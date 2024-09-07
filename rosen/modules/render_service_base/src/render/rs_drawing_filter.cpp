@@ -27,6 +27,7 @@
 #include "render/rs_aibar_shader_filter.h"
 #include "render/rs_grey_shader_filter.h"
 #include "render/rs_kawase_blur_shader_filter.h"
+#include "render/rs_mesa_blur_shader_filter.h"
 #include "render/rs_linear_gradient_blur_shader_filter.h"
 #include "render/rs_maskcolor_shader_filter.h"
 #include "src/core/SkOpts.h"
@@ -95,6 +96,12 @@ std::string RSDrawingFilter::GetDescription()
                 filterString = filterString + ", radius: " + std::to_string(radius) + " sigma";
                 break;
             }
+            case RSShaderFilter::MESA: {
+                auto filter = std::static_pointer_cast<RSMESABlurShaderFilter>(shaderFilter);
+                int radius = filter->GetRadius();
+                filterString = filterString + ", MESA radius: " + std::to_string(radius) + " sigma";
+                break;
+            }
             case RSShaderFilter::LINEAR_GRADIENT_BLUR: {
                 auto filter4 = std::static_pointer_cast<RSLinearGradientBlurShaderFilter>(shaderFilter);
                 float radius2 = filter4->GetLinearGradientBlurRadius();
@@ -126,6 +133,11 @@ std::string RSDrawingFilter::GetDetailedDescription()
                 float greyCoefHigh = filter2->GetGreyCoefHigh();
                 filterString = filterString + ", greyCoef1: " + std::to_string(greyCoefLow);
                 filterString = filterString + ", greyCoef2: " + std::to_string(greyCoefHigh);
+                break;
+            }
+            case RSShaderFilter::MESA: {
+                auto filter = std::static_pointer_cast<RSMESABlurShaderFilter>(shaderFilter);
+                filterString = filterString + filter->GetDetailedDescription();
                 break;
             }
             case RSShaderFilter::MASK_COLOR: {
@@ -163,7 +175,6 @@ Drawing::Brush RSDrawingFilter::GetBrush() const
     brush.SetAntiAlias(true);
     Drawing::Filter filter;
     filter.SetImageFilter(imageFilter_);
-    filter.SetColorFilter(colorFilterForHDR_);
     brush.SetFilter(filter);
     return brush;
 }
@@ -271,7 +282,6 @@ void RSDrawingFilter::ApplyColorFilter(Drawing::Canvas& canvas, const std::share
         filter.SetImageFilter(imageFilter_);
         brush.SetFilter(filter);
     }
-    brush.SetForceBrightnessDisable(true);
     canvas.AttachBrush(brush);
     canvas.DrawImageRect(*image, src, dst, Drawing::SamplingOptions());
     canvas.DetachBrush();
@@ -299,10 +309,15 @@ void RSDrawingFilter::ApplyImageEffect(Drawing::Canvas& canvas, const std::share
     if (kawaseShaderFilter != nullptr) {
         auto tmpFilter = std::static_pointer_cast<RSKawaseBlurShaderFilter>(kawaseShaderFilter);
         auto radius = tmpFilter->GetRadius();
+
+        static constexpr float epsilon = 0.999f;
+        if (ROSEN_LE(radius, epsilon)) {
+            ApplyColorFilter(canvas, outImage, src, dst);
+            return;
+        }
         auto hpsParam = Drawing::HpsBlurParameter(src, dst, radius, saturationForHPS_, brightnessForHPS_);
         if (RSSystemProperties::GetHpsBlurEnabled() && GetFilterType() == RSFilter::MATERIAL &&
-            HpsBlurFilter::GetHpsBlurFilter().ApplyHpsBlur(canvas, outImage, hpsParam, brush.GetColor().GetAlphaF(),
-                brush.GetFilter().GetColorFilter())) {
+            HpsBlurFilter::GetHpsBlurFilter().ApplyHpsBlur(canvas, outImage, hpsParam, brush)) {
             RS_OPTIONAL_TRACE_NAME("ApplyHPSBlur " + std::to_string(radius));
         } else {
             auto effectContainer = std::make_shared<Drawing::GEVisualEffectContainer>();
@@ -313,7 +328,6 @@ void RSDrawingFilter::ApplyImageEffect(Drawing::Canvas& canvas, const std::share
                 ROSEN_LOGE("RSDrawingFilter::DrawImageRect blurImage is null");
                 return;
             }
-            brush.SetForceBrightnessDisable(true);
             canvas.AttachBrush(brush);
             canvas.DrawImageRect(*blurImage, src, dst, Drawing::SamplingOptions());
             canvas.DetachBrush();
@@ -321,7 +335,6 @@ void RSDrawingFilter::ApplyImageEffect(Drawing::Canvas& canvas, const std::share
         }
         return;
     }
-    brush.SetForceBrightnessDisable(true);
     canvas.AttachBrush(brush);
     canvas.DrawImageRect(*outImage, src, dst, Drawing::SamplingOptions());
     canvas.DetachBrush();

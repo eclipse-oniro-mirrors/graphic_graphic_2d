@@ -37,7 +37,10 @@
 #include "render/rs_skia_filter.h"
 #include "transaction/rs_render_service_client.h"
 #include "visitor/rs_node_visitor.h"
-
+#ifndef ROSEN_CROSS_PLATFORM
+#include "metadata_helper.h"
+#include <v1_0/cm_color_space.h>
+#endif
 namespace OHOS {
 namespace Rosen {
 
@@ -204,7 +207,7 @@ bool RSSurfaceRenderNode::ShouldPrepareSubnodes()
 void RSSurfaceRenderNode::StoreMustRenewedInfo()
 {
     mustRenewedInfo_ = RSRenderNode::HasMustRenewedInfo() || GetHasSecurityLayer() ||
-        GetHasSkipLayer() || GetHasProtectedLayer();
+        GetHasSkipLayer() || GetHasSnapshotSkipLayer() || GetHasProtectedLayer();
 }
 
 std::string RSSurfaceRenderNode::DirtyRegionDump() const
@@ -393,6 +396,7 @@ void RSSurfaceRenderNode::OnTreeStateChanged()
     // sync skip & security info
     SyncSecurityInfoToFirstLevelNode();
     SyncSkipInfoToFirstLevelNode();
+    SyncSnapshotSkipInfoToFirstLevelNode();
     SyncProtectedInfoToFirstLevelNode();
 }
 
@@ -834,6 +838,22 @@ void RSSurfaceRenderNode::SetSkipLayer(bool isSkipLayer)
     SyncSkipInfoToFirstLevelNode();
 }
 
+void RSSurfaceRenderNode::SetSnapshotSkipLayer(bool isSnapshotSkipLayer)
+{
+    if (isSnapshotSkipLayer_ == isSnapshotSkipLayer) {
+        return;
+    }
+    specialLayerChanged_ = true;
+    isSnapshotSkipLayer_ = isSnapshotSkipLayer;
+    SetDirty();
+    if (isSnapshotSkipLayer) {
+        snapshotSkipLayerIds_.insert(GetId());
+    } else {
+        snapshotSkipLayerIds_.erase(GetId());
+    }
+    SyncOnTheTreeInfoToFirstLevelNode();
+}
+
 void RSSurfaceRenderNode::SetProtectedLayer(bool isProtectedLayer)
 {
     if (isProtectedLayer_ == isProtectedLayer) {
@@ -867,6 +887,11 @@ bool RSSurfaceRenderNode::GetSkipLayer() const
     return isSkipLayer_;
 }
 
+bool RSSurfaceRenderNode::GetSnapshotSkipLayer() const
+{
+    return isSnapshotSkipLayer_;
+}
+
 bool RSSurfaceRenderNode::GetProtectedLayer() const
 {
     return isProtectedLayer_;
@@ -880,6 +905,11 @@ bool RSSurfaceRenderNode::GetHasSecurityLayer() const
 bool RSSurfaceRenderNode::GetHasSkipLayer() const
 {
     return skipLayerIds_.size() != 0;
+}
+
+bool RSSurfaceRenderNode::GetHasSnapshotSkipLayer() const
+{
+    return !snapshotSkipLayerIds_.empty();
 }
 
 bool RSSurfaceRenderNode::GetHasProtectedLayer() const
@@ -910,6 +940,40 @@ void RSSurfaceRenderNode::SyncSkipInfoToFirstLevelNode()
             firstLevelNode->skipLayerIds_.insert(GetId());
         } else {
             firstLevelNode->skipLayerIds_.erase(GetId());
+        }
+        firstLevelNode->specialLayerChanged_ = specialLayerChanged_;
+    }
+}
+
+void RSSurfaceRenderNode::SyncOnTheTreeInfoToFirstLevelNode()
+{
+    if (!IsOnTheTree() || GetFirstLevelNodeId() == GetId()) {
+        return;
+    }
+    auto firstLevelNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(GetFirstLevelNode());
+    // firstLevelNode is the nearest app window / leash node
+    if (firstLevelNode) {
+        if (isSnapshotSkipLayer_) {
+            firstLevelNode->snapshotSkipLayerIds_.insert(GetId());
+        } else {
+            firstLevelNode->snapshotSkipLayerIds_.erase(GetId());
+        }
+        firstLevelNode->specialLayerChanged_ = specialLayerChanged_;
+    }
+}
+
+void RSSurfaceRenderNode::SyncSnapshotSkipInfoToFirstLevelNode()
+{
+    if (isSnapshotSkipLayer_ == false || GetFirstLevelNodeId() == GetId()) {
+        return;
+    }
+    auto firstLevelNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(GetFirstLevelNode());
+    // firstLevelNode is the nearest app window / leash node
+    if (firstLevelNode) {
+        if (IsOnTheTree()) {
+            firstLevelNode->snapshotSkipLayerIds_.insert(GetId());
+        } else {
+            firstLevelNode->snapshotSkipLayerIds_.erase(GetId());
         }
         firstLevelNode->specialLayerChanged_ = specialLayerChanged_;
     }
@@ -983,15 +1047,15 @@ void RSSurfaceRenderNode::SetAncoForceDoDirect(bool direct)
 
 bool RSSurfaceRenderNode::GetAncoForceDoDirect() const
 {
-    return (ancoForceDoDirect_.load() && (GetAncoFlags() & static_cast<int32_t>(AncoFlags::IS_ANCO_NODE)));
+    return (ancoForceDoDirect_.load() && (GetAncoFlags() & static_cast<uint32_t>(AncoFlags::IS_ANCO_NODE)));
 }
 
-void RSSurfaceRenderNode::SetAncoFlags(int32_t flags)
+void RSSurfaceRenderNode::SetAncoFlags(uint32_t flags)
 {
     ancoFlags_.store(flags);
 }
 
-int32_t RSSurfaceRenderNode::GetAncoFlags() const
+uint32_t RSSurfaceRenderNode::GetAncoFlags() const
 {
     return ancoFlags_.load();
 }
@@ -1008,6 +1072,24 @@ void RSSurfaceRenderNode::NotifyTreeStateChange()
     }
 }
 
+void RSSurfaceRenderNode::SetLayerTop(bool isTop)
+{
+#ifndef ROSEN_CROSS_PLATFORM
+    if (!RSInterfaceCodeAccessVerifierBase::IsSystemCalling("SetLayerTop")) {
+        // System calls only
+        return;
+    }
+#endif
+    isLayerTop_ = isTop;
+    SetContentDirty();
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
+    if (surfaceParams == nullptr) {
+        return;
+    }
+    surfaceParams->SetLayerTop(isTop);
+    AddToPendingSyncList();
+}
+
 void RSSurfaceRenderNode::SetColorSpace(GraphicColorGamut colorSpace)
 {
     colorSpace_ = colorSpace;
@@ -1016,6 +1098,46 @@ void RSSurfaceRenderNode::SetColorSpace(GraphicColorGamut colorSpace)
 GraphicColorGamut RSSurfaceRenderNode::GetColorSpace() const
 {
     return colorSpace_;
+}
+
+void RSSurfaceRenderNode::UpdateColorSpaceToIntanceRootNode()
+{
+    auto parentInstance = GetInstanceRootNode();
+    if (!parentInstance) {
+        RS_LOGD("RSSurfaceRenderNode::UpdateColorSpaceToIntanceRootNode get parent instance root node info failed.");
+        return;
+    }
+#ifndef ROSEN_CROSS_PLATFORM
+    if (!GetRSSurfaceHandler() || !GetRSSurfaceHandler()->GetBuffer()) {
+        return;
+    }
+    const sptr<SurfaceBuffer>& buffer = GetRSSurfaceHandler()->GetBuffer();
+    using namespace HDI::Display::Graphic::Common::V1_0;
+    CM_ColorSpaceInfo colorSpaceInfo;
+    if (MetadataHelper::GetColorSpaceInfo(buffer, colorSpaceInfo) != GSERROR_OK) {
+        RS_LOGD("RSSurfaceRenderNode::UpdateColorSpaceToIntanceRootNode get color space info failed.");
+        return;
+    }
+    // currently, P3 is the only supported wide color gamut, this may be modified later.
+    auto subColorSpace = colorSpaceInfo.primaries != COLORPRIMARIES_SRGB ?
+        GRAPHIC_COLOR_GAMUT_DISPLAY_P3 : GRAPHIC_COLOR_GAMUT_SRGB;
+    if (auto parentSurface = parentInstance->ReinterpretCastTo<RSSurfaceRenderNode>()) {
+        parentSurface->subColorSpace_ = parentSurface->subColorSpace_ == GRAPHIC_COLOR_GAMUT_DISPLAY_P3 ?
+            GRAPHIC_COLOR_GAMUT_DISPLAY_P3 : subColorSpace;
+    }
+    // Set subColorSpace_ of the node itself, in case the parent surface is not obtained.
+    subColorSpace_ = subColorSpace;
+#endif
+}
+
+GraphicColorGamut RSSurfaceRenderNode::GetSubSurfaceColorSpace() const
+{
+    return subColorSpace_.value_or(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB);
+}
+
+void RSSurfaceRenderNode::ResetSubSurfaceColorSpace()
+{
+    subColorSpace_ = std::nullopt;
 }
 
 void RSSurfaceRenderNode::UpdateSurfaceDefaultSize(float width, float height)
@@ -1050,8 +1172,8 @@ void RSSurfaceRenderNode::OnSkipSync()
         }
         auto context = GetContext().lock();
         if (context && !surfaceParams->GetHardwareEnabled()) {
-            context->GetMutableSkipSyncBuffer().push_back(
-                { preBuffer, GetRSSurfaceHandler()->GetConsumer(), surfaceParams->GetLastFrameHardwareEnabled() });
+            context->GetMutableSkipSyncBuffer()[GetFirstLevelNodeId()] = { preBuffer,
+                GetRSSurfaceHandler()->GetConsumer(), surfaceParams->GetLastFrameHardwareEnabled() };
             surfaceParams->SetPreBuffer(nullptr);
         }
     }
@@ -1418,6 +1540,7 @@ void RSSurfaceRenderNode::UpdateHwcNodeLayerInfo(GraphicTransformType transform)
     layer.blendType = GetBlendType();
     layer.matrix = totalMatrix_;
     layer.alpha = GetGlobalAlpha();
+    layer.arsrTag = GetArsrTag();
     if (IsHardwareEnabledTopSurface() && RSSystemProperties::IsPcType()) {
         layer.layerType = GraphicLayerType::GRAPHIC_LAYER_TYPE_CURSOR;
     } else {
@@ -2498,7 +2621,7 @@ void RSSurfaceRenderNode::SetIsOnTheTree(bool onTree, NodeId instanceRootNodeId,
         firstLevelNodeId = GetId();
         auto parentNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(GetParent().lock());
         if (parentNode && parentNode->GetFirstLevelNodeId() != INVALID_NODEID) {
-            firstLevelNodeId = parentNode->GetFirstLevelNodeId();
+            firstLevelNodeId = parentNode->GetFirstLevelNodeId ();
         }
     }
     if (IsSecureUIExtension()) {
@@ -2656,7 +2779,6 @@ void RSSurfaceRenderNode::UpdatePartialRenderParams()
         return;
     }
     if (IsMainWindowType()) {
-        surfaceParams->SetVisibleRegion(visibleRegion_);
         surfaceParams->SetVisibleRegionInVirtual(visibleRegionInVirtual_);
         surfaceParams->SetIsParentScaling(isParentScaling_);
     }
@@ -2664,6 +2786,18 @@ void RSSurfaceRenderNode::UpdatePartialRenderParams()
     surfaceParams->SetOldDirtyInSurface(GetOldDirtyInSurface());
     surfaceParams->SetTransparentRegion(GetTransparentRegion());
     surfaceParams->SetOpaqueRegion(GetOpaqueRegion());
+}
+
+void RSSurfaceRenderNode::UpdateExtendVisibleRegion(Occlusion::Region& region)
+{
+    extendVisibleRegion_.Reset();
+    extendVisibleRegion_ = region.Or(visibleRegion_);
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
+    if (surfaceParams == nullptr) {
+        RS_LOGE("RSSurfaceRenderNode::UpdateExtendVisibleRegion surfaceParams is nullptr");
+        return;
+    }
+    surfaceParams->SetVisibleRegion(extendVisibleRegion_);
 }
 
 void RSSurfaceRenderNode::InitRenderParams()
@@ -2698,10 +2832,13 @@ void RSSurfaceRenderNode::UpdateRenderParams()
     surfaceParams->SetAncestorDisplayNode(ancestorDisplayNode_);
     surfaceParams->isSecurityLayer_ = isSecurityLayer_;
     surfaceParams->isSkipLayer_ = isSkipLayer_;
+    surfaceParams->isSnapshotSkipLayer_ = isSnapshotSkipLayer_;
     surfaceParams->isProtectedLayer_ = isProtectedLayer_;
     surfaceParams->animateState_ = animateState_;
+    surfaceParams->isRotating_ = isRotating_;
     surfaceParams->forceClientForDRMOnly_ = forceClientForDRMOnly_;
     surfaceParams->skipLayerIds_= skipLayerIds_;
+    surfaceParams->snapshotSkipLayerIds_= snapshotSkipLayerIds_;
     surfaceParams->securityLayerIds_= securityLayerIds_;
     surfaceParams->protectedLayerIds_= protectedLayerIds_;
     surfaceParams->name_= name_;
@@ -2831,6 +2968,33 @@ std::map<std::string, std::pair<bool, std::shared_ptr<Media::PixelMap>>> RSSurfa
 size_t RSSurfaceRenderNode::GetWatermarkSize() const
 {
     return watermarkHandles_.size();
+}
+
+void RSSurfaceRenderNode::SetSdrNit(int32_t sdrNit)
+{
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
+    if (surfaceParams) {
+        surfaceParams->SetSdrNit(sdrNit);
+    }
+    AddToPendingSyncList();
+}
+
+void RSSurfaceRenderNode::SetDisplayNit(int32_t displayNit)
+{
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
+    if (surfaceParams) {
+        surfaceParams->SetDisplayNit(displayNit);
+    }
+    AddToPendingSyncList();
+}
+
+void RSSurfaceRenderNode::SetBrightnessRatio(float brightnessRatio)
+{
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
+    if (surfaceParams) {
+        surfaceParams->SetBrightnessRatio(brightnessRatio);
+    }
+    AddToPendingSyncList();
 }
 } // namespace Rosen
 } // namespace OHOS

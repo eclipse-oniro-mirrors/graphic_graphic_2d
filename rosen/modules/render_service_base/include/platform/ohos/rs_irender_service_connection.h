@@ -59,6 +59,7 @@ public:
     virtual bool GetUniRenderEnabled() = 0;
 
     virtual bool CreateNode(const RSSurfaceRenderNodeConfig& config) = 0;
+    virtual bool CreateNode(const RSDisplayNodeConfig& displayNodeConfig, NodeId nodeId) = 0;
     virtual sptr<Surface> CreateNodeAndSurface(const RSSurfaceRenderNodeConfig& config) = 0;
 
     virtual sptr<IVSyncConnection> CreateVSyncConnection(const std::string& name,
@@ -121,6 +122,8 @@ public:
 
     virtual void SyncFrameRateRange(FrameRateLinkerId id, const FrameRateRange& range,
         int32_t animatorExpectedFrameRate) = 0;
+
+    virtual void UnregisterFrameRateLinker(FrameRateLinkerId id) = 0;
 
     virtual uint32_t GetScreenCurrentRefreshRate(ScreenId id) = 0;
 
@@ -292,6 +295,8 @@ public:
     virtual bool SetVirtualScreenStatus(ScreenId id, VirtualScreenStatus screenStatus) = 0;
 
     virtual bool SetAncoForceDoDirect(bool direct) = 0;
+
+    virtual void SetFreeMultiWindowStatus(bool enable) = 0;
 
 #ifdef TP_FEATURE_ENABLE
     virtual void SetTpFeatureConfig(int32_t feature, const char* config) = 0;

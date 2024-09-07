@@ -44,6 +44,7 @@
 #include "surface_buffer.h"
 #include "sync_fence.h"
 #endif
+#include "ipc_security/rs_ipc_interface_code_access_verifier_base.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -117,6 +118,13 @@ public:
         return nodeType_ == RSSurfaceNodeType::SELF_DRAWING_WINDOW_NODE && GetName() == "pointer window";
     }
 
+    void SetLayerTop(bool isTop);
+
+    bool IsLayerTop() const
+    {
+        return isLayerTop_;
+    }
+
     // indicate if this node type can enable hardware composer
     bool IsHardwareEnabledType() const
     {
@@ -124,7 +132,7 @@ public:
             return false;
         }
         return (nodeType_ == RSSurfaceNodeType::SELF_DRAWING_NODE && isHardwareEnabledNode_) ||
-            IsHardwareEnabledTopSurface();
+            IsHardwareEnabledTopSurface() || IsLayerTop();
     }
 
     void SetHardwareEnabled(bool isEnabled, SelfDrawingNodeType selfDrawingType = SelfDrawingNodeType::DEFAULT)
@@ -380,6 +388,16 @@ public:
         offsetY_ = offsetY;
     }
 
+    bool GetArsrTag() const
+    {
+        return arsrTag_;
+    }
+
+    void SetArsrTag(bool arsrTag)
+    {
+        arsrTag_ = arsrTag;
+    }
+
     void CollectSurface(const std::shared_ptr<RSBaseRenderNode>& node, std::vector<RSBaseRenderNode::SharedPtr>& vec,
         bool isUniRender, bool onlyFirstLevel) override;
     void CollectSurfaceForUIFirstSwitch(uint32_t& leashWindowCount, uint32_t minNodeNum) override;
@@ -428,17 +446,20 @@ public:
 
     void SetSecurityLayer(bool isSecurityLayer);
     void SetSkipLayer(bool isSkipLayer);
+    void SetSnapshotSkipLayer(bool isSnapshotSkipLayer);
     void SetProtectedLayer(bool isProtectedLayer);
     void SetForceClientForDRMOnly(bool forceClient);
 
     // get whether it is a security/skip layer itself
     bool GetSecurityLayer() const;
     bool GetSkipLayer() const;
+    bool GetSnapshotSkipLayer() const;
     bool GetProtectedLayer() const;
 
     // get whether it and it's subtree contain security layer
     bool GetHasSecurityLayer() const;
     bool GetHasSkipLayer() const;
+    bool GetHasSnapshotSkipLayer() const;
     bool GetHasProtectedLayer() const;
 
     void ResetSpecialLayerChangedFlag()
@@ -453,6 +474,8 @@ public:
 
     void SyncSecurityInfoToFirstLevelNode();
     void SyncSkipInfoToFirstLevelNode();
+    void SyncOnTheTreeInfoToFirstLevelNode();
+    void SyncSnapshotSkipInfoToFirstLevelNode();
     void SyncProtectedInfoToFirstLevelNode();
 
     void SetFingerprint(bool hasFingerprint);
@@ -477,8 +500,8 @@ public:
 
     static void SetAncoForceDoDirect(bool direct);
     bool GetAncoForceDoDirect() const;
-    void SetAncoFlags(int32_t flags);
-    int32_t GetAncoFlags() const;
+    void SetAncoFlags(uint32_t flags);
+    uint32_t GetAncoFlags() const;
 
     void SetHDRPresent(bool hasHdrPresent);
     bool GetHDRPresent() const;
@@ -658,6 +681,12 @@ public:
 
     void SetColorSpace(GraphicColorGamut colorSpace);
     GraphicColorGamut GetColorSpace() const;
+
+    // Only call this if the node is self-drawing surface node.
+    void UpdateColorSpaceToIntanceRootNode();
+    GraphicColorGamut GetSubSurfaceColorSpace() const;
+    void ResetSubSurfaceColorSpace();
+
 #ifndef ROSEN_CROSS_PLATFORM
     void SetConsumer(const sptr<IConsumerSurface>& consumer);
     void SetBlendType(GraphicBlendType blendType);
@@ -1073,6 +1102,8 @@ public:
     Vector2f GetGravityTranslate(float imgWidth, float imgHeight);
     bool GetHasTransparentSurface() const;
     void UpdatePartialRenderParams();
+    // This function is used for extending visibleRegion by dirty blurfilter node half-obscured
+    void UpdateExtendVisibleRegion(Occlusion::Region& region);
     void UpdateAncestorDisplayNodeInRenderParams();
 
     void SetNeedDrawFocusChange(bool needDrawFocusChange)
@@ -1139,26 +1170,6 @@ public:
         return doDirectComposition_;
     }
 
-    void SetDisplayNit(int32_t displayNit)
-    {
-        displayNit_ = displayNit;
-    }
-
-    int32_t GetDisplayNit() const
-    {
-        return displayNit_;
-    }
-
-    void SetBrightnessRatio(float brightnessRatio)
-    {
-        brightnessRatio_ = brightnessRatio;
-    }
-
-    float GetBrightnessRatio() const
-    {
-        return brightnessRatio_;
-    }
-
     void SetHardWareDisabledByReverse(bool isHardWareDisabledByReverse)
     {
         isHardWareDisabledByReverse_ = isHardWareDisabledByReverse;
@@ -1172,6 +1183,9 @@ public:
     void SetSkipDraw(bool skip);
     bool GetSkipDraw() const;
     void SetNeedOffscreen(bool needOffscreen);
+    void SetSdrNit(int32_t sdrNit);
+    void SetDisplayNit(int32_t displayNit);
+    void SetBrightnessRatio(float brightnessRatio);
     static const std::unordered_map<NodeId, NodeId>& GetSecUIExtensionNodes();
     bool IsSecureUIExtension() const
     {
@@ -1257,9 +1271,11 @@ private:
 
     bool isSecurityLayer_ = false;
     bool isSkipLayer_ = false;
+    bool isSnapshotSkipLayer_ = false;
     bool isProtectedLayer_ = false;
     bool forceClientForDRMOnly_ = false;
     std::set<NodeId> skipLayerIds_= {};
+    std::set<NodeId> snapshotSkipLayerIds_= {};
     std::set<NodeId> securityLayerIds_= {};
     std::set<NodeId> protectedLayerIds_= {};
     bool specialLayerChanged_ = false;
@@ -1278,8 +1294,10 @@ private:
 
     std::string name_;
     RSSurfaceNodeType nodeType_ = RSSurfaceNodeType::DEFAULT;
+    bool isLayerTop_ = false;
     const enum SurfaceWindowType surfaceWindowType_ = SurfaceWindowType::DEFAULT_WINDOW;
     GraphicColorGamut colorSpace_ = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
+    std::optional<GraphicColorGamut> subColorSpace_ = std::nullopt;
 #ifndef ROSEN_CROSS_PLATFORM
     GraphicBlendType blendType_ = GraphicBlendType::GRAPHIC_BLEND_SRCOVER;
 #endif
@@ -1303,6 +1321,7 @@ private:
     different under filter cache surfacenode layer.
     */
     Occlusion::Region visibleRegion_;
+    Occlusion::Region extendVisibleRegion_;
     Occlusion::Region visibleRegionInVirtual_;
     Occlusion::Region visibleRegionForCallBack_;
     bool isLeashWindowVisibleRegionEmpty_ = false;
@@ -1453,6 +1472,7 @@ private:
     bool UIFirstIsPurge_ = false;
     // whether to wait uifirst first frame finished when buffer available callback invoked.
     std::atomic<bool> isWaitUifirstFirstFrame_ = false;
+    bool isTargetUIFirstDfxEnabled_ = false;
 
     TreeStateChangeCallback treeStateChangeCallback_;
     RSBaseRenderNode::WeakPtr ancestorDisplayNode_;
@@ -1470,7 +1490,7 @@ private:
     bool forceUIFirst_ = false;
     bool hasTransparentSurface_ = false;
 
-    std::atomic<int32_t> ancoFlags_ = 0;
+    std::atomic<uint32_t> ancoFlags_ = 0;
     static inline std::atomic<bool> ancoForceDoDirect_ = false;
 
     bool isGpuOverDrawBufferOptimizeNode_ = false;
@@ -1485,6 +1505,8 @@ private:
 
     bool isHardwareForcedByBackgroundAlpha_ = false;
     std::map<std::string, std::pair<bool, std::shared_ptr<Media::PixelMap>>> watermarkHandles_ = {};
+
+    bool arsrTag_ = true;
 
     // UIExtension record, <UIExtension, hostAPP>
     inline static std::unordered_map<NodeId, NodeId> secUIExtensionNodes_ = {};

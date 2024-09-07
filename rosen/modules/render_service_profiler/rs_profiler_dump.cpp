@@ -24,6 +24,7 @@
 #include "pipeline/rs_root_render_node.h"
 #include "pipeline/rs_surface_handler.h"
 #include "pipeline/rs_surface_render_node.h"
+#include "params/rs_render_params.h"
 
 namespace OHOS::Rosen {
 
@@ -64,7 +65,9 @@ void RSProfiler::DumpNodeBaseInfo(const RSRenderNode& node, JsonWriter& out)
             std::to_string(sharedTrans->inNodeId_) + " -> " + std::to_string(sharedTrans->outNodeId_);
     }
     if (node.IsSuggestedDrawInGroup()) {
+        const auto& renderParams = const_cast<RSRenderNode&>(node).GetStagingRenderParams();
         out["nodeGroup"] = static_cast<int>(node.nodeGroupType_);
+        out["nodeGroupReuseCache"] = renderParams ? static_cast<int>(!renderParams->GetNeedUpdateCache()) : 0;
     }
     if (node.GetUifirstRootNodeId() != INVALID_NODEID) {
         out["uifirstRootNodeId"] = node.GetUifirstRootNodeId();
@@ -103,6 +106,7 @@ void RSProfiler::DumpNodeSubClassNode(const RSRenderNode& node, JsonWriter& out)
         subclass["OcclusionBg"] = std::to_string((surfaceNode.GetAbilityBgAlpha()));
         subclass["SecurityLayer"] = surfaceNode.GetSecurityLayer();
         subclass["skipLayer"] = surfaceNode.GetSkipLayer();
+        subclass["snapshotSkipLayer"] = surfaceNode.GetSnapshotSkipLayer();
     } else if (node.GetType() == RSRenderNodeType::ROOT_NODE) {
         auto& rootNode = static_cast<const RSRootRenderNode&>(node);
         subclass["Visible"] = rootNode.GetRenderProperties().GetVisible();

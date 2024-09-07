@@ -36,9 +36,6 @@
 #include "ipc_callbacks/rs_uiextension_callback_stub.h"
 #include "platform/common/rs_log.h"
 #include "platform/common/rs_system_properties.h"
-#ifdef NEW_RENDER_CONTEXT
-#include "render_backend/rs_surface_factory.h"
-#endif
 #include "render/rs_typeface_cache.h"
 #include "rs_render_service_connect_hub.h"
 #include "rs_surface_ohos.h"
@@ -108,6 +105,15 @@ bool RSRenderServiceClient::GetTotalAppMemSize(float& cpuMemSize, float& gpuMemS
     return renderService->GetTotalAppMemSize(cpuMemSize, gpuMemSize);
 }
 
+bool RSRenderServiceClient::CreateNode(const RSDisplayNodeConfig& displayNodeConfig, NodeId nodeId)
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService == nullptr) {
+        return false;
+    }
+    return renderService->CreateNode(displayNodeConfig, nodeId);
+}
+
 bool RSRenderServiceClient::CreateNode(const RSSurfaceRenderNodeConfig& config)
 {
     auto renderService = RSRenderServiceConnectHub::GetRenderService();
@@ -117,11 +123,7 @@ bool RSRenderServiceClient::CreateNode(const RSSurfaceRenderNodeConfig& config)
     return renderService->CreateNode(config);
 }
 
-#ifdef NEW_RENDER_CONTEXT
-std::shared_ptr<RSRenderSurface> RSRenderServiceClient::CreateNodeAndSurface(const RSSurfaceRenderNodeConfig& config)
-#else
 std::shared_ptr<RSSurface> RSRenderServiceClient::CreateNodeAndSurface(const RSSurfaceRenderNodeConfig& config)
-#endif
 {
     auto renderService = RSRenderServiceConnectHub::GetRenderService();
     if (renderService == nullptr) {
@@ -131,13 +133,6 @@ std::shared_ptr<RSSurface> RSRenderServiceClient::CreateNodeAndSurface(const RSS
     return CreateRSSurface(surface);
 }
 
-#if defined(NEW_RENDER_CONTEXT)
-std::shared_ptr<RSRenderSurface> RSRenderServiceClient::CreateRSSurface(const sptr<Surface> &surface)
-{
-    std::shared_ptr<RSRenderSurface> producer = RSSurfaceFactory::CreateRSSurface(PlatformName::OHOS, surface);
-    return producer;
-}
-#else
 std::shared_ptr<RSSurface> RSRenderServiceClient::CreateRSSurface(const sptr<Surface> &surface)
 {
 #if defined (ACE_ENABLE_VK)
@@ -153,7 +148,6 @@ std::shared_ptr<RSSurface> RSRenderServiceClient::CreateRSSurface(const sptr<Sur
 #endif
     return std::make_shared<RSSurfaceOhosRaster>(surface); // CPU render
 }
-#endif
 
 std::shared_ptr<VSyncReceiver> RSRenderServiceClient::CreateVSyncReceiver(
     const std::string& name,
@@ -212,7 +206,7 @@ void RSRenderServiceClient::TriggerSurfaceCaptureCallback(NodeId id, std::shared
             continue;
         }
         std::shared_ptr<Media::PixelMap> surfaceCapture = pixelmap;
-        if (i != callbackVector.size() - 1) {
+        if (UNLIKELY(RSSystemProperties::GetPixelmapDfxEnabled()) || (i != callbackVector.size() - 1)) {
             if (pixelmap != nullptr) {
                 Media::InitializationOptions options;
                 std::unique_ptr<Media::PixelMap> pixelmapCopy = Media::PixelMap::Create(*pixelmap, options);
@@ -509,6 +503,16 @@ void RSRenderServiceClient::SyncFrameRateRange(FrameRateLinkerId id,
     }
 
     return renderService->SyncFrameRateRange(id, range, animatorExpectedFrameRate);
+}
+
+void RSRenderServiceClient::UnregisterFrameRateLinker(FrameRateLinkerId id)
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService == nullptr) {
+        ROSEN_LOGW("RSRenderServiceClient renderService == nullptr!");
+        return;
+    }
+    renderService->UnregisterFrameRateLinker(id);
 }
 
 uint32_t RSRenderServiceClient::GetScreenCurrentRefreshRate(ScreenId id)
@@ -1478,6 +1482,16 @@ bool RSRenderServiceClient::SetAncoForceDoDirect(bool direct)
         return renderService->SetAncoForceDoDirect(direct);
     }
     return false;
+}
+
+void RSRenderServiceClient::SetFreeMultiWindowStatus(bool enable)
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService == nullptr) {
+        ROSEN_LOGE("RSRenderServiceClient::SetFreeMultiWindowStatus renderService == nullptr!");
+        return;
+    }
+    renderService->SetFreeMultiWindowStatus(enable);
 }
 } // namespace Rosen
 } // namespace OHOS

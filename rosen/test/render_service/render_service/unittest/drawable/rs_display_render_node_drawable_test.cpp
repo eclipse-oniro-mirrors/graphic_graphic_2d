@@ -49,8 +49,8 @@ public:
     RSDisplayRenderNodeDrawable* displayDrawable_ = nullptr;
     RSDisplayRenderNodeDrawable* mirroredDisplayDrawable_ = nullptr;
 
-    std::shared_ptr<Drawing::Canvas> drawingCanvas_;
-    std::shared_ptr<RSPaintFilterCanvas> canvas_;
+    std::shared_ptr<Drawing::Canvas> drawingCanvas_ = nullptr;
+    std::shared_ptr<Drawing::Canvas> drawingCanvasForMirror_ = nullptr;
 
     static void SetUpTestCase();
     static void TearDownTestCase();
@@ -69,25 +69,39 @@ void RSDisplayRenderNodeDrawableTest::SetUp()
     mirroredNode_ = std::make_shared<RSDisplayRenderNode>(DEFAULT_ID + 1, config);
     if (!renderNode_ || !mirroredNode_) {
         RS_LOGE("RSDisplayRenderNodeDrawableTest: failed to create display node.");
+        return;
     }
+
     drawable_ = RSDisplayRenderNodeDrawable::OnGenerate(renderNode_);
     mirroredDrawable_ = RSDisplayRenderNodeDrawable::OnGenerate(mirroredNode_);
-    if (drawable_ && mirroredDrawable_) {
-        displayDrawable_ = static_cast<RSDisplayRenderNodeDrawable*>(drawable_);
-        displayDrawable_->renderParams_ = std::make_unique<RSDisplayRenderParams>(id);
-        mirroredDisplayDrawable_ = static_cast<RSDisplayRenderNodeDrawable*>(mirroredDrawable_);
-        if (!drawable_->renderParams_ || !mirroredDrawable_->renderParams_) {
-            RS_LOGE("RSDisplayRenderNodeDrawableTest: failed to init render params.");
-        }
-        drawingCanvas_ = std::make_unique<Drawing::Canvas>(DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
-        if (drawingCanvas_) {
-            canvas_ = std::make_shared<RSPaintFilterCanvas>(drawingCanvas_.get());
-        }
-        if (displayDrawable_) {
-            displayDrawable_->curCanvas_ = canvas_;
-        }
-    } else {
+    if (!drawable_ || !mirroredDrawable_) {
+        RS_LOGE("RSDisplayRenderNodeDrawableTest: failed to create RSRenderNodeDrawableAdapter.");
+        return;
+    }
+
+    displayDrawable_ = static_cast<RSDisplayRenderNodeDrawable*>(drawable_);
+    mirroredDisplayDrawable_ = static_cast<RSDisplayRenderNodeDrawable*>(mirroredDrawable_);
+    if (!displayDrawable_ || !mirroredDisplayDrawable_) {
         RS_LOGE("RSDisplayRenderNodeDrawableTest: failed to create drawable.");
+        return;
+    }
+
+    displayDrawable_->renderParams_ = std::make_unique<RSDisplayRenderParams>(id);
+    mirroredDisplayDrawable_->renderParams_ = std::make_unique<RSDisplayRenderParams>(id + 1);
+    if (!drawable_->renderParams_ || !mirroredDrawable_->renderParams_) {
+        RS_LOGE("RSDisplayRenderNodeDrawableTest: failed to init render params.");
+        return;
+    }
+
+    // generate canvas for displayDrawable_
+    drawingCanvas_ = std::make_unique<Drawing::Canvas>(DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
+    if (drawingCanvas_) {
+        displayDrawable_->curCanvas_ = std::make_shared<RSPaintFilterCanvas>(drawingCanvas_.get());
+    }
+    // generate canvas for mirroredDisplayDrawable_
+    drawingCanvasForMirror_ = std::make_unique<Drawing::Canvas>(DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
+    if (drawingCanvasForMirror_) {
+        mirroredDisplayDrawable_->curCanvas_ = std::make_shared<RSPaintFilterCanvas>(drawingCanvasForMirror_.get());
     }
 }
 void RSDisplayRenderNodeDrawableTest::TearDown() {}
@@ -163,8 +177,8 @@ HWTEST_F(RSDisplayRenderNodeDrawableTest, ClearTransparentBeforeSaveLayer, TestS
 {
     ASSERT_NE(displayDrawable_, nullptr);
     auto& rtThread = RSUniRenderThread::Instance();
-    if (!rtThread.renderThreadParams_) {
-        rtThread.renderThreadParams_ = std::make_unique<RSRenderThreadParams>();
+    if (!rtThread.GetRSRenderThreadParams()) {
+        rtThread.Sync(std::make_unique<RSRenderThreadParams>());
     }
     NodeId id = 1;
     auto surfaceNode1 = std::make_shared<RSSurfaceRenderNode>(id);
@@ -173,8 +187,8 @@ HWTEST_F(RSDisplayRenderNodeDrawableTest, ClearTransparentBeforeSaveLayer, TestS
     auto surfaceNode2 = std::make_shared<RSSurfaceRenderNode>(id);
     auto drawable2 = RSRenderNodeDrawableAdapter::OnGenerate(surfaceNode2);
     surfaceNode2->InitRenderParams();
-    rtThread.renderThreadParams_->hardwareEnabledTypeDrawables_.push_back(drawable1);
-    rtThread.renderThreadParams_->hardwareEnabledTypeDrawables_.push_back(drawable2);
+    rtThread.GetRSRenderThreadParams()->hardwareEnabledTypeDrawables_.push_back(drawable1);
+    rtThread.GetRSRenderThreadParams()->hardwareEnabledTypeDrawables_.push_back(drawable2);
     ASSERT_NE(renderNode_, nullptr);
     renderNode_->GetMutableRenderProperties().SetFrameWidth(DEFAULT_CANVAS_SIZE);
     renderNode_->GetMutableRenderProperties().SetFrameHeight(DEFAULT_CANVAS_SIZE);
@@ -193,10 +207,10 @@ HWTEST_F(RSDisplayRenderNodeDrawableTest, DrawCurtainScreen, TestSize.Level1)
     displayDrawable_->DrawCurtainScreen();
     ASSERT_TRUE(!RSUniRenderThread::Instance().IsCurtainScreenOn());
 
-    RSUniRenderThread::Instance().renderThreadParams_->isCurtainScreenOn_ = true;
+    RSUniRenderThread::Instance().GetRSRenderThreadParams()->isCurtainScreenOn_ = true;
     displayDrawable_->DrawCurtainScreen();
     ASSERT_TRUE(RSUniRenderThread::Instance().IsCurtainScreenOn());
-    RSUniRenderThread::Instance().renderThreadParams_->isCurtainScreenOn_ = false;
+    RSUniRenderThread::Instance().GetRSRenderThreadParams()->isCurtainScreenOn_ = false;
 }
 
 /**
@@ -208,22 +222,22 @@ HWTEST_F(RSDisplayRenderNodeDrawableTest, DrawCurtainScreen, TestSize.Level1)
 HWTEST_F(RSDisplayRenderNodeDrawableTest, DrawWatermarkIfNeed, TestSize.Level1)
 {
     ASSERT_NE(displayDrawable_, nullptr);
-    ASSERT_NE(canvas_, nullptr);
+    ASSERT_NE(displayDrawable_->curCanvas_, nullptr);
     auto params = static_cast<RSDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
     ASSERT_TRUE(params);
     if (params) {
-        displayDrawable_->DrawWatermarkIfNeed(*params, *canvas_);
+        displayDrawable_->DrawWatermarkIfNeed(*params, *displayDrawable_->curCanvas_);
     }
 
-    ASSERT_TRUE(RSUniRenderThread::Instance().renderThreadParams_);
+    ASSERT_TRUE(RSUniRenderThread::Instance().GetRSRenderThreadParams());
 
-    RSUniRenderThread::Instance().renderThreadParams_->watermarkFlag_ = true;
-    displayDrawable_->DrawWatermarkIfNeed(*params, *canvas_);
+    RSUniRenderThread::Instance().GetRSRenderThreadParams()->watermarkFlag_ = true;
+    displayDrawable_->DrawWatermarkIfNeed(*params, *displayDrawable_->curCanvas_);
 
-    RSUniRenderThread::Instance().renderThreadParams_->watermarkImg_ = std::make_shared<Drawing::Image>();
-    displayDrawable_->DrawWatermarkIfNeed(*params, *canvas_);
-    RSUniRenderThread::Instance().renderThreadParams_->watermarkFlag_ = false;
-    RSUniRenderThread::Instance().renderThreadParams_->watermarkImg_ = nullptr;
+    RSUniRenderThread::Instance().GetRSRenderThreadParams()->watermarkImg_ = std::make_shared<Drawing::Image>();
+    displayDrawable_->DrawWatermarkIfNeed(*params, *displayDrawable_->curCanvas_);
+    RSUniRenderThread::Instance().GetRSRenderThreadParams()->watermarkFlag_ = false;
+    RSUniRenderThread::Instance().GetRSRenderThreadParams()->watermarkImg_ = nullptr;
 }
 
 /**
@@ -272,8 +286,8 @@ HWTEST_F(RSDisplayRenderNodeDrawableTest, CalculateVirtualDirtyForWiredScreen002
     Drawing::Matrix canvasMatrix;
     params->mirrorSourceDrawable_ = mirroredNode_->GetRenderDrawable();
     auto& rtThread = RSUniRenderThread::Instance();
-    if (rtThread.renderThreadParams_) {
-        rtThread.renderThreadParams_->isVirtualDirtyEnabled_ = false;
+    if (rtThread.GetRSRenderThreadParams()) {
+        rtThread.GetRSRenderThreadParams()->isVirtualDirtyEnabled_ = false;
     }
     auto damageRects = displayDrawable_->CalculateVirtualDirtyForWiredScreen(
         renderFrame, *params, canvasMatrix);
@@ -299,8 +313,8 @@ HWTEST_F(RSDisplayRenderNodeDrawableTest, CalculateVirtualDirtyForWiredScreen003
     Drawing::Matrix canvasMatrix;
     params->mirrorSourceDrawable_ = mirroredNode_->GetRenderDrawable();
     auto& rtThread = RSUniRenderThread::Instance();
-    if (rtThread.renderThreadParams_) {
-        rtThread.renderThreadParams_->isVirtualDirtyEnabled_ = true;
+    if (rtThread.GetRSRenderThreadParams()) {
+        rtThread.GetRSRenderThreadParams()->isVirtualDirtyEnabled_ = true;
     }
     auto damageRects = displayDrawable_->CalculateVirtualDirtyForWiredScreen(
         renderFrame, *params, canvasMatrix);
@@ -326,8 +340,8 @@ HWTEST_F(RSDisplayRenderNodeDrawableTest, CalculateVirtualDirtyForWiredScreen004
     Drawing::Matrix canvasMatrix;
     params->mirrorSourceDrawable_ = mirroredNode_->GetRenderDrawable();
     auto& rtThread = RSUniRenderThread::Instance();
-    if (rtThread.renderThreadParams_) {
-        rtThread.renderThreadParams_->isVirtualDirtyEnabled_ = true;
+    if (rtThread.GetRSRenderThreadParams()) {
+        rtThread.GetRSRenderThreadParams()->isVirtualDirtyEnabled_ = true;
     }
     displayDrawable_->syncDirtyManager_ = std::make_shared<RSDirtyRegionManager>(false);
     const Drawing::scalar scale = 100.0f;
@@ -356,8 +370,8 @@ HWTEST_F(RSDisplayRenderNodeDrawableTest, CalculateVirtualDirtyForWiredScreen005
     Drawing::Matrix canvasMatrix;
     params->mirrorSourceDrawable_ = mirroredNode_->GetRenderDrawable();
     auto& rtThread = RSUniRenderThread::Instance();
-    if (rtThread.renderThreadParams_) {
-        rtThread.renderThreadParams_->isVirtualDirtyEnabled_ = true;
+    if (rtThread.GetRSRenderThreadParams()) {
+        rtThread.GetRSRenderThreadParams()->isVirtualDirtyEnabled_ = true;
     }
     displayDrawable_->syncDirtyManager_ = std::make_shared<RSDirtyRegionManager>(false);
     displayDrawable_->syncDirtyManager_->dirtyRegion_ = RectI(0, 0, DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
@@ -384,9 +398,9 @@ HWTEST_F(RSDisplayRenderNodeDrawableTest, CalculateVirtualDirtyForWiredScreen006
     Drawing::Matrix canvasMatrix;
     params->mirrorSourceDrawable_ = mirroredNode_->GetRenderDrawable();
     auto& rtThread = RSUniRenderThread::Instance();
-    if (rtThread.renderThreadParams_) {
-        rtThread.renderThreadParams_->isVirtualDirtyEnabled_ = true;
-        rtThread.renderThreadParams_->isVirtualDirtyDfxEnabled_ = true;
+    if (rtThread.GetRSRenderThreadParams()) {
+        rtThread.GetRSRenderThreadParams()->isVirtualDirtyEnabled_ = true;
+        rtThread.GetRSRenderThreadParams()->isVirtualDirtyDfxEnabled_ = true;
     }
     displayDrawable_->syncDirtyManager_ = std::make_shared<RSDirtyRegionManager>(false);
     auto damageRects = displayDrawable_->CalculateVirtualDirtyForWiredScreen(
@@ -505,17 +519,21 @@ HWTEST_F(RSDisplayRenderNodeDrawableTest, CheckFilterCacheFullyCoveredTest, Test
     renderDrawableAdapter->renderParams_->SetHasBlurFilter(false);
     RSDisplayRenderNodeDrawable::CheckFilterCacheFullyCovered(*surfaceParams, screenRect);
 
-    renderDrawableAdapter->renderParams_->SetHasBlurFilter(true);
     surfaceParams->isTransparent_ = true;
+    surfaceParams->isRotating_ = true;
+    RSDisplayRenderNodeDrawable::CheckFilterCacheFullyCovered(*surfaceParams, screenRect);
+
+    surfaceParams->isRotating_ = false;
+    RSDisplayRenderNodeDrawable::CheckFilterCacheFullyCovered(*surfaceParams, screenRect);
+
+    surfaceParams->isTransparent_ = false;
+    renderDrawableAdapter->renderParams_->SetHasBlurFilter(true);
     RSDisplayRenderNodeDrawable::CheckFilterCacheFullyCovered(*surfaceParams, screenRect);
 
     renderDrawableAdapter->renderParams_->SetEffectNodeShouldPaint(false);
     RSDisplayRenderNodeDrawable::CheckFilterCacheFullyCovered(*surfaceParams, screenRect);
 
     renderDrawableAdapter->renderParams_->SetNodeType(RSRenderNodeType::EFFECT_NODE);
-    RSDisplayRenderNodeDrawable::CheckFilterCacheFullyCovered(*surfaceParams, screenRect);
-
-    surfaceParams->isTransparent_ = false;
     RSDisplayRenderNodeDrawable::CheckFilterCacheFullyCovered(*surfaceParams, screenRect);
 
     renderDrawableAdapter->renderParams_->SetHasGlobalCorner(true);
@@ -553,10 +571,10 @@ HWTEST_F(RSDisplayRenderNodeDrawableTest, DrawMirrorScreenTest, TestSize.Level1)
     ASSERT_NE(mirroredNode_, nullptr);
 
     auto& rtThread = RSUniRenderThread::Instance();
-    if (!rtThread.renderThreadParams_) {
-        rtThread.renderThreadParams_ = std::make_unique<RSRenderThreadParams>();
+    if (!rtThread.GetRSRenderThreadParams()) {
+        rtThread.Sync(std::make_unique<RSRenderThreadParams>());
     }
-    rtThread.renderThreadParams_->isVirtualDirtyEnabled_ = true;
+    rtThread.GetRSRenderThreadParams()->isVirtualDirtyEnabled_ = true;
     CaptureParam param;
     param.isSingleSurface_ = true;
     rtThread.SetCaptureParam(param);
@@ -585,8 +603,8 @@ HWTEST_F(RSDisplayRenderNodeDrawableTest, CalculateVirtualDirtyTest, TestSize.Le
     ASSERT_NE(mirroredNode_, nullptr);
 
     auto& rtThread = RSUniRenderThread::Instance();
-    if (!rtThread.renderThreadParams_) {
-        rtThread.renderThreadParams_ = std::make_unique<RSRenderThreadParams>();
+    if (!rtThread.GetRSRenderThreadParams()) {
+        rtThread.Sync(std::make_unique<RSRenderThreadParams>());
     }
     displayDrawable_->PrepareOffscreenRender(*displayDrawable_);
     auto params = static_cast<RSDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
@@ -753,8 +771,7 @@ HWTEST_F(RSDisplayRenderNodeDrawableTest, GetSpecialLayerType, TestSize.Level1)
     displayDrawable_->currentBlackList_.insert(0);
     result = displayDrawable_->GetSpecialLayerType(*params);
     ASSERT_EQ(result, 1);
-    auto uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams().get();
-    uniParam->whiteList_.insert(0);
+    RSUniRenderThread::Instance().whiteList_.insert(0);
     result = displayDrawable_->GetSpecialLayerType(*params);
     ASSERT_EQ(result, 1);
 
@@ -767,7 +784,7 @@ HWTEST_F(RSDisplayRenderNodeDrawableTest, GetSpecialLayerType, TestSize.Level1)
     RSUniRenderThread::GetCaptureParam().isSnapshot_ = false;
     params->hasHdrPresent_ = false;
     displayDrawable_->currentBlackList_.clear();
-    uniParam->whiteList_.clear();
+    RSUniRenderThread::Instance().whiteList_.clear();
 }
 
 /**
@@ -833,7 +850,7 @@ HWTEST_F(RSDisplayRenderNodeDrawableTest, ScaleAndRotateMirrorForWiredScreen, Te
     screenManager->screens_.clear();
     auto screenPtr = std::make_unique<OHOS::Rosen::impl::RSScreen>(configs);
     screenPtr->screenRotation_ = ScreenRotation::ROTATION_90;
-    screenManager->screens_.insert(std::make_pair(screenId, std::move(screenPtr)));
+    screenManager->screens_.insert(std::make_pair(screenPtr->id_, std::move(screenPtr)));
     auto mainScreenInfo = mirroredDrawable->renderParams_->GetScreenInfo();
     mainScreenInfo.width = 1;
     displayDrawable_->ScaleAndRotateMirrorForWiredScreen(*mirroredDrawable);
@@ -842,12 +859,101 @@ HWTEST_F(RSDisplayRenderNodeDrawableTest, ScaleAndRotateMirrorForWiredScreen, Te
     screenManager->screens_.clear();
     auto managerPtr = std::make_unique<OHOS::Rosen::impl::RSScreen>(configs);
     managerPtr->screenRotation_ = ScreenRotation::ROTATION_270;
-    screenManager->screens_.insert(std::make_pair(screenId, std::move(managerPtr)));
+    screenManager->screens_.insert(std::make_pair(managerPtr->id_, std::move(managerPtr)));
     mainScreenInfo.height = 1;
     displayDrawable_->ScaleAndRotateMirrorForWiredScreen(*mirroredDrawable);
     mirroredDrawable->renderParams_ = nullptr;
     displayDrawable_->ScaleAndRotateMirrorForWiredScreen(*mirroredDrawable);
     ASSERT_FALSE(mirroredDrawable->renderParams_);
+}
+
+/**
+ * @tc.name: ScaleAndRotateMirrorForWiredScreen002
+ * @tc.desc: Test ScaleAndRotateMirrorForWiredScreen while scale of width smaller
+ * @tc.type: FUNC
+ * @tc.require: issueIANDBE
+ */
+HWTEST_F(RSDisplayRenderNodeDrawableTest, ScaleAndRotateMirrorForWiredScreen002, TestSize.Level2)
+{
+    // set drawable screenInfo
+    ASSERT_NE(displayDrawable_, nullptr);
+    auto mainParams = displayDrawable_->GetRenderParams() ?
+        static_cast<RSDisplayRenderParams*>(displayDrawable_->GetRenderParams().get()) : nullptr;
+    ASSERT_NE(mainParams, nullptr);
+    mainParams->screenInfo_.width = 100;
+    mainParams->screenInfo_.height = 100;
+
+    ASSERT_NE(mirroredDrawable_, nullptr);
+    auto mirroredParams = mirroredDrawable_->GetRenderParams() ?
+        static_cast<RSDisplayRenderParams*>(mirroredDrawable_->GetRenderParams().get()) : nullptr;
+    ASSERT_NE(mirroredParams, nullptr);
+    mirroredParams->screenInfo_.width = 50;
+    mirroredParams->screenInfo_.height = 100;
+    
+    // sacle mirror screen
+    mirroredDisplayDrawable_->ScaleAndRotateMirrorForWiredScreen(*displayDrawable_);
+    ASSERT_NE(mirroredDisplayDrawable_->curCanvas_, nullptr);
+    ASSERT_EQ(mirroredDisplayDrawable_->curCanvas_->GetTotalMatrix().Get(Drawing::Matrix::SCALE_X),
+        static_cast<float>(mirroredParams->screenInfo_.width) / static_cast<float>(mainParams->screenInfo_.width));
+}
+
+/**
+ * @tc.name: ScaleAndRotateMirrorForWiredScreen003
+ * @tc.desc: Test ScaleAndRotateMirrorForWiredScreen while scale of height smaller
+ * @tc.type: FUNC
+ * @tc.require: issueIANDBE
+ */
+HWTEST_F(RSDisplayRenderNodeDrawableTest, ScaleAndRotateMirrorForWiredScreen003, TestSize.Level2)
+{
+    // set drawable screenInfo
+    ASSERT_NE(displayDrawable_, nullptr);
+    auto mainParams = displayDrawable_->GetRenderParams() ?
+        static_cast<RSDisplayRenderParams*>(displayDrawable_->GetRenderParams().get()) : nullptr;
+    ASSERT_NE(mainParams, nullptr);
+    mainParams->screenInfo_.width = 100;
+    mainParams->screenInfo_.height = 100;
+
+    ASSERT_NE(mirroredDrawable_, nullptr);
+    auto mirroredParams = mirroredDrawable_->GetRenderParams() ?
+        static_cast<RSDisplayRenderParams*>(mirroredDrawable_->GetRenderParams().get()) : nullptr;
+    ASSERT_NE(mirroredParams, nullptr);
+    mirroredParams->screenInfo_.width = 100;
+    mirroredParams->screenInfo_.height = 50;
+    
+    // sacle mirror screen
+    mirroredDisplayDrawable_->ScaleAndRotateMirrorForWiredScreen(*displayDrawable_);
+    ASSERT_NE(mirroredDisplayDrawable_->curCanvas_, nullptr);
+    ASSERT_EQ(mirroredDisplayDrawable_->curCanvas_->GetTotalMatrix().Get(Drawing::Matrix::SCALE_X),
+        static_cast<float>(mirroredParams->screenInfo_.height) / static_cast<float>(mainParams->screenInfo_.height));
+}
+
+/**
+ * @tc.name: ScaleAndRotateMirrorForWiredScreen004
+ * @tc.desc: Test ScaleAndRotateMirrorForWiredScreen while mainHeight / mainWidth invalid
+ * @tc.type: FUNC
+ * @tc.require: issueIANDBE
+ */
+HWTEST_F(RSDisplayRenderNodeDrawableTest, ScaleAndRotateMirrorForWiredScreen004, TestSize.Level2)
+{
+    // set drawable screenInfo
+    ASSERT_NE(displayDrawable_, nullptr);
+    auto mainParams = displayDrawable_->GetRenderParams() ?
+        static_cast<RSDisplayRenderParams*>(displayDrawable_->GetRenderParams().get()) : nullptr;
+    ASSERT_NE(mainParams, nullptr);
+    mainParams->screenInfo_.width = 0;
+    mainParams->screenInfo_.height = 0;
+
+    ASSERT_NE(mirroredDrawable_, nullptr);
+    auto mirroredParams = mirroredDrawable_->GetRenderParams() ?
+        static_cast<RSDisplayRenderParams*>(mirroredDrawable_->GetRenderParams().get()) : nullptr;
+    ASSERT_NE(mirroredParams, nullptr);
+    mirroredParams->screenInfo_.width = 100;
+    mirroredParams->screenInfo_.height = 100;
+    
+    // sacle mirror screen
+    mirroredDisplayDrawable_->ScaleAndRotateMirrorForWiredScreen(*displayDrawable_);
+    ASSERT_NE(mirroredDisplayDrawable_->curCanvas_, nullptr);
+    ASSERT_EQ(mirroredDisplayDrawable_->curCanvas_->GetTotalMatrix().Get(Drawing::Matrix::SCALE_X), 1);
 }
 
 /**
@@ -872,8 +978,8 @@ HWTEST_F(RSDisplayRenderNodeDrawableTest, DrawMirrorCopy, TestSize.Level1)
         mirrorDrawable->renderParams_ = std::make_unique<RSDisplayRenderParams>(id);
     }
     auto& rtThread = RSUniRenderThread::Instance();
-    if (!rtThread.renderThreadParams_) {
-        rtThread.renderThreadParams_ = std::make_unique<RSRenderThreadParams>();
+    if (!rtThread.GetRSRenderThreadParams()) {
+        rtThread.Sync(std::make_unique<RSRenderThreadParams>());
     }
     if (mirroredNode_->GetRenderDrawable() == nullptr) {
         mirroredNode_->renderDrawable_ = DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(mirroredNode_);
@@ -1022,7 +1128,7 @@ HWTEST_F(RSDisplayRenderNodeDrawableTest, FindHardwareEnabledNodes, TestSize.Lev
     auto params = static_cast<RSDisplayRenderParams*>(displayDrawable_->renderParams_.get());
     ASSERT_NE(params, nullptr);
     displayDrawable_->FindHardwareEnabledNodes(*params);
-    ASSERT_EQ(RSUniRenderThread::Instance().renderThreadParams_->hardwareEnabledTypeDrawables_.size(), 2);
+    ASSERT_EQ(RSUniRenderThread::Instance().GetRSRenderThreadParams()->hardwareEnabledTypeDrawables_.size(), 2);
 }
 
 /**

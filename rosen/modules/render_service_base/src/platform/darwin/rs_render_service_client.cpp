@@ -53,6 +53,11 @@ bool RSRenderServiceClient::GetUniRenderEnabled()
     return {};
 }
 
+bool RSRenderServiceClient::CreateNode(const RSDisplayNodeConfig& displayNodeConfig, NodeId nodeId)
+{
+    return {};
+}
+
 bool RSRenderServiceClient::CreateNode(const RSSurfaceRenderNodeConfig& config)
 {
     return {};
@@ -189,6 +194,10 @@ void RSRenderServiceClient::SetRefreshRateMode(int32_t refreshRateMode)
 
 void RSRenderServiceClient::SyncFrameRateRange(FrameRateLinkerId id,
     const FrameRateRange& range, int32_t animatorExpectedFrameRate)
+{
+}
+
+void RSRenderServiceClient::UnregisterFrameRateLinker(FrameRateLinkerId id)
 {
 }
 
@@ -586,6 +595,10 @@ bool RSRenderServiceClient::SetVirtualScreenStatus(ScreenId id, VirtualScreenSta
 bool RSRenderServiceClient::SetAncoForceDoDirect(bool direct)
 {
     return false;
+}
+
+void RSRenderServiceClient::SetFreeMultiWindowStatus(bool enable)
+{
 }
 } // namespace Rosen
 } // namespace OHOS

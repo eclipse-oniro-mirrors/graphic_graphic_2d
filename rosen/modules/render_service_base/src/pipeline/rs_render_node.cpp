@@ -214,12 +214,12 @@ const std::set<RSModifierType> BASIC_GEOTRANSFORM_ANIMATION_TYPE = {
 }
 
 RSRenderNode::RSRenderNode(NodeId id, const std::weak_ptr<RSContext>& context, bool isTextureExportNode)
-    : id_(id), context_(context), isTextureExportNode_(isTextureExportNode)
+    : isTextureExportNode_(isTextureExportNode), context_(context), id_(id)
 {}
 
 RSRenderNode::RSRenderNode(
     NodeId id, bool isOnTheTree, const std::weak_ptr<RSContext>& context, bool isTextureExportNode)
-    : isOnTheTree_(isOnTheTree), id_(id), context_(context), isTextureExportNode_(isTextureExportNode)
+    : isOnTheTree_(isOnTheTree), isTextureExportNode_(isTextureExportNode), context_(context), id_(id)
 {}
 
 void RSRenderNode::AddChild(SharedPtr child, int index)
@@ -315,6 +315,13 @@ void RSRenderNode::RemoveChild(SharedPtr child, bool skipTransition)
     if (child->GetBootAnimation()) {
         SetContainBootAnimation(false);
     }
+    if (!isOnTheTree_) {
+        std::atomic_store_explicit(&fullChildrenList_, EmptyChildrenList, std::memory_order_release);
+        drawableVec_[static_cast<int8_t>(RSDrawableSlot::CHILDREN)].reset();
+        stagingDrawCmdList_.clear();
+        drawCmdListNeedSync_ = true;
+        AddToPendingSyncList();
+    }
     ROSEN_LOGD("Node id %{public}" PRIu64 " set dirty, render node remove child", GetId());
     SetContentDirty();
     isFullChildrenListValid_ = false;
@@ -332,17 +339,14 @@ void RSRenderNode::SetIsOnTheTree(bool flag, NodeId instanceRootNodeId, NodeId f
     if (isOnTheTree_) {
         instanceRootNodeId_ = instanceRootNodeId;
         firstLevelNodeId_ = firstLevelNodeId;
-        if (stagingRenderParams_) {
-            stagingRenderParams_->SetFirstLevelNode(firstLevelNodeId_);
-        }
         OnTreeStateChanged();
     } else {
         OnTreeStateChanged();
         instanceRootNodeId_ = instanceRootNodeId;
-        firstLevelNodeId_ = firstLevelNodeId;
-        if (stagingRenderParams_) {
-            stagingRenderParams_->SetFirstLevelNode(firstLevelNodeId_);
+        if (firstLevelNodeId_ != INVALID_NODEID) {
+            preFirstLevelNodeIdSet_.insert(firstLevelNodeId_);
         }
+        firstLevelNodeId_ = firstLevelNodeId;
     }
     // if node is marked as cacheRoot, update subtree status when update surface
     // in case prepare stage upper cacheRoot cannot specify dirty subnode
@@ -351,15 +355,15 @@ void RSRenderNode::SetIsOnTheTree(bool flag, NodeId instanceRootNodeId, NodeId f
     }
     if (uifirstRootNodeId != INVALID_NODEID) {
         uifirstRootNodeId_ = uifirstRootNodeId;
-        if (stagingRenderParams_) {
-            stagingRenderParams_->SetUiFirstRootNode(uifirstRootNodeId_);
-        }
     }
 
     for (auto& weakChild : children_) {
         auto child = weakChild.lock();
         if (child == nullptr) {
             continue;
+        }
+        if (isOnTheTree_) {
+            AddPreFirstLevelNodeIdSet(child->GetPreFirstLevelNodeIdSet());
         }
         child->SetIsOnTheTree(flag, instanceRootNodeId, firstLevelNodeId, cacheNodeId);
     }
@@ -776,6 +780,9 @@ void RSRenderNode::DumpSubClassNode(std::string& out) const
         out += ", OcclusionBg: " + std::to_string(surfaceNode->GetAbilityBgAlpha());
         out += ", SecurityLayer: " + std::to_string(surfaceNode->GetSecurityLayer());
         out += ", skipLayer: " + std::to_string(surfaceNode->GetSkipLayer());
+        if (surfaceNode->GetSnapshotSkipLayer()) {
+            out += ", snapshotSkipLayer: " + std::to_string(surfaceNode->GetSnapshotSkipLayer());
+        }
         out += ", surfaceType: " + std::to_string((int)surfaceNode->GetSurfaceNodeType());
     } else if (GetType() == RSRenderNodeType::ROOT_NODE) {
         auto rootNode = static_cast<const RSRootRenderNode*>(this);
@@ -2469,6 +2476,8 @@ void RSRenderNode::UpdateDrawableVecV2()
     }
     // Step 2: Update or regenerate drawable if needed
     bool drawableChanged = RSDrawable::UpdateDirtySlots(*this, drawableVec_, dirtySlots);
+    // Step 2.1 (optional): fuze some drawables
+    RSDrawable::FuzeDrawableSlots(*this, drawableVec_);
     // If any drawable has changed, or the CLIP_TO_BOUNDS slot has changed, then we need to recalculate
     // save/clip/restore.
     RS_LOGI_IF(DEBUG_NODE,
@@ -3564,9 +3573,6 @@ const std::shared_ptr<RSRenderNode> RSRenderNode::GetInstanceRootNode() const
 void RSRenderNode::UpdateTreeUifirstRootNodeId(NodeId id)
 {
     uifirstRootNodeId_ = id;
-    if (stagingRenderParams_) {
-        stagingRenderParams_->SetUiFirstRootNode(uifirstRootNodeId_);
-    }
     for (auto& child : *GetChildren()) {
         if (child) {
             child->UpdateTreeUifirstRootNodeId(id);
@@ -3989,6 +3995,9 @@ void RSRenderNode::UpdateRenderParams()
     bool hasSandbox = sharedTransitionParam_ && GetRenderProperties().GetSandBox();
     stagingRenderParams_->SetHasSandBox(hasSandbox);
     stagingRenderParams_->SetMatrix(boundGeo->GetMatrix());
+#ifdef RS_ENABLE_PREFETCH
+    __builtin_prefetch(&boundsModifier_, 0, 1);
+#endif
     stagingRenderParams_->SetFrameGravity(GetRenderProperties().GetFrameGravity());
     stagingRenderParams_->SetBoundsRect({ 0, 0, boundGeo->GetWidth(), boundGeo->GetHeight() });
     stagingRenderParams_->SetFrameRect({ 0, 0, GetRenderProperties().GetFrameWidth(),

@@ -103,6 +103,7 @@ void RSSurfaceCaptureTaskParallel::Capture(NodeId id,
     }
     if (!captureHandle->CreateResources()) {
         callback->OnSurfaceCapture(id, nullptr);
+        return;
     }
 
     std::function<void()> captureTask = [captureHandle, id, callback]() -> void {
@@ -185,6 +186,8 @@ bool RSSurfaceCaptureTaskParallel::Run(sptr<RSISurfaceCaptureCallback> callback)
     canvas.Scale(captureConfig_.scaleX, captureConfig_.scaleY);
     canvas.SetDisableFilterCache(true);
     RSSurfaceRenderParams* curNodeParams = nullptr;
+    // Currently, capture do not support HDR display
+    canvas.SetCapture(true);
     if (surfaceNodeDrawable_) {
         curNodeParams = static_cast<RSSurfaceRenderParams*>(surfaceNodeDrawable_->GetRenderParams().get());
         RSUniRenderThread::SetCaptureParam(
@@ -269,7 +272,6 @@ std::unique_ptr<Media::PixelMap> RSSurfaceCaptureTaskParallel::CreatePixelMapByD
         return nullptr;
     }
     uint64_t screenId = node->GetScreenId();
-    RSScreenModeInfo screenModeInfo;
     sptr<RSScreenManager> screenManager = CreateOrGetScreenManager();
     if (!screenManager) {
         RS_LOGE("RSSurfaceCaptureTaskParallel::CreatePixelMapByDisplayNode: screenManager is nullptr!");
@@ -405,6 +407,7 @@ std::function<void()> RSSurfaceCaptureTaskParallel::CreateSurfaceSyncCopyTask(
         std::shared_ptr<Drawing::Surface> surface;
         auto grContext = RSBackgroundThread::Instance().GetShareGPUContext();
         if (!grContext) {
+            callback->OnSurfaceCapture(id, nullptr);
             return;
         }
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
@@ -558,6 +561,11 @@ std::shared_ptr<Drawing::Surface> DmaMem::GetSurfaceFromSurfaceBuffer(
         Drawing::TextureOrigin::TOP_LEFT,
         1, Drawing::ColorType::COLORTYPE_RGBA_8888, nullptr,
         NativeBufferUtils::DeleteVkImage, cleanUpHelper);
+    if (!drawingSurface) {
+        delete cleanUpHelper;
+        cleanUpHelper = nullptr;
+        RS_LOGE("DmaMem::GetSurfaceFromSurfaceBuffer: MakeFromBackendTexture fail.");
+    }
     return drawingSurface;
 }
 #endif

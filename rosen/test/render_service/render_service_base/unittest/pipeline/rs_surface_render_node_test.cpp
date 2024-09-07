@@ -125,7 +125,7 @@ HWTEST_F(RSSurfaceRenderNodeTest, SetSurfaceNodeType001, TestSize.Level1)
  * @tc.name: SetSurfaceNodeType002
  * @tc.desc: Test SetSurfaceNodeType
  * @tc.type: FUNC
- * @tc.require: issueIAI1VN
+ * @tc.require: issueIAN19G
  */
 HWTEST_F(RSSurfaceRenderNodeTest, SetSurfaceNodeType002, TestSize.Level1)
 {
@@ -135,32 +135,47 @@ HWTEST_F(RSSurfaceRenderNodeTest, SetSurfaceNodeType002, TestSize.Level1)
     auto node = std::make_shared<RSSurfaceRenderNode>(config);
     EXPECT_NE(node, nullptr);
     node->SetSurfaceNodeType(RSSurfaceNodeType::UI_EXTENSION_COMMON_NODE);
-    bool isSameType = (node->GetSurfaceNodeType() == RSSurfaceNodeType::UI_EXTENSION_COMMON_NODE);
+    bool isSameType = (node->GetSurfaceNodeType() == RSSurfaceNodeType::DEFAULT);
     EXPECT_TRUE(isSameType);
-    node->SetSurfaceNodeType(RSSurfaceNodeType::DEFAULT);
+    node->SetSurfaceNodeType(RSSurfaceNodeType::UI_EXTENSION_SECURE_NODE);
     isSameType = (node->GetSurfaceNodeType() == RSSurfaceNodeType::DEFAULT);
-    EXPECT_FALSE(isSameType);
+    EXPECT_TRUE(isSameType);
 }
 
 /**
  * @tc.name: SetSurfaceNodeType003
  * @tc.desc: Test SetSurfaceNodeType
  * @tc.type: FUNC
- * @tc.require: issueIAI1VN
+ * @tc.require: issueIAN19G
  */
 HWTEST_F(RSSurfaceRenderNodeTest, SetSurfaceNodeType003, TestSize.Level1)
 {
     NodeId id = 1;
-    RSSurfaceNodeType type = RSSurfaceNodeType::DEFAULT;
+    RSSurfaceNodeType type = RSSurfaceNodeType::UI_EXTENSION_COMMON_NODE;
     RSSurfaceRenderNodeConfig config = { .id = id, .nodeType = type };
     auto node = std::make_shared<RSSurfaceRenderNode>(config);
     EXPECT_NE(node, nullptr);
-    node->SetSurfaceNodeType(RSSurfaceNodeType::UI_EXTENSION_SECURE_NODE);
+    node->SetSurfaceNodeType(RSSurfaceNodeType::DEFAULT);
+    bool isSameType = (node->GetSurfaceNodeType() == RSSurfaceNodeType::UI_EXTENSION_COMMON_NODE);
+    EXPECT_TRUE(isSameType);
+}
+
+/**
+ * @tc.name: SetSurfaceNodeType004
+ * @tc.desc: Test SetSurfaceNodeType
+ * @tc.type: FUNC
+ * @tc.require: issueIAN19G
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, SetSurfaceNodeType004, TestSize.Level1)
+{
+    NodeId id = 1;
+    RSSurfaceNodeType type = RSSurfaceNodeType::UI_EXTENSION_SECURE_NODE;
+    RSSurfaceRenderNodeConfig config = { .id = id, .nodeType = type };
+    auto node = std::make_shared<RSSurfaceRenderNode>(config);
+    EXPECT_NE(node, nullptr);
+    node->SetSurfaceNodeType(RSSurfaceNodeType::DEFAULT);
     bool isSameType = (node->GetSurfaceNodeType() == RSSurfaceNodeType::UI_EXTENSION_SECURE_NODE);
     EXPECT_TRUE(isSameType);
-    node->SetSurfaceNodeType(RSSurfaceNodeType::DEFAULT);
-    isSameType = (node->GetSurfaceNodeType() == RSSurfaceNodeType::DEFAULT);
-    EXPECT_FALSE(isSameType);
 }
 
 /**
@@ -581,6 +596,23 @@ HWTEST_F(RSSurfaceRenderNodeTest, SetSkipLayer001, TestSize.Level2)
 }
 
 /**
+ * @tc.name: SetSnapshotSkipLayer001
+ * @tc.desc: Test SetSnapshotSkipLayer for single surface node which is skip layer
+ * @tc.type: FUNC
+ * @tc.require: issueI9ABGS
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, SetSnapshotSkipLayer001, TestSize.Level2)
+{
+    auto rsContext = std::make_shared<RSContext>();
+    ASSERT_NE(rsContext, nullptr);
+    auto node = std::make_shared<RSSurfaceRenderNode>(id, rsContext);
+    ASSERT_NE(node, nullptr);
+
+    node->SetSnapshotSkipLayer(true);
+    ASSERT_TRUE(node->GetSnapshotSkipLayer());
+}
+
+/**
  * @tc.name: SetSkipLayer002
  * @tc.desc: Test SetSkipLayer for surface node while skip Layer isn't first level node
  * @tc.type: FUNC
@@ -604,6 +636,32 @@ HWTEST_F(RSSurfaceRenderNodeTest, SetSkipLayer002, TestSize.Level2)
     skipLayerNode->SetSkipLayer(true);
 
     ASSERT_TRUE(parentNode->GetHasSkipLayer());
+}
+
+/**
+ * @tc.name: SetSnapshotSkipLayer002
+ * @tc.desc: Test SetSnapshotSkipLayer for surface node while skip Layer isn't first level node
+ * @tc.type: FUNC
+ * @tc.require: issueI9ABGS
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, SetSnapshotSkipLayer002, TestSize.Level2)
+{
+    auto rsContext = std::make_shared<RSContext>();
+    ASSERT_NE(rsContext, nullptr);
+    auto parentNode = std::make_shared<RSSurfaceRenderNode>(id, rsContext);
+    auto snapshotSkipLayerNode = std::make_shared<RSSurfaceRenderNode>(id + 1, rsContext);
+    ASSERT_NE(parentNode, nullptr);
+    ASSERT_NE(snapshotSkipLayerNode, nullptr);
+
+    rsContext->GetMutableNodeMap().renderNodeMap_[parentNode->GetId()] = parentNode;
+    rsContext->GetMutableNodeMap().renderNodeMap_[snapshotSkipLayerNode->GetId()] = snapshotSkipLayerNode;
+
+    parentNode->nodeType_ = RSSurfaceNodeType::LEASH_WINDOW_NODE;
+    parentNode->AddChild(snapshotSkipLayerNode);
+    parentNode->SetIsOnTheTree(true);
+    snapshotSkipLayerNode->SetSnapshotSkipLayer(true);
+
+    ASSERT_TRUE(parentNode->GetHasSnapshotSkipLayer());
 }
 
 /**
@@ -1256,6 +1314,21 @@ HWTEST_F(RSSurfaceRenderNodeTest, SetSkipLayerTest, TestSize.Level1)
 }
 
 /**
+ * @tc.name: SetSnapshotSkipLayerTest
+ * @tc.desc: test results of SetSnapshotSkipLayer
+ * @tc.type: FUNC
+ * @tc.require: issueI9JAFQ
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, SetSnapshotSkipLayerTest, TestSize.Level1)
+{
+    std::shared_ptr<RSSurfaceRenderNode> node = std::make_shared<RSSurfaceRenderNode>(id, context);
+    node->SetSnapshotSkipLayer(true);
+    EXPECT_TRUE(node->isSnapshotSkipLayer_);
+    node->SetSnapshotSkipLayer(false);
+    EXPECT_FALSE(node->isSnapshotSkipLayer_);
+}
+
+/**
  * @tc.name: SyncSecurityInfoToFirstLevelNodeTest
  * @tc.desc: test results of SyncSecurityInfoToFirstLevelNode
  * @tc.type: FUNC
@@ -1279,6 +1352,19 @@ HWTEST_F(RSSurfaceRenderNodeTest, SyncSkipInfoToFirstLevelNode, TestSize.Level1)
     auto node = std::make_shared<RSSurfaceRenderNode>(id, context);
     node->SyncSkipInfoToFirstLevelNode();
     EXPECT_FALSE(node->isSkipLayer_);
+}
+
+/**
+ * @tc.name: SyncSnapshotSkipInfoToFirstLevelNode
+ * @tc.desc: test results of SyncSnapshotSkipInfoToFirstLevelNode
+ * @tc.type: FUNC
+ * @tc.require: issueI9JAFQ
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, SyncSnapshotSkipInfoToFirstLevelNode, TestSize.Level1)
+{
+    auto node = std::make_shared<RSSurfaceRenderNode>(id, context);
+    node->SyncSnapshotSkipInfoToFirstLevelNode();
+    EXPECT_FALSE(node->isSnapshotSkipLayer_);
 }
 
 /**

@@ -34,11 +34,7 @@
 #include "ipc_callbacks/screen_change_callback.h"
 #include "ipc_callbacks/surface_capture_callback.h"
 #include "memory/rs_memory_graphic.h"
-#ifdef NEW_RENDER_CONTEXT
-#include "render_backend/rs_render_surface.h"
-#else
 #include "platform/drawing/rs_surface.h"
-#endif
 #include "rs_irender_client.h"
 #include "variable_frame_rate/rs_variable_frame_rate.h"
 #include "screen_manager/rs_screen_capability.h"
@@ -120,11 +116,8 @@ public:
     bool GetUniRenderEnabled();
 
     bool CreateNode(const RSSurfaceRenderNodeConfig& config);
-#ifdef NEW_RENDER_CONTEXT
-    std::shared_ptr<RSRenderSurface> CreateNodeAndSurface(const RSSurfaceRenderNodeConfig& config);
-#else
+    bool CreateNode(const RSDisplayNodeConfig& displayNodeConfig, NodeId nodeId);
     std::shared_ptr<RSSurface> CreateNodeAndSurface(const RSSurfaceRenderNodeConfig& config);
-#endif
     std::shared_ptr<VSyncReceiver> CreateVSyncReceiver(
         const std::string& name,
         const std::shared_ptr<OHOS::AppExecFwk::EventHandler> &looper = nullptr,
@@ -145,11 +138,7 @@ public:
     std::vector<ScreenId> GetAllScreenIds();
 
 #ifndef ROSEN_CROSS_PLATFORM
-#if defined(NEW_RENDER_CONTEXT)
-    std::shared_ptr<RSRenderSurface> CreateRSSurface(const sptr<Surface> &surface);
-#else
     std::shared_ptr<RSSurface> CreateRSSurface(const sptr<Surface> &surface);
-#endif
     ScreenId CreateVirtualScreen(const std::string& name, uint32_t width, uint32_t height, sptr<Surface> surface,
         ScreenId mirrorId, int32_t flags, std::vector<NodeId> whiteList = {});
 
@@ -185,6 +174,8 @@ public:
 
     void SyncFrameRateRange(FrameRateLinkerId id, const FrameRateRange& range,
         int32_t animatorExpectedFrameRate);
+
+    void UnregisterFrameRateLinker(FrameRateLinkerId id);
 
     uint32_t GetScreenCurrentRefreshRate(ScreenId id);
 
@@ -352,6 +343,8 @@ public:
     void SetVirtualScreenUsingStatus(bool isVirtualScreenUsingStatus);
     void SetCurtainScreenUsingStatus(bool isCurtainScreenOn);
     bool SetVirtualScreenStatus(ScreenId id, VirtualScreenStatus screenStatus);
+
+    void SetFreeMultiWindowStatus(bool enable);
 private:
     void TriggerSurfaceCaptureCallback(NodeId id, std::shared_ptr<Media::PixelMap> pixelmap);
     std::mutex mutex_;

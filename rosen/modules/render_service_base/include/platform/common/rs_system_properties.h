@@ -161,6 +161,7 @@ public:
     static bool GetHardwareComposerEnabledForMirrorMode();
     static bool GetHwcRegionDfxEnabled();
     static bool GetDrawMirrorCacheImageEnabled();
+    static bool GetPixelmapDfxEnabled();
     static bool GetAFBCEnabled();
     static bool GetReleaseResourceEnabled();
     static bool GetRSScreenRoundCornerEnable();
@@ -189,6 +190,7 @@ public:
     static bool GetKawaseEnabled();
     static void SetForceHpsBlurDisabled(bool flag);
     static bool GetHpsBlurEnabled();
+    static bool GetMESABlurFuzedEnabled();
     static float GetKawaseRandomColorFactor();
     static bool GetRandomColorEnabled();
     static bool GetImageReleaseUsingPostTask();
@@ -205,7 +207,6 @@ public:
     static bool GetBlurExtraFilterEnabled();
     static bool GetDiscardCanvasBeforeFilterEnabled();
     static bool GetPurgeBetweenFramesEnabled();
-    static bool GetPreAllocateTextureBetweenFramesEnabled();
     static bool GetAsyncFreeVMAMemoryBetweenFramesEnabled();
 
     static bool GetAnimationCacheEnabled();
@@ -214,6 +215,7 @@ public:
     static int WatchSystemProperty(const char* name, OnSystemPropertyChanged func, void* context);
     static bool GetUIFirstEnabled();
     static bool GetUIFirstDebugEnabled();
+    static bool GetTargetUIFirstDfxEnabled(std::vector<std::string>& SurfaceNames);
     static bool GetSurfaceOffscreenEnadbled();
     static bool GetDebugTraceEnabled();
     static int GetDebugTraceLevel();
@@ -259,6 +261,8 @@ public:
     static bool GetDumpUIPixelmapEnabled();
     static bool GetDumpImgEnabled();
 
+    static bool GetTransactionTerminateEnabled();
+
     static int GetVirtualScreenScaleModeDFX();
     static bool GetTextBlobAsPixelMap();
     static inline GpuApiType GetGpuApiType()
@@ -272,7 +276,8 @@ public:
     }
 
     static int GetRSNodeLimit();
-
+    static bool GetMemoryOverTreminateEnabled();
+    static bool GetHwcDirtyRegionEnabled();
 private:
     RSSystemProperties() = default;
 

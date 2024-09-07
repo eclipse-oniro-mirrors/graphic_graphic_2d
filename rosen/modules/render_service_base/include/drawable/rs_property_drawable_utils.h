@@ -77,9 +77,9 @@ public:
     RSB_EXPORT static int GetAndResetBlurCnt();
     static bool GetGravityMatrix(const Gravity& gravity, const Drawing::Rect& rect, const float& w, const float& h,
         Drawing::Matrix& mat);
-    // Create a colorfilter if the brightness ratio of the cached image is different from that of the canvas.
-    static std::shared_ptr<Drawing::ColorFilter> CreateColorFilterForHDR(float cachedBrightnessRatio,
-        float newBrightnessRatio);
+    static bool RSFilterSetPixelStretch(const RSProperties& property, const std::shared_ptr<RSFilter>& filter);
+    static void RSFilterRemovePixelStretch(const std::shared_ptr<RSFilter>& filter);
+
 private:
     static std::shared_ptr<Drawing::RuntimeEffect> binarizationShaderEffect_;
     static std::shared_ptr<Drawing::RuntimeEffect> dynamicDimShaderEffect_;

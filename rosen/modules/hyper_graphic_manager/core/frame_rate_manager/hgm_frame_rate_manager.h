@@ -103,7 +103,7 @@ struct VoteInfo {
 
     bool operator==(const VoteInfo& other) const
     {
-        return this->max == other.max && this->voterName == other.voterName &&
+        return this->min == other.min && this->max == other.max && this->voterName == other.voterName &&
             this->extInfo == other.extInfo && this->pid == other.pid && this->bundleName == other.bundleName;
     }
 
@@ -236,6 +236,7 @@ private:
     // Used to record your votes, and clear your votes after you die
     std::unordered_set<pid_t> pidRecord_;
     std::unordered_set<std::string> gameScenes_;
+    std::unordered_set<std::string> ancoScenes_;
     std::unordered_map<pid_t, std::unordered_set<CleanPidCallbackType>> cleanPidCallback_;
     // FORMAT: <timestamp, VoteInfo>
     std::vector<std::pair<int64_t, VoteInfo>> frameRateVoteInfoVec_;

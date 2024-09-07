@@ -115,30 +115,21 @@ VsyncError VSyncConnection::RequestNextVSync()
     return RequestNextVSync(DEFAULT_REQUEST, 0);
 }
 
-VsyncError VSyncConnection::GetRemoteDistributorLocked(sptr<VSyncDistributor> &distributor)
-{
-    if (distributor_ == nullptr) {
-        return VSYNC_ERROR_NULLPTR;
-    }
-    distributor = distributor_.promote();
-    if (distributor == nullptr) {
-        return VSYNC_ERROR_NULLPTR;
-    }
-    return VSYNC_ERROR_OK;
-}
-
 VsyncError VSyncConnection::RequestNextVSync(const std::string &fromWhom, int64_t lastVSyncTS)
 {
-    sptr<VSyncDistributor> distributor = nullptr;
+    sptr<VSyncDistributor> distributor;
     {
         std::unique_lock<std::mutex> locker(mutex_);
         if (isDead_) {
             VLOGE("%{public}s VSync Client Connection is dead, name:%{public}s.", __func__, info_.name_.c_str());
             return VSYNC_ERROR_API_FAILED;
         }
-        VsyncError ret = GetRemoteDistributorLocked(distributor);
-        if (ret != VSYNC_ERROR_OK) {
-            return ret;
+        if (distributor_ == nullptr) {
+            return VSYNC_ERROR_NULLPTR;
+        }
+        distributor = distributor_.promote();
+        if (distributor == nullptr) {
+            return VSYNC_ERROR_NULLPTR;
         }
     }
     return distributor->RequestNextVSync(this, fromWhom, lastVSyncTS);
@@ -193,11 +184,11 @@ int32_t VSyncConnection::PostEvent(int64_t now, int64_t period, int64_t vsyncCou
     if (ret > -1) {
         ScopedDebugTrace successful("successful");
         info_.postVSyncCount_++;
+        if (gcNotifyTask_ != nullptr) {
+            gcNotifyTask_(false);
+        }
     } else {
         ScopedBytrace failed("failed");
-    }
-    if (gcNotifyTask_ != nullptr) {
-        gcNotifyTask_(false);
     }
     return ret;
 }
@@ -209,10 +200,12 @@ VsyncError VSyncConnection::SetVSyncRate(int32_t rate)
         VLOGE("%{public}s VSync Client Connection is dead, name:%{public}s.", __func__, info_.name_.c_str());
         return VSYNC_ERROR_API_FAILED;
     }
-    sptr<VSyncDistributor> distributor = nullptr;
-    VsyncError ret = GetRemoteDistributorLocked(distributor);
-    if (ret != VSYNC_ERROR_OK) {
-        return ret;
+    if (distributor_ == nullptr) {
+        return VSYNC_ERROR_NULLPTR;
+    }
+    const sptr<VSyncDistributor> distributor = distributor_.promote();
+    if (distributor == nullptr) {
+        return VSYNC_ERROR_NULLPTR;
     }
     return distributor->SetVSyncRate(rate, this);
 }
@@ -220,12 +213,11 @@ VsyncError VSyncConnection::SetVSyncRate(int32_t rate)
 VsyncError VSyncConnection::CleanAllLocked()
 {
     socketPair_ = nullptr;
-    sptr<VSyncDistributor> distributor = nullptr;
-    VsyncError ret = GetRemoteDistributorLocked(distributor);
-    if (ret != VSYNC_ERROR_OK) {
-        return ret;
+    const sptr<VSyncDistributor> distributor = distributor_.promote();
+    if (distributor == nullptr) {
+        return VSYNC_ERROR_OK;
     }
-    ret = distributor->RemoveConnection(this);
+    VsyncError ret = distributor->RemoveConnection(this);
     isDead_ = true;
     return ret;
 }
@@ -238,16 +230,19 @@ VsyncError VSyncConnection::Destroy()
 
 VsyncError VSyncConnection::SetUiDvsyncSwitch(bool dvsyncSwitch)
 {
-    sptr<VSyncDistributor> distributor = nullptr;
+    sptr<VSyncDistributor> distributor;
     {
         std::unique_lock<std::mutex> locker(mutex_);
         if (isDead_) {
             VLOGE("%{public}s VSync Client Connection is dead, name:%{public}s.", __func__, info_.name_.c_str());
             return VSYNC_ERROR_API_FAILED;
         }
-        VsyncError ret = GetRemoteDistributorLocked(distributor);
-        if (ret != VSYNC_ERROR_OK) {
-            return ret;
+        if (distributor_ == nullptr) {
+            return VSYNC_ERROR_NULLPTR;
+        }
+        distributor = distributor_.promote();
+        if (distributor == nullptr) {
+            return VSYNC_ERROR_NULLPTR;
         }
     }
     return distributor->SetUiDvsyncSwitch(dvsyncSwitch, this);
@@ -262,9 +257,12 @@ VsyncError VSyncConnection::SetUiDvsyncConfig(int32_t bufferCount)
             VLOGE("%{public}s VSync Client Connection is dead, name:%{public}s.", __func__, info_.name_.c_str());
             return VSYNC_ERROR_API_FAILED;
         }
-        VsyncError ret = GetRemoteDistributorLocked(distributor);
-        if (ret != VSYNC_ERROR_OK) {
-            return ret;
+        if (distributor_ == nullptr) {
+            return VSYNC_ERROR_NULLPTR;
+        }
+        distributor = distributor_.promote();
+        if (distributor == nullptr) {
+            return VSYNC_ERROR_NULLPTR;
         }
     }
     return distributor->SetUiDvsyncConfig(bufferCount);
@@ -314,14 +312,12 @@ VsyncError VSyncDistributor::AddConnection(const sptr<VSyncConnection>& connecti
     if (connection == nullptr) {
         return VSYNC_ERROR_NULLPTR;
     }
-
-    int32_t proxyPid = connection->proxyPid_;
     std::lock_guard<std::mutex> locker(mutex_);
+    int32_t proxyPid = connection->proxyPid_;
     if (connectionCounter_[proxyPid] > VSYNC_CONNECTION_MAX_SIZE) {
         VLOGE("You [%{public}d] have created too many vsync connection, please check!!!", proxyPid);
         return VSYNC_ERROR_API_FAILED;
     }
-
     auto it = std::find(connections_.begin(), connections_.end(), connection);
     if (it != connections_.end()) {
         return VSYNC_ERROR_INVALID_ARGUMENTS;
@@ -386,7 +382,7 @@ void VSyncDistributor::WaitForVsyncOrRequest(std::unique_lock<std::mutex> &locke
 #if defined(RS_ENABLE_DVSYNC)
     dvsync_->RNVNotify();
     if (!isRs_ && IsDVsyncOn()) {
-        con_.wait_for(locker, std::chrono::nanoseconds(dvsync_->WaitTime()), [this] {return dvsync_->WaitCond();});
+        con_.wait_for(locker, std::chrono::nanoseconds(dvsync_->WaitTime()), [this] { return dvsync_->WaitCond(); });
     } else {
         if (!(hasVsync_.load() && isRs_)) {
             con_.wait(locker);
@@ -510,7 +506,7 @@ bool VSyncDistributor::PostVSyncEventPreProcess(int64_t &timestamp, std::vector<
             std::unique_lock<std::mutex> locker(mutex_);
             dvsync_->MarkDistributorSleep(true);
             dvsync_->RNVNotify();
-            dvsync_->DelayBeforePostEvent(timestamp, locker);
+            dvsync_->DelayBeforePostEvent(event_.timestamp, locker);
             dvsync_->MarkDistributorSleep(false);
             CollectConns(waitForVSync, timestamp, conns, true);
             hasVsync_.store(false);
@@ -576,6 +572,7 @@ void VSyncDistributor::OnDVSyncTrigger(int64_t now, int64_t period, uint32_t ref
         return;
     }
 
+    // When vsync switches to dvsync, need to handle pending RNVs during vsync
     if (!IsDVsyncOn() || pendingRNVInVsync_) {
         event_.timestamp = now;
         event_.vsyncCount++;
@@ -592,17 +589,7 @@ void VSyncDistributor::OnDVSyncTrigger(int64_t now, int64_t period, uint32_t ref
     if (dvsync_->WaitCond() || pendingRNVInVsync_) {
         con_.notify_all();
     } else {
-        // When Dvsync on, if the RequestNextVsync is not invoked within three period and SetVSyncRate
-        // is not invoked either, execute DisableVSync.
-        for (uint32_t i = 0; i < connections_.size(); i++) {
-            if (connections_[i]->triggerThisTime_ || connections_[i]->rate_ >= 0) {
-                return;
-            }
-        }
-        if (now - dvsync_->GetLastRnvTS() > 3 * period) {  // 3 period
-            ScopedBytrace func(name_ + "_DisableVsync");
-            DisableVSync();
-        }
+        CheckNeedDisableDvsync(now, period);
     }
 }
 #endif
@@ -612,6 +599,7 @@ void VSyncDistributor::OnVSyncTrigger(int64_t now, int64_t period, uint32_t refr
     std::vector<sptr<VSyncConnection>> conns;
     uint32_t generatorRefreshRate;
     int64_t vsyncCount;
+
     {
         bool waitForVSync = false;
         std::lock_guard<std::mutex> locker(mutex_);
@@ -629,7 +617,7 @@ void VSyncDistributor::OnVSyncTrigger(int64_t now, int64_t period, uint32_t refr
         if (vsyncMode_ == VSYNC_MODE_LTPO) {
             CollectConnectionsLTPO(waitForVSync, now, conns, event_.vsyncPulseCount);
         } else {
-            CollectConnections(waitForVSync, now, conns, vsyncCount);
+            CollectConnections(waitForVSync, now, conns, event_.vsyncCount);
         }
         if (!waitForVSync) {
             DisableVSync();
@@ -638,7 +626,7 @@ void VSyncDistributor::OnVSyncTrigger(int64_t now, int64_t period, uint32_t refr
 
         countTraceValue_ = (countTraceValue_ + 1) % 2;  // 2 : change num
         CountTrace(HITRACE_TAG_GRAPHIC_AGP, "VSync-" + name_, countTraceValue_);
-        
+
         generatorRefreshRate = generatorRefreshRate_;
     }
 
@@ -701,6 +689,26 @@ int32_t VSyncDistributor::GetUIDVsyncPid()
     return pid;
 }
 #endif
+
+void VSyncDistributor::CheckNeedDisableDvsync(int64_t now, int64_t period)
+{
+#if defined(RS_ENABLE_DVSYNC)
+    if (!isRs_ && IsDVsyncOn()) {
+        return;
+    }
+    // When Dvsync on, if the RequestNextVsync is not invoked within three period and SetVSyncRate
+    // is not invoked either, execute DisableVSync.
+    for (uint32_t i = 0; i < connections_.size(); i++) {
+        if (connections_[i]->triggerThisTime_ || connections_[i]->rate_ >= 0) {
+            return;
+        }
+    }
+    if (now - dvsync_->GetLastRnvTS() > 3 * period) {  // 3 period
+        ScopedBytrace func(name_ + "_DisableVsync");
+        DisableVSync();
+    }
+#endif
+}
 
 /* std::pair<id, refresh rate> */
 void VSyncDistributor::OnConnsRefreshRateChanged(const std::vector<std::pair<uint64_t, uint32_t>> &refreshRates)
@@ -845,8 +853,6 @@ void VSyncDistributor::PostVSyncEvent(const std::vector<sptr<VSyncConnection>> &
         eventPeriod = event_.period;
         vsyncCount = event_.vsyncCount;
     }
-    countTraceValue_ = (countTraceValue_ + 1) % 2;  // 2 : change num
-    CountTrace(HITRACE_TAG_GRAPHIC_AGP, "DVSync-" + name_, countTraceValue_);
     for (uint32_t i = 0; i < conns.size(); i++) {
         int64_t period = eventPeriod;
         if ((generatorRefreshRate > 0) && (conns[i]->refreshRate_ > 0) &&
@@ -922,7 +928,6 @@ VsyncError VSyncDistributor::RequestNextVSync(const sptr<VSyncConnection> &conne
     {
         EnableVSync();
     }
-
     VLOGD("conn name:%{public}s, rate:%{public}d", connection->info_.name_.c_str(), connection->rate_);
     return VSYNC_ERROR_OK;
 }

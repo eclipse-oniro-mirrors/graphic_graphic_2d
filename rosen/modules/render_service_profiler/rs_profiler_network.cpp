@@ -32,8 +32,9 @@
 
 namespace OHOS::Rosen {
 
-bool Network::isRunning_ = false;
+std::atomic<bool> Network::isRunning_ = false;
 std::atomic<bool> Network::forceShutdown_ = false;
+std::atomic<bool> Network::blockBinary_ = false;
 
 std::mutex Network::incomingMutex_ {};
 std::queue<std::vector<std::string>> Network::incoming_ {};
@@ -49,6 +50,11 @@ static void AwakeRenderServiceThread()
         RSMainThread::Instance()->SetAccessibilityConfigChanged();
         RSMainThread::Instance()->RequestNextVSync();
     });
+}
+
+bool Network::IsRunning()
+{
+    return isRunning_;
 }
 
 void Network::Run()
@@ -189,8 +195,16 @@ void Network::SendRSTreeSingleNodePerf(uint64_t id, uint64_t nanosec)
     SendPacket(packet);
 }
 
+void Network::SetBlockBinary(bool blockFlag)
+{
+    blockBinary_ = blockFlag;
+}
+
 void Network::SendBinary(const void* data, size_t size)
 {
+    if (blockBinary_) {
+        return;
+    }
     if (data && (size > 0)) {
         Packet packet { Packet::BINARY };
         packet.Write(data, size);

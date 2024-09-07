@@ -119,7 +119,7 @@ void RSScreenManager::RegisterSensorCallback()
     int32_t setBatchRet;
     int32_t activateRet;
     int tryCnt = 0;
-    const int tryLimit = 5; // 5 times failure limit
+    constexpr int tryLimit = 5; // 5 times failure limit
     do {
         subscribeRet = SubscribeSensor(SENSOR_TYPE_ID_POSTURE, &user);
         RS_LOGI("RSScreenManager RegisterSensorCallback, subscribeRet: %{public}d", subscribeRet);
@@ -1028,7 +1028,7 @@ const std::vector<uint64_t> RSScreenManager::GetVirtualScreenSecurityExemptionLi
     return virtualScreen->second->GetSecurityExemptionList();
 }
 
-std::unordered_set<NodeId> RSScreenManager::GetVirtualScreenBlackList(ScreenId id) const
+const std::unordered_set<NodeId> RSScreenManager::GetVirtualScreenBlackList(ScreenId id) const
 {
     std::lock_guard<std::mutex> lock(mutex_);
     auto virtualScreen = screens_.find(id);
@@ -1068,7 +1068,6 @@ int32_t RSScreenManager::SetCastScreenEnableSkipWindow(ScreenId id, bool enable)
 
 bool RSScreenManager::GetCastScreenEnableSkipWindow(ScreenId id) const
 {
-    std::lock_guard<std::mutex> lock(mutex_);
     auto virtualScreen = screens_.find(id);
     if (virtualScreen == screens_.end()) {
         RS_LOGW("RSScreenManager %{public}s: There is no screen for id %{public}" PRIu64 ".", __func__, id);
@@ -1295,18 +1294,11 @@ void RSScreenManager::GetScreenActiveMode(ScreenId id, RSScreenModeInfo& screenM
     GetScreenActiveModeLocked(id, screenModeInfo);
 }
 
-uint32_t RSScreenManager::GetDefaultScreenRefreshRate() const
+void RSScreenManager::GetDefaultScreenActiveMode(RSScreenModeInfo& screenModeInfo) const
 {
     std::lock_guard<std::mutex> lock(mutex_);
 
-    auto screensIt = screens_.find(defaultScreenId_);
-    if (screensIt == screens_.end() || screensIt->second == nullptr) {
-        RS_LOGW("RSScreenManager %{public}s: There is no screen for id %{public}" PRIu64 ".",
-            __func__, defaultScreenId_);
-        return 0;
-    }
-    const auto& screen = screensIt->second;
-    return screen->GetActiveRefreshRate();
+    GetScreenActiveModeLocked(defaultScreenId_, screenModeInfo);
 }
 
 std::vector<RSScreenModeInfo> RSScreenManager::GetScreenSupportedModes(ScreenId id) const

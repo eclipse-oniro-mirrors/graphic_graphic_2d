@@ -168,6 +168,9 @@ bool DoSetAndGet(const uint8_t* data, size_t size)
     bool isSkipLayer = GetData<bool>();
     surfaceNode->SetSkipLayer(isSkipLayer);
     surfaceNode->GetSkipLayer();
+    bool isSnapshotSkipLayer = GetData<bool>();
+    surfaceNode->SetSnapshotSkipLayer(isSnapshotSkipLayer);
+    surfaceNode->GetSnapshotSkipLayer();
     bool hasFingerprint = GetData<bool>();
     surfaceNode->SetFingerprint(hasFingerprint);
     surfaceNode->GetFingerprint();
@@ -183,6 +186,10 @@ bool DoSetAndGet(const uint8_t* data, size_t size)
     bool isBootAnimation = GetData<bool>();
     surfaceNode->SetBootAnimation(isBootAnimation);
     surfaceNode->GetBootAnimation();
+    bool isLayerTop = GetData<bool>();
+    std::string surfaceNodeName = GetData<std::string>();
+    surfaceNode->SetLayerTop(surfaceNodeName, isLayerTop);
+    surfaceNode->IsLayerTop();
     return true;
 }
 
@@ -604,7 +611,7 @@ bool DoSetAncoFlags(const uint8_t* data, size_t size)
     // test
     RSSurfaceNodeConfig config;
     RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(config);
-    int32_t flags = GetData<int32_t>();
+    uint32_t flags = GetData<uint32_t>();
     surfaceNode->SetAncoFlags(flags);
     return true;
 }

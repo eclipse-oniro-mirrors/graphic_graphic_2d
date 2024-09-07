@@ -179,6 +179,11 @@ public:
                              buffer->GetHeight() != preBuffer_.buffer->GetHeight();
     }
 
+    void SetBufferTransformTypeChanged(bool flag)
+    {
+        bufferTransformTypeChanged_ = flag;
+    }
+
     bool CheckScalingModeChanged()
     {
         std::lock_guard<std::mutex> lock(mutex_);
@@ -249,6 +254,11 @@ public:
         return bufferSizeChanged_;
     }
 
+    bool GetBufferTransformTypeChanged() const
+    {
+        return bufferTransformTypeChanged_;
+    }
+
     bool HasConsumer() const
     {
 #ifndef ROSEN_CROSS_PLATFORM
@@ -280,6 +290,7 @@ public:
         }
     }
     void ConsumeAndUpdateBuffer(SurfaceBufferEntry buffer);
+    void ConsumeAndUpdateBuffer(const uint64_t& vsyncTimestamp, const std::string& surfaceName);
     void CacheBuffer(const SurfaceBufferEntry& buffer, const std::string& surfaceName);
     RSSurfaceHandler::SurfaceBufferEntry GetBufferFromCache(uint64_t vsyncTimestamp, const std::string& surfaceName);
     bool HasBufferCache() const;
@@ -294,6 +305,9 @@ protected:
 
 private:
     void ReleaseBuffer(SurfaceBufferEntry& buffer);
+    void ConsumeAndUpdateBufferInner(SurfaceBufferEntry& buffer);
+    void GetBufferFromCacheLocked(const uint64_t& vsyncTimestamp, const std::string& surfaceName,
+        RSSurfaceHandler::SurfaceBufferEntry& buffer);
 
 #ifndef ROSEN_CROSS_PLATFORM
     ScalingMode scalingModePre = ScalingMode::SCALING_MODE_SCALE_TO_WINDOW;
@@ -306,6 +320,7 @@ private:
     float globalZOrder_ = 0.0f;
     std::atomic<int> bufferAvailableCount_ = 0;
     bool bufferSizeChanged_ = false;
+    bool bufferTransformTypeChanged_ = false;
     std::map<uint64_t, SurfaceBufferEntry> bufferCache_;
     std::shared_ptr<SurfaceBufferEntry> holdBuffer_ = nullptr;
 };

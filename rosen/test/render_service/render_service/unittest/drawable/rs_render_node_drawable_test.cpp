@@ -379,7 +379,7 @@ HWTEST_F(RSRenderNodeDrawableTest, DrawAutoCache, TestSize.Level1)
  @tc.type: FUNC
  @tc.require: issueIAL4RE
  */
-HWTEST(RSRenderNodeDrawableTest, AfterDrawCacheWithScreen, TestSize.Level1)
+HWTEST_F(RSRenderNodeDrawableTest, AfterDrawCacheWithScreen, TestSize.Level1)
 {
     auto drawable = RSRenderNodeDrawableTest::CreateDrawable();
     Drawing::Canvas canvas;
@@ -504,10 +504,10 @@ HWTEST_F(RSRenderNodeDrawableTest, CheckCacheTypeAndDrawTest, TestSize.Level1)
     drawable->drawCmdIndex_.shadowIndex_ = 1;
     drawable->CheckCacheTypeAndDraw(canvas, params);
     ASSERT_TRUE(drawable->HasFilterOrEffect());
-    RSRenderNodeDrawable::isNeedOffScreenCache_ = true;
+    RSRenderNodeDrawable::isOffScreenWithClipHole_ = true;
     params.foregroundFilterCache_ = std::make_shared<RSFilter>();
     drawable->CheckCacheTypeAndDraw(canvas, params);
-    RSRenderNodeDrawable::isNeedOffScreenCache_ = false;
+    RSRenderNodeDrawable::isOffScreenWithClipHole_ = false;
     ASSERT_TRUE(params.GetForegroundFilterCache());
 
     drawable->SetCacheType(DrawableCacheType::NONE);

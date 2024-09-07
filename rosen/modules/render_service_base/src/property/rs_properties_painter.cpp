@@ -605,7 +605,6 @@ void RSPropertiesPainter::DrawFilter(const RSProperties& properties, RSPaintFilt
         brush.SetFilter(filterForBrush);
         Drawing::SaveLayerOps slr(nullptr, &brush, Drawing::SaveLayerOps::Flags::INIT_WITH_PREVIOUS);
         canvas.SaveLayer(slr);
-        filter->PostProcess(canvas);
         return;
     }
 
@@ -678,7 +677,6 @@ void RSPropertiesPainter::DrawFilter(const RSProperties& properties, RSPaintFilt
     Drawing::Rect srcRect = Drawing::Rect(0, 0, imageSnapshot->GetWidth(), imageSnapshot->GetHeight());
     Drawing::Rect dstRect = clipIBounds;
     filter->DrawImageRect(canvas, imageSnapshot, srcRect, dstRect);
-    filter->PostProcess(canvas);
 }
 
 void RSPropertiesPainter::DrawBackgroundImageAsEffect(const RSProperties& properties, RSPaintFilterCanvas& canvas)
@@ -795,7 +793,6 @@ void RSPropertiesPainter::ProcessAndCacheImage(Drawing::Surface* surface, const 
     auto clipBounds = Drawing::Rect(0, 0, imageRect.GetWidth(), imageRect.GetHeight());
     auto imageSnapshotBounds = Drawing::Rect(0, 0, imageSnapshot->GetWidth(), imageSnapshot->GetHeight());
     filter->DrawImageRect(offscreenCanvas, imageSnapshot, imageSnapshotBounds, clipBounds);
-    filter->PostProcess(offscreenCanvas);
 
     auto imageCache = offscreenSurface->GetImageSnapshot();
     if (imageCache == nullptr) {
@@ -1374,21 +1371,17 @@ void RSPropertiesPainter::DrawBorderIfNoFill(const RSProperties& properties, Dra
         canvas.DrawPath(borderPath);
         canvas.DetachPen();
     } else {
-        Drawing::AutoCanvasRestore acr(canvas, true);
-        auto rrect = RRect2DrawingRRect(GetRRectForDrawingBorder(properties, border, isOutline));
-        canvas.ClipRoundRect(rrect, Drawing::ClipOp::INTERSECT, true);
-        auto innerRoundRect = RRect2DrawingRRect(GetInnerRRectForDrawingBorder(properties, border, isOutline));
-        canvas.ClipRoundRect(innerRoundRect, Drawing::ClipOp::DIFFERENCE, true);
-        Drawing::scalar centerX = innerRoundRect.GetRect().GetLeft() + innerRoundRect.GetRect().GetWidth() / 2;
-        Drawing::scalar centerY = innerRoundRect.GetRect().GetTop() + innerRoundRect.GetRect().GetHeight() / 2;
-        Drawing::Point center = { centerX, centerY };
-        auto rect = rrect.GetRect();
+        RSBorderGeo borderGeo;
+        borderGeo.rrect = RRect2DrawingRRect(GetRRectForDrawingBorder(properties, border, isOutline));
+        borderGeo.innerRRect = RRect2DrawingRRect(GetInnerRRectForDrawingBorder(properties, border, isOutline));
+        auto centerX = borderGeo.innerRRect.GetRect().GetLeft() + borderGeo.innerRRect.GetRect().GetWidth() / 2;
+        auto centerY = borderGeo.innerRRect.GetRect().GetTop() + borderGeo.innerRRect.GetRect().GetHeight() / 2;
+        borderGeo.center = { centerX, centerY };
+        auto rect = borderGeo.rrect.GetRect();
+        Drawing::AutoCanvasRestore acr(canvas, false);
         Drawing::SaveLayerOps slr(&rect, nullptr);
         canvas.SaveLayer(slr);
-        border->PaintTopPath(canvas, pen, rrect, center);
-        border->PaintRightPath(canvas, pen, rrect, center);
-        border->PaintBottomPath(canvas, pen, rrect, center);
-        border->PaintLeftPath(canvas, pen, rrect, center);
+        border->DrawBorders(canvas, pen, borderGeo);
     }
 }
 

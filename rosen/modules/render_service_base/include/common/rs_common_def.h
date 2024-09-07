@@ -271,6 +271,11 @@ enum class MultiThreadCacheType : uint8_t {
     NONFOCUS_WINDOW,
 };
 
+enum class UiFirstModeType : uint8_t {
+    SINGLE_WINDOW_MODE,
+    MULTI_WINDOW_MODE,
+};
+
 enum class SelfDrawingNodeType : uint8_t {
     DEFAULT,
     VIDEO,
@@ -309,6 +314,7 @@ using RSSurfaceTextureUpdateCallBack = std::function<void(std::vector<float>&)>;
 struct RSDisplayNodeConfig {
     uint64_t screenId = 0;
     bool isMirrored = false;
+    bool isSync = false;
     NodeId mirrorNodeId = 0;
 };
 
@@ -406,7 +412,7 @@ inline typename Container::size_type EraseIf(Container& container, Predicate pre
     return oldSize - container.size();
 }
 
-enum class AncoFlags : int32_t {
+enum class AncoFlags : uint32_t {
     IS_ANCO_NODE = 0x0001
 };
 

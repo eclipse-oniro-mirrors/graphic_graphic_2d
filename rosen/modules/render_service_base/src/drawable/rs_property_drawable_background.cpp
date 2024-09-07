@@ -398,6 +398,11 @@ std::shared_ptr<Drawing::Image> RSBackgroundImageDrawable::MakeFromTextureForVK(
         tid_ = gettid();
     }
 
+    if (canvas.GetGPUContext() == nullptr) {
+        RS_LOGE("RSBackgroundImageDrawable::MakeFromTextureForVK canvas.GetGPUContext is nullptr");
+        ReleaseNativeWindowBuffer();
+        return nullptr;
+    }
     std::shared_ptr<Drawing::Image> dmaImage = std::make_shared<Drawing::Image>();
     auto vkTextureInfo = backendTexture_.GetTextureInfo().GetVKTextureInfo();
     Drawing::ColorType colorType = GetColorTypeFromVKFormat(vkTextureInfo->format);
@@ -435,7 +440,7 @@ void RSBackgroundImageDrawable::SetCompressedDataForASTC()
         const void* data = pixelMap->GetPixels();
         if (pixelMap->GetCapacity() > ASTC_HEADER_SIZE &&
             (data == nullptr || !fileData->BuildWithoutCopy(
-                reinterpret_cast<void *>(reinterpret_cast<char *>(data) + ASTC_HEADER_SIZE),
+                reinterpret_cast<const void *>(reinterpret_cast<const char *>(data) + ASTC_HEADER_SIZE),
                 pixelMap->GetCapacity() - ASTC_HEADER_SIZE))) {
                 RS_LOGE("SetCompressedDataForASTC data BuildWithoutCopy fail");
                 return;
@@ -532,6 +537,16 @@ bool RSBackgroundFilterDrawable::OnUpdate(const RSRenderNode& node)
     needSync_ = true;
     stagingFilter_ = rsFilter;
     return true;
+}
+
+bool RSBackgroundFilterDrawable::FuzePixelStretch(const RSRenderNode& node)
+{
+    return RSPropertyDrawableUtils::RSFilterSetPixelStretch(node.GetRenderProperties(), stagingFilter_);
+}
+
+void RSBackgroundFilterDrawable::RemovePixelStretch()
+{
+    RSPropertyDrawableUtils::RSFilterRemovePixelStretch(stagingFilter_);
 }
 
 bool RSBackgroundEffectDrawable::OnUpdate(const RSRenderNode& node)

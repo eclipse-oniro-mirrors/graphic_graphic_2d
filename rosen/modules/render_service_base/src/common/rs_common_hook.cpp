@@ -65,16 +65,4 @@ bool RsCommonHook::GetHardwareEnabledByBackgroundAlphaFlag() const
     return hardwareEnabledByBackgroundAlphaSkippedFlag_;
 }
 
-// temporary code: ignore below current hardware composer node rect size BEGIN
-void RsCommonHook::SetHardwareEnabledByIgnoringInsideFlag(bool hardwareEnabledByIgnoringInsideFlag)
-{
-    hardwareEnabledByIgnoringInsideFlag_ = hardwareEnabledByIgnoringInsideFlag;
-}
-
-bool RsCommonHook::GetHardwareEnabledByIgnoringInsideFlag() const
-{
-    return hardwareEnabledByIgnoringInsideFlag_;
-}
-// temporary code: ignore below current hardware composer node rect size END
-
 } // namespace OHOS::Rosen

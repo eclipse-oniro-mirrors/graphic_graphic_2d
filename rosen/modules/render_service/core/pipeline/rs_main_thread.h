@@ -183,7 +183,7 @@ public:
 
     void SetFocusAppInfo(
         int32_t pid, int32_t uid, const std::string &bundleName, const std::string &abilityName, uint64_t focusNodeId);
-    std::unordered_map<NodeId, bool> GetCacheCmdSkippedNodes() const;
+    const std::unordered_map<NodeId, bool>& GetCacheCmdSkippedNodes() const;
 
     sptr<VSyncDistributor> rsVSyncDistributor_;
     sptr<VSyncController> rsVSyncController_;
@@ -204,7 +204,6 @@ public:
     bool GetScreenPowerOnChanged() const;
     bool IsAccessibilityConfigChanged() const;
     bool IsCurtainScreenUsingStatusChanged() const;
-    bool IsLuminanceChanged() const;
     void ForceRefreshForUni();
     void TrimMem(std::unordered_set<std::u16string>& argSets, std::string& result);
     void DumpMem(std::unordered_set<std::u16string>& argSets, std::string& result, std::string& type, pid_t pid = 0);
@@ -288,7 +287,9 @@ public:
     void HandleOnTrim(Memory::SystemMemoryLevel level);
     void SetCurtainScreenUsingStatus(bool isCurtainScreenOn);
     void SetLuminanceChangingStatus(bool isLuminanceChanged);
+    bool ExchangeLuminanceChangingStatus();
     bool IsCurtainScreenOn() const;
+    void RealeaseScreenDmaBuffer(uint64_t screenId);
 
     bool GetParallelCompositionEnabled();
     void SetFrameIsRender(bool isRender);
@@ -355,7 +356,7 @@ public:
     void SetAncoForceDoDirect(bool direct);
 
     bool IsBlurSwitchOpen() const;
-    
+
     bool IsSystemAnimatedScenesListEmpty() const
     {
         return systemAnimatedScenesList_.empty();
@@ -491,7 +492,7 @@ private:
     std::shared_ptr<AppExecFwk::EventHandler> handler_ = nullptr;
     RSTaskMessage::RSTask mainLoop_;
     std::unique_ptr<RSVsyncClient> vsyncClient_ = nullptr;
-    std::unordered_map<NodeId, uint64_t> bufferTimestamps_;
+    std::unordered_map<NodeId, uint64_t> dividedRenderbufferTimestamps_;
 
     std::mutex transitionDataMutex_;
     std::unordered_map<NodeId, std::map<uint64_t, std::vector<std::unique_ptr<RSCommand>>>> cachedCommands_;
@@ -552,7 +553,7 @@ private:
     bool isCurtainScreenUsingStatusChanged_ = false;
 
     // Used to refresh the whole display when luminance is changed
-    bool isLuminanceChanged_ = false;
+    std::atomic<bool> isLuminanceChanged_ = false;
 
     // used for blocking mainThread when hardwareThread has 2 and more task to Execute
     mutable std::mutex hardwareThreadTaskMutex_;

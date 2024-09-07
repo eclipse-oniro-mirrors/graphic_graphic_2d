@@ -67,7 +67,6 @@ namespace {
 constexpr const char* CLEAR_GPU_CACHE = "ClearGpuCache";
 constexpr const char* DEFAULT_CLEAR_GPU_CACHE = "DefaultClearGpuCache";
 constexpr const char* PURGE_CACHE_BETWEEN_FRAMES = "PurgeCacheBetweenFrames";
-constexpr const char* PRE_ALLOCATE_TEXTURE_BETWEEN_FRAMES = "PreAllocateTextureBetweenFrames";
 constexpr const char* ASYNC_FREE_VMAMEMORY_BETWEEN_FRAMES = "AsyncFreeVMAMemoryBetweenFrames";
 const std::string PERF_FOR_BLUR_IF_NEEDED_TASK_NAME = "PerfForBlurIfNeeded";
 constexpr uint32_t TIME_OF_EIGHT_FRAMES = 8000;
@@ -168,11 +167,11 @@ void RSUniRenderThread::Start()
     }
     handler_ = std::make_shared<AppExecFwk::EventHandler>(runner_);
     runner_->Run();
-    auto PostTaskProxy = [](RSTaskMessage::RSTask task, const std::string& name, int64_t delayTime,
+    auto postTaskProxy = [](RSTaskMessage::RSTask task, const std::string& name, int64_t delayTime,
         AppExecFwk::EventQueue::Priority priority) {
         RSUniRenderThread::Instance().PostTask(task, name, delayTime, priority);
     };
-    RSRenderNodeGC::Instance().SetRenderTask(PostTaskProxy);
+    RSRenderNodeGC::Instance().SetRenderTask(postTaskProxy);
     PostSyncTask([this] {
         RS_LOGE("RSUniRenderThread Started ...");
         Inittcache();
@@ -292,9 +291,9 @@ bool RSUniRenderThread::IsIdle() const
     return handler_ ? handler_->IsIdle() : false;
 }
 
-void RSUniRenderThread::Sync(std::unique_ptr<RSRenderThreadParams>& stagingRenderThreadParams)
+void RSUniRenderThread::Sync(std::unique_ptr<RSRenderThreadParams>&& stagingRenderThreadParams)
 {
-    renderThreadParams_ = std::move(stagingRenderThreadParams);
+    renderParamsManager_.SetRSRenderThreadParams(std::move(stagingRenderThreadParams));
 }
 
 void RSUniRenderThread::Render()
@@ -318,38 +317,14 @@ void RSUniRenderThread::Render()
     PerfForBlurIfNeeded();
 }
 
-void RSUniRenderThread::ReleaseSkipSyncBuffer(std::vector<std::function<void()>>& tasks)
-{
-#ifndef ROSEN_CROSS_PLATFORM
-    auto& bufferToRelease = RSMainThread::Instance()->GetContext().GetMutableSkipSyncBuffer();
-    if (bufferToRelease.empty()) {
-        return;
-    }
-    for (const auto& item : bufferToRelease) {
-        if (!item.buffer || !item.consumer) {
-            continue;
-        }
-        auto releaseTask = [buffer = item.buffer, consumer = item.consumer,
-            useReleaseFence = item.useFence, acquireFence = acquireFence_]() mutable {
-            auto ret = consumer->ReleaseBuffer(buffer, useReleaseFence ?
-                RSHardwareThread::Instance().releaseFence_ : acquireFence);
-            if (ret != OHOS::SURFACE_ERROR_OK) {
-                RS_LOGD("ReleaseSelfDrawingNodeBuffer failed ret:%{public}d", ret);
-            }
-        };
-        tasks.emplace_back(releaseTask);
-    }
-    bufferToRelease.clear();
-#endif
-}
-
 void RSUniRenderThread::ReleaseSelfDrawingNodeBuffer()
 {
-    if (!renderThreadParams_) {
+    auto& renderThreadParams = GetRSRenderThreadParams();
+    if (!renderThreadParams) {
         return;
     }
     std::vector<std::function<void()>> releaseTasks;
-    for (const auto& drawable : renderThreadParams_->GetSelfDrawables()) {
+    for (const auto& drawable : renderThreadParams->GetSelfDrawables()) {
         if (UNLIKELY(!drawable)) {
             continue;
         }
@@ -392,7 +367,6 @@ void RSUniRenderThread::ReleaseSelfDrawingNodeBuffer()
             }
         }
     }
-    ReleaseSkipSyncBuffer(releaseTasks);
     if (releaseTasks.empty()) {
         return;
     }
@@ -427,17 +401,20 @@ void RSUniRenderThread::AddToReleaseQueue(std::shared_ptr<Drawing::Surface>&& su
 
 uint64_t RSUniRenderThread::GetCurrentTimestamp() const
 {
-    return renderThreadParams_ ? renderThreadParams_->GetCurrentTimestamp() : 0;
+    auto& renderThreadParams = GetRSRenderThreadParams();
+    return renderThreadParams ? renderThreadParams->GetCurrentTimestamp() : 0;
 }
 
 uint32_t RSUniRenderThread::GetPendingScreenRefreshRate() const
 {
-    return renderThreadParams_ ? renderThreadParams_->GetPendingScreenRefreshRate() : 0;
+    auto& renderThreadParams = GetRSRenderThreadParams();
+    return renderThreadParams ? renderThreadParams->GetPendingScreenRefreshRate() : 0;
 }
 
 uint64_t RSUniRenderThread::GetPendingConstraintRelativeTime() const
 {
-    return renderThreadParams_ ? renderThreadParams_->GetPendingConstraintRelativeTime() : 0;
+    auto& renderThreadParams = GetRSRenderThreadParams();
+    return renderThreadParams ? renderThreadParams->GetPendingConstraintRelativeTime() : 0;
 }
 
 #ifdef RES_SCHED_ENABLE
@@ -578,17 +555,20 @@ uint32_t RSUniRenderThread::GetRefreshRate() const
 
 std::shared_ptr<Drawing::Image> RSUniRenderThread::GetWatermarkImg()
 {
-    return renderThreadParams_ ? renderThreadParams_->GetWatermarkImg() : nullptr;
+    auto& renderThreadParams = GetRSRenderThreadParams();
+    return renderThreadParams ? renderThreadParams->GetWatermarkImg() : nullptr;
 }
 
 bool RSUniRenderThread::GetWatermarkFlag() const
 {
-    return renderThreadParams_ ? renderThreadParams_->GetWatermarkFlag() : false;
+    auto& renderThreadParams = GetRSRenderThreadParams();
+    return renderThreadParams ? renderThreadParams->GetWatermarkFlag() : false;
 }
 
 bool RSUniRenderThread::IsCurtainScreenOn() const
 {
-    return renderThreadParams_ ? renderThreadParams_->IsCurtainScreenOn() : false;
+    auto& renderThreadParams = GetRSRenderThreadParams();
+    return renderThreadParams ? renderThreadParams->IsCurtainScreenOn() : false;
 }
 
 bool RSUniRenderThread::IsColorFilterModeOn() const
@@ -612,11 +592,11 @@ bool RSUniRenderThread::IsHighContrastTextModeOn() const
     return uniRenderEngine_->IsHighContrastEnabled();
 }
 
-std::string FormatNumber(size_t number)
+static std::string FormatNumber(size_t number)
 {
-    constexpr uint8_t FORMATE_NUM_STEP = 3;
+    constexpr int FORMATE_NUM_STEP = 3;
     std::string strNumber = std::to_string(number);
-    int n = strNumber.length();
+    int n = static_cast<int>(strNumber.length());
     for (int i = n - FORMATE_NUM_STEP; i > 0; i -= FORMATE_NUM_STEP) {
         strNumber.insert(i, ",");
     }
@@ -848,22 +828,6 @@ void RSUniRenderThread::PurgeCacheBetweenFrames()
         PURGE_CACHE_BETWEEN_FRAMES, 0, AppExecFwk::EventQueue::Priority::LOW);
 }
 
-void RSUniRenderThread::PreAllocateTextureBetweenFrames()
-{
-    if (!RSSystemProperties::IsPhoneType()) {
-        return;
-    }
-    RemoveTask(PRE_ALLOCATE_TEXTURE_BETWEEN_FRAMES);
-    PostTask(
-        [this]() {
-            RS_TRACE_NAME_FMT("PreAllocateTextureBetweenFrames");
-            GrDirectContext::preAllocateTextureBetweenFrames();
-        },
-        PRE_ALLOCATE_TEXTURE_BETWEEN_FRAMES,
-        0,
-        AppExecFwk::EventQueue::Priority::LOW);
-}
-
 void RSUniRenderThread::AsyncFreeVMAMemoryBetweenFrames()
 {
     RemoveTask(ASYNC_FREE_VMAMEMORY_BETWEEN_FRAMES);
@@ -879,9 +843,6 @@ void RSUniRenderThread::AsyncFreeVMAMemoryBetweenFrames()
 
 void RSUniRenderThread::MemoryManagementBetweenFrames()
 {
-    if (RSSystemProperties::GetPreAllocateTextureBetweenFramesEnabled()) {
-        PreAllocateTextureBetweenFrames();
-    }
     if (RSSystemProperties::GetAsyncFreeVMAMemoryBetweenFramesEnabled()) {
         AsyncFreeVMAMemoryBetweenFrames();
     }

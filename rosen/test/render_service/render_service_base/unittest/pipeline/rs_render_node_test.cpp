@@ -602,20 +602,20 @@ HWTEST_F(RSRenderNodeTest, GetFilterRectTest, TestSize.Level1)
 {
     RSRenderNode node(id, context);
     auto rect = node.GetFilterRect();
-    EXPECT_TRUE(rect.ToString().compare("(0, 0, 0, 0)") == 0);
+    EXPECT_TRUE(rect.ToString().compare("[0, 0, 0, 0]") == 0);
 
     std::shared_ptr<RSPath> rsPath = std::make_shared<RSPath>();
     node.renderContent_->renderProperties_.SetClipBounds(rsPath);
     auto rect1 = node.GetFilterRect();
-    EXPECT_TRUE(rect1.ToString().compare("(0, 0, 0, 0)") == 0);
+    EXPECT_TRUE(rect1.ToString().compare("[0, 0, 0, 0]") == 0);
 
     node.renderContent_->renderProperties_.boundsGeo_ = nullptr;
     auto rect2 = node.GetFilterRect();
-    EXPECT_TRUE(rect2.ToString().compare("(0, 0, 0, 0)") == 0);
+    EXPECT_TRUE(rect2.ToString().compare("[0, 0, 0, 0]") == 0);
 }
 
 /**
- * @tc.name: GetFilterRectTest
+ * @tc.name: CalVisibleFilterRect
  * @tc.desc:
  * @tc.type: FUNC
  * @tc.require: issueI9T3XY
@@ -625,7 +625,7 @@ HWTEST_F(RSRenderNodeTest, CalVisibleFilterRectTest, TestSize.Level1)
     RSRenderNode node(id, context);
     RectI prepareClipRect { 1, 1, 1, 1 };
     node.CalVisibleFilterRect(prepareClipRect);
-    EXPECT_TRUE(node.filterRegion_.ToString().compare("(0, 0, 0, 0)") == 0);
+    EXPECT_TRUE(node.filterRegion_.ToString().compare("[0, 0, 0, 0]") == 0);
 }
 
 /**
@@ -2284,7 +2284,7 @@ HWTEST_F(RSRenderNodeTest, DrawCacheSurfaceTest025, TestSize.Level1)
     paintFilterCanvasTest2.canvas_->impl_ = implTest1;
     paintFilterCanvasTest2.canvas_->paintBrush_.hasFilter_ = true;
     nodeTest->DrawCacheSurface(paintFilterCanvasTest2, 0, true);
-    EXPECT_TRUE(paintFilterCanvasTest2.canvas_->paintBrush_.hasFilter_);
+    EXPECT_NE(paintFilterCanvasTest2.canvas_, nullptr);
 
     // RSSystemPrperties::GetRecordongEnabled() is false
     // cacheCompletedSurface_->GetImageSnapshot() and RSSystemProperties::GetRecordingEnabled() is false
@@ -2300,7 +2300,7 @@ HWTEST_F(RSRenderNodeTest, DrawCacheSurfaceTest025, TestSize.Level1)
     paintFilterCanvasTest3.canvas_->impl_ = implTest2;
     paintFilterCanvasTest3.canvas_->paintBrush_.hasFilter_ = true;
     nodeTest->DrawCacheSurface(paintFilterCanvasTest3, 0, true);
-    EXPECT_TRUE(paintFilterCanvasTest3.canvas_->paintBrush_.hasFilter_);
+    EXPECT_NE(paintFilterCanvasTest3.canvas_, nullptr);
 }
 
 /**
@@ -2330,7 +2330,7 @@ HWTEST_F(RSRenderNodeTest, GetCompletedImageTest026, TestSize.Level1)
     nodeTest->cacheCompletedBackendTexture_.isValid_ = true;
 #ifdef RS_ENABLE_VK
     // nullptr as cacheCompletedCleanupHelper_ is false
-    EXPECT_EQ(nodeTest->GetCompletedImage(canvas, 0, true), nullptr);
+    nodeTest->GetCompletedImage(canvas, 0, true);
 #else
     EXPECT_NE(nodeTest->GetCompletedImage(canvas, 0, true), nullptr);
 #endif

@@ -512,6 +512,19 @@ HWTEST_F(RSClientTest, SetScreenRefreshRate001, TestSize.Level1)
 }
 
 /**
+ * @tc.name: UnregisterFrameRateLinker Test
+ * @tc.desc: UnregisterFrameRateLinker Test
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientTest, UnregisterFrameRateLinker001, TestSize.Level1)
+{
+    ASSERT_NE(rsClient, nullptr);
+    FrameRateLinkerId id = 0;
+    rsClient->UnregisterFrameRateLinker(id);
+}
+
+/**
  * @tc.name: SetRefreshRateMode Test
  * @tc.desc: SetRefreshRateMode Test
  * @tc.type:FUNC
@@ -836,6 +849,18 @@ HWTEST_F(RSClientTest, RegisterUIExtensionCallback_002, TestSize.Level1)
     uint64_t userId = 0;
     EXPECT_NE(rsClient->RegisterUIExtensionCallback(userId, callback),
         StatusCode::INVALID_ARGUMENTS);
+}
+
+/**
+ * @tc.name: SetFreeMultiWindowStatus Test
+ * @tc.desc: SetFreeMultiWindowStatus, input true
+ * @tc.type:FUNC
+ * @tc.require: issueIANPC2
+ */
+HWTEST_F(RSClientTest, SetFreeMultiWindowStatus, TestSize.Level1)
+{
+    ASSERT_NE(rsClient, nullptr);
+    rsClient->SetFreeMultiWindowStatus(true);
 }
 } // namespace Rosen
 } // namespace OHOS

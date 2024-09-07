@@ -306,6 +306,11 @@ bool RSSystemProperties::GetHpsBlurEnabled()
     return false;
 }
 
+bool RSSystemProperties::GetMESABlurFuzedEnabled()
+{
+    return false;
+}
+
 float RSSystemProperties::GetKawaseRandomColorFactor()
 {
     return 0.f;
@@ -427,6 +432,12 @@ bool RSSystemProperties::GetSubSurfaceEnabled()
 {
     return false;
 }
+
+bool RSSystemProperties::GetTargetUIFirstDfxEnabled(std::vector<std::string>& SurfaceNames)
+{
+    return false;
+}
+
 bool RSSystemProperties::GetSecurityPermissionCheckEnabled()
 {
     return false;
@@ -447,6 +458,11 @@ bool RSSystemProperties::GetDumpUIPixelmapEnabled()
     return false;
 }
 
+bool RSSystemProperties::GetTransactionTerminateEnabled()
+{
+    return false;
+}
+
 int RSSystemProperties::GetVirtualScreenScaleModeDFX()
 {
     return {};
@@ -458,6 +474,11 @@ bool RSSystemProperties::GetHwcRegionDfxEnabled()
 }
 
 bool RSSystemProperties::GetDrawMirrorCacheImageEnabled()
+{
+    return false;
+}
+
+bool RSSystemProperties::GetPixelmapDfxEnabled()
 {
     return false;
 }
@@ -502,5 +523,14 @@ bool RSSystemProperties::GetSkipDisplayIfScreenOffEnabled()
     return false;
 }
 
+bool RSSystemProperties::GetMemoryOverTreminateEnabled()
+{
+    return false;
+}
+
+bool RSSystemProperties::GetHwcDirtyRegionEnabled()
+{
+    return false;
+}
 } // namespace Rosen
 } // namespace OHOS

@@ -84,7 +84,6 @@ public:
 
     void RunHardwareTask(const std::function<void()>& task)
     {
-        std::lock_guard<std::mutex> lock(resourceMut_);
         if (!supportHardware_) {
             return;
         }

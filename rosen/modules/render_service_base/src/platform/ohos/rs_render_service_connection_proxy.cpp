@@ -169,6 +169,42 @@ bool RSRenderServiceConnectionProxy::GetUniRenderEnabled()
     return reply.ReadBool();
 }
 
+bool RSRenderServiceConnectionProxy::CreateNode(const RSDisplayNodeConfig& displayNodeConfig, NodeId nodeId)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor())) {
+        ROSEN_LOGE("RSRenderServiceConnectionProxy::CreateNode: WriteInterfaceToken err.");
+        return WRITE_PARCEL_ERR;
+    }
+    if (!data.WriteUint64(nodeId)) {
+        ROSEN_LOGE("RSRenderServiceConnectionProxy::CreateNode: WriteUint64 NodeId err.");
+        return WRITE_PARCEL_ERR;
+    }
+    if (!data.WriteUint64(displayNodeConfig.mirrorNodeId)) {
+        ROSEN_LOGE("RSRenderServiceConnectionProxy::CreateNode: WriteUint64 Config.MirrorNodeId err.");
+        return WRITE_PARCEL_ERR;
+    }
+    if (!data.WriteUint64(displayNodeConfig.screenId)) {
+        ROSEN_LOGE("RSRenderServiceConnectionProxy::CreateNode: WriteUint64 Config.ScreenId err.");
+        return WRITE_PARCEL_ERR;
+    }
+    if (!data.WriteBool(displayNodeConfig.isMirrored)) {
+        ROSEN_LOGE("RSRenderServiceConnectionProxy::CreateNode: WriteBool Config.IsMirrored err.");
+        return WRITE_PARCEL_ERR;
+    }
+    option.SetFlags(MessageOption::TF_SYNC);
+    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::CREATE_DISPLAY_NODE);
+    int32_t err = Remote()->SendRequest(code, data, reply, option);
+    if (err != NO_ERROR) {
+        return false;
+    }
+
+    return reply.ReadBool();
+}
+
 bool RSRenderServiceConnectionProxy::CreateNode(const RSSurfaceRenderNodeConfig& config)
 {
     MessageParcel data;
@@ -773,6 +809,26 @@ void RSRenderServiceConnectionProxy::SyncFrameRateRange(FrameRateLinkerId id, co
     data.WriteUint32(range.type_);
     data.WriteInt32(animatorExpectedFrameRate);
     uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SYNC_FRAME_RATE_RANGE);
+    int32_t err = Remote()->SendRequest(code, data, reply, option);
+    if (err != NO_ERROR) {
+        ROSEN_LOGE("RSRenderServiceProxy sendrequest error : %{public}d", err);
+        return;
+    }
+}
+void RSRenderServiceConnectionProxy::UnregisterFrameRateLinker(FrameRateLinkerId id)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor())) {
+        ROSEN_LOGE("RSRenderServiceProxy failed to get descriptor");
+        return;
+    }
+
+    option.SetFlags(MessageOption::TF_ASYNC);
+    data.WriteUint64(id);
+    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::UNREGISTER_FRAME_RATE_LINKER);
     int32_t err = Remote()->SendRequest(code, data, reply, option);
     if (err != NO_ERROR) {
         ROSEN_LOGE("RSRenderServiceProxy sendrequest error : %{public}d", err);
@@ -1875,8 +1931,25 @@ bool RSRenderServiceConnectionProxy::RegisterTypeface(uint64_t globalUniqueId,
         return false;
     }
     option.SetFlags(MessageOption::TF_SYNC);
+    uint32_t hash = typeface->GetHash();
     data.WriteUint64(globalUniqueId);
+    data.WriteUint32(hash);
+
+    if (hash) { // if adapter does not provide hash, use old path
+        MessageParcel reply2;
+        uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NEED_REGISTER_TYPEFACE);
+        int32_t err = Remote()->SendRequest(code, data, reply2, option);
+        if (err != NO_ERROR) {
+            RS_LOGW("Check if RegisterTypeface is needed failed, err:%{public}d", err);
+            return false;
+        }
+        if (!reply2.ReadBool()) {
+            return true; // the hash exists on server, no need to resend full data
+        }
+    }
+
     RSMarshallingHelper::Marshalling(data, typeface);
+
     uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REGISTER_TYPEFACE);
     int32_t err = Remote()->SendRequest(code, data, reply, option);
     if (err != NO_ERROR) {
@@ -2726,6 +2799,27 @@ bool RSRenderServiceConnectionProxy::SetAncoForceDoDirect(bool direct)
         return result;
     } else {
         return RS_CONNECTION_ERROR;
+    }
+}
+
+void RSRenderServiceConnectionProxy::SetFreeMultiWindowStatus(bool enable)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    if (!data.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor())) {
+        ROSEN_LOGE("RSRenderServiceConnectionProxy::SetFreeMultiWindowStatus: write token err.");
+        return;
+    }
+    option.SetFlags(MessageOption::TF_ASYNC);
+    if (!data.WriteBool(enable)) {
+        ROSEN_LOGE("RSRenderServiceConnectionProxy::SetFreeMultiWindowStatus: write bool val err.");
+        return;
+    }
+    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_FREE_MULTI_WINDOW_STATUS);
+    int32_t err = Remote()->SendRequest(code, data, reply, option);
+    if (err != NO_ERROR) {
+        ROSEN_LOGE("RSRenderServiceConnectionProxy::SetFreeMultiWindowStatus: Send Request err.");
     }
 }
 

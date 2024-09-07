@@ -13,19 +13,21 @@
  * limitations under the License.
  */
 
+#include "pipeline/rs_uni_hwc_prevalidate_util.h"
+
 #include <dlfcn.h>
 #include <functional>
 #include <string>
 
-#include "common/rs_common_hook.h"
-#include "common/rs_obj_abs_geometry.h"
 #include "rs_base_render_util.h"
 #include "rs_uni_render_util.h"
+
+#include "common/rs_common_hook.h"
+#include "common/rs_obj_abs_geometry.h"
+#include "drawable/rs_display_render_node_drawable.h"
 #include "pipeline/rs_surface_render_node.h"
 #include "pipeline/rs_uifirst_manager.h"
-#include "pipeline/rs_uni_hwc_prevalidate_util.h"
 #include "platform/common/rs_log.h"
-#include "drawable/rs_display_render_node_drawable.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -47,6 +49,8 @@ RSUniHwcPrevalidateUtil::RSUniHwcPrevalidateUtil()
     if (preValidateFunc_ == nullptr) {
         RS_LOGW("[%{public}s_%{public}d]:load func failed, reason: %{public}s", __func__, __LINE__, dlerror());
         dlclose(preValidateHandle_);
+        preValidateHandle_ = nullptr;
+        return;
     }
     RS_LOGI("[%{public}s_%{public}d]:load success", __func__, __LINE__);
     loadSuccess = true;
@@ -56,6 +60,7 @@ RSUniHwcPrevalidateUtil::~RSUniHwcPrevalidateUtil()
 {
     if (preValidateHandle_) {
         dlclose(preValidateHandle_);
+        preValidateHandle_ = nullptr;
     }
 }
 
@@ -96,6 +101,11 @@ bool RSUniHwcPrevalidateUtil::CreateSurfaceNodeLayerInfo(uint32_t zorder,
         info.perFrameParameters["SourceCropTuning"] = std::vector<int8_t> {1};
     } else {
         info.perFrameParameters["SourceCropTuning"] = std::vector<int8_t> {0};
+    }
+
+    if (CheckIfDoArsrPre(node)) {
+        info.perFrameParameters["ArsrDoEnhance"] = std::vector<int8_t> {1};
+        node->SetArsrTag(true);
     }
     RS_LOGD_IF(DEBUG_PREVALIDATE, "RSUniHwcPrevalidateUtil::CreateSurfaceNodeLayerInfo %{public}s,"
         " %{public}" PRIu64 ", src: %{public}s, dst: %{public}s, z: %{public}" PRIu32 ","
@@ -303,6 +313,21 @@ void RSUniHwcPrevalidateUtil::CopyCldInfo(CldInfo src, RequestLayerInfo& info)
     info.cldInfo->exWidth = src.exWidth;
     info.cldInfo->exHeight = src.exHeight;
     info.cldInfo->baseColor = src.baseColor;
+}
+
+bool RSUniHwcPrevalidateUtil::CheckIfDoArsrPre(const RSSurfaceRenderNode::SharedPtr node)
+{
+    if (node->GetRSSurfaceHandler()->GetBuffer() == nullptr) {
+        return false;
+    }
+    static const std::unordered_set<std::string> videoLayers {
+        "xcomponentIdSurface",
+        "componentIdSurface",
+    };
+    if (IsYUVBufferFormat(node) || (videoLayers.count(node->GetName()) > 0)) {
+        return true;
+    }
+    return false;
 }
 } //Rosen
 } //OHOS

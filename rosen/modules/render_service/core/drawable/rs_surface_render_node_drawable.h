@@ -21,11 +21,7 @@
 #include <iconsumer_surface.h>
 #include <surface.h>
 #endif
-#ifdef NEW_RENDER_CONTEXT
-#include "rs_render_surface.h"
-#else
 #include "platform/drawing/rs_surface.h"
-#endif
 
 #include "common/rs_common_def.h"
 #include "drawable/rs_render_node_drawable.h"
@@ -52,7 +48,7 @@ public:
     static RSRenderNodeDrawable::Ptr OnGenerate(std::shared_ptr<const RSRenderNode> node);
     void OnDraw(Drawing::Canvas& canvas) override;
     void OnCapture(Drawing::Canvas& canvas) override;
-    bool CheckIfSurfaceSkipInMirror(const RSRenderThreadParams& uniParam, const RSSurfaceRenderParams& surfaceParams);
+    bool CheckIfSurfaceSkipInMirror(const RSSurfaceRenderParams& surfaceParams);
     void SetVirtualScreenWhiteListRootId(const std::unordered_set<NodeId>& whiteList, NodeId id);
     void ResetVirtualScreenWhiteListRootId(NodeId id);
 
@@ -117,7 +113,7 @@ public:
         std::function<void(std::shared_ptr<Drawing::Surface>&&,
         std::shared_ptr<Drawing::Surface>&&, uint32_t, uint32_t)>;
     void InitCacheSurface(Drawing::GPUContext* grContext, ClearCacheSurfaceFunc func = nullptr,
-        uint32_t threadIndex = UNI_MAIN_THREAD_INDEX);
+        uint32_t threadIndex = UNI_MAIN_THREAD_INDEX, bool isHdrOn = false);
 
     void ResetUifirst(bool isNotClearCompleteCacheSurface)
     {
@@ -182,26 +178,6 @@ public:
         return hasHdrPresent_;
     }
 
-    void SetDisplayNit(int32_t displayNit)
-    {
-        displayNit_ = displayNit;
-    }
-
-    int32_t GetDisplayNit() const
-    {
-        return displayNit_;
-    }
-
-    void SetBrightnessRatio(float brightnessRatio)
-    {
-        brightnessRatio_ = brightnessRatio;
-    }
-
-    float GetBrightnessRatio() const
-    {
-        return brightnessRatio_;
-    }
-
     ScreenId GetScreenId() const
     {
         return screenId_;
@@ -262,7 +238,7 @@ public:
 #endif
     bool IsHardwareEnabledTopSurface() const
     {
-        return nodeType_ == RSSurfaceNodeType::SELF_DRAWING_WINDOW_NODE && GetName() == "pointer window";
+        return surfaceNodeType_ == RSSurfaceNodeType::SELF_DRAWING_WINDOW_NODE && GetName() == "pointer window";
     }
 
     inline bool CheckCacheSurface()
@@ -273,7 +249,6 @@ private:
     explicit RSSurfaceRenderNodeDrawable(std::shared_ptr<const RSRenderNode>&& node);
     bool DealWithUIFirstCache(
         RSPaintFilterCanvas& canvas, RSSurfaceRenderParams& surfaceParams, RSRenderThreadParams& uniParams);
-    bool CheckCurFirstLevelCorrect() const;
     void OnGeneralProcess(RSPaintFilterCanvas& canvas, RSSurfaceRenderParams& surfaceParams, bool isSelfDrawingSurface);
     void CaptureSurface(RSPaintFilterCanvas& canvas, RSSurfaceRenderParams& surfaceParams);
 
@@ -286,9 +261,6 @@ private:
 
     bool DrawUIFirstCache(RSPaintFilterCanvas& rscanvas, bool canSkipWait);
     bool DrawUIFirstCacheWithStarting(RSPaintFilterCanvas& rscanvas, NodeId id);
-#ifdef USE_VIDEO_PROCESSING_ENGINE
-    void DealWithHdr(const RSSurfaceRenderParams& surfaceParams);
-#endif
 
     void DrawUIFirstDfx(RSPaintFilterCanvas& canvas, MultiThreadCacheType enableType,
         RSSurfaceRenderParams& surfaceParams, bool drawCacheSuccess);
@@ -310,15 +282,11 @@ private:
     void DrawBufferForRotationFixed(RSPaintFilterCanvas& canvas, RSSurfaceRenderParams& surfaceParams);
 
     std::string name_;
-    RSSurfaceNodeType nodeType_ = RSSurfaceNodeType::DEFAULT;
+    RSSurfaceNodeType surfaceNodeType_ = RSSurfaceNodeType::DEFAULT;
 #ifndef ROSEN_CROSS_PLATFORM
     sptr<IBufferConsumerListener> consumerListener_ = nullptr;
 #endif
-#ifdef NEW_RENDER_CONTEXT
-    std::shared_ptr<RSRenderSurface> surface_ = nullptr;
-#else
     std::shared_ptr<RSSurface> surface_ = nullptr;
-#endif
     bool surfaceCreated_ = false;
 
     // UIFIRST
@@ -344,8 +312,6 @@ private:
     NodePriorityType priority_ = NodePriorityType::MAIN_PRIORITY;
     bool hasHdrPresent_ = false;
     // hdr
-    int32_t displayNit_ = 500; // default sdr luminance
-    float brightnessRatio_ = 1.0f; // 1.of means no discount.
     GraphicColorGamut targetColorGamut_ = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
     ScreenId screenId_ = INVALID_SCREEN_ID;
     uint64_t frameCount_ = 0;

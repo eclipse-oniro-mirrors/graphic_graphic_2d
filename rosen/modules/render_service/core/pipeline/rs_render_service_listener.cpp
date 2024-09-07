@@ -60,6 +60,11 @@ void RSRenderServiceListener::OnBufferAvailable()
             " RT buffer available", node->GetId());
         node->NotifyRTBufferAvailable(node->GetIsTextureExportNode());
     }
+    if (node->IsLayerTop()) {
+        // Ensure that the compose task is completed within single frame
+        RSMainThread::Instance()->ForceRefreshForUni();
+        return;
+    }
     RSMainThread::Instance()->RequestNextVSync();
 }
 
@@ -138,6 +143,9 @@ void RSRenderServiceListener::OnTransformChange()
         ROSEN_LOGD("Node id %{public}" PRIu64 " set dirty, transform changed", node->GetId());
         node->SetContentDirty();
         node->SetDoDirectComposition(false);
+        if (node->GetRSSurfaceHandler() != nullptr) {
+            node->GetRSSurfaceHandler()->SetBufferTransformTypeChanged(true);
+        }
     });
 }
 } // namespace Rosen

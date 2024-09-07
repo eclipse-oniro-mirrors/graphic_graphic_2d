@@ -29,11 +29,7 @@
 #ifndef ROSEN_CROSS_PLATFORM
 #include "platform/drawing/rs_surface_converter.h"
 #endif
-#ifdef NEW_RENDER_CONTEXT
-#include "render_context_base.h"
-#else
 #include "render_context/render_context.h"
-#endif
 #include "transaction/rs_render_service_client.h"
 #include "transaction/rs_transaction_proxy.h"
 #include "ui/rs_hdr_manager.h"
@@ -277,6 +273,24 @@ void RSSurfaceNode::SetSkipLayer(bool isSkipLayer)
 bool RSSurfaceNode::GetSkipLayer() const
 {
     return isSkipLayer_;
+}
+
+void RSSurfaceNode::SetSnapshotSkipLayer(bool isSnapshotSkipLayer)
+{
+    isSnapshotSkipLayer_ = isSnapshotSkipLayer;
+    std::unique_ptr<RSCommand> command =
+        std::make_unique<RSSurfaceNodeSetSnapshotSkipLayer>(GetId(), isSnapshotSkipLayer);
+    auto transactionProxy = RSTransactionProxy::GetInstance();
+    if (transactionProxy != nullptr) {
+        transactionProxy->AddCommand(command, true);
+    }
+    ROSEN_LOGD("RSSurfaceNode::SetSnapshotSkipLayer, surfaceNodeId:[%" PRIu64 "] isSnapshotSkipLayer:%s", GetId(),
+        isSnapshotSkipLayer ? "true" : "false");
+}
+
+bool RSSurfaceNode::GetSnapshotSkipLayer() const
+{
+    return isSnapshotSkipLayer_;
 }
 
 void RSSurfaceNode::SetFingerprint(bool hasFingerprint)
@@ -779,7 +793,7 @@ void RSSurfaceNode::SetForceUIFirst(bool forceUIFirst)
     }
 }
 
-void RSSurfaceNode::SetAncoFlags(int32_t flags)
+void RSSurfaceNode::SetAncoFlags(uint32_t flags)
 {
     std::unique_ptr<RSCommand> command =
         std::make_unique<RSSurfaceNodeSetAncoFlags>(GetId(), flags);
@@ -815,6 +829,23 @@ void RSSurfaceNode::SetSkipDraw(bool skip)
 bool RSSurfaceNode::GetSkipDraw() const
 {
     return isSkipDraw_;
+}
+
+void RSSurfaceNode::SetLayerTop(const std::string& targetName, bool isTop)
+{
+    isLayerTop_ = isTop;
+    std::unique_ptr<RSCommand> command =
+        std::make_unique<RSSurfaceNodeSetLayerTop>(GetId(), targetName, isTop);
+    auto transactionProxy = RSTransactionProxy::GetInstance();
+    if (transactionProxy != nullptr) {
+        ROSEN_LOGD("SetLayerTop  RSSurfaceNode");
+        transactionProxy->AddCommand(command, true);
+    }
+}
+
+bool RSSurfaceNode::IsLayerTop() const
+{
+    return isLayerTop_;
 }
 
 void RSSurfaceNode::SetWatermark(const std::string& name, std::shared_ptr<Media::PixelMap> watermark)

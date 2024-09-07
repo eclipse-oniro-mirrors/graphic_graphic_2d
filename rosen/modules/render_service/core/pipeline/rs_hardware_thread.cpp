@@ -186,10 +186,11 @@ void RSHardwareThread::CommitAndReleaseLayers(OutputPtr output, const std::vecto
             startTimeNs = std::chrono::duration_cast<std::chrono::nanoseconds>(
                 std::chrono::steady_clock::now().time_since_epoch()).count();
         }
+        uint32_t currentRate = HgmCore::Instance().GetScreenCurrentRefreshRate(HgmCore::Instance().GetActiveScreenId());
         RS_TRACE_NAME_FMT("RSHardwareThread::CommitAndReleaseLayers rate: %d, now: %lu, size: %lu",
-            param.rate, param.frameTimestamp, layers.size());
+            currentRate, param.frameTimestamp, layers.size());
         RS_LOGD("RSHardwareThread::CommitAndReleaseLayers rate:%{public}d, now:%{public}" PRIu64 ", size:%{public}zu",
-            param.rate, param.frameTimestamp, layers.size());
+            currentRate, param.frameTimestamp, layers.size());
         ExecuteSwitchRefreshRate(param.rate);
         PerformSetActiveMode(output, param.frameTimestamp, param.constraintRelativeTime);
         AddRefreshRateCount();
@@ -316,6 +317,11 @@ void RSHardwareThread::ExecuteSwitchRefreshRate(uint32_t refreshRate)
     if (hgmCore.GetFrameRateMgr() == nullptr) {
         RS_LOGD("FrameRateMgr is null");
         return;
+    }
+    auto screenRefreshRateImme = hgmCore.GetScreenRefreshRateImme();
+    if (screenRefreshRateImme > 0) {
+        RS_LOGD("ExecuteSwitchRefreshRate:rate change: %{public}u -> %{public}u", refreshRate, screenRefreshRateImme);
+        refreshRate = screenRefreshRateImme;
     }
     ScreenId id = hgmCore.GetFrameRateMgr()->GetCurScreenId();
     if (refreshRate != hgmCore.GetScreenCurrentRefreshRate(id) || lastScreenId != id) {

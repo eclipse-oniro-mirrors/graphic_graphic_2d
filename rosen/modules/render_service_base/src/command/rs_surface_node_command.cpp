@@ -102,6 +102,13 @@ void SurfaceNodeCommandHelper::SetSkipLayer(RSContext& context, NodeId id, bool 
     }
 }
 
+void SurfaceNodeCommandHelper::SetSnapshotSkipLayer(RSContext& context, NodeId id, bool isSnapshotSkipLayer)
+{
+    if (auto node = context.GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(id)) {
+        node->SetSnapshotSkipLayer(isSnapshotSkipLayer);
+    }
+}
+
 void SurfaceNodeCommandHelper::SetFingerprint(RSContext& context, NodeId id, bool hasFingerprint)
 {
     if (auto node = context.GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(id)) {
@@ -201,7 +208,8 @@ void SurfaceNodeCommandHelper::AttachToDisplay(RSContext& context, NodeId nodeId
     nodeMap.TraverseDisplayNodes(
         [&surfaceRenderNode, &screenId](const std::shared_ptr<RSDisplayRenderNode>& displayRenderNode) {
             if (displayRenderNode == nullptr || displayRenderNode->GetScreenId() != screenId ||
-                displayRenderNode->GetBootAnimation() != surfaceRenderNode->GetBootAnimation()) {
+                displayRenderNode->GetBootAnimation() != surfaceRenderNode->GetBootAnimation() ||
+                !displayRenderNode->IsOnTheTree()) {
                 return;
             }
             displayRenderNode->AddChild(surfaceRenderNode);
@@ -271,7 +279,7 @@ void SurfaceNodeCommandHelper::SetForceUIFirst(RSContext& context, NodeId nodeId
     }
 }
 
-void SurfaceNodeCommandHelper::SetAncoFlags(RSContext& context, NodeId nodeId, int32_t flags)
+void SurfaceNodeCommandHelper::SetAncoFlags(RSContext& context, NodeId nodeId, uint32_t flags)
 {
     if (auto node = context.GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(nodeId)) {
         node->SetAncoFlags(flags);
@@ -306,6 +314,22 @@ void SurfaceNodeCommandHelper::SetWatermarkEnabled(RSContext& context, NodeId no
     if (auto node = context.GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(nodeId)) {
         node->SetWatermarkEnabled(name, isEnabled);
     }
+}
+
+void SurfaceNodeCommandHelper::SetLayerTop(RSContext& context, NodeId nodeId, std::string nodeIdStr, bool isTop)
+{
+    const auto& nodeMap = context.GetNodeMap();
+    nodeMap.TraverseSurfaceNodes(
+        [&nodeIdStr, &isTop](const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode) mutable {
+        if (surfaceNode == nullptr) {
+            return;
+        }
+        if ((surfaceNode->GetName() == nodeIdStr) &&
+            (surfaceNode->GetSurfaceNodeType() == RSSurfaceNodeType::SELF_DRAWING_NODE)) {
+            surfaceNode->SetLayerTop(isTop);
+            return;
+        }
+    });
 }
 } // namespace Rosen
 } // namespace OHOS

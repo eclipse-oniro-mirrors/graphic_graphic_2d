@@ -152,6 +152,11 @@ public:
         return isSkipLayer_;
     }
 
+    inline bool IsSnapshotSkipLayer() const
+    {
+        return isSnapshotSkipLayer_;
+    }
+
     inline bool IsLayerDirty() const
     {
         return dirtyType_.test(RSRenderParamsDirtyType::LAYER_INFO_DIRTY);
@@ -175,6 +180,9 @@ public:
 
     void SetDrawingCacheChanged(bool isChanged, bool lastFrameSynced);
     bool GetDrawingCacheChanged() const;
+
+    void SetNeedUpdateCache(bool needUpdateCache);
+    bool GetNeedUpdateCache() const;
 
     void SetDrawingCacheType(RSDrawingCacheType cacheType);
     RSDrawingCacheType GetDrawingCacheType() const;
@@ -212,13 +220,6 @@ public:
     {
         return startingWindowFlag_;
     }
-
-    void SetFirstLevelNode(NodeId firstLevelNodeId);
-    const NodeId& GetFirstLevelNodeId() const;
-    DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr GetFirstLevelNodeDrawable() const;
-    void SetUiFirstRootNode(NodeId uifirstRootNodeId);
-    const NodeId& GetUifirstRootNodeId() const;
-    DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr GetUiFirstRootNodeDrawable() const;
 
     // disable copy and move
     RSRenderParams(const RSRenderParams&) = delete;
@@ -334,9 +335,11 @@ private:
     bool childHasVisibleFilter_ = false;
     bool hasSandBox_ = false;
     bool isDrawingCacheChanged_ = false;
+    std::atomic_bool isNeedUpdateCache_ = false;
     bool drawingCacheIncludeProperty_ = false;
     bool isSecurityLayer_ = false;
     bool isSkipLayer_ = false;
+    bool isSnapshotSkipLayer_ = false;
     bool shouldPaint_ = false;
     bool contentEmpty_  = false;
     std::atomic_bool canvasDrawingNodeSurfaceChanged_ = false;
@@ -354,10 +357,6 @@ private:
     bool hasBlurFilter_ = false;
     SurfaceParam surfaceParams_;
     bool freezeFlag_ = false;
-    NodeId firstLevelNodeId_ = INVALID_NODEID;
-    DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr firstLevelNodeDrawable_ = {};
-    NodeId uifirstRootNodeId_ = INVALID_NODEID;
-    DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr uifirstRootNodeDrawable_ = {};
 };
 } // namespace OHOS::Rosen
 #endif // RENDER_SERVICE_BASE_PARAMS_RS_RENDER_PARAMS_H

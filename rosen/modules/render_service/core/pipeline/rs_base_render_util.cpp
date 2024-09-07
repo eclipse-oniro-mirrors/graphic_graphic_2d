@@ -935,18 +935,17 @@ Rect RSBaseRenderUtil::MergeBufferDamages(const std::vector<Rect>& damages)
     return {damage.left_, damage.top_, damage.width_, damage.height_};
 }
 
-bool RSBaseRenderUtil::ConsumeAndUpdateBuffer(
-    RSSurfaceHandler& surfaceHandler, const ControlBufferConsumeParam& param)
+bool RSBaseRenderUtil::ConsumeAndUpdateBuffer(RSSurfaceHandler& surfaceHandler,
+    const std::string& surfaceName, const bool& isDisplaySurface, const uint64_t& vsyncTimestamp)
 {
     if (surfaceHandler.GetAvailableBufferCount() <= 0) {
         // this node has no new buffer, try use cache.
         // if don't have cache, will not update and use old buffer.
         // display surface don't have cache, always use old buffer.
-        surfaceHandler.ConsumeAndUpdateBuffer(
-            surfaceHandler.GetBufferFromCache(param.vsyncTimestamp, param.surfaceName));
+        surfaceHandler.ConsumeAndUpdateBuffer(vsyncTimestamp, surfaceName);
         return true;
     }
-    auto consumer = surfaceHandler.GetConsumer();
+    const auto& consumer = surfaceHandler.GetConsumer();
     if (consumer == nullptr) {
         RS_LOGE("Consume and update buffer fail for consumer is nullptr");
         return false;
@@ -994,24 +993,23 @@ bool RSBaseRenderUtil::ConsumeAndUpdateBuffer(
         RS_LOGE("RsDebug surfaceHandler(id: %{public}" PRIu64 ") no buffer to consume", surfaceHandler.GetNodeId());
         return false;
     }
-    bool directConsume = param.isDisplaySurface || !RSUniRenderJudgement::IsUniRender() ||
+    bool directConsume = isDisplaySurface || !RSUniRenderJudgement::IsUniRender() ||
         !RSSystemParameters::GetControlBufferConsumeEnabled();
     RS_LOGD("RsDebug surfaceHandler(id: %{public}" PRIu64 ") AcquireBuffer success, "
             "directConsume[%{public}d], vysnc[%{public}" PRIu64 "], "
             "buffer[timestamp:%{public}" PRId64 ", seq:%{public}" PRIu32 "].",
-            surfaceHandler.GetNodeId(), directConsume, param.vsyncTimestamp,
+            surfaceHandler.GetNodeId(), directConsume, vsyncTimestamp,
             surfaceBuffer->timestamp, surfaceBuffer->buffer->GetSeqNum());
     RS_TRACE_NAME_FMT("surfaceHandler(id: %" PRIu64 ") AcquireBuffer success, "
             "directConsume[%d], vysnc[%" PRIu64 "], "
             "buffer[timestamp:%" PRId64 ", seq:%" PRIu32 "].",
-            surfaceHandler.GetNodeId(), directConsume, param.vsyncTimestamp,
+            surfaceHandler.GetNodeId(), directConsume, vsyncTimestamp,
             surfaceBuffer->timestamp, surfaceBuffer->buffer->GetSeqNum());
     if (directConsume) {
         surfaceHandler.ConsumeAndUpdateBuffer(*(surfaceBuffer.get()));
     } else {
-        surfaceHandler.CacheBuffer(*(surfaceBuffer.get()), param.surfaceName);
-        surfaceHandler.ConsumeAndUpdateBuffer(
-            surfaceHandler.GetBufferFromCache(param.vsyncTimestamp, param.surfaceName));
+        surfaceHandler.CacheBuffer(*(surfaceBuffer.get()), surfaceName);
+        surfaceHandler.ConsumeAndUpdateBuffer(vsyncTimestamp, surfaceName);
     }
     surfaceHandler.ReduceAvailableBuffer();
     DelayedSingleton<RSFrameRateVote>::GetInstance()->VideoFrameRateVote(surfaceHandler.GetNodeId(),
@@ -1126,20 +1124,51 @@ bool RSBaseRenderUtil::IsBufferValid(const sptr<SurfaceBuffer>& buffer)
     return true;
 }
 
-Drawing::Matrix RSBaseRenderUtil::GetSurfaceTransformMatrix(GraphicTransformType rotationTransform, const RectF& bounds)
+GraphicTransformType RSBaseRenderUtil::GetSurfaceBufferTransformType(
+    const sptr<IConsumerSurface>& consumer, const sptr<SurfaceBuffer>& buffer)
+{
+    auto transformType = GraphicTransformType::GRAPHIC_ROTATE_NONE;
+    if (consumer == nullptr || buffer == nullptr) {
+        return transformType;
+    }
+    if (consumer->GetSurfaceBufferTransformType(buffer, &transformType) != GSERROR_OK) {
+        RS_LOGE("RSBaseRenderUtil::GetSurfaceBufferTransformType GetSurfaceBufferTransformType failed");
+    }
+    return transformType;
+}
+
+Drawing::Matrix RSBaseRenderUtil::GetSurfaceTransformMatrix(
+    GraphicTransformType rotationTransform, const RectF &bounds, const RectF &bufferBounds, Gravity gravity)
 {
     Drawing::Matrix matrix;
     const float boundsWidth = bounds.GetWidth();
     const float boundsHeight = bounds.GetHeight();
+    const float bufferHeight = bufferBounds.GetHeight();
+    float heightAdjust = boundsHeight;
+
+    static std::unordered_set<Gravity> resizeGravities = {Gravity::RESIZE,
+        Gravity::RESIZE_ASPECT,
+        Gravity::RESIZE_ASPECT_TOP_LEFT,
+        Gravity::RESIZE_ASPECT_BOTTOM_RIGHT,
+        Gravity::RESIZE_ASPECT_FILL,
+        Gravity::RESIZE_ASPECT_FILL_TOP_LEFT,
+        Gravity::RESIZE_ASPECT_FILL_BOTTOM_RIGHT};
+    if (resizeGravities.find(gravity) != resizeGravities.end()) {
+        heightAdjust = boundsHeight;
+    } else if (bufferHeight > 0) {
+        heightAdjust = std::min(bufferHeight, boundsHeight);
+    }
+
     switch (rotationTransform) {
         case GraphicTransformType::GRAPHIC_ROTATE_90: {
-            matrix.PreTranslate(0, boundsHeight);
-            matrix.PreRotate(-90); // rotate 90 degrees anti-clockwise at last.
+            matrix.PreTranslate(0, heightAdjust);
+            matrix.PreRotate(-90);  // rotate 90 degrees anti-clockwise at last.
             break;
         }
         case GraphicTransformType::GRAPHIC_ROTATE_180: {
-            matrix.PreTranslate(boundsWidth, boundsHeight);
-            matrix.PreRotate(-180); // rotate 180 degrees anti-clockwise at last.
+            matrix.PreTranslate(boundsWidth, heightAdjust);
+            matrix.PreRotate(-180);  // rotate 180 degrees anti-clockwise at last.
+
             break;
         }
         case GraphicTransformType::GRAPHIC_ROTATE_270: {
@@ -1179,7 +1208,7 @@ Drawing::Matrix RSBaseRenderUtil::GetGravityMatrix(
 }
 
 void RSBaseRenderUtil::DealWithSurfaceRotationAndGravity(GraphicTransformType transform, Gravity gravity,
-    RectF localBounds, BufferDrawParam& params, RSSurfaceRenderParams* nodeParams)
+    RectF &localBounds, BufferDrawParam &params, RSSurfaceRenderParams *nodeParams)
 {
     // the surface can rotate itself.
     auto rotationTransform = GetRotateTransform(transform);
@@ -1189,9 +1218,22 @@ void RSBaseRenderUtil::DealWithSurfaceRotationAndGravity(GraphicTransformType tr
         int degree = RSUniRenderUtil::GetRotationDegreeFromMatrix(nodeParams->GetLayerInfo().matrix);
         extraRotation = degree - rotationDegree;
     }
+
     rotationTransform = static_cast<GraphicTransformType>(
         (rotationTransform + extraRotation / RS_ROTATION_90 + SCREEN_ROTATION_NUM) % SCREEN_ROTATION_NUM);
-    params.matrix.PreConcat(RSBaseRenderUtil::GetSurfaceTransformMatrix(rotationTransform, localBounds));
+
+    RectF bufferBounds = {0.0f, 0.0f, 0.0f, 0.0f};
+    if (params.buffer != nullptr) {
+        bufferBounds = {0.0f, 0.0f, params.buffer->GetSurfaceBufferWidth(), params.buffer->GetSurfaceBufferHeight()};
+        if (rotationTransform == GraphicTransformType::GRAPHIC_ROTATE_90 ||
+            rotationTransform == GraphicTransformType::GRAPHIC_ROTATE_270) {
+            std::swap(bufferBounds.width_, bufferBounds.height_);
+        }
+    }
+
+    params.matrix.PreConcat(
+        RSBaseRenderUtil::GetSurfaceTransformMatrix(rotationTransform, localBounds, bufferBounds, gravity));
+
     if (rotationTransform == GraphicTransformType::GRAPHIC_ROTATE_90 ||
         rotationTransform == GraphicTransformType::GRAPHIC_ROTATE_270) {
         // after rotate, we should swap dstRect and bound's width and height.
@@ -1212,7 +1254,7 @@ void RSBaseRenderUtil::FlipMatrix(GraphicTransformType transform, BufferDrawPara
     if (type != GraphicTransformType::GRAPHIC_FLIP_H && type != GraphicTransformType::GRAPHIC_FLIP_V) {
         return;
     }
-     
+
     const int angle = 180;
     Drawing::Camera3D camera3D;
     switch (type) {
