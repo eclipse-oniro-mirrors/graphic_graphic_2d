@@ -221,7 +221,7 @@ bool RSUnmarshalThread::ReportTransactionDataStatistics(pid_t pid,
     if (!transactionData) {
         return false;
     }
-    opCount += transactionData->GetCommandCount();
+    opCount = transactionData->GetCommandCount();
     auto& payload_temp = transactionData->GetPayload();
     for (auto& item_temp : payload_temp) {
         auto& cmd = std::get<2>(item_temp);
@@ -253,7 +253,8 @@ bool RSUnmarshalThread::ReportTransactionDataStatistics(pid_t pid,
     HiSysEventWrite(OHOS::HiviewDFX::HiSysEvent::Domain::GRAPHIC, TRANSACTION_REPORT_NAME,
         OHOS::HiviewDFX::HiSysEvent::EventType::STATISTIC, "PID", pid, "UID", uid,
         "BUNDLE_NAME", bundleName, "TRANSACTION_DATA_SIZE", totalCount);
-    RS_LOGW("TransactionDataStatistics pid[%d] uid[%d] bundleName[%s] opCount[%{public}zu] exceeded[%{public}d]",
+    RS_LOGW("TransactionDataStatistics pid[%{public}d] uid[%{public}d]"
+            " bundleName[%{public}s] opCount[%{public}zu] exceeded[%{public}d]",
         pid, uid, bundleName.c_str(), totalCount, totalCount > TRANSACTION_DATA_KILL_COUNT);
 
     bool terminateEnabled = RSSystemProperties::GetTransactionTerminateEnabled();
