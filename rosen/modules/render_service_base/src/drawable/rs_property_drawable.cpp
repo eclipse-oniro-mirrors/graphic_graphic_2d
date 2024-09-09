@@ -404,6 +404,7 @@ void RSFilterDrawable::ClearFilterCache()
 bool RSFilterDrawable::IsFilterCacheValidForOcclusion()
 {
     if (cacheManager_ == nullptr) {
+        ROSEN_LOGD("RSFilterDrawable::IsFilterCacheValidForOcclusion cacheManager not available");
         return false;
     }
 
