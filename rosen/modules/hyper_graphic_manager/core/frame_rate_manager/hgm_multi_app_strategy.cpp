@@ -131,9 +131,6 @@ void HgmMultiAppStrategy::CalcVote()
     UpdateStrategyByTouch(voteRes_.second, "", true);
     uniqueTouchInfo_ = nullptr;
 
-    HGM_LOGD("final apps res: %{public}d, [%{public}d, %{public}d]",
-        voteRes_.first, voteRes_.second.min, voteRes_.second.max);
-
     OnStrategyChange();
 }
 
