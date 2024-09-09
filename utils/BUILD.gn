@@ -66,7 +66,7 @@ ohos_shared_library("libgraphic_utils") {
   
   public_external_deps = [
     "graphic_2d:EGL",
-	"graphic_2d:GLESv3",
+    "graphic_2d:GLESv3",
   ]
 
   part_name = "graphic_2d"
