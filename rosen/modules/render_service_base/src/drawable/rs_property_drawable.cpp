@@ -403,6 +403,11 @@ void RSFilterDrawable::ClearFilterCache()
 // called after OnSync()
 bool RSFilterDrawable::IsFilterCacheValidForOcclusion()
 {
+    if (cacheManager_ == nullptr) {
+        ROSEN_LOGD("RSFilterDrawable::IsFilterCacheValidForOcclusion cacheManager not available");
+        return false;
+    }
+
     auto cacheType = cacheManager_->GetCachedType();
     RS_OPTIONAL_TRACE_NAME_FMT("RSFilterDrawable::IsFilterCacheValidForOcclusion cacheType:%d renderClearType_:%d",
         cacheType, renderClearType_);

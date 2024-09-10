@@ -380,6 +380,10 @@ HWTEST_F(RSPropertyDrawableTest, RSFilterDrawableTest011, TestSize.Level1)
     ASSERT_NE(filterDrawable, nullptr);
 
     auto &cacheManager = filterDrawable->cacheManager_;
+
+    cacheManager = nullptr;
+    EXPECT_FALSE(filterDrawable->IsFilterCacheValidForOcclusion());
+
     cacheManager = std::make_unique<RSFilterCacheManager>();
     ASSERT_NE(cacheManager, nullptr);
 
