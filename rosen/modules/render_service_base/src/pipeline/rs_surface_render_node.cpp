@@ -2962,32 +2962,14 @@ const std::unordered_map<NodeId, NodeId>& RSSurfaceRenderNode::GetSecUIExtension
     return secUIExtensionNodes_;
 }
 
-void RSSurfaceRenderNode::SetWatermark(const std::string& name, std::shared_ptr<Media::PixelMap> watermark)
-{
-    auto iter = watermarkHandles_.find(name);
-    if (iter == watermarkHandles_.end()) {
-        std::tie(iter, std::ignore) = watermarkHandles_.insert({name, {false, nullptr}});
-    }
-    (iter->second).second = watermark;
-}
-
-void RSSurfaceRenderNode::SetWatermarkEnabled(const std::string& name, bool isEnabled)
-{
-    auto iter = watermarkHandles_.find(name);
-    if (iter == watermarkHandles_.end()) {
-        return;
-    }
-    (iter->second).first = isEnabled;
-}
-
-std::map<std::string, std::pair<bool, std::shared_ptr<Media::PixelMap>>> RSSurfaceRenderNode::GetWatermark() const
+const std::unordered_map<std::string, bool>& RSSurfaceRenderNode::GetWatermark() const
 {
     return watermarkHandles_;
 }
 
-size_t RSSurfaceRenderNode::GetWatermarkSize() const
+bool RSSurfaceRenderNode::IsWatermarkEmpty() const
 {
-    return watermarkHandles_.size();
+    return watermarkHandles_.empty();
 }
 
 void RSSurfaceRenderNode::SetSdrNit(int32_t sdrNit)
@@ -3025,6 +3007,18 @@ void RSSurfaceRenderNode::SetRSWindowMode(RSWindowMode mode)
 RSWindowMode RSSurfaceRenderNode::GetRSWindowMode() const
 {
     return windowMode_;
+}
+
+void RSSurfaceRenderNode::SetWatermarkEnabled(const std::string& name, bool isEnabled)
+{
+    if (isEnabled) {
+        RS_LOGI("RSSurfaceRenderNode::SetWatermarkEnabled[%{public}d], Name:%{public}s", isEnabled, name.c_str());
+    }
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
+    if (surfaceParams) {
+        surfaceParams->SetWatermarkEnabled(name, isEnabled);
+    }
+    AddToPendingSyncList();
 }
 } // namespace Rosen
 } // namespace OHOS

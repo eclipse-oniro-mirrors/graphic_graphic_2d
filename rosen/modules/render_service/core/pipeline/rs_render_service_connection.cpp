@@ -471,6 +471,15 @@ int32_t RSRenderServiceConnection::SetFocusAppInfo(
     ).get();
 }
 
+bool RSRenderServiceConnection::SetWatermark(const std::string& name, std::shared_ptr<Media::PixelMap> watermark)
+{
+    if (!mainThread_) {
+        return false;
+    }
+    mainThread_->SetWatermark(name, watermark);
+    return true;
+}
+
 ScreenId RSRenderServiceConnection::GetDefaultScreenId()
 {
     if (!screenManager_) {

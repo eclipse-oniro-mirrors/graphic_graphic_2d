@@ -153,6 +153,10 @@ bool RSIRenderServiceConnectionInterfaceCodeAccessVerifier::IsExclusiveVerificat
             hasPermission = IsSystemCalling(codeEnumTypeName_ + "::SET_SCREEN_GAMUT");
             break;
         }
+        case static_cast<CodeUnderlyingType>(CodeEnumType::SET_WATERMARK): {
+            hasPermission = IsSystemCalling(codeEnumTypeName_ + "::SET_WATERMARK");
+            break;
+        }
         case static_cast<CodeUnderlyingType>(CodeEnumType::SET_SCREEN_GAMUT_MAP): {
             hasPermission = IsSystemCalling(codeEnumTypeName_ + "::SET_SCREEN_GAMUT_MAP");
             break;

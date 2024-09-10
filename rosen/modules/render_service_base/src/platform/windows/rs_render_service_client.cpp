@@ -48,6 +48,11 @@ std::vector<MemoryGraphic> RSRenderServiceClient::GetMemoryGraphics()
     return {};
 }
 
+bool RSRenderServiceClient::SetWatermark(const std::string& name, std::shared_ptr<Media::PixelMap> watermark)
+{
+    return false;
+}
+
 bool RSRenderServiceClient::GetTotalAppMemSize(float& cpuMemSize, float& gpuMemSize)
 {
     return {};

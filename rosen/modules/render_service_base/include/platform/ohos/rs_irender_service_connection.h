@@ -92,6 +92,8 @@ public:
 
     virtual int32_t SetVirtualScreenBlackList(ScreenId id, std::vector<NodeId>& blackListVector) = 0;
 
+    virtual bool SetWatermark(const std::string& name, std::shared_ptr<Media::PixelMap> watermark) = 0;
+
     virtual int32_t SetVirtualScreenSecurityExemptionList(
         ScreenId id, const std::vector<NodeId>& securityExemptionList) = 0;
 

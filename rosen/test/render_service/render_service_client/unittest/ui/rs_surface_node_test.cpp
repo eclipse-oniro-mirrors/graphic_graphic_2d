@@ -325,6 +325,20 @@ HWTEST_F(RSSurfaceNodeTest, SetandGetBoundsHeight005, TestSize.Level1)
 }
 
 /**
+ * @tc.name: SetWatermarkEnabled
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSSurfaceNodeTest, SetWatermarkEnabled001, TestSize.Level1)
+{
+    RSSurfaceNodeConfig c;
+    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
+    std::string waterMark = "watermark";
+    surfaceNode->SetWatermarkEnabled(waterMark, true);
+    surfaceNode->SetWatermarkEnabled(waterMark, false);
+}
+
+/**
  * @tc.name: SetSecurityLayer001
  * @tc.desc:
  * @tc.type:FUNC

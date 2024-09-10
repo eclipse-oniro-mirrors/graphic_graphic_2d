@@ -95,6 +95,7 @@ enum class RSIRenderServiceConnectionInterfaceCode : CodeUnderlyingType {
     SET_APP_WINDOW_NUM,
     SET_SYSTEM_ANIMATED_SCENES,
     SHOW_WATERMARK,
+    SET_WATERMARK,
     RESIZE_VIRTUAL_SCREEN,
     GET_MEMORY_GRAPHIC,
     GET_MEMORY_GRAPHICS,
