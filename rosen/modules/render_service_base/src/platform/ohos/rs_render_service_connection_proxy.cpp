@@ -2410,6 +2410,26 @@ bool RSRenderServiceConnectionProxy::SetSystemAnimatedScenes(SystemAnimatedScene
     return result;
 }
 
+bool RSRenderServiceConnectionProxy::SetWatermark(const std::string& name, std::shared_ptr<Media::PixelMap> watermark)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    if (!data.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor())) {
+        return false;
+    }
+    option.SetFlags(MessageOption::TF_ASYNC);
+    data.WriteString(name);
+    data.WriteParcelable(watermark.get());
+    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_WATERMARK);
+    int32_t err = Remote()->SendRequest(code, data, reply, option);
+    if (err != NO_ERROR) {
+        ROSEN_LOGE("RSRenderServiceConnectionProxy::SetWatermark: Send Request err.");
+        return false;
+    }
+    return true;
+}
+
 void RSRenderServiceConnectionProxy::ShowWatermark(const std::shared_ptr<Media::PixelMap> &watermarkImg, bool isShow)
 {
     if (watermarkImg == nullptr) {

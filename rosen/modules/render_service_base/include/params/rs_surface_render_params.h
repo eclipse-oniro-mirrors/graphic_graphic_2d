@@ -18,6 +18,7 @@
 
 #include <memory>
 #include <string>
+#include <unordered_map>
 
 #include "common/rs_occlusion_region.h"
 #include "drawable/rs_render_node_drawable_adapter.h"
@@ -86,7 +87,7 @@ public:
         auto node = ancestorDisplayNode.lock();
         ancestorDisplayDrawable_ = node ? node->GetRenderDrawable() : nullptr;
     }
-  
+
     RSRenderNode::WeakPtr GetAncestorDisplayNode() const
     {
         return ancestorDisplayNode_;
@@ -355,10 +356,9 @@ public:
 
     bool IsVisibleDirtyRegionEmpty(const Drawing::Region curSurfaceDrawRegion) const;
     
-    void SetWatermark(const std::string& name, std::shared_ptr<Media::PixelMap> watermark);
     void SetWatermarkEnabled(const std::string& name, bool isEnabled);
-    std::map<std::string, std::pair<bool, std::shared_ptr<Media::PixelMap>>> GetWatermark() const;
-    size_t GetWatermarkSize() const;
+    const std::unordered_map<std::string, bool>& GetWatermarksEnabled() const;
+    bool IsWatermarkEmpty() const;
 
     void SetPreScalingMode(ScalingMode scalingMode) override
     {
@@ -557,7 +557,7 @@ private:
     bool needOffscreen_ = false;
     bool layerCreated_ = false;
     int32_t layerSource_ = 0;
-    std::map<std::string, std::pair<bool, std::shared_ptr<Media::PixelMap>>> watermarkHandles_ = {};
+    std::unordered_map<std::string, bool> watermarkHandles_ = {};
 
     Drawing::Matrix totalMatrix_;
     float globalAlpha_ = 1.0f;

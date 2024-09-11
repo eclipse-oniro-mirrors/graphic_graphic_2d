@@ -2112,6 +2112,14 @@ void RSMainThread::Render()
     }
     if (isUniRender_) {
         renderThreadParams_->SetWatermark(watermarkFlag_, watermarkImg_);
+        {
+            std::lock_guard<std::mutex> lock(watermarkMutex_);
+            if (surfaceNodeWatermarksChanged_) {
+                renderThreadParams_->SetWatermarks(surfaceNodeWatermarks_);
+                surfaceNodeWatermarksChanged_ = false;
+            }
+        }
+        
         renderThreadParams_->SetCurtainScreenUsingStatus(isCurtainScreenOn_);
         UniRender(rootNode);
         frameCount_++;
@@ -3736,6 +3744,13 @@ bool RSMainThread::IsOcclusionNodesNeedSync(NodeId id)
     }
 
     return needSync;
+}
+
+void RSMainThread::SetWatermark(const std::string& name, std::shared_ptr<Media::PixelMap> watermark)
+{
+    std::lock_guard<std::mutex> lock(watermarkMutex_);
+    surfaceNodeWatermarks_[name] = watermark;
+    surfaceNodeWatermarksChanged_ = true;
 }
 
 void RSMainThread::ShowWatermark(const std::shared_ptr<Media::PixelMap> &watermarkImg, bool flag)

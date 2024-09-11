@@ -331,6 +331,16 @@ int32_t RSRenderServiceClient::SetVirtualScreenBlackList(ScreenId id, std::vecto
     return renderService->SetVirtualScreenBlackList(id, blackListVector);
 }
 
+bool RSRenderServiceClient::SetWatermark(const std::string& name, std::shared_ptr<Media::PixelMap> watermark)
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService == nullptr) {
+        return false;
+    }
+
+    return renderService->SetWatermark(name, watermark);
+}
+
 int32_t RSRenderServiceClient::SetVirtualScreenSecurityExemptionList(
     ScreenId id,
     const std::vector<NodeId>& securityExemptionList)

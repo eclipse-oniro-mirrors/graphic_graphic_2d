@@ -126,6 +126,14 @@ int32_t RSInterfaces::SetPointerColorInversionEnabled(bool enable)
     }
     return renderServiceClient_->SetPointerColorInversionEnabled(enable);
 }
+
+bool RSInterfaces::SetWatermark(const std::string& name, std::shared_ptr<Media::PixelMap> watermark)
+{
+    if (renderServiceClient_ == nullptr) {
+        return false;
+    }
+    return renderServiceClient_->SetWatermark(name, watermark);
+}
  
 int32_t RSInterfaces::RegisterPointerLuminanceChangeCallback(const PointerLuminanceChangeCallback &callback)
 {

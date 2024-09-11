@@ -372,32 +372,20 @@ bool RSSurfaceRenderParams::IsLayerTop() const
     return isLayerTop_;
 }
 
-void RSSurfaceRenderParams::SetWatermark(const std::string& name, std::shared_ptr<Media::PixelMap> watermark)
-{
-    auto iter = watermarkHandles_.find(name);
-    if (iter == watermarkHandles_.end()) {
-        std::tie(iter, std::ignore) = watermarkHandles_.insert({name, {false, nullptr}});
-    }
-    (iter->second).second = watermark;
-}
-
 void RSSurfaceRenderParams::SetWatermarkEnabled(const std::string& name, bool isEnabled)
 {
-    auto iter = watermarkHandles_.find(name);
-    if (iter == watermarkHandles_.end()) {
-        return;
-    }
-    (iter->second).first = isEnabled;
+    watermarkHandles_[name] = isEnabled;
+    needSync_ = true;
 }
 
-std::map<std::string, std::pair<bool, std::shared_ptr<Media::PixelMap>>> RSSurfaceRenderParams::GetWatermark() const
+const std::unordered_map<std::string, bool>& RSSurfaceRenderParams::GetWatermarksEnabled() const
 {
     return watermarkHandles_;
 }
 
-size_t RSSurfaceRenderParams::GetWatermarkSize() const
+bool RSSurfaceRenderParams::IsWatermarkEmpty() const
 {
-    return watermarkHandles_.size();
+    return watermarkHandles_.empty();
 }
 
 void RSSurfaceRenderParams::OnSync(const std::unique_ptr<RSRenderParams>& target)
@@ -489,6 +477,7 @@ void RSSurfaceRenderParams::OnSync(const std::unique_ptr<RSRenderParams>& target
     targetSurfaceParams->sdrNit_ = sdrNit_;
     targetSurfaceParams->displayNit_ = displayNit_;
     targetSurfaceParams->brightnessRatio_ = brightnessRatio_;
+    targetSurfaceParams->watermarkHandles_ = watermarkHandles_;
     RSRenderParams::OnSync(target);
 }
 

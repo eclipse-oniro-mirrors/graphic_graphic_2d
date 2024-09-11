@@ -113,20 +113,28 @@ void RSSurfaceRenderNodeDrawable::OnGeneralProcess(
     // 5. Draw foreground of this node by the main canvas.
     DrawForeground(canvas, bounds);
 
-    if (surfaceParams.GetWatermarkSize() > 0) {
-        DrawWatermarkIfNeed(canvas, surfaceParams);
-    }
+    DrawWatermark(canvas, surfaceParams);
 }
 
-void RSSurfaceRenderNodeDrawable::DrawWatermarkIfNeed(RSPaintFilterCanvas& canvas, const RSSurfaceRenderParams& params)
+void RSSurfaceRenderNodeDrawable::DrawWatermark(RSPaintFilterCanvas& canvas, const RSSurfaceRenderParams& params)
 {
-    auto surfaceRect = params.GetBounds();
-    if (surfaceRect.GetWidth() == 0 || surfaceRect.GetHeight() == 0) {
+    if (params.IsWatermarkEmpty()) {
+        RS_LOGE("SurfaceNodeDrawable DrawWatermark Name:%{public}s Id:%{public}" PRIu64 " water mark count is zero",
+            GetName().c_str(), params.GetId());
         return;
     }
-    for (auto& [name, pixelMapInfo] : params.GetWatermark()) {
-        auto [isEnabled, watermark] = pixelMapInfo;
-        if (!isEnabled || !watermark) {
+    auto& renderThreadParams = RSUniRenderThread::Instance().GetRSRenderThreadParams();
+    if (!renderThreadParams) {
+        RS_LOGE("SurfaceNodeDrawable DrawWatermark renderThreadParams is nullptr");
+        return;
+    }
+    auto surfaceRect = params.GetBounds();
+    for (auto& [name, isEnabled] : params.GetWatermarksEnabled()) {
+        if (!isEnabled) {
+            continue;
+        }
+        auto watermark = renderThreadParams->GetWatermark(name);
+        if (!watermark) {
             continue;
         }
         auto imagePtr = RSPixelMapUtil::ExtractDrawingImage(watermark);

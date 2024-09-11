@@ -215,6 +215,9 @@ public:
     void SetAppWindowNum(uint32_t num);
     bool SetSystemAnimatedScenes(SystemAnimatedScenes systemAnimatedScenes);
     SystemAnimatedScenes GetSystemAnimatedScenes();
+    // Save marks, and use it for SurfaceNodes later.
+    void SetWatermark(const std::string& name, std::shared_ptr<Media::PixelMap> watermark);
+    // Save marks, and use it for DisplayNode later.
     void ShowWatermark(const std::shared_ptr<Media::PixelMap> &watermarkImg, bool flag);
     void SetIsCachedSurfaceUpdated(bool isCachedSurfaceUpdated);
     pid_t GetDesktopPidForRotationScene() const;
@@ -614,6 +617,9 @@ private:
     std::mutex nodeTreeDumpMutex_;
     std::condition_variable nodeTreeDumpCondVar_;
     std::unordered_map<uint32_t, NodeTreeDumpTask> nodeTreeDumpTasks_;
+
+    bool surfaceNodeWatermarksChanged_ = false;
+    std::unordered_map<std::string, std::shared_ptr<Media::PixelMap>> surfaceNodeWatermarks_;
 
     // used for watermark
     std::mutex watermarkMutex_;
