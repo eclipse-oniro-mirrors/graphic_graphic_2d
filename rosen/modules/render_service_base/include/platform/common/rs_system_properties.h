@@ -228,6 +228,7 @@ public:
     static bool GetImageGpuResourceCacheEnable(int width, int height);
     static bool GetSnapshotWithDMAEnabled();
     static bool GetDrmEnabled();
+    static bool GetSurfaceNodeWatermarkEnabled();
     static bool IsPhoneType();
     static bool IsTabletType();
     static bool IsPcType();

@@ -104,6 +104,7 @@ static constexpr std::array descriptorCheckList = {
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REGISTER_OCCLUSION_CHANGE_CALLBACK),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_APP_WINDOW_NUM),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_SYSTEM_ANIMATED_SCENES),
+    static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_WATERMARK),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SHOW_WATERMARK),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::RESIZE_VIRTUAL_SCREEN),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_MEMORY_GRAPHIC),
@@ -302,14 +303,6 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             }
             RS_TRACE_NAME_FMT("Recv Parcel Size:%zu, fdCnt:%zu", data.GetDataSize(), data.GetOffsetsSize());
             static bool isUniRender = RSUniRenderJudgement::IsUniRender();
-            if (isUniRender) {
-                bool shouldDrop = RSUnmarshalThread::Instance().ReportTransactionDataStatistics(
-                    callingPid, data.GetDataSize(), isNonSystemAppCalling);
-                if (shouldDrop) {
-                    RS_LOGW("RSRenderServiceConnectionStub::COMMIT_TRANSACTION data droped");
-                    return ERR_TRANSACTION_FAILED;
-                }
-            }
             std::shared_ptr<MessageParcel> parsedParcel;
             if (data.ReadInt32() == 0) { // indicate normal parcel
                 if (isUniRender) {
@@ -1437,6 +1430,16 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             if (!reply.WriteBool(result)) {
                 ret = ERR_INVALID_REPLY;
             }
+            break;
+        }
+        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_WATERMARK): {
+            if (!RSSystemProperties::GetSurfaceNodeWatermarkEnabled()) {
+                RS_LOGI("Current disenable water mark");
+                break;
+            }
+            std::string name = data.ReadString();
+            auto watermark = std::shared_ptr<Media::PixelMap>(data.ReadParcelable<Media::PixelMap>());
+            SetWatermark(name, watermark);
             break;
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SHOW_WATERMARK): {

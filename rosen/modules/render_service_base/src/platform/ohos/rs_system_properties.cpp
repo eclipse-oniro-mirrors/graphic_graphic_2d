@@ -463,6 +463,13 @@ ParallelRenderingType RSSystemProperties::GetParallelRenderingEnabled()
     return systemPropertieType;
 }
 
+bool RSSystemProperties::GetSurfaceNodeWatermarkEnabled()
+{
+    static bool watermark =
+        std::atoi((system::GetParameter("persist.rosen.watermark.enabled", "1")).c_str()) != 0;
+    return watermark;
+}
+
 HgmRefreshRates RSSystemProperties::GetHgmRefreshRatesEnabled()
 {
     static CachedHandle g_Handle = CachedParameterCreate("rosen.sethgmrefreshrate.enabled", "0");

@@ -151,6 +151,8 @@ public:
 
     int32_t SetCastScreenEnableSkipWindow(ScreenId id, bool enable);
 
+    bool SetWatermark(const std::string& name, std::shared_ptr<Media::PixelMap> watermark);
+
     void RemoveVirtualScreen(ScreenId id);
 
 #ifdef OHOS_BUILD_ENABLE_MAGICCURSOR

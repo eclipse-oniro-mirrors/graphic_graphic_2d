@@ -315,6 +315,8 @@ void RSRenderNode::RemoveChild(SharedPtr child, bool skipTransition)
     if (child->GetBootAnimation()) {
         SetContainBootAnimation(false);
     }
+    // When a child node is deleted, if the parent node has already been removed from the tree,
+    // then clear fullChildrenList_ and RSChildrenDrawable of the parent node; otherwise, it may cause a memory leak.
     if (!isOnTheTree_) {
         std::atomic_store_explicit(&fullChildrenList_, EmptyChildrenList, std::memory_order_release);
         drawableVec_[static_cast<int8_t>(RSDrawableSlot::CHILDREN)].reset();
@@ -1754,8 +1756,8 @@ void RSRenderNode::MapAndUpdateChildrenRect()
         auto invertAbsParentMatrix = Drawing::Matrix();
         if (sandbox.has_value() && sharedTransitionParam_ &&
             parentGeoPtr->GetAbsMatrix().Invert(invertAbsParentMatrix)) {
-            auto absChildMatrix = geoPtr->GetAbsMatrix();
-            childRelativeToParentMatrix = absChildMatrix * invertAbsParentMatrix;
+            childRelativeToParentMatrix = geoPtr->GetAbsMatrix();
+            childRelativeToParentMatrix.PostConcat(invertAbsParentMatrix);
         } else {
             childRelativeToParentMatrix = geoPtr->GetMatrix();
         }

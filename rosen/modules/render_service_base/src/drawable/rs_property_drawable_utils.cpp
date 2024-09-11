@@ -792,24 +792,32 @@ void RSPropertyDrawableUtils::DrawPixelStretch(Drawing::Canvas* canvas, const st
     Drawing::Matrix worldToLocalMat;
     if (!canvas->GetTotalMatrix().Invert(worldToLocalMat)) {
         ROSEN_LOGE("RSPropertyDrawableUtils::DrawPixelStretch get invert matrix failed.");
+        return;
     }
-    Drawing::Rect localClipBounds;
-    canvas->Save();
-    canvas->ClipRect(Rect2DrawingRect(boundsRect), Drawing::ClipOp::INTERSECT, false);
-    auto tmpBounds = canvas->GetDeviceClipBounds();
+
+    // convert local coord to world coord
+    Drawing::Rect tmpBounds;
+    auto bounds = Rect2DrawingRect(boundsRect);
+    if (!canvas->GetTotalMatrix().MapRect(tmpBounds, bounds)) {
+        ROSEN_LOGE("RSPropertyDrawableUtils::DrawPixelStretch map rect failed.");
+        return;
+    }
     RS_OPTIONAL_TRACE_NAME_FMT_LEVEL(TRACE_LEVEL_TWO,
         "RSPropertyDrawableUtils::DrawPixelStretch, tmpBounds: %s", tmpBounds.ToString().c_str());
-    canvas->Restore();
+
     Drawing::Rect clipBounds(
         tmpBounds.GetLeft(), tmpBounds.GetTop(), tmpBounds.GetRight() - 1, tmpBounds.GetBottom() - 1);
     Drawing::Rect fClipBounds(clipBounds.GetLeft(), clipBounds.GetTop(), clipBounds.GetRight(), clipBounds.GetBottom());
 
+    Drawing::Rect localClipBounds;
     if (!worldToLocalMat.MapRect(localClipBounds, fClipBounds)) {
         ROSEN_LOGE("RSPropertyDrawableUtils::DrawPixelStretch map rect failed.");
+        return;
     }
-    auto bounds = Rect2DrawingRect(boundsRect);
+
     if (!bounds.Intersect(localClipBounds)) {
         ROSEN_LOGE("RSPropertyDrawableUtils::DrawPixelStretch intersect clipbounds failed");
+        return;
     }
 
     auto scaledBounds = Drawing::Rect(bounds.GetLeft() - pixelStretch->x_, bounds.GetTop() - pixelStretch->y_,

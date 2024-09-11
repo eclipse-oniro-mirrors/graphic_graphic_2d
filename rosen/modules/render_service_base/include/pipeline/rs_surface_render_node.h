@@ -1224,10 +1224,9 @@ public:
         dirtyStatus_ = containerDirty ? NodeDirty::DIRTY : dirtyStatus_;
     }
 
-    void SetWatermark(const std::string& name, std::shared_ptr<Media::PixelMap> watermark);
     void SetWatermarkEnabled(const std::string& name, bool isEnabled);
-    std::map<std::string, std::pair<bool, std::shared_ptr<Media::PixelMap>>> GetWatermark() const;
-    size_t GetWatermarkSize() const;
+    const std::unordered_map<std::string, bool>& GetWatermark() const;
+    bool IsWatermarkEmpty() const;
     bool GetIsIntersectWithRoundCorner() const
     {
         return isIntersectWithRoundCorner_;
@@ -1514,7 +1513,7 @@ private:
     bool isSkipDraw_ = false;
 
     bool isHardwareForcedByBackgroundAlpha_ = false;
-    std::map<std::string, std::pair<bool, std::shared_ptr<Media::PixelMap>>> watermarkHandles_ = {};
+    std::unordered_map<std::string, bool> watermarkHandles_ = {};
 
     bool arsrTag_ = true;
 

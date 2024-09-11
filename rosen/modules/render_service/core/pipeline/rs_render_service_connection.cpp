@@ -49,6 +49,7 @@
 #include "pipeline/rs_uifirst_manager.h"
 #include "pipeline/rs_uni_render_judgement.h"
 #include "pipeline/rs_uni_ui_capture.h"
+#include "pipeline/rs_unmarshal_thread.h"
 #include "pixel_map_from_surface.h"
 #include "platform/common/rs_log.h"
 #include "platform/common/rs_system_properties.h"
@@ -267,6 +268,16 @@ void RSRenderServiceConnection::CommitTransaction(std::unique_ptr<RSTransactionD
     if (!mainThread_) {
         return;
     }
+    pid_t callingPid = GetCallingPid();
+    bool isTokenTypeValid = true;
+    bool isNonSystemAppCalling = false;
+    RSInterfaceCodeAccessVerifierBase::GetAccessType(isTokenTypeValid, isNonSystemAppCalling);
+    bool shouldDrop = RSUnmarshalThread::Instance().ReportTransactionDataStatistics(
+        callingPid, transactionData.get(), isNonSystemAppCalling);
+    if (shouldDrop) {
+        RS_LOGW("RSRenderServiceConnection::CommitTransaction data droped");
+        return;
+    }
     bool isProcessBySingleFrame = mainThread_->IsNeedProcessBySingleFrameComposer(transactionData);
     if (isProcessBySingleFrame) {
         mainThread_->ProcessDataBySingleFrameComposer(transactionData);
@@ -450,19 +461,31 @@ std::shared_ptr<Media::PixelMap> RSRenderServiceConnection::CreatePixelMapFromSu
 int32_t RSRenderServiceConnection::SetFocusAppInfo(
     int32_t pid, int32_t uid, const std::string &bundleName, const std::string &abilityName, uint64_t focusNodeId)
 {
-    return RSMainThread::Instance()->ScheduleTask(
-        [=, weakThis = wptr<RSRenderServiceConnection>(this)]() -> int32_t {
+    if (mainThread_ == nullptr) {
+        return INVALID_ARGUMENTS;
+    }
+    mainThread_->ScheduleTask(
+        [=, weakThis = wptr<RSRenderServiceConnection>(this)]() {
             sptr<RSRenderServiceConnection> connection = weakThis.promote();
             if (connection == nullptr) {
-                return RS_CONNECTION_ERROR;
+                return;
             }
             if (connection->mainThread_ == nullptr) {
-                return INVALID_ARGUMENTS;
+                return;
             }
             connection->mainThread_->SetFocusAppInfo(pid, uid, bundleName, abilityName, focusNodeId);
-            return SUCCESS;
         }
-    ).get();
+    );
+    return SUCCESS;
+}
+
+bool RSRenderServiceConnection::SetWatermark(const std::string& name, std::shared_ptr<Media::PixelMap> watermark)
+{
+    if (!mainThread_) {
+        return false;
+    }
+    mainThread_->SetWatermark(name, watermark);
+    return true;
 }
 
 ScreenId RSRenderServiceConnection::GetDefaultScreenId()
