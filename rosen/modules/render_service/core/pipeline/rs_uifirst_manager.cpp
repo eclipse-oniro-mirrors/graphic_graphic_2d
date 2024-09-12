@@ -643,14 +643,14 @@ CacheProcessStatus& RSUifirstManager::GetUifirstCachedState(NodeId id)
     return curRootIdState;
 }
 
-bool RSUifirstManager::CollectSkipSyncNodeWithDrawableState(const std::shared_ptr<RSRenderNode> &node, bool& canSkip)
+RSUifirstManager::SkipSyncState RSUifirstManager::CollectSkipSyncNodeWithDrawableState(
+    const std::shared_ptr<RSRenderNode>& node)
 {
     auto drawable = node->GetRenderDrawable();
     if (UNLIKELY(!drawable || !drawable->GetRenderParams())) {
         RS_LOGE("RSUifirstManager::CollectSkipSyncNode drawable/params nullptr");
         // must not be in the DOING state with the invalid drawable.
-        canSkip = false;
-        return true;
+        return SkipSyncState::STATE_NOT_SKIP;
     }
     auto& params = drawable->GetRenderParams();
     // if node's UifirstRootNodeId is valid (e.g. ArkTsCard), use it first
@@ -670,10 +670,9 @@ bool RSUifirstManager::CollectSkipSyncNodeWithDrawableState(const std::shared_pt
         RS_OPTIONAL_TRACE_NAME_FMT("%s %" PRIu64 " root%" PRIu64,
             isUifirstRootNode ? "set partial_sync" : "CollectSkipSyncNode", node->GetId(), uifirstRootId);
         SetUifirstSkipPartialSync(node, isUifirstRootNode);
-        canSkip = !isUifirstRootNode;
-        return true;
+        return isUifirstRootNode ? SkipSyncState::STATE_NOT_SKIP : SkipSyncState::STATE_NEED_SKIP;
     }
-    return false;
+    return SkipSyncState::STATE_NEED_CHECK;
 }
 
 bool RSUifirstManager::CollectSkipSyncNode(const std::shared_ptr<RSRenderNode> &node)
@@ -685,9 +684,10 @@ bool RSUifirstManager::CollectSkipSyncNode(const std::shared_ptr<RSRenderNode> &
         pendingPostCardNodes_.find(node->GetId()) != pendingPostCardNodes_.end()) {
         node->SetUifirstSyncFlag(true);
     }
-    bool canSkip = false;
-    if (CollectSkipSyncNodeWithDrawableState(node, canSkip)) {
-        return canSkip;
+
+    auto ret = CollectSkipSyncNodeWithDrawableState(node);
+    if (ret != SkipSyncState::STATE_NEED_CHECK) {
+        return ret == SkipSyncState::STATE_NEED_SKIP;
     }
 
     if (NodeIsInCardWhiteList(*node) && processingCardNodeSkipSync_.count(node->GetUifirstRootNodeId())) {

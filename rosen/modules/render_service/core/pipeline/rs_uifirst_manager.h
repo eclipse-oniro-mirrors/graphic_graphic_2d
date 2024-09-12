@@ -34,6 +34,12 @@ public:
     // planning: move to display node
     static RSUifirstManager& Instance();
 
+    typedef enum {
+        STATE_NEED_SKIP,
+        STATE_NOT_SKIP,
+        STATE_NEED_CHECK,
+    } SkipSyncState;
+
     struct EventInfo {
         int64_t startTime = 0;
         int64_t stopTime = 0;
@@ -200,7 +206,7 @@ private:
     void CheckCurrentFrameHasCardNodeReCreate(const RSSurfaceRenderNode& node);
     void ResetCurrentFrameDeletedCardNodes();
     bool IsPreFirstLevelNodeDoing(std::shared_ptr<RSRenderNode> node);
-    bool CollectSkipSyncNodeWithDrawableState(const std::shared_ptr<RSRenderNode> &node, bool& canSkip);
+    SkipSyncState CollectSkipSyncNodeWithDrawableState(const std::shared_ptr<RSRenderNode> &node);
     CacheProcessStatus& GetUifirstCachedState(NodeId id);
 
     // only use in mainThread & RT onsync
@@ -287,10 +293,12 @@ public:
         }
     }
 
+    // If a subnode is delivered directly
+    // record the firstLevelNodeId in the delivered subnode as the real one.
     RSUiFirstProcessStateCheckerHelper(NodeId curFirsLevelNodeId, NodeId curUifirstRootNodeId)
     {
         isCurUifirstRootNodeId_ = true;
-        curFirstLevelNodeId_ = true;
+        isCurFirsLevelNodeId_ = true;
         curUifirstRootNodeId_ = curUifirstRootNodeId;
         curFirstLevelNodeId_ = curFirsLevelNodeId;
     }
@@ -322,7 +330,6 @@ private:
 
     bool isCurUifirstRootNodeId_ = false;
     bool isCurFirsLevelNodeId_ = false;
-    bool isOnCapture = false;
 };
 }
 #endif // RS_UIFIRST_MANAGER_H
