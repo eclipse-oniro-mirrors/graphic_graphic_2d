@@ -477,7 +477,9 @@ void RSHardwareThread::Redraw(const sptr<Surface>& surface, const std::vector<La
     using namespace HDI::Display::Graphic::Common::V1_0;
     CM_ColorSpaceType colorSpace = CM_SRGB_FULL;
     if (ConvertColorGamutToSpaceType(colorGamut, colorSpace)) {
-        surface->SetUserData("ATTRKEY_COLORSPACE_INFO", std::to_string(colorSpace));
+        if (surface->SetUserData("ATTRKEY_COLORSPACE_INFO", std::to_string(colorSpace)) != GSERROR_OK) {
+            RS_LOGD("RSHardwareThread::Redraw set user data failed");
+        }
     }
 #else
     auto renderFrameConfig = RSBaseRenderUtil::GetFrameBufferRequestConfig(screenInfo, true, isProtected);
