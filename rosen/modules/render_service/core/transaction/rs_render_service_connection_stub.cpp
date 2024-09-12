@@ -1776,8 +1776,8 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             RSDisplayNodeConfig config = {
                 .screenId = screenId,
                 .isMirrored = isMirrored,
-                .isSync = true,
                 .mirrorNodeId = mirrorId,
+                .isSync = true,
             };
             reply.WriteBool(CreateNode(config, id));
             break;
