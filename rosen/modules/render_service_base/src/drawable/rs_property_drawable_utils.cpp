@@ -499,19 +499,10 @@ void RSPropertyDrawableUtils::DrawColorFilter(
         ROSEN_LOGE("RSPropertyDrawableUtils::DrawColorFilter surface is null");
         return;
     }
-    auto clipBounds = canvas->GetDeviceClipBounds();
-    auto imageSnapshot = surface->GetImageSnapshot(clipBounds);
-    if (imageSnapshot == nullptr) {
-        ROSEN_LOGD("RSPropertyDrawableUtils::DrawColorFilter image is null");
-        return;
-    }
-    imageSnapshot->HintCacheGpuResource();
-    Drawing::AutoCanvasRestore acr(*canvas, true);
-    canvas->ResetMatrix();
-    Drawing::SamplingOptions options(Drawing::FilterMode::NEAREST, Drawing::MipmapMode::NONE);
-    canvas->AttachBrush(brush);
-    canvas->DrawImageRect(*imageSnapshot, clipBounds, options);
-    canvas->DetachBrush();
+    auto clipBounds = canvas->GetLocalClipBounds();
+    Drawing::AutoCanvasRestore acr(*canvas, false);
+    Drawing::SaveLayerOps slo(&clipBounds, &brush, Drawing::SaveLayerOps::Flags::INIT_WITH_PREVIOUS);
+    canvas->SaveLayer(slo);
 }
 
 void RSPropertyDrawableUtils::DrawLightUpEffect(Drawing::Canvas* canvas, const float lightUpEffectDegree)
@@ -784,7 +775,7 @@ void RSPropertyDrawableUtils::DrawBinarization(Drawing::Canvas* canvas, const st
 }
 
 void RSPropertyDrawableUtils::DrawPixelStretch(Drawing::Canvas* canvas, const std::optional<Vector4f>& pixelStretch,
-    const RectF& boundsRect, const bool boundsGeoValid)
+    const RectF& boundsRect, const bool boundsGeoValid, const Drawing::TileMode pixelStretchTileMode)
 {
     if (!pixelStretch.has_value()) {
         ROSEN_LOGE("RSPropertyDrawableUtils::DrawPixelStretch pixelStretch has no value");
@@ -801,24 +792,32 @@ void RSPropertyDrawableUtils::DrawPixelStretch(Drawing::Canvas* canvas, const st
     Drawing::Matrix worldToLocalMat;
     if (!canvas->GetTotalMatrix().Invert(worldToLocalMat)) {
         ROSEN_LOGE("RSPropertyDrawableUtils::DrawPixelStretch get invert matrix failed.");
+        return;
     }
-    Drawing::Rect localClipBounds;
-    canvas->Save();
-    canvas->ClipRect(Rect2DrawingRect(boundsRect), Drawing::ClipOp::INTERSECT, false);
-    auto tmpBounds = canvas->GetDeviceClipBounds();
+
+    // convert local coord to world coord
+    Drawing::Rect tmpBounds;
+    auto bounds = Rect2DrawingRect(boundsRect);
+    if (!canvas->GetTotalMatrix().MapRect(tmpBounds, bounds)) {
+        ROSEN_LOGE("RSPropertyDrawableUtils::DrawPixelStretch map rect failed.");
+        return;
+    }
     RS_OPTIONAL_TRACE_NAME_FMT_LEVEL(TRACE_LEVEL_TWO,
         "RSPropertyDrawableUtils::DrawPixelStretch, tmpBounds: %s", tmpBounds.ToString().c_str());
-    canvas->Restore();
+
     Drawing::Rect clipBounds(
         tmpBounds.GetLeft(), tmpBounds.GetTop(), tmpBounds.GetRight() - 1, tmpBounds.GetBottom() - 1);
     Drawing::Rect fClipBounds(clipBounds.GetLeft(), clipBounds.GetTop(), clipBounds.GetRight(), clipBounds.GetBottom());
 
+    Drawing::Rect localClipBounds;
     if (!worldToLocalMat.MapRect(localClipBounds, fClipBounds)) {
         ROSEN_LOGE("RSPropertyDrawableUtils::DrawPixelStretch map rect failed.");
+        return;
     }
-    auto bounds = Rect2DrawingRect(boundsRect);
+
     if (!bounds.Intersect(localClipBounds)) {
         ROSEN_LOGE("RSPropertyDrawableUtils::DrawPixelStretch intersect clipbounds failed");
+        return;
     }
 
     auto scaledBounds = Drawing::Rect(bounds.GetLeft() - pixelStretch->x_, bounds.GetTop() - pixelStretch->y_,
@@ -870,7 +869,7 @@ void RSPropertyDrawableUtils::DrawPixelStretch(Drawing::Canvas* canvas, const st
     constexpr static float EPS = 1e-5f;
     if (pixelStretch->x_ > EPS || pixelStretch->y_ > EPS || pixelStretch->z_ > EPS || pixelStretch->w_ > EPS) {
         brush.SetShaderEffect(Drawing::ShaderEffect::CreateImageShader(
-            *image, Drawing::TileMode::CLAMP, Drawing::TileMode::CLAMP, samplingOptions, inverseMat));
+            *image, pixelStretchTileMode, pixelStretchTileMode, samplingOptions, inverseMat));
         canvas->AttachBrush(brush);
         canvas->DrawRect(Drawing::Rect(-pixelStretch->x_, -pixelStretch->y_,
             -pixelStretch->x_ + scaledBounds.GetWidth(), -pixelStretch->y_ + scaledBounds.GetHeight()));
@@ -879,7 +878,7 @@ void RSPropertyDrawableUtils::DrawPixelStretch(Drawing::Canvas* canvas, const st
         inverseMat.PostScale(
             scaledBounds.GetWidth() / bounds.GetWidth(), scaledBounds.GetHeight() / bounds.GetHeight());
         brush.SetShaderEffect(Drawing::ShaderEffect::CreateImageShader(
-            *image, Drawing::TileMode::CLAMP, Drawing::TileMode::CLAMP, samplingOptions, inverseMat));
+            *image, pixelStretchTileMode, pixelStretchTileMode, samplingOptions, inverseMat));
 
         canvas->Translate(-pixelStretch->x_, -pixelStretch->y_);
         canvas->AttachBrush(brush);

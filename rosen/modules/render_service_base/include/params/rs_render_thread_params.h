@@ -159,6 +159,8 @@ public:
         return watermarkFlag_;
     }
 
+    std::shared_ptr<Media::PixelMap> GetWatermark(const std::string& name) const;
+
     std::shared_ptr<Drawing::Image> GetWatermarkImg() const
     {
         return watermarkImg_;
@@ -169,6 +171,8 @@ public:
         watermarkFlag_ = watermarkFlag;
         watermarkImg_ = watermarkImg;
     }
+
+    void SetWatermarks(std::unordered_map<std::string, std::shared_ptr<Media::PixelMap>>& watermarks);
 
     void SetOcclusionEnabled(bool isOcclusionEnabled)
     {
@@ -357,6 +361,7 @@ private:
     Occlusion::Region accumulatedDirtyRegion_;
     bool watermarkFlag_ = false;
     std::shared_ptr<Drawing::Image> watermarkImg_ = nullptr;
+    std::unordered_map<std::string, std::shared_ptr<Media::PixelMap>> surfaceNodeWatermarks_;
 
     bool needRequestNextVsyncAnimate_ = false;
     bool isOverDrawEnabled_ = false;

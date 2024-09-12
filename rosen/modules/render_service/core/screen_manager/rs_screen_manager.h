@@ -226,6 +226,8 @@ public:
 
     virtual bool SetVirtualScreenStatus(ScreenId id, VirtualScreenStatus screenStatus) = 0;
     virtual VirtualScreenStatus GetVirtualScreenStatus(ScreenId id) const = 0;
+
+    virtual void RealeaseScreenDmaBuffer(uint64_t screenId) = 0;
 };
 
 sptr<RSScreenManager> CreateOrGetScreenManager();
@@ -434,6 +436,7 @@ public:
     bool SetVirtualScreenStatus(ScreenId id, VirtualScreenStatus screenStatus) override;
     VirtualScreenStatus GetVirtualScreenStatus(ScreenId id) const override;
 
+    void RealeaseScreenDmaBuffer(uint64_t screenId) override;
 private:
     RSScreenManager();
     ~RSScreenManager() noexcept override;
@@ -494,6 +497,9 @@ private:
     void HandleSensorData(float angle);
     FoldState TransferAngleToScreenState(float angle);
 #endif
+
+    void RegSetScreenVsyncEnabledCallbackForMainThread(ScreenId vsyncEnabledScreenId);
+    void RegSetScreenVsyncEnabledCallbackForHardwareThread(ScreenId vsyncEnabledScreenId);
 
     mutable std::mutex mutex_;
     mutable std::mutex blackListMutex_;

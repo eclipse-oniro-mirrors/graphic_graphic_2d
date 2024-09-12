@@ -85,6 +85,9 @@ public:
 
     int32_t SetScreenChangeCallback(const ScreenChangeCallback &callback);
 
+    // if return true, the setting is successful. otherwise failed. The function is setted watermark for SurfaceNode
+    bool SetWatermark(const std::string& name, std::shared_ptr<Media::PixelMap> watermark);
+
     bool TakeSurfaceCapture(std::shared_ptr<RSSurfaceNode> node, std::shared_ptr<SurfaceCaptureCallback> callback,
         RSSurfaceCaptureConfig captureConfig = {});
 
@@ -286,6 +289,8 @@ public:
     bool SetAncoForceDoDirect(bool direct);
 
     void SetFreeMultiWindowStatus(bool enable);
+
+    void SetLayerTop(const std::string &nodeIdStr, bool isTop);
 private:
     RSInterfaces();
     ~RSInterfaces() noexcept;

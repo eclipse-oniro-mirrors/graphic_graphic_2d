@@ -258,22 +258,25 @@ void RSUifirstManager::CollectSkipSyncBuffer(std::vector<std::function<void()>>&
     if (buffersToRelease.empty()) {
         return;
     }
-    auto bufferInfo = buffersToRelease.find(id);
-    if (bufferInfo != buffersToRelease.end()) {
-        auto& item = bufferInfo->second;
-        if (!item.buffer || !item.consumer) {
-            buffersToRelease.erase(bufferInfo->first);
-            return;
-        }
-        auto releaseTask = [buffer = item.buffer, consumer = item.consumer,
-            useReleaseFence = item.useFence]() mutable {
-            auto ret = consumer->ReleaseBuffer(buffer, RSHardwareThread::Instance().releaseFence_);
-            if (ret != OHOS::SURFACE_ERROR_OK) {
-                RS_LOGD("ReleaseSelfDrawingNodeBuffer failed ret:%{public}d", ret);
+    for (auto item = buffersToRelease.begin(); item != buffersToRelease.end();) {
+        if (item->id == id) {
+            if (!item->buffer || !item->consumer) {
+                item = buffersToRelease.erase(item);
+                continue;
             }
-        };
-        tasks.emplace_back(releaseTask);
-        buffersToRelease.erase(bufferInfo->first);
+            auto releaseTask = [buffer = item->buffer, consumer = item->consumer,
+                useReleaseFence = item->useFence]() mutable {
+                auto ret = consumer->ReleaseBuffer(buffer, RSHardwareThread::Instance().releaseFence_);
+                if (ret != OHOS::SURFACE_ERROR_OK) {
+                    RS_LOGD("ReleaseSelfDrawingNodeBuffer failed ret:%{public}d", ret);
+                }
+            };
+            tasks.emplace_back(releaseTask);
+            item = buffersToRelease.erase(item);
+            RS_LOGD("ReleaseSkipSyncBuffer fId[%" PRIu64"]", id);
+        } else {
+            ++item;
+        }
     }
 #endif
 }
@@ -615,6 +618,15 @@ void RSUifirstManager::ConvertPendingNodeToDrawable()
     }
 }
 
+static inline void SetUifirstSkipPartialSync(const std::shared_ptr<RSRenderNode> &node, bool needSync)
+{
+    // node not null in caller
+    if (!needSync) {
+        return;
+    }
+    node->SetUifirstSkipPartialSync(true);
+}
+
 bool RSUifirstManager::CollectSkipSyncNode(const std::shared_ptr<RSRenderNode> &node)
 {
     if (!node) {
@@ -630,7 +642,7 @@ bool RSUifirstManager::CollectSkipSyncNode(const std::shared_ptr<RSRenderNode> &
     if (!uifirstRootNode) {
         RS_TRACE_NAME_FMT("uifirstRootNode %" PRIu64 " null and curNodeId %" PRIu64 " skip sync",
             node->GetFirstLevelNodeId(), node->GetId());
-        return true;
+        return false;
     }
 
     if (uifirstRootNode->IsInstanceOf<RSSurfaceRenderNode>()) {
@@ -638,54 +650,48 @@ bool RSUifirstManager::CollectSkipSyncNode(const std::shared_ptr<RSRenderNode> &
             DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(uifirstRootNode));
         if (!drawableNode) {
             RS_LOGE("RSUifirstManager::CollectSkipSyncNode drawableNode generate failed");
-            return true;
+            return false;
         }
         if (drawableNode->GetCacheSurfaceProcessedStatus() == CacheProcessStatus::DOING ||
             IsPreFirstLevelNodeDoing(node)) {
             pendingSyncForSkipBefore_[uifirstRootNode->GetId()].push_back(node);
-            if (uifirstRootNode->GetId() == node->GetId()) {
-                RS_OPTIONAL_TRACE_NAME_FMT("set partial_sync %lld root%lld", node->GetId(), uifirstRootNode->GetId());
-                node->SetUifirstSkipPartialSync(true);
-                return false;
-            }
-            RS_OPTIONAL_TRACE_NAME_FMT("CollectSkipSyncNode root %lld, node %lld",
-                uifirstRootNode->GetId(), node->GetId());
-            return true;
+            auto isUifirstRootNode = (uifirstRootNode->GetId() == node->GetId());
+            RS_OPTIONAL_TRACE_NAME_FMT("set %s %" PRIu64 " root%" PRIu64,
+                isUifirstRootNode ? "set partial_sync" : "CollectSkipSyncNode",
+                node->GetId(), uifirstRootNode->GetId());
+            SetUifirstSkipPartialSync(node, isUifirstRootNode);
+            return !isUifirstRootNode;
         }
+    } else if (IsPreFirstLevelNodeDoing(node)) {
+        pendingSyncForSkipBefore_[uifirstRootNode->GetId()].push_back(node);
+        RS_OPTIONAL_TRACE_NAME_FMT("CollectSkipSyncNode root %" PRIu64", node %" PRIu64,
+            uifirstRootNode->GetId(), node->GetId());
+        return true;
     }
     if (NodeIsInCardWhiteList(*node) && processingCardNodeSkipSync_.count(node->GetUifirstRootNodeId())) {
         pendingSyncForSkipBefore_[node->GetUifirstRootNodeId()].push_back(node);
-        if (node->GetUifirstRootNodeId() == node->GetId()) {
-            RS_OPTIONAL_TRACE_NAME_FMT("set partial_sync card %" PRIu64" root%" PRIu64"",
-                node->GetId(), node->GetUifirstRootNodeId());
-            node->SetUifirstSkipPartialSync(true);
-            return false;
-        } else {
-            RS_OPTIONAL_TRACE_NAME_FMT("CollectSkipSyncNode card root %" PRIu64", node %" PRIu64"",
-                node->GetUifirstRootNodeId(), node->GetId());
-            return true;
-        }
+        auto isUifirstRootNode = (node->GetUifirstRootNodeId() == node->GetId());
+        RS_OPTIONAL_TRACE_NAME_FMT("set %s %" PRIu64 " root%" PRIu64,
+            isUifirstRootNode ? "set partial_sync card" : "CollectSkipSyncNode card",
+            node->GetId(), node->GetInstanceRootNodeId());
+        SetUifirstSkipPartialSync(node, isUifirstRootNode);
+        return !isUifirstRootNode;
     }
     if (processingNodePartialSync_.count(node->GetInstanceRootNodeId()) > 0) {
         pendingSyncForSkipBefore_[node->GetInstanceRootNodeId()].push_back(node);
-        if (node->GetInstanceRootNodeId() == node->GetId()) {
-            RS_OPTIONAL_TRACE_NAME_FMT("set partial_sync %" PRIu64" root%" PRIu64"",
-                node->GetId(), node->GetInstanceRootNodeId());
-            node->SetUifirstSkipPartialSync(true);
-            return false;
-        } else {
-            RS_OPTIONAL_TRACE_NAME_FMT("CollectSkipSyncNode root %" PRIu64", node %" PRIu64"",
-                node->GetInstanceRootNodeId(), node->GetId());
-            return true;
-        }
+        auto isInstanceRootNode = (node->GetInstanceRootNodeId() == node->GetId());
+        RS_OPTIONAL_TRACE_NAME_FMT("set %s %" PRIu64 " root%" PRIu64,
+            isInstanceRootNode ? "set partial_sync" : "CollectSkipSyncNode",
+            node->GetId(), node->GetInstanceRootNodeId());
+        SetUifirstSkipPartialSync(node, isInstanceRootNode);
+        return !isInstanceRootNode;
     } else if (processingNodeSkipSync_.count(node->GetInstanceRootNodeId()) > 0) {
-        RS_OPTIONAL_TRACE_NAME_FMT("CollectSkipSyncNode root %" PRIu64", node %" PRIu64"",
+        RS_OPTIONAL_TRACE_NAME_FMT("CollectSkipSyncNode root %" PRIu64", node %" PRIu64,
             node->GetInstanceRootNodeId(), node->GetId());
         pendingSyncForSkipBefore_[node->GetInstanceRootNodeId()].push_back(node);
         return true;
-    } else {
-        return false;
     }
+    return false;
 }
 
 void RSUifirstManager::RestoreSkipSyncNode()

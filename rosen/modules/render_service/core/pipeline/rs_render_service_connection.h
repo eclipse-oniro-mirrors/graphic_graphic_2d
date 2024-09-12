@@ -244,6 +244,8 @@ private:
 
     void ShowWatermark(const std::shared_ptr<Media::PixelMap> &watermarkImg, bool isShow) override;
 
+    bool SetWatermark(const std::string& name, std::shared_ptr<Media::PixelMap> watermark) override;
+
     int32_t ResizeVirtualScreen(ScreenId id, uint32_t width, uint32_t height) override;
 
     void ReportJankStats() override;
@@ -296,6 +298,8 @@ private:
     bool SetAncoForceDoDirect(bool direct) override;
 
     void SetFreeMultiWindowStatus(bool enable) override;
+
+    void SetLayerTop(const std::string &nodeIdStr, bool isTop) override;
 
     pid_t remotePid_;
     wptr<RSRenderService> renderService_;

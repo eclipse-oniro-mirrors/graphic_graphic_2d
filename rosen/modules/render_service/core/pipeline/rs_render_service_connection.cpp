@@ -49,6 +49,7 @@
 #include "pipeline/rs_uifirst_manager.h"
 #include "pipeline/rs_uni_render_judgement.h"
 #include "pipeline/rs_uni_ui_capture.h"
+#include "pipeline/rs_unmarshal_thread.h"
 #include "pixel_map_from_surface.h"
 #include "platform/common/rs_log.h"
 #include "platform/common/rs_system_properties.h"
@@ -144,13 +145,7 @@ void RSRenderServiceConnection::CleanAll(bool toDelete) noexcept
         return;
     }
     RS_LOGD("RSRenderServiceConnection::CleanAll() start.");
-    auto weakThis = wptr<RSRenderServiceConnection>(this);
-    sptr<RSRenderServiceConnection> connection = weakThis.promote();
-    pid_t remotePid = 0;
-    if (connection != nullptr) {
-        remotePid = connection->remotePid_;
-    }
-    RS_TRACE_NAME("RSRenderServiceConnection CleanAll begin, remotePid: " + std::to_string(remotePid));
+    RS_TRACE_NAME("RSRenderServiceConnection CleanAll begin, remotePid: " + std::to_string(remotePid_));
     mainThread_->ScheduleTask(
         [weakThis = wptr<RSRenderServiceConnection>(this)]() {
             sptr<RSRenderServiceConnection> connection = weakThis.promote();
@@ -214,7 +209,7 @@ void RSRenderServiceConnection::CleanAll(bool toDelete) noexcept
     }
 
     RS_LOGD("RSRenderServiceConnection::CleanAll() end.");
-    RS_TRACE_NAME("RSRenderServiceConnection CleanAll end, remotePid: " + std::to_string(remotePid));
+    RS_TRACE_NAME("RSRenderServiceConnection CleanAll end, remotePid: " + std::to_string(remotePid_));
 }
 
 RSRenderServiceConnection::RSConnectionDeathRecipient::RSConnectionDeathRecipient(
@@ -271,6 +266,16 @@ void RSRenderServiceConnection::RSApplicationRenderThreadDeathRecipient::OnRemot
 void RSRenderServiceConnection::CommitTransaction(std::unique_ptr<RSTransactionData>& transactionData)
 {
     if (!mainThread_) {
+        return;
+    }
+    pid_t callingPid = GetCallingPid();
+    bool isTokenTypeValid = true;
+    bool isNonSystemAppCalling = false;
+    RSInterfaceCodeAccessVerifierBase::GetAccessType(isTokenTypeValid, isNonSystemAppCalling);
+    bool shouldDrop = RSUnmarshalThread::Instance().ReportTransactionDataStatistics(
+        callingPid, transactionData.get(), isNonSystemAppCalling);
+    if (shouldDrop) {
+        RS_LOGW("RSRenderServiceConnection::CommitTransaction data droped");
         return;
     }
     bool isProcessBySingleFrame = mainThread_->IsNeedProcessBySingleFrameComposer(transactionData);
@@ -456,19 +461,31 @@ std::shared_ptr<Media::PixelMap> RSRenderServiceConnection::CreatePixelMapFromSu
 int32_t RSRenderServiceConnection::SetFocusAppInfo(
     int32_t pid, int32_t uid, const std::string &bundleName, const std::string &abilityName, uint64_t focusNodeId)
 {
-    return RSMainThread::Instance()->ScheduleTask(
-        [=, weakThis = wptr<RSRenderServiceConnection>(this)]() -> int32_t {
+    if (mainThread_ == nullptr) {
+        return INVALID_ARGUMENTS;
+    }
+    mainThread_->ScheduleTask(
+        [=, weakThis = wptr<RSRenderServiceConnection>(this)]() {
             sptr<RSRenderServiceConnection> connection = weakThis.promote();
             if (connection == nullptr) {
-                return RS_CONNECTION_ERROR;
+                return;
             }
             if (connection->mainThread_ == nullptr) {
-                return INVALID_ARGUMENTS;
+                return;
             }
             connection->mainThread_->SetFocusAppInfo(pid, uid, bundleName, abilityName, focusNodeId);
-            return SUCCESS;
         }
-    ).get();
+    );
+    return SUCCESS;
+}
+
+bool RSRenderServiceConnection::SetWatermark(const std::string& name, std::shared_ptr<Media::PixelMap> watermark)
+{
+    if (!mainThread_) {
+        return false;
+    }
+    mainThread_->SetWatermark(name, watermark);
+    return true;
 }
 
 ScreenId RSRenderServiceConnection::GetDefaultScreenId()
@@ -1980,5 +1997,30 @@ void RSRenderServiceConnection::SetFreeMultiWindowStatus(bool enable)
     mainThread_->PostTask(task);
 }
 
+void RSRenderServiceConnection::SetLayerTop(const std::string &nodeIdStr, bool isTop)
+{
+    if (mainThread_ == nullptr) {
+        return;
+    }
+    auto task = [weakThis = wptr<RSRenderServiceConnection>(this), nodeIdStr, isTop]() -> void {
+        sptr<RSRenderServiceConnection> connection = weakThis.promote();
+        if (!connection) {
+            return;
+        }
+        auto& context = connection->mainThread_->GetContext();
+        context.GetNodeMap().TraverseSurfaceNodes(
+            [&nodeIdStr, &isTop](const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode) mutable {
+            if ((surfaceNode != nullptr) && (surfaceNode->GetName() == nodeIdStr) &&
+                (surfaceNode->GetSurfaceNodeType() == RSSurfaceNodeType::SELF_DRAWING_NODE)) {
+                surfaceNode->SetLayerTop(isTop);
+                return;
+            }
+        });
+        // It can be displayed immediately after layer-top changed.
+        connection->mainThread_->SetDirtyFlag();
+        connection->mainThread_->RequestNextVSync();
+    };
+    mainThread_->PostTask(task);
+}
 } // namespace Rosen
 } // namespace OHOS

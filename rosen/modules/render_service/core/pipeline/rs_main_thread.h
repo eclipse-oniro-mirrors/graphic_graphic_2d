@@ -46,6 +46,7 @@
 #include "pipeline/rs_draw_frame.h"
 #include "pipeline/rs_graphic_config.h"
 #include "pipeline/rs_uni_render_judgement.h"
+#include "pipeline/rs_vsync_rate_reduce_manager.h"
 #include "platform/common/rs_event_manager.h"
 #include "platform/drawing/rs_vsync_client.h"
 #include "transaction/rs_transaction_data.h"
@@ -106,6 +107,7 @@ public:
     void PostSyncTask(RSTaskMessage::RSTask task);
     bool IsIdle() const;
     void RenderServiceTreeDump(std::string& dumpString, bool forceDumpSingleFrame = true);
+    void RenderServiceAllNodeDump(DfxString& log);
     void SendClientDumpNodeTreeCommands(uint32_t taskId);
     void CollectClientNodeTreeResult(uint32_t taskId, std::string& dumpString, size_t timeout);
     void RsEventParamDump(std::string& dumpString);
@@ -182,7 +184,7 @@ public:
     void AddTransactionDataPidInfo(pid_t remotePid);
 
     void SetFocusAppInfo(
-        int32_t pid, int32_t uid, const std::string &bundleName, const std::string &abilityName, uint64_t focusNodeId);
+        int32_t pid, int32_t uid, const std::string bundleName, const std::string abilityName, uint64_t focusNodeId);
     const std::unordered_map<NodeId, bool>& GetCacheCmdSkippedNodes() const;
 
     sptr<VSyncDistributor> rsVSyncDistributor_;
@@ -213,6 +215,9 @@ public:
     void SetAppWindowNum(uint32_t num);
     bool SetSystemAnimatedScenes(SystemAnimatedScenes systemAnimatedScenes);
     SystemAnimatedScenes GetSystemAnimatedScenes();
+    // Save marks, and use it for SurfaceNodes later.
+    void SetWatermark(const std::string& name, std::shared_ptr<Media::PixelMap> watermark);
+    // Save marks, and use it for DisplayNode later.
     void ShowWatermark(const std::shared_ptr<Media::PixelMap> &watermarkImg, bool flag);
     void SetIsCachedSurfaceUpdated(bool isCachedSurfaceUpdated);
     pid_t GetDesktopPidForRotationScene() const;
@@ -289,7 +294,6 @@ public:
     void SetLuminanceChangingStatus(bool isLuminanceChanged);
     bool ExchangeLuminanceChangingStatus();
     bool IsCurtainScreenOn() const;
-    void RealeaseScreenDmaBuffer(uint64_t screenId);
 
     bool GetParallelCompositionEnabled();
     void SetFrameIsRender(bool isRender);
@@ -362,6 +366,11 @@ public:
         return systemAnimatedScenesList_.empty();
     }
 
+    RSVsyncRateReduceManager& GetRSVsyncRateReduceManager()
+    {
+        return rsVsyncRateReduceManager_;
+    }
+
     bool IsFirstFrameOfOverdrawSwitch() const
     {
         return isOverDrawEnabledOfCurFrame_ != isOverDrawEnabledOfLastFrame_;
@@ -396,10 +405,6 @@ private:
         std::vector<RSBaseRenderNode::SharedPtr>& curAllSurfaces, VisibleData& dstCurVisVec,
         std::map<NodeId, RSVisibleLevel>& dstPidVisMap);
     void CalcOcclusion();
-    void SetVSyncRateByVisibleLevel(std::map<NodeId, RSVisibleLevel>& pidVisMap,
-        std::vector<RSBaseRenderNode::SharedPtr>& curAllSurfaces);
-    void SetUniVSyncRateByVisibleLevel(const std::shared_ptr<RSUniRenderVisitor>& visitor);
-    void NotifyVSyncRates(const std::map<NodeId, RSVisibleLevel>& vSyncRates);
     void CallbackToWMS(VisibleData& curVisVec);
     void SendCommands();
     void InitRSEventDetector();
@@ -559,7 +564,6 @@ private:
     mutable std::mutex hardwareThreadTaskMutex_;
     std::condition_variable hardwareThreadTaskCond_;
 
-    std::map<NodeId, RSVisibleLevel> lastVisMapForVsyncRate_;
     VisibleData lastVisVec_;
     std::map<NodeId, uint64_t> lastDrawStatusMap_;
     std::vector<NodeId> curDrawStatusVec_;
@@ -614,6 +618,9 @@ private:
     std::condition_variable nodeTreeDumpCondVar_;
     std::unordered_map<uint32_t, NodeTreeDumpTask> nodeTreeDumpTasks_;
 
+    bool surfaceNodeWatermarksChanged_ = false;
+    std::unordered_map<std::string, std::shared_ptr<Media::PixelMap>> surfaceNodeWatermarks_;
+
     // used for watermark
     std::mutex watermarkMutex_;
     std::shared_ptr<Drawing::Image> watermarkImg_ = nullptr;
@@ -652,7 +659,6 @@ private:
     std::mutex systemAnimatedScenesMutex_;
     std::list<std::pair<SystemAnimatedScenes, time_t>> systemAnimatedScenesList_;
     std::list<std::pair<SystemAnimatedScenes, time_t>> threeFingerScenesList_;
-    bool isReduceVSyncBySystemAnimatedScenes_ = false;
     std::unordered_map<NodeId, // map<node ID, <pid, callback, partition points vector, level>>
         std::tuple<pid_t, sptr<RSISurfaceOcclusionChangeCallback>,
         std::vector<float>, uint8_t>> surfaceOcclusionListeners_;
@@ -700,6 +706,7 @@ private:
     std::unique_ptr<RSRenderThreadParams> renderThreadParams_ = nullptr; // sync to render thread
     RsParallelType rsParallelType_;
     bool isCurtainScreenOn_ = false;
+    RSVsyncRateReduceManager rsVsyncRateReduceManager_;
 #ifdef RES_SCHED_ENABLE
     sptr<VSyncSystemAbilityListener> saStatusChangeListener_ = nullptr;
 #endif

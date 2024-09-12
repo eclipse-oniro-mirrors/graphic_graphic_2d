@@ -907,6 +907,10 @@ public:
     {
         grContext_ = grContext;
     }
+
+    void SetRSWindowMode(RSWindowMode mode);
+    RSWindowMode GetRSWindowMode() const;
+
     // UIFirst
     void UpdateUIFirstFrameGravity();
 
@@ -1216,10 +1220,9 @@ public:
         dirtyStatus_ = containerDirty ? NodeDirty::DIRTY : dirtyStatus_;
     }
 
-    void SetWatermark(const std::string& name, std::shared_ptr<Media::PixelMap> watermark);
     void SetWatermarkEnabled(const std::string& name, bool isEnabled);
-    std::map<std::string, std::pair<bool, std::shared_ptr<Media::PixelMap>>> GetWatermark() const;
-    size_t GetWatermarkSize() const;
+    const std::unordered_map<std::string, bool>& GetWatermark() const;
+    bool IsWatermarkEmpty() const;
     bool GetIsIntersectWithRoundCorner() const
     {
         return isIntersectWithRoundCorner_;
@@ -1413,6 +1416,7 @@ private:
     };
 
     ContainerConfig containerConfig_;
+    ContainerConfig GetContainerConfigWithWindowMode() const;
 
     bool startAnimationFinished_ = false;
 
@@ -1504,9 +1508,11 @@ private:
     bool isSkipDraw_ = false;
 
     bool isHardwareForcedByBackgroundAlpha_ = false;
-    std::map<std::string, std::pair<bool, std::shared_ptr<Media::PixelMap>>> watermarkHandles_ = {};
+    std::unordered_map<std::string, bool> watermarkHandles_ = {};
 
     bool arsrTag_ = true;
+
+    RSWindowMode windowMode_ = RSWindowMode::RS_WINDOW_MODE_UNDEFINED;
 
     // UIExtension record, <UIExtension, hostAPP>
     inline static std::unordered_map<NodeId, NodeId> secUIExtensionNodes_ = {};

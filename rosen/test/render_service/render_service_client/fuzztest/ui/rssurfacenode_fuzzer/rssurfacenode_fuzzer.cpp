@@ -186,10 +186,6 @@ bool DoSetAndGet(const uint8_t* data, size_t size)
     bool isBootAnimation = GetData<bool>();
     surfaceNode->SetBootAnimation(isBootAnimation);
     surfaceNode->GetBootAnimation();
-    bool isLayerTop = GetData<bool>();
-    std::string surfaceNodeName = GetData<std::string>();
-    surfaceNode->SetLayerTop(surfaceNodeName, isLayerTop);
-    surfaceNode->IsLayerTop();
     return true;
 }
 
@@ -616,6 +612,26 @@ bool DoSetAncoFlags(const uint8_t* data, size_t size)
     return true;
 }
 
+bool DoSetWatermark(const uint8_t* data, size_t size)
+{
+    if (data == nullptr) {
+        return false;
+    }
+
+    // initialize
+    g_data = data;
+    g_size = size;
+    g_pos = 0;
+
+    // test
+    RSSurfaceNodeConfig config;
+    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(config);
+    std::string waterMark = GetData<std::string>();
+    bool waterMarkEnabled = GetData<bool>();
+    surfaceNode->SetWatermarkEnabled(waterMark, waterMarkEnabled);
+    return true;
+}
+
 bool DoSetHDRPresent(const uint8_t* data, size_t size)
 {
     if (data == nullptr) {
@@ -807,6 +823,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::Rosen::DoSetForeground(data, size);
     OHOS::Rosen::DoSetForceUIFirst(data, size);
     OHOS::Rosen::DoSetAncoFlags(data, size);
+    OHOS::Rosen::DoSetWatermark(data, size);
     OHOS::Rosen::DoSetHDRPresent(data, size);
     OHOS::Rosen::DoNeedForcedSendToRemoteAndCreateTextureExportRenderNodeInRT(data, size);
     OHOS::Rosen::DoRSSurfaceNode(data, size);

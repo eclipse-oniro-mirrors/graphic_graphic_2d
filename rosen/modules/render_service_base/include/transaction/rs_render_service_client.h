@@ -151,6 +151,8 @@ public:
 
     int32_t SetCastScreenEnableSkipWindow(ScreenId id, bool enable);
 
+    bool SetWatermark(const std::string& name, std::shared_ptr<Media::PixelMap> watermark);
+
     void RemoveVirtualScreen(ScreenId id);
 
 #ifdef OHOS_BUILD_ENABLE_MAGICCURSOR
@@ -337,6 +339,7 @@ public:
 
     bool SetAncoForceDoDirect(bool direct);
 
+    void SetLayerTop(const std::string &nodeIdStr, bool isTop);
 #ifdef TP_FEATURE_ENABLE
     void SetTpFeatureConfig(int32_t feature, const char* config);
 #endif

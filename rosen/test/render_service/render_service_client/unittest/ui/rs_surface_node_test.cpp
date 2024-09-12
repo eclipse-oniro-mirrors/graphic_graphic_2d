@@ -325,6 +325,20 @@ HWTEST_F(RSSurfaceNodeTest, SetandGetBoundsHeight005, TestSize.Level1)
 }
 
 /**
+ * @tc.name: SetWatermarkEnabled
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSSurfaceNodeTest, SetWatermarkEnabled001, TestSize.Level1)
+{
+    RSSurfaceNodeConfig c;
+    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
+    std::string waterMark = "watermark";
+    surfaceNode->SetWatermarkEnabled(waterMark, true);
+    surfaceNode->SetWatermarkEnabled(waterMark, false);
+}
+
+/**
  * @tc.name: SetSecurityLayer001
  * @tc.desc:
  * @tc.type:FUNC
@@ -1620,35 +1634,4 @@ HWTEST_F(RSSurfaceNodeTest, GetSkipDraw, TestSize.Level1)
     RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
     EXPECT_FALSE(surfaceNode->GetSkipDraw());
 }
-
-/**
- * @tc.name: SetLayerTop
- * @tc.desc: Test function SetLayerTop
- * @tc.type: FUNC
- * @tc.require: issueIAMKKL
- */
-HWTEST_F(RSSurfaceNodeTest, SetLayerTop, TestSize.Level1)
-{
-    RSSurfaceNodeConfig c;
-    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
-    std::string nodeName = "123456";
-    surfaceNode->SetLayerTop(nodeName, true);
-    EXPECT_TRUE(surfaceNode->IsLayerTop());
-    surfaceNode->SetLayerTop(nodeName, false);
-    EXPECT_FALSE(surfaceNode->IsLayerTop());
-}
-
-/**
- * @tc.name: IsLayerTop
- * @tc.desc: Test function IsLayerTop
- * @tc.type: FUNC
- * @tc.require: issueIAMKKL
- */
-HWTEST_F(RSSurfaceNodeTest, IsLayerTop, TestSize.Level1)
-{
-    RSSurfaceNodeConfig c;
-    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
-    EXPECT_FALSE(surfaceNode->IsLayerTop());
-}
-
 } // namespace OHOS::Rosen

@@ -180,6 +180,51 @@ void MemoryManager::ReleaseUnlockAndSafeCacheGpuResource(Drawing::GPUContext* gp
 #endif
 }
 
+void MemoryManager::SetGpuCacheSuppressWindowSwitch(Drawing::GPUContext* gpuContext, bool enabled)
+{
+#if defined(RS_ENABLE_VK)
+    if (!gpuContext) {
+        RS_LOGE("SetGpuCacheSuppressWindowSwitch fail, gpuContext is nullptr");
+        return;
+    }
+    gpuContext->SetGpuCacheSuppressWindowSwitch(enabled);
+#endif
+}
+
+void MemoryManager::SetGpuMemoryAsyncReclaimerSwitch(Drawing::GPUContext* gpuContext, bool enabled)
+{
+#if defined(RS_ENABLE_VK)
+    if (!gpuContext) {
+        RS_LOGE("SetGpuMemoryAsyncReclaimerSwitch fail, gpuContext is nullptr");
+        return;
+    }
+    gpuContext->SetGpuMemoryAsyncReclaimerSwitch(enabled);
+#endif
+}
+
+void MemoryManager::FlushGpuMemoryInWaitQueue(Drawing::GPUContext* gpuContext)
+{
+#if defined(RS_ENABLE_VK)
+    if (!gpuContext) {
+        RS_LOGE("FlushGpuMemoryInWaitQueue fail, gpuContext is nullptr");
+        return;
+    }
+    gpuContext->FlushGpuMemoryInWaitQueue();
+#endif
+}
+
+void MemoryManager::SuppressGpuCacheBelowCertainRatio(
+    Drawing::GPUContext* gpuContext, const std::function<bool(void)>& nextFrameHasArrived)
+{
+#if defined(RS_ENABLE_VK)
+    if (!gpuContext) {
+        RS_LOGE("SuppressGpuCacheBelowCertainRatio fail, gpuContext is nullptr");
+        return;
+    }
+    gpuContext->SuppressGpuCacheBelowCertainRatio(nextFrameHasArrived);
+#endif
+}
+
 float MemoryManager::GetAppGpuMemoryInMB(Drawing::GPUContext* gpuContext)
 {
     if (!gpuContext) {
@@ -288,6 +333,7 @@ void MemoryManager::DumpRenderServiceMemory(DfxString& log)
 {
     log.AppendFormat("\n----------\nRenderService caches:\n");
     MemoryTrack::Instance().DumpMemoryStatistics(log, FindGeoById);
+    RSMainThread::Instance()->RenderServiceAllNodeDump(log);
 }
 
 void MemoryManager::DumpDrawingCpuMemory(DfxString& log)

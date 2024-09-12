@@ -831,41 +831,24 @@ bool RSSurfaceNode::GetSkipDraw() const
     return isSkipDraw_;
 }
 
-void RSSurfaceNode::SetLayerTop(const std::string& targetName, bool isTop)
-{
-    isLayerTop_ = isTop;
-    std::unique_ptr<RSCommand> command =
-        std::make_unique<RSSurfaceNodeSetLayerTop>(GetId(), targetName, isTop);
-    auto transactionProxy = RSTransactionProxy::GetInstance();
-    if (transactionProxy != nullptr) {
-        ROSEN_LOGD("SetLayerTop  RSSurfaceNode");
-        transactionProxy->AddCommand(command, true);
-    }
-}
-
-bool RSSurfaceNode::IsLayerTop() const
-{
-    return isLayerTop_;
-}
-
-void RSSurfaceNode::SetWatermark(const std::string& name, std::shared_ptr<Media::PixelMap> watermark)
-{
-    std::unique_ptr<RSCommand> command =
-        std::make_unique<RSSurfaceNodeSetWatermark>(GetId(), name, watermark);
-    auto transactionProxy = RSTransactionProxy::GetInstance();
-    if (transactionProxy != nullptr) {
-        ROSEN_LOGD("SetWatermark  RSSurfaceNode");
-        transactionProxy->AddCommand(command, true);
-    }
-}
-
 void RSSurfaceNode::SetWatermarkEnabled(const std::string& name, bool isEnabled)
 {
     std::unique_ptr<RSCommand> command =
         std::make_unique<RSSurfaceNodeSetWatermarkEnabled>(GetId(), name, isEnabled);
     auto transactionProxy = RSTransactionProxy::GetInstance();
     if (transactionProxy != nullptr) {
-        ROSEN_LOGD("SetWatermarkEnabled  RSSurfaceNode");
+        ROSEN_LOGI("SetWatermarkEnabled[%{public}s, %{public}" PRIu64 " watermark:%{public}s]",
+            GetName().c_str(), GetId(), name.c_str());
+        transactionProxy->AddCommand(command, true);
+    }
+}
+
+void RSSurfaceNode::SetRSWindowMode(RSWindowMode mode)
+{
+    std::unique_ptr<RSCommand> command =
+        std::make_unique<RSSurfaceNodeSetWindowMode>(GetId(), mode);
+    auto transactionProxy = RSTransactionProxy::GetInstance();
+    if (transactionProxy != nullptr) {
         transactionProxy->AddCommand(command, true);
     }
 }

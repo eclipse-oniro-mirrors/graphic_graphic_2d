@@ -48,7 +48,9 @@ constexpr uint32_t DRAWCMDLIST_COUNT_LIMIT = 50;
 RSCanvasDrawingRenderNode::RSCanvasDrawingRenderNode(
     NodeId id, const std::weak_ptr<RSContext>& context, bool isTextureExportNode)
     : RSCanvasRenderNode(id, context, isTextureExportNode)
-{}
+{
+    MemorySnapshot::Instance().AddCpuMemory(ExtractPid(id), sizeof(*this) - sizeof(RSCanvasRenderNode));
+}
 
 RSCanvasDrawingRenderNode::~RSCanvasDrawingRenderNode()
 {
@@ -57,6 +59,7 @@ RSCanvasDrawingRenderNode::~RSCanvasDrawingRenderNode()
         preThreadInfo_.second(std::move(surface_));
     }
 #endif
+    MemorySnapshot::Instance().RemoveCpuMemory(ExtractPid(GetId()), sizeof(*this) - sizeof(RSCanvasRenderNode));
 }
 
 void RSCanvasDrawingRenderNode::InitRenderContent()

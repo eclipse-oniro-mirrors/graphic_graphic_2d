@@ -207,7 +207,8 @@ public:
     static bool GetBlurExtraFilterEnabled();
     static bool GetDiscardCanvasBeforeFilterEnabled();
     static bool GetPurgeBetweenFramesEnabled();
-    static bool GetAsyncFreeVMAMemoryBetweenFramesEnabled();
+    static bool GetGpuMemoryAsyncReclaimerEnabled();
+    static bool GetGpuCacheSuppressWindowEnabled();
 
     static bool GetAnimationCacheEnabled();
 
@@ -227,6 +228,7 @@ public:
     static bool GetImageGpuResourceCacheEnable(int width, int height);
     static bool GetSnapshotWithDMAEnabled();
     static bool GetDrmEnabled();
+    static bool GetSurfaceNodeWatermarkEnabled();
     static bool IsPhoneType();
     static bool IsTabletType();
     static bool IsPcType();

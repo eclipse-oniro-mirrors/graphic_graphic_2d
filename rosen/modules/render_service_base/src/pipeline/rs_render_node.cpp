@@ -315,6 +315,8 @@ void RSRenderNode::RemoveChild(SharedPtr child, bool skipTransition)
     if (child->GetBootAnimation()) {
         SetContainBootAnimation(false);
     }
+    // When a child node is deleted, if the parent node has already been removed from the tree,
+    // then clear fullChildrenList_ and RSChildrenDrawable of the parent node; otherwise, it may cause a memory leak.
     if (!isOnTheTree_) {
         std::atomic_store_explicit(&fullChildrenList_, EmptyChildrenList, std::memory_order_release);
         drawableVec_[static_cast<int8_t>(RSDrawableSlot::CHILDREN)].reset();
@@ -714,7 +716,12 @@ void RSRenderNode::DumpTree(int32_t depth, std::string& out) const
 
     out += "\n";
 
-    for (auto& child : *GetSortedChildren()) {
+    for (auto& child : children_) {
+        if (auto c = child.lock()) {
+            c->DumpTree(depth + 1, out);
+        }
+    }
+    for (auto& [child, pos] : disappearingChildren_) {
         child->DumpTree(depth + 1, out);
     }
 }
@@ -1118,6 +1125,7 @@ RSRenderNode::~RSRenderNode()
         clearCacheSurfaceFunc_(std::move(cacheSurface_), std::move(cacheCompletedSurface_), cacheSurfaceThreadIndex_,
             completedSurfaceThreadIndex_);
     }
+    DrawableV2::RSRenderNodeDrawableAdapter::RemoveDrawableFromCache(GetId());
     ClearCacheSurface();
     auto context = GetContext().lock();
     if (!context) {
