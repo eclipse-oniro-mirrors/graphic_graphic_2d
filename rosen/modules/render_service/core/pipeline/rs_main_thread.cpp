@@ -4193,5 +4193,10 @@ void RSMainThread::UnregisterSurfaceBufferCallback(pid_t pid, uint64_t uid)
 {
     surfaceBufferCallbackMgr_.UnregisterSurfaceBufferCallback(pid, uid);
 }
+
+void RSMainThread::RunSurfaceBufferCallback()
+{
+    surfaceBufferCallbackMgr_.RunSurfaceBufferCallback();
+}
 } // namespace Rosen
 } // namespace OHOS

@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include <cstdint>
+#include <functional>
 #include <map>
 #include <mutex>
 #include <shared_mutex>
@@ -39,8 +39,8 @@ public:
         sptr<RSISurfaceBufferCallback> callback);
     void UnregisterSurfaceBufferCallback(pid_t pid, uint64_t uid);
 
-    using SurfaceBufferOpItemCallback = std::function<pid_t, uint64_t, uint32_t>;
-    SurfaceBufferOpItemCallback GetSurfaceBufferOpItemCallback() const;
+    using SurfaceBufferOpItemCallback = std::function<void(pid_t, uint64_t, uint32_t)>;
+    SurfaceBufferOpItemCallback GetSurfaceBufferOpItemCallback();
     
 private:
     sptr<RSISurfaceBufferCallback> GetSurfaceBufferCallback(pid_t pid, uint64_t uid) const;

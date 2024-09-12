@@ -1,5 +1,6 @@
 #include "ipc_callbacks/rs_surface_buffer_callback.h"
-#include 'rs_hardware_thread.h'
+#include "platform/common/rs_log.h"
+#include "rs_hardware_thread.h"
 #include "rs_surface_buffer_callback_manager.h"
 
 namespace OHOS {
@@ -29,7 +30,8 @@ void RSSurfaceBufferCallbackManager::UnregisterSurfaceBufferCallback(pid_t pid, 
     }
 }
 
-SurfaceBufferOpItemCallback RSSurfaceBufferCallbackManager::GetSurfaceBufferOpItemCallback() const
+RSSurfaceBufferCallbackManager::SurfaceBufferOpItemCallback
+RSSurfaceBufferCallbackManager::GetSurfaceBufferOpItemCallback()
 {
     return [this](pid_t pid, uint64_t uid, uint32_t surfaceBufferId) {
         OnSurfaceBufferOpItemDestruct(pid, uid, surfaceBufferId);
