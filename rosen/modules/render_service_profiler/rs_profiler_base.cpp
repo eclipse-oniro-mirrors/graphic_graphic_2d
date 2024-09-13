@@ -30,6 +30,7 @@
 #include "rs_profiler_network.h"
 #include "rs_profiler_utils.h"
 #include "rs_profiler_file.h"
+#include "rs_profiler_log.h"
 
 #include "animation/rs_animation_manager.h"
 #include "command/rs_base_node_command.h"
@@ -1043,7 +1044,13 @@ static const uint8_t* GetCachedAshmemData(uint64_t id)
 
 void RSProfiler::WriteParcelData(Parcel& parcel)
 {
-    if (!IsEnabled()) {
+    bool isClientEnabled = RSSystemProperties::GetProfilerEnabled();
+    if (!parcel.WriteBool(isClientEnabled)) {
+        HRPE("Unable to write is_client_enabled");
+        return;
+    }
+
+    if (!isClientEnabled) {
         return;
     }
 
@@ -1052,7 +1059,12 @@ void RSProfiler::WriteParcelData(Parcel& parcel)
 
 const void* RSProfiler::ReadParcelData(Parcel& parcel, size_t size, bool& isMalloc)
 {
-    if (!IsEnabled()) {
+    bool isClientEnabled = false;
+    if (!parcel.ReadBool(isClientEnabled)) {
+        HRPE("Unable to read is_client_enabled");
+        return nullptr;
+    }
+    if (!isClientEnabled) {
         return RSMarshallingHelper::ReadFromAshmem(parcel, size, isMalloc);
     }
 
