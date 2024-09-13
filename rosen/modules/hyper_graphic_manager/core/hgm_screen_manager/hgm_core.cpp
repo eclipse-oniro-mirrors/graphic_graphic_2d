@@ -332,7 +332,7 @@ int32_t HgmCore::SetRefreshRateMode(int32_t refreshRateMode)
     }
 
     hgmFrameRateMgr_->HandleRefreshRateMode(refreshRateMode);
-
+    // sync vsync mode after refreshRate mode switching
     auto refreshRateModeName = GetCurrentRefreshRateModeName();
     if (refreshRateModeChangeCallback_ != nullptr) {
         refreshRateModeChangeCallback_(refreshRateModeName);
