@@ -35,10 +35,10 @@ int RSSurfaceBufferCallbackStub::OnRemoteRequest(
     switch (code) {
         case static_cast<uint32_t>(RSISurfaceBufferCallbackInterfaceCode::ON_FINISH): {
             uint64_t uid = {};
-            auto ret = data.ReadUint64(uid);
+            auto readRet = data.ReadUint64(uid);
             std::vector<uint32_t> surfaceBufferIds;
-            ret = ret && data.ReadUInt32Vector(&surfaceBufferIds);
-            if (!ret) {
+            readRet = readRet && data.ReadUInt32Vector(&surfaceBufferIds);
+            if (!readRet) {
                 ROSEN_LOGE("RSSurfaceBufferCallbackStub Read Remote Data ERROR");
             }
             OnFinish(uid, surfaceBufferIds);
