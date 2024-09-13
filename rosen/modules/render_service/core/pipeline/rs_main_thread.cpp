@@ -493,6 +493,8 @@ void RSMainThread::Init()
         RSNodeCommandHelper::SetDumpNodeTreeProcessor(
             std::bind(&RSMainThread::OnDumpClientNodeTree, this, _1, _2, _3, _4));
     }
+    Drawing::DrawSurfaceBufferOpItem::RegisterSurfaceBufferCallback(
+        RSSurfaceBufferCallbackManager::Instance().GetSurfaceBufferOpItemCallback());
 
     if (RSGraphicConfig::LoadConfigXml()) {
         if (RSGraphicConfig::GetConfig().IsMap()) {
@@ -4176,32 +4178,6 @@ void RSMainThread::ConfigureRenderService()
 bool RSMainThread::IsBlurSwitchOpen() const
 {
     return isBlurSwitchOpen_;
-}
-
-void RSMainThread::RegisterSurfaceBufferCallback(pid_t pid, uint64_t uid,
-    sptr<RSISurfaceBufferCallback> callback)
-{
-    static std::once_flag drawCmdRegisterFlag;
-    std::call_once(drawCmdRegisterFlag, [this]() {
-        auto callback = surfaceBufferCallbackMgr_.GetSurfaceBufferOpItemCallback();
-        Drawing::DrawSurfaceBufferOpItem::RegisterSurfaceBufferCallback(callback);
-    });
-    surfaceBufferCallbackMgr_.RegisterSurfaceBufferCallback(pid, uid, callback);
-}
-
-void RSMainThread::UnregisterSurfaceBufferCallback(pid_t pid)
-{
-    surfaceBufferCallbackMgr_.UnregisterSurfaceBufferCallback(pid);
-}
-
-void RSMainThread::UnregisterSurfaceBufferCallback(pid_t pid, uint64_t uid)
-{
-    surfaceBufferCallbackMgr_.UnregisterSurfaceBufferCallback(pid, uid);
-}
-
-void RSMainThread::RunSurfaceBufferCallback()
-{
-    surfaceBufferCallbackMgr_.RunSurfaceBufferCallback();
 }
 } // namespace Rosen
 } // namespace OHOS

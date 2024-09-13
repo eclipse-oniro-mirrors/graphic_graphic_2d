@@ -20,6 +20,12 @@
 
 namespace OHOS {
 namespace Rosen {
+RSSurfaceBufferCallbackManager& RSSurfaceBufferCallbackManager::Instance()
+{
+    static RSSurfaceBufferCallbackManager surfaceBufferCallbackMgr;
+    return surfaceBufferCallbackMgr;
+}
+
 void RSSurfaceBufferCallbackManager::RegisterSurfaceBufferCallback(pid_t pid, uint64_t uid,
     sptr<RSISurfaceBufferCallback> callback)
 {

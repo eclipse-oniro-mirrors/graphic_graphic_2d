@@ -185,15 +185,7 @@ void RSRenderServiceConnection::CleanAll(bool toDelete) noexcept
             connection->mainThread_->ClearSurfaceOcclusionChangeCallback(connection->remotePid_);
             connection->mainThread_->UnRegisterUIExtensionCallback(connection->remotePid_);
         }).wait();
-    mainThread_->ScheduleTask(
-        [weakThis = wptr<RSRenderServiceConnection>(this)]() {
-            sptr<RSRenderServiceConnection> connection = weakThis.promote();
-            if (!connection) {
-                return;
-            }
-            RS_TRACE_NAME_FMT("UnRegisterCallback For SurfaceBuffer %d", connection->remotePid_);
-            connection->mainThread_->UnregisterSurfaceBufferCallback(connection->remotePid_);
-        }).wait();
+    RSSurfaceBufferCallbackManager::Instance().UnregisterSurfaceBufferCallback(remotePid_);
     HgmTaskHandleThread::Instance().ScheduleTask([pid = remotePid_] () {
         RS_TRACE_NAME_FMT("CleanHgmEvent %d", pid);
         HgmConfigCallbackManager::GetInstance()->UnRegisterHgmConfigChangeCallback(pid);
@@ -2009,44 +2001,12 @@ void RSRenderServiceConnection::SetFreeMultiWindowStatus(bool enable)
 void RSRenderServiceConnection::RegisterSurfaceBufferCallback(pid_t pid, uint64_t uid,
     sptr<RSISurfaceBufferCallback> callback)
 {
-    if (!mainThread_) {
-        ROSEN_LOGE("RSRenderServiceConnection::RegisterSurfaceBufferCallback"
-            " Pair:[Pid: %{public}d, Uid: %{public}s] mainThread == nullptr",
-            pid, std::to_string(uid).c_str());
-        return;
-    }
-    auto task = [weakThis = wptr<RSRenderServiceConnection>(this), pid, uid, callback]() {
-        sptr<RSRenderServiceConnection> connection = weakThis.promote();
-        if (!connection || !connection->mainThread_) {
-            ROSEN_LOGE("RSRenderServiceConnection::RegisterSurfaceBufferCallback"
-                " Pair:[Pid: %{public}d, Uid: %{public}s] connection/mainThread == nullptr",
-                pid, std::to_string(uid).c_str());
-            return;
-        }
-        connection->mainThread_->RegisterSurfaceBufferCallback(pid, uid, callback);
-    };
-    mainThread_->PostTask(task);
+    RSSurfaceBufferCallbackManager::Instance().RegisterSurfaceBufferCallback(pid, uid, callback);
 }
 
 void RSRenderServiceConnection::UnregisterSurfaceBufferCallback(pid_t pid, uint64_t uid)
 {
-    if (!mainThread_) {
-        ROSEN_LOGE("RSRenderServiceConnection::UnregisterSurfaceBufferCallback"
-            " Pair:[Pid: %{public}d, Uid: %{public}s] mainThread == nullptr",
-            pid, std::to_string(uid).c_str());
-        return;
-    }
-    auto task = [weakThis = wptr<RSRenderServiceConnection>(this), pid, uid]() {
-        sptr<RSRenderServiceConnection> connection = weakThis.promote();
-        if (!connection || !connection->mainThread_) {
-            ROSEN_LOGE("RSRenderServiceConnection::UnregisterSurfaceBufferCallback"
-                " Pair:[Pid: %{public}d, Uid: %{public}s] connection/mainThread == nullptr",
-                pid, std::to_string(uid).c_str());
-            return;
-        }
-        connection->mainThread_->UnregisterSurfaceBufferCallback(pid, uid);
-    };
-    mainThread_->PostTask(task);
+    RSSurfaceBufferCallbackManager::Instance().UnregisterSurfaceBufferCallback(pid, uid);
 }
 
 void RSRenderServiceConnection::SetLayerTop(const std::string &nodeIdStr, bool isTop)

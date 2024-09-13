@@ -32,17 +32,23 @@ class RSISurfaceBufferCallback;
 
 class RSSurfaceBufferCallbackManager {
 public:
-    RSSurfaceBufferCallbackManager() = default;
-    ~RSSurfaceBufferCallbackManager() noexcept = default;
-
     void RegisterSurfaceBufferCallback(pid_t pid, uint64_t uid,
         sptr<RSISurfaceBufferCallback> callback);
     void UnregisterSurfaceBufferCallback(pid_t pid);
     void UnregisterSurfaceBufferCallback(pid_t pid, uint64_t uid);
 
     std::function<void(pid_t, uint64_t, uint32_t)> GetSurfaceBufferOpItemCallback() const;
-    
+
+    static RSSurfaceBufferCallbackManager& Instance();
 private:
+    RSSurfaceBufferCallbackManager() = default;
+    ~RSSurfaceBufferCallbackManager() noexcept = default;
+
+    RSSurfaceBufferCallbackManager(const RSSurfaceBufferCallbackManager&) = delete;
+    RSSurfaceBufferCallbackManager(RSSurfaceBufferCallbackManager&&) = delete;
+    RSSurfaceBufferCallbackManager& operator=(const RSSurfaceBufferCallbackManager&) = delete;
+    RSSurfaceBufferCallbackManager& operator=(RSSurfaceBufferCallbackManager&&) = delete;
+
     sptr<RSISurfaceBufferCallback> GetSurfaceBufferCallback(pid_t pid, uint64_t uid) const;
     size_t GetSurfaceBufferCallbackSize() const;
     
