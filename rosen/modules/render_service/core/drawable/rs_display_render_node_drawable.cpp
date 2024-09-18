@@ -300,7 +300,16 @@ std::unique_ptr<RSRenderFrame> RSDisplayRenderNodeDrawable::RequestFrame(
         params.GetNewColorSpace(), params.GetNewPixelFormat());
     RS_LOGD("RequestFrame colorspace is %{public}d, pixelformat is %{public}d", params.GetNewColorSpace(),
         params.GetNewPixelFormat());
-    auto renderFrame = renderEngine->RequestFrame(std::static_pointer_cast<RSSurfaceOhos>(rsSurface), bufferConfig);
+
+    bool isHebc = true;
+    if (RSMainThread::Instance()->GetAncoHebcStatus() == AncoHebcStatus::NOT_USE_HEBC) {
+        isHebc = false;
+        RS_LOGI("anco request frame not use hebc");
+    }
+    RSMainThread::Instance()->SetAncoHebcStatus(AncoHebcStatus::INITIAL);
+
+    auto renderFrame = renderEngine->RequestFrame(std::static_pointer_cast<RSSurfaceOhos>(rsSurface),
+        bufferConfig, false, isHebc);
     if (!renderFrame) {
         RS_LOGE("RSDisplayRenderNodeDrawable::RequestFrame renderEngine requestFrame is null");
         return nullptr;
@@ -623,7 +632,8 @@ void RSDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     RS_LOGD("RSDisplayRenderNodeDrawable::OnDraw HDR content in UniRender:%{public}d, BrightnessRatio:%{public}f",
         isHdrOn, hdrBrightnessRatio);
 
-    if (uniParam->IsOpDropped() && CheckDisplayNodeSkip(*params, processor)) {
+    if (uniParam->IsOpDropped() && CheckDisplayNodeSkip(*params, processor) &&
+        RSMainThread::Instance()->GetAncoHebcStatus() == AncoHebcStatus::INITIAL) {
         RSMainThread::Instance()->SetFrameIsRender(false);
         SetDisplayNodeSkipFlag(*uniParam, true);
         return;
