@@ -1519,7 +1519,7 @@ void RSUniRenderVisitor::UpdateHwcNodeProperty(std::shared_ptr<RSSurfaceRenderNo
                         if (area > 0) {
                             currIntersectedRoundCornerAABBs.push_back(roundCornerAABB);
                         }
-                    }        
+                    }
                 );
             }
         }
@@ -1887,7 +1887,8 @@ void RSUniRenderVisitor::UpdateHwcNodeEnableByHwcNodeBelowSelf(std::vector<RectI
         for (auto roundCornerAABB : hwcNode->GetIntersectedRoundCornerAABBs()) {
             auto intersectRect = roundCornerAABB.IntersectRect(rect);
             if (intersectRect.width_ * intersectRect.height_ > 0) {
-                RS_OPTIONAL_TRACE_NAME_FMT("hwc debug: name:%s id:%" PRIu64 " disabled by corner radius + hwc node below",
+                RS_OPTIONAL_TRACE_NAME_FMT("hwc debug: name:%s id:%" PRIu64
+                    " disabled by corner radius + hwc node below",
                     hwcNode->GetName().c_str(), hwcNode->GetId());
                 hwcNode->SetHardwareForcedDisabledState(true);
                 if (RSMainThread::CheckIsHdrSurface(*hwcNode)) {
