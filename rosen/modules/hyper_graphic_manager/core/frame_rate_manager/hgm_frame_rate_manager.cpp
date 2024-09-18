@@ -823,7 +823,7 @@ void HgmFrameRateManager::HandleRefreshRateMode(int32_t refreshRateMode)
     multiAppStrategy_.CalcVote();
     HgmCore::Instance().SetLtpoConfig();
     HgmConfigCallbackManager::GetInstance()->SyncHgmConfigChangeCallback();
-    UpdateAppSupportedState();
+    UpdateAppSupportedState();  // sync app state config when RefreshRateMode changed
 }
 
 void HgmFrameRateManager::HandleScreenPowerStatus(ScreenId id, ScreenPowerStatus status)
