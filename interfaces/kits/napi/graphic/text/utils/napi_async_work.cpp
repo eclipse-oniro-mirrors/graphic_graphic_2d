@@ -37,16 +37,18 @@ void ContextBase::GetCbInfo(napi_env envi, napi_callback_info info, NapiCbInfoPa
     size_t argc = ARGC_MAX;
     napi_value argv[ARGC_MAX] = {nullptr};
     status = napi_get_cb_info(env, info, &argc, argv, &self, nullptr);
-    NAPI_CHECK_ARGS_RETURN_VOID(this, status == napi_ok, status, "napi_get_cb_info failed", TextErrorCode::ERROR);
-    NAPI_CHECK_ARGS_RETURN_VOID(this, argc <= ARGC_MAX, status, "too many arguments",
-        TextErrorCode::ERROR_INVALID_PARAM);
-    NAPI_CHECK_ARGS_RETURN_VOID(this, self, status, "no JavaScript this argument",
-        TextErrorCode::ERROR_INVALID_PARAM);
+    NAPI_CHECK_ARGS(this, status == napi_ok, status, TextErrorCode::ERROR, return,
+        "Failed to get callback info");
+    NAPI_CHECK_ARGS(this, argc <= ARGC_MAX, status, TextErrorCode::ERROR_INVALID_PARAM, return,
+        "Too many arguments %zu", argc);
+    NAPI_CHECK_ARGS(this, self, status, TextErrorCode::ERROR_INVALID_PARAM, return,
+        "There is no JavaScript for this parameter");
 
     napi_create_reference(env, self, 1, &selfRef);
 
     status = napi_unwrap(env, self, &native);
-    NAPI_CHECK_ARGS_RETURN_VOID(this, status == napi_ok, status, "self unwrap failed", TextErrorCode::ERROR);
+    NAPI_CHECK_ARGS(this, status == napi_ok, status, TextErrorCode::ERROR, return,
+        "Failed to unwrap self");
 
     if (!sync && (argc > 0)) {
         // get the last arguments :: <callback>
@@ -55,7 +57,8 @@ void ContextBase::GetCbInfo(napi_env envi, napi_callback_info info, NapiCbInfoPa
         napi_status tyst = napi_typeof(env, argv[index], &type);
         if ((tyst == napi_ok) && (type == napi_function)) {
             status = napi_create_reference(env, argv[index], 1, &callbackRef);
-            NAPI_CHECK_ARGS_RETURN_VOID(this, status == napi_ok, status, "ref callback failed", TextErrorCode::ERROR);
+            NAPI_CHECK_ARGS(this, status == napi_ok, status, TextErrorCode::ERROR, return,
+                "Failed to get callback ref");
             argc = index;
             TEXT_LOGD("async callback, no promise");
         } else {
@@ -66,8 +69,8 @@ void ContextBase::GetCbInfo(napi_env envi, napi_callback_info info, NapiCbInfoPa
     if (parser) {
         parser(argc, argv);
     } else {
-        NAPI_CHECK_ARGS_RETURN_VOID(this, argc == 0, status, "required no arguments",
-            TextErrorCode::ERROR_INVALID_PARAM);
+        NAPI_CHECK_ARGS(this, argc == 0, status, TextErrorCode::ERROR_INVALID_PARAM, return,
+            "Required no arguments");
     }
 }
 

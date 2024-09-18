@@ -717,4 +717,13 @@ napi_value GetFontMetricsAndConvertToJsValue(napi_env env, Drawing::FontMetrics*
     return objValue;
 }
 
+bool NapiValueTypeIsValid(napi_env env, napi_value argValue)
+{
+    napi_valuetype valueType;
+    if (napi_typeof(env, argValue, &valueType) != napi_ok || valueType == napi_null || valueType == napi_undefined) {
+        TEXT_LOGE("Invalid value type %{public}d", static_cast<int32_t>(valueType));
+        return false;
+    }
+    return true;
+}
 } // namespace OHOS::Rosen

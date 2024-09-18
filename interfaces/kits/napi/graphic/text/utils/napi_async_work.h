@@ -25,16 +25,23 @@
 #include "napi/native_node_api.h"
 
 namespace OHOS::Rosen {
+#define MAX_LOG_SIZE 1024
 /* check condition related to argc/argv, return and logging. */
-#define NAPI_CHECK_ARGS_RETURN_VOID(context, condition, specifyStatus, message, code)               \
-    do {                                                               \
-        if (!(condition)) {                                            \
-            (context)->status = specifyStatus;                         \
-            (context)->errMessage = std::string(message);                      \
-            (context)->errCode = static_cast<int32_t>(code);                      \
-            TEXT_LOGE("test (" #condition ") failed: " message);           \
-            return;                                                    \
-        }                                                              \
+#define NAPI_CHECK_ARGS(context, condition, specifyStatus, code, retValue, fmt, ...) \
+    do { \
+        if (!(condition)) { \
+            (context)->status = specifyStatus; \
+            (context)->errCode = static_cast<int32_t>(code); \
+            char buffer[MAX_LOG_SIZE] = {0}; \
+            int res = snprintf_s(buffer, MAX_LOG_SIZE, MAX_LOG_SIZE - 1, fmt, ##__VA_ARGS__); \
+            if (res < 0) { \
+                TEXT_LOGE("Snprintf err, errcode %{public}d", res); \
+                retValue; \
+            } \
+            (context)->errMessage = std::string(buffer); \
+            TEXT_LOGE("Test (" #condition ") failed: %{public}s", buffer); \
+            retValue; \
+        } \
     } while (0)
 
 #define NAPI_CHECK_STATUS_RETURN_VOID(context, message, code)                        \
