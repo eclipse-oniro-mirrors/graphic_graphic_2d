@@ -46,7 +46,7 @@ HgmEnergyConsumptionPolicy::HgmEnergyConsumptionPolicy()
         HgmTaskHandleThread::Instance().PostTask([this, componentName]() { StartNewAnimation(componentName); });
     });
     RsCommonHook::Instance().SetComponentPowerFpsFunc(
-        std::bind(&HgmEnergyConsumptionPolicy::GetCompnentFps, this, std::placeholders::_1));
+        std::bind(&HgmEnergyConsumptionPolicy::GetComponentFps, this, std::placeholders::_1));
 }
 
 HgmEnergyConsumptionPolicy& HgmEnergyConsumptionPolicy::Instance()
