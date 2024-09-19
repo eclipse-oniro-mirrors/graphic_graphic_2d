@@ -127,6 +127,20 @@ HWTEST_F(RSInterfacesTest, UnRegisterTypeface001, TestSize.Level1)
 }
 
 /**
+ * @tc.name: GetMemoryGraphics001
+ * @tc.desc: test results of GetMemoryGraphics
+ * @tc.type: FUNC
+ * @tc.require: issueIAS4B8
+ */
+HWTEST_F(RSInterfacesTest, GetMemoryGraphics001, TestSize.Level1)
+{
+    RSInterfaces& instance = RSInterfaces::GetInstance();
+    instance.renderServiceClient_ = std::make_unique<RSRenderServiceClient>();
+    auto res = instance.GetMemoryGraphics();
+    EXPECT_FALSE(res.empty());
+}
+
+/**
  * @tc.name: GetTotalAppMemSize001
  * @tc.desc: test results of GetTotalAppMemSize
  * @tc.type: FUNC
@@ -212,6 +226,20 @@ HWTEST_F(RSInterfacesTest, ReportEventJankFrame001, TestSize.Level1)
     DataBaseRs info;
     instance.renderServiceClient_ = std::make_unique<RSRenderServiceClient>();
     instance.ReportEventJankFrame(info);
+    EXPECT_TRUE(instance.renderServiceClient_ != nullptr);
+}
+
+/**
+ * @tc.name: SetDefaultDeviceRotationOffset001
+ * @tc.desc: test results of SetDefaultDeviceRotationOffset
+ * @tc.type: FUNC
+ * @tc.require: issueIAS4B8
+ */
+HWTEST_F(RSInterfacesTest, SetDefaultDeviceRotationOffset001, TestSize.Level1)
+{
+    RSInterfaces& instance = RSInterfaces::GetInstance();
+    instance.renderServiceClient_ = std::make_unique<RSRenderServiceClient>();
+    instance.SetDefaultDeviceRotationOffset(90);
     EXPECT_TRUE(instance.renderServiceClient_ != nullptr);
 }
 
