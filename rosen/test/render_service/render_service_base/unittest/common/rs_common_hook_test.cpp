@@ -43,6 +43,7 @@ HWTEST_F(RsCommonHookTest, RegisterStartNewAnimationListenerTest, TestSize.Level
 {
     auto callback = [](const std::string &componentName) {};
     RsCommonHook::Instance().RegisterStartNewAnimationListener(callback);
+    ASSERT_EQ(RsCommonHook::Instance().startNewAniamtionFunc_, callback);
 }
 
 /**
@@ -53,10 +54,12 @@ HWTEST_F(RsCommonHookTest, RegisterStartNewAnimationListenerTest, TestSize.Level
  */
 HWTEST_F(RsCommonHookTest, OnStartNewAnimationTest1, TestSize.Level1)
 {
-    auto callback = [](const std::string &componentName) {};
+    std::string result;
+    auto callback = [&result](const std::string& componentName) { result = componentName; };
     RsCommonHook::Instance().RegisterStartNewAnimationListener(callback);
     std::string componentName = "SWIPER_FLING";
     RsCommonHook::Instance().OnStartNewAnimation(componentName);
+    ASSERT_EQ(result, componentName);
 }
 
 /**
@@ -82,6 +85,7 @@ HWTEST_F(RsCommonHookTest, SetComponentPowerFpsFuncTest, TestSize.Level1)
 {
     auto callback = [](FrameRateRange &range) {};
     RsCommonHook::Instance().SetComponentPowerFpsFunc(callback);
+    ASSERT_EQ(RsCommonHook::Instance().componentPoweFpsFunc_, task);
 }
 
 /**

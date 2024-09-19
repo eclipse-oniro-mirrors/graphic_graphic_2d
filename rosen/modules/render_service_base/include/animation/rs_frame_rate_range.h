@@ -131,7 +131,6 @@ public:
         switch (componentScene_) {
             case ComponentScene::SWIPER_FLING:
                 return "SWIPER_FLING";
-
             default:
                 return "UNKNOWN_SCENE";
         }

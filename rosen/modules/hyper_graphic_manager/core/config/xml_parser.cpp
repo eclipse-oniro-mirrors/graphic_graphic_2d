@@ -409,8 +409,9 @@ int32_t XMLParser::ParsePowerStrategy(xmlNode& node, std::unordered_map<std::str
 {
     std::unordered_map<std::string, std::string> configs;
     auto result = ParseSimplex(node, configs);
-    powerConfig.clear ();
+    powerConfig.clear();
     if (result != EXEC_SUCCESS) {
+        HGM_LOGI("XMLParser failed to powerConfig %{public}s", name.c_str());
         return result;
     }
     for (const auto &item: configs) {

@@ -22,6 +22,7 @@
 #include <atomic>
 
 #include "animation/rs_frame_rate_range.h"
+
 namespace OHOS::Rosen {
 class RsCommonHook {
 public:
