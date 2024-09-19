@@ -95,7 +95,7 @@ HWTEST_F(RsCommonHookTest, GetComponentPowerFpsTest, TestSize.Level1)
     auto callback = [](FrameRateRange &range) {
         range.preferred_ = RANGE_MAX_REFRESHRATE;
     };
-    RsCommonHook::Instance().GetComponentPowerFps(callback);
+    RsCommonHook::Instance().SetComponentPowerFpsFunc(callback);
     FrameRateRange range;
     RsCommonHook::Instance().GetComponentPowerFps(range);
     ASSERT_EQ(range.preferred_, RANGE_MAX_REFRESHRATE);
