@@ -411,7 +411,7 @@ int32_t XMLParser::ParsePowerStrategy(xmlNode& node, std::unordered_map<std::str
     auto result = ParseSimplex(node, configs);
     powerConfig.clear();
     if (result != EXEC_SUCCESS) {
-        HGM_LOGI("XMLParser failed to powerConfig %{public}s", name.c_str());
+        HGM_LOGI("XMLParser failed to powerConfig component_power_config");
         return result;
     }
     for (const auto &item: configs) {
