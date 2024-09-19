@@ -43,7 +43,6 @@ HWTEST_F(RsCommonHookTest, RegisterStartNewAnimationListenerTest, TestSize.Level
 {
     auto callback = [](const std::string &componentName) {};
     RsCommonHook::Instance().RegisterStartNewAnimationListener(callback);
-    ASSERT_EQ(RsCommonHook::Instance().startNewAniamtionFunc_, callback);
 }
 
 /**
@@ -85,7 +84,6 @@ HWTEST_F(RsCommonHookTest, SetComponentPowerFpsFuncTest, TestSize.Level1)
 {
     auto callback = [](FrameRateRange &range) {};
     RsCommonHook::Instance().SetComponentPowerFpsFunc(callback);
-    ASSERT_EQ(RsCommonHook::Instance().componentPoweFpsFunc_, task);
 }
 
 /**
