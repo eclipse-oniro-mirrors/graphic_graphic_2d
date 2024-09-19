@@ -3170,7 +3170,9 @@ void RSRenderNode::MarkNodeGroup(NodeGroupType type, bool isNodeGroup, bool incl
             nodeGroupType_ |= type;
             ROSEN_LOGD("Node id %{public}" PRIu64 " set dirty, mark node group", GetId());
             SetDirty();
-            stagingRenderParams_->SetDirtyType(RSRenderParamsDirtyType::DRAWING_CACHE_TYPE_DIRTY);
+            if (stagingRenderParams_) {
+                stagingRenderParams_->SetDirtyType(RSRenderParamsDirtyType::DRAWING_CACHE_TYPE_DIRTY);
+            }
         }
     } else {
         if (isNodeGroup) {
@@ -3180,7 +3182,9 @@ void RSRenderNode::MarkNodeGroup(NodeGroupType type, bool isNodeGroup, bool incl
         }
         ROSEN_LOGD("Node id %{public}" PRIu64 " set dirty, mark node group", GetId());
         SetDirty();
-        stagingRenderParams_->SetDirtyType(RSRenderParamsDirtyType::DRAWING_CACHE_TYPE_DIRTY);
+        if (stagingRenderParams_) {
+            stagingRenderParams_->SetDirtyType(RSRenderParamsDirtyType::DRAWING_CACHE_TYPE_DIRTY);
+        }
     }
     if (nodeGroupType_ == static_cast<uint8_t>(NodeGroupType::NONE) && !isNodeGroup) {
         needClearSurface_ = true;
