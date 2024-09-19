@@ -240,7 +240,7 @@ void DoScreenRcdTask(std::shared_ptr<RSProcessor>& processor, std::unique_ptr<Rc
 
 float CalScaler(const float& maxContentLightLevel)
 {
-    if (ROSEN_LE(maxContentLightLevel, 0.0f) || ROSEN_LNE(maxContentLightLevel, REFERENCE_WHITE)) {
+    if (ROSEN_LNE(maxContentLightLevel, REFERENCE_WHITE)) {
         return DEFAULT_HDR_RATIO;
     } else if (ROSEN_GE(maxContentLightLevel, CAMERA_WHITE_MIN) && ROSEN_LE(maxContentLightLevel, CAMERA_WHITE_MAX)) {
         return CAMERA_HDR_RATIO;
@@ -1021,7 +1021,7 @@ void RSMainThread::RequestNextVsyncForCachedCommand(std::string& transactionFlag
     RequestNextVSync();
 #else
     transactionFlags += " cache (" + std::to_string(pid) + "," + std::to_string(curIndex) + ")";
-    RS_TRACE_NAME("trigger NextVsync for Dvsync-Cached command");
+    RS_TRACE_NAME("RSMainThread::CheckAndUpdateTransactionIndex Trigger NextVsync");
     if (rsVSyncDistributor_->IsUiDvsyncOn()) {
         RequestNextVSync("fromRsMainCommand", timestamp_);
     } else {
@@ -3174,6 +3174,34 @@ void RSMainThread::RenderServiceTreeDump(std::string& dumpString, bool forceDump
 
         dumpString += "\n====================================\n";
         RSUniRenderThread::Instance().RenderServiceTreeDump(dumpString);
+
+        // dump all node info
+        std::string node_str = "";
+        std::string type_str = "";
+        int count = 0;
+        for (auto& [nodeId, info] : MemoryTrack::Instance().GetMemNodeMap()) {
+            auto node = context_->GetMutableNodeMap().GetRenderNode(nodeId);
+            if (node) {
+                RSRenderNode::DumpNodeType(node->GetType(), type_str);
+                node_str = "nodeId: " + std::to_string(nodeId) +
+                    ", [info] pid: " + std::to_string(info.pid) + ", type: "+ type_str +
+                    ", width: " + std::to_string(node->GetOptionalBufferSize().x_) +
+                    ", height: " + std::to_string(node->GetOptionalBufferSize().y_) +
+                    (node->IsOnTheTree() ? ", ontree;\n" : ", offtree;\n");
+                dumpString += node_str.c_str();
+                count++;
+                type_str = "";
+            } else {
+                node_str = "nodeId: " + std::to_string(nodeId) +
+                    ", [info] pid: " + std::to_string(info.pid) + ", node is nullptr;\n";
+                dumpString += node_str.c_str();
+            }
+            node_str = "";
+            if (count > 2500) { // 2500 is the max dump size.
+                dumpString += "Total node size > 2500, only record the first 2500.\n";
+                break;
+            }
+        }
     } else {
         dumpString += g_dumpStr;
         g_dumpStr = "";

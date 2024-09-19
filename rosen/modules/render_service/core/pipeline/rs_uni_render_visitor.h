@@ -253,6 +253,7 @@ private:
     void UpdatePointWindowDirtyStatus(std::shared_ptr<RSSurfaceRenderNode>& pointWindow);
     void UpdateTopLayersDirtyStatus(const std::vector<std::shared_ptr<RSSurfaceRenderNode>>& topLayers);
     void UpdateHwcNodeEnable();
+    void UpdateHwcNodeEnableByNodeBelow();
     void PrevalidateHwcNode();
 
     // use in QuickPrepareSurfaceRenderNode, update SurfaceRenderNode's uiFirst status
@@ -399,7 +400,6 @@ private:
     VisibleData dstCurVisVec_;
     std::vector<RectI> globalSurfaceBounds_;
     bool isPrevalidateHwcNodeEnable_ = false;
-    bool hasHdrpresent_ = false;
     bool hasUniRenderHdrSurface_ = false;
     bool isSubThread_ = false;
     float localZOrder_ = 0.0f; // local zOrder for surfaceView under same app window node
