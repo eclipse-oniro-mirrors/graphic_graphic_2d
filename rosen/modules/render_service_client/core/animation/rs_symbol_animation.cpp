@@ -253,9 +253,6 @@ bool RSSymbolAnimation::SetReplaceAppear(
     bool isStartAnimation)
 {
     auto nodeNum = symbolAnimationConfig->numNodes;
-    if (nodeNum <= 0) {
-        return false;
-    }
     auto symbolSpanId = symbolAnimationConfig->symbolSpanId;
     const auto& symbolFirstNode = symbolAnimationConfig->symbolNodes[0]; // calculate offset by the first node
     Vector4f offsets = CalculateOffset(symbolFirstNode.symbolData.path_,
@@ -376,11 +373,6 @@ bool RSSymbolAnimation::SetPublicAnimation(
     const std::shared_ptr<TextEngine::SymbolAnimationConfig>& symbolAnimationConfig)
 {
     uint32_t nodeNum = symbolAnimationConfig->numNodes;
-    if (nodeNum <= 0) {
-        ROSEN_LOGD("HmSymbol SetDisappearAnimation::getNode or get symbolAnimationConfig:failed");
-        return false;
-    }
-
     auto symbolSpanId = symbolAnimationConfig->symbolSpanId;
     const auto& symbolFirstNode = symbolAnimationConfig->symbolNodes[0]; // calculate offset by the first node
 
