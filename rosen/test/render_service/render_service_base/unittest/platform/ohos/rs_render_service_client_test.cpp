@@ -885,7 +885,7 @@ HWTEST_F(RSClientTest, SetLayerTop001, TestSize.Level1)
     ASSERT_NE(rsClient, nullptr);
     const std::string nodeIdStr = "123456";
     rsClient->SetLayerTop(nodeIdStr, true);
-    ASSERT_TRUE(true);
+    rsClient->SetLayerTop(nodeIdStr, false);
 }
 } // namespace Rosen
 } // namespace OHOS
