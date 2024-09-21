@@ -2993,5 +2993,20 @@ RSSurfaceNodeAbilityState RSSurfaceRenderNode::GetAbilityState() const
 {
     return abilityState_;
 }
+
+bool RSSurfaceRenderNode::IsWaitUifirstFirstFrame() const
+{
+    return isWaitUifirstFirstFrame_;
+}
+
+void RSSurfaceRenderNode::SetWaitUifirstFirstFrame(bool wait)
+{
+    if (isWaitUifirstFirstFrame_ == wait) {
+        return;
+    }
+    isWaitUifirstFirstFrame_ = wait;
+    RS_TRACE_NAME_FMT("SetWaitUifirstFirstFrame id:%" PRIu64 ", wait:%d", GetId(), wait);
+    RS_LOGI("SetWaitUifirstFirstFrame id:%{public}" PRIu64 ", wait:%{public}d", GetId(), wait);
+}
 } // namespace Rosen
 } // namespace OHOS

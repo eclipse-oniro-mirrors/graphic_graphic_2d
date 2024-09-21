@@ -922,15 +922,8 @@ public:
         return submittedSubThreadIndex_;
     }
 
-    bool IsWaitUifirstFirstFrame() const
-    {
-        return isWaitUifirstFirstFrame_;
-    }
-
-    void SetWaitUifirstFirstFrame(bool wait)
-    {
-        isWaitUifirstFirstFrame_ = wait;
-    }
+    bool IsWaitUifirstFirstFrame() const;
+    void SetWaitUifirstFirstFrame(bool wait);
 
     void SetCacheSurfaceProcessedStatus(CacheProcessStatus cacheProcessStatus);
     CacheProcessStatus GetCacheSurfaceProcessedStatus() const;

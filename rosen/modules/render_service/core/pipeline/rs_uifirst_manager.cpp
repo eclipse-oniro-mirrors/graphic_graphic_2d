@@ -244,9 +244,6 @@ void RSUifirstManager::NotifyUIStartingWindow(NodeId id, bool wait)
         auto surfaceChild = child->ReinterpretCastTo<RSSurfaceRenderNode>();
         if (surfaceChild && surfaceChild->IsMainWindowType()) {
             surfaceChild->SetWaitUifirstFirstFrame(wait);
-            RS_TRACE_NAME_FMT("uifirst NotifyUIStartingWindow id:%llu, wait:%d", surfaceChild->GetId(), wait);
-            RS_LOGI("uifirst NotifyUIStartingWindow id:%{public}" PRIu64 ", wait:%{public}d",
-                surfaceChild->GetId(), wait);
         }
     }
 }
