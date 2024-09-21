@@ -301,7 +301,6 @@ HWTEST_F(GEKawaseBlurShaderFilterTest, getNormalizedOffset001, TestSize.Level1)
     auto geKawaseBlurShaderFilter = std::make_shared<GEKawaseBlurShaderFilter>(params);
     const uint32_t offsetCount = BLUR_SAMPLE_COUNT;
     SkV2 offsets[offsetCount];
-    //offsetInfo :float offsetX=1.f,float offsetY=1.f,int width=2,int height=2;
     OffsetInfo offsetInfo = { 1.f, 1.f, 2, 2 };
 
     getNormalizedOffset(offsets, offsetCount, offsetInfo);
@@ -317,7 +316,6 @@ HWTEST_F(GEKawaseBlurShaderFilterTest, getNormalizedOffset002, TestSize.Level1)
     Drawing::GEKawaseBlurShaderFilterParams params { 1 }; // 1 blur radius
     auto geKawaseBlurShaderFilter = std::make_shared<GEKawaseBlurShaderFilter>(params);
     const uint32_t offsetCount = BLUR_SAMPLE_COUNT;
-    //offsetInfo :float offsetX=1.f,float offsetY=1.f,int width=2,int height=2;
     OffsetInfo offsetInfo = { 1.f, 1.f, 2, 2 };
     //offsets == nullptr
     getNormalizedOffset(nullptr, offsetCount, offsetInfo);
@@ -334,7 +332,6 @@ HWTEST_F(GEKawaseBlurShaderFilterTest, getNormalizedOffset003, TestSize.Level1)
     auto geKawaseBlurShaderFilter = std::make_shared<GEKawaseBlurShaderFilter>(params);
     const uint32_t offsetCount = 3;
     SkV2 offsets[offsetCount];
-    //offsetInfo :float offsetX=1.f,float offsetY=1.f,int width=2,int height=2;
     OffsetInfo offsetInfo = { 1.f, 1.f, 2, 2 };
     //offsetCount != BLUR_SAMPLE_COUNT
     getNormalizedOffset(offsets, offsetCount, offsetInfo);
@@ -351,7 +348,6 @@ HWTEST_F(GEKawaseBlurShaderFilterTest, getNormalizedOffset004, TestSize.Level1)
     auto geKawaseBlurShaderFilter = std::make_shared<GEKawaseBlurShaderFilter>(params);
     const uint32_t offsetCount = BLUR_SAMPLE_COUNT;
     SkV2 offsets[offsetCount];
-    //offsetInfo :float offsetX=1.f,float offsetY=1.f,int width=2,int height=2;
     OffsetInfo offsetInfo = { 1.f, 1.f, 0, 2 };
     // offsetInfo.width=0
     getNormalizedOffset(offsets, offsetCount, offsetInfo);
@@ -368,7 +364,6 @@ HWTEST_F(GEKawaseBlurShaderFilterTest, getNormalizedOffset005, TestSize.Level1)
     auto geKawaseBlurShaderFilter = std::make_shared<GEKawaseBlurShaderFilter>(params);
     const uint32_t offsetCount = BLUR_SAMPLE_COUNT;
     SkV2 offsets[offsetCount];
-    //offsetInfo :float offsetX=1.f,float offsetY=1.f,int width=2,int height=2;
     OffsetInfo offsetInfo = { 1.f, 1.f, 2, 0 };
     // offsetInfo.height=0
     getNormalizedOffset(offsets, offsetCount, offsetInfo);
