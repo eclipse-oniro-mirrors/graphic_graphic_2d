@@ -1862,7 +1862,7 @@ void RSUniRenderVisitor::UpdateHwcNodeEnableByHwcNodeBelowSelf(std::vector<RectI
         return;
     }
     for (const auto& rect : hwcRects) {
-        for (auto roundCornerAABB : hwcNode->GetIntersectedRoundCornerAABBs()) {
+        for (auto& roundCornerAABB : hwcNode->GetIntersectedRoundCornerAABBs()) {
             if (!roundCornerAABB.IntersectRect(rect).IsEmpty()) {
                 RS_OPTIONAL_TRACE_NAME_FMT("hwc debug: name:%s id:%" PRIu64
                     " disabled by corner radius + hwc node below",
