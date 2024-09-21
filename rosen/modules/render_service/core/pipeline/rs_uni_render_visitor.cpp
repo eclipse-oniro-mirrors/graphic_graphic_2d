@@ -1481,8 +1481,11 @@ void RSUniRenderVisitor::UpdateHwcNodeProperty(std::shared_ptr<RSSurfaceRenderNo
             if (parentGeo && maxCornerRadius > 0) {
                 // The logic here is to calculate whether the HWC Node affects
                 // the round corner property of the parent node.
-                // The method is to calculate whether the Rect of the HWC Node intersects
-                // with the AABB of the round corner of the parent node.
+                // The method is calculating the rounded AABB of each HWC node
+                // with respect to all parent nodes above it and storing the results.
+                // When a HWC node is found below, the AABBs and the HWC node
+                // are checked for intersection. If there is an intersection,
+                // the node above it is disabled from taking the HWC pipeline.
                 auto parentRect = parentGeo->GetAbsRect();
                 UIPoint offset { parentRect.GetWidth() - maxCornerRadius, parentRect.GetHeight() - maxCornerRadius };
                 UIPoint anchorPoint { parentRect.GetLeft(), parentRect.GetTop() };
