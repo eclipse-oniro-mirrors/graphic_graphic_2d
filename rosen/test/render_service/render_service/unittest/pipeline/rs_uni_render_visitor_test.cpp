@@ -4317,6 +4317,7 @@ HWTEST_F(RSUniRenderVisitorTest, IsSubTreeOccluded002, TestSize.Level2)
     auto node = RSTestUtil::CreateSurfaceNode();
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
     ASSERT_NE(rsUniRenderVisitor, nullptr);
+    rsUniRenderVisitor->isOcclusionEnabled_ = true;
 
     ASSERT_EQ(rsUniRenderVisitor->IsSubTreeOccluded(*node), false);
     ASSERT_EQ(node->dirtyStatus_, RSRenderNode::NodeDirty::CLEAN);
@@ -4368,7 +4369,7 @@ HWTEST_F(RSUniRenderVisitorTest, CheckFilterCacheNeedForceClearOrSave001, TestSi
 
 /**
  * @tc.name: PrepareForUIFirstNode001
- * @tc.desc: Test PrepareForUIFirstNode with multi-RSRenderNode
+ * @tc.desc: Test PrepareForUIFirstNode with multi-rsSurfaceRenderNode
  * @tc.type: FUNC
  * @tc.require: issueIASE3Z
  */
@@ -4388,7 +4389,7 @@ HWTEST_F(RSUniRenderVisitorTest, PrepareForUIFirstNode001, TestSize.Level2)
 
 /**
  * @tc.name: UpdateNodeVisibleRegion001
- * @tc.desc: Test UpdateNodeVisibleRegion with multi-
+ * @tc.desc: Test UpdateNodeVisibleRegion when needRecalculateOcclusion_ is true
  * @tc.type: FUNC
  * @tc.require: issueIASE3Z
  */
@@ -4412,7 +4413,7 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateNodeVisibleRegion001, TestSize.Level2)
 HWTEST_F(RSUniRenderVisitorTest, CalculateOcclusion004, TestSize.Level2)
 {
     std::shared_ptr<RSSurfaceRenderNode> rsSurfaceRenderNode = nullptr;
-    ASSERT_NE(rsSurfaceRenderNode, nullptr);
+    ASSERT_EQ(rsSurfaceRenderNode, nullptr);
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
     ASSERT_NE(rsUniRenderVisitor, nullptr);
     rsUniRenderVisitor->CalculateOcclusion(*rsSurfaceRenderNode);
@@ -4420,7 +4421,7 @@ HWTEST_F(RSUniRenderVisitorTest, CalculateOcclusion004, TestSize.Level2)
     auto rsContext = std::make_shared<RSContext>();
     ASSERT_NE(rsContext, nullptr);
     RSSurfaceRenderNodeConfig config;
-    config.id = 11;
+    config.id = 1;
     rsSurfaceRenderNode = std::make_shared<RSSurfaceRenderNode>(config, rsContext->weak_from_this());
     ASSERT_NE(rsSurfaceRenderNode, nullptr);
     rsUniRenderVisitor->needRecalculateOcclusion_ = true;
@@ -4445,7 +4446,6 @@ HWTEST_F(RSUniRenderVisitorTest, QuickPrepareCanvasRenderNode001, TestSize.Level
     rsUniRenderVisitor->QuickPrepareCanvasRenderNode(*rsCanvasRenderNode);
 
     rsUniRenderVisitor->isDrawingCacheEnabled_ = true;
-    rsUniRenderVisitor->curSurfaceNode_ = RSTestUtil::CreateSurfaceNodeWithBuffer();
     rsUniRenderVisitor->QuickPrepareCanvasRenderNode(*rsCanvasRenderNode);
 }
 
@@ -4475,7 +4475,7 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateLeashWindowVisibleRegionEmpty001, TestSiz
     auto rsContext = std::make_shared<RSContext>();
     ASSERT_NE(rsContext, nullptr);
     RSSurfaceRenderNodeConfig config;
-    config.id = 11;
+    config.id = 1;
     auto rsSurfaceRenderNode = std::make_shared<RSSurfaceRenderNode>(config, rsContext->weak_from_this());
     ASSERT_NE(rsSurfaceRenderNode, nullptr);
     rsSurfaceRenderNode->nodeType_ = RSSurfaceNodeType::LEASH_WINDOW_NODE;
@@ -4487,7 +4487,7 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateLeashWindowVisibleRegionEmpty001, TestSiz
 
 /**
  * @tc.name: UpdateHwcNodeInfoForAppNode002
- * @tc.desc: Test UpdateHwcNodeInfoForAppNode without nullptr
+ * @tc.desc: Test UpdateHwcNodeInfoForAppNode with multi-params
  * @tc.type: FUNC
  * @tc.require: issueIASE3Z
  */
