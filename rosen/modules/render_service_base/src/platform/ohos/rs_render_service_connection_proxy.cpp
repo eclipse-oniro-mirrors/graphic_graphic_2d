@@ -30,8 +30,8 @@ namespace OHOS {
 namespace Rosen {
 namespace {
 static constexpr size_t ASHMEM_SIZE_THRESHOLD = 400 * 1024; // cannot > 500K in TF_ASYNC mode
-static constexpr int MAX_RETRY_COUNT = 10;
-static constexpr int RETRY_WAIT_TIME_US = 500; // wait 0.5ms before retry SendRequest
+static constexpr int MAX_RETRY_COUNT = 20;
+static constexpr int RETRY_WAIT_TIME_US = 1000; // wait 1ms before retry SendRequest
 }
 
 RSRenderServiceConnectionProxy::RSRenderServiceConnectionProxy(const sptr<IRemoteObject>& impl)
@@ -88,7 +88,8 @@ void RSRenderServiceConnectionProxy::CommitTransaction(std::unique_ptr<RSTransac
                 usleep(RETRY_WAIT_TIME_US);
             } else if (err != NO_ERROR) {
                 ROSEN_LOGE("RSRenderServiceConnectionProxy::CommitTransaction SendRequest failed, "
-                    "err = %{public}d, retryCount = %{public}d", err, retryCount);
+                    "err = %{public}d, retryCount = %{public}d, data size:%{public}zu", err, retryCount,
+                    parcel->GetDataSize());
                 return;
             }
         } while (err != NO_ERROR && retryCount < MAX_RETRY_COUNT);
