@@ -673,7 +673,7 @@ napi_value JsParagraph::OnGetFontMetricsByTextStyle(napi_env env, napi_callback_
     TextStyle textStyle;
     if (!GetTextStyleFromJS(env, argv[0], textStyle)) {
         TEXT_LOGE("Failed to convert text style");
-        return NapiGetUndefined(env);
+        return NapiThrowError(env, TextErrorCode::ERROR_INVALID_PARAM, "Invalid params");
     }
 
     OHOS::Rosen::Drawing::FontMetrics fontmetrics = paragraph_->GetFontMetrics(textStyle);

@@ -138,6 +138,14 @@ typedef struct OH_Drawing_TextLine OH_Drawing_TextLine;
  */
 typedef struct OH_Drawing_Run OH_Drawing_Run;
 
+/**
+ * @brief Defines an <b>OH_Drawing_TextTab</b>, which is used to create an <b>OH_Drawing_TextTab</b> object.
+ *
+ * @since 14
+ * @version 1.0
+ */
+typedef struct OH_Drawing_TextTab OH_Drawing_TextTab;
+
 #ifdef __cplusplus
 }
 #endif
