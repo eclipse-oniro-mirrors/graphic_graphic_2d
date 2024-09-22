@@ -1250,6 +1250,18 @@ bool RSUifirstManager::IsLeashWindowCache(RSSurfaceRenderNode& node, bool animat
     return isNeedAssignToSubThread;
 }
 
+// Vm app not use uifirst when it is focused
+bool RSUifirstManager::IsVMSurfaceName(std::string surfaceName)
+{
+    for (auto& item : vmAppNameSet_) {
+        if (surfaceName.find(item) != std::string::npos) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 // NonFocusWindow, may reuse last image cache
 bool RSUifirstManager::IsNonFocusWindowCache(RSSurfaceRenderNode& node, bool animation)
 {
@@ -1267,7 +1279,8 @@ bool RSUifirstManager::IsNonFocusWindowCache(RSSurfaceRenderNode& node, bool ani
     }
     if ((node.IsFocusedNode(RSMainThread::Instance()->GetFocusNodeId()) ||
         node.IsFocusedNode(RSMainThread::Instance()->GetFocusLeashWindowId())) &&
-        node.GetHasSharedTransitionNode()) {
+        (node.GetHasSharedTransitionNode() || RSUifirstManager::Instance().IsVMSurfaceName(surfaceName))) {
+        RS_TRACE_NAME_FMT("IsNonFocusWindowCache: surfaceName[%s] is MainThread", surfaceName.c_str());
         return false;
     }
     return node.QuerySubAssignable(isDisplayRotation);
