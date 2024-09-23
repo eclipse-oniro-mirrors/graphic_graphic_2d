@@ -1186,7 +1186,7 @@ std::tuple<bool, bool, bool> RSRenderNode::Animate(int64_t timestamp, int64_t pe
     }
     RS_OPTIONAL_TRACE_BEGIN("RSRenderNode:Animate node id: [" + std::to_string(GetId()) + "]");
     bool abilityState = true;
-    if (context = GetContext().lock()) {
+    if (auto context = GetContext().lock()) {
         abilityState = context->GetNodeMap().GetAbilityStateById(GetId());
     }
     auto animateResult = animationManager_.Animate(timestamp, IsOnTheTree(), abilityState);

@@ -3025,7 +3025,16 @@ void RSSurfaceRenderNode::SetAbilityState(bool abilityState)
     if (abilityState_ == abilityState) {
         return;
     }
+
     abilityState_ = abilityState;
+
+    if (auto context = GetContext().lock()) {
+        if (abilityState_) {
+            context->GetMutableNodeMap().RemoveBackgroundPidBySurfaceNodeId(GetId());
+        } else {
+            context->GetMutableNodeMap().AddBackgroundPidBySurfaceNodeId(GetId());
+        }
+    }
 }
 
 bool RSSurfaceRenderNode::GetAbilityState() const

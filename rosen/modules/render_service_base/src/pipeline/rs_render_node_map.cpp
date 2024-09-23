@@ -337,16 +337,20 @@ const std::string RSRenderNodeMap::GetSelfDrawSurfaceNameByPid(pid_t nodePid) co
 bool RSRenderNodeMap::GetAbilityStateById(NodeId id) const
 {
     auto nodePid = ExtractPid(id);
-    if (!ContainPid(nodePid)) {
-        return true;
-    }
+    std::lock_guard<std::mutex> lock(backgroundPidsMutex_);
+    return backgroundPids_.find(nodePid) == backgroundPids_.end();
+}
 
-    for (const auto& [surfaceNodeId, surfaceNode] : surfaceNodeMap_) {
-        if (nodePid == ExtractPid(surfaceNodeId)) {
-            return surfaceNode->GetAbilityState();
-        }
-    }
-    return true;
+void RSRenderNodeMap::AddBackgroundPidBySurfaceNodeId(NodeId id)
+{
+    std::lock_guard<std::mutex> lock(backgroundPidsMutex_);
+    backgroundPids_.insert(ExtractPid(id));
+}
+
+void RSRenderNodeMap::RemoveBackgroundPidBySurfaceNodeId(NodeId id)
+{
+    std::lock_guard<std::mutex> lock(backgroundPidsMutex_);
+    backgroundPids_.erase(ExtractPid(id));
 }
 } // namespace Rosen
 } // namespace OHOS
