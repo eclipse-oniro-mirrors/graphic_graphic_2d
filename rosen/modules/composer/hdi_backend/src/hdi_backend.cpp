@@ -263,7 +263,7 @@ bool HdiBackend::GetVsyncSamplerEnabled(const OutputPtr &output)
         HLOGE("output is nullptr.");
         return false;
     }
-    output->GetVsyncSamplerEnabled();
+    return output->GetVsyncSamplerEnabled();
 }
 
 void HdiBackend::ResetDevice()
