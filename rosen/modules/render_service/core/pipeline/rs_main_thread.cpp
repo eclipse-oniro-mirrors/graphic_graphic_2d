@@ -2042,7 +2042,7 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
     idleTimerExpiredFlag_ = false;
 }
 
-AncoHebcStatus RSMainThread::GetAncoHebcStatus()
+AncoHebcStatus RSMainThread::GetAncoHebcStatus() const
 {
     return static_cast<AncoHebcStatus>(ancoHebcStatus_.load());
 }

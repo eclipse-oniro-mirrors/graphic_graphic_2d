@@ -358,7 +358,7 @@ public:
     void UnRegisterUIExtensionCallback(pid_t pid);
 
     void SetAncoForceDoDirect(bool direct);
-    AncoHebcStatus GetAncoHebcStatus();
+    AncoHebcStatus GetAncoHebcStatus() const;
     void SetAncoHebcStatus(AncoHebcStatus hebcStatus);
     bool AncoOptimizeCheck(bool isHebc, int nodesCnt, int sfvNodesCnt);
     bool AncoOptimizeDisplayNode(std::shared_ptr<RSDisplayRenderNode>& displayNode, ScreenInfo screenInfo);
