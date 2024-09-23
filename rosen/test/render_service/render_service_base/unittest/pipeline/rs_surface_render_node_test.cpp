@@ -2075,6 +2075,16 @@ HWTEST_F(RSSurfaceRenderNodeTest, UpdateChildrenFilterRects, TestSize.Level1)
 }
 
 /**
+ * @tc.name: GetOriAncoForceDoDirect
+ * @tc.desc: test results of GetOriAncoForceDoDirect
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, GetOriAncoForceDoDirect, TestSize.Level1)
+{
+    EXPECT_FALSE(RSSurfaceRenderNode::GetOriAncoForceDoDirect());
+}
+
+/**
  * @tc.name: CheckUpdateHwcNodeLayerInfo
  * @tc.desc: test results of CheckUpdateHwcNodeLayerInfo
  * @tc.type: FUNC
@@ -2123,16 +2133,6 @@ HWTEST_F(RSSurfaceRenderNodeTest, BufferClearCallbackProxy, TestSize.Level1)
     testNode->RegisterBufferClearListener(callback);
     testNode->SetNotifyRTBufferAvailable(true);
     ASSERT_TRUE(testNode->isNotifyRTBufferAvailable_);
-}
-
-/**
- * @tc.name: GetOriAncoForceDoDirect
- * @tc.desc: test results of GetOriAncoForceDoDirect
- * @tc.type: FUNC
- */
-HWTEST_F(RSSurfaceRenderNodeTest, GetOriAncoForceDoDirect, TestSize.Level1)
-{
-    EXPECT_FALSE(RSSurfaceRenderNode::GetOriAncoForceDoDirect());
 }
 } // namespace Rosen
 } // namespace OHOS
