@@ -231,9 +231,19 @@ void RSHardwareThread::CommitAndReleaseLayers(OutputPtr output, const std::vecto
             RS_LOGD("RSHardwareThread::CommitAndReleaseLayers send layer isAdaptive: %{public}u", isAdaptive);
             if (isAdaptive) {
                 RS_TRACE_NAME("RSHardwareThread::CommitAndReleaseLayers PostTask in Adaptive Mode");
+                if (!isLastAdaptive_) {
+                    // enter adaptive sync mode must disable vsync sampler
+                    isLastAdaptive_ = true;
+                    hdiBackend_->SetVsyncSamplerEnabled(output, false);
+                }
                 PostTask(task);
                 return;
             }
+        }
+        if (isLastAdaptive_) {
+            // exit adaptive sync mode must restore vsync sampler
+            hdiBackend_->SetVsyncSamplerEnabled(output, true);
+            isLastAdaptive_ = false;
         }
         auto period  = CreateVSyncSampler()->GetHardwarePeriod();
         int64_t pipelineOffset = hgmCore.GetPipelineOffset();

@@ -247,6 +247,15 @@ void HdiBackend::StartSample(const OutputPtr &output)
     }
     output->StartVSyncSampler(true); // force resample
 }
+ 
+void HdiBackend::SetVsyncSamplerEnabled(const OutputPtr &output, bool enabled)
+{
+    if (output == nullptr) {
+        HLOGE("output is nullptr.");
+        return;
+    }
+    output->SetVsyncSamplerEnabled(enabled);
+}
 
 void HdiBackend::ResetDevice()
 {
