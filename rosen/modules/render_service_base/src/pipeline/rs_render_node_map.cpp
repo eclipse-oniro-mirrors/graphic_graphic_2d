@@ -14,6 +14,7 @@
  */
 
 #include "pipeline/rs_render_node_map.h"
+#include <sys/types.h>
 #include "common/rs_common_def.h"
 #include "pipeline/rs_canvas_drawing_render_node.h"
 #include "pipeline/rs_render_node.h"
@@ -335,16 +336,27 @@ bool RSRenderNodeMap::GetAbilityStateByNodeId(NodeId id) const
     return backgroundPids_.find(nodePid) == backgroundPids_.end();
 }
 
-void RSRenderNodeMap::AddBackgroundPidBySurfaceNodeId(NodeId id)
+void RSRenderNodeMap::AddBackgroundPid(pid_t pid)
 {
     std::lock_guard<std::mutex> lock(backgroundPidsMutex_);
-    backgroundPids_.insert(ExtractPid(id));
+    backgroundPids_.insert(pid);
 }
 
-void RSRenderNodeMap::RemoveBackgroundPidBySurfaceNodeId(NodeId id)
+void RSRenderNodeMap::RemoveBackgroundPid(pid_t pid)
 {
     std::lock_guard<std::mutex> lock(backgroundPidsMutex_);
-    backgroundPids_.erase(ExtractPid(id));
+    backgroundPids_.erase(pid);
+}
+
+bool RSRenderNodeMap::IsAllSurfaceNodesWithSamePidOnBackground(NodeId id) const
+{
+    auto pid = ExtractPid(id);
+    for (const auto& [surfaceNodeId, surfaceNode] : surfaceNodeMap_) {
+        if (ExtractPid(surfaceNodeId) == pid && surfaceNode && surfaceNode->GetAbilityState()) {
+            return false;
+        }
+    }
+    return true;
 }
 } // namespace Rosen
 } // namespace OHOS

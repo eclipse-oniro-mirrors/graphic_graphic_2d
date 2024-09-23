@@ -3006,9 +3006,9 @@ void RSSurfaceRenderNode::SetAbilityState(bool abilityState)
 
     if (auto context = GetContext().lock()) {
         if (abilityState_) {
-            context->GetMutableNodeMap().RemoveBackgroundPidBySurfaceNodeId(GetId());
-        } else {
-            context->GetMutableNodeMap().AddBackgroundPidBySurfaceNodeId(GetId());
+            context->GetMutableNodeMap().RemoveBackgroundPid(ExtractPid(GetId()));
+        } else if (context->GetNodeMap().IsAllSurfaceNodesWithSamePidOnBackground(GetId())) {
+            context->GetMutableNodeMap().AddBackgroundPid(ExtractPid(GetId()));
         }
     }
 }
