@@ -224,7 +224,9 @@ void RSHardwareThread::CommitAndReleaseLayers(OutputPtr output, const std::vecto
     if (!hgmCore.GetLtpoEnabled()) {
         PostTask(task);
     } else {
-        if (CommitInAdaptiveMode()) {
+        if (IsInAdaptiveMode(output)) {
+            RS_TRACE_NAME("RSHardwareThread::CommitAndReleaseLayers PostTask in Adaptive Mode");
+            PostTask(task);
             return;
         }
         auto period  = CreateVSyncSampler()->GetHardwarePeriod();
@@ -262,9 +264,10 @@ void RSHardwareThread::CommitAndReleaseLayers(OutputPtr output, const std::vecto
     }
 }
 
-bool RSHardwareThread::CommitInAdaptiveMode()
+bool RSHardwareThread::IsInAdaptiveMode(OutputPtr output)
 {
     bool isSamplerEnabled = hdiBackend_->GetVsyncSamplerEnabled(output);
+    auto& hgmCore = OHOS::Rosen::HgmCore::Instance();
 
     // if in game adaptive vsync mode and do direct composition,send layer immediately
     auto frameRateMgr = hgmCore.GetFrameRateMgr();
@@ -272,12 +275,10 @@ bool RSHardwareThread::CommitInAdaptiveMode()
         bool isAdaptive = frameRateMgr->IsAdaptive();
         RS_LOGD("RSHardwareThread::CommitAndReleaseLayers send layer isAdaptive: %{public}u", isAdaptive);
         if (isAdaptive) {
-            RS_TRACE_NAME("RSHardwareThread::CommitAndReleaseLayers PostTask in Adaptive Mode");
             if (isSamplerEnabled) {
                 // enter adaptive sync mode must disable vsync sampler
                 hdiBackend_->SetVsyncSamplerEnabled(output, false);
             }
-            PostTask(task);
             return true;
         }
     }
