@@ -151,7 +151,7 @@ private:
 
     void ClearBufferCache();
     std::map<LayerInfoPtr, sptr<SyncFence>> GetLayersReleaseFenceLocked();
-    bool enableVsyncSample_ = true;
+    std::atomic<bool> enableVsyncSample_ = true;
 };
 } // namespace Rosen
 } // namespace OHOS
