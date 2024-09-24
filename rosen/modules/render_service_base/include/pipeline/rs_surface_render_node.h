@@ -801,8 +801,10 @@ public:
     {
         return "[outR: " + std::to_string(containerConfig_.outR) +
                " inR: " + std::to_string(containerConfig_.inR) +
-               " bt: " + std::to_string(containerConfig_.bt) +
-               " bp: " + std::to_string(containerConfig_.bp) + "]";
+               " x: " + std::to_string(containerConfig_.innerRect.left_) +
+               " y: " + std::to_string(containerConfig_.innerRect.top_) +
+               " w: " + std::to_string(containerConfig_.innerRect.width_) +
+               " h: " + std::to_string(containerConfig_.innerRect.height_) + "]";
     }
 
     bool IsOpaqueRegionChanged() const
@@ -1401,11 +1403,11 @@ private:
         bool hasContainerWindow_ = false;               // set to false as default, set by arkui
         int outR = 32;                                  // outer radius (int value)
         int inR = 28;                                   // inner radius (int value)
-        int bp = 10;                                    // border width + padding (int value)
-        int bt = 76;                                    // border width + title (int value)
+        RectI innerRect = {};                           // inner rect, value relative to outerRect
     };
 
     ContainerConfig containerConfig_;
+    ContainerConfig GetAbsContainerConfig() const;
 
     bool startAnimationFinished_ = false;
 
