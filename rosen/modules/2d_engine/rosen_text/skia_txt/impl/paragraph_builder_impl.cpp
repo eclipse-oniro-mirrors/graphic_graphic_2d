@@ -155,6 +155,14 @@ skt::ParagraphPainter::PaintID ParagraphBuilderImpl::AllocPaintID(const PaintRec
     return static_cast<int>(paints_.size()) - 1;
 }
 
+skt::TextTabs ConvertToSkTextTab(const TextTab& tab)
+{
+    return {
+        static_cast<skt::TextAlign>(tab.alignment),
+        tab.location,
+    };
+}
+
 skt::ParagraphStyle ParagraphBuilderImpl::TextStyleToSkStyle(const ParagraphStyle& txt)
 {
     skt::ParagraphStyle skStyle;
@@ -208,6 +216,7 @@ skt::ParagraphStyle ParagraphBuilderImpl::TextStyleToSkStyle(const ParagraphStyl
     skStyle.setReplaceTabCharacters(true);
     skStyle.setTextSplitRatio(txt.textSplitRatio);
     skStyle.setTextHeightBehavior(static_cast<skt::TextHeightBehavior>(txt.textHeightBehavior));
+    skStyle.setTextTab(ConvertToSkTextTab(txt.tab));
 
     return skStyle;
 }

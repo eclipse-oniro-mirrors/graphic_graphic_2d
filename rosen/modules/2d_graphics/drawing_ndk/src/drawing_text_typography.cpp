@@ -3452,3 +3452,57 @@ size_t OH_Drawing_GetDrawingArraySize(OH_Drawing_Array* drawingArray)
 
     return array->num;
 }
+
+OH_Drawing_TextTab* OH_Drawing_CreateTextTab(OH_Drawing_TextAlign alignment, float location)
+{
+    TextAlign textAlign;
+    switch (alignment) {
+        case TEXT_ALIGN_LEFT: {
+            textAlign = TextAlign::LEFT;
+            break;
+        }
+        case TEXT_ALIGN_RIGHT: {
+            textAlign = TextAlign::RIGHT;
+            break;
+        }
+        case TEXT_ALIGN_CENTER: {
+            textAlign = TextAlign::CENTER;
+            break;
+        }
+        default: {
+            textAlign = TextAlign::LEFT;
+            break;
+        }
+    }
+    return (OH_Drawing_TextTab*)new TextTab(textAlign, location);
+}
+
+void OH_Drawing_DestroyTextTab(OH_Drawing_TextTab* tab)
+{
+    delete ConvertToOriginalText<TextTab>(tab);
+}
+
+void OH_Drawing_SetTypographyTextTab(OH_Drawing_TypographyStyle* style, OH_Drawing_TextTab* tab)
+{
+    if (!style || !tab) {
+        return;
+    }
+    auto rosenTextTab = ConvertToOriginalText<OHOS::Rosen::TextTab>(tab);
+    ConvertToOriginalText<TypographyStyle>(style)->tab = *rosenTextTab;
+}
+
+OH_Drawing_TextAlign OH_Drawing_GetTextTabAlignment(OH_Drawing_TextTab* tab)
+{
+    if (tab == nullptr) {
+        return TEXT_ALIGN_LEFT;
+    }
+    return static_cast<OH_Drawing_TextAlign>(ConvertToOriginalText<TextTab>(tab)->alignment);
+}
+
+float OH_Drawing_GetTextTabLocation(OH_Drawing_TextTab* tab)
+{
+    if (tab == nullptr) {
+        return 0.0;
+    }
+    return ConvertToOriginalText<TextTab>(tab)->location;
+}
