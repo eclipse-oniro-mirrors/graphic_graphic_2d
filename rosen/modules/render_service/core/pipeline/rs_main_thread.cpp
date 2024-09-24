@@ -2095,7 +2095,7 @@ bool RSMainThread::AncoOptimizeDisplayNode(std::shared_ptr<RSDisplayRenderNode>&
 
     // process displayNode rect
     int minDisplayW = static_cast<int32_t>(screenInfo.GetRotatedPhyWidth() / 2);
-    int minDisplayH = static_cast<int32_t>(screenInfo.GetRotatedPhyHeight() / 2); 
+    int minDisplayH = static_cast<int32_t>(screenInfo.GetRotatedPhyHeight() / 2);
     if (minDisplayW <= 0 && minDisplayH <= 0) {
         return false;
     }
