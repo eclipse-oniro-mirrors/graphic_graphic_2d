@@ -228,7 +228,7 @@ void HgmFrameRateManager::InitTouchManager()
     });
 }
 
-void HgmFrameRateManager::InitTouchManager()
+void HgmFrameRateManager::InitPowerTouchManager()
 {
     powerTouchManager_.RegisterEnterStateCallback(TouchState::DOWN_STATE,
         [](TouchState lastState, TouchState newState) {
