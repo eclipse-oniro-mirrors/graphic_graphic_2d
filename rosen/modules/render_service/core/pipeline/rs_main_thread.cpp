@@ -2106,7 +2106,7 @@ bool RSMainThread::AncoOptimizeDisplayNode(std::shared_ptr<RSDisplayRenderNode>&
         if ((surfaceNode->GetAncoFlags() & static_cast<uint32_t>(AncoFlags::IS_ANCO_NODE)) == 0) {
             continue;
         }
-        auto alpha = surfaceNode_>GetGlobalAlpha();
+        auto alpha = surfaceNode->GetGlobalAlpha();
         if (ROSEN_EQ(alpha, 0.0f) || !surfaceNode->GetRSSurfaceHandler() ||
             !surfaceNode->GetRSSurfaceHandler()->GetBuffer()) {
             continue;
