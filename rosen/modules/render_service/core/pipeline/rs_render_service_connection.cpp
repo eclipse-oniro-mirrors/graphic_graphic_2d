@@ -1894,7 +1894,15 @@ void RSRenderServiceConnection::SetHardwareEnabled(NodeId id, bool isEnabled, Se
 
 void RSRenderServiceConnection::SetCacheEnabledForRotation(bool isEnabled)
 {
-    RSSystemProperties::SetCacheEnabledForRotation(isEnabled);
+    if (!mainThread_) {
+        return;
+    }
+    std::lock_guard<std::mutex> lock(mutex_);
+    auto task = [isEnabled]() {
+        RSSystemProperties::SetCacheEnabledForRotation(isEnabled);
+    };
+    mainThread_->PostTask(task);
+    return;
 }
 
 void RSRenderServiceConnection::SetDefaultDeviceRotationOffset(uint32_t offset)

@@ -150,10 +150,6 @@ public:
     {
         return isRotating_;
     }
-    bool GetForceClientForDRMOnly() const
-    {
-        return forceClientForDRMOnly_;
-    }
     const std::set<NodeId>& GetSecurityLayerIds() const
     {
         return securityLayerIds_;
@@ -539,7 +535,6 @@ private:
     bool isProtectedLayer_ = false;
     bool animateState_ = false;
     bool isRotating_ = false;
-    bool forceClientForDRMOnly_ = false;
     bool isSubSurfaceNode_ = false;
     Gravity uiFirstFrameGravity_ = Gravity::TOP_LEFT;
     bool isNodeToBeCaptured_ = false;
