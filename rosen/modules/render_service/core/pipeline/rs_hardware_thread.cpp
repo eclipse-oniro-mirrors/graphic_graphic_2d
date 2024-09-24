@@ -264,7 +264,7 @@ void RSHardwareThread::CommitAndReleaseLayers(OutputPtr output, const std::vecto
     }
 }
 
-bool RSHardwareThread::IsInAdaptiveMode(OutputPtr output)
+bool RSHardwareThread::IsInAdaptiveMode(const OutputPtr &output)
 {
     bool isSamplerEnabled = hdiBackend_->GetVsyncSamplerEnabled(output);
     auto& hgmCore = OHOS::Rosen::HgmCore::Instance();
