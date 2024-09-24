@@ -448,7 +448,6 @@ public:
     void SetSkipLayer(bool isSkipLayer);
     void SetSnapshotSkipLayer(bool isSnapshotSkipLayer);
     void SetProtectedLayer(bool isProtectedLayer);
-    void SetForceClientForDRMOnly(bool forceClient);
 
     // get whether it is a security/skip layer itself
     bool GetSecurityLayer() const;
@@ -1275,7 +1274,6 @@ private:
     bool isSkipLayer_ = false;
     bool isSnapshotSkipLayer_ = false;
     bool isProtectedLayer_ = false;
-    bool forceClientForDRMOnly_ = false;
     std::set<NodeId> skipLayerIds_= {};
     std::set<NodeId> snapshotSkipLayerIds_= {};
     std::set<NodeId> securityLayerIds_= {};

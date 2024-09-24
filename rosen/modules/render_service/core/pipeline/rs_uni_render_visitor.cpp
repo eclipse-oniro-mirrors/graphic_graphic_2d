@@ -1723,11 +1723,6 @@ void RSUniRenderVisitor::UpdateHwcNodeDirtyRegionAndCreateLayer(std::shared_ptr<
             ? -1.f : globalZOrder_++);
         auto transform = RSUniRenderUtil::GetLayerTransform(*hwcNodePtr, screenInfo_);
         hwcNodePtr->UpdateHwcNodeLayerInfo(transform);
-        if (hwcNodePtr->GetProtectedLayer()) {
-            hwcNodePtr->SetForceClientForDRMOnly(displayNodeRotationChanged_ || isScreenRotationAnimating_);
-        } else {
-            hwcNodePtr->SetForceClientForDRMOnly(false);
-        }
     }
     curDisplayNode_->SetDisplayGlobalZOrder(globalZOrder_);
     if (!topLayers.empty()) {
@@ -2816,6 +2811,7 @@ void RSUniRenderVisitor::SetUniRenderThreadParam(std::unique_ptr<RSRenderThreadP
     renderThreadParams->isExpandScreenDirtyEnabled_ = isExpandScreenDirtyEnabled_;
     renderThreadParams->hasMirrorDisplay_ = hasMirrorDisplay_;
     renderThreadParams->isForceCommitLayer_ |= pointerWindowManager_.IsNeedForceCommitByPointer();
+    renderThreadParams->cacheEnabledForRotation_ = RSSystemProperties::GetCacheEnabledForRotation();
 }
 
 void RSUniRenderVisitor::SetAppWindowNum(uint32_t num)
