@@ -73,7 +73,7 @@ private:
     void PerformSetActiveMode(OutputPtr output, uint64_t timestamp, uint64_t constraintRelativeTime);
     void ExecuteSwitchRefreshRate(uint32_t rate);
     void AddRefreshRateCount();
-    bool IsInAdaptiveMode(OutputPtr output);
+    bool IsInAdaptiveMode(const OutputPtr &output);
 
     RefreshRateParam GetRefreshRateParam();
     std::shared_ptr<RSSurfaceOhos> CreateFrameBufferSurfaceOhos(const sptr<Surface>& surface);
