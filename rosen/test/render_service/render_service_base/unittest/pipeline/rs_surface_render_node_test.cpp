@@ -2078,6 +2078,7 @@ HWTEST_F(RSSurfaceRenderNodeTest, UpdateChildrenFilterRects, TestSize.Level1)
  * @tc.name: GetOriAncoForceDoDirect
  * @tc.desc: test results of GetOriAncoForceDoDirect
  * @tc.type: FUNC
+ * @tc.require: issueIARZ3Q
  */
 HWTEST_F(RSSurfaceRenderNodeTest, GetOriAncoForceDoDirect, TestSize.Level1)
 {
