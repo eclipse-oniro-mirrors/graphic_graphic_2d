@@ -4087,7 +4087,7 @@ void RSRenderNode::OnSync()
 
         // copy newest for uifirst root node, now force sync done nodes
         if (uifirstNeedSync_) {
-            RS_TRACE_NAME_FMT("uifirst_sync %lld", GetId());
+            RS_OPTIONAL_TRACE_NAME_FMT("uifirst_sync %lld", GetId());
             renderDrawable_->uifirstDrawCmdList_.assign(renderDrawable_->drawCmdList_.begin(),
                                                         renderDrawable_->drawCmdList_.end());
             renderDrawable_->uifirstDrawCmdIndex_ = renderDrawable_->drawCmdIndex_;

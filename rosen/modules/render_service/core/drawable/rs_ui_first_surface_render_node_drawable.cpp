@@ -21,6 +21,7 @@
 #include "common/rs_color.h"
 #include "common/rs_common_def.h"
 #include "common/rs_obj_abs_geometry.h"
+#include "common/rs_optional_trace.h"
 #include "draw/brush.h"
 #include "drawable/rs_surface_render_node_drawable.h"
 #include "memory/rs_tag_tracker.h"
@@ -421,8 +422,9 @@ bool RSSurfaceRenderNodeDrawable::IsCurFrameStatic(DeviceType deviceType)
         RS_LOGE("RSSurfaceRenderNodeDrawable::OnDraw params is nullptr");
         return false;
     }
-    RS_TRACE_NAME_FMT("RSSurfaceRenderNodeDrawable::GetSurfaceCacheContentStatic: [%d] name [%s] Id:%" PRIu64 "",
-        surfaceParams->GetSurfaceCacheContentStatic(), surfaceParams->GetName().c_str(), surfaceParams->GetId());
+    RS_OPTIONAL_TRACE_NAME_FMT("RSSurfaceRenderNodeDrawable::GetSurfaceCacheContentStatic:"
+        "[%d] name [%s] Id:%" PRIu64 "", surfaceParams->GetSurfaceCacheContentStatic(),
+        surfaceParams->GetName().c_str(), surfaceParams->GetId());
     return surfaceParams->GetSurfaceCacheContentStatic();
 }
 
