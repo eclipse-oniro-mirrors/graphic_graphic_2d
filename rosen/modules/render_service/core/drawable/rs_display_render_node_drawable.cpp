@@ -32,7 +32,6 @@
 #include "params/rs_display_render_params.h"
 #include "params/rs_surface_render_params.h"
 #include "pipeline/round_corner_display/rs_rcd_render_manager.h"
-#include "pipeline/round_corner_display/rs_round_corner_display.h"
 #include "pipeline/round_corner_display/rs_round_corner_display_manager.h"
 #include "pipeline/rs_anco_manager.h"
 #include "pipeline/rs_base_render_engine.h"
