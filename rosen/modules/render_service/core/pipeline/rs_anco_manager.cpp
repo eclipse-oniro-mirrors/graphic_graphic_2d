@@ -37,9 +37,9 @@ void RSAncoManager::SetAncoHebcStatus(AncoHebcStatus hebcStatus)
 
 bool RSAncoManager::AncoOptimizeCheck(bool isHebc, int nodesCnt, int sfvNodesCnt)
 {
-    constexpr int MIN_OPTIMIZE_ANCO_NUMS = 3;
-    constexpr int MIN_OPTIMIZE_ANCO_SFV_NUMS = 2;
-    bool numsMatch = nodesCnt == MIN_OPTIMIZE_ANCO_NUMS && sfvNodesCnt == MIN_OPTIMIZE_ANCO_SFV_NUMS;
+    constexpr int minOptimizeAncoNums = 3;
+    constexpr int minOptimizeAncoSfvNums = 2;
+    bool numsMatch = nodesCnt == minOptimizeAncoNums && sfvNodesCnt == minOptimizeAncoSfvNums;
     if (numsMatch && isHebc) {
         RS_LOGI("doDirect anco disable hebc");
         SetAncoHebcStatus(AncoHebcStatus::NOT_USE_HEBC);
@@ -55,8 +55,8 @@ bool RSAncoManager::AncoOptimizeCheck(bool isHebc, int nodesCnt, int sfvNodesCnt
 }
 
 bool RSAncoManager::AncoOptimizeDisplayNode(std::shared_ptr<RSSurfaceHandler>& surfaceHandler,
-        std::vector<std::shared_ptr<RSSurfaceRenderNode>>& hardwareEnabledNodes,
-        ScreenRotation rotation, int width, int height)
+    std::vector<std::shared_ptr<RSSurfaceRenderNode>>& hardwareEnabledNodes,
+    ScreenRotation rotation, int width, int height)
 {
     if (!RSSurfaceRenderNode::GetOriAncoForceDoDirect() || !RSSystemProperties::IsTabletType() ||
         rotation != ScreenRotation::ROTATION_0) {
