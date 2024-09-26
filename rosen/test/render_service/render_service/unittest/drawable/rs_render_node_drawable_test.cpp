@@ -70,7 +70,7 @@ HWTEST_F(RSRenderNodeDrawableTest, CreateRenderNodeDrawable, TestSize.Level1)
 HWTEST_F(RSRenderNodeDrawableTest, OpincCalculateBefore, TestSize.Level1)
 {
     auto drawable = RSRenderNodeDrawableTest::CreateDrawable();
-
+    ASSERT_NE(drawable, nullptr);
     Drawing::Canvas canvas;
     RSRenderParams params(RSRenderNodeDrawableTest::id);
     bool isOpincDropNodeExt = true;
@@ -275,6 +275,7 @@ HWTEST_F(RSRenderNodeDrawableTest, BeforeDrawCacheProcessChildNode, TestSize.Lev
 HWTEST_F(RSRenderNodeDrawableTest, BeforeDrawCacheFindRootNode, TestSize.Level1)
 {
     auto drawable = RSRenderNodeDrawableTest::CreateDrawable();
+    ASSERT_NE(drawable, nullptr);
 
     Drawing::Canvas canvas;
     RSPaintFilterCanvas paintFilterCanvas(&canvas);
