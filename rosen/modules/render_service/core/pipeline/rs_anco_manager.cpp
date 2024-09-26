@@ -55,7 +55,7 @@ bool RSAncoManager::AncoOptimizeCheck(bool isHebc, int nodesCnt, int sfvNodesCnt
 
 bool RSAncoManager::AncoOptimizeDisplayNode(std::shared_ptr<RSSurfaceHandler>& surfaceHandler,
     std::vector<std::shared_ptr<RSSurfaceRenderNode>>& hardwareEnabledNodes,
-    ScreenRotation rotation, int width, int height)
+    ScreenRotation rotation, uint32_t width, uint32_t height)
 {
     SetAncoHebcStatus(AncoHebcStatus::INITIAL);
     if (!RSSurfaceRenderNode::GetOriAncoForceDoDirect() || !RSSystemProperties::IsTabletType() ||
@@ -73,9 +73,8 @@ bool RSAncoManager::AncoOptimizeDisplayNode(std::shared_ptr<RSSurfaceHandler>& s
     }
 
     // process displayNode rect
-    int minDisplayW = static_cast<int32_t>(width / 2);
-    int minDisplayH = static_cast<int32_t>(height / 2);
-    if (minDisplayW <= 0 || minDisplayH <= 0) {
+    uint32_t minArea = width * height / 2;
+    if (minArea == 0) {
         return false;
     }
 
@@ -96,7 +95,10 @@ bool RSAncoManager::AncoOptimizeDisplayNode(std::shared_ptr<RSSurfaceHandler>& s
             continue;
         }
         auto& layerInfo = params->GetLayerInfo().dstRect;
-        if (layerInfo.w >= minDisplayW && layerInfo.h >= minDisplayH) {
+        if (layerInfo.w <= 0 || layerInfo.h <= 0) {
+            continue;
+        }
+        if (static_cast<uint32_t>(layerInfo.w * layerInfo.h) >= minArea) {
             nodesCnt++;
             if (surfaceNode->GetAncoFlags() == static_cast<uint32_t>(AncoFlags::ANCO_SFV_NODE)) {
                 sfvNodesCnt++;

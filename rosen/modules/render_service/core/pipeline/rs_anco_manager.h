@@ -29,7 +29,7 @@ public:
     void SetAncoHebcStatus(AncoHebcStatus hebcStatus);
     bool AncoOptimizeDisplayNode(std::shared_ptr<RSSurfaceHandler>& surfaceHandler,
         std::vector<std::shared_ptr<RSSurfaceRenderNode>>& hardwareEnabledNodes,
-        ScreenRotation rotation, int width, int height);
+        ScreenRotation rotation, uint32_t width, uint32_t height);
 
 private:
     RSAncoManager() = default;
