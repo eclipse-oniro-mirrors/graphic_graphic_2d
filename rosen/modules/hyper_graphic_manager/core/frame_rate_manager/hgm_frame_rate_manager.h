@@ -208,6 +208,7 @@ private:
     void RegisterCoreCallbacksAndInitController(sptr<VSyncController> rsController,
         sptr<VSyncController> appController, sptr<VSyncGenerator> vsyncGenerator);
     void InitRsIdleTimer();
+    void InitPowerTouchManager();
 
     uint32_t currRefreshRate_ = 0;
     uint32_t controllerRate_ = 0;
@@ -254,6 +255,8 @@ private:
     VoteInfo lastVoteInfo_;
     HgmMultiAppStrategy multiAppStrategy_;
     HgmTouchManager touchManager_;
+    // For the power consumption module, only monitor touch up 3s and 600ms without flashing frames
+    HgmTouchManager powerTouchManager_;
     std::atomic<bool> startCheck_ = false;
     HgmIdleDetector idleDetector_;
     bool needHighRefresh_ = false;
