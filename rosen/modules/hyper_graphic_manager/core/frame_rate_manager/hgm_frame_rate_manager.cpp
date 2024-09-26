@@ -211,7 +211,6 @@ void HgmFrameRateManager::InitTouchManager()
                 .pkgName = touchManager_.GetPkgName(),
                 .touchState = newState,
             };
-            HgmEnergyConsumptionPolicy::Instance().SetTouchState(TouchState::IDLE_STATE);
             multiAppStrategy_.HandleTouchInfo(touchInfo);
         });
         touchManager_.RegisterEnterStateCallback(TouchState::UP_STATE,
@@ -224,6 +223,26 @@ void HgmFrameRateManager::InitTouchManager()
             HgmTaskHandleThread::Instance().RemoveEvent(UP_TIME_OUT_TASK_ID);
             startCheck_.store(false);
         });
+        InitPowerTouchManager();
+    });
+}
+
+void HgmFrameRateManager::InitPowerTouchManager()
+{
+    powerTouchManager_.RegisterEventCallback(TouchEvent::DOWN_EVENT, [this] (TouchEvent event) {
+        powerTouchManager_.ChangeState(TouchState::DOWN_STATE);
+    });
+    powerTouchManager_.RegisterEnterStateCallback(TouchState::DOWN_STATE,
+        [](TouchState lastState, TouchState newState) {
+        HgmEnergyConsumptionPolicy::Instance().SetTouchState(TouchState::DOWN_STATE);
+    });
+    powerTouchManager_.RegisterEnterStateCallback(TouchState::UP_STATE,
+        [](TouchState lastState, TouchState newState) {
+        HgmEnergyConsumptionPolicy::Instance().SetTouchState(TouchState::UP_STATE);
+    });
+    powerTouchManager_.RegisterEnterStateCallback(TouchState::IDLE_STATE,
+        [](TouchState lastState, TouchState newState) {
+        HgmEnergyConsumptionPolicy::Instance().SetTouchState(TouchState::IDLE_STATE);
     });
 }
 
@@ -766,7 +785,7 @@ void HgmFrameRateManager::HandleTouchEvent(pid_t pid, int32_t touchStatus, int32
     if (touchStatus == TOUCH_DOWN || touchStatus == TOUCH_PULL_DOWN) {
         HGM_LOGD("[touch manager] down");
         PolicyConfigData::StrategyConfig strategyRes;
-        HgmEnergyConsumptionPolicy::Instance().SetTouchState(TouchState::DOWN_STATE);
+        powerTouchManager_.HandleTouchEvent(TouchEvent::DOWN_EVENT, "");
         if (multiAppStrategy_.GetFocusAppStrategyConfig(strategyRes) == EXEC_SUCCESS &&
             strategyRes.dynamicMode != DynamicModeType::TOUCH_DISENABLED) {
             touchManager_.HandleTouchEvent(TouchEvent::DOWN_EVENT, "");
@@ -783,7 +802,7 @@ void HgmFrameRateManager::HandleTouchEvent(pid_t pid, int32_t touchStatus, int32
         if (touchCnt == LAST_TOUCH_CNT) {
             HGM_LOGD("[touch manager] up");
             touchManager_.HandleTouchEvent(TouchEvent::UP_EVENT, "");
-            HgmEnergyConsumptionPolicy::Instance().SetTouchState(TouchState::UP_STATE);
+            powerTouchManager_.HandleTouchEvent(TouchEvent::UP_EVENT, "");
         }
     } else {
         HGM_LOGD("[touch manager] other touch status not support");
@@ -902,6 +921,7 @@ void HgmFrameRateManager::HandleRsFrame()
         rsIdleTimer_->Start();
     }
     touchManager_.HandleRsFrame();
+    powerTouchManager_.HandleRsFrame();
 }
 
 void HgmFrameRateManager::HandleSceneEvent(pid_t pid, EventInfo eventInfo)
