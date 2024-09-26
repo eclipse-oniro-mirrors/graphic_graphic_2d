@@ -13,14 +13,21 @@
  * limitations under the License.
  */
 
+#ifndef IOS_PLATFORM
 #include "egl_manager.h"
+#endif
+
 #if defined(NEW_SKIA)
 #include <include/gpu/GrDirectContext.h>
 #else
 #include <include/gpu/GrContext.h>
 #endif
 #include "include/gpu/gl/GrGLInterface.h"
+
+#if (!defined(ANDROID_PLATFORM)) && (!defined(IOS_PLATFORM))
 #include "rs_trace.h"
+#endif
+
 #include "sk_image_chain.h"
 #include "platform/common/rs_system_properties.h"
 
@@ -89,7 +96,7 @@ bool SKImageChain::CreateCPUCanvas()
 
 bool SKImageChain::CreateGPUCanvas()
 {
-#ifdef ACE_ENABLE_GL
+#if defined(ACE_ENABLE_GL) && (!defined(IOS_PLATFORM))
     if (!EglManager::GetInstance().Init()) {
         LOGE("Failed to init for GPU.");
         return false;
@@ -251,9 +258,9 @@ DrawError SKImageChain::Draw()
     if (error != DrawError::ERR_OK) {
         return error;
     }
-
+#if (!defined(ANDROID_PLATFORM)) && (!defined(IOS_PLATFORM))
     ROSEN_TRACE_BEGIN(HITRACE_TAG_GRAPHIC_AGP, "SKImageChain::Draw");
-
+#endif
     SkPaint paint;
     SetupPaint(paint);
     ApplyClipping();
@@ -261,8 +268,9 @@ DrawError SKImageChain::Draw()
     if (!DrawImage(paint)) {
         return DrawError::ERR_PIXEL_READ;
     }
-
+#if (!defined(ANDROID_PLATFORM)) && (!defined(IOS_PLATFORM))
     ROSEN_TRACE_END(HITRACE_TAG_GRAPHIC_AGP);
+#endif
     return DrawError::ERR_OK;
 }
 
