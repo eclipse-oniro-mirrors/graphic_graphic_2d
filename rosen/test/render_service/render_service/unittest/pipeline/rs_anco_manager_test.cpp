@@ -52,6 +52,7 @@ HWTEST_F(RSAncoManagerTest, AncoOptimizeDisplayNode, TestSize.Level2)
         ScreenRotation::ROTATION_0, 0, 0), false);
     
     RSSurfaceRenderNode::SetAncoForceDoDirect(true);
+    auto deviceTypeStr = system::GetParameter("const.product.devicetype", "phone");
     system::SetParameter("const.product.devicetype", "phone");
     ASSERT_EQ(ancoManager->AncoOptimizeDisplayNode(surfaceHandler, hardwareEnabledNodes,
         ScreenRotation::ROTATION_0, 0, 0), false);
@@ -66,6 +67,7 @@ HWTEST_F(RSAncoManagerTest, AncoOptimizeDisplayNode, TestSize.Level2)
         ScreenRotation::ROTATION_90, 0, 0), false);
     ASSERT_EQ(ancoManager->AncoOptimizeDisplayNode(surfaceHandler, hardwareEnabledNodes,
         ScreenRotation::ROTATION_90, 10, 10), false);
+    system::SetParameter("const.product.devicetype", deviceTypeStr);
 }
 
 /**

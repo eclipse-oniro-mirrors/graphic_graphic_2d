@@ -2084,6 +2084,7 @@ HWTEST_F(RSSurfaceRenderNodeTest, UpdateChildrenFilterRects, TestSize.Level1)
  */
 HWTEST_F(RSSurfaceRenderNodeTest, GetOriAncoForceDoDirect, TestSize.Level1)
 {
+    RSSurfaceRenderNode::SetAncoForceDoDirect(false);
     EXPECT_FALSE(RSSurfaceRenderNode::GetOriAncoForceDoDirect());
 }
 
