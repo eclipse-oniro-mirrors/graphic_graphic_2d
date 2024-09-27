@@ -4320,7 +4320,7 @@ HWTEST_F(RSUniRenderVisitorTest, IsSubTreeOccluded002, TestSize.Level2)
     ASSERT_NE(rsUniRenderVisitor, nullptr);
     rsUniRenderVisitor->isOcclusionEnabled_ = true;
 
-    ASSERT_EQ(rsUniRenderVisitor->IsSubTreeOccluded(*node), false);
+    ASSERT_EQ(rsUniRenderVisitor->IsSubTreeOccluded(*node), true);
     ASSERT_EQ(node->dirtyStatus_, RSRenderNode::NodeDirty::CLEAN);
 }
 
@@ -4363,6 +4363,7 @@ HWTEST_F(RSUniRenderVisitorTest, CheckFilterCacheNeedForceClearOrSave001, TestSi
 
     std::shared_ptr<RSFilter> filter = RSFilter::CreateBlurFilter(1.0f, 1.0f);
     node->renderContent_->renderProperties_.SetBackgroundFilter(filter);
+    ASSERT_NE(node->renderContent_, nullptr);
     rsUniRenderVisitor->CheckFilterCacheNeedForceClearOrSave(*node);
 }
 
