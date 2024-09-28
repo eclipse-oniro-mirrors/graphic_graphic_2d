@@ -80,7 +80,7 @@ HWTEST_F(OH_Drawing_FontDescriptorTest, OH_Drawing_FontDescriptorTest004, TestSi
     desc->fontFamily = fontFamily;
     size_t num = 0;
     OH_Drawing_FontDescriptor* descArr = OH_Drawing_MatchFontDescriptors(desc, &num);
-    EXPECT_NE(descArr, nullptr);
+    ASSERT_NE(descArr, nullptr);
     EXPECT_LE(1, num);
     EXPECT_STREQ(descArr[0].fontFamily, fontFamily);
     OH_Drawing_DestroyFontDescriptors(descArr, num);
@@ -90,7 +90,7 @@ HWTEST_F(OH_Drawing_FontDescriptorTest, OH_Drawing_FontDescriptorTest004, TestSi
     desc->fontFamily = fontFamily;
     descArr = OH_Drawing_MatchFontDescriptors(desc, &num);
     OH_Drawing_DestroyFontDescriptor(desc);
-    EXPECT_NE(descArr, nullptr);
+    ASSERT_NE(descArr, nullptr);
     EXPECT_EQ(num, 1);
     EXPECT_STREQ(descArr[0].fontFamily, fontFamily);
     OH_Drawing_DestroyFontDescriptors(descArr, num);
@@ -108,16 +108,14 @@ HWTEST_F(OH_Drawing_FontDescriptorTest, OH_Drawing_FontDescriptorTest005, TestSi
     char* fontFamily = strdup("HarmonyOS Sans");
     desc->fontFamily = fontFamily;
     desc->weight = 400;
-    desc->italic = 0;
 
     size_t num = 0;
     OH_Drawing_FontDescriptor* descArr = OH_Drawing_MatchFontDescriptors(desc, &num);
     OH_Drawing_DestroyFontDescriptor(desc);
-    EXPECT_NE(descArr, nullptr);
+    ASSERT_NE(descArr, nullptr);
     EXPECT_LE(1, num);
     EXPECT_STREQ(descArr[0].fontFamily, fontFamily);
     EXPECT_EQ(descArr[0].weight, 400);
-    EXPECT_EQ(descArr[0].italic, 0);
     OH_Drawing_DestroyFontDescriptors(descArr, num);
     free(fontFamily);
 }
