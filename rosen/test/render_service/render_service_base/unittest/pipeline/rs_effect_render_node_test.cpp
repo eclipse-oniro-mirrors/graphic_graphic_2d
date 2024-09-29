@@ -114,7 +114,7 @@ HWTEST_F(RSEffectRenderNodeTest, ProcessRenderBeforeChildren, TestSize.Level1)
     Drawing::Canvas canvas(1, 1);
     RSPaintFilterCanvas paintFilterCanvas(&canvas);
     rsEffectRenderNode.ProcessRenderBeforeChildren(paintFilterCanvas);
-    rsEffectRenderNode.renderContent_->renderProperties_.G(true);
+    rsEffectRenderNode.renderContent_->renderProperties_.SetHaveEffectRegion(true);
     rsEffectRenderNode.ProcessRenderBeforeChildren(paintFilterCanvas);
     auto backgroundFilter = RSFilter::CreateBlurFilter(1.f, 1.f);
     rsEffectRenderNode.renderContent_->renderProperties_.SetBackgroundFilter(backgroundFilter);
