@@ -124,6 +124,10 @@ HWTEST_F(RSSurfaceRenderNodeTwoTest, CollectSurfaceTest003, TestSize.Level1)
     renderNode->shouldPaint_ = false;
     renderNode->CollectSurface(rsBaseRenderNode, vec, false, true);
     EXPECT_FALSE(renderNode->IsLeashWindow());
+    if (renderNode->GetRSSurfaceHandler()->buffer_.buffer) {
+        delete renderNode->GetRSSurfaceHandler()->buffer_.buffer;
+        renderNode->GetRSSurfaceHandler()->buffer_.buffer = nullptr;
+    }
 }
 
 /**
@@ -227,6 +231,7 @@ HWTEST_F(RSSurfaceRenderNodeTwoTest, UpdateSrcRectTest, TestSize.Level1)
     EXPECT_TRUE(renderNode->IsYUVBufferFormat());
     if (renderNode->GetRSSurfaceHandler()->buffer_.buffer) {
         delete renderNode->GetRSSurfaceHandler()->buffer_.buffer;
+        renderNode->GetRSSurfaceHandler()->buffer_.buffer = nullptr;
     }
 }
 
@@ -252,6 +257,7 @@ HWTEST_F(RSSurfaceRenderNodeTwoTest, UpdateHwcDisabledBySrcRectTest, TestSize.Le
     EXPECT_TRUE(renderNode->IsYUVBufferFormat());
     if (renderNode->GetRSSurfaceHandler()->buffer_.buffer) {
         delete renderNode->GetRSSurfaceHandler()->buffer_.buffer;
+        renderNode->GetRSSurfaceHandler()->buffer_.buffer = nullptr;
     }
 }
 
@@ -280,6 +286,7 @@ HWTEST_F(RSSurfaceRenderNodeTwoTest, IsYUVBufferFormatTest, TestSize.Level1)
     EXPECT_TRUE(renderNode->IsYUVBufferFormat());
     if (renderNode->GetRSSurfaceHandler()->buffer_.buffer) {
         delete renderNode->GetRSSurfaceHandler()->buffer_.buffer;
+        renderNode->GetRSSurfaceHandler()->buffer_.buffer = nullptr;
     }
 }
 
@@ -624,6 +631,7 @@ HWTEST_F(RSSurfaceRenderNodeTwoTest, AccumulateOcclusionRegion, TestSize.Level1)
     EXPECT_TRUE(testNode->IsSurfaceInStartingWindowStage());
     if (testNode->GetRSSurfaceHandler()->buffer_.buffer) {
         delete testNode->GetRSSurfaceHandler()->buffer_.buffer;
+        testNode->GetRSSurfaceHandler()->buffer_.buffer = nullptr;
     }
 }
 
