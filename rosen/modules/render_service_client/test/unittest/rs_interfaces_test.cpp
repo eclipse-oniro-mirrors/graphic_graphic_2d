@@ -1464,6 +1464,7 @@ HWTEST_F(RSInterfacesTest, SetCurtainScreenUsingStatus002, Function | SmallTest 
 HWTEST_F(RSInterfacesTest, SetVirtualScreenUsingStatus001, Function | SmallTest | Level2)
 {
     rsInterfaces->SetVirtualScreenUsingStatus(true);
+    EXPECT_TRUE(rsInterfaces != nullptr);
 }
 
 /*
@@ -1475,6 +1476,7 @@ HWTEST_F(RSInterfacesTest, SetVirtualScreenUsingStatus001, Function | SmallTest 
 HWTEST_F(RSInterfacesTest, SetVirtualScreenUsingStatus002, Function | SmallTest | Level2)
 {
     rsInterfaces->SetVirtualScreenUsingStatus(false);
+    EXPECT_TRUE(rsInterfaces != nullptr);
 }
 
 /*
