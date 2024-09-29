@@ -580,14 +580,16 @@ uint32_t VSyncGenerator::JudgeRefreshRateLocked(int64_t period)
         return 0;
     }
     int32_t actualRefreshRate = round(1.0/((double)period/1000000000.0)); // 1.0s == 1000000000.0ns
-    if (actualRefreshRate == 0) {
+    if (actualRefreshRate == 0) { // actualRefreshRate is greater than 0
         return 0;
     }
     int32_t refreshRate = actualRefreshRate;
     int32_t diff = 0;
     // 在actualRefreshRate附近找一个能被vsyncMaxRefreshRate_整除的刷新率作为训练pulse的参考刷新率
+    // refreshRate is greater than 0, and the value is in following range:
+    // [max(1, actualRefreshRate - MAX_REFRESHRATE_DEVIATION), actualRefreshRate + MAX_REFRESHRATE_DEVIATION]
     while ((abs(refreshRate - actualRefreshRate) < MAX_REFRESHRATE_DEVIATION) &&
-           (vsyncMaxRefreshRate_ % refreshRate != 0)) {
+           (vsyncMaxRefreshRate_ % static_cast<uint32_t>(refreshRate) != 0)) {
         if (diff < 0) {
             diff = -diff;
         } else {
@@ -595,11 +597,11 @@ uint32_t VSyncGenerator::JudgeRefreshRateLocked(int64_t period)
         }
         refreshRate = actualRefreshRate + diff;
     }
-    if (vsyncMaxRefreshRate_ % refreshRate != 0) {
+    if (vsyncMaxRefreshRate_ % static_cast<uint32_t>(refreshRate) != 0) {
         VLOGE("Not Support this refresh rate: %{public}d, update pulse failed.", actualRefreshRate);
         return 0;
     }
-    pulse_ = period / (vsyncMaxRefreshRate_ / refreshRate);
+    pulse_ = period / static_cast<int64_t>(vsyncMaxRefreshRate_ / static_cast<uint32_t>(refreshRate));
     return static_cast<uint32_t>(refreshRate);
 }
 
