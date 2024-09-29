@@ -93,7 +93,6 @@ HWTEST_F(RSPathTest, ReverseTest001, TestSize.Level1)
     auto rsPath = RSPath::CreateRSPath(path);
     auto reveseRsPath = rsPath->Reverse();
     EXPECT_NE(rsPath, reveseRsPath);
-    ASSERT_TRUE(rsPath != nullptr);
 }
 
 /**
@@ -118,7 +117,7 @@ HWTEST_F(RSPathTest, SetSkiaPathTest, TestSize.Level1)
     Drawing::Path path = CreateDrawingPath();
     RSPath rsPath;
     rsPath.SetDrawingPath(path);
-    rsPath.SetDrawingPath(path);
+    ASSERT_NE(rsPath, rsPath.drPath_);
 }
 
 /**

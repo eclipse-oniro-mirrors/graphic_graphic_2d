@@ -130,11 +130,11 @@ HWTEST_F(RSDisplayNodeCommandTest, AddDisplayNodeToTree001, TestSize.Level1)
     RSContext context;
     NodeId id = static_cast<NodeId>(1);
     DisplayNodeCommandHelper::AddDisplayNodeToTree(context, id);
-    ASSERT_TRUE(id != nullptr);
+    ASSERT_EQ(id, 1);
 
     NodeId id2 = static_cast<NodeId>(2);
     DisplayNodeCommandHelper::AddDisplayNodeToTree(context, id2);
-    ASSERT_TRUE(id2 != nullptr);
+    ASSERT_EQ(id2, 2);
 }
 
 /**
