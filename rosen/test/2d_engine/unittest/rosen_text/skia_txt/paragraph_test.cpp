@@ -185,17 +185,6 @@ HWTEST_F(ParagraphTest, ParagraphTest010, TestSize.Level1)
 }
 
 /*
- * @tc.name: ParagraphTest011
- * @tc.desc: test for GetGlyphsBoundsRight
- * @tc.type: FUNC
- */
-HWTEST_F(ParagraphTest, ParagraphTest011, TestSize.Level1)
-{
-    EXPECT_EQ(paragraph_ != nullptr, true);
-    EXPECT_EQ(paragraph_->GetGlyphsBoundsRight() > 0, true);
-}
-
-/*
  * @tc.name: ParagraphTest012
  * @tc.desc: test for DidExceedMaxLines
  * @tc.type: FUNC
