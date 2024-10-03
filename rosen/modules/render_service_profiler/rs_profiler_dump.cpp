@@ -16,8 +16,10 @@
 #include "foundation/graphic/graphic_2d/utils/log/rs_trace.h"
 #include "rs_profiler.h"
 #include "rs_profiler_json.h"
+#include "rs_profiler_log.h"
 #include "rs_profiler_network.h"
 
+#include <stack>
 #include "common/rs_obj_geometry.h"
 #include "pipeline/rs_context.h"
 #include "pipeline/rs_display_render_node.h"
@@ -28,11 +30,15 @@
 
 namespace OHOS::Rosen {
 
-void RSProfiler::DumpNode(const RSRenderNode& node, JsonWriter& out, bool clearMockFlag)
+void RSProfiler::DumpNode(const RSRenderNode& node, JsonWriter& out, bool clearMockFlag, bool absRoot)
 {
     out.PushObject();
     DumpNodeBaseInfo(node, out, clearMockFlag);
-    DumpNodeProperties(node.GetRenderProperties(), out);
+    if (absRoot) {
+        DumpNodeAbsoluteProperties(node, out);
+    } else {
+        DumpNodeProperties(node.GetRenderProperties(), out);
+    }
     DumpNodeOptionalFlags(node, out);
     DumpNodeDrawCmdModifiers(node, out);
     DumpNodeAnimations(node.animationManager_, out);
@@ -43,7 +49,7 @@ void RSProfiler::DumpNode(const RSRenderNode& node, JsonWriter& out, bool clearM
     if (node.GetSortedChildren()) {
         for (auto& child : *node.GetSortedChildren()) {
             if (child) {
-                DumpNode(*child, children, clearMockFlag);
+                DumpNode(*child, children, clearMockFlag, false);
             }
         }
     }
@@ -59,6 +65,54 @@ NodeId RSProfiler::AdjustNodeId(NodeId nodeId, bool clearMockFlag)
         return nodeId & ~mask;
     }
     return nodeId;
+}
+
+void RSProfiler::DumpNodeAbsoluteProperties(const RSRenderNode& node, JsonWriter& out)
+{
+    std::stack<RSRenderNode::SharedPtr> parentStack;
+    // trace back to top parent
+    auto parent = node.GetParent().lock();
+    while (parent) {
+        parentStack.push(parent);
+        if (parent->GetType() == RSRenderNodeType::DISPLAY_NODE) {
+            break;
+        }
+        parent = parent->GetParent().lock();
+    }
+    // calc absolute position from top parent to current node
+    float upperLeftX = .0f;
+    float upperLeftY = .0f;
+    float scaleX = 1.0f;
+    float scaleY = 1.0f;
+    auto accParent = [&](RSRenderNode::SharedPtr node) {
+        if (node) {
+            const auto& prop = node->GetRenderProperties();
+            upperLeftX += prop.GetBoundsPositionX();
+            upperLeftY += prop.GetBoundsPositionY();
+            scaleX *= prop.GetScaleX();
+            scaleY *= prop.GetScaleY();
+        }
+    };
+    while (!parentStack.empty()) {
+        auto parentNode = parentStack.top();
+        accParent(parentNode);
+        parentStack.pop();
+    }
+
+    // write result into json
+    auto& json = out["Properties"];
+    const auto& prop = node.GetRenderProperties();
+    json.PushObject();
+    json["Bounds"] = { prop.GetBoundsPositionX() + upperLeftX, prop.GetBoundsPositionY() + upperLeftY,
+        prop.GetBoundsWidth(), prop.GetBoundsHeight() };
+    json["Frame"] = { prop.GetFramePositionX(), prop.GetFramePositionY(), prop.GetFrameWidth(), prop.GetFrameHeight() };
+    if (!prop.GetVisible()) {
+        json["IsVisible"] = false;
+    }
+    json["ScaleX"] = prop.GetScaleX() * scaleX;
+    json["ScaleY"] = prop.GetScaleY() * scaleY;
+    DumpNodePropertiesNonSpatial(prop, json);
+    json.PopObject();
 }
 
 void RSProfiler::DumpNodeBaseInfo(const RSRenderNode& node, JsonWriter& out, bool clearMockFlag)
@@ -253,12 +307,8 @@ void RSProfiler::DumpNodeProperties(const RSProperties& properties, JsonWriter& 
     if (!properties.GetVisible()) {
         json["IsVisible"] = false;
     }
-    DumpNodePropertiesClip(properties, json);
     DumpNodePropertiesTransform(properties, json);
-    DumpNodePropertiesDecoration(properties, json);
-    DumpNodePropertiesShadow(properties, json);
-    DumpNodePropertiesEffects(properties, json);
-    DumpNodePropertiesColor(properties, json);
+    DumpNodePropertiesNonSpatial(properties, json);
     json.PopObject();
 }
 
@@ -306,6 +356,15 @@ void RSProfiler::DumpNodePropertiesTransform(const RSProperties& properties, Jso
     if (!ROSEN_EQ(properties.GetScaleY(), defaultTransform.scaleY_)) {
         out["ScaleY"] = properties.GetScaleY();
     }
+}
+
+void RSProfiler::DumpNodePropertiesNonSpatial(const RSProperties& properties, JsonWriter& out)
+{
+    DumpNodePropertiesClip(properties, out);
+    DumpNodePropertiesDecoration(properties, out);
+    DumpNodePropertiesShadow(properties, out);
+    DumpNodePropertiesEffects(properties, out);
+    DumpNodePropertiesColor(properties, out);
 }
 
 void RSProfiler::DumpNodePropertiesDecoration(const RSProperties& properties, JsonWriter& out)
