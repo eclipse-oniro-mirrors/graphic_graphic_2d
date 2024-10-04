@@ -16,6 +16,7 @@
 #include "transaction/rs_marshalling_helper.h"
 #include "rs_profiler.h"
 
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <message_parcel.h>
@@ -74,6 +75,7 @@ namespace Rosen {
 namespace {
     bool g_useSharedMem = true;
     std::thread::id g_tid = std::thread::id();
+    constexpr size_t PIXELMAP_UNMARSHALLING_DEBUG_OFFSET = 12;
 }
 
  
@@ -1455,9 +1457,20 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<Media::P
     if (!CheckReadPosition(parcel)) {
         RS_LOGE("RSMarshallingHelper::Unmarshalling PixelMap, CheckReadPosition begin failed");
     }
+    auto readPosition = parcel.GetReadPosition();
     val.reset(RS_PROFILER_UNMARSHAL_PIXELMAP(parcel));
     if (val == nullptr) {
         ROSEN_LOGE("failed RSMarshallingHelper::Unmarshalling Media::PixelMap");
+        if (readPosition > PIXELMAP_UNMARSHALLING_DEBUG_OFFSET &&
+            parcel.RewindRead(readPosition - PIXELMAP_UNMARSHALLING_DEBUG_OFFSET)) {
+            ROSEN_LOGE("RSMarshallingHelper::Unmarshalling PixelMap before "
+                       " [%{public}d, %{public}d, %{public}d] [w, h, format]: [%{public}d, %{public}d, %{public}d]",
+                parcel.ReadInt32(), parcel.ReadInt32(), parcel.ReadInt32(), parcel.ReadInt32(), parcel.ReadInt32(),
+                parcel.ReadInt32());
+        } else {
+            ROSEN_LOGE("RSMarshallingHelper::Unmarshalling RewindRead failed");
+        }
+        
         return false;
     }
     if (!CheckReadPosition(parcel)) {
