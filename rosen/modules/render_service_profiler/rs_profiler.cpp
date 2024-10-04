@@ -621,6 +621,11 @@ void RSProfiler::RenderServiceTreeDump(JsonWriter& out, pid_t pid)
         return;
     }
 
+    const bool useMockPid = pid > 0 && GetMode() == Mode::READ;
+    if (useMockPid) {
+        pid = Utils::GetMockPid(pid);
+    }
+
     auto& animation = out["Animation Node"];
     animation.PushArray();
     for (auto& [nodeId, _] : g_context->animatingNodeList_) {
@@ -634,7 +639,6 @@ void RSProfiler::RenderServiceTreeDump(JsonWriter& out, pid_t pid)
 
     auto rootNode = g_context->GetGlobalRootRenderNode();
     if (pid) {
-        pid = Utils::GetMockPid(pid);
         rootNode = nullptr;
         auto& nodeMap = RSMainThread::Instance()->GetContext().GetMutableNodeMap();
         nodeMap.TraversalNodes([&rootNode, pid](const std::shared_ptr<RSBaseRenderNode>& node) {
@@ -653,8 +657,9 @@ void RSProfiler::RenderServiceTreeDump(JsonWriter& out, pid_t pid)
 
     auto& root = out["Root node"];
     if (rootNode) {
-        DumpNode(*rootNode, root, pid);
+        DumpNode(*rootNode, root, useMockPid, pid > 0);
     } else {
+        Respond("rootNode not found");
         root.PushObject();
         root.PopObject();
     }
