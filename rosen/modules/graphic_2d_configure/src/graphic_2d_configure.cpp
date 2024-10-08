@@ -77,7 +77,8 @@ void Graphic2dConfigure::parserTest()
     auto &graphic2dConfig = mConfigData_->graphic2dConfig_;
     for (const auto &[key, value] : graphic2dConfig) {
         RS_LOGI("Graphic2dConfigure graphic2dConfig_ key: %{public}s value: %{public}s",
-                 key.c_str(), value.c_str());
+                 key.c_str(),
+                 value.c_str());
     }
 }
 }
