@@ -579,6 +579,8 @@ int32_t HdiOutput::UpdateInfosAfterCommit(sptr<SyncFence> fbFence)
 
 void HdiOutput::SetVsyncSamplerEnabled(bool enabled)
 {
+    ScopedBytrace func("HdiOutput::SetVsyncSamplerEnabled, enableVsyncSample_:" + std::to_string(enabled));
+    HLOGD("Change enableVsyncSample_, value is %{public}d", enabled);
     enableVsyncSample_.store(enabled);
 }
 
