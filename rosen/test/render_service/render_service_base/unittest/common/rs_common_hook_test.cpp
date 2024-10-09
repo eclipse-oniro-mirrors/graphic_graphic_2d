@@ -58,7 +58,6 @@ HWTEST_F(RsCommonHookTest, OnStartNewAnimationTest1, TestSize.Level1)
 HWTEST_F(RsCommonHookTest, OnStartNewAnimationTest2, TestSize.Level1)
 {
     std::string result;
-    auto callback = [&result](const std::string& componentName) { result = componentName; };
     RsCommonHook::Instance().RegisterStartNewAnimationListener(nullptr);
     std::string componentName = "SWIPER_FLING";
     RsCommonHook::Instance().OnStartNewAnimation(componentName);
