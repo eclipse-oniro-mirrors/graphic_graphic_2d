@@ -5245,7 +5245,7 @@ HWTEST_F(RSNodeTest, SetEnvForegroundColor, TestSize.Level1)
     auto rsNode = RSCanvasNode::Create();
     uint32_t colorValue = 1; // for test
     rsNode->SetEnvForegroundColor(colorValue);
-    ASSERT_EQ(rsNode->GetInstance(), -1);
+    ASSERT_EQ(rsNode->GetInstanceId(), -1);
 }
 
 /**
@@ -7173,7 +7173,7 @@ HWTEST_F(RSNodeTest, SetWaterRippleParams, TestSize.Level1)
     };
     auto rsNode = RSCanvasNode::Create();
     rsNode->SetWaterRippleParams(rs_water_ripple_param, progress);
-    ASSERT_EQ(rsNode->GetInstance(), -1);
+    ASSERT_EQ(rsNode->GetInstanceId(), -1);
 }
 
 /**
