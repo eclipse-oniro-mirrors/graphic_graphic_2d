@@ -530,4 +530,18 @@ const Occlusion::Region& RSSurfaceRenderParams::GetOpaqueRegion() const
     return opaqueRegion_;
 }
 
+void RSSurfaceRenderParams::SetNeedCacheSurface(bool needCacheSurface)
+{
+    if (needCacheSurface_ == needCacheSurface) {
+        return;
+    }
+    needCacheSurface_ = needCacheSurface;
+    needSync_ = true;
+}
+
+bool RSSurfaceRenderParams::GetNeedCacheSurface() const
+{
+    return needCacheSurface_;
+}
+
 } // namespace OHOS::Rosen

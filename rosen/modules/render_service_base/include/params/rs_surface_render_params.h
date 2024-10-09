@@ -479,18 +479,8 @@ public:
         return brightnessRatio_;
     }
 
-    void SetNeedCacheSurface(bool needCacheSurface)
-    {
-        if (needCacheSurface_ == needCacheSurface) {
-            return;
-        }
-        needCacheSurface_ = needCacheSurface;
-        needSync_ = true;
-    }
-    bool GetNeedCacheSurface() const
-    {
-        return needCacheSurface_;
-    }
+    void SetNeedCacheSurface(bool needCacheSurface);
+    bool GetNeedCacheSurface() const;
 
 protected:
 private:
