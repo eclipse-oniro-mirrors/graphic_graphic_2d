@@ -59,7 +59,8 @@ HWTEST_F(RSCanvasNodeCommandTest, TestRSCanvasNodeCommand002, TestSize.Level1)
     RSContext context;
     NodeId nodeId = static_cast<NodeId>(-1);
     RSCanvasNodeCommandHelper::ClearRecording(context, nodeId);
-    ASSERT_EQ(nodeId, -1);
+    auto& modi = context.GetNodeMap().GetRenderNode<RSCanvasRenderNode>(nodeId)->modifiers_;
+    ASSERT_TRUE(modi.empty());
 }
 
 /**
