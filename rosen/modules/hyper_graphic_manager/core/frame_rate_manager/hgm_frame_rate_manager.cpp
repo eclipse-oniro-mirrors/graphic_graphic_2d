@@ -854,36 +854,33 @@ void HgmFrameRateManager::HandleScreenPowerStatus(ScreenId id, ScreenPowerStatus
     } else if (status == ScreenPowerStatus::POWER_STATUS_SUSPEND) {
         ReportHiSysEvent({.voterName = "SCREEN_POWER", .extInfo = "OFF"});
     }
-    static ScreenId lastScreenId = 12345; // init value diff with any real screen id
-    if (status != ScreenPowerStatus::POWER_STATUS_ON || lastScreenId == id) {
+    if (status != ScreenPowerStatus::POWER_STATUS_ON || curScreenId_ == id) {
         return;
     }
-    lastScreenId = id;
 
     auto& hgmCore = HgmCore::Instance();
+    auto configData = hgmCore.GetPolicyConfigData();
     auto screenList = hgmCore.GetScreenIds();
-    auto screenPos = find(screenList.begin(), screenList.end(), id);
-    auto lastCurScreenId = curScreenId_;
-    curScreenId_ = (screenPos == screenList.end()) ? 0 : id;
-    if (lastCurScreenId == curScreenId_) {
+    if (configData == nullptr || std::find(screenList.begin(), screenList.end(), id) == screenList.end()) {
         return;
     }
-    HGM_LOGI("HandleScreenPowerStatus curScreen:%{public}d", static_cast<int>(curScreenId_));
     auto& hgmScreenInfo = HgmScreenInfo::GetInstance();
-    isLtpo_ = hgmScreenInfo.IsLtpoType(hgmScreenInfo.GetScreenType(curScreenId_));
-    std::string curScreenName = "screen" + std::to_string(curScreenId_) + "_" + (isLtpo_ ? "LTPO" : "LTPS");
-
-    auto configData = hgmCore.GetPolicyConfigData();
-    if (configData != nullptr) {
-        if (configData->screenStrategyConfigs_.find(curScreenName) != configData->screenStrategyConfigs_.end()) {
-            curScreenStrategyId_ = configData->screenStrategyConfigs_[curScreenName];
-        }
-        if (curScreenStrategyId_.empty()) {
-            curScreenStrategyId_ = "LTPO-DEFAULT";
-        }
-        multiAppStrategy_.UpdateXmlConfigCache();
-        UpdateEnergyConsumptionConfig();
+    auto isLtpo = hgmScreenInfo.IsLtpoType(hgmScreenInfo.GetScreenType(id));
+    std::string curScreenName = "screen" + std::to_string(id) + "_" + (isLtpo ? "LTPO" : "LTPS");
+    if (configData->screenStrategyConfigs_.find(curScreenName) == configData->screenStrategyConfigs_.end()) {
+        return;
     }
+    curScreenStrategyId_ = configData->screenStrategyConfigs_[curScreenName];
+    if (curScreenStrategyId_.empty()) {
+        curScreenStrategyId_ = "LTPO-DEFAULT";
+    }
+    isLtpo_ = isLtpo;
+    curScreenId_ = id;
+    hgmCore.SetActiveScreenId(curScreenId_);
+    HGM_LOGD("curScreen change:%{public}d", static_cast<int>(curScreenId_));
+
+    multiAppStrategy_.UpdateXmlConfigCache();
+    UpdateEnergyConsumptionConfig();
 
     multiAppStrategy_.CalcVote();
     hgmCore.SetLtpoConfig();
