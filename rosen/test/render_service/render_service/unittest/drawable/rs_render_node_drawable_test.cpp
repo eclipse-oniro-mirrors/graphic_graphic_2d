@@ -90,7 +90,7 @@ HWTEST_F(RSRenderNodeDrawableTest, OpincCalculateBefore, TestSize.Level1)
 HWTEST_F(RSRenderNodeDrawableTest, OpincCalculateAfter, TestSize.Level1)
 {
     auto drawable = RSRenderNodeDrawableTest::CreateDrawable();
-
+    ASSERT_NE(drawable, nullptr);
     Drawing::Canvas canvas;
     bool isOpincDropNodeExt = true;
     drawable->OpincCalculateAfter(canvas, isOpincDropNodeExt);
