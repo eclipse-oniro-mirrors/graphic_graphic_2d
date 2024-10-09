@@ -271,4 +271,22 @@ HWTEST_F(RSSurfaceRenderParamsTest, SetGlobalPositionEnabled, TestSize.Level1)
     params.SetGlobalPositionEnabled(true);
     EXPECT_EQ(params.GetGlobalPositionEnabled(), true);
 }
+
+/**
+ * @tc.name: NeedCacheSurface
+ * @tc.desc: SetNeedCacheSurface and GetNeedCacheSurface test
+ * @tc.type:FUNC
+ * @tc.require: issueIAVLLE
+ */
+HWTEST_F(RSSurfaceRenderParamsTest, SetNeedCacheSurface, TestSize.Level1)
+{
+    RSSurfaceRenderParams params(113);
+    params.SetNeedCacheSurface(true);
+    EXPECT_EQ(params.GetNeedCacheSurface(), true);
+    EXPECT_EQ(params.needSync_, true);
+
+    params.SetNeedCacheSurface(false);
+    EXPECT_EQ(params.GetNeedCacheSurface(), false);
+    EXPECT_EQ(params.needSync_, true);
+}
 }

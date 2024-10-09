@@ -1226,6 +1226,16 @@ public:
     size_t GetIntersectedRoundCornerAABBsSize() const {
         return intersectedRoundCornerAABBs_.size();
     }
+
+    void SetNeedCacheSurface(bool needCacheSurface);
+    bool GetSubThreadAssignable() const
+    {
+        return subThreadAssignable_;
+    }
+    void SetSubThreadAssignable(bool subThreadAssignable)
+    {
+        subThreadAssignable_ = subThreadAssignable;
+    }
 protected:
     void OnSync() override;
     void OnSkipSync() override;
@@ -1497,6 +1507,8 @@ private:
     std::unordered_map<std::string, bool> watermarkHandles_ = {};
 
     bool arsrTag_ = true;
+
+    bool subThreadAssignable_ = false;
 
     // UIExtension record, <UIExtension, hostAPP>
     inline static std::unordered_map<NodeId, NodeId> secUIExtensionNodes_ = {};

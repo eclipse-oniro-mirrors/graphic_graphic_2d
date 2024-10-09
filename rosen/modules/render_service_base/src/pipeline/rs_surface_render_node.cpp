@@ -3035,5 +3035,14 @@ void RSSurfaceRenderNode::SetWaitUifirstFirstFrame(bool wait)
     RS_TRACE_NAME_FMT("SetWaitUifirstFirstFrame id:%" PRIu64 ", wait:%d", GetId(), wait);
     RS_LOGI("SetWaitUifirstFirstFrame id:%{public}" PRIu64 ", wait:%{public}d", GetId(), wait);
 }
+
+void RSSurfaceRenderNode::SetNeedCacheSurface(bool needCacheSurface)
+{
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
+    if (surfaceParams) {
+        surfaceParams->SetNeedCacheSurface(needCacheSurface);
+    }
+    AddToPendingSyncList();
+}
 } // namespace Rosen
 } // namespace OHOS

@@ -373,7 +373,11 @@ void RSSurfaceRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         return;
     }
 
+    if (DrawWithWindowCache(*rscanvas, *surfaceParams)) {
+        return;
+    }
     if (DealWithUIFirstCache(*rscanvas, *surfaceParams, *uniParam)) {
+        ClearWindowCache();
         return;
     }
 
@@ -438,7 +442,11 @@ void RSSurfaceRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         EnableGpuOverDrawDrawBufferOptimization(*curCanvas_, surfaceParams);
     }
 
-    OnGeneralProcess(*curCanvas_, *surfaceParams, isSelfDrawingSurface);
+    if (surfaceParams->GetNeedCacheSurface()) {
+        OnGeneralProcessAndCache(*curCanvas_, *surfaceParams, *uniParam, isSelfDrawingSurface);
+    } else {
+        OnGeneralProcess(*curCanvas_, *surfaceParams, isSelfDrawingSurface);
+    }
 
     if (needOffscreen && canvasBackup_) {
         Drawing::AutoCanvasRestore acrBackUp(*canvasBackup_, true);
@@ -975,5 +983,96 @@ void RSSurfaceRenderNodeDrawable::RegisterDeleteBufferListenerOnSync(sptr<IConsu
     renderEngine->RegisterDeleteBufferListener(consumerOnDraw_);
 }
 #endif
+
+bool RSSurfaceRenderNodeDrawable::HasWindowCache() const
+{
+    return cacheWindowImage_ != nullptr;
+}
+
+void RSSurfaceRenderNodeDrawable::ClearWindowCache()
+{
+    cacheWindowImage_ = nullptr;
+}
+
+bool RSSurfaceRenderNodeDrawable::DrawWithWindowCache(RSPaintFilterCanvas& canvas, RSSurfaceRenderParams& surfaceParams)
+{
+    if (HasCachedTexture() ||
+        !HasWindowCache() ||
+        surfaceParams.GetUifirstNodeEnableParam() == MultiThreadCacheType::NONE) {
+        RS_LOGW("RSSurfaceRenderNodeDrawable::DrawWithWindowCache should not use window cache.");
+        ClearWindowCache();
+        return false;
+    }
+    if (ROSEN_EQ(cacheWindowImage_->GetWidth(), 0) || ROSEN_EQ(cacheWindowImage_->GetHeight(), 0)) {
+        RS_LOGE("RSSurfaceRenderNodeDrawable::DrawWithWindowCache buffer size is zero.");
+        return false;
+    }
+    RS_TRACE_NAME_FMT("DrawWithWindowCache node[%lld] %s", GetId(), GetName().c_str());
+    if (!RSUniRenderThread::GetCaptureParam().isSnapshot_) {
+        canvas.MultiplyAlpha(surfaceParams.GetAlpha());
+        canvas.ConcatMatrix(surfaceParams.GetMatrix());
+    }
+    auto boundSize = surfaceParams.GetFrameRect();
+    float scaleX = boundSize.GetWidth() / static_cast<float>(cacheWindowImage_->GetWidth());
+    float scaleY = boundSize.GetHeight() / static_cast<float>(cacheWindowImage_->GetHeight());
+    canvas.Save();
+    canvas.Scale(scaleX, scaleY);
+    if (RSSystemProperties::GetRecordingEnabled()) {
+        if (cacheWindowImage_->IsTextureBacked()) {
+            RS_LOGI("RSSurfaceRenderNodeDrawable::DrawWithWindowCache convert image from texture to raster image.");
+            cacheWindowImage_ = cacheWindowImage_->MakeRasterImage();
+        }
+    }
+    Drawing::Brush brush;
+    canvas.AttachBrush(brush);
+    auto samplingOptions = Drawing::SamplingOptions(Drawing::FilterMode::LINEAR, Drawing::MipmapMode::NONE);
+    auto gravityTranslate = GetGravityTranslate(cacheWindowImage_->GetWidth(), cacheWindowImage_->GetHeight());
+    canvas.DrawImage(*cacheWindowImage_, gravityTranslate.x_, gravityTranslate.y_, samplingOptions);
+    canvas.DetachBrush();
+    canvas.Restore();
+    return true;
+}
+
+void RSSurfaceRenderNodeDrawable::OnGeneralProcessAndCache(RSPaintFilterCanvas& canvas,
+    RSSurfaceRenderParams& surfaceParams, RSRenderThreadParams& uniParams, bool isSelfDrawingSurface)
+{
+    RS_TRACE_NAME_FMT("OnGeneralProcessAndCache node[%lld] %s", GetId(), GetName().c_str());
+    auto rect = surfaceParams.GetFrameRect();
+    auto windowSurface = canvas.GetSurface()->MakeSurface(rect.GetWidth(), rect.GetHeight());
+    if (windowSurface == nullptr) {
+        RS_LOGE("RSSurfaceRenderNodeDrawable::OnGeneralProcessAndCache surface nullptr.");
+        return;
+    }
+    auto windowCanvas = std::make_shared<RSPaintFilterCanvas>(windowSurface.get());
+    if (windowCanvas == nullptr) {
+        RS_LOGE("RSSurfaceRenderNodeDrawable::OnGeneralProcessAndCache canvas nullptr.");
+        return;
+    }
+    // copy HDR properties into offscreen canvas
+    windowCanvas->CopyHDRConfiguration(canvas);
+    // copy current canvas properties into offscreen canvas
+    windowCanvas->CopyConfigurationToOffscreenCanvas(canvas);
+    windowCanvas->SetDisableFilterCache(true);
+    auto arc = std::make_unique<RSAutoCanvasRestore>(windowCanvas, RSPaintFilterCanvas::SaveType::kCanvasAndAlpha);
+    windowCanvas->Clear(Drawing::Color::COLOR_TRANSPARENT);
+
+    bool isOpDropped = uniParams.IsOpDropped();
+    uniParams.SetOpDropped(false); // temporarily close partial render
+    OnGeneralProcess(*windowCanvas, surfaceParams, isSelfDrawingSurface);
+    uniParams.SetOpDropped(isOpDropped);
+
+    cacheWindowImage_ = windowSurface->GetImageSnapshot();
+    if (cacheWindowImage_ == nullptr) {
+        RS_LOGE("RSSurfaceRenderNodeDrawable::OnGeneralProcessAndCache snapshot nullptr.");
+        OnGeneralProcess(*windowCanvas, surfaceParams, isSelfDrawingSurface);
+        return;
+    }
+    Drawing::Brush paint;
+    paint.SetAntiAlias(true);
+    canvas.AttachBrush(paint);
+    auto samplingOptions = Drawing::SamplingOptions(Drawing::FilterMode::NEAREST, Drawing::MipmapMode::NONE);
+    canvas.DrawImage(*cacheWindowImage_, 0, 0, samplingOptions);
+    canvas.DetachBrush();
+}
 
 } // namespace OHOS::Rosen::DrawableV2

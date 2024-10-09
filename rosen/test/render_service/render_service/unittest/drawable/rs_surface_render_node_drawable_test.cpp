@@ -1174,4 +1174,86 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, DealWithSelfDrawingNodeBufferTest001, 
     surfaceDrawable_->name_ = "pointer window";
     surfaceDrawable_->DealWithSelfDrawingNodeBuffer(canvas, *surfaceParams);
 }
+
+/**
+ * @tc.name: HasWindowCache
+ * @tc.desc: Test HasWindowCache
+ * @tc.type: FUNC
+ * @tc.require: issueIAVLLE
+ */
+HWTEST_F(RSSurfaceRenderNodeDrawableTest, HasWindowCache, TestSize.Level1)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    ASSERT_FALSE(surfaceDrawable_->HasWindowCache());
+
+    surfaceDrawable_->cacheWindowImage_ = std::make_shared<Drawing::Image>();
+    ASSERT_TRUE(surfaceDrawable_->HasWindowCache());
+}
+
+/**
+ * @tc.name: ClearWindowCache
+ * @tc.desc: Test ClearWindowCache
+ * @tc.type: FUNC
+ * @tc.require: issueIAVLLE
+ */
+HWTEST_F(RSSurfaceRenderNodeDrawableTest, ClearWindowCache, TestSize.Level1)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    surfaceDrawable_->cacheWindowImage_ = std::make_shared<Drawing::Image>();
+    ASSERT_TRUE(surfaceDrawable_->HasWindowCache());
+
+    surfaceDrawable_->ClearWindowCache();
+    ASSERT_FALSE(surfaceDrawable_->HasWindowCache());
+}
+
+/**
+ * @tc.name: DrawWithWindowCache
+ * @tc.desc: Test DrawWithWindowCache
+ * @tc.type: FUNC
+ * @tc.require: issueIAVLLE
+ */
+HWTEST_F(RSSurfaceRenderNodeDrawableTest, DrawWithWindowCache, TestSize.Level1)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->GetRenderParams().get());
+    Drawing::Canvas drawingCanvas;
+    RSPaintFilterCanvas canvas(drawingCanvas);
+    ASSERT_FALSE(surfaceDrawable_->DrawWithWindowCache(canvas, *surfaceParams));
+
+    surfaceDrawable_->cacheWindowImage_ = std::make_shared<Drawing::Image>();
+    surfaceParams->SetUifirstNodeEnableParam(MultiThreadCacheType::NONE);
+    ASSERT_FALSE(surfaceDrawable_->DrawWithWindowCache(canvas, *surfaceParams));
+
+    Drawing::Bitmap bmp;
+    Drawing::BitmapFormat format { Drawing::COLORTYPE_RGBA_8888, Drawing::ALPHATYPE_PREMUL };
+    bmp.Build(100, 30, format);
+    bmp.ClearWithColor(Drawing::Color::COLOR_RED);
+    surfaceDrawable_->cacheWindowImage_ = bmp.MakeImage();
+    surfaceParams->SetUifirstNodeEnableParam(MultiThreadCacheType::NONFOCUS_WINDOW);
+    ASSERT_TRUE(surfaceDrawable_->DrawWithWindowCache(canvas, *surfaceParams));
+}
+
+/**
+ * @tc.name: OnGeneralProcessAndCache
+ * @tc.desc: Test OnGeneralProcessAndCache
+ * @tc.type: FUNC
+ * @tc.require: issueIAVLLE
+ */
+HWTEST_F(RSSurfaceRenderNodeDrawableTest, OnGeneralProcessAndCache, TestSize.Level1)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->GetRenderParams().get());
+    ASSERT_NE(surfaceParams, nullptr);
+    surfaceParams->SetFrameRect({0.0f, 0.0f, 100.0f, 100.0f});
+    auto uniParams = std::make_shared<RSRenderThreadParams>();
+    ASSERT_NE(uniParams, nullptr);
+
+    std::shared_ptr<Drawing::Surface> surface = Drawing::Surface::MakeRasterN32Premul(100, 100);
+    ASSERT_NE(surface, nullptr);
+    RSPaintFilterCanvas canvas(surface.get());
+    surfaceDrawable_->OnGeneralProcessAndCache(canvas, *surfaceParams, *uniParams, false);
+    ASSERT_TRUE(surfaceDrawable_->HasWindowCache());
+}
 }
