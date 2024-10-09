@@ -481,7 +481,7 @@ public:
 
     void SetNeedCacheSurface(bool needCacheSurface)
     {
-        if (needCacheSurface_ == needCacheSurface)) {
+        if (needCacheSurface_ == needCacheSurface) {
             return;
         }
         needCacheSurface_ = needCacheSurface;
