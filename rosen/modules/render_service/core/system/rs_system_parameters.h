@@ -73,6 +73,7 @@ public:
     static bool GetHideNotchStatus();
     static bool GetUIFirstDmaBufferEnabled();
     static bool GetTcacheEnabled();
+    static int GetDumpCanvasDrawingNodeEnabled();
 };
 
 } // namespace Rosen
