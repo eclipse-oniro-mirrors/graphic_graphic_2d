@@ -120,10 +120,10 @@ void RSSurfaceRenderNodeDrawable::OnGeneralProcess(
         }
 
         // 3. Draw content of this node by the main canvas.
-        DrawContent(canvas, bounds);
+        DrawContent(*windowCanvas_, bounds);
 
         // 4. Draw children of this node by the main canvas.
-        DrawChildren(canvas, bounds);
+        DrawChildren(*windowCanvas_, bounds);
 
         FinishWindowCache(canvas);
         if (uniParams) {
@@ -1091,8 +1091,8 @@ void RSSurfaceRenderNodeDrawable::FinishWindowCache(RSPaintFilterCanvas& canvas)
     canvas.DrawImage(*cacheWindowImage_, 0, 0, samplingOptions);
     canvas.DetachBrush();
 
-    windowCanvas_ = nullptr;
     windowArc_ = nullptr;
+    windowCanvas_ = nullptr;
 }
 
 } // namespace OHOS::Rosen::DrawableV2
