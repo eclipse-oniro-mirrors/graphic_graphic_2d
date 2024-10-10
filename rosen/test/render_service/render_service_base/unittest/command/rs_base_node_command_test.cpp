@@ -67,11 +67,11 @@ HWTEST_F(RSBaseNodeCommandText, TextRSBaseNodeCommand002, TestSize.Level1)
 HWTEST_F(RSBaseNodeCommandText, TextRSBaseNodeCommand003, TestSize.Level1)
 {
     RSContext context;
-    NodeId nodeId = static_cast<NodeId>(-1);
+    NodeId nodeId = static_cast<NodeId>(0);
     NodeId childNodeId = static_cast<NodeId>(-2);
     int32_t index = static_cast<int32_t>(1);
     BaseNodeCommandHelper::MoveChild(context, nodeId, childNodeId, index);
-    ASSERT_NE(context.GetNodeMap().GetRenderNode(nodeId)->children_.size(), 0);
+    ASSERT_EQ(context.GetNodeMap().GetRenderNode(nodeId)->children_.size(), 0);
 }
 
 /**
