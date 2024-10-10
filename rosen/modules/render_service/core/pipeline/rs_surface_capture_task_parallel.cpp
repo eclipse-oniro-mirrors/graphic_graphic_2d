@@ -62,10 +62,10 @@ inline void DrawCapturedImg(Drawing::Image& image,
 }
 }
 
-void RSSurfaceCaptureTaskParallel::CheckModifiers(NodeId id)
+void RSSurfaceCaptureTaskParallel::CheckModifiers(NodeId id, bool useCurWindow)
 {
     RS_TRACE_NAME("RSSurfaceCaptureTaskParallel::CheckModifiers");
-    bool needSync = RSMainThread::Instance()->IsOcclusionNodesNeedSync(id) ||
+    bool needSync = RSMainThread::Instance()->IsOcclusionNodesNeedSync(id, useCurWindow) ||
         RSMainThread::Instance()->IsHardwareEnabledNodesNeedSync();
     if (!needSync) {
         return;

@@ -749,6 +749,11 @@ public:
         return renderDrawable_;
     }
     void MarkBlurIntersectWithDRM(bool intersectWithDRM, bool isDark);
+    bool GetIsFullChildrenListValid() const
+    {
+        return isFullChildrenListValid_;
+    }
+
 protected:
     virtual void OnApplyModifiers() {}
     void SetOldDirtyInSurface(RectI oldDirtyInSurface);
