@@ -181,6 +181,11 @@ public:
         return filterRegion_;
     }
 
+    inline bool IsWaitSync() const
+    {
+        return waitSync_;
+    }
+
     using ChildrenListSharedPtr = std::shared_ptr<const std::vector<std::shared_ptr<RSRenderNode>>>;
     // return children and disappeared children, not guaranteed to be sorted by z-index
     ChildrenListSharedPtr GetChildren() const;
@@ -781,6 +786,9 @@ protected:
     virtual void OnSync();
     virtual void OnSkipSync() {};
     virtual void ClearResource() {};
+    virtual void ClearNeverOnTree() {};
+
+    void UpdateDrawableVecV2();
 
     mutable std::shared_ptr<DrawableV2::RSRenderNodeDrawableAdapter> renderDrawable_;
     NodeId drawingCacheRootId_ = INVALID_NODEID;
@@ -798,6 +806,7 @@ protected:
     std::atomic<bool> isStaticCached_ = false;
     bool lastFrameHasVisibleEffect_ = false;
     RectI filterRegion_;
+    bool waitSync_ = false;
 
     inline void DrawPropertyDrawable(RSPropertyDrawableSlot slot, RSPaintFilterCanvas& canvas)
     {
@@ -1038,7 +1047,6 @@ private:
 
     void UpdateDrawableVec();
     void UpdateDrawableVecInternal(std::unordered_set<RSPropertyDrawableSlot> dirtySlots);
-    void UpdateDrawableVecV2();
     void UpdateDisplayList();
     void UpdateShadowRect();
 
