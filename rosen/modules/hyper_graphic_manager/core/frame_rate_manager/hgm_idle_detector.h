@@ -53,6 +53,23 @@ public:
         return aceAnimatorIdleState_;
     }
 
+    void SetAnimatorExpected(int32_t animatorExpected)
+    {
+        if (animatorExpected > animatorExpected_) {
+            animatorExpected_ = animatorExpected;
+        }
+    }
+
+    int32_t GetAnimatorExpected() const
+    {
+        return animatorExpected_;
+    }
+
+    void ResetAnimatorExpected()
+    {
+        animatorExpected_ = -1;
+    }
+
     void UpdateSurfaceTime(const std::string& surfaceName, uint64_t timestamp,
         pid_t pid, UIFWKType uiFwkType = UIFWKType::FROM_UNKNOWN);
     bool GetSurfaceIdleState(uint64_t timestamp);
@@ -89,6 +106,7 @@ private:
         std::string& validSurfaceName);
     bool appSupported_ = false;
     bool aceAnimatorIdleState_ = true;
+    int32_t animatorExpected_ = -1;
     // FORMAT: <buffername>
     std::vector<std::string> appBufferBlackList_;
     std::vector<std::string> supportAppBufferList_;
