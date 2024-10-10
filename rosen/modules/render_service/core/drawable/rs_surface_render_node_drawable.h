@@ -281,8 +281,8 @@ private:
     bool HasWindowCache() const;
     void ClearWindowCache();
     bool DrawWithWindowCache(RSPaintFilterCanvas& canvas, RSSurfaceRenderParams& surfaceParams);
-    void OnGeneralProcessAndCache(RSPaintFilterCanvas& canvas, RSSurfaceRenderParams& surfaceParams,
-        RSRenderThreadParams& uniParams, bool isSelfDrawingSurface);
+    bool PrepareWindowCache(RSPaintFilterCanvas& canvas, Drawing::Rect& bounds);
+    void FinishWindowCache(RSPaintFilterCanvas& canvas);
 
     std::string name_;
     RSSurfaceNodeType surfaceNodeType_ = RSSurfaceNodeType::DEFAULT;
@@ -302,6 +302,9 @@ private:
     std::shared_ptr<Drawing::Surface> cacheSurface_ = nullptr;
     std::shared_ptr<Drawing::Surface> cacheCompletedSurface_ = nullptr;
     std::shared_ptr<Drawing::Image> cacheWindowImage_ = nullptr;
+    std::shared_ptr<RSPaintFilterCanvas> windowCanvas_ = nullptr;
+    std::shared_ptr<Drawing::Surface> windowSurface_ = nullptr;
+    std::unique_ptr<RSAutoCanvasRestore> windowArc_ = nullptr;
 #if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
     Drawing::BackendTexture cacheBackendTexture_;
     Drawing::BackendTexture cacheCompletedBackendTexture_;

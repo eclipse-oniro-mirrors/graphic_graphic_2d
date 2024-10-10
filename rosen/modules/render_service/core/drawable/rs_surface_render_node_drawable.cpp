@@ -112,11 +112,30 @@ void RSSurfaceRenderNodeDrawable::OnGeneralProcess(
         canvas.Restore();
     }
 
-    // 3. Draw content of this node by the main canvas.
-    DrawContent(canvas, bounds);
+    if (surfaceParams.GetNeedCacheSurface() && PrepareWindowCache(canvas, bounds)) {
+        auto& uniParams = RSUniRenderThread::Instance().GetRSRenderThreadParams();
+        bool isOpDropped = uniParams != nullptr ? uniParams->IsOpDropped() : true;
+        if (uniParams) {
+            uniParams->SetOpDropped(false); // temporarily close partial render
+        }
 
-    // 4. Draw children of this node by the main canvas.
-    DrawChildren(canvas, bounds);
+        // 3. Draw content of this node by the main canvas.
+        DrawContent(canvas, bounds);
+
+        // 4. Draw children of this node by the main canvas.
+        DrawChildren(canvas, bounds);
+
+        FinishWindowCache(canvas);
+        if (uniParams) {
+            uniParams->SetOpDropped(isOpDropped);
+        }
+    } else {
+        // 3. Draw content of this node by the main canvas.
+        DrawContent(canvas, bounds);
+
+        // 4. Draw children of this node by the main canvas.
+        DrawChildren(canvas, bounds);
+    }
 
     // 5. Draw foreground of this node by the main canvas.
     DrawForeground(canvas, bounds);
@@ -442,11 +461,7 @@ void RSSurfaceRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         EnableGpuOverDrawDrawBufferOptimization(*curCanvas_, surfaceParams);
     }
 
-    if (surfaceParams->GetNeedCacheSurface()) {
-        OnGeneralProcessAndCache(*curCanvas_, *surfaceParams, *uniParam, isSelfDrawingSurface);
-    } else {
-        OnGeneralProcess(*curCanvas_, *surfaceParams, isSelfDrawingSurface);
-    }
+    OnGeneralProcess(*curCanvas_, *surfaceParams, isSelfDrawingSurface);
 
     if (needOffscreen && canvasBackup_) {
         Drawing::AutoCanvasRestore acrBackUp(*canvasBackup_, true);
@@ -992,6 +1007,7 @@ bool RSSurfaceRenderNodeDrawable::HasWindowCache() const
 void RSSurfaceRenderNodeDrawable::ClearWindowCache()
 {
     cacheWindowImage_ = nullptr;
+    windowSurface_ = nullptr;
 }
 
 bool RSSurfaceRenderNodeDrawable::DrawWithWindowCache(RSPaintFilterCanvas& canvas, RSSurfaceRenderParams& surfaceParams)
@@ -999,7 +1015,6 @@ bool RSSurfaceRenderNodeDrawable::DrawWithWindowCache(RSPaintFilterCanvas& canva
     if (HasCachedTexture() ||
         !HasWindowCache() ||
         surfaceParams.GetUifirstNodeEnableParam() == MultiThreadCacheType::NONE) {
-        RS_LOGW("RSSurfaceRenderNodeDrawable::DrawWithWindowCache should not use window cache.");
         ClearWindowCache();
         return false;
     }
@@ -1013,6 +1028,7 @@ bool RSSurfaceRenderNodeDrawable::DrawWithWindowCache(RSPaintFilterCanvas& canva
         canvas.ConcatMatrix(surfaceParams.GetMatrix());
     }
     auto boundSize = surfaceParams.GetFrameRect();
+    DrawBackground(canvas, boundSize);
     float scaleX = boundSize.GetWidth() / static_cast<float>(cacheWindowImage_->GetWidth());
     float scaleY = boundSize.GetHeight() / static_cast<float>(cacheWindowImage_->GetHeight());
     canvas.Save();
@@ -1030,41 +1046,42 @@ bool RSSurfaceRenderNodeDrawable::DrawWithWindowCache(RSPaintFilterCanvas& canva
     canvas.DrawImage(*cacheWindowImage_, gravityTranslate.x_, gravityTranslate.y_, samplingOptions);
     canvas.DetachBrush();
     canvas.Restore();
+    DrawForeground(canvas, boundSize);
     return true;
 }
 
-void RSSurfaceRenderNodeDrawable::OnGeneralProcessAndCache(RSPaintFilterCanvas& canvas,
-    RSSurfaceRenderParams& surfaceParams, RSRenderThreadParams& uniParams, bool isSelfDrawingSurface)
+bool RSSurfaceRenderNodeDrawable::PrepareWindowCache(RSPaintFilterCanvas& canvas, Drawing::Rect& bounds)
 {
-    RS_TRACE_NAME_FMT("OnGeneralProcessAndCache node[%lld] %s", GetId(), GetName().c_str());
-    auto rect = surfaceParams.GetFrameRect();
-    auto windowSurface = canvas.GetSurface()->MakeSurface(rect.GetWidth(), rect.GetHeight());
-    if (windowSurface == nullptr) {
-        RS_LOGE("RSSurfaceRenderNodeDrawable::OnGeneralProcessAndCache surface nullptr.");
-        return;
+    windowSurface_ = canvas.GetSurface()->MakeSurface(rect.GetWidth(), rect.GetHeight());
+    if (windowSurface_ == nullptr) {
+        RS_LOGE("RSSurfaceRenderNodeDrawable::PrepareWindowCache surface nullptr.");
+        return false;
     }
-    auto windowCanvas = std::make_shared<RSPaintFilterCanvas>(windowSurface.get());
-    if (windowCanvas == nullptr) {
-        RS_LOGE("RSSurfaceRenderNodeDrawable::OnGeneralProcessAndCache canvas nullptr.");
-        return;
+    windowCanvas_ = std::make_shared<RSPaintFilterCanvas>(windowSurface_.get());
+    if (windowCanvas_ == nullptr) {
+        RS_LOGE("RSSurfaceRenderNodeDrawable::PrepareWindowCache canvas nullptr.");
+        windowSurface_ = nullptr;
+        return false;
     }
     // copy HDR properties into offscreen canvas
-    windowCanvas->CopyHDRConfiguration(canvas);
+    windowCanvas_->CopyHDRConfiguration(canvas);
     // copy current canvas properties into offscreen canvas
-    windowCanvas->CopyConfigurationToOffscreenCanvas(canvas);
-    windowCanvas->SetDisableFilterCache(true);
-    auto arc = std::make_unique<RSAutoCanvasRestore>(windowCanvas, RSPaintFilterCanvas::SaveType::kCanvasAndAlpha);
-    windowCanvas->Clear(Drawing::Color::COLOR_TRANSPARENT);
+    windowCanvas_->CopyConfigurationToOffscreenCanvas(canvas);
+    windowCanvas_->SetDisableFilterCache(true);
+    windowArc_ = std::make_unique<RSAutoCanvasRestore>(windowCanvas_, RSPaintFilterCanvas::SaveType::kCanvasAndAlpha);
+    windowCanvas_->Clear(Drawing::Color::COLOR_TRANSPARENT);
+    return true;
+}
 
-    bool isOpDropped = uniParams.IsOpDropped();
-    uniParams.SetOpDropped(false); // temporarily close partial render
-    OnGeneralProcess(*windowCanvas, surfaceParams, isSelfDrawingSurface);
-    uniParams.SetOpDropped(isOpDropped);
-
-    cacheWindowImage_ = windowSurface->GetImageSnapshot();
+void RSSurfaceRenderNodeDrawable::FinishWindowCache(RSPaintFilterCanvas& canvas)
+{
+    if (windowSurface_ == nullptr) {
+        RS_LOGE("RSSurfaceRenderNodeDrawable::FinishWindowCache surface nullptr.");
+        return;
+    }
+    cacheWindowImage_ = windowCanvas_->GetImageSnapshot();
     if (cacheWindowImage_ == nullptr) {
-        RS_LOGE("RSSurfaceRenderNodeDrawable::OnGeneralProcessAndCache snapshot nullptr.");
-        OnGeneralProcess(canvas, surfaceParams, isSelfDrawingSurface);
+        RS_LOGE("RSSurfaceRenderNodeDrawable::FinishWindowCache snapshot nullptr.");
         return;
     }
     Drawing::Brush paint;
@@ -1073,6 +1090,9 @@ void RSSurfaceRenderNodeDrawable::OnGeneralProcessAndCache(RSPaintFilterCanvas& 
     auto samplingOptions = Drawing::SamplingOptions(Drawing::FilterMode::NEAREST, Drawing::MipmapMode::NONE);
     canvas.DrawImage(*cacheWindowImage_, 0, 0, samplingOptions);
     canvas.DetachBrush();
+
+    windowCanvas_ = nullptr;
+    windowArc_ = nullptr;
 }
 
 } // namespace OHOS::Rosen::DrawableV2
