@@ -1271,14 +1271,56 @@ HWTEST_F(RSUniRenderVisitorTest, HandleColorGamuts001, TestSize.Level2)
     screenManager->RemoveVirtualScreen(virtualScreenId);
 }
 
+/**
+ * @tc.name: CheckColorSpaceWithSelfDrawingNode001
+ * @tc.desc: Test RSUniRenderVisitorTest.CheckColorSpaceWithSelfDrawingNode while
+ *           selfDrawingNode's color space is not equal to GRAPHIC_COLOR_GAMUT_SRGB,
+ *           and this node will be drawn with gpu
+ * @tc.type: FUNC
+ * @tc.require: issueIAW3W0
+ */
+HWTEST_F(RSUniRenderVisitorTest, CheckColorSpaceWithSelfDrawingNode001, TestSize.Level2)
+{
+    auto selfDrawingNode = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(selfDrawingNode, nullptr);
+    selfDrawingNode->SetHardwareForcedDisabledState(true);
+    selfDrawingNode->SetColorSpace(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3);
+
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    ASSERT_NE(rsUniRenderVisitor, nullptr);
+    rsUniRenderVisitor->CheckColorSpaceWithSelfDrawingNode(*selfDrawingNode);
+    ASSERT_EQ(rsUniRenderVisitor->newColorSpace_, selfDrawingNode->GetColorSpace());
+}
+
+/**
+ * @tc.name: CheckColorSpaceWithSelfDrawingNode002
+ * @tc.desc: Test RSUniRenderVisitorTest.CheckColorSpaceWithSelfDrawingNode while
+ *           selfDrawingNode's color space is not equal to GRAPHIC_COLOR_GAMUT_SRGB,
+ *           and this node will not be drawn with gpu
+ * @tc.type: FUNC
+ * @tc.require: issueIAW3W0
+ */
+HWTEST_F(RSUniRenderVisitorTest, CheckColorSpaceWithSelfDrawingNode002, TestSize.Level2)
+{
+    auto selfDrawingNode = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(selfDrawingNode, nullptr);
+    selfDrawingNode->SetHardwareForcedDisabledState(false);
+    selfDrawingNode->SetColorSpace(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3);
+
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    ASSERT_NE(rsUniRenderVisitor, nullptr);
+    rsUniRenderVisitor->CheckColorSpaceWithSelfDrawingNode(*selfDrawingNode);
+    ASSERT_NE(rsUniRenderVisitor->newColorSpace_, selfDrawingNode->GetColorSpace());
+}
+
 #ifndef ROSEN_CROSS_PLATFORM
 /**
- * @tc.name: UpdateColorSpaceToIntanceRootNode
- * @tc.desc: test results of UpdateColorSpaceToIntanceRootNode, if node has no buffer
+ * @tc.name: UpdateColorSpaceWithMetadata
+ * @tc.desc: test results of UpdateColorSpaceWithMetadata, if node has no buffer
  * @tc.type: FUNC
- * @tc.require: issueIAOTNY
+ * @tc.require: issueIAW3W0
  */
-HWTEST_F(RSUniRenderVisitorTest, UpdateColorSpaceToIntanceRootNode001, TestSize.Level1)
+HWTEST_F(RSUniRenderVisitorTest, UpdateColorSpaceWithMetadata001, TestSize.Level1)
 {
     // register instance root node
     auto instanceRootNode = RSTestUtil::CreateSurfaceNode();
@@ -1293,17 +1335,17 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateColorSpaceToIntanceRootNode001, TestSize.
     surfaceNode->instanceRootNodeId_ = instanceRootNode->GetId();
 
     ASSERT_NE(surfaceNode->GetInstanceRootNode(), nullptr);
-    surfaceNode->UpdateColorSpaceToIntanceRootNode();
-    ASSERT_EQ(surfaceNode->GetSubSurfaceColorSpace(), GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB);
+    surfaceNode->UpdateColorSpaceWithMetadata();
+    ASSERT_EQ(surfaceNode->GetColorSpace(), GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB);
 }
 
 /**
- * @tc.name: UpdateColorSpaceToIntanceRootNode
- * @tc.desc: test results of UpdateColorSpaceToIntanceRootNode, if node has buffer
+ * @tc.name: UpdateColorSpaceWithMetadata
+ * @tc.desc: test results of UpdateColorSpaceWithMetadata, if node has buffer
  * @tc.type: FUNC
- * @tc.require: issueIAOTNY
+ * @tc.require: issueIAW3W0
  */
-HWTEST_F(RSUniRenderVisitorTest, UpdateColorSpaceToIntanceRootNode002, TestSize.Level1)
+HWTEST_F(RSUniRenderVisitorTest, UpdateColorSpaceWithMetadata002, TestSize.Level1)
 {
     // register instance root node
     auto instanceRootNode = RSTestUtil::CreateSurfaceNode();
@@ -1314,14 +1356,36 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateColorSpaceToIntanceRootNode002, TestSize.
     // create subsurface node
     auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
     ASSERT_NE(surfaceNode, nullptr);
+    const sptr<SurfaceBuffer>& buffer = surfaceNode->GetRSSurfaceHandler()->GetBuffer();
+    ASSERT_NE(buffer, nullptr);
     surfaceNode->context_ = rsContext;
     surfaceNode->instanceRootNodeId_ = instanceRootNode->GetId();
 
     ASSERT_NE(surfaceNode->GetInstanceRootNode(), nullptr);
-    surfaceNode->UpdateColorSpaceToIntanceRootNode();
-    ASSERT_EQ(surfaceNode->GetSubSurfaceColorSpace(), GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB);
+    surfaceNode->UpdateColorSpaceWithMetadata();
+    ASSERT_EQ(surfaceNode->GetColorSpace(), GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB);
 }
 #endif
+
+/*
+ * @tc.name: UpdateColorSpaceAfterHwcCalc_001
+ * @tc.desc: Test UpdateColorSpaceAfterHwcCalc when there is a P3 selfDrawingNode.
+ * @tc.type: FUNC
+ * @tc.require: issueIAW3W0
+ */
+HWTEST_F(RSUniRenderVisitorTest, UpdateColorSpaceAfterHwcCalc_001, TestSize.Level2)
+{
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    ASSERT_NE(rsUniRenderVisitor, nullptr);
+    auto selfDrawingNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
+    ASSERT_NE(selfDrawingNode, nullptr);
+    selfDrawingNode->SetHardwareForcedDisabledState(true);
+    selfDrawingNode->SetColorSpace(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3);
+    RSMainThread::Instance()->selfDrawingNodes_.emplace_back(selfDrawingNode);
+
+    rsUniRenderVisitor->UpdateColorSpaceAfterHwcCalc();
+    ASSERT_EQ(rsUniRenderVisitor->newColorSpace_, selfDrawingNode->GetColorSpace());
+}
 
 /*
  * @tc.name: ResetCurSurfaceInfoAsUpperSurfaceParent001
