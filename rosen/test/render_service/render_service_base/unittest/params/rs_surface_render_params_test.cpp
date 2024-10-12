@@ -280,7 +280,8 @@ HWTEST_F(RSSurfaceRenderParamsTest, SetGlobalPositionEnabled, TestSize.Level1)
  */
 HWTEST_F(RSSurfaceRenderParamsTest, SetNeedCacheSurface, TestSize.Level1)
 {
-    RSSurfaceRenderParams params(113);
+    uint64_t nodeId = 113;
+    RSSurfaceRenderParams params(nodeId);
     params.SetNeedCacheSurface(true);
     EXPECT_EQ(params.GetNeedCacheSurface(), true);
     EXPECT_EQ(params.needSync_, true);

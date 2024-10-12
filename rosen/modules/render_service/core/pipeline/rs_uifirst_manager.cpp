@@ -1317,12 +1317,14 @@ void RSUifirstManager::UpdateUifirstNodes(RSSurfaceRenderNode& node, bool ancest
         return;
     }
     if (RSUifirstManager::IsNonFocusWindowCache(node, ancestorNodeHasAnimation)) {
+        // purpose: to avoid that RT waits uifirst cache long time when switching to uifirst first frame,
+        // draw and cache win in RT on first frame, then use RT thread cache to draw until uifirst cache ready.
         if (node.GetLastFrameUifirstFlag() == MultiThreadCacheType::NONE &&
             !node.GetSubThreadAssignable() &&
             node.GetSurfaceWindowType() != SurfaceWindowType::SYSTEM_SCB_WINDOW) {
-            UifirstStateChange(node, MultiThreadCacheType::NONE);
-            node.SetSubThreadAssignable(true);
-            node.SetNeedCacheSurface(true);
+            UifirstStateChange(node, MultiThreadCacheType::NONE);   // mark as draw win in RT thread
+            node.SetSubThreadAssignable(true);                      // mark as assignable to uifirst next frame
+            node.SetNeedCacheSurface(true);                         // mark as that needs cache win in RT
         } else {
             UifirstStateChange(node, MultiThreadCacheType::NONFOCUS_WINDOW);
         }

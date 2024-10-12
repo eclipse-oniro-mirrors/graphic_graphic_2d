@@ -29,6 +29,7 @@
 #include "pipeline/rs_base_render_engine.h"
 #include "params/rs_display_render_params.h"
 #include "pipeline/rs_surface_render_node.h"
+#include "pipeline/rs_draw_window_cache.h"
 
 namespace OHOS::Rosen {
 class RSRenderThreadParams;
@@ -278,12 +279,6 @@ private:
     void ClipHoleForSelfDrawingNode(RSPaintFilterCanvas& canvas, RSSurfaceRenderParams& surfaceParams);
     void DrawBufferForRotationFixed(RSPaintFilterCanvas& canvas, RSSurfaceRenderParams& surfaceParams);
 
-    bool HasWindowCache() const;
-    void ClearWindowCache();
-    bool DrawWithWindowCache(RSPaintFilterCanvas& canvas, RSSurfaceRenderParams& surfaceParams);
-    bool PrepareWindowCache(RSPaintFilterCanvas& canvas, Drawing::Rect& bounds);
-    void FinishWindowCache(RSPaintFilterCanvas& canvas);
-
     std::string name_;
     RSSurfaceNodeType surfaceNodeType_ = RSSurfaceNodeType::DEFAULT;
 #ifndef ROSEN_CROSS_PLATFORM
@@ -301,10 +296,6 @@ private:
     mutable std::recursive_mutex completeResourceMutex_; // only lock complete Resource
     std::shared_ptr<Drawing::Surface> cacheSurface_ = nullptr;
     std::shared_ptr<Drawing::Surface> cacheCompletedSurface_ = nullptr;
-    std::shared_ptr<Drawing::Image> cacheWindowImage_ = nullptr;
-    std::shared_ptr<RSPaintFilterCanvas> windowCanvas_ = nullptr;
-    std::shared_ptr<Drawing::Surface> windowSurface_ = nullptr;
-    std::unique_ptr<RSAutoCanvasRestore> windowArc_ = nullptr;
 #if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
     Drawing::BackendTexture cacheBackendTexture_;
     Drawing::BackendTexture cacheCompletedBackendTexture_;
@@ -348,6 +339,8 @@ private:
     // if a there a dirty layer under transparent clean layer, transparent layer should refreshed
     Occlusion::Region dirtyRegionBelowCurrentLayer_;
     bool dirtyRegionBelowCurrentLayerIsEmpty_ = false;
+
+    RSDrawWindowCache drawWindowCache_;
 };
 } // namespace DrawableV2
 } // namespace OHOS::Rosen

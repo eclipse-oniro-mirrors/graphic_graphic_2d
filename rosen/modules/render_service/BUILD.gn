@@ -130,6 +130,7 @@ ohos_shared_library("librender_service") {
     "core/pipeline/rs_vblank_idle_corrector.cpp",
     "core/pipeline/rs_virtual_screen_processor.cpp",
     "core/pipeline/rs_vsync_rate_reduce_manager.cpp",
+    "core/pipeline/rs_draw_window_cache.cpp",
     "core/screen_manager/rs_screen.cpp",
     "core/screen_manager/rs_screen_manager.cpp",
     "core/system/rs_system_parameters.cpp",
