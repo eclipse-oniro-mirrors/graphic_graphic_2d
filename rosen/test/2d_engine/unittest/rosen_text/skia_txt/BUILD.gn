@@ -44,6 +44,7 @@ ohos_unittest("rosen_text_skia_txt_test") {
     "$rosen_root/modules/2d_graphics/include/recording",
     "$rosen_root/modules/2d_graphics/include/text",
     "$skia_root_new",
+    "$skia_root_new/modules/skparagraph",
   ]
 
   cflags_cc = [
