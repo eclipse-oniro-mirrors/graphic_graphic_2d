@@ -279,9 +279,6 @@ void RSUniRenderVisitor::CheckColorSpaceWithSelfDrawingNode(RSSurfaceRenderNode&
 void RSUniRenderVisitor::UpdateColorSpaceAfterHwcCalc()
 {
     const auto& selfDrawingNodes = RSMainThread::Instance()->GetSelfDrawingNodes();
-    if (selfDrawingNodes.empty()) {
-        return;
-    }
     for (const auto& selfDrawingNode : selfDrawingNodes) {
         if (newColorSpace_ == GRAPHIC_COLOR_GAMUT_DISPLAY_P3) {
             RS_LOGD("RSUniRenderVisitor::UpdateColorSpaceAfterHwcCalc: newColorSpace is already DISPLAY_P3.");
