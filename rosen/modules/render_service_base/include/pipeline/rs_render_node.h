@@ -880,6 +880,7 @@ private:
     RectI localOutlineRect_;
     RectI localPixelStretchRect_;
     RectI localForegroundEffectRect_;
+    RectI localDistortionEffectRect_;
     // map parentMatrix
     RectI absDrawRect_;
     RectI oldAbsDrawRect_;
@@ -1017,6 +1018,7 @@ private:
     void CollectAndUpdateLocalOutlineRect();
     void CollectAndUpdateLocalPixelStretchRect();
     void CollectAndUpdateLocalForegroundEffectRect();
+    void CollectAndUpdateLocalDistortionEffectRect();
     // update drawrect based on self's info
     void UpdateBufferDirtyRegion();
     bool UpdateSelfDrawRect();

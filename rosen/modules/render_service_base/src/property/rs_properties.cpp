@@ -1451,6 +1451,7 @@ void RSProperties::SetDistortionK(const std::optional<float>& distortionK)
     distortionK_ = distortionK;
     if (distortionK_.has_value()) {
         isDrawn_ = true;
+        distortionEffectDirty_ = ROSEN_GNE(*distortionK_, 0.0f) && ROSEN_LE(*distortionK_, 1.0f);
     }
     filterNeedUpdate_ = true;
     SetDirty();
@@ -1465,6 +1466,16 @@ const std::optional<float>& RSProperties::GetDistortionK() const
 bool RSProperties::IsDistortionKValid() const
 {
     return distortionK_.has_value() && ROSEN_GE(*distortionK_, -1.0f) && ROSEN_LE(*distortionK_, 1.0f);
+}
+
+void RSProperties::SetDistortionDirty(bool distortionEffectDirty)
+{
+    distortionEffectDirty_ = distortionEffectDirty;
+}
+
+bool RSProperties::GetDistortionDirty() const
+{
+    return distortionEffectDirty_;
 }
 
 void RSProperties::SetFgBrightnessRates(const Vector4f& rates)
@@ -4298,8 +4309,7 @@ void RSProperties::UpdateForegroundFilter()
             foregroundFilter_ = colorfulShadowFilter;
         }
     } else if (IsDistortionKValid()) {
-        auto distortionFilter = std::make_shared<RSDistortionFilter>(*distortionK_);
-        foregroundFilter_ = distortionFilter;
+        foregroundFilter_ = std::make_shared<RSDistortionFilter>(*distortionK_);
     } else {
         foregroundFilter_.reset();
         foregroundFilterCache_.reset();
