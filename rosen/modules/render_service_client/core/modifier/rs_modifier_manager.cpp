@@ -118,6 +118,17 @@ bool RSModifierManager::Animate(int64_t time, int64_t vsyncPeriod)
     return hasRunningAnimation;
 }
 
+bool RSModifierManager::HasFirstFrameAnimation()
+{
+    for (auto& iter : animations_) {
+        auto animation = iter.second.lock();
+        if (animation && animation->IsFirstFrame()) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void RSModifierManager::FlushStartAnimation(int64_t time)
 {
     for (auto& iter : animations_) {
