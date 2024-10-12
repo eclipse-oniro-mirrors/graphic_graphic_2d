@@ -22,31 +22,18 @@ namespace OHOS {
 namespace Rosen {
 namespace {
     static auto prevPrintTime = std::chrono::steady_clock::now();
-    static std::ostringstream oss;
+    static auto sendBufferCnt = 0;
 }
 
-template<class... Args>
-void LogMessage(Args&&... args) {
-    (oss << ... << args);
+void LogMessage() {
+    ++sendBufferCnt;
     auto currTime = std::chrono::steady_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::seconds>(currTime - prevPrintTime);
     if (duration.count() >= 1) {
-        RS_LOGE("TextureViewLog: %{public}s", oss.str().c_str());
-        oss.str("");
-        oss.clear();
+        RS_LOGE("TextureViewLog: %{public}d", sendBufferCnt);
+        prevPrintTime = std::chrono::steady_clock::now();
+        sendBufferCnt = 0;
     }
-}
-
-std::string Serialize(const std::vector<uint32_t>& vec)
-{
-    std::string str = {};
-    str += "{";
-    for (const auto& elem : vec) {
-        str += elem;
-        str += ",";
-    }
-    str += "}";
-    return str;
 }
 
 RSSurfaceBufferCallbackManager& RSSurfaceBufferCallbackManager::Instance()
@@ -152,9 +139,7 @@ void RSSurfaceBufferCallbackManager::RunSurfaceBufferCallback()
             auto callback = GetSurfaceBufferCallback(pid, uid);
             if (callback) {
                 callback->OnFinish(uid, bufferIds);
-                LogMessage("TextureView::Release Buffers: ", Serialize(bufferIds));
-            } else {
-                LogMessage("TextureView::Lose Buffers: ", Serialize(bufferIds));
+                LogMessage();
             }
         }
     });
