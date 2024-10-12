@@ -37,6 +37,9 @@ config("color_manager_config") {
 
 config("color_manager_public_config") {
   include_dirs = [ "export" ]
+  if (is_arkui_x) {
+    include_dirs += [ "$skia_root_new" ]
+  }
 }
 
 template("color_manager_source_set") {
