@@ -1304,7 +1304,7 @@ HWTEST_F(RSUniRenderVisitorTest, CheckColorSpaceWithSelfDrawingNode002, TestSize
 {
     auto selfDrawingNode = RSTestUtil::CreateSurfaceNode();
     ASSERT_NE(selfDrawingNode, nullptr);
-    selfDrawingNode->SetHardwareForcedDisabledState(false);
+    selfDrawingNode->SetProtectedLayer(true);
     selfDrawingNode->SetColorSpace(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3);
 
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
