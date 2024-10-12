@@ -101,7 +101,11 @@ bool RSProfiler::IsEnabled()
 
 bool RSProfiler::IsBetaRecordEnabled()
 {
+#ifdef RS_PROFILER_BETA_ENABLED
     return betaRecordingEnabled_;
+#else
+    return false;
+#endif
 }
 
 uint32_t RSProfiler::GetCommandCount()
