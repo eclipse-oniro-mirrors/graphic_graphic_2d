@@ -35,7 +35,7 @@ public:
 
     /**
      * @brief Draw and cache window content/children by offscreen buffer and draw back to target canvas
-     * 
+     *
      * @param surfaceDrawable Indicates the window to draw
      * @param canvas Indicates the target canvas to draw the window onto
      * @param bounds Indicates the bounds of the window rect
@@ -45,7 +45,7 @@ public:
 
     /**
      * @brief Draw the cached window onto target canvas
-     * 
+     *
      * @param surfaceDrawable Indicates the window to draw
      * @param canvas Indicates the target canvas to draw the window onto
      * @param surfaceParams Indicates the render params
