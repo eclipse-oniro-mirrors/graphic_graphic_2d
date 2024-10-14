@@ -46,10 +46,16 @@ public:
 
     void SetFocusedNodeId(NodeId focusedNodeId)
     {
+        if (!vsyncControlEnabled_) {
+            return;
+        }
         focusedNodeId_ = focusedNodeId;
     }
     void PushWindowNodeId(NodeId nodeId)
     {
+        if (!vsyncControlEnabled_) {
+            return;
+        }
         curAllMainAndLeashWindowNodesIds_.emplace_back(nodeId);
     }
     void ClearLastVisMapForVsyncRate()
@@ -63,10 +69,16 @@ public:
 
     void FrameDurationBegin()
     {
+        if (!vsyncControlEnabled_) {
+            return;
+        }
         curTime_ = Now();
     }
     void FrameDurationEnd()
     {
+        if (!vsyncControlEnabled_) {
+            return;
+        }
         if (oneFramePeriod_ > 0) {
             float val = (Now() - curTime_) / static_cast<float>(oneFramePeriod_);
             EnqueueFrameDuration(val);
