@@ -19,7 +19,7 @@ module_output_path = "graphic_2d/graphic_2d"
 ##############################fuzztest##########################################
 ohos_fuzztest("RSRenderParamsFuzzTest") {
   module_out_path = module_output_path
-  fuzz_config_file = "../../../../../test/render_service/render_service_base/fuzztest/rsrenderserviceconnecthub_fuzzer"
+  fuzz_config_file = "../../../../../test/render_service/render_service_base/fuzztest/rsrenderparams_fuzzer"
   include_dirs = [
     "../../../../../modules/render_service_base/src",
     "../../../../../modules/2d_graphics/include",
@@ -29,7 +29,6 @@ ohos_fuzztest("RSRenderParamsFuzzTest") {
     "../../../../../modules/2d_graphics:2d_graphics",
     "../../../../../modules/render_service:librender_service",
     "../../../../../modules/render_service_base:librender_service_base",
-    "../../../../../modules/render_service_base:librender_service_base_static",
     "../../../../../modules/render_service_client:librender_service_client",
     "../../../../../modules/render_service_client:render_service_client_src",
   ]
@@ -45,7 +44,7 @@ ohos_fuzztest("RSRenderParamsFuzzTest") {
     "-Dprivate=public",
     "-Dprotected=public",
   ]
-  sources = [ "rsrenderserviceconnecthub_fuzzer.cpp" ]
+  sources = [ "rsrenderparams_fuzzer.cpp" ]
 }
 
 ###############################################################################
@@ -54,7 +53,7 @@ group("fuzztest") {
   deps = []
   deps += [
     # deps file
-    ":RSRenderServiceConnectHubFuzzTest",
+    ":RSRenderParamsFuzzTest",
   ]
 }
 ###############################################################################

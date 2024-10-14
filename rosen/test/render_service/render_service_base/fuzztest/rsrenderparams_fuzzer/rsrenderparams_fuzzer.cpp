@@ -50,7 +50,8 @@ T GetData()
     g_pos += objectSize;
     return object;
 }
-bool DoRSRenderParams(const uint8_t* data, size_t size)
+
+bool DoSomethingInterestingWithMyAPI(const uint8_t* data, size_t size)
 {
     if (data == nullptr) {
         return false;
@@ -95,17 +96,24 @@ bool DoRSRenderParams(const uint8_t* data, size_t size)
     rsRenderParams.GetDrawingCacheChanged();
     rsRenderParams.SetNeedUpdateCache(false);
     rsRenderParams.GetNeedUpdateCache();
-    RSDrawingCacheType cacheType = RSDrawingCacheType::FORCED_CACHE;
-    rsRenderParams.SetDrawingCacheType(cacheType);
-    rsRenderParams.GetDrawingCacheType();
-    rsRenderParams.SetDrawingCacheIncludeProperty(false);
-    rsRenderParams.GetDrawingCacheIncludeProperty();
-    rsRenderParams.SetRSFreezeFlag(false);
-    rsRenderParams.GetRSFreezeFlag();
-    rsRenderParams.OpincUpdateRootFlag(false);
-    rsRenderParams.OpincGetRootFlag();
-    rsRenderParams.OpincSetCacheChangeFlag(false, false);
-    rsRenderParams.OpincGetCacheChangeState();
+    return true;
+}
+
+bool DoSetShadowRect(const uint8_t* data, size_t size)
+{
+    if (data == nullptr) {
+        return false;
+    }
+
+    // initialize
+    g_data = data;
+    g_size = size;
+    g_pos = 0;
+    NodeId id = 0;
+
+    RSRenderParams rsRenderParams(id);
+    float alpha = 1.0;
+    const Drawing::Matrix matrix;
     Drawing::Rect rect;
     rsRenderParams.SetShadowRect(rect);
     rsRenderParams.GetShadowRect();
@@ -131,14 +139,9 @@ bool DoRSRenderParams(const uint8_t* data, size_t size)
     int width = 1;
     int height = 2;
     rsRenderParams.SetCanvasDrawingSurfaceParams(width, height);
-    rsRenderParams.OnSync(target);
     rsRenderParams.ToString();
     rsRenderParams.SetParentSurfaceMatrix(matrix);
     rsRenderParams.GetParentSurfaceMatrix();
-    rsRenderParams.SetFirstLevelNode(id);
-    rsRenderParams.GetFirstLevelNodeId();
-    rsRenderParams.SetUiFirstRootNode(id);
-    rsRenderParams.GetUifirstRootNodeId();
     rsRenderParams.GetLayerInfo();
     rsRenderParams.GetScreenInfo();
     rsRenderParams.GetTotalMatrix();
@@ -146,6 +149,36 @@ bool DoRSRenderParams(const uint8_t* data, size_t size)
     return true;
 }
 
+bool DoOpincSetCacheChangeFlag(const uint8_t* data, size_t size)
+{
+    if (data == nullptr) {
+        return false;
+    }
+
+    // initialize
+    g_data = data;
+    g_size = size;
+    g_pos = 0;
+    NodeId id = 0;
+
+    RSRenderParams rsRenderParams(id);
+    rsRenderParams.OpincSetCacheChangeFlag(false, false);
+    rsRenderParams.OpincGetCacheChangeState();
+    rsRenderParams.OpincUpdateRootFlag(false);
+    rsRenderParams.OpincGetRootFlag();
+    rsRenderParams.SetRSFreezeFlag(false);
+    rsRenderParams.GetRSFreezeFlag();
+    rsRenderParams.SetFirstLevelNode(id);
+    rsRenderParams.GetFirstLevelNodeId();
+    rsRenderParams.SetUiFirstRootNode(id);
+    rsRenderParams.GetUifirstRootNodeId();
+    RSDrawingCacheType cacheType = RSDrawingCacheType::FORCED_CACHE;
+    rsRenderParams.SetDrawingCacheType(cacheType);
+    rsRenderParams.GetDrawingCacheType();
+    rsRenderParams.SetDrawingCacheIncludeProperty(false);
+    rsRenderParams.GetDrawingCacheIncludeProperty();
+    return true;
+}
 } // namespace Rosen
 } // namespace OHOS
 
@@ -153,6 +186,8 @@ bool DoRSRenderParams(const uint8_t* data, size_t size)
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
     /* Run your code on data */
-    OHOS::Rosen::DoRSRenderParams(data, size);
+    OHOS::Rosen::DoSomethingInterestingWithMyAPI(data, size);
+    OHOS::Rosen::DoSetShadowRect(data, size);
+    OHOS::Rosen::DoOpincSetCacheChangeFlag(data, size);
     return 0;
 }
