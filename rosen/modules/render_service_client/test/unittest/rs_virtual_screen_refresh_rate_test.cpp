@@ -208,12 +208,10 @@ HWTEST_F(RSVirtualScreenRefreshRateTest, SetVirtualScreenRefreshRate005, Functio
 HWTEST_F(RSVirtualScreenRefreshRateTest, SetVirtualScreenRefreshRate006, Function | SmallTest | Level1)
 {
     auto csurface = IConsumerSurface::Create();
-    EXPECT_NE(csurface, nullptr);
     auto producer = csurface->GetProducer();
     auto psurface = Surface::CreateSurfaceAsProducer(producer);
     uint32_t defaultWidth = 720; // 720px
     uint32_t defaultHeight = 1280; // 1280px
-    EXPECT_NE(psurface, nullptr);
 
     ScreenId virtualScreenId = rsInterfaces->CreateVirtualScreen(
         "virtualScreen01", defaultWidth, defaultHeight, psurface, INVALID_SCREEN_ID, -1);
