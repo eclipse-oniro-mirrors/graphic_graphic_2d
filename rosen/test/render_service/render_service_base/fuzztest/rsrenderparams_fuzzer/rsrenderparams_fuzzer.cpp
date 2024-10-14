@@ -25,7 +25,7 @@
 #include <securec.h>
 #include <unistd.h>
 
-#include "include/params/rs_render_params.h"
+#include "params/rs_render_params.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -50,6 +50,101 @@ T GetData()
     g_pos += objectSize;
     return object;
 }
+bool DoRSRenderParams(const uint8_t* data, size_t size)
+{
+    if (data == nullptr) {
+        return false;
+    }
+
+    // initialize
+    g_data = data;
+    g_size = size;
+    g_pos = 0;
+    NodeId id = 0;
+
+    RSRenderParams rsRenderParams(id);
+    float alpha = 1.0;
+    rsRenderParams.SetAlpha(alpha);
+    rsRenderParams.GetAlpha();
+    rsRenderParams.SetAlphaOffScreen(false);
+    const Drawing::Matrix matrix;
+    rsRenderParams.SetMatrix(matrix);
+    rsRenderParams.GetMatrix();
+    Drawing::Canvas drawingCanvas;
+    RSPaintFilterCanvas canvas(&drawingCanvas);
+    rsRenderParams.ApplyAlphaAndMatrixToCanvas(canvas, false);
+    const Drawing::RectF boundsRect;
+    rsRenderParams.SetBoundsRect(boundsRect);
+    rsRenderParams.GetBounds();
+    const Drawing::RectF frameRect;
+    rsRenderParams.SetFrameRect(frameRect);
+    rsRenderParams.GetFrameRect();
+    const RectF localDrawRect;
+    rsRenderParams.SetLocalDrawRect(localDrawRect);
+    rsRenderParams.GetLocalDrawRect();
+    rsRenderParams.SetHasSandBox(false);
+    rsRenderParams.HasSandBox();
+    rsRenderParams.SetShouldPaint(false);
+    rsRenderParams.GetShouldPaint();
+    rsRenderParams.SetContentEmpty(false);
+    rsRenderParams.SetChildHasVisibleFilter(false);
+    rsRenderParams.ChildHasVisibleFilter();
+    rsRenderParams.SetChildHasVisibleEffect(false);
+    rsRenderParams.ChildHasVisibleEffect();
+    rsRenderParams.SetDrawingCacheChanged(false, false);
+    rsRenderParams.GetDrawingCacheChanged();
+    rsRenderParams.SetNeedUpdateCache(false);
+    rsRenderParams.GetNeedUpdateCache();
+    RSDrawingCacheType cacheType = RSDrawingCacheType::FORCED_CACHE;
+    rsRenderParams.SetDrawingCacheType(cacheType);
+    rsRenderParams.GetDrawingCacheType();
+    rsRenderParams.SetDrawingCacheIncludeProperty(false);
+    rsRenderParams.GetDrawingCacheIncludeProperty();
+    rsRenderParams.SetRSFreezeFlag(false);
+    rsRenderParams.GetRSFreezeFlag();
+    rsRenderParams.OpincUpdateRootFlag(false);
+    rsRenderParams.OpincGetRootFlag();
+    rsRenderParams.OpincSetCacheChangeFlag(false, false);
+    rsRenderParams.OpincGetCacheChangeState();
+    Drawing::Rect rect;
+    rsRenderParams.SetShadowRect(rect);
+    rsRenderParams.GetShadowRect();
+    rsRenderParams.SetNeedSync(false);
+    Gravity gravity = Gravity::DEFAULT;
+    rsRenderParams.SetFrameGravity(gravity);
+    rsRenderParams.SetNeedFilter(false);
+    RSRenderNodeType type = RSRenderNodeType::RS_NODE;
+    rsRenderParams.SetNodeType(type);
+    rsRenderParams.SetEffectNodeShouldPaint(false);
+    rsRenderParams.SetHasGlobalCorner(false);
+    rsRenderParams.SetHasBlurFilter(false);
+    rsRenderParams.SetGlobalAlpha(alpha);
+    rsRenderParams.NeedSync();
+    std::unique_ptr<RSRenderParams> target;
+    rsRenderParams.OnCanvasDrawingSurfaceChange(target);
+    rsRenderParams.GetCanvasDrawingSurfaceChanged();
+    rsRenderParams.SetCanvasDrawingSurfaceChanged(true);
+    rsRenderParams.GetForegroundFilterCache();
+    std::shared_ptr<RSFilter> foregroundFilterCache;
+    rsRenderParams.SetForegroundFilterCache(foregroundFilterCache);
+    rsRenderParams.GetCanvasDrawingSurfaceParams();
+    int width = 1;
+    int height = 2;
+    rsRenderParams.SetCanvasDrawingSurfaceParams(width, height);
+    rsRenderParams.OnSync(target);
+    rsRenderParams.ToString();
+    rsRenderParams.SetParentSurfaceMatrix(matrix);
+    rsRenderParams.GetParentSurfaceMatrix();
+    rsRenderParams.SetFirstLevelNode(id);
+    rsRenderParams.GetFirstLevelNodeId();
+    rsRenderParams.SetUiFirstRootNode(id);
+    rsRenderParams.GetUifirstRootNodeId();
+    rsRenderParams.GetLayerInfo();
+    rsRenderParams.GetScreenInfo();
+    rsRenderParams.GetTotalMatrix();
+    rsRenderParams.GetMirrorSourceDrawable();
+    return true;
+}
 
 } // namespace Rosen
 } // namespace OHOS
@@ -58,6 +153,6 @@ T GetData()
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
     /* Run your code on data */
-    OHOS::Rosen::DoSomethingInterestingWithMyAPI(data, size);
+    OHOS::Rosen::DoRSRenderParams(data, size);
     return 0;
 }
