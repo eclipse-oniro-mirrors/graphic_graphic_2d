@@ -1285,6 +1285,7 @@ HWTEST_F(RSUniRenderVisitorTest, CheckColorSpaceWithSelfDrawingNode001, TestSize
     ASSERT_NE(selfDrawingNode, nullptr);
     selfDrawingNode->SetHardwareForcedDisabledState(true);
     selfDrawingNode->SetColorSpace(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3);
+    selfDrawingNode->SetIsOnTheTree(true);
 
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
     ASSERT_NE(rsUniRenderVisitor, nullptr);
@@ -1306,6 +1307,7 @@ HWTEST_F(RSUniRenderVisitorTest, CheckColorSpaceWithSelfDrawingNode002, TestSize
     ASSERT_NE(selfDrawingNode, nullptr);
     selfDrawingNode->SetProtectedLayer(true);
     selfDrawingNode->SetColorSpace(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3);
+    selfDrawingNode->SetIsOnTheTree(true);
 
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
     ASSERT_NE(rsUniRenderVisitor, nullptr);
