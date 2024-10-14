@@ -1543,7 +1543,7 @@ UiFirstModeType RSUifirstManager::GetUiFirstMode()
     return UiFirstModeType::SINGLE_WINDOW_MODE;
 }
 
-bool RSUiFirstProcessStateCheckerHelper::CheckMatchAndWaitNotify(const RSSurfaceRenderParams& params, bool checkMatch)
+bool RSUiFirstProcessStateCheckerHelper::CheckMatchAndWaitNotify(const RSRenderParams& params, bool checkMatch)
 {
     if (checkMatch && IsCurFirstLevelMatch(params)) {
         return true;
@@ -1551,7 +1551,7 @@ bool RSUiFirstProcessStateCheckerHelper::CheckMatchAndWaitNotify(const RSSurface
     return CheckAndWaitPreFirstLevelDrawableNotify(params);
 }
 
-bool RSUiFirstProcessStateCheckerHelper::CheckAndWaitPreFirstLevelDrawableNotify(const RSSurfaceRenderParams& params)
+bool RSUiFirstProcessStateCheckerHelper::CheckAndWaitPreFirstLevelDrawableNotify(const RSRenderParams& params)
 {
     auto firstLevelNodeId = params.GetFirstLevelNodeId();
     auto uifirstRootNodeId = params.GetUifirstRootNodeId();
@@ -1589,7 +1589,7 @@ bool RSUiFirstProcessStateCheckerHelper::CheckAndWaitPreFirstLevelDrawableNotify
     return ret;
 }
 
-bool RSUiFirstProcessStateCheckerHelper::IsCurFirstLevelMatch(const RSSurfaceRenderParams& params)
+bool RSUiFirstProcessStateCheckerHelper::IsCurFirstLevelMatch(const RSRenderParams& params)
 {
     auto uifirstRootNodeId = params.GetUifirstRootNodeId();
     auto firstLevelNodeId = params.GetFirstLevelNodeId();
