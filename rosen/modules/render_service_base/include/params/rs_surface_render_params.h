@@ -479,6 +479,9 @@ public:
         return brightnessRatio_;
     }
 
+    void SetNeedCacheSurface(bool needCacheSurface);
+    bool GetNeedCacheSurface() const;
+
 protected:
 private:
     bool isMainWindowType_ = false;
@@ -565,6 +568,7 @@ private:
     int32_t sdrNit_ = 500; // default sdrNit
     int32_t displayNit_ = 500; // default displayNit_
     float brightnessRatio_ = 1.0; // 1.0f means no discount.
+    bool needCacheSurface_ = false;
     friend class RSSurfaceRenderNode;
     friend class RSUniRenderProcessor;
     friend class RSUniRenderThread;

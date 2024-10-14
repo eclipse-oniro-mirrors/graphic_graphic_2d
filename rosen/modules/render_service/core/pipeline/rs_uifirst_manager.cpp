@@ -1278,7 +1278,9 @@ bool RSUifirstManager::IsNonFocusWindowCache(RSSurfaceRenderNode& node, bool ani
     }
     if ((node.IsFocusedNode(RSMainThread::Instance()->GetFocusNodeId()) ||
         node.IsFocusedNode(RSMainThread::Instance()->GetFocusLeashWindowId())) &&
-        (node.GetHasSharedTransitionNode() || RSUifirstManager::Instance().IsVMSurfaceName(surfaceName))) {
+        (node.GetHasSharedTransitionNode() ||
+        RSUifirstManager::Instance().IsVMSurfaceName(surfaceName) ||
+        !animation)) {
         RS_TRACE_NAME_FMT("IsNonFocusWindowCache: surfaceName[%s] is MainThread", surfaceName.c_str());
         return false;
     }
@@ -1314,7 +1316,17 @@ void RSUifirstManager::UpdateUifirstNodes(RSSurfaceRenderNode& node, bool ancest
         return;
     }
     if (RSUifirstManager::IsNonFocusWindowCache(node, ancestorNodeHasAnimation)) {
-        UifirstStateChange(node, MultiThreadCacheType::NONFOCUS_WINDOW);
+        // purpose: to avoid that RT waits uifirst cache long time when switching to uifirst first frame,
+        // draw and cache win in RT on first frame, then use RT thread cache to draw until uifirst cache ready.
+        if (node.GetLastFrameUifirstFlag() == MultiThreadCacheType::NONE &&
+            !node.GetSubThreadAssignable() &&
+            node.GetSurfaceWindowType() != SurfaceWindowType::SYSTEM_SCB_WINDOW) {
+            UifirstStateChange(node, MultiThreadCacheType::NONE);   // mark as draw win in RT thread
+            node.SetSubThreadAssignable(true);                      // mark as assignable to uifirst next frame
+            node.SetNeedCacheSurface(true);                         // mark as that needs cache win in RT
+        } else {
+            UifirstStateChange(node, MultiThreadCacheType::NONFOCUS_WINDOW);
+        }
         return;
     }
     if (RSUifirstManager::IsArkTsCardCache(node, ancestorNodeHasAnimation)) {
@@ -1373,8 +1385,12 @@ void RSUifirstManager::UifirstStateChange(RSSurfaceRenderNode& node, MultiThread
             node.SetUifirstStartTime(GetCurSysTime());
             AddPendingPostNode(node.GetId(), surfaceNode, currentFrameCacheType); // clear pending reset status
             AddCardNodes(node.GetId(), currentFrameCacheType);
+            node.SetSubThreadAssignable(true);
+            node.SetNeedCacheSurface(false);
         } else { // keep disable
             RS_OPTIONAL_TRACE_NAME_FMT("UIFirst_keep disable  %" PRIu64"", node.GetId());
+            node.SetSubThreadAssignable(false);
+            node.SetNeedCacheSurface(false);
         }
     } else { // last is enable
         auto surfaceNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(node.shared_from_this());
@@ -1396,6 +1412,8 @@ void RSUifirstManager::UifirstStateChange(RSSurfaceRenderNode& node, MultiThread
             NotifyUIStartingWindow(node.GetId(), false);
             AddPendingResetNode(node.GetId(), surfaceNode); // set false onsync when task done
             RemoveCardNodes(node.GetId());
+            node.SetSubThreadAssignable(false);
+            node.SetNeedCacheSurface(false);
         }
     }
     node.SetLastFrameUifirstFlag(currentFrameCacheType);

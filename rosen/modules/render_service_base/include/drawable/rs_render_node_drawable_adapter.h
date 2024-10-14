@@ -39,6 +39,7 @@ class RSDisplayRenderNode;
 class RSSurfaceRenderNode;
 class RSSurfaceHandler;
 class RSContext;
+class RSDrawWindowCache;
 namespace Drawing {
 class Canvas;
 }
@@ -247,6 +248,7 @@ private:
     friend class RSRenderNodeShadowDrawable;
     friend class RSUseEffectDrawable;
     friend class RSRenderNodeDrawable;
+    friend class OHOS::Rosen::RSDrawWindowCache;
 };
 
 } // namespace DrawableV2
