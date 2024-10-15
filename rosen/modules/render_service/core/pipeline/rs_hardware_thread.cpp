@@ -179,7 +179,6 @@ void RSHardwareThread::CommitAndReleaseLayers(OutputPtr output, const std::vecto
     ResschedEventListener::GetInstance()->ReportFrameToRSS();
 #endif
     RSTaskMessage::RSTask task = [this, output = output, layers = layers, param = param]() {
-        // start
         auto startCurTime = std::chrono::system_clock::now().time_since_epoch();
         int64_t startTime = std::chrono::duration_cast<std::chrono::microseconds>(startCurTime).count();
         if (output == nullptr || hdiBackend_ == nullptr) {
@@ -222,7 +221,6 @@ void RSHardwareThread::CommitAndReleaseLayers(OutputPtr output, const std::vecto
         if (unExecuteTaskNum_ <= HARDWARE_THREAD_TASK_NUM) {
             RSMainThread::Instance()->NotifyHardwareThreadCanExecuteTask();
         }
-        // end
         auto endCurTime = std::chrono::system_clock::now().time_since_epoch();
         int64_t endTime = std::chrono::duration_cast<std::chrono::microseconds>(startCurTime).count();
         RS_LOGE("startCurTime:%{public}" PRIu64 " endCurTime:%{public}" PRIu64 "", startTime, endTime);
