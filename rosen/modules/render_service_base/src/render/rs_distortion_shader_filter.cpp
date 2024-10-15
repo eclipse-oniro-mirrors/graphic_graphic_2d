@@ -15,8 +15,8 @@
 #include "render/rs_distortion_shader_filter.h"
 
 #include "common/rs_optional_trace.h"
-#include "platform/common/rs_log.h"
 #include "common/rs_common_def.h"
+#include "platform/common/rs_log.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -94,6 +94,22 @@ std::shared_ptr<Drawing::RuntimeShaderBuilder> RSDistortionFilter::MakeDistortio
     return distortBuilder;
 }
 
+Vector2f RSDistortionFilter::GetDirtyExtension(float width, float height) const
+{
+    Vector2f dirtyExtension(0.0, 0.0);
+    if (distortionK_ > 0) {
+        float distortionKScale = distortionK_ * DISTORTION_SCALE;
+        float x = width * 0.5f; // 0.5: move the center point to the 0 on x-axis
+        float y = height * 0.5f; // 0.5: move the center point to the 0 on y-axis
+        float r = x * x + y * y;
+        float finalX = (1 + distortionKScale * r) * x;
+        float finalY = (1 + distortionKScale * r) * x;
+        dirtyExtension.x_ = fabs(finalX - width);
+        dirtyExtension.y_ = fabs(finalY - height);
+    }
+    return dirtyExtension;
+}
+
 void RSDistortionFilter::DrawDistortion(Drawing::Canvas& canvas, const std::shared_ptr<Drawing::Image>& image,
     const Drawing::Rect& src, const Drawing::Rect& dst) const
 {
@@ -115,12 +131,18 @@ void RSDistortionFilter::DrawDistortion(Drawing::Canvas& canvas, const std::shar
     std::shared_ptr<Drawing::ShaderEffect> distortShader = distortBuilder->MakeShader(nullptr, false);
     Drawing::Brush brush;
     brush.SetShaderEffect(distortShader);
+    if (distortionK_ < 0) {
+        canvas.AttachBrush(brush);
+        canvas.DrawRect(dst);
+        canvas.DetachBrush();
+        return;
+    }
     canvas.DrawBackground(brush);
 }
 void RSDistortionFilter::DrawImageRect(Drawing::Canvas& canvas, const std::shared_ptr<Drawing::Image>& image,
     const Drawing::Rect& src, const Drawing::Rect& dst) const
 {
-    if (!image || image->GetWidth() == 0 || image->GetHeight() == 0) {
+    if (!image || image->GetWidth() <= 0 || image->GetHeight() <= 0) {
         ROSEN_LOGE("RSDistortionFilter::image error");
         return;
     }
