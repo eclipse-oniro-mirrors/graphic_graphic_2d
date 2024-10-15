@@ -223,7 +223,6 @@ void RSHardwareThread::CommitAndReleaseLayers(OutputPtr output, const std::vecto
         }
         auto endCurTime = std::chrono::system_clock::now().time_since_epoch();
         int64_t endTime = std::chrono::duration_cast<std::chrono::microseconds>(startCurTime).count();
-        RS_LOGE("startCurTime:%{public}" PRIu64 " endCurTime:%{public}" PRIu64 "", startTime, endTime);
         uint64_t frameTime = endTime - startTime;
         uint32_t missedFrames = frameTime / REFRESH_PERIOD;
         uint16_t frameRate = currentRate;
