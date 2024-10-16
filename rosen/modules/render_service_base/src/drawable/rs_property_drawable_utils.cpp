@@ -58,6 +58,28 @@ Drawing::Rect RSPropertyDrawableUtils::Rect2DrawingRect(const RectF& r)
     return { r.left_, r.top_, r.left_ + r.width_, r.top_ + r.height_ };
 }
 
+Drawing::RoundRect RSPropertyDrawableUtils::RRect2DrawingRRectBorder(const RRect& rr_outer, const RRect& rr_inner)
+{
+    auto left_border = (rr_inner.rect_.left_ - rr_outer.rect_.left_) / 2;
+    auto top_border = (rr_inner.rect_.top_ - rr_outer.rect_.top_) / 2;
+    auto right_border = ((rr_outer.rect_.left_ + rr_outer.rect_.width_) -
+        (rr_inner.rect_.left_ + rr_inner.rect_.width_)) / 2;
+    auto bottom_border = ((rr_outer.rect_.top_ + rr_outer.rect_.height_) -
+        (rr_inner.rect_.top_ + rr_inner.rect_.height_)) / 2;
+    Drawing::Rect rect = Drawing::Rect(rr_inner.rect_.left_ - left_border, rr_inner.rect_.top_ - top_border,
+        rr_inner.rect_.left_ + rr_inner.rect_.width_ + right_border,
+        rr_inner.rect_.top_ + rr_inner.rect_.height_ + bottom_border);
+
+    // set radius for all 4 corner of RRect
+    constexpr uint32_t NUM_OF_CORNERS_IN_RECT = 4;
+    std::vector<Drawing::Point> radii(NUM_OF_CORNERS_IN_RECT);
+    for (uint32_t i = 0; i < NUM_OF_CORNERS_IN_RECT; i++) {
+        radii.at(i).SetX(rr.radius_[i].x_);
+        radii.at(i).SetY(rr.radius_[i].y_);
+    }
+    return { rect, radii };
+}
+
 RRect RSPropertyDrawableUtils::GetRRectForDrawingBorder(
     const RSProperties& properties, const std::shared_ptr<RSBorder>& border, const bool& isOutline)
 {
