@@ -4307,7 +4307,7 @@ void RSMainThread::ConfigureRenderService()
     }
 }
 
-uint64_t GetRealTimeOffsetOfDvsync(int64_t time)
+uint64_t RSMainThread::GetRealTimeOffsetOfDvsync(int64_t time)
 {
     return rsVSyncDistributor_->GetRealTimeOffsetOfDvsync(time);
 }
