@@ -163,7 +163,6 @@ bool DoSomethingInterestingWithMyAPI(const uint8_t* data, size_t size)
     return true;
 }
 
-
 bool DoUpdateScreenRenderParams(const uint8_t* data, size_t size)
 {
     if (data == nullptr) {
