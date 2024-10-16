@@ -56,7 +56,7 @@ public:
         return aceAnimatorIdleState_;
     }
 
-    void SetAnimatorExpected(int32_t animatorExpected)
+    void UpdateAnimatorExpected(int32_t animatorExpected)
     {
         if (animatorExpected > animatorExpected_) {
             animatorExpected_ = animatorExpected;

@@ -317,7 +317,7 @@ void HgmFrameRateManager::SetAceAnimatorVote(const std::shared_ptr<RSRenderFrame
             "AnimatorExpectedFrameRate = [%d]", ExtractPid(linker->GetId()), linker->GetId(),
             linker->GetAceAnimatorExpectedFrameRate());
         idleDetector_.SetAceAnimatorIdleState(false);
-        idleDetector_.SetAnimatorExpected(linker->GetAceAnimatorExpectedFrameRate());
+        idleDetector_.UpdateAnimatorExpected(linker->GetAceAnimatorExpectedFrameRate());
         return;
     }
     RS_OPTIONAL_TRACE_NAME_FMT("SetAceAnimatorVote PID = [%d]  linkerId = [%" PRIu64 "] "
