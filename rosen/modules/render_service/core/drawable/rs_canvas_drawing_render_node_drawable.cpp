@@ -109,7 +109,7 @@ void RSCanvasDrawingRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     DrawRenderContent(canvas, bounds);
 
     //if you want to dump canvas_drawing_node as a png
-    dumpCanvasDrawing();
+    DumpCanvasDrawing();
 
     // 3. Draw children of this drawing node by the main canvas.
     DrawChildren(canvas, bounds);
@@ -121,12 +121,13 @@ void RSCanvasDrawingRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     SetDrawCmdListsVisited(true);
 }
 
-void canvasDrawingDumpToPngImpl(Drawing::Bitmap bitmap, std::string debugNodeId)
+void CanvasDrawingDumpToPngImpl(Drawing::Bitmap bitmap, std::string debugNodeId)
 {
     RS_LOGI("canvas drawing dump beginning");
     RSBaseRenderUtil::WriteCacheImageRenderNodeToPng(bitmap, debugNodeId);
 }
-void RSCanvasDrawingRenderNodeDrawable::dumpCanvasDrawing()
+
+void RSCanvasDrawingRenderNodeDrawable::DumpCanvasDrawing()
 {
     int enabled = RSSystemParameters::GetDumpCanvasDrawingNodeEnabled();
     if (enabled < 0) {
@@ -137,7 +138,7 @@ void RSCanvasDrawingRenderNodeDrawable::dumpCanvasDrawing()
     Drawing::Bitmap bitmap;
     bitmap.Build(image_->GetWidth(), image_->GetHeight(), format);
     image_->ReadPixels(bitmap, 0, 0);
-    std::thread syncDump(canvasDrawingDumpToPngImpl, bitmap, debugNodeId);
+    std::thread syncDump(CanvasDrawingDumpToPngImpl, bitmap, debugNodeId);
     syncDump.detach();
 }
 

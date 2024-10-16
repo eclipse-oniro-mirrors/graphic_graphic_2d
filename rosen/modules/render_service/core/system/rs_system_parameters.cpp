@@ -194,6 +194,7 @@ bool RSSystemParameters::GetTcacheEnabled()
     static bool flag = system::GetBoolParameter("persist.sys.graphic.tcache.enable", true);
     return flag;
 }
+
 int RSSystemParameters::GetDumpCanvasDrawingNodeEnabled()
 {
     static CachedHandle g_Handle = CachedParameterCreate("debug.graphic.canvasDrawingEnabled", "0");
