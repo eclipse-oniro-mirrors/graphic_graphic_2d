@@ -143,6 +143,16 @@ const RSLayerInfo& RSSurfaceRenderParams::GetLayerInfo() const
     return layerInfo_;
 }
 
+void RSSurfaceRenderParams::SetHidePrivacyContent(bool needHidePrivacyContent)
+{
+    needHidePrivacyContent_ = needHidePrivacyContent;
+}
+
+bool RSSurfaceRenderParams::GetHidePrivacyContent() const
+{
+    return needHidePrivacyContent_;
+}
+
 void RSSurfaceRenderParams::SetHardwareEnabled(bool enabled)
 {
     if (isHardwareEnabled_ == enabled) {
@@ -473,6 +483,7 @@ void RSSurfaceRenderParams::OnSync(const std::unique_ptr<RSRenderParams>& target
     targetSurfaceParams->dstRect_ = dstRect_;
     targetSurfaceParams->isSkipDraw_ = isSkipDraw_;
     targetSurfaceParams->isLayerTop_ = isLayerTop_;
+    targetSurfaceParams->needHidePrivacyContent_ = needHidePrivacyContent_;
     targetSurfaceParams->isLeashWindowVisibleRegionEmpty_ = isLeashWindowVisibleRegionEmpty_;
     targetSurfaceParams->opaqueRegion_ = opaqueRegion_;
     targetSurfaceParams->preScalingMode_ = preScalingMode_;

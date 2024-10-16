@@ -430,6 +430,15 @@ enum class AncoHebcStatus : int32_t {
     USE_HEBC
 };
 
+enum class RSInterfaceErrorCode : uint32_t {
+#undef NO_ERROR
+    NO_ERROR = 0,
+    NON_SELF_CALLING,
+    NON_SYSTEM_CALLING,
+    UNKNOWN_ERROR,
+    WRITE_PARCEL_ERROR,
+};
+
 } // namespace Rosen
 } // namespace OHOS
 #endif // RENDER_SERVICE_CLIENT_CORE_COMMON_RS_COMMON_DEF_H
