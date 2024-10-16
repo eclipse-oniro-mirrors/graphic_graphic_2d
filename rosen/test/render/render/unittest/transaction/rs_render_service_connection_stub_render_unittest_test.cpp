@@ -233,7 +233,7 @@ HWTEST_F(RSRenderServiceConnectionTest, TestRSRenderServiceConnectionStub0061, T
 
 /**
  * @tc.name: TestRSRenderServiceConnectionStub0071
- * @tc.desc: Test 
+ * @tc.desc: Test
  * @tc.type: FUNC
  * @tc.require: issueI60KU1
  */
