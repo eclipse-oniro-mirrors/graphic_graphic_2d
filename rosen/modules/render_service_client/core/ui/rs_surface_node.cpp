@@ -904,5 +904,16 @@ RSSurfaceNodeAbilityState RSSurfaceNode::GetAbilityState() const
 {
     return abilityState_;
 }
+
+RSInterfaceErrorCode RSSurfaceNode::SetHidePrivacyContent(bool needHidePrivacyContent)
+{
+    auto renderServiceClient =
+        std::static_pointer_cast<RSRenderServiceClient>(RSIRenderClient::CreateRenderServiceClient());
+    if (renderServiceClient != nullptr) {
+        return static_cast<RSInterfaceErrorCode>(
+            renderServiceClient->SetHidePrivacyContent(GetId(), needHidePrivacyContent));
+    }
+    return RSInterfaceErrorCode::UNKNOWN_ERROR;
+}
 } // namespace Rosen
 } // namespace OHOS

@@ -350,6 +350,9 @@ public:
     void SetSkipDraw(bool skip);
     bool GetSkipDraw() const;
 
+    void SetHidePrivacyContent(bool needHidePrivacyContent);
+    bool GetHidePrivacyContent() const;
+
     void SetLayerTop(bool isTop);
     bool IsLayerTop() const;
 
@@ -556,6 +559,7 @@ private:
     bool isSkipDraw_ = false;
     bool isLayerTop_ = false;
     ScalingMode preScalingMode_ = ScalingMode::SCALING_MODE_SCALE_TO_WINDOW;
+    bool needHidePrivacyContent_ = false;
     bool needOffscreen_ = false;
     bool layerCreated_ = false;
     int32_t layerSource_ = 0;

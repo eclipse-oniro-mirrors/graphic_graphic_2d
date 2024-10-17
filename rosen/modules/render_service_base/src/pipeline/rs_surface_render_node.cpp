@@ -2723,6 +2723,7 @@ void RSSurfaceRenderNode::UpdateRenderParams()
     surfaceParams->overDrawBufferNodeCornerRadius_ = GetOverDrawBufferNodeCornerRadius();
     surfaceParams->isGpuOverDrawBufferOptimizeNode_ = isGpuOverDrawBufferOptimizeNode_;
     surfaceParams->SetSkipDraw(isSkipDraw_);
+    surfaceParams->SetHidePrivacyContent(needHidePrivacyContent_);
     surfaceParams->visibleFilterChild_ = GetVisibleFilterChild();
     surfaceParams->isTransparent_ = IsTransparent();
     surfaceParams->SetNeedSync(true);
@@ -2808,6 +2809,12 @@ void RSSurfaceRenderNode::SetSkipDraw(bool skip)
 bool RSSurfaceRenderNode::GetSkipDraw() const
 {
     return isSkipDraw_;
+}
+
+void RSSurfaceRenderNode::SetHidePrivacyContent(bool needHidePrivacyContent)
+{
+    needHidePrivacyContent_ = needHidePrivacyContent;
+    SetDirty();
 }
 
 const std::unordered_map<NodeId, NodeId>& RSSurfaceRenderNode::GetSecUIExtensionNodes()
