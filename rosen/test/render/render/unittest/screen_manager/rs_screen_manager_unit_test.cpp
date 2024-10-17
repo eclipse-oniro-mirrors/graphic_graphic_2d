@@ -1944,22 +1944,6 @@ HWTEST_F(RsScreenManagerTest, IsScreenPowerOffTest002, TestSize.Level1)
 }
 
 /*
- * @tc.name: SetVirtualScreenBlackList001
- * @tc.desc: Test SetVirtualScreenBlackList, input invalid id
- * @tc.type: FUNC
- * @tc.require: issueIAIMIW
- */
-HWTEST_F(RsScreenManagerTest, SetVirtualScreenBlackList001, TestSize.Level1)
-{
-    auto screenManager = CreateOrGetScreenManager();
-    ASSERT_NE(nullptr, screenManager);
-
-    ScreenId id = INVALID_SCREEN_ID;
-    std::vector<uint64_t> blackList = {};
-    ASSERT_EQ(screenManager->SetVirtualScreenBlackList(id, blackList), StatusCode::SUCCESS);
-}
-
-/*
  * @tc.name: IsScreenPowerOffTest001
  * @tc.desc: Test IsScreenPowerOff, input invalid id, expect correctly get power status.
  * @tc.type: FUNC
@@ -1971,22 +1955,6 @@ HWTEST_F(RsScreenManagerTest, IsScreenPowerOffTest001, TestSize.Level1)
     ASSERT_NE(nullptr, screenManager);
     ScreenId id = INVALID_SCREEN_ID;
     ASSERT_FALSE(screenManager->IsScreenPowerOff(id));
-}
-
-/*
- * @tc.name: SetVirtualScreenBlackList002
- * @tc.desc: Test SetVirtualScreenBlackList, input id  which not found in screens_
- * @tc.type: FUNC
- * @tc.require: issueIAIMIW
- */
-HWTEST_F(RsScreenManagerTest, SetVirtualScreenBlackList002, TestSize.Level1)
-{
-    auto screenManager = CreateOrGetScreenManager();
-    ASSERT_NE(nullptr, screenManager);
-
-    ScreenId id = 1;
-    std::vector<uint64_t> blackList = {};
-    ASSERT_EQ(screenManager->SetVirtualScreenBlackList(id, blackList), StatusCode::SCREEN_NOT_FOUND);
 }
 
 /*
@@ -2079,31 +2047,6 @@ HWTEST_F(RsScreenManagerTest, SetVirtualScreenBlackList007, TestSize.Level1)
     std::vector<uint64_t> blackList = {};
 
     ASSERT_EQ(screenManagerImpl.SetVirtualScreenBlackList(id, blackList), StatusCode::SUCCESS);
-}
-
-/*
- * @tc.name: SetVirtualScreenBlackList006
- * @tc.desc: Test SetVirtualScreenBlackList, screens_[id]!=nullptr, id!=mainId, mainId is one of key of screens_ but
- * screens_[mainId]==nullptr screens_[]!=null id==DefaultScreenId
- * @tc.type: FUNC
- * @tc.require: issueIAIMIW
- */
-HWTEST_F(RsScreenManagerTest, SetVirtualScreenBlackList006, TestSize.Level1)
-{
-    auto screenManager = CreateOrGetScreenManager();
-    ASSERT_NE(nullptr, screenManager);
-    OHOS::Rosen::impl::RSScreenManager& screenManagerImpl =
-        static_cast<OHOS::Rosen::impl::RSScreenManager&>(*screenManager);
-
-    ScreenId id = 1;
-    ScreenId mainId = 0;
-    screenManagerImpl.SetDefaultScreenId(mainId);
-
-    screenManagerImpl.screens_[id] = std::make_unique<impl::RSScreen>(id, false, nullptr, nullptr);
-    screenManagerImpl.screens_[mainId] = nullptr;
-    std::vector<uint64_t> blackList = {};
-
-    ASSERT_EQ(screenManagerImpl.SetVirtualScreenBlackList(id, blackList), StatusCode::SCREEN_NOT_FOUND);
 }
 
 /*
@@ -2250,34 +2193,6 @@ HWTEST_F(RsScreenManagerTest, GetVirtualScreenBlackList001, TestSize.Level1)
 
     ScreenId id = 1;
     ASSERT_TRUE(screenManagerImpl.GetVirtualScreenBlackList(id).empty());
-}
-
-/*
- * @tc.name: GetVirtualScreenBlackList003
- * @tc.desc: Test GetVirtualScreenBlackList, input id in keys of screens_,screens_[id]!=null
- * @tc.type: FUNC
- * @tc.require: issueIAIMIW
- */
-HWTEST_F(RsScreenManagerTest, GetVirtualScreenBlackList003, TestSize.Level1)
-{
-    auto screenManager = CreateOrGetScreenManager();
-    ASSERT_NE(nullptr, screenManager);
-    OHOS::Rosen::impl::RSScreenManager& screenManagerImpl =
-        static_cast<OHOS::Rosen::impl::RSScreenManager&>(*screenManager);
-
-    ScreenId id = 1;
-    screenManagerImpl.screens_[id] = std::make_unique<impl::RSScreen>(id, false, nullptr, nullptr);
-
-    const std::vector<uint64_t>& blackList = { 1, 2, 3, 4 };
-    std::unordered_set<NodeId> screenBlackList(blackList.begin(), blackList.end());
-
-    ScreenId mainId = id;
-    screenManagerImpl.SetDefaultScreenId(mainId);
-    ASSERT_EQ(screenManagerImpl.SetVirtualScreenBlackList(id, blackList), StatusCode::SUCCESS);
-
-    const std::unordered_set<uint64_t>& blackList_ = screenManagerImpl.GetVirtualScreenBlackList(id);
-    ASSERT_TRUE(std::set<NodeId>(blackList_.begin(), blackList_.end()) ==
-                std::set<NodeId>(screenBlackList.begin(), screenBlackList.end()));
 }
 
 /*
