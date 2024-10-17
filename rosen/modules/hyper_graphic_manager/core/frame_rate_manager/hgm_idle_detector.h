@@ -109,7 +109,7 @@ private:
         std::string& validSurfaceName);
     bool appSupported_ = false;
     bool aceAnimatorIdleState_ = true;
-    int32_t animatorExpected_ = -1;
+    int32_t animatorExpected_ = ANIMATOR_NOT_RUNNING;
     // FORMAT: <buffername>
     std::vector<std::string> appBufferBlackList_;
     std::vector<std::string> supportAppBufferList_;
