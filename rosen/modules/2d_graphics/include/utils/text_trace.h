@@ -56,6 +56,8 @@ public:
     }
 
     // Simplify __PRETTY_FUNCTION__ to only return class name and function name
+    // case: std::unique_str<XXX::XXX::Xxx> XXX::XXX::ClassName::FunctionName()
+    // retrun: ClassName::FunctionName
     static void CutPrettyFunction(std::string& str)
     {
         // find last '('
@@ -70,7 +72,7 @@ public:
         for (int i = endIndex; i >= 0; --i) {
             if (str[i] == ':') {
                 count++;
-                if (count == 3) {
+                if (count == 3) { // 3 means to stop iterating when reaching the third ':'
                     startIndex = i + 1;
                     break;
                 }
