@@ -124,7 +124,7 @@ void RSImage::CanvasDrawImage(Drawing::Canvas& canvas, const Drawing::Rect& rect
             ApplyCanvasClip(canvas);
         }
         bool isFitMatrixValid = !isBackground && imageFit_ == ImageFit::MATRIX &&
-                            fitMatrix_.has_value() && !fitMatrix_.value().IsIdentity();
+                                fitMatrix_.has_value() && !fitMatrix_.value().IsIdentity();
         if (isFitMatrixValid) {
             canvas.Save();
             canvas.ConcatMatrix(fitMatrix_.value());
