@@ -68,6 +68,7 @@
 namespace OHOS::Rosen {
 namespace {
 constexpr uint32_t HARDWARE_THREAD_TASK_NUM = 2;
+constexpr uint32_t HARD_JANK_TWO_TIME = 2;
 constexpr int64_t REFRESH_PERIOD = 16667; // 16667us == 16.667ms
 constexpr int64_t REPORT_LOAD_WARNING_INTERVAL_TIME = 5000000; // 5s == 5000000us
 }
@@ -222,7 +223,7 @@ void RSHardwareThread::CommitAndReleaseLayers(OutputPtr output, const std::vecto
         uint64_t frameTime = endTime - startTime;
         uint32_t missedFrames = frameTime / REFRESH_PERIOD;
         uint16_t frameRate = currentRate;
-        if (missedFrames >= HARDWARE_THREAD_TASK_NUM &&
+        if (missedFrames >= HARD_JANK_TWO_TIME &&
             endTime - intervalTimePoints_ > REPORT_LOAD_WARNING_INTERVAL_TIME) {
             RS_LOGI("RSHardwareThread::CommitAndReleaseLayers report load event frameTime: %{public}" PRIu64
                 " missedFrame: %{public}" PRIu32 " frameRate:%{public}" PRIu16 "",
