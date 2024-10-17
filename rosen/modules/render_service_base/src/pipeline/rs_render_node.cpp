@@ -1369,10 +1369,12 @@ bool RSRenderNode::CheckAndUpdateGeoTrans(std::shared_ptr<RSObjAbsGeometry>& geo
 void RSRenderNode::UpdateAbsDirtyRegion(RSDirtyRegionManager& dirtyManager, const RectI& clipRect)
 {
     dirtyManager.MergeDirtyRect(oldDirty_);
-    if (isSelfDrawingNode_ && absDrawRect_ != oldAbsDrawRect_) {
-        // merge self drawing node last frame size and join current frame size to absDrawRect_ when changed
-        dirtyManager.MergeDirtyRect(oldAbsDrawRect_.IntersectRect(clipRect));
-        selfDrawingNodeAbsDirtyRect_.JoinRect(absDrawRect_);
+    if (absDrawRect_ != oldAbsDrawRect_) {
+        if (isSelfDrawingNode_) {
+            // merge self drawing node last frame size and join current frame size to absDrawRect_ when changed
+            dirtyManager.MergeDirtyRect(oldAbsDrawRect_.IntersectRect(clipRect));
+            selfDrawingNodeAbsDirtyRect_.JoinRect(absDrawRect_);
+        }
         oldAbsDrawRect_ = absDrawRect_;
     }
     // easily merge oldDirty if switch to invisible
@@ -1418,7 +1420,7 @@ bool RSRenderNode::UpdateDrawRectAndDirtyRegion(RSDirtyRegionManager& dirtyManag
             if (isSelfDrawingNode_) {
                 selfDrawingNodeAbsDirtyRect_ = geoPtr->MapAbsRect(selfDrawingNodeDirtyRect_);
             }
-            UpdateClipAbsDrawRectChangeState(clipRect);
+            UpdateAbsDrawRectChangeState();
         }
     }
     // 3. update dirtyRegion if needed
@@ -1429,7 +1431,7 @@ bool RSRenderNode::UpdateDrawRectAndDirtyRegion(RSDirtyRegionManager& dirtyManag
     isDirtyRegionUpdated_ = false; // todo make sure why windowDirty use it
     // Only when satisfy following conditions, absDirtyRegion should update:
     // 1.The node is dirty; 2.The clip absDrawRect change; 3.Parent clip property change or has GeoUpdateDelay dirty;
-    if ((IsDirty() || clipAbsDrawRectChange_ || (parent && (parent->GetAccumulatedClipFlagChange() ||
+    if ((IsDirty() || absDrawRectChange_ || (parent && (parent->GetAccumulatedClipFlagChange() ||
         parent->GetGeoUpdateDelay()))) && (shouldPaint_ || isLastVisible_)) {
         // update ForegroundFilterCache
         UpdateAbsDirtyRegion(dirtyManager, clipRect);
@@ -4081,20 +4083,19 @@ void RSRenderNode::UpdateCurCornerRadius(Vector4f& curCornerRadius)
 
 void RSRenderNode::ResetChangeState()
 {
-    clipAbsDrawRectChange_ = false;
+    absDrawRectChange_ = false;
     geometryChangeNotPerceived_ = false;
 }
 
-void RSRenderNode::UpdateClipAbsDrawRectChangeState(const RectI& clipRect)
+void RSRenderNode::UpdateAbsDrawRectChangeState()
 {
     if (RSSystemProperties::GetSkipGeometryNotChangeEnabled()) {
         if (geometryChangeNotPerceived_) {
-            clipAbsDrawRectChange_ = false;
+            absDrawRectChange_ = false;
             return;
         }
     }
-    auto clipAbsDrawRect = absDrawRect_.IntersectRect(clipRect);
-    clipAbsDrawRectChange_ = clipAbsDrawRect != oldDirtyInSurface_;
+    absDrawRectChange_ = (absDrawRect_ != oldAbsDrawRect_);
 }
 
 void RSRenderNode::OnSync()
