@@ -303,5 +303,80 @@ HWTEST_F(HgmIdleDetectorTest, GetUiFrameworkTypeTable, Function | SmallTest | Le
         }
     }
 }
+
+/**
+ * @tc.name: UpdateAndGetAnimatorExpected001
+ * @tc.desc: Verify the result of UpdateAndGetAnimatorExpected001 function
+ * @tc.type: FUNC
+ * @tc.require: IAW09K
+ */
+HWTEST_F(HgmIdleDetectorTest, UpdateAndGetAnimatorExpected001, Function | SmallTest | Level1)
+{
+    std::unique_ptr<HgmIdleDetector> idleDetector = std::make_unique<HgmIdleDetector>();
+
+    PART("CaseDescription") {
+        STEP("1. get an idleDetector") {
+            STEP_ASSERT_NE(idleDetector, nullptr);
+        }
+        STEP("2. update max expected animator frame rate") {
+            idleDetector->UpdateAnimatorExpected(-2);
+        }
+        STEP("3. get max expected animator frame rate") {
+            int32_t ret = idleDetector->GetAnimatorExpected();
+            STEP_ASSERT_EQ(ret, ANIMATOR_NOT_RUNNING);
+        }
+    }
+}
+
+/**
+ * @tc.name: UpdateAndGetAnimatorExpected002
+ * @tc.desc: Verify the result of UpdateAndGetAnimatorExpected002 function
+ * @tc.type: FUNC
+ * @tc.require: IAW09K
+ */
+HWTEST_F(HgmIdleDetectorTest, UpdateAndGetAnimatorExpected002, Function | SmallTest | Level1)
+{
+    std::unique_ptr<HgmIdleDetector> idleDetector = std::make_unique<HgmIdleDetector>();
+
+    PART("CaseDescription") {
+        STEP("1. get an idleDetector") {
+            STEP_ASSERT_NE(idleDetector, nullptr);
+        }
+        STEP("2. update max expected animator frame rate") {
+            idleDetector->UpdateAnimatorExpected(60);
+        }
+        STEP("3. get max expected animator frame rate") {
+            int32_t ret = idleDetector->GetAnimatorExpected();
+            STEP_ASSERT_EQ(ret, 60);
+        }
+    }
+}
+
+/**
+ * @tc.name: ResetAnimatorExpected
+ * @tc.desc: Verify the result of ResetAnimatorExpected function
+ * @tc.type: FUNC
+ * @tc.require: IAW09K
+ */
+HWTEST_F(HgmIdleDetectorTest, ResetAnimatorExpected, Function | SmallTest | Level1)
+{
+    std::unique_ptr<HgmIdleDetector> idleDetector = std::make_unique<HgmIdleDetector>();
+
+    PART("CaseDescription") {
+        STEP("1. get an idleDetector") {
+            STEP_ASSERT_NE(idleDetector, nullptr);
+        }
+        STEP("2. update max expected animator frame rate") {
+            idleDetector->UpdateAnimatorExpected(120);
+        }
+        STEP("3. reset max expected animator frame rate") {
+            idleDetector->ResetAnimatorExpected();
+        }
+        STEP("4. get max expected animator frame rate") {
+            int32_t ret = idleDetector->GetAnimatorExpected();
+            STEP_ASSERT_EQ(ret, ANIMATOR_NOT_RUNNING);
+        }
+    }
+}
 } // namespace Rosen
 } // namespace OHOS
