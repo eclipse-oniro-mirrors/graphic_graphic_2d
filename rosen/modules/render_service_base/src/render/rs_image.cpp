@@ -134,8 +134,7 @@ void RSImage::CanvasDrawImage(Drawing::Canvas& canvas, const Drawing::Rect& rect
             canvas.Restore();
         }
     } else {
-        bool needCanvasRestore = HasRadius() ||
-                                 (pixelMap_ != nullptr && pixelMap_->IsAstc()) ||
+        bool needCanvasRestore = HasRadius() || (pixelMap_ != nullptr && pixelMap_->IsAstc()) ||
                                  isFitMatrixValid;
         Drawing::AutoCanvasRestore acr(canvas, needCanvasRestore);
         if (pixelMap_ != nullptr && pixelMap_->IsAstc()) {
