@@ -56,21 +56,21 @@ public:
         return aceAnimatorIdleState_;
     }
 
-    void UpdateAnimatorExpectedFrameRate(int32_t animatorExpectedFrameRate)
+    void UpdateAceAnimatorExpectedFrameRate(int32_t aceAnimatorExpectedFrameRate)
     {
-        if (animatorExpectedFrameRate > animatorExpectedFrameRate_) {
-            animatorExpectedFrameRate_ = animatorExpectedFrameRate;
+        if (aceAnimatorExpectedFrameRate > aceAnimatorExpectedFrameRate_) {
+            aceAnimatorExpectedFrameRate_ = aceAnimatorExpectedFrameRate;
         }
     }
 
-    int32_t GetAnimatorExpectedFrameRate() const
+    int32_t GetAceAnimatorExpectedFrameRate() const
     {
-        return animatorExpectedFrameRate_;
+        return aceAnimatorExpectedFrameRate_;
     }
 
-    void ResetAnimatorExpectedFrameRate()
+    void ResetAceAnimatorExpectedFrameRate()
     {
-        animatorExpectedFrameRate_ = ANIMATOR_NOT_RUNNING;
+        aceAnimatorExpectedFrameRate_ = ANIMATOR_NOT_RUNNING;
     }
 
     void UpdateSurfaceTime(const std::string& surfaceName, uint64_t timestamp,
@@ -109,7 +109,7 @@ private:
         std::string& validSurfaceName);
     bool appSupported_ = false;
     bool aceAnimatorIdleState_ = true;
-    int32_t animatorExpectedFrameRate_ = ANIMATOR_NOT_RUNNING;
+    int32_t aceAnimatorExpectedFrameRate_ = ANIMATOR_NOT_RUNNING;
     // FORMAT: <buffername>
     std::vector<std::string> appBufferBlackList_;
     std::vector<std::string> supportAppBufferList_;

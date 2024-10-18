@@ -132,8 +132,8 @@ bool HgmIdleDetector::ThirdFrameNeedHighRefresh()
 int32_t HgmIdleDetector::GetTouchUpExpectedFPS()
 {
     if (appBufferList_.empty()) {
-        return GetAnimatorExpectedFrameRate() > ANIMATOR_NO_EXPECTED_FRAME_RATE ? GetAnimatorExpectedFrameRate()
-                                                                                : FPS_MAX;
+        return GetAceAnimatorExpectedFrameRate() > ANIMATOR_NO_EXPECTED_FRAME_RATE ? GetAceAnimatorExpectedFrameRate()
+                                                                                   : FPS_MAX;
     }
     if (!aceAnimatorIdleState_) {
         auto iter = std::find_if(appBufferList_.begin(), appBufferList_.end(),
@@ -141,8 +141,8 @@ int32_t HgmIdleDetector::GetTouchUpExpectedFPS()
             return appBuffer.first == ACE_ANIMATOR_NAME;
         });
         if (iter != appBufferList_.end() && frameTimeMap_.empty()) {
-            return GetAnimatorExpectedFrameRate() > ANIMATOR_NO_EXPECTED_FRAME_RATE
-                    ? std::min(GetAnimatorExpectedFrameRate(), iter->second)
+            return GetAceAnimatorExpectedFrameRate() > ANIMATOR_NO_EXPECTED_FRAME_RATE
+                    ? std::min(GetAceAnimatorExpectedFrameRate(), iter->second)
                     : iter->second;
         }
     }
