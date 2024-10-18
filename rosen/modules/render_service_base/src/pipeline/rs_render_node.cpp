@@ -1381,7 +1381,7 @@ void RSRenderNode::UpdateAbsDirtyRegion(RSDirtyRegionManager& dirtyManager, cons
     }
     auto dirtyRect = isSelfDrawingNode_ ? selfDrawingNodeAbsDirtyRect_ : absDrawRect_;
     auto curNode = ReinterpretCastTo<RSSurfaceRenderNode>();
-    auto parent = GetParent().lock()->ReinterpretCastTo<RSSurfaceRenderNode>();
+    auto parent = GetParent().lock() ? GetParent().lock()->ReinterpretCastTo<RSSurfaceRenderNode>() : nullptr;
     if (curNode && curNode->GetGlobalPositionEnabled()) {
         dirtyRect.left_ -= curNode->GetCurDisplayOffsetX();
         dirtyRect.top_ -= curNode->GetCurDisplayOffsetY();

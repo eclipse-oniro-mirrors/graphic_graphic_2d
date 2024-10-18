@@ -760,7 +760,7 @@ public:
 
     virtual RSSurfaceNodeAbilityState GetAbilityState() const { return RSSurfaceNodeAbilityState::FOREGROUND; }
 
-    int32_t GetCurDisplayOffsetX()
+    int32_t GetCurDisplayOffsetX() const
     {
         return curDisplayOffsetX_;
     }
@@ -768,7 +768,7 @@ public:
     {
         curDisplayOffsetX_ = offsetX;
     }
-    int32_t GetCurDisplayOffsetY()
+    int32_t GetCurDisplayOffsetY() const
     {
         return curDisplayOffsetY_;
     }
