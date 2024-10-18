@@ -489,22 +489,25 @@ void RSCanvasDrawingRenderNode::InitRenderParams()
 void RSCanvasDrawingRenderNode::CheckDrawCmdListSize(RSModifierType type)
 {
     bool overflow = drawCmdLists_[type].size() > DRAWCMDLIST_COUNT_LIMIT;
-    if (overflow && lastOverflowStatus_ != overflow) {
-        RS_LOGE("AddDirtyType Out of Cmdlist Limit, This Node[%{public}" PRIu64 "] with Modifier[%{public}hd]"
-                " have drawcmdlist:%{public}zu",
-                GetId(), type, drawCmdLists_[type].size());
+    if (overflow) {
+        if (overflow != lastOverflowStatus_) {
+            RS_LOGE("AddDirtyType Out of Cmdlist Limit, This Node[%{public}" PRIu64 "] with Modifier[%{public}hd]"
+                    " have drawcmdlist:%{public}zu",
+                    GetId(), type, drawCmdLists_[type].size());
+        }
+        // If such nodes are not drawn, The drawcmdlists don't clearOp during recording, As a result, there are
+        // too many drawOp, so we need to add the limit of drawcmdlists.
+        while ((GetOldDirtyInSurface().IsEmpty() || !IsDirty() || renderDrawable_) &&
+                drawCmdLists_[type].size() > DRAWCMDLIST_COUNT_LIMIT) {
+                drawCmdLists_[type].pop_front();
+        }
+        if (drawCmdLists_[type].size() > DRAWCMDLIST_COUNT_LIMIT) {
+            RS_LOGE("AddDirtyType Cmdlist Protect Error, This Node[%{public}" PRIu64 "] with Modifier[%{public}hd]"
+                    " have drawcmdlist:%{public}zu",
+                    GetId(), type, drawCmdLists_[type].size());
+        }
     }
     lastOverflowStatus_ = overflow;
-    // If such nodes are not drawn, The drawcmdlists don't clearOp during recording, As a result, there are
-    // too many drawOp, so we need to add the limit of drawcmdlists.
-    while ((GetOldDirtyInSurface().IsEmpty() || !IsDirty() || renderDrawable_) && overflow) {
-            drawCmdLists_[type].pop_front();
-    }
-    if (overflow) {
-        RS_LOGE("AddDirtyType Cmdlist Protect Error, This Node[%{public}" PRIu64 "] with Modifier[%{public}hd]"
-                " have drawcmdlist:%{public}zu",
-                GetId(), type, drawCmdLists_[type].size());
-    }
 }
 
 void RSCanvasDrawingRenderNode::AddDirtyType(RSModifierType modifierType)
