@@ -1280,21 +1280,7 @@ bool RSUifirstManager::IsNonFocusWindowCache(RSSurfaceRenderNode& node, bool ani
 
     std::string surfaceName = node.GetName();
     bool needFilterSCB = node.GetSurfaceWindowType() == SurfaceWindowType::SYSTEM_SCB_WINDOW;
-    if (!node.GetForceUIFirst() && (needFilterSCB || node.IsSelfDrawingType())) {
-        return false;
-    }
-    if ((node.IsFocusedNode(RSMainThread::Instance()->GetFocusNodeId()) ||
-        node.IsFocusedNode(RSMainThread::Instance()->GetFocusLeashWindowId())) &&
-        (node.GetHasSharedTransitionNode() ||
-        RSUifirstManager::Instance().IsVMSurfaceName(surfaceName) ||
-        !animation)) {
-        RS_TRACE_NAME_FMT("IsNonFocusWindowCache: surfaceName[%s] is MainThread", surfaceName.c_str());
-        return false;
-    }
-    return node.QuerySubAssignable(isDisplayRotation);
-}
-
-void RSUifirstManager::UpdateUifirstNodes(RSSurfaceRenderNode& node, bool ancestorNodeHasAnimation)
+    if (!node.GetForceUIFirst() && (needFilterSCB || (RSSurfaceRenderNode& node, bool ancestorNodeHasAnimation)
 {
     RS_TRACE_NAME_FMT("UpdateUifirstNodes: Id[%llu] name[%s] FLId[%llu] Ani[%d] Support[%d] isUiFirstOn[%d]",
         node.GetId(), node.GetName().c_str(), node.GetFirstLevelNodeId(),
@@ -1332,7 +1318,7 @@ void RSUifirstManager::UpdateUifirstNodes(RSSurfaceRenderNode& node, bool ancest
             node.SetSubThreadAssignable(true);                      // mark as assignable to uifirst next frame
             node.SetNeedCacheSurface(true);                         // mark as that needs cache win in RT
 
-            // disable hwd, otherwise rect of hwc nodes in win cache will be transparent
+            // to avoid that rect of self-drawing nodes in win cache be transparent
             node.SetHwcChildrenDisabledStateByUifirst();
         } else {
             UifirstStateChange(node, MultiThreadCacheType::NONFOCUS_WINDOW);
