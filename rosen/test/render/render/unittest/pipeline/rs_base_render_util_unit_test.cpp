@@ -48,7 +48,6 @@ private:
         .damage = { .w = 0x100, .h = 0x100, },
     };
     static inline Drawing::Matrix matrix  = Drawing::Matrix();
-    static constexpr float BRIGHTNESS_RATIO = 0.6f;
     static const uint32_t MATRIX_SIZE = 20;
     static inline float InvertColorMat[MATRIX_SIZE] = {
         0.402,  -1.174, -0.228, 1.0, 0.0,
@@ -268,7 +267,7 @@ HWTEST_F(RsBaseRenderUtilTest, SetColorFilterModeToPaint01, TestSize.Level2)
     filter.GetColorFilter()->AsAColorMatrix(matrix);
     CompareMatrix(matrix, InvertColorMat);
 
-    RSBaseRenderUtil::SetColorFilterModeToPaint(colorFilterMode, paint, BRIGHTNESS_RATIO);
+    RSBaseRenderUtil::SetColorFilterModeToPaint(colorFilterMode, paint, 0.6f);
     filter = paint.GetFilter();
     ASSERT_NE(filter.GetColorFilter(), nullptr);
 
