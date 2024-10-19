@@ -133,7 +133,7 @@ int OH_NativeVSync_GetPeriod(OH_NativeVSync* nativeVsync, long long* period);
  * @return {@link NATIVE_ERROR_OK} 0 - Success.
  *     {@link NATIVE_ERROR_INVALID_ARGUMENTS} 40001000 - the parameter nativeVsync is NULL or callback is NULL.
  *     {@link NATIVE_ERROR_BINDER_ERROR} 50401000 - ipc send failed.
- * @since 12
+ * @since 14
  * @version 1.0
  */
 int OH_NativeVSync_DVSyncSwitch(OH_NativeVSync* nativeVsync, bool enable);

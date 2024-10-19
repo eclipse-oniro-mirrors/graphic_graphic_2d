@@ -1199,7 +1199,7 @@ VsyncError VSyncDistributor::SetUiDvsyncConfig(int32_t bufferCount)
     return VSYNC_ERROR_OK;
 }
 
-VsyncError VSyncDistributor::SetNativeDvsyncSwitch(bool dvsyncSwitch, const sptr<VSyncConnection> &connection)
+VsyncError VSyncDistributor::SetNativeDVSyncSwitch(bool dvsyncSwitch, const sptr<VSyncConnection> &connection)
 {
 #if defined(RS_ENABLE_DVSYNC)
     std::lock_guard<std::mutex> locker(mutex_);

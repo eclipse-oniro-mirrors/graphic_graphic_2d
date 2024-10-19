@@ -140,6 +140,7 @@ public:
     void SetHardwareTaskNum(uint32_t num);
     int64_t GetVsyncCount();
     uint64_t GetRealTimeOffsetOfDvsync(int64_t time);
+    VsyncError SetNativeDVSyncSwitch(bool dvsyncSwitch, const sptr<VSyncConnection> &connection);
 
 private:
 

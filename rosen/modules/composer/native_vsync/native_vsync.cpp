@@ -108,10 +108,10 @@ int OH_NativeVSync_GetPeriod(OH_NativeVSync* nativeVsync, long long* period)
     return nativeVSync->receiver_->GetVSyncPeriod(*reinterpret_cast<int64_t*>(period));
 }
 
-int OH_NativeVSync_DVSyncSwitch(OH_NativeVSync* ohNativeVSync, bool enable, int bufferCount)
+int OH_NativeVSync_DVSyncSwitch(OH_NativeVSync* ohNativeVSync, bool enable)
 {
     NativeVSync* nativeVSync = OH_NativeVSync_OHNativeVSyncToNativeVSync(ohNativeVSync);
-    if (nativeVSync == nullptr || nativeVSync->receiver_ == nullptr || callback == nullptr) {
+    if (nativeVSync == nullptr || nativeVSync->receiver_ == nullptr) {
         VLOGE("parameter is nullptr, please check");
         return VSYNC_ERROR_INVALID_ARGUMENTS;
     }

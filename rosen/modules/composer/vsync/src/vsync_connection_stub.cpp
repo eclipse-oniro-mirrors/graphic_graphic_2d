@@ -82,7 +82,7 @@ int32_t VSyncConnectionStub::OnRemoteRequest(uint32_t code, MessageParcel &data,
         }
         case IVSYNC_CONNECTION_SET_NATIVE_DVSYNC_SWITCH: {
             auto dvsyncOn = data.ReadBool();
-            int32_t ret = SetNativeDvsyncSwitch(dvsyncOn);
+            int32_t ret = SetNativeDVSyncSwitch(dvsyncOn);
             reply.WriteInt32(ret);
             return ret;
         }
