@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "rs_surface_buffer_callback_stub.h"
+#include "ipc_callbacks/rs_surface_buffer_callback.h"
 #include "platform/common/rs_log.h"
 
 namespace OHOS {
