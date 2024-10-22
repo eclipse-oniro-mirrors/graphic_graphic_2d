@@ -1140,7 +1140,7 @@ bool RSProperties::GetBorderIsSolid() const
         GetBorderStyle().y_ == static_cast<uint32_t>(BorderStyle::SOLID) &&
         GetBorderStyle().z_ == static_cast<uint32_t>(BorderStyle::SOLID) &&
         GetBorderStyle().w_ == static_cast<uint32_t>(BorderStyle::SOLID)) {
-            return true;
+        return true;
     }
     return false;
 }
