@@ -243,9 +243,9 @@ bool RSBackgroundColorDrawable::OnUpdate(const RSRenderNode& node)
         brush.SetAntiAlias(antiAlias);
         canvas.AttachBrush(brush);
         if (properties.GetBorderColorIsTransparent() || !properties.GetBorderIsSolid()) {
-            canvas.DrawRoundRect(RSPropertyDrawableUtils::RRect2DrawingRRect(properties.GetRRect()));
+            canvas.DrawRoundRect(RSPropertiesPainter::RRect2DrawingRRect(properties.GetRRect()));
         } else {
-            canvas.DrawRoundRect(RSPropertyDrawableUtils::RRect2DrawingRRectBorder(properties.GetRRect(),
+            canvas.DrawRoundRect(RSPropertiesPainter::RRect2DrawingRRectBorder(properties.GetRRect(),
                 properties.GetInnerRRect()));
         }
     } else {
@@ -289,9 +289,9 @@ bool RSBackgroundShaderDrawable::OnUpdate(const RSRenderNode& node)
         brush.SetAntiAlias(antiAlias);
         canvas.AttachBrush(brush);
         if (properties.GetBorderColorIsTransparent() || !properties.GetBorderIsSolid()) {
-            canvas.DrawRoundRect(RSPropertyDrawableUtils::RRect2DrawingRRect(properties.GetRRect()));
+            canvas.DrawRoundRect(RSPropertiesPainter::RRect2DrawingRRect(properties.GetRRect()));
         } else {
-            canvas.DrawRoundRect(RSPropertyDrawableUtils::RRect2DrawingRRectBorder(properties.GetRRect(),
+            canvas.DrawRoundRect(RSPropertiesPainter::RRect2DrawingRRectBorder(properties.GetRRect(),
                 properties.GetInnerRRect()));
         }
     } else {
