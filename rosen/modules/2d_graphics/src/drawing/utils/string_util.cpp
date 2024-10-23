@@ -22,7 +22,8 @@ bool IsUtf8(const char* text)
 {
     int len = strlen(text);
     int n;
-    for (int i = 0; i < len; i++) {
+    int i = 0;
+    while (i < len) {
         uint32_t c = text[i];
         if (c <= 0x7F) { // 0x00 and 0x7F is the range of utf-8
             n = 0;
@@ -44,6 +45,7 @@ bool IsUtf8(const char* text)
                 return false;
             }
         }
+        i++; // move to the next character
     }
     return true;
 }
