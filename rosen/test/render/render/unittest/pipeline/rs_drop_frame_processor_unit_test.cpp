@@ -163,7 +163,7 @@ HWTEST_F(RsDropFrameProcessorTest, DropFrameProcessorTest03, TestSize.Level1)
     psurf->SetQueueSize(4); // only test 4 frames
 
     // request&&flush 3 buffer, make dirtyList size equal queuesize -1
-    for (int i = 0; i < 3; i ++) {
+    for (int i = 0; i < 3; i++) {
         sptr<SurfaceBuffer> buffer;
         sptr<SyncFence> requestFence = SyncFence::INVALID_FENCE;
         [[maybe_unused]] GSError ret = psurf->RequestBuffer(buffer, requestFence, requestConfig);
