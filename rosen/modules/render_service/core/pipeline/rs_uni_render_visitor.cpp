@@ -1698,6 +1698,7 @@ void RSUniRenderVisitor::UpdateHwcNodeEnable()
         if (hwcNodes.empty()) {
             return;
         }
+        std::vector<RectI> hwcRects;
         for (const auto& hwcNode : hwcNodes) {
             auto hwcNodePtr = hwcNode.lock();
             if (!hwcNodePtr || !hwcNodePtr->IsOnTheTree()) {
