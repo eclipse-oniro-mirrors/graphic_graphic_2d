@@ -52,7 +52,8 @@ RSTransitionEffect::RSTransitionEffect(
 
 std::shared_ptr<RSTransitionEffect> RSTransitionEffect::Opacity(float opacity)
 {
-    if (opacity == 1.0f) {
+    static uint32_t count = 0;
+    if (opacity == 1.0f && ((count++) % 10) == 0) { // 10% probability to accept
         ROSEN_LOGI("RSTransitionEffect::Opacity: Skip empty transition effect");
         return shared_from_this();
     }
