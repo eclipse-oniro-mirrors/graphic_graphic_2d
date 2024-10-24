@@ -67,7 +67,6 @@ constexpr int32_t NO_SPECIAL_LAYER = 0;
 constexpr int32_t HAS_SPECIAL_LAYER = 1;
 constexpr int32_t CAPTURE_WINDOW = 2; // To be deleted after captureWindow being deleted
 constexpr int64_t MAX_JITTER_NS = 2000000; // 2ms
-constexpr int32_t IRREGULAR_REFRESH_RATE_SKIP_THRETHOLD = 10;
 
 std::string RectVectorToString(std::vector<RectI>& regionRects)
 {
@@ -1715,8 +1714,8 @@ bool RSDisplayRenderNodeDrawable::SkipFrame(uint32_t refreshRate, uint32_t skipF
     }
     int64_t currentTime = std::chrono::duration_cast<std::chrono::nanoseconds>(
         std::chrono::steady_clock::now().time_since_epoch()).count();
-    // when skipFrameInterval > 10 means the skipFrameInterval is the virtual screen refresh rate
-    if (skipFrameInterval > IRREGULAR_REFRESH_RATE_SKIP_THRETHOLD) {
+    // when refreshRate % skipFrameInterval != 0 means the skipFrameInterval is the virtual screen refresh rate
+    if (refreshRate % skipFrameInterval != 0) {
         int64_t minFrameInterval = 1000000000LL / skipFrameInterval;
         if (minFrameInterval == 0) {
             return false;
