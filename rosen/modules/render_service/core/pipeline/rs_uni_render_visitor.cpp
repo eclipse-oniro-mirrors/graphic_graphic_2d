@@ -1515,10 +1515,8 @@ void RSUniRenderVisitor::UpdateHwcNodeEnableByHwcNodeBelowSelfInApp(std::vector<
         hwcRects.emplace_back(dst);
         return;
     }
-    bool shouldDisable = !(hwcNode->GetName() == "ChronosSurface" &&
-        RsCommonHook::Instance().GetHardwareEnabledByHwcnodeBelowSelfInAppFlag());
     for (const auto& rect : hwcRects) {
-        if (dst.Intersect(rect) && (shouldDisable || hasSkippedSpecialLayer)) {
+        if (dst.Intersect(rect) && !RsCommonHook::Instance().GetHardwareEnabledByHwcnodeBelowSelfInAppFlag()) {
             if (RsCommonHook::Instance().GetVideoSurfaceFlag() &&
                 ((dst.GetBottom() - rect.GetTop() <= MIN_OVERLAP && dst.GetBottom() - rect.GetTop() >= 0) ||
                 (rect.GetBottom() - dst.GetTop() <= MIN_OVERLAP && rect.GetBottom() - dst.GetTop() >= 0))) {
@@ -1531,10 +1529,6 @@ void RSUniRenderVisitor::UpdateHwcNodeEnableByHwcNodeBelowSelfInApp(std::vector<
                 HwcDisabledReasons::DISABLED_BY_HWC_NODE_ABOVE, hwcNode->GetName());
             return;
         }
-    }
-    if (!shouldDisable ||
-        (RsCommonHook::Instance().GetHardwareEnabledByHwcnodeBelowSelfInAppFlag() && hwcNode->IsRosenWeb())) {
-        hasSkeppedSpecialLayer = true;
     }
     hwcRects.emplace_back(dst);
 }
@@ -1583,27 +1577,46 @@ void RSUniRenderVisitor::UpdateHwcNodeProperty(std::shared_ptr<RSSurfaceRenderNo
                 UIPoint { 0, 1 },
                 UIPoint { 1, 1 }
             };
-            if (parentGeo && maxCornerRadius > 0) {
-                // The logic here is to calculate whether the HWC Node affects
-                // the round corner property of the parent node.
-                // The method is calculating the rounded AABB of each HWC node
-                // with respect to all parent nodes above it and storing the results.
-                // When a HWC node is found below, the AABBs and the HWC node
-                // are checked for intersection. If there is an intersection,
-                // the node above it is disabled from taking the HWC pipeline.
-                auto parentRect = parentGeo->GetAbsRect();
-                UIPoint offset { parentRect.GetWidth() - macCornerRadius, parentRect.GetHeight() - maxCornerRadius };
-                UIPoint anchorPoint { parentRect.GetLeft(), parentRect.GetTop() };
+            // The logic here is to calculate whether the HWC Node affects
+            // the round corner property of the parent node.
+            // The method is calculating the rounded AABB of each HWC node
+            // with respect to all parent nodes above it and storing the results.
+            // When a HWC node is found below, the AABBs and the HWC node
+            // are checked for intersection. If there is an intersection,
+            // the node above it is disabled from taking the HWC pipeline.
+            auto checkIntersectWithRoundCorner = [&currIntersectedRoundCornerAABBs, hwcNodeRect](
+                const RectI& rect, float radiusX, float radiusY) {
+                if (radiusX <= 0 || radiusY <= 0) {
+                    return;
+                }
+                UIPoint offset { rect.GetWidth() - radiusX, rect.GetHeight() - radiusY };
+                UIPoint anchorPoint { rect.GetLeft(), rect.GetTop() };
                 std::for_each(std::begin(offsetVecs), std::end(offsetVecs),
                     [&currIntersectedRoundCornerAABBs, hwcNodeRect, offset,
-                        maxCornerRadius, anchorPoint](auto offsetVec) {
+                        radiusX, radiusY, anchorPoint](auto offsetVec) {
                         auto res = anchorPoint + offset * offsetVec;
-                        auto roundCornerAABB = RectI(res.x_, res.y_, maxCornerRadius, maxCornerRadius);
+                        auto roundCornerAABB = RectI(res.x_, res.y_, radiusX, radiusY);
                         if (!roundCornerAABB.IntersectRect(hwcNodeRect).IsEmpty()) {
                             currIntersectedRoundCornerAABBs.push_back(roundCornerAABB);
                         }
                     }
                 );
+            };
+            if (parentGeo) {
+                auto parentRect = parentGeo->GetAbsRect();
+                checkIntersectWithRoundCorner(parentRect, maxCornerRadius, maxCornerRadius);
+
+                if (parentProperty.GetClipToRRect()) {
+                    RRect parentClipRRect = parentProperty.GetClipRRect();
+                    RectI parentClipRect = parentGeo->MapAbsRect(parentClipRRect.rect_);
+                    float maxClipRRectCornerRadiusX = 0, maxClipRRectCornerRadiusY = 0;
+                    constexpr size_t radiusVecSize = 4;
+                    for (size_t i = 0; i < radiusVecSize; ++i) {
+                        maxClipRRectCornerRadiusX = std::max(maxClipRRectCornerRadiusX, parentClipRRect.radius_[i].x_);
+                        maxClipRRectCornerRadiusY = std::max(maxClipRRectCornerRadiusY, parentClipRRect.radius_[i].y_);
+                    }
+                    checkIntersectWithRoundCorner(parentClipRect, maxClipRRectCornerRadiusX, maxClipRRectCornerRadiusY);
+                }
             }
         }
     );
