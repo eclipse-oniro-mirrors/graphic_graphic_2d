@@ -33,14 +33,14 @@ RSRenderNodeDrawable::Ptr RSEffectRenderNodeDrawable::OnGenerate(std::shared_ptr
 void RSEffectRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
 {
     if (!ShouldPaint()) {
-        SetDrawSkipType("");
+        SetDrawSkipType(DrawSkipType::SHOULD_NOT_PAINT);
         return;
     }
 
     RS_LOGD("RSEffectRenderNodeDrawable::OnDraw node: %{public}" PRIu64, nodeId_);
     auto effectParams = static_cast<RSEffectRenderParams*>(GetRenderParams().get());
     if (!effectParams) {
-        SetDrawSkipType("");
+        SetDrawSkipType(DrawSkipType::RENDER_PARAMS_NULL);
         RS_LOGE("RSSurfaceRenderNodeDrawable::OnDraw params is nullptr");
         return;
     }
@@ -51,13 +51,13 @@ void RSEffectRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     auto& uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
     if ((UNLIKELY(!uniParam) || uniParam->IsOpDropped()) && GetOpDropped() &&
         QuickReject(canvas, effectParams->GetLocalDrawRect())) {
-            SetDrawSkipType("");
+        SetDrawSkipType(DrawSkipType::OCCLUSION_SKIP);
         return;
     }
     const Drawing::Rect& bounds = effectParams->GetFrameRect();
     
     if (!GenerateEffectDataOnDemand(effectParams, canvas, bounds, paintFilterCanvas)) {
-        SetDrawSkipType("");
+        SetDrawSkipType(DrawSkipType::GENERATE_EFFECT_DATA_ON_DEMAND_FAIL);
         return;
     }
 
