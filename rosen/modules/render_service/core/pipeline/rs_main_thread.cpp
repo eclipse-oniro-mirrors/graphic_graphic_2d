@@ -1974,7 +1974,7 @@ void RSMainThread::ProcessUiCaptureTasks()
 void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
 {
     if (isAccessibilityConfigChanged_) {
-        RSUniRenderVisitor::ClearRenderGroupCache();
+        RS_LOGD("RSMainThread::UniRender AccessibilityConfig has Changed");
     }
     UpdateUIFirstSwitch();
     UpdateRogSizeIfNeeded();

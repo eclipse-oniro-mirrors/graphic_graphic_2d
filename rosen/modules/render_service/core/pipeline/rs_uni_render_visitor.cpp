@@ -69,7 +69,6 @@ constexpr float EPSILON_SCALE = 0.00001f;
 static const std::string CAPTURE_WINDOW_NAME = "CapsuleWindow";
 constexpr const char* RELIABLE_GESTURE_BACK_SURFACE_NAME = "SCBGestureBack";
 constexpr int MIN_OVERLAP = 2;
-static std::map<NodeId, uint32_t> cacheRenderNodeMap = {};
 static uint32_t cacheReuseTimes = 0;
 static std::mutex cacheRenderNodeMapMutex;
 
@@ -503,11 +502,17 @@ void RSUniRenderVisitor::ResetDisplayDirtyRegion()
         CheckLuminanceStatusChange() ||
         IsFirstFrameOfOverdrawSwitch() ||
         IsFirstFrameOfDrawingCacheDfxSwitch() ||
+        IsAccessibilityConfigChanged() ||
         isNeedNotchUpdate;
     if (ret) {
         curDisplayDirtyManager_->ResetDirtyAsSurfaceSize();
         RS_LOGD("RSUniRenderVisitor::ResetDisplayDirtyRegion on");
     }
+}
+
+bool RSUniRenderVisitor::IsAccessibilityConfigChanged() const
+{
+    return RSMainThread::Instance()->IsAccessibilityConfigChanged();
 }
 
 bool RSUniRenderVisitor::CheckScreenPowerChange() const
@@ -1006,9 +1011,13 @@ void RSUniRenderVisitor::QuickPrepareCanvasRenderNode(RSCanvasRenderNode& node)
     auto curCornerRadius = curCornerRadius_;
     curAlpha_ *= std::clamp(node.GetRenderProperties().GetAlpha(), 0.f, 1.f);
     CheckFilterCacheNeedForceClearOrSave(node);
+    if (IsAccessibilityConfigChanged()) {
+        node.SetIsAccessibilityConfigChanged(true);
+    }
     if (isDrawingCacheEnabled_) {
         node.UpdateDrawingCacheInfoBeforeChildren(isScreenRotationAnimating_);
     }
+    node.SetIsAccessibilityConfigChanged(false);
     node.OpincQuickMarkStableNode(unchangeMarkInApp_, unchangeMarkEnable_,
         RSMainThread::Instance()->IsAccessibilityConfigChanged());
 
@@ -2972,12 +2981,6 @@ void RSUniRenderVisitor::PrepareRootRenderNode(RSRootRenderNode& node)
     parentSurfaceNodeMatrix_ = parentSurfaceNodeMatrix;
     dirtyFlag_ = dirtyFlag;
     prepareClipRect_ = prepareClipRect;
-}
-
-void RSUniRenderVisitor::ClearRenderGroupCache()
-{
-    std::lock_guard<std::mutex> lock(cacheRenderNodeMapMutex);
-    cacheRenderNodeMap.clear();
 }
 
 void RSUniRenderVisitor::SetUniRenderThreadParam(std::unique_ptr<RSRenderThreadParams>& renderThreadParams)
