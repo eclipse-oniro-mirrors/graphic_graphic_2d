@@ -2937,17 +2937,6 @@ bool RSMainThread::IsNeedProcessBySingleFrameComposer(std::unique_ptr<RSTransact
         return false;
     }
 
-    // animation node will call RequestNextVsync() in mainLoop_, here we simply ignore animation scenario
-    if (!context_->animatingNodeList_.empty()) {
-        return false;
-    }
-
-    // ignore mult-window scenario
-    auto currentVisibleLeashWindowCount = context_->GetNodeMap().GetVisibleLeashWindowCount();
-    if (currentVisibleLeashWindowCount >= MULTI_WINDOW_PERF_START_NUM) {
-        return false;
-    }
-
     return true;
 }
 
@@ -2963,21 +2952,25 @@ void RSMainThread::ProcessDataBySingleFrameComposer(std::unique_ptr<RSTransactio
         rsTransactionData->ProcessBySingleFrameComposer(*context_);
     }
 
-    RecvAndProcessRSTransactionDataImmediately(rsTransactionData);
-}
-
-void RSMainThread::RecvAndProcessRSTransactionDataImmediately(std::unique_ptr<RSTransactionData>& rsTransactionData)
-{
-    if (!rsTransactionData || !isUniRender_) {
-        return;
-    }
-    RS_TRACE_NAME("ProcessBySingleFrameComposer");
     {
         std::lock_guard<std::mutex> lock(transitionDataMutex_);
         RSTransactionMetricCollector::GetInstance().Collect(rsTransactionData);
         cachedTransactionDataMap_[rsTransactionData->GetSendingPid()].emplace_back(std::move(rsTransactionData));
     }
-    ForceRefreshForUni();
+    PostTask([this]() {
+        if (!context_) {
+            return;
+        }
+        // animation node will call RequestNextVsync() in mainLoop_, here we simply ignore animation scenario
+        // and also ignore mult-window scenario
+        bool isNeedSingleFrameCompose = context_->GetAnimatingNodeList().empty() &&
+            context_->GetNodeMap().GetVisibleLeashWindowCount() < MULTI_WINDOW_PERF_START_NUM;
+        if (isNeedSingleFrameCompose) {
+            ForceRefreshForUni();
+        } else {
+            RequestNextVSync();
+        }
+    });
 }
 
 void RSMainThread::RecvRSTransactionData(std::unique_ptr<RSTransactionData>& rsTransactionData)
