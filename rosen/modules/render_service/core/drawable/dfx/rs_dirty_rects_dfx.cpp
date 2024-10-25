@@ -220,7 +220,7 @@ void RSDirtyRectsDfx::DrawCurrentRefreshRate()
     auto rotation = displayParams_->GetScreenRotation();
     // fold device with one logic screen
     if (RSSystemProperties::IsFoldScreenFlag()
-        && (FOLD_SCREEN_TYPE[0] != DUAL_DISPLAY && FOLD_SCREEN_TYPE[0] != DUAL_DISPLAY_FMT)
+        && (FOLD_SCREEN_TYPE[0] != DUAL_DISPLAY && FOLD_SCREEN_TYPE[0] != DUAL_DISPLAY_NEWFMT)
         && screenId == 0) {
         rotation =
             (rotation == ScreenRotation::ROTATION_270 ? ScreenRotation::ROTATION_0
