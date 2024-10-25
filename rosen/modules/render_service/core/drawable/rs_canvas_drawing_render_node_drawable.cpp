@@ -76,10 +76,12 @@ void RSCanvasDrawingRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
 {
     std::unique_lock<std::recursive_mutex> lock(drawableMutex_);
     if (!ShouldPaint()) {
+        SetDrawSkipType("");
         return;
     }
     const auto& params = GetRenderParams();
     if (UNLIKELY(!params)) {
+        SetDrawSkipType("");
         RS_LOGE("RSCanvasDrawingRenderNodeDrawable params is null!");
         return;
     }
@@ -96,6 +98,7 @@ void RSCanvasDrawingRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     auto& uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
     if ((UNLIKELY(!uniParam) || uniParam->IsOpDropped()) && GetOpDropped() &&
         QuickReject(canvas, params->GetLocalDrawRect())) {
+            SetDrawSkipType("");
         return;
     }
 
@@ -111,6 +114,7 @@ void RSCanvasDrawingRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     auto& bounds = params->GetBounds();
     auto surfaceParams = params->GetCanvasDrawingSurfaceParams();
     if (!InitSurface(surfaceParams.width, surfaceParams.height, *paintFilterCanvas)) {
+        SetDrawSkipType("");
         RS_LOGE("Failed to init surface!");
         return;
     }

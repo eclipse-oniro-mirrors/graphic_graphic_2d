@@ -33,12 +33,14 @@ RSRenderNodeDrawable::Ptr RSEffectRenderNodeDrawable::OnGenerate(std::shared_ptr
 void RSEffectRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
 {
     if (!ShouldPaint()) {
+        SetDrawSkipType("");
         return;
     }
 
     RS_LOGD("RSEffectRenderNodeDrawable::OnDraw node: %{public}" PRIu64, nodeId_);
     auto effectParams = static_cast<RSEffectRenderParams*>(GetRenderParams().get());
     if (!effectParams) {
+        SetDrawSkipType("");
         RS_LOGE("RSSurfaceRenderNodeDrawable::OnDraw params is nullptr");
         return;
     }
@@ -49,11 +51,13 @@ void RSEffectRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     auto& uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
     if ((UNLIKELY(!uniParam) || uniParam->IsOpDropped()) && GetOpDropped() &&
         QuickReject(canvas, effectParams->GetLocalDrawRect())) {
+            SetDrawSkipType("");
         return;
     }
     const Drawing::Rect& bounds = effectParams->GetFrameRect();
     
     if (!GenerateEffectDataOnDemand(effectParams, canvas, bounds, paintFilterCanvas)) {
+        SetDrawSkipType("");
         return;
     }
 

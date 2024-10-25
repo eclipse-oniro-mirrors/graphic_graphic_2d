@@ -69,6 +69,11 @@ enum class SkipType : uint8_t {
     SKIP_BACKGROUND_COLOR = 2
 };
 
+enum calss DrawSkipType : uint8_t {
+    NONE = 0,
+    SHOULD_NOT_PAINT = 1
+}
+
 class RSB_EXPORT RSRenderNodeDrawableAdapter : public std::enable_shared_from_this<RSRenderNodeDrawableAdapter> {
 public:
     explicit RSRenderNodeDrawableAdapter(std::shared_ptr<const RSRenderNode>&& node);
@@ -182,6 +187,15 @@ public:
             purgeFunc_();
         }
     }
+
+    void SetDrawSkipType(DrawSkipType type) {
+        drawSkipType_ = type;
+    }
+
+    DrawSkipType GetDrawSkipType() {
+        return drawSkipType_;
+    }
+
 protected:
     // Util functions
     std::string DumpDrawableVec(const std::shared_ptr<RSRenderNode>& renderNode) const;
@@ -259,6 +273,7 @@ private:
     static inline std::mutex cacheMapMutex_;
     SkipType skipType_ = SkipType::NONE;
     int8_t GetSkipIndex() const;
+    DrawSkipType drawSkipType_ = DrawSkipType::NONE;
     static void RemoveDrawableFromCache(const NodeId nodeId);
     void UpdateFilterInfoForNodeGroup(RSPaintFilterCanvas* curCanvas);
     NodeId lastDrawnFilterNodeId_ = 0;
