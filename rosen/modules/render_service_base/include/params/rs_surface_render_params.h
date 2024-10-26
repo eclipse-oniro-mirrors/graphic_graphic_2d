@@ -398,6 +398,16 @@ public:
 
     virtual void OnSync(const std::unique_ptr<RSRenderParams>& target) override;
 
+    void SetRoundedCornerRegion(const Occlusion::Region& roundedCornerRegion)
+    {
+        roundedCornerRegion_ = roundedCornerRegion;
+    }
+
+    const Occlusion::Region& GetRoundedCornerRegion() const
+    {
+        return roundedCornerRegion_;
+    }
+
     // DFX
     std::string ToString() const override;
     // Set/Get OpaqueRegion, currently only used for DFX
@@ -449,6 +459,20 @@ public:
     }
     bool GetFingerprint() override {
         return false;
+    }
+
+    void SetCornerRadiusInfoForDRM(const std::vector<float>& drmCornerRadiusInfo)
+    {
+        if (drmCornerRadiusInfo_ == drmCornerRadiusInfo) {
+            return;
+        }
+        drmCornerRadiusInfo_ = drmCornerRadiusInfo;
+        needSync_ = true;
+    }
+
+    const std::vector<float>& GetCornerRadiusInfoForDRM() const
+    {
+        return drmCornerRadiusInfo_;
     }
 
     void SetSdrNit(int32_t sdrNit)
@@ -523,6 +547,7 @@ private:
     RRect rrect_;
     NodeId uifirstUseStarting_ = INVALID_NODEID;
     Occlusion::Region transparentRegion_;
+    Occlusion::Region roundedCornerRegion_;
     Occlusion::Region opaqueRegion_;
 
     LeashPersistentId leashPersistentId_ = INVALID_LEASH_PERSISTENTID;
@@ -579,6 +604,7 @@ private:
     bool layerCreated_ = false;
     int32_t layerSource_ = 0;
     std::unordered_map<std::string, bool> watermarkHandles_ = {};
+    std::vector<float> drmCornerRadiusInfo_;
 
     Drawing::Matrix totalMatrix_;
     float globalAlpha_ = 1.0f;

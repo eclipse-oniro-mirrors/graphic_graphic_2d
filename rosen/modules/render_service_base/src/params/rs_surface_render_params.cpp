@@ -480,6 +480,7 @@ void RSSurfaceRenderParams::OnSync(const std::unique_ptr<RSRenderParams>& target
     targetSurfaceParams->isSkipLayer_ = isSkipLayer_;
     targetSurfaceParams->isSnapshotSkipLayer_ = isSnapshotSkipLayer_;
     targetSurfaceParams->isProtectedLayer_ = isProtectedLayer_;
+    targetSurfaceParams->drmCornerRadiusInfo_ = drmCornerRadiusInfo_;
     targetSurfaceParams->animateState_ = animateState_;
     targetSurfaceParams->isRotating_ = isRotating_;
     targetSurfaceParams->skipLayerIds_= skipLayerIds_;
@@ -503,6 +504,7 @@ void RSSurfaceRenderParams::OnSync(const std::unique_ptr<RSRenderParams>& target
     targetSurfaceParams->needHidePrivacyContent_ = needHidePrivacyContent_;
     targetSurfaceParams->isLeashWindowVisibleRegionEmpty_ = isLeashWindowVisibleRegionEmpty_;
     targetSurfaceParams->opaqueRegion_ = opaqueRegion_;
+    targetSurfaceParams->roundedCornerRegion_ = roundedCornerRegion_;
     targetSurfaceParams->scalingMode_ = scalingMode_;
     targetSurfaceParams->needOffscreen_ = needOffscreen_;
     targetSurfaceParams->layerSource_ = layerSource_;

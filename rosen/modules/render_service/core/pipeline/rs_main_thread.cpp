@@ -49,6 +49,7 @@
 #include "common/rs_background_thread.h"
 #include "common/rs_common_def.h"
 #include "common/rs_optional_trace.h"
+#include "common/rs_vector4.h"
 #include "drawable/rs_canvas_drawing_render_node_drawable.h"
 #include "info_collection/rs_gpu_dirty_region_collection.h"
 #include "luminance/rs_luminance_control.h"
@@ -83,6 +84,7 @@
 #include "pipeline/rs_render_node_gc.h"
 #include "pipeline/rs_uifirst_manager.h"
 #include "pipeline/sk_resource_manager.h"
+#include "pipeline/rs_pointer_drawing_manager.h"
 #ifdef OHOS_BUILD_ENABLE_MAGICCURSOR
 #include "pipeline/magic_pointer_render/rs_magic_pointer_render_manager.h"
 #endif
@@ -196,6 +198,13 @@ const std::map<int, int32_t> BLUR_CNT_TO_BLUR_CODE {
     { 2, 10022 },
     { 3, 10023 },
 };
+
+static int64_t SystemTime()
+{
+    timespec t = {};
+    clock_gettime(CLOCK_MONOTONIC, &t);
+    return int64_t(t.tv_sec) * 1000000000LL + t.tv_nsec; // 1000000000ns == 1s
+}
 
 bool Compare(const std::unique_ptr<RSTransactionData>& data1, const std::unique_ptr<RSTransactionData>& data2)
 {
@@ -498,6 +507,10 @@ void RSMainThread::Init()
     }
     Drawing::DrawSurfaceBufferOpItem::RegisterSurfaceBufferCallback(
         RSSurfaceBufferCallbackManager::Instance().GetSurfaceBufferOpItemCallback());
+
+    RSSurfaceBufferCallbackManager::Instance().SetRunPolicy([](auto task) {
+        RSHardwareThread::Instance().PostTask(task);
+    });
 
     if (RSGraphicConfig::LoadConfigXml()) {
         if (RSGraphicConfig::GetConfig().IsMap()) {
@@ -1971,7 +1984,11 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
     auto uniVisitor = std::make_shared<RSUniRenderVisitor>();
     uniVisitor->SetAppWindowNum(appWindowNum_);
     uniVisitor->SetProcessorRenderEngine(GetRenderEngine());
-    rsVsyncRateReduceManager_.ResetFrameValues(rsVSyncDistributor_->GetRefreshRate());
+    int64_t rsPeriod = 0;
+    if (receiver_) {
+        receiver_->GetVSyncPeriod(rsPeriod);
+    }
+    rsVsyncRateReduceManager_.ResetFrameValues(impl::CalculateRefreshRate(rsPeriod));
 
     if (isHardwareForcedDisabled_) {
         uniVisitor->MarkHardwareForcedDisabled();
@@ -1983,8 +2000,9 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
     RSUniRenderThread::Instance().PostTask([ids = context_->GetMutableNodeMap().GetAndClearPurgeableNodeIds()] {
         RSUniRenderThread::Instance().ResetClearMemoryTask(std::move(ids));
     });
+    bool pointerSkip = !RSPointerDrawingManager::Instance().IsPointerCanSkipFrameCompareChange(false, true);
     if (doDirectComposition_ && !isDirty_ && !isAccessibilityConfigChanged_
-        && !isCachedSurfaceUpdated_) {
+        && !isCachedSurfaceUpdated_ && pointerSkip) {
         doDirectComposition_ = isHardwareEnabledBufferUpdated_;
         if (isHardwareEnabledBufferUpdated_) {
             needTraverseNodeTree = !DoDirectComposition(rootNode, !isLastFrameDirectComposition_);
@@ -2013,6 +2031,7 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
     isCachedSurfaceUpdated_ = false;
     if (needTraverseNodeTree) {
         RSUifirstManager::Instance().ProcessForceUpdateNode();
+        RSPointerDrawingManager::Instance().UpdatePointerInfo();
         doDirectComposition_ = false;
         uniVisitor->SetAnimateState(doWindowAnimate_);
         uniVisitor->SetDirtyFlag(isDirty_ || isAccessibilityConfigChanged_ || forceUIFirstChanged_);
@@ -2167,6 +2186,9 @@ void RSMainThread::Render()
     if (isUniRender_) {
         auto& hgmCore = OHOS::Rosen::HgmCore::Instance();
         renderThreadParams_->SetTimestamp(hgmCore.GetCurrentTimestamp());
+        renderThreadParams_->SetActualTimestamp(hgmCore.GetActualTimestamp());
+        renderThreadParams_->SetVsyncId(hgmCore.GetVsyncId());
+        renderThreadParams_->SetForceRefreshFlag(isForceRefresh_);
         renderThreadParams_->SetRequestNextVsyncFlag(needRequestNextVsyncAnimate_);
         renderThreadParams_->SetPendingScreenRefreshRate(hgmCore.GetPendingScreenRefreshRate());
         renderThreadParams_->SetPendingConstraintRelativeTime(hgmCore.GetPendingConstraintRelativeTime());
@@ -2175,6 +2197,10 @@ void RSMainThread::Render()
         renderThreadParams_->SetCacheEnabledForRotation(RSSystemProperties::GetCacheEnabledForRotation());
         renderThreadParams_->SetUIFirstCurrentFrameCanSkipFirstWait(
             RSUifirstManager::Instance().GetCurrentFrameSkipFirstWait());
+        // If use DoDirectComposition, we do not sync renderThreadParams,
+        // so we use hgmCore to keep force refresh flag, then reset flag.
+        hgmCore.SetForceRefreshFlag(isForceRefresh_);
+        isForceRefresh_ = false;
     }
     if (RSSystemProperties::GetRenderNodeTraceEnabled()) {
         RSPropertyTrace::GetInstance().RefreshNodeTraceInfo();
@@ -2703,6 +2729,7 @@ void RSMainThread::ProcessScreenHotPlugEvents()
 void RSMainThread::OnVsync(uint64_t timestamp, uint64_t frameCount, void* data)
 {
     isOnVsync_.store(true);
+    SetFrameInfo(frameCount);
     const int64_t onVsyncStartTime = GetCurrentSystimeMs();
     const int64_t onVsyncStartTimeSteady = GetCurrentSteadyTimeMs();
     const float onVsyncStartTimeSteadyFloat = GetCurrentSteadyTimeMsFloat();
@@ -2929,17 +2956,6 @@ bool RSMainThread::IsNeedProcessBySingleFrameComposer(std::unique_ptr<RSTransact
         return false;
     }
 
-    // animation node will call RequestNextVsync() in mainLoop_, here we simply ignore animation scenario
-    if (!context_->animatingNodeList_.empty()) {
-        return false;
-    }
-
-    // ignore mult-window scenario
-    auto currentVisibleLeashWindowCount = context_->GetNodeMap().GetVisibleLeashWindowCount();
-    if (currentVisibleLeashWindowCount >= MULTI_WINDOW_PERF_START_NUM) {
-        return false;
-    }
-
     return true;
 }
 
@@ -2955,21 +2971,25 @@ void RSMainThread::ProcessDataBySingleFrameComposer(std::unique_ptr<RSTransactio
         rsTransactionData->ProcessBySingleFrameComposer(*context_);
     }
 
-    RecvAndProcessRSTransactionDataImmediately(rsTransactionData);
-}
-
-void RSMainThread::RecvAndProcessRSTransactionDataImmediately(std::unique_ptr<RSTransactionData>& rsTransactionData)
-{
-    if (!rsTransactionData || !isUniRender_) {
-        return;
-    }
-    RS_TRACE_NAME("ProcessBySingleFrameComposer");
     {
         std::lock_guard<std::mutex> lock(transitionDataMutex_);
         RSTransactionMetricCollector::GetInstance().Collect(rsTransactionData);
         cachedTransactionDataMap_[rsTransactionData->GetSendingPid()].emplace_back(std::move(rsTransactionData));
     }
-    ForceRefreshForUni();
+    PostTask([this]() {
+        if (!context_) {
+            return;
+        }
+        // animation node will call RequestNextVsync() in mainLoop_, here we simply ignore animation scenario
+        // and also ignore mult-window scenario
+        bool isNeedSingleFrameCompose = context_->GetAnimatingNodeList().empty() &&
+            context_->GetNodeMap().GetVisibleLeashWindowCount() < MULTI_WINDOW_PERF_START_NUM;
+        if (isNeedSingleFrameCompose) {
+            ForceRefreshForUni();
+        } else {
+            RequestNextVSync();
+        }
+    });
 }
 
 void RSMainThread::RecvRSTransactionData(std::unique_ptr<RSTransactionData>& rsTransactionData)
@@ -3631,6 +3651,9 @@ void RSMainThread::ForceRefreshForUni()
             RS_PROFILER_PATCH_TIME(now);
             timestamp_ = timestamp_ + (now - curTime_);
             curTime_ = now;
+            isForceRefresh_ = true;
+            // Not triggered by vsync, so we set frameCount to 0.
+            SetFrameInfo(0);
             RS_TRACE_NAME("RSMainThread::ForceRefreshForUni timestamp:" + std::to_string(timestamp_));
             mainLoop_();
         });
@@ -4025,7 +4048,6 @@ void RSMainThread::UpdateDisplayNodeScreenId()
     }
 }
 
-const uint32_t UIFIRST_MINIMUM_NODE_NUMBER = 4; // minimum window number(4) for enabling UIFirst
 const uint32_t FOLD_DEVICE_SCREEN_NUMBER = 2; // alt device has two screens
 
 void RSMainThread::UpdateUIFirstSwitch()
@@ -4054,10 +4076,7 @@ void RSMainThread::UpdateUIFirstSwitch()
         RSUifirstManager::Instance().SetUiFirstSwitch(isUiFirstOn_);
         return;
     }
-    isUiFirstOn_ = false;
-    uint32_t LeashWindowCount = 0;
-    displayNode->CollectSurfaceForUIFirstSwitch(LeashWindowCount, UIFIRST_MINIMUM_NODE_NUMBER);
-    isUiFirstOn_ = RSSystemProperties::GetUIFirstEnabled() && LeashWindowCount >=  UIFIRST_MINIMUM_NODE_NUMBER;
+    isUiFirstOn_ = RSSystemProperties::GetUIFirstEnabled();
     RSUifirstManager::Instance().SetUiFirstSwitch(isUiFirstOn_);
 }
 
@@ -4337,6 +4356,15 @@ void RSMainThread::ConfigureRenderService()
 uint64_t RSMainThread::GetRealTimeOffsetOfDvsync(int64_t time)
 {
     return rsVSyncDistributor_->GetRealTimeOffsetOfDvsync(time);
+}
+
+void RSMainThread::SetFrameInfo(uint64_t frameCount)
+{
+    // use the same function as vsync to get current time
+    int64_t currentTimestamp = SystemTime();
+    auto &hgmCore = HgmCore::Instance();
+    hgmCore.SetActualTimestamp(currentTimestamp);
+    hgmCore.SetVsyncId(frameCount);
 }
 
 bool RSMainThread::IsBlurSwitchOpen() const

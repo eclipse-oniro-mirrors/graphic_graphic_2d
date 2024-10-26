@@ -768,6 +768,16 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             TakeSurfaceCapture(id, cb, captureConfig, permissions);
             break;
         }
+        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_POINTER_POSITION): {
+            NodeId id = data.ReadUint64();
+            RS_PROFILER_PATCH_NODE_ID(data, id);
+            float positionX = data.ReadFloat();
+            float positionY = data.ReadFloat();
+            float positionZ = data.ReadFloat();
+            float positionW = data.ReadFloat();
+            SetHwcNodeBounds(id, positionX, positionY, positionZ, positionW);
+            break;
+        }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REGISTER_APPLICATION_AGENT): {
             auto pid = data.ReadInt32();
             RS_PROFILER_PATCH_PID(data, pid);
@@ -1553,7 +1563,8 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             }
             auto isEnabled = data.ReadBool();
             auto selfDrawingType = static_cast<SelfDrawingNodeType>(data.ReadUint8());
-            SetHardwareEnabled(id, isEnabled, selfDrawingType);
+            auto dynamicHardwareEnable = data.ReadBool();
+            SetHardwareEnabled(id, isEnabled, selfDrawingType, dynamicHardwareEnable);
             break;
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_HIDE_PRIVACY_CONTENT) : {

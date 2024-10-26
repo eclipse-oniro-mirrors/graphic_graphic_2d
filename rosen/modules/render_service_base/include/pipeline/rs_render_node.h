@@ -102,7 +102,6 @@ public:
                                 std::vector<RSRenderNode::SharedPtr>& vec,
                                 bool isUniRender,
                                 bool onlyFirstLevel);
-    virtual void CollectSurfaceForUIFirstSwitch(uint32_t& leashWindowCount, uint32_t minNodeNum);
     virtual void QuickPrepare(const std::shared_ptr<RSNodeVisitor>& visitor);
     void PrepareSelfNodeForApplyModifiers();
     void PrepareChildrenForApplyModifiers();
@@ -1085,6 +1084,7 @@ private:
     friend class RSAliasDrawable;
     friend class RSContext;
     friend class RSMainThread;
+    friend class RSPointerDrawingManager;
     friend class RSModifierDrawable;
     friend class RSProxyRenderNode;
     friend class RSRenderNodeMap;
