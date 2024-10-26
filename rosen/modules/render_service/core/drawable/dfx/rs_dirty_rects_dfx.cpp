@@ -225,6 +225,12 @@ void RSDirtyRectsDfx::DrawCurrentRefreshRate()
             (rotation == ScreenRotation::ROTATION_270 ? ScreenRotation::ROTATION_0
                                                       : static_cast<ScreenRotation>(static_cast<int>(rotation) + 1));
     }
+    // fold device with new format
+    if (RSSystemProperties::IsFoldScreenFlag() && FOLD_SCREEN_TYPE[0] == DUAL_DISPLAY_NEWFMT && screenId != 0) {
+        rotation =
+            (rotation == ScreenRotation::ROTATION_0 ? ScreenRotation::ROTATION_270
+                                                      : static_cast<ScreenRotation>(static_cast<int>(rotation) - 1));
+    }
     auto saveCount = canvas_->Save();
     if (!RefreshRateRotationProcess(rotation, screenId)) {
         return;
