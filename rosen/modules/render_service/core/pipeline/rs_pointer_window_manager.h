@@ -59,16 +59,10 @@ public:
         hardCursorDrawables_.id = INVALID_NODEID;
         hardCursorDrawables_.drawablePtr = nullptr;
     }
-
-    bool CheckIsHardCursor() const;
-    bool HasMirrorDisplay() const;
-    bool HasVirtualDisplay() const;
-
 private:
     bool isNeedForceCommitByPointer_{ false };
     HardCursorInfo hardCursorDrawables_;
 };
 } // namespace Rosen
 } // namespace OHOS
-
 #endif // RENDER_SERVICE_CORE_PIPELINE_RS_POINTER_WINDOW_MANAGER_H
