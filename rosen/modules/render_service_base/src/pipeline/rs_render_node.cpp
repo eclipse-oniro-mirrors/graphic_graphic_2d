@@ -1800,21 +1800,23 @@ void RSRenderNode::MapAndUpdateChildrenRect()
     // node with sharedTransitionParam should recalculate childRelativeToParentMatrix from absMatrix due to sandbox.
     if (auto parentNode = parent_.lock()) {
         const auto& parentProperties = parentNode->GetRenderProperties();
-        const auto& sandbox = GetRenderProperties().GetSandBox();
-        RectI childRectMapped;
-        if (LIKELY(!sandbox.has_value())) {
-            childRectMapped = geoPtr->MapRect(childRect, geoPtr->GetMatrix());
-        } else {
-            Drawing::Matrix invertAbsParentMatrix;
-            const auto& parentGeoPtr = parentProperties.GetBoundsGeometry();
-            if (parentGeoPtr && parentGeoPtr->GetAbsMatrix().Invert(invertAbsParentMatrix)) {
-                auto childRelativeToParentMatrix = geoPtr->GetAbsMatrix();
-                childRelativeToParentMatrix.PostConcat(invertAbsParentMatrix);
-                childRectMapped = geoPtr->MapRect(childRect, childRelativeToParentMatrix);
+        auto childRectMapped = [&]() {
+            const auto& sandbox = GetRenderProperties().GetSandBox();
+            if (LIKELY(!sandbox.has_value())) {
+                return geoPtr->MapRect(childRect, geoPtr->GetMatrix());
             } else {
-                childRectMapped = geoPtr->MapRect(childRect, geoPtr->GetMatrix());
+                Drawing::Matrix invertAbsParentMatrix;
+                const auto& parentGeoPtr = parentProperties.GetBoundsGeometry();
+                if (parentGeoPtr && parentGeoPtr->GetAbsMatrix().Invert(invertAbsParentMatrix)) {
+                    auto childRelativeToParentMatrix = geoPtr->GetAbsMatrix();
+                    childRelativeToParentMatrix.PostConcat(invertAbsParentMatrix);
+                    return geoPtr->MapRect(childRect, childRelativeToParentMatrix);
+                } else {
+                    return geoPtr->MapRect(childRect, geoPtr->GetMatrix());
+                }
             }
-        }
+        } ();
+
         if (parentProperties.GetClipToBounds() || parentProperties.GetClipToFrame()) {
             childRectMapped = parentNode->GetSelfDrawRect().ConvertTo<int>().IntersectRect(childRectMapped);
         }
