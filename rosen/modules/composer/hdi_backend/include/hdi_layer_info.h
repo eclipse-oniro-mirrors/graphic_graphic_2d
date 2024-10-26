@@ -178,6 +178,16 @@ public:
         layerColor_ = layerColor;
     }
 
+    void SetBackgroundColor(GraphicLayerColor backgroundColor)
+    {
+        backgroundColor_ = backgroundColor;
+    }
+
+    void SetCornerRadiusInfoForDRM(const std::vector<float>& drmCornerRadiusInfo)
+    {
+        drmCornerRadiusInfo_ = drmCornerRadiusInfo;
+    }
+
     void SetColorTransform(const std::vector<float> &matrix)
     {
         colorTransformMatrix_ = matrix;
@@ -351,6 +361,16 @@ public:
     GraphicLayerColor GetLayerColor() const
     {
         return layerColor_;
+    }
+
+    GraphicLayerColor GetBackgroundColor() const
+    {
+        return backgroundColor_;
+    }
+
+    const std::vector<float>& GetCornerRadiusInfoForDRM() const
+    {
+        return drmCornerRadiusInfo_;
     }
 
     std::vector<GraphicHDRMetaData> &GetMetaData()
@@ -581,6 +601,7 @@ private:
     GraphicBlendType blendType_;
     std::vector<float> colorTransformMatrix_;
     GraphicLayerColor layerColor_;
+    GraphicLayerColor backgroundColor_;
     GraphicColorDataSpace colorSpace_ = GraphicColorDataSpace::GRAPHIC_COLOR_DATA_SPACE_UNKNOWN;
     std::vector<GraphicHDRMetaData> metaData_;
     GraphicHDRMetaDataSet metaDataSet_;
@@ -605,6 +626,7 @@ private:
     int32_t layerSource_ = 0; // default layer source tag
     bool rotationFixed_ = false;
     bool arsrTag_ = true;
+    std::vector<float> drmCornerRadiusInfo_;
 };
 } // namespace Rosen
 } // namespace OHOS
