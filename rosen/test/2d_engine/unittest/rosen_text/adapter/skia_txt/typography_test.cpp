@@ -243,7 +243,6 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyTest009, TestSize.Level
 {
     double maxWidth = 50;
     OHOS::Rosen::TypographyStyle typographyStyle;
-    auto textStyle = typographyStyle.GetTextStyle();
     std::shared_ptr<OHOS::Rosen::FontCollection> fontCollection =
         OHOS::Rosen::FontCollection::From(std::make_shared<txt::FontCollection>());
     std::unique_ptr<OHOS::Rosen::TypographyCreate> typographyCreate =
