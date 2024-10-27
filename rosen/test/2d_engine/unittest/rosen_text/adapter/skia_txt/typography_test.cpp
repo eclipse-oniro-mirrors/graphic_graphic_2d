@@ -291,5 +291,5 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyTest009, TestSize.Level
     ASSERT_EQ(range3, Boundary(2, 14));
     typography2->GetEllipsisTextRange();
 }
-}// namespace Rosen
+} // namespace Rosen
 } // namespace OHOS
