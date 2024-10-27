@@ -275,7 +275,7 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyTest009, TestSize.Level
     Boundary range2 = typography1->GetEllipsisTextRange();
     ASSERT_EQ(range2, Boundary(5, 16));
 
-    //For branch coverage
+    // For branch coverage
     OHOS::Rosen::TypographyStyle typographyStyle2;
     typographyStyle2.maxLines = 1;
     typographyStyle2.ellipsis = ellipsisStr;
