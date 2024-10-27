@@ -265,7 +265,6 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyTest009, TestSize.Level
     typographyStyle1.maxLines = 1;
     std::u16string ellipsisStr = TypographyStyle::ELLIPSIS;
     typographyStyle1.ellipsis = ellipsisStr;
-    auto textStyle = typographyStyle.GetTextStyle();
     std::unique_ptr<OHOS::Rosen::TypographyCreate> typographyCreate1 =
         OHOS::Rosen::TypographyCreate::Create(typographyStyle1, fontCollection);
     std::u16string text1 = u"text is too long";
@@ -282,7 +281,6 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyTest009, TestSize.Level
     typographyStyle2.maxLines = 1;
     typographyStyle2.ellipsis = ellipsisStr;
     typographyStyle2.ellipsisModal = EllipsisModal::MIDDLE;
-    auto textStyle = typographyStyle.GetTextStyle();
     std::unique_ptr<OHOS::Rosen::TypographyCreate> typographyCreate2 =
         OHOS::Rosen::TypographyCreate::Create(typographyStyle2, fontCollection);
     typographyCreate2->AppendText(text1);
