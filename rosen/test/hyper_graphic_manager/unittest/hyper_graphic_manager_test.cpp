@@ -654,21 +654,8 @@ HWTEST_F(HyperGraphicManagerTest, TestAbnormalCase, Function | SmallTest | Level
 HWTEST_F(HyperGraphicManagerTest, SetActualTimestamp, Function | SmallTest | Level2)
 {
     auto &hgmCore = HgmCore::Instance();
-    uint64_t timestamp = 1700;
-    hgmCore.SetActualTimestamp(timestamp);
-    EXPECT_EQ(hgmCore.actualTimestamp_ == timestamp, true);
-}
-
-/**
- * @tc.name: GetActualTimestamp
- * @tc.desc: Verify the result of GetActualTimestamp function
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(HyperGraphicManagerTest, GetActualTimestamp, Function | SmallTest | Level2)
-{
-    auto &hgmCore = HgmCore::Instance();
-    uint64_t timestamp = 1800;
+    EXPECT_NE(hgmCore, nullptr);
+    int64_t timestamp = 1700;
     hgmCore.SetActualTimestamp(timestamp);
     EXPECT_EQ(hgmCore.GetActualTimestamp() == timestamp, true);
 }
@@ -682,21 +669,8 @@ HWTEST_F(HyperGraphicManagerTest, GetActualTimestamp, Function | SmallTest | Lev
 HWTEST_F(HyperGraphicManagerTest, SetVsyncId, Function | SmallTest | Level2)
 {
     auto &hgmCore = HgmCore::Instance();
-    uint64_t vsyncId = 1900;
-    hgmCore.SetVsyncId(vsyncId);
-    EXPECT_EQ(hgmCore.vsyncId_ == vsyncId, true);
-}
-
-/**
- * @tc.name: GetVsyncId
- * @tc.desc: Verify the result of GetVsyncId function
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(HyperGraphicManagerTest, GetVsyncId, Function | SmallTest | Level2)
-{
-    auto &hgmCore = HgmCore::Instance();
-    uint64_t vsyncId = 1900;
+    EXPECT_NE(hgmCore, nullptr);
+    uint64_t vsyncId = 1800;
     hgmCore.SetVsyncId(vsyncId);
     EXPECT_EQ(hgmCore.GetVsyncId() == vsyncId, true);
 }
@@ -710,20 +684,7 @@ HWTEST_F(HyperGraphicManagerTest, GetVsyncId, Function | SmallTest | Level2)
 HWTEST_F(HyperGraphicManagerTest, SetForceRefreshFlag, Function | SmallTest | Level2)
 {
     auto &hgmCore = HgmCore::Instance();
-    bool isForceRefresh = false;
-    hgmCore.SetForceRefreshFlag(isForceRefresh);
-    EXPECT_EQ(hgmCore.isForceRefresh_ == isForceRefresh, true);
-}
-
-/**
- * @tc.name: GetForceRefreshFlag
- * @tc.desc: Verify the result of GetForceRefreshFlag function
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(HyperGraphicManagerTest, GetForceRefreshFlag, Function | SmallTest | Level2)
-{
-    auto &hgmCore = HgmCore::Instance();
+    EXPECT_NE(hgmCore, nullptr);
     bool isForceRefresh = false;
     hgmCore.SetForceRefreshFlag(isForceRefresh);
     EXPECT_EQ(hgmCore.GetForceRefreshFlag() == isForceRefresh, true);
