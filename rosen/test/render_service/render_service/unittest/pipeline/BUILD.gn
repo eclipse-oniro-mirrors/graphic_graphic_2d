@@ -688,10 +688,7 @@ ohos_unittest("RSHardwareThreadTest") {
     "mock/mock_hdi_device.cpp",
     "rs_hardware_thread_test.cpp",
   ]
-  deps = [
-    "$graphic_2d_root/rosen/modules/hyper_graphic_manager:libhyper_graphic_manager",
-    ":rs_test_common",
-  ]
+  deps = [":rs_test_common",]
   external_deps = [
     "c_utils:utils",
     "hilog:libhilog",
