@@ -115,7 +115,7 @@ public:
     }
     const std::unique_ptr<RSRenderThreadParams>& GetRSRenderThreadParams() const
     {
-        return renderParamsManager_.GetRSRenderThreadParams();
+        return RSRenderThreadParamsManager::Instance().GetRSRenderThreadParams();
     }
 
     void RenderServiceTreeDump(std::string& dumpString);
@@ -201,8 +201,6 @@ private:
     std::shared_ptr<RSContext> context_;
     std::shared_ptr<DrawableV2::RSRenderNodeDrawable> rootNodeDrawable_;
     std::vector<NodeId> curDrawStatusVec_;
-
-    RSRenderThreadParamsManager renderParamsManager_;
 
     // used for blocking renderThread before displayNode has no freed buffer to request
     mutable std::mutex displayNodeBufferReleasedMutex_;
