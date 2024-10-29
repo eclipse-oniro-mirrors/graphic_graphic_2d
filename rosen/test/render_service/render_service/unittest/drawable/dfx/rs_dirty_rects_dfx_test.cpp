@@ -94,7 +94,7 @@ HWTEST_F(RSDirtyRectsDFXTest, OnDraw, TestSize.Level1)
 {
     ASSERT_NE(rsDirtyRectsDfx_, nullptr);
     std::shared_ptr<RSPaintFilterCanvas> canvas = nullptr;
-    rsDirtyRectsDfx_->OnDraw(canvas);
+    rsDirtyRectsDfx_->OnDraw(*canvas_);
     ASSERT_NE(canvas_, nullptr);
     rsDirtyRectsDfx_->OnDraw(*canvas_);
 
@@ -212,7 +212,7 @@ HWTEST_F(RSDirtyRectsDFXTest, DrawAllSurfaceOpaqueRegionForDFX, TestSize.Level1)
 HWTEST_F(RSDirtyRectsDFXTest, DrawTargetSurfaceDirtyRegionForDFX, TestSize.Level1)
 {
     ASSERT_NE(rsDirtyRectsDfx_, nullptr);
-    rsDirtyRectsDfx_->DrawTargetSurfaceDirtyRegionForDFX(*canvas);
+    rsDirtyRectsDfx_->DrawTargetSurfaceDirtyRegionForDFX(*canvas_);
     ASSERT_NE(rsDirtyRectsDfx_->targetDrawable_.GetRenderParams(), nullptr);
 }
 
@@ -225,7 +225,7 @@ HWTEST_F(RSDirtyRectsDFXTest, DrawTargetSurfaceDirtyRegionForDFX, TestSize.Level
 HWTEST_F(RSDirtyRectsDFXTest, DrawTargetSurfaceVisibleRegionForDFX, TestSize.Level1)
 {
     ASSERT_NE(rsDirtyRectsDfx_, nullptr);
-    rsDirtyRectsDfx_->DrawTargetSurfaceVisibleRegionForDFX(*canvas);
+    rsDirtyRectsDfx_->DrawTargetSurfaceVisibleRegionForDFX(*canvas_);
 }
 
 /**
@@ -273,20 +273,19 @@ HWTEST_F(RSDirtyRectsDFXTest, DrawDirtyRectForDFX, TestSize.Level1)
     RectI dirtyRect(1, 1, 1, 1);
     Drawing::Color color;
     RSDirtyRectsDfx::RSPaintStyle fillType = RSDirtyRectsDfx::RSPaintStyle::STROKE;
-    float alpha = 1.f;
     int edgeWidth = 1;
     auto drawingCanvas = std::make_unique<Drawing::Canvas>();
     canvas_ = std::make_shared<RSPaintFilterCanvas>(drawingCanvas.get());
-    rsDirtyRectsDfx_->DrawDirtyRectForDFX(*canvas_, dirtyRect, color, fillType, alpha, edgeWidth);
+    rsDirtyRectsDfx_->DrawDirtyRectForDFX(*canvas_, dirtyRect, color, fillType, edgeWidth);
     ASSERT_TRUE(rsDirtyRectsDfx_->displayParams_);
 
     fillType = RSDirtyRectsDfx::RSPaintStyle::FILL;
-    rsDirtyRectsDfx_->DrawDirtyRectForDFX(*canvas_, dirtyRect, color, fillType, alpha, edgeWidth);
+    rsDirtyRectsDfx_->DrawDirtyRectForDFX(*canvas_, dirtyRect, color, fillType, edgeWidth);
     dirtyRect.height_ = 0;
-    rsDirtyRectsDfx_->DrawDirtyRectForDFX(*canvas_, dirtyRect, color, fillType, alpha, edgeWidth);
+    rsDirtyRectsDfx_->DrawDirtyRectForDFX(*canvas_, dirtyRect, color, fillType, edgeWidth);
     dirtyRect.width_ = 0;
-    rsDirtyRectsDfx_->DrawDirtyRectForDFX(*canvas_, dirtyRect, color, fillType, alpha, edgeWidth);
-    ASSERT_TRUE(rsDirtyRectsDfx_->canvas_);
+    rsDirtyRectsDfx_->DrawDirtyRectForDFX(*canvas_, dirtyRect, color, fillType, edgeWidth);
+    ASSERT_TRUE(canvas_);
 }
 
 /**
