@@ -998,7 +998,6 @@ void RSDisplayRenderNodeDrawable::DrawMirror(RSDisplayRenderParams& params,
     }
     // for HDR
     curCanvas_->SetCapture(true);
-    curCanvas_->Clear(Drawing::Color::COLOR_BLACK);
     curCanvas_->SetDisableFilterCache(true);
     auto mirroedDisplayParams = static_cast<RSDisplayRenderParams*>(mirroredParams.get());
     auto hasSecSurface = mirroedDisplayParams->GetDisplayHasSecSurface();
@@ -1022,6 +1021,10 @@ void RSDisplayRenderNodeDrawable::DrawMirror(RSDisplayRenderParams& params,
         std::vector<RectI> emptyRects = {};
         virtualProcesser->SetRoiRegionToCodec(emptyRects);
     }
+    // Clean up the content of the previous frame
+    curCanvas_->Clear(Drawing::Color::COLOR_TRANSPARENT);
+    virtualProcesser->CanvasClipRegionForUniscaleMode();
+    curCanvas_->ConcatMatrix(mirroredParams->GetMatrix());
 
     // set mirror screen capture param
     // Don't need to scale here since the canvas has been switched from mirror frame to offscreen
@@ -1065,6 +1068,9 @@ void RSDisplayRenderNodeDrawable::DrawMirrorCopy(
         RS_LOGE("RSDisplayRenderNodeDrawable::DrawMirrorCopy failed to get canvas.");
         return;
     }
+    // Clean up the content of the previous frame
+    curCanvas_->Clear(Drawing::Color::COLOR_TRANSPARENT);
+    virtualProcesser->CanvasClipRegionForUniscaleMode();
     RSUniRenderThread::SetCaptureParam(CaptureParam(false, false, true, 1.0f, 1.0f));
     mirrorDrawable.DrawHardwareEnabledNodesMissedInCacheImage(*curCanvas_);
     if (cacheImage && RSSystemProperties::GetDrawMirrorCacheImageEnabled()) {
