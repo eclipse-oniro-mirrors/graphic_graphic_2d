@@ -73,7 +73,7 @@ namespace OHOS {
         sptr<Rosen::VSyncConnection> conn = new Rosen::VSyncConnection(vsyncDistributor, "Fuzz");
         vsyncDistributor->SetVSyncRate(rate, conn);
         vsyncDistributor->SetNativeDVSyncSwitch(nativeDVSyncSwitch, conn);
-        vsyncDistributor->SetUiDvsyncSwitch(uiDVSyncSwitch);
+        vsyncDistributor->SetUiDvsyncSwitch(uiDVSyncSwitch, conn);
         vsyncDistributor->SetUiDvsyncConfig(bufferCount);
         vsyncDistributor->SetHighPriorityVSyncRate(highPriorityRate, conn);
 
