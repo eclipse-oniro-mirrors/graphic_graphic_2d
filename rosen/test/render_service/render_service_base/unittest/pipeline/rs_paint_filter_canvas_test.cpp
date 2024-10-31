@@ -1618,5 +1618,23 @@ HWTEST_F(RSPaintFilterCanvasTest, DirtyRegionTest, TestSize.Level1)
     filterCanvas->PopDirtyRegion();
     EXPECT_TRUE(filterCanvas->dirtyRegionStack_.empty());
 }
+
+/**
+ * @tc.name: BehindWindowDataTest
+ * @tc.desc: SetBehindWindowData and GetBehindWindowData
+ * @tc.type: FUNC
+ * @tc.require: issueIB0UQV
+ */
+HWTEST_F(RSPaintFilterCanvasTest, BehindWindowDataTest, TestSize.Level1)
+{
+    RSPaintFilterCanvas::Env env;
+    paintFilterCanvas_->envStack_.push(env);
+    auto data = std::make_shared<RSPaintFilterCanvas::CachedEffectData>();
+    data->cachedImage_ = std::make_shared<Drawing::Image>();
+    paintFilterCanvas_->SetBehindWindowData(data);
+    ASSERT_NE(paintFilterCanvas_->envStack_.top().behindWindowData_, nullptr);
+    ASSERT_NE(paintFilterCanvas_->GetBehindWindowData(), nullptr);
+    EXPECT_TRUE(EnvStackClear());
+}
 } // namespace Rosen
 } // namespace OHOS
