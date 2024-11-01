@@ -232,6 +232,7 @@ void RSRenderNode::AddChild(SharedPtr child, int index)
     }
     
     if (RS_PROFILER_PROCESS_ADD_CHILD(this, child, index)) {
+        RS_LOGI("Add child: blocked during replay");
         return;
     }
 
