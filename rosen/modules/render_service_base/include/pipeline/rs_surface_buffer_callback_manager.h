@@ -34,6 +34,7 @@ class RSB_EXPORT RSSurfaceBufferCallbackManager {
 public:
     struct VSyncFuncs {
         std::function<void()> requestNextVsync;
+        std::function<bool()> isRequestedNextVSync;
     };
 
     void RegisterSurfaceBufferCallback(pid_t pid, uint64_t uid,
@@ -61,6 +62,8 @@ private:
     void EnqueueSurfaceBufferId(pid_t pid, uint64_t uid, uint32_t surfaceBufferId);
     void OnSurfaceBufferOpItemDestruct(pid_t pid, uint64_t uid, uint32_t surfaceBufferId);
     void RunSurfaceBufferCallback();
+
+    void RequestNextVSync();
 
     std::map<std::pair<pid_t, uint64_t>, sptr<RSISurfaceBufferCallback>>
         surfaceBufferCallbacks_;

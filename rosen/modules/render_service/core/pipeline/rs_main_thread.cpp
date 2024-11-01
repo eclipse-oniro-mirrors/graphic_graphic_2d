@@ -515,6 +515,9 @@ void RSMainThread::Init()
         .requestNextVsync = []() {
             RSMainThread::Instance()->RequestNextVSync();
         },
+        .isRequestedNextVSync = []() {
+            return RSMainThread::Instance()->IsRequestedNextVSync();
+        },
     });
 
     if (RSGraphicConfig::LoadConfigXml()) {

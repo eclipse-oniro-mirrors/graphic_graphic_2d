@@ -123,6 +123,15 @@ void RSSurfaceBufferCallbackManager::EnqueueSurfaceBufferId(pid_t pid, uint64_t 
     iter->second.push_back(surfaceBufferId);
 }
 
+void RSSurfaceBufferCallbackManager::RequestNextVSync()
+{
+    if (vSyncFuncs_.isRequestedNextVSync && !std::invoke(vSyncFuncs_.isRequestedNextVSync)) {
+        if (vSyncFuncs_.requestNextVsync) {
+            std::invoke(vSyncFuncs_.requestNextVsync);
+        }
+    }
+}
+
 void RSSurfaceBufferCallbackManager::OnSurfaceBufferOpItemDestruct(
     pid_t pid, uint64_t uid, uint32_t surfaceBufferId)
 {
@@ -136,9 +145,7 @@ void RSSurfaceBufferCallbackManager::OnSurfaceBufferOpItemDestruct(
         }
         EnqueueSurfaceBufferId(pid, uid, surfaceBufferId);
     }
-    if (vSyncFuncs_.requestNextVsync) {
-        std::invoke(vSyncFuncs_.requestNextVsync);
-    }
+    RequestNextVSync();
 }
 
 void RSSurfaceBufferCallbackManager::RunSurfaceBufferCallback()
@@ -160,8 +167,8 @@ void RSSurfaceBufferCallbackManager::RunSurfaceBufferCallback()
                 LogMessage();
             }
         }
-        if (vSyncFuncs_.requestNextVsync && !surfaceBufferIds.empty()) {
-            std::invoke(vSyncFuncs_.requestNextVsync);
+        if (!surfaceBufferIds.empty()) {
+            RequestNextVSync();
         }
     });
 }
