@@ -219,6 +219,8 @@ private:
     void UpdateHwcNodeByTransform(RSSurfaceRenderNode& node);
     void UpdateHwcNodeEnableByRotateAndAlpha(std::shared_ptr<RSSurfaceRenderNode>& node);
     void ProcessAncoNode(std::shared_ptr<RSSurfaceRenderNode>& hwcNodePtr);
+    void InitAncoStatus();
+    void UpdateAncoNodeHWCDisabledState();
     void UpdateHwcNodeEnableByHwcNodeBelowSelfInApp(std::vector<RectI>& hwcRects,
         std::shared_ptr<RSSurfaceRenderNode>& hwcNode);
     void UpdateChildHwcNodeEnableByHwcNodeBelow(std::vector<RectI>& hwcRects,
@@ -429,9 +431,7 @@ private:
 
     bool zoomStateChange_ = false;
 
-    // anco buffer shared
-    void InitAncoStatus();
-    void UpdateAncoNodeHHWCDisabledState();
+    // anco RSSurfaceNode process
     bool ancoHasGpu_ = false;
     std::unordered_set<std::shared_ptr<RSSurfaceRenderNode>> ancoNodes_;
 };
