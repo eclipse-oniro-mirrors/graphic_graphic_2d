@@ -173,6 +173,25 @@ OHOS::Rosen::Drawing::BackendTexture MakeBackendTexture(uint32_t width, uint32_t
 
 namespace OHOS {
 namespace Rosen {
+
+std::unordered_map<pid_t, size_t> RSRenderNode::blurEffectCounter_ = {};
+
+void RSRenderNode::UpdateBlurEffectCounter(int deltaCount)
+{
+    if (LIKELY(deltaCount == 0)) {
+        return;
+    }
+    
+    auto pid = ExtractPid(GetId());
+    // Try to insert pid with value 0 and we got an iterator to the inserted element or to the existing element.
+    auto it = blurEffectCounter_.emplace(std::make_pair(pid, 0)).first;
+    if (deltaCount > 0 || (it->second > -deltaCount)) {
+        it->second += deltaCount;
+    } else {
+        blurEffectCounter_.erase(it);
+    }
+}
+
 void RSRenderNode::OnRegister(const std::weak_ptr<RSContext>& context)
 {
     context_ = context;
@@ -2541,6 +2560,14 @@ void RSRenderNode::UpdateDrawableVec()
     }
 }
 
+int RSRenderNode::GetBlurEffectDrawbleCount()
+{
+    bool fgFilterValid = drawableVec_[static_cast<int32_t>(RSDrawableSlot::FOREGROUND_FILTER)] != nullptr;
+    bool bgFilterValid = drawableVec_[static_cast<int32_t>(RSDrawableSlot::BACKGROUND_FILTER)] != nullptr;
+    bool cpFilterValid = drawableVec_[static_cast<int32_t>(RSDrawableSlot::COMPOSITING_FILTER)] != nullptr;
+    return static_cast<int>(fgFilterValid) + static_cast<int>(bgFilterValid) + static_cast<int>(cpFilterValid);
+}
+
 void RSRenderNode::UpdateDrawableVecV2()
 {
     // Step 1: Collect dirty slots
@@ -2549,6 +2576,7 @@ void RSRenderNode::UpdateDrawableVecV2()
         RS_LOGD("RSRenderNode::update drawable VecV2 dirtySlots is empty");
         return;
     }
+    auto preBlurDrawableCnt = GetBlurEffectDrawbleCount();
     // Step 2: Update or regenerate drawable if needed
     bool drawableChanged = RSDrawable::UpdateDirtySlots(*this, drawableVec_, dirtySlots);
     // Step 2.1 (optional): fuze some drawables
@@ -2568,6 +2596,7 @@ void RSRenderNode::UpdateDrawableVecV2()
         RSDrawable::UpdateDirtySlots(*this, drawableVec_, dirtySlotShadow);
         // Step 4: Generate drawCmdList from drawables
         UpdateDisplayList();
+        UpdateBlurEffectCounter(GetBlurEffectDrawbleCount() - preBlurDrawableCnt);
     }
     // Merge dirty slots
     if (dirtySlots_.empty()) {
@@ -3411,10 +3440,13 @@ void RSRenderNode::OnTreeStateChanged()
         ClearNeverOnTree();
     }
 
+    auto curBlurDrawableCnt = GetBlurEffectDrawbleCount();
     if (!isOnTheTree_) {
+        UpdateBlurEffectCounter(-curBlurDrawableCnt);
         startingWindowFlag_ = false;
     }
     if (isOnTheTree_) {
+        UpdateBlurEffectCounter(curBlurDrawableCnt);
         // Set dirty and force add to active node list, re-generate children list if needed
         SetDirty(true);
         SetParentSubTreeDirty();

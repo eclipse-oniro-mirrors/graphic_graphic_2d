@@ -26,6 +26,7 @@
 #include <string>
 #include <unistd.h>
 
+#include "app_mgr_client.h"
 #include "benchmarks/file_utils.h"
 #include "delegate/rs_functional_delegate.h"
 #include "hgm_core.h"
@@ -1972,6 +1973,46 @@ void RSMainThread::ProcessUiCaptureTasks()
     }
 }
 
+void RSMainThread::CheckBlurEffectCountStatistics(std::shared_ptr<RSRenderNode> rootNode)
+{
+    uint32_t terminateLimit = RSSystemProperties::GetBlurEffectTerminateLimit();
+    if (terminateLimit == 0) {
+        return;
+    }
+    static std::unique_ptr<AppExecFwk::AppMgrClient> appMgrClient =
+        std::make_unique<AppExecFwk::AppMgrClient>();
+    auto children = rootNode->GetChildren();
+    if (children->empty()) {
+        return;
+    }
+    auto displayNode = RSRenderNode::ReinterpretCast<RSDisplayRenderNode>(children->front());
+    if (displayNode == nullptr) {
+        return;
+    }
+    auto scbPid = displayNode->GetCurrentScbPid();
+    int32_t uid = 0;
+    std::string bundleName;
+    for (auto& [pid, count] : rootNode->blurEffectCounter_) {
+        if (pid == scbPid) {
+            continue;
+        }
+        appMgrClient->GetBundleNameByPid(pid, bundleName, uid);
+        if (count > terminateLimit) {
+            auto res = appMgrClient->KillApplicationByUid(bundleName, uid);
+            if (res) {
+                RS_LOGI("RSMainThread: bundleName[%{public}s] was killed for too many blur effcts. "
+                    "BlurEffectCountStatistics: pid[%{public}d] uid[%{public}d] blurCount[%{public}zu]",
+                    bundleName.c_str(), pid, uid, count);
+                rootNode->blurEffectCounter_.erase(pid);
+            } else {
+                RS_LOGE("RSMainThread: kill bundleName[%{public}s] for too many blur effcts failed. "
+                    "BlurEffectCountStatistics: pid[%{public}d] uid[%{public}d] blurCount[%{public}zu]",
+                    bundleName.c_str(), pid, uid, count);
+            }
+        }
+    }
+}
+
 void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
 {
     if (isAccessibilityConfigChanged_) {
@@ -2041,6 +2082,7 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
         uniVisitor->SetFocusedNodeId(focusNodeId_, focusLeashWindowId_);
         rsVsyncRateReduceManager_.SetFocusedNodeId(focusNodeId_);
         rootNode->QuickPrepare(uniVisitor);
+        CheckBlurEffectCountStatistics(rootNode);
         uniVisitor->SurfaceOcclusionCallbackToWMS();
         rsVsyncRateReduceManager_.SetUniVsync();
         renderThreadParams_->selfDrawables_ = std::move(selfDrawables_);
