@@ -18,7 +18,7 @@ module_output_path = "graphic_2d/graphic_2d"
 
 ##############################fuzztest##########################################
 ohos_fuzztest("RSCanvasNodeFuzzTest") {
-  fuzz_config_file = "../../../../../../test/render_service/render_service_client/fuzztest/ui/rscanvasdrawingnode_fuzzer"
+  fuzz_config_file = "../../../../../../test/render_service/render_service_client/fuzztest/ui/rscanvasnode_fuzzer"
   module_out_path = module_output_path
   if (defined(use_rosen_drawing) && use_rosen_drawing) {
     defines = [ "USE_ROSEN_DRAWING" ]
@@ -39,7 +39,7 @@ ohos_fuzztest("RSCanvasNodeFuzzTest") {
     "-Dprivate=public",
     "-Dprotected=public",
   ]
-  sources = [ "rscanvasdrawingnode_fuzzer.cpp" ]
+  sources = [ "rscanvasnode_fuzzer.cpp" ]
 
   external_deps = [
     "c_utils:utils",
@@ -54,7 +54,7 @@ group("fuzztest") {
   deps = []
   deps += [
     # deps file
-    ":RSCanvasDrawingNodeFuzzTest",
+    ":RSCanvasNodeFuzzTest",
   ]
 }
 ###############################################################################
