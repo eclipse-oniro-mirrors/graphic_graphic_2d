@@ -489,7 +489,6 @@ HWTEST_F(RSRenderParamsTest, OpincSetCacheChangeFlag_001, TestSize.Level2)
     renderParams->OpincSetCacheChangeFlag(state, lastFrameSynced);
     EXPECT_TRUE(renderParams->needSync_);
     EXPECT_TRUE(renderParams->isOpincStateChanged_);
-
 }
 
 /**
