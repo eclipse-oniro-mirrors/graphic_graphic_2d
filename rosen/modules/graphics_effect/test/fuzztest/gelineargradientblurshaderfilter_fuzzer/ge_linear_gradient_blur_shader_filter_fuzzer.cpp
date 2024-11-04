@@ -62,7 +62,7 @@ std::string GetDescriptionFuzzTest(const uint8_t *data, size_t size)
     float radius = GETest::GetPlainData<float>();
     std::vector<std::pair<float, float>> fractionStops = {{1.0, 0.0}, {0.0, 1.0}};
     Drawing::Matrix mat;
-    Drawing::GELinearGradientBlurShaderFilterParams params = {radius, fractionStops, 2, 10.0, 10.0, mat, 1.0, 1.0, false};
+    Drawing::GELinearGradientBlurShaderFilterParams params{radius, fractionStops, 2, 10.0, 10.0, mat, 1.0, 1.0, false};
     std::unique_ptr<GELinearGradientBlurShaderFilter> shaderFilter =
         std::make_unique<GELinearGradientBlurShaderFilter>(params);
     std::string res = shaderFilter->GetDescription();
