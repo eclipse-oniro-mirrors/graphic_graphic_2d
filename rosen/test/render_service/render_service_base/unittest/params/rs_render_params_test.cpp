@@ -423,7 +423,7 @@ HWTEST_F(RSRenderParamsTest, SetChildHasVisibleEffect_001, TestSize.Level2)
     auto renderParams = static_cast<RSRenderParams*>(target.get());
     bool val = true;
     renderParams->childHasVisibleEffect_   = val;
-    EXPECT_EQ(renderParams->childHasVisibleEffect_ , val);
+    EXPECT_EQ(renderParams->childHasVisibleEffect_, val);
     renderParams->needSync_ = false;
 
     renderParams->SetChildHasVisibleEffect(val);
@@ -660,4 +660,4 @@ HWTEST_F(RSRenderParamsTest, GetLayerInfo_001, TestSize.Level2)
     RSLayerInfo defaultLayerInfo = {};
     EXPECT_EQ(defaultLayerInfo, renderParams->GetLayerInfo());
 }
-}// namespace OHOS::Rosen
+} // namespace OHOS::Rosen

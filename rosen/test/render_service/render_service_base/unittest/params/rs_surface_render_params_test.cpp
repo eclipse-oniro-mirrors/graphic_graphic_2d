@@ -385,4 +385,4 @@ HWTEST_F(RSSurfaceRenderParamsTest, IsVisibleDirtyRegionEmpty_002, TestSize.Leve
 
     EXPECT_EQ(params.IsVisibleDirtyRegionEmpty(curSurfaceDrawRegion), params.isLeashWindowVisibleRegionEmpty_);
 }
-}// namespace OHOS::Rosen
+} // namespace OHOS::Rosen
