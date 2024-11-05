@@ -1328,7 +1328,7 @@ void RSRenderNode::CollectAndUpdateLocalDistortionEffectRect()
 {
     // update distortion effect's dirty region if it changes
     if (GetRenderProperties().GetDistortionDirty()) {
-        RSPropertiesPainter::GetDistortionEffectDirtyRect(localDistortionEffectRect_, GetRenderProperties(), false);
+        RSPropertiesPainter::GetDistortionEffectDirtyRect(localDistortionEffectRect_, GetRenderProperties());
         GetMutableRenderProperties().SetDistortionDirty(false);
     }
     selfDrawRect_ = selfDrawRect_.JoinRect(localDistortionEffectRect_.ConvertTo<float>());

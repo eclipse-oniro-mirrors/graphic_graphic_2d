@@ -914,17 +914,16 @@ void RSPropertiesPainter::GetForegroundEffectDirtyRect(RectI& dirtyForegroundEff
     dirtyForegroundEffect.height_ = std::ceil(drawingRect.GetHeight()) + PARAM_DOUBLE;
 }
 
-// calcuation the distortion effect's dirty area
-void RSPropertiesPainter::GetDistortionEffectDirtyRect(RectI& dirtyDistortionEffect,
-    const RSProperties& properties, const bool isAbsCoordinate)
+// calculate the distortion effect's dirty area
+void RSPropertiesPainter::GetDistortionEffectDirtyRect(RectI& dirtyDistortionEffect, const RSProperties& properties)
 {
-    // if the DistortionK > 0, set the dirty bounds to its maximum range value
+    // if the distortionK > 0, set the dirty bounds to its maximum range value
     auto distortionK = properties.GetDistortionK();
     if (distortionK.has_value() && *distortionK > 0) {
-        int dirtyWidth = std::numeric_limits<int>::max();
-        int dirtyBeginpoint = std::numeric_limits<int>::min() / PARAM_DOUBLE;
-        dirtyDistortionEffect.left_ = dirtyBeginpoint;
-        dirtyDistortionEffect.top_ = dirtyBeginpoint;
+        int dirtyWidth = static_cast<int>(std::numeric_limits<int16_t>::max());
+        int dirtyBeginPoint = static_cast<int>(std::numeric_limits<int16_t>::min()) / PARAM_DOUBLE;
+        dirtyDistortionEffect.left_ = dirtyBeginPoint;
+        dirtyDistortionEffect.top_ = dirtyBeginPoint;
         dirtyDistortionEffect.width_ = dirtyWidth;
         dirtyDistortionEffect.height_ = dirtyWidth;
     }
