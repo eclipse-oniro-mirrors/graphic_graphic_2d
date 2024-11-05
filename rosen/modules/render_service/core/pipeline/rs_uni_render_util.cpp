@@ -1601,7 +1601,8 @@ void RSUniRenderUtil::DealWithScalingMode(RSSurfaceRenderNode& node)
     if (scalingMode == ScalingMode::SCALING_MODE_SCALE_CROP) {
         RSUniRenderUtil::LayerScaleDown(node);
     } else if (scalingMode == ScalingMode::SCALING_MODE_SCALE_FIT) {
-        int degree = RSUniRenderUtil::GetRotationDegreeFromMatrix(node.GetTotalMatrix());
+        int degree = RSUniRenderUtil::GetRotationDegreeFromMatrix(
+            node.GetRenderProperties().GetBoundsGeometry()->GetAbsMatrix());
         if (degree % RS_ROTATION_90 == 0) {
             RSUniRenderUtil::LayerScaleFit(node);
         }
