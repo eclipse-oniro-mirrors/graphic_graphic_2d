@@ -3074,7 +3074,7 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeEnableByHwcNodeBelowSelf_004, Test
 /*
  * @tc.name: UpdateHwcNodeRectInSkippedSubTree_001
  * @tc.desc: Test UpdateHwcNodeRectInSkippedSubTree when RS_PROFILER_SHOULD_BLOCK_HWCNODE() is false,
- *           curSurfaceNode_ is null or hwcNodes is empty.
+ *           hwcNodes is empty.
  * @tc.type: FUNC
  * @tc.require: issueIAKJFE
  */
@@ -3087,16 +3087,7 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeRectInSkippedSubTree_001, TestSize
     ASSERT_NE(parentNode, nullptr);
 
     {
-        rsUniRenderVisitor->curSurfaceNode_ = nullptr;
-        rsUniRenderVisitor->UpdateHwcNodeRectInSkippedSubTree(*parentNode);
-    }
-
-    {
-        auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
-        ASSERT_NE(surfaceNode, nullptr);
-        surfaceNode->ResetChildHardwareEnabledNodes();
-        ASSERT_EQ(surfaceNode->GetChildHardwareEnabledNodes().size(), 0);
-        rsUniRenderVisitor->curSurfaceNode_ = surfaceNode;
+        ASSERT_TRUE(RSMainThread::Instance()->GetSelfDrawingNodes().empty());
         rsUniRenderVisitor->UpdateHwcNodeRectInSkippedSubTree(*parentNode);
     }
 }
@@ -3112,21 +3103,19 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeRectInSkippedSubTree_002, TestSize
 {
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
     ASSERT_NE(rsUniRenderVisitor, nullptr);
-    auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
-    ASSERT_NE(surfaceNode, nullptr);
 
     NodeId parentNodeId = 1;
     auto parentNode = std::make_shared<RSRenderNode>(parentNodeId);
     ASSERT_NE(parentNode, nullptr);
 
     {
-        NodeId childNodeId = 2;
-        auto childNode = std::make_shared<RSSurfaceRenderNode>(childNodeId);
-        childNode = nullptr;
+        std::shared_ptr<RSSurfaceRenderNode> childNode;
+        ASSERT_EQ(childNode, nullptr);
 
-        surfaceNode->ResetChildHardwareEnabledNodes();
-        surfaceNode->AddChildHardwareEnabledNode(childNode);
-        rsUniRenderVisitor->curSurfaceNode_ = surfaceNode;
+        RSMainThread::Instance()->ClearSelfDrawingNodes();
+        ASSERT_TRUE(RSMainThread::Instance()->GetSelfDrawingNodes().empty());
+        RSMainThread::Instance()->AddSelfDrawingNodes(childNode);
+        ASSERT_EQ(RSMainThread::Instance()->GetSelfDrawingNodes().size(), 1);
         rsUniRenderVisitor->UpdateHwcNodeRectInSkippedSubTree(*parentNode);
     }
 
@@ -3137,9 +3126,10 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeRectInSkippedSubTree_002, TestSize
         childNode->SetIsOnTheTree(false);
         ASSERT_FALSE(childNode->IsOnTheTree());
 
-        surfaceNode->ResetChildHardwareEnabledNodes();
-        surfaceNode->AddChildHardwareEnabledNode(childNode);
-        rsUniRenderVisitor->curSurfaceNode_ = surfaceNode;
+        RSMainThread::Instance()->ClearSelfDrawingNodes();
+        ASSERT_TRUE(RSMainThread::Instance()->GetSelfDrawingNodes().empty());
+        RSMainThread::Instance()->AddSelfDrawingNodes(childNode);
+        ASSERT_EQ(RSMainThread::Instance()->GetSelfDrawingNodes().size(), 1);
         rsUniRenderVisitor->UpdateHwcNodeRectInSkippedSubTree(*parentNode);
     }
 
@@ -3152,9 +3142,10 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeRectInSkippedSubTree_002, TestSize
         childNode->SetCalcRectInPrepare(true);
         ASSERT_TRUE(childNode->GetCalcRectInPrepare());
 
-        surfaceNode->ResetChildHardwareEnabledNodes();
-        surfaceNode->AddChildHardwareEnabledNode(childNode);
-        rsUniRenderVisitor->curSurfaceNode_ = surfaceNode;
+        RSMainThread::Instance()->ClearSelfDrawingNodes();
+        ASSERT_TRUE(RSMainThread::Instance()->GetSelfDrawingNodes().empty());
+        RSMainThread::Instance()->AddSelfDrawingNodes(childNode);
+        ASSERT_EQ(RSMainThread::Instance()->GetSelfDrawingNodes().size(), 1);
         rsUniRenderVisitor->UpdateHwcNodeRectInSkippedSubTree(*parentNode);
     }
 }
@@ -3185,11 +3176,10 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeRectInSkippedSubTree_003, TestSize
 
     ASSERT_EQ(childNode->GetParent().lock(), nullptr);
 
-    auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
-    ASSERT_NE(surfaceNode, nullptr);
-    surfaceNode->ResetChildHardwareEnabledNodes();
-    surfaceNode->AddChildHardwareEnabledNode(childNode);
-    rsUniRenderVisitor->curSurfaceNode_ = surfaceNode;
+    RSMainThread::Instance()->ClearSelfDrawingNodes();
+    ASSERT_TRUE(RSMainThread::Instance()->GetSelfDrawingNodes().empty());
+    RSMainThread::Instance()->AddSelfDrawingNodes(childNode);
+    ASSERT_EQ(RSMainThread::Instance()->GetSelfDrawingNodes().size(), 1);
     rsUniRenderVisitor->UpdateHwcNodeRectInSkippedSubTree(*parentNode);
 }
 
@@ -3227,11 +3217,10 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeRectInSkippedSubTree_004, TestSize
     ASSERT_NE(parent, nullptr);
     ASSERT_NE(parent->GetId(), parentNodeId);
 
-    auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
-    ASSERT_NE(surfaceNode, nullptr);
-    surfaceNode->ResetChildHardwareEnabledNodes();
-    surfaceNode->AddChildHardwareEnabledNode(childNode);
-    rsUniRenderVisitor->curSurfaceNode_ = surfaceNode;
+    RSMainThread::Instance()->ClearSelfDrawingNodes();
+    ASSERT_TRUE(RSMainThread::Instance()->GetSelfDrawingNodes().empty());
+    RSMainThread::Instance()->AddSelfDrawingNodes(childNode);
+    ASSERT_EQ(RSMainThread::Instance()->GetSelfDrawingNodes().size(), 1);
     rsUniRenderVisitor->UpdateHwcNodeRectInSkippedSubTree(*parentNode);
 }
 
@@ -3265,11 +3254,10 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeRectInSkippedSubTree_005, TestSize
     ASSERT_NE(parent, nullptr);
     ASSERT_EQ(parent->GetId(), parentNodeId);
 
-    auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
-    ASSERT_NE(surfaceNode, nullptr);
-    surfaceNode->ResetChildHardwareEnabledNodes();
-    surfaceNode->AddChildHardwareEnabledNode(childNode);
-    rsUniRenderVisitor->curSurfaceNode_ = surfaceNode;
+    RSMainThread::Instance()->ClearSelfDrawingNodes();
+    ASSERT_TRUE(RSMainThread::Instance()->GetSelfDrawingNodes().empty());
+    RSMainThread::Instance()->AddSelfDrawingNodes(childNode);
+    ASSERT_EQ(RSMainThread::Instance()->GetSelfDrawingNodes().size(), 1);
     NodeId displayNodeId = 3;
     RSDisplayNodeConfig config;
     rsUniRenderVisitor->curDisplayNode_ = std::make_shared<RSDisplayRenderNode>(displayNodeId, config);
@@ -3317,12 +3305,11 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeRectInSkippedSubTree_006, TestSize
     ASSERT_NE(grandparent, nullptr);
     ASSERT_EQ(grandparent->GetId(), grandparentNodeId);
 
-    auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
-    ASSERT_NE(surfaceNode, nullptr);
-    surfaceNode->ResetChildHardwareEnabledNodes();
-    surfaceNode->AddChildHardwareEnabledNode(childNode);
-    rsUniRenderVisitor->curSurfaceNode_ = surfaceNode;
-    NodeId displayNodeId = 3;
+    RSMainThread::Instance()->ClearSelfDrawingNodes();
+    ASSERT_TRUE(RSMainThread::Instance()->GetSelfDrawingNodes().empty());
+    RSMainThread::Instance()->AddSelfDrawingNodes(childNode);
+    ASSERT_EQ(RSMainThread::Instance()->GetSelfDrawingNodes().size(), 1);
+    NodeId displayNodeId = 4;
     RSDisplayNodeConfig config;
     rsUniRenderVisitor->curDisplayNode_ = std::make_shared<RSDisplayRenderNode>(displayNodeId, config);
     rsUniRenderVisitor->UpdateHwcNodeRectInSkippedSubTree(*parentNode);
