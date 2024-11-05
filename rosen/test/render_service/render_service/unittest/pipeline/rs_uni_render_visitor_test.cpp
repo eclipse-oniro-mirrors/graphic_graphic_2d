@@ -2465,6 +2465,101 @@ HWTEST_F(RSUniRenderVisitorTest, QuickPrepareDisplayRenderNode004, TestSize.Leve
 }
 
 /**
+ * @tc.name: UpdateVirtualScreenSecurityExemption001
+ * @tc.desc: Test UpdateVirtualScreenSecurityExemption for no-mirror display
+ * @tc.type: FUNC
+ * @tc.require: issueIB1YAT
+ */
+HWTEST_F(RSUniRenderVisitorTest, UpdateVirtualScreenSecurityExemption001, TestSize.Level2)
+{
+    auto rsContext = std::make_shared<RSContext>();
+    RSDisplayNodeConfig displayConfig;
+    // 11 non-zero node id
+    auto rsDisplayRenderNode = std::make_shared<RSDisplayRenderNode>(11, displayConfig, rsContext->weak_from_this());
+    rsDisplayRenderNode->InitRenderParams();
+    ASSERT_EQ(rsDisplayRenderNode->IsMirrorDisplay(), false);
+
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    rsUniRenderVisitor->UpdateVirtualScreenSecurityExemption(*rsDisplayRenderNode);
+}
+
+/**
+ * @tc.name: UpdateVirtualScreenSecurityExemption002
+ * @tc.desc: Test UpdateVirtualScreenSecurityExemption for mirror display with abnormal params
+ * @tc.type: FUNC
+ * @tc.require: issueIB1YAT
+ */
+HWTEST_F(RSUniRenderVisitorTest, UpdateVirtualScreenSecurityExemption002, TestSize.Level2)
+{
+    auto rsContext = std::make_shared<RSContext>();
+    RSDisplayNodeConfig displayConfig;
+    // 11 non-zero node id
+    auto rsDisplayRenderNode = std::make_shared<RSDisplayRenderNode>(11, displayConfig, rsContext->weak_from_this());
+    rsDisplayRenderNode->InitRenderParams();
+    rsDisplayRenderNode->SetIsMirrorDisplay(true);
+    ASSERT_EQ(rsDisplayRenderNode->GetMirrorSource().lock(), nullptr);
+
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    ASSERT_EQ(rsUniRenderVisitor->screenManager_, nullptr);
+    rsUniRenderVisitor->UpdateVirtualScreenSecurityExemption(*rsDisplayRenderNode);
+
+    // 12 non-zero node id
+    auto mirrorNode = std::make_shared<RSDisplayRenderNode>(12, displayConfig, rsContext->weak_from_this());
+    rsDisplayRenderNode->mirrorSource_ = mirrorNode;
+    rsUniRenderVisitor->UpdateVirtualScreenSecurityExemption(*rsDisplayRenderNode);
+}
+
+/**
+ * @tc.name: UpdateVirtualScreenSecurityExemption003
+ * @tc.desc: Test UpdateVirtualScreenSecurityExemption for mirror display with normal params
+ * @tc.type: FUNC
+ * @tc.require: issueIB1YAT
+ */
+HWTEST_F(RSUniRenderVisitorTest, UpdateVirtualScreenSecurityExemption003, TestSize.Level2)
+{
+    auto rsContext = std::make_shared<RSContext>();
+    RSDisplayNodeConfig displayConfig;
+    auto screenManager = CreateOrGetScreenManager();
+    // 480, 320 width and height for test
+    auto id = screenManager->CreateVirtualScreen("virtualScreen01", 480, 320, nullptr);
+    // 480, 320 width and height for test
+    auto mirrorId = screenManager->CreateVirtualScreen("virtualScreen02", 480, 320, nullptr);
+    screenManager->SetScreenMirror(id, mirrorId);
+
+    displayConfig.screenId = id;
+    auto rsDisplayRenderNode = std::make_shared<RSDisplayRenderNode>(id, displayConfig, rsContext->weak_from_this());
+    rsDisplayRenderNode->InitRenderParams();
+    rsDisplayRenderNode->SetIsMirrorDisplay(true);
+
+    displayConfig.screenId = mirrorId;
+    auto mirrorNode = std::make_shared<RSDisplayRenderNode>(mirrorId, displayConfig, rsContext->weak_from_this());
+    mirrorNode->AddSecurityLayer(1);  // layerId for test
+    mirrorNode->AddSecurityLayer(2);  // layerId for test
+    rsDisplayRenderNode->mirrorSource_ = mirrorNode;
+
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    rsUniRenderVisitor->screenManager_ = screenManager;
+    ASSERT_NE(rsUniRenderVisitor->screenManager_, nullptr);
+    rsUniRenderVisitor->UpdateVirtualScreenSecurityExemption(*rsDisplayRenderNode);
+
+    screenManager->SetVirtualScreenSecurityExemptionList(id, {1});
+    rsUniRenderVisitor->screenManager_ = screenManager;
+    rsUniRenderVisitor->UpdateVirtualScreenSecurityExemption(*rsDisplayRenderNode);
+
+    screenManager->SetVirtualScreenSecurityExemptionList(id, {1, 2});  // layerId for test
+    rsUniRenderVisitor->screenManager_ = screenManager;
+    rsUniRenderVisitor->UpdateVirtualScreenSecurityExemption(*rsDisplayRenderNode);
+
+    screenManager->SetVirtualScreenSecurityExemptionList(id, {1, 2, 3});  // layerId for test
+    rsUniRenderVisitor->screenManager_ = screenManager;
+    rsUniRenderVisitor->UpdateVirtualScreenSecurityExemption(*rsDisplayRenderNode);
+
+    screenManager->SetVirtualScreenSecurityExemptionList(id, {1, 3});  // layerId for test
+    rsUniRenderVisitor->screenManager_ = screenManager;
+    rsUniRenderVisitor->UpdateVirtualScreenSecurityExemption(*rsDisplayRenderNode);
+}
+
+/**
  * @tc.name: IsSubTreeOccluded001
  * @tc.desc: Test IsSubTreeOccluded with empty node
  * @tc.type: FUNC
