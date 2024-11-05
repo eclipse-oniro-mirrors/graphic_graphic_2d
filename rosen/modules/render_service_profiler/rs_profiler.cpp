@@ -1623,6 +1623,11 @@ void RSProfiler::TestSwitch(const ArgList& args)
 
 void RSProfiler::RecordStart(const ArgList& args)
 {
+    if (g_playbackFile.IsOpen() || !g_childOfDisplayNodes.empty()) {
+        Respond("FAILED: Record start - replay is in progress");
+        return;
+    }
+
     g_recordStartTime = 0.0;
 
     ImageCache::Reset();
@@ -1674,6 +1679,7 @@ void RSProfiler::RecordStart(const ArgList& args)
 void RSProfiler::RecordStop(const ArgList& args)
 {
     if (!IsRecording()) {
+        Respond("FAILED: Record stop - recording was not started");
         return;
     }
 
@@ -1731,6 +1737,10 @@ void RSProfiler::RecordStop(const ArgList& args)
 
 void RSProfiler::PlaybackPrepareFirstFrame(const ArgList& args)
 {
+    if (g_playbackFile.IsOpen() || !g_childOfDisplayNodes.empty()) {
+        Respond("FAILED: rsrecord_replay_prepare was already called");
+        return;
+    }
     g_playbackPid = args.Pid();
     g_playbackStartTime = 0.0;
     g_playbackPauseTime = args.Fp64(1);
@@ -1741,6 +1751,7 @@ void RSProfiler::PlaybackPrepareFirstFrame(const ArgList& args)
         path = RSFile::GetDefaultPath();
     }
 
+    RSTypefaceCache::Instance().ReplayClear();
     ImageCache::Reset();
 
     auto &animeMap = RSProfiler::AnimeGetStartTimes();
@@ -1793,6 +1804,11 @@ void RSProfiler::RecordSendBinary(const ArgList& args)
 
 void RSProfiler::PlaybackStart(const ArgList& args)
 {
+    if (!g_playbackFile.IsOpen() || !g_childOfDisplayNodes.empty()) {
+        Respond("FAILED: rsrecord_replay was already called");
+        return;
+    }
+
     HiddenSpaceTurnOn();
 
     for (size_t pid : g_playbackFile.GetHeaderPids()) {
@@ -1834,12 +1850,19 @@ void RSProfiler::PlaybackStart(const ArgList& args)
 
 void RSProfiler::PlaybackStop(const ArgList& args)
 {
-    if (g_childOfDisplayNodes.empty()) {
+    if (!g_playbackFile.IsOpen() && g_childOfDisplayNodes.empty()) {
+        Respond("FAILED: Playback stop - no rsrecord_replay_* was called previously");
         return;
     }
     SetMode(Mode::NONE);
-    g_playbackShouldBeTerminated = true;
-    HiddenSpaceTurnOff();
+    if (g_childOfDisplayNodes.empty()) {
+        // rsrecord_replay_prepare was called but rsrecord_replay_start was not
+        g_playbackFile.Close();
+        g_childOfDisplayNodes.clear();
+    } else {
+        g_playbackShouldBeTerminated = true;
+        HiddenSpaceTurnOff();
+    }
     FilterMockNode(*g_context);
     constexpr int maxCountForSecurity = 1000;
     for (int i = 0; !RSRenderNodeGC::Instance().IsBucketQueueEmpty() && i < maxCountForSecurity; i++) {
