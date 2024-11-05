@@ -506,6 +506,7 @@ private:
     bool CheckUIExtensionCallbackDataChanged() const;
     void ConfigureRenderService();
 
+    void CheckBlurEffectCountStatistics(std::shared_ptr<RSBaseRenderNode> rootNode);
     void OnCommitDumpClientNodeTree(NodeId nodeId, pid_t pid, uint32_t taskId, const std::string& result);
 
     // Used for CommitAndReleaseLayers task

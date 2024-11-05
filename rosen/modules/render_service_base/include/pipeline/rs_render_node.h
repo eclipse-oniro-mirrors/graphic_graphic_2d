@@ -1049,6 +1049,10 @@ private:
     bool childrenHasUIExtension_ = false;
     bool isAccessibilityConfigChanged_ = false;
     const bool isPurgeable_;
+    // for blur effct count
+    static std::unordered_map<pid_t, size_t> blurEffectCounter_;
+    void UpdateBlurEffectCounter(int deltaCount);
+    int GetBlurEffectDrawbleCount();
 
     void SetParent(WeakPtr parent);
     void ResetParent();

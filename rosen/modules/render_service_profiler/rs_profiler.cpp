@@ -272,7 +272,7 @@ void RSProfiler::OnRemoteRequest(RSIRenderServiceConnection* connection, uint32_
     if (IsLoadSaveFirstScreenInProgress()) {
         // saving screen right now
     }
-    if (IsPlaying()) {
+    if (IsPlaying() && !g_playbackShouldBeTerminated) {
         SetTransactionTimeCorrection(g_playbackStartTime, g_playbackFile.GetWriteTime());
         SetSubstitutingPid(g_playbackFile.GetHeaderPids(), g_playbackPid, g_playbackParentNodeId);
         SetMode(Mode::READ);
@@ -811,6 +811,13 @@ void RSProfiler::HiddenSpaceTurnOff()
         for (const auto& child : g_childOfDisplayNodes) {
             displayNode->AddChild(child);
         }
+        auto& listPostponed = RSProfiler::GetChildOfDisplayNodesPostponed();
+        for (const auto& childWeak : listPostponed) {
+            if (auto child = childWeak.lock()) {
+                displayNode->AddChild(child);
+            }
+        }
+        listPostponed.clear();
         FilterMockNode(*g_context);
         RSTypefaceCache::Instance().ReplayClear();
         g_childOfDisplayNodes.clear();
@@ -1847,6 +1854,7 @@ void RSProfiler::PlaybackStop(const ArgList& args)
         Respond("FAILED: Playback stop - no rsrecord_replay_* was called previously");
         return;
     }
+    SetMode(Mode::NONE);
     if (g_childOfDisplayNodes.empty()) {
         // rsrecord_replay_prepare was called but rsrecord_replay_start was not
         g_playbackFile.Close();

@@ -646,8 +646,6 @@ void RSUniRenderVisitor::QuickPrepareDisplayRenderNode(RSDisplayRenderNode& node
     prepareClipRect_ = screenRect_;
     hasAccumulatedClip_ = false;
 
-    isHardCursorSupport_ = RSPointerWindowManager::Instance().CheckHardCursorSupport(node.GetScreenId());
-    RS_OPTIONAL_TRACE_NAME_FMT("QuickPrepareDisplayRenderNode isHardCursorSupport:%d", isHardCursorSupport_);
     curAlpha_ = 1.0f;
     globalZOrder_ = 0.0f;
     hasSkipLayer_ = false;
@@ -805,7 +803,7 @@ void RSUniRenderVisitor::QuickPrepareSurfaceRenderNode(RSSurfaceRenderNode& node
         CheckIsGpuOverDrawBufferOptimizeNode(node);
     }
     PostPrepare(node, !isSubTreeNeedPrepare);
-    if (isHardCursorSupport_ && node.IsHardwareEnabledTopSurface() && node.shared_from_this()) {
+    if (node.IsHardwareEnabledTopSurface() && node.shared_from_this()) {
         RSUniRenderUtil::UpdateHwcNodeProperty(node.shared_from_this()->ReinterpretCastTo<RSSurfaceRenderNode>());
     }
     CheckMergeFilterDirtyByIntersectWithDirty(curSurfaceNoBelowDirtyFilter_, false);
@@ -1270,7 +1268,7 @@ bool RSUniRenderVisitor::BeforeUpdateSurfaceDirtyCalc(RSSurfaceRenderNode& node)
     if (node.GetRSSurfaceHandler() && node.GetRSSurfaceHandler()->GetBuffer()) {
         node.SetBufferRelMatrix(RSUniRenderUtil::GetMatrixOfBufferToRelRect(node));
     }
-    if (isHardCursorSupport_ && node.IsHardwareEnabledTopSurface() && node.ShouldPaint()) {
+    if (node.IsHardwareEnabledTopSurface() && node.ShouldPaint()) {
         RSPointerWindowManager::Instance().CollectInfoForHardCursor(curDisplayNode_->GetId(),
             node.GetRenderDrawable());
     }
@@ -1311,7 +1309,7 @@ bool RSUniRenderVisitor::AfterUpdateSurfaceDirtyCalc(RSSurfaceRenderNode& node)
     }
     // 3. Update HwcNode Info for appNode
     UpdateHwcNodeInfoForAppNode(node);
-    if (isHardCursorSupport_ && node.IsHardwareEnabledTopSurface()) {
+    if (node.IsHardwareEnabledTopSurface()) {
         UpdateSrcRect(node, geoPtr->GetAbsMatrix(), geoPtr->GetAbsRect());
     }
     return true;
@@ -1400,7 +1398,7 @@ void RSUniRenderVisitor::UpdateSrcRect(RSSurfaceRenderNode& node,
 void RSUniRenderVisitor::UpdateDstRect(RSSurfaceRenderNode& node, const RectI& absRect, const RectI& clipRect)
 {
     auto dstRect = absRect;
-    if (!(isHardCursorSupport_ && node.IsHardwareEnabledTopSurface())) {
+    if (!node.IsHardwareEnabledTopSurface()) {
         // If the screen is expanded, intersect the destination rectangle with the screen rectangle
         dstRect = dstRect.IntersectRect(RectI(curDisplayNode_->GetDisplayOffsetX(),
             curDisplayNode_->GetDisplayOffsetY(), screenInfo_.width, screenInfo_.height));
@@ -1409,7 +1407,7 @@ void RSUniRenderVisitor::UpdateDstRect(RSSurfaceRenderNode& node, const RectI& a
         dstRect.top_ = dstRect.top_ - curDisplayNode_->GetDisplayOffsetY();
     }
     // If the node is a hardware-enabled type, intersect its destination rectangle with the prepare clip rectangle
-    if (node.IsHardwareEnabledType()) {
+    if (node.IsHardwareEnabledType() || node.IsHardwareEnabledTopSurface()) {
         dstRect = dstRect.IntersectRect(clipRect);
         if (curSurfaceNode_ && (node.GetId() != curSurfaceNode_->GetId())) {
             dstRect = dstRect.IntersectRect(curSurfaceNode_->GetDstRect());
@@ -1450,6 +1448,13 @@ void RSUniRenderVisitor::UpdateHwcNodeEnableByBackgroundAlpha(RSSurfaceRenderNod
         node.SetNodeHasBackgroundColorAlpha(true);
         hwcDisabledReasonCollection_.UpdateHwcDisabledReasonForDFX(node.GetId(),
             HwcDisabledReasons::DISABLED_BY_BACKGROUND_ALPHA, node.GetName());
+    } else {
+        if (!RsCommonHook::Instance().GetHardwareEnabledBySolidColorLayerFlag() &&
+            node.GetRenderProperties().GetBackgroundColor() != RgbPalette::Black()) {
+            node.SetHardwareForcedDisabledState(true);
+            RS_OPTIONAL_TRACE_NAME_FMT("hwc debug: name:%s id:%" PRIu64 " disabled by solid background color",
+                node.GetName().c_str(), node.GetId());
+        }
     }
 }
 
@@ -1570,13 +1575,12 @@ void RSUniRenderVisitor::UpdateHwcNodeEnableByRotateAndAlpha(std::shared_ptr<RSS
     }
 }
 
-void RSUniRenderVisitor::ProcessAncoNode(std::shared_ptr<RSSurfaceRenderNode>& hwcNodePtr,
-    std::vector<std::shared_ptr<RSSurfaceRenderNode>>& ancoNodes, bool& ancoHasGpu)
+void RSUniRenderVisitor::ProcessAncoNode(std::shared_ptr<RSSurfaceRenderNode>& hwcNodePtr)
 {
     if ((hwcNodePtr->GetAncoFlags() & static_cast<uint32_t>(AncoFlags::IS_ANCO_NODE)) == 0) {
         return;
     }
-    ancoNodes.emplace_back(hwcNodePtr);
+    ancoNodes_.insert(hwcNodePtr);
     auto alpha = hwcNodePtr->GetGlobalAlpha();
     RS_LOGD("rs debug: name:%{public}s id:%{public}" PRIu64 "src %{public}s dst %{public}s "
         "alpha:%{public}.2f", hwcNodePtr->GetName().c_str(), hwcNodePtr->GetId(),
@@ -1591,17 +1595,22 @@ void RSUniRenderVisitor::ProcessAncoNode(std::shared_ptr<RSSurfaceRenderNode>& h
         return;
     }
 
-    ancoHasGpu = (ancoHasGpu || hwcNodePtr->IsHardwareForcedDisabled());
+    ancoHasGpu_ = (ancoHasGpu_ || hwcNodePtr->IsHardwareForcedDisabled());
+}
+
+void RSUniRenderVisitor::InitAncoStatus()
+{
+    ancoHasGpu_ = false;
+    ancoNodes_.clear();
 }
 
 void RSUniRenderVisitor::UpdateHwcNodeEnable()
 {
-    bool ancoHasGpu = false;
-    std::vector<std::shared_ptr<RSSurfaceRenderNode>> ancoNodes;
+    InitAncoStatus();
 
     auto& curMainAndLeashSurfaces = curDisplayNode_->GetAllMainAndLeashSurfaces();
     std::for_each(curMainAndLeashSurfaces.rbegin(), curMainAndLeashSurfaces.rend(),
-        [this, &ancoNodes, &ancoHasGpu](RSBaseRenderNode::SharedPtr& nodePtr) {
+        [this](RSBaseRenderNode::SharedPtr& nodePtr) {
         auto surfaceNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(nodePtr);
         if (!surfaceNode) {
             return;
@@ -1624,18 +1633,22 @@ void RSUniRenderVisitor::UpdateHwcNodeEnable()
             RSUniRenderUtil::UpdateHwcNodeProperty(hwcNodePtr);
             UpdateHwcNodeEnableByRotateAndAlpha(hwcNodePtr);
             UpdateHwcNodeEnableByHwcNodeBelowSelfInApp(hwcRects, hwcNodePtr);
-            ProcessAncoNode(hwcNodePtr, ancoNodes, ancoHasGpu);
+            ProcessAncoNode(hwcNodePtr);
         }
     });
+    UpdateAncoNodeHWCDisabledState();
+    PrevalidateHwcNode();
+    UpdateHwcNodeEnableByNodeBelow();
+}
 
-    if (ancoHasGpu) {
-        for (const auto& hwcNodePtr : ancoNodes) {
+void RSUniRenderVisitor::UpdateAncoNodeHWCDisabledState()
+{
+    if (ancoHasGpu_) {
+        for (const auto& hwcNodePtr : ancoNodes_) {
             hwcNodePtr->SetHardwareForcedDisabledState(true);
         }
     }
-
-    PrevalidateHwcNode();
-    UpdateHwcNodeEnableByNodeBelow();
+    InitAncoStatus();
 }
 
 void RSUniRenderVisitor::PrevalidateHwcNode()
@@ -1740,6 +1753,11 @@ void RSUniRenderVisitor::UpdateHwcNodeDirtyRegionAndCreateLayer(std::shared_ptr<
         hwcNodePtr->SetHardWareDisabledByReverse(false);
         surfaceHandler->SetGlobalZOrder(hwcNodePtr->IsHardwareForcedDisabled() && !hwcNodePtr->GetProtectedLayer()
             ? -1.f : globalZOrder_++);
+        if (surfaceHandler->GetGlobalZOrder() >= 0 &&
+            hwcNodePtr->GetRenderProperties().GetBackgroundColor() != RgbPalette::Black() &&
+            hwcNodePtr->GetRenderProperties().GetBackgroundColor() != RgbPalette::Transparent()) {
+            surfaceHandler->SetGlobalZOrder(globalZOrder_++);
+        }
         auto transform = RSUniRenderUtil::GetLayerTransform(*hwcNodePtr, screenInfo_);
         hwcNodePtr->UpdateHwcNodeLayerInfo(transform);
     }
@@ -1751,7 +1769,7 @@ void RSUniRenderVisitor::UpdateHwcNodeDirtyRegionAndCreateLayer(std::shared_ptr<
 
 void RSUniRenderVisitor::UpdatePointWindowDirtyStatus(std::shared_ptr<RSSurfaceRenderNode>& pointWindow)
 {
-    if (!pointWindow->IsHardwareEnabledTopSurface() || !pointWindow->ShouldPaint() || !isHardCursorSupport_) {
+    if (!pointWindow->IsHardwareEnabledTopSurface() || !pointWindow->ShouldPaint()) {
         pointWindow->SetHardCursorStatus(false);
         return;
     }
@@ -1759,11 +1777,12 @@ void RSUniRenderVisitor::UpdatePointWindowDirtyStatus(std::shared_ptr<RSSurfaceR
     if (pointSurfaceHandler) {
         // globalZOrder_ + 2 is displayNode layer, point window must be at the top.
         pointSurfaceHandler->SetGlobalZOrder(globalZOrder_ + 2);
+        bool isHardCursor = RSPointerWindowManager::Instance().CheckHardCursorSupport(curDisplayNode_);
         pointWindow->SetHardwareForcedDisabledState(true);
-        RSPointerDrawingManager::Instance().SetIsPointerEnableHwc(true);
+        RSPointerDrawingManager::Instance().SetIsPointerEnableHwc(isHardCursor);
         auto transform = RSUniRenderUtil::GetLayerTransform(*pointWindow, screenInfo_);
-        pointWindow->SetHardCursorStatus(true);
-        pointWindow->UpdateHwcNodeLayerInfo(transform, true);
+        pointWindow->SetHardCursorStatus(isHardCursor);
+        pointWindow->UpdateHwcNodeLayerInfo(transform, isHardCursor);
         if (RSMainThread::Instance()->GetDeviceType() == DeviceType::PC) {
             RSPointerWindowManager::Instance().UpdatePointerDirtyToGlobalDirty(pointWindow, curDisplayNode_);
         }
@@ -2641,6 +2660,7 @@ void RSUniRenderVisitor::UpdateHwcNodeEnableByGlobalFilter(std::shared_ptr<RSSur
             if (cleanFilterFound) {
                 UpdateHwcNodeEnableByGlobalCleanFilter(cleanFilter->second, *hwcNodePtr);
                 if (hwcNodePtr->IsHardwareForcedDisabled()) {
+                    ProcessAncoNode(hwcNodePtr);
                     continue;
                 }
             }
@@ -2652,6 +2672,7 @@ void RSUniRenderVisitor::UpdateHwcNodeEnableByGlobalFilter(std::shared_ptr<RSSur
                     RS_OPTIONAL_TRACE_NAME_FMT("hwc debug: name:%s id:%" PRIu64 " disabled by transparentDirtyFilter",
                         hwcNodePtr->GetName().c_str(), hwcNodePtr->GetId());
                     hwcNodePtr->SetHardwareForcedDisabledState(true);
+                    ProcessAncoNode(hwcNodePtr);
                     hwcDisabledReasonCollection_.UpdateHwcDisabledReasonForDFX(hwcNodePtr->GetId(),
                         HwcDisabledReasons::DISABLED_BY_TRANSPARENT_DIRTY_FLITER, hwcNodePtr->GetName());
                     break;
@@ -2731,6 +2752,8 @@ void RSUniRenderVisitor::UpdateSubSurfaceNodeRectInSkippedSubTree(const RSRender
         if (subSurfaceNodePtr->IsLeashOrMainWindow()) {
             curMainAndLeashWindowNodesIds_.push(subSurfaceNodePtr->GetId());
             curDisplayNode_->RecordMainAndLeashSurfaces(subSurfaceNodePtr);
+            curDisplayNode_->UpdateSurfaceNodePos(
+                subSurfaceNodePtr->GetId(), subSurfaceNodePtr->GetOldDirtyInSurface());
             CollectOcclusionInfoForWMS(*subSurfaceNodePtr);
             auto& rateReduceManager = RSMainThread::Instance()->GetRSVsyncRateReduceManager();
             rateReduceManager.PushWindowNodeId(subSurfaceNodePtr->GetId());
