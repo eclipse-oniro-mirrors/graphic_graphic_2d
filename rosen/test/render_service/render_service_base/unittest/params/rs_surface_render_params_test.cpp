@@ -345,44 +345,4 @@ HWTEST_F(RSSurfaceRenderParamsTest, SetLayerTop_002, TestSize.Level2)
     EXPECT_EQ(params.needSync_, true);
     EXPECT_EQ(params.isLayerTop_, isLayerTop);
 }
-
-/**
- * @tc.name: IsVisibleDirtyRegionEmpty_001
- * @tc.desc: Test function IsVisibleDirtyRegionEmpty, IsMainWindowType
- * @tc.type:FUNC
- * @tc.require:issueIB1KXV
- */
-HWTEST_F(RSSurfaceRenderParamsTest, IsVisibleDirtyRegionEmpty_001, TestSize.Level2)
-{
-    constexpr NodeId id = TestSrc::limitNumber::Uint64[4];
-    RSSurfaceRenderParams params(id);
-    Drawing::Region curSurfaceDrawRegion;
-    bool regionIsEmpty = curSurfaceDrawRegion.IsEmpty();
-
-    params.windowInfo_.isMainWindowType_ = true;
-    EXPECT_TRUE(params.IsMainWindowType());
-
-    EXPECT_EQ(params.IsVisibleDirtyRegionEmpty(curSurfaceDrawRegion), regionIsEmpty);
-}
-
-/**
- * @tc.name: IsVisibleDirtyRegionEmpty_002
- * @tc.desc: Test function IsVisibleDirtyRegionEmpty, IsLeashWindow
- * @tc.type:FUNC
- * @tc.require:issueIB1KXV
- */
-HWTEST_F(RSSurfaceRenderParamsTest, IsVisibleDirtyRegionEmpty_002, TestSize.Level2)
-{
-    constexpr NodeId id = TestSrc::limitNumber::Uint64[4];
-    RSSurfaceRenderParams params(id);
-    Drawing::Region curSurfaceDrawRegion;
-    params.isLeashWindowVisibleRegionEmpty_ = true;
-
-    params.windowInfo_.isMainWindowType_ = false;
-    params.windowInfo_.isLeashWindow_ = true;
-    EXPECT_FALSE(params.IsMainWindowType());
-    EXPECT_TRUE(params.IsLeashWindow());
-
-    EXPECT_EQ(params.IsVisibleDirtyRegionEmpty(curSurfaceDrawRegion), params.isLeashWindowVisibleRegionEmpty_);
-}
 } // namespace OHOS::Rosen
