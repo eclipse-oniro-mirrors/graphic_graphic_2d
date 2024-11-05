@@ -158,7 +158,7 @@ void RSCanvasDrawingRenderNodeDrawable::DumpCanvasDrawing()
     }
 
     bool enabled = RSSystemParameters::GetDumpCanvasDrawingNodeEnabled();
-    if (enabled) {
+    if (!enabled) {
         return;
     }
     std::string debugNodeId = std::to_string(GetId());
