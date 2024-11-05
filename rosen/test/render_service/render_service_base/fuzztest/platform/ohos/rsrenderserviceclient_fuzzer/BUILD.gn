@@ -1,4 +1,4 @@
-# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Copyright (c) 2022 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -18,28 +18,44 @@ module_output_path = "graphic_2d/graphic_2d"
 
 ##############################fuzztest##########################################
 ohos_fuzztest("RSRenderServiceClientFuzzTest") {
-  fuzz_config_file = "//foundation/graphic/graphic_2d/rosen/test/render_service/render_service_base/fuzztest/platform/ohos/rsrenderseviceclient_fuzzer"
+  fuzz_config_file = "//foundation/graphic/graphic_2d/rosen/test/render_service/render_service_base/fuzztest/platform/ohos/rsrenderserviceclient_fuzzer"
   module_out_path = module_output_path
+  if (defined(use_rosen_drawing) && use_rosen_drawing) {
+    defines = [ "USE_ROSEN_DRAWING" ]
+  }
 
   include_dirs = [
     "//foundation/graphic/graphic_2d/rosen/modules/render_service_base/include",
+    "//foundation/graphic/graphic_2d/rosen/modules/platform/ipc_core",
+    "//foundation/graphic/graphic_2d/rosen/modules/platform",
+    "//foundation/graphic/graphic_2d/modules/hyper_graphic_manager/core/config",
+    "//foundation/graphic/graphic_2d/modules/render_service/core",
+    "//foundation/graphic/graphic_2d/modules/render_service_base/src",
+    "//foundation/graphic/graphic_2d/modules/render_service_base/src/ipc_callback",
+    "//foundation/graphic/graphic_2d/test/include",
   ]
-  public_external_deps = [
-    "graphic_2d:2d_graphics",
-    "graphic_2d:librender_service_base",
-    "image_framework:image_native",
+  deps = [
+    "//foundation/graphic/graphic_2d/rosen/modules/2d_graphics:2d_graphics",
+    "//foundation/graphic/graphic_2d/rosen/modules/render_service:librender_service",
+    "//foundation/graphic/graphic_2d/rosen/modules/render_service_client:librender_service_client",
   ]
   cflags = [
+    "-Wall",
+    "-Werror",
+    "-g3",
+    "-Dprivate=public",
+    "-Dprotected=public",
     "-g",
     "-O0",
     "-Wno-unused-variable",
     "-fno-omit-frame-pointer",
   ]
-  sources = [ "rsrenderseviceclient_fuzzer.cpp" ]
+  sources = [ "rsrenderserviceclient_fuzzer.cpp" ]
 
   external_deps = [
     "c_utils:utils",
     "hilog:libhilog",
+    "zlib:libz",
   ]
 }
 
