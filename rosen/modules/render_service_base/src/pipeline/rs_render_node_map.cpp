@@ -229,10 +229,10 @@ void RSRenderNodeMap::FilterNodeByPid(pid_t pid)
             }
             if (useBatchRemoving) {
                 RSRenderNodeGC::Instance().AddToOffTreeNodeBucket(pair.second);
+            } else if (auto parent = pair.second->GetParent().lock()) {
+                parent->RemoveChildFromFulllist(pair.second->GetId());
+                pair.second->RemoveFromTree(false);
             } else {
-                if (auto parent = pair.second->GetParent().lock()) {
-                    parent->RemoveChildFromFulllist(pair.second->GetId());
-                }
                 pair.second->RemoveFromTree(false);
             }
             pair.second->GetAnimationManager().FilterAnimationByPid(pid);
@@ -337,7 +337,7 @@ const std::shared_ptr<RSBaseRenderNode> RSRenderNodeMap::GetRenderNode(NodeId id
 
 const std::shared_ptr<RSRenderNode> RSRenderNodeMap::GetAnimationFallbackNode() const
 {
-    for (auto iter = renderNodeMap_.begin(); iter != renderNodeMap_.end; ++iter) {
+    for (auto iter = renderNodeMap_.begin(); iter != renderNodeMap_.end(); ++iter) {
         auto subiter = (iter->second).find(0);
         if (subiter != (iter->second).end()) {
             return subiter->second;
