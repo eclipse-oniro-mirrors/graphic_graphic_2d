@@ -29,7 +29,7 @@
 #include "pipeline/rs_display_render_node.h"
 #include "pipeline/rs_render_thread_visitor.cpp"
 #include "screen_manager/screen_types.h"
-#include "params/rs_display_render_param.h"
+#include "params/rs_display_render_params.h"
 
 namespace OHOS {
 namespace Rosen {
