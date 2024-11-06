@@ -80,7 +80,6 @@ HWTEST_F(RSDrawingFilterTest, SetImageFilter001, TestSize.Level1)
  * @tc.name: ProcessImageFilter001
  * @tc.desc: test results of ProcessImageFilter
  * @tc.type: FUNC
- * @tc.require: issuesI9PH4G
  */
 HWTEST_F(RSDrawingFilterTest, ProcessImageFilter001, TestSize.Level1)
 {
