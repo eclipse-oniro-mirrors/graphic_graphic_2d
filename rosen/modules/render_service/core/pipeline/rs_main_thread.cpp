@@ -3859,6 +3859,7 @@ void RSMainThread::ResetHardwareEnabledState(bool isUniRender)
 
 bool RSMainThread::IsHardwareEnabledNodesNeedSync()
 {
+    bool needSync = false;
     for (const auto& node : hardwareEnabledNodes_) {
         if (node != nullptr && (node->GetStagingRenderParams()->NeedSync() || !node->IsHardwareForcedDisabled())) {
             needSync = true;
