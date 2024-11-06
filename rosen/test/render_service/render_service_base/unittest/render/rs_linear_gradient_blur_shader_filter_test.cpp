@@ -64,7 +64,7 @@ HWTEST_F(RSLinearGradientBlurShaderFilterTest, GetLinearGradientBlurRadius003, T
 {
     float geoWidth = 0.f;
     float geoHeight = 0.f;
-    auto rsLinearGradientBlurShaderFilter = 
+    auto rsLinearGradientBlurShaderFilter =
         std::make_shared<RSLinearGradientBlurShaderFilter>(nullptr, geoWidth, geoHeight);
     EXPECT_TRUE(rsLinearGradientBlurShaderFilter->GetLinearGradientBlurRadius() == 0.);
 }
