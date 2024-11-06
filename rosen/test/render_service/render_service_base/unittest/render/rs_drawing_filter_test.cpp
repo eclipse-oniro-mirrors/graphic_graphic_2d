@@ -63,7 +63,6 @@ HWTEST_F(RSDrawingFilterTest, RSDrawingFilter001, TestSize.Level1)
  * @tc.name: SetImageFilter001
  * @tc.desc: test results of SetImageFilter
  * @tc.type: FUNC
- * @tc.require: issuesI9PH4G
  */
 HWTEST_F(RSDrawingFilterTest, SetImageFilter001, TestSize.Level1)
 {
@@ -347,7 +346,6 @@ HWTEST_F(RSDrawingFilterTest, PrepareAlphaForOnScreenDraw001, TestSize.Level1)
  * @tc.name: PreProcess001
  * @tc.desc: test results of PreProcess
  * @tc.type: FUNC
- * @tc.require: issuesI9PH4G
  */
 HWTEST_F(RSDrawingFilterTest, PreProcess001, TestSize.Level1)
 {
