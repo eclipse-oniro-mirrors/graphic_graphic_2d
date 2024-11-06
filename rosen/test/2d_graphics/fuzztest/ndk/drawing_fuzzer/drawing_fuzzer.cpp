@@ -428,6 +428,7 @@ void OHDrawingLineTypographyTest(const uint8_t* data, size_t size)
     OH_Drawing_TypographyHandlerAddText(createHandler, text.c_str());
     OH_Drawing_TypographyGetTextLines(nullptr);
     OH_Drawing_LineTypography* lineTypography = OH_Drawing_CreateLineTypography(createHandler);
+    OH_Drawing_CreateLineTypography(nullptr);
     if (lineTypography == nullptr) {
         return;
     }
@@ -550,6 +551,7 @@ void OHDrawingCreateSharedFontCollectionTest(const uint8_t* data, size_t size)
     OH_Drawing_DisableFontCollectionFallback(fontCollection);
     OH_Drawing_DisableFontCollectionSystemFont(fontCollection);
     OH_Drawing_ClearFontCaches(fontCollection);
+    OH_Drawing_ClearFontCaches(nullptr);
     OH_Drawing_DestroyFontCollection(fontCollection);
 }
 } // namespace OHOS::Rosen::Drawing

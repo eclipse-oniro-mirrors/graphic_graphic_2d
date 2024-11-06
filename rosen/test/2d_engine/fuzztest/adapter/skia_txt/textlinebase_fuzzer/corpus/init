@@ -11,14 +11,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import("//build/test.gni")
-group("fuzztest") {
-  testonly = true
-  deps = []
-
-  deps += [
-    # deps file
-    "adapter/skia_txt:fuzztest",
-    "hm_symbol:fuzztest",
-  ]
-}
+FUZZ
