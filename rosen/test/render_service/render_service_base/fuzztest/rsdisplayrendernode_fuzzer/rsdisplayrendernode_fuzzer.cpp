@@ -29,6 +29,7 @@
 #include "pipeline/rs_display_render_node.h"
 #include "pipeline/rs_render_thread_visitor.cpp"
 #include "screen_manager/screen_types.h"
+#include "params/rs_display_render_param.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -249,11 +250,11 @@ bool DoGetSortedChildren(const uint8_t* data, size_t size)
     g_size = size;
     g_pos = 0;
 
-    uint64_t id = GetData<uint64_t>();
-    RSDisplayNodeConfig config;
-    config.mirrorNodeId = id;
-    config.screenId = id;
-    config.isMirrored = true;
+    NodeId id = GetData<NodeId>();
+    uint64_t screenId = GetData<uint64_t>();
+    bool isMirrored = GetData<bool>();
+    NodeId mirrorNodeId = GetData<NodeId>();
+    RSDisplayNodeConfig config = { screenId, isMirrored, mirrorNodeId };
     RSDisplayRenderNode rsDisplayRenderNode(id, config);
     auto oldScbPids = std::vector<int32_t>();
     int32_t currentScbPid = GetData<int32_t>();
