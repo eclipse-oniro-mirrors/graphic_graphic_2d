@@ -249,7 +249,6 @@ void RSRenderNodeMap::FilterNodeByPid(pid_t pid)
             }
             subiter->second->GetAnimationManager().FilterAnimationByPid(pid);
             subiter = submap.erase(subiter);
-            continue;
         }
         renderNodeMap_.erase(iter);
     }
