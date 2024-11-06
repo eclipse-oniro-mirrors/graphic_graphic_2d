@@ -36,7 +36,9 @@ void RSImageBaseTest::SetUpTestCase() {}
 void RSImageBaseTest::TearDownTestCase() {}
 void RSImageBaseTest::SetUp() {}
 void RSImageBaseTest::TearDown() {}
+#if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
 Drawing::ColorType GetColorTypeWithVKFormat(VkFormat vkFormat);
+#endif
 
 /**
  * @tc.name: DrawImageTest
@@ -689,6 +691,7 @@ HWTEST_F(RSImageBaseTest, MakeFromTextureForVKTest004, TestSize.Level1)
 }
 #endif
 
+#if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
 /**
  * @tc.name: BindPixelMapToDrawingImageTest
  * @tc.desc: Verify function BindPixelMapToDrawingImage
@@ -830,4 +833,5 @@ HWTEST_F(RSImageBaseTest, BindPixelMapToDrawingImageTest007, TestSize.Level1)
     ASSERT_NE(imageBase, nullptr);
     imageBase->BindPixelMapToDrawingImage(canvas);
 }
+#endif
 } // namespace OHOS::Rosen
