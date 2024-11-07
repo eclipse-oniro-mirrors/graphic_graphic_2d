@@ -464,6 +464,16 @@ public:
         return arsrTag_;
     }
 
+    void SetNeedBilinearInterpolation(bool need)
+    {
+        needBilinearInterpolation_ = need;
+    }
+
+    bool GetNeedBilinearInterpolation() const
+    {
+        return needBilinearInterpolation_;
+    }
+
     void CopyLayerInfo(const std::shared_ptr<HdiLayerInfo> &layerInfo)
     {
         std::lock_guard<std::mutex> lock(mutex_);
@@ -495,6 +505,7 @@ public:
         layerSource_ = layerInfo->GetLayerSourceTuning();
         rotationFixed_ = layerInfo->GetRotationFixed();
         arsrTag_ = layerInfo->GetLayerArsr();
+        needBilinearInterpolation_ = layerInfo->GetNeedBilinearInterpolation();
     }
 
     void Dump(std::string &result) const
@@ -610,6 +621,7 @@ private:
     sptr<SurfaceBuffer> sbuffer_ = nullptr;
     sptr<SurfaceBuffer> pbuffer_ = nullptr;
     bool preMulti_ = false;
+    bool needBilinearInterpolation_ = false;
     LayerMask layerMask_ = LayerMask::LAYER_MASK_NORMAL;
     mutable std::mutex mutex_;
     int32_t sdrNit_ = 500; // default sdr nit
