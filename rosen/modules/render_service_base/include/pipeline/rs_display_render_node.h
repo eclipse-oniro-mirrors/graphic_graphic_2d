@@ -229,10 +229,10 @@ public:
     }
 
     void SetHasSecLayerInVisibleRect(bool hasSecLayer) {
-        bool lastHasSecLayerInVisibleRect_ = hasSecLayerInVisibleRect_;
+        bool lastHasSecLayerInVisibleRect = hasSecLayerInVisibleRect_;
         hasSecLayerInVisibleRect_ = hasSecLayer;
         hasSecLayerInVisibleRectChanged_ =
-            lastHasSecLayerInVisibleRect_ != hasSecLayerInVisibleRect_;
+            lastHasSecLayerInVisibleRect != hasSecLayerInVisibleRect_;
     }
 
     RectI GetLastFrameSurfacePos(NodeId id)

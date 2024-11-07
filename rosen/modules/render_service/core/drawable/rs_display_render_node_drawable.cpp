@@ -1063,9 +1063,8 @@ void RSDisplayRenderNodeDrawable::DrawMirrorCopy(
         if (!enableVisibleRect_) {
             RSUniRenderUtil::ProcessCacheImage(*curCanvas_, *cacheImage);
         } else {
-            Drawing::Rect src = curVisibleRect_;
-            Drawing::Rect dst = Drawing::Rect(0, 0, src.GetWidth(), src.GetHeight());
-            RSUniRenderUtil::ProcessCacheImageRect(*curCanvas_, *cacheImage, src, dst);
+            RSUniRenderUtil::ProcessCacheImageRect(*curCanvas_, *cacheImage, curVisibleRect_,
+                Drawing::Rect(0, 0, curVisibleRect_.GetWidth(), curVisibleRect_.GetHeight()));
         }
     } else {
         RS_TRACE_NAME("DrawMirrorCopy with displaySurface");
@@ -1146,9 +1145,8 @@ void RSDisplayRenderNodeDrawable::DrawWiredMirrorCopy(RSDisplayRenderNodeDrawabl
         if (!enableVisibleRect_) {
             RSUniRenderUtil::ProcessCacheImage(*curCanvas_, *cacheImage);
         } else {
-            Drawing::Rect src = curVisibleRect_;
-            Drawing::Rect dst = Drawing::Rect(0, 0, src.GetWidth(), src.GetHeight());
-            RSUniRenderUtil::ProcessCacheImageRect(*curCanvas_, *cacheImage, src, dst);
+            RSUniRenderUtil::ProcessCacheImageRect(*curCanvas_, *cacheImage, curVisibleRect_,
+                Drawing::Rect(0, 0, curVisibleRect_.GetWidth(), curVisibleRect_.GetHeight()));
         }
     } else {
         RS_TRACE_NAME("DrawWiredMirrorCopy with displaySurface");
