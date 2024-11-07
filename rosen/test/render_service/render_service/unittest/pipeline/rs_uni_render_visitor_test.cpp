@@ -40,6 +40,8 @@
 #include "pipeline/rs_uni_render_thread.h"
 #include "pipeline/rs_uni_render_util.h"
 #include "pipeline/rs_uni_render_visitor.h"
+#include "pipeline/round_corner_display/rs_round_corner_display.h"
+#include "pipeline/round_corner_display/rs_round_corner_display_manager.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -4690,5 +4692,63 @@ HWTEST_F(RSUniRenderVisitorTest, IsFirstFrameOfOverdrawSwitch, TestSize.Level1)
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
     ASSERT_NE(rsUniRenderVisitor, nullptr);
     ASSERT_EQ(rsUniRenderVisitor->IsFirstFrameOfOverdrawSwitch(), false);
+}
+
+/*
+ * @tc.name: CheckMergeDisplayDirtyByRoundCornerDisplay001
+ * @tc.desc: Test RSUniRenderVisitorTest.CheckMergeDisplayDirtyByRoundCornerDisplay001
+ * @tc.type: FUNC
+ * @tc.require: issueIB2P2F
+ */
+HWTEST_F(RSUniRenderVisitorTest, CheckMergeDisplayDirtyByRoundCornerDisplay001, TestSize.Level2)
+{
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    ASSERT_NE(rsUniRenderVisitor, nullptr);
+    rsUniRenderVisitor->screenManager_ = CreateOrGetScreenManager();
+    ASSERT_NE(rsUniRenderVisitor->screenManager_, nullptr);
+    auto virtualScreenId = rsUniRenderVisitor->screenManager_->CreateVirtualScreen("virtual screen 001", 0, 0, nullptr);
+    ASSERT_NE(INVALID_SCREEN_ID, virtualScreenId);
+
+    RSDisplayNodeConfig config;
+    auto rsContext = std::make_shared<RSContext>();
+    auto displayNode = std::make_shared<RSDisplayRenderNode>(0, config, rsContext->weak_from_this());
+    ASSERT_NE(displayNode, nullptr);
+    displayNode->SetScreenId(virtualScreenId);
+    rsUniRenderVisitor->curDisplayNode_ = displayNode;
+    rsUniRenderVisitor->CheckMergeDisplayDirtyByRoundCornerDisplay();
+}
+
+/*
+ * @tc.name: CheckMergeDisplayDirtyByRoundCornerDisplay002
+ * @tc.desc: Test RSUniRenderVisitorTest.CheckMergeDisplayDirtyByRoundCornerDisplay002
+ * @tc.type: FUNC
+ * @tc.require: issueIB2P2F
+ */
+HWTEST_F(RSUniRenderVisitorTest, CheckMergeDisplayDirtyByRoundCornerDisplay002, TestSize.Level2)
+{
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    ASSERT_NE(rsUniRenderVisitor, nullptr);
+    rsUniRenderVisitor->screenManager_ = CreateOrGetScreenManager();
+    ASSERT_NE(rsUniRenderVisitor->screenManager_, nullptr);
+
+    ScreenId screenId = 0;
+    auto rsScreen = std::make_unique<impl::RSScreen>(screenId, false, HdiOutput::CreateHdiOutput(screenId), nullptr);
+    rsScreen->screenType_ = EXTERNAL_TYPE_SCREEN;
+    rsUniRenderVisitor->screenManager_->MockHdiScreenConnected(rsScreen);
+    RSDisplayNodeConfig config;
+    auto rsContext = std::make_shared<RSContext>();
+    auto displayNode = std::make_shared<RSDisplayRenderNode>(0, config, rsContext->weak_from_this());
+    ASSERT_NE(displayNode, nullptr);
+    displayNode->screenId_ = screenId;
+    rsUniRenderVisitor->curDisplayNode_ = displayNode;
+    rsUniRenderVisitor->CheckMergeDisplayDirtyByRoundCornerDisplay();
+
+    auto &rcdInstance = RSSingleton<RoundCornerDisplayManager>::GetInstance();
+    NodeId id = displayNode->GetId();
+    rcdInstance.AddRoundCornerDisplay(id);
+    EXPECT_TRUE(rcdInstance.CheckExist(id));
+    rcdInstance.rcdMap_[id]->rcdDirtyType_ = RoundCornerDirtyType::RCD_DIRTY_ALL;
+    rcdInstance.rcdMap_[id]->hardInfo_.resourceChanged = true;
+    rsUniRenderVisitor->CheckMergeDisplayDirtyByRoundCornerDisplay();
 }
 } // OHOS::Rosen
