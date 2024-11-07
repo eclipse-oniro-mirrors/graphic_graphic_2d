@@ -101,6 +101,16 @@ struct VoteInfo {
         return str.str();
     }
 
+    std::string ToSimpleString() const
+    {
+        std::stringstream str;
+        str << "VOTER:" << voterName << ";";
+        str << "FPS:" << max << ";";
+        str << "EXT:" << extInfo << ";";
+        str << "PID:" << pid;
+        return str.str();
+    }
+
     bool operator==(const VoteInfo& other) const
     {
         return this->min == other.min && this->max == other.max && this->voterName == other.voterName &&
