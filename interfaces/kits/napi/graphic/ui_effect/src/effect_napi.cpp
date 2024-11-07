@@ -114,8 +114,7 @@ napi_value EffectNapi::CreateEffect(napi_env env, napi_callback_info info)
         return nullptr;
     }
     napi_value object = nullptr;
-    napi_status status;
-    status = napi_create_object(env, &object);
+    napi_status status = napi_create_object(env, &object);
     if (status != napi_ok) {
         delete effectObj;
         UIEFFECT_LOG_E("EffectNapi CreateEffect create object fail.");
