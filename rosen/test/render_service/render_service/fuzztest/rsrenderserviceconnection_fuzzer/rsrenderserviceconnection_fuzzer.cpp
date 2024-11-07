@@ -532,6 +532,20 @@ bool DoTakeSurfaceCapture()
     return true;
 }
 
+bool DoSetHwcNodeBounds()
+{
+    if (rsConn_ == nullptr) {
+        return false;
+    }
+    uint64_t nodeId = GetData<uint64_t>();
+    float positionX = GetData<float>();
+    float positionY = GetData<float>();
+    float positionZ = GetData<float>();
+    float positionW = GetData<float>();
+    rsConn_->SetHwcNodeBounds(nodeId, positionX, positionY, positionZ, positionW);
+    return true;
+}
+
 bool DoSetScreenChangeCallback()
 {
     if (rsConn_ == nullptr) {
@@ -1183,6 +1197,7 @@ void DoFuzzerTest1()
     DoRegisterOcclusionChangeCallback();
     DoShowWatermark();
     DoTakeSurfaceCapture();
+    DoSetHwcNodeBounds();
     DoSetScreenChangeCallback();
     DoSetFocusAppInfo();
     DoSetAncoForceDoDirect();
