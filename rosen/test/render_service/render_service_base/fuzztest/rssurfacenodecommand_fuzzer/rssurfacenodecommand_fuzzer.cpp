@@ -130,7 +130,7 @@ bool DoSurfacenodecommand002(const uint8_t* data, size_t size)
     }
 
     // initialize
-    DATA = data;
+    g_data = data;
     g_size = size;
     g_pos = 0;
 
