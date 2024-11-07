@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,24 +13,14 @@
  * limitations under the License.
  */
 
-#ifndef TEST_FUZZTEST_DRAWING_FUZZER_H
-#define TEST_FUZZTEST_DRAWING_FUZZER_H
+#ifndef TEST_FONTCOLLECTION_FUZZER_H
+#define TEST_FONTCOLLECTION_FUZZER_H
 
 #include <climits>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 
-#define FUZZ_PROJECT_NAME "drawing_fuzzer"
+#define FUZZ_PROJECT_NAME "fontcollection_fuzzer"
 
-constexpr inline size_t DATA_MIN_SIZE = 8;
-constexpr inline size_t DATA_MAX_ENUM_SIZE1 = 3;
-constexpr inline size_t DATA_MAX_ENUM_SIZE2 = 4;
-constexpr inline size_t DATA_MAX_ENUM_SIZE3 = 5;
-constexpr inline size_t DATA_MAX_ENUM_SIZE4 = 8;
-constexpr inline size_t DATA_MAX_ENUM_SIZE5 = 11;
-namespace OHOS::Rosen::Drawing {
-void OHDrawingTypographyTest(const uint8_t* data, size_t size);
-} // namespace OHOS::Rosen::Drawing
-
-#endif // TEST_FUZZTEST_DRAWING_FUZZER_H
+#endif // TEST_FONTCOLLECTION_FUZZER_H

@@ -1,4 +1,4 @@
-# Copyright (c) 2023 Huawei Device Co., Ltd.
+# Copyright (c) 2024 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -15,37 +15,35 @@
 import("//build/config/features.gni")
 import("//build/test.gni")
 import("//foundation/graphic/graphic_2d/graphic_config.gni")
-module_out_path = "graphic_2d/graphic_2d"
+import("$graphic_2d_root/rosen/modules/2d_engine/rosen_text/config.gni")
+module_out_path = "graphic_2d/graphic_2d/modules/2d_engine/adapter/skia_txt"
 
 ##############################fuzztest##########################################
-ohos_fuzztest("DrawingFuzzTest") {
+ohos_fuzztest("ConvertFuzzTest") {
   module_out_path = module_out_path
-  fuzz_config_file =
-      "$graphic_2d_root/rosen/test/2d_graphics/fuzztest/ndk/drawing_fuzzer"
+  fuzz_config_file = "$graphic_2d_root/rosen/test/2d_engine/fuzztest/adapter/skia_txt/convert_fuzzer"
 
   include_dirs = [
-    "$graphic_2d_root/rosen/modules/2d_engine/rosen_text/export",
-    "$graphic_2d_root/rosen/modules/2d_graphics/include",
-    "$graphic_2d_root/rosen/modules/2d_graphics/src",
-    "$graphic_2d_root/rosen/modules/2d_graphics/src/drawing/engine_adapter",
+    "$graphic_2d_root/rosen/modules/export/rosen_text/export/",
+    "$graphic_2d_root/rosen/modules/export/rosen_text/export/rosen_test",
+    "$graphic_2d_root/rosen/modules/2d_engine/rosen_text/skia_txt",
+    "$graphic_2d_root/rosen/modules/2d_engine/rosen_text/skia_txt/txt",
     "$graphic_2d_root/rosen/test/2d_graphics/fuzztest",
-    "$graphic_2d_root/rosen/modules/render_service_base/include",
+    "$graphic_2d_root/rosen/test/2d_engine/fuzztest/adapter/skia_txt/convert_fuzzer",
   ]
-  cflags_cc = [
+
+  if (use_skia_txt) {
+    sources = [ "convert_fuzzer.cpp" ]
+  }
+
+  cflags = [
     "-g",
     "-O0",
     "-Wno-unused-variable",
     "-fno-omit-frame-pointer",
-    "-std=c++17",
-  ]
-  sources = [
-    "drawing_fuzzer.cpp",
-    "drawing_typography_fuzzer.cpp",
   ]
 
-  deps = [
-    "$graphic_2d_root/rosen/modules/2d_graphics/drawing_ndk:native_drawing_ndk",
-  ]
+  deps = [ "$graphic_2d_root/rosen/modules/2d_graphics:2d_graphics" ]
 
   part_name = "graphic_2d"
   subsystem_name = "graphic"
@@ -54,10 +52,7 @@ ohos_fuzztest("DrawingFuzzTest") {
 ###############################################################################
 group("fuzztest") {
   testonly = true
-  deps = []
-  deps += [
-    # deps file
-    ":DrawingFuzzTest",
-  ]
+
+  deps = [ ":ConvertFuzzTest" ]
 }
 ###############################################################################
