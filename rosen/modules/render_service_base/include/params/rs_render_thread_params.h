@@ -254,6 +254,16 @@ public:
         return cacheEnabledForRotation_;
     }
 
+    void SetScreenSwitchStatus(bool flag)
+    {
+        isScreenSwitching_ = flag;
+    }
+
+    bool GetScreenSwitchStatus() const
+    {
+        return isScreenSwitching_;
+    }
+
     void SetRequestNextVsyncFlag(bool flag)
     {
         needRequestNextVsyncAnimate_ = flag;
@@ -406,6 +416,7 @@ private:
     bool isExpandScreenDirtyEnabled_ = false;
     bool isMirrorScreenDirty_ = false;
     bool cacheEnabledForRotation_ = false;
+    bool isScreenSwitching_ = false;
     DirtyRegionDebugType dirtyRegionDebugType_ = DirtyRegionDebugType::DISABLED;
     std::vector<DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr> selfDrawables_;
     std::vector<DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr> hardwareEnabledTypeDrawables_;

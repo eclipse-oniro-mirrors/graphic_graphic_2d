@@ -339,6 +339,8 @@ public:
 
     void SetCacheEnabledForRotation(bool isEnabled);
 
+    void SetScreenSwitchStatus(bool flag);
+
     void SetDefaultDeviceRotationOffset(uint32_t offset);
 
     void SetOnRemoteDiedCallback(const OnRemoteDiedCallback& callback);

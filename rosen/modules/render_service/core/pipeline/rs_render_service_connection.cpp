@@ -1964,6 +1964,17 @@ void RSRenderServiceConnection::SetCacheEnabledForRotation(bool isEnabled)
     mainThread_->PostTask(task);
 }
 
+void RSRenderServiceConnection::SetScreenSwitchStatus(bool flag)
+{
+    if (!mainThread_) {
+        return;
+    }
+    auto task = [flag]() {
+        RSSystemProperties::SetScreenSwitchStatus(flag);
+    };
+    mainThread_->PostTask(task);
+}
+
 void RSRenderServiceConnection::SetDefaultDeviceRotationOffset(uint32_t offset)
 {
     RSSystemProperties::SetDefaultDeviceRotationOffset(offset);

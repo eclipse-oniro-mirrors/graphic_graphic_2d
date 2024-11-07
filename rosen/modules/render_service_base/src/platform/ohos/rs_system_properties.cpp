@@ -440,6 +440,16 @@ bool RSSystemProperties::GetCacheEnabledForRotation()
     return cacheEnabledForRotation_;
 }
 
+void RSRenderServiceClient::SetScreenSwitchStatus(bool flag)
+{
+    isScreenSwitching_ = flag;
+}
+
+bool RSRenderServiceClient::GetScreenSwitchStatus()
+{
+    return isScreenSwitching_;
+}
+
 void RSSystemProperties::SetDefaultDeviceRotationOffset(uint32_t offset)
 {
     defaultDeviceRotationOffset_ = offset;
