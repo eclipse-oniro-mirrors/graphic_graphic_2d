@@ -775,7 +775,7 @@ void HgmFrameRateManager::HandleRefreshRateEvent(pid_t pid, const EventInfo& eve
         return;
     }
 
-    HGM_LOGI("%{public}s(%{public}d) %{public}s", eventName.c_str(), pid, eventInfo.description.c_str());
+    HGM_LOGD("%{public}s(%{public}d) %{public}s", eventName.c_str(), pid, eventInfo.description.c_str());
     if (eventName == "VOTER_SCENE") {
         HandleSceneEvent(pid, eventInfo);
     } else if (eventName == "VOTER_VIRTUALDISPLAY") {
@@ -1044,6 +1044,8 @@ void HgmFrameRateManager::MarkVoteChange(const std::string& voter)
         return;
     }
     lastVoteInfo_ = resultVoteInfo;
+    HGM_LOGI("Strategy:%{public}s Screen:%{public}d Mode:%{public}d -- %{public}s", curScreenStrategyId_.c_str(),
+        static_cast<int>(curScreenId_.load()), curRefreshRateMode_, resultVoteInfo.ToSimpleString().c_str());
 
     // max used here
     FrameRateRange finalRange = {resultVoteInfo.max, resultVoteInfo.max, resultVoteInfo.max};
@@ -1383,7 +1385,7 @@ void HgmFrameRateManager::UpdateVoteRule()
     uint32_t curScenePriority = static_cast<uint32_t>(std::stoi(curSceneConfig.priority));
     uint32_t min = static_cast<uint32_t>(configData->strategyConfigs_[curSceneConfig.strategy].min);
     uint32_t max = static_cast<uint32_t>(configData->strategyConfigs_[curSceneConfig.strategy].max);
-    HGM_LOGI("UpdateVoteRule: SceneName:%{public}s", lastScene.c_str());
+    HGM_LOGD("UpdateVoteRule: SceneName:%{public}s", lastScene.c_str());
     DeliverRefreshRateVote({"VOTER_SCENE", min, max, (*scenePos).second, lastScene}, ADD_VOTE);
 
     // restore
@@ -1476,7 +1478,7 @@ void HgmFrameRateManager::ProcessVoteLog(const VoteInfo& curVoteInfo, bool isSki
 {
     RS_TRACE_NAME_FMT("Process voter:%s(pid:%d), value:[%d-%d]%s",
         curVoteInfo.voterName.c_str(), curVoteInfo.pid, curVoteInfo.min, curVoteInfo.max, isSkip ? " skip" : "");
-    HGM_LOGI("Process: %{public}s(%{public}d):[%{public}d, %{public}d]%{public}s",
+    HGM_LOGD("Process: %{public}s(%{public}d):[%{public}d, %{public}d]%{public}s",
         curVoteInfo.voterName.c_str(), curVoteInfo.pid, curVoteInfo.min, curVoteInfo.max, isSkip ? " skip" : "");
 }
 

@@ -302,7 +302,7 @@ int32_t HgmCore::SetScreenRefreshRate(ScreenId id, int32_t sceneId, int32_t rate
     std::lock_guard<std::mutex> lock(modeListMutex_);
 
     // the rate is accepted and passed to a list, will be applied by hardwarethread before sending the composition
-    HGM_LOGI("HgmCore the rate of %{public}d is accepted, the target mode is %{public}d", rate, modeToSwitch);
+    HGM_LOGD("HgmCore the rate of %{public}d is accepted, the target mode is %{public}d", rate, modeToSwitch);
     if (modeListToApply_ == nullptr) {
         HGM_LOGD("HgmCore modeListToApply_ is invalid, buiding a new mode list");
         modeListToApply_ = std::make_unique<std::unordered_map<ScreenId, int32_t>>();
