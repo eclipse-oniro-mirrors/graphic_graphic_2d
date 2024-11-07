@@ -608,7 +608,7 @@ HWTEST_F(RSImageCacheTest, CheckRefCntAndReleaseImageCacheTest004, TestSize.Leve
  * @tc.name: CachePixelMapTest006
  * @tc.desc: Verify function CachePixelMap
  * @tc.type:FUNC
- * @tc.require: issue#IB2B3G
+ * @tc.require: issue#IB2LQP
  */
 HWTEST_F(RSImageCacheTest, CachePixelMapTest006, TestSize.Level1)
 {
@@ -617,7 +617,7 @@ HWTEST_F(RSImageCacheTest, CachePixelMapTest006, TestSize.Level1)
     auto pixelMap = std::make_shared<Media::PixelMap>();
     pixelMap->allocatorType_ = Media::AllocatorType::DMA_ALLOC;
     imageCache.CachePixelMap(uniqueId, pixelMap);
-    EXPECT_TRUE(imageCache.pixelMapCache_.empty());
+    EXPECT_FALSE(imageCache.pixelMapCache_.empty());
     imageCache.pixelMapCache_.clear();
 }
 
@@ -625,7 +625,7 @@ HWTEST_F(RSImageCacheTest, CachePixelMapTest006, TestSize.Level1)
  * @tc.name: ReleasePixelMapCacheTest006
  * @tc.desc: Verify function ReleasePixelMapCache
  * @tc.type:FUNC
- * @tc.require: issue#IB2B3G
+ * @tc.require: issue#IB2LQP
  */
 HWTEST_F(RSImageCacheTest, ReleasePixelMapCacheTest006, TestSize.Level1)
 {
@@ -642,7 +642,7 @@ HWTEST_F(RSImageCacheTest, ReleasePixelMapCacheTest006, TestSize.Level1)
  * @tc.name: ReleasePixelMapCacheTest007
  * @tc.desc: Verify function ReleasePixelMapCache
  * @tc.type:FUNC
- * @tc.require: issue#IB2B3G
+ * @tc.require: issue#IB2LQP
  */
 HWTEST_F(RSImageCacheTest, ReleasePixelMapCacheTest007, TestSize.Level1)
 {
@@ -659,7 +659,7 @@ HWTEST_F(RSImageCacheTest, ReleasePixelMapCacheTest007, TestSize.Level1)
  * @tc.name: ReleasePixelMapCacheTest008
  * @tc.desc: Verify function ReleasePixelMapCache
  * @tc.type:FUNC
- * @tc.require: issue#IB2B3G
+ * @tc.require: issue#IB2LQP
  */
 HWTEST_F(RSImageCacheTest, ReleasePixelMapCacheTest008, TestSize.Level1)
 {

@@ -853,7 +853,7 @@ HWTEST_F(RSImageBaseTest, BindPixelMapToDrawingImageTest007, TestSize.Level1)
  * @tc.name: UnmarshallingDrawingImageAndPixelMapTest003
  * @tc.desc: Verify UnmarshallingDrawingImageAndPixelMap
  * @tc.type:FUNC
- * @tc.require: issue#IB2B3G
+ * @tc.require: issue#IB2LQP
  */
 HWTEST_F(RSImageBaseTest, UnmarshallingDrawingImageAndPixelMapTest003, TestSize.Level1)
 {
@@ -873,7 +873,7 @@ HWTEST_F(RSImageBaseTest, UnmarshallingDrawingImageAndPixelMapTest003, TestSize.
  * @tc.name: UnmarshallingDrawingImageAndPixelMapTest004
  * @tc.desc: Verify UnmarshallingDrawingImageAndPixelMap
  * @tc.type:FUNC
- * @tc.require: issue#IB2B3G
+ * @tc.require: issue#IB2LQP
  */
 HWTEST_F(RSImageBaseTest, UnmarshallingDrawingImageAndPixelMapTest004, TestSize.Level1)
 {
@@ -893,7 +893,7 @@ HWTEST_F(RSImageBaseTest, UnmarshallingDrawingImageAndPixelMapTest004, TestSize.
  * @tc.name: UnmarshallingDrawingImageAndPixelMapTest005
  * @tc.desc: Verify UnmarshallingDrawingImageAndPixelMap
  * @tc.type:FUNC
- * @tc.require: issue#IB2B3G
+ * @tc.require: issue#IB2LQP
  */
 HWTEST_F(RSImageBaseTest, UnmarshallingDrawingImageAndPixelMapTest005, TestSize.Level1)
 {
@@ -914,7 +914,7 @@ HWTEST_F(RSImageBaseTest, UnmarshallingDrawingImageAndPixelMapTest005, TestSize.
  * @tc.name: UnmarshallingDrawingImageAndPixelMapTest006
  * @tc.desc: Verify UnmarshallingDrawingImageAndPixelMap
  * @tc.type:FUNC
- * @tc.require: issue#IB2B3G
+ * @tc.require: issue#IB2LQP
  */
 HWTEST_F(RSImageBaseTest, UnmarshallingDrawingImageAndPixelMapTest006, TestSize.Level1)
 {
@@ -935,7 +935,7 @@ HWTEST_F(RSImageBaseTest, UnmarshallingDrawingImageAndPixelMapTest006, TestSize.
  * @tc.name: UnmarshallingDrawingImageAndPixelMapTest007
  * @tc.desc: Verify UnmarshallingDrawingImageAndPixelMap
  * @tc.type:FUNC
- * @tc.require: issue#IB2B3G
+ * @tc.require: issue#IB2LQP
  */
 HWTEST_F(RSImageBaseTest, UnmarshallingDrawingImageAndPixelMapTest007, TestSize.Level1)
 {
@@ -957,27 +957,7 @@ HWTEST_F(RSImageBaseTest, UnmarshallingDrawingImageAndPixelMapTest007, TestSize.
  * @tc.name: UnmarshallingDrawingImageAndPixelMapTest008
  * @tc.desc: Verify UnmarshallingDrawingImageAndPixelMap
  * @tc.type:FUNC
- * @tc.require: issue#IB2B3G
- */
-HWTEST_F(RSImageBaseTest, UnmarshallingDrawingImageAndPixelMapTest008, TestSize.Level1)
-{
-    auto imageBase = std::make_shared<RSImageBase>();
-    Parcel parcel;
-    parcel.WriteInt32(-1);
-    uint64_t uniqueId = -1;
-    bool useSKImage = true;
-    auto image = std::make_shared<Drawing::Image>();
-    auto pixelMap = std::make_shared<Media::PixelMap>();
-    void* addr = nullptr;
-    bool ret = imageBase->UnmarshallingDrawingImageAndPixelMap(parcel, uniqueId, useSKImage, image, pixelMap, addr);
-    EXPECT_EQ(ret, false);
-}
-
-/**
- * @tc.name: UnmarshallingDrawingImageAndPixelMapTest008
- * @tc.desc: Verify UnmarshallingDrawingImageAndPixelMap
- * @tc.type:FUNC
- * @tc.require: issue#IB2B3G
+ * @tc.require: issue#IB2LQP
  */
 HWTEST_F(RSImageBaseTest, UnmarshallingDrawingImageAndPixelMapTest008, TestSize.Level1)
 {
@@ -997,7 +977,7 @@ HWTEST_F(RSImageBaseTest, UnmarshallingDrawingImageAndPixelMapTest008, TestSize.
  * @tc.name: IncreaseCacheRefCountTest
  * @tc.desc: Verify IncreaseCacheRefCount
  * @tc.type:FUNC
- * @tc.require: issue#IB2B3G
+ * @tc.require: issue#IB2LQP
  */
 HWTEST_F(RSImageBaseTest, IncreaseCacheRefCountTest, TestSize.Level1)
 {
@@ -1014,7 +994,7 @@ HWTEST_F(RSImageBaseTest, IncreaseCacheRefCountTest, TestSize.Level1)
  * @tc.name: IncreaseCacheRefCountTest001
  * @tc.desc: Verify IncreaseCacheRefCount
  * @tc.type:FUNC
- * @tc.require: issue#IB2B3G
+ * @tc.require: issue#IB2LQP
  */
 HWTEST_F(RSImageBaseTest, IncreaseCacheRefCountTest001, TestSize.Level1)
 {
@@ -1031,7 +1011,7 @@ HWTEST_F(RSImageBaseTest, IncreaseCacheRefCountTest001, TestSize.Level1)
  * @tc.name: IncreaseCacheRefCountTest002
  * @tc.desc: Verify IncreaseCacheRefCount
  * @tc.type:FUNC
- * @tc.require: issue#IB2B3G
+ * @tc.require: issue#IB2LQP
  */
 HWTEST_F(RSImageBaseTest, IncreaseCacheRefCountTest002, TestSize.Level1)
 {
