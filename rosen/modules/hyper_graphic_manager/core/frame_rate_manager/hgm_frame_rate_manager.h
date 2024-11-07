@@ -269,7 +269,7 @@ private:
     int32_t schedulePreferredFpsChange_ = false;
     std::atomic<bool> isAdaptive_ = false;
     // Does current game require Adaptive Sync
-    isGameSupportAS_ = false;
+    bool isGameSupportAS_ = false;
 
     uint64_t timestamp_ = 0;
     std::shared_ptr<RSRenderFrameRateLinker> rsFrameRateLinker_ = nullptr;
