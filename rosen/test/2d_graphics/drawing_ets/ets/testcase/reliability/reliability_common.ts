@@ -64,7 +64,10 @@ export function drawAll(canvas: drawing.Canvas) {
   canvas.drawSingleCharacter('A', font, charX, charY);
   // 5.设置背景颜色
   let brush = new drawing.Brush();
-  brush.setColor(0x22ff0088);
+  // todo: setColor(color: number): void;此方法还未转测
+  // brush.setColor(0x22ff0088);
+  let color: common2D.Color = { alpha: 22, red: 255, green: 0, blue: 88 };
+  brush.setColor(color);
   canvas.drawBackground(brush);
   // 6.绘制点
   let pointX = 500;

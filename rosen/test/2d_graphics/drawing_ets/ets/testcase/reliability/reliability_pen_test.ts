@@ -19,6 +19,20 @@ import { drawAll } from './reliability_common';
 
 // detach pen后，再调用draw接口
 export class ReliabilityDetachPen extends TestBase {
+
+  /*
+  @CaseID:SUB_BASIC_GRAPHICS_SPECIAL_STABLE_TS_DRAWING_RELIABILITY_PEN_0100
+  @Description:detach pen后，再调用draw接口
+  @Step:
+  1、运行脚本，循环执行hidumper命令查询内存
+  2、执行自动化用例：
+  detach pen后，再调用draw接口
+  3、执行结束后等待3分钟
+  4、结束脚本运行，抓取的内存值转成折线图，观察内存变化
+  @Result:
+  1、程序运行正常，无crash
+  2、内存平稳，没有持续增长，执行后内存回落到执行前；
+  */
   public async OnTestFunction(canvas: drawing.Canvas) {
     let pen = new drawing.Pen();
     canvas.attachPen(pen);
@@ -29,6 +43,20 @@ export class ReliabilityDetachPen extends TestBase {
 
 // attach pen后调用destroy接口，再调用draw接口
 export class ReliabilityAttachPen extends TestBase {
+
+  /*
+  @CaseID:SUB_BASIC_GRAPHICS_SPECIAL_STABLE_TS_DRAWING_RELIABILITY_PEN_0200
+  @Description:attach pen后调用destroy接口，再调用draw接口
+  @Step:
+  1、运行脚本，循环执行hidumper命令查询内存
+  2、执行自动化用例：
+  attach pen后调用destroy接口，再调用draw接口
+  3、执行结束后等待3分钟
+  4、结束脚本运行，抓取的内存值转成折线图，观察内存变化
+  @Result:
+  1、程序运行正常，无crash
+  2、内存平稳，没有持续增长，执行后内存回落到执行前；
+  */
   public async OnTestFunction(canvas: drawing.Canvas) {
     {
       let pen = new drawing.Pen();
@@ -41,6 +69,20 @@ export class ReliabilityAttachPen extends TestBase {
 
 // pen setColorFilter后销毁ColorFilter，再调用draw接口
 export class ReliabilityPenSetColorFilter extends TestBase {
+
+  /*
+  @CaseID:SUB_BASIC_GRAPHICS_SPECIAL_STABLE_TS_DRAWING_RELIABILITY_PEN_0300
+  @Description:pen setColorFilter后销毁ColorFilter，再调用draw接口
+  @Step:
+  1、运行脚本，循环执行hidumper命令查询内存
+  2、执行自动化用例：
+  pen setColorFilter后销毁ColorFilter，再调用draw接口
+  3、执行结束后等待3分钟
+  4、结束脚本运行，抓取的内存值转成折线图，观察内存变化
+  @Result:
+  1、程序运行正常，无crash
+  2、内存平稳，没有持续增长，执行后内存回落到执行前；
+  */
   public async OnTestFunction(canvas: drawing.Canvas) {
     let pen = new drawing.Pen();
     canvas.attachPen(pen);
@@ -56,6 +98,20 @@ export class ReliabilityPenSetColorFilter extends TestBase {
 
 // pen setMaskFilter1后销毁MaskFilter，再调用draw接口
 export class ReliabilityPenSetMaskFilter extends TestBase {
+
+  /*
+  @CaseID:SUB_BASIC_GRAPHICS_SPECIAL_STABLE_TS_DRAWING_RELIABILITY_PEN_0400
+  @Description:pen setMaskFilter1后销毁MaskFilter，再调用draw接口
+  @Step:
+  1、运行脚本，循环执行hidumper命令查询内存
+  2、执行自动化用例：
+  pen setMaskFilter1后销毁MaskFilter，再调用draw接口
+  3、执行结束后等待3分钟
+  4、结束脚本运行，抓取的内存值转成折线图，观察内存变化
+  @Result:
+  1、程序运行正常，无crash
+  2、内存平稳，没有持续增长，执行后内存回落到执行前；
+  */
   public async OnTestFunction(canvas: drawing.Canvas) {
     let pen = new drawing.Pen();
     canvas.attachPen(pen);
@@ -72,6 +128,20 @@ export class ReliabilityPenSetMaskFilter extends TestBase {
 
 // pen SetPathEffect后销毁PathEffect，再调用draw接口
 export class ReliabilityPenSetPathEffect extends TestBase {
+
+  /*
+  @CaseID:SUB_BASIC_GRAPHICS_SPECIAL_STABLE_TS_DRAWING_RELIABILITY_PEN_0500
+  @Description:pen SetPathEffect后销毁PathEffect，再调用draw接口
+  @Step:
+  1、运行脚本，循环执行hidumper命令查询内存
+  2、执行自动化用例：
+  pen SetPathEffect后销毁PathEffect，再调用draw接口
+  3、执行结束后等待3分钟
+  4、结束脚本运行，抓取的内存值转成折线图，观察内存变化
+  @Result:
+  1、程序运行正常，无crash
+  2、内存平稳，没有持续增长，执行后内存回落到执行前；
+  */
   public async OnTestFunction(canvas: drawing.Canvas) {
     let pen = new drawing.Pen();
     canvas.attachPen(pen);
@@ -86,6 +156,20 @@ export class ReliabilityPenSetPathEffect extends TestBase {
 
 // pen setShadowLayer后销毁ShadowLayer，再调用draw接口
 export class ReliabilityPenSetShadowLayer extends TestBase {
+
+  /*
+  @CaseID:SUB_BASIC_GRAPHICS_SPECIAL_STABLE_TS_DRAWING_RELIABILITY_PEN_0600
+  @Description:pen setShadowLayer后销毁ShadowLayer，再调用draw接口
+  @Step:
+  1、运行脚本，循环执行hidumper命令查询内存
+  2、执行自动化用例：
+  pen setShadowLayer后销毁ShadowLayer，再调用draw接口
+  3、执行结束后等待3分钟
+  4、结束脚本运行，抓取的内存值转成折线图，观察内存变化
+  @Result:
+  1、程序运行正常，无crash
+  2、内存平稳，没有持续增长，执行后内存回落到执行前；
+  */
   public async OnTestFunction(canvas: drawing.Canvas) {
     let pen = new drawing.Pen();
     canvas.attachPen(pen);
@@ -121,6 +205,20 @@ async function subWorker(canvas) {
 
 // draw过程中，detach pen
 export class ReliabilityDetachPenWorker extends TestBase {
+
+  /*
+  @CaseID:SUB_BASIC_GRAPHICS_SPECIAL_STABLE_TS_DRAWING_RELIABILITY_PEN_0700
+  @Description:draw过程中，detach pen
+  @Step:
+  1、运行脚本，循环执行hidumper命令查询内存
+  2、执行自动化用例：
+  draw过程中，detach pen
+  3、执行结束后等待3分钟
+  4、结束脚本运行，抓取的内存值转成折线图，观察内存变化
+  @Result:
+  1、程序运行正常，无crash
+  2、内存平稳，没有持续增长，执行后内存回落到执行前；
+  */
   public async OnTestFunction(canvas: drawing.Canvas) {
     console.log('function main start');
     subWorker(canvas);
@@ -137,6 +235,20 @@ export class ReliabilityDetachPenWorker extends TestBase {
 
 // draw过程中，pen调用destroy接口
 export class ReliabilityAttachPenWorker extends TestBase {
+
+  /*
+  @CaseID:SUB_BASIC_GRAPHICS_SPECIAL_STABLE_TS_DRAWING_RELIABILITY_PEN_0800
+  @Description:draw过程中，pen调用destroy接口
+  @Step:
+  1、运行脚本，循环执行hidumper命令查询内存
+  2、执行自动化用例：
+  draw过程中，pen调用destroy接口
+  3、执行结束后等待3分钟
+  4、结束脚本运行，抓取的内存值转成折线图，观察内存变化
+  @Result:
+  1、程序运行正常，无crash
+  2、内存平稳，没有持续增长，执行后内存回落到执行前；
+  */
   public async OnTestFunction(canvas: drawing.Canvas) {
     console.log('function main start');
     subWorker(canvas);
@@ -155,6 +267,20 @@ export class ReliabilityAttachPenWorker extends TestBase {
 
 // draw过程中，pen 销毁ColorFilter
 export class ReliabilityPenSetColorFilterWorker extends TestBase {
+
+  /*
+  @CaseID:SUB_BASIC_GRAPHICS_SPECIAL_STABLE_TS_DRAWING_RELIABILITY_PEN_0900
+  @Description:draw过程中，pen 销毁ColorFilter
+  @Step:
+  1、运行脚本，循环执行hidumper命令查询内存
+  2、执行自动化用例：
+  draw过程中，pen 销毁ColorFilter
+  3、执行结束后等待3分钟
+  4、结束脚本运行，抓取的内存值转成折线图，观察内存变化
+  @Result:
+  1、程序运行正常，无crash
+  2、内存平稳，没有持续增长，执行后内存回落到执行前；
+  */
   public async OnTestFunction(canvas: drawing.Canvas) {
     console.log('function main start');
     subWorker(canvas);
@@ -175,6 +301,20 @@ export class ReliabilityPenSetColorFilterWorker extends TestBase {
 
 // draw过程中，pen 销毁MaskFilter
 export class ReliabilityPenSetMaskFilterWorker extends TestBase {
+
+  /*
+  @CaseID:SUB_BASIC_GRAPHICS_SPECIAL_STABLE_TS_DRAWING_RELIABILITY_PEN_1000
+  @Description:draw过程中，pen 销毁MaskFilter
+  @Step:
+  1、运行脚本，循环执行hidumper命令查询内存
+  2、执行自动化用例：
+  draw过程中，pen 销毁MaskFilter
+  3、执行结束后等待3分钟
+  4、结束脚本运行，抓取的内存值转成折线图，观察内存变化
+  @Result:
+  1、程序运行正常，无crash
+  2、内存平稳，没有持续增长，执行后内存回落到执行前；
+  */
   public async OnTestFunction(canvas: drawing.Canvas) {
     console.log('function main start');
     subWorker(canvas);
@@ -197,6 +337,20 @@ export class ReliabilityPenSetMaskFilterWorker extends TestBase {
 
 // draw过程中，pen 销毁PathEffect
 export class ReliabilityPenSetPathEffectWorker extends TestBase {
+
+  /*
+  @CaseID:SUB_BASIC_GRAPHICS_SPECIAL_STABLE_TS_DRAWING_RELIABILITY_PEN_1100
+  @Description:draw过程中，pen 销毁PathEffect
+  @Step:
+  1、运行脚本，循环执行hidumper命令查询内存
+  2、执行自动化用例：
+  draw过程中，pen 销毁PathEffect
+  3、执行结束后等待3分钟
+  4、结束脚本运行，抓取的内存值转成折线图，观察内存变化
+  @Result:
+  1、程序运行正常，无crash
+  2、内存平稳，没有持续增长，执行后内存回落到执行前；
+  */
   public async OnTestFunction(canvas: drawing.Canvas) {
     console.log('function main start');
     subWorker(canvas);
@@ -217,6 +371,20 @@ export class ReliabilityPenSetPathEffectWorker extends TestBase {
 
 // draw过程中，pen 销毁ShadowLayer
 export class ReliabilityPenSetShadowLayerWorker extends TestBase {
+
+  /*
+  @CaseID:SUB_BASIC_GRAPHICS_SPECIAL_STABLE_TS_DRAWING_RELIABILITY_PEN_1200
+  @Description:draw过程中，pen 销毁ShadowLayer
+  @Step:
+  1、运行脚本，循环执行hidumper命令查询内存
+  2、执行自动化用例：
+  draw过程中，pen 销毁ShadowLayer
+  3、执行结束后等待3分钟
+  4、结束脚本运行，抓取的内存值转成折线图，观察内存变化
+  @Result:
+  1、程序运行正常，无crash
+  2、内存平稳，没有持续增长，执行后内存回落到执行前；
+  */
   public async OnTestFunction(canvas: drawing.Canvas) {
     console.log('function main start');
     subWorker(canvas);

@@ -14,11 +14,24 @@
  */
 import { common2D, drawing } from '@kit.ArkGraphics2D';
 import { TestBase } from '../../pages/testbase';
-import { ColorFilterCreateMatrix } from '../interface/colorfiltertests';
 import { drawAll } from './reliability_common';
 
 // detach brush后，再调用draw接口
 export class ReliabilityDetachBrush extends TestBase {
+
+  /*
+  @CaseID:SUB_BASIC_GRAPHICS_SPECIAL_STABLE_TS_DRAWING_RELIABILITY_BRUSH_0100
+  @Description:detach brush后，再调用draw接口
+  @Step:
+  1、运行脚本，循环执行hidumper命令查询内存
+  2、执行自动化用例：
+  detach brush后，再调用draw接口
+  3、执行结束后等待3分钟
+  4、结束脚本运行，抓取的内存值转成折线图，观察内存变化
+  @Result:
+  1、程序运行正常，无crash
+  2、内存平稳，没有持续增长，执行后内存回落到执行前；
+  */
   public async OnTestFunction(canvas: drawing.Canvas) {
     let brush = new drawing.Brush();
     canvas.attachBrush(brush);
@@ -29,6 +42,20 @@ export class ReliabilityDetachBrush extends TestBase {
 
 // attach brush后调用destroy接口，再调用draw接口
 export class ReliabilityAttachBrush extends TestBase {
+
+  /*
+  @CaseID:SUB_BASIC_GRAPHICS_SPECIAL_STABLE_TS_DRAWING_RELIABILITY_BRUSH_0200
+  @Description:attach brush后调用destroy接口，再调用draw接口
+  @Step:
+  1、运行脚本，循环执行hidumper命令查询内存
+  2、执行自动化用例：
+  attach brush后调用destroy接口，再调用draw接口
+  3、执行结束后等待3分钟
+  4、结束脚本运行，抓取的内存值转成折线图，观察内存变化
+  @Result:
+  1、程序运行正常，无crash
+  2、内存平稳，没有持续增长，执行后内存回落到执行前；
+  */
   public async OnTestFunction(canvas: drawing.Canvas) {
     {
       let brush = new drawing.Brush();
@@ -41,6 +68,20 @@ export class ReliabilityAttachBrush extends TestBase {
 
 // brush setColorFilter后销毁ColorFilter，再调用draw接口
 export class ReliabilityBrushSetColorFilter extends TestBase {
+
+  /*
+  @CaseID:SUB_BASIC_GRAPHICS_SPECIAL_STABLE_TS_DRAWING_RELIABILITY_BRUSH_0300
+  @Description:attach brush setColorFilter后销毁ColorFilter，再调用draw接口
+  @Step:
+  1、运行脚本，循环执行hidumper命令查询内存
+  2、执行自动化用例：
+  brush setColorFilter后销毁ColorFilter，再调用draw接口
+  3、执行结束后等待3分钟
+  4、结束脚本运行，抓取的内存值转成折线图，观察内存变化
+  @Result:
+  1、程序运行正常，无crash
+  2、内存平稳，没有持续增长，执行后内存回落到执行前；
+  */
   public async OnTestFunction(canvas: drawing.Canvas) {
     let brush = new drawing.Brush();
     canvas.attachBrush(brush);
@@ -56,6 +97,20 @@ export class ReliabilityBrushSetColorFilter extends TestBase {
 
 // brush setMaskFilter后销毁MaskFilter，再调用draw接口
 export class ReliabilityBrushSetMaskFilter extends TestBase {
+
+  /*
+  @CaseID:SUB_BASIC_GRAPHICS_SPECIAL_STABLE_TS_DRAWING_RELIABILITY_BRUSH_0400
+  @Description:brush setMaskFilter后销毁MaskFilter，再调用draw接口
+  @Step:
+  1、运行脚本，循环执行hidumper命令查询内存
+  2、执行自动化用例：
+  brush setMaskFilter后销毁MaskFilter，再调用draw接口
+  3、执行结束后等待3分钟
+  4、结束脚本运行，抓取的内存值转成折线图，观察内存变化
+  @Result:
+  1、程序运行正常，无crash
+  2、内存平稳，没有持续增长，执行后内存回落到执行前；
+  */
   public async OnTestFunction(canvas: drawing.Canvas) {
     let brush = new drawing.Brush();
     {
@@ -71,6 +126,20 @@ export class ReliabilityBrushSetMaskFilter extends TestBase {
 
 // brush setShadowLayer后销毁ShadowLayer，再调用draw接口
 export class ReliabilityBrushSetShadowLayer extends TestBase {
+
+  /*
+  @CaseID:SUB_BASIC_GRAPHICS_SPECIAL_STABLE_TS_DRAWING_RELIABILITY_BRUSH_0500
+  @Description:brush setShadowLayer后销毁ShadowLayer，再调用draw接口
+  @Step:
+  1、运行脚本，循环执行hidumper命令查询内存
+  2、执行自动化用例：
+  brush setShadowLayer后销毁ShadowLayer，再调用draw接口
+  3、执行结束后等待3分钟
+  4、结束脚本运行，抓取的内存值转成折线图，观察内存变化
+  @Result:
+  1、程序运行正常，无crash
+  2、内存平稳，没有持续增长，执行后内存回落到执行前；
+  */
   public async OnTestFunction(canvas: drawing.Canvas) {
     let brush = new drawing.Brush();
     canvas.attachBrush(brush);
@@ -106,6 +175,20 @@ async function subWorker(canvas) {
 
 // draw过程中，detach brush
 export class ReliabilityDetachBrushWorker extends TestBase {
+
+  /*
+  @CaseID:SUB_BASIC_GRAPHICS_SPECIAL_STABLE_TS_DRAWING_RELIABILITY_BRUSH_0600
+  @Description:draw过程中，detach brush
+  @Step:
+  1、运行脚本，循环执行hidumper命令查询内存
+  2、执行自动化用例：
+  draw过程中，detach brush
+  3、执行结束后等待3分钟
+  4、结束脚本运行，抓取的内存值转成折线图，观察内存变化
+  @Result:
+  1、程序运行正常，无crash
+  2、内存平稳，没有持续增长，执行后内存回落到执行前；
+  */
   public async OnTestFunction(canvas: drawing.Canvas) {
     console.log('function main start');
     subWorker(canvas);
@@ -122,6 +205,20 @@ export class ReliabilityDetachBrushWorker extends TestBase {
 
 // draw过程中，brush调用destroy接口
 export class ReliabilityAttachBrushWorker extends TestBase {
+
+  /*
+  @CaseID:SUB_BASIC_GRAPHICS_SPECIAL_STABLE_TS_DRAWING_RELIABILITY_BRUSH_0700
+  @Description:draw过程中，brush调用destroy接口
+  @Step:
+  1、运行脚本，循环执行hidumper命令查询内存
+  2、执行自动化用例：
+  draw过程中，brush调用destroy接口
+  3、执行结束后等待3分钟
+  4、结束脚本运行，抓取的内存值转成折线图，观察内存变化
+  @Result:
+  1、程序运行正常，无crash
+  2、内存平稳，没有持续增长，执行后内存回落到执行前；
+  */
   public async OnTestFunction(canvas: drawing.Canvas) {
     console.log('function main start');
     subWorker(canvas);
@@ -140,6 +237,20 @@ export class ReliabilityAttachBrushWorker extends TestBase {
 
 // draw过程中，brush 销毁ColorFilter
 export class ReliabilityBrushSetColorFilterWorker extends TestBase {
+
+  /*
+  @CaseID:SUB_BASIC_GRAPHICS_SPECIAL_STABLE_TS_DRAWING_RELIABILITY_BRUSH_0800
+  @Description:draw过程中，brush 销毁ColorFilter
+  @Step:
+  1、运行脚本，循环执行hidumper命令查询内存
+  2、执行自动化用例：
+  draw过程中，brush 销毁ColorFilter
+  3、执行结束后等待3分钟
+  4、结束脚本运行，抓取的内存值转成折线图，观察内存变化
+  @Result:
+  1、程序运行正常，无crash
+  2、内存平稳，没有持续增长，执行后内存回落到执行前；
+  */
   public async OnTestFunction(canvas: drawing.Canvas) {
     console.log('function main start');
     subWorker(canvas);
@@ -160,6 +271,20 @@ export class ReliabilityBrushSetColorFilterWorker extends TestBase {
 
 // draw过程中，brush 销毁MaskFilter
 export class ReliabilityBrushSetMaskFilterWorker extends TestBase {
+
+  /*
+  @CaseID:SUB_BASIC_GRAPHICS_SPECIAL_STABLE_TS_DRAWING_RELIABILITY_BRUSH_0900
+  @Description:draw过程中，brush 销毁MaskFilter
+  @Step:
+  1、运行脚本，循环执行hidumper命令查询内存
+  2、执行自动化用例：
+  draw过程中，brush 销毁MaskFilter
+  3、执行结束后等待3分钟
+  4、结束脚本运行，抓取的内存值转成折线图，观察内存变化
+  @Result:
+  1、程序运行正常，无crash
+  2、内存平稳，没有持续增长，执行后内存回落到执行前；
+  */
   public async OnTestFunction(canvas: drawing.Canvas) {
     console.log('function main start');
     subWorker(canvas);
@@ -182,6 +307,20 @@ export class ReliabilityBrushSetMaskFilterWorker extends TestBase {
 
 // draw过程中，brush 销毁ShadowLayer
 export class ReliabilityBrushSetShadowLayerWorker extends TestBase {
+
+  /*
+  @CaseID:SUB_BASIC_GRAPHICS_SPECIAL_STABLE_TS_DRAWING_RELIABILITY_BRUSH_1000
+  @Description:draw过程中，brush 销毁ShadowLayer
+  @Step:
+  1、运行脚本，循环执行hidumper命令查询内存
+  2、执行自动化用例：
+  draw过程中，brush 销毁ShadowLayer
+  3、执行结束后等待3分钟
+  4、结束脚本运行，抓取的内存值转成折线图，观察内存变化
+  @Result:
+  1、程序运行正常，无crash
+  2、内存平稳，没有持续增长，执行后内存回落到执行前；
+  */
   public async OnTestFunction(canvas: drawing.Canvas) {
     console.log('function main start');
     subWorker(canvas);
