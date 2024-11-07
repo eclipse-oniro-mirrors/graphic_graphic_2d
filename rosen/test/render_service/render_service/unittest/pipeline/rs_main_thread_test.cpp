@@ -3872,6 +3872,31 @@ HWTEST_F(RSMainThreadTest, ProcessDataBySingleFrameComposer002, TestSize.Level2)
 }
 
 /**
+ * @tc.name: IsHardwareEnabledNodesNeedSync
+ * @tc.desc: test IsHardwareEnabledNodesNeedSync
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSMainThreadTest, IsHardwareEnabledNodesNeedSync, TestSize.Level2)
+{
+    NodeId id = 1;
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    mainThread->hardwareEnabledNodes_.emplace_back(nullptr);
+    ASSERT_EQ(mainThread->IsHardwareEnabledNodesNeedSync(), false);
+    auto node1 = std::make_shared<RSSurfaceRenderNode>(id, mainThread_->context_);
+    node1->stagingRenderParams_ = std::make_unique<RSSurfaceRenderParams>(id + 1);
+    node1->stagingRenderParams_->SetNeedSync(true);
+    mainThread->hardwareEnabledNodes_.emplace_back(node1);
+    ASSERT_EQ(mainThread->IsHardwareEnabledNodesNeedSync(), true);
+    mainThread->hardwareEnabledNodes_.clear();
+    auto node2 = std::make_shared<RSSurfaceRenderNode>(id + 2, mainThread_->context_);
+    node2->SetHardwareForcedDisabledState(true); 
+    mainThread->hardwareEnabledNodes_.emplace_back(node2);  
+    ASSERT_EQ(mainThread->IsHardwareEnabledNodesNeedSync(), false);
+}
+
+/**
  * @tc.name: IsSingleDisplay
  * @tc.desc: test IsSingleDisplay, rootNode = nullptr
  * @tc.type: FUNC
