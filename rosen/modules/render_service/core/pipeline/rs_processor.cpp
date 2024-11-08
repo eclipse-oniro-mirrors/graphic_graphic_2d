@@ -25,7 +25,7 @@
 #include "params/rs_display_render_params.h"
 #include "pipeline/rs_display_render_node.h"
 #include "platform/common/rs_log.h"
-
+#include "pipeline/rs_uni_render_util.h"
 #ifdef SOC_PERF_ENABLE
 #include "socperf_client.h"
 #endif
@@ -63,59 +63,9 @@ void PerfRequest(int32_t perfRequestCode, bool onOffTag)
 }
 }
 
-#ifdef FRAME_AWARE_TRACE
-bool RSProcessor::FrameAwareTraceBoost(size_t layerNum)
-{
-    RenderFrameTrace& ft = RenderFrameTrace::GetInstance();
-    if (layerNum != FRAME_TRACE_LAYER_NUM_1 && layerNum != FRAME_TRACE_LAYER_NUM_2) {
-        if (ft.RenderFrameTraceIsOpen()) {
-            ft.RenderFrameTraceClose();
-            PerfRequest(FRAME_TRACE_PERF_REQUESTED_CODE, false);
-            RS_LOGD("RsDebug RSProcessor::Perf: FrameTrace 0");
-        }
-        return false;
-    }
-
-    static std::chrono::steady_clock::time_point lastRequestPerfTime = std::chrono::steady_clock::now();
-    auto currentTime = std::chrono::steady_clock::now();
-    bool isTimeOut = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - lastRequestPerfTime).
-        count() > PERF_TIME_OUT;
-    if (isTimeOut || !ft.RenderFrameTraceIsOpen()) {
-        if (!ft.RenderFrameTraceOpen()) {
-            return false;
-        }
-        PerfRequest(FRAME_TRACE_PERF_REQUESTED_CODE, true);
-        RS_LOGD("RsDebug RSProcessor::Perf: FrameTrace 1");
-        lastRequestPerfTime = currentTime;
-    }
-    return true;
-}
-#endif
-
 void RSProcessor::RequestPerf(uint32_t layerLevel, bool onOffTag)
 {
-    switch (layerLevel) {
-        case PERF_LEVEL_0: {
-            // do nothing
-            RS_LOGD("RsDebug RSProcessor::Perf: perf do nothing");
-            break;
-        }
-        case PERF_LEVEL_1: {
-            PerfRequest(PERF_LEVEL_1_REQUESTED_CODE, onOffTag);
-            RS_LOGD("RsDebug RSProcessor::Perf: level1 %{public}d", onOffTag);
-            break;
-        }
-        case PERF_LEVEL_2: {
-            PerfRequest(PERF_LEVEL_2_REQUESTED_CODE, onOffTag);
-            RS_LOGD("RsDebug RSProcessor::Perf: level2 %{public}d", onOffTag);
-            break;
-        }
-        default: {
-            PerfRequest(PERF_LEVEL_3_REQUESTED_CODE, onOffTag);
-            RS_LOGD("RsDebug RSProcessor::Perf: level3 %{public}d", onOffTag);
-            break;
-        }
-    }
+    RSUniRenderUtil::RequestPerf(layerLevel, onOffTag);
 }
 
 bool RSProcessor::InitForRenderThread(DrawableV2::RSDisplayRenderNodeDrawable& displayDrawable, ScreenId mirroredId,
@@ -233,41 +183,6 @@ void RSProcessor::MirrorScenePerf()
         count() > PERF_TIME_OUT;
     if (isTimeOut) {
         PerfRequest(PERF_LEVEL_3_REQUESTED_CODE, true);
-        lastRequestPerfTime = currentTime;
-    }
-}
-
-void RSProcessor::MultiLayersPerf(size_t layerNum)
-{
-    if (needDisableMultiLayersPerf_) {
-        auto& context = RSMainThread::Instance()->GetContext();
-        std::shared_ptr<RSBaseRenderNode> rootNode = context.GetGlobalRootRenderNode();
-        if (rootNode && rootNode->GetChildrenCount() <= 1) {
-            needDisableMultiLayersPerf_ = false;
-        } else {
-            return;
-        }
-    }
-#ifdef FRAME_AWARE_TRACE
-    if (FrameAwareTraceBoost(layerNum)) {
-        return;
-    }
-#endif
-    static uint32_t lastLayerLevel = 0;
-    static std::chrono::steady_clock::time_point lastRequestPerfTime = std::chrono::steady_clock::now();
-    auto curLayerLevel = layerNum / PERF_LEVEL_INTERVAL;
-    if (curLayerLevel == 0 && layerNum >= PERF_LAYER_START_NUM) {
-        curLayerLevel = 1;
-    }
-    auto currentTime = std::chrono::steady_clock::now();
-    bool isTimeOut = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - lastRequestPerfTime).
-        count() > PERF_TIME_OUT;
-    if (curLayerLevel != lastLayerLevel || isTimeOut) {
-        if (!isTimeOut) {
-            RequestPerf(lastLayerLevel, false);
-        }
-        RequestPerf(curLayerLevel, true);
-        lastLayerLevel = curLayerLevel;
         lastRequestPerfTime = currentTime;
     }
 }

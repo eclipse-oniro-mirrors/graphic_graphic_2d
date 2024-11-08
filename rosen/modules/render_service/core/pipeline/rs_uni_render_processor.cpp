@@ -79,9 +79,6 @@ bool RSUniRenderProcessor::InitForRenderThread(DrawableV2::RSDisplayRenderNodeDr
 void RSUniRenderProcessor::PostProcess()
 {
     uniComposerAdapter_->CommitLayers(layers_);
-    if (!isPhone_) {
-        MultiLayersPerf(layerNum_);
-    }
     RS_LOGD("RSUniRenderProcessor::PostProcess layers_:%{public}zu", layers_.size());
 }
 

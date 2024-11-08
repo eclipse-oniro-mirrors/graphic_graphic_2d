@@ -102,7 +102,6 @@ protected:
     void SetMirrorScreenSwap(const RSDisplayRenderNode& node);
     void CalculateMirrorAdaptiveMatrix();
 
-    void MultiLayersPerf(size_t layerNum);
     void RequestPerf(uint32_t layerLevel, bool onOffTag);
 #ifdef FRAME_AWARE_TRACE
     bool FrameAwareTraceBoost(size_t layerNum);
