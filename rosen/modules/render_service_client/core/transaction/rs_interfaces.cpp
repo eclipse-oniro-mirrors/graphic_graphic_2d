@@ -699,7 +699,7 @@ void RSInterfaces::DisableCacheForRotation()
     renderServiceClient_->SetCacheEnabledForRotation(false);
 }
 
-void RSInterfaces::isScreenSwitching(bool flag)
+void RSInterfaces::SetScreenSwitching(bool flag)
 {
     renderServiceClient_->SetScreenSwitchStatus(flag);
 }
