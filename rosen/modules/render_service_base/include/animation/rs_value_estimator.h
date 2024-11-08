@@ -260,7 +260,7 @@ public:
             if (fraction < startFraction) {
                 break;
             }
-            if ((fraction > startFraction) && (fraction <= endFraction)) {
+            if ((fraction > startFraction) && ROSEN_LE(fraction, endFraction)) {
                 bInFraction = true;
                 float intervalFraction = (fraction - startFraction) / (endFraction - startFraction);
                 auto interpolationValue = RSValueEstimator::Estimate(
@@ -273,7 +273,7 @@ public:
                 preKeyframeValue = animationValue;
                 continue;
             }
-            if (fraction == startFraction && startFraction == endFraction) {
+            if (ROSEN_EQ(fraction, startFraction) && ROSEN_EQ(startFraction, endFraction)) {
                 bInFraction = true;
                 animationValue = keyframeValue;
                 preKeyframeValue = keyframeValue;

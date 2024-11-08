@@ -82,7 +82,7 @@ RSAnimationTimingCurve RSAnimationTimingCurve::CreateCubicCurve(float ctrlX1, fl
 RSAnimationTimingCurve RSAnimationTimingCurve::CreateSpringCurve(
     float velocity, float mass, float stiffness, float damping)
 {
-    if (stiffness <= 0.0f || mass * stiffness <= 0.0f) {
+    if (ROSEN_LE(stiffness, 0.0f) || ROSEN_LE(mass * stiffness, 0.0f)) {
         constexpr float response = 0.55f;
         constexpr float dampingRatio = 0.825f;
         ROSEN_LOGE("RSAnimationTimingCurve::CreateSpringCurve, invalid parameters.");
@@ -96,7 +96,7 @@ RSAnimationTimingCurve RSAnimationTimingCurve::CreateSpringCurve(
 RSAnimationTimingCurve RSAnimationTimingCurve::CreateInterpolatingSpring(
     float mass, float stiffness, float damping, float velocity, float minimumAmplitudeRatio)
 {
-    if (stiffness <= 0.0f || mass * stiffness <= 0.0f) {
+    if (ROSEN_LE(stiffness, 0.0f) || ROSEN_LE(mass * stiffness, 0.0f)) {
         constexpr float response = 0.55f;
         constexpr float dampingRatio = 0.825f;
         ROSEN_LOGE("RSAnimationTimingCurve::CreateInterpolatingSpring, invalid parameters.");

@@ -95,7 +95,7 @@ public:
 
     float EstimateDuration() const
     {
-        if (dampingRatio_ <= 0.0f || response_ <= 0.0f) {
+        if (ROSEN_LE(dampingRatio_, 0.0f) || ROSEN_LE(response_, 0.0f)) {
             return 0.0f;
         }
 
@@ -145,10 +145,10 @@ protected:
     {
         // sanity check
         dampingRatio_ = std::clamp(dampingRatio_, SPRING_MIN_DAMPING_RATIO, SPRING_MAX_DAMPING_RATIO);
-        if (response_ <= 0) {
+        if (ROSEN_LE(response_, 0.0f)) {
             response_ = SPRING_MIN_RESPONSE;
         }
-        if (minimumAmplitudeRatio_ <= 0) {
+        if (ROSEN_LE(minimumAmplitudeRatio_, 0.0f)) {
             minimumAmplitudeRatio_ = SPRING_MIN_AMPLITUDE_RATIO;
         }
 
