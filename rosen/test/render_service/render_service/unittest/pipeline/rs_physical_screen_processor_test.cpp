@@ -20,6 +20,7 @@
 #include "pipeline/rs_processor_factory.h"
 #include "pipeline/round_corner_display/rs_rcd_surface_render_node.h"
 #include "pipeline/rs_uni_render_engine.h"
+#include "pipeline/rs_uni_render_util.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -300,13 +301,10 @@ HWTEST_F(RSPhysicalScreenProcessorTest, Redraw, TestSize.Level1)
  */
 HWTEST_F(RSPhysicalScreenProcessorTest, RequestPerf, TestSize.Level1)
 {
-    auto rsHardwareProcessor = RSProcessorFactory::CreateProcessor(RSDisplayRenderNode::CompositeType::
-        HARDWARE_COMPOSITE);
-    ASSERT_NE(rsHardwareProcessor, nullptr);
     uint32_t layerLevel[] = { 0, 1, 2, 3 };
     bool onOffTag = true;
     for (uint32_t level : layerLevel) {
-        rsHardwareProcessor->RequestPerf(level, onOffTag);
+        RSUniRenderUtil::RequestPerf(level, onOffTag);
     }
 }
 
