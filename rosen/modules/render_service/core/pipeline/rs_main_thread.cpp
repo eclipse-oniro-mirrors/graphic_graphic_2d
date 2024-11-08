@@ -3861,7 +3861,7 @@ bool RSMainThread::IsHardwareEnabledNodesNeedSync()
 {
     bool needSync = false;
     for (const auto& node : hardwareEnabledNodes_) {
-        if (node != nullptr && ((doDirectComposition_ && node->GetStagingRenderParams() != nullptr &&
+        if (node != nullptr && ((!doDirectComposition_ && node->GetStagingRenderParams() != nullptr &&
             node->GetStagingRenderParams()->NeedSync()) ||
             (doDirectComposition_ && !node->IsHardwareForcedDisabled()))) {
             needSync = true;
