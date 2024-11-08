@@ -63,11 +63,6 @@ void PerfRequest(int32_t perfRequestCode, bool onOffTag)
 }
 }
 
-void RSProcessor::RequestPerf(uint32_t layerLevel, bool onOffTag)
-{
-    RSUniRenderUtil::RequestPerf(layerLevel, onOffTag);
-}
-
 bool RSProcessor::InitForRenderThread(DrawableV2::RSDisplayRenderNodeDrawable& displayDrawable, ScreenId mirroredId,
     std::shared_ptr<RSBaseRenderEngine> renderEngine)
 {
