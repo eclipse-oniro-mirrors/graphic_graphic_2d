@@ -242,6 +242,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 #ifdef TP_FEATURE_ENABLE
     OHOS::Rosen::DoSetTpFeatureConfigFuzzTest(data, size);
 #endif
-    DoSetFreeMultiWindowStatus(data, size);
+    OHOS::Rosen::DoSetFreeMultiWindowStatus(data, size);
     return 0;
 }
