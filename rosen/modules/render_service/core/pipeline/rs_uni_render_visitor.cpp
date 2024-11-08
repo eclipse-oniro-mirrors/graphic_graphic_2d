@@ -208,6 +208,7 @@ RSUniRenderVisitor::RSUniRenderVisitor(const RSUniRenderVisitor& visitor) : RSUn
     isHardwareForcedDisabled_ = visitor.isHardwareForcedDisabled_;
     doAnimate_ = visitor.doAnimate_;
     isDirty_ = visitor.isDirty_;
+    layerNum_ = visitor.layerNum_;
 }
 
 RSUniRenderVisitor::~RSUniRenderVisitor() {}
@@ -808,7 +809,9 @@ void RSUniRenderVisitor::QuickPrepareSurfaceRenderNode(RSSurfaceRenderNode& node
     prepareClipRect_ = prepareClipRect;
     hasAccumulatedClip_ = hasAccumulatedClip;
     dirtyFlag_ = dirtyFlag;
-
+    if (node.IsMainWindowType()) {
+        layerNum_++;
+    }
     PrepareForUIFirstNode(node);
     node.OpincSetInAppStateEnd(unchangeMarkInApp_);
     ResetCurSurfaceInfoAsUpperSurfaceParent(node);
