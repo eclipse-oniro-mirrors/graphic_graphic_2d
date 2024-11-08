@@ -3905,7 +3905,7 @@ HWTEST_F(RSMainThreadTest, IsHardwareEnabledNodesNeedSync, TestSize.Level2)
     mainThread->doDirectComposition_ = true;
     auto node3 = std::make_shared<RSSurfaceRenderNode>(id + 3, mainThread_->context_);
     node3->SetHardwareForcedDisabledState(false);
-    RectI dstRect{0,0,400,600};
+    RectI dstRect{0, 0, 400, 600};
     node3->SetDstRect(dstRect);
     mainThread->hardwareEnabledNodes_.emplace_back(node3);
     ASSERT_EQ(mainThread->IsHardwareEnabledNodesNeedSync(), true);
