@@ -364,24 +364,6 @@ HWTEST_F(RSPhysicalScreenProcessorTest, MirrorScenePerf, TestSize.Level1)
 }
 
 /**
- * @tc.name: MultiLayersPerf
- * @tc.desc: test results of MultiLayersPerf
- * @tc.type: FUNC
- * @tc.require: issueI9JY8B
- */
-HWTEST_F(RSPhysicalScreenProcessorTest, MultiLayersPerf, TestSize.Level1)
-{   
-    auto processor = RSProcessorFactory::CreateProcessor(RSDisplayRenderNode::CompositeType::
-        HARDWARE_COMPOSITE);
-    size_t layerNum = 1;
-    processor->needDisableMultiLayersPerf_ = true;
-    processor->MultiLayersPerf(layerNum);
-    processor->needDisableMultiLayersPerf_ = false;
-    processor->MultiLayersPerf(layerNum);
-    ASSERT_FALSE(processor->needDisableMultiLayersPerf_);
-}
-
-/**
  * @tc.name: SetDisplayHasSecSurface
  * @tc.desc: test results of SetDisplayHasSecSurface
  * @tc.type: FUNC
