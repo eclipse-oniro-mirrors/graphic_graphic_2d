@@ -1747,5 +1747,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::Rosen::DoRegisterSurfaceBufferCallback(data, size);
     OHOS::Rosen::DoTriggerSurfaceBufferCallback(data, size);
     OHOS::Rosen::DoSetLayerTop(data, size);
+    
     return 0;
 }
