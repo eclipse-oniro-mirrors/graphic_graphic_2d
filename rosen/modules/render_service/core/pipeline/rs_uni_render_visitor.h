@@ -126,6 +126,10 @@ public:
     {
         return newColorSpace_;
     }
+    uint32_t GetLayerNum() const
+    {
+        return layerNum_;
+    }
 
     void SetAppWindowNum(uint32_t num);
 
@@ -133,10 +137,7 @@ public:
     {
         screenInfo_ = screenInfo;
     }
-    uint32_t GetLayerNum() const
-    {
-        return layerNum_;
-    }
+
     // Use in updating hwcnode hardware state with background alpha
     void UpdateHardwareStateByHwcNodeBackgroundAlpha(const std::vector<std::weak_ptr<RSSurfaceRenderNode>>& hwcNodes);
 
