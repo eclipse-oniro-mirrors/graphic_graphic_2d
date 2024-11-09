@@ -58,13 +58,19 @@ bool RSCanvasDrawingNode::ResetSurface(int width, int height)
     return true;
 }
 
-void RSCanvasDrawingNode::CreateTextureExportRenderNodeInRT()
+void RSCanvasDrawingNode::CreateRenderNode()
 {
-    std::unique_ptr<RSCommand> command = std::make_unique<RSCanvasDrawingNodeCreate>(GetId(), true);
     auto transactionProxy = RSTransactionProxy::GetInstance();
-    if (transactionProxy != nullptr) {
-        transactionProxy->AddCommand(command, false);
+    if (transactionProxy == nullptr) {
+        return;
     }
+    std::unique_ptr<RSCommand> command = std::make_unique<RSCanvasDrawingNodeCreate>(GetId(), isTextureExportNode_);
+    if (IsRenderServiceNode()) {
+        hasCreateRenderRenderInRS_ = true;
+    } else {
+        hasCreateRenderRenderInRT_ = true;
+    }
+    transactionProxy->AddCommand(command, IsRenderServiceNode());
 }
 
 bool RSCanvasDrawingNode::GetBitmap(Drawing::Bitmap& bitmap,
