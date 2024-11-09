@@ -509,6 +509,10 @@ protected:
     bool isTextureExportNode_ = false;
     bool skipDestroyCommandInDestructor_ = false;
 
+    // Used for same layer rendering, to determine whether RT or RS generates renderNode when the type of node switches
+    bool hasCreateRenderRenderInRT_ = false;
+    bool hasCreateRenderRenderInRS_ = false;
+
     bool drawContentLast_ = false;
 
     virtual void OnAddChildren();
@@ -541,7 +545,7 @@ private:
     std::vector<NodeId> children_;
     void SetParent(NodeId parent);
     void RemoveChildById(NodeId childId);
-    virtual void CreateTextureExportRenderNodeInRT() {};
+    virtual void CreateRenderNode() {};
 
     void SetBackgroundBlurRadius(float radius);
     void SetBackgroundBlurSaturation(float saturation);
