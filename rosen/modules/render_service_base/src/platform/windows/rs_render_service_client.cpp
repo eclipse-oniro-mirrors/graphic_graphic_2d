@@ -615,21 +615,18 @@ int32_t RSRenderServiceClient::RegisterUIExtensionCallback(uint64_t userId, cons
     return {};
 }
 
-bool RSRenderServiceClient::SetVirtualScreenStatus(ScreenId id, VirtualScreenStatus screenStatus)
-{
-    return false;
-}
 
 bool RSRenderServiceClient::SetAncoForceDoDirect(bool direct)
 {
     return false;
 }
 
-void RSRenderServiceClient::SetFreeMultiWindowStatus(bool enable)
+bool RSRenderServiceClient::SetVirtualScreenStatus(ScreenId id, VirtualScreenStatus screenStatus)
 {
+    return false;
 }
 
-void RSRenderServiceClient::SetLayerTop(const std::string &nodeIdStr, bool isTop)
+void RSRenderServiceClient::SetFreeMultiWindowStatus(bool enable)
 {
 }
 
@@ -642,6 +639,10 @@ bool RSRenderServiceClient::RegisterSurfaceBufferCallback(pid_t pid, uint64_t ui
 bool RSRenderServiceClient::UnregisterSurfaceBufferCallback(pid_t pid, uint64_t uid)
 {
     return false;
+}
+
+void RSRenderServiceClient::SetLayerTop(const std::string &nodeIdStr, bool isTop)
+{
 }
 } // namespace Rosen
 } // namespace OHOS
