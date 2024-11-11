@@ -65,7 +65,7 @@ napi_value JsFontCollection::Constructor(napi_env env, napi_callback_info info)
     }
 
     JsFontCollection* jsFontCollection = new(std::nothrow) JsFontCollection();
-    if (jsFontCollection == nullptr){
+    if (jsFontCollection == nullptr) {
         TEXT_LOGE("Failed to new font collection");
         return nullptr;
     }
@@ -392,7 +392,7 @@ napi_value JsFontCollection::OnLoadFont(napi_env env, napi_callback_info info)
         TEXT_LOGE("Failed to get argument, argc %{public}zu", argc);
         return nullptr;
     }
-    if (argv[0] == nullptr){
+    if (argv[0] == nullptr) {
         TEXT_LOGE("Argv[0] is invalid");
         return nullptr;
     }
@@ -403,7 +403,7 @@ napi_value JsFontCollection::OnLoadFont(napi_env env, napi_callback_info info)
         return nullptr;
     }
     napi_valuetype valueType = napi_undefined;
-    if (argv[1] == nullptr){
+    if (argv[1] == nullptr) {
         TEXT_LOGE("JsFontCollection::OnLoadFont Argv[1] is invalid");
         return nullptr;
     }

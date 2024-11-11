@@ -302,7 +302,7 @@ napi_value JsRun::OnPaint(napi_env env, napi_callback_info info)
     double y = 0.0;
     napi_unwrap(env, argv[0], reinterpret_cast<void **>(&jsCanvas));
     if (!jsCanvas || !jsCanvas->GetCanvas() ||
-        !(argv[ARGC_ONE] != nullptr && ConvertFromJsValue(env, argv[ARGC_ONE], x) && 
+        !(argv[ARGC_ONE] != nullptr && ConvertFromJsValue(env, argv[ARGC_ONE], x) &&
         argv[ARGC_TWO] != nullptr && ConvertFromJsValue(env, argv[ARGC_TWO], y))) {
         TEXT_LOGE("Failed to get paint parameter");
         return NapiGetUndefined(env);

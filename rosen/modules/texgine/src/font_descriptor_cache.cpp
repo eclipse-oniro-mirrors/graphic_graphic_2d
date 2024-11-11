@@ -221,7 +221,7 @@ bool FontDescriptorCache::ProcessSystemFontType(const int32_t& systemFontType, i
 }
 
 void FontDescriptorCache::GetSystemFontFullNamesByType(
-    const int32_t &systemFontType,std::unordered_set<std::string> &fontList)
+    const int32_t &systemFontType, std::unordered_set<std::string> &fontList)
 {
     int32_t fontType = 0;
     if (!ProcessSystemFontType(systemFontType, fontType)) {

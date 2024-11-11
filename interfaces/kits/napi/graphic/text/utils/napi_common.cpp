@@ -361,7 +361,7 @@ bool GetParagraphStyleFromJS(napi_env env, napi_value argValue, TypographyStyle&
     if (tempValue != nullptr && napi_get_value_uint32(env, tempValue, &textDirection) == napi_ok) {
         pographyStyle.textDirection = TextDirection(textDirection);
     }
-    SetAlignValueForParagraphStyle(env, argValue,pographyStyle);
+    SetAlignValueForParagraphStyle(env, argValue, pographyStyle);
     tempValue = nullptr;
     napi_get_named_property(env, argValue, "wordBreak", &tempValue);
     uint32_t wordBreak = 0;

@@ -50,7 +50,7 @@ void Ranges::Dump() const
     for (const auto &[start, end, gid] : ranges_) {
         LOGSO_FUNC_LINE(INFO) << "0x" << std::uppercase << std::hex
             << std::setw(4) << std::setfill('0') << start  //4 means output width
-            << " ~ 0x" << std::uppercase << std::hex 
+            << " ~ 0x" << std::uppercase << std::hex
             << std::setw(4) << std::setfill('0') << end   //4 means output width
             << ": offset " << std::dec << end;
     }

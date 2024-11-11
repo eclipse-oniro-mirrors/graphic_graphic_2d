@@ -109,7 +109,7 @@ void FontParser::SetNameString(FontParser::FontDescriptor& fontDescriptor, std::
 {
     bool willSet = field.empty();
     if (!willSet) {
-        willSet = languageId == fontDescriptor.requestedLid || 
+        willSet = languageId == fontDescriptor.requestedLid ||
             (fieldLid != fontDescriptor.requestedLid && languageId == LANGUAGE_DEFAULT);
     }
 
