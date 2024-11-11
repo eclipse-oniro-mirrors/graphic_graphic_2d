@@ -2262,4 +2262,35 @@ HWTEST_F(RSUniRenderUtilTest, CheckRenderSkipIfScreenOff002, TestSize.Level1)
     screenManagerImpl.screenPowerStatus_[screenId] = ScreenPowerStatus::POWER_STATUS_OFF;
     EXPECT_FALSE(RSUniRenderUtil::CheckRenderSkipIfScreenOff(false, screenId));
 }
+
+/**
+ * @tc.name: RequestPerf
+ * @tc.desc: Test RequestPerf
+ * @tc.type: FUNC
+ * @tc.require: #IB2XN0
+ */
+HWTEST_F(RSUniRenderUtilTest, RequestPerf, TestSize.Level1)
+{
+    uint32_t layerLevel[] = { 0, 1, 2, 3 };
+    bool onOffTag = true;
+    for (uint32_t level : layerLevel) {
+        RSUniRenderUtil::RequestPerf(level, onOffTag);
+    }
+}
+
+/**
+ * @tc.name: MultiLayersPerf
+ * @tc.desc: test results of MultiLayersPerf
+ * @tc.type: FUNC
+ * @tc.require: #IB2XN0
+ */
+HWTEST_F(RSUniRenderUtilTest, MultiLayersPerf, TestSize.Level1)
+{   
+    uint32_t layerNum = 0;
+    RSUniRenderUtil::MultiLayersPerf(layerNum);
+    layerNum = 20;
+    RSUniRenderUtil::MultiLayersPerf(layerNum);
+    layerNum = 1;
+    RSUniRenderUtil::MultiLayersPerf(layerNum);
+}
 } // namespace OHOS::Rosen
