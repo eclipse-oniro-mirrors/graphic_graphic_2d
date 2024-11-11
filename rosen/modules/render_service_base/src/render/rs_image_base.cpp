@@ -251,7 +251,7 @@ void RSImageBase::MarkRenderServiceImage()
     }
     pixelMap_->IncreaseUseCount();
     if (canPurgeShareMemFlag_ == CanPurgeFlag::UNINITED &&
-        RSSystemProperties::GetRenderNodePurgeEnabled() &&
+        RSSystemProperties::GetRSImagePurgeEnabled() &&
         (pixelMap_->GetAllocatorType() == Media::AllocatorType::SHARE_MEM_ALLOC) &&
         !pixelMap_->IsEditable() &&
         !pixelMap_->IsAstc() &&
