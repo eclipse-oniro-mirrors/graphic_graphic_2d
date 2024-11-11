@@ -57,8 +57,7 @@ void FontDescriptorCache::ClearFontFileCache()
 
 void FontDescriptorCache::ParserSystemFonts()
 {
-    icu::Locale locale = icu::Locale::getDefault();
-    for (auto& item : parser_.GetSystemFonts(std::string(locale.getName()))) {
+    for (auto& item : parser_.GetSystemFonts()) {
         FontDescriptorScatter(item);
     }
     Dump();
@@ -89,7 +88,7 @@ void FontDescriptorCache::ParserInstallFonts()
 
     for (const auto& path : fontPathList) {
         if (!ProcessInstalledFontPath(path)) {
-            TEXT_LOGE("Failed to process font path, path: %{public}s", path.c_str());
+            TEXT_LOGE("Failed to process font path");
         }
     }
 }
@@ -221,8 +220,8 @@ bool FontDescriptorCache::ProcessSystemFontType(const int32_t& systemFontType, i
     return true;
 }
 
-void FontDescriptorCache::GetSystemFontFullNamesByType(const int32_t& systemFontType,
-    std::unordered_set<std::string>& fontList)
+void FontDescriptorCache::GetSystemFontFullNamesByType(
+    const int32_t &systemFontType,std::unordered_set<std::string> &fontList)
 {
     int32_t fontType = 0;
     if (!ProcessSystemFontType(systemFontType, fontType)) {
@@ -261,9 +260,11 @@ bool FontDescriptorCache::ParseInstallFontDescSharedPtrByName(const std::string&
             break;
         }
     }
+    
+    //Setting the locale to English is to ensure consistency with the fullName format obtained from Skia.
+    std::string locale = TextEngine::ENGLISH;
     std::vector<FontDescSharedPtr> descriptors;
-    icu::Locale locale = icu::Locale::getDefault();
-    if (parser_.ParserFontDescriptorFromPath(path, fullName, descriptors, std::string(locale.getName()))) {
+    if (parser_.ParserFontDescriptorFromPath(path, fullName, descriptors, locale)) {
         for (auto& item : descriptors) {
             if (item->fullName == fullName) {
                 item->weight = WeightAlignment(item->weight);
@@ -286,6 +287,11 @@ void FontDescriptorCache::GetFontDescSharedPtrByFullName(const std::string& full
     }
     int32_t fontType = 0;
     if (!ProcessSystemFontType(systemFontType, fontType)) {
+        result = nullptr;
+        return;
+    }
+    if (systemFontType < 0) {
+        TEXT_LOGE("SystemFontType is an invalid value");
         result = nullptr;
         return;
     }
@@ -542,7 +548,7 @@ int32_t FontDescriptorCache::WeightAlignment(int32_t weight)
         return weight;
     }
 
-    static const std::vector<int> weightRange = {
+    static const std::vector<int> weightType = {
         Drawing::FontStyle::THIN_WEIGHT,
         Drawing::FontStyle::EXTRA_LIGHT_WEIGHT,
         Drawing::FontStyle::LIGHT_WEIGHT,
@@ -555,7 +561,7 @@ int32_t FontDescriptorCache::WeightAlignment(int32_t weight)
         Drawing::FontStyle::EXTRA_BLACK_WEIGHT
     };
     // Obtain weight ranges for non-whole hundred values
-    auto it = std::lower_bound(weightRange.begin(), weightRange.end(), weight);
+    auto it = std::lower_bound(weightType.begin(), weightType.end(), weight);
     std::vector<int> targetRange = { *(it - 1), *it };
     
     /**
