@@ -159,10 +159,11 @@ public:
     // firstLevelNodeId: surfacenode for uiFirst to assign task; cacheNodeId: drawing cache rootnode attached to
     virtual void SetIsOnTheTree(bool flag, NodeId instanceRootNodeId = INVALID_NODEID,
         NodeId firstLevelNodeId = INVALID_NODEID, NodeId cacheNodeId = INVALID_NODEID,
-        NodeId uifirstRootNodeId = INVALID_NODEID);
+        NodeId uifirstRootNodeId = INVALID_NODEID, NodeId displayNodeId = INVALID_NODEID);
     void SetIsOntheTreeOnlyFlag(bool flag)
     {
-        SetIsOnTheTree(flag, instanceRootNodeId_, firstLevelNodeId_, drawingCacheRootId_, uifirstRootNodeId_);
+        SetIsOnTheTree(flag, instanceRootNodeId_, firstLevelNodeId_, drawingCacheRootId_,
+            uifirstRootNodeId_, displayNodeId_);
     }
     inline bool IsOnTheTree() const
     {
@@ -791,6 +792,11 @@ public:
         return isAccessibilityConfigChanged_;
     }
 
+    const NodeId GetDisplayNodeId() const
+    {
+        return displayNodeId_;
+    }
+
     void ProcessBehindWindowOnTreeStateChanged();
     void ProcessBehindWindowAfterApplyModifiers();
     virtual bool NeedDrawBehindWindow() const { return false; }
@@ -1055,6 +1061,7 @@ private:
     bool childrenHasUIExtension_ = false;
     bool isAccessibilityConfigChanged_ = false;
     const bool isPurgeable_;
+    NodeId displayNodeId_;
     // for blur effct count
     static std::unordered_map<pid_t, size_t> blurEffectCounter_;
     void UpdateBlurEffectCounter(int deltaCount);

@@ -1505,7 +1505,8 @@ void RSDisplayRenderNodeDrawable::FindHardwareEnabledNodes(RSDisplayRenderParams
         RSUniRenderThread::Instance().GetRSRenderThreadParams()->GetHardwareEnabledTypeDrawables();
     for (const auto& drawable : hardwareDrawables) {
         auto surfaceNodeDrawable = std::static_pointer_cast<RSSurfaceRenderNodeDrawable>(drawable);
-        if (!surfaceNodeDrawable || !surfaceNodeDrawable->ShouldPaint()) {
+        if (!surfaceNodeDrawable || !surfaceNodeDrawable->ShouldPaint() ||
+            surfaceNodeDrawable->GetDisplayNodeId() != params.GetId()) {
             continue;
         }
         auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceNodeDrawable->GetRenderParams().get());

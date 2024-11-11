@@ -68,6 +68,11 @@ public:
         return name_;
     }
 
+    const NodeId GetDisplayNodeId()
+    {
+        return displayNodeId_;
+    }
+
     // Dma Buffer
     bool UseDmaBuffer();
 
@@ -291,6 +296,7 @@ private:
     void DrawBufferForRotationFixed(RSPaintFilterCanvas& canvas, RSSurfaceRenderParams& surfaceParams);
 
     std::string name_;
+    NodeId displayNodeId_;
     RSSurfaceNodeType surfaceNodeType_ = RSSurfaceNodeType::DEFAULT;
 #ifndef ROSEN_CROSS_PLATFORM
     sptr<IBufferConsumerListener> consumerListener_ = nullptr;
