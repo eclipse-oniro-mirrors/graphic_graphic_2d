@@ -38,6 +38,7 @@
 #include "rs_frame_report.h"
 #include "rs_profiler.h"
 #include "rs_trace.h"
+#include "v2_1/cm_color_space.h"
 #include "scene_board_judgement.h"
 #include "vsync_iconnection_token.h"
 #include "xcollie/watchdog.h"
@@ -355,7 +356,7 @@ static inline void WaitUntilUploadTextureTaskFinished(bool isUniRender)
 #endif
 }
 
-bool RSMainThread::CheckIsHdrSurface(const RSSurfaceRenderNode& surfaceNode)
+bool RSMainThread::CheckIsAihdrSurface(const RSSurfaceRenderNode& surfaceNode)
 {
     if (!surfaceNode.IsOnTheTree()) {
         return false;
@@ -364,19 +365,24 @@ bool RSMainThread::CheckIsHdrSurface(const RSSurfaceRenderNode& surfaceNode)
     if (surfaceBuffer == nullptr) {
         return false;
     }
-    if (surfaceBuffer->GetFormat() != GRAPHIC_PIXEL_FMT_YCBCR_P010 &&
-        surfaceBuffer->GetFormat() != GRAPHIC_PIXEL_FMT_YCRCB_P010) {
-        return false;
+#ifdef USE_VIDEO_PROCESSING_ENGINE
+    std::vector<uint8_t> metadataType{};
+    if (surfaceBuffer->GetMetadata(Media::VideoProcessingEngine::ATTRKEY_HDR_METADATA_TYPE, metadataType) ==
+        GSERROR_OK && metadataType.size() > 0 &&
+        metadataType[0] == HDI::Display::Graphic::Common::V2_1::CM_VIDEO_AI_HDR) {
+        return true;
     }
-    using namespace HDI::Display::Graphic::Common::V1_0;
-    CM_ColorSpaceInfo colorSpaceInfo;
-    if (MetadataHelper::GetColorSpaceInfo(surfaceBuffer, colorSpaceInfo) == GSERROR_OK) {
-        if (colorSpaceInfo.transfunc == TRANSFUNC_PQ || colorSpaceInfo.transfunc == TRANSFUNC_HLG) {
-            return true;
-        }
-    }
+#endif
     return false;
 }
+
+bool RSMainThread::CheckIsHdrSurface(const RSSurfaceRenderNode& surfaceNode)
+{
+    if (!surfaceNode.IsOnTheTree()) {
+        return false;
+    }
+    return RSBaseRenderEngine::CheckIsHdrSurfaceBuffer(surfaceNode.GetRSSurfaceHandler()->GetBuffer());
+    }
 
 RSMainThread* RSMainThread::Instance()
 {
@@ -1350,12 +1356,14 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
     RS_OPTIONAL_TRACE_BEGIN("RSMainThread::ConsumeAndUpdateAllNodes");
     bool needRequestNextVsync = false;
     bool hasHdrVideo = false;
+    int hdrType = HDR_TYPE::VIDEO;
     if (!isUniRender_) {
         dividedRenderbufferTimestamps_.clear();
     }
     const auto& nodeMap = GetContext().GetNodeMap();
     nodeMap.TraverseSurfaceNodes(
-        [this, &needRequestNextVsync, &hasHdrVideo](const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode) mutable {
+        [this, &needRequestNextVsync, &hasHdrVideo, &hdrType](
+            const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode) mutable {
         if (surfaceNode == nullptr) {
             return;
         }
@@ -1450,6 +1458,7 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
         }
         if (!hasHdrVideo) {
             hasHdrVideo = CheckIsHdrSurface(*surfaceNode);
+            hdrType = CheckIsAihdrSurface(*surfaceNode) ? HDR_TYPE::AIHDR_VIDEO : hdrType;
         }
         if ((*surfaceNode).GetRSSurfaceHandler() == nullptr) {
             RS_LOGE("surfaceNode.GetRSSurfaceHandler is NULL");
@@ -1458,7 +1467,7 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
         UpdateSurfaceNodeNit((*surfaceNode).GetRSSurfaceHandler()->GetBuffer(),
             *surfaceNode, CheckIsHdrSurface(*surfaceNode));
     });
-    RSLuminanceControl::Get().SetHdrStatus(0, hasHdrVideo, HDR_TYPE::VIDEO);
+    RSLuminanceControl::Get().SetHdrStatus(0, hasHdrVideo, hdrType);
     if (needRequestNextVsync) {
         RequestNextVSync();
     }
