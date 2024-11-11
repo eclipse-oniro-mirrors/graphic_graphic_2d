@@ -1007,7 +1007,11 @@ void RSSurfaceRenderNode::SyncProtectedInfoToFirstLevelNode()
 
 void RSSurfaceRenderNode::SetFingerprint(bool hasFingerprint)
 {
+    if (hasFingerprint_ == hasFingerprint) {
+        return;
+    }
     hasFingerprint_ = hasFingerprint;
+    SetDirty();
 }
 
 bool RSSurfaceRenderNode::GetFingerprint() const
