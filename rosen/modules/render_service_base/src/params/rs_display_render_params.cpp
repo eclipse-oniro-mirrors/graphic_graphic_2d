@@ -173,6 +173,9 @@ void RSDisplayRenderParams::OnSync(const std::unique_ptr<RSRenderParams>& target
     targetDisplayParams->displayHasProtectedSurface_ = displayHasProtectedSurface_;
     targetDisplayParams->displaySpecailSurfaceChanged_ = displaySpecailSurfaceChanged_;
     targetDisplayParams->hasCaptureWindow_ = hasCaptureWindow_;
+    targetDisplayParams->hasChildCrossNode_ = hasChildCrossNode_;
+    targetDisplayParams->isMirrorScreen_ = isMirrorScreen_;
+    targetDisplayParams->isFirstVisitCrossNodeDisplay_ = isFirstVisitCrossNodeDisplay_;
     targetDisplayParams->offsetX_ = offsetX_;
     targetDisplayParams->offsetY_ = offsetY_;
     targetDisplayParams->nodeRotation_ = nodeRotation_;

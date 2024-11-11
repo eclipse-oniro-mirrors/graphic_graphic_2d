@@ -93,6 +93,26 @@ public:
         isOpDropped_ = opDropped;
     }
 
+    bool IsMirrorScreen() const
+    {
+        return isMirrorScreen_;
+    }
+
+    void SetIsMirrorScreen(bool isMirrorScreen)
+    {
+        isMirrorScreen_ = isMirrorScreen;
+    }
+
+    bool IsFirstVisitCrossNodeDisplay() const
+    {
+        return isFirstVisitCrossNodeDisplay_;
+    }
+
+    void SetIsFirstVisitCrossNodeDisplay(bool isFirstVisitCrossNodeDisplay)
+    {
+        isFirstVisitCrossNodeDisplay_ = isFirstVisitCrossNodeDisplay;
+    }
+
     bool GetUIFirstDebugEnabled() const
     {
         return isUIFirstDebugEnable_;
@@ -389,6 +409,8 @@ private:
     uint64_t pendingConstraintRelativeTime_ = 0;
     // RSDirtyRectsDfx dfx
     std::vector<std::string> dfxTargetSurfaceNames_;
+    bool isMirrorScreen_ = false;
+    bool isFirstVisitCrossNodeDisplay_ = false;
     bool isRegionDebugEnabled_ = false;
     bool isPartialRenderEnabled_ = false;
     bool isDirtyRegionDfxEnabled_ = false;

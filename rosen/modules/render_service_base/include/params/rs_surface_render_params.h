@@ -101,6 +101,10 @@ public:
     {
         return alpha_;
     }
+    bool IsCrossNode() const
+    {
+        return isCrossNode_;
+    }
     bool IsSpherizeValid() const
     {
         return isSpherizeValid_;
@@ -526,6 +530,7 @@ private:
     DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr ancestorDisplayDrawable_;
 
     float alpha_ = 0;
+    bool isCrossNode_ = false;
     bool isTransparent_ = false;
     bool isSpherizeValid_ = false;
     bool isAttractionValid_ = false;

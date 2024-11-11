@@ -2805,6 +2805,7 @@ void RSSurfaceRenderNode::UpdateRenderParams()
     }
     auto& properties = GetRenderProperties();
     surfaceParams->alpha_ = properties.GetAlpha();
+    surfaceParams->isCrossNode_ = IsCrossNode();
     surfaceParams->isSpherizeValid_ = properties.IsSpherizeValid();
     surfaceParams->isAttractionValid_ = properties.IsAttractionValid();
     surfaceParams->rsSurfaceNodeType_ = GetSurfaceNodeType();

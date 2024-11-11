@@ -186,6 +186,7 @@ private:
     bool CheckColorFilterChange() const;
     bool CheckCurtainScreenUsingStatusChange() const;
     bool CheckLuminanceStatusChange();
+    void CheckCrossNode(RSSurfaceRenderNode& node);
     bool IsFirstFrameOfPartialRender() const;
     bool IsFirstFrameOfOverdrawSwitch() const;
     bool IsFirstFrameOfDrawingCacheDfxSwitch() const;
@@ -391,6 +392,7 @@ private:
     // vector of current frame mainwindow surface visible info
     VisibleData allDstCurVisVec_;
     GraphicPixelFormat newPixelFormat_ = GraphicPixelFormat::GRAPHIC_PIXEL_FMT_RGBA_8888;
+    bool hasVisitCrossNode_ = false;
     bool isDirtyRegionDfxEnabled_ = false; // dirtyRegion DFX visualization
     bool isTargetDirtyRegionDfxEnabled_ = false;
     bool isOpaqueRegionDfxEnabled_ = false;

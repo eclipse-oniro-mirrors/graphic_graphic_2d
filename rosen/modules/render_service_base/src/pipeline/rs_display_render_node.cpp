@@ -258,6 +258,9 @@ void RSDisplayRenderNode::UpdateScreenRenderParams(ScreenRenderParams& screenRen
     displayParams->screenId_ = GetScreenId();
     displayParams->screenRotation_ = GetScreenRotation();
     displayParams->compositeType_ = GetCompositeType();
+    displayParams->hasChildCrossNode_ = HasChildCrossNode();
+    displayParams->isMirrorScreen_ = IsMirrorScreen();
+    displayParams->isFirstVisitCrossNodeDisplay_ = IsFirstVisitCrossNodeDisplay();
     displayParams->isSecurityDisplay_ = GetSecurityDisplay();
     displayParams->screenInfo_ = std::move(screenRenderParams.screenInfo);
     displayParams->displayHasSecSurface_ = std::move(screenRenderParams.displayHasSecSurface);

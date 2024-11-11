@@ -113,6 +113,36 @@ public:
         return offsetX_;
     }
 
+    bool HasChildCrossNode() const
+    {
+        return hasChildCrossNode_;
+    }
+
+    void SetHasChildCrossNode(bool hasChildCrossNode)
+    {
+        hasChildCrossNode_ = hasChildCrossNode;
+    }
+
+    bool IsMirrorScreen() const
+    {
+        return isMirrorScreen_;
+    }
+
+    void SetIsMirrorScreen(bool isMirrorScreen)
+    {
+        isMirrorScreen_ = isMirrorScreen;
+    }
+
+    void SetIsFirstVisitCrossNodeDisplay(bool isFirstVisitCrossNodeDisplay)
+    {
+        isFirstVisitCrossNodeDisplay_ = isFirstVisitCrossNodeDisplay;
+    }
+
+    bool IsFirstVisitCrossNodeDisplay() const
+    {
+        return isFirstVisitCrossNodeDisplay_;
+    }
+
     int32_t GetDisplayOffsetY() const
     {
         return offsetY_;
@@ -453,6 +483,9 @@ private:
     int32_t offsetY_ = 0;
     uint32_t rogWidth_ = 0;
     uint32_t rogHeight_ = 0;
+    bool hasChildCrossNode_ = false;
+    bool isMirrorScreen_ = false;
+    bool isFirstVisitCrossNodeDisplay_ = false;
     bool forceSoftComposite_ { false };
     bool isMirroredDisplay_ = false;
     bool isSecurityDisplay_ = false;
