@@ -503,6 +503,7 @@ HWTEST_F(HgmFrameRateMgrTest, ProcessRefreshRateVoteTest, Function | SmallTest |
     frameRateMgr.ProcessRefreshRateVote(voterIter, resultVoteInfo, voteRange);
     frameRateMgr.DeliverRefreshRateVote({"VOTER_GAMES", OLED_120_HZ, OLED_90_HZ, OLED_NULL_HZ}, true);
     frameRateMgr.DeliverRefreshRateVote({"VOTER_THERMAL", OLED_120_HZ, OLED_90_HZ, OLED_NULL_HZ}, true);
+    frameRateMgr.DeliverRefreshRateVote({"VOTER_MULTISELFOWNEDSCREEN", OLED_120_HZ, OLED_90_HZ, OLED_NULL_HZ}, true);
     auto screenSetting = frameRateMgr.multiAppStrategy_.GetScreenSetting();
     screenSetting.sceneList.insert(make_pair(testScene, PolicyConfigData::SceneConfig{"1", "1"}));
     screenSetting.gameSceneList.insert(make_pair(testScene, "1"));
@@ -681,12 +682,12 @@ HWTEST_F(HgmFrameRateMgrTest, HandleScreenPowerStatus, Function | SmallTest | Le
         return;
     }
     // init
-    EXPECT_EQ(hgmCore.AddScreen(externalScreenId, 0, screenSize), EXEC_SUCCESS);
-    EXPECT_EQ(hgmCore.AddScreen(internalScreenId, 0, screenSize), EXEC_SUCCESS);
     configData->screenStrategyConfigs_["screen0_LTPS"] = "LTPS-DEFAULT";
     configData->screenStrategyConfigs_["screen0_LTPO"] = "LTPO-DEFAULT";
     configData->screenStrategyConfigs_["screen5_LTPS"] = "LTPS-DEFAULT";
     configData->screenStrategyConfigs_["screen5_LTPO"] = "LTPO-DEFAULT";
+    EXPECT_EQ(hgmCore.AddScreen(externalScreenId, 0, screenSize), EXEC_SUCCESS);
+    EXPECT_EQ(hgmCore.AddScreen(internalScreenId, 0, screenSize), EXEC_SUCCESS);
 
     // fold -> expand -> fold
     frameRateMgr->HandleScreenPowerStatus(internalScreenId, ScreenPowerStatus::POWER_STATUS_SUSPEND);
