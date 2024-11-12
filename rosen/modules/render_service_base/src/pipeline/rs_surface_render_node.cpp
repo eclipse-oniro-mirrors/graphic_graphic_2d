@@ -476,8 +476,19 @@ void RSSurfaceRenderNode::UpdateChildSubSurfaceNodes(RSSurfaceRenderNode::Shared
     }
 }
 
+std::unordered_set<NodeId> RSSurfaceRenderNode::GetAllSubSurfaceNodeIds() const
+{
+    std::unordered_set<NodeId> allSubSurfaceNodeIds;
+    std::vector<std::pair<NodeId, RSSurfaceRenderNode::WeakPtr>> allSubSurfaceNodes;
+    GetAllSubSurfaceNodes(allSubSurfaceNodes);
+    for (auto& [id, _] : allSubSurfaceNodes) {
+        allSubSurfaceNodeIds.insert(id);
+    }
+    return allSubSurfaceNodeIds;
+}
+
 void RSSurfaceRenderNode::GetAllSubSurfaceNodes(
-    std::vector<std::pair<NodeId, RSSurfaceRenderNode::WeakPtr>>& allSubSurfaceNodes)
+    std::vector<std::pair<NodeId, RSSurfaceRenderNode::WeakPtr>>& allSubSurfaceNodes) const
 {
     for (auto& [id, node] : childSubSurfaceNodes_) {
         auto subSubSurfaceNodePtr = node.lock();
@@ -2838,6 +2849,8 @@ void RSSurfaceRenderNode::UpdateRenderParams()
     surfaceParams->visibleFilterChild_ = GetVisibleFilterChild();
     surfaceParams->isTransparent_ = IsTransparent();
     surfaceParams->leashPersistentId_ = leashPersistentId_;
+    surfaceParams->hasSubSurfaceNodes_ = HasSubSurfaceNodes();
+    surfaceParams->allSubSurfaceNodeIds_ = GetAllSubSurfaceNodeIds();
     surfaceParams->SetNeedSync(true);
 
     RSRenderNode::UpdateRenderParams();
