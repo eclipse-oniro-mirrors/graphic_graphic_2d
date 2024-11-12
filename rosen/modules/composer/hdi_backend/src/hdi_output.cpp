@@ -727,7 +727,7 @@ void HdiOutput::Dump(std::string &result) const
             continue;
         }
         auto surface = layer->GetLayerInfo()->GetSurface();
-        const std::string& name = surface ? surface->GetName() : 
+        const std::string& name = surface ? surface->GetName() :
             "Layer Without Surface" + std::to_string(SOLID_SURFACE_COUNT);
         auto info = layer->GetLayerInfo();
         result += "\n surface [" + name + "] NodeId[" + std::to_string(layerInfo.nodeId) + "]";
