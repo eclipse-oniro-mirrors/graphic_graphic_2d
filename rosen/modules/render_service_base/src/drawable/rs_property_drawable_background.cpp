@@ -236,18 +236,7 @@ bool RSBackgroundColorDrawable::OnUpdate(const RSRenderNode& node)
             properties.GetBgBrightnessParams().value());
         brush.SetBlender(blender);
     }
-
-    // use drawrrect to avoid texture update in phone screen rotation scene
-    if (RSSystemProperties::IsPhoneType() && RSSystemProperties::GetCacheEnabledForRotation()) {
-        bool antiAlias = RSPropertiesPainter::GetBgAntiAlias() || !properties.GetCornerRadius().IsZero();
-        brush.SetAntiAlias(antiAlias);
-        canvas.AttachBrush(brush);
-        canvas.DrawRoundRect(RSPropertyDrawableUtils::RRect2DrawingRRect(properties.GetRRect()));
-    } else {
-        canvas.AttachBrush(brush);
-        canvas.DrawRoundRect(RSPropertyDrawableUtils::RRect2DrawingRRect(properties.GetRRect()));
-    }
-    canvas.DetachBrush();
+    canvas.DrawBackground(brush);
     return true;
 }
 
@@ -273,17 +262,7 @@ bool RSBackgroundShaderDrawable::OnUpdate(const RSRenderNode& node)
     Drawing::Brush brush;
     auto shaderEffect = bgShader->GetDrawingShader();
     brush.SetShaderEffect(shaderEffect);
-    // use drawrrect to avoid texture update in phone screen rotation scene
-    if (RSSystemProperties::IsPhoneType() && RSSystemProperties::GetCacheEnabledForRotation()) {
-        bool antiAlias = RSPropertiesPainter::GetBgAntiAlias() || !properties.GetCornerRadius().IsZero();
-        brush.SetAntiAlias(antiAlias);
-        canvas.AttachBrush(brush);
-        canvas.DrawRoundRect(RSPropertyDrawableUtils::RRect2DrawingRRect(properties.GetRRect()));
-    } else {
-        canvas.AttachBrush(brush);
-        canvas.DrawRoundRect(RSPropertyDrawableUtils::RRect2DrawingRRect(properties.GetRRect()));
-    }
-    canvas.DetachBrush();
+    canvas.DrawBackground(brush);
     return true;
 }
 
