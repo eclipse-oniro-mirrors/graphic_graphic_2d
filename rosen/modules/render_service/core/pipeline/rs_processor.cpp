@@ -24,7 +24,6 @@
 #include "drawable/rs_display_render_node_drawable.h"
 #include "params/rs_display_render_params.h"
 #include "pipeline/rs_display_render_node.h"
-#include "pipeline/rs_uni_render_util.h"
 #include "platform/common/rs_log.h"
 
 #ifdef SOC_PERF_ENABLE
