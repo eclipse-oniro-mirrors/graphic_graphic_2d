@@ -77,7 +77,6 @@ public:
     void Sub(const Vector4<T>& arg);
     void Add(const Vector4<T>& arg);
     void Multiply(const Vector4<T>& arg);
-    void Div(const Vector4<T>& arg);
     void Negate();
     void Absolute();
     static void Min(const Vector4<T>& a, const Vector4<T>& b, Vector4<T>& result);
@@ -477,16 +476,6 @@ void Vector4<T>::Multiply(const Vector4<T>& arg)
     data_[2] *= argData[2];
     data_[1] *= argData[1];
     data_[0] *= argData[0];
-}
-
-template<typename T>
-void Vector4<T>::Div(const Vector4<T>& arg)
-{
-    const T* argData = arg.data_;
-    data_[3] /= argData[3];
-    data_[2] /= argData[2];
-    data_[1] /= argData[1];
-    data_[0] /= argData[0];
 }
 
 template<typename T>
