@@ -123,7 +123,6 @@ bool InitSurface()
     RSSurfaceNodeType surfaceNodeType = RSSurfaceNodeType::SELF_DRAWING_WINDOW_NODE;
     std::cout << "RSSurfaceNode::Create" <<std::endl;
     surfaceNode = RSSurfaceNode::Create(surfaceNodeConfig, surfaceNodeType);
-
     if (!surfaceNode) {
         return false;
     }
