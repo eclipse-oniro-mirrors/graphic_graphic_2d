@@ -451,7 +451,7 @@ void HgmMultiAppStrategy::CheckPackageInConfigList(const std::vector<std::string
     rsCommonHook.SetVideoSurfaceFlag(false);
     rsCommonHook.SetHardwareEnabledByHwcnodeBelowSelfInAppFlag(false);
     rsCommonHook.SetHardwareEnabledByBackgroundAlphaFlag(false);
-    rsCommonHook.SetHardwareEnabledBySolidColorLayerFlag(false);
+    rsCommonHook.SetIsWhiteListForSolidColorLayerFlag(false);
     std::unordered_map<std::string, std::string>& videoConfigFromHgm = configData->sourceTuningConfig_;
     std::unordered_map<std::string, std::string>& solidLayerConfigFromHgm = configData->solidLayerConfig_;
     if (videoConfigFromHgm.empty() || solidLayerConfigFromHgm.empty() || pkgs.size() > 1) {
