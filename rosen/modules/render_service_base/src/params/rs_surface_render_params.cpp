@@ -457,6 +457,7 @@ void RSSurfaceRenderParams::OnSync(const std::unique_ptr<RSRenderParams>& target
     targetSurfaceParams->isSpherizeValid_ = isSpherizeValid_;
     targetSurfaceParams->isAttractionValid_ = isAttractionValid_;
     targetSurfaceParams->isParentScaling_ = isParentScaling_;
+    targetSurfaceParams->isCrossNode_ = isCrossNode_;
     targetSurfaceParams->needBilinearInterpolation_ = needBilinearInterpolation_;
     targetSurfaceParams->backgroundColor_ = backgroundColor_;
     targetSurfaceParams->absDrawRect_ = absDrawRect_;

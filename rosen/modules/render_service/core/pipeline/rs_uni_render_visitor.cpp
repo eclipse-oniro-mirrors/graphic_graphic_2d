@@ -776,6 +776,7 @@ void RSUniRenderVisitor::QuickPrepareSurfaceRenderNode(RSSurfaceRenderNode& node
         "pid:[%{public}d] nodeType:[%{public}d] subTreeDirty[%{public}d]", node.GetName().c_str(), node.GetId(),
         ExtractPid(node.GetId()), static_cast<int>(node.GetSurfaceNodeType()), node.IsSubTreeDirty());
 
+    CheckCrossNode(node);
     // 0. init curSurface info and check node info
     auto curCornerRadius = curCornerRadius_;
     auto parentSurfaceNodeMatrix = parentSurfaceNodeMatrix_;
@@ -853,6 +854,22 @@ void RSUniRenderVisitor::QuickPrepareSurfaceRenderNode(RSSurfaceRenderNode& node
     parentSurfaceNodeMatrix_ = parentSurfaceNodeMatrix;
     node.RenderTraceDebug();
     node.SetNeedOffscreen(isScreenRotationAnimating_);
+}
+
+void RSUniRenderVisitor::CheckCrossNode(RSSurfaceRenderNode& node)
+{
+    if (!node.IsCrossNode()) {
+        return;
+    }
+    curDisplayNode_->SetHasChildCrossNode(true);
+    if (hasVisitCrossNode_ && !curDisplayNode_->IsMirrorScreen()) {
+        return;
+    }
+    if (!hasVisitCrossNode_ && !curDisplayNode_->IsMirrorScreen()) {
+        curDisplayNode_->SetIsFirstVisitCrossNodeDisplay(true);
+        hasVisitCrossNode_ = true;
+    }
+    return;
 }
 
 void RSUniRenderVisitor::PrepareForUIFirstNode(RSSurfaceRenderNode& node)
@@ -1205,7 +1222,8 @@ bool RSUniRenderVisitor::InitDisplayInfo(RSDisplayRenderNode& node)
     curDisplayDirtyManager_->Clear();
     transparentCleanFilter_.clear();
     transparentDirtyFilter_.clear();
-
+    node.SetHasChildCrossNode(false);
+    node.SetIsFirstVisitCrossNodeDisplay(false);
     // 2 init screenManager info
     screenManager_ = CreateOrGetScreenManager();
     if (!screenManager_) {
@@ -1236,6 +1254,7 @@ bool RSUniRenderVisitor::InitDisplayInfo(RSDisplayRenderNode& node)
 
     // 5. check compositeType
     auto mirrorNode = node.GetMirrorSource().lock();
+    node.SetIsMirrorScreen(mirrorNode != nullptr);
     switch (screenInfo_.state) {
         case ScreenState::SOFTWARE_OUTPUT_ENABLE:
             node.SetCompositeType(mirrorNode ?

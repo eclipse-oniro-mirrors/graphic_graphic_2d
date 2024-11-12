@@ -563,6 +563,9 @@ public:
     void MarkNodeSingleFrameComposer(bool isNodeSingleFrameComposer, pid_t pid = 0);
     virtual bool GetNodeIsSingleFrameComposer() const;
 
+    // mark cross node in physical extended screen model
+    bool IsCrossNode() const;
+
     // mark stable node
     void OpincSetInAppStateStart(bool& unchangeMarkInApp);
     void OpincSetInAppStateEnd(bool& unchangeMarkInApp);
@@ -878,6 +881,9 @@ protected:
     bool childHasSharedTransition_ = false;
     bool flagIntersectWithDRM_ = false;
 private:
+    // mark cross node in physical extended screen model
+    bool isCrossNode_ = false;
+    uint32_t crossScreenNum_ = 0;
     // shadowRectOffset means offset between shadowRect and absRect of node
     int shadowRectOffsetX_ = 0;
     int shadowRectOffsetY_ = 0;
@@ -1097,6 +1103,9 @@ private:
     void UpdateDrawableVecInternal(std::unordered_set<RSPropertyDrawableSlot> dirtySlots);
     void UpdateDisplayList();
     void UpdateShadowRect();
+
+    void IncreaseCrossScreenNum();
+    void DecreaseCrossScreenNum();
 
     void OnRegister(const std::weak_ptr<RSContext>& context);
     // purge resource
