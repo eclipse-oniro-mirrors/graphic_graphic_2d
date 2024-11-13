@@ -2312,7 +2312,7 @@ void RSMainThread::OnUniRenderDraw()
         return;
     }
 
-    if (!doDirectComposition_ && needDrawFrame_) {
+    if (!doDirectComposition_ && needDrawFrame_ && !RSSystemProperties::GetScreenSwitchStatus()) {
         renderThreadParams_->SetContext(context_);
         renderThreadParams_->SetDiscardJankFrames(GetDiscardJankFrames());
         drawFrame_.SetRenderThreadParams(renderThreadParams_);

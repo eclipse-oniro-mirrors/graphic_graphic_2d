@@ -719,6 +719,11 @@ void RSInterfaces::DisableCacheForRotation()
     renderServiceClient_->SetCacheEnabledForRotation(false);
 }
 
+void RSInterfaces::SetScreenSwitching(bool flag)
+{
+    renderServiceClient_->SetScreenSwitchStatus(flag);
+}
+
 void RSInterfaces::SetOnRemoteDiedCallback(const OnRemoteDiedCallback& callback)
 {
     renderServiceClient_->SetOnRemoteDiedCallback(callback);

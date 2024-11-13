@@ -575,6 +575,10 @@ void RSRenderServiceClient::SetCacheEnabledForRotation(bool isEnabled)
 {
 }
 
+void RSRenderServiceClient::SetScreenSwitchStatus(bool flag)
+{
+}
+
 void RSRenderServiceClient::SetDefaultDeviceRotationOffset(uint32_t offset)
 {
 }
