@@ -1029,6 +1029,8 @@ void RSDisplayRenderNodeDrawable::DrawMirror(RSDisplayRenderParams& params,
     curCanvas_->Clear(Drawing::Color::COLOR_TRANSPARENT);
     virtualProcesser->CanvasClipRegionForUniscaleMode();
     curCanvas_->ConcatMatrix(mirroredParams->GetMatrix());
+    // Recording HDR screen cannot use canvas size
+    SetUseCanvasSize(false);
 
     // set mirror screen capture param
     // Don't need to scale here since the canvas has been switched from mirror frame to offscreen
@@ -1700,7 +1702,7 @@ void RSDisplayRenderNodeDrawable::PrepareOffscreenRender(const RSDisplayRenderNo
     if (!params->GetNeedOffscreen() || !useFixedOffscreenSurfaceSize_ || offscreenSurface_ == nullptr) {
         RS_TRACE_NAME_FMT("make offscreen surface with fixed size: [%d, %d]", offscreenWidth, offscreenHeight);
         bool isScRGBEnable = EnablescRGBForP3AndUiFirst(params->GetNewColorSpace());
-        if (!params->GetNeedOffscreen() && (params->GetHDRPresent() || isScRGBEnable)) {
+        if (!params->GetNeedOffscreen() && (params->GetHDRPresent() || isScRGBEnable) && GetUseCanvasSize()) {
             offscreenWidth = curCanvas_->GetWidth();
             offscreenHeight = curCanvas_->GetHeight();
         }
