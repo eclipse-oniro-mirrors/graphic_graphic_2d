@@ -120,7 +120,7 @@ OHOS::Rosen::Drawing::BackendTexture MakeBackendTexture(uint32_t width, uint32_t
     VkImage image = VK_NULL_HANDLE;
     VkDeviceMemory memory = VK_NULL_HANDLE;
 
-    if (width * height > OHOS::Rosen::NativeBufferUtils::VKIMAGE_LIMIT_SIZE) {
+    if (height != 0 && width > OHOS::Rosen::NativeBufferUtils::VKIMAGE_LIMIT_SIZE / height) {
         ROSEN_LOGE("NativeBufferUtils: vkCreateImag failed, image is too large, width:%{public}u, height::%{public}u",
             width, height);
         return {};
