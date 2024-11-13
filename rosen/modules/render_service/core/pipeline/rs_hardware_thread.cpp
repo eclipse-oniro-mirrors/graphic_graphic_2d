@@ -207,9 +207,9 @@ void RSHardwareThread::CommitAndReleaseLayers(OutputPtr output, const std::vecto
                 std::chrono::steady_clock::now().time_since_epoch()).count();
         }
         RS_TRACE_NAME_FMT("RSHardwareThread::CommitAndReleaseLayers rate: %u, now: %PRIu64, vsyncId: %PRIu64, " \
-            "size: %PRIu64", currentRate, param.frameTimestamp, param.vsyncId, layers.size());
+            "size: %u", currentRate, param.frameTimestamp, param.vsyncId, layers.size());
         RS_LOGD("RSHardwareThread::CommitAndReleaseLayers rate:%{public}u, " \
-            "now:%{public}"PRIu64", vsyncId:%{public}"PRIu64", size:%{public}"PRIu64"",
+            "now:%{public}"PRIu64 ", vsyncId:%{public}"PRIu64 ", size:%{public}u ",
             currentRate, param.frameTimestamp, param.vsyncId, layers.size());
         ExecuteSwitchRefreshRate(output, param.rate);
         PerformSetActiveMode(output, param.frameTimestamp, param.constraintRelativeTime);
@@ -338,7 +338,7 @@ void RSHardwareThread::CalculateDelayTime(OHOS::Rosen::HgmCore& hgmCore, Refresh
         "frameOffset: %PRId64, dvsyncOffset: %PRIu64, vsyncOffset: %PRId64, idealPeriod: %PRId64, period: %PRId64",
         pipelineOffset, param.actualTimestamp, expectCommitTime, currTime, diffTime, delayTime_,
         frameOffset, dvsyncOffset, vsyncOffset, idealPeriod, period);
-    RS_LOGD("RSHardwareThread::CalculateDelayTime period:%{public}" PRId64 " delayTime:%{public}" PRId64,
+    RS_LOGD("RSHardwareThread::CalculateDelayTime period:%{public}" PRId64 " delayTime:%{public}" PRId64 "",
         period, delayTime_);
 }
 
