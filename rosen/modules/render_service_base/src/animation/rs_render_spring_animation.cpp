@@ -314,7 +314,8 @@ RSRenderSpringAnimation::GetSpringStatus() const
 {
     // if animation is never started, return start value and initial velocity
     // fraction_threshold will change with animationScale.
-    if (ROSEN_EQ(prevMappedTime_, 0.0f, FRACTION_THRESHOLD / animationFraction_.GetAnimationScale())) {
+    if (ROSEN_EQ(animationFraction_.GetAnimationScale(), 0.0f) ||
+        ROSEN_EQ(prevMappedTime_, 0.0f, FRACTION_THRESHOLD / animationFraction_.GetAnimationScale())) {ß
         return { startValue_, endValue_, initialVelocity_ };
     }
 

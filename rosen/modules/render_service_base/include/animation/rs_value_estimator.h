@@ -260,7 +260,7 @@ public:
             if (fraction < startFraction) {
                 break;
             }
-            if ((fraction > startFraction) && ROSEN_LE(fraction, endFraction)) {
+            if ((fraction > startFraction) && (fraction <= endFraction)) {
                 bInFraction = true;
                 float intervalFraction = (fraction - startFraction) / (endFraction - startFraction);
                 auto interpolationValue = RSValueEstimator::Estimate(

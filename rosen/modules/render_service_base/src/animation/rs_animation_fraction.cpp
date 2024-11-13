@@ -58,7 +58,7 @@ float RSAnimationFraction::GetAnimationScale()
 
 void RSAnimationFraction::SetAnimationScale(float animationScale)
 {
-    animationScale_.store(std::max(std::numeric_limits<float>::epsilon(), animationScale), std::memory_order_relaxed);
+    animationScale_.store(std::max(0.0f, animationScale), std::memory_order_relaxed);
 }
 
 void RSAnimationFraction::OnAnimationScaleChangedCallback(const char* key, const char* value, void* context)

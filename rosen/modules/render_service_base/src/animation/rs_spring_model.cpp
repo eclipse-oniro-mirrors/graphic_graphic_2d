@@ -41,10 +41,10 @@ void RSSpringModel<std::shared_ptr<RSRenderPropertyBase>>::CalculateSpringParame
 {
     // sanity check
     dampingRatio_ = std::clamp(dampingRatio_, SPRING_MIN_DAMPING_RATIO, SPRING_MAX_DAMPING_RATIO);
-    if (ROSEN_LE(response_, 0.f)) {
+    if (response_ <= 0) {
         response_ = SPRING_MIN_RESPONSE;
     }
-    if (ROSEN_LE(minimumAmplitudeRatio_, 0.f)) {
+    if (minimumAmplitudeRatio_ <= 0) {
         minimumAmplitudeRatio_ = SPRING_MIN_AMPLITUDE_RATIO;
     }
     if (initialOffset_ == nullptr) {
@@ -78,7 +78,7 @@ void RSSpringModel<std::shared_ptr<RSRenderPropertyBase>>::CalculateSpringParame
 template<>
 float RSSpringModel<std::shared_ptr<RSRenderPropertyBase>>::EstimateDuration() const
 {
-    if (ROSEN_LE(dampingRatio_, 0.0f) || ROSEN_LE(response_, 0.0f)) {
+    if (dampingRatio_ <= 0.0f || response_ <= 0.0f) {
         ROSEN_LOGE("RSSpringModel::%{public}s, uninitialized spring model", __func__);
         return 0.0f;
     }
@@ -130,7 +130,7 @@ template<>
 std::shared_ptr<RSRenderPropertyBase> RSSpringModel<std::shared_ptr<RSRenderPropertyBase>>::CalculateDisplacement(
     double time) const
 {
-    if (ROSEN_LE(dampingRatio_, 0.0f)) {
+    if (dampingRatio_ <= 0.0f) {
         ROSEN_LOGE("RSSpringModel::%{public}s, uninitialized spring model", __func__);
         return {};
     }
@@ -200,7 +200,7 @@ float RSSpringModel<float>::BinarySearchTime(float left, float right, float targ
 template<>
 float RSSpringModel<float>::EstimateDurationForUnderDampedModel() const
 {
-    if (ROSEN_LE(response_, 0.0f)) {
+    if (response_ <= 0.0f) {
         ROSEN_LOGE("RSSpringModel<float>::EstimateDurationForUnderDampedModel, uninitialized response.");
         return 0.0f;
     }
@@ -236,7 +236,7 @@ float RSSpringModel<float>::EstimateDurationForUnderDampedModel() const
 template<>
 float RSSpringModel<float>::EstimateDurationForCriticalDampedModel() const
 {
-    if (ROSEN_LE(response_, 0.0f)) {
+    if (response_ <= 0.0f) {
         ROSEN_LOGE("RSSpringModel::EstimateDurationForCriticalDampedModel, uninitialized response.");
         return 0.0f;
     }
@@ -272,7 +272,7 @@ float RSSpringModel<float>::EstimateDurationForCriticalDampedModel() const
 template<>
 float RSSpringModel<float>::EstimateDurationForOverDampedModel() const
 {
-    if (ROSEN_LE(response_, 0.0f)) {
+    if (response_ <= 0.0f) {
         ROSEN_LOGE("RSSpringModel::EstimateDurationForOverDampedModel, uninitialized response.");
         return 0.0f;
     }
