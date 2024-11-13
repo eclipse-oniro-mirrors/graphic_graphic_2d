@@ -2383,14 +2383,14 @@ void RSNode::MarkUifirstNode(bool isUifirstNode)
         transactionProxy->AddCommand(command, IsRenderServiceNode());
     }
 }
-
+ 
 void RSNode::MarkUifirstNode(bool isForceFlag, bool isUifirstEnable)
 {
-    if (isUifirstNode_ == isUifirstNode && isUifirstEnable_ == isUifirstEnable) {
+    if (isForceFlag == isForceFlag_ && isUifirstEnable_ == isUifirstEnable) {
         return;
     }
     isForceFlag_ = isForceFlag;
-    isUifirstNode_ = isUifirstNode;
+    isUifirstEnable_ = isUifirstEnable_;
     std::unique_ptr<RSCommand> command = std::make_unique<RSForceUifirstNode>(GetId(), isForceFlag, isUifirstEnable);
     auto transactionProxy = RSTransactionProxy::GetInstance();
     if (transactionProxy != nullptr) {

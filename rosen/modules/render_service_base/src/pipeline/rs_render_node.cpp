@@ -4350,7 +4350,7 @@ void RSRenderNode::MarkUifirstNode(bool isUifirstNode)
 
 void RSRenderNode::MarkUifirstNode(bool isForceFlag, bool isUifirstEnable)
 {
-    RS_TRACE_NAME_FMT("MarkUifirstNode id:%lld, isForceFlag:%d, isUifirstEnable:%d", 
+    RS_TRACE_NAME_FMT("MarkUifirstNode id:%lld, isForceFlag:%d, isUifirstEnable:%d",
         GetId(), isForceFlag, isUifirstEnable);
     ROSEN_LOGI("MarkUifirstNode id:%{public}" PRIu64 " isForceFlag:%{public}d, isUifirstEnable:%{public}d",
         GetId(), isForceFlag, isUifirstEnable);

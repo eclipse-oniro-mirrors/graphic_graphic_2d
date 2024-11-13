@@ -66,6 +66,7 @@ enum RSNodeCommandType : uint16_t {
     MARK_SUGGEST_OPINC_NODE,
 
     MARK_UIFIRST_NODE,
+    MARK_UIFIRST_NODE_FORCE,
 
     SET_NODE_NAME,
     UPDATE_MODIFIER_MOTION_BLUR_PTR,
@@ -268,7 +269,7 @@ ADD_COMMAND(RSMarkUifirstNode,
     ARG(RS_NODE, MARK_UIFIRST_NODE, RSNodeCommandHelper::MarkUifirstNode, NodeId, bool))
 
 ADD_COMMAND(RSForceUifirstNode,
-    ARG(RS_NODE, MARK_SUGGEST_OPINC_NODE, RSNodeCommandHelper::ForceUifirstNode, NodeId, bool, bool))
+    ARG(RS_NODE, MARK_UIFIRST_NODE_FORCE, RSNodeCommandHelper::ForceUifirstNode, NodeId, bool, bool))
 
 ADD_COMMAND(RSSetDrawRegion,
     ARG(RS_NODE, SET_DRAW_REGION, RSNodeCommandHelper::SetDrawRegion,
