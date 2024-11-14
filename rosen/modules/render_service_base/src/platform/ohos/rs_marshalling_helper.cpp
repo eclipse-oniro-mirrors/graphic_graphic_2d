@@ -66,10 +66,6 @@
 #include "recording/mask_cmd_list.h"
 #include "property/rs_properties_def.h"
 
-#ifdef RS_ENABLE_RECORDING
-#include "benchmarks/rs_recording_thread.h"
-#endif
-
 namespace OHOS {
 namespace Rosen {
 
@@ -1468,13 +1464,6 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<Media::P
     };
 
 #ifdef ROSEN_OHOS
-    if (RSSystemProperties::GetRsMemoryOptimizeEnabled() &&
-        (val->GetAllocatorType() == Media::AllocatorType::SHARE_MEM_ALLOC) &&
-        !val->IsEditable() &&
-        !val->IsAstc() &&
-        !val->IsHdr()) {
-        val->UnMap();
-    }
     MemoryTrack::Instance().AddPictureRecord(val->GetFd(), info);
 #else
     MemoryTrack::Instance().AddPictureRecord(val->GetPixels(), info);

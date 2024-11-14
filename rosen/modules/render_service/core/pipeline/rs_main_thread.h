@@ -97,7 +97,6 @@ public:
     void UpdateFocusNodeId(NodeId focusNodeId);
     void UpdateNeedDrawFocusChange(NodeId id);
     void ProcessDataBySingleFrameComposer(std::unique_ptr<RSTransactionData>& rsTransactionData);
-    void RecvAndProcessRSTransactionDataImmediately(std::unique_ptr<RSTransactionData>& rsTransactionData);
     void RecvRSTransactionData(std::unique_ptr<RSTransactionData>& rsTransactionData);
     void RequestNextVSync(const std::string& fromWhom = "unknown", int64_t lastVSyncTS = 0);
     void PostTask(RSTaskMessage::RSTask task);
@@ -210,7 +209,6 @@ public:
 
     void SetDirtyFlag(bool isDirty = true);
     bool GetDirtyFlag();
-    void SetNoNeedToPostTask(bool noNeedToPostTask);
     void SetAccessibilityConfigChanged();
     void SetScreenPowerOnChanged(bool val);
     bool GetScreenPowerOnChanged() const;
@@ -239,10 +237,6 @@ public:
     {
         idleTimerExpiredFlag_ = flag;
     }
-    void SetRSIdleTimerExpiredFlag(bool flag)
-    {
-        rsIdleTimerExpiredFlag_ = flag;
-    }
     std::shared_ptr<Drawing::Image> GetWatermarkImg();
     bool GetWatermarkFlag();
 
@@ -267,7 +261,6 @@ public:
     DeviceType GetDeviceType() const;
     bool IsSingleDisplay();
     bool HasMirrorDisplay() const;
-    bool GetNoNeedToPostTask();
     uint64_t GetFocusNodeId() const;
     uint64_t GetFocusLeashWindowId() const;
     bool GetClearMemDeeply() const
@@ -308,13 +301,10 @@ public:
 
     bool GetParallelCompositionEnabled();
     void SetFrameIsRender(bool isRender);
+    void AddSelfDrawingNodes(std::shared_ptr<RSSurfaceRenderNode> selfDrawingNode);
     const std::vector<std::shared_ptr<RSSurfaceRenderNode>>& GetSelfDrawingNodes() const;
+    void ClearSelfDrawingNodes();
     const std::vector<DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr>& GetSelfDrawables() const;
-
-    bool IsOnVsync() const
-    {
-        return isOnVsync_.load();
-    }
 
     bool GetDiscardJankFrames() const
     {
@@ -362,8 +352,6 @@ public:
 
     bool IsHardwareEnabledNodesNeedSync();
     bool IsOcclusionNodesNeedSync(NodeId id, bool useCurWindow);
-    void CollectInfoForHardCursor(NodeId id,
-        DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr cursorDrawable);
 
     void CallbackDrawContextStatusToWMS(bool isUniRender = false);
     void SetHardwareTaskNum(uint32_t num);
@@ -390,6 +378,11 @@ public:
     }
 
     uint64_t GetRealTimeOffsetOfDvsync(int64_t time);
+
+    bool HasWiredMirrorDisplay()
+    {
+        return hasWiredMirrorDisplay_;
+    }
 private:
     using TransactionDataIndexMap = std::unordered_map<pid_t,
         std::pair<uint64_t, std::vector<std::unique_ptr<RSTransactionData>>>>;
@@ -461,7 +454,6 @@ private:
 
     bool IsResidentProcess(pid_t pid) const;
     bool IsNeedSkip(NodeId instanceRootNodeId, pid_t pid);
-    void UpdateAceDebugBoundaryEnabled();
 
     // UIFirst
     bool CheckParallelSubThreadNodesStatus();
@@ -509,7 +501,11 @@ private:
     bool CheckUIExtensionCallbackDataChanged() const;
     void ConfigureRenderService();
 
+    void CheckBlurEffectCountStatistics(std::shared_ptr<RSBaseRenderNode> rootNode);
     void OnCommitDumpClientNodeTree(NodeId nodeId, pid_t pid, uint32_t taskId, const std::string& result);
+
+    // Used for CommitAndReleaseLayers task
+    void SetFrameInfo(uint64_t frameCount);
 
     std::shared_ptr<AppExecFwk::EventRunner> runner_ = nullptr;
     std::shared_ptr<AppExecFwk::EventHandler> handler_ = nullptr;
@@ -585,7 +581,6 @@ private:
     VisibleData lastVisVec_;
     std::map<NodeId, uint64_t> lastDrawStatusMap_;
     std::vector<NodeId> curDrawStatusVec_;
-    bool qosPidCal_ = false;
 
     std::atomic<bool> isDirty_ = false;
     std::atomic<bool> screenPowerOnChanged_ = false;
@@ -601,19 +596,14 @@ private:
     uint64_t lastFocusNodeId_ = 0;
     uint32_t appWindowNum_ = 0;
     std::atomic<uint32_t> requestNextVsyncNum_ = 0;
-    bool lastFrameHasFilter_ = false;
     bool vsyncControlEnabled_ = true;
     bool systemAnimatedScenesEnabled_ = false;
     bool isFoldScreenDevice_ = false;
     std::atomic<bool> isGlobalDarkColorMode_ = false;
 
-    bool isAceDebugBoundaryEnabledOfLastFrame_ = false;
-    bool hasPostUpdateAceDebugBoundaryTask_ = false;
-
-    std::atomic_bool noNeedToPostTask_ = false;
+    mutable bool hasWiredMirrorDisplay_ = false;
 
     std::shared_ptr<RSBaseRenderEngine> renderEngine_;
-    std::shared_ptr<RSBaseRenderEngine> uniRenderEngine_;
     std::shared_ptr<RSBaseEventDetector> rsCompositionTimeoutDetector_;
     RSEventManager rsEventManager_;
 #if defined(ACCESSIBILITY_ENABLE)
@@ -624,13 +614,13 @@ private:
     bool doDirectComposition_ = true;
     bool needDrawFrame_ = true;
     bool isLastFrameDirectComposition_ = false;
+    bool isNeedResetClearMemoryTask_ = false;
     bool isHardwareEnabledBufferUpdated_ = false;
     std::vector<std::shared_ptr<RSSurfaceRenderNode>> hardwareEnabledNodes_;
     std::vector<std::shared_ptr<RSSurfaceRenderNode>> selfDrawingNodes_;
     std::vector<DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr> selfDrawables_;
     bool isHardwareForcedDisabled_ = false; // if app node has shadow or filter, disable hardware composer for all
     std::vector<DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr> hardwareEnabledDrwawables_;
-    std::vector<HardCursorInfo> hardCursorDrawables_;
 
     // for client node tree dump
     struct NodeTreeDumpTask {
@@ -667,11 +657,8 @@ private:
     bool isUiFirstOn_ = false;
 
     // used for informing hgm the bundle name of SurfaceRenderNodes
-    bool noBundle_ = false;
-    std::string currentBundleName_ = "";
     bool forceUpdateUniRenderFlag_ = false;
     bool idleTimerExpiredFlag_ = false;
-    bool rsIdleTimerExpiredFlag_ = false;
     // for ui first
     std::mutex mutex_;
     std::queue<std::shared_ptr<Drawing::Surface>> tmpSurfaces_;
@@ -734,7 +721,6 @@ private:
     sptr<VSyncSystemAbilityListener> saStatusChangeListener_ = nullptr;
 #endif
     // for statistic of jank frames
-    std::atomic_bool isOnVsync_ = false;
     std::atomic_bool discardJankFrames_ = false;
     std::atomic_bool skipJankAnimatorFrame_ = false;
     ScreenId displayNodeScreenId_ = 0;
@@ -746,6 +732,8 @@ private:
 
     // graphic config
     bool isBlurSwitchOpen_ = true;
+
+    bool isForceRefresh_ = false;
 };
 } // namespace OHOS::Rosen
 #endif // RS_MAIN_THREAD

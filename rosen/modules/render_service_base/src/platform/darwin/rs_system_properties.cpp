@@ -77,7 +77,12 @@ bool RSSystemProperties::GetAnimationTraceEnabled()
     return false;
 }
 
-bool RSSystemProperties::GetRsMemoryOptimizeEnabled()
+bool RSSystemProperties::GetRenderNodePurgeEnabled()
+{
+    return false;
+}
+
+bool RSSystemProperties::GetRSImagePurgeEnabled()
 {
     return false;
 }
@@ -127,17 +132,7 @@ bool RSSystemProperties::GetOcclusionEnabled()
     return {};
 }
 
-bool RSSystemProperties::GetAceDebugBoundaryEnabled()
-{
-    return false;
-}
-
 std::string RSSystemProperties::GetRSEventProperty(const std::string &paraName)
-{
-    return {};
-}
-
-bool RSSystemProperties::GetDirectClientCompEnableStatus()
 {
     return {};
 }
@@ -178,6 +173,15 @@ void RSSystemProperties::SetCacheEnabledForRotation(bool flag)
 bool RSSystemProperties::GetCacheEnabledForRotation()
 {
     return {};
+}
+
+void RSSystemProperties::SetScreenSwitchStatus(bool flag)
+{
+}
+
+bool RSSystemProperties::GetScreenSwitchStatus()
+{
+    return false;
 }
 
 void RSSystemProperties::SetDefaultDeviceRotationOffset(uint32_t offset)
@@ -511,6 +515,11 @@ bool RSSystemProperties::GetRenderParallelEnabled()
 bool RSSystemProperties::IsForceClient()
 {
     return false;
+}
+
+uint32_t RSSystemProperties::GetBlurEffectTerminateLimit()
+{
+    return 0;
 }
 
 bool RSSystemProperties::GetDrmMarkedFilterEnabled()

@@ -33,7 +33,6 @@
 
 namespace OHOS {
 namespace Rosen {
-constexpr size_t MAX_SIZE = 4;
 DECLARE_INTERFACE_DESCRIPTOR(u"ohos.rosen.RenderServiceConnection");
 
 namespace {
@@ -68,10 +67,6 @@ bool DoOnRemoteRequest(const uint8_t* data, size_t size)
         return false;
     }
 
-    if (size < MAX_SIZE) {
-        return false;
-    }
-
     // initialize
     g_data = data;
     g_size = size;
@@ -100,10 +95,6 @@ bool DoOnRemoteRequest(const uint8_t* data, size_t size)
 bool DoSetScreenGamutMap(const uint8_t* data, size_t size)
 {
     if (data == nullptr) {
-        return false;
-    }
-
-    if (size < MAX_SIZE) {
         return false;
     }
 
@@ -137,10 +128,6 @@ bool DoGetScreenGamutMap(const uint8_t* data, size_t size)
         return false;
     }
 
-    if (size < MAX_SIZE) {
-        return false;
-    }
-
     // initialize
     g_data = data;
     g_size = size;
@@ -168,10 +155,6 @@ bool DoGetScreenGamutMap(const uint8_t* data, size_t size)
 bool DoGetScreenHDRCapability(const uint8_t* data, size_t size)
 {
     if (data == nullptr) {
-        return false;
-    }
-
-    if (size < MAX_SIZE) {
         return false;
     }
 
@@ -205,10 +188,6 @@ bool DoGetScreenType(const uint8_t* data, size_t size)
         return false;
     }
 
-    if (size < MAX_SIZE) {
-        return false;
-    }
-
     // initialize
     g_data = data;
     g_size = size;
@@ -239,10 +218,6 @@ bool DoGetBitmap(const uint8_t* data, size_t size)
         return false;
     }
 
-    if (size < MAX_SIZE) {
-        return false;
-    }
-
     // initialize
     g_data = data;
     g_size = size;
@@ -268,10 +243,6 @@ bool DoGetBitmap(const uint8_t* data, size_t size)
 bool DoSetAppWindowNum(const uint8_t* data, size_t size)
 {
     if (data == nullptr) {
-        return false;
-    }
-
-    if (size < MAX_SIZE) {
         return false;
     }
 
@@ -305,10 +276,6 @@ bool DoShowWatermark(const uint8_t* data, size_t size)
         return false;
     }
 
-    if (size < MAX_SIZE) {
-        return false;
-    }
-
     // initialize
     g_data = data;
     g_size = size;
@@ -336,10 +303,6 @@ bool DoShowWatermark(const uint8_t* data, size_t size)
 bool DoSetScreenPowerStatus(const uint8_t* data, size_t size)
 {
     if (data == nullptr) {
-        return false;
-    }
-
-    if (size < MAX_SIZE) {
         return false;
     }
 
@@ -374,10 +337,6 @@ bool DoSetScreenActiveMode(const uint8_t* data, size_t size)
         return false;
     }
 
-    if (size < MAX_SIZE) {
-        return false;
-    }
-
     // initialize
     g_data = data;
     g_size = size;
@@ -403,13 +362,40 @@ bool DoSetScreenActiveMode(const uint8_t* data, size_t size)
     return true;
 }
 
-bool DoGetScreenActiveMode(const uint8_t* data, size_t size)
+bool DoSetScreenActiveRect(const uint8_t* data, size_t size)
 {
     if (data == nullptr) {
         return false;
     }
 
-    if (size < MAX_SIZE) {
+    // initialize
+    g_data = data;
+    g_size = size;
+    g_pos = 0;
+
+    FuzzedDataProvider fdp(data, size);
+    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_SCREEN_ACTIVE_RECT);
+    auto newPid = getpid();
+
+    sptr<RSIConnectionToken> token_ = new IRemoteStub<RSIConnectionToken>();
+    sptr<RSRenderServiceConnectionStub> connectionStub_ =
+        new RSRenderServiceConnection(newPid, nullptr, nullptr, nullptr, token_->AsObject(), nullptr);
+
+    MessageOption option;
+    MessageParcel dataParcel;
+    MessageParcel replyParcel;
+
+    std::vector<uint8_t> subData =
+        fdp.ConsumeBytes<uint8_t>(fdp.ConsumeIntegralInRange<size_t>(0, fdp.remaining_bytes()));
+    dataParcel.WriteInterfaceToken(GetDescriptor());
+    dataParcel.WriteBuffer(subData.data(), subData.size());
+    connectionStub_->OnRemoteRequest(code, dataParcel, replyParcel, option);
+    return true;
+}
+
+bool DoGetScreenActiveMode(const uint8_t* data, size_t size)
+{
+    if (data == nullptr) {
         return false;
     }
 
@@ -444,10 +430,6 @@ bool DoSetRefreshRateMode(const uint8_t* data, size_t size)
         return false;
     }
 
-    if (size < MAX_SIZE) {
-        return false;
-    }
-
     // initialize
     g_data = data;
     g_size = size;
@@ -476,10 +458,6 @@ bool DoSetRefreshRateMode(const uint8_t* data, size_t size)
 bool DoGetScreenSupportedRefreshRates(const uint8_t* data, size_t size)
 {
     if (data == nullptr) {
-        return false;
-    }
-
-    if (size < MAX_SIZE) {
         return false;
     }
 
@@ -514,10 +492,6 @@ bool DoGetScreenSupportedModes(const uint8_t* data, size_t size)
         return false;
     }
 
-    if (size < MAX_SIZE) {
-        return false;
-    }
-
     // initialize
     g_data = data;
     g_size = size;
@@ -546,10 +520,6 @@ bool DoGetScreenSupportedModes(const uint8_t* data, size_t size)
 bool DoGetScreenCapability(const uint8_t* data, size_t size)
 {
     if (data == nullptr) {
-        return false;
-    }
-
-    if (size < MAX_SIZE) {
         return false;
     }
 
@@ -584,10 +554,6 @@ bool DoGetMemoryGraphic(const uint8_t* data, size_t size)
         return false;
     }
 
-    if (size < MAX_SIZE) {
-        return false;
-    }
-
     // initialize
     g_data = data;
     g_size = size;
@@ -616,10 +582,6 @@ bool DoGetMemoryGraphic(const uint8_t* data, size_t size)
 bool DoCreateVirtualScreen(const uint8_t* data, size_t size)
 {
     if (data == nullptr) {
-        return false;
-    }
-
-    if (size < MAX_SIZE) {
         return false;
     }
 
@@ -654,10 +616,6 @@ bool DoRemoveVirtualScreen(const uint8_t* data, size_t size)
         return false;
     }
 
-    if (size < MAX_SIZE) {
-        return false;
-    }
-
     // initialize
     g_data = data;
     g_size = size;
@@ -686,10 +644,6 @@ bool DoRemoveVirtualScreen(const uint8_t* data, size_t size)
 bool DoGetScreenData(const uint8_t* data, size_t size)
 {
     if (data == nullptr) {
-        return false;
-    }
-
-    if (size < MAX_SIZE) {
         return false;
     }
 
@@ -724,10 +678,6 @@ bool DoGetScreenBacklight(const uint8_t* data, size_t size)
         return false;
     }
 
-    if (size < MAX_SIZE) {
-        return false;
-    }
-
     // initialize
     g_data = data;
     g_size = size;
@@ -756,10 +706,6 @@ bool DoGetScreenBacklight(const uint8_t* data, size_t size)
 bool DoSetScreenBacklight(const uint8_t* data, size_t size)
 {
     if (data == nullptr) {
-        return false;
-    }
-
-    if (size < MAX_SIZE) {
         return false;
     }
 
@@ -794,10 +740,6 @@ bool DoGetScreenColorGamut(const uint8_t* data, size_t size)
         return false;
     }
 
-    if (size < MAX_SIZE) {
-        return false;
-    }
-
     // initialize
     g_data = data;
     g_size = size;
@@ -826,10 +768,6 @@ bool DoGetScreenColorGamut(const uint8_t* data, size_t size)
 bool DoSetScreenColorGamut(const uint8_t* data, size_t size)
 {
     if (data == nullptr) {
-        return false;
-    }
-
-    if (size < MAX_SIZE) {
         return false;
     }
 
@@ -864,10 +802,6 @@ bool DoSetAncoForceDoDirect(const uint8_t* data, size_t size)
         return false;
     }
 
-    if (size < MAX_SIZE) {
-        return false;
-    }
-
     // initialize
     g_data = data;
     g_size = size;
@@ -896,10 +830,6 @@ bool DoSetAncoForceDoDirect(const uint8_t* data, size_t size)
 bool DoGetActiveDirtyRegionInfo(const uint8_t* data, size_t size)
 {
     if (data == nullptr) {
-        return false;
-    }
-
-    if (size < MAX_SIZE) {
         return false;
     }
 
@@ -934,10 +864,6 @@ bool DoGetGlobalDirtyRegionInfo(const uint8_t* data, size_t size)
         return false;
     }
 
-    if (size < MAX_SIZE) {
-        return false;
-    }
-
     // initialize
     g_data = data;
     g_size = size;
@@ -969,10 +895,6 @@ bool DoGetLayerComposeInfo(const uint8_t* data, size_t size)
         return false;
     }
 
-    if (size < MAX_SIZE) {
-        return false;
-    }
-
     // initialize
     g_data = data;
     g_size = size;
@@ -1001,10 +923,6 @@ bool DoGetLayerComposeInfo(const uint8_t* data, size_t size)
 bool DoGetHwcDisabledReasonInfo(const uint8_t* data, size_t size)
 {
     if (data == nullptr) {
-        return false;
-    }
-
-    if (size < MAX_SIZE) {
         return false;
     }
 
@@ -1040,10 +958,6 @@ bool DoCreateNodeAndSurface(const uint8_t* data, size_t size)
         return false;
     }
 
-    if (size < MAX_SIZE) {
-        return false;
-    }
-
     // initialize
     g_data = data;
     g_size = size;
@@ -1076,10 +990,6 @@ bool DoExecuteSynchronousTask(const uint8_t* data, size_t size)
         return false;
     }
 
-    if (size < MAX_SIZE) {
-        return false;
-    }
-
     // initialize
     g_data = data;
     g_size = size;
@@ -1103,6 +1013,36 @@ bool DoExecuteSynchronousTask(const uint8_t* data, size_t size)
     connectionStub_->OnRemoteRequest(code, dataParcel, replyParcel, option);
     return true;
 }
+
+bool DoSetFreeMultiWindowStatus(const uint8_t* data, size_t size)
+{
+    if (data == nullptr) {
+        return false;
+    }
+
+    // initialize
+    g_data = data;
+    g_size = size;
+    g_pos = 0;
+
+    auto newPid = getpid();
+    sptr<RSIConnectionToken> token_ = new IRemoteStub<RSIConnectionToken>();
+    sptr<RSRenderServiceConnectionStub> connectionStub_ =
+        new RSRenderServiceConnection(newPid, nullptr, RSMainThread::Instance(), nullptr, token_->AsObject(), nullptr);
+
+    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_FREE_MULTI_WINDOW_STATUS);
+    MessageParcel dataParcel;
+    MessageParcel replyParcel;
+    MessageOption option;
+    
+    FuzzedDataProvider fdp(data, size);
+    std::vector<uint8_t> subData =
+        fdp.ConsumeBytes<uint8_t>(fdp.ConsumeIntegralInRange<size_t>(0, fdp.remaining_bytes()));
+    dataParcel.WriteInterfaceToken(GetDescriptor());
+    dataParcel.WriteBuffer(subData.data(), subData.size());
+    connectionStub_->OnRemoteRequest(code, dataParcel, replyParcel, option);
+    return true;
+}
 } // Rosen
 } // OHOS
 
@@ -1120,6 +1060,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::Rosen::DoShowWatermark(data, size);
     OHOS::Rosen::DoSetScreenPowerStatus(data, size);
     OHOS::Rosen::DoSetScreenActiveMode(data, size);
+    OHOS::Rosen::DoSetScreenActiveRect(data, size);
     OHOS::Rosen::DoGetScreenActiveMode(data, size);
     OHOS::Rosen::DoSetRefreshRateMode(data, size);
     OHOS::Rosen::DoGetScreenSupportedRefreshRates(data, size);
@@ -1135,6 +1076,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::Rosen::DoSetScreenColorGamut(data, size);
     OHOS::Rosen::DoCreateNodeAndSurface(data, size);
     OHOS::Rosen::DoExecuteSynchronousTask(data, size);
+    OHOS::Rosen::DoSetFreeMultiWindowStatus(data, size);
 
     return 0;
 }

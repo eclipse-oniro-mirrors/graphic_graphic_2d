@@ -253,6 +253,11 @@ uint32_t RSScreen::PhyHeight() const
     return phyHeight_;
 }
 
+RectI RSScreen::GetActiveRect() const
+{
+    return activeRect_;
+}
+
 bool RSScreen::IsEnable() const
 {
     if (id_ == INVALID_SCREEN_ID) {
@@ -305,6 +310,26 @@ void RSScreen::SetActiveMode(uint32_t modeId)
                 "TARGETRATE", activeMode->freshRate, "WIDTH", phyWidth_, "HEIGHT", phyHeight_);
             modeInfo = activeMode.value();
         }
+    }
+}
+
+uint32_t RSScreen::SetScreenActiveRect(const GraphicIRect& activeRect)
+{
+    if (IsVirtual()) {
+        RS_LOGW("RSScreen %{public}s failed: virtual screen not support", __func__);
+        return StatusCode::HDI_ERROR;
+    }
+    if (hdiScreen_ == nullptr) {
+        RS_LOGE("RSScreen %{public}s failed: hdiScreen_ is nullptr",  __func__);
+        return StatusCode::HDI_ERROR;
+    }
+    
+    if (hdiScreen_->SetScreenActiveRect(activeRect) < 0) {
+        RS_LOGE("RSScreen %{public}s failed: hdi SetScreenActiveRect failed",  __func__);
+        return StatusCode::HDI_ERROR;
+    } else {
+        activeRect_ = RectI(activeRect.x, activeRect.y, activeRect.w, activeRect.h);
+        return StatusCode::SUCCESS;
     }
 }
 
@@ -685,6 +710,7 @@ void RSScreen::SetScreenBacklight(uint32_t level)
 
     RS_LOGD("RSScreen_%{public}" PRIu64 " SetScreenBacklight, level is %{public}u", id_, level);
     if (hdiScreen_->SetScreenBacklight(level) < 0) {
+        RS_LOGE("RSScreen_%{public}" PRIu64 " SetScreenBacklight error.", id_);
         return;
     }
     screenBacklightLevel_ = static_cast<int32_t>(level);
@@ -1042,6 +1068,20 @@ void RSScreen::SetBlackList(const std::unordered_set<uint64_t>& blackList)
     blackList_ = blackList;
 }
 
+void RSScreen::AddBlackList(const std::vector<uint64_t>& blackList)
+{
+    for (auto& list : blackList) {
+        blackList_.emplace(list);
+    }
+}
+
+void RSScreen::RemoveBlackList(const std::vector<uint64_t>& blackList)
+{
+    for (auto& list : blackList) {
+        blackList_.erase(list);
+    }
+}
+
 void RSScreen::SetCastScreenEnableSkipWindow(bool enable)
 {
     skipWindow_ = enable;
@@ -1093,6 +1133,41 @@ void RSScreen::SetSecurityExemptionList(const std::vector<uint64_t>& securityExe
 const std::vector<uint64_t>& RSScreen::GetSecurityExemptionList() const
 {
     return securityExemptionList_;
+}
+
+void RSScreen::SetEnableVisibleRect(bool enable)
+{
+    enableVisibleRect_ = enable;
+}
+
+bool RSScreen::GetEnableVisibleRect() const
+{
+    return enableVisibleRect_;
+}
+
+void RSScreen::SetMainScreenVisibleRect(const Rect& mainScreenRect)
+{
+    mainScreenVisibleRect_ = mainScreenRect;
+}
+
+Rect RSScreen::GetMainScreenVisibleRect() const
+{
+    return mainScreenVisibleRect_;
+}
+
+void RSScreen::SetDisplayPropertyForHardCursor()
+{
+    isHardCursorSupport_ = false;
+    if (hdiScreen_) {
+        isHardCursorSupport_ = hdiScreen_->GetDisplayPropertyForHardCursor(id_);
+    }
+    RS_LOGI("%{public}s, RSScreen(id %{public}" PRIu64 ", isHardCursorSupport:%{public}d)",
+        __func__, id_, isHardCursorSupport_);
+}
+
+bool RSScreen::GetDisplayPropertyForHardCursor()
+{
+    return isHardCursorSupport_;
 }
 } // namespace impl
 } // namespace Rosen

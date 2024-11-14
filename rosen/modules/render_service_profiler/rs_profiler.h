@@ -24,6 +24,8 @@
 #include "recording/draw_cmd_list.h"
 
 #include "common/rs_vector4.h"
+#include "common/rs_occlusion_region.h"
+#include "pipeline/rs_render_node.h"
 #include "params/rs_display_render_params.h"
 
 #define RS_PROFILER_INIT(renderSevice) RSProfiler::Init(renderSevice)
@@ -60,6 +62,7 @@
 #define RS_PROFILER_REPLAY_FIX_TRINDEX(curIndex, lastIndex) RSProfiler::ReplayFixTrIndex(curIndex, lastIndex)
 #define RS_PROFILER_PATCH_TYPEFACE_ID(parcel, val) RSProfiler::PatchTypefaceId(parcel, val)
 #define RS_PROFILER_DRAWING_NODE_ADD_CLEAROP(drawCmdList) RSProfiler::DrawingNodeAddClearOp(drawCmdList)
+#define RS_PROFILER_PROCESS_ADD_CHILD(parent, child, index) RSProfiler::ProcessAddChild(parent, child, index)
 #else
 #define RS_PROFILER_INIT(renderSevice)
 #define RS_PROFILER_ON_FRAME_BEGIN()
@@ -94,6 +97,7 @@
 #define RS_PROFILER_REPLAY_FIX_TRINDEX(curIndex, lastIndex)
 #define RS_PROFILER_PATCH_TYPEFACE_ID(parcel, val)
 #define RS_PROFILER_DRAWING_NODE_ADD_CLEAROP(drawCmdList) (drawCmdList)->ClearOp()
+#define RS_PROFILER_PROCESS_ADD_CHILD(parent, child, index) false
 #endif
 
 #ifdef RS_PROFILER_ENABLED
@@ -173,6 +177,7 @@ public:
         return static_cast<T>(PatchPlainPid(parcel, static_cast<pid_t>(pid)));
     }
 
+    RSB_EXPORT static bool ProcessAddChild(RSRenderNode* parent, RSRenderNode::SharedPtr child, int index);
     RSB_EXPORT static void PatchCommand(const Parcel& parcel, RSCommand* command);
     RSB_EXPORT static void ExecuteCommand(const RSCommand* command);
     RSB_EXPORT static bool MarshalPixelMap(Parcel& parcel, const std::shared_ptr<Media::PixelMap>& map);
@@ -194,6 +199,8 @@ public:
     RSB_EXPORT static void SendMessageBase(const std::string& msg);
     RSB_EXPORT static void ReplayFixTrIndex(uint64_t curIndex, uint64_t& lastIndex);
 
+    RSB_EXPORT static std::vector<RSRenderNode::WeakPtr>& GetChildOfDisplayNodesPostponed();
+    
 public:
     RSB_EXPORT static bool IsParcelMock(const Parcel& parcel);
     RSB_EXPORT static bool IsSharedMemoryEnabled();
@@ -266,12 +273,13 @@ private:
     RSB_EXPORT static void MarshalNodeModifiers(
         const RSRenderNode& node, std::stringstream& data, uint32_t fileVersion);
 
-    RSB_EXPORT static void UnmarshalNodes(RSContext& context, std::stringstream& data, uint32_t fileVersion);
-    RSB_EXPORT static void UnmarshalTree(RSContext& context, std::stringstream& data, uint32_t fileVersion);
-    RSB_EXPORT static void UnmarshalNode(RSContext& context, std::stringstream& data, uint32_t fileVersion);
-    RSB_EXPORT static void UnmarshalNode(
+    RSB_EXPORT static std::string UnmarshalNodes(RSContext& context, std::stringstream& data, uint32_t fileVersion);
+    RSB_EXPORT static std::string UnmarshalTree(RSContext& context, std::stringstream& data, uint32_t fileVersion);
+    RSB_EXPORT static std::string UnmarshalNode(RSContext& context, std::stringstream& data, uint32_t fileVersion);
+    RSB_EXPORT static std::string UnmarshalNode(
         RSContext& context, std::stringstream& data, NodeId nodeId, uint32_t fileVersion);
-    RSB_EXPORT static void UnmarshalNodeModifiers(RSRenderNode& node, std::stringstream& data, uint32_t fileVersion);
+    RSB_EXPORT static std::string UnmarshalNodeModifiers(
+        RSRenderNode& node, std::stringstream& data, uint32_t fileVersion);
 
     RSB_EXPORT static NodeId AdjustNodeId(NodeId nodeId, bool clearMockFlag);
 
@@ -310,8 +318,13 @@ private:
     RSB_EXPORT static NodeId PatchPlainNodeId(const Parcel& parcel, NodeId id);
     RSB_EXPORT static pid_t PatchPlainPid(const Parcel& parcel, pid_t pid);
 
-    RSB_EXPORT static int PerfTreeFlatten(
-        const RSRenderNode& node, std::unordered_set<NodeId>& nodeSet, std::unordered_map<NodeId, int>& mapNode2Count);
+    RSB_EXPORT static uint32_t PerfTreeFlatten(
+        std::shared_ptr<RSRenderNode> node, std::vector<std::pair<NodeId, uint32_t>>& nodeSet,
+        std::unordered_map<NodeId, uint32_t>& mapNode2Count, int depth);
+    RSB_EXPORT static uint32_t CalcNodeCmdListCount(RSRenderNode& node);
+    RSB_EXPORT static void CalcPerfNodePrepare(NodeId nodeId, uint32_t timeCount, bool excludeDown);
+    RSB_EXPORT static void CalcPerfNodePrepareLo(const std::shared_ptr<RSRenderNode>& node, bool forceExcludeNode);
+    static void PrintNodeCacheLo(const std::shared_ptr<RSRenderNode>& node);
 
     static uint64_t RawNowNano();
     static uint64_t NowNano();
@@ -322,14 +335,13 @@ private:
 
     static bool IsLoadSaveFirstScreenInProgress();
     static std::string FirstFrameMarshalling(uint32_t fileVersion);
-    static void FirstFrameUnmarshalling(const std::string& data, uint32_t fileVersion);
+    static std::string FirstFrameUnmarshalling(const std::string& data, uint32_t fileVersion);
     static void HiddenSpaceTurnOff();
     static void HiddenSpaceTurnOn();
 
     static void ScheduleTask(std::function<void()> && task);
     static void RequestNextVSync();
     static void AwakeRenderServiceThread();
-    static void AwakeRenderServiceThreadResetCaches();
     static void ResetAnimationStamp();
 
     static void CreateMockConnection(pid_t pid);
@@ -340,19 +352,23 @@ private:
     static std::shared_ptr<RSRenderNode> GetRenderNode(uint64_t id);
     static void ProcessSendingRdc();
 
+    static void BlinkNodeUpdate();
+    static void CalcPerfNodeUpdate();
     static void CalcPerfNodeAllStep();
     static void CalcNodeWeigthOnFrameEnd(uint64_t frameLength);
 
     RSB_EXPORT static uint32_t GetNodeDepth(const std::shared_ptr<RSRenderNode> node);
 
     static void TypefaceMarshalling(std::stringstream& stream, uint32_t fileVersion);
-    static void TypefaceUnmarshalling(std::stringstream& stream, uint32_t fileVersion);
+    static std::string TypefaceUnmarshalling(std::stringstream& stream, uint32_t fileVersion);
 
     // Network interface
     static void Invoke(const std::vector<std::string>& line);
     static void ProcessPauseMessage();
     static void ProcessCommands();
+    // Deprecated: Use SendMessage instead
     static void Respond(const std::string& message);
+    static void SendMessage(const char* format, ...);
     static void SetSystemParameter(const ArgList& args);
     static void GetSystemParameter(const ArgList& args);
     static void Reset(const ArgList& args);
@@ -364,8 +380,12 @@ private:
     static void DumpTreeToJson(const ArgList& args);
     static void DumpSurfaces(const ArgList& args);
     static void DumpNodeSurface(const ArgList& args);
+    static void ClearFilter(const ArgList& args);
+    static void PrintNodeCache(const ArgList& args);
+    static void PrintNodeCacheAll(const ArgList& args);
     static void PatchNode(const ArgList& args);
     static void KillNode(const ArgList& args);
+    static void BlinkNode(const ArgList& args);
     static void AttachChild(const ArgList& args);
     static void KillPid(const ArgList& args);
     static void GetRoot(const ArgList& args);

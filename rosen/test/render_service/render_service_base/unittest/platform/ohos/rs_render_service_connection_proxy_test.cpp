@@ -318,6 +318,25 @@ HWTEST_F(RSRenderServiceConnectionProxyTest, SetScreenActiveMode, TestSize.Level
 }
 
 /**
+ * @tc.name: SetScreenActiveRect Test
+ * @tc.desc: SetScreenActiveRect Test
+ * @tc.type:FUNC
+ * @tc.require: issueIB3986
+ */
+HWTEST_F(RSRenderServiceConnectionProxyTest, SetScreenActiveRect, TestSize.Level1)
+{
+    ScreenId id = 1;
+    Rect activeRect {
+        .x = 0,
+        .y = 0,
+        .w = 0,
+        .h = 0,
+    };
+    proxy->SetScreenActiveRect(id, activeRect);
+    ASSERT_NE(proxy->transactionDataIndex_, 0);
+}
+
+/**
  * @tc.name: SetScreenRefreshRate Test
  * @tc.desc: SetScreenRefreshRate Test
  * @tc.type:FUNC
@@ -894,7 +913,7 @@ HWTEST_F(RSRenderServiceConnectionProxyTest, NotifyLightFactorStatus, TestSize.L
     GameStateData info;
     proxy->ReportGameStateData(info);
     NodeId id = 1;
-    proxy->SetHardwareEnabled(id, true, SelfDrawingNodeType::DEFAULT);
+    proxy->SetHardwareEnabled(id, true, SelfDrawingNodeType::DEFAULT, true);
     proxy->NotifyLightFactorStatus(true);
     ASSERT_EQ(proxy->transactionDataIndex_, 0);
 }
@@ -1017,6 +1036,19 @@ HWTEST_F(RSRenderServiceConnectionProxyTest, SetLayerTop, TestSize.Level1)
     const std::string nodeIdStr = "123456";
     proxy->SetLayerTop(nodeIdStr, true);
     proxy->SetLayerTop(nodeIdStr, false);
+    ASSERT_TRUE(true);
+}
+
+/**
+ * @tc.name: SetFreeMultiWindowStatus Test
+ * @tc.desc: SetFreeMultiWindowStatus Test
+ * @tc.type:FUNC
+ * @tc.require: issueIB31K8
+ */
+HWTEST_F(RSRenderServiceConnectionProxyTest, SetFreeMultiWindowStatus, TestSize.Level1)
+{
+    proxy->SetFreeMultiWindowStatus(true);
+    proxy->SetFreeMultiWindowStatus(false);
     ASSERT_TRUE(true);
 }
 } // namespace Rosen

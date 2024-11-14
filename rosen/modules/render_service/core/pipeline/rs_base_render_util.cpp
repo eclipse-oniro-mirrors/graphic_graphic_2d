@@ -1210,35 +1210,6 @@ Drawing::Matrix RSBaseRenderUtil::GetGravityMatrix(
     return gravityMatrix;
 }
 
-bool RSBaseRenderUtil::InitPreScalingMode(RSSurfaceRenderNode& node)
-{
-    auto surfaceHandler = node.GetRSSurfaceHandler();
-    if (surfaceHandler == nullptr) {
-        RS_LOGE("RSBaseRenderUtil::InitPreScalingMode surfaceHandler is nullptr");
-        return false;
-    }
-    auto consumer = surfaceHandler->GetConsumer();
-    auto buffer = surfaceHandler->GetBuffer();
-    if (consumer == nullptr || buffer == nullptr) {
-        RS_LOGE("RSBaseRenderUtil::InitPreScalingMode consumer or buffer is nullptr");
-        return false;
-    }
-    auto nodeParams = static_cast<RSSurfaceRenderParams*>(node.GetStagingRenderParams().get());
-    if (nodeParams == nullptr) {
-        RS_LOGE("RSBaseRenderUtil::InitPreScalingMode nodeParams is nullptr");
-        return false;
-    }
-    ScalingMode scalingMode = nodeParams->GetPreScalingMode();
-    auto ret = consumer->GetScalingMode(buffer->GetSeqNum(), scalingMode);
-    if (ret == GSERROR_OK) {
-        nodeParams->SetPreScalingMode(scalingMode);
-    } else {
-        RS_LOGE("RSBaseRenderUtil::InitPreScalingMode GetScalingMode Error: %{public}d", ret);
-        return false;
-    }
-    return true;
-}
-
 void RSBaseRenderUtil::DealWithSurfaceRotationAndGravity(GraphicTransformType transform, Gravity gravity,
     RectF &localBounds, BufferDrawParam &params, RSSurfaceRenderParams *nodeParams)
 {
@@ -1537,10 +1508,14 @@ bool RSBaseRenderUtil::WriteCacheImageRenderNodeToPng(std::shared_ptr<Drawing::S
 
 bool RSBaseRenderUtil::WriteCacheImageRenderNodeToPng(std::shared_ptr<Drawing::Bitmap> bitmap, std::string debugInfo)
 {
+    if (!bitmap) {
+        RS_LOGE("RSSubThread::DrawableCache no bitmap to dump");
+        return false;
+    }
     // create dir if not exists
     if (access(DUMP_CANVASDRAWING_DIR.c_str(), F_OK) == -1) {
         if (mkdir(DUMP_CANVASDRAWING_DIR.c_str(), (S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH)) != 0) {
-            RS_LOGE("WriteCacheImageRenderNodeToPng create %s directory failed, errno: %d",
+            RS_LOGE("DumpImageDrawingToPng create %s directory failed, errno: %d",
                 DUMP_CANVASDRAWING_DIR.c_str(), errno);
             return false;
         }

@@ -16,8 +16,9 @@
 #include "transaction/rs_render_service_client.h"
 #include "surface_type.h"
 #include "surface_utils.h"
-
+#ifdef RS_ENABLE_GL
 #include "backend/rs_surface_ohos_gl.h"
+#endif
 #include "backend/rs_surface_ohos_raster.h"
 #ifdef RS_ENABLE_VK
 #include "backend/rs_surface_ohos_vulkan.h"
@@ -55,6 +56,8 @@ void RSRenderServiceClient::CommitTransaction(std::unique_ptr<RSTransactionData>
     auto renderService = RSRenderServiceConnectHub::GetRenderService();
     if (renderService != nullptr) {
         renderService->CommitTransaction(transactionData);
+    } else {
+        RS_LOGE_LIMIT(__func__, __line__, "RSRenderServiceClient::CommitTransaction failed, renderService is nullptr");
     }
 }
 
@@ -207,12 +210,15 @@ void RSRenderServiceClient::TriggerSurfaceCaptureCallback(NodeId id, std::shared
             continue;
         }
         std::shared_ptr<Media::PixelMap> surfaceCapture = pixelmap;
-        if (UNLIKELY(RSSystemProperties::GetPixelmapDfxEnabled()) || (i != callbackVector.size() - 1)) {
+        if (i != callbackVector.size() - 1) {
             if (pixelmap != nullptr) {
                 Media::InitializationOptions options;
                 std::unique_ptr<Media::PixelMap> pixelmapCopy = Media::PixelMap::Create(*pixelmap, options);
                 surfaceCapture = std::move(pixelmapCopy);
             }
+        }
+        if (surfaceCapture) {
+            surfaceCapture->SetMemoryName("RSSurfaceCaptureForCallback");
         }
         callbackVector[i]->OnSurfaceCapture(surfaceCapture);
     }
@@ -261,6 +267,18 @@ bool RSRenderServiceClient::TakeSurfaceCapture(NodeId id, std::shared_ptr<Surfac
         surfaceCaptureCbDirector_ = new SurfaceCaptureCallbackDirector(this);
     }
     renderService->TakeSurfaceCapture(id, surfaceCaptureCbDirector_, captureConfig);
+    return true;
+}
+
+bool RSRenderServiceClient::SetHwcNodeBounds(int64_t rsNodeId, float positionX, float positionY,
+    float positionZ, float positionW)
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService == nullptr) {
+        RS_LOGE("RSRenderServiceClient::SetHwcNodeBounds renderService is null!");
+        return false;
+    }
+    renderService->SetHwcNodeBounds(rsNodeId, positionX, positionY, positionZ, positionW);
     return true;
 }
 
@@ -332,6 +350,26 @@ int32_t RSRenderServiceClient::SetVirtualScreenBlackList(ScreenId id, std::vecto
     return renderService->SetVirtualScreenBlackList(id, blackListVector);
 }
 
+int32_t RSRenderServiceClient::AddVirtualScreenBlackList(ScreenId id, std::vector<NodeId>& blackListVector)
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService == nullptr) {
+        return RENDER_SERVICE_NULL;
+    }
+
+    return renderService->AddVirtualScreenBlackList(id, blackListVector);
+}
+
+int32_t RSRenderServiceClient::RemoveVirtualScreenBlackList(ScreenId id, std::vector<NodeId>& blackListVector)
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService == nullptr) {
+        return RENDER_SERVICE_NULL;
+    }
+
+    return renderService->RemoveVirtualScreenBlackList(id, blackListVector);
+}
+
 bool RSRenderServiceClient::SetWatermark(const std::string& name, std::shared_ptr<Media::PixelMap> watermark)
 {
     auto renderService = RSRenderServiceConnectHub::GetRenderService();
@@ -352,6 +390,16 @@ int32_t RSRenderServiceClient::SetVirtualScreenSecurityExemptionList(
     }
 
     return renderService->SetVirtualScreenSecurityExemptionList(id, securityExemptionList);
+}
+
+int32_t RSRenderServiceClient::SetMirrorScreenVisibleRect(ScreenId id, const Rect& mainScreenRect)
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService == nullptr) {
+        return RENDER_SERVICE_NULL;
+    }
+
+    return renderService->SetMirrorScreenVisibleRect(id, mainScreenRect);
 }
 
 int32_t RSRenderServiceClient::SetCastScreenEnableSkipWindow(ScreenId id, bool enable)
@@ -1064,6 +1112,15 @@ int32_t RSRenderServiceClient::SetVirtualScreenRefreshRate(
     return renderService->SetVirtualScreenRefreshRate(id, maxRefreshRate, actualRefreshRate);
 }
 
+uint32_t RSRenderServiceClient::SetScreenActiveRect(ScreenId id, const Rect& activeRect)
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService == nullptr) {
+        return RENDER_SERVICE_NULL;
+    }
+    return renderService->SetScreenActiveRect(id, activeRect);
+}
+
 class CustomOcclusionChangeCallback : public RSOcclusionChangeCallbackStub
 {
 public:
@@ -1324,11 +1381,12 @@ void RSRenderServiceClient::ReportGameStateData(GameStateData info)
     }
 }
 
-void RSRenderServiceClient::SetHardwareEnabled(NodeId id, bool isEnabled, SelfDrawingNodeType selfDrawingType)
+void RSRenderServiceClient::SetHardwareEnabled(NodeId id, bool isEnabled, SelfDrawingNodeType selfDrawingType,
+    bool dynamicHardwareEnable)
 {
     auto renderService = RSRenderServiceConnectHub::GetRenderService();
     if (renderService != nullptr) {
-        renderService->SetHardwareEnabled(id, isEnabled, selfDrawingType);
+        renderService->SetHardwareEnabled(id, isEnabled, selfDrawingType, dynamicHardwareEnable);
     }
 }
 
@@ -1378,6 +1436,14 @@ void RSRenderServiceClient::NotifyDynamicModeEvent(bool enableDynamicMode)
     auto renderService = RSRenderServiceConnectHub::GetRenderService();
     if (renderService != nullptr) {
         renderService->NotifyDynamicModeEvent(enableDynamicMode);
+    }
+}
+
+void RSRenderServiceClient::SetScreenSwitchStatus(bool flag)
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService != nullptr) {
+        renderService->SetScreenSwitchStatus(flag);
     }
 }
 
@@ -1451,13 +1517,14 @@ void RSRenderServiceClient::SetVmaCacheStatus(bool flag)
 }
 
 #ifdef TP_FEATURE_ENABLE
-void RSRenderServiceClient::SetTpFeatureConfig(int32_t feature, const char* config)
+void RSRenderServiceClient::SetTpFeatureConfig(int32_t feature, const char* config,
+    TpFeatureConfigType tpFeatureConfigType)
 {
     auto renderService = RSRenderServiceConnectHub::GetRenderService();
     if (renderService == nullptr) {
         return;
     }
-    renderService->SetTpFeatureConfig(feature, config);
+    renderService->SetTpFeatureConfig(feature, config, tpFeatureConfigType);
 }
 #endif
 

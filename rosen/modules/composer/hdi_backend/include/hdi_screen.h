@@ -41,6 +41,7 @@ public:
     int32_t GetScreenSupportedModes(std::vector<GraphicDisplayModeInfo> &modes) const;
     int32_t GetScreenMode(uint32_t &modeId);
     int32_t SetScreenMode(uint32_t modeId);
+    int32_t SetScreenActiveRect(const GraphicIRect& activeRect);
     int32_t SetScreenOverlayResolution(uint32_t width, uint32_t height) const;
     int32_t GetScreenPowerStatus(GraphicDispPowerStatus &status) const;
     int32_t SetScreenPowerStatus(GraphicDispPowerStatus status) const;
@@ -57,6 +58,7 @@ public:
     int32_t GetHDRCapabilityInfos(GraphicHDRCapability &info) const;
     int32_t GetSupportedMetaDataKey(std::vector<GraphicHDRMetadataKey> &keys) const;
     int32_t SetScreenConstraint(uint64_t frameId, uint64_t timestamp, uint32_t type);
+    bool GetDisplayPropertyForHardCursor(uint32_t screenId);
 
     static void OnVsync(uint32_t sequence, uint64_t ns, void *data);
 

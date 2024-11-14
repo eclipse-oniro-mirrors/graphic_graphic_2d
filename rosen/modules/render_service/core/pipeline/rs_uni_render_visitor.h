@@ -92,7 +92,6 @@ public:
 
     void SetSubThreadConfig(uint32_t threadIndex)
     {
-        isSubThread_ = true;
         isHardwareForcedDisabled_ = true;
         threadIndex_ = threadIndex;
     }
@@ -126,17 +125,15 @@ public:
     {
         return newColorSpace_;
     }
-
-    void SetAppWindowNum(uint32_t num);
+    uint32_t GetLayerNum() const
+    {
+        return layerNum_;
+    }
 
     void SetScreenInfo(ScreenInfo screenInfo)
     {
         screenInfo_ = screenInfo;
     }
-
-    bool CheckIfHardCursorEnable() const;
-    bool HasMirrorDisplay() const;
-    bool HasVirtualDisplay() const;
 
     // Use in updating hwcnode hardware state with background alpha
     void UpdateHardwareStateByHwcNodeBackgroundAlpha(const std::vector<std::weak_ptr<RSSurfaceRenderNode>>& hwcNodes);
@@ -145,8 +142,6 @@ public:
     // Use end
 
     void SurfaceOcclusionCallbackToWMS();
-
-    static void ClearRenderGroupCache();
 
     using RenderParam = std::tuple<std::shared_ptr<RSRenderNode>, RSPaintFilterCanvas::CanvasStatus>;
 private:
@@ -192,9 +187,11 @@ private:
     bool CheckColorFilterChange() const;
     bool CheckCurtainScreenUsingStatusChange() const;
     bool CheckLuminanceStatusChange();
+    void CheckCrossNode(RSSurfaceRenderNode& node);
     bool IsFirstFrameOfPartialRender() const;
     bool IsFirstFrameOfOverdrawSwitch() const;
     bool IsFirstFrameOfDrawingCacheDfxSwitch() const;
+    bool IsAccessibilityConfigChanged() const;
     bool IsWatermarkFlagChanged() const;
     void UpdateDisplayZoomState();
     void CollectFilterInfoAndUpdateDirty(RSRenderNode& node,
@@ -221,11 +218,13 @@ private:
     void UpdateSrcRect(RSSurfaceRenderNode& node,
         const Drawing::Matrix& absMatrix, const RectI& clipRect);
     void UpdateDstRect(RSSurfaceRenderNode& node, const RectI& absRect, const RectI& clipRect);
-    void UpdateHwcNodeProperty(std::shared_ptr<RSSurfaceRenderNode> hwcNode);
     void UpdateHwcNodeByTransform(RSSurfaceRenderNode& node);
     void UpdateHwcNodeEnableByRotateAndAlpha(std::shared_ptr<RSSurfaceRenderNode>& node);
-    void ProcessAncoNode(std::shared_ptr<RSSurfaceRenderNode>& hwcNodePtr,
-        std::vector<std::shared_ptr<RSSurfaceRenderNode>>& ancoNodes, bool& ancoHasGpu);
+    void ProcessAncoNode(std::shared_ptr<RSSurfaceRenderNode>& hwcNodePtr);
+    void InitAncoStatus();
+    void UpdateAncoNodeHWCDisabledState();
+    void UpdateHwcNodeEnableByHwcNodeBelowSelfInApp(std::vector<RectI>& hwcRects,
+        std::shared_ptr<RSSurfaceRenderNode>& hwcNode);
     void UpdateChildHwcNodeEnableByHwcNodeBelow(std::vector<RectI>& hwcRects,
         std::shared_ptr<RSSurfaceRenderNode>& appNode);
     void UpdateHwcNodeEnableByHwcNodeBelowSelf(std::vector<RectI>& hwcRects,
@@ -234,6 +233,9 @@ private:
     void AllSurfacesDrawnInUniRender(const std::vector<std::weak_ptr<RSSurfaceRenderNode>>& hwcNodes);
     void UpdatePointWindowDirtyStatus(std::shared_ptr<RSSurfaceRenderNode>& pointWindow);
     void UpdateTopLayersDirtyStatus(const std::vector<std::shared_ptr<RSSurfaceRenderNode>>& topLayers);
+    void UpdateCornerRadiusInfoForDRM(std::shared_ptr<RSSurfaceRenderNode> hwcNode, std::vector<RectI>& hwcRects);
+    bool CheckIfRoundCornerIntersectDRM(const float& ratio, std::vector<float>& ratioVector,
+        const Vector4f& instanceCornerRadius, const RectI& instanceAbsRect, const RectI& hwcAbsRect);
     void UpdateHwcNodeEnable();
     void UpdateHwcNodeEnableByNodeBelow();
     void PrevalidateHwcNode();
@@ -261,6 +263,8 @@ private:
         Occlusion::Region& accumulatedDirtyRegion);
     void CheckMergeGlobalFilterForDisplay(Occlusion::Region& accumulatedDirtyRegion);
     void CheckMergeDebugRectforRefreshRate(std::vector<RSBaseRenderNode::SharedPtr>& surfaces);
+    void CheckMergeDisplayDirtyByRoundCornerDisplay(
+        RSDisplayRenderNode &node, const sptr<RSScreenManager> &screenManager);
 
     // merge last childRect as dirty if any child has been removed
     void MergeRemovedChildDirtyRegion(RSRenderNode& node, bool needMap = false);
@@ -280,7 +284,7 @@ private:
 
     bool ForcePrepareSubTree()
     {
-        return curSurfaceNode_ && curSurfaceNode_->GetNeedCollectHwcNode();
+        return (curSurfaceNode_ && curSurfaceNode_->GetNeedCollectHwcNode()) || IsAccessibilityConfigChanged();
     }
     bool IsValidInVirtualScreen(RSSurfaceRenderNode& node) const
     {
@@ -294,7 +298,9 @@ private:
     void CollectOcclusionInfoForWMS(RSSurfaceRenderNode& node);
     void CollectEffectInfo(RSRenderNode& node);
 
-    void UpdateVirtualScreenSecurityExemption(RSDisplayRenderNode& node);
+    void UpdateVirtualScreenInfo(RSDisplayRenderNode& node);
+    void UpdateVirtualScreenSecurityExemption(RSDisplayRenderNode& node, RSDisplayRenderNode& mirrorNode);
+    void UpdateVirtualScreenVisibleRectSecurity(RSDisplayRenderNode& node, RSDisplayRenderNode& mirrorNode);
 
     /* Check whether gpu overdraw buffer feature can be enabled on the RenderNode
      * 1. is leash window
@@ -305,11 +311,7 @@ private:
     void MarkBlurIntersectWithDRM(std::shared_ptr<RSRenderNode> node) const;
 
     std::vector<std::shared_ptr<RSSurfaceRenderNode>> hardwareEnabledNodes_;
-    uint32_t appWindowNum_ = 0;
-    bool isSurfaceRotationChanged_ = false;
     bool isCompleteRenderEnabled_ = false;
-    bool isCanvasNodeSkipDfxEnabled_ = false;
-    bool isSkipCanvasNodeOutOfScreen_ = false;
     std::shared_ptr<RSBaseRenderEngine> renderEngine_;
     bool doAnimate_ = false;
     bool isDirty_ = false;
@@ -330,6 +332,7 @@ private:
     std::map<ScreenId, bool> displayHasProtectedSurface_;
     std::map<ScreenId, bool> displaySpecailSurfaceChanged_;
     std::map<ScreenId, bool> hasCaptureWindow_;
+    std::map<ScreenId, bool> hasFingerprint_;
     std::shared_ptr<RSDisplayRenderNode> curDisplayNode_;
     // record nodes which has transparent clean filter
     std::unordered_map<NodeId, std::vector<std::pair<NodeId, RectI>>> transparentCleanFilter_;
@@ -364,7 +367,6 @@ private:
     bool filterInGlobal_ = true;
     // opinc feature
     bool autoCacheEnable_ = false;
-    bool hasFingerprint_ = false;
     bool isHardwareForcedDisabled_ = false; // indicates if hardware composer is totally disabled
     // to record and pass container node dirty to leash node.
     bool curContainerDirty_ = false;
@@ -376,8 +378,6 @@ private:
     VisibleData dstCurVisVec_;
     std::vector<RectI> globalSurfaceBounds_;
     bool hasUniRenderHdrSurface_ = false;
-    bool isSubThread_ = false;
-    float localZOrder_ = 0.0f; // local zOrder for surfaceView under same app window node
     // record container nodes which need filter
     FilterRectISet containerFilter_;
     // record nodes in surface which has filter may influence globalDirty
@@ -387,6 +387,7 @@ private:
     // vector of current frame mainwindow surface visible info
     VisibleData allDstCurVisVec_;
     GraphicPixelFormat newPixelFormat_ = GraphicPixelFormat::GRAPHIC_PIXEL_FMT_RGBA_8888;
+    bool hasVisitCrossNode_ = false;
     bool isDirtyRegionDfxEnabled_ = false; // dirtyRegion DFX visualization
     bool isTargetDirtyRegionDfxEnabled_ = false;
     bool isOpaqueRegionDfxEnabled_ = false;
@@ -403,7 +404,6 @@ private:
     std::vector<std::string> dfxTargetSurfaceNames_;
 
     std::stack<std::shared_ptr<RSDirtyRegionManager>> surfaceDirtyManager_;
-    std::stack<std::shared_ptr<RSSurfaceRenderNode>> surfaceNode_;
     int32_t offsetX_ { 0 };
     int32_t offsetY_ { 0 };
     bool isTargetUIFirstDfxEnabled_ = false;
@@ -412,24 +412,23 @@ private:
     SurfaceRegionDebugType surfaceRegionDebugType_;
     GraphicColorGamut newColorSpace_ = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
     uint32_t threadIndex_ = UNI_MAIN_THREAD_INDEX;
-    // vector of all app window nodes with surfaceView, sorted by zOrder
-    std::vector<std::shared_ptr<RSSurfaceRenderNode>> appWindowNodesInZOrder_;
-    // vector of hardwareEnabled nodes above displayNodeSurface like pointer window
-    std::vector<std::shared_ptr<RSSurfaceRenderNode>> hardwareEnabledTopNodes_;
     // vector of Appwindow nodes ids not contain subAppWindow nodes ids in last frame
     static inline std::queue<NodeId> preMainAndLeashWindowNodesIds_;
     // vector of last frame mainwindow surface visible info
     static inline VisibleData allLastVisVec_;
     std::mutex occlusionMutex_;
     static void ProcessUnpairedSharedTransitionNode();
-    std::vector<RectI> globalFilterRects_;
     NodeId FindInstanceChildOfDisplay(std::shared_ptr<RSRenderNode> node);
     void UpdateSurfaceRenderNodeScale(RSSurfaceRenderNode& node);
-    RSPointerWindowManager pointerWindowManager_;
     // use for hardware compose disabled reason collection
     HwcDisabledReasonCollection& hwcDisabledReasonCollection_ = HwcDisabledReasonCollection::GetInstance();
 
     bool zoomStateChange_ = false;
+
+    // anco RSSurfaceNode process
+    bool ancoHasGpu_ = false;
+    std::unordered_set<std::shared_ptr<RSSurfaceRenderNode>> ancoNodes_;
+    uint32_t layerNum_ = 0;
 };
 } // namespace Rosen
 } // namespace OHOS

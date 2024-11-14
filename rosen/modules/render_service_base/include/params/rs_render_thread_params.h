@@ -93,6 +93,26 @@ public:
         isOpDropped_ = opDropped;
     }
 
+    bool IsMirrorScreen() const
+    {
+        return isMirrorScreen_;
+    }
+
+    void SetIsMirrorScreen(bool isMirrorScreen)
+    {
+        isMirrorScreen_ = isMirrorScreen;
+    }
+
+    bool IsFirstVisitCrossNodeDisplay() const
+    {
+        return isFirstVisitCrossNodeDisplay_;
+    }
+
+    void SetIsFirstVisitCrossNodeDisplay(bool isFirstVisitCrossNodeDisplay)
+    {
+        isFirstVisitCrossNodeDisplay_ = isFirstVisitCrossNodeDisplay;
+    }
+
     bool GetUIFirstDebugEnabled() const
     {
         return isUIFirstDebugEnable_;
@@ -118,6 +138,36 @@ public:
         return timestamp_;
     }
 
+    void SetActualTimestamp(int64_t timestamp)
+    {
+        actualTimestamp_ = timestamp;
+    }
+
+    int64_t GetActualTimestamp() const
+    {
+        return actualTimestamp_;
+    }
+
+    void SetVsyncId(uint64_t vsyncId)
+    {
+        vsyncId_ = vsyncId;
+    }
+
+    uint64_t GetVsyncId() const
+    {
+        return vsyncId_;
+    }
+
+    void SetForceRefreshFlag(bool isForceRefresh)
+    {
+        isForceRefresh_ = isForceRefresh;
+    }
+
+    bool GetForceRefreshFlag() const
+    {
+        return isForceRefresh_;
+    }
+
     const std::vector<DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr>& GetSelfDrawables() const
     {
         return selfDrawables_;
@@ -128,7 +178,7 @@ public:
         return hardwareEnabledTypeDrawables_;
     }
 
-    const std::vector<HardCursorInfo>& GetHardCursorDrawables() const
+    const HardCursorInfo& GetHardCursorDrawables() const
     {
         return hardCursorDrawables_;
     }
@@ -222,6 +272,16 @@ public:
     bool GetCacheEnabledForRotation() const
     {
         return cacheEnabledForRotation_;
+    }
+
+    void SetScreenSwitchStatus(bool flag)
+    {
+        isScreenSwitching_ = flag;
+    }
+
+    bool GetScreenSwitchStatus() const
+    {
+        return isScreenSwitching_;
     }
 
     void SetRequestNextVsyncFlag(bool flag)
@@ -349,18 +409,18 @@ public:
         return isDrawingCacheDfxEnabled_;
     }
 
-    bool IsAceDebugBoundaryEnabled() const
-    {
-        return isAceDebugBoundaryEnabled_;
-    }
-
 private:
     // Used by hardware thred
     uint64_t timestamp_ = 0;
+    int64_t actualTimestamp_ = 0;
+    uint64_t vsyncId_ = 0;
+    bool isForceRefresh_ = false;
     uint32_t pendingScreenRefreshRate_ = 0;
     uint64_t pendingConstraintRelativeTime_ = 0;
     // RSDirtyRectsDfx dfx
     std::vector<std::string> dfxTargetSurfaceNames_;
+    bool isMirrorScreen_ = false;
+    bool isFirstVisitCrossNodeDisplay_ = false;
     bool isRegionDebugEnabled_ = false;
     bool isPartialRenderEnabled_ = false;
     bool isDirtyRegionDfxEnabled_ = false;
@@ -378,10 +438,11 @@ private:
     bool isExpandScreenDirtyEnabled_ = false;
     bool isMirrorScreenDirty_ = false;
     bool cacheEnabledForRotation_ = false;
+    bool isScreenSwitching_ = false;
     DirtyRegionDebugType dirtyRegionDebugType_ = DirtyRegionDebugType::DISABLED;
     std::vector<DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr> selfDrawables_;
     std::vector<DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr> hardwareEnabledTypeDrawables_;
-    std::vector<HardCursorInfo> hardCursorDrawables_;
+    HardCursorInfo hardCursorDrawables_;
     bool isForceCommitLayer_ = false;
     bool hasMirrorDisplay_ = false;
     // accumulatedDirtyRegion to decide whether to skip tranasparent nodes.
@@ -400,7 +461,6 @@ private:
     bool isUniRenderAndOnVsync_ = false;
     std::weak_ptr<RSContext> context_;
     bool isCurtainScreenOn_ = false;
-    bool isAceDebugBoundaryEnabled_ = false;
 
     Drawing::Region clipRegion_;
     bool isImplicitAnimationEnd_ = false;
@@ -417,6 +477,12 @@ class RSRenderThreadParamsManager {
 public:
     RSRenderThreadParamsManager() = default;
     ~RSRenderThreadParamsManager() = default;
+
+    static RSRenderThreadParamsManager& Instance()
+    {
+        static RSRenderThreadParamsManager instance;
+        return instance;
+    }
 
     inline void SetRSRenderThreadParams(std::unique_ptr<RSRenderThreadParams>&& renderThreadParams)
     {

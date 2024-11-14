@@ -66,6 +66,9 @@ HgmErrCode HgmMultiAppStrategy::HandlePkgsEvent(const std::vector<std::string>& 
         configCallbackManager->SyncHgmConfigChangeCallback(foregroundPidAppMap_);
     }
 
+    if (!pkgs_.empty()) {
+        touchInfo_.pkgName = std::get<0>(AnalyzePkgParam(pkgs_.front()));
+    }
     CalcVote();
 
     return EXEC_SUCCESS;
@@ -99,6 +102,7 @@ void HgmMultiAppStrategy::HandleLightFactorStatus(bool isSafe)
 void HgmMultiAppStrategy::CalcVote()
 {
     RS_TRACE_FUNC();
+    HgmTaskHandleThread::Instance().DetectMultiThreadingCalls();
     voteRes_ = { HGM_ERROR, {
         .min = OLED_NULL_HZ, .max = OLED_120_HZ, .dynamicMode = DynamicModeType::TOUCH_ENABLED,
         .idleFps = OLED_60_HZ, .isFactor = false, .drawMin = OLED_NULL_HZ,
@@ -440,8 +444,10 @@ void HgmMultiAppStrategy::CheckPackageInConfigList(const std::vector<std::string
     rsCommonHook.SetVideoSurfaceFlag(false);
     rsCommonHook.SetHardwareEnabledByHwcnodeBelowSelfInAppFlag(false);
     rsCommonHook.SetHardwareEnabledByBackgroundAlphaFlag(false);
+    rsCommonHook.SetIsWhiteListForSolidColorLayerFlag(false);
     std::unordered_map<std::string, std::string>& videoConfigFromHgm = configData->sourceTuningConfig_;
-    if (videoConfigFromHgm.empty() || pkgs.size() > 1) {
+    std::unordered_map<std::string, std::string>& solidLayerConfigFromHgm = configData->solidLayerConfig_;
+    if (videoConfigFromHgm.empty() || solidLayerConfigFromHgm.empty() || pkgs.size() > 1) {
         return;
     }
     for (auto &param: pkgs) {
@@ -453,6 +459,11 @@ void HgmMultiAppStrategy::CheckPackageInConfigList(const std::vector<std::string
         } else if (videoConfigFromHgm[pkgNameForCheck] == "2") {
             rsCommonHook.SetHardwareEnabledByHwcnodeBelowSelfInAppFlag(true);
             rsCommonHook.SetHardwareEnabledByBackgroundAlphaFlag(true);
+        }
+        // 1 means enable dss by solid color layer
+        if (auto iter = solidLayerConfigFromHgm.find(pkgNameForCheck);
+            iter != solidLayerConfigFromHgm.end() && iter->second == "1") {
+            rsCommonHook.SetIsWhiteListForSolidColorLayerFlag(true);
         }
     }
 }

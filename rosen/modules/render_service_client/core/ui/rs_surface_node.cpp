@@ -356,21 +356,26 @@ void RSSurfaceNode::SetColorSpace(GraphicColorGamut colorSpace)
     }
 }
 
-void RSSurfaceNode::CreateTextureExportRenderNodeInRT()
+void RSSurfaceNode::CreateRenderNodeForTextureExportSwitch()
 {
-    std::unique_ptr<RSCommand> command = std::make_unique<RSSurfaceNodeCreate>(GetId(),
-        RSSurfaceNodeType::SELF_DRAWING_NODE, true);
     auto transactionProxy = RSTransactionProxy::GetInstance();
     if (transactionProxy == nullptr) {
         return;
     }
-    transactionProxy->AddCommand(command, false);
-    command = std::make_unique<RSSurfaceNodeConnectToNodeInRenderService>(GetId());
-    transactionProxy->AddCommand(command, false);
+    std::unique_ptr<RSCommand> command = std::make_unique<RSSurfaceNodeCreate>(GetId(),
+        RSSurfaceNodeType::SELF_DRAWING_NODE, isTextureExportNode_);
+    transactionProxy->AddCommand(command, IsRenderServiceNode());
+    if (!IsRenderServiceNode()) {
+        hasCreateRenderNodeInRT_ = true;
+        command = std::make_unique<RSSurfaceNodeConnectToNodeInRenderService>(GetId());
+        transactionProxy->AddCommand(command, false);
 
-    RSRTRefreshCallback::Instance().SetRefresh([] { RSRenderThread::Instance().RequestNextVSync(); });
-    command = std::make_unique<RSSurfaceNodeSetCallbackForRenderThreadRefresh>(GetId(), true);
-    transactionProxy->AddCommand(command, false);
+        RSRTRefreshCallback::Instance().SetRefresh([] { RSRenderThread::Instance().RequestNextVSync(); });
+        command = std::make_unique<RSSurfaceNodeSetCallbackForRenderThreadRefresh>(GetId(), true);
+        transactionProxy->AddCommand(command, false);
+    } else {
+        hasCreateRenderNodeInRS_ = true;
+    }
 }
 
 void RSSurfaceNode::SetIsTextureExportNode(bool isTextureExportNode)
@@ -393,12 +398,15 @@ void RSSurfaceNode::SetTextureExport(bool isTextureExportNode)
         return;
     }
     isTextureExportNode_ = isTextureExportNode;
+    if (!IsUniRenderEnabled()) {
+        return;
+    }
     if (!isTextureExportNode_) {
         SetIsTextureExportNode(isTextureExportNode);
         DoFlushModifier();
         return;
     }
-    CreateTextureExportRenderNodeInRT();
+    CreateRenderNodeForTextureExportSwitch();
     SetIsTextureExportNode(isTextureExportNode);
     SetSurfaceIdToRenderNode();
     DoFlushModifier();
@@ -706,12 +714,12 @@ void RSSurfaceNode::DetachToDisplay(uint64_t screenId)
     }
 }
 
-void RSSurfaceNode::SetHardwareEnabled(bool isEnabled, SelfDrawingNodeType selfDrawingType)
+void RSSurfaceNode::SetHardwareEnabled(bool isEnabled, SelfDrawingNodeType selfDrawingType, bool dynamicHardwareEnable)
 {
     auto renderServiceClient =
         std::static_pointer_cast<RSRenderServiceClient>(RSIRenderClient::CreateRenderServiceClient());
     if (renderServiceClient != nullptr) {
-        renderServiceClient->SetHardwareEnabled(GetId(), isEnabled, selfDrawingType);
+        renderServiceClient->SetHardwareEnabled(GetId(), isEnabled, selfDrawingType, dynamicHardwareEnable);
     }
 }
 
@@ -964,7 +972,7 @@ void RSSurfaceNode::SetAbilityState(RSSurfaceNodeAbilityState abilityState)
     }
     abilityState_ = abilityState;
     transactionProxy->AddCommand(command, true);
-    ROSEN_LOGD("RSSurfaceNode::SetAbilityState, surfaceNodeId:[%{public}" PRIu64 "], ability state: %{public}s",
+    ROSEN_LOGI("RSSurfaceNode::SetAbilityState, surfaceNodeId:[%{public}" PRIu64 "], ability state: %{public}s",
         GetId(), abilityState_ == RSSurfaceNodeAbilityState::FOREGROUND ? "foreground" : "background");
 }
 

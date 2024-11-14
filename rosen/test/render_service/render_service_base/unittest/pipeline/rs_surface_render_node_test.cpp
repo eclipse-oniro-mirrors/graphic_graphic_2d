@@ -82,6 +82,7 @@ HWTEST_F(RSSurfaceRenderNodeTest, SetContextMatrix001, TestSize.Level1)
     Drawing::Matrix matrix;
     bool sendMsg = false;
     surfaceRenderNode.SetContextMatrix(matrix, sendMsg);
+    ASSERT_EQ(surfaceRenderNode.GetId(), 0);
 }
 
 /**
@@ -96,6 +97,7 @@ HWTEST_F(RSSurfaceRenderNodeTest, SetContextClipRegion001, TestSize.Level1)
     Drawing::Rect clipRegion { 0, 0, 0, 0 };
     bool sendMsg = false;
     surfaceRenderNode.SetContextClipRegion(clipRegion, sendMsg);
+    ASSERT_EQ(surfaceRenderNode.GetId(), 0);
 }
 
 /**
@@ -108,6 +110,7 @@ HWTEST_F(RSSurfaceRenderNodeTest, ConnectToNodeInRenderService001, TestSize.Leve
 {
     RSSurfaceRenderNode surfaceRenderNode(id, context);
     surfaceRenderNode.ConnectToNodeInRenderService();
+    ASSERT_EQ(surfaceRenderNode.GetId(), 0);
 }
 
 /**
@@ -198,6 +201,7 @@ HWTEST_F(RSSurfaceRenderNodeTest, ClearChildrenCache001, TestSize.Level1)
 {
     RSSurfaceRenderNode surfaceRenderNode(id, context);
     surfaceRenderNode.ResetParent();
+    ASSERT_EQ(surfaceRenderNode.GetId(), 0);
 }
 
 /**
@@ -209,6 +213,7 @@ HWTEST_F(RSSurfaceRenderNodeTest, ClearChildrenCache001, TestSize.Level1)
 HWTEST_F(RSSurfaceRenderNodeTest, ResetSurfaceOpaqueRegion02, TestSize.Level1)
 {
     RSSurfaceRenderNode surfaceRenderNode(id, context);
+    ASSERT_EQ(surfaceRenderNode.GetId(), 0);
     RectI screenRect {0, 0, 2560, 1600};
     RectI absRect {0, 100, 400, 500};
     surfaceRenderNode.SetAbilityBGAlpha(0);
@@ -234,6 +239,7 @@ HWTEST_F(RSSurfaceRenderNodeTest, ResetSurfaceOpaqueRegion02, TestSize.Level1)
 HWTEST_F(RSSurfaceRenderNodeTest, ResetSurfaceOpaqueRegion03, TestSize.Level1)
 {
     RSSurfaceRenderNode surfaceRenderNode(id, context);
+    ASSERT_EQ(surfaceRenderNode.GetId(), 0);
     RectI screenRect {0, 0, 2560, 1600};
     RectI absRect {0, 100, 400, 500};
     surfaceRenderNode.SetAbilityBGAlpha(255);
@@ -262,6 +268,7 @@ HWTEST_F(RSSurfaceRenderNodeTest, ResetSurfaceOpaqueRegion03, TestSize.Level1)
 HWTEST_F(RSSurfaceRenderNodeTest, ResetSurfaceOpaqueRegion04, TestSize.Level1)
 {
     RSSurfaceRenderNode surfaceRenderNode(id, context);
+    ASSERT_EQ(surfaceRenderNode.GetId(), 0);
     RectI screenRect {0, 0, 2560, 1600};
     RectI absRect {0, 100, 400, 500};
     surfaceRenderNode.SetAbilityBGAlpha(255);
@@ -289,6 +296,7 @@ HWTEST_F(RSSurfaceRenderNodeTest, ResetSurfaceOpaqueRegion04, TestSize.Level1)
 HWTEST_F(RSSurfaceRenderNodeTest, ResetSurfaceOpaqueRegion05, TestSize.Level1)
 {
     RSSurfaceRenderNode surfaceRenderNode(id, context);
+    ASSERT_EQ(surfaceRenderNode.GetId(), 0);
     RectI screenRect {0, 0, 2560, 1600};
     RectI absRect {0, 100, 400, 500};
     surfaceRenderNode.SetAbilityBGAlpha(255);
@@ -317,6 +325,7 @@ HWTEST_F(RSSurfaceRenderNodeTest, ResetSurfaceOpaqueRegion05, TestSize.Level1)
 HWTEST_F(RSSurfaceRenderNodeTest, ResetSurfaceOpaqueRegion06, TestSize.Level1)
 {
     RSSurfaceRenderNode surfaceRenderNode(id, context);
+    ASSERT_EQ(surfaceRenderNode.GetId(), 0);
     RectI screenRect {0, 0, 2560, 1600};
     RectI absRect {0, 100, 400, 500};
     surfaceRenderNode.SetAbilityBGAlpha(255);
@@ -345,6 +354,7 @@ HWTEST_F(RSSurfaceRenderNodeTest, ResetSurfaceOpaqueRegion06, TestSize.Level1)
 HWTEST_F(RSSurfaceRenderNodeTest, ResetSurfaceOpaqueRegion07, TestSize.Level1)
 {
     RSSurfaceRenderNode surfaceRenderNode(id, context);
+    ASSERT_EQ(surfaceRenderNode.GetId(), 0);
     RectI screenRect {0, 0, 2560, 1600};
     RectI absRect {0, 100, 400, 500};
     surfaceRenderNode.SetAbilityBGAlpha(255);
@@ -430,9 +440,15 @@ HWTEST_F(RSSurfaceRenderNodeTest, HDRPresentTest, TestSize.Level1)
     ASSERT_NE(parentNode, nullptr);
     ASSERT_NE(leashWindowNode, nullptr);
 
-    rsContext->GetMutableNodeMap().renderNodeMap_[childNode->GetId()] = childNode;
-    rsContext->GetMutableNodeMap().renderNodeMap_[parentNode->GetId()] = parentNode;
-    rsContext->GetMutableNodeMap().renderNodeMap_[leashWindowNode->GetId()] = leashWindowNode;
+    NodeId childNodeId = childNode->GetId();
+    pid_t childNodePid = ExtractPid(childNodeId);
+    NodeId parentNodeId = parentNode->GetId();
+    pid_t parentNodePid = ExtractPid(parentNodeId);
+    NodeId leashWindowNodeId = leashWindowNode->GetId();
+    pid_t leashWindowNodePid = ExtractPid(leashWindowNodeId);
+    rsContext->GetMutableNodeMap().renderNodeMap_[childNodePid][childNodeId] = childNode;
+    rsContext->GetMutableNodeMap().renderNodeMap_[parentNodePid][parentNodeId] = parentNode;
+    rsContext->GetMutableNodeMap().renderNodeMap_[leashWindowNodePid][leashWindowNodeId] = leashWindowNode;
 
     parentNode->nodeType_ = RSSurfaceNodeType::APP_WINDOW_NODE;
     childNode->nodeType_ = RSSurfaceNodeType::UI_EXTENSION_COMMON_NODE;
@@ -507,6 +523,7 @@ HWTEST_F(RSSurfaceRenderNodeTest, ProcessAnimatePropertyBeforeChildrenTest, Test
 {
     auto node = std::make_shared<RSSurfaceRenderNode>(id, context);
     node->ProcessAnimatePropertyBeforeChildren(*canvas_, true);
+    ASSERT_EQ(node->GetId(), 0);
 }
 
 /**
@@ -519,6 +536,7 @@ HWTEST_F(RSSurfaceRenderNodeTest, ProcessAnimatePropertyAfterChildrenTest, TestS
 {
     auto node = std::make_shared<RSSurfaceRenderNode>(id, context);
     node->ProcessAnimatePropertyAfterChildren(*canvas_);
+    ASSERT_EQ(node->GetId(), 0);
 }
 
 /**
@@ -533,6 +551,7 @@ HWTEST_F(RSSurfaceRenderNodeTest, SetContextMatrixTest, TestSize.Level1)
     bool sendMsg = false;
     auto node = std::make_shared<RSSurfaceRenderNode>(id, context);
     node->SetContextMatrix(matrix, sendMsg);
+    ASSERT_EQ(node->GetId(), 0);
 }
 
 /**
@@ -547,6 +566,7 @@ HWTEST_F(RSSurfaceRenderNodeTest, RegisterBufferAvailableListenerTest, TestSize.
     bool isFromRenderThread = true;
     auto node = std::make_shared<RSSurfaceRenderNode>(id, context);
     node->RegisterBufferAvailableListener(callback, isFromRenderThread);
+    ASSERT_EQ(node->GetId(), 0);
 }
 
 /**
@@ -690,8 +710,12 @@ HWTEST_F(RSSurfaceRenderNodeTest, SetSkipLayer002, TestSize.Level2)
     ASSERT_NE(parentNode, nullptr);
     ASSERT_NE(skipLayerNode, nullptr);
 
-    rsContext->GetMutableNodeMap().renderNodeMap_[parentNode->GetId()] = parentNode;
-    rsContext->GetMutableNodeMap().renderNodeMap_[skipLayerNode->GetId()] = skipLayerNode;
+    NodeId parentNodeId = parentNode->GetId();
+    pid_t parentNodePid = ExtractPid(parentNodeId);
+    NodeId skipLayerNodeId = skipLayerNode->GetId();
+    pid_t skipLayerNodePid = ExtractPid(skipLayerNodeId);
+    rsContext->GetMutableNodeMap().renderNodeMap_[parentNodePid][parentNodePid] = parentNode;
+    rsContext->GetMutableNodeMap().renderNodeMap_[skipLayerNodePid][skipLayerNodeId] = skipLayerNode;
 
     parentNode->nodeType_ = RSSurfaceNodeType::LEASH_WINDOW_NODE;
     parentNode->AddChild(skipLayerNode);
@@ -716,8 +740,12 @@ HWTEST_F(RSSurfaceRenderNodeTest, SetSnapshotSkipLayer002, TestSize.Level2)
     ASSERT_NE(parentNode, nullptr);
     ASSERT_NE(snapshotSkipLayerNode, nullptr);
 
-    rsContext->GetMutableNodeMap().renderNodeMap_[parentNode->GetId()] = parentNode;
-    rsContext->GetMutableNodeMap().renderNodeMap_[snapshotSkipLayerNode->GetId()] = snapshotSkipLayerNode;
+    NodeId parentNodeId = parentNode->GetId();
+    pid_t parentNodePid = ExtractPid(parentNodeId);
+    NodeId skipLayerNodeId = snapshotSkipLayerNode->GetId();
+    pid_t skipLayerNodePid = ExtractPid(skipLayerNodeId);
+    rsContext->GetMutableNodeMap().renderNodeMap_[parentNodePid][parentNodeId] = parentNode;
+    rsContext->GetMutableNodeMap().renderNodeMap_[skipLayerNodePid][skipLayerNodeId] = snapshotSkipLayerNode;
 
     parentNode->nodeType_ = RSSurfaceNodeType::LEASH_WINDOW_NODE;
     parentNode->AddChild(snapshotSkipLayerNode);
@@ -759,8 +787,12 @@ HWTEST_F(RSSurfaceRenderNodeTest, SetSecurityLayer002, TestSize.Level2)
     ASSERT_NE(parentNode, nullptr);
     ASSERT_NE(securityLayerNode, nullptr);
 
-    rsContext->GetMutableNodeMap().renderNodeMap_[parentNode->GetId()] = parentNode;
-    rsContext->GetMutableNodeMap().renderNodeMap_[securityLayerNode->GetId()] = securityLayerNode;
+    NodeId parentNodeId = parentNode->GetId();
+    pid_t parentNodePid = ExtractPid(parentNodeId);
+    NodeId secLayerNodeId = securityLayerNode->GetId();
+    pid_t secLayerNodePid = ExtractPid(secLayerNodeId);
+    rsContext->GetMutableNodeMap().renderNodeMap_[parentNodePid][parentNodeId] = parentNode;
+    rsContext->GetMutableNodeMap().renderNodeMap_[secLayerNodePid][secLayerNodeId] = securityLayerNode;
 
     parentNode->nodeType_ = RSSurfaceNodeType::LEASH_WINDOW_NODE;
     parentNode->AddChild(securityLayerNode);
@@ -874,6 +906,23 @@ HWTEST_F(RSSurfaceRenderNodeTest, StoreMustRenewedInfo006, TestSize.Level2)
 }
 
 /**
+ * @tc.name: CornerRadiusInfoForDRMTest
+ * @tc.desc: Test SetCornerRadiusInfoForDRM and GetCornerRadiusInfoForDRM
+ * @tc.type: FUNC
+ * @tc.require: issueIAX2NE
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, CornerRadiusInfoForDRMTest, TestSize.Level2)
+{
+    auto rsContext = std::make_shared<RSContext>();
+    ASSERT_NE(rsContext, nullptr);
+    auto node = std::make_shared<RSSurfaceRenderNode>(id, rsContext);
+    ASSERT_NE(node, nullptr);
+    std::vector<float> cornerRadiusInfo = {};
+    node->SetCornerRadiusInfoForDRM(cornerRadiusInfo);
+    ASSERT_TRUE(node->GetCornerRadiusInfoForDRM().empty());
+}
+
+/**
  * @tc.name: GetFirstLevelNodeId001
  * @tc.desc: Test GetFirstLevelNode for single app window node
  * @tc.type: FUNC
@@ -885,8 +934,9 @@ HWTEST_F(RSSurfaceRenderNodeTest, GetFirstLevelNodeId001, TestSize.Level2)
     ASSERT_NE(rsContext, nullptr);
     auto node = std::make_shared<RSSurfaceRenderNode>(id, rsContext);
     ASSERT_NE(node, nullptr);
-
-    rsContext->GetMutableNodeMap().renderNodeMap_[node->GetId()] = node;
+    NodeId nodeId = node->GetId();
+    pid_t pid = ExtractPid(nodeId);
+    rsContext->GetMutableNodeMap().renderNodeMap_[pid][nodeId] = node;
     node->nodeType_ = RSSurfaceNodeType::APP_WINDOW_NODE;
     node->SetIsOnTheTree(true);
     ASSERT_EQ(node->GetFirstLevelNodeId(), node->GetId());
@@ -907,8 +957,12 @@ HWTEST_F(RSSurfaceRenderNodeTest, GetFirstLevelNodeId002, TestSize.Level2)
     ASSERT_NE(childNode, nullptr);
     ASSERT_NE(parentNode, nullptr);
 
-    rsContext->GetMutableNodeMap().renderNodeMap_[childNode->GetId()] = childNode;
-    rsContext->GetMutableNodeMap().renderNodeMap_[parentNode->GetId()] = parentNode;
+    NodeId childNodeId = childNode->GetId();
+    pid_t childNodePid = ExtractPid(childNodeId);
+    NodeId parentNodeId = parentNode->GetId();
+    pid_t parentNodePid = ExtractPid(parentNodeId);
+    rsContext->GetMutableNodeMap().renderNodeMap_[childNodePid][childNodeId] = childNode;
+    rsContext->GetMutableNodeMap().renderNodeMap_[parentNodePid][parentNodeId] = parentNode;
 
     parentNode->nodeType_ = RSSurfaceNodeType::LEASH_WINDOW_NODE;
     childNode->nodeType_ = RSSurfaceNodeType::APP_WINDOW_NODE;
@@ -1172,21 +1226,6 @@ HWTEST_F(RSSurfaceRenderNodeTest, CollectSurfaceTest, TestSize.Level1)
     testNode->nodeType_ = RSSurfaceNodeType::SELF_DRAWING_NODE;
     testNode->CollectSurface(node, vec, true, true);
     ASSERT_FALSE(testNode->isSubSurfaceEnabled_);
-}
-
-/**
- * @tc.name: CollectSurfaceForUIFirstSwitchTest
- * @tc.desc: test results of CollectSurfaceForUIFirstSwitchTest
- * @tc.type: FUNC
- * @tc.require: issueI9JAFQ
- */
-HWTEST_F(RSSurfaceRenderNodeTest, CollectSurfaceForUIFirstSwitchTest, TestSize.Level1)
-{
-    std::shared_ptr<RSSurfaceRenderNode> testNode = std::make_shared<RSSurfaceRenderNode>(id, context);
-    uint32_t leashWindowCount = 0;
-    uint32_t minNodeNum = 5;
-    testNode->CollectSurfaceForUIFirstSwitch(leashWindowCount, minNodeNum);
-    ASSERT_EQ(leashWindowCount, 0);
 }
 
 /**

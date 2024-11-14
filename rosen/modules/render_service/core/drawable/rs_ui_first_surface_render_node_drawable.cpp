@@ -15,6 +15,7 @@
 
 #include <memory>
 
+#include "EGL/egl.h"
 #include "impl_interface/region_impl.h"
 #include "rs_trace.h"
 
@@ -149,8 +150,8 @@ std::shared_ptr<Drawing::Image> RSSurfaceRenderNodeDrawable::GetCompletedImage(
         if (OHOS::Rosen::RSSystemProperties::GetGpuApiType() == OHOS::Rosen::GpuApiType::VULKAN ||
             OHOS::Rosen::RSSystemProperties::GetGpuApiType() == OHOS::Rosen::GpuApiType::DDGR) {
             if (!cacheCompletedSurface_ || !cacheCompletedCleanupHelper_) {
-                RS_LOGE("RSSurfaceRenderNodeDrawable::GetCompletedImage surface %p cleanupHelper %p",
-                    cacheCompletedSurface_.get(), cacheCompletedSurface_.get());
+                RS_LOGE("RSSurfaceRenderNodeDrawable::GetCompletedImage %{public}s is nullptr",
+                    cacheCompletedSurface_ == nullptr ? "surface" : "cleanupHelper");
                 return nullptr;
             }
         }
@@ -218,6 +219,45 @@ std::shared_ptr<Drawing::Image> RSSurfaceRenderNodeDrawable::GetCompletedImage(
 #endif
 }
 
+#ifdef RS_ENABLE_GL
+void RSSurfaceRenderNodeDrawable::FlushSemaphore(RSPaintFilterCanvas& canvas)
+{
+    auto* surface = canvas.GetSurface();
+    if (surface == nullptr ||RSSystemProperties::GetGpuApiType() != GpuApiType::OPENGL) {
+        return;
+    }
+    RS_TRACE_NAME("FlushSemaphore");
+    // init or get context's semaphore
+    auto& semaphore = semaphoresForRT_[eglGetCurrentContext()];
+    // clear previous semaphore
+    auto sync = semaphore.glSync();
+    if (sync != nullptr) {
+        eglDestroySync(eglGetCurrentDisplay(), sync);
+    }
+    semaphore = {};
+    // flush
+    Drawing::FlushInfo flushInfo;
+    flushInfo.numSemaphores = 1;
+    flushInfo.backendSemaphore = &semaphore;
+    surface->Flush(&flushInfo);
+}
+
+void RSSurfaceRenderNodeDrawable::WaitSemaphore()
+{
+    if (cacheSurface_ == nullptr || semaphoresForRSSub_.empty() ||
+        RSSystemProperties::GetGpuApiType() != GpuApiType::OPENGL) {
+        return;
+    }
+    RS_TRACE_NAME("WaitSemaphore");
+    std::vector<GrGLsync> syncs;
+    for (const auto& [key, value]: semaphoresForRSSub_) {
+        syncs.push_back(value.glSync());
+    }
+    cacheSurface_->Wait(syncs);
+    semaphoresForRSSub_.clear();
+}
+#endif
+
 bool RSSurfaceRenderNodeDrawable::DrawCacheSurface(RSPaintFilterCanvas& canvas, const Vector2f& boundSize,
     uint32_t threadIndex, bool isUIFirst)
 {
@@ -233,10 +273,12 @@ bool RSSurfaceRenderNodeDrawable::DrawCacheSurface(RSPaintFilterCanvas& canvas, 
         RS_LOGE("RSSurfaceRenderNodeDrawable::DrawCacheSurface return %d", __LINE__);
         return false;
     }
-    float scaleX = boundSize.x_ / static_cast<float>(cacheImage->GetWidth());
-    float scaleY = boundSize.y_ / static_cast<float>(cacheImage->GetHeight());
     canvas.Save();
-    canvas.Scale(scaleX, scaleY);
+    if (RSMainThread::Instance()->GetDeviceType() != DeviceType::PC) {
+        float scaleX = boundSize.x_ / static_cast<float>(cacheImage->GetWidth());
+        float scaleY = boundSize.y_ / static_cast<float>(cacheImage->GetHeight());
+        canvas.Scale(scaleX, scaleY);
+    }
     if (RSSystemProperties::GetRecordingEnabled()) {
         if (cacheImage->IsTextureBacked()) {
             RS_LOGI("RSSurfaceRenderNodeDrawable::DrawCacheSurface convert cacheImage from texture to raster image");
@@ -250,6 +292,9 @@ bool RSSurfaceRenderNodeDrawable::DrawCacheSurface(RSPaintFilterCanvas& canvas, 
     canvas.DrawImage(*cacheImage, gravityTranslate.x_, gravityTranslate.y_, samplingOptions);
     canvas.DetachBrush();
     canvas.Restore();
+#ifdef RS_ENABLE_GL
+    FlushSemaphore(canvas);
+#endif
     return true;
 }
 
@@ -383,6 +428,9 @@ void RSSurfaceRenderNodeDrawable::UpdateCompletedCacheSurface()
     std::swap(cacheSurfaceThreadIndex_, completedSurfaceThreadIndex_);
 #if (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
     std::swap(cacheBackendTexture_, cacheCompletedBackendTexture_);
+#ifdef RS_ENABLE_GL
+    std::swap(semaphoresForRT_, semaphoresForRSSub_);
+#endif
 #ifdef RS_ENABLE_VK
     if (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
         RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) {

@@ -72,7 +72,12 @@ bool RSSystemProperties::GetDrawOpTraceEnabled()
     return false;
 }
 
-bool RSSystemProperties::GetRsMemoryOptimizeEnabled()
+bool RSSystemProperties::GetRenderNodePurgeEnabled()
+{
+    return false;
+}
+
+bool RSSystemProperties::GetRSImagePurgeEnabled()
 {
     return false;
 }
@@ -127,17 +132,7 @@ bool RSSystemProperties::GetVkQueuePriorityEnable()
     return false;
 }
 
-bool RSSystemProperties::GetAceDebugBoundaryEnabled()
-{
-    return false;
-}
-
 std::string RSSystemProperties::GetRSEventProperty(const std::string &paraName)
-{
-    return {};
-}
-
-bool RSSystemProperties::GetDirectClientCompEnableStatus()
 {
     return {};
 }
@@ -194,6 +189,15 @@ uint32_t RSSystemProperties::GetDefaultDeviceRotationOffset()
 bool RSSystemProperties::GetCacheEnabledForRotation()
 {
     return {};
+}
+
+void RSSystemProperties::SetScreenSwitchStatus(bool flag)
+{
+}
+
+bool RSSystemProperties::GetScreenSwitchStatus()
+{
+    return false;
 }
 
 ParallelRenderingType RSSystemProperties::GetPrepareParallelRenderingEnabled()
@@ -510,6 +514,11 @@ bool RSSystemProperties::GetRenderParallelEnabled()
 bool RSSystemProperties::IsForceClient()
 {
     return false;
+}
+
+uint32_t RSSystemProperties::GetBlurEffectTerminateLimit()
+{
+    return 0;
 }
 
 bool RSSystemProperties::GetTextBlobAsPixelMap()

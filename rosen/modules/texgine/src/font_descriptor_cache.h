@@ -38,12 +38,14 @@ public:
     void GetFontDescSharedPtrByFullName(const std::string& fullName,
         const int32_t& systemFontType, FontDescSharedPtr& result);
     void GetSystemFontFullNamesByType(const int32_t& systemFontType, std::unordered_set<std::string>& fontList);
+    void SetLocale(const std::string& locale)
+    {
+        locale_ = locale;
+    }
 
 private:
     void FontDescriptorScatter(FontDescSharedPtr desc);
-    void ParserInstallFonts();
-    bool ParseInstalledConfigFile(const std::string& fontPath, std::vector<std::string>& fontPathList);
-    bool ProcessInstalledFontPath(const std::string& path);
+    bool ParserInstallFontsPathList(std::vector<std::string>& fontPathList);
     bool ProcessSystemFontType(const int32_t& systemFontType, int32_t& fontType);
     bool ParseInstallFontDescSharedPtrByName(const std::string& fullName, FontDescSharedPtr& result);
     std::unordered_set<std::string> GetInstallFontList();
@@ -57,6 +59,7 @@ private:
     bool FilterMonoSpaceCache(bool monoSpace, std::set<FontDescSharedPtr>& finishRet);
     bool FilterSymbolicCache(bool symbolic, std::set<FontDescSharedPtr>& finishRet);
     bool IsDefault(FontDescSharedPtr desc);
+    int32_t WeightAlignment(int32_t weight);
 
 private:
     TextEngine::FontParser parser_;
@@ -79,8 +82,8 @@ private:
     std::set<FontDescSharedPtr> italicCache_;
     std::set<FontDescSharedPtr> monoSpaceCache_;
     std::set<FontDescSharedPtr> symbolicCache_;
-    std::unordered_map<std::string, std::vector<std::string>> installPathMap_;
     std::unordered_map<std::string, std::set<FontDescSharedPtr>> stylishFullNameMap_;
+    std::string locale_;
 };
 } // namespace OHOS::Rosen
 

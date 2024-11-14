@@ -138,6 +138,9 @@ public:
     bool TakeSurfaceCapture(
         NodeId id, std::shared_ptr<SurfaceCaptureCallback> callback, const RSSurfaceCaptureConfig& captureConfig);
 
+    bool SetHwcNodeBounds(int64_t rsNodeId, float positionX, float positionY,
+        float positionZ, float positionW);
+
     int32_t SetFocusAppInfo(int32_t pid, int32_t uid, const std::string &bundleName, const std::string &abilityName,
         uint64_t focusNodeId);
 
@@ -154,9 +157,15 @@ public:
     int32_t SetVirtualScreenSurface(ScreenId id, sptr<Surface> surface);
 
     int32_t SetVirtualScreenBlackList(ScreenId id, std::vector<NodeId>& blackListVector);
+
+    int32_t AddVirtualScreenBlackList(ScreenId id, std::vector<NodeId>& blackListVector);
+
+    int32_t RemoveVirtualScreenBlackList(ScreenId id, std::vector<NodeId>& blackListVector);
 #endif
 
     int32_t SetVirtualScreenSecurityExemptionList(ScreenId id, const std::vector<NodeId>& securityExemptionList);
+
+    int32_t SetMirrorScreenVisibleRect(ScreenId id, const Rect& mainScreenRect);
 
     int32_t SetCastScreenEnableSkipWindow(ScreenId id, bool enable);
 
@@ -289,6 +298,8 @@ public:
 
     int32_t SetVirtualScreenRefreshRate(ScreenId id, uint32_t maxRefreshRate, uint32_t& actualRefreshRate);
 
+    uint32_t SetScreenActiveRect(ScreenId id, const Rect& activeRect);
+
     int32_t RegisterOcclusionChangeCallback(const OcclusionChangeCallback& callback);
 
     int32_t RegisterSurfaceOcclusionChangeCallback(
@@ -330,11 +341,13 @@ public:
 
     void ReportGameStateData(GameStateData info);
 
-    void SetHardwareEnabled(NodeId id, bool isEnabled, SelfDrawingNodeType selfDrawingType);
+    void SetHardwareEnabled(NodeId id, bool isEnabled, SelfDrawingNodeType selfDrawingType, bool dynamicHardwareEnable);
 
     uint32_t SetHidePrivacyContent(NodeId id, bool needHidePrivacyContent);
 
     void SetCacheEnabledForRotation(bool isEnabled);
+
+    void SetScreenSwitchStatus(bool flag);
 
     void SetDefaultDeviceRotationOffset(uint32_t offset);
 
@@ -356,7 +369,8 @@ public:
 
     void SetLayerTop(const std::string &nodeIdStr, bool isTop);
 #ifdef TP_FEATURE_ENABLE
-    void SetTpFeatureConfig(int32_t feature, const char* config);
+    void SetTpFeatureConfig(int32_t feature, const char* config,
+        TpFeatureConfigType tpFeatureConfigType = TpFeatureConfigType::DEFAULT_TP_FEATURE);
 #endif
     void SetVirtualScreenUsingStatus(bool isVirtualScreenUsingStatus);
     void SetCurtainScreenUsingStatus(bool isCurtainScreenOn);

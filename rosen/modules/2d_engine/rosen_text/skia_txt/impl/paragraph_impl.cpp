@@ -20,9 +20,9 @@
 
 #include "include/core/SkMatrix.h"
 #include "drawing_painter_impl.h"
+#include "paragraph_builder_impl.h"
 #include "skia_adapter/skia_convert_utils.h"
 #include "text/font_metrics.h"
-#include "paragraph_builder_impl.h"
 #include "text_line_impl.h"
 #include "utils/text_log.h"
 
@@ -415,6 +415,19 @@ void ParagraphImpl::RecordDifferentPthreadCall(const char* caller) const
             threadId_, caller);
         threadId_ = currenetThreadId;
     }
+}
+
+Drawing::RectI ParagraphImpl::GeneratePaintRegion(double x, double y)
+{
+    RecordDifferentPthreadCall("GeneratePaintRegion");
+    if (!paragraph_) {
+        double left = std::floor(x);
+        double top = std::floor(y);
+        return Drawing::RectI(left, top, left, top);
+    }
+
+    SkIRect skIRect = paragraph_->generatePaintRegion(SkDoubleToScalar(x), SkDoubleToScalar(y));
+    return Drawing::RectI(skIRect.left(), skIRect.top(), skIRect.right(), skIRect.bottom());
 }
 } // namespace SPText
 } // namespace Rosen
