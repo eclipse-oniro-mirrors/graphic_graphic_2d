@@ -48,13 +48,14 @@ do \
     } \
 } while (0)
 
-#define EFFECT_NAPI_CHECK_RET_DELETE_POINTER(x, res, msg, pointer) \
+#define EFFECT_NAPI_CHECK_RET_DELETE_POINTER(x, res, pointer, msg) \
 do \
 { \
     if (!(x)) \
     { \
         msg; \
         delete pointer; \
+        pointer = nullptr; \
         return (res); \
     } \
 } while (0)
@@ -84,7 +85,7 @@ do \
     status = napi_get_cb_info(env, info, nullptr, nullptr, &(thisVar), nullptr); \
 } while (0)
 
-#define EFFECT_CREATE_CREATE_ASYNC_WORK_WITH_QOS(env, status, workName, exec, complete, aContext, work, qos) \
+#define EFFECT_CREATE_ASYNC_WORK_WITH_QOS(env, status, workName, exec, complete, aContext, work, qos) \
 do \
 { \
     napi_value _resource = nullptr; \

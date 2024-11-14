@@ -84,7 +84,7 @@ public:
     NATIVEEXPORT uint32_t GetDeepenImmersionColor(ColorManager::Color &color) const;
     NATIVEEXPORT uint32_t GetImmersiveBackgroundColor(ColorManager::Color &color) const;
     NATIVEEXPORT uint32_t GetImmersiveForegroundColor(ColorManager::Color &color) const;
-    NATIVEEXPORT uint32_t DiscriminatePitureLightDegree(PictureLightColorDegree &degree) const;
+    NATIVEEXPORT uint32_t DiscriminatePictureLightDegree(PictureLightColorDegree &degree) const;
     NATIVEEXPORT uint32_t GetReverseColor(ColorManager::Color &color) const;
     NATIVEEXPORT std::vector<ColorManager::Color> GetTopProportionColors(uint32_t colorsNum) const;
 
@@ -103,7 +103,7 @@ private:
     uint32_t RGB2GRAY(uint32_t color) const;
     bool IsEquals(double val1, double val2) const;
     HSV RGB2HSV(uint32_t rgb) const;
-    void AdjustHSVToDefinedIterval(HSV& hsv) const;
+    void AdjustHSVToDefinedInterval(HSV& hsv) const;
     uint32_t HSVtoRGB(HSV hsv) const;
     uint32_t CalcGrayVariance() const;
     double CalcContrastRatioWithWhite() const;
