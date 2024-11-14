@@ -394,50 +394,45 @@ private:
 std::vector<std::shared_ptr<FontParser::FontDescriptor>> FontParser::GetSystemFonts(const std::string locale)
 {
     std::vector<std::shared_ptr<Drawing::Typeface>> typefaces = Drawing::Typeface::GetSystemFonts();
+    return CreateFontDescriptors(typefaces, locale);
+}
+
+std::vector<std::shared_ptr<FontParser::FontDescriptor>> FontParser::ParserFontDescriptorsFromPath(
+    const std::string& path, const std::string& locale)
+{
+    std::vector<std::shared_ptr<Drawing::Typeface>> typefaces;
+    int index = 0;
+    std::shared_ptr<Drawing::Typeface> typeface = nullptr;
+    while ((typeface = Drawing::Typeface::MakeFromFile(path.c_str(), index)) != nullptr) {
+        typefaces.push_back(typeface);
+        index++;
+    }
+    return CreateFontDescriptors(typefaces, locale);
+}
+
+std::vector<std::shared_ptr<FontParser::FontDescriptor>> FontParser::CreateFontDescriptors(
+    const std::vector<std::shared_ptr<Drawing::Typeface>>& typefaces, const std::string& locale)
+{
     if (typefaces.empty()) {
         return {};
     }
 
     std::vector<std::shared_ptr<FontDescriptor>> descriptors;
     descriptors.reserve(typefaces.size());
+    unsigned int languageId = static_cast<unsigned int>(GetLanguageId(locale));
     for (auto& item : typefaces) {
         FontDescriptor desc;
-        desc.requestedLid = static_cast<unsigned int>(GetLanguageId(locale));
+        desc.requestedLid = languageId;
         desc.path = item->GetFontPath();
         auto fontStyle = item->GetFontStyle();
         desc.weight = fontStyle.GetWeight();
         desc.width = fontStyle.GetWidth();
-        if (ParseTable(item, desc) !=  SUCCESSED) {
+        if (ParseTable(item, desc) != SUCCESSED) {
             continue;
         }
         descriptors.emplace_back(std::make_shared<FontDescriptor>(desc));
     }
     return descriptors;
-}
-
-bool FontParser::ParserFontDescriptorFromPath(const std::string& path, const std::string& fullName,
-    std::vector<std::shared_ptr<FontDescriptor>>& descriptors, const std::string locale)
-{
-    std::shared_ptr<Drawing::Typeface> typeface = nullptr;
-    int index = 0;
-    while ((typeface = Drawing::Typeface::MakeFromFile(path.c_str(), index)) != nullptr) {
-        index++;
-        FontDescriptor desc;
-        desc.requestedLid = static_cast<unsigned int>(GetLanguageId(locale));
-        desc.path = path;
-        desc.requestedFullname = fullName;
-        auto fontStyle = typeface->GetFontStyle();
-        desc.weight = fontStyle.GetWeight();
-        desc.width = fontStyle.GetWidth();
-        if (ParseTable(typeface, desc) != SUCCESSED) {
-            continue;
-        }
-        descriptors.emplace_back(std::make_shared<FontDescriptor>(desc));
-    }
-    if (descriptors.size() > 0) {
-        return true;
-    }
-    return false;
 }
 
 std::unique_ptr<FontParser::FontDescriptor> FontParser::ParseFontDescriptor(const std::string& fontName,
