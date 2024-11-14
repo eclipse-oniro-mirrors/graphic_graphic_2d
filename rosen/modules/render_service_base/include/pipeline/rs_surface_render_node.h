@@ -1224,7 +1224,7 @@ public:
     void SetWatermarkEnabled(const std::string& name, bool isEnabled);
     const std::unordered_map<std::string, bool>& GetWatermark() const;
     bool IsWatermarkEmpty() const;
-    
+
     template<class... Args>
     void SetIntersectedRoundCornerAABBs(Args&& ...args)
     {
