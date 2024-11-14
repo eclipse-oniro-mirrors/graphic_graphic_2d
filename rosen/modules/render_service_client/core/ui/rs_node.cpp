@@ -2390,7 +2390,7 @@ void RSNode::MarkUifirstNode(bool isForceFlag, bool isUifirstEnable)
         return;
     }
     isForceFlag_ = isForceFlag;
-    isUifirstEnable_ = isUifirstEnable_;
+    isUifirstEnable_ = isUifirstEnable;
     std::unique_ptr<RSCommand> command = std::make_unique<RSForceUifirstNode>(GetId(), isForceFlag, isUifirstEnable);
     auto transactionProxy = RSTransactionProxy::GetInstance();
     if (transactionProxy != nullptr) {
