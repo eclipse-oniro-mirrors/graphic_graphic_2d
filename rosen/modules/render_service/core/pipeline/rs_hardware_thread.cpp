@@ -206,8 +206,8 @@ void RSHardwareThread::CommitAndReleaseLayers(OutputPtr output, const std::vecto
             startTimeNs = std::chrono::duration_cast<std::chrono::nanoseconds>(
                 std::chrono::steady_clock::now().time_since_epoch()).count();
         }
-        RS_TRACE_NAME_FMT("RSHardwareThread::CommitAndReleaseLayers rate: %u, now: %PRIu64, vsyncId: %PRIu64, " \
-            "size: %u", currentRate, param.frameTimestamp, param.vsyncId, layers.size());
+        RS_TRACE_NAME_FMT("RSHardwareThread::CommitAndReleaseLayers rate: %u, now: %" PRIu64 ", " \
+            "vsyncId: %" PRIu64 ", size: %u", currentRate, param.frameTimestamp, param.vsyncId, layers.size());
         RS_LOGD("RSHardwareThread::CommitAndReleaseLayers rate:%{public}u, " \
             "now:%{public}" PRIu64 ", vsyncId:%{public}" PRIu64 ", size:%{public}u ",
             currentRate, param.frameTimestamp, param.vsyncId, layers.size());
@@ -268,7 +268,7 @@ void RSHardwareThread::CommitAndReleaseLayers(OutputPtr output, const std::vecto
         RS_LOGD("RSHardwareThread::CommitAndReleaseLayers vsyncId: %{public}" PRIu64 ", " \
             "update delayTime: %{public}" PRId64 ", currCommitTime: %{public}" PRId64 ", " \
             "lastCommitTime: %{public}" PRId64, param.vsyncId, delayTime_, currCommitTime, lastCommitTime_);
-        RS_TRACE_NAME_FMT("update delayTime: %PRId64, currCommitTime: %PRId64, lastCommitTime: %PRId64",
+        RS_TRACE_NAME_FMT("update delayTime: %" PRId64 ", currCommitTime: %" PRId64 ", lastCommitTime: %" PRId64 "",
             delayTime_, currCommitTime, lastCommitTime_);
     }
     if (delayTime_ < 0 || delayTime_ >= MAX_DELAY_TIME) {
@@ -333,9 +333,10 @@ void RSHardwareThread::CalculateDelayTime(OHOS::Rosen::HgmCore& hgmCore, Refresh
     if (diffTime > 0 && period > 0) {
         delayTime_ = std::round(diffTime * 1.0f / NS_MS_UNIT_CONVERSION);
     }
-    RS_TRACE_NAME_FMT("CalculateDelayTime pipelineOffset: %PRId64, actualTimestamp: %PRId64, " \
-        "expectCommitTime: %PRId64, currTime: %PRId64, diffTime: %PRId64, delayTime: %PRId64, " \
-        "frameOffset: %PRId64, dvsyncOffset: %PRIu64, vsyncOffset: %PRId64, idealPeriod: %PRId64, period: %PRId64",
+    RS_TRACE_NAME_FMT("CalculateDelayTime pipelineOffset: %" PRId64 ", actualTimestamp: %" PRId64 ", " \
+        "expectCommitTime: %" PRId64 ", currTime: %" PRId64 ", diffTime: %" PRId64 ", delayTime: %" PRId64 ", " \
+        "frameOffset: %" PRId64 ", dvsyncOffset: %" PRIu64 ", vsyncOffset: %" PRId64 ", idealPeriod: %" PRId64 ", " \
+        "period: %" PRId64 "",
         pipelineOffset, param.actualTimestamp, expectCommitTime, currTime, diffTime, delayTime_,
         frameOffset, dvsyncOffset, vsyncOffset, idealPeriod, period);
     RS_LOGD("RSHardwareThread::CalculateDelayTime period:%{public}" PRId64 " delayTime:%{public}" PRId64 "",
