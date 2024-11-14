@@ -430,12 +430,17 @@ sptr<IVSyncConnection> RSRenderServiceConnection::CreateVSyncConnection(const st
     }
     sptr<VSyncConnection> conn = new VSyncConnection(appVSyncDistributor_, name, token->AsObject(), 0, windowNodeId);
     if (ExtractPid(id) == remotePid_) {
-        mainThread_->ScheduleTask([weakThis = wptr<RSRenderServiceConnection>(this), id]() {
+        auto observer = [] (const RSRenderFrameRateLinker& linker) {
+            if (auto mainThread = RSMainThread::Instance(); mainThread != nullptr) {
+                mainThread->UpdateFrameRateLinker(linker);
+            }
+        };
+        mainThread_->ScheduleTask([weakThis = wptr<RSRenderServiceConnection>(this), id, observer]() {
             sptr<RSRenderServiceConnection> connection = weakThis.promote();
             if (!connection) {
                 return;
             }
-            auto linker = std::make_shared<RSRenderFrameRateLinker>(id);
+            auto linker = std::make_shared<RSRenderFrameRateLinker>(id, observer);
             auto& context = connection->mainThread_->GetContext();
             auto& frameRateLinkerMap = context.GetMutableFrameRateLinkerMap();
             frameRateLinkerMap.RegisterFrameRateLinker(linker);
@@ -1905,12 +1910,10 @@ void RSRenderServiceConnection::NotifyRefreshRateEvent(const EventInfo& eventInf
 
 void RSRenderServiceConnection::NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt)
 {
-    HgmTaskHandleThread::Instance().PostTask([pid = remotePid_, touchStatus, touchCnt]() {
-        auto frameRateMgr = HgmCore::Instance().GetFrameRateMgr();
-        if (frameRateMgr != nullptr) {
-            frameRateMgr->HandleTouchEvent(pid, touchStatus, touchCnt);
-        }
-    });
+    auto frameRateMgr = HgmCore::Instance().GetFrameRateMgr();
+    if (frameRateMgr != nullptr) {
+        frameRateMgr->HandleTouchEvent(remotePid_, touchStatus, touchCnt);
+    }
 }
 
 void RSRenderServiceConnection::NotifyDynamicModeEvent(bool enableDynamicModeEvent)

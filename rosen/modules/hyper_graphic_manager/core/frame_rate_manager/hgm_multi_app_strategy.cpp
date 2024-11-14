@@ -160,12 +160,15 @@ void HgmMultiAppStrategy::RegisterStrategyChangeCallback(const StrategyChangeCal
     strategyChangeCallbacks_.emplace_back(callback);
 }
 
-bool HgmMultiAppStrategy::CheckPidValid(pid_t pid)
+bool HgmMultiAppStrategy::CheckPidValid(pid_t pid, bool onlyCheckForegroundApp)
 {
     auto configData = HgmCore::Instance().GetPolicyConfigData();
     if (configData != nullptr && !configData->safeVoteEnabled) {
         // disable safe vote
         return true;
+    }
+    if (onlyCheckForegroundApp) {
+        return foregroundPidAppMap_.find(pid) != foregroundPidAppMap_.end();
     }
     return !backgroundPid_.Existed(pid);
 }

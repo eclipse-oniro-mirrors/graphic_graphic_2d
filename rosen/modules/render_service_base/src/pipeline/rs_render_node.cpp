@@ -3819,7 +3819,7 @@ void RSRenderNode::SetNodeName(const std::string& nodeName)
     auto& uiFrameworkTypeTable = context->GetUiFrameworkTypeTable();
     for (auto uiFwkType : uiFrameworkTypeTable) {
         if (nodeName.rfind(uiFwkType, 0) == 0) {
-            context->UpdateUiFrameworkDirtyNodes(weak_from_this());
+            context->UpdateUIFrameworkDirtyNodes(weak_from_this());
         }
     }
 }

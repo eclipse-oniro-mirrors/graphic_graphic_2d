@@ -684,14 +684,12 @@ void RSHardwareThread::AddRefreshRateCount()
         iter->second++;
     }
     RSRealtimeRefreshRateManager::Instance().CountRealtimeFrame();
-    HgmTaskHandleThread::Instance().PostTask([] () {
-        auto frameRateMgr = HgmCore::Instance().GetFrameRateMgr();
-        if (frameRateMgr == nullptr) {
-            RS_LOGE("RSHardwareThread::AddRefreshData fail, frameBufferSurfaceOhos_ is nullptr");
-            return;
-        }
-        frameRateMgr->HandleRsFrame();
-    });
+    auto frameRateMgr = HgmCore::Instance().GetFrameRateMgr();
+    if (frameRateMgr == nullptr) {
+        RS_LOGE("RSHardwareThread::AddRefreshData fail, frameBufferSurfaceOhos_ is nullptr");
+        return;
+    }
+    frameRateMgr->HandleRsFrame();
 }
 
 void RSHardwareThread::SubScribeSystemAbility()
