@@ -582,7 +582,9 @@ void RSMainThread::Init()
     InitRSEventDetector();
     sptr<VSyncIConnectionToken> token = new IRemoteStub<VSyncIConnectionToken>();
     sptr<VSyncConnection> conn = new VSyncConnection(rsVSyncDistributor_, "rs", token->AsObject());
-    rsFrameRateLinker_ = std::make_shared<RSRenderFrameRateLinker>();
+    rsFrameRateLinker_ = std::make_shared<RSRenderFrameRateLinker>([this] (const RSRenderFrameRateLinker& linker) {
+        UpdateFrameRateLinker(linker);
+    });
     conn->id_ = rsFrameRateLinker_->GetId();
     rsVSyncDistributor_->AddConnection(conn);
     receiver_ = std::make_shared<VSyncReceiver>(conn, token->AsObject(), handler_, "rs");
@@ -1383,12 +1385,11 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
         auto surfaceHandler = surfaceNode->GetMutableRSSurfaceHandler();
         if (surfaceHandler->GetAvailableBufferCount() > 0) {
             auto name = surfaceNode->GetName().empty() ? DEFAULT_SURFACE_NODE_NAME : surfaceNode->GetName();
-            HgmTaskHandleThread::Instance().PostTask([name, timestamp = timestamp_, id = surfaceNode->GetId()]() {
-                auto frameRateMgr = HgmCore::Instance().GetFrameRateMgr();
-                if (frameRateMgr != nullptr) {
-                    frameRateMgr->UpdateSurfaceTime(name, timestamp, ExtractPid(id), UIFWKType::FROM_SURFACE);
-                }
-            });
+            auto frameRateMgr = HgmCore::Instance().GetFrameRateMgr();
+            if (frameRateMgr != nullptr) {
+                frameRateMgr->UpdateSurfaceTime(
+                    name, ExtractPid(surfaceNode->GetId()), UIFWKType::FROM_SURFACE);
+            }
         }
         surfaceHandler->ResetCurrentFrameBufferConsumed();
         if (RSBaseRenderUtil::ConsumeAndUpdateBuffer(*surfaceHandler, timestamp_)) {
@@ -1900,32 +1901,31 @@ void RSMainThread::ProcessHgmFrameRate(uint64_t timestamp)
     auto rsRate = rsVSyncDistributor_->GetRefreshRate();
     frameRateMgr->ProcessPendingRefreshRate(timestamp, vsyncId_, rsRate, info);
 
-    HgmTaskHandleThread::Instance().PostTask([timestamp, info, rsCurrRange = rsCurrRange_,
-                                            rsFrameRateLinker = rsFrameRateLinker_,
-                                            appFrameRateLinkers = GetContext().GetFrameRateLinkerMap().Get(),
-                                            idleTimerExpiredFlag = idleTimerExpiredFlag_,
-                                            dirtyNodes = GetContext().GetUiFrameworkDirtyNodes()] () mutable {
+    if (rsFrameRateLinker_ != nullptr) {
+        auto rsCurrRange = rsCurrRange_;
+        rsCurrRange.type_ = RS_ANIMATION_FRAME_RATE_TYPE;
+        HgmEnergyConsumptionPolicy::Instance().GetAnimationIdleFps(rsCurrRange);
+        rsFrameRateLinker_->SetExpectedRange(rsCurrRange);
+        RS_TRACE_NAME_FMT("rsCurrRange = (%d, %d, %d)", rsCurrRange.min_, rsCurrRange.max_, rsCurrRange.preferred_);
+    }
+    
+    frameRateMgr->UpdateUIFrameworkDirtyNodes(GetContext().GetUiFrameworkDirtyNodes(), timestamp_);
+
+    if (!postHgmTaskFlag_ && HgmCore::Instance().GetPendingScreenRefreshRate() == frameRateMgr->GetCurrRefreshRate()) {
+        return;
+    }
+    postHgmTaskFlag_ = false;
+
+    HgmTaskHandleThread::Instance().PostTask([timestamp, rsFrameRateLinker = rsFrameRateLinker_,
+                                        appFrameRateLinkers = GetContext().GetFrameRateLinkerMap().Get()] () mutable {
         RS_TRACE_NAME("ProcessHgmFrameRate");
-        if (rsFrameRateLinker != nullptr) {
-            rsCurrRange.type_ = RS_ANIMATION_FRAME_RATE_TYPE;
-            HgmEnergyConsumptionPolicy::Instance().GetAnimationIdleFps(rsCurrRange);
-            rsFrameRateLinker->SetExpectedRange(rsCurrRange);
-            RS_TRACE_NAME_FMT("rsCurrRange = (%d, %d, %d)", rsCurrRange.min_, rsCurrRange.max_, rsCurrRange.preferred_);
-        }
         auto frameRateMgr = HgmCore::Instance().GetFrameRateMgr();
         if (frameRateMgr == nullptr) {
             return;
         }
-        auto uiFrameworkDirtyNodeName = frameRateMgr->GetUiFrameworkDirtyNodes(dirtyNodes);
-        if (!uiFrameworkDirtyNodeName.empty()) {
-            for (auto [uiFwkDirtyNodeName, pid] : uiFrameworkDirtyNodeName) {
-                frameRateMgr->UpdateSurfaceTime(uiFwkDirtyNodeName, timestamp, pid, UIFWKType::FROM_UNKNOWN);
-            }
-        }
         // hgm warning: use IsLtpo instead after GetDisplaySupportedModes ready
         if (frameRateMgr->GetCurScreenStrategyId().find("LTPO") != std::string::npos) {
-            frameRateMgr->UniProcessDataForLtpo(timestamp, rsFrameRateLinker, appFrameRateLinkers,
-                idleTimerExpiredFlag, info);
+            frameRateMgr->UniProcessDataForLtpo(timestamp, rsFrameRateLinker, appFrameRateLinkers);
         }
     });
 }
@@ -3006,9 +3006,7 @@ void RSMainThread::Animate(uint64_t timestamp)
     RS_LOGD("RSMainThread::Animate end, animating nodes remains, has window animation: %{public}d", curWinAnim);
 
     if (needRequestNextVsync) {
-        HgmTaskHandleThread::Instance().PostTask([timestamp]() {
-            HgmEnergyConsumptionPolicy::Instance().StatisticAnimationTime(timestamp / NS_PER_MS);
-        });
+        HgmEnergyConsumptionPolicy::Instance().StatisticAnimationTime(timestamp / NS_PER_MS);
         if (!rsVSyncDistributor_->IsDVsyncOn()) {
             RequestNextVSync("animate", timestamp_);
         } else {
