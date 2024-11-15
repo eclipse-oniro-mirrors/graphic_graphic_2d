@@ -709,6 +709,7 @@ void RSRenderNode::DumpTree(int32_t depth, std::string& out) const
             std::string(surfaceNode->GetAbilityState() == RSSurfaceNodeAbilityState::FOREGROUND ?
             "foreground" : "background");
     }
+    out += ", subSurfaceCnt[" + std::to_string(subSurfaceCnt_) + "]";
     if (sharedTransitionParam_) {
         out += sharedTransitionParam_->Dump();
     }
@@ -1035,6 +1036,9 @@ bool RSRenderNode::IsSubTreeNeedPrepare(bool filterInGlobal, bool isOccluded)
         return true;
     }
     if (isAccumulatedClipFlagChanged_) {
+        return true;
+    }
+    if (subSurfaceCnt_ > 0) {
         return true;
     }
     if (ChildHasVisibleFilter()) {
@@ -3942,8 +3946,12 @@ const std::unordered_set<NodeId>& RSRenderNode::GetVisitedCacheRootIds() const
 }
 void RSRenderNode::UpdateSubSurfaceCnt(SharedPtr curParent, SharedPtr preParent)
 {
-    uint32_t subSurfaceCnt = GetType() == RSRenderNodeType::SURFACE_NODE ?
-        subSurfaceCnt_ + 1 : subSurfaceCnt_;
+    uint32_t subSurfaceCnt = subSurfaceCnt_;
+    if (GetType() == RSRenderNodeType::SURFACE_NODE) {
+        auto surfaceNode = ReinterpretCastTo<RSSurfaceRenderNode>();
+        subSurfaceCnt = (surfaceNode && (surfaceNode->IsLeashWindow() || surfaceNode->IsAppWindow())) ?
+            subSurfaceCnt_ + 1 : subSurfaceCnt;
+    }
     if (subSurfaceCnt == 0) {
         return;
     }
