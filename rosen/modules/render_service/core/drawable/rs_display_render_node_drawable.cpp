@@ -354,6 +354,9 @@ void RSDisplayRenderNodeDrawable::RenderOverDraw()
 bool RSDisplayRenderNodeDrawable::CheckDisplayNodeSkip(
     RSDisplayRenderParams& params, std::shared_ptr<RSProcessor> processor)
 {
+    if (params.HasChildCrossNode() && !params.IsMirrorScreen()) {
+        return false;
+    }
     if (GetSyncDirtyManager()->IsCurrentFrameDirty() ||
         (params.GetMainAndLeashSurfaceDirty() || RSUifirstManager::Instance().HasDoneNode()) ||
         RSMainThread::Instance()->GetDirtyFlag()) {
@@ -545,7 +548,9 @@ void RSDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
 
     // dfx
     RSRenderNodeDrawable::InitDfxForCacheInfo();
-
+    // set for cache and draw cross node in extended screen model
+    uniParam->SetIsMirrorScreen(params->IsMirrorScreen());
+    uniParam->SetIsFirstVisitCrossNodeDisplay(params->IsFirstVisitCrossNodeDisplay());
     // check rotation for point light
     constexpr int ROTATION_NUM = 4;
     auto screenRotation = GetRenderParams()->GetScreenRotation();
