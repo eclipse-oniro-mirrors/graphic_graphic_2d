@@ -333,11 +333,11 @@ void RSHardwareThread::CalculateDelayTime(OHOS::Rosen::HgmCore& hgmCore, Refresh
     if (diffTime > 0 && period > 0) {
         delayTime_ = std::round(diffTime * 1.0f / NS_MS_UNIT_CONVERSION);
     }
-    RS_TRACE_NAME_FMT("CalculateDelayTime pipelineOffset: %lld, " \
-        "actualTimestamp: %lld, expectCommitTime: %lld, currTime: %lld, diffTime: %lld, delayTime: %lld, " \
-        "frameOffset: %lld, dvsyncOffset: %llu, vsyncOffset: %lld, idealPeriod: %lld, period: %lld",
-        pipelineOffset, param.actualTimestamp, expectCommitTime, currTime, diffTime, delayTime_,
-        frameOffset, dvsyncOffset, vsyncOffset, idealPeriod, period);
+    RS_TRACE_NAME_FMT("CalculateDelayTime pipelineOffset: %" PRId64 ", " \
+        "actualTimestamp: %" PRId64 ", expectCommitTime: %" PRId64 ", currTime: %" PRId64 ", diffTime: %" PRId64 ", " \
+        "delayTime: %" PRId64 ", frameOffset: %" PRId64 ", dvsyncOffset: %" PRId64 ", vsyncOffset: %" PRId64 ", "
+        "idealPeriod: %" PRId64 ", period: %" PRId64 "," pipelineOffset, param.actualTimestamp, expectCommitTime, 
+        currTime, diffTime, delayTime_, frameOffset, dvsyncOffset, vsyncOffset, idealPeriod, period);
     RS_LOGD("RSHardwareThread::CalculateDelayTime period:%{public}" PRId64 " delayTime:%{public}" PRId64,
         period, delayTime_);
 }
@@ -415,7 +415,7 @@ RefreshRateParam RSHardwareThread::GetRefreshRateParam()
 
 void RSHardwareThread::OnScreenVBlankIdleCallback(ScreenId screenId, uint64_t timestamp)
 {
-    RS_TRACE_NAME_FMT("RSHardwareThread::OnScreenVBlankIdleCallback screenId: %d now: %lu", screenId, timestamp);
+    RS_TRACE_NAME_FMT("RSHardwareThread::OnScreenVBlankIdleCallback screenId: %" PRIu64" now: %" PRIu64"", screenId, timestamp);
     vblankIdleCorrector_.SetScreenVBlankIdle(screenId);
 }
 
@@ -480,7 +480,7 @@ void RSHardwareThread::PerformSetActiveMode(OutputPtr output, uint64_t timestamp
 
         auto supportedModes = screenManager->GetScreenSupportedModes(id);
         for (auto mode : supportedModes) {
-            RS_OPTIONAL_TRACE_NAME_FMT("RSHardwareThread check modes w: %d, h: %d, rate: %d, id: %d",
+            RS_OPTIONAL_TRACE_NAME_FMT("RSHardwareThread check modes w: %" PRId32", h: %" PRId32", rate: %" PRId32", id: %" PRId32"",
                 mode.GetScreenWidth(), mode.GetScreenHeight(), mode.GetScreenRefreshRate(), mode.GetScreenModeId());
         }
 
