@@ -39,7 +39,7 @@ public:
     bool SetColorMatrix(const PixelColorMatrix& matrix);
     private:
     void AddNextFilter(sk_sp<SkImageFilter> filter);
-    void Render(bool forceCPU);
+    bool Render(bool forceCPU);
     std::vector<sk_sp<SkImageFilter> > skFilters_;
     std::shared_ptr<OHOS::Media::PixelMap> srcPixelMap_ = nullptr;
     std::shared_ptr<OHOS::Media::PixelMap> dstPixelMap_ = nullptr;
