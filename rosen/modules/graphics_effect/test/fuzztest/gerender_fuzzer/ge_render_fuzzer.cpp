@@ -37,7 +37,7 @@ bool GERenderFuzzTest001(const uint8_t *data, size_t size)
     auto geRender = std::make_shared<GERender>();
     Drawing::Canvas canvas;
     auto visualEffect = std::make_shared<Drawing::GEVisualEffect>(Drawing::GE_FILTER_KAWASE_BLUR);
-    static constexpr radius = 10;
+    static constexpr int32_t radius = 10;
     visualEffect->SetParam("KAWASE_BLUR_RADIUS", radius);
     auto veContainer = std::make_shared<Drawing::GEVisualEffectContainer>();
     veContainer->AddToChainedFilter(visualEffect);
