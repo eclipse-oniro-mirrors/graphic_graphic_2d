@@ -1031,13 +1031,7 @@ bool RSRenderNode::IsSubTreeNeedPrepare(bool filterInGlobal, bool isOccluded)
         UpdateChildrenOutOfRectFlag(false); // collect again
         return true;
     }
-    if (childHasSharedTransition_) {
-        return true;
-    }
-    if (isAccumulatedClipFlagChanged_) {
-        return true;
-    }
-    if (subSurfaceCnt_ > 0) {
+    if (childHasSharedTransition_ || isAccumulatedClipFlagChanged_ || subSurfaceCnt_ > 0) {
         return true;
     }
     if (ChildHasVisibleFilter()) {
