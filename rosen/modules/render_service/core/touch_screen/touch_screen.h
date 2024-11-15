@@ -19,7 +19,6 @@
 #include <dlfcn.h>
 
 #include "nocopyable.h"
-#include "platform/common/rs_log.h"
 #include "singleton.h"
 
 namespace OHOS {
@@ -51,18 +50,6 @@ public:
     int32_t SetAftConfig(const char *config)
     {
         return setAftConfigHandle_(config);
-    }
-protected:
-    template<typename Handle>
-    void GetHandleBySymbol(Handle& handle, const char* symbol)
-    {
-        handle = reinterpret_cast<Handle>(dlsym(touchScreenHandle_, symbol));
-        if (handle == nullptr) {
-            RS_LOGE("touch screen get handle by %{public}s failed, error: %{public}s",
-                symbol, dlerror());
-        } else {
-            RS_LOGI("touch screen get handle by %{public}s success", symbol);
-        }
     }
 
 private:
