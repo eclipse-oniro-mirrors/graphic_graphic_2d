@@ -416,7 +416,7 @@ RefreshRateParam RSHardwareThread::GetRefreshRateParam()
 
 void RSHardwareThread::OnScreenVBlankIdleCallback(ScreenId screenId, uint64_t timestamp)
 {
-    RS_TRACE_NAME_FMT("RSHardwareThread::OnScreenVBlankIdleCallback screenId: %d now: %lu", screenId, timestamp);
+    RS_TRACE_NAME_FMT("RSHardwareThread::OnScreenVBlankIdleCallback screenId: %" PRIu64" now: %" PRIu64"", screenId, timestamp);
     vblankIdleCorrector_.SetScreenVBlankIdle(screenId);
 }
 
@@ -485,7 +485,7 @@ void RSHardwareThread::PerformSetActiveMode(OutputPtr output, uint64_t timestamp
 
         auto supportedModes = screenManager->GetScreenSupportedModes(id);
         for (auto mode : supportedModes) {
-            RS_OPTIONAL_TRACE_NAME_FMT("RSHardwareThread check modes w: %d, h: %d, rate: %d, id: %d",
+            RS_OPTIONAL_TRACE_NAME_FMT("RSHardwareThread check modes w: %" PRId32", h: %" PRId32", rate: %" PRId32", id: %" PRId32"",
                 mode.GetScreenWidth(), mode.GetScreenHeight(), mode.GetScreenRefreshRate(), mode.GetScreenModeId());
         }
 

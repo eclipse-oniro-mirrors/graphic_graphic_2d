@@ -497,28 +497,28 @@ bool RSRenderServiceConnection::SetWatermark(const std::string& name, std::share
 
 ScreenId RSRenderServiceConnection::GetDefaultScreenId()
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     if (!screenManager_) {
         return StatusCode::SCREEN_NOT_FOUND;
     }
-    std::lock_guard<std::mutex> lock(mutex_);
     return screenManager_->GetDefaultScreenId();
 }
 
 ScreenId RSRenderServiceConnection::GetActiveScreenId()
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     if (!screenManager_) {
         return StatusCode::SCREEN_NOT_FOUND;
     }
-    std::lock_guard<std::mutex> lock(mutex_);
     return screenManager_->GetActiveScreenId();
 }
 
 std::vector<ScreenId> RSRenderServiceConnection::GetAllScreenIds()
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     if (!screenManager_) {
         return std::vector<ScreenId>();
     }
-    std::lock_guard<std::mutex> lock(mutex_);
     return screenManager_->GetAllScreenIds();
 }
 
@@ -531,10 +531,10 @@ ScreenId RSRenderServiceConnection::CreateVirtualScreen(
     int32_t flags,
     std::vector<NodeId> whiteList)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     if (!screenManager_) {
         return StatusCode::SCREEN_NOT_FOUND;
     }
-    std::lock_guard<std::mutex> lock(mutex_);
     auto newVirtualScreenId = screenManager_->CreateVirtualScreen(
         name, width, height, surface, mirrorId, flags, whiteList);
     virtualScreenIds_.insert(newVirtualScreenId);
@@ -547,12 +547,12 @@ ScreenId RSRenderServiceConnection::CreateVirtualScreen(
 
 int32_t RSRenderServiceConnection::SetVirtualScreenBlackList(ScreenId id, std::vector<NodeId>& blackListVector)
 {
-    if (!screenManager_) {
-        return StatusCode::SCREEN_NOT_FOUND;
-    }
-    std::lock_guard<std::mutex> lock(mutex_);
     if (blackListVector.empty()) {
         RS_LOGW("SetVirtualScreenBlackList blackList is empty.");
+    }
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (!screenManager_) {
+        return StatusCode::SCREEN_NOT_FOUND;
     }
     return screenManager_->SetVirtualScreenBlackList(id, blackListVector);
 }
@@ -603,19 +603,19 @@ int32_t RSRenderServiceConnection::SetMirrorScreenVisibleRect(ScreenId id, const
 
 int32_t RSRenderServiceConnection::SetCastScreenEnableSkipWindow(ScreenId id, bool enable)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     if (!screenManager_) {
         return StatusCode::SCREEN_NOT_FOUND;
     }
-    std::lock_guard<std::mutex> lock(mutex_);
     return screenManager_->SetCastScreenEnableSkipWindow(id, enable);
 }
 
 int32_t RSRenderServiceConnection::SetVirtualScreenSurface(ScreenId id, sptr<Surface> surface)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     if (!screenManager_) {
         return StatusCode::SCREEN_NOT_FOUND;
     }
-    std::lock_guard<std::mutex> lock(mutex_);
     return screenManager_->SetVirtualScreenSurface(id, surface);
 }
 
@@ -654,10 +654,10 @@ int32_t RSRenderServiceConnection::UnRegisterPointerLuminanceChangeCallback()
 
 void RSRenderServiceConnection::RemoveVirtualScreen(ScreenId id)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     if (!screenManager_) {
         return;
     }
-    std::lock_guard<std::mutex> lock(mutex_);
     screenManager_->RemoveVirtualScreen(id);
     virtualScreenIds_.erase(id);
     EventInfo event = { "VOTER_VIRTUALDISPLAY", REMOVE_VOTE };
@@ -1381,28 +1381,28 @@ int32_t RSRenderServiceConnection::SetScreenGamutMap(ScreenId id, ScreenGamutMap
 
 int32_t RSRenderServiceConnection::SetScreenCorrection(ScreenId id, ScreenRotation screenRotation)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     if (!screenManager_) {
         return StatusCode::SCREEN_NOT_FOUND;
     }
-    std::lock_guard<std::mutex> lock(mutex_);
     return screenManager_->SetScreenCorrection(id, screenRotation);
 }
 
 bool RSRenderServiceConnection::SetVirtualMirrorScreenCanvasRotation(ScreenId id, bool canvasRotation)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     if (!screenManager_) {
         return false;
     }
-    std::lock_guard<std::mutex> lock(mutex_);
     return screenManager_->SetVirtualMirrorScreenCanvasRotation(id, canvasRotation);
 }
 
 bool RSRenderServiceConnection::SetGlobalDarkColorMode(bool isDark)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     if (!mainThread_) {
         return false;
     }
-    std::lock_guard<std::mutex> lock(mutex_);
     auto task = [weakThis = wptr<RSRenderServiceConnection>(this), isDark]() {
         sptr<RSRenderServiceConnection> connection = weakThis.promote();
         if (!connection) {
@@ -1417,10 +1417,10 @@ bool RSRenderServiceConnection::SetGlobalDarkColorMode(bool isDark)
 
 bool RSRenderServiceConnection::SetVirtualMirrorScreenScaleMode(ScreenId id, ScreenScaleMode scaleMode)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     if (!screenManager_) {
         return false;
     }
-    std::lock_guard<std::mutex> lock(mutex_);
     return screenManager_->SetVirtualMirrorScreenScaleMode(id, scaleMode);
 }
 
@@ -1441,10 +1441,10 @@ int32_t RSRenderServiceConnection::GetScreenGamutMap(ScreenId id, ScreenGamutMap
 
 int32_t RSRenderServiceConnection::GetScreenHDRCapability(ScreenId id, RSScreenHDRCapability& screenHdrCapability)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     if (!screenManager_) {
         return StatusCode::SCREEN_NOT_FOUND;
     }
-    std::lock_guard<std::mutex> lock(mutex_);
     return screenManager_->GetScreenHDRCapability(id, screenHdrCapability);
 }
 
@@ -1571,10 +1571,10 @@ int32_t RSRenderServiceConnection::SetScreenColorSpace(ScreenId id, GraphicCM_Co
 
 int32_t RSRenderServiceConnection::GetScreenType(ScreenId id, RSScreenType& screenType)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     if (!screenManager_) {
         return StatusCode::SCREEN_NOT_FOUND;
     }
-    std::lock_guard<std::mutex> lock(mutex_);
     return screenManager_->GetScreenType(id, screenType);
 }
 
@@ -1723,10 +1723,10 @@ uint32_t RSRenderServiceConnection::SetScreenActiveRect(
 
 int32_t RSRenderServiceConnection::RegisterOcclusionChangeCallback(sptr<RSIOcclusionChangeCallback> callback)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     if (!mainThread_) {
         return StatusCode::INVALID_ARGUMENTS;
     }
-    std::lock_guard<std::mutex> lock(mutex_);
     if (!callback) {
         RS_LOGD("RSRenderServiceConnection::RegisterOcclusionChangeCallback: callback is nullptr");
         return StatusCode::INVALID_ARGUMENTS;
@@ -1738,10 +1738,10 @@ int32_t RSRenderServiceConnection::RegisterOcclusionChangeCallback(sptr<RSIOcclu
 int32_t RSRenderServiceConnection::RegisterSurfaceOcclusionChangeCallback(
     NodeId id, sptr<RSISurfaceOcclusionChangeCallback> callback, std::vector<float>& partitionPoints)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     if (!mainThread_) {
         return StatusCode::INVALID_ARGUMENTS;
     }
-    std::lock_guard<std::mutex> lock(mutex_);
     if (!callback) {
         RS_LOGD("RSRenderServiceConnection::RegisterSurfaceOcclusionChangeCallback: callback is nullptr");
         return StatusCode::INVALID_ARGUMENTS;
@@ -1752,10 +1752,10 @@ int32_t RSRenderServiceConnection::RegisterSurfaceOcclusionChangeCallback(
 
 int32_t RSRenderServiceConnection::UnRegisterSurfaceOcclusionChangeCallback(NodeId id)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     if (!mainThread_) {
         return StatusCode::INVALID_ARGUMENTS;
     }
-    std::lock_guard<std::mutex> lock(mutex_);
     mainThread_->UnRegisterSurfaceOcclusionChangeCallback(id);
     return StatusCode::SUCCESS;
 }
@@ -1817,11 +1817,11 @@ void RSRenderServiceConnection::SetAppWindowNum(uint32_t num)
 
 bool RSRenderServiceConnection::SetSystemAnimatedScenes(SystemAnimatedScenes systemAnimatedScenes)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     if (!mainThread_) {
         return false;
     }
     RSUifirstManager::Instance().OnProcessAnimateScene(systemAnimatedScenes);
-    std::lock_guard<std::mutex> lock(mutex_);
     return mainThread_->SetSystemAnimatedScenes(systemAnimatedScenes);
 }
 
@@ -2125,10 +2125,10 @@ void RSRenderServiceConnection::SetCurtainScreenUsingStatus(bool isCurtainScreen
 
 int32_t RSRenderServiceConnection::RegisterUIExtensionCallback(uint64_t userId, sptr<RSIUIExtensionCallback> callback)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     if (!mainThread_) {
         return StatusCode::INVALID_ARGUMENTS;
     }
-    std::lock_guard<std::mutex> lock(mutex_);
     if (!callback) {
         RS_LOGE("RSRenderServiceConnection::RegisterUIExtensionCallback register null callback, failed.");
         return StatusCode::INVALID_ARGUMENTS;
