@@ -129,7 +129,7 @@ napi_value ColorPickerNapi::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("getDeepenImmersionColor", GetDeepenImmersionColor),
         DECLARE_NAPI_FUNCTION("getImmersiveBackgroundColor", GetImmersiveBackgroundColor),
         DECLARE_NAPI_FUNCTION("getImmersiveForegroundColor", GetImmersiveForegroundColor),
-        DECLARE_NAPI_FUNCTION("discriminatePitureLightDegree", DiscriminatePictureLightDegree),
+        DECLARE_NAPI_FUNCTION("discriminatePitureLightDegree", DiscriminatePitureLightDegree),
         DECLARE_NAPI_FUNCTION("getReverseColor", GetReverseColor),
         DECLARE_NAPI_FUNCTION("getTopProportionColors", GetTopProportionColors),
     };
@@ -246,7 +246,6 @@ void ColorPickerNapi::CreateColorPickerFromPixelMapComplete(napi_env env, napi_s
         EFFECT_LOG_E("ColorPickerNapi CreateColorPickerFromPixelMapComplete napi_get_reference_value fail"));
     sColorPicker_ = context->rColorPicker;
     status = napi_new_instance(env, constructor, NUM_0, nullptr, &result);
-
     if (status != napi_ok) {
         context->status = ERROR;
         EFFECT_LOG_E("ColorPickerNapi::CreateColorPickerFromPixelMapComplete New instance could not be obtained");
@@ -845,7 +844,7 @@ napi_value ColorPickerNapi::GetImmersiveForegroundColor(napi_env env, napi_callb
     return result;
 }
 
-napi_value ColorPickerNapi::DiscriminatePictureLightDegree(napi_env env, napi_callback_info info)
+napi_value ColorPickerNapi::DiscriminatePitureLightDegree(napi_env env, napi_callback_info info)
 {
     napi_status status;
     napi_value thisVar = nullptr;
@@ -854,20 +853,20 @@ napi_value ColorPickerNapi::DiscriminatePictureLightDegree(napi_env env, napi_ca
     EFFECT_LOG_I("Discriminate Piture Light Degree");
     EFFECT_JS_ARGS(env, info, status, argCount, argValue, thisVar);
     EFFECT_NAPI_CHECK_RET_D(status == napi_ok, nullptr,
-        EFFECT_LOG_E("ColorPickerNapi DiscriminatePictureLightDegree parsing input fail"));
+        EFFECT_LOG_E("ColorPickerNapi DiscriminatePitureLightDegree parsing input fail"));
 
     ColorPickerNapi *thisColorPicker = nullptr;
 
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&thisColorPicker));
     EFFECT_NAPI_CHECK_RET_D(status == napi_ok && thisColorPicker != nullptr &&
         thisColorPicker->nativeColorPicker_ != nullptr, nullptr,
-        EFFECT_LOG_E("ColorPickerNapi DiscriminatePictureLightDegree unwrap native ColorPicker fail"));
+        EFFECT_LOG_E("ColorPickerNapi DiscriminatePitureLightDegree unwrap native ColorPicker fail"));
 
     uint32_t errorCode = ERR_EFFECT_INVALID_VALUE;
 
     napi_value result;
     PictureLightColorDegree rst;
-    errorCode = thisColorPicker->nativeColorPicker_->DiscriminatePictureLightDegree(rst);
+    errorCode = thisColorPicker->nativeColorPicker_->DiscriminatePitureLightDegree(rst);
     if (errorCode == SUCCESS) {
         napi_create_int32(env, rst, &result);
     } else {

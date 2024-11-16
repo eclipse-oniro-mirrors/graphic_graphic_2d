@@ -254,7 +254,7 @@ double ColorPicker::CalcContrastRatioWithWhite() const
 }
 
 // Discriminate wallpaper color shade mode
-uint32_t ColorPicker::DiscriminatePictureLightDegree(PictureLightColorDegree &degree) const
+uint32_t ColorPicker::DiscriminatePitureLightDegree(PictureLightColorDegree &degree) const
 {
     if (featureColors_.empty()) {
         return ERR_EFFECT_INVALID_VALUE;
@@ -290,7 +290,7 @@ uint32_t ColorPicker::DiscriminatePictureLightDegree(PictureLightColorDegree &de
 uint32_t ColorPicker::GetReverseColor(ColorManager::Color &color) const
 {
     PictureLightColorDegree lightColorDegree;
-    bool rst = DiscriminatePictureLightDegree(lightColorDegree);
+    bool rst = DiscriminatePitureLightDegree(lightColorDegree);
     if (rst != SUCCESS) {
         return ERR_EFFECT_INVALID_VALUE;
     }
@@ -327,7 +327,8 @@ uint32_t ColorPicker::GetMorandiBackgroundColor(ColorManager::Color &color) cons
         uint32_t nextDominantColorCnt = 0;
         bool existColor = false;
         for (size_t i = 0; i < featureColors_.size(); i++) {
-            if (!IsBlackOrWhiteOrGrayColor(featureColors_[i].first) && featureColors_[i].second > nextDominantColorCnt) {
+            if (!IsBlackOrWhiteOrGrayColor(featureColors_[i].first) &&
+                featureColors_[i].second > nextDominantColorCnt) {
                 nextDominantColor = featureColors_[i].first;
                 nextDominantColorCnt = featureColors_[i].second;
                 existColor = true;
@@ -390,7 +391,8 @@ uint32_t ColorPicker::GetMorandiShadowColor(ColorManager::Color &color) const
         uint32_t nextDominantColorCnt = 0;
         bool existColor = false;
         for (size_t i = 0; i < featureColors_.size(); i++) {
-            if (!IsBlackOrWhiteOrGrayColor(featureColors_[i].first) && featureColors_[i].second > nextDominantColorCnt) {
+            if (!IsBlackOrWhiteOrGrayColor(featureColors_[i].first) &&
+                featureColors_[i].second > nextDominantColorCnt) {
                 nextDominantColor = featureColors_[i].first;
                 nextDominantColorCnt = featureColors_[i].second;
                 existColor = true;
