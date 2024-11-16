@@ -13,9 +13,6 @@
  * limitations under the License.
  */
 
-#ifndef C_INCLUDE_EFFECT_FILTER_H
-#define C_INCLUDE_EFFECT_FILTER_H
-
 /**
  * @addtogroup image
  * @{
@@ -35,6 +32,9 @@
  * @syscap SystemCapability.Multimedia.Image.Core
  * @since 12
  */
+
+#ifndef C_INCLUDE_EFFECT_FILTER_H
+#define C_INCLUDE_EFFECT_FILTER_H
 
 #include "effect_types.h"
 #ifdef __cplusplus
