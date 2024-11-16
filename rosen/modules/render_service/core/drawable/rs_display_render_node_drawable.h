@@ -129,7 +129,7 @@ public:
     {
         return originScreenRotation_;
     }
-    bool SkipFrame(uint32_t refreshRate, uint32_t skipFrameInterval);
+    bool SkipFrame(uint32_t refreshRate, ScreenInfo screenInfo);
 
 private:
     explicit RSDisplayRenderNodeDrawable(std::shared_ptr<const RSRenderNode>&& node);
@@ -176,6 +176,8 @@ private:
     // For P3-scRGB Control
     bool EnablescRGBForP3AndUiFirst(const GraphicColorGamut& currentGamut);
     void RenderOverDraw();
+    bool SkipFrameByInterval(uint32_t refreshRate, uint32_t skipFrameInterval);
+    bool SkipFrameByRefreshRate(uint32_t refreshRate);
 
     using Registrar = RenderNodeDrawableRegistrar<RSRenderNodeType::DISPLAY_NODE, OnGenerate>;
     static Registrar instance_;
