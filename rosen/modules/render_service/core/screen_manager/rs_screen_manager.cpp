@@ -26,6 +26,7 @@
 #include "param/sys_param.h"
 #include "common/rs_optional_trace.h"
 #include "rs_trace.h"
+#include <mutex>
 
 namespace OHOS {
 namespace Rosen {
@@ -1659,6 +1660,8 @@ ScreenInfo RSScreenManager::QueryScreenInfoLocked(ScreenId id) const
         info.state = ScreenState::SOFTWARE_OUTPUT_ENABLE;
     }
     info.skipFrameInterval = screen->GetScreenSkipFrameInterval();
+    info.expectedRefreshRate = screen->GetScreenExpectedRefreshRate();
+    info.skipFrameStrategy = screen->GetScreenSkipFrameStrategy();
     screen->GetPixelFormat(info.pixelFormat);
     screen->GetScreenHDRFormat(info.hdrFormat);
     info.whiteList = screen->GetWhiteList();
@@ -2010,10 +2013,9 @@ int32_t RSScreenManager::SetVirtualScreenRefreshRate(ScreenId id, uint32_t maxRe
     while (MAX_VIRTUAL_SCREEN_REFRESH_RATE % maxRefreshRate != 0) { // maxRefreshRate is greater than 0
         maxRefreshRate--;
     }
-    uint32_t skipFrameInterval = MAX_VIRTUAL_SCREEN_REFRESH_RATE / maxRefreshRate;
-    screensIt->second->SetScreenSkipFrameInterval(skipFrameInterval);
-    RS_LOGI("RSScreenManager %{public}s: screen(id %" PRIu64 "), skipFrameInterval(%d).",
-        __func__, id, skipFrameInterval);
+    screensIt->second->SetScreenExpectedRefreshRate(maxRefreshRate);
+    RS_LOGI("RSScreenManager %{public}s: screen(id %" PRIu64 "), maxRefreshRate(%d).",
+        __func__, id, maxRefreshRate);
     actualRefreshRate = maxRefreshRate;
     return StatusCode::SUCCESS;
 }

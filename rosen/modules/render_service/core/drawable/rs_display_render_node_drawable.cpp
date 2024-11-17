@@ -27,6 +27,7 @@
 #include "common/rs_optional_trace.h"
 #include "common/rs_singleton.h"
 #include "drawable/rs_surface_render_node_drawable.h"
+#include "hgm_core.h"
 #include "memory/rs_tag_tracker.h"
 #include "params/rs_display_render_params.h"
 #include "params/rs_surface_render_params.h"
@@ -576,13 +577,13 @@ void RSDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         return;
     }
     ScreenInfo curScreenInfo = screenManager->QueryScreenInfo(paramScreenId);
-    RSScreenModeInfo modeInfo = {};
-    screenManager->GetDefaultScreenActiveMode(modeInfo);
-    uint32_t refreshRate = modeInfo.GetScreenRefreshRate();
+    ScreenId activeScreenId = HgmCore::Instance().GetActiveScreenId();
+    uint32_t activeScreenRefreshRate = HgmCore::Instance().GetScreenCurrentRefreshRate(activeScreenId);
     // skip frame according to skipFrameInterval value of SetScreenSkipFrameInterval interface
-    if (SkipFrame(refreshRate, curScreenInfo.skipFrameInterval)) {
+    if (SkipFrame(activeScreenRefreshRate, curScreenInfo)) {
         SetDrawSkipType(DrawSkipType::SKIP_FRAME);
-        RS_TRACE_NAME("SkipFrame, screenId:" + std::to_string(paramScreenId));
+        RS_TRACE_NAME_FMT("SkipFrame, screenId:%lu, strategy:%d, interval:%u, refreshrate:%u", paramScreenId,
+            curScreenInfo.skipFrameStrategy, curScreenInfo.skipFrameInterval, curScreenInfo.expectedRefreshRate);
         screenManager->ForceRefreshOneFrameIfNoRNV();
         return;
     }
@@ -1808,7 +1809,7 @@ bool RSDisplayRenderNodeDrawable::CreateSurface(sptr<IBufferConsumerListener> li
 }
 #endif
 
-bool RSDisplayRenderNodeDrawable::SkipFrame(uint32_t refreshRate, uint32_t skipFrameInterval)
+bool RSDisplayRenderNodeDrawable::SkipFrameByInterval(uint32_t refreshRate, uint32_t skipFrameInterval)
 {
     if (refreshRate == 0 || skipFrameInterval <= 1) {
         return false;
@@ -1843,4 +1844,43 @@ bool RSDisplayRenderNodeDrawable::SkipFrame(uint32_t refreshRate, uint32_t skipF
     return needSkip;
 }
 
+bool RSDisplayRenderNodeDrawable::SkipFrameByRefreshRate(uint32_t refreshRate)
+{
+    if (refreshRate == 0) {
+        return false;
+    }
+    int64_t currentTime = std::chrono::duration_cast<std::chrono::nanoseconds>(
+        std::chrono::steady_clock::now().time_since_epoch()).count();
+    int64_t minFrameInterval = 1000000000LL / refreshRate;
+    if (minFrameInterval == 0) {
+        return false;
+    }
+    // lastRefreshTime_ is next frame expected refresh time for virtual display
+    if (lastRefreshTime_ <= 0) {
+        lastRefreshTime_ = currentTime + minFrameInterval;
+        return false;
+    }
+    if (currentTime < (lastRefreshTime_ - MAX_JITTER_NS)) {
+        return true;
+    }
+    int64_t intervalNums = (currentTime - lastRefreshTime_ + MAX_JITTER_NS) / minFrameInterval;
+    lastRefreshTime_ += (intervalNums + 1) * minFrameInterval;
+    return false;
+}
+
+bool RSDisplayRenderNodeDrawable::SkipFrame(uint32_t refreshRate, ScreenInfo screenInfo)
+{
+    bool needSkip = false;
+    switch (screenInfo.skipFrameStrategy) {
+        case SKIP_FRAME_BY_INTERVAL:
+            needSkip = SkipFrameByInterval(refreshRate, screenInfo.skipFrameInterval);
+            break;
+        case SKIP_FRAME_BY_REFRESH_RATE:
+            needSkip = SkipFrameByRefreshRate(screenInfo.expectedRefreshRate);
+            break;
+        default:
+            break;
+    }
+    return needSkip;
+}
 } // namespace OHOS::Rosen::DrawableV2
