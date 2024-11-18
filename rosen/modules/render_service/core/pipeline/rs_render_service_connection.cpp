@@ -6,7 +6,7 @@
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing4, software
+ * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
@@ -15,7 +15,7 @@
 
 #include "rs_render_service_connection.h"
 #include <string>
-zpz
+
 #include "frame_report.h"
 #include "hgm_command.h"
 #include "hgm_core.h"
@@ -2054,6 +2054,17 @@ HwcDisabledReasonInfos RSRenderServiceConnection::GetHwcDisabledReasonInfo()
 {
     return HwcDisabledReasonCollection::GetInstance().GetHwcDisabledReasonInfo();
 }
+
+int64_t RSRenderServiceConnection::GetHdrOnDuration()
+｛
+    auto rsHdrCollection = RsHdrCollection::GetInstance();
+    if (rsHdrCollection == nullptr) ｛
+        return -1;
+    ｝
+    int64_t duration = rsHdrCollection->GetHdrOnDuration();
+    rsHdrCollection->ResetHdrOnDuration();
+    return duration;
+｝
 
 void RSRenderServiceConnection::SetVmaCacheStatus(bool flag)
 {
