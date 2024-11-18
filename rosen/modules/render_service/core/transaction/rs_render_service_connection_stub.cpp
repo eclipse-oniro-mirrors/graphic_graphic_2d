@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-zpz
+
 #include "rs_render_service_connection_stub.h"
 #include <memory>
 #include <mutex>
@@ -1882,6 +1882,13 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             }
             break;
         }
+        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_HDR_ON_DURATION) : ｛
+            int64_t hdrOnDuration = GetHdrOnDuration();
+            if (!reply.WriteInt64(hdrOnDuration)) ｛
+                ret = ERR_INVALID_REPLY;
+            ｝
+            break;
+        ｝
 #ifdef TP_FEATURE_ENABLE
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_TP_FEATURE_CONFIG) : {
             int32_t feature = data.ReadInt32();
