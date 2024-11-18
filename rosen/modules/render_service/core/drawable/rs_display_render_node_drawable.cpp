@@ -1035,6 +1035,7 @@ void RSDisplayRenderNodeDrawable::DrawMirror(RSDisplayRenderParams& params,
     curCanvas_->ConcatMatrix(mirroredParams->GetMatrix());
     // Recording HDR screen cannot use canvas size
     SetUseCanvasSize(false);
+    PrepareOffscreenRender(*mirroredDrawable);
 
     // set mirror screen capture param
     // Don't need to scale here since the canvas has been switched from mirror frame to offscreen
@@ -1047,6 +1048,7 @@ void RSDisplayRenderNodeDrawable::DrawMirror(RSDisplayRenderParams& params,
     (mirroredDrawable.get()->*drawFunc)(*curCanvas_);
     uniParam.SetOpDropped(isOpDropped);
     RSUniRenderThread::ResetCaptureParam();
+    FinishOffscreenRender(Drawing::SamplingOptions(Drawing::CubicResampler::Mitchell()));
     // Restore the initial state of the canvas to avoid state accumulation
     curCanvas_->RestoreToCount(0);
     rsDirtyRectsDfx.OnDrawVirtual(*curCanvas_);

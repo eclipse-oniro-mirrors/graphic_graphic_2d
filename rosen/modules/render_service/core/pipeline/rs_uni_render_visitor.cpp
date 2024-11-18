@@ -338,9 +338,7 @@ void RSUniRenderVisitor::CheckPixelFormatWithSelfDrawingNode(RSSurfaceRenderNode
         return;
     }
     auto bufferPixelFormat = node.GetRSSurfaceHandler()->GetBuffer()->GetFormat();
-    if (bufferPixelFormat == GRAPHIC_PIXEL_FMT_RGBA_1010102 ||
-        bufferPixelFormat == GRAPHIC_PIXEL_FMT_YCBCR_P010 ||
-        bufferPixelFormat == GRAPHIC_PIXEL_FMT_YCRCB_P010) {
+    if (RSMainThread::CheckIsHdrSurface(node)) {
         newPixelFormat_ = GRAPHIC_PIXEL_FMT_RGBA_1010102;
         RS_LOGD("RSUniRenderVisitor::CheckPixelFormatWithSelfDrawingNode HDRService pixelformat is set to 1010102");
     }

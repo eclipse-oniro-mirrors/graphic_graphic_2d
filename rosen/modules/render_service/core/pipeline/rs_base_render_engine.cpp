@@ -783,7 +783,8 @@ bool RSBaseRenderEngine::CheckIsHdrSurfaceBuffer(const sptr<SurfaceBuffer> surfa
     if (surfaceBuffer == nullptr) {
         return false;
     }
-    if (surfaceBuffer->GetFormat() != GRAPHIC_PIXEL_FMT_YCBCR_P010 &&
+    if (surfaceBuffer->GetFormat() != GRAPHIC_PIXEL_FMT_RGBA_1010102 &&
+        surfaceBuffer->GetFormat() != GRAPHIC_PIXEL_FMT_YCBCR_P010 &&
         surfaceBuffer->GetFormat() != GRAPHIC_PIXEL_FMT_YCRCB_P010) {
         return false;
     }
