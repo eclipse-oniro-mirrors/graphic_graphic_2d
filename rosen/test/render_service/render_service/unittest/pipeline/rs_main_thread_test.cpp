@@ -27,6 +27,7 @@
 #include "pipeline/rs_render_engine.h"
 #include "pipeline/rs_root_render_node.h"
 #include "pipeline/rs_uni_render_engine.h"
+#include "pipeline/rs_canvas_drawing_render_node.h"
 #include "platform/common/rs_innovation.h"
 #include "platform/common/rs_system_properties.h"
 #if defined(ACCESSIBILITY_ENABLE)
@@ -781,6 +782,13 @@ HWTEST_F(RSMainThreadTest, ProcessCommandForUniRender, TestSize.Level1)
     mainThread->effectiveTransactionDataIndexMap_[0].second.emplace_back(std::move(data));
     // empty data
     mainThread->effectiveTransactionDataIndexMap_[0].second.emplace_back(nullptr);
+
+    NodeId nodeId =1;
+    std::weak_ptr<RSContext> context = {};
+    auto rsCanvasDrawingRenderNode = std::make_shared<RSCanvasDrawingRenderNode>(nodeId, context);
+    auto drawableNode = DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(rsCanvasDrawingRenderNode);
+    drawableNode->SetNeedDraw(true);
+    mainThread_->context_->nodeMap.RegisterRenderNode(rsCanvasDrawingRenderNode);
     mainThread->ProcessCommandForUniRender();
 }
 
@@ -4003,48 +4011,15 @@ HWTEST_F(RSMainThreadTest, OnCommitDumpClientNodeTree, TestSize.Level2)
 }
 
 /**
- * @tc.name: CheckIsAihdrSurface
- * @tc.desc: Test CheckIsAihdrSurface
+ * @tc.name: TraverseCanvasDrawingNodesNotOnTree
+ * @tc.desc: test TraverseCanvasDrawingNodesNotOnTree
  * @tc.type: FUNC
- * @tc.require:
+ * @tc.require: issueIB56EL
  */
-#ifdef USE_VIDEO_PROCESSING_ENGINE
-HWTEST_F(RSMainThreadTest, CheckIsAihdrSurface, TestSize.Level1)
-{
-    auto mainThread = RSMainThread::Instance();
-    mainThread->context_->activeNodesInRoot_.clear();
-    // valid nodeid
-    NodeId id = 1;
-    auto node = std::make_shared<RSSurfaceRenderNode>(id, mainThread->context_);
-    ASSERT_NE(node, nullptr);
-    const auto& surfaceBuffer = node->GetRSSurfaceHandler()->GetBuffer();
-    if (surfaceBuffer == nullptr) {
-        return;
-    }
-    uint32_t hdrType = HDI::Display::Graphic::Common::V2_1::CM_VIDEO_AI_HDR;
-    std::vector<uint8_t> metadataType;
-    metadataType.resize(sizeof(hdrType));
-    memcpy_s(metadataType.data(), metadataType.size(), &hdrType, sizeof(hdrType));
-    surfaceBuffer->SetMetadata(Media::VideoProcessingEngine::ATTRKEY_HDR_METADATA_TYPE,
-        metadataType);
-    ASSERT_EQ(mainThread->CheckIsAihdrSurface(*node), true);
-}
-#endif
-
-/**
- * @tc.name: RenderServiceAllNodeDump01
- * @tc.desc: RenderServiceAllNodeDump Test
- * @tc.type: FUNC
- * @tc.require: issueIB57QP
- */
-HWTEST_F(RSMainThreadTest, RenderServiceAllNodeDump01, TestSize.Level1)
+HWTEST_F(RSMainThreadTest, TraverseCanvasDrawingNodesNotOnTree, TestSize.Level2)
 {
     auto mainThread = RSMainThread::Instance();
     ASSERT_NE(mainThread, nullptr);
-    NodeId id = 1;
-    MemoryInfo info = {sizeof(*this), ExtractPid(id), id, MEMORY_TYPE::MEM_RENDER_NODE};
-    MemoryTrack::Instance().AddNodeRecord(id, info);
-    DfxString log;
-    mainThread->RenderServiceAllNodeDump(log);
+    mainThread->TraverseCanvasDrawingNodesNotOnTree();
 }
 } // namespace OHOS::Rosen

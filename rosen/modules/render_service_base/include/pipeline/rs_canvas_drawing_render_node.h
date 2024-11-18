@@ -109,7 +109,6 @@ private:
 
     // Used in uni render thread.
     uint32_t drawingNodeRenderID = UNI_MAIN_THREAD_INDEX;
-    uint32_t playbackNotOnTreeCmdSize_ = 0;
 
     friend class RSCanvasDrawingNodeCommandHelper;
 };
