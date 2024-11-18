@@ -330,6 +330,12 @@ private:
     static uint64_t NowNano();
     static double Now();
 
+    static bool IsNoneMode();
+    static bool IsReadMode();
+    static bool IsReadEmulationMode();
+    static bool IsWriteMode();
+    static bool IsWriteEmulationMode();
+
     static bool IsRecording();
     static bool IsPlaying();
 
