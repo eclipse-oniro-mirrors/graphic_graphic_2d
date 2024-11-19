@@ -1799,17 +1799,6 @@ void RSMainThread::ClearMemoryCache(ClearMemoryMoment moment, bool deeply, pid_t
     }
 }
 
-void RSMainThread::WaitUtilUniRenderFinished()
-{
-    std::unique_lock<std::mutex> lock(uniRenderMutex_);
-    if (uniRenderFinished_) {
-        return;
-    }
-    RS_TRACE_NAME("RSMainThread::WaitUtilUniRenderFinished");
-    uniRenderCond_.wait(lock, [this]() { return uniRenderFinished_; });
-    uniRenderFinished_ = false;
-}
-
 void RSMainThread::WaitUntilUnmarshallingTaskFinished()
 {
     if (!isUniRender_) {
@@ -1847,17 +1836,6 @@ void RSMainThread::MergeToEffectiveTransactionDataMap(TransactionDataMap& cached
         InsertToEnd(elem.second, effectiveTransactionDataIndexMap_[pid].second);
     }
     cachedTransactionDataMap.clear();
-}
-
-void RSMainThread::NotifyUniRenderFinish()
-{
-    if (std::this_thread::get_id() != Id()) {
-        std::lock_guard<std::mutex> lock(uniRenderMutex_);
-        uniRenderFinished_ = true;
-        uniRenderCond_.notify_one();
-    } else {
-        uniRenderFinished_ = true;
-    }
 }
 
 void RSMainThread::OnHideNotchStatusCallback(const char *key, const char *value, void *context)
@@ -1941,11 +1919,6 @@ void RSMainThread::ProcessHgmFrameRate(uint64_t timestamp)
             frameRateMgr->UniProcessDataForLtpo(timestamp, rsFrameRateLinker, appFrameRateLinkers);
         }
     });
-}
-
-bool RSMainThread::GetParallelCompositionEnabled()
-{
-    return doParallelComposition_;
 }
 
 void RSMainThread::SetFrameIsRender(bool isRender)
