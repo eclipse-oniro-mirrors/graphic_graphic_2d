@@ -608,9 +608,9 @@ HwcDisabledReasonInfos RSRenderServiceClient::GetHwcDisabledReasonInfo()
 }
 
 int64_t RSRenderServiceClient::GetHdrOnDuration() const
-｛
+{
     return 0;
-｝
+}
 
 void RSRenderServiceClient::SetVmaCacheStatus(bool flag)
 {
