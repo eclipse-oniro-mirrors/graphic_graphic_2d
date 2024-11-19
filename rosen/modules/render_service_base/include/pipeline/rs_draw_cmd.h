@@ -24,6 +24,8 @@
 #include "GLES2/gl2ext.h"
 #endif
 
+#include "common/rs_common_def.h"
+
 #include "recording/draw_cmd.h"
 #include "recording/recording_canvas.h"
 #include "render/rs_image.h"
@@ -250,6 +252,7 @@ struct RSB_EXPORT DrawSurfaceBufferFinishCbData {
     uint64_t uid;
     pid_t pid;
     uint32_t surfaceBufferId;
+    NodeId rootNodeId = INVALID_NODEID;
     sptr<SyncFence> releaseFence = SyncFence::INVALID_FENCE;
     bool isRendered = false;
     bool isNeedTriggerCbDirectly = false;
@@ -289,6 +292,7 @@ public:
     void Playback(Canvas* canvas, const Rect* rect) override;
     virtual void DumpItems(std::string& out) const override;
     RSB_EXPORT static void RegisterSurfaceBufferCallback(DrawSurfaceBufferOpItemCb callbacks);
+    RSB_EXPORT static void RegisterGetRootNodeIdFuncForRT(std::function<NodeId()> func);
     RSB_EXPORT static void SetIsUniRender(bool isUniRender);
 private:
     void OnDestruct();
@@ -302,6 +306,7 @@ private:
     bool CreateEglTextureId();
     Drawing::BitmapFormat CreateBitmapFormat(int32_t bufferFormat);
     mutable DrawingSurfaceBufferInfo surfaceBufferInfo_;
+    NodeId rootNodeId_ = INVALID_NODEID;
     sptr<SyncFence> releaseFence_ = SyncFence::INVALID_FENCE;
     bool isRendered_ = false;
 

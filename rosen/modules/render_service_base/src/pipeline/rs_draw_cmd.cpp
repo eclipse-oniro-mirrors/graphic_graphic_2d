@@ -771,6 +771,7 @@ void DrawSurfaceBufferOpItem::Marshalling(DrawCmdList& cmdList)
 namespace {
     std::function<void(const DrawSurfaceBufferFinishCbData&)> surfaceBufferFinishCb;
     std::function<void(const DrawSurfaceBufferAfterAcquireCbData&)> surfaceBufferAfterAcquireCb;
+    std::function<NodeId()> getRootNodeIdForRT;
     bool contextIsUniRender = true;
 }
 
@@ -790,6 +791,7 @@ void DrawSurfaceBufferOpItem::OnAfterDraw()
     if (contextIsUniRender) {
         return;
     }
+    rootNodeId_ = getRootNodeIdForRT ? std::invoke(getRootNodeIdForRT) : INVALID_NODEID;
 #ifdef RS_ENABLE_GL
     if (SystemProperties::GetGpuApiType() == GpuApiType::OPENGL) {
         auto disp = eglGetDisplay(EGL_DEFAULT_DISPLAY);
@@ -815,14 +817,15 @@ void DrawSurfaceBufferOpItem::OnAfterDraw()
 
 void DrawSurfaceBufferOpItem::ReleaseBuffer()
 {
-    RS_TRACE_NAME_FMT("DrawSurfaceBufferOpItem::ReleaseBuffer %s Release, isNeedTriggerCbDirectly = %d",
-        std::to_string(surfaceBufferInfo_.surfaceBuffer_->GetSeqNum()).c_str(),
-        releaseFence_ && releaseFence_->IsValid());
     if (surfaceBufferFinishCb && surfaceBufferInfo_.surfaceBuffer_) {
+        RS_TRACE_NAME_FMT("DrawSurfaceBufferOpItem::ReleaseBuffer %s Release, isNeedTriggerCbDirectly = %d",
+            std::to_string(surfaceBufferInfo_.surfaceBuffer_->GetSeqNum()).c_str(),
+            releaseFence_ && releaseFence_->IsValid());
         std::invoke(surfaceBufferFinishCb, DrawSurfaceBufferFinishCbData {
             .uid = surfaceBufferInfo_.uid_,
             .pid = surfaceBufferInfo_.pid_,
             .surfaceBufferId = surfaceBufferInfo_.surfaceBuffer_->GetSeqNum(),
+            .rootNodeId = rootNodeId_,
             .releaseFence = releaseFence_,
             .isRendered = isRendered_,
             .isNeedTriggerCbDirectly = releaseFence_ && releaseFence_->IsValid(),
@@ -849,6 +852,14 @@ void DrawSurfaceBufferOpItem::RegisterSurfaceBufferCallback(
     }
     if (std::exchange(surfaceBufferAfterAcquireCb, callbacks.OnAfterAcquireBuffer)) {
         RS_LOGE("DrawSurfaceBufferOpItem::RegisterSurfaceBufferCallback"
+            " registered OnAfterAcquireBuffer twice incorrectly.");
+    }
+}
+
+void DrawSurfaceBufferOpItem::RegisterGetRootNodeIdFuncForRT(std::function<NodeId()> func)
+{
+    if (std::exchange(getRootNodeIdForRT, func)) {
+        RS_LOGE("DrawSurfaceBufferOpItem::RegisterGetRootNodeIdFuncForRT"
             " registered OnAfterAcquireBuffer twice incorrectly.");
     }
 }

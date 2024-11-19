@@ -40,9 +40,6 @@ public:
         std::function<void()> requestNextVsync;
         std::function<bool()> isRequestedNextVSync;
     };
-    struct RenderContextFuncs {
-        std::function<NodeId()> getRootNodeIdForRT;
-    };
  
 #ifdef ROSEN_OHOS
     using OnFinishCb = std::function<void(const Drawing::DrawSurfaceBufferFinishCbData&)>;
@@ -63,7 +60,6 @@ public:
     void SetRunPolicy(std::function<void(std::function<void()>)> runPolicy);
     void SetVSyncFuncs(VSyncFuncs vSyncFuncs);
     void SetIsUniRender(bool isUniRender);
-    void SetRenderContextFuncs(RenderContextFuncs contextFuncs);
 #ifdef RS_ENABLE_VK
     void SetReleaseFenceForVulkan(int releaseFenceFd, NodeId rootNodeId);
 #endif
@@ -116,7 +112,6 @@ private:
         std::invoke(task);
     };
     VSyncFuncs vSyncFuncs_;
-    RenderContextFuncs renderContextFuncs_;
     bool isUniRender_ = {};
 };
 

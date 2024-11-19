@@ -157,23 +157,27 @@ RSRenderThread::RSRenderThread()
         .OnAfterAcquireBuffer = RSSurfaceBufferCallbackManager::Instance().GetOnAfterAcquireBufferCb(),
     });
     Drawing::DrawSurfaceBufferOpItem::SetIsUniRender(false);
+    Drawing::DrawSurfaceBufferOpItem::RegisterGetRootNodeIdFuncForRT(
+        [this]() {
+            if (visitor_) {
+                return visitor_->GetActiveSubtreeRootId();
+            }
+            return INVALID_NODEID;
+        }
+    );
 #endif
     RSSurfaceBufferCallbackManager::Instance().SetIsUniRender(false);
     RSSurfaceBufferCallbackManager::Instance().SetVSyncFuncs({
         .requestNextVsync = []() {
             RSRenderThread::Instance().RequestNextVSync();
         },
-        .isRequestedNextVSync = []() {
-            return RSRenderThread::Instance().IsRequestedNextVSync();
-        },
-    });
-    RSSurfaceBufferCallbackManager::Instance().SetRenderContextFuncs({
-        .getRootNodeIdForRT = [this]() {
-            if (visitor_) {
-                return visitor_->GetActiveSubtreeRootId();
+        .isRequestedNextVSync = [this]() {
+#ifdef __OHOS__
+            if (receiver_ != nullptr) {
+                return receiver_->IsRequestedNextVSync();
             }
-            return INVALID_NODEID;
-        }
+#endif
+            return false;
     });
 }
 
@@ -258,16 +262,6 @@ void RSRenderThread::RequestNextVSync()
     } else {
         hasSkipVsync_ = true;
     }
-}
-
-bool RSRenderThread::IsRequestedNextVSync()
-{
-#ifdef __OHOS__
-    if (receiver_ != nullptr) {
-        return receiver_->IsRequestedNextVSync();
-    }
-#endif
-    return false;
 }
 
 int32_t RSRenderThread::GetTid()
