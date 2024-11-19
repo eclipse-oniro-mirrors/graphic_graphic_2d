@@ -1024,7 +1024,7 @@ HWTEST_F(RSRenderServiceConnectionProxyTest, GetHwcDisabledReasonInfo, TestSize.
 /**
  * @tc.name: GetHdrOnDuration Test
  * @tc.desc: GetHdrOnDuration Test
- * @tc.type:FUNC
+ * @tc.type: FUNC
  * @tc.require: issueIB4YDF
  */
 HWTEST_F(RSRenderServiceConnectionProxyTest, GetHdrOnDuration, TestSize.Level1)
