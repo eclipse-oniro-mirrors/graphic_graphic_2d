@@ -384,7 +384,7 @@ bool RSMainThread::CheckIsHdrSurface(const RSSurfaceRenderNode& surfaceNode)
         return false;
     }
     return RSBaseRenderEngine::CheckIsHdrSurfaceBuffer(surfaceNode.GetRSSurfaceHandler()->GetBuffer());
-    }
+}
 
 RSMainThread* RSMainThread::Instance()
 {
