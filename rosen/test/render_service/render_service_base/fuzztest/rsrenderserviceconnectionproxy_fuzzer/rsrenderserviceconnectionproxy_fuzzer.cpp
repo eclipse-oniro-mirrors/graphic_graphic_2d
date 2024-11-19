@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-zpz
+
 #include "rsrenderserviceconnectionproxy_fuzzer.h"
 
 #include <climits>
@@ -227,6 +227,7 @@ bool DoSomethingInterestingWithMyAPI(const uint8_t* data, size_t size)
     rsRenderServiceConnectionProxy.GetGlobalDirtyRegionInfo();
     rsRenderServiceConnectionProxy.GetLayerComposeInfo();
     rsRenderServiceConnectionProxy.GetHwcDisabledReasonInfo();
+    rsRenderServiceConnectionProxy.GetHdrOnDuration();
     rsRenderServiceConnectionProxy.SetVmaCacheStatus(true);
     rsRenderServiceConnectionProxy.SetVmaCacheStatus(false);
     rsRenderServiceConnectionProxy.SetVirtualScreenUsingStatus(true);
