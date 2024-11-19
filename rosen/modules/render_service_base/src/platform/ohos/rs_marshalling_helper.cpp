@@ -75,7 +75,7 @@ namespace {
 bool g_useSharedMem = true;
 std::thread::id g_tid = std::thread::id();
 constexpr size_t PIXELMAP_UNMARSHALLING_DEBUG_OFFSET = 12;
-constexpr size_t MAX_OPITEMSIZE = 50;
+constexpr size_t MAX_OPITEMSIZE = 10000;
 }
 
 #define MARSHALLING_AND_UNMARSHALLING(TYPE, TYPENAME)                      \
