@@ -1510,7 +1510,7 @@ HwcDisabledReasonInfos RSRenderServiceClient::GetHwcDisabledReasonInfo()
 int64_t RSRenderServiceClient::GetHdrOnDuration()
 {
     auto renderService = RSRenderServiceConnectHub::GetRenderService();
-    if (renderService == nullptr){
+    if (renderService == nullptr) {
         return RENDER_SERVICE_NULL;
     }
     return renderService->GetHdrOnDuration();
