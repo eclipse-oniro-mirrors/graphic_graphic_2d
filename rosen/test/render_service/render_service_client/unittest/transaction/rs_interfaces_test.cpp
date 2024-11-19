@@ -15,7 +15,7 @@
 #include "gtest/gtest.h"
 #include "impl_interface/typeface_impl.h"
 #include "skia_adapter/skia_typeface.h"
-zpz
+
 #include "render/rs_typeface_cache.h"
 #include "transaction/rs_interfaces.h"
 #include "transaction/rs_render_service_client.h"
@@ -340,6 +340,20 @@ HWTEST_F(RSInterfacesTest, GetHardwareComposeDisabledReasonInfo001, TestSize.Lev
     RSInterfaces& instance = RSInterfaces::GetInstance();
     instance.renderServiceClient_ = std::make_unique<RSRenderServiceClient>();
     instance.GetHwcDisabledReasonInfo();
+    EXPECT_TRUE(instance.renderServiceClient_ != nullptr);
+}
+
+/**
+ * @tc.name: GetHdrOnDuration001
+ * @tc.desc: test results of GetHdrOnDuration
+ * @tc.type: FUNC
+ * @tc.require: issueIB4YDF
+ */
+HWTEST_F(RSInterfacesTest, GetHdrOnDuration001, TestSize.Level1)
+{
+    RSInterfaces& instance = RSInterfaces::GetInstance();
+    instance.renderServiceClient_ = std::make_unique<RSRenderServiceClient>();
+    EXPECT_GE(instance.GetHdrOnDuration(), 0);
     EXPECT_TRUE(instance.renderServiceClient_ != nullptr);
 }
 
