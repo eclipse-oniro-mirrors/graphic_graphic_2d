@@ -60,6 +60,7 @@ namespace {
         { { 1.0f, 0.5f }, { 0.5f, 0.2f }, { 0.2f, 1.0f } },
     };
     constexpr const char* BUNDLE_SCAN_PARAM_NAME = "bms.scanning_apps.status";
+    constexpr const int BUNDLE_SCAN_WAITING_TIMEOUT = 3;
 }
 
 void BootCompileProgress::Init(const BootAnimationConfig& config, bool needOtaCompile, bool needBundleScan)
@@ -225,7 +226,7 @@ bool BootCompileProgress::WaitBundleScanIfNeeded()
     if (!needBundleScan_) {
         return true;
     }
-    if (WaitParameter(BUNDLE_SCAN_PARAM_NAME, "0", 3) != 0) {
+    if (WaitParameter(BUNDLE_SCAN_PARAM_NAME, "0", BUNDLE_SCAN_WAITING_TIMEOUT) != 0) {
         paramNeeded_.erase(BUNDLE_SCAN_PARAM_NAME);
         LOGE("waiting bundle scan failed.");
         return false;
