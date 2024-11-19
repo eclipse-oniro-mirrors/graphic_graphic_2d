@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-zpz
+
 #include "rs_render_service_connection_proxy.h"
 
 #include <algorithm>
@@ -3178,9 +3178,9 @@ HwcDisabledReasonInfos RSRenderServiceConnectionProxy::GetHwcDisabledReasonInfo(
         return hwcDisabledReasonInfos;
     }
     int32_t size = reply.ReadInt32();
-    size_t readableSize = reply.GetReadableBytes() / (sizeof(HwcDisabledReasonInfo) - HWC_DISABLED_REASON_INFO_OFFSET);
+    size_t readableSize = reply.GetReadableBytes();
     size_t len = static_cast<size_t>(size);
-    if (len > readableSize || len > hwcDisabledReasonInfos.max_size()) {
+    if (len * HWC_DISABLED_REASON_INFO_MIN_BYTE > readableSize || len > hwcDisabledReasonInfos.max_size()) {
         RS_LOGE("RSRenderServiceConnectionProxy GetHwcDisabledReasonInfo Failed read vector, size:%{public}zu,"
             " readableSize:%{public}zu", len, readableSize);
         return hwcDisabledReasonInfos;
