@@ -43,12 +43,7 @@ void RSSurfaceBufferCallbackManager::SetIsUniRender(bool isUniRender)
 {
     isUniRender_ = isUniRender;
 }
- 
-void RSSurfaceBufferCallbackManager::SetRenderContextFuncs(RenderContextFuncs contextFuncs)
-{
-    renderContextFuncs_ = contextFuncs;
-}
- 
+
 #ifdef RS_ENABLE_VK
 void RSSurfaceBufferCallbackManager::SetReleaseFenceForVulkan(
     int releaseFenceFd, NodeId rootNodeId)
@@ -61,10 +56,11 @@ void RSSurfaceBufferCallbackManager::SetReleaseFenceForVulkan(
         auto& fences = data.releaseFences;
         size_t idx = 0;
         for (auto& fence : fences) {
-            if (data.isRenderedFlags.at(idx)) {
+            if (data.isRenderedFlags[idx] && data.rootNodeIds[idx] == rootNodeId) {
                 fence = new (std::nothrow) SyncFence(::dup(releaseFenceFd));
                 if (!fence) {
-                    RS_LOGE("RSSurfaceBufferCallbackManager::ApplyReleaseFence Err on creating SyncFence");
+                    RS_LOGE("RSSurfaceBufferCallbackManager::SetReleaseFenceForVulkan"
+                        " Err on creating SyncFence");
                 }
             }
             ++idx;
@@ -160,11 +156,7 @@ void RSSurfaceBufferCallbackManager::EnqueueSurfaceBufferId(
     surfaceBufferIds.push_back(data.surfaceBufferId);
     isRenderedFlags.push_back(static_cast<uint8_t>(data.isRendered));
     fences.push_back(data.releaseFence);
-    if (!isUniRender_ && renderContextFuncs_.getRootNodeIdForRT) {
-        rootNodeIds.push_back(std::invoke(renderContextFuncs_.getRootNodeIdForRT));
-    } else {
-        rootNodeIds.push_back(INVALID_NODEID);
-    }
+    rootNodeIds.push_back(data.rootNodeId);
 }
 #endif
 

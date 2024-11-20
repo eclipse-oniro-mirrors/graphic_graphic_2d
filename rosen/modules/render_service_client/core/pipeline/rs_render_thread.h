@@ -117,8 +117,6 @@ public:
         }
     }
 
-    bool IsRequestedNextVSync();
-
 private:
     RSRenderThread();
     ~RSRenderThread();
