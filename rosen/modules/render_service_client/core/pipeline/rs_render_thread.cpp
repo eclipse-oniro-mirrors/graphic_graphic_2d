@@ -178,6 +178,7 @@ RSRenderThread::RSRenderThread()
             }
 #endif
             return false;
+        },
     });
 }
 
