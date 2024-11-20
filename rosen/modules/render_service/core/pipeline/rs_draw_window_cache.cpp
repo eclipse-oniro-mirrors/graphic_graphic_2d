@@ -61,7 +61,7 @@ void RSDrawWindowCache::DrawAndCacheWindowContent(DrawableV2::RSSurfaceRenderNod
     windowCanvas->SetDisableFilterCache(true);
     auto acr = std::make_unique<RSAutoCanvasRestore>(windowCanvas, RSPaintFilterCanvas::SaveType::kCanvasAndAlpha);
     windowCanvas->Clear(Drawing::Color::COLOR_TRANSPARENT);
-
+#ifdef RS_ENABLE_GPU
     // draw window content/children onto offscreen canvas
     auto& uniParams = RSUniRenderThread::Instance().GetRSRenderThreadParams();
     bool isOpDropped = uniParams != nullptr ? uniParams->IsOpDropped() : true;
@@ -73,7 +73,7 @@ void RSDrawWindowCache::DrawAndCacheWindowContent(DrawableV2::RSSurfaceRenderNod
     if (uniParams) {
         uniParams->SetOpDropped(isOpDropped);
     }
-
+#endif
     // cache and draw snapshot of offscreen canvas onto target canvas
     image_ = windowSurface->GetImageSnapshot();
     if (image_ == nullptr) {
@@ -87,7 +87,7 @@ void RSDrawWindowCache::DrawAndCacheWindowContent(DrawableV2::RSSurfaceRenderNod
     canvas.DrawImage(*image_, 0, 0, samplingOptions);
     canvas.DetachBrush();
 }
-
+#ifdef RS_ENABLE_GPU
 bool RSDrawWindowCache::DealWithCachedWindow(DrawableV2::RSSurfaceRenderNodeDrawable* surfaceDrawable,
     RSPaintFilterCanvas& canvas, RSSurfaceRenderParams& surfaceParams, RSRenderThreadParams& uniParam)
 {
@@ -154,7 +154,7 @@ bool RSDrawWindowCache::DealWithCachedWindow(DrawableV2::RSSurfaceRenderNodeDraw
     surfaceDrawable->DrawWatermark(canvas, surfaceParams);
     return true;
 }
-
+#endif
 void RSDrawWindowCache::ClearCache()
 {
     image_ = nullptr;

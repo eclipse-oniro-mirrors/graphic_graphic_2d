@@ -410,12 +410,12 @@ void RSRenderThreadVisitor::ProcessRootRenderNode(RSRootRenderNode& node)
         rsSurface->SetColorSpace(surfaceNodeColorSpace);
     }
 
-#if defined(ACE_ENABLE_GL) || defined (ACE_ENABLE_VK)
+#if defined(RS_ENABLE_GL) || defined (RS_ENABLE_VK)
     RenderContext* rc = RSRenderThread::Instance().GetRenderContext();
     rsSurface->SetRenderContext(rc);
 #endif
 
-#ifdef ACE_ENABLE_VK
+#ifdef RS_ENABLE_VK
     if (RSSystemProperties::IsUseVulkan()) {
         auto skContext = RsVulkanContext::GetSingleton().CreateDrawingContext();
         if (skContext == nullptr) {
@@ -631,7 +631,11 @@ void RSRenderThreadVisitor::ProcessCanvasRenderNode(RSCanvasRenderNode& node)
 bool RSRenderThreadVisitor::UpdateAnimatePropertyCacheSurface(RSRenderNode& node)
 {
     if (!node.GetCacheSurface()) {
+#ifdef RS_ENABLE_GPU
         node.InitCacheSurface(canvas_ ? canvas_->GetGPUContext().get() : nullptr);
+#else
+        node.InitCacheSurface(nullptr);
+#endif
     }
     if (!node.GetCacheSurface()) {
         return false;

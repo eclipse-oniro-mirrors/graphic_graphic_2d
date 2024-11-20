@@ -55,7 +55,9 @@ public:
     std::future<Return> ScheduleTask(Task&& task)
     {
         auto [scheduledTask, taskFuture] = Detail::ScheduledTask<Task>::Create(std::forward<Task&&>(task));
+#ifdef RS_ENABLE_GPU
         PostTask([t(std::move(scheduledTask))]() { t->Run(); });
+#endif
         return std::move(taskFuture);
     }
     uint32_t GetunExecuteTaskNum();

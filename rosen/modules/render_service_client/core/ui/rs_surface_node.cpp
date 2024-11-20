@@ -28,7 +28,9 @@
 #ifndef ROSEN_CROSS_PLATFORM
 #include "platform/drawing/rs_surface_converter.h"
 #endif
+#ifdef RS_ENABLE_GPU
 #include "render_context/render_context.h"
+#endif
 #include "transaction/rs_render_service_client.h"
 #include "transaction/rs_transaction_proxy.h"
 #include "ui/rs_hdr_manager.h"

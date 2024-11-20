@@ -1017,12 +1017,16 @@ bool RSBaseRenderUtil::ConsumeAndUpdateBuffer(RSSurfaceHandler& surfaceHandler, 
     surfaceHandler.SetAvailableBufferCount(static_cast<int32_t>(consumer->GetAvailableBufferCount()));
     // should drop frame after acquire buffer to avoid drop key frame
     DropFrameProcess(surfaceHandler, acquireTimeStamp);
+#ifdef RS_ENABLE_GPU
     auto renderEngine = RSUniRenderThread::Instance().GetRenderEngine();
     if (!renderEngine) {
         return true;
     }
     renderEngine->RegisterDeleteBufferListener(surfaceHandler);
     return true;
+#else
+    return true;
+#endif
 }
 
 bool RSBaseRenderUtil::ReleaseBuffer(RSSurfaceHandler& surfaceHandler)
@@ -1209,7 +1213,7 @@ Drawing::Matrix RSBaseRenderUtil::GetGravityMatrix(
 
     return gravityMatrix;
 }
-
+#ifdef RS_ENABLE_GPU
 void RSBaseRenderUtil::DealWithSurfaceRotationAndGravity(GraphicTransformType transform, Gravity gravity,
     RectF &localBounds, BufferDrawParam &params, RSSurfaceRenderParams *nodeParams)
 {
@@ -1250,7 +1254,7 @@ void RSBaseRenderUtil::DealWithSurfaceRotationAndGravity(GraphicTransformType tr
     // we must disable the scale effect that from srcRect to dstRect.
     params.dstRect = params.srcRect;
 }
-
+#endif
 void RSBaseRenderUtil::FlipMatrix(GraphicTransformType transform, BufferDrawParam& params)
 {
     GraphicTransformType type = GetFlipTransform(transform);

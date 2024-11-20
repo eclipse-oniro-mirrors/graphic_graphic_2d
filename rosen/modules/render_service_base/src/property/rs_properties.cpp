@@ -4431,11 +4431,13 @@ bool RSProperties::GetHaveEffectRegion() const
 
 void RSProperties::SetHaveEffectRegion(bool haveEffectRegion)
 {
+#if defined(NEW_SKIA) && (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
     // clear cache if new region is null or outside current region
     if (auto& manager = GetFilterCacheManager(false);
         manager && manager->IsCacheValid() && haveEffectRegion == false) {
         manager->UpdateCacheStateWithFilterRegion();
     }
+#endif
     haveEffectRegion_ = haveEffectRegion;
 }
 } // namespace Rosen
