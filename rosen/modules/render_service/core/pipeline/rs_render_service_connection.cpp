@@ -1234,13 +1234,13 @@ void RSRenderServiceConnection::SetScreenBacklight(ScreenId id, uint32_t level)
     }
     RSLuminanceControl::Get().SetSdrLuminance(id, level);
     if (RSLuminanceControl::Get().IsHdrOn(id) && level > 0) {
-        auto task = [weakThis = wptr<RSRenderServiceConnection>(this)]() {
+        auto task = [weakThis = wptr<RSRenderServiceConnection>(this), id]() {
             sptr<RSRenderServiceConnection> connection = weakThis.promote();
             if (!connection) {
                 RS_LOGE("RSRenderServiceConnection::SetScreenBacklight fail");
                 return;
             }
-            connection->mainThread_->SetLuminanceChangingStatus(true);
+            connection->mainThread_->SetLuminanceChangingStatus(id, true);
             connection->mainThread_->SetDirtyFlag();
             connection->mainThread_->RequestNextVSync();
         };

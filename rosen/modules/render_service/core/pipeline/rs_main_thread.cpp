@@ -4234,19 +4234,22 @@ void RSMainThread::SetCurtainScreenUsingStatus(bool isCurtainScreenOn)
     RS_LOGD("RSMainThread::SetCurtainScreenUsingStatus %{public}d", isCurtainScreenOn);
 }
 
-void RSMainThread::SetLuminanceChangingStatus(bool isLuminanceChanged)
+void RSMainThread::SetLuminanceChangingStatus(ScreenId id, bool isLuminanceChanged)
 {
-    isLuminanceChanged_.store(isLuminanceChanged);
+    std::lock_guard<std::mutex> lock(luminanceMutex_);
+    displayLuminanceChanged_[id] = isLuminanceChanged;
 }
-
-bool RSMainThread::ExchangeLuminanceChangingStatus()
+ 
+bool RSMainThread::ExchangeLuminanceChangingStatus(ScreenId id)
 {
-    bool expectChanged = true;
-    if (!isLuminanceChanged_.compare_exchange_weak(expectChanged, false)) {
-        return false;
+    std::lock_guard<std::mutex> lock(luminanceMutex_);
+    bool ret = false;
+    auto it = displayLuminanceChanged_.find(id);
+    if (it != displayLuminanceChanged_.end()) {
+        ret = it->second;
+        it->second = false;
     }
-    RS_LOGD("RSMainThread::ExchangeLuminanceChangingStatus changed");
-    return true;
+    return ret;
 }
 
 bool RSMainThread::IsCurtainScreenOn() const
@@ -4300,11 +4303,11 @@ void RSMainThread::UpdateLuminance()
             if (rsLuminance.IsDimmingOn(screenId)) {
                 rsLuminance.DimmingIncrease(screenId);
                 isNeedRefreshAll = true;
+                SetLuminanceChangingStatus(screenId, true);
             }
         }
     }
     if (isNeedRefreshAll) {
-        SetLuminanceChangingStatus(true);
         SetDirtyFlag();
         RequestNextVSync();
     }

@@ -524,6 +524,7 @@ void RSUniRenderVisitor::ResetDisplayDirtyRegion()
     if (curDisplayNode_ == nullptr) {
         return;
     }
+    ScreenId id = curDisplayNode_->GetScreenId();
     bool ret = CheckScreenPowerChange() ||
         CheckColorFilterChange() ||
         CheckCurtainScreenUsingStatusChange() ||
@@ -531,7 +532,7 @@ void RSUniRenderVisitor::ResetDisplayDirtyRegion()
         IsWatermarkFlagChanged() ||
         zoomStateChange_ ||
         isCompleteRenderEnabled_ ||
-        CheckLuminanceStatusChange() ||
+        CheckLuminanceStatusChange(id) ||
         IsFirstFrameOfOverdrawSwitch() ||
         IsFirstFrameOfDrawingCacheDfxSwitch() ||
         IsAccessibilityConfigChanged();
@@ -564,9 +565,9 @@ bool RSUniRenderVisitor::CheckCurtainScreenUsingStatusChange() const
     return true;
 }
 
-bool RSUniRenderVisitor::CheckLuminanceStatusChange()
+bool RSUniRenderVisitor::CheckLuminanceStatusChange(ScreenId id)
 {
-    if (!RSMainThread::Instance()->ExchangeLuminanceChangingStatus()) {
+    if (!RSMainThread::Instance()->ExchangeLuminanceChangingStatus(id)) {
         return false;
     }
     RS_LOGD("RSUniRenderVisitor::CheckLuminanceStatusChange changed");

@@ -3003,9 +3003,13 @@ HWTEST_F(RSMainThreadTest, SetLuminanceChangingStatus, TestSize.Level2)
 {
     auto mainThread = RSMainThread::Instance();
     ASSERT_NE(mainThread, nullptr);
-    ASSERT_EQ(mainThread->isLuminanceChanged_.load(), false);
-    mainThread->SetLuminanceChangingStatus(true);
-    ASSERT_EQ(mainThread->isLuminanceChanged_.load(), true);
+    for (int i = 0; i < 10; i++) {
+        auto id = static_cast<ScreenId>(i);
+        mainThread->SetLuminanceChangingStatus(id, true);
+        ASSERT_EQ(mainThread->displayLuminanceChanged_[id], true);
+        mainThread->SetLuminanceChangingStatus(id, false);
+        ASSERT_EQ(mainThread->displayLuminanceChanged_[id], false);
+    }
 }
 
 /**
@@ -3018,9 +3022,14 @@ HWTEST_F(RSMainThreadTest, ExchangeLuminanceChangingStatus, TestSize.Level2)
 {
     auto mainThread = RSMainThread::Instance();
     ASSERT_NE(mainThread, nullptr);
-    mainThread->SetLuminanceChangingStatus(true);
-    ASSERT_EQ(mainThread->ExchangeLuminanceChangingStatus(), true);
-    ASSERT_EQ(mainThread->isLuminanceChanged_.load(), false);
+    for (int i = 0; i < 10; i++) {
+        auto id = static_cast<ScreenId>(i);
+        mainThread->SetLuminanceChangingStatus(id, true);
+        ASSERT_EQ(mainThread->ExchangeLuminanceChangingStatus(id), true);
+        ASSERT_EQ(mainThread->ExchangeLuminanceChangingStatus(id), false);
+        mainThread->SetLuminanceChangingStatus(id, false);
+        ASSERT_EQ(mainThread->ExchangeLuminanceChangingStatus(id), false);
+    }
 }
 
 /**

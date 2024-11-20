@@ -576,10 +576,13 @@ HWTEST_F(RSUniRenderVisitorTest, CheckLuminanceStatusChangeTest, TestSize.Level2
 {
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
     ASSERT_NE(rsUniRenderVisitor, nullptr);
-    RSMainThread::Instance()->SetLuminanceChangingStatus(true);
-    ASSERT_EQ(rsUniRenderVisitor->CheckLuminanceStatusChange(), true);
-    RSMainThread::Instance()->SetLuminanceChangingStatus(false);
-    ASSERT_EQ(rsUniRenderVisitor->CheckLuminanceStatusChange(), false);
+    for (int i = 0; i < 10; i++) {
+        auto id = static_cast<ScreenId>(i);
+        RSMainThread::Instance()->SetLuminanceChangingStatus(id, true);
+        ASSERT_EQ(rsUniRenderVisitor->CheckLuminanceStatusChange(id), true);
+        RSMainThread::Instance()->SetLuminanceChangingStatus(id, false);
+        ASSERT_EQ(rsUniRenderVisitor->CheckLuminanceStatusChange(id), false);
+    }
 }
 
 /*
