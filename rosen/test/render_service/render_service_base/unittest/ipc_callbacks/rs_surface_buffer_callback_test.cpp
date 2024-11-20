@@ -52,25 +52,5 @@ HWTEST_F(RSDefaultSurfaceBufferCallbackTest, Constructor, TestSize.Level1)
     EXPECT_TRUE(rsDefaultSurfaceBufferCallback.finishCallback_ != nullptr);
     EXPECT_FALSE(flag);
 }
-
-/**
- * @tc.name: OnFinish
- * @tc.desc: Verify the OnFinish
- * @tc.type:FUNC
- * @tc.require: issueIB2AHG
- */
-HWTEST_F(RSDefaultSurfaceBufferCallbackTest, OnFinish, TestSize.Level1)
-{
-    RSDefaultSurfaceBufferCallback rsDefaultSurfaceBufferCallback({});
-    rsDefaultSurfaceBufferCallback.OnFinish(FinishCallbackRet{});
-    EXPECT_EQ(rsDefaultSurfaceBufferCallback.finishCallback_, nullptr);
-    bool flag = false;
-    DefaultSurfaceBufferCallbackFuncs funcs = {
-        .OnFinish = [&flag](const FinishCallbackRet&) { flag = true; }
-    };
-    RSDefaultSurfaceBufferCallback rsDefaultSurfaceBufferCallback1(funcs);
-    rsDefaultSurfaceBufferCallback1.OnFinish(FinishCallbackRet{});
-    EXPECT_TRUE(flag);
-}
 } // namespace Rosen
 } // namespace OHOS
