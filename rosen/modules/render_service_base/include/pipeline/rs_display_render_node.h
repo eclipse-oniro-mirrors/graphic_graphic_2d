@@ -452,6 +452,7 @@ public:
     void SetScbNodePid(const std::vector<int32_t>& oldScbPids, int32_t currentScbPid)
     {
         oldScbPids_ = oldScbPids;
+        lastScbPid_ = currentScbPid_;
         currentScbPid_ = currentScbPid;
         isNeedWaitNewScbPid_ = true;
         isFullChildrenListValid_ = false;
@@ -551,6 +552,7 @@ private:
 
     std::vector<int32_t> oldScbPids_ {};
     int32_t currentScbPid_ = -1;
+    int32_t lastScbPid_ = -1;
     mutable bool isNeedWaitNewScbPid_ = false;
     mutable std::shared_ptr<std::vector<std::shared_ptr<RSRenderNode>>> currentChildrenList_ =
         std::make_shared<std::vector<std::shared_ptr<RSRenderNode>>>();
