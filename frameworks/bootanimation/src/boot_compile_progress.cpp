@@ -190,6 +190,7 @@ bool BootCompileProgress::CheckParams()
     }
     return false;
 }
+
 bool BootCompileProgress::CheckBundleScanParam()
 {
     if (!needBundleScan_) {
@@ -201,6 +202,7 @@ bool BootCompileProgress::CheckBundleScanParam()
     }
     return false;
 }
+
 bool BootCompileProgress::CheckBmsStartParam()
 {
     if (!needOtaCompile_) {
@@ -212,6 +214,7 @@ bool BootCompileProgress::CheckBmsStartParam()
     }
     return false;
 }
+
 bool BootCompileProgress::WaitParamsIfNeeded()
 {
     bool wait1 = WaitBmsStartIfNeeded();
@@ -221,6 +224,7 @@ bool BootCompileProgress::WaitParamsIfNeeded()
     }
     return true;
 }
+
 bool BootCompileProgress::WaitBundleScanIfNeeded()
 {
     if (!needBundleScan_) {
@@ -233,6 +237,7 @@ bool BootCompileProgress::WaitBundleScanIfNeeded()
     }
     return true;
 }
+
 bool BootCompileProgress::WaitBmsStartIfNeeded()
 {
     if (!needOtaCompile_) {
