@@ -27,7 +27,9 @@
 #include "pipeline/rs_uni_render_judgement.h"
 #include "platform/common/rs_log.h"
 #include "platform/common/rs_system_properties.h"
+#if (defined(RS_ENABLE_GPU) && defined(RS_ENABLE_GL))
 #include "platform/ohos/backend/rs_surface_ohos_gl.h"
+#endif
 #include "platform/ohos/backend/rs_surface_ohos_raster.h"
 #ifdef RS_ENABLE_VK
 #include "platform/ohos/backend/rs_vulkan_context.h"
@@ -36,8 +38,9 @@
 #include "render/rs_drawing_filter.h"
 #include "render/rs_skia_filter.h"
 #include "metadata_helper.h"
-
+#ifdef RS_ENABLE_GPU
 #include "drawable/rs_display_render_node_drawable.h"
+#endif
 
 namespace OHOS {
 namespace Rosen {
@@ -75,7 +78,7 @@ void RSBaseRenderEngine::Init(bool independentContext)
     renderContext_->SetUpGpuContext();
 #endif
 #endif // RS_ENABLE_GL || RS_ENABLE_VK
-#if defined(RS_ENABLE_EGLIMAGE)
+#if (defined(RS_ENABLE_EGLIMAGE) && defined(RS_ENABLE_GPU))
     eglImageManager_ = std::make_shared<RSEglImageManager>(renderContext_->GetEGLDisplay());
 #endif // RS_ENABLE_EGLIMAGE
 #ifdef RS_ENABLE_VK
@@ -91,10 +94,12 @@ void RSBaseRenderEngine::Init(bool independentContext)
 
 void RSBaseRenderEngine::InitCapture(bool independentContext)
 {
+#ifdef RS_ENABLE_GPU
     (void)independentContext;
     if (captureRenderContext_) {
         return;
     }
+#endif
 
 #if (defined RS_ENABLE_GL) || (defined RS_ENABLE_VK)
     captureRenderContext_ = std::make_shared<RenderContext>();
@@ -121,10 +126,12 @@ void RSBaseRenderEngine::InitCapture(bool independentContext)
 
 void RSBaseRenderEngine::ResetCurrentContext()
 {
+#ifdef RS_ENABLE_GPU
     if (renderContext_ == nullptr) {
         RS_LOGE("This render context is nullptr.");
         return;
     }
+#endif
 #if (defined RS_ENABLE_GL)
     if (RSSystemProperties::GetGpuApiType() == GpuApiType::OPENGL) {
         renderContext_->ShareMakeCurrentNoSurface(EGL_NO_CONTEXT);
@@ -173,7 +180,7 @@ std::shared_ptr<Drawing::Image> RSBaseRenderEngine::CreateEglImageFromBuffer(RSP
     const sptr<SurfaceBuffer>& buffer, const sptr<SyncFence>& acquireFence, const uint32_t threadIndex,
     const std::shared_ptr<Drawing::ColorSpace>& drawingColorSpace)
 {
-#ifdef RS_ENABLE_EGLIMAGE
+#if (defined(RS_ENABLE_EGLIMAGE) && defined(RS_ENABLE_GPU))
 #if defined(RS_ENABLE_GL)
     if (!RSSystemProperties::IsUseVulkan() && canvas.GetGPUContext() == nullptr) {
         RS_LOGE("RSBaseRenderEngine::CreateEglImageFromBuffer GrContext is null!");
@@ -390,7 +397,9 @@ void RSBaseRenderEngine::DrawDisplayNodeWithParams(RSPaintFilterCanvas& canvas, 
 {
     if (params.useCPU) {
         DrawBuffer(canvas, params);
-    } else {
+    }
+#ifdef RS_ENABLE_GPU
+    else {
         auto drawable = node.GetRenderDrawable();
         if (!drawable) {
             return;
@@ -399,6 +408,7 @@ void RSBaseRenderEngine::DrawDisplayNodeWithParams(RSPaintFilterCanvas& canvas, 
         RegisterDeleteBufferListener(displayDrawable->GetRSSurfaceHandlerOnDraw()->GetConsumer());
         DrawImage(canvas, params);
     }
+#endif
 }
 
 void RSBaseRenderEngine::DrawDisplayNodeWithParams(RSPaintFilterCanvas& canvas, RSSurfaceHandler& surfaceHandler,
@@ -824,7 +834,7 @@ void RSBaseRenderEngine::RegisterDeleteBufferListener(const sptr<IConsumerSurfac
     }
 #endif // #ifdef RS_ENABLE_VK
 
-#ifdef RS_ENABLE_EGLIMAGE
+#if (defined(RS_ENABLE_EGLIMAGE) && defined(RS_ENABLE_GPU))
     auto regUnMapEglImageFunc = [this, isForUniRedraw](int32_t bufferId) {
         if (isForUniRedraw) {
             eglImageManager_->UnMapEglImageFromSurfaceBufferForUniRedraw(bufferId);
@@ -853,7 +863,7 @@ void RSBaseRenderEngine::RegisterDeleteBufferListener(RSSurfaceHandler& handler)
     }
 #endif // #ifdef RS_ENABLE_VK
 
-#ifdef RS_ENABLE_EGLIMAGE
+#if (defined(RS_ENABLE_EGLIMAGE) && defined(RS_ENABLE_GPU))
     auto regUnMapEglImageFunc = [this](int32_t bufferId) {
         eglImageManager_->UnMapEglImageFromSurfaceBuffer(bufferId);
     };
@@ -872,7 +882,7 @@ void RSBaseRenderEngine::ShrinkCachesIfNeeded(bool isForUniRedraw)
     }
 #endif // RS_ENABLE_VK
 
-#ifdef RS_ENABLE_EGLIMAGE
+#if (defined(RS_ENABLE_EGLIMAGE) && defined(RS_ENABLE_GPU))
     if (eglImageManager_ != nullptr) {
         eglImageManager_->ShrinkCachesIfNeeded(isForUniRedraw);
     }
@@ -892,7 +902,7 @@ void RSBaseRenderEngine::ClearCacheSet(const std::set<int32_t> unmappedCache)
     }
 #endif // RS_ENABLE_VK
 
-#ifdef RS_ENABLE_EGLIMAGE
+#if (defined(RS_ENABLE_EGLIMAGE) && defined(RS_ENABLE_GPU))
     if (eglImageManager_ != nullptr) {
         for (auto id : unmappedCache) {
             eglImageManager_->UnMapEglImageFromSurfaceBuffer(id);

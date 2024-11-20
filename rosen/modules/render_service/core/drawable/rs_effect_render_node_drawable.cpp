@@ -32,6 +32,7 @@ RSRenderNodeDrawable::Ptr RSEffectRenderNodeDrawable::OnGenerate(std::shared_ptr
 
 void RSEffectRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
 {
+#ifdef RS_ENABLE_GPU
     SetDrawSkipType(DrawSkipType::NONE);
     if (!ShouldPaint()) {
         SetDrawSkipType(DrawSkipType::SHOULD_NOT_PAINT);
@@ -63,11 +64,13 @@ void RSEffectRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     }
 
     RSRenderNodeDrawableAdapter::DrawImpl(canvas, bounds, drawCmdIndex_.childrenIndex_);
+#endif
 }
 
 bool RSEffectRenderNodeDrawable::GenerateEffectDataOnDemand(RSEffectRenderParams* effectParams,
     Drawing::Canvas& canvas, const Drawing::Rect& bounds, RSPaintFilterCanvas* paintFilterCanvas)
 {
+#ifdef RS_ENABLE_GPU
     if (drawCmdIndex_.childrenIndex_ == -1) {
         // case 0: No children, skip
         return false;
@@ -115,6 +118,9 @@ bool RSEffectRenderNodeDrawable::GenerateEffectDataOnDemand(RSEffectRenderParams
         }
     }
     return true;
+#else
+    return false;
+#endif
 }
 
 void RSEffectRenderNodeDrawable::OnCapture(Drawing::Canvas& canvas)

@@ -42,6 +42,7 @@ RSRenderNodeDrawable::Ptr RSCanvasRenderNodeDrawable::OnGenerate(std::shared_ptr
  */
 void RSCanvasRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
 {
+#ifdef RS_ENABLE_GPU
     SetDrawSkipType(DrawSkipType::NONE);
     if (!ShouldPaint()) {
         SetDrawSkipType(DrawSkipType::SHOULD_NOT_PAINT);
@@ -81,6 +82,7 @@ void RSCanvasRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         RSRenderNodeDrawable::OnDraw(canvas);
     }
     RSRenderNodeDrawable::ProcessedNodeCountInc();
+#endif
 }
 
 /*
@@ -88,6 +90,7 @@ void RSCanvasRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
  */
 void RSCanvasRenderNodeDrawable::OnCapture(Drawing::Canvas& canvas)
 {
+#ifdef RS_ENABLE_GPU
     if (!ShouldPaint()) {
         return;
     }
@@ -104,5 +107,6 @@ void RSCanvasRenderNodeDrawable::OnCapture(Drawing::Canvas& canvas)
     } else {
         RSRenderNodeDrawable::OnDraw(canvas);
     }
+#endif
 }
 } // namespace OHOS::Rosen::DrawableV2

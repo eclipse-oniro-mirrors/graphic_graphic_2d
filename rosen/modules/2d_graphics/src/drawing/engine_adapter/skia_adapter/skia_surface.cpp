@@ -55,7 +55,6 @@ SkSurface::BackendHandleAccess ConvertToSkiaBackendAccess(BackendAccess access)
 }
 }
 #endif
-
 SkiaSurface::SkiaSurface() {}
 
 void SkiaSurface::PostSkSurfaceToTargetThread()
@@ -378,9 +377,9 @@ std::shared_ptr<Image> SkiaSurface::GetImageSnapshot(const RectI& bounds) const
     return image;
 }
 
-#ifdef RS_ENABLE_GPU
 BackendTexture SkiaSurface::GetBackendTexture(BackendAccess access) const
 {
+#ifdef RS_ENABLE_GPU
     if (skSurface_ == nullptr) {
         LOGD("skSurface is nullptr");
         return {};
@@ -400,8 +399,11 @@ BackendTexture SkiaSurface::GetBackendTexture(BackendAccess access) const
     backendTexture.SetTextureInfo(SkiaTextureInfo::ConvertToTextureInfo(grBackendTexture));
 #endif
     return backendTexture;
-}
+#else
+    return {};
 #endif
+}
+
 
 std::shared_ptr<Surface> SkiaSurface::MakeSurface(int width, int height) const
 {

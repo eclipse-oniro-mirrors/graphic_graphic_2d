@@ -16,7 +16,9 @@
 #ifndef FRAMEWORKS_BOOTANIMATION_INCLUDE_BOOT_COMPILE_PROGRESS_H
 #define FRAMEWORKS_BOOTANIMATION_INCLUDE_BOOT_COMPILE_PROGRESS_H
 
+#ifdef RS_ENABLE_GPU
 #include <render_context/render_context.h>
+#endif
 #include <ui/rs_canvas_node.h>
 #include <ui/rs_display_node.h>
 #include <ui/rs_surface_extractor.h>

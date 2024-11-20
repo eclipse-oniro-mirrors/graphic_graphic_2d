@@ -65,6 +65,7 @@ void PerfRequest(int32_t perfRequestCode, bool onOffTag)
 bool RSProcessor::InitForRenderThread(DrawableV2::RSDisplayRenderNodeDrawable& displayDrawable, ScreenId mirroredId,
     std::shared_ptr<RSBaseRenderEngine> renderEngine)
 {
+#ifdef RS_ENABLE_GPU
     if (renderEngine == nullptr) {
         RS_LOGE("renderEngine is nullptr");
         return false;
@@ -100,6 +101,7 @@ bool RSProcessor::InitForRenderThread(DrawableV2::RSDisplayRenderNodeDrawable& d
 
     // set default render frame config
     renderFrameConfig_ = RSBaseRenderUtil::GetFrameBufferRequestConfig(screenInfo_);
+#endif
     return true;
 }
 

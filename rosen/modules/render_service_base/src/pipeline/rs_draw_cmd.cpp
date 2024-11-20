@@ -43,7 +43,7 @@
 namespace OHOS {
 namespace Rosen {
 constexpr int32_t CORNER_SIZE = 4;
-#ifdef ROSEN_OHOS
+#if (defined(ROSEN_OHOS) && defined(RS_ENABLE_GPU))
 constexpr uint32_t FENCE_WAIT_TIME = 3000; // ms
 #endif
 #if defined(ROSEN_OHOS) && (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
@@ -1004,6 +1004,7 @@ void DrawSurfaceBufferOpItem::DrawWithGles(Canvas* canvas)
 
 bool DrawSurfaceBufferOpItem::CreateEglTextureId()
 {
+#ifdef RS_ENABLE_GL
     EGLint attrs[] = { EGL_IMAGE_PRESERVED, EGL_TRUE, EGL_NONE };
 
     auto disp = eglGetDisplay(EGL_DEFAULT_DISPLAY);
@@ -1043,7 +1044,7 @@ bool DrawSurfaceBufferOpItem::CreateEglTextureId()
     glTexParameteri(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_MAG_FILTER, magFilter);
     glTexParameteri(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_WRAP_S, wrapS);
     glTexParameteri(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_WRAP_T, wrapT);
-
+#endif
     return true;
 }
 

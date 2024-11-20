@@ -147,6 +147,7 @@ static void SendTelemetry(double time)
 */
 void RSProfiler::SetDirtyRegion(const Occlusion::Region& dirtyRegion)
 {
+#ifdef RS_ENABLE_GPU
     if (!IsRecording()) {
         return;
     }
@@ -184,6 +185,7 @@ void RSProfiler::SetDirtyRegion(const Occlusion::Region& dirtyRegion)
     if (g_dirtyRegionPercentage > maxPercentValue) {
         g_dirtyRegionPercentage = maxPercentValue;
     }
+#endif
 }
 
 void RSProfiler::Init(RSRenderService* renderService)

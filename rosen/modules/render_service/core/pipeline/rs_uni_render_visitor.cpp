@@ -1406,10 +1406,12 @@ bool RSUniRenderVisitor::BeforeUpdateSurfaceDirtyCalc(RSSurfaceRenderNode& node)
     if (node.GetRSSurfaceHandler() && node.GetRSSurfaceHandler()->GetBuffer()) {
         node.SetBufferRelMatrix(RSUniRenderUtil::GetMatrixOfBufferToRelRect(node));
     }
+#ifdef RS_ENABLE_GPU
     if (node.IsHardwareEnabledTopSurface() && node.ShouldPaint()) {
         RSPointerWindowManager::Instance().CollectInfoForHardCursor(curDisplayNode_->GetId(),
             node.GetRenderDrawable());
     }
+#endif
     node.setQosCal((RSMainThread::Instance()->GetDeviceType() == DeviceType::PC) &&
         RSSystemParameters::GetVSyncControlEnabled());
     return true;

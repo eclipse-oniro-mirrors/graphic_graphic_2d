@@ -139,13 +139,13 @@ std::shared_ptr<RSSurface> RSRenderServiceClient::CreateNodeAndSurface(const RSS
 
 std::shared_ptr<RSSurface> RSRenderServiceClient::CreateRSSurface(const sptr<Surface> &surface)
 {
-#if defined (ACE_ENABLE_VK)
+#if defined (RS_ENABLE_VK)
     if (RSSystemProperties::IsUseVulkan()) {
         return std::make_shared<RSSurfaceOhosVulkan>(surface); // GPU render
     }
 #endif
 
-#if defined (ACE_ENABLE_GL)
+#if defined (RS_ENABLE_GL)
     if (RSSystemProperties::GetGpuApiType() == Rosen::GpuApiType::OPENGL) {
         return std::make_shared<RSSurfaceOhosGl>(surface); // GPU render
     }
