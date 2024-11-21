@@ -824,6 +824,7 @@ HWTEST_F(RSMainThreadTest, DoParallelComposition, TestSize.Level1)
     int index = 0;
     node->SetIsOnTheTree(true);
     node->AddChild(childNode, index);
+    node->GenerateFullChildrenList();
     ASSERT_EQ(static_cast<int>(node->GetChildrenCount()), 1);
     ASSERT_TRUE(childNode->IsOnTheTree());
 
@@ -1085,6 +1086,7 @@ HWTEST_F(RSMainThreadTest, CheckParallelSubThreadNodesStatus, TestSize.Level1)
     node2->AddChild(childNode1);
     node2->AddChild(childNode2);
     node2->AddChild(childNode3);
+    node2->GenerateFullChildrenList();
     mainThread->subThreadNodes_.push_back(node1);
     mainThread->subThreadNodes_.push_back(node2);
     mainThread->subThreadNodes_.push_back(node3);
@@ -1227,6 +1229,7 @@ HWTEST_F(RSMainThreadTest, CheckSubThreadNodeStatusIsDoing002, TestSize.Level1)
     rsSurfaceRenderNode1->SetCacheSurfaceProcessedStatus(CacheProcessStatus::DOING);
     auto rsSurfaceRenderNode2 = RSTestUtil::CreateSurfaceNode();
     rsSurfaceRenderNode1->AddChild(rsSurfaceRenderNode2);
+    rsSurfaceRenderNode1->GenerateFullChildrenList();
     mainThread->subThreadNodes_.emplace_back(rsSurfaceRenderNode1);
     mainThread->CheckSubThreadNodeStatusIsDoing(rsSurfaceRenderNode2->GetId());
 }
@@ -1264,12 +1267,12 @@ HWTEST_F(RSMainThreadTest, CollectInfoForHardwareComposer002, TestSize.Level1)
 }
 
 /**
- * @tc.name: IsLastFrameUIFirstEnbaled001
- * @tc.desc: IsLastFrameUIFirstEnbaled test
+ * @tc.name: IsLastFrameUIFirstEnabled001
+ * @tc.desc: IsLastFrameUIFirstEnabled test
  * @tc.type: FUNC
  * @tc.require: issueI7HDVG
  */
-HWTEST_F(RSMainThreadTest, IsLastFrameUIFirstEnbaled001, TestSize.Level1)
+HWTEST_F(RSMainThreadTest, IsLastFrameUIFirstEnabled001, TestSize.Level1)
 {
     auto mainThread = RSMainThread::Instance();
     ASSERT_NE(mainThread, nullptr);
@@ -1290,12 +1293,12 @@ HWTEST_F(RSMainThreadTest, IsLastFrameUIFirstEnbaled001, TestSize.Level1)
 
 
 /**
- * @tc.name: IsLastFrameUIFirstEnbaled002
- * @tc.desc: IsLastFrameUIFirstEnbaled test
+ * @tc.name: IsLastFrameUIFirstEnabled002
+ * @tc.desc: IsLastFrameUIFirstEnabled test
  * @tc.type: FUNC
  * @tc.require: issueI7HDVG
  */
-HWTEST_F(RSMainThreadTest, IsLastFrameUIFirstEnbaled002, TestSize.Level1)
+HWTEST_F(RSMainThreadTest, IsLastFrameUIFirstEnabled002, TestSize.Level1)
 {
     auto mainThread = RSMainThread::Instance();
     ASSERT_NE(mainThread, nullptr);
@@ -1309,6 +1312,7 @@ HWTEST_F(RSMainThreadTest, IsLastFrameUIFirstEnbaled002, TestSize.Level1)
     auto node2 = std::make_shared<RSSurfaceRenderNode>(id, mainThread->context_);
     node2->nodeType_ = RSSurfaceNodeType::APP_WINDOW_NODE;
     node1->AddChild(node2);
+    node1->GenerateFullChildrenList();
     mainThread->subThreadNodes_.push_back(node1);
     mainThread->IsLastFrameUIFirstEnabled(2);
 }
@@ -1775,6 +1779,7 @@ HWTEST_F(RSMainThreadTest, CalcOcclusion002, TestSize.Level1)
     auto node1 = std::make_shared<RSRenderNode>(0, true);
     auto node2 = std::make_shared<RSRenderNode>(1, true);
     node1->AddChild(node2);
+    node1->GenerateFullChildrenList();
     mainThread->context_->globalRootRenderNode_ = node1;
     mainThread->CalcOcclusion();
     // run with more than one node
@@ -1784,6 +1789,7 @@ HWTEST_F(RSMainThreadTest, CalcOcclusion002, TestSize.Level1)
     RSSurfaceRenderNodeConfig config2;
     auto node5 = std::make_shared<RSSurfaceRenderNode>(config2);
     node3->AddChild(node4);
+    node3->GenerateFullChildrenList();
     node4->curAllSurfaces_.push_back(nullptr);
     node4->curAllSurfaces_.push_back(node5);
     mainThread->context_->globalRootRenderNode_ = node3;
@@ -3882,6 +3888,60 @@ HWTEST_F(RSMainThreadTest, IsSingleDisplay, TestSize.Level2)
 }
 
 /**
+ * @tc.name: HasMirrorDisplay
+ * @tc.desc: test HasMirrorDisplay001, rootNode = nullptr
+ * @tc.type: FUNC
+ * @tc.require: issueIB5EAA
+ */
+HWTEST_F(RSMainThreadTest, HasMirrorDisplay001, TestSize.Level2)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    ASSERT_NE(mainThread->context_, nullptr);
+    auto rootNode = mainThread->context_->globalRootRenderNode_;
+    ASSERT_NE(rootNode, nullptr);
+    mainThread->context_->globalRootRenderNode_ = nullptr;
+    ASSERT_EQ(mainThread->HasMirrorDisplay(), false);
+    mainThread->context_->globalRootRenderNode_ = rootNode;
+}
+
+/**
+ * @tc.name: HasMirrorDisplay
+ * @tc.desc: test HasMirrorDisplay002, rootNode = nullptr
+ * @tc.type: FUNC
+ * @tc.require: issueIB5EAA
+ */
+HWTEST_F(RSMainThreadTest, HasMirrorDisplay002, TestSize.Level2)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    ASSERT_NE(mainThread->context_, nullptr);
+    auto rootNode = mainThread->context_->globalRootRenderNode_;
+    NodeId id = 1;
+    auto node1 = std::make_shared<RSRenderNode>(id);
+    id++;
+    RSDisplayNodeConfig config;
+    auto displayNode1 = std::make_shared<RSDisplayRenderNode>(id, config);
+    id++;
+    node1->AddChild(displayNode1);
+    node1->GenerateFullChildrenList();
+    ASSERT_TRUE(node1->GetChildrenCount() <= 1);
+    mainThread->context_->globalRootRenderNode_ = node1;
+    ASSERT_EQ(mainThread->HasMirrorDisplay(), false);
+    auto displayNode2 = std::make_shared<RSDisplayRenderNode>(id, config);
+    id++;
+    auto mirrorSourceNode = std::make_shared<RSDisplayRenderNode>(id, config);
+    displayNode2->isMirroredDisplay_ = true;
+    displayNode2->SetMirrorSource(mirrorSourceNode);
+    node1->AddChild(displayNode2);
+    node1->GenerateFullChildrenList();
+    ASSERT_TRUE(node1->GetChildrenCount() > 1);
+    mainThread->context_->globalRootRenderNode_ = node1;
+    ASSERT_EQ(mainThread->HasMirrorDisplay(), true);
+    mainThread->context_->globalRootRenderNode_ = rootNode;
+}
+
+/**
  * @tc.name: ResetAnimateNodeFlag
  * @tc.desc: test ResetAnimateNodeFlag, context_ = nullptr & !nullptr
  * @tc.type: FUNC
@@ -3925,6 +3985,8 @@ HWTEST_F(RSMainThreadTest, SendClientDumpNodeTreeCommands, TestSize.Level2)
     node1->AddChild(node2);
     auto node3 = std::make_shared<RSRootRenderNode>(testId++, mainThread->context_);
     node2->AddChild(node3);
+    node1->GenerateFullChildrenList();
+    node2->GenerateFullChildrenList();
     node3->SetIsOnTheTree(true);
     mainThread->context_->GetMutableNodeMap().FilterNodeByPid(0);
     mainThread->context_->GetMutableNodeMap().RegisterRenderNode(node3);
