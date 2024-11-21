@@ -1626,7 +1626,8 @@ void RSMainThread::CollectInfoForHardwareComposer()
             } else { // hwc -> hwc
                 // self-drawing node don't set content dirty when gpu -> hwc
                 // so first frame in hwc -> hwc, should set content dirty
-                if (surfaceNode->GetHwcDelayDirtyFlag()) {
+                if (surfaceNode->GetHwcDelayDirtyFlag() ||
+                    RSUniRenderUtil::GetRotationDegreeFromMatrix(surfaceNode->GetTotalMatrix()) % RS_ROTATION_90 != 0) {
                     surfaceNode->SetContentDirty();
                     surfaceNode->SetHwcDelayDirtyFlag(false);
                     doDirectComposition_ = false;

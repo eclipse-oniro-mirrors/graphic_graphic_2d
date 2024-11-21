@@ -1686,9 +1686,10 @@ void RSUniRenderUtil::LayerScaleFit(RSSurfaceRenderNode& node)
 
     // If surfaceRotation is not a multiple of 180, need to change the correspondence between width & height.
     // ScreenRotation has been processed in SetLayerSize, and do not change the width & height correspondence.
-    int surfaceRotation = RSUniRenderUtil::GetRotationFromMatrix(node.GetTotalMatrix()) +
-                          RSBaseRenderUtil::RotateEnumToInt(RSBaseRenderUtil::GetRotateTransform(
-                              RSBaseRenderUtil::GetSurfaceBufferTransformType(surface, buffer)));
+    int surfaceRotation =
+        RSUniRenderUtil::GetRotationFromMatrix(node.GetRenderProperties().GetBoundsGeometry()->GetAbsMatrix()) +
+        RSBaseRenderUtil::RotateEnumToInt(
+            RSBaseRenderUtil::GetRotateTransform(RSBaseRenderUtil::GetSurfaceBufferTransformType(surface, buffer)));
     if (surfaceRotation % FLAT_ANGLE != 0) {
         std::swap(srcRect.width_, srcRect.height_);
     }
