@@ -2635,7 +2635,7 @@ void OH_Drawing_SetTypographyStyleFontStyleStruct(OH_Drawing_TypographyStyle* dr
  * @version 1.0
  */
 OH_Drawing_FontStyleStruct OH_Drawing_TypographyStyleGetFontStyleStruct(OH_Drawing_TypographyStyle* drawingStyle);
-    
+
 /**
  * @brief Gets whether the two TextStyle objects are equal.
  *
