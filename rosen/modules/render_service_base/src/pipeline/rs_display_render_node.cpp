@@ -484,7 +484,7 @@ RSRenderNode::ChildrenListSharedPtr RSDisplayRenderNode::GetSortedChildren() con
             }
         }
     }
-    if (isNeedWaitNewScbPid_) {
+    if (isNeedWaitNewScbPid_ && lastScbPid_ < 0) {
         return fullChildrenList;
     }
     std::vector<int32_t> oldScbPids = GetOldScbPids();
@@ -495,7 +495,8 @@ RSRenderNode::ChildrenListSharedPtr RSDisplayRenderNode::GetSortedChildren() con
         }
         auto childPid = ExtractPid(child->GetId());
         auto pidIter = std::find(oldScbPids.begin(), oldScbPids.end(), childPid);
-        if (pidIter != oldScbPids.end()) {
+        // only when isNeedWaitNewScbPid_ is ture, put lastScb's child to currentChildrenList_
+        if (pidIter != oldScbPids.end() && (!isNeedWaitNewScbPid_ || childPid != lastScbPid_)) {
             child->SetIsOntheTreeOnlyFlag(false);
             continue;
         } else if (childPid == currentScbPid) {
