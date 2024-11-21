@@ -68,7 +68,8 @@ RSSurfaceNode::SharedPtr RSSurfaceNode::Create(const RSSurfaceNodeConfig& surfac
     RSNodeMap::MutableInstance().RegisterNode(node);
     RS_LOGD("RSSurfaceNode::Create HDRClient name: %{public}s, type: %{public}hhu, id: %{public}" PRIu64,
         node->name_.c_str(), type, node->GetId());
-    if (type == RSSurfaceNodeType::APP_WINDOW_NODE || type == RSSurfaceNodeType::UI_EXTENSION_COMMON_NODE) {
+    if (type == RSSurfaceNodeType::APP_WINDOW_NODE || type == RSSurfaceNodeType::UI_EXTENSION_COMMON_NODE ||
+        type == RSSurfaceNodeType::UI_EXTENSION_SECURE_NODE) {
         auto callback = &RSSurfaceNode::SetHDRPresent;
         RSHDRManager::Instance().RegisterSetHDRPresent(callback, node->GetId());
     }
