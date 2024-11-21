@@ -186,8 +186,8 @@ private:
     bool CheckScreenPowerChange() const;
     bool CheckColorFilterChange() const;
     bool CheckCurtainScreenUsingStatusChange() const;
-    bool CheckLuminanceStatusChange();
-    void CheckCrossNode(RSSurfaceRenderNode& node);
+    bool CheckLuminanceStatusChange(ScreenId id);
+    bool CheckSkipCrossNode(RSSurfaceRenderNode& node);
     bool IsFirstFrameOfPartialRender() const;
     bool IsFirstFrameOfOverdrawSwitch() const;
     bool IsFirstFrameOfDrawingCacheDfxSwitch() const;
@@ -239,6 +239,7 @@ private:
     void UpdateHwcNodeEnable();
     void UpdateHwcNodeEnableByNodeBelow();
     void PrevalidateHwcNode();
+    void PrepareForCrossNode(RSSurfaceRenderNode& node);
 
     // use in QuickPrepareSurfaceRenderNode, update SurfaceRenderNode's uiFirst status
     void PrepareForUIFirstNode(RSSurfaceRenderNode& node);
@@ -274,6 +275,8 @@ private:
     void CheckColorSpace(RSSurfaceRenderNode& node);
     void CheckColorSpaceWithSelfDrawingNode(RSSurfaceRenderNode& node);
     void UpdateColorSpaceAfterHwcCalc(RSDisplayRenderNode& node);
+    void CheckPixelFormatWithSelfDrawingNode(RSSurfaceRenderNode& node);
+    void UpdatePixelFormatAfterHwcCalc(RSDisplayRenderNode& node);
     void HandleColorGamuts(RSDisplayRenderNode& node, const sptr<RSScreenManager>& screenManager);
     void CheckPixelFormat(RSSurfaceRenderNode& node);
     void HandlePixelFormat(RSDisplayRenderNode& node, const sptr<RSScreenManager>& screenManager);
@@ -387,6 +390,7 @@ private:
     // vector of current frame mainwindow surface visible info
     VisibleData allDstCurVisVec_;
     GraphicPixelFormat newPixelFormat_ = GraphicPixelFormat::GRAPHIC_PIXEL_FMT_RGBA_8888;
+    bool hasDisplayHdrOn_ = false;
     bool hasVisitCrossNode_ = false;
     bool isDirtyRegionDfxEnabled_ = false; // dirtyRegion DFX visualization
     bool isTargetDirtyRegionDfxEnabled_ = false;

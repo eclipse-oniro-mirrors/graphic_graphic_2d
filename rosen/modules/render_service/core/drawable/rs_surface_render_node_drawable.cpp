@@ -59,6 +59,7 @@
 namespace {
 constexpr int32_t CORNER_SIZE = 4;
 constexpr float GAMMA2_2 = 2.2f;
+constexpr const char* WALLPAPER = "SCBWallpaper";
 }
 namespace OHOS::Rosen::DrawableV2 {
 RSSurfaceRenderNodeDrawable::Registrar RSSurfaceRenderNodeDrawable::instance_;
@@ -87,8 +88,25 @@ RSRenderNodeDrawable::Ptr RSSurfaceRenderNodeDrawable::OnGenerate(std::shared_pt
     return new RSSurfaceRenderNodeDrawable(std::move(node));
 }
 
-void RSSurfaceRenderNodeDrawable::OnGeneralProcess(
-    RSPaintFilterCanvas& canvas, RSSurfaceRenderParams& surfaceParams, bool isSelfDrawingSurface)
+bool RSSurfaceRenderNodeDrawable::CheckDrawAndCacheWindowContent(RSSurfaceRenderParams& surfaceParams,
+    RSRenderThreadParams& uniParams) const
+{
+    if (!surfaceParams.GetNeedCacheSurface()) {
+        return false;
+    }
+    if (!surfaceParams.IsCrossNode()) {
+        return true;
+    }
+    if (uniParams.IsFirstVisitCrossNodeDisplay() &&
+        !RSUniRenderThread::IsInCaptureProcess() && !uniParams.HasDisplayHdrOn()) {
+        RS_TRACE_NAME_FMT("%s cache cross node[%s]", __func__, GetName().c_str());
+        return true;
+    }
+    return false;
+}
+
+void RSSurfaceRenderNodeDrawable::OnGeneralProcess(RSPaintFilterCanvas& canvas,
+    RSSurfaceRenderParams& surfaceParams, RSRenderThreadParams& uniParams, bool isSelfDrawingSurface)
 {
     auto bounds = surfaceParams.GetFrameRect();
 
@@ -112,7 +130,7 @@ void RSSurfaceRenderNodeDrawable::OnGeneralProcess(
         canvas.Restore();
     }
 
-    if (surfaceParams.GetNeedCacheSurface()) {
+    if (CheckDrawAndCacheWindowContent(surfaceParams, uniParams)) {
         // 3/4 Draw content and children of this node by the main canvas, and cache
         drawWindowCache_.DrawAndCacheWindowContent(this, canvas, bounds);
     } else {
@@ -407,6 +425,12 @@ void RSSurfaceRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         surfaceParams->GetId(), name_.c_str(), surfaceParams->GetOcclusionVisible(),
         surfaceParams->GetBounds().ToString().c_str());
 
+    if (RSSystemProperties::GetCacheOptimizeRotateEnable() &&
+        (surfaceParams->GetName().find(WALLPAPER) != std::string::npos)) {
+        auto translate = RSUniRenderThread::Instance().GetWallpaperTranslate();
+        canvas.Translate(-translate.first, -translate.second);
+    }
+
     RSUiFirstProcessStateCheckerHelper stateCheckerHelper(
         surfaceParams->GetFirstLevelNodeId(), surfaceParams->GetUifirstRootNodeId(), nodeId_);
     if (!RSUiFirstProcessStateCheckerHelper::CheckMatchAndWaitNotify(*surfaceParams)) {
@@ -415,7 +439,7 @@ void RSSurfaceRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         return;
     }
 
-    if (drawWindowCache_.DealWithCachedWindow(this, *rscanvas, *surfaceParams)) {
+    if (drawWindowCache_.DealWithCachedWindow(this, *rscanvas, *surfaceParams, *uniParam)) {
         SetDrawSkipType(DrawSkipType::DEAL_WITH_CACHED_WINDOW);
         return;
     }
@@ -477,6 +501,9 @@ void RSSurfaceRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         }
     }
 
+    // disable filter cache when surface global position is enabled
+    bool isDisableFilterCache = curCanvas_->GetDisableFilterCache();
+    curCanvas_->SetDisableFilterCache(isDisableFilterCache || surfaceParams->GetGlobalPositionEnabled());
     auto parentSurfaceMatrix = RSRenderParams::GetParentSurfaceMatrix();
     RSRenderParams::SetParentSurfaceMatrix(curCanvas_->GetTotalMatrix());
 
@@ -486,7 +513,7 @@ void RSSurfaceRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         EnableGpuOverDrawDrawBufferOptimization(*curCanvas_, surfaceParams);
     }
 
-    OnGeneralProcess(*curCanvas_, *surfaceParams, isSelfDrawingSurface);
+    OnGeneralProcess(*curCanvas_, *surfaceParams, *uniParam, isSelfDrawingSurface);
 
     if (needOffscreen && canvasBackup_) {
         Drawing::AutoCanvasRestore acrBackUp(*canvasBackup_, true);
@@ -516,6 +543,7 @@ void RSSurfaceRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         RSNodeStats::GetInstance().AddNodeStats(nodeStats);
     }
 
+    curCanvas_->SetDisableFilterCache(isDisableFilterCache);
     RSRenderParams::SetParentSurfaceMatrix(parentSurfaceMatrix);
 }
 
@@ -757,7 +785,7 @@ void RSSurfaceRenderNodeDrawable::CaptureSurface(RSPaintFilterCanvas& canvas, RS
     auto parentSurfaceMatrix = RSRenderParams::GetParentSurfaceMatrix();
     RSRenderParams::SetParentSurfaceMatrix(canvas.GetTotalMatrix());
 
-    OnGeneralProcess(canvas, surfaceParams, isSelfDrawingSurface);
+    OnGeneralProcess(canvas, surfaceParams, *uniParams, isSelfDrawingSurface);
 
     RSRenderParams::SetParentSurfaceMatrix(parentSurfaceMatrix);
 }
@@ -795,6 +823,10 @@ void RSSurfaceRenderNodeDrawable::DealWithSelfDrawingNodeBuffer(
         if (!IsHardwareEnabledTopSurface() && !surfaceParams.IsLayerTop()) {
             ClipHoleForSelfDrawingNode(canvas, surfaceParams);
         }
+        return;
+    }
+    if (surfaceParams.GetIsProtectedLayer()) {
+        RS_LOGD("protected layer cannot draw in non-protected context.");
         return;
     }
     if (surfaceParams.IsInFixedRotation()) {

@@ -15,10 +15,24 @@
 
 #include "touch_screen.h"
 
+#include "platform/common/rs_log.h"
+
 namespace OHOS {
 namespace Rosen {
 namespace {
 constexpr std::string_view TOUCHSCREEN_WRAPPER_PATH = "../../vendor/lib64/chipsetsdk/libhw_touchscreen.default.so";
+
+template<typename Handle>
+void GetHandleBySymbol(void* dlHandle, Handle& handle, const char* symbol)
+{
+    handle = reinterpret_cast<Handle>(dlsym(dlHandle, symbol));
+    if (handle == nullptr) {
+        RS_LOGE("touch screen get handle by %{public}s failed, error: %{public}s",
+            symbol, dlerror());
+    } else {
+        RS_LOGI("touch screen get handle by %{public}s success", symbol);
+    }
+}
 } // namespace
 
 TouchScreen::TouchScreen() {}
@@ -40,8 +54,8 @@ void TouchScreen::InitTouchScreen()
         return;
     }
 
-    GetHandleBySymbol(setFeatureConfigHandle_, "ts_set_feature_config");
-    GetHandleBySymbol(setAftConfigHandle_, "ts_set_aft_config");
+    GetHandleBySymbol(touchScreenHandle_, setFeatureConfigHandle_, "ts_set_feature_config");
+    GetHandleBySymbol(touchScreenHandle_, setAftConfigHandle_, "ts_set_aft_config");
 }
 } // namespace Rosen
 } // namespace OHOS

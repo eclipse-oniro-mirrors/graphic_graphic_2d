@@ -52,8 +52,9 @@ struct ComposeInfo {
     int32_t displayNit { 0 };
     float brightnessRatio { 0.0 };
 };
-
+#ifdef RS_ENABLE_GPU
 class RSSurfaceRenderParams;
+#endif
 class RSTransactionData;
 #ifdef USE_VIDEO_PROCESSING_ENGINE
 constexpr float DEFAULT_SCREEN_LIGHT_NITS = 500;
@@ -160,8 +161,10 @@ public:
     static bool WriteSurfaceBufferToPng(sptr<SurfaceBuffer>& buffer, uint64_t id = 0);
 
     static bool WritePixelMapToPng(Media::PixelMap& pixelMap);
+#ifdef RS_ENABLE_GPU
     static void DealWithSurfaceRotationAndGravity(GraphicTransformType transform, Gravity gravity,
         RectF& localBounds, BufferDrawParam& params, RSSurfaceRenderParams* nodeParams = nullptr);
+#endif
     static void FlipMatrix(GraphicTransformType transform, BufferDrawParam& params);
 
     // GraphicTransformType has two attributes: rotation and flip, it take out one of the attributes separately

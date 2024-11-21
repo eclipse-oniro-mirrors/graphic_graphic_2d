@@ -194,7 +194,7 @@ void RSCanvasDrawingRenderNodeDrawable::DrawRenderContent(Drawing::Canvas& canva
     Flush(rect.GetWidth(), rect.GetHeight(), ctx, nodeId_,
         *static_cast<RSPaintFilterCanvas*>(&canvas)); // getimage
     if (image_ == nullptr) {
-        RS_LOGE("Failed to draw gpu image!");
+        RS_LOGD("Failed to draw gpu image!");
         return;
     }
 
@@ -224,6 +224,8 @@ void RSCanvasDrawingRenderNodeDrawable::Purge()
                 isPurge_ = true;
             }
         }
+        purgeMatrix_ = canvas_->GetTotalMatrix();
+        isPurgeMatrix_ = true;
         curThreadInfo_.second(std::move(surface_));
         surface_ = nullptr;
     }
@@ -727,6 +729,12 @@ bool RSCanvasDrawingRenderNodeDrawable::ResetSurfaceForVK(int width, int height,
     }
     recordingCanvas_ = nullptr;
     canvas_ = std::make_shared<RSPaintFilterCanvas>(surface_.get());
+#ifdef RS_ENABLE_VK
+    if (isPurgeMatrix_) {
+        canvas_->SetMatrix(purgeMatrix_);
+        isPurgeMatrix_ = false;
+    }
+#endif
     if (isNewCreate) {
         canvas_->Clear(Drawing::Color::COLOR_TRANSPARENT);
     }

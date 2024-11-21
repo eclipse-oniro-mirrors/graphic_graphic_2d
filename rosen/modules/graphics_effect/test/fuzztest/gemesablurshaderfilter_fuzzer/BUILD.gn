@@ -14,23 +14,26 @@
 #####################hydra-fuzz###################
 import("//build/config/features.gni")
 import("//build/test.gni")
-module_output_path = "graphic_2d/graphic_2d"
+import("//foundation/graphic/graphic_2d/graphic_config.gni")
+module_out_path = "graphic_2d/rosen/modules/graphics_effect"
 
 ##############################fuzztest##########################################
-ohos_fuzztest("RSUiShareContextFuzzTest") {
-  fuzz_config_file = "../../../../../../test/render_service/render_service_client/fuzztest/ui/rsuisharecontext_fuzzer"
-  module_out_path = module_output_path
-  if (defined(use_rosen_drawing) && use_rosen_drawing) {
-    defines = [ "USE_ROSEN_DRAWING" ]
-  }
+ohos_fuzztest("GEMesaBlurShaderFilterFuzzTest") {
+  module_out_path = module_out_path
+  fuzz_config_file = "$graphic_2d_root/rosen/modules/graphics_effect/test/fuzztest/gemesablurshaderfilter_fuzzer"
 
-  include_dirs = [ "../../../../../../modules/render_service_client/core" ]
-  deps = [
-    "../../../../../../modules/2d_graphics:2d_graphics",
-    "../../../../../../modules/render_service:librender_service",
-    "../../../../../../modules/render_service_base:librender_service_base",
-    "../../../../../../modules/render_service_client:librender_service_client",
+  include_dirs = [
+    "$graphic_2d_root/rosen/modules/graphics_effect/src",
+    "$graphic_2d_root/rosen/modules/utils",
+    "$graphic_2d_root/utils/color_manager/export",
+    "$graphic_2d_root/rosen/modules/graphics_effect/test/fuzztest/",
   ]
+
+  sources = [
+    "ge_mesa_blur_shader_filter_fuzzer.cpp",
+    "get_object.h",
+  ]
+
   cflags = [
     "-g",
     "-O0",
@@ -39,22 +42,20 @@ ohos_fuzztest("RSUiShareContextFuzzTest") {
     "-Dprivate=public",
     "-Dprotected=public",
   ]
-  sources = [ "rsuisharecontext_fuzzer.cpp" ]
 
-  external_deps = [
-    "c_utils:utils",
-    "hilog:libhilog",
-    "zlib:libz",
+  deps = [
+    "$graphic_2d_root/rosen/modules/2d_graphics:2d_graphics",
+    "$graphic_2d_root/rosen/modules/graphics_effect:libgraphics_effect",
   ]
+
+  part_name = "graphic_2d"
+  subsystem_name = "graphic"
 }
 
 ###############################################################################
 group("fuzztest") {
   testonly = true
-  deps = []
-  deps += [
-    # deps file
-    ":RSUiShareContextFuzzTest",
-  ]
+
+  deps = [ ":GEMesaBlurShaderFilterFuzzTest" ]
 }
 ###############################################################################

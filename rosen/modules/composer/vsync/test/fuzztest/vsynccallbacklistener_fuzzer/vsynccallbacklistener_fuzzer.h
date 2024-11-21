@@ -13,11 +13,9 @@
  * limitations under the License.
  */
 
-#include "rs_base_xml_config.h"
+#ifndef VSYNC_CALLBACK_LISTENER_FUZZER_H
+#define VSYNC_CALLBACK_LISTENER_FUZZER_H
 
-namespace OHOS {
-namespace Rosen {
-std::recursive_mutex RSBaseXmlConfig::configItemMutex;
-const RSBaseXmlConfig::ConfigItem RSBaseXmlConfig::ConfigItem::defaultItem;
-} // namespace Rosen
-} // namespace OHOS
+#define FUZZ_PROJECT_NAME "vsynccallbacklistener_fuzzer"
+
+#endif // VSYNC_CALLBACK_LISTENER_FUZZER_H

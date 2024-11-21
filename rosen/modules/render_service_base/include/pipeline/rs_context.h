@@ -168,7 +168,7 @@ public:
         return uiFrameworkTypeTable_;
     }
 
-    void UpdateUiFrameworkDirtyNodes(std::weak_ptr<RSRenderNode> uiFwkDirtyNode)
+    void UpdateUIFrameworkDirtyNodes(std::weak_ptr<RSRenderNode> uiFwkDirtyNode)
     {
         uiFrameworkDirtyNodes_.emplace_back(uiFwkDirtyNode);
     }
@@ -222,7 +222,9 @@ private:
 
     friend class RSRenderThread;
     friend class RSMainThread;
+#ifdef RS_ENABLE_GPU
     friend class RSDrawFrame;
+#endif
     friend class RSSurfaceCaptureTaskParallel;
 #ifdef RS_PROFILER_ENABLED
     friend class RSProfiler;

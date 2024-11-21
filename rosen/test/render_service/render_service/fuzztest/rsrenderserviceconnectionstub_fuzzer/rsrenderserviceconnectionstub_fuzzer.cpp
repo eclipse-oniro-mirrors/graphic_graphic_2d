@@ -35,6 +35,8 @@ namespace OHOS {
 namespace Rosen {
 DECLARE_INTERFACE_DESCRIPTOR(u"ohos.rosen.RenderServiceConnection");
 
+sptr<RSIConnectionToken> token_ = nullptr;
+sptr<RSRenderServiceConnectionStub> rsConnStub_ = nullptr;
 namespace {
 const uint8_t* g_data = nullptr;
 size_t g_size = 0;
@@ -327,6 +329,37 @@ bool DoSetScreenPowerStatus(const uint8_t* data, size_t size)
         fdp.ConsumeBytes<uint8_t>(fdp.ConsumeIntegralInRange<size_t>(0, fdp.remaining_bytes()));
     dataParcel.WriteInterfaceToken(GetDescriptor());
     dataParcel.WriteBuffer(subData.data(), subData.size());
+    connectionStub_->OnRemoteRequest(code, dataParcel, replyParcel, option);
+    return true;
+}
+
+bool DoSetHwcNodeBounds(const uint8_t* data, size_t size)
+{
+    if (data == nullptr) {
+        return false;
+    }
+
+    // initialize
+    g_data = data;
+    g_size = size;
+    g_pos = 0;
+
+    pid_t newPid = getpid();
+    sptr<RSIConnectionToken> token_ = new IRemoteStub<RSIConnectionToken>();
+    sptr<RSRenderServiceConnectionStub> connectionStub_ =
+        new RSRenderServiceConnection(newPid, nullptr, nullptr, nullptr, token_->AsObject(), nullptr);
+
+    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::CREATE_NODE_AND_SURFACE);
+    MessageParcel dataParcel;
+    MessageParcel replyParcel;
+    MessageOption option;
+
+    NodeId id = static_cast<NodeId>(newPid) << 32;
+    dataParcel.WriteUint64(id);
+    dataParcel.WriteFloat(1.0f);
+    dataParcel.WriteFloat(1.0f);
+    dataParcel.WriteFloat(1.0f);
+    dataParcel.WriteFloat(1.0f);
     connectionStub_->OnRemoteRequest(code, dataParcel, replyParcel, option);
     return true;
 }
@@ -1043,6 +1076,338 @@ bool DoSetFreeMultiWindowStatus(const uint8_t* data, size_t size)
     connectionStub_->OnRemoteRequest(code, dataParcel, replyParcel, option);
     return true;
 }
+
+bool Init(const uint8_t* data, size_t size)
+{
+    if (data == nullptr) {
+        return false;
+    }
+    g_data = data;
+    g_size = size;
+    g_pos = 0;
+    
+    auto newPid = getpid();
+    token_ = new IRemoteStub<RSIConnectionToken>();
+    if (token_ == nullptr) {
+        return false;
+    }
+    rsConnStub_ = new RSRenderServiceConnection(newPid, nullptr, nullptr, nullptr, token_->AsObject(), nullptr);
+    if (rsConnStub_ == nullptr) {
+        return false;
+    }
+    return true;
+}
+
+bool DoSetVirtualScreenSurface()
+{
+    MessageParcel dataP;
+    MessageParcel reply;
+    MessageOption option;
+    if (!dataP.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor())) {
+        return false;
+    }
+    option.SetFlags(MessageOption::TF_ASYNC);
+    uint64_t id = GetData<uint64_t>();
+    if (!dataP.WriteUint64(id)) {
+        return false;
+    }
+    sptr<IConsumerSurface> cSurface = IConsumerSurface::Create("DisplayNode");
+    sptr<IBufferProducer> bp = cSurface->GetProducer();
+    sptr<Surface> pSurface = Surface::CreateSurfaceAsProducer(bp);
+    auto producer = pSurface->GetProducer();
+    if (!dataP.WriteRemoteObject(producer->AsObject())) {
+        return false;
+    }
+
+    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_SURFACE);
+    if (rsConnStub_ == nullptr) {
+        return false;
+    }
+    rsConnStub_->OnRemoteRequest(code, dataP, reply, option);
+    return true;
+}
+
+bool DoSetVirtualScreenResolution()
+{
+    MessageParcel dataP;
+    MessageParcel reply;
+    MessageOption option;
+    if (!dataP.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor())) {
+        return false;
+    }
+    option.SetFlags(MessageOption::TF_SYNC);
+    uint64_t id = GetData<uint64_t>();
+    if (!dataP.WriteUint64(id)) {
+        return false;
+    }
+    uint32_t width = GetData<uint32_t>();
+    if (!dataP.WriteUint32(width)) {
+        return false;
+    }
+    uint32_t height = GetData<uint32_t>();
+    if (!dataP.WriteUint32(height)) {
+        return false;
+    }
+
+    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_RESOLUTION);
+    if (rsConnStub_ == nullptr) {
+        return false;
+    }
+    rsConnStub_->OnRemoteRequest(code, dataP, reply, option);
+    return true;
+}
+
+bool DoGetVirtualScreenResolution()
+{
+    MessageParcel dataP;
+    MessageParcel reply;
+    MessageOption option;
+    if (!dataP.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor())) {
+        return false;
+    }
+    option.SetFlags(MessageOption::TF_SYNC);
+    uint64_t id = GetData<uint64_t>();
+    if (!dataP.WriteUint64(id)) {
+        return false;
+    }
+
+    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_VIRTUAL_SCREEN_RESOLUTION);
+    if (rsConnStub_ == nullptr) {
+        return false;
+    }
+    rsConnStub_->OnRemoteRequest(code, dataP, reply, option);
+    return true;
+}
+
+bool DoSetVirtualScreenStatus()
+{
+    uint64_t id = GetData<uint64_t>();
+    uint64_t screenStatus = GetData<uint64_t>();
+    MessageParcel dataP;
+    MessageParcel reply;
+    MessageOption option;
+    if (!dataP.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor())) {
+        return false;
+    }
+    option.SetFlags(MessageOption::TF_SYNC);
+    if (!dataP.WriteUint64(id)) {
+        return false;
+    }
+    if (!dataP.WriteUint8(screenStatus)) {
+        return false;
+    }
+    
+    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_STATUS);
+    if (rsConnStub_ == nullptr) {
+        return false;
+    }
+    rsConnStub_->OnRemoteRequest(code, dataP, reply, option);
+    return true;
+}
+
+bool DoSetVirtualScreenBlackList()
+{
+    uint64_t id = GetData<uint64_t>();
+    uint64_t nodeId = GetData<uint64_t>();
+    std::vector<uint64_t> blackListVector;
+    blackListVector.push_back(nodeId);
+    MessageParcel dataP;
+    MessageParcel reply;
+    MessageOption option;
+    if (!dataP.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor())) {
+        return false;
+    }
+    option.SetFlags(MessageOption::TF_ASYNC);
+    if (!dataP.WriteUint64(id)) {
+        return false;
+    }
+    if (!dataP.WriteUInt64Vector(blackListVector)) {
+        return false;
+    }
+    
+    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_BLACKLIST);
+    if (rsConnStub_ == nullptr) {
+        return false;
+    }
+    rsConnStub_->OnRemoteRequest(code, dataP, reply, option);
+    return true;
+}
+
+bool DoSetCastScreenEnableSkipWindow()
+{
+    uint64_t id = GetData<uint64_t>();
+    bool enable = GetData<bool>();
+    MessageParcel dataP;
+    MessageParcel reply;
+    MessageOption option;
+    if (!dataP.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor())) {
+        return false;
+    }
+    option.SetFlags(MessageOption::TF_ASYNC);
+    if (!dataP.WriteUint64(id)) {
+        return false;
+    }
+    if (!dataP.WriteBool(enable)) {
+        return false;
+    }
+    
+    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_CAST_SCREEN_ENABLE_SKIP_WINDOW);
+    if (rsConnStub_ == nullptr) {
+        return false;
+    }
+    rsConnStub_->OnRemoteRequest(code, dataP, reply, option);
+    return true;
+}
+
+bool DoSetScreenCorrection()
+{
+    uint64_t id = GetData<uint64_t>();
+    uint32_t screenRotation = GetData<uint32_t>();
+    MessageParcel dataP;
+    MessageParcel reply;
+    MessageOption option;
+    if (!dataP.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor())) {
+        return false;
+    }
+    option.SetFlags(MessageOption::TF_SYNC);
+    if (!dataP.WriteUint64(id)) {
+        return false;
+    }
+    if (!dataP.WriteUint32(screenRotation)) {
+        return false;
+    }
+    
+    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_SCREEN_CORRECTION);
+    if (rsConnStub_ == nullptr) {
+        return false;
+    }
+    rsConnStub_->OnRemoteRequest(code, dataP, reply, option);
+    return true;
+}
+
+bool DoSetVirtualMirrorScreenCanvasRotation()
+{
+    uint64_t id = GetData<uint64_t>();
+    bool canvasRotation = GetData<bool>();
+    MessageParcel dataP;
+    MessageParcel reply;
+    MessageOption option;
+    if (!dataP.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor())) {
+        return false;
+    }
+    option.SetFlags(MessageOption::TF_SYNC);
+    if (!dataP.WriteUint64(id)) {
+        return false;
+    }
+    if (!dataP.WriteBool(canvasRotation)) {
+        return false;
+    }
+    
+    uint32_t code = static_cast<uint32_t>(
+        RSIRenderServiceConnectionInterfaceCode::SET_VIRTUAL_MIRROR_SCREEN_CANVAS_ROTATION);
+    if (rsConnStub_ == nullptr) {
+        return false;
+    }
+    rsConnStub_->OnRemoteRequest(code, dataP, reply, option);
+    return true;
+}
+
+bool DoSetVirtualMirrorScreenScaleMode()
+{
+    uint64_t id = GetData<uint64_t>();
+    uint32_t scaleMode = GetData<uint32_t>();
+    MessageParcel dataP;
+    MessageParcel reply;
+    MessageOption option;
+    if (!dataP.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor())) {
+        return false;
+    }
+    option.SetFlags(MessageOption::TF_SYNC);
+    if (!dataP.WriteUint64(id)) {
+        return false;
+    }
+    if (!dataP.WriteUint32(scaleMode)) {
+        return false;
+    }
+    uint32_t code = static_cast<uint32_t>(
+        RSIRenderServiceConnectionInterfaceCode::SET_VIRTUAL_MIRROR_SCREEN_SCALE_MODE);
+    if (rsConnStub_ == nullptr) {
+        return false;
+    }
+    rsConnStub_->OnRemoteRequest(code, dataP, reply, option);
+    return true;
+}
+
+bool DoResizeVirtualScreen()
+{
+    uint64_t id = GetData<uint64_t>();
+    uint32_t width = GetData<uint32_t>();
+    uint32_t height = GetData<uint32_t>();
+    MessageParcel dataP;
+    MessageParcel reply;
+    MessageOption option;
+    if (!dataP.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor())) {
+        return false;
+    }
+    option.SetFlags(MessageOption::TF_SYNC);
+    if (!dataP.WriteUint64(id)) {
+        return false;
+    }
+    if (!dataP.WriteUint32(width)) {
+        return false;
+    }
+    if (!dataP.WriteUint32(height)) {
+        return false;
+    }
+    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::RESIZE_VIRTUAL_SCREEN);
+    if (rsConnStub_ == nullptr) {
+        return false;
+    }
+    rsConnStub_->OnRemoteRequest(code, dataP, reply, option);
+    return true;
+}
+
+bool DoSetCacheEnabledForRotation()
+{
+    MessageParcel dataP;
+    MessageParcel reply;
+    MessageOption option;
+    if (!dataP.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor())) {
+        return false;
+    }
+    bool isEnabled = GetData<bool>();
+    if (!dataP.WriteBool(isEnabled)) {
+        return false;
+    }
+    option.SetFlags(MessageOption::TF_ASYNC);
+    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_ROTATION_CACHE_ENABLED);
+    if (rsConnStub_ == nullptr) {
+        return false;
+    }
+    rsConnStub_->OnRemoteRequest(code, dataP, reply, option);
+    return true;
+}
+
+bool DoSetVirtualScreenUsingStatus()
+{
+    bool isVirtualScreenUsingStatus = GetData<bool>();
+    MessageParcel dataP;
+    MessageParcel reply;
+    MessageOption option;
+    if (!dataP.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor())) {
+        return false;
+    }
+    if (!dataP.WriteBool(isVirtualScreenUsingStatus)) {
+        return false;
+    }
+    option.SetFlags(MessageOption::TF_ASYNC);
+    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_USING_STATUS);
+    if (rsConnStub_ == nullptr) {
+        return false;
+    }
+    rsConnStub_->OnRemoteRequest(code, dataP, reply, option);
+    return true;
+}
 } // Rosen
 } // OHOS
 
@@ -1059,6 +1424,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::Rosen::DoSetAppWindowNum(data, size);
     OHOS::Rosen::DoShowWatermark(data, size);
     OHOS::Rosen::DoSetScreenPowerStatus(data, size);
+    OHOS::Rosen::DoSetHwcNodeBounds(data, size);
     OHOS::Rosen::DoSetScreenActiveMode(data, size);
     OHOS::Rosen::DoSetScreenActiveRect(data, size);
     OHOS::Rosen::DoGetScreenActiveMode(data, size);
@@ -1067,8 +1433,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::Rosen::DoGetScreenSupportedModes(data, size);
     OHOS::Rosen::DoGetScreenCapability(data, size);
     OHOS::Rosen::DoGetMemoryGraphic(data, size);
-    OHOS::Rosen::DoCreateVirtualScreen(data, size);
-    OHOS::Rosen::DoRemoveVirtualScreen(data, size);
     OHOS::Rosen::DoGetScreenData(data, size);
     OHOS::Rosen::DoGetScreenBacklight(data, size);
     OHOS::Rosen::DoSetScreenBacklight(data, size);
@@ -1077,6 +1441,23 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::Rosen::DoCreateNodeAndSurface(data, size);
     OHOS::Rosen::DoExecuteSynchronousTask(data, size);
     OHOS::Rosen::DoSetFreeMultiWindowStatus(data, size);
+    OHOS::Rosen::DoCreateVirtualScreen(data, size);
+    OHOS::Rosen::DoRemoveVirtualScreen(data, size);
+    if (!OHOS::Rosen::Init(data, size)) {
+        return 0;
+    }
+    OHOS::Rosen::DoSetVirtualScreenSurface();
+    OHOS::Rosen::DoSetVirtualScreenResolution();
+    OHOS::Rosen::DoGetVirtualScreenResolution();
+    OHOS::Rosen::DoSetVirtualScreenStatus();
+    OHOS::Rosen::DoSetVirtualScreenBlackList();
+    OHOS::Rosen::DoSetCastScreenEnableSkipWindow();
+    OHOS::Rosen::DoSetScreenCorrection();
+    OHOS::Rosen::DoSetVirtualMirrorScreenCanvasRotation();
+    OHOS::Rosen::DoSetVirtualMirrorScreenScaleMode();
+    OHOS::Rosen::DoResizeVirtualScreen();
+    OHOS::Rosen::DoSetCacheEnabledForRotation();
+    OHOS::Rosen::DoSetVirtualScreenUsingStatus();
 
     return 0;
 }

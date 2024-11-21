@@ -965,11 +965,13 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, OnGeneralProcessTest, TestSize.Level1)
     ASSERT_NE(surfaceParams, nullptr);
     Drawing::Canvas drawingCanvas;
     RSPaintFilterCanvas canvas(&drawingCanvas);
-    surfaceDrawable_->OnGeneralProcess(canvas, *surfaceParams, false);
+    auto uniParams = std::make_shared<RSRenderThreadParams>();
+    ASSERT_NE(uniParams, nullptr);
+    surfaceDrawable_->OnGeneralProcess(canvas, *surfaceParams, *uniParams, false);
     EXPECT_FALSE(surfaceParams->GetBuffer());
-    surfaceDrawable_->OnGeneralProcess(canvas, *surfaceParams, true);
+    surfaceDrawable_->OnGeneralProcess(canvas, *surfaceParams, *uniParams, true);
     surfaceParams->buffer_ = OHOS::SurfaceBuffer::Create();
-    surfaceDrawable_->OnGeneralProcess(canvas, *surfaceParams, true);
+    surfaceDrawable_->OnGeneralProcess(canvas, *surfaceParams, *uniParams, true);
 }
 
 /**
@@ -1232,6 +1234,40 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, DealWithSelfDrawingNodeBufferTest001, 
 }
 
 /**
+ * @tc.name: CheckDrawAndCacheWindowContentTest
+ * @tc.desc: Test OnGeneralProcessAndCache
+ * @tc.type: FUNC
+ * @tc.require: issueB2YOV
+ */
+HWTEST_F(RSSurfaceRenderNodeDrawableTest, CheckDrawAndCacheWindowContentTest, TestSize.Level1)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(drawable_->renderParams_.get());
+    ASSERT_NE(surfaceParams, nullptr);
+    surfaceParams->SetNeedCacheSurface(false);
+    surfaceParams->isCrossNode_ = false;
+
+    auto uniParams = std::make_shared<RSRenderThreadParams>();
+    ASSERT_NE(uniParams, nullptr);
+
+    uniParams->SetIsFirstVisitCrossNodeDisplay(false);
+    ASSERT_FALSE(surfaceDrawable_->CheckDrawAndCacheWindowContent(*surfaceParams, *uniParams));
+
+    surfaceParams->SetNeedCacheSurface(true);
+    ASSERT_TRUE(surfaceDrawable_->CheckDrawAndCacheWindowContent(*surfaceParams, *uniParams));
+
+    surfaceParams->isCrossNode_ = true;
+    ASSERT_FALSE(surfaceDrawable_->CheckDrawAndCacheWindowContent(*surfaceParams, *uniParams));
+
+    uniParams->SetIsFirstVisitCrossNodeDisplay(true);
+    ASSERT_TRUE(surfaceDrawable_->CheckDrawAndCacheWindowContent(*surfaceParams, *uniParams));
+
+    RSUniRenderThread::captureParam_.isSnapshot_ = true;
+    ASSERT_TRUE(RSUniRenderThread::IsInCaptureProcess());
+    ASSERT_FALSE(surfaceDrawable_->CheckDrawAndCacheWindowContent(*surfaceParams, *uniParams));
+}
+
+/**
  * @tc.name: OnGeneralProcessAndCache
  * @tc.desc: Test OnGeneralProcessAndCache
  * @tc.type: FUNC
@@ -1248,82 +1284,9 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, OnGeneralProcessAndCache, TestSize.Lev
         Drawing::Surface::MakeRasterN32Premul(DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
     ASSERT_NE(surface, nullptr);
     RSPaintFilterCanvas canvas(surface.get());
-    surfaceDrawable_->OnGeneralProcess(canvas, *surfaceParams, false);
+    auto uniParams = std::make_shared<RSRenderThreadParams>();
+    ASSERT_NE(uniParams, nullptr);
+    surfaceDrawable_->OnGeneralProcess(canvas, *surfaceParams, *uniParams, false);
     ASSERT_TRUE(surfaceDrawable_->drawWindowCache_.HasCache());
 }
-
-#ifdef RS_ENABLE_GL
-/**
- * @tc.name: FlushSemaphoreTest001
- * @tc.desc: Test FlushSemaphore while surface is nullptr
- * @tc.type: FUNC
- * @tc.require: issueIAZ4QG
- */
-HWTEST_F(RSSurfaceRenderNodeDrawableTest, FlushSemaphoreTest001, TestSize.Level2)
-{
-    if (RSSystemProperties::GetGpuApiType() != GpuApiType::OPENGL) {
-        return;
-    }
-    ASSERT_NE(surfaceDrawable_, nullptr);
-
-    std::shared_ptr<Drawing::Surface> drawingSurface =
-        Drawing::Surface::MakeRasterN32Premul(DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
-    ASSERT_NE(drawingSurface, nullptr);
-    RSPaintFilterCanvas canvas(drawingSurface.get());
-    canvas.surface_ = nullptr;
-
-    surfaceDrawable_->FlushSemaphore(canvas);
-    ASSERT_EQ(surfaceDrawable_->semaphoresForRT_.size(), 0);
-}
-
-/**
- * @tc.name: FlushSemaphoreTest002
- * @tc.desc: Test FlushSemaphore while surface isn't nullptr
- * @tc.type: FUNC
- * @tc.require: issueIAZ4QG
- */
-HWTEST_F(RSSurfaceRenderNodeDrawableTest, FlushSemaphoreTest002, TestSize.Level2)
-{
-    if (RSSystemProperties::GetGpuApiType() != GpuApiType::OPENGL) {
-        return;
-    }
-    ASSERT_NE(surfaceDrawable_, nullptr);
-
-    std::shared_ptr<Drawing::Surface> drawingSurface =
-        Drawing::Surface::MakeRasterN32Premul(DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
-    ASSERT_NE(drawingSurface, nullptr);
-    RSPaintFilterCanvas canvas(drawingSurface.get());
-
-    surfaceDrawable_->FlushSemaphore(canvas);
-    ASSERT_EQ(surfaceDrawable_->semaphoresForRT_.size(), 1);
-}
-
-/**
- * @tc.name: WaitSemaphoreTest
- * @tc.desc: Test WaitSemaphoreTest
- * @tc.type: FUNC
- * @tc.require: issueIAZ4QG
- */
-HWTEST_F(RSSurfaceRenderNodeDrawableTest, WaitSemaphoreTest, TestSize.Level2)
-{
-    if (RSSystemProperties::GetGpuApiType() != GpuApiType::OPENGL) {
-        return;
-    }
-    ASSERT_NE(surfaceDrawable_, nullptr);
-    surfaceDrawable_->cacheSurface_ = std::make_shared<Drawing::Surface>();
-
-    std::shared_ptr<Drawing::Surface> drawingSurface =
-        Drawing::Surface::MakeRasterN32Premul(DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
-    ASSERT_NE(drawingSurface, nullptr);
-    RSPaintFilterCanvas canvas(drawingSurface.get());
-
-    // flush (RT Thread)
-    surfaceDrawable_->FlushSemaphore(canvas);
-    // swap semaphores to RS SubThread
-    std::swap(surfaceDrawable_->semaphoresForRT_, surfaceDrawable_->semaphoresForRSSub_);
-    // wait (RS SubThread)
-    surfaceDrawable_->WaitSemaphore();
-    ASSERT_EQ(surfaceDrawable_->semaphoresForRSSub_.size(), 0);
-}
-#endif
 }

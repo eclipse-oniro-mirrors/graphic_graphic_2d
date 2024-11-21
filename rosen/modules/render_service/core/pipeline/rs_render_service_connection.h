@@ -328,7 +328,9 @@ private:
     pid_t remotePid_;
     wptr<RSRenderService> renderService_;
     RSMainThread* mainThread_ = nullptr;
+#ifdef RS_ENABLE_GPU
     RSUniRenderThread& renderThread_;
+#endif
     sptr<RSScreenManager> screenManager_;
     sptr<IRemoteObject> token_;
 

@@ -51,7 +51,6 @@ namespace {
 const uint8_t* g_data = nullptr;
 size_t g_size = 0;
 size_t g_pos;
-} // namespace
 
 template<class T>
 T GetData()
@@ -68,6 +67,20 @@ T GetData()
     g_pos += objectSize;
     return object;
 }
+
+template<>
+std::string GetData()
+{
+    size_t objectSize = GetData<uint8_t>();
+    std::string object(objectSize, '\0');
+    if (g_data == nullptr || objectSize > g_size - g_pos) {
+        return object;
+    }
+    object.assign(reinterpret_cast<const char*>(g_data + g_pos), objectSize);
+    g_pos += objectSize;
+    return object;
+}
+} // namespace
 
 bool Init(const uint8_t* data, size_t size)
 {
@@ -549,6 +562,20 @@ bool DoTakeSurfaceCapture()
     captureConfig.captureType = (SurfaceCaptureType)type;
     captureConfig.isSync = GetData<bool>();
     rsConn_->TakeSurfaceCapture(nodeId, callback, captureConfig);
+    return true;
+}
+
+bool DoSetHwcNodeBounds()
+{
+    if (rsConn_ == nullptr) {
+        return false;
+    }
+    uint64_t nodeId = GetData<uint64_t>();
+    float positionX = GetData<float>();
+    float positionY = GetData<float>();
+    float positionZ = GetData<float>();
+    float positionW = GetData<float>();
+    rsConn_->SetHwcNodeBounds(nodeId, positionX, positionY, positionZ, positionW);
     return true;
 }
 
@@ -1216,6 +1243,7 @@ void DoFuzzerTest1()
     DoRegisterOcclusionChangeCallback();
     DoShowWatermark();
     DoTakeSurfaceCapture();
+    DoSetHwcNodeBounds();
     DoSetScreenChangeCallback();
     DoSetFocusAppInfo();
     DoSetAncoForceDoDirect();

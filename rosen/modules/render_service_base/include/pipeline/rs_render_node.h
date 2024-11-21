@@ -89,6 +89,8 @@ public:
     virtual void SetBootAnimation(bool isBootAnimation);
     virtual bool GetBootAnimation() const;
 
+    virtual bool GetGlobalPositionEnabled() const;
+
     void MoveChild(SharedPtr child, int index);
     void RemoveChild(SharedPtr child, bool skipTransition = false);
     void ClearChildren();
@@ -537,8 +539,10 @@ public:
     virtual void UpdateFilterCacheWithSelfDirty();
     bool IsBackgroundInAppOrNodeSelfDirty() const;
     void PostPrepareForBlurFilterNode(RSDirtyRegionManager& dirtyManager, bool needRequestNextVsync);
+#ifdef RS_ENABLE_GPU
     void CheckFilterCacheAndUpdateDirtySlots(
         std::shared_ptr<DrawableV2::RSFilterDrawable>& filterDrawable, RSDrawableSlot slot);
+#endif
     bool IsFilterCacheValid() const;
     bool IsAIBarFilterCacheValid() const;
     void MarkForceClearFilterCacheWithInvisible();
@@ -625,7 +629,6 @@ public:
     virtual void UpdateRenderParams();
     void UpdateDrawingCacheInfoBeforeChildren(bool isScreenRotation);
     void UpdateDrawingCacheInfoAfterChildren();
-    void DisableDrawingCacheByHwcNode();
 
     virtual RectI GetFilterRect() const;
     void CalVisibleFilterRect(const std::optional<RectI>& clipRect);
@@ -671,13 +674,13 @@ public:
     {
         return;
     }
-
+#ifdef RS_ENABLE_GPU
     std::unique_ptr<RSRenderParams>& GetStagingRenderParams();
 
     // Deprecated! Do not use this interface.
     // This interface has crash risks and will be deleted in later versions.
     const std::unique_ptr<RSRenderParams>& GetRenderParams() const;
-
+#endif
     void UpdatePointLightDirtySlot();
     void AccmulateDirtyInOcclusion(bool isOccluded);
     void RecordCurDirtyStatus();
@@ -728,8 +731,11 @@ public:
         return context_;
     }
 
-    // arkui mark uifirst
+    // will be abandoned
     void MarkUifirstNode(bool isUifirstNode);
+    // Mark uifirst leash node
+    void MarkUifirstNode(bool isForceFlag, bool isUifirstEnable);
+    bool GetUifirstNodeForceFlag() const;
 
     void SetOccludedStatus(bool occluded);
     const RectI GetFilterCachedRegion() const;
@@ -864,17 +870,19 @@ protected:
     {
         renderContent_->DrawPropertyDrawableRange(begin, end, canvas);
     }
-
+#ifdef RS_ENABLE_GPU
     std::shared_ptr<DrawableV2::RSFilterDrawable> GetFilterDrawable(bool isForeground) const;
     virtual void MarkFilterCacheFlags(std::shared_ptr<DrawableV2::RSFilterDrawable>& filterDrawable,
         RSDirtyRegionManager& dirtyManager, bool needRequestNextVsync);
     bool IsForceClearOrUseFilterCache(std::shared_ptr<DrawableV2::RSFilterDrawable>& filterDrawable);
-
+#endif
     void UpdateDirtySlotsAndPendingNodes(RSDrawableSlot slot);
     mutable bool isFullChildrenListValid_ = true;
     bool isOnTheTree_ = false;
     bool isChildSupportUifirst_ = true;
     bool isUifirstNode_ = true;
+    bool isForceFlag_ = false;
+    bool isUifirstEnable_ = false;
     NodeDirty dirtyStatus_ = NodeDirty::CLEAN;
     NodeDirty curDirtyStatus_ = NodeDirty::CLEAN;
     ModifierDirtyTypes dirtyTypes_;
@@ -889,7 +897,7 @@ protected:
 private:
     // mark cross node in physical extended screen model
     bool isCrossNode_ = false;
-    uint32_t crossScreenNum_ = 0;
+    int32_t crossScreenNum_ = 0;
     // shadowRectOffset means offset between shadowRect and absRect of node
     int shadowRectOffsetX_ = 0;
     int shadowRectOffsetY_ = 0;
@@ -1123,7 +1131,7 @@ private:
     friend class RSAliasDrawable;
     friend class RSContext;
     friend class RSMainThread;
-    friend class RSPointerDrawingManager;
+    friend class RSPointerWindowManager;
     friend class RSModifierDrawable;
     friend class RSProxyRenderNode;
     friend class RSRenderNodeMap;

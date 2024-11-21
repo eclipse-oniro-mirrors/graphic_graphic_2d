@@ -109,6 +109,7 @@ void RSDirtyRectsDfx::OnDrawVirtual(RSPaintFilterCanvas& canvas)
 
 void RSDirtyRectsDfx::DrawHwcRegionForDFX(RSPaintFilterCanvas& canvas) const
 {
+#ifdef RS_ENABLE_GPU
     auto& hardwareDrawables =
         RSUniRenderThread::Instance().GetRSRenderThreadParams()->GetHardwareEnabledTypeDrawables();
     static uint32_t updateCnt = 0;
@@ -129,6 +130,7 @@ void RSDirtyRectsDfx::DrawHwcRegionForDFX(RSPaintFilterCanvas& canvas) const
                 HWC_DFX_FILL_ALPHA, extraInfo);
         }
     }
+#endif
 }
 
 void RSDirtyRectsDfx::DrawDirtyRegionInVirtual(RSPaintFilterCanvas& canvas) const
@@ -191,11 +193,7 @@ void RSDirtyRectsDfx::DrawCurrentRefreshRate(RSPaintFilterCanvas& canvas)
         return;
     }
     uint32_t currentRefreshRate = OHOS::Rosen::HgmCore::Instance().GetScreenCurrentRefreshRate(screenId);
-    uint32_t realtimeRefreshRate = RSRealtimeRefreshRateManager::Instance().GetRealtimeRefreshRate();
-    if (realtimeRefreshRate > currentRefreshRate) {
-        realtimeRefreshRate = currentRefreshRate;
-    }
-
+    uint32_t realtimeRefreshRate = RSRealtimeRefreshRateManager::Instance().GetRealtimeRefreshRate(screenId);
     std::string info = std::to_string(currentRefreshRate) + " " + std::to_string(realtimeRefreshRate);
     std::shared_ptr<Drawing::Typeface> tf = Drawing::Typeface::MakeFromName("HarmonyOS Sans SC", Drawing::FontStyle());
     Drawing::Font font;
@@ -352,7 +350,7 @@ bool RSDirtyRectsDfx::DrawDetailedTypesOfDirtyRegionForDFX(RSPaintFilterCanvas& 
     }
     return true;
 }
-
+#ifdef RS_ENABLE_GPU
 void RSDirtyRectsDfx::DrawSurfaceOpaqueRegionForDFX(RSPaintFilterCanvas& canvas,
     RSSurfaceRenderParams& surfaceParams) const
 {
@@ -361,7 +359,7 @@ void RSDirtyRectsDfx::DrawSurfaceOpaqueRegionForDFX(RSPaintFilterCanvas& canvas,
         DrawDirtyRectForDFX(canvas, subRect.ToRectI(), Drawing::Color::COLOR_GREEN, RSPaintStyle::FILL, 0);
     }
 }
-
+#endif
 void RSDirtyRectsDfx::DrawAllSurfaceDirtyRegionForDFX(RSPaintFilterCanvas& canvas) const
 {
     const auto& visibleDirtyRects = dirtyRegion_.GetRegionRects();
@@ -378,6 +376,7 @@ void RSDirtyRectsDfx::DrawAllSurfaceDirtyRegionForDFX(RSPaintFilterCanvas& canva
 
 void RSDirtyRectsDfx::DrawAllSurfaceOpaqueRegionForDFX(RSPaintFilterCanvas& canvas) const
 {
+#ifdef RS_ENABLE_GPU
     if (!displayParams_) {
         RS_LOGE("RSDirtyRectsDfx::DrawAllSurfaceOpaqueRegionForDFX displayParams is null ptr.");
         return;
@@ -389,6 +388,7 @@ void RSDirtyRectsDfx::DrawAllSurfaceOpaqueRegionForDFX(RSPaintFilterCanvas& canv
             DrawSurfaceOpaqueRegionForDFX(canvas, *surfaceParams);
         }
     }
+#endif
 }
 
 void RSDirtyRectsDfx::DrawTargetSurfaceDirtyRegionForDFX(RSPaintFilterCanvas& canvas) const
@@ -430,6 +430,7 @@ void RSDirtyRectsDfx::DrawTargetSurfaceDirtyRegionForDFX(RSPaintFilterCanvas& ca
 
 void RSDirtyRectsDfx::DrawTargetSurfaceVisibleRegionForDFX(RSPaintFilterCanvas& canvas) const
 {
+#ifdef RS_ENABLE_GPU
     if (!displayParams_) {
         RS_LOGE("RSDirtyRectsDfx: displayParams is null ptr.");
         return;
@@ -449,6 +450,7 @@ void RSDirtyRectsDfx::DrawTargetSurfaceVisibleRegionForDFX(RSPaintFilterCanvas& 
             DrawDirtyRegionForDFX(canvas, rects);
         }
     }
+#endif
 }
 
 } // namespace OHOS::Rosen

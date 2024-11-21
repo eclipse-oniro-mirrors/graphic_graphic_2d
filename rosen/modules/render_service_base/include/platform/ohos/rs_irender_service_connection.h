@@ -105,7 +105,7 @@ public:
     virtual int32_t SetMirrorScreenVisibleRect(ScreenId id, const Rect& mainScreenRect) = 0;
 
     virtual int32_t SetCastScreenEnableSkipWindow(ScreenId id, bool enable) = 0;
-    
+
     virtual int32_t SetVirtualScreenSurface(ScreenId id, sptr<Surface> surface) = 0;
 
     virtual void RemoveVirtualScreen(ScreenId id) = 0;
@@ -315,9 +315,9 @@ public:
 
     virtual int32_t RegisterUIExtensionCallback(uint64_t userId, sptr<RSIUIExtensionCallback> callback) = 0;
 
-    virtual bool SetVirtualScreenStatus(ScreenId id, VirtualScreenStatus screenStatus) = 0;
-
     virtual bool SetAncoForceDoDirect(bool direct) = 0;
+
+    virtual bool SetVirtualScreenStatus(ScreenId id, VirtualScreenStatus screenStatus) = 0;
 
     virtual void SetFreeMultiWindowStatus(bool enable) = 0;
 

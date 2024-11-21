@@ -33,7 +33,7 @@
 #if (defined RS_ENABLE_GL) || (defined RS_ENABLE_VK)
 #include "render_context/render_context.h"
 #endif // RS_ENABLE_GL || RS_ENABLE_VK
-#ifdef RS_ENABLE_EGLIMAGE
+#if (defined(RS_ENABLE_EGLIMAGE) && defined(RS_ENABLE_GPU))
 #include "rs_egl_image_manager.h"
 #endif // RS_ENABLE_EGLIMAGE
 #ifdef USE_VIDEO_PROCESSING_ENGINE
@@ -175,6 +175,7 @@ public:
     static ColorFilterMode GetColorFilterMode();
     static void SetHighContrast(bool enabled);
     static bool IsHighContrastEnabled();
+    static bool CheckIsHdrSurfaceBuffer(const sptr<SurfaceBuffer> surfaceBuffer);
 
 #if (defined RS_ENABLE_GL) || (defined RS_ENABLE_VK)
     const std::shared_ptr<RenderContext>& GetRenderContext()
@@ -188,7 +189,7 @@ public:
 #endif // RS_ENABLE_GL || RS_ENABLE_VK
     void ResetCurrentContext();
 
-#ifdef RS_ENABLE_EGLIMAGE
+#if (defined(RS_ENABLE_EGLIMAGE) && defined(RS_ENABLE_GPU))
     const std::shared_ptr<RSEglImageManager>& GetEglImageManager()
     {
         return eglImageManager_;
@@ -215,7 +216,6 @@ public:
 #endif
 protected:
     void DrawImage(RSPaintFilterCanvas& canvas, BufferDrawParam& params);
-    static bool CheckIsHdrSurfaceBuffer(const sptr<SurfaceBuffer> surfaceBuffer);
 
     static inline std::mutex colorFilterMutex_;
     static inline ColorFilterMode colorFilterMode_ = ColorFilterMode::COLOR_FILTER_END;
@@ -234,7 +234,7 @@ private:
     std::shared_ptr<RenderContext> renderContext_ = nullptr;
     std::shared_ptr<RenderContext> captureRenderContext_ = nullptr;
 #endif // RS_ENABLE_GL || RS_ENABLE_VK
-#ifdef RS_ENABLE_EGLIMAGE
+#if (defined(RS_ENABLE_EGLIMAGE) && defined(RS_ENABLE_GPU))
     std::shared_ptr<RSEglImageManager> eglImageManager_ = nullptr;
 #endif // RS_ENABLE_EGLIMAGE
 #ifdef RS_ENABLE_VK

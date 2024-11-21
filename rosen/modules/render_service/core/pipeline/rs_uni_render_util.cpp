@@ -1453,7 +1453,9 @@ void RSUniRenderUtil::DealWithNodeGravity(RSSurfaceRenderNode& node, const Scree
 
     CheckForceHardwareAndUpdateDstRect(node);
     // we do not need to do additional works for Gravity::RESIZE and if frameSize == boundsSize.
-    if (frameGravity == Gravity::RESIZE || (ROSEN_EQ(frameWidth, boundsWidth) && ROSEN_EQ(frameHeight, boundsHeight))) {
+    if (frameGravity == Gravity::RESIZE
+        || (node.IsRosenWeb() && frameGravity == Gravity::TOP_LEFT)
+        || (ROSEN_EQ(frameWidth, boundsWidth) && ROSEN_EQ(frameHeight, boundsHeight))) {
         return;
     }
  
@@ -1684,9 +1686,10 @@ void RSUniRenderUtil::LayerScaleFit(RSSurfaceRenderNode& node)
 
     // If surfaceRotation is not a multiple of 180, need to change the correspondence between width & height.
     // ScreenRotation has been processed in SetLayerSize, and do not change the width & height correspondence.
-    int surfaceRotation = RSUniRenderUtil::GetRotationFromMatrix(node.GetTotalMatrix()) +
-                          RSBaseRenderUtil::RotateEnumToInt(RSBaseRenderUtil::GetRotateTransform(
-                              RSBaseRenderUtil::GetSurfaceBufferTransformType(surface, buffer)));
+    int surfaceRotation =
+        RSUniRenderUtil::GetRotationFromMatrix(node.GetRenderProperties().GetBoundsGeometry()->GetAbsMatrix()) +
+        RSBaseRenderUtil::RotateEnumToInt(
+            RSBaseRenderUtil::GetRotateTransform(RSBaseRenderUtil::GetSurfaceBufferTransformType(surface, buffer)));
     if (surfaceRotation % FLAT_ANGLE != 0) {
         std::swap(srcRect.width_, srcRect.height_);
     }
@@ -1798,9 +1801,6 @@ void RSUniRenderUtil::AccumulateMatrixAndAlpha(std::shared_ptr<RSSurfaceRenderNo
         const auto& curProperty = parent->GetRenderProperties();
         alpha *= curProperty.GetAlpha();
         matrix.PostConcat(curProperty.GetBoundsGeometry()->GetMatrix());
-        if (ROSEN_EQ(alpha, 1.f)) {
-            parent->DisableDrawingCacheByHwcNode();
-        }
         parent = parent->GetParent().lock();
     }
     if (!parent) {
@@ -2003,11 +2003,11 @@ bool RSUniRenderUtil::CheckRenderSkipIfScreenOff(bool extraFrame, std::optional<
 
 void RSUniRenderUtil::UpdateHwcNodeProperty(std::shared_ptr<RSSurfaceRenderNode> hwcNode)
 {
-    auto hwcNodeGeo = hwcNode->GetRenderProperties().GetBoundsGeometry();
     if (hwcNode == nullptr) {
         RS_LOGE("hwcNode is null.");
         return;
     }
+    auto hwcNodeGeo = hwcNode->GetRenderProperties().GetBoundsGeometry();
     if (!hwcNodeGeo) {
         RS_LOGE("hwcNode Geometry is not prepared.");
         return;

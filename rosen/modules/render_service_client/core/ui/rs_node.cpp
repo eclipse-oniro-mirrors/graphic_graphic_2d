@@ -2386,6 +2386,20 @@ void RSNode::MarkUifirstNode(bool isUifirstNode)
         transactionProxy->AddCommand(command, IsRenderServiceNode());
     }
 }
+ 
+void RSNode::MarkUifirstNode(bool isForceFlag, bool isUifirstEnable)
+{
+    if (isForceFlag == isForceFlag_ && isUifirstEnable_ == isUifirstEnable) {
+        return;
+    }
+    isForceFlag_ = isForceFlag;
+    isUifirstEnable_ = isUifirstEnable;
+    std::unique_ptr<RSCommand> command = std::make_unique<RSForceUifirstNode>(GetId(), isForceFlag, isUifirstEnable);
+    auto transactionProxy = RSTransactionProxy::GetInstance();
+    if (transactionProxy != nullptr) {
+        transactionProxy->AddCommand(command, IsRenderServiceNode());
+    }
+}
 
 void RSNode::SetGrayScale(float grayScale)
 {
@@ -2759,6 +2773,11 @@ void RSNode::ClearChildren()
     transactionProxy->AddCommand(command, IsRenderServiceNode(), GetFollowType(), nodeId);
 }
 
+void RSNode::SetExportTypeChangedCallback(ExportTypeChangedCallback callback)
+{
+    exportTypeChangedCallback_ = callback;
+}
+
 void RSNode::SetTextureExport(bool isTextureExportNode)
 {
     if (isTextureExportNode == isTextureExportNode_) {
@@ -2767,6 +2786,9 @@ void RSNode::SetTextureExport(bool isTextureExportNode)
     isTextureExportNode_ = isTextureExportNode;
     if (!IsUniRenderEnabled()) {
         return;
+    }
+    if (exportTypeChangedCallback_) {
+        exportTypeChangedCallback_(isTextureExportNode);
     }
     if ((isTextureExportNode_ && !hasCreateRenderNodeInRT_) ||
         (!isTextureExportNode_ && !hasCreateRenderNodeInRS_)) {

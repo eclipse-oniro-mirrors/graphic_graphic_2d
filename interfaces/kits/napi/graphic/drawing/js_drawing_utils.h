@@ -189,7 +189,6 @@ constexpr size_t ARGC_SEVEN = 7;
 constexpr size_t ARGC_EIGHT = 8;
 constexpr size_t ARGC_NINE = 9;
 constexpr int NUMBER_TWO = 2;
-extern const char* const JSPROPERTY[4];
 constexpr size_t A_SHIFT = 24;
 constexpr size_t R_SHIFT = 16;
 constexpr size_t G_SHIFT = 8;
@@ -356,8 +355,6 @@ bool ConvertFromJsValue(napi_env env, napi_value jsValue, T& value)
 }
 
 bool ConvertFromJsColor(napi_env env, napi_value jsValue, int32_t* argb, size_t size);
-
-bool ConvertFromJsColorWithNumber(napi_env env, napi_value jsValue, int32_t* argb, size_t size, size_t argc);
 
 bool ConvertFromJsRect(napi_env env, napi_value jsValue, double* ltrb, size_t size);
 

@@ -231,6 +231,7 @@ bool RSMagicPointerRenderManager::GetIntersectImageBySubset(std::shared_ptr<Draw
 
 bool RSMagicPointerRenderManager::CalculateTargetLayer(std::shared_ptr<RSProcessor> processor)
 {
+#ifdef RS_ENABLE_GPU
     auto uniRenderProcessor = std::static_pointer_cast<RSUniRenderProcessor>(processor);
     if (uniRenderProcessor == nullptr) {
         ROSEN_LOGE("RSMagicPointerRenderManager::CalculateTargetLayer uniRenderProcessor is null!");
@@ -267,7 +268,7 @@ bool RSMagicPointerRenderManager::CalculateTargetLayer(std::shared_ptr<RSProcess
     CalculateColorRange(pRect);
     // calculate the max intersection layer and rect
     GetRectAndTargetLayer(layers, pRect, displayNodeIndex);
-
+#endif
     return true;
 }
 

@@ -26,6 +26,7 @@
 #include "param/sys_param.h"
 #include "common/rs_optional_trace.h"
 #include "rs_trace.h"
+#include <mutex>
 
 namespace OHOS {
 namespace Rosen {
@@ -410,7 +411,9 @@ void RSScreenManager::OnHwcDeadEvent()
             if (screen->IsVirtual()) {
                 continue;
             } else {
+#ifdef RS_ENABLE_GPU
                 RSHardwareThread::Instance().ClearFrameBuffers(screen->GetOutput());
+#endif
             }
         }
     }
@@ -437,9 +440,11 @@ void RSScreenManager::OnScreenVBlankIdleEvent(uint32_t devId, uint64_t ns)
         RS_LOGW("RSScreenManager %{public}s: There is no screen for id %{public}" PRIu64 ".", __func__, screenId);
         return;
     }
+#ifdef RS_ENABLE_GPU
     RSHardwareThread::Instance().PostTask([screenId, ns]() {
         RSHardwareThread::Instance().OnScreenVBlankIdleCallback(screenId, ns);
     });
+#endif
 }
 
 void RSScreenManager::CleanAndReinit()
@@ -471,6 +476,7 @@ void RSScreenManager::CleanAndReinit()
             }
         });
     } else {
+#ifdef RS_ENABLE_GPU
         RSHardwareThread::Instance().PostTask([screenManager, this]() {
             RS_LOGW("RSScreenManager %{public}s: clean and reinit in hardware thread.", __func__);
             screenManager->OnHwcDeadEvent();
@@ -485,6 +491,7 @@ void RSScreenManager::CleanAndReinit()
                 return;
             }
         });
+#endif
     }
 }
 
@@ -736,6 +743,7 @@ void RSScreenManager::RegSetScreenVsyncEnabledCallbackForHardwareThread(ScreenId
         RS_LOGE("RegSetScreenVsyncEnabledCallbackForHardwareThread failed, vsyncSampler is null");
         return;
     }
+#ifdef RS_ENABLE_GPU
     vsyncSampler->RegSetScreenVsyncEnabledCallback([this, vsyncEnabledScreenId](bool enabled) {
         RSHardwareThread::Instance().PostTask([this, vsyncEnabledScreenId, enabled]() {
         std::lock_guard<std::mutex> lock(mutex_);
@@ -748,6 +756,7 @@ void RSScreenManager::RegSetScreenVsyncEnabledCallbackForHardwareThread(ScreenId
             screensIt->second->SetScreenVsyncEnabled(enabled);
         });
     });
+#endif
 }
 
 // If the previous primary screen disconnected, we traversal the left screens
@@ -1492,6 +1501,7 @@ void RSScreenManager::GetDefaultScreenActiveMode(RSScreenModeInfo& screenModeInf
 
 void RSScreenManager::ReleaseScreenDmaBuffer(uint64_t screenId)
 {
+#ifdef RS_ENABLE_GPU
     RSHardwareThread::Instance().PostTask([screenId]() {
         RS_TRACE_NAME("RSScreenManager ReleaseScreenDmaBuffer");
         auto screenManager = CreateOrGetScreenManager();
@@ -1507,6 +1517,7 @@ void RSScreenManager::ReleaseScreenDmaBuffer(uint64_t screenId)
         std::vector<LayerInfoPtr> layer;
         output->SetLayerInfo(layer);
     });
+#endif
 }
 
 std::vector<RSScreenModeInfo> RSScreenManager::GetScreenSupportedModes(ScreenId id) const
@@ -1659,6 +1670,8 @@ ScreenInfo RSScreenManager::QueryScreenInfoLocked(ScreenId id) const
         info.state = ScreenState::SOFTWARE_OUTPUT_ENABLE;
     }
     info.skipFrameInterval = screen->GetScreenSkipFrameInterval();
+    info.expectedRefreshRate = screen->GetScreenExpectedRefreshRate();
+    info.skipFrameStrategy = screen->GetScreenSkipFrameStrategy();
     screen->GetPixelFormat(info.pixelFormat);
     screen->GetScreenHDRFormat(info.hdrFormat);
     info.whiteList = screen->GetWhiteList();
@@ -1817,6 +1830,7 @@ void RSScreenManager::ClearFpsDump(std::string& dumpString, std::string& arg)
 
 void RSScreenManager::ClearFrameBufferIfNeed()
 {
+#ifdef RS_ENABLE_GPU
     RSHardwareThread::Instance().PostTask([this]() {
         std::lock_guard<std::mutex> lock(mutex_);
         for (const auto& [id, screen] : screens_) {
@@ -1830,6 +1844,7 @@ void RSScreenManager::ClearFrameBufferIfNeed()
             }
         }
     });
+#endif
 }
 
 int32_t RSScreenManager::SetScreenConstraint(ScreenId id, uint64_t timestamp, ScreenConstraintType type)
@@ -2010,10 +2025,9 @@ int32_t RSScreenManager::SetVirtualScreenRefreshRate(ScreenId id, uint32_t maxRe
     while (MAX_VIRTUAL_SCREEN_REFRESH_RATE % maxRefreshRate != 0) { // maxRefreshRate is greater than 0
         maxRefreshRate--;
     }
-    uint32_t skipFrameInterval = MAX_VIRTUAL_SCREEN_REFRESH_RATE / maxRefreshRate;
-    screensIt->second->SetScreenSkipFrameInterval(skipFrameInterval);
-    RS_LOGI("RSScreenManager %{public}s: screen(id %" PRIu64 "), skipFrameInterval(%d).",
-        __func__, id, skipFrameInterval);
+    screensIt->second->SetScreenExpectedRefreshRate(maxRefreshRate);
+    RS_LOGI("RSScreenManager %{public}s: screen(id %" PRIu64 "), maxRefreshRate(%d).",
+        __func__, id, maxRefreshRate);
     actualRefreshRate = maxRefreshRate;
     return StatusCode::SUCCESS;
 }

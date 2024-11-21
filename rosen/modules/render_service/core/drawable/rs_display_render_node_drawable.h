@@ -129,7 +129,7 @@ public:
     {
         return originScreenRotation_;
     }
-    bool SkipFrame(uint32_t refreshRate, uint32_t skipFrameInterval);
+    bool SkipFrame(uint32_t refreshRate, ScreenInfo screenInfo);
 
 private:
     explicit RSDisplayRenderNodeDrawable(std::shared_ptr<const RSRenderNode>&& node);
@@ -157,6 +157,7 @@ private:
         std::shared_ptr<RSUniRenderVirtualProcessor> virtualProcesser, RSRenderThreadParams& uniParam);
     void DrawExpandScreen(RSUniRenderVirtualProcessor& processor);
     void DrawCurtainScreen() const;
+    void InitTranslateForWallpaper();
     void RemoveClearMemoryTask() const;
     void PostClearMemoryTask() const;
     void SetCanvasBlack(RSProcessor& processor);
@@ -176,6 +177,8 @@ private:
     // For P3-scRGB Control
     bool EnablescRGBForP3AndUiFirst(const GraphicColorGamut& currentGamut);
     void RenderOverDraw();
+    bool SkipFrameByInterval(uint32_t refreshRate, uint32_t skipFrameInterval);
+    bool SkipFrameByRefreshRate(uint32_t refreshRate);
 
     using Registrar = RenderNodeDrawableRegistrar<RSRenderNodeType::DISPLAY_NODE, OnGenerate>;
     static Registrar instance_;
@@ -220,6 +223,8 @@ private:
     bool enableVisibleRect_ = false;
     Drawing::RectI curVisibleRect_;
     Drawing::RectI lastVisibleRect_;
+    int32_t offscreenTranslateX_ = 0;
+    int32_t offscreenTranslateY_ = 0;
 };
 } // namespace DrawableV2
 } // namespace OHOS::Rosen

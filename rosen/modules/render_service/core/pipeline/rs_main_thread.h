@@ -44,7 +44,6 @@
 #include "params/rs_render_thread_params.h"
 #include "pipeline/rs_context.h"
 #include "pipeline/rs_draw_frame.h"
-#include "pipeline/rs_graphic_config.h"
 #include "pipeline/rs_uni_render_judgement.h"
 #include "pipeline/rs_vsync_rate_reduce_manager.h"
 #include "platform/common/rs_event_manager.h"
@@ -116,6 +115,7 @@ public:
     void GetAppMemoryInMB(float& cpuMemSize, float& gpuMemSize);
     void ClearMemoryCache(ClearMemoryMoment moment, bool deeply = false, pid_t pid = -1);
     static bool CheckIsHdrSurface(const RSSurfaceRenderNode& surfaceNode);
+    static bool CheckIsAihdrSurface(const RSSurfaceRenderNode& surfaceNode);
 
     template<typename Task, typename Return = std::invoke_result_t<Task>>
     std::future<Return> ScheduleTask(Task&& task)
@@ -128,7 +128,11 @@ public:
     const std::shared_ptr<RSBaseRenderEngine> GetRenderEngine() const
     {
         RS_LOGD("You'd better to call GetRenderEngine from RSUniRenderThread directly");
+#ifdef RS_ENABLE_GPU
         return isUniRender_ ? std::move(RSUniRenderThread::Instance().GetRenderEngine()) : renderEngine_;
+#else
+        return renderEngine_;
+#endif
     }
 
     bool GetClearMemoryFinished() const
@@ -182,9 +186,6 @@ public:
     void UnRegisterSurfaceOcclusionChangeCallback(NodeId id);
     void ClearSurfaceOcclusionChangeCallback(pid_t pid);
     bool SurfaceOcclusionCallBackIfOnTreeStateChanged();
-
-    void WaitUtilUniRenderFinished();
-    void NotifyUniRenderFinish();
 
     bool WaitHardwareThreadTaskExecute();
     void NotifyHardwareThreadCanExecuteTask();
@@ -295,8 +296,8 @@ public:
     void SubscribeAppState();
     void HandleOnTrim(Memory::SystemMemoryLevel level);
     void SetCurtainScreenUsingStatus(bool isCurtainScreenOn);
-    void SetLuminanceChangingStatus(bool isLuminanceChanged);
-    bool ExchangeLuminanceChangingStatus();
+    void SetLuminanceChangingStatus(ScreenId id, bool isLuminanceChanged);
+    bool ExchangeLuminanceChangingStatus(ScreenId id);
     bool IsCurtainScreenOn() const;
 
     bool GetParallelCompositionEnabled();
@@ -304,8 +305,9 @@ public:
     void AddSelfDrawingNodes(std::shared_ptr<RSSurfaceRenderNode> selfDrawingNode);
     const std::vector<std::shared_ptr<RSSurfaceRenderNode>>& GetSelfDrawingNodes() const;
     void ClearSelfDrawingNodes();
+#ifdef RS_ENABLE_GPU
     const std::vector<DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr>& GetSelfDrawables() const;
-
+#endif
     bool GetDiscardJankFrames() const
     {
         return discardJankFrames_.load();
@@ -360,8 +362,6 @@ public:
 
     void SetAncoForceDoDirect(bool direct);
 
-    bool IsBlurSwitchOpen() const;
-
     bool IsSystemAnimatedScenesListEmpty() const
     {
         return systemAnimatedScenesList_.empty();
@@ -382,6 +382,11 @@ public:
     bool HasWiredMirrorDisplay()
     {
         return hasWiredMirrorDisplay_;
+    }
+
+    void UpdateFrameRateLinker(const RSRenderFrameRateLinker& linker)
+    {
+        postHgmTaskFlag_ = true;
     }
 private:
     using TransactionDataIndexMap = std::unordered_map<pid_t,
@@ -501,7 +506,6 @@ private:
     void PrepareUiCaptureTasks(std::shared_ptr<RSUniRenderVisitor> uniVisitor);
     void UIExtensionNodesTraverseAndCallback();
     bool CheckUIExtensionCallbackDataChanged() const;
-    void ConfigureRenderService();
 
     void CheckBlurEffectCountStatistics(std::shared_ptr<RSBaseRenderNode> rootNode);
     void OnCommitDumpClientNodeTree(NodeId nodeId, pid_t pid, uint32_t taskId, const std::string& result);
@@ -561,8 +565,6 @@ private:
 #endif
 
     mutable std::mutex uniRenderMutex_;
-    bool uniRenderFinished_ = false;
-    std::condition_variable uniRenderCond_;
 
     bool clearMemoryFinished_ = true;
     bool clearMemDeeply_ = false;
@@ -574,7 +576,8 @@ private:
     bool isCurtainScreenUsingStatusChanged_ = false;
 
     // Used to refresh the whole display when luminance is changed
-    std::atomic<bool> isLuminanceChanged_ = false;
+    std::unordered_map<ScreenId, bool> displayLuminanceChanged_;
+    std::mutex luminanceMutex_;
 
     // used for blocking mainThread when hardwareThread has 2 and more task to Execute
     mutable std::mutex hardwareThreadTaskMutex_;
@@ -614,13 +617,17 @@ private:
 
     // used for hardware enabled case
     bool doDirectComposition_ = true;
+#ifdef RS_ENABLE_GPU
     bool needDrawFrame_ = true;
+#endif
     bool isLastFrameDirectComposition_ = false;
     bool isNeedResetClearMemoryTask_ = false;
     bool isHardwareEnabledBufferUpdated_ = false;
     std::vector<std::shared_ptr<RSSurfaceRenderNode>> hardwareEnabledNodes_;
     std::vector<std::shared_ptr<RSSurfaceRenderNode>> selfDrawingNodes_;
+#ifdef RS_ENABLE_GPU
     std::vector<DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr> selfDrawables_;
+#endif
     bool isHardwareForcedDisabled_ = false; // if app node has shadow or filter, disable hardware composer for all
     DrawablesVec hardwareEnabledDrwawables_;
 
@@ -641,10 +648,10 @@ private:
     std::shared_ptr<Drawing::Image> watermarkImg_ = nullptr;
     bool watermarkFlag_ = false;
     bool lastWatermarkFlag_ = false;
-    bool doParallelComposition_ = false;
     bool hasProtectedLayer_ = false;
 
     std::shared_ptr<RSRenderFrameRateLinker> rsFrameRateLinker_ = nullptr; // modify by HgmThread
+    bool postHgmTaskFlag_ = false;
     pid_t desktopPidForRotationScene_ = 0;
     FrameRateRange rsCurrRange_;
 
@@ -714,7 +721,9 @@ private:
 #endif
     pid_t exitedPid_ = -1;
     std::set<pid_t> exitedPidSet_;
+#ifdef RS_ENABLE_GPU
     RSDrawFrame drawFrame_;
+#endif
     std::unique_ptr<RSRenderThreadParams> renderThreadParams_ = nullptr; // sync to render thread
     RsParallelType rsParallelType_;
     bool isCurtainScreenOn_ = false;
@@ -731,9 +740,6 @@ private:
     bool isFirstFrameOfPartialRender_ = false;
     bool isPartialRenderEnabledOfLastFrame_ = false;
     bool isRegionDebugEnabledOfLastFrame_ = false;
-
-    // graphic config
-    bool isBlurSwitchOpen_ = true;
 
     bool isForceRefresh_ = false;
 };

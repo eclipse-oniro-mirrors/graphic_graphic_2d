@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -12,24 +12,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "rs_ui_share_context.h"
-#include "pipeline/rs_render_thread.h"
+
+#ifndef RENDER_SERVICE_CLIENT_CORE_PIPELINE_RS_RENDER_THREAD_UTIL
+#define RENDER_SERVICE_CLIENT_CORE_PIPELINE_RS_RENDER_THREAD_UTIL
+
+#include "utils/rect.h"
 
 namespace OHOS {
 namespace Rosen {
-RSUIShareContext& RSUIShareContext::GetInstance()
-{
-    static RSUIShareContext singleton;
-    return singleton;
-}
+class RSRenderThreadUtil {
+public:
+    static void SrcRectScaleDown(Drawing::Rect& srcRect, const Drawing::Rect& localBounds);
+    static void SrcRectScaleFit(const Drawing::Rect& srcRect, Drawing::Rect& dstRect, const Drawing::Rect& localBounds);
+};
+} // namespace Rosen
+} // namespace OHOS
 
-EGLContext RSUIShareContext::GetRsRenderContext() const
-{
-    auto context = RSRenderThread::Instance().GetRenderContext();
-    if (!context) {
-        return EGL_NO_CONTEXT;
-    }
-    return context->GetEGLContext();
-}
-}
-}
+#endif // RENDER_SERVICE_CLIENT_CORE_PIPELINE_RS_RENDER_THREAD_UTIL

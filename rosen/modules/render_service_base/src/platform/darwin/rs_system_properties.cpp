@@ -19,6 +19,7 @@
 
 namespace OHOS {
 namespace Rosen {
+
 #if (defined (ACE_ENABLE_GL) && defined (ACE_ENABLE_VK)) || (defined (RS_ENABLE_GL) && defined (RS_ENABLE_VK))
 const GpuApiType RSSystemProperties::systemGpuApiType_ = GpuApiType::OPENGL;
 #elif defined (ACE_ENABLE_GL) || defined (RS_ENABLE_GL)
@@ -251,6 +252,11 @@ float RSSystemProperties::GetAnimationScale()
 }
 
 bool RSSystemProperties::GetProxyNodeDebugEnabled()
+{
+    return false;
+}
+
+bool RSSystemProperties::GetCacheOptimizeRotateEnable()
 {
     return false;
 }

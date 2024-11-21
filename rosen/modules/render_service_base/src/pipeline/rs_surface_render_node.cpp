@@ -27,10 +27,10 @@
 #include "ipc_callbacks/rs_rt_refresh_callback.h"
 #include "params/rs_surface_render_params.h"
 #include "pipeline/rs_render_node.h"
+#include "pipeline/rs_display_render_node.h"
 #include "pipeline/rs_effect_render_node.h"
 #include "pipeline/rs_root_render_node.h"
 #include "pipeline/rs_surface_handler.h"
-#include "pipeline/rs_display_render_node.h"
 #include "platform/common/rs_log.h"
 #include "platform/ohos/rs_jank_stats.h"
 #include "property/rs_properties_painter.h"
@@ -426,12 +426,14 @@ bool RSSurfaceRenderNode::HasSubSurfaceNodes() const
 
 void RSSurfaceRenderNode::SetIsSubSurfaceNode(bool isSubSurfaceNode)
 {
+#ifdef RS_ENABLE_GPU
     auto surfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
     if (surfaceParams) {
         surfaceParams->SetIsSubSurfaceNode(isSubSurfaceNode);
         isSubSurfaceNode_ = isSubSurfaceNode;
         AddToPendingSyncList();
     }
+#endif
 }
 
 bool RSSurfaceRenderNode::IsSubSurfaceNode() const
@@ -514,12 +516,14 @@ std::string RSSurfaceRenderNode::SubSurfaceNodesDump() const
 
 void RSSurfaceRenderNode::SetIsNodeToBeCaptured(bool isNodeToBeCaptured)
 {
+#ifdef RS_ENABLE_GPU
     auto surfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
     if (surfaceParams) {
         surfaceParams->SetIsNodeToBeCaptured(isNodeToBeCaptured);
         isNodeToBeCaptured_ = isNodeToBeCaptured;
         AddToPendingSyncList();
     }
+#endif
 }
 
 bool RSSurfaceRenderNode::IsNodeToBeCaptured() const
@@ -584,6 +588,8 @@ bool RSSurfaceRenderNode::IsSubTreeNeedPrepare(bool filterInGlobal, bool isOcclu
     if (surfaceParentPtr != nullptr &&
         surfaceParentPtr->GetSurfaceNodeType() == RSSurfaceNodeType::LEASH_WINDOW_NODE) {
         if (this->GetRenderProperties().IsCurGeoDirty()) {
+            SetSubTreeDirty(false);
+            UpdateChildrenOutOfRectFlag(false);
             return true;
         }
     }
@@ -788,6 +794,7 @@ bool RSSurfaceRenderNode::GetBootAnimation() const
 
 void RSSurfaceRenderNode::SetGlobalPositionEnabled(bool isEnabled)
 {
+#ifdef RS_ENABLE_GPU
     if (isGlobalPositionEnabled_ == isEnabled) {
         return;
     }
@@ -803,6 +810,7 @@ void RSSurfaceRenderNode::SetGlobalPositionEnabled(bool isEnabled)
     isGlobalPositionEnabled_ = isEnabled;
     ROSEN_LOGI("RSSurfaceRenderNode::SetGlobalPositionEnabled id:%{public}" PRIu64 ", isEnabled:%{public}d",
         GetId(), isEnabled);
+#endif
 }
 
 bool RSSurfaceRenderNode::GetGlobalPositionEnabled() const
@@ -812,6 +820,7 @@ bool RSSurfaceRenderNode::GetGlobalPositionEnabled() const
 
 void RSSurfaceRenderNode::SetForceHardwareAndFixRotation(bool flag)
 {
+#ifdef RS_ENABLE_GPU
     auto surfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
     if (surfaceParams == nullptr) {
         return;
@@ -820,6 +829,7 @@ void RSSurfaceRenderNode::SetForceHardwareAndFixRotation(bool flag)
     AddToPendingSyncList();
 
     isFixRotationByUser_ = flag;
+#endif
 }
 
 bool RSSurfaceRenderNode::GetFixRotationByUser() const
@@ -836,12 +846,14 @@ void RSSurfaceRenderNode::SetInFixedRotation(bool isRotating)
 {
     if (isFixRotationByUser_ && !isInFixedRotation_ && isRotating) {
 #ifndef ROSEN_CROSS_PLATFORM
+#ifdef RS_ENABLE_GPU
         auto surfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
         if (surfaceParams) {
             auto layer = surfaceParams->GetLayerInfo();
             originalSrcRect_ = { layer.srcRect.x, layer.srcRect.y, layer.srcRect.w, layer.srcRect.h };
             originalDstRect_ = { layer.dstRect.x, layer.dstRect.y, layer.dstRect.w, layer.dstRect.h };
         }
+#endif
 #endif
     }
     isInFixedRotation_ = isFixRotationByUser_ && isRotating;
@@ -1183,6 +1195,7 @@ void RSSurfaceRenderNode::NotifyTreeStateChange()
 
 void RSSurfaceRenderNode::SetLayerTop(bool isTop)
 {
+#ifdef RS_ENABLE_GPU
     isLayerTop_ = isTop;
     SetContentDirty();
     auto surfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
@@ -1191,6 +1204,7 @@ void RSSurfaceRenderNode::SetLayerTop(bool isTop)
     }
     surfaceParams->SetLayerTop(isTop);
     AddToPendingSyncList();
+#endif
 }
 
 bool RSSurfaceRenderNode::IsHardwareEnabledTopSurface() const
@@ -1201,6 +1215,7 @@ bool RSSurfaceRenderNode::IsHardwareEnabledTopSurface() const
 
 void RSSurfaceRenderNode::SetHardCursorStatus(bool status)
 {
+#ifdef RS_ENABLE_GPU
     if (isHardCursor_ == status) {
         isLastHardCursor_ = isHardCursor_;
         return;
@@ -1213,6 +1228,7 @@ void RSSurfaceRenderNode::SetHardCursorStatus(bool status)
         surfaceParams->SetHardCursorStatus(status);
         AddToPendingSyncList();
     }
+#endif
 }
 
 bool RSSurfaceRenderNode::GetHardCursorStatus() const
@@ -1281,6 +1297,7 @@ void RSSurfaceRenderNode::UpdateSurfaceDefaultSize(float width, float height)
 void RSSurfaceRenderNode::UpdateBufferInfo(const sptr<SurfaceBuffer>& buffer, const Rect& damageRect,
     const sptr<SyncFence>& acquireFence, const sptr<SurfaceBuffer>& preBuffer)
 {
+#ifdef RS_ENABLE_GPU
     auto surfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
     if (!surfaceParams->IsBufferSynced()) {
         auto curBuffer = surfaceParams->GetBuffer();
@@ -1297,10 +1314,12 @@ void RSSurfaceRenderNode::UpdateBufferInfo(const sptr<SurfaceBuffer>& buffer, co
     surfaceParams->SetAcquireFence(acquireFence);
     surfaceParams->SetBufferSynced(false);
     AddToPendingSyncList();
+#endif
 }
 
 void RSSurfaceRenderNode::NeedClearBufferCache()
 {
+#ifdef RS_ENABLE_GPU
     if (!surfaceHandler_) {
         return;
     }
@@ -1315,6 +1334,7 @@ void RSSurfaceRenderNode::NeedClearBufferCache()
     }
     surfaceParams->SetBufferClearCacheSet(bufferCacheSet);
     AddToPendingSyncList();
+#endif
 }
 #endif
 
@@ -1403,7 +1423,7 @@ void RSSurfaceRenderNode::NotifyRTBufferAvailable(bool isTextureExportNode)
     }
 
     if (isRefresh_) {
-        ROSEN_LOGI("RSSurfaceRenderNode::NotifyRTBufferAvailable nodeId = %{public}" PRIu64 " RenderThread", GetId());
+        ROSEN_LOGD("RSSurfaceRenderNode::NotifyRTBufferAvailable nodeId = %{public}" PRIu64 " RenderThread", GetId());
         RSRTRefreshCallback::Instance().ExecuteRefresh();
     }
     if (isTextureExportNode) {
@@ -1413,7 +1433,7 @@ void RSSurfaceRenderNode::NotifyRTBufferAvailable(bool isTextureExportNode)
     {
         std::lock_guard<std::mutex> lock(mutexRT_);
         if (callbackFromRT_) {
-            ROSEN_LOGI("RSSurfaceRenderNode::NotifyRTBufferAvailable nodeId = %{public}" PRIu64 " RenderService",
+            ROSEN_LOGD("RSSurfaceRenderNode::NotifyRTBufferAvailable nodeId = %{public}" PRIu64 " RenderService",
                 GetId());
             callbackFromRT_->OnBufferAvailable();
         }
@@ -1624,6 +1644,7 @@ bool RSSurfaceRenderNode::IsSCBNode() const
 
 void RSSurfaceRenderNode::UpdateHwcNodeLayerInfo(GraphicTransformType transform, bool isHardCursorEnable)
 {
+#ifdef RS_ENABLE_GPU
 #ifndef ROSEN_CROSS_PLATFORM
     auto surfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
     auto layer = surfaceParams->GetLayerInfo();
@@ -1680,15 +1701,18 @@ void RSSurfaceRenderNode::UpdateHwcNodeLayerInfo(GraphicTransformType transform,
     }
     AddToPendingSyncList();
 #endif
+#endif
 }
 
 void RSSurfaceRenderNode::UpdateHardwareDisabledState(bool disabled)
 {
+#ifdef RS_ENABLE_GPU
     auto surfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
     surfaceParams->SetLastFrameHardwareEnabled(!IsHardwareForcedDisabled());
     SetHardwareForcedDisabledState(disabled);
     surfaceParams->SetHardwareEnabled(!IsHardwareForcedDisabled());
     AddToPendingSyncList();
+#endif
 }
 
 void RSSurfaceRenderNode::SetVisibleRegionRecursive(const Occlusion::Region& region,
@@ -1801,16 +1825,19 @@ void RSSurfaceRenderNode::CheckValidFilterCacheFullyCoverTarget(const RSRenderNo
 
 void RSSurfaceRenderNode::UpdateOccludedByFilterCache(bool val)
 {
+#ifdef RS_ENABLE_GPU
     isOccludedByFilterCache_ = val;
     auto surfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
     surfaceParams->SetOccludedByFilterCache(isOccludedByFilterCache_);
+#endif
 }
 
 void RSSurfaceRenderNode::UpdateSurfaceCacheContentStaticFlag()
 {
+#ifdef RS_ENABLE_GPU
     auto contentStatic = false;
     if (IsLeashWindow() || IsAbilityComponent()) {
-        contentStatic = (!IsSubTreeDirty() || GetForceUpdateByUifirst()) && !HasRemovedChild();
+        contentStatic = (!IsSubTreeDirty() || GetForceUpdateByUifirst()) && !IsContentDirty() && !HasRemovedChild();
     } else {
         contentStatic = surfaceCacheContentStatic_;
     }
@@ -1822,8 +1849,9 @@ void RSSurfaceRenderNode::UpdateSurfaceCacheContentStaticFlag()
         AddToPendingSyncList();
     }
     RS_OPTIONAL_TRACE_NAME_FMT("RSSurfaceRenderNode::UpdateSurfaceCacheContentStaticFlag: "
-        "[%d] name:[%s] Id:[%" PRIu64 "] subDirty:[%d] forceUpdate:[%d]",
-        contentStatic, GetName().c_str(), GetId(), IsSubTreeDirty(), GetForceUpdateByUifirst());
+        "[%d] name:[%s] Id:[%" PRIu64 "] subDirty:[%d] contentDirty:[%d] forceUpdate:[%d]",
+        contentStatic, GetName().c_str(), GetId(), IsSubTreeDirty(), IsContentDirty(), GetForceUpdateByUifirst());
+#endif
 }
 
 bool RSSurfaceRenderNode::IsOccludedByFilterCache() const
@@ -1833,6 +1861,7 @@ bool RSSurfaceRenderNode::IsOccludedByFilterCache() const
 
 void RSSurfaceRenderNode::UpdateSurfaceSubTreeDirtyFlag()
 {
+#ifdef RS_ENABLE_GPU
     auto stagingSurfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
     if (stagingSurfaceParams) {
         stagingSurfaceParams->SetSurfaceSubTreeDirty(IsSubTreeDirty());
@@ -1840,6 +1869,7 @@ void RSSurfaceRenderNode::UpdateSurfaceSubTreeDirtyFlag()
     if (stagingRenderParams_->NeedSync()) {
         AddToPendingSyncList();
     }
+#endif
 }
 
 void RSSurfaceRenderNode::UpdateDrawingCacheNodes(const std::shared_ptr<RSRenderNode>& nodePtr)
@@ -2071,6 +2101,7 @@ RSSurfaceRenderNode::ContainerConfig RSSurfaceRenderNode::GetAbsContainerConfig(
 
 void RSSurfaceRenderNode::OnSync()
 {
+#ifdef RS_ENABLE_GPU
     RS_OPTIONAL_TRACE_NAME_FMT("RSSurfaceRenderNode::OnSync name[%s] dirty[%s]",
         GetName().c_str(), dirtyManager_->GetCurrentFrameDirtyRegion().ToString().c_str());
     if (!renderDrawable_) {
@@ -2090,6 +2121,7 @@ void RSSurfaceRenderNode::OnSync()
     renderDrawable_->RegisterDeleteBufferListenerOnSync(GetRSSurfaceHandler()->GetConsumer());
 #endif
     RSRenderNode::OnSync();
+#endif
 }
 
 bool RSSurfaceRenderNode::CheckIfOcclusionReusable(std::queue<NodeId>& surfaceNodesIds) const
@@ -2369,7 +2401,7 @@ const std::vector<std::weak_ptr<RSSurfaceRenderNode>>& RSSurfaceRenderNode::GetC
     return childHardwareEnabledNodes_;
 }
 
-void RSSurfaceRenderNode::SetHwcChildrenDisabledStateByUifirst()
+void RSSurfaceRenderNode::SetHwcChildrenDisabledState()
 {
     if (IsAppWindow()) {
         auto hwcNodes = GetChildHardwareEnabledNodes();
@@ -2389,7 +2421,7 @@ void RSSurfaceRenderNode::SetHwcChildrenDisabledStateByUifirst()
             if (surfaceNode == nullptr) {
                 continue;
             }
-            surfaceNode->SetHwcChildrenDisabledStateByUifirst();
+            surfaceNode->SetHwcChildrenDisabledState();
         }
     }
 }
@@ -2693,9 +2725,12 @@ bool RSSurfaceRenderNode::QuerySubAssignable(bool isRotation)
     } else {
         hasTransparentSurface_ = IsTransparent();
     }
-    RS_TRACE_NAME_FMT("SubThreadAssignable node[%lld] hasTransparent: %d, childHasVisibleFilter: %d, hasFilter: %d, "
-        "isRotation: %d", GetId(), hasTransparentSurface_, ChildHasVisibleFilter(), HasFilter(), isRotation);
-    return !(hasTransparentSurface_ && ChildHasVisibleFilter()) && !HasFilter() && !isRotation;
+    RS_TRACE_NAME_FMT("SubThreadAssignable node[%lld] hasTransparent: %d, childHasVisibleFilter: %d, "
+        "hasFilter: %d, isRotation: %d & %d globalAlpha[%f]", GetId(), hasTransparentSurface_, ChildHasVisibleFilter(),
+        HasFilter(), isRotation, RSSystemProperties::GetCacheOptimizeRotateEnable(), GetGlobalAlpha());
+    bool rotateOptimize = RSSystemProperties::GetCacheOptimizeRotateEnable() ?
+        !(isRotation && ROSEN_EQ(GetGlobalAlpha(), 0.0f)) : !isRotation;
+    return !(hasTransparentSurface_ && ChildHasVisibleFilter()) && !HasFilter() && rotateOptimize;
 }
 
 bool RSSurfaceRenderNode::GetHasTransparentSurface() const
@@ -2736,6 +2771,7 @@ Vector2f RSSurfaceRenderNode::GetGravityTranslate(float imgWidth, float imgHeigh
 
 void RSSurfaceRenderNode::UpdateUIFirstFrameGravity()
 {
+#ifdef RS_ENABLE_GPU
     Gravity gravity = GetRenderProperties().GetFrameGravity();
     if (IsLeashWindow()) {
         std::vector<Gravity> subGravity{};
@@ -2757,10 +2793,12 @@ void RSSurfaceRenderNode::UpdateUIFirstFrameGravity()
     }
     stagingSurfaceParams->SetUIFirstFrameGravity(gravity);
     AddToPendingSyncList();
+#endif
 }
 
 void RSSurfaceRenderNode::SetOcclusionVisible(bool visible)
 {
+#ifdef RS_ENABLE_GPU
     auto stagingSurfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
     if (stagingSurfaceParams) {
         stagingSurfaceParams->SetOcclusionVisible(visible);
@@ -2770,10 +2808,12 @@ void RSSurfaceRenderNode::SetOcclusionVisible(bool visible)
     }
 
     isOcclusionVisible_ = visible;
+#endif
 }
 
 void RSSurfaceRenderNode::UpdatePartialRenderParams()
 {
+#ifdef RS_ENABLE_GPU
     auto surfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
     if (surfaceParams == nullptr) {
         RS_LOGE("RSSurfaceRenderNode::UpdatePartialRenderParams surfaceParams is null");
@@ -2788,10 +2828,12 @@ void RSSurfaceRenderNode::UpdatePartialRenderParams()
     surfaceParams->SetTransparentRegion(GetTransparentRegion());
     surfaceParams->SetOpaqueRegion(GetOpaqueRegion());
     surfaceParams->SetRoundedCornerRegion(GetRoundedCornerRegion());
+#endif
 }
 
 void RSSurfaceRenderNode::UpdateExtendVisibleRegion(Occlusion::Region& region)
 {
+#ifdef RS_ENABLE_GPU
     extendVisibleRegion_.Reset();
     extendVisibleRegion_ = region.Or(visibleRegion_);
     auto surfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
@@ -2800,20 +2842,24 @@ void RSSurfaceRenderNode::UpdateExtendVisibleRegion(Occlusion::Region& region)
         return;
     }
     surfaceParams->SetVisibleRegion(extendVisibleRegion_);
+#endif
 }
 
 void RSSurfaceRenderNode::InitRenderParams()
 {
+#ifdef RS_ENABLE_GPU
     stagingRenderParams_ = std::make_unique<RSSurfaceRenderParams>(GetId());
     DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(shared_from_this());
     if (renderDrawable_ == nullptr) {
         RS_LOGE("RSSurfaceRenderNode::InitRenderParams failed");
         return;
     }
+#endif
 }
 
 void RSSurfaceRenderNode::UpdateRenderParams()
 {
+#ifdef RS_ENABLE_GPU
     auto surfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
     if (surfaceParams == nullptr) {
         RS_LOGE("RSSurfaceRenderNode::UpdateRenderParams surfaceParams is null");
@@ -2861,10 +2907,12 @@ void RSSurfaceRenderNode::UpdateRenderParams()
     surfaceParams->SetNeedSync(true);
 
     RSRenderNode::UpdateRenderParams();
+#endif
 }
 
 void RSSurfaceRenderNode::SetNeedOffscreen(bool needOffscreen)
 {
+#ifdef RS_ENABLE_GPU
     auto stagingSurfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
     if (stagingSurfaceParams) {
         stagingSurfaceParams->SetNeedOffscreen(needOffscreen);
@@ -2873,10 +2921,12 @@ void RSSurfaceRenderNode::SetNeedOffscreen(bool needOffscreen)
     } else {
         RS_LOGE("RSSurfaceRenderNode::SetNeedOffscreen stagingSurfaceParams is null");
     }
+#endif
 }
 
 void RSSurfaceRenderNode::UpdateAncestorDisplayNodeInRenderParams()
 {
+#ifdef RS_ENABLE_GPU
     auto surfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
     if (surfaceParams == nullptr) {
         RS_LOGE("RSSurfaceRenderNode::UpdateAncestorDisplayNodeInRenderParams surfaceParams is null");
@@ -2884,56 +2934,68 @@ void RSSurfaceRenderNode::UpdateAncestorDisplayNodeInRenderParams()
     }
     surfaceParams->SetAncestorDisplayNode(ancestorDisplayNode_);
     surfaceParams->SetNeedSync(true);
+#endif
 }
 
 void RSSurfaceRenderNode::SetUifirstChildrenDirtyRectParam(RectI rect)
 {
+#ifdef RS_ENABLE_GPU
     auto stagingSurfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
     if (stagingSurfaceParams) {
         stagingSurfaceParams->SetUifirstChildrenDirtyRectParam(rect);
         AddToPendingSyncList();
     }
+#endif
 }
 
 void RSSurfaceRenderNode::SetLeashWindowVisibleRegionEmptyParam()
 {
+#ifdef RS_ENABLE_GPU
     auto stagingSurfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
     if (!stagingSurfaceParams) {
         RS_LOGE("RSSurfaceRenderNode::SetLeashWindowVisibleRegionEmptyParam staingSurfaceParams is null");
         return;
     }
     stagingSurfaceParams->SetLeashWindowVisibleRegionEmptyParam(isLeashWindowVisibleRegionEmpty_);
+#endif
 }
 
 void RSSurfaceRenderNode::SetUifirstNodeEnableParam(MultiThreadCacheType b)
 {
+#ifdef RS_ENABLE_GPU
     auto stagingSurfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
     if (stagingSurfaceParams) {
         stagingSurfaceParams->SetUifirstNodeEnableParam(b);
         AddToPendingSyncList();
     }
+#endif
 }
 
 void RSSurfaceRenderNode::SetIsParentUifirstNodeEnableParam(bool b)
 {
+#ifdef RS_ENABLE_GPU
     auto stagingSurfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
     if (stagingSurfaceParams) {
         stagingSurfaceParams->SetIsParentUifirstNodeEnableParam(b);
         AddToPendingSyncList();
     }
+#endif
 }
 
 void RSSurfaceRenderNode::SetUifirstUseStarting(NodeId id)
 {
+#ifdef RS_ENABLE_GPU
     auto stagingSurfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
     if (stagingSurfaceParams) {
         stagingSurfaceParams->SetUifirstUseStarting(id);
         AddToPendingSyncList();
     }
+#endif
 }
 
 void RSSurfaceRenderNode::SetCornerRadiusInfoForDRM(const std::vector<float>& drmCornerRadiusInfo)
 {
+#ifdef RS_ENABLE_GPU
     if (drmCornerRadiusInfo_ != drmCornerRadiusInfo) {
         auto surfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
         if (surfaceParams) {
@@ -2942,6 +3004,7 @@ void RSSurfaceRenderNode::SetCornerRadiusInfoForDRM(const std::vector<float>& dr
         }
         AddToPendingSyncList();
     }
+#endif
 }
 
 void RSSurfaceRenderNode::SetSkipDraw(bool skip)
@@ -2972,29 +3035,35 @@ bool RSSurfaceRenderNode::IsWatermarkEmpty() const
 
 void RSSurfaceRenderNode::SetSdrNit(int32_t sdrNit)
 {
+#ifdef RS_ENABLE_GPU
     auto surfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
     if (surfaceParams) {
         surfaceParams->SetSdrNit(sdrNit);
     }
     AddToPendingSyncList();
+#endif
 }
 
 void RSSurfaceRenderNode::SetDisplayNit(int32_t displayNit)
 {
+#ifdef RS_ENABLE_GPU
     auto surfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
     if (surfaceParams) {
         surfaceParams->SetDisplayNit(displayNit);
     }
     AddToPendingSyncList();
+#endif
 }
 
 void RSSurfaceRenderNode::SetBrightnessRatio(float brightnessRatio)
 {
+#ifdef RS_ENABLE_GPU
     auto surfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
     if (surfaceParams) {
         surfaceParams->SetBrightnessRatio(brightnessRatio);
     }
     AddToPendingSyncList();
+#endif
 }
 
 void RSSurfaceRenderNode::SetWatermarkEnabled(const std::string& name, bool isEnabled)
@@ -3002,10 +3071,12 @@ void RSSurfaceRenderNode::SetWatermarkEnabled(const std::string& name, bool isEn
     if (isEnabled) {
         RS_LOGI("RSSurfaceRenderNode::SetWatermarkEnabled[%{public}d], Name:%{public}s", isEnabled, name.c_str());
     }
+#ifdef RS_ENABLE_GPU
     auto surfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
     if (surfaceParams) {
         surfaceParams->SetWatermarkEnabled(name, isEnabled);
     }
+#endif
     AddToPendingSyncList();
 }
 
@@ -3045,11 +3116,13 @@ void RSSurfaceRenderNode::SetWaitUifirstFirstFrame(bool wait)
 
 void RSSurfaceRenderNode::SetNeedCacheSurface(bool needCacheSurface)
 {
+#ifdef RS_ENABLE_GPU
     auto surfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
     if (surfaceParams) {
         surfaceParams->SetNeedCacheSurface(needCacheSurface);
     }
     AddToPendingSyncList();
+#endif
 }
 
 bool RSSurfaceRenderNode::NeedUpdateDrawableBehindWindow()

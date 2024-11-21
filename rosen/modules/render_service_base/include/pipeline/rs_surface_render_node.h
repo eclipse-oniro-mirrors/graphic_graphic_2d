@@ -276,7 +276,8 @@ public:
         // a protected node not on the tree need to release buffer when producer produce buffers
         // release buffer in ReleaseSelfDrawingNodeBuffer function
         if (isProtectedLayer_ && IsOnTheTree()) {
-            return false;
+            constexpr float DRM_MIN_ALPHA = 0.1f;
+            return GetGlobalAlpha() < DRM_MIN_ALPHA; // if alpha less than 0.1, drm layer display black background.
         }
         return isHardwareForcedDisabled_ ||
             GetDstRect().GetWidth() <= 1 || GetDstRect().GetHeight() <= 1; // avoid fallback by composer
@@ -428,7 +429,7 @@ public:
     bool IsSCBNode() const;
     void UpdateHwcNodeLayerInfo(GraphicTransformType transform, bool isHardCursorEnable = false);
     void UpdateHardwareDisabledState(bool disabled);
-    void SetHwcChildrenDisabledStateByUifirst();
+    void SetHwcChildrenDisabledState();
 
     void SetContextBounds(const Vector4f bounds);
     bool CheckParticipateInOcclusion();
@@ -456,7 +457,7 @@ public:
     bool GetBootAnimation() const override;
 
     void SetGlobalPositionEnabled(bool isEnabled);
-    bool GetGlobalPositionEnabled() const;
+    bool GetGlobalPositionEnabled() const override;
 
     void SetSecurityLayer(bool isSecurityLayer);
     void SetLeashPersistentId(uint64_t leashPersistentId);
@@ -1251,13 +1252,14 @@ public:
     {
         std::vector<RectI>(std::forward<Args>(args)...).swap(intersectedRoundCornerAABBs_);
     }
-    
+
     const std::vector<RectI>& GetIntersectedRoundCornerAABBs() const
     {
         return intersectedRoundCornerAABBs_;
     }
 
-    size_t GetIntersectedRoundCornerAABBsSize() const {
+    size_t GetIntersectedRoundCornerAABBsSize() const
+    {
         return intersectedRoundCornerAABBs_.size();
     }
 
@@ -1311,7 +1313,7 @@ private:
     Drawing::GPUContext* grContext_ = nullptr;
     std::mutex parallelVisitMutex_;
 
-    ScreenId screenId_ = -1;
+    ScreenId screenId_ = INVALID_SCREEN_ID;
 
     float contextAlpha_ = 1.0f;
     std::optional<Drawing::Matrix> contextMatrix_;
