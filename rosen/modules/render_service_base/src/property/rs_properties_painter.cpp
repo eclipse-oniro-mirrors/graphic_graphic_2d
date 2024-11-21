@@ -507,6 +507,7 @@ std::shared_ptr<Drawing::RuntimeEffect> RSPropertiesPainter::MakeGreyAdjustmentE
 std::shared_ptr<Drawing::Image> RSPropertiesPainter::DrawGreyAdjustment(Drawing::Canvas& canvas,
     const std::shared_ptr<Drawing::Image>& image, const Vector2f& greyCoeff)
 {
+#ifdef RS_ENABLE_GPU
     if (image == nullptr) {
         ROSEN_LOGE("RSPropertiesPainter::DrawGreyAdjustment image is null");
         return nullptr;
@@ -527,6 +528,9 @@ std::shared_ptr<Drawing::Image> RSPropertiesPainter::DrawGreyAdjustment(Drawing:
     builder->SetUniform("coefficient1", greyCoeff.x_);
     builder->SetUniform("coefficient2", greyCoeff.y_);
     return builder->MakeImage(canvas.GetGPUContext().get(), nullptr, image->GetImageInfo(), false);
+#else
+    return nullptr;
+#endif
 }
 
 void RSPropertiesPainter::DrawForegroundFilter(const RSProperties& properties, RSPaintFilterCanvas& canvas)
@@ -687,10 +691,10 @@ void RSPropertiesPainter::DrawFilter(const RSProperties& properties, RSPaintFilt
 void RSPropertiesPainter::DrawBackgroundImageAsEffect(const RSProperties& properties, RSPaintFilterCanvas& canvas)
 {
     RS_TRACE_FUNC();
-    auto boundsRect = properties.GetBoundsRect();
 
     // Optional use cacheManager to draw filter, cache is valid, skip drawing background image
 #if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
+    auto boundsRect = properties.GetBoundsRect();
     if (auto& cacheManager = properties.GetFilterCacheManager(false);
         cacheManager != nullptr && !canvas.GetDisableFilterCache() && cacheManager->IsCacheValid()) {
         // no need to validate parameters, the caller already do it

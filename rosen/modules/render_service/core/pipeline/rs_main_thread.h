@@ -128,7 +128,11 @@ public:
     const std::shared_ptr<RSBaseRenderEngine> GetRenderEngine() const
     {
         RS_LOGD("You'd better to call GetRenderEngine from RSUniRenderThread directly");
+#ifdef RS_ENABLE_GPU
         return isUniRender_ ? std::move(RSUniRenderThread::Instance().GetRenderEngine()) : renderEngine_;
+#else
+        return renderEngine_;
+#endif
     }
 
     bool GetClearMemoryFinished() const
@@ -301,8 +305,9 @@ public:
     void AddSelfDrawingNodes(std::shared_ptr<RSSurfaceRenderNode> selfDrawingNode);
     const std::vector<std::shared_ptr<RSSurfaceRenderNode>>& GetSelfDrawingNodes() const;
     void ClearSelfDrawingNodes();
+#ifdef RS_ENABLE_GPU
     const std::vector<DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr>& GetSelfDrawables() const;
-
+#endif
     bool GetDiscardJankFrames() const
     {
         return discardJankFrames_.load();
@@ -610,16 +615,21 @@ private:
 
     // used for hardware enabled case
     bool doDirectComposition_ = true;
+#ifdef RS_ENABLE_GPU
     bool needDrawFrame_ = true;
+#endif
     bool isLastFrameDirectComposition_ = false;
     bool isNeedResetClearMemoryTask_ = false;
     bool isHardwareEnabledBufferUpdated_ = false;
     std::vector<std::shared_ptr<RSSurfaceRenderNode>> hardwareEnabledNodes_;
     std::vector<std::shared_ptr<RSSurfaceRenderNode>> selfDrawingNodes_;
+#ifdef RS_ENABLE_GPU
     std::vector<DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr> selfDrawables_;
+#endif
     bool isHardwareForcedDisabled_ = false; // if app node has shadow or filter, disable hardware composer for all
+#ifdef RS_ENABLE_GPU
     std::vector<DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr> hardwareEnabledDrwawables_;
-
+#endif
     // for client node tree dump
     struct NodeTreeDumpTask {
         size_t count = 0;
@@ -710,7 +720,9 @@ private:
 #endif
     pid_t exitedPid_ = -1;
     std::set<pid_t> exitedPidSet_;
+#ifdef RS_ENABLE_GPU
     RSDrawFrame drawFrame_;
+#endif
     std::unique_ptr<RSRenderThreadParams> renderThreadParams_ = nullptr; // sync to render thread
     RsParallelType rsParallelType_;
     bool isCurtainScreenOn_ = false;

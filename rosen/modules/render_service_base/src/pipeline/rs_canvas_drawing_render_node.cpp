@@ -211,21 +211,24 @@ void RSCanvasDrawingRenderNode::ContentStyleSlotUpdate()
     // update content_style when node not on tree, need check (waitSync_ false, not on tree, never on tree
     // not texture exportnode, unirender mode)
     // if canvas drawing node never on tree, should not update, it will lost renderParams->localDrawRect_
+#ifdef RS_ENABLE_GPU
     if (IsWaitSync() || IsOnTheTree() || isNeverOnTree_ || !stagingRenderParams_ ||
-        !RSUniRenderJudgement::IsUniRender() || GetIsTextureExportNode()) {
+        RSUniRenderJudgement::IsUniRender()) {
         return;
     }
+#endif
 
     if (!dirtyTypes_.test(static_cast<size_t>(RSModifierType::CONTENT_STYLE))) {
         return;
     }
-
+#ifdef RS_ENABLE_GPU
     auto surfaceParams = GetStagingRenderParams()->GetCanvasDrawingSurfaceParams();
     if (surfaceParams.width == 0 || surfaceParams.height == 0) {
         RS_LOGE("RSCanvasDrawingRenderNode::ContentStyleSlotUpdate Area Size Error, NodeId[%{public}" PRIu64 "]"
             "width[%{public}d], height[%{public}d]", GetId(), surfaceParams.width, surfaceParams.height);
         return;
     }
+#endif
 
     //only update content_style dirtyType
     auto savedirtyTypes = dirtyTypes_;
@@ -260,9 +263,12 @@ void RSCanvasDrawingRenderNode::SetNeedProcess(bool needProcess)
     if (!stagingRenderParams_) {
         return;
     }
-
+#ifdef RS_ENABLE_GPU
     stagingRenderParams_->SetNeedSync(needProcess);
     isNeedProcess_ = needProcess;
+#else
+    isNeedProcess_ = false;
+#endif
 }
 
 void RSCanvasDrawingRenderNode::PlaybackInCorrespondThread()
@@ -501,12 +507,14 @@ bool RSCanvasDrawingRenderNode::IsNeedResetSurface() const
 
 void RSCanvasDrawingRenderNode::InitRenderParams()
 {
+#ifdef RS_ENABLE_GPU
     stagingRenderParams_ = std::make_unique<RSCanvasDrawingRenderParams>(GetId());
     DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(shared_from_this());
     if (renderDrawable_ == nullptr) {
         RS_LOGE("RSCanvasDrawingRenderNode::InitRenderParams failed");
         return;
     }
+#endif
 }
 
 void RSCanvasDrawingRenderNode::CheckDrawCmdListSize(RSModifierType type)
@@ -580,8 +588,10 @@ void RSCanvasDrawingRenderNode::ResetSurface(int width, int height)
     }
     surface_ = nullptr;
     recordingCanvas_ = nullptr;
+#ifdef RS_ENABLE_GPU
     stagingRenderParams_->SetCanvasDrawingSurfaceChanged(true);
     stagingRenderParams_->SetCanvasDrawingSurfaceParams(width, height);
+#endif
 }
 
 const std::map<RSModifierType, std::list<Drawing::DrawCmdListPtr>>& RSCanvasDrawingRenderNode::GetDrawCmdLists() const

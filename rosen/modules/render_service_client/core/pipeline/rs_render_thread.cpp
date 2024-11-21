@@ -118,8 +118,10 @@ RSRenderThread::RSRenderThread()
 #endif
         prevTimestamp_ = timestamp_;
         ProcessCommands();
+#ifdef RS_ENABLE_GPU
         ROSEN_LOGD("RSRenderThread DrawFrame(%{public}" PRIu64 ") in %{public}s",
             prevTimestamp_, renderContext_ ? "GPU" : "CPU");
+#endif
         Animate(prevTimestamp_);
         Render();
         SendCommands();
@@ -185,11 +187,13 @@ RSRenderThread::RSRenderThread()
 RSRenderThread::~RSRenderThread()
 {
     Stop();
+#ifdef RS_ENABLE_GPU
     if (renderContext_ != nullptr) {
         ROSEN_LOGD("Destroy renderContext!!");
         delete renderContext_;
         renderContext_ = nullptr;
     }
+#endif
 }
 
 void RSRenderThread::Start()
