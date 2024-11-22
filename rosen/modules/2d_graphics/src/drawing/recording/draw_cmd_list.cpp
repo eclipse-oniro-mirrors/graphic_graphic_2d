@@ -214,7 +214,9 @@ void DrawCmdList::CaculatePerformanceOpType()
     size_t offset = offset_;
     const int caculatePerformaceCount = 500;    // 被测单接口用例至少出现500次以上
     std::map<uint32_t, uint32_t> opTypeCountMap;
+    uint32_t count = 0;
     do {
+        count++;
         void* itemPtr = opAllocator_.OffsetToAddr(offset, sizeof(OpItem));
         auto* curOpItemPtr = static_cast<OpItem*>(itemPtr);
         if (curOpItemPtr == nullptr) {
@@ -231,7 +233,7 @@ void DrawCmdList::CaculatePerformanceOpType()
             opTypeCountMap[type] = 1;   // 记录出现的第1次
         }
         offset = curOpItemPtr->GetNextOpItemOffset();
-    } while (offset != 0);
+    } while (offset != 0 && count <= MAX_OPITEMSIZE);
 }
 
 void DrawCmdList::UnmarshallingDrawOps()
@@ -252,7 +254,9 @@ void DrawCmdList::UnmarshallingDrawOps()
     lastOpGenSize_ = 0;
     uint32_t opReplaceIndex = 0;
     size_t offset = offset_;
+    uint32_t count = 0;
     do {
+        count++;
         void* itemPtr = opAllocator_.OffsetToAddr(offset, sizeof(OpItem));
         auto* curOpItemPtr = static_cast<OpItem*>(itemPtr);
         if (curOpItemPtr == nullptr) {
@@ -291,7 +295,7 @@ void DrawCmdList::UnmarshallingDrawOps()
             LOGD("DrawCmdList::UnmarshallingOps seek end by cache textOps");
             break;
         }
-    } while (offset != 0);
+    } while (offset != 0 && count <= MAX_OPITEMSIZE);
     lastOpGenSize_ = opAllocator_.GetSize();
 
     if ((int)imageAllocator_.GetSize() > 0) {
@@ -452,7 +456,9 @@ void DrawCmdList::GenerateCacheByBuffer(Canvas* canvas, const Rect* rect)
     size_t offset = offset_;
     GenerateCachedOpItemPlayer player = { *this, canvas, rect };
     uint32_t maxOffset = opAllocator_.GetSize();
+    uint32_t count = 0;
     do {
+        count++;
         void* itemPtr = opAllocator_.OffsetToAddr(offset, sizeof(OpItem));
         auto* curOpItemPtr = static_cast<OpItem*>(itemPtr);
         if (curOpItemPtr == nullptr) {
@@ -471,7 +477,7 @@ void DrawCmdList::GenerateCacheByBuffer(Canvas* canvas, const Rect* rect)
             }
         }
         offset = curOpItemPtr->GetNextOpItemOffset();
-    } while (offset != 0 && offset < maxOffset);
+    } while (offset != 0 && offset < maxOffset && count <= MAX_OPITEMSIZE);
     isCached_ = true;
     cachedHighContrast_ = canvas && canvas->isHighContrastEnabled();
 #endif
@@ -541,9 +547,11 @@ void DrawCmdList::PlaybackByBuffer(Canvas& canvas, const Rect* rect)
     }
     size_t offset = offset_;
     if (lastOpGenSize_ != opAllocator_.GetSize()) {
+        uint32_t count = 0;
         UnmarshallingPlayer player = { *this };
         drawOpItems_.clear();
         do {
+            count++;
             void* itemPtr = opAllocator_.OffsetToAddr(offset, sizeof(OpItem));
             auto* curOpItemPtr = static_cast<OpItem*>(itemPtr);
             if (curOpItemPtr == nullptr) {
@@ -554,7 +562,7 @@ void DrawCmdList::PlaybackByBuffer(Canvas& canvas, const Rect* rect)
                 drawOpItems_.emplace_back(op);
             }
             offset = curOpItemPtr->GetNextOpItemOffset();
-        } while (offset != 0);
+        } while (offset != 0 && count <= MAX_OPITEMSIZE);
         lastOpGenSize_ = opAllocator_.GetSize();
     }
     for (auto op : drawOpItems_) {
@@ -571,7 +579,9 @@ size_t DrawCmdList::CountTextBlobNum()
     if (mode_ == DrawCmdList::UnmarshalMode::IMMEDIATE) {
         size_t offset = offset_;
         size_t maxOffset = opAllocator_.GetSize();
+        uint32_t count = 0;
         do {
+            count++;
             void* itemPtr = opAllocator_.OffsetToAddr(offset, sizeof(OpItem));
             auto* curOpItemPtr = static_cast<OpItem*>(itemPtr);
             if (curOpItemPtr == nullptr) {
@@ -582,7 +592,7 @@ size_t DrawCmdList::CountTextBlobNum()
                 textBlobCnt++;
             }
             offset = curOpItemPtr->GetNextOpItemOffset();
-        } while (offset != 0 && offset < maxOffset);
+        } while (offset != 0 && offset < maxOffset && count <= MAX_OPITEMSIZE);
     }
     return textBlobCnt;
 }
@@ -593,7 +603,9 @@ void DrawCmdList::PatchTypefaceIds()
     uint64_t replayMask = (uint64_t)1 << bitNumber;
     size_t offset = offset_;
     size_t maxOffset = opAllocator_.GetSize();
+    uint32_t count = 0;
     do {
+        count++;
         void* itemPtr = opAllocator_.OffsetToAddr(offset, sizeof(OpItem));
         auto* curOpItemPtr = static_cast<OpItem*>(itemPtr);
         if (curOpItemPtr == nullptr) {
@@ -608,7 +620,7 @@ void DrawCmdList::PatchTypefaceIds()
             }
         }
         offset = curOpItemPtr->GetNextOpItemOffset();
-    } while (offset != 0 && offset < maxOffset);
+    } while (offset != 0 && offset < maxOffset && count <= MAX_OPITEMSIZE);
 }
 
 void DrawCmdList::Purge()
