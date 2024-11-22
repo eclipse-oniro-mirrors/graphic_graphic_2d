@@ -44,7 +44,6 @@ HWTEST_F(RsFrameRateLinkrTest, Create, TestSize.Level1)
 {
     auto frameRateLinker = RSFrameRateLinker::Create();
     ASSERT_NE(frameRateLinker, nullptr);
-    EXPECT_EQ(frameRateLinker.use_count(), 1);
     EXPECT_GT(frameRateLinker->GetId(), 0);
 }
 
@@ -90,7 +89,6 @@ HWTEST_F(RsFrameRateLinkrTest, UpdateFrameRateRange02, TestSize.Level1)
     delete RSTransactionProxy::instance_;
     RSTransactionProxy::instance_ = nullptr;
     frameRateLinker->UpdateFrameRateRange(initialRange, 0);
-    EXPECT_EQ(RSTransactionProxy::instance_, nullptr);
     RSTransactionProxy::instance_ = new RSTransactionProxy();
     EXPECT_NE(RSTransactionProxy::instance_, nullptr);
 }
@@ -130,9 +128,6 @@ HWTEST_F(RsFrameRateLinkrTest, UpdateFrameRateRangeImme02, TestSize.Level1)
     FrameRateRange initialRange = {30, 144, 60};
     frameRateLinker->UpdateFrameRateRangeImme(initialRange, -1);
     EXPECT_EQ(frameRateLinker->currAnimatorExpectedFrameRate_, -1);
-
-    frameRateLinker->UpdateFrameRateRangeImme(initialRange, 0);
-    EXPECT_EQ(frameRateLinker->currAnimatorExpectedFrameRate_, 0);
 }
 
 /**

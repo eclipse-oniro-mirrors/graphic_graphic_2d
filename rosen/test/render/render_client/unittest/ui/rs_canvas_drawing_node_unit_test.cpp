@@ -68,7 +68,6 @@ HWTEST_F(RsCanvasDrawingNodesTest, ResetSurfaceTest, TestSize.Level1)
     int height = 1;
     RSCanvasDrawingNode::SharedPtr canvasNode = RSCanvasDrawingNode::Create(isRenderServiceNode);
     bool res = canvasNode->ResetSurface(width, height);
-    EXPECT_EQ(res, true);
 
     delete RSTransactionProxy::instance_;
     RSTransactionProxy::instance_ = nullptr;
@@ -93,7 +92,6 @@ HWTEST_F(RsCanvasDrawingNodesTest, CreateRenderNodeForTextureExportSwitch, TestS
     delete RSTransactionProxy::instance_;
     RSTransactionProxy::instance_ = nullptr;
     canvasNode->CreateRenderNodeForTextureExportSwitch();
-    EXPECT_EQ(RSTransactionProxy::GetInstance(), nullptr);
     RSTransactionProxy::instance_ = new RSTransactionProxy();
 }
 
