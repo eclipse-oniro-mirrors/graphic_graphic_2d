@@ -19,9 +19,11 @@
 #include <memory>
 #include <vector>
 #include "common/rs_occlusion_region.h"
+#include "pipeline/rs_display_render_node.h"
 #include "pipeline/rs_surface_render_node.h"
 #include "platform/ohos/rs_jank_stats.h"
 #include "property/rs_properties.h"
+#include "screen_manager/rs_screen_info.h"
 
 namespace OHOS::Rosen {
 struct CaptureParam {
@@ -414,6 +416,25 @@ public:
         return isDrawingCacheDfxEnabled_;
     }
 
+    const ScreenInfo& GetScreenInfo() const
+    {
+        return screenInfo_;
+    }
+
+    void SetScreenInfo(const ScreenInfo& info)
+    {
+        screenInfo_ = info;
+    }
+
+    RSDisplayRenderNode::CompositeType GetCompositeType() const
+    {
+        return compositeType_;
+    }
+
+    void SetCompositeType(RSDisplayRenderNode::CompositeType type)
+    {
+        compositeType_ = type;
+    }
 private:
     // Used by hardware thred
     uint64_t timestamp_ = 0;
@@ -467,12 +488,14 @@ private:
     bool isUniRenderAndOnVsync_ = false;
     std::weak_ptr<RSContext> context_;
     bool isCurtainScreenOn_ = false;
+    RSDisplayRenderNode::CompositeType compositeType_ = RSDisplayRenderNode::CompositeType::HARDWARE_COMPOSITE;
 
     Drawing::Region clipRegion_;
     bool isImplicitAnimationEnd_ = false;
     bool discardJankFrames_ = false;
 
     bool isSecurityExemption_ = false;
+    ScreenInfo screenInfo_ = {};
 
     friend class RSMainThread;
     friend class RSUniRenderVisitor;

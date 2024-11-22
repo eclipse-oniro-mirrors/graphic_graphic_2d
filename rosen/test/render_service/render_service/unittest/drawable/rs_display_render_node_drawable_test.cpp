@@ -1431,4 +1431,15 @@ HWTEST_F(RSDisplayRenderNodeDrawableTest, EnablescRGBForP3AndUiFirstTest, TestSi
     auto result = displayDrawable_->EnablescRGBForP3AndUiFirst(currentGamut);
     EXPECT_FALSE(result);
 }
+
+HWTEST_F(RSDisplayRenderNodeDrawableTest, DrawWiredMirrorOnDraw, TestSize.Level2)
+{
+    ASSERT_NE(displayDrawable_, nullptr);
+    ASSERT_NE(mirroredDisplayDrawable_, nullptr);
+    auto params = static_cast<RSDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
+    RSRenderThreadParamsManager::Instance().renderThreadParams_ = nullptr;
+    displayDrawable_->DrawWiredMirrorOnDraw(*mirroredDisplayDrawable_, *params);
+    RSRenderThreadParamsManager::Instance().renderThreadParams_ = std::make_unique<RSRenderThreadParams>();
+    displayDrawable_->DrawWiredMirrorOnDraw(*mirroredDisplayDrawable_, *params);
+}
 }
