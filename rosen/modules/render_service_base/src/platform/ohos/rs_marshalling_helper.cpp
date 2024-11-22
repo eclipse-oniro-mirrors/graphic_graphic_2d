@@ -853,7 +853,7 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<EmitterU
 bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::vector<std::shared_ptr<EmitterUpdater>>& val)
 {
     bool success = parcel.WriteUint32(static_cast<uint32_t>(val.size()));
-    for (size_t i = 0; i < val.size(); i++) {
+    for (size_t i = 0; i < val.size() && success; i++) {
         success &= Marshalling(parcel, val[i]);
     }
     return success;
@@ -934,7 +934,7 @@ bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<Part
         return parcel.WriteInt32(-1);
     }
     bool success = parcel.WriteInt32(1) && parcel.WriteUint32(static_cast<uint32_t>(val->fields_.size()));
-    for (size_t i = 0; i < val->fields_.size(); i++) {
+    for (size_t i = 0; i < val->fields_.size() && success; i++) {
         success &= Marshalling(parcel, val->fields_[i]);
     }
     return success;
@@ -1241,10 +1241,7 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<Particle
 bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::vector<std::shared_ptr<ParticleRenderParams>>& val)
 {
     bool success = parcel.WriteUint32(static_cast<uint32_t>(val.size()));
-    for (size_t i = 0; i < val.size(); i++) {
-        if (!success) {
-            break;
-        }
+    for (size_t i = 0; i < val.size() && success; i++) {
         success &= Marshalling(parcel, val[i]);
     }
     return success;
