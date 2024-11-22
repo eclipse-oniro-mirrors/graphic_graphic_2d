@@ -16,6 +16,7 @@
 #ifndef ROSEN_RENDER_SERVICE_BASE_RS_TRANSACTION_PROXY_H
 #define ROSEN_RENDER_SERVICE_BASE_RS_TRANSACTION_PROXY_H
 
+#include <event_handler.h>
 #include <memory>
 #include <mutex>
 #include <queue>
