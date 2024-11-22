@@ -473,8 +473,8 @@ void MemoryManager::DumpGpuStats(DfxString& log, const Drawing::GPUContext* gpuC
     std::string stat;
     gpuContext->DumpGpuStats(stat);
 
-    int statIndex = 0;
-    int statLength = stat.length();
+    size_t statIndex = 0;
+    size_t statLength = stat.length();
     while (statIndex < statLength) {
         std::string statSubStr;
         if (statLength - statIndex > DUPM_STRING_BUF_SIZE) {
