@@ -92,6 +92,9 @@ private:
     RSUIDirector& operator=(const RSUIDirector&) = delete;
     RSUIDirector& operator=(const RSUIDirector&&) = delete;
 
+    static std::unordered_map<RSUIDirector*, TaskRunner> g_uiTaskRunners;
+    static std::mutex g_uiTaskRunnersVisitorMutex;
+
     std::mutex mutex_;
     NodeId root_ = 0;
     int32_t instanceId_ = INSTANCE_ID_UNDEFINED;

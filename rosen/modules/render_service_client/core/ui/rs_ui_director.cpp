@@ -54,8 +54,6 @@
 
 namespace OHOS {
 namespace Rosen {
-static std::unordered_map<RSUIDirector*, TaskRunner> g_uiTaskRunners;
-static std::mutex g_uiTaskRunnersVisitorMutex;
 std::function<void()> RSUIDirector::requestVsyncCallback_ = nullptr;
 static std::mutex g_vsyncCallbackMutex;
 static std::once_flag g_initDumpNodeTreeProcessorFlag;
@@ -392,7 +390,7 @@ void RSUIDirector::ProcessMessages(std::shared_ptr<RSTransactionData> cmds)
         if (instanceId == INSTANCE_ID_UNDEFINED) {
             instanceId = RSNodeMap::Instance().GetInstanceIdForReleasedNode(realId);
         }
-        m[instanceId].push_back(std::move(cmd));
+        m[instanceId].push_back(cmd);
     }
     auto msgId = ++messageId;
     RS_TRACE_NAME_FMT("RSUIDirector::ProcessMessages [messageId:%lu,cmdIndex:%llu,cmdCount:%lu]",
