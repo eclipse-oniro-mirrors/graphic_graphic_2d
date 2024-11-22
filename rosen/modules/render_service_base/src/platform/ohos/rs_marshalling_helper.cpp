@@ -78,7 +78,7 @@ std::mutex g_writeMutex;
 constexpr size_t PIXELMAP_UNMARSHALLING_DEBUG_OFFSET = 12;
 }
 
-#define MARSHALLING_AND_UNMARSHALLING_TYPE_TYPENAME(TYPE, TYPENAME)        \
+#define MARSHALLING_AND_UNMARSHALLING(TYPE, TYPENAME)        \
     bool RSMarshallingHelper::Marshalling(Parcel& parcel, const TYPE& val) \
     {                                                                      \
         return parcel.Write##TYPENAME(val);                                \
@@ -89,19 +89,19 @@ constexpr size_t PIXELMAP_UNMARSHALLING_DEBUG_OFFSET = 12;
     }
 
 // basic types
-MARSHALLING_AND_UNMARSHALLING_TYPE_TYPENAME(bool, Bool)
-MARSHALLING_AND_UNMARSHALLING_TYPE_TYPENAME(int8_t, Int8)
-MARSHALLING_AND_UNMARSHALLING_TYPE_TYPENAME(uint8_t, Uint8)
-MARSHALLING_AND_UNMARSHALLING_TYPE_TYPENAME(int16_t, Int16)
-MARSHALLING_AND_UNMARSHALLING_TYPE_TYPENAME(uint16_t, Uint16)
-MARSHALLING_AND_UNMARSHALLING_TYPE_TYPENAME(int32_t, Int32)
-MARSHALLING_AND_UNMARSHALLING_TYPE_TYPENAME(uint32_t, Uint32)
-MARSHALLING_AND_UNMARSHALLING_TYPE_TYPENAME(int64_t, Int64)
-MARSHALLING_AND_UNMARSHALLING_TYPE_TYPENAME(uint64_t, Uint64)
-MARSHALLING_AND_UNMARSHALLING_TYPE_TYPENAME(float, Float)
-MARSHALLING_AND_UNMARSHALLING_TYPE_TYPENAME(double, Double)
+MARSHALLING_AND_UNMARSHALLING(bool, Bool)
+MARSHALLING_AND_UNMARSHALLING(int8_t, Int8)
+MARSHALLING_AND_UNMARSHALLING(uint8_t, Uint8)
+MARSHALLING_AND_UNMARSHALLING(int16_t, Int16)
+MARSHALLING_AND_UNMARSHALLING(uint16_t, Uint16)
+MARSHALLING_AND_UNMARSHALLING(int32_t, Int32)
+MARSHALLING_AND_UNMARSHALLING(uint32_t, Uint32)
+MARSHALLING_AND_UNMARSHALLING(int64_t, Int64)
+MARSHALLING_AND_UNMARSHALLING(uint64_t, Uint64)
+MARSHALLING_AND_UNMARSHALLING(float, Float)
+MARSHALLING_AND_UNMARSHALLING(double, Double)
 
-#undef MARSHALLING_AND_UNMARSHALLING_TYPE_TYPENAME
+#undef MARSHALLING_AND_UNMARSHALLING
 
 namespace {
 static bool MarshallingRecordCmdFromDrawCmdList(Parcel& parcel, const std::shared_ptr<Drawing::DrawCmdList>& val)
@@ -2049,7 +2049,7 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<Drawing:
     return true;
 }
 
-#define MARSHALLING_AND_UNMARSHALLING_TYPE(TYPE)                                            \
+#define MARSHALLING_AND_UNMARSHALLING(TYPE)                                            \
     bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<TYPE>& val) \
     {                                                                                       \
         return parcel.WriteParcelable(val.get());                                           \
@@ -2059,11 +2059,11 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<Drawing:
         val.reset(parcel.ReadParcelable<TYPE>());                                           \
         return val != nullptr;                                                              \
     }
-MARSHALLING_AND_UNMARSHALLING_TYPE(RSRenderTransition)
-MARSHALLING_AND_UNMARSHALLING_TYPE(RSRenderTransitionEffect)
-#undef MARSHALLING_AND_UNMARSHALLING_TYPE
+MARSHALLING_AND_UNMARSHALLING(RSRenderTransition)
+MARSHALLING_AND_UNMARSHALLING(RSRenderTransitionEffect)
+#undef MARSHALLING_AND_UNMARSHALLING
 
-#define MARSHALLING_AND_UNMARSHALLING_TEMPLATE(TEMPLATE)                                        \
+#define MARSHALLING_AND_UNMARSHALLING(TEMPLATE)                                        \
     bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<TEMPLATE>& val) \
     {                                                                                           \
         if (val == nullptr) {                                                                   \
@@ -2077,13 +2077,13 @@ MARSHALLING_AND_UNMARSHALLING_TYPE(RSRenderTransitionEffect)
         return val != nullptr;                                                                  \
     }
 
-MARSHALLING_AND_UNMARSHALLING_TEMPLATE(RSRenderCurveAnimation)
-MARSHALLING_AND_UNMARSHALLING_TEMPLATE(RSRenderParticleAnimation)
-MARSHALLING_AND_UNMARSHALLING_TEMPLATE(RSRenderInterpolatingSpringAnimation)
-MARSHALLING_AND_UNMARSHALLING_TEMPLATE(RSRenderKeyframeAnimation)
-MARSHALLING_AND_UNMARSHALLING_TEMPLATE(RSRenderSpringAnimation)
-MARSHALLING_AND_UNMARSHALLING_TEMPLATE(RSRenderPathAnimation)
-#undef MARSHALLING_AND_UNMARSHALLING_TEMPLATE
+MARSHALLING_AND_UNMARSHALLING(RSRenderCurveAnimation)
+MARSHALLING_AND_UNMARSHALLING(RSRenderParticleAnimation)
+MARSHALLING_AND_UNMARSHALLING(RSRenderInterpolatingSpringAnimation)
+MARSHALLING_AND_UNMARSHALLING(RSRenderKeyframeAnimation)
+MARSHALLING_AND_UNMARSHALLING(RSRenderSpringAnimation)
+MARSHALLING_AND_UNMARSHALLING(RSRenderPathAnimation)
+#undef MARSHALLING_AND_UNMARSHALLING
 
 bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<RSRenderModifier>& val)
 {
@@ -2095,7 +2095,7 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<RSRender
     return val != nullptr;
 }
 
-#define MARSHALLING_AND_UNMARSHALLING_TEMPLATE_TEMPLATE(TEMPLATE)                                                     \
+#define MARSHALLING_AND_UNMARSHALLING(TEMPLATE)                                                     \
     template<typename T>                                                                                              \
     bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<TEMPLATE<T>>& val)                    \
     {                                                                                                                 \
@@ -2123,9 +2123,9 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<RSRender
         return val != nullptr;                                                                                        \
     }
 
-MARSHALLING_AND_UNMARSHALLING_TEMPLATE_TEMPLATE(RSRenderProperty)
-MARSHALLING_AND_UNMARSHALLING_TEMPLATE_TEMPLATE(RSRenderAnimatableProperty)
-#undef MARSHALLING_AND_UNMARSHALLING_TEMPLATE_TEMPLATE
+MARSHALLING_AND_UNMARSHALLING(RSRenderProperty)
+MARSHALLING_AND_UNMARSHALLING(RSRenderAnimatableProperty)
+#undef MARSHALLING_AND_UNMARSHALLING
 
 #define EXPLICIT_INSTANTIATION(TEMPLATE, TYPE)                                                                  \
     template bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<TEMPLATE<TYPE>>& val); \
