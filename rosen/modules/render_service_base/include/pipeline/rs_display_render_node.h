@@ -370,6 +370,9 @@ public:
 
     void SetBrightnessRatio(float brightnessRatio);
 
+    void SetColorSpace(const GraphicColorGamut& newColorSpace);
+    GraphicColorGamut GetColorSpace() const;
+
     std::map<NodeId, std::shared_ptr<RSSurfaceRenderNode>>& GetDirtySurfaceNodeMap()
     {
         return dirtySurfaceNodeMap_;
@@ -511,6 +514,7 @@ private:
     Drawing::Matrix initMatrix_;
     bool isFirstTimeToProcessor_ = true;
     bool hasFingerprint_ = false;
+    GraphicColorGamut colorSpace_ = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
 
     std::map<NodeId, RectI> lastFrameSurfacePos_;
     std::map<NodeId, RectI> currentFrameSurfacePos_;
