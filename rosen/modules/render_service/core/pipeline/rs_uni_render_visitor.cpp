@@ -484,7 +484,6 @@ void RSUniRenderVisitor::ResetDisplayDirtyRegion()
     }
     ScreenId id = curDisplayNode_->GetScreenId();
     bool ret = CheckScreenPowerChange() ||
-        CheckColorFilterChange() ||
         CheckCurtainScreenUsingStatusChange() ||
         IsFirstFrameOfPartialRender() ||
         IsWatermarkFlagChanged() ||
@@ -1110,7 +1109,7 @@ void RSUniRenderVisitor::QuickPrepareCanvasRenderNode(RSCanvasRenderNode& node)
     }
     node.SetIsAccessibilityConfigChanged(false);
     node.OpincQuickMarkStableNode(unchangeMarkInApp_, unchangeMarkEnable_,
-        RSMainThread::Instance()->IsAccessibilityConfigChanged());
+        IsAccessibilityConfigChanged());
 
     RectI prepareClipRect = prepareClipRect_;
     bool hasAccumulatedClip = hasAccumulatedClip_;
@@ -3116,15 +3115,6 @@ NodeId RSUniRenderVisitor::FindInstanceChildOfDisplay(std::shared_ptr<RSRenderNo
     } else {
         return FindInstanceChildOfDisplay(nodeParent);
     }
-}
-
-bool RSUniRenderVisitor::CheckColorFilterChange() const
-{
-    if (!RSMainThread::Instance()->IsAccessibilityConfigChanged()) {
-        return false;
-    }
-    RS_LOGD("RSUniRenderVisitor::CheckColorFilterChange changed");
-    return true;
 }
 
 void RSUniRenderVisitor::CheckMergeDebugRectforRefreshRate(std::vector<RSBaseRenderNode::SharedPtr>& surfaces)

@@ -184,7 +184,6 @@ private:
     // should ensure that the surface size of dirty region manager has been set
     void ResetDisplayDirtyRegion();
     bool CheckScreenPowerChange() const;
-    bool CheckColorFilterChange() const;
     bool CheckCurtainScreenUsingStatusChange() const;
     bool CheckLuminanceStatusChange(ScreenId id);
     bool CheckSkipCrossNode(RSSurfaceRenderNode& node);
