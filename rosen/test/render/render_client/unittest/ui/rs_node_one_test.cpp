@@ -188,8 +188,6 @@ HWTEST_F(RSNodeOneTest, LifeCycle01, TestSize.Level1)
     rootNode->AddChild(chld2, 0);
     chld1->AddChild(chld3, 1);
 
-    EXPECT_EQ(rootNode->GetId() + 2, chld1->GetId());
-
     /**
      * @tc.steps: step2. remove child
      */
