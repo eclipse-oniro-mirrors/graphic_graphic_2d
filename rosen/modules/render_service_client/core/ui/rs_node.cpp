@@ -1808,6 +1808,12 @@ void RSNode::SetCustomClipToFrame(const Vector4f& clipRect)
         RSModifierType::CUSTOM_CLIP_TO_FRAME, clipRect);
 }
 
+void RSNode::SetHDRBrightness(const float& hdrBrightness)
+{
+    SetProperty<RSHDRBrightnessModifier, RSAnimatableProperty<float>>(
+        RSModifierType::HDR_BRIGHTNESS, hdrBrightness);
+}
+
 void RSNode::SetVisible(bool visible)
 {
     // kick off transition only if it's on tree(has valid parent) and visibility is changed.

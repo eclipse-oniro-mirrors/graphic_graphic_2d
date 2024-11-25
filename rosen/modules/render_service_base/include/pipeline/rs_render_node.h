@@ -470,6 +470,7 @@ public:
         curFrameHasAnimation_ = b;
     }
 
+    float GetHDRBrightness() const;
     bool HasFilter() const;
     void SetHasFilter(bool hasFilter);
     bool GetCommandExecuted() const

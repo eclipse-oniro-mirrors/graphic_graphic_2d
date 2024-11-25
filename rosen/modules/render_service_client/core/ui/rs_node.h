@@ -340,6 +340,7 @@ public:
     void SetClipToBounds(bool clipToBounds);
     void SetClipToFrame(bool clipToFrame);
     void SetCustomClipToFrame(const Vector4f& clipRect);
+    void SetHDRBrightness(const float& hdrBrightness);
 
     void SetVisible(bool visible);
     void SetMask(const std::shared_ptr<RSMask>& mask);
