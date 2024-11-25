@@ -175,7 +175,7 @@ std::string RSDrawingFilter::GetFilterTypeString()
     auto iter = FILTER_TYPE_MAP.find(RSFilter::type_);
     std::string filterString;
     if (iter != FILTER_TYPE_MAP.end()) {
-        filterString = iter->second; 
+        filterString = iter->second;
     }
     return filterString;
 }
