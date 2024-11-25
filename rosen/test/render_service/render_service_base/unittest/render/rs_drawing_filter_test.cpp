@@ -372,7 +372,8 @@ HWTEST_F(RSDrawingFilterTest, GetFilterTypeString, TestSize.Level1)
     shaderFilters.push_back(filterPtr);
     uint32_t hash = 1;
     RSDrawingFilter drawingFilter(imageFilter, shaderFilters, hash);
-    EXPECT_TRUE(drawingFilter.GetFilterTypeString() != "");
+    drawingFilter.type_ = RSFilter::BLUR;
+    EXPECT_TRUE(drawingFilter.GetFilterTypeString() == "RSBlurFilterBlur");
 }
 
 } // namespace OHOS::Rosen
