@@ -16,6 +16,7 @@
 #include "pipeline/rs_render_frame_rate_linker_map.h"
 #include "common/rs_common_def.h"
 #include "platform/common/rs_log.h"
+#include "ipc_callbacks/rs_iframe_rate_linker_expected_fps_update_callback.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -53,5 +54,30 @@ std::shared_ptr<RSRenderFrameRateLinker> RSRenderFrameRateLinkerMap::GetFrameRat
 {
     return frameRateLinkerMap_.count(id) ? frameRateLinkerMap_[id] : nullptr;
 }
+
+bool RSRenderFrameRateLinkerMap::RegisterFrameRateLinkerExpectedFpsUpdateCallback(pid_t listenerPid,
+    uint32_t dstPid, sptr<RSIFrameRateLinkerExpectedFpsUpdateCallback> callback)
+{
+    // unregister
+    if (callback == nullptr) {
+        for (auto& pair : frameRateLinkerMap_) {
+            if (ExtractPid(pair.first) == dstPid) {
+                pair.second->RegisterExpectedFpsUpdateCallback(listenerPid, callback);
+            }
+        }
+        return true;
+    }
+
+    // register
+    bool success = false;
+    for (auto& pair : frameRateLinkerMap_) {
+        if (ExtractPid(pair.first) == dstPid) {
+            pair.second->RegisterExpectedFpsUpdateCallback(listenerPid, callback);
+            success = true;
+        }
+    }
+    return success;
+}
+
 } // namespace Rosen
 } // namespace OHOS
