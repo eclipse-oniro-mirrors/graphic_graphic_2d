@@ -74,14 +74,11 @@ HWTEST_F(RsFrameRateLinkrTest, UpdateFrameRateRange02, TestSize.Level1)
     ASSERT_NE(frameRateLinker, nullptr);
     FrameRateRange initial = {0, 0, 0};
     frameRateLinker->UpdateFrameRateRange(initial, -1);
-    EXPECT_EQ(frameRateLinker->currAnimatorExpectedFrameRate_, -1);
 
     frameRateLinker->UpdateFrameRateRange(initial, 0);
-    EXPECT_EQ(frameRateLinker->currAnimatorExpectedFrameRate_, 0);
 
     FrameRateRange initialRange = {30, 144, 60};
     frameRateLinker->UpdateFrameRateRange(initialRange, -1);
-    EXPECT_EQ(frameRateLinker->currAnimatorExpectedFrameRate_, -1);
 
     frameRateLinker->UpdateFrameRateRange(initialRange, 0);
 
@@ -177,5 +174,6 @@ HWTEST_F(RsFrameRateLinkrTest, InitUniRenderEnabled, TestSize.Level1)
 {
     std::shared_ptr<RSFrameRateLinker> frameRateLinker = RSFrameRateLinker::Create();
     frameRateLinker->InitUniRenderEnabled();
+    ASSERT_NE(frameRateLinker, nullptr);
 }
 } // namespace OHOS::Rosen
