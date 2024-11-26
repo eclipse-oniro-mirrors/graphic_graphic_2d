@@ -34,50 +34,14 @@ using namespace testing::ext;
 
 namespace OHOS {
 namespace Rosen {
-const std::string OUT_STR3 =
-    ", Parent [null], Name [SurfaceNode], hasConsumer: 0, Alpha: 1.000000, Visible: 1, VisibleRegion [Empty], "
-    "OpaqueRegion [Empty], OcclusionBg: 0, SecurityLayer: 0, skipLayer: 0, surfaceType: 0, "
-    "ContainerConfig: [outR: 0 inR: 0 x: 0 y: 0 w: 0 h: 0]";
-const std::string OUT_STR4 = ", Visible: 1, Size: [-inf, -inf], EnableRender: 1";
-const std::string OUT_STR5 = ", skipLayer: 0";
 
-class RSRenderNodeTest2 : public testing::Test {
-public:
-    constexpr static float floatData[] = {
-        0.0f,
-        485.44f,
-        -34.4f,
-        std::numeric_limits<float>::max(),
-        std::numeric_limits<float>::min(),
-    };
-    static void SetUpTestCase();
-    static void TearDownTestCase();
-    void SetUp() override;
-    void TearDown() override;
-    static inline NodeId id;
-    static inline std::weak_ptr<RSContext> context = {};
-    static inline RSPaintFilterCanvas* canvas_;
-    static inline Drawing::Canvas drawingCanvas_;
-};
-
-void RSRenderNodeTest2::SetUpTestCase()
-{
-    canvas_ = new RSPaintFilterCanvas(&drawingCanvas_);
-}
-void RSRenderNodeTest2::TearDownTestCase()
-{
-    delete canvas_;
-    canvas_ = nullptr;
-}
-void RSRenderNodeTest2::SetUp() {}
-void RSRenderNodeTest2::TearDown() {}
 /**
- * @tc.name: Process
+ * @tc.name: ProcessRenderText
  * @tc.desc: test
  * @tc.type: FUNC
  * @tc.require: issueI9V3BK
  */
-HWTEST_F(RSRenderTest1, Process, TestSize.Level1)
+HWTEST_F(RSRenderTest1, ProcessRenderText, TestSize.Level1)
 {
     RSRenderNode node(id, context);
     std::shared_ptr<RSNodeVisitor> visitor = nullptr;
@@ -88,7 +52,7 @@ HWTEST_F(RSRenderTest1, Process, TestSize.Level1)
 }
 
 /**
- * @tc.name: SendCommandFromRT
+ * @tc.name: SendRT
  * @tc.desc: test
  * @tc.type: FUNC
  * @tc.require: issueI9V3BK
@@ -103,7 +67,7 @@ HWTEST_F(RSRenderTest2, SendRT, TestSize.Level1)
 }
 
 /**
- * @tc.name: InternalRemoveSelfFromDisappearingChildren
+ * @tc.name: InternalChildren
  * @tc.desc: test
  * @tc.type: FUNC
  * @tc.require: issueI9V3BK
@@ -116,7 +80,7 @@ HWTEST_F(RSRenderTest3, InternalChildren, TestSize.Level1)
 }
 
 /**
- * @tc.name: DestroyRSRenderNode
+ * @tc.name: DestroyNode
  * @tc.desc: test
  * @tc.type: FUNC
  * @tc.require: issueI9V3BK
@@ -129,7 +93,7 @@ HWTEST_F(RSRenderTest4, DestroyNode, TestSize.Level1)
 }
 
 /**
- * @tc.name: FallbackAnimationsToRoot
+ * @tc.name: BackToRoot
  * @tc.desc: test
  * @tc.type: FUNC
  * @tc.require: issueI9V3BK
@@ -145,7 +109,7 @@ HWTEST_F(RSRenderTest5, BackToRoot, TestSize.Level1)
 }
 
 /**
- * @tc.name: ActivateDisplaySync
+ * @tc.name: ActivateSync
  * @tc.desc: test
  * @tc.type: FUNC
  * @tc.require: issueI9V3BK
@@ -160,7 +124,7 @@ HWTEST_F(RSRenderTest6, ActivateSync, TestSize.Level1)
 }
 
 /**
- * @tc.name: UpdateDisplaySyncRange
+ * @tc.name: UpdateRange
  * @tc.desc: test
  * @tc.type: FUNC
  * @tc.require: issueI9V3BK
@@ -199,7 +163,7 @@ HWTEST_F(RSRenderTest8, Animate, TestSize.Level1)
 }
 
 /**
- * @tc.name: IsClipBound
+ * @tc.name: IsBound
  * @tc.desc: test
  * @tc.type: FUNC
  * @tc.require: issueI9V3BK
@@ -212,7 +176,7 @@ HWTEST_F(RSRenderTest9, IsBound, TestSize.Level1)
 }
 
 /**
- * @tc.name: GetRenderContent
+ * @tc.name: GetContent
  * @tc.desc: test
  * @tc.type: FUNC
  * @tc.require: issueI9V3BK
@@ -224,7 +188,7 @@ HWTEST_F(RSRenderTest10, GetContent, TestSize.Level1)
 }
 
 /**
- * @tc.name: GetStagingRenderParams
+ * @tc.name: GetRenderParams
  * @tc.desc: test
  * @tc.type: FUNC
  * @tc.require: issueI9V3BK
@@ -236,7 +200,7 @@ HWTEST_F(RSRenderTest11, GetRenderParams, TestSize.Level1)
 }
 
 /**
- * @tc.name: CollectAndUpdateLocalShadowRect
+ * @tc.name: CollectShadowRect
  * @tc.desc: test
  * @tc.type: FUNC
  * @tc.require: issueI9V3BK
@@ -252,7 +216,7 @@ HWTEST_F(RSRenderTest12, CollectShadowRect, TestSize.Level1)
 }
 
 /**
- * @tc.name: CollectAndUpdateLocalOutlineRect
+ * @tc.name: CollectOutlineRect
  * @tc.desc: test
  * @tc.type: FUNC
  * @tc.require: issueI9V3BK
@@ -268,12 +232,12 @@ HWTEST_F(RSRenderTest13, CollectOutlineRect, TestSize.Level1)
 }
 
 /**
- * @tc.name: CollectAndUpdateLocalPixelStretchRect
+ * @tc.name: CollectPixelStretchRect
  * @tc.desc: test
  * @tc.type: FUNC
  * @tc.require: issueI9V3BK
  */
-HWTEST_F(RSRenderTest14, CollectixelStretchRect, TestSize.Level1)
+HWTEST_F(RSRenderTest14, CollectPixelStretchRect, TestSize.Level1)
 {
     RSRenderNode node(id, context);
     node.CollectAndUpdateLocalPixelStretchRect();
@@ -284,7 +248,7 @@ HWTEST_F(RSRenderTest14, CollectixelStretchRect, TestSize.Level1)
 }
 
 /**
- * @tc.name: UpdateBufferDirtyRegion
+ * @tc.name: UpdateByRegion
  * @tc.desc: test
  * @tc.type: FUNC
  * @tc.require: issueI9V3BK
@@ -300,12 +264,12 @@ HWTEST_F(RSRenderTest15, UpdateByRegion, TestSize.Level1)
 }
 
 /**
- * @tc.name: UpdateSelfDrawRect
+ * @tc.name: UpdateDrawingRect
  * @tc.desc: test
  * @tc.type: FUNC
  * @tc.require: issueI9V3BK
  */
-HWTEST_F(RSRenderTest16, UpdateSwRect, TestSize.Level1)
+HWTEST_F(RSRenderTest16, UpdateDrawingRect, TestSize.Level1)
 {
     RSRenderNode node(id, context);
     node.UpdateSelfDrawRect();
@@ -313,12 +277,12 @@ HWTEST_F(RSRenderTest16, UpdateSwRect, TestSize.Level1)
 }
 
 /**
- * @tc.name: GetSelfDrawRect
+ * @tc.name: GetRect
  * @tc.desc: test
  * @tc.type: FUNC
  * @tc.require: issueI9V3BK
  */
-HWTEST_F(RSRenderTest17, GetDract, TestSize.Level1)
+HWTEST_F(RSRenderTest17, GetRect, TestSize.Level1)
 {
     RSRenderNode node(id, context);
     ASSERT_EQ(node.GetSelfDrawRect(), node.selfDrawRect_);
@@ -326,12 +290,12 @@ HWTEST_F(RSRenderTest17, GetDract, TestSize.Level1)
 }
 
 /**
- * @tc.name: CheckAndUpdateGeoTrans001
+ * @tc.name: CheckGeoTrans001
  * @tc.desc: test
  * @tc.type: FUNC
  * @tc.require: issueI9V3BK
  */
-HWTEST_F(RSRenderTest18, CheckeGeoTrans001, TestSize.Level1)
+HWTEST_F(RSRenderTest18, CheckGeoTrans001, TestSize.Level1)
 {
     RSRenderNode node(id, context);
     std::shared_ptr<RSObjAbsGeometry> geoPtr = std::make_shared<RSObjAbsGeometry>();
@@ -339,12 +303,12 @@ HWTEST_F(RSRenderTest18, CheckeGeoTrans001, TestSize.Level1)
 }
 
 /**
- * @tc.name: CheckAndUpdateGeoTrans002
+ * @tc.name: CheckGeoTrans002
  * @tc.desc: test
  * @tc.type: FUNC
  * @tc.require: issueI9V3BK
  */
-HWTEST_F(RSRenderTest19, CheckAnans002, TestSize.Level1)
+HWTEST_F(RSRenderTest19, CheckGeoTrans002, TestSize.Level1)
 {
     RSRenderNode node(id, context);
     std::shared_ptr<RSObjAbsGeometry> geoPtr = std::make_shared<RSObjAbsGeometry>();
@@ -360,12 +324,12 @@ HWTEST_F(RSRenderTest19, CheckAnans002, TestSize.Level1)
 }
 
 /**
- * @tc.name: UpdateAbsDirtyRegion001
+ * @tc.name: UpdateAbs001
  * @tc.desc: test
  * @tc.type: FUNC
  * @tc.require: issueI9V3BK
  */
-HWTEST_F(RSRenderTest20, UpdateAbsion001, TestSize.Level1)
+HWTEST_F(RSRenderTest20, UpdateAbs001, TestSize.Level1)
 {
     RSRenderNode node(id, context);
     std::shared_ptr<RSDirtyRegionManager> rsDirtyManager = std::make_shared<RSDirtyRegionManager>();
@@ -375,12 +339,12 @@ HWTEST_F(RSRenderTest20, UpdateAbsion001, TestSize.Level1)
 }
 
 /**
- * @tc.name: UpdateAbsDirtyRegion002
+ * @tc.name: UpdateAbs002
  * @tc.desc: test
  * @tc.type: FUNC
  * @tc.require: issueI9V3BK
  */
-HWTEST_F(RSRenderTest21, UpdateAgion002, TestSize.Level1)
+HWTEST_F(RSRenderTest21, UpdateAbs002, TestSize.Level1)
 {
     RSRenderNode node(id, context);
     std::shared_ptr<RSDirtyRegionManager> rsDirtyManager = std::make_shared<RSDirtyRegionManager>();
@@ -393,12 +357,12 @@ HWTEST_F(RSRenderTest21, UpdateAgion002, TestSize.Level1)
 }
 
 /**
- * @tc.name: UpdateAbsDirtyRegion003
+ * @tc.name: UpdateAbs003
  * @tc.desc: test
  * @tc.type: FUNC
  * @tc.require: issueI9V3BK
  */
-HWTEST_F(RSRenderTest22, UpdateAgion003, TestSize.Level1)
+HWTEST_F(RSRenderTest22, UpdateAbs003, TestSize.Level1)
 {
     RSRenderNode node(id, context);
     std::shared_ptr<RSDirtyRegionManager> rsDirtyManager = std::make_shared<RSDirtyRegionManager>();
@@ -413,12 +377,12 @@ HWTEST_F(RSRenderTest22, UpdateAgion003, TestSize.Level1)
 }
 
 /**
- * @tc.name: UpdateAbsDirtyRegion004
+ * @tc.name: UpdateAbs004
  * @tc.desc: test
  * @tc.type: FUNC
  * @tc.require: issueI9V3BK
  */
-HWTEST_F(RSRenderTest23, UpdateAbion004, TestSize.Level1)
+HWTEST_F(RSRenderTest23, UpdateAbs004, TestSize.Level1)
 {
     RSRenderNode node(id, context);
     std::shared_ptr<RSDirtyRegionManager> rsDirtyManager = std::make_shared<RSDirtyRegionManager>();
@@ -433,12 +397,12 @@ HWTEST_F(RSRenderTest23, UpdateAbion004, TestSize.Level1)
 }
 
 /**
- * @tc.name: UpdateDrawRectAndDirtyRegion001
+ * @tc.name: UpdateDrawRegion001
  * @tc.desc: test
  * @tc.type: FUNC
  * @tc.require: issueI9V3BK
  */
-HWTEST_F(RSRenderTest24, UpdateDrayRegion001, TestSize.Level1)
+HWTEST_F(RSRenderTest24, UpdateDrawRegion001, TestSize.Level1)
 {
     RSRenderNode node(id, context);
     std::shared_ptr<RSDirtyRegionManager> rsDirtyManager = std::make_shared<RSDirtyRegionManager>();
@@ -449,12 +413,12 @@ HWTEST_F(RSRenderTest24, UpdateDrayRegion001, TestSize.Level1)
 }
 
 /**
- * @tc.name: UpdateDrawRectAndDirtyRegion002
+ * @tc.name: UpdateDrawRegion002
  * @tc.desc: test
  * @tc.type: FUNC
  * @tc.require: issueI9V3BK
  */
-HWTEST_F(RSRenderTest25, UpdateDrawRion002, TestSize.Level1)
+HWTEST_F(RSRenderTest25, UpdateDrawRegion002, TestSize.Level1)
 {
     RSRenderNode node(id, context);
     std::shared_ptr<RSDirtyRegionManager> rsDirtyManager = std::make_shared<RSDirtyRegionManager>();
@@ -474,12 +438,12 @@ HWTEST_F(RSRenderTest25, UpdateDrawRion002, TestSize.Level1)
 }
 
 /**
- * @tc.name: UpdateDrawRect001
+ * @tc.name: UpdateRect001
  * @tc.desc: test
  * @tc.type: FUNC
  * @tc.require: issueI9V3BK
  */
-HWTEST_F(RSRenderTest26, UpdateDt001, TestSize.Level1)
+HWTEST_F(RSRenderTest26, UpdateRect001, TestSize.Level1)
 {
     RSRenderNode node(id, context);
     RectI clipRect{0, 0, 1000, 1000};
@@ -491,12 +455,12 @@ HWTEST_F(RSRenderTest26, UpdateDt001, TestSize.Level1)
 }
 
 /**
- * @tc.name: UpdateDrawRect002
+ * @tc.name: UpdateRect002
  * @tc.desc: test
  * @tc.type: FUNC
  * @tc.require: issueI9V3BK
  */
-HWTEST_F(RSRenderTest27, Updatect002, TestSize.Level1)
+HWTEST_F(RSRenderTest27, UpdateRect002, TestSize.Level1)
 {
     RSRenderNode node(id, context);
     RectI clipRect{0, 0, 1000, 1000};
@@ -506,6 +470,46 @@ HWTEST_F(RSRenderTest27, Updatect002, TestSize.Level1)
     bool accumGeoDirty = true;
     node.UpdateDrawRect(accumGeoDirty, clipRect, matrix);
     ASSERT_TRUE(true);
+}
+/**
+ * @tc.name: ProcessChangedTest
+ * @tc.desc: ProcessChangedTest
+ * @tc.type: FUNC
+ * @tc.require: issueIB0UQV
+ */
+HWTEST_F(RSRenderNodeTest2, ProcessChangedTest, TestSize.Level1)
+{
+    auto rsContext = std::make_shared<RSContext>();
+    auto node = std::make_shared<RSRenderNode>(0, rsContext);
+    node->ProcessBehindWindowOnTreeStateChanged();
+    auto rootNode = std::make_shared<RSRenderNode>(1);
+    rsContext->nodeMap.renderNodeMap_[ExtractPid(1)][1] = rootNode;
+    node->renderContent_->renderProperties_.SetUseEffect(true);
+    node->renderContent_->renderProperties_.SetUseEffectType(1);
+    node->isOnTheTree_ = true;
+    node->ProcessBehindWindowOnTreeStateChanged();
+    node->isOnTheTree_ = false;
+    node->ProcessBehindWindowOnTreeStateChanged();
+}
+
+/**
+ * @tc.name: ProcessModifiersTest
+ * @tc.desc: ProcessModifiersTest
+ * @tc.type: FUNC
+ * @tc.require: issueIB0UQV
+ */
+HWTEST_F(RSRenderNodeTest2, ProcessModifiersTest, TestSize.Level1)
+{
+    auto rsContext = std::make_shared<RSContext>();
+    auto node = std::make_shared<RSRenderNode>(0, rsContext);
+    node->ProcessBehindWindowAfterApplyModifiers();
+    auto rootNode = std::make_shared<RSRenderNode>(1);
+    rsContext->nodeMap.renderNodeMap_[ExtractPid(1)][1] = rootNode;
+    node->renderContent_->renderProperties_.SetUseEffect(false);
+    node->ProcessBehindWindowAfterApplyModifiers();
+    node->renderContent_->renderProperties_.SetUseEffect(true);
+    node->renderContent_->renderProperties_.SetUseEffectType(1);
+    node->ProcessBehindWindowAfterApplyModifiers();
 }
 } // namespace Rosen
 } // namespace OHOS
