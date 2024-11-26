@@ -1952,7 +1952,7 @@ void RSUniRenderVisitor::UpdateSurfaceDirtyAndGlobalDirty()
     curDisplayNode_->SetMainAndLeashSurfaceDirty(hasMainAndLeashSurfaceDirty);
     CheckMergeDebugRectforRefreshRate(curMainAndLeashSurfaces);
     CheckMergeGlobalFilterForDisplay(accumulatedDirtyRegion);
-    CheckMergeDisplayDirtyByRoundCornerDisplay(*curDisplayNode_, screenManager_);
+    CheckMergeDisplayDirtyByRoundCornerDisplay();
     ResetDisplayDirtyRegion();
     if (curDisplayDirtyManager_) {
         curDisplayDirtyManager_->ClipDirtyRectWithinSurface();
@@ -3149,22 +3149,27 @@ void RSUniRenderVisitor::CheckMergeDebugRectforRefreshRate(std::vector<RSBaseRen
     }
 }
 
-void RSUniRenderVisitor::CheckMergeDisplayDirtyByRoundCornerDisplay(
-    RSDisplayRenderNode &node, const sptr<RSScreenManager> &screenManager)
+void RSUniRenderVisitor::CheckMergeDisplayDirtyByRoundCornerDisplay() const
 {
+    if (!screenManager_ || !curDisplayNode_) {
+        RS_LOGE(
+            "RSUniRenderVisitor::CheckMergeDisplayDirtyByRoundCornerDisplay screenmanager or displaynode is nullptr");
+        return;
+    }
+
     RSScreenType screenType = BUILT_IN_TYPE_SCREEN;
-    if (screenManager->GetScreenType(node.GetScreenId(), screenType) != SUCCESS) {
+    if (screenManager_->GetScreenType(curDisplayNode_->GetScreenId(), screenType) != SUCCESS) {
         RS_LOGD("RSUniRenderVisitor::CheckMergeDisplayDirtyByRoundCornerDisplay get screen type failed.");
         return;
     }
     if (screenType == EXTERNAL_TYPE_SCREEN) {
         RectI dirtyRectTop, dirtyRectBottom;
         if (RSSingleton<RoundCornerDisplayManager>::GetInstance().HandleRoundCornerDirtyRect(
-            node.GetId(), dirtyRectTop, RoundCornerDisplayManager::RCDLayerType::TOP)) {
+            curDisplayNode_->GetId(), dirtyRectTop, RoundCornerDisplayManager::RCDLayerType::TOP)) {
             curDisplayNode_->GetDirtyManager()->MergeDirtyRect(dirtyRectTop);
         }
         if (RSSingleton<RoundCornerDisplayManager>::GetInstance().HandleRoundCornerDirtyRect(
-            node.GetId(), dirtyRectBottom, RoundCornerDisplayManager::RCDLayerType::BOTTOM)) {
+            curDisplayNode_->GetId(), dirtyRectBottom, RoundCornerDisplayManager::RCDLayerType::BOTTOM)) {
             curDisplayNode_->GetDirtyManager()->MergeDirtyRect(dirtyRectBottom);
         }
     }

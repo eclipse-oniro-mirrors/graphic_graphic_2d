@@ -255,7 +255,7 @@ void RoundCornerDisplay::UpdateDisplayParameter(uint32_t width, uint32_t height)
         displayWidth_, width, displayHeight_, height);
     if (LoadImgsbyResolution(width, height)) {
         rcdDirtyType_ = static_cast<RoundCornerDirtyType>(
-+            static_cast<uint8_t>(RoundCornerDirtyType::RCD_DIRTY_ALL) | static_cast<uint8_t>(rcdDirtyType_));
+            static_cast<uint8_t>(RoundCornerDirtyType::RCD_DIRTY_ALL) | static_cast<uint8_t>(rcdDirtyType_));
         updateFlag_["display"] = true;
         displayWidth_ = width;
         displayHeight_ = height;
@@ -278,7 +278,7 @@ void RoundCornerDisplay::UpdateNotchStatus(int status)
         notchStatus_, status);
     notchStatus_ = status;
     rcdDirtyType_ = static_cast<RoundCornerDirtyType>(
-+        static_cast<uint8_t>(RoundCornerDirtyType::RCD_DIRTY_TOP) | static_cast<uint8_t>(rcdDirtyType_));
+        static_cast<uint8_t>(RoundCornerDirtyType::RCD_DIRTY_TOP) | static_cast<uint8_t>(rcdDirtyType_));
     updateFlag_["notch"] = true;
 }
 
@@ -292,7 +292,7 @@ void RoundCornerDisplay::UpdateOrientationStatus(ScreenRotation orientation)
     lastOrientation_ = curOrientation_;
     curOrientation_ = orientation;
     rcdDirtyType_ = static_cast<RoundCornerDirtyType>(
-+        static_cast<uint8_t>(RoundCornerDirtyType::RCD_DIRTY_TOP) | static_cast<uint8_t>(rcdDirtyType_));
+        static_cast<uint8_t>(RoundCornerDirtyType::RCD_DIRTY_TOP) | static_cast<uint8_t>(rcdDirtyType_));
     RS_LOGD_IF(DEBUG_PIPELINE, "[%{public}s] curOrientation_ = %{public}d, lastOrientation_ = %{public}d \n",
         __func__, curOrientation_, lastOrientation_);
     updateFlag_["orientation"] = true;
