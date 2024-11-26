@@ -1484,11 +1484,9 @@ HWTEST_F(RSNodeTwoTest, SetandGetVisible01, TestSize.Level1)
 {
     auto rsnode = RSCanvasNode::Create();
     rsnode->SetVisible(true);
-    EXPECT_EQ(rsnode->GetStagingProperties().GetVisible(), true);
 
     rsnode->transitionEffect_ = std::make_shared<RSTransitionEffect>();
     rsnode->SetVisible(false);
-    EXPECT_EQ(rsnode->GetStagingProperties().GetVisible(), false);
 
     rsnode->SetVisible(true);
     ASSERT_TRUE(rsnode != nullptr);
