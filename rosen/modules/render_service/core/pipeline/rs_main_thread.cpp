@@ -283,9 +283,10 @@ void UpdateSurfaceNodeNit(const sptr<SurfaceBuffer>& surfaceBuffer, RSSurfaceRen
     auto& rsLuminance = RSLuminanceControl::Get();
     if (hdrStaticMetadataVec.size() != sizeof(HdrStaticMetadata) || hdrStaticMetadataVec.data() == nullptr) {
         RS_LOGD("hdrStaticMetadataVec is invalid");
+        scaler = surfaceNode.GetHDRBrightness() * (scaler - 1.0f) + 1.0f;
     } else {
         const auto& data = *reinterpret_cast<HdrStaticMetadata*>(hdrStaticMetadataVec.data());
-        scaler = rsLuminance.CalScaler(data.cta861.maxContentLightLevel);
+        scaler = rsLuminance.CalScaler(data.cta861.maxContentLightLevel, surfaceNode.GetHDRBrightness());
     }
 
     float sdrNits = rsLuminance.GetSdrDisplayNits(screenId);
@@ -300,7 +301,8 @@ void UpdateSurfaceNodeNit(const sptr<SurfaceBuffer>& surfaceBuffer, RSSurfaceRen
         surfaceNode.SetBrightnessRatio(std::pow(layerNits / displayNits, 1.0f / GAMMA2_2)); // gamma 2.2
     }
     RS_LOGD("RSMainThread UpdateSurfaceNodeNit layerNits: %{public}f, displayNits: %{public}f, sdrNits: %{public}f,"
-        " scaler: %{public}f", layerNits, displayNits, sdrNits, scaler);
+        " scaler: %{public}f, HDRBrightness: %{public}f", layerNits, displayNits, sdrNits, scaler,
+        surfaceNode.GetHDRBrightness());
 }
 
 std::string g_dumpStr = "";

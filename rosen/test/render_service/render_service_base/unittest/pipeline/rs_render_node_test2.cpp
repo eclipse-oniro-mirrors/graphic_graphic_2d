@@ -326,6 +326,19 @@ HWTEST_F(RSRenderNodeTest2, GetDrawRect, TestSize.Level1)
 }
 
 /**
+ * @tc.name: GetHDRBrightness
+ * @tc.desc: test
+ * @tc.type: FUNC
+ * @tc.require: issueI9V3BK
+ */
+HWTEST_F(RSRenderNodeTest2, GetHDRBrightness, TestSize.Level1)
+{
+    RSRenderNode node(id, context);
+    node.GetHDRBrightness();
+    ASSERT_TRUE(true);
+}
+
+/**
  * @tc.name: CheckAndUpdateGeoTrans001
  * @tc.desc: test
  * @tc.type: FUNC

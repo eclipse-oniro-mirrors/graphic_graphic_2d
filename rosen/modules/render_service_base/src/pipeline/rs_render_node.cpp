@@ -3667,6 +3667,20 @@ uint32_t RSRenderNode::GetChildrenCount() const
     return children_.size();
 }
 
+float RSRenderNode::GetHDRBrightness() const
+{
+    const auto& drawCmdModifiers = renderContent_->drawCmdModifiers_;
+    auto itr = drawCmdModifiers.find(RSModifierType::HDR_BRIGHTNESS);
+    if (itr == drawCmdModifiers.end() || itr->second.empty()) {
+        RS_LOGD("RSRenderNode::GetHDRBrightness drawCmdModifiers find failed");
+        return 1.0f; // 1.0f make sure HDR video is still HDR state if RSNode::SetHDRBrightness not called
+    }
+    const auto& modifier = itr->second.back();
+    auto renderProperty = std::static_pointer_cast<RSRenderAnimatableProperty<float>>(modifier->GetProperty());
+    float hdrBrightness = renderProperty->Get();
+    return hdrBrightness;
+}
+
 void RSRenderNode::SetTunnelHandleChange(bool change)
 {
     isTunnelHandleChange_ = change;
