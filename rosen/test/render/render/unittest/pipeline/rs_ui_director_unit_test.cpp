@@ -66,6 +66,7 @@ void RSUIDirectorTest::TearDown() {}
 HWTEST_F(RSUIDirectorTest, SetTimeStamp001, TestSize.Level1)
 {
     std::shared_ptr<RSUIDirector> director = RSUIDirector::Create();
+    ASSERT_TRUE(director != nullptr);
     director->SetTimeStamp(NOMAL_U_INT64_1, "test");
 }
 
@@ -77,6 +78,7 @@ HWTEST_F(RSUIDirectorTest, SetTimeStamp001, TestSize.Level1)
 HWTEST_F(RSUIDirectorTest, SetTimeStamp002, TestSize.Level1)
 {
     std::shared_ptr<RSUIDirector> director = RSUIDirector::Create();
+    ASSERT_TRUE(director != nullptr);
     director->SetTimeStamp(-std::numeric_limits<uint64_t>::max(), "test");
 }
 
@@ -88,6 +90,7 @@ HWTEST_F(RSUIDirectorTest, SetTimeStamp002, TestSize.Level1)
 HWTEST_F(RSUIDirectorTest, SetTimeStamp003, TestSize.Level1)
 {
     std::shared_ptr<RSUIDirector> director = RSUIDirector::Create();
+    ASSERT_TRUE(director != nullptr);
     director->SetTimeStamp(std::numeric_limits<int64_t>::min(), "test");
 }
 
@@ -99,6 +102,7 @@ HWTEST_F(RSUIDirectorTest, SetTimeStamp003, TestSize.Level1)
 HWTEST_F(RSUIDirectorTest, SetRSSurfaceNode001, TestSize.Level1)
 {
     std::shared_ptr<RSUIDirector> director = RSUIDirector::Create();
+    ASSERT_TRUE(director != nullptr);
     RSSurfaceNodeConfig c;
     auto surfaceNode = RSSurfaceNode::Create(c);
     director->SetRSSurfaceNode(surfaceNode);
@@ -109,9 +113,10 @@ HWTEST_F(RSUIDirectorTest, SetRSSurfaceNode001, TestSize.Level1)
  * @tc.desc:
  * @tc.type:FUNC
  */
-HWTEST_F(RSUIDirectorTest, SetRSSurfaceNode002 , TestSize.Level1)
+HWTEST_F(RSUIDirectorTest, SetRSSurfaceNode002, TestSize.Level1)
 {
     std::shared_ptr<RSUIDirector> director = RSUIDirector::Create();
+    ASSERT_TRUE(director != nullptr);
     director->SetRSSurfaceNode(nullptr);
 }
 
@@ -140,6 +145,7 @@ HWTEST_F(RSUIDirectorTest, PlatformInit001, TestSize.Level1)
 HWTEST_F(RSUIDirectorTest, SetUITaskRunner001, TestSize.Level1)
 {
     std::shared_ptr<RSUIDirector> director = RSUIDirector::Create();
+    ASSERT_TRUE(director != nullptr);
     director->SetUITaskRunner([&](const std::function<void()>& task, uint32_t delay) {});
 }
 
@@ -165,6 +171,7 @@ HWTEST_F(RSUIDirectorTest, StartTextureExport001, TestSize.Level1)
 HWTEST_F(RSUIDirectorTest, DirectorSendMessages001, TestSize.Level1)
 {
     std::shared_ptr<RSUIDirector> director = RSUIDirector::Create();
+    ASSERT_TRUE(director != nullptr);
     director->SendMessages();
 }
 
@@ -179,6 +186,7 @@ HWTEST_F(RSUIDirectorTest, UIDirectorSetRoot001, TestSize.Level1)
      * @tc.steps: step1. set parentSize, childSize and alignment
      */
     std::shared_ptr<RSUIDirector> director = RSUIDirector::Create();
+    ASSERT_TRUE(director != nullptr);
     RSNode::SharedPtr testNode = RSCanvasNode::Create();
     director->SetRoot(testNode->GetId());
     director->SetRoot(testNode->GetId());
@@ -203,6 +211,7 @@ HWTEST_F(RSUIDirectorTest, UIDirectorTotal001, TestSize.Level1)
     child1->AddChild(child3, 1);
 
     std::shared_ptr<RSUIDirector> director = RSUIDirector::Create();
+    ASSERT_TRUE(director != nullptr);
 
     director->SetRoot(rootNode->GetId());
 
@@ -227,6 +236,7 @@ HWTEST_F(RSUIDirectorTest, SetProperty001, TestSize.Level1)
      * @tc.steps: step1. set parentSize, childSize and alignment
      */
     std::shared_ptr<RSUIDirector> director = RSUIDirector::Create();
+    ASSERT_TRUE(director != nullptr);
     std::string cacheDir = "/data/log";
     director->SetAbilityBGAlpha(0);
     director->SetContainerWindow(true, 1.f);
@@ -250,6 +260,7 @@ HWTEST_F(RSUIDirectorTest, SetProperty001, TestSize.Level1)
 HWTEST_F(RSUIDirectorTest, DestroyTest, TestSize.Level1)
 {
     std::shared_ptr<RSUIDirector> director = RSUIDirector::Create();
+    ASSERT_TRUE(director != nullptr);
     NodeId nodeId = 10;
     director->SetRoot(nodeId);
     director->Destroy();
@@ -263,6 +274,7 @@ HWTEST_F(RSUIDirectorTest, DestroyTest, TestSize.Level1)
 HWTEST_F(RSUIDirectorTest, SetRootTest, TestSize.Level1)
 {
     std::shared_ptr<RSUIDirector> director = RSUIDirector::Create();
+    ASSERT_TRUE(director != nullptr);
     NodeId nodeId = 10;
     director->SetRoot(nodeId);
     director->SetRoot(nodeId);
