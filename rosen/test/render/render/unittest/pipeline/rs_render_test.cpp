@@ -472,44 +472,72 @@ HWTEST_F(RSRenderTest27, UpdateRect002, TestSize.Level1)
     ASSERT_TRUE(true);
 }
 /**
- * @tc.name: ProcessChangedTest
- * @tc.desc: ProcessChangedTest
+ * @tc.name: RegionTest001
+ * @tc.desc: RegionTest001 test
  * @tc.type: FUNC
- * @tc.require: issueIB0UQV
+ * @tc.require: issueIA61E9
  */
-HWTEST_F(RSRenderNodeTest2, ProcessChangedTest, TestSize.Level1)
+HWTEST_F(RSRenderTest28, RegionTest001, TestSize.Level1)
 {
-    auto rsContext = std::make_shared<RSContext>();
-    auto node = std::make_shared<RSRenderNode>(0, rsContext);
-    node->ProcessBehindWindowOnTreeStateChanged();
-    auto rootNode = std::make_shared<RSRenderNode>(1);
-    rsContext->nodeMap.renderNodeMap_[ExtractPid(1)][1] = rootNode;
-    node->renderContent_->renderProperties_.SetUseEffect(true);
-    node->renderContent_->renderProperties_.SetUseEffectType(1);
-    node->isOnTheTree_ = true;
-    node->ProcessBehindWindowOnTreeStateChanged();
-    node->isOnTheTree_ = false;
-    node->ProcessBehindWindowOnTreeStateChanged();
+    std::shared_ptr<RSSurfaceRenderNode> nodeTest = std::make_shared<RSSurfaceRenderNode>(0);
+    EXPECT_NE(nodeTest, nullptr);
+
+    RSDirtyRegionManager dirtyManagerTest1;
+    RectI clipRectTest1 = RectI { 0, 0, 1, 1 };
+    nodeTest->lastFrameSubTreeSkipped_ = true;
+    nodeTest->geoUpdateDelay_ = true;
+    nodeTest->ForceMergeSubTreeDirtyRegion(dirtyManagerTest1, clipRectTest1);
+    EXPECT_FALSE(nodeTest->lastFrameSubTreeSkipped_);
+
+    RSDirtyRegionManager dirtyManagerTest2;
+    RectI clipRectTest2 = RectI { 0, 0, 1, 1 };
+    nodeTest->lastFrameHasChildrenOutOfRect_ = false;
+    nodeTest->renderContent_->renderProperties_.boundsGeo_ = std::make_shared<RSObjAbsGeometry>();
+    EXPECT_NE(nodeTest->renderContent_->renderProperties_.boundsGeo_, nullptr);
+    nodeTest->hasChildrenOutOfRect_ = true;
+    nodeTest->SubTreeSkipPrepare(dirtyManagerTest2, true, true, clipRectTest2);
+
+    RSDirtyRegionManager dirtyManagerTest3;
+    RectI clipRectTest3 = RectI { 0, 0, 1, 1 };
+    nodeTest->srcOrClipedAbsDrawRectChangeFlag_ = true;
+    nodeTest->hasChildrenOutOfRect_ = false;
+    nodeTest->lastFrameHasChildrenOutOfRect_ = true;
+    nodeTest->renderContent_->renderProperties_.boundsGeo_ = nullptr;
+    nodeTest->SubTreeSkipPrepare(dirtyManagerTest3, false, true, clipRectTest3);
 }
 
 /**
- * @tc.name: ProcessModifiersTest
- * @tc.desc: ProcessModifiersTest
+ * @tc.name: RegionTest002
+ * @tc.desc: RegionTest002 test
  * @tc.type: FUNC
- * @tc.require: issueIB0UQV
+ * @tc.require: issueIA5Y41
  */
-HWTEST_F(RSRenderNodeTest2, ProcessModifiersTest, TestSize.Level1)
+HWTEST_F(RSRenderTest29, RegionTest002, TestSize.Level1)
 {
-    auto rsContext = std::make_shared<RSContext>();
-    auto node = std::make_shared<RSRenderNode>(0, rsContext);
-    node->ProcessBehindWindowAfterApplyModifiers();
-    auto rootNode = std::make_shared<RSRenderNode>(1);
-    rsContext->nodeMap.renderNodeMap_[ExtractPid(1)][1] = rootNode;
-    node->renderContent_->renderProperties_.SetUseEffect(false);
-    node->ProcessBehindWindowAfterApplyModifiers();
-    node->renderContent_->renderProperties_.SetUseEffect(true);
-    node->renderContent_->renderProperties_.SetUseEffectType(1);
-    node->ProcessBehindWindowAfterApplyModifiers();
+    std::shared_ptr<RSSurfaceRenderNode> nodeTest = std::make_shared<RSSurfaceRenderNode>(0);
+    EXPECT_NE(nodeTest, nullptr);
+
+    std::shared_ptr<RSNodeVisitor> visitor = nullptr;
+    nodeTest->Prepare(visitor);
+    nodeTest->QuickPrepare(visitor);
+
+    nodeTest->shouldPaint_ = false;
+    EXPECT_FALSE(nodeTest->IsSubTreeNeedPrepare(false, false));
+    nodeTest->shouldPaint_ = true;
+    EXPECT_FALSE(nodeTest->IsSubTreeNeedPrepare(false, true));
+    nodeTest->isSubTreeDirty_ = true;
+    EXPECT_TRUE(nodeTest->IsSubTreeNeedPrepare(false, false));
+    nodeTest->isSubTreeDirty_ = false;
+    nodeTest->childHasSharedTransition_ = true;
+    EXPECT_TRUE(nodeTest->IsSubTreeNeedPrepare(false, false));
+    nodeTest->childHasSharedTransition_ = false;
+    nodeTest->childHasVisibleFilter_ = true;
+    EXPECT_FALSE(nodeTest->IsSubTreeNeedPrepare(false, false));
+
+    nodeTest->nodeGroupType_ = RSRenderNode::NONE;
+    EXPECT_FALSE(nodeTest->IsUifirstArkTsCardNode());
+    nodeTest->nodeGroupType_ = RSRenderNode::GROUPED_BY_ANIM;
+    EXPECT_FALSE(nodeTest->IsUifirstArkTsCardNode());
 }
 } // namespace Rosen
 } // namespace OHOS
