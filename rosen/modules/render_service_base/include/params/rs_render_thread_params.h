@@ -51,7 +51,7 @@ struct HardCursorInfo {
 class RSB_EXPORT RSRenderThreadParams {
 public:
     using DrawablesVec = std::vector<std::pair<NodeId,
-        DrawableV2::RSRenderNodeDrawableAdapter::SharePtr>>;
+        DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr>>;
 
     RSRenderThreadParams() = default;
     virtual ~RSRenderThreadParams() = default;
