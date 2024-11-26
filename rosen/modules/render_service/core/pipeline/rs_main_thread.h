@@ -392,7 +392,7 @@ private:
     using TransactionDataIndexMap = std::unordered_map<pid_t,
         std::pair<uint64_t, std::vector<std::unique_ptr<RSTransactionData>>>>;
     using DrawablesVec = std::vector<std::pair<NodeId,
-        DrawableV2::RSRenderNodeDrawableAdapter::SharePtr>>;
+        DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr>>;
 
     RSMainThread();
     ~RSMainThread() noexcept;
