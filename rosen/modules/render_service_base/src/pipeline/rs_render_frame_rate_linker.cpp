@@ -78,9 +78,9 @@ RSRenderFrameRateLinker::~RSRenderFrameRateLinker()
 void RSRenderFrameRateLinker::SetExpectedRange(const FrameRateRange& range)
 {
     if (expectedRange_.preferred_ != range.preferred_) {
-        for (auto& cb : changeCallbacks_) {
-            if (cb.second) {
-                cb.second->OnFrameRateLinkerExpectedFpsUpdate(ExtractPid(id_), range.preferred_);
+        for (auto& [_, cb] : changeCallbacks_) {
+            if (cb) {
+                cb->OnFrameRateLinkerExpectedFpsUpdate(ExtractPid(id_), range.preferred_);
             }
         }
     }
@@ -136,16 +136,12 @@ void RSRenderFrameRateLinker::RegisterExpectedFpsUpdateCallback(pid_t listener,
     sptr<RSIFrameRateLinkerExpectedFpsUpdateCallback> callback)
 {
     if (callback == nullptr) {
-        // remove all callbacks registered by this listener
-        changeCallbacks_.erase(std::remove_if(changeCallbacks_.begin(), changeCallbacks_.end(),
-            [listener] (std::pair<pid_t, sptr<RSIFrameRateLinkerExpectedFpsUpdateCallback>> element) {
-                return listener == element.first;
-            }),
-            changeCallbacks_.end());
+        changeCallbacks_.erase(listener);
         return;
     }
 
-    changeCallbacks_.push_back({listener, callback});
+    // if this listener has registered a callback before, replace it.
+    changeCallbacks_[listener] = callback;
 }
 
 } // namespace Rosen

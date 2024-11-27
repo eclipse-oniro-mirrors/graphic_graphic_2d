@@ -58,21 +58,10 @@ std::shared_ptr<RSRenderFrameRateLinker> RSRenderFrameRateLinkerMap::GetFrameRat
 bool RSRenderFrameRateLinkerMap::RegisterFrameRateLinkerExpectedFpsUpdateCallback(pid_t listenerPid,
     uint32_t dstPid, sptr<RSIFrameRateLinkerExpectedFpsUpdateCallback> callback)
 {
-    // unregister
-    if (callback == nullptr) {
-        for (auto& pair : frameRateLinkerMap_) {
-            if (ExtractPid(pair.first) == dstPid) {
-                pair.second->RegisterExpectedFpsUpdateCallback(listenerPid, callback);
-            }
-        }
-        return true;
-    }
-
-    // register
     bool success = false;
-    for (auto& pair : frameRateLinkerMap_) {
-        if (ExtractPid(pair.first) == dstPid) {
-            pair.second->RegisterExpectedFpsUpdateCallback(listenerPid, callback);
+    for (auto& [id, linker] : frameRateLinkerMap_) {
+        if (ExtractPid(id) == dstPid && linker != nullptr) {
+            linker->RegisterExpectedFpsUpdateCallback(listenerPid, callback);
             success = true;
         }
     }

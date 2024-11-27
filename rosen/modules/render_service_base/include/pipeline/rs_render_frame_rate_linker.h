@@ -66,7 +66,7 @@ private:
     uint32_t frameRate_ = 0;
     int32_t animatorExpectedFrameRate_ = -1;
 
-    std::vector<std::pair<pid_t, sptr<RSIFrameRateLinkerExpectedFpsUpdateCallback>>> changeCallbacks_;
+    std::unordered_map<pid_t, sptr<RSIFrameRateLinkerExpectedFpsUpdateCallback>> changeCallbacks_;
 };
 } // namespace Rosen
 } // namespace OHOS
