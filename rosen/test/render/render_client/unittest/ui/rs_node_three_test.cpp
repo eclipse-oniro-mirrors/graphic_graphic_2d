@@ -269,6 +269,48 @@ HWTEST_F(RSNodeOneTest, CreateBlurFilter05, TestSize.Level1)
 }
 
 /**
+ * @tc.name: CreateNormalFilter01
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSNodeOneTest, CreateNormalFilter01, TestSize.Level1)
+{
+    auto rsnode = RSCanvasNode::Create();
+    std::shared_ptr<RSFilter> filter = RSFilter::CreateBlurFilter(floatDatas[0], floatDatas[1]);
+    rsnode->SetFilter(filter);
+    EXPECT_TRUE(rsnode->GetStagingProperties().GetForegroundBlurRadiusX() == floatDatas[0]);
+    EXPECT_TRUE(rsnode->GetStagingProperties().GetForegroundBlurRadiusY() == floatDatas[1]);
+}
+
+/**
+ * @tc.name: CreateNormalFilter02
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSNodeOneTest, CreateNormalFilter02, TestSize.Level2)
+{
+    auto rsnode = RSCanvasNode::Create();
+    std::shared_ptr<RSFilter> filter = RSFilter::CreateBlurFilter(floatDatas[1], floatDatas[2]);
+    rsnode->SetFilter(filter);
+    EXPECT_TRUE(rsnode->GetStagingProperties().GetForegroundBlurRadiusX() == floatDatas[1]);
+    EXPECT_TRUE(rsnode->GetStagingProperties().GetForegroundBlurRadiusY() == floatDatas[2]);
+}
+
+/**
+ * @tc.name: CreateNormalFilter03
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSNodeOneTest, CreateNormalFilter03, TestSize.Level3)
+{
+    auto rsnode = RSCanvasNode::Create();
+    std::shared_ptr<RSFilter> filter = RSFilter::CreateBlurFilter(floatDatas[2], floatDatas[3]);
+    rsnode->SetFilter(filter);
+    EXPECT_TRUE(rsnode->GetStagingProperties().GetForegroundBlurRadiusX() == floatDatas[2]);
+    EXPECT_TRUE(rsnode->GetStagingProperties().GetForegroundBlurRadiusY() == floatDatas[3]);
+}
+
+/**
  * @tc.name: CreateNormalFilter04
  * @tc.desc:
  * @tc.type:FUNC
@@ -534,6 +576,172 @@ HWTEST_F(RSNodeOneTest, SetandGetShadowIsFilled02, TestSize.Level1)
     auto rsnode = RSCanvasNode::Create();
     rsnode->SetShadowIsFilled(false);
     EXPECT_EQ(rsnode->GetStagingProperties().GetShadowIsFilled(), false);
+}
+
+/**
+ * @tc.name: SetandGetForegroundEffectRadius01
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSNodeOneTest, SetandGetForegroundEffectRadius01, TestSize.Level1)
+{
+    auto rsnode = RSCanvasNode::Create();
+    float radius = 10.0f;
+    rsnode->SetForegroundEffectRadius(radius);
+    EXPECT_TRUE(ROSEN_EQ(rsnode->GetStagingProperties().GetForegroundEffectRadius(), radius));
+}
+
+/**
+ * @tc.name: SetCompositingFilter01
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSNodeOneTest, SetCompositingFilter01, TestSize.Level1)
+{
+    auto rsnode = RSCanvasNode::Create();
+    auto compositingFilter = RSFilter::CreateBlurFilter(0.0f, 0.0f);
+    rsnode->SetCompositingFilter(compositingFilter);
+}
+
+/**
+ * @tc.name: SetShadowPath01
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSNodeOneTest, SetShadowPath01, TestSize.Level1)
+{
+    auto rsnode = RSCanvasNode::Create();
+    auto shadowpath = RSPath::CreateRSPath();
+    rsnode->SetShadowPath(shadowpath);
+}
+
+/**
+ * @tc.name: SetFreeze01
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSNodeOneTest, SetFreeze01, TestSize.Level1)
+{
+    auto rsnode = RSCanvasNode::Create();
+    rsnode->SetFreeze(true);
+    std::shared_ptr<RSNode> child = std::make_shared<RSNode>(0);
+    child->SetFreeze(true);
+    EXPECT_TRUE(child != nullptr);
+}
+
+template<typename ModifierName, typename PropertyName, typename T>
+void SetPropertyTest(RSModifierType modifierType, T value1, T value2)
+{
+    auto node = RSCanvasNode::Create();
+    node->SetProperty<ModifierName, PropertyName, T>(modifierType, value1);
+    node->SetProperty<ModifierName, PropertyName, T>(modifierType, value1);
+    node->SetProperty<ModifierName, PropertyName, T>(modifierType, value2);
+};
+
+/**
+ * @tc.name: SetProperty01
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSNodeOneTest, SetProperty01, TestSize.Level1)
+{
+    SetPropertyTest<RSAlphaModifier, RSAnimatableProperty<float>, float>(
+        RSModifierType::ALPHA, 0.0f, 0.5f);
+    SetPropertyTest<RSAlphaOffscreenModifier, RSProperty<bool>, bool>(
+        RSModifierType::ALPHA_OFFSCREEN, false, true);
+    SetPropertyTest<RSBoundsModifier, RSAnimatableProperty<Vector4f>, Vector4f>(
+        RSModifierType::BOUNDS, Vector4f(), Vector4f(25.f));
+    SetPropertyTest<RSFrameModifier, RSAnimatableProperty<Vector4f>, Vector4f>(
+        RSModifierType::FRAME, Vector4f(), Vector4f(25.f));
+    SetPropertyTest<RSPositionZModifier, RSAnimatableProperty<float>, float>(
+        RSModifierType::POSITION_Z, 1.f, 2.f);
+    SetPropertyTest<RSPivotModifier, RSAnimatableProperty<Vector2f>, Vector2f>(
+        RSModifierType::PIVOT, Vector2f(0.f, 0.f), Vector2f(1.f, 1.f));
+    SetPropertyTest<RSCornerRadiusModifier, RSAnimatableProperty<Vector4f>, Vector4f>(
+        RSModifierType::CORNER_RADIUS, Vector4f(), Vector4f(1.f));
+    SetPropertyTest<RSQuaternionModifier, RSAnimatableProperty<Quaternion>, Quaternion>(
+        RSModifierType::QUATERNION, Quaternion(), Quaternion(0.f, 1.f, 0.f, 0.f));
+    SetPropertyTest<RSRotationModifier, RSAnimatableProperty<float>, float>(
+        RSModifierType::ROTATION, 45.f, 90.f);
+    SetPropertyTest<RSRotationXModifier, RSAnimatableProperty<float>, float>(
+        RSModifierType::ROTATION_X, 45.f, 90.f);
+    SetPropertyTest<RSRotationYModifier, RSAnimatableProperty<float>, float>(
+        RSModifierType::ROTATION_Y, 45.f, 90.f);
+    SetPropertyTest<RSTranslateModifier, RSAnimatableProperty<Vector2f>, Vector2f>(
+        RSModifierType::TRANSLATE, Vector2f(10.f, 10.f), Vector2f(1.f, 1.f));
+    SetPropertyTest<RSTranslateZModifier, RSAnimatableProperty<float>, float>(
+        RSModifierType::TRANSLATE_Z, 45.f, 90.f);
+    SetPropertyTest<RSScaleModifier, RSAnimatableProperty<Vector2f>, Vector2f>(
+        RSModifierType::SCALE, Vector2f(0.f, 0.f), Vector2f(1.f, 1.f));
+    SetPropertyTest<RSSkewModifier, RSAnimatableProperty<Vector2f>, Vector2f>(
+        RSModifierType::SKEW, Vector2f(1.f, 1.f), Vector2f(-1.f, -1.f));
+    SetPropertyTest<RSPerspModifier, RSAnimatableProperty<Vector2f>, Vector2f>(
+        RSModifierType::PERSP, Vector2f(FLOAT_DATA_INIT, FLOAT_DATA_INIT),
+        Vector2f(FLOAT_DATA_UPDATE, FLOAT_DATA_UPDATE));
+    SetPropertyTest<RSForegroundColorModifier, RSAnimatableProperty<Color>, Color>(
+        RSModifierType::FOREGROUND_COLOR, Color(), Color(0xFF0FF0));
+    SetPropertyTest<RSBackgroundColorModifier, RSAnimatableProperty<Color>, Color>(
+        RSModifierType::BACKGROUND_COLOR, Color(), Color(0xFF0FF0));
+    SetPropertyTest<RSBgImageModifier, RSProperty<std::shared_ptr<RSImage>>, std::shared_ptr<RSImage>>(
+        RSModifierType::BG_IMAGE, std::make_shared<RSImage>(), nullptr);
+    SetPropertyTest<RSBgImageWidthModifier, RSAnimatableProperty<float>, float>(
+        RSModifierType::BG_IMAGE_WIDTH, 45.f, 90.f);
+    SetPropertyTest<RSBgImageHeightModifier, RSAnimatableProperty<float>, float>(
+        RSModifierType::BG_IMAGE_HEIGHT, 45.f, 90.f);
+    SetPropertyTest<RSBorderColorModifier, RSAnimatableProperty<Vector4<Color>>, Vector4<Color>>(
+        RSModifierType::BORDER_COLOR, Vector4<Color>(), Vector4<Color>(Color(0xFF0FF0)));
+    SetPropertyTest<RSBorderWidthModifier, RSAnimatableProperty<Vector4f>, Vector4f>(
+        RSModifierType::BORDER_WIDTH, Vector4f(), Vector4f(1.f));
+    SetPropertyTest<RSBorderStyleModifier, RSProperty<Vector4<uint32_t>>, Vector4<uint32_t>>(
+        RSModifierType::BORDER_STYLE, Vector4<uint32_t>(), Vector4<uint32_t>(1));
+    SetPropertyTest<RSShadowColorModifier, RSAnimatableProperty<Color>, Color>(
+        RSModifierType::SHADOW_COLOR, Color(), Color(0xFF0FF0));
+    SetPropertyTest<RSShadowOffsetXModifier, RSAnimatableProperty<float>, float>(
+        RSModifierType::SHADOW_OFFSET_X, 1.f, 2.f);
+    SetPropertyTest<RSShadowOffsetYModifier, RSAnimatableProperty<float>, float>(
+        RSModifierType::SHADOW_OFFSET_Y, 1.f, 2.f);
+    SetPropertyTest<RSShadowAlphaModifier, RSAnimatableProperty<float>, float>(
+        RSModifierType::SHADOW_ALPHA, 0.2f, 0.5f);
+    SetPropertyTest<RSShadowElevationModifier, RSAnimatableProperty<float>, float>(
+        RSModifierType::SHADOW_ELEVATION, 1.f, 2.f);
+    SetPropertyTest<RSShadowRadiusModifier, RSAnimatableProperty<float>, float>(
+        RSModifierType::SHADOW_RADIUS, 1.f, 2.f);
+    SetPropertyTest<RSShadowPathModifier, RSProperty<std::shared_ptr<RSPath>>, std::shared_ptr<RSPath>>(
+        RSModifierType::SHADOW_PATH, RSPath::CreateRSPath(), nullptr);
+    SetPropertyTest<RSFrameGravityModifier, RSProperty<Gravity>, Gravity>(
+        RSModifierType::FRAME_GRAVITY, Gravity::TOP_RIGHT, Gravity::RESIZE);
+    SetPropertyTest<RSClipBoundsModifier, RSProperty<std::shared_ptr<RSPath>>, std::shared_ptr<RSPath>>(
+        RSModifierType::CLIP_BOUNDS, RSPath::CreateRSPath(), nullptr);
+    SetPropertyTest<RSClipToBoundsModifier, RSProperty<bool>, bool>(
+        RSModifierType::CLIP_TO_BOUNDS, false, true);
+    SetPropertyTest<RSClipToFrameModifier, RSProperty<bool>, bool>(
+        RSModifierType::CLIP_TO_FRAME, false, true);
+    SetPropertyTest<RSVisibleModifier, RSProperty<bool>, bool>(
+        RSModifierType::VISIBLE, false, true);
+    SetPropertyTest<RSMaskModifier, RSProperty<std::shared_ptr<RSMask>>, std::shared_ptr<RSMask>>(
+        RSModifierType::MASK, std::make_shared<RSMask>(), nullptr);
+}
+
+/**
+ * @tc.name: SetModifier01
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSNodeOneTest, SetModifier01, TestSize.Level1)
+{
+    RSSurfaceNodeConfig surfaceNodeConfig;
+    auto node = RSSurfaceNode::Create(surfaceNodeConfig, false);
+    auto value = Vector4f(10.f);
+    auto prop = std::make_shared<RSAnimatableProperty<Vector4f>>(value);
+    auto modifier = std::make_shared<RSBoundsModifier>(prop);
+
+    node->AddModifier(nullptr);
+    node->RemoveModifier(modifier);
+    node->AddModifier(modifier);
+    ASSERT_TRUE(node != nullptr);
+    ASSERT_EQ(node->GetStagingProperties().GetBounds(), value);
+    node->AddModifier(modifier);
+    node->RemoveModifier(modifier);
 }
 
 } // namespace OHOS::Rosen
