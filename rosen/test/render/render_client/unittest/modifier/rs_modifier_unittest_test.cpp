@@ -898,4 +898,889 @@ HWTEST_F(RsModifiersTest, BackgroundShaderModifier01, TestSize.Level1)
     ASSERT_EQ(node->GetStagingProperties().GetBackgroundShader(), node1->GetStagingProperties().GetBackgroundShader());
 }
 
+/**
+ * @tc.name: BackgroundShaderModifier02
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RsModifiersTest, BackgroundShaderModifier02, TestSize.Level1)
+{
+    std::shared_ptr<RSShader> val = nullptr;
+    auto prop = std::make_shared<RSProperty<std::shared_ptr<RSShader>>>(val);
+    auto modifier = std::make_shared<RSBackgroundShaderModifier>(prop);
+
+    auto node = RSCanvasNode::Create();
+    node->AddModifier(modifier);
+    ASSERT_TRUE(node != nullptr);
+    ASSERT_EQ(node->GetStagingProperties().GetBackgroundShader(), val);
+
+    val = RSShader::CreateRSShader();
+    prop->Set(val);
+    ASSERT_EQ(node->GetStagingProperties().GetBackgroundShader(), val);
+}
+
+/**
+ * @tc.name: BgImageModifier01
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RsModifiersTest, BgImageModifier01, TestSize.Level1)
+{
+    auto val = std::make_shared<RSImage>();
+    auto prop = std::make_shared<RSProperty<std::shared_ptr<RSImage>>>(val);
+    auto modifier = std::make_shared<RSBgImageModifier>(prop);
+
+    auto node = RSCanvasNode::Create();
+    node->AddModifier(modifier);
+    ASSERT_TRUE(node != nullptr);
+    ASSERT_EQ(node->GetStagingProperties().GetBgImage(), val);
+
+    node->RemoveModifier(modifier);
+    auto node1 = RSCanvasNode::Create();
+    ASSERT_EQ(node->GetStagingProperties().GetBgImage(), node1->GetStagingProperties().GetBgImage());
+}
+
+/**
+ * @tc.name: BgImageModifier02
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RsModifiersTest, BgImageModifier02, TestSize.Level1)
+{
+    std::shared_ptr<RSImage> val = nullptr;
+    auto prop = std::make_shared<RSProperty<std::shared_ptr<RSImage>>>(val);
+    auto modifier = std::make_shared<RSBgImageModifier>(prop);
+
+    auto node = RSCanvasNode::Create();
+    node->AddModifier(modifier);
+    ASSERT_TRUE(node != nullptr);
+    ASSERT_EQ(node->GetStagingProperties().GetBgImage(), val);
+
+    val = std::make_shared<RSImage>();
+    prop->Set(val);
+    ASSERT_EQ(node->GetStagingProperties().GetBgImage(), val);
+}
+
+/**
+ * @tc.name: BgImageWidthModifier01
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RsModifiersTest, BgImageWidthModifier01, TestSize.Level1)
+{
+    auto val = 20.f;
+    auto prop = std::make_shared<RSAnimatableProperty<float>>(val);
+    auto modifier = std::make_shared<RSBgImageWidthModifier>(prop);
+
+    auto node = RSCanvasNode::Create();
+    node->AddModifier(modifier);
+    ASSERT_TRUE(node != nullptr);
+    ASSERT_EQ(node->GetStagingProperties().GetBgImageWidth(), val);
+
+    node->RemoveModifier(modifier);
+    auto node1 = RSCanvasNode::Create();
+    ASSERT_EQ(node->GetStagingProperties().GetBgImageWidth(), node1->GetStagingProperties().GetBgImageWidth());
+}
+
+/**
+ * @tc.name: BgImageWidthModifier02
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RsModifiersTest, BgImageWidthModifier02, TestSize.Level1)
+{
+    auto val = 0.f;
+    auto prop = std::make_shared<RSAnimatableProperty<float>>(val);
+    auto modifier = std::make_shared<RSBgImageWidthModifier>(prop);
+
+    auto node = RSCanvasNode::Create();
+    node->AddModifier(modifier);
+    ASSERT_TRUE(node != nullptr);
+    ASSERT_EQ(node->GetStagingProperties().GetBgImageWidth(), val);
+
+    val = -10.f;
+    prop->Set(val);
+    ASSERT_EQ(node->GetStagingProperties().GetBgImageWidth(), val);
+}
+
+/**
+ * @tc.name: BgImageHeightModifier01
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RsModifiersTest, BgImageHeightModifier01, TestSize.Level1)
+{
+    auto val = 20.f;
+    auto prop = std::make_shared<RSAnimatableProperty<float>>(val);
+    auto modifier = std::make_shared<RSBgImageHeightModifier>(prop);
+
+    auto node = RSCanvasNode::Create();
+    node->AddModifier(modifier);
+    ASSERT_TRUE(node != nullptr);
+    ASSERT_EQ(node->GetStagingProperties().GetBgImageHeight(), val);
+
+    node->RemoveModifier(modifier);
+    auto node1 = RSCanvasNode::Create();
+    ASSERT_EQ(node->GetStagingProperties().GetBgImageHeight(), node1->GetStagingProperties().GetBgImageHeight());
+}
+
+/**
+ * @tc.name: BgImageHeightModifier02
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RsModifiersTest, BgImageHeightModifier02, TestSize.Level1)
+{
+    auto val = 0.f;
+    auto prop = std::make_shared<RSAnimatableProperty<float>>(val);
+    auto modifier = std::make_shared<RSBgImageHeightModifier>(prop);
+
+    auto node = RSCanvasNode::Create();
+    node->AddModifier(modifier);
+    ASSERT_TRUE(node != nullptr);
+    ASSERT_EQ(node->GetStagingProperties().GetBgImageHeight(), val);
+
+    val = -10.f;
+    prop->Set(val);
+    ASSERT_EQ(node->GetStagingProperties().GetBgImageHeight(), val);
+}
+
+/**
+ * @tc.name: BgImagePositionXModifier01
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RsModifiersTest, BgImagePositionXModifier01, TestSize.Level1)
+{
+    auto val = 20.f;
+    auto prop = std::make_shared<RSAnimatableProperty<float>>(val);
+    auto modifier = std::make_shared<RSBgImagePositionXModifier>(prop);
+
+    auto node = RSCanvasNode::Create();
+    node->AddModifier(modifier);
+    ASSERT_TRUE(node != nullptr);
+    ASSERT_EQ(node->GetStagingProperties().GetBgImagePositionX(), val);
+
+    node->RemoveModifier(modifier);
+    auto node1 = RSCanvasNode::Create();
+    ASSERT_EQ(node->GetStagingProperties().GetBgImagePositionX(), node1->GetStagingProperties().GetBgImagePositionX());
+}
+
+/**
+ * @tc.name: BgImagePositionXModifier02
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RsModifiersTest, BgImagePositionXModifier02, TestSize.Level1)
+{
+    auto val = 0.f;
+    auto prop = std::make_shared<RSAnimatableProperty<float>>(val);
+    auto modifier = std::make_shared<RSBgImagePositionXModifier>(prop);
+
+    auto node = RSCanvasNode::Create();
+    node->AddModifier(modifier);
+    ASSERT_TRUE(node != nullptr);
+    ASSERT_EQ(node->GetStagingProperties().GetBgImagePositionX(), val);
+
+    val = -10.f;
+    prop->Set(val);
+    ASSERT_EQ(node->GetStagingProperties().GetBgImagePositionX(), val);
+}
+
+/**
+ * @tc.name: BgImagePositionYModifier01
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RsModifiersTest, BgImagePositionYModifier01, TestSize.Level1)
+{
+    auto val = 20.f;
+    auto prop = std::make_shared<RSAnimatableProperty<float>>(val);
+    auto modifier = std::make_shared<RSBgImagePositionYModifier>(prop);
+
+    auto node = RSCanvasNode::Create();
+    node->AddModifier(modifier);
+    ASSERT_TRUE(node != nullptr);
+    ASSERT_EQ(node->GetStagingProperties().GetBgImagePositionY(), val);
+
+    node->RemoveModifier(modifier);
+    auto node1 = RSCanvasNode::Create();
+    ASSERT_EQ(node->GetStagingProperties().GetBgImagePositionY(), node1->GetStagingProperties().GetBgImagePositionY());
+}
+
+/**
+ * @tc.name: BgImagePositionYModifier02
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RsModifiersTest, BgImagePositionYModifier02, TestSize.Level1)
+{
+    auto val = 0.f;
+    auto prop = std::make_shared<RSAnimatableProperty<float>>(val);
+    auto modifier = std::make_shared<RSBgImagePositionYModifier>(prop);
+
+    auto node = RSCanvasNode::Create();
+    node->AddModifier(modifier);
+    ASSERT_TRUE(node != nullptr);
+    ASSERT_EQ(node->GetStagingProperties().GetBgImagePositionY(), val);
+
+    val = -10.f;
+    prop->Set(val);
+    ASSERT_EQ(node->GetStagingProperties().GetBgImagePositionY(), val);
+}
+
+/**
+ * @tc.name: BorderColorModifier01
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RsModifiersTest, BorderColorModifier01, TestSize.Level1)
+{
+    auto val = Vector4<Color>(RgbPalette::Black());
+    auto prop = std::make_shared<RSAnimatableProperty<Vector4<Color>>>(val);
+    auto modifier = std::make_shared<RSBorderColorModifier>(prop);
+
+    auto node = RSCanvasNode::Create();
+    node->AddModifier(modifier);
+    ASSERT_TRUE(node != nullptr);
+    ASSERT_EQ(node->GetStagingProperties().GetBorderColor(), val);
+
+    node->RemoveModifier(modifier);
+    auto node1 = RSCanvasNode::Create();
+    ASSERT_EQ(node->GetStagingProperties().GetBorderColor(), node1->GetStagingProperties().GetBorderColor());
+}
+
+/**
+ * @tc.name: BorderColorModifier02
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RsModifiersTest, BorderColorModifier02, TestSize.Level1)
+{
+    auto val = Vector4<Color>(RgbPalette::Transparent());
+    auto prop = std::make_shared<RSAnimatableProperty<Vector4<Color>>>(val);
+    auto modifier = std::make_shared<RSBorderColorModifier>(prop);
+
+    auto node = RSCanvasNode::Create();
+    node->AddModifier(modifier);
+    ASSERT_TRUE(node != nullptr);
+    ASSERT_EQ(node->GetStagingProperties().GetBorderColor(), val);
+
+    val = Vector4<Color>(RgbPalette::Transparent(), RgbPalette::Red(), RgbPalette::Green(), RgbPalette::Blue());
+    prop->Set(val);
+    ASSERT_EQ(node->GetStagingProperties().GetBorderColor(), val);
+}
+
+/**
+ * @tc.name: BorderWidthModifier01
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RsModifiersTest, BorderWidthModifier01, TestSize.Level1)
+{
+    auto val = Vector4f(10.f, 10.f, 20.f, 30.f);
+    auto prop = std::make_shared<RSAnimatableProperty<Vector4f>>(val);
+    auto modifier = std::make_shared<RSBorderWidthModifier>(prop);
+
+    auto node = RSCanvasNode::Create();
+    node->AddModifier(modifier);
+    ASSERT_TRUE(node != nullptr);
+    ASSERT_EQ(node->GetStagingProperties().GetBorderWidth(), val);
+
+    node->RemoveModifier(modifier);
+    auto node1 = RSCanvasNode::Create();
+    ASSERT_EQ(node->GetStagingProperties().GetBorderWidth(), node1->GetStagingProperties().GetBorderWidth());
+}
+
+/**
+ * @tc.name: BorderWidthModifier02
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RsModifiersTest, BorderWidthModifier02, TestSize.Level1)
+{
+    auto val = Vector4f();
+    auto prop = std::make_shared<RSAnimatableProperty<Vector4f>>(val);
+    auto modifier = std::make_shared<RSBorderWidthModifier>(prop);
+
+    auto node = RSCanvasNode::Create();
+    node->AddModifier(modifier);
+    ASSERT_TRUE(node != nullptr);
+    ASSERT_EQ(node->GetStagingProperties().GetBorderWidth(), val);
+
+    val = Vector4f(-10.f);
+    prop->Set(val);
+    ASSERT_EQ(node->GetStagingProperties().GetBorderWidth(), val);
+}
+
+/**
+ * @tc.name: BorderStyleModifier01
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RsModifiersTest, BorderStyleModifier01, TestSize.Level1)
+{
+    auto val = Vector4<uint32_t>(static_cast<uint32_t>(BorderStyle::SOLID));
+    auto prop = std::make_shared<RSProperty<Vector4<uint32_t>>>(val);
+    auto modifier = std::make_shared<RSBorderStyleModifier>(prop);
+
+    auto node = RSCanvasNode::Create();
+    node->AddModifier(modifier);
+    ASSERT_TRUE(node != nullptr);
+    ASSERT_EQ(node->GetStagingProperties().GetBorderStyle(), val);
+
+    node->RemoveModifier(modifier);
+    auto node1 = RSCanvasNode::Create();
+    ASSERT_EQ(node->GetStagingProperties().GetBorderStyle(), node1->GetStagingProperties().GetBorderStyle());
+}
+
+/**
+ * @tc.name: BorderStyleModifier02
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RsModifiersTest, BorderStyleModifier02, TestSize.Level1)
+{
+    auto val = Vector4<uint32_t>(static_cast<uint32_t>(BorderStyle::NONE));
+    auto prop = std::make_shared<RSProperty<Vector4<uint32_t>>>(val);
+    auto modifier = std::make_shared<RSBorderStyleModifier>(prop);
+
+    auto node = RSCanvasNode::Create();
+    node->AddModifier(modifier);
+    ASSERT_TRUE(node != nullptr);
+    ASSERT_EQ(node->GetStagingProperties().GetBorderStyle(), val);
+
+    val = Vector4<uint32_t>(static_cast<uint32_t>(BorderStyle::DOTTED));
+    prop->Set(val);
+    ASSERT_EQ(node->GetStagingProperties().GetBorderStyle(), val);
+}
+
+/**
+ * @tc.name: FilterModifier01
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RsModifiersTest, FilterModifier01, TestSize.Level1)
+{
+    auto val = RSFilter::CreateBlurFilter(10.f, 10.f);
+    auto prop = std::make_shared<RSAnimatableProperty<std::shared_ptr<RSFilter>>>(val);
+    auto modifier = std::make_shared<RSFilterModifier>(prop);
+
+    auto node = RSCanvasNode::Create();
+    node->AddModifier(modifier);
+    ASSERT_TRUE(node != nullptr);
+    ASSERT_EQ(node->GetStagingProperties().GetFilter(), val);
+
+    node->RemoveModifier(modifier);
+    auto node1 = RSCanvasNode::Create();
+    ASSERT_EQ(node->GetStagingProperties().GetFilter(), node1->GetStagingProperties().GetFilter());
+}
+
+/**
+ * @tc.name: FilterModifier02
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RsModifiersTest, FilterModifier02, TestSize.Level1)
+{
+    std::shared_ptr<RSFilter> val = nullptr;
+    auto prop = std::make_shared<RSAnimatableProperty<std::shared_ptr<RSFilter>>>(val);
+    auto modifier = std::make_shared<RSFilterModifier>(prop);
+
+    auto node = RSCanvasNode::Create();
+    node->AddModifier(modifier);
+    ASSERT_TRUE(node != nullptr);
+    ASSERT_EQ(node->GetStagingProperties().GetFilter(), val);
+
+    val = RSFilter::CreateBlurFilter(20.f, 30.f);
+    prop->Set(val);
+    ASSERT_EQ(node->GetStagingProperties().GetFilter(), val);
+}
+
+/**
+ * @tc.name: BackgroundFilterModifier01
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RsModifiersTest, BackgroundFilterModifier01, TestSize.Level1)
+{
+    auto val = RSFilter::CreateBlurFilter(10.f, 10.f);
+    auto prop = std::make_shared<RSAnimatableProperty<std::shared_ptr<RSFilter>>>(val);
+    auto modifier = std::make_shared<RSBackgroundFilterModifier>(prop);
+
+    auto node = RSCanvasNode::Create();
+    node->AddModifier(modifier);
+    ASSERT_TRUE(node != nullptr);
+    ASSERT_EQ(node->GetStagingProperties().GetBackgroundFilter(), val);
+
+    node->RemoveModifier(modifier);
+    auto node1 = RSCanvasNode::Create();
+    ASSERT_EQ(node->GetStagingProperties().GetBackgroundFilter(), node1->GetStagingProperties().GetBackgroundFilter());
+}
+
+/**
+ * @tc.name: BackgroundFilterModifier02
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RsModifiersTest, BackgroundFilterModifier02, TestSize.Level1)
+{
+    std::shared_ptr<RSFilter> val = nullptr;
+    auto prop = std::make_shared<RSAnimatableProperty<std::shared_ptr<RSFilter>>>(val);
+    auto modifier = std::make_shared<RSBackgroundFilterModifier>(prop);
+
+    auto node = RSCanvasNode::Create();
+    node->AddModifier(modifier);
+    ASSERT_TRUE(node != nullptr);
+    ASSERT_EQ(node->GetStagingProperties().GetBackgroundFilter(), val);
+
+    val = RSFilter::CreateBlurFilter(20.f, 30.f);
+    prop->Set(val);
+    ASSERT_EQ(node->GetStagingProperties().GetBackgroundFilter(), val);
+}
+
+/**
+ * @tc.name: FrameGravityModifier01
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RsModifiersTest, FrameGravityModifier01, TestSize.Level1)
+{
+    auto val = Gravity::CENTER;
+    auto prop = std::make_shared<RSProperty<Gravity>>(val);
+    auto modifier = std::make_shared<RSFrameGravityModifier>(prop);
+
+    auto node = RSCanvasNode::Create();
+    node->AddModifier(modifier);
+    ASSERT_TRUE(node != nullptr);
+    ASSERT_EQ(node->GetStagingProperties().GetFrameGravity(), val);
+
+    node->RemoveModifier(modifier);
+    auto node1 = RSCanvasNode::Create();
+    ASSERT_EQ(node->GetStagingProperties().GetFrameGravity(), node1->GetStagingProperties().GetFrameGravity());
+}
+
+/**
+ * @tc.name: FrameGravityModifier02
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RsModifiersTest, FrameGravityModifier02, TestSize.Level1)
+{
+    auto val = Gravity::DEFAULT;
+    auto prop = std::make_shared<RSProperty<Gravity>>(val);
+    auto modifier = std::make_shared<RSFrameGravityModifier>(prop);
+
+    auto node = RSCanvasNode::Create();
+    node->AddModifier(modifier);
+    ASSERT_TRUE(node != nullptr);
+    ASSERT_EQ(node->GetStagingProperties().GetFrameGravity(), val);
+
+    val = Gravity::RESIZE_ASPECT;
+    prop->Set(val);
+    ASSERT_EQ(node->GetStagingProperties().GetFrameGravity(), val);
+}
+
+/**
+ * @tc.name: ClipBoundsModifier01
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RsModifiersTest, ClipBoundsModifier01, TestSize.Level1)
+{
+    auto val = RSPath::CreateRSPath();
+    auto prop = std::make_shared<RSProperty<std::shared_ptr<RSPath>>>(val);
+    auto modifier = std::make_shared<RSClipBoundsModifier>(prop);
+
+    auto node = RSCanvasNode::Create();
+    node->AddModifier(modifier);
+    ASSERT_TRUE(node != nullptr);
+    ASSERT_EQ(node->GetStagingProperties().GetClipBounds(), val);
+
+    node->RemoveModifier(modifier);
+    auto node1 = RSCanvasNode::Create();
+    ASSERT_EQ(node->GetStagingProperties().GetClipBounds(), node1->GetStagingProperties().GetClipBounds());
+}
+
+/**
+ * @tc.name: ClipBoundsModifier02
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RsModifiersTest, ClipBoundsModifier02, TestSize.Level1)
+{
+    std::shared_ptr<RSPath> val = nullptr;
+    auto prop = std::make_shared<RSProperty<std::shared_ptr<RSPath>>>(val);
+    auto modifier = std::make_shared<RSClipBoundsModifier>(prop);
+
+    auto node = RSCanvasNode::Create();
+    node->AddModifier(modifier);
+    ASSERT_TRUE(node != nullptr);
+    ASSERT_EQ(node->GetStagingProperties().GetClipBounds(), val);
+
+    val = RSPath::CreateRSPath();
+    prop->Set(val);
+    ASSERT_EQ(node->GetStagingProperties().GetClipBounds(), val);
+}
+
+/**
+ * @tc.name: ClipToBoundsModifier01
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RsModifiersTest, ClipToBoundsModifier01, TestSize.Level1)
+{
+    auto val = true;
+    auto prop = std::make_shared<RSProperty<bool>>(val);
+    auto modifier = std::make_shared<RSClipToBoundsModifier>(prop);
+
+    auto node = RSCanvasNode::Create();
+    node->AddModifier(modifier);
+    ASSERT_TRUE(node != nullptr);
+    ASSERT_EQ(node->GetStagingProperties().GetClipToBounds(), val);
+
+    node->RemoveModifier(modifier);
+    auto node1 = RSCanvasNode::Create();
+    ASSERT_EQ(node->GetStagingProperties().GetClipToBounds(), node1->GetStagingProperties().GetClipToBounds());
+}
+
+/**
+ * @tc.name: ClipToBoundsModifier02
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RsModifiersTest, ClipToBoundsModifier02, TestSize.Level1)
+{
+    auto val = false;
+    auto prop = std::make_shared<RSProperty<bool>>(val);
+    auto modifier = std::make_shared<RSClipToBoundsModifier>(prop);
+
+    auto node = RSCanvasNode::Create();
+    node->AddModifier(modifier);
+    ASSERT_TRUE(node != nullptr);
+    ASSERT_EQ(node->GetStagingProperties().GetClipToBounds(), val);
+
+    val = true;
+    prop->Set(val);
+    ASSERT_EQ(node->GetStagingProperties().GetClipToBounds(), val);
+}
+
+/**
+ * @tc.name: VisibleModifier01
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RsModifiersTest, VisibleModifier01, TestSize.Level1)
+{
+    auto val = false;
+    auto prop = std::make_shared<RSProperty<bool>>(val);
+    auto modifier = std::make_shared<RSVisibleModifier>(prop);
+
+    auto node = RSCanvasNode::Create();
+    node->AddModifier(modifier);
+    ASSERT_TRUE(node != nullptr);
+    ASSERT_EQ(node->GetStagingProperties().GetVisible(), val);
+
+    node->RemoveModifier(modifier);
+    auto node1 = RSCanvasNode::Create();
+    ASSERT_EQ(node->GetStagingProperties().GetVisible(), node1->GetStagingProperties().GetVisible());
+}
+
+/**
+ * @tc.name: VisibleModifier02
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RsModifiersTest, VisibleModifier02, TestSize.Level1)
+{
+    auto val = true;
+    auto prop = std::make_shared<RSProperty<bool>>(val);
+    auto modifier = std::make_shared<RSVisibleModifier>(prop);
+
+    auto node = RSCanvasNode::Create();
+    node->AddModifier(modifier);
+    ASSERT_TRUE(node != nullptr);
+    ASSERT_EQ(node->GetStagingProperties().GetVisible(), val);
+    auto str = node->GetStagingProperties().Dump();
+
+    val = false;
+    prop->Set(val);
+    ASSERT_EQ(node->GetStagingProperties().GetVisible(), val);
+    str = node->GetStagingProperties().Dump();
+}
+
+/**
+ * @tc.name: ShadowColorModifier01
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RsModifiersTest, ShadowColorModifier01, TestSize.Level1)
+{
+    auto val = RgbPalette::Black();
+    auto prop = std::make_shared<RSAnimatableProperty<Color>>(val);
+    auto modifier = std::make_shared<RSShadowColorModifier>(prop);
+
+    auto node = RSCanvasNode::Create();
+    node->AddModifier(modifier);
+    ASSERT_TRUE(node != nullptr);
+    ASSERT_EQ(node->GetStagingProperties().GetShadowColor(), val);
+
+    node->RemoveModifier(modifier);
+    auto node1 = RSCanvasNode::Create();
+    ASSERT_EQ(node->GetStagingProperties().GetShadowColor(), node1->GetStagingProperties().GetShadowColor());
+}
+
+/**
+ * @tc.name: ShadowColorModifier02
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RsModifiersTest, ShadowColorModifier02, TestSize.Level1)
+{
+    auto val = Color::FromArgbInt(DEFAULT_SPOT_COLOR);
+    auto prop = std::make_shared<RSAnimatableProperty<Color>>(val);
+    auto modifier = std::make_shared<RSShadowColorModifier>(prop);
+
+    auto node = RSCanvasNode::Create();
+    node->AddModifier(modifier);
+    ASSERT_TRUE(node != nullptr);
+    ASSERT_EQ(node->GetStagingProperties().GetShadowColor(), val);
+
+    val = RgbPalette::Red();
+    prop->Set(val);
+    ASSERT_EQ(node->GetStagingProperties().GetShadowColor(), val);
+}
+
+/**
+ * @tc.name: ClipToFrameModifier01
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RsModifiersTest, ClipToFrameModifier01, TestSize.Level1)
+{
+    auto val = true;
+    auto prop = std::make_shared<RSProperty<bool>>(val);
+    auto modifier = std::make_shared<RSClipToFrameModifier>(prop);
+
+    auto node = RSCanvasNode::Create();
+    node->AddModifier(modifier);
+    ASSERT_TRUE(node != nullptr);
+    ASSERT_EQ(node->GetStagingProperties().GetClipToFrame(), val);
+
+    node->RemoveModifier(modifier);
+    auto node1 = RSCanvasNode::Create();
+    ASSERT_EQ(node->GetStagingProperties().GetClipToFrame(), node1->GetStagingProperties().GetClipToFrame());
+}
+
+/**
+ * @tc.name: ClipToFrameModifier02
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RsModifiersTest, ClipToFrameModifier02, TestSize.Level1)
+{
+    auto val = false;
+    auto prop = std::make_shared<RSProperty<bool>>(val);
+    auto modifier = std::make_shared<RSClipToFrameModifier>(prop);
+
+    auto node = RSCanvasNode::Create();
+    node->AddModifier(modifier);
+    ASSERT_TRUE(node != nullptr);
+    ASSERT_EQ(node->GetStagingProperties().GetClipToFrame(), val);
+
+    val = true;
+    prop->Set(val);
+    ASSERT_EQ(node->GetStagingProperties().GetClipToFrame(), val);
+}
+
+/**
+ * @tc.name: ShadowOffsetXModifier01
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RsModifiersTest, ShadowOffsetXModifier01, TestSize.Level1)
+{
+    auto val = 5.f;
+    auto prop = std::make_shared<RSAnimatableProperty<float>>(val);
+    auto modifier = std::make_shared<RSShadowOffsetXModifier>(prop);
+
+    auto node = RSCanvasNode::Create();
+    node->AddModifier(modifier);
+    ASSERT_TRUE(node != nullptr);
+    ASSERT_EQ(node->GetStagingProperties().GetShadowOffsetX(), val);
+
+    node->RemoveModifier(modifier);
+    auto node1 = RSCanvasNode::Create();
+    ASSERT_EQ(node->GetStagingProperties().GetShadowOffsetX(), node1->GetStagingProperties().GetShadowOffsetX());
+}
+
+/**
+ * @tc.name: ShadowOffsetXModifier02
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RsModifiersTest, ShadowOffsetXModifier02, TestSize.Level1)
+{
+    auto val = 0.f;
+    auto prop = std::make_shared<RSAnimatableProperty<float>>(val);
+    auto modifier = std::make_shared<RSShadowOffsetXModifier>(prop);
+
+    auto node = RSCanvasNode::Create();
+    node->AddModifier(modifier);
+    ASSERT_TRUE(node != nullptr);
+    ASSERT_EQ(node->GetStagingProperties().GetShadowOffsetX(), val);
+
+    val = -1.f;
+    prop->Set(val);
+    ASSERT_EQ(node->GetStagingProperties().GetShadowOffsetX(), val);
+}
+
+/**
+ * @tc.name: ShadowOffsetYModifier01
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RsModifiersTest, ShadowOffsetYModifier01, TestSize.Level1)
+{
+    auto val = 5.f;
+    auto prop = std::make_shared<RSAnimatableProperty<float>>(val);
+    auto modifier = std::make_shared<RSShadowOffsetYModifier>(prop);
+
+    auto node = RSCanvasNode::Create();
+    node->AddModifier(modifier);
+    ASSERT_TRUE(node != nullptr);
+    ASSERT_EQ(prop->Get(), val);
+    ASSERT_EQ(node->GetStagingProperties().GetShadowOffsetY(), val);
+
+    node->RemoveModifier(modifier);
+    auto node1 = RSCanvasNode::Create();
+    ASSERT_EQ(node->GetStagingProperties().GetShadowOffsetY(), node1->GetStagingProperties().GetShadowOffsetY());
+}
+
+/**
+ * @tc.name: ShadowOffsetYModifier02
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RsModifiersTest, ShadowOffsetYModifier02, TestSize.Level1)
+{
+    auto val = 0.f;
+    auto prop = std::make_shared<RSAnimatableProperty<float>>(val);
+    auto modifier = std::make_shared<RSShadowOffsetYModifier>(prop);
+
+    auto node = RSCanvasNode::Create();
+    node->AddModifier(modifier);
+    ASSERT_TRUE(node != nullptr);
+    ASSERT_EQ(node->GetStagingProperties().GetShadowOffsetY(), val);
+
+    val = -1.f;
+    prop->Set(val);
+    ASSERT_EQ(node->GetStagingProperties().GetShadowOffsetY(), val);
+}
+
+/**
+ * @tc.name: ShadowAlphaModifier01
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RsModifiersTest, ShadowAlphaModifier01, TestSize.Level1)
+{
+    auto val = 0.8f;
+    auto prop = std::make_shared<RSAnimatableProperty<float>>(val);
+    auto modifier = std::make_shared<RSShadowAlphaModifier>(prop);
+
+    auto node = RSCanvasNode::Create();
+    node->AddModifier(modifier);
+    ASSERT_TRUE(node != nullptr);
+    ASSERT_EQ(node->GetStagingProperties().GetShadowAlpha(), val);
+
+    node->RemoveModifier(modifier);
+    auto node1 = RSCanvasNode::Create();
+    ASSERT_EQ(node->GetStagingProperties().GetShadowAlpha(), node1->GetStagingProperties().GetShadowAlpha());
+}
+
+/**
+ * @tc.name: ShadowAlphaModifier02
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RsModifiersTest, ShadowAlphaModifier02, TestSize.Level1)
+{
+    auto val = 0.f;
+    auto prop = std::make_shared<RSAnimatableProperty<float>>(val);
+    auto modifier = std::make_shared<RSShadowAlphaModifier>(prop);
+
+    auto node = RSCanvasNode::Create();
+    node->AddModifier(modifier);
+    ASSERT_TRUE(node != nullptr);
+    ASSERT_EQ(node->GetStagingProperties().GetShadowAlpha(), val);
+
+    val = -0.2f;
+    prop->Set(val);
+    ASSERT_EQ(node->GetStagingProperties().GetShadowAlpha(), val);
+}
+
+/**
+ * @tc.name: ShadowElevationModifier01
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RsModifiersTest, ShadowElevationModifier01, TestSize.Level1)
+{
+    auto val = 5.f;
+    auto prop = std::make_shared<RSAnimatableProperty<float>>(val);
+    auto modifier = std::make_shared<RSShadowElevationModifier>(prop);
+
+    auto node = RSCanvasNode::Create();
+    node->AddModifier(modifier);
+    ASSERT_TRUE(node != nullptr);
+    ASSERT_EQ(node->GetStagingProperties().GetShadowElevation(), val);
+
+    node->RemoveModifier(modifier);
+    auto node1 = RSCanvasNode::Create();
+    ASSERT_EQ(node->GetStagingProperties().GetShadowElevation(), node1->GetStagingProperties().GetShadowElevation());
+}
+
+/**
+ * @tc.name: ShadowElevationModifier02
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RsModifiersTest, ShadowElevationModifier02, TestSize.Level1)
+{
+    auto val = 0.f;
+    auto prop = std::make_shared<RSAnimatableProperty<float>>(val);
+    auto modifier = std::make_shared<RSShadowElevationModifier>(prop);
+
+    auto node = RSCanvasNode::Create();
+    node->AddModifier(modifier);
+    ASSERT_TRUE(node != nullptr);
+    ASSERT_EQ(node->GetStagingProperties().GetShadowElevation(), val);
+
+    val = -1.f;
+    prop->Set(val);
+    ASSERT_EQ(node->GetStagingProperties().GetShadowElevation(), val);
+}
+
+/**
+ * @tc.name: ShadowRadiusModifier01
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RsModifiersTest, ShadowRadiusModifier01, TestSize.Level1)
+{
+    auto val = 10.f;
+    auto prop = std::make_shared<RSAnimatableProperty<float>>(val);
+    auto modifier = std::make_shared<RSShadowRadiusModifier>(prop);
+
+    auto node = RSCanvasNode::Create();
+    node->AddModifier(modifier);
+    ASSERT_TRUE(node != nullptr);
+    ASSERT_EQ(node->GetStagingProperties().GetShadowRadius(), val);
+
+    node->RemoveModifier(modifier);
+    auto node1 = RSCanvasNode::Create();
+    ASSERT_EQ(node->GetStagingProperties().GetShadowRadius(), node1->GetStagingProperties().GetShadowRadius());
+}
+
 } // namespace OHOS::Rosen
