@@ -314,16 +314,18 @@ bool RSTransactionData::IsCallingPidValid(pid_t callingPid, const RSRenderNodeMa
         }
         const NodeId nodeId = command->GetNodeId();
         const pid_t commandPid = ExtractPid(nodeId);
-        bool isSystemCallingForDisplayNode = false;
+        bool isNotSystemCallingForDisplayNode = false;
         if (command->GetType() == RSCommandType::DISPLAY_NODE) {
             bool isTokenTypeValid = true;
-            RSInterfaceCodeAccessVerifierBase::GetAccessType(isTokenTypeValid, isSystemCallingForDisplayNode);
+            RSInterfaceCodeAccessVerifierBase::GetAccessType(isTokenTypeValid, isNotSystemCallingForDisplayNode);
         }
-        if (!isSystemCallingForDisplayNode && callingPid == commandPid) {
-            continue;
-        }
-        if (!isSystemCallingForDisplayNode && nodeMap.IsUIExtensionSurfaceNode(nodeId)) {
-            continue;
+        if (!isNotSystemCallingForDisplayNode) {
+            if (callingPid == commandPid) {
+                continue;
+            }
+            if (nodeMap.IsUIExtensionSurfaceNode(nodeId)) {
+                continue;
+            }
         }
         conflictPidToCommandMap[commandPid][nodeId].insert(command->GetUniqueType());
         command->SetCallingPidValid(false);
