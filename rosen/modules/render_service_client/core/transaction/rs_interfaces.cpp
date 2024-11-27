@@ -627,6 +627,10 @@ int32_t RSInterfaces::UnRegisterHgmRefreshRateUpdateCallback()
 int32_t RSInterfaces::RegisterFrameRateLinkerExpectedFpsUpdateCallback(uint32_t dstPid,
     const FrameRateLinkerExpectedFpsUpdateCallback& callback)
 {
+    if (callback == nullptr) {
+        ROSEN_LOGE("RSInterfaces::RegisterFrameRateLinkerExpectedFpsUpdateCallback callback == nullptr.");
+        return INVALID_ARGUMENTS;
+    }
     return renderServiceClient_->RegisterFrameRateLinkerExpectedFpsUpdateCallback(dstPid, callback);
 }
 
