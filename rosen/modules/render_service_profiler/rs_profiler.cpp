@@ -1104,7 +1104,10 @@ void RSProfiler::Reset(const ArgList& args)
 
     Utils::FileDelete(RSFile::GetDefaultPath());
 
-    Respond("Reset");
+    SendMessage("Reset");
+
+    RSSystemProperties::SetProfilerDisabled();
+    HRPI("Reset: persist.graphic.profiler.enabled 0");
 }
 
 void RSProfiler::DumpSystemParameters(const ArgList& args)

@@ -16,6 +16,7 @@
 #ifndef RS_PROFILER_NETWORK_H
 #define RS_PROFILER_NETWORK_H
 
+#include <chrono>
 #include <queue>
 #include <mutex>
 #include <string>
@@ -28,12 +29,6 @@ class Packet;
 class Socket;
 class RSCaptureData;
 enum class PackageID;
-
-struct NetworkStats {
-    std::string interface;
-    uint64_t receivedBytes = 0u;
-    uint64_t transmittedBytes = 0u;
-};
 
 class Network {
 public:
@@ -73,11 +68,14 @@ private:
     static void SendPacket(const Packet& packet);
     static void ResetSendQueue();
     static void Shutdown(Socket*& socket);
+    static void Ping(Socket& socket);
+    static void ResetPing();
 
 private:
     static std::atomic<bool> isRunning_;
     static std::atomic<bool> forceShutdown_;
     static std::atomic<bool> blockBinary_;
+    static std::chrono::steady_clock::time_point ping_;
 
     static std::mutex incomingMutex_;
     static std::queue<std::vector<std::string>> incoming_;
