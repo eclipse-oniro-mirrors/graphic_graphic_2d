@@ -1783,4 +1783,204 @@ HWTEST_F(RsModifiersTest, ShadowRadiusModifier01, TestSize.Level1)
     ASSERT_EQ(node->GetStagingProperties().GetShadowRadius(), node1->GetStagingProperties().GetShadowRadius());
 }
 
+/**
+ * @tc.name: ShadowRadiusModifier02
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RsModifiersTest, ShadowRadiusModifier02, TestSize.Level1)
+{
+    auto val = 0.f;
+    auto prop = std::make_shared<RSAnimatableProperty<float>>(val);
+    auto modifier = std::make_shared<RSShadowRadiusModifier>(prop);
+
+    auto node = RSCanvasNode::Create();
+    node->AddModifier(modifier);
+    ASSERT_TRUE(node != nullptr);
+    ASSERT_EQ(node->GetStagingProperties().GetShadowRadius(), val);
+
+    val = -10.f;
+    prop->Set(val);
+    ASSERT_EQ(node->GetStagingProperties().GetShadowRadius(), val);
+}
+
+/**
+ * @tc.name: ShadowPathModifier01
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RsModifiersTest, ShadowPathModifier01, TestSize.Level1)
+{
+    auto val = RSPath::CreateRSPath();
+    auto prop = std::make_shared<RSProperty<std::shared_ptr<RSPath>>>(val);
+    auto modifier = std::make_shared<RSShadowPathModifier>(prop);
+
+    auto node = RSCanvasNode::Create();
+    node->AddModifier(modifier);
+    ASSERT_TRUE(node != nullptr);
+    ASSERT_EQ(node->GetStagingProperties().GetShadowPath(), val);
+
+    node->RemoveModifier(modifier);
+    auto node1 = RSCanvasNode::Create();
+    ASSERT_EQ(node->GetStagingProperties().GetShadowPath(), node1->GetStagingProperties().GetShadowPath());
+}
+
+/**
+ * @tc.name: ShadowPathModifier02
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RsModifiersTest, ShadowPathModifier02, TestSize.Level1)
+{
+    std::shared_ptr<RSPath> val = nullptr;
+    auto prop = std::make_shared<RSProperty<std::shared_ptr<RSPath>>>(val);
+    auto modifier = std::make_shared<RSShadowPathModifier>(prop);
+
+    auto node = RSCanvasNode::Create();
+    node->AddModifier(modifier);
+    ASSERT_TRUE(node != nullptr);
+    ASSERT_EQ(node->GetStagingProperties().GetShadowPath(), val);
+
+    val = RSPath::CreateRSPath();
+    prop->Set(val);
+    ASSERT_EQ(node->GetStagingProperties().GetShadowPath(), val);
+}
+
+/**
+ * @tc.name: MaskModifier01
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RsModifiersTest, MaskModifier01, TestSize.Level1)
+{
+    auto val = RSMask::CreateGradientMask(Drawing::Brush());
+    auto prop = std::make_shared<RSProperty<std::shared_ptr<RSMask>>>(val);
+    auto modifier = std::make_shared<RSMaskModifier>(prop);
+
+    auto node = RSCanvasNode::Create();
+    node->AddModifier(modifier);
+    ASSERT_TRUE(node != nullptr);
+    ASSERT_EQ(node->GetStagingProperties().GetMask(), val);
+
+    node->RemoveModifier(modifier);
+    auto node1 = RSCanvasNode::Create();
+    ASSERT_EQ(node->GetStagingProperties().GetMask(), node1->GetStagingProperties().GetMask());
+}
+
+/**
+ * @tc.name: MaskModifier02
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RsModifiersTest, MaskModifier02, TestSize.Level1)
+{
+    std::shared_ptr<RSMask> val = nullptr;
+    auto prop = std::make_shared<RSProperty<std::shared_ptr<RSMask>>>(val);
+    auto modifier = std::make_shared<RSMaskModifier>(prop);
+
+    auto node = RSCanvasNode::Create();
+    node->AddModifier(modifier);
+    ASSERT_TRUE(node != nullptr);
+    ASSERT_EQ(node->GetStagingProperties().GetMask(), val);
+
+    val = RSMask::CreateGradientMask(Drawing::Brush());
+    prop->Set(val);
+    ASSERT_EQ(node->GetStagingProperties().GetMask(), val);
+}
+
+/**
+ * @tc.name: ModifierManager01
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RsModifiersTest, ModifierManager01, TestSize.Level1)
+{
+    RSModifierManager manager;
+    manager.Draw();
+
+    auto prop = std::make_shared<RSAnimatableProperty<float>>(floatData[0]);
+    auto modifier = std::make_shared<RSAlphaModifier>(prop);
+    manager.AddModifier(modifier);
+    manager.Draw();
+}
+
+/**
+ * @tc.name: ModifierManager02
+ * @tc.desc: animation is exit
+ * @tc.type:FUNC
+ */
+HWTEST_F(RsModifiersTest, ModifierManager02, TestSize.Level1)
+{
+    RSModifierManager manager;
+    manager.Draw();
+
+    auto prop = std::make_shared<RSAnimatableProperty<float>>(floatData[0]);
+    auto modifier = std::make_shared<RSAlphaModifier>(prop);
+    auto animation = std::make_shared<RSRenderAnimation>();
+    ASSERT_NE(animation, nullptr);
+    manager.AddAnimation(animation);
+    manager.AddModifier(modifier);
+    manager.Draw();
+}
+
+/**
+ * @tc.name: ModifierManager03
+ * @tc.desc: animation is nullptr
+ * @tc.type:FUNC
+ */
+HWTEST_F(RsModifiersTest, ModifierManager03, TestSize.Level1)
+{
+    RSModifierManager manager;
+    AnimationId id = 0;
+    manager.Draw();
+
+    auto prop = std::make_shared<RSAnimatableProperty<float>>(floatData[0]);
+    auto modifier = std::make_shared<RSAlphaModifier>(prop);
+    auto animation = std::make_shared<RSRenderAnimation>(id);
+    manager.AddAnimation(animation);
+    manager.AddModifier(modifier);
+    manager.Draw();
+}
+
+/**
+ * @tc.name: ModifierManager04
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RsModifiersTest, ModifierManager04, TestSize.Level1)
+{
+    RSModifierManager manager;
+    AnimationId id = 10;
+    manager.Draw();
+
+    auto prop = std::make_shared<RSAnimatableProperty<float>>(floatData[0]);
+    auto modifier = std::make_shared<RSAlphaModifier>(prop);
+    auto animation = std::make_shared<RSRenderAnimation>();
+    ASSERT_NE(animation, nullptr);
+    manager.AddAnimation(animation);
+    manager.RemoveAnimation(id);
+    manager.AddModifier(modifier);
+    manager.Draw();
+}
+
+/**
+ * @tc.name: ModifierManager05
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RsModifiersTest, ModifierManager05, TestSize.Level1)
+{
+    RSModifierManager manager;
+    AnimationId id = 0;
+    manager.Draw();
+
+    auto prop = std::make_shared<RSAnimatableProperty<float>>(floatData[0]);
+    auto modifier = std::make_shared<RSAlphaModifier>(prop);
+    auto animation = std::make_shared<RSRenderAnimation>(id);
+    manager.AddAnimation(animation);
+    manager.RemoveAnimation(id);
+    manager.AddModifier(modifier);
+    manager.Draw();
+}
+
 } // namespace OHOS::Rosen
