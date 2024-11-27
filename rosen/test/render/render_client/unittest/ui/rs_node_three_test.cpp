@@ -1257,18 +1257,16 @@ HWTEST_F(RSNodeOneTest, RemoveAllAnimations, TestSize.Level1)
 HWTEST_F(RSNodeOneTest, RemoveAnimation, TestSize.Level1)
 {
     auto rsnode = RSCanvasNode::Create();
+    ASSERT_TRUE(rsnode != nullptr);
     std::shared_ptr<RSAnimation> animation = nullptr;
     rsnode->RemoveAnimation(animation);
-    EXPECT_EQ(animation, nullptr);
 
     animation = std::make_shared<RSAnimation>();
     rsnode->RemoveAnimation(animation);
-    EXPECT_NE(animation, nullptr);
 
     AnimationId id = animation->GetId();
     rsnode->animations_.insert({ id, animation });
     rsnode->RemoveAnimation(animation);
-    EXPECT_NE(animation, nullptr);
 }
 
 /**
