@@ -47,7 +47,9 @@ bool RegisterTypefaceCallback()
     return true;
 }
 
+#ifndef ARKUI_X_ENABLE
 bool g_typefaceAutoRegister = RegisterTypefaceCallback();
+#endif
 }
 
 std::shared_ptr<RSNode> RSRootNode::Create(bool isRenderServiceNode, bool isTextureExportNode)
