@@ -538,6 +538,10 @@ void MemoryManager::InitMemoryLimit(Drawing::GPUContext* gpuContext)
 {
     std::ifstream configFile;
     configFile.open(KERNEL_CONFIG_PATH);
+    if (!configFile.is_open()) {
+        RS_LOGE("MemoryManager::InitMemoryLimit can not open config file");
+        return;
+    }
     std::stringstream filterParamsStream;
     filterParamsStream << configFile.rdbuf();
     configFile.close();
