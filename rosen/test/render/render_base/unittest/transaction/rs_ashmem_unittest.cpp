@@ -147,6 +147,8 @@ HWTEST_F(RSAshmemUnitTest, AshmemAllocatorWriteAndCopy001, Function | MediumTest
 
 static std::shared_ptr<Drawing::Image> CreateDrawingImage(int width, int height)
 {
+    int start = 4;
+    int end = 2;
     const Drawing::ImageInfo info =
         Drawing::ImageInfo(width, height, Drawing::COLORTYPE_N32, Drawing::ALPHATYPE_OPAQUE);
     auto surface(Drawing::Surface::MakeRaster(info));
@@ -155,7 +157,7 @@ static std::shared_ptr<Drawing::Image> CreateDrawingImage(int width, int height)
     Drawing::Brush brush;
     brush.SetColor(Drawing::Color::COLOR_RED);
     canvas->AttachBrush(brush);
-    canvas->DrawRect(Drawing::Rect(width / 4, height / 4, width / 2, height / 2));
+    canvas->DrawRect(Drawing::Rect(width / start, height / start, width / end, height / end));
     canvas->DetachBrush();
     return surface->GetImageSnapshot();
 }
@@ -189,6 +191,8 @@ HWTEST_F(RSAshmemUnitTest, SkImageAshmem001, Function | MediumTest | Level2)
 
 static std::shared_ptr<Media::PixelMap> CreatePixelMap(int width, int height)
 {
+    int start = 4;
+    int end = 2;
     Media::InitializationOptions opts;
     opts.size.width = width;
     opts.size.height = height;
@@ -205,7 +209,7 @@ static std::shared_ptr<Media::PixelMap> CreatePixelMap(int width, int height)
     Drawing::Brush brush;
     brush.SetColor(Drawing::Color::COLOR_RED);
     canvas->AttachBrush(brush);
-    canvas->DrawRect(Drawing::Rect(width / 4, height / 4, width / 2, height / 2));
+    canvas->DrawRect(Drawing::Rect(width / start, height / start, width / end, height / end));
     canvas->DetachBrush();
     return pixelmap;
 }
@@ -269,7 +273,7 @@ HWTEST_F(RSAshmemUnitTest, ParseFromAshmemParcel001, Function | MediumTest | Lev
     MessageParcel ashmemParcel;
     ASSERT_TRUE(RSAshmemHelper::ParseFromAshmemParcel(&ashmemParcel) == nullptr);
     ashmemParcel.WriteInt32(0);
-    ashmemParcel.WriteBool(true);   
+    ashmemParcel.WriteBool(true);
     size_t size = 1024;
     auto ashmemAllocator_ = ashmemAllocator_::CreateAshmemAllocator(size, PROT_READ | PROT_WRITE);
     int fd = ashmemAllocator_->GetFd();
