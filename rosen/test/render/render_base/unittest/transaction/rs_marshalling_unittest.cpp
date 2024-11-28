@@ -120,32 +120,6 @@ static void TestDrawingDataSerialization(size_t size)
     ASSERT_EQ(dataUnmarshal->GetSize(), size);
 }
 
-
-
-static Drawing::Path CreateDrawingPath()
-{
-    Drawing::Path path;
-    path.MoveTo(20, 20);
-    path.QuadTo(20, 60, 80, 50);
-    path.QuadTo(20, 60, 20, 80);
-    return path;
-}
-
-static std::shared_ptr<Drawing::Image> CreateDrawingImage()
-{
-    const Drawing::ImageInfo info =
-        Drawing::ImageInfo(200, 200, Drawing::COLORTYPE_N32, Drawing::ALPHATYPE_OPAQUE);
-    auto surface(Drawing::Surface::MakeRaster(info));
-    auto canvas = surface->GetCanvas();
-    canvas->Clear(Drawing::Color::COLOR_YELLOW);
-    Drawing::Brush brush;
-    brush.SetColor(Drawing::Color::COLOR_RED);
-    canvas->AttachBrush(brush);
-    canvas->DrawRect(Drawing::Rect(50, 50, 100, 100));
-    canvas->DetachBrush();
-    return surface->GetImageSnapshot();
-}
-
 /**
  * @tc.name: NullptrObjectSerialization001
  * @tc.desc: test results of serialization and deserialization of nullptr object

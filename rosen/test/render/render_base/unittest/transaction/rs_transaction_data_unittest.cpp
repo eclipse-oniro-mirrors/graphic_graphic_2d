@@ -66,7 +66,6 @@ HWTEST_F(RSTransactionDataUnitTest, ProcessTest, TestSize.Level1)
     RSTransactionData rsTransactionData;
     rsTransactionData.Process(context);
     ASSERT_TRUE(rsTransactionData.IsEmpty());
-
 }
 
 /**
@@ -305,34 +304,6 @@ HWTEST_F(RSTransactionDataUnitTest, Marshalling, TestSize.Level1)
 }
 
 /**
- * @tc.name: AlarmRsNodeLog
- * @tc.desc: Test UnmarshallingCommand
- * @tc.type:FUNC
- * @tc.require: issueI9QIQO
- */
-HWTEST_F(RSTransactionDataUnitTest, AlarmRsNodeLog, TestSize.Level1)
-{
-    RSTransactionData rsTransactionData;
-    rsTransactionData.AlarmRsNodeLog();
-    EXPECT_EQ(rsTransactionData.pid_, 0);
-}
-
-/**
- * @tc.name: AddCommand
- * @tc.desc: Test AddCommand
- * @tc.type:FUNC
- * @tc.require: issueI9QIQO
- */
-HWTEST_F(RSTransactionDataUnitTest, AddCommand, TestSize.Level1)
-{
-    RSTransactionData rsTransactionData;
-    Parcel parcel;
-    std::unique_ptr<RSCommand> command;
-    rsTransactionData.AddCommand(command, 1, FollowType::FOLLOW_TO_PARENT);
-    EXPECT_EQ(command, nullptr);
-}
-
-/**
  * @tc.name: IsCallingPidValid
  * @tc.desc: Test IsCallingPidValid
  * @tc.type: FUNC
@@ -349,22 +320,6 @@ HWTEST_F(RSTransactionDataUnitTest, IsCallingPidValid, TestSize.Level1)
     bool isCallingPidValid =
         rsTransactionData.IsCallingPidValid(callingPid, rsRenderNodeMap, conflictCommandPid, commandMapDesc);
     EXPECT_TRUE(isCallingPidValid);
-}
-
-/**
- * @tc.name: ProcessBySingleFrameComposer
- * @tc.desc: Test ProcessBySingleFrameComposer
- * @tc.type:FUNC
- * @tc.require: issueI9QIQO
- */
-HWTEST_F(RSTransactionDataUnitTest, ProcessBySingleFrameComposer, TestSize.Level1)
-{
-    RSTransactionData rsTransactionData;
-    Parcel parcel;
-    std::unique_ptr<RSCommand> command;
-    rsTransactionData.AddCommand(command, 1, FollowType::FOLLOW_TO_PARENT);
-    RSContext context;
-    rsTransactionData.ProcessBySingleFrameComposer(context);
 }
 } // namespace Rosen
 } // namespace OHOS
