@@ -432,12 +432,12 @@ HWTEST_F(RSMainThreadTest, ClearNeedDropframePidList, TestSize.Level2)
 }
 
 /**
- * @tc.name: IsNeedDropFrameByPid
- * @tc.desc: Test IsNeedDropFrameByPid
+ * @tc.name: IsNeedDropFrameByPid001
+ * @tc.desc: Test IsNeedDropFrameByPid while pid satisfy
  * @tc.type: FUNC
- * @tc.require: issueIB612L
+ * @tc.require: issueIB7PH1
  */
-HWTEST_F(RSMainThreadTest, IsNeedDropFrameByPid, TestSize.Level2)
+HWTEST_F(RSMainThreadTest, IsNeedDropFrameByPid001, TestSize.Level2)
 {
     auto mainThread = RSMainThread::Instance();
     ASSERT_NE(mainThread, nullptr);
@@ -445,7 +445,28 @@ HWTEST_F(RSMainThreadTest, IsNeedDropFrameByPid, TestSize.Level2)
     NodeId id = 0;
     auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(id, mainThread->context_);
     mainThread->AddPidNeedDropFrame({ExtractPid(surfaceNode->GetId())});
-    ASSERT_TRUE(mainThread->IsNeedDropFrameByPid(ExtractPid(surfaceNode->GetId())));
+    ASSERT_TRUE(mainThread->IsNeedDropFrameByPid(surfaceNode->GetId()));
+
+    mainThread->ClearNeedDropframePidList();
+}
+
+/**
+ * @tc.name: IsNeedDropFrameByPid002
+ * @tc.desc: Test IsNeedDropFrameByPid while pid not satisfy
+ * @tc.type: FUNC
+ * @tc.require: issueIB7PH1
+ */
+HWTEST_F(RSMainThreadTest, IsNeedDropFrameByPid002, TestSize.Level2)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+
+    NodeId id = 0;
+    auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(id, mainThread->context_);
+    mainThread->AddPidNeedDropFrame({});
+    ASSERT_FALSE(mainThread->IsNeedDropFrameByPid(surfaceNode->GetId()));
+
+    mainThread->ClearNeedDropframePidList();
 }
 
 /**
