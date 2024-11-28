@@ -1240,7 +1240,7 @@ float RSProperties::GetForegroundEffectRadius() const
 
 bool RSProperties::IsForegroundEffectRadiusValid() const
 {
-    return ROSEN_GNE(foregroundEffectRadius_, 0.999); // if blur radius < 1, no need to draw
+    return ROSEN_GNE(foregroundEffectRadius_, 0.999f); // if blur radius < 1, no need to draw
 }
 
 void RSProperties::SetForegroundEffectDirty(bool dirty)

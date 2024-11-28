@@ -199,6 +199,10 @@ void RSForegroundEffectFilter::ApplyForegroundEffect(Drawing::Canvas& canvas,
         return;
     }
     std::shared_ptr<Drawing::Image> tmpBlur = MakeImage(surface, &blurMatrixGeo, blurBuilder);
+    if (!tmpBlur) {
+        ROSEN_LOGE("RSForegroundEffectFilter tmpBlur is null");
+        return;
+    }
     std::shared_ptr<Drawing::Surface> tmpSurface = surface->MakeSurface(scaledInfoGeo.GetWidth(),
         scaledInfoGeo.GetHeight());
     if (!tmpSurface) {
@@ -213,6 +217,10 @@ void RSForegroundEffectFilter::ApplyForegroundEffect(Drawing::Canvas& canvas,
             Drawing::TileMode::DECAL, Drawing::TileMode::DECAL, linear, Drawing::Matrix()));
         blurBuilder->SetUniform("in_blurOffset", radiusByPasses_ * stepScale, radiusByPasses_ * stepScale);
         tmpBlur = MakeImage(tmpSurface, nullptr, blurBuilder);
+        if (!tmpBlur) {
+            ROSEN_LOGE("RSForegroundEffectFilter tmpBlur is null when build our chain of scaled blur stages");
+            return;
+        }
         std::swap(surface, tmpSurface);
     }
 
