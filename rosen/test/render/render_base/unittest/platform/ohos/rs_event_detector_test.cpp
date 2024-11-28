@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -40,12 +40,12 @@ void RSEventDetectorTest::SetUp() {}
 void RSEventDetectorTest::TearDown() {}
 
 /**
- * @tc.name: settings
+ * @tc.name: settings001
  * @tc.desc:
  * @tc.type:FUNC
  * @tc.require:
  */
-HWTEST_F(RSEventDetectorTest, settings, TestSize.Level1)
+HWTEST_F(RSEventDetectorTest, settings001, TestSize.Level1)
 {
     rsDetector->SetParam("0", "1");
     rsDetector->SetParam("timeOutThresholdMs", "1");
@@ -67,46 +67,46 @@ HWTEST_F(RSEventDetectorTest, settings, TestSize.Level1)
 }
 
 /**
- * @tc.name: CreateRSTimeOutDetector
+ * @tc.name: CreateRSTimeOutDetector001
  * @tc.desc:
  * @tc.type:FUNC
  * @tc.require:
  */
-HWTEST_F(RSEventDetectorTest, CreateRSTimeOutDetector, TestSize.Level1)
+HWTEST_F(RSEventDetectorTest, CreateRSTimeOutDetector001, TestSize.Level1)
 {
     ASSERT_NE(rsDetector, nullptr);
 }
 
 /**
- * @tc.name: RSTimeOutDetectorTest
+ * @tc.name: RSTimeOutDetectorTest001
  * @tc.desc: Verify function RSTimeOutDetector
  * @tc.type:FUNC
  * @tc.require:issuesI9JRWH
  */
-HWTEST_F(RSEventDetectorTest, RSTimeOutDetectorTest, TestSize.Level1)
+HWTEST_F(RSEventDetectorTest, RSTimeOutDetectorTest001, TestSize.Level1)
 {
     auto rsTimeOutDetector1 = std::make_shared<RSTimeOutDetector>(1, "0");
     EXPECT_TRUE(rsTimeOutDetector1);
 }
 
 /**
- * @tc.name: GetSysTimeMsTest
+ * @tc.name: GetSysTimeMsTest001
  * @tc.desc: Verify function GetSysTimeMs
  * @tc.type:FUNC
  * @tc.require:issuesI9JRWH
  */
-HWTEST_F(RSEventDetectorTest, GetSysTimeMsTest, TestSize.Level1)
+HWTEST_F(RSEventDetectorTest, GetSysTimeMsTest001, TestSize.Level1)
 {
     EXPECT_NE(RSEventTimer::GetSysTimeMs(), 0);
 }
 
 /**
- * @tc.name: EventReportTest
+ * @tc.name: EventReportTest001
  * @tc.desc: Verify function EventReport
  * @tc.type:FUNC
  * @tc.require:issuesI9JRWH
  */
-HWTEST_F(RSEventDetectorTest, EventReportTest, TestSize.Level1)
+HWTEST_F(RSEventDetectorTest, EventReportTest001, TestSize.Level1)
 {
     auto rsTimeOutDetector1 = std::make_shared<RSTimeOutDetector>(1, "0");
     rsTimeOutDetector1->EventReport(1);

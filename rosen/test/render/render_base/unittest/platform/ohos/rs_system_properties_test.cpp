@@ -42,34 +42,34 @@ void RSSystemPropertiesTest::SetUp() {}
 void RSSystemPropertiesTest::TearDown() {}
 
 /**
- * @tc.name: GetDumpFrameNum
+ * @tc.name: GetDumpFrameNum001
  * @tc.desc: GetDumpFrameNum Test
  * @tc.type:FUNC
  * @tc.require: issueI9JZWC
  */
-HWTEST_F(RSSystemPropertiesTest, GetDumpFrameNum, TestSize.Level1)
+HWTEST_F(RSSystemPropertiesTest, GetDumpFrameNum001, TestSize.Level1)
 {
     ASSERT_EQ(RSSystemProperties::GetDumpFrameNum(), 0);
 }
 
 /**
- * @tc.name: IsSceneBoardEnabled
+ * @tc.name: IsSceneBoardEnabled001
  * @tc.desc: IsSceneBoardEnabled Test
  * @tc.type:FUNC
  * @tc.require: issueI9JZWC
  */
-HWTEST_F(RSSystemPropertiesTest, IsSceneBoardEnabled, TestSize.Level1)
+HWTEST_F(RSSystemPropertiesTest, IsSceneBoardEnabled001, TestSize.Level1)
 {
     ASSERT_FALSE(RSSystemProperties::IsSceneBoardEnabled());
 }
 
 /**
- * @tc.name: GetUniRenderEnabled
+ * @tc.name: GetUniRenderEnabled001
  * @tc.desc: GetUniRenderEnabled Test
  * @tc.type:FUNC
  * @tc.require: issueI9JZWC
  */
-HWTEST_F(RSSystemPropertiesTest, GetUniRenderEnabled, TestSize.Level1)
+HWTEST_F(RSSystemPropertiesTest, GetUniRenderEnabled001, TestSize.Level1)
 {
     auto uniRenderEnabled = std::static_pointer_cast<RSRenderServiceClient>
         (RSIRenderClient::CreateRenderServiceClient())->GetUniRenderEnabled();
@@ -80,46 +80,46 @@ HWTEST_F(RSSystemPropertiesTest, GetUniRenderEnabled, TestSize.Level1)
 }
 
 /**
- * @tc.name: GetRecordingEnabled
+ * @tc.name: GetRecordingEnabled001
  * @tc.desc: GetRecordingEnabled Test
  * @tc.type:FUNC
  * @tc.require: issueI9JZWC
  */
-HWTEST_F(RSSystemPropertiesTest, GetRecordingEnabled, TestSize.Level1)
+HWTEST_F(RSSystemPropertiesTest, GetRecordingEnabled001, TestSize.Level1)
 {
     ASSERT_EQ(RSSystemProperties::GetRecordingEnabled(), 0);
 }
 
 /**
- * @tc.name: GetProfilerEnabled
+ * @tc.name: GetProfilerEnabled001
  * @tc.desc: GetProfilerEnabled Test
  * @tc.type:FUNC
  * @tc.require: issueI9JZWC
  */
-HWTEST_F(RSSystemPropertiesTest, GetProfilerEnabled, TestSize.Level1)
+HWTEST_F(RSSystemPropertiesTest, GetProfilerEnabled001, TestSize.Level1)
 {
     ASSERT_EQ(RSSystemProperties::GetProfilerEnabled(), 0);
 }
 
 /**
- * @tc.name: SetRecordingDisenabled
+ * @tc.name: SetRecordingDisenabled001
  * @tc.desc: SetRecordingDisenabled Test
  * @tc.type:FUNC
  * @tc.require: issueI9JZWC
  */
-HWTEST_F(RSSystemPropertiesTest, SetRecordingDisenabled, TestSize.Level1)
+HWTEST_F(RSSystemPropertiesTest, SetRecordingDisenabled001, TestSize.Level1)
 {
     RSSystemProperties::SetRecordingDisenabled();
     ASSERT_TRUE(true);
 }
 
 /**
- * @tc.name: SetInstantRecording
+ * @tc.name: SetInstantRecording001
  * @tc.desc: SetInstantRecording Test
  * @tc.type:FUNC
  * @tc.require: issueI9JZWC
  */
-HWTEST_F(RSSystemPropertiesTest, SetInstantRecording, TestSize.Level1)
+HWTEST_F(RSSystemPropertiesTest, SetInstantRecording001, TestSize.Level1)
 {
     bool flag1 = true;
     RSSystemProperties::SetInstantRecording(flag1);
@@ -129,12 +129,12 @@ HWTEST_F(RSSystemPropertiesTest, SetInstantRecording, TestSize.Level1)
 }
 
 /**
- * @tc.name: SetSaveRDC
+ * @tc.name: SetSaveRDC001
  * @tc.desc: SetSaveRDC Test
  * @tc.type:FUNC
  * @tc.require: issueI9VPIT
  */
-HWTEST_F(RSSystemPropertiesTest, SetSaveRDC, TestSize.Level1)
+HWTEST_F(RSSystemPropertiesTest, SetSaveRDC001, TestSize.Level1)
 {
     bool flag = false;
     RSSystemProperties::SetSaveRDC(flag);
@@ -142,12 +142,12 @@ HWTEST_F(RSSystemPropertiesTest, SetSaveRDC, TestSize.Level1)
 }
 
 /**
- * @tc.name: GetSaveRDC
+ * @tc.name: GetSaveRDC001
  * @tc.desc: GetSaveRDC Test
  * @tc.type:FUNC
  * @tc.require: issueI9VPIT
  */
-HWTEST_F(RSSystemPropertiesTest, GetSaveRDC, TestSize.Level1)
+HWTEST_F(RSSystemPropertiesTest, GetSaveRDC001, TestSize.Level1)
 {
     bool flag = true;
     RSSystemProperties::SetSaveRDC(flag);
@@ -155,34 +155,34 @@ HWTEST_F(RSSystemPropertiesTest, GetSaveRDC, TestSize.Level1)
 }
 
 /**
- * @tc.name: GetDrawOpTraceEnabled
+ * @tc.name: GetDrawOpTraceEnabled001
  * @tc.desc: GetDrawOpTraceEnabled Test
  * @tc.type:FUNC
  * @tc.require: issueI9JZWC
  */
-HWTEST_F(RSSystemPropertiesTest, GetDrawOpTraceEnabled, TestSize.Level1)
+HWTEST_F(RSSystemPropertiesTest, GetDrawOpTraceEnabled001, TestSize.Level1)
 {
     ASSERT_FALSE(RSSystemProperties::GetDrawOpTraceEnabled());
 }
 
 /**
- * @tc.name: GetRecordingFile
+ * @tc.name: GetRecordingFile001
  * @tc.desc: GetRecordingFile Test
  * @tc.type:FUNC
  * @tc.require: issueI9JZWC
  */
-HWTEST_F(RSSystemPropertiesTest, GetRecordingFile, TestSize.Level1)
+HWTEST_F(RSSystemPropertiesTest, GetRecordingFile001, TestSize.Level1)
 {
     ASSERT_EQ(RSSystemProperties::GetRecordingFile().size(), 0);
 }
 
 /**
- * @tc.name: GetRSScreenRoundCornerEnable
+ * @tc.name: GetRSScreenRoundCornerEnable001
  * @tc.desc: GetRSScreenRoundCornerEnable Test
  * @tc.type:FUNC
  * @tc.require: issueI9JZWC
  */
-HWTEST_F(RSSystemPropertiesTest, GetRSScreenRoundCornerEnable, TestSize.Level1)
+HWTEST_F(RSSystemPropertiesTest, GetRSScreenRoundCornerEnable001, TestSize.Level1)
 {
     ASSERT_TRUE(RSSystemProperties::GetRSScreenRoundCornerEnable());
 }

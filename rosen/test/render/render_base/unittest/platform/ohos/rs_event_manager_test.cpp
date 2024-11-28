@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -48,7 +48,7 @@ void RSEventMgrTest::TearDown()
  * @tc.type:FUNC
  * @tc.require:
  */
-HWTEST_F(RSEventMgrTest, AddEvent_LT0, TestSize.Level1)
+HWTEST_F(RSEventMgrTest, AddEventLT0, TestSize.Level1)
 {
     RSEventManager* rsEventMgr1 = new RSEventManager();
     ASSERT_NE(rsEventMgr1, nullptr);
@@ -64,7 +64,7 @@ HWTEST_F(RSEventMgrTest, AddEvent_LT0, TestSize.Level1)
  * @tc.type:FUNC
  * @tc.require:
  */
-HWTEST_F(RSEventMgrTest, AddEvent_Nullptr, TestSize.Level1)
+HWTEST_F(RSEventMgrTest, AddEventNullptr, TestSize.Level1)
 {
     RSEventManager* rsEventMgr1 = new RSEventManager();
     ASSERT_NE(rsEventMgr1, nullptr);
@@ -78,7 +78,7 @@ HWTEST_F(RSEventMgrTest, AddEvent_Nullptr, TestSize.Level1)
  * @tc.type:FUNC
  * @tc.require:
  */
-HWTEST_F(RSEventMgrTest, AddEvent_GT0, TestSize.Level1)
+HWTEST_F(RSEventMgrTest, AddEventGT0, TestSize.Level1)
 {
     RSEventManager* rsEventMgr1 = new RSEventManager();
     ASSERT_NE(rsEventMgr1, nullptr);
@@ -89,12 +89,12 @@ HWTEST_F(RSEventMgrTest, AddEvent_GT0, TestSize.Level1)
 }
 
 /**
- * @tc.name: ClearTest
+ * @tc.name: ClearTest001
  * @tc.desc: Verify function Clear
  * @tc.type:FUNC
  * @tc.require:issuesI9JRWH
  */
-HWTEST_F(RSEventMgrTest, ClearTest, TestSize.Level1)
+HWTEST_F(RSEventMgrTest, ClearTest001, TestSize.Level1)
 {
     RSEventManager* rsEventManager1 = new RSEventManager();
     delete rsEventManager1;
@@ -108,7 +108,7 @@ HWTEST_F(RSEventMgrTest, ClearTest, TestSize.Level1)
  * @tc.type:FUNC
  * @tc.require:
  */
-HWTEST_F(RSEventMgrTest, SetParam_Test, TestSize.Level1)
+HWTEST_F(RSEventMgrTest, SetParamTest, TestSize.Level1)
 {
     std::shared_ptr<RSBaseEventDetector> rsEvntDtr1 = RSBaseEventDetector::CreateRSTimeOutDetector(0, "SetParam_Test");
     ASSERT_NE(rsEvntDtr1, nullptr);
@@ -116,12 +116,12 @@ HWTEST_F(RSEventMgrTest, SetParam_Test, TestSize.Level1)
 }
 
 /**
- * @tc.name: DumpEventIntervalMsTest
+ * @tc.name: DumpEventIntervalMsTest001
  * @tc.desc: Verify function DumpEventIntervalMs
  * @tc.type:FUNC
  * @tc.require:issuesI9JRWH
  */
-HWTEST_F(RSEventMgrTest, DumpEventIntervalMsTest, TestSize.Level1)
+HWTEST_F(RSEventMgrTest, DumpEventIntervalMsTest001, TestSize.Level1)
 {
     std::string dumpString = "0";
     RSEventState rsEventState;
@@ -136,12 +136,12 @@ HWTEST_F(RSEventMgrTest, DumpEventIntervalMsTest, TestSize.Level1)
 }
 
 /**
- * @tc.name: DumpDetectorParamTest
+ * @tc.name: DumpDetectorParamTest001
  * @tc.desc: Verify function DumpDetectorParam
  * @tc.type:FUNC
  * @tc.require:issuesI9JRWH
  */
-HWTEST_F(RSEventMgrTest, DumpDetectorParamTest, TestSize.Level1)
+HWTEST_F(RSEventMgrTest, DumpDetectorParamTest001, TestSize.Level1)
 {
     std::string value0 = "0";
     std::string dumpString = "0";
@@ -155,12 +155,12 @@ HWTEST_F(RSEventMgrTest, DumpDetectorParamTest, TestSize.Level1)
 }
 
 /**
- * @tc.name: DumpAllEventParamTest
+ * @tc.name: DumpAllEventParamTest001
  * @tc.desc: Verify function DumpAllEventParam
  * @tc.type:FUNC
  * @tc.require:issuesI9JRWH
  */
-HWTEST_F(RSEventMgrTest, DumpAllEventParamTest, TestSize.Level1)
+HWTEST_F(RSEventMgrTest, DumpAllEventParamTest001, TestSize.Level1)
 {
     std::string key0 = "0";
     std::string key1 = "1";
@@ -175,12 +175,12 @@ HWTEST_F(RSEventMgrTest, DumpAllEventParamTest, TestSize.Level1)
 }
 
 /**
- * @tc.name: UpdateEventIntervalMsTest
+ * @tc.name: UpdateEventIntervalMsTest001
  * @tc.desc: Verify function UpdateEventIntervalMs
  * @tc.type:FUNC
  * @tc.require:issuesI9JRWH
  */
-HWTEST_F(RSEventMgrTest, UpdateEventIntervalMsTest, TestSize.Level1)
+HWTEST_F(RSEventMgrTest, UpdateEventIntervalMsTest001, TestSize.Level1)
 {
     std::string key0 = "0";
     RSEventState rsEventState;
@@ -200,12 +200,12 @@ HWTEST_F(RSEventMgrTest, UpdateEventIntervalMsTest, TestSize.Level1)
 }
 
 /**
- * @tc.name: UpdateDetectorParamTest
+ * @tc.name: UpdateDetectorParamTest001
  * @tc.desc: Verify function UpdateDetectorParam
  * @tc.type:FUNC
  * @tc.require:issuesI9JRWH
  */
-HWTEST_F(RSEventMgrTest, UpdateDetectorParamTest, TestSize.Level1)
+HWTEST_F(RSEventMgrTest, UpdateDetectorParamTest001, TestSize.Level1)
 {
     std::string key0 = "0";
     std::string value0 = "0";
@@ -217,12 +217,12 @@ HWTEST_F(RSEventMgrTest, UpdateDetectorParamTest, TestSize.Level1)
 }
 
 /**
- * @tc.name: AddEventTest
+ * @tc.name: AddEventTest001
  * @tc.desc: Verify function AddEvent
  * @tc.type:FUNC
  * @tc.require:issuesI9JRWH
  */
-HWTEST_F(RSEventMgrTest, AddEventTest, TestSize.Level1)
+HWTEST_F(RSEventMgrTest, AddEventTest001, TestSize.Level1)
 {
     std::string key0 = "0";
     auto detectorPtr1 = RSBaseEventDetector::CreateRSTimeOutDetector(1, "0");
@@ -236,12 +236,12 @@ HWTEST_F(RSEventMgrTest, AddEventTest, TestSize.Level1)
 }
 
 /**
- * @tc.name: UpdateParamTest
+ * @tc.name: UpdateParamTest001
  * @tc.desc: Verify function UpdateParam
  * @tc.type:FUNC
  * @tc.require:issuesI9JRWH
  */
-HWTEST_F(RSEventMgrTest, UpdateParamTest, TestSize.Level1)
+HWTEST_F(RSEventMgrTest, UpdateParamTest001, TestSize.Level1)
 {
     std::string key0 = "0";
     std::string key1 = "1";
@@ -255,12 +255,12 @@ HWTEST_F(RSEventMgrTest, UpdateParamTest, TestSize.Level1)
 }
 
 /**
- * @tc.name: EventReportTest
+ * @tc.name: EventReportTest001
  * @tc.desc: Verify function EventReport
  * @tc.type:FUNC
  * @tc.require:issuesI9JRWH
  */
-HWTEST_F(RSEventMgrTest, EventReportTest, TestSize.Level1)
+HWTEST_F(RSEventMgrTest, EventReportTest001, TestSize.Level1)
 {
     std::string key0 = "0";
     RSEventState rsEventState;
@@ -274,12 +274,12 @@ HWTEST_F(RSEventMgrTest, EventReportTest, TestSize.Level1)
 }
 
 /**
- * @tc.name: RemoveEventTest
+ * @tc.name: RemoveEventTest001
  * @tc.desc: Verify function RemoveEvent
  * @tc.type:FUNC
  * @tc.require:issuesI9JRWH
  */
-HWTEST_F(RSEventMgrTest, RemoveEventTest, TestSize.Level1)
+HWTEST_F(RSEventMgrTest, RemoveEventTest001, TestSize.Level1)
 {
     auto detectorPtr = RSBaseEventDetector::CreateRSTimeOutDetector(1, "0");
     std::string key0 = "0";

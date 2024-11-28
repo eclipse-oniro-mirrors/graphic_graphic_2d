@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -87,12 +87,12 @@ std::shared_ptr<MessageParcel> CreateMessageParcel()
 }
 
 /**
- * @tc.name: CreateAshmemAllocatorWithFdTest
+ * @tc.name: CreateAshmemAllocatorWithFdTest001
  * @tc.desc:
  * @tc.type:FUNC
  * @tc.require:
  */
-HWTEST_F(RSAshmemHelperTest, CreateAshmemAllocatorWithFdTest, TestSize.Level1)
+HWTEST_F(RSAshmemHelperTest, CreateAshmemAllocatorWithFdTest001, TestSize.Level1)
 {
     int fd1 = 0;
     size_t size1 = -10;
@@ -107,12 +107,12 @@ HWTEST_F(RSAshmemHelperTest, CreateAshmemAllocatorWithFdTest, TestSize.Level1)
 }
 
 /**
- * @tc.name: CreateAshmemAllocatorTest
+ * @tc.name: CreateAshmemAllocatorTest001
  * @tc.desc:
  * @tc.type:FUNC
  * @tc.require:
  */
-HWTEST_F(RSAshmemHelperTest, CreateAshmemAllocatorTest, TestSize.Level1)
+HWTEST_F(RSAshmemHelperTest, CreateAshmemAllocatorTest001, TestSize.Level1)
 {
     auto mapType = PROT_READ | PROT_WRITE;
 
@@ -126,12 +126,12 @@ HWTEST_F(RSAshmemHelperTest, CreateAshmemAllocatorTest, TestSize.Level1)
 }
 
 /**
- * @tc.name: WriteToAshmemTest
+ * @tc.name: WriteToAshmemTest001
  * @tc.desc:
  * @tc.type:FUNC
  * @tc.require:
  */
-HWTEST_F(RSAshmemHelperTest, WriteToAshmemTest, TestSize.Level1)
+HWTEST_F(RSAshmemHelperTest, WriteToAshmemTest001, TestSize.Level1)
 {
     int fd = 10;
     size_t size0 = 10;
@@ -141,12 +141,12 @@ HWTEST_F(RSAshmemHelperTest, WriteToAshmemTest, TestSize.Level1)
 }
 
 /**
- * @tc.name: MapAshmemTest
+ * @tc.name: MapAshmemTest001
  * @tc.desc:
  * @tc.type:FUNC
  * @tc.require:
  */
-HWTEST_F(RSAshmemHelperTest, MapAshmemTest, TestSize.Level1)
+HWTEST_F(RSAshmemHelperTest, MapAshmemTest001, TestSize.Level1)
 {
     int fd = 10;
     size_t size = -10;
@@ -158,45 +158,45 @@ HWTEST_F(RSAshmemHelperTest, MapAshmemTest, TestSize.Level1)
 }
 
 /**
- * @tc.name: GetSizeTest
+ * @tc.name: GetSizeTest001
  * @tc.desc: Verify function GetSize
  * @tc.type:FUNC
  * @tc.require:issuesI9JRWH
  */
-HWTEST_F(RSAshmemHelperTest, GetSizeTest, TestSize.Level1)
+HWTEST_F(RSAshmemHelperTest, GetSizeTest001, TestSize.Level1)
 {
     EXPECT_EQ(rsAshmemAllocator->GetSize(), 10);
 }
 
 /**
- * @tc.name: GetDataTest
+ * @tc.name: GetDataTest001
  * @tc.desc: Verify function GetData
  * @tc.type:FUNC
  * @tc.require:issuesI9JRWH
  */
-HWTEST_F(RSAshmemHelperTest, GetDataTest, TestSize.Level1)
+HWTEST_F(RSAshmemHelperTest, GetDataTest001, TestSize.Level1)
 {
     EXPECT_EQ(rsAshmemAllocator->GetData(), nullptr);
 }
 
 /**
- * @tc.name: GetFdTest
+ * @tc.name: GetFdTest001
  * @tc.desc: Verify function GetFd
  * @tc.type:FUNC
  * @tc.require:issuesI9JRWH
  */
-HWTEST_F(RSAshmemHelperTest, GetFdTest, TestSize.Level1)
+HWTEST_F(RSAshmemHelperTest, GetFdTest001, TestSize.Level1)
 {
     EXPECT_EQ(rsAshmemAllocator->GetFd(), 10);
 }
 
 /**
- * @tc.name: CopyFromAshmemTest
+ * @tc.name: CopyFromAshmemTest001
  * @tc.desc:
  * @tc.type:FUNC
  * @tc.require:
  */
-HWTEST_F(RSAshmemHelperTest, CopyFromAshmemTest, TestSize.Level1)
+HWTEST_F(RSAshmemHelperTest, CopyFromAshmemTest001, TestSize.Level1)
 {
     int fd = 10;
     size_t size0 = 10;
@@ -216,12 +216,12 @@ HWTEST_F(RSAshmemHelperTest, CopyFromAshmemTest, TestSize.Level1)
 }
 
 /**
- * @tc.name: DeallocTest
+ * @tc.name: DeallocTest001
  * @tc.desc: Verify function Dealloc
  * @tc.type:FUNC
  * @tc.require:issuesI9JRWH
  */
-HWTEST_F(RSAshmemHelperTest, DeallocTest, TestSize.Level1)
+HWTEST_F(RSAshmemHelperTest, DeallocTest001, TestSize.Level1)
 {
     rsAshmemAllocator->data_ =
         ::mmap(nullptr, rsAshmemAllocator->size_, PROT_READ, MAP_SHARED, rsAshmemAllocator->fd_, 0);
@@ -238,12 +238,12 @@ HWTEST_F(RSAshmemHelperTest, DeallocTest, TestSize.Level1)
 }
 
 /**
- * @tc.name: ReallocTest
+ * @tc.name: ReallocTest001
  * @tc.desc: Verify function Realloc
  * @tc.type:FUNC
  * @tc.require:issuesI9JRWH
  */
-HWTEST_F(RSAshmemHelperTest, ReallocTest, TestSize.Level1)
+HWTEST_F(RSAshmemHelperTest, ReallocTest001, TestSize.Level1)
 {
     void* wrongData = ::mmap(nullptr, rsAshmemAllocator->size_, PROT_READ, MAP_SHARED, rsAshmemAllocator->fd_, 0);
     size_t newSize1 = 1;
@@ -251,12 +251,12 @@ HWTEST_F(RSAshmemHelperTest, ReallocTest, TestSize.Level1)
 }
 
 /**
- * @tc.name: InjectFileDescriptorTest
+ * @tc.name: InjectFileDescriptorTest001
  * @tc.desc: Verify function InjectFileDescriptor
  * @tc.type:FUNC
  * @tc.require:issuesI9JRWH
  */
-HWTEST_F(RSAshmemHelperTest, InjectFileDescriptorTest, TestSize.Level1)
+HWTEST_F(RSAshmemHelperTest, InjectFileDescriptorTest001, TestSize.Level1)
 {
     MessageParcel ashmemParcel;
     RSAshmemHelper rsAshmemHelper;
@@ -266,24 +266,24 @@ HWTEST_F(RSAshmemHelperTest, InjectFileDescriptorTest, TestSize.Level1)
 }
 
 /**
- * @tc.name: AllocTest
+ * @tc.name: AllocTest001
  * @tc.desc: Verify function Alloc
  * @tc.type:FUNC
  * @tc.require:issuesI9JRWH
  */
-HWTEST_F(RSAshmemHelperTest, AllocTest, TestSize.Level1)
+HWTEST_F(RSAshmemHelperTest, AllocTest001, TestSize.Level1)
 {
     size_t allocSize = 1;
     EXPECT_EQ(rsAshmemAllocator->Alloc(allocSize), nullptr);
 }
 
 /**
- * @tc.name: CopyFileDescriptorTest
+ * @tc.name: CopyFileDescriptorTest001
  * @tc.desc: Verify function CopyFileDescriptor
  * @tc.type:FUNC
  * @tc.require:issuesI9JRWH
  */
-HWTEST_F(RSAshmemHelperTest, CopyFileDescriptorTest, TestSize.Level1)
+HWTEST_F(RSAshmemHelperTest, CopyFileDescriptorTest001, TestSize.Level1)
 {
     MessageParcel ashmemParcel;
     RSAshmemHelper rsAshmemHelper;
@@ -293,12 +293,12 @@ HWTEST_F(RSAshmemHelperTest, CopyFileDescriptorTest, TestSize.Level1)
 }
 
 /**
- * @tc.name: ParseFromAshmemParcelTest
+ * @tc.name: ParseFromAshmemParcelTest001
  * @tc.desc: Verify function ParseFromAshmemParcel
  * @tc.type:FUNC
  * @tc.require:issuesI9JRWH
  */
-HWTEST_F(RSAshmemHelperTest, ParseFromAshmemParcelTest, TestSize.Level1)
+HWTEST_F(RSAshmemHelperTest, ParseFromAshmemParcelTest001, TestSize.Level1)
 {
     MessageParcel ashmemParcel;
     RSAshmemHelper rsAshmemHelper;
@@ -306,12 +306,12 @@ HWTEST_F(RSAshmemHelperTest, ParseFromAshmemParcelTest, TestSize.Level1)
 }
 
 /**
- * @tc.name: CreateAshmemParcelTest
+ * @tc.name: CreateAshmemParcelTest001
  * @tc.desc: Verify function CreateAshmemParcel
  * @tc.type:FUNC
  * @tc.require:issuesI9JRWH
  */
-HWTEST_F(RSAshmemHelperTest, CreateAshmemParcelTest, TestSize.Level1)
+HWTEST_F(RSAshmemHelperTest, CreateAshmemParcelTest001, TestSize.Level1)
 {
     RSAshmemHelper rsAshmemHelper;
     auto dataParcel1 = std::make_shared<MessageParcel>();
