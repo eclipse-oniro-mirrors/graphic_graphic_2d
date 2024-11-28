@@ -57,12 +57,12 @@ void SetRSJankStatsTest(std::shared_ptr<RSJankStats> rsJankStats, int64_t rtEndT
 }
 
 /**
- * @tc.name: UpdateEndTimeTest
+ * @tc.name: UpdateEndTimeTest001
  * @tc.desc:
  * @tc.type:FUNC
  * @tc.require:
  */
-HWTEST_F(RSJankStatsTest, UpdateEndTimeTest, TestSize.Level1)
+HWTEST_F(RSJankStatsTest, UpdateEndTimeTest001, TestSize.Level1)
 {
     auto& rsJankStatsInstance = RSJankStats::GetInstance();
     rsJankStatsInstance.isFirstSetEnd_ = false;
@@ -73,12 +73,12 @@ HWTEST_F(RSJankStatsTest, UpdateEndTimeTest, TestSize.Level1)
 }
 
 /**
- * @tc.name: SetEndTimeTest
+ * @tc.name: SetEndTimeTest001
  * @tc.desc:
  * @tc.type:FUNC
  * @tc.require:
  */
-HWTEST_F(RSJankStatsTest, SetEndTimeTest, TestSize.Level1)
+HWTEST_F(RSJankStatsTest, SetEndTimeTest001, TestSize.Level1)
 {
     auto& rsJankStatsInstance = RSJankStats::GetInstance();
     rsJankStatsInstance.SetEndTime(false);
@@ -91,12 +91,12 @@ HWTEST_F(RSJankStatsTest, SetEndTimeTest, TestSize.Level1)
 }
 
 /**
- * @tc.name: HandleDirectCompositionTest
+ * @tc.name: HandleDirectCompositionTest001
  * @tc.desc:
  * @tc.type:FUNC
  * @tc.require:
  */
-HWTEST_F(RSJankStatsTest, HandleDirectCompositionTest, TestSize.Level1)
+HWTEST_F(RSJankStatsTest, HandleDirectCompositionTest001, TestSize.Level1)
 {
     JankDurationParams rsParams;
     auto& rsJankStatsInstance = RSJankStats::GetInstance();
@@ -115,12 +115,12 @@ HWTEST_F(RSJankStatsTest, HandleDirectCompositionTest, TestSize.Level1)
 }
 
 /**
- * @tc.name: SetReportEventResponseTest
+ * @tc.name: SetReportEventResponseTest001
  * @tc.desc:
  * @tc.type:FUNC
  * @tc.require:
  */
-HWTEST_F(RSJankStatsTest, SetReportEventResponseTest, TestSize.Level1)
+HWTEST_F(RSJankStatsTest, SetReportEventResponseTest001, TestSize.Level1)
 {
     DataBaseRs info1;
     auto& rsJankStatsInstance = RSJankStats::GetInstance();
@@ -135,12 +135,12 @@ HWTEST_F(RSJankStatsTest, SetReportEventResponseTest, TestSize.Level1)
 }
 
 /**
- * @tc.name: UpdateJankFrameTest
+ * @tc.name: UpdateJankFrameTest001
  * @tc.desc:
  * @tc.type:FUNC
  * @tc.require:
  */
-HWTEST_F(RSJankStatsTest, ReportJankStatsTest, TestSize.Level1)
+HWTEST_F(RSJankStatsTest, ReportJankStatsTest001, TestSize.Level1)
 {
     auto& rsJankStatsInstance = RSJankStats::GetInstance();
     rsJankStatsInstance.SetStartTime();
@@ -150,12 +150,12 @@ HWTEST_F(RSJankStatsTest, ReportJankStatsTest, TestSize.Level1)
 }
 
 /**
- * @tc.name: SetReportEventCompleteTest
+ * @tc.name: SetReportEventCompleteTest001
  * @tc.desc:
  * @tc.type:FUNC
  * @tc.require:
  */
-HWTEST_F(RSJankStatsTest, SetReportEventCompleteTest, TestSize.Level1)
+HWTEST_F(RSJankStatsTest, SetReportEventCompleteTest001, TestSize.Level1)
 {
     DataBaseRs info1;
     auto& rsJankStatsInstance = RSJankStats::GetInstance();
@@ -170,12 +170,12 @@ HWTEST_F(RSJankStatsTest, SetReportEventCompleteTest, TestSize.Level1)
 }
 
 /**
- * @tc.name: ConvertTimeToSystimeTest
+ * @tc.name: ConvertTimeToSystimeTest001
  * @tc.desc:
  * @tc.type:FUNC
  * @tc.require:
  */
-HWTEST_F(RSJankStatsTest, ConvertTimeToSystimeTest, TestSize.Level1)
+HWTEST_F(RSJankStatsTest, ConvertTimeToSystimeTest001, TestSize.Level1)
 {
     DataBaseRs info1;
     info1.uniqueId = 0;
@@ -208,12 +208,12 @@ HWTEST_F(RSJankStatsTest, ConvertTimeToSystimeTest, TestSize.Level1)
 }
 
 /**
- * @tc.name: SetReportEventJankFrameTest
+ * @tc.name: SetReportEventJankFrameTest001
  * @tc.desc:
  * @tc.type:FUNC
  * @tc.require:
  */
-HWTEST_F(RSJankStatsTest, SetReportEventJankFrameTest, TestSize.Level1)
+HWTEST_F(RSJankStatsTest, SetReportEventJankFrameTest001, TestSize.Level1)
 {
     DataBaseRs info1;
     auto& rsJankStatsInstance = RSJankStats::GetInstance();
@@ -227,12 +227,12 @@ HWTEST_F(RSJankStatsTest, SetReportEventJankFrameTest, TestSize.Level1)
 }
 
 /**
- * @tc.name: RecordJankFrameSingleTest
+ * @tc.name: RecordJankFrameSingleTest001
  * @tc.desc: test RecordJankFrameSingle
  * @tc.type:FUNC
  * @tc.require: issuesI9K7SJ
  */
-HWTEST_F(RSJankStatsTest, RecordJankFrameSingleTest, TestSize.Level1)
+HWTEST_F(RSJankStatsTest, RecordJankFrameSingleTest001, TestSize.Level1)
 {
     auto& rsJankStatsInstance = RSJankStats::GetInstance();
     JankFrameRecordStats recordStats = {"test", 1};
@@ -245,12 +245,12 @@ HWTEST_F(RSJankStatsTest, RecordJankFrameSingleTest, TestSize.Level1)
 }
 
 /**
- * @tc.name: SetRSJankStatsTest001
+ * @tc.name: SetRSJankStats001
  * @tc.desc: SetRSJankStats and GetEffectiveFrameTime test
  * @tc.type: FUNC
  * @tc.require: issuesI9TD1K
  */
-HWTEST_F(RSJankStatsTest, SetRSJankStatsTest001, TestSize.Level1)
+HWTEST_F(RSJankStatsTest, SetRSJankStats001, TestSize.Level1)
 {
     std::shared_ptr<RSJankStats> rsJankStats1 = std::make_shared<RSJankStats>();
     EXPECT_NE(rsJankStats1, nullptr);
@@ -294,12 +294,12 @@ HWTEST_F(RSJankStatsTest, SetRSJankStatsTest001, TestSize.Level1)
 }
 
 /**
- * @tc.name: ReportEventCompleteTest
+ * @tc.name: ReportEventComplete001
  * @tc.desc: test ReportEventComplete
  * @tc.type:FUNC
  * @tc.require: issuesI9K7SJ
  */
-HWTEST_F(RSJankStatsTest, ReportEventCompleteTest, TestSize.Level1)
+HWTEST_F(RSJankStatsTest, ReportEventComplete001, TestSize.Level1)
 {
     auto& rsJankStatsInstance = RSJankStats::GetInstance();
     DataBaseRs info1;
@@ -312,7 +312,7 @@ HWTEST_F(RSJankStatsTest, ReportEventCompleteTest, TestSize.Level1)
 }
 
 /**
- * @tc.name: SetImplicitAnimationEndTest002
+ * @tc.name: SetImplicitAnimationEnd002
  * @tc.desc: SetImplicitAnimationEnd ReportEventJankFrame ReportEventHitchTimeRatio ReportEventFirstFrame test
  * @tc.type: FUNC
  * @tc.require: issuesI9TD1K
@@ -371,12 +371,12 @@ HWTEST_F(RSJankStatsTest, SetImplicitAnimationEnd002, TestSize.Level1)
 }
 
 /**
- * @tc.name: ReportJankStatsTest003
+ * @tc.name: ReportJankStats003
  * @tc.desc: ReportJankStats and HandleImplicitAnimationEndInAdvance test
  * @tc.type: FUNC
  * @tc.require: issuesI9TD1K
  */
-HWTEST_F(RSJankStatsTest, ReportJankStatsTest003, TestSize.Level1)
+HWTEST_F(RSJankStatsTest, ReportJankStats003, TestSize.Level1)
 {
     std::shared_ptr<RSJankStats> rsJankStats3 = std::make_shared<RSJankStats>();
     EXPECT_NE(rsJankStats3, nullptr);
@@ -412,12 +412,12 @@ HWTEST_F(RSJankStatsTest, ReportJankStatsTest003, TestSize.Level1)
 }
 
 /**
- * @tc.name: RecordJankFrameTest004
+ * @tc.name: RecordJankFrame004
  * @tc.desc: RecordJankFrame and RecordJankFrameSingle test
  * @tc.type: FUNC
  * @tc.require: issuesI9TD1K
  */
-HWTEST_F(RSJankStatsTest, RecordJankFrameTest004, TestSize.Level1)
+HWTEST_F(RSJankStatsTest, RecordJankFrame004, TestSize.Level1)
 {
     // RecordJankFrame test
     std::shared_ptr<RSJankStats> rsJankStats4 = std::make_shared<RSJankStats>();
@@ -440,12 +440,12 @@ HWTEST_F(RSJankStatsTest, RecordJankFrameTest004, TestSize.Level1)
 }
 
 /**
- * @tc.name: RecordAnimationDynamicFrameRateTest005
+ * @tc.name: RecordAnimationDynamicFrameRate005
  * @tc.desc: RecordAnimationDynamicFrameRate test
  * @tc.type: FUNC
  * @tc.require: issueIA61E9
  */
-HWTEST_F(RSJankStatsTest, RecordAnimationDynamicFrameRateTest005, TestSize.Level1)
+HWTEST_F(RSJankStatsTest, RecordAnimationDynamicFrameRate005, TestSize.Level1)
 {
     std::shared_ptr<RSJankStats> rsJankStats5 = std::make_shared<RSJankStats>();
     EXPECT_NE(rsJankStats5, nullptr);
@@ -496,12 +496,12 @@ HWTEST_F(RSJankStatsTest, RecordAnimationDynamicFrameRateTest005, TestSize.Level
 }
 
 /**
- * @tc.name: SetAnimationTraceBeginTest006
+ * @tc.name: SetAnimationTraceBegin006
  * @tc.desc: SetAnimationTraceBegin test
  * @tc.type: FUNC
  * @tc.require: issuesI9TD1K
  */
-HWTEST_F(RSJankStatsTest, SetAnimationTraceBeginTest006, TestSize.Level1)
+HWTEST_F(RSJankStatsTest, SetAnimationTraceBegin006, TestSize.Level1)
 {
     std::shared_ptr<RSJankStats> rsJankStats6 = std::make_shared<RSJankStats>();
     EXPECT_NE(rsJankStats6, nullptr);
@@ -525,12 +525,12 @@ HWTEST_F(RSJankStatsTest, SetAnimationTraceBeginTest006, TestSize.Level1)
 }
 
 /**
- * @tc.name: SetAnimationTraceEndTest007
+ * @tc.name: SetAnimationTraceEnd007
  * @tc.desc: SetAnimationTraceEnd test
  * @tc.type: FUNC
  * @tc.require: issuesI9TD1K
  */
-HWTEST_F(RSJankStatsTest, SetAnimationTraceEndTest007, TestSize.Level1)
+HWTEST_F(RSJankStatsTest, SetAnimationTraceEnd007, TestSize.Level1)
 {
     std::shared_ptr<RSJankStats> rsJankStats7 = std::make_shared<RSJankStats>();
     EXPECT_NE(rsJankStats7, nullptr);
@@ -555,12 +555,12 @@ HWTEST_F(RSJankStatsTest, SetAnimationTraceEndTest007, TestSize.Level1)
 }
 
 /**
- * @tc.name: CheckAnimationTraceTimeoutTest008
+ * @tc.name: CheckAnimationTraceTimeout008
  * @tc.desc: CheckAnimationTraceTimeout test
  * @tc.type: FUNC
  * @tc.require: issuesI9TD1K
  */
-HWTEST_F(RSJankStatsTest, CheckAnimationTraceTimeoutTest008, TestSize.Level1)
+HWTEST_F(RSJankStatsTest, CheckAnimationTraceTimeout008, TestSize.Level1)
 {
     std::shared_ptr<RSJankStats> rsJankStats8 = std::make_shared<RSJankStats>();
     EXPECT_NE(rsJankStats8, nullptr);
@@ -584,12 +584,12 @@ HWTEST_F(RSJankStatsTest, CheckAnimationTraceTimeoutTest008, TestSize.Level1)
 }
 
 /**
- * @tc.name: GetTraceIdInitTest009
+ * @tc.name: GetTraceIdInit009
  * @tc.desc: GetTraceIdInit GetEffectiveFrameTimeFloat ConvertTimeToSystime test
  * @tc.type: FUNC
  * @tc.require: issuesI9TD1K
  */
-HWTEST_F(RSJankStatsTest, GetTraceIdInitTest009, TestSize.Level1)
+HWTEST_F(RSJankStatsTest, GetTraceIdInit009, TestSize.Level1)
 {
     std::shared_ptr<RSJankStats> rsJankStats9 = std::make_shared<RSJankStats>();
     EXPECT_NE(rsJankStats9, nullptr);
@@ -619,12 +619,12 @@ HWTEST_F(RSJankStatsTest, GetTraceIdInitTest009, TestSize.Level1)
 }
 
 /**
- * @tc.name: GetMaxJankInfoTest010
+ * @tc.name: GetMaxJankInfo010
  * @tc.desc: GetMaxJankInfo test
  * @tc.type: FUNC
  * @tc.require: issueIA61E9
  */
-HWTEST_F(RSJankStatsTest, GetMaxJankInfoTest010, TestSize.Level1)
+HWTEST_F(RSJankStatsTest, GetMaxJankInfo010, TestSize.Level1)
 {
     std::shared_ptr<RSJankStats> rsJankStats10 = std::make_shared<RSJankStats>();
     EXPECT_NE(rsJankStats10, nullptr);

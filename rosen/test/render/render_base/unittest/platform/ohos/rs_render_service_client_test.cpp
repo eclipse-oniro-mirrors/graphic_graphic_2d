@@ -78,7 +78,7 @@ public:
  * @tc.type:FUNC
  * @tc.require: issuesI9K7SJ
  */
-HWTEST_F(RSClientTest, ExecuteSynchronousTask001, TestSize.Level1)
+HWTEST_F(RSClientTest, ExecuteSynchronousTaskTest001, TestSize.Level1)
 {
     ASSERT_NE(rsClient, nullptr);
     rsClient->ExecuteSynchronousTask(nullptr);
@@ -94,7 +94,7 @@ HWTEST_F(RSClientTest, ExecuteSynchronousTask001, TestSize.Level1)
  * @tc.type:FUNC
  * @tc.require: issuesI9K7SJ
  */
-HWTEST_F(RSClientTest, GetScreenData001, TestSize.Level1)
+HWTEST_F(RSClientTest, GetScreenDataTest001, TestSize.Level1)
 {
     auto screenId1 = rsClient->GetDefaultScreenId();
     EXPECT_NE(screenId1, INVALID_SCREEN_ID);
@@ -109,7 +109,7 @@ HWTEST_F(RSClientTest, GetScreenData001, TestSize.Level1)
  * @tc.type:FUNC
  * @tc.require: issuesI9K7SJ
  */
-HWTEST_F(RSClientTest, GetScreenBacklight001, TestSize.Level1)
+HWTEST_F(RSClientTest, GetScreenBacklightTest001, TestSize.Level1)
 {
     auto screenId1 = rsClient->GetDefaultScreenId();
     EXPECT_NE(screenId1, INVALID_SCREEN_ID);
@@ -125,7 +125,7 @@ HWTEST_F(RSClientTest, GetScreenBacklight001, TestSize.Level1)
  * @tc.type:FUNC
  * @tc.require: issuesI9K7SJ
 */
-HWTEST_F(RSClientTest, SetScreenGamutMap001, TestSize.Level1)
+HWTEST_F(RSClientTest, SetScreenGamutMapTest001, TestSize.Level1)
 {
     ScreenGamutMap mode1 = ScreenGamutMap::GAMUT_MAP_CONSTANT;
     ScreenId screenId1 = rsClient->GetDefaultScreenId();
@@ -141,7 +141,7 @@ HWTEST_F(RSClientTest, SetScreenGamutMap001, TestSize.Level1)
  * @tc.type:FUNC
  * @tc.require: issuesI9K7SJ
 */
-HWTEST_F(RSClientTest, GetScreenColorGamut001, TestSize.Level1)
+HWTEST_F(RSClientTest, GetScreenColorGamutTest001, TestSize.Level1)
 {
     auto csurface = IConsumerSurface::Create();
     EXPECT_NE(csurface, nullptr);
@@ -170,7 +170,7 @@ HWTEST_F(RSClientTest, GetScreenColorGamut001, TestSize.Level1)
  * @tc.type:FUNC
  * @tc.require: issuesI9K7SJ
 */
-HWTEST_F(RSClientTest, SetScreenCorrection001, TestSize.Level1)
+HWTEST_F(RSClientTest, SetScreenCorrectionTest001, TestSize.Level1)
 {
     ScreenId screenId1 = rsClient->GetDefaultScreenId();
     uint32_t res = rsClient->SetScreenCorrection(screenId1, ScreenRotation::ROTATION_90);
@@ -183,7 +183,7 @@ HWTEST_F(RSClientTest, SetScreenCorrection001, TestSize.Level1)
  * @tc.type:FUNC
  * @tc.require: issuesI9K7SJ
 */
-HWTEST_F(RSClientTest, SetVirtualMirrorScreenCanvasRotation001, TestSize.Level1)
+HWTEST_F(RSClientTest, SetVirtualMirrorScreenCanvasRotationTest001, TestSize.Level1)
 {
     auto csurface = IConsumerSurface::Create();
     EXPECT_NE(csurface, nullptr);
@@ -205,7 +205,7 @@ HWTEST_F(RSClientTest, SetVirtualMirrorScreenCanvasRotation001, TestSize.Level1)
  * @tc.type:FUNC
  * @tc.require: issueIABHAX
  */
-HWTEST_F(RSClientTest, RegisterUIExtensionCallback_001, TestSize.Level1)
+HWTEST_F(RSClientTest, RegisterUIExtensionCallbackTest001, TestSize.Level1)
 {
     uint64_t userId1 = 0;
     UIExtensionCallback callback1 = [](std::shared_ptr<RSUIExtensionData>, uint64_t) {};
@@ -219,7 +219,7 @@ HWTEST_F(RSClientTest, RegisterUIExtensionCallback_001, TestSize.Level1)
  * @tc.type:FUNC
  * @tc.require: issueIABHAX
  */
-HWTEST_F(RSClientTest, RegisterUIExtensionCallback_002, TestSize.Level1)
+HWTEST_F(RSClientTest, RegisterUIExtensionCallbackTest002, TestSize.Level1)
 {
     uint64_t userId2 = 0;
     UIExtensionCallback callback2 = nullptr;
@@ -233,7 +233,7 @@ HWTEST_F(RSClientTest, RegisterUIExtensionCallback_002, TestSize.Level1)
  * @tc.type:FUNC
  * @tc.require: issuesI9K7SJ
 */
-HWTEST_F(RSClientTest, SetVirtualMirrorScreenScaleMode001, TestSize.Level1)
+HWTEST_F(RSClientTest, SetVirtualMirrorScreenScaleModeTest001, TestSize.Level1)
 {
     auto csurface = IConsumerSurface::Create();
     EXPECT_NE(csurface, nullptr);
