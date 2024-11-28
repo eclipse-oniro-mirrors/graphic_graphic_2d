@@ -831,18 +831,44 @@ void RSUniRenderVisitor::CheckMergeFilterDirtyByIntersectWithDirty(OcclusionRect
     filterSet.clear();
 }
 
+void RSUniRenderVisitor::PrepareForSkippedCrossNode(RSSurfaceRenderNode& node)
+{
+    int32_t curOffsetX = curDisplayNode_->GetDisplayOffsetX();
+    int32_t curOffsetY = curDisplayNode_->GetDisplayOffsetY();
+    // 1. record this surface node and its position on second display, for global dirty region conversion.
+    curDisplayNode_->RecordMainAndLeashSurfaces(node.shared_from_this());
+    node.UpdateCrossNodeSkippedDisplayOffset(curDisplayNode_->GetId(), curOffsetX, curOffsetY);
+    curDisplayNode_->UpdateSurfaceNodePos(node.GetId(), node.GetOldDirty().Offset(
+        node.GetPreparedDisplayOffsetX() - curOffsetX,
+        node.GetPreparedDisplayOffsetY() - curOffsetY).IntersectRect(screenRect_));
+    // 2. record all children surface nodes and their position on second display, for global dirty region conversion.
+    std::vector<std::pair<NodeId, std::weak_ptr<RSSurfaceRenderNode>>> allSubSurfaceNodes;
+    node.GetAllSubSurfaceNodes(allSubSurfaceNodes);
+    for (auto& [_, subSurfaceNode] : allSubSurfaceNodes) {
+        if (auto childPtr = subSurfaceNode.lock()) {
+            curDisplayNode_->RecordMainAndLeashSurfaces(childPtr);
+            childPtr->UpdateCrossNodeSkippedDisplayOffset(curDisplayNode_->GetId(), curOffsetX, curOffsetY);
+            curDisplayNode_->UpdateSurfaceNodePos(childPtr->GetId(), childPtr->GetOldDirty().Offset(
+                childPtr->GetPreparedDisplayOffsetX() - curOffsetX,
+                childPtr->GetPreparedDisplayOffsetY() - curOffsetY).IntersectRect(screenRect_));
+        }
+    }
+}
+
 void RSUniRenderVisitor::QuickPrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
 {
-    RS_OPTIONAL_TRACE_NAME_FMT("RSUniRender::QuickPrepare:[%s] nodeId[%" PRIu64 "]"
-        "pid[%d] nodeType[%u] subTreeDirty[%d]", node.GetName().c_str(), node.GetId(), ExtractPid(node.GetId()),
-        static_cast<uint>(node.GetSurfaceNodeType()), node.IsSubTreeDirty());
-    RS_LOGD("RSUniRender::QuickPrepareSurfaceRenderNode:[%{public}s] nodeid:[%{public}" PRIu64 "]"
-        "pid:[%{public}d] nodeType:[%{public}d] subTreeDirty[%{public}d]", node.GetName().c_str(), node.GetId(),
-        ExtractPid(node.GetId()), static_cast<int>(node.GetSurfaceNodeType()), node.IsSubTreeDirty());
+    RS_OPTIONAL_TRACE_NAME_FMT("RSUniRender::QuickPrepare:[%s] nodeId[%" PRIu64 "] pid[%d] nodeType[%u]"
+        " subTreeDirty[%d], crossDisplay:[%d]", node.GetName().c_str(), node.GetId(), ExtractPid(node.GetId()),
+        static_cast<uint>(node.GetSurfaceNodeType()), node.IsSubTreeDirty(), node.IsFirstLevelCrossNode());
+    RS_LOGD("RSUniRender::QuickPrepareSurfaceRenderNode:[%{public}s] nodeid:[%{public}" PRIu64 "] pid:[%{public}d] "
+        "nodeType:[%{public}d] subTreeDirty[%{public}d] crossDisplay[%{public}d]", node.GetName().c_str(), node.GetId(),
+        ExtractPid(node.GetId()), static_cast<int>(node.GetSurfaceNodeType()), node.IsSubTreeDirty(),
+        node.IsFirstLevelCrossNode());
 
     // avoid cross node subtree visited twice or more
     UpdateSecuritySkipAndProtectedLayersRecord(node);
     if (CheckSkipCrossNode(node)) {
+        PrepareForSkippedCrossNode(node);
         return;
     }
     // 0. init curSurface info and check node info
@@ -871,8 +897,9 @@ void RSUniRenderVisitor::QuickPrepareSurfaceRenderNode(RSSurfaceRenderNode& node
     node.SetGlobalAlpha(curAlpha_);
     CheckFilterCacheNeedForceClearOrSave(node);
     node.CheckContainerDirtyStatusAndUpdateDirty(curContainerDirty_);
-    node.SetCurDisplayOffsetX(curDisplayNode_->GetDisplayOffsetX());
-    node.SetCurDisplayOffsetY(curDisplayNode_->GetDisplayOffsetY());
+    node.ClearCrossNodeSkippedDisplayOffset();
+    node.SetPreparedDisplayOffsetX(curDisplayNode_->GetDisplayOffsetX());
+    node.SetPreparedDisplayOffsetY(curDisplayNode_->GetDisplayOffsetY());
     if (node.GetGlobalPositionEnabled()) {
         parentSurfaceNodeMatrix_.Translate(
             -curDisplayNode_->GetDisplayOffsetX(), -curDisplayNode_->GetDisplayOffsetY());
@@ -897,8 +924,9 @@ void RSUniRenderVisitor::QuickPrepareSurfaceRenderNode(RSSurfaceRenderNode& node
         ForcePrepareSubTree();
     isSubTreeNeedPrepare ? QuickPrepareChildren(node) :
         node.SubTreeSkipPrepare(*curSurfaceDirtyManager_, curDirty_, dirtyFlag_, prepareClipRect_);
-    curSurfaceDirtyManager_->ClipDirtyRectWithinSurface();
-
+    if (!node.IsFirstLevelCrossNode()) {
+        curSurfaceDirtyManager_->ClipDirtyRectWithinSurface();
+    }
     auto dirtyRect = node.GetDirtyManager()->GetCurrentFrameDirtyRegion();
     RS_LOGD("QuickPrepare [%{public}s, %{public}" PRIu64 "] DirtyRect[%{public}d, %{public}d, %{public}d, %{public}d]",
         node.GetName().c_str(), node.GetId(), dirtyRect.GetLeft(), dirtyRect.GetTop(), dirtyRect.GetWidth(),
@@ -1020,9 +1048,7 @@ void RSUniRenderVisitor::CalculateOcclusion(RSSurfaceRenderNode& node)
         return;
     }
 
-    auto firstLevelNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(node.GetFirstLevelNode());
-    bool isFirstLevelCrossNode = firstLevelNode && firstLevelNode->IsCrossNode();
-    if (!curDisplayNode_->IsFirstVisitCrossNodeDisplay() && isFirstLevelCrossNode) {
+    if (!curDisplayNode_->IsFirstVisitCrossNodeDisplay() && node.IsFirstLevelCrossNode()) {
         RS_LOGD("RSUniRenderVisitor::CalculateOcclusion NodeName: %{public}s, NodeId: %{public}" PRIu64 ""
             "not paticipate in occlusion when cross node in expand screen", node.GetName().c_str(), node.GetId());
         return;
@@ -1178,7 +1204,6 @@ void RSUniRenderVisitor::QuickPrepareCanvasRenderNode(RSCanvasRenderNode& node)
     node.SetIsAccessibilityConfigChanged(false);
     node.OpincQuickMarkStableNode(unchangeMarkInApp_, unchangeMarkEnable_,
         IsAccessibilityConfigChanged());
-
     RectI prepareClipRect = prepareClipRect_;
     bool hasAccumulatedClip = hasAccumulatedClip_;
 
@@ -1286,23 +1311,27 @@ void RSUniRenderVisitor::QuickPrepareChildren(RSRenderNode& node)
     node.ResetChildUifirstSupportFlag();
     auto children = node.GetSortedChildren();
     if (NeedPrepareChindrenInReverseOrder(node)) {
-        std::for_each((*children).rbegin(), (*children).rend(), [this](const std::shared_ptr<RSRenderNode>& node) {
-            if (!node) {
+        std::for_each(
+            (*children).rbegin(), (*children).rend(), [this, &node](const std::shared_ptr<RSRenderNode>& child) {
+            if (!child) {
                 return;
             }
             auto containerDirty = curContainerDirty_;
-            curDirty_ = node->IsDirty();
-            curContainerDirty_ = curContainerDirty_ || node->IsDirty();
-            node->QuickPrepare(shared_from_this());
+            curDirty_ = child->IsDirty();
+            curContainerDirty_ = curContainerDirty_ || child->IsDirty();
+            child->SetFirstLevelCrossNode(node.IsFirstLevelCrossNode() || child->IsCrossNode());
+            child->QuickPrepare(shared_from_this());
             curContainerDirty_ = containerDirty;
         });
     } else {
-        std::for_each((*children).begin(), (*children).end(), [this](const std::shared_ptr<RSRenderNode>& node) {
-            if (!node) {
+        std::for_each(
+            (*children).begin(), (*children).end(), [this, &node](const std::shared_ptr<RSRenderNode>& child) {
+            if (!child) {
                 return;
             }
-            curDirty_ = node->IsDirty();
-            node->QuickPrepare(shared_from_this());
+            curDirty_ = child->IsDirty();
+            child->SetFirstLevelCrossNode(node.IsFirstLevelCrossNode() || child->IsCrossNode());
+            child->QuickPrepare(shared_from_this());
         });
     }
     ancestorNodeHasAnimation_ = animationBackup;
@@ -1397,9 +1426,7 @@ bool RSUniRenderVisitor::BeforeUpdateSurfaceDirtyCalc(RSSurfaceRenderNode& node)
         node.UpdateCurCornerRadius(curCornerRadius_);
         curSurfaceNode_ = node.ReinterpretCastTo<RSSurfaceRenderNode>();
         // dirty manager should not be overrode by cross node in expand screen
-        auto firstLevelNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(node.GetFirstLevelNode());
-        bool isFirstLevelCrossNode = firstLevelNode && firstLevelNode->IsCrossNode();
-        curSurfaceDirtyManager_ = (!curDisplayNode_->IsFirstVisitCrossNodeDisplay() && isFirstLevelCrossNode) ?
+        curSurfaceDirtyManager_ = (!curDisplayNode_->IsFirstVisitCrossNodeDisplay() && node.IsFirstLevelCrossNode()) ?
             std::make_shared<RSDirtyRegionManager>() : node.GetDirtyManager();
         if (!curSurfaceDirtyManager_ || !curSurfaceNode_) {
             RS_LOGE("RSUniRenderVisitor::BeforeUpdateSurfaceDirtyCalc %{public}s has invalid"
@@ -2020,8 +2047,12 @@ void RSUniRenderVisitor::UpdateSurfaceDirtyAndGlobalDirty()
         }
         // 2. check surface node dirtyrect need merge into displayDirtyManager
         CheckMergeSurfaceDirtysForDisplay(surfaceNode);
-        // 3. check merge transparent filter when it intersects with pre-dirty
+        // 3. check merge transparent filter when it intersects with pre-dirty.
         CheckMergeDisplayDirtyByTransparentFilter(surfaceNode, accumulatedDirtyRegion);
+        // 4. for cross-display node, process its filter (which is not collected during prepare).
+        CollectFilterInCrossDisplayWindow(surfaceNode, accumulatedDirtyRegion);
+        // 5. accumulate dirty region of this surface.
+        AccumulateSurfaceDirtyRegion(surfaceNode, accumulatedDirtyRegion);
     });
     curDisplayNode_->SetMainAndLeashSurfaceDirty(hasMainAndLeashSurfaceDirty);
     CheckMergeDebugRectforRefreshRate(curMainAndLeashSurfaces);
@@ -2322,19 +2353,64 @@ void RSUniRenderVisitor::CheckMergeSurfaceDirtysForDisplay(std::shared_ptr<RSSur
     if (surfaceNode->GetDirtyManager() == nullptr || curDisplayNode_->GetDirtyManager() == nullptr) {
         return;
     }
-    // 1 Handles the case of transparent surface, merge transparent dirty rect
-    CheckMergeDisplayDirtyByTransparent(*surfaceNode);
-    // 2 Zorder changed case, merge surface dest Rect
-    CheckMergeDisplayDirtyByZorderChanged(*surfaceNode);
-    // 3 surfacePos chanded case, merge surface lastframe pos or curframe pos
-    CheckMergeDisplayDirtyByPosChanged(*surfaceNode);
-    // 4 shadow disappear and appear case.
-    CheckMergeDisplayDirtyByShadowChanged(*surfaceNode);
-    // 5 handle last and curframe surfaces which appear or disappear case
+    // 1 handle last and curframe surfaces which appear or disappear case
     CheckMergeDisplayDirtyBySurfaceChanged();
-    // 6 handle surface has attraction effect
+    // 2 if the surface node is cross-display and prepared again, convert its dirty region into global.
+    if (surfaceNode->IsFirstLevelCrossNode() && !curDisplayNode_->IsFirstVisitCrossNodeDisplay()) {
+        CheckMergeDisplayDirtyByPosChanged(*surfaceNode);
+        CheckMergeDisplayDirtyByCrossDisplayWindow(*surfaceNode);
+        return;
+    }
+    // 3 Handles the case of transparent surface, merge transparent dirty rect
+    CheckMergeDisplayDirtyByTransparent(*surfaceNode);
+    // 4 Zorder changed case, merge surface dest Rect
+    CheckMergeDisplayDirtyByZorderChanged(*surfaceNode);
+    // 5 surfacePos chanded case, merge surface lastframe pos or curframe pos
+    CheckMergeDisplayDirtyByPosChanged(*surfaceNode);
+    // 6 shadow disappear and appear case.
+    CheckMergeDisplayDirtyByShadowChanged(*surfaceNode);
+    // 7 handle surface has attraction effect
     CheckMergeDisplayDirtyByAttraction(*surfaceNode);
     // More: any other display dirty caused by surfaceNode should be added here like CheckMergeDisplayDirtByXXX
+}
+
+void RSUniRenderVisitor::CheckMergeDisplayDirtyByCrossDisplayWindow(RSSurfaceRenderNode& surfaceNode) const
+{
+    // transfer from the display coordinate system during quickprepare into current display coordinate system.
+    auto dirtyRect = surfaceNode.GetDirtyManager()->GetCurrentFrameDirtyRegion().Offset(
+        surfaceNode.GetPreparedDisplayOffsetX() - curDisplayNode_->GetDisplayOffsetX(),
+        surfaceNode.GetPreparedDisplayOffsetY() - curDisplayNode_->GetDisplayOffsetY());
+    RS_OPTIONAL_TRACE_NAME_FMT("CheckMergeDisplayDirtyByCrossDisplayWindow %s, global dirty %s, add rect %s",
+        surfaceNode.GetName().c_str(), curDisplayDirtyManager_->GetCurrentFrameDirtyRegion().ToString().c_str(),
+        dirtyRect.ToString().c_str());
+    curDisplayDirtyManager_->MergeDirtyRect(dirtyRect);
+}
+
+void RSUniRenderVisitor::CollectFilterInCrossDisplayWindow(
+    std::shared_ptr<RSSurfaceRenderNode>& surfaceNode, Occlusion::Region& accumulatedDirtyRegion)
+{
+    if (!surfaceNode->IsFirstLevelCrossNode() || curDisplayNode_->IsFirstVisitCrossNodeDisplay()) {
+        return;
+    }
+    const auto& nodeMap = RSMainThread::Instance()->GetContext().GetNodeMap();
+    for (auto& child : surfaceNode->GetVisibleFilterChild()) {
+        auto& filterNode = nodeMap.GetRenderNode<RSRenderNode>(child);
+        if (!filterNode) {
+            continue;
+        }
+        auto filterRect = filterNode->GetAbsDrawRect().Offset(
+            filterNode->GetPreparedDisplayOffsetX() - curDisplayNode_->GetDisplayOffsetX(),
+            filterNode->GetPreparedDisplayOffsetY() - curDisplayNode_->GetDisplayOffsetY()).IntersectRect(screenRect_);
+        if (surfaceNode->IsTransparent() && accumulatedDirtyRegion.IsIntersectWith(Occlusion::Rect(filterRect))) {
+            RS_OPTIONAL_TRACE_NAME_FMT("CollectFilterInCrossDisplayWindow [%s] has filter, add [%s] to global dirty",
+                surfaceNode->GetName().c_str(), filterRect.ToString().c_str());
+            curDisplayDirtyManager_->MergeDirtyRect(filterRect);
+        } else {
+            RS_OPTIONAL_TRACE_NAME_FMT("CollectFilterInCrossDisplayWindow [%s] has filter, add [%s] to global filter",
+                surfaceNode->GetName().c_str(), filterRect.ToString().c_str());
+            globalFilter_.insert({ filterNode->GetId(), filterRect });
+        }
+    }
 }
 
 void RSUniRenderVisitor::CheckMergeDisplayDirtyByTransparentRegions(RSSurfaceRenderNode& surfaceNode) const
@@ -2423,8 +2499,21 @@ void RSUniRenderVisitor::CheckMergeDisplayDirtyByTransparentFilter(
             filterNode->PostPrepareForBlurFilterNode(*(curDisplayNode_->GetDirtyManager()), needRequestNextVsync_);
         }
     }
-    auto surfaceDirtyRegion = Occlusion::Region{
-        Occlusion::Rect{ surfaceNode->GetDirtyManager()->GetCurrentFrameDirtyRegion() } };
+}
+
+void RSUniRenderVisitor::AccumulateSurfaceDirtyRegion(
+    std::shared_ptr<RSSurfaceRenderNode>& surfaceNode, Occlusion::Region& accumulatedDirtyRegion) const
+{
+    if (!surfaceNode->GetDirtyManager()) {
+        return;
+    }
+    auto surfaceDirtyRect = surfaceNode->GetDirtyManager()->GetCurrentFrameDirtyRegion();
+    if (surfaceNode->IsFirstLevelCrossNode() && !curDisplayNode_->IsFirstVisitCrossNodeDisplay()) {
+        surfaceDirtyRect = surfaceDirtyRect.Offset(
+            surfaceNode->GetPreparedDisplayOffsetX() - curDisplayNode_->GetDisplayOffsetX(),
+            surfaceNode->GetPreparedDisplayOffsetY() - curDisplayNode_->GetDisplayOffsetY());
+    }
+    auto surfaceDirtyRegion = Occlusion::Region{ Occlusion::Rect{ surfaceDirtyRect } };
     accumulatedDirtyRegion.OrSelf(surfaceDirtyRegion);
 }
 
@@ -2572,7 +2661,7 @@ void RSUniRenderVisitor::PostPrepare(RSRenderNode& node, bool subTreeSkipped)
     }
     auto isOccluded = curSurfaceNode_ ?
         curSurfaceNode_->IsMainWindowType() && curSurfaceNode_->GetVisibleRegion().IsEmpty() : false;
-    if (subTreeSkipped && !isOccluded) {
+    if (subTreeSkipped && (!isOccluded || node.IsFirstLevelCrossNode())) {
         UpdateHwcNodeRectInSkippedSubTree(node);
         CheckFilterNodeInSkippedSubTreeNeedClearCache(node, *curDirtyManager);
         UpdateSubSurfaceNodeRectInSkippedSubTree(node);
@@ -3054,7 +3143,6 @@ void RSUniRenderVisitor::PrepareRootRenderNode(RSRootRenderNode& node)
         RS_LOGE("RSUniRenderVisitor::PrepareRootRenderNode curSurfaceDirtyManager is nullptr");
         return;
     }
-
     dirtyFlag_ = node.UpdateDrawRectAndDirtyRegion(
         *curSurfaceDirtyManager_, dirtyFlag_, prepareClipRect_, parentSurfaceNodeMatrix_);
 

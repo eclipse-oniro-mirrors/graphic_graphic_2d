@@ -54,6 +54,8 @@ namespace {
     const std::string CAPTURE_WINDOW_NAME = "CapsuleWindow";
     constexpr int MAX_ALPHA = 255;
     constexpr OHOS::Rosen::NodeId DEFAULT_NODE_ID = 100;
+    constexpr int32_t DEFAULT_DISPLAY_OFFSET = 100;
+    const OHOS::Rosen::RectI DEFAULT_SCREEN_RECT = {0, 0, 1000, 1000};
 }
 
 namespace OHOS::Rosen {
@@ -3754,6 +3756,84 @@ HWTEST_F(RSUniRenderVisitorTest, CheckMergeDisplayDirtyByTransparentRegions002, 
     rsUniRenderVisitor->curDisplayNode_->InitRenderParams();
     ASSERT_NE(rsUniRenderVisitor->curDisplayNode_, nullptr);
     rsUniRenderVisitor->CheckMergeDisplayDirtyByTransparentRegions(*surfaceNode);
+}
+
+/**
+ * @tc.name: CollectFilterInCrossDisplayWindow
+ * @tc.desc: Test CollectFilterInCrossDisplayWindow, if filter is non-transparent, collect to global filter.
+ * @tc.type: FUNC
+ * @tc.require: issueIB670G
+ */
+HWTEST_F(RSUniRenderVisitorTest, CollectFilterInCrossDisplayWindow_001, TestSize.Level2)
+{
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    ASSERT_NE(rsUniRenderVisitor, nullptr);
+    auto rsSurfaceRenderNode = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(rsSurfaceRenderNode, nullptr);
+    // set surface node fully opaque.
+    rsSurfaceRenderNode->globalAlpha_ = 1.f;
+    rsSurfaceRenderNode->abilityBgAlpha_ = MAX_ALPHA;
+    RSDisplayNodeConfig config;
+    NodeId id = 1;
+    rsUniRenderVisitor->curDisplayNode_ = std::make_shared<RSDisplayRenderNode>(id, config);
+    rsUniRenderVisitor->curDisplayDirtyManager_ = std::make_shared<RSDirtyRegionManager>();
+    rsUniRenderVisitor->curDisplayNode_->SetDisplayOffset(DEFAULT_DISPLAY_OFFSET, DEFAULT_DISPLAY_OFFSET);
+    // add filter node to parent surface.
+    auto filterNode = std::make_shared<RSCanvasRenderNode>(++id);
+    filterNode->absDrawRect_ = DEFAULT_FILTER_RECT;
+    auto& nodeMap = RSMainThread::Instance()->GetContext().GetMutableNodeMap();
+    nodeMap.renderNodeMap_.clear();
+    nodeMap.RegisterRenderNode(filterNode);
+    rsSurfaceRenderNode->visibleFilterChild_.push_back(filterNode->GetId());
+
+    auto accumDirtyRegion = Occlusion::Region();
+    // if node is not cross display, nothing collected.
+    rsUniRenderVisitor->CollectFilterInCrossDisplayWindow(rsSurfaceRenderNode, accumDirtyRegion);
+    ASSERT_TRUE(rsUniRenderVisitor->globalFilter_.empty());
+
+    // if node is cross display, collect to global filter.
+    rsSurfaceRenderNode->SetFirstLevelCrossNode(true);
+    rsUniRenderVisitor->curDisplayNode_->SetIsFirstVisitCrossNodeDisplay(false);
+    rsUniRenderVisitor->CollectFilterInCrossDisplayWindow(rsSurfaceRenderNode, accumDirtyRegion);
+    ASSERT_FALSE(rsUniRenderVisitor->globalFilter_.empty());
+}
+
+/**
+ * @tc.name: CollectFilterInCrossDisplayWindow
+ * @tc.desc: Test CollectFilterInCrossDisplayWindow, if transparent, collect to global dirty or global filter.
+ * @tc.type: FUNC
+ * @tc.require: issueIB670G
+ */
+HWTEST_F(RSUniRenderVisitorTest, CollectFilterInCrossDisplayWindow_002, TestSize.Level2)
+{
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    ASSERT_NE(rsUniRenderVisitor, nullptr);
+    auto rsSurfaceRenderNode = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(rsSurfaceRenderNode, nullptr);
+    // set surface node transparent.
+    rsSurfaceRenderNode->globalAlpha_ = 0.f;
+    rsSurfaceRenderNode->abilityBgAlpha_ = 0;
+    RSDisplayNodeConfig config;
+    NodeId id = 1;
+    rsUniRenderVisitor->curDisplayNode_ = std::make_shared<RSDisplayRenderNode>(id, config);
+    rsUniRenderVisitor->curDisplayDirtyManager_ = std::make_shared<RSDirtyRegionManager>();
+    rsUniRenderVisitor->curDisplayNode_->SetDisplayOffset(DEFAULT_DISPLAY_OFFSET, DEFAULT_DISPLAY_OFFSET);
+    rsUniRenderVisitor->screenRect_ = DEFAULT_SCREEN_RECT;
+    // add filter node to parent surface.
+    auto filterNode = std::make_shared<RSCanvasRenderNode>(++id);
+    filterNode->absDrawRect_ = DEFAULT_FILTER_RECT;
+    auto& nodeMap = RSMainThread::Instance()->GetContext().GetMutableNodeMap();
+    nodeMap.renderNodeMap_.clear();
+    nodeMap.RegisterRenderNode(filterNode);
+    rsSurfaceRenderNode->visibleFilterChild_.push_back(filterNode->GetId());
+
+    auto accumDirtyRegion = Occlusion::Region(Occlusion::Rect(DEFAULT_FILTER_RECT));
+
+    // if node is cross display, collect to global dirty.
+    rsSurfaceRenderNode->SetFirstLevelCrossNode(true);
+    rsUniRenderVisitor->curDisplayNode_->SetIsFirstVisitCrossNodeDisplay(false);
+    rsUniRenderVisitor->CollectFilterInCrossDisplayWindow(rsSurfaceRenderNode, accumDirtyRegion);
+    ASSERT_FALSE(rsUniRenderVisitor->curDisplayDirtyManager_->GetCurrentFrameDirtyRegion().IsEmpty());
 }
 
 /**

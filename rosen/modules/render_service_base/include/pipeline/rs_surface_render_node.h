@@ -1280,6 +1280,14 @@ public:
     bool NeedDrawBehindWindow() const override;
     void AddChildBlurBehindWindow(NodeId id) override;
     void RemoveChildBlurBehindWindow(NodeId id) override;
+    void UpdateCrossNodeSkippedDisplayOffset(NodeId displayId, int32_t offsetX, int32_t offsetY)
+    {
+        crossNodeSkippedDisplayOffsets_[displayId] = { offsetX, offsetY };
+    }
+    void ClearCrossNodeSkippedDisplayOffset()
+    {
+        crossNodeSkippedDisplayOffsets_.clear();
+    }
 protected:
     void OnSync() override;
 
@@ -1584,7 +1592,7 @@ private:
     bool subThreadAssignable_ = false;
     bool oldHasChildrenBlurBehindWindow_ = false;
     std::unordered_set<NodeId> childrenBlurBehindWindow_ = {};
-
+    std::unordered_map<NodeId, Vector2<int32_t>> crossNodeSkippedDisplayOffsets_ = {};
     // UIExtension record, <UIExtension, hostAPP>
     inline static std::unordered_map<NodeId, NodeId> secUIExtensionNodes_ = {};
     friend class SurfaceNodeCommandHelper;

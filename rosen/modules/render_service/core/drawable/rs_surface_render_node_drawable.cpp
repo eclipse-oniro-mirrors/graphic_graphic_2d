@@ -235,7 +235,8 @@ Drawing::Region RSSurfaceRenderNodeDrawable::CalculateVisibleDirtyRegion(RSRende
     Occlusion::Region globalDirtyRegion = GetGlobalDirtyRegion();
     // This include dirty region and occlusion region when surfaceNode is mainWindow.
     auto dirtyRegion = globalDirtyRegion.Or(surfaceNodeDirtyRegion);
-    auto visibleDirtyRegion = dirtyRegion.And(visibleRegion);
+    // visibility of cross-display surface (which is generally at the top) is ignored.
+    auto visibleDirtyRegion = surfaceParams.IsFirstLevelCrossNode() ? dirtyRegion : dirtyRegion.And(visibleRegion);
     if (visibleDirtyRegion.IsEmpty()) {
         RS_LOGD("RSSurfaceRenderNodeDrawable::OnDraw occlusion skip SurfaceName:%s NodeId:%" PRIu64 "",
             surfaceDrawable.GetName().c_str(), surfaceParams.GetId());
@@ -577,6 +578,22 @@ void RSSurfaceRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     RSRenderParams::SetParentSurfaceMatrix(parentSurfaceMatrix);
 }
 
+void RSSurfaceRenderNodeDrawable::CrossDisplaySurfaceDirtyRegionOffset(
+    const RSRenderThreadParams& uniParam, const RSSurfaceRenderParams& surfaceParam, RectI& surfaceDirtyRect) const
+{
+    if (!surfaceParam.IsFirstLevelCrossNode()) {
+        return;
+    }
+    auto displayOffsets = surfaceParam.GetCrossNodeSkippedDisplayOffsets();
+    auto curDisplayOffset = displayOffsets.find(uniParam.GetCurrentVisitDisplayDrawableId());
+    if (curDisplayOffset != displayOffsets.end()) {
+        // transfer from the display coordinate system during quickprepare into current display coordinate system.
+        int32_t offsetX = surfaceParam.GetPreparedDisplayOffsetX() - curDisplayOffset->second.x_;
+        int32_t offsetY = surfaceParam.GetPreparedDisplayOffsetY() - curDisplayOffset->second.y_;
+        surfaceDirtyRect = surfaceDirtyRect.Offset(offsetX, offsetY);
+    }
+}
+
 void RSSurfaceRenderNodeDrawable::MergeDirtyRegionBelowCurSurface(
     RSRenderThreadParams& uniParam, Drawing::Region& region)
 {
@@ -611,8 +628,9 @@ void RSSurfaceRenderNodeDrawable::MergeDirtyRegionBelowCurSurface(
             }
         }
         // [planing] surfaceDirtyRegion can be optimized by visibleDirtyRegion in some case.
-        auto surfaceDirtyRegion = Occlusion::Region {
-            Occlusion::Rect{ GetSyncDirtyManager()->GetDirtyRegion() } };
+        auto surfaceDirtyRect = GetSyncDirtyManager()->GetDirtyRegion();
+        CrossDisplaySurfaceDirtyRegionOffset(uniParam, *surfaceParams, surfaceDirtyRect);
+        auto surfaceDirtyRegion = Occlusion::Region { Occlusion::Rect{ surfaceDirtyRect } };
         accumulatedDirtyRegion.OrSelf(surfaceDirtyRegion);
         // add children window dirty here for uifirst leasf window will not traverse cached children
         if (surfaceParams->GetUifirstNodeEnableParam() != MultiThreadCacheType::NONE) {

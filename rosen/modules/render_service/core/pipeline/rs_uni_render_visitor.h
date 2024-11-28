@@ -244,6 +244,12 @@ private:
 
     void UpdatePrepareClip(RSRenderNode& node);
 
+    void AccumulateSurfaceDirtyRegion(
+        std::shared_ptr<RSSurfaceRenderNode>& surfaceNode, Occlusion::Region& accumulatedDirtyRegion) const;
+    void CheckMergeDisplayDirtyByCrossDisplayWindow(RSSurfaceRenderNode& surfaceNode) const;
+    void PrepareForSkippedCrossNode(RSSurfaceRenderNode& surfaceNode);
+    void CollectFilterInCrossDisplayWindow(
+        std::shared_ptr<RSSurfaceRenderNode>& surfaceNode, Occlusion::Region& accumulatedDirtyRegion);
     void CheckMergeDisplayDirtyByTransparent(RSSurfaceRenderNode& surfaceNode) const;
     void CheckMergeDisplayDirtyByZorderChanged(RSSurfaceRenderNode& surfaceNode) const;
     void CheckMergeDisplayDirtyByPosChanged(RSSurfaceRenderNode& surfaceNode) const;

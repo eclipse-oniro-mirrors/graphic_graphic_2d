@@ -577,6 +577,7 @@ void RSDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     InitTranslateForWallpaper();
     // set for cache and draw cross node in extended screen model
     uniParam->SetIsMirrorScreen(params->IsMirrorScreen());
+    uniParam->SetCurrentVisitDisplayDrawableId(GetId());
     uniParam->SetIsFirstVisitCrossNodeDisplay(params->IsFirstVisitCrossNodeDisplay());
     uniParam->SetCompositeType(params->GetCompositeType());
     // check rotation for point light
@@ -709,8 +710,7 @@ void RSDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         isHdrOn, hdrBrightnessRatio);
 
     // checkDisplayNodeSkip need to be judged at the end
-    if ((RSMainThread::Instance()->GetDeviceType() != DeviceType::PC || paramScreenId == 0) &&
-        RSAncoManager::Instance()->GetAncoHebcStatus() == AncoHebcStatus::INITIAL &&
+    if (RSAncoManager::Instance()->GetAncoHebcStatus() == AncoHebcStatus::INITIAL &&
         uniParam->IsOpDropped() && CheckDisplayNodeSkip(*params, processor)) {
         SetDrawSkipType(DrawSkipType::DISPLAY_NODE_SKIP);
         RSMainThread::Instance()->SetFrameIsRender(false);
@@ -736,8 +736,7 @@ void RSDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     RSDirtyRectsDfx rsDirtyRectsDfx(*this);
     std::vector<RectI> damageRegionrects;
     Drawing::Region clipRegion;
-    if (uniParam->IsPartialRenderEnabled() &&
-        (RSMainThread::Instance()->GetDeviceType() != DeviceType::PC || paramScreenId == 0)) {
+    if (uniParam->IsPartialRenderEnabled()) {
         damageRegionrects = MergeDirtyHistory(*this, renderFrame->GetBufferAge(), screenInfo, rsDirtyRectsDfx, *params);
         uniParam->Reset();
         clipRegion = GetFlippedRegion(damageRegionrects, screenInfo);

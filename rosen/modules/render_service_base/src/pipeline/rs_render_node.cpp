@@ -516,6 +516,9 @@ void RSRenderNode::AddCrossParentChild(const SharedPtr& child, int32_t index)
     if (isOnTheTree_) {
         child->SetIsOnTheTree(true, instanceRootNodeId_, firstLevelNodeId_, drawingCacheRootId_, uifirstRootNodeId_);
     }
+    if (child->IsCrossNode()) {
+        child->SetDirty();
+    }
     SetContentDirty();
     isFullChildrenListValid_ = false;
 }
@@ -981,7 +984,8 @@ void RSRenderNode::SubTreeSkipPrepare(
         auto dirtyRect = geoPtr->MapAbsRect(childrenRect_.ConvertTo<float>());
         auto dirtyRectClip = dirtyRect.IntersectRect(clipRect);
         dirtyRectClip = dirtyRectClip.JoinRect(oldDirtyRectClip);
-        dirtyManager.MergeDirtyRect(dirtyRectClip);
+        IsFirstLevelCrossNode() ?
+            dirtyManager.MergeDirtyRect(dirtyRect.JoinRect(oldDirtyRect)) : dirtyManager.MergeDirtyRect(dirtyRectClip);
         UpdateSubTreeSkipDirtyForDFX(dirtyManager, dirtyRectClip);
     }
     if (isDirty && GetChildrenCount() == 0) {
@@ -1476,7 +1480,7 @@ void RSRenderNode::UpdateAbsDirtyRegion(RSDirtyRegionManager& dirtyManager, cons
         return;
     }
     auto dirtyRect = isSelfDrawingNode_ ? selfDrawingNodeAbsDirtyRect_ : absDrawRect_;
-    dirtyRect = dirtyRect.IntersectRect(clipRect);
+    dirtyRect = IsFirstLevelCrossNode() ? dirtyRect : dirtyRect.IntersectRect(clipRect);
     oldDirty_ = dirtyRect;
     oldDirtyInSurface_ = oldDirty_.IntersectRect(dirtyManager.GetSurfaceRect());
     if (!dirtyRect.IsEmpty()) {
@@ -1560,7 +1564,7 @@ void RSRenderNode::UpdateDrawRect(
                                 parent->GetRenderProperties().GetFrameOffsetY())
                           : std::nullopt;
         if (isSurfaceRenderNode && GetGlobalPositionEnabled()) {
-            offset = std::make_optional<Drawing::Point>(-GetCurDisplayOffsetX(), -GetCurDisplayOffsetY());
+            offset = std::make_optional<Drawing::Point>(-GetPreparedDisplayOffsetX(), -GetPreparedDisplayOffsetY());
         }
         accumGeoDirty = properties.UpdateGeometryByParent(parentMatrix, offset) || accumGeoDirty;
     } else {
@@ -2003,8 +2007,8 @@ void RSRenderNode::UpdateFilterRegionInSkippedSubTree(RSDirtyRegionManager& dirt
     }
     Drawing::RectF absDrawRect;
     absMatrix.MapRect(absDrawRect, Rect2DrawingRect(selfDrawRect_));
-    oldDirtyInSurface_ = RectI(absDrawRect.GetLeft(), absDrawRect.GetTop(),
-        absDrawRect.GetWidth(), absDrawRect.GetHeight()).IntersectRect(clipRect);
+    absDrawRect_ = RectI(absDrawRect.GetLeft(), absDrawRect.GetTop(), absDrawRect.GetWidth(), absDrawRect.GetHeight());
+    oldDirtyInSurface_ = absDrawRect_.IntersectRect(clipRect);
     Drawing::RectF absRect;
     absMatrix.MapRect(absRect, Rect2DrawingRect(GetRenderProperties().GetBoundsRect()));
     filterRect = RectI(absRect.GetLeft(), absRect.GetTop(), absRect.GetWidth(), absRect.GetHeight());
@@ -4265,6 +4269,7 @@ void RSRenderNode::UpdateRenderParams()
     stagingRenderParams_->SetNodeType(GetType());
     stagingRenderParams_->SetEffectNodeShouldPaint(EffectNodeShouldPaint());
     stagingRenderParams_->SetHasGlobalCorner(!globalCornerRadius_.IsZero());
+    stagingRenderParams_->SetFirstLevelCrossNode(isFirstLevelCrossNode_);
 #endif
 }
 
