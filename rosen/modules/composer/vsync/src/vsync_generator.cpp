@@ -52,7 +52,6 @@ constexpr int32_t SCHED_PRIORITY = 2;
 constexpr int64_t errorThreshold = 500000;
 constexpr int32_t MAX_REFRESHRATE_DEVIATION = 5; // ±5Hz
 constexpr int64_t PERIOD_CHECK_THRESHOLD = 1000000; // 1000000ns == 1.0ms
-constexpr int64_t REFRESH_PERIOD = 16666667; // 16666667ns == 16.666667ms
 constexpr int64_t DEFAULT_SOFT_VSYNC_PERIOD = 16000000; // 16000000ns == 16ms
 
 static void SetThreadHighPriority()
@@ -63,19 +62,6 @@ static void SetThreadHighPriority()
     sched_setscheduler(0, SCHED_FIFO, &param);
 }
 
-static bool IsPcType()
-{
-    static bool isPc = (system::GetParameter("const.product.devicetype", "pc") == "pc") ||
-                       (system::GetParameter("const.product.devicetype", "pc") == "2in1");
-    return isPc;
-}
-
-static bool IsPCRefreshRateLock60()
-{
-    static bool isPCRefreshRateLock60 =
-        (std::atoi(system::GetParameter("persist.pc.refreshrate.lock60", "0").c_str()) != 0);
-    return isPCRefreshRateLock60;
-}
 }
 
 std::once_flag VSyncGenerator::createFlag_;
@@ -118,11 +104,7 @@ void VSyncGenerator::DeleteInstance() noexcept
 
 VSyncGenerator::VSyncGenerator()
 {
-    if (IsPcType() && IsPCRefreshRateLock60()) {
-        period_ = REFRESH_PERIOD;
-    } else {
-        period_ = DEFAULT_SOFT_VSYNC_PERIOD;
-    }
+    period_ = DEFAULT_SOFT_VSYNC_PERIOD;
     vsyncThreadRunning_ = true;
     thread_ = std::thread([this] { this->ThreadLoop(); });
     pthread_setname_np(thread_.native_handle(), "VSyncGenerator");
@@ -533,9 +515,6 @@ void VSyncGenerator::SubScribeSystemAbility()
 
 VsyncError VSyncGenerator::UpdateMode(int64_t period, int64_t phase, int64_t referenceTime)
 {
-    if (IsPcType() && IsPCRefreshRateLock60()) {
-        period = REFRESH_PERIOD;
-    }
     std::lock_guard<std::mutex> locker(mutex_);
     RS_TRACE_NAME_FMT("UpdateMode, period:%ld, phase:%ld, referenceTime:%ld, referenceTimeOffsetPulseNum_:%d",
         period, phase, referenceTime, referenceTimeOffsetPulseNum_);
