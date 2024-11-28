@@ -71,7 +71,7 @@ sptr<RSIRenderServiceConnection> RSRenderServiceConnectHub::GetRenderService()
 
 sptr<RSIRenderServiceConnection> RSRenderServiceConnectHub::GetCachedConnection()
 {
-    if (!cachedConnection_){
+    if (!cachedConnection_) {
         cachedConnection_ = RSRenderServiceConnectHub::GetRenderService();
     }
     return cachedConnection_;
