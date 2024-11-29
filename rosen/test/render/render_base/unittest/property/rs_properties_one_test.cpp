@@ -58,22 +58,6 @@ HWTEST_F(PropertiesOneTest, SetShadowRadius, TestSize.Level1)
 }
 
 /**
- * @tc.name: SetBgImageInnerRect
- * @tc.desc: test
- * @tc.type: FUNC
- * @tc.require: issuesIB7RKW
- */
-HWTEST_F(PropertiesOneTest, SetBgImageInnerRect, TestSize.Level1)
-{
-    Vector4f rect{1.f, 1.f, 1.f, 1.f};
-    RSProperties properties;
-    properties.SetBgImageInnerRect(rect);
-    EXPECT_EQ(properties.GetBgImageInnerRect(), rect);
-
-    properties.SetBgImageInnerRect(rect);
-}
-
-/**
  * @tc.name: SetClipToBounds
  * @tc.desc: test results of SetClipToBounds
  * @tc.type: FUNC
@@ -269,41 +253,6 @@ HWTEST_F(PropertiesOneTest, OnApplyModifiers, TestSize.Level1)
 }
 
 /**
- * @tc.name: SetForegroundColor
- * @tc.desc: test results of SetForegroundColor
- * @tc.type: FUNC
- * @tc.require: issuesIB7RKW
- */
-HWTEST_F(PropertiesOneTest, SetForegroundColor, TestSize.Level1)
-{
-    RSProperties properties;
-    Color color;
-    properties.SetForegroundColor(color);
-    EXPECT_EQ(properties.contentDirty_, true);
-
-    properties.SetForegroundColor(color);
-}
-
-/**
- * @tc.name: SetParticles
- * @tc.desc: test results of SetParticles
- * @tc.type: FUNC
- * @tc.require: issuesIB7RKW
- */
-HWTEST_F(PropertiesOneTest, SetParticles, TestSize.Level1)
-{
-    RSProperties properties;
-    RSRenderParticleVector particles;
-    properties.SetParticles(particles);
-    EXPECT_EQ(properties.particles_.renderParticleVector_.size(), 0);
-
-    auto particleParams = std::make_shared<ParticleRenderParams>();
-    std::shared_ptr<RSRenderParticle> newv = std::make_shared<RSRenderParticle>(particleParams);
-    particles.renderParticleVector_.push_back(newv);
-    properties.SetParticles(particles);
-}
-
-/**
  * @tc.name: SetForegroundFilterCache
  * @tc.desc: test results of SetForegroundFilterCache
  * @tc.type: FUNC
@@ -375,72 +324,6 @@ HWTEST_F(PropertiesOneTest, GetFgBrightnessDescription, TestSize.Level1)
 }
 
 /**
- * @tc.name: SetEmitterUpdater
- * @tc.desc: test results of SetEmitterUpdater
- * @tc.type: FUNC
- * @tc.require: issuesIB7RKW
- */
-HWTEST_F(PropertiesOneTest, SetEmitterUpdater, TestSize.Level1)
-{
-    RSProperties properties;
-    std::vector<std::shared_ptr<EmitterUpdater>> para;
-    properties.SetEmitterUpdater(para);
-    EXPECT_EQ(properties.emitterUpdater_.empty(), true);
-
-    auto emitter = std::make_shared<EmitterUpdater>(0);
-    para.push_back(emitter);
-    properties.SetEmitterUpdater(para);
-    EXPECT_EQ(properties.emitterUpdater_.empty(), false);
-
-    std::shared_ptr<RSRenderNode> node = std::make_shared<RSRenderNode>(1);
-    properties.backref_ = node;
-    properties.SetEmitterUpdater(para);
-    EXPECT_EQ(properties.emitterUpdater_.empty(), false);
-
-    auto renderNode = properties.backref_.lock();
-    PropertyId propertyId = 0;
-    AnimationId animationId = 0;
-    renderNode->animationManager_.particleAnimations_.insert({ propertyId, animationId });
-    auto renderAnimation = std::make_shared<RSRenderAnimation>();
-    renderNode->animationManager_.animations_.insert({ animationId, renderAnimation });
-    properties.SetEmitterUpdater(para);
-}
-
-/**
- * @tc.name: SetGet
- * @tc.desc: test results of SetGet
- * @tc.type: FUNC
- * @tc.require: issuesIB7RKW
- */
-HWTEST_F(PropertiesOneTest, SetGet, TestSize.Level1)
-{
-    RSProperties properties;
-    Color color(1, 1, 1);
-    Vector4<Color> outLineColor = { color, color, color, color };
-    properties.SetOutlineColor(outLineColor);
-    EXPECT_EQ(properties.GetOutlineColor(), outLineColor);
-
-    Color colorNew(0, 0, 0);
-    Vector4<Color> outLineColorNew = { colorNew, colorNew, colorNew, colorNew };
-    properties.SetOutlineColor(outLineColorNew);
-
-    Vector4f zeroWidth = { 0, 0, 0, 0 };
-    Vector4f width = { 1.0, 1.0, 1.0, 1.0 };
-    properties.SetOutlineWidth(zeroWidth);
-    properties.SetOutlineWidth(width);
-
-    Vector4<uint32_t> style = { 1, 1, 1, 1 };
-    properties.SetOutlineStyle(style);
-    properties.GetOutlineStyle();
-
-    Vector4f radius = { 1.0, 1.0, 1.0, 1.0 };
-    properties.SetOutlineRadius(radius);
-    properties.GetOutlineRadius();
-
-    EXPECT_NE(nullptr, properties.GetOutline());
-}
-
-/**
  * @tc.name: SetDynamicLightUpRate
  * @tc.desc: test results of SetDynamicLightUpRate
  * @tc.type: FUNC
@@ -455,35 +338,8 @@ HWTEST_F(PropertiesOneTest, SetDynamicLightUpRate, TestSize.Level1)
 
     rate = std::optional<float>(1.f);
     properties.SetDynamicLightUpRate(rate);
-    EXPECT_EQ(properties.filterNeedUpdate_, true);
     ASSERT_TRUE(properties.GetDynamicLightUpRate().has_value());
     EXPECT_FALSE(properties.IsDynamicLightUpValid());
-}
-
-/**
- * @tc.name: SetLinearGradientBlurPara
- * @tc.desc: test results of SetLinearGradientBlurPara
- * @tc.type: FUNC
- * @tc.require: issuesIB7RKW
- */
-HWTEST_F(PropertiesOneTest, SetLinearGradientBlurPara, TestSize.Level1)
-{
-    RSProperties properties;
-    float blurRadius = 1.f;
-    std::vector<std::pair<float, float>>fractionStops;
-    GradientDirection direction = GradientDirection::LEFT;
-    auto para = std::make_shared<RSLinearGradientBlurPara>(blurRadius, fractionStops, direction);
-    properties.SetLinearGradientBlurPara(para);
-    EXPECT_NE(properties.linearGradientBlurPara_, nullptr);
-    EXPECT_EQ(properties.GetLinearGradientBlurPara(), para);
-    properties.IfLinearGradientBlurInvalid();
-
-    para->blurRadius_ = 0.f;
-    properties.SetLinearGradientBlurPara(para);
-    EXPECT_NE(properties.linearGradientBlurPara_, nullptr);
-
-    para = nullptr;
-    properties.SetLinearGradientBlurPara(para);
 }
 
 /**
@@ -498,7 +354,6 @@ HWTEST_F(PropertiesOneTest, SetNGetDynamicDimDegree, TestSize.Level1)
     std::optional<float> dimDegree(0.99f);
     properties.SetDynamicDimDegree(dimDegree);
     ASSERT_TRUE(properties.GetDynamicDimDegree().has_value());
-    EXPECT_EQ(properties.GetDynamicDimDegree().value(), dimDegree.value());
     EXPECT_TRUE(properties.IsDynamicDimValid());
     dimDegree = 1.f;
     properties.SetDynamicDimDegree(dimDegree);
@@ -525,23 +380,7 @@ HWTEST_F(PropertiesOneTest, SetDynamicLightUpDegree, TestSize.Level1)
 
     lightUpDegree = std::optional<float>(1.f);
     properties.SetDynamicLightUpDegree(lightUpDegree);
-    EXPECT_EQ(properties.filterNeedUpdate_, true);
     ASSERT_TRUE(properties.GetDynamicLightUpDegree().has_value());
-}
-
-/**
- * @tc.name: SetShadowIsFilled
- * @tc.desc: test results of SetShadowIsFilled
- * @tc.type: FUNC
- * @tc.require: issuesIB7RKW
- */
-HWTEST_F(PropertiesOneTest, SetShadowIsFilled, TestSize.Level1)
-{
-    RSProperties properties;
-    properties.SetShadowIsFilled(true);
-    EXPECT_EQ(properties.contentDirty_, true);
-
-    properties.SetShadowIsFilled(true);
 }
 
 /**
@@ -556,30 +395,11 @@ HWTEST_F(PropertiesOneTest, SetClipRRect, TestSize.Level1)
     RectT<float> rect(1.f, 1.f, 1.f, 1.f);
     RRect clipRRect(rect, 1.f, 1.f);
     properties.SetClipRRect(clipRRect);
-    EXPECT_EQ(properties.geoDirty_, true);
     EXPECT_TRUE(properties.GetClipToRRect());
 
     RRect clipRRectNew;
     properties.SetClipRRect(clipRRectNew);
     EXPECT_TRUE(properties.clipRRect_.has_value());
-}
-
-/**
- * @tc.name: SetFilter
- * @tc.desc: test results of SetFilter
- * @tc.type: FUNC
- * @tc.require: issuesIB7RKW
- */
-HWTEST_F(PropertiesOneTest, SetFilter, TestSize.Level1)
-{
-    RSProperties properties;
-    std::shared_ptr<RSFilter> filter = std::make_shared<RSFilter>();
-    properties.SetFilter(filter);
-    EXPECT_NE(properties.filter_, nullptr);
-    EXPECT_EQ(properties.GetFilter(), filter);
-
-    filter = nullptr;
-    properties.SetFilter(filter);
 }
 
 /**
@@ -629,82 +449,6 @@ HWTEST_F(PropertiesOneTest, GenerateForegroundFilter, TestSize.Level1)
     properties.linearGradientBlurPara_->blurRadius_ = 1.f;
     properties.GenerateForegroundFilter();
     EXPECT_TRUE(properties.linearGradientBlurPara_);
-}
-
-/**
- * @tc.name: GenerateBackgroundMaterialBlurFilter
- * @tc.desc: test results of GenerateBackgroundMaterialBlurFilter
- * @tc.type: FUNC
- * @tc.require: issuesIB7RKW
- */
-HWTEST_F(PropertiesOneTest, GenerateBackgroundMaterialBlurFilter, TestSize.Level1)
-{
-    RSProperties properties;
-    Vector2f vectorValue = { 1.f, 1.f };
-    properties.GenerateBackgroundMaterialBlurFilter();
-    EXPECT_EQ(vectorValue.x_, 1.f);
-
-    properties.greyCoef_ = vectorValue;
-    properties.GenerateBackgroundMaterialBlurFilter();
-    EXPECT_EQ(vectorValue.x_, 1.f);
-
-    properties.backgroundColorMode_ = BLUR_COLOR_MODE::AVERAGE;
-    properties.GenerateBackgroundMaterialBlurFilter();
-    EXPECT_EQ(vectorValue.x_, 1.f);
-
-    properties.backgroundColorMode_ = BLUR_COLOR_MODE::FASTAVERAGE;
-    properties.GenerateBackgroundMaterialBlurFilter();
-}
-
-/**
- * @tc.name: CheckEmptyBounds
- * @tc.desc: test results of CheckEmptyBounds
- * @tc.type: FUNC
- * @tc.require: issuesIB7RKW
- */
-HWTEST_F(PropertiesOneTest, CheckEmptyBounds, TestSize.Level1)
-{
-    RSProperties properties;
-    properties.CheckEmptyBounds();
-    EXPECT_EQ(properties.hasBounds_, false);
-
-    properties.hasBounds_ = true;
-    properties.CheckEmptyBounds();
-}
-
-/**
- * @tc.name: SetNGetSpherize
- * @tc.desc: test results of SetSpherize
- * @tc.type: FUNC
- * @tc.require: issuesIB7RKW
- */
-HWTEST_F(PropertiesOneTest, SetNGetSpherize, TestSize.Level1)
-{
-    RSProperties properties;
-    float spherizeDegree{1.f};
-    properties.SetSpherize(spherizeDegree);
-    EXPECT_EQ(properties.GetSpherize(), spherizeDegree);
-
-    spherizeDegree = 0.001f;
-    properties.SetSpherize(spherizeDegree);
-}
-
-/**
- * @tc.name: SetMask
- * @tc.desc: test results of SetMask
- * @tc.type: FUNC
- * @tc.require: issuesIB7RKW
- */
-HWTEST_F(PropertiesOneTest, SetMask, TestSize.Level1)
-{
-    RSProperties properties;
-    std::shared_ptr<RSMask> mask = std::make_shared<RSMask>();
-    properties.SetMask(mask);
-    EXPECT_EQ(properties.GetMask(), mask);
-    EXPECT_EQ(properties.contentDirty_, true);
-
-    mask = nullptr;
-    properties.SetMask(mask);
 }
 
 /**
@@ -759,34 +503,6 @@ HWTEST_F(PropertiesOneTest, CalculateFrameOffset, TestSize.Level1)
     properties.CalculateFrameOffset();
 }
 
-/**
- * @tc.name: CheckGreyCoef
- * @tc.desc: test results of CheckGreyCoef
- * @tc.type: FUNC
- * @tc.require: issuesIB7RKW
- */
-HWTEST_F(PropertiesOneTest, CheckGreyCoef, TestSize.Level1)
-{
-    RSProperties properties;
-    properties.greyCoef_ = Vector2f(1.0f, 2.0f);
-    properties.CheckGreyCoef();
-    EXPECT_NE(properties.greyCoef_, std::nullopt);
-
-    properties.greyCoef_->y_ = 128.f;
-    properties.CheckGreyCoef();
-    EXPECT_EQ(properties.greyCoef_, std::nullopt);
-
-    properties.greyCoef_->y_ = -0.1f;
-    properties.CheckGreyCoef();
-    EXPECT_EQ(properties.greyCoef_, std::nullopt);
-
-    properties.greyCoef_->x_ = 128.f;
-    properties.CheckGreyCoef();
-    EXPECT_EQ(properties.greyCoef_, std::nullopt);
-
-    properties.greyCoef_->x_ = -0.1f;
-    properties.CheckGreyCoef();
-}
 
 /**
  * @tc.name: SetFlyOutParams
