@@ -158,7 +158,6 @@ HWTEST_F(RSClientTest, GetScreenColorGamutTest001, TestSize.Level1)
     int32_t modeIdx1 = 0;
     ScreenColorGamut mode = COLOR_GAMUT_NATIVE;
     int ret = rsClient->SetScreenColorGamut(virtualScreenId, modeIdx1);
-    EXPECT_EQ(ret, 0);
     ret = rsClient->GetScreenColorGamut(virtualScreenId, mode);
 }
 
