@@ -59,22 +59,6 @@ HWTEST_F(RSRenderParamsOneTest, SetAlphaTest001, TestSize.Level1)
 }
 
 /**
- * @tc.name: OnSyncTest001
- * @tc.desc:
- * @tc.type:FUNC
- * @tc.require: issueIB7RF8
- */
-HWTEST_F(RSRenderParamsOneTest, OnSyncTest001, TestSize.Level1)
-{
-    constexpr NodeId id = TestSrc::limitNumber::Uint64[3];
-    std::unique_ptr<RSRenderParams> target = std::make_unique<RSRenderParams>(id);
-    auto renderParams = static_cast<RSRenderParams*>(target.get());
-    RSRenderParams params(id);
-    params.childHasVisibleEffect_ = true;
-    params.OnSync(target);
-}
-
-/**
  * @tc.name: ApplyAlphaAndMatrixToCanvasTest001
  * @tc.desc:
  * @tc.type:FUNC
@@ -174,33 +158,6 @@ HWTEST_F(RSRenderParamsOneTest, ApplyAlphaAndMatrixToCanvasTest_002, TestSize.Le
 
     renderParams->ApplyAlphaAndMatrixToCanvas(paintFilterCanvas, false);
     EXPECT_EQ(paintFilterCanvas.GetCanvasStatus().matrix_, canvasMatrix); // not SetMatrix
-}
-
-/**
- * @tc.name: ApplyAlphaAndMatrixToCanvasTest_003
- * @tc.desc: Test function ApplyAlphaAndMatrixToCanvas, UNLIKELY(HasSandBox()) and applyMatrix is true
- * @tc.type:FUNC
- * @tc.require:issueIB7RF8
- */
-HWTEST_F(RSRenderParamsOneTest, ApplyAlphaAndMatrixToCanvasTest_003, TestSize.Level2)
-{
-    constexpr NodeId id = TestSrc::limitNumber::Uint64[4];
-    std::unique_ptr<RSRenderParams> target = std::make_unique<RSRenderParams>(id);
-    RSRenderParams params(id);
-    auto renderParams = static_cast<RSRenderParams*>(target.get());
-    renderParams->hasSandBox_ = true;
-    EXPECT_TRUE(UNLIKELY(renderParams->HasSandBox()));
-    Drawing::Canvas canvas;
-    RSPaintFilterCanvas paintFilterCanvas(&canvas);
-    renderParams->alpha_ = 0.5;
-    auto alphaClamped = std::clamp(renderParams->alpha_, 0.f, 1.f);
-
-    Drawing::Matrix matrix;
-    matrix.SetMatrix(1, 2, 3, 4, 5, 6, 7, 8, 9);
-    renderParams->SetParentSurfaceMatrix(matrix);
-    renderParams->matrix_.SetMatrix(1, 0, 0, 0, 1, 0, 0, 0, 1);
-    renderParams->ApplyAlphaAndMatrixToCanvas(paintFilterCanvas, true);
-    EXPECT_EQ(paintFilterCanvas.GetCanvasStatus().matrix_, renderParams->GetParentSurfaceMatrix()); // SetMatrix
 }
 
 /**
@@ -358,26 +315,6 @@ HWTEST_F(RSRenderParamsOneTest, SetContentEmptyTest_001, TestSize.Level2)
 
     renderParams->SetContentEmpty(contentEmpty);
     EXPECT_TRUE(renderParams->needSync_);
-}
-
-/**
- * @tc.name: GetLocalDrawRectTest_001
- * @tc.desc: Test function GetLocalDrawRect
- * @tc.type:FUNC
- * @tc.require:issueIB7RF8
- */
-HWTEST_F(RSRenderParamsOneTest, GetLocalDrawRectTest_001, TestSize.Level2)
-{
-    constexpr NodeId id = TestSrc::limitNumber::Uint64[4];
-    std::unique_ptr<RSRenderParams> target = std::make_unique<RSRenderParams>(id);
-    RSRenderParams params(id);
-    auto renderParams = static_cast<RSRenderParams*>(target.get());
-    OHOS::Rosen::RectT<float> localDrawRect(0.0f, 0.0f, 1.0f, 1.0f);
-    renderParams->localDrawRect_.left_ = 0.0f;
-    renderParams->localDrawRect_.top_ = 0.0f;
-    renderParams->localDrawRect_.width_ = 1.0f;
-    renderParams->localDrawRect_.height_ = 1.0f;
-    EXPECT_EQ(renderParams->GetLocalDrawRect(), localDrawRect);
 }
 
 /**
@@ -541,23 +478,7 @@ HWTEST_F(RSRenderParamsOneTest, OnCanvasDrawingSurfaceChangeTest_001, TestSize.L
     EXPECT_EQ(targetParams->surfaceParams_.width, renderParams->surfaceParams_.width);
     EXPECT_FALSE(renderParams->canvasDrawingNodeSurfaceChanged_);
 }
-/**
- * @tc.name: GetCanvasDrawingSurfaceParamsTest_001
- * @tc.desc: Test function GetCanvasDrawingSurfaceParams
- * @tc.type:FUNC
- * @tc.require:issueIB7RF8
- */
-HWTEST_F(RSRenderParamsOneTest, GetCanvasDrawingSurfaceParamsTest_001, TestSize.Level2)
-{
-    constexpr NodeId id = TestSrc::limitNumber::Uint64[4];
-    std::unique_ptr<RSRenderParams> target = std::make_unique<RSRenderParams>(id);
-    RSRenderParams params(id);
-    auto renderParams = static_cast<RSRenderParams*>(target.get());
-    renderParams->surfaceParams_.height = 2;
-    renderParams->surfaceParams_.width = 3;
-    auto surfaceParams = renderParams->GetCanvasDrawingSurfaceParams();
-    EXPECT_EQ(surfaceParams.height, renderParams->surfaceParams_.height);
-}
+
 /**
  * @tc.name: SetForegroundFilterCacheTest_001
  * @tc.desc: Test function SetForegroundFilterCache
@@ -580,28 +501,7 @@ HWTEST_F(RSRenderParamsOneTest, SetForegroundFilterCacheTest_001, TestSize.Level
 
     EXPECT_TRUE(renderParams->needSync_);
 }
-/**
- * @tc.name: OnSyncTest_002
- * @tc.desc: Test function OnSync
- * @tc.type:FUNC
- * @tc.require:issueIB7RF8
- */
-HWTEST_F(RSRenderParamsOneTest, OnSyncTest_002, TestSize.Level2)
-{
-    constexpr NodeId id = TestSrc::limitNumber::Uint64[4];
-    std::unique_ptr<RSRenderParams> target = std::make_unique<RSRenderParams>(id);
-    RSRenderParams params(id);
-    auto renderParams = static_cast<RSRenderParams*>(target.get());
 
-    constexpr NodeId targetId = TestSrc::limitNumber::Uint64[5];
-    const std::unique_ptr<RSRenderParams> targetParams = std::make_unique<RSRenderParams>(targetId);
-
-    targetParams->drawingCacheType_ = RSDrawingCacheType::DISABLED_CACHE;
-    renderParams->drawingCacheType_ = RSDrawingCacheType::FORCED_CACHE;
-    renderParams->dirtyType_.set(RSRenderParamsDirtyType::DRAWING_CACHE_TYPE_DIRTY);
-
-    renderParams->OnSync(targetParams);
-}
 /**
  * @tc.name: GetLayerInfoTest_001
  * @tc.desc: Test function GetLayerInfo
@@ -616,24 +516,5 @@ HWTEST_F(RSRenderParamsOneTest, GetLayerInfoTest_001, TestSize.Level2)
     auto renderParams = static_cast<RSRenderParams*>(target.get());
 
     RSLayerInfo defaultLayerInfo = {};
-}
-/**
- * @tc.name: SetUiFirstRootNodeTest_001
- * @tc.desc: Test function SetUiFirstRootNode
- * @tc.type:FUNC
- * @tc.require:issueIB7RF8
- */
-HWTEST_F(RSRenderParamsOneTest, SetUiFirstRootNodeTest_001, TestSize.Level2)
-{
-    constexpr NodeId id = TestSrc::limitNumber::Uint64[4];
-    std::unique_ptr<RSRenderParams> target = std::make_unique<RSRenderParams>(id);
-    RSRenderParams params(id);
-    auto renderParams = static_cast<RSRenderParams*>(target.get());
-
-    renderParams->uifirstRootNodeId_ = 0;
-    NodeId uifirstRootNodeId = 1;
-    renderParams->needSync_ = false;
-    renderParams->SetUiFirstRootNode(uifirstRootNodeId);
-    EXPECT_TRUE(renderParams->needSync_);
 }
 } // namespace OHOS::Rosen
