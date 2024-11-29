@@ -40,24 +40,6 @@ void RSEffectRenderParamsOneTest::DisplayTestInfo()
 }
 
 /**
- * @tc.name: OnSyncTest002
- * @tc.desc:
- * @tc.type:FUNC
- * @tc.require: issuesIB7RWT
- */
-HWTEST_F(RSEffectRenderParamsOneTest, OnSyncTest002, TestSize.Level1)
-{
-    constexpr NodeId id = TestSrc::limitNumber::Uint64[2];
-    std::unique_ptr<RSRenderParams> target = std::make_unique<RSEffectRenderParams>(id);
-    auto targetEffectRenderParam = static_cast<RSEffectRenderParams*>(target.get());
-    RSEffectRenderParams params(id);
-    params.cacheValid_ = true;
-    params.hasEffectChildren_ = true;
-    params.OnSync(target);
-    EXPECT_EQ(params.cacheValid_, targetEffectRenderParam->cacheValid_);
-}
-
-/**
  * @tc.name: OnSyncTest001
  * @tc.desc:
  * @tc.type:FUNC

@@ -65,7 +65,7 @@ HWTEST_F(RSDisplayRenderParamsOneTest, SetRotationChangedTest, TestSize.Level1)
     constexpr NodeId id = TestSrc::limitNumber::Uint64[4];
     RSDisplayRenderParams params(id);
     params.SetRotationChanged(params.IsRotationChanged());
-    EXPECT_EQ(params.needSync_, false);
+    EXPECT_FALSE(params.needSync_);
 
     params.SetRotationChanged(true);
 }
@@ -81,7 +81,7 @@ HWTEST_F(RSDisplayRenderParamsOneTest, SetMainAndLeashSurfaceDirtyTest, TestSize
     constexpr NodeId id = TestSrc::limitNumber::Uint64[3];
     RSDisplayRenderParams params(id);
     params.SetMainAndLeashSurfaceDirty(params.GetMainAndLeashSurfaceDirty());
-    EXPECT_EQ(params.needSync_, false);
+    EXPECT_FALSE(params.needSync_);
 
     params.SetMainAndLeashSurfaceDirty(true);
 }
@@ -97,7 +97,7 @@ HWTEST_F(RSDisplayRenderParamsOneTest, SetNewColorSpaceTest, TestSize.Level1)
     constexpr NodeId id = TestSrc::limitNumber::Uint64[6];
     RSDisplayRenderParams params(id);
     params.SetNewColorSpace(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB);
-    EXPECT_EQ(params.needSync_, false);
+    EXPECT_FALSE(params.needSync_);
 
     params.SetNewColorSpace(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_ADOBE_RGB);
 }
@@ -113,7 +113,7 @@ HWTEST_F(RSDisplayRenderParamsOneTest, SetHDRPresentTest, TestSize.Level1)
     constexpr NodeId id = TestSrc::limitNumber::Uint64[5];
     RSDisplayRenderParams params(id);
     params.SetHDRPresent(params.GetHDRPresent());
-    EXPECT_EQ(params.needSync_, false);
+    EXPECT_FALSE(params.needSync_);
 
     params.SetHDRPresent(true);
 }
@@ -146,7 +146,7 @@ HWTEST_F(RSDisplayRenderParamsOneTest, SetNewPixelFormatTest, TestSize.Level1)
     constexpr NodeId id = TestSrc::limitNumber::Uint64[0];
     RSDisplayRenderParams params(id);
     params.SetNewPixelFormat(params.GetNewPixelFormat());
-    EXPECT_EQ(params.needSync_, false);
+    EXPECT_FALSE(params.needSync_);
 
     params.SetNewPixelFormat(GraphicPixelFormat::GRAPHIC_PIXEL_FMT_BUTT);
 }
@@ -227,7 +227,7 @@ HWTEST_F(RSDisplayRenderParamsOneTest, SetNeedOffscreenTest, TestSize.Level1)
     RSDisplayRenderParams params(id);
     auto needOffscreen = params.GetNeedOffscreen();
     params.SetNeedOffscreen(needOffscreen);
-    EXPECT_EQ(params.needSync_, false);
+    EXPECT_FALSE(params.needSync_);
 
     params.SetNeedOffscreen(true);
 }
@@ -262,18 +262,6 @@ HWTEST_F(RSDisplayRenderParamsOneTest, IsSpecialLayerChangedTest001, TestSize.Le
 }
 
 /**
- * @tc.name: HasSecLayerInVisibleRectTest001
- * @tc.desc: test result of HasSecLayerInVisibleRect
- * @tc.type: FUNC
- * @tc.require: issuesIB7RKW
- */
-HWTEST_F(RSDisplayRenderParamsOneTest, HasSecLayerInVisibleRectTest001, TestSize.Level1)
-{
-    constexpr NodeId id = TestSrc::limitNumber::Uint64[0];
-    RSDisplayRenderParams params(id);
-}
-
-/**
  * @tc.name: GetSecurityExemptionTest001
  * @tc.desc: test result of GetSecurityExemption
  * @tc.type: FUNC
@@ -284,43 +272,5 @@ HWTEST_F(RSDisplayRenderParamsOneTest, GetSecurityExemptionTest001, TestSize.Lev
     constexpr NodeId id = TestSrc::limitNumber::Uint64[0];
     RSDisplayRenderParams params(id);
     EXPECT_FALSE(params.GetSecurityExemption());
-}
-
-/**
- * @tc.name: HasSecLayerInVisibleRectTest002
- * @tc.desc: test result of HasSecLayerInVisibleRect
- * @tc.type: FUNC
- * @tc.require: issuesIB7RKW
- */
-HWTEST_F(RSDisplayRenderParamsOneTest, HasSecLayerInVisibleRectTest002, TestSize.Level1)
-{
-    constexpr NodeId id = TestSrc::limitNumber::Uint64[0];
-    RSDisplayRenderParams params(id);
-    params.hasSecLayerInVisibleRect_ = true;
-}
-
-/**
- * @tc.name: HasSecLayerInVisibleRectChangedTest002
- * @tc.desc: test result of HasSecLayerInVisibleRectChanged
- * @tc.type: FUNC
- * @tc.require: issuesIB7RKW
- */
-HWTEST_F(RSDisplayRenderParamsOneTest, HasSecLayerInVisibleRectChangedTest002, TestSize.Level1)
-{
-    constexpr NodeId id = TestSrc::limitNumber::Uint64[0];
-    RSDisplayRenderParams params(id);
-    params.hasSecLayerInVisibleRectChanged_ = true;
-}
-
-/**
- * @tc.name: HasSecLayerInVisibleRectChangedTest001
- * @tc.desc: test result of HasSecLayerInVisibleRectChanged
- * @tc.type: FUNC
- * @tc.require: issuesIB7RKW
- */
-HWTEST_F(RSDisplayRenderParamsOneTest, HasSecLayerInVisibleRectChangedTest001, TestSize.Level1)
-{
-    constexpr NodeId id = TestSrc::limitNumber::Uint64[0];
-    RSDisplayRenderParams params(id);
 }
 } // namespace OHOS::Rosen
