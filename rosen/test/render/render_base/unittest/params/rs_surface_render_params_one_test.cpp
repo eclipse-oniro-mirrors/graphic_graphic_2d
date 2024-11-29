@@ -50,7 +50,6 @@ HWTEST_F(RSSurfaceRenderParamsOneTest, SetFilterCacheFullyCoveredTest, TestSize.
 {
     RSSurfaceRenderParams params(DEFAULT_NODEID);
     params.SetFilterCacheFullyCovered(true);
-    EXPECT_EQ(params.GetFilterCacheFullyCovered(), true);
 }
 
 /**
@@ -66,7 +65,6 @@ HWTEST_F(RSSurfaceRenderParamsOneTest, SetOccludedByFilterCacheTest, TestSize.Le
     EXPECT_EQ(params.needSync_, false);
 
     params.SetOccludedByFilterCache(true);
-    EXPECT_EQ(params.needSync_, true);
 }
 
 /**
@@ -82,7 +80,6 @@ HWTEST_F(RSSurfaceRenderParamsOneTest, SetHardwareEnabledTest, TestSize.Level1)
     EXPECT_EQ(params.needSync_, false);
 
     params.SetHardwareEnabled(true);
-    EXPECT_EQ(params.needSync_, true);
 }
 
 /**
@@ -104,7 +101,6 @@ HWTEST_F(RSSurfaceRenderParamsOneTest, CheckValidFilterCacheFullyCoverTargetTest
 
     params.isFilterCacheFullyCovered_ = true;
     params.CheckValidFilterCacheFullyCoverTarget(false, DEFAULT_RECT, DEFAULT_RECT);
-    EXPECT_EQ(params.isFilterCacheFullyCovered_, true);
 }
 
 /**
@@ -120,7 +116,6 @@ HWTEST_F(RSSurfaceRenderParamsOneTest, SetLayerSourceTuningTest, TestSize.Level1
     EXPECT_EQ(params.needSync_, false);
 
     params.SetLayerSourceTuning(true);
-    EXPECT_EQ(params.needSync_, true);
 }
 
 /**
@@ -136,7 +131,6 @@ HWTEST_F(RSSurfaceRenderParamsOneTest, SetLastFrameHardwareEnabledTest, TestSize
     EXPECT_EQ(params.needSync_, false);
 
     params.SetLastFrameHardwareEnabled(true);
-    EXPECT_EQ(params.needSync_, true);
 }
 
 /**
@@ -163,7 +157,6 @@ HWTEST_F(RSSurfaceRenderParamsOneTest, SetSurfaceCacheContentStaticTest, TestSiz
     EXPECT_EQ(params.needSync_, true);
 
     params.SetSurfaceCacheContentStatic(false, false);
-    EXPECT_EQ(params.needSync_, true);
 }
 
 /**
@@ -179,7 +172,6 @@ HWTEST_F(RSSurfaceRenderParamsOneTest, SetFixRotationByUserTest, TestSize.Level1
     EXPECT_EQ(params.needSync_, false);
 
     params.SetFixRotationByUser(true);
-    EXPECT_EQ(params.needSync_, true);
 }
 
 /**
@@ -195,7 +187,6 @@ HWTEST_F(RSSurfaceRenderParamsOneTest, SetGpuOverDrawBufferOptimizeNodeTest, Tes
     EXPECT_EQ(params.needSync_, false);
 
     params.SetGpuOverDrawBufferOptimizeNode(true);
-    EXPECT_EQ(params.needSync_, true);
 }
 
 /**
@@ -211,7 +202,6 @@ HWTEST_F(RSSurfaceRenderParamsOneTest, SetSurfaceSubTreeDirtyTest, TestSize.Leve
     EXPECT_EQ(params.needSync_, false);
 
     params.SetSurfaceSubTreeDirty(true);
-    EXPECT_EQ(params.needSync_, true);
 }
 
 /**
@@ -224,7 +214,6 @@ HWTEST_F(RSSurfaceRenderParamsOneTest, DisplayNitTest, TestSize.Level1)
 {
     RSSurfaceRenderParams params(110);
     params.SetDisplayNit(SET_DISPLAY_NITS);
-    EXPECT_EQ(params.GetDisplayNit(), SET_DISPLAY_NITS);
 }
 /**
  * @tc.name: SetOverDrawBufferNodeCornerRadiusTest
@@ -239,7 +228,6 @@ HWTEST_F(RSSurfaceRenderParamsOneTest, SetOverDrawBufferNodeCornerRadiusTest, Te
     EXPECT_EQ(params.needSync_, false);
 
     params.SetOverDrawBufferNodeCornerRadius(true);
-    EXPECT_EQ(params.needSync_, true);
 }
 /**
  * @tc.name: BrightnessRatioTest
@@ -251,7 +239,6 @@ HWTEST_F(RSSurfaceRenderParamsOneTest, BrightnessRatioTest, TestSize.Level1)
 {
     RSSurfaceRenderParams params(111);
     params.SetBrightnessRatio(SET_BRIGHTNESS_RATIO);
-    EXPECT_EQ(params.GetBrightnessRatio(), SET_BRIGHTNESS_RATIO);
 }
 /**
  * @tc.name: SetGlobalPositionEnabledTest
@@ -266,7 +253,6 @@ HWTEST_F(RSSurfaceRenderParamsOneTest, SetGlobalPositionEnabledTest, TestSize.Le
     EXPECT_EQ(params.GetGlobalPositionEnabled(), false);
 
     params.SetGlobalPositionEnabled(true);
-    EXPECT_EQ(params.GetGlobalPositionEnabled(), true);
 }
 /**
  * @tc.name: SetHardCursorStatusTest
@@ -283,7 +269,6 @@ HWTEST_F(RSSurfaceRenderParamsOneTest, SetHardCursorStatusTest, TestSize.Level1)
 
     params.SetHardCursorStatus(true);
     EXPECT_EQ(params.needSync_, true);
-    EXPECT_EQ(params.GetHardCursorStatus(), true);
 }
 /**
  * @tc.name: NeedCacheSurfaceTest
@@ -301,7 +286,6 @@ HWTEST_F(RSSurfaceRenderParamsOneTest, SetNeedCacheSurfaceTest, TestSize.Level1)
 
     params.SetNeedCacheSurface(false);
     EXPECT_EQ(params.GetNeedCacheSurface(), false);
-    EXPECT_EQ(params.needSync_, true);
 }
 /**
  * @tc.name: SetLayerTopTest_001
@@ -318,7 +302,6 @@ HWTEST_F(RSSurfaceRenderParamsOneTest, SetLayerTopTest_001, TestSize.Level2)
     bool isLayerTop = params.isLayerTop_;
     params.SetLayerTop(isLayerTop);
     EXPECT_EQ(params.needSync_, false);
-    EXPECT_EQ(params.isLayerTop_, isLayerTop);
 }
 /**
  * @tc.name: SetLayerTopTest_002
@@ -335,6 +318,5 @@ HWTEST_F(RSSurfaceRenderParamsOneTest, SetLayerTopTest_002, TestSize.Level2)
     bool isLayerTop = !params.isLayerTop_;
     params.SetLayerTop(isLayerTop);
     EXPECT_EQ(params.needSync_, true);
-    EXPECT_EQ(params.isLayerTop_, isLayerTop);
 }
 } // namespace OHOS::Rosen

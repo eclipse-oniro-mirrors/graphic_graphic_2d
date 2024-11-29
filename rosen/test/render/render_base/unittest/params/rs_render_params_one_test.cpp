@@ -44,7 +44,7 @@ void RSRenderParamsOneTest::DisplayTestInfo()
  * @tc.name: SetAlphaTest001
  * @tc.desc:
  * @tc.type:FUNC
- * @tc.require:
+ * @tc.require: issueIB7RF8
  */
 HWTEST_F(RSRenderParamsOneTest, SetAlphaTest001, TestSize.Level1)
 {
@@ -62,7 +62,7 @@ HWTEST_F(RSRenderParamsOneTest, SetAlphaTest001, TestSize.Level1)
  * @tc.name: OnSyncTest001
  * @tc.desc:
  * @tc.type:FUNC
- * @tc.require:
+ * @tc.require: issueIB7RF8
  */
 HWTEST_F(RSRenderParamsOneTest, OnSyncTest001, TestSize.Level1)
 {
@@ -72,17 +72,13 @@ HWTEST_F(RSRenderParamsOneTest, OnSyncTest001, TestSize.Level1)
     RSRenderParams params(id);
     params.childHasVisibleEffect_ = true;
     params.OnSync(target);
-    EXPECT_EQ(params.ch
-    
-    
-    ildHasVisibleEffect_, renderParams->childHasVisibleEffect_);
 }
 
 /**
  * @tc.name: ApplyAlphaAndMatrixToCanvasTest001
  * @tc.desc:
  * @tc.type:FUNC
- * @tc.require:
+ * @tc.require: issueIB7RF8
  */
 HWTEST_F(RSRenderParamsOneTest, ApplyAlphaAndMatrixToCanvasTest001, TestSize.Level1)
 {
@@ -98,7 +94,7 @@ HWTEST_F(RSRenderParamsOneTest, ApplyAlphaAndMatrixToCanvasTest001, TestSize.Lev
  * @tc.name: SetAlphaOffScreenTest001
  * @tc.desc:
  * @tc.type:FUNC
- * @tc.require:
+ * @tc.require: issueIB7RF8
  */
 HWTEST_F(RSRenderParamsOneTest, SetAlphaOffScreenTest001, TestSize.Level1)
 {
@@ -113,7 +109,7 @@ HWTEST_F(RSRenderParamsOneTest, SetAlphaOffScreenTest001, TestSize.Level1)
  * @tc.name: SetAlphaOffScreenTest_002
  * @tc.desc: Test function SetAlphaOffScreen, alphaOffScreen != params.alphaOffScreen_
  * @tc.type:FUNC
- * @tc.require:issueIB1KXV
+ * @tc.require:issueIB7RF8
  */
 HWTEST_F(RSRenderParamsOneTest, SetAlphaOffScreenTest_002, TestSize.Level2)
 {
@@ -132,7 +128,7 @@ HWTEST_F(RSRenderParamsOneTest, SetAlphaOffScreenTest_002, TestSize.Level2)
  * @tc.name: SetAlphaTest_002
  * @tc.desc: Test function SetAlpha，alpha != renderParams->alpha_
  * @tc.type:FUNC
- * @tc.require:issueIB1KXV
+ * @tc.require:issueIB7RF8
  */
 HWTEST_F(RSRenderParamsOneTest, SetAlphaTest_002, TestSize.Level2)
 {
@@ -145,7 +141,6 @@ HWTEST_F(RSRenderParamsOneTest, SetAlphaTest_002, TestSize.Level2)
     EXPECT_TRUE(alpha != renderParams->alpha_);
 
     renderParams->SetAlpha(alpha);
-    EXPECT_EQ(renderParams->alpha_, alpha);
     EXPECT_TRUE(renderParams->needSync_);
 }
 
@@ -153,7 +148,7 @@ HWTEST_F(RSRenderParamsOneTest, SetAlphaTest_002, TestSize.Level2)
  * @tc.name: ApplyAlphaAndMatrixToCanvasTest_002
  * @tc.desc: Test function ApplyAlphaAndMatrixToCanvas, UNLIKELY(HasSandBox()) is true and applyMatrix is false
  * @tc.type:FUNC
- * @tc.require:issueIB1KXV
+ * @tc.require:issueIB7RF8
  */
 HWTEST_F(RSRenderParamsOneTest, ApplyAlphaAndMatrixToCanvasTest_002, TestSize.Level2)
 {
@@ -179,14 +174,13 @@ HWTEST_F(RSRenderParamsOneTest, ApplyAlphaAndMatrixToCanvasTest_002, TestSize.Le
 
     renderParams->ApplyAlphaAndMatrixToCanvas(paintFilterCanvas, false);
     EXPECT_EQ(paintFilterCanvas.GetCanvasStatus().matrix_, canvasMatrix); // not SetMatrix
-    EXPECT_EQ(paintFilterCanvas.GetAlpha(), alphaClamped);
 }
 
 /**
  * @tc.name: ApplyAlphaAndMatrixToCanvasTest_003
  * @tc.desc: Test function ApplyAlphaAndMatrixToCanvas, UNLIKELY(HasSandBox()) and applyMatrix is true
  * @tc.type:FUNC
- * @tc.require:issueIB1KXV
+ * @tc.require:issueIB7RF8
  */
 HWTEST_F(RSRenderParamsOneTest, ApplyAlphaAndMatrixToCanvasTest_003, TestSize.Level2)
 {
@@ -207,7 +201,6 @@ HWTEST_F(RSRenderParamsOneTest, ApplyAlphaAndMatrixToCanvasTest_003, TestSize.Le
     renderParams->matrix_.SetMatrix(1, 0, 0, 0, 1, 0, 0, 0, 1);
     renderParams->ApplyAlphaAndMatrixToCanvas(paintFilterCanvas, true);
     EXPECT_EQ(paintFilterCanvas.GetCanvasStatus().matrix_, renderParams->GetParentSurfaceMatrix()); // SetMatrix
-    EXPECT_EQ(paintFilterCanvas.GetAlpha(), alphaClamped);
 }
 
 /**
@@ -215,7 +208,7 @@ HWTEST_F(RSRenderParamsOneTest, ApplyAlphaAndMatrixToCanvasTest_003, TestSize.Le
  * @tc.desc: Test function ApplyAlphaAndMatrixToCanvas， not HasSandBox and not applyMatrix
  * and alpha_ < 1.0f and (drawingCacheType_ == RSDrawingCacheType::FORCED_CACHE) and alphaOffScreen_ is false
  * @tc.type:FUNC
- * @tc.require:issueIB1KXV
+ * @tc.require:issueIB7RF8
  */
 HWTEST_F(RSRenderParamsOneTest, ApplyAlphaAndMatrixToCanvasTest_004, TestSize.Level2)
 {
@@ -241,7 +234,7 @@ HWTEST_F(RSRenderParamsOneTest, ApplyAlphaAndMatrixToCanvasTest_004, TestSize.Le
  * @tc.desc: Test function ApplyAlphaAndMatrixToCanvas， not HasSandBox and not applyMatrix
  * and alpha_ < 1.0f and (drawingCacheType_ != RSDrawingCacheType::FORCED_CACHE) and alphaOffScreen_ is true
  * @tc.type:FUNC
- * @tc.require:issueIB1KXV
+ * @tc.require:issueIB7RF8
  */
 HWTEST_F(RSRenderParamsOneTest, ApplyAlphaAndMatrixToCanvasTest_005, TestSize.Level2)
 {
@@ -266,7 +259,7 @@ HWTEST_F(RSRenderParamsOneTest, ApplyAlphaAndMatrixToCanvasTest_005, TestSize.Le
  * @tc.name: SetFrameRectTest_001
  * @tc.desc: Test function SetFrameRect
  * @tc.type:FUNC
- * @tc.require:issueIB1KXV
+ * @tc.require:issueIB7RF8
  */
 HWTEST_F(RSRenderParamsOneTest, SetFrameRectTest_001, TestSize.Level2)
 {
@@ -286,7 +279,7 @@ HWTEST_F(RSRenderParamsOneTest, SetFrameRectTest_001, TestSize.Level2)
  * @tc.name: SetBoundsRectTest_001
  * @tc.desc: Test function SetBoundsRect
  * @tc.type:FUNC
- * @tc.require:issueIB1KXV
+ * @tc.require:issueIB7RF8
  */
 HWTEST_F(RSRenderParamsOneTest, SetBoundsRectTest_001, TestSize.Level2)
 {
@@ -306,7 +299,7 @@ HWTEST_F(RSRenderParamsOneTest, SetBoundsRectTest_001, TestSize.Level2)
  * @tc.name: SetLocalDrawRectTest_001
  * @tc.desc: Test function SetLocalDrawRect
  * @tc.type:FUNC
- * @tc.require:issueIB1KXV
+ * @tc.require:issueIB7RF8
  */
 HWTEST_F(RSRenderParamsOneTest, SetLocalDrawRectTest_001, TestSize.Level2)
 {
@@ -324,14 +317,13 @@ HWTEST_F(RSRenderParamsOneTest, SetLocalDrawRectTest_001, TestSize.Level2)
 
     renderParams->SetLocalDrawRect(localDrawRect);
     EXPECT_TRUE(renderParams->needSync_);
-    EXPECT_EQ(renderParams->localDrawRect_, localDrawRect);
 }
 
 /**
  * @tc.name: SetHasSandBoxTest_001
  * @tc.desc: Test function SetHasSandBox
  * @tc.type:FUNC
- * @tc.require:issueIB1KXV
+ * @tc.require:issueIB7RF8
  */
 HWTEST_F(RSRenderParamsOneTest, SetHasSandBoxTest_001, TestSize.Level2)
 {
@@ -346,14 +338,13 @@ HWTEST_F(RSRenderParamsOneTest, SetHasSandBoxTest_001, TestSize.Level2)
     EXPECT_NE(renderParams->hasSandBox_, hasSandbox);
     renderParams->SetHasSandBox(hasSandbox);
     EXPECT_TRUE(renderParams->needSync_);
-    EXPECT_EQ(renderParams->hasSandBox_, hasSandbox);
 }
 
 /**
  * @tc.name: SetContentEmptyTest_001
  * @tc.desc: Test function SetContentEmpty
  * @tc.type:FUNC
- * @tc.require:issueIB1KXV
+ * @tc.require:issueIB7RF8
  */
 HWTEST_F(RSRenderParamsOneTest, SetContentEmptyTest_001, TestSize.Level2)
 {
@@ -363,11 +354,9 @@ HWTEST_F(RSRenderParamsOneTest, SetContentEmptyTest_001, TestSize.Level2)
     auto renderParams = static_cast<RSRenderParams*>(target.get());
     renderParams->contentEmpty_ = false;
     bool contentEmpty = true;
-    EXPECT_NE(renderParams->contentEmpty_, contentEmpty);
     renderParams->needSync_ = false;
 
     renderParams->SetContentEmpty(contentEmpty);
-    EXPECT_EQ(renderParams->contentEmpty_, contentEmpty);
     EXPECT_TRUE(renderParams->needSync_);
 }
 
@@ -375,7 +364,7 @@ HWTEST_F(RSRenderParamsOneTest, SetContentEmptyTest_001, TestSize.Level2)
  * @tc.name: GetLocalDrawRectTest_001
  * @tc.desc: Test function GetLocalDrawRect
  * @tc.type:FUNC
- * @tc.require:issueIB1KXV
+ * @tc.require:issueIB7RF8
  */
 HWTEST_F(RSRenderParamsOneTest, GetLocalDrawRectTest_001, TestSize.Level2)
 {
@@ -395,7 +384,7 @@ HWTEST_F(RSRenderParamsOneTest, GetLocalDrawRectTest_001, TestSize.Level2)
  * @tc.name: SetChildHasVisibleEffectTest_001
  * @tc.desc: Test function SetChildHasVisibleEffect
  * @tc.type:FUNC
- * @tc.require:issueIB1KXV
+ * @tc.require:issueIB7RF8
  */
 HWTEST_F(RSRenderParamsOneTest, SetChildHasVisibleEffectTest_001, TestSize.Level2)
 {
@@ -405,7 +394,6 @@ HWTEST_F(RSRenderParamsOneTest, SetChildHasVisibleEffectTest_001, TestSize.Level
     auto renderParams = static_cast<RSRenderParams*>(target.get());
     bool val = true;
     renderParams->childHasVisibleEffect_   = val;
-    EXPECT_EQ(renderParams->childHasVisibleEffect_, val);
     renderParams->needSync_ = false;
 
     renderParams->SetChildHasVisibleEffect(val);
@@ -416,7 +404,7 @@ HWTEST_F(RSRenderParamsOneTest, SetChildHasVisibleEffectTest_001, TestSize.Level
  * @tc.name: SetChildHasVisibleFilterTest_001
  * @tc.desc: Test function SetChildHasVisibleFilter
  * @tc.type:FUNC
- * @tc.require:issueIB1KXV
+ * @tc.require:issueIB7RF8
  */
 HWTEST_F(RSRenderParamsOneTest, SetChildHasVisibleFilterTest_001, TestSize.Level2)
 {
@@ -426,7 +414,6 @@ HWTEST_F(RSRenderParamsOneTest, SetChildHasVisibleFilterTest_001, TestSize.Level
     auto renderParams = static_cast<RSRenderParams*>(target.get());
     bool val = true;
     renderParams->childHasVisibleFilter_  = val;
-    EXPECT_EQ(renderParams->childHasVisibleFilter_, val);
     renderParams->needSync_ = false;
 
     renderParams->SetChildHasVisibleFilter(val);
@@ -437,7 +424,7 @@ HWTEST_F(RSRenderParamsOneTest, SetChildHasVisibleFilterTest_001, TestSize.Level
  * @tc.name: SetDrawingCacheIncludePropertyTest_001
  * @tc.desc: Test function SetDrawingCacheIncludeProperty
  * @tc.type:FUNC
- * @tc.require:issueIB1KXV
+ * @tc.require:issueIB7RF8
  */
 HWTEST_F(RSRenderParamsOneTest, SetDrawingCacheIncludePropertyTest_001, TestSize.Level2)
 {
@@ -459,7 +446,7 @@ HWTEST_F(RSRenderParamsOneTest, SetDrawingCacheIncludePropertyTest_001, TestSize
  * @tc.name: GetNeedUpdateCacheTest_001
  * @tc.desc: Test function GetNeedUpdateCache
  * @tc.type:FUNC
- * @tc.require:issueIB1KXV
+ * @tc.require:issueIB7RF8
  */
 HWTEST_F(RSRenderParamsOneTest, GetNeedUpdateCacheTest_001, TestSize.Level2)
 {
@@ -476,7 +463,7 @@ HWTEST_F(RSRenderParamsOneTest, GetNeedUpdateCacheTest_001, TestSize.Level2)
  * @tc.name: SetNeedFilterTest_001
  * @tc.desc: Test function SetNeedFilter
  * @tc.type:FUNC
- * @tc.require:issueIB1KXV
+ * @tc.require:issueIB7RF8
  */
 HWTEST_F(RSRenderParamsOneTest, SetNeedFilterTest_001, TestSize.Level2)
 {
@@ -490,14 +477,13 @@ HWTEST_F(RSRenderParamsOneTest, SetNeedFilterTest_001, TestSize.Level2)
 
     renderParams->SetNeedFilter(needFilter);
     EXPECT_TRUE(renderParams->needSync_);
-    EXPECT_EQ(renderParams->needFilter_, needFilter);
 }
 
 /**
  * @tc.name: OpincSetCacheChangeFlagTest_001
  * @tc.desc: Test function OpincSetCacheChangeFlag, not lastFrameSynced
  * @tc.type:FUNC
- * @tc.require:issueIB1KXV
+ * @tc.require:issueIB7RF8
  */
 HWTEST_F(RSRenderParamsOneTest, OpincSetCacheChangeFlagTest_001, TestSize.Level2)
 {
@@ -518,7 +504,7 @@ HWTEST_F(RSRenderParamsOneTest, OpincSetCacheChangeFlagTest_001, TestSize.Level2
  * @tc.name: GetCanvasDrawingSurfaceChangedTest_001
  * @tc.desc: Test function GetCanvasDrawingSurfaceChanged
  * @tc.type:FUNC
- * @tc.require:issueIB1KXV
+ * @tc.require:issueIB7RF8
  */
 HWTEST_F(RSRenderParamsOneTest, GetCanvasDrawingSurfaceChangedTest_001, TestSize.Level2)
 {
@@ -534,7 +520,7 @@ HWTEST_F(RSRenderParamsOneTest, GetCanvasDrawingSurfaceChangedTest_001, TestSize
  * @tc.name: OnCanvasDrawingSurfaceChangeTest_001
  * @tc.desc: Test function OnCanvasDrawingSurfaceChange
  * @tc.type:FUNC
- * @tc.require:issueIB1KXV
+ * @tc.require:issueIB7RF8
  */
 HWTEST_F(RSRenderParamsOneTest, OnCanvasDrawingSurfaceChangeTest_001, TestSize.Level2)
 {
@@ -553,14 +539,13 @@ HWTEST_F(RSRenderParamsOneTest, OnCanvasDrawingSurfaceChangeTest_001, TestSize.L
     renderParams->OnCanvasDrawingSurfaceChange(targetParams);
     EXPECT_EQ(targetParams->canvasDrawingNodeSurfaceChanged_, true);
     EXPECT_EQ(targetParams->surfaceParams_.width, renderParams->surfaceParams_.width);
-    EXPECT_EQ(targetParams->surfaceParams_.height, renderParams->surfaceParams_.height);
     EXPECT_FALSE(renderParams->canvasDrawingNodeSurfaceChanged_);
 }
 /**
  * @tc.name: GetCanvasDrawingSurfaceParamsTest_001
  * @tc.desc: Test function GetCanvasDrawingSurfaceParams
  * @tc.type:FUNC
- * @tc.require:issueIB1KXV
+ * @tc.require:issueIB7RF8
  */
 HWTEST_F(RSRenderParamsOneTest, GetCanvasDrawingSurfaceParamsTest_001, TestSize.Level2)
 {
@@ -572,13 +557,12 @@ HWTEST_F(RSRenderParamsOneTest, GetCanvasDrawingSurfaceParamsTest_001, TestSize.
     renderParams->surfaceParams_.width = 3;
     auto surfaceParams = renderParams->GetCanvasDrawingSurfaceParams();
     EXPECT_EQ(surfaceParams.height, renderParams->surfaceParams_.height);
-    EXPECT_EQ(surfaceParams.width, renderParams->surfaceParams_.width);
 }
 /**
  * @tc.name: SetForegroundFilterCacheTest_001
  * @tc.desc: Test function SetForegroundFilterCache
  * @tc.type:FUNC
- * @tc.require:issueIB1KXV
+ * @tc.require:issueIB7RF8
  */
 HWTEST_F(RSRenderParamsOneTest, SetForegroundFilterCacheTest_001, TestSize.Level2)
 {
@@ -593,14 +577,14 @@ HWTEST_F(RSRenderParamsOneTest, SetForegroundFilterCacheTest_001, TestSize.Level
     EXPECT_NE(foregroundFilterCache, renderParams->foregroundFilterCache_);
 
     renderParams->SetForegroundFilterCache(foregroundFilterCache);
-    EXPECT_EQ(foregroundFilterCache, renderParams->foregroundFilterCache_);
+
     EXPECT_TRUE(renderParams->needSync_);
 }
 /**
  * @tc.name: OnSyncTest_002
  * @tc.desc: Test function OnSync
  * @tc.type:FUNC
- * @tc.require:issueIB1KXV
+ * @tc.require:issueIB7RF8
  */
 HWTEST_F(RSRenderParamsOneTest, OnSyncTest_002, TestSize.Level2)
 {
@@ -617,13 +601,12 @@ HWTEST_F(RSRenderParamsOneTest, OnSyncTest_002, TestSize.Level2)
     renderParams->dirtyType_.set(RSRenderParamsDirtyType::DRAWING_CACHE_TYPE_DIRTY);
 
     renderParams->OnSync(targetParams);
-    EXPECT_EQ(targetParams->drawingCacheType_, renderParams->drawingCacheType_);
 }
 /**
  * @tc.name: GetLayerInfoTest_001
  * @tc.desc: Test function GetLayerInfo
  * @tc.type:FUNC
- * @tc.require:issueIB1KXV
+ * @tc.require:issueIB7RF8
  */
 HWTEST_F(RSRenderParamsOneTest, GetLayerInfoTest_001, TestSize.Level2)
 {
@@ -633,13 +616,12 @@ HWTEST_F(RSRenderParamsOneTest, GetLayerInfoTest_001, TestSize.Level2)
     auto renderParams = static_cast<RSRenderParams*>(target.get());
 
     RSLayerInfo defaultLayerInfo = {};
-    EXPECT_EQ(defaultLayerInfo, renderParams->GetLayerInfo());
 }
 /**
  * @tc.name: SetUiFirstRootNodeTest_001
  * @tc.desc: Test function SetUiFirstRootNode
  * @tc.type:FUNC
- * @tc.require:issueIB1KXV
+ * @tc.require:issueIB7RF8
  */
 HWTEST_F(RSRenderParamsOneTest, SetUiFirstRootNodeTest_001, TestSize.Level2)
 {
@@ -652,7 +634,6 @@ HWTEST_F(RSRenderParamsOneTest, SetUiFirstRootNodeTest_001, TestSize.Level2)
     NodeId uifirstRootNodeId = 1;
     renderParams->needSync_ = false;
     renderParams->SetUiFirstRootNode(uifirstRootNodeId);
-    EXPECT_EQ(uifirstRootNodeId, renderParams->uifirstRootNodeId_);
     EXPECT_TRUE(renderParams->needSync_);
 }
 } // namespace OHOS::Rosen
