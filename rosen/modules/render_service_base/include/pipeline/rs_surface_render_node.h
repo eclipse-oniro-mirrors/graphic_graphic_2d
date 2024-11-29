@@ -1277,6 +1277,7 @@ public:
     }
 
     bool NeedUpdateDrawableBehindWindow();
+    void SetOldNeedDrawBehindWindow(bool val);
     bool NeedDrawBehindWindow() const override;
     void AddChildBlurBehindWindow(NodeId id) override;
     void RemoveChildBlurBehindWindow(NodeId id) override;
@@ -1582,7 +1583,7 @@ private:
     bool arsrTag_ = true;
 
     bool subThreadAssignable_ = false;
-    bool oldHasChildrenBlurBehindWindow_ = false;
+    bool oldNeedDrawBehindWindow_ = false;
     std::unordered_set<NodeId> childrenBlurBehindWindow_ = {};
 
     // UIExtension record, <UIExtension, hostAPP>
