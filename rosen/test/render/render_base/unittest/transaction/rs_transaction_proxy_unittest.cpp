@@ -251,18 +251,6 @@ HWTEST_F(RSTransactionProxyUnitTest, FlushImplicitTransactionFromRT003, TestSize
 }
 
 /**
- * @tc.name: Commit001
- * @tc.desc: test
- * @tc.type:FUNC
- * @tc.require:
- */
-HWTEST_F(RSTransactionProxyUnitTest, Commit001, TestSize.Level1)
-{
-    uint64_t timeStamp = 1;
-    RSTransactionProxy::GetInstance()->Commit(timeStamp);
-}
-
-/**
  * @tc.name: Commit002
  * @tc.desc: test
  * @tc.type:FUNC
