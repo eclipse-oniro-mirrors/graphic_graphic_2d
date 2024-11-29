@@ -604,7 +604,7 @@ bool XMLParser::IsNumber(const std::string& str)
     return number == str.length() || (str.compare(0, 1, "-") == 0 && number == str.length() - 1);
 }
 
-std::vector<uint_32> XMLParser::StringToVector(const std::string &str)
+std::vector<uint32_t> XMLParser::StringToVector(const std::string &str)
 {
     // valid format: string consisting of only numbers and spaces
     if (!std::regex_match(str, std::regex("^\\s*(\\d+(\\s+\\d+)*)\\s*$"))) {
@@ -613,8 +613,8 @@ std::vector<uint_32> XMLParser::StringToVector(const std::string &str)
     }
 
     std::istringstream isstr(str);
-    std::vector<uint_32> vec;
-    uint_32 num;
+    std::vector<uint32_t> vec;
+    uint32_t num;
     while (isstr >> num) {
         vec.push_back(num);
     }

@@ -120,7 +120,7 @@ public:
     using SceneConfigMap = std::unordered_map<std::string, SceneConfig>;
 
     struct LowBrightConfig {
-        std::vector<uint_32> optionalRefreshRateVec;
+        std::vector<uint32_t> optionalRefreshRateVec;
     };
     // <"LTPO1", LowBrightConfig>
     using LowBrightConfigMap = std::unordered_map<std::string, LowBrightConfig>;

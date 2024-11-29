@@ -610,7 +610,7 @@ uint32_t HgmFrameRateManager::CalcRefreshRate(const ScreenId id, const FrameRate
     // 2. FrameRateRange[min, max, preferred] is [150, 150, 150], supported refreshRates
     // of current screen are {30, 60, 90}, the result will be 90.
     uint32_t refreshRate = currRefreshRate_;
-    std::vector<uint_32> supportRefreshRateVec;
+    std::vector<uint32_t> supportRefreshRateVec;
     if (isSafe_ && isAmbientEffect_) {
         supportRefreshRateVec = lowBrightVec_;
     } else {

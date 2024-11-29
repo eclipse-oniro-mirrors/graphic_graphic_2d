@@ -248,7 +248,7 @@ private:
 
     std::shared_ptr<HgmVSyncGeneratorController> controller_ = nullptr;
     std::vector<std::pair<FrameRateLinkerId, uint32_t>> appChangeData_;
-    std::vector<uint_32> lowBrightVec_;
+    std::vector<uint32_t> lowBrightVec_;
 
     std::function<void(bool, bool)> forceUpdateCallback_ = nullptr;
     HgmSimpleTimer voterLtpoTimer_;
