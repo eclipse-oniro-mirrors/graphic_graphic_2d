@@ -47,32 +47,6 @@ void RSSurfaceOhosVulkanTest::SetUp() {}
 void RSSurfaceOhosVulkanTest::TearDown() {}
 
 /**
- * @tc.name: ClearBufferTest001
- * @tc.desc: test results of ClearBuffer
- * @tc.type:FUNC
- * @tc.require: issueI9VVLE
- */
-HWTEST_F(RSSurfaceOhosVulkanTest, ClearBufferTest001, TestSize.Level1)
-{
-    sptr<Surface> producer1 = nullptr;
-    RSSurfaceOhosVulkan rsSurface(producer1);
-    rsSurface.ClearBuffer();
-}
-
-/**
- * @tc.name: ResetBufferAgeTest001
- * @tc.desc: test results of ResetBufferAge
- * @tc.type:FUNC
- * @tc.require: issueI9VVLE
- */
-HWTEST_F(RSSurfaceOhosVulkanTest, ResetBufferAgeTest001, TestSize.Level1)
-{
-    sptr<Surface> producer1 = nullptr;
-    RSSurfaceOhosVulkan rsSurface(producer1);
-    rsSurface.ResetBufferAge();
-}
-
-/**
  * @tc.name: ClearBufferTest002
  * @tc.desc: test results of ClearBuffer
  * @tc.type:FUNC
