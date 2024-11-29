@@ -773,7 +773,7 @@ void HgmFrameRateManager::HandleLightFactorStatus(pid_t pid, bool isSafe)
         cleanPidCallback_[pid].insert(CleanPidCallbackType::LIGHT_FACTOR);
     }
     auto isEffect = isAmbientEffect_;
-    multiAppStrategy.HandleLowBrightStrategyStatus(isEffect);
+    multiAppStrategy_.HandleLowBrightStrategyStatus(isEffect);
     multiAppStrategy_.HandleLightFactorStatus(isSafe);
     isSafe_ = isSafe;
 }

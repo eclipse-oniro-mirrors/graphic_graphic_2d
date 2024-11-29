@@ -512,7 +512,7 @@ int32_t XMLParser::ParseLowBrightList(xmlNode &node, PolicyConfigData::LowBright
     }
 
     // re-parse
-    lowBrightList.clear():
+    lowBrightList.clear();
     currNode = currNode->xmlChildrenNode;
     for (; currNode; currNode = currNode->next) {
         if (currNode->type != XML_ELEMENT_NODE) {
