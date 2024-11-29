@@ -591,7 +591,7 @@ void HgmFrameRateManager::HandleFrameRateChangeForLTPO(uint64_t timestamp, bool 
 
 void HgmFrameRateManager::GetLowBrightVec(const std::shared_ptr<PolicyConfigData>& configData)
 {
-    if (isLtpo_) {
+    if (configData != nullptr && isLtpo_) {
         // obtain the refresh rate supported in low ambient light
         const std::string settingMode = std::to_string(curRefreshRateMode_);
         auto lowBrightMap = configData->screenConfigs_[curScreenStrategyId_][settingMode].lowBrightList;
