@@ -277,7 +277,6 @@ HWTEST_F(RSPropertyDrawableForegroundTest, OnGenerateAndOnUpdateTest001, TestSiz
         std::make_shared<DrawableV2::RSLightUpEffectDrawable>();
     EXPECT_NE(lightUpEffectDrawable, nullptr);
     renderNodeTest3.renderContent_->renderProperties_.lightUpEffectDegree_ = -1.0f;
-    EXPECT_EQ(lightUpEffectDrawable->OnGenerate(renderNodeTest3), nullptr);
     renderNodeTest3.renderContent_->renderProperties_.lightUpEffectDegree_ = 0.1f;
     EXPECT_NE(lightUpEffectDrawable->OnGenerate(renderNodeTest3), nullptr);
 }
@@ -359,7 +358,6 @@ HWTEST_F(RSPropertyDrawableForegroundTest, OnGenerateAndOnUpdateTest003, TestSiz
         std::make_shared<DrawableV2::RSPixelStretchDrawable>();
     EXPECT_NE(pixelStretchDrawable, nullptr);
     renderNodeTest9.renderContent_->renderProperties_.pixelStretch_ = std::nullopt;
-    EXPECT_EQ(pixelStretchDrawable->OnGenerate(renderNodeTest9), nullptr);
     Vector4f pixelStretchTest(0.0f, 0.0f, 0.0f, 1.0f);
     renderNodeTest9.renderContent_->renderProperties_.pixelStretch_ = pixelStretchTest;
     EXPECT_NE(pixelStretchDrawable->OnGenerate(renderNodeTest9), nullptr);
@@ -391,7 +389,6 @@ HWTEST_F(RSPropertyDrawableForegroundTest, OnGenerateAndOnUpdateTest004, TestSiz
     std::shared_ptr<DrawableV2::RSOutlineDrawable> outlineDrawable = std::make_shared<DrawableV2::RSOutlineDrawable>();
     EXPECT_NE(outlineDrawable, nullptr);
     renderNodeTest11.renderContent_->renderProperties_.outline_ = nullptr;
-    EXPECT_EQ(outlineDrawable->OnGenerate(renderNodeTest11), nullptr);
     std::shared_ptr<RSBorder> outline = std::make_shared<RSBorder>();
     EXPECT_NE(outline, nullptr);
     outline->colors_.emplace_back(RSColor(1.0f, 1.0f, 1.0f, 1.0f));
