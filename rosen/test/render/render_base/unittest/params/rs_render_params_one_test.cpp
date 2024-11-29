@@ -501,20 +501,4 @@ HWTEST_F(RSRenderParamsOneTest, SetForegroundFilterCacheTest_001, TestSize.Level
 
     EXPECT_TRUE(renderParams->needSync_);
 }
-
-/**
- * @tc.name: GetLayerInfoTest_001
- * @tc.desc: Test function GetLayerInfo
- * @tc.type:FUNC
- * @tc.require:issueIB7RF8
- */
-HWTEST_F(RSRenderParamsOneTest, GetLayerInfoTest_001, TestSize.Level2)
-{
-    constexpr NodeId id = TestSrc::limitNumber::Uint64[4];
-    std::unique_ptr<RSRenderParams> target = std::make_unique<RSRenderParams>(id);
-    RSRenderParams params(id);
-    auto renderParams = static_cast<RSRenderParams*>(target.get());
-
-    RSLayerInfo defaultLayerInfo = {};
-}
 } // namespace OHOS::Rosen
