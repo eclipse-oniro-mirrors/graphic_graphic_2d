@@ -52,6 +52,20 @@ VSyncReceiver::VSyncReceiver(const sptr<IVSyncConnection>& conn,
 {
 };
 
+void VSyncReceiver::RegisterFileDescriptorListener()
+{
+    auto selfToken = IPCSkeleton::GetSelfTokenID();
+    auto tokenType = Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(static_cast<uint32_t>(selfToken));
+    bool isApp = (tokenType == Security::AccessToken::ATokenTypeEnum::TOKEN_HAP);
+    if (isApp && (static_cast<int32_t>(AppExecFwk::EventQueue::Priority::VIP) <= APP_VSYNC_PRIORITY) &&
+        (static_cast<int32_t>(AppExecFwk::EventQueue::Priority::IDLE) >= APP_VSYNC_PRIORITY)) {
+        looper_->AddFileDescriptorListener(fd_, AppExecFwk::FILE_DESCRIPTOR_INPUT_EVENT, listener_, "vSyncTask",
+            static_cast<AppExecFwk::EventQueue::Priority>(APP_VSYNC_PRIORITY));
+    } else {
+        looper_->AddFileDescriptorListener(fd_, AppExecFwk::FILE_DESCRIPTOR_INPUT_EVENT, listener_, "vSyncTask");
+    }
+}
+
 VsyncError VSyncReceiver::Init()
 {
     std::lock_guard<std::mutex> locker(initMutex_);
@@ -104,16 +118,7 @@ VsyncError VSyncReceiver::Init()
         return true;
     });
 
-    auto selfToken = IPCSkeleton::GetSelfTokenID();
-    auto tokenType = Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(static_cast<uint32_t>(selfToken));
-    bool isApp = (tokenType == Security::AccessToken::ATokenTypeEnum::TOKEN_HAP);
-    if (isApp && (static_cast<int32_t>(AppExecFwk::EventQueue::Priority::VIP) <= APP_VSYNC_PRIORITY) &&
-        (static_cast<int32_t>(AppExecFwk::EventQueue::Priority::IDLE) >= APP_VSYNC_PRIORITY)) {
-        looper_->AddFileDescriptorListener(fd_, AppExecFwk::FILE_DESCRIPTOR_INPUT_EVENT, listener_, "vSyncTask",
-            static_cast<AppExecFwk::EventQueue::Priority>(APP_VSYNC_PRIORITY));
-    } else {
-        looper_->AddFileDescriptorListener(fd_, AppExecFwk::FILE_DESCRIPTOR_INPUT_EVENT, listener_, "vSyncTask");
-    }
+    RegisterFileDescriptorListener();
     init_ = true;
     return VSYNC_ERROR_OK;
 }
