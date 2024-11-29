@@ -18,20 +18,21 @@ module_output_path = "graphic_2d/graphic_2d"
 
 ##############################fuzztest##########################################
 ohos_fuzztest("CLTRenderNodeFuzzTest") {
-  fuzz_config_file = "//foundation/graphic/graphic_2d/rosen/test/render_service/render_service_base/fuzztest/pipeline/cltrendernode_fuzzer"
+  fuzz_config_file = 
+      "../../../../../test/render_service/render_service_base/fuzztest/pipeline/cltrendernode_fuzzer"
   module_out_path = module_output_path
   if (defined(use_rosen_drawing) && use_rosen_drawing) {
     defines = [ "USE_ROSEN_DRAWING" ]
   }
 
   include_dirs = [
-    "//foundation/graphic/graphic_2d/rosen/modules/render_service_base/include",
+    "../../../../../modules/render_service_base/include",
   ]
   deps = [
     "../../../../../../modules/render_service_base:render_service_base_src",
-    "//foundation/graphic/graphic_2d/rosen/modules/2d_graphics:2d_graphics",
-    "//foundation/graphic/graphic_2d/rosen/modules/render_service:librender_service",
-    "//foundation/graphic/graphic_2d/rosen/modules/render_service_client:librender_service_client",
+    "../../../../../modules/2d_graphics:2d_graphics",
+    "../../../../../modules/render_service:librender_service",
+    "../../../../../modules/render_service_client:librender_service_client",
   ]
   cflags = [
     "-Wall",

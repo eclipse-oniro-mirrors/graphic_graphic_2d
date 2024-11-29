@@ -33,13 +33,13 @@ namespace Rosen {
 
 namespace {
 constexpr size_t STR_LEN = 10;
-const uint8_t* g_data = nullptr;
+const uint8_t* g_data_ = nullptr;
 size_t g_size = 0;
 size_t g_pos;
 } // namespace
 
 /*
- * describe: get data from outside untrusted data(g_data) which size is according to sizeof(T)
+ * describe: get data from outside untrusted data(g_data_) which size is according to sizeof(T)
  * tips: only support basic type
  */
 template<class T>
@@ -47,10 +47,10 @@ T GetData()
 {
     T object {};
     size_t objectSize = sizeof(object);
-    if (g_data == nullptr || objectSize > g_size - g_pos) {
+    if (g_data_ == nullptr || objectSize > g_size - g_pos) {
         return object;
     }
-    errno_t ret = memcpy_s(&object, objectSize, g_data + g_pos, objectSize);
+    errno_t ret = memcpy_s(&object, objectSize, g_data_ + g_pos, objectSize);
     if (ret != EOK) {
         return {};
     }
@@ -59,7 +59,7 @@ T GetData()
 }
 
 /*
- * get a string from g_data
+ * get a string from g_data_
  */
 std::string GetStringFromData(int strlen)
 {
@@ -92,7 +92,7 @@ bool RSBaseRenderNode(const uint8_t* data, size_t size)
     }
 
     // initialize
-    g_data = data;
+    g_data_ = data;
     g_size = size;
     g_pos = 0;
 
@@ -140,7 +140,7 @@ bool RSCanvasRenderNodeFuzzTest(const uint8_t* data, size_t size)
     }
 
     // initialize
-    g_data = data;
+    g_data_ = data;
     g_size = size;
     g_pos = 0;
 
@@ -171,7 +171,7 @@ bool RSContextFuzzTest(const uint8_t* data, size_t size)
     }
 
     // initialize
-    g_data = data;
+    g_data_ = data;
     g_size = size;
     g_pos = 0;
 
@@ -191,7 +191,7 @@ bool RSDirtyRegionManagerFuzzTest(const uint8_t* data, size_t size)
     }
 
     // initialize
-    g_data = data;
+    g_data_ = data;
     g_size = size;
     g_pos = 0;
 
@@ -202,8 +202,8 @@ bool RSDirtyRegionManagerFuzzTest(const uint8_t* data, size_t size)
     int width = GetData<int>();
     int height = GetData<int>();
     RectI rect(left, top, width, height);
-    uint64_t u_id = GetData<uint64_t>();
-    NodeId id = static_cast<NodeId>(u_id);
+    uint64_t uId = GetData<uint64_t>();
+    NodeId id = static_cast<NodeId>(uId);
     RSRenderNodeType nodeType = GetData<RSRenderNodeType>();
     DirtyRegionType dirtyType = GetData<DirtyRegionType>();
     std::map<NodeId, RectI> target;
@@ -230,7 +230,7 @@ bool RSDisplayRenderNodeFuzzTest(const uint8_t* data, size_t size)
     }
 
     // initialize
-    g_data = data;
+    g_data_ = data;
     g_size = size;
     g_pos = 0;
 
@@ -283,7 +283,7 @@ bool RSDrawCmdListFuzzTest(const uint8_t* data, size_t size)
     }
 
     // initialize
-    g_data = data;
+    g_data_ = data;
     g_size = size;
     g_pos = 0;
 
@@ -312,7 +312,7 @@ bool RSOcclusionConfigFuzzTes(const uint8_t* data, size_t size)
     }
 
     // initialize
-    g_data = data;
+    g_data_ = data;
     g_size = size;
     g_pos = 0;
 
