@@ -49,8 +49,6 @@ void RSChildrenDrawableTest::TearDownTestCase() {}
 void RSChildrenDrawableTest::SetUp() {}
 void RSChildrenDrawableTest::TearDown() {}
 
-
-
 /**
  * @tc.name: RSChildrenDrawable002
  * @tc.desc: Test OnSharedTransition
