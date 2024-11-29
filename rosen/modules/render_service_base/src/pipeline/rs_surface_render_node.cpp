@@ -2912,6 +2912,8 @@ void RSSurfaceRenderNode::UpdateRenderParams()
     surfaceParams->leashPersistentId_ = leashPersistentId_;
     surfaceParams->hasSubSurfaceNodes_ = HasSubSurfaceNodes();
     surfaceParams->allSubSurfaceNodeIds_ = GetAllSubSurfaceNodeIds();
+    surfaceParams->crossNodeSkippedDisplayOffsets_ = crossNodeSkippedDisplayOffsets_;
+    surfaceParams->preparedDisplayOffset_ = { GetPreparedDisplayOffsetX(), GetPreparedDisplayOffsetY() };
     surfaceParams->SetNeedSync(true);
     for (auto iter = ancestorDisplayNodeMap_.begin(); iter != ancestorDisplayNodeMap_.end(); ++iter) {
         surfaceParams->SetAncestorDisplayNode(iter->first, iter->second);

@@ -333,6 +333,8 @@ public:
     // canvas drawing node
     virtual bool IsNeedProcess() const { return true; }
     virtual void SetNeedProcess(bool isNeedProcess) {}
+    virtual bool IsFirstLevelCrossNode() const { return isFirstLevelCrossNode_; }
+    virtual void SetFirstLevelCrossNode(bool firstLevelCrossNode) { isFirstLevelCrossNode_ = firstLevelCrossNode; }
 protected:
     bool needSync_ = false;
     std::bitset<RSRenderParamsDirtyType::MAX_DIRTY_TYPE> dirtyType_;
@@ -380,6 +382,7 @@ private:
     bool freezeFlag_ = false;
     NodeId firstLevelNodeId_ = INVALID_NODEID;
     NodeId uifirstRootNodeId_ = INVALID_NODEID;
+    bool isFirstLevelCrossNode_ = false;
 };
 } // namespace OHOS::Rosen
 #endif // RENDER_SERVICE_BASE_PARAMS_RS_RENDER_PARAMS_H

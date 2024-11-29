@@ -537,6 +537,18 @@ public:
     {
         return allSubSurfaceNodeIds_;
     }
+    int32_t GetPreparedDisplayOffsetX() const
+    {
+        return preparedDisplayOffset_.x_;
+    }
+    int32_t GetPreparedDisplayOffsetY() const
+    {
+        return preparedDisplayOffset_.y_;
+    }
+    const std::unordered_map<NodeId, Vector2<int32_t>>& GetCrossNodeSkippedDisplayOffsets() const
+    {
+        return crossNodeSkippedDisplayOffsets_;
+    }
 protected:
 private:
     bool isMainWindowType_ = false;
@@ -636,7 +648,8 @@ private:
     
     bool hasSubSurfaceNodes_ = false;
     std::unordered_set<NodeId> allSubSurfaceNodeIds_ = {};
-
+    std::unordered_map<NodeId, Vector2<int32_t>> crossNodeSkippedDisplayOffsets_ = {};
+    Vector2<int32_t> preparedDisplayOffset_ = { 0, 0 };
     friend class RSSurfaceRenderNode;
     friend class RSUniRenderProcessor;
     friend class RSUniRenderThread;

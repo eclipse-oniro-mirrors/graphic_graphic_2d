@@ -91,6 +91,10 @@ void RSUniRenderUtil::MergeDirtyHistoryForDrawable(DrawableV2::RSDisplayRenderNo
         if (surfaceParams == nullptr || !surfaceParams->IsAppWindow()) {
             continue;
         }
+        // for cross-display surface, only merge dirty history once.
+        if (surfaceParams->IsFirstLevelCrossNode() && !params.IsFirstVisitCrossNodeDisplay()) {
+            continue;
+        }
         auto surfaceDirtyManager = surfaceNodeDrawable->GetSyncDirtyManager();
         if (surfaceDirtyManager == nullptr) {
             continue;
@@ -130,6 +134,11 @@ Occlusion::Region RSUniRenderUtil::MergeVisibleDirtyRegion(
             continue;
         }
         if (!surfaceParams->IsAppWindow() || surfaceParams->GetDstRect().IsEmpty()) {
+            continue;
+        }
+        // for cross-display surface, only consider the dirty region on the first display (use global dirty for others).
+        if (surfaceParams->IsFirstLevelCrossNode() &&
+            !RSUniRenderThread::Instance().GetRSRenderThreadParams()->IsFirstVisitCrossNodeDisplay()) {
             continue;
         }
         auto surfaceDirtyRect = surfaceDirtyManager->GetDirtyRegion();

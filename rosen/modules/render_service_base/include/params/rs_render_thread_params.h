@@ -443,6 +443,14 @@ public:
     {
         compositeType_ = type;
     }
+    NodeId GetCurrentVisitDisplayDrawableId() const
+    {
+        return currentVisitDisplayDrawableId_;
+    }
+    void SetCurrentVisitDisplayDrawableId(NodeId displayId)
+    {
+        currentVisitDisplayDrawableId_ = displayId;
+    }
 private:
     // Used by hardware thred
     uint64_t timestamp_ = 0;
@@ -475,6 +483,7 @@ private:
     bool isMirrorScreenDirty_ = false;
     bool cacheEnabledForRotation_ = false;
     bool isScreenSwitching_ = false;
+    NodeId currentVisitDisplayDrawableId_ = INVALID_NODEID;
     DirtyRegionDebugType dirtyRegionDebugType_ = DirtyRegionDebugType::DISABLED;
     std::vector<DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr> selfDrawables_;
     DrawablesVec hardwareEnabledTypeDrawables_;

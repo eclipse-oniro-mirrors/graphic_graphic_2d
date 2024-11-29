@@ -501,6 +501,7 @@ void RSRenderParams::OnSync(const std::unique_ptr<RSRenderParams>& target)
     target->absDrawRect_ = absDrawRect_;
     target->firstLevelNodeId_ = firstLevelNodeId_;
     target->uifirstRootNodeId_ = uifirstRootNodeId_;
+    target->isFirstLevelCrossNode_ = isFirstLevelCrossNode_;
     needSync_ = false;
 }
 
