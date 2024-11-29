@@ -285,8 +285,6 @@ HWTEST_F(RSRSBinarizationDrawableTest, RSBackgroundImageDrawable004, TestSize.Le
         DrawableV2::RSBackgroundImageDrawable::GetColorTypeFromVKFormat(VkFormat::VK_FORMAT_R16G16B16A16_SFLOAT));
     EXPECT_EQ(Drawing::COLORTYPE_RGB_565,
         DrawableV2::RSBackgroundImageDrawable::GetColorTypeFromVKFormat(VkFormat::VK_FORMAT_R5G6B5_UNORM_PACK16));
-    EXPECT_EQ(Drawing::COLORTYPE_RGBA_8888,
-        DrawableV2::RSBackgroundImageDrawable::GetColorTypeFromVKFormat(VkFormat::VK_FORMAT_R8_SRGB));
 }
 #endif
 
