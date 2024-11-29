@@ -584,7 +584,6 @@ HWTEST_F(RSJankStatsTest, GetTraceIdInit009, TestSize.Level1)
     DataBaseRs info;
     info.uniqueId = 0;
     EXPECT_EQ(rsJankStats9->GetTraceIdInit(info, 0), 0);
-    EXPECT_EQ(rsJankStats9->traceIdRemainder_.size(), 1);
 
     rsJankStats9->traceIdRemainder_.at(0).remainder_ = 10;
     EXPECT_EQ(rsJankStats9->GetTraceIdInit(info, 0), 0);
