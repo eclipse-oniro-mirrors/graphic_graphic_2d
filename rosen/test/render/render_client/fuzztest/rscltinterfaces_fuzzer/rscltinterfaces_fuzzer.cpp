@@ -22,12 +22,12 @@
 namespace OHOS {
 namespace Rosen {
 namespace {
-const uint8_t* g_data_ = nullptr;
+const uint8_t* data_ = nullptr;
 size_t g_size = 0;
 size_t g_pos;
 
 /*
- * describe: get data from outside untrusted data(g_data_) which size is according to sizeof(T)
+ * describe: get data from outside untrusted data(data_) which size is according to sizeof(T)
  * tips: only support basic type
  */
 template<class T>
@@ -35,10 +35,10 @@ T GetData()
 {
     T object {};
     size_t objectSize = sizeof(object);
-    if (g_data_ == nullptr || objectSize > g_size - g_pos) {
+    if (data_ == nullptr || objectSize > g_size - g_pos) {
         return object;
     }
-    errno_t ret = memcpy_s(&object, objectSize, g_data_ + g_pos, objectSize);
+    errno_t ret = memcpy_s(&object, objectSize, data_ + g_pos, objectSize);
     if (ret != EOK) {
         return {};
     }
@@ -51,10 +51,10 @@ std::string GetData()
 {
     size_t objectSize = GetData<uint8_t>();
     std::string object(objectSize, '\0');
-    if (g_data_ == nullptr || objectSize > g_size - g_pos) {
+    if (data_ == nullptr || objectSize > g_size - g_pos) {
         return object;
     }
-    object.assign(reinterpret_cast<const char*>(g_data_ + g_pos), objectSize);
+    object.assign(reinterpret_cast<const char*>(data_ + g_pos), objectSize);
     g_pos += objectSize;
     return object;
 }
@@ -83,7 +83,7 @@ bool RSPhysicalScreenTest01(const uint8_t* data, size_t size)
     }
 
     // initialize
-    g_data_ = data;
+    data_ = data;
     g_size = size;
     g_pos = 0;
 
@@ -136,7 +136,7 @@ bool RSPhysicalScreenTest02(const uint8_t* data, size_t size)
     }
 
     // initialize
-    g_data_ = data;
+    data_ = data;
     g_size = size;
     g_pos = 0;
 
@@ -190,7 +190,7 @@ bool RSPhysicalScreenTest03(const uint8_t* data, size_t size)
     }
 
     // initialize
-    g_data_ = data;
+    data_ = data;
     g_size = size;
     g_pos = 0;
 
@@ -243,16 +243,12 @@ bool RSPhysicalScreenTest04(const uint8_t* data, size_t size)
     }
 
     // initialize
-    g_data_ = data;
+    data_ = data;
     g_size = size;
     g_pos = 0;
 
     // get data
     uint64_t id = GetData<uint64_t>();
-    uint32_t modeId = GetData<uint32_t>();
-    uint32_t status = GetData<uint32_t>();
-    uint32_t level = GetData<uint32_t>();
-    int32_t modeIdx = GetData<uint32_t>();
     uint32_t skipFrameInterval = GetData<uint32_t>();
     uint32_t width = GetData<uint32_t>();
     uint32_t height = GetData<uint32_t>();
@@ -307,7 +303,7 @@ bool OHOS::Rosen::DoSetTpFeatureConfigFuzzTest(const uint8_t* data, size_t size)
     }
 
     // initialize
-    g_data_ = data;
+    data_ = data;
     g_size = size;
     g_pos = 0;
 
@@ -330,7 +326,7 @@ bool DoSetFreeMultiStatus(const uint8_t* data, size_t size)
     }
 
     // initialize
-    g_data_ = data;
+    data_ = data;
     g_size = size;
     g_pos = 0;
 
@@ -350,7 +346,7 @@ bool DoDropFrameByPids(const uint8_t* data, size_t size)
     }
 
     // initialize
-    g_data_ = data;
+    data_ = data;
     g_size = size;
     g_pos = 0;
 
