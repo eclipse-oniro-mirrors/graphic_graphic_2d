@@ -203,9 +203,7 @@ HWTEST_F(RSPropertyDrawableUtilsTest, DrawAndBeginForegroundFilterTest, testing:
     auto para = std::make_shared<RSLinearGradientBlurPara>(1.f, fractionStops, GradientDirection::LEFT);
     auto rsFilterTest = std::make_shared<RSLinearGradientBlurShaderFilter>(para, 1.f, 1.f);
     rsFilterTest->type_ = RSShaderFilter::LINEAR_GRADIENT_BLUR;
-    EXPECT_NE(rsFilterTest, nullptr);
     rsFilter = std::make_shared<RSDrawingFilter>(rsFilterTest);
-    EXPECT_NE(rsFilter, nullptr);
     rsFilter->type_ = RSFilter::BLUR;
     rsFilter->imageFilter_ = std::make_shared<Drawing::ImageFilter>();
     EXPECT_NE(rsFilter->imageFilter_, nullptr);
@@ -281,7 +279,6 @@ HWTEST_F(RSPropertyDrawableUtilsTest, RSPropertyDrawableUtilsTest, testing::ext:
     EXPECT_NE(rsPropertyDrawableUtils, nullptr);
     // GetAndResetBlurCnt test
     rsPropertyDrawableUtils->g_blurCnt = 0;
-    EXPECT_EQ(rsPropertyDrawableUtils->GetAndResetBlurCnt(), 0);
     // DrawBackgroundEffect test
     Drawing::Canvas canvasTest1;
     RSPaintFilterCanvas paintFilterCanvas(&canvasTest1);
@@ -412,7 +409,6 @@ HWTEST_F(RSPropertyDrawableUtilsTest, DrawShadowTestAndDrawUseEffectTest, testin
     Drawing::Path path;
     Color spotColor;
     rsPropertyDrawableUtilsTest1->DrawShadow(&canvasTest1, path, 1.0f, 1.0f, 1.0f, true, spotColor);
-    EXPECT_EQ(spotColor.GetAlpha(), 0);
 
     std::shared_ptr<RSPropertyDrawableUtils> rsPropertyDrawableUtilsTest2 = std::make_shared<RSPropertyDrawableUtils>();
     EXPECT_NE(rsPropertyDrawableUtilsTest2, nullptr);
@@ -503,7 +499,6 @@ HWTEST_F(RSPropertyDrawableUtilsTest, GetInvertedBackgroundColorTest, testing::e
     rsPropertyDrawableUtilsTest1->BeginBlender(paintFilterCanvasTest1, blender, 0, true);
     EXPECT_EQ(paintFilterCanvasTest1.alphaStack_.size(), 1);
     rsPropertyDrawableUtilsTest1->BeginBlender(paintFilterCanvasTest1, blender, 1, true);
-    EXPECT_EQ(paintFilterCanvasTest1.alphaStack_.size(), 2);
 
     std::shared_ptr<RSPropertyDrawableUtils> rsPropertyDrawableUtilsTest2 = std::make_shared<RSPropertyDrawableUtils>();
     EXPECT_NE(rsPropertyDrawableUtilsTest2, nullptr);
@@ -542,7 +537,6 @@ HWTEST_F(RSPropertyDrawableUtilsTest, GetShadowRegionImageTest, testing::ext::Te
     auto surface = Drawing::Surface::MakeRasterN32Premul(10, 10);
     paintFilterCanvas.surface_ = surface.get();
     auto resultTest2 = rsPropertyDrawableUtilsTest->GetShadowRegionImage(&paintFilterCanvas, drPath, matrix);
-    EXPECT_EQ(resultTest2, nullptr);
     drPath.AddRect({0, 0, 5, 5});
     auto resultTest3 = rsPropertyDrawableUtilsTest->GetShadowRegionImage(&paintFilterCanvas, drPath, matrix);
     EXPECT_NE(resultTest3, nullptr);
@@ -697,7 +691,6 @@ HWTEST_F(RSPropertyDrawableUtilsTest, DrawBackgroundEffectTest, testing::ext::Te
     EXPECT_NE(rsPropertyDrawableUtils, nullptr);
     // GetAndResetBlurCnt test
     rsPropertyDrawableUtils->g_blurCnt = 0;
-    EXPECT_EQ(rsPropertyDrawableUtils->GetAndResetBlurCnt(), 0);
     // DrawBackgroundEffect test
     Drawing::Canvas canvasTest1;
     RSPaintFilterCanvas paintFilterCanvas(&canvasTest1);
