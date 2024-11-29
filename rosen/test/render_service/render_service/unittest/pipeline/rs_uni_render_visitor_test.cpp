@@ -4415,7 +4415,7 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateHardwareStateByHwcNodeBackgroundAlpha002,
     auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(surfaceConfig);
     ASSERT_NE(surfaceNode, nullptr);
     surfaceNode->SetNodeHasBackgroundColorAlpha(true);
-    surfaceNode->SetHardwareForcedDisabledstate(true);
+    surfaceNode->SetHardwareForcedDisabledState(true);
 
     std::vector<std::weak_ptr<RSSurfaceRenderNode>> hwcNodes;
     hwcNodes.push_back(std::weak_ptr<RSSurfaceRenderNode>(surfaceNode));
