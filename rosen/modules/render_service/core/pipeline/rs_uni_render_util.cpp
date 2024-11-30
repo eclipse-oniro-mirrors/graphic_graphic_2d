@@ -1471,16 +1471,15 @@ void RSUniRenderUtil::DealWithNodeGravity(RSSurfaceRenderNode& node, const Scree
 
     CheckForceHardwareAndUpdateDstRect(node);
     // we do not need to do additional works for Gravity::RESIZE and if frameSize == boundsSize.
-    if (frameGravity == Gravity::RESIZE
-        || (node.IsRosenWeb() && frameGravity == Gravity::TOP_LEFT)
-        || (ROSEN_EQ(frameWidth, boundsWidth) && ROSEN_EQ(frameHeight, boundsHeight))) {
+    if (frameGravity == Gravity::RESIZE || (ROSEN_EQ(frameWidth, boundsWidth) && ROSEN_EQ(frameHeight, boundsHeight))) {
         return;
     }
-
-    // get current node's translate matrix and calculate gravity matrix.
-    auto translateMatrix = Drawing::Matrix();
-    translateMatrix.Translate(node.GetTotalMatrix().Get(Drawing::Matrix::Index::TRANS_X),
-        std::ceil(node.GetTotalMatrix().Get(Drawing::Matrix::Index::TRANS_Y)));
+    if (frameGravity != Gravity::RESIZE && frameGravity != Gravity::TOP_LEFT && frameGravity != Gravity::CENTER) {
+        RS_OPTIONAL_TRACE_NAME_FMT("hwc debug: name:%s id:%" PRIu64 "disabled by frameGravity[%d]",
+            node.GetName().c_str(), node.GetId(), static_cast<int>(frameGravity));
+        node.SetHardwareForcedDisabledState(true);
+        return;
+    }
     Drawing::Matrix gravityMatrix;
     (void)RSPropertiesPainter::GetGravityMatrix(frameGravity,
         RectF {0.0f, 0.0f, boundsWidth, boundsHeight}, frameWidth, frameHeight, gravityMatrix);
@@ -1491,26 +1490,60 @@ void RSUniRenderUtil::DealWithNodeGravity(RSSurfaceRenderNode& node, const Scree
     if (screenRotation == ScreenRotation::ROTATION_90 || screenRotation == ScreenRotation::ROTATION_270) {
         std::swap(screenWidth, screenHeight);
     }
-
-    auto canvas = std::make_unique<Drawing::Canvas>(screenWidth, screenHeight);
-    canvas->ConcatMatrix(translateMatrix);
+    auto canvas = std::make_unique<Drawing::Canvas>(fmax(boundsWidth, screenWidth), fmax(boundsHeight, screenHeight));
     canvas->ConcatMatrix(gravityMatrix);
-    Drawing::Rect clipRect;
+    Drawing::Rect bounds = Drawing::Rect(0, 0, boundsWidth, boundsHeight);
+    Drawing::Rect absRect = Drawing::Rect(0, 0, 0, 0);
+    node.GetTotalMatrix().MapRect(absRect, bounds);
+    Drawing::Matrix gravityMatrixScalePart = Drawing::Matrix();
+    gravityMatrixScalePart.SetMatrix(
+        gravityMatrix.Get(Drawing::Matrix::Index::SCALE_X), 0.0f, 0.0f,
+        0.0f, gravityMatrix.Get(Drawing::Matrix::Index::SCALE_Y), 0.0f,
+        0.0f, 0.0f, 1.0f);
+    Drawing::Matrix gravityMatrixTranslatePart = Drawing::Matrix();
+    gravityMatrixTranslatePart.SetMatrix(
+        1.0f, 0.0f, gravityMatrix.Get(Drawing::Matrix::Index::TRANS_X),
+        0.0f, 1.0f, gravityMatrix.Get(Drawing::Matrix::Index::TRANS_Y),
+        0.0f, 0.0f, 1.0f);
+    RectI dstRect = node.GetDstRect();
+    Drawing::Rect newDstRect = Drawing::Rect(
+        absRect.left_, absRect.top_, absRect.left_ + frameWidth, absRect.top_ + frameHeight);
+    gravityMatrixScalePart.MapRect(newDstRect,
+        Drawing::Rect(absRect.left_, absRect.top_, absRect.left_ + frameWidth, absRect.top_ + frameHeight));
+    newDstRect = Drawing::Rect(
+        absRect.left_,
+        absRect.top_,
+        absRect.left_ + newDstRect.right_ - newDstRect.left_,
+        absRect.top_ + newDstRect.bottom_ - newDstRect.top_);
+    gravityMatrixTranslatePart.MapRect(newDstRect, newDstRect);
+    newDstRect.Intersect(Drawing::Rect(
+        absRect.left_, absRect.top_, absRect.right_, absRect.bottom_));
+    Drawing::Rect croppedNewDstRect = newDstRect;
+    croppedNewDstRect.Intersect(Drawing::RectI(
+        dstRect.left_, dstRect.top_, dstRect.left_ + dstRect.width_, dstRect.top_ + dstRect.height_));
+    const float offsetXLeft = (newDstRect.left_ - croppedNewDstRect.left_) < 0 ?
+        croppedNewDstRect.left_ - newDstRect.left_ : 0;
+    const float offsetXRight = (newDstRect.right_ - croppedNewDstRect.right_) > 0 ?
+        newDstRect.right_ - croppedNewDstRect.right_ : 0;
+    const float offsetYTop = (newDstRect.top_ - croppedNewDstRect.top_) < 0 ?
+        croppedNewDstRect.top_ - newDstRect.top_ : 0;
+    const float offsetYBottom = (newDstRect.bottom_ - croppedNewDstRect.bottom_) > 0 ?
+        newDstRect.bottom_ - croppedNewDstRect.bottom_ : 0;
+    Drawing::Rect clipRect = Drawing::Rect(0.0f, 0.0f, 0.0f, 0.0f);
     gravityMatrix.MapRect(clipRect, Drawing::Rect(0, 0, frameWidth, frameHeight));
-    canvas->ClipRect(Drawing::Rect(0, 0, clipRect.GetWidth(), clipRect.GetHeight()), Drawing::ClipOp::INTERSECT);
-    Drawing::RectI newDstRect = canvas->GetDeviceClipBounds();
-    auto dstRect = node.GetDstRect();
-    // we make the newDstRect as the intersection of new and old dstRect,
-    // to deal with the situation that frameSize > boundsSize.
-    newDstRect.Intersect(Drawing::RectI(
-        dstRect.left_, dstRect.top_, dstRect.width_ + dstRect.left_, dstRect.height_ + dstRect.top_));
+    canvas->ClipRect(Drawing::Rect(
+        -clipRect.GetLeft() + offsetXLeft,
+        -clipRect.GetTop() + offsetYTop,
+        -clipRect.GetLeft() + std::min(absRect.right - absRect.left_, frameWidth) - offsetXRight,
+        -clipRect.GetTop() + std::min(absRect.bottom - absRect.top_, frameHeight) - offsetYBottom),
+        Drawing::ClipOp::INTERSECT);
     auto localRect = canvas->GetLocalClipBounds();
     int left = std::clamp<int>(localRect.GetLeft(), 0, frameWidth);
     int top = std::clamp<int>(localRect.GetTop(), 0, frameHeight);
     int width = std::clamp<int>(localRect.GetWidth(), 0, frameWidth - left);
     int height = std::clamp<int>(localRect.GetHeight(), 0, frameHeight - top);
-
-    node.SetDstRect({newDstRect.GetLeft(), newDstRect.GetTop(), newDstRect.GetWidth(), newDstRect.GetHeight()});
+    node.SetDstRect({croppedNewDstRect.GetLeft(), croppedNewDstRect.GetTop(),
+        croppedNewDstRect.GetWidth(), croppedNewDstRect.GetHeight()});
     node.SetSrcRect({left, top, width, height});
 }
 
