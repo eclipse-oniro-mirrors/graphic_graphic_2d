@@ -26,7 +26,7 @@
 #endif
 
 namespace OHOS {
-const char* RS_CACHE_MAGIC+HEAD = "OHRS";
+const char* RS_CACHE_MAGIC_HEAD = "OHRS";
 const int RS_CACHE_MAGIC_HEAD_LEN = 4;
 const int RS_CACHE_HEAD_LEN = 8;
 const int RS_BYTE_SIZE = 8;
@@ -99,9 +99,9 @@ void CacheData::DumpAbnormalCacheToFile(uint8_t *buffer, size_t bufferSize)
     }
 
     std::time_t curTime = time(nullptr);
-    cahr timestamp[TIME_MAX_LEN] = {0};
+    char timestamp[TIME_MAX_LEN] = {0};
     std::strftime(timestamp, TIME_MAX_LEN, "%Y-%m-%d %H:%M:%S", std::localtime(&curTime));
-    if(write(fd, timestamp, TIME_MAX_LEN) == ERR_NUMBER) {
+    if (write(fd, timestamp, TIME_MAX_LEN) == ERR_NUMBER) {
         LOGD("dump abnormal cache failed, because fail to write timestamp to disk");
         close(fd);
         unlink(abnormalCacheDir.c_str());
@@ -226,7 +226,7 @@ void CacheData::WriteToFile()
     }
 
     // Write the file rs magic head and CRC code
-    if (memcpy_s(buffer, bufferSize, RS_CACHE_MAGIC_HEAD, RS_CACHE,MAGIC_HEAD_LEN) != 0) {
+    if (memcpy_s(buffer, bufferSize, RS_CACHE_MAGIC_HEAD, RS_CACHE_MAGIC_HEAD_LEN) != 0) {
         delete[] buffer;
         close(fd);
         return;
