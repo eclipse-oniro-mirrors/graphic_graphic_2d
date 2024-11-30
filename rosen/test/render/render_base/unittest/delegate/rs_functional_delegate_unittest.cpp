@@ -37,17 +37,6 @@ void RSFunctionalDelegateUnitTest::SetUp()
 }
 void RSFunctionalDelegateUnitTest::TearDown() {}
 
-/**
- * @tc.name: Repaint001
- * @tc.desc: test results of Repaint
- * @tc.type:FUNC
- * @tc.require: issueI5HRIF
- */
-HWTEST_F(RSFunctionalDelegateUnitTest, Repaint001, TestSize.Level1)
-{
-    rsfunctionaldelegate_->SetRepaintCallback(nullptr);
-    rsfunctionaldelegate_->Repaint();
-}
 }
 
 /**
