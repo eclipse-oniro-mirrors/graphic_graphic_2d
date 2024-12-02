@@ -419,6 +419,14 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::CREATE_NODE): {
             auto nodeId = data.ReadUint64();
+            bool isNonSystemCalling = false;
+            bool isTokenTypeValid = true;
+            RSInterfaceCodeAccessVerifierBase::GetAccessType(isTokenTypeValid, isNonSystemCalling);
+            if (isNonSystemCalling && !IsValidCallingPid(ExtractPid(id), callingPid)) {
+                RS_LOGW("CREATE_NODE invalid nodeId[%" PRIu64 "] pid[%d]", nodeId, callingPid);
+                ret = ERR_INVALID_DATA;
+                break;
+            }
             RS_PROFILER_PATCH_NODE_ID(data, nodeId);
             auto surfaceName = data.ReadString();
             RSSurfaceRenderNodeConfig config = {.id = nodeId, .name = surfaceName};
