@@ -49,11 +49,13 @@ bool RegisterTypefaceCallback()
 
 class TypefaceAutoRegister {
 public:
-    TypefaceAutoRegister() {
+    TypefaceAutoRegister()
+    {
         RegisterTypefaceCallback();
     }
 
-    ~TypefaceAutoRegister() {
+    ~TypefaceAutoRegister()
+    {
         Drawing::Typeface::RegisterCallBackFunc(nullptr);
         Drawing::Typeface::UnRegisterCallBackFunc(nullptr);
     }
