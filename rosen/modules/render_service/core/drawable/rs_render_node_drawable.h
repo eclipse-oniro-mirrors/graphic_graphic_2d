@@ -187,6 +187,7 @@ private:
     static inline std::unordered_map<NodeId, int32_t> drawingCacheUpdateTimeMap_;
 
     static thread_local bool isOpDropped_;
+    static thread_local bool isOffScreenWithClipHole_;
     static inline std::atomic<int> totalProcessedNodeCount_ = 0;
     static inline std::atomic<int> processedNodeCount_ = 0;
     // used foe render group cache
@@ -216,13 +217,12 @@ private:
     bool isOpincRootNode_ = false;
     bool isOpincDropNodeExtTemp_ = true;
     bool isOpincCaculateStart_ = false;
-    bool isOpincMarkCached_ = false;
     bool OpincGetCachedMark() const
     {
         return isOpincMarkCached_;
     }
+    bool isOpincMarkCached_ = false;
     bool IsOpincNodeInScreenRect(RSRenderParams& params);
-    static thread_local bool isOffScreenWithClipHole_;
 };
 } // namespace DrawableV2
 } // namespace OHOS::Rosen

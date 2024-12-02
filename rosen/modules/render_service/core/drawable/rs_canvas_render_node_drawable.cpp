@@ -51,11 +51,10 @@ void RSCanvasRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     const auto& params = GetRenderParams();
     if (params == nullptr) {
         SetDrawSkipType(DrawSkipType::RENDER_PARAMS_NULL);
-        RS_LOGE("RSCanvasRenderNodeDrawable::OnDraw params is null, id:%{public}" PRIu64 "", nodeId_);
         return;
     }
     auto paintFilterCanvas = static_cast<RSPaintFilterCanvas*>(&canvas);
-    if (params->GetStartingWindowFlag() && paintFilterCanvas) { // do not draw startingwindows in sudthread
+    if (params->GetStartingWindowFlag() && paintFilterCanvas) { // do not draw startingwindows in subthread
         if (paintFilterCanvas->GetIsParallelCanvas()) {
             SetDrawSkipType(DrawSkipType::PARALLEL_CANVAS_SKIP);
             return;
