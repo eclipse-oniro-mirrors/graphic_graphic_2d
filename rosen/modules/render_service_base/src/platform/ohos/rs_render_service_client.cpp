@@ -1671,7 +1671,7 @@ public:
     {
         client_->TriggerOnFinish(ret);
     }
- 
+
     void OnAfterAcquireBuffer(const AfterAcquireBufferRet& ret) override
     {
         client_->TriggerOnAfterAcquireBuffer(ret);
