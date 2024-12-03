@@ -355,14 +355,9 @@ void NativeDrawingPathCloseTest(const uint8_t* data, size_t size)
 
 void OHDrawingTextLineArray(OH_Drawing_Array* linesArray, const uint8_t* data, size_t size)
 {
-    if (data == nullptr) {
-        return;
-    }
-    // initialize
     g_data = data;
     g_size = size;
     g_pos = 0;
-
     size_t linesSize = OH_Drawing_GetDrawingArraySize(linesArray);
     for (size_t i = 0; i < linesSize; ++i) {
         OH_Drawing_GetTextLineByIndex(nullptr, i);
