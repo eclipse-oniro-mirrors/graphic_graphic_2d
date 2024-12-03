@@ -839,7 +839,7 @@ protected:
     virtual void OnSync();
     virtual void ClearResource() {};
     virtual void ClearNeverOnTree() {};
-    virtual void CheckCanvasDrawingPostPlayBacked() {};
+    virtual void CheckCanvasDrawingPostPlaybacked() {};
 
     void UpdateDrawableVecV2();
 

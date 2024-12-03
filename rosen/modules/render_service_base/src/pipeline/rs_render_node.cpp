@@ -2602,7 +2602,7 @@ void RSRenderNode::ApplyModifiers()
     // Temporary code, copy matrix into render params
     if (LIKELY(RSUniRenderJudgement::IsUniRender() && !isTextureExportNode_)) {
         if (GetType() == RSRenderNodeType::CANVAS_DRAWING_NODE) {
-            CheckCanvasDrawingPostPlayBacked();
+            CheckCanvasDrawingPostPlaybacked();
         }
         UpdateDrawableVecV2();
     } else {
