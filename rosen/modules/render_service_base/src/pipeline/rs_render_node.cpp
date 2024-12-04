@@ -4386,6 +4386,7 @@ void RSRenderNode::OnSync()
     DrawableV2::RSRenderNodeSingleDrawableLocker
         singleLocker(uifirstSkipPartialSync_ ? nullptr : renderDrawable_.get());
     if (!uifirstSkipPartialSync_ && UNLIKELY(!singleLocker.IsLocked())) {
+        singleLocker.DrawableOnDrawMultiAccessEventReport(__func__);
         RS_LOGE("Drawable try to Sync when node %{public}" PRIu64 " onDraw!!!", GetId());
         return;
     }
