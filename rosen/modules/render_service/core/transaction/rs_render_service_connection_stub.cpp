@@ -1830,7 +1830,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             RSIRenderServiceConnectionInterfaceCode::REGISTER_FRAME_RATE_LINKER_EXPECTED_FPS_CALLBACK) : {
             sptr<RSIFrameRateLinkerExpectedFpsUpdateCallback> callback = nullptr;
             sptr<IRemoteObject> remoteObject = nullptr;
-            uint32_t dstPid = data.ReadUint32();
+            int32_t dstPid = data.ReadInt32();
             if (data.ReadBool()) {
                 remoteObject = data.ReadRemoteObject();
             }
