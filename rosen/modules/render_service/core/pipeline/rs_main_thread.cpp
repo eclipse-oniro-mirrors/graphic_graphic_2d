@@ -1901,8 +1901,11 @@ void RSMainThread::MergeToEffectiveTransactionDataMap(TransactionDataMap& cached
 void RSMainThread::OnHideNotchStatusCallback(const char *key, const char *value, void *context)
 {
     if (strcmp(key, HIDE_NOTCH_STATUS) != 0) {
+        RS_LOGI("RSMainThread::OnHideNotchStatusCallback, key is not HIDE_NOTCH_STATUS");
         return;
     }
+    RS_LOGI("RSMainThread::OnHideNotchStatusCallback HideNotchStatus is change, status is %{public}d",
+        RSSystemParameters::GetHideNotchStatus());
     RSMainThread::Instance()->RequestNextVSync();
 }
 
