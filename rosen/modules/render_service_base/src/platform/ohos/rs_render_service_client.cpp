@@ -1331,7 +1331,7 @@ private:
 };
 
 int32_t RSRenderServiceClient::RegisterFrameRateLinkerExpectedFpsUpdateCallback(
-    uint32_t dstPid, const FrameRateLinkerExpectedFpsUpdateCallback& callback)
+    int32_t dstPid, const FrameRateLinkerExpectedFpsUpdateCallback& callback)
 {
     auto renderService = RSRenderServiceConnectHub::GetRenderService();
     if (renderService == nullptr) {

@@ -1984,7 +1984,7 @@ int32_t RSRenderServiceConnection::RegisterHgmRefreshRateUpdateCallback(
     return StatusCode::SUCCESS;
 }
 
-int32_t RSRenderServiceConnection::RegisterFrameRateLinkerExpectedFpsUpdateCallback(uint32_t dstPid,
+int32_t RSRenderServiceConnection::RegisterFrameRateLinkerExpectedFpsUpdateCallback(int32_t dstPid,
     sptr<RSIFrameRateLinkerExpectedFpsUpdateCallback> callback)
 {
     if (!mainThread_ || dstPid == 0) {

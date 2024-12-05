@@ -2586,24 +2586,23 @@ int32_t RSRenderServiceConnectionProxy::RegisterHgmRefreshRateUpdateCallback(
     return result;
 }
 
-int32_t RSRenderServiceConnectionProxy::RegisterFrameRateLinkerExpectedFpsUpdateCallback(uint32_t dstPid,
+int32_t RSRenderServiceConnectionProxy::RegisterFrameRateLinkerExpectedFpsUpdateCallback(int32_t dstPid,
     sptr<RSIFrameRateLinkerExpectedFpsUpdateCallback> callback)
 {
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
+
     if (!data.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor())) {
-        return RS_CONNECTION_ERROR;
+        ROSEN_LOGE("RSRenderServiceConnectionProxy::RegisterFrameRateLinkerCallback: WriteInterfaceToken err.");
+        return WRITE_PARCEL_ERR;
     }
     option.SetFlags(MessageOption::TF_SYNC);
-    if (!data.WriteUint32(dstPid)) {
+    if (!data.WriteInt32(dstPid)) {
         return WRITE_PARCEL_ERR;
     }
     if (callback) {
-        if (!data.WriteBool(true)) {
-            return WRITE_PARCEL_ERR;
-        }
-        if (!data.WriteRemoteObject(callback->AsObject())) {
+        if (!data.WriteBool(true) || !data.WriteRemoteObject(callback->AsObject())) {
             return WRITE_PARCEL_ERR;
         }
     } else {
