@@ -853,10 +853,7 @@ bool RSUniRenderUtil::HasNonZRotationTransform(Drawing::Matrix matrix)
     }
     int vectorZ = value[Drawing::Matrix::Index::SCALE_X] * value[Drawing::Matrix::Index::SCALE_Y] -
         value[Drawing::Matrix::Index::SKEW_Y] * value[Drawing::Matrix::Index::SKEW_X];
-    if (vectorZ < 0) {
-        return true;
-    }
-    return false;
+    return vectorZ < 0;
 }
 
 bool RSUniRenderUtil::IsNodeAssignSubThread(std::shared_ptr<RSSurfaceRenderNode> node, bool isDisplayRotation)
