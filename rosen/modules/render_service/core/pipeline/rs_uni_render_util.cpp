@@ -1611,10 +1611,10 @@ void RSUniRenderUtil::DealWithNodeGravity(RSSurfaceRenderNode& node, const Scree
     Drawing::Rect tempRect;
     preTransformMatrix.MapRect(tempRect, croppedNewDstRect);
     clipRect = Drawing::Rect(
-        clipRect.GetLeft() - preRotationAbsRect.left_ - gravityMatrix.Get(Drawing::Matrix::Index::TRANS_X),
-        clipRect.GetTop() - preRotationAbsRect.top_ - gravityMatrix.Get(Drawing::Matrix::Index::TRANS_Y),
-        clipRect.GetLeft() + clipRect.GetWidth() - preRotationAbsRect.left_ - gravityMatrix.Get(Drawing::Matrix::Index::TRANS_X),
-        clipRect.GetTop() + clipRect.GetHeight() - preRotationAbsRect.top_ - gravityMatrix.Get(Drawing::Matrix::Index::TRANS_Y));
+        clipRect.GetLeft() - preRotatedAbsRect.left_ - gravityMatrix.Get(Drawing::Matrix::Index::TRANS_X),
+        clipRect.GetTop() - preRotatedAbsRect.top_ - gravityMatrix.Get(Drawing::Matrix::Index::TRANS_Y),
+        clipRect.GetLeft() + clipRect.GetWidth() - preRotatedAbsRect.left_ - gravityMatrix.Get(Drawing::Matrix::Index::TRANS_X),
+        clipRect.GetTop() + clipRect.GetHeight() - preRotatedAbsRect.top_ - gravityMatrix.Get(Drawing::Matrix::Index::TRANS_Y));
     canvas->ClipRect(clipRect, Drawing::ClipOp::INTERSECT);
     auto localRect = canvas->GetLocalClipBounds();
     int left = std::clamp<int>(localRect.GetLeft(), 0, frameWidth);
@@ -1632,15 +1632,15 @@ void RSUniRenderUtil::DealWithNodeGravity(RSSurfaceRenderNode& node, const Scree
             srcRect = Drawing::Rect(left, top, width, height);
             break;
         }
-        case GraphicTransformType::GRAPHIC_ROTATE_NONE: {
+        case GraphicTransformType::GRAPHIC_ROTATE_90: {
             srcRect = Drawing::Rect(frameWidth - width, top, frameWidth, top + height);
             break;
         }
-        case GraphicTransformType::GRAPHIC_ROTATE_NONE: {
+        case GraphicTransformType::GRAPHIC_ROTATE_180: {
             srcRect = Drawing::Rect(frameWidth - width, frameHeight - height, frameWidth, frameHeight);
             break;
         }
-        case GraphicTransformType::GRAPHIC_ROTATE_NONE: {
+        case GraphicTransformType::GRAPHIC_ROTATE_270: {
             srcRect = Drawing::Rect(left, frameHeight - height, left + width, frameHeight);
             break;
         }
