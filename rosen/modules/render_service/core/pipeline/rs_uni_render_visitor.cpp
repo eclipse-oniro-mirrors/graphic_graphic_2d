@@ -966,6 +966,9 @@ void RSUniRenderVisitor::QuickPrepareSurfaceRenderNode(RSSurfaceRenderNode& node
 
 void RSUniRenderVisitor::PrepareForCrossNode(RSSurfaceRenderNode& node)
 {
+    if (isCrossNodeOffscreenOn_ == CrossNodeOffScreenRenderDebugType::DISABLED) {
+        return;
+    }
     if (curDisplayNode_ == nullptr) {
         RS_LOGE("%{public}s curDisplayNode_ is nullptr", __func__);
         return;
@@ -1423,9 +1426,6 @@ bool RSUniRenderVisitor::BeforeUpdateSurfaceDirtyCalc(RSSurfaceRenderNode& node)
         hasCaptureWindow_[currentVisitDisplay_] = true;
     }
     node.UpdateUIFirstFrameGravity();
-    if (IsAccessibilityConfigChanged()) {
-        node.SetIsAccessibilityConfigChanged(true);
-    }
     if (node.IsMainWindowType() || node.IsLeashWindow()) {
         // UpdateCurCornerRadius must process before curSurfaceNode_ update
         node.UpdateCurCornerRadius(curCornerRadius_);
@@ -1453,7 +1453,6 @@ bool RSUniRenderVisitor::BeforeUpdateSurfaceDirtyCalc(RSSurfaceRenderNode& node)
             nodePtr->UpdateSurfaceCacheContentStaticFlag();
         }
     }
-    node.SetIsAccessibilityConfigChanged(false);
     // 2. update surface info and CheckIfOcclusionReusable
     node.SetAncestorDisplayNode(curDisplayNode_->GetScreenId(), curDisplayNode_); // set for boot animation
     node.UpdateAncestorDisplayNodeInRenderParams();
@@ -1769,7 +1768,7 @@ void RSUniRenderVisitor::UpdateHwcNodeEnableByRotateAndAlpha(std::shared_ptr<RSS
     }
     // [planning] degree only multiples of 90 now
     int degree = RSUniRenderUtil::GetRotationDegreeFromMatrix(totalMatrix);
-    bool hasRotate = degree % RS_ROTATION_90 != 0 || RSUniRenderUtil::Is3DRotation(totalMatrix);
+    bool hasRotate = degree % RS_ROTATION_90 != 0 || RSUniRenderUtil::HasNonZRotationTransform(totalMatrix);
     if (hasRotate) {
         RS_OPTIONAL_TRACE_NAME_FMT("hwc debug: name:%s id:%" PRIu64 " disabled by rotation:%d",
             hwcNode->GetName().c_str(), hwcNode->GetId(), degree);
@@ -2931,7 +2930,8 @@ void RSUniRenderVisitor::UpdateHwcNodeEnableByGlobalFilter(std::shared_ptr<RSSur
         }
         for (auto hwcNode : hwcNodes) {
             auto hwcNodePtr = hwcNode.lock();
-            if (!hwcNodePtr || hwcNodePtr->IsHardwareForcedDisabled()) {
+            if (!hwcNodePtr || hwcNodePtr->IsHardwareForcedDisabled() ||
+                !hwcNodePtr->GetRenderProperties().GetBoundsGeometry()) {
                 continue;
             }
             if (cleanFilterFound) {
@@ -2945,7 +2945,7 @@ void RSUniRenderVisitor::UpdateHwcNodeEnableByGlobalFilter(std::shared_ptr<RSSur
                 continue;
             }
             for (auto filter = dirtyFilter->second.begin(); filter != dirtyFilter->second.end(); ++filter) {
-                if (hwcNodePtr->GetDstRect().Intersect(filter->second)) {
+                if (hwcNodePtr->GetRenderProperties().GetBoundsGeometry()->GetAbsRect().Intersect(filter->second)) {
                     RS_OPTIONAL_TRACE_NAME_FMT("hwc debug: name:%s id:%" PRIu64 " disabled by transparentDirtyFilter",
                         hwcNodePtr->GetName().c_str(), hwcNodePtr->GetId());
                     hwcNodePtr->SetHardwareForcedDisabledState(true);
