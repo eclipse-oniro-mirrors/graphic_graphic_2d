@@ -54,7 +54,7 @@ group("fuzztest") {
   deps = []
   deps += [
     # deps file
-    ":RSShowingPropertiesFreezerFuzzTest",
+    ":RSRenderClientFuzzTest",
   ]
 }
 ###############################################################################
