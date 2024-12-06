@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "rscommontools_fuzzer.h"
+#include "rscommondef_fuzzer.h"
 
 #include <climits>
 #include <cstddef>
@@ -22,20 +22,18 @@
 #include <cstdlib>
 #include <fcntl.h>
 #include <hilog/log.h>
-#include <iostream>
 #include <securec.h>
 #include <unistd.h>
 
-#include "image_native/pixel_map.h"
+#include "common/rs_common_def.cpp"
+#include "common/rs_common_def.h"
 
-#include "common/rs_common_tools.h"
 namespace OHOS {
 namespace Rosen {
 namespace {
 const uint8_t* g_data = nullptr;
 size_t g_size = 0;
 size_t g_pos;
-int32_t g_iSize = 512;
 } // namespace
 
 template<class T>
@@ -53,7 +51,39 @@ T GetData()
     g_pos += objectSize;
     return object;
 }
-bool DoSavePixelmapToFile(const uint8_t* data, size_t size)
+bool DoInline(const uint8_t* data, size_t size)
+{
+    if (data == nullptr) {
+        return false;
+    }
+
+    // initialize
+    g_data = data;
+    g_size = size;
+    g_pos = 0;
+    float valuex = GetData<float>();
+    float valuey = GetData<float>();
+    float epsilon = GetData<float>();
+    ROSEN_EQ(valuex, valuey);
+    ROSEN_EQ(valuex, valuey, epsilon);
+
+    std::shared_ptr<float> sharedObject1 = std::make_shared<float>(valuex);
+    std::shared_ptr<float> sharedObject2 = std::make_shared<float>(valuey);
+    std::weak_ptr<float> weakPtr1 = sharedObject1;
+    std::weak_ptr<float> weakPtr2 = sharedObject2;
+    ROSEN_EQ(weakPtr1, weakPtr2);
+
+    ROSEN_LNE(valuex, valuey);
+    ROSEN_GNE(valuex, valuey);
+    ROSEN_GE(valuex, valuey);
+    ROSEN_LE(valuex, valuey);
+
+    uint64_t id = GetData<uint64_t>();
+    ExtractPid(id);
+    return true;
+}
+
+bool DoMemObject(const uint8_t* data, size_t size)
 {
     if (data == nullptr) {
         return false;
@@ -64,36 +94,16 @@ bool DoSavePixelmapToFile(const uint8_t* data, size_t size)
     g_size = size;
     g_pos = 0;
 
-    int32_t width = GetData<int32_t>();
-    int32_t height = GetData<int32_t>();
-    Media::InitializationOptions opts;
-    opts.size.width = width;
-    opts.size.height = height;
-    opts.pixelFormat = static_cast<Media::PixelFormat>(GetData<int32_t>());
-    opts.alphaType = static_cast<Media::AlphaType>(GetData<int32_t>());
-    opts.scaleMode = static_cast<Media::ScaleMode>(GetData<int32_t>());
-    opts.editable = GetData<bool>();
-    opts.useSourceIfMatch = GetData<bool>();
-    std::shared_ptr<Media::PixelMap>  pixelmap = Media::PixelMap::Create(opts);
-    std::string dst = "/path/";
-    CommonTools::SavePixelmapToFile(pixelmap, dst);
-    return true;
-}
-bool DoGetLocalTime(const uint8_t* data, size_t size)
-{
-    if (data == nullptr) {
-        return false;
+    size_t size1 = GetData<size_t>();
+    MemObject obj3(size1);
+    MemObject* obj1 = new MemObject(size1);
+    delete obj1;
+    MemObject* obj2 = new (std::nothrow) MemObject(size1);
+    if (obj2) {
+        delete obj2;
     }
-
-    // initialize
-    g_data = data;
-    g_size = size;
-    g_pos = 0;
-
-    CommonTools::GetLocalTime();
     return true;
 }
-
 } // namespace Rosen
 } // namespace OHOS
 
@@ -101,7 +111,7 @@ bool DoGetLocalTime(const uint8_t* data, size_t size)
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
     /* Run your code on data */
-    OHOS::Rosen::DoSavePixelmapToFile(data, size); // SavePixelmapToFile
-    OHOS::Rosen::DoGetLocalTime(data, size); // GetLocalTime
+    OHOS::Rosen::DoInline(data, size);    // inline
+    OHOS::Rosen::DoMemObject(data, size); // MemObject
     return 0;
 }
