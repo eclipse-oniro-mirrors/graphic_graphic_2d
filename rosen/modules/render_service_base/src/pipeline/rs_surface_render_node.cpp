@@ -1123,7 +1123,11 @@ bool RSSurfaceRenderNode::GetForceUIFirst() const
 
 void RSSurfaceRenderNode::SetHDRPresent(bool hasHdrPresent)
 {
-    hasHdrPresent_ = hasHdrPresent;
+    auto surfaceParam = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
+    if (surfaceParam) {
+        surfaceParam->SetHDRPresent(hasHdrPresent);
+        AddToPendingSyncList();
+    }
 }
 
 bool RSSurfaceRenderNode::GetHDRPresent() const

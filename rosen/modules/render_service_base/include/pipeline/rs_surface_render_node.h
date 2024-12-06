@@ -1292,6 +1292,15 @@ public:
     {
         crossNodeSkippedDisplayOffsets_.clear();
     }
+    bool GetHdrVideo() const
+    {
+        return hasHdrVideoSurface_;
+    }
+
+    void SetHdrVideo(bool hasHdrVideoSurface)
+    {
+        hasHdrVideoSurface_ = hasHdrVideoSurface;
+    }
 
     void SetApiCompatibleVersion(uint32_t apiCompatibleVersion);
     uint32_t GetApiCompatibleVersion()
@@ -1357,8 +1366,10 @@ private:
     bool isGlobalPositionEnabled_ = false;
 
     bool hasFingerprint_ = false;
-    bool hasHdrPresent_ = false;
+    // Count the number of hdr pictures. If hdrNum_ > 0, it means there are hdr pictures
     int hdrNum_ = 0;
+    // hdr video
+    bool hasHdrVideoSurface_ = false;
     RectI srcRect_;
     Drawing::Matrix totalMatrix_;
     std::vector<RectI> intersectedRoundCornerAABBs_;

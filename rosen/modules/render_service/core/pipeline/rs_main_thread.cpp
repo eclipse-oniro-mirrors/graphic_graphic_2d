@@ -1509,20 +1509,21 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
         if (surfaceHandler->GetAvailableBufferCount() > 0) {
             needRequestNextVsync = true;
         }
+        bool isHdrSurface = CheckIsHdrSurface(*surfaceNode);
         if (!hasHdrVideo) {
-            hasHdrVideo = CheckIsHdrSurface(*surfaceNode);
+            hasHdrVideo = isHdrSurface;
             hdrType = CheckIsAihdrSurface(*surfaceNode) ? HDR_TYPE::AIHDR_VIDEO : hdrType;
         }
+        surfaceNode->SetHdrVideo(isHdrSurface);
         if ((*surfaceNode).GetRSSurfaceHandler() == nullptr) {
             RS_LOGE("surfaceNode.GetRSSurfaceHandler is NULL");
             return;
         }
         UpdateSurfaceNodeNit((*surfaceNode).GetRSSurfaceHandler()->GetBuffer(),
-            *surfaceNode, CheckIsHdrSurface(*surfaceNode));
+            *surfaceNode, isHdrSurface);
         bool isDimmingOn = RSLuminanceControl::Get().IsDimmingOn(0);
         if (isDimmingOn) {
             bool hasHdrPresent = surfaceNode->GetHDRPresent();
-            bool isHdrSurface = CheckIsHdrSurface(*surfaceNode);
             RS_LOGD("HDRDiming IsDimmingOn: %{public}d, GetHDRPresent: %{public}d, CheckIsHdrSurface: %{public}d",
                 isDimmingOn, hasHdrPresent, isHdrSurface);
             if (hasHdrPresent || isHdrSurface) {
