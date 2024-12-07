@@ -392,6 +392,15 @@ void RSUniRenderVisitor::UpdatePixelFormatAfterHwcCalc(RSDisplayRenderNode& node
     }
 }
 
+void RSUniRenderVisitor::SetHDRParam(RSSurfaceRenderNode& node, bool flag)
+{
+    auto firstLevelNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(node.GetFirstLevelNode());
+    if (firstLevelNode != nullptr && node.GetFirstLevelNodeId() != node.GetId()) {
+        firstLevelNode->SetHDRPresent(flag);
+    }
+    node.SetHDRPresent(flag);
+}
+
 void RSUniRenderVisitor::CheckPixelFormat(RSSurfaceRenderNode& node)
 {
     if (hasFingerprint_[currentVisitDisplay_]) {
@@ -408,6 +417,7 @@ void RSUniRenderVisitor::CheckPixelFormat(RSSurfaceRenderNode& node)
         RS_LOGD("RSUniRenderVisitor::CheckPixelFormat HDRService SetHDRPresent true, surfaceNode: %{public}" PRIu64 "",
             node.GetId());
         hasUniRenderHdrSurface_ = true;
+        SetHDRParam(node, true);
     }
 }
 

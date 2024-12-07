@@ -477,6 +477,20 @@ public:
         return drmCornerRadiusInfo_;
     }
 
+    void SetHDRPresent(bool hasHdrPresent)
+    {
+        if (hasHdrPresent_ == hasHdrPresent) {
+            return;
+        }
+        hasHdrPresent_ = hasHdrPresent;
+        needSync_ = true;
+    }
+
+    bool GetHDRPresent() const
+    {
+        return hasHdrPresent_;
+    }
+
     void SetSdrNit(int32_t sdrNit)
     {
         if (ROSEN_EQ(sdrNit_, sdrNit)) {
@@ -662,6 +676,7 @@ private:
     float globalAlpha_ = 1.0f;
     bool hasFingerprint_ = false;
     // hdr
+    bool hasHdrPresent_ = false;
     int32_t sdrNit_ = 500; // default sdrNit
     int32_t displayNit_ = 500; // default displayNit_
     float brightnessRatio_ = 1.0; // 1.0f means no discount.
