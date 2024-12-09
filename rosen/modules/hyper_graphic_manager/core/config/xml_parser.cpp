@@ -521,12 +521,14 @@ int32_t XMLParser::ParseLowBrightList(xmlNode &node, PolicyConfigData::LowBright
         PolicyConfigData::LowBrightConfig lowBrightConfig;
         auto name = ExtractPropertyValue("name", *currNode);
         auto value = ExtractPropertyValue("value", *currNode);
+        // optionalRefreshRateVec may be an empty vector
         lowBrightConfig.optionalRefreshRateVec = StringToVector(value);
 
         lowBrightList[name] = lowBrightConfig;
         HGM_LOGI("HgmXMLParser ParseLowBrightList name=%{public}s value=%{public}s",
                  name.c_str(), value.c_str());
     }
+
     return EXEC_SUCCESS;
 }
 

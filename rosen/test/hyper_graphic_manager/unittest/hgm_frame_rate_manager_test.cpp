@@ -696,6 +696,7 @@ HWTEST_F(HgmFrameRateMgrTest, GetLowBrightVec, Function | SmallTest | Level2)
         EXPECT_EQ(mgr.lowBrightVec_, expectedLowBrightVec);
     }
 }
+
 /**
  * @tc.name: GetDrawingFrameRate
  * @tc.desc: Verify the result of HandleFrameRateChangeForLTPO
