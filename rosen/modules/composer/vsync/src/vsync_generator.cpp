@@ -537,10 +537,11 @@ VsyncError VSyncGenerator::UpdateMode(int64_t period, int64_t phase, int64_t ref
         return VSYNC_ERROR_INVALID_ARGUMENTS;
     }
     phase_ = phase;
-    if (period != 0) {
-        UpdatePeriodLocked(period);
+    if (period == 0) {
+        UpdateReferenceTimeLocked(referenceTime);
+    } else if (UpdatePeriodLocked(period) == VSYNC_ERROR_OK) {
+        UpdateReferenceTimeLocked(referenceTime);
     }
-    UpdateReferenceTimeLocked(referenceTime);
     startRefresh_ = false;
     con_.notify_all();
     return VSYNC_ERROR_OK;

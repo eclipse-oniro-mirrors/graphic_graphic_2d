@@ -717,6 +717,7 @@ void RSScreenManager::RegSetScreenVsyncEnabledCallbackForMainThread(ScreenId vsy
         RS_LOGE("RegSetScreenVsyncEnabledCallbackForMainThread failed, vsyncSampler is null");
         return;
     }
+    vsyncSampler->SetVsyncEnabledScreenId(vsyncEnabledScreenId);
     vsyncSampler->RegSetScreenVsyncEnabledCallback([this, vsyncEnabledScreenId](bool enabled) {
         auto mainThread = RSMainThread::Instance();
         if (mainThread == nullptr) {
@@ -743,6 +744,7 @@ void RSScreenManager::RegSetScreenVsyncEnabledCallbackForHardwareThread(ScreenId
         RS_LOGE("RegSetScreenVsyncEnabledCallbackForHardwareThread failed, vsyncSampler is null");
         return;
     }
+    vsyncSampler->SetVsyncEnabledScreenId(vsyncEnabledScreenId);
 #ifdef RS_ENABLE_GPU
     vsyncSampler->RegSetScreenVsyncEnabledCallback([this, vsyncEnabledScreenId](bool enabled) {
         RSHardwareThread::Instance().PostTask([this, vsyncEnabledScreenId, enabled]() {
