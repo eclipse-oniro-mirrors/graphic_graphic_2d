@@ -190,6 +190,7 @@ HWTEST_F(RSRenderNodeTest, AddModifierTest, TestSize.Level1)
 HWTEST_F(RSRenderNodeTest, InitCacheSurfaceTest, TestSize.Level1)
 {
     RSRenderNode node(id, context);
+    ASSERT_TRUE(node != nullptr);
     CacheType type = CacheType::ANIMATE_PROPERTY;
     node.SetCacheType(type);
     node.InitCacheSurface(canvas_->GetGPUContext().get());
