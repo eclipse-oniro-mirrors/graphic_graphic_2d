@@ -738,6 +738,9 @@ public:
     void MarkUifirstNode(bool isForceFlag, bool isUifirstEnable);
     bool GetUifirstNodeForceFlag() const;
 
+    void SetUIFirstSwitch(RSUIFirstSwitch uiFirstSwitch);
+    RSUIFirstSwitch GetUIFirstSwitch() const;
+
     void SetOccludedStatus(bool occluded);
     const RectI GetFilterCachedRegion() const;
     virtual bool EffectNodeShouldPaint() const { return true; };
@@ -893,6 +896,7 @@ protected:
     bool isUifirstNode_ = true;
     bool isForceFlag_ = false;
     bool isUifirstEnable_ = false;
+    RSUIFirstSwitch uiFirstSwitch_ = RSUIFirstSwitch::NONE;
     NodeDirty dirtyStatus_ = NodeDirty::CLEAN;
     NodeDirty curDirtyStatus_ = NodeDirty::CLEAN;
     ModifierDirtyTypes dirtyTypes_;
