@@ -944,6 +944,7 @@ void HgmFrameRateManager::HandleScreenPowerStatus(ScreenId id, ScreenPowerStatus
     HGM_LOGD("curScreen change:%{public}d", static_cast<int>(curScreenId_.load()));
 
     multiAppStrategy_.UpdateXmlConfigCache();
+    GetLowBrightVec(configData);
     UpdateEnergyConsumptionConfig();
 
     multiAppStrategy_.CalcVote();
