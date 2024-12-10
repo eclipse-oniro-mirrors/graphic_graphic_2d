@@ -1059,7 +1059,7 @@ void RSProfiler::ExecuteCommand(const RSCommand* command)
 
 uint32_t RSProfiler::PerfTreeFlatten(const std::shared_ptr<RSRenderNode> node,
     std::vector<std::pair<NodeId, uint32_t>>& nodeSet,
-    std::unordered_map<NodeId, uint32_t>& mapNode2Count, int depth)
+    std::unordered_map<NodeId, uint32_t>& mapNode2Count, uint32_t depth)
 {
     if (!node) {
         return 0;
@@ -1153,7 +1153,7 @@ void RSProfiler::DrawingNodeAddClearOp(const std::shared_ptr<Drawing::DrawCmdLis
 
 static uint64_t NewAshmemDataCacheId()
 {
-    static uint32_t id = 0u;
+    static std::atomic_uint32_t id = 0u;
     return Utils::ComposeDataId(Utils::GetPid(), id++);
 }
 
