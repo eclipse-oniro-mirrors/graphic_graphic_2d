@@ -428,6 +428,14 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::CREATE_NODE): {
             auto nodeId = data.ReadUint64();
+            bool isNonSystemCalling = false;
+            bool isTokenTypeValid = true;
+            RSInterfaceCodeAccessVerifierBase::GetAccessType(isTokenTypeValid, isNonSystemCalling);
+            if (isNonSystemCalling && !IsValidCallingPid(ExtractPid(nodeId), callingPid)) {
+                RS_LOGW("CREATE_NODE invalid nodeId[%{public}" PRIu64 "] pid[%{public}d]", nodeId, callingPid);
+                ret = ERR_INVALID_DATA;
+                break;
+            }
             RS_PROFILER_PATCH_NODE_ID(data, nodeId);
             auto surfaceName = data.ReadString();
             RSSurfaceRenderNodeConfig config = {.id = nodeId, .name = surfaceName};
@@ -2017,6 +2025,14 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::CREATE_DISPLAY_NODE) : {
             auto id = data.ReadUint64();
+            bool isNonSystemCalling = false;
+            bool isTokenTypeValid = true;
+            RSInterfaceCodeAccessVerifierBase::GetAccessType(isTokenTypeValid, isNonSystemCalling);
+            if (isNonSystemCalling && !IsValidCallingPid(ExtractPid(id), callingPid)) {
+                RS_LOGW("CREATE_DISPLAY_NODE invalid nodeId[%{public}" PRIu64 "] pid[%{public}d]", id, callingPid);
+                ret = ERR_INVALID_DATA;
+                break;
+            }
             auto mirrorId = data.ReadUint64();
             auto screenId = data.ReadUint64();
             auto isMirrored = data.ReadBool();
