@@ -553,8 +553,15 @@ void RSSurfaceRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         && surfaceParams->IsGpuOverDrawBufferOptimizeNode()) {
         EnableGpuOverDrawDrawBufferOptimization(*curCanvas_, surfaceParams);
     }
-
-    OnGeneralProcess(*curCanvas_, *surfaceParams, *uniParam, isSelfDrawingSurface);
+    if (surfaceParams->GetRSFreezeFlag() && GetCacheImageByCapture()) {
+        RS_TRACE_NAME("Drawing cachedImage by capture");
+        DrawCachedImage(*curCanvas_, surfaceParams->GetCacheSize());
+    } else {
+        if (GetCacheImageByCapture()) {
+            SetCacheImageByCapture(nullptr);
+        }
+        OnGeneralProcess(*curCanvas_, *surfaceParams, *uniParam, isSelfDrawingSurface);
+    }
 
     if (needOffscreen && canvasBackup_) {
         Drawing::AutoCanvasRestore acrBackUp(*canvasBackup_, true);

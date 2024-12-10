@@ -425,6 +425,10 @@ bool RSIRenderServiceConnectionInterfaceCodeAccessVerifier::IsExclusiveVerificat
             hasPermission = IsSystemCalling(codeEnumTypeName_ + "::SET_FREE_MULTI_WINDOW_STATUS");
             break;
         }
+        case static_cast<CodeUnderlyingType>(CodeEnumType::SET_WINDOW_FREEZE_IMMEDIATELY): {
+            hasPermission = IsSystemCalling(codeEnumTypeName_ + "::SET_WINDOW_FREEZE_IMMEDIATELY");
+            break;
+        }
         default: {
             break;
         }
