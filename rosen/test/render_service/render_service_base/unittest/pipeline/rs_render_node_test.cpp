@@ -134,7 +134,7 @@ void RSRenderNodeTest::TearDown() {}
 HWTEST_F(RSRenderNodeTest, UpdateRenderStatus001, TestSize.Level1)
 {
     RSSurfaceRenderNode node(id, context);
-    ASSERT_TRUE(node.isNodeDirty());
+    ASSERT_TRUE(node.IsNodeDirty());
     RectI dirtyRegion;
     bool isPartialRenderEnabled = false;
     node.UpdateRenderStatus(dirtyRegion, isPartialRenderEnabled);
