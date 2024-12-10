@@ -1116,7 +1116,7 @@ GraphicTransformType DrawSurfaceBufferOpItem::MapGraphicTransformType(GraphicTra
     return rotation;
 }
 
-bool DrawSurfaceBufferOpItem::IsNeedDrawDirectly()
+bool DrawSurfaceBufferOpItem::IsNeedDrawDirectly() const
 {
     return isNeedDrawDirectly_;
 }
