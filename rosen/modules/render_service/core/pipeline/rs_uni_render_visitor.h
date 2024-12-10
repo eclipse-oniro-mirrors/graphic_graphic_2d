@@ -34,6 +34,7 @@
 #include "platform/ohos/overdraw/rs_overdraw_controller.h"
 #include "screen_manager/rs_screen_manager.h"
 #include "visitor/rs_node_visitor.h"
+#include "info_collection/rs_hdr_collection.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -120,11 +121,7 @@ public:
     {
         return isRegionDebugEnabled_;
     }
-    // Use in vulkan parallel rendering
-    GraphicColorGamut GetColorGamut() const
-    {
-        return newColorSpace_;
-    }
+    
     uint32_t GetLayerNum() const
     {
         return layerNum_;
@@ -248,6 +245,12 @@ private:
 
     void UpdatePrepareClip(RSRenderNode& node);
 
+    void AccumulateSurfaceDirtyRegion(
+        std::shared_ptr<RSSurfaceRenderNode>& surfaceNode, Occlusion::Region& accumulatedDirtyRegion) const;
+    void CheckMergeDisplayDirtyByCrossDisplayWindow(RSSurfaceRenderNode& surfaceNode) const;
+    void PrepareForSkippedCrossNode(RSSurfaceRenderNode& surfaceNode);
+    void CollectFilterInCrossDisplayWindow(
+        std::shared_ptr<RSSurfaceRenderNode>& surfaceNode, Occlusion::Region& accumulatedDirtyRegion);
     void CheckMergeDisplayDirtyByTransparent(RSSurfaceRenderNode& surfaceNode) const;
     void CheckMergeDisplayDirtyByZorderChanged(RSSurfaceRenderNode& surfaceNode) const;
     void CheckMergeDisplayDirtyByPosChanged(RSSurfaceRenderNode& surfaceNode) const;
@@ -270,8 +273,10 @@ private:
     void ResetCurSurfaceInfoAsUpperSurfaceParent(RSSurfaceRenderNode& node);
 
     void CheckColorSpace(RSSurfaceRenderNode& node);
-    void CheckColorSpaceWithSelfDrawingNode(RSSurfaceRenderNode& node);
+    void CheckColorSpaceWithSelfDrawingNode(RSSurfaceRenderNode& node, GraphicColorGamut& newColorSpace);
     void UpdateColorSpaceAfterHwcCalc(RSDisplayRenderNode& node);
+    void CheckPixelFormatWithSelfDrawingNode(RSSurfaceRenderNode& node, GraphicPixelFormat& pixelFormat);
+    void UpdatePixelFormatAfterHwcCalc(RSDisplayRenderNode& node);
     void HandleColorGamuts(RSDisplayRenderNode& node, const sptr<RSScreenManager>& screenManager);
     void CheckPixelFormat(RSSurfaceRenderNode& node);
     void HandlePixelFormat(RSDisplayRenderNode& node, const sptr<RSScreenManager>& screenManager);
@@ -295,6 +300,7 @@ private:
     void UpdateSubSurfaceNodeRectInSkippedSubTree(const RSRenderNode& rootNode);
     void CollectOcclusionInfoForWMS(RSSurfaceRenderNode& node);
     void CollectEffectInfo(RSRenderNode& node);
+    void SetHDRParam(RSSurfaceRenderNode& node, bool flag);
 
     void UpdateVirtualScreenInfo(RSDisplayRenderNode& node);
     void UpdateVirtualScreenSecurityExemption(RSDisplayRenderNode& node, RSDisplayRenderNode& mirrorNode);
@@ -384,7 +390,6 @@ private:
     OcclusionRectISet curSurfaceNoBelowDirtyFilter_;
     // vector of current frame mainwindow surface visible info
     VisibleData allDstCurVisVec_;
-    GraphicPixelFormat newPixelFormat_ = GraphicPixelFormat::GRAPHIC_PIXEL_FMT_RGBA_8888;
     bool hasDisplayHdrOn_ = false;
     bool hasVisitCrossNode_ = false;
     bool isDirtyRegionDfxEnabled_ = false; // dirtyRegion DFX visualization
@@ -399,6 +404,7 @@ private:
     bool isVirtualDirtyDfxEnabled_ = false;
     bool isExpandScreenDirtyEnabled_ = false;
     bool needRequestNextVsync_ = true;
+    CrossNodeOffScreenRenderDebugType isCrossNodeOffscreenOn_ = CrossNodeOffScreenRenderDebugType::ENABLE;
     DirtyRegionDebugType dirtyRegionDebugType_;
     std::vector<std::string> dfxTargetSurfaceNames_;
 
@@ -409,7 +415,6 @@ private:
     std::vector<std::string> dfxUIFirstSurfaceNames_;
     PartialRenderType partialRenderType_;
     SurfaceRegionDebugType surfaceRegionDebugType_;
-    GraphicColorGamut newColorSpace_ = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
     uint32_t threadIndex_ = UNI_MAIN_THREAD_INDEX;
     // vector of Appwindow nodes ids not contain subAppWindow nodes ids in last frame
     static inline std::queue<NodeId> preMainAndLeashWindowNodesIds_;
@@ -421,6 +426,7 @@ private:
     void UpdateSurfaceRenderNodeScale(RSSurfaceRenderNode& node);
     // use for hardware compose disabled reason collection
     HwcDisabledReasonCollection& hwcDisabledReasonCollection_ = HwcDisabledReasonCollection::GetInstance();
+    std::shared_ptr<RsHdrCollection> rsHdrCollection_ = RsHdrCollection::GetInstance();
 
     bool zoomStateChange_ = false;
 

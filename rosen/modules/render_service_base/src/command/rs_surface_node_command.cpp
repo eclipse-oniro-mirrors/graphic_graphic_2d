@@ -300,10 +300,10 @@ void SurfaceNodeCommandHelper::SetAncoFlags(RSContext& context, NodeId nodeId, u
     }
 }
 
-void SurfaceNodeCommandHelper::SetHDRPresent(RSContext& context, NodeId nodeId, bool ancoForceDoDirect)
+void SurfaceNodeCommandHelper::SetHDRPresent(RSContext& context, NodeId nodeId, bool hdrPresent)
 {
     if (auto node = context.GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(nodeId)) {
-        node->SetHDRPresent(ancoForceDoDirect);
+        node->SetHDRPresent(hdrPresent);
     }
 }
 
@@ -331,6 +331,16 @@ void SurfaceNodeCommandHelper::SetAbilityState(RSContext& context, NodeId nodeId
         return;
     }
     node->SetAbilityState(abilityState);
+}
+
+void SurfaceNodeCommandHelper::SetApiCompatibleVersion(RSContext& context, NodeId nodeId, uint32_t apiCompatibleVersion)
+{
+    auto node = context.GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(nodeId);
+    if (!node) {
+        RS_LOGE("SurfaceNodeCommandHelper::SetApiCompatibleVersion node is null!");
+        return;
+    }
+    node->SetApiCompatibleVersion(apiCompatibleVersion);
 }
 } // namespace Rosen
 } // namespace OHOS

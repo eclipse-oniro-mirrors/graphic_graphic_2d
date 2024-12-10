@@ -243,6 +243,11 @@ public:
     {
         return cacheSurface_ ? true : false;
     }
+
+    bool HasCache() const override
+    {
+        return drawWindowCache_.HasCache();
+    }
 private:
     explicit RSSurfaceRenderNodeDrawable(std::shared_ptr<const RSRenderNode>&& node);
     bool DealWithUIFirstCache(
@@ -256,6 +261,8 @@ private:
         RSSurfaceRenderParams& surfaceParams, Occlusion::Region& surfaceDirtyRegion) const;
     Drawing::Region CalculateVisibleDirtyRegion(RSRenderThreadParams& uniParam, RSSurfaceRenderParams& surfaceParams,
         RSSurfaceRenderNodeDrawable& surfaceDrawable, bool isOffscreen) const;
+    void CrossDisplaySurfaceDirtyRegionOffset(
+        const RSRenderThreadParams& uniParam, const RSSurfaceRenderParams& surfaceParam, RectI& surfaceDirtyRect) const;
     bool HasCornerRadius(const RSSurfaceRenderParams& surfaceParams) const;
     using Registrar = RenderNodeDrawableRegistrar<RSRenderNodeType::SURFACE_NODE, OnGenerate>;
     static Registrar instance_;
@@ -348,6 +355,8 @@ private:
     RSDrawWindowCache drawWindowCache_;
     friend class OHOS::Rosen::RSDrawWindowCache;
     bool vmaCacheOff_ = false;
+
+    static inline bool isInRotationFixed_ = false;
 };
 } // namespace DrawableV2
 } // namespace OHOS::Rosen

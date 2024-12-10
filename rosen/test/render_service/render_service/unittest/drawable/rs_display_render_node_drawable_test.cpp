@@ -187,6 +187,7 @@ HWTEST_F(RSDisplayRenderNodeDrawableTest, InitTranslateForWallpaper, TestSize.Le
     auto& rtThread = RSUniRenderThread::Instance();
     EXPECT_EQ(rtThread.wallpaperTranslate_.first, 21);
     EXPECT_EQ(rtThread.wallpaperTranslate_.second, 21);
+    system::SetParameter("const.cache.optimize.rotate.enable", "false");
 }
 
 /**
@@ -209,8 +210,8 @@ HWTEST_F(RSDisplayRenderNodeDrawableTest, ClearTransparentBeforeSaveLayer, TestS
     auto surfaceNode2 = std::make_shared<RSSurfaceRenderNode>(id);
     auto drawable2 = RSRenderNodeDrawableAdapter::OnGenerate(surfaceNode2);
     surfaceNode2->InitRenderParams();
-    rtThread.GetRSRenderThreadParams()->hardwareEnabledTypeDrawables_.push_back(drawable1);
-    rtThread.GetRSRenderThreadParams()->hardwareEnabledTypeDrawables_.push_back(drawable2);
+    rtThread.GetRSRenderThreadParams()->hardwareEnabledTypeDrawables_.push_back(std::make_pair(1, drawable1));
+    rtThread.GetRSRenderThreadParams()->hardwareEnabledTypeDrawables_.push_back(std::make_pair(1, drawable2));
     ASSERT_NE(renderNode_, nullptr);
     renderNode_->GetMutableRenderProperties().SetFrameWidth(DEFAULT_CANVAS_SIZE);
     renderNode_->GetMutableRenderProperties().SetFrameHeight(DEFAULT_CANVAS_SIZE);

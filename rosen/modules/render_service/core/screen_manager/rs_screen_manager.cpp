@@ -362,7 +362,6 @@ void RSScreenManager::OnRefresh(ScreenId id, void *data)
 {
     RSScreenManager *screenManager = nullptr;
     if (data != nullptr) {
-        RS_LOGI("RSScreenManager %{public}s: data is not nullptr.", __func__);
         screenManager = static_cast<RSScreenManager *>(data);
     } else {
         RS_LOGI("RSScreenManager %{public}s: data is nullptr.", __func__);
@@ -862,6 +861,8 @@ void RSScreenManager::GetScreenActiveModeLocked(ScreenId id, RSScreenModeInfo& s
         return;
     }
 
+    RS_LOGI("RSScreenManager %{public}s: screen[%{public}" PRIu64 "] pixel[%{public}d * %{public}d],"
+        "freshRate[%{public}d]", __func__, id, modeInfo->width, modeInfo->height, modeInfo->freshRate);
     screenModeInfo.SetScreenWidth(modeInfo->width);
     screenModeInfo.SetScreenHeight(modeInfo->height);
     screenModeInfo.SetScreenRefreshRate(modeInfo->freshRate);

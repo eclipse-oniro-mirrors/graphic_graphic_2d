@@ -114,7 +114,7 @@ bool DoSetScreenGamutMap(const uint8_t* data, size_t size)
     MessageParcel dataParcel;
     MessageParcel replyParcel;
     MessageOption option;
-    
+
     FuzzedDataProvider fdp(data, size);
     std::vector<uint8_t> subData =
         fdp.ConsumeBytes<uint8_t>(fdp.ConsumeIntegralInRange<size_t>(0, fdp.remaining_bytes()));
@@ -144,7 +144,7 @@ bool DoGetScreenGamutMap(const uint8_t* data, size_t size)
     MessageParcel dataParcel;
     MessageParcel replyParcel;
     MessageOption option;
-    
+
     FuzzedDataProvider fdp(data, size);
     std::vector<uint8_t> subData =
         fdp.ConsumeBytes<uint8_t>(fdp.ConsumeIntegralInRange<size_t>(0, fdp.remaining_bytes()));
@@ -174,7 +174,7 @@ bool DoGetScreenHDRCapability(const uint8_t* data, size_t size)
     MessageParcel dataParcel;
     MessageParcel replyParcel;
     MessageOption option;
-    
+
     FuzzedDataProvider fdp(data, size);
     std::vector<uint8_t> subData =
         fdp.ConsumeBytes<uint8_t>(fdp.ConsumeIntegralInRange<size_t>(0, fdp.remaining_bytes()));
@@ -204,7 +204,7 @@ bool DoGetScreenType(const uint8_t* data, size_t size)
     MessageParcel dataParcel;
     MessageParcel replyParcel;
     MessageOption option;
-    
+
     FuzzedDataProvider fdp(data, size);
     std::vector<uint8_t> subData =
         fdp.ConsumeBytes<uint8_t>(fdp.ConsumeIntegralInRange<size_t>(0, fdp.remaining_bytes()));
@@ -262,7 +262,7 @@ bool DoSetAppWindowNum(const uint8_t* data, size_t size)
     MessageParcel dataParcel;
     MessageParcel replyParcel;
     MessageOption option;
-    
+
     FuzzedDataProvider fdp(data, size);
     std::vector<uint8_t> subData =
         fdp.ConsumeBytes<uint8_t>(fdp.ConsumeIntegralInRange<size_t>(0, fdp.remaining_bytes()));
@@ -292,7 +292,7 @@ bool DoShowWatermark(const uint8_t* data, size_t size)
     MessageParcel dataParcel;
     MessageParcel replyParcel;
     MessageOption option;
-    
+
     FuzzedDataProvider fdp(data, size);
     std::vector<uint8_t> subData =
         fdp.ConsumeBytes<uint8_t>(fdp.ConsumeIntegralInRange<size_t>(0, fdp.remaining_bytes()));
@@ -320,8 +320,64 @@ bool DoDropFrameByPid()
     if (!dataP.WriteInt32Vector(pidList)) {
         return false;
     }
-    
+
     uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::DROP_FRAME_BY_PID);
+    if (rsConnStub_ == nullptr) {
+        return false;
+    }
+    rsConnStub_->OnRemoteRequest(code, dataP, reply, option);
+    return true;
+}
+
+bool DoSetCurtainScreenUsingStatus()
+{
+    bool status = GetData<bool>();
+    
+    MessageParcel dataP;
+    MessageParcel reply;
+    MessageOption option;
+    if (!dataP.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor())) {
+        return false;
+    }
+    option.SetFlags(MessageOption::TF_ASYNC);
+    if (!dataP.WriteBool(status)) {
+        return false;
+    }
+
+    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_CURTAIN_SCREEN_USING_STATUS);
+    if (rsConnStub_ == nullptr) {
+        return false;
+    }
+    rsConnStub_->OnRemoteRequest(code, dataP, reply, option);
+    return true;
+}
+
+bool DoSetScreenActiveRect()
+{
+    ScreenId id = GetData<uint64_t>();
+
+    Rect activeRect;
+    activeRect.x = GetData<int32_t>();
+    activeRect.y = GetData<int32_t>();
+    activeRect.w = GetData<int32_t>();
+    activeRect.h = GetData<int32_t>();
+    
+    MessageParcel dataP;
+    MessageParcel reply;
+    MessageOption option;
+    if (!dataP.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor())) {
+        return false;
+    }
+    option.SetFlags(MessageOption::TF_ASYNC);
+    if (!dataP.WriteUint64(id)) {
+        return false;
+    }
+    if (!dataP.WriteInt32(activeRect.x) || !dataP.WriteInt32(activeRect.y) ||
+        !dataP.WriteInt32(activeRect.w) || !dataP.WriteInt32(activeRect.h)) {
+        return false;
+    }
+
+    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_SCREEN_ACTIVE_RECT);
     if (rsConnStub_ == nullptr) {
         return false;
     }
@@ -388,6 +444,75 @@ bool DoSetHwcNodeBounds(const uint8_t* data, size_t size)
     dataParcel.WriteFloat(1.0f);
     dataParcel.WriteFloat(1.0f);
     connectionStub_->OnRemoteRequest(code, dataParcel, replyParcel, option);
+    return true;
+}
+
+bool DoGetDefaultScreenId()
+{
+    MessageParcel dataP;
+    MessageParcel reply;
+    MessageOption option;
+
+    uint32_t code = static_cast<uint32_t>(
+        RSIRenderServiceConnectionInterfaceCode::GET_DEFAULT_SCREEN_ID);
+    auto newPid = getpid();
+    sptr<RSScreenManager> screenManager = nullptr;
+    if (GetData<bool>()) {
+        screenManager = CreateOrGetScreenManager();
+    }
+    sptr<RSIConnectionToken> token_ = new IRemoteStub<RSIConnectionToken>();
+    sptr<RSRenderServiceConnectionStub> connectionStub =
+        new RSRenderServiceConnection(newPid, nullptr, nullptr, screenManager, token_->AsObject(), nullptr);
+    if (connectionStub == nullptr) {
+        return false;
+    }
+    connectionStub->OnRemoteRequest(code, dataP, reply, option);
+    return true;
+}
+
+bool DoGetActiveScreenId()
+{
+    MessageParcel dataP;
+    MessageParcel reply;
+    MessageOption option;
+
+    uint32_t code = static_cast<uint32_t>(
+        RSIRenderServiceConnectionInterfaceCode::GET_ACTIVE_SCREEN_ID);
+    auto newPid = getpid();
+    sptr<RSScreenManager> screenManager = nullptr;
+    if (GetData<bool>()) {
+        screenManager = CreateOrGetScreenManager();
+    }
+    sptr<RSIConnectionToken> token_ = new IRemoteStub<RSIConnectionToken>();
+    sptr<RSRenderServiceConnectionStub> connectionStub =
+        new RSRenderServiceConnection(newPid, nullptr, nullptr, screenManager, token_->AsObject(), nullptr);
+    if (connectionStub == nullptr) {
+        return false;
+    }
+    connectionStub->OnRemoteRequest(code, dataP, reply, option);
+    return true;
+}
+
+bool DoGetAllScreenIds()
+{
+    MessageParcel dataP;
+    MessageParcel reply;
+    MessageOption option;
+
+    uint32_t code = static_cast<uint32_t>(
+        RSIRenderServiceConnectionInterfaceCode::GET_ALL_SCREEN_IDS);
+    auto newPid = getpid();
+    sptr<RSScreenManager> screenManager = nullptr;
+    if (GetData<bool>()) {
+        screenManager = CreateOrGetScreenManager();
+    }
+    sptr<RSIConnectionToken> token_ = new IRemoteStub<RSIConnectionToken>();
+    sptr<RSRenderServiceConnectionStub> connectionStub =
+        new RSRenderServiceConnection(newPid, nullptr, nullptr, screenManager, token_->AsObject(), nullptr);
+    if (connectionStub == nullptr) {
+        return false;
+    }
+    connectionStub->OnRemoteRequest(code, dataP, reply, option);
     return true;
 }
 
@@ -622,7 +747,7 @@ bool DoGetMemoryGraphic(const uint8_t* data, size_t size)
     FuzzedDataProvider fdp(data, size);
     uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_MEMORY_GRAPHIC);
     auto newPid = getpid();
-    
+
     sptr<RSIConnectionToken> token_ = new IRemoteStub<RSIConnectionToken>();
     sptr<RSRenderServiceConnectionStub> connectionStub_ =
         new RSRenderServiceConnection(newPid, nullptr, nullptr, nullptr, token_->AsObject(), nullptr);
@@ -653,7 +778,7 @@ bool DoCreateVirtualScreen(const uint8_t* data, size_t size)
     FuzzedDataProvider fdp(data, size);
     uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::CREATE_VIRTUAL_SCREEN);
     auto newPid = getpid();
-    
+
     sptr<RSIConnectionToken> token_ = new IRemoteStub<RSIConnectionToken>();
     sptr<RSRenderServiceConnectionStub> connectionStub_ =
         new RSRenderServiceConnection(newPid, nullptr, nullptr, nullptr, token_->AsObject(), nullptr);
@@ -684,7 +809,7 @@ bool DoRemoveVirtualScreen(const uint8_t* data, size_t size)
     FuzzedDataProvider fdp(data, size);
     uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REMOVE_VIRTUAL_SCREEN);
     auto newPid = getpid();
-    
+
     sptr<RSIConnectionToken> token_ = new IRemoteStub<RSIConnectionToken>();
     sptr<RSRenderServiceConnectionStub> connectionStub_ =
         new RSRenderServiceConnection(newPid, nullptr, nullptr, nullptr, token_->AsObject(), nullptr);
@@ -715,7 +840,7 @@ bool DoGetScreenData(const uint8_t* data, size_t size)
     FuzzedDataProvider fdp(data, size);
     uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_SCREEN_DATA);
     auto newPid = getpid();
-    
+
     sptr<RSIConnectionToken> token_ = new IRemoteStub<RSIConnectionToken>();
     sptr<RSRenderServiceConnectionStub> connectionStub_ =
         new RSRenderServiceConnection(newPid, nullptr, nullptr, nullptr, token_->AsObject(), nullptr);
@@ -746,7 +871,7 @@ bool DoGetScreenBacklight(const uint8_t* data, size_t size)
     FuzzedDataProvider fdp(data, size);
     uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_SCREEN_BACK_LIGHT);
     auto newPid = getpid();
-    
+
     sptr<RSIConnectionToken> token_ = new IRemoteStub<RSIConnectionToken>();
     sptr<RSRenderServiceConnectionStub> connectionStub_ =
         new RSRenderServiceConnection(newPid, nullptr, nullptr, nullptr, token_->AsObject(), nullptr);
@@ -777,7 +902,7 @@ bool DoSetScreenBacklight(const uint8_t* data, size_t size)
     FuzzedDataProvider fdp(data, size);
     uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_SCREEN_BACK_LIGHT);
     auto newPid = getpid();
-    
+
     sptr<RSIConnectionToken> token_ = new IRemoteStub<RSIConnectionToken>();
     sptr<RSRenderServiceConnectionStub> connectionStub_ =
         new RSRenderServiceConnection(newPid, nullptr, nullptr, nullptr, token_->AsObject(), nullptr);
@@ -808,7 +933,7 @@ bool DoGetScreenColorGamut(const uint8_t* data, size_t size)
     FuzzedDataProvider fdp(data, size);
     uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_SCREEN_GAMUT);
     auto newPid = getpid();
-    
+
     sptr<RSIConnectionToken> token_ = new IRemoteStub<RSIConnectionToken>();
     sptr<RSRenderServiceConnectionStub> connectionStub_ =
         new RSRenderServiceConnection(newPid, nullptr, nullptr, nullptr, token_->AsObject(), nullptr);
@@ -839,7 +964,7 @@ bool DoSetScreenColorGamut(const uint8_t* data, size_t size)
     FuzzedDataProvider fdp(data, size);
     uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_SCREEN_GAMUT);
     auto newPid = getpid();
-    
+
     sptr<RSIConnectionToken> token_ = new IRemoteStub<RSIConnectionToken>();
     sptr<RSRenderServiceConnectionStub> connectionStub_ =
         new RSRenderServiceConnection(newPid, nullptr, nullptr, nullptr, token_->AsObject(), nullptr);
@@ -901,7 +1026,7 @@ bool DoGetActiveDirtyRegionInfo(const uint8_t* data, size_t size)
     FuzzedDataProvider fdp(data, size);
     uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_ACTIVE_DIRTY_REGION_INFO);
     auto newPid = getpid();
-    
+
     sptr<RSIConnectionToken> token_ = new IRemoteStub<RSIConnectionToken>();
     sptr<RSRenderServiceConnectionStub> connectionStub_ =
         new RSRenderServiceConnection(newPid, nullptr, nullptr, nullptr, token_->AsObject(), nullptr);
@@ -1094,7 +1219,7 @@ bool DoSetFreeMultiWindowStatus(const uint8_t* data, size_t size)
     MessageParcel dataParcel;
     MessageParcel replyParcel;
     MessageOption option;
-    
+
     FuzzedDataProvider fdp(data, size);
     std::vector<uint8_t> subData =
         fdp.ConsumeBytes<uint8_t>(fdp.ConsumeIntegralInRange<size_t>(0, fdp.remaining_bytes()));
@@ -1112,7 +1237,7 @@ bool Init(const uint8_t* data, size_t size)
     g_data = data;
     g_size = size;
     g_pos = 0;
-    
+
     auto newPid = getpid();
     token_ = new IRemoteStub<RSIConnectionToken>();
     if (token_ == nullptr) {
@@ -1223,7 +1348,7 @@ bool DoSetVirtualScreenStatus()
     if (!dataP.WriteUint8(screenStatus)) {
         return false;
     }
-    
+
     uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_STATUS);
     if (rsConnStub_ == nullptr) {
         return false;
@@ -1251,8 +1376,64 @@ bool DoSetVirtualScreenBlackList()
     if (!dataP.WriteUInt64Vector(blackListVector)) {
         return false;
     }
-    
+
     uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_BLACKLIST);
+    if (rsConnStub_ == nullptr) {
+        return false;
+    }
+    rsConnStub_->OnRemoteRequest(code, dataP, reply, option);
+    return true;
+}
+
+bool DoAddVirtualScreenBlackList()
+{
+    uint64_t id = GetData<uint64_t>();
+    uint64_t nodeId = GetData<uint64_t>();
+    std::vector<uint64_t> blackListVector;
+    blackListVector.push_back(nodeId);
+    MessageParcel dataP;
+    MessageParcel reply;
+    MessageOption option;
+    if (!dataP.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor())) {
+        return false;
+    }
+    option.SetFlags(MessageOption::TF_ASYNC);
+    if (!dataP.WriteUint64(id)) {
+        return false;
+    }
+    if (!dataP.WriteUInt64Vector(blackListVector)) {
+        return false;
+    }
+    
+    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::ADD_VIRTUAL_SCREEN_BLACKLIST);
+    if (rsConnStub_ == nullptr) {
+        return false;
+    }
+    rsConnStub_->OnRemoteRequest(code, dataP, reply, option);
+    return true;
+}
+
+bool DoRemoveVirtualScreenBlackList()
+{
+    uint64_t id = GetData<uint64_t>();
+    uint64_t nodeId = GetData<uint64_t>();
+    std::vector<uint64_t> blackListVector;
+    blackListVector.push_back(nodeId);
+    MessageParcel dataP;
+    MessageParcel reply;
+    MessageOption option;
+    if (!dataP.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor())) {
+        return false;
+    }
+    option.SetFlags(MessageOption::TF_ASYNC);
+    if (!dataP.WriteUint64(id)) {
+        return false;
+    }
+    if (!dataP.WriteUInt64Vector(blackListVector)) {
+        return false;
+    }
+    
+    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REMOVE_VIRTUAL_SCREEN_BLACKLIST);
     if (rsConnStub_ == nullptr) {
         return false;
     }
@@ -1280,13 +1461,9 @@ bool DoSetScreenSkipFrameInterval()
 
     uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_SCREEN_SKIP_FRAME_INTERVAL);
     auto newPid = getpid();
-    sptr<RSScreenManager> screenManager = nullptr;
-    if (GetData<bool>()) {
-        screenManager = CreateOrGetScreenManager();
-    }
     sptr<RSIConnectionToken> token = new IRemoteStub<RSIConnectionToken>();
     sptr<RSRenderServiceConnectionStub> connectionStub =
-        new RSRenderServiceConnection(newPid, nullptr, nullptr, screenManager, token->AsObject(), nullptr);
+        new RSRenderServiceConnection(newPid, nullptr, nullptr, nullptr, token->AsObject(), nullptr);
     if (connectionStub == nullptr) {
         return false;
     }
@@ -1297,9 +1474,12 @@ bool DoSetScreenSkipFrameInterval()
 bool DoSetVirtualScreenSecurityExemptionList()
 {
     uint64_t id = GetData<uint64_t>();
-    uint64_t nodeId = GetData<uint64_t>();
     std::vector<uint64_t> secExemptionListVector;
-    secExemptionListVector.push_back(nodeId);
+    uint16_t listSize = GetData<uint16_t>();
+    for (int i = 0; i < listSize; i++) {
+        uint64_t nodeId = GetData<uint64_t>();
+        secExemptionListVector.push_back(nodeId);
+    }
     MessageParcel dataP;
     MessageParcel reply;
     MessageOption option;
@@ -1354,7 +1534,7 @@ bool DoSetVirtualScreenVisibleRect()
         !dataP.WriteInt32(rect.w) || !dataP.WriteInt32(rect.h)) {
         return false;
     }
-    
+
     uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_MIRROR_SCREEN_VISIBLE_RECT);
     auto newPid = getpid();
     sptr<RSScreenManager> screenManager = nullptr;
@@ -1388,7 +1568,7 @@ bool DoSetCastScreenEnableSkipWindow()
     if (!dataP.WriteBool(enable)) {
         return false;
     }
-    
+
     uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_CAST_SCREEN_ENABLE_SKIP_WINDOW);
     if (rsConnStub_ == nullptr) {
         return false;
@@ -1414,7 +1594,7 @@ bool DoSetScreenCorrection()
     if (!dataP.WriteUint32(screenRotation)) {
         return false;
     }
-    
+
     uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_SCREEN_CORRECTION);
     if (rsConnStub_ == nullptr) {
         return false;
@@ -1440,7 +1620,7 @@ bool DoSetVirtualMirrorScreenCanvasRotation()
     if (!dataP.WriteBool(canvasRotation)) {
         return false;
     }
-    
+
     uint32_t code = static_cast<uint32_t>(
         RSIRenderServiceConnectionInterfaceCode::SET_VIRTUAL_MIRROR_SCREEN_CANVAS_ROTATION);
     if (rsConnStub_ == nullptr) {
@@ -1546,6 +1726,71 @@ bool DoSetVirtualScreenUsingStatus()
     rsConnStub_->OnRemoteRequest(code, dataP, reply, option);
     return true;
 }
+
+bool DoCreatePixelMapFromSurface(const uint8_t* data, size_t size)
+{
+    if (data == nullptr) {
+        return false;
+    }
+
+    // initialize
+    g_data = data;
+    g_size = size;
+    g_pos = 0;
+
+    sptr<IConsumerSurface> cSurface = IConsumerSurface::Create("FuzzTest");
+    sptr<IBufferProducer> bp = cSurface->GetProducer();
+    sptr<Surface> pSurface = Surface::CreateSurfaceAsProducer(bp);
+    if (pSurface == nullptr) {
+        return false;
+    }
+
+    MessageParcel dataP;
+    MessageParcel reply;
+    MessageOption option;
+    if (!dataP.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor())) {
+        return false;
+    }
+    if (!dataP.WriteRemoteObject(pSurface->GetProducer()->AsObject())) {
+        return false;
+    }
+    if (!dataP.WriteInt32(GetData<int32_t>()) || !dataP.WriteInt32(GetData<int32_t>()) ||
+        !dataP.WriteInt32(GetData<int32_t>()) || !dataP.WriteInt32(GetData<int32_t>())) {
+        return false;
+    }
+    option.SetFlags(MessageOption::TF_SYNC);
+    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::CREATE_PIXEL_MAP_FROM_SURFACE);
+    if (rsConnStub_ == nullptr) {
+        return false;
+    }
+    rsConnStub_->OnRemoteRequest(code, dataP, reply, option);
+    return true;
+}
+
+bool DoNotifyTouchEvent()
+{
+    uint32_t touchStatus = GetData<uint32_t>();
+    uint32_t touchCnt = GetData<uint32_t>();
+    MessageParcel dataP;
+    MessageParcel reply;
+    MessageOption option;
+    if (!dataP.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor())) {
+        return false;
+    }
+    option.SetFlags(MessageOption::TF_SYNC);
+    if (!dataP.WriteUint32(touchStatus)) {
+        return false;
+    }
+    if (!dataP.WriteUint32(touchCnt)) {
+        return false;
+    }
+    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_TOUCH_EVENT);
+    if (rsConnStub_ == nullptr) {
+        return false;
+    }
+    rsConnStub_->OnRemoteRequest(code, dataP, reply, option);
+    return true;
+}
 } // Rosen
 } // OHOS
 
@@ -1561,7 +1806,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::Rosen::DoGetBitmap(data, size);
     OHOS::Rosen::DoSetAppWindowNum(data, size);
     OHOS::Rosen::DoShowWatermark(data, size);
-    OHOS::Rosen::DoDropFrameByPid();
     OHOS::Rosen::DoSetScreenPowerStatus(data, size);
     OHOS::Rosen::DoSetHwcNodeBounds(data, size);
     OHOS::Rosen::DoSetScreenActiveMode(data, size);
@@ -1582,14 +1826,22 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::Rosen::DoSetFreeMultiWindowStatus(data, size);
     OHOS::Rosen::DoCreateVirtualScreen(data, size);
     OHOS::Rosen::DoRemoveVirtualScreen(data, size);
+    OHOS::Rosen::DoGetDefaultScreenId();
+    OHOS::Rosen::DoGetActiveScreenId();
+    OHOS::Rosen::DoGetAllScreenIds();
     if (!OHOS::Rosen::Init(data, size)) {
         return 0;
     }
+    OHOS::Rosen::DoDropFrameByPid();
+    OHOS::Rosen::DoSetCurtainScreenUsingStatus();
+    OHOS::Rosen::DoSetScreenActiveRect();
     OHOS::Rosen::DoSetVirtualScreenSurface();
     OHOS::Rosen::DoSetVirtualScreenResolution();
     OHOS::Rosen::DoGetVirtualScreenResolution();
     OHOS::Rosen::DoSetVirtualScreenStatus();
     OHOS::Rosen::DoSetVirtualScreenBlackList();
+    OHOS::Rosen::DoAddVirtualScreenBlackList();
+    OHOS::Rosen::DoRemoveVirtualScreenBlackList();
     OHOS::Rosen::DoSetScreenSkipFrameInterval();
     OHOS::Rosen::DoSetVirtualScreenSecurityExemptionList();
     OHOS::Rosen::DoSetVirtualScreenVisibleRect();
@@ -1600,6 +1852,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::Rosen::DoResizeVirtualScreen();
     OHOS::Rosen::DoSetCacheEnabledForRotation();
     OHOS::Rosen::DoSetVirtualScreenUsingStatus();
-
+    OHOS::Rosen::DoCreatePixelMapFromSurface(data, size);
+    OHOS::Rosen::DoNotifyTouchEvent();
     return 0;
 }

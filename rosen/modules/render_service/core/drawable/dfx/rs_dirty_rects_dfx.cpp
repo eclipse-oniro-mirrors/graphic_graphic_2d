@@ -116,7 +116,7 @@ void RSDirtyRectsDfx::DrawHwcRegionForDFX(RSPaintFilterCanvas& canvas) const
     if (++updateCnt == UINT32_MAX) {
         updateCnt = 0;
     }
-    for (const auto& drawable : hardwareDrawables) {
+    for (const auto& [_, drawable] : hardwareDrawables) {
         if (UNLIKELY(!drawable || !drawable->GetRenderParams())) {
             continue;
         }
@@ -160,6 +160,9 @@ bool RSDirtyRectsDfx::RefreshRateRotationProcess(RSPaintFilterCanvas& canvas,
 {
     if (rotation != ScreenRotation::ROTATION_0) {
         auto screenManager = CreateOrGetScreenManager();
+        if (screenManager == nullptr) {
+            return false;
+        }
         auto mainScreenInfo = screenManager->QueryScreenInfo(screenId);
         if (rotation == ScreenRotation::ROTATION_90) {
             canvas.Rotate(-90, 0, 0); // 90 degree for text draw
@@ -194,7 +197,11 @@ void RSDirtyRectsDfx::DrawCurrentRefreshRate(RSPaintFilterCanvas& canvas)
     }
     uint32_t currentRefreshRate = OHOS::Rosen::HgmCore::Instance().GetScreenCurrentRefreshRate(screenId);
     uint32_t realtimeRefreshRate = RSRealtimeRefreshRateManager::Instance().GetRealtimeRefreshRate(screenId);
-    std::string info = std::to_string(currentRefreshRate) + " " + std::to_string(realtimeRefreshRate);
+    static bool showRealtimeRefreshRate = system::GetParameter("const.logsystem.versiontype", "") == "beta";
+    std::string info = std::to_string(currentRefreshRate);
+    if (showRealtimeRefreshRate) {
+        info += " " + std::to_string(realtimeRefreshRate);
+    }
     std::shared_ptr<Drawing::Typeface> tf = Drawing::Typeface::MakeFromName("HarmonyOS Sans SC", Drawing::FontStyle());
     Drawing::Font font;
     font.SetSize(100); // 100:Scalar of setting font size

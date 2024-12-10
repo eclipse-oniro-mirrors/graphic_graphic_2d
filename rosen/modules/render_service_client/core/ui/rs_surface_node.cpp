@@ -24,6 +24,7 @@
 #include "ipc_callbacks/rs_rt_refresh_callback.h"
 #include "pipeline/rs_node_map.h"
 #include "pipeline/rs_render_thread.h"
+#include "pipeline/rs_render_thread_util.h"
 #include "platform/common/rs_log.h"
 #ifndef ROSEN_CROSS_PLATFORM
 #include "platform/drawing/rs_surface_converter.h"
@@ -33,7 +34,6 @@
 #endif
 #include "transaction/rs_render_service_client.h"
 #include "transaction/rs_transaction_proxy.h"
-#include "ui/rs_hdr_manager.h"
 #include "ui/rs_proxy_node.h"
 #include "rs_trace.h"
 
@@ -66,13 +66,6 @@ RSSurfaceNode::SharedPtr RSSurfaceNode::Create(const RSSurfaceNodeConfig& surfac
 
     SharedPtr node(new RSSurfaceNode(surfaceNodeConfig, isWindow));
     RSNodeMap::MutableInstance().RegisterNode(node);
-    RS_LOGD("RSSurfaceNode::Create HDRClient name: %{public}s, type: %{public}hhu, id: %{public}" PRIu64,
-        node->name_.c_str(), type, node->GetId());
-    if (type == RSSurfaceNodeType::APP_WINDOW_NODE || type == RSSurfaceNodeType::UI_EXTENSION_COMMON_NODE ||
-        type == RSSurfaceNodeType::UI_EXTENSION_SECURE_NODE) {
-        auto callback = &RSSurfaceNode::SetHDRPresent;
-        RSHDRManager::Instance().RegisterSetHDRPresent(callback, node->GetId());
-    }
 
     // create node in RS
     RSSurfaceRenderNodeConfig config = {
@@ -658,7 +651,6 @@ RSSurfaceNode::RSSurfaceNode(const RSSurfaceNodeConfig& config, bool isRenderSer
 
 RSSurfaceNode::~RSSurfaceNode()
 {
-    RSHDRManager::Instance().UnRegisterSetHDRPresent(GetId());
     auto transactionProxy = RSTransactionProxy::GetInstance();
     if (transactionProxy == nullptr) {
         return;
@@ -733,6 +725,20 @@ void RSSurfaceNode::SetForceHardwareAndFixRotation(bool flag)
     if (transactionProxy != nullptr) {
         transactionProxy->AddCommand(command, true);
     }
+#ifdef ROSEN_OHOS
+    std::lock_guard<std::mutex> lock(apiInitMutex_);
+    static bool apiCompatibleVersionInitialized = false;
+    if (apiCompatibleVersionInitialized) {
+        return;
+    }
+    uint32_t apiCompatibleVersion = RSRenderThreadUtil::GetApiCompatibleVersion();
+    if (apiCompatibleVersion != INVALID_API_COMPATIBLE_VERSION && transactionProxy != nullptr) {
+        std::unique_ptr<RSCommand> command =
+            std::make_unique<RSSurfaceNodeSetApiCompatibleVersion>(GetId(), apiCompatibleVersion);
+        transactionProxy->AddCommand(command, true);
+        apiCompatibleVersionInitialized = true;
+    }
+#endif
 }
 
 void RSSurfaceNode::SetBootAnimation(bool isBootAnimation)

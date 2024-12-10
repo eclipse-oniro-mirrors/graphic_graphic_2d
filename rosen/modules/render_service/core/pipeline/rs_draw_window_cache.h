@@ -56,10 +56,13 @@ public:
     bool DealWithCachedWindow(DrawableV2::RSSurfaceRenderNodeDrawable* surfaceDrawable,
         RSPaintFilterCanvas& canvas, RSSurfaceRenderParams& surfaceParams, RSRenderThreadParams& uniParam);
 #endif
-private:
+
+    void DrawCrossNodeOffscreenDFX(RSPaintFilterCanvas& canvas, RSSurfaceRenderParams& surfaceParams,
+        RSRenderThreadParams& uniParams, const Drawing::Color& color);
+
     bool HasCache() const;
     void ClearCache();
-
+private:
     std::shared_ptr<Drawing::Image> image_ = nullptr;
 };
 } // Rosen

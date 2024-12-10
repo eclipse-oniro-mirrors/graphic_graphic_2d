@@ -181,6 +181,20 @@ bool RSSurfaceRenderParams::GetHardCursorStatus() const
     return isHardCursor_;
 }
 
+void RSSurfaceRenderParams::SetPreSubHighPriorityType(bool enabledType)
+{
+    if (subHighPriorityType_ == enabledType) {
+        return;
+    }
+    subHighPriorityType_ = enabledType;
+    needSync_ = true;
+}
+
+bool RSSurfaceRenderParams::GetPreSubHighPriorityType() const
+{
+    return subHighPriorityType_;
+}
+
 void RSSurfaceRenderParams::SetLastFrameHardwareEnabled(bool enabled)
 {
     if (isLastFrameHardwareEnabled_ == enabled) {
@@ -457,8 +471,8 @@ void RSSurfaceRenderParams::OnSync(const std::unique_ptr<RSRenderParams>& target
     targetSurfaceParams->isAppWindow_ = isAppWindow_;
     targetSurfaceParams->rsSurfaceNodeType_ = rsSurfaceNodeType_;
     targetSurfaceParams->selfDrawingType_ = selfDrawingType_;
-    targetSurfaceParams->ancestorDisplayNode_ = ancestorDisplayNode_;
-    targetSurfaceParams->ancestorDisplayDrawable_ = ancestorDisplayDrawable_;
+    targetSurfaceParams->ancestorDisplayNodeMap_ = ancestorDisplayNodeMap_;
+    targetSurfaceParams->ancestorDisplayDrawableMap_ = ancestorDisplayDrawableMap_;
     targetSurfaceParams->alpha_ = alpha_;
     targetSurfaceParams->isSpherizeValid_ = isSpherizeValid_;
     targetSurfaceParams->isAttractionValid_ = isAttractionValid_;
@@ -476,11 +490,13 @@ void RSSurfaceRenderParams::OnSync(const std::unique_ptr<RSRenderParams>& target
     targetSurfaceParams->isHardwareEnabled_ = isHardwareEnabled_;
     targetSurfaceParams->isHardCursor_ = isHardCursor_;
     targetSurfaceParams->isLastFrameHardwareEnabled_ = isLastFrameHardwareEnabled_;
+    targetSurfaceParams->subHighPriorityType_ = subHighPriorityType_;
     targetSurfaceParams->isFixRotationByUser_ = isFixRotationByUser_;
     targetSurfaceParams->isInFixedRotation_ = isInFixedRotation_;
     targetSurfaceParams->uiFirstFlag_ = uiFirstFlag_;
     targetSurfaceParams->uiFirstParentFlag_ = uiFirstParentFlag_;
     targetSurfaceParams->uifirstUseStarting_ = uifirstUseStarting_;
+    targetSurfaceParams->uifirstStartingFlag_ = uifirstStartingFlag_;
     targetSurfaceParams->childrenDirtyRect_ = childrenDirtyRect_;
     targetSurfaceParams->isOccludedByFilterCache_ = isOccludedByFilterCache_;
     targetSurfaceParams->isSecurityLayer_ = isSecurityLayer_;
@@ -515,6 +531,7 @@ void RSSurfaceRenderParams::OnSync(const std::unique_ptr<RSRenderParams>& target
     targetSurfaceParams->roundedCornerRegion_ = roundedCornerRegion_;
     targetSurfaceParams->needOffscreen_ = needOffscreen_;
     targetSurfaceParams->layerSource_ = layerSource_;
+    targetSurfaceParams->hasHdrPresent_ = hasHdrPresent_;
     targetSurfaceParams->totalMatrix_ = totalMatrix_;
     targetSurfaceParams->visibleFilterChild_ = visibleFilterChild_;
     targetSurfaceParams->isTransparent_ = isTransparent_;
@@ -529,6 +546,9 @@ void RSSurfaceRenderParams::OnSync(const std::unique_ptr<RSRenderParams>& target
     targetSurfaceParams->isHwcEnabledBySolidLayer_ = isHwcEnabledBySolidLayer_;
     targetSurfaceParams->hasSubSurfaceNodes_ = hasSubSurfaceNodes_;
     targetSurfaceParams->allSubSurfaceNodeIds_ = std::move(allSubSurfaceNodeIds_);
+    targetSurfaceParams->preparedDisplayOffset_ = preparedDisplayOffset_;
+    targetSurfaceParams->crossNodeSkippedDisplayOffsets_ = crossNodeSkippedDisplayOffsets_;
+    targetSurfaceParams->apiCompatibleVersion_ = apiCompatibleVersion_;
     RSRenderParams::OnSync(target);
 }
 
@@ -584,4 +604,17 @@ bool RSSurfaceRenderParams::GetNeedCacheSurface() const
     return needCacheSurface_;
 }
 
+void RSSurfaceRenderParams::SetUifirstStartingFlag(bool flag)
+{
+    if (uifirstStartingFlag_ == flag) {
+        return;
+    }
+    uifirstStartingFlag_ = flag;
+    needSync_ = true;
+}
+
+bool RSSurfaceRenderParams::GetUifirstStartingFlag() const
+{
+    return uifirstStartingFlag_;
+}
 } // namespace OHOS::Rosen

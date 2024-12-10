@@ -35,6 +35,7 @@
 #include "ipc_callbacks/hgm_config_change_callback_stub.h"
 #include "ipc_callbacks/rs_occlusion_change_callback_stub.h"
 #include "ipc_callbacks/rs_surface_buffer_callback_stub.h"
+#include "ipc_callbacks/rs_frame_rate_linker_expected_fps_update_callback_stub.h"
 #include "ipc_callbacks/rs_uiextension_callback_stub.h"
 #include "platform/common/rs_log.h"
 #include "platform/common/rs_system_properties.h"
@@ -45,10 +46,13 @@
 
 namespace OHOS {
 namespace Rosen {
+std::shared_ptr<RSIRenderClient> RSIRenderClient::client_ = nullptr;
+
 std::shared_ptr<RSIRenderClient> RSIRenderClient::CreateRenderServiceClient()
 {
-    static std::shared_ptr<RSIRenderClient> client = std::make_shared<RSRenderServiceClient>();
-    return client;
+    static std::once_flag once_flag;
+    std::call_once(once_flag, []() { client_ = std::make_shared<RSRenderServiceClient>(); });
+    return client_;
 }
 
 void RSRenderServiceClient::CommitTransaction(std::unique_ptr<RSTransactionData>& transactionData)
@@ -819,6 +823,7 @@ bool RSRenderServiceClient::RegisterBufferAvailableListener(
     sptr<RSIBufferAvailableCallback> bufferAvailableCb = new CustomBufferAvailableCallback(callback);
     renderService->RegisterBufferAvailableListener(id, bufferAvailableCb, isFromRenderThread);
     if (isFromRenderThread) {
+        std::lock_guard<std::mutex> lock(cbRtMapMutex_);
         bufferAvailableCbRTMap_.emplace(id, bufferAvailableCb);
     } else {
         std::lock_guard<std::mutex> lock(mapMutex_);
@@ -1305,6 +1310,44 @@ int32_t RSRenderServiceClient::RegisterHgmRefreshRateUpdateCallback(
     return renderService->RegisterHgmRefreshRateUpdateCallback(cb);
 }
 
+class CustomFrameRateLinkerExpectedFpsUpdateCallback : public RSFrameRateLinkerExpectedFpsUpdateCallbackStub
+{
+public:
+    explicit CustomFrameRateLinkerExpectedFpsUpdateCallback(
+        const FrameRateLinkerExpectedFpsUpdateCallback& callback) : cb_(callback) {}
+    ~CustomFrameRateLinkerExpectedFpsUpdateCallback() override {};
+
+    void OnFrameRateLinkerExpectedFpsUpdate(pid_t dstPid, int32_t expectedFps) override
+    {
+        ROSEN_LOGD("CustomFrameRateLinkerExpectedFpsUpdateCallback::OnFrameRateLinkerExpectedFpsUpdate called,"
+            " pid=%{public}d, fps=%{public}d", dstPid, expectedFps);
+        if (cb_ != nullptr) {
+            cb_(dstPid, expectedFps);
+        }
+    }
+
+private:
+    FrameRateLinkerExpectedFpsUpdateCallback cb_;
+};
+
+int32_t RSRenderServiceClient::RegisterFrameRateLinkerExpectedFpsUpdateCallback(
+    int32_t dstPid, const FrameRateLinkerExpectedFpsUpdateCallback& callback)
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService == nullptr) {
+        ROSEN_LOGE("RSRenderServiceClient::RegisterFrameRateLinkerExpectedFpsUpdateCallback renderService == nullptr");
+        return RENDER_SERVICE_NULL;
+    }
+
+    sptr<CustomFrameRateLinkerExpectedFpsUpdateCallback> cb = nullptr;
+    if (callback) {
+        cb = new CustomFrameRateLinkerExpectedFpsUpdateCallback(callback);
+    }
+
+    ROSEN_LOGD("RSRenderServiceClient::RegisterFrameRateLinkerExpectedFpsUpdateCallback called");
+    return renderService->RegisterFrameRateLinkerExpectedFpsUpdateCallback(dstPid, cb);
+}
+
 void RSRenderServiceClient::SetAppWindowNum(uint32_t num)
 {
     auto renderService = RSRenderServiceConnectHub::GetRenderService();
@@ -1509,6 +1552,15 @@ HwcDisabledReasonInfos RSRenderServiceClient::GetHwcDisabledReasonInfo()
     return renderService->GetHwcDisabledReasonInfo();
 }
 
+int64_t RSRenderServiceClient::GetHdrOnDuration()
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService == nullptr) {
+        return RENDER_SERVICE_NULL;
+    }
+    return renderService->GetHdrOnDuration();
+}
+
 void RSRenderServiceClient::SetVmaCacheStatus(bool flag)
 {
     auto renderService = RSRenderServiceConnectHub::GetRenderService();
@@ -1619,7 +1671,7 @@ public:
     {
         client_->TriggerOnFinish(ret);
     }
- 
+
     void OnAfterAcquireBuffer(const AfterAcquireBufferRet& ret) override
     {
         client_->TriggerOnAfterAcquireBuffer(ret);
@@ -1679,7 +1731,6 @@ bool RSRenderServiceClient::UnregisterSurfaceBufferCallback(pid_t pid, uint64_t 
 }
 
 void RSRenderServiceClient::TriggerOnFinish(const FinishCallbackRet& ret) const
- 
 {
     std::shared_ptr<SurfaceBufferCallback> callback = nullptr;
     {
@@ -1688,9 +1739,11 @@ void RSRenderServiceClient::TriggerOnFinish(const FinishCallbackRet& ret) const
             callback = iter->second;
         }
     }
-    if (callback) {
-        callback->OnFinish(ret);
+    if (!callback) {
+        ROSEN_LOGD("RSRenderServiceClient::TriggerOnFinish callback is null");
+        return;
     }
+    callback->OnFinish(ret);
 }
 
 void RSRenderServiceClient::TriggerOnAfterAcquireBuffer(const AfterAcquireBufferRet& ret) const

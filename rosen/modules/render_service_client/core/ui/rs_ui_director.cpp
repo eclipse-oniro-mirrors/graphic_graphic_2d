@@ -71,8 +71,9 @@ RSUIDirector::~RSUIDirector()
 void RSUIDirector::Init(bool shouldCreateRenderThread)
 {
     AnimationCommandHelper::SetAnimationCallbackProcessor(AnimationCallbackProcessor);
-    std::call_once(g_initDumpNodeTreeProcessorFlag, [] () {
-        RSNodeCommandHelper::SetDumpNodeTreeProcessor(RSUIDirector::DumpNodeTreeProcessor);
+    std::call_once(g_initDumpNodeTreeProcessorFlag, [this] () {
+        RSNodeCommandHelper::SetDumpNodeTreeProcessor(std::bind(&RSUIDirector::DumpNodeTreeProcessor, this,
+            std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
     });
 
     isUniRenderEnabled_ = RSSystemProperties::GetUniRenderEnabled();
@@ -393,17 +394,17 @@ void RSUIDirector::ProcessMessages(std::shared_ptr<RSTransactionData> cmds)
         m[instanceId].push_back(std::move(cmd));
     }
     auto msgId = ++messageId;
-    RS_TRACE_NAME_FMT("RSUIDirector::ProcessMessages [messageId:%lu,cmdIndex:%llu,cmdCount:%lu]",
+    RS_TRACE_NAME_FMT("RSUIDirector::ProcessMessages Post [messageId:%lu,cmdIndex:%llu,cmdCount:%lu]",
         msgId, cmds->GetIndex(), cmds->GetCommandCount());
     auto counter = std::make_shared<std::atomic_size_t>(m.size());
     for (auto &[instanceId, commands] : m) {
-        ROSEN_LOGI("RSUIDirector::ProcessMessages messageId:%{public}d, cmdCount:%{public}lu, "
-            "instanceId:%{public}d", msgId, static_cast<unsigned long>(commands.size()), instanceId);
+        ROSEN_LOGI("Post messageId:%{public}d, cmdCount:%{public}lu, instanceId:%{public}d", msgId,
+            static_cast<unsigned long>(commands.size()), instanceId);
         PostTask(
             [cmds = std::make_shared<std::vector<std::unique_ptr<RSCommand>>>(std::move(commands)),
                 counter, msgId, tempInstanceId = instanceId] {
-                RS_TRACE_NAME_FMT("RSUIDirector::ProcessMessages PostTask messageId [%lu]", msgId);
-                ROSEN_LOGI("RSUIDirector::PostTask messageId:%{public}d, cmdCount:%{public}lu, instanceId:%{public}d",
+                RS_TRACE_NAME_FMT("RSUIDirector::ProcessMessages Process messageId:%lu", msgId);
+                ROSEN_LOGI("Process messageId:%{public}d, cmdCount:%{public}lu, instanceId:%{public}d",
                     msgId, static_cast<unsigned long>(cmds->size()), tempInstanceId);
                 for (auto &cmd : *cmds) {
                     RSContext context; // RSCommand->process() needs it
@@ -452,6 +453,8 @@ void RSUIDirector::DumpNodeTreeProcessor(NodeId nodeId, pid_t pid, uint32_t task
     ROSEN_LOGI("DumpNodeTreeProcessor task[%{public}u] node[%" PRIu64 "]", taskId, nodeId);
 
     std::string out;
+    out.append("transactionFlags:[ ").append(std::to_string(pid).append(", ")
+        .append(std::to_string(index_)).append("]\r"));
     if (auto node = RSNodeMap::Instance().GetNode(nodeId)) {
         constexpr int TOP_LEVEL_DEPTH = 1;
         node->DumpTree(TOP_LEVEL_DEPTH, out);

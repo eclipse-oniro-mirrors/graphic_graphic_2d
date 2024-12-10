@@ -67,6 +67,7 @@ public:
     {
         gcNotifyTask_ = hook;
     }
+    void RegisterDeathRecipient();
 
     int32_t rate_; // used for LTPS
     int32_t highPriorityRate_ = -1;
@@ -100,6 +101,7 @@ private:
     sptr<LocalSocketPair> socketPair_;
     bool isDead_;
     std::mutex mutex_;
+    std::mutex postEventMutex_;
     bool isFirstRequestVsync_ = true;
     bool isFirstSendVsync_ = true;
 };

@@ -57,7 +57,7 @@ void FontDescriptorCache::ClearFontFileCache()
 
 void FontDescriptorCache::ParserSystemFonts()
 {
-    for (auto& item : parser_.GetSystemFonts(locale_)) {
+    for (auto& item : parser_.GetSystemFonts()) {
         FontDescriptorScatter(item);
     }
     Dump();
@@ -65,7 +65,7 @@ void FontDescriptorCache::ParserSystemFonts()
 
 void FontDescriptorCache::ParserStylishFonts()
 {
-    std::vector<TextEngine::FontParser::FontDescriptor> descriptors = parser_.GetVisibilityFonts(locale_);
+    std::vector<TextEngine::FontParser::FontDescriptor> descriptors = parser_.GetVisibilityFonts(TextEngine::ENGLISH);
     for (const auto& descriptor : descriptors) {
         FontDescSharedPtr descriptorPtr = std::make_shared<TextEngine::FontParser::FontDescriptor>(descriptor);
         descriptorPtr->weight = WeightAlignment(descriptorPtr->weight);
@@ -122,11 +122,11 @@ std::unordered_set<std::string> FontDescriptorCache::GetInstallFontList()
     std::unordered_set<std::string> fullNameList;
     std::vector<std::string> fontPathList;
     if (!ParserInstallFontsPathList(fontPathList)) {
-        TEXT_LOGE("Parser install fonts path list failed");
+        TEXT_LOGE("Failed to parser install fonts path list");
         return fullNameList;
     }
     for (const auto& path : fontPathList) {
-        std::vector<FontDescSharedPtr> descriptors = parser_.ParserFontDescriptorsFromPath(path, locale_);
+        std::vector<FontDescSharedPtr> descriptors = parser_.ParserFontDescriptorsFromPath(path);
         for (const auto& item : descriptors) {
             fullNameList.emplace(item->fullName);
         }
@@ -203,11 +203,11 @@ bool FontDescriptorCache::ParseInstallFontDescSharedPtrByName(const std::string&
 {
     std::vector<std::string> fontPathList;
     if (!ParserInstallFontsPathList(fontPathList)) {
-        TEXT_LOGE("Parser install fonts path list failed");
+        TEXT_LOGE("Failed to parser install fonts path list");
         return false;
     }
     for (const auto& path : fontPathList) {
-        std::vector<FontDescSharedPtr> descriptors = parser_.ParserFontDescriptorsFromPath(path, locale_);
+        std::vector<FontDescSharedPtr> descriptors = parser_.ParserFontDescriptorsFromPath(path);
         for (const auto& item : descriptors) {
             if (item->fullName == fullName) {
                 item->weight = WeightAlignment(item->weight);
@@ -216,7 +216,7 @@ bool FontDescriptorCache::ParseInstallFontDescSharedPtrByName(const std::string&
             }
         }
     }
-    TEXT_LOGE_LIMIT3_MIN("Parser installed fontDescriptor by name failed, fullName: %{public}s", fullName.c_str());
+    TEXT_LOGE_LIMIT3_MIN("Failed to parser installed fontDescriptor by name, fullName: %{public}s", fullName.c_str());
     return false;
 }
 
@@ -507,7 +507,7 @@ int32_t FontDescriptorCache::WeightAlignment(int32_t weight)
     // Obtain weight ranges for non-whole hundred values
     auto it = std::lower_bound(weightType.begin(), weightType.end(), weight);
     std::vector<int> targetRange = { *(it - 1), *it };
-    
+
     /**
      * When the font weight is less than NORMAL_WEIGHT, round down as much as possible;
      * when the font weight exceeds NORMAL_WEIGHT, round up where possible. For example, when weight is 360,
@@ -524,11 +524,13 @@ int32_t FontDescriptorCache::WeightAlignment(int32_t weight)
         constexpr int kWeightDiffThreshold = Drawing::FontStyle::EXTRA_BLACK_WEIGHT / 2;
         if ((weight == Drawing::FontStyle::NORMAL_WEIGHT && item == Drawing::FontStyle::MEDIUM_WEIGHT) ||
             (weight == Drawing::FontStyle::MEDIUM_WEIGHT && item == Drawing::FontStyle::NORMAL_WEIGHT)) {
-            weightDiff = SPECIAL_WEIGHT_DIFF;
+            weightDiff = static_cast<uint32_t>(SPECIAL_WEIGHT_DIFF);
         } else if (weight <= Drawing::FontStyle::NORMAL_WEIGHT) {
-            weightDiff = (item <= weight) ? (weight - item) : (item - weight + kWeightDiffThreshold);
+            weightDiff = (item <= weight) ? static_cast<uint32_t>(weight - item) :
+                static_cast<uint32_t>(item - weight + kWeightDiffThreshold);
         } else if (weight > Drawing::FontStyle::NORMAL_WEIGHT) {
-            weightDiff = (item >= weight) ? (item - weight) : (weight - item + kWeightDiffThreshold);
+            weightDiff = (item >= weight) ? static_cast<uint32_t>(item - weight) :
+                static_cast<uint32_t>(weight - item + kWeightDiffThreshold);
         }
 
         // Retain the font weight with the smallest difference

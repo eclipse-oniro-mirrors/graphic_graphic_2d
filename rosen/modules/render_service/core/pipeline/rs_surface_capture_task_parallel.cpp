@@ -106,11 +106,6 @@ void RSSurfaceCaptureTaskParallel::Capture(NodeId id,
     }
     std::shared_ptr<RSSurfaceCaptureTaskParallel> captureHandle =
         std::make_shared<RSSurfaceCaptureTaskParallel>(id, captureConfig);
-    if (captureHandle == nullptr) {
-        RS_LOGE("RSSurfaceCaptureTaskParallel::Capture captureHandle is nullptr!");
-        callback->OnSurfaceCapture(id, nullptr);
-        return;
-    }
     if (!captureHandle->CreateResources()) {
         callback->OnSurfaceCapture(id, nullptr);
         return;
@@ -198,7 +193,8 @@ bool RSSurfaceCaptureTaskParallel::Run(sptr<RSISurfaceCaptureCallback> callback,
     if (surfaceNodeDrawable_) {
         curNodeParams = static_cast<RSSurfaceRenderParams*>(surfaceNodeDrawable_->GetRenderParams().get());
         // make sure the previous uifirst task is completed.
-        if (!RSUiFirstProcessStateCheckerHelper::CheckMatchAndWaitNotify(*curNodeParams, false)) {
+        if (!surfaceNodeDrawable_->HasCache() &&
+            !RSUiFirstProcessStateCheckerHelper::CheckMatchAndWaitNotify(*curNodeParams, false)) {
             RS_LOGE("RSSurfaceCaptureTaskParallel::Run: CheckMatchAndWaitNotify failed");
             return false;
         }
@@ -447,7 +443,7 @@ std::function<void()> RSSurfaceCaptureTaskParallel::CreateSurfaceSyncCopyTask(
             (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
             RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR)) {
             sptr<SurfaceBuffer> surfaceBuffer = dmaMem.DmaMemAlloc(info, pixelmap);
-            if (!colorSpace->IsSRGB()) {
+            if (colorSpace != nullptr && !colorSpace->IsSRGB()) {
                 surfaceBuffer->SetSurfaceBufferColorGamut(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3);
             }
             surface = dmaMem.GetSurfaceFromSurfaceBuffer(surfaceBuffer, grContext);

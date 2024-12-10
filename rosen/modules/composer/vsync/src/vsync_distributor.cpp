@@ -95,11 +95,15 @@ VSyncConnection::VSyncConnection(
     if (err != 0) {
         RS_TRACE_NAME_FMT("Create socket channel failed, errno = %d", errno);
     }
+    proxyPid_ = GetCallingPid();
+    isDead_ = false;
+}
+
+void VSyncConnection::RegisterDeathRecipient()
+{
     if (token_ != nullptr) {
         token_->AddDeathRecipient(vsyncConnDeathRecipient_);
     }
-    proxyPid_ = GetCallingPid();
-    isDead_ = false;
 }
 
 VSyncConnection::~VSyncConnection()
@@ -170,6 +174,8 @@ int32_t VSyncConnection::PostEvent(int64_t now, int64_t period, int64_t vsyncCou
         RS_TRACE_NAME_FMT("socketPair is null, conn: %s", info_.name_.c_str());
         return ERRNO_OTHER;
     }
+
+    std::unique_lock<std::mutex> lockerPostEvent(postEventMutex_);
     RS_TRACE_NAME_FMT("SendVsyncTo conn: %s, now:%ld, refreshRate:%d", info_.name_.c_str(), now, refreshRate_);
     // 3 is array size.
     int64_t data[3];
@@ -361,7 +367,7 @@ VsyncError VSyncDistributor::AddConnection(const sptr<VSyncConnection>& connecti
             connectionsMap_[tmpPid].push_back(connection);
         }
     }
-    
+    connection->RegisterDeathRecipient();
     return VSYNC_ERROR_OK;
 }
 

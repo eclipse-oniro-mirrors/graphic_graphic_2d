@@ -24,6 +24,7 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
+#include "memory/rs_memory_flow_control.h"
 #include "memory/rs_memory_track.h"
 #include "pixel_map.h"
 
@@ -76,6 +77,7 @@ bool g_useSharedMem = true;
 std::thread::id g_tid = std::thread::id();
 std::mutex g_writeMutex;
 constexpr size_t PIXELMAP_UNMARSHALLING_DEBUG_OFFSET = 12;
+thread_local pid_t g_callingPid = 0;
 }
 
 #define MARSHALLING_AND_UNMARSHALLING(TYPE, TYPENAME)                      \
@@ -273,6 +275,10 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<Drawing:
         ret = val->BuildFromMalloc(data, size);
     }
     if (!ret) {
+        if (isMalloc) {
+            free(const_cast<void*>(data));
+            data = nullptr;
+        }
         ROSEN_LOGE("unirender: failed RSMarshallingHelper::Unmarshalling Data failed with Build Data");
     }
     return ret;
@@ -1460,7 +1466,11 @@ bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<Medi
 static void CustomFreePixelMap(void* addr, void* context, uint32_t size)
 {
 #ifdef ROSEN_OHOS
-    MemoryTrack::Instance().RemovePictureRecord(context);
+    if (RSSystemProperties::GetClosePixelMapFdEnabled()) {
+        MemoryTrack::Instance().RemovePictureRecord(addr);
+    } else {
+        MemoryTrack::Instance().RemovePictureRecord(context);
+    }
 #else
     MemoryTrack::Instance().RemovePictureRecord(addr);
 #endif
@@ -1488,12 +1498,19 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<Media::P
         
         return false;
     }
+    if (RSSystemProperties::GetClosePixelMapFdEnabled()) {
+        val->CloseFd();
+    }
     MemoryInfo info = {
         val->GetByteCount(), 0, 0, val->GetUniqueId(), MEMORY_TYPE::MEM_PIXELMAP, val->GetAllocatorType(), val
     };
 
 #ifdef ROSEN_OHOS
-    MemoryTrack::Instance().AddPictureRecord(val->GetFd(), info);
+    if (RSSystemProperties::GetClosePixelMapFdEnabled()) {
+        MemoryTrack::Instance().AddPictureRecord(val->GetPixels(), info);
+    } else {
+        MemoryTrack::Instance().AddPictureRecord(val->GetFd(), info);
+    }
 #else
     MemoryTrack::Instance().AddPictureRecord(val->GetPixels(), info);
 #endif
@@ -1692,6 +1709,10 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<Drawing:
     if (size == -1) {
         val = nullptr;
         return true;
+    } else if (size < 0) {
+        ROSEN_LOGE("unirender: RSMarshallingHelper::Unmarshalling Drawing::DrawCmdList size is invalid!");
+        val = nullptr;
+        return false;
     }
     int32_t width = parcel.ReadInt32();
     int32_t height = parcel.ReadInt32();
@@ -2257,8 +2278,22 @@ const void* RSMarshallingHelper::ReadFromParcel(Parcel& parcel, size_t size, boo
         isMalloc = false;
         return parcel.ReadUnpadBuffer(size);
     }
+    // ReadFromAshmem flow control begin
+    bool success = MemoryFlowControl::Instance().AddAshmemStatistic(g_callingPid, bufferSize);
+    if (!success) {
+        // discard this ashmem parcel since callingPid is submitting too many data to RS simultaneously
+        isMalloc = false;
+        RS_TRACE_NAME_FMT("RSMarshallingHelper::ReadFromParcel callingPid %d is submitting too many data, "
+            "discard parcel with bufferSize %" PRIu32, static_cast<int>(g_callingPid), bufferSize);
+        ROSEN_LOGE("RSMarshallingHelper::ReadFromParcel callingPid %{public}d is submitting too many data, "
+            "discard parcel with bufferSize %{public}" PRIu32, static_cast<int>(g_callingPid), bufferSize);
+        return nullptr;
+    }
     // read from ashmem
-    return RS_PROFILER_READ_PARCEL_DATA(parcel, size, isMalloc);
+    const void* data = RS_PROFILER_READ_PARCEL_DATA(parcel, size, isMalloc);
+    // ReadFromAshmem flow control end
+    MemoryFlowControl::Instance().RemoveAshmemStatistic(g_callingPid, bufferSize);
+    return data;
 }
 
 bool RSMarshallingHelper::SkipFromParcel(Parcel& parcel, size_t size)
@@ -2326,6 +2361,11 @@ bool RSMarshallingHelper::CheckReadPosition(Parcel& parcel)
         return false;
     }
     return true;
+}
+
+void RSMarshallingHelper::SetCallingPid(pid_t callingPid)
+{
+    g_callingPid = callingPid;
 }
 
 bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<RSRenderPropertyBase>& val)

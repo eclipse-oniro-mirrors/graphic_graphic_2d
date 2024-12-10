@@ -82,6 +82,11 @@ bool RSSystemProperties::GetRSImagePurgeEnabled()
     return false;
 }
 
+bool RSSystemProperties::GetClosePixelMapFdEnabled()
+{
+    return false;
+}
+
 DirtyRegionDebugType RSSystemProperties::GetDirtyRegionDebugType()
 {
     return {};
@@ -328,6 +333,11 @@ void RSSystemProperties::SetForceHpsBlurDisabled(bool flag)
 bool RSSystemProperties::GetHpsBlurEnabled()
 {
     return false;
+}
+
+float RSSystemProperties::GetHpsBlurNoiseFactor()
+{
+    return 0.f;
 }
 
 bool RSSystemProperties::GetMESABlurFuzedEnabled()

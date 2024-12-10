@@ -52,6 +52,9 @@ struct HardCursorInfo {
 };
 class RSB_EXPORT RSRenderThreadParams {
 public:
+    using DrawablesVec = std::vector<std::pair<NodeId,
+        DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr>>;
+
     RSRenderThreadParams() = default;
     virtual ~RSRenderThreadParams() = default;
 
@@ -120,6 +123,11 @@ public:
         isFirstVisitCrossNodeDisplay_ = isFirstVisitCrossNodeDisplay;
     }
 
+    CrossNodeOffScreenRenderDebugType GetCrossNodeOffscreenDebugEnabled() const
+    {
+        return isCrossNodeOffscreenOn_;
+    }
+
     bool GetUIFirstDebugEnabled() const
     {
         return isUIFirstDebugEnable_;
@@ -180,7 +188,7 @@ public:
         return selfDrawables_;
     }
 
-    const std::vector<DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr>& GetHardwareEnabledTypeDrawables() const
+    const DrawablesVec& GetHardwareEnabledTypeDrawables() const
     {
         return hardwareEnabledTypeDrawables_;
     }
@@ -435,6 +443,14 @@ public:
     {
         compositeType_ = type;
     }
+    NodeId GetCurrentVisitDisplayDrawableId() const
+    {
+        return currentVisitDisplayDrawableId_;
+    }
+    void SetCurrentVisitDisplayDrawableId(NodeId displayId)
+    {
+        currentVisitDisplayDrawableId_ = displayId;
+    }
 private:
     // Used by hardware thred
     uint64_t timestamp_ = 0;
@@ -458,6 +474,7 @@ private:
     bool isAllSurfaceVisibleDebugEnabled_ = false;
     bool isOpDropped_ = false;
     bool isOcclusionEnabled_ = false;
+    CrossNodeOffScreenRenderDebugType isCrossNodeOffscreenOn_ = CrossNodeOffScreenRenderDebugType::ENABLE;
     bool isUIFirstDebugEnable_ = false;
     bool isUIFirstCurrentFrameCanSkipFirstWait_ = false;
     bool isVirtualDirtyDfxEnabled_ = false;
@@ -466,9 +483,10 @@ private:
     bool isMirrorScreenDirty_ = false;
     bool cacheEnabledForRotation_ = false;
     bool isScreenSwitching_ = false;
+    NodeId currentVisitDisplayDrawableId_ = INVALID_NODEID;
     DirtyRegionDebugType dirtyRegionDebugType_ = DirtyRegionDebugType::DISABLED;
     std::vector<DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr> selfDrawables_;
-    std::vector<DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr> hardwareEnabledTypeDrawables_;
+    DrawablesVec hardwareEnabledTypeDrawables_;
     HardCursorInfo hardCursorDrawables_;
     bool isForceCommitLayer_ = false;
     bool hasMirrorDisplay_ = false;

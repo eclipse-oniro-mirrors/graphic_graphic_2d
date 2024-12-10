@@ -126,7 +126,6 @@ template("render_service_client_source_set") {
       "core/ui/rs_ext_node_operation.cpp",
       "core/ui/rs_frame_rate_linker.cpp",
       "core/ui/rs_frame_rate_policy.cpp",
-      "core/ui/rs_hdr_manager.cpp",
       "core/ui/rs_node.cpp",
       "core/ui/rs_proxy_node.cpp",
       "core/ui/rs_root_node.cpp",
@@ -194,6 +193,11 @@ template("render_service_client_source_set") {
         defines += [ "WINDOWS_PLATFORM" ]
       }
     }
+
+    if (is_arkui_x) {
+      defines += [ "ARKUI_X_ENABLE" ]
+    }
+
     if (rosen_is_ohos) {
       deps += [
         "$graphic_2d_root/rosen/modules/frame_analyzer:libframe_analyzer",
@@ -201,6 +205,8 @@ template("render_service_client_source_set") {
       ]
 
       external_deps = [
+        "bundle_framework:appexecfwk_base",
+        "bundle_framework:appexecfwk_core",
         "c_utils:utils",
         "hisysevent:libhisysevent",
         "hitrace:hitrace_meter",

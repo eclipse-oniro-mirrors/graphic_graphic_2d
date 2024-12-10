@@ -81,20 +81,21 @@ public:
     {
         return selfDrawingType_;
     }
-    void SetAncestorDisplayNode(const RSRenderNode::WeakPtr& ancestorDisplayNode)
+    void SetAncestorDisplayNode(const ScreenId screenId, const RSRenderNode::WeakPtr& ancestorDisplayNode)
     {
-        ancestorDisplayNode_ = ancestorDisplayNode;
+        ancestorDisplayNodeMap_[screenId] = ancestorDisplayNode;
         auto node = ancestorDisplayNode.lock();
-        ancestorDisplayDrawable_ = node ? node->GetRenderDrawable() : nullptr;
+        ancestorDisplayDrawableMap_[screenId] = node ? node->GetRenderDrawable() : nullptr;
     }
 
-    RSRenderNode::WeakPtr GetAncestorDisplayNode() const
+    const std::unordered_map<ScreenId, RSRenderNode::WeakPtr>& GetAncestorDisplayNode() const
     {
-        return ancestorDisplayNode_;
+        return ancestorDisplayNodeMap_;
     }
-    DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr GetAncestorDisplayDrawable() const
+    const std::unordered_map<ScreenId, DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr>&
+        GetAncestorDisplayDrawable() const
     {
-        return ancestorDisplayDrawable_;
+        return ancestorDisplayDrawableMap_;
     }
 
     float GetAlpha() const
@@ -338,6 +339,8 @@ public:
     bool GetHardwareEnabled() const override;
     void SetHardCursorStatus(bool status);
     bool GetHardCursorStatus() const override;
+    void SetPreSubHighPriorityType(bool enabledType);
+    bool GetPreSubHighPriorityType() const;
     void SetLastFrameHardwareEnabled(bool enabled);
     bool GetLastFrameHardwareEnabled() const override;
     void SetFixRotationByUser(bool flag);
@@ -474,6 +477,20 @@ public:
         return drmCornerRadiusInfo_;
     }
 
+    void SetHDRPresent(bool hasHdrPresent)
+    {
+        if (hasHdrPresent_ == hasHdrPresent) {
+            return;
+        }
+        hasHdrPresent_ = hasHdrPresent;
+        needSync_ = true;
+    }
+
+    bool GetHDRPresent() const
+    {
+        return hasHdrPresent_;
+    }
+
     void SetSdrNit(int32_t sdrNit)
     {
         if (ROSEN_EQ(sdrNit_, sdrNit)) {
@@ -528,6 +545,9 @@ public:
 
     void SetNeedCacheSurface(bool needCacheSurface);
     bool GetNeedCacheSurface() const;
+    void SetUifirstStartingFlag(bool flag);
+    bool GetUifirstStartingFlag() const;
+
     inline bool HasSubSurfaceNodes() const
     {
         return hasSubSurfaceNodes_;
@@ -536,6 +556,32 @@ public:
     {
         return allSubSurfaceNodeIds_;
     }
+    int32_t GetPreparedDisplayOffsetX() const
+    {
+        return preparedDisplayOffset_.x_;
+    }
+    int32_t GetPreparedDisplayOffsetY() const
+    {
+        return preparedDisplayOffset_.y_;
+    }
+    const std::unordered_map<NodeId, Vector2<int32_t>>& GetCrossNodeSkippedDisplayOffsets() const
+    {
+        return crossNodeSkippedDisplayOffsets_;
+    }
+
+    void SetApiCompatibleVersion(uint32_t apiCompatibleVersion)
+    {
+        if (ROSEN_EQ(apiCompatibleVersion_, apiCompatibleVersion)) {
+            return;
+        }
+        apiCompatibleVersion_ = apiCompatibleVersion;
+        needSync_ = true;
+    }
+    uint32_t GetApiCompatibleVersion() const
+    {
+        return apiCompatibleVersion_;
+    }
+
 protected:
 private:
     bool isMainWindowType_ = false;
@@ -543,8 +589,8 @@ private:
     bool isAppWindow_ = false;
     RSSurfaceNodeType rsSurfaceNodeType_ = RSSurfaceNodeType::DEFAULT;
     SelfDrawingNodeType selfDrawingType_ = SelfDrawingNodeType::DEFAULT;
-    RSRenderNode::WeakPtr ancestorDisplayNode_;
-    DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr ancestorDisplayDrawable_;
+    std::unordered_map<ScreenId, RSRenderNode::WeakPtr> ancestorDisplayNodeMap_;
+    std::unordered_map<ScreenId, DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr> ancestorDisplayDrawableMap_;
 
     float alpha_ = 0;
     bool isCrossNode_ = false;
@@ -557,6 +603,7 @@ private:
     bool uiFirstParentFlag_ = false;
     Color backgroundColor_ = RgbPalette::Transparent();
     bool isHwcEnabledBySolidLayer_ = false;
+    bool uifirstStartingFlag_ = false;
 
     RectI dstRect_;
     RectI oldDirtyInSurface_;
@@ -593,6 +640,7 @@ private:
     bool isHardwareEnabled_ = false;
     bool isHardCursor_ = false;
     bool isLastFrameHardwareEnabled_ = false;
+    bool subHighPriorityType_ = false;
     bool isFixRotationByUser_ = false;
     bool isInFixedRotation_ = false;
     int32_t releaseInHardwareThreadTaskNum_ = 0;
@@ -628,6 +676,7 @@ private:
     float globalAlpha_ = 1.0f;
     bool hasFingerprint_ = false;
     // hdr
+    bool hasHdrPresent_ = false;
     int32_t sdrNit_ = 500; // default sdrNit
     int32_t displayNit_ = 500; // default displayNit_
     float brightnessRatio_ = 1.0; // 1.0f means no discount.
@@ -635,6 +684,10 @@ private:
     
     bool hasSubSurfaceNodes_ = false;
     std::unordered_set<NodeId> allSubSurfaceNodeIds_ = {};
+    std::unordered_map<NodeId, Vector2<int32_t>> crossNodeSkippedDisplayOffsets_ = {};
+    Vector2<int32_t> preparedDisplayOffset_ = { 0, 0 };
+
+    uint32_t apiCompatibleVersion_ = 0;
 
     friend class RSSurfaceRenderNode;
     friend class RSUniRenderProcessor;

@@ -28,6 +28,7 @@
 #include "command/rs_command_factory.h"
 #include "common/rs_xcollie.h"
 #include "hgm_frame_rate_manager.h"
+#include "memory/rs_memory_flow_control.h"
 #include "pipeline/rs_base_render_util.h"
 #include "pipeline/rs_main_thread.h"
 #include "pipeline/rs_uni_render_judgement.h"
@@ -43,8 +44,9 @@ namespace Rosen {
 namespace {
 constexpr size_t MAX_DATA_SIZE_FOR_UNMARSHALLING_IN_PLACE = 1024 * 15; // 15kB
 constexpr size_t FILE_DESCRIPTOR_LIMIT = 15;
-constexpr size_t MAX_OBJECTNUM = INT_MAX;
-constexpr size_t MAX_DATA_SIZE = INT_MAX;
+constexpr size_t MAX_OBJECTNUM = 512;
+constexpr size_t MAX_DATA_SIZE = 1024 * 1024; // 1MB
+static constexpr int MAX_SECURITY_EXEMPTION_LIST_NUMBER = 1024; // securityExemptionList size not exceed 1024
 #ifdef RES_SCHED_ENABLE
 const uint32_t RS_IPC_QOS_LEVEL = 7;
 constexpr const char* RS_BUNDLE_NAME = "render_service";
@@ -155,6 +157,7 @@ static constexpr std::array descriptorCheckList = {
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REGISTER_TYPEFACE),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::UNREGISTER_TYPEFACE),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REFRESH_RATE_UPDATE_CALLBACK),
+    static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REGISTER_FRAME_RATE_LINKER_EXPECTED_FPS_CALLBACK),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_ACTIVE_DIRTY_REGION_INFO),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_GLOBAL_DIRTY_REGION_INFO),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_LAYER_COMPOSE_INFO),
@@ -177,9 +180,6 @@ void CopyFileDescriptor(MessageParcel& old, MessageParcel& copied)
     binder_size_t* copiedObject = reinterpret_cast<binder_size_t*>(copied.GetObjectOffsets());
 
     size_t objectNum = old.GetOffsetsSize();
-    if (objectNum > MAX_OBJECTNUM) {
-        return;
-    }
 
     uintptr_t data = old.GetData();
     uintptr_t copiedData = copied.GetData();
@@ -188,7 +188,7 @@ void CopyFileDescriptor(MessageParcel& old, MessageParcel& copied)
         const flat_binder_object* flat = reinterpret_cast<flat_binder_object*>(data + object[i]);
         flat_binder_object* copiedFlat = reinterpret_cast<flat_binder_object*>(copiedData + copiedObject[i]);
 
-        if (flat->hdr.type == BINDER_TYPE_FD && flat->handle > 0) {
+        if (flat->hdr.type == BINDER_TYPE_FD && flat->handle >= 0) {
             int32_t val = dup(flat->handle);
             if (val < 0) {
                 ROSEN_LOGW("CopyFileDescriptor dup failed, fd:%{public}d, handle:%{public}" PRIu32, val,
@@ -215,6 +215,13 @@ std::shared_ptr<MessageParcel> CopyParcelIfNeed(MessageParcel& old, pid_t callin
     if (dataSize == 0) {
         return nullptr;
     }
+
+    if (old.GetOffsetsSize() > MAX_OBJECTNUM) {
+        ROSEN_LOGW("RSRenderServiceConnectionStub::CopyParcelIfNeed failed, parcel fdCnt: %{public}zu is too large",
+            old.GetOffsetsSize());
+        return nullptr;
+    }
+
     RS_TRACE_NAME("CopyParcelForUnmarsh: size:" + std::to_string(dataSize));
     void* base = malloc(dataSize);
     if (base == nullptr) {
@@ -319,6 +326,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
     RS_PROFILER_ON_REMOTE_REQUEST(this, code, data, reply, option);
 
     pid_t callingPid = GetCallingPid();
+    RSMarshallingHelper::SetCallingPid(callingPid);
     auto tid = gettid();
     {
         std::lock_guard<std::mutex> lock(mutex_);
@@ -340,7 +348,11 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
         }
     }
     auto accessible = securityManager_.IsInterfaceCodeAccessible(code);
-    if (!accessible && code != static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::TAKE_SURFACE_CAPTURE)) {
+    if (!accessible && code != static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::TAKE_SURFACE_CAPTURE) &&
+        code != static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_MEMORY_GRAPHIC) &&
+        code != static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_REFRESH_INFO) &&
+        code != static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_BUFFER_AVAILABLE_LISTENER) &&
+        code != static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_BUFFER_CLEAR_LISTENER)) {
         RS_LOGE("RSRenderServiceConnectionStub::OnRemoteRequest no permission code:%{public}d", code);
         return ERR_INVALID_STATE;
     }
@@ -357,6 +369,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             RS_TRACE_NAME_FMT("Recv Parcel Size:%zu, fdCnt:%zu", data.GetDataSize(), data.GetOffsetsSize());
             static bool isUniRender = RSUniRenderJudgement::IsUniRender();
             std::shared_ptr<MessageParcel> parsedParcel;
+            auto ashmemFlowControlUnit = std::make_shared<AshmemFlowControlUnit>(callingPid);
             if (data.ReadInt32() == 0) { // indicate normal parcel
                 if (isUniRender) {
                     // in uni render mode, if parcel size over threshold,
@@ -370,13 +383,8 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                     auto transactionData = RSBaseRenderUtil::ParseTransactionData(data);
                     if (transactionData && isNonSystemAppCalling) {
                         const auto& nodeMap = RSMainThread::Instance()->GetContext().GetNodeMap();
-                        pid_t conflictCommandPid = 0;
-                        std::string commandMapDesc = "";
-                        if (!transactionData->IsCallingPidValid(callingPid, nodeMap, conflictCommandPid,
-                                                                commandMapDesc)) {
-                            RS_LOGE("RSRenderServiceConnectionStub::COMMIT_TRANSACTION non-system callingPid %{public}d"
-                                    " is denied to access commandPid %{public}d, commandMap = %{public}s",
-                                    callingPid, conflictCommandPid, commandMapDesc.c_str());
+                        if (!transactionData->IsCallingPidValid(callingPid, nodeMap)) {
+                            RS_LOGE("RSRenderServiceConnectionStub::COMMIT_TRANSACTION IsCallingPidValid check failed");
                         }
                     }
                     CommitTransaction(transactionData);
@@ -385,29 +393,30 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             } else {
                 // indicate ashmem parcel
                 // should be parsed to normal parcel before Unmarshalling
-                parsedParcel = RSAshmemHelper::ParseFromAshmemParcel(&data);
+                parsedParcel = RSAshmemHelper::ParseFromAshmemParcel(&data, ashmemFlowControlUnit);
             }
             if (parsedParcel == nullptr) {
                 RS_LOGE("RSRenderServiceConnectionStub::COMMIT_TRANSACTION failed: parsed parcel is nullptr");
+                // ParseFromAshmemParcel flow control end
+                MemoryFlowControl::Instance().RemoveAshmemStatistic(ashmemFlowControlUnit);
                 return ERR_INVALID_DATA;
             }
             if (isUniRender) {
                 // post Unmarshalling task to RSUnmarshalThread
-                RSUnmarshalThread::Instance().RecvParcel(parsedParcel, isNonSystemAppCalling, callingPid);
+                RSUnmarshalThread::Instance().RecvParcel(parsedParcel, isNonSystemAppCalling, callingPid,
+                    ashmemFlowControlUnit);
             } else {
                 // execute Unmarshalling immediately
                 auto transactionData = RSBaseRenderUtil::ParseTransactionData(*parsedParcel);
                 if (transactionData && isNonSystemAppCalling) {
                     const auto& nodeMap = RSMainThread::Instance()->GetContext().GetNodeMap();
-                    pid_t conflictCommandPid = 0;
-                    std::string commandMapDesc = "";
-                    if (!transactionData->IsCallingPidValid(callingPid, nodeMap, conflictCommandPid, commandMapDesc)) {
-                        RS_LOGE("RSRenderServiceConnectionStub::COMMIT_TRANSACTION non-system callingPid %{public}d"
-                                " is denied to access commandPid %{public}d, commandMap = %{public}s",
-                                callingPid, conflictCommandPid, commandMapDesc.c_str());
+                    if (!transactionData->IsCallingPidValid(callingPid, nodeMap)) {
+                        RS_LOGE("RSRenderServiceConnectionStub::COMMIT_TRANSACTION IsCallingPidValid check failed");
                     }
                 }
                 CommitTransaction(transactionData);
+                // ParseFromAshmemParcel flow control end
+                MemoryFlowControl::Instance().RemoveAshmemStatistic(ashmemFlowControlUnit);
             }
             break;
         }
@@ -517,7 +526,10 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             ScreenId mirrorId = data.ReadUint64();
             int32_t flags = data.ReadInt32();
             std::vector<NodeId> whiteList;
-            data.ReadUInt64Vector(&whiteList);
+            if (!data.ReadUInt64Vector(&whiteList)) {
+                ret = ERR_INVALID_DATA;
+                break;
+            }
             ScreenId id = CreateVirtualScreen(name, width, height, surface, mirrorId, flags, whiteList);
             if (!reply.WriteUint64(id)) {
                 ret = ERR_INVALID_REPLY;
@@ -528,7 +540,10 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             // read the parcel data.
             ScreenId id = data.ReadUint64();
             std::vector<NodeId> blackListVector;
-            data.ReadUInt64Vector(&blackListVector);
+            if (!data.ReadUInt64Vector(&blackListVector)) {
+                ret = ERR_INVALID_DATA;
+                break;
+            }
             int32_t status = SetVirtualScreenBlackList(id, blackListVector);
             if (!reply.WriteInt32(status)) {
                 ret = ERR_INVALID_REPLY;
@@ -570,6 +585,12 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             std::vector<NodeId> securityExemptionList;
             if (!data.ReadUInt64Vector(&securityExemptionList)) {
                 ret = ERR_INVALID_REPLY;
+                break;
+            }
+            if (securityExemptionList.size() > MAX_SECURITY_EXEMPTION_LIST_NUMBER) {
+                RS_LOGE("RSRenderServiceConnectionStub::SET_VIRTUAL_SCREEN_SECURITY_EXEMPTION_LIST"
+                    " failed: too many lists.");
+                ret = ERR_INVALID_DATA;
                 break;
             }
             int32_t status = SetVirtualScreenSecurityExemptionList(id, securityExemptionList);
@@ -798,6 +819,11 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 break;
             }
             pid_t pid = data.ReadInt32();
+            if (!IsValidCallingPid(pid, callingPid)) {
+                RS_LOGW("GET_REFRESH_INFO invalid pid[%{public}d]", callingPid);
+                ret = ERR_INVALID_DATA;
+                break;
+            }
             std::string refreshInfo = GetRefreshInfo(pid);
             if (!reply.WriteString(refreshInfo)) {
                 ret = ERR_INVALID_REPLY;
@@ -873,7 +899,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             break;
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REGISTER_APPLICATION_AGENT): {
-            auto pid = data.ReadInt32();
+            pid_t pid = GetCallingPid();
             RS_PROFILER_PATCH_PID(data, pid);
             auto remoteObject = data.ReadRemoteObject();
             if (remoteObject == nullptr) {
@@ -922,6 +948,11 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_MEMORY_GRAPHIC): {
             auto pid = data.ReadInt32();
             RS_PROFILER_PATCH_PID(data, pid);
+            if (!IsValidCallingPid(pid, callingPid)) {
+                RS_LOGW("GET_MEMORY_GRAPHIC invalid pid[%{public}d]", callingPid);
+                ret = ERR_INVALID_DATA;
+                break;
+            }
             MemoryGraphic memoryGraphic = GetMemoryGraphic(pid);
             if (!reply.WriteParcelable(&memoryGraphic)) {
                 ret = ERR_INVALID_REPLY;
@@ -991,6 +1022,11 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_BUFFER_AVAILABLE_LISTENER): {
             NodeId id = data.ReadUint64();
+            if (!accessible && (ExtractPid(id) != callingPid)) {
+                RS_LOGW("The SetBufferAvailableListener isn't legal, nodeId:%{public}" PRIu64 ", callingPid:%{public}d",
+                    id, callingPid);
+                break;
+            }
             RS_PROFILER_PATCH_NODE_ID(data, id);
             auto remoteObject = data.ReadRemoteObject();
             bool isFromRenderThread = data.ReadBool();
@@ -1008,6 +1044,11 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_BUFFER_CLEAR_LISTENER): {
             NodeId id = data.ReadUint64();
+            if (!accessible && (ExtractPid(id) != callingPid)) {
+                RS_LOGW("The SetBufferClearListener isn't legal, nodeId:%{public}" PRIu64 ", callingPid:%{public}d",
+                    id, callingPid);
+                break;
+            }
             RS_PROFILER_PATCH_NODE_ID(data, id);
             auto remoteObject = data.ReadRemoteObject();
             if (remoteObject == nullptr) {
@@ -1799,6 +1840,23 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             }
             break;
         }
+        case static_cast<uint32_t>(
+            RSIRenderServiceConnectionInterfaceCode::REGISTER_FRAME_RATE_LINKER_EXPECTED_FPS_CALLBACK) : {
+            sptr<RSIFrameRateLinkerExpectedFpsUpdateCallback> callback = nullptr;
+            sptr<IRemoteObject> remoteObject = nullptr;
+            int32_t dstPid = data.ReadInt32();
+            if (data.ReadBool()) {
+                remoteObject = data.ReadRemoteObject();
+            }
+            if (remoteObject != nullptr) {
+                callback = iface_cast<RSIFrameRateLinkerExpectedFpsUpdateCallback>(remoteObject);
+            }
+            int32_t status = RegisterFrameRateLinkerExpectedFpsUpdateCallback(dstPid, callback);
+            if (!reply.WriteInt32(status)) {
+                ret = ERR_INVALID_REPLY;
+            }
+            break;
+        }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_ROTATION_CACHE_ENABLED) : {
             bool isEnabled = false;
             if (!data.ReadBool(isEnabled)) {
@@ -1880,6 +1938,13 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                     ret = ERR_INVALID_REPLY;
                     break;
                 }
+            }
+            break;
+        }
+        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_HDR_ON_DURATION) : {
+            int64_t hdrOnDuration = GetHdrOnDuration();
+            if (!reply.WriteInt64(hdrOnDuration)) {
+                ret = ERR_INVALID_REPLY;
             }
             break;
         }

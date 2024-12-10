@@ -229,6 +229,9 @@ public:
 
     int32_t RegisterHgmRefreshRateUpdateCallback(sptr<RSIHgmConfigChangeCallback> callback) override;
 
+    int32_t RegisterFrameRateLinkerExpectedFpsUpdateCallback(int32_t dstPid,
+        sptr<RSIFrameRateLinkerExpectedFpsUpdateCallback> callback) override;
+
     void SetAppWindowNum(uint32_t num) override;
 
     bool SetSystemAnimatedScenes(SystemAnimatedScenes systemAnimatedScenes) override;
@@ -280,6 +283,8 @@ public:
 
     HwcDisabledReasonInfos GetHwcDisabledReasonInfo() override;
 
+    int64_t GetHdrOnDuration() override;
+
     void SetVmaCacheStatus(bool flag) override;
 
     int32_t RegisterUIExtensionCallback(uint64_t userId, sptr<RSIUIExtensionCallback> callback) override;
@@ -309,6 +314,8 @@ private:
     void ReportDataBaseRs(MessageParcel& data, MessageParcel& reply, MessageOption& option, DataBaseRs info);
 
     void ReportGameStateDataRs(MessageParcel& data, MessageParcel& reply, MessageOption& option, GameStateData info);
+
+    int32_t SendRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
 
     bool SetAncoForceDoDirect(bool direct) override;
 

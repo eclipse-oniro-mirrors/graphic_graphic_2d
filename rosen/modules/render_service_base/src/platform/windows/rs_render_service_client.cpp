@@ -504,6 +504,12 @@ int32_t RSRenderServiceClient::RegisterHgmRefreshRateUpdateCallback(
     return {};
 }
 
+int32_t RSRenderServiceClient::RegisterFrameRateLinkerExpectedFpsUpdateCallback(
+    int32_t dstPid, const FrameRateLinkerExpectedFpsUpdateCallback& callback)
+{
+    return {};
+}
+
 void RSRenderServiceClient::SetAppWindowNum(uint32_t num)
 {
 }
@@ -606,6 +612,11 @@ LayerComposeInfo RSRenderServiceClient::GetLayerComposeInfo()
 HwcDisabledReasonInfos RSRenderServiceClient::GetHwcDisabledReasonInfo()
 {
     return {};
+}
+
+int64_t RSRenderServiceClient::GetHdrOnDuration()
+{
+    return 0;
 }
 
 void RSRenderServiceClient::SetVmaCacheStatus(bool flag)

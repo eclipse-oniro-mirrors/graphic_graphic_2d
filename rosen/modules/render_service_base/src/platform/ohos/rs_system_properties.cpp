@@ -207,6 +207,12 @@ bool RSSystemProperties::GetRSImagePurgeEnabled()
     return isPurgeable;
 }
 
+bool RSSystemProperties::GetClosePixelMapFdEnabled()
+{
+    static bool isClosePixelMapFd = system::GetParameter("persist.rosen.rsimage.purge.enabled", "0") != "0";
+    return isClosePixelMapFd;
+}
+
 DirtyRegionDebugType RSSystemProperties::GetDirtyRegionDebugType()
 {
     static CachedHandle g_Handle = CachedParameterCreate("rosen.dirtyregiondebug.enabled", "0");
@@ -626,6 +632,14 @@ void RSSystemProperties::SetForceHpsBlurDisabled(bool flag)
     forceHpsBlurDisabled_ = flag;
 }
 
+float RSSystemProperties::GetHpsBlurNoiseFactor()
+{
+    static bool deviceHpsType = RSSystemProperties::IsPcType();
+    static float noiseFactor = deviceHpsType ?
+        std::atof((system::GetParameter("persist.sys.graphic.HpsBlurNoiseFactor", "1.75")).c_str()) : 0.f;
+    return noiseFactor;
+}
+
 bool RSSystemProperties::GetHpsBlurEnabled()
 {
     static bool hpsBlurEnabled =
@@ -721,6 +735,14 @@ bool RSSystemProperties::GetCacheOptimizeRotateEnable()
 {
     static bool debugEnable = system::GetBoolParameter("const.cache.optimize.rotate.enable", false);
     return debugEnable;
+}
+
+CrossNodeOffScreenRenderDebugType RSSystemProperties::GetCrossNodeOffscreenDebugEnabled()
+{
+    static CachedHandle g_Handle = CachedParameterCreate("rosen.crossnode.offscreen.render.enabled", "1");
+    int chanded = 0;
+    const char *type = CachedParameterGetChanged(g_Handle, &chanded);
+    return static_cast<CrossNodeOffScreenRenderDebugType>(ConvertToInt(type, 1));
 }
 
 bool RSSystemProperties::GetUIFirstEnabled()

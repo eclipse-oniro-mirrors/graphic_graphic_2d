@@ -161,10 +161,11 @@ public:
     // firstLevelNodeId: surfacenode for uiFirst to assign task; cacheNodeId: drawing cache rootnode attached to
     virtual void SetIsOnTheTree(bool flag, NodeId instanceRootNodeId = INVALID_NODEID,
         NodeId firstLevelNodeId = INVALID_NODEID, NodeId cacheNodeId = INVALID_NODEID,
-        NodeId uifirstRootNodeId = INVALID_NODEID);
+        NodeId uifirstRootNodeId = INVALID_NODEID, NodeId displayNodeId = INVALID_NODEID);
     void SetIsOntheTreeOnlyFlag(bool flag)
     {
-        SetIsOnTheTree(flag, instanceRootNodeId_, firstLevelNodeId_, drawingCacheRootId_, uifirstRootNodeId_);
+        SetIsOnTheTree(flag, instanceRootNodeId_, firstLevelNodeId_, drawingCacheRootId_,
+            uifirstRootNodeId_, displayNodeId_);
     }
     inline bool IsOnTheTree() const
     {
@@ -770,23 +771,31 @@ public:
 
     virtual RSSurfaceNodeAbilityState GetAbilityState() const { return RSSurfaceNodeAbilityState::FOREGROUND; }
 
-    int32_t GetCurDisplayOffsetX() const
+    int32_t GetPreparedDisplayOffsetX() const
     {
-        return curDisplayOffsetX_;
+        return preparedDisplayOffsetX_;
     }
-    void SetCurDisplayOffsetX(int32_t offsetX)
+    void SetPreparedDisplayOffsetX(int32_t offsetX)
     {
-        curDisplayOffsetX_ = offsetX;
+        preparedDisplayOffsetX_ = offsetX;
     }
-    int32_t GetCurDisplayOffsetY() const
+    int32_t GetPreparedDisplayOffsetY() const
     {
-        return curDisplayOffsetY_;
+        return preparedDisplayOffsetY_;
     }
-    void SetCurDisplayOffsetY(int32_t offsetY)
+    void SetPreparedDisplayOffsetY(int32_t offsetY)
     {
-        curDisplayOffsetY_ = offsetY;
+        preparedDisplayOffsetY_ = offsetY;
     }
-
+    bool IsFirstLevelCrossNode() const
+    {
+        return isFirstLevelCrossNode_;
+    }
+    void SetFirstLevelCrossNode(bool isFirstLevelCrossNode)
+    {
+        isFirstLevelCrossNode_ = isFirstLevelCrossNode;
+    }
+    void SetHdrNum(bool flag, NodeId instanceRootNodeId);
 
     void SetIsAccessibilityConfigChanged(bool isAccessibilityConfigChanged)
     {
@@ -796,6 +805,11 @@ public:
     bool IsAccessibilityConfigChanged() const
     {
         return isAccessibilityConfigChanged_;
+    }
+
+    NodeId GetDisplayNodeId() const
+    {
+        return displayNodeId_;
     }
 
     void ProcessBehindWindowOnTreeStateChanged();
@@ -835,6 +849,7 @@ protected:
     virtual void OnSync();
     virtual void ClearResource() {};
     virtual void ClearNeverOnTree() {};
+    virtual void CheckCanvasDrawingPostPlaybacked() {};
 
     void UpdateDrawableVecV2();
 
@@ -896,8 +911,9 @@ private:
     // shadowRectOffset means offset between shadowRect and absRect of node
     int shadowRectOffsetX_ = 0;
     int shadowRectOffsetY_ = 0;
-    int32_t curDisplayOffsetX_ = 0;
-    int32_t curDisplayOffsetY_ = 0;
+    int32_t preparedDisplayOffsetX_ = 0;
+    int32_t preparedDisplayOffsetY_ = 0;
+    bool isFirstLevelCrossNode_ = false;
     bool isChildrenSorted_ = true;
     bool childrenHasSharedTransition_ = false;
     uint8_t nodeGroupType_ = NodeGroupType::NONE;
@@ -1064,6 +1080,7 @@ private:
     bool childrenHasUIExtension_ = false;
     bool isAccessibilityConfigChanged_ = false;
     const bool isPurgeable_;
+    NodeId displayNodeId_ = INVALID_NODEID;
     // for blur effct count
     static std::unordered_map<pid_t, size_t> blurEffectCounter_;
     void UpdateBlurEffectCounter(int deltaCount);

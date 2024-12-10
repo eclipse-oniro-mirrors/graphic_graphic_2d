@@ -76,7 +76,7 @@ public:
 
     void SetIsOnTheTree(bool onTree, NodeId instanceRootNodeId = INVALID_NODEID,
         NodeId firstLevelNodeId = INVALID_NODEID, NodeId cacheNodeId = INVALID_NODEID,
-        NodeId uifirstRootNodeId = INVALID_NODEID) override;
+        NodeId uifirstRootNodeId = INVALID_NODEID, NodeId displayNodeId = INVALID_NODEID) override;
     bool IsAppWindow() const
     {
         return nodeType_ == RSSurfaceNodeType::APP_WINDOW_NODE;
@@ -140,12 +140,16 @@ public:
     // indicate if this node type can enable hardware composer
     bool IsHardwareEnabledType() const
     {
-        if (IsRosenWeb() && !(RSSystemProperties::IsPhoneType() || RSSystemProperties::IsTabletType())) {
+        if (IsRosenWeb() && !(RSSystemProperties::IsPhoneType() || RSSystemProperties::IsTabletType() ||
+            RSSystemProperties::IsPcType())) {
             return false;
         }
         return (nodeType_ == RSSurfaceNodeType::SELF_DRAWING_NODE && isHardwareEnabledNode_) ||
             IsLayerTop();
     }
+
+    void GetHwcChildrenState(bool& enabledType);
+    void SetPreSubHighPriorityType();
 
     bool IsDynamicHardwareEnable() const
     {
@@ -535,6 +539,9 @@ public:
 
     void SetHDRPresent(bool hasHdrPresent);
     bool GetHDRPresent() const;
+
+    void IncreaseHDRNum();
+    void ReduceHDRNum();
 
     const std::shared_ptr<RSDirtyRegionManager>& GetDirtyManager() const;
     std::shared_ptr<RSDirtyRegionManager> GetCacheSurfaceDirtyManager() const;
@@ -1097,9 +1104,9 @@ public:
     }
     bool GetNodeIsSingleFrameComposer() const override;
 
-    void SetAncestorDisplayNode(const RSBaseRenderNode::WeakPtr& ancestorDisplayNode)
+    void SetAncestorDisplayNode(const ScreenId screenId, const RSBaseRenderNode::WeakPtr& ancestorDisplayNode)
     {
-        ancestorDisplayNode_ = ancestorDisplayNode;
+        ancestorDisplayNodeMap_[screenId] = ancestorDisplayNode;
     }
 
     void SetUifirstNodeEnableParam(MultiThreadCacheType b);
@@ -1118,9 +1125,9 @@ public:
         return uifirstStartTime_;
     }
 
-    RSBaseRenderNode::WeakPtr GetAncestorDisplayNode() const
+    const std::unordered_map<ScreenId, RSBaseRenderNode::WeakPtr>& GetAncestorDisplayNode() const
     {
-        return ancestorDisplayNode_;
+        return ancestorDisplayNodeMap_;
     }
     bool QuerySubAssignable(bool isRotation);
     bool QueryIfAllHwcChildrenForceDisabledByFilter();
@@ -1281,12 +1288,38 @@ public:
     }
 
     bool NeedUpdateDrawableBehindWindow();
+    void SetOldNeedDrawBehindWindow(bool val);
     bool NeedDrawBehindWindow() const override;
     void AddChildBlurBehindWindow(NodeId id) override;
     void RemoveChildBlurBehindWindow(NodeId id) override;
     bool RecordPresentTime(uint64_t timestamp, uint32_t seqNum);
     void Dump(std::string& result);
     void ClearDump(std::string& result);
+    void SetUifirstStartingFlag(bool flag);
+    void UpdateCrossNodeSkippedDisplayOffset(NodeId displayId, int32_t offsetX, int32_t offsetY)
+    {
+        crossNodeSkippedDisplayOffsets_[displayId] = { offsetX, offsetY };
+    }
+    void ClearCrossNodeSkippedDisplayOffset()
+    {
+        crossNodeSkippedDisplayOffsets_.clear();
+    }
+    bool GetHdrVideo() const
+    {
+        return hasHdrVideoSurface_;
+    }
+
+    void SetHdrVideo(bool hasHdrVideoSurface)
+    {
+        hasHdrVideoSurface_ = hasHdrVideoSurface;
+    }
+
+    void SetApiCompatibleVersion(uint32_t apiCompatibleVersion);
+    uint32_t GetApiCompatibleVersion()
+    {
+        return apiCompatibleVersion_;
+    }
+
 protected:
     void OnSync() override;
 
@@ -1322,6 +1355,7 @@ private:
     std::mutex mutexUI_;
     std::mutex mutexClear_;
     std::mutex mutex_;
+    std::mutex mutexHDR_;
     Drawing::GPUContext* grContext_ = nullptr;
     std::mutex parallelVisitMutex_;
 
@@ -1344,7 +1378,10 @@ private:
     bool isGlobalPositionEnabled_ = false;
 
     bool hasFingerprint_ = false;
-    bool hasHdrPresent_ = false;
+    // Count the number of hdr pictures. If hdrNum_ > 0, it means there are hdr pictures
+    int hdrNum_ = 0;
+    // hdr video
+    bool hasHdrVideoSurface_ = false;
     RectI srcRect_;
     Drawing::Matrix totalMatrix_;
     std::vector<RectI> intersectedRoundCornerAABBs_;
@@ -1547,7 +1584,7 @@ private:
     bool isTargetUIFirstDfxEnabled_ = false;
 
     TreeStateChangeCallback treeStateChangeCallback_;
-    RSBaseRenderNode::WeakPtr ancestorDisplayNode_;
+    std::unordered_map<ScreenId, RSBaseRenderNode::WeakPtr> ancestorDisplayNodeMap_;
     bool hasSharedTransitionNode_ = false;
     size_t lastFrameChildrenCnt_ = 0;
     bool lastFrameShouldPaint_ = true;
@@ -1587,8 +1624,11 @@ private:
     bool arsrTag_ = true;
 
     bool subThreadAssignable_ = false;
-    bool oldHasChildrenBlurBehindWindow_ = false;
+    bool oldNeedDrawBehindWindow_ = false;
     std::unordered_set<NodeId> childrenBlurBehindWindow_ = {};
+    std::unordered_map<NodeId, Vector2<int32_t>> crossNodeSkippedDisplayOffsets_ = {};
+
+    uint32_t apiCompatibleVersion_ = 0;
 
     // Record the drawing timestamp, which is used to collect statistics on the transmission and display frame rate.
     static constexpr int FRAME_RECORDS_NUM = 288;
