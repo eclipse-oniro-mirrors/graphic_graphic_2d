@@ -763,7 +763,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 ret = ERR_INVALID_DATA;
                 break;
             }
-            uint32_t min{0}
+            uint32_t min{0};
             uint32_t max{0};
             uint32_t preferred{0};
             uint32_t type{0};
@@ -1816,7 +1816,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 }
                 packageList.push_back(package);
             }
-            if (errFalg) {
+            if (errFlag) {
                 ret = ERR_INVALID_DATA;
                 break;
             }
@@ -1860,11 +1860,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             break;
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REGISTER_HGM_CFG_CALLBACK) : {
-            sptr<IRemoteObject> remoteObject = nullptr;
-            if (!data.ReadRemoteObject(remoteObject)) {
-                ret = ERR_INVALID_DATA;
-                break;
-            }
+            auto remoteObject = data.ReadRemoteObject();
             if (remoteObject == nullptr) {
                 ret = ERR_NULL_OBJECT;
                 break;
@@ -1881,11 +1877,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             break;
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REFRESH_RATE_MODE_CHANGE_CALLBACK) : {
-            sptr<IRemoteObject> remoteObject = nullptr;
-            if (!data.ReadRemoteObject(remoteObject)) {
-                ret = ERR_INVALID_DATA;
-                break;
-            }
+            auto remoteObject = data.ReadRemoteObject();
             if (remoteObject == nullptr) {
                 ret = ERR_NULL_OBJECT;
                 break;
@@ -1910,9 +1902,8 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 ret = ERR_INVALID_DATA;
                 break;
             }
-            if (readRemoteObject && !data.ReadRemoteObject(remoteObject)) {
-                ret = ERR_INVALID_DATA;
-                break;
+            if (readRemoteObject) {
+                remoteObject = data.ReadRemoteObject();
             }
             if (remoteObject != nullptr) {
                 callback = iface_cast<RSIHgmConfigChangeCallback>(remoteObject);
@@ -1933,9 +1924,8 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 ret = ERR_INVALID_DATA;
                 break;
             }
-            if (readRemoteObject && !data.ReadRemoteObject(remoteObject)) {
-                ret = ERR_INVALID_DATA;
-                break;
+            if (readRemoteObject) {
+                remoteObject = data.ReadRemoteObject();
             }
             if (remoteObject != nullptr) {
                 callback = iface_cast<RSIFrameRateLinkerExpectedFpsUpdateCallback>(remoteObject);
