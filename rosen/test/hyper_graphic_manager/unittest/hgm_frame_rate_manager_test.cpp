@@ -568,6 +568,7 @@ HWTEST_F(HgmFrameRateMgrTest, HgmOneShotTimerTest, Function | SmallTest | Level2
     timer.Reset();
     timer.Stop();
     sleep(1); // wait for timer stop
+    ASSERT_EQ(timer.stopFlag_.load(), true);
 }
 
 /**
@@ -583,6 +584,7 @@ HWTEST_F(HgmFrameRateMgrTest, HgmSimpleTimerTest, Function | SmallTest | Level2)
     timer.Reset();
     timer.Stop();
     sleep(1); // wait for timer stop
+    ASSERT_EQ(timer.running_.load(), false);
 }
 
 /**
