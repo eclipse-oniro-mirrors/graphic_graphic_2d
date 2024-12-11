@@ -193,7 +193,10 @@ public:
     RSB_EXPORT static uint32_t GetFrameNumber();
     RSB_EXPORT static bool ShouldBlockHWCNode();
 
+    RSB_EXPORT static void AnimeGetStartTimesFromFile(
+        std::unordered_map<AnimationId, std::vector<int64_t>>& animeMap);
     RSB_EXPORT static std::unordered_map<AnimationId, std::vector<int64_t>> &AnimeGetStartTimes();
+    RSB_EXPORT static std::vector<std::pair<uint64_t, int64_t>> AnimeGetStartTimesFlattened(double recordStartTime);
     RSB_EXPORT static int64_t AnimeSetStartTime(AnimationId id, int64_t nanoTime);
     RSB_EXPORT static std::string SendMessageBase();
     RSB_EXPORT static void SendMessageBase(const std::string& msg);
@@ -320,7 +323,7 @@ private:
 
     RSB_EXPORT static uint32_t PerfTreeFlatten(
         std::shared_ptr<RSRenderNode> node, std::vector<std::pair<NodeId, uint32_t>>& nodeSet,
-        std::unordered_map<NodeId, uint32_t>& mapNode2Count, int depth);
+        std::unordered_map<NodeId, uint32_t>& mapNode2Count, uint32_t depth);
     RSB_EXPORT static uint32_t CalcNodeCmdListCount(RSRenderNode& node);
     RSB_EXPORT static void CalcPerfNodePrepare(NodeId nodeId, uint32_t timeCount, bool excludeDown);
     RSB_EXPORT static void CalcPerfNodePrepareLo(const std::shared_ptr<RSRenderNode>& node, bool forceExcludeNode);

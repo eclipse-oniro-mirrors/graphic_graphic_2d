@@ -1620,7 +1620,10 @@ void RSProfiler::CalcPerfNodeAllStep()
 
         for (auto it : g_nodeListPerf) {
             const auto node = GetRenderNode(it.first);
-            const auto parent = node ? node->GetParent().lock() : nullptr;
+            if (!node) {
+                continue;
+            }
+            const auto parent = node->GetParent().lock();
             if (!parent || !g_mapNode2UpTime.count(node->id_) || !g_mapNode2UpDownTime.count(node->id_)) {
                 Respond("CALC_RESULT [" + std::to_string(node->id_) + "] error");
                 Network::SendRSTreeSingleNodePerf(node->id_, 0);
@@ -1753,16 +1756,8 @@ void RSProfiler::RecordStop(const ArgList& args)
         stream.write(reinterpret_cast<const char*>(&g_recordFile.GetHeaderFirstFrame()[0]), sizeFirstFrame);
 
         // ANIME START TIMES
-        std::vector<std::pair<uint64_t, int64_t>> headerAnimeStartTimes;
-        std::unordered_map<AnimationId, std::vector<int64_t>> &headerAnimeStartTimesMap = AnimeGetStartTimes();
-        for (const auto& item : headerAnimeStartTimesMap) {
-            for (const auto time : item.second) {
-                headerAnimeStartTimes.push_back({
-                    Utils::PatchNodeId(item.first),
-                    time - Utils::ToNanoseconds(g_recordStartTime)
-                });
-            }
-        }
+        std::vector<std::pair<uint64_t, int64_t>> headerAnimeStartTimes =
+            AnimeGetStartTimesFlattened(g_recordStartTime);
 
         uint32_t startTimesSize = headerAnimeStartTimes.size();
         stream.write(reinterpret_cast<const char*>(&startTimesSize), sizeof(startTimesSize));
@@ -1824,17 +1819,7 @@ void RSProfiler::PlaybackPrepareFirstFrame(const ArgList& args)
         g_playbackPauseTime = g_playbackFile.ConvertVsyncId2Time(args.Int64(1));
     }
 
-    const auto& fileAnimeStartTimes = g_playbackFile.GetAnimeStartTimes();
-    for (const auto& item : fileAnimeStartTimes) {
-        if (animeMap.count(item.first)) {
-            animeMap[Utils::PatchNodeId(item.first)].push_back(item.second);
-        } else {
-            std::vector<int64_t> list;
-            list.push_back(item.second);
-            animeMap.insert({ Utils::PatchNodeId(item.first), list });
-        }
-    }
-
+    AnimeGetStartTimesFromFile(animeMap);
     std::string dataFirstFrame = g_playbackFile.GetHeaderFirstFrame();
 
     // get first frame data
@@ -1850,6 +1835,20 @@ void RSProfiler::PlaybackPrepareFirstFrame(const ArgList& args)
     g_playbackWaitFrames = defaultWaitFrames;
     SendMessage("awake_frame %d", g_playbackWaitFrames); // DO NOT TOUCH!
     AwakeRenderServiceThread();
+}
+
+void RSProfiler::AnimeGetStartTimesFromFile(std::unordered_map<AnimationId, std::vector<int64_t>>& animeMap)
+{
+    const auto& fileAnimeStartTimes = g_playbackFile.GetAnimeStartTimes();
+    for (const auto& item : fileAnimeStartTimes) {
+        if (animeMap.count(item.first)) {
+            animeMap[Utils::PatchNodeId(item.first)].push_back(item.second);
+        } else {
+            std::vector<int64_t> list;
+            list.push_back(item.second);
+            animeMap.insert({ Utils::PatchNodeId(item.first), list });
+        }
+    }
 }
 
 void RSProfiler::RecordSendBinary(const ArgList& args)
@@ -2130,10 +2129,13 @@ void RSProfiler::BlinkNodeUpdate()
         }
     } else {
         // remove node
-        const auto parentNode = g_blinkSavedParentChildren[0];
         auto blinkNode = GetRenderNode(g_blinkNodeId);
-        parentNode->RemoveChild(blinkNode);
-        blinkNode->ResetParent();
+        if (const auto parentNode = g_blinkSavedParentChildren[0]) {
+            parentNode->RemoveChild(blinkNode);
+        }
+        if (blinkNode) {
+            blinkNode->ResetParent();
+        }
     }
 
     g_blinkNodeCount++;
@@ -2172,4 +2174,18 @@ void RSProfiler::CalcPerfNodeUpdate()
     AwakeRenderServiceThread();
 }
 
+std::vector<std::pair<uint64_t, int64_t>> RSProfiler::AnimeGetStartTimesFlattened(double recordStartTime)
+{
+    std::vector<std::pair<uint64_t, int64_t>> headerAnimeStartTimes;
+    std::unordered_map<AnimationId, std::vector<int64_t>> &headerAnimeStartTimesMap = AnimeGetStartTimes();
+    for (const auto& item : headerAnimeStartTimesMap) {
+        for (const auto time : item.second) {
+            headerAnimeStartTimes.push_back({
+                Utils::PatchNodeId(item.first),
+                time - Utils::ToNanoseconds(recordStartTime)
+            });
+        }
+    }
+    return headerAnimeStartTimes;
+}
 } // namespace OHOS::Rosen
