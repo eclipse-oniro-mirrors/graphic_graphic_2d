@@ -326,6 +326,17 @@ int32_t XMLParser::ParseScreenConfig(xmlNode &node)
         if (currNode->type != XML_ELEMENT_NODE) {
             continue;
         }
+        auto name = ExtractPropertyValue("name", *currNode);
+        if (name == "supported_mode") {
+            PolicyConfigData::LowBrightConfigMap lowBrightList;
+            int32_t setResult = EXEC_SUCCESS;
+            setResult = ParseLowBrightList(*currNode, lowBrightList);
+            if (setResult != EXEC_SUCCESS) {
+                HGM_LOGI("XMLParser failed to ParseLowBrightList");
+            }
+            mParsedData_->supportedModeConfigs_[type] = lowBrightList;
+            continue;
+        }
         PolicyConfigData::ScreenSetting screenSetting;
         auto id = ExtractPropertyValue("id", *currNode);
         screenSetting.strategy = ExtractPropertyValue("strategy", *currNode);
@@ -369,8 +380,6 @@ int32_t XMLParser::ParseSubScreenConfig(xmlNode &node, PolicyConfigData::ScreenS
         setResult = ParseSimplex(*thresholdNode, screenSetting.uiPowerConfig);
     } else if (name == "component_power_config") {
         setResult = ParsePowerStrategy(*thresholdNode, screenSetting.componentPowerConfig);
-    } else if (name == "supported_mode") {
-        setResult = ParseLowBrightList(*thresholdNode, screenSetting.lowBrightList);
     } else {
         setResult = EXEC_SUCCESS;
     }

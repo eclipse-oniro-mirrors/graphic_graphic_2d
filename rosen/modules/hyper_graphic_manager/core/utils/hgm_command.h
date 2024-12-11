@@ -124,6 +124,8 @@ public:
     };
     // <"LTPO", LowBrightConfig>
     using LowBrightConfigMap = std::unordered_map<std::string, LowBrightConfig>;
+    // <"LTPO-DEAULT", LowBrightConfigMap>
+    using SupportedModeMap = std::unordered_map<std::string, LowBrightConfigMap>;
 
     struct DynamicConfig {
         int32_t min;
@@ -146,7 +148,6 @@ public:
         // <appType, strategyName>
         std::unordered_map<int32_t, std::string> appTypes;
         SceneConfigMap sceneList;
-        LowBrightConfigMap lowBrightList;
         // <SCENE_APP_START_ANIMATION, placeholder>
         std::unordered_map<std::string, std::string> gameSceneList;
         DynamicSettingMap animationDynamicSettings;
@@ -180,6 +181,7 @@ public:
     std::unordered_map<std::string, std::string> solidLayerConfig_;
     StrategyConfigMap strategyConfigs_;
     ScreenConfigMap screenConfigs_;
+    SupportedModeMap supportedModeConfigs_;
     bool videoFrameRateVoteSwitch_ = false;
     // <"pkgName", "1">
     std::unordered_map<std::string, std::string> videoFrameRateList_;

@@ -592,18 +592,20 @@ void HgmFrameRateManager::HandleFrameRateChangeForLTPO(uint64_t timestamp, bool 
 void HgmFrameRateManager::GetLowBrightVec(const std::shared_ptr<PolicyConfigData>& configData)
 {
     if (configData != nullptr && isLtpo_) {
-        // obtain the refresh rate supported in low ambient light
-        const std::string settingMode = std::to_string(curRefreshRateMode_);
-        auto lowBrightMap = configData->screenConfigs_[curScreenStrategyId_][settingMode].lowBrightList;
-        if (auto iter = lowBrightMap.find("LTPO"); iter != lowBrightMap.end() &&
-            !iter->second.optionalRefreshRateVec.empty()) {
-            isAmbientEffect_ = true;
-            lowBrightVec_ = iter->second.optionalRefreshRateVec;
-        } else {
-            isAmbientEffect_ = false;
-        }
-        multiAppStrategy_.HandleLowAmbientStatus(isAmbientEffect_);
+        return;
     }
+
+    // obtain the refresh rate supported in low ambient light
+    const std::string settingMode = std::to_string(curRefreshRateMode_);
+    auto lowBrightMap = configData->screenConfigs_[curScreenStrategyId_][settingMode].lowBrightList;
+    if (auto iter = lowBrightMap.find("LTPO"); iter != lowBrightMap.end() &&
+        !iter->second.optionalRefreshRateVec.empty()) {
+        isAmbientEffect_ = true;
+        lowBrightVec_ = iter->second.optionalRefreshRateVec;
+    } else {
+        isAmbientEffect_ = false;
+    }
+    multiAppStrategy_.HandleLowAmbientStatus(isAmbientEffect_);
 }
 
 uint32_t HgmFrameRateManager::CalcRefreshRate(const ScreenId id, const FrameRateRange& range) const
@@ -776,8 +778,6 @@ void HgmFrameRateManager::HandleLightFactorStatus(pid_t pid, bool isSafe)
     if (pid != DEFAULT_PID) {
         cleanPidCallback_[pid].insert(CleanPidCallbackType::LIGHT_FACTOR);
     }
-    auto isEffect = isAmbientEffect_;
-    multiAppStrategy_.HandleLowAmbientStatus(isEffect);
     multiAppStrategy_.HandleLightFactorStatus(isSafe);
     isAmbientSafe_ = isSafe;
 }
