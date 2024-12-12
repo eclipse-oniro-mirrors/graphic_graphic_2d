@@ -85,7 +85,7 @@ int GetRadiusFuzzTest(const uint8_t *data, size_t size)
         return 0;
     }
     FuzzedDataProvider fdp(data, size);
-    int radius = Gfdp.ConsumeIntegral<int32_t>;
+    int radius = fdp.ConsumeIntegral<int32_t>;
     Drawing::GEMESABlurShaderFilterParams params{radius, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0, 0.f, 0.f};
     auto shaderFilter = std::make_shared<GEMESABlurShaderFilter>(params);
     return shaderFilter->GetRadius();
