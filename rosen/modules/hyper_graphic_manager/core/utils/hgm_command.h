@@ -119,11 +119,8 @@ public:
     // <"SCENE_APP_START_ANIMATION", SceneConfig>
     using SceneConfigMap = std::unordered_map<std::string, SceneConfig>;
 
-    struct LowBrightConfig {
-        std::vector<uint32_t> optionalRefreshRateVec;
-    };
-    // <"LTPO", LowBrightConfig>
-    using LowBrightConfigMap = std::unordered_map<std::string, LowBrightConfig>;
+    // <"LTPO", <30, 60, 120>>
+    using LowBrightConfigMap = std::unordered_map<std::string, std::vector<uint_32>>;
     // <"LTPO-DEAULT", LowBrightConfigMap>
     using SupportedModeMap = std::unordered_map<std::string, LowBrightConfigMap>;
 

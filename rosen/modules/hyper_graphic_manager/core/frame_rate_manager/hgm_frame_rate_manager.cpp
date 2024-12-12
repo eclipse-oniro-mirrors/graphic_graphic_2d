@@ -51,6 +51,7 @@ namespace {
     constexpr uint32_t VOTER_SCENE_PRIORITY_BEFORE_PACKAGES = 1;
     constexpr int32_t RS_IDLE_TIMEOUT_MS = 600; // ms
     const static std::string UP_TIME_OUT_TASK_ID = "UP_TIME_OUT_TASK_ID";
+    const static std::string SUPPORTED_MODE_LTPO = "LTPO";
     // CAUTION: with priority
     const std::string VOTER_NAME[] = {
         "VOTER_THERMAL",
@@ -597,10 +598,13 @@ void HgmFrameRateManager::GetLowBrightVec(const std::shared_ptr<PolicyConfigData
 
     // obtain the refresh rate supported in low ambient light
     auto lowBrightMap = configData->supportedModeConfigs_[curScreenStrategyId_];
+    if (lowBrightMap.empty()) {
+        return;
+    }
     if (auto iter = lowBrightMap.find("LTPO"); iter != lowBrightMap.end() &&
-        !iter->second.optionalRefreshRateVec.empty()) {
+        !iter->second.empty()) {
         isAmbientEffect_ = true;
-        lowBrightVec_ = iter->second.optionalRefreshRateVec;
+        lowBrightVec_ = iter->second;
     } else {
         isAmbientEffect_ = false;
     }
