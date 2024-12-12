@@ -39,8 +39,8 @@ ohos_fuzztest("DrawingTextFuzzTest") {
     "-std=c++17",
   ]
   sources = [
+    "drawing_text_fuzzer.cpp",
     "drawing_typography_fuzzer.cpp",
-    "drawing_text_fuzzer.cpp"
   ]
 
   deps = [
