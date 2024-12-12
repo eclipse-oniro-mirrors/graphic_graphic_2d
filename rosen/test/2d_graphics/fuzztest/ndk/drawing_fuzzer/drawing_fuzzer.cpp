@@ -18,8 +18,6 @@
 #include <cstddef>
 #include <cstdint>
 
-#include <cmath>
-
 #include "drawing_bitmap.h"
 #include "drawing_brush.h"
 #include "drawing_canvas.h"
@@ -52,8 +50,8 @@ void NativeDrawingBitmapTest(const uint8_t* data, size_t size)
     g_size = size;
     g_pos = 0;
 
-    uint32_t width = GetObject<uint32_t>() % 500;
-    uint32_t height = GetObject<uint32_t>() % 500;
+    uint32_t width = GetObject<uint32_t>() % DATA_MAX_RANDOM;
+    uint32_t height = GetObject<uint32_t>() % DATA_MAX_RANDOM;
     OH_Drawing_Bitmap* bitmap = OH_Drawing_BitmapCreate();
     OH_Drawing_BitmapFormat bitmapFormat { GetObject<OH_Drawing_ColorFormat>(), GetObject<OH_Drawing_AlphaFormat>() };
     OH_Drawing_BitmapBuild(bitmap, width, height, &bitmapFormat);
@@ -70,10 +68,10 @@ void NativeDrawingBrushTest(const uint8_t* data, size_t size)
     g_size = size;
     g_pos = 0;
 
-    uint32_t red = GetObject<uint32_t>() % 500;
-    uint32_t gree = GetObject<uint32_t>() % 500;
-    uint32_t blue = GetObject<uint32_t>() % 500;
-    uint32_t alpha = GetObject<uint32_t>() % 500;
+    uint32_t red = GetObject<uint32_t>() % DATA_MAX_RANDOM;
+    uint32_t gree = GetObject<uint32_t>() % DATA_MAX_RANDOM;
+    uint32_t blue = GetObject<uint32_t>() % DATA_MAX_RANDOM;
+    uint32_t alpha = GetObject<uint32_t>() % DATA_MAX_RANDOM;
     OH_Drawing_Brush* brush = OH_Drawing_BrushCreate();
     OH_Drawing_BrushSetAntiAlias(brush, false);
     OH_Drawing_BrushIsAntiAlias(brush);
@@ -145,10 +143,10 @@ void NativeDrawingCanvasDrawLineTest(const uint8_t* data, size_t size)
     g_size = size;
     g_pos = 0;
 
-    float x1 = GetObject<uint32_t>() % 500;
-    float y1 = GetObject<uint32_t>() % 500;
-    float x2 = GetObject<uint32_t>() % 500;
-    float y2 = GetObject<uint32_t>() % 500;
+    uint32_t x1 = GetObject<uint32_t>() % DATA_MAX_RANDOM;
+    uint32_t y1 = GetObject<uint32_t>() % DATA_MAX_RANDOM;
+    uint32_t x2 = GetObject<uint32_t>() % DATA_MAX_RANDOM;
+    uint32_t y2 = GetObject<uint32_t>() % DATA_MAX_RANDOM;
     OH_Drawing_Canvas* canvas = OH_Drawing_CanvasCreate();
     OH_Drawing_CanvasDrawLine(canvas, x1, y1, x2, y2);
     OH_Drawing_CanvasDestroy(canvas);
@@ -183,7 +181,7 @@ void NativeDrawingCanvasClearTest(const uint8_t* data, size_t size)
     g_size = size;
     g_pos = 0;
 
-    uint32_t color = GetObject<uint32_t>() % 500;
+    uint32_t color = GetObject<uint32_t>() % DATA_MAX_RANDOM;
     OH_Drawing_Canvas* canvas = OH_Drawing_CanvasCreate();
     OH_Drawing_CanvasClear(canvas, color);
     OH_Drawing_CanvasDestroy(canvas);
@@ -199,9 +197,9 @@ void NativeDrawingColorTest(const uint8_t* data, size_t size)
     g_size = size;
     g_pos = 0;
 
-    uint32_t color = GetObject<uint32_t>() % 500;
+    uint32_t color = GetObject<uint32_t>() % DATA_MAX_RANDOM;
     OH_Drawing_Brush* brush = OH_Drawing_BrushCreate();
-    OH_Drawing_BrushSetAntiAlias(brush, GetObject<bool>() % 500);
+    OH_Drawing_BrushSetAntiAlias(brush, GetObject<bool>());
     OH_Drawing_BrushIsAntiAlias(brush);
     OH_Drawing_BrushSetColor(brush, color);
     OH_Drawing_BrushGetColor(brush);
@@ -232,8 +230,8 @@ void NativeDrawingPathMoveToTest(const uint8_t* data, size_t size)
     g_size = size;
     g_pos = 0;
 
-    float x = GetObject<uint32_t>() % 500;
-    float y = GetObject<uint32_t>() % 500;
+    uint32_t x = GetObject<uint32_t>() % DATA_MAX_RANDOM;
+    uint32_t y = GetObject<uint32_t>() % DATA_MAX_RANDOM;
     OH_Drawing_Path* path = OH_Drawing_PathCreate();
     OH_Drawing_PathMoveTo(path, x, y);
     OH_Drawing_PathDestroy(path);
@@ -249,8 +247,8 @@ void NativeDrawingPathLineToTest(const uint8_t* data, size_t size)
     g_size = size;
     g_pos = 0;
 
-    float x = GetObject<uint32_t>() % 500;
-    float y = GetObject<uint32_t>() % 500;
+    uint32_t x = GetObject<uint32_t>() % DATA_MAX_RANDOM;
+    uint32_t y = GetObject<uint32_t>() % DATA_MAX_RANDOM;
     OH_Drawing_Path* path = OH_Drawing_PathCreate();
     OH_Drawing_PathLineTo(path, x, y);
     OH_Drawing_PathDestroy(path);
@@ -266,8 +264,8 @@ void NativeDrawingPathResetTest(const uint8_t* data, size_t size)
     g_size = size;
     g_pos = 0;
 
-    float x = GetObject<uint32_t>() % 500;
-    float y = GetObject<uint32_t>() % 500;
+    uint32_t x = GetObject<uint32_t>() % DATA_MAX_RANDOM;
+    uint32_t y = GetObject<uint32_t>() % DATA_MAX_RANDOM;
     OH_Drawing_Path* path = OH_Drawing_PathCreate();
     OH_Drawing_PathMoveTo(path, x, y);
     OH_Drawing_PathReset(path);
@@ -284,12 +282,12 @@ void NativeDrawingPathArcToTest(const uint8_t* data, size_t size)
     g_size = size;
     g_pos = 0;
 
-    float x1 = GetObject<uint32_t>() % 500;
-    float y1 = GetObject<uint32_t>() % 500;
-    float x2 = GetObject<uint32_t>() % 500;
-    float y2 = GetObject<uint32_t>() % 500;
-    float startDeg = GetObject<uint32_t>() % 500;
-    float sweepDeg = GetObject<uint32_t>() % 500;
+    uint32_t x1 = GetObject<uint32_t>() % DATA_MAX_RANDOM;
+    uint32_t y1 = GetObject<uint32_t>() % DATA_MAX_RANDOM;
+    uint32_t x2 = GetObject<uint32_t>() % DATA_MAX_RANDOM;
+    uint32_t y2 = GetObject<uint32_t>() % DATA_MAX_RANDOM;
+    uint32_t startDeg = GetObject<uint32_t>() % DATA_MAX_RANDOM;
+    uint32_t sweepDeg = GetObject<uint32_t>() % DATA_MAX_RANDOM;
     OH_Drawing_Path* path = OH_Drawing_PathCreate();
     OH_Drawing_PathArcTo(path, x1, y1, x2, y2, startDeg, sweepDeg);
     OH_Drawing_PathDestroy(path);
@@ -305,10 +303,10 @@ void NativeDrawingPathQuadToTest(const uint8_t* data, size_t size)
     g_size = size;
     g_pos = 0;
 
-    float ctrlX = GetObject<uint32_t>() % 500;
-    float ctrlY = GetObject<uint32_t>() % 500;
-    float endX = GetObject<uint32_t>() % 500;
-    float endY = GetObject<uint32_t>() % 500;
+    uint32_t ctrlX = GetObject<uint32_t>() % DATA_MAX_RANDOM;
+    uint32_t ctrlY = GetObject<uint32_t>() % DATA_MAX_RANDOM;
+    uint32_t endX = GetObject<uint32_t>() % DATA_MAX_RANDOM;
+    uint32_t endY = GetObject<uint32_t>() % DATA_MAX_RANDOM;
     OH_Drawing_Path* path = OH_Drawing_PathCreate();
     OH_Drawing_PathQuadTo(path, ctrlX, ctrlY, endX, endY);
     OH_Drawing_PathDestroy(path);
@@ -324,12 +322,12 @@ void NativeDrawingPathCubicToTest(const uint8_t* data, size_t size)
     g_size = size;
     g_pos = 0;
 
-    float ctrlX1 = GetObject<uint32_t>() % 500;
-    float ctrlY1 = GetObject<uint32_t>() % 500;
-    float ctrlX2 = GetObject<uint32_t>() % 500;
-    float ctrlY2 = GetObject<uint32_t>() % 500;
-    float endX = GetObject<uint32_t>() % 500;
-    float endY = GetObject<uint32_t>() % 500;
+    uint32_t ctrlX1 = GetObject<uint32_t>() % DATA_MAX_RANDOM;
+    uint32_t ctrlY1 = GetObject<uint32_t>() % DATA_MAX_RANDOM;
+    uint32_t ctrlX2 = GetObject<uint32_t>() % DATA_MAX_RANDOM;
+    uint32_t ctrlY2 = GetObject<uint32_t>() % DATA_MAX_RANDOM;
+    uint32_t endX = GetObject<uint32_t>() % DATA_MAX_RANDOM;
+    uint32_t endY = GetObject<uint32_t>() % DATA_MAX_RANDOM;
     OH_Drawing_Path* path = OH_Drawing_PathCreate();
     OH_Drawing_PathCubicTo(path, ctrlX1, ctrlY1, ctrlX2, ctrlY2, endX, endY);
     OH_Drawing_PathDestroy(path);
@@ -345,8 +343,8 @@ void NativeDrawingPathCloseTest(const uint8_t* data, size_t size)
     g_size = size;
     g_pos = 0;
 
-    float x = GetObject<uint32_t>() % 500;
-    float y = GetObject<uint32_t>() % 500;
+    uint32_t x = GetObject<uint32_t>() % DATA_MAX_RANDOM;
+    uint32_t y = GetObject<uint32_t>() % DATA_MAX_RANDOM;
     OH_Drawing_Path* path = OH_Drawing_PathCreate();
     OH_Drawing_PathLineTo(path, x, y);
     OH_Drawing_PathClose(path);
@@ -369,13 +367,15 @@ void OHDrawingTextLineArray(OH_Drawing_Array* linesArray, const uint8_t* data, s
     OH_Drawing_TextLineGetGlyphRuns(nullptr);
     OH_Drawing_Array* runs = OH_Drawing_TextLineGetGlyphRuns(line);
     OH_Drawing_GetRunByIndex(runs, 0);
-    OH_Drawing_GetRunByIndex(nullptr, GetObject<size_t>() % 500);
+    OH_Drawing_GetRunByIndex(nullptr, GetObject<size_t>() % DATA_MAX_RANDOM);
     OH_Drawing_GetDrawingArraySize(nullptr);
     OH_Drawing_GetDrawingArraySize(runs);
     OH_Drawing_DestroyRuns(runs);
-    OH_Drawing_TextLinePaint(nullptr, nullptr, GetObject<uint32_t>() % 500, GetObject<uint32_t>() % 500);
+    OH_Drawing_TextLinePaint(
+        nullptr, nullptr, GetObject<uint32_t>() % DATA_MAX_RANDOM, GetObject<uint32_t>() % DATA_MAX_RANDOM);
     auto canvas = OH_Drawing_CanvasCreate();
-    OH_Drawing_TextLinePaint(line, canvas, GetObject<uint32_t>() % 500, GetObject<uint32_t>() % 500);
+    OH_Drawing_TextLinePaint(
+        line, canvas, GetObject<uint32_t>() % DATA_MAX_RANDOM, GetObject<uint32_t>() % DATA_MAX_RANDOM);
     OH_Drawing_CanvasDestroy(canvas);
     double ascent = 0.0, descent = 0.0, leading = 0.0;
     OH_Drawing_TextLineGetTypographicBounds(nullptr, &ascent, &descent, &leading);
@@ -387,9 +387,10 @@ void OHDrawingTextLineArray(OH_Drawing_Array* linesArray, const uint8_t* data, s
     const char* ellipsis = "...";
     OH_Drawing_TextLineCreateTruncatedLine(nullptr, DATA_MAX_LAYOUT_WIDTH, 0, ellipsis);
     OH_Drawing_TextLine* truncatedLine =
-         OH_Drawing_TextLineCreateTruncatedLine(line, DATA_MAX_LAYOUT_WIDTH, 0, ellipsis);
+        OH_Drawing_TextLineCreateTruncatedLine(line, DATA_MAX_LAYOUT_WIDTH, 0, ellipsis);
     OH_Drawing_DestroyTextLine(truncatedLine);
-    double pointX = GetObject<uint32_t>() % 500, pointY = GetObject<uint32_t>() % 500;
+    uint32_t pointX = GetObject<uint32_t>() % DATA_MAX_RANDOM;
+    uint32_t pointY = GetObject<uint32_t>() % DATA_MAX_RANDOM;
     OH_Drawing_Point* point = OH_Drawing_PointCreate(pointX, pointY);
     int32_t index = OH_Drawing_TextLineGetStringIndexForPosition(line, point);
     int32_t index1 = OH_Drawing_TextLineGetStringIndexForPosition(nullptr, point);
@@ -398,8 +399,8 @@ void OHDrawingTextLineArray(OH_Drawing_Array* linesArray, const uint8_t* data, s
     OH_Drawing_TextLineGetOffsetForStringIndex(nullptr, index1);
     OH_Drawing_TextLineEnumerateCaretOffsets(line, [](double, int, bool) { return false; });
     OH_Drawing_TextLineEnumerateCaretOffsets(line, nullptr);
-    OH_Drawing_TextLineGetAlignmentOffset(line, GetObject<uint32_t>() % 500, DATA_MAX_LAYOUT_WIDTH);
-    OH_Drawing_TextLineGetAlignmentOffset(nullptr, GetObject<uint32_t>() % 500, DATA_MAX_LAYOUT_WIDTH);
+    OH_Drawing_TextLineGetAlignmentOffset(line, GetObject<uint32_t>() % DATA_MAX_RANDOM, DATA_MAX_LAYOUT_WIDTH);
+    OH_Drawing_TextLineGetAlignmentOffset(nullptr, GetObject<uint32_t>() % DATA_MAX_RANDOM, DATA_MAX_LAYOUT_WIDTH);
     OH_Drawing_DestroyTextLine(line);
 }
 
@@ -412,17 +413,16 @@ void OHDrawTextLineTest(const uint8_t* data, size_t size)
     g_size = size;
     g_pos = 0;
 
-    uint32_t width = GetObject<uint32_t>() % 500;
-    uint32_t red = GetObject<uint32_t>() % 500;
-    uint32_t gree = GetObject<uint32_t>() % 500;
-    uint32_t blue = GetObject<uint32_t>() % 500;
-    uint32_t alpha = GetObject<uint32_t>() % 500;
-    uint32_t fontSize = GetObject<uint32_t>() % 500;
+    uint32_t width = GetObject<uint32_t>() % DATA_MAX_RANDOM;
+    uint32_t red = GetObject<uint32_t>() % DATA_MAX_RANDOM;
+    uint32_t gree = GetObject<uint32_t>() % DATA_MAX_RANDOM;
+    uint32_t blue = GetObject<uint32_t>() % DATA_MAX_RANDOM;
+    uint32_t alpha = GetObject<uint32_t>() % DATA_MAX_RANDOM;
+    uint32_t fontSize = GetObject<uint32_t>() % DATA_MAX_RANDOM;
     OH_Drawing_TypographyStyle* typoStyle = OH_Drawing_CreateTypographyStyle();
     OH_Drawing_TextStyle* txtStyle = OH_Drawing_CreateTextStyle();
     OH_Drawing_FontCollection* fontCollection = OH_Drawing_CreateFontCollection();
-    OH_Drawing_TypographyCreate* handler =
-        OH_Drawing_CreateTypographyHandler(typoStyle, fontCollection);
+    OH_Drawing_TypographyCreate* handler = OH_Drawing_CreateTypographyHandler(typoStyle, fontCollection);
     OH_Drawing_DestroyFontCollection(fontCollection);
     OH_Drawing_SetTextStyleFontWeight(txtStyle, width);
     OH_Drawing_TypographyHandlerPopTextStyle(handler);
@@ -436,7 +436,7 @@ void OHDrawTextLineTest(const uint8_t* data, size_t size)
     std::string text = "Hello World 测试文本";
     OH_Drawing_TypographyHandlerAddText(handler, text.c_str());
     OH_Drawing_Typography* typography = OH_Drawing_CreateTypography(handler);
-    OH_Drawing_TypographyLayout(typography, 500);
+    OH_Drawing_TypographyLayout(typography, DATA_MAX_LAYOUT_WIDTH);
     OH_Drawing_TypographyGetTextLines(nullptr);
     OH_Drawing_Array* linesArray = OH_Drawing_TypographyGetTextLines(typography);
     OHDrawingTextLineArray(linesArray, data, size);
@@ -457,15 +457,14 @@ void OHDrawingLineTypographyTest(const uint8_t* data, size_t size)
     g_size = size;
     g_pos = 0;
 
-    uint32_t red = GetObject<uint32_t>() % 500;
-    uint32_t gree = GetObject<uint32_t>() % 500;
-    uint32_t blue = GetObject<uint32_t>() % 500;
-    uint32_t alpha = GetObject<uint32_t>() % 500;
+    uint32_t red = GetObject<uint32_t>() % DATA_MAX_RANDOM;
+    uint32_t gree = GetObject<uint32_t>() % DATA_MAX_RANDOM;
+    uint32_t blue = GetObject<uint32_t>() % DATA_MAX_RANDOM;
+    uint32_t alpha = GetObject<uint32_t>() % DATA_MAX_RANDOM;
     OH_Drawing_TypographyStyle* typographStyle = OH_Drawing_CreateTypographyStyle();
     OH_Drawing_TextStyle* textStyle = OH_Drawing_CreateTextStyle();
     OH_Drawing_FontCollection* fontCollection = OH_Drawing_CreateFontCollection();
-    OH_Drawing_TypographyCreate* createHandler =
-        OH_Drawing_CreateTypographyHandler(typographStyle, fontCollection);
+    OH_Drawing_TypographyCreate* createHandler = OH_Drawing_CreateTypographyHandler(typographStyle, fontCollection);
     OH_Drawing_DestroyFontCollection(fontCollection);
     OH_Drawing_SetTextStyleColor(textStyle, OH_Drawing_ColorSetArgb(alpha, red, gree, blue));
     OH_Drawing_SetTextStyleFontSize(textStyle, DATA_MAX_ENUM_FONTSIZE);
@@ -485,7 +484,7 @@ void OHDrawingLineTypographyTest(const uint8_t* data, size_t size)
     if (lineTypography == nullptr) {
         return;
     }
-    size_t startIndex = GetObject<size_t>() % 500;
+    size_t startIndex = GetObject<size_t>() % DATA_MAX_RANDOM;
     auto count = OH_Drawing_LineTypographyGetLineBreak(lineTypography, startIndex, DATA_MAX_LAYOUT_WIDTH);
     OH_Drawing_TextLine* line = OH_Drawing_LineTypographyCreateLine(lineTypography, startIndex, count);
     OH_Drawing_DestroyTextLine(line);
@@ -506,12 +505,12 @@ void NativeDrawingPenTest(const uint8_t* data, size_t size)
     g_size = size;
     g_pos = 0;
 
-    uint32_t red = GetObject<uint32_t>() % 500;
-    uint32_t gree = GetObject<uint32_t>() % 500;
-    uint32_t blue = GetObject<uint32_t>() % 500;
-    uint32_t alpha = GetObject<uint32_t>() % 500;
-    float width = GetObject<uint32_t>() % 500;
-    float miter = GetObject<uint32_t>() % 500;
+    uint32_t red = GetObject<uint32_t>() % DATA_MAX_RANDOM;
+    uint32_t gree = GetObject<uint32_t>() % DATA_MAX_RANDOM;
+    uint32_t blue = GetObject<uint32_t>() % DATA_MAX_RANDOM;
+    uint32_t alpha = GetObject<uint32_t>() % DATA_MAX_RANDOM;
+    uint32_t width = GetObject<uint32_t>() % DATA_MAX_RANDOM;
+    uint32_t miter = GetObject<uint32_t>() % DATA_MAX_RANDOM;
     OH_Drawing_Pen* pen = OH_Drawing_PenCreate();
     OH_Drawing_PenSetAntiAlias(pen, true);
     OH_Drawing_PenIsAntiAlias(pen);
@@ -538,10 +537,10 @@ void NativeDrawingShadowLayerTest(const uint8_t* data, size_t size)
     g_size = size;
     g_pos = 0;
 
-    float blurRadius = GetObject<uint32_t>() % 500;
-    float x = GetObject<uint32_t>() % 500;
-    float y = GetObject<uint32_t>() % 500;
-    uint32_t color = GetObject<uint32_t>() % 500;
+    uint32_t blurRadius = GetObject<uint32_t>() % DATA_MAX_RANDOM;
+    uint32_t x = GetObject<uint32_t>() % DATA_MAX_RANDOM;
+    uint32_t y = GetObject<uint32_t>() % DATA_MAX_RANDOM;
+    uint32_t color = GetObject<uint32_t>() % DATA_MAX_RANDOM;
     OH_Drawing_ShadowLayer* shadowLayer = OH_Drawing_ShadowLayerCreate(blurRadius, x, y, color);
     OH_Drawing_Pen* pen = OH_Drawing_PenCreate();
     OH_Drawing_Brush* brush = OH_Drawing_BrushCreate();
@@ -566,8 +565,8 @@ void NativeDrawingTextStyleDecorationTest(const uint8_t* data, size_t size)
     if (txtStyle == nullptr) {
         return;
     }
-    int decorationA = GetObject<uint32_t>() % 500;
-    int decorationB = GetObject<uint32_t>() % 500;
+    uint32_t decorationA = GetObject<uint32_t>() % DATA_MAX_RANDOM;
+    uint32_t decorationB = GetObject<uint32_t>() % DATA_MAX_RANDOM;
     OH_Drawing_AddTextStyleDecoration(txtStyle, decorationA);
     OH_Drawing_AddTextStyleDecoration(txtStyle, decorationB);
     OH_Drawing_RemoveTextStyleDecoration(txtStyle, decorationA);
@@ -585,7 +584,7 @@ void OHDrawingTextTabTest(const uint8_t* data, size_t size)
     g_size = size;
     g_pos = 0;
 
-    float location = GetObject<uint32_t>() % 500;
+    uint32_t location = GetObject<uint32_t>() % DATA_MAX_RANDOM;
     OH_Drawing_TypographyStyle* typoStyle = OH_Drawing_CreateTypographyStyle();
     OH_Drawing_TextTab* tab = OH_Drawing_CreateTextTab(OH_Drawing_TextAlign::TEXT_ALIGN_LEFT, location);
     OH_Drawing_GetTextTabAlignment(tab);

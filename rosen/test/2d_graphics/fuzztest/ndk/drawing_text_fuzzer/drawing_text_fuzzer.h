@@ -31,9 +31,9 @@
 #include "drawing_pen.h"
 #include "drawing_point.h"
 #include "drawing_text_declaration.h"
-#include "drawing_text_typography.h"
 #include "drawing_text_line.h"
 #include "drawing_text_lineTypography.h"
+#include "drawing_text_typography.h"
 #include "drawing_types.h"
 #include "get_object.h"
 
@@ -47,6 +47,7 @@ constexpr inline size_t DATA_MAX_ENUM_SIZE4 = 8;
 constexpr inline size_t DATA_MAX_ENUM_SIZE5 = 11;
 constexpr inline size_t DATA_MAX_ENUM_FONTSIZE = 40;
 constexpr inline size_t DATA_MAX_LAYOUT_WIDTH = 100;
+constexpr inline size_t DATA_MAX_RANDOM = 500;
 
 namespace OHOS::Rosen::Drawing {
 std::unique_ptr<char[]> GetRandomString();

@@ -15,21 +15,20 @@
  */
 
 #include <cstddef>
+#include <iostream>
 #include <memory>
 
 #include "drawing_run_fuzzer.h"
 #include "drawing_text_run.h"
 #include "get_object.h"
-
-#include <iostream>
 namespace OHOS::Rosen::Drawing {
 void OHDrawingRunTest(OH_Drawing_Array* runs, OH_Drawing_Canvas* canvas)
 {
     OH_Drawing_GetDrawingArraySize(runs);
     OH_Drawing_Run* run = OH_Drawing_GetRunByIndex(runs, 0);
     uint32_t count = OH_Drawing_GetRunGlyphCount(run);
-    uint64_t location = GetObject<uint64_t>() % 500;
-    uint64_t length = GetObject<uint64_t>() % 500;
+    uint64_t location = GetObject<uint64_t>() % DATA_MAX_RANDOM;
+    uint64_t length = GetObject<uint64_t>() % DATA_MAX_RANDOM;
     OH_Drawing_GetRunStringRange(run, nullptr, nullptr);
     OH_Drawing_GetRunStringRange(run, &location, &length);
     OH_Drawing_GetRunStringIndices(run, 0, 0);
@@ -80,7 +79,7 @@ void OHDrawingTextRunTest(const uint8_t* data, size_t size)
 
     OH_Drawing_Bitmap* bitmap = CreateBitmap();
     OH_Drawing_Canvas* canvas = CreateCanvas(bitmap);
-    OH_Drawing_TypographyLayout(typography, 500);
+    OH_Drawing_TypographyLayout(typography, DATA_MAX_RANDOM);
     OH_Drawing_Array* textLines = OH_Drawing_TypographyGetTextLines(typography);
     // 针对每一行
     OH_Drawing_GetDrawingArraySize(textLines);

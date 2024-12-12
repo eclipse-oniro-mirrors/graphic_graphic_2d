@@ -36,32 +36,32 @@ void SetTypographyStyle(OH_Drawing_TypographyStyle* typoStyle)
     const char* fontFamilies[] = { str.get() };
     const char* fontFamilies1[] = { fontFamiliesTest };
 
-    OH_Drawing_SetTypographyTextDirection(typoStyle, GetObject<uint32_t>() % 500 % DATA_MAX_ENUM_SIZE1);
-    OH_Drawing_SetTypographyTextAlign(typoStyle, GetObject<uint32_t>() % 500 % DATA_MAX_ENUM_SIZE4);
+    OH_Drawing_SetTypographyTextDirection(typoStyle, GetObject<uint32_t>() % DATA_MAX_ENUM_SIZE1);
+    OH_Drawing_SetTypographyTextAlign(typoStyle, GetObject<uint32_t>() % DATA_MAX_ENUM_SIZE4);
     OH_Drawing_SetTypographyTextMaxLines(typoStyle, 5);
-    OH_Drawing_SetTypographyTextBreakStrategy(typoStyle, GetObject<uint32_t>() % 500 % DATA_MAX_ENUM_SIZE2);
-    OH_Drawing_SetTypographyTextWordBreakType(typoStyle, GetObject<uint32_t>() % 500 % DATA_MAX_ENUM_SIZE2);
-    OH_Drawing_SetTypographyTextHalfLeading(typoStyle, GetObject<uint32_t>() % 500);
-    OH_Drawing_SetTypographyTextEllipsisModal(typoStyle, GetObject<uint32_t>() % 500 % DATA_MAX_ENUM_SIZE2);
-    OH_Drawing_SetTypographyTextFontWeight(typoStyle, GetObject<uint32_t>() % 500 % DATA_MAX_ENUM_SIZE5);
-    OH_Drawing_SetTypographyTextFontStyle(typoStyle, GetObject<uint32_t>() % 500 % DATA_MAX_ENUM_SIZE2);
+    OH_Drawing_SetTypographyTextBreakStrategy(typoStyle, GetObject<uint32_t>() % DATA_MAX_ENUM_SIZE2);
+    OH_Drawing_SetTypographyTextWordBreakType(typoStyle, GetObject<uint32_t>() % DATA_MAX_ENUM_SIZE2);
+    OH_Drawing_SetTypographyTextHalfLeading(typoStyle, GetObject<uint32_t>() % DATA_MAX_RANDOM);
+    OH_Drawing_SetTypographyTextEllipsisModal(typoStyle, GetObject<uint32_t>() % DATA_MAX_ENUM_SIZE2);
+    OH_Drawing_SetTypographyTextFontWeight(typoStyle, GetObject<uint32_t>() % DATA_MAX_ENUM_SIZE5);
+    OH_Drawing_SetTypographyTextFontStyle(typoStyle, GetObject<uint32_t>() % DATA_MAX_ENUM_SIZE2);
     OH_Drawing_SetTypographyTextFontFamily(typoStyle, str.get());
     OH_Drawing_SetTypographyTextFontFamily(typoStyle, fontFamiliesTest);
     OH_Drawing_SetTypographyTextFontSize(typoStyle, DATA_MAX_ENUM_FONTSIZE);
-    OH_Drawing_SetTypographyTextFontHeight(typoStyle, GetObject<uint32_t>() % 500);
-    OH_Drawing_SetTypographyTextHalfLeading(typoStyle, GetObject<uint32_t>() % 500);
-    OH_Drawing_SetTypographyTextUseLineStyle(typoStyle, GetObject<bool>() % 500);
-    OH_Drawing_SetTypographyTextLineStyleFontWeight(typoStyle, GetObject<uint32_t>() % 500 % DATA_MAX_ENUM_SIZE5);
-    OH_Drawing_SetTypographyTextLineStyleFontStyle(typoStyle, GetObject<uint32_t>() % 500 % DATA_MAX_ENUM_SIZE2);
+    OH_Drawing_SetTypographyTextFontHeight(typoStyle, GetObject<uint32_t>() % DATA_MAX_RANDOM);
+    OH_Drawing_SetTypographyTextHalfLeading(typoStyle, GetObject<uint32_t>() % DATA_MAX_RANDOM);
+    OH_Drawing_SetTypographyTextUseLineStyle(typoStyle, GetObject<bool>());
+    OH_Drawing_SetTypographyTextLineStyleFontWeight(typoStyle, GetObject<uint32_t>() % DATA_MAX_ENUM_SIZE5);
+    OH_Drawing_SetTypographyTextLineStyleFontStyle(typoStyle, GetObject<uint32_t>() % DATA_MAX_ENUM_SIZE2);
     OH_Drawing_SetTypographyTextLineStyleFontFamilies(typoStyle, 1, fontFamilies);
     OH_Drawing_SetTypographyTextLineStyleFontFamilies(typoStyle, 1, fontFamilies1);
     OH_Drawing_SetTypographyTextLineStyleFontSize(typoStyle, DATA_MAX_ENUM_FONTSIZE);
-    OH_Drawing_SetTypographyTextLineStyleFontHeight(typoStyle, GetObject<uint32_t>() % 500);
-    OH_Drawing_SetTypographyTextLineStyleHalfLeading(typoStyle, GetObject<uint32_t>() % 500);
-    OH_Drawing_SetTypographyTextLineStyleSpacingScale(typoStyle, GetObject<uint32_t>() % 500);
-    OH_Drawing_SetTypographyTextLineStyleOnly(typoStyle, GetObject<bool>() % 500);
+    OH_Drawing_SetTypographyTextLineStyleFontHeight(typoStyle, GetObject<uint32_t>() % DATA_MAX_RANDOM);
+    OH_Drawing_SetTypographyTextLineStyleHalfLeading(typoStyle, GetObject<uint32_t>() % DATA_MAX_RANDOM);
+    OH_Drawing_SetTypographyTextLineStyleSpacingScale(typoStyle, GetObject<uint32_t>() % DATA_MAX_RANDOM);
+    OH_Drawing_SetTypographyTextLineStyleOnly(typoStyle, GetObject<bool>());
     OH_Drawing_SetTypographyTextLocale(typoStyle, str.get());
-    OH_Drawing_SetTypographyTextSplitRatio(typoStyle, GetObject<uint32_t>() % 500);
+    OH_Drawing_SetTypographyTextSplitRatio(typoStyle, GetObject<uint32_t>() % DATA_MAX_RANDOM);
 }
 
 OH_Drawing_TypographyStyle* UpdateTypographyStyle(OH_Drawing_TypographyStyle* typoStyle)
@@ -74,7 +74,7 @@ OH_Drawing_TypographyStyle* UpdateTypographyStyle(OH_Drawing_TypographyStyle* ty
     OH_Drawing_TypographyGetEffectiveAlignment(typoStyle);
     OH_Drawing_TypographyIsLineUnlimited(typoStyle);
     OH_Drawing_TypographyIsEllipsized(typoStyle);
-    OH_Drawing_SetTypographyTextEllipsisModal(typoStyle, GetObject<uint32_t>() % 500);
+    OH_Drawing_SetTypographyTextEllipsisModal(typoStyle, GetObject<uint32_t>() % DATA_MAX_RANDOM);
     OH_Drawing_TypographyTextSetHeightBehavior(typoStyle, GetObject<OH_Drawing_TextHeightBehavior>());
     OH_Drawing_TypographyTextGetHeightBehavior(typoStyle);
     OH_Drawing_TypographyTextGetLineStyle(typoStyle);
@@ -103,7 +103,7 @@ OH_Drawing_TypographyStyle* UpdateTypographyStyle(OH_Drawing_TypographyStyle* ty
     OH_Drawing_StrutStyle* getStrutStyle = OH_Drawing_TypographyStyleGetStrutStyle(typoStyle);
     OH_Drawing_TypographyStyleStrutStyleEquals(getStrutStyle, getStrutStyle);
     OH_Drawing_TypographyStyleDestroyStrutStyle(getStrutStyle);
-    OH_Drawing_TypographyStyleSetHintsEnabled(typoStyle, GetObject<bool>() % 500);
+    OH_Drawing_TypographyStyleSetHintsEnabled(typoStyle, GetObject<bool>());
     OH_Drawing_FontStyleStruct structStyle = GetObject<OH_Drawing_FontStyleStruct>();
     OH_Drawing_SetTypographyStyleFontStyleStruct(typoStyle, structStyle);
     OH_Drawing_TypographyStyleGetFontStyleStruct(typoStyle);
@@ -117,18 +117,18 @@ OH_Drawing_TypographyStyle* UpdateTypographyStyle(OH_Drawing_TypographyStyle* ty
 
 void SetTextStyle(OH_Drawing_TextStyle* txtStyle)
 {
-    uint32_t red = GetObject<uint32_t>() % 500;
-    uint32_t gree = GetObject<uint32_t>() % 500;
-    uint32_t blue = GetObject<uint32_t>() % 500;
-    uint32_t alpha = GetObject<uint32_t>() % 500;
+    uint32_t red = GetObject<uint32_t>() % DATA_MAX_RANDOM;
+    uint32_t gree = GetObject<uint32_t>() % DATA_MAX_RANDOM;
+    uint32_t blue = GetObject<uint32_t>() % DATA_MAX_RANDOM;
+    uint32_t alpha = GetObject<uint32_t>() % DATA_MAX_RANDOM;
     OH_Drawing_SetTextStyleColor(txtStyle, OH_Drawing_ColorSetArgb(alpha, red, gree, blue));
     OH_Drawing_SetTextStyleFontSize(txtStyle, DATA_MAX_ENUM_FONTSIZE);
-    OH_Drawing_SetTextStyleFontWeight(txtStyle, GetObject<uint32_t>() % 500 % DATA_MAX_ENUM_SIZE5);
-    OH_Drawing_SetTextStyleBaseLine(txtStyle, GetObject<uint32_t>() % 500 % DATA_MAX_ENUM_SIZE1);
-    OH_Drawing_SetTextStyleDecoration(txtStyle, GetObject<uint32_t>() % 500 % DATA_MAX_ENUM_SIZE3);
+    OH_Drawing_SetTextStyleFontWeight(txtStyle, GetObject<uint32_t>() % DATA_MAX_ENUM_SIZE5);
+    OH_Drawing_SetTextStyleBaseLine(txtStyle, GetObject<uint32_t>() % DATA_MAX_ENUM_SIZE1);
+    OH_Drawing_SetTextStyleDecoration(txtStyle, GetObject<uint32_t>() % DATA_MAX_ENUM_SIZE3);
     OH_Drawing_SetTextStyleDecorationColor(txtStyle, OH_Drawing_ColorSetArgb(alpha, red, gree, blue));
-    OH_Drawing_SetTextStyleFontHeight(txtStyle, GetObject<uint32_t>() % 500);
-    OH_Drawing_SetTextStyleFontStyle(txtStyle, GetObject<uint32_t>() % 500 % DATA_MAX_ENUM_SIZE3);
+    OH_Drawing_SetTextStyleFontHeight(txtStyle, GetObject<uint32_t>() % DATA_MAX_RANDOM);
+    OH_Drawing_SetTextStyleFontStyle(txtStyle, GetObject<uint32_t>() % DATA_MAX_ENUM_SIZE3);
     std::unique_ptr dest = GetRandomString();
     OH_Drawing_SetTextStyleLocale(txtStyle, dest.get());
     const char* fontFamilies[] = { dest.get() };
@@ -138,14 +138,14 @@ void SetTextStyle(OH_Drawing_TextStyle* txtStyle)
     const char* fontFamilies1[] = { fontFamiliesTest };
     OH_Drawing_SetTextStyleFontFamilies(txtStyle, 1, fontFamilies);
     OH_Drawing_SetTextStyleFontFamilies(txtStyle, 1, fontFamilies);
-    OH_Drawing_SetTextStyleDecorationStyle(txtStyle, GetObject<uint32_t>() % 500 % DATA_MAX_ENUM_SIZE3);
-    OH_Drawing_SetTextStyleDecorationThicknessScale(txtStyle, GetObject<uint32_t>() % 500);
-    OH_Drawing_SetTextStyleLetterSpacing(txtStyle, GetObject<uint32_t>() % 500);
-    OH_Drawing_SetTextStyleWordSpacing(txtStyle, GetObject<uint32_t>() % 500);
-    OH_Drawing_SetTextStyleHalfLeading(txtStyle, GetObject<uint32_t>() % 500);
-    OH_Drawing_SetTextStyleEllipsisModal(txtStyle, GetObject<uint32_t>() % 500 % DATA_MAX_ENUM_SIZE2);
+    OH_Drawing_SetTextStyleDecorationStyle(txtStyle, GetObject<uint32_t>() % DATA_MAX_ENUM_SIZE3);
+    OH_Drawing_SetTextStyleDecorationThicknessScale(txtStyle, GetObject<uint32_t>() % DATA_MAX_RANDOM);
+    OH_Drawing_SetTextStyleLetterSpacing(txtStyle, GetObject<uint32_t>() % DATA_MAX_RANDOM);
+    OH_Drawing_SetTextStyleWordSpacing(txtStyle, GetObject<uint32_t>() % DATA_MAX_RANDOM);
+    OH_Drawing_SetTextStyleHalfLeading(txtStyle, GetObject<uint32_t>() % DATA_MAX_RANDOM);
+    OH_Drawing_SetTextStyleEllipsisModal(txtStyle, GetObject<uint32_t>() % DATA_MAX_ENUM_SIZE2);
     OH_Drawing_SetTextStyleEllipsis(txtStyle, dest.get());
-    OH_Drawing_TextStyleAddFontVariation(txtStyle, dest.get(), GetObject<uint32_t>() % 500);
+    OH_Drawing_TextStyleAddFontVariation(txtStyle, dest.get(), GetObject<uint32_t>() % DATA_MAX_RANDOM);
     auto brus = OH_Drawing_BrushCreate();
     auto pen = OH_Drawing_PenCreate();
     OH_Drawing_SetTextStyleForegroundBrush(txtStyle, brus);
@@ -165,22 +165,23 @@ OH_Drawing_TextStyle* CreateTextStyle(OH_Drawing_TextStyle* txtStyle)
     SetTextStyle(txtStyle);
     OH_Drawing_TextShadow* shadow = OH_Drawing_CreateTextShadow();
     OH_Drawing_Point* offset = OH_Drawing_PointCreate(0, 0);
-    OH_Drawing_SetTextShadow(shadow, GetObject<uint32_t>() % 500, offset, GetObject<uint32_t>() % 500);
+    OH_Drawing_SetTextShadow(
+        shadow, GetObject<uint32_t>() % DATA_MAX_RANDOM, offset, GetObject<uint32_t>() % DATA_MAX_RANDOM);
     OH_Drawing_TextStyleAddShadow(txtStyle, shadow);
     OH_Drawing_DestroyTextShadows(OH_Drawing_TextStyleGetShadows(txtStyle));
     OH_Drawing_TextStyleGetShadowCount(txtStyle);
-    OH_Drawing_TextStyleGetShadowWithIndex(txtStyle, GetObject<uint32_t>() % 500);
+    OH_Drawing_TextStyleGetShadowWithIndex(txtStyle, GetObject<uint32_t>() % DATA_MAX_RANDOM);
     OH_Drawing_TextStyleClearShadows(txtStyle);
     OH_Drawing_DestroyTextShadow(shadow);
 
     OH_Drawing_RectStyle_Info rectStyleInfo;
-    OH_Drawing_TextStyleSetBackgroundRect(txtStyle, &rectStyleInfo, GetObject<uint32_t>() % 500);
-    OH_Drawing_TextStyleAddFontFeature(txtStyle, GetRandomString().get(), GetObject<uint32_t>() % 500);
+    OH_Drawing_TextStyleSetBackgroundRect(txtStyle, &rectStyleInfo, GetObject<uint32_t>() % DATA_MAX_RANDOM);
+    OH_Drawing_TextStyleAddFontFeature(txtStyle, GetRandomString().get(), GetObject<uint32_t>() % DATA_MAX_RANDOM);
     size_t fontFeaturesSize = OH_Drawing_TextStyleGetFontFeatureSize(txtStyle);
     OH_Drawing_FontFeature* fontFeatures = OH_Drawing_TextStyleGetFontFeatures(txtStyle);
     OH_Drawing_TextStyleDestroyFontFeatures(fontFeatures, fontFeaturesSize);
     OH_Drawing_TextStyleClearFontFeature(txtStyle);
-    OH_Drawing_TextStyleSetBaselineShift(txtStyle, GetObject<uint32_t>() % 500);
+    OH_Drawing_TextStyleSetBaselineShift(txtStyle, GetObject<uint32_t>() % DATA_MAX_RANDOM);
     OH_Drawing_TextStyleGetBaselineShift(txtStyle);
     OH_Drawing_TextStyleGetColor(txtStyle);
     OH_Drawing_TextStyleGetDecorationStyle(txtStyle);
@@ -213,13 +214,13 @@ OH_Drawing_TextStyle* CreateTextStyle(OH_Drawing_TextStyle* txtStyle)
 OH_Drawing_TypographyCreate* CreateTypographyHandler(
     OH_Drawing_TypographyCreate* handler, OH_Drawing_TypographyStyle* typoStyle, OH_Drawing_TextStyle* txtStyle)
 {
-    OH_Drawing_PlaceholderSpan placeholder = {
-        .width = 10.0,
-        .height = 5.0,
+    int width = 10.0;
+    int height = 5.0;
+    OH_Drawing_PlaceholderSpan placeholder = { .width = width,
+        .height = height,
         .alignment = ALIGNMENT_OFFSET_AT_BASELINE,
         .baseline = TEXT_BASELINE_ALPHABETIC,
-        .baselineOffset = 0
-    };
+        .baselineOffset = 0 };
     OH_Drawing_TypographyHandlerAddPlaceholder(handler, &placeholder);
     OH_Drawing_TypographyHandlerPushTextStyle(handler, txtStyle);
     std::unique_ptr dest = GetRandomString();
@@ -230,7 +231,7 @@ OH_Drawing_TypographyCreate* CreateTypographyHandler(
 
 void OHDrawingRange(OH_Drawing_Typography* typography)
 {
-    OH_Drawing_Range* range = OH_Drawing_TypographyGetWordBoundary(typography, GetObject<size_t>() % 500);
+    OH_Drawing_Range* range = OH_Drawing_TypographyGetWordBoundary(typography, GetObject<size_t>() % DATA_MAX_RANDOM);
     OH_Drawing_GetStartFromRange(range);
     OH_Drawing_GetEndFromRange(range);
     free(range);
@@ -239,7 +240,7 @@ void OHDrawingRange(OH_Drawing_Typography* typography)
 void OHDrawingPositionAndAffinity(OH_Drawing_Typography* typography)
 {
     OH_Drawing_PositionAndAffinity* positionAffinity = OH_Drawing_TypographyGetGlyphPositionAtCoordinateWithCluster(
-        typography, GetObject<uint32_t>() % 500, GetObject<uint32_t>() % 500);
+        typography, GetObject<uint32_t>() % DATA_MAX_RANDOM, GetObject<uint32_t>() % DATA_MAX_RANDOM);
     OH_Drawing_GetPositionFromPositionAndAffinity(positionAffinity);
     OH_Drawing_GetAffinityFromPositionAndAffinity(positionAffinity);
     free(positionAffinity);
@@ -247,7 +248,7 @@ void OHDrawingPositionAndAffinity(OH_Drawing_Typography* typography)
 
 OH_Drawing_Typography* CreateTypography(OH_Drawing_Typography* typography, OH_Drawing_TypographyCreate* handler)
 {
-    OH_Drawing_TypographyLayout(typography, 500);
+    OH_Drawing_TypographyLayout(typography, DATA_MAX_RANDOM);
     OH_Drawing_TypographyGetMaxWidth(typography);
     OH_Drawing_TypographyGetHeight(typography);
     OH_Drawing_TypographyGetLongestLine(typography);
@@ -256,40 +257,41 @@ OH_Drawing_Typography* CreateTypography(OH_Drawing_Typography* typography, OH_Dr
     OH_Drawing_TypographyGetAlphabeticBaseline(typography);
     OH_Drawing_TypographyGetIdeographicBaseline(typography);
     OH_Drawing_TypographyGetLongestLineWithIndent(typography);
-    OH_Drawing_TextBox* textBox = OH_Drawing_TypographyGetRectsForRange(typography, GetObject<size_t>() % 500,
-        GetObject<size_t>() % 500, GetObject<OH_Drawing_RectHeightStyle>(), GetObject<OH_Drawing_RectWidthStyle>());
+    OH_Drawing_TextBox* textBox = OH_Drawing_TypographyGetRectsForRange(typography,
+        GetObject<size_t>() % DATA_MAX_RANDOM, GetObject<size_t>() % DATA_MAX_RANDOM,
+        GetObject<OH_Drawing_RectHeightStyle>(), GetObject<OH_Drawing_RectWidthStyle>());
     OH_Drawing_TypographyDestroyTextBox(OH_Drawing_TypographyGetRectsForPlaceholders(typography));
-    OH_Drawing_GetLeftFromTextBox(textBox, GetObject<uint32_t>() % 500);
-    OH_Drawing_GetRightFromTextBox(textBox, GetObject<uint32_t>() % 500);
-    OH_Drawing_GetTopFromTextBox(textBox, GetObject<uint32_t>() % 500);
-    OH_Drawing_GetBottomFromTextBox(textBox, GetObject<uint32_t>() % 500);
-    OH_Drawing_GetTextDirectionFromTextBox(textBox, GetObject<uint32_t>() % 500);
+    OH_Drawing_GetLeftFromTextBox(textBox, GetObject<uint32_t>() % DATA_MAX_RANDOM);
+    OH_Drawing_GetRightFromTextBox(textBox, GetObject<uint32_t>() % DATA_MAX_RANDOM);
+    OH_Drawing_GetTopFromTextBox(textBox, GetObject<uint32_t>() % DATA_MAX_RANDOM);
+    OH_Drawing_GetBottomFromTextBox(textBox, GetObject<uint32_t>() % DATA_MAX_RANDOM);
+    OH_Drawing_GetTextDirectionFromTextBox(textBox, GetObject<uint32_t>() % DATA_MAX_RANDOM);
     OH_Drawing_GetSizeOfTextBox(textBox);
     OH_Drawing_TypographyDestroyTextBox(textBox);
-    free(OH_Drawing_TypographyGetGlyphPositionAtCoordinate(typography, GetObject<uint32_t>() % 500,
-        GetObject<uint32_t>() % 500));
+    free(OH_Drawing_TypographyGetGlyphPositionAtCoordinate(
+        typography, GetObject<uint32_t>() % DATA_MAX_RANDOM, GetObject<uint32_t>() % DATA_MAX_RANDOM));
     OHDrawingPositionAndAffinity(typography);
     OHDrawingRange(typography);
     OH_Drawing_TypographyGetLineCount(typography);
-    OH_Drawing_TypographyGetLineHeight(typography, GetObject<uint32_t>() % 500);
-    OH_Drawing_TypographyGetLineWidth(typography, GetObject<uint32_t>() % 500);
-    free(OH_Drawing_TypographyGetLineTextRange(typography, GetObject<uint32_t>() % 500, GetObject<bool>() % 500));
+    OH_Drawing_TypographyGetLineHeight(typography, GetObject<uint32_t>() % DATA_MAX_RANDOM);
+    OH_Drawing_TypographyGetLineWidth(typography, GetObject<uint32_t>() % DATA_MAX_RANDOM);
+    free(OH_Drawing_TypographyGetLineTextRange(typography, GetObject<uint32_t>() % DATA_MAX_RANDOM, GetObject<bool>()));
     OH_Drawing_LineMetrics* lineMetrics = OH_Drawing_TypographyGetLineMetrics(typography);
     OH_Drawing_LineMetricsGetSize(lineMetrics);
-    OH_Drawing_TypographyGetLineInfo(typography, GetObject<uint32_t>() % 500, GetObject<bool>() % 500,
-        GetObject<bool>() % 500, lineMetrics);
+    OH_Drawing_TypographyGetLineInfo(
+        typography, GetObject<uint32_t>() % DATA_MAX_RANDOM, GetObject<bool>(), GetObject<bool>(), lineMetrics);
     OH_Drawing_LineMetrics metrics = GetObject<OH_Drawing_LineMetrics>();
-    OH_Drawing_TypographyGetLineMetricsAt(typography, GetObject<uint32_t>() % 500, &metrics);
-    float indents[] = { GetObject<uint32_t>() % 500, GetObject<uint32_t>() % 500 };
+    OH_Drawing_TypographyGetLineMetricsAt(typography, GetObject<uint32_t>() % DATA_MAX_RANDOM, &metrics);
+    float indents[] = { GetObject<uint32_t>() % DATA_MAX_RANDOM, GetObject<uint32_t>() % DATA_MAX_RANDOM };
     OH_Drawing_TypographySetIndents(typography, sizeof(indents) / sizeof(float), indents);
-    OH_Drawing_TypographyGetIndentsWithIndex(typography, GetObject<uint32_t>() % 500);
+    OH_Drawing_TypographyGetIndentsWithIndex(typography, GetObject<uint32_t>() % DATA_MAX_RANDOM);
     OH_Drawing_TypographyMarkDirty(typography);
     OH_Drawing_TypographyGetUnresolvedGlyphsCount(typography);
-    OH_Drawing_TypographyUpdateFontSize(typography, GetObject<size_t>() % 500, GetObject<size_t>() % 500,
-        DATA_MAX_ENUM_FONTSIZE + 1);
+    OH_Drawing_TypographyUpdateFontSize(typography, GetObject<size_t>() % DATA_MAX_RANDOM,
+        GetObject<size_t>() % DATA_MAX_RANDOM, DATA_MAX_ENUM_FONTSIZE + 1);
     size_t size;
     OH_Drawing_Font_Metrics* fontMetrics =
-        OH_Drawing_TypographyGetLineFontMetrics(typography, GetObject<size_t>() % 500, &size);
+        OH_Drawing_TypographyGetLineFontMetrics(typography, GetObject<size_t>() % DATA_MAX_RANDOM, &size);
     OH_Drawing_TypographyDestroyLineFontMetrics(fontMetrics);
     OH_Drawing_DestroyLineMetrics(lineMetrics);
     return typography;
@@ -308,16 +310,15 @@ OH_Drawing_Bitmap* CreateBitmap()
 
 OH_Drawing_Canvas* CreateCanvas(OH_Drawing_Bitmap* bitmap)
 {
-    uint32_t red = GetObject<uint32_t>() % 500;
-    uint32_t gree = GetObject<uint32_t>() % 500;
-    uint32_t blue = GetObject<uint32_t>() % 500;
-    uint32_t alpha = GetObject<uint32_t>() % 500;
+    uint32_t red = GetObject<uint32_t>() % DATA_MAX_RANDOM;
+    uint32_t gree = GetObject<uint32_t>() % DATA_MAX_RANDOM;
+    uint32_t blue = GetObject<uint32_t>() % DATA_MAX_RANDOM;
+    uint32_t alpha = GetObject<uint32_t>() % DATA_MAX_RANDOM;
     OH_Drawing_Canvas* canvas = OH_Drawing_CanvasCreate();
     OH_Drawing_CanvasBind(canvas, bitmap);
     OH_Drawing_CanvasClear(canvas, OH_Drawing_ColorSetArgb(alpha, red, gree, blue));
     return canvas;
 }
-
 
 void OHDrawingParserTest()
 {
@@ -345,8 +346,7 @@ void OHDrawingTypographyTest(const uint8_t* data, size_t size)
     CreateTextStyle(txtStyle);
     CreateTextStyle(nullptr);
     OH_Drawing_FontCollection* myFontCollection = OH_Drawing_CreateFontCollection();
-    OH_Drawing_TypographyCreate* handler =
-        OH_Drawing_CreateTypographyHandler(typoStyle, myFontCollection);
+    OH_Drawing_TypographyCreate* handler = OH_Drawing_CreateTypographyHandler(typoStyle, myFontCollection);
     OH_Drawing_DestroyFontCollection(myFontCollection);
     CreateTypographyHandler(handler, typoStyle, txtStyle);
     CreateTypographyHandler(nullptr, nullptr, nullptr);
@@ -355,15 +355,18 @@ void OHDrawingTypographyTest(const uint8_t* data, size_t size)
     CreateTypography(nullptr, nullptr);
     OH_Drawing_Font_Metrics fontMetrics;
     OH_Drawing_TextStyleGetFontMetrics(typography, txtStyle, &fontMetrics);
-    double position[] = { GetObject<uint32_t>() % 500, GetObject<uint32_t>() % 500 };
+    double position[] = { GetObject<uint32_t>() % DATA_MAX_RANDOM, GetObject<uint32_t>() % DATA_MAX_RANDOM };
     OH_Drawing_Bitmap* bitmap = CreateBitmap();
     OH_Drawing_Canvas* canvas = CreateCanvas(bitmap);
     OH_Drawing_CanvasDestroy(CreateCanvas(nullptr));
     OH_Drawing_Path* path = OH_Drawing_PathCreate();
-    OH_Drawing_PathArcTo(path, GetObject<uint32_t>() % 500, GetObject<uint32_t>() % 500, GetObject<uint32_t>() % 500,
-    GetObject<float>(), GetObject<uint32_t>() % 500, GetObject<uint32_t>() % 500);
-    OH_Drawing_TypographyPaintOnPath(typography, canvas, path, GetObject<uint32_t>() % 500, GetObject<uint32_t>() % 500);
-    OH_Drawing_TypographyPaintOnPath(typography, canvas, nullptr, GetObject<uint32_t>() % 500, GetObject<uint32_t>() % 500);
+    OH_Drawing_PathArcTo(path, GetObject<uint32_t>() % DATA_MAX_RANDOM, GetObject<uint32_t>() % DATA_MAX_RANDOM,
+        GetObject<uint32_t>() % DATA_MAX_RANDOM, GetObject<float>(), GetObject<uint32_t>() % DATA_MAX_RANDOM,
+        GetObject<uint32_t>() % DATA_MAX_RANDOM);
+    OH_Drawing_TypographyPaintOnPath(
+        typography, canvas, path, GetObject<uint32_t>() % DATA_MAX_RANDOM, GetObject<uint32_t>() % DATA_MAX_RANDOM);
+    OH_Drawing_TypographyPaintOnPath(
+        typography, canvas, nullptr, GetObject<uint32_t>() % DATA_MAX_RANDOM, GetObject<uint32_t>() % DATA_MAX_RANDOM);
     OH_Drawing_TypographyPaint(typography, canvas, position[0], position[1]);
     OH_Drawing_FontDescriptor* fontDescriptor = OH_Drawing_CreateFontDescriptor();
     OH_Drawing_DestroyFontDescriptor(fontDescriptor);
