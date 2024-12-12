@@ -21,7 +21,6 @@
 
 #include "ashmem.h"
 #include "platform/common/rs_log.h"
-#include "rs_profiler.h"
 #include "rs_trace.h"
 #include "securec.h"
 #include "sys_binder.h"
@@ -257,47 +256,19 @@ std::shared_ptr<MessageParcel> RSAshmemHelper::CreateAshmemParcel(std::shared_pt
     return ashmemParcel;
 }
 
-std::shared_ptr<MessageParcel> RSAshmemHelper::CopyParcel(MessageParcel& old)
-{
-    RS_TRACE_NAME("RSAshmemHelper::CopyParcel");
-    auto dataSize = old.GetDataSize();
-    void* base = malloc(dataSize);
-    if (base == nullptr) {
-        RS_LOGE("RSAshmemHelper::CopyParcel malloc failed");
-        return nullptr;
-    }
-    if (memcpy_s(base, dataSize, reinterpret_cast<void*>(old.GetData()), dataSize) != 0) {
-        RS_LOGE("RSAshmemHelper::CopyParcel copy parcel data failed");
-        free(base);
-        return nullptr;
-    }
-    auto parcelCopied = RS_PROFILER_COPY_PARCEL(old);
-    if (!parcelCopied->ParseFrom(reinterpret_cast<uintptr_t>(base), dataSize)) {
-        RS_LOGE("RSAshmemHelper::CopyParcel ParseFrom failed");
-        free(base);
-        return nullptr;
-    }
-    return parcelCopied;
-}
-
 std::shared_ptr<MessageParcel> RSAshmemHelper::ParseFromAshmemParcel(MessageParcel* ashmemParcel,
-    std::shared_ptr<AshmemFlowControlUnit> ashmemFlowControlUnit)
+    std::shared_ptr<AshmemFlowControlUnit> &ashmemFlowControlUnit, pid_t callingPid)
 {
     uint32_t dataSize = ashmemParcel->ReadUint32();
     RS_TRACE_NAME("ParseFromAshmemParcel data size:" + std::to_string(dataSize));
-    if (ashmemFlowControlUnit != nullptr) {
-        ashmemFlowControlUnit->bufferSize = dataSize;
-        // ParseFromAshmemParcel flow control begin
-        bool success = MemoryFlowControl::Instance().AddAshmemStatistic(ashmemFlowControlUnit);
-        if (!success) {
-            // discard this ashmem parcel since callingPid is submitting too many data to RS simultaneously
-            pid_t callingPid = ashmemFlowControlUnit->callingPid;
-            RS_TRACE_NAME_FMT("RSAshmemHelper::ParseFromAshmemParcel callingPid %d is submitting too many data, "
-                "discard parcel with bufferSize %" PRIu32, static_cast<int>(callingPid), dataSize);
-            ROSEN_LOGE("RSAshmemHelper::ParseFromAshmemParcel callingPid %{public}d is submitting too many data, "
-                "discard parcel with bufferSize %{public}" PRIu32, static_cast<int>(callingPid), dataSize);
-            return nullptr;
-        }
+    ashmemFlowControlUnit = AshmemFlowControlUnit::CheckOverflowAndCreateInstance(callingPid, dataSize);
+    if (ashmemFlowControlUnit == nullptr) {
+        // discard this ashmem parcel since callingPid is submitting too many data to RS simultaneously
+        RS_TRACE_NAME_FMT("RSAshmemHelper::ParseFromAshmemParcel callingPid %d is submitting too many data, "
+            "discard parcel with bufferSize %" PRIu32, static_cast<int>(callingPid), dataSize);
+        ROSEN_LOGE("RSAshmemHelper::ParseFromAshmemParcel callingPid %{public}d is submitting too many data, "
+            "discard parcel with bufferSize %{public}" PRIu32, static_cast<int>(callingPid), dataSize);
+        return nullptr;
     }
 
     int fd = ashmemParcel->ReadFileDescriptor();
@@ -309,7 +280,7 @@ std::shared_ptr<MessageParcel> RSAshmemHelper::ParseFromAshmemParcel(MessageParc
     void* data = ashmemAllocator->GetData();
     auto dataParcel = std::make_shared<MessageParcel>(ashmemAllocator.release());
     dataParcel->ParseFrom(reinterpret_cast<uintptr_t>(data), dataSize);
-    auto copiedParcel = CopyParcel(*std::move(dataParcel));
+
     int32_t offsetSize = ashmemParcel->ReadInt32();
     if (offsetSize > 0) {
         auto* offsets = ashmemParcel->ReadBuffer(sizeof(binder_size_t) * offsetSize);
@@ -318,17 +289,17 @@ std::shared_ptr<MessageParcel> RSAshmemHelper::ParseFromAshmemParcel(MessageParc
             return nullptr;
         }
         // restore array that record the offsets of all fds
-        copiedParcel->InjectOffsets(reinterpret_cast<binder_size_t>(offsets), offsetSize);
+        dataParcel->InjectOffsets(reinterpret_cast<binder_size_t>(offsets), offsetSize);
         // restore all fds
-        InjectFileDescriptor(copiedParcel, ashmemParcel);
+        InjectFileDescriptor(dataParcel, ashmemParcel);
     }
 
-    if (copiedParcel->ReadInt32() != 0) { // identify normal parcel
+    if (dataParcel->ReadInt32() != 0) { // identify normal parcel
         ROSEN_LOGE("RSAshmemHelper::ParseFromAshmemParcel failed");
         return nullptr;
     }
 
-    return copiedParcel;
+    return dataParcel;
 }
 } // namespace Rosen
 } // namespace OHOS

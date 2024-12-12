@@ -1521,15 +1521,6 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
         }
         UpdateSurfaceNodeNit((*surfaceNode).GetRSSurfaceHandler()->GetBuffer(),
             *surfaceNode, isHdrSurface);
-        bool isDimmingOn = RSLuminanceControl::Get().IsDimmingOn(0);
-        if (isDimmingOn) {
-            bool hasHdrPresent = surfaceNode->GetHDRPresent();
-            RS_LOGD("HDRDiming IsDimmingOn: %{public}d, GetHDRPresent: %{public}d, CheckIsHdrSurface: %{public}d",
-                isDimmingOn, hasHdrPresent, isHdrSurface);
-            if (hasHdrPresent || isHdrSurface) {
-                surfaceNode->SetContentDirty(); // HDR content is dirty on Dimming status.
-            }
-        }
     });
     RSLuminanceControl::Get().SetHdrStatus(0, hasHdrVideo, hdrType);
     if (needRequestNextVsync) {
@@ -1964,9 +1955,10 @@ void RSMainThread::ProcessHgmFrameRate(uint64_t timestamp)
         RS_TRACE_NAME_FMT("rsCurrRange = (%d, %d, %d)", rsCurrRange.min_, rsCurrRange.max_, rsCurrRange.preferred_);
     }
 
+    bool needRefresh = frameRateMgr->UpdateUIFrameworkDirtyNodes(GetContext().GetUiFrameworkDirtyNodes(), timestamp_);
     if (!HgmCore::Instance().SetHgmTaskFlag(false) &&
         HgmCore::Instance().GetPendingScreenRefreshRate() == frameRateMgr->GetCurrRefreshRate() &&
-        !frameRateMgr->UpdateUIFrameworkDirtyNodes(GetContext().GetUiFrameworkDirtyNodes(), timestamp_)) {
+        !needRefresh) {
         return;
     }
 

@@ -16,6 +16,7 @@
 #ifndef RS_MEMORY_FLOW_CONTROL_H
 #define RS_MEMORY_FLOW_CONTROL_H
 
+#include <memory>
 #include <mutex>
 #include <unistd.h>
 #include <unordered_map>
@@ -25,14 +26,6 @@
 
 namespace OHOS {
 namespace Rosen {
-struct AshmemFlowControlUnit {
-    const pid_t callingPid;
-    uint32_t bufferSize = 0;
-    bool inProgress = false;
-
-    AshmemFlowControlUnit(pid_t pid, uint32_t size = 0) : callingPid(pid), bufferSize(size) {}
-};
-
 class RSB_EXPORT MemoryFlowControl {
 public:
     static MemoryFlowControl& Instance();
@@ -41,9 +34,7 @@ public:
         return ASHMEM_BUFFER_SIZE_UPPER_BOUND_FOR_EACH_PID;
     }
     bool AddAshmemStatistic(pid_t callingPid, uint32_t bufferSize);
-    bool AddAshmemStatistic(std::shared_ptr<AshmemFlowControlUnit> ashmemFlowControlUnit);
     void RemoveAshmemStatistic(pid_t callingPid, uint32_t bufferSize);
-    void RemoveAshmemStatistic(std::shared_ptr<AshmemFlowControlUnit> ashmemFlowControlUnit);
 
 private:
     MemoryFlowControl() = default;
@@ -54,6 +45,21 @@ private:
     static constexpr uint32_t ASHMEM_BUFFER_SIZE_UPPER_BOUND_FOR_EACH_PID = 1024 * 1024 * 1024;
     std::unordered_map<pid_t, uint32_t> pidToAshmemBufferSizeMap_;
     std::mutex pidToAshmemBufferSizeMapMutex_;
+};
+
+class RSB_EXPORT AshmemFlowControlUnit {
+public:
+    static std::shared_ptr<AshmemFlowControlUnit> CheckOverflowAndCreateInstance(pid_t pid, uint32_t size);
+    AshmemFlowControlUnit(pid_t pid, uint32_t size);
+    ~AshmemFlowControlUnit();
+
+private:
+    AshmemFlowControlUnit() = delete;
+    DISALLOW_COPY_AND_MOVE(AshmemFlowControlUnit);
+
+    const pid_t callingPid_;
+    const uint32_t bufferSize_;
+    bool needStatistic_ = false;
 };
 } // namespace OHOS
 } // namespace Rosen

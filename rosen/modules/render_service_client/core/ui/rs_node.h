@@ -204,6 +204,7 @@ public:
     void SetSandBox(std::optional<Vector2f> parentPosition);
 
     void SetPositionZ(float positionZ);
+    void SetPositionZApplicableCamera3D(bool isApplicable);
 
     void SetPivot(const Vector2f& pivot);
     void SetPivot(float pivotX, float pivotY);
@@ -406,6 +407,8 @@ public:
     // Mark uifirst leash node
     void MarkUifirstNode(bool isForceFlag, bool isUifirstEnable);
 
+    void SetUIFirstSwitch(RSUIFirstSwitch uiFirstSwitch);
+
     void MarkNodeSingleFrameComposer(bool isNodeSingleFrameComposer);
 
     void SetGrayScale(float grayScale);
@@ -601,6 +604,7 @@ private:
     bool isUifirstNode_ = true;
     bool isForceFlag_ = false;
     bool isUifirstEnable_ = false;
+    RSUIFirstSwitch uiFirstSwitch_ = RSUIFirstSwitch::NONE;
 
     RSModifierExtractor stagingPropertiesExtractor_;
     RSShowingPropertiesFreezer showingPropertiesFreezer_;

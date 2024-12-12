@@ -205,6 +205,7 @@ void RSUifirstManager::ProcessForceUpdateNode()
         if (node->GetLastFrameUifirstFlag() == MultiThreadCacheType::ARKTS_CARD) {
             continue;
         }
+        bool isChildForceUpdate = false;
         for (auto& child : *node->GetChildren()) {
             if (!child) {
                 continue;
@@ -217,7 +218,14 @@ void RSUifirstManager::ProcessForceUpdateNode()
             if (!child->IsDirty() && !child->IsSubTreeDirty()) {
                 markForceUpdateByUifirst_.push_back(child);
                 child->SetForceUpdateByUifirst(true);
+                isChildForceUpdate = true;
             }
+        }
+        if (isChildForceUpdate && !node->GetForceUpdateByUifirst()) {
+            // if the child's forceupdate flag is true, the parent flag must also be true,
+            // otherwise subtreedirty flag is unreliable.
+            markForceUpdateByUifirst_.push_back(node);
+            node->SetForceUpdateByUifirst(true);
         }
     }
     for (auto& node : toDirtyNodes) {
@@ -357,7 +365,10 @@ void RSUifirstManager::SyncHDRDisplayParam(std::shared_ptr<DrawableV2::RSSurface
     bool changeColorSpace = drawable->GetTargetColorGamut() != displayParams->GetNewColorSpace();
     if (isHdrOn || isScRGBEnable || changeColorSpace) {
         if (isScRGBEnable && changeColorSpace) {
-            RS_LOGD("UIFirstHDR SyncDisplayParam: ColorSpace change, ClearCacheSurface");
+            RS_LOGI("UIFirstHDR SyncDisplayParam: ColorSpace change, ClearCacheSurface,"
+                "nodeID: [%{public}" PRIu64"]", id);
+            RS_TRACE_NAME_FMT("UIFirstHDR SyncDisplayParam: ColorSpace change, ClearCacheSurface,"
+                "nodeID: [%{public}" PRIu64"]", id);
             drawable->ClearCacheSurfaceInThread();
         }
         drawable->SetScreenId(id);
@@ -1231,12 +1242,15 @@ bool RSUifirstManager::IsNonFocusWindowCache(RSSurfaceRenderNode& node, bool ani
     if (!node.GetForceUIFirst() && (needFilterSCB || node.IsSelfDrawingType())) {
         return false;
     }
-    if ((node.IsFocusedNode(RSMainThread::Instance()->GetFocusNodeId()) ||
-        node.IsFocusedNode(RSMainThread::Instance()->GetFocusLeashWindowId())) &&
-        (node.GetHasSharedTransitionNode() ||
+    bool focus = node.IsFocusedNode(RSMainThread::Instance()->GetFocusNodeId()) ||
+        node.IsFocusedNode(RSMainThread::Instance()->GetFocusLeashWindowId());
+    // open app with modal window animation, close uifirst
+    bool modalAnimation = animation && node.GetUIFirstSwitch() == RSUIFirstSwitch::MODAL_WINDOW_CLOSE;
+    if (focus && (node.GetHasSharedTransitionNode() ||
         RSUifirstManager::Instance().IsVMSurfaceName(surfaceName) ||
-        !animation)) {
-        RS_TRACE_NAME_FMT("IsNonFocusWindowCache: surfaceName[%s] is MainThread", surfaceName.c_str());
+        !animation || modalAnimation)) {
+        RS_TRACE_NAME_FMT("IsNonFocusWindowCache: surfaceName[%s] is MainThread, foceus:%d, animation:%d, switch:%d",
+            surfaceName.c_str(), focus, animation, node.GetUIFirstSwitch());
         return false;
     }
     return node.QuerySubAssignable(isDisplayRotation);

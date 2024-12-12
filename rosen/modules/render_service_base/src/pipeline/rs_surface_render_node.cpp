@@ -1884,8 +1884,10 @@ void RSSurfaceRenderNode::UpdateSurfaceCacheContentStaticFlag()
 {
 #ifdef RS_ENABLE_GPU
     auto contentStatic = false;
-    if (IsLeashWindow() || IsAbilityComponent()) {
-        contentStatic = (!IsSubTreeDirty() || GetForceUpdateByUifirst()) && !IsContentDirty() && !HasRemovedChild();
+    if (IsLeashWindow()) {
+        contentStatic = (!IsSubTreeDirty() || GetForceUpdateByUifirst()) && !HasRemovedChild();
+    } else if (IsAbilityComponent()) {
+        contentStatic = (!IsSubTreeDirty() || GetForceUpdateByUifirst()) && !IsContentDirty();
     } else {
         contentStatic = surfaceCacheContentStatic_;
     }

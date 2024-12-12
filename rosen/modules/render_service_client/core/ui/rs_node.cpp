@@ -757,6 +757,12 @@ void RSNode::SetPositionZ(float positionZ)
     SetProperty<RSPositionZModifier, RSAnimatableProperty<float>>(RSModifierType::POSITION_Z, positionZ);
 }
 
+void RSNode::SetPositionZApplicableCamera3D(bool isApplicable)
+{
+    SetProperty<RSPositionZApplicableCamera3DModifier, RSProperty<bool>>(
+        RSModifierType::POSITION_Z_APPLICABLE_CAMERA3D, isApplicable);
+}
+
 // pivot
 void RSNode::SetPivot(const Vector2f& pivot)
 {
@@ -2401,6 +2407,19 @@ void RSNode::MarkUifirstNode(bool isForceFlag, bool isUifirstEnable)
     isForceFlag_ = isForceFlag;
     isUifirstEnable_ = isUifirstEnable;
     std::unique_ptr<RSCommand> command = std::make_unique<RSForceUifirstNode>(GetId(), isForceFlag, isUifirstEnable);
+    auto transactionProxy = RSTransactionProxy::GetInstance();
+    if (transactionProxy != nullptr) {
+        transactionProxy->AddCommand(command, IsRenderServiceNode());
+    }
+}
+
+void RSNode::SetUIFirstSwitch(RSUIFirstSwitch uiFirstSwitch)
+{
+    if (uiFirstSwitch_ == uiFirstSwitch) {
+        return;
+    }
+    uiFirstSwitch_ = uiFirstSwitch;
+    std::unique_ptr<RSCommand> command = std::make_unique<RSSetUIFirstSwitch>(GetId(), uiFirstSwitch);
     auto transactionProxy = RSTransactionProxy::GetInstance();
     if (transactionProxy != nullptr) {
         transactionProxy->AddCommand(command, IsRenderServiceNode());

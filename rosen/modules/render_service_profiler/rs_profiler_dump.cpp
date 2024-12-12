@@ -568,7 +568,7 @@ void RSProfiler::DumpNodeChildrenListUpdate(const RSRenderNode& node, JsonWriter
     if (!node.isFullChildrenListValid_) {
         auto& childrenUpdate = out["children update"];
         childrenUpdate.PushObject();
-        childrenUpdate["current count"] = node.fullChildrenList_->size();
+        childrenUpdate["current count"] = node.fullChildrenList_ ? node.fullChildrenList_->size() : 0;
         std::string expected = std::to_string(node.GetSortedChildren()->size());
         if (!node.disappearingChildren_.empty()) {
             childrenUpdate["disappearing count"] = node.disappearingChildren_.size();
