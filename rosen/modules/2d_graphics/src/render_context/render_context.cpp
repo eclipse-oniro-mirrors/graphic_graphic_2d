@@ -492,11 +492,11 @@ std::shared_ptr<Drawing::ColorSpace> RenderContext::ConvertColorGamutToColorSpac
                 Drawing::CMSMatrixType::DCIP3);
             break;
         case GRAPHIC_COLOR_GAMUT_ADOBE_RGB:
-            colorSpace = Drawing::ColorSpace::CreateRGB(Drawing::CMSTransferFuncType::SRGB, 
+            colorSpace = Drawing::ColorSpace::CreateRGB(Drawing::CMSTransferFuncType::SRGB,
                 Drawing::CMSMatrixType::ADOBE_RGB);
             break;
         case GRAPHIC_COLOR_GAMUT_BT2020:
-            colorSpace = Drawing::ColorSpace::CreateRGB(Drawing::CMSTransferFuncType::SRGB, 
+            colorSpace = Drawing::ColorSpace::CreateRGB(Drawing::CMSTransferFuncType::SRGB,
                 Drawing::CMSMatrixType::REC2020);
             break;
         default:
