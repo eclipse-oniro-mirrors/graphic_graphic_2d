@@ -1222,7 +1222,6 @@ Drawing::Matrix RSBaseRenderUtil::GetSurfaceTransformMatrixForRotationFixed(
         case GraphicTransformType::GRAPHIC_ROTATE_180: {
             matrix.PreTranslate(boundsWidth, heightAdjust);
             matrix.PreRotate(-180);  // rotate 180 degrees anti-clockwise at last.
-
             break;
         }
         case GraphicTransformType::GRAPHIC_ROTATE_270: {
