@@ -52,12 +52,12 @@ void SkiaShaderEffect::InitWithColorSpace(const Color4f& color, std::shared_ptr<
 {
     const SkColor4f& skC4f = { .fR = color.redF_, .fG = color.greenF_, .fB = color.blueF_, .fA = color.alphaF_ };
     if (colorSpace == nullptr){
-        shader_=nullptr;
+        shader_ = nullptr;
         return;
     }
-    auto skColorSpace=colorSpace->GetImpl<SkiaColorSpace>();
+    auto skColorSpace = colorSpace->GetImpl<SkiaColorSpace>();
     if (skColorSpace == nullptr){
-        shader_=nullptr;
+        shader_ = nullptr;
         return;
     }
     shader_ = SkShaders::Color(skC4f, skColorSpace->GetColorSpace());
