@@ -487,7 +487,6 @@ std::shared_ptr<Drawing::ColorSpace> RenderContext::ConvertColorGamutToColorSpac
         // [planning] in order to stay consistant with the colorspace used before, we disabled
         // GRAPHIC_COLOR_GAMUT_SRGB to let the branch to default, then skColorSpace is set to nullptr
         case GRAPHIC_COLOR_GAMUT_DISPLAY_P3:
-
             colorSpace = Drawing::ColorSpace::CreateRGB(Drawing::CMSTransferFuncType::SRGB,
                 Drawing::CMSMatrixType::DCIP3);
             break;
