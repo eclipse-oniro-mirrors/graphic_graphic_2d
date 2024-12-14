@@ -51,7 +51,12 @@ void SkiaShaderEffect::InitWithColor(ColorQuad color)
 void SkiaShaderEffect::InitWithColorSpace(const Color4f& color, std::shared_ptr<ColorSpace> colorSpace)
 {
     const SkColor4f& skC4f = { .fR = color.redF_, .fG = color.greenF_, .fB = color.blueF_, .fA = color.alphaF_ };
-    shader_ = SkShaders::Color(skC4f, colorSpace->GetSkColorSpace());
+    if (colorSpace == nullptr) {
+        shader_ = SkShaders::Color(skC4f, nullptr);
+        return;
+    }
+    auto skiaColorSpace = colorSpace->GetImpl<SkiaColorSpace>();
+    shader_ = SkShaders::Color(skC4f, skiaColorSpace ? skiaColorSpace->GetColorSpace() : nullptr);
 }
 
 void SkiaShaderEffect::InitWithBlend(const ShaderEffect& s1, const ShaderEffect& s2, BlendMode mode)
