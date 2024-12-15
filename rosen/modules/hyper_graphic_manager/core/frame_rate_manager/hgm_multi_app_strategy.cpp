@@ -378,7 +378,7 @@ std::tuple<std::string, pid_t, int32_t> HgmMultiAppStrategy::AnalyzePkgParam(con
 
 void HgmMultiAppStrategy::OnLightFactor(PolicyConfigData::StrategyConfig& strategyRes) const
 {
-    HGM_LOGI("lightFactorStatus:%{public}u, isFactor:%{public}u, lowAmbientStatus:%{public}u",
+    HGM_LOGD("lightFactorStatus:%{public}u, isFactor:%{public}u, lowAmbientStatus:%{public}u",
         lightFactorStatus_.load(), strategyRes.isFactor, lowAmbientStatus_);
     if (lightFactorStatus_ && strategyRes.isFactor && !lowAmbientStatus_) {
         RS_TRACE_NAME_FMT("OnLightFactor, strategy change: min -> max");

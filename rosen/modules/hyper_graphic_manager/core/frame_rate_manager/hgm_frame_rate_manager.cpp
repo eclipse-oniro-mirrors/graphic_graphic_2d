@@ -592,7 +592,7 @@ void HgmFrameRateManager::HandleFrameRateChangeForLTPO(uint64_t timestamp, bool 
 
 void HgmFrameRateManager::GetLowBrightVec(const std::shared_ptr<PolicyConfigData>& configData)
 {
-    if (configData != nullptr && isLtpo_) {
+    if (configData == nullptr || !isLtpo_) {
         return;
     }
 
@@ -601,8 +601,8 @@ void HgmFrameRateManager::GetLowBrightVec(const std::shared_ptr<PolicyConfigData
     if (lowBrightMap.empty()) {
         return;
     }
-    if (auto iter = lowBrightMap.find(SUPPORTED_MODE_LTPO); iter != lowBrightMap.end() &&
-        !iter->second.empty()) {
+    auto iter = lowBrightMap.find(SUPPORTED_MODE_LTPO);
+    if (iter != lowBrightMap.end() && !iter->second.empty()) {
         isAmbientEffect_ = true;
         lowBrightVec_ = iter->second;
     } else {
