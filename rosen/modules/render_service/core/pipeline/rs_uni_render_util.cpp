@@ -1466,52 +1466,6 @@ void RSUniRenderUtil::UpdateRealSrcRect(RSSurfaceRenderNode& node, const RectI& 
     node.SetSrcRect(newSrcRect);
 }
 
-Drawing::Matrix RSUniRenderUtil::GetPreTransformMatrix(GraphicTransformType transformType,
-    Drawing::scalar dx, Drawing::scalar dy)
-{
-    Drawing::Matrix matrix;
-    switch (transformType) {
-        case GraphicTransformType::GRAPHIC_ROTATE_90: {
-            matrix.PostRotate(-90, dx, dy); // rotate 90 degree
-            break;
-        }
-        case GraphicTransformType::GRAPHIC_ROTATE_180: {
-            matrix.PostRotate(-180, dx, dy); // rotate 180 degree
-            break;
-        }
-        case GraphicTransformType::GRAPHIC_ROTATE_270: {
-            matrix.PostRotate(-270, dx, dy); // rotate 270 degree
-            break;
-        }
-        default:
-            break;
-    }
-    return matrix;
-}
-
-Drawing::Matrix RSUniRenderUtil::GetTransformMatrix(GraphicTransformType transformType,
-    Drawing::scalar dx, Drawing::scalar dy)
-{
-    Drawing::Matrix matrix;
-    switch (transformType) {
-        case GraphicTransformType::GRAPHIC_ROTATE_90: {
-            matrix.PostRotate(90, dx, dy); // rotate 90 degree
-            break;
-        }
-        case GraphicTransformType::GRAPHIC_ROTATE_180: {
-            matrix.PostRotate(180, dx, dy); // rotate 180 degree
-            break;
-        }
-        case GraphicTransformType::GRAPHIC_ROTATE_270: {
-            matrix.PostRotate(270, dx, dy); // rotate 270 degree
-            break;
-        }
-        default:
-            break;
-    }
-    return matrix;
-}
-
 GraphicTransformType RSUniRenderUtil::GetConsumerTransform(RSSurfaceRenderNode& node, const ScreenInfo& screenInfo)
 {
     auto surfaceHandler = node.GetRSSurfaceHandler();
@@ -1530,6 +1484,64 @@ GraphicTransformType RSUniRenderUtil::GetConsumerTransform(RSSurfaceRenderNode& 
     return consumerTransform;
 }
 
+void RSUniRenderUtil::GetCurrentTotalMatrix(RSSurfaceRenderNode& node, Drawing::Matrix& totalMatrix)
+{
+    auto hwcNodeGeo = node.GetRenderProperties().GetBoundsGeometry();
+    if (!hwcNodeGeo) {
+        RS_LOGE("hwcNode Geometry is not prepared");
+        return;
+    }
+    totalMatrix = hwcNodeGeo->GetMatrix();
+    auto parent = node.GetParent().lock();
+    while (parent) {
+        if (auto opt = RSUniRenderUtil::GetMatrix(parent)) {
+            totalMatrix.PostConcat(opt.value());
+        } else {
+            break;
+        }
+        parent = parent->GetParent().lock();
+        if (!parent) {
+            break;
+        }
+    }
+}
+
+void RSUniRenderUtil::UpdateSrcRectByBufferRotation(RSSurfaceRenderNode& node,
+    const GraphicTransformType consumerTransformType, RectI& newSrcRect)
+{
+    auto buffer = node.GetRSSurfaceHandler()->GetBuffer();
+    if (!buffer) {
+        return;
+    }
+    const float frameWidth = buffer->GetSurfaceBufferWidth();
+    const float frameHeight = buffer->GetSurfaceBufferHeight();
+    int left = std::clamp<int>(newSrcRect.GetLeft(), 0, frameWidth);
+    int top = std::clamp<int>(newSrcRect.GetTop(), 0, frameHeight);
+    int width = std::clamp<int>(newSrcRect.GetWidth(), 0, frameWidth - left);
+    int height = std::clamp<int>(newSrcRect.GetHeight(), 0, frameHeight - top);
+    switch (consumerTransformType) {
+        case GraphicTransformType::GRAPHIC_ROTATE_NONE: {
+            newSrcRect = RectI(left, top, width, height);
+            break;
+        }
+        case GraphicTransformType::GRAPHIC_ROTATE_90: {
+            newSrcRect = RectI(frameWidth - width - left, top, width, height);
+            break;
+        }
+        case GraphicTransformType::GRAPHIC_ROTATE_180: {
+            newSrcRect = RectI(frameWidth - width - left, frameHeight - height - top,
+                width, height);
+            break;
+        }
+        case GraphicTransformType::GRAPHIC_ROTATE_270: {
+            newSrcRect = RectI(left, frameHeight - height - top, width, height);
+            break;
+        }
+        default:
+            break;
+    }
+}
+
 void RSUniRenderUtil::DealWithNodeGravity(RSSurfaceRenderNode& node, const ScreenInfo& screenInfo)
 {
     auto buffer = node.GetRSSurfaceHandler()->GetBuffer();
@@ -1542,11 +1554,7 @@ void RSUniRenderUtil::DealWithNodeGravity(RSSurfaceRenderNode& node, const Scree
     const float boundsWidth = property.GetBoundsWidth();
     const float boundsHeight = property.GetBoundsHeight();
     const Gravity frameGravity = property.GetFrameGravity();
-    GraphicTransformType consumerTransformType = RSUniRenderUtil::GetConsumerTransform(node, screenInfo);
-    int32_t rotationDegree = static_cast<int32_t>(RSSystemProperties::GetDefaultDeviceRotationOffset());
-    int surfaceNodeRotation = node.GetFixRotationByUser() ? -1 * rotationDegree :
-        RSUniRenderUtil::GetRotationFromMatrix(node.GetTotalMatrix());
-    GraphicTransformType surfaceTransformType = RSBaseRenderUtil::RotateEnumToInt(surfaceNodeRotation % 360);
+    GraphicTransformType consumerTransformType = GetConsumerTransform(node, screenInfo);
     CheckForceHardwareAndUpdateDstRect(node);
     // We don't have to do additional works when renderfit mode is Gravity::RESIZE or frameSize == boundsSize.
     if (frameGravity == Gravity::RESIZE || (ROSEN_EQ(frameWidth, boundsWidth) && ROSEN_EQ(frameHeight, boundsHeight))) {
@@ -1560,103 +1568,31 @@ void RSUniRenderUtil::DealWithNodeGravity(RSSurfaceRenderNode& node, const Scree
         node.SetHardwareForcedDisabledState(true);
         return;
     }
-    Drawing::Rect bounds = Drawing::Rect(0, 0, boundsWidth, boundsHeight);
-    Drawing::Rect absRect = Drawing::Rect(0, 0, 0, 0);
-    node.GetTotalMatrix().MapRect(absRect, bounds);
     if (consumerTransformType == GraphicTransformType::GRAPHIC_ROTATE_90 ||
         consumerTransformType == GraphicTransformType::GRAPHIC_ROTATE_270) {
         std::swap(frameWidth, frameHeight);
     }
-    // Create canvas to calculate aimed dstRect and corresponding srcRect
-    auto canvas = std::make_unique<Drawing::Canvas>(fmax(boundsWidth, boundsHeight), fmax(boundsWidth, boundsHeight));
-    Drawing::Matrix gravityMatrix;
-    (void)RSPropertiesPainter::GetGravityMatrix(frameGravity,
-        RectF {0.0f, 0.0f, boundsWidth, boundsHeight}, frameWidth, frameHeight, gravityMatrix);
-    canvas->ConcatMatrix(gravityMatrix);
-    Drawing::Matrix gravityMatrixScalePart = Drawing::Matrix();
-    gravityMatrixScalePart.SetMatrix(
-        gravityMatrix.Get(Drawing::Matrix::Index::SCALE_X), 0.0f, 0.0f,
-        0.0f, gravityMatrix.Get(Drawing::Matrix::Index::SCALE_Y), 0.0f,
-        0.0f, 0.0f, 1.0f);
-    Drawing::Matrix gravityMatrixTranslatePart = Drawing::Matrix();
-    gravityMatrixTranslatePart.SetMatrix(
-        1.0f, 0.0f, gravityMatrix.Get(Drawing::Matrix::Index::TRANS_X),
-        0.0f, 1.0f, gravityMatrix.Get(Drawing::Matrix::Index::TRANS_Y),
-        0.0f, 0.0f, 1.0f);
-    // Calculate Rotation Matrix
-    float dx = absRect.left_ + (absRect.right_ - absRect.left_) * 0.5;
-    float dy = absRect.top_ + (absRect.bottom_ - absRect.top_) * 0.5;
-    auto preTransformMatrix = RSUniRenderUtil::GetPreTransformMatrix(surfaceTransformType, dx, dy);
-    auto transformMatrix = RSUniRenderUtil::GetTransformMatrix(surfaceTransformType, dx, dy);
-    Drawing::Rect preRotatedAbsRect = Drawing::Rect(0, 0, 0, 0);
-    preTransformMatrix.MapRect(preRotatedAbsRect, absRect);
-    RectI dstRect = node.GetDstRect();
-    Drawing::Rect newDstRect = Drawing::Rect(
-        preRotatedAbsRect.left_, preRotatedAbsRect.top_,
-        preRotatedAbsRect.left_ + frameWidth, preRotatedAbsRect.top_ + frameHeight);
-    gravityMatrixScalePart.MapRect(newDstRect,
-        Drawing::Rect(preRotatedAbsRect.left_, preRotatedAbsRect.top_,
-            preRotatedAbsRect.left_ + frameWidth, preRotatedAbsRect.top_ + frameHeight));
-    newDstRect = Drawing::Rect(
-        preRotatedAbsRect.left_, preRotatedAbsRect.top_,
-        preRotatedAbsRect.left_ + newDstRect.right_ - newDstRect.left_,
-        preRotatedAbsRect.top_ + newDstRect.bottom_ - newDstRect.top_);
-    gravityMatrixTranslatePart.MapRect(newDstRect, newDstRect);
-    newDstRect.Intersect(Drawing::Rect(
-        preRotatedAbsRect.left_, preRotatedAbsRect.top_, preRotatedAbsRect.right_, preRotatedAbsRect.bottom_));
-    transformMatrix.MapRect(newDstRect, newDstRect);
-    Drawing::Rect croppedNewDstRect = newDstRect;
-    croppedNewDstRect.Intersect(Drawing::RectI(
-        dstRect.left_, dstRect.top_, dstRect.left_ + dstRect.width_, dstRect.top_ + dstRect.height_));
-    node.SetDstRect({croppedNewDstRect.GetLeft(), croppedNewDstRect.GetTop(),
-        croppedNewDstRect.GetWidth(), croppedNewDstRect.GetHeight()});
-    Drawing::Rect clipRect = Drawing::Rect(0.0f, 0.0f, 0.0f, 0.0f);
-    gravityMatrix.MapRect(clipRect, Drawing::Rect(
-        preRotatedAbsRect.left_, preRotatedAbsRect.top_,
-        preRotatedAbsRect.left_ + frameWidth, preRotatedAbsRect.top_ + frameHeight));
-    Drawing::Rect tempRect;
-    preTransformMatrix.MapRect(tempRect, croppedNewDstRect);
-    clipRect = Drawing::Rect(
-        clipRect.GetLeft() - preRotatedAbsRect.left_ - gravityMatrix.Get(Drawing::Matrix::Index::TRANS_X),
-        clipRect.GetTop() - preRotatedAbsRect.top_ - gravityMatrix.Get(Drawing::Matrix::Index::TRANS_Y),
-        clipRect.GetLeft() + clipRect.GetWidth() -
-            preRotatedAbsRect.left_ - gravityMatrix.Get(Drawing::Matrix::Index::TRANS_X),
-        clipRect.GetTop() + clipRect.GetHeight() -
-            preRotatedAbsRect.top_ - gravityMatrix.Get(Drawing::Matrix::Index::TRANS_Y));
-    canvas->ClipRect(clipRect, Drawing::ClipOp::INTERSECT);
-    auto localRect = canvas->GetLocalClipBounds();
-    int left = std::clamp<int>(localRect.GetLeft(), 0, frameWidth);
-    int top = std::clamp<int>(localRect.GetTop(), 0, frameHeight);
-    int width = std::clamp<int>(localRect.GetWidth(), 0, frameWidth - left);
-    int height = std::clamp<int>(localRect.GetHeight(), 0, frameHeight - top);
+    Drawing::Rect intersectRect = Drawing::Rect(0, 0, boundsWidth, boundsHeight);
+    Drawing::Rect frame = Drawing::Rect(0, 0, frameWidth, frameHeight);
+    intersectRect.Intersect(frame);
+    Drawing::Matrix totalMatrix = node.GetTotalMatrix();
+    GetCurrentTotalMatrix(node, totalMatrix);
+    Drawing::Rect absIntersectRect;
+    totalMatrix.MapRect(absIntersectRect, intersectRect);
+    const RectI& dstRect = node.GetDstRect();
+    Drawing::Rect newDstRect(dstRect.left_, dstRect.top_, dstRect.GetRight(), dstRect.GetBottom());
+    newDstRect.Intersect(absIntersectRect);
+    node.SetDstRect({newDstRect.GetLeft(), newDstRect.GetTop(), newDstRect.GetWidth(), newDstRect.GetHeight()})
     if (consumerTransformType == GraphicTransformType::GRAPHIC_ROTATE_90 ||
         consumerTransformType == GraphicTransformType::GRAPHIC_ROTATE_270) {
-        std::swap(frameWidth, frameHeight);
-        std::swap(width, height);
+        std::swap(intersectRect.left_, intersectRect.top_);
+        std::swap(intersectRect.right_, intersectRect.bottom_);
     }
-    Drawing::Rect srcRect;
-    switch (consumerTransformType) {
-        case GraphicTransformType::GRAPHIC_ROTATE_NONE: {
-            srcRect = Drawing::Rect(left, top, left + width, top + height);
-            break;
-        }
-        case GraphicTransformType::GRAPHIC_ROTATE_90: {
-            srcRect = Drawing::Rect(frameWidth - width - left, top, frameWidth - left, top + height);
-            break;
-        }
-        case GraphicTransformType::GRAPHIC_ROTATE_180: {
-            srcRect = Drawing::Rect(frameWidth - width - left, frameHeight - height - top,
-                frameWidth - left, frameHeight - top);
-            break;
-        }
-        case GraphicTransformType::GRAPHIC_ROTATE_270: {
-            srcRect = Drawing::Rect(left, frameHeight - height - top, left + width, frameHeight - top);
-            break;
-        }
-        default:
-            break;
-    }
-    node.SetSrcRect({srcRect.GetLeft(), srcRect.GetTop(), srcRect.GetWidth(), srcRect.GetHeight()});
+    RectI newSrcRect(intersectRect.left_, intersectRect.top_, intersectRect.GetWidth(), intersectRect.GetHeight());
+    const RectI& srcRect = node.GetSrcRect();
+    newSrcRect = newSrcRect.IntersectRect(srcRect);
+    UpdateSrcRectByBufferRotation(node, consumerTransformType, newSrcRect);
+    node.SetSrcRect(newSrcRect);
 }
 
 void RSUniRenderUtil::CheckForceHardwareAndUpdateDstRect(RSSurfaceRenderNode& node)
