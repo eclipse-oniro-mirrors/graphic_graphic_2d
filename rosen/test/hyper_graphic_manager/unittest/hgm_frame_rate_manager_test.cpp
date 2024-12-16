@@ -683,7 +683,7 @@ HWTEST_F(HgmFrameRateMgrTest, GetLowBrightVec, Function | SmallTest | Level2)
 
     std::string screenConfig = {"LTPO-DEFAULT"};
     {
-        configData->supportedModeConfigs_[screenConfig]["LTPO"].clear();
+        configData->supportedModeConfigs_[screenConfig].clear();
         mgr.GetLowBrightVec(configData);
         EXPECT_FALSE(mgr.isAmbientEffect_);
         EXPECT_EQ(mgr.lowBrightVec_.empty(), true);
@@ -691,9 +691,17 @@ HWTEST_F(HgmFrameRateMgrTest, GetLowBrightVec, Function | SmallTest | Level2)
 
     {
         std::vector<uint32_t> expectedLowBrightVec = {30, 40, 50};
-        configData->supportedModeConfigs_[screenConfig]["LTPO"] = expectedLowBrightVec;
+        configData->supportedModeConfigs_[screenConfig] = expectedLowBrightVec;
         mgr.GetLowBrightVec(configData);
-        EXPECT_TRUE(mgr.isAmbientEffect_);
+        EXPECT_FALSE(mgr.isAmbientEffect_);
+        EXPECT_NE(mgr.lowBrightVec_, expectedLowBrightVec);
+    }
+
+    {
+        std::vector<uint32_t> expectedLowBrightVec = {30, 60, 90};
+        configData->supportedModeConfigs_[screenConfig] = expectedLowBrightVec;
+        mgr.GetLowBrightVec(configData);
+        EXPECT_FALSE(mgr.isAmbientEffect_);
         EXPECT_EQ(mgr.lowBrightVec_, expectedLowBrightVec);
     }
 }

@@ -328,13 +328,10 @@ int32_t XMLParser::ParseScreenConfig(xmlNode &node)
         }
         auto name = ExtractPropertyValue("name", *currNode);
         if (name == "supported_mode") {
-            PolicyConfigData::LowBrightConfigMap lowBrightList;
-            int32_t setResult = EXEC_SUCCESS;
-            setResult = ParseLowBrightList(*currNode, lowBrightList);
-            if (setResult != EXEC_SUCCESS) {
-                HGM_LOGI("XMLParser failed to ParseLowBrightList");
-            }
-            mParsedData_->supportedModeConfigs_[type] = lowBrightList;
+            std::vector<uint32_t> supportedModeVector;
+            auto value = ExtractPropertyValue("value", *currNode);
+            supportedModeVector = StringToVector(value);
+            mParsedData_->supportedModeConfigs_[type] = supportedModeVector;
             continue;
         }
         PolicyConfigData::ScreenSetting screenSetting;
@@ -506,35 +503,6 @@ int32_t XMLParser::ParseSceneList(xmlNode &node, PolicyConfigData::SceneConfigMa
         sceneList[name] = sceneConfig;
         HGM_LOGI("HgmXMLParser ParseSceneList name=%{public}s strategy=%{public}s priority=%{public}s",
                  name.c_str(), sceneList[name].strategy.c_str(), sceneList[name].priority.c_str());
-    }
-
-    return EXEC_SUCCESS;
-}
-
-int32_t XMLParser::ParseLowBrightList(xmlNode &node, PolicyConfigData::LowBrightConfigMap &lowBrightList)
-{
-    HGM_LOGD("XMLParser parsing lowBrightList");
-    xmlNode *currNode = &node;
-    if (currNode->xmlChildrenNode == nullptr) {
-        HGM_LOGD("XMLParser stop parsing lowBrightList, no children nodes");
-        return HGM_ERROR;
-    }
-
-    // re-parse
-    lowBrightList.clear();
-    currNode = currNode->xmlChildrenNode;
-    for (; currNode; currNode = currNode->next) {
-        if (currNode->type != XML_ELEMENT_NODE) {
-            continue;
-        }
-        auto name = ExtractPropertyValue("name", *currNode);
-        auto value = ExtractPropertyValue("value", *currNode);
-        // lowBrightConfig may be an empty vector
-        auto lowBrightConfig = StringToVector(value);
-
-        lowBrightList[name] = lowBrightConfig;
-        HGM_LOGI("HgmXMLParser ParseLowBrightList name=%{public}s value=%{public}s",
-                 name.c_str(), value.c_str());
     }
 
     return EXEC_SUCCESS;

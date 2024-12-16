@@ -119,10 +119,8 @@ public:
     // <"SCENE_APP_START_ANIMATION", SceneConfig>
     using SceneConfigMap = std::unordered_map<std::string, SceneConfig>;
 
-    // <"LTPO", <30, 60, 120>>
-    using LowBrightConfigMap = std::unordered_map<std::string, std::vector<uint32_t>>;
-    // <"LTPO-DEAULT", LowBrightConfigMap>
-    using SupportedModeMap = std::unordered_map<std::string, LowBrightConfigMap>;
+    // <"LTPO-DEAULT", <30, 60, 120>>
+    using SupportedModeMap = std::unordered_map<std::string, std::vector<uint32_t>>;
 
     struct DynamicConfig {
         int32_t min;
