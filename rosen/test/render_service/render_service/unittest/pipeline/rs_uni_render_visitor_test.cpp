@@ -5431,7 +5431,7 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateAncoNodeHWCDisabledState, TestSize.Level1
     auto hwcNodePtr = RSTestUtil::CreateSurfaceNodeWithBuffer();
     ASSERT_NE(hwcNodePtr, nullptr);
     hwcNodePtr->SetAncoFlags(static_cast<uint32_t>(AncoFlags::IS_ANCO_NODE));
-    rsUniRenderVisitor->ancoNodes_insert(hwcNodePtr);
+    rsUniRenderVisitor->ancoNodes_.insert(hwcNodePtr);
     rsUniRenderVisitor->UpdateAncoNodeHWCDisabledState();
 }
 } // OHOS::Rosen
