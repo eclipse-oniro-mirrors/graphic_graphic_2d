@@ -110,7 +110,8 @@ public:
         VkFormat format = VK_FORMAT_R8G8B8A8_UNORM);
 #endif
     static void UpdateRealSrcRect(RSSurfaceRenderNode& node, const RectI& absRect);
-    static void DealWithNodeGravity(RSSurfaceRenderNode& node, const ScreenInfo& screenInfo);
+    static void DealWithNodeGravity(RSSurfaceRenderNode& node, const ScreenInfo& screenInfo,
+        Drawing::Matrix totalMatrix);
     static void DealWithScalingMode(RSSurfaceRenderNode& node, const ScreenInfo& screenInfo);
     static void CheckForceHardwareAndUpdateDstRect(RSSurfaceRenderNode& node);
     static void LayerRotate(RSSurfaceRenderNode& node, const ScreenInfo& screenInfo);
@@ -155,10 +156,8 @@ public:
     static void UpdateHwcNodeProperty(std::shared_ptr<RSSurfaceRenderNode> hwcNode);
     static void MultiLayersPerf(size_t layerNum);
     static GraphicTransformType GetConsumerTransform(const RSSurfaceRenderNode& node, const ScreenInfo& screenInfo);
-    static RectI CalcSrcRectByBufferRotation(const sptr<SurfaceBuffer>& buffer,
+    static RectI CalcSrcRectByBufferRotation(const SurfaceBuffer& buffer,
         const GraphicTransformType consumerTransformType, RectI newSrcRect);
-    static Drawing::Matrix GetCurrentTotalMatrix(const RSSurfaceRenderNode& node,
-        const std::shared_ptr<RSObjAbsGeometry>& hwcNodeGeo);
 private:
     static void SetSrcRect(BufferDrawParam& params, const sptr<SurfaceBuffer>& buffer);
     static RectI SrcRectRotateTransform(RSSurfaceRenderNode& node, GraphicTransformType transformType);

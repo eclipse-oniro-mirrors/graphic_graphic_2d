@@ -1485,11 +1485,11 @@ GraphicTransformType RSUniRenderUtil::GetConsumerTransform(const RSSurfaceRender
     return consumerTransform;
 }
 
-RectI RSUniRenderUtil::CalcSrcRectByBufferRotation(const sptr<SurfaceBuffer>& buffer,
+RectI RSUniRenderUtil::CalcSrcRectByBufferRotation(const SurfaceBuffer& buffer,
     const GraphicTransformType consumerTransformType, RectI newSrcRect)
 {
-    const float frameWidth = buffer->GetSurfaceBufferWidth();
-    const float frameHeight = buffer->GetSurfaceBufferHeight();
+    const float frameWidth = buffer.GetSurfaceBufferWidth();
+    const float frameHeight = buffer.GetSurfaceBufferHeight();
     int left = std::clamp<int>(newSrcRect.GetLeft(), 0, frameWidth);
     int top = std::clamp<int>(newSrcRect.GetTop(), 0, frameHeight);
     int width = std::clamp<int>(newSrcRect.GetWidth(), 0, frameWidth - left);
@@ -1518,23 +1518,8 @@ RectI RSUniRenderUtil::CalcSrcRectByBufferRotation(const sptr<SurfaceBuffer>& bu
     return newSrcRect;
 }
 
-Drawing::Matrix RSUniRenderUtil::GetCurrentTotalMatrix(const RSSurfaceRenderNode& node,
-    const std::shared_ptr<RSObjAbsGeometry>& hwcNodeGeo)
-{
-    Drawing::Matrix totalMatrix = hwcNodeGeo->GetMatrix();
-    auto parent = node.GetParent().lock();
-    while (parent) {
-        if (auto opt = RSUniRenderUtil::GetMatrix(parent)) {
-            totalMatrix.PostConcat(opt.value());
-        } else {
-            break;
-        }
-        parent = parent->GetParent().lock();
-    }
-    return totalMatrix;
-}
-
-void RSUniRenderUtil::DealWithNodeGravity(RSSurfaceRenderNode& node, const ScreenInfo& screenInfo)
+void RSUniRenderUtil::DealWithNodeGravity(RSSurfaceRenderNode& node, const ScreenInfo& screenInfo,
+    Drawing::Matrix totalMatrix)
 {
     auto buffer = node.GetRSSurfaceHandler()->GetBuffer();
     if (!buffer) {
@@ -1572,14 +1557,13 @@ void RSUniRenderUtil::DealWithNodeGravity(RSSurfaceRenderNode& node, const Scree
     Drawing::Rect localIntersectRect = Drawing::Rect(0, 0, boundsWidth, boundsHeight);
     Drawing::Rect frame = Drawing::Rect(0, 0, frameWidth, frameHeight);
     localIntersectRect.Intersect(frame);
-    Drawing::Matrix totalMatrix = node.GetTotalMatrix();
-    totalMatrix = GetCurrentTotalMatrix(node, hwcNodeGeo);
     Drawing::Rect absIntersectRect;
     totalMatrix.MapRect(absIntersectRect, localIntersectRect);
     const RectI& dstRect = node.GetDstRect();
     Drawing::Rect newDstRect(dstRect.left_, dstRect.top_, dstRect.GetRight(), dstRect.GetBottom());
     newDstRect.Intersect(absIntersectRect);
-    node.SetDstRect({newDstRect.GetLeft(), newDstRect.GetTop(), newDstRect.GetWidth(), newDstRect.GetHeight()});
+    node.SetDstRect({std::floor(newDstRect.GetLeft()), std::floor(newDstRect.GetTop()),
+        std::ceil(newDstRect.GetWidth()), std::ceil(newDstRect.GetHeight())});
     if (consumerTransformType == GraphicTransformType::GRAPHIC_ROTATE_90 ||
         consumerTransformType == GraphicTransformType::GRAPHIC_ROTATE_270) {
         std::swap(localIntersectRect.left_, localIntersectRect.top_);
@@ -1589,7 +1573,7 @@ void RSUniRenderUtil::DealWithNodeGravity(RSSurfaceRenderNode& node, const Scree
         localIntersectRect.GetWidth(), localIntersectRect.GetHeight());
     const RectI& srcRect = node.GetSrcRect();
     newSrcRect = newSrcRect.IntersectRect(srcRect);
-    newSrcRect = CalcSrcRectByBufferRotation(buffer, consumerTransformType, newSrcRect);
+    newSrcRect = CalcSrcRectByBufferRotation(*buffer, consumerTransformType, newSrcRect);
     node.SetSrcRect(newSrcRect);
 }
 

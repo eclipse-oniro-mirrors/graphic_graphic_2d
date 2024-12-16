@@ -1033,7 +1033,7 @@ void RSUniRenderVisitor::PrepareForUIFirstNode(RSSurfaceRenderNode& node)
         if (auto& geo = node.GetRenderProperties().GetBoundsGeometry()) {
             UpdateSrcRect(node, geo->GetAbsMatrix(), geo->GetAbsRect());
         }
-        UpdateHwcNodeByTransform(node);
+        UpdateHwcNodeByTransform(node, node.GetRenderProperties().GetBoundsGeometry()->GetAbsMatrix());
     }
     if (RSUifirstManager::Instance().GetUseDmaBuffer(node.GetName()) && curSurfaceDirtyManager_ &&
         (node.GetLastFrameUifirstFlag() != lastFlag ||
@@ -1595,7 +1595,7 @@ void RSUniRenderVisitor::UpdateHwcNodeInfoForAppNode(RSSurfaceRenderNode& node)
             return;
         }
         UpdateSrcRect(node, geo->GetAbsMatrix(), geo->GetAbsRect());
-        UpdateHwcNodeByTransform(node);
+        UpdateHwcNodeByTransform(node, geo->GetAbsMatrix());
         UpdateHwcNodeEnableByBackgroundAlpha(node);
         UpdateHwcNodeEnableByBufferSize(node);
         UpdateHwcNodeEnableBySrcRect(node);
@@ -1640,13 +1640,13 @@ void RSUniRenderVisitor::UpdateDstRect(RSSurfaceRenderNode& node, const RectI& a
     node.SetDstRect(dstRect);
 }
 
-void RSUniRenderVisitor::UpdateHwcNodeByTransform(RSSurfaceRenderNode& node)
+void RSUniRenderVisitor::UpdateHwcNodeByTransform(RSSurfaceRenderNode& node, Drawing::Matrix totalMatrix)
 {
     if (!node.GetRSSurfaceHandler() || !node.GetRSSurfaceHandler()->GetBuffer()) {
         return;
     }
     node.SetInFixedRotation(displayNodeRotationChanged_ || isScreenRotationAnimating_);
-    RSUniRenderUtil::DealWithNodeGravity(node, screenInfo_);
+    RSUniRenderUtil::DealWithNodeGravity(node, screenInfo_, totalMatrix);
     RSUniRenderUtil::LayerRotate(node, screenInfo_);
     RSUniRenderUtil::LayerCrop(node, screenInfo_);
     RSUniRenderUtil::DealWithScalingMode(node, screenInfo_);
@@ -2938,15 +2938,15 @@ void RSUniRenderVisitor::UpdateHwcNodeRectInSkippedSubTree(const RSRenderNode& r
         Drawing::Rect bounds = Drawing::Rect(0, 0, properties.GetBoundsWidth(), properties.GetBoundsHeight());
         Drawing::Rect absRect;
         matrix.MapRect(absRect, bounds);
+        hwcNodePtr->SetTotalMatrix(matrix);
         RectI rect = {std::round(absRect.left_), std::round(absRect.top_),
             std::round(absRect.GetWidth()), std::round(absRect.GetHeight())};
         UpdateDstRect(*hwcNodePtr, rect, prepareClipRect_);
         UpdateSrcRect(*hwcNodePtr, matrix, rect);
-        UpdateHwcNodeByTransform(*hwcNodePtr);
+        UpdateHwcNodeByTransform(*hwcNodePtr, matrix);
         UpdateHwcNodeEnableByBackgroundAlpha(*hwcNodePtr);
         UpdateHwcNodeEnableBySrcRect(*hwcNodePtr);
         UpdateHwcNodeEnableByBufferSize(*hwcNodePtr);
-        hwcNodePtr->SetTotalMatrix(matrix);
         hwcNodePtr->SetOldDirtyInSurface(geoPtr->MapRect(hwcNodePtr->GetSelfDrawRect(), matrix));
     }
 }
