@@ -1522,13 +1522,10 @@ void RSUniRenderUtil::DealWithNodeGravity(RSSurfaceRenderNode& node, const Scree
     Drawing::Matrix totalMatrix)
 {
     auto buffer = node.GetRSSurfaceHandler()->GetBuffer();
-    if (!buffer) {
-        return;
-    }
     const auto& property = node.GetRenderProperties();
     const std::shared_ptr<RSObjAbsGeometry>& hwcNodeGeo = property.GetBoundsGeometry();
-    if (!hwcNodeGeo) {
-        RS_LOGE("hwcNode Geometry is not prepared");
+    if (!buffer || !hwcNodeGeo) {
+        RS_LOGE("hwcNode Geometry is not prepared or buffer cannot be found");
         return;
     }
     float frameWidth = buffer->GetSurfaceBufferWidth();
@@ -1555,8 +1552,7 @@ void RSUniRenderUtil::DealWithNodeGravity(RSSurfaceRenderNode& node, const Scree
         std::swap(frameWidth, frameHeight);
     }
     Drawing::Rect localIntersectRect = Drawing::Rect(0, 0, boundsWidth, boundsHeight);
-    Drawing::Rect frame = Drawing::Rect(0, 0, frameWidth, frameHeight);
-    localIntersectRect.Intersect(frame);
+    localIntersectRect.Intersect(Drawing::Rect(0, 0, frameWidth, frameHeight));
     Drawing::Rect absIntersectRect;
     totalMatrix.MapRect(absIntersectRect, localIntersectRect);
     const RectI& dstRect = node.GetDstRect();
