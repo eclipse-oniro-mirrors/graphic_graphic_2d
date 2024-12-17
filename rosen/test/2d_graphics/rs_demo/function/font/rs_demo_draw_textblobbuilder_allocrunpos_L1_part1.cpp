@@ -31,17 +31,22 @@
 namespace OHOS {
 namespace Rosen {
 
-void DrawText(Drawing::TextBlobBuilder& builder, TestPlaybackCanvas* playbackCanvas) {
+void DrawText(Drawing::TextBlobBuilder& builder, TestPlaybackCanvas* playbackCanvas)
+{
     Drawing::Brush brush;
     Drawing::Pen pen;
 
+    int line2 = 200;
+    int line5 = 500;
+    int interval2 = 200;
+
     playbackCanvas->AttachBrush(brush);
     std::shared_ptr<Drawing::TextBlob> infoTextBlob1 = builder.Make();
-    playbackCanvas->DrawTextBlob(infoTextBlob1.get(), 200, 200);
+    playbackCanvas->DrawTextBlob(infoTextBlob1.get(), interval2, line2);
     playbackCanvas->DetachBrush();
 
     playbackCanvas->AttachPen(pen);
-    playbackCanvas->DrawTextBlob(infoTextBlob1.get(), 200, 500);
+    playbackCanvas->DrawTextBlob(infoTextBlob1.get(), interval2, line5);
     playbackCanvas->DetachPen();
 }
 
