@@ -1518,7 +1518,7 @@ RectI RSUniRenderUtil::CalcSrcRectByBufferRotation(const SurfaceBuffer& buffer,
 }
 
 void RSUniRenderUtil::DealWithNodeGravity(RSSurfaceRenderNode& node, const ScreenInfo& screenInfo,
-    Drawing::Matrix totalMatrix)
+    const Drawing::Matrix& totalMatrix)
 {
     auto buffer = node.GetRSSurfaceHandler()->GetBuffer();
     const auto& property = node.GetRenderProperties();

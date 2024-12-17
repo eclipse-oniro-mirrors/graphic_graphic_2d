@@ -1640,7 +1640,7 @@ void RSUniRenderVisitor::UpdateDstRect(RSSurfaceRenderNode& node, const RectI& a
     node.SetDstRect(dstRect);
 }
 
-void RSUniRenderVisitor::UpdateHwcNodeByTransform(RSSurfaceRenderNode& node, Drawing::Matrix totalMatrix)
+void RSUniRenderVisitor::UpdateHwcNodeByTransform(RSSurfaceRenderNode& node, const Drawing::Matrix& totalMatrix)
 {
     if (!node.GetRSSurfaceHandler() || !node.GetRSSurfaceHandler()->GetBuffer()) {
         return;
