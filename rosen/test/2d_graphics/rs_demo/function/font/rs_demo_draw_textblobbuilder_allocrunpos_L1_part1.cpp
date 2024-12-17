@@ -19,6 +19,15 @@
 #include "text/text_blob_builder.h"
 #include "text/typeface.h"
 
+/*
+测试类：textblobbuilder
+测试接口：allocrunpos
+测试内容：
+1、对接口入参字体样式、需生成textblob字符个数、字体样式生效范围进行参数组合创建buffer。
+2、对buffer里每个元素设置glyphsID并进行排版。
+3、通过make接口创建textblob，并调用drawtextblob接口将内容绘制在画布上。
+*/
+
 namespace OHOS {
 namespace Rosen {
 
