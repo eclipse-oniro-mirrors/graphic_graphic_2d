@@ -453,7 +453,8 @@ void RSUIDirector::DumpNodeTreeProcessor(NodeId nodeId, pid_t pid, uint32_t task
     ROSEN_LOGI("DumpNodeTreeProcessor task[%{public}u] node[%" PRIu64 "]", taskId, nodeId);
 
     std::string out;
-    int32_t instanceId = RSNodeMap::Instance().GetNodeInstanceId(realId);
+    // use for dump transactionFlags [pid,index] in client tree dump
+    int32_t instanceId = RSNodeMap::Instance().GetNodeInstanceId(nodeId);
     {
         std::unique_lock<std::mutex> lock(uiTaskRunnersVisitorMutex);
         for (const auto &[director, taskRunner] : uiTaskRunners) {
