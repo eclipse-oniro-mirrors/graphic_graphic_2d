@@ -657,5 +657,629 @@ DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 24)
     DrawText(builder, playbackCanvas_);
 }
 
+//对应用例allocrunrsxform_3025
+DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 25)
+{
+    Drawing::Brush brush;
+    Drawing::Pen pen;
+    playbackCanvas_->AttachBrush(brush);
+    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
+    std::string name = "HarmonyOS Sans SC";
+    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
+    auto typeface = Drawing::Typeface::MakeDefault();
+    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
+    auto font = Drawing::Font();
+    font.SetTypeface(typeface);
+    font.SetSize(50.f);
+    Drawing::TextBlobBuilder builder;
+    auto buffer = builder.AllocRunRSXform(font, 0);
+    for (int i = 0; i < 0; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X30);
+        buffer.pos[i * 4] = i+1;
+        buffer.pos[i * 4 + 1] =  0;
+        buffer.pos[i * 4 + 2] =  100;
+        buffer.pos[i * 4 + 3] =  100;
+    }
+    DrawText(builder, playbackCanvas_);
+}
+
+//对应用例allocrunrsxform_3026
+DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 26)
+{
+    Drawing::Brush brush;
+    Drawing::Pen pen;
+    playbackCanvas_->AttachBrush(brush);
+    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
+    std::string name = "HarmonyOS Sans SC";
+    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
+    auto typeface = Drawing::Typeface::MakeDefault();
+    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
+    auto font = Drawing::Font();
+    font.SetTypeface(typeface);
+    font.SetSize(50.f);
+    Drawing::TextBlobBuilder builder;
+    auto buffer = builder.AllocRunRSXform(font, 0);
+    for (int i = 0; i < 0; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X30);
+        buffer.pos[i * 4] = cos(i*18);
+        buffer.pos[i * 4 + 1] = sin(18*i);
+        buffer.pos[i * 4 + 2] = 100;
+        buffer.pos[i * 4 + 3] = 100;
+    }
+    DrawText(builder, playbackCanvas_);
+}
+
+//对应用例allocrunrsxform_3027
+DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 27)
+{
+    Drawing::Brush brush;
+    Drawing::Pen pen;
+    playbackCanvas_->AttachBrush(brush);
+    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
+    std::string name = "HarmonyOS Sans SC";
+    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
+    auto typeface = Drawing::Typeface::MakeDefault();
+    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
+    auto font = Drawing::Font();
+    font.SetTypeface(typeface);
+    font.SetSize(50.f);
+    Drawing::TextBlobBuilder builder;
+    auto buffer = builder.AllocRunRSXform(font, 0);
+    for (int i = 0; i < 0; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X30);
+        buffer.pos[i * 4] = 1;
+        buffer.pos[i * 4 + 1] =  0;
+        buffer.pos[i * 4 + 2] =  50*i;
+        buffer.pos[i * 4 + 3] =  0;
+    }
+    DrawText(builder, playbackCanvas_);
+}
+
+//对应用例allocrunrsxform_3028
+DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 28)
+{
+    Drawing::Brush brush;
+    Drawing::Pen pen;
+    playbackCanvas_->AttachBrush(brush);
+    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
+    std::string name = "HarmonyOS Sans SC";
+    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
+    auto typeface = Drawing::Typeface::MakeDefault();
+    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
+    auto font = Drawing::Font();
+    font.SetTypeface(typeface);
+    font.SetSize(50.f);
+    Drawing::TextBlobBuilder builder;
+    auto buffer = builder.AllocRunRSXform(font, 0);
+    for (int i = 0; i < 0; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X30);
+        buffer.pos[i * 4] = cos(10 * i) + 0.1 * i;
+        buffer.pos[i * 4 + 1] = sin(10 * i);
+        buffer.pos[i * 4 + 2] =  20*i;
+        buffer.pos[i * 4 + 3] =  -10*i;
+    }
+    DrawText(builder, playbackCanvas_);
+}
+
+//对应用例allocrunrsxform_3029
+DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 29)
+{
+    Drawing::Brush brush;
+    Drawing::Pen pen;
+    playbackCanvas_->AttachBrush(brush);
+    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
+    std::string name = "HarmonyOS Sans SC";
+    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
+    auto typeface = Drawing::Typeface::MakeDefault();
+    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
+    auto font = Drawing::Font();
+    font.SetTypeface(typeface);
+    font.SetSize(50.f);
+    Drawing::TextBlobBuilder builder;
+    auto buffer = builder.AllocRunRSXform(font, 0);
+    for (int i = 0; i < 0; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X9088);
+        buffer.pos[i * 4] = i+1;
+        buffer.pos[i * 4 + 1] =  0;
+        buffer.pos[i * 4 + 2] =  100;
+        buffer.pos[i * 4 + 3] =  100;
+    }
+    DrawText(builder, playbackCanvas_);
+}
+
+//对应用例allocrunrsxform_3030
+DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 30)
+{
+    Drawing::Brush brush;
+    Drawing::Pen pen;
+    playbackCanvas_->AttachBrush(brush);
+    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
+    std::string name = "HarmonyOS Sans SC";
+    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
+    auto typeface = Drawing::Typeface::MakeDefault();
+    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
+    auto font = Drawing::Font();
+    font.SetTypeface(typeface);
+    font.SetSize(50.f);
+    Drawing::TextBlobBuilder builder;
+    auto buffer = builder.AllocRunRSXform(font, 0);
+    for (int i = 0; i < 0; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X9088);
+        buffer.pos[i * 4] = cos(i*18);
+        buffer.pos[i * 4 + 1] = sin(18*i);
+        buffer.pos[i * 4 + 2] = 100;
+        buffer.pos[i * 4 + 3] = 100;
+    }
+    DrawText(builder, playbackCanvas_);
+}
+
+//对应用例allocrunrsxform_3031
+DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 31)
+{
+    Drawing::Brush brush;
+    Drawing::Pen pen;
+    playbackCanvas_->AttachBrush(brush);
+    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
+    std::string name = "HarmonyOS Sans SC";
+    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
+    auto typeface = Drawing::Typeface::MakeDefault();
+    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
+    auto font = Drawing::Font();
+    font.SetTypeface(typeface);
+    font.SetSize(50.f);
+    Drawing::TextBlobBuilder builder;
+    auto buffer = builder.AllocRunRSXform(font, 0);
+    for (int i = 0; i < 0; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X9088);
+        buffer.pos[i * 4] = 1;
+        buffer.pos[i * 4 + 1] =  0;
+        buffer.pos[i * 4 + 2] =  50*i;
+        buffer.pos[i * 4 + 3] =  0;
+    }
+    DrawText(builder, playbackCanvas_);
+}
+
+//对应用例allocrunrsxform_3032
+DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 32)
+{
+    Drawing::Brush brush;
+    Drawing::Pen pen;
+    playbackCanvas_->AttachBrush(brush);
+    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
+    std::string name = "HarmonyOS Sans SC";
+    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
+    auto typeface = Drawing::Typeface::MakeDefault();
+    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
+    auto font = Drawing::Font();
+    font.SetTypeface(typeface);
+    font.SetSize(50.f);
+    Drawing::TextBlobBuilder builder;
+    auto buffer = builder.AllocRunRSXform(font, 0);
+    for (int i = 0; i < 0; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X9088);
+        buffer.pos[i * 4] = cos(10 * i) + 0.1 * i;
+        buffer.pos[i * 4 + 1] = sin(10 * i);
+        buffer.pos[i * 4 + 2] =  20*i;
+        buffer.pos[i * 4 + 3] =  -10*i;
+    }
+    DrawText(builder, playbackCanvas_);
+}
+
+//对应用例allocrunrsxform_3033
+DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 33)
+{
+    Drawing::Brush brush;
+    Drawing::Pen pen;
+    playbackCanvas_->AttachBrush(brush);
+    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
+    std::string name = "HarmonyOS Sans SC";
+    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
+    auto typeface = Drawing::Typeface::MakeDefault();
+    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
+    auto font = Drawing::Font();
+    font.SetTypeface(typeface);
+    font.SetSize(50.f);
+    Drawing::TextBlobBuilder builder;
+    auto buffer = builder.AllocRunRSXform(font, 0);
+    for (int i = 0; i < 0; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X00AE);
+        buffer.pos[i * 4] = i+1;
+        buffer.pos[i * 4 + 1] =  0;
+        buffer.pos[i * 4 + 2] =  100;
+        buffer.pos[i * 4 + 3] =  100;
+    }
+    DrawText(builder, playbackCanvas_);
+}
+
+//对应用例allocrunrsxform_3034
+DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 34)
+{
+    Drawing::Brush brush;
+    Drawing::Pen pen;
+    playbackCanvas_->AttachBrush(brush);
+    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
+    std::string name = "HarmonyOS Sans SC";
+    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
+    auto typeface = Drawing::Typeface::MakeDefault();
+    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
+    auto font = Drawing::Font();
+    font.SetTypeface(typeface);
+    font.SetSize(50.f);
+    Drawing::TextBlobBuilder builder;
+    auto buffer = builder.AllocRunRSXform(font, 0);
+    for (int i = 0; i < 0; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X00AE);
+        buffer.pos[i * 4] = cos(i*18);
+        buffer.pos[i * 4 + 1] = sin(18*i);
+        buffer.pos[i * 4 + 2] = 100;
+        buffer.pos[i * 4 + 3] = 100;
+    }
+    DrawText(builder, playbackCanvas_);
+}
+
+//对应用例allocrunrsxform_3035
+DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 35)
+{
+    Drawing::Brush brush;
+    Drawing::Pen pen;
+    playbackCanvas_->AttachBrush(brush);
+    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
+    std::string name = "HarmonyOS Sans SC";
+    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
+    auto typeface = Drawing::Typeface::MakeDefault();
+    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
+    auto font = Drawing::Font();
+    font.SetTypeface(typeface);
+    font.SetSize(50.f);
+    Drawing::TextBlobBuilder builder;
+    auto buffer = builder.AllocRunRSXform(font, 0);
+    for (int i = 0; i < 0; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X00AE);
+        buffer.pos[i * 4] = 1;
+        buffer.pos[i * 4 + 1] =  0;
+        buffer.pos[i * 4 + 2] =  50*i;
+        buffer.pos[i * 4 + 3] =  0;
+    }
+    DrawText(builder, playbackCanvas_);
+}
+
+//对应用例allocrunrsxform_3036
+DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 36)
+{
+    Drawing::Brush brush;
+    Drawing::Pen pen;
+    playbackCanvas_->AttachBrush(brush);
+    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
+    std::string name = "HarmonyOS Sans SC";
+    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
+    auto typeface = Drawing::Typeface::MakeDefault();
+    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
+    auto font = Drawing::Font();
+    font.SetTypeface(typeface);
+    font.SetSize(50.f);
+    Drawing::TextBlobBuilder builder;
+    auto buffer = builder.AllocRunRSXform(font, 0);
+    for (int i = 0; i < 0; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X00AE);
+        buffer.pos[i * 4] = cos(10 * i) + 0.1 * i;
+        buffer.pos[i * 4 + 1] = sin(10 * i);
+        buffer.pos[i * 4 + 2] =  20*i;
+        buffer.pos[i * 4 + 3] =  -10*i;
+    }
+    DrawText(builder, playbackCanvas_);
+}
+
+//对应用例allocrunrsxform_3037
+DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 37)
+{
+    Drawing::Brush brush;
+    Drawing::Pen pen;
+    playbackCanvas_->AttachBrush(brush);
+    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
+    std::string name = "HarmonyOS Sans SC";
+    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
+    auto typeface = Drawing::Typeface::MakeDefault();
+    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
+    auto font = Drawing::Font();
+    font.SetTypeface(typeface);
+    font.SetSize(50.f);
+    Drawing::TextBlobBuilder builder;
+    auto buffer = builder.AllocRunRSXform(font, -1);
+    for (int i = 0; i < 10; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X30);
+        buffer.pos[i * 4] = i+1;
+        buffer.pos[i * 4 + 1] =  0;
+        buffer.pos[i * 4 + 2] =  100;
+        buffer.pos[i * 4 + 3] =  100;
+    }
+    DrawText(builder, playbackCanvas_);
+}
+
+//对应用例allocrunrsxform_3038
+DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 38)
+{
+    Drawing::Brush brush;
+    Drawing::Pen pen;
+    playbackCanvas_->AttachBrush(brush);
+    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
+    std::string name = "HarmonyOS Sans SC";
+    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
+    auto typeface = Drawing::Typeface::MakeDefault();
+    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
+    auto font = Drawing::Font();
+    font.SetTypeface(typeface);
+    font.SetSize(50.f);
+    Drawing::TextBlobBuilder builder;
+    auto buffer = builder.AllocRunRSXform(font, -1);
+    for (int i = 0; i < 10; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X30);
+        buffer.pos[i * 4] = cos(i*18);
+        buffer.pos[i * 4 + 1] = sin(18*i);
+        buffer.pos[i * 4 + 2] = 100;
+        buffer.pos[i * 4 + 3] = 100;
+    }
+    DrawText(builder, playbackCanvas_);
+}
+
+//对应用例allocrunrsxform_3039
+DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 39)
+{
+    Drawing::Brush brush;
+    Drawing::Pen pen;
+    playbackCanvas_->AttachBrush(brush);
+    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
+    std::string name = "HarmonyOS Sans SC";
+    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
+    auto typeface = Drawing::Typeface::MakeDefault();
+    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
+    auto font = Drawing::Font();
+    font.SetTypeface(typeface);
+    font.SetSize(50.f);
+    Drawing::TextBlobBuilder builder;
+    auto buffer = builder.AllocRunRSXform(font, -1);
+    for (int i = 0; i < 10; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X30);
+        buffer.pos[i * 4] = 1;
+        buffer.pos[i * 4 + 1] =  0;
+        buffer.pos[i * 4 + 2] =  50*i;
+        buffer.pos[i * 4 + 3] =  0;
+    }
+    DrawText(builder, playbackCanvas_);
+}
+
+//对应用例allocrunrsxform_3040
+DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 40)
+{
+    Drawing::Brush brush;
+    Drawing::Pen pen;
+    playbackCanvas_->AttachBrush(brush);
+    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
+    std::string name = "HarmonyOS Sans SC";
+    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
+    auto typeface = Drawing::Typeface::MakeDefault();
+    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
+    auto font = Drawing::Font();
+    font.SetTypeface(typeface);
+    font.SetSize(50.f);
+    Drawing::TextBlobBuilder builder;
+    auto buffer = builder.AllocRunRSXform(font, -1);
+    for (int i = 0; i < 10; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X30);
+        buffer.pos[i * 4] = cos(10 * i) + 0.1 * i;
+        buffer.pos[i * 4 + 1] = sin(10 * i);
+        buffer.pos[i * 4 + 2] =  20*i;
+        buffer.pos[i * 4 + 3] =  -10*i;
+    }
+    DrawText(builder, playbackCanvas_);
+}
+
+//对应用例allocrunrsxform_3041
+DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 41)
+{
+    Drawing::Brush brush;
+    Drawing::Pen pen;
+    playbackCanvas_->AttachBrush(brush);
+    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
+    std::string name = "HarmonyOS Sans SC";
+    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
+    auto typeface = Drawing::Typeface::MakeDefault();
+    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
+    auto font = Drawing::Font();
+    font.SetTypeface(typeface);
+    font.SetSize(50.f);
+    Drawing::TextBlobBuilder builder;
+    auto buffer = builder.AllocRunRSXform(font, -1);
+    for (int i = 0; i < 10; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X9088);
+        buffer.pos[i * 4] = i+1;
+        buffer.pos[i * 4 + 1] =  0;
+        buffer.pos[i * 4 + 2] =  100;
+        buffer.pos[i * 4 + 3] =  100;
+    }
+    DrawText(builder, playbackCanvas_);
+}
+
+//对应用例allocrunrsxform_3042
+DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 42)
+{
+    Drawing::Brush brush;
+    Drawing::Pen pen;
+    playbackCanvas_->AttachBrush(brush);
+    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
+    std::string name = "HarmonyOS Sans SC";
+    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
+    auto typeface = Drawing::Typeface::MakeDefault();
+    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
+    auto font = Drawing::Font();
+    font.SetTypeface(typeface);
+    font.SetSize(50.f);
+    Drawing::TextBlobBuilder builder;
+    auto buffer = builder.AllocRunRSXform(font, -1);
+    for (int i = 0; i < 10; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X9088);
+        buffer.pos[i * 4] = cos(i*18);
+        buffer.pos[i * 4 + 1] = sin(18*i);
+        buffer.pos[i * 4 + 2] = 100;
+        buffer.pos[i * 4 + 3] = 100;
+    }
+    DrawText(builder, playbackCanvas_);
+}
+
+//对应用例allocrunrsxform_3043
+DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 43)
+{
+    Drawing::Brush brush;
+    Drawing::Pen pen;
+    playbackCanvas_->AttachBrush(brush);
+    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
+    std::string name = "HarmonyOS Sans SC";
+    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
+    auto typeface = Drawing::Typeface::MakeDefault();
+    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
+    auto font = Drawing::Font();
+    font.SetTypeface(typeface);
+    font.SetSize(50.f);
+    Drawing::TextBlobBuilder builder;
+    auto buffer = builder.AllocRunRSXform(font, -1);
+    for (int i = 0; i < 10; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X9088);
+        buffer.pos[i * 4] = 1;
+        buffer.pos[i * 4 + 1] =  0;
+        buffer.pos[i * 4 + 2] =  50*i;
+        buffer.pos[i * 4 + 3] =  0;
+    }
+    DrawText(builder, playbackCanvas_);
+}
+
+//对应用例allocrunrsxform_3044
+DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 44)
+{
+    Drawing::Brush brush;
+    Drawing::Pen pen;
+    playbackCanvas_->AttachBrush(brush);
+    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
+    std::string name = "HarmonyOS Sans SC";
+    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
+    auto typeface = Drawing::Typeface::MakeDefault();
+    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
+    auto font = Drawing::Font();
+    font.SetTypeface(typeface);
+    font.SetSize(50.f);
+    Drawing::TextBlobBuilder builder;
+    auto buffer = builder.AllocRunRSXform(font, -1);
+    for (int i = 0; i < 10; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X9088);
+        buffer.pos[i * 4] = cos(10 * i) + 0.1 * i;
+        buffer.pos[i * 4 + 1] = sin(10 * i);
+        buffer.pos[i * 4 + 2] =  20*i;
+        buffer.pos[i * 4 + 3] =  -10*i;
+    }
+    DrawText(builder, playbackCanvas_);
+}
+
+//对应用例allocrunrsxform_3045
+DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 45)
+{
+    Drawing::Brush brush;
+    Drawing::Pen pen;
+    playbackCanvas_->AttachBrush(brush);
+    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
+    std::string name = "HarmonyOS Sans SC";
+    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
+    auto typeface = Drawing::Typeface::MakeDefault();
+    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
+    auto font = Drawing::Font();
+    font.SetTypeface(typeface);
+    font.SetSize(50.f);
+    Drawing::TextBlobBuilder builder;
+    auto buffer = builder.AllocRunRSXform(font, -1);
+    for (int i = 0; i < 10; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X00AE);
+        buffer.pos[i * 4] = i+1;
+        buffer.pos[i * 4 + 1] =  0;
+        buffer.pos[i * 4 + 2] =  100;
+        buffer.pos[i * 4 + 3] =  100;
+    }
+    DrawText(builder, playbackCanvas_);
+}
+
+//对应用例allocrunrsxform_3046
+DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 46)
+{
+    Drawing::Brush brush;
+    Drawing::Pen pen;
+    playbackCanvas_->AttachBrush(brush);
+    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
+    std::string name = "HarmonyOS Sans SC";
+    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
+    auto typeface = Drawing::Typeface::MakeDefault();
+    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
+    auto font = Drawing::Font();
+    font.SetTypeface(typeface);
+    font.SetSize(50.f);
+    Drawing::TextBlobBuilder builder;
+    auto buffer = builder.AllocRunRSXform(font, -1);
+    for (int i = 0; i < -1; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X00AE);
+        buffer.pos[i * 4] = cos(i*18);
+        buffer.pos[i * 4 + 1] = sin(18*i);
+        buffer.pos[i * 4 + 2] = 100;
+        buffer.pos[i * 4 + 3] = 100;
+    }
+    DrawText(builder, playbackCanvas_);
+}
+
+//对应用例allocrunrsxform_3047
+DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 47)
+{
+    Drawing::Brush brush;
+    Drawing::Pen pen;
+    playbackCanvas_->AttachBrush(brush);
+    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
+    std::string name = "HarmonyOS Sans SC";
+    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
+    auto typeface = Drawing::Typeface::MakeDefault();
+    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
+    auto font = Drawing::Font();
+    font.SetTypeface(typeface);
+    font.SetSize(50.f);
+    Drawing::TextBlobBuilder builder;
+    auto buffer = builder.AllocRunRSXform(font, -1);
+    for (int i = 0; i < 10; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X00AE);
+        buffer.pos[i * 4] = 1;
+        buffer.pos[i * 4 + 1] =  0;
+        buffer.pos[i * 4 + 2] =  50*i;
+        buffer.pos[i * 4 + 3] =  0;
+    }
+    DrawText(builder, playbackCanvas_);
+}
+
+//对应用例allocrunrsxform_3048
+DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 48)
+{
+    Drawing::Brush brush;
+    Drawing::Pen pen;
+    playbackCanvas_->AttachBrush(brush);
+    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
+    std::string name = "HarmonyOS Sans SC";
+    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
+    auto typeface = Drawing::Typeface::MakeDefault();
+    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
+    auto font = Drawing::Font();
+    font.SetTypeface(typeface);
+    font.SetSize(50.f);
+    Drawing::TextBlobBuilder builder;
+    auto buffer = builder.AllocRunRSXform(font, -1);
+    for (int i = 0; i < 10; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X00AE);
+        buffer.pos[i * 4] = cos(10 * i) + 0.1 * i;
+        buffer.pos[i * 4 + 1] = sin(10 * i);
+        buffer.pos[i * 4 + 2] =  20*i;
+        buffer.pos[i * 4 + 3] =  -10*i;
+    }
+    DrawText(builder, playbackCanvas_);
+}
+
 }
 }
