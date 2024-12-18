@@ -4181,7 +4181,7 @@ HWTEST_F(RSNodeTest, SetGreyCoef001, TestSize.Level1)
 HWTEST_F(RSNodeTest, SetAiInvertTest, TestSize.Level1)
 {
     auto rootNode = RSCanvasNode::Create();
-    ASSERT_NE(rsNode, nullptr);
+    ASSERT_NE(rootNode, nullptr);
     auto value = Vector4f(10.f);
     rootNode->SetAiInvert(value);
 }
