@@ -330,14 +330,15 @@ bool JsTool::MatchColorWithMagic(std::string& colorStr, uint32_t& result)
         ROSEN_LOGE("JsTool::MatchColorWithMagic colorString is invalid");
         return false;
     }
+    // Remove "#"
+    colorStr.erase(0, 1);
+
     // Check whether the remaining part of the string is hexnumber
     if (!std::regex_match(colorStr, HEX_PATTERN)) {
         ROSEN_LOGE("JsTool::MatchColorWithMagic colorString is invalid hexnub");
         return false;
     }
 
-    // Remove "#"
-    colorStr.erase(0, 1);
     result = HandleIncorrectColor(colorStr);
     // If string is "#FF0000" that has not Alpha, set Alpha is "FF"
     if (colorStr.length() < COLOR_STRING_SIZE_STANDARD) {
@@ -354,14 +355,15 @@ bool JsTool::MatchColorWithMagicMini(std::string& colorStr, uint32_t& result)
         ROSEN_LOGE("JsTool::MatchColorWithMagicMini colorString is invalid");
         return false;
     }
+    // Remove "#"
+    colorStr.erase(0, 1);
+
     // Check whether the remaining part of the string is hexnumber
     if (!std::regex_match(colorStr, HEX_PATTERN)) {
         ROSEN_LOGE("JsTool::MatchColorWithMagicMini colorString is invalid hexnub");
         return false;
     }
 
-    // Remove "#"
-    colorStr.erase(0, 1);
     // "#F00" is the abbreviation of "#FF0000", every will be used twice to make origin string
     std::string newColorStr;
     for (auto& c : colorStr) {
