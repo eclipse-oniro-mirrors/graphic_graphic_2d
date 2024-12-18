@@ -44,7 +44,7 @@ const std::vector<size_t> EXPECT_MAGIC_COLOR_LENGTHS = {7, 9};
 const std::vector<size_t> EXPECT_MAGIC_MINI_COLOR_LENGTHS = {4, 5};
 const std::regex COLOR_WITH_RGB(R"(rgb\(([+]?[0-9]+)\,([+]?[0-9]+)\,([+]?[0-9]+)\))", std::regex::icase);
 const std::regex COLOR_WITH_RGBA(R"(rgba\(([+]?[0-9]+)\,([+]?[0-9]+)\,([+]?[0-9]+)\,(\d+\.?\d*)\))", std::regex::icase);
-const std::regex HEX_PATTERN(R"^[0-9a-fA-F]+$", std::regex::icase);
+const std::regex HEX_PATTERN("^[0-9a-fA-F]+$");
 #endif
 napi_value JsTool::Init(napi_env env, napi_value exportObj)
 {
