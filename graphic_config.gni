@@ -31,6 +31,7 @@ declare_args() {
   graphic_2d_feature_enable_flutter_vulkan = false
   graphic_2d_feature_enable_opengl = true
   graphic_2d_feature_enable_ddgr = false
+  graphic_2d_feature_enable_sdf = false
   graphic_2d_feature_enable_opinc = false
   graphic_2d_feature_enable_filter_cache = true
   graphic_2d_feature_parallel_upload_enable = true
@@ -159,6 +160,7 @@ if (graphic_2d_feature_rs_enable_eglimage || current_os == "android") {
 
 if (graphic_2d_feature_rs_enable_uni_render) {
   graphic_2d_feature_enable_dvsync = true
+  graphic_2d_feature_enable_sdf = true
   if (graphic_2d_feature_product == "phone") {
     graphic_2d_feature_enable_chipset_vsync = true
   }
@@ -166,6 +168,7 @@ if (graphic_2d_feature_rs_enable_uni_render) {
 } else {
   graphic_2d_feature_enable_dvsync = false
   graphic_2d_feature_enable_chipset_vsync = false
+  graphic_2d_feature_enable_sdf = false
 }
 
 if (graphic_2d_feature_enable_afbc) {

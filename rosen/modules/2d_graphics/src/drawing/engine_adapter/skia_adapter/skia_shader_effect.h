@@ -17,8 +17,10 @@
 #define SKIA_SHADER_EFFECT_H
 
 #include "include/core/SkShader.h"
+#include <unordered_map>
 
 #include "impl_interface/shader_effect_impl.h"
+#include "include/effects/SkRuntimeEffect.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -63,16 +65,21 @@ public:
 
     void InitWithLightUp(const float& lightUpDeg, const ShaderEffect& imageShader) override;
 
+    void InitWithSdf(const SDFShapeBase& shape) override;
+
     sk_sp<SkShader> GetShader() const;
     /*
      * @brief  Update the member variable to skShader, adaptation layer calls.
      */
     void SetSkShader(const sk_sp<SkShader>& skShader);
 
+    static SkRuntimeEffect::Result GetShaderResultInstance(int shapeId, std::string shaderStr);
+
     std::shared_ptr<Data> Serialize() const override;
     bool Deserialize(std::shared_ptr<Data> data) override;
 private:
     sk_sp<SkShader> shader_;
+    static std::unordered_map<int, SkRuntimeEffect::Result> shaderEffectCaches_;
 };
 } // namespace Drawing
 } // namespace Rosen

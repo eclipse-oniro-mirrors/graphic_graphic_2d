@@ -16,6 +16,10 @@
 #include "skia_shader_effect.h"
 
 #include <vector>
+#include <unordered_map>
+#ifdef RS_ENABLE_SDF
+#include "cache/sdf_cache_manager.h"
+#endif
 
 #include "include/core/SkMatrix.h"
 #include "include/core/SkSamplingOptions.h"
@@ -37,10 +41,14 @@
 #include "utils/matrix.h"
 #include "utils/data.h"
 #include "utils/log.h"
+#include "securec.h"
 
 namespace OHOS {
 namespace Rosen {
 namespace Drawing {
+
+std::unordered_map<int, SkRuntimeEffect::Result> SkiaShaderEffect::shaderEffectCaches_;
+
 SkiaShaderEffect::SkiaShaderEffect() noexcept : shader_(nullptr) {}
 
 void SkiaShaderEffect::InitWithColor(ColorQuad color)
@@ -264,6 +272,128 @@ void SkiaShaderEffect::InitWithLightUp(const float& lightUpDeg, const ShaderEffe
     } else {
         LOGE("SkiaShaderEffect::InitWithLightUp: imageShader is nullptr");
     }
+}
+
+
+SkRuntimeEffect::Result SkiaShaderEffect::GetShaderResultInstance(int shapeId, std::string shaderStr)
+{
+    auto shaderIterator = shaderEffectCaches_.find(shapeId);
+    if (shaderIterator != shaderEffectCaches_.end()) {
+        LOGE("SCP cache first enter");
+        return shaderIterator->second;
+    }
+    LOGE("SCP cache second enter");
+    auto result = SkRuntimeEffect::MakeForShader(static_cast<SkString>(shaderStr));
+    shaderEffectCaches_.insert({shapeId, result});
+    return result;
+}
+
+#ifdef RS_ENABLE_SDF
+SkRuntimeEffect::Result GetShaderResultFromCache(int shapeId, const std::string& shaderStr)
+{
+    SkRuntimeEffect::Result result;
+    std::shared_ptr<SDFCacheManager<SkRuntimeEffect::Result>> mgr = SDFCacheManager<SkRuntimeEffect::Result>::GetInstance();
+    bool succ = mgr->GetCache(shapeId, result);
+    if (succ) {
+        LOGE("SCP new cache first enter");
+        return result;
+    }
+    LOGE("SCP new cache second enter");
+    auto shaderResult = SkRuntimeEffect::MakeForShader(static_cast<SkString>(shaderStr));
+    mgr->SetCache(shapeId, shaderResult);
+    return shaderResult;
+}
+#endif
+ 
+void SkiaShaderEffect::InitWithSdf(const SDFShapeBase& shape)
+{
+    std::string shaderString = shape.Getshader();
+    if (shaderString.size() == 0) {
+        LOGE("sdf shape is empty. return on line %{public}d", __LINE__);
+        return;
+    }
+
+    #ifdef RS_ENABLE_SDF
+    auto [effect, err] = GetShaderResultFromCache(shape.GetShapeId(), shaderString);
+    #else
+    auto [effect, err] = SkRuntimeEffect::MakeForShader(static_cast<SkString>(shaderString));
+    #endif
+    if (effect == nullptr) {
+        LOGE("sdf make shader fail : %{public}s", err.c_str());
+        return;
+    }
+    SkRuntimeShaderBuilder builder(effect);
+ 
+    std::vector<float> para = shape.GetPara();
+    std::vector<float> transPara = shape.GetTransPara();
+    std::vector<float> paintPara = shape.GetPaintPara();
+    std::vector<float> colorParam = shape.GetPointAndColorPara();
+    uint64_t transCount = transPara.size();
+    uint64_t paraCount = para.size();
+    uint64_t paintParaCount = paintPara.size();
+    uint64_t pointAndColorParaCount = colorParam.size();
+ 
+    for (uint64_t i = 0; i < pointAndColorParaCount; i++) {
+        char buf[15] = {0}; // maximum length of string needed is 10.
+        if (sprintf_s(buf, sizeof(buf), "pColorPara%lu", i) != -1) {
+            builder.uniform(buf) = colorParam[i];
+        } else {
+            LOGE("sdf splicing pColorPara error.");
+            return;
+        }
+    }
+ 
+    for (uint64_t i = 1; i <= paraCount; i++) {
+        char buf[15] = {0}; // maximum length of string needed is 10.
+        if (sprintf_s(buf, sizeof(buf), "para%lu", i) != -1) {
+            builder.uniform(buf) = para[i-1];
+        } else {
+            LOGE("sdf splicing para error.");
+            return;
+        }
+    }
+ 
+    for (uint64_t i = 0; i < paintParaCount; i++) {
+        char buf[15] = {0}; // maximum length of string needed is 10.
+        if (sprintf_s(buf, sizeof(buf), "paintPara%lu", i) != -1) {
+            builder.uniform(buf) = paintPara[i];
+        } else {
+            LOGE("sdf splicing para error.");
+            return;
+        }
+    }
+ 
+    for (uint64_t i = 1; i <= transCount; i++) {
+        char buf[15] = {0}; // maximum length of string needed is 15.
+        if (sprintf_s(buf, sizeof(buf), "transpara%lu", i) != -1) {
+            builder.uniform(buf) = transPara[i-1];
+        } else {
+            LOGE("sdf splicing para error.");
+            return;
+        }
+    }
+
+    std::vector<float> color = shape.GetColorPara();
+    builder.uniform("sdfalpha") = color[0]; // color_[0] is color alpha channel.
+    for (uint64_t i = 1; i < color.size(); i++) {
+        char buf[15] = {0}; // maximum length of string needed is 15.
+        if (sprintf_s(buf, sizeof(buf), "colpara%lu", i) != -1) {
+            builder.uniform(buf) = color[i];
+        } else {
+            LOGE("sdf splicing para error.");
+            return;
+        }
+    }
+    
+    SkV2 size = SkV2{shape.GetBoundsRect().GetWidth(), shape.GetBoundsRect().GetHeight()};
+    builder.uniform("size") = size;
+    builder.uniform("sdfsize") = shape.GetSize();
+    builder.uniform("filltype") = shape.GetFillType();
+    builder.uniform("translatex") = shape.GetTranslateX();
+    builder.uniform("translatey") = shape.GetTranslateY();
+    builder.uniform("width") = shape.GetBoundsRect().GetWidth();
+    builder.uniform("transparent") = shape.GetTransparent();
+    shader_ = builder.makeShader(nullptr, false);
 }
 
 sk_sp<SkShader> SkiaShaderEffect::GetShader() const
