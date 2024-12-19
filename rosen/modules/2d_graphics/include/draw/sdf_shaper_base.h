@@ -31,7 +31,7 @@ public:
     SDFShapeBase() {};
     virtual ~SDFShapeBase() {};
 
-    virtual std::string Getshader() const = 0;
+    virtual const std::string& Getshader() const = 0;
     virtual float GetSize() const = 0;
     virtual void SetSize(float size) = 0;
     virtual void SetTranslate(float dx, float dy) = 0;

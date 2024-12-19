@@ -76,9 +76,9 @@ void RSPaintFilterCanvasTest::TearDown() {}
 
 class SDFShapeBaseTest : public Drawing::SDFShapeBase {
 public:
-    std::string Getshader() const override
+    const std::string& Getshader() const override
     {
-        return "";
+        return nullptr;
     };
     float GetSize() const override
     {
@@ -100,6 +100,35 @@ public:
     {
         return 0.0f;
     };
+    void SetBoundsRect(const Rosen::Drawing::Rect& rect)
+    {
+        return;
+    }
+    Rect GetBoundsRect()
+    {
+        Rosen::Drawing::Rect temp;
+        return temp;
+    }
+    int GetShapeId()
+    {
+        return 0;
+    }
+    void SetTransparent(int transparent)
+    {
+        return;
+    }
+    int GetTransparent()
+    {
+        return 0;
+    }
+    std::vector<float> GetPaintPara()
+    {
+        return {};
+    }
+    std::vector<float> GetPointAndColorPara()
+    {
+        return {};
+    }
     int GetParaNum() const override
     {
         return 0;

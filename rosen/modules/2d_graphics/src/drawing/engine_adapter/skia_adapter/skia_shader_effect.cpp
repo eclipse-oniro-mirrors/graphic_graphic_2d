@@ -292,19 +292,32 @@ SkRuntimeEffect::Result SkiaShaderEffect::GetShaderResultInstance(int shapeId, s
 SkRuntimeEffect::Result GetShaderResultFromCache(int shapeId, const std::string& shaderStr)
 {
     SkRuntimeEffect::Result result;
-    std::shared_ptr<SDFCacheManager<SkRuntimeEffect::Result>> mgr = SDFCacheManager<SkRuntimeEffect::Result>::GetInstance();
+    std::shared_ptr<SDFCacheManager<SkRuntimeEffect::Result>> mgr =
+                    SDFCacheManager<SkRuntimeEffect::Result>::GetInstance();
     bool succ = mgr->GetCache(shapeId, result);
     if (succ) {
-        LOGE("SCP new cache first enter");
         return result;
     }
-    LOGE("SCP new cache second enter");
     auto shaderResult = SkRuntimeEffect::MakeForShader(static_cast<SkString>(shaderStr));
     mgr->SetCache(shapeId, shaderResult);
     return shaderResult;
 }
 #endif
- 
+
+void BuildPara(SkRuntimeShaderBuilder& builder, const std::vector<float>& para, std::string paraName,
+    int startIndex)
+{
+    for (uint64_t i = startIndex; i < para.size() + startIndex; i++) {
+        char buf[15] = {0}; // maximum length of string needed is 15.
+        if (sprintf_s(buf, sizeof(buf), paraName.c_str(), i) != -1) {
+            builder.uniform(buf) = para[i - startIndex];
+        } else {
+            LOGE("sdf splicing pColorPara error.");
+            return;
+        }
+    }
+}
+
 void SkiaShaderEffect::InitWithSdf(const SDFShapeBase& shape)
 {
     std::string shaderString = shape.Getshader();
@@ -328,51 +341,11 @@ void SkiaShaderEffect::InitWithSdf(const SDFShapeBase& shape)
     std::vector<float> transPara = shape.GetTransPara();
     std::vector<float> paintPara = shape.GetPaintPara();
     std::vector<float> colorParam = shape.GetPointAndColorPara();
-    uint64_t transCount = transPara.size();
-    uint64_t paraCount = para.size();
-    uint64_t paintParaCount = paintPara.size();
-    uint64_t pointAndColorParaCount = colorParam.size();
- 
-    for (uint64_t i = 0; i < pointAndColorParaCount; i++) {
-        char buf[15] = {0}; // maximum length of string needed is 10.
-        if (sprintf_s(buf, sizeof(buf), "pColorPara%lu", i) != -1) {
-            builder.uniform(buf) = colorParam[i];
-        } else {
-            LOGE("sdf splicing pColorPara error.");
-            return;
-        }
-    }
- 
-    for (uint64_t i = 1; i <= paraCount; i++) {
-        char buf[15] = {0}; // maximum length of string needed is 10.
-        if (sprintf_s(buf, sizeof(buf), "para%lu", i) != -1) {
-            builder.uniform(buf) = para[i-1];
-        } else {
-            LOGE("sdf splicing para error.");
-            return;
-        }
-    }
- 
-    for (uint64_t i = 0; i < paintParaCount; i++) {
-        char buf[15] = {0}; // maximum length of string needed is 10.
-        if (sprintf_s(buf, sizeof(buf), "paintPara%lu", i) != -1) {
-            builder.uniform(buf) = paintPara[i];
-        } else {
-            LOGE("sdf splicing para error.");
-            return;
-        }
-    }
- 
-    for (uint64_t i = 1; i <= transCount; i++) {
-        char buf[15] = {0}; // maximum length of string needed is 15.
-        if (sprintf_s(buf, sizeof(buf), "transpara%lu", i) != -1) {
-            builder.uniform(buf) = transPara[i-1];
-        } else {
-            LOGE("sdf splicing para error.");
-            return;
-        }
-    }
-
+    
+    BuildPara(builder, colorParam, "pColorPara%lu", 0); // 0 is start index
+    BuildPara(builder, para, "para%lu", 1); // 1 is start index
+    BuildPara(builder, paintPara, "paintPara%lu", 0); // 0 is start index
+    BuildPara(builder, transPara, "transpara%lu", 1); // 1 is start index
     std::vector<float> color = shape.GetColorPara();
     builder.uniform("sdfalpha") = color[0]; // color_[0] is color alpha channel.
     for (uint64_t i = 1; i < color.size(); i++) {
