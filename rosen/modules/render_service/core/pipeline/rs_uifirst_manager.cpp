@@ -789,7 +789,7 @@ void RSUifirstManager::SetNodePriorty(std::list<NodeId>& result,
         }
         auto surfaceParams = static_cast<RSSurfaceRenderParams*>(drawable->GetRenderParams().get());
         if (surfaceParams && surfaceParams->GetPreSubHighPriorityType()) {
-            drawable->SetRenderCachePriority(NodePriorityType::SUB_VEDIO_PRIORITY);
+            drawable->SetRenderCachePriority(NodePriorityType::SUB_VIDEO_PRIORITY);
         }
         sortedSubThreadNodeIds_.emplace_back(id);
     }
