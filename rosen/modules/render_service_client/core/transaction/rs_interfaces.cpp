@@ -401,6 +401,12 @@ void RSInterfaces::MarkPowerOffNeedProcessOneFrame()
     renderServiceClient_->MarkPowerOffNeedProcessOneFrame();
 }
 
+void RSInterfaces::RepaintEverything()
+{
+    RS_LOGD("[UL_POWER]RSInterfaces::RepaintEverything.");
+    renderServiceClient_->RepaintEverything();
+}
+
 void RSInterfaces::DisablePowerOffRenderControl(ScreenId id)
 {
     RS_LOGD("RSInterfaces::DisablePowerOffRenderControl.");
