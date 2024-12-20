@@ -2803,6 +2803,7 @@ void RSUniRenderVisitor::UpdateHwcNodeRectInSkippedSubTree(const RSRenderNode& r
         if (geoPtr == nullptr) {
             return;
         }
+        auto originalMatrix = geoPtr->GetMatrix();
         auto matrix = Drawing::Matrix();
         auto parent = hwcNodePtr->GetParent().lock();
         bool findInRoot = parent ? parent->GetId() == rootNode.GetId() : false;
@@ -2831,7 +2832,7 @@ void RSUniRenderVisitor::UpdateHwcNodeRectInSkippedSubTree(const RSRenderNode& r
         auto& properties = hwcNodePtr->GetMutableRenderProperties();
         auto offset = std::nullopt;
         properties.UpdateGeometryByParent(&matrix, offset);
-        matrix.PreConcat(geoPtr->GetMatrix());
+        matrix.PreConcat(originalMatrix);
         Drawing::Rect bounds = Drawing::Rect(0, 0, properties.GetBoundsWidth(), properties.GetBoundsHeight());
         Drawing::Rect absRect;
         matrix.MapRect(absRect, bounds);
