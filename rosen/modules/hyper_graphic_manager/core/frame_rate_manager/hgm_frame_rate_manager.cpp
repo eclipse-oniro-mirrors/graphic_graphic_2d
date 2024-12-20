@@ -593,7 +593,7 @@ void HgmFrameRateManager::HandleFrameRateChangeForLTPO(uint64_t timestamp, bool 
 void HgmFrameRateManager::GetLowBrightVec(const std::shared_ptr<PolicyConfigData>& configData)
 {
     isAmbientEffect_ = false;
-    multiAppStrategy_.HandleLowBrightStrategyStatus(isAmbientEffect_);
+    multiAppStrategy_.HandleLowAmbientStatus(isAmbientEffect_);
     if (!configData || !isLtpo_) {
         return;
     }
