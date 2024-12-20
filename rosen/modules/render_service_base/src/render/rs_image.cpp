@@ -130,7 +130,8 @@ void RSImage::CanvasDrawImage(Drawing::Canvas& canvas, const Drawing::Rect& rect
                                 fitMatrix_.has_value() && !fitMatrix_.value().IsIdentity();
     if (!isDrawn_ || rect != lastRect_) {
         UpdateNodeIdToPicture(nodeId_);
-        Drawing::AutoCanvasRestore acr(canvas, HasRadius());
+        bool needCanvasRestore = HasRadius() || isFitMatrixValid || (rotateDegree_ != 0);
+        Drawing::AutoCanvasRestore acr(canvas, needCanvasRestore);
         if (!canvas.GetOffscreen()) {
             frameRect_.SetAll(rect.GetLeft(), rect.GetTop(), rect.GetWidth(), rect.GetHeight());
         }
@@ -139,22 +140,14 @@ void RSImage::CanvasDrawImage(Drawing::Canvas& canvas, const Drawing::Rect& rect
             ApplyCanvasClip(canvas);
         }
         if (isFitMatrixValid) {
-            canvas.Save();
             canvas.ConcatMatrix(fitMatrix_.value());
         }
         if (rotateDegree_ != 0) {
-            canvas.Save();
             canvas.Rotate(rotateDegree_);
             auto axis = CalculateByDegree(rect);
             canvas.Translate(axis.first, axis.second);
-            DrawImageRepeatRect(samplingOptions, canvas);
-            canvas.Restore();
-        } else {
-            DrawImageRepeatRect(samplingOptions, canvas);
         }
-        if (isFitMatrixValid) {
-            canvas.Restore();
-        }
+        DrawImageRepeatRect(samplingOptions, canvas);
     } else {
         bool needCanvasRestore = HasRadius() || (pixelMap_ != nullptr && pixelMap_->IsAstc()) ||
                                  isFitMatrixValid;
