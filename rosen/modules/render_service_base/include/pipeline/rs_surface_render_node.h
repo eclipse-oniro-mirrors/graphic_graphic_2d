@@ -1292,9 +1292,6 @@ public:
     bool NeedDrawBehindWindow() const override;
     void AddChildBlurBehindWindow(NodeId id) override;
     void RemoveChildBlurBehindWindow(NodeId id) override;
-    bool RecordPresentTime(uint64_t timestamp, uint32_t seqNum);
-    void Dump(std::string& result);
-    void ClearDump(std::string& result);
     void SetUifirstStartingFlag(bool flag);
     void UpdateCrossNodeSkippedDisplayOffset(NodeId displayId, int32_t offsetX, int32_t offsetY)
     {
