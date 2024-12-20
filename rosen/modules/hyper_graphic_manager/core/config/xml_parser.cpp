@@ -525,7 +525,7 @@ int32_t XMLParser::ParseSupportedModeConfig(xmlNode &node, PolicyConfigData::Sup
     currNode = currNode->xmlChildrenNode;
     for (; currNode; currNode = currNode->next) {
         if (currNode->type != XML_ELEMENT_NODE) {
-           continue;
+            continue;
         }
         std::vector<uint32_t> supportedModeVec;
         auto name = ExtractPropertyValue("name", *currNode);

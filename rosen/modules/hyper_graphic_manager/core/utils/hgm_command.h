@@ -120,7 +120,7 @@ public:
     using SceneConfigMap = std::unordered_map<std::string, SceneConfig>;
 
     // <"LowBright", <30, 60, 120>>
-    using SupportedModeConfig = std::unordered_map<std::string, std::vector<uint32_t>>
+    using SupportedModeConfig = std::unordered_map<std::string, std::vector<uint32_t>>;
     // <"LTPO-DEAULT", SupportedModeConfig>
     using SupportedModeMap = std::unordered_map<std::string, SupportedModeConfig>;
 
