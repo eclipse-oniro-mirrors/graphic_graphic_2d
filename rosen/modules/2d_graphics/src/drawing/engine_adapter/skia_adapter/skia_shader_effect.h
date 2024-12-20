@@ -73,13 +73,10 @@ public:
      */
     void SetSkShader(const sk_sp<SkShader>& skShader);
 
-    static SkRuntimeEffect::Result GetShaderResultInstance(int shapeId, std::string shaderStr);
-
     std::shared_ptr<Data> Serialize() const override;
     bool Deserialize(std::shared_ptr<Data> data) override;
 private:
     sk_sp<SkShader> shader_;
-    static std::unordered_map<int, SkRuntimeEffect::Result> shaderEffectCaches_;
 };
 } // namespace Drawing
 } // namespace Rosen

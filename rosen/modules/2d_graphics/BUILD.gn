@@ -206,6 +206,13 @@ template("graphics2d_source_set") {
 
     external_deps += [ "skia:skia_canvaskit" ]
 
+    if (defined(graphic_2d_feature_enable_sdf) &&
+        graphic_2d_feature_enable_sdf) {
+      deps += [ "graphic_2d_ext:libsdf" ]
+      include_dirs += [ "$graphic_2d_ext_root/sdf/include" ]
+      defines += [ "RS_ENABLE_SDF" ]
+    }
+
     if (rs_enable_gpu) {
       sources += [
         "$drawing_core_src_dir/engine_adapter/skia_adapter/skia_gpu_context.cpp",
@@ -525,6 +532,11 @@ ohos_shared_library("2d_graphics_canvaskit0310") {
   ]
 
   external_deps += [ "skia:skia_canvaskit" ]
+  if (defined(graphic_2d_feature_enable_sdf) && graphic_2d_feature_enable_sdf) {
+    deps = [ "graphic_2d_ext:libsdf" ]
+    include_dirs += [ "$graphic_2d_ext_root/sdf/include" ]
+    defines += [ "RS_ENABLE_SDF" ]
+  }
 
   if (!is_arkui_x) {
     deps = [

@@ -38,12 +38,13 @@
 #include "utils/data.h"
 #include "utils/log.h"
 #include "securec.h"
+#ifdef RS_ENABLE_SDF
+#include "draw/sdf_shape.h"
+#endif
 
 namespace OHOS {
 namespace Rosen {
 namespace Drawing {
-
-std::unordered_map<int, SkRuntimeEffect::Result> SkiaShaderEffect::shaderEffectCaches_;
 
 SkiaShaderEffect::SkiaShaderEffect() noexcept : shader_(nullptr) {}
 
@@ -270,47 +271,13 @@ void SkiaShaderEffect::InitWithLightUp(const float& lightUpDeg, const ShaderEffe
     }
 }
 
-
-SkRuntimeEffect::Result SkiaShaderEffect::GetShaderResultInstance(int shapeId, std::string shaderStr)
-{
-    auto shaderIterator = shaderEffectCaches_.find(shapeId);
-    if (shaderIterator != shaderEffectCaches_.end()) {
-        LOGE("SCP cache first enter");
-        return shaderIterator->second;
-    }
-    LOGE("SCP cache second enter");
-    auto result = SkRuntimeEffect::MakeForShader(static_cast<SkString>(shaderStr));
-    shaderEffectCaches_.insert({shapeId, result});
-    return result;
-}
-
-void BuildPara(SkRuntimeShaderBuilder& builder, const std::vector<float>& para, std::string paraName,
-    int startIndex)
-{
-    for (uint64_t i = startIndex; i < para.size() + startIndex; i++) {
-        char buf[15] = {0}; // maximum length of string needed is 15.
-        if (sprintf_s(buf, sizeof(buf), paraName.c_str(), i) != -1) {
-            builder.uniform(buf) = para[i - startIndex];
-        } else {
-            LOGE("sdf splicing pColorPara error.");
-            return;
-        }
-    }
-}
-
 void SkiaShaderEffect::InitWithSdf(const SDFShapeBase& shape)
 {
-    std::string shaderString = shape.Getshader();
-    if (shaderString.size() == 0) {
-        LOGE("sdf shape is empty. return on line %{public}d", __LINE__);
+    sk_sp<SkShader> skShader = shape.Build<sk_sp<SkShader>>();
+    if (skShader == nullptr) {
         return;
     }
-    SkRuntimeEffect::Result result = shape.GetSkiaResult(shape.GetShapeId(), shaderString);
-    if (result.effect == nullptr) {
-        return;
-    }
-    SkRuntimeShaderBuilder builder = shape.GetSkiaBuilder(result);
-    shader_ = builder.makeShader(nullptr, false);
+    shader_ = skShader;
 }
 
 sk_sp<SkShader> SkiaShaderEffect::GetShader() const
