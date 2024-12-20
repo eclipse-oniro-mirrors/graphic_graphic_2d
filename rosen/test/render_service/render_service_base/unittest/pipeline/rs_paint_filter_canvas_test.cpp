@@ -78,7 +78,7 @@ class SDFShapeBaseTest : public Drawing::SDFShapeBase {
 public:
     const std::string& Getshader() const override
     {
-        return nullptr;
+        return std::nullptr_t();
     };
     float GetSize() const override
     {
