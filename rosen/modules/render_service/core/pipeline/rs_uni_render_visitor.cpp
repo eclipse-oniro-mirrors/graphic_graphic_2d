@@ -1637,7 +1637,8 @@ void RSUniRenderVisitor::UpdateHwcNodeInfoForAppNode(RSSurfaceRenderNode& node)
             curSurfaceNode_->AddChildHardwareEnabledNode(node.ReinterpretCastTo<RSSurfaceRenderNode>());
         }
         if (!node.GetHardWareDisabledByReverse()) {
-            node.SetHardwareForcedDisabledState(false);
+            node.SetHardwareForcedDisabledState(node.GetIsHwcPendingDisabled());
+            node.SetIsHwcPendingDisabled(false);
         }
         node.SetInFixedRotation(displayNodeRotationChanged_ || isScreenRotationAnimating_);
         if (!IsHardwareComposerEnabled() || !node.IsDynamicHardwareEnable() ||
@@ -3087,6 +3088,7 @@ void RSUniRenderVisitor::CalcHwcNodeEnableByFilterRect(
             node->GetSrcRect().GetLeft(), node->GetSrcRect().GetRight(),
             node->GetSrcRect().GetTop(), node->GetSrcRect().GetBottom());
 #endif
+        node->SetIsHwcPendingDisabled(true);
         node->SetHardwareForcedDisabledState(true);
         node->SetHardWareDisabledByReverse(isReverseOrder);
         hwcDisabledReasonCollection_.UpdateHwcDisabledReasonForDFX(node->GetId(),
