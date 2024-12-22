@@ -609,9 +609,9 @@ void HgmFrameRateManager::GetLowBrightVec(const std::shared_ptr<PolicyConfigData
     }
     auto supportRefreshRateVec = HgmCore::Instance().GetScreenSupportedRefreshRates(curScreenId_.load());
     lowBrightVec_.clear();
-    for (auto rate : supportRefreshRateVec) {
-        auto it = std::find(iter->second.begin(), iter->second.end(), rate);
-        if (it != iter->second.end()) {
+    for (auto rate : iter->second) {
+        auto it = std::find(supportRefreshRateVec.begin(), supportRefreshRateVec.end(), rate);
+        if (it != supportRefreshRateVec.end()) {
             lowBrightVec_.push_back(*it);
         }
     }
