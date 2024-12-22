@@ -1287,7 +1287,8 @@ public:
     bool GetBehindWindowFilterEnabled() const;
     void AddChildBlurBehindWindow(NodeId id) override;
     void RemoveChildBlurBehindWindow(NodeId id) override;
-    void SetDrawBehindWindowRegion();
+    void CalDrawBehindWindowRegion() override;
+    RectI GetFilterRect() const override;
     void SetUifirstStartingFlag(bool flag);
     void UpdateCrossNodeSkippedDisplayOffset(NodeId displayId, int32_t offsetX, int32_t offsetY)
     {
@@ -1639,6 +1640,7 @@ private:
     bool subThreadAssignable_ = false;
     bool oldNeedDrawBehindWindow_ = false;
     std::unordered_set<NodeId> childrenBlurBehindWindow_ = {};
+    RectI drawBehindWindowRegion_;
     std::unordered_map<NodeId, Vector2<int32_t>> crossNodeSkippedDisplayOffsets_ = {};
 
     uint32_t apiCompatibleVersion_ = 0;
