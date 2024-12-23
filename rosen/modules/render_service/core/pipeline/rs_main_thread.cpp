@@ -68,6 +68,7 @@
 #include "pipeline/rs_occlusion_config.h"
 #include "pipeline/rs_pointer_window_manager.h"
 #include "pipeline/rs_processor_factory.h"
+#include "pipeline/rs_realtime_refresh_rate_manager.h"
 #include "pipeline/rs_render_engine.h"
 #include "pipeline/rs_render_service_visitor.h"
 #include "pipeline/rs_root_render_node.h"
@@ -1897,6 +1898,10 @@ bool RSMainThread::IsRequestedNextVSync()
 
 void RSMainThread::ProcessHgmFrameRate(uint64_t timestamp)
 {
+    int changed = 0;
+    if (bool enable = RSSystemParameters::GetShowRefreshRateEnabled(changed); changed != 0) {
+        RSRealtimeRefreshRateManager::Instance().SetShowRefreshRateEnabled(enable);
+    }
     DvsyncInfo info;
     if (rsVSyncDistributor_ != nullptr) {
         info.isRsDvsyncOn = rsVSyncDistributor_->IsDVsyncOn();

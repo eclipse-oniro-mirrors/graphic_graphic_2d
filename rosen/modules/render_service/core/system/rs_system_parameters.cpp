@@ -68,10 +68,9 @@ bool RSSystemParameters::GetDrawingCacheEnabledDfx()
     return ConvertToInt(enabledDfx, 0) != 0;
 }
 
-bool RSSystemParameters::GetShowRefreshRateEnabled()
+bool RSSystemParameters::GetShowRefreshRateEnabled(int& changed)
 {
     static CachedHandle g_Handle = CachedParameterCreate("rosen.showRefreshRate.enabled", "0");
-    int changed = 0;
     const char *enabled = CachedParameterGetChanged(g_Handle, &changed);
     return ConvertToInt(enabled, 0) != 0;
 }
