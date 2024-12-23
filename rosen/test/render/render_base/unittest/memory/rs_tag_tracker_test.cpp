@@ -21,7 +21,7 @@ using namespace testing;
 using namespace testing::ext;
 
 namespace OHOS::Rosen {
-class RSTagTrackerTest : public testing::Test {
+class RSTagTrackerUnitTest : public testing::Test {
 public:
     static void SetUpTestCase();
     static void TearDownTestCase();
@@ -29,10 +29,10 @@ public:
     void TearDown() override;
 };
 
-void RSTagTrackerTest::SetUpTestCase() {}
-void RSTagTrackerTest::TearDownTestCase() {}
-void RSTagTrackerTest::SetUp() {}
-void RSTagTrackerTest::TearDown() {}
+void RSTagTrackerUnitTest::SetUpTestCase() {}
+void RSTagTrackerUnitTest::TearDownTestCase() {}
+void RSTagTrackerUnitTest::SetUp() {}
+void RSTagTrackerUnitTest::TearDown() {}
 
 /**
  * @tc.name: TagType2String001
@@ -40,7 +40,7 @@ void RSTagTrackerTest::TearDown() {}
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSTagTrackerTest, TagType2String001, TestSize.Level1)
+HWTEST_F(RSTagTrackerUnitTest, TagType2String001, TestSize.Level1)
 {
     NodeId nodeId = static_cast<NodeId>(0);
     RSTagTracker tagTracker(nullptr, nodeId, RSTagTracker::TAGTYPE::TAG_FILTER, "TagType2String001");
@@ -63,7 +63,7 @@ HWTEST_F(RSTagTrackerTest, TagType2String001, TestSize.Level1)
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSTagTrackerTest, RSTagTracker001, TestSize.Level1)
+HWTEST_F(RSTagTrackerUnitTest, RSTagTracker001, TestSize.Level1)
 {
     Drawing::GPUResourceTag tag(0, 0, 0, 0, "RSTagTracker001");
     Drawing::GPUContext* gpuContext = nullptr;
@@ -78,7 +78,7 @@ HWTEST_F(RSTagTrackerTest, RSTagTracker001, TestSize.Level1)
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSTagTrackerTest, RSTagTracker002, TestSize.Level1)
+HWTEST_F(RSTagTrackerUnitTest, RSTagTracker002, TestSize.Level1)
 {
     RSTagTracker::TAGTYPE tagType = RSTagTracker::TAGTYPE::TAG_DRAW_SURFACENODE;
     Drawing::GPUContext* gpuContext = new Drawing::GPUContext;
@@ -95,7 +95,7 @@ HWTEST_F(RSTagTrackerTest, RSTagTracker002, TestSize.Level1)
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSTagTrackerTest, RSTagTracker003, TestSize.Level1)
+HWTEST_F(RSTagTrackerUnitTest, RSTagTracker003, TestSize.Level1)
 {
     RSTagTracker::TAGTYPE tagType = RSTagTracker::TAGTYPE::TAG_DRAW_SURFACENODE;
     Drawing::GPUContext* gpuContext = new Drawing::GPUContext;
@@ -112,7 +112,7 @@ HWTEST_F(RSTagTrackerTest, RSTagTracker003, TestSize.Level1)
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSTagTrackerTest, RSTagTracker004, TestSize.Level1)
+HWTEST_F(RSTagTrackerUnitTest, RSTagTracker004, TestSize.Level1)
 {
     Drawing::GPUContext* gpuContext = new Drawing::GPUContext;
     NodeId nodeId = 1;
@@ -129,7 +129,7 @@ HWTEST_F(RSTagTrackerTest, RSTagTracker004, TestSize.Level1)
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSTagTrackerTest, RSTagTracker005, TestSize.Level1)
+HWTEST_F(RSTagTrackerUnitTest, RSTagTracker005, TestSize.Level1)
 {
     Drawing::GPUContext* gpuContext = nullptr;
     NodeId nodeId = 1;
@@ -144,7 +144,7 @@ HWTEST_F(RSTagTrackerTest, RSTagTracker005, TestSize.Level1)
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSTagTrackerTest, RSTagTracker006, TestSize.Level1)
+HWTEST_F(RSTagTrackerUnitTest, RSTagTracker006, TestSize.Level1)
 {
     Drawing::GPUContext* gpuContext = nullptr;
     NodeId nodeId = 1;
@@ -161,7 +161,7 @@ HWTEST_F(RSTagTrackerTest, RSTagTracker006, TestSize.Level1)
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSTagTrackerTest, RSTagTracker007, TestSize.Level1)
+HWTEST_F(RSTagTrackerUnitTest, RSTagTracker007, TestSize.Level1)
 {
     Drawing::GPUContext* gpuContext = new Drawing::GPUContext;
     NodeId nodeId = 1;
@@ -178,7 +178,7 @@ HWTEST_F(RSTagTrackerTest, RSTagTracker007, TestSize.Level1)
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSTagTrackerTest, RSTagTracker008, TestSize.Level1)
+HWTEST_F(RSTagTrackerUnitTest, RSTagTracker008, TestSize.Level1)
 {
     Drawing::GPUResourceTag tag(0, 0, 0, 0, "RSTagTracker008");
     Drawing::GPUContext gpuContext;
@@ -195,7 +195,7 @@ HWTEST_F(RSTagTrackerTest, RSTagTracker008, TestSize.Level1)
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSTagTrackerTest, RSTagTracker009, TestSize.Level1)
+HWTEST_F(RSTagTrackerUnitTest, RSTagTracker009, TestSize.Level1)
 {
     Drawing::GPUResourceTag tag(0, 0, 0, 0, "RSTagTracker009");
     Drawing::GPUContext gpuContext;
@@ -212,7 +212,7 @@ HWTEST_F(RSTagTrackerTest, RSTagTracker009, TestSize.Level1)
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSTagTrackerTest, RSTagTracker010, TestSize.Level1)
+HWTEST_F(RSTagTrackerUnitTest, RSTagTracker010, TestSize.Level1)
 {
     RSTagTracker::TAGTYPE tagType = RSTagTracker::TAGTYPE::TAG_DRAW_SURFACENODE;
     Drawing::GPUContext* gpuContext = nullptr;
@@ -229,7 +229,7 @@ HWTEST_F(RSTagTrackerTest, RSTagTracker010, TestSize.Level1)
  * @tc.type: FUNC
  * @tc.require: issueI9QIQO
  */
-HWTEST_F(RSTagTrackerTest, UpdateReleaseResourceEnabled, TestSize.Level1)
+HWTEST_F(RSTagTrackerUnitTest, UpdateReleaseResourceEnabled, TestSize.Level1)
 {
     Drawing::GPUResourceTag tag(0, 0, 0, 0, "UpdateReleaseResourceEnabled");
     Drawing::GPUContext gpuContext;

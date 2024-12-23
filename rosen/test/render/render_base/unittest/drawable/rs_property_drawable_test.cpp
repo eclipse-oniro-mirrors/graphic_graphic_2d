@@ -29,18 +29,31 @@ using namespace testing;
 using namespace testing::ext;
 
 namespace OHOS::Rosen {
-class RSPropertyDrawableTest : public testing::Test {
+class RSPropertyDrawableUnitTest : public testing::Test {
 public:
-    static void SetUpTestCase();
-    static void TearDownTestCase();
     void SetUp() override;
     void TearDown() override;
+    static void SetUpTestCase();
+    static void TearDownTestCase();
 };
 
-void RSPropertyDrawableTest::SetUpTestCase() {}
-void RSPropertyDrawableTest::TearDownTestCase() {}
-void RSPropertyDrawableTest::SetUp() {}
-void RSPropertyDrawableTest::TearDown() {}
+void RSPropertyDrawableUnitTest::SetUpTestCase() {}
+void RSPropertyDrawableUnitTest::TearDownTestCase() {}
+void RSPropertyDrawableUnitTest::SetUp() {}
+void RSPropertyDrawableUnitTest::TearDown() {}
+
+/*
+ * @tc.name: MarkBlurIntersectWithDRM001
+ * @tc.desc: class RSFilterDrawable MarkBlurIntersectWithDRM test
+ * @tc.type: FUNC
+ * @tc.require: issuesIAQZ4I
+ */
+HWTEST_F(RSPropertyDrawableUnitTest, MarkBlurIntersectWithDRM001, TestSize.Level1)
+{
+    std::shared_ptr<DrawableV2::RSFilterDrawable> filterDrawable = std::make_shared<DrawableV2::RSFilterDrawable>();
+    EXPECT_NE(filterDrawable, nullptr);
+    filterDrawable->MarkBlurIntersectWithDRM(true, true);
+}
 
 /**
  * @tc.name: OnSyncAndCreateDrawFuncTest001
@@ -48,7 +61,7 @@ void RSPropertyDrawableTest::TearDown() {}
  * @tc.type:FUNC
  * @tc.require: issueI9VSPU
  */
-HWTEST_F(RSPropertyDrawableTest, OnSyncAndCreateDrawFuncTest001, TestSize.Level1)
+HWTEST_F(RSPropertyDrawableUnitTest, OnSyncAndCreateDrawFuncTest001, TestSize.Level1)
 {
     std::shared_ptr<DrawableV2::RSPropertyDrawable> propertyDrawable =
         std::make_shared<DrawableV2::RSPropertyDrawable>();
@@ -78,7 +91,7 @@ HWTEST_F(RSPropertyDrawableTest, OnSyncAndCreateDrawFuncTest001, TestSize.Level1
  * @tc.type:FUNC
  * @tc.require: issueI9VSPU
  */
-HWTEST_F(RSPropertyDrawableTest, RSPropertyDrawCmdListUpdaterTest002, TestSize.Level1)
+HWTEST_F(RSPropertyDrawableUnitTest, RSPropertyDrawCmdListUpdaterTest002, TestSize.Level1)
 {
     DrawableV2::RSPropertyDrawable targetTest1;
     std::shared_ptr<DrawableV2::RSPropertyDrawCmdListUpdater> propertyDrawCmdListUpdaterTest1 =
@@ -103,7 +116,7 @@ HWTEST_F(RSPropertyDrawableTest, RSPropertyDrawCmdListUpdaterTest002, TestSize.L
  * @tc.type:FUNC
  * @tc.require: issueI9VSPU
  */
-HWTEST_F(RSPropertyDrawableTest, OnGenerateAndOnUpdateTest003, TestSize.Level1)
+HWTEST_F(RSPropertyDrawableUnitTest, OnGenerateAndOnUpdateTest003, TestSize.Level1)
 {
     std::shared_ptr<DrawableV2::RSFrameOffsetDrawable> frameOffsetDrawable =
         std::make_shared<DrawableV2::RSFrameOffsetDrawable>();
@@ -124,7 +137,7 @@ HWTEST_F(RSPropertyDrawableTest, OnGenerateAndOnUpdateTest003, TestSize.Level1)
  * @tc.type:FUNC
  * @tc.require: issueIA61E9
  */
-HWTEST_F(RSPropertyDrawableTest, OnUpdateTest004, TestSize.Level1)
+HWTEST_F(RSPropertyDrawableUnitTest, OnUpdateTest004, TestSize.Level1)
 {
     std::shared_ptr<DrawableV2::RSClipToBoundsDrawable> clipToBoundsDrawable =
         std::make_shared<DrawableV2::RSClipToBoundsDrawable>();
@@ -155,7 +168,7 @@ HWTEST_F(RSPropertyDrawableTest, OnUpdateTest004, TestSize.Level1)
  * @tc.type:FUNC
  * @tc.require: issueI9VSPU
  */
-HWTEST_F(RSPropertyDrawableTest, OnGenerateAndOnUpdateTest005, TestSize.Level1)
+HWTEST_F(RSPropertyDrawableUnitTest, OnGenerateAndOnUpdateTest005, TestSize.Level1)
 {
     std::shared_ptr<DrawableV2::RSClipToFrameDrawable> clipToFrameDrawable =
         std::make_shared<DrawableV2::RSClipToFrameDrawable>();
@@ -180,7 +193,7 @@ HWTEST_F(RSPropertyDrawableTest, OnGenerateAndOnUpdateTest005, TestSize.Level1)
  * @tc.type:FUNC
  * @tc.require: issueI9VSPU
  */
-HWTEST_F(RSPropertyDrawableTest, RSFilterDrawableTest006, TestSize.Level1)
+HWTEST_F(RSPropertyDrawableUnitTest, RSFilterDrawableTest006, TestSize.Level1)
 {
     std::shared_ptr<DrawableV2::RSFilterDrawable> filterDrawable = std::make_shared<DrawableV2::RSFilterDrawable>();
     EXPECT_NE(filterDrawable, nullptr);
@@ -214,7 +227,7 @@ HWTEST_F(RSPropertyDrawableTest, RSFilterDrawableTest006, TestSize.Level1)
  * @tc.type:FUNC
  * @tc.require: issueI9VSPU
  */
-HWTEST_F(RSPropertyDrawableTest, MarkNeedClearFilterCacheTest007, TestSize.Level1)
+HWTEST_F(RSPropertyDrawableUnitTest, MarkNeedClearFilterCacheTest007, TestSize.Level1)
 {
     std::shared_ptr<DrawableV2::RSFilterDrawable> filterDrawable = std::make_shared<DrawableV2::RSFilterDrawable>();
     EXPECT_NE(filterDrawable, nullptr);
@@ -262,7 +275,7 @@ HWTEST_F(RSPropertyDrawableTest, MarkNeedClearFilterCacheTest007, TestSize.Level
  * @tc.type:FUNC
  * @tc.require: issueIA61E9
  */
-HWTEST_F(RSPropertyDrawableTest, RecordFilterInfosTest008, TestSize.Level1)
+HWTEST_F(RSPropertyDrawableUnitTest, RecordFilterInfosTest008, TestSize.Level1)
 {
     std::shared_ptr<DrawableV2::RSFilterDrawable> filterDrawable = std::make_shared<DrawableV2::RSFilterDrawable>();
     EXPECT_NE(filterDrawable, nullptr);
@@ -322,7 +335,7 @@ HWTEST_F(RSPropertyDrawableTest, RecordFilterInfosTest008, TestSize.Level1)
  * @tc.type:FUNC
  * @tc.require: issueIA61E9
  */
-HWTEST_F(RSPropertyDrawableTest, IsAIBarCacheValidTest009, TestSize.Level1)
+HWTEST_F(RSPropertyDrawableUnitTest, IsAIBarCacheValidTest009, TestSize.Level1)
 {
     std::shared_ptr<DrawableV2::RSFilterDrawable> filterDrawable = std::make_shared<DrawableV2::RSFilterDrawable>();
     EXPECT_NE(filterDrawable, nullptr);
@@ -343,7 +356,7 @@ HWTEST_F(RSPropertyDrawableTest, IsAIBarCacheValidTest009, TestSize.Level1)
  * @tc.type:FUNC
  * @tc.require: issueI9VSPU
  */
-HWTEST_F(RSPropertyDrawableTest, RSFilterDrawableTest010, TestSize.Level1)
+HWTEST_F(RSPropertyDrawableUnitTest, RSFilterDrawableTest010, TestSize.Level1)
 {
     auto drawable = std::make_shared<DrawableV2::RSFilterDrawable>();
     EXPECT_NE(drawable, nullptr);
@@ -375,7 +388,7 @@ HWTEST_F(RSPropertyDrawableTest, RSFilterDrawableTest010, TestSize.Level1)
  * @tc.desc: IsFilterCacheValidForOcclusion
  * @tc.type: FUNC
  */
-HWTEST_F(RSPropertyDrawableTest, RSFilterDrawableTest011, TestSize.Level1)
+HWTEST_F(RSPropertyDrawableUnitTest, RSFilterDrawableTest011, TestSize.Level1)
 {
     auto filterDrawable = std::make_shared<DrawableV2::RSFilterDrawable>();
     ASSERT_NE(filterDrawable, nullptr);
@@ -425,26 +438,13 @@ HWTEST_F(RSPropertyDrawableTest, RSFilterDrawableTest011, TestSize.Level1)
     EXPECT_FALSE(filterDrawable->IsFilterCacheValidForOcclusion());
 }
 
-/*
- * @tc.name: MarkBlurIntersectWithDRM001
- * @tc.desc: class RSFilterDrawable MarkBlurIntersectWithDRM test
- * @tc.type: FUNC
- * @tc.require: issuesIAQZ4I
- */
-HWTEST_F(RSPropertyDrawableTest, MarkBlurIntersectWithDRM001, TestSize.Level1)
-{
-    std::shared_ptr<DrawableV2::RSFilterDrawable> filterDrawable = std::make_shared<DrawableV2::RSFilterDrawable>();
-    EXPECT_NE(filterDrawable, nullptr);
-    filterDrawable->MarkBlurIntersectWithDRM(true, true);
-}
-
 /**
  * @tc.name: RSFilterDrawableTest012
  * @tc.desc: Test RSFilterDrawable needDrawBehindWindow branch
  * @tc.type: FUNC
  * @tc.require: issueIB0UQV
  */
-HWTEST_F(RSPropertyDrawableTest, RSFilterDrawableTest012, TestSize.Level1)
+HWTEST_F(RSPropertyDrawableUnitTest, RSFilterDrawableTest012, TestSize.Level1)
 {
     auto drawable = std::make_shared<DrawableV2::RSFilterDrawable>();
     ASSERT_NE(drawable, nullptr);

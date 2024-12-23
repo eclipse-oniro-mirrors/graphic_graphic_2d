@@ -45,21 +45,6 @@ HWTEST_F(RSMemoryGraphicTest, UnmarshallingTest, testing::ext::TestSize.Level1)
     ASSERT_EQ(mem, nullptr);
 }
 
-
-/**
- * @tc.name: MarshallingTest
- * @tc.desc: test
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(RSMemoryGraphicTest, MarshallingTest, testing::ext::TestSize.Level1)
-{
-    Parcel parcel;
-    MemoryGraphic memoryGraphic;
-    auto mem = memoryGraphic.Marshalling(parcel);
-    ASSERT_EQ(mem, true);
-}
-
 /**
  * @tc.name: IncreaseCpuMemoryTest
  * @tc.desc: test
@@ -77,6 +62,20 @@ HWTEST_F(RSMemoryGraphicTest, IncreaseCpuMemoryTest, testing::ext::TestSize.Leve
     memoryGraphic.IncreaseGpuMemory(graphicSize);
     int ret = 0;
     ASSERT_EQ(ret, 0);
+}
+
+/**
+ * @tc.name: MarshallingTest
+ * @tc.desc: test
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSMemoryGraphicTest, MarshallingTest, testing::ext::TestSize.Level1)
+{
+    Parcel parcel;
+    MemoryGraphic memoryGraphic;
+    auto mem = memoryGraphic.Marshalling(parcel);
+    ASSERT_EQ(mem, true);
 }
 
 /**

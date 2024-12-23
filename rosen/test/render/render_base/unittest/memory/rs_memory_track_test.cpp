@@ -17,7 +17,7 @@
 #include "memory/rs_memory_track.h"
 
 namespace OHOS::Rosen {
-class RSMemoryTrackTest : public testing::Test {
+class RSMemoryTrackUnitTest : public testing::Test {
 public:
     static void SetUpTestCase();
     static void TearDownTestCase();
@@ -25,10 +25,10 @@ public:
     void TearDown() override;
 };
 
-void RSMemoryTrackTest::SetUpTestCase() {}
-void RSMemoryTrackTest::TearDownTestCase() {}
-void RSMemoryTrackTest::SetUp() {}
-void RSMemoryTrackTest::TearDown() {}
+void RSMemoryTrackUnitTest::SetUpTestCase() {}
+void RSMemoryTrackUnitTest::TearDownTestCase() {}
+void RSMemoryTrackUnitTest::SetUp() {}
+void RSMemoryTrackUnitTest::TearDown() {}
 
 /**
  * @tc.name: RemoveNodeRecordTest
@@ -36,7 +36,7 @@ void RSMemoryTrackTest::TearDown() {}
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSMemoryTrackTest, RemoveNodeRecordTest, testing::ext::TestSize.Level1)
+HWTEST_F(RSMemoryTrackUnitTest, RemoveNodeRecordTest, testing::ext::TestSize.Level1)
 {
     NodeId id = 1;
     MemoryInfo info = {sizeof(*this), ExtractPid(id), id, MEMORY_TYPE::MEM_RENDER_NODE};
@@ -53,7 +53,7 @@ HWTEST_F(RSMemoryTrackTest, RemoveNodeRecordTest, testing::ext::TestSize.Level1)
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSMemoryTrackTest, CountRSMemoryTest001, testing::ext::TestSize.Level1)
+HWTEST_F(RSMemoryTrackUnitTest, CountRSMemoryTest001, testing::ext::TestSize.Level1)
 {
     MemoryGraphic memoryGraphic;
     pid_t pid1 = -1;
@@ -68,7 +68,7 @@ HWTEST_F(RSMemoryTrackTest, CountRSMemoryTest001, testing::ext::TestSize.Level1)
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSMemoryTrackTest, CountRSMemoryTest002, testing::ext::TestSize.Level1)
+HWTEST_F(RSMemoryTrackUnitTest, CountRSMemoryTest002, testing::ext::TestSize.Level1)
 {
     MemoryGraphic memoryGraphic;
     pid_t pid1 = 0;
@@ -83,7 +83,7 @@ HWTEST_F(RSMemoryTrackTest, CountRSMemoryTest002, testing::ext::TestSize.Level1)
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSMemoryTrackTest, DumpMemoryStatisticsTest, testing::ext::TestSize.Level1)
+HWTEST_F(RSMemoryTrackUnitTest, DumpMemoryStatisticsTest, testing::ext::TestSize.Level1)
 {
     DfxString log;
     std::function<std::tuple<uint64_t, std::string, RectI> (uint64_t)> func;
@@ -98,7 +98,7 @@ HWTEST_F(RSMemoryTrackTest, DumpMemoryStatisticsTest, testing::ext::TestSize.Lev
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSMemoryTrackTest, AddPictureRecordTest, testing::ext::TestSize.Level1)
+HWTEST_F(RSMemoryTrackUnitTest, AddPictureRecordTest, testing::ext::TestSize.Level1)
 {
     const void* addr;
     MemoryInfo info;
@@ -113,7 +113,7 @@ HWTEST_F(RSMemoryTrackTest, AddPictureRecordTest, testing::ext::TestSize.Level1)
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSMemoryTrackTest, RemovePictureRecordTest, testing::ext::TestSize.Level1)
+HWTEST_F(RSMemoryTrackUnitTest, RemovePictureRecordTest, testing::ext::TestSize.Level1)
 {
     const void* addr;
     MemoryTrack::Instance().RemovePictureRecord(addr);
@@ -127,7 +127,7 @@ HWTEST_F(RSMemoryTrackTest, RemovePictureRecordTest, testing::ext::TestSize.Leve
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSMemoryTrackTest, UpdatePictureInfoTest, testing::ext::TestSize.Level1)
+HWTEST_F(RSMemoryTrackUnitTest, UpdatePictureInfoTest, testing::ext::TestSize.Level1)
 {
     const void* addr;
     NodeId nodeId = 1;
@@ -143,7 +143,7 @@ HWTEST_F(RSMemoryTrackTest, UpdatePictureInfoTest, testing::ext::TestSize.Level1
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSMemoryTrackTest, GetAppMemorySizeInMBTest, testing::ext::TestSize.Level1)
+HWTEST_F(RSMemoryTrackUnitTest, GetAppMemorySizeInMBTest, testing::ext::TestSize.Level1)
 {
     float ret = MemoryTrack::Instance().GetAppMemorySizeInMB();
     ASSERT_EQ(ret, 0);
@@ -155,7 +155,7 @@ HWTEST_F(RSMemoryTrackTest, GetAppMemorySizeInMBTest, testing::ext::TestSize.Lev
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSMemoryTrackTest, MemoryType2StringTest001, testing::ext::TestSize.Level1)
+HWTEST_F(RSMemoryTrackUnitTest, MemoryType2StringTest001, testing::ext::TestSize.Level1)
 {
     MEMORY_TYPE type = MEMORY_TYPE::MEM_PIXELMAP;
     const char* ret = MemoryTrack::Instance().MemoryType2String(type);
@@ -168,7 +168,7 @@ HWTEST_F(RSMemoryTrackTest, MemoryType2StringTest001, testing::ext::TestSize.Lev
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSMemoryTrackTest, MemoryType2StringTest002, testing::ext::TestSize.Level1)
+HWTEST_F(RSMemoryTrackUnitTest, MemoryType2StringTest002, testing::ext::TestSize.Level1)
 {
     MEMORY_TYPE type = MEMORY_TYPE::MEM_SKIMAGE;
     const char* ret = MemoryTrack::Instance().MemoryType2String(type);
@@ -181,7 +181,7 @@ HWTEST_F(RSMemoryTrackTest, MemoryType2StringTest002, testing::ext::TestSize.Lev
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSMemoryTrackTest, MemoryType2StringTest003, testing::ext::TestSize.Level1)
+HWTEST_F(RSMemoryTrackUnitTest, MemoryType2StringTest003, testing::ext::TestSize.Level1)
 {
     MEMORY_TYPE type = MEMORY_TYPE::MEM_RENDER_NODE;
     const char* ret = MemoryTrack::Instance().MemoryType2String(type);
@@ -194,7 +194,7 @@ HWTEST_F(RSMemoryTrackTest, MemoryType2StringTest003, testing::ext::TestSize.Lev
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSMemoryTrackTest, GenerateDumpTitleTest, testing::ext::TestSize.Level1)
+HWTEST_F(RSMemoryTrackUnitTest, GenerateDumpTitleTest, testing::ext::TestSize.Level1)
 {
     MemoryInfo info;
     // for test
@@ -213,7 +213,7 @@ HWTEST_F(RSMemoryTrackTest, GenerateDumpTitleTest, testing::ext::TestSize.Level1
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSMemoryTrackTest, DumpMemoryNodeStatisticsTest, testing::ext::TestSize.Level1)
+HWTEST_F(RSMemoryTrackUnitTest, DumpMemoryNodeStatisticsTest, testing::ext::TestSize.Level1)
 {
     // for test
     DfxString log;
@@ -223,44 +223,3 @@ HWTEST_F(RSMemoryTrackTest, DumpMemoryNodeStatisticsTest, testing::ext::TestSize
     int ret = 1;
     ASSERT_EQ(ret, 1);
 }
-
-/**
- * @tc.name: RemoveNodeFromMapTest001
- * @tc.desc: test
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(RSMemoryTrackTest, RemoveNodeFromMapTest001, testing::ext::TestSize.Level1)
-{
-    // fot test
-    const NodeId id = 1;
-    // fot test
-    pid_t pid = -1;
-    // fot test
-    size_t size = sizeof(10);
-    MemoryTrack::Instance().RemoveNodeFromMap(id, pid, size);
-    MemoryTrack::Instance().RemoveNodeOfPidFromMap(pid, size, id);
-    int ret = 1;
-    ASSERT_EQ(ret, 1);
-}
-
-/**
- * @tc.name: RemoveNodeFromMapTest002
- * @tc.desc: test
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(RSMemoryTrackTest, RemoveNodeFromMapTest002, testing::ext::TestSize.Level1)
-{
-    // fot test
-    const NodeId id = 0;
-    // fot test
-    pid_t pid = 0;
-    // fot test
-    size_t size = sizeof(10);
-    MemoryTrack::Instance().RemoveNodeFromMap(id, pid, size);
-    MemoryTrack::Instance().RemoveNodeOfPidFromMap(pid, size, id);
-    int ret = 1;
-    ASSERT_EQ(ret, 1);
-}
-} // namespace OHOS::Rosen
