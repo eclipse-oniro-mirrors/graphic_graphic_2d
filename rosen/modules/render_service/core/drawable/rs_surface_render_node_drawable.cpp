@@ -952,6 +952,11 @@ void RSSurfaceRenderNodeDrawable::DealWithSelfDrawingNodeBuffer(
 void RSSurfaceRenderNodeDrawable::ClipHoleForSelfDrawingNode(RSPaintFilterCanvas& canvas,
     RSSurfaceRenderParams& surfaceParams)
 {
+    if (surfaceParams.GetForceDisableClipHoleForDRM()) {
+        RS_LOGD("DMA buffer avoid clippingHole during Attraction effect");
+        RS_OPTIONAL_TRACE_NAME_FMT("DMA buffer avoid clippingHole during Attraction effect [%s] ", name_.c_str());
+        return;
+    }
     RSAutoCanvasRestore arc(&canvas);
     auto bounds = surfaceParams.GetBounds();
     canvas.ClipRect({std::round(bounds.GetLeft()), std::round(bounds.GetTop()),

@@ -1228,6 +1228,7 @@ public:
     }
 
     void SetCornerRadiusInfoForDRM(const std::vector<float>& drmCornerRadius);
+    void SetForceDisableClipHoleForDRM(bool isForceDisable);
     const std::vector<float>& GetCornerRadiusInfoForDRM() const
     {
         return drmCornerRadiusInfo_;

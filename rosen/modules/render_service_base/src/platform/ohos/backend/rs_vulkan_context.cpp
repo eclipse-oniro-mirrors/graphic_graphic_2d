@@ -662,6 +662,10 @@ std::shared_ptr<Drawing::GPUContext> RsVulkanContext::GetDrawingContext()
 void RsVulkanContext::SetIsProtected(bool isProtected)
 {
     if (isProtected_ != isProtected) {
+        RS_LOGW("RsVulkanContext switch, isProtected: %{public}d.", isProtected);
+        if (isProtected) {
+            RS_TRACE_NAME("RsVulkanContext switch to protected GPU context");
+        }
         ClearGrContext(isProtected);
     }
 }

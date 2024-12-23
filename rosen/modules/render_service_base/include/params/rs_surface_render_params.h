@@ -472,6 +472,20 @@ public:
         needSync_ = true;
     }
 
+    void SetForceDisableClipHoleForDRM(bool isForceDisable)
+    {
+        if (isForceDisableClipHoleForDRM_ == isForceDisable) {
+            return;
+        }
+        isForceDisableClipHoleForDRM_ = isForceDisable;
+        needSync_ = true;
+    }
+
+    bool GetForceDisableClipHoleForDRM() const
+    {
+        return isForceDisableClipHoleForDRM_;
+    }
+
     const std::vector<float>& GetCornerRadiusInfoForDRM() const
     {
         return drmCornerRadiusInfo_;
@@ -671,6 +685,7 @@ private:
     int32_t layerSource_ = 0;
     std::unordered_map<std::string, bool> watermarkHandles_ = {};
     std::vector<float> drmCornerRadiusInfo_;
+    bool isForceDisableClipHoleForDRM_ = false;
 
     Drawing::Matrix totalMatrix_;
     float globalAlpha_ = 1.0f;

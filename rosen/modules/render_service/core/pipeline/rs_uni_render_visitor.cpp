@@ -1989,6 +1989,10 @@ void RSUniRenderVisitor::UpdateHwcNodeEnable()
             }
             if (hwcNodePtr->GetProtectedLayer()) {
                 drmNodes_.emplace_back(hwcNode);
+                auto firstLevelNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(
+                    hwcNodePtr->GetFirstLevelNode());
+                hwcNodePtr->SetForceDisableClipHoleForDRM(firstLevelNode != nullptr &&
+                    firstLevelNode->GetRenderProperties().IsAttractionValid());
             }
             RSUniRenderUtil::UpdateHwcNodeProperty(hwcNodePtr);
             UpdateHwcNodeEnableByRotateAndAlpha(hwcNodePtr);
