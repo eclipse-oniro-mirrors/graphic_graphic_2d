@@ -16,7 +16,6 @@
 #include "skia_shader_effect.h"
 
 #include <vector>
-#include <unordered_map>
 #include "include/core/SkMatrix.h"
 #include "include/core/SkSamplingOptions.h"
 #include "include/core/SkTileMode.h"
@@ -37,7 +36,6 @@
 #include "utils/matrix.h"
 #include "utils/data.h"
 #include "utils/log.h"
-#include "securec.h"
 #ifdef RS_ENABLE_SDF
 #include "draw/sdf_shape.h"
 #endif

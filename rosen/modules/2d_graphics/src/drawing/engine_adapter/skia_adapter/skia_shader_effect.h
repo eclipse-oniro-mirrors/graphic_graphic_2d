@@ -17,7 +17,6 @@
 #define SKIA_SHADER_EFFECT_H
 
 #include "include/core/SkShader.h"
-#include <unordered_map>
 
 #include "impl_interface/shader_effect_impl.h"
 #include "include/effects/SkRuntimeEffect.h"
