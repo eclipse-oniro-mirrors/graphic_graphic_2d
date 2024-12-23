@@ -453,7 +453,7 @@ void RSRenderService::ClearSurfaceNodeFps(std::string& dumpString, std::string& 
 {
     dumpString += "\n-- Clear fps records info of screens:\n";
     const auto& surfaceFpsManager = RSSurfaceFpsManager::GetInstance();
-    surfaceFpsManager.ClearDump(fpsArg);
+    surfaceFpsManager.ClearDump(dumpString, fpsArg);
 }
 
 void RSRenderService::DumpRSEvenParam(std::string& dumpString) const
