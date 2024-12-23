@@ -132,8 +132,6 @@ ohos_executable("render_service_client_modifier_demo") {
 
   external_deps = [
     "access_token:libaccesstoken_sdk",
-    "access_token:libnativetoken",
-    "access_token:libtoken_setproc",
     "c_utils:utils",
     "eventhandler:libeventhandler",
     "hilog:libhilog",
@@ -156,8 +154,6 @@ ohos_executable("render_service_client_transition_demo") {
 
   external_deps = [
     "access_token:libaccesstoken_sdk",
-    "access_token:libnativetoken",
-    "access_token:libtoken_setproc",
     "c_utils:utils",
     "eventhandler:libeventhandler",
     "hilog:libhilog",
@@ -187,8 +183,6 @@ ohos_executable("render_service_client_gesture_interrupt_animation_demo") {
 
   external_deps = [
     "access_token:libaccesstoken_sdk",
-    "access_token:libnativetoken",
-    "access_token:libtoken_setproc",
     "c_utils:utils",
     "eventhandler:libeventhandler",
     "hilog:libhilog",
@@ -241,8 +235,6 @@ ohos_executable("render_service_client_surface_capture_demo") {
 
   external_deps = [
     "access_token:libaccesstoken_sdk",
-    "access_token:libnativetoken",
-    "access_token:libtoken_setproc",
     "c_utils:utils",
     "hilog:libhilog",
     "init:libbegetutil",
@@ -269,8 +261,6 @@ ohos_executable("render_service_client_ui_capture_demo") {
 
   external_deps = [
     "access_token:libaccesstoken_sdk",
-    "access_token:libnativetoken",
-    "access_token:libtoken_setproc",
     "c_utils:utils",
     "hilog:libhilog",
     "init:libbegetutil",
@@ -417,8 +407,6 @@ ohos_executable("render_service_client_uni_render_demo") {
 
   external_deps = [
     "access_token:libaccesstoken_sdk",
-    "access_token:libnativetoken",
-    "access_token:libtoken_setproc",
     "c_utils:utils",
     "hilog:libhilog",
     "safwk:system_ability_fwk",
@@ -457,8 +445,6 @@ ohos_executable("rs_uni_render_pixelmap_demo") {
 
   external_deps = [
     "access_token:libaccesstoken_sdk",
-    "access_token:libnativetoken",
-    "access_token:libtoken_setproc",
     "c_utils:utils",
     "eventhandler:libeventhandler",
     "hilog:libhilog",

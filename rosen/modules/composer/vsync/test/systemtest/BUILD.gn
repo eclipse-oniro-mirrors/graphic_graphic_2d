@@ -72,8 +72,6 @@ ohos_unittest("vsync_test_st") {
   ]
   external_deps = [
     "access_token:libaccesstoken_sdk",
-    "access_token:libnativetoken",
-    "access_token:libtoken_setproc",
     "c_utils:utils",
   ]
 }
@@ -104,8 +102,6 @@ ohos_unittest("vsync_ltpo_test_st") {
   ]
   external_deps = [
     "access_token:libaccesstoken_sdk",
-    "access_token:libnativetoken",
-    "access_token:libtoken_setproc",
     "c_utils:utils",
     "ipc:ipc_core",
     "samgr:samgr_proxy",
@@ -138,8 +134,6 @@ ohos_unittest("vsync_30to60_test_st") {
   ]
   external_deps = [
     "access_token:libaccesstoken_sdk",
-    "access_token:libnativetoken",
-    "access_token:libtoken_setproc",
     "c_utils:utils",
     "ipc:ipc_core",
     "samgr:samgr_proxy",
@@ -172,8 +166,6 @@ ohos_unittest("vsync_30to90_test_st") {
   ]
   external_deps = [
     "access_token:libaccesstoken_sdk",
-    "access_token:libnativetoken",
-    "access_token:libtoken_setproc",
     "c_utils:utils",
     "ipc:ipc_core",
     "samgr:samgr_proxy",
@@ -206,8 +198,6 @@ ohos_unittest("vsync_30to120_test_st") {
   ]
   external_deps = [
     "access_token:libaccesstoken_sdk",
-    "access_token:libnativetoken",
-    "access_token:libtoken_setproc",
     "c_utils:utils",
     "ipc:ipc_core",
     "samgr:samgr_proxy",
@@ -240,8 +230,6 @@ ohos_unittest("vsync_60to30_test_st") {
   ]
   external_deps = [
     "access_token:libaccesstoken_sdk",
-    "access_token:libnativetoken",
-    "access_token:libtoken_setproc",
     "c_utils:utils",
     "ipc:ipc_core",
     "samgr:samgr_proxy",
@@ -274,8 +262,6 @@ ohos_unittest("vsync_60to90_test_st") {
   ]
   external_deps = [
     "access_token:libaccesstoken_sdk",
-    "access_token:libnativetoken",
-    "access_token:libtoken_setproc",
     "c_utils:utils",
     "ipc:ipc_core",
     "samgr:samgr_proxy",
@@ -308,8 +294,6 @@ ohos_unittest("vsync_60to120_test_st") {
   ]
   external_deps = [
     "access_token:libaccesstoken_sdk",
-    "access_token:libnativetoken",
-    "access_token:libtoken_setproc",
     "c_utils:utils",
     "ipc:ipc_core",
     "samgr:samgr_proxy",
@@ -342,8 +326,6 @@ ohos_unittest("vsync_90to30_test_st") {
   ]
   external_deps = [
     "access_token:libaccesstoken_sdk",
-    "access_token:libnativetoken",
-    "access_token:libtoken_setproc",
     "c_utils:utils",
     "ipc:ipc_core",
     "samgr:samgr_proxy",
@@ -376,8 +358,6 @@ ohos_unittest("vsync_90to60_test_st") {
   ]
   external_deps = [
     "access_token:libaccesstoken_sdk",
-    "access_token:libnativetoken",
-    "access_token:libtoken_setproc",
     "c_utils:utils",
     "ipc:ipc_core",
     "samgr:samgr_proxy",
@@ -410,8 +390,6 @@ ohos_unittest("vsync_90to120_test_st") {
   ]
   external_deps = [
     "access_token:libaccesstoken_sdk",
-    "access_token:libnativetoken",
-    "access_token:libtoken_setproc",
     "c_utils:utils",
     "ipc:ipc_core",
     "samgr:samgr_proxy",
@@ -444,8 +422,6 @@ ohos_unittest("vsync_120to30_test_st") {
   ]
   external_deps = [
     "access_token:libaccesstoken_sdk",
-    "access_token:libnativetoken",
-    "access_token:libtoken_setproc",
     "c_utils:utils",
     "ipc:ipc_core",
     "samgr:samgr_proxy",
@@ -478,8 +454,6 @@ ohos_unittest("vsync_120to60_test_st") {
   ]
   external_deps = [
     "access_token:libaccesstoken_sdk",
-    "access_token:libnativetoken",
-    "access_token:libtoken_setproc",
     "c_utils:utils",
     "ipc:ipc_core",
     "samgr:samgr_proxy",
@@ -512,8 +486,6 @@ ohos_unittest("vsync_120to90_test_st") {
   ]
   external_deps = [
     "access_token:libaccesstoken_sdk",
-    "access_token:libnativetoken",
-    "access_token:libtoken_setproc",
     "c_utils:utils",
     "ipc:ipc_core",
     "samgr:samgr_proxy",
@@ -547,8 +519,6 @@ ohos_unittest("vsync_multicallback_test_st") {
   ]
   external_deps = [
     "access_token:libaccesstoken_sdk",
-    "access_token:libnativetoken",
-    "access_token:libtoken_setproc",
     "c_utils:utils",
     "ipc:ipc_core",
     "samgr:samgr_proxy",
@@ -673,8 +643,6 @@ ohos_unittest("vsync_setvsyncrate_test_st") {
   ]
   external_deps = [
     "access_token:libaccesstoken_sdk",
-    "access_token:libnativetoken",
-    "access_token:libtoken_setproc",
     "c_utils:utils",
     "ipc:ipc_core",
     "samgr:samgr_proxy",
@@ -708,8 +676,6 @@ ohos_unittest("vsync_callbackeveryframe_test_st") {
   ]
   external_deps = [
     "access_token:libaccesstoken_sdk",
-    "access_token:libnativetoken",
-    "access_token:libtoken_setproc",
     "c_utils:utils",
     "ipc:ipc_core",
     "samgr:samgr_proxy",
@@ -743,8 +709,6 @@ ohos_unittest("vsync_sample_test_st") {
   ]
   external_deps = [
     "access_token:libaccesstoken_sdk",
-    "access_token:libnativetoken",
-    "access_token:libtoken_setproc",
     "c_utils:utils",
     "ipc:ipc_core",
     "samgr:samgr_proxy",
