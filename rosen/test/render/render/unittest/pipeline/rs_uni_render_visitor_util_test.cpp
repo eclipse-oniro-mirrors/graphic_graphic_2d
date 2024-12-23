@@ -3293,9 +3293,9 @@ HWTEST_F(RSUniRenderVisitorTest, GetCurrentBlackList002, TestSize.Level1)
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
     rsUniRenderVisitor->screenManager_ = CreateOrGetScreenManager();
     ASSERT_NE(rsUniRenderVisitor, nullptr);
-    NodeId displayNodeId = 1;
+    NodeId id = 1;
     RSDisplayNodeConfig config;
-    rsUniRenderVisitor->curDisplayNode_ = std::make_shared<RSDisplayRenderNode>(displayNodeId, config);
+    rsUniRenderVisitor->curDisplayNode_ = std::make_shared<RSDisplayRenderNode>(id, config);
     rsUniRenderVisitor->curDisplayNode_->InitRenderParams();
     ASSERT_EQ(rsUniRenderVisitor->GetCurrentBlackList().size(), 0);
 }
@@ -3474,10 +3474,10 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeEnableByFilterRect001, TestSize.Le
     auto surfaceNode2 = std::make_shared<RSSurfaceRenderNode>(surfaceConfig);
     ASSERT_NE(surfaceNode2, nullptr);
 
-    uint32_t left = 0;
-    uint32_t top = 0;
-    uint32_t width = 300;
-    uint32_t height = 300;
+    constexpr uint32_t left = 0;
+    constexpr uint32_t top = 0;
+    constexpr uint32_t width = 300;
+    constexpr uint32_t height = 300;
     RectI rect{left, top, width, height};
     surfaceNode2->SetDstRect(rect);
     surfaceNode1->AddChildHardwareEnabledNode(surfaceNode2);
@@ -3550,10 +3550,10 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeEnableByFilterRect003, TestSize.Le
     auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(surfaceConfig);
     ASSERT_NE(surfaceNode, nullptr);
 
-    uint32_t left = 0;
-    uint32_t top = 0;
-    uint32_t width = 300;
-    uint32_t height = 300;
+    constexpr uint32_t left = 0;
+    constexpr uint32_t top = 0;
+    constexpr uint32_t width = 300;
+    constexpr uint32_t height = 300;
     RectI rect{left, top, width, height};
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
     ASSERT_NE(rsUniRenderVisitor, nullptr);
