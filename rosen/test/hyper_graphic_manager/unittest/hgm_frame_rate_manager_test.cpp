@@ -693,7 +693,7 @@ HWTEST_F(HgmFrameRateMgrTest, GetStylusVec, Function | SmallTest | Level2)
         mgr.GetStylusVec(configData);
         ASSERT_TRUE(mgr.stylusVec_.empty());
  
-        std::vector<uint32_t> expectedVec = {60, 120};
+        std::vector<uint32_t> expectedVec = {OLED_60_HZ, OLED_120_HZ};
         supportedModeConfig["StylusPen"] = expectedVec;
         mgr.GetStylusVec(configData);
         ASSERT_EQ(mgr.stylusVec_, expectedVec);
