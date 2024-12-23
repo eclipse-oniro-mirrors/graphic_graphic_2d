@@ -41,7 +41,7 @@ RSDisplayRenderNode::RSDisplayRenderNode(
 
 RSDisplayRenderNode::~RSDisplayRenderNode()
 {
-    RS_LOGI("RSDisplayRenderNode dtor id:%{public}" PRIu64 ", creenid: %{public}" PRIu64 ".", GetId(), screenId_);
+    RS_LOGI("RSDisplayRenderNode dtor id:%{public}" PRIu64 ", Screenid: %{public}" PRIu64 ".", GetId(), screenId_);
     MemoryTrack::Instance().RemoveNodeRecord(GetId());
     MemorySnapshot::Instance().RemoveCpuMemory(ExtractPid(GetId()), sizeof(*this));
 }
