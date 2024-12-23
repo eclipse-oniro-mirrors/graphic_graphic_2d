@@ -980,7 +980,7 @@ void RSSurfaceRenderNodeDrawable::DrawSelfDrawingNodeBuffer(
     if (params.buffer == nullptr) {
         RS_LOGE("RSSurfaceRenderNodeDrawable::DrawSelfDrawingNodeBuffer params.buffer is nullptr");
     } else {
-        surfaceFpsManager->RecordPresentTime(surfaceParams.GetId(), currentTime, params.buffer->GetSeqNum());
+        surfaceFpsManager.RecordPresentTime(surfaceParams.GetId(), currentTime, params.buffer->GetSeqNum());
     }
     auto bgColor = surfaceParams.GetBackgroundColor();
     auto renderEngine = RSUniRenderThread::Instance().GetRenderEngine();
