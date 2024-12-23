@@ -289,9 +289,7 @@ void RSHardwareThread::RecordTimestamp(const std::vector<LayerInfoPtr>& layers)
         std::chrono::steady_clock::now().time_since_epoch()).count();
     for (auto& layer : layers) {
         if (layer == nullptr ||
-            layer->GetUniRenderFlag() ||
-            layer->GetSurface()->GetName().find("RCDBottomSurfaceNode") != std::string::npos ||
-            layer->GetSurface()->GetName().find("RCDTopSurfaceNode") != std::string::npos) {
+            layer->GetUniRenderFlag()) {
                 continue;
             }
             uint64_t id = layer->GetNodeId();
