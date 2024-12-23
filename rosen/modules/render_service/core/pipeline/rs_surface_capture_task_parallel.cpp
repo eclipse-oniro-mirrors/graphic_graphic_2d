@@ -323,7 +323,7 @@ std::unique_ptr<Media::PixelMap> RSSurfaceCaptureTaskParallel::CreatePixelMapByD
     finalRotationAngle_ = CalPixelMapRotation();
     uint32_t pixmapWidth = screenInfo.width;
     uint32_t pixmapHeight = screenInfo.height;
-    const Drawing:Rect& rect = captureConfig_.mainScreenRect;
+    const Drawing::Rect& rect = captureConfig_.mainScreenRect;
     if (rect.right_ - rect.left_ > 0 && rect.bottom_ - rect.top_ > 0) {
         pixmapWidth = ceil(rect.right_ - rect.left_);
         pixmapHeight = ceil(rect.bottom_ - rect.top_);
