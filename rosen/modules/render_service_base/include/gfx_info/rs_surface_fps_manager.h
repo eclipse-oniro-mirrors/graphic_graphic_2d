@@ -34,3 +34,4 @@ private:
     std::unordered_map<NodeId, std::shared_ptr<RSSurfaceFps>> surfaceFpsMap_;
 };
 }
+#endif

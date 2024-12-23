@@ -52,12 +52,6 @@ class RSCommand;
 class RSDirtyRegionManager;
 class RSSurfaceHandler;
 
-struct FPSStat {
-    uint64_t presentTime;
-    uint32_t seqNum;
-};
-
-
 class RSB_EXPORT RSSurfaceRenderNode : public RSRenderNode {
 public:
     using WeakPtr = std::weak_ptr<RSSurfaceRenderNode>;
@@ -1626,11 +1620,6 @@ private:
     std::unordered_map<NodeId, Vector2<int32_t>> crossNodeSkippedDisplayOffsets_ = {};
 
     uint32_t apiCompatibleVersion_ = 0;
-
-    // Record the drawing timestamp, which is used to collect statistics on the transmission and display frame rate.
-    static constexpr int FRAME_RECORDS_NUM = 384;
-    std::array<FPSStat, FRAME_RECORDS_NUM> presentTimeRecords_ {};
-    uint32_t count_ = 0;
 
     // UIExtension record, <UIExtension, hostAPP>
     inline static std::unordered_map<NodeId, NodeId> secUIExtensionNodes_ = {};
