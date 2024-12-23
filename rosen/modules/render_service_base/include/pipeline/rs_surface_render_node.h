@@ -51,7 +51,6 @@ namespace Rosen {
 class RSCommand;
 class RSDirtyRegionManager;
 class RSSurfaceHandler;
-
 class RSB_EXPORT RSSurfaceRenderNode : public RSRenderNode {
 public:
     using WeakPtr = std::weak_ptr<RSSurfaceRenderNode>;
