@@ -929,11 +929,11 @@ void RSRenderServiceConnection::RepaintEverything()
     if (mainThread_ == nullptr) {
         RS_LOGE("RepaintEverything, mainThread_ is null, return");
     }
-    aotu captureTask = [=]() -> void {
+    auto captureTask = [=]() -> void {
+        RS_LOGI("RepaintEverything, setDirtyflag, forceRefresh in mainThread");
         RSMainThread::Instance()->SetDirtyFlag();
         RSMainThread::Instance()->ForceRefreshForUni();
-        RS_LOGI("RepaintEverything, setDirtyflag, forceRefresh in mainThread");
-    }
+    };
     mainThread_->PostTask(captureTask);
 }
 
