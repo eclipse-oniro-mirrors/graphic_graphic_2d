@@ -978,20 +978,45 @@ void HgmFrameRateManager::HandleScreenPowerStatus(ScreenId id, ScreenPowerStatus
     }
     auto& hgmScreenInfo = HgmScreenInfo::GetInstance();
     auto isLtpo = hgmScreenInfo.IsLtpoType(hgmScreenInfo.GetScreenType(id));
-    auto configData = hgmCore.GetPolicyConfigData();
-    if (configData == nullptr) {
-        return;
-    }
     std::string curScreenName = "screen" + std::to_string(id) + "_" + (isLtpo ? "LTPO" : "LTPS");
+
     curScreenStrategyId_ = configData->screenStrategyConfigs_[curScreenName];
-    if (curScreenStrategyId_.empty()) {
-        curScreenStrategyId_ = "LTPO-DEFAULT";
-    }
     isLtpo_ = isLtpo;
     lastCurScreenId_.store(curScreenId_.load());
     curScreenId_.store(id);
     hgmCore.SetActiveScreenId(curScreenId_.load());
     HGM_LOGD("curScreen change:%{public}d", static_cast<int>(curScreenId_.load()));
+
+    HandleScreenFrameRate();
+}
+
+void HgmFrameRateManager::HandleScreenRectFrameRate(ScreenId id, const GraphicIRect& activeRect)
+{
+    RS_TRACE_NAME_FMT("HandleScreenRectFrameRate FMTTrace");
+    auto& hgmScreenInfo = HgmScreenInfo::GetInstance();
+    auto isLtpo = hgmScreenInfo.IsLtpoType(hgmScreenInfo.GetScreenType(id));
+
+    std::string curScreenName = "screen" + std::to_string(id) + "_" + (isLtpo ? "LTPO" : "LTPS");
+    if (!activeRect) {
+        curScreenName += "_" + std::to_string(activeRect.x);
+        curScreenName += "_" + std::to_string(activeRect.y);
+        curScreenName += "_" + std::to_string(activeRect.w);
+        curScreenName += "_" + std::to_string(activeRect.h);
+    }
+    curScreenStrategyId_ = configData->screenStrategyConfigs_[curScreenName];
+    HandleScreenFrameRate();
+}
+
+void HgmFrameRateManager::HandleScreenFrameRate()
+{
+    auto& hgmCore = HgmCore::Instance();
+    auto configData = hgmCore.GetPolicyConfigData();
+    if (configData == nullptr) {
+        return;
+    }
+    if (curScreenStrategyId_.empty()) {
+        curScreenStrategyId_ = "LTPO-DEFAULT";
+    }
 
     multiAppStrategy_.UpdateXmlConfigCache();
     GetLowBrightVec(configData);

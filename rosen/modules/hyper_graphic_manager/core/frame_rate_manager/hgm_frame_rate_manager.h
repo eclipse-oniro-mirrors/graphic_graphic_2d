@@ -147,6 +147,9 @@ public:
     std::string GetCurScreenStrategyId() const { return curScreenStrategyId_; };
     void HandleRefreshRateMode(int32_t refreshRateMode);
     void HandleScreenPowerStatus(ScreenId id, ScreenPowerStatus status);
+    void HandleScreenRectFrameRate(ScreenId id, const GraphicIRect& activeRect);
+    void HandleScreenFrameRate(std::string curScreenName);
+
     // called by RSHardwareThread
     void HandleRsFrame();
     void SetShowRefreshRateEnabled(bool enable);

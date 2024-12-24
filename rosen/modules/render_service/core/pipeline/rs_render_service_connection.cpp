@@ -1941,6 +1941,9 @@ uint32_t RSRenderServiceConnection::SetScreenActiveRect(
         .w = activeRect.w,
         .h = activeRect.h,
     };
+    HgmTaskHandleThread::Instance().PostTask([id, dstActiveRect]() {
+        OHOS::Rosen::HgmCore::Instance().NotifyScreenRectFrameRateChange(id, dstActiveRect);
+    });
     return screenManager_->SetScreenActiveRect(id, dstActiveRect);
 }
 
