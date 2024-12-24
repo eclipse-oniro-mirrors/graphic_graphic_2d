@@ -27,7 +27,6 @@
 #include "draw/color.h"
 #include "platform/common/rs_system_properties.h"
 #include "render/rs_filter.h"
-#include "token_setproc.h"
 #include "transaction/rs_transaction.h"
 #include "ui/rs_root_node.h"
 #include "ui/rs_display_node.h"
