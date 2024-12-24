@@ -91,7 +91,7 @@ void DrawTexts(
         length,
         &xform[0],
         font,
-        Drawing::TextEncoding::UTF8);
+        encoding);
     DrawTexts(infoTextBlob, playbackCanvas_);
     playbackCanvas->AttachBrush(brush);
     playbackCanvas->DrawTextBlob(infoTextBlob.get(), interval2, line);
