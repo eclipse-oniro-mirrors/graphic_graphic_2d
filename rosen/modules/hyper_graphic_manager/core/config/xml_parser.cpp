@@ -293,7 +293,7 @@ void XMLParser::ParseBufferStrategyList(xmlNode &node, PolicyConfigData::Strateg
             strategy.bufferFpsMap[name] = FPS_MAX;
         } else if (IsNumber(fpsStr)) {
             auto fpsNum = std::stoi(fpsStr);
-            if (fpsNum > 0) {
+            if (fpsNum >= 0) {
                 strategy.bufferFpsMap[name] = fpsNum;
             }
         }
