@@ -316,7 +316,7 @@ HWTEST_F(OH_Drawing_FontDescriptorTest, OH_Drawing_FontDescriptorTest012, TestSi
 
 /*
  * @tc.name: OH_Drawing_FontDescriptorTest013
- * @tc.desc: est for obtaining the list of composite fonts that include "ALL".
+ * @tc.desc: test for obtaining the list of composite fonts that include "ALL".
  * @tc.type: FUNC
  */
 HWTEST_F(OH_Drawing_FontDescriptorTest, OH_Drawing_FontDescriptorTest013, TestSize.Level1)
@@ -326,7 +326,7 @@ HWTEST_F(OH_Drawing_FontDescriptorTest, OH_Drawing_FontDescriptorTest013, TestSi
     const char* fontPath = "/system/fonts/FTToken.ttf";
     OH_Drawing_RegisterFont(fc, fontFamily, fontPath);
 
-    OH_Drawing_Array *ttfs = OH_Drawing_GetSystemFontFullNamesByType(CUSTOMIZED);
+    OH_Drawing_Array *ttfs = OH_Drawing_GetSystemFontFullNamesByType(ALL);
     size_t num = OH_Drawing_GetDrawingArraySize(ttfs);
     EXPECT_EQ(num, 141);
     FontDescriptorMgrInstance.ClearFontFileCache();
@@ -347,8 +347,7 @@ HWTEST_F(OH_Drawing_FontDescriptorTest, OH_Drawing_FontDescriptorTest014, TestSi
     OH_Drawing_Array *ttfs = OH_Drawing_GetSystemFontFullNamesByType(CUSTOMIZED);
     size_t num = OH_Drawing_GetDrawingArraySize(ttfs);
     EXPECT_EQ(num, 1);
-    for (size_t i = 0; i < num; i++)
-    {
+    for (size_t i = 0; i < num; i++) {
         const OH_Drawing_String *fullName = OH_Drawing_GetSystemFontFullNameByIndex(ttfs, i);
         OH_Drawing_FontDescriptor *fd = OH_Drawing_GetFontDescriptorByFullName(fullName, CUSTOMIZED);
         ASSERT_STREQ(fd->fullName, "FTToken");
@@ -375,8 +374,7 @@ HWTEST_F(OH_Drawing_FontDescriptorTest, OH_Drawing_FontDescriptorTest015, TestSi
     OH_Drawing_Array *ttfs = OH_Drawing_GetSystemFontFullNamesByType(CUSTOMIZED);
     size_t num = OH_Drawing_GetDrawingArraySize(ttfs);
     EXPECT_EQ(num, 1);
-    for (size_t i = 0; i < num; i++)
-    {
+    for (size_t i = 0; i < num; i++) {
         const OH_Drawing_String *fullName = OH_Drawing_GetSystemFontFullNameByIndex(ttfs, i);
         OH_Drawing_FontDescriptor *fd = OH_Drawing_GetFontDescriptorByFullName(fullName, CUSTOMIZED);
         ASSERT_STREQ(fd->fullName, "FTToken");
@@ -399,8 +397,7 @@ HWTEST_F(OH_Drawing_FontDescriptorTest, OH_Drawing_FontDescriptorTest016, TestSi
     OH_Drawing_Array *ttfs = OH_Drawing_GetSystemFontFullNamesByType(CUSTOMIZED);
     size_t num = OH_Drawing_GetDrawingArraySize(ttfs);
     EXPECT_EQ(num, 1);
-    for (size_t i = 0; i < num; i++)
-    {
+    for (size_t i = 0; i < num; i++) {
         const OH_Drawing_String *fullName = OH_Drawing_GetSystemFontFullNameByIndex(ttfs, i);
         OH_Drawing_FontDescriptor *fd = OH_Drawing_GetFontDescriptorByFullName(fullName, CUSTOMIZED);
         ASSERT_STREQ(fd->fullName, "Noto Sans CJK JP");
@@ -418,8 +415,7 @@ HWTEST_F(OH_Drawing_FontDescriptorTest, OH_Drawing_FontDescriptorTest017, TestSi
     OH_Drawing_FontCollection *fc = OH_Drawing_CreateSharedFontCollection();
     const char* fontFamily = "Birch std";
     const char* fontPath = "/system/fonts/Birchstd.otf";
-    if (!fs::exists(fontPath))
-    {
+    if (!fs::exists(fontPath)) {
         return;
     }
     OH_Drawing_RegisterFont(fc, fontFamily, fontPath);
@@ -427,8 +423,7 @@ HWTEST_F(OH_Drawing_FontDescriptorTest, OH_Drawing_FontDescriptorTest017, TestSi
     OH_Drawing_Array *ttfs = OH_Drawing_GetSystemFontFullNamesByType(CUSTOMIZED);
     size_t num = OH_Drawing_GetDrawingArraySize(ttfs);
     EXPECT_EQ(num, 1);
-    for (size_t i = 0; i < num; i++)
-    {
+    for (size_t i = 0; i < num; i++) {
         const OH_Drawing_String *fullName = OH_Drawing_GetSystemFontFullNameByIndex(ttfs, i);
         OH_Drawing_FontDescriptor *fd = OH_Drawing_GetFontDescriptorByFullName(fullName, CUSTOMIZED);
         ASSERT_STREQ(fd->fullName, "Birch std");
@@ -469,17 +464,16 @@ HWTEST_F(OH_Drawing_FontDescriptorTest, OH_Drawing_FontDescriptorTest019, TestSi
     OH_Drawing_Array *ttfs = OH_Drawing_GetSystemFontFullNamesByType(CUSTOMIZED);
     size_t num = OH_Drawing_GetDrawingArraySize(ttfs);
     EXPECT_EQ(num, 1);
-    for (size_t i = 0; i < num; i++)
-    {
+    for (size_t i = 0; i < num; i++) {
         const OH_Drawing_String *fullName = OH_Drawing_GetSystemFontFullNameByIndex(ttfs, i);
         OH_Drawing_FontDescriptor *fd = OH_Drawing_GetFontDescriptorByFullName(fullName, CUSTOMIZED);
-        ASSERT_STREQ(fd->fullName, "Birch std");
+        ASSERT_STREQ(fd->fullName, "FTToken");
     }
 
     OH_Drawing_TypographyStyle *typoStyle = OH_Drawing_CreateTypographyStyle();
     OH_Drawing_CreateTypographyHandler(typoStyle, fc);
     OH_Drawing_Array *ttfs1 = OH_Drawing_GetSystemFontFullNamesByType(CUSTOMIZED);
-    size_t num1 = OH_Drawing_GetDrawingArraySize(ttfs);
+    size_t num1 = OH_Drawing_GetDrawingArraySize(ttfs1);
     EXPECT_EQ(num1, 0);
     FontDescriptorMgrInstance.ClearFontFileCache();
 }
