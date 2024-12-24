@@ -641,20 +641,62 @@ HWTEST_F(HgmFrameRateMgrTest, GetLowBrightVec, Function | SmallTest | Level2)
     std::vector<std::string> screenConfigs = {"LTPO-DEFAULT", "LTPO-internal", "LTPO-external"};
     for (const auto& screenConfig : screenConfigs) {
         auto iter = configData->supportedModeConfigs_.find(screenConfig);
-        if (iter != configData-> supportedModeConfigs_.end()) {
-            auto& supportedModeConfig = iter->second;
-
-            supportedModeConfig.clear();
-            mgr.GetLowBrightVec(configData);
-            ASSERT_EQ(mgr.isAmbientEffect_, false);
-            ASSERT_TRUE(mgr.lowBrightVec_.empty());
-
-            std::vector<uint32_t> expectedLowBrightVec = {30, 60, 90};
-            supportedModeConfig = expectedLowBrightVec;
-            mgr.GetLowBrightVec(configData);
-            ASSERT_EQ(mgr.isAmbientEffect_, true);
-            ASSERT_EQ(mgr.lowBrightVec_, expectedLowBrightVec);
+        if (iter == configData-> supportedModeConfigs_.end()) {
+            continue;
         }
+
+        auto& supportedModeConfig = iter->second;
+        auto vec = supportedModeConfig.find("LowBright");
+
+        if (vec == supportedModeConfig.end()) {
+            continue;
+        }
+
+        supportedModeConfig["LowBright"].clear();
+        mgr.GetLowBrightVec(configData);
+        ASSERT_EQ(mgr.isAmbientEffect_, false);
+        ASSERT_TRUE(mgr.lowBrightVec_.empty());
+
+        std::vector<uint32_t> expectedLowBrightVec = {30, 60, 90};
+        supportedModeConfig["LowBright"] = expectedLowBrightVec;
+        mgr.GetLowBrightVec(configData);
+        ASSERT_EQ(mgr.isAmbientEffect_, true);
+        ASSERT_EQ(mgr.lowBrightVec_, expectedLowBrightVec);
+    }
+}
+
+/**
+ * @tc.name: GetStylusVec
+ * @tc.desc: Verify the result of GetStylusVec
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(HgmFrameRateMgrTest, GetStylusVec, Function | SmallTest | Level2)
+{
+    HgmFrameRateManager mgr;
+    std::shared_ptr<PolicyConfigData> configData = std::make_shared<PolicyConfigData>();
+ 
+    std::vector<std::string> screenConfigs = {"LTPO-DEFAULT", "LTPS-DEFAULT"};
+    for (const auto& screenConfig : screenConfigs) {
+        auto iter = configData->supportedModeConfigs_.find(screenConfig);
+        if (iter == configData-> supportedModeConfigs_.end()) {
+            continue;
+        }
+ 
+        auto& supportedModeConfig = iter->second;
+        auto it = supportedModeConfig.find("StylusPen");
+        if (it == supportedModeConfig.end()) {
+            continue;
+        }
+ 
+        supportedModeConfig["StylusPen"].clear();
+        mgr.GetStylusVec(configData);
+        ASSERT_TRUE(mgr.stylusVec_.empty());
+ 
+        std::vector<uint32_t> expectedVec = {OLED_60_HZ, OLED_120_HZ};
+        supportedModeConfig["StylusPen"] = expectedVec;
+        mgr.GetStylusVec(configData);
+        ASSERT_EQ(mgr.stylusVec_, expectedVec);
     }
 }
 

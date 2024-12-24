@@ -2948,6 +2948,7 @@ void RSSurfaceRenderNode::UpdateRenderParams()
     surfaceParams->isMainWindowType_ = IsMainWindowType();
     surfaceParams->isLeashWindow_ = IsLeashWindow();
     surfaceParams->isAppWindow_ = IsAppWindow();
+    surfaceParams->SetAncestorDisplayNode(ancestorDisplayNode_);
     surfaceParams->isSecurityLayer_ = isSecurityLayer_;
     surfaceParams->isSkipLayer_ = isSkipLayer_;
     surfaceParams->isSnapshotSkipLayer_ = isSnapshotSkipLayer_;
@@ -2976,9 +2977,6 @@ void RSSurfaceRenderNode::UpdateRenderParams()
     surfaceParams->crossNodeSkippedDisplayOffsets_ = crossNodeSkippedDisplayOffsets_;
     surfaceParams->preparedDisplayOffset_ = { GetPreparedDisplayOffsetX(), GetPreparedDisplayOffsetY() };
     surfaceParams->SetNeedSync(true);
-    for (auto iter = ancestorDisplayNodeMap_.begin(); iter != ancestorDisplayNodeMap_.end(); ++iter) {
-        surfaceParams->SetAncestorDisplayNode(iter->first, iter->second);
-    }
 
     RSRenderNode::UpdateRenderParams();
 #endif
@@ -3006,9 +3004,7 @@ void RSSurfaceRenderNode::UpdateAncestorDisplayNodeInRenderParams()
         RS_LOGE("RSSurfaceRenderNode::UpdateAncestorDisplayNodeInRenderParams surfaceParams is null");
         return;
     }
-    for (auto iter = ancestorDisplayNodeMap_.begin(); iter != ancestorDisplayNodeMap_.end(); ++iter) {
-        surfaceParams->SetAncestorDisplayNode(iter->first, iter->second);
-    }
+    surfaceParams->SetAncestorDisplayNode(ancestorDisplayNode_);
     surfaceParams->SetNeedSync(true);
 #endif
 }
@@ -3092,6 +3088,18 @@ void RSSurfaceRenderNode::SetCornerRadiusInfoForDRM(const std::vector<float>& dr
         AddToPendingSyncList();
     }
 #endif
+}
+
+void RSSurfaceRenderNode::SetForceDisableClipHoleForDRM(bool isForceDisable)
+{
+    auto stagingSurfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
+    if (stagingSurfaceParams == nullptr) {
+        return;
+    }
+    stagingSurfaceParams->SetForceDisableClipHoleForDRM(isForceDisable);
+    if (stagingRenderParams_->NeedSync()) {
+        AddToPendingSyncList();
+    }
 }
 
 void RSSurfaceRenderNode::SetSkipDraw(bool skip)
@@ -3226,7 +3234,8 @@ void RSSurfaceRenderNode::SetOldNeedDrawBehindWindow(bool val)
 
 bool RSSurfaceRenderNode::NeedDrawBehindWindow() const
 {
-    return GetBehindWindowFilterEnabled() && !childrenBlurBehindWindow_.empty();
+    return !GetRenderProperties().GetBackgroundFilter() && GetBehindWindowFilterEnabled() &&
+        !childrenBlurBehindWindow_.empty();
 }
 
 bool RSSurfaceRenderNode::GetBehindWindowFilterEnabled() const
@@ -3251,11 +3260,11 @@ void RSSurfaceRenderNode::RemoveChildBlurBehindWindow(NodeId id)
     childrenBlurBehindWindow_.erase(id);
 }
 
-void RSSurfaceRenderNode::SetDrawBehindWindowRegion()
+void RSSurfaceRenderNode::CalDrawBehindWindowRegion()
 {
     auto context = GetContext().lock();
     if (!context) {
-        RS_LOGE("RSSurfaceRenderNode::SetDrawBehindWindowRegion, invalid context");
+        RS_LOGE("RSSurfaceRenderNode::CalDrawBehindWindowRegion, invalid context");
     }
     RectI region;
     for (auto& id : childrenBlurBehindWindow_) {
@@ -3263,17 +3272,23 @@ void RSSurfaceRenderNode::SetDrawBehindWindowRegion()
             auto childRect = child->GetMutableRenderProperties().GetBoundsGeometry()->GetAbsRect();
             region = region.JoinRect(childRect);
         } else {
-            RS_LOGE("RSSurfaceRenderNode::RSSurfaceRenderNode, get child failed");
+            RS_LOGE("RSSurfaceRenderNode::CalDrawBehindWindowRegion, get child failed");
             return;
         }
     }
-    RS_OPTIONAL_TRACE_NAME_FMT("RSSurfaceRenderNode::SetDrawBehindWindowRegion: Id: %lu, BehindWindowRegion: %s",
+    RS_OPTIONAL_TRACE_NAME_FMT("RSSurfaceRenderNode::CalDrawBehindWindowRegion: Id: %lu, BehindWindowRegion: %s",
         GetId(), region.ToString().c_str());
+    drawBehindWindowRegion_ = region;
     auto filterDrawable = GetFilterDrawable(false);
     if (!filterDrawable) {
         return;
     }
     filterDrawable->SetDrawBehindWindowRegion(region);
+}
+
+RectI RSSurfaceRenderNode::GetFilterRect() const
+{
+    return NeedDrawBehindWindow() ? drawBehindWindowRegion_ : RSRenderNode::GetFilterRect();
 }
 
 bool RSSurfaceRenderNode::IsCurFrameSwitchToPaint()

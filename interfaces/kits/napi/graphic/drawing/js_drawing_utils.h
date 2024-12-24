@@ -26,6 +26,7 @@
 #include "draw/shadow.h"
 #include "native_engine/native_engine.h"
 #include "native_engine/native_value.h"
+#include "text/font.h"
 #include "text/font_metrics.h"
 #include "text/font_types.h"
 #include "utils/point.h"
@@ -178,6 +179,7 @@ private:
     } while (0)
 
 namespace Drawing {
+constexpr char THEME_FONT[] = "OhosThemeFont";
 constexpr size_t ARGC_ZERO = 0;
 constexpr size_t ARGC_ONE = 1;
 constexpr size_t ARGC_TWO = 2;
@@ -190,6 +192,7 @@ constexpr size_t ARGC_EIGHT = 8;
 constexpr size_t ARGC_NINE = 9;
 constexpr int NUMBER_TWO = 2;
 constexpr int MAX_PAIRS_PATHVERB = 4;
+extern const char* const JSCOLOR[4];
 
 enum class DrawingErrorCode : int32_t {
     OK = 0,
@@ -352,6 +355,8 @@ bool ConvertFromJsValue(napi_env env, napi_value jsValue, T& value)
 
 bool ConvertFromJsColor(napi_env env, napi_value jsValue, int32_t* argb, size_t size);
 
+bool ConvertFromAdaptHexJsColor(napi_env env, napi_value jsValue, Drawing::ColorQuad& jsColor);
+
 bool ConvertFromJsRect(napi_env env, napi_value jsValue, double* ltrb, size_t size);
 
 bool ConvertFromJsIRect(napi_env env, napi_value jsValue, int32_t* ltrb, size_t size);
@@ -471,6 +476,8 @@ inline napi_value GetColorAndConvertToJsValue(napi_env env, const Color& color)
 }
 
 napi_value NapiThrowError(napi_env env, DrawingErrorCode err, const std::string& message);
+
+std::shared_ptr<Font> GetThemeFont(std::shared_ptr<Font> font);
 } // namespace Drawing
 } // namespace OHOS::Rosen
 
