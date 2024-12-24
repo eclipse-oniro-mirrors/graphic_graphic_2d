@@ -50,8 +50,7 @@ void DrawText(Drawing::TextBlobBuilder& builder, TestPlaybackCanvas* playbackCan
     playbackCanvas->DetachPen();
 }
 
-//对应用例allocrunrsxform_3001
-DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 1)
+Drawing::Font MakeFont()
 {
     std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
     std::string name = "HarmonyOS Sans SC";
@@ -61,6 +60,14 @@ DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 1)
     auto font = Drawing::Font();
     font.SetTypeface(typeface);
     font.SetSize(50.f);
+
+    return font;
+}
+
+//对应用例allocrunrsxform_3001
+DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 1)
+{
+    auto font = MakeFont();
     Drawing::TextBlobBuilder builder;
     auto buffer = builder.AllocRunRSXform(font, 20);
     for (int i = 0; i < 20; i++) {
@@ -76,14 +83,7 @@ DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 1)
 //对应用例allocrunrsxform_3002
 DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 2)
 {
-    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
-    std::string name = "HarmonyOS Sans SC";
-    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
-    auto typeface = Drawing::Typeface::MakeDefault();
-    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
-    auto font = Drawing::Font();
-    font.SetTypeface(typeface);
-    font.SetSize(50.f);
+    auto font = MakeFont();
     Drawing::TextBlobBuilder builder;
     auto buffer = builder.AllocRunRSXform(font, 20);
     for (int i = 0; i < 20; i++) {
@@ -99,14 +99,7 @@ DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 2)
 //对应用例allocrunrsxform_3003
 DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 3)
 {
-    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
-    std::string name = "HarmonyOS Sans SC";
-    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
-    auto typeface = Drawing::Typeface::MakeDefault();
-    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
-    auto font = Drawing::Font();
-    font.SetTypeface(typeface);
-    font.SetSize(50.f);
+    auto font = MakeFont();
     Drawing::TextBlobBuilder builder;
     auto buffer = builder.AllocRunRSXform(font, 20);
     for (int i = 0; i < 20; i++) {
@@ -122,14 +115,7 @@ DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 3)
 //对应用例allocrunrsxform_3004
 DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 4)
 {
-    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
-    std::string name = "HarmonyOS Sans SC";
-    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
-    auto typeface = Drawing::Typeface::MakeDefault();
-    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
-    auto font = Drawing::Font();
-    font.SetTypeface(typeface);
-    font.SetSize(50.f);
+    auto font = MakeFont();
     Drawing::TextBlobBuilder builder;
     auto buffer = builder.AllocRunRSXform(font, 20);
     for (int i = 0; i < 20; i++) {
@@ -145,14 +131,7 @@ DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 4)
 //对应用例allocrunrsxform_3005
 DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 5)
 {
-    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
-    std::string name = "HarmonyOS Sans SC";
-    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
-    auto typeface = Drawing::Typeface::MakeDefault();
-    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
-    auto font = Drawing::Font();
-    font.SetTypeface(typeface);
-    font.SetSize(50.f);
+    auto font = MakeFont();
     Drawing::TextBlobBuilder builder;
     auto buffer = builder.AllocRunRSXform(font, 20);
     for (int i = 0; i < 20; i++) {
@@ -168,14 +147,7 @@ DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 5)
 //对应用例allocrunrsxform_3006
 DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 6)
 {
-    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
-    std::string name = "HarmonyOS Sans SC";
-    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
-    auto typeface = Drawing::Typeface::MakeDefault();
-    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
-    auto font = Drawing::Font();
-    font.SetTypeface(typeface);
-    font.SetSize(50.f);
+    auto font = MakeFont();
     Drawing::TextBlobBuilder builder;
     auto buffer = builder.AllocRunRSXform(font, 20);
     for (int i = 0; i < 20; i++) {
@@ -191,14 +163,7 @@ DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 6)
 //对应用例allocrunrsxform_3007
 DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 7)
 {
-    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
-    std::string name = "HarmonyOS Sans SC";
-    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
-    auto typeface = Drawing::Typeface::MakeDefault();
-    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
-    auto font = Drawing::Font();
-    font.SetTypeface(typeface);
-    font.SetSize(50.f);
+    auto font = MakeFont();
     Drawing::TextBlobBuilder builder;
     auto buffer = builder.AllocRunRSXform(font, 20);
     for (int i = 0; i < 20; i++) {
@@ -214,14 +179,7 @@ DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 7)
 //对应用例allocrunrsxform_3008
 DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 8)
 {
-    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
-    std::string name = "HarmonyOS Sans SC";
-    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
-    auto typeface = Drawing::Typeface::MakeDefault();
-    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
-    auto font = Drawing::Font();
-    font.SetTypeface(typeface);
-    font.SetSize(50.f);
+    auto font = MakeFont();
     Drawing::TextBlobBuilder builder;
     auto buffer = builder.AllocRunRSXform(font, 20);
     for (int i = 0; i < 20; i++) {
@@ -237,14 +195,7 @@ DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 8)
 //对应用例allocrunrsxform_3009
 DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 9)
 {
-    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
-    std::string name = "HarmonyOS Sans SC";
-    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
-    auto typeface = Drawing::Typeface::MakeDefault();
-    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
-    auto font = Drawing::Font();
-    font.SetTypeface(typeface);
-    font.SetSize(50.f);
+    auto font = MakeFont();
     Drawing::TextBlobBuilder builder;
     auto buffer = builder.AllocRunRSXform(font, 20);
     for (int i = 0; i < 20; i++) {
@@ -260,14 +211,7 @@ DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 9)
 //对应用例allocrunrsxform_3010
 DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 10)
 {
-    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
-    std::string name = "HarmonyOS Sans SC";
-    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
-    auto typeface = Drawing::Typeface::MakeDefault();
-    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
-    auto font = Drawing::Font();
-    font.SetTypeface(typeface);
-    font.SetSize(50.f);
+    auto font = MakeFont();
     Drawing::TextBlobBuilder builder;
     auto buffer = builder.AllocRunRSXform(font, 20);
     for (int i = 0; i < 20; i++) {
@@ -283,14 +227,7 @@ DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 10)
 //对应用例allocrunrsxform_3011
 DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 11)
 {
-    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
-    std::string name = "HarmonyOS Sans SC";
-    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
-    auto typeface = Drawing::Typeface::MakeDefault();
-    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
-    auto font = Drawing::Font();
-    font.SetTypeface(typeface);
-    font.SetSize(50.f);
+    auto font = MakeFont();
     Drawing::TextBlobBuilder builder;
     auto buffer = builder.AllocRunRSXform(font, 20);
     for (int i = 0; i < 20; i++) {
@@ -306,14 +243,7 @@ DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 11)
 //对应用例allocrunrsxform_3012
 DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 12)
 {
-    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
-    std::string name = "HarmonyOS Sans SC";
-    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
-    auto typeface = Drawing::Typeface::MakeDefault();
-    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
-    auto font = Drawing::Font();
-    font.SetTypeface(typeface);
-    font.SetSize(50.f);
+    auto font = MakeFont();
     Drawing::TextBlobBuilder builder;
     auto buffer = builder.AllocRunRSXform(font, 20);
     for (int i = 0; i < 20; i++) {
@@ -329,14 +259,7 @@ DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 12)
 //对应用例allocrunrsxform_3013
 DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 13)
 {
-    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
-    std::string name = "HarmonyOS Sans SC";
-    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
-    auto typeface = Drawing::Typeface::MakeDefault();
-    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
-    auto font = Drawing::Font();
-    font.SetTypeface(typeface);
-    font.SetSize(50.f);
+    auto font = MakeFont();
     Drawing::TextBlobBuilder builder;
     auto buffer = builder.AllocRunRSXform(font, 10);
     for (int i = 0; i < 10; i++) {
@@ -352,14 +275,7 @@ DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 13)
 //对应用例allocrunrsxform_3014
 DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 14)
 {
-    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
-    std::string name = "HarmonyOS Sans SC";
-    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
-    auto typeface = Drawing::Typeface::MakeDefault();
-    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
-    auto font = Drawing::Font();
-    font.SetTypeface(typeface);
-    font.SetSize(50.f);
+    auto font = MakeFont();
     Drawing::TextBlobBuilder builder;
     auto buffer = builder.AllocRunRSXform(font, 10);
     for (int i = 0; i < 10; i++) {
@@ -375,14 +291,7 @@ DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 14)
 //对应用例allocrunrsxform_3015
 DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 15)
 {
-    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
-    std::string name = "HarmonyOS Sans SC";
-    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
-    auto typeface = Drawing::Typeface::MakeDefault();
-    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
-    auto font = Drawing::Font();
-    font.SetTypeface(typeface);
-    font.SetSize(50.f);
+    auto font = MakeFont();
     Drawing::TextBlobBuilder builder;
     auto buffer = builder.AllocRunRSXform(font, 10);
     for (int i = 0; i < 10; i++) {
@@ -398,14 +307,7 @@ DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 15)
 //对应用例allocrunrsxform_3016
 DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 16)
 {
-    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
-    std::string name = "HarmonyOS Sans SC";
-    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
-    auto typeface = Drawing::Typeface::MakeDefault();
-    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
-    auto font = Drawing::Font();
-    font.SetTypeface(typeface);
-    font.SetSize(50.f);
+    auto font = MakeFont();
     Drawing::TextBlobBuilder builder;
     auto buffer = builder.AllocRunRSXform(font, 10);
     for (int i = 0; i < 10; i++) {
@@ -421,14 +323,7 @@ DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 16)
 //对应用例allocrunrsxform_3017
 DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 17)
 {
-    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
-    std::string name = "HarmonyOS Sans SC";
-    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
-    auto typeface = Drawing::Typeface::MakeDefault();
-    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
-    auto font = Drawing::Font();
-    font.SetTypeface(typeface);
-    font.SetSize(50.f);
+    auto font = MakeFont();
     Drawing::TextBlobBuilder builder;
     auto buffer = builder.AllocRunRSXform(font, 10);
     for (int i = 0; i < 10; i++) {
@@ -444,14 +339,7 @@ DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 17)
 //对应用例allocrunrsxform_3018
 DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 18)
 {
-    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
-    std::string name = "HarmonyOS Sans SC";
-    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
-    auto typeface = Drawing::Typeface::MakeDefault();
-    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
-    auto font = Drawing::Font();
-    font.SetTypeface(typeface);
-    font.SetSize(50.f);
+    auto font = MakeFont();
     Drawing::TextBlobBuilder builder;
     auto buffer = builder.AllocRunRSXform(font, 10);
     for (int i = 0; i < 10; i++) {
@@ -467,14 +355,7 @@ DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 18)
 //对应用例allocrunrsxform_3019
 DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 19)
 {
-    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
-    std::string name = "HarmonyOS Sans SC";
-    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
-    auto typeface = Drawing::Typeface::MakeDefault();
-    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
-    auto font = Drawing::Font();
-    font.SetTypeface(typeface);
-    font.SetSize(50.f);
+    auto font = MakeFont();
     Drawing::TextBlobBuilder builder;
     auto buffer = builder.AllocRunRSXform(font, 10);
     for (int i = 0; i < 10; i++) {
@@ -490,14 +371,7 @@ DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 19)
 //对应用例allocrunrsxform_3020
 DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 20)
 {
-    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
-    std::string name = "HarmonyOS Sans SC";
-    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
-    auto typeface = Drawing::Typeface::MakeDefault();
-    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
-    auto font = Drawing::Font();
-    font.SetTypeface(typeface);
-    font.SetSize(50.f);
+    auto font = MakeFont();
     Drawing::TextBlobBuilder builder;
     auto buffer = builder.AllocRunRSXform(font, 10);
     for (int i = 0; i < 10; i++) {
@@ -513,14 +387,7 @@ DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 20)
 //对应用例allocrunrsxform_3021
 DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 21)
 {
-    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
-    std::string name = "HarmonyOS Sans SC";
-    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
-    auto typeface = Drawing::Typeface::MakeDefault();
-    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
-    auto font = Drawing::Font();
-    font.SetTypeface(typeface);
-    font.SetSize(50.f);
+    auto font = MakeFont();
     Drawing::TextBlobBuilder builder;
     auto buffer = builder.AllocRunRSXform(font, 10);
     for (int i = 0; i < 10; i++) {
@@ -536,14 +403,7 @@ DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 21)
 //对应用例allocrunrsxform_3022
 DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 22)
 {
-    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
-    std::string name = "HarmonyOS Sans SC";
-    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
-    auto typeface = Drawing::Typeface::MakeDefault();
-    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
-    auto font = Drawing::Font();
-    font.SetTypeface(typeface);
-    font.SetSize(50.f);
+    auto font = MakeFont();
     Drawing::TextBlobBuilder builder;
     auto buffer = builder.AllocRunRSXform(font, 10);
     for (int i = 0; i < 10; i++) {
@@ -559,14 +419,7 @@ DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 22)
 //对应用例allocrunrsxform_3023
 DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 23)
 {
-    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
-    std::string name = "HarmonyOS Sans SC";
-    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
-    auto typeface = Drawing::Typeface::MakeDefault();
-    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
-    auto font = Drawing::Font();
-    font.SetTypeface(typeface);
-    font.SetSize(50.f);
+    auto font = MakeFont();
     Drawing::TextBlobBuilder builder;
     auto buffer = builder.AllocRunRSXform(font, 10);
     for (int i = 0; i < 10; i++) {
@@ -582,14 +435,7 @@ DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 23)
 //对应用例allocrunrsxform_3024
 DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 24)
 {
-    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
-    std::string name = "HarmonyOS Sans SC";
-    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
-    auto typeface = Drawing::Typeface::MakeDefault();
-    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
-    auto font = Drawing::Font();
-    font.SetTypeface(typeface);
-    font.SetSize(50.f);
+    auto font = MakeFont();
     Drawing::TextBlobBuilder builder;
     auto buffer = builder.AllocRunRSXform(font, 10);
     for (int i = 0; i < 10; i++) {
@@ -605,14 +451,7 @@ DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 24)
 //对应用例allocrunrsxform_3025
 DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 25)
 {
-    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
-    std::string name = "HarmonyOS Sans SC";
-    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
-    auto typeface = Drawing::Typeface::MakeDefault();
-    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
-    auto font = Drawing::Font();
-    font.SetTypeface(typeface);
-    font.SetSize(50.f);
+    auto font = MakeFont();
     Drawing::TextBlobBuilder builder;
     auto buffer = builder.AllocRunRSXform(font, 0);
     for (int i = 0; i < 0; i++) {
@@ -628,14 +467,7 @@ DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 25)
 //对应用例allocrunrsxform_3026
 DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 26)
 {
-    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
-    std::string name = "HarmonyOS Sans SC";
-    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
-    auto typeface = Drawing::Typeface::MakeDefault();
-    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
-    auto font = Drawing::Font();
-    font.SetTypeface(typeface);
-    font.SetSize(50.f);
+    auto font = MakeFont();
     Drawing::TextBlobBuilder builder;
     auto buffer = builder.AllocRunRSXform(font, 0);
     for (int i = 0; i < 0; i++) {
@@ -651,14 +483,7 @@ DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 26)
 //对应用例allocrunrsxform_3027
 DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 27)
 {
-    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
-    std::string name = "HarmonyOS Sans SC";
-    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
-    auto typeface = Drawing::Typeface::MakeDefault();
-    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
-    auto font = Drawing::Font();
-    font.SetTypeface(typeface);
-    font.SetSize(50.f);
+    auto font = MakeFont();
     Drawing::TextBlobBuilder builder;
     auto buffer = builder.AllocRunRSXform(font, 0);
     for (int i = 0; i < 0; i++) {
@@ -674,14 +499,7 @@ DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 27)
 //对应用例allocrunrsxform_3028
 DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 28)
 {
-    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
-    std::string name = "HarmonyOS Sans SC";
-    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
-    auto typeface = Drawing::Typeface::MakeDefault();
-    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
-    auto font = Drawing::Font();
-    font.SetTypeface(typeface);
-    font.SetSize(50.f);
+    auto font = MakeFont();
     Drawing::TextBlobBuilder builder;
     auto buffer = builder.AllocRunRSXform(font, 0);
     for (int i = 0; i < 0; i++) {
@@ -697,14 +515,7 @@ DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 28)
 //对应用例allocrunrsxform_3029
 DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 29)
 {
-    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
-    std::string name = "HarmonyOS Sans SC";
-    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
-    auto typeface = Drawing::Typeface::MakeDefault();
-    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
-    auto font = Drawing::Font();
-    font.SetTypeface(typeface);
-    font.SetSize(50.f);
+    auto font = MakeFont();
     Drawing::TextBlobBuilder builder;
     auto buffer = builder.AllocRunRSXform(font, 0);
     for (int i = 0; i < 0; i++) {
@@ -720,14 +531,7 @@ DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 29)
 //对应用例allocrunrsxform_3030
 DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 30)
 {
-    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
-    std::string name = "HarmonyOS Sans SC";
-    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
-    auto typeface = Drawing::Typeface::MakeDefault();
-    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
-    auto font = Drawing::Font();
-    font.SetTypeface(typeface);
-    font.SetSize(50.f);
+    auto font = MakeFont();
     Drawing::TextBlobBuilder builder;
     auto buffer = builder.AllocRunRSXform(font, 0);
     for (int i = 0; i < 0; i++) {
@@ -743,14 +547,7 @@ DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 30)
 //对应用例allocrunrsxform_3031
 DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 31)
 {
-    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
-    std::string name = "HarmonyOS Sans SC";
-    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
-    auto typeface = Drawing::Typeface::MakeDefault();
-    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
-    auto font = Drawing::Font();
-    font.SetTypeface(typeface);
-    font.SetSize(50.f);
+    auto font = MakeFont();
     Drawing::TextBlobBuilder builder;
     auto buffer = builder.AllocRunRSXform(font, 0);
     for (int i = 0; i < 0; i++) {
@@ -766,14 +563,7 @@ DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 31)
 //对应用例allocrunrsxform_3032
 DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 32)
 {
-    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
-    std::string name = "HarmonyOS Sans SC";
-    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
-    auto typeface = Drawing::Typeface::MakeDefault();
-    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
-    auto font = Drawing::Font();
-    font.SetTypeface(typeface);
-    font.SetSize(50.f);
+    auto font = MakeFont();
     Drawing::TextBlobBuilder builder;
     auto buffer = builder.AllocRunRSXform(font, 0);
     for (int i = 0; i < 0; i++) {
@@ -789,14 +579,7 @@ DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 32)
 //对应用例allocrunrsxform_3033
 DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 33)
 {
-    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
-    std::string name = "HarmonyOS Sans SC";
-    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
-    auto typeface = Drawing::Typeface::MakeDefault();
-    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
-    auto font = Drawing::Font();
-    font.SetTypeface(typeface);
-    font.SetSize(50.f);
+    auto font = MakeFont();
     Drawing::TextBlobBuilder builder;
     auto buffer = builder.AllocRunRSXform(font, 0);
     for (int i = 0; i < 0; i++) {
@@ -812,14 +595,7 @@ DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 33)
 //对应用例allocrunrsxform_3034
 DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 34)
 {
-    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
-    std::string name = "HarmonyOS Sans SC";
-    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
-    auto typeface = Drawing::Typeface::MakeDefault();
-    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
-    auto font = Drawing::Font();
-    font.SetTypeface(typeface);
-    font.SetSize(50.f);
+    auto font = MakeFont();
     Drawing::TextBlobBuilder builder;
     auto buffer = builder.AllocRunRSXform(font, 0);
     for (int i = 0; i < 0; i++) {
@@ -835,14 +611,7 @@ DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 34)
 //对应用例allocrunrsxform_3035
 DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 35)
 {
-    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
-    std::string name = "HarmonyOS Sans SC";
-    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
-    auto typeface = Drawing::Typeface::MakeDefault();
-    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
-    auto font = Drawing::Font();
-    font.SetTypeface(typeface);
-    font.SetSize(50.f);
+    auto font = MakeFont();
     Drawing::TextBlobBuilder builder;
     auto buffer = builder.AllocRunRSXform(font, 0);
     for (int i = 0; i < 0; i++) {
@@ -858,14 +627,7 @@ DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 35)
 //对应用例allocrunrsxform_3036
 DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 36)
 {
-    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
-    std::string name = "HarmonyOS Sans SC";
-    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
-    auto typeface = Drawing::Typeface::MakeDefault();
-    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
-    auto font = Drawing::Font();
-    font.SetTypeface(typeface);
-    font.SetSize(50.f);
+    auto font = MakeFont();
     Drawing::TextBlobBuilder builder;
     auto buffer = builder.AllocRunRSXform(font, 0);
     for (int i = 0; i < 0; i++) {
@@ -881,14 +643,7 @@ DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 36)
 //对应用例allocrunrsxform_3037
 DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 37)
 {
-    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
-    std::string name = "HarmonyOS Sans SC";
-    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
-    auto typeface = Drawing::Typeface::MakeDefault();
-    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
-    auto font = Drawing::Font();
-    font.SetTypeface(typeface);
-    font.SetSize(50.f);
+    auto font = MakeFont();
     Drawing::TextBlobBuilder builder;
     auto buffer = builder.AllocRunRSXform(font, -1);
     for (int i = 0; i < 10; i++) {
@@ -904,14 +659,7 @@ DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 37)
 //对应用例allocrunrsxform_3038
 DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 38)
 {
-    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
-    std::string name = "HarmonyOS Sans SC";
-    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
-    auto typeface = Drawing::Typeface::MakeDefault();
-    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
-    auto font = Drawing::Font();
-    font.SetTypeface(typeface);
-    font.SetSize(50.f);
+    auto font = MakeFont();
     Drawing::TextBlobBuilder builder;
     auto buffer = builder.AllocRunRSXform(font, -1);
     for (int i = 0; i < 10; i++) {
@@ -927,14 +675,7 @@ DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 38)
 //对应用例allocrunrsxform_3039
 DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 39)
 {
-    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
-    std::string name = "HarmonyOS Sans SC";
-    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
-    auto typeface = Drawing::Typeface::MakeDefault();
-    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
-    auto font = Drawing::Font();
-    font.SetTypeface(typeface);
-    font.SetSize(50.f);
+    auto font = MakeFont();
     Drawing::TextBlobBuilder builder;
     auto buffer = builder.AllocRunRSXform(font, -1);
     for (int i = 0; i < 10; i++) {
@@ -950,14 +691,7 @@ DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 39)
 //对应用例allocrunrsxform_3040
 DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 40)
 {
-    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
-    std::string name = "HarmonyOS Sans SC";
-    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
-    auto typeface = Drawing::Typeface::MakeDefault();
-    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
-    auto font = Drawing::Font();
-    font.SetTypeface(typeface);
-    font.SetSize(50.f);
+    auto font = MakeFont();
     Drawing::TextBlobBuilder builder;
     auto buffer = builder.AllocRunRSXform(font, -1);
     for (int i = 0; i < 10; i++) {
@@ -973,14 +707,7 @@ DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 40)
 //对应用例allocrunrsxform_3041
 DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 41)
 {
-    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
-    std::string name = "HarmonyOS Sans SC";
-    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
-    auto typeface = Drawing::Typeface::MakeDefault();
-    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
-    auto font = Drawing::Font();
-    font.SetTypeface(typeface);
-    font.SetSize(50.f);
+    auto font = MakeFont();
     Drawing::TextBlobBuilder builder;
     auto buffer = builder.AllocRunRSXform(font, -1);
     for (int i = 0; i < 10; i++) {
@@ -996,14 +723,7 @@ DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 41)
 //对应用例allocrunrsxform_3042
 DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 42)
 {
-    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
-    std::string name = "HarmonyOS Sans SC";
-    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
-    auto typeface = Drawing::Typeface::MakeDefault();
-    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
-    auto font = Drawing::Font();
-    font.SetTypeface(typeface);
-    font.SetSize(50.f);
+    auto font = MakeFont();
     Drawing::TextBlobBuilder builder;
     auto buffer = builder.AllocRunRSXform(font, -1);
     for (int i = 0; i < 10; i++) {
@@ -1019,14 +739,7 @@ DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 42)
 //对应用例allocrunrsxform_3043
 DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 43)
 {
-    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
-    std::string name = "HarmonyOS Sans SC";
-    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
-    auto typeface = Drawing::Typeface::MakeDefault();
-    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
-    auto font = Drawing::Font();
-    font.SetTypeface(typeface);
-    font.SetSize(50.f);
+    auto font = MakeFont();
     Drawing::TextBlobBuilder builder;
     auto buffer = builder.AllocRunRSXform(font, -1);
     for (int i = 0; i < 10; i++) {
@@ -1042,14 +755,7 @@ DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 43)
 //对应用例allocrunrsxform_3044
 DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 44)
 {
-    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
-    std::string name = "HarmonyOS Sans SC";
-    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
-    auto typeface = Drawing::Typeface::MakeDefault();
-    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
-    auto font = Drawing::Font();
-    font.SetTypeface(typeface);
-    font.SetSize(50.f);
+    auto font = MakeFont();
     Drawing::TextBlobBuilder builder;
     auto buffer = builder.AllocRunRSXform(font, -1);
     for (int i = 0; i < 10; i++) {
@@ -1065,14 +771,7 @@ DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 44)
 //对应用例allocrunrsxform_3045
 DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 45)
 {
-    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
-    std::string name = "HarmonyOS Sans SC";
-    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
-    auto typeface = Drawing::Typeface::MakeDefault();
-    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
-    auto font = Drawing::Font();
-    font.SetTypeface(typeface);
-    font.SetSize(50.f);
+    auto font = MakeFont();
     Drawing::TextBlobBuilder builder;
     auto buffer = builder.AllocRunRSXform(font, -1);
     for (int i = 0; i < 10; i++) {
@@ -1088,14 +787,7 @@ DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 45)
 //对应用例allocrunrsxform_3046
 DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 46)
 {
-    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
-    std::string name = "HarmonyOS Sans SC";
-    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
-    auto typeface = Drawing::Typeface::MakeDefault();
-    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
-    auto font = Drawing::Font();
-    font.SetTypeface(typeface);
-    font.SetSize(50.f);
+    auto font = MakeFont();
     Drawing::TextBlobBuilder builder;
     auto buffer = builder.AllocRunRSXform(font, -1);
     for (int i = 0; i < -1; i++) {
@@ -1111,14 +803,7 @@ DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 46)
 //对应用例allocrunrsxform_3047
 DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 47)
 {
-    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
-    std::string name = "HarmonyOS Sans SC";
-    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
-    auto typeface = Drawing::Typeface::MakeDefault();
-    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
-    auto font = Drawing::Font();
-    font.SetTypeface(typeface);
-    font.SetSize(50.f);
+    auto font = MakeFont();
     Drawing::TextBlobBuilder builder;
     auto buffer = builder.AllocRunRSXform(font, -1);
     for (int i = 0; i < 10; i++) {
@@ -1134,14 +819,7 @@ DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 47)
 //对应用例allocrunrsxform_3048
 DEF_RSDEMO(textblobbuilder_allocrunrsxform, TestLevel::L1, 48)
 {
-    std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
-    std::string name = "HarmonyOS Sans SC";
-    std::shared_ptr<Drawing::FontStyle> fontStyleSet(font_mgr->MatchFamily(name.c_str()));
-    auto typeface = Drawing::Typeface::MakeDefault();
-    typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
-    auto font = Drawing::Font();
-    font.SetTypeface(typeface);
-    font.SetSize(50.f);
+    auto font = MakeFont();
     Drawing::TextBlobBuilder builder;
     auto buffer = builder.AllocRunRSXform(font, -1);
     for (int i = 0; i < 10; i++) {
