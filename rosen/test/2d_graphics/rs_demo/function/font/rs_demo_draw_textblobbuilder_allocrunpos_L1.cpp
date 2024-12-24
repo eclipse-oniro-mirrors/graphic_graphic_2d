@@ -664,6 +664,605 @@ DEF_RSDEMO(textblobbuilder_allocrunpos, TestLevel::L1, 40)
     DrawText(builder, playbackCanvas_);
 }
 
+//对应用例allocrunpos_3041
+DEF_RSDEMO(textblobbuilder_allocrunpos, TestLevel::L1, 41)
+{
+    auto font = MakeFont();
+    Drawing::TextBlobBuilder builder;
+    Drawing::Rect rect1(100, 100, 1000, 1500);
+    auto buffer = builder.AllocRunPos(font, 0, &rect1);
+    for (int i = 0; i < 0; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X9088);
+        buffer.pos[i * 2] = 50.f*i;
+        buffer.pos[i * 2 + 1] = 30.f*i;
+    }
+    DrawText(builder, playbackCanvas_);
+}
+
+//对应用例allocrunpos_3042
+DEF_RSDEMO(textblobbuilder_allocrunpos, TestLevel::L1, 42)
+{
+    auto font = MakeFont();
+    Drawing::TextBlobBuilder builder;
+    Drawing::Rect rect1(100, 100, 1000, 1500);
+    auto buffer = builder.AllocRunPos(font, 0, &rect1);
+    for (int i = 0; i < 0; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X9088);
+        buffer.pos[i * 2] = 0;
+        buffer.pos[i * 2 + 1] = 30.f*i;
+    }
+    DrawText(builder, playbackCanvas_);
+}
+
+//对应用例allocrunpos_3043
+DEF_RSDEMO(textblobbuilder_allocrunpos, TestLevel::L1, 43)
+{
+    auto font = MakeFont();
+    Drawing::TextBlobBuilder builder;
+    Drawing::Rect rect1(100, 100, 1000, 1500);
+    auto buffer = builder.AllocRunPos(font, 0, &rect1);
+    for (int i = 0; i < 0; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X9088);
+        buffer.pos[i * 2] = 50.f*i;
+        buffer.pos[i * 2 + 1] = 0;
+    }
+    DrawText(builder, playbackCanvas_);
+}
+
+//对应用例allocrunpos_3044
+DEF_RSDEMO(textblobbuilder_allocrunpos, TestLevel::L1, 44)
+{
+    auto font = MakeFont();
+    Drawing::TextBlobBuilder builder;
+    Drawing::Rect rect1(100, 100, 1000, 1500);
+    auto buffer = builder.AllocRunPos(font, 0, &rect1);
+    for (int i = 0; i < 0; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X9088);
+        buffer.pos[i * 2] = 1000.0f-50.f*i;
+        buffer.pos[i * 2 + 1] = 30.f*i;
+    }
+    DrawText(builder, playbackCanvas_);
+}
+
+//对应用例allocrunpos_3045
+DEF_RSDEMO(textblobbuilder_allocrunpos, TestLevel::L1, 45)
+{
+    auto font = MakeFont();
+    Drawing::TextBlobBuilder builder;
+    Drawing::Rect rect1(-100, -100, 1000, 1500);
+    auto buffer = builder.AllocRunPos(font, 0, &rect1);
+    for (int i = 0; i < 0; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X9088);
+        buffer.pos[i * 2] = 50.f*i;
+        buffer.pos[i * 2 + 1] = 30.f*i;
+    }
+    DrawText(builder, playbackCanvas_);
+}
+
+//对应用例allocrunpos_3046
+DEF_RSDEMO(textblobbuilder_allocrunpos, TestLevel::L1, 46)
+{
+    auto font = MakeFont();
+    Drawing::TextBlobBuilder builder;
+    Drawing::Rect rect1(-100, -100, 1000, 1500);
+    auto buffer = builder.AllocRunPos(font, 0, &rect1);
+    for (int i = 0; i < 0; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X9088);
+        buffer.pos[i * 2] = 0;
+        buffer.pos[i * 2 + 1] = 30.f*i;
+    }
+    DrawText(builder, playbackCanvas_);
+}
+
+//对应用例allocrunpos_3047
+DEF_RSDEMO(textblobbuilder_allocrunpos, TestLevel::L1, 47)
+{
+    auto font = MakeFont();
+    Drawing::TextBlobBuilder builder;
+    Drawing::Rect rect1(-100, -100, 1000, 1500);
+    auto buffer = builder.AllocRunPos(font, 0, &rect1);
+    for (int i = 0; i < 0; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X9088);
+        buffer.pos[i * 2] = 50.f*i;
+        buffer.pos[i * 2 + 1] = 0;
+    }
+    DrawText(builder, playbackCanvas_);
+}
+
+//对应用例allocrunpos_3048
+DEF_RSDEMO(textblobbuilder_allocrunpos, TestLevel::L1, 48)
+{
+    auto font = MakeFont();
+    Drawing::TextBlobBuilder builder;
+    Drawing::Rect rect1(-100, -100, 1000, 1500);
+    auto buffer = builder.AllocRunPos(font, 0, &rect1);
+    for (int i = 0; i < 0; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X9088);
+        buffer.pos[i * 2] = 1000.0f-50.f*i;
+        buffer.pos[i * 2 + 1] = 30.f*i;
+    }
+    DrawText(builder, playbackCanvas_);
+}
+
+//对应用例allocrunpos_3049
+DEF_RSDEMO(textblobbuilder_allocrunpos, TestLevel::L1, 49)
+{
+    auto font = MakeFont();
+    Drawing::TextBlobBuilder builder;
+    Drawing::Rect rect1(300, 300, 320, 500);
+    auto buffer = builder.AllocRunPos(font, 0, &rect1);
+    for (int i = 0; i < 0; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X9088);
+        buffer.pos[i * 2] = 50.f*i;
+        buffer.pos[i * 2 + 1] = 30.f*i;
+    }
+    DrawText(builder, playbackCanvas_);
+}
+
+//对应用例allocrunpos_3050
+DEF_RSDEMO(textblobbuilder_allocrunpos, TestLevel::L1, 50)
+{
+    auto font = MakeFont();
+    Drawing::TextBlobBuilder builder;
+    Drawing::Rect rect1(300, 300, 320, 500);
+    auto buffer = builder.AllocRunPos(font, 0, &rect1);
+    for (int i = 0; i < 0; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X9088);
+        buffer.pos[i * 2] = 0;
+        buffer.pos[i * 2 + 1] = 30.f*i;
+    }
+    DrawText(builder, playbackCanvas_);
+}
+
+//对应用例allocrunpos_3051
+DEF_RSDEMO(textblobbuilder_allocrunpos, TestLevel::L1, 51)
+{
+    auto font = MakeFont();
+    Drawing::TextBlobBuilder builder;
+    Drawing::Rect rect1(300, 300, 320, 500);
+    auto buffer = builder.AllocRunPos(font, 0, &rect1);
+    for (int i = 0; i < 0; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X9088);
+        buffer.pos[i * 2] = 50.f*i;
+        buffer.pos[i * 2 + 1] = 0;
+    }
+    DrawText(builder, playbackCanvas_);
+}
+
+//对应用例allocrunpos_3052
+DEF_RSDEMO(textblobbuilder_allocrunpos, TestLevel::L1, 52)
+{
+    auto font = MakeFont();
+    Drawing::TextBlobBuilder builder;
+    Drawing::Rect rect1(300, 300, 320, 500);
+    auto buffer = builder.AllocRunPos(font, 0, &rect1);
+    for (int i = 0; i < 0; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X9088);
+        buffer.pos[i * 2] = 1000.0f-50.f*i;
+        buffer.pos[i * 2 + 1] = 30.f*i;
+    }
+    DrawText(builder, playbackCanvas_);
+}
+
+//对应用例allocrunpos_3053
+DEF_RSDEMO(textblobbuilder_allocrunpos, TestLevel::L1, 53)
+{
+    auto font = MakeFont();
+    Drawing::TextBlobBuilder builder;
+    Drawing::Rect rect1(300, 300, 100, 800);
+    auto buffer = builder.AllocRunPos(font, 0, &rect1);
+    for (int i = 0; i < 0; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X9088);
+        buffer.pos[i * 2] = 50.f*i;
+        buffer.pos[i * 2 + 1] = 30.f*i;
+    }
+    DrawText(builder, playbackCanvas_);
+}
+
+//对应用例allocrunpos_3054
+DEF_RSDEMO(textblobbuilder_allocrunpos, TestLevel::L1, 54)
+{
+    auto font = MakeFont();
+    Drawing::TextBlobBuilder builder;
+    Drawing::Rect rect1(300, 300, 100, 800);
+    auto buffer = builder.AllocRunPos(font, 0, &rect1);
+    for (int i = 0; i < 0; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X9088);
+        buffer.pos[i * 2] = 0;
+        buffer.pos[i * 2 + 1] = 30.f*i;
+    }
+    DrawText(builder, playbackCanvas_);
+}
+
+//对应用例allocrunpos_3055
+DEF_RSDEMO(textblobbuilder_allocrunpos, TestLevel::L1, 55)
+{
+    auto font = MakeFont();
+    Drawing::TextBlobBuilder builder;
+    Drawing::Rect rect1(300, 300, 100, 800);
+    auto buffer = builder.AllocRunPos(font, 0, &rect1);
+    for (int i = 0; i < 0; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X9088);
+        buffer.pos[i * 2] = 50.f*i;
+        buffer.pos[i * 2 + 1] = 0;
+    }
+    DrawText(builder, playbackCanvas_);
+}
+
+//对应用例allocrunpos_3056
+DEF_RSDEMO(textblobbuilder_allocrunpos, TestLevel::L1, 56)
+{
+    auto font = MakeFont();
+    Drawing::TextBlobBuilder builder;
+    Drawing::Rect rect1(300, 300, 100, 800);
+    auto buffer = builder.AllocRunPos(font, 0, &rect1);
+    for (int i = 0; i < 0; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X9088);
+        buffer.pos[i * 2] = 1000.0f-50.f*i;
+        buffer.pos[i * 2 + 1] = 30.f*i;
+    }
+    DrawText(builder, playbackCanvas_);
+}
+
+//对应用例allocrunpos_3057
+DEF_RSDEMO(textblobbuilder_allocrunpos, TestLevel::L1, 57)
+{
+    auto font = MakeFont();
+    Drawing::TextBlobBuilder builder;
+    Drawing::Rect rect1(nullptr);
+    auto buffer = builder.AllocRunPos(font, 0, &rect1);
+    for (int i = 0; i < 0; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X9088);
+        buffer.pos[i * 2] = 50.f*i;
+        buffer.pos[i * 2 + 1] = 30.f*i;
+    }
+    DrawText(builder, playbackCanvas_);
+}
+
+//对应用例allocrunpos_3058
+DEF_RSDEMO(textblobbuilder_allocrunpos, TestLevel::L1, 58)
+{
+    auto font = MakeFont();
+    Drawing::TextBlobBuilder builder;
+    Drawing::Rect rect1(nullptr);
+    auto buffer = builder.AllocRunPos(font, 0, &rect1);
+    for (int i = 0; i < 0; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X9088);
+        buffer.pos[i * 2] = 0;
+        buffer.pos[i * 2 + 1] = 30.f*i;
+    }
+    DrawText(builder, playbackCanvas_);
+}
+
+//对应用例allocrunpos_3059
+DEF_RSDEMO(textblobbuilder_allocrunpos, TestLevel::L1, 59)
+{
+    auto font = MakeFont();
+    Drawing::TextBlobBuilder builder;
+    Drawing::Rect rect1(nullptr);
+    auto buffer = builder.AllocRunPos(font, 0, &rect1);
+    for (int i = 0; i < 0; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X9088);
+        buffer.pos[i * 2] = 50.f*i;
+        buffer.pos[i * 2 + 1] = 0;
+    }
+    DrawText(builder, playbackCanvas_);
+}
+
+//对应用例allocrunpos_3060
+DEF_RSDEMO(textblobbuilder_allocrunpos, TestLevel::L1, 60)
+{
+    auto font = MakeFont();
+    Drawing::TextBlobBuilder builder;
+    Drawing::Rect rect1(nullptr);
+    auto buffer = builder.AllocRunPos(font, 0, &rect1);
+    for (int i = 0; i < 0; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X9088);
+        buffer.pos[i * 2] = 1000.0f-50.f*i;
+        buffer.pos[i * 2 + 1] = 30.f*i;
+    }
+    DrawText(builder, playbackCanvas_);
+}
+
+//对应用例allocrunpos_3061
+DEF_RSDEMO(textblobbuilder_allocrunpos, TestLevel::L1, 61)
+{
+    auto font = MakeFont();
+    Drawing::TextBlobBuilder builder;
+    Drawing::Rect rect1(100, 100, 1000, 1500);
+    auto buffer = builder.AllocRunPos(font, -1, &rect1);
+    for (int i = 0; i < -1; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X9088);
+        buffer.pos[i * 2] = 50.f*i;
+        buffer.pos[i * 2 + 1] = 30.f*i;
+    }
+    DrawText(builder, playbackCanvas_);
+}
+
+//对应用例allocrunpos_3062
+DEF_RSDEMO(textblobbuilder_allocrunpos, TestLevel::L1, 62)
+{
+    auto font = MakeFont();
+    Drawing::TextBlobBuilder builder;
+    Drawing::Rect rect1(100, 100, 1000, 1500);
+    auto buffer = builder.AllocRunPos(font, -1, &rect1);
+    for (int i = 0; i < -1; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X9088);
+        buffer.pos[i * 2] = 0;
+        buffer.pos[i * 2 + 1] = 30.f*i;
+    }
+    DrawText(builder, playbackCanvas_);
+}
+
+//对应用例allocrunpos_3063
+DEF_RSDEMO(textblobbuilder_allocrunpos, TestLevel::L1, 63)
+{
+    auto font = MakeFont();
+    Drawing::TextBlobBuilder builder;
+    Drawing::Rect rect1(100, 100, 1000, 1500);
+    auto buffer = builder.AllocRunPos(font, -1, &rect1);
+    for (int i = 0; i < -1; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X9088);
+        buffer.pos[i * 2] = 50.f*i;
+        buffer.pos[i * 2 + 1] = 0;
+    }
+    DrawText(builder, playbackCanvas_);
+}
+
+//对应用例allocrunpos_3064
+DEF_RSDEMO(textblobbuilder_allocrunpos, TestLevel::L1, 64)
+{
+    auto font = MakeFont();
+    Drawing::TextBlobBuilder builder;
+    Drawing::Rect rect1(100, 100, 1000, 1500);
+    auto buffer = builder.AllocRunPos(font, -1, &rect1);
+    for (int i = 0; i < -1; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X9088);
+        buffer.pos[i * 2] = 1000.0f-50.f*i;
+        buffer.pos[i * 2 + 1] = 30.f*i;
+    }
+    DrawText(builder, playbackCanvas_);
+}
+
+//对应用例allocrunpos_3065
+DEF_RSDEMO(textblobbuilder_allocrunpos, TestLevel::L1, 65)
+{
+    auto font = MakeFont();
+    Drawing::TextBlobBuilder builder;
+    Drawing::Rect rect1(-100, -100, 1000, 1500);
+    auto buffer = builder.AllocRunPos(font, -1, &rect1);
+    for (int i = 0; i < -1; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X9088);
+        buffer.pos[i * 2] = 50.f*i;
+        buffer.pos[i * 2 + 1] = 30.f*i;
+    }
+    DrawText(builder, playbackCanvas_);
+}
+
+//对应用例allocrunpos_3066
+DEF_RSDEMO(textblobbuilder_allocrunpos, TestLevel::L1, 66)
+{
+    auto font = MakeFont();
+    Drawing::TextBlobBuilder builder;
+    Drawing::Rect rect1(-100, -100, 1000, 1500);
+    auto buffer = builder.AllocRunPos(font, -1, &rect1);
+    for (int i = 0; i < -1; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X9088);
+        buffer.pos[i * 2] = 0;
+        buffer.pos[i * 2 + 1] = 30.f*i;
+    }
+    DrawText(builder, playbackCanvas_);
+}
+
+//对应用例allocrunpos_3067
+DEF_RSDEMO(textblobbuilder_allocrunpos, TestLevel::L1, 67)
+{
+    auto font = MakeFont();
+    Drawing::TextBlobBuilder builder;
+    Drawing::Rect rect1(-100, -100, 1000, 1500);
+    auto buffer = builder.AllocRunPos(font, -1, &rect1);
+    for (int i = 0; i < -1; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X9088);
+        buffer.pos[i * 2] = 50.f*i;
+        buffer.pos[i * 2 + 1] = 0;
+    }
+    DrawText(builder, playbackCanvas_);
+}
+
+//对应用例allocrunpos_3068
+DEF_RSDEMO(textblobbuilder_allocrunpos, TestLevel::L1, 68)
+{
+    auto font = MakeFont();
+    Drawing::TextBlobBuilder builder;
+    Drawing::Rect rect1(-100, -100, 1000, 1500);
+    auto buffer = builder.AllocRunPos(font, -1, &rect1);
+    for (int i = 0; i < -1; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X9088);
+        buffer.pos[i * 2] = 1000.0f-50.f*i;
+        buffer.pos[i * 2 + 1] = 30.f*i;
+    }
+    DrawText(builder, playbackCanvas_);
+}
+
+//对应用例allocrunpos_3069
+DEF_RSDEMO(textblobbuilder_allocrunpos, TestLevel::L1, 69)
+{
+    auto font = MakeFont();
+    Drawing::TextBlobBuilder builder;
+    Drawing::Rect rect1(300, 300, 320, 500);
+    auto buffer = builder.AllocRunPos(font, -1, &rect1);
+    for (int i = 0; i < -1; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X9088);
+        buffer.pos[i * 2] = 50.f*i;
+        buffer.pos[i * 2 + 1] = 30.f*i;
+    }
+    DrawText(builder, playbackCanvas_);
+}
+
+//对应用例allocrunpos_3070
+DEF_RSDEMO(textblobbuilder_allocrunpos, TestLevel::L1, 70)
+{
+    auto font = MakeFont();
+    Drawing::TextBlobBuilder builder;
+    Drawing::Rect rect1(300, 300, 320, 500);
+    auto buffer = builder.AllocRunPos(font, -1, &rect1);
+    for (int i = 0; i < -1; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X9088);
+        buffer.pos[i * 2] = 0;
+        buffer.pos[i * 2 + 1] = 30.f*i;
+    }
+    DrawText(builder, playbackCanvas_);
+}
+
+//对应用例allocrunpos_3071
+DEF_RSDEMO(textblobbuilder_allocrunpos, TestLevel::L1, 71)
+{
+    auto font = MakeFont();
+    Drawing::TextBlobBuilder builder;
+    Drawing::Rect rect1(300, 300, 320, 500);
+    auto buffer = builder.AllocRunPos(font, -1, &rect1);
+    for (int i = 0; i < -1; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X9088);
+        buffer.pos[i * 2] = 50.f*i;
+        buffer.pos[i * 2 + 1] = 0;
+    }
+    DrawText(builder, playbackCanvas_);
+}
+
+//对应用例allocrunpos_3072
+DEF_RSDEMO(textblobbuilder_allocrunpos, TestLevel::L1, 72)
+{
+    auto font = MakeFont();
+    Drawing::TextBlobBuilder builder;
+    Drawing::Rect rect1(300, 300, 320, 500);
+    auto buffer = builder.AllocRunPos(font, -1, &rect1);
+    for (int i = 0; i < -1; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X9088);
+        buffer.pos[i * 2] = 1000.0f-50.f*i;
+        buffer.pos[i * 2 + 1] = 30.f*i;
+    }
+    DrawText(builder, playbackCanvas_);
+}
+
+//对应用例allocrunpos_3073
+DEF_RSDEMO(textblobbuilder_allocrunpos, TestLevel::L1, 73)
+{
+    auto font = MakeFont();
+    Drawing::TextBlobBuilder builder;
+    Drawing::Rect rect1(300, 300, 100, 800);
+    auto buffer = builder.AllocRunPos(font, -1, &rect1);
+    for (int i = 0; i < -1; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X9088);
+        buffer.pos[i * 2] = 50.f*i;
+        buffer.pos[i * 2 + 1] = 30.f*i;
+    }
+    DrawText(builder, playbackCanvas_);
+}
+
+//对应用例allocrunpos_3074
+DEF_RSDEMO(textblobbuilder_allocrunpos, TestLevel::L1, 74)
+{
+    auto font = MakeFont();
+    Drawing::TextBlobBuilder builder;
+    Drawing::Rect rect1(300, 300, 100, 800);
+    auto buffer = builder.AllocRunPos(font, -1, &rect1);
+    for (int i = 0; i < -1; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X9088);
+        buffer.pos[i * 2] = 0;
+        buffer.pos[i * 2 + 1] = 30.f*i;
+    }
+    DrawText(builder, playbackCanvas_);
+}
+
+//对应用例allocrunpos_3075
+DEF_RSDEMO(textblobbuilder_allocrunpos, TestLevel::L1, 75)
+{
+    auto font = MakeFont();
+    Drawing::TextBlobBuilder builder;
+    Drawing::Rect rect1(300, 300, 100, 800);
+    auto buffer = builder.AllocRunPos(font, -1, &rect1);
+    for (int i = 0; i < -1; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X9088);
+        buffer.pos[i * 2] = 50.f*i;
+        buffer.pos[i * 2 + 1] = 0;
+    }
+    DrawText(builder, playbackCanvas_);
+}
+
+//对应用例allocrunpos_3076
+DEF_RSDEMO(textblobbuilder_allocrunpos, TestLevel::L1, 76)
+{
+    auto font = MakeFont();
+    Drawing::TextBlobBuilder builder;
+    Drawing::Rect rect1(300, 300, 100, 800);
+    auto buffer = builder.AllocRunPos(font, -1, &rect1);
+    for (int i = 0; i < -1; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X9088);
+        buffer.pos[i * 2] = 1000.0f-50.f*i;
+        buffer.pos[i * 2 + 1] = 30.f*i;
+    }
+    DrawText(builder, playbackCanvas_);
+}
+
+//对应用例allocrunpos_3077
+DEF_RSDEMO(textblobbuilder_allocrunpos, TestLevel::L1, 77)
+{
+    auto font = MakeFont();
+    Drawing::TextBlobBuilder builder;
+    Drawing::Rect rect1(nullptr);
+    auto buffer = builder.AllocRunPos(font, -1, &rect1);
+    for (int i = 0; i < -1; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X9088);
+        buffer.pos[i * 2] = 50.f*i;
+        buffer.pos[i * 2 + 1] = 30.f*i;
+    }
+    DrawText(builder, playbackCanvas_);
+}
+
+//对应用例allocrunpos_3078
+DEF_RSDEMO(textblobbuilder_allocrunpos, TestLevel::L1, 78)
+{
+    auto font = MakeFont();
+    Drawing::TextBlobBuilder builder;
+    Drawing::Rect rect1(nullptr);
+    auto buffer = builder.AllocRunPos(font, -1, &rect1);
+    for (int i = 0; i < -1; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X9088);
+        buffer.pos[i * 2] = 0;
+        buffer.pos[i * 2 + 1] = 30.f*i;
+    }
+    DrawText(builder, playbackCanvas_);
+}
+
+//对应用例allocrunpos_3079
+DEF_RSDEMO(textblobbuilder_allocrunpos, TestLevel::L1, 79)
+{
+    auto font = MakeFont();
+    Drawing::TextBlobBuilder builder;
+    Drawing::Rect rect1(nullptr);
+    auto buffer = builder.AllocRunPos(font, -1, &rect1);
+    for (int i = 0; i < -1; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X9088);
+        buffer.pos[i * 2] = 50.f*i;
+        buffer.pos[i * 2 + 1] = 0;
+    }
+    DrawText(builder, playbackCanvas_);
+}
+
+//对应用例allocrunpos_3080
+DEF_RSDEMO(textblobbuilder_allocrunpos, TestLevel::L1, 80)
+{
+    auto font = MakeFont();
+    Drawing::TextBlobBuilder builder;
+    Drawing::Rect rect1(nullptr);
+    auto buffer = builder.AllocRunPos(font, -1, &rect1);
+    for (int i = 0; i < -1; i++) {
+        buffer.glyphs[i] = font.UnicharToGlyph(0X9088);
+        buffer.pos[i * 2] = 1000.0f-50.f*i;
+        buffer.pos[i * 2 + 1] = 30.f*i;
+    }
+    DrawText(builder, playbackCanvas_);
+}
 
 }
 }
