@@ -77,6 +77,7 @@ void RSCanvasRenderNode::QuickPrepare(const std::shared_ptr<RSNodeVisitor>& visi
     if (!visitor) {
         return;
     }
+    IncPreparedChildrenCountByRootNode();
     ApplyModifiers();
     visitor->QuickPrepareCanvasRenderNode(*this);
 }

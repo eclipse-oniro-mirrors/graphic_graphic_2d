@@ -911,6 +911,11 @@ protected:
     bool isNodeSingleFrameComposer_ = false;
     bool childHasSharedTransition_ = false;
     bool flagIntersectWithDRM_ = false;
+    int GetPreparedChildrenCount() const;
+    void IncPreparedChildrenCount();
+    void ClearPreparedChildrenCount();
+    void IncPreparedChildrenCountByRootNode();
+    std::string GetAllPreparedChildren();
 private:
     // mark cross node in physical extended screen model
     bool isCrossNode_ = false;
@@ -1090,6 +1095,7 @@ private:
     bool isAccessibilityConfigChanged_ = false;
     const bool isPurgeable_;
     NodeId displayNodeId_ = INVALID_NODEID;
+    std::atomic<int> preparedChildrenCount_ = 0;
     // for blur effct count
     static std::unordered_map<pid_t, size_t> blurEffectCounter_;
     void UpdateBlurEffectCounter(int deltaCount);

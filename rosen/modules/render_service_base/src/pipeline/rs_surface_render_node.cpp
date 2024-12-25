@@ -564,6 +564,7 @@ void RSSurfaceRenderNode::QuickPrepare(const std::shared_ptr<RSNodeVisitor>& vis
     if (!visitor) {
         return;
     }
+    IncPreparedChildrenCountByRootNode();
     ApplyModifiers();
     visitor->QuickPrepareSurfaceRenderNode(*this);
 

@@ -1008,8 +1008,12 @@ void RSUniRenderVisitor::QuickPrepareSurfaceRenderNode(RSSurfaceRenderNode& node
     hasAccumulatedClip_ = node.SetAccumulatedClipFlag(hasAccumulatedClip_);
     bool isSubTreeNeedPrepare = node.IsSubTreeNeedPrepare(filterInGlobal_, IsSubTreeOccluded(node)) ||
         ForcePrepareSubTree();
+    node.ClearPreparedChildrenCount();
     isSubTreeNeedPrepare ? QuickPrepareChildren(node) :
         node.SubTreeSkipPrepare(*curSurfaceDirtyManager_, curDirty_, dirtyFlag_, prepareClipRect_);
+    RS_LOGI_LIMIT(
+        "RSUniRenderVisitor::QuickPrepareSurfaceRenderNode all prepared children count: %{public}s",
+        node.GetAllPreparedChildren().c_str());
     if (!node.IsFirstLevelCrossNode()) {
         curSurfaceDirtyManager_->ClipDirtyRectWithinSurface();
     }
