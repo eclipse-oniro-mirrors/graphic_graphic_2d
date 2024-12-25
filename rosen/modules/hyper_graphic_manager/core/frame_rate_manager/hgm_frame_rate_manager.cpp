@@ -991,7 +991,8 @@ void HgmFrameRateManager::HandleScreenPowerStatus(ScreenId id, ScreenPowerStatus
 
 void HgmFrameRateManager::HandleScreenRectFrameRate(ScreenId id, const GraphicIRect& activeRect)
 {
-    RS_TRACE_NAME_FMT("HandleScreenRectFrameRate FMTTrace");
+    RS_TRACE_NAME_FMT("HgmFrameRateManager::HandleScreenRectFrameRate screenId:%d activeRect(%d, %d, %d, %d)",
+        id, activeRect.x, activeRect.y, activeRect.w, activeRect.h);
     auto& hgmScreenInfo = HgmScreenInfo::GetInstance();
     auto isLtpo = hgmScreenInfo.IsLtpoType(hgmScreenInfo.GetScreenType(id));
 

@@ -240,6 +240,24 @@ HWTEST_F(HgmFrameRateMgrTest, MultiThread001, Function | SmallTest | Level1)
     std::string pkg0 = "com.pkg.other:0:-1";
     std::string pkg1 = "com.ss.hm.ugc.aweme:1001:10067";
     std::string pkg2 = "com.wedobest.fivechess.harm:1002:10110";
+    GraphicIRect rectF {
+        .x = 0,
+        .y = 0,
+        .w = 2232,
+        .h = 1008,
+    };
+    GraphicIRect rectM {
+        .x = 0,
+        .y = 1136,
+        .w = 2232,
+        .h = 2048,
+    };
+    GraphicIRect rectG {
+        .x = 0,
+        .y = 0,
+        .w = 2232,
+        .h = 3184,
+    };
 
     HgmFrameRateManager frameRateMgr;
     auto vsyncGenerator = CreateVSyncGenerator();
@@ -286,6 +304,11 @@ HWTEST_F(HgmFrameRateMgrTest, MultiThread001, Function | SmallTest | Level1)
             // HandleScreenPowerStatus
             frameRateMgr.HandleScreenPowerStatus(i, ScreenPowerStatus::POWER_STATUS_ON);
             frameRateMgr.HandleScreenPowerStatus(i, ScreenPowerStatus::POWER_STATUS_OFF);
+
+            // HandleScreenRectFrameRate
+            frameRateMgr.HandleScreenRectFrameRate(i, rectF);
+            frameRateMgr.HandleScreenRectFrameRate(i, rectM);
+            frameRateMgr.HandleScreenRectFrameRate(i, rectG);
         }
     });
     sleep(1); // wait for handler task finished
