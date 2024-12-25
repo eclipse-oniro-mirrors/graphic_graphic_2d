@@ -232,16 +232,15 @@ private:
 #define RS_LOGI_LIMIT(format, ...)                                                                                    \
 {                                                                                                                     \
     static constexpr uint64_t LOG_PRINT_INTERVAL_IN_SECOND = 5;                                                       \
-    static std::atomic<bool> isFirstTime##__func__##__line__ = true;                                                  \
-    static std::atomic<uint64_t> prePrintTime##__func__##__line__ = std::chrono::duration_cast<std::chrono::seconds>( \
+    static std::atomic<bool> isFirst##__func__##__line__ = true;                                                      \
+    static std::atomic<uint64_t> preTime##__func__##__line__ = std::chrono::duration_cast<std::chrono::seconds>(      \
         std::chrono::system_clock::now().time_since_epoch()).count();                                                 \
     uint64_t currTime = std::chrono::duration_cast<std::chrono::seconds>(                                             \
         std::chrono::system_clock::now().time_since_epoch()).count();                                                 \
-    if ((currTime - prePrintTime##__func__##__line__ >= LOG_PRINT_INTERVAL_IN_SECOND) ||                              \
-        isFirstTime##__func__##__line__) {                                                                            \
-        prePrintTime##__func__##__line__ = std::chrono::duration_cast<std::chrono::seconds>(                          \
+    if ((currTime - preTime##__func__##__line__ >= LOG_PRINT_INTERVAL_IN_SECOND) || isFirst##__func__##__line__) {    \
+        preTime##__func__##__line__ = std::chrono::duration_cast<std::chrono::seconds>(                               \
             std::chrono::system_clock::now().time_since_epoch()).count();                                             \
-        isFirstTime##__func__##__line__ = false;                                                                      \
+        isFirst##__func__##__line__ = false;                                                                          \
         RS_LOGI(format, ##__VA_ARGS__);                                                                               \
     }                                                                                                                 \
 }                                                                                                                     \
