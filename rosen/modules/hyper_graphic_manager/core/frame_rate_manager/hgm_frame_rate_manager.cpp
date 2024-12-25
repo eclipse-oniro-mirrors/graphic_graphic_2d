@@ -229,6 +229,7 @@ void HgmFrameRateManager::InitTouchManager()
             };
             multiAppStrategy_.HandleTouchInfo(touchInfo);
             startCheck_.store(false);
+            voterTouchEffective_.store(true);
         });
         touchManager_.RegisterEnterStateCallback(TouchState::IDLE_STATE,
             [this] (TouchState lastState, TouchState newState) {
@@ -238,6 +239,7 @@ void HgmFrameRateManager::InitTouchManager()
                 .touchState = newState,
             };
             multiAppStrategy_.HandleTouchInfo(touchInfo);
+            voterTouchEffective_.store(false);
         });
         touchManager_.RegisterEnterStateCallback(TouchState::UP_STATE,
             [this] (TouchState lastState, TouchState newState) {
@@ -359,8 +361,7 @@ void HgmFrameRateManager::UpdateGuaranteedPlanVote(uint64_t timestamp)
     }
     idleDetector_.UpdateSurfaceState(timestamp);
     RS_TRACE_NAME_FMT("HgmFrameRateManager:: TouchState = [%d]  SurFaceIdleState = [%d]  AceAnimatorIdleState = [%d]",
-        touchManager_.GetState(), idleDetector_.GetSurfaceIdleState(),
-        idleDetector_.GetAceAnimatorIdleState());
+        touchManager_.GetState(), idleDetector_.GetSurfaceIdleState(), idleDetector_.GetAceAnimatorIdleState());
 
     // After touch up, wait FIRST_FRAME_TIME_OUT ms
     if (!startCheck_.load() || touchManager_.GetState() == TouchState::IDLE_STATE) {
@@ -1248,9 +1249,6 @@ void HgmFrameRateManager::DeliverRefreshRateVote(const VoteInfo& voteInfo, bool 
     auto& vec = voteRecord_[voteInfo.voterName].first;
 
     auto voter = voteInfo.voterName != "VOTER_PACKAGES" ? voteInfo.voterName : "";
-    if (voteInfo.voterName == "VOTER_TOUCH") {
-        voterTouchEffective_ = eventStatus;
-    }
 
     // clear
     if ((voteInfo.pid == 0) && (eventStatus == REMOVE_VOTE)) {
@@ -1681,6 +1679,7 @@ bool HgmFrameRateManager::UpdateUIFrameworkDirtyNodes(
 {
     timestamp_ = timestamp;
     if (!voterTouchEffective_ || voterGamesEffective_) {
+        surfaceData_.clear();
         return false;
     }
     std::unordered_map<std::string, pid_t> uiFrameworkDirtyNodeName;

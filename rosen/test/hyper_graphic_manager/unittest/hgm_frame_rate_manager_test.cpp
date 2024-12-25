@@ -554,7 +554,8 @@ HWTEST_F(HgmFrameRateMgrTest, HgmRsIdleTimerTest, Function | SmallTest | Level2)
 {
     int32_t interval = 700; // 700ms waiting time
     HgmFrameRateManager mgr;
-    mgr.InitRsIdleTimer();
+    mgr.rsIdleTimer_ = std::make_unique<HgmSimpleTimer>("rs_idle_timer",
+        std::chrono::milliseconds(600), nullptr, nullptr);
     ASSERT_NE(mgr.rsIdleTimer_, nullptr);
     std::this_thread::sleep_for(std::chrono::milliseconds(interval));
     mgr.HandleRsFrame();
