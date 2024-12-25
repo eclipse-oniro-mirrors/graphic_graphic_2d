@@ -70,6 +70,7 @@ public:
     static bool GetRenderStop();
     static bool GetOcclusionCallBackToWMSDebugType();
     static bool GetPrevalidateHwcNodeEnabled();
+    static bool GetSolidLayerHwcEnabled();
     static bool GetControlBufferConsumeEnabled();
     static bool GetHideNotchStatus();
     static bool GetUIFirstDmaBufferEnabled();
@@ -78,6 +79,8 @@ public:
     static bool IsNeedScRGBForP3(const GraphicColorGamut& currentGamut);
     static bool GetWiredScreenOndrawEnabled();
     static bool GetDFXMirrorScreenForceRedrawEnabled();
+    static bool GetArsrPreEnabled();
+    static bool GetMultimediaEnableCameraRotationCompensation();
 };
 
 } // namespace Rosen

@@ -1127,16 +1127,6 @@ bool DOSetCacheEnabledForRotation()
     return true;
 }
 
-bool DOSetDefaultDeviceRotationOffset()
-{
-    if (rsConn_ == nullptr) {
-        return false;
-    }
-    uint32_t offset = GetData<uint32_t>();
-    rsConn_->SetDefaultDeviceRotationOffset(offset);
-    return true;
-}
-
 bool DOSetOnRemoteDiedCallback()
 {
     if (rsConn_ == nullptr) {
@@ -1221,6 +1211,26 @@ bool DOSetFreeMultiWindowStatus()
 
     bool enable = GetData<bool>();
     rsConn_->SetFreeMultiWindowStatus(enable);
+    return true;
+}
+
+bool DoCreatePixelMapFromSurface()
+{
+    sptr<IConsumerSurface> cSurface = IConsumerSurface::Create("FuzzTest");
+    sptr<IBufferProducer> bp = cSurface->GetProducer();
+    sptr<Surface> pSurface = Surface::CreateSurfaceAsProducer(bp);
+    if (pSurface == nullptr) {
+        return false;
+    }
+
+    auto srcRect = Rect {
+        .x = GetData<int32_t>(),
+        .y = GetData<int32_t>(),
+        .w = GetData<int32_t>(),
+        .h = GetData<int32_t>(),
+    };
+
+    rsConn_->CreatePixelMapFromSurface(pSurface, srcRect);
     return true;
 }
 
@@ -1310,7 +1320,6 @@ void DoFuzzerTest2()
     DONotifyTouchEvent();
     DONotifyDynamicModeEvent();
     DOSetCacheEnabledForRotation();
-    DOSetDefaultDeviceRotationOffset();
     DOSetOnRemoteDiedCallback();
     DOSetVmaCacheStatus();
 #ifdef TP_FEATURE_ENABLE
@@ -1321,6 +1330,11 @@ void DoFuzzerTest2()
     DOSetVirtualScreenStatus();
     DOSetLayerTop();
     DOSetFreeMultiWindowStatus();
+}
+
+void DoFuzzerTest3()
+{
+    DoCreatePixelMapFromSurface();
 }
 } // namespace Rosen
 } // namespace OHOS
@@ -1334,5 +1348,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     /* Run your code on data */
     OHOS::Rosen::DoFuzzerTest1();
     OHOS::Rosen::DoFuzzerTest2();
+    OHOS::Rosen::DoFuzzerTest3();
     return 0;
 }

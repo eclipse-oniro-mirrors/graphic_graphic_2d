@@ -204,6 +204,10 @@ void RSUniRenderProcessor::CreateSolidColorLayer(LayerInfoPtr layer, RSSurfaceRe
         if (layer->GetZorder() > 0) {
             solidColorLayer->SetZorder(layer->GetZorder() - 1);
         }
+        solidColorLayer->SetTransform(GraphicTransformType::GRAPHIC_ROTATE_NONE);
+        auto dstRect = params.layerInfo_.dstRect;
+        GraphicIRect layerRect = {dstRect.x, dstRect.y, dstRect.w, dstRect.h};
+        solidColorLayer->SetLayerSize(layerRect);
         solidColorLayer->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_SOLID_COLOR);
         solidColorLayer->SetLayerColor({color.GetRed(), color.GetGreen(), color.GetBlue(), color.GetAlpha()});
         solidColorLayer->SetSurface({});
@@ -227,13 +231,8 @@ bool RSUniRenderProcessor::GetForceClientForDRM(RSSurfaceRenderParams& params)
         return true;
     }
     bool forceClientForDRM = false;
-    auto ancestorDrawableMap = params.GetAncestorDisplayDrawable();
-    if (ancestorDrawableMap.empty()) {
-        RS_LOGE("ancestorDrawableMap return empty");
-        return false;
-    }
     auto ancestorDisplayDrawable =
-        std::static_pointer_cast<DrawableV2::RSDisplayRenderNodeDrawable>(ancestorDrawableMap.begin()->second.lock());
+        std::static_pointer_cast<DrawableV2::RSDisplayRenderNodeDrawable>(params.GetAncestorDisplayDrawable().lock());
     auto& uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
     if (ancestorDisplayDrawable == nullptr || ancestorDisplayDrawable->GetRenderParams() == nullptr ||
         uniParam == nullptr) {
