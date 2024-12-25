@@ -103,6 +103,11 @@ public:
         return GetName().find("RosenWeb") != std::string::npos;
     }
 
+    bool IsSubHighPriorityType() const
+    {
+        return GetName().find("hipreview") != std::string::npos;
+    }
+
     bool IsScbScreen() const
     {
         return nodeType_ == RSSurfaceNodeType::SCB_SCREEN_NODE;
@@ -142,7 +147,7 @@ public:
             IsLayerTop();
     }
 
-    void GetHwcChildrenState(bool& enabledType);
+    void CheckHwcChildrenType(SurfaceHwcNodeType& enabledType);
     void SetPreSubHighPriorityType();
 
     bool IsDynamicHardwareEnable() const
@@ -171,7 +176,8 @@ public:
     {
         return nodeType_ == RSSurfaceNodeType::SELF_DRAWING_NODE && isHardwareEnabledNode_ &&
             (name_ == "SceneViewer Model0" || name_ == "RosenWeb" || name_ == "VMWinXComponentSurface" ||
-                name_ == "VMLinuxXComponentSurface" || name_.find("HwStylusFeature") != std::string::npos);
+                name_ == "VMLinuxXComponentSurface" || name_ == "oh_flutter_1Surface" ||
+                name_.find("HwStylusFeature") != std::string::npos);
     }
 
     void SetSubNodeShouldPaint()
@@ -1098,9 +1104,9 @@ public:
     }
     bool GetNodeIsSingleFrameComposer() const override;
 
-    void SetAncestorDisplayNode(const ScreenId screenId, const RSBaseRenderNode::WeakPtr& ancestorDisplayNode)
+    void SetAncestorDisplayNode(const RSBaseRenderNode::WeakPtr& ancestorDisplayNode)
     {
-        ancestorDisplayNodeMap_[screenId] = ancestorDisplayNode;
+        ancestorDisplayNode_ = ancestorDisplayNode;
     }
 
     void SetUifirstNodeEnableParam(MultiThreadCacheType b);
@@ -1119,9 +1125,9 @@ public:
         return uifirstStartTime_;
     }
 
-    const std::unordered_map<ScreenId, RSBaseRenderNode::WeakPtr>& GetAncestorDisplayNode() const
+    RSBaseRenderNode::WeakPtr GetAncestorDisplayNode() const
     {
-        return ancestorDisplayNodeMap_;
+        return ancestorDisplayNode_;
     }
     bool QuerySubAssignable(bool isRotation);
     bool QueryIfAllHwcChildrenForceDisabledByFilter();
@@ -1228,6 +1234,7 @@ public:
     }
 
     void SetCornerRadiusInfoForDRM(const std::vector<float>& drmCornerRadius);
+    void SetForceDisableClipHoleForDRM(bool isForceDisable);
     const std::vector<float>& GetCornerRadiusInfoForDRM() const
     {
         return drmCornerRadiusInfo_;
@@ -1287,6 +1294,8 @@ public:
     bool GetBehindWindowFilterEnabled() const;
     void AddChildBlurBehindWindow(NodeId id) override;
     void RemoveChildBlurBehindWindow(NodeId id) override;
+    void CalDrawBehindWindowRegion() override;
+    RectI GetFilterRect() const override;
     void SetUifirstStartingFlag(bool flag);
     void UpdateCrossNodeSkippedDisplayOffset(NodeId displayId, int32_t offsetX, int32_t offsetY)
     {
@@ -1316,6 +1325,16 @@ public:
     uint32_t GetApiCompatibleVersion()
     {
         return apiCompatibleVersion_;
+    }
+
+    bool GetIsHwcPendingDisabled() const
+    {
+        return isHwcPendingDisabled_;
+    }
+
+    void SetIsHwcPendingDisabled(bool isHwcPendingDisabled)
+    {
+        isHwcPendingDisabled_ = isHwcPendingDisabled;
     }
 
 protected:
@@ -1438,6 +1457,9 @@ private:
     uint8_t abilityBgAlpha_ = 0;
     bool alphaChanged_ = false;
     bool isUIHidden_ = false;
+
+    // is hwc node disabled by filter rect
+    bool isHwcPendingDisabled_ = false;
 
     // dirtyRegion caused by surfaceNode visible region after alignment
     Occlusion::Region extraDirtyRegionAfterAlignment_;
@@ -1583,7 +1605,7 @@ private:
     bool isTargetUIFirstDfxEnabled_ = false;
 
     TreeStateChangeCallback treeStateChangeCallback_;
-    std::unordered_map<ScreenId, RSBaseRenderNode::WeakPtr> ancestorDisplayNodeMap_;
+    RSBaseRenderNode::WeakPtr ancestorDisplayNode_;
     bool hasSharedTransitionNode_ = false;
     size_t lastFrameChildrenCnt_ = 0;
     bool lastFrameShouldPaint_ = true;
@@ -1625,6 +1647,7 @@ private:
     bool subThreadAssignable_ = false;
     bool oldNeedDrawBehindWindow_ = false;
     std::unordered_set<NodeId> childrenBlurBehindWindow_ = {};
+    RectI drawBehindWindowRegion_;
     std::unordered_map<NodeId, Vector2<int32_t>> crossNodeSkippedDisplayOffsets_ = {};
 
     uint32_t apiCompatibleVersion_ = 0;

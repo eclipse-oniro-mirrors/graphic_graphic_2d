@@ -355,11 +355,7 @@ bool RSSystemProperties::GetHighContrastStatus()
 
 bool RSSystemProperties::GetDrmEnabled()
 {
-    // The switch only works on PC, will remove the restriction in the future.
-    if (!IsPcType()) {
-        return true;
-    }
-    static CachedHandle g_Handle = CachedParameterCreate("rosen.drm.enabled", "0");
+    static CachedHandle g_Handle = CachedParameterCreate("rosen.drm.enabled", "1");
     int changed = 0;
     const char *enabled = CachedParameterGetChanged(g_Handle, &changed);
     return ConvertToInt(enabled, 0) != 0;
@@ -727,7 +723,7 @@ bool RSSystemProperties::GetCacheOptimizeRotateEnable()
     return debugEnable;
 }
 
-CrossNodeOffScreenRenderDebugType RSSystemProperties::GetCrossNodeOffscreenDebugEnabled()
+CrossNodeOffScreenRenderDebugType RSSystemProperties::GetCrossNodeOffScreenStatus()
 {
     static CachedHandle g_Handle = CachedParameterCreate("rosen.crossnode.offscreen.render.enabled", "1");
     int chanded = 0;

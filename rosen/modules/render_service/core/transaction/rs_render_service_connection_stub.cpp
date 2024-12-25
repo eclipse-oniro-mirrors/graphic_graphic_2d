@@ -26,6 +26,7 @@
 #include "sys_binder.h"
 
 #include "command/rs_command_factory.h"
+#include "command/rs_command_verify_helper.h"
 #include "common/rs_xcollie.h"
 #include "hgm_frame_rate_manager.h"
 #include "memory/rs_memory_flow_control.h"
@@ -77,6 +78,7 @@ static constexpr std::array descriptorCheckList = {
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_SHOW_REFRESH_RATE_ENABLED),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_SHOW_REFRESH_RATE_ENABLED),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::MARK_POWER_OFF_NEED_PROCESS_ONE_FRAME),
+    static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REPAINT_EVERYTHING),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::DISABLE_RENDER_CONTROL_SCREEN),
 #ifdef OHOS_BUILD_ENABLE_MAGICCURSOR
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_POINTER_COLOR_INVERSION_CONFIG),
@@ -325,6 +327,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
 {
     RS_PROFILER_ON_REMOTE_REQUEST(this, code, data, reply, option);
 
+    AshmemFdContainer::SetIsUnmarshalThread(false);
     pid_t callingPid = GetCallingPid();
     RSMarshallingHelper::SetCallingPid(callingPid);
     auto tid = gettid();
@@ -366,9 +369,13 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 RS_LOGE("RSRenderServiceConnectionStub::COMMIT_TRANSACTION invalid token type");
                 return ERR_INVALID_STATE;
             }
+            if (isNonSystemAppCalling) {
+                RsCommandVerifyHelper::GetInstance().RegisterNonSystemPid(callingPid);
+            }
             RS_TRACE_NAME_FMT("Recv Parcel Size:%zu, fdCnt:%zu", data.GetDataSize(), data.GetOffsetsSize());
             static bool isUniRender = RSUniRenderJudgement::IsUniRender();
             std::shared_ptr<MessageParcel> parsedParcel;
+            std::unique_ptr<AshmemFdWorker> ashmemFdWorker = nullptr;
             std::shared_ptr<AshmemFlowControlUnit> ashmemFlowControlUnit = nullptr;
             if (data.ReadInt32() == 0) { // indicate normal parcel
                 if (isUniRender) {
@@ -393,7 +400,8 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             } else {
                 // indicate ashmem parcel
                 // should be parsed to normal parcel before Unmarshalling
-                parsedParcel = RSAshmemHelper::ParseFromAshmemParcel(&data, ashmemFlowControlUnit, callingPid);
+                parsedParcel = RSAshmemHelper::ParseFromAshmemParcel(&data, ashmemFdWorker, ashmemFlowControlUnit,
+                    callingPid);
             }
             if (parsedParcel == nullptr) {
                 RS_LOGE("RSRenderServiceConnectionStub::COMMIT_TRANSACTION failed: parsed parcel is nullptr");
@@ -402,7 +410,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             if (isUniRender) {
                 // post Unmarshalling task to RSUnmarshalThread
                 RSUnmarshalThread::Instance().RecvParcel(parsedParcel, isNonSystemAppCalling, callingPid,
-                    ashmemFlowControlUnit);
+                    std::move(ashmemFdWorker), ashmemFlowControlUnit);
             } else {
                 // execute Unmarshalling immediately
                 auto transactionData = RSBaseRenderUtil::ParseTransactionData(*parsedParcel);
@@ -916,6 +924,11 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             MarkPowerOffNeedProcessOneFrame();
             break;
         }
+        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REPAINT_EVERYTHING): {
+            RS_LOGI("call RepaintEverything");
+            RepaintEverything();
+            break;
+        }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::DISABLE_RENDER_CONTROL_SCREEN): {
             ScreenId id{INVALID_SCREEN_ID};
             if (!data.ReadUint64(id)) {
@@ -955,9 +968,15 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 break;
             }
             RSSurfaceCaptureConfig captureConfig;
+            RSSurfaceCaptureBlurParam blurParam;
             if (!ReadSurfaceCaptureConfig(captureConfig, data)) {
                 ret = ERR_INVALID_DATA;
-                RS_LOGE("RSRenderServiceConnectionStub::TakeSurfaceCapture write captureConfig failed");
+                RS_LOGE("RSRenderServiceConnectionStub::TakeSurfaceCapture read captureConfig failed");
+                break;
+            }
+            if (!ReadSurfaceCaptureBlurParam(blurParam, data)) {
+                ret = ERR_INVALID_DATA;
+                RS_LOGE("RSRenderServiceConnectionStub::TakeSurfaceCapture read blurParam failed");
                 break;
             }
             RSSurfaceCapturePermissions permissions;
@@ -968,7 +987,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             // we temporarily add a white list to avoid abnormal functionality or abnormal display.
             // The white list will be removed after GetCallingPid interface can return real PID.
             permissions.selfCapture = (ExtractPid(id) == callingPid || callingPid == 0);
-            TakeSurfaceCapture(id, cb, captureConfig, permissions);
+            TakeSurfaceCapture(id, cb, captureConfig, blurParam, permissions);
             break;
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_WINDOW_FREEZE_IMMEDIATELY): {
@@ -2257,15 +2276,6 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             SetScreenSwitchStatus(flag);
             break;
         }
-        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_DEFAULT_DEVICE_ROTATION_OFFSET) : {
-            uint32_t offset{0};
-            if (!data.ReadUint32(offset)) {
-                ret = ERR_INVALID_DATA;
-                break;
-            }
-            SetDefaultDeviceRotationOffset(offset);
-            break;
-        }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_ACTIVE_DIRTY_REGION_INFO) : {
             const auto& activeDirtyRegionInfos = GetActiveDirtyRegionInfo();
             if (!reply.WriteInt32(activeDirtyRegionInfos.size())) {
@@ -2571,6 +2581,15 @@ bool RSRenderServiceConnectionStub::ReadSurfaceCaptureConfig(RSSurfaceCaptureCon
         return false;
     }
     captureConfig.captureType = static_cast<SurfaceCaptureType>(captureType);
+    return true;
+}
+
+bool RSRenderServiceConnectionStub::ReadSurfaceCaptureBlurParam(
+    RSSurfaceCaptureBlurParam& blurParam, MessageParcel& data)
+{
+    if (!data.ReadBool(blurParam.isNeedBlur) || !data.ReadFloat(blurParam.blurRadius)) {
+        return false;
+    }
     return true;
 }
 

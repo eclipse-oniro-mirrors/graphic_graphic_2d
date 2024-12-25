@@ -152,12 +152,14 @@ public:
 
     virtual void MarkPowerOffNeedProcessOneFrame() = 0;
 
+    virtual void RepaintEverything() = 0;
+
     virtual void DisablePowerOffRenderControl(ScreenId id) = 0;
 
     virtual void SetScreenPowerStatus(ScreenId id, ScreenPowerStatus status) = 0;
 
     virtual void TakeSurfaceCapture(NodeId id, sptr<RSISurfaceCaptureCallback> callback,
-        const RSSurfaceCaptureConfig& captureConfig,
+        const RSSurfaceCaptureConfig& captureConfig, const RSSurfaceCaptureBlurParam& blurParam = {},
         RSSurfaceCapturePermissions permissions = RSSurfaceCapturePermissions()) = 0;
 
     virtual void SetWindowFreezeImmediately(NodeId id, bool isFreeze, sptr<RSISurfaceCaptureCallback> callback,
@@ -300,8 +302,6 @@ public:
     virtual void SetCacheEnabledForRotation(bool isEnabled) = 0;
 
     virtual void SetScreenSwitchStatus(bool flag) = 0;
-
-    virtual void SetDefaultDeviceRotationOffset(uint32_t offset) = 0;
 
     virtual void SetOnRemoteDiedCallback(const OnRemoteDiedCallback& callback) = 0;
 

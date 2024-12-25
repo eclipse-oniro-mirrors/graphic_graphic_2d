@@ -81,21 +81,20 @@ public:
     {
         return selfDrawingType_;
     }
-    void SetAncestorDisplayNode(const ScreenId screenId, const RSRenderNode::WeakPtr& ancestorDisplayNode)
+    void SetAncestorDisplayNode(const RSRenderNode::WeakPtr& ancestorDisplayNode)
     {
-        ancestorDisplayNodeMap_[screenId] = ancestorDisplayNode;
+        ancestorDisplayNode_ = ancestorDisplayNode;
         auto node = ancestorDisplayNode.lock();
-        ancestorDisplayDrawableMap_[screenId] = node ? node->GetRenderDrawable() : nullptr;
+        ancestorDisplayDrawable_ = node ? node->GetRenderDrawable() : nullptr;
     }
 
-    const std::unordered_map<ScreenId, RSRenderNode::WeakPtr>& GetAncestorDisplayNode() const
+    RSRenderNode::WeakPtr GetAncestorDisplayNode() const
     {
-        return ancestorDisplayNodeMap_;
+        return ancestorDisplayNode_;
     }
-    const std::unordered_map<ScreenId, DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr>&
-        GetAncestorDisplayDrawable() const
+    DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr GetAncestorDisplayDrawable() const
     {
-        return ancestorDisplayDrawableMap_;
+        return ancestorDisplayDrawable_;
     }
 
     float GetAlpha() const
@@ -472,6 +471,20 @@ public:
         needSync_ = true;
     }
 
+    void SetForceDisableClipHoleForDRM(bool isForceDisable)
+    {
+        if (isForceDisableClipHoleForDRM_ == isForceDisable) {
+            return;
+        }
+        isForceDisableClipHoleForDRM_ = isForceDisable;
+        needSync_ = true;
+    }
+
+    bool GetForceDisableClipHoleForDRM() const
+    {
+        return isForceDisableClipHoleForDRM_;
+    }
+
     const std::vector<float>& GetCornerRadiusInfoForDRM() const
     {
         return drmCornerRadiusInfo_;
@@ -589,8 +602,8 @@ private:
     bool isAppWindow_ = false;
     RSSurfaceNodeType rsSurfaceNodeType_ = RSSurfaceNodeType::DEFAULT;
     SelfDrawingNodeType selfDrawingType_ = SelfDrawingNodeType::DEFAULT;
-    std::unordered_map<ScreenId, RSRenderNode::WeakPtr> ancestorDisplayNodeMap_;
-    std::unordered_map<ScreenId, DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr> ancestorDisplayDrawableMap_;
+    RSRenderNode::WeakPtr ancestorDisplayNode_;
+    DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr ancestorDisplayDrawable_;
 
     float alpha_ = 0;
     bool isCrossNode_ = false;
@@ -671,6 +684,7 @@ private:
     int32_t layerSource_ = 0;
     std::unordered_map<std::string, bool> watermarkHandles_ = {};
     std::vector<float> drmCornerRadiusInfo_;
+    bool isForceDisableClipHoleForDRM_ = false;
 
     Drawing::Matrix totalMatrix_;
     float globalAlpha_ = 1.0f;

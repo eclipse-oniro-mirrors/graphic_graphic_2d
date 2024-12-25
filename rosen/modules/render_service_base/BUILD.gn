@@ -120,6 +120,7 @@ ohos_source_set("render_service_base_src") {
     "src/command/rs_canvas_drawing_node_command.cpp",
     "src/command/rs_canvas_node_command.cpp",
     "src/command/rs_command_factory.cpp",
+    "src/command/rs_command_verify_helper.cpp",
     "src/command/rs_display_node_command.cpp",
     "src/command/rs_effect_node_command.cpp",
     "src/command/rs_frame_rate_linker_command.cpp",
@@ -275,6 +276,10 @@ ohos_source_set("render_service_base_src") {
     "src/transaction/rs_transaction_proxy.cpp",
     "src/transaction/rs_uiextension_data.cpp",
 
+    #gfx
+    "src/gfx/fps_info/rs_surface_fps.cpp",
+    "src/gfx/fps_info/rs_surface_fps_manager.cpp",
+
     #screen_manager
     "src/screen_manager/rs_screen_capability.cpp",
     "src/screen_manager/rs_screen_data.cpp",
@@ -419,6 +424,10 @@ ohos_source_set("render_service_base_src") {
         cflags += [ "-moutline-atomics" ]
       }
     }
+  }
+
+  if (graphic_2d_feature_product != "wearable") {
+    defines += [ "IS_ENABLE_DRM" ]
   }
 
   cflags_cc = [

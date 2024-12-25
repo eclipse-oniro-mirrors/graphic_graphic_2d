@@ -105,8 +105,7 @@ public:
         // Does this game app require Adaptive Sync?
         bool supportAS;
         // <bufferName, fps>
-        std::vector<std::pair<std::string, int32_t>> appBufferList;
-        std::vector<std::string> appBufferBlackList;
+        std::unordered_map<std::string, int32_t> bufferFpsMap;
     };
     // <"1", StrategyConfig>
     using StrategyConfigMap = std::unordered_map<std::string, StrategyConfig>;
@@ -115,12 +114,15 @@ public:
         std::string strategy;
         std::string priority;
         bool doNotAutoClear;
+        bool disableSafeVote;
     };
     // <"SCENE_APP_START_ANIMATION", SceneConfig>
     using SceneConfigMap = std::unordered_map<std::string, SceneConfig>;
 
-    // <"LTPO-DEAULT", <30, 60, 120>>
-    using SupportedModeMap = std::unordered_map<std::string, std::vector<uint32_t>>;
+    // <"LowBright", <30, 60, 120>>
+    using SupportedModeConfig = std::unordered_map<std::string, std::vector<uint32_t>>;
+    // <"LTPO-DEFAULT", SupportedModeConfig>
+    using SupportedModeMap = std::unordered_map<std::string, SupportedModeConfig>;
 
     struct DynamicConfig {
         int32_t min;

@@ -628,6 +628,7 @@ public:
     void ApplyModifiers();
     void ApplyPositionZModifier();
     virtual void UpdateRenderParams();
+    void SetCrossNodeOffScreenStatus(CrossNodeOffScreenRenderDebugType isCrossNodeOffscreenOn_);
     void UpdateDrawingCacheInfoBeforeChildren(bool isScreenRotation);
     void UpdateDrawingCacheInfoAfterChildren();
 
@@ -823,6 +824,7 @@ public:
     virtual bool NeedDrawBehindWindow() const { return false; }
     virtual void AddChildBlurBehindWindow(NodeId id) {}
     virtual void RemoveChildBlurBehindWindow(NodeId id) {}
+    virtual void CalDrawBehindWindowRegion() {}
 protected:
     virtual void OnApplyModifiers() {}
     void SetOldDirtyInSurface(RectI oldDirtyInSurface);
@@ -854,7 +856,6 @@ protected:
     virtual void OnSync();
     virtual void ClearResource() {};
     virtual void ClearNeverOnTree() {};
-    virtual void CheckCanvasDrawingPostPlaybacked() {};
 
     void UpdateDrawableVecV2();
 
@@ -1041,7 +1042,7 @@ private:
     // collect subtree's surfaceNode including itself
     int subSurfaceCnt_ = 0;
     bool selfAddForSubSurfaceCnt_ = false;
-    bool visited_ = false;
+    bool visitedForSubSurfaceCnt_ = false;
     std::unordered_set<NodeId> curCacheFilterRects_ = {};
     std::unordered_set<NodeId> visitedCacheRoots_ = {};
     mutable std::recursive_mutex surfaceMutex_;

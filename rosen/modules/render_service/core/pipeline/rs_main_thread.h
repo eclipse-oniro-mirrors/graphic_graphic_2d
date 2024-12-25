@@ -386,6 +386,10 @@ public:
     {
         return hasWiredMirrorDisplay_;
     }
+    uint64_t GetCurrentVsyncTime() const
+    {
+        return curTime_;
+    }
 private:
     using TransactionDataIndexMap = std::unordered_map<pid_t,
         std::pair<uint64_t, std::vector<std::unique_ptr<RSTransactionData>>>>;
@@ -741,6 +745,10 @@ private:
     bool isRegionDebugEnabledOfLastFrame_ = false;
 
     bool isForceRefresh_ = false;
+
+#ifdef RS_ENABLE_VK
+    bool needCreateVkPipeline_ = true;
+#endif
 };
 } // namespace OHOS::Rosen
 #endif // RS_MAIN_THREAD

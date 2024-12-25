@@ -227,12 +227,6 @@ float RSCustomInterpolator::InterpolateImpl(float input) const
         ROSEN_LOGE("RSCustomInterpolator::InterpolateImpl, times_ and values_ have different sizes.");
         return 0.0f;
     }
-    if (input < times_[0] + EPSILON) {
-        return values_[0];
-    }
-    if (input > times_.back() - EPSILON) {
-        return values_.back();
-    }
     auto firstGreatValueIterator = std::upper_bound(times_.begin(), times_.end(), input);
     if (firstGreatValueIterator == times_.end()) {
         return values_.back();
