@@ -980,14 +980,13 @@ void HgmFrameRateManager::HandleScreenPowerStatus(ScreenId id, ScreenPowerStatus
     auto isLtpo = hgmScreenInfo.IsLtpoType(hgmScreenInfo.GetScreenType(id));
     std::string curScreenName = "screen" + std::to_string(id) + "_" + (isLtpo ? "LTPO" : "LTPS");
 
-    curScreenStrategyId_ = configData->screenStrategyConfigs_[curScreenName];
     isLtpo_ = isLtpo;
     lastCurScreenId_.store(curScreenId_.load());
     curScreenId_.store(id);
     hgmCore.SetActiveScreenId(curScreenId_.load());
     HGM_LOGD("curScreen change:%{public}d", static_cast<int>(curScreenId_.load()));
 
-    HandleScreenFrameRate();
+    HandleScreenFrameRate(curScreenName);
 }
 
 void HgmFrameRateManager::HandleScreenRectFrameRate(ScreenId id, const GraphicIRect& activeRect)
@@ -997,23 +996,22 @@ void HgmFrameRateManager::HandleScreenRectFrameRate(ScreenId id, const GraphicIR
     auto isLtpo = hgmScreenInfo.IsLtpoType(hgmScreenInfo.GetScreenType(id));
 
     std::string curScreenName = "screen" + std::to_string(id) + "_" + (isLtpo ? "LTPO" : "LTPS");
-    if (!activeRect) {
-        curScreenName += "_" + std::to_string(activeRect.x);
-        curScreenName += "_" + std::to_string(activeRect.y);
-        curScreenName += "_" + std::to_string(activeRect.w);
-        curScreenName += "_" + std::to_string(activeRect.h);
-    }
-    curScreenStrategyId_ = configData->screenStrategyConfigs_[curScreenName];
-    HandleScreenFrameRate();
+    curScreenName += "_" + std::to_string(activeRect.x);
+    curScreenName += "_" + std::to_string(activeRect.y);
+    curScreenName += "_" + std::to_string(activeRect.w);
+    curScreenName += "_" + std::to_string(activeRect.h);
+    
+    HandleScreenFrameRate(curScreenName);
 }
 
-void HgmFrameRateManager::HandleScreenFrameRate()
+void HgmFrameRateManager::HandleScreenFrameRate(std::string curScreenName)
 {
     auto& hgmCore = HgmCore::Instance();
     auto configData = hgmCore.GetPolicyConfigData();
     if (configData == nullptr) {
         return;
     }
+    curScreenStrategyId_ = configData->screenStrategyConfigs_[curScreenName];
     if (curScreenStrategyId_.empty()) {
         curScreenStrategyId_ = "LTPO-DEFAULT";
     }
