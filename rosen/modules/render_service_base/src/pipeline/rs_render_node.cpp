@@ -1106,7 +1106,8 @@ std::string RSRenderNode::GetAllPreparedChildren()
         if (node->GetType() == RSRenderNodeType::SURFACE_NODE) {
             auto surfaceNode = node->ReinterpretCastTo<RSSurfaceRenderNode>();
             oss << "[" << surfaceNode->GetName() << ":" << surfaceNode->GetPreparedChildrenCount() << "] ";
-        }});
+        }
+        });
     oss << "]";
     return oss.str();
 }

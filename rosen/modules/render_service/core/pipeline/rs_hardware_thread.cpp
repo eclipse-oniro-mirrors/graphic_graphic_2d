@@ -302,7 +302,7 @@ std::string RSHardwareThread::GetSurfaceNameInLayers(const std::vector<LayerInfo
             isFirst = false;
             continue;
         }
-       surfaceName += ", " + layer->GetSurface()->GetName();
+        surfaceName += ", " + layer->GetSurface()->GetName();
     }
     surfaceName += "]";
     return surfaceName;
