@@ -576,5 +576,10 @@ bool RSSystemProperties::GetDisableHebcEnabled()
 {
     return false;
 }
+
+bool RSSystemProperties::GetHveFilterEnabled()
+{
+    return false;
+}
 } // namespace Rosen
 } // namespace OHOS

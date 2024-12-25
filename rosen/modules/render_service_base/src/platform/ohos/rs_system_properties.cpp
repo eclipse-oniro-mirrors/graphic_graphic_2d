@@ -1208,5 +1208,12 @@ bool RSSystemProperties::GetDisableHebcEnabled()
         std::atoi((system::GetParameter("persist.sys.graphic.anco.disableHebc", "0")).c_str()) != 0;
     return enable;
 }
+
+bool RSSystemProperties::GetHveFilterEnabled()
+{
+    static bool hveFilterEnabled =
+        std::atoi((system::GetParameter("persist.sys.graphic.HveFilterEnable", "1")).c_str()) != 0;
+    return hveFilterEnabled;
+}
 } // namespace Rosen
 } // namespace OHOS

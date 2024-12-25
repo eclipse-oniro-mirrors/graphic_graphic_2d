@@ -138,6 +138,7 @@ public:
     bool IsForceUseFilterCache() const;
     bool NeedPendingPurge() const;
     bool IsSkippingFrame() const;
+    bool IsAIBarFilter();
     bool IsAIBarCacheValid();
 
     void OnSync() override;

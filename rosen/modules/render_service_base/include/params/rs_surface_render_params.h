@@ -336,6 +336,8 @@ public:
     const RSLayerInfo& GetLayerInfo() const override;
     void SetHardwareEnabled(bool enabled);
     bool GetHardwareEnabled() const override;
+    void SetNeedMakeImage(bool enabled);
+    bool GetNeedMakeImage() const override;
     void SetHardCursorStatus(bool status);
     bool GetHardCursorStatus() const override;
     void SetPreSubHighPriorityType(bool enabledType);
@@ -651,6 +653,7 @@ private:
     bool bufferSynced_ = true;
 #endif
     bool isHardwareEnabled_ = false;
+    bool needMakeImage_ = false;
     bool isHardCursor_ = false;
     bool isLastFrameHardwareEnabled_ = false;
     bool subHighPriorityType_ = false;

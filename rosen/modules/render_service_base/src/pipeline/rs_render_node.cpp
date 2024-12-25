@@ -1954,6 +1954,20 @@ bool RSRenderNode::IsFilterCacheValid() const
     return false;
 }
 
+bool RSRenderNode::IsAIBarFilter() const
+{
+    if (!RSSystemProperties::GetBlurEnabled() || !RSProperties::FilterCacheEnabled) {
+        ROSEN_LOGD("blur is disabled or filter cache is disabled.");
+        return false;
+    }
+    auto filterDrawable = GetRenderProperties().GetFilter() != nullptr ?
+        GetFilterDrawable(true) : GetFilterDrawable(false);
+    if (filterDrawable == nullptr) {
+        return false;
+    }
+    return filterDrawable->IsAIBarFilter();
+}
+
 bool RSRenderNode::IsAIBarFilterCacheValid() const
 {
 #ifdef RS_ENABLE_GPU
