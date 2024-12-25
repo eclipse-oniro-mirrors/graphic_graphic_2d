@@ -25,7 +25,9 @@
 #include <unordered_map>
 
 #include "accesstoken_kit.h"
+#ifdef SUPPORT_ACCESS_TOKEN
 #include "nativetoken_kit.h"
+#endif
 #include "ipc_object_proxy.h"
 #include "ipc_object_stub.h"
 #include "iremote_object.h"
@@ -539,6 +541,7 @@ bool DoRegisterOcclusionChangeCallback()
 
 bool DoShowWatermark()
 {
+#ifdef SUPPORT_ACCESS_TOKEN
     if (rsConn_ == nullptr) {
         return false;
     }
@@ -560,6 +563,7 @@ bool DoShowWatermark()
     bool isShow = GetData<bool>();
     std::shared_ptr<Media::PixelMap> pixelMap1;
     rsConn_->ShowWatermark(pixelMap1, isShow);
+#endif
     return true;
 }
 
@@ -1278,7 +1282,9 @@ void DoFuzzerTest1()
     DoGetScreenData();
     DoGetScreenHDRCapability();
     DoRegisterOcclusionChangeCallback();
+#ifdef SUPPORT_ACCESS_TOKEN
     DoShowWatermark();
+#endif
     DoTakeSurfaceCapture();
     DoSetHwcNodeBounds();
     DoSetScreenChangeCallback();

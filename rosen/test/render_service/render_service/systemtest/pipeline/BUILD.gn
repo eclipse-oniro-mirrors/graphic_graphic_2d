@@ -116,6 +116,14 @@ if (graphic_2d_feature_rs_enable_uni_render) {
       external_deps +=
           [ "drivers_interface_display:display_commontype_idl_headers" ]
     }
+
+    if (graphic_2d_support_access_token) {
+      external_deps += [
+        "access_token:libnativetoken",
+        "access_token:libtoken_setproc",
+      ]
+      defines += [ "SUPPORT_ACCESS_TOKEN" ]
+    }
   }
 }
 

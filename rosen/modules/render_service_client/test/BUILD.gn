@@ -139,6 +139,15 @@ ohos_executable("render_service_client_modifier_demo") {
     "window_manager:sms",
   ]
 
+  defines = []
+  if (graphic_2d_support_access_token) {
+    external_deps += [
+      "access_token:libnativetoken",
+      "access_token:libtoken_setproc",
+    ]
+    defines += [ "SUPPORT_ACCESS_TOKEN" ]
+  }
+
   part_name = "graphic_2d"
   subsystem_name = "graphic"
 }
@@ -160,6 +169,15 @@ ohos_executable("render_service_client_transition_demo") {
     "window_manager:libwm",
     "window_manager:sms",
   ]
+
+  defines = []
+  if (graphic_2d_support_access_token) {
+    external_deps += [
+      "access_token:libnativetoken",
+      "access_token:libtoken_setproc",
+    ]
+    defines += [ "SUPPORT_ACCESS_TOKEN" ]
+  }
 
   public_external_deps = [ "$public_deps_skia" ]
 
@@ -189,6 +207,15 @@ ohos_executable("render_service_client_gesture_interrupt_animation_demo") {
     "safwk:system_ability_fwk",
     "zlib:libz",
   ]
+
+  defines = []
+  if (graphic_2d_support_access_token) {
+    external_deps += [
+      "access_token:libnativetoken",
+      "access_token:libtoken_setproc",
+    ]
+    defines += [ "SUPPORT_ACCESS_TOKEN" ]
+  }
 
   part_name = "graphic_2d"
   subsystem_name = "graphic"
@@ -240,6 +267,15 @@ ohos_executable("render_service_client_surface_capture_demo") {
     "init:libbegetutil",
   ]
 
+  defines = []
+  if (graphic_2d_support_access_token) {
+    external_deps += [
+      "access_token:libnativetoken",
+      "access_token:libtoken_setproc",
+    ]
+    defines += [ "SUPPORT_ACCESS_TOKEN" ]
+  }
+
   public_external_deps = [
     "$public_deps_skia",
     "libpng:libpng",
@@ -265,6 +301,15 @@ ohos_executable("render_service_client_ui_capture_demo") {
     "hilog:libhilog",
     "init:libbegetutil",
   ]
+
+  defines = []
+  if (graphic_2d_support_access_token) {
+    external_deps += [
+      "access_token:libnativetoken",
+      "access_token:libtoken_setproc",
+    ]
+    defines += [ "SUPPORT_ACCESS_TOKEN" ]
+  }
 
   public_external_deps = [
     "$public_deps_skia",
@@ -413,6 +458,15 @@ ohos_executable("render_service_client_uni_render_demo") {
     "zlib:libz",
   ]
 
+  defines = []
+  if (graphic_2d_support_access_token) {
+    external_deps += [
+      "access_token:libnativetoken",
+      "access_token:libtoken_setproc",
+    ]
+    defines += [ "SUPPORT_ACCESS_TOKEN" ]
+  }
+
   part_name = "graphic_2d"
   subsystem_name = "graphic"
 }
@@ -451,6 +505,15 @@ ohos_executable("rs_uni_render_pixelmap_demo") {
     "image_framework:image_native",
     "window_manager:libwm",
   ]
+
+  defines = []
+  if (graphic_2d_support_access_token) {
+    external_deps += [
+      "access_token:libnativetoken",
+      "access_token:libtoken_setproc",
+    ]
+    defines += [ "SUPPORT_ACCESS_TOKEN" ]
+  }
 
   part_name = "graphic_2d"
   subsystem_name = "graphic"

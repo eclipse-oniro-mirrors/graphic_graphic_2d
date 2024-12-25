@@ -24,7 +24,9 @@
 #include "vsync_generator.h"
 #include "vsync_distributor.h"
 #include "accesstoken_kit.h"
+#ifdef SUPPORT_ACCESS_TOKEN
 #include "nativetoken_kit.h"
+#endif
 
 #include <iostream>
 
@@ -59,6 +61,7 @@ public:
 
 static void InitNativeTokenInfo()
 {
+#ifdef SUPPORT_ACCESS_TOKEN
     uint64_t tokenId;
     const char *perms[2];
     perms[0] = "ohos.permission.DISTRIBUTED_DATASYNC";
@@ -78,10 +81,12 @@ static void InitNativeTokenInfo()
     int32_t ret = Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo();
     ASSERT_EQ(ret, Security::AccessToken::RET_SUCCESS);
     std::this_thread::sleep_for(std::chrono::milliseconds(50));  // wait 50ms
+#endif
 }
 
 void SetVsyncCallBackForEveryFrameTest::Process1()
 {
+#ifdef SUPPORT_ACCESS_TOKEN
     InitNativeTokenInfo();
     vsyncGenerator = CreateVSyncGenerator();
     vsyncSampler = CreateVSyncSampler();
@@ -108,6 +113,7 @@ void SetVsyncCallBackForEveryFrameTest::Process1()
     close(pipeFd[0]);
     close(pipe1Fd[1]);
     exit(0);
+#endif
 }
 
 void SetVsyncCallBackForEveryFrameTest::Process2()

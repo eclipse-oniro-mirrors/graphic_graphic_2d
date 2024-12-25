@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import("//build/test.gni")
+import("//foundation/graphic/graphic_2d/graphic_config.gni")
 
 module_out_path = "graphic_2d/composer"
 
@@ -74,6 +75,15 @@ ohos_unittest("vsync_test_st") {
     "access_token:libaccesstoken_sdk",
     "c_utils:utils",
   ]
+
+  defines = []
+  if (graphic_2d_support_access_token) {
+    external_deps += [
+      "access_token:libnativetoken",
+      "access_token:libtoken_setproc",
+    ]
+    defines += [ "SUPPORT_ACCESS_TOKEN" ]
+  }
 }
 
 ## SystemTest vsync_test }}}
@@ -106,6 +116,15 @@ ohos_unittest("vsync_ltpo_test_st") {
     "ipc:ipc_core",
     "samgr:samgr_proxy",
   ]
+
+  defines = []
+  if (graphic_2d_support_access_token) {
+    external_deps += [
+      "access_token:libnativetoken",
+      "access_token:libtoken_setproc",
+    ]
+    defines += [ "SUPPORT_ACCESS_TOKEN" ]
+  }
 }
 
 ## SystemTest vsync_ltpo_test }}}
@@ -138,6 +157,15 @@ ohos_unittest("vsync_30to60_test_st") {
     "ipc:ipc_core",
     "samgr:samgr_proxy",
   ]
+
+  defines = []
+  if (graphic_2d_support_access_token) {
+    external_deps += [
+      "access_token:libnativetoken",
+      "access_token:libtoken_setproc",
+    ]
+    defines += [ "SUPPORT_ACCESS_TOKEN" ]
+  }
 }
 
 ## SystemTest vsync_30to60_test }}}
@@ -170,6 +198,15 @@ ohos_unittest("vsync_30to90_test_st") {
     "ipc:ipc_core",
     "samgr:samgr_proxy",
   ]
+
+  defines = []
+  if (graphic_2d_support_access_token) {
+    external_deps += [
+      "access_token:libnativetoken",
+      "access_token:libtoken_setproc",
+    ]
+    defines += [ "SUPPORT_ACCESS_TOKEN" ]
+  }
 }
 
 ## SystemTest vsync_30to90_test }}}
@@ -202,6 +239,15 @@ ohos_unittest("vsync_30to120_test_st") {
     "ipc:ipc_core",
     "samgr:samgr_proxy",
   ]
+
+  defines = []
+  if (graphic_2d_support_access_token) {
+    external_deps += [
+      "access_token:libnativetoken",
+      "access_token:libtoken_setproc",
+    ]
+    defines += [ "SUPPORT_ACCESS_TOKEN" ]
+  }
 }
 
 ## SystemTest vsync_30to120_test }}}
@@ -234,6 +280,15 @@ ohos_unittest("vsync_60to30_test_st") {
     "ipc:ipc_core",
     "samgr:samgr_proxy",
   ]
+
+  defines = []
+  if (graphic_2d_support_access_token) {
+    external_deps += [
+      "access_token:libnativetoken",
+      "access_token:libtoken_setproc",
+    ]
+    defines += [ "SUPPORT_ACCESS_TOKEN" ]
+  }
 }
 
 ## SystemTest vsync_60to30_test }}}
@@ -266,6 +321,15 @@ ohos_unittest("vsync_60to90_test_st") {
     "ipc:ipc_core",
     "samgr:samgr_proxy",
   ]
+
+  defines = []
+  if (graphic_2d_support_access_token) {
+    external_deps += [
+      "access_token:libnativetoken",
+      "access_token:libtoken_setproc",
+    ]
+    defines += [ "SUPPORT_ACCESS_TOKEN" ]
+  }
 }
 
 ## SystemTest vsync_60to90_test }}}
@@ -298,6 +362,15 @@ ohos_unittest("vsync_60to120_test_st") {
     "ipc:ipc_core",
     "samgr:samgr_proxy",
   ]
+
+  defines = []
+  if (graphic_2d_support_access_token) {
+    external_deps += [
+      "access_token:libnativetoken",
+      "access_token:libtoken_setproc",
+    ]
+    defines += [ "SUPPORT_ACCESS_TOKEN" ]
+  }
 }
 
 ## SystemTest vsync_60to120_test }}}
@@ -330,6 +403,15 @@ ohos_unittest("vsync_90to30_test_st") {
     "ipc:ipc_core",
     "samgr:samgr_proxy",
   ]
+
+  defines = []
+  if (graphic_2d_support_access_token) {
+    external_deps += [
+      "access_token:libnativetoken",
+      "access_token:libtoken_setproc",
+    ]
+    defines += [ "SUPPORT_ACCESS_TOKEN" ]
+  }
 }
 
 ## SystemTest vsync_90to30_test }}}
@@ -362,6 +444,15 @@ ohos_unittest("vsync_90to60_test_st") {
     "ipc:ipc_core",
     "samgr:samgr_proxy",
   ]
+
+  defines = []
+  if (graphic_2d_support_access_token) {
+    external_deps += [
+      "access_token:libnativetoken",
+      "access_token:libtoken_setproc",
+    ]
+    defines += [ "SUPPORT_ACCESS_TOKEN" ]
+  }
 }
 
 ## SystemTest vsync_90to60_test }}}
@@ -394,6 +485,15 @@ ohos_unittest("vsync_90to120_test_st") {
     "ipc:ipc_core",
     "samgr:samgr_proxy",
   ]
+
+  defines = []
+  if (graphic_2d_support_access_token) {
+    external_deps += [
+      "access_token:libnativetoken",
+      "access_token:libtoken_setproc",
+    ]
+    defines += [ "SUPPORT_ACCESS_TOKEN" ]
+  }
 }
 
 ## SystemTest vsync_90to120_test }}}
@@ -426,6 +526,15 @@ ohos_unittest("vsync_120to30_test_st") {
     "ipc:ipc_core",
     "samgr:samgr_proxy",
   ]
+
+  defines = []
+  if (graphic_2d_support_access_token) {
+    external_deps += [
+      "access_token:libnativetoken",
+      "access_token:libtoken_setproc",
+    ]
+    defines += [ "SUPPORT_ACCESS_TOKEN" ]
+  }
 }
 
 ## SystemTest vsync_120to30_test }}}
@@ -458,6 +567,15 @@ ohos_unittest("vsync_120to60_test_st") {
     "ipc:ipc_core",
     "samgr:samgr_proxy",
   ]
+
+  defines = []
+  if (graphic_2d_support_access_token) {
+    external_deps += [
+      "access_token:libnativetoken",
+      "access_token:libtoken_setproc",
+    ]
+    defines += [ "SUPPORT_ACCESS_TOKEN" ]
+  }
 }
 
 ## SystemTest vsync_120to60_test }}}
@@ -490,6 +608,15 @@ ohos_unittest("vsync_120to90_test_st") {
     "ipc:ipc_core",
     "samgr:samgr_proxy",
   ]
+
+  defines = []
+  if (graphic_2d_support_access_token) {
+    external_deps += [
+      "access_token:libnativetoken",
+      "access_token:libtoken_setproc",
+    ]
+    defines += [ "SUPPORT_ACCESS_TOKEN" ]
+  }
 }
 
 ## SystemTest vsync_120to90_test }}}
@@ -523,6 +650,15 @@ ohos_unittest("vsync_multicallback_test_st") {
     "ipc:ipc_core",
     "samgr:samgr_proxy",
   ]
+
+  defines = []
+  if (graphic_2d_support_access_token) {
+    external_deps += [
+      "access_token:libnativetoken",
+      "access_token:libtoken_setproc",
+    ]
+    defines += [ "SUPPORT_ACCESS_TOKEN" ]
+  }
 }
 
 ## SystemTest vsync_multicallback_test }}}
@@ -647,6 +783,15 @@ ohos_unittest("vsync_setvsyncrate_test_st") {
     "ipc:ipc_core",
     "samgr:samgr_proxy",
   ]
+
+  defines = []
+  if (graphic_2d_support_access_token) {
+    external_deps += [
+      "access_token:libnativetoken",
+      "access_token:libtoken_setproc",
+    ]
+    defines += [ "SUPPORT_ACCESS_TOKEN" ]
+  }
 }
 
 ## SystemTest vsync_setvsyncrate_test }}}
@@ -680,6 +825,15 @@ ohos_unittest("vsync_callbackeveryframe_test_st") {
     "ipc:ipc_core",
     "samgr:samgr_proxy",
   ]
+
+  defines = []
+  if (graphic_2d_support_access_token) {
+    external_deps += [
+      "access_token:libnativetoken",
+      "access_token:libtoken_setproc",
+    ]
+    defines += [ "SUPPORT_ACCESS_TOKEN" ]
+  }
 }
 
 ## SystemTest vsync_callbackeveryframe_test }}}
@@ -713,5 +867,14 @@ ohos_unittest("vsync_sample_test_st") {
     "ipc:ipc_core",
     "samgr:samgr_proxy",
   ]
+
+  defines = []
+  if (graphic_2d_support_access_token) {
+    external_deps += [
+      "access_token:libnativetoken",
+      "access_token:libtoken_setproc",
+    ]
+    defines += [ "SUPPORT_ACCESS_TOKEN" ]
+  }
 }
 ## SystemTest vsync_sample_test }}}

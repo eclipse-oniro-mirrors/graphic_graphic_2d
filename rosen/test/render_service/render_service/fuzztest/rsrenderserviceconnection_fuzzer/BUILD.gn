@@ -81,6 +81,15 @@ ohos_fuzztest("RSRenderServiceConnectionFuzzTest") {
     "samgr:samgr_proxy",
   ]
 
+  defines = []
+  if (graphic_2d_support_access_token) {
+    external_deps += [
+      "access_token:libnativetoken",
+      "access_token:libtoken_setproc",
+    ]
+    defines += [ "SUPPORT_ACCESS_TOKEN" ]
+  }
+
   if (defined(global_parts_info) && defined(global_parts_info.sensors_sensor)) {
     external_deps += [ "sensor:sensor_interface_native" ]
   }
