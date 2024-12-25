@@ -36,7 +36,7 @@ namespace TextEngine {
 #define FAILED 1
 
 const char* FONT_DEFAULT_CONFIG = "/system/etc/fontconfig_ohos.json";
-const char* FONT_DEFAULT_CONFIG_OLD = "/system/etc/font_file_map.json";
+const char* FONT_FILE_MAP_CONFIG = "/system/etc/font_file_map.json";
 
 FontConfig::FontConfig(const char* fname)
 {
@@ -185,7 +185,7 @@ int FontConfigJson::ParseFontFileMap(const char* fname)
 {
     if (fname == nullptr) {
         TEXT_LOGD("ParseFontFileMap fname is nullptr");
-        fname = FONT_DEFAULT_CONFIG_OLD;
+        fname = FONT_FILE_MAP_CONFIG;
     }
 
     TEXT_LOGI("ParseFontFileMap fname is: %{public}s", fname);
