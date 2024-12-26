@@ -80,7 +80,7 @@ std::shared_ptr<Drawing::Image> HveFilter::SampleLayer(RSPaintFilterCanvas& canv
         offscreenCanvas->Save();
         offscreenCanvas->Translate(-srcRect.GetLeft(), -srcRect.GetTop());
         offscreenCanvas->ConcatMatrix(rotateMatrix);
-        offscreenCanvas->DrawImageRect(*surfaceImage, parmSrcRect, parmDstRect, Drawing::SamplingOptions()
+        offscreenCanvas->DrawImageRect(*surfaceImage, parmSrcRect, parmDstRect, Drawing::SamplingOptions(),
             Drawing::SrcRectConstraint::FAST_SRC_RECT_CONSTRAINT);
         offscreenCanvas->Restore();
     }
