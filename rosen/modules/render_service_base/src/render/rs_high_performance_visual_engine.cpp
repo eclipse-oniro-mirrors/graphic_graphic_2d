@@ -48,7 +48,7 @@ int HveFilter::GetSurfaceNodeSize()
 std::shared_ptr<Drawing::Image> HveFilter::SampleLayer(RSPaintFilterCanvas& canvas, const Drawing::RectI& srcRect)
 {
     auto drawingSurface = canvas.GetSurface();
-    if(drawingSurface == nullptr) {
+    if (drawingSurface == nullptr) {
         return nullptr;
     }
     int widthUI = srcRect.GetWidth();
