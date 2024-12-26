@@ -118,13 +118,14 @@ bool PixelMapStorage::PullSharedMemory(uint64_t id, const ImageInfo& info, Pixel
         return false;
     }
 
-    memory.base = new uint8_t[memory.bufferSize];
+    memory.allocatorType = AllocatorType::HEAP_ALLOC;
+    memory.base = reinterpret_cast<uint8_t*>(malloc(memory.bufferSize));
     if (!memory.base) {
         return false;
     }
 
     if (!CopyImageData(image, memory.base, memory.bufferSize)) {
-        delete[] memory.base;
+        free(memory.base);
         memory.base = nullptr;
         return false;
     }
@@ -417,7 +418,8 @@ bool RSProfiler::MarshalPixelMap(Parcel& parcel, const std::shared_ptr<Media::Pi
     return true;
 }
 
-Media::PixelMap* RSProfiler::UnmarshalPixelMap(Parcel& parcel)
+Media::PixelMap* RSProfiler::UnmarshalPixelMap(Parcel& parcel,
+    std::function<int(Parcel& parcel, std::function<int(Parcel&)> readFdDefaultFunc)> readSafeFdFunc)
 {
     bool profilerEnabled = false;
     if (!parcel.ReadBool(profilerEnabled)) {
@@ -426,13 +428,13 @@ Media::PixelMap* RSProfiler::UnmarshalPixelMap(Parcel& parcel)
     }
 
     if (!profilerEnabled) {
-        return PixelMap::Unmarshalling(parcel);
+        return PixelMap::Unmarshalling(parcel, readSafeFdFunc);
     }
 
     const uint64_t id = parcel.ReadUint64();
 
     if (IsRecordAbortRequested()) {
-        return PixelMap::Unmarshalling(parcel);
+        return PixelMap::Unmarshalling(parcel, readSafeFdFunc);
     }
 
     ImageInfo info;
@@ -449,7 +451,7 @@ Media::PixelMap* RSProfiler::UnmarshalPixelMap(Parcel& parcel)
     }
 
     const auto parcelPosition = parcel.GetReadPosition();
-    if (map && !PixelMap::ReadMemInfoFromParcel(parcel, memory, error)) {
+    if (map && !PixelMap::ReadMemInfoFromParcel(parcel, memory, error, readSafeFdFunc)) {
         delete map;
         return nullptr;
     }

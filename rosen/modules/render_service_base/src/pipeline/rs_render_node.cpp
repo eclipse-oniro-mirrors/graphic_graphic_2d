@@ -40,6 +40,7 @@
 #include "pipeline/rs_paint_filter_canvas.h"
 #include "pipeline/rs_root_render_node.h"
 #include "pipeline/rs_surface_render_node.h"
+#include "pipeline/rs_canvas_drawing_render_node.h"
 #include "pipeline/sk_resource_manager.h"
 #include "platform/common/rs_log.h"
 #include "platform/common/rs_system_properties.h"
@@ -482,51 +483,7 @@ void RSRenderNode::UpdateSubTreeInfo(const RectI& clipRect)
 
 bool RSRenderNode::IsCrossNode() const
 {
-    if (!isCrossNode_) {
-        return false;
-    }
-
-    const auto& property = GetRenderProperties();
-    const auto surfaceRect = RectI{
-        property.GetBoundsPositionX(),
-        property.GetBoundsPositionY(),
-        property.GetBoundsWidth(),
-        property.GetBoundsHeight()
-    };
-
-    auto context = GetContext().lock();
-    if (!context) {
-        ROSEN_LOGE("RSRenderNode::IsCrossNode: Invalid context");
-        return isCrossNode_;
-    }
-    const auto& nodeMap = context->GetNodeMap();
-    int intersectCount = 0;
-
-    nodeMap.TraverseDisplayNodes(
-        [&intersectCount, &surfaceRect](const std::shared_ptr<RSDisplayRenderNode>& displayRenderNode) {
-            if (displayRenderNode == nullptr) {
-                return;
-            }
-            
-            const auto& displayProperty = displayRenderNode->GetRenderProperties();
-            auto displayRect = RectI{
-                displayRenderNode->GetDisplayOffsetX(),
-                displayRenderNode->GetDisplayOffsetY(),
-                displayProperty.GetBoundsWidth(),
-                displayProperty.GetBoundsHeight()
-            };
-            if (surfaceRect.Intersect(displayRect)) {
-                intersectCount++;
-            }
-
-            ROSEN_LOGD("RSRenderNode::IsCrossNode displayRect={%{public}d, %{public}d, %{public}d, %{public}d}"
-                " surfaceRect={%{public}d, %{public}d, %{public}d, %{public}d}",
-                displayRect.left_, displayRect.top_, displayRect.width_, displayRect.height_,
-                surfaceRect.left_, surfaceRect.top_, surfaceRect.width_, surfaceRect.height_);
-        });
-
-    ROSEN_LOGD("RSRenderNode::IsCrossNode intersectCount=%{public}d", intersectCount);
-    return intersectCount > 1;
+    return isCrossNode_;
 }
 
 void RSRenderNode::IncreaseCrossScreenNum()
@@ -2201,8 +2158,8 @@ void RSRenderNode::UpdateFilterCacheWithSelfDirty()
     RS_OPTIONAL_TRACE_NAME_FMT("node[%llu] UpdateFilterCacheWithSelfDirty lastRect:%s, currRegion:%s",
         GetId(), lastFilterRegion_.ToString().c_str(), filterRegion_.ToString().c_str());
     const auto& properties = GetRenderProperties();
-    if ((properties.GetBackgroundFilter() || properties.GetNeedDrawBehindWindow()) &&
-        !filterRegion_.IsInsideOf(lastFilterRegion_)) {
+    if ((properties.GetBackgroundFilter() && !filterRegion_.IsInsideOf(lastFilterRegion_)) ||
+        (properties.GetNeedDrawBehindWindow() && filterRegion_ != lastFilterRegion_)) {
         auto filterDrawable = GetFilterDrawable(false);
         if (filterDrawable != nullptr) {
             if (!IsForceClearOrUseFilterCache(filterDrawable)) {
@@ -2649,7 +2606,8 @@ void RSRenderNode::ApplyModifiers()
     // Temporary code, copy matrix into render params
     if (LIKELY(RSUniRenderJudgement::IsUniRender() && !isTextureExportNode_)) {
         if (GetType() == RSRenderNodeType::CANVAS_DRAWING_NODE) {
-            CheckCanvasDrawingPostPlaybacked();
+            auto canvasdrawingnode = ReinterpretCastTo<RSCanvasDrawingRenderNode>();
+            canvasdrawingnode->CheckCanvasDrawingPostPlaybacked();
         }
         UpdateDrawableVecV2();
     } else {
@@ -2719,6 +2677,10 @@ void RSRenderNode::UpdateDrawableVecV2()
     // save/clip/restore.
     RS_LOGI_IF(DEBUG_NODE,
         "RSRenderNode::update drawable VecV2 drawableChanged:%{public}d", drawableChanged);
+    if (GetType() == RSRenderNodeType::CANVAS_DRAWING_NODE) {
+        auto canvasdrawingnode = ReinterpretCastTo<RSCanvasDrawingRenderNode>();
+        drawableChanged |= canvasdrawingnode->GetIsPostPlaybacked();
+    }
     if (drawableChanged || dirtySlots.count(RSDrawableSlot::CLIP_TO_BOUNDS)) {
         // Step 3: Recalculate save/clip/restore on demands
         RSDrawable::UpdateSaveRestore(*this, drawableVec_, drawableVecStatus_);
@@ -4116,13 +4078,13 @@ void RSRenderNode::AddSubSurfaceUpdateInfo(SharedPtr curParent, SharedPtr prePar
 void RSRenderNode::UpdateSubSurfaceCnt(int updateCnt)
 {
     // avoid loop
-    if (visited_) {
+    if (visitedForSubSurfaceCnt_) {
         RS_LOGE("RSRenderNode::UpdateSubSurfaceCnt: %{public}" PRIu64" has loop tree", GetId());
         return;
     }
-    visited_ = true;
+    visitedForSubSurfaceCnt_ = true;
     if (updateCnt == 0) {
-        visited_ = false;
+        visitedForSubSurfaceCnt_ = false;
         return;
     }
     int cnt = subSurfaceCnt_ + updateCnt;
@@ -4130,7 +4092,7 @@ void RSRenderNode::UpdateSubSurfaceCnt(int updateCnt)
     if (auto parent = GetParent().lock()) {
         parent->UpdateSubSurfaceCnt(updateCnt);
     }
-    visited_ = false;
+    visitedForSubSurfaceCnt_ = false;
 }
 bool RSRenderNode::HasSubSurface() const
 {
@@ -4352,6 +4314,11 @@ void RSRenderNode::UpdateRenderParams()
 #endif
 }
 
+void RSRenderNode::SetCrossNodeOffScreenStatus(CrossNodeOffScreenRenderDebugType isCrossNodeOffscreenOn_)
+{
+    stagingRenderParams_->SetCrossNodeOffScreenStatus(isCrossNodeOffscreenOn_);
+}
+
 bool RSRenderNode::UpdateLocalDrawRect()
 {
 #ifdef RS_ENABLE_GPU
@@ -4477,7 +4444,8 @@ void RSRenderNode::OnSync()
     foregroundFilterInteractWithDirty_ = false;
 
     // Reset Sync Flag
-    if (waitSync_) {
+    // only canvas drawing node use SetNeedDraw function
+    if (GetType() == RSRenderNodeType::CANVAS_DRAWING_NODE && waitSync_) {
         renderDrawable_->SetNeedDraw(true);
     }
     waitSync_ = false;
@@ -4759,6 +4727,31 @@ void RSRenderNode::ProcessBehindWindowAfterApplyModifiers()
     } else {
         rootNode->RemoveChildBlurBehindWindow(GetId());
     }
+}
+
+void RSRenderNode::UpdateDrawableBehindWindow()
+{
+    AddDirtyType(RSModifierType::BACKGROUND_BLUR_RADIUS);
+    SetContentDirty();
+#ifdef RS_ENABLE_GPU
+    auto dirtySlots = RSDrawable::CalculateDirtySlots(dirtyTypes_, drawableVec_);
+    if (dirtySlots.empty()) {
+        RS_LOGD("RSRenderNode::UpdateDrawableBehindWindow dirtySlots is empty");
+        return;
+    }
+    bool drawableChanged = RSDrawable::UpdateDirtySlots(*this, drawableVec_, dirtySlots);
+    RSDrawable::FuzeDrawableSlots(*this, drawableVec_);
+    RS_LOGD("RSRenderNode::UpdateDrawableBehindWindow drawableChanged:%{public}d", drawableChanged);
+    if (drawableChanged) {
+        RSDrawable::UpdateSaveRestore(*this, drawableVec_, drawableVecStatus_);
+        UpdateDisplayList();
+    }
+    if (dirtySlots_.empty()) {
+        dirtySlots_ = std::move(dirtySlots);
+    } else {
+        dirtySlots_.insert(dirtySlots.begin(), dirtySlots.end());
+    }
+#endif
 }
 } // namespace Rosen
 } // namespace OHOS

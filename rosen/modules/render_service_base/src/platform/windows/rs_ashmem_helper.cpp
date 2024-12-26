@@ -99,7 +99,7 @@ int AshmemFdContainer::ReadSafeFd(Parcel &parcel, std::function<int(Parcel&)> re
     return readFdDefaultFunc(parcel);
 }
 
-void AshmemFdContainer::Init(const std::unordered_map<binder_size_t, int>& fds)
+void AshmemFdContainer::Merge(const std::unordered_map<binder_size_t, int>& fds)
 {
 }
 
@@ -117,14 +117,20 @@ std::string AshmemFdContainer::PrintFds() const
 AshmemFdWorker::~AshmemFdWorker()
 {
     isFdContainerUpdated_ = false;
+    needManualCloseFds_ = false;
     fds_.clear();
+    fdsToBeClosed_.clear();
 }
 
-void AshmemFdWorker::InsertFdWithOffset(int fd, binder_size_t offset)
+void AshmemFdWorker::InsertFdWithOffset(int fd, binder_size_t offset, bool shouldCloseFd)
 {
 }
 
 void AshmemFdWorker::PushFdsToContainer()
+{
+}
+
+void AshmemFdWorker::EnableManualCloseFds()
 {
 }
 

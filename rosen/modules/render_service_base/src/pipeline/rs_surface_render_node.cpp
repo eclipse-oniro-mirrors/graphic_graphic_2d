@@ -1713,19 +1713,37 @@ void RSSurfaceRenderNode::UpdateHwcNodeLayerInfo(GraphicTransformType transform,
 #endif
 }
 
-void RSSurfaceRenderNode::GetHwcChildrenState(bool& enabledType)
+void RSSurfaceRenderNode::CheckHwcChildrenType(SurfaceHwcNodeType& enabledType)
 {
+    if (enabledType == SurfaceHwcNodeType::DEFAULT_HWC_ROSENWEB) {
+        return;
+    }
     if (IsAppWindow()) {
         auto hwcNodes = GetChildHardwareEnabledNodes();
         if (hwcNodes.empty()) {
             return;
         }
+        if (IsSubHighPriorityType()) {
+            enabledType = SurfaceHwcNodeType::DEFAULT_HWC_VIDEO;
+            return;
+        }
+        if (IsRosenWeb()) {
+            enabledType = SurfaceHwcNodeType::DEFAULT_HWC_ROSENWEB;
+            return;
+        }
         for (auto hwcNode : hwcNodes) {
             auto hwcNodePtr = hwcNode.lock();
-            if (!hwcNodePtr || IsRosenWeb()) {
+            if (!hwcNodePtr) {
                 continue;
             }
-            enabledType = true;
+            if (hwcNodePtr->IsRosenWeb()) {
+                enabledType = SurfaceHwcNodeType::DEFAULT_HWC_ROSENWEB;
+                return;
+            }
+            if (hwcNodePtr->IsSubHighPriorityType()) {
+                enabledType = SurfaceHwcNodeType::DEFAULT_HWC_VIDEO;
+                return;
+            }
         }
     } else if (IsLeashWindow()) {
         for (auto& child : *GetChildren()) {
@@ -1733,7 +1751,7 @@ void RSSurfaceRenderNode::GetHwcChildrenState(bool& enabledType)
             if (surfaceNode == nullptr) {
                 continue;
             }
-            surfaceNode->GetHwcChildrenState(enabledType);
+            surfaceNode->CheckHwcChildrenType(enabledType);
         }
     }
 }
@@ -1745,10 +1763,11 @@ void RSSurfaceRenderNode::SetPreSubHighPriorityType()
         return;
     }
     auto surfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
-    bool preSubHighPriority = false;
-    GetHwcChildrenState(preSubHighPriority);
-    RS_OPTIONAL_TRACE_NAME_FMT("SetPreSubHighPriorityType::name:[%s] preSub:%d", GetName().c_str(), preSubHighPriority);
-    surfaceParams->SetPreSubHighPriorityType(preSubHighPriority);
+    SurfaceHwcNodeType preSubHighPriority = SurfaceHwcNodeType::DEFAULT_HWC_TYPE;
+    CheckHwcChildrenType(preSubHighPriority);
+    RS_OPTIONAL_TRACE_NAME_FMT("SubHignProirityType::name:[%s] preSub:%d", GetName().c_str(),
+        preSubHighPriority);
+    surfaceParams->SetPreSubHighPriorityType(preSubHighPriority == SurfaceHwcNodeType::DEFAULT_HWC_VIDEO);
     AddToPendingSyncList();
 #endif
 }
@@ -2936,6 +2955,7 @@ void RSSurfaceRenderNode::UpdateRenderParams()
     surfaceParams->isMainWindowType_ = IsMainWindowType();
     surfaceParams->isLeashWindow_ = IsLeashWindow();
     surfaceParams->isAppWindow_ = IsAppWindow();
+    surfaceParams->SetAncestorDisplayNode(ancestorDisplayNode_);
     surfaceParams->isSecurityLayer_ = isSecurityLayer_;
     surfaceParams->isSkipLayer_ = isSkipLayer_;
     surfaceParams->isSnapshotSkipLayer_ = isSnapshotSkipLayer_;
@@ -2964,9 +2984,6 @@ void RSSurfaceRenderNode::UpdateRenderParams()
     surfaceParams->crossNodeSkippedDisplayOffsets_ = crossNodeSkippedDisplayOffsets_;
     surfaceParams->preparedDisplayOffset_ = { GetPreparedDisplayOffsetX(), GetPreparedDisplayOffsetY() };
     surfaceParams->SetNeedSync(true);
-    for (auto iter = ancestorDisplayNodeMap_.begin(); iter != ancestorDisplayNodeMap_.end(); ++iter) {
-        surfaceParams->SetAncestorDisplayNode(iter->first, iter->second);
-    }
 
     RSRenderNode::UpdateRenderParams();
 #endif
@@ -2994,9 +3011,7 @@ void RSSurfaceRenderNode::UpdateAncestorDisplayNodeInRenderParams()
         RS_LOGE("RSSurfaceRenderNode::UpdateAncestorDisplayNodeInRenderParams surfaceParams is null");
         return;
     }
-    for (auto iter = ancestorDisplayNodeMap_.begin(); iter != ancestorDisplayNodeMap_.end(); ++iter) {
-        surfaceParams->SetAncestorDisplayNode(iter->first, iter->second);
-    }
+    surfaceParams->SetAncestorDisplayNode(ancestorDisplayNode_);
     surfaceParams->SetNeedSync(true);
 #endif
 }
@@ -3080,6 +3095,18 @@ void RSSurfaceRenderNode::SetCornerRadiusInfoForDRM(const std::vector<float>& dr
         AddToPendingSyncList();
     }
 #endif
+}
+
+void RSSurfaceRenderNode::SetForceDisableClipHoleForDRM(bool isForceDisable)
+{
+    auto stagingSurfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
+    if (stagingSurfaceParams == nullptr) {
+        return;
+    }
+    stagingSurfaceParams->SetForceDisableClipHoleForDRM(isForceDisable);
+    if (stagingRenderParams_->NeedSync()) {
+        AddToPendingSyncList();
+    }
 }
 
 void RSSurfaceRenderNode::SetSkipDraw(bool skip)
@@ -3200,10 +3227,9 @@ void RSSurfaceRenderNode::SetNeedCacheSurface(bool needCacheSurface)
 #endif
 }
 
-bool RSSurfaceRenderNode::NeedUpdateDrawableBehindWindow()
+bool RSSurfaceRenderNode::NeedUpdateDrawableBehindWindow() const
 {
     bool needDrawBehindWindow = NeedDrawBehindWindow();
-    GetMutableRenderProperties().SetNeedDrawBehindWindow(needDrawBehindWindow);
     return needDrawBehindWindow != oldNeedDrawBehindWindow_;
 }
 
@@ -3214,7 +3240,8 @@ void RSSurfaceRenderNode::SetOldNeedDrawBehindWindow(bool val)
 
 bool RSSurfaceRenderNode::NeedDrawBehindWindow() const
 {
-    return GetBehindWindowFilterEnabled() && !childrenBlurBehindWindow_.empty();
+    return !GetRenderProperties().GetBackgroundFilter() && GetBehindWindowFilterEnabled() &&
+        !childrenBlurBehindWindow_.empty();
 }
 
 bool RSSurfaceRenderNode::GetBehindWindowFilterEnabled() const
@@ -3237,6 +3264,37 @@ void RSSurfaceRenderNode::AddChildBlurBehindWindow(NodeId id)
 void RSSurfaceRenderNode::RemoveChildBlurBehindWindow(NodeId id)
 {
     childrenBlurBehindWindow_.erase(id);
+}
+
+void RSSurfaceRenderNode::CalDrawBehindWindowRegion()
+{
+    auto context = GetContext().lock();
+    if (!context) {
+        RS_LOGE("RSSurfaceRenderNode::CalDrawBehindWindowRegion, invalid context");
+    }
+    RectI region;
+    for (auto& id : childrenBlurBehindWindow_) {
+        if (auto child = context->GetNodeMap().GetRenderNode<RSRenderNode>(id)) {
+            auto childRect = child->GetMutableRenderProperties().GetBoundsGeometry()->GetAbsRect();
+            region = region.JoinRect(childRect);
+        } else {
+            RS_LOGE("RSSurfaceRenderNode::CalDrawBehindWindowRegion, get child failed");
+            return;
+        }
+    }
+    RS_OPTIONAL_TRACE_NAME_FMT("RSSurfaceRenderNode::CalDrawBehindWindowRegion: Id: %lu, BehindWindowRegion: %s",
+        GetId(), region.ToString().c_str());
+    drawBehindWindowRegion_ = region;
+    auto filterDrawable = GetFilterDrawable(false);
+    if (!filterDrawable) {
+        return;
+    }
+    filterDrawable->SetDrawBehindWindowRegion(region);
+}
+
+RectI RSSurfaceRenderNode::GetFilterRect() const
+{
+    return NeedDrawBehindWindow() ? drawBehindWindowRegion_ : RSRenderNode::GetFilterRect();
 }
 
 bool RSSurfaceRenderNode::IsCurFrameSwitchToPaint()
