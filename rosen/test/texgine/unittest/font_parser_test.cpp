@@ -139,6 +139,7 @@ HWTEST_F(FontParserTest, FontConfigTest2, TestSize.Level1)
     FontConfigJson fontConfigJson;
     EXPECT_EQ(fontConfigJson.ParseFontFileMap(), 0);
     auto map = fontConfigJson.GetFontFileMap();
+    ASSERT_NE(map, nullptr);
     EXPECT_EQ(map->size(), 281);
     for (auto& it: *map) {
         ASSERT_GT(it.second.size(), 3);

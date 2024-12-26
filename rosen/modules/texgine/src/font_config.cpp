@@ -324,13 +324,14 @@ int FontConfigJson::ParseFontMap(const cJSON* root, const char* key)
         return FAILED;
     }
     cJSON* filters = cJSON_GetObjectItem(root, key);
-    if (filters == nullptr || !cJSON_IsArray(filters)) {
+    if (filters == nullptr || !cJSON_IsObject(filters)) {
         TEXT_LOGE("Failed to cJSON_GetObjectItem");
         return FAILED;
     }
     cJSON* item = filters->child;
     while (item != nullptr) {
         (*fontFileMap)[item->string] = item->valuestring;
+        item = item->next;
     }
     return SUCCESSED;
 }
