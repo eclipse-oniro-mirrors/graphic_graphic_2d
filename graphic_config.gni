@@ -374,6 +374,7 @@ if (defined(graphic_2d_feature_enable_prefetch)) {
   gpu_defines += [ "RS_ENABLE_PREFETCH" ]
 }
 
-if (defined(global_parts_info) && !defined(global_parts_info.security_access_token)) {
+if (defined(global_parts_info) &&
+    !defined(global_parts_info.security_access_token)) {
   graphic_2d_support_access_token = false
 }
