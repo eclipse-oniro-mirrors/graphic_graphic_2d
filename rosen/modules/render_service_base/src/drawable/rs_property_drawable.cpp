@@ -477,7 +477,7 @@ void RSFilterDrawable::UpdateFlags(FilterCacheType type, bool cacheValid)
 
 bool RSFilterDrawable::IsAIBarFilter()
 {
-    return  filterType_ == RSFilter::AIBAR;
+    return filterType_ == RSFilter::AIBAR;
 }
 
 bool RSFilterDrawable::IsAIBarCacheValid()
