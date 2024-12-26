@@ -27,7 +27,7 @@ RSAncoManager* RSAncoManager::Instance()
     return &instance;
 }
 
-bool AncoDisableHebcProperty()
+static bool AncoDisableHebcProperty()
 {
     // Dynamically disable unified rendering layer hebc if persist.sys.graphic.anco.disableHebc equal 1
     static bool result =
