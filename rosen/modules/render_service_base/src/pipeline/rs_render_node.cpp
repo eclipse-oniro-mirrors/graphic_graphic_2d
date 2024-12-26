@@ -1063,55 +1063,6 @@ void RSRenderNode::QuickPrepare(const std::shared_ptr<RSNodeVisitor>& visitor)
     AddToPendingSyncList();
 }
 
-int RSRenderNode::GetPreparedChildrenCount() const
-{
-    return preparedChildrenCount_;
-}
-
-void RSRenderNode::IncPreparedChildrenCount()
-{
-    ++preparedChildrenCount_;
-}
-
-void RSRenderNode::ClearPreparedChildrenCount()
-{
-    preparedChildrenCount_ = 0;
-}
-
-void RSRenderNode::IncPreparedChildrenCountByRootNode()
-{
-    auto context = GetContext().lock();
-    if (!context) {
-        ROSEN_LOGE("RSRenderNode::IncPreparedChildrenCountByRootNode: Invalid context");
-        return;
-    }
-    auto& nodeMap = context->GetNodeMap();
-    auto node = nodeMap.GetRenderNode(GetInstanceRootNodeId());
-    if (node != nullptr) {
-        node->IncPreparedChildrenCount();
-    }
-}
-
-std::string RSRenderNode::GetAllPreparedChildren()
-{
-    auto context = GetContext().lock();
-    if (!context) {
-        ROSEN_LOGE("RSRenderNode::GetAllPreparedChildren: Invalid context");
-        return "";
-    }
-    auto& nodeMap = context->GetNodeMap();
-    std::ostringstream oss;
-    oss << "[ ";
-    nodeMap.TraversalNodes([&oss](const std::shared_ptr<RSBaseRenderNode>& node) {
-        if (node->GetType() == RSRenderNodeType::SURFACE_NODE) {
-            auto surfaceNode = node->ReinterpretCastTo<RSSurfaceRenderNode>();
-            oss << "[" << surfaceNode->GetName() << ":" << surfaceNode->GetPreparedChildrenCount() << "] ";
-        }
-        });
-    oss << "]";
-    return oss.str();
-}
-
 bool RSRenderNode::IsSubTreeNeedPrepare(bool filterInGlobal, bool isOccluded)
 {
     auto checkType = RSSystemProperties::GetSubTreePrepareCheckType();

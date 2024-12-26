@@ -92,7 +92,6 @@ void RSRootRenderNode::QuickPrepare(const std::shared_ptr<RSNodeVisitor>& visito
     if (!visitor) {
         return;
     }
-    IncPreparedChildrenCountByRootNode();
     ApplyModifiers();
     visitor->PrepareRootRenderNode(*this);
 }
