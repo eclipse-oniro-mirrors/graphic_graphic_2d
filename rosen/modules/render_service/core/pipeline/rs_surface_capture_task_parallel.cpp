@@ -293,6 +293,8 @@ std::unique_ptr<Media::PixelMap> RSSurfaceCaptureTaskParallel::CreatePixelMapByS
     Media::InitializationOptions opts;
     opts.size.width = ceil(pixmapWidth * captureConfig_.scaleX);
     opts.size.height = ceil(pixmapHeight * captureConfig_.scaleY);
+    // Surface Node currently does not support regional screenshot
+    captureConfig_.mainScreenRect = {};
     RS_LOGD("RSSurfaceCaptureTaskParallel::CreatePixelMapBySurfaceNode: NodeId:[%{public}" PRIu64 "],"
         " origin pixelmap size: [%{public}u, %{public}u],"
         " created pixelmap size: [%{public}u, %{public}u],"
