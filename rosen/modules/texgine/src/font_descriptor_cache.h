@@ -38,8 +38,8 @@ public:
     void GetFontDescSharedPtrByFullName(const std::string& fullName,
         const int32_t& systemFontType, FontDescSharedPtr& result);
     void GetSystemFontFullNamesByType(const int32_t& systemFontType, std::unordered_set<std::string>& fontList);
-    void cacheDynamicTypeface(std::shared_ptr<Drawing::Typeface> typeface);
-    void deleteDynamicTypefaceFromCache(std::shared_ptr<Drawing::Typeface> typeface);
+    void CacheDynamicTypeface(std::shared_ptr<Drawing::Typeface> typeface);
+    void DeleteDynamicTypefaceFromCache(std::shared_ptr<Drawing::Typeface> typeface);
 
 private:
     void FontDescriptorScatter(FontDescSharedPtr desc);

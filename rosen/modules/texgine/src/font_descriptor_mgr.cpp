@@ -66,20 +66,20 @@ void FontDescriptorMgr::GetSystemFontFullNamesByType(
 }
 } // namespace OHOS::Rosen
 
-void cacheDynamicTypeface(std::shared_ptr<Drawing::Typeface> typeface)
+void FontDescriptorMgr::CacheDynamicTypeface(std::shared_ptr<Drawing::Typeface> typeface)
 {
     if (typeface == nullptr) {
         return;
     }
     std::unique_lock<std::mutex> guard(parserMtx_);
-    descCache_.cacheDynamicTypeface(typeface);
+    descCache_.CacheDynamicTypeface(typeface);
 }
 
-void deleteDynamicTypefaceFromCache(std::shared_ptr<Drawing::Typeface> typeface)
+void FontDescriptorMgr::DeleteDynamicTypefaceFromCache(std::shared_ptr<Drawing::Typeface> typeface)
 {
     if (typeface == nullptr) {
         return;
     }
     std::unique_lock<std::mutex> guard(parserMtx_);
-    descCache_.deleteDynamicTypefaceFromCache(typeface);
+    descCache_.DeleteDynamicTypefaceFromCache(typeface);
 }
