@@ -206,10 +206,9 @@ bool RSSurfaceCaptureTaskParallel::Run(sptr<RSISurfaceCaptureCallback> callback,
     RSPaintFilterCanvas canvas(surface.get());
     canvas.Scale(captureConfig_.scaleX, captureConfig_.scaleY);
     const Drawing::Rect& rect = captureConfig_.mainScreenRect;
-    if (rect.right_ - rect.left_ > 0 && rect.bottom_ - rect.top_ > 0 &&
-        (!(rect.left_ < 0 || rect.top_ < 0))) {
-        canvas.ClipRect({0, 0, rect.right_ - rect.left_, rect.bottom_ - rect.top_});
-        canvas.Translate(0 - rect.left_, 0 - rect.top_);
+    if (rect.GetWidth() > 0 && rect.GetHeight() > 0 && (!(rect.GetLeft() < 0 || rect.GetRight() < 0))) {
+        canvas.ClipRect({0, 0, rect.GetWidth(), rect.GetHeight()});
+        canvas.Translate(0 - rect.GetLeft(), 0 - rect.GetRight());
     }
     canvas.SetDisableFilterCache(true);
     RSSurfaceRenderParams* curNodeParams = nullptr;
@@ -324,9 +323,9 @@ std::unique_ptr<Media::PixelMap> RSSurfaceCaptureTaskParallel::CreatePixelMapByD
     uint32_t pixmapWidth = screenInfo.width;
     uint32_t pixmapHeight = screenInfo.height;
     const Drawing::Rect& rect = captureConfig_.mainScreenRect;
-    if (rect.right_ - rect.left_ > 0 && rect.bottom_ - rect.top_ > 0) {
-        pixmapWidth = ceil(rect.right_ - rect.left_);
-        pixmapHeight = ceil(rect.bottom_ - rect.top_);
+    if (rect.GetWidth() > 0 && rect.GetHeight() > 0) {
+        pixmapWidth = ceil(rect.GetWidth());
+        pixmapHeight = ceil(rect.GetHeight());
     }
 
     Media::InitializationOptions opts;
@@ -338,8 +337,7 @@ std::unique_ptr<Media::PixelMap> RSSurfaceCaptureTaskParallel::CreatePixelMapByD
         " translate: [%{public}f, %{public}f],"
         " useDma: [%{public}d], screenRotation: [%{public}d], screenCorrection: [%{public}d]",
         node->GetId(), pixmapWidth, pixmapHeight, captureConfig_.scaleX, captureConfig_.scaleY,
-        captureConfig_.mainScreenRect.left_, captureConfig_.mainScreenRect.top_,
-        captureConfig_.useDma, screenRotation_, screenCorrection_);
+        rect.GetLeft(), rect.GetTop(), captureConfig_.useDma, screenRotation_, screenCorrection_);
     return Media::PixelMap::Create(opts);
 }
 
