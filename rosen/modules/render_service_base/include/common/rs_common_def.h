@@ -219,7 +219,7 @@ struct RSSurfaceCaptureConfig {
     bool useCurWindow = true;
     SurfaceCaptureType captureType = SurfaceCaptureType::DEFAULT_CAPTURE;
     bool isSync = false;
-    Rect mainScreenRect = {};
+    Drawing::Rect mainScreenRect = {};
 };
 
 struct RSSurfaceCaptureBlurParam {
