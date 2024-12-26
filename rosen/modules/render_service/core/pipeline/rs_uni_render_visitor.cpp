@@ -3231,7 +3231,7 @@ void RSUniRenderVisitor::UpdateHwcNodeEnableByGlobalCleanFilter(
                 if (rendernode->IsAIBarFilterCacheValid()) {
                     ROSEN_LOGD("RSUniRenderVisitor::UpdateHwcNodeByFilter: skip intersection for using cache");
                     continue;
-                } else if (RSSystemProperties::GetHveFilterEnable()) {
+                } else if (RSSystemProperties::GetHveFilterEnabled()) {
                     checkDrawAIBar = true;
                     continue;
                 }
@@ -3258,7 +3258,7 @@ void RSUniRenderVisitor::UpdateHwcNodeEnableByGlobalCleanFilter(
         hwcNodePtr.SetHardwareNeedMakeImage(checkDrawAIBar);
     }
     if (intersectedWithAIBar) {
-        hwcNodePtr::SetIntersectWithAIBar(intersectWithAIBar);
+        hwcNodePtr.SetIntersectWithAIBar(intersectedWithAIBar);
     }
 }
 
