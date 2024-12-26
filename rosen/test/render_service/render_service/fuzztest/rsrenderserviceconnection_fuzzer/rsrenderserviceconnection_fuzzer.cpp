@@ -27,6 +27,7 @@
 #include "accesstoken_kit.h"
 #ifdef SUPPORT_ACCESS_TOKEN
 #include "nativetoken_kit.h"
+#include "token_setproc.h"
 #endif
 #include "ipc_object_proxy.h"
 #include "ipc_object_stub.h"

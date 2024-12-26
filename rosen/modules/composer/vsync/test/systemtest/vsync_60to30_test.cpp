@@ -26,6 +26,7 @@
 #include "accesstoken_kit.h"
 #ifdef SUPPORT_ACCESS_TOKEN
 #include "nativetoken_kit.h"
+#include "token_setproc.h"
 #endif
 #include "vsync_type.h"
 
