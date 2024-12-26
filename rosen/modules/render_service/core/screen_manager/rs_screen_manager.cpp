@@ -1172,6 +1172,48 @@ const std::vector<uint64_t> RSScreenManager::GetVirtualScreenSecurityExemptionLi
     return virtualScreen->second->GetSecurityExemptionList();
 }
 
+int32_t RSScreenManager::SetVirtualScreenSecurityMask(ScreenId id,
+    const std::shared_ptr<Media::PixelMap>& securityMaskImg)
+{
+    if (id == INVALID_SCREEN_ID) {
+        RS_LOGD("RSScreenManager %{public}s: INVALID_SCREEN_ID.", __func__);
+        return INVALID_ARGUMENTS;
+    }
+    std::lock_guard<std::mutex> lock(mutex_);
+    auto virtualScreen = screens_.find(id);
+    if (virtualScreen == screens_.end()) {
+        RS_LOGW("RSScreenManager %{public}s: There is no screen for id %{public}" PRIu64 ".", __func__, id);
+        return SCREEN_NOT_FOUND;
+    }
+
+    if (virtualScreen->second == nullptr) {
+        RS_LOGW("RSScreenManager %{public}s: Null screen for id %{public}" PRIu64 ".", __func__, id);
+        return SCREEN_NOT_FOUND;
+    }
+    if (!(virtualScreen->second->IsVirtual())) {
+        RS_LOGW("RSScreenManager %{public}s: not virtual screen for id %{public}" PRIu64 ".", __func__, id);
+        return INVALID_ARGUMENTS;
+    }
+    virtualScreen->second->SetSecurityMaskResource(securityMaskImg);
+    return SUCCESS;
+}
+
+const std::shared_ptr<Media::PixelMap> RSScreenManager::GetVirtualScreenSecurityMask(ScreenId id) const
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    auto virtualScreen = screens_.find(id);
+    if (virtualScreen == screens_.end()) {
+        RS_LOGW("RSScreenManager %{public}s: There is no screen for id %{public}" PRIu64 ".", __func__, id);
+        return nullptr;
+    }
+
+    if (virtualScreen->second == nullptr) {
+        RS_LOGW("RSScreenManager %{public}s: Null screen for id %{public}" PRIu64 ".", __func__, id);
+        return nullptr;
+    }
+    return virtualScreen->second->GetSecurityMaskResource();
+}
+
 int32_t RSScreenManager::SetMirrorScreenVisibleRect(ScreenId id, const Rect& mainScreenRect)
 {
     if (id == INVALID_SCREEN_ID) {

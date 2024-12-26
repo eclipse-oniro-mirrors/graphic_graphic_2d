@@ -55,6 +55,7 @@
 #include "property/rs_point_light_manager.h"
 #include "screen_manager/rs_screen_manager.h"
 #include "static_factory.h"
+#include "render/rs_pixel_map_util.h"
 // dfx
 #include "drawable/dfx/rs_dirty_rects_dfx.h"
 #include "drawable/dfx/rs_skp_capture_dfx.h"
@@ -1085,7 +1086,11 @@ void RSDisplayRenderNodeDrawable::DrawMirror(RSDisplayRenderParams& params,
     if (hasSecSurface[mirroredParams->GetScreenId()] && !uniParam.GetSecExemption()) {
         std::vector<RectI> emptyRects = {};
         virtualProcesser->SetRoiRegionToCodec(emptyRects);
-        SetCanvasBlack(*virtualProcesser);
+        if (!params.GetSecurityMaskResource()) {
+            SetCanvasBlack(*virtualProcesser);
+        } else {
+            SetSecurityMask(*virtualProcesser);
+        }
         virtualDirtyRefresh_ = true;
         curCanvas_->RestoreToCount(0);
         return;
@@ -1417,6 +1422,42 @@ void RSDisplayRenderNodeDrawable::SetCanvasBlack(RSProcessor& processor)
     processor.PostProcess();
     RS_LOGI("RSDisplayRenderNodeDrawable::SetCanvasBlack, set canvas to black because of security layer.");
     curCanvas_->SetDisableFilterCache(false);
+}
+
+void RSDisplayRenderNodeDrawable::SetSecurityMask(RSProcessor& processor)
+{
+    auto params = static_cast<RSDisplayRenderParams*>(GetRenderParams().get());
+    auto imagePtr = params->GetSecurityMaskResource();
+    auto image = RSPixelMapUtil::ExtractDrawingImage(imagePtr);
+    if (!image || image->GetWidth() == 0 || image->GetHeight() == 0) {
+        return;
+    }
+    if (auto screenManager = CreateOrGetScreenManager()) {
+        RS_TRACE_FUNC();
+        auto screenInfo = screenManager->QueryScreenInfo(params->GetScreenId());
+        auto mainWidth = static_cast<float>(screenInfo.width);
+        auto mainHeight = static_cast<float>(screenInfo.height);
+
+        // in certain cases (such as fold screen), the width and height must be swapped to fix the screen rotation.
+        int angle = RSUniRenderUtil::GetRotationFromMatrix(curCanvas_->GetTotalMatrix());
+        if (angle == RS_ROTATION_90 || angle == RS_ROTATION_270) {
+            std::swap(mainWidth, mainHeight);
+        }
+        auto srcRect = Drawing::Rect(0, 0, image->GetWidth(), image->GetHeight());
+        auto dstRect = Drawing::Rect(0, 0, mainWidth, mainHeight);
+
+        Drawing::Brush brush;
+        curCanvas_->AttachBrush(brush);
+        curCanvas_->DrawImageRect(*image, srcRect, dstRect, Drawing::SamplingOptions(),
+            Drawing::SrcRectConstraint::STRICT_SRC_RECT_CONSTRAINT);
+        curCanvas_->DetachBrush();
+        DrawWatermarkIfNeed(*params, *curCanvas_);
+
+        processor.PostProcess();
+        RS_LOGI("RSDisplayRenderNodeDrawable::SetSecurityMask, this interface is invoked"
+            "when the security layer is used and mask resources are set.");
+        curCanvas_->SetDisableFilterCache(false);
+    }
 }
 
 void RSDisplayRenderNodeDrawable::RotateMirrorCanvas(ScreenRotation& rotation, float mainWidth, float mainHeight)

@@ -110,6 +110,11 @@ int32_t RSInterfaces::SetVirtualScreenSecurityExemptionList(
     return renderServiceClient_->SetVirtualScreenSecurityExemptionList(id, securityExemptionList);
 }
 
+int32_t RSInterfaces::SetVirtualScreenSecurityMask(ScreenId id, const std::shared_ptr<Media::PixelMap>& securityMaskImg)
+{
+    return renderServiceClient_->SetVirtualScreenSecurityMask(id, securityMaskImg);
+}
+
 int32_t RSInterfaces::SetMirrorScreenVisibleRect(ScreenId id, const Rect& mainScreenRect)
 {
     return renderServiceClient_->SetMirrorScreenVisibleRect(id, mainScreenRect);

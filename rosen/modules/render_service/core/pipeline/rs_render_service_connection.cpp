@@ -628,6 +628,16 @@ int32_t RSRenderServiceConnection::SetVirtualScreenSecurityExemptionList(
     return screenManager_->SetVirtualScreenSecurityExemptionList(id, securityExemptionList);
 }
 
+int32_t RSRenderServiceConnection::SetVirtualScreenSecurityMask(ScreenId id,
+    const std::shared_ptr<Media::PixelMap>& securityMaskImg)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (!screenManager_) {
+        return StatusCode::SCREEN_NOT_FOUND;
+    }
+    return screenManager_->SetVirtualScreenSecurityMask(id, securityMaskImg);
+}
+
 int32_t RSRenderServiceConnection::SetMirrorScreenVisibleRect(ScreenId id, const Rect& mainScreenRect)
 {
     if (screenManager_ == nullptr) {
