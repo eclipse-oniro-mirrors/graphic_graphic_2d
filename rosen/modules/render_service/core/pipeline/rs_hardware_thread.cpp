@@ -202,8 +202,9 @@ void RSHardwareThread::CommitAndReleaseLayers(OutputPtr output, const std::vecto
 #endif
         int64_t startTime = GetCurTimeCount();
         std::string surfaceName = GetSurfaceNameInLayers(layers);
+        RS_LOGI_LIMIT("RSHardwareThread::CommitAndReleaseLayers task execute, %{public}s", surfaceName.c_str());
         if (output == nullptr || hdiBackend_ == nullptr) {
-            RS_LOGI("RSHardwareThread::CommitAndReleaseLayers %{public}s", surfaceName.c_str());
+            RS_LOGI("RSHardwareThread::CommitAndReleaseLayers task return, %{public}s", surfaceName.c_str());
             return;
         }
         int64_t startTimeNs = 0;
