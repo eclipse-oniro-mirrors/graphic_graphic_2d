@@ -1451,14 +1451,14 @@ void RSDisplayRenderNodeDrawable::SetSecurityMask(RSProcessor& processor)
         //Ensure image is centered on the screen.
         if (imageScaleWidth != imageScaleHeight && mainWidth >= mainHeight) {
             auto imageWidth_ = image->GetWidth() * imageScaleHeight;
-            auto halfBoundWidthLeft_ = (mainWidth - imageWidth_ ) / 2;
-            auto halfBoundWidthRight_ = (mainWidth + imageWidth_ ) / 2;
+            auto halfBoundWidthLeft_ = (mainWidth - imageWidth_) / 2;
+            auto halfBoundWidthRight_ = (mainWidth + imageWidth_) / 2;
             dstRect = Drawing::Rect(halfBoundWidthLeft_, 0, halfBoundWidthRight_, mainHeight);
         }
         if (imageScaleWidth != imageScaleHeight && mainWidth < mainHeight) {
             auto imageHeight_ = image->GetHeight() * imageScaleWidth;
-            auto halfBoundHeightLeft_ = (mainHeight - imageHeight_ ) / 2;
-            auto halfBoundHeightRight_ = (mainHeight + imageHeight_ ) / 2;   
+            auto halfBoundHeightLeft_ = (mainHeight - imageHeight_) / 2;
+            auto halfBoundHeightRight_ = (mainHeight + imageHeight_) / 2;
             dstRect = Drawing::Rect(0, halfBoundHeightLeft_, mainWidth, halfBoundHeightRight_);
         }
 
