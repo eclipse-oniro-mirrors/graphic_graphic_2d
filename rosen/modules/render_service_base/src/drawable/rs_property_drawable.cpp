@@ -135,8 +135,7 @@ bool RSClipToBoundsDrawable::OnUpdate(const RSRenderNode& node)
     } else if (!properties.GetCornerRadius().IsZero()) {
         canvas.ClipRoundRect(
             RSPropertyDrawableUtils::RRect2DrawingRRect(properties.GetRRect()), Drawing::ClipOp::INTERSECT, true);
-    } else if (node.GetType() == RSRenderNodeType::SURFACE_NODE && RSSystemProperties::IsPhoneType() &&
-        RSSystemProperties::GetCacheEnabledForRotation()) {
+    } else if (node.GetType() == RSRenderNodeType::SURFACE_NODE && RSSystemProperties::GetCacheEnabledForRotation()) {
         Drawing::Rect rect = RSPropertyDrawableUtils::Rect2DrawingRect(properties.GetBoundsRect());
         Drawing::RectI iRect(0, 0, rect.GetWidth(), rect.GetHeight());
         canvas.ClipIRect(iRect, Drawing::ClipOp::INTERSECT);
