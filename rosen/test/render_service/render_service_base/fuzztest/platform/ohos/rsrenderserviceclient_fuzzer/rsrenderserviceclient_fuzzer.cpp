@@ -1272,6 +1272,46 @@ bool DoRegisterHgmConfigChangeCallback(const uint8_t* data, size_t size)
     client->RegisterHgmRefreshRateModeChangeCallback(callback2);
     HgmRefreshRateUpdateCallback callback3;
     client->RegisterHgmRefreshRateUpdateCallback(callback3);
+    uint32_t dstPid = GetData<uint32_t>();
+    FrameRateLinkerExpectedFpsUpdateCallback callback4;
+    client->RegisterFrameRateLinkerExpetedFpsUpdateCallback(dstPid, callback4);
+
+    return true;
+}
+
+bool DoRegisterFrameRateLinkerExpetedFpsUpdateCallback(const uint8_t* data, size_t size)
+{
+    if (data == nullptr) {
+        return false;
+    }
+
+    // initialize
+    g_data = data;
+    g_size = size;
+    g_pos = 0;
+
+    std::shared_ptr<RSInterfaces> rsInterfaces = std::maked_shared<RSInterfaces>();
+    uint32_t dstPid = Getdata<uint32_t>();
+    FrameRateLinkerExpectedFpsUpdateCallback callback;
+    rsInterfaces->RegisterFrameRateLinkerExpetedFpsUpdateCallback(dstPid, callback);
+
+    return true;
+}
+
+bool DoUnRegisterFrameRateLinkerExpetedFpsUpdateCallback(const uint8_t* data, size_t size)
+{
+    if (data == nullptr) {
+        return false;
+    }
+
+    // initialize
+    g_data = data;
+    g_size = size;
+    g_pos = 0;
+
+    std::shared_ptr<RSInterfaces> rsInterfaces = std::maked_shared<RSInterfaces>();
+    uint32_t dstPid = Getdata<uint32_t>();
+    rsInterfaces->UnRegisterFrameRateLinkerExpetedFpsUpdateCallback(dstPid);
 
     return true;
 }
@@ -2345,6 +2385,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::Rosen::DoRegisterSurfaceOcclusionChangeCallback(data, size);
     OHOS::Rosen::DoRegisterHgmConfigChangeCallback(data, size);
     OHOS::Rosen::DoSetSystemAnimatedScenes(data, size);
+    OHOS::Rosen::DoRegisterFrameRateLinkerExpetedFpsUpdateCallback(data, size);
+    OHOS::Rosen::DoUnRegisterFrameRateLinkerExpetedFpsUpdateCallback(data, size);
     OHOS::Rosen::DoShowWatermark(data, size);
     OHOS::Rosen::DoResizeVirtualScreen(data, size);
     OHOS::Rosen::DoReportJankStats(data, size);
