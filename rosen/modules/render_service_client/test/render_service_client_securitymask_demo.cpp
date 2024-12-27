@@ -50,7 +50,7 @@ int main()
     int32_t ret;
 
     cout << "SecurityMask interface." << endl;
-    cout << "Enter: ";   
+    cout << "Enter: ";
     cin >> open;
     cout << "ScreenId: ";
     cin >> virtualScreenId;

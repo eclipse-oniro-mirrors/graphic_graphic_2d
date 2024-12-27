@@ -1446,6 +1446,16 @@ void RSDisplayRenderNodeDrawable::SetSecurityMask(RSProcessor& processor)
         auto srcRect = Drawing::Rect(0, 0, image->GetWidth(), image->GetHeight());
         auto dstRect = Drawing::Rect(0, 0, mainWidth, mainHeight);
 
+        auto imageScaleWidth = mainWidth / static_cast<float>(image->GetWidth());
+        auto imageScaleHeight = mainHeight / static_cast<float>(image->GetHeight());
+        if (imageScaleWidth != imageScaleHeight && mainWidth >= mainHeight) {
+            auto imageWidth_ = image->GetWidth() * imageScaleHeight;
+            dstRect = Drawing::Rect(mainWidth / 2 - imageWidth_ / 2, 0, mainWidth / 2 + imageWidth_ / 2, mainHeight);
+        } else if (imageScaleWidth != imageScaleHeight && mainWidth < mainHeight) {
+            auto imageHeight_ = image->GetHeight() * imageScaleWidth;
+            dstRect = Drawing::Rect(0, mainHeight / 2 - imageHeight_ / 2, mainWidth, mainHeight / 2 + imageHeight_ / 2);
+        }
+
         Drawing::Brush brush;
         curCanvas_->AttachBrush(brush);
         curCanvas_->DrawImageRect(*image, srcRect, dstRect, Drawing::SamplingOptions(),
