@@ -36,6 +36,7 @@
 #ifdef OHOS_BUILD_ENABLE_MAGICCURSOR
 #include "pipeline/magic_pointer_render/rs_magic_pointer_render_manager.h"
 #endif
+#include "gfx/fps_info/rs_surface_fps_manager.h"
 
 #include "platform/common/rs_log.h"
 #include "platform/ohos/rs_node_stats.h"
@@ -104,7 +105,7 @@ bool RSSurfaceRenderNodeDrawable::CheckDrawAndCacheWindowContent(RSSurfaceRender
     }
     if (uniParams.IsFirstVisitCrossNodeDisplay() &&
         !RSUniRenderThread::IsInCaptureProcess() && !uniParams.HasDisplayHdrOn() &&
-        uniParams.GetCrossNodeOffscreenDebugEnabled() != CrossNodeOffScreenRenderDebugType::DISABLED) {
+        uniParams.GetCrossNodeOffScreenStatus() != CrossNodeOffScreenRenderDebugType::DISABLED) {
         RS_TRACE_NAME_FMT("%s cache cross node[%s]", __func__, GetName().c_str());
         return true;
     }
@@ -139,12 +140,6 @@ void RSSurfaceRenderNodeDrawable::OnGeneralProcess(RSPaintFilterCanvas& canvas,
     if (CheckDrawAndCacheWindowContent(surfaceParams, uniParams)) {
         // 3/4 Draw content and children of this node by the main canvas, and cache
         drawWindowCache_.DrawAndCacheWindowContent(this, canvas, bounds);
-        if (surfaceParams.IsCrossNode() &&
-            uniParams.GetCrossNodeOffscreenDebugEnabled() == CrossNodeOffScreenRenderDebugType::ENABLE_DFX) {
-            // rgba: Alpha 128, green 128, blue 128
-            Drawing::Color color(0, 128, 128, 128);
-            drawWindowCache_.DrawCrossNodeOffscreenDFX(canvas, surfaceParams, uniParams, color);
-        }
     } else {
         // 3. Draw content of this node by the main canvas.
         DrawContent(canvas, bounds);
@@ -157,6 +152,13 @@ void RSSurfaceRenderNodeDrawable::OnGeneralProcess(RSPaintFilterCanvas& canvas,
     DrawForeground(canvas, bounds);
 
     DrawWatermark(canvas, surfaceParams);
+
+    if (surfaceParams.IsCrossNode() &&
+        uniParams.GetCrossNodeOffScreenStatus() == CrossNodeOffScreenRenderDebugType::ENABLE_DFX) {
+        // rgba: Alpha 128, green 128, blue 128
+        Drawing::Color color(0, 128, 128, 128);
+        drawWindowCache_.DrawCrossNodeOffscreenDFX(canvas, surfaceParams, uniParams, color);
+    }
 }
 
 void RSSurfaceRenderNodeDrawable::DrawWatermark(RSPaintFilterCanvas& canvas, const RSSurfaceRenderParams& params)
@@ -841,6 +843,9 @@ void RSSurfaceRenderNodeDrawable::CaptureSurface(RSPaintFilterCanvas& canvas, RS
         surfaceParams.HasProtectedLayer() || surfaceParams.GetHDRPresent() || hasHidePrivacyContent) &&
         DealWithUIFirstCache(canvas, surfaceParams, *uniParams)) {
         surfaceParams.SetHardwareEnabled(hwcEnable);
+        if (RSUniRenderThread::GetCaptureParam().isSingleSurface_) {
+            RS_LOGI("%{public}s DealWithUIFirstCache", __func__);
+        }
         return;
     }
     if (drawWindowCache_.DealWithCachedWindow(this, canvas, surfaceParams, *uniParams)) {
@@ -883,22 +888,17 @@ void RSSurfaceRenderNodeDrawable::CaptureSurface(RSPaintFilterCanvas& canvas, RS
 GraphicColorGamut RSSurfaceRenderNodeDrawable::GetAncestorDisplayColorGamut(const RSSurfaceRenderParams& surfaceParams)
 {
     GraphicColorGamut targetColorGamut = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
-    auto ancestorDrawableMap = surfaceParams.GetAncestorDisplayDrawable();
-    if (ancestorDrawableMap.empty()) {
-        RS_LOGE("ancestorDrawableMap return empty");
+    auto ancestorDrawable = surfaceParams.GetAncestorDisplayDrawable().lock();
+    if (!ancestorDrawable) {
+        RS_LOGE("ancestorDrawable return nullptr");
         return targetColorGamut;
     }
-    auto mainAncestorDrawable = ancestorDrawableMap.begin()->second.lock();
-    if (!mainAncestorDrawable) {
-        RS_LOGE("main ancestor drawable return nullptr");
-        return targetColorGamut;
-    }
-    auto ancestorDisplayDrawable = std::static_pointer_cast<RSDisplayRenderNodeDrawable>(mainAncestorDrawable);
+    auto ancestorDisplayDrawable = std::static_pointer_cast<RSDisplayRenderNodeDrawable>(ancestorDrawable);
     if (!ancestorDisplayDrawable) {
         RS_LOGE("ancestorDisplayDrawable return nullptr");
         return targetColorGamut;
     }
-    auto& ancestorParam = ancestorDisplayDrawable->GetRenderParams();
+    auto& ancestorParam = ancestorDrawable->GetRenderParams();
     if (!ancestorParam) {
         RS_LOGE("ancestorParam return nullptr");
         return targetColorGamut;
@@ -952,6 +952,11 @@ void RSSurfaceRenderNodeDrawable::DealWithSelfDrawingNodeBuffer(
 void RSSurfaceRenderNodeDrawable::ClipHoleForSelfDrawingNode(RSPaintFilterCanvas& canvas,
     RSSurfaceRenderParams& surfaceParams)
 {
+    if (surfaceParams.GetForceDisableClipHoleForDRM()) {
+        RS_LOGD("DMA buffer avoid clippingHole during Attraction effect");
+        RS_OPTIONAL_TRACE_NAME_FMT("DMA buffer avoid clippingHole during Attraction effect [%s] ", name_.c_str());
+        return;
+    }
     RSAutoCanvasRestore arc(&canvas);
     auto bounds = surfaceParams.GetBounds();
     canvas.ClipRect({std::round(bounds.GetLeft()), std::round(bounds.GetTop()),
@@ -982,6 +987,14 @@ void RSSurfaceRenderNodeDrawable::DrawBufferForRotationFixed(RSPaintFilterCanvas
 void RSSurfaceRenderNodeDrawable::DrawSelfDrawingNodeBuffer(
     RSPaintFilterCanvas& canvas, const RSSurfaceRenderParams& surfaceParams, BufferDrawParam& params)
 {
+    uint64_t currentTime = std::chrono::duration_cast<std::chrono::nanoseconds>(
+        std::chrono::steady_clock::now().time_since_epoch()).count();
+    const auto& surfaceFpsManager = RSSurfaceFpsManager::GetInstance();
+    if (params.buffer == nullptr) {
+        RS_LOGE("RSSurfaceRenderNodeDrawable::DrawSelfDrawingNodeBuffer params.buffer is nullptr");
+    } else {
+        surfaceFpsManager.RecordPresentTime(surfaceParams.GetId(), currentTime, params.buffer->GetSeqNum());
+    }
     auto bgColor = surfaceParams.GetBackgroundColor();
     auto renderEngine = RSUniRenderThread::Instance().GetRenderEngine();
     if ((surfaceParams.GetSelfDrawingNodeType() != SelfDrawingNodeType::VIDEO) &&

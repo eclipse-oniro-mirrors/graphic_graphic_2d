@@ -30,9 +30,9 @@
 #include "rs_profiler.h"
 #include "rs_render_service_connection.h"
 #include "vsync_generator.h"
+#include "rs_trace.h"
 
 #include "common/rs_singleton.h"
-#include "graphic_2d_configure.h"
 #include "pipeline/round_corner_display/rs_message_bus.h"
 #ifdef RS_ENABLE_GPU
 #include "pipeline/round_corner_display/rs_rcd_render_manager.h"
@@ -42,6 +42,7 @@
 #include "pipeline/rs_surface_render_node.h"
 #include "pipeline/rs_uni_render_judgement.h"
 #include "system/rs_system_parameters.h"
+#include "gfx/fps_info/rs_surface_fps_manager.h"
 
 #include "text/font_mgr.h"
 
@@ -90,7 +91,6 @@ bool RSRenderService::Init()
         mallopt(M_DELAYED_FREE, M_DELAYED_FREE_ENABLE);
     }
 
-    Graphic2dConfigure::Instance();
     RSMainThread::Instance();
     RSUniRenderJudgement::InitUniRenderConfig();
 #ifdef TP_FEATURE_ENABLE
@@ -367,51 +367,92 @@ void RSRenderService::FPSDUMPProcess(std::unordered_set<std::u16string>& argSets
     std::string& dumpString, const std::u16string& arg) const
 {
     auto iter = argSets.find(arg);
-    if (iter != argSets.end()) {
-        std::string layerArg;
-        argSets.erase(iter);
-        if (!argSets.empty()) {
-            layerArg = std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> {}.to_bytes(*argSets.begin());
-        }
-        auto renderType = RSUniRenderJudgement::GetUniRenderEnabledType();
-        if (renderType == UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL) {
-#ifdef RS_ENABLE_GPU
-            RSHardwareThread::Instance().ScheduleTask(
-                [this, &dumpString, &layerArg]() { return screenManager_->FpsDump(dumpString, layerArg); }).wait();
-#endif
-        } else {
-            mainThread_->ScheduleTask(
-                [this, &dumpString, &layerArg]() { return screenManager_->FpsDump(dumpString, layerArg); }).wait();
-        }
+    if (iter == argSets.end()) {
+        return ;
     }
+    argSets.erase(iter);
+    if (argSets.empty()) {
+        RS_LOGE("RSRenderService::FPSDUMPProcess layer name is not specified");
+        return ;
+    }
+    RS_TRACE_NAME("RSRenderService::FPSDUMPProcess");
+    std::string fpsArg = std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> {}
+        .to_bytes(*argSets.begin());
+    std::unordered_set<std::string> args{"DisplayNode", "composer", "UniRender"};
+    if (args.find(fpsArg) != args.end()) {
+        DumpFps(dumpString, fpsArg);
+    } else {
+        DumpSurfaceNodeFps(dumpString, fpsArg);
+    }
+}
+
+void RSRenderService::DumpFps(std::string& dumpString, std::string& fpsArg) const
+{
+    auto renderType = RSUniRenderJudgement::GetUniRenderEnabledType();
+    if (renderType == UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL) {
+#ifdef RS_ENABLE_GPU
+        RSHardwareThread::Instance().ScheduleTask(
+            [this, &dumpString, &fpsArg]() { return screenManager_->FpsDump(dumpString, fpsArg); }).wait();
+#endif
+    } else {
+        mainThread_->ScheduleTask(
+            [this, &dumpString, &fpsArg]() { return screenManager_->FpsDump(dumpString, fpsArg); }).wait();
+    }
+}
+
+void RSRenderService::DumpSurfaceNodeFps(std::string& dumpString, std::string& fpsArg) const
+{
+    dumpString += "\n-- The recently fps records info of screens:\n";
+    const auto& surfaceFpsManager = RSSurfaceFpsManager::GetInstance();
+    surfaceFpsManager.Dump(dumpString, fpsArg);
 }
 
 void RSRenderService::FPSDUMPClearProcess(std::unordered_set<std::u16string>& argSets,
     std::string& dumpString, const std::u16string& arg) const
 {
     auto iter = argSets.find(arg);
-    if (iter != argSets.end()) {
-        std::string layerArg;
-        argSets.erase(iter);
-        if (!argSets.empty()) {
-            layerArg = std::wstring_convert<
-            std::codecvt_utf8_utf16<char16_t>, char16_t> {}.to_bytes(*argSets.begin());
-        }
-        auto renderType = RSUniRenderJudgement::GetUniRenderEnabledType();
-        if (renderType == UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL) {
-#ifdef RS_ENABLE_GPU
-            RSHardwareThread::Instance().ScheduleTask(
-                [this, &dumpString, &layerArg]() {
-                    return screenManager_->ClearFpsDump(dumpString, layerArg);
-                }).wait();
-#endif
-        } else {
-            mainThread_->ScheduleTask(
-                [this, &dumpString, &layerArg]() {
-                    return screenManager_->ClearFpsDump(dumpString, layerArg);
-                }).wait();
-        }
+    if (iter == argSets.end()) {
+        return ;
     }
+    argSets.erase(iter);
+    if (argSets.empty()) {
+        RS_LOGE("RSRenderService::FPSDUMPClearProcess layer name is not specified");
+        return ;
+    }
+    RS_TRACE_NAME("RSRenderService::FPSDUMPClearProcess");
+    std::string fpsArg = std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> {}
+        .to_bytes(*argSets.begin());
+    std::unordered_set<std::string> args{"DisplayNode", "composer"};
+    if (args.find(fpsArg) != args.end()) {
+        ClearFps(dumpString, fpsArg);
+    } else {
+        ClearSurfaceNodeFps(dumpString, fpsArg);
+    }
+}
+
+void RSRenderService::ClearFps(std::string& dumpString, std::string& fpsArg) const
+{
+    auto renderType = RSUniRenderJudgement::GetUniRenderEnabledType();
+    if (renderType == UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL) {
+#ifdef RS_ENABLE_GPU
+        RSHardwareThread::Instance().ScheduleTask(
+            [this, &dumpString, &fpsArg]() {
+                return screenManager_->ClearFpsDump(dumpString, fpsArg);
+            }).wait();
+#endif
+    } else {
+        mainThread_->ScheduleTask(
+            [this, &dumpString, &fpsArg]() {
+                return screenManager_->ClearFpsDump(dumpString, fpsArg);
+            }).wait();
+    }
+}
+
+void RSRenderService::ClearSurfaceNodeFps(std::string& dumpString, std::string& fpsArg) const
+{
+    dumpString += "\n-- Clear fps records info of screens:\n";
+    const auto& surfaceFpsManager = RSSurfaceFpsManager::GetInstance();
+    surfaceFpsManager.ClearDump(dumpString, fpsArg);
 }
 
 void RSRenderService::DumpRSEvenParam(std::string& dumpString) const

@@ -47,6 +47,24 @@ namespace {
     constexpr int32_t errorVelocity = -1;
     constexpr int32_t strategy3 = 3;
     const std::string testScene = "TestScene";
+    const GraphicIRect rectF {
+        .x = 0,
+        .y = 0,
+        .w = 2232,
+        .h = 1008,
+    };
+    const GraphicIRect rectM {
+        .x = 0,
+        .y = 1136,
+        .w = 2232,
+        .h = 2048,
+    };
+    const GraphicIRect rectG {
+        .x = 0,
+        .y = 0,
+        .w = 2232,
+        .h = 3184,
+    };
 }
 class HgmFrameRateMgrTest : public testing::Test {
 public:
@@ -286,6 +304,11 @@ HWTEST_F(HgmFrameRateMgrTest, MultiThread001, Function | SmallTest | Level1)
             // HandleScreenPowerStatus
             frameRateMgr.HandleScreenPowerStatus(i, ScreenPowerStatus::POWER_STATUS_ON);
             frameRateMgr.HandleScreenPowerStatus(i, ScreenPowerStatus::POWER_STATUS_OFF);
+
+            // HandleScreenRectFrameRate
+            frameRateMgr.HandleScreenRectFrameRate(i, rectF);
+            frameRateMgr.HandleScreenRectFrameRate(i, rectM);
+            frameRateMgr.HandleScreenRectFrameRate(i, rectG);
         }
     });
     sleep(1); // wait for handler task finished
@@ -554,7 +577,8 @@ HWTEST_F(HgmFrameRateMgrTest, HgmRsIdleTimerTest, Function | SmallTest | Level2)
 {
     int32_t interval = 700; // 700ms waiting time
     HgmFrameRateManager mgr;
-    mgr.InitRsIdleTimer();
+    mgr.rsIdleTimer_ = std::make_unique<HgmSimpleTimer>("rs_idle_timer",
+        std::chrono::milliseconds(600), nullptr, nullptr);
     ASSERT_NE(mgr.rsIdleTimer_, nullptr);
     std::this_thread::sleep_for(std::chrono::milliseconds(interval));
     mgr.HandleRsFrame();
@@ -641,36 +665,88 @@ HWTEST_F(HgmFrameRateMgrTest, GetLowBrightVec, Function | SmallTest | Level2)
     std::vector<std::string> screenConfigs = {"LTPO-DEFAULT", "LTPO-internal", "LTPO-external"};
     for (const auto& screenConfig : screenConfigs) {
         auto iter = configData->supportedModeConfigs_.find(screenConfig);
-        if (iter != configData-> supportedModeConfigs_.end()) {
-            auto& supportedModeConfig = iter->second;
-
-            supportedModeConfig.clear();
-            mgr.GetLowBrightVec(configData);
-            ASSERT_EQ(mgr.isAmbientEffect_, false);
-            ASSERT_TRUE(mgr.lowBrightVec_.empty());
-
-            std::vector<uint32_t> expectedLowBrightVec = {30, 60, 90};
-            supportedModeConfig = expectedLowBrightVec;
-            mgr.GetLowBrightVec(configData);
-            ASSERT_EQ(mgr.isAmbientEffect_, true);
-            ASSERT_EQ(mgr.lowBrightVec_, expectedLowBrightVec);
+        if (iter == configData-> supportedModeConfigs_.end()) {
+            continue;
         }
+
+        auto& supportedModeConfig = iter->second;
+        auto vec = supportedModeConfig.find("LowBright");
+
+        if (vec == supportedModeConfig.end()) {
+            continue;
+        }
+
+        supportedModeConfig["LowBright"].clear();
+        mgr.GetLowBrightVec(configData);
+        ASSERT_EQ(mgr.isAmbientEffect_, false);
+        ASSERT_TRUE(mgr.lowBrightVec_.empty());
+
+        std::vector<uint32_t> expectedLowBrightVec = {30, 60, 90};
+        supportedModeConfig["LowBright"] = expectedLowBrightVec;
+        mgr.GetLowBrightVec(configData);
+        ASSERT_EQ(mgr.isAmbientEffect_, true);
+        ASSERT_EQ(mgr.lowBrightVec_, expectedLowBrightVec);
+    }
+}
+
+/**
+ * @tc.name: GetStylusVec
+ * @tc.desc: Verify the result of GetStylusVec
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(HgmFrameRateMgrTest, GetStylusVec, Function | SmallTest | Level2)
+{
+    HgmFrameRateManager mgr;
+    std::shared_ptr<PolicyConfigData> configData = std::make_shared<PolicyConfigData>();
+ 
+    std::vector<std::string> screenConfigs = {"LTPO-DEFAULT", "LTPS-DEFAULT"};
+    for (const auto& screenConfig : screenConfigs) {
+        auto iter = configData->supportedModeConfigs_.find(screenConfig);
+        if (iter == configData-> supportedModeConfigs_.end()) {
+            continue;
+        }
+ 
+        auto& supportedModeConfig = iter->second;
+        auto it = supportedModeConfig.find("StylusPen");
+        if (it == supportedModeConfig.end()) {
+            continue;
+        }
+ 
+        supportedModeConfig["StylusPen"].clear();
+        mgr.GetStylusVec(configData);
+        ASSERT_TRUE(mgr.stylusVec_.empty());
+ 
+        std::vector<uint32_t> expectedVec = {OLED_60_HZ, OLED_120_HZ};
+        supportedModeConfig["StylusPen"] = expectedVec;
+        mgr.GetStylusVec(configData);
+        ASSERT_EQ(mgr.stylusVec_, expectedVec);
     }
 }
 
 /**
  * @tc.name: GetDrawingFrameRate
- * @tc.desc: Verify the result of HandleFrameRateChangeForLTPO
+ * @tc.desc: Verify the result of GetDrawingFrameRate
  * @tc.type: FUNC
  * @tc.require:
  */
 HWTEST_F(HgmFrameRateMgrTest, GetDrawingFrameRate, Function | SmallTest | Level2)
 {
-    HgmFrameRateManager mgr;
-    FrameRateRange finalRange = {OLED_60_HZ, OLED_90_HZ, OLED_60_HZ};
-    mgr.GetDrawingFrameRate(OLED_120_HZ, finalRange);
-    FrameRateRange finalRange2 = {OLED_50_HZ, OLED_80_HZ, OLED_80_HZ};
-    EXPECT_EQ(mgr.GetDrawingFrameRate(OLED_90_HZ, finalRange), OLED_90_HZ);
+    std::vector<std::pair<std::pair<uint32_t, FrameRateRange>, uint32_t>> inputAndOutput = {
+        {{0, {0, 120, 60}}, 0},
+        {{60, {0, 120, 0}}, 0},
+        {{60, {0, 90, 120}}, 60},
+        {{60, {0, 120, 120}}, 60},
+        {{90, {0, 120, 30}}, 30},
+        {{80, {0, 120, 30}}, 40},
+        {{70, {0, 120, 30}}, 35},
+        {{60, {0, 120, 30}}, 30},
+        {{50, {0, 120, 30}}, 50}
+    };
+
+    for (const auto& [input, output] : inputAndOutput) {
+        EXPECT_EQ(HgmFrameRateManager::GetDrawingFrameRate(input.first, input.second), output);
+    }
 }
 
 /**

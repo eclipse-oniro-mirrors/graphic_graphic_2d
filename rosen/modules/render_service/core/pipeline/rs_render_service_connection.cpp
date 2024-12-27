@@ -75,6 +75,7 @@ namespace Rosen {
 namespace {
 constexpr int SLEEP_TIME_US = 1000;
 const std::string REGISTER_NODE = "RegisterNode";
+const std::string APS_SET_VSYNC = "APS_SET_VSYNC";
 }
 // we guarantee that when constructing this object,
 // all these pointers are valid, so will not check them.
@@ -209,6 +210,7 @@ void RSRenderServiceConnection::CleanAll(bool toDelete) noexcept
             connection->mainThread_->UnRegisterOcclusionChangeCallback(connection->remotePid_);
             connection->mainThread_->ClearSurfaceOcclusionChangeCallback(connection->remotePid_);
             connection->mainThread_->UnRegisterUIExtensionCallback(connection->remotePid_);
+            connection->mainThread_->GetRSVsyncRateReduceManager().ClearWindowLinkersMap(connection->remotePid_);
         }).wait();
     RSSurfaceBufferCallbackManager::Instance().UnregisterSurfaceBufferCallback(remotePid_);
     HgmTaskHandleThread::Instance().ScheduleTask([pid = remotePid_] () {
@@ -467,7 +469,8 @@ sptr<IVSyncConnection> RSRenderServiceConnection::CreateVSyncConnection(const st
                 HgmCore::Instance().SetHgmTaskFlag(true);
             }
         };
-        mainThread_->ScheduleTask([weakThis = wptr<RSRenderServiceConnection>(this), id, observer]() {
+        mainThread_->ScheduleTask([weakThis = wptr<RSRenderServiceConnection>(this), id, observer,
+            &windowNodeId]() {
             sptr<RSRenderServiceConnection> connection = weakThis.promote();
             if (connection == nullptr || connection->mainThread_ == nullptr) {
                 return;
@@ -476,6 +479,7 @@ sptr<IVSyncConnection> RSRenderServiceConnection::CreateVSyncConnection(const st
             auto& context = connection->mainThread_->GetContext();
             auto& frameRateLinkerMap = context.GetMutableFrameRateLinkerMap();
             frameRateLinkerMap.RegisterFrameRateLinker(linker);
+            connection->mainThread_->GetRSVsyncRateReduceManager().SetWindowLinkersMap(windowNodeId, id);
         }).wait();
         conn->id_ = id;
         RS_LOGD("CreateVSyncConnection connect id: %{public}" PRIu64, id);
@@ -952,6 +956,7 @@ void RSRenderServiceConnection::DisablePowerOffRenderControl(ScreenId id)
 void RSRenderServiceConnection::SetScreenPowerStatus(ScreenId id, ScreenPowerStatus status)
 {
     if (screenManager_ == nullptr || mainThread_ == nullptr) {
+        RS_LOGE("%{public}s screenManager or mainThread is null, id: %{public}" PRIu64, __func__, id);
         return;
     }
     auto renderType = RSUniRenderJudgement::GetUniRenderEnabledType();
@@ -1941,7 +1946,13 @@ uint32_t RSRenderServiceConnection::SetScreenActiveRect(
         .w = activeRect.w,
         .h = activeRect.h,
     };
-    return screenManager_->SetScreenActiveRect(id, dstActiveRect);
+    auto result = screenManager_->SetScreenActiveRect(id, dstActiveRect);
+    if (result == StatusCode::SUCCESS) {
+        HgmTaskHandleThread::Instance().PostTask([id, dstActiveRect]() {
+            OHOS::Rosen::HgmCore::Instance().NotifyScreenRectFrameRateChange(id, dstActiveRect);
+        });
+    }
+    return result;
 }
 
 int32_t RSRenderServiceConnection::RegisterOcclusionChangeCallback(sptr<RSIOcclusionChangeCallback> callback)
@@ -2158,6 +2169,14 @@ void RSRenderServiceConnection::NotifyRefreshRateEvent(const EventInfo& eventInf
     });
 }
 
+void RSRenderServiceConnection::NotifySoftVsyncEvent(uint32_t pid, uint32_t rateDiscount)
+{
+    if (!appVSyncDistributor_) {
+        return;
+    }
+    appVSyncDistributor_->SetQosVSyncRateByPidPublic(pid, rateDiscount, true);
+}
+
 void RSRenderServiceConnection::NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt)
 {
     auto frameRateMgr = HgmCore::Instance().GetFrameRateMgr();
@@ -2277,11 +2296,6 @@ void RSRenderServiceConnection::SetScreenSwitchStatus(bool flag)
     RS_LOGD("RSRenderServiceConnection::SetScreenSwitchStatus %{public}d", flag);
     RS_TRACE_NAME_FMT("SetScreenSwitchStatus %d", flag);
     RSSystemProperties::SetScreenSwitchStatus(flag);
-}
-
-void RSRenderServiceConnection::SetDefaultDeviceRotationOffset(uint32_t offset)
-{
-    RSSystemProperties::SetDefaultDeviceRotationOffset(offset);
 }
 
 std::vector<ActiveDirtyRegionInfo> RSRenderServiceConnection::GetActiveDirtyRegionInfo()

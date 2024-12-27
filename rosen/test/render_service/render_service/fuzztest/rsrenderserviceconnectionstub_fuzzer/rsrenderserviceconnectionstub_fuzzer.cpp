@@ -2200,33 +2200,6 @@ bool DoNotifyRefreshRateEvent(const uint8_t* data, size_t size)
     return true;
 }
 
-bool DoSetDefaultDeviceRotationOffset(const uint8_t* data, size_t size)
-{
-    if (data == nullptr) {
-        return false;
-    }
-
-    // initialize
-    g_data = data;
-    g_size = size;
-    g_pos = 0;
-
-    MessageParcel dataP;
-    MessageParcel reply;
-    MessageOption option;
-    if (!dataP.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor())) {
-        return false;
-    }
-    uint32_t offset = GetData<uint32_t>();
-    dataP.WriteUint32(offset);
-    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_DEFAULT_DEVICE_ROTATION_OFFSET);
-    if (rsConnStub_ == nullptr) {
-        return false;
-    }
-    rsConnStub_->OnRemoteRequest(code, dataP, reply, option);
-    return true;
-}
-
 bool DoReportJankStats()
 {
     MessageParcel dataP;
@@ -3077,6 +3050,39 @@ bool DoTakeSurfaceCapture(const uint8_t* data, size_t size)
     connectionStub_->OnRemoteRequest(code, dataParcel, replyParcel, option);
     return true;
 }
+
+bool DoNotifySoftVsyncEvent(const uint8_t* data, size_t size)
+{
+    if (data == nullptr) {
+        return false;
+    }
+
+    // initialize
+    g_data = data;
+    g_size = size;
+    g_pos = 0;
+
+    uint32_t code =
+        static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_SOFT_VSYNC_EVENT);
+    auto newPid = getpid();
+
+    sptr<RSIConnectionToken> token_ = new IRemoteStub<RSIConnectionToken>();
+    sptr<RSRenderServiceConnectionStub> connectionStub_ =
+        new RSRenderServiceConnection(newPid, nullptr, nullptr, nullptr, token_->AsObject(), nullptr);
+    
+    MessageOption option;
+    MessageParcel dataParcel;
+    MessageParcel replyParcel;
+
+    uint8_t pid  = GetData<uint32_t>();
+    uint8_t rateDiscount = GetData<uint32_t>();
+    std::vector<uint8_t> subDataVec;
+    subDataVec.push_back(pid);
+    subDataVec.push_back(rateDiscount);
+    dataParcel.WriteBuffer(subDataVec.data(), subDataVec.size());
+    connectionStub_->OnRemoteRequest(code, dataParcel, replyParcel, option);
+    return true;
+}
 } // Rosen
 } // OHOS
 
@@ -3160,7 +3166,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::Rosen::DoNotifyLightFactorStatus(data, size);
     OHOS::Rosen::DoNotifyPackageEvent(data, size);
     OHOS::Rosen::DoNotifyRefreshRateEvent(data, size);
-    OHOS::Rosen::DoSetDefaultDeviceRotationOffset(data, size);
     OHOS::Rosen::DoReportJankStats();
     OHOS::Rosen::DoReportEventResponse();
     OHOS::Rosen::DoReportEventComplete();
@@ -3185,6 +3190,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::Rosen::DoRegisterSurfaceOcclusionChangeCallback();
     OHOS::Rosen::DoUnRegisterSurfaceOcclusionChangeCallback();
     OHOS::Rosen::DoTakeSurfaceCapture(data, size);
+    OHOS::Rosen::DoNotifySoftVsyncEvent(data, size);
 
     return 0;
 }

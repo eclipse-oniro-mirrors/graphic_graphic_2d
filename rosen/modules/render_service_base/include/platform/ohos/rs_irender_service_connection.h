@@ -282,6 +282,8 @@ public:
 
     virtual void NotifyRefreshRateEvent(const EventInfo& eventInfo) = 0;
 
+    virtual void NotifySoftVsyncEvent(uint32_t pid, uint32_t rateDiscount) = 0;
+
     virtual void NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt) = 0;
 
     virtual void NotifyDynamicModeEvent(bool enableDynamicMode) = 0;
@@ -302,8 +304,6 @@ public:
     virtual void SetCacheEnabledForRotation(bool isEnabled) = 0;
 
     virtual void SetScreenSwitchStatus(bool flag) = 0;
-
-    virtual void SetDefaultDeviceRotationOffset(uint32_t offset) = 0;
 
     virtual void SetOnRemoteDiedCallback(const OnRemoteDiedCallback& callback) = 0;
 

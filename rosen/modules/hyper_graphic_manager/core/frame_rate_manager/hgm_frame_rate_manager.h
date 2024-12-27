@@ -147,13 +147,15 @@ public:
     std::string GetCurScreenStrategyId() const { return curScreenStrategyId_; };
     void HandleRefreshRateMode(int32_t refreshRateMode);
     void HandleScreenPowerStatus(ScreenId id, ScreenPowerStatus status);
+    void HandleScreenRectFrameRate(ScreenId id, const GraphicIRect& activeRect);
+
     // called by RSHardwareThread
     void HandleRsFrame();
     void SetShowRefreshRateEnabled(bool enable);
     bool IsLtpo() const { return isLtpo_; };
     bool IsAdaptive() const { return isAdaptive_.load(); };
     void UniProcessDataForLtpo(uint64_t timestamp, std::shared_ptr<RSRenderFrameRateLinker> rsFrameRateLinker,
-        const FrameRateLinkerMap& appFrameRateLinkers);
+        const FrameRateLinkerMap& appFrameRateLinkers, const std::map<uint64_t, int>& vRatesMap);
 
     int32_t GetExpectedFrameRate(const RSPropertyUnit unit, float velocity) const;
     void SetForceUpdateCallback(std::function<void(bool, bool)> forceUpdateCallback)
@@ -200,7 +202,7 @@ private:
     void HandleFrameRateChangeForLTPO(uint64_t timestamp, bool followRs);
     void FrameRateReport();
     uint32_t CalcRefreshRate(const ScreenId id, const FrameRateRange& range) const;
-    uint32_t GetDrawingFrameRate(const uint32_t refreshRate, const FrameRateRange& range);
+    static uint32_t GetDrawingFrameRate(const uint32_t refreshRate, const FrameRateRange& range);
     int32_t GetPreferredFps(const std::string& type, float velocity) const;
     static float PixelToMM(float velocity);
 
@@ -210,8 +212,10 @@ private:
     void HandleGamesEvent(pid_t pid, EventInfo eventInfo);
     void HandleMultiSelfOwnedScreenEvent(pid_t pid, EventInfo eventInfo);
     void HandleTouchTask(pid_t pid, int32_t touchStatus, int32_t touchCnt);
+    void HandleScreenFrameRate(std::string curScreenName);
 
     void GetLowBrightVec(const std::shared_ptr<PolicyConfigData>& configData);
+    void GetStylusVec(const std::shared_ptr<PolicyConfigData>& configData);
     void DeliverRefreshRateVote(const VoteInfo& voteInfo, bool eventStatus);
     void MarkVoteChange(const std::string& voter = "");
     static bool IsCurrentScreenSupportAS();
@@ -233,6 +237,8 @@ private:
         sptr<VSyncController> appController, sptr<VSyncGenerator> vsyncGenerator);
     void InitRsIdleTimer();
     void InitPowerTouchManager();
+    // vrate voting to hgm linkerId means that frameLinkerid, appFrameRate means that vrate
+    void CollectVRateChange(uint64_t linkerId, int& appFrameRate);
 
     std::atomic<uint32_t> currRefreshRate_ = 0;
     uint32_t controllerRate_ = 0;
@@ -250,6 +256,7 @@ private:
     std::shared_ptr<HgmVSyncGeneratorController> controller_ = nullptr;
     std::vector<std::pair<FrameRateLinkerId, uint32_t>> appChangeData_;
     std::vector<uint32_t> lowBrightVec_;
+    std::vector<uint32_t> stylusVec_;
 
     std::function<void(bool, bool)> forceUpdateCallback_ = nullptr;
     HgmSimpleTimer voterLtpoTimer_;
@@ -274,6 +281,7 @@ private:
     bool isLtpo_ = true;
     bool isAmbientSafe_ = false;
     bool isAmbientEffect_ = false;
+    int32_t stylusMode_ = -1;
     int32_t idleFps_ = OLED_60_HZ;
     int32_t minIdleFps_ = OLED_60_HZ;
     // rsIdleTimer_ skip rsFrame(see in SetShowRefreshRateEnabled), default value is 1 while ShowRefreshRate disabled
@@ -304,6 +312,8 @@ private:
     std::atomic<uint64_t> timestamp_ = 0;
     std::shared_ptr<RSRenderFrameRateLinker> rsFrameRateLinker_ = nullptr;
     FrameRateLinkerMap appFrameRateLinkers_;
+    // linkerid is key, vrate is value
+    std::map<uint64_t, int> vRatesMap_;
 };
 } // namespace Rosen
 } // namespace OHOS

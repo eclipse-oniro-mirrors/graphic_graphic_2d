@@ -72,6 +72,8 @@ constexpr int32_t CAPTURE_WINDOW = 2; // To be deleted after captureWindow being
 constexpr int64_t MAX_JITTER_NS = 2000000; // 2ms
 constexpr const float HALF = 2.0f;
 constexpr const float LITTLE_SCREEN_SCALE = 0.6f;
+constexpr char FOLDSCREEN_TYPE_SMALL_FOLD = '2';
+const std::string FOLDSCREEN_TYPE_KEY = "const.window.foldscreen.type";
 static std::once_flag g_initTranslateForWallpaperFlag;
 
 std::string RectVectorToString(std::vector<RectI>& regionRects)
@@ -126,6 +128,7 @@ void DoScreenRcdTask(NodeId id, std::shared_ptr<RSProcessor>& processor, std::un
 }
 
 RSDisplayRenderNodeDrawable::Registrar RSDisplayRenderNodeDrawable::instance_;
+std::shared_ptr<Drawing::RuntimeEffect> RSDisplayRenderNodeDrawable::brightnessAdjustmentShaderEffect_ = nullptr;
 
 RSDisplayRenderNodeDrawable::RSDisplayRenderNodeDrawable(std::shared_ptr<const RSRenderNode>&& node)
     : RSRenderNodeDrawable(std::move(node)), surfaceHandler_(std::make_shared<RSSurfaceHandler>(nodeId_)),
@@ -381,7 +384,9 @@ void RSDisplayRenderNodeDrawable::RenderOverDraw()
 bool RSDisplayRenderNodeDrawable::CheckDisplayNodeSkip(
     RSDisplayRenderParams& params, std::shared_ptr<RSProcessor> processor)
 {
-    if (params.HasChildCrossNode() && !params.IsMirrorScreen()) {
+    auto& uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
+    if (params.HasChildCrossNode() && !params.IsMirrorScreen() &&
+        uniParam->GetCrossNodeOffScreenStatus() != CrossNodeOffScreenRenderDebugType::DISABLED) {
         return false;
     }
     if (GetSyncDirtyManager()->IsCurrentFrameDirty() ||
@@ -556,8 +561,9 @@ void RSDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
 
     // [Attention] do not return before layer created set false, otherwise will result in buffer not released
     auto& hardwareDrawables = uniParam->GetHardwareEnabledTypeDrawables();
-    for (const auto& [_, drawable] : hardwareDrawables) {
-        if (UNLIKELY(!drawable || !drawable->GetRenderParams())) {
+    for (const auto& [displayNodeId, drawable] : hardwareDrawables) {
+        if (UNLIKELY(!drawable || !drawable->GetRenderParams()) ||
+            displayNodeId != params->GetId()) {
             continue;
         }
         drawable->GetRenderParams()->SetLayerCreated(false);
@@ -601,7 +607,9 @@ void RSDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     RS_LOGD("RSDisplayRenderNodeDrawable::OnDraw curScreenId=[%{public}" PRIu64 "], "
         "offsetX=%{public}d, offsetY=%{public}d", paramScreenId, offsetX_, offsetY_);
 
-    if (RSSystemProperties::IsFoldScreenFlag() && paramScreenId == 0) {
+    static std::string foldScreenType = system::GetParameter(FOLDSCREEN_TYPE_KEY, "0,0,0,0");
+    if (RSSystemProperties::IsFoldScreenFlag() && foldScreenType[0] != FOLDSCREEN_TYPE_SMALL_FOLD &&
+        paramScreenId == 0) {
         screenRotation = static_cast<ScreenRotation>((static_cast<int>(screenRotation) + 1) % ROTATION_NUM);
     }
     RSPointLightManager::Instance()->SetScreenRotation(screenRotation);
@@ -1760,9 +1768,14 @@ void RSDisplayRenderNodeDrawable::ClearTransparentBeforeSaveLayer()
     RS_TRACE_NAME("ClearTransparentBeforeSaveLayer");
     auto& hardwareDrawables =
         RSUniRenderThread::Instance().GetRSRenderThreadParams()->GetHardwareEnabledTypeDrawables();
-    for (const auto& [_, drawable] : hardwareDrawables) {
+    if (UNLIKELY(!renderParams_)) {
+        RS_LOGE("RSDisplayRenderNodeDrawable::OnDraw renderParams is null!");
+        return;
+    }
+    auto params = static_cast<RSDisplayRenderParams*>(renderParams_.get());
+    for (const auto& [displayNodeId, drawable] : hardwareDrawables) {
         auto surfaceDrawable = static_cast<RSSurfaceRenderNodeDrawable*>(drawable.get());
-        if (!surfaceDrawable) {
+        if (!surfaceDrawable || displayNodeId != params->GetId()) {
             continue;
         }
         auto surfaceParams = static_cast<RSSurfaceRenderParams*>(drawable->GetRenderParams().get());
@@ -1818,6 +1831,11 @@ void RSDisplayRenderNodeDrawable::PrepareOffscreenRender(const RSDisplayRenderNo
         } else {
             maxRenderSize =
                 static_cast<int32_t>(std::max(params->GetScreenInfo().width, params->GetScreenInfo().height));
+            if (offscreenSurface_ != nullptr
+                && maxRenderSize != std::max(offscreenSurface_->Width(), offscreenSurface_->Height())) {
+                RS_TRACE_NAME("offscreen surface's max size has changed");
+                offscreenSurface_ = nullptr;
+            }
         }
         offscreenWidth = maxRenderSize;
         offscreenHeight = maxRenderSize;
@@ -1884,8 +1902,38 @@ void RSDisplayRenderNodeDrawable::PrepareOffscreenRender(const RSDisplayRenderNo
     canvasBackup_ = std::exchange(curCanvas_, offscreenCanvas);
 }
 
-void RSDisplayRenderNodeDrawable::FinishOffscreenRender(const Drawing::SamplingOptions& sampling,
-    float hdrBrightnessRatio)
+std::shared_ptr<Drawing::ShaderEffect> RSDisplayRenderNodeDrawable::MakeBrightnessAdjustmentShader(
+    const std::shared_ptr<Drawing::Image>& image, const Drawing::SamplingOptions& sampling, float hdrBrightnessRatio)
+{
+    static const std::string shaderString(R"(
+        uniform shader imageInput;
+        uniform float ratio;
+        half4 main(float2 xy) {
+            half4 c = imageInput.eval(xy);
+            return half4(c.rgb * ratio, c.a);
+        }
+    )");
+    if (brightnessAdjustmentShaderEffect_ == nullptr) {
+        brightnessAdjustmentShaderEffect_ = Drawing::RuntimeEffect::CreateForShader(shaderString);
+        if (brightnessAdjustmentShaderEffect_ == nullptr) {
+            ROSEN_LOGE("RSDisplayRenderNodeDrawable::MakeBrightnessAdjustmentShaderBuilder effect is null");
+            return nullptr;
+        }
+    }
+
+    auto builder = std::make_shared<Drawing::RuntimeShaderBuilder>(brightnessAdjustmentShaderEffect_);
+    if (!builder) {
+        ROSEN_LOGE("RSDisplayRenderNodeDrawable::MakeBrightnessAdjustmentShaderBuilder builder is null");
+        return nullptr;
+    }
+    builder->SetChild("imageInput", Drawing::ShaderEffect::CreateImageShader(*image, Drawing::TileMode::CLAMP,
+        Drawing::TileMode::CLAMP, sampling, Drawing::Matrix()));
+    builder->SetUniform("ratio", hdrBrightnessRatio);
+    return builder->MakeShader(nullptr, false);
+}
+
+void RSDisplayRenderNodeDrawable::FinishOffscreenRender(
+    const Drawing::SamplingOptions& sampling, float hdrBrightnessRatio)
 {
     if (canvasBackup_ == nullptr) {
         RS_LOGE("RSDisplayRenderNodeDrawable::FinishOffscreenRender, canvasBackup_ is nullptr");
@@ -1902,16 +1950,33 @@ void RSDisplayRenderNodeDrawable::FinishOffscreenRender(const Drawing::SamplingO
     }
     // draw offscreen surface to current canvas
     Drawing::Brush paint;
+    bool isUseCustomShader = false;
     if (ROSEN_LNE(hdrBrightnessRatio, 1.0f)) {
-        FinishHdrDraw(paint, hdrBrightnessRatio);
+        auto shader = MakeBrightnessAdjustmentShader(image, sampling, hdrBrightnessRatio);
+        if (shader) {
+            paint.SetShaderEffect(shader);
+            isUseCustomShader = true;
+        } else {
+            FinishHdrDraw(paint, hdrBrightnessRatio);
+        }
     }
     paint.SetAntiAlias(true);
     canvasBackup_->AttachBrush(paint);
     if (RSSystemProperties::GetCacheOptimizeRotateEnable()) {
-        canvasBackup_->DrawImage(*image, -offscreenTranslateX_, -offscreenTranslateY_, sampling);
+        if (isUseCustomShader) {
+            Drawing::Rect imageRect { 0., 0., image->GetImageInfo().GetWidth(), image->GetImageInfo().GetHeight() };
+            imageRect.Offset(-offscreenTranslateX_, -offscreenTranslateY_);
+            canvasBackup_->DrawRect(imageRect);
+        } else {
+            canvasBackup_->DrawImage(*image, -offscreenTranslateX_, -offscreenTranslateY_, sampling);
+        }
         canvasBackup_->Translate(offscreenTranslateX_, offscreenTranslateY_);
     } else {
-        canvasBackup_->DrawImage(*image, 0, 0, sampling);
+        if (isUseCustomShader) {
+            canvasBackup_->DrawRect({ 0., 0., image->GetImageInfo().GetWidth(), image->GetImageInfo().GetHeight() });
+        } else {
+            canvasBackup_->DrawImage(*image, 0, 0, sampling);
+        }
     }
     canvasBackup_->DetachBrush();
     // restore current canvas and cleanup

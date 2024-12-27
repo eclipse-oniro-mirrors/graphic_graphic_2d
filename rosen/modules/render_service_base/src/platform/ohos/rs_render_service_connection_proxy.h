@@ -257,6 +257,8 @@ public:
 
     void NotifyRefreshRateEvent(const EventInfo& eventInfo) override;
 
+    void NotifySoftVsyncEvent(uint32_t pid, uint32_t rateDiscount) override;
+
     void NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt) override;
 
     void NotifyDynamicModeEvent(bool enableDynamicMode) override;
@@ -277,8 +279,6 @@ public:
     void SetCacheEnabledForRotation(bool isEnabled) override;
 
     void SetScreenSwitchStatus(bool flag) override;
-
-    void SetDefaultDeviceRotationOffset(uint32_t offset) override;
 
     void SetOnRemoteDiedCallback(const OnRemoteDiedCallback& callback) override;
 

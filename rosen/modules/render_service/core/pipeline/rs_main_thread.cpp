@@ -75,6 +75,9 @@
 #include "pipeline/rs_surface_render_node.h"
 #include "pipeline/rs_task_dispatcher.h"
 #include "pipeline/rs_unmarshal_thread.h"
+#ifdef RS_ENABLE_VK
+#include "pipeline/rs_vk_pipeline_config.h"
+#endif
 #include "pipeline/rs_render_node_gc.h"
 #include "pipeline/rs_uifirst_manager.h"
 #include "pipeline/sk_resource_manager.h"
@@ -461,6 +464,15 @@ void RSMainThread::Init()
         RSTypefaceCache::Instance().HandleDelayDestroyQueue();
 #if defined(RS_ENABLE_CHIPSET_VSYNC)
         ConnectChipsetVsyncSer();
+#endif
+#ifdef RS_ENABLE_VK
+        if (needCreateVkPipeline_) {
+            needCreateVkPipeline_ = false;
+            RSBackgroundThread::Instance().PostTask([]() {
+                Rosen::RDC::RDCConfig rdcConfig;
+                rdcConfig.LoadAndAnalyze(std::string(Rosen::RDC::CONFIG_XML_FILE));
+            });
+        }
 #endif
         RS_PROFILER_ON_FRAME_END();
     };
@@ -1387,14 +1399,6 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
         if (surfaceNode->GetName().find(CAPTURE_WINDOW_NAME) != std::string::npos) {
             surfaceNode->SetContentDirty(); // screen recording capsule force mark dirty
         }
-        if (surfaceNode->NeedUpdateDrawableBehindWindow()) {
-            RS_LOGD("RSMainThread::ConsumeAndUpdateAllNodes NeedRequestNextVsyncDrawBehindWindow");
-            RS_OPTIONAL_TRACE_NAME_FMT("RSMainThread::ConsumeAndUpdateAllNodes NeedRequestNextVsyncDrawBehindWindow");
-            surfaceNode->AddDirtyType(RSModifierType::BACKGROUND_BLUR_RADIUS);
-            surfaceNode->SetContentDirty();
-            surfaceNode->SetDoDirectComposition(false);
-            surfaceNode->SetOldNeedDrawBehindWindow(surfaceNode->NeedDrawBehindWindow());
-        }
         if (surfaceNode->IsHardwareEnabledType()
             && CheckSubThreadNodeStatusIsDoing(surfaceNode->GetInstanceRootNodeId())) {
             RS_LOGD("SubThread is processing %{public}s, skip acquire buffer", surfaceNode->GetName().c_str());
@@ -1926,14 +1930,18 @@ void RSMainThread::ProcessHgmFrameRate(uint64_t timestamp)
     }
 
     bool needRefresh = frameRateMgr->UpdateUIFrameworkDirtyNodes(GetContext().GetUiFrameworkDirtyNodes(), timestamp_);
-    if (!HgmCore::Instance().SetHgmTaskFlag(false) &&
+    bool setHgmTaskFlag = HgmCore::Instance().SetHgmTaskFlag(false);
+    bool vrateStatusChange = rsVsyncRateReduceManager_.SetVSyncRatesChangeStatus(false);
+
+    if (!vrateStatusChange && !setHgmTaskFlag &&
         HgmCore::Instance().GetPendingScreenRefreshRate() == frameRateMgr->GetCurrRefreshRate() &&
         !needRefresh) {
         return;
     }
 
     HgmTaskHandleThread::Instance().PostTask([timestamp, rsFrameRateLinker = rsFrameRateLinker_,
-                                        appFrameRateLinkers = GetContext().GetFrameRateLinkerMap().Get()] () mutable {
+                                        appFrameRateLinkers = GetContext().GetFrameRateLinkerMap().Get(),
+                                        linkers = rsVsyncRateReduceManager_.GetVrateMap() ]() mutable {
         RS_TRACE_NAME("ProcessHgmFrameRate");
         auto frameRateMgr = HgmCore::Instance().GetFrameRateMgr();
         if (frameRateMgr == nullptr) {
@@ -1941,7 +1949,7 @@ void RSMainThread::ProcessHgmFrameRate(uint64_t timestamp)
         }
         // hgm warning: use IsLtpo instead after GetDisplaySupportedModes ready
         if (frameRateMgr->GetCurScreenStrategyId().find("LTPO") != std::string::npos) {
-            frameRateMgr->UniProcessDataForLtpo(timestamp, rsFrameRateLinker, appFrameRateLinkers);
+            frameRateMgr->UniProcessDataForLtpo(timestamp, rsFrameRateLinker, appFrameRateLinkers, linkers);
         }
     });
 }
@@ -4022,7 +4030,7 @@ bool RSMainThread::IsOcclusionNodesNeedSync(NodeId id, bool useCurWindow)
         }
     }
 
-    if (nodePtr->GetIsFullChildrenListValid() == false) {
+    if (nodePtr->GetIsFullChildrenListValid() == false || !nodePtr->IsOnTheTree()) {
         nodePtr->PrepareSelfNodeForApplyModifiers();
         return true;
     }
