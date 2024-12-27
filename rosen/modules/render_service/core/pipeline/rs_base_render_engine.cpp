@@ -657,6 +657,12 @@ std::shared_ptr<Drawing::ColorSpace> RSBaseRenderEngine::ConvertColorGamutToDraw
 std::shared_ptr<Drawing::Image> RSBaseRenderEngine::CreateImageFromBuffer(RSPaintFilterCanvas& canvas,
     BufferDrawParam& params, VideoInfo& videoInfo)
 {
+    std::shared_ptr<Drawing::AutoCanvasRestore> acr = nullptr;
+    if (params.preRotation) {
+        acr = std::make_shared<Drawing::AutoCanvasRestore>(canvas, true);
+        canvas.ResetMatrix;
+    }
+
     auto image = std::make_shared<Drawing::Image>();
     if (!RSBaseRenderUtil::IsBufferValid(params.buffer)) {
         RS_LOGE("RSBaseRenderEngine::CreateImageFromBuffer invalid buffer!");
@@ -766,7 +772,7 @@ void RSBaseRenderEngine::DrawImage(RSPaintFilterCanvas& canvas, BufferDrawParam&
         return;
     }
 
-    if (inClrInfo.primaries == outClrInfo.primaries && inClrInfo.transfunc == outClrInfo.transfunc) {
+    if (inClrInfo.primaries == outClrInfo.primaries && inClrInfo.transfunc == outClrInfo.transfunc && !canvas.GetHdrOn()) {
         RS_LOGD("RSBaseRenderEngine::DrawImage primaries and transfunc equal.");
         DrawImageRect(canvas, image, params, samplingOptions);
         return;
