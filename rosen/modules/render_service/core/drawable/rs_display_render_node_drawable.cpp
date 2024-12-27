@@ -1450,10 +1450,14 @@ void RSDisplayRenderNodeDrawable::SetSecurityMask(RSProcessor& processor)
         auto imageScaleHeight = mainHeight / static_cast<float>(image->GetHeight());
         if (imageScaleWidth != imageScaleHeight && mainWidth >= mainHeight) {
             auto imageWidth_ = image->GetWidth() * imageScaleHeight;
-            dstRect = Drawing::Rect(mainWidth / 2 - imageWidth_ / 2, 0, mainWidth / 2 + imageWidth_ / 2, mainHeight);
+            auto halfBoundWidthLeft_ = (mainWidth - imageWidth_ ) / 2;
+            auto halfBoundWidthRight_ = (mainWidth + imageWidth_ ) / 2;
+            dstRect = Drawing::Rect(halfBoundWidthLeft_, 0, halfBoundWidthRight_, mainHeight);
         } else if (imageScaleWidth != imageScaleHeight && mainWidth < mainHeight) {
+            auto halfBoundHeightLeft_ = (mainHeight - imageHeight_ ) / 2;
+            auto halfBoundHeightRight_ = (mainHeight + imageHeight_ ) / 2;   
             auto imageHeight_ = image->GetHeight() * imageScaleWidth;
-            dstRect = Drawing::Rect(0, mainHeight / 2 - imageHeight_ / 2, mainWidth, mainHeight / 2 + imageHeight_ / 2);
+            dstRect = Drawing::Rect(0, halfBoundHeightLeft_, mainWidth, halfBoundHeightRight_);
         }
 
         Drawing::Brush brush;
