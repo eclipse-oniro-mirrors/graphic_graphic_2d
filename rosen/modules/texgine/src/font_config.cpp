@@ -34,6 +34,7 @@ namespace Rosen {
 namespace TextEngine {
 #define SUCCESSED 0
 #define FAILED 1
+#define GENERIC_FONT 0
 
 const char* FONT_DEFAULT_CONFIG = "/system/etc/fontconfig_ohos.json";
 const char* FONT_FILE_MAP_CONFIG = "/system/etc/font_file_map.json";
@@ -92,11 +93,11 @@ cJSON* FontConfig::CheckConfigFile(const char* fname) const
 {
     int size = 0;
     char* data = GetFileData(fname, size);
-    cJSON_Minify(data);
     if (data == nullptr) {
         TEXT_LOGE("Data is NULL");
         return nullptr;
     }
+    cJSON_Minify(data);
     cJSON* res = cJSON_Parse(data);
     free(data);
     return res;
@@ -113,7 +114,7 @@ int FontConfig::ParseFont(const cJSON* root)
     int size = cJSON_GetArraySize(filters);
     for (int i = 0; i < size;i++) {
         cJSON* item = cJSON_GetArrayItem(filters, i);
-        if (item != nullptr && cJSON_IsString(item)) {
+        if (cJSON_IsString(item)) {
             fontSet_.emplace_back(rootPath_ + std::string(item->valuestring));
         }
     }
@@ -198,11 +199,11 @@ int FontConfigJson::ParseFontFileMap(const char* fname)
 
 void FontConfigJson::EmplaceFontJson(const FontJson& fontJson)
 {
-    if (!fontPtr) {
+    if (fontPtr != nullptr) {
         return;
     }
 
-    if (fontJson.type == 0) {
+    if (fontJson.type == GENERIC_FONT) {
         auto exist = indexMap->find(fontJson.family);
         if (exist == indexMap->end()) {
             (*indexMap)[fontJson.family] = fontPtr->genericSet.size();
@@ -223,7 +224,7 @@ void FontConfigJson::EmplaceFontJson(const FontJson& fontJson)
 
 int FontConfigJson::ParseDir(const cJSON* root)
 {
-    if (!fontPtr) {
+    if (fontPtr == nullptr) {
         return FAILED;
     }
     int size = cJSON_GetArraySize(root);
@@ -264,11 +265,11 @@ int FontConfigJson::ParseFonts(const cJSON* root)
         TEXT_LOGE("Failed to parse fonts");
         return FAILED;
     }
-    if (root != nullptr && cJSON_IsArray(root)) {
+    if (cJSON_IsArray(root)) {
         int fontsSize = cJSON_GetArraySize(root);
         for (int i = 0; i < fontsSize; i++) {
             cJSON* item = cJSON_GetArrayItem(root, i);
-            if (item != nullptr && cJSON_IsObject(item)) {
+            if (cJSON_IsObject(item)) {
                 AnalyseFont(item);
             }
         }
