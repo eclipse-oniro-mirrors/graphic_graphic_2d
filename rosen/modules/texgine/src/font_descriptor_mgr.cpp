@@ -77,9 +77,7 @@ bool FontDescriptorMgr::AdjustSystemFontTypeNotCustomized(uint32_t fontType)
 void FontDescriptorMgr::MatchFontDescriptors(FontDescSharedPtr desc, std::set<FontDescSharedPtr>& descs)
 {
     std::unique_lock<std::mutex> guard(parserMtx_);
-    if (!hasParseAllFont) {   
-        ParseAllFontSource();
-    }
+    ParseAllFontSource();
     descCache_.MatchFromFontDescriptor(desc, descs);
 }
 
