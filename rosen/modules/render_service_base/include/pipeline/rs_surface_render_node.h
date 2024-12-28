@@ -1337,6 +1337,8 @@ public:
         isHwcPendingDisabled_ = isHwcPendingDisabled;
     }
 
+    void ResetIsBufferFlushed();
+
 protected:
     void OnSync() override;
 
