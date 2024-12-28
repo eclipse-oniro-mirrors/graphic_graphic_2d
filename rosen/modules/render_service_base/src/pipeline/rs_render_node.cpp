@@ -52,6 +52,7 @@
 #include "transaction/rs_transaction_proxy.h"
 #include "visitor/rs_node_visitor.h"
 #include "rs_profiler.h"
+#include "pipeline/rs_render_node_gc.h"
 
 #ifdef RS_ENABLE_VK
 #include "include/gpu/GrBackendSurface.h"
@@ -1577,6 +1578,9 @@ bool RSRenderNode::UpdateDrawRectAndDirtyRegion(RSDirtyRegionManager& dirtyManag
     // 2. update geoMatrix by parent for dirty collection
     // update geoMatrix and accumGeoDirty if needed
     auto parent = GetParent().lock();
+    if (!curCloneNodeParent_.expired() && curCloneNodeParent_.lock()) {
+        parent = curCloneNodeParent_.lock();
+    }
     if (parent && parent->GetGeoUpdateDelay()) {
         accumGeoDirty = true;
         // Set geometry update delay flag recursively to update node's old dirty in subTree
@@ -1624,6 +1628,9 @@ void RSRenderNode::UpdateDrawRect(
     bool& accumGeoDirty, const RectI& clipRect, const Drawing::Matrix& parentSurfaceMatrix)
 {
     auto parent = GetParent().lock();
+    if (!curCloneNodeParent_.expired() && curCloneNodeParent_.lock()) {
+        parent = curCloneNodeParent_.lock();
+    }
     auto& properties = GetMutableRenderProperties();
     if (auto sandbox = properties.GetSandBox(); sandbox.has_value() && sharedTransitionParam_) {
         // case a. use parent sur_face matrix with sandbox
@@ -2951,7 +2958,7 @@ void RSRenderNode::UpdateShouldPaint()
     // Besides, if one node has sharedTransitionParam, it should be painted no matter what alpha it has.
     shouldPaint_ = ((ROSEN_GNE(GetRenderProperties().GetAlpha(), 0.0f)) &&
                    (GetRenderProperties().GetVisible() || HasDisappearingTransition(false))) ||
-                   sharedTransitionParam_;
+                   sharedTransitionParam_ || IsCrossCloneNode();
     if (!shouldPaint_ && HasBlurFilter()) { // force clear blur cache
         RS_OPTIONAL_TRACE_NAME_FMT("node[%llu] is invisible", GetId());
         MarkForceClearFilterCacheWithInvisible();
@@ -4385,6 +4392,10 @@ void RSRenderNode::UpdateRenderParams()
     stagingRenderParams_->SetEffectNodeShouldPaint(EffectNodeShouldPaint());
     stagingRenderParams_->SetHasGlobalCorner(!globalCornerRadius_.IsZero());
     stagingRenderParams_->SetFirstLevelCrossNode(isFirstLevelCrossNode_);
+    auto cloneSourceNode = GetSourceCrossNode().lock();
+    if (cloneSourceNode) {
+        stagingRenderParams_->SetCloneSourceDrawable(cloneSourceNode->GetRenderDrawable());
+    }
 #endif
 }
 

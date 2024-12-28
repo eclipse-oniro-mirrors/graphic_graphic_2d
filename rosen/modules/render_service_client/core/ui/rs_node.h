@@ -102,6 +102,10 @@ public:
     void AddCrossScreenChild(SharedPtr child, int index);
     void RemoveCrossScreenChild(SharedPtr child);
 
+    // Only used in PC extend screen
+    void AddCrossScreenChild(SharedPtr child, int index);
+    void RemoveCrossScreenChild(SharedPtr child);
+
     NodeId GetId() const
     {
         return id_;

@@ -115,6 +115,28 @@ public:
         return isCloneCrossNode_;
     }
 
+    // Only used in PC extend screen
+    void AddCrossScreenChild(const SharedPtr& child, NodeId cloneNodeId, int32_t index = -1);
+    void RemoveCrossScreenChild(const SharedPtr& child);
+
+    WeakPtr GetSourceCrossNode() const
+    {
+        return sourceCrossNode_;
+    }
+
+    bool IsCrossCloneNode()
+    {
+        return isCloneCrossNode_;
+    }
+    void SetCurCloneNodeParent(SharedPtr node)
+    {
+        curCloneNodeParent_ = node;
+    }
+    WeakPtr GetCurCloneNodeParent() const
+    {
+        return curCloneNodeParent_;
+    }
+
     virtual void CollectSurface(const std::shared_ptr<RSRenderNode>& node,
                                 std::vector<RSRenderNode::SharedPtr>& vec,
                                 bool isUniRender,
@@ -939,6 +961,7 @@ private:
     bool isCloneCrossNode_ = false;
     WeakPtr sourceCrossNode_;
     std::vector<SharedPtr> cloneCrossNodeVec_;
+    WeakPtr curCloneNodeParent_;
     // shadowRectOffset means offset between shadowRect and absRect of node
     int shadowRectOffsetX_ = 0;
     int shadowRectOffsetY_ = 0;

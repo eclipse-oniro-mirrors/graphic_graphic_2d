@@ -940,6 +940,37 @@ void RSUniRenderVisitor::PrepareForSkippedCrossNode(RSSurfaceRenderNode& node)
     }
 }
 
+bool RSUniRenderVisitor::CheckSkipAndPrepareForCrossNode(RSSurfaceRenderNode& node)
+{
+    RSSurfaceRenderNode::SharedPtr sourceNode = node.GetSourceCrossNode().lock() ?
+            node.GetSourceCrossNode().lock()->ReinterpretCastTo<RSSurfaceRenderNode>() : nullptr;
+    if (node.IsCrossCloneNode()) {
+        if (sourceNode == nullptr) {
+            RS_LOGE("RSUniRenderVisitor::QuickPrepareSurfaceRenderNode source node of clone node %{public}"
+                PRIu64 " is null", node.GetId());
+            return true;
+        }
+    }
+    if (CheckSkipCrossNode(node)) {
+        if (sourceNode != nullptr) {
+            PrepareForSkippedCrossNode(*sourceNode);
+        } else {
+            PrepareForSkippedCrossNode(node);
+        }
+        return true;
+    }
+
+    if (node.IsCrossCloneNode() && curDisplayNode_->IsFirstVisitCrossNodeDisplay()) {
+        isSwitchToSourceCrossNodePrepare_ = true;
+        sourceNode->SetCurCloneNodeParent(node.GetParent().lock());
+        sourceNode->QuickPrepare(shared_from_this());
+        sourceNode->SetCurCloneNodeParent(nullptr);
+        isSwitchToSourceCrossNodePrepare_ = false;
+        return true;
+    }
+    return false;
+}
+
 void RSUniRenderVisitor::QuickPrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
 {
     RS_OPTIONAL_TRACE_NAME_FMT("RSUniRender::QuickPrepare:[%s] nodeId[%" PRIu64 "] pid[%d] nodeType[%u]"
@@ -952,8 +983,7 @@ void RSUniRenderVisitor::QuickPrepareSurfaceRenderNode(RSSurfaceRenderNode& node
 
     // avoid cross node subtree visited twice or more
     UpdateSecuritySkipAndProtectedLayersRecord(node);
-    if (CheckSkipCrossNode(node)) {
-        PrepareForSkippedCrossNode(node);
+    if (CheckSkipAndPrepareForCrossNode(node)) {
         return;
     }
     // 0. init curSurface info and check node info
@@ -1067,7 +1097,7 @@ void RSUniRenderVisitor::PrepareForCrossNode(RSSurfaceRenderNode& node)
 
 bool RSUniRenderVisitor::CheckSkipCrossNode(RSSurfaceRenderNode& node)
 {
-    if (!node.IsCrossNode()) {
+    if (!node.IsCrossNode() || isSwitchToSourceCrossNodePrepare_) {
         return false;
     }
     if (curDisplayNode_ == nullptr) {
@@ -3080,6 +3110,9 @@ void RSUniRenderVisitor::UpdateHwcNodeRectInSkippedSubTree(const RSRenderNode& r
         auto originalMatrix = geoPtr->GetMatrix();
         auto matrix = Drawing::Matrix();
         auto parent = hwcNodePtr->GetParent().lock();
+        if (!hwcNodePtr->GetCurCloneNodeParent().expired() && hwcNodePtr->GetCurCloneNodeParent().lock()) {
+            parent = hwcNodePtr->GetCurCloneNodeParent().lock();
+        }
         bool findInRoot = parent ? parent->GetId() == rootNode.GetId() : false;
         while (parent && parent->GetType() != RSRenderNodeType::DISPLAY_NODE) {
             if (auto opt = RSUniRenderUtil::GetMatrix(parent)) {
@@ -3087,7 +3120,11 @@ void RSUniRenderVisitor::UpdateHwcNodeRectInSkippedSubTree(const RSRenderNode& r
             } else {
                 break;
             }
-            parent = parent->GetParent().lock();
+            if (parent->GetCurCloneNodeParent().expired() && parent->GetCurCloneNodeParent().lock()) {
+                parent = parent->GetCurCloneNodeParent().lock();
+            } else {
+                parent = parent->GetParent().lock();
+            }
             if (!parent) {
                 break;
             }
