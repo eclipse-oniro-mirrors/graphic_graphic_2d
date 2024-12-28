@@ -351,12 +351,8 @@ void RSUniRenderVisitor::UpdateColorSpaceAfterHwcCalc(RSDisplayRenderNode& node)
         if (ancestorDisplayNode != nullptr && node.GetId() == ancestorDisplayNode->GetId()) {
             CheckColorSpaceWithSelfDrawingNode(*selfDrawingNode, colorSpace);
         }
-        if (colorSpace == GRAPHIC_COLOR_GAMUT_DISPLAY_P3) {
-            RS_LOGD("RSUniRenderVisitor::UpdateColorSpaceAfterHwcCalc: newColorSpace is already DISPLAY_P3.");
-            node.SetColorSpace(colorSpace);
-            return;
-        }
     }
+    node.SetColorSpace(colorSpace);
 }
 
 bool IsScreenSupportedWideColorGamut(ScreenId id, const sptr<RSScreenManager>& screenManager)
@@ -403,20 +399,25 @@ void RSUniRenderVisitor::CheckPixelFormatWithSelfDrawingNode(RSSurfaceRenderNode
             node.GetName().c_str());
         return;
     }
-    if (!node.IsHardwareForcedDisabled()) {
-        RS_LOGD("RSUniRenderVisitor::CheckPixelFormatWithSelfDrawingNode node(%{public}s) is hardware-enabled",
-            node.GetName().c_str());
+    if (!curDisplayNode_) {
+        RS_LOGE("RSUniRenderVisitor::CheckPixelFormatWithSelfDrawingNode curDisplayNode is null");
         return;
     }
-    if (!node.GetRSSurfaceHandler() || !node.GetRSSurfaceHandler()->GetBuffer()) {
-        RS_LOGD("RSUniRenderVisitor::CheckPixelFormatWithSelfDrawingNode node(%{public}s) did not have buffer.",
-            node.GetName().c_str());
+    if (!node.GetRSSurfaceHandler()) {
+        RS_LOGD("RSUniRenderVisitor::CheckPixelFormatWithSelfDrawingNode surfaceHandler is null");
         return;
     }
     auto screenId = curDisplayNode_->GetScreenId();
     UpdateSurfaceNodeNit(node.GetRSSurfaceHandler()->GetBuffer(), node, screenId);
     if (node.GetHdrVideo()) {
         curDisplayNode_->SetHdrVideo(true, node.GetHdrVideoType());
+    }
+    if (!node.IsHardwareForcedDisabled()) {
+        RS_LOGD("RSUniRenderVisitor::CheckPixelFormatWithSelfDrawingNode node(%{public}s) is hardware-enabled",
+            node.GetName().c_str());
+        return;
+    }
+    if (node.GetHdrVideo()) {
         SetHDRParam(node, true);
         pixelFormat = GRAPHIC_PIXEL_FMT_RGBA_1010102;
         RS_LOGD("RSUniRenderVisitor::CheckPixelFormatWithSelfDrawingNode HDRService pixelformat is set to 1010102");
@@ -426,10 +427,6 @@ void RSUniRenderVisitor::CheckPixelFormatWithSelfDrawingNode(RSSurfaceRenderNode
 void RSUniRenderVisitor::UpdatePixelFormatAfterHwcCalc(RSDisplayRenderNode& node)
 {
     auto pixelFormat = node.GetPixelFormat();
-    if (pixelFormat == GRAPHIC_PIXEL_FMT_RGBA_1010102) {
-        RS_LOGD("RSUniRenderVisitor::UpdatePixelFormatAfterHwcCalc newPixelFormat is already 1010102.");
-        return;
-    }
     const auto& selfDrawingNodes = RSMainThread::Instance()->GetSelfDrawingNodes();
     for (const auto& selfDrawingNode : selfDrawingNodes) {
         if (!selfDrawingNode) {
@@ -445,12 +442,8 @@ void RSUniRenderVisitor::UpdatePixelFormatAfterHwcCalc(RSDisplayRenderNode& node
         if (ancestorDisplayNode != nullptr && node.GetId() == ancestorDisplayNode->GetId()) {
             CheckPixelFormatWithSelfDrawingNode(*selfDrawingNode, pixelFormat);
         }
-        if (pixelFormat == GRAPHIC_PIXEL_FMT_RGBA_1010102) {
-            RS_LOGD("RSUniRenderVisitor::UpdatePixelFormatAfterHwcCalc newPixelFormat is already 1010102.");
-            node.SetPixelFormat(pixelFormat);
-            return;
-        }
     }
+    node.SetPixelFormat(pixelFormat);
 }
 
 void RSUniRenderVisitor::SetHDRParam(RSSurfaceRenderNode& node, bool flag)
@@ -521,8 +514,9 @@ void RSUniRenderVisitor::HandlePixelFormat(RSDisplayRenderNode& node, const sptr
         auto pixelFormat = node.GetPixelFormat();
         if (screenManager->GetPixelFormat(node.GetScreenId(), pixelFormat) != SUCCESS) {
             RS_LOGD("RSUniRenderVisitor::HandlePixelFormat get screen color gamut failed.");
+        } else {
+            node.SetPixelFormat(pixelFormat);
         }
-        node.SetPixelFormat(pixelFormat);
     }
 }
 
@@ -1444,8 +1438,6 @@ bool RSUniRenderVisitor::InitDisplayInfo(RSDisplayRenderNode& node)
         RS_LOGE("RSUniRenderVisitor::InitDisplayInfo dirtyMgr or node ptr is nullptr");
         return false;
     }
-    curDisplayNode_->SetColorSpace(GRAPHIC_COLOR_GAMUT_SRGB);
-    curDisplayNode_->SetPixelFormat(GRAPHIC_PIXEL_FMT_RGBA_8888);
     curDisplayDirtyManager_->Clear();
     transparentCleanFilter_.clear();
     transparentDirtyFilter_.clear();
@@ -1501,8 +1493,10 @@ bool RSUniRenderVisitor::InitDisplayInfo(RSDisplayRenderNode& node)
             return false;
     }
 
-    // init hdr video status
+    // init hdr and color gamut info
     node.SetHdrVideo(false, HDR_TYPE::VIDEO);
+    node.SetPixelFormat(GraphicPixelFormat::GRAPHIC_PIXEL_FMT_RGBA_8888);
+    node.SetColorSpace(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB);
     return true;
 }
 

@@ -718,6 +718,9 @@ public:
 
     void SetColorSpace(GraphicColorGamut colorSpace);
     GraphicColorGamut GetColorSpace() const;
+    // Only call this if the node is first level node.
+    GraphicColorGamut GetFirstLevelNodeColorGamut() const;
+    void SetFirstLevelNodeColorGamut(bool changeToP3);
 
     // Only call this if the node is self-drawing surface node.
     void UpdateColorSpaceWithMetadata();
@@ -1603,6 +1606,7 @@ private:
     // whether to wait uifirst first frame finished when buffer available callback invoked.
     std::atomic<bool> isWaitUifirstFirstFrame_ = false;
     bool isTargetUIFirstDfxEnabled_ = false;
+    uint32_t wideColorGamutInChildNodeCount_ = 0;
 
     TreeStateChangeCallback treeStateChangeCallback_;
     RSBaseRenderNode::WeakPtr ancestorDisplayNode_;
