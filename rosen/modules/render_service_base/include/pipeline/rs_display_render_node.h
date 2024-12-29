@@ -258,11 +258,6 @@ public:
         return isSecurityExemption_;
     }
 
-    const std::shared_ptr<Media::PixelMap> GetSecurityMaskResource() const
-    {
-        return securityMaskResource_;
-    }
-
     void AddSecurityVisibleLayer(NodeId id)
     {
         securityVisibleLayerList_.emplace_back(id);

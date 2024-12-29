@@ -633,7 +633,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             ScreenId id{INVALID_SCREEN_ID};
             bool enable{false};
             std::shared_ptr<Media::PixelMap> securityMask{nullptr};
-            if (!data.ReadUint64(id)) {
+            if (!data.ReadUint64(id) || !data.ReadBool(enable)) {
                 ret = ERR_INVALID_DATA;
                 break;
             }

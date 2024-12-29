@@ -1193,14 +1193,14 @@ const std::vector<uint64_t>& RSScreen::GetSecurityExemptionList() const
     return securityExemptionList_;
 }
 
-void RSScreen::SetSecurityMaskResource(const std::shared_ptr<Media::PixelMap>& securityMask)
+void RSScreen::SetSecurityMask(const std::shared_ptr<Media::PixelMap>& securityMask)
 {
-    securityMaskResource_ = securityMask;
+    securityMask_ = securityMask;
 }
 
-const std::shared_ptr<Media::PixelMap> RSScreen::GetSecurityMaskResource() const
+const std::shared_ptr<Media::PixelMap> RSScreen::GetSecurityMask() const
 {
-    return securityMaskResource_;
+    return securityMask_;
 }
 
 void RSScreen::SetEnableVisibleRect(bool enable)

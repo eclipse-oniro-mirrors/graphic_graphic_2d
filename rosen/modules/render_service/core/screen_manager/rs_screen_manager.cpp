@@ -1194,7 +1194,7 @@ int32_t RSScreenManager::SetScreenSecurityMask(ScreenId id,
         RS_LOGW("RSScreenManager %{public}s: not virtual screen for id %{public}" PRIu64 ".", __func__, id);
         return INVALID_ARGUMENTS;
     }
-    virtualScreen->second->SetSecurityMaskResource(securityMask);
+    virtualScreen->second->SetSecurityMask(securityMask);
     return SUCCESS;
 }
 
@@ -1211,7 +1211,7 @@ const std::shared_ptr<Media::PixelMap> RSScreenManager::GetScreenSecurityMask(Sc
         RS_LOGW("RSScreenManager %{public}s: Null screen for id %{public}" PRIu64 ".", __func__, id);
         return nullptr;
     }
-    return virtualScreen->second->GetSecurityMaskResource();
+    return virtualScreen->second->GetSecurityMask();
 }
 
 int32_t RSScreenManager::SetMirrorScreenVisibleRect(ScreenId id, const Rect& mainScreenRect)

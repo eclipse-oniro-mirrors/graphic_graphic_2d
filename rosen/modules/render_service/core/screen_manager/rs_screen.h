@@ -125,8 +125,8 @@ public:
     virtual void SetDisplayPropertyForHardCursor() = 0;
     virtual void SetSecurityExemptionList(const std::vector<uint64_t>& securityExemptionList) = 0;
     virtual const std::vector<uint64_t>& GetSecurityExemptionList() const = 0;
-    virtual void SetSecurityMaskResource(const std::shared_ptr<Media::PixelMap>& securityMask) = 0;
-    virtual const std::shared_ptr<Media::PixelMap> GetSecurityMaskResource() const = 0;
+    virtual void SetSecurityMask(const std::shared_ptr<Media::PixelMap>& securityMask) = 0;
+    virtual const std::shared_ptr<Media::PixelMap> GetSecurityMask() const = 0;
     virtual void SetEnableVisibleRect(bool enable) = 0;
     virtual bool GetEnableVisibleRect() const = 0;
     virtual void SetMainScreenVisibleRect(const Rect& mainScreenRect) = 0;
@@ -226,8 +226,8 @@ public:
     void SetDisplayPropertyForHardCursor() override;
     void SetSecurityExemptionList(const std::vector<uint64_t>& securityExemptionList) override;
     const std::vector<uint64_t>& GetSecurityExemptionList() const override;
-    void SetSecurityMaskResource(const std::shared_ptr<Media::PixelMap>& securityMask) override;
-    const std::shared_ptr<Media::PixelMap> GetSecurityMaskResource() const override;
+    void SetSecurityMask(const std::shared_ptr<Media::PixelMap>& securityMask) override;
+    const std::shared_ptr<Media::PixelMap> GetSecurityMask() const override;
     void SetEnableVisibleRect(bool enable) override;
     bool GetEnableVisibleRect() const override;
     void SetMainScreenVisibleRect(const Rect& mainScreenRect) override;
@@ -300,7 +300,7 @@ private:
     std::unordered_set<uint64_t> whiteList_ = {};
     std::unordered_set<uint64_t> blackList_ = {};
     std::vector<uint64_t> securityExemptionList_ = {};
-    std::shared_ptr<Media::PixelMap> securityMaskResource_ = nullptr;
+    std::shared_ptr<Media::PixelMap> securityMask_ = nullptr;
     bool enableVisibleRect_ = false;
     Rect mainScreenVisibleRect_ = {};
     std::atomic<bool> skipWindow_ = false;

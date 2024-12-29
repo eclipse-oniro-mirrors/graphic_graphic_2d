@@ -2107,7 +2107,7 @@ HWTEST_F(RSInterfacesTest, SetScreenSecurityMask_001, Function | SmallTest | Lev
     EXPECT_NE(virtualScreenId, INVALID_SCREEN_ID);
 
     int32_t ret = rsInterfaces->SetScreenSecurityMask(virtualScreenId, nullptr);
-    EXPECT_EQ(ret, RS_CONNECTION_ERROR);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /*
