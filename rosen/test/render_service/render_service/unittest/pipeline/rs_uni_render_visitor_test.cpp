@@ -1626,6 +1626,105 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateChildHwcNodeEnableByHwcNodeBelow, TestSiz
 }
 
 /*
+ * @tc.name: UpdateCornerRadiusInfoForDRM
+ * @tc.desc: Test RSUniRenderVistorTest.UpdateCornerRadiusInfoForDRM
+ * @tc.type: FUNC
+ * @tc.require: issuesIBE1C8
+ */
+HWTEST_F(RSUniRenderVisitorTest, UpdateCornerRadiusInfoForDRM, TestSize.Level2)
+{
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    ASSERT_NE(rsUniRenderVisitor, nullptr);
+    std::vector<RectI> hwcRects;
+
+    rsUniRenderVisitor->UpdateCornerRadiusInfoForDRM(nullptr, hwcRects);
+
+    auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
+    ASSERT_NE(surfaceNode, nullptr);
+    surfaceNode->SetProtectedLayer(true);
+
+    rsUniRenderVisitor->UpdateCornerRadiusInfoForDRM(surfaceNode, hwcRects);
+
+    // register instance root node
+    auto instanceRootNode = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(instanceRootNode, nullptr);
+    auto rsContext = std::make_shared<RSContext>();
+    ASSERT_NE(rsContext, nullptr);
+    auto& nodeMap = rsContext->GetMutableNodeMap();
+    NodeId instanceRootNodeId = instanceRootNode->GetId();
+    pid_t instanceRootNodePid = ExtractPid(instanceRootNodeId);
+    nodeMap.renderNodeMap_[instanceRootNodePid][instanceRootNodeId] = instanceRootNode;
+
+    // create surface node for UpdateCornerRadiusInfoForDRM
+    surfaceNode->context_ = rsContext;
+    surfaceNode->instanceRootNodeId_ = instanceRootNode->GetId();
+    hwcRects.emplace_back(0, 0, 1, 1);
+    rsUniRenderVisitor->UpdateCornerRadiusInfoForDRM(surfaceNode, hwcRects);
+
+    instanceRootNode->absDrawRect_ = {-10, -10, 100, 100};
+    instanceRootNode->SetGlobalCornerRadius({-10, -10, 100, 100});
+    auto surfaceBoundsGeo = surfaceNode->GetRenderProperties().GetBoundsGeometry();
+    surfaceNode->renderContent_->renderProperties_.boundsGeo_ = nullptr;
+    rsUniRenderVisitor->UpdateCornerRadiusInfoForDRM(surfaceNode, hwcRects);
+
+    surfaceNode->renderContent_->renderProperties_.boundsGeo_ = surfaceBoundsGeo;
+    rsUniRenderVisitor->UpdateCornerRadiusInfoForDRM(surfaceNode, hwcRects);
+
+    surfaceNode->GetInstanceRootNode()->renderContent_->renderProperties_.SetBounds({0, 0, 1, 1});
+    Drawing::Matrix matrix = Drawing::Matrix();
+    matrix.SetMatrix(1, 2, 3, 4, 5, 6, 7, 8, 9);
+    surfaceNode->SetTotalMatrix(matrix);
+    surfaceNode->selfDrawRect_ = {0, 0, 1, 1};
+    rsUniRenderVisitor->UpdateCornerRadiusInfoForDRM(surfaceNode, hwcRects);
+}
+
+/*
+ * @tc.name: CheckIfRoundCornerIntersectDRM
+ * @tc.desc: Test CheckIfRoundCornerIntersectDRM
+ * @tc.type: FUNC
+ * @tc.require: issuesIBE1C8
+ */
+HWTEST_F(RSUniRenderVisitorTest, CheckIfRoundCornerIntersectDRM, TestSize.Level2)
+{
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    ASSERT_NE(rsUniRenderVisitor, nullptr);
+
+    auto hwcNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
+    ASSERT_NE(hwcNode, nullptr);
+    auto instanceRootNode = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(instanceRootNode, nullptr);
+    NodeId instanceRootNodeId = instanceRootNode->GetId();
+    pid_t instanceRootNodePid = ExtractPid(instanceRootNodeId);
+    auto rsContext = std::make_shared<RSContext>();
+    ASSERT_NE(rsContext, nullptr);
+    auto& nodeMap = rsContext->GetMutableNodeMap();
+    nodeMap.renderNodeMap_[instanceRootNodePid][instanceRootNodeId] = instanceRootNode;
+    hwcNode->context_ = rsContext;
+    hwcNode->instanceRootNodeId_ = instanceRootNode->GetId();
+    instanceRootNode->absDrawRect_ = {-10, -10, 1000, 1000};
+    instanceRootNode->SetGlobalCornerRadius({-10, -10, 1000, 1000});
+    hwcNode->GetInstanceRootNode()->renderContent_->renderProperties_.SetBounds({0, 0, 1, 1});
+    Drawing::Matrix matrix = Drawing::Matrix();
+    matrix.SetMatrix(1, 2, 3, 4, 5, 6, 7, 8, 9);
+    hwcNode->SetTotalMatrix(matrix);
+    hwcNode->selfDrawRect_ = {0, 0, 1, 1};
+
+    auto instanceNode = hwcNode->GetInstanceRootNode() ?
+        hwcNode->GetInstanceRootNode()->ReinterpretCastTo<RSSurfaceRenderNode>() : nullptr;
+    auto hwcGeo = hwcNode->GetRenderProperties().GetBoundsGeometry();
+    auto instanceAbsRect = instanceNode->GetAbsDrawRect();
+    auto instanceCornerRadius = instanceNode->GetGlobalCornerRadius();
+    std::vector<float> ratioVector = { 0.0f, 0.0f, 0.0f, 0.0f };
+    auto hwcAbsRect = hwcGeo->MapRect(hwcNode->GetSelfDrawRect(), hwcNode->GetTotalMatrix());
+    hwcAbsRect = hwcAbsRect.IntersectRect(instanceAbsRect);
+    auto ratio = static_cast<float>(instanceAbsRect.GetWidth()) /
+        instanceNode->GetRenderProperties().GetBoundsWidth();
+    bool result = rsUniRenderVisitor->CheckIfRoundCornerIntersectDRM(
+        ratio, ratioVector, instanceCornerRadius, instanceAbsRect, hwcAbsRect);
+    ASSERT_TRUE(result);
+}
+
+/*
  * @tc.name: PrepareForUIFirstNode001
  * @tc.desc: Test PrePareForUIFirstNode with last frame uifirst flag is not leash window and hardware enabled
  * @tc.type: FUNC
