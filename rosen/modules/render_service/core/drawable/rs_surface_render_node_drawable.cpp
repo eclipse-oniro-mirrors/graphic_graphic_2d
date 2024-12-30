@@ -560,6 +560,9 @@ void RSSurfaceRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
             SetCacheImageByCapture(nullptr);
         }
         OnGeneralProcess(*curCanvas_, *surfaceParams, *uniParam, isSelfDrawingSurface);
+        RS_LOGI_LIMIT(
+            "RSSurfaceRenderNodeDrawable::OnDraw name:%{public}s, the number of total processedNodes: %{public}d",
+            name_.c_str(), RSRenderNodeDrawable::GetTotalProcessedNodeCount());
     }
 
     if (needOffscreen && canvasBackup_) {
