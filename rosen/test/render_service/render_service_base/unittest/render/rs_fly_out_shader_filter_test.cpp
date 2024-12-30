@@ -1224,7 +1224,8 @@ HWTEST_F(RSFlyOutShaderFilterTest, DrawImageRect208, TestSize.Level1)
     // 1.0f, 1.0f, 2.0f, 2.0f is left top right bottom
     Drawing::Rect src{1.0f, 1.0f, 2.0f, 2.0f};
     Drawing::Rect dst{1.0f, 1.0f, 2.0f, 2.0f};
-    Drawing::ImageInfo imageInfo(1, 1, Drawing::ColorType::COLORTYPE_RGBA_1010102, Drawing::AlphaType::ALPHATYPE_OPAQUE);
+    Drawing::ImageInfo imageInfo(
+        1, 1, Drawing::ColorType::COLORTYPE_RGBA_1010102, Drawing::AlphaType::ALPHATYPE_OPAQUE);
     auto skImageInfo = Drawing::SkiaImageInfo::ConvertToSkImageInfo(imageInfo);
     int addr1 = 1;
     int* addr = &addr1;
@@ -1261,7 +1262,8 @@ HWTEST_F(RSFlyOutShaderFilterTest, DrawImageRect2081, TestSize.Level1)
     // 1.0f, 1.0f, 2.0f, 2.0f is left top right bottom
     Drawing::Rect src{1.0f, 1.0f, 2.0f, 2.0f};
     Drawing::Rect dst{1.0f, 1.0f, 2.0f, 2.0f};
-    Drawing::ImageInfo imageInfo(1, 1, Drawing::ColorType::COLORTYPE_RGBA_1010102, Drawing::AlphaType::ALPHATYPE_UNKNOWN);
+    Drawing::ImageInfo imageInfo(
+        1, 1, Drawing::ColorType::COLORTYPE_RGBA_1010102, Drawing::AlphaType::ALPHATYPE_UNKNOWN);
     auto skImageInfo = Drawing::SkiaImageInfo::ConvertToSkImageInfo(imageInfo);
     int addr1 = 1;
     int *addr = &addr1;
@@ -1298,7 +1300,8 @@ HWTEST_F(RSFlyOutShaderFilterTest, DrawImageRect2082, TestSize.Level1)
     // 1.0f, 1.0f, 2.0f, 2.0f is left top right bottom
     Drawing::Rect src{1.0f, 1.0f, 2.0f, 2.0f};
     Drawing::Rect dst{1.0f, 1.0f, 2.0f, 2.0f};
-    Drawing::ImageInfo imageInfo(1, 1, Drawing::ColorType::COLORTYPE_RGBA_1010102, Drawing::AlphaType::ALPHATYPE_PREMUL);
+    Drawing::ImageInfo imageInfo(
+        1, 1, Drawing::ColorType::COLORTYPE_RGBA_1010102, Drawing::AlphaType::ALPHATYPE_PREMUL);
     auto skImageInfo = Drawing::SkiaImageInfo::ConvertToSkImageInfo(imageInfo);
     int addr1 = 1;
     int *addr = &addr1;
@@ -1335,7 +1338,8 @@ HWTEST_F(RSFlyOutShaderFilterTest, DrawImageRect2083, TestSize.Level1)
     // 1.0f, 1.0f, 2.0f, 2.0f is left top right bottom
     Drawing::Rect src{1.0f, 1.0f, 2.0f, 2.0f};
     Drawing::Rect dst{1.0f, 1.0f, 2.0f, 2.0f};
-    Drawing::ImageInfo imageInfo(1, 1, Drawing::ColorType::COLORTYPE_RGBA_1010102, Drawing::AlphaType::ALPHATYPE_UNPREMUL);
+    Drawing::ImageInfo imageInfo(
+        1, 1, Drawing::ColorType::COLORTYPE_RGBA_1010102, Drawing::AlphaType::ALPHATYPE_UNPREMUL);
     auto skImageInfo = Drawing::SkiaImageInfo::ConvertToSkImageInfo(imageInfo);
     int addr1 = 1;
     int *addr = &addr1;
