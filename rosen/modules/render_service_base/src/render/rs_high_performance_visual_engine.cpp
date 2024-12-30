@@ -32,6 +32,7 @@ void HveFilter::ClearSurfaceNodeInfo()
 
 void HveFilter::PushSurfaceNodeInfo(SurfaceNodeInfo& surfaceNodeInfo)
 {
+    std::lock_guard<std::mutex> lock(hveFilterMtx_);
     surfaceNodeInfo_.push_back(surfaceNodeInfo);
 }
 
@@ -42,13 +43,16 @@ std::vector<SurfaceNodeInfo> HveFilter::GetSurfaceNodeInfo()
 
 int HveFilter::GetSurfaceNodeSize()
 {
+    std::lock_guard<std::mutex> lock(hveFilterMtx_);
     return surfaceNodeInfo_.size();
 }
 
 std::shared_ptr<Drawing::Image> HveFilter::SampleLayer(RSPaintFilterCanvas& canvas, const Drawing::RectI& srcRect)
 {
+    std::lock_guard<std::mutex> lock(hveFilterMtx_);
     auto drawingSurface = canvas.GetSurface();
     if (drawingSurface == nullptr) {
+        ClearSurfaceNodeInfo();
         return nullptr;
     }
     int widthUI = srcRect.GetWidth();
