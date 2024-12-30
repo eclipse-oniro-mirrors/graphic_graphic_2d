@@ -600,7 +600,7 @@ public:
         if (isBufferFlushed_ == isBufferFlushed) {
             return;
         }
-        isBufferFlushed_ == isBufferFlushed;
+        isBufferFlushed_ = isBufferFlushed;
         needSync_ = true;
     }
 
