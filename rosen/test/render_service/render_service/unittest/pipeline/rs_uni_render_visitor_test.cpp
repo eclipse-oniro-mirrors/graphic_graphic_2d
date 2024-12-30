@@ -1256,6 +1256,7 @@ HWTEST_F(RSUniRenderVisitorTest, CheckSkipCrossNodeTest, TestSize.Level1)
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
     ASSERT_NE(rsUniRenderVisitor, nullptr);
     auto surfaceRenderNode = RSSurfaceRenderNode(1);
+    surfaceRenderNode.stagingRenderParams_ = std::make_unique<RSRenderParams>(surfaceRenderNode.GetId());
     RSDisplayNodeConfig config = {};
     rsUniRenderVisitor->curDisplayNode_ = std::make_shared<RSDisplayRenderNode>(2, config);
     rsUniRenderVisitor->CheckSkipCrossNode(surfaceRenderNode);
