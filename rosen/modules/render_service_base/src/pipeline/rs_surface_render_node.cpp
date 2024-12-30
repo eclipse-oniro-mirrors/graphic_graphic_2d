@@ -1252,12 +1252,42 @@ bool RSSurfaceRenderNode::GetHardCursorLastStatus() const
 
 void RSSurfaceRenderNode::SetColorSpace(GraphicColorGamut colorSpace)
 {
+    if (colorSpace_ == colorSpace) {
+        return;
+    }
     colorSpace_ = colorSpace;
+    if (!isOnTheTree_) {
+        return;
+    }
+    auto firstLevelNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(GetFirstLevelNode());
+    if (!firstLevelNode) {
+        RS_LOGE("RSSurfaceRenderNode::SetColorSpace firstLevelNode is nullptr");
+        return;
+    }
+    firstLevelNode->SetFirstLevelNodeColorGamut(colorSpace != GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB);
 }
 
 GraphicColorGamut RSSurfaceRenderNode::GetColorSpace() const
 {
     return colorSpace_;
+}
+
+GraphicColorGamut RSSurfaceRenderNode::GetFirstLevelNodeColorGamut() const
+{
+    if (wideColorGamutInChildNodeCount_ > 0) {
+        return GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3;
+    } else {
+        return GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
+    }
+}
+
+void RSSurfaceRenderNode::SetFirstLevelNodeColorGamut(bool changeToP3)
+{
+    if (changeToP3) {
+        wideColorGamutInChildNodeCount_++;
+    } else {
+        wideColorGamutInChildNodeCount_--;
+    }
 }
 
 void RSSurfaceRenderNode::UpdateColorSpaceWithMetadata()
@@ -1276,8 +1306,8 @@ void RSSurfaceRenderNode::UpdateColorSpaceWithMetadata()
         return;
     }
     // currently, P3 is the only supported wide color gamut, this may be modified later.
-    colorSpace_ = colorSpaceInfo.primaries != COLORPRIMARIES_SRGB ?
-        GRAPHIC_COLOR_GAMUT_DISPLAY_P3 : GRAPHIC_COLOR_GAMUT_SRGB;
+    SetColorSpace(colorSpaceInfo.primaries != COLORPRIMARIES_SRGB ?
+        GRAPHIC_COLOR_GAMUT_DISPLAY_P3 : GRAPHIC_COLOR_GAMUT_SRGB);
 #endif
 }
 
@@ -2724,6 +2754,12 @@ void RSSurfaceRenderNode::SetIsOnTheTree(bool onTree, NodeId instanceRootNodeId,
     RS_TRACE_NAME_FMT("RSSurfaceRenderNode:SetIsOnTheTree, node:[name: %s, id: %" PRIu64 "], "
         "on tree: %d, nodeType: %d", GetName().c_str(), GetId(), onTree, static_cast<int>(nodeType_));
     instanceRootNodeId = IsLeashOrMainWindow() ? GetId() : instanceRootNodeId;
+    if (!onTree && isOnTheTree_ && colorSpace_ != GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB) {
+        auto firstLevelNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(GetFirstLevelNode());
+        if (firstLevelNode) {
+            firstLevelNode->SetFirstLevelNodeColorGamut(false);
+        }
+    }
     if (IsLeashWindow()) {
         firstLevelNodeId = GetId();
     } else if (IsAppWindow()) {
@@ -2747,6 +2783,12 @@ void RSSurfaceRenderNode::SetIsOnTheTree(bool onTree, NodeId instanceRootNodeId,
     // in case prepare stage upper cacheRoot cannot specify dirty subnode
     RSBaseRenderNode::SetIsOnTheTree(onTree, instanceRootNodeId, firstLevelNodeId, cacheNodeId,
         INVALID_NODEID, displayNodeId);
+    if (onTree && !isOnTheTree_ && colorSpace_ != GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB) {
+        auto firstLevelNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(GetFirstLevelNode());
+        if (firstLevelNode) {
+            firstLevelNode->SetFirstLevelNodeColorGamut(true);
+        }
+    }
 }
 
 CacheProcessStatus RSSurfaceRenderNode::GetCacheSurfaceProcessedStatus() const

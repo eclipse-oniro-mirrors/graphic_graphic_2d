@@ -409,7 +409,9 @@ HWTEST_F(RSUifirstManagerTest, SyncHDRDisplayParam, TestSize.Level1)
     auto surfaceDrawable = std::static_pointer_cast<RSSurfaceRenderNodeDrawable>(
         DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(surfaceNode));
     ASSERT_NE(surfaceDrawable, nullptr);
-    uifirstManager_.SyncHDRDisplayParam(surfaceDrawable);
+    surfaceDrawable->SetTargetColorGamut(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB);
+    auto colorGamut = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3;
+    uifirstManager_.SyncHDRDisplayParam(surfaceDrawable, colorGamut);
 }
 /**
  * @tc.name: ProcessTreeStateChange

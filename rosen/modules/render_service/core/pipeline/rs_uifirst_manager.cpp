@@ -331,7 +331,8 @@ void RSUifirstManager::ProcessDoneNode()
     }
 }
 
-void RSUifirstManager::SyncHDRDisplayParam(std::shared_ptr<DrawableV2::RSSurfaceRenderNodeDrawable> drawable)
+void RSUifirstManager::SyncHDRDisplayParam(std::shared_ptr<DrawableV2::RSSurfaceRenderNodeDrawable> drawable,
+    const GraphicColorGamut& colorGamut)
 {
 #ifdef RS_ENABLE_GPU
     auto surfaceParams = static_cast<RSSurfaceRenderParams*>(drawable->GetRenderParams().get());
@@ -351,7 +352,7 @@ void RSUifirstManager::SyncHDRDisplayParam(std::shared_ptr<DrawableV2::RSSurface
     drawable->SetHDRPresent(isHdrOn);
     bool isScRGBEnable = RSSystemParameters::IsNeedScRGBForP3(displayParams->GetNewColorSpace()) &&
         RSMainThread::Instance()->IsUIFirstOn();
-    bool changeColorSpace = drawable->GetTargetColorGamut() != displayParams->GetNewColorSpace();
+    bool changeColorSpace = drawable->GetTargetColorGamut() != colorGamut;
     if (isHdrOn || isScRGBEnable || changeColorSpace) {
         if (isScRGBEnable && changeColorSpace) {
             RS_LOGI("UIFirstHDR SyncDisplayParam: ColorSpace change, ClearCacheSurface,"
@@ -361,7 +362,7 @@ void RSUifirstManager::SyncHDRDisplayParam(std::shared_ptr<DrawableV2::RSSurface
             drawable->ClearCacheSurfaceInThread();
         }
         drawable->SetScreenId(id);
-        drawable->SetTargetColorGamut(displayParams->GetNewColorSpace());
+        drawable->SetTargetColorGamut(colorGamut);
     }
     RS_LOGD("UIFirstHDR SyncDisplayParam:%{public}d, ratio:%{public}f", drawable->GetHDRPresent(),
         surfaceParams->GetBrightnessRatio());
@@ -410,14 +411,14 @@ void RSUifirstManager::DoPurgePendingPostNodes(std::unordered_map<NodeId,
     for (auto it = pendingNode.begin(); it != pendingNode.end();) {
         auto id = it->first;
         auto drawable = GetSurfaceDrawableByID(id);
-        if (!drawable) {
+        auto node = it->second;
+        if (!drawable || !node) {
             ++it;
             continue;
         }
-        SyncHDRDisplayParam(drawable);
+        SyncHDRDisplayParam(drawable, node->GetFirstLevelNodeColorGamut());
         auto surfaceParams = static_cast<RSSurfaceRenderParams*>(drawable->GetRenderParams().get());
-        auto node = it->second;
-        if (!surfaceParams || !node) {
+        if (!surfaceParams) {
             ++it;
             continue;
         }
