@@ -247,8 +247,6 @@ bool RoundCornerDisplay::LoadImgsbyResolution(uint32_t width, uint32_t height)
 bool RoundCornerDisplay::CheckResolutionChanged(uint32_t width, uint32_t height)
 {
     if (width == lastRcvDisplayWidth_ && height == lastRcvDisplayHeight_) {
-        lastRcvDisplayWidth_ = width;
-        lastRcvDisplayHeight_ = height;
         return false;
     }
     lastRcvDisplayWidth_ = width;
