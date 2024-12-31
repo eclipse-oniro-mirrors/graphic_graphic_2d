@@ -486,7 +486,7 @@ bool RSFilterDrawable::IsAIBarFilter()
     return filterType_ == RSFilter::AIBAR;
 }
 
-bool RSFilterDrawable::IsAIBarCacheValid()
+bool RSFilterDrawable::IsAIBarCacheValid() const
 {
     if (filterType_ != RSFilter::AIBAR) {
         return false;
