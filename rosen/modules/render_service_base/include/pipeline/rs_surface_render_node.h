@@ -147,8 +147,7 @@ public:
             IsLayerTop();
     }
 
-    void CheckHwcChildrenType(SurfaceHwcNodeType& enabledType);
-    void SetPreSubHighPriorityType();
+    void SetPreSubHighPriorityType(bool priorityType);
 
     bool IsDynamicHardwareEnable() const
     {
