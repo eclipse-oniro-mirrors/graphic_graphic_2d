@@ -104,6 +104,7 @@ public:
     // Only used in PC extend screen
     void AddCrossScreenChild(const SharedPtr& child, NodeId cloneNodeId, int32_t index = -1);
     void RemoveCrossScreenChild(const SharedPtr& child);
+    void ClearCloneCrossNode();
 
     WeakPtr GetSourceCrossNode() const
     {
