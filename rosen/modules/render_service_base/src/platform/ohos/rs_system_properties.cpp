@@ -1200,5 +1200,12 @@ bool RSSystemProperties::GetDrmMarkedFilterEnabled()
     const char *num = CachedParameterGetChanged(g_Handle, &changed);
     return ConvertToInt(num, 0);
 }
+
+bool RSSystemProperties::GetHveFilterEnabled()
+{
+    static bool hveFilterEnabled =
+        std::atoi((system::GetParameter("persist.sys.graphic.HveFilterEnable", "1")).c_str()) != 0;
+    return hveFilterEnabled;
+}
 } // namespace Rosen
 } // namespace OHOS
