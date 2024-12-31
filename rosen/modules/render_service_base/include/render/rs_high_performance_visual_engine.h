@@ -43,8 +43,8 @@ public:
 
     void ClearSurfaceNodeInfo();
     void PushSurfaceNodeInfo(SurfaceNodeInfo& surfaceNodeInfo);
-    std::vector<SurfaceNodeInfo> GetSurfaceNodeInfo();
-    int GetSurfaceNodeSize();
+    std::vector<SurfaceNodeInfo> GetSurfaceNodeInfo() const;
+    int GetSurfaceNodeSize() const;
 
     std::shared_ptr<Drawing::Image> SampleLayer(RSPaintFilterCanvas& canvas, const Drawing::RectI& srcRect);
 private:
