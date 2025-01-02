@@ -34,6 +34,9 @@
 #include "surface_buffer.h"
 #include "sync_fence.h"
 
+#include "hdr_type.h"
+#include "v2_0/buffer_handle_meta_key_type.h"
+
 #if defined(RS_ENABLE_GL)
 #include "EGL/egl.h"
 #include "EGL/eglext.h"
@@ -55,6 +58,13 @@
 namespace OHOS {
 namespace Rosen {
 using namespace OHOS::Media;
+static constexpr int32_t PLANE_Y = 0;
+static constexpr int32_t PLANE_U = 1;
+static constexpr int32_t PLANE_V = 2;
+static constexpr uint8_t NUM_1 = 1;
+static constexpr uint8_t NUM_2 = 2;
+static constexpr uint8_t HDR_PIXEL_SIZE = 2;
+static constexpr uint8_t PIXEL_SIZE_HDR_YUV = 3;
 
 #ifdef RS_ENABLE_GPU
 static sptr<SurfaceBuffer> LocalDmaMemAlloc(const uint32_t &width, const uint32_t &height,
@@ -206,6 +216,12 @@ private:
 #if defined(RS_ENABLE_VK)
     static void DeleteVkImage(void *context);
 #endif
+    void UpdateYUVDataInfo(int32_t width, int32_t height, YUVDataInfo &yuvDataInfo);
+    void SetPixelMapYuvInfo(GraphicPixelFormat pixelFormat, const sptr<SurfaceBuffer> &surfaceBuffer,
+        std::unique_ptr<OHOS::Media::PixelMap> &pixelMap);
+    std::unique_ptr<OHOS::Media::PixelMap> CreatePixelMap(GraphicPixelFormat pixelFormat,
+        const sptr<SurfaceBuffer> &surfaceBuffer, const OHOS::Media::Rect &srcRect);
+    void CopySurfaceBufferInfo(const sptr<SurfaceBuffer>& src, sptr<SurfaceBuffer>& dst);
     std::unique_ptr<OHOS::Media::PixelMap> CreateForVK(const sptr<Surface> &surface, const OHOS::Media::Rect &srcRect);
     bool DrawImageRectVK(const std::shared_ptr<Drawing::Image> &drawingImage,
         OHNativeWindowBuffer *nativeWindowBufferTmp, const sptr<SurfaceBuffer> &surfaceBufferTmp,
@@ -468,6 +484,117 @@ std::shared_ptr<Drawing::Image> PixelMapFromSurface::CreateDrawingImage()
 #endif
 }
 
+void PixelMapFromSurface::UpdateYUVDataInfo(int32_t width, int32_t height, YUVDataInfo &yuvDataInfo)
+{
+    yuvDataInfo.yWidth = static_cast<uint32_t>(width);
+    yuvDataInfo.yHeight = static_cast<uint32_t>(height);
+    yuvDataInfo.uvWidth = static_cast<uint32_t>((width + NUM_1) / NUM_2);
+    yuvDataInfo.uvHeight = static_cast<uint32_t>((height + NUM_1) / NUM_2);
+    yuvDataInfo.yStride = static_cast<uint32_t>(width);
+    yuvDataInfo.uvStride = static_cast<uint32_t>(((width + NUM_1) / NUM_2) * NUM_2);
+    yuvDataInfo.uvOffset = static_cast<uint32_t>(width) * static_cast<uint32_t>(height);
+}
+
+void PixelMapFromSurface::SetPixelMapYuvInfo(GraphicPixelFormat pixelFormat, const sptr<SurfaceBuffer> &surfaceBuffer,
+    std::unique_ptr<OHOS::Media::PixelMap> &pixelMap)
+{
+    if (pixelMap == nullptr) {
+        RS_LOGE("invalid argument: pixelMap is nullptr");
+        return;
+    }
+    int32_t srcWidth = pixelMap->GetWidth();
+    int32_t srcHeight = pixelMap->GetHeight();
+    YUVDataInfo yuvDataInfo;
+    UpdateYUVDataInfo(srcWidth, srcHeight, yuvDataInfo);
+
+    if (surfaceBuffer == nullptr) {
+        pixelMap->SetImageYUVInfo(yuvDataInfo);
+        return;
+    }
+    OH_NativeBuffer_Planes *planes = nullptr;
+    GSError retVal = surfaceBuffer->GetPlanesInfo(reinterpret_cast<void**>(&planes));
+    if (retVal != OHOS::GSERROR_OK || planes == nullptr) {
+        pixelMap->SetImageYUVInfo(yuvDataInfo);
+        return;
+    }
+    if (pixelFormat == GRAPHIC_PIXEL_FMT_YCBCR_P010) {
+        yuvDataInfo.yStride = planes->planes[PLANE_Y].columnStride / HDR_PIXEL_SIZE;
+        yuvDataInfo.uvStride = planes->planes[PLANE_U].columnStride / HDR_PIXEL_SIZE;
+        yuvDataInfo.yOffset = planes->planes[PLANE_Y].offset / HDR_PIXEL_SIZE;
+        yuvDataInfo.uvOffset = planes->planes[PLANE_U].offset / HDR_PIXEL_SIZE;
+    } else if (pixelFormat == GRAPHIC_PIXEL_FMT_YCRCB_P010) {
+        yuvDataInfo.yStride = planes->planes[PLANE_Y].columnStride / HDR_PIXEL_SIZE;
+        yuvDataInfo.uvStride = planes->planes[PLANE_V].columnStride / HDR_PIXEL_SIZE;
+        yuvDataInfo.yOffset = planes->planes[PLANE_Y].offset / HDR_PIXEL_SIZE;
+        yuvDataInfo.uvOffset = planes->planes[PLANE_V].offset / HDR_PIXEL_SIZE;
+    }
+    pixelMap->SetImageYUVInfo(yuvDataInfo);
+}
+
+std::unique_ptr<OHOS::Media::PixelMap> PixelMapFromSurface::CreatePixelMap(GraphicPixelFormat pixelFormat,
+    const sptr<SurfaceBuffer> &surfaceBuffer, const OHOS::Media::Rect &srcRect)
+{
+    if (surfaceBuffer == nullptr) {
+        RS_LOGE("invalid argument: surfaceBuffer is nullptr");
+        return nullptr;
+    }
+    InitializationOptions options;
+    options.size.width = srcRect.width;
+    options.size.height = srcRect.height;
+    std::unique_ptr<OHOS::Media::PixelMap> pixelMap;
+    if (pixelFormat == GRAPHIC_PIXEL_FMT_YCBCR_P010 || pixelFormat == GRAPHIC_PIXEL_FMT_YCRCB_P010) {
+        options.useDMA = true;
+        options.srcPixelFormat = pixelFormat == GRAPHIC_PIXEL_FMT_YCBCR_P010 ?
+            PixelFormat::YCBCR_P010 : PixelFormat::YCRCB_P010;
+        options.pixelFormat = pixelFormat == GRAPHIC_PIXEL_FMT_YCBCR_P010 ?
+            PixelFormat::YCBCR_P010 : PixelFormat::YCRCB_P010;
+        int32_t colorLength = surfaceBuffer->GetWidth() * surfaceBuffer->GetHeight() * PIXEL_SIZE_HDR_YUV;
+        pixelMap = PixelMap::Create(reinterpret_cast<const uint32_t *>(surfaceBuffer->GetVirAddr()),
+            static_cast<uint32_t>(colorLength), options);
+        if (pixelMap == nullptr) {
+            RS_LOGE("create P010 pixelMap fail in CreateForVK");
+            return nullptr;
+        }
+        pixelMap->SetHdrType(ImageHdrType::HDR_VIVID_SINGLE);
+        pixelMap->InnerSetColorSpace(OHOS::ColorManager::ColorSpace(ColorManager::ColorSpaceName::BT2020_HLG));
+        SetPixelMapYuvInfo(pixelFormat, surfaceBuffer, pixelMap);
+    } else {
+        options.srcPixelFormat = PixelFormat::RGBA_8888;
+        options.pixelFormat = PixelFormat::RGBA_8888;
+        pixelMap = PixelMap::Create(options);
+        if (pixelMap == nullptr) {
+            RS_LOGE("create RGBA pixelMap fail in CreateForVK");
+            return nullptr;
+        }
+    }
+    return pixelMap;
+}
+
+using namespace OHOS::HDI::Display::Graphic::Common::V2_0;
+void PixelMapFromSurface::CopySurfaceBufferInfo(const sptr<SurfaceBuffer>& src, sptr<SurfaceBuffer>& dst)
+{
+    if (src == nullptr || dst == nullptr) {
+        RS_LOGE("PixelMapFromSurface CopySurfaceBufferInfo failed, source or dst is nullptr");
+        return;
+    }
+    std::vector<uint8_t> hdrMetadataType;
+    std::vector<uint8_t> colorSpaceInfo;
+    std::vector<uint8_t> staticMetadata;
+    std::vector<uint8_t> dynamicMetadata;
+    if (src->GetMetadata(ATTRKEY_HDR_METADATA_TYPE, hdrMetadataType) == GSERROR_OK) {
+        dst->SetMetadata(ATTRKEY_HDR_METADATA_TYPE, hdrMetadataType);
+    }
+    if (src->GetMetadata(ATTRKEY_COLORSPACE_INFO, colorSpaceInfo) == GSERROR_OK) {
+        dst->SetMetadata(ATTRKEY_COLORSPACE_INFO, colorSpaceInfo);
+    }
+    if (src->GetMetadata(ATTRKEY_HDR_STATIC_METADATA, staticMetadata) == GSERROR_OK && (staticMetadata.size() > 0)) {
+        dst->SetMetadata(ATTRKEY_HDR_STATIC_METADATA, staticMetadata);
+    }
+    if (src->GetMetadata(ATTRKEY_HDR_DYNAMIC_METADATA, dynamicMetadata) == GSERROR_OK && (dynamicMetadata.size()) > 0) {
+        dst->SetMetadata(ATTRKEY_HDR_DYNAMIC_METADATA, dynamicMetadata);
+    }
+}
+
 std::unique_ptr<OHOS::Media::PixelMap> PixelMapFromSurface::CreateForVK(const sptr<Surface> &surface,
     const OHOS::Media::Rect &srcRect)
 {
@@ -483,22 +610,14 @@ std::unique_ptr<OHOS::Media::PixelMap> PixelMapFromSurface::CreateForVK(const sp
         return nullptr;
     }
 
-    InitializationOptions options;
-    options.size.width = srcRect.width;
-    options.size.height = srcRect.height;
-    options.srcPixelFormat = PixelFormat::RGBA_8888;
-    options.pixelFormat = PixelFormat::RGBA_8888;
-    auto pixelMap = PixelMap::Create(options);
-    if (!pixelMap) {
-        RS_LOGE("create pixelMap fail in CreateForVK");
-        return nullptr;
-    }
-
+    GraphicPixelFormat pixelFormat = static_cast<GraphicPixelFormat>(surfaceBuffer_->GetFormat());
+    std::unique_ptr<OHOS::Media::PixelMap> pixelMap = CreatePixelMap(pixelFormat, surfaceBuffer_, srcRect);
     sptr<SurfaceBuffer> surfaceBufferTmp = LocalDmaMemAlloc(srcRect.width, srcRect.height, pixelMap);
     if (!surfaceBufferTmp) {
         RS_LOGE("LocalDmaMemAlloc fail");
         return nullptr;
     }
+    CopySurfaceBufferInfo(surfaceBuffer_, surfaceBufferTmp);
 
     OHNativeWindowBuffer *nativeWindowBufferTmp = CreateNativeWindowBufferFromSurfaceBuffer(&surfaceBufferTmp);
     if (!nativeWindowBufferTmp) {
