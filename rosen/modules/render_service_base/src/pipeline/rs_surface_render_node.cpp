@@ -1746,61 +1746,15 @@ void RSSurfaceRenderNode::UpdateHwcNodeLayerInfo(GraphicTransformType transform,
 #endif
 }
 
-void RSSurfaceRenderNode::CheckHwcChildrenType(SurfaceHwcNodeType& enabledType)
-{
-    if (enabledType == SurfaceHwcNodeType::DEFAULT_HWC_ROSENWEB) {
-        return;
-    }
-    if (IsAppWindow()) {
-        auto hwcNodes = GetChildHardwareEnabledNodes();
-        if (hwcNodes.empty()) {
-            return;
-        }
-        if (IsSubHighPriorityType()) {
-            enabledType = SurfaceHwcNodeType::DEFAULT_HWC_VIDEO;
-            return;
-        }
-        if (IsRosenWeb()) {
-            enabledType = SurfaceHwcNodeType::DEFAULT_HWC_ROSENWEB;
-            return;
-        }
-        for (auto hwcNode : hwcNodes) {
-            auto hwcNodePtr = hwcNode.lock();
-            if (!hwcNodePtr) {
-                continue;
-            }
-            if (hwcNodePtr->IsRosenWeb()) {
-                enabledType = SurfaceHwcNodeType::DEFAULT_HWC_ROSENWEB;
-                return;
-            }
-            if (hwcNodePtr->IsSubHighPriorityType()) {
-                enabledType = SurfaceHwcNodeType::DEFAULT_HWC_VIDEO;
-                return;
-            }
-        }
-    } else if (IsLeashWindow()) {
-        for (auto& child : *GetChildren()) {
-            auto surfaceNode = child->ReinterpretCastTo<RSSurfaceRenderNode>();
-            if (surfaceNode == nullptr) {
-                continue;
-            }
-            surfaceNode->CheckHwcChildrenType(enabledType);
-        }
-    }
-}
-
-void RSSurfaceRenderNode::SetPreSubHighPriorityType()
+void RSSurfaceRenderNode::SetPreSubHighPriorityType(bool priorityType)
 {
 #ifdef RS_ENABLE_GPU
-    if (!RSSystemProperties::IsPcType()) {
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
+    if (surfaceParams == nullptr) {
+        RS_LOGE("RSSurfaceRenderNode::SetPreSubHighPriorityType surfaceParams is Null");
         return;
     }
-    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
-    SurfaceHwcNodeType preSubHighPriority = SurfaceHwcNodeType::DEFAULT_HWC_TYPE;
-    CheckHwcChildrenType(preSubHighPriority);
-    RS_OPTIONAL_TRACE_NAME_FMT("SubHignProirityType::name:[%s] preSub:%d", GetName().c_str(),
-        preSubHighPriority);
-    surfaceParams->SetPreSubHighPriorityType(preSubHighPriority == SurfaceHwcNodeType::DEFAULT_HWC_VIDEO);
+    surfaceParams->SetPreSubHighPriorityType(priorityType);
     AddToPendingSyncList();
 #endif
 }
