@@ -41,6 +41,7 @@
 #include "pipeline/rs_root_render_node.h"
 #include "pipeline/rs_surface_render_node.h"
 #include "pipeline/rs_canvas_drawing_render_node.h"
+#include "pipeline/rs_render_node_gc.h"
 #include "pipeline/sk_resource_manager.h"
 #include "platform/common/rs_log.h"
 #include "platform/common/rs_system_properties.h"
@@ -481,6 +482,20 @@ void RSRenderNode::UpdateSubTreeInfo(const RectI& clipRect)
     oldAbsMatrix_ = geoPtr->GetAbsMatrix();
 }
 
+void RSRenderNode::ClearCloneCrossNode()
+{
+    if (cloneCrossNodeVec_.size() == 0) {
+        return;
+    }
+
+    for (auto it = cloneCrossNodeVec_.begin(); it != cloneCrossNodeVec_.end(); ++it) {
+        auto parent = (*it)->GetParent().lock();
+        if (parent) {
+            parent->RemoveChild(*it, true);
+        }
+    }
+    cloneCrossNodeVec_.clear();
+}
 
 void RSRenderNode::SetIsCrossNode(bool isCrossNode)
 {
@@ -549,6 +564,70 @@ void RSRenderNode::RemoveCrossParentChild(const SharedPtr& child, const WeakPtr&
     children_.erase(it);
     SetContentDirty();
     isFullChildrenListValid_ = false;
+}
+
+void RSRenderNode::AddCrossScreenChild(const SharedPtr& child, NodeId cloneNodeId, int32_t index)
+{
+    auto context = GetContext().lock();
+    if (child == nullptr || context == nullptr) {
+        return;
+    }
+
+    RSSurfaceRenderNodeConfig config = {
+        .id = cloneNodeId,
+        .name = child->GetNodeName() + "_cloneNode",
+        .nodeType = RSSurfaceNodeType::LEASH_WINDOW_NODE,
+        .surfaceWindowType = SurfaceWindowType::DEFAULT_WINDOW
+    };
+    auto cloneNode = std::shared_ptr<RSSurfaceRenderNode>(new RSSurfaceRenderNode(config,
+        context->weak_from_this()), RSRenderNodeGC::NodeDestructor);
+    context->GetMutableNodeMap().RegisterRenderNode(cloneNode);
+    RS_OPTIONAL_TRACE_NAME_FMT("RSRenderNode::AddCrossScreenChild cloneNodeId=%" PRIu64 "", cloneNodeId);
+    auto& cloneNodeParams = cloneNode->GetStagingRenderParams();
+    if (cloneNodeParams == nullptr) {
+        ROSEN_LOGE("RSRenderNode::AddCrossScreenChild failed! clone node params is null. id=%{public}"
+            "" PRIu64 "", GetId());
+        return;
+    }
+    child->ApplyPositionZModifier();
+    cloneNode->GetMutableRenderProperties().SetPositionZ(child->GetRenderProperties().GetPositionZ());
+    cloneNode->isCloneCrossNode_ = true;
+    cloneNode->sourceCrossNode_ = child;
+
+    cloneNodeParams->SetCloneSourceDrawable(child->GetRenderDrawable());
+    cloneNodeParams->SetShouldPaint(true);
+    cloneNodeParams->SetNeedSync(true);
+    cloneNode->AddToPendingSyncList();
+
+    child->RecordCloneCrossNode(cloneNode);
+    AddChild(cloneNode, index);
+}
+
+void RSRenderNode::RecordCloneCrossNode(SharedPtr node)
+{
+    cloneCrossNodeVec_.emplace_back(node);
+}
+
+void RSRenderNode::RemoveCrossScreenChild(const SharedPtr& child)
+{
+    if (child == nullptr) {
+        return;
+    }
+
+    auto cloneIt = std::find_if(child->cloneCrossNodeVec_.begin(), child->cloneCrossNodeVec_.end(),
+        [this](auto cloneNode) -> bool {
+            auto parent = cloneNode->GetParent().lock();
+            return parent && parent->GetId() == id_;
+        });
+    if (cloneIt == child->cloneCrossNodeVec_.end()) {
+        ROSEN_LOGE("RSRenderNode::RemoveCrossScreenChild can not find clone node %{public}" PRIu64 " in source node"
+            "(id %{public}" PRIu64 ")", GetId(), child->GetId());
+        return;
+    }
+    RemoveChild(*cloneIt, true);
+
+
+    child->cloneCrossNodeVec_.erase(cloneIt);
 }
 
 void RSRenderNode::RemoveFromTree(bool skipTransition)

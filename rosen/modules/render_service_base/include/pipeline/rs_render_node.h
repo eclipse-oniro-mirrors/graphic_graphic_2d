@@ -101,6 +101,30 @@ public:
     void RemoveCrossParentChild(const SharedPtr& child, const WeakPtr& newParent);
     void SetIsCrossNode(bool isCrossNode);
 
+    // Only used in PC extend screen
+    void AddCrossScreenChild(const SharedPtr& child, NodeId cloneNodeId, int32_t index = -1);
+    void RemoveCrossScreenChild(const SharedPtr& child);
+    void ClearCloneCrossNode();
+
+    WeakPtr GetSourceCrossNode() const
+    {
+        return sourceCrossNode_;
+    }
+
+    bool IsCloneCrossNode() const
+    {
+        return isCloneCrossNode_;
+    }
+
+    void SetCurCloneNodeParent(SharedPtr node)
+    {
+        curCloneNodeParent_ = node;
+    }
+    WeakPtr GetCurCloneNodeParent() const
+    {
+        return curCloneNodeParent_;
+    }
+
     virtual void CollectSurface(const std::shared_ptr<RSRenderNode>& node,
                                 std::vector<RSRenderNode::SharedPtr>& vec,
                                 bool isUniRender,
@@ -919,6 +943,10 @@ private:
     // mark cross node in physical extended screen model
     bool isCrossNode_ = false;
     int32_t crossScreenNum_ = 0;
+    bool isCloneCrossNode_ = false;
+    WeakPtr sourceCrossNode_;
+    WeakPtr curCloneNodeParent_;
+    std::vector<SharedPtr> cloneCrossNodeVec_;
     // shadowRectOffset means offset between shadowRect and absRect of node
     int shadowRectOffsetX_ = 0;
     int shadowRectOffsetY_ = 0;
@@ -1142,6 +1170,8 @@ private:
     void UpdateDrawableVecInternal(std::unordered_set<RSPropertyDrawableSlot> dirtySlots);
     void UpdateDisplayList();
     void UpdateShadowRect();
+
+    void RecordCloneCrossNode(SharedPtr node);
 
     void OnRegister(const std::weak_ptr<RSContext>& context);
     // purge resource
