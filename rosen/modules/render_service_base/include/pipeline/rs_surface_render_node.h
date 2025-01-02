@@ -551,7 +551,7 @@ public:
         srcRect_ = rect;
     }
 
-    void NeedClearBufferCache();
+    void NeedClearBufferCache(std::set<uint32_t>& bufferCacheSet);
 
     const RectI& GetSrcRect() const
     {

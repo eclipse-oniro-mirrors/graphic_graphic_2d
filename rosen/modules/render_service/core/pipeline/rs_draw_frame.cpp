@@ -89,6 +89,7 @@ void RSDrawFrame::NotifyClearGpuCache()
 void RSDrawFrame::ReleaseSelfDrawingNodeBuffer()
 {
     unirenderInstance_.ReleaseSelfDrawingNodeBuffer();
+    unirenderInstance_.ClearGPUCompositionCache();
 }
 
 void RSDrawFrame::PostAndWait()
