@@ -57,6 +57,7 @@
 
 namespace OHOS {
 namespace Rosen {
+using namespace OHOS::HDI::Display::Graphic::Common::V2_0;
 using namespace OHOS::Media;
 static constexpr int32_t PLANE_Y = 0;
 static constexpr int32_t PLANE_U = 1;
@@ -217,7 +218,8 @@ private:
     static void DeleteVkImage(void *context);
 #endif
     void UpdateYUVDataInfo(int32_t width, int32_t height, YUVDataInfo &yuvDataInfo);
-    void SetPixelMapYuvInfo(GraphicPixelFormat pixelFormat, const sptr<SurfaceBuffer> &surfaceBuffer,
+    uint32_t GetYUVByteCount(const sptr<SurfaceBuffer> &surfaceBuffer);
+    void SetPixelMapYUVInfo(GraphicPixelFormat pixelFormat, const sptr<SurfaceBuffer> &surfaceBuffer,
         std::unique_ptr<OHOS::Media::PixelMap> &pixelMap);
     std::unique_ptr<OHOS::Media::PixelMap> CreatePixelMap(GraphicPixelFormat pixelFormat,
         const sptr<SurfaceBuffer> &surfaceBuffer, const OHOS::Media::Rect &srcRect);
@@ -486,6 +488,10 @@ std::shared_ptr<Drawing::Image> PixelMapFromSurface::CreateDrawingImage()
 
 void PixelMapFromSurface::UpdateYUVDataInfo(int32_t width, int32_t height, YUVDataInfo &yuvDataInfo)
 {
+    if (width < 0 || height < 0) {
+        RS_LOGE("UpdateYUVDataInfo failed: invalid argument");
+        return;
+    }
     yuvDataInfo.yWidth = static_cast<uint32_t>(width);
     yuvDataInfo.yHeight = static_cast<uint32_t>(height);
     yuvDataInfo.uvWidth = static_cast<uint32_t>((width + NUM_1) / NUM_2);
@@ -495,7 +501,28 @@ void PixelMapFromSurface::UpdateYUVDataInfo(int32_t width, int32_t height, YUVDa
     yuvDataInfo.uvOffset = static_cast<uint32_t>(width) * static_cast<uint32_t>(height);
 }
 
-void PixelMapFromSurface::SetPixelMapYuvInfo(GraphicPixelFormat pixelFormat, const sptr<SurfaceBuffer> &surfaceBuffer,
+uint32_t PixelMapFromSurface::GetYUVByteCount(const sptr<SurfaceBuffer> &surfaceBuffer)
+{
+    if (surfaceBuffer == nullptr) {
+        RS_LOGE("GetYUVByteCount failed: surfaceBuffer is nullptr");
+        return 0;
+    }
+    uint64_t width = static_cast<uint64_t>(surfaceBuffer->GetWidth());
+    uint64_t hight = static_cast<uint64_t>(surfaceBuffer->GetHeight());
+    uint64_t pixelsSize = width * hight;
+    if (pixelsSize > INT_MAX) {
+        RS_LOGE("GetYUVByteCount failed: pixelsSize overflowed");
+        return 0;
+    }
+    uint64_t colorLength = pixelsSize * static_cast<uint64_t>(PIXEL_SIZE_HDR_YUV);
+    if (colorLength > INT_MAX) {
+        RS_LOGE("GetYUVByteCount failed: colorLength overflowed");
+        return 0;
+    }
+    return static_cast<uint32_t>(colorLength);
+}
+
+void PixelMapFromSurface::SetPixelMapYUVInfo(GraphicPixelFormat pixelFormat, const sptr<SurfaceBuffer> &surfaceBuffer,
     std::unique_ptr<OHOS::Media::PixelMap> &pixelMap)
 {
     if (pixelMap == nullptr) {
@@ -548,29 +575,38 @@ std::unique_ptr<OHOS::Media::PixelMap> PixelMapFromSurface::CreatePixelMap(Graph
             PixelFormat::YCBCR_P010 : PixelFormat::YCRCB_P010;
         options.pixelFormat = pixelFormat == GRAPHIC_PIXEL_FMT_YCBCR_P010 ?
             PixelFormat::YCBCR_P010 : PixelFormat::YCRCB_P010;
-        int32_t colorLength = surfaceBuffer->GetWidth() * surfaceBuffer->GetHeight() * PIXEL_SIZE_HDR_YUV;
-        pixelMap = PixelMap::Create(reinterpret_cast<const uint32_t *>(surfaceBuffer->GetVirAddr()),
-            static_cast<uint32_t>(colorLength), options);
-        if (pixelMap == nullptr) {
-            RS_LOGE("create P010 pixelMap fail in CreateForVK");
+        uint32_t colorLength = GetYUVByteCount(surfaceBuffer);
+        if (colorLength <= 0) {
+            RS_LOGE("CreatePixelMap failed: colorLength invalid");
             return nullptr;
         }
+        const uint32_t *colors = reinterpret_cast<const uint32_t *>(surfaceBuffer->GetVirAddr());
+        if (colors == nullptr) {
+        RS_LOGE("CreatePixelMap failed: colors is nullptr");
+            return nullptr;
+        }
+        pixelMap = PixelMap::Create(colors, colorLength, options);
+        if (pixelMap == nullptr) {
+            RS_LOGE("Create P010 pixelMap failed");
+            return nullptr;
+        }
+        // VIDEO HDR TYPE SHOULD MAP TO IMAGE HDR TYPE
         pixelMap->SetHdrType(ImageHdrType::HDR_VIVID_SINGLE);
+        // VIDEO HDR COLORSPACE SHOULD MAP TO IMAGE HDR COLORSPACE
         pixelMap->InnerSetColorSpace(OHOS::ColorManager::ColorSpace(ColorManager::ColorSpaceName::BT2020_HLG));
-        SetPixelMapYuvInfo(pixelFormat, surfaceBuffer, pixelMap);
+        SetPixelMapYUVInfo(pixelFormat, surfaceBuffer, pixelMap);
     } else {
         options.srcPixelFormat = PixelFormat::RGBA_8888;
         options.pixelFormat = PixelFormat::RGBA_8888;
         pixelMap = PixelMap::Create(options);
         if (pixelMap == nullptr) {
-            RS_LOGE("create RGBA pixelMap fail in CreateForVK");
+            RS_LOGE("Create RGBA pixelMap failed");
             return nullptr;
         }
     }
     return pixelMap;
 }
 
-using namespace OHOS::HDI::Display::Graphic::Common::V2_0;
 void PixelMapFromSurface::CopySurfaceBufferInfo(const sptr<SurfaceBuffer>& src, sptr<SurfaceBuffer>& dst)
 {
     if (src == nullptr || dst == nullptr) {
@@ -612,12 +648,20 @@ std::unique_ptr<OHOS::Media::PixelMap> PixelMapFromSurface::CreateForVK(const sp
 
     GraphicPixelFormat pixelFormat = static_cast<GraphicPixelFormat>(surfaceBuffer_->GetFormat());
     std::unique_ptr<OHOS::Media::PixelMap> pixelMap = CreatePixelMap(pixelFormat, surfaceBuffer_, srcRect);
+    if (pixelMap == nullptr) {
+        RS_LOGE("create RGBA pixelMap fail in CreateForVK");
+        return nullptr;
+    }
+
     sptr<SurfaceBuffer> surfaceBufferTmp = LocalDmaMemAlloc(srcRect.width, srcRect.height, pixelMap);
     if (!surfaceBufferTmp) {
         RS_LOGE("LocalDmaMemAlloc fail");
         return nullptr;
     }
-    CopySurfaceBufferInfo(surfaceBuffer_, surfaceBufferTmp);
+
+    if (pixelFormat == GRAPHIC_PIXEL_FMT_YCBCR_P010 || pixelFormat == GRAPHIC_PIXEL_FMT_YCRCB_P010) {
+        CopySurfaceBufferInfo(surfaceBuffer_, surfaceBufferTmp);
+    }
 
     OHNativeWindowBuffer *nativeWindowBufferTmp = CreateNativeWindowBufferFromSurfaceBuffer(&surfaceBufferTmp);
     if (!nativeWindowBufferTmp) {
