@@ -482,21 +482,6 @@ void RSRenderNode::UpdateSubTreeInfo(const RectI& clipRect)
     oldAbsMatrix_ = geoPtr->GetAbsMatrix();
 }
 
-void RSRenderNode::ClearCloneCrossNode()
-{
-    if (cloneCrossNodeVec_.size() == 0) {
-        return;
-    }
-
-    for (auto it = cloneCrossNodeVec_.begin(); it != cloneCrossNodeVec_.end(); ++it) {
-        auto parent = (*it)->GetParent().lock();
-        if (parent) {
-            parent->RemoveChild(*it, true);
-        }
-    }
-    cloneCrossNodeVec_.clear();
-}
-
 void RSRenderNode::SetIsCrossNode(bool isCrossNode)
 {
     isCrossNode_ = isCrossNode;
