@@ -558,6 +558,7 @@ void RSRenderNode::AddCrossScreenChild(const SharedPtr& child, NodeId cloneNodeI
         return;
     }
 
+    RS_OPTIONAL_TRACE_NAME_FMT("RSRenderNode::AddCrossScreenChild cloneNodeId=%" PRIu64 "", cloneNodeId);
     RSSurfaceRenderNodeConfig config = {
         .id = cloneNodeId,
         .name = child->GetNodeName() + "_cloneNode",
@@ -567,7 +568,6 @@ void RSRenderNode::AddCrossScreenChild(const SharedPtr& child, NodeId cloneNodeI
     auto cloneNode = std::shared_ptr<RSSurfaceRenderNode>(new RSSurfaceRenderNode(config,
         context->weak_from_this()), RSRenderNodeGC::NodeDestructor);
     context->GetMutableNodeMap().RegisterRenderNode(cloneNode);
-    RS_OPTIONAL_TRACE_NAME_FMT("RSRenderNode::AddCrossScreenChild cloneNodeId=%" PRIu64 "", cloneNodeId);
     auto& cloneNodeParams = cloneNode->GetStagingRenderParams();
     if (cloneNodeParams == nullptr) {
         ROSEN_LOGE("RSRenderNode::AddCrossScreenChild failed! clone node params is null. id=%{public}"
