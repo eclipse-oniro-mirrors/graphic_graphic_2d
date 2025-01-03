@@ -2776,6 +2776,7 @@ void RSNode::AddCrossScreenChild(SharedPtr child, int index)
 
     auto transactionProxy = RSTransactionProxy::GetInstance();
     if (transactionProxy == nullptr) {
+        ROSEN_LOGE("RSNode::AddCrossScreenChild, transactionProxy is nullptr");
         return;
     }
 
@@ -2804,6 +2805,7 @@ void RSNode::RemoveCrossScreenChild(SharedPtr child)
 
     auto transactionProxy = RSTransactionProxy::GetInstance();
     if (transactionProxy == nullptr) {
+        ROSEN_LOGE("RSNode::RemoveCrossScreenChild, transactionProxy is nullptr");
         return;
     }
 
