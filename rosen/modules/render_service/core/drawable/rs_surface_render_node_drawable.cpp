@@ -709,7 +709,7 @@ void RSSurfaceRenderNodeDrawable::OnCapture(Drawing::Canvas& canvas)
     SetVirtualScreenWhiteListRootId(whiteList, surfaceParams->GetId());
 
     if (RSSystemProperties::GetCacheOptimizeRotateEnable() &&
-        (surfaceParams->GetName().find(WALLPAPER) != std::string::npos)) {
+        surfaceParams->GetName().find(WALLPAPER) != std::string::npos) {
         auto translate = RSUniRenderThread::Instance().GetWallpaperTranslate();
         canvas.Translate(-translate.first, -translate.second);
     }
