@@ -333,7 +333,7 @@ std::unique_ptr<Media::PixelMap> RSSurfaceCaptureTaskParallel::CreatePixelMapByD
     float rectWidth = rect.GetWidth();
     float rectHeight = rect.GetHeight();
     if (rectWidth > 0 && rectHeight > 0 && rectWidth <= pixmapWidth && rectHeight <= pixmapHeight) {
-        pixmapWidth = floor(pixmapWidth);
+        pixmapWidth = floor(rectWidth);
         pixmapHeight = floor(rectHeight);
     }
 
