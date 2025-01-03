@@ -2789,6 +2789,19 @@ bool RSSurfaceRenderNode::QuerySubAssignable(bool isRotation)
     if (!IsFirstLevelNode()) {
         return false;
     }
+    UpdateTransparentSurface();
+    RS_TRACE_NAME_FMT("SubThreadAssignable node[%lld] hasTransparent: %d, childHasVisibleFilter: %d, "
+        "hasFilter: %d, isRotation: %d & %d globalAlpha[%f], hasProtectedLayer: %d", GetId(), hasTransparentSurface_,
+        ChildHasVisibleFilter(), HasFilter(), isRotation, RSSystemProperties::GetCacheOptimizeRotateEnable(),
+        GetGlobalAlpha(), GetHasProtectedLayer());
+    bool rotateOptimize = RSSystemProperties::GetCacheOptimizeRotateEnable() ?
+        !(isRotation && ROSEN_EQ(GetGlobalAlpha(), 0.0f)) : !isRotation;
+    return !(hasTransparentSurface_ && ChildHasVisibleFilter()) && !HasFilter() && rotateOptimize &&
+        !GetHasProtectedLayer();
+}
+
+void RSSurfaceRenderNode::UpdateTransparentSurface()
+{
     hasTransparentSurface_ = false;
     if (IsLeashWindow()) {
         for (auto &child : *GetSortedChildren()) {
@@ -2801,14 +2814,6 @@ bool RSSurfaceRenderNode::QuerySubAssignable(bool isRotation)
     } else {
         hasTransparentSurface_ = IsTransparent();
     }
-    RS_TRACE_NAME_FMT("SubThreadAssignable node[%lld] hasTransparent: %d, childHasVisibleFilter: %d, "
-        "hasFilter: %d, isRotation: %d & %d globalAlpha[%f], hasProtectedLayer: %d", GetId(), hasTransparentSurface_,
-        ChildHasVisibleFilter(), HasFilter(), isRotation, RSSystemProperties::GetCacheOptimizeRotateEnable(),
-        GetGlobalAlpha(), GetHasProtectedLayer());
-    bool rotateOptimize = RSSystemProperties::GetCacheOptimizeRotateEnable() ?
-        !(isRotation && ROSEN_EQ(GetGlobalAlpha(), 0.0f)) : !isRotation;
-    return !(hasTransparentSurface_ && ChildHasVisibleFilter()) && !HasFilter() && rotateOptimize &&
-        !GetHasProtectedLayer();
 }
 
 bool RSSurfaceRenderNode::GetHasTransparentSurface() const
