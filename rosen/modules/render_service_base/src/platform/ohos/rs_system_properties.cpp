@@ -640,6 +640,20 @@ bool RSSystemProperties::GetMESABlurFuzedEnabled()
     return blurPixelStretchEnabled;
 }
 
+int RSSystemProperties::GetSimplifiedMesaEnabled()
+{
+    static int simplifiedMesaEnabled =
+        std::atoi((system::GetParameter("persist.sys.graphic.simplifiedMesaEnable", "0")).c_str());
+    return simplifiedMesaEnabled;
+}
+
+bool RSSystemProperties::GetForceKawaseDisabled()
+{
+    static bool kawaseDisabled =
+        std::atoi((system::GetParameter("persist.sys.graphic.kawaseDisable", "0")).c_str()) != 0;
+    return kawaseDisabled;
+}
+
 float RSSystemProperties::GetKawaseRandomColorFactor()
 {
     static float randomFactor =

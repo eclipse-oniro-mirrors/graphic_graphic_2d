@@ -11,40 +11,34 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+#####################hydra-fuzz###################
+import("//build/config/features.gni")
 import("//build/test.gni")
 import("//foundation/graphic/graphic_2d/graphic_config.gni")
+module_out_path = "graphic_2d/rosen/modules/graphics_effect"
 
-module_output_path = "graphic_2d/rosen/modules/graphics_effect"
-
-ohos_unittest("GraphicsEffectTest") {
-  module_out_path = module_output_path
-
-  sources = [
-    "ge_aibar_shader_filter_test.cpp",
-    "ge_grey_shader_filter_test.cpp",
-    "ge_kawase_blur_shader_filter_test.cpp",
-    "ge_linear_gradient_blur_shader_filter_test.cpp",
-    "ge_magnifier_shader_filter_test.cpp",
-    "ge_mesa_blur_shader_filter_test.cpp",
-    "ge_render_test.cpp",
-    "ge_system_properties_test.cpp",
-    "ge_visual_effect_container_test.cpp",
-    "ge_visual_effect_impl_test.cpp",
-    "ge_visual_effect_test.cpp",
-    "ge_water_ripple_filter_test.cpp",
-  ]
-
-  if (!is_mingw && !is_win) {
-    sources += [ "ge_external_dynamic_loader_test.cpp" ]
-  }
+##############################fuzztest##########################################
+ohos_fuzztest("GEExternalDynamicLoaderFuzzTest") {
+  module_out_path = module_out_path
+  fuzz_config_file = "$graphic_2d_root/rosen/modules/graphics_effect/test/fuzztest/geexternaldynamicloader_fuzzer"
 
   include_dirs = [
-    "$graphic_2d_root/rosen/modules/graphics_effect/include",
     "$graphic_2d_root/rosen/modules/graphics_effect/src",
-    "$graphic_2d_root/rosen/modules/2d_graphics/include",
+    "$graphic_2d_root/rosen/modules/utils",
+    "$graphic_2d_root/utils/color_manager/export",
+    "$graphic_2d_root/rosen/modules/graphics_effect/test/fuzztest/",
+  ]
+
+  sources = [
+    "ge_external_dynamic_loader_fuzz.cpp",
+    "get_object.h",
   ]
 
   cflags = [
+    "-g",
+    "-O0",
+    "-Wno-unused-variable",
+    "-fno-omit-frame-pointer",
     "-Dprivate=public",
     "-Dprotected=public",
   ]
@@ -52,16 +46,16 @@ ohos_unittest("GraphicsEffectTest") {
   deps = [
     "$graphic_2d_root/rosen/modules/2d_graphics:2d_graphics",
     "$graphic_2d_root/rosen/modules/graphics_effect:libgraphics_effect",
-    "//third_party/googletest:gtest_main",
   ]
-
-  external_deps = [ "hilog:libhilog" ]
 
   part_name = "graphic_2d"
   subsystem_name = "graphic"
 }
 
-group("unittest") {
+###############################################################################
+group("fuzztest") {
   testonly = true
-  deps = [ ":GraphicsEffectTest" ]
+
+  deps = [ ":GEExternalDynamicLoaderFuzzTest" ]
 }
+###############################################################################
