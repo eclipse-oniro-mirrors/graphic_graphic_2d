@@ -153,6 +153,8 @@ public:
     void SetWatermarkEnabled(const std::string& name, bool isEnabled);
 
     RSInterfaceErrorCode SetHidePrivacyContent(bool needHidePrivacyContent);
+    void SetApiCompatibleVersion(uint32_t version);
+
 protected:
     bool NeedForcedSendToRemote() const override;
     RSSurfaceNode(const RSSurfaceNodeConfig& config, bool isRenderServiceNode);
