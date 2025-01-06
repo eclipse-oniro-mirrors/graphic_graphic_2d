@@ -270,7 +270,6 @@ bool RSSymbolAnimation::SetReplaceAppear(
     Drawing::DrawingEffectStrategy effectStrategy = Drawing::DrawingEffectStrategy::REPLACE_APPEAR;
     bool res = GetAnimationGroupParameters(symbolAnimationConfig, parameters,
         effectStrategy);
-    bool isMaskSymbol = IsMaskSymbol(symbolAnimationConfig);
     for (uint32_t n = 0; n < nodeNum; n++) {
         auto& symbolNode = symbolAnimationConfig->symbolNodes[n];
         auto canvasNode = RSCanvasNode::Create();
@@ -299,7 +298,6 @@ bool RSSymbolAnimation::SetReplaceAppear(
             continue;
         }
         SpliceAnimation(canvasNode, parameters[symbolNode.animationIndex], Drawing::DrawingEffectStrategy::APPEAR);
-        canvasNode->MarkNodeGroup(!isMaskSymbol);
     }
     return true;
 }
@@ -380,18 +378,6 @@ bool RSSymbolAnimation::ChooseAnimation(const std::shared_ptr<RSNode>& rsNode,
     }
 }
 
-// Check the symbol is a mask symbol
-bool RSSymbolAnimation::IsMaskSymbol(
-    const std::shared_ptr<TextEngine::SymbolAnimationConfig>& symbolAnimationConfig)
-{
-    for (const auto& symbolNode: symbolAnimationConfig->symbolNodes) {
-        if (symbolNode.isMask) {
-            return true;
-        }
-    }
-    return false;
-}
-
 bool RSSymbolAnimation::SetPublicAnimation(
     const std::shared_ptr<TextEngine::SymbolAnimationConfig>& symbolAnimationConfig)
 {
@@ -409,7 +395,6 @@ bool RSSymbolAnimation::SetPublicAnimation(
     std::vector<std::vector<Drawing::DrawingPiecewiseParameter>> parameters;
     bool res = GetAnimationGroupParameters(symbolAnimationConfig, parameters, symbolAnimationConfig->effectStrategy);
 
-    bool isMaskSymbol = IsMaskSymbol(symbolAnimationConfig);
     for (uint32_t n = 0; n < nodeNum; n++) {
         bool createNewNode = false;
         auto& symbolNode = symbolAnimationConfig->symbolNodes[n];
@@ -444,7 +429,6 @@ bool RSSymbolAnimation::SetPublicAnimation(
 
         if (createNewNode) {
             ChooseAnimation(canvasNode, parameters[symbolNode.animationIndex], symbolAnimationConfig);
-            canvasNode->MarkNodeGroup(!isMaskSymbol);
         }
     }
     return true;
@@ -579,7 +563,11 @@ void RSSymbolAnimation::GroupDrawing(const std::shared_ptr<RSCanvasNode>& canvas
     // drawing a symbol or a path group
     auto recordingCanvas = canvasNode->BeginRecording(symbolNode.nodeBoundary[NODE_WIDTH],
                                                       symbolNode.nodeBoundary[NODE_HEIGHT]);
-    DrawPathOnCanvas(recordingCanvas, symbolNode, offsets);
+    if (isMultiLayer) {
+        DrawPathOnCanvas(recordingCanvas, symbolNode, offsets);
+    } else {
+        DrawSymbolOnCanvas(recordingCanvas, symbolNode, offsets);
+    }
     canvasNode->FinishRecording();
 }
 

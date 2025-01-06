@@ -711,7 +711,8 @@ void RSMainThread::UpdateGpuContextCacheSize()
         * MEMUNIT_RATE * MEMUNIT_RATE; // adjust by actual Resolution
     cacheLimitsResourceSize = cacheLimitsResourceSize > MAX_GPU_CONTEXT_CACHE_SIZE ?
         MAX_GPU_CONTEXT_CACHE_SIZE : cacheLimitsResourceSize;
-    if (cacheLimitsResourceSize > maxResourcesSize) {
+    if (cacheLimitsResourceSize > maxResourcesSize ||
+        system::GetParameter("const.product.devicetype", "pc") == "wearable") {
         gpuContext->SetResourceCacheLimits(maxResources, cacheLimitsResourceSize);
     }
 #endif
@@ -1396,6 +1397,7 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
         surfaceNode->ResetAnimateState();
         surfaceNode->ResetRotateState();
         surfaceNode->ResetSpecialLayerChangedFlag();
+        surfaceNode->ResetIsBufferFlushed();
         // Reset BasicGeoTrans info at the beginning of cmd process
         if (surfaceNode->IsLeashOrMainWindow()) {
             surfaceNode->ResetIsOnlyBasicGeoTransform();
@@ -1668,6 +1670,7 @@ void RSMainThread::CheckIfHardwareForcedDisabled()
         return;
     }
     bool isMultiDisplay = rootNode->GetChildrenCount() > 1;
+    CloseHdrWhenMultiDisplayInPC(isMultiDisplay);
 
     // check all children of global root node, and only disable hardware composer
     // in case node's composite type is UNI_RENDER_EXPAND_COMPOSITE or Wired projection
@@ -2105,6 +2108,7 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
             }
             WaitUntilUploadTextureTaskFinishedForGL();
             renderThreadParams_->selfDrawables_ = std::move(selfDrawables_);
+            renderThreadParams_->unmappedCacheSet_ = std::move(unmappedCacheSet_);
             renderThreadParams_->hardwareEnabledTypeDrawables_ = std::move(hardwareEnabledDrwawables_);
             renderThreadParams_->hardCursorDrawables_ = RSPointerWindowManager::Instance().GetHardCursorDrawables();
             return;
@@ -2135,6 +2139,7 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
         uniVisitor->SurfaceOcclusionCallbackToWMS();
         rsVsyncRateReduceManager_.SetUniVsync();
         renderThreadParams_->selfDrawables_ = std::move(selfDrawables_);
+        renderThreadParams_->unmappedCacheSet_ = std::move(unmappedCacheSet_);
         renderThreadParams_->hardCursorDrawables_ = RSPointerWindowManager::Instance().GetHardCursorDrawables();
         renderThreadParams_->hardwareEnabledTypeDrawables_ = std::move(hardwareEnabledDrwawables_);
         renderThreadParams_->isOverDrawEnabled_ = isOverDrawEnabledOfCurFrame_;
@@ -4515,6 +4520,20 @@ void RSMainThread::SetFrameInfo(uint64_t frameCount)
     auto &hgmCore = HgmCore::Instance();
     hgmCore.SetActualTimestamp(currentTimestamp);
     hgmCore.SetVsyncId(frameCount);
+}
+
+void RSMainThread::CloseHdrWhenMultiDisplayInPC(bool isMultiDisplay)
+{
+    if (deviceType_ != DeviceType::PC) {
+        return;
+    }
+    if (isMultiDisplay == isMultiDisplayPre_) {
+        return;
+    }
+    RS_LOGI("RSMainThread::CloseHdrWhenMultiDisplayInPC closeHdrStatus: %{public}d.", isMultiDisplay);
+    RS_TRACE_NAME_FMT("RSMainThread::CloseHdrWhenMultiDisplayInPC closeHdrStatus: %d", isMultiDisplay);
+    RSLuminanceControl::Get().ForceCloseHdr(CLOSEHDR_SCENEID::MULTI_DISPLAY, isMultiDisplay);
+    isMultiDisplayPre_ = isMultiDisplay;
 }
 } // namespace Rosen
 } // namespace OHOS

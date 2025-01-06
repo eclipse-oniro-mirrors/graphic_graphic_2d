@@ -53,7 +53,7 @@ constexpr uint8_t ASTC_HEADER_SIZE = 16;
 #ifdef RS_ENABLE_VK
 Drawing::ColorType GetColorTypeFromVKFormat(VkFormat vkFormat)
 {
-    if (!RSSystemProperties::IsUseVukan()) {
+    if (!RSSystemProperties::IsUseVulkan()) {
         return Drawing::COLORTYPE_RGBA_8888;
     }
     switch (vkFormat) {
@@ -352,7 +352,7 @@ bool RSExtendImageObject::GetDrawingImageFromSurfaceBuffer(Drawing::Canvas& canv
 bool RSExtendImageObject::MakeFromTextureForVK(Drawing::Canvas& canvas, SurfaceBuffer *surfaceBuffer,
     const std::shared_ptr<Drawing::ColorSpace>& colorSpace)
 {
-    if (!RSSystemProperties::IsUseVukan()) {
+    if (!RSSystemProperties::IsUseVulkan()) {
         return false;
     }
     if (surfaceBuffer == nullptr || surfaceBuffer->GetBufferHandle() == nullptr) {
@@ -428,7 +428,7 @@ RSExtendImageObject::~RSExtendImageObject()
     }
 #endif
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
-    if (RSSystemProperties::IsUseVukan()) {
+    if (RSSystemProperties::IsUseVulkan()) {
         RSTaskDispatcher::GetInstance().PostTask(tid_, [nativeWindowBuffer = nativeWindowBuffer_,
             cleanupHelper = cleanUpHelper_]() {
             if (nativeWindowBuffer != nullptr) {

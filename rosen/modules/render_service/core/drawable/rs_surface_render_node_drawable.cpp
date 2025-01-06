@@ -402,11 +402,6 @@ void RSSurfaceRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         RS_LOGE("RSSurfaceRenderNodeDrawable::OnDraw renderEngine is nullptr");
         return;
     }
-    auto unmappedCache = surfaceParams->GetBufferClearCacheSet();
-    if (unmappedCache.size() > 0) {
-        // remove imagecahce when its bufferQueue gobackground
-        renderEngine->ClearCacheSet(unmappedCache);
-    }
     if (autoCacheEnable_) {
         nodeCacheType_ = NodeStrategyType::CACHE_NONE;
     }
@@ -708,7 +703,21 @@ void RSSurfaceRenderNodeDrawable::OnCapture(Drawing::Canvas& canvas)
     auto whiteList = RSUniRenderThread::Instance().GetWhiteList();
     SetVirtualScreenWhiteListRootId(whiteList, surfaceParams->GetId());
 
+    if (RSSystemProperties::GetCacheOptimizeRotateEnable() &&
+        surfaceParams->GetName().find(WALLPAPER) != std::string::npos) {
+        auto translate = RSUniRenderThread::Instance().GetWallpaperTranslate();
+        canvas.Translate(-translate.first, -translate.second);
+    }
+
     if (CheckIfSurfaceSkipInMirror(*surfaceParams)) {
+        return;
+    }
+
+    if (surfaceParams->GetHardCursorStatus() &&
+        (UNLIKELY(RSUniRenderThread::GetCaptureParam().isMirror_) ||
+            RSUniRenderThread::GetCaptureParam().isSnapshot_)) {
+        SetDrawSkipType(DrawSkipType::HARD_CURSOR_ENAbLED);
+        RS_TRACE_NAME_FMT("RSSurfaceRenderNodeDrawable::OnCapture hardcursor skip SurfaceName:%s", name_.c_str());
         return;
     }
 

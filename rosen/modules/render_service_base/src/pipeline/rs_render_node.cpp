@@ -1498,10 +1498,10 @@ void RSRenderNode::UpdateAbsDirtyRegion(RSDirtyRegionManager& dirtyManager, cons
 bool RSRenderNode::UpdateDrawRectAndDirtyRegion(RSDirtyRegionManager& dirtyManager, bool accumGeoDirty,
     const RectI& clipRect, const Drawing::Matrix& parentSurfaceMatrix)
 {
-    bool selfDrawRectChanged = false;
     // 1. update self drawrect if dirty
-    if (IsDirty()) {
-        selfDrawRectChanged = UpdateSelfDrawRect();
+    bool selfDrawRectChanged = IsDirty() ? UpdateSelfDrawRect() : false;
+    if (selfDrawRectChanged) {
+        UpdateChildrenOutOfRectFlag(!childrenRect_.ConvertTo<float>().IsInsideOf(selfDrawRect_));
     }
     // 2. update geoMatrix by parent for dirty collection
     // update geoMatrix and accumGeoDirty if needed
@@ -4755,6 +4755,26 @@ void RSRenderNode::UpdateDrawableBehindWindow()
         dirtySlots_.insert(dirtySlots.begin(), dirtySlots.end());
     }
 #endif
+}
+
+size_t RSRenderNode::GetAllModifierSize()
+{
+    size_t totalSize = 0;
+    for (auto& [type, modifier] : modifiers_) {
+        if (modifier) {
+            totalSize += modifier->GetSize();
+        }
+    }
+
+    for (auto& [type, modifiers] : renderContent_->drawCmdModifiers_) {
+        for (auto& modifier : modifiers) {
+            if (modifier != nullptr) {
+                totalSize += modifier->GetSize();
+            }
+        }
+    }
+
+    return totalSize;
 }
 } // namespace Rosen
 } // namespace OHOS

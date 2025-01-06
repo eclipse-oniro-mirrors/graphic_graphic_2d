@@ -322,7 +322,8 @@ void RSUifirstManager::ProcessDoneNode()
             continue;
         }
         auto cacheStatus = drawable->GetCacheSurfaceProcessedStatus();
-        if (cacheStatus == CacheProcessStatus::SKIPPED) {
+        if ((drawable->HasCachedTexture() && cacheStatus == CacheProcessStatus::WAITING) ||
+            cacheStatus == CacheProcessStatus::SKIPPED) {
             it = subthreadProcessingNode_.erase(it);
             continue;
         }
@@ -1203,9 +1204,11 @@ bool RSUifirstManager::IsLeashWindowCache(RSSurfaceRenderNode& node, bool animat
         } else {
             isNeedAssignToSubThread = animation && LeashWindowContainMainWindow(node);
         }
+        node.UpdateTransparentSurface();
         // 1: Planning: support multi appwindows
         isNeedAssignToSubThread = (isNeedAssignToSubThread || ROSEN_EQ(node.GetGlobalAlpha(), 0.0f) ||
-                node.GetForceUIFirst()) && !node.HasFilter() && !RSUifirstManager::Instance().rotationChanged_;
+                node.GetForceUIFirst()) && !node.HasFilter() && !RSUifirstManager::Instance().rotationChanged_ &&
+                !(node.GetHasTransparentSurface() && node.ChildHasVisibleFilter());
     }
 
     bool needFilterSCB = node.GetSurfaceWindowType() == SurfaceWindowType::SYSTEM_SCB_WINDOW;
@@ -1214,9 +1217,9 @@ bool RSUifirstManager::IsLeashWindowCache(RSSurfaceRenderNode& node, bool animat
         return false;
     }
     RS_TRACE_NAME_FMT("IsLeashWindowCache: toSubThread[%d] IsScale[%d]"
-        " filter:[%d] rotate[%d] captured[%d]",
-        isNeedAssignToSubThread, node.IsScale(),
-        node.HasFilter(), RSUifirstManager::Instance().rotationChanged_, node.IsNodeToBeCaptured());
+        " filter:[%d] rotate[%d] captured[%d] transparent[%d] childHasVisibleFilter[%d]",
+        isNeedAssignToSubThread, node.IsScale(), node.HasFilter(), RSUifirstManager::Instance().rotationChanged_,
+        node.IsNodeToBeCaptured(), node.GetHasTransparentSurface(), node.ChildHasVisibleFilter());
     return isNeedAssignToSubThread;
 }
 
@@ -1654,6 +1657,65 @@ bool RSUifirstManager::IsSubTreeNeedPrepareForSnapshot(RSSurfaceRenderNode& node
     return RSUifirstManager::Instance().IsRecentTaskScene() &&
         (node.IsFocusedNode(RSMainThread::Instance()->GetFocusLeashWindowId()) ||
         node.IsFocusedNode(RSMainThread::Instance()->GetFocusNodeId()));
+}
+
+bool RSUifirstManager::IsSubHighPriorityType(RSSurfaceRenderNode& node) const
+{
+    return node.GetName().find("hipreview") != std::string::npos;
+}
+
+void RSUifirstManager::CheckHwcChildrenType(RSSurfaceRenderNode& node, SurfaceHwcNodeType& enabledType)
+{
+    if (enabledType == SurfaceHwcNodeType::DEFAULT_HWC_ROSENWEB) {
+        return;
+    }
+    if (node.IsAppWindow()) {
+        auto hwcNodes = node.GetChildHardwareEnabledNodes();
+        if (hwcNodes.empty()) {
+            return;
+        }
+        if (IsSubHighPriorityType(node)) {
+            enabledType = SurfaceHwcNodeType::DEFAULT_HWC_VIDEO;
+            return;
+        }
+        if (node.IsRosenWeb()) {
+            enabledType = SurfaceHwcNodeType::DEFAULT_HWC_ROSENWEB;
+            return;
+        }
+        for (auto hwcNode : hwcNodes) {
+            auto hwcNodePtr = hwcNode.lock();
+            if (!hwcNodePtr) {
+                continue;
+            }
+            if (hwcNodePtr->IsRosenWeb()) {
+                enabledType = SurfaceHwcNodeType::DEFAULT_HWC_ROSENWEB;
+                return;
+            }
+            if (IsSubHighPriorityType(*hwcNodePtr)) {
+                enabledType = SurfaceHwcNodeType::DEFAULT_HWC_VIDEO;
+                return;
+            }
+        }
+    } else if (node.IsLeashWindow()) {
+        for (auto& child : *(node.GetChildren())) {
+            auto surfaceNode = child->ReinterpretCastTo<RSSurfaceRenderNode>();
+            if (surfaceNode == nullptr) {
+                continue;
+            }
+            CheckHwcChildrenType(*surfaceNode, enabledType);
+        }
+    }
+}
+
+void RSUifirstManager::MarkSubHighPriorityType(RSSurfaceRenderNode& node)
+{
+    if (!RSSystemProperties::IsPcType()) {
+        return;
+    }
+    SurfaceHwcNodeType preSubHighPriority = SurfaceHwcNodeType::DEFAULT_HWC_TYPE;
+    CheckHwcChildrenType(node, preSubHighPriority);
+    RS_OPTIONAL_TRACE_NAME_FMT("SubHighPriorityType::name:[%s] preSub:%d", node.GetName().c_str(), preSubHighPriority);
+    node.SetPreSubHighPriorityType(preSubHighPriority == SurfaceHwcNodeType::DEFAULT_HWC_VIDEO);
 }
 } // namespace Rosen
 } // namespace OHOS

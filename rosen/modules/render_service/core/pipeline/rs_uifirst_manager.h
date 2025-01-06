@@ -162,7 +162,9 @@ public:
     }
 
     bool IsSubTreeNeedPrepareForSnapshot(RSSurfaceRenderNode& node);
-
+    bool IsSubHighPriorityType(RSSurfaceRenderNode& node) const;
+    void CheckHwcChildrenType(RSSurfaceRenderNode& node, SurfaceHwcNodeType& enabledType);
+    void MarkSubHighPriorityType(RSSurfaceRenderNode& node);
 private:
     RSUifirstManager();
     ~RSUifirstManager() = default;

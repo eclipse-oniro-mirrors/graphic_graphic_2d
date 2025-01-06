@@ -390,6 +390,11 @@ public:
     {
         return curTime_;
     }
+
+    std::set<uint32_t>& GetUnmappedCacheSet()
+    {
+        return unmappedCacheSet_;
+    }
 private:
     using TransactionDataIndexMap = std::unordered_map<pid_t,
         std::pair<uint64_t, std::vector<std::unique_ptr<RSTransactionData>>>>;
@@ -516,6 +521,9 @@ private:
     // Used for CommitAndReleaseLayers task
     void SetFrameInfo(uint64_t frameCount);
 
+    // Used for closing HDR in PC multidisplay becauseof performance
+    void CloseHdrWhenMultiDisplayInPC(bool isMultiDisplay);
+
     std::shared_ptr<AppExecFwk::EventRunner> runner_ = nullptr;
     std::shared_ptr<AppExecFwk::EventHandler> handler_ = nullptr;
     RSTaskMessage::RSTask mainLoop_;
@@ -533,6 +541,16 @@ private:
     TransactionDataIndexMap effectiveTransactionDataIndexMap_;
     std::map<pid_t, std::vector<std::unique_ptr<RSTransactionData>>> cachedSkipTransactionDataMap_;
     std::unordered_map<pid_t, uint64_t> transactionDataLastWaitTime_;
+
+    /**
+     * @brief A set to store buffer IDs of images that are about to be unmapped from GPU cache.
+     *
+     * This set is used to track images that are no longer needed and should be removed from the GPU cache.
+     * When an image is unmapped, its buffer ID is added to this set. During the rendering process,
+     * if an image is found in this set, it means that the image is no longer needed and can be safely
+     * removed from the GPU cache.
+     */
+    std::set<uint32_t> unmappedCacheSet_ = {};
 
     uint64_t curTime_ = 0;
     uint64_t timestamp_ = 0;
@@ -745,6 +763,9 @@ private:
     bool isRegionDebugEnabledOfLastFrame_ = false;
 
     bool isForceRefresh_ = false;
+
+    // record multidisplay status change
+    bool isMultiDisplayPre_ = false;
 
 #ifdef RS_ENABLE_VK
     bool needCreateVkPipeline_ = true;
