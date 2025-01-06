@@ -1942,11 +1942,12 @@ uint32_t RSRenderServiceConnection::SetScreenActiveRect(
         .h = activeRect.h,
     };
     auto result = screenManager_->SetScreenActiveRect(id, dstActiveRect);
-    if (result == StatusCode::SUCCESS) {
-        HgmTaskHandleThread::Instance().PostTask([id, dstActiveRect]() {
-            OHOS::Rosen::HgmCore::Instance().NotifyScreenRectFrameRateChange(id, dstActiveRect);
-        });
+    if (result != StatusCode::SUCCESS) {
+        RS_LOGE("SetScreenActiveRect Fail with result: %{public}d", result);
     }
+    HgmTaskHandleThread::Instance().PostTask([id, dstActiveRect]() {
+            OHOS::Rosen::HgmCore::Instance().NotifyScreenRectFrameRateChange(id, dstActiveRect);
+    });
     return result;
 }
 

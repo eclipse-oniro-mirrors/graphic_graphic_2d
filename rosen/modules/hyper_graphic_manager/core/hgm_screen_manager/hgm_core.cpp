@@ -386,8 +386,11 @@ int32_t HgmCore::AddScreen(ScreenId id, int32_t defaultMode, ScreenSize& screenS
         auto& hgmScreenInfo = HgmScreenInfo::GetInstance();
         auto isLtpo = hgmScreenInfo.IsLtpoType(hgmScreenInfo.GetScreenType(id));
         std::string curScreenName = "screen" + std::to_string(id) + "_" + (isLtpo ? "LTPO" : "LTPS");
-        if (configData->screenStrategyConfigs_.find(curScreenName) != configData->screenStrategyConfigs_.end()) {
-            newScreen->SetSelfOwnedScreenFlag(true);
+        for (auto strategyConfig : configData->screenStrategyConfigs_) {
+            if (strategyConfig.first.find(curScreenName) == 0) {
+                newScreen->SetSelfOwnedScreenFlag(true);
+                break;
+            }
         }
     }
 
