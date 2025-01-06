@@ -17,6 +17,7 @@
 #define ROSEN_MODULE_RS_FRAME_REPORT_H
 
 #include <string>
+#include <unordered_map>
 
 namespace OHOS {
 namespace Rosen {
