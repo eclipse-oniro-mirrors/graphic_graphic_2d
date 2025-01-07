@@ -59,13 +59,6 @@ namespace OHOS {
 namespace Rosen {
 using namespace OHOS::HDI::Display::Graphic::Common::V2_0;
 using namespace OHOS::Media;
-static constexpr int32_t PLANE_Y = 0;
-static constexpr int32_t PLANE_U = 1;
-static constexpr int32_t PLANE_V = 2;
-static constexpr uint8_t NUM_1 = 1;
-static constexpr uint8_t NUM_2 = 2;
-static constexpr uint8_t HDR_PIXEL_SIZE = 2;
-static constexpr uint8_t PIXEL_SIZE_HDR_YUV = 3;
 
 #ifdef RS_ENABLE_GPU
 static sptr<SurfaceBuffer> LocalDmaMemAlloc(const uint32_t &width, const uint32_t &height,
@@ -217,12 +210,8 @@ private:
 #if defined(RS_ENABLE_VK)
     static void DeleteVkImage(void *context);
 #endif
-    void UpdateYUVDataInfo(int32_t width, int32_t height, YUVDataInfo &yuvDataInfo);
-    uint32_t GetYUVByteCount(const sptr<SurfaceBuffer> &surfaceBuffer);
-    void SetPixelMapYUVInfo(GraphicPixelFormat pixelFormat, const sptr<SurfaceBuffer> &surfaceBuffer,
-        std::unique_ptr<OHOS::Media::PixelMap> &pixelMap);
     std::unique_ptr<OHOS::Media::PixelMap> CreatePixelMap(GraphicPixelFormat pixelFormat,
-        const sptr<SurfaceBuffer> &surfaceBuffer, const OHOS::Media::Rect &srcRect);
+        const OHOS::Media::Rect &srcRect);
     void CopySurfaceBufferInfo(const sptr<SurfaceBuffer>& src, sptr<SurfaceBuffer>& dst);
     std::unique_ptr<OHOS::Media::PixelMap> CreateForVK(const sptr<Surface> &surface, const OHOS::Media::Rect &srcRect);
     bool DrawImageRectVK(const std::shared_ptr<Drawing::Image> &drawingImage,
@@ -486,123 +475,35 @@ std::shared_ptr<Drawing::Image> PixelMapFromSurface::CreateDrawingImage()
 #endif
 }
 
-void PixelMapFromSurface::UpdateYUVDataInfo(int32_t width, int32_t height, YUVDataInfo &yuvDataInfo)
-{
-    if (width < 0 || height < 0) {
-        RS_LOGE("UpdateYUVDataInfo failed: invalid argument");
-        return;
-    }
-    yuvDataInfo.yWidth = static_cast<uint32_t>(width);
-    yuvDataInfo.yHeight = static_cast<uint32_t>(height);
-    yuvDataInfo.uvWidth = static_cast<uint32_t>((width + NUM_1) / NUM_2);
-    yuvDataInfo.uvHeight = static_cast<uint32_t>((height + NUM_1) / NUM_2);
-    yuvDataInfo.yStride = static_cast<uint32_t>(width);
-    yuvDataInfo.uvStride = static_cast<uint32_t>(((width + NUM_1) / NUM_2) * NUM_2);
-    yuvDataInfo.uvOffset = static_cast<uint32_t>(width) * static_cast<uint32_t>(height);
-}
-
-uint32_t PixelMapFromSurface::GetYUVByteCount(const sptr<SurfaceBuffer> &surfaceBuffer)
-{
-    if (surfaceBuffer == nullptr) {
-        RS_LOGE("GetYUVByteCount failed: surfaceBuffer is nullptr");
-        return 0;
-    }
-    uint64_t width = static_cast<uint64_t>(surfaceBuffer->GetWidth());
-    uint64_t hight = static_cast<uint64_t>(surfaceBuffer->GetHeight());
-    uint64_t pixelsSize = width * hight;
-    if (pixelsSize > INT_MAX) {
-        RS_LOGE("GetYUVByteCount failed: pixelsSize overflowed");
-        return 0;
-    }
-    uint64_t colorLength = pixelsSize * static_cast<uint64_t>(PIXEL_SIZE_HDR_YUV);
-    if (colorLength > INT_MAX) {
-        RS_LOGE("GetYUVByteCount failed: colorLength overflowed");
-        return 0;
-    }
-    return static_cast<uint32_t>(colorLength);
-}
-
-void PixelMapFromSurface::SetPixelMapYUVInfo(GraphicPixelFormat pixelFormat, const sptr<SurfaceBuffer> &surfaceBuffer,
-    std::unique_ptr<OHOS::Media::PixelMap> &pixelMap)
-{
-    if (pixelMap == nullptr) {
-        RS_LOGE("invalid argument: pixelMap is nullptr");
-        return;
-    }
-    int32_t srcWidth = pixelMap->GetWidth();
-    int32_t srcHeight = pixelMap->GetHeight();
-    YUVDataInfo yuvDataInfo;
-    UpdateYUVDataInfo(srcWidth, srcHeight, yuvDataInfo);
-
-    if (surfaceBuffer == nullptr) {
-        pixelMap->SetImageYUVInfo(yuvDataInfo);
-        return;
-    }
-    OH_NativeBuffer_Planes *planes = nullptr;
-    GSError retVal = surfaceBuffer->GetPlanesInfo(reinterpret_cast<void**>(&planes));
-    if (retVal != OHOS::GSERROR_OK || planes == nullptr) {
-        pixelMap->SetImageYUVInfo(yuvDataInfo);
-        return;
-    }
-    if (pixelFormat == GRAPHIC_PIXEL_FMT_YCBCR_P010) {
-        yuvDataInfo.yStride = planes->planes[PLANE_Y].columnStride / HDR_PIXEL_SIZE;
-        yuvDataInfo.uvStride = planes->planes[PLANE_U].columnStride / HDR_PIXEL_SIZE;
-        yuvDataInfo.yOffset = planes->planes[PLANE_Y].offset / HDR_PIXEL_SIZE;
-        yuvDataInfo.uvOffset = planes->planes[PLANE_U].offset / HDR_PIXEL_SIZE;
-    } else if (pixelFormat == GRAPHIC_PIXEL_FMT_YCRCB_P010) {
-        yuvDataInfo.yStride = planes->planes[PLANE_Y].columnStride / HDR_PIXEL_SIZE;
-        yuvDataInfo.uvStride = planes->planes[PLANE_V].columnStride / HDR_PIXEL_SIZE;
-        yuvDataInfo.yOffset = planes->planes[PLANE_Y].offset / HDR_PIXEL_SIZE;
-        yuvDataInfo.uvOffset = planes->planes[PLANE_V].offset / HDR_PIXEL_SIZE;
-    }
-    pixelMap->SetImageYUVInfo(yuvDataInfo);
-}
-
 std::unique_ptr<OHOS::Media::PixelMap> PixelMapFromSurface::CreatePixelMap(GraphicPixelFormat pixelFormat,
-    const sptr<SurfaceBuffer> &surfaceBuffer, const OHOS::Media::Rect &srcRect)
+    const OHOS::Media::Rect &srcRect)
 {
-    if (surfaceBuffer == nullptr) {
-        RS_LOGE("invalid argument: surfaceBuffer is nullptr");
-        return nullptr;
-    }
     InitializationOptions options;
     options.size.width = srcRect.width;
     options.size.height = srcRect.height;
-    std::unique_ptr<OHOS::Media::PixelMap> pixelMap;
-    if (pixelFormat == GRAPHIC_PIXEL_FMT_YCBCR_P010 || pixelFormat == GRAPHIC_PIXEL_FMT_YCRCB_P010) {
+    bool isYUV = pixelFormat == GRAPHIC_PIXEL_FMT_YCBCR_P010 || pixelFormat == GRAPHIC_PIXEL_FMT_YCRCB_P010;
+    if (isYUV) {
         options.useDMA = true;
         options.srcPixelFormat = pixelFormat == GRAPHIC_PIXEL_FMT_YCBCR_P010 ?
             PixelFormat::YCBCR_P010 : PixelFormat::YCRCB_P010;
         options.pixelFormat = pixelFormat == GRAPHIC_PIXEL_FMT_YCBCR_P010 ?
             PixelFormat::YCBCR_P010 : PixelFormat::YCRCB_P010;
-        uint32_t colorLength = GetYUVByteCount(surfaceBuffer);
-        if (colorLength <= 0) {
-            RS_LOGE("CreatePixelMap failed: colorLength invalid");
-            return nullptr;
-        }
-        const uint32_t *colors = reinterpret_cast<const uint32_t *>(surfaceBuffer->GetVirAddr());
-        if (colors == nullptr) {
-        RS_LOGE("CreatePixelMap failed: colors is nullptr");
-            return nullptr;
-        }
-        pixelMap = PixelMap::Create(colors, colorLength, options);
-        if (pixelMap == nullptr) {
-            RS_LOGE("Create P010 pixelMap failed");
-            return nullptr;
-        }
+    } else {
+        options.srcPixelFormat = PixelFormat::RGBA_8888;
+        options.pixelFormat = PixelFormat::RGBA_8888;
+    }
+
+    std::unique_ptr<OHOS::Media::PixelMap> pixelMap = PixelMap::Create(options);
+    if (pixelMap == nullptr) {
+        RS_LOGE("Create pixelMap failed");
+        return nullptr;
+    }
+
+    if (isYUV) {
         // VIDEO HDR TYPE SHOULD MAP TO IMAGE HDR TYPE
         pixelMap->SetHdrType(ImageHdrType::HDR_VIVID_SINGLE);
         // VIDEO HDR COLORSPACE SHOULD MAP TO IMAGE HDR COLORSPACE
         pixelMap->InnerSetColorSpace(OHOS::ColorManager::ColorSpace(ColorManager::ColorSpaceName::BT2020_HLG));
-        SetPixelMapYUVInfo(pixelFormat, surfaceBuffer, pixelMap);
-    } else {
-        options.srcPixelFormat = PixelFormat::RGBA_8888;
-        options.pixelFormat = PixelFormat::RGBA_8888;
-        pixelMap = PixelMap::Create(options);
-        if (pixelMap == nullptr) {
-            RS_LOGE("Create RGBA pixelMap failed");
-            return nullptr;
-        }
     }
     return pixelMap;
 }
@@ -647,9 +548,9 @@ std::unique_ptr<OHOS::Media::PixelMap> PixelMapFromSurface::CreateForVK(const sp
     }
 
     GraphicPixelFormat pixelFormat = static_cast<GraphicPixelFormat>(surfaceBuffer_->GetFormat());
-    std::unique_ptr<OHOS::Media::PixelMap> pixelMap = CreatePixelMap(pixelFormat, surfaceBuffer_, srcRect);
+    std::unique_ptr<OHOS::Media::PixelMap> pixelMap = CreatePixelMap(pixelFormat, srcRect);
     if (pixelMap == nullptr) {
-        RS_LOGE("create RGBA pixelMap fail in CreateForVK");
+        RS_LOGE("create pixelMap fail in CreateForVK");
         return nullptr;
     }
 
