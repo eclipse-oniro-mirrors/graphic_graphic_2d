@@ -1471,7 +1471,7 @@ void RSDisplayRenderNodeDrawable::SetSecurityMask(RSProcessor& processor)
         curCanvas_->DrawImageRect(*image, srcRect, dstRect, Drawing::SamplingOptions(),
             Drawing::SrcRectConstraint::STRICT_SRC_RECT_CONSTRAINT);
         if (watermark) {
-            curCanvas_->DrawImageRect(*waterMark, srcRect, dstRect, Drawing::SamplingOptions(),
+            curCanvas_->DrawImageRect(*watermark, srcRect, dstRect, Drawing::SamplingOptions(),
                 Drawing::SrcRectConstraint::STRICT_SRC_RECT_CONSTRAINT);
         }
         curCanvas_->DetachBrush();
