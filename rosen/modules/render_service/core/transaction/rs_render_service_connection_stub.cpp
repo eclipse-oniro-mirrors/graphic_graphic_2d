@@ -810,13 +810,16 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             uint32_t max{0};
             uint32_t preferred{0};
             uint32_t type{0};
+            uint32_t componentScene{0};
             int32_t animatorExpectedFrameRate{0};
             if (!data.ReadUint32(min) || !data.ReadUint32(max) || !data.ReadUint32(preferred) ||
-                !data.ReadUint32(type) || !data.ReadInt32(animatorExpectedFrameRate)) {
+                !data.ReadUint32(type) || !data.ReadUint32(componentScene) ||
+                !data.ReadInt32(animatorExpectedFrameRate)) {
                 ret = ERR_INVALID_DATA;
                 break;
             }
-            SyncFrameRateRange(id, {min, max, preferred, type}, animatorExpectedFrameRate);
+            SyncFrameRateRange(id, {min, max, preferred, type, static_cast<ComponentScene>(componentScene)},
+                animatorExpectedFrameRate);
             break;
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::UNREGISTER_FRAME_RATE_LINKER): {
