@@ -1180,17 +1180,17 @@ int32_t RSScreenManager::SetScreenSecurityMask(ScreenId id,
         return INVALID_ARGUMENTS;
     }
     std::lock_guard<std::mutex> lock(mutex_);
-    auto virtualScreen = screens_.find(id);
-    if (virtualScreen == screens_.end()) {
+    auto iter = screens_.find(id);
+    if (iter == screens_.end()) {
         RS_LOGW("RSScreenManager %{public}s: There is no screen for id %{public}" PRIu64 ".", __func__, id);
         return SCREEN_NOT_FOUND;
     }
 
-    if (virtualScreen->second == nullptr) {
+    if (iter->second == nullptr) {
         RS_LOGW("RSScreenManager %{public}s: Null screen for id %{public}" PRIu64 ".", __func__, id);
         return SCREEN_NOT_FOUND;
     }
-    virtualScreen->second->SetSecurityMask(std::move(securityMask));
+    iter->second->SetSecurityMask(std::move(securityMask));
     return SUCCESS;
 }
 
@@ -1202,7 +1202,7 @@ std::shared_ptr<Media::PixelMap> RSScreenManager::GetScreenSecurityMask(ScreenId
         RS_LOGW("RSScreenManager %{public}s: There is no screen for id %{public}" PRIu64 ".", __func__, id);
         return nullptr;
     }
-    return virtualScreen->second->GetSecurityMask();
+    return iter->second->GetSecurityMask();
 }
 
 int32_t RSScreenManager::SetMirrorScreenVisibleRect(ScreenId id, const Rect& mainScreenRect)

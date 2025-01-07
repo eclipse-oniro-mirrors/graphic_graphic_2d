@@ -634,7 +634,7 @@ int32_t RSRenderServiceConnection::SetScreenSecurityMask(ScreenId id,
     if (!screenManager_) {
         return StatusCode::SCREEN_NOT_FOUND;
     }
-    return screenManager_->SetScreenSecurityMask(id, securityMask);
+    return screenManager_->SetScreenSecurityMask(id, std::move(securityMask));
 }
 
 int32_t RSRenderServiceConnection::SetMirrorScreenVisibleRect(ScreenId id, const Rect& mainScreenRect)

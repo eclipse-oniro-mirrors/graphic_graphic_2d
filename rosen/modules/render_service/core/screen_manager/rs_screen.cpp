@@ -1196,8 +1196,8 @@ const std::vector<uint64_t>& RSScreen::GetSecurityExemptionList() const
 void RSScreen::SetSecurityMask(const std::shared_ptr<Media::PixelMap> securityMask)
 {
     if (!IsVirtual()) {
-        RS_LOGW("RSScreen %{public}s: not virtual screen for id %{public}" PRIu64 ".", __func__, id);
-        return INVALID_ARGUMENTS;
+        RS_LOGW("RSScreen::SetSecurityMask not virtual screen");
+        return;
     }
     securityMask_ = std::move(securityMask);
 }
