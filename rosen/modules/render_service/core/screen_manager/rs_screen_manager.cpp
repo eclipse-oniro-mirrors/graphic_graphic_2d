@@ -1190,8 +1190,7 @@ int32_t RSScreenManager::SetScreenSecurityMask(ScreenId id,
         RS_LOGW("RSScreenManager %{public}s: Null screen for id %{public}" PRIu64 ".", __func__, id);
         return SCREEN_NOT_FOUND;
     }
-    iter->second->SetSecurityMask(std::move(securityMask));
-    return SUCCESS;
+    return iter->second->SetSecurityMask(std::move(securityMask));
 }
 
 std::shared_ptr<Media::PixelMap> RSScreenManager::GetScreenSecurityMask(ScreenId id) const
