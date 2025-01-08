@@ -626,6 +626,28 @@ HWTEST_F(RSSystemPropertiesTest, GetMESABlurFuzedEnabled, TestSize.Level1)
 }
 
 /**
+ * @tc.name: GetForceKawaseDisabled
+ * @tc.desc: GetForceKawaseDisabled Test
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSSystemPropertiesTest, GetForceKawaseDisabled, TestSize.Level1)
+{
+    ASSERT_FALSE(RSSystemProperties::GetForceKawaseDisabled());
+}
+
+/**
+ * @tc.name: GetSimplifiedMesaEnabled
+ * @tc.desc: GetSimplifiedMesaEnabled Test
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSSystemPropertiesTest, GetSimplifiedMesaEnabled, TestSize.Level1)
+{
+    ASSERT_EQ(RSSystemProperties::GetSimplifiedMesaEnabled(), 0);
+}
+
+/**
  * @tc.name: SetForceHpsBlurDisabled
  * @tc.desc: SetForceHpsBlurDisabled Test
  * @tc.type:FUNC
