@@ -268,8 +268,7 @@ napi_value RSWindowAnimationManager::OnGetWindowAnimationTargets(napi_env env, n
         }
     }
     napi_value result = nullptr;
-    NapiAsyncTask::Schedule("RSWindowAnimationManager::OnGetWindowAnimationTargets",
-        env, CreateAsyncTaskWithLastParam(env, lastParam, nullptr, std::move(complete), &result));
+
     return result;
 }
 } // namespace Rosen
