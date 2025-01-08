@@ -1204,11 +1204,9 @@ bool RSUifirstManager::IsLeashWindowCache(RSSurfaceRenderNode& node, bool animat
         } else {
             isNeedAssignToSubThread = animation && LeashWindowContainMainWindow(node);
         }
-        node.UpdateTransparentSurface();
         // 1: Planning: support multi appwindows
         isNeedAssignToSubThread = (isNeedAssignToSubThread || ROSEN_EQ(node.GetGlobalAlpha(), 0.0f) ||
-                node.GetForceUIFirst()) && !node.HasFilter() && !RSUifirstManager::Instance().rotationChanged_ &&
-                !(node.GetHasTransparentSurface() && node.ChildHasVisibleFilter());
+                node.GetForceUIFirst()) && !node.HasFilter() && !RSUifirstManager::Instance().rotationChanged_;
     }
 
     bool needFilterSCB = node.GetSurfaceWindowType() == SurfaceWindowType::SYSTEM_SCB_WINDOW;
@@ -1217,9 +1215,9 @@ bool RSUifirstManager::IsLeashWindowCache(RSSurfaceRenderNode& node, bool animat
         return false;
     }
     RS_TRACE_NAME_FMT("IsLeashWindowCache: toSubThread[%d] IsScale[%d]"
-        " filter:[%d] rotate[%d] captured[%d] transparent[%d] childHasVisibleFilter[%d]",
-        isNeedAssignToSubThread, node.IsScale(), node.HasFilter(), RSUifirstManager::Instance().rotationChanged_,
-        node.IsNodeToBeCaptured(), node.GetHasTransparentSurface(), node.ChildHasVisibleFilter());
+        " filter:[%d] rotate[%d] captured[%d]",
+        isNeedAssignToSubThread, node.IsScale(),
+        node.HasFilter(), RSUifirstManager::Instance().rotationChanged_, node.IsNodeToBeCaptured());
     return isNeedAssignToSubThread;
 }
 
