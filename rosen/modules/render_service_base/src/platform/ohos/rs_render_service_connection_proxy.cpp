@@ -663,6 +663,40 @@ int32_t RSRenderServiceConnectionProxy::SetVirtualScreenSecurityExemptionList(
     return status;
 }
 
+int32_t RSRenderServiceConnectionProxy::SetScreenSecurityMask(ScreenId id,
+    const std::shared_ptr<Media::PixelMap> securityMask)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    if (!data.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor())) {
+        return WRITE_PARCEL_ERR;
+    }
+
+    option.SetFlags(MessageOption::TF_ASYNC);
+    if (!data.WriteUint64(id)) {
+        return WRITE_PARCEL_ERR;
+    }
+
+    if (securityMask) {
+        if (!data.WriteBool(true) || !data.WriteParcelable(securityMask.get())) {
+            return WRITE_PARCEL_ERR;
+        }
+    } else {
+        if (!data.WriteBool(false)) {
+            return WRITE_PARCEL_ERR;
+        }
+    }
+    uint32_t code = static_cast<uint32_t>(
+        RSIRenderServiceConnectionInterfaceCode::SET_SCREEN_SECURITY_MASK);
+    int32_t err = SendRequest(code, data, reply, option);
+    if (err != NO_ERROR) {
+        ROSEN_LOGE("RSRenderServiceConnectionProxy::SetScreenSecurityMask: Send Request err.");
+        return RS_CONNECTION_ERROR;
+    }
+    return SUCCESS;
+}
+
 int32_t RSRenderServiceConnectionProxy::SetMirrorScreenVisibleRect(
     ScreenId id, const Rect& mainScreenRect)
 {

@@ -64,6 +64,7 @@ static constexpr std::array descriptorCheckList = {
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::ADD_VIRTUAL_SCREEN_BLACKLIST),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REMOVE_VIRTUAL_SCREEN_BLACKLIST),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_SECURITY_EXEMPTION_LIST),
+    static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_SCREEN_SECURITY_MASK),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_MIRROR_SCREEN_VISIBLE_RECT),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REMOVE_VIRTUAL_SCREEN),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_SCREEN_CHANGE_CALLBACK),
@@ -622,6 +623,25 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             }
             int32_t status = SetVirtualScreenSecurityExemptionList(id, securityExemptionList);
             if (!reply.WriteInt32(status)) {
+                ret = ERR_INVALID_REPLY;
+            }
+            break;
+        }
+        case static_cast<uint32_t>(
+            RSIRenderServiceConnectionInterfaceCode::SET_SCREEN_SECURITY_MASK): {
+            // read the parcel data.
+            ScreenId id{INVALID_SCREEN_ID};
+            bool enable{false};
+            if (!data.ReadUint64(id) || !data.ReadBool(enable)) {
+                ret = ERR_INVALID_DATA;
+                break;
+            }
+            std::shared_ptr<Media::PixelMap> securityMask{nullptr};
+            if (enable) {
+                securityMask = std::shared_ptr<Media::PixelMap>(data.ReadParcelable<Media::PixelMap>());
+            }
+            int32_t result = SetScreenSecurityMask(id, std::move(securityMask));
+            if (!reply.WriteInt32(result)) {
                 ret = ERR_INVALID_REPLY;
             }
             break;

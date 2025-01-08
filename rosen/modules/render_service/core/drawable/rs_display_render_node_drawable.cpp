@@ -53,6 +53,7 @@
 #include "platform/common/rs_log.h"
 #include "platform/ohos/rs_jank_stats.h"
 #include "property/rs_point_light_manager.h"
+#include "render/rs_pixel_map_util.h"
 #include "screen_manager/rs_screen_manager.h"
 #include "static_factory.h"
 // dfx
@@ -1086,7 +1087,12 @@ void RSDisplayRenderNodeDrawable::DrawMirror(RSDisplayRenderParams& params,
     if (hasSecSurface[mirroredParams->GetScreenId()] && !uniParam.GetSecExemption()) {
         std::vector<RectI> emptyRects = {};
         virtualProcesser->SetRoiRegionToCodec(emptyRects);
-        SetCanvasBlack(*virtualProcesser);
+        auto screenManager = CreateOrGetScreenManager();
+        if (!screenManager->GetScreenSecurityMask(params.GetScreenId())) {
+            SetCanvasBlack(*virtualProcesser);
+        } else {
+            SetSecurityMask(*virtualProcesser);
+        }
         virtualDirtyRefresh_ = true;
         curCanvas_->RestoreToCount(0);
         return;
@@ -1417,6 +1423,64 @@ void RSDisplayRenderNodeDrawable::SetCanvasBlack(RSProcessor& processor)
     processor.PostProcess();
     RS_LOGI("RSDisplayRenderNodeDrawable::SetCanvasBlack, set canvas to black because of security layer.");
     curCanvas_->SetDisableFilterCache(false);
+}
+
+void RSDisplayRenderNodeDrawable::SetSecurityMask(RSProcessor& processor)
+{
+    RS_TRACE_FUNC();
+    auto params = static_cast<RSDisplayRenderParams*>(GetRenderParams().get());
+    if (auto screenManager = CreateOrGetScreenManager()) {
+        auto imagePtr = screenManager->GetScreenSecurityMask(params->GetScreenId());
+        auto image = RSPixelMapUtil::ExtractDrawingImage(imagePtr);
+        if (!image || image->GetWidth() == 0 || image->GetHeight() == 0) {
+            return;
+        }
+
+        auto watermark = RSUniRenderThread::Instance().GetWatermarkImg();
+        auto screenInfo = screenManager->QueryScreenInfo(params->GetScreenId());
+        auto screenWidth = static_cast<float>(screenInfo.width);
+        auto screenHeight = static_cast<float>(screenInfo.height);
+
+        curCanvas_->Clear(Drawing::Color::COLOR_TRANSPARENT);
+        auto srcRect = Drawing::Rect(0, 0, image->GetWidth(), image->GetHeight());
+        auto dstRect = Drawing::Rect(0, 0, screenWidth, screenHeight);
+
+        float imageScaleWidth = screenWidth / static_cast<float>(image->GetWidth());
+        float imageScaleHeight = screenHeight / static_cast<float>(image->GetHeight());
+        auto imageWidth = image->GetWidth() * imageScaleHeight;
+        auto imageHeight = image->GetHeight() * imageScaleWidth;
+        // Ensure that the security mask is located in the middle of the virtual screen.
+        if (imageScaleWidth > imageScaleHeight) {
+            // Left and right set black
+            float halfBoundWidthLeft = (screenWidth - imageWidth) / 2;
+            float halfBoundWidthRight = halfBoundWidthLeft + imageWidth;
+            dstRect = Drawing::Rect(halfBoundWidthLeft, 0, halfBoundWidthRight, screenHeight);
+        }
+
+        if (imageScaleWidth < imageScaleHeight) {
+            // Up and down set black
+            float halfBoundHeightTop = (screenHeight - imageHeight) / 2;
+            float halfBoundHeightBottom = halfBoundHeightTop + imageHeight;
+            dstRect = Drawing::Rect(0, halfBoundHeightTop, screenWidth, halfBoundHeightBottom);
+        }
+        // Make sure the canvas is oriented accurately.
+        curCanvas_->ResetMatrix();
+
+        Drawing::Brush brush;
+        curCanvas_->AttachBrush(brush);
+        curCanvas_->DrawImageRect(*image, srcRect, dstRect, Drawing::SamplingOptions(),
+            Drawing::SrcRectConstraint::STRICT_SRC_RECT_CONSTRAINT);
+        if (watermark) {
+            curCanvas_->DrawImageRect(*watermark, srcRect, dstRect, Drawing::SamplingOptions(),
+                Drawing::SrcRectConstraint::STRICT_SRC_RECT_CONSTRAINT);
+        }
+        curCanvas_->DetachBrush();
+
+        processor.PostProcess();
+        RS_LOGI("RSDisplayRenderNodeDrawable::SetSecurityMask, this interface is invoked"
+            "when the security layer is used and mask resources are set.");
+        curCanvas_->SetDisableFilterCache(false);
+    }
 }
 
 void RSDisplayRenderNodeDrawable::RotateMirrorCanvas(ScreenRotation& rotation, float mainWidth, float mainHeight)
