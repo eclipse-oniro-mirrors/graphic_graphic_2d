@@ -113,6 +113,7 @@ RSSurfaceNode::SharedPtr RSSurfaceNode::Create(const RSSurfaceNodeConfig& surfac
         command = std::make_unique<RSSurfaceNodeSetCallbackForRenderThreadRefresh>(node->GetId(), true);
         transactionProxy->AddCommand(command, isWindow);
         node->SetFrameGravity(Gravity::RESIZE);
+        // codes for arkui-x
 #if defined(USE_SURFACE_TEXTURE) && defined(ROSEN_ANDROID)
         if (type == RSSurfaceNodeType::SURFACE_TEXTURE_NODE) {
             RSSurfaceExtConfig config = {
@@ -122,6 +123,7 @@ RSSurfaceNode::SharedPtr RSSurfaceNode::Create(const RSSurfaceNodeConfig& surfac
             node->CreateSurfaceExt(config);
         }
 #endif
+        // codes for arkui-x
 #if defined(USE_SURFACE_TEXTURE) && defined(ROSEN_IOS)
         if ((type == RSSurfaceNodeType::SURFACE_TEXTURE_NODE) &&
             (surfaceNodeConfig.SurfaceNodeName == "PlatformViewSurface")) {
@@ -1008,6 +1010,17 @@ void RSSurfaceNode::SetHardwareEnableHint(bool enable)
     auto transactionProxy = RSTransactionProxy::GetInstance();
     if (transactionProxy != nullptr) {
         transactionProxy->AddCommand(command, true);
+    }
+}
+
+void RSSurfaceNode::SetApiCompatibleVersion(uint32_t version)
+{
+    std::unique_ptr<RSCommand> command = std::make_unique<RSSurfaceNodeSetApiCompatibleVersion>(GetId(), version);
+    auto transactionProxy = RSTransactionProxy::GetInstance();
+    if (transactionProxy != nullptr) {
+        transactionProxy->AddCommand(command, true);
+        RS_LOGD(
+            "RSSurfaceNode::SetApiCompatibleVersion: Node: %{public}" PRIu64 ", version: %{public}u", GetId(), version);
     }
 }
 } // namespace Rosen

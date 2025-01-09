@@ -225,19 +225,6 @@ public:
         return uiFirstFlag_;
     }
 
-    void SetBufferClearCacheSet(const std::set<int32_t> bufferCacheSet)
-    {
-        if (bufferCacheSet.size() > 0) {
-            bufferCacheSet_ = bufferCacheSet;
-            needSync_ = true;
-        }
-    }
-
-    const std::set<int32_t> GetBufferClearCacheSet()
-    {
-        return bufferCacheSet_;
-    }
-
     void SetIsParentUifirstNodeEnableParam(bool isUifirstParent)
     {
         if (uiFirstParentFlag_ == isUifirstParent) {
@@ -597,6 +584,20 @@ public:
         return apiCompatibleVersion_;
     }
 
+    void SetIsBufferFlushed(bool isBufferFlushed)
+    {
+        if (isBufferFlushed_ == isBufferFlushed) {
+            return;
+        }
+        isBufferFlushed_ = isBufferFlushed;
+        needSync_ = true;
+    }
+
+    bool GetIsBufferFlushed() const
+    {
+        return isBufferFlushed_;
+    }
+
 protected:
 private:
     bool isMainWindowType_ = false;
@@ -709,6 +710,8 @@ private:
     friend class RSSurfaceRenderNode;
     friend class RSUniRenderProcessor;
     friend class RSUniRenderThread;
+
+    bool isBufferFlushed_ = false;
 };
 } // namespace OHOS::Rosen
 #endif // RENDER_SERVICE_BASE_PARAMS_RS_SURFACE_RENDER_PARAMS_H

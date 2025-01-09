@@ -322,7 +322,8 @@ void RSUifirstManager::ProcessDoneNode()
             continue;
         }
         auto cacheStatus = drawable->GetCacheSurfaceProcessedStatus();
-        if (cacheStatus == CacheProcessStatus::SKIPPED) {
+        if ((drawable->HasCachedTexture() && cacheStatus == CacheProcessStatus::WAITING) ||
+            cacheStatus == CacheProcessStatus::SKIPPED) {
             it = subthreadProcessingNode_.erase(it);
             continue;
         }
@@ -1654,6 +1655,65 @@ bool RSUifirstManager::IsSubTreeNeedPrepareForSnapshot(RSSurfaceRenderNode& node
     return RSUifirstManager::Instance().IsRecentTaskScene() &&
         (node.IsFocusedNode(RSMainThread::Instance()->GetFocusLeashWindowId()) ||
         node.IsFocusedNode(RSMainThread::Instance()->GetFocusNodeId()));
+}
+
+bool RSUifirstManager::IsSubHighPriorityType(RSSurfaceRenderNode& node) const
+{
+    return node.GetName().find("hipreview") != std::string::npos;
+}
+
+void RSUifirstManager::CheckHwcChildrenType(RSSurfaceRenderNode& node, SurfaceHwcNodeType& enabledType)
+{
+    if (enabledType == SurfaceHwcNodeType::DEFAULT_HWC_ROSENWEB) {
+        return;
+    }
+    if (node.IsAppWindow()) {
+        auto hwcNodes = node.GetChildHardwareEnabledNodes();
+        if (hwcNodes.empty()) {
+            return;
+        }
+        if (IsSubHighPriorityType(node)) {
+            enabledType = SurfaceHwcNodeType::DEFAULT_HWC_VIDEO;
+            return;
+        }
+        if (node.IsRosenWeb()) {
+            enabledType = SurfaceHwcNodeType::DEFAULT_HWC_ROSENWEB;
+            return;
+        }
+        for (auto hwcNode : hwcNodes) {
+            auto hwcNodePtr = hwcNode.lock();
+            if (!hwcNodePtr) {
+                continue;
+            }
+            if (hwcNodePtr->IsRosenWeb()) {
+                enabledType = SurfaceHwcNodeType::DEFAULT_HWC_ROSENWEB;
+                return;
+            }
+            if (IsSubHighPriorityType(*hwcNodePtr)) {
+                enabledType = SurfaceHwcNodeType::DEFAULT_HWC_VIDEO;
+                return;
+            }
+        }
+    } else if (node.IsLeashWindow()) {
+        for (auto& child : *(node.GetChildren())) {
+            auto surfaceNode = child->ReinterpretCastTo<RSSurfaceRenderNode>();
+            if (surfaceNode == nullptr) {
+                continue;
+            }
+            CheckHwcChildrenType(*surfaceNode, enabledType);
+        }
+    }
+}
+
+void RSUifirstManager::MarkSubHighPriorityType(RSSurfaceRenderNode& node)
+{
+    if (!RSSystemProperties::IsPcType()) {
+        return;
+    }
+    SurfaceHwcNodeType preSubHighPriority = SurfaceHwcNodeType::DEFAULT_HWC_TYPE;
+    CheckHwcChildrenType(node, preSubHighPriority);
+    RS_OPTIONAL_TRACE_NAME_FMT("SubHighPriorityType::name:[%s] preSub:%d", node.GetName().c_str(), preSubHighPriority);
+    node.SetPreSubHighPriorityType(preSubHighPriority == SurfaceHwcNodeType::DEFAULT_HWC_VIDEO);
 }
 } // namespace Rosen
 } // namespace OHOS

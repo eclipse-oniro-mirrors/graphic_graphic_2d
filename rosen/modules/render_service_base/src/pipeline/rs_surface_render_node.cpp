@@ -1353,27 +1353,26 @@ void RSSurfaceRenderNode::UpdateBufferInfo(const sptr<SurfaceBuffer>& buffer, co
     surfaceParams->SetBuffer(buffer, damageRect);
     surfaceParams->SetAcquireFence(acquireFence);
     surfaceParams->SetBufferSynced(false);
+    surfaceParams->SetIsBufferFlushed(true);
     AddToPendingSyncList();
 #endif
 }
 
-void RSSurfaceRenderNode::NeedClearBufferCache()
+void RSSurfaceRenderNode::NeedClearBufferCache(std::set<uint32_t>& bufferCacheSet)
 {
 #ifdef RS_ENABLE_GPU
     if (!surfaceHandler_) {
         return;
     }
 
-    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
-    std::set<int32_t> bufferCacheSet;
     if (auto buffer = surfaceHandler_->GetBuffer()) {
         bufferCacheSet.insert(buffer->GetSeqNum());
+        RS_OPTIONAL_TRACE_NAME_FMT("NeedClearBufferCache bufferSeqNum:%d", buffer->GetSeqNum());
     }
     if (auto preBuffer = surfaceHandler_->GetPreBuffer()) {
         bufferCacheSet.insert(preBuffer->GetSeqNum());
+        RS_OPTIONAL_TRACE_NAME_FMT("NeedClearBufferCache preBufferSeqNum:%d", preBuffer->GetSeqNum());
     }
-    surfaceParams->SetBufferClearCacheSet(bufferCacheSet);
-    AddToPendingSyncList();
 #endif
 }
 #endif
@@ -1745,61 +1744,15 @@ void RSSurfaceRenderNode::UpdateHwcNodeLayerInfo(GraphicTransformType transform,
 #endif
 }
 
-void RSSurfaceRenderNode::CheckHwcChildrenType(SurfaceHwcNodeType& enabledType)
-{
-    if (enabledType == SurfaceHwcNodeType::DEFAULT_HWC_ROSENWEB) {
-        return;
-    }
-    if (IsAppWindow()) {
-        auto hwcNodes = GetChildHardwareEnabledNodes();
-        if (hwcNodes.empty()) {
-            return;
-        }
-        if (IsSubHighPriorityType()) {
-            enabledType = SurfaceHwcNodeType::DEFAULT_HWC_VIDEO;
-            return;
-        }
-        if (IsRosenWeb()) {
-            enabledType = SurfaceHwcNodeType::DEFAULT_HWC_ROSENWEB;
-            return;
-        }
-        for (auto hwcNode : hwcNodes) {
-            auto hwcNodePtr = hwcNode.lock();
-            if (!hwcNodePtr) {
-                continue;
-            }
-            if (hwcNodePtr->IsRosenWeb()) {
-                enabledType = SurfaceHwcNodeType::DEFAULT_HWC_ROSENWEB;
-                return;
-            }
-            if (hwcNodePtr->IsSubHighPriorityType()) {
-                enabledType = SurfaceHwcNodeType::DEFAULT_HWC_VIDEO;
-                return;
-            }
-        }
-    } else if (IsLeashWindow()) {
-        for (auto& child : *GetChildren()) {
-            auto surfaceNode = child->ReinterpretCastTo<RSSurfaceRenderNode>();
-            if (surfaceNode == nullptr) {
-                continue;
-            }
-            surfaceNode->CheckHwcChildrenType(enabledType);
-        }
-    }
-}
-
-void RSSurfaceRenderNode::SetPreSubHighPriorityType()
+void RSSurfaceRenderNode::SetPreSubHighPriorityType(bool priorityType)
 {
 #ifdef RS_ENABLE_GPU
-    if (!RSSystemProperties::IsPcType()) {
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
+    if (surfaceParams == nullptr) {
+        RS_LOGE("RSSurfaceRenderNode::SetPreSubHighPriorityType surfaceParams is Null");
         return;
     }
-    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
-    SurfaceHwcNodeType preSubHighPriority = SurfaceHwcNodeType::DEFAULT_HWC_TYPE;
-    CheckHwcChildrenType(preSubHighPriority);
-    RS_OPTIONAL_TRACE_NAME_FMT("SubHignProirityType::name:[%s] preSub:%d", GetName().c_str(),
-        preSubHighPriority);
-    surfaceParams->SetPreSubHighPriorityType(preSubHighPriority == SurfaceHwcNodeType::DEFAULT_HWC_VIDEO);
+    surfaceParams->SetPreSubHighPriorityType(priorityType);
     AddToPendingSyncList();
 #endif
 }
@@ -2834,18 +2787,7 @@ bool RSSurfaceRenderNode::QuerySubAssignable(bool isRotation)
     if (!IsFirstLevelNode()) {
         return false;
     }
-    hasTransparentSurface_ = false;
-    if (IsLeashWindow()) {
-        for (auto &child : *GetSortedChildren()) {
-            auto childSurfaceNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(child);
-            if (childSurfaceNode && childSurfaceNode->IsTransparent()) {
-                hasTransparentSurface_ = true;
-                break;
-            }
-        }
-    } else {
-        hasTransparentSurface_ = IsTransparent();
-    }
+    UpdateTransparentSurface();
     RS_TRACE_NAME_FMT("SubThreadAssignable node[%lld] hasTransparent: %d, childHasVisibleFilter: %d, "
         "hasFilter: %d, isRotation: %d & %d globalAlpha[%f], hasProtectedLayer: %d", GetId(), hasTransparentSurface_,
         ChildHasVisibleFilter(), HasFilter(), isRotation, RSSystemProperties::GetCacheOptimizeRotateEnable(),
@@ -2854,6 +2796,20 @@ bool RSSurfaceRenderNode::QuerySubAssignable(bool isRotation)
         !(isRotation && ROSEN_EQ(GetGlobalAlpha(), 0.0f)) : !isRotation;
     return !(hasTransparentSurface_ && ChildHasVisibleFilter()) && !HasFilter() && rotateOptimize &&
         !GetHasProtectedLayer();
+}
+
+void RSSurfaceRenderNode::UpdateTransparentSurface()
+{
+    hasTransparentSurface_ = IsTransparent();
+    if (IsLeashWindow() && !hasTransparentSurface_) {
+        for (auto &child : *GetSortedChildren()) {
+            auto childSurfaceNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(child);
+            if (childSurfaceNode && childSurfaceNode->IsTransparent()) {
+                hasTransparentSurface_ = true;
+                break;
+            }
+        }
+    }
 }
 
 bool RSSurfaceRenderNode::GetHasTransparentSurface() const
@@ -3325,16 +3281,24 @@ void RSSurfaceRenderNode::CalDrawBehindWindowRegion()
         RS_LOGE("RSSurfaceRenderNode::CalDrawBehindWindowRegion, invalid context");
     }
     RectI region;
+    auto geoPtr = GetMutableRenderProperties().GetBoundsGeometry();
+    auto surfaceAbsMatrix = geoPtr->GetAbsMatrix();
+    Drawing::Matrix invertSurfaceAbsMatrix;
+    surfaceAbsMatrix.Invert(invertSurfaceAbsMatrix);
     for (auto& id : childrenBlurBehindWindow_) {
         if (auto child = context->GetNodeMap().GetRenderNode<RSRenderNode>(id)) {
-            auto childRect = child->GetMutableRenderProperties().GetBoundsGeometry()->GetAbsRect();
-            region = region.JoinRect(childRect);
+            auto childRelativeMatrix = child->GetMutableRenderProperties().GetBoundsGeometry()->GetAbsMatrix();
+            childRelativeMatrix.PostConcat(invertSurfaceAbsMatrix);
+            auto childRelativeRect = geoPtr->MapRect(child->GetSelfDrawRect(), childRelativeMatrix);
+            region = region.JoinRect(childRelativeRect);
         } else {
             RS_LOGE("RSSurfaceRenderNode::CalDrawBehindWindowRegion, get child failed");
             return;
         }
     }
     RS_OPTIONAL_TRACE_NAME_FMT("RSSurfaceRenderNode::CalDrawBehindWindowRegion: Id: %lu, BehindWindowRegion: %s",
+        GetId(), region.ToString().c_str());
+    RS_LOGD("RSSurfaceRenderNode::CalDrawBehindWindowRegion: Id: %{public}" PRIu64 ", BehindWindowRegion: %{public}s",
         GetId(), region.ToString().c_str());
     drawBehindWindowRegion_ = region;
     auto filterDrawable = GetFilterDrawable(false);
@@ -3346,7 +3310,19 @@ void RSSurfaceRenderNode::CalDrawBehindWindowRegion()
 
 RectI RSSurfaceRenderNode::GetFilterRect() const
 {
-    return NeedDrawBehindWindow() ? drawBehindWindowRegion_ : RSRenderNode::GetFilterRect();
+    if (!NeedDrawBehindWindow()) {
+        return RSRenderNode::GetFilterRect();
+    }
+    auto geoPtr = GetRenderProperties().GetBoundsGeometry();
+    auto surfaceAbsMatrix = geoPtr->GetAbsMatrix();
+    RectF regionF(drawBehindWindowRegion_.GetLeft(), drawBehindWindowRegion_.GetTop(),
+        drawBehindWindowRegion_.GetRight(), drawBehindWindowRegion_.GetBottom());
+    return geoPtr->MapRect(regionF, surfaceAbsMatrix);
+}
+
+RectI RSSurfaceRenderNode::GetBehindWindowRegion() const
+{
+    return drawBehindWindowRegion_;
 }
 
 bool RSSurfaceRenderNode::IsCurFrameSwitchToPaint()
@@ -3372,6 +3348,21 @@ void RSSurfaceRenderNode::SetApiCompatibleVersion(uint32_t apiCompatibleVersion)
     AddToPendingSyncList();
 
     apiCompatibleVersion_ = apiCompatibleVersion;
+}
+
+void RSSurfaceRenderNode::ResetIsBufferFlushed()
+{
+    if (stagingRenderParams_ == nullptr) {
+        RS_LOGE("RSSurfaceRenderNode::ResetIsBufferFlushed: stagingRenderPrams is nullptr");
+        return;
+    }
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
+    if (surfaceParams == nullptr) {
+        RS_LOGE("RSSurfaceRenderNode::ResetIsBufferFlushed: surfaceParams is nullptr");
+        return;
+    }
+    surfaceParams->SetIsBufferFlushed(false);
+    AddToPendingSyncList();
 }
 } // namespace Rosen
 } // namespace OHOS

@@ -171,8 +171,7 @@ public:
             IsLayerTop();
     }
 
-    void CheckHwcChildrenType(SurfaceHwcNodeType& enabledType);
-    void SetPreSubHighPriorityType();
+    void SetPreSubHighPriorityType(bool priorityType);
 
     bool IsDynamicHardwareEnable() const
     {
@@ -604,7 +603,7 @@ public:
         srcRect_ = rect;
     }
 
-    void NeedClearBufferCache();
+    void NeedClearBufferCache(std::set<uint32_t>& bufferCacheSet);
 
     const RectI& GetSrcRect() const
     {
@@ -1190,6 +1189,7 @@ public:
     bool GetHasSharedTransitionNode() const;
     void SetHasSharedTransitionNode(bool hasSharedTransitionNode);
     Vector2f GetGravityTranslate(float imgWidth, float imgHeight);
+    void UpdateTransparentSurface();
     bool GetHasTransparentSurface() const;
     void UpdatePartialRenderParams();
     // This function is used for extending visibleRegion by dirty blurfilter node half-obscured
@@ -1352,6 +1352,7 @@ public:
     void RemoveChildBlurBehindWindow(NodeId id) override;
     void CalDrawBehindWindowRegion() override;
     RectI GetFilterRect() const override;
+    RectI GetBehindWindowRegion() const override;
     void SetUifirstStartingFlag(bool flag);
     void UpdateCrossNodeSkippedDisplayOffset(NodeId displayId, int32_t offsetX, int32_t offsetY)
     {
@@ -1392,6 +1393,8 @@ public:
     {
         isHwcPendingDisabled_ = isHwcPendingDisabled;
     }
+
+    void ResetIsBufferFlushed();
 
 protected:
     void OnSync() override;

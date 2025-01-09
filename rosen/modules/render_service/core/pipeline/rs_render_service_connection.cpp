@@ -320,6 +320,13 @@ void RSRenderServiceConnection::ExecuteSynchronousTask(const std::shared_ptr<RSS
         RS_LOGW("RSRenderServiceConnection::ExecuteSynchronousTask, task or main thread is null!");
         return;
     }
+    auto screenManager = CreateOrGetScreenManager();
+    if (screenManager && screenManager->IsScreenPoweringOn() && task->GetType() == RS_NODE_SYNCHRONOUS_READ_PROPERTY) {
+        RS_LOGI("RSRenderServiceConnection::ExecuteSynchronousTask, when screen is powering on, the task is executed "
+                "in the IPC thread");
+        task->Process(mainThread_->GetContext());
+        return;
+    }
     // After a synchronous task times out, it will no longer be executed.
     auto isTimeout = std::make_shared<bool>(0);
     std::weak_ptr<bool> isTimeoutWeak = isTimeout;
@@ -627,6 +634,15 @@ int32_t RSRenderServiceConnection::SetVirtualScreenSecurityExemptionList(
         return StatusCode::SCREEN_NOT_FOUND;
     }
     return screenManager_->SetVirtualScreenSecurityExemptionList(id, securityExemptionList);
+}
+
+int32_t RSRenderServiceConnection::SetScreenSecurityMask(ScreenId id,
+    const std::shared_ptr<Media::PixelMap> securityMask)
+{
+    if (!screenManager_) {
+        return StatusCode::SCREEN_NOT_FOUND;
+    }
+    return screenManager_->SetScreenSecurityMask(id, std::move(securityMask));
 }
 
 int32_t RSRenderServiceConnection::SetMirrorScreenVisibleRect(ScreenId id, const Rect& mainScreenRect)
@@ -1953,11 +1969,12 @@ uint32_t RSRenderServiceConnection::SetScreenActiveRect(
         .h = activeRect.h,
     };
     auto result = screenManager_->SetScreenActiveRect(id, dstActiveRect);
-    if (result == StatusCode::SUCCESS) {
-        HgmTaskHandleThread::Instance().PostTask([id, dstActiveRect]() {
-            OHOS::Rosen::HgmCore::Instance().NotifyScreenRectFrameRateChange(id, dstActiveRect);
-        });
+    if (result != StatusCode::SUCCESS) {
+        RS_LOGE("SetScreenActiveRect Fail with result: %{public}d", result);
     }
+    HgmTaskHandleThread::Instance().PostTask([id, dstActiveRect]() {
+            OHOS::Rosen::HgmCore::Instance().NotifyScreenRectFrameRateChange(id, dstActiveRect);
+    });
     return result;
 }
 
