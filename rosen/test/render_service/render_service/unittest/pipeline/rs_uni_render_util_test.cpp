@@ -930,7 +930,9 @@ HWTEST_F(RSUniRenderUtilTest, GetConsumerTransformTest, Function | SmallTest | L
     NodeId id = 0;
     RSSurfaceRenderNode node(id);
     node.GetRSSurfaceHandler()->buffer_.buffer = OHOS::SurfaceBuffer::Create();
-    auto consumerTransform = RSUniRenderUtil::GetConsumerTransform(node);
+    node.GetRSSurfaceHandler()->consumer_ = OHOS::IConsumerSurface::Create();
+    auto consumerTransform = RSUniRenderUtil::GetConsumerTransform(node,
+        node.GetRSSurfaceHandler()->buffer_.buffer, node.GetRSSurfaceHandler()->consumer_);
     ASSERT_EQ(consumerTransform, GRAPHIC_ROTATE_NONE);
 }
 
@@ -952,9 +954,24 @@ HWTEST_F(RSUniRenderUtilTest, CalcSrcRectByBufferRotationTest, Function | SmallT
     int top = 1;
     int width = 1;
     int height = 1;
-    RectI srcRect(left, top, width, height);
-    RectI newSrcRect = RSUniRenderUtil::CalcSrcRectByBufferRotation(*surfaceBuffer, consumerTransformType, srcRect);
+    Drawing::Rect srcRect(left, top, left + width, top + height);
+    Drawing::Rect newSrcRect = RSUniRenderUtil::CalcSrcRectByBufferRotation(*surfaceBuffer, consumerTransformType, srcRect);
     ASSERT_EQ(newSrcRect, srcRect);
+}
+
+/*
+ * @tc.name: IsHwcEnabledByGravity
+ * @tc.desc: Verify function IsHwcEnabledByGravity
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSUniRenderUtilTest, IsHwcEnabledByGravityTest, Function | SmallTest | Level2)
+{
+    NodeId id = 0;
+    RSSurfaceRenderNode node(id);
+    EXPECT_FALSE(RSUniRenderUtil::IsHwcEnabledByGravity(node, GRAVITY::RESIZE));
+    EXPECT_FALSE(RSUniRenderUtil::IsHwcEnabledByGravity(node, GRAVITY::TOP_LEFT));
+    EXPECT_TRUE(RSUniRenderUtil::IsHwcEnabledByGravity(node, GRAVITY::CENTER));
 }
 
 /*
