@@ -479,10 +479,12 @@ void RSSurfaceRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
 
     RSRenderNodeSingleDrawableLocker singleLocker(this);
     if (UNLIKELY(!singleLocker.IsLocked())) {
-        SetDrawSkipType(DrawSkipType::MULTI_ACCESS);
         singleLocker.DrawableOnDrawMultiAccessEventReport(__func__);
         RS_LOGE("RSSurfaceRenderNodeDrawable::OnDraw node %{public}" PRIu64 " onDraw!!!", GetId());
-        return;
+        if (RSSystemProperties::GetSingleDrawableLockerEnabled()) {
+            SetDrawSkipType(DrawSkipType::MULTI_ACCESS);
+            return;
+        }
     }
 
     std::shared_ptr<Drawing::GPUContext> gpuContext = nullptr;
@@ -879,7 +881,9 @@ void RSSurfaceRenderNodeDrawable::CaptureSurface(RSPaintFilterCanvas& canvas, RS
     if (UNLIKELY(!singleLocker.IsLocked())) {
         singleLocker.DrawableOnDrawMultiAccessEventReport(__func__);
         RS_LOGE("RSSurfaceRenderNodeDrawable::CaptureSurface node %{public}" PRIu64 " onDraw!!!", GetId());
-        return;
+        if (RSSystemProperties::GetSingleDrawableLockerEnabled()) {
+            return;
+        }
     }
 
     bool isSelfDrawingSurface = surfaceParams.GetSurfaceNodeType() == RSSurfaceNodeType::SELF_DRAWING_NODE &&
