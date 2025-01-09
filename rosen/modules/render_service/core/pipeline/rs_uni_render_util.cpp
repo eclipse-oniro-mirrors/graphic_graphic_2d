@@ -1483,7 +1483,7 @@ GraphicTransformType RSUniRenderUtil::GetConsumerTransform(const RSSurfaceRender
 }
 
 Drawing::Rect RSUniRenderUtil::CalcSrcRectByBufferRotation(const SurfaceBuffer& buffer,
-    const GraphicTransformType consumerTransformType, RectI newSrcRect)
+    const GraphicTransformType consumerTransformType, Drawing::Rect newSrcRect)
 {
     const float frameWidth = buffer.GetSurfaceBufferWidth();
     const float frameHeight = buffer.GetSurfaceBufferHeight();

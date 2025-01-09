@@ -158,7 +158,7 @@ public:
     static GraphicTransformType GetConsumerTransform(const RSSurfaceRenderNode& node,
         const sptr<SurfaceBuffer> buffer, const sptr<IConsumerSurface> consumer);
     static Drawing::Rect CalcSrcRectByBufferRotation(const SurfaceBuffer& buffer,
-        const GraphicTransformType consumerTransformType, RectI newSrcRect);
+        const GraphicTransformType consumerTransformType, Drawing::Rect newSrcRect);
     static bool IsHwcEnabledByGravity(RSSurfaceRenderNode& node, const Gravity frameGravity);
     static void DealWithNodeGravityOldVersion(RSSurfaceRenderNode& node, const ScreenInfo& screenInfo);
 private:
