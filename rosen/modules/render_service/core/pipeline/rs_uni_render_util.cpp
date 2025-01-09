@@ -850,6 +850,14 @@ bool RSUniRenderUtil::HandleCaptureNode(RSRenderNode& node, RSPaintFilterCanvas&
     return false;
 }
 
+int RSUniRenderUtil::TransferToAntiClockwiseDegrees(int angle)
+{
+    static const std::map<int, int> supportedDegrees = { { 90, 270 }, { 180, 180 }, { -90, 90 }, { -180, 180 },
+        { 270, -270 }, { -270, 270 } };
+    auto iter = supportedDegrees.find(angle);
+    return iter != supportedDegrees.end() ? iter->second : 0;
+}
+
 int RSUniRenderUtil::GetRotationFromMatrix(Drawing::Matrix matrix)
 {
     Drawing::Matrix::Buffer value;
@@ -860,9 +868,7 @@ int RSUniRenderUtil::GetRotationFromMatrix(Drawing::Matrix matrix)
     // transfer the result to anti-clockwise degrees
     // only rotation with 90°, 180°, 270° are composed through hardware,
     // in which situation the transformation of the layer needs to be set.
-    static const std::map<int, int> supportedDegrees = {{90, 270}, {180, 180}, {-90, 90}, {-180, 180}};
-    auto iter = supportedDegrees.find(rAngle);
-    return iter != supportedDegrees.end() ? iter->second : 0;
+    return TransferToAntiClockwiseDegrees(rAngle);
 }
 
 int RSUniRenderUtil::GetRotationDegreeFromMatrix(Drawing::Matrix matrix)
@@ -1359,8 +1365,7 @@ GraphicTransformType RSUniRenderUtil::GetRotateTransformForRotationFixed(RSSurfa
     auto transformType = RSBaseRenderUtil::GetRotateTransform(RSBaseRenderUtil::GetSurfaceBufferTransformType(
         node.GetRSSurfaceHandler()->GetConsumer(), node.GetRSSurfaceHandler()->GetBuffer()));
     int extraRotation = 0;
-    auto geoPtr = node.GetRenderProperties().GetBoundsGeometry();
-    int degree = RSUniRenderUtil::GetRotationDegreeFromMatrix(geoPtr ? geoPtr->GetAbsMatrix() : Drawing::Matrix());
+    int degree = static_cast<int>(node.GetAbsRotation()) % 360;
     auto surfaceParams = node.GetStagingRenderParams() == nullptr
                              ? nullptr
                              : static_cast<RSSurfaceRenderParams*>(node.GetStagingRenderParams().get());
@@ -1628,8 +1633,9 @@ GraphicTransformType RSUniRenderUtil::GetLayerTransform(RSSurfaceRenderNode& nod
                              ? nullptr
                              : static_cast<RSSurfaceRenderParams*>(node.GetStagingRenderParams().get());
     int32_t rotationDegree = RSBaseRenderUtil::GetScreenRotationOffset(surfaceParams);
-    int surfaceNodeRotation = node.GetFixRotationByUser() ? -1 * rotationDegree :
-        RSUniRenderUtil::GetRotationFromMatrix(node.GetTotalMatrix());
+    int surfaceNodeRotation = node.GetFixRotationByUser()
+                                  ? -1 * rotationDegree
+                                  : TransferToAntiClockwiseDegrees(static_cast<int>(node.GetAbsRotation()) % 360);
     auto transformType = GraphicTransformType::GRAPHIC_ROTATE_NONE;
     auto buffer = node.GetRSSurfaceHandler()->GetBuffer();
     if (consumer != nullptr && buffer != nullptr) {
@@ -2124,7 +2130,9 @@ void RSUniRenderUtil::UpdateHwcNodeProperty(std::shared_ptr<RSSurfaceRenderNode>
     Drawing::Matrix totalMatrix = hwcNodeGeo->GetMatrix();
     auto hwcNodeRect = hwcNodeGeo->GetAbsRect();
     bool isNodeRenderByDrawingCache = false;
-    RSUniRenderUtil::TraverseParentNodeAndReduce(hwcNode,
+    hwcNode->SetAbsRotation(hwcNode->GetRenderProperties().GetRotation());
+    RSUniRenderUtil::TraverseParentNodeAndReduce(
+        hwcNode,
         [&isNodeRenderByDrawingCache](std::shared_ptr<RSRenderNode> parent) {
             if (isNodeRenderByDrawingCache) {
                 return;
@@ -2197,8 +2205,10 @@ void RSUniRenderUtil::UpdateHwcNodeProperty(std::shared_ptr<RSSurfaceRenderNode>
                     checkIntersectWithRoundCorner(parentClipRect, maxClipRRectCornerRadiusX, maxClipRRectCornerRadiusY);
                 }
             }
-        }
-    );
+        },
+        [hwcNode](std::shared_ptr<RSRenderNode> parent) {
+            hwcNode->SetAbsRotation(hwcNode->GetAbsRotation() + parent->GetRenderProperties().GetRotation());
+        });
     if (isNodeRenderByDrawingCache) {
         RS_OPTIONAL_TRACE_NAME_FMT("hwc debug: name:%s id:%" PRIu64 " disabled by drawing cache",
             hwcNode->GetName().c_str(), hwcNode->GetId());

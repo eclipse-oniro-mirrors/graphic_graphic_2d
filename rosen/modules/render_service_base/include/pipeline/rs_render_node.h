@@ -846,6 +846,17 @@ public:
     virtual void RemoveChildBlurBehindWindow(NodeId id) {}
     virtual void CalDrawBehindWindowRegion() {}
     virtual RectI GetBehindWindowRegion() const { return {}; };
+
+    void SetAbsRotation(float degree)
+    {
+        absRotation_ = degree;
+    }
+
+    float GetAbsRotation() const
+    {
+        return absRotation_;
+    }
+
 protected:
     virtual void OnApplyModifiers() {}
     void SetOldDirtyInSurface(RectI oldDirtyInSurface);
@@ -1116,6 +1127,8 @@ private:
     NodeId displayNodeId_ = INVALID_NODEID;
     // for blur effct count
     static std::unordered_map<pid_t, size_t> blurEffectCounter_;
+    // The angle at which the node rotates about the Z-axis
+    float absRotation_ = 0.f;
     void UpdateBlurEffectCounter(int deltaCount);
     int GetBlurEffectDrawbleCount();
 
