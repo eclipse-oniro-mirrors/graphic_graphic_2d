@@ -506,7 +506,7 @@ void RSRenderNode::SetIsCrossNode(bool isCrossNode)
 
 bool RSRenderNode::IsCrossNode() const
 {
-    return isCrossNode_;
+    return isCrossNode_ || isCloneCrossNode_;
 }
 
 void RSRenderNode::AddCrossParentChild(const SharedPtr& child, int32_t index)
