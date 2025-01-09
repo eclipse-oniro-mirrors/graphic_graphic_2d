@@ -4385,6 +4385,7 @@ void RSRenderNode::UpdateRenderParams()
     stagingRenderParams_->SetEffectNodeShouldPaint(EffectNodeShouldPaint());
     stagingRenderParams_->SetHasGlobalCorner(!globalCornerRadius_.IsZero());
     stagingRenderParams_->SetFirstLevelCrossNode(isFirstLevelCrossNode_);
+    stagingRenderParams_->SetAbsRotation(absRotation_);
 #endif
 }
 
