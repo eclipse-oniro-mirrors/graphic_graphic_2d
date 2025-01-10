@@ -411,6 +411,8 @@ private:
     RSMainThread& operator=(const RSMainThread&&) = delete;
 
     void OnVsync(uint64_t timestamp, uint64_t frameCount, void* data);
+    void GetCurrentFrameDrawLargeAreaBlurPredictively();
+    void GetCurrentFrameDrawLargeAreaBlurPrecisely();
     void ProcessCommand();
     void UpdateSubSurfaceCnt();
     void Animate(uint64_t timestamp);
@@ -779,6 +781,9 @@ private:
 #ifdef RS_ENABLE_VK
     bool needCreateVkPipeline_ = true;
 #endif
+
+    std::pair<bool, bool> predictDrawLargeAreaBlur_ = {false, false};
+    bool predictBegin_ = false;
 };
 } // namespace OHOS::Rosen
 #endif // RS_MAIN_THREAD

@@ -4435,6 +4435,24 @@ void RSRenderNode::UpdateSrcOrClipedAbsDrawRectChangeState(const RectI& clipRect
     srcOrClipedAbsDrawRectChangeFlag_ = (absDrawRect_ != oldAbsDrawRect_ || clipedAbsDrawRect != oldDirtyInSurface_);
 }
 
+void RSRenderNode::NodeDrawLargeAreaBlur(std::pair<bool, bool>& nodeDrawLargeAreaBlur)
+{
+    auto backgroundFilterDrawable = GetFilterDrawable(false);
+    auto compositingFilterDrawable = GetFilterDrawable(true);
+    bool flagPredict = false;
+    bool flagCurrent = false;
+    if (backgroundFilterDrawable) {
+        flagPredict = flagPredict || backgroundFilterDrawable->WouldDrawLargeAreaBlur();
+        flagCurrent = flagCurrent || backgroundFilterDrawable->WouldDrawLargeAreaBlurPrecisely();
+    }
+    if (compositingFilterDrawable) {
+        flagPredict = flagPredict || compositingFilterDrawable->WouldDrawLargeAreaBlur();
+        flagCurrent = flagCurrent || compositingFilterDrawable->WouldDrawLargeAreaBlurPrecisely();
+    }
+    nodeDrawLargeAreaBlur.first = flagPredict;
+    nodeDrawLargeAreaBlur.second = flagCurrent;
+}
+
 void RSRenderNode::OnSync()
 {
     addedToPendingSyncList_ = false;
