@@ -102,6 +102,7 @@ enum class DrawSkipType : uint8_t {
     DEAL_WITH_CACHED_WINDOW = 28,
     MULTI_ACCESS = 29,
     RENDER_SKIP_IF_SCREEN_SWITCHING = 30,
+    UI_FIRST_CACHE_FAIL = 31,
 };
 
 class RSB_EXPORT RSRenderNodeDrawableAdapter : public std::enable_shared_from_this<RSRenderNodeDrawableAdapter> {
@@ -344,7 +345,7 @@ public:
     }
     inline bool IsLocked() const
     {
-        return locked_;
+        return LIKELY(locked_);
     }
     struct MultiAccessReportInfo {
         bool drawableNotNull = false;
