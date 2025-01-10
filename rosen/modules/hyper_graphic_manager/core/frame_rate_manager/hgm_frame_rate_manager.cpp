@@ -748,7 +748,8 @@ void HgmFrameRateManager::Reset()
     appChangeData_.clear();
 }
 
-int32_t HgmFrameRateManager::GetExpectedFrameRate(const RSPropertyUnit unit, float velocity, float animationSize) const
+int32_t HgmFrameRateManager::GetExpectedFrameRate(const RSPropertyUnit unit,
+    float velocity, int32_t animationSize) const
 {
     switch (unit) {
         case RSPropertyUnit::PIXEL_POSITION:
@@ -810,15 +811,15 @@ int32_t HgmFrameRateManager::GetPreferredFps(const std::string& type, float velo
     return 0;
 }
 
-float HgmFrameRateManager::PixelToMM(float velocity)
+template<typename T>
+float HgmFrameRateManager::PixelToMM(T pixels)
 {
-    float velocityMM = 0.0f;
     auto& hgmCore = HgmCore::Instance();
     sptr<HgmScreen> hgmScreen = hgmCore.GetScreen(hgmCore.GetActiveScreenId());
     if (hgmScreen && hgmScreen->GetPpi() > 0.f) {
-        velocityMM = velocity / hgmScreen->GetPpi() * INCH_2_MM;
+        return pixels / hgmScreen->GetPpi() * INCH_2_MM;
     }
-    return velocityMM;
+    return 0.f;
 }
 
 void HgmFrameRateManager::HandleLightFactorStatus(pid_t pid, bool isSafe)

@@ -207,6 +207,11 @@ void RSAnimationManager::SetRateDeciderScale(float scaleX, float scaleY)
     rateDecider_.SetNodeScale(scaleX, scaleY);
 }
 
+void RSAnimationManager::SetRateDeciderAbsRect(int32_t width, int32_t height)
+{
+    rateDecider_.SetAbsRect(width, height);
+}
+
 const FrameRateRange& RSAnimationManager::GetDecideFrameRateRange() const
 {
     return rateDecider_.GetFrameRateRange();

@@ -414,7 +414,7 @@ HWTEST_F(HgmFrameRateMgrTest, HandleEventTest, Function | SmallTest | Level2)
     auto &hgm = HgmCore::Instance();
     mgr->DeliverRefreshRateVote({"VOTER_GAMES", 120, 90, 0}, true);
 
-    mgr->GetExpectedFrameRate(static_cast<RSPropertyUnit>(0xff), 100.f, 0.f);
+    mgr->GetExpectedFrameRate(static_cast<RSPropertyUnit>(0xff), 100.f, 0);
     EXPECT_NE(hgm.mPolicyConfigData_, nullptr);
     std::shared_ptr<PolicyConfigData> cachedPolicyConfigData = nullptr;
     std::swap(hgm.mPolicyConfigData_, cachedPolicyConfigData);
