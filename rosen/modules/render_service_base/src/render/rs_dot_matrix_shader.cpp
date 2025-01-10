@@ -63,7 +63,7 @@ void RSDotMatrixShader::SetNoneEffect()
     if (params_) {
         params_->effectType_ = DotMatrixEffectType::NONE;
     }
-
+}
 void RSDotMatrixShader::SetRotateEffect(const RotateEffectParams& rotateParams)
 {
     if (params_) {
