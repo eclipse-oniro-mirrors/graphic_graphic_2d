@@ -160,13 +160,13 @@ napi_value JsParagraphBuilder::AddText(napi_env env, napi_callback_info info)
 napi_value JsParagraphBuilder::OnAddText(napi_env env, napi_callback_info info)
 {
     if (typographyCreate_ == nullptr) {
-        return NapiThrowError(env, TextErrorCode::ERROR_INVALID_PARAM, "Invalid params.");
+        return NapiThrowError(env, TextErrorCode::ERROR_INVALID_PARAM, "Invalid typographyCreate");
     }
     size_t argc = ARGC_ONE;
     napi_value argv[ARGC_ONE] = {nullptr};
     napi_status status = napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
     if (status != napi_ok || argc < ARGC_ONE) {
-        return NapiThrowError(env, TextErrorCode::ERROR_INVALID_PARAM, "Invalid params.");
+        return NapiThrowError(env, TextErrorCode::ERROR_INVALID_PARAM, "Invalid param 0");
     }
     napi_valuetype valueType = napi_undefined;
     if (argv[0] == nullptr || napi_typeof(env, argv[0], &valueType) != napi_ok) {
@@ -175,11 +175,11 @@ napi_value JsParagraphBuilder::OnAddText(napi_env env, napi_callback_info info)
 
     size_t len = 0;
     if (napi_get_value_string_utf16(env, argv[0], nullptr, 0, &len) != napi_ok) {
-        return NapiThrowError(env, TextErrorCode::ERROR_INVALID_PARAM, "Incorrect parameter0 type");
+        return NapiThrowError(env, TextErrorCode::ERROR_INVALID_PARAM, "Failed get utf16 length");
     }
     char16_t buffer[len+1];
     if (napi_get_value_string_utf16(env, argv[0], buffer, len + 1, &len) != napi_ok) {
-        return NapiThrowError(env, TextErrorCode::ERROR_INVALID_PARAM, "Incorrect parameter0 type");
+        return NapiThrowError(env, TextErrorCode::ERROR_INVALID_PARAM, "Failed get utf16");
     }
     typographyCreate_->AppendText(buffer);
     return NapiGetUndefined(env);
