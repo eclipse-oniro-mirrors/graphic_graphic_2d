@@ -45,8 +45,9 @@ void RSModifierManagerUnitTest::TearDown() {}
  */
 HWTEST_F(RSModifierManagerUnitTest, CreateDrawingContextTest001, TestSize.Level1)
 {
-    RSModifierManager rsModifierManager;
-    rsModifierManager.Draw();
+    auto manager = std::make_shared<RSModifierManager>();
+    manager->Draw();
+    EXPECT_TRUE(manager);
 }
 
 /**
