@@ -410,7 +410,7 @@ void RSScreenManager::OnHwcDeadEvent()
                 continue;
             } else {
 #ifdef RS_ENABLE_GPU
-            RSHardwareThread::Instance().ClearFrameBuffers(screen->GetOutput());
+                RSHardwareThread::Instance().ClearFrameBuffers(screen->GetOutput());
             }
         }
 #endif
