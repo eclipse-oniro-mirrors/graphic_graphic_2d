@@ -1244,7 +1244,7 @@ void RSDisplayRenderNodeDrawable::WiredScreenProjection(
     }
     auto& mirroredParams = static_cast<RSDisplayRenderParams&>(*mirroredDrawable->GetRenderParams());
     if (littleScreenRedraw_ || (RSSystemParameters::GetWiredScreenOndrawEnabled() &&
-        (params.GetHDRPresent() || !currentBlackList_.empty()))) {
+        (mirroredParams.GetHDRPresent() || !currentBlackList_.empty()))) {
         DrawWiredMirrorOnDraw(*mirroredDrawable, params);
     } else {
         DrawWiredMirrorCopy(*mirroredDrawable);
