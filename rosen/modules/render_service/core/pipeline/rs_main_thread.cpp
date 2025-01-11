@@ -868,6 +868,31 @@ void RSMainThread::Start()
     }
 }
 
+void RSMainThread::GetCurrentFrameDrawLargeAreaBlurPredictively()
+{
+    if (!predictBegin_) {
+        RS_TRACE_NAME("prediction invalid frame");
+        return;
+    }
+    if (predictDrawLargeAreaBlur_.first) {
+        RS_TRACE_NAME("prediction current long frame");
+    } else {
+        RS_TRACE_NAME("prediction current short frame");
+    }
+    predictDrawLargeAreaBlur_.first = false;
+}
+
+void RSMainThread::GetCurrentFrameDrawLargeAreaBlurPrecisely()
+{
+    if (predictDrawLargeAreaBlur_.second) {
+        RS_TRACE_NAME("precise current long frame");
+        predictBegin_ = true;
+    } else {
+        RS_TRACE_NAME("precise current short frame");
+    }
+    predictDrawLargeAreaBlur_.second = false;
+}
+
 void RSMainThread::ProcessCommand()
 {
     RSUnmarshalThread::Instance().ClearTransactionDataStatistics();
@@ -2158,6 +2183,8 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
         uniVisitor->SetFocusedNodeId(focusNodeId_, focusLeashWindowId_);
         rsVsyncRateReduceManager_.SetFocusedNodeId(focusNodeId_);
         rootNode->QuickPrepare(uniVisitor);
+        uniVisitor->GetPredictDrawLargeAreaBlur(predictDrawLargeAreaBlur_);
+        uniVisitor->ResetPredictDrawLargeAreaBlur();
         if (deviceType_ != DeviceType::PHONE) {
             RSUniRenderUtil::MultiLayersPerf(uniVisitor->GetLayerNum());
         }

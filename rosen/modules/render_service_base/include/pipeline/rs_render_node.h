@@ -324,6 +324,7 @@ public:
     void UpdateAbsDrawRect();
 
     void ResetChangeState();
+    void NodeDrawLargeAreaBlur(std::pair<bool, bool>& nodeDrawLargeAreaBlur);
     bool UpdateDrawRectAndDirtyRegion(RSDirtyRegionManager& dirtyManager, bool accumGeoDirty, const RectI& clipRect,
         const Drawing::Matrix& parentSurfaceMatrix);
     void UpdateDirtyRegionInfoForDFX(RSDirtyRegionManager& dirtyManager);
