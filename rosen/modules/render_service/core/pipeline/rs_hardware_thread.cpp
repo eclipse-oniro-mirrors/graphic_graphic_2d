@@ -393,7 +393,7 @@ void RSHardwareThread::CalculateDelayTime(OHOS::Rosen::HgmCore& hgmCore, Refresh
         if (periodNum * idealPeriod + vsyncOffset + IDEAL_PULSE < idealPipelineOffset) {
             periodNum = periodNum + 1;
         }
-        frameOffset = periodNum * idealPeriod + vsyncOffset + static_cast<int64_t>(dvsyncOffset);
+        frameOffset = periodNum * idealPeriod + vsyncOffset + static_cast<int64_t>(dvsyncOffset) - param.fastComposeTimeStampDiff;
     }
     expectCommitTime = param.actualTimestamp + frameOffset - compositionTime - RESERVE_TIME;
     int64_t diffTime = expectCommitTime - currTime;
@@ -468,6 +468,7 @@ RefreshRateParam RSHardwareThread::GetRefreshRateParam()
             .vsyncId = hgmCore.GetVsyncId(),
             .constraintRelativeTime = hgmCore.GetPendingConstraintRelativeTime(),
             .isForceRefresh = hgmCore.GetForceRefreshFlag(),
+            .fastComposeTimeStampDiff = hgmCore.GetFastComposeTimeStampDiff()
         };
     } else {
         param = {
@@ -477,6 +478,7 @@ RefreshRateParam RSHardwareThread::GetRefreshRateParam()
             .vsyncId = RSUniRenderThread::Instance().GetVsyncId(),
             .constraintRelativeTime = RSUniRenderThread::Instance().GetPendingConstraintRelativeTime(),
             .isForceRefresh = RSUniRenderThread::Instance().GetForceRefreshFlag(),
+            .fastComposeTimeStampDiff = RSUniRenderThread::Instance().GetFastComposeTimeStampDiff()
         };
     }
     return param;

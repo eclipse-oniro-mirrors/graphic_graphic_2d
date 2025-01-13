@@ -185,6 +185,7 @@ constexpr uint32_t EVENT_SET_HARDWARE_UTIL = 100004;
 constexpr int64_t FIXED_EXTRA_DRAWING_TIME = 3000000; // 3ms
 constexpr int64_t SINGLE_SHIFT = 2700000; // 2.7ms
 constexpr int64_t DOUBLE_SHIFT = 5400000; // 5.4ms
+constexpr uint64_t PERIOD_MAX_OFFSET = 1000000; // 1ms
 constexpr const char* WALLPAPER_VIEW = "WallpaperView";
 constexpr const char* CLEAR_GPU_CACHE = "ClearGpuCache";
 constexpr const char* DESKTOP_NAME_FOR_ROTATION = "SCBDesktop";
@@ -2384,6 +2385,12 @@ void RSMainThread::Render()
         // so we use hgmCore to keep force refresh flag, then reset flag.
         hgmCore.SetForceRefreshFlag(isForceRefresh_);
         isForceRefresh_ = false;
+        uint64_t fastComposeTimeStampDiff = 0;
+        if (lastFastComposeTimeStamp_ == timestamp_) {
+            fastComposeTimeStampDiff = lastFastComposeTimeStampDiff_;
+        }
+        renderThreadParams_->SetFastComposeTimeStampDiff(fastComposeTimeStampDiff);
+        hgmCore.SetFastComposeTimeStampDiff(fastComposeTimeStampDiff);
 #endif
     }
     if (RSSystemProperties::GetRenderNodeTraceEnabled()) {
@@ -3833,7 +3840,43 @@ void RSMainThread::PerfAfterAnim(bool needRequestNextVsync)
     }
 }
 
-void RSMainThread::ForceRefreshForUni()
+void RSMainThread::CheckFastCompose(int64_t lastFlushedDesiredPresentTimeStamp)
+{
+    auto nowTime = SystemTime();
+    int64_t vsyncPeriod = 0;
+    if (receiver_) {
+        receiver_->GetVSyncPeriod(vsyncPeriod);
+    }
+    if (static_cast<uint64_t>(vsyncPeriod) > REFRESH_PERIOD + PERIOD_MAX_OFFSET || 
+    	static_cast<uint64_t>(vsyncPeriod) < REFRESH_PERIOD - PERIOD_MAX_OFFSET) {
+        RequestNextVSync();
+        return;
+    }
+    uint64_t lastVsyncTime = 0;
+    if (lastFastComposeTimeStamp_ > 0 && timestamp_ == lastFastComposeTimeStamp_) {
+        lastVsyncTime = timestamp_ - lastFastComposeTimeStampDiff_;
+    } else {
+        lastVsyncTime = timestamp_;
+    }
+    lastVsyncTime = nowTime - ((nowTime - lastVsyncTime) % vsyncPeriod);
+    RS_TRACE_NAME_FMT("RSMainThread::CheckFastCompose now = :" + std::to_string(nowTime) +
+        " ,lastVsyncTime = :" + std::to_string(lastVsyncTime) +
+        " ,timestamp_ = :" + std::to_string(timestamp_));
+    // ignore animation scenario and mult-window scenario
+    bool isNeedSingleFrameCompose = context_->GetAnimatingNodeList().empty() &&
+        context_->GetNodeMap().GetVisibleLeashWindowCount() < MULTI_WINDOW_PERF_START_NUM;
+    if (isNeedSingleFrameCompose && nowTime - timestamp_ > vsyncPeriod && 
+        lastFlushedDesiredPresentTimeStamp > lastVsyncTime - vsyncPeriod &&
+        lastFlushedDesiredPresentTimeStamp < lastVsyncTime &&
+        nowTime - lastVsyncTime < REFRESH_PERIOD / 2) { // invoke when late less than 1/2 refresh period
+        RS_TRACE_NAME("RSMainThread::CheckFastCompose start fastcompose");
+        ForceRefreshForUni(true);
+    } else {
+        RequestNextVSync();
+    }
+}
+
+void RSMainThread::ForceRefreshForUni(bool needDelay)
 {
     RS_LOGI("RSMainThread::ForceRefreshForUni call");
     if (isUniRender_) {
@@ -3851,10 +3894,22 @@ void RSMainThread::ForceRefreshForUni()
                 std::chrono::steady_clock::now().time_since_epoch()).count();
             RS_PROFILER_PATCH_TIME(now);
             timestamp_ = timestamp_ + (now - curTime_);
+            int64_t vsyncPeriod = 0;
+            if (receiver_) {
+                receiver_->GetVSyncPeriod(vsyncPeriod);
+            }
+            if (vsyncPeriod <= 0){
+                RequestNextVSync();
+                return;
+            }
+            lastFastComposeTimeStampDiff_ = (now - curTime_) % vsyncPeriod;
+            lastFastComposeTimeStamp_ = timestamp_;
+            RS_TRACE_NAME("RSMainThread::ForceRefreshForUni record Time diff:" +
+                std::to_string(lastFastComposeTimeStampDiff_));
+            isForceRefresh_ = !needDelay;
             curTime_ = now;
-            isForceRefresh_ = true;
             // Not triggered by vsync, so we set frameCount to 0.
-            SetFrameInfo(0, true);
+            SetFrameInfo(0, isForceRefresh_);
             RS_TRACE_NAME("RSMainThread::ForceRefreshForUni timestamp:" + std::to_string(timestamp_));
             mainLoop_();
             RSJankStatsOnVsyncEnd(onVsyncStartTime, onVsyncStartTimeSteady, onVsyncStartTimeSteadyFloat);

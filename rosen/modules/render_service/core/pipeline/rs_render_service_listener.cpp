@@ -65,6 +65,19 @@ void RSRenderServiceListener::OnBufferAvailable()
         RSMainThread::Instance()->ForceRefreshForUni();
         return;
     }
+    if (auto consumer = surfaceHandler->GetConsumer()) {
+        bool supportFastCompose = false;
+        consumer->GetBufferSupportFastCompose(supportFastCompose);
+        if (supportFastCompose) {
+            int64_t lastFlushedDesiredPresentTimeStamp = 0;
+            consumer->GetLastFlushedDesiredPresentTimeStamp(lastFlushedDesiredPresentTimeStamp);
+            RS_TRACE_NAME_FMT("RSRenderServiceListener::OnBufferAvailable SupportFastCompose : " +
+                std::to_string(supportFastCompose) +
+                " ,bufferTimeStamp : " + std::to_string(lastFlushedDesiredPresentTimeStamp));
+            RSMainThread::Instance()->CheckFastCompose(lastFlushedDesiredPresentTimeStamp);
+            return;
+        }
+    }
     RSMainThread::Instance()->RequestNextVSync();
 }
 
