@@ -1166,7 +1166,7 @@ public:
         ancestorDisplayNode_ = ancestorDisplayNode;
     }
 
-    void SetUifirstNodeEnableParam(MultiThreadCacheType b);
+    bool SetUifirstNodeEnableParam(MultiThreadCacheType b);
 
     void SetIsParentUifirstNodeEnableParam(bool b);
 
