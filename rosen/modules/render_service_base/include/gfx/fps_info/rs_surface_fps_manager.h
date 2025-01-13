@@ -16,6 +16,8 @@
 #ifndef RENDER_SERVICE_BASE_GFX_FPS_INFO_RS_SURFACE_FPS_MANAGER_H
 #define RENDER_SERVICE_BASE_GFX_FPS_INFO_RS_SURFACE_FPS_MANAGER_H
 
+#include <shared_mutex>
+
 #include "rs_surface_fps.h"
 #include "common/rs_common_def.h"
 
@@ -25,9 +27,9 @@ public:
     static RSSurfaceFpsManager &GetInstance();
     bool RegisterSurfaceFps(NodeId id, std::string name);
     bool UnregisterSurfaceFps(NodeId id);
-    bool RecordPresentTime(NodeId id, uint64_t timestamp, int32_t seqNum) const;
-    void Dump(std::string& result, std::string& name) const;
-    void ClearDump(std::string& result, std::string& name) const;
+    bool RecordPresentTime(NodeId id, uint64_t timestamp, int32_t seqNum);
+    void Dump(std::string& result, std::string& name);
+    void ClearDump(std::string& result, std::string& name);
     std::unordered_map<NodeId, std::shared_ptr<RSSurfaceFps>> GetSurfaceFpsMap() const;
 private:
     RSSurfaceFpsManager() = default;
@@ -37,10 +39,10 @@ private:
     RSSurfaceFpsManager& operator=(const RSSurfaceFpsManager&) = delete;
     RSSurfaceFpsManager& operator=(const RSSurfaceFpsManager&&) = delete;
 
-    std::shared_ptr<RSSurfaceFps> GetSurfaceFps(NodeId id) const;
-    std::shared_ptr<RSSurfaceFps> GetSurfaceFps(std::string name) const;
+    std::shared_ptr<RSSurfaceFps> GetSurfaceFps(NodeId id);
+    std::shared_ptr<RSSurfaceFps> GetSurfaceFps(std::string name);
     std::unordered_map<NodeId, std::shared_ptr<RSSurfaceFps>> surfaceFpsMap_;
-    std::mutex mutex_;
+    std::shared_mutex smtx;
 };
 }
 #endif
