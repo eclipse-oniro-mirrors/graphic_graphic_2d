@@ -25,17 +25,18 @@ RSSurfaceFpsManager& RSSurfaceFpsManager::GetInstance()
     return instance;
 }
 
-bool RSSurfaceFpsManager::Register(NodeId id, std::string name)
+bool RSSurfaceFpsManager::RegisterSurfaceFps(NodeId id, std::string name)
 {
     if (surfaceFpsMap_.find(id) != surfaceFpsMap_.end()) {
-        RS_LOGE("RSSurfaceFpsManager::Register node:%{public}" PRIu64 "already existed.", id);
         return false;
     }
     surfaceFpsMap_[id] = std::make_shared<RSSurfaceFps>(name);
     return true;
 }
-bool RSSurfaceFpsManager::Unregister(NodeId id)
+
+bool RSSurfaceFpsManager::UnregisterSurfaceFps(NodeId id)
 {
+    std::unique_lock<std::mutex> lock(mutex_);
     if (surfaceFpsMap_.find(id) == surfaceFpsMap_.end()) {
         RS_LOGE("RSSurfaceFpsManager::Unregister node:%{public}" PRIu64 "not exist.", id);
         return false;
@@ -43,6 +44,7 @@ bool RSSurfaceFpsManager::Unregister(NodeId id)
     surfaceFpsMap_.erase(id);
     return true;
 }
+
 std::shared_ptr<RSSurfaceFps> RSSurfaceFpsManager::GetSurfaceFps(NodeId id) const
 {
     auto iter = surfaceFpsMap_.find(id);
@@ -51,6 +53,7 @@ std::shared_ptr<RSSurfaceFps> RSSurfaceFpsManager::GetSurfaceFps(NodeId id) cons
     }
     return iter->second;
 }
+
 std::shared_ptr<RSSurfaceFps> RSSurfaceFpsManager::GetSurfaceFps(std::string name) const
 {
     for (auto [id, surfaceFps] : surfaceFpsMap_) {
@@ -60,6 +63,7 @@ std::shared_ptr<RSSurfaceFps> RSSurfaceFpsManager::GetSurfaceFps(std::string nam
     }
     return nullptr;
 }
+
 bool RSSurfaceFpsManager::RecordPresentTime(NodeId id, uint64_t timestamp, int32_t seqNum) const
 {
     const auto& surfaceFps = GetSurfaceFps(id);
@@ -67,9 +71,9 @@ bool RSSurfaceFpsManager::RecordPresentTime(NodeId id, uint64_t timestamp, int32
         RS_LOGE("RSSurfaceFpsManager::RecordPresentTime surfaceFps is nullptr.");
         return false;
     }
-    surfaceFps->RecordPresentTime(timestamp, seqNum);
-    return true;
+    return surfaceFps->RecordPresentTime(timestamp, seqNum);
 }
+
 void RSSurfaceFpsManager::Dump(std::string& result, std::string& name) const
 {
     const auto& surfaceFps = GetSurfaceFps(name);
@@ -79,6 +83,7 @@ void RSSurfaceFpsManager::Dump(std::string& result, std::string& name) const
     result += "\n surface [" + name + "]:\n";
     surfaceFps->Dump(result);
 }
+
 void RSSurfaceFpsManager::ClearDump(std::string& result, std::string& name) const
 {
     const auto& surfaceFps = GetSurfaceFps(name);
@@ -87,5 +92,10 @@ void RSSurfaceFpsManager::ClearDump(std::string& result, std::string& name) cons
     }
     result += "\n The fps info of surface [" + name + "] is cleared.\n";
     surfaceFps->ClearDump();
+}
+
+std::unordered_map<NodeId, std::shared_ptr<RSSurfaceFps>> RSSurfaceFpsManager::GetSurfaceFpsMap() const
+{
+    return surfaceFpsMap_;
 }
 }
