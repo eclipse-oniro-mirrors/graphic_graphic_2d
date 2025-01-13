@@ -381,7 +381,7 @@ HWTEST_F(RSHardwareThreadTest, PerformSetActiveMode, TestSize.Level1)
     auto &hgmCore = HgmCore::Instance();
     hgmCore.modeListToApply_ = std::make_unique<std::unordered_map<ScreenId, int32_t>>();
     int32_t rate = 3;
-    hgmCore.modeListToApply_->insert({screenId_, 3});
+    hgmCore.modeListToApply_->insert({screenId_, rate});
     hardwareThread.PerformSetActiveMode(output, 0, 0);
 
     auto supportedModes = screenManager->GetScreenSupportedModes(screenId_);
