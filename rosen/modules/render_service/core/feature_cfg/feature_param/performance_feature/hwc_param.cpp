@@ -33,7 +33,7 @@ int HWCParam::GetSourceTuningForApp(std::string appName) const
     if (iter != sourceTuningMap_.end()) {
         return iter->second;
     }
-    HGM_LOGI("HWCParamParse parse SourceTuningForApp cannot find name %{public}s", appName.c_str());
+    HGM_LOGE("HWCParam parse SourceTuningForApp cannot find name %{public}s", appName.c_str());
     return -1;
 }
 
@@ -43,7 +43,7 @@ int HWCParam::GetSolidColorLayerForApp(std::string appName) const
     if (iter != solidColorLayerMap_.end()) {
         return iter->second;
     }
-    HGM_LOGI("HWCParamParse parse SolidColorLayerForApp cannot find name %{public}s", appName.c_str());
+    HGM_LOGE("HWCParam parse SolidColorLayerForApp cannot find name %{public}s", appName.c_str());
     return -1;
 }
 

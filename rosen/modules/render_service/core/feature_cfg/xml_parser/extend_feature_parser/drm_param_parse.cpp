@@ -48,7 +48,7 @@ int32_t DRMParamParse::ParseFeatureParam(xmlNode &node)
             bool isEnabled = ParseFeatureSwitch(val);
             if (name == "DrmEnabled") {
                 drmParam_->SetDrmEnable(isEnabled);
-                HGM_LOGI("HDRParamParse parse DrmEnabled %{public}d", drmParam_->IsDrmEnable());
+                HGM_LOGI("DRMParamParse parse DrmEnabled %{public}d", drmParam_->IsDrmEnable());
             } else {
                 HGM_LOGD("DRMParamParse stop parsing, not related feature");
             }
