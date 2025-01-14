@@ -1325,7 +1325,7 @@ void RSDisplayRenderNodeDrawable::DrawWiredMirrorOnDraw(
     curCanvas_->SetDisableFilterCache(true);
     if (RSMainThread::Instance()->GetDeviceType() != DeviceType::PC) {
         auto hasSecSurface = mirroredParams->GetDisplayHasSecSurface();
-        if (hasSecSurface[mirroredParams->GetScreenId()] && !uniParam->GetSecExemption()) {
+        if (hasSecSurface[mirroredParams->GetScreenId()]) {
             curCanvas_->Clear(Drawing::Color::COLOR_BLACK);
             RS_LOGI("RSDisplayRenderNodeDrawable::DrawWiredMirrorOnDraw, "
                 "set canvas to black because of security layer.");
