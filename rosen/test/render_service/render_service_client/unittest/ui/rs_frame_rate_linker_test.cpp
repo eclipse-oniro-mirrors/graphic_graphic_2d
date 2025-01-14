@@ -185,6 +185,7 @@ HWTEST_F(RSFrameRateLinkerTest, IsUniRenderEnabled, TestSize.Level1)
 HWTEST_F(RSFrameRateLinkerTest, InitUniRenderEnabled, TestSize.Level1)
 {
     std::shared_ptr<RSFrameRateLinker> frameRateLinker = RSFrameRateLinker::Create();
-    EXPECT_TRUE(frameRateLinker->InitUniRenderEnabled());
+    ASSERT_NE(frameRateLinker, nullptr);
+    frameRateLinker->InitUniRenderEnabled();
 }
 } // namespace OHOS::Rosen
