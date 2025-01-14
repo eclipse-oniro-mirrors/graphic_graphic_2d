@@ -1947,8 +1947,6 @@ void RSUniRenderVisitor::UpdateHwcNodeEnableByRotateAndAlpha(std::shared_ptr<RSS
         return;
     }
     // [planning] degree only multiples of 90 now
-    // int degree = RSUniRenderUtil::GetRotationDegreeFromMatrix(totalMatrix);
-    // bool hasRotate = degree % RS_ROTATION_90 != 0 || RSUniRenderUtil::HasNonZRotationTransform(totalMatrix);
     float degree = RSUniRenderUtil::GetFloatRotationDegreeFromMatrix(totalMatrix);
     bool hasRotate = !ROSEN_EQ(std::remainder(degree, 90.f), 0.f, EPSILON);
     hasRotate = hasRotate || RSUniRenderUtil::HasNonZRotationTransform(totalMatrix);
