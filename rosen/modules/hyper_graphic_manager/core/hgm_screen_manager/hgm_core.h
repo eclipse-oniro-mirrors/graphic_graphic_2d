@@ -158,7 +158,7 @@ public:
     }
 
     // called by RSMainThread/RSUniRenderThread
-    bool GetFastComposeTimeStampDiff() const
+    uint64_t GetFastComposeTimeStampDiff() const
     {
         return fastComposeTimeStampDiff_.load();
     }
