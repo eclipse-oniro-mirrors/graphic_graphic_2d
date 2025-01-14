@@ -281,7 +281,6 @@ void HgmFrameRateManager::InitPowerTouchManager()
 void HgmFrameRateManager::ProcessPendingRefreshRate(
     uint64_t timestamp, int64_t vsyncId, uint32_t rsRate, bool isUiDvsyncOn)
 {
-    voterLtpoTimer_.Reset();
     std::lock_guard<std::mutex> lock(pendingMutex_);
     // ensure that vsync switching takes effect in this frame
     if (vsyncId < vsyncCountOfChangeGeneratorRate_) {
@@ -391,7 +390,6 @@ void HgmFrameRateManager::ProcessLtpoVote(const FrameRateRange& finalRange)
         auto refreshRate = CalcRefreshRate(curScreenId_.load(), finalRange);
         DeliverRefreshRateVote(
             {"VOTER_LTPO", refreshRate, refreshRate, DEFAULT_PID, finalRange.GetExtInfo()}, ADD_VOTE);
-        voterLtpoTimer_.Start();
     } else {
         DeliverRefreshRateVote({.voterName = "VOTER_LTPO"}, REMOVE_VOTE);
     }
@@ -426,6 +424,11 @@ void HgmFrameRateManager::UniProcessDataForLtpo(uint64_t timestamp,
     }
     HgmEnergyConsumptionPolicy::Instance().PrintEnergyConsumptionLog(finalRange);
     ProcessLtpoVote(finalRange);
+    if (rsFrameRateLinker->GetExpectedRange().IsValid()) {
+        voterLtpoTimer_.Start();
+    } else {
+        voterLtpoTimer_.Stop();
+    }
 
     UpdateGuaranteedPlanVote(timestamp);
     idleDetector_.ResetAceAnimatorExpectedFrameRate();
