@@ -1271,8 +1271,9 @@ void RSDisplayRenderNodeDrawable::WiredScreenProjection(
     }
     auto& mirroredParams = static_cast<RSDisplayRenderParams&>(*mirroredDrawable->GetRenderParams());
     if (RSSystemParameters::GetDebugMirrorOndrawEnabled() || (RSSystemParameters::GetWiredScreenOndrawEnabled() &&
-        (mirroredParams.GetHDRPresent() || !currentBlackList_.empty()))) {
+        (mirroredParams.GetHDRPresent() || !currentBlackList_.empty() || mirroredParams.HasSecurityLayer()))) {
         DrawWiredMirrorOnDraw(*mirroredDrawable, params);
+        RSUniRenderThread::Instance().SetBlackList({});
     } else {
         DrawWiredMirrorCopy(*mirroredDrawable);
     }
@@ -1321,25 +1322,39 @@ void RSDisplayRenderNodeDrawable::DrawWiredMirrorOnDraw(
     if (uniParam == nullptr) {
         return;
     }
+    const auto mirroredParams = static_cast<RSDisplayRenderParams*>(mirroredDrawable.GetRenderParams().get());
+    if (mirroredParams == nullptr) {
+        return;
+    }
     // for HDR
     curCanvas_->SetOnMultipleScreen(true);
     curCanvas_->SetDisableFilterCache(true);
+    if (RSMainThread::Instance()->GetDeviceType() != DeviceType::PC) {
+        auto hasSecSurface = mirroredParams->GetDisplayHasSecSurface();
+        if (hasSecSurface[mirroredParams->GetScreenId()]) {
+            curCanvas_->Clear(Drawing::Color::COLOR_BLACK);
+            RS_LOGI("RSDisplayRenderNodeDrawable::DrawWiredMirrorOnDraw, "
+                "set canvas to black because of security layer.");
+            return;
+        }
+    }
     curCanvas_->SetHighContrast(RSUniRenderThread::Instance().IsHighContrastTextModeOn());
     bool isOpDropped = uniParam->IsOpDropped();
     uniParam->SetOpDropped(false);
-    if (const auto& mirrorParams = static_cast<RSDisplayRenderParams*>(mirroredDrawable.GetRenderParams().get())) {
-        auto screenInfo = mirrorParams->GetScreenInfo();
-        uniParam->SetScreenInfo(screenInfo);
-        Drawing::Rect rect(0, 0, screenInfo.width, screenInfo.height);
-        curCanvas_->ClipRect(rect, Drawing::ClipOp::INTERSECT, false);
-        curCanvas_->ConcatMatrix(mirrorParams->GetMatrix());
-        RSRenderParams::SetParentSurfaceMatrix(curCanvas_->GetTotalMatrix());
-        mirroredDrawable.RSRenderNodeDrawable::OnDraw(*curCanvas_);
-        DrawCurtainScreen();
-        DrawWatermarkIfNeed(*mirrorParams, *curCanvas_);
-        SwitchColorFilter(*curCanvas_, 1.f); // 1.f: wired screen not use hdr, use default value 1.f
-    }
-    RSUniRenderThread::Instance().SetBlackList({});
+
+    auto screenInfo = mirroredParams->GetScreenInfo();
+    uniParam->SetScreenInfo(screenInfo);
+    Drawing::Rect rect(0, 0, screenInfo.width, screenInfo.height);
+    RSUniRenderThread::SetCaptureParam(CaptureParam(false, false, true, 1.0f, 1.0f));
+    curCanvas_->ClipRect(rect, Drawing::ClipOp::INTERSECT, false);
+    curCanvas_->ConcatMatrix(mirroredParams->GetMatrix());
+    RSRenderParams::SetParentSurfaceMatrix(curCanvas_->GetTotalMatrix());
+    mirroredDrawable.RSRenderNodeDrawable::OnDraw(*curCanvas_);
+    DrawCurtainScreen();
+    DrawWatermarkIfNeed(*mirroredParams, *curCanvas_);
+    SwitchColorFilter(*curCanvas_, 1.f); // 1.f: wired screen not use hdr, use default value 1.f
+    RSUniRenderThread::ResetCaptureParam();
+
     uniParam->SetOpDropped(isOpDropped);
 }
 
