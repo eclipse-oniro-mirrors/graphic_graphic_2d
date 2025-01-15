@@ -212,6 +212,7 @@ RSDrawable::Ptr RSCompositingFilterDrawable::OnGenerate(const RSRenderNode& node
 bool RSCompositingFilterDrawable::OnUpdate(const RSRenderNode& node)
 {
     stagingNodeId_ = node.GetId();
+    stagingNodeName_ = node.GetNodeName();
     auto& rsFilter = node.GetRenderProperties().GetFilter();
     if (rsFilter == nullptr) {
         return false;

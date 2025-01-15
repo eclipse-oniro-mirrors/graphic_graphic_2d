@@ -27,12 +27,14 @@
 #include "include/core/SkSamplingOptions.h"
 #include "include/core/SkString.h"
 #include "include/core/SkTextBlob.h"
+#include "src/gpu/GrPerfMonitorReporter.h"
 
 #include "text/font_arguments.h"
 #include "text/font_metrics.h"
 #include "text/font_style.h"
 #include "text/rs_xform.h"
 #include "text/text_blob_builder.h"
+#include "utils/perfevent.h"
 #include "utils/rect.h"
 #include "utils/sampling_options.h"
 
@@ -210,6 +212,26 @@ public:
         pal.index = fontArgs.GetPalette().index;
         pal.overrideCount = fontArgs.GetPalette().overrideCount;
         skFontArgs.setPalette(pal);
+    }
+
+    static inline void DrawingTextureEventToRsTextureEvent(const TextureEvent& grTextureEvent,
+        RsTextureEvent& rsTextureEvent)
+    {
+        rsTextureEvent.fPid = grTextureEvent.fPid;
+        rsTextureEvent.fMaxBytes = grTextureEvent.fMaxBytes;
+        rsTextureEvent.fBudgetedBytes = grTextureEvent.fBudgetedBytes;
+        rsTextureEvent.fAllocTime = grTextureEvent.fAllocTime;
+        rsTextureEvent.fClearCache = grTextureEvent.fClearCache;
+    }
+
+    static inline void DrawingBlurEventToRsBlurEvent(const BlurEvent& grBlurEvent, RsBlurEvent& rsBlurEvent)
+    {
+        rsBlurEvent.fPid = grBlurEvent.fPid;
+        rsBlurEvent.fFilterType = grBlurEvent.fFilterType;
+        rsBlurEvent.fBlurRadius = grBlurEvent.fBlurRadius;
+        rsBlurEvent.fWidth = grBlurEvent.fWidth;
+        rsBlurEvent.fHeight = grBlurEvent.fHeight;
+        rsBlurEvent.fBlurTime = grBlurEvent.fBlurTime;
     }
 };
 } // namespace Drawing
