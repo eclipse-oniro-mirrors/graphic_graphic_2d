@@ -18,6 +18,7 @@
 
 #include "xml_parser_base.h"
 #include "hwc_param.h"
+
 namespace OHOS::Rosen {
 class HWCParamParse : public XMLParserBase {
 public:

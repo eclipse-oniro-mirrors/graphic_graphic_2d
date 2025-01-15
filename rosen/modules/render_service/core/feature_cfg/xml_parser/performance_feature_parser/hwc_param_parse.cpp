@@ -22,8 +22,8 @@ int32_t HWCParamParse::ParseFeatureParam(FeatureParamMapType featureMap, xmlNode
     RS_LOGI("HWCParamParse start");
     xmlNode *currNode = &node;
     if (currNode->xmlChildrenNode == nullptr) {
-        RS_LOGD("HWCParamParse stop parsing, no children nodes");
-        return CCM_GET_CHILD_FAIL;
+        RS_LOGE("HWCParamParse stop parsing, no children nodes");
+        return PARSE_GET_CHILD_FAIL;
     }
 
     currNode = currNode->xmlChildrenNode;
@@ -32,53 +32,53 @@ int32_t HWCParamParse::ParseFeatureParam(FeatureParamMapType featureMap, xmlNode
             continue;
         }
 
-        if (ParseHwcInternal(featureMap, *currNode) != CCM_EXEC_SUCCESS) {
+        if (ParseHwcInternal(featureMap, *currNode) != PARSE_EXEC_SUCCESS) {
             RS_LOGE("HWCParamParse stop parsing, parse internal fail");
-            return CCM_PARSE_INTERNAL_FAIL;
+            return PARSE_INTERNAL_FAIL;
         }
     }
-    return CCM_EXEC_SUCCESS;
+    return PARSE_EXEC_SUCCESS;
 }
 
 int32_t HWCParamParse::ParseHwcInternal(FeatureParamMapType featureMap, xmlNode &node)
 {
     xmlNode *currNode = &node;
 
-    auto iter = featureMap.find(paramVec[featureParamCode::HWC]);
+    auto iter = featureMap.find(featureModules[HWC]);
     if (iter != featureMap.end()) {
         hwcParam_ = std::static_pointer_cast<HWCParam>(iter->second);
     } else {
-        RS_LOGD("HWCParamParse stop parsing, no initializing param map");
+        RS_LOGE("HWCParamParse stop parsing, no initializing param map");
     }
 
     // Start Parse Feature Params
-    int xmlParamType = GetCcmXmlNodeAsInt(*currNode);
+    int xmlParamType = GetXmlNodeAsInt(*currNode);
     auto name = ExtractPropertyValue("name", *currNode);
     auto val = ExtractPropertyValue("value", *currNode);
-    if (xmlParamType == CCM_XML_FEATURE_SWITCH) {
+    if (xmlParamType == PARSE_XML_FEATURE_SWITCH) {
         bool isEnabled = ParseFeatureSwitch(val);
         if (name == "HwcEnabled") {
             hwcParam_->SetHwcEnable(isEnabled);
-            RS_LOGI("xinyu HWCParamParse parse HwcEnabled %{public}d", hwcParam_->IsHwcEnable());
+            RS_LOGD("HWCParamParse parse HwcEnabled %{public}d", hwcParam_->IsHwcEnable());
         } else if (name == "HwcMirrorEnabled"){
             hwcParam_->SetHwcMirrorEnable(isEnabled);
-            RS_LOGI("xinyu HWCParamParse parse HwcMirrorEnabled %{public}d", hwcParam_->IsHwcMirrorEnable());
+            RS_LOGD("HWCParamParse parse HwcMirrorEnabled %{public}d", hwcParam_->IsHwcMirrorEnable());
         }
-    } else if (xmlParamType == CCM_XML_FEATURE_MULTIPARAM) {
-        if (ParseFeatureMultiParamForApp(*currNode, name) != CCM_EXEC_SUCCESS) {
-            RS_LOGI("xinyu HWCParamParse parse MultiParam fail");
+    } else if (xmlParamType == PARSE_XML_FEATURE_MULTIPARAM) {
+        if (ParseFeatureMultiParamForApp(*currNode, name) != PARSE_EXEC_SUCCESS) {
+            RS_LOGD("HWCParamParse parse MultiParam fail");
         }
     }
 
-    return CCM_EXEC_SUCCESS;
+    return PARSE_EXEC_SUCCESS;
 }
 
 int32_t HWCParamParse::ParseFeatureMultiParamForApp(xmlNode &node, std::string name)
 {
     xmlNode *currNode = &node;
     if (currNode->xmlChildrenNode == nullptr) {
-        RS_LOGD("HWCParamParse stop parsing, no children nodes");
-        return CCM_GET_CHILD_FAIL;
+        RS_LOGE("HWCParamParse stop parsing, no children nodes");
+        return PARSE_GET_CHILD_FAIL;
     }
     currNode = currNode->xmlChildrenNode;
     for (; currNode; currNode = currNode->next) {
@@ -92,10 +92,10 @@ int32_t HWCParamParse::ParseFeatureMultiParamForApp(xmlNode &node, std::string n
         } else if (name == "RsSolidColorLayerConfig") {
             hwcParam_->SetSolidColorLayerForApp(appName, val);
         } else {
-            RS_LOGI("HWCParamParse ParseFeatureMultiParam cannot find name");
-            return CCM_NO_PARAM;
+            RS_LOGE("HWCParamParse ParseFeatureMultiParam cannot find name");
+            return PARSE_NO_PARAM;
         }
     }
-    return CCM_EXEC_SUCCESS;
+    return PARSE_EXEC_SUCCESS;
 }
 } // namespace OHOS::Rosen

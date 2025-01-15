@@ -34,7 +34,7 @@ int HWCParam::GetSourceTuningForApp(std::string appName) const
         return iter->second;
     }
     RS_LOGE("HWCParam parse SourceTuningForApp cannot find name %{public}s", appName.c_str());
-    return -1;
+    return PARSE_ERROR;
 }
 
 int HWCParam::GetSolidColorLayerForApp(std::string appName) const
@@ -44,7 +44,7 @@ int HWCParam::GetSolidColorLayerForApp(std::string appName) const
         return iter->second;
     }
     RS_LOGE("HWCParam parse SolidColorLayerForApp cannot find name %{public}s", appName.c_str());
-    return -1;
+    return PARSE_ERROR;
 }
 
 void HWCParam::SetHwcEnable(bool isEnable)

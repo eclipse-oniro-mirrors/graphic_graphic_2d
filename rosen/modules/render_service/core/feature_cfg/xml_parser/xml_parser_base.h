@@ -28,24 +28,11 @@
 namespace OHOS::Rosen {
 using FeatureParamMapType = std::unordered_map<std::string, std::shared_ptr<FeatureParam>>;
 
-enum CcmErrCode {
-    CCM_ERROR = -1,
-
-    CCM_EXEC_SUCCESS = 0,
-
-    CCM_NO_PARAM = 100,
-
-    CCM_FILE_LOAD_FAIL = 200,
-    CCM_GET_ROOT_FAIL,
-    CCM_GET_CHILD_FAIL,
-    CCM_PARSE_INTERNAL_FAIL,
-};
-
-enum CcmXmlNode {
-    CCM_XML_UNDEFINED = 0,
-    CCM_XML_FEATURE_SWITCH,
-    CCM_XML_FEATURE_SINGLEPARAM,
-    CCM_XML_FEATURE_MULTIPARAM,
+enum ParseXmlNode {
+    PARSE_XML_UNDEFINED = 0,
+    PARSE_XML_FEATURE_SWITCH,
+    PARSE_XML_FEATURE_SINGLEPARAM,
+    PARSE_XML_FEATURE_MULTIPARAM,
 };
 
 class XMLParserBase {
@@ -63,7 +50,7 @@ public:
     std::string ParseFeatureMultiParam(std::string type, std::string val);
 
     std::string ExtractPropertyValue(const std::string &propName, xmlNode &node);
-    int32_t GetCcmXmlNodeAsInt(xmlNode &node);
+    int32_t GetXmlNodeAsInt(xmlNode &node);
 
 private:
     bool ParseInternal(xmlNode &node);

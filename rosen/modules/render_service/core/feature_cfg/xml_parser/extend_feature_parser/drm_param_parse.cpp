@@ -22,8 +22,8 @@ int32_t DRMParamParse::ParseFeatureParam(FeatureParamMapType featureMap, xmlNode
     RS_LOGI("DRMParamParse start");
     xmlNode *currNode = &node;
     if (currNode->xmlChildrenNode == nullptr) {
-        RS_LOGD("DRMParamParse stop parsing, no children nodes");
-        return CCM_GET_CHILD_FAIL;
+        RS_LOGE("DRMParamParse stop parsing, no children nodes");
+        return PARSE_GET_CHILD_FAIL;
     }
 
     currNode = currNode->xmlChildrenNode;
@@ -32,40 +32,40 @@ int32_t DRMParamParse::ParseFeatureParam(FeatureParamMapType featureMap, xmlNode
             continue;
         }
 
-        if (ParseDrmInternal(featureMap, *currNode) != CCM_EXEC_SUCCESS) {
+        if (ParseDrmInternal(featureMap, *currNode) != PARSE_EXEC_SUCCESS) {
             RS_LOGE("DRMParamParse stop parsing, parse internal fail");
-            return CCM_PARSE_INTERNAL_FAIL;
+            return PARSE_INTERNAL_FAIL;
         }
     }
 
-    return CCM_EXEC_SUCCESS;
+    return PARSE_EXEC_SUCCESS;
 }
 
 int32_t DRMParamParse::ParseDrmInternal(FeatureParamMapType featureMap, xmlNode &node)
 {
     xmlNode *currNode = &node;
 
-    auto iter = featureMap.find(paramVec[featureParamCode::DRM]);
+    auto iter = featureMap.find(featureModules[DRM]);
     if (iter != featureMap.end()) {
         drmParam_ = std::static_pointer_cast<DRMParam>(iter->second);
     } else {
-        RS_LOGD("DRMParamParse stop parsing, no initializing param map");
-        return CCM_NO_PARAM;
+        RS_LOGE("DRMParamParse stop parsing, no initializing param map");
+        return PARSE_NO_PARAM;
     }
 
     // Start Parse Feature Params
-    int xmlParamType = GetCcmXmlNodeAsInt(*currNode);
+    int xmlParamType = GetXmlNodeAsInt(*currNode);
     auto name = ExtractPropertyValue("name", *currNode);
     auto val = ExtractPropertyValue("value", *currNode);
-    if (xmlParamType == CCM_XML_FEATURE_SWITCH) {
+    if (xmlParamType == PARSE_XML_FEATURE_SWITCH) {
         bool isEnabled = ParseFeatureSwitch(val);
         if (name == "DrmEnabled") {
             drmParam_->SetDrmEnable(isEnabled);
             RS_LOGD("DRMParamParse parse DrmEnabled %{public}d", drmParam_->IsDrmEnable());
         } else {
-            RS_LOGD("DRMParamParse stop parsing, not related feature");
+            RS_LOGE("DRMParamParse stop parsing, not related feature");
         }
     }
-    return CCM_EXEC_SUCCESS;
+    return PARSE_EXEC_SUCCESS;
 }
 } // namespace OHOS::Rosen

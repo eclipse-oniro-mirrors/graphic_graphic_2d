@@ -16,20 +16,20 @@
 #include <algorithm>
 
 #include "xml_parser_base.h"
-#include "graphic_ccm_feature_param_manager.h"
+#include "graphic_feature_param_manager.h"
 
 namespace OHOS::Rosen {
 
 int32_t XMLParserBase::LoadGraphicConfiguration(const char* fileDir)
 {
-    RS_LOGD("XMLParserBase opening xml file");
+    RS_LOGI("XMLParserBase opening xml file");
     xmlDocument_ = xmlReadFile(fileDir, nullptr, 0);
     if (!xmlDocument_) {
         RS_LOGE("XMLParser xmlReadFile failed");
-        return CCM_FILE_LOAD_FAIL;
+        return PARSE_FILE_LOAD_FAIL;
     }
 
-    return CCM_EXEC_SUCCESS;
+    return PARSE_EXEC_SUCCESS;
 }
 
 int32_t XMLParserBase::Parse()
@@ -37,18 +37,18 @@ int32_t XMLParserBase::Parse()
     RS_LOGI("XMLParserBase Parse Start");
     if (!xmlDocument_) {
         RS_LOGE("XMLParser xmlDocument_ is empty, should do LoadGraphicConfiguration first");
-        return CCM_FILE_LOAD_FAIL;
+        return PARSE_FILE_LOAD_FAIL;
     }
     xmlNode *root = xmlDocGetRootElement(xmlDocument_);
     if (root == nullptr) {
         RS_LOGE("XMLParser xmlDocGetRootElement failed");
-        return CCM_GET_ROOT_FAIL;
+        return PARSE_GET_ROOT_FAIL;
     }
 
     if (ParseInternal(*root) == false) {
-        return CCM_PARSE_INTERNAL_FAIL;
+        return PARSE_INTERNAL_FAIL;
     }
-    return CCM_EXEC_SUCCESS;
+    return PARSE_EXEC_SUCCESS;
 }
 
 bool XMLParserBase::ParseInternal(xmlNode &node)
@@ -56,17 +56,17 @@ bool XMLParserBase::ParseInternal(xmlNode &node)
     RS_LOGI("XMLParserBase ParseInternal Start");
     xmlNode *currNode = &node;
     if (currNode->xmlChildrenNode == nullptr) {
-        RS_LOGD("XMLParserBase stop parsing internal, no children nodes");
+        RS_LOGE("XMLParserBase stop parsing internal, no children nodes");
         return false;
     }
     currNode = currNode->xmlChildrenNode;
-    int32_t parseSuccess = CCM_EXEC_SUCCESS;
+    int32_t parseSuccess = PARSE_EXEC_SUCCESS;
 
     for (; currNode; currNode = currNode->next) {
         if (currNode->type != XML_ELEMENT_NODE) {
             continue;
         }
-        if (parseSuccess != CCM_EXEC_SUCCESS) {
+        if (parseSuccess != PARSE_EXEC_SUCCESS) {
             return false;
         }
 
@@ -75,8 +75,8 @@ bool XMLParserBase::ParseInternal(xmlNode &node)
         if (featureName == "") {
             return false;
         }
-        auto parseMap = GraphicCcmFeatureParamManager::GetInstance().featureParseMap_;
-        auto featureMap = GraphicCcmFeatureParamManager::GetInstance().featureParamMap_;
+        auto parseMap = GraphicFeatureParamManager::GetInstance().featureParseMap_;
+        auto featureMap = GraphicFeatureParamManager::GetInstance().featureParamMap_;
         auto iter = parseMap.find(featureName);
         if (iter != parseMap.end()) {
             auto featureObj = iter->second;
@@ -108,19 +108,19 @@ std::string XMLParserBase::ExtractPropertyValue(const std::string &propName, xml
     return propValue;
 }
 
-int32_t XMLParserBase::GetCcmXmlNodeAsInt(xmlNode &node)
+int32_t XMLParserBase::GetXmlNodeAsInt(xmlNode &node)
 {
     if (!xmlStrcmp(node.name, reinterpret_cast<const xmlChar*>("FeatureSwicth"))) {
-        return CCM_XML_FEATURE_SWITCH;
+        return PARSE_XML_FEATURE_SWITCH;
     }
     if (!xmlStrcmp(node.name, reinterpret_cast<const xmlChar*>("FeatureSingleParam"))) {
-        return CCM_XML_FEATURE_SINGLEPARAM;
+        return PARSE_XML_FEATURE_SINGLEPARAM;
     }
     if (!xmlStrcmp(node.name, reinterpret_cast<const xmlChar*>("FeatureMultiParam"))) {
-        return CCM_XML_FEATURE_MULTIPARAM;
+        return PARSE_XML_FEATURE_MULTIPARAM;
     }
-    RS_LOGD("XMLParserBase failed to identify a xml node : %{public}s", node.name);
-    return CCM_XML_UNDEFINED;
+    RS_LOGE("XMLParserBase failed to identify a xml node : %{public}s", node.name);
+    return PARSE_XML_UNDEFINED;
 }
 
 bool XMLParserBase::ParseFeatureSwitch(std::string val)

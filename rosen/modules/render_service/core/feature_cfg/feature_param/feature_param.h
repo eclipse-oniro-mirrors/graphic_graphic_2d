@@ -25,12 +25,25 @@
 #include "platform/common/rs_log.h"
 
 namespace OHOS::Rosen {
-static std::vector<std::string> paramVec = {"HdrConfig", "DrmConfig", "HwcConfig"};
+static std::vector<std::string> featureModules = {"HdrConfig", "DrmConfig", "HwcConfig"};
 
-enum featureParamCode {
+enum FeatureModuleEnum {
     HDR = 0,
-    DRM, 
+    DRM,
     HWC,
+};
+
+enum ParseErrCode {
+    PARSE_ERROR = -1,
+
+    PARSE_EXEC_SUCCESS = 0,
+
+    PARSE_NO_PARAM = 100,
+
+    PARSE_FILE_LOAD_FAIL = 200,
+    PARSE_GET_ROOT_FAIL,
+    PARSE_GET_CHILD_FAIL,
+    PARSE_INTERNAL_FAIL,
 };
 
 class FeatureParam {

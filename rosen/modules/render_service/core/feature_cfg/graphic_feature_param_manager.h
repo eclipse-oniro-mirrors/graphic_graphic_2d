@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef GRAPHIC_CCM_FEATURE_PARAM_MANAGER_H
-#define GRAPHIC_CCM_FEATURE_PARAM_MANAGER_H
+#ifndef GRAPHIC_FEATURE_PARAM_MANAGER_H
+#define GRAPHIC_FEATURE_PARAM_MANAGER_H
 
 #include <list>
 #include <mutex>
@@ -31,9 +31,9 @@
 #include "hwc_param.h"
 
 namespace OHOS::Rosen {
-class GraphicCcmFeatureParamManager : public RefBase {
+class GraphicFeatureParamManager : public RefBase {
 public:
-    static GraphicCcmFeatureParamManager& GetInstance();
+    static GraphicFeatureParamManager& GetInstance();
 
     void Init();
     void FeatureParamParseEntry();
@@ -45,12 +45,12 @@ public:
     std::unordered_map<std::string, std::shared_ptr<FeatureParam>> featureParamMap_;
 
 private:
-    GraphicCcmFeatureParamManager();
-    ~GraphicCcmFeatureParamManager() noexcept override;
+    GraphicFeatureParamManager();
+    ~GraphicFeatureParamManager() noexcept override;
 
-    static constexpr char GRAPHIC_CCM_CONFIG_FILE_PRODUCT[] = "/sys_prod/etc/graphic/graphic_config.xml";
+    static constexpr char GRAPHIC_CONFIG_FILE_PRODUCT[] = "/sys_prod/etc/graphic/graphic_config.xml";
 
     std::unique_ptr<XMLParserBase> featureParser_ = nullptr;
 };
 } // namespace OHOS::Rosen
-#endif // GRAPHIC_CCM_FEATURE_PARAM_MANAGER_H
+#endif // GRAPHIC_FEATURE_PARAM_MANAGER_H

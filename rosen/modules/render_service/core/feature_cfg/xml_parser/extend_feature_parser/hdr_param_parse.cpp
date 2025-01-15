@@ -22,8 +22,8 @@ int32_t HDRParamParse::ParseFeatureParam(FeatureParamMapType featureMap, xmlNode
     RS_LOGI("HDRParamParse start");
     xmlNode *currNode = &node;
     if (currNode->xmlChildrenNode == nullptr) {
-        RS_LOGD("HDRParamParse stop parsing, no children nodes");
-        return CCM_GET_CHILD_FAIL;
+        RS_LOGE("HDRParamParse stop parsing, no children nodes");
+        return PARSE_GET_CHILD_FAIL;
     }
 
     currNode = currNode->xmlChildrenNode;
@@ -32,32 +32,32 @@ int32_t HDRParamParse::ParseFeatureParam(FeatureParamMapType featureMap, xmlNode
             continue;
         }
 
-        if (ParseHdrInternal(featureMap, *currNode) != CCM_EXEC_SUCCESS) {
+        if (ParseHdrInternal(featureMap, *currNode) != PARSE_EXEC_SUCCESS) {
             RS_LOGE("HDRParamParse stop parsing, parse internal fail");
-            return CCM_PARSE_INTERNAL_FAIL;
+            return PARSE_INTERNAL_FAIL;
         }
     }
 
-    return CCM_EXEC_SUCCESS;
+    return PARSE_EXEC_SUCCESS;
 }
 
 int32_t HDRParamParse::ParseHdrInternal(FeatureParamMapType featureMap, xmlNode &node)
 {
     xmlNode *currNode = &node;
 
-    auto iter = featureMap.find(paramVec[featureParamCode::HDR]);
+    auto iter = featureMap.find(featureModules[HDR]);
     if (iter != featureMap.end()) {
         hdrParam_ = std::static_pointer_cast<HDRParam>(iter->second);
     } else {
-        RS_LOGD("HDRParamParse stop parsing, no initializing param map");
-        return CCM_NO_PARAM;
+        RS_LOGE("HDRParamParse stop parsing, no initializing param map");
+        return PARSE_NO_PARAM;
     }
 
     // Start Parse Feature Params
-    int xmlParamType = GetCcmXmlNodeAsInt(*currNode);
+    int xmlParamType = GetXmlNodeAsInt(*currNode);
     auto name = ExtractPropertyValue("name", *currNode);
     auto val = ExtractPropertyValue("value", *currNode);
-    if (xmlParamType == CCM_XML_FEATURE_SWITCH) {
+    if (xmlParamType == PARSE_XML_FEATURE_SWITCH) {
         bool isEnabled = ParseFeatureSwitch(val);
         if (name == "HdrVideoEnabled") {
             hdrParam_->SetHdrVideoEnable(isEnabled);
@@ -68,6 +68,6 @@ int32_t HDRParamParse::ParseHdrInternal(FeatureParamMapType featureMap, xmlNode 
         }
     }
 
-    return CCM_EXEC_SUCCESS;
+    return PARSE_EXEC_SUCCESS;
 }
 } // namespace OHOS::Rosen
