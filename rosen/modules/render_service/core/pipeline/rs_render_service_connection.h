@@ -342,7 +342,7 @@ private:
         sptr<RSISurfaceBufferCallback> callback) override;
     void UnregisterSurfaceBufferCallback(pid_t pid, uint64_t uid) override;
 
-    void NotifyScreenSwitched(ScreenId id) override;
+    void NotifyScreenSwitched() override;
 
     pid_t remotePid_;
     wptr<RSRenderService> renderService_;

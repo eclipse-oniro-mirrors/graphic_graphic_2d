@@ -214,7 +214,7 @@ bool RSPhysicalScreenFuzzTest(const uint8_t* data, size_t size)
     std::string nodeIdStr = GetData<std::string>();
     bool isTop = GetData<bool>();
     rsInterfaces.SetLayerTop(nodeIdStr, isTop);
-    rsInterfaces.NotifyScreenSwitched(static_cast<ScreenId>(id));
+    rsInterfaces.NotifyScreenSwitched();
     return true;
 }
 

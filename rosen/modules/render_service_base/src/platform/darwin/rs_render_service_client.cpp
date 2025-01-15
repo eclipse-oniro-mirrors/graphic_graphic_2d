@@ -687,7 +687,7 @@ void RSRenderServiceClient::SetLayerTop(const std::string &nodeIdStr, bool isTop
 {
 }
 
-void RSRenderServiceClient::NotifyScreenSwitched(ScreenId id)
+void RSRenderServiceClient::NotifyScreenSwitched()
 {
 }
 } // namespace Rosen

@@ -1822,11 +1822,11 @@ void RSRenderServiceClient::SetLayerTop(const std::string &nodeIdStr, bool isTop
     }
 }
 
-void RSRenderServiceClient::NotifyScreenSwitched(ScreenId id)
+void RSRenderServiceClient::NotifyScreenSwitched()
 {
     auto renderService = RSRenderServiceConnectHub::GetRenderService();
     if (renderService != nullptr) {
-        renderService->NotifyScreenSwitched(id);
+        renderService->NotifyScreenSwitched();
     }
 }
 } // namespace Rosen

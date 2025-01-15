@@ -2399,15 +2399,12 @@ void RSScreenManager::SetScreenHasProtectedLayer(ScreenId id, bool hasProtectedL
     screensIt->second->SetHasProtectedLayer(hasProtectedLayer);
 }
 
-void RSScreenManager::SetScreenSwitchStatus(bool flag, ScreenId id)
+void RSScreenManager::SetScreenSwitchStatus(bool flag)
 {
     isScreenSwitching_ = flag;
-    if (isScreenSwitching_) {
-        RSDisplayRenderNode::SetSwitchedScreenId(id);
-    }
 }
 
-bool RSScreenManager::GetScreenSwitchStatus() const
+bool RSScreenManager::IsScreenSwitching() const
 {
     return isScreenSwitching_;
 }

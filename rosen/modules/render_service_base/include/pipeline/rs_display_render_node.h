@@ -515,13 +515,11 @@ public:
         return hasHdrVideo_;
     }
 
-    using ScreenStatusNotifyTask = std::function<void(bool, uint64_t)>;
+    using ScreenStatusNotifyTask = std::function<void(bool)>;
 
     static void SetScreenStatusNotifyTask(ScreenStatusNotifyTask task);
 
-    static void SetSwitchedScreenId(uint64_t screenId);
-
-    void CheckTargetScreenSwitched(uint64_t screenId);
+    void NotifyScreenNotSwitching();
 
 protected:
     void OnSync() override;
@@ -609,7 +607,6 @@ private:
 
     friend class DisplayNodeCommandHelper;
     static inline ScreenStatusNotifyTask screenStatusNotifyTask_ = nullptr;
-    static inline uint64_t switchedScreenId_ = 0;
 };
 } // namespace Rosen
 } // namespace OHOS

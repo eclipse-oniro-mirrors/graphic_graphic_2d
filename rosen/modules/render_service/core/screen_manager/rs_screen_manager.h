@@ -257,9 +257,9 @@ public:
 
     virtual void SetScreenHasProtectedLayer(ScreenId id, bool hasProtectedLayer) = 0;
 
-    virtual void SetScreenSwitchStatus(bool flag, ScreenId id) = 0;
+    virtual void SetScreenSwitchStatus(bool flag) = 0;
 
-    virtual bool GetScreenSwitchStatus() const = 0;
+    virtual bool IsScreenSwitching() const = 0;
 };
 
 sptr<RSScreenManager> CreateOrGetScreenManager();
@@ -503,9 +503,10 @@ public:
     }
 
     void SetScreenHasProtectedLayer(ScreenId id, bool hasProtectedLayer) override;
-    void SetScreenSwitchStatus(bool flag, ScreenId id) override;
 
-    bool GetScreenSwitchStatus() const override;
+    void SetScreenSwitchStatus(bool flag) override;
+
+    bool IsScreenSwitching() const override;
 
 private:
     RSScreenManager();

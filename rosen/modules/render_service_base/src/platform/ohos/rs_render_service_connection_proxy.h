@@ -318,7 +318,7 @@ public:
 
     void UnregisterSurfaceBufferCallback(pid_t pid, uint64_t uid) override;
 
-    void NotifyScreenSwitched(ScreenId id) override;
+    void NotifyScreenSwitched() override;
 
 private:
     bool FillParcelWithTransactionData(

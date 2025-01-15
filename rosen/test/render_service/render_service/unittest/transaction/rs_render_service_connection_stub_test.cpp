@@ -502,12 +502,10 @@ HWTEST_F(RSRenderServiceConnectionStubTest, TestRSRenderServiceConnectionStub012
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    ScreenId id{INVALID_SCREEN_ID};
     data.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor());
-    data.WriteUint64(id);
     uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_SCREEN_SWITCHED);
     int res = connectionStub_->OnRemoteRequest(code, data, reply, option);
-    ASSERT_EQ(res, ERR_NONE);
+    ASSERT_EQ(res, NO_ERROR);
 }
 
 } // namespace OHOS::Rosen
