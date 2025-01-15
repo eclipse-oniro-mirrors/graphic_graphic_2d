@@ -1264,8 +1264,8 @@ void RSDisplayRenderNodeDrawable::WiredScreenProjection(
         return;
     }
     auto& mirroredParams = static_cast<RSDisplayRenderParams&>(*mirroredDrawable->GetRenderParams());
-    if (RSSystemParameters::GetWiredScreenOndrawEnabled() &&
-        (params.GetHDRPresent() || !currentBlackList_.empty())) {
+    if (RSSystemParameters::GetDebugMirrorOndrawEnabled() || (RSSystemParameters::GetWiredScreenOndrawEnabled() &&
+        (mirroredParams.GetHDRPresent() || !currentBlackList_.empty()))) {
         DrawWiredMirrorOnDraw(*mirroredDrawable, params);
     } else {
         DrawWiredMirrorCopy(*mirroredDrawable);
@@ -1333,6 +1333,7 @@ void RSDisplayRenderNodeDrawable::DrawWiredMirrorOnDraw(
         DrawWatermarkIfNeed(*mirrorParams, *curCanvas_);
         SwitchColorFilter(*curCanvas_, 1.f); // 1.f: wired screen not use hdr, use default value 1.f
     }
+    RSUniRenderThread::Instance().SetBlackList({});
     uniParam->SetOpDropped(isOpDropped);
 }
 

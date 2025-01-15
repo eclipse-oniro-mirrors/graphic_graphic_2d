@@ -404,25 +404,18 @@ void RSScreenManager::OnHwcDeadEvent()
 {
     std::lock_guard<std::mutex> lock(mutex_);
     for (const auto &[id, screen] : screens_) {
-        if (!screen) {
-            continue;
-        }
-        // In sceneboard, we should not notify the WMS to remove node from RSTree
-        if (screen->IsVirtual()) {
-            continue;
-        }
-        for (auto& cb : screenChangeCallbacks_) {
-            cb->OnScreenChanged(id, ScreenEvent::DISCONNECTED);
-        }
+        if (screen) {
+            // In sceneboard, we should not notify the WMS to remove node from RSTree
+            if (screen->IsVirtual()) {
+                continue;
+            } else {
 #ifdef RS_ENABLE_GPU
-        RSHardwareThread::Instance().ClearFrameBuffers(screen->GetOutput());
+                RSHardwareThread::Instance().ClearFrameBuffers(screen->GetOutput());
+            }
+        }
 #endif
     }
     isHwcDead_ = true;
-    pendingHotPlugEvents_.clear();
-    screenPowerStatus_.clear();
-    screenBacklight_.clear();
-    screenCorrection_.clear();
     screens_.clear();
     defaultScreenId_ = INVALID_SCREEN_ID;
 }
@@ -524,8 +517,11 @@ void RSScreenManager::ProcessScreenHotPlugEvents()
         }
     }
     for (auto id : connectedIds_) {
-        for (auto& cb : screenChangeCallbacks_) {
-            cb->OnScreenChanged(id, ScreenEvent::CONNECTED);
+        for (auto &cb : screenChangeCallbacks_) {
+            if (!isHwcDead_) {
+                cb->OnScreenChanged(id, ScreenEvent::CONNECTED);
+                continue;
+            }
         }
         auto screenIt = screens_.find(id);
         if (screenIt == screens_.end() || screenIt->second == nullptr) {
@@ -1173,7 +1169,7 @@ const std::vector<uint64_t> RSScreenManager::GetVirtualScreenSecurityExemptionLi
 }
 
 int32_t RSScreenManager::SetScreenSecurityMask(ScreenId id,
-    const std::shared_ptr<Media::PixelMap> securityMask)
+    std::shared_ptr<Media::PixelMap> securityMask)
 {
     if (id == INVALID_SCREEN_ID) {
         RS_LOGW("RSScreenManager %{public}s: INVALID_SCREEN_ID.", __func__);
@@ -1883,6 +1879,10 @@ void RSScreenManager::ClearFrameBufferIfNeed()
                 RS_LOGE("RSScreenManager %{public}s: screen %{public}" PRIu64 " not found.", __func__, id);
                 continue;
             }
+            if (screen->GetHasProtectedLayer()) {
+                RS_TRACE_NAME_FMT("screen Id:%lu has protected layer.", id);
+                continue;
+            }
             if (screen->GetOutput()->GetBufferCacheSize() > 0) {
                 RS_LOGI("RSScreenManager %{public}s: screen %{public}" PRIu64 " ClearFrameBuffers.", __func__, id);
                 RSHardwareThread::Instance().ClearFrameBuffers(screen->GetOutput());
@@ -2386,6 +2386,17 @@ bool RSScreenManager::GetDisplayPropertyForHardCursor(uint32_t screenId)
         return false;
     }
     return screensIt->second->GetDisplayPropertyForHardCursor();
+}
+
+void RSScreenManager::SetScreenHasProtectedLayer(ScreenId id, bool hasProtectedLayer)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    auto screensIt = screens_.find(id);
+    if (screensIt == screens_.end() || screensIt->second == nullptr) {
+        RS_LOGW("RSScreenManager %{public}s: There is no screen for id %{public}" PRIu64 ".", __func__, id);
+        return;
+    }
+    screensIt->second->SetHasProtectedLayer(hasProtectedLayer);
 }
 
 void RSScreenManager::SetScreenSwitchStatus(bool flag, ScreenId id)

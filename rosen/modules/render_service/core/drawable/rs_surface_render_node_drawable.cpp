@@ -402,6 +402,9 @@ void RSSurfaceRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         return;
     }
     if (CheckIfSurfaceSkipInMirror(*surfaceParams)) {
+        SetDrawSkipType(DrawSkipType::SURFACE_SKIP_IN_MIRROR);
+        RS_TRACE_NAME_FMT("RSSurfaceRenderNodeDrawable::OnDraw surface skipped in mirror name:[%s] id:%" PRIu64,
+            name_.c_str(), surfaceParams->GetId());
         return;
     }
     RS_LOGD("RSSurfaceRenderNodeDrawable ondraw name:%{public}s nodeId:[%{public}" PRIu64 "]", name_.c_str(),
