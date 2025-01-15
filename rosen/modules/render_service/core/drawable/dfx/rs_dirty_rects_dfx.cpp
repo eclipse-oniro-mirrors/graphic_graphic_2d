@@ -173,8 +173,8 @@ bool RSDirtyRectsDfx::RefreshRateRotationProcess(RSPaintFilterCanvas& canvas,
     if (rotation == ScreenRotation::ROTATION_90 || rotation == ScreenRotation::ROTATION_270) {
         std::swap(translateWidth, translateHeight);
     }
-    RS_LOGD("RotationProcess correction:%{public}d translateWidth:%{public}d translateHeight:%{public}d",
-        static_cast<int>(screenCorrection), static_cast<int>(rotation)
+    RS_LOGD("RotationProcess correction:%{public}d rotation:%{public}d translateWidth:%{public}d translateHeight:%{public}d",
+        static_cast<int>(screenCorrection), static_cast<int>(rotation),
         static_cast<int>(translateWidth), static_cast<int>(translateHeight));
 
     if (rotation != ScreenRotation::ROTATION_0) {
