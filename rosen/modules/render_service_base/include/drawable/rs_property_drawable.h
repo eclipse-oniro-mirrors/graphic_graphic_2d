@@ -202,6 +202,8 @@ protected:
     int cacheUpdateInterval_ = 0;
     NodeId stagingNodeId_ = INVALID_NODEID;
     NodeId renderNodeId_ = INVALID_NODEID;
+    std::string stagingNodeName_ = "invalid0";
+    std::string renderNodeName_ = "invalid0";
 
     std::shared_ptr<RSFilter> filter_;
     std::shared_ptr<RSFilter> stagingFilter_;
