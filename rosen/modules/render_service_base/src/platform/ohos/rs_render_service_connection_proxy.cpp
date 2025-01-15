@@ -1409,8 +1409,9 @@ void RSRenderServiceConnectionProxy::TakeSurfaceCapture(NodeId id, sptr<RSISurfa
     }
 }
 
-void RSRenderServiceConnectionProxy::SetWindowFreezeImmediately(
-    NodeId id, bool isFreeze, sptr<RSISurfaceCaptureCallback> callback, const RSSurfaceCaptureConfig& captureConfig)
+void RSRenderServiceConnectionProxy::SetWindowFreezeImmediately(NodeId id, bool isFreeze,
+    sptr<RSISurfaceCaptureCallback> callback, const RSSurfaceCaptureConfig& captureConfig,
+    const RSSurfaceCaptureBlurParam& blurParam)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -1435,6 +1436,10 @@ void RSRenderServiceConnectionProxy::SetWindowFreezeImmediately(
         }
         if (!WriteSurfaceCaptureConfig(captureConfig, data)) {
             ROSEN_LOGE("%{public}s write captureConfig failed", __func__);
+            return;
+        }
+        if (!WriteSurfaceCaptureBlurParam(blurParam, data)) {
+            ROSEN_LOGE("%{public}s write blurParam failed", __func__);
             return;
         }
     }
