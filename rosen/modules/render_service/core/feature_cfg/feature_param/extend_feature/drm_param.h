@@ -30,7 +30,7 @@ protected:
     void SetDrmEnable(bool isEnable);
 
 private:
-    bool isDrmEnable_;
+    bool isDrmEnable_ = true;
 
     friend class DRMParamParse;
 };

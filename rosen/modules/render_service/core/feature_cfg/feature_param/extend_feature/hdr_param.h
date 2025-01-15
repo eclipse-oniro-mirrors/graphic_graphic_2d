@@ -32,8 +32,8 @@ protected:
     void SetHdrImageEnable(bool isEnable);
 
 private:
-    bool isHdrVideoEnable_;
-    bool isHdrImageEnable_;
+    bool isHdrVideoEnable_ = true;
+    bool isHdrImageEnable_ = true;
 
     friend class HDRParamParse;
 };

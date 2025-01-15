@@ -38,8 +38,8 @@ protected:
     void SetSolidColorLayerForApp(std::string appName, std::string val);
 
 private:
-    bool isHwcEnable_;
-    bool isHwcMirrorEnable_;
+    bool isHwcEnable_ = false;
+    bool isHwcMirrorEnable_ = false;
 
     std::unordered_map<std::string, int> sourceTuningMap_;
     std::unordered_map<std::string, int> solidColorLayerMap_;
