@@ -26,5 +26,4 @@ void DRMParam::SetDrmEnable(bool isEnable)
 {
     isDrmEnable_ = isEnable;
 }
-
 } // namespace OHOS::Rosen

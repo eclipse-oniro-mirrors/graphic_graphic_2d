@@ -14,48 +14,60 @@
  */
 
 #include "hdr_param_parse.h"
-#include "graphic_ccm_feature_param_manager.h"
 
 namespace OHOS::Rosen {
 
-int32_t HDRParamParse::ParseFeatureParam(xmlNode &node)
+int32_t HDRParamParse::ParseFeatureParam(FeatureParamMapType featureMap, xmlNode &node)
 {
-    HGM_LOGI("HDRParamParse start");
+    RS_LOGI("HDRParamParse start");
     xmlNode *currNode = &node;
     if (currNode->xmlChildrenNode == nullptr) {
-        HGM_LOGD("HDRParamParse stop parsing, no children nodes");
-        return HGM_ERROR;
+        RS_LOGD("HDRParamParse stop parsing, no children nodes");
+        return CCM_GET_CHILD_FAIL;
     }
-    auto featureMap = GraphicCcmFeatureParamManager::GetInstance()->featureParamMap_;
-    auto iter = featureMap.find("HdrConfig");
-    if (iter != featureMap.end()) {
-        hdrParam_ = std::static_pointer_cast<HDRParam>(iter->second);
-    } else {
-        HGM_LOGD("HDRParamParse stop parsing, no initializing param map");
-        return HGM_ERROR;
-    }
+
     currNode = currNode->xmlChildrenNode;
     for (; currNode; currNode = currNode->next) {
         if (currNode->type != XML_ELEMENT_NODE) {
             continue;
         }
 
-        // Start Parse Feature Params
-        int xmlParamType = GetCcmXmlNodeAsInt(*currNode);
-        auto name = ExtractPropertyValue("name", *currNode);
-        auto val = ExtractPropertyValue("value", *currNode);
-        if (xmlParamType == CCM_XML_FEATURE_SWITCH) {
-            bool isEnabled = ParseFeatureSwitch(val);
-            if (name == "HdrVideoEnabled") {
-                hdrParam_->SetHdrVideoEnable(isEnabled);
-                HGM_LOGI("HDRParamParse parse HdrVideoEnabled %{public}d", hdrParam_->IsHdrVideoEnable());
-            } else if (name == "HdrImageEnabled") {
-                hdrParam_->SetHdrImageEnable(isEnabled);
-                HGM_LOGI("HDRParamParse parse HdrImageEnabled %{public}d", hdrParam_->IsHdrImageEnable());
-            }
+        if (ParseHdrInternal(featureMap, *currNode) != CCM_EXEC_SUCCESS) {
+            RS_LOGE("HDRParamParse stop parsing, parse internal fail");
+            return CCM_PARSE_INTERNAL_FAIL;
         }
     }
 
-    return EXEC_SUCCESS;
+    return CCM_EXEC_SUCCESS;
+}
+
+int32_t HDRParamParse::ParseHdrInternal(FeatureParamMapType featureMap, xmlNode &node)
+{
+    xmlNode *currNode = &node;
+
+    auto iter = featureMap.find("HdrConfig");
+    if (iter != featureMap.end()) {
+        hdrParam_ = std::static_pointer_cast<HDRParam>(iter->second);
+    } else {
+        RS_LOGD("HDRParamParse stop parsing, no initializing param map");
+        return CCM_NO_PARAM;
+    }
+
+    // Start Parse Feature Params
+    int xmlParamType = GetCcmXmlNodeAsInt(*currNode);
+    auto name = ExtractPropertyValue("name", *currNode);
+    auto val = ExtractPropertyValue("value", *currNode);
+    if (xmlParamType == CCM_XML_FEATURE_SWITCH) {
+        bool isEnabled = ParseFeatureSwitch(val);
+        if (name == "HdrVideoEnabled") {
+            hdrParam_->SetHdrVideoEnable(isEnabled);
+            RS_LOGD("HDRParamParse parse HdrVideoEnabled %{public}d", hdrParam_->IsHdrVideoEnable());
+        } else if (name == "HdrImageEnabled") {
+            hdrParam_->SetHdrImageEnable(isEnabled);
+            RS_LOGD("HDRParamParse parse HdrImageEnabled %{public}d", hdrParam_->IsHdrImageEnable());
+        }
+    }
+
+    return CCM_EXEC_SUCCESS;
 }
 } // namespace OHOS::Rosen

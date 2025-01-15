@@ -14,19 +14,13 @@
  */
 
 #include "graphic_ccm_feature_param_manager.h"
-
-#include "hgm_log.h"
+#include "platform/common/rs_log.h"
 
 namespace OHOS::Rosen {
-std::once_flag GraphicCcmFeatureParamManager::createFlag_;
-sptr<GraphicCcmFeatureParamManager> GraphicCcmFeatureParamManager::instance_ = nullptr;
-
-sptr<GraphicCcmFeatureParamManager> GraphicCcmFeatureParamManager::GetInstance() noexcept
+GraphicCcmFeatureParamManager& GraphicCcmFeatureParamManager::GetInstance()
 {
-    std::call_once(createFlag_, []() {
-        instance_ = new GraphicCcmFeatureParamManager();
-    });
-    return instance_;
+    static GraphicCcmFeatureParamManager instance;
+    return instance;
 }
 
 GraphicCcmFeatureParamManager::GraphicCcmFeatureParamManager()
@@ -39,7 +33,7 @@ GraphicCcmFeatureParamManager::~GraphicCcmFeatureParamManager() noexcept
 
 void GraphicCcmFeatureParamManager::Init()
 {
-    HGM_LOGD("GraphicCcmFeatureParamManager %{public}s : Init feature map", __func__);
+    RS_LOGD("GraphicCcmFeatureParamManager %{public}s : Init feature map", __func__);
     // parse map init
     featureParseMap_["HdrConfig"] = std::make_unique<HDRParamParse>();
     featureParseMap_["DvsyncConfig"] = std::make_unique<DvsyncParamParse>();
@@ -55,31 +49,31 @@ void GraphicCcmFeatureParamManager::Init()
 
 void GraphicCcmFeatureParamManager::FeatureParamParseEntry()
 {
-    HGM_LOGD("GraphicCcmFeatureParamManager %{public}s : In", __func__);
+    RS_LOGD("GraphicCcmFeatureParamManager %{public}s : In", __func__);
     if (!featureParser_) {
         featureParser_ = std::make_unique<XMLParserBase>();
     }
 
-    if (featureParser_->LoadGraphicConfiguration(GRAPHIC_CCM_CONFIG_FILE_PRODUCT) != EXEC_SUCCESS) {
-        HGM_LOGW("GraphicCcmFeatureParamManager failed to load prod xml configuration file");
+    if (featureParser_->LoadGraphicConfiguration(GRAPHIC_CCM_CONFIG_FILE_PRODUCT) != CCM_EXEC_SUCCESS) {
+        RS_LOGW("GraphicCcmFeatureParamManager failed to load prod xml configuration file");
+        return;
     }
 
-    if (featureParser_->Parse() != EXEC_SUCCESS) {
-        HGM_LOGW("GraphicCcmFeatureParamManager failed to parse prod xml configuration");
+    if (featureParser_->Parse() != CCM_EXEC_SUCCESS) {
+        RS_LOGW("GraphicCcmFeatureParamManager failed to parse prod xml configuration");
     }
 }
 
 std::shared_ptr<FeatureParam> GraphicCcmFeatureParamManager::GetFeatureParam(std::string featureName)
 {
-    HGM_LOGI("GraphicCcmFeatureParamManager %{public}s : getFeatureParam %{public}s", __func__, featureName.c_str());
+    RS_LOGI("GraphicCcmFeatureParamManager %{public}s : getFeatureParam %{public}s", __func__, featureName.c_str());
 
     auto iter = featureParamMap_.find(featureName);
     if (iter == featureParamMap_.end()) {
-        HGM_LOGE("GraphicCcmFeatureParamManager %{public}s : getFeatureParam featureName: %{public}s failed", __func__, featureName.c_str());
+        RS_LOGE("GraphicCcmFeatureParamManager %{public}s : getFeatureParam featureName: %{public}s failed", __func__, featureName.c_str());
         return nullptr;
     }
 
     return iter->second;
 }
-
 } // namespace OHOS::Rosen

@@ -22,64 +22,65 @@ namespace OHOS::Rosen {
 
 int32_t XMLParserBase::LoadGraphicConfiguration(const char* fileDir)
 {
-    HGM_LOGI("XMLParserBase opening xml file");
+    RS_LOGD("XMLParserBase opening xml file");
     xmlDocument_ = xmlReadFile(fileDir, nullptr, 0);
     if (!xmlDocument_) {
-        HGM_LOGE("XMLParser xmlReadFile failed");
-        return XML_FILE_LOAD_FAIL;
+        RS_LOGE("XMLParser xmlReadFile failed");
+        return CCM_FILE_LOAD_FAIL;
     }
 
-    return EXEC_SUCCESS;
+    return CCM_EXEC_SUCCESS;
 }
 
 int32_t XMLParserBase::Parse()
 {
-    HGM_LOGD("XMLParserBase Parse Start");
+    RS_LOGI("XMLParserBase Parse Start");
     if (!xmlDocument_) {
-        HGM_LOGE("XMLParser xmlDocument_ is empty, should do LoadGraphicConfiguration first");
-        return HGM_ERROR;
+        RS_LOGE("XMLParser xmlDocument_ is empty, should do LoadGraphicConfiguration first");
+        return CCM_FILE_LOAD_FAIL;
     }
     xmlNode *root = xmlDocGetRootElement(xmlDocument_);
     if (root == nullptr) {
-        HGM_LOGE("XMLParser xmlDocGetRootElement failed");
-        return XML_GET_ROOT_FAIL;
+        RS_LOGE("XMLParser xmlDocGetRootElement failed");
+        return CCM_GET_ROOT_FAIL;
     }
 
     if (ParseInternal(*root) == false) {
-        return XML_PARSE_INTERNAL_FAIL;
+        return CCM_PARSE_INTERNAL_FAIL;
     }
-    return EXEC_SUCCESS;
+    return CCM_EXEC_SUCCESS;
 }
 
 bool XMLParserBase::ParseInternal(xmlNode &node)
 {
-    HGM_LOGI("XMLParserBase ParseInternal Start");
+    RS_LOGI("XMLParserBase ParseInternal Start");
     xmlNode *currNode = &node;
     if (currNode->xmlChildrenNode == nullptr) {
-        HGM_LOGD("XMLParserBase stop parsing internal, no children nodes");
+        RS_LOGD("XMLParserBase stop parsing internal, no children nodes");
         return false;
     }
     currNode = currNode->xmlChildrenNode;
-    int32_t parseSuccess = EXEC_SUCCESS;
+    int32_t parseSuccess = CCM_EXEC_SUCCESS;
 
     for (; currNode; currNode = currNode->next) {
         if (currNode->type != XML_ELEMENT_NODE) {
             continue;
         }
-        if (parseSuccess != EXEC_SUCCESS) {
+        if (parseSuccess != CCM_EXEC_SUCCESS) {
             return false;
         }
-        // featureParam --- Hdrconfig
-        std::string featureName = ExtractPropertyValue("name", *currNode);
-        HGM_LOGI("XMLParserBase featureName is: %{public}s", featureName.c_str());
 
-        auto parseMap = GraphicCcmFeatureParamManager::GetInstance()->featureParseMap_;
+        std::string featureName = ExtractPropertyValue("name", *currNode);
+        RS_LOGI("XMLParserBase featureName is: %{public}s", featureName.c_str());
+
+        auto parseMap = GraphicCcmFeatureParamManager::GetInstance().featureParseMap_;
+        auto featureMap = GraphicCcmFeatureParamManager::GetInstance().featureParamMap_;
         auto iter = parseMap.find(featureName);
         if (iter != parseMap.end()) {
             auto featureObj = iter->second;
-            parseSuccess = featureObj->ParseFeatureParam(*currNode);
+            parseSuccess = featureObj->ParseFeatureParam(featureMap, *currNode);
         } else {
-            HGM_LOGE("XMLParserBase featureMap cannot find feature %{public}s", featureName.c_str());
+            RS_LOGE("XMLParserBase featureMap cannot find feature %{public}s", featureName.c_str());
         }
     }
     return true;
@@ -87,7 +88,7 @@ bool XMLParserBase::ParseInternal(xmlNode &node)
 
 std::string XMLParserBase::ExtractPropertyValue(const std::string &propName, xmlNode &node)
 {
-    HGM_LOGD("XMLParserBase extracting value : %{public}s", propName.c_str());
+    RS_LOGD("XMLParserBase extracting value : %{public}s", propName.c_str());
     std::string propValue = "";
     xmlChar *tempValue = nullptr;
 
@@ -96,7 +97,7 @@ std::string XMLParserBase::ExtractPropertyValue(const std::string &propName, xml
     }
 
     if (tempValue != nullptr) {
-        HGM_LOGD("XMLParser not a empty tempValue");
+        RS_LOGD("XMLParser not a empty tempValue");
         propValue = reinterpret_cast<const char*>(tempValue);
         xmlFree(tempValue);
         tempValue = nullptr;
@@ -116,7 +117,7 @@ int32_t XMLParserBase::GetCcmXmlNodeAsInt(xmlNode &node)
     if (!xmlStrcmp(node.name, reinterpret_cast<const xmlChar*>("FeatureMultiParam"))) {
         return CCM_XML_FEATURE_MULTIPARAM;
     }
-    HGM_LOGD("XMLParserBase failed to identify a xml node : %{public}s", node.name);
+    RS_LOGD("XMLParserBase failed to identify a xml node : %{public}s", node.name);
     return CCM_XML_UNDEFINED;
 }
 

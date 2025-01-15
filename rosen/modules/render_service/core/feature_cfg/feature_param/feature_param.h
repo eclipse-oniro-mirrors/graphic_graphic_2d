@@ -22,8 +22,7 @@
 #include <libxml/parser.h>
 #include <libxml/tree.h>
 
-#include "hgm_command.h"
-#include "hgm_log.h"
+#include "platform/common/rs_log.h"
 
 namespace OHOS::Rosen {
 class FeatureParam {

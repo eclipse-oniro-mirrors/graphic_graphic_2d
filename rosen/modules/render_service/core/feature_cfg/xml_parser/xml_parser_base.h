@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef GRAPHIC_XML_PARSER_BASE_H
-#define GRAPHIC_XML_PARSER_BASE_H
+#ifndef XML_PARSER_BASE_H
+#define XML_PARSER_BASE_H
 
 #include <string>
 #include <unordered_map>
@@ -22,11 +22,24 @@
 #include <libxml/parser.h>
 #include <libxml/tree.h>
 
+#include "platform/common/rs_log.h"
 #include "feature_param.h"
-#include "hgm_command.h"
-#include "hgm_log.h"
 
 namespace OHOS::Rosen {
+using FeatureParamMapType = std::unordered_map<std::string, std::shared_ptr<FeatureParam>>;
+
+enum CcmErrCode {
+    CCM_ERROR = -1,
+
+    CCM_EXEC_SUCCESS = 0,
+
+    CCM_NO_PARAM = 100,
+
+    CCM_FILE_LOAD_FAIL = 200,
+    CCM_GET_ROOT_FAIL,
+    CCM_GET_CHILD_FAIL,
+    CCM_PARSE_INTERNAL_FAIL,
+};
 
 enum CcmXmlNode {
     CCM_XML_UNDEFINED = 0,
@@ -39,7 +52,7 @@ class XMLParserBase {
 public:
     virtual ~XMLParserBase() = default;
 
-    virtual int32_t ParseFeatureParam(xmlNode &node){
+    virtual int32_t ParseFeatureParam(FeatureParamMapType featureMap, xmlNode &node){
         return 0;
     };
 
@@ -57,4 +70,4 @@ private:
     xmlDoc *xmlDocument_ = nullptr;
 };
 } // namespace OHOS::Rosen
-#endif // GRAPHIC_XML_PARSER_BASE_H
+#endif // XML_PARSER_BASE_H

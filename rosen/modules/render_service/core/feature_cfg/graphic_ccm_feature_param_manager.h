@@ -35,11 +35,7 @@
 namespace OHOS::Rosen {
 class GraphicCcmFeatureParamManager : public RefBase {
 public:
-    static sptr<GraphicCcmFeatureParamManager> GetInstance() noexcept;
-
-    // non-copyable
-    GraphicCcmFeatureParamManager(const GraphicCcmFeatureParamManager &) = delete;
-    GraphicCcmFeatureParamManager &operator=(const GraphicCcmFeatureParamManager &) = delete;
+    static GraphicCcmFeatureParamManager& GetInstance();
 
     void Init();
     void FeatureParamParseEntry();
@@ -53,8 +49,6 @@ public:
 private:
     GraphicCcmFeatureParamManager();
     ~GraphicCcmFeatureParamManager() noexcept override;
-    static std::once_flag createFlag_;
-    static sptr<GraphicCcmFeatureParamManager> instance_;
 
     static constexpr char GRAPHIC_CCM_CONFIG_FILE_PRODUCT[] = "/sys_prod/etc/graphic/graphic_ccm_config.xml";
 

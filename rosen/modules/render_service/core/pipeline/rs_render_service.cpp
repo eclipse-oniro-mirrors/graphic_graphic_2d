@@ -162,11 +162,11 @@ bool RSRenderService::Init()
     }
     samgr->AddSystemAbility(RENDER_SERVICE, this);
 
-    RS_PROFILER_INIT(this);
-
     // CCM feature param parse
-    GraphicCcmFeatureParamManager::GetInstance()->Init();
-    GraphicCcmFeatureParamManager::GetInstance()->FeatureParamParseEntry();
+    GraphicCcmFeatureParamManager::GetInstance().Init();
+    GraphicCcmFeatureParamManager::GetInstance().FeatureParamParseEntry();
+
+    RS_PROFILER_INIT(this);
 
     return true;
 }

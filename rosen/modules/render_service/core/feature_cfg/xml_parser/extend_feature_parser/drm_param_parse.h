@@ -24,11 +24,11 @@ public:
     DRMParamParse() = default;
     ~DRMParamParse() = default;
 
-    int32_t ParseFeatureParam(xmlNode &node) override;
+    int32_t ParseFeatureParam(FeatureParamMapType featureMap, xmlNode &node) override;
 
 private:
+    int32_t ParseDrmInternal(FeatureParamMapType featureMap, xmlNode &node);
     std::shared_ptr<DRMParam> drmParam_;
-
 };
 } // namespace OHOS::Rosen
 #endif // DRM_PARAM_PARSE_H

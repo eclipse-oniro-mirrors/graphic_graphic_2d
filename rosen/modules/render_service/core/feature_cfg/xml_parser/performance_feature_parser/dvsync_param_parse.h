@@ -25,9 +25,10 @@ public:
     DvsyncParamParse() = default;
     ~DvsyncParamParse() = default;
 
-    int32_t ParseFeatureParam(xmlNode &node) override;
+    int32_t ParseFeatureParam(FeatureParamMapType featureMap, xmlNode &node) override;
 
 private:
+    int32_t ParseDvsyncInternal(FeatureParamMapType featureMap, xmlNode &node);
     std::shared_ptr<DvsyncParam> dvsyncParam_;
 
 };

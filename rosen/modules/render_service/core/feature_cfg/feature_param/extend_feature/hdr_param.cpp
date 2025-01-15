@@ -36,5 +36,4 @@ void HDRParam::SetHdrImageEnable(bool isEnable)
 {
     isHdrImageEnable_ = isEnable;
 }
-
 } // namespace OHOS::Rosen

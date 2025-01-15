@@ -26,11 +26,13 @@ public:
 
     bool IsDrmEnable() const;
 
+protected:
     void SetDrmEnable(bool isEnable);
 
 private:
     bool isDrmEnable_;
 
+    friend class DRMParamParse;
 };
 } // namespace OHOS::Rosen
 #endif // DRM_PARAM_H

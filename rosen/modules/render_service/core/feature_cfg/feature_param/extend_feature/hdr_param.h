@@ -27,6 +27,7 @@ public:
     bool IsHdrVideoEnable() const;
     bool IsHdrImageEnable() const;
 
+protected:
     void SetHdrVideoEnable(bool isEnable);
     void SetHdrImageEnable(bool isEnable);
 
@@ -34,6 +35,7 @@ private:
     bool isHdrVideoEnable_;
     bool isHdrImageEnable_;
 
+    friend class HDRParamParse;
 };
 } // namespace OHOS::Rosen
 #endif // HDR_PARAM_H

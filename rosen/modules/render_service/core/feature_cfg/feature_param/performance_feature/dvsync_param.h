@@ -32,6 +32,7 @@ public:
     int32_t GetAppPreCount() const;
     int32_t GetNativePreCount() const;
 
+protected:
     void SetDvsyncEnable(bool isEnable);
     void SetUiDvsyncEnable(bool isEnable);
     void SetNativeDvsyncEnable(bool isEnable);
@@ -47,6 +48,8 @@ private:
     int32_t rsPreCnt_;
     int32_t appPreCnt_;
     int32_t nativePreCnt_;
+
+    friend class DvsyncParamParse;
 };
 } // namespace OHOS::Rosen
 #endif // DVSYNC_PARAM_H

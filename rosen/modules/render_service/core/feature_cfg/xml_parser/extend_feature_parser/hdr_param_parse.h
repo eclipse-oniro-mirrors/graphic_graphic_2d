@@ -24,11 +24,11 @@ public:
     HDRParamParse() = default;
     ~HDRParamParse() = default;
 
-    int32_t ParseFeatureParam(xmlNode &node) override;
+    int32_t ParseFeatureParam(FeatureParamMapType featureMap, xmlNode &node) override;
 
 private:
+    int32_t ParseHdrInternal(FeatureParamMapType featureMap, xmlNode &node);
     std::shared_ptr<HDRParam> hdrParam_;
-
 };
 } // namespace OHOS::Rosen
 #endif // HDR_PARAM_PARSE_H

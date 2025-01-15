@@ -31,6 +31,7 @@ public:
     int GetSourceTuningForApp(std::string appName) const;
     int GetSolidColorLayerForApp(std::string appName) const;
 
+protected:
     void SetHwcEnable(bool isEnable);
     void SetHwcMirrorEnable(bool isEnable);
     void SetSourceTuningForApp(std::string appName, std::string val);
@@ -42,6 +43,8 @@ private:
 
     std::unordered_map<std::string, int> sourceTuningMap_;
     std::unordered_map<std::string, int> solidColorLayerMap_;
+
+    friend class HWCParamParse;
 };
 } // namespace OHOS::Rosen
 #endif // HWC_PARAM_H

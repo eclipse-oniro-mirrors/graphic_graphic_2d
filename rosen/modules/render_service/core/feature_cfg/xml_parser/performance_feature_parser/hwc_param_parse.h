@@ -24,12 +24,13 @@ public:
     HWCParamParse() = default;
     ~HWCParamParse() = default;
 
-    int32_t ParseFeatureParam(xmlNode &node) override;
-    int32_t ParseFeatureMultiParamForApp(xmlNode &node, std::string name);
+    int32_t ParseFeatureParam(FeatureParamMapType featureMap, xmlNode &node) override;
 
 private:
-    std::shared_ptr<HWCParam> hwcParam_;
+    int32_t ParseHwcInternal(FeatureParamMapType featureMap, xmlNode &node);
+    int32_t ParseFeatureMultiParamForApp(xmlNode &node, std::string name);
 
+    std::shared_ptr<HWCParam> hwcParam_;
 };
 } // namespace OHOS::Rosen
 #endif // HWC_PARAM_PARSE_H
