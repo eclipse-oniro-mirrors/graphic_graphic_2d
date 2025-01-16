@@ -2505,5 +2505,54 @@ HWTEST_F(RSRenderNodeTest2, ResortChildrenTest02, TestSize.Level1)
     node->ResortChildren();
     EXPECT_TRUE(node->isChildrenSorted_);
 }
+
+/**
+ * @tc.name: UpdateDrawableBehindWindowTest
+ * @tc.desc: UpdateDrawableBehindWindowTest
+ * @tc.type: FUNC
+ * @tc.require: issueIBDI0L
+ */
+HWTEST_F(RSRenderNodeTest2, UpdateDrawableBehindWindowTest, TestSize.Level1)
+{
+    auto rsContext = std::make_shared<RSContext>();
+    auto node = std::make_shared<RSRenderNode>(0, rsContext);
+    node->UpdateDrawableBehindWindow();
+    EXPECT_TRUE(node->dirtySlots_.count(RSDrawableSlot::BACKGROUND_FILTER) != 0);
+}
+
+/**
+ * @tc.name: SetUIFirstSwitchTest001
+ * @tc.desc: SetUIFirstSwitch with Node does not have firstLevelNoode
+ * @tc.type: FUNC
+ * @tc.require: issueIBH5UD
+ */
+HWTEST_F(RSRenderNodeTest2, SetUIFirstSwitchTest001, TestSize.Level1)
+{
+    auto node = std::make_shared<RSRenderNode>(id);
+    ASSERT_NE(node, nullptr);
+    node->SetUIFirstSwitch(RSUIFirstSwitch::MODAL_WINDOW_CLOSE);
+    ASSERT_EQ(node->GetUIFirstSwitch(), RSUIFirstSwitch::MODAL_WINDOW_CLOSE);
+}
+
+/**
+ * @tc.name: SetUIFirstSwitchTest002
+ * @tc.desc: SetUIFirstSwitch with Node has firstLevelNoode
+ * @tc.type: FUNC
+ * @tc.require: issueIBH5UD
+ */
+HWTEST_F(RSRenderNodeTest2, SetUIFirstSwitchTest002, TestSize.Level1)
+{
+    auto rsContext = std::make_shared<RSContext>();
+    ASSERT_NE(rsContext, nullptr);
+    auto node = std::make_shared<RSRenderNode>(id, rsContext);
+    ASSERT_NE(node, nullptr);
+    auto firstNode = std::make_shared<RSSurfaceRenderNode>(id + 1, rsContext);
+    ASSERT_NE(firstNode, nullptr);
+    node->firstLevelNodeId_ = id + 1;
+    rsContext->nodeMap.RegisterRenderNode(node);
+    rsContext->nodeMap.RegisterRenderNode(firstNode);
+    node->SetUIFirstSwitch(RSUIFirstSwitch::MODAL_WINDOW_CLOSE);
+    ASSERT_EQ(firstNode->GetUIFirstSwitch(), RSUIFirstSwitch::MODAL_WINDOW_CLOSE);
+}
 } // namespace Rosen
 } // namespace OHOS

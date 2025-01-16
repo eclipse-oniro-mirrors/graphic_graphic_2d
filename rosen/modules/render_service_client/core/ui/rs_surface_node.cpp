@@ -1,6 +1,6 @@
 
 /*
- * Copyright (c) 2021-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -24,7 +24,6 @@
 #include "ipc_callbacks/rs_rt_refresh_callback.h"
 #include "pipeline/rs_node_map.h"
 #include "pipeline/rs_render_thread.h"
-#include "pipeline/rs_render_thread_util.h"
 #include "platform/common/rs_log.h"
 #ifndef ROSEN_CROSS_PLATFORM
 #include "platform/drawing/rs_surface_converter.h"
@@ -113,6 +112,7 @@ RSSurfaceNode::SharedPtr RSSurfaceNode::Create(const RSSurfaceNodeConfig& surfac
         command = std::make_unique<RSSurfaceNodeSetCallbackForRenderThreadRefresh>(node->GetId(), true);
         transactionProxy->AddCommand(command, isWindow);
         node->SetFrameGravity(Gravity::RESIZE);
+        // codes for arkui-x
 #if defined(USE_SURFACE_TEXTURE) && defined(ROSEN_ANDROID)
         if (type == RSSurfaceNodeType::SURFACE_TEXTURE_NODE) {
             RSSurfaceExtConfig config = {
@@ -122,6 +122,7 @@ RSSurfaceNode::SharedPtr RSSurfaceNode::Create(const RSSurfaceNodeConfig& surfac
             node->CreateSurfaceExt(config);
         }
 #endif
+        // codes for arkui-x
 #if defined(USE_SURFACE_TEXTURE) && defined(ROSEN_IOS)
         if ((type == RSSurfaceNodeType::SURFACE_TEXTURE_NODE) &&
             (surfaceNodeConfig.SurfaceNodeName == "PlatformViewSurface")) {
@@ -725,20 +726,6 @@ void RSSurfaceNode::SetForceHardwareAndFixRotation(bool flag)
     if (transactionProxy != nullptr) {
         transactionProxy->AddCommand(command, true);
     }
-#ifdef ROSEN_OHOS
-    std::lock_guard<std::mutex> lock(apiInitMutex_);
-    static bool apiCompatibleVersionInitialized = false;
-    if (apiCompatibleVersionInitialized) {
-        return;
-    }
-    uint32_t apiCompatibleVersion = RSRenderThreadUtil::GetApiCompatibleVersion();
-    if (apiCompatibleVersion != INVALID_API_COMPATIBLE_VERSION && transactionProxy != nullptr) {
-        std::unique_ptr<RSCommand> command =
-            std::make_unique<RSSurfaceNodeSetApiCompatibleVersion>(GetId(), apiCompatibleVersion);
-        transactionProxy->AddCommand(command, true);
-        apiCompatibleVersionInitialized = true;
-    }
-#endif
 }
 
 void RSSurfaceNode::SetBootAnimation(bool isBootAnimation)
@@ -896,6 +883,19 @@ void RSSurfaceNode::SetForeground(bool isForeground)
     }
 }
 
+void RSSurfaceNode::SetClonedNodeId(NodeId nodeId)
+{
+    auto transactionProxy = RSTransactionProxy::GetInstance();
+    if (transactionProxy == nullptr) {
+        ROSEN_LOGD("RSSurfaceNode::SetClonedNodeId transactionProxy is null");
+        return;
+    }
+    std::unique_ptr<RSCommand> command =
+        std::make_unique<RSSurfaceNodeSetClonedNodeId>(GetId(), nodeId);
+    transactionProxy->AddCommand(command, true);
+
+}
+
 void RSSurfaceNode::SetForceUIFirst(bool forceUIFirst)
 {
     std::unique_ptr<RSCommand> command =
@@ -999,6 +999,27 @@ RSInterfaceErrorCode RSSurfaceNode::SetHidePrivacyContent(bool needHidePrivacyCo
             renderServiceClient->SetHidePrivacyContent(GetId(), needHidePrivacyContent));
     }
     return RSInterfaceErrorCode::UNKNOWN_ERROR;
+}
+
+void RSSurfaceNode::SetHardwareEnableHint(bool enable)
+{
+    std::unique_ptr<RSCommand> command =
+        std::make_unique<RSSurfaceNodeSetHardwareEnableHint>(GetId(), enable);
+    auto transactionProxy = RSTransactionProxy::GetInstance();
+    if (transactionProxy != nullptr) {
+        transactionProxy->AddCommand(command, true);
+    }
+}
+
+void RSSurfaceNode::SetApiCompatibleVersion(uint32_t version)
+{
+    std::unique_ptr<RSCommand> command = std::make_unique<RSSurfaceNodeSetApiCompatibleVersion>(GetId(), version);
+    auto transactionProxy = RSTransactionProxy::GetInstance();
+    if (transactionProxy != nullptr) {
+        transactionProxy->AddCommand(command, true);
+        RS_LOGD(
+            "RSSurfaceNode::SetApiCompatibleVersion: Node: %{public}" PRIu64 ", version: %{public}u", GetId(), version);
+    }
 }
 } // namespace Rosen
 } // namespace OHOS

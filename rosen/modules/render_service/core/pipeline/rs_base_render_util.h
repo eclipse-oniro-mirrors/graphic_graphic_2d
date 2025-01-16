@@ -135,7 +135,7 @@ public:
     static GraphicTransformType GetSurfaceBufferTransformType(
         const sptr<IConsumerSurface>& consumer, const sptr<SurfaceBuffer>& buffer);
     static Drawing::Matrix GetSurfaceTransformMatrix(GraphicTransformType rotationTransform, const RectF &bounds,
-        const RectF &bufferBounds = {0.0f, 0.0f, 0.0f, 0.0f}, Gravity gravity = Gravity::RESIZE);
+        const RectF &bufferBounds = {0.0f, 0.0f, 0.0f, 0.0f});
     static Drawing::Matrix GetSurfaceTransformMatrixForRotationFixed(GraphicTransformType rotationTransform,
         const RectF &bounds, const RectF &bufferBounds = {0.0f, 0.0f, 0.0f, 0.0f}, Gravity gravity = Gravity::RESIZE);
     static Drawing::Matrix GetGravityMatrix(Gravity gravity, const RectF& bufferSize, const RectF& bounds);
@@ -169,7 +169,7 @@ public:
     static bool WriteSurfaceBufferToPng(sptr<SurfaceBuffer>& buffer, uint64_t id = 0);
 
     static bool WritePixelMapToPng(Media::PixelMap& pixelMap);
-    static int32_t GetDeviceRotation(RSSurfaceRenderParams* nodeParams);
+    static int32_t GetScreenRotationOffset(RSSurfaceRenderParams* nodeParams);
 #ifdef RS_ENABLE_GPU
     static void DealWithSurfaceRotationAndGravity(GraphicTransformType transform, Gravity gravity,
         RectF& localBounds, BufferDrawParam& params, RSSurfaceRenderParams* nodeParams = nullptr);
@@ -204,6 +204,7 @@ private:
         const std::vector<GraphicHDRMetaData>& metaDatas = {});
     static bool CreateBitmap(sptr<OHOS::SurfaceBuffer> buffer, Drawing::Bitmap& bitmap);
     static bool WriteToPng(const std::string &filename, const WriteToPngParam &param);
+    static ScreenId GetScreenIdFromSurfaceRenderParams(RSSurfaceRenderParams* nodeParams);
 
     static bool enableClient;
 

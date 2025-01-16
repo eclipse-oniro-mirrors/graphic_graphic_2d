@@ -118,13 +118,14 @@ bool PixelMapStorage::PullSharedMemory(uint64_t id, const ImageInfo& info, Pixel
         return false;
     }
 
-    memory.base = new uint8_t[memory.bufferSize];
+    memory.allocatorType = AllocatorType::HEAP_ALLOC;
+    memory.base = reinterpret_cast<uint8_t*>(malloc(memory.bufferSize));
     if (!memory.base) {
         return false;
     }
 
     if (!CopyImageData(image, memory.base, memory.bufferSize)) {
-        delete[] memory.base;
+        free(memory.base);
         memory.base = nullptr;
         return false;
     }
@@ -441,8 +442,8 @@ Media::PixelMap* RSProfiler::UnmarshalPixelMap(Parcel& parcel,
     PIXEL_MAP_ERR error;
     auto map = PixelMap::StartUnmarshalling(parcel, info, memory, error);
 
-    size_t skipBytes = 0u;
     if (IsReadMode() || IsReadEmulationMode()) {
+        size_t skipBytes = 0u;
         if (PixelMapStorage::Pull(id, info, memory, skipBytes)) {
             parcel.SkipBytes(skipBytes);
             return PixelMap::FinishUnmarshalling(map, parcel, info, memory, error);

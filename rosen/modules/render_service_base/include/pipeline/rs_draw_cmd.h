@@ -123,6 +123,36 @@ protected:
     std::shared_ptr<RSImageBase> rsImage_;
 };
 
+class RSB_EXPORT RSExtendImageNineObject : public Drawing::ExtendImageNineObject {
+public:
+    RSExtendImageNineObject() = default;
+    RSExtendImageNineObject(const std::shared_ptr<Media::PixelMap>& pixelMap);
+    ~RSExtendImageNineObject() override = default;
+    void Playback(Drawing::Canvas& canvas, const Drawing::RectI& center, const Drawing::Rect& dst,
+        Drawing::FilterMode filterMode) override;
+    bool Marshalling(Parcel &parcel) const;
+    static RSExtendImageNineObject *Unmarshalling(Parcel &parcel);
+    void SetNodeId(NodeId id) override;
+    void Purge() override;
+protected:
+    std::shared_ptr<RSImageBase> rsImage_;
+};
+
+class RSB_EXPORT RSExtendImageLatticeObject : public Drawing::ExtendImageLatticeObject {
+public:
+    RSExtendImageLatticeObject() = default;
+    RSExtendImageLatticeObject(const std::shared_ptr<Media::PixelMap>& pixelMap);
+    ~RSExtendImageLatticeObject() override = default;
+    void Playback(Drawing::Canvas& canvas, const Drawing::Lattice& lattice, const Drawing::Rect& dst,
+        Drawing::FilterMode filterMode) override;
+    bool Marshalling(Parcel &parcel) const;
+    static RSExtendImageLatticeObject *Unmarshalling(Parcel &parcel);
+    void SetNodeId(NodeId id) override;
+    void Purge() override;
+protected:
+    std::shared_ptr<RSImageBase> rsImage_;
+};
+
 class RSB_EXPORT RSExtendDrawFuncObj : public Drawing::ExtendDrawFuncObj {
 public:
     explicit RSExtendDrawFuncObj(Drawing::RecordingCanvas::DrawFunc&& drawFunc) : drawFunc_(std::move(drawFunc)) {}
@@ -250,6 +280,80 @@ private:
     std::shared_ptr<ExtendDrawFuncObj> objectHandle_;
 };
 
+class DrawPixelMapNineOpItem : public DrawWithPaintOpItem {
+public:
+    struct ConstructorHandle : public OpItem {
+        ConstructorHandle(const OpDataHandle& objectHandle, const Drawing::RectI& center,
+            const Drawing::Rect& dst, Drawing::FilterMode filterMode, const PaintHandle& paintHandle)
+            : OpItem(DrawOpItem::PIXELMAP_NINE_OPITEM), objectHandle(objectHandle), center(center),
+              dst(dst), filterMode(filterMode), paintHandle(paintHandle) {}
+        ~ConstructorHandle() override = default;
+        OpDataHandle objectHandle;
+        Drawing::RectI center;
+        Drawing::Rect dst;
+        FilterMode filterMode;
+        PaintHandle paintHandle;
+    };
+    DrawPixelMapNineOpItem(const DrawCmdList& cmdList, ConstructorHandle* handle);
+    DrawPixelMapNineOpItem(const std::shared_ptr<Media::PixelMap>& pixelMap, const Drawing::RectI& center,
+        const Drawing::Rect& dst, Drawing::FilterMode filterMode, const Paint& paint);
+    ~DrawPixelMapNineOpItem() override = default;
+
+    static std::shared_ptr<DrawOpItem> Unmarshalling(const DrawCmdList& cmdList, void* handle);
+    void Marshalling(DrawCmdList& cmdList) override;
+    void Playback(Canvas* canvas, const Rect* rect) override;
+    void SetNodeId(NodeId id) override;
+    virtual void DumpItems(std::string& out) const override;
+    void Purge() override
+    {
+        if (objectHandle_) {
+            objectHandle_->Purge();
+        }
+    }
+private:
+    Drawing::RectI center_;
+    Drawing::Rect dst_;
+    FilterMode filterMode_;
+    std::shared_ptr<ExtendImageNineObject> objectHandle_;
+};
+
+class DrawPixelMapLatticeOpItem : public DrawWithPaintOpItem {
+public:
+    struct ConstructorHandle : public OpItem {
+        ConstructorHandle(const OpDataHandle& objectHandle, const LatticeHandle& latticeHandle,
+            const Drawing::Rect& dst, Drawing::FilterMode filterMode, const PaintHandle& paintHandle)
+            : OpItem(DrawOpItem::PIXELMAP_LATTICE_OPITEM), objectHandle(objectHandle), latticeHandle(latticeHandle),
+              dst(dst), filterMode(filterMode), paintHandle(paintHandle) {}
+        ~ConstructorHandle() override = default;
+        OpDataHandle objectHandle;
+        LatticeHandle latticeHandle;
+        Drawing::Rect dst;
+        FilterMode filterMode;
+        PaintHandle paintHandle;
+    };
+    DrawPixelMapLatticeOpItem(const DrawCmdList& cmdList, ConstructorHandle* handle);
+    DrawPixelMapLatticeOpItem(const std::shared_ptr<Media::PixelMap>& pixelMap, const Drawing::Lattice& lattice,
+        const Drawing::Rect& dst, Drawing::FilterMode filterMode, const Paint& paint);
+    ~DrawPixelMapLatticeOpItem() override = default;
+
+    static std::shared_ptr<DrawOpItem> Unmarshalling(const DrawCmdList& cmdList, void* handle);
+    void Marshalling(DrawCmdList& cmdList) override;
+    void Playback(Canvas* canvas, const Rect* rect) override;
+    void SetNodeId(NodeId id) override;
+    virtual void DumpItems(std::string& out) const override;
+    void Purge() override
+    {
+        if (objectHandle_) {
+            objectHandle_->Purge();
+        }
+    }
+private:
+    Drawing::Lattice lattice_;
+    Drawing::Rect dst_;
+    FilterMode filterMode_;
+    std::shared_ptr<ExtendImageLatticeObject> objectHandle_;
+};
+
 #ifdef ROSEN_OHOS
 struct RSB_EXPORT DrawSurfaceBufferFinishCbData {
     uint64_t uid;
@@ -311,7 +415,10 @@ private:
     void DrawWithGles(Canvas* canvas);
     bool CreateEglTextureId();
     bool IsNeedDrawDirectly() const;
-    Drawing::BitmapFormat CreateBitmapFormat(int32_t bufferFormat);
+    static Drawing::BitmapFormat CreateBitmapFormat(int32_t bufferFormat);
+#ifdef RS_ENABLE_GL
+    static GLenum GetGLTextureFormatByBitmapFormat(Drawing::ColorType colorType);
+#endif
     static GraphicTransformType MapGraphicTransformType(GraphicTransformType origin);
     static bool IsValidRemoteAddress(pid_t pid, uint64_t uid);
     mutable DrawingSurfaceBufferInfo surfaceBufferInfo_;

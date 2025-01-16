@@ -68,11 +68,10 @@ bool RSSystemParameters::GetDrawingCacheEnabledDfx()
     return ConvertToInt(enabledDfx, 0) != 0;
 }
 
-bool RSSystemParameters::GetShowRefreshRateEnabled()
+bool RSSystemParameters::GetShowRefreshRateEnabled(int *changed)
 {
     static CachedHandle g_Handle = CachedParameterCreate("rosen.showRefreshRate.enabled", "0");
-    int changed = 0;
-    const char *enabled = CachedParameterGetChanged(g_Handle, &changed);
+    const char *enabled = CachedParameterGetChanged(g_Handle, changed);
     return ConvertToInt(enabled, 0) != 0;
 }
 
@@ -164,6 +163,13 @@ bool RSSystemParameters::GetPrevalidateHwcNodeEnabled()
     return prevalidateHwcNodeEnabled;
 }
 
+bool RSSystemParameters::GetSolidLayerHwcEnabled()
+{
+    static bool solidLayerHwcEnabled =
+        std::atoi((system::GetParameter("persist.sys.graphic.solidLayer.Enabled", "1")).c_str()) != 0;
+    return solidLayerHwcEnabled;
+}
+
 bool RSSystemParameters::GetControlBufferConsumeEnabled()
 {
     static bool controlBufferConsume =
@@ -217,18 +223,32 @@ bool RSSystemParameters::GetWiredScreenOndrawEnabled()
     return ConvertToInt(enable, 0) != 0;
 }
 
-bool RSSystemParameters::GetDFXMirrorScreenForceRedrawEnabled()
+bool RSSystemParameters::GetDebugMirrorOndrawEnabled()
 {
-    static CachedHandle g_Handle = CachedParameterCreate("rosen.DFX.mirrorScreen.forceRedraw.enabled", "0");
+    static CachedHandle g_Handle = CachedParameterCreate("rosen.debugMirrorOndraw.enabled", "0");
     int changed = 0;
     const char *enable = CachedParameterGetChanged(g_Handle, &changed);
-    return ConvertToInt(enable, 0) != 0;
+    return ConvertToInt(enable, 1) != 0;
 }
 
 bool RSSystemParameters::GetArsrPreEnabled()
 {
     static bool flag = system::GetBoolParameter("const.display.enable_arsr_pre", true);
     return flag;
+}
+
+bool RSSystemParameters::GetMultimediaEnableCameraRotationCompensation()
+{
+    static bool flag = system::GetBoolParameter("const.multimedia.enable_camera_rotation_compensation", 0);
+    return flag;
+}
+
+bool RSSystemParameters::GetCanvasDrawingNodeRegionEnabled()
+{
+    static CachedHandle g_Handle = CachedParameterCreate("rosen.canvas_drawing_node.region.enabled", "0");
+    int changed = 0;
+    const char *enable = CachedParameterGetChanged(g_Handle, &changed);
+    return ConvertToInt(enable, 0) != 0;
 }
 } // namespace Rosen
 } // namespace OHOS

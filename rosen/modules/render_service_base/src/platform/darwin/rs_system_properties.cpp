@@ -181,24 +181,6 @@ bool RSSystemProperties::GetCacheEnabledForRotation()
     return {};
 }
 
-void RSSystemProperties::SetScreenSwitchStatus(bool flag)
-{
-}
-
-bool RSSystemProperties::GetScreenSwitchStatus()
-{
-    return false;
-}
-
-void RSSystemProperties::SetDefaultDeviceRotationOffset(uint32_t offset)
-{
-}
-
-uint32_t RSSystemProperties::GetDefaultDeviceRotationOffset()
-{
-    return {};
-}
-
 #ifndef NEW_SKIA
 bool RSSystemProperties::GetReleaseResourceEnabled()
 {
@@ -346,6 +328,16 @@ bool RSSystemProperties::GetMESABlurFuzedEnabled()
     return false;
 }
 
+int RSSystemProperties::GetSimplifiedMesaEnabled()
+{
+    return 0;
+}
+
+bool RSSystemProperties::GetForceKawaseDisabled()
+{
+    return false;
+}
+
 float RSSystemProperties::GetKawaseRandomColorFactor()
 {
     return 0.f;
@@ -468,6 +460,11 @@ bool RSSystemProperties::GetSubSurfaceEnabled()
     return false;
 }
 
+bool RSSystemProperties::GetSingleDrawableLockerEnabled()
+{
+    return false;
+}
+
 bool RSSystemProperties::GetTargetUIFirstDfxEnabled(std::vector<std::string>& SurfaceNames)
 {
     return false;
@@ -583,7 +580,7 @@ bool RSSystemProperties::GetHwcDirtyRegionEnabled()
     return false;
 }
 
-bool RSSystemProperties::GetDisableHebcEnabled()
+bool RSSystemProperties::GetHveFilterEnabled()
 {
     return false;
 }

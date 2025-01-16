@@ -105,6 +105,9 @@ private:
     int32_t SetVirtualScreenSecurityExemptionList(
         ScreenId id, const std::vector<NodeId>& securityExemptionList) override;
 
+    int32_t SetScreenSecurityMask(ScreenId id,
+        std::shared_ptr<Media::PixelMap> securityMask) override;
+
     int32_t SetMirrorScreenVisibleRect(ScreenId id, const Rect& mainScreenRect) override;
 
     int32_t SetCastScreenEnableSkipWindow(ScreenId id, bool enable) override;
@@ -155,6 +158,8 @@ private:
 
     void RepaintEverything() override;
 
+    void ForceRefreshOneFrameWithNextVSync() override;
+
     void DisablePowerOffRenderControl(ScreenId id) override;
 
     void SetScreenPowerStatus(ScreenId id, ScreenPowerStatus status) override;
@@ -164,7 +169,7 @@ private:
         RSSurfaceCapturePermissions permissions = RSSurfaceCapturePermissions()) override;
 
     void SetWindowFreezeImmediately(NodeId id, bool isFreeze, sptr<RSISurfaceCaptureCallback> callback,
-        const RSSurfaceCaptureConfig& captureConfig) override;
+        const RSSurfaceCaptureConfig& captureConfig, const RSSurfaceCaptureBlurParam& blurParam) override;
 
     void SetHwcNodeBounds(int64_t rsNodeId, float positionX, float positionY,
         float positionZ, float positionW) override;
@@ -294,15 +299,13 @@ private:
 
     void NotifyRefreshRateEvent(const EventInfo& eventInfo) override;
 
+    void NotifySoftVsyncEvent(uint32_t pid, uint32_t rateDiscount) override;
+
     void NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt) override;
 
     void NotifyDynamicModeEvent(bool enableDynamicModeEvent) override;
 
     void SetCacheEnabledForRotation(bool isEnabled) override;
-
-    void SetScreenSwitchStatus(bool flag) override;
-
-    void SetDefaultDeviceRotationOffset(uint32_t offset) override;
 
     bool SetVirtualScreenStatus(ScreenId id, VirtualScreenStatus screenStatus) override;
 
@@ -338,6 +341,8 @@ private:
     void RegisterSurfaceBufferCallback(pid_t pid, uint64_t uid,
         sptr<RSISurfaceBufferCallback> callback) override;
     void UnregisterSurfaceBufferCallback(pid_t pid, uint64_t uid) override;
+
+    void NotifyScreenSwitched(ScreenId id) override;
 
     pid_t remotePid_;
     wptr<RSRenderService> renderService_;

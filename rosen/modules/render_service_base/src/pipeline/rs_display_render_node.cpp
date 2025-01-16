@@ -30,10 +30,10 @@ constexpr int64_t MAX_JITTER_NS = 2000000; // 2ms
 
 RSDisplayRenderNode::RSDisplayRenderNode(
     NodeId id, const RSDisplayNodeConfig& config, const std::weak_ptr<RSContext>& context)
-    : RSRenderNode(id, context), screenId_(config.screenId), offsetX_(0), offsetY_(0),
-      isMirroredDisplay_(config.isMirrored), dirtyManager_(std::make_shared<RSDirtyRegionManager>(true))
+    : RSRenderNode(id, context), isMirroredDisplay_(config.isMirrored), offsetX_(0), offsetY_(0),
+      screenId_(config.screenId), dirtyManager_(std::make_shared<RSDirtyRegionManager>(true))
 {
-    RS_LOGI("RSDisplayRenderNode ctor id:%{public}" PRIu64 "", id);
+    RS_LOGI("RSScreen RSDisplayRenderNode ctor id:%{public}" PRIu64 ", screenid:%{public}" PRIu64, id, screenId_);
     MemoryInfo info = {sizeof(*this), ExtractPid(id), id, MEMORY_TYPE::MEM_RENDER_NODE};
     MemoryTrack::Instance().AddNodeRecord(id, info);
     MemorySnapshot::Instance().AddCpuMemory(ExtractPid(id), sizeof(*this));
@@ -41,7 +41,7 @@ RSDisplayRenderNode::RSDisplayRenderNode(
 
 RSDisplayRenderNode::~RSDisplayRenderNode()
 {
-    RS_LOGI("RSDisplayRenderNode dtor id:%{public}" PRIu64 "", GetId());
+    RS_LOGI("RSScreen RSDisplayRenderNode dtor id:%{public}" PRIu64 ", screenId:%{public}" PRIu64, GetId(), screenId_);
     MemoryTrack::Instance().RemoveNodeRecord(GetId());
     MemorySnapshot::Instance().RemoveCpuMemory(ExtractPid(GetId()), sizeof(*this));
 }
@@ -234,18 +234,19 @@ void RSDisplayRenderNode::UpdateRenderParams()
         RS_LOGE("RSDisplayRenderNode::UpdateRenderParams displayParams is null");
         return;
     }
+    displayParams->offsetX_ = GetDisplayOffsetX();
+    displayParams->offsetY_ = GetDisplayOffsetY();
+    displayParams->nodeRotation_ = GetRotation();
     auto mirroredNode = GetMirrorSource().lock();
     if (mirroredNode == nullptr) {
         displayParams->mirrorSourceId_ = INVALID_NODEID;
+        displayParams->mirrorSourceDrawable_.reset();
         RS_LOGW("RSDisplayRenderNode::UpdateRenderParams mirroredNode is null");
     } else {
         displayParams->mirrorSourceDrawable_ = mirroredNode->GetRenderDrawable();
         displayParams->mirrorSourceId_ = mirroredNode->GetId();
     }
     displayParams->isSecurityExemption_ = isSecurityExemption_;
-    displayParams->offsetX_ = GetDisplayOffsetX();
-    displayParams->offsetY_ = GetDisplayOffsetY();
-    displayParams->nodeRotation_ = GetRotation();
     displayParams->mirrorSource_ = GetMirrorSource();
     displayParams->hasSecLayerInVisibleRect_ = hasSecLayerInVisibleRect_;
     displayParams->hasSecLayerInVisibleRectChanged_ = hasSecLayerInVisibleRectChanged_;
@@ -582,6 +583,27 @@ Occlusion::Region RSDisplayRenderNode::GetDisappearedSurfaceRegionBelowCurrent(N
 bool RSDisplayRenderNode::IsZoomStateChange() const
 {
     return preZoomState_ != curZoomState_;
+}
+
+
+void RSDisplayRenderNode::SetScreenStatusNotifyTask(ScreenStatusNotifyTask task)
+{
+    screenStatusNotifyTask_ = task;
+}
+
+void RSDisplayRenderNode::SetSwitchedScreenId(uint64_t screenId)
+{
+    switchedScreenId_ = screenId;
+}
+
+void RSDisplayRenderNode::CheckTargetScreenSwitched(uint64_t screenId)
+{
+    if (screenStatusNotifyTask_) {
+        screenStatusNotifyTask_(switchedScreenId_ != screenId, switchedScreenId_);
+        RS_TRACE_NAME_FMT("ScreenId: %" PRIu64 ", SwitchedScreenId: %" PRIu64, screenId, switchedScreenId_);
+        ROSEN_LOGI("DisplayNodeCommandHelper::SetScreenId screenId:[%{public}" PRIu64 "],"
+            "switchedId:[%{public}" PRIu64 "]", screenId, switchedScreenId_);
+    }
 }
 } // namespace Rosen
 } // namespace OHOS

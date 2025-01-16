@@ -34,6 +34,7 @@ namespace Rosen {
 namespace {
 constexpr uint32_t WATERMARK_PIXELMAP_SIZE_LIMIT = 500 * 1024;
 constexpr uint32_t WATERMARK_NAME_LENGTH_LIMIT = 128;
+constexpr uint32_t SECURITYMASK_PIXELMAP_SIZE_LIMIT = 4096 * 4096;
 }
 #endif
 RSInterfaces &RSInterfaces::GetInstance()
@@ -108,6 +109,20 @@ int32_t RSInterfaces::SetVirtualScreenSecurityExemptionList(
     const std::vector<NodeId>& securityExemptionList)
 {
     return renderServiceClient_->SetVirtualScreenSecurityExemptionList(id, securityExemptionList);
+}
+
+int32_t RSInterfaces::SetScreenSecurityMask(ScreenId id, std::shared_ptr<Media::PixelMap> securityMask)
+{
+#ifdef ROSEN_OHOS
+    if (securityMask &&  securityMask->GetCapacity() > SECURITYMASK_PIXELMAP_SIZE_LIMIT) {
+        ROSEN_LOGE("SetScreenSecurityMask failed, securityMask %{public}d is error",
+            securityMask->GetCapacity());
+        return RS_CONNECTION_ERROR;
+    }
+    return renderServiceClient_->SetScreenSecurityMask(id, std::move(securityMask));
+#else
+    return RS_CONNECTION_ERROR;
+#endif
 }
 
 int32_t RSInterfaces::SetMirrorScreenVisibleRect(ScreenId id, const Rect& mainScreenRect)
@@ -223,13 +238,19 @@ bool RSInterfaces::TakeSurfaceCaptureWithBlur(std::shared_ptr<RSSurfaceNode> nod
 }
 
 bool RSInterfaces::SetWindowFreezeImmediately(std::shared_ptr<RSSurfaceNode> node, bool isFreeze,
-    std::shared_ptr<SurfaceCaptureCallback> callback, RSSurfaceCaptureConfig captureConfig)
+    std::shared_ptr<SurfaceCaptureCallback> callback, RSSurfaceCaptureConfig captureConfig, float blurRadius)
 {
     if (!node) {
         ROSEN_LOGE("%{public}s node is nullptr", __func__);
         return false;
     }
-    return renderServiceClient_->SetWindowFreezeImmediately(node->GetId(), isFreeze, callback, captureConfig);
+    RSSurfaceCaptureBlurParam blurParam;
+    if (ROSEN_GE(blurRadius, 1.f)) {
+        blurParam.isNeedBlur = true;
+        blurParam.blurRadius = blurRadius;
+    }
+    return renderServiceClient_->SetWindowFreezeImmediately(
+        node->GetId(), isFreeze, callback, captureConfig, blurParam);
 }
 
 bool RSInterfaces::SetHwcNodeBounds(int64_t rsNodeId, float positionX, float positionY,
@@ -421,6 +442,11 @@ void RSInterfaces::MarkPowerOffNeedProcessOneFrame()
 void RSInterfaces::RepaintEverything()
 {
     renderServiceClient_->RepaintEverything();
+}
+
+void RSInterfaces::ForceRefreshOneFrameWithNextVSync()
+{
+    renderServiceClient_->ForceRefreshOneFrameWithNextVSync();
 }
 
 void RSInterfaces::DisablePowerOffRenderControl(ScreenId id)
@@ -732,11 +758,6 @@ void RSInterfaces::EnableCacheForRotation()
     renderServiceClient_->SetCacheEnabledForRotation(true);
 }
 
-void RSInterfaces::SetDefaultDeviceRotationOffset(uint32_t offset)
-{
-    renderServiceClient_->SetDefaultDeviceRotationOffset(offset);
-}
-
 void RSInterfaces::NotifyLightFactorStatus(bool isSafe)
 {
     renderServiceClient_->NotifyLightFactorStatus(isSafe);
@@ -769,7 +790,8 @@ void RSInterfaces::DisableCacheForRotation()
 
 void RSInterfaces::SetScreenSwitching(bool flag)
 {
-    renderServiceClient_->SetScreenSwitchStatus(flag);
+    ScreenId id{INVALID_SCREEN_ID};
+    renderServiceClient_->NotifyScreenSwitched(id);
 }
 
 void RSInterfaces::SetOnRemoteDiedCallback(const OnRemoteDiedCallback& callback)
@@ -886,6 +908,11 @@ bool RSInterfaces::UnregisterSurfaceBufferCallback(pid_t pid, uint64_t uid)
 void RSInterfaces::SetLayerTop(const std::string &nodeIdStr, bool isTop)
 {
     renderServiceClient_->SetLayerTop(nodeIdStr, isTop);
+}
+
+void RSInterfaces::NotifyScreenSwitched(ScreenId id)
+{
+    renderServiceClient_->NotifyScreenSwitched(id);
 }
 } // namespace Rosen
 } // namespace OHOS

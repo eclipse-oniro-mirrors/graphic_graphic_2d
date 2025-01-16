@@ -66,6 +66,9 @@ public:
     int GetHardwareTid() const;
     GSError ClearFrameBuffers(OutputPtr output);
     void OnScreenVBlankIdleCallback(ScreenId screenId, uint64_t timestamp);
+    void ClearRedrawGPUCompositionCache(const std::set<uint32_t>& bufferIds);
+    std::string GetEventQueueDump() const;
+    void PreAllocateProtectedBuffer(sptr<SurfaceBuffer> buffer, uint64_t screenId);
 private:
     RSHardwareThread() = default;
     ~RSHardwareThread() = default;
@@ -80,6 +83,7 @@ private:
     void PerformSetActiveMode(OutputPtr output, uint64_t timestamp, uint64_t constraintRelativeTime);
     void ExecuteSwitchRefreshRate(const OutputPtr& output, uint32_t refreshRate);
     void AddRefreshRateCount(const OutputPtr& output);
+    void RecordTimestamp(const std::vector<LayerInfoPtr>& layers);
     int64_t GetCurTimeCount();
     bool IsInAdaptiveMode(const OutputPtr &output);
 
@@ -91,7 +95,6 @@ private:
     std::shared_ptr<RSSurfaceOhos> CreateFrameBufferSurfaceOhos(const sptr<Surface>& surface);
 #ifdef RES_SCHED_ENABLE
     void SubScribeSystemAbility();
-    void ReportFrameToRSS();
     sptr<VSyncSystemAbilityListener> saStatusChangeListener_ = nullptr;
 #endif
 #ifdef USE_VIDEO_PROCESSING_ENGINE
@@ -101,6 +104,8 @@ private:
         HDI::Display::Graphic::Common::V1_0::CM_ColorSpaceType& colorSpaceInfo);
 #endif
 
+    static GraphicColorGamut ComputeTargetColorGamut(const sptr<SurfaceBuffer> &buffer);
+    static GraphicPixelFormat ComputeTargetPixelFormat(const sptr<SurfaceBuffer> &buffer);
     std::shared_ptr<AppExecFwk::EventRunner> runner_ = nullptr;
     std::shared_ptr<AppExecFwk::EventHandler> handler_ = nullptr;
     HdiBackend *hdiBackend_ = nullptr;
@@ -120,9 +125,26 @@ private:
     int64_t lastCommitTime_ = 0;
     int64_t intervalTimePoints_ = 0;
     bool isLastAdaptive_ = false;
+    std::string GetSurfaceNameInLayers(const std::vector<LayerInfoPtr>& layers);
+    std::mutex preAllocMutex_;
+    std::mutex frameBufferSurfaceOhosMapMutex_;
 
     friend class RSUniRenderThread;
     friend class RSUifirstManager;
 };
 }
+
+namespace OHOS {
+namespace AppExecFwk {
+class RSHardwareDumper : public Dumper {
+public:
+    virtual void Dump(const std::string& message) override;
+    virtual std::string GetTag() override;
+    std::string GetDumpInfo();
+
+private:
+    std::string dumpInfo_;
+};
+} // namespace AppExecFwk
+} // namespace OHOS
 #endif // RS_HARDWARE_THREAD_H

@@ -125,7 +125,7 @@ public:
         isFirstVisitCrossNodeDisplay_ = isFirstVisitCrossNodeDisplay;
     }
 
-    CrossNodeOffScreenRenderDebugType GetCrossNodeOffscreenDebugEnabled() const
+    CrossNodeOffScreenRenderDebugType GetCrossNodeOffScreenStatus() const
     {
         return isCrossNodeOffscreenOn_;
     }
@@ -195,9 +195,9 @@ public:
         return hardwareEnabledTypeDrawables_;
     }
 
-    const HardCursorInfo& GetHardCursorDrawables() const
+    const std::map<NodeId, DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr>& GetHardCursorDrawables() const
     {
-        return hardCursorDrawables_;
+        return hardCursorDrawableMap_;
     }
     
     void SetPendingScreenRefreshRate(uint32_t rate)
@@ -289,16 +289,6 @@ public:
     bool GetCacheEnabledForRotation() const
     {
         return cacheEnabledForRotation_;
-    }
-
-    void SetScreenSwitchStatus(bool flag)
-    {
-        isScreenSwitching_ = flag;
-    }
-
-    bool GetScreenSwitchStatus() const
-    {
-        return isScreenSwitching_;
     }
 
     void SetRequestNextVsyncFlag(bool flag)
@@ -453,6 +443,16 @@ public:
     {
         currentVisitDisplayDrawableId_ = displayId;
     }
+
+    const std::set<uint32_t> GetUnmappedCacheSet() const
+    {
+        return unmappedCacheSet_;
+    }
+
+    void ClearUnmappedCacheSet()
+    {
+        unmappedCacheSet_.clear();
+    }
 private:
     // Used by hardware thred
     uint64_t timestamp_ = 0;
@@ -484,12 +484,11 @@ private:
     bool isExpandScreenDirtyEnabled_ = false;
     bool isMirrorScreenDirty_ = false;
     bool cacheEnabledForRotation_ = false;
-    bool isScreenSwitching_ = false;
     NodeId currentVisitDisplayDrawableId_ = INVALID_NODEID;
     DirtyRegionDebugType dirtyRegionDebugType_ = DirtyRegionDebugType::DISABLED;
     std::vector<DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr> selfDrawables_;
     DrawablesVec hardwareEnabledTypeDrawables_;
-    HardCursorInfo hardCursorDrawables_;
+    std::map<NodeId, DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr> hardCursorDrawableMap_;
     bool isForceCommitLayer_ = false;
     bool hasMirrorDisplay_ = false;
     // accumulatedDirtyRegion to decide whether to skip tranasparent nodes.
@@ -516,6 +515,8 @@ private:
 
     bool isSecurityExemption_ = false;
     ScreenInfo screenInfo_ = {};
+
+    std::set<uint32_t> unmappedCacheSet_ = {};
 
     friend class RSMainThread;
     friend class RSUniRenderVisitor;

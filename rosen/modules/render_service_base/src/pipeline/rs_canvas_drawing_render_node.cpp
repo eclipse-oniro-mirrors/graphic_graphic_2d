@@ -41,7 +41,6 @@
 #include "property/rs_properties_painter.h"
 #include "visitor/rs_node_visitor.h"
 
-
 namespace OHOS {
 namespace Rosen {
 static std::mutex drawingMutex_;
@@ -87,13 +86,15 @@ bool RSCanvasDrawingRenderNode::ResetSurfaceWithTexture(int width, int height, R
     if (!image) {
         return false;
     }
-    Drawing::TextureOrigin origin = Drawing::TextureOrigin::BOTTOM_LEFT;
+    Drawing::TextureOrigin origin = Drawing::TextureOrigin::TOP_LEFT;
+#if defined(RS_ENABLE_GL)
+    origin = Drawing::TextureOrigin::BOTTOM_LEFT;
+#endif
     auto sharedBackendTexture = image->GetBackendTexture(false, &origin);
     if (!sharedBackendTexture.IsValid()) {
         RS_LOGE("RSCanvasDrawingRenderNode::ResetSurfaceWithTexture sharedBackendTexture is nullptr");
         return false;
     }
-
     Drawing::BitmapFormat bitmapFormat = { image->GetColorType(), image->GetAlphaType() };
     auto sharedTexture = std::make_shared<Drawing::Image>();
     auto context = canvas.GetGPUContext();
@@ -574,7 +575,7 @@ void RSCanvasDrawingRenderNode::AddDirtyType(RSModifierType modifierType)
         if (cmd == nullptr) {
             continue;
         }
-
+        
         if (cmd->GetOpItemSize() > DRAWCMDLIST_OPSIZE_COUNT_LIMIT) {
             RS_LOGE("CanvasDrawingNode AddDirtyType NodeId[%{public}" PRIu64 "] Cmd oversize"
                     " Add DrawOpSize [%{public}zu]",

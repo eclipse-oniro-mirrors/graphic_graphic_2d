@@ -350,6 +350,7 @@ HWTEST_F(RSRenderNodeDrawableTest, AfterDrawCache, TestSize.Level1)
 HWTEST_F(RSRenderNodeDrawableTest, DrawAutoCache, TestSize.Level1)
 {
     auto drawable = RSRenderNodeDrawableTest::CreateDrawable();
+    ASSERT_NE(drawable, nullptr);
 
     Drawing::Canvas canvas;
     RSPaintFilterCanvas paintFilterCanvas(&canvas);
@@ -767,7 +768,6 @@ HWTEST_F(RSRenderNodeDrawableTest, DrawTest, TestSize.Level1)
 
     CaptureParam param;
     param.isSnapshot_ = true;
-    param.isMirror_ = true;
     RSUniRenderThread::SetCaptureParam(param);
     ASSERT_TRUE(RSUniRenderThread::IsInCaptureProcess());
 }

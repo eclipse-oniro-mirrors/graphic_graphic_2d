@@ -53,7 +53,7 @@ constexpr uint8_t ASTC_HEADER_SIZE = 16;
 #ifdef RS_ENABLE_VK
 Drawing::ColorType GetColorTypeFromVKFormat(VkFormat vkFormat)
 {
-    if (!RSSystemProperties::IsUseVukan()) {
+    if (!RSSystemProperties::IsUseVulkan()) {
         return Drawing::COLORTYPE_RGBA_8888;
     }
     switch (vkFormat) {
@@ -199,18 +199,15 @@ void RSExtendImageObject::PreProcessPixelMap(Drawing::Canvas& canvas, const std:
 #endif
     if (!pixelMap->IsAstc() && RSPixelMapUtil::IsSupportZeroCopy(pixelMap, sampling)) {
 #if defined(RS_ENABLE_GL)
-        if (RSSystemProperties::GetGpuApiType() == GpuApiType::OPENGL) {
-            if (GetDrawingImageFromSurfaceBuffer(canvas, reinterpret_cast<SurfaceBuffer*>(pixelMap->GetFd()))) {
-                rsImage_->SetDmaImage(image_);
-            }
+        if (RSSystemProperties::GetGpuApiType() == GpuApiType::OPENGL &&
+            GetDrawingImageFromSurfaceBuffer(canvas, reinterpret_cast<SurfaceBuffer*>(pixelMap->GetFd()))) {
+            rsImage_->SetDmaImage(image_);
         }
 #endif
 #if defined(RS_ENABLE_VK)
-        if (RSSystemProperties::IsUseVukan()) {
-            if (GetRsImageCache(canvas, pixelMap,
-                reinterpret_cast<SurfaceBuffer*>(pixelMap->GetFd()), colorSpace)) {
-                rsImage_->SetDmaImage(image_);
-            }
+        if (RSSystemProperties::IsUseVukan() &&
+            GetRsImageCache(canvas, pixelMap, reinterpret_cast<SurfaceBuffer*>(pixelMap->GetFd()), colorSpace)) {
+            rsImage_->SetDmaImage(image_);
         }
 #endif
         return;
@@ -219,7 +216,8 @@ void RSExtendImageObject::PreProcessPixelMap(Drawing::Canvas& canvas, const std:
         std::shared_ptr<Drawing::Data> fileData = std::make_shared<Drawing::Data>();
         // After RS is switched to Vulkan, the judgment of GpuApiType can be deleted.
         if (pixelMap->GetAllocatorType() == Media::AllocatorType::DMA_ALLOC &&
-            RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN) {
+            (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
+            RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR)) {
             if (!nativeWindowBuffer_) {
                 sptr<SurfaceBuffer> sfBuffer(reinterpret_cast<SurfaceBuffer *>(pixelMap->GetFd()));
                 nativeWindowBuffer_ = CreateNativeWindowBufferFromSurfaceBuffer(&sfBuffer);
@@ -355,7 +353,7 @@ bool RSExtendImageObject::GetDrawingImageFromSurfaceBuffer(Drawing::Canvas& canv
 bool RSExtendImageObject::MakeFromTextureForVK(Drawing::Canvas& canvas, SurfaceBuffer *surfaceBuffer,
     const std::shared_ptr<Drawing::ColorSpace>& colorSpace)
 {
-    if (!RSSystemProperties::IsUseVukan()) {
+    if (!RSSystemProperties::IsUseVulkan()) {
         return false;
     }
     if (surfaceBuffer == nullptr || surfaceBuffer->GetBufferHandle() == nullptr) {
@@ -431,7 +429,7 @@ RSExtendImageObject::~RSExtendImageObject()
     }
 #endif
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
-    if (RSSystemProperties::IsUseVukan()) {
+    if (RSSystemProperties::IsUseVulkan()) {
         RSTaskDispatcher::GetInstance().PostTask(tid_, [nativeWindowBuffer = nativeWindowBuffer_,
             cleanupHelper = cleanUpHelper_]() {
             if (nativeWindowBuffer != nullptr) {
@@ -487,6 +485,100 @@ bool RSExtendImageBaseObj::Marshalling(Parcel &parcel) const
 RSExtendImageBaseObj *RSExtendImageBaseObj::Unmarshalling(Parcel &parcel)
 {
     auto object = new RSExtendImageBaseObj();
+    bool ret = RSMarshallingHelper::Unmarshalling(parcel, object->rsImage_);
+    if (!ret) {
+        delete object;
+        return nullptr;
+    }
+    return object;
+}
+
+RSExtendImageNineObject::RSExtendImageNineObject(const std::shared_ptr<Media::PixelMap>& pixelMap)
+{
+    if (pixelMap) {
+        rsImage_ = std::make_shared<RSImageBase>();
+        rsImage_->SetPixelMap(pixelMap);
+    }
+}
+
+void RSExtendImageNineObject::Playback(Drawing::Canvas& canvas, const Drawing::RectI& center,
+    const Drawing::Rect& dst, Drawing::FilterMode filterMode)
+{
+    if (rsImage_) {
+        rsImage_->DrawImageNine(canvas, center, dst, filterMode);
+    }
+}
+
+void RSExtendImageNineObject::SetNodeId(NodeId id)
+{
+    if (rsImage_) {
+        rsImage_->UpdateNodeIdToPicture(id);
+    }
+}
+
+void RSExtendImageNineObject::Purge()
+{
+    if (rsImage_) {
+        rsImage_->Purge();
+    }
+}
+
+bool RSExtendImageNineObject::Marshalling(Parcel &parcel) const
+{
+    bool ret = RSMarshallingHelper::Marshalling(parcel, rsImage_);
+    return ret;
+}
+
+RSExtendImageNineObject *RSExtendImageNineObject::Unmarshalling(Parcel &parcel)
+{
+    auto object = new RSExtendImageNineObject();
+    bool ret = RSMarshallingHelper::Unmarshalling(parcel, object->rsImage_);
+    if (!ret) {
+        delete object;
+        return nullptr;
+    }
+    return object;
+}
+
+RSExtendImageLatticeObject::RSExtendImageLatticeObject(const std::shared_ptr<Media::PixelMap>& pixelMap)
+{
+    if (pixelMap) {
+        rsImage_ = std::make_shared<RSImageBase>();
+        rsImage_->SetPixelMap(pixelMap);
+    }
+}
+
+void RSExtendImageLatticeObject::Playback(Drawing::Canvas& canvas, const Drawing::Lattice& lattice,
+    const Drawing::Rect& dst, Drawing::FilterMode filterMode)
+{
+    if (rsImage_) {
+        rsImage_->DrawImageLattice(canvas, lattice, dst, filterMode);
+    }
+}
+
+void RSExtendImageLatticeObject::SetNodeId(NodeId id)
+{
+    if (rsImage_) {
+        rsImage_->UpdateNodeIdToPicture(id);
+    }
+}
+
+void RSExtendImageLatticeObject::Purge()
+{
+    if (rsImage_) {
+        rsImage_->Purge();
+    }
+}
+
+bool RSExtendImageLatticeObject::Marshalling(Parcel &parcel) const
+{
+    bool ret = RSMarshallingHelper::Marshalling(parcel, rsImage_);
+    return ret;
+}
+
+RSExtendImageLatticeObject *RSExtendImageLatticeObject::Unmarshalling(Parcel &parcel)
+{
+    auto object = new RSExtendImageLatticeObject();
     bool ret = RSMarshallingHelper::Unmarshalling(parcel, object->rsImage_);
     if (!ret) {
         delete object;
@@ -689,6 +781,122 @@ void DrawPixelMapRectOpItem::DumpItems(std::string& out) const
 {
     out += " sampling";
     sampling_.Dump(out);
+}
+
+/* DrawPixelMapNineOpItem */
+UNMARSHALLING_REGISTER(DrawPixelMapNine, DrawOpItem::PIXELMAP_NINE_OPITEM,
+    DrawPixelMapNineOpItem::Unmarshalling, sizeof(DrawPixelMapNineOpItem::ConstructorHandle));
+
+DrawPixelMapNineOpItem::DrawPixelMapNineOpItem(
+    const DrawCmdList& cmdList, DrawPixelMapNineOpItem::ConstructorHandle* handle)
+    : DrawWithPaintOpItem(cmdList, handle->paintHandle, PIXELMAP_NINE_OPITEM), center_(handle->center),
+      dst_(handle->dst), filterMode_(handle->filterMode)
+{
+    objectHandle_ = CmdListHelper::GetImageNineObjecFromCmdList(cmdList, handle->objectHandle);
+}
+
+DrawPixelMapNineOpItem::DrawPixelMapNineOpItem(const std::shared_ptr<Media::PixelMap>& pixelMap,
+    const Drawing::RectI& center, const Drawing::Rect& dst, Drawing::FilterMode filterMode, const Paint& paint)
+    : DrawWithPaintOpItem(paint, PIXELMAP_NINE_OPITEM), center_(center), dst_(dst), filterMode_(filterMode)
+{
+    objectHandle_ = std::make_shared<RSExtendImageNineObject>(pixelMap);
+}
+
+std::shared_ptr<DrawOpItem> DrawPixelMapNineOpItem::Unmarshalling(const DrawCmdList& cmdList, void* handle)
+{
+    return std::make_shared<DrawPixelMapNineOpItem>(
+        cmdList, static_cast<DrawPixelMapNineOpItem::ConstructorHandle*>(handle));
+}
+
+void DrawPixelMapNineOpItem::Marshalling(DrawCmdList& cmdList)
+{
+    PaintHandle paintHandle;
+    GenerateHandleFromPaint(cmdList, paint_, paintHandle);
+    auto objectHandle = CmdListHelper::AddImageNineObjecToCmdList(cmdList, objectHandle_);
+    cmdList.AddOp<ConstructorHandle>(objectHandle, center_, dst_, filterMode_, paintHandle);
+}
+
+void DrawPixelMapNineOpItem::Playback(Canvas* canvas, const Rect* rect)
+{
+    if (objectHandle_ == nullptr) {
+        LOGE("DrawPixelMapNineOpItem objectHandle is nullptr!");
+        return;
+    }
+    canvas->AttachPaint(paint_);
+    objectHandle_->Playback(*canvas, center_, dst_, filterMode_);
+}
+
+void DrawPixelMapNineOpItem::SetNodeId(NodeId id)
+{
+    if (objectHandle_ == nullptr) {
+        LOGE("DrawPixelMapNineOpItem objectHandle is nullptr!");
+        return;
+    }
+    objectHandle_->SetNodeId(id);
+}
+
+void DrawPixelMapNineOpItem::DumpItems(std::string& out) const
+{
+    out += " DrawPixelMapNineOpItem";
+}
+
+/* DrawPixelMapLatticeOpItem */
+UNMARSHALLING_REGISTER(DrawPixelMapLattice, DrawOpItem::PIXELMAP_LATTICE_OPITEM,
+    DrawPixelMapLatticeOpItem::Unmarshalling, sizeof(DrawPixelMapLatticeOpItem::ConstructorHandle));
+
+DrawPixelMapLatticeOpItem::DrawPixelMapLatticeOpItem(
+    const DrawCmdList& cmdList, DrawPixelMapLatticeOpItem::ConstructorHandle* handle)
+    : DrawWithPaintOpItem(cmdList, handle->paintHandle, PIXELMAP_LATTICE_OPITEM),
+      dst_(handle->dst), filterMode_(handle->filterMode)
+{
+    objectHandle_ = CmdListHelper::GetImageLatticeObjecFromCmdList(cmdList, handle->objectHandle);
+    lattice_ = CmdListHelper::GetLatticeFromCmdList(cmdList, handle->latticeHandle);
+}
+
+DrawPixelMapLatticeOpItem::DrawPixelMapLatticeOpItem(const std::shared_ptr<Media::PixelMap>& pixelMap,
+    const Drawing::Lattice& lattice, const Drawing::Rect& dst, Drawing::FilterMode filterMode, const Paint& paint)
+    : DrawWithPaintOpItem(paint, PIXELMAP_LATTICE_OPITEM), lattice_(lattice), dst_(dst), filterMode_(filterMode)
+{
+    objectHandle_ = std::make_shared<RSExtendImageLatticeObject>(pixelMap);
+}
+
+std::shared_ptr<DrawOpItem> DrawPixelMapLatticeOpItem::Unmarshalling(const DrawCmdList& cmdList, void* handle)
+{
+    return std::make_shared<DrawPixelMapLatticeOpItem>(
+        cmdList, static_cast<DrawPixelMapLatticeOpItem::ConstructorHandle*>(handle));
+}
+
+void DrawPixelMapLatticeOpItem::Marshalling(DrawCmdList& cmdList)
+{
+    PaintHandle paintHandle;
+    GenerateHandleFromPaint(cmdList, paint_, paintHandle);
+    auto objectHandle = CmdListHelper::AddImageLatticeObjecToCmdList(cmdList, objectHandle_);
+    auto latticeHandle = CmdListHelper::AddLatticeToCmdList(cmdList, lattice_);
+    cmdList.AddOp<ConstructorHandle>(objectHandle, latticeHandle, dst_, filterMode_, paintHandle);
+}
+
+void DrawPixelMapLatticeOpItem::Playback(Canvas* canvas, const Rect* rect)
+{
+    if (objectHandle_ == nullptr) {
+        LOGE("DrawPixelMapLatticeOpItem objectHandle is nullptr!");
+        return;
+    }
+    canvas->AttachPaint(paint_);
+    objectHandle_->Playback(*canvas, lattice_, dst_, filterMode_);
+}
+
+void DrawPixelMapLatticeOpItem::SetNodeId(NodeId id)
+{
+    if (objectHandle_ == nullptr) {
+        LOGE("DrawPixelMapLatticeOpItem objectHandle is nullptr!");
+        return;
+    }
+    objectHandle_->SetNodeId(id);
+}
+
+void DrawPixelMapLatticeOpItem::DumpItems(std::string& out) const
+{
+    out += " DrawPixelMapLatticeOpItem";
 }
 
 /* DrawFuncOpItem */
@@ -986,10 +1194,83 @@ void DrawSurfaceBufferOpItem::Draw(Canvas* canvas)
 
 Drawing::BitmapFormat DrawSurfaceBufferOpItem::CreateBitmapFormat(int32_t bufferFormat)
 {
-    bool isRgbx = bufferFormat == OH_NativeBuffer_Format::NATIVEBUFFER_PIXEL_FMT_RGBX_8888;
-    return { isRgbx ? Drawing::ColorType::COLORTYPE_RGB_888X : Drawing::ColorType::COLORTYPE_RGBA_8888,
-        isRgbx ? Drawing::AlphaType::ALPHATYPE_OPAQUE : Drawing::AlphaType::ALPHATYPE_PREMUL };
+    switch (bufferFormat) {
+        case OH_NativeBuffer_Format::NATIVEBUFFER_PIXEL_FMT_RGBA_8888 : {
+            return {
+                .colorType = Drawing::ColorType::COLORTYPE_RGBA_8888,
+                .alphaType = Drawing::AlphaType::ALPHATYPE_PREMUL,
+            };
+        }
+        case OH_NativeBuffer_Format::NATIVEBUFFER_PIXEL_FMT_RGBX_8888 : {
+            return {
+                .colorType = Drawing::ColorType::COLORTYPE_RGB_888X,
+                .alphaType = Drawing::AlphaType::ALPHATYPE_OPAQUE,
+            };
+        }
+        case OH_NativeBuffer_Format::NATIVEBUFFER_PIXEL_FMT_BGRA_8888 : {
+            return {
+                .colorType = Drawing::ColorType::COLORTYPE_BGRA_8888,
+                .alphaType = Drawing::AlphaType::ALPHATYPE_PREMUL,
+            };
+        }
+        case OH_NativeBuffer_Format::NATIVEBUFFER_PIXEL_FMT_RGB_565 : {
+            return {
+                .colorType = Drawing::ColorType::COLORTYPE_RGB_565,
+                .alphaType = Drawing::AlphaType::ALPHATYPE_OPAQUE,
+            };
+        }
+        case OH_NativeBuffer_Format::NATIVEBUFFER_PIXEL_FMT_RGBA_1010102 : {
+            return {
+                .colorType = Drawing::ColorType::COLORTYPE_RGBA_1010102,
+                .alphaType = Drawing::AlphaType::ALPHATYPE_PREMUL,
+            };
+        }
+        default : {
+            return {
+                .colorType = Drawing::ColorType::COLORTYPE_RGBA_8888,
+                .alphaType = Drawing::AlphaType::ALPHATYPE_PREMUL,
+            };
+        }
+    }
 }
+
+#ifdef RS_ENABLE_GL
+GLenum DrawSurfaceBufferOpItem::GetGLTextureFormatByBitmapFormat(Drawing::ColorType colorType)
+{
+    switch (colorType) {
+        case Drawing::ColorType::COLORTYPE_ALPHA_8 : {
+            return GL_ALPHA8_OES;
+        }
+        case Drawing::ColorType::COLORTYPE_RGB_888X : {
+            return GL_RGBA8_OES;
+        }
+        case Drawing::ColorType::COLORTYPE_RGB_565 : {
+            return GL_RGB565_OES;
+        }
+        case Drawing::ColorType::COLORTYPE_RGBA_1010102 : {
+            return GL_RGB10_A2_EXT;
+        }
+        case Drawing::ColorType::COLORTYPE_BGRA_8888 : {
+            return GL_BGRA8_EXT;
+        }
+        case Drawing::ColorType::COLORTYPE_RGBA_8888 : {
+            return GL_RGBA8_OES;
+        }
+        case Drawing::ColorType::COLORTYPE_RGBA_F16 : {
+            return GL_RGBA16F_EXT;
+        }
+        case Drawing::ColorType::COLORTYPE_GRAY_8 :
+            [[fallthrough]];
+        case Drawing::ColorType::COLORTYPE_ARGB_4444 :
+            [[fallthrough]];
+        case Drawing::ColorType::COLORTYPE_N32 :
+            [[fallthrough]];
+        default : {
+            return GL_RGBA8_OES;
+        }
+    }
+}
+#endif
 
 void DrawSurfaceBufferOpItem::DrawWithVulkan(Canvas* canvas)
 {
@@ -1058,19 +1339,15 @@ void DrawSurfaceBufferOpItem::DrawWithGles(Canvas* canvas)
         rotatedRect.SetRight(rotatedRect.GetLeft() + width);
         rotatedRect.SetBottom(rotatedRect.GetTop() + height);
     }
-    GrGLTextureInfo textureInfo = { GL_TEXTURE_EXTERNAL_OES, texId_, GL_RGBA8_OES };
 
-    GrBackendTexture backendTexture(
-        rotatedRect.GetWidth(), rotatedRect.GetHeight(), GrMipMapped::kNo, textureInfo);
-
+    Drawing::BitmapFormat bitmapFormat = CreateBitmapFormat(surfaceBufferInfo_.surfaceBuffer_->GetFormat());
     Drawing::TextureInfo externalTextureInfo;
     externalTextureInfo.SetWidth(rotatedRect.GetWidth());
     externalTextureInfo.SetHeight(rotatedRect.GetHeight());
     externalTextureInfo.SetIsMipMapped(false);
     externalTextureInfo.SetTarget(GL_TEXTURE_EXTERNAL_OES);
     externalTextureInfo.SetID(texId_);
-    externalTextureInfo.SetFormat(GL_RGBA8_OES);
-    Drawing::BitmapFormat bitmapFormat = CreateBitmapFormat(surfaceBufferInfo_.surfaceBuffer_->GetFormat());
+    externalTextureInfo.SetFormat(GetGLTextureFormatByBitmapFormat(bitmapFormat.colorType));
     if (!canvas->GetGPUContext()) {
         LOGE("DrawSurfaceBufferOpItem::Draw: gpu context is nullptr");
         return;

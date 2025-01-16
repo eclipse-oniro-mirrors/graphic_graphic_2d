@@ -32,6 +32,7 @@ constexpr pid_t DEFAULT_PID = 0;
 constexpr int ADAPTIVE_SYNC_ENABLED = 1;
 constexpr int32_t SWITCH_SCREEN_SCENE = 1;
 constexpr int32_t STRING_BUFFER_MAX_SIZE = 256;
+constexpr int64_t IDEAL_PULSE = 2777778; // 2.777778ms
 
 enum OledRefreshRate {
     OLED_NULL_HZ = 0,
@@ -119,8 +120,10 @@ public:
     // <"SCENE_APP_START_ANIMATION", SceneConfig>
     using SceneConfigMap = std::unordered_map<std::string, SceneConfig>;
 
-    // <"LTPO-DEAULT", <30, 60, 120>>
-    using SupportedModeMap = std::unordered_map<std::string, std::vector<uint32_t>>;
+    // <"LowBright", <30, 60, 120>>
+    using SupportedModeConfig = std::unordered_map<std::string, std::vector<uint32_t>>;
+    // <"LTPO-DEFAULT", SupportedModeConfig>
+    using SupportedModeMap = std::unordered_map<std::string, SupportedModeConfig>;
 
     struct DynamicConfig {
         int32_t min;

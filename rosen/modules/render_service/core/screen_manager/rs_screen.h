@@ -125,10 +125,14 @@ public:
     virtual void SetDisplayPropertyForHardCursor() = 0;
     virtual void SetSecurityExemptionList(const std::vector<uint64_t>& securityExemptionList) = 0;
     virtual const std::vector<uint64_t>& GetSecurityExemptionList() const = 0;
+    virtual int32_t SetSecurityMask(std::shared_ptr<Media::PixelMap> securityMask) = 0;
+    virtual std::shared_ptr<Media::PixelMap> GetSecurityMask() const = 0;
     virtual void SetEnableVisibleRect(bool enable) = 0;
     virtual bool GetEnableVisibleRect() const = 0;
     virtual void SetMainScreenVisibleRect(const Rect& mainScreenRect) = 0;
     virtual Rect GetMainScreenVisibleRect() const = 0;
+    virtual void SetHasProtectedLayer(bool hasProtectedLayer) = 0;
+    virtual bool GetHasProtectedLayer() = 0;
 };
 
 namespace impl {
@@ -224,10 +228,14 @@ public:
     void SetDisplayPropertyForHardCursor() override;
     void SetSecurityExemptionList(const std::vector<uint64_t>& securityExemptionList) override;
     const std::vector<uint64_t>& GetSecurityExemptionList() const override;
+    int32_t SetSecurityMask(std::shared_ptr<Media::PixelMap> securityMask) override;
+    std::shared_ptr<Media::PixelMap> GetSecurityMask() const override;
     void SetEnableVisibleRect(bool enable) override;
     bool GetEnableVisibleRect() const override;
     void SetMainScreenVisibleRect(const Rect& mainScreenRect) override;
     Rect GetMainScreenVisibleRect() const override;
+    void SetHasProtectedLayer(bool hasProtectedLayer) override;
+    bool GetHasProtectedLayer() override;
 
 private:
     // create hdiScreen and get some information from drivers.
@@ -241,6 +249,7 @@ private:
     void PowerStatusDump(std::string& dumpString);
     void CapabilityTypeDump(GraphicInterfaceType capabilityType, std::string& dumpString);
     void ScreenTypeDump(std::string& dumpString);
+    void WriteHisyseventEpsLcdInfo(GraphicDisplayModeInfo& activeMode);
 
     // ScreenId for this screen.
     ScreenId id_ = INVALID_SCREEN_ID;
@@ -271,7 +280,8 @@ private:
     std::vector<ScreenColorGamut> supportedVirtualColorGamuts_ = {
         COLOR_GAMUT_SRGB,
         COLOR_GAMUT_DCI_P3,
-        COLOR_GAMUT_ADOBE_RGB };
+        COLOR_GAMUT_ADOBE_RGB,
+        COLOR_GAMUT_DISPLAY_P3 };
     std::vector<ScreenColorGamut> supportedPhysicalColorGamuts_;
     int32_t currentVirtualColorGamutIdx_ = 0;
     int32_t currentPhysicalColorGamutIdx_ = 0;
@@ -296,11 +306,13 @@ private:
     std::unordered_set<uint64_t> whiteList_ = {};
     std::unordered_set<uint64_t> blackList_ = {};
     std::vector<uint64_t> securityExemptionList_ = {};
+    std::shared_ptr<Media::PixelMap> securityMask_ = nullptr;
     bool enableVisibleRect_ = false;
     Rect mainScreenVisibleRect_ = {};
     std::atomic<bool> skipWindow_ = false;
     bool isHardCursorSupport_ = false;
-    mutable std::mutex mutex_;
+    mutable std::mutex skipFrameMutex_;
+    bool hasProtectedLayer_ = false;
 };
 } // namespace impl
 } // namespace Rosen

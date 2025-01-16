@@ -179,10 +179,6 @@ public:
     static bool GetDrawTextAsBitmap();
     static void SetCacheEnabledForRotation(bool flag);
     static bool GetCacheEnabledForRotation();
-    static void SetScreenSwitchStatus(bool flag);
-    static bool GetScreenSwitchStatus();
-    static void SetDefaultDeviceRotationOffset(uint32_t offset);
-    static uint32_t GetDefaultDeviceRotationOffset();
     static ParallelRenderingType GetPrepareParallelRenderingEnabled();
     static ParallelRenderingType GetParallelRenderingEnabled();
     static HgmRefreshRates GetHgmRefreshRatesEnabled();
@@ -204,6 +200,8 @@ public:
     static float GetHpsBlurNoiseFactor();
     static bool GetHpsBlurEnabled();
     static bool GetMESABlurFuzedEnabled();
+    static int GetSimplifiedMesaEnabled();
+    static bool GetForceKawaseDisabled();
     static float GetKawaseRandomColorFactor();
     static bool GetRandomColorEnabled();
     static bool GetImageReleaseUsingPostTask();
@@ -228,7 +226,8 @@ public:
     static bool GetBoolSystemProperty(const char* name, bool defaultValue);
     static int WatchSystemProperty(const char* name, OnSystemPropertyChanged func, void* context);
     static bool GetCacheOptimizeRotateEnable();
-    static CrossNodeOffScreenRenderDebugType GetCrossNodeOffscreenDebugEnabled();
+    static CrossNodeOffScreenRenderDebugType GetCrossNodeOffScreenStatus();
+    static bool GetSingleDrawableLockerEnabled();
     static bool GetUIFirstEnabled();
     static bool GetUIFirstDebugEnabled();
     static bool GetTargetUIFirstDfxEnabled(std::vector<std::string>& SurfaceNames);
@@ -297,15 +296,13 @@ public:
     static int GetRSNodeLimit();
     static std::string GetVersionType();
     static bool GetHwcDirtyRegionEnabled();
-    static bool GetDisableHebcEnabled();
+    static bool GetHveFilterEnabled();
 private:
     RSSystemProperties() = default;
 
     static inline bool isUniRenderEnabled_ = false;
     inline static bool isDrawTextAsBitmap_ = false;
     inline static bool cacheEnabledForRotation_ = false;
-    inline static bool isScreenSwitching_ = false;
-    inline static std::atomic<uint32_t> defaultDeviceRotationOffset_ = 0;
     static inline bool forceHpsBlurDisabled_ = false;
     static const GpuApiType systemGpuApiType_;
     static const DdgrOpincType ddgrOpincType_;

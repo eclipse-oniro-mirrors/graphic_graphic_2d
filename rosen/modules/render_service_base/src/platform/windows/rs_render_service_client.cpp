@@ -134,7 +134,8 @@ bool RSRenderServiceClient::TakeSurfaceCapture(NodeId id, std::shared_ptr<Surfac
 }
 
 bool RSRenderServiceClient::SetWindowFreezeImmediately(NodeId id, bool isFreeze,
-    std::shared_ptr<SurfaceCaptureCallback> callback, const RSSurfaceCaptureConfig& captureConfig)
+    std::shared_ptr<SurfaceCaptureCallback> callback, const RSSurfaceCaptureConfig& captureConfig,
+    const RSSurfaceCaptureBlurParam& blurParam)
 {
     return false;
 }
@@ -263,6 +264,10 @@ void RSRenderServiceClient::MarkPowerOffNeedProcessOneFrame()
 }
 
 void RSRenderServiceClient::RepaintEverything()
+{
+}
+
+void RSRenderServiceClient::ForceRefreshOneFrameWithNextVSync()
 {
 }
 
@@ -454,6 +459,12 @@ int32_t RSRenderServiceClient::SetVirtualScreenSecurityExemptionList(
     return {};
 }
 
+int32_t RSRenderServiceClient::SetScreenSecurityMask(ScreenId id,
+    std::shared_ptr<Media::PixelMap> securityMask)
+{
+    return 0;
+}
+
 int32_t RSRenderServiceClient::SetMirrorScreenVisibleRect(
     ScreenId id, const Rect& mainScreenRect)
 {
@@ -592,14 +603,6 @@ void RSRenderServiceClient::SetCacheEnabledForRotation(bool isEnabled)
 {
 }
 
-void RSRenderServiceClient::SetScreenSwitchStatus(bool flag)
-{
-}
-
-void RSRenderServiceClient::SetDefaultDeviceRotationOffset(uint32_t offset)
-{
-}
-
 void RSRenderServiceClient::SetOnRemoteDiedCallback(const OnRemoteDiedCallback& callback)
 {
 }
@@ -684,6 +687,10 @@ bool RSRenderServiceClient::UnregisterSurfaceBufferCallback(pid_t pid, uint64_t 
 }
 
 void RSRenderServiceClient::SetLayerTop(const std::string &nodeIdStr, bool isTop)
+{
+}
+
+void RSRenderServiceClient::NotifyScreenSwitched(ScreenId id)
 {
 }
 } // namespace Rosen

@@ -77,6 +77,30 @@ void RSUifirstManagerTest::SetUp() {}
 void RSUifirstManagerTest::TearDown() {}
 
 /**
+ * @tc.name: GetSurfaceDrawableByID
+ * @tc.desc: Test GetSurfaceDrawableByID
+ * @tc.type: FUNC
+ * @tc.require: #IBEL7U
+ */
+HWTEST_F(RSUifirstManagerTest, GetSurfaceDrawableByID, TestSize.Level1)
+{
+    auto surfaceNode = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(surfaceNode, nullptr);
+    auto adapter = DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(surfaceNode);
+    uifirstManager_.subthreadProcessingNode_.insert(std::make_pair(surfaceNode->GetId(), adapter));
+    auto drawable = uifirstManager_.GetSurfaceDrawableByID(surfaceNode->GetId());
+    ASSERT_NE(drawable, nullptr);
+
+    NodeId id = 100;
+    auto canvasNode = std::make_shared<RSCanvasRenderNode>(id);
+    adapter = DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(canvasNode);
+    uifirstManager_.subthreadProcessingNode_.insert(std::make_pair(canvasNode->GetId(), adapter));
+    drawable = uifirstManager_.GetSurfaceDrawableByID(canvasNode->GetId());
+    ASSERT_EQ(drawable, nullptr);
+    uifirstManager_.subthreadProcessingNode_.clear();
+}
+
+/**
  * @tc.name: SetUifirstNodeEnableParam001
  * @tc.desc: Test SetUifirstNodeEnableParam, when node is leash window type
  * @tc.type: FUNC
@@ -127,7 +151,7 @@ HWTEST_F(RSUifirstManagerTest, SetUifirstNodeEnableParam002, TestSize.Level1)
 
 /**
  * @tc.name: MergeOldDirty001
- * @tc.desc: Test MergeOldDirty, preSurfaceCacheContentStatic_ is false, no dirty region
+ * @tc.desc: Test MergeOldDirty
  * @tc.type: FUNC
  * @tc.require: #I9NVOG
  */
@@ -135,63 +159,59 @@ HWTEST_F(RSUifirstManagerTest, MergeOldDirty001, TestSize.Level1)
 {
     auto surfaceNode = RSTestUtil::CreateSurfaceNode();
     ASSERT_NE(surfaceNode, nullptr);
-    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceNode->GetStagingRenderParams().get());
-    ASSERT_NE(surfaceParams, nullptr);
-    surfaceParams->preSurfaceCacheContentStatic_ = false;
     surfaceNode->oldDirty_ = RSUifirstManagerTest::DEFAULT_RECT;
-    uifirstManager_.MergeOldDirty(*surfaceNode);
-    if (surfaceNode->GetDirtyManager()) {
-        ASSERT_TRUE(surfaceNode->GetDirtyManager()->GetCurrentFrameDirtyRegion().IsEmpty());
+    auto surfaceDrawable = std::static_pointer_cast<RSSurfaceRenderNodeDrawable>(
+        DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(surfaceNode));
+    ASSERT_NE(surfaceDrawable, nullptr);
+
+    uifirstManager_.mainThread_ = nullptr;
+    uifirstManager_.MergeOldDirty(surfaceNode->GetId());
+    if (surfaceDrawable->GetSyncDirtyManager()) {
+        ASSERT_TRUE(surfaceDrawable->GetSyncDirtyManager()->GetCurrentFrameDirtyRegion().IsEmpty());
+    }
+
+    uifirstManager_.mainThread_ = mainThread_;
+    uifirstManager_.MergeOldDirty(surfaceNode->GetId());
+    if (surfaceDrawable->GetSyncDirtyManager()) {
+        ASSERT_TRUE(surfaceDrawable->GetSyncDirtyManager()->GetCurrentFrameDirtyRegion().IsEmpty());
+    }
+
+    mainThread_->context_->nodeMap.RegisterRenderNode(surfaceNode);
+    surfaceNode->SetSurfaceNodeType(RSSurfaceNodeType::APP_WINDOW_NODE);
+    uifirstManager_.MergeOldDirty(surfaceNode->GetId());
+    if (surfaceDrawable->GetSyncDirtyManager()) {
+        ASSERT_FALSE(surfaceDrawable->GetSyncDirtyManager()->GetCurrentFrameDirtyRegion().IsEmpty());
     }
 }
 
 /**
  * @tc.name: MergeOldDirty002
- * @tc.desc: Test MergeOldDirty, preSurfaceCacheContentStatic_ is true, dirty region is not empty
+ * @tc.desc: Test MergeOldDirty, merge children dirty region
  * @tc.type: FUNC
  * @tc.require: #I9NVOG
  */
 HWTEST_F(RSUifirstManagerTest, MergeOldDirty002, TestSize.Level1)
 {
-    auto surfaceNode = RSTestUtil::CreateSurfaceNode();
-    ASSERT_NE(surfaceNode, nullptr);
-    surfaceNode->SetSurfaceNodeType(RSSurfaceNodeType::APP_WINDOW_NODE);
-    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceNode->GetStagingRenderParams().get());
-    ASSERT_NE(surfaceParams, nullptr);
-    surfaceParams->preSurfaceCacheContentStatic_ = true;
-    surfaceNode->oldDirty_ = RSUifirstManagerTest::DEFAULT_RECT;
-    uifirstManager_.MergeOldDirty(*surfaceNode);
-    if (surfaceNode->GetDirtyManager()) {
-        ASSERT_FALSE(surfaceNode->GetDirtyManager()->GetCurrentFrameDirtyRegion().IsEmpty());
-    }
-}
-
-/**
- * @tc.name: MergeOldDirty003
- * @tc.desc: Test MergeOldDirty, merge children dirty region
- * @tc.type: FUNC
- * @tc.require: #I9NVOG
- */
-HWTEST_F(RSUifirstManagerTest, MergeOldDirty003, TestSize.Level1)
-{
     auto parentNode = RSTestUtil::CreateSurfaceNode();
     ASSERT_NE(parentNode, nullptr);
     auto surfaceNode = RSTestUtil::CreateSurfaceNode();
     ASSERT_NE(surfaceNode, nullptr);
-    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceNode->GetStagingRenderParams().get());
-    ASSERT_NE(surfaceParams, nullptr);
-    surfaceParams->preSurfaceCacheContentStatic_ = true;
     parentNode->AddChild(surfaceNode);
     // add different children nodes
     auto childNode = RSTestUtil::CreateSurfaceNode();
     ASSERT_NE(childNode, nullptr);
+    auto childDrawable = std::static_pointer_cast<RSSurfaceRenderNodeDrawable>(
+        DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(childNode));
+    ASSERT_NE(childDrawable, nullptr);
     childNode->SetSurfaceNodeType(RSSurfaceNodeType::APP_WINDOW_NODE);
     childNode->oldDirty_= RSUifirstManagerTest::DEFAULT_RECT;
     surfaceNode->AddChild(childNode);
     surfaceNode->GenerateFullChildrenList();
-    uifirstManager_.MergeOldDirty(*surfaceNode);
-    if (childNode->GetDirtyManager()) {
-        ASSERT_FALSE(childNode->GetDirtyManager()->GetCurrentFrameDirtyRegion().IsEmpty());
+    uifirstManager_.mainThread_ = mainThread_;
+    mainThread_->context_->nodeMap.RegisterRenderNode(surfaceNode);
+    uifirstManager_.MergeOldDirty(surfaceNode->GetId());
+    if (childDrawable->GetSyncDirtyManager()) {
+        ASSERT_FALSE(childDrawable->GetSyncDirtyManager()->GetCurrentFrameDirtyRegion().IsEmpty());
     }
 }
 
@@ -225,8 +245,8 @@ HWTEST_F(RSUifirstManagerTest, RenderGroupUpdate002, TestSize.Level1)
     auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(++id);
     ASSERT_NE(surfaceNode, nullptr);
     displayNode->AddChild(surfaceNode);
-    auto surfaceDrawable = std::static_pointer_cast<RSSurfaceRenderNodeDrawable>(
-        DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(surfaceNode));
+    mainThread_->context_->nodeMap.RegisterRenderNode(surfaceNode);
+    auto surfaceDrawable = std::static_pointer_cast<RSSurfaceRenderNodeDrawable>(surfaceNode->GetRenderDrawable());
     uifirstManager_.RenderGroupUpdate(surfaceDrawable);
 }
 
@@ -413,7 +433,14 @@ HWTEST_F(RSUifirstManagerTest, SyncHDRDisplayParam, TestSize.Level1)
     auto surfaceDrawable = std::static_pointer_cast<RSSurfaceRenderNodeDrawable>(
         DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(surfaceNode));
     ASSERT_NE(surfaceDrawable, nullptr);
-    uifirstManager_.SyncHDRDisplayParam(surfaceDrawable);
+    surfaceDrawable->SetTargetColorGamut(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB);
+    NodeId id = 10;
+    RSDisplayNodeConfig config;
+    auto displayNode = std::make_shared<RSDisplayRenderNode>(id, config);
+    auto surfaceRenderParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable->renderParams_.get());
+    surfaceRenderParams->SetAncestorDisplayNode(displayNode);
+    auto colorGamut = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3;
+    uifirstManager_.SyncHDRDisplayParam(surfaceDrawable, colorGamut);
 }
 /**
  * @tc.name: ProcessTreeStateChange
@@ -1530,5 +1557,41 @@ HWTEST_F(RSUifirstManagerTest, IsSubTreeNeedPrepareForSnapshot, TestSize.Level1)
     uifirstManager_.OnProcessAnimateScene(SystemAnimatedScenes::ENTER_RECENTS);
     bool isOccluded = uifirstManager_.IsSubTreeNeedPrepareForSnapshot(*surfaceNode);
     ASSERT_EQ(isOccluded, false);
+}
+
+/**
+@tc.name: UpdateUIFirstLayerInfo
+@tc.desc: Test UpdateUIFirstLayerInfo
+@tc.type: FUNC
+@tc.require: #IBHZJA
+*/
+HWTEST_F(RSUifirstManagerTest, UpdateUIFirstLayerInfo, TestSize.Level1)
+{
+    auto surfaceNode = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(surfaceNode, nullptr);
+    ScreenInfo screenInfo;
+    float zOrder = 1;
+    ASSERT_NE(uifirstManager_.pendingPostNodes_.size(), 0);
+    uifirstManager_.UpdateUIFirstLayerInfo(screenInfo, zOrder);
+}
+
+/**
+@tc.name: CheckAndWaitPreFirstLevelDrawableNotify
+@tc.desc: Test CheckAndWaitPreFirstLevelDrawableNotify
+@tc.type: FUNC
+@tc.require: #IBHZJA
+*/
+HWTEST_F(RSUifirstManagerTest, CheckAndWaitPreFirstLevelDrawableNotify, TestSize.Level1)
+{
+    auto surfaceNode = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(surfaceNode, nullptr);
+    auto renderParams = surfaceNode->GetRenderParams().get();
+    bool res = RSUiFirstProcessStateCheckerHelper::CheckAndWaitPreFirstLevelDrawableNotify(*renderParams);
+    ASSERT_TRUE(res);
+
+    auto leashSurfaceNode = RSTestUtil::CreateSurfaceNode();
+    renderParams->SetUiFirstRootNode(leashSurfaceNode->GetId());
+    res = RSUiFirstProcessStateCheckerHelper::CheckAndWaitPreFirstLevelDrawableNotify(*renderParams);
+    ASSERT_TRUE(res);
 }
 }

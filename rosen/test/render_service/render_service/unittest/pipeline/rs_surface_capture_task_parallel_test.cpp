@@ -15,9 +15,9 @@
 
 #include <gtest/gtest.h>
 
+#include "feature/capture/rs_surface_capture_task_parallel.h"
 #include "pipeline/rs_context.h"
 #include "pipeline/rs_main_thread.h"
-#include "pipeline/rs_surface_capture_task_parallel.h"
 #include "pipeline/rs_surface_render_node.h"
 #include "pipeline/rs_uni_render_engine.h"
 #include "rs_test_util.h"
@@ -93,6 +93,7 @@ HWTEST_F(RSSurfaceCaptureTaskParallelTest, CreatePixelMapBySurfaceNode, TestSize
     const float imgWidth = 1.0f;
     const float imgHeight = 1.0f;
     node->GetGravityTranslate(imgWidth, imgHeight);
+    task.surfaceNode_ = node;
     auto pxiemap = task.CreatePixelMapBySurfaceNode(node);
     ASSERT_EQ(pxiemap, nullptr);
 }

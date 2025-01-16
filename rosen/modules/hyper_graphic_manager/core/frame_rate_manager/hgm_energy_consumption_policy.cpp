@@ -29,7 +29,7 @@
 namespace OHOS::Rosen {
 
 const static std::string RS_ENERGY_ASSURANCE_TASK_ID = "RS_ENERGY_ASSURANCE_TASK_ID";
-static const std::unordered_map<std::string, int32_t> UI_RATE_TYPE_NAME_MAP = {
+static const std::unordered_map<std::string, uint32_t> UI_RATE_TYPE_NAME_MAP = {
     {"ui_animation", UI_ANIMATION_FRAME_RATE_TYPE },
     {"display_sync", DISPLAY_SYNC_FRAME_RATE_TYPE },
     {"ace_component", ACE_COMPONENT_FRAME_RATE_TYPE },
@@ -42,8 +42,10 @@ constexpr int32_t UNKNOWN_IDLE_FPS = -1;
 
 HgmEnergyConsumptionPolicy::HgmEnergyConsumptionPolicy()
 {
-    RsCommonHook::Instance().RegisterStartNewAnimationListener([this](const std::string &componentName) {
-        HgmTaskHandleThread::Instance().PostTask([this, componentName]() { StartNewAnimation(componentName); });
+    RsCommonHook::Instance().RegisterStartNewAnimationListener([this](const std::string& componentName) {
+        if (isAnimationEnergyConsumptionAssuranceMode_) {
+            HgmTaskHandleThread::Instance().PostTask([this, componentName]() { StartNewAnimation(componentName); });
+        }
     });
     RsCommonHook::Instance().SetComponentPowerFpsFunc(
         std::bind(&HgmEnergyConsumptionPolicy::GetComponentFps, this, std::placeholders::_1));

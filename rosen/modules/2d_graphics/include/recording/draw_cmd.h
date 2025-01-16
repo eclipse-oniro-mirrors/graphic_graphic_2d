@@ -89,6 +89,8 @@ public:
         IMAGE_WITH_PARM_OPITEM,
         PIXELMAP_WITH_PARM_OPITEM,
         PIXELMAP_RECT_OPITEM,
+        PIXELMAP_NINE_OPITEM,
+        PIXELMAP_LATTICE_OPITEM,
         REGION_OPITEM,
         PATCH_OPITEM,
         EDGEAAQUAD_OPITEM,
@@ -121,6 +123,8 @@ public:
     static std::function<std::shared_ptr<Drawing::Typeface>(uint64_t)> customTypefaceQueryfunc_;
 
     virtual void Purge() {}
+
+    size_t GetOpSize();
 };
 
 class DRAWING_API UnmarshallingHelper {

@@ -83,6 +83,11 @@ public:
 
     virtual const std::vector<uint64_t> GetVirtualScreenSecurityExemptionList(ScreenId id) const = 0;
 
+    virtual int32_t SetScreenSecurityMask(ScreenId id,
+        std::shared_ptr<Media::PixelMap> securityMask) = 0;
+
+    virtual std::shared_ptr<Media::PixelMap> GetScreenSecurityMask(ScreenId id) const = 0;
+
     virtual int32_t SetMirrorScreenVisibleRect(ScreenId id, const Rect& mainScreenRect) = 0;
 
     virtual Rect GetMirrorScreenVisibleRect(ScreenId id) const = 0;
@@ -247,6 +252,14 @@ public:
     virtual VirtualScreenStatus GetVirtualScreenStatus(ScreenId id) const = 0;
 
     virtual bool GetDisplayPropertyForHardCursor(uint32_t screenId) = 0;
+
+    virtual bool IsScreenPoweringOn() const = 0;
+
+    virtual void SetScreenHasProtectedLayer(ScreenId id, bool hasProtectedLayer) = 0;
+
+    virtual void SetScreenSwitchStatus(bool flag, ScreenId id) = 0;
+
+    virtual bool GetScreenSwitchStatus() const = 0;
 };
 
 sptr<RSScreenManager> CreateOrGetScreenManager();
@@ -303,6 +316,10 @@ public:
         ScreenId id, const std::vector<uint64_t>& securityExemptionList) override;
 
     const std::vector<uint64_t> GetVirtualScreenSecurityExemptionList(ScreenId id) const override;
+
+    int32_t SetScreenSecurityMask(ScreenId id, std::shared_ptr<Media::PixelMap> securityMask) override;
+        
+    std::shared_ptr<Media::PixelMap> GetScreenSecurityMask(ScreenId id) const override;
 
     int32_t SetMirrorScreenVisibleRect(ScreenId id, const Rect& mainScreenRect) override;
 
@@ -480,6 +497,16 @@ public:
         return currentVirtualScreenNum_;
     }
 
+    bool IsScreenPoweringOn() const override
+    {
+        return isScreenPoweringOn_;
+    }
+
+    void SetScreenHasProtectedLayer(ScreenId id, bool hasProtectedLayer) override;
+    void SetScreenSwitchStatus(bool flag, ScreenId id) override;
+
+    bool GetScreenSwitchStatus() const override;
+
 private:
     RSScreenManager();
     ~RSScreenManager() noexcept override;
@@ -567,6 +594,8 @@ private:
     uint64_t frameId_ = 0;
     std::atomic<bool> powerOffNeedProcessOneFrame_ = false;
     std::unordered_set<ScreenId> disableRenderControlScreens_ = {};
+    bool isScreenPoweringOn_ = false;
+    std::atomic<bool> isScreenSwitching_ = false;
 
 #ifdef RS_SUBSCRIBE_SENSOR_ENABLE
     SensorUser user;

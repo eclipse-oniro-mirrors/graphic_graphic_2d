@@ -272,6 +272,10 @@ bool RSBackgroundShaderDrawable::OnUpdate(const RSRenderNode& node)
     Drawing::Canvas& canvas = *updater.GetRecordingCanvas();
     Drawing::Brush brush;
     auto shaderEffect = bgShader->GetDrawingShader();
+    // do not draw if shaderEffect is nullptr and keep RSShader behavior consistent
+    if (shaderEffect == nullptr && bgShader->GetShaderType() != RSShader::ShaderType::DRAWING) {
+        return true;
+    }
     brush.SetShaderEffect(shaderEffect);
     // use drawrrect to avoid texture update in phone screen rotation scene
     if (RSSystemProperties::IsPhoneType() && RSSystemProperties::GetCacheEnabledForRotation()) {
@@ -408,7 +412,8 @@ void RSBackgroundImageDrawable::SetCompressedDataForASTC()
     std::shared_ptr<Drawing::Data> fileData = std::make_shared<Drawing::Data>();
     // After RS is switched to Vulkan, the judgment of GpuApiType can be deleted.
     if (pixelMap->GetAllocatorType() == Media::AllocatorType::DMA_ALLOC &&
-        RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN) {
+        (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
+        RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR)) {
         if (pixelMapId_ != pixelMap->GetUniqueId()) {
             if (nativeWindowBuffer_) {
                 DestroyNativeWindowBuffer(nativeWindowBuffer_);
@@ -515,6 +520,7 @@ RSDrawable::Ptr RSBackgroundFilterDrawable::OnGenerate(const RSRenderNode& node)
 bool RSBackgroundFilterDrawable::OnUpdate(const RSRenderNode& node)
 {
     stagingNodeId_ = node.GetId();
+    stagingNodeName_ = node.GetNodeName();
     auto& rsFilter = node.GetRenderProperties().GetBackgroundFilter();
     if (rsFilter != nullptr) {
         RecordFilterInfos(rsFilter);
@@ -532,6 +538,7 @@ bool RSBackgroundFilterDrawable::OnUpdate(const RSRenderNode& node)
         needSync_ = true;
         stagingFilter_ = behindWindowFilter;
         stagingNeedDrawBehindWindow_ = true;
+        stagingDrawBehindWindowRegion_ = node.GetBehindWindowRegion();
         return true;
     }
     return false;
@@ -588,6 +595,7 @@ void RSBackgroundFilterDrawable::RemovePixelStretch()
 bool RSBackgroundEffectDrawable::OnUpdate(const RSRenderNode& node)
 {
     stagingNodeId_ = node.GetId();
+    stagingNodeName_ = node.GetNodeName();
     auto& rsFilter = node.GetRenderProperties().GetBackgroundFilter();
     if (rsFilter == nullptr) {
         return false;
@@ -612,7 +620,12 @@ Drawing::RecordingCanvas::DrawFunc RSBackgroundEffectDrawable::CreateDrawFunc() 
         paintFilterCanvas->ClipRect(*rect);
         Drawing::Rect absRect(0.0, 0.0, 0.0, 0.0);
         canvas->GetTotalMatrix().MapRect(absRect, *rect);
-        RectI deviceRect(0, 0, canvas->GetSurface()->Width(), canvas->GetSurface()->Height());
+        auto surface = canvas->GetSurface();
+        if (!surface) {
+            ROSEN_LOGE("RSBackgroundEffectDrawable::CreateDrawFunc surface is nullptr.");
+            return;
+        }
+        RectI deviceRect(0, 0, surface->Width(), surface->Height());
         RectI bounds(std::ceil(absRect.GetLeft()), std::ceil(absRect.GetTop()), std::ceil(absRect.GetWidth()),
             std::ceil(absRect.GetHeight()));
         bounds = bounds.IntersectRect(deviceRect);

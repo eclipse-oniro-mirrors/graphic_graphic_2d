@@ -104,6 +104,9 @@ public:
     virtual int32_t SetVirtualScreenSecurityExemptionList(
         ScreenId id, const std::vector<NodeId>& securityExemptionList) = 0;
 
+    virtual int32_t SetScreenSecurityMask(ScreenId id,
+        std::shared_ptr<Media::PixelMap> securityMask) = 0;
+
     virtual int32_t SetMirrorScreenVisibleRect(ScreenId id, const Rect& mainScreenRect) = 0;
 
     virtual int32_t SetCastScreenEnableSkipWindow(ScreenId id, bool enable) = 0;
@@ -154,6 +157,8 @@ public:
 
     virtual void RepaintEverything() = 0;
 
+    virtual void ForceRefreshOneFrameWithNextVSync() = 0;
+
     virtual void DisablePowerOffRenderControl(ScreenId id) = 0;
 
     virtual void SetScreenPowerStatus(ScreenId id, ScreenPowerStatus status) = 0;
@@ -163,7 +168,7 @@ public:
         RSSurfaceCapturePermissions permissions = RSSurfaceCapturePermissions()) = 0;
 
     virtual void SetWindowFreezeImmediately(NodeId id, bool isFreeze, sptr<RSISurfaceCaptureCallback> callback,
-        const RSSurfaceCaptureConfig& captureConfig) = 0;
+        const RSSurfaceCaptureConfig& captureConfig, const RSSurfaceCaptureBlurParam& blurParam = {}) = 0;
 
     virtual void SetHwcNodeBounds(int64_t rsNodeId, float positionX, float positionY,
         float positionZ, float positionW) = 0;
@@ -282,6 +287,8 @@ public:
 
     virtual void NotifyRefreshRateEvent(const EventInfo& eventInfo) = 0;
 
+    virtual void NotifySoftVsyncEvent(uint32_t pid, uint32_t rateDiscount) = 0;
+
     virtual void NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt) = 0;
 
     virtual void NotifyDynamicModeEvent(bool enableDynamicMode) = 0;
@@ -300,10 +307,6 @@ public:
     virtual uint32_t SetHidePrivacyContent(NodeId id, bool needHidePrivacyContent) = 0;
 
     virtual void SetCacheEnabledForRotation(bool isEnabled) = 0;
-
-    virtual void SetScreenSwitchStatus(bool flag) = 0;
-
-    virtual void SetDefaultDeviceRotationOffset(uint32_t offset) = 0;
 
     virtual void SetOnRemoteDiedCallback(const OnRemoteDiedCallback& callback) = 0;
 
@@ -344,6 +347,8 @@ public:
         sptr<RSISurfaceBufferCallback> callback) = 0;
 
     virtual void UnregisterSurfaceBufferCallback(pid_t pid, uint64_t uid) = 0;
+
+    virtual void NotifyScreenSwitched(ScreenId id) = 0;
 };
 } // namespace Rosen
 } // namespace OHOS

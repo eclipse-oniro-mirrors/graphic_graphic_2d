@@ -24,6 +24,7 @@
 #include "rs_trace.h"
 #include "string_utils.h"
 #include "hisysevent.h"
+#include "hgm_core.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -282,6 +283,23 @@ bool RSScreen::IsVirtual() const
     return isVirtual_;
 }
 
+void RSScreen::WriteHisyseventEpsLcdInfo(GraphicDisplayModeInfo& activeMode)
+{
+    auto frameRateMgr = HgmCore::Instance().GetFrameRateMgr();
+    if (frameRateMgr != nullptr && frameRateMgr->IsLtpo()) {
+        RS_LOGD_IF(DEBUG_SCREEN, "RSScreen LTPO mode");
+        return;
+    }
+    static GraphicDisplayModeInfo modeInfo;
+    if ((modeInfo.freshRate != activeMode.freshRate)
+        || modeInfo.width != activeMode.width || modeInfo.height != activeMode.height) {
+        HiSysEventWrite(HiSysEvent::Domain::GRAPHIC, "EPS_LCD_FREQ",
+            HiSysEvent::EventType::STATISTIC, "SOURCERATE", modeInfo.freshRate,
+            "TARGETRATE", activeMode.freshRate, "WIDTH", activeMode.width, "HEIGHT", activeMode.height);
+        modeInfo = activeMode;
+    }
+}
+
 void RSScreen::SetActiveMode(uint32_t modeId)
 {
     if (IsVirtual()) {
@@ -307,14 +325,7 @@ void RSScreen::SetActiveMode(uint32_t modeId)
     if (activeMode) {
         phyWidth_ = activeMode->width;
         phyHeight_ = activeMode->height;
-        static GraphicDisplayModeInfo modeInfo;
-        if ((modeInfo.freshRate != activeMode->freshRate)
-            || modeInfo.width != activeMode->width || modeInfo.height != activeMode->height) {
-            HiSysEventWrite(HiSysEvent::Domain::GRAPHIC, "EPS_LCD_FREQ",
-                HiSysEvent::EventType::STATISTIC, "SOURCERATE", modeInfo.freshRate,
-                "TARGETRATE", activeMode->freshRate, "WIDTH", phyWidth_, "HEIGHT", phyHeight_);
-            modeInfo = activeMode.value();
-        }
+        WriteHisyseventEpsLcdInfo(activeMode.value());
     }
 }
 
@@ -398,7 +409,7 @@ void RSScreen::SetPowerStatus(uint32_t powerStatus)
         return;
     }
 
-    RS_LOGW("[UL_POWER]RSScreen_%{public}" PRIu64 " SetPowerStatus, status is %{public}u", id_, powerStatus);
+    RS_LOGW("[UL_POWER]RSScreen_%{public}" PRIu64 " SetPowerStatus: %{public}u.", id_, powerStatus);
     RS_TRACE_NAME_FMT("[UL_POWER]Screen_%llu SetPowerStatus %u", id_, powerStatus);
     if (hdiScreen_->SetScreenPowerStatus(static_cast<GraphicDispPowerStatus>(powerStatus)) < 0) {
         powerStatus_ = ScreenPowerStatus::INVALID_POWER_STATUS;
@@ -415,7 +426,7 @@ void RSScreen::SetPowerStatus(uint32_t powerStatus)
             RS_LOGE("RSScreen %{public}s SetScreenVsyncEnabled failed", __func__);
         }
     }
-    RS_LOGW("[UL_POWER]RSScreen_%{public}" PRIu64 " SetPowerStatus done", id_);
+    RS_LOGW("[UL_POWER]RSScreen_%{public}" PRIu64 " SetPowerStatus: %{public}u done.", id_, powerStatus_);
 }
 
 std::optional<GraphicDisplayModeInfo> RSScreen::GetActiveMode() const
@@ -906,45 +917,45 @@ const RSScreenType& RSScreen::GetScreenType() const
 
 void RSScreen::SetScreenSkipFrameInterval(uint32_t skipFrameInterval)
 {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::lock_guard<std::mutex> lock(skipFrameMutex_);
     skipFrameInterval_ = skipFrameInterval;
     skipFrameStrategy_ = SKIP_FRAME_BY_INTERVAL;
 }
 
 void RSScreen::SetScreenExpectedRefreshRate(uint32_t expectedRefreshRate)
 {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::lock_guard<std::mutex> lock(skipFrameMutex_);
     expectedRefreshRate_ = expectedRefreshRate;
     skipFrameStrategy_ = SKIP_FRAME_BY_REFRESH_RATE;
 }
 
 void RSScreen::SetEqualVsyncPeriod(bool isEqualVsyncPeriod)
 {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::lock_guard<std::mutex> lock(skipFrameMutex_);
     isEqualVsyncPeriod_ = isEqualVsyncPeriod;
 }
 
 uint32_t RSScreen::GetScreenSkipFrameInterval() const
 {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::lock_guard<std::mutex> lock(skipFrameMutex_);
     return skipFrameInterval_;
 }
 
 uint32_t RSScreen::GetScreenExpectedRefreshRate() const
 {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::lock_guard<std::mutex> lock(skipFrameMutex_);
     return expectedRefreshRate_;
 }
 
 SkipFrameStrategy RSScreen::GetScreenSkipFrameStrategy() const
 {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::lock_guard<std::mutex> lock(skipFrameMutex_);
     return skipFrameStrategy_;
 }
 
 bool RSScreen::GetEqualVsyncPeriod() const
 {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::lock_guard<std::mutex> lock(skipFrameMutex_);
     return isEqualVsyncPeriod_;
 }
 
@@ -1193,6 +1204,21 @@ const std::vector<uint64_t>& RSScreen::GetSecurityExemptionList() const
     return securityExemptionList_;
 }
 
+int32_t RSScreen::SetSecurityMask(std::shared_ptr<Media::PixelMap> securityMask)
+{
+    if (!IsVirtual()) {
+        RS_LOGW("RSScreen::SetSecurityMask not virtual screen");
+        return SCREEN_NOT_FOUND;
+    }
+    securityMask_ = std::move(securityMask);
+    return SUCCESS;
+}
+
+std::shared_ptr<Media::PixelMap> RSScreen::GetSecurityMask() const
+{
+    return securityMask_;
+}
+
 void RSScreen::SetEnableVisibleRect(bool enable)
 {
     enableVisibleRect_ = enable;
@@ -1226,6 +1252,16 @@ void RSScreen::SetDisplayPropertyForHardCursor()
 bool RSScreen::GetDisplayPropertyForHardCursor()
 {
     return isHardCursorSupport_;
+}
+
+void RSScreen::SetHasProtectedLayer(bool hasProtectedLayer)
+{
+    hasProtectedLayer_ = hasProtectedLayer;
+}
+
+bool RSScreen::GetHasProtectedLayer()
+{
+    return hasProtectedLayer_;
 }
 } // namespace impl
 } // namespace Rosen

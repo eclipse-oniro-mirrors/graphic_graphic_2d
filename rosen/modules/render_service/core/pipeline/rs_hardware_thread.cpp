@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -40,6 +40,7 @@
 #include "platform/ohos/backend/rs_surface_ohos_gl.h"
 #include "platform/ohos/backend/rs_surface_ohos_raster.h"
 #include "screen_manager/rs_screen_manager.h"
+#include "gfx/fps_info/rs_surface_fps_manager.h"
 
 #ifdef RS_ENABLE_EGLIMAGE
 #include "src/gpu/gl/GrGLDefines.h"
@@ -76,7 +77,6 @@ constexpr int64_t COMMIT_DELTA_TIME = 2; // 2ms
 constexpr int64_t MAX_DELAY_TIME = 100; // 100ms
 constexpr int64_t NS_MS_UNIT_CONVERSION = 1000000;
 constexpr int64_t UNI_RENDER_VSYNC_OFFSET_DELAY_MODE = 3300000; // 3.3ms
-constexpr int64_t PERIOD_60_HZ = 16666666;
 }
 
 static int64_t SystemTime()
@@ -113,7 +113,7 @@ void RSHardwareThread::Start()
                 SubScribeSystemAbility();
 #endif
                 uniRenderEngine_ = std::make_shared<RSUniRenderEngine>();
-#ifdef RS_ENABLE_VK
+#if defined (RS_ENABLE_VK) && defined(IS_ENABLE_DRM)
                 if (RSSystemProperties::IsUseVulkan()) {
                     RsVulkanContext::GetSingleton().SetIsProtected(true);
                 }
@@ -152,6 +152,16 @@ void RSHardwareThread::PostDelayTask(const std::function<void()>& task, int64_t 
 uint32_t RSHardwareThread::GetunExecuteTaskNum()
 {
     return unExecuteTaskNum_.load();
+}
+
+void RSHardwareThread::ClearRedrawGPUCompositionCache(const std::set<uint32_t>& bufferIds)
+{
+    std::weak_ptr<RSBaseRenderEngine> uniRenderEngine = uniRenderEngine_;
+    PostTask([uniRenderEngine, bufferIds]() {
+        if (auto engine = uniRenderEngine.lock()) {
+            engine->ClearCacheSet(bufferIds);
+        }
+    });
 }
 
 void RSHardwareThread::RefreshRateCounts(std::string& dumpString)
@@ -200,27 +210,32 @@ void RSHardwareThread::CommitAndReleaseLayers(OutputPtr output, const std::vecto
         RS_LOGW("hiperf_surface_counter3 %{public}" PRIu64 " ", static_cast<uint64_t>(layers.size()));
 #endif
         int64_t startTime = GetCurTimeCount();
+        std::string surfaceName = GetSurfaceNameInLayers(layers);
+        RS_LOGI_LIMIT("RSHardwareThread::CommitAndReleaseLayers task execute, %{public}s", surfaceName.c_str());
         if (output == nullptr || hdiBackend_ == nullptr) {
+            RS_LOGI("RSHardwareThread::CommitAndReleaseLayers task return, %{public}s", surfaceName.c_str());
             return;
         }
         int64_t startTimeNs = 0;
         int64_t endTimeNs = 0;
-        RS_LOGI_IF(DEBUG_COMPOSER, "RSHardwareThread::CommitAndReleaseData hasGameScene is %{public}d", hasGameScene);
+        RS_LOGI_IF(DEBUG_COMPOSER, "RSHardwareThread::CommitAndReleaseData hasGameScene is %{public}d %{public}s",
+            hasGameScene, surfaceName.c_str());
         if (hasGameScene) {
             startTimeNs = std::chrono::duration_cast<std::chrono::nanoseconds>(
                 std::chrono::steady_clock::now().time_since_epoch()).count();
         }
         RS_TRACE_NAME_FMT("RSHardwareThread::CommitAndReleaseLayers rate: %u, now: %" PRIu64 ", " \
             "vsyncId: %" PRIu64 ", size: %zu", currentRate, param.frameTimestamp, param.vsyncId, layers.size());
-        RS_LOGD("RSHardwareThread::CommitAndReleaseLayers rate:%{public}u, " \
-            "now:%{public}" PRIu64 ", vsyncId:%{public}" PRIu64 ", size:%{public}zu ",
-            currentRate, param.frameTimestamp, param.vsyncId, layers.size());
+        RS_LOGD_IF(DEBUG_COMPOSER, "RSHardwareThread::CommitAndReleaseLayers rate:%{public}u, " \
+            "now:%{public}" PRIu64 ", vsyncId:%{public}" PRIu64 ", size:%{public}zu, %{public}s",
+            currentRate, param.frameTimestamp, param.vsyncId, layers.size(), surfaceName.c_str());
         ExecuteSwitchRefreshRate(output, param.rate);
         PerformSetActiveMode(output, param.frameTimestamp, param.constraintRelativeTime);
         AddRefreshRateCount(output);
         output->SetLayerInfo(layers);
         if (output->IsDeviceValid()) {
             hdiBackend_->Repaint(output);
+            RecordTimestamp(layers);
         }
         output->ReleaseLayers(releaseFence_);
         RSBaseRenderUtil::DecAcquiredBufferCount();
@@ -232,8 +247,9 @@ void RSHardwareThread::CommitAndReleaseLayers(OutputPtr output, const std::vecto
         }
 
         unExecuteTaskNum_--;
-        RS_LOGD("RSHardwareThread::CommitAndReleaseData unExecuteTaskNum_:%{public}d,"
-            " HARDWARE_THREAD_TASK_NUM:%{public}d", unExecuteTaskNum_.load(), HARDWARE_THREAD_TASK_NUM);
+        RS_LOGD_IF(DEBUG_COMPOSER, "RSHardwareThread::CommitAndReleaseData unExecuteTaskNum_:%{public}d,"
+            " HARDWARE_THREAD_TASK_NUM:%{public}d, %{public}s",
+            unExecuteTaskNum_.load(), HARDWARE_THREAD_TASK_NUM, surfaceName.c_str());
         if (unExecuteTaskNum_ <= HARDWARE_THREAD_TASK_NUM) {
             RSMainThread::Instance()->NotifyHardwareThreadCanExecuteTask();
         }
@@ -244,8 +260,8 @@ void RSHardwareThread::CommitAndReleaseLayers(OutputPtr output, const std::vecto
         if (missedFrames >= HARD_JANK_TWO_TIME &&
             endTime - intervalTimePoints_ > REPORT_LOAD_WARNING_INTERVAL_TIME) {
             RS_LOGI("RSHardwareThread::CommitAndReleaseLayers report load event frameTime: %{public}" PRIu64
-                " missedFrame: %{public}" PRIu32 " frameRate:%{public}" PRIu16 "",
-                frameTime, missedFrames, frameRate);
+                " missedFrame: %{public}" PRIu32 " frameRate:%{public}" PRIu16 " %{public}s",
+                frameTime, missedFrames, frameRate, surfaceName.c_str());
             intervalTimePoints_ = endTime;
             HiSysEventWrite(OHOS::HiviewDFX::HiSysEvent::Domain::GRAPHIC, "RS_HARDWARE_THREAD_LOAD_WARNING",
                 OHOS::HiviewDFX::HiSysEvent::EventType::STATISTIC, "FRAME_RATE", frameRate, "MISSED_FRAMES",
@@ -280,6 +296,41 @@ void RSHardwareThread::CommitAndReleaseLayers(OutputPtr output, const std::vecto
     }
     lastCommitTime_ = currTime + delayTime_ * NS_MS_UNIT_CONVERSION;
     PostDelayTask(task, delayTime_);
+    RS_LOGI_LIMIT("RSHardwareThread::CommitAndReleaseLayers finished");
+}
+
+std::string RSHardwareThread::GetSurfaceNameInLayers(const std::vector<LayerInfoPtr>& layers)
+{
+    std::string surfaceName = "SurfaceName: [";
+    bool isFirst = true;
+    for (const auto& layer : layers) {
+        if (layer == nullptr || layer->GetSurface() == nullptr) {
+            continue;
+        }
+        if (isFirst) {
+            surfaceName += layer->GetSurface()->GetName();
+            isFirst = false;
+            continue;
+        }
+        surfaceName += ", " + layer->GetSurface()->GetName();
+    }
+    surfaceName += "]";
+    return surfaceName;
+}
+
+void RSHardwareThread::RecordTimestamp(const std::vector<LayerInfoPtr>& layers)
+{
+    uint64_t currentTime = std::chrono::duration_cast<std::chrono::nanoseconds>(
+        std::chrono::steady_clock::now().time_since_epoch()).count();
+    for (auto& layer : layers) {
+        if (layer == nullptr ||
+            layer->GetUniRenderFlag()) {
+                continue;
+            }
+            uint64_t id = layer->GetNodeId();
+            const auto& surfaceFpsManager = RSSurfaceFpsManager::GetInstance();
+            surfaceFpsManager.RecordPresentTime(id, currentTime, layer->GetBuffer()->GetSeqNum());
+    }
 }
 
 bool RSHardwareThread::IsDelayRequired(OHOS::Rosen::HgmCore& hgmCore, RefreshRateParam param,
@@ -317,8 +368,10 @@ void RSHardwareThread::CalculateDelayTime(OHOS::Rosen::HgmCore& hgmCore, Refresh
 {
     int64_t frameOffset = 0;
     int64_t vsyncOffset = 0;
+    int64_t idealPipelineOffset = 0;
     int64_t pipelineOffset = 0;
     int64_t expectCommitTime = 0;
+    int64_t periodNum = 0;
     int64_t idealPeriod = hgmCore.GetIdealPeriod(currentRate);
     int64_t period  = CreateVSyncSampler()->GetHardwarePeriod();
     uint64_t dvsyncOffset = RSMainThread::Instance()->GetRealTimeOffsetOfDvsync(param.frameTimestamp);
@@ -329,11 +382,18 @@ void RSHardwareThread::CalculateDelayTime(OHOS::Rosen::HgmCore& hgmCore, Refresh
         // 2 period for draw and composition, pipelineOffset = 2 * period
         frameOffset = 2 * period + vsyncOffset;
     } else {
-        if (idealPeriod == PERIOD_60_HZ) {
-            vsyncOffset = CreateVSyncGenerator()->GetVSyncOffset();
-        }
+        idealPipelineOffset = hgmCore.GetIdealPipelineOffset();
         pipelineOffset = hgmCore.GetPipelineOffset();
-        frameOffset = pipelineOffset + vsyncOffset + static_cast<int64_t>(dvsyncOffset);
+        vsyncOffset = CreateVSyncGenerator()->GetVSyncOffset();
+        periodNum = idealPeriod == 0 ? 0 : idealPipelineOffset / idealPeriod;
+
+        if (vsyncOffset >= period) {
+            vsyncOffset = 0;
+        }
+        if (periodNum * idealPeriod + vsyncOffset + IDEAL_PULSE < idealPipelineOffset) {
+            periodNum = periodNum + 1;
+        }
+        frameOffset = periodNum * idealPeriod + vsyncOffset + static_cast<int64_t>(dvsyncOffset);
     }
     expectCommitTime = param.actualTimestamp + frameOffset - compositionTime - RESERVE_TIME;
     int64_t diffTime = expectCommitTime - currTime;
@@ -343,17 +403,106 @@ void RSHardwareThread::CalculateDelayTime(OHOS::Rosen::HgmCore& hgmCore, Refresh
     RS_TRACE_NAME_FMT("CalculateDelayTime pipelineOffset: %" PRId64 ", actualTimestamp: %" PRId64 ", " \
         "expectCommitTime: %" PRId64 ", currTime: %" PRId64 ", diffTime: %" PRId64 ", delayTime: %" PRId64 ", " \
         "frameOffset: %" PRId64 ", dvsyncOffset: %" PRIu64 ", vsyncOffset: %" PRId64 ", idealPeriod: %" PRId64 ", " \
-        "period: %" PRId64 "",
+        "period: %" PRId64 ", idealPipelineOffset: %" PRId64 "",
         pipelineOffset, param.actualTimestamp, expectCommitTime, currTime, diffTime, delayTime_,
-        frameOffset, dvsyncOffset, vsyncOffset, idealPeriod, period);
-    RS_LOGD("RSHardwareThread::CalculateDelayTime period:%{public}" PRId64 " delayTime:%{public}" PRId64 "",
-        period, delayTime_);
+        frameOffset, dvsyncOffset, vsyncOffset, idealPeriod, period, idealPipelineOffset);
+    RS_LOGD_IF(DEBUG_PIPELINE,
+        "RSHardwareThread::CalculateDelayTime period:%{public}" PRId64 " delayTime:%{public}" PRId64 "", period,
+        delayTime_);
 }
 
 int64_t RSHardwareThread::GetCurTimeCount()
 {
     auto curTime = std::chrono::system_clock::now().time_since_epoch();
     return std::chrono::duration_cast<std::chrono::microseconds>(curTime).count();
+}
+
+void RSHardwareThread::PreAllocateProtectedBuffer(sptr<SurfaceBuffer> buffer, uint64_t screenId)
+{
+    RS_TRACE_NAME("RSHardwareThread::PreAllocateProtectedBuffer enter.");
+    {
+        std::unique_lock<std::mutex> lock(preAllocMutex_, std::try_to_lock);
+        if (!lock.owns_lock()) {
+            RS_TRACE_NAME("RSHardwareThread::PreAllocateProtectedBuffer failed, HardwareThread is redraw.");
+            return;
+        }
+    }
+    auto screenManager = CreateOrGetScreenManager();
+    if (screenManager == nullptr) {
+        RS_LOGE("screenManager is NULL");
+        return;
+    }
+    auto output = screenManager->GetOutput(ToScreenPhysicalId(screenId));
+    if (output == nullptr) {
+        RS_LOGE("output is NULL");
+        return;
+    }
+    if (output->GetProtectedFrameBufferState()) {
+        return;
+    }
+    auto fbSurface = output->GetFrameBufferSurface();
+    if (fbSurface == nullptr) {
+        RS_LOGE("fbSurface is NULL");
+        return;
+    }
+#ifdef RS_ENABLE_VK
+    std::shared_ptr<RSSurfaceOhosVulkan> rsSurface;
+    auto surfaceId = fbSurface->GetUniqueId();
+    {
+        std::lock_guard<std::mutex> lock(frameBufferSurfaceOhosMapMutex_);
+        if (frameBufferSurfaceOhosMap_.count(surfaceId)) {
+            rsSurface = std::static_pointer_cast<RSSurfaceOhosVulkan>(frameBufferSurfaceOhosMap_[surfaceId]);
+        } else {
+            rsSurface = std::make_shared<RSSurfaceOhosVulkan>(fbSurface);
+            frameBufferSurfaceOhosMap_[surfaceId] = rsSurface;
+        }
+    }
+    // SetColorSpace
+    rsSurface->SetColorSpace(ComputeTargetColorGamut(buffer));
+
+    // SetSurfacePixelFormat
+    rsSurface->SetSurfacePixelFormat(ComputeTargetPixelFormat(buffer));
+
+    // SetSurfaceBufferUsage
+    auto usage = BUFFER_USAGE_CPU_READ | BUFFER_USAGE_MEM_DMA | BUFFER_USAGE_MEM_FB | BUFFER_USAGE_PROTECTED |
+        BUFFER_USAGE_DRM_REDRAW;
+    rsSurface->SetSurfaceBufferUsage(usage);
+    auto screenInfo = screenManager->QueryScreenInfo(screenId);
+    auto ret = rsSurface->PreAllocateProtectedBuffer(screenInfo.phyWidth, screenInfo.phyHeight);
+    output->SetProtectedFrameBufferState(ret);
+#endif
+}
+
+GraphicColorGamut RSHardwareThread::ComputeTargetColorGamut(const sptr<SurfaceBuffer> &buffer)
+{
+    GraphicColorGamut colorGamut = GRAPHIC_COLOR_GAMUT_SRGB;
+#ifdef USE_VIDEO_PROCESSING_ENGINE
+    using namespace HDI::Display::Graphic::Common::V1_0;
+    CM_ColorSpaceInfo colorSpaceInfo;
+    if (MetadataHelper::GetColorSpaceInfo(buffer, colorSpaceInfo) != GSERROR_OK) {
+        RS_LOGD("RSHardwareThread::PreAllocateProtectedBuffer Get color space failed");
+    }
+    if (colorSpaceInfo.primaries != COLORPRIMARIES_SRGB) {
+        RS_LOGD("RSHardwareThread::PreAllocateProtectedBuffer fail, primaries is %{public}d", colorSpaceInfo.primaries);
+        colorGamut = GRAPHIC_COLOR_GAMUT_DISPLAY_P3;
+    }
+#endif
+    return colorGamut;
+}
+
+GraphicPixelFormat RSHardwareThread::ComputeTargetPixelFormat(const sptr<SurfaceBuffer> &buffer)
+{
+    GraphicPixelFormat pixelFormat = GRAPHIC_PIXEL_FMT_RGBA_8888;
+#ifdef USE_VIDEO_PROCESSING_ENGINE
+    using namespace HDI::Display::Graphic::Common::V1_0;
+    auto bufferPixelFormat = buffer->GetFormat();
+    if (bufferPixelFormat == GRAPHIC_PIXEL_FMT_RGBA_1010102 || bufferPixelFormat == GRAPHIC_PIXEL_FMT_YCBCR_P010 ||
+        bufferPixelFormat == GRAPHIC_PIXEL_FMT_YCRCB_P010) {
+        pixelFormat = GRAPHIC_PIXEL_FMT_RGBA_1010102;
+        RS_LOGD("RSHardwareThread::PreAllocateProtectedBuffer pixelformat is set to 1010102 for 10bit buffer");
+    }
+#endif
+    return pixelFormat;
 }
 
 bool RSHardwareThread::IsInAdaptiveMode(const OutputPtr &output)
@@ -533,7 +682,8 @@ GSError RSHardwareThread::ClearFrameBuffers(OutputPtr output)
         uniRenderEngine_->ResetCurrentContext();
     }
 #ifdef RS_ENABLE_VK
-    if (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN) {
+    if (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
+        RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) {
         auto frameBufferSurface = std::static_pointer_cast<RSSurfaceOhosVulkan>(frameBufferSurfaceOhos_);
         if (frameBufferSurface) {
             frameBufferSurface->WaitSurfaceClear();
@@ -552,7 +702,8 @@ std::shared_ptr<RSSurfaceOhos> RSHardwareThread::CreateFrameBufferSurfaceOhos(co
     }
 #endif
 #if (defined RS_ENABLE_VK)
-    if (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN) {
+    if (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
+        RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) {
         rsSurface = std::make_shared<RSSurfaceOhosVulkan>(surface);
     }
 #endif
@@ -590,15 +741,22 @@ void RSHardwareThread::RedrawScreenRCD(RSPaintFilterCanvas& canvas, const std::v
 void RSHardwareThread::Redraw(const sptr<Surface>& surface, const std::vector<LayerInfoPtr>& layers, uint32_t screenId)
 {
     RS_TRACE_NAME("RSHardwareThread::Redraw");
+    std::unique_lock<std::mutex> lock(preAllocMutex_, std::try_to_lock);
+    auto screenManager = CreateOrGetScreenManager();
+    if (screenManager == nullptr) {
+        RS_LOGE("RSHardwareThread::Redraw: screenManager is null.");
+        return;
+    }
     if (surface == nullptr || uniRenderEngine_ == nullptr) {
         RS_LOGE("RSHardwareThread::Redraw: surface or uniRenderEngine is null.");
         return;
     }
     bool isProtected = false;
+    bool isDefaultScreen = screenManager->GetDefaultScreenId() == ToScreenId(screenId);
 #ifdef RS_ENABLE_VK
     if (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
         RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) {
-        if (RSSystemProperties::GetDrmEnabled()) {
+        if (RSSystemProperties::GetDrmEnabled() && isDefaultScreen) {
             for (const auto& layer : layers) {
                 if (layer && layer->GetBuffer() && (layer->GetBuffer()->GetUsage() & BUFFER_USAGE_PROTECTED)) {
                     isProtected = true;
@@ -616,11 +774,6 @@ void RSHardwareThread::Redraw(const sptr<Surface>& surface, const std::vector<La
 
     RS_LOGD("RsDebug RSHardwareThread::Redraw flush frame buffer start");
     bool forceCPU = RSBaseRenderEngine::NeedForceCPU(layers);
-    auto screenManager = CreateOrGetScreenManager();
-    if (screenManager == nullptr) {
-        RS_LOGE("RSHardwareThread::Redraw: screenManager is null.");
-        return;
-    }
     auto screenInfo = screenManager->QueryScreenInfo(screenId);
     std::shared_ptr<Drawing::ColorSpace> drawingColorSpace = nullptr;
 #ifdef USE_VIDEO_PROCESSING_ENGINE
@@ -726,6 +879,39 @@ void RSHardwareThread::SubScribeSystemAbility()
     }
 }
 
+std::string RSHardwareThread::GetEventQueueDump() const
+{
+    std::string retString;
+
+    if (handler_ != nullptr) {
+        AppExecFwk::RSHardwareDumper dumper;
+        handler_->Dump(dumper);
+        auto dumpinfo = dumper.GetDumpInfo();
+        size_t compareStrSize = sizeof("}\n");
+
+        size_t curRunningStart = dumpinfo.find("Current Running: start");
+        if (curRunningStart != std::string::npos) {
+            size_t curRunningEnd = dumpinfo.find("}\n", curRunningStart);
+            if (curRunningEnd != std::string::npos) {
+                retString += dumpinfo.substr(curRunningStart, curRunningEnd - curRunningStart + compareStrSize);
+            }
+        }
+
+        size_t immediateStart = dumpinfo.find("Immediate priority event queue information:");
+        if (immediateStart != std::string::npos) {
+            size_t immediateEnd = dumpinfo.find("}\n", immediateStart);
+            if (immediateEnd != std::string::npos) {
+                retString += dumpinfo.substr(immediateStart, immediateEnd - immediateStart + compareStrSize);
+            }
+        }
+
+        if (retString.empty()) {
+            retString = "Current Running and Immediate priority event empty";
+        }
+    }
+    return retString;
+}
+
 #ifdef USE_VIDEO_PROCESSING_ENGINE
 GraphicColorGamut RSHardwareThread::ComputeTargetColorGamut(const std::vector<LayerInfoPtr>& layers)
 {
@@ -811,3 +997,22 @@ bool RSHardwareThread::ConvertColorGamutToSpaceType(const GraphicColorGamut& col
 }
 #endif
 }
+
+namespace OHOS {
+namespace AppExecFwk {
+void RSHardwareDumper::Dump(const std::string& message)
+{
+    dumpInfo_ += message;
+}
+
+std::string RSHardwareDumper::GetTag()
+{
+    return "RSHardwareDumper";
+}
+
+std::string RSHardwareDumper::GetDumpInfo()
+{
+    return dumpInfo_;
+}
+} // namespace AppExecFwk
+} // namespace OHOS

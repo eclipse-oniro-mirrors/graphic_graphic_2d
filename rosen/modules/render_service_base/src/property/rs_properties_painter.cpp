@@ -1732,11 +1732,13 @@ std::shared_ptr<Drawing::Blender> RSPropertiesPainter::MakeLightUpEffectBlender(
             return c.z * mix(vec3(1.0), rgb, c.y);
         }
         vec4 main(vec4 drawing_src, vec4 drawing_dst) {
+            drawing_dst = max(drawing_dst, 0.0);
             vec3 c = vec3(drawing_dst.r, drawing_dst.g, drawing_dst.b);
             vec3 hsv = rgb2hsv(c);
             float satUpper = clamp(hsv.y * 1.2, 0.0, 1.0);
             hsv.y = mix(satUpper, hsv.y, lightUpDeg);
             hsv.z += lightUpDeg - 1.0;
+            hsv.z = max(hsv.z, 0.0);
             return vec4(hsv2rgb(hsv), drawing_dst.a);
         }
     )";
@@ -1746,16 +1748,9 @@ std::shared_ptr<Drawing::Blender> RSPropertiesPainter::MakeLightUpEffectBlender(
             return nullptr;
         }
     }
-    static std::shared_ptr<Drawing::RuntimeBlenderBuilder> builder_ = nullptr;
-    if (!builder_) {
-        builder_ = std::make_shared<Drawing::RuntimeBlenderBuilder>(lightUpEffectBlender_);
-        if (!builder_) {
-            ROSEN_LOGE("RSPropertiesPainter::MakeLightUpEffectBlender make builder fail");
-            return nullptr;
-        }
-    }
-    builder_->SetUniform("lightUpDeg", lightUpDeg);
-    return builder_->MakeBlender();
+    auto builder = std::make_shared<Drawing::RuntimeBlenderBuilder>(lightUpEffectBlender_);
+    builder->SetUniform("lightUpDeg", lightUpDeg);
+    return builder->MakeBlender();
 }
 
 void RSPropertiesPainter::DrawDynamicLightUp(const RSProperties& properties, RSPaintFilterCanvas& canvas)

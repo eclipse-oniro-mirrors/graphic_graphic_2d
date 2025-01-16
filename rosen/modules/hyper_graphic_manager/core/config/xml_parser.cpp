@@ -14,8 +14,6 @@
  */
 #include "xml_parser.h"
 #include <algorithm>
-#include <sstream>
-#include <regex>
 
 #include "config_policy_utils.h"
 
@@ -293,7 +291,7 @@ void XMLParser::ParseBufferStrategyList(xmlNode &node, PolicyConfigData::Strateg
             strategy.bufferFpsMap[name] = FPS_MAX;
         } else if (IsNumber(fpsStr)) {
             auto fpsNum = std::stoi(fpsStr);
-            if (fpsNum > 0) {
+            if (fpsNum >= 0) {
                 strategy.bufferFpsMap[name] = fpsNum;
             }
         }
@@ -318,10 +316,11 @@ int32_t XMLParser::ParseScreenConfig(xmlNode &node)
         }
         auto name = ExtractPropertyValue("name", *currNode);
         if (name == "supported_mode") {
-            std::vector<uint32_t> supportedModeVector;
-            auto value = ExtractPropertyValue("value", *currNode);
-            supportedModeVector = StringToVector(value);
-            mParsedData_->supportedModeConfigs_[type] = supportedModeVector;
+            PolicyConfigData::SupportedModeConfig supportedModeConfig;
+            if (ParseSupportedModeConfig(*currNode, supportedModeConfig) != EXEC_SUCCESS) {
+                HGM_LOGI("XMLParser failed to ParseScreenConfig %{public}s", name.c_str());
+            }
+            mParsedData_->supportedModeConfigs_[type] = supportedModeConfig;
             continue;
         }
         PolicyConfigData::ScreenSetting screenSetting;
@@ -501,6 +500,34 @@ int32_t XMLParser::ParseSceneList(xmlNode &node, PolicyConfigData::SceneConfigMa
     return EXEC_SUCCESS;
 }
 
+int32_t XMLParser::ParseSupportedModeConfig(xmlNode &node, PolicyConfigData::SupportedModeConfig &supportedModeConfig)
+{
+    HGM_LOGD("XMLParser parsing supportedModeConfig");
+    xmlNode *currNode = &node;
+    if (currNode->xmlChildrenNode == nullptr) {
+        HGM_LOGD("XMLParser stop parsing supportedModeConfig, no children nodes");
+        return HGM_ERROR;
+    }
+
+    // re-parse
+    supportedModeConfig.clear();
+    currNode = currNode->xmlChildrenNode;
+    for (; currNode; currNode = currNode->next) {
+        if (currNode->type != XML_ELEMENT_NODE) {
+            continue;
+        }
+        std::vector<uint32_t> supportedModeVec;
+        auto name = ExtractPropertyValue("name", *currNode);
+        auto value = ExtractPropertyValue("value", *currNode);
+        supportedModeVec = StringToVector(value);
+
+        supportedModeConfig[name] = supportedModeVec;
+        HGM_LOGI("HgmXMLParser ParseSupportedModeConfig name=%{public}s value=%{public}s",
+            name.c_str(), value.c_str());
+    }
+    return EXEC_SUCCESS;
+}
+
 int32_t XMLParser::ParseMultiAppStrategy(xmlNode &node, PolicyConfigData::ScreenSetting &screenSetting)
 {
     auto multiAppStrategy = ExtractPropertyValue("multi_app_strategy", node);
@@ -576,21 +603,27 @@ bool XMLParser::IsNumber(const std::string& str)
     return number == str.length() || (str.compare(0, 1, "-") == 0 && number == str.length() - 1);
 }
 
-std::vector<uint32_t> XMLParser::StringToVector(const std::string &str)
+std::vector<uint32_t> XMLParser::StringToVector(const std::string &str, const std::string &pattern)
 {
-    // valid format: string consisting of only numbers and spaces
-    if (!std::regex_match(str, std::regex("^\\s*(\\d+(\\s+\\d+)*)\\s*$"))) {
-        HGM_LOGD("Input invalid format.");
-        return {};
+    std::vector<std::string> vstr;
+    std::string::size_type wordBegin = 0;
+    std::string::size_type wordEnd = str.find(pattern);
+    while (wordEnd != std::string::npos) {
+        vstr.push_back(str.substr(wordBegin, wordEnd - wordBegin));
+        wordBegin = wordEnd + pattern.size();
+        wordEnd = str.find(pattern, wordBegin);
+    }
+    if (wordBegin != str.length()) {
+        vstr.push_back(str.substr(wordBegin));
     }
 
-    std::istringstream isstr(str);
     std::vector<uint32_t> vec;
-    uint32_t num;
-    while (isstr >> num) {
-        vec.push_back(num);
+    for (const auto& s : vstr) {
+        if (!IsNumber(s)) {
+            continue;
+        }
+        vec.emplace_back(std::stoi(s));
     }
-
     return vec;
 }
 

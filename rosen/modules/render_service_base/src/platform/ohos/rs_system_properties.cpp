@@ -355,11 +355,7 @@ bool RSSystemProperties::GetHighContrastStatus()
 
 bool RSSystemProperties::GetDrmEnabled()
 {
-    // The switch only works on PC, will remove the restriction in the future.
-    if (!IsPcType()) {
-        return true;
-    }
-    static CachedHandle g_Handle = CachedParameterCreate("rosen.drm.enabled", "0");
+    static CachedHandle g_Handle = CachedParameterCreate("rosen.drm.enabled", "1");
     int changed = 0;
     const char *enabled = CachedParameterGetChanged(g_Handle, &changed);
     return ConvertToInt(enabled, 0) != 0;
@@ -454,26 +450,6 @@ void RSSystemProperties::SetCacheEnabledForRotation(bool flag)
 bool RSSystemProperties::GetCacheEnabledForRotation()
 {
     return cacheEnabledForRotation_;
-}
-
-void RSSystemProperties::SetScreenSwitchStatus(bool flag)
-{
-    isScreenSwitching_ = flag;
-}
-
-bool RSSystemProperties::GetScreenSwitchStatus()
-{
-    return isScreenSwitching_;
-}
-
-void RSSystemProperties::SetDefaultDeviceRotationOffset(uint32_t offset)
-{
-    defaultDeviceRotationOffset_ = offset;
-}
-
-uint32_t RSSystemProperties::GetDefaultDeviceRotationOffset()
-{
-    return defaultDeviceRotationOffset_;
 }
 
 ParallelRenderingType RSSystemProperties::GetPrepareParallelRenderingEnabled()
@@ -634,9 +610,8 @@ void RSSystemProperties::SetForceHpsBlurDisabled(bool flag)
 
 float RSSystemProperties::GetHpsBlurNoiseFactor()
 {
-    static bool deviceHpsType = RSSystemProperties::IsPcType();
-    static float noiseFactor = deviceHpsType ?
-        std::atof((system::GetParameter("persist.sys.graphic.HpsBlurNoiseFactor", "1.75")).c_str()) : 0.f;
+    static float noiseFactor =
+        std::atof((system::GetParameter("persist.sys.graphic.HpsBlurNoiseFactor", "1.75")).c_str());
     return noiseFactor;
 }
 
@@ -652,6 +627,20 @@ bool RSSystemProperties::GetMESABlurFuzedEnabled()
     static bool blurPixelStretchEnabled =
         std::atoi((system::GetParameter("persist.sys.graphic.mesaBlurFuzedEnable", "1")).c_str()) != 0;
     return blurPixelStretchEnabled;
+}
+
+int RSSystemProperties::GetSimplifiedMesaEnabled()
+{
+    static int simplifiedMesaEnabled =
+        std::atoi((system::GetParameter("persist.sys.graphic.simplifiedMesaEnable", "0")).c_str());
+    return simplifiedMesaEnabled;
+}
+
+bool RSSystemProperties::GetForceKawaseDisabled()
+{
+    static bool kawaseDisabled =
+        std::atoi((system::GetParameter("persist.sys.graphic.kawaseDisable", "0")).c_str()) != 0;
+    return kawaseDisabled;
 }
 
 float RSSystemProperties::GetKawaseRandomColorFactor()
@@ -737,7 +726,7 @@ bool RSSystemProperties::GetCacheOptimizeRotateEnable()
     return debugEnable;
 }
 
-CrossNodeOffScreenRenderDebugType RSSystemProperties::GetCrossNodeOffscreenDebugEnabled()
+CrossNodeOffScreenRenderDebugType RSSystemProperties::GetCrossNodeOffScreenStatus()
 {
     static CachedHandle g_Handle = CachedParameterCreate("rosen.crossnode.offscreen.render.enabled", "1");
     int chanded = 0;
@@ -769,6 +758,12 @@ bool RSSystemProperties::GetUIFirstDebugEnabled()
 {
     static bool debugEnable = system::GetIntParameter("persist.sys.graphic.uifirstDebugEnabled", 0) != 0;
     return debugEnable;
+}
+
+bool RSSystemProperties::GetSingleDrawableLockerEnabled()
+{
+    static bool lockerEnable = system::GetIntParameter("persist.sys.graphic.singleDrawableLocker.enable", 1) != 0;
+    return lockerEnable;
 }
 
 bool RSSystemProperties::GetTargetUIFirstDfxEnabled(std::vector<std::string>& SurfaceNames)
@@ -1215,12 +1210,11 @@ bool RSSystemProperties::GetDrmMarkedFilterEnabled()
     return ConvertToInt(num, 0);
 }
 
-bool RSSystemProperties::GetDisableHebcEnabled()
+bool RSSystemProperties::GetHveFilterEnabled()
 {
-    // Dynamically disable unified rendering layer hecb if persist.sys.graphic.anco.disableHebc equal 1
-    static bool enable =
-        std::atoi((system::GetParameter("persist.sys.graphic.anco.disableHebc", "0")).c_str()) != 0;
-    return enable;
+    static bool hveFilterEnabled =
+        std::atoi((system::GetParameter("persist.sys.graphic.HveFilterEnable", "1")).c_str()) != 0;
+    return hveFilterEnabled;
 }
 } // namespace Rosen
 } // namespace OHOS

@@ -19,6 +19,7 @@
 
 #include "common/rs_optional_trace.h"
 #include "drawable/rs_property_drawable_utils.h"
+#include "gfx/performance/rs_perfmonitor_reporter.h"
 #include "pipeline/rs_recording_canvas.h"
 #include "pipeline/rs_render_node.h"
 #include "pipeline/rs_surface_render_node.h"
@@ -135,12 +136,14 @@ bool RSClipToBoundsDrawable::OnUpdate(const RSRenderNode& node)
     } else if (!properties.GetCornerRadius().IsZero()) {
         canvas.ClipRoundRect(
             RSPropertyDrawableUtils::RRect2DrawingRRect(properties.GetRRect()), Drawing::ClipOp::INTERSECT, true);
+    } else if (node.GetType() == RSRenderNodeType::SURFACE_NODE && RSSystemProperties::GetCacheEnabledForRotation() &&
+        node.ReinterpretCastTo<RSSurfaceRenderNode>()->IsAppWindow()) {
+        Drawing::Rect rect = RSPropertyDrawableUtils::Rect2DrawingRect(properties.GetBoundsRect());
+        Drawing::RectI iRect(rect.GetLeft(), rect.GetTop(), rect.GetRight(), rect.GetBottom());
+        canvas.ClipIRect(iRect, Drawing::ClipOp::INTERSECT);
     } else {
-        // Enable anti-aliasing only on surface nodes to resolve the issue of jagged edges on card compoments
-        // during dragging.
-        bool aa = node.IsInstanceOf<RSSurfaceRenderNode>();
         canvas.ClipRect(
-            RSPropertyDrawableUtils::Rect2DrawingRect(properties.GetBoundsRect()), Drawing::ClipOp::INTERSECT, aa);
+            RSPropertyDrawableUtils::Rect2DrawingRect(properties.GetBoundsRect()), Drawing::ClipOp::INTERSECT, false);
     }
     return true;
 }
@@ -185,6 +188,7 @@ void RSFilterDrawable::OnSync()
     renderIsEffectNode_ = stagingIsEffectNode_;
     renderIsSkipFrame_ = stagingIsSkipFrame_;
     renderNodeId_ = stagingNodeId_;
+    renderNodeName_ = stagingNodeName_;
     renderClearType_ = stagingClearType_;
     renderIntersectWithDRM_ = stagingIntersectWithDRM_;
     renderIsDarkColorMode_ = stagingIsDarkColorMode_;
@@ -208,6 +212,50 @@ void RSFilterDrawable::OnSync()
     stagingIsEffectNode_ = false;
     stagingIsSkipFrame_ = false;
     needSync_ = false;
+    stagingUpdateInterval_ = cacheUpdateInterval_;
+    stagingLastCacheType_ = lastCacheType_;
+}
+
+bool RSFilterDrawable::WouldDrawLargeAreaBlur()
+{
+    RS_TRACE_NAME_FMT("wouldDrawLargeAreaBlur stagingIsLargeArea:%d canSkipFrame:%d"
+        " stagingUpdateInterval:%d stagingFilterInteractWithDirty:%d stagingNodeId[%llu]",
+        stagingIsLargeArea_, canSkipFrame_, stagingUpdateInterval_, stagingFilterInteractWithDirty_, stagingNodeId_);
+    if (stagingIsLargeArea_) {
+        if (!canSkipFrame_) {
+            return true;
+        }
+        return stagingUpdateInterval_ == 1 && stagingFilterInteractWithDirty_;
+    }
+    return false;
+}
+
+bool RSFilterDrawable::WouldDrawLargeAreaBlurPrecisely()
+{
+    RS_TRACE_NAME_FMT("wouldDrawLargeAreaBlurPrecisely stagingIsLargeArea:%d stagingForceClearCache:%d"
+        " canSkipFrame:%d stagingFilterHashChanged:%d stagingFilterInteractWithDirty:%d stagingFilterRegionChanged:%d"
+        " stagingUpdateInterval:%d stagingLastCacheType:%d stagingNodeId[%llu]", stagingIsLargeArea_,
+        stagingForceClearCache_, canSkipFrame_, stagingFilterHashChanged_, stagingFilterInteractWithDirty_,
+        stagingFilterRegionChanged_, stagingUpdateInterval_, stagingLastCacheType_, stagingNodeId_);
+    if (!stagingIsLargeArea_) {
+        return false;
+    }
+    if (stagingForceClearCache_) {
+        return true;
+    }
+    if (!canSkipFrame_ && !stagingFilterHashChanged_) {
+        return true;
+    }
+    if (!stagingFilterInteractWithDirty_ && !stagingFilterHashChanged_ && !stagingFilterRegionChanged_) {
+        return false;
+    }
+    if (stagingUpdateInterval_ == 0) {
+        return true;
+    }
+    if (stagingLastCacheType_ == FilterCacheType::FILTERED_SNAPSHOT && stagingFilterHashChanged_) {
+        return true;
+    }
+    return false;
 }
 
 Drawing::RecordingCanvas::DrawFunc RSFilterDrawable::CreateDrawFunc() const
@@ -217,10 +265,21 @@ Drawing::RecordingCanvas::DrawFunc RSFilterDrawable::CreateDrawFunc() const
         if (ptr->needDrawBehindWindow_) {
             RS_TRACE_NAME_FMT("RSFilterDrawable::CreateDrawFunc DrawBehindWindow node[%llu] ", ptr->renderNodeId_);
             auto paintFilterCanvas = static_cast<RSPaintFilterCanvas*>(canvas);
+            if (!paintFilterCanvas || !canvas->GetSurface()) {
+                RS_LOGE("RSFilterDrawable::CreateDrawFunc DrawBehindWindow canvas:[%{public}d], surface:[%{public}d]",
+                    paintFilterCanvas != nullptr, canvas->GetSurface() != nullptr);
+                return;
+            }
             Drawing::AutoCanvasRestore acr(*canvas, true);
             paintFilterCanvas->ClipRect(*rect);
-            Drawing::RectI bounds(ptr->drawBehindWindowRegion_.GetLeft(), ptr->drawBehindWindowRegion_.GetTop(),
+            Drawing::Rect absRect(0.0, 0.0, 0.0, 0.0);
+            Drawing::Rect relativeBounds(ptr->drawBehindWindowRegion_.GetLeft(), ptr->drawBehindWindowRegion_.GetTop(),
                 ptr->drawBehindWindowRegion_.GetRight(), ptr->drawBehindWindowRegion_.GetBottom());
+            canvas->GetTotalMatrix().MapRect(absRect, relativeBounds);
+            Drawing::RectI bounds(std::ceil(absRect.GetLeft()), std::ceil(absRect.GetTop()),
+                std::ceil(absRect.GetRight()), std::ceil(absRect.GetBottom()));
+            auto deviceRect = Drawing::RectI(0, 0, canvas->GetSurface()->Width(), canvas->GetSurface()->Height());
+            bounds.Intersect(deviceRect);
             RSPropertyDrawableUtils::DrawBackgroundEffect(paintFilterCanvas, ptr->filter_, ptr->cacheManager_,
                 ptr->renderClearFilteredCacheAfterDrawing_, bounds, true);
             return;
@@ -242,8 +301,19 @@ Drawing::RecordingCanvas::DrawFunc RSFilterDrawable::CreateDrawFunc() const
                     tmpFilter->SetGeometry(*canvas, rect->GetWidth(), rect->GetHeight());
                 }
             }
+            int64_t startBlurTime = Drawing::PerfmonitorReporter::GetCurrentTime();
             RSPropertyDrawableUtils::DrawFilter(canvas, ptr->filter_,
                 ptr->cacheManager_, ptr->IsForeground(), ptr->renderClearFilteredCacheAfterDrawing_);
+            int64_t blurDuration = Drawing::PerfmonitorReporter::GetCurrentTime() - startBlurTime;
+            auto filterType = ptr->filter_->GetFilterType();
+            RSPerfMonitorReporter::GetInstance().RecordBlurNode(ptr->renderNodeName_, blurDuration,
+                RSPropertyDrawableUtils::IsBlurFilterType(filterType));
+            if (rect != nullptr) {
+                RSPerfMonitorReporter::GetInstance().RecordBlurPerfEvent(ptr->renderNodeId_, ptr->renderNodeName_,
+                    static_cast<uint16_t>(filterType), RSPropertyDrawableUtils::GetBlurFilterRadius(ptr->filter_),
+                    rect->GetWidth(), rect->GetHeight(), blurDuration,
+                    RSPropertyDrawableUtils::IsBlurFilterType(filterType));
+            }
         }
     };
 }
@@ -255,16 +325,22 @@ const RectI RSFilterDrawable::GetFilterCachedRegion() const
 
 void RSFilterDrawable::MarkFilterRegionChanged()
 {
+    RSPerfMonitorReporter::GetInstance().RecordBlurCacheReason(this->renderNodeName_,
+        BLUR_CLEAR_CACHE_REASON::BLUR_REGION_CHANGED, RSPropertyDrawableUtils::IsBlurFilterType(filterType_));
     stagingFilterRegionChanged_ = true;
 }
 
 void RSFilterDrawable::MarkFilterRegionInteractWithDirty()
 {
+    RSPerfMonitorReporter::GetInstance().RecordBlurCacheReason(this->renderNodeName_,
+        BLUR_CLEAR_CACHE_REASON::BLUR_CONTENT_CHANGED, RSPropertyDrawableUtils::IsBlurFilterType(filterType_));
     stagingFilterInteractWithDirty_ = true;
 }
 
 void RSFilterDrawable::MarkFilterRegionIsLargeArea()
 {
+    RSPerfMonitorReporter::GetInstance().RecordBlurCacheReason(this->renderNodeName_,
+        BLUR_CLEAR_CACHE_REASON::DIRTY_OVER_SIZE, RSPropertyDrawableUtils::IsBlurFilterType(filterType_));
     stagingIsLargeArea_ = true;
 }
 
@@ -275,21 +351,29 @@ void RSFilterDrawable::MarkFilterForceUseCache(bool forceUseCache)
 
 void RSFilterDrawable::MarkFilterForceClearCache()
 {
+    RSPerfMonitorReporter::GetInstance().RecordBlurCacheReason(this->renderNodeName_,
+        BLUR_CLEAR_CACHE_REASON::FORCE_CLEAR_CACHE, RSPropertyDrawableUtils::IsBlurFilterType(filterType_));
     stagingForceClearCache_ = true;
 }
 
 void RSFilterDrawable::MarkRotationChanged()
 {
+    RSPerfMonitorReporter::GetInstance().RecordBlurCacheReason(this->renderNodeName_,
+        BLUR_CLEAR_CACHE_REASON::ROTATION_CHANGED, RSPropertyDrawableUtils::IsBlurFilterType(filterType_));
     stagingRotationChanged_ = true;
 }
 
 void RSFilterDrawable::MarkNodeIsOccluded(bool isOccluded)
 {
+    RSPerfMonitorReporter::GetInstance().RecordBlurCacheReason(this->renderNodeName_,
+        BLUR_CLEAR_CACHE_REASON::NODE_IS_OCCLUDED, RSPropertyDrawableUtils::IsBlurFilterType(filterType_));
     stagingIsOccluded_ = isOccluded;
 }
 
 void RSFilterDrawable::MarkForceClearCacheWithLastFrame()
 {
+    RSPerfMonitorReporter::GetInstance().RecordBlurCacheReason(this->renderNodeName_,
+        BLUR_CLEAR_CACHE_REASON::SKIP_FRAME_NO_VSYNC, RSPropertyDrawableUtils::IsBlurFilterType(filterType_));
     stagingForceClearCacheForLastFrame_ = true;
 }
 
@@ -305,6 +389,16 @@ void RSFilterDrawable::MarkNeedClearFilterCache()
         "forceClearCacheWithLastFrame:%d, rotationChanged:%d",
         stagingNodeId_, stagingForceUseCache_, stagingForceClearCache_, stagingFilterHashChanged_,
         stagingFilterRegionChanged_, stagingFilterInteractWithDirty_,
+        lastCacheType_, cacheUpdateInterval_, canSkipFrame_, stagingIsLargeArea_,
+        filterType_, pendingPurge_, stagingForceClearCacheForLastFrame_, stagingRotationChanged_);
+    
+    ROSEN_LOGD("RSFilterDrawable::MarkNeedClearFilterCache nodeId[%{public}lld], forceUseCache_:%{public}d,"
+        "forceClearCache_:%{public}d, hashChanged:%{public}d, regionChanged_:%{public}d, belowDirty_:%{public}d,"
+        "lastCacheType:%{public}hhu, cacheUpdateInterval_:%{public}d, canSkip:%{public}d, isLargeArea:%{public}d,"
+        "filterType_:%{public}d, pendingPurge_:%{public}d,"
+        "forceClearCacheWithLastFrame:%{public}d, rotationChanged:%{public}d",
+        static_cast<long long>(stagingNodeId_), stagingForceUseCache_, stagingForceClearCache_,
+        stagingFilterHashChanged_, stagingFilterRegionChanged_, stagingFilterInteractWithDirty_,
         lastCacheType_, cacheUpdateInterval_, canSkipFrame_, stagingIsLargeArea_,
         filterType_, pendingPurge_, stagingForceClearCacheForLastFrame_, stagingRotationChanged_);
 
@@ -473,6 +567,11 @@ void RSFilterDrawable::UpdateFlags(FilterCacheType type, bool cacheValid)
         }
     }
     stagingIsAIBarInteractWithHWC_ = false;
+}
+
+bool RSFilterDrawable::IsAIBarFilter() const
+{
+    return filterType_ == RSFilter::AIBAR;
 }
 
 bool RSFilterDrawable::IsAIBarCacheValid()

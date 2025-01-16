@@ -1212,6 +1212,12 @@ void RSNode::SetBackgroundShader(const std::shared_ptr<RSShader>& shader)
         RSModifierType::BACKGROUND_SHADER, shader);
 }
 
+void RSNode::SetBackgroundShaderProgress(const float& progress)
+{
+    SetProperty<RSBackgroundShaderProgressModifier, RSAnimatableProperty<float>>(
+        RSModifierType::BACKGROUND_SHADER_PROGRESS, progress);
+}
+
 // background
 void RSNode::SetBgImage(const std::shared_ptr<RSImage>& image)
 {
@@ -2748,6 +2754,74 @@ void RSNode::RemoveCrossParentChild(SharedPtr child, NodeId newParentId)
     // construct command using child's GetHierarchyCommandNodeId(), not GetId()
     childId = child->GetHierarchyCommandNodeId();
     std::unique_ptr<RSCommand> command = std::make_unique<RSBaseNodeRemoveCrossParentChild>(id_, childId, newParentId);
+    transactionProxy->AddCommand(command, IsRenderServiceNode(), GetFollowType(), id_);
+}
+
+void RSNode::SetIsCrossNode(bool isCrossNode)
+{
+    auto transactionProxy = RSTransactionProxy::GetInstance();
+    if (transactionProxy == nullptr) {
+        ROSEN_LOGE("transactionProxy is null, SetIsCrossNode failed !");
+        return;
+    }
+    std::unique_ptr<RSCommand> command =
+        std::make_unique<RSBaseNodeSetIsCrossNode>(GetId(), isCrossNode);
+    transactionProxy->AddCommand(command);
+}
+
+void RSNode::AddCrossScreenChild(SharedPtr child, int index)
+{
+    if (child == nullptr) {
+        ROSEN_LOGE("RSNode::AddCrossScreenChild, child is nullptr");
+        return;
+    }
+    if (!this->IsInstanceOf<RSDisplayNode>()) {
+        ROSEN_LOGE("RSNode::AddCrossScreenChild, only displayNode support AddCrossScreenChild");
+        return;
+    }
+
+    auto transactionProxy = RSTransactionProxy::GetInstance();
+    if (transactionProxy == nullptr) {
+        ROSEN_LOGE("RSNode::AddCrossScreenChild, transactionProxy is nullptr");
+        return;
+    }
+
+    if (!child->IsInstanceOf<RSSurfaceNode>()) {
+        ROSEN_LOGE("RSNode::AddCrossScreenChild, child shoult be RSSurfaceNode");
+        return;
+    }
+    // construct command using child's GetHierarchyCommandNodeId(), not GetId()
+    NodeId childId = child->GetHierarchyCommandNodeId();
+    // Generate an id on the client and create a clone node on the server based on the id.
+    std::unique_ptr<RSCommand> command = std::make_unique<RSBaseNodeAddCrossScreenChild>(id_, childId,
+        GenerateId(), index);
+    transactionProxy->AddCommand(command, IsRenderServiceNode(), GetFollowType(), id_);
+}
+
+void RSNode::RemoveCrossScreenChild(SharedPtr child)
+{
+    if (child == nullptr) {
+        ROSEN_LOGE("RSNode::RemoveCrossScreenChild, child is nullptr");
+        return;
+    }
+    if (!this->IsInstanceOf<RSDisplayNode>()) {
+        ROSEN_LOGE("RSNode::RemoveCrossScreenChild, only displayNode support RemoveCrossScreenChild");
+        return;
+    }
+
+    auto transactionProxy = RSTransactionProxy::GetInstance();
+    if (transactionProxy == nullptr) {
+        ROSEN_LOGE("RSNode::RemoveCrossScreenChild, transactionProxy is nullptr");
+        return;
+    }
+
+    if (!child->IsInstanceOf<RSSurfaceNode>()) {
+        ROSEN_LOGE("RSNode::RemoveCrossScreenChild, child shoult be RSSurfaceNode");
+        return;
+    }
+    // construct command using child's GetHierarchyCommandNodeId(), not GetId()
+    NodeId childId = child->GetHierarchyCommandNodeId();
+    std::unique_ptr<RSCommand> command = std::make_unique<RSBaseNodeRemoveCrossScreenChild>(id_, childId);
     transactionProxy->AddCommand(command, IsRenderServiceNode(), GetFollowType(), id_);
 }
 

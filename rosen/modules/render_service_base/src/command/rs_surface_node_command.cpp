@@ -302,6 +302,13 @@ void SurfaceNodeCommandHelper::SetSurfaceId(RSContext& context, NodeId nodeId, S
     }
 }
 
+void SurfaceNodeCommandHelper::SetClonedNodeId(RSContext& context, NodeId nodeId, NodeId cloneNodeId)
+{
+    if (auto node = context.GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(nodeId)) {
+        node->SetClonedNodeId(cloneNodeId);
+    }
+}
+
 void SurfaceNodeCommandHelper::SetForceUIFirst(RSContext& context, NodeId nodeId, bool forceUIFirst)
 {
     if (auto node = context.GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(nodeId)) {
@@ -357,6 +364,13 @@ void SurfaceNodeCommandHelper::SetApiCompatibleVersion(RSContext& context, NodeI
         return;
     }
     node->SetApiCompatibleVersion(apiCompatibleVersion);
+}
+
+void SurfaceNodeCommandHelper::SetHardwareEnableHint(RSContext& context, NodeId nodeId, bool enable)
+{
+    if (auto node = context.GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(nodeId)) {
+        node->SetHardwareEnableHint(enable);
+    }
 }
 } // namespace Rosen
 } // namespace OHOS

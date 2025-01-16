@@ -29,7 +29,7 @@
 namespace OHOS {
 namespace Rosen {
 namespace {
-static constexpr size_t ASHMEM_SIZE_THRESHOLD = 400 * 1024; // cannot > 500K in TF_ASYNC mode
+static constexpr size_t ASHMEM_SIZE_THRESHOLD = 200 * 1024; // cannot > 500K in TF_ASYNC mode
 static constexpr int MAX_RETRY_COUNT = 20;
 static constexpr int RETRY_WAIT_TIME_US = 1000; // wait 1ms before retry SendRequest
 static constexpr int MAX_SECURITY_EXEMPTION_LIST_NUMBER = 1024; // securityExemptionList size not exceed 1024
@@ -663,6 +663,40 @@ int32_t RSRenderServiceConnectionProxy::SetVirtualScreenSecurityExemptionList(
     return status;
 }
 
+int32_t RSRenderServiceConnectionProxy::SetScreenSecurityMask(ScreenId id,
+    std::shared_ptr<Media::PixelMap> securityMask)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    if (!data.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor())) {
+        return WRITE_PARCEL_ERR;
+    }
+
+    option.SetFlags(MessageOption::TF_ASYNC);
+    if (!data.WriteUint64(id)) {
+        return WRITE_PARCEL_ERR;
+    }
+
+    if (securityMask) {
+        if (!data.WriteBool(true) || !data.WriteParcelable(securityMask.get())) {
+            return WRITE_PARCEL_ERR;
+        }
+    } else {
+        if (!data.WriteBool(false)) {
+            return WRITE_PARCEL_ERR;
+        }
+    }
+    uint32_t code = static_cast<uint32_t>(
+        RSIRenderServiceConnectionInterfaceCode::SET_SCREEN_SECURITY_MASK);
+    int32_t err = SendRequest(code, data, reply, option);
+    if (err != NO_ERROR) {
+        ROSEN_LOGE("RSRenderServiceConnectionProxy::SetScreenSecurityMask: Send Request err.");
+        return RS_CONNECTION_ERROR;
+    }
+    return SUCCESS;
+}
+
 int32_t RSRenderServiceConnectionProxy::SetMirrorScreenVisibleRect(
     ScreenId id, const Rect& mainScreenRect)
 {
@@ -1001,7 +1035,8 @@ void RSRenderServiceConnectionProxy::SyncFrameRateRange(FrameRateLinkerId id, co
         return;
     }
     if (!data.WriteUint32(range.min_) || !data.WriteUint32(range.max_) ||
-        !data.WriteUint32(range.preferred_) || !data.WriteUint32(range.type_)) {
+        !data.WriteUint32(range.preferred_) || !data.WriteUint32(range.type_) ||
+        !data.WriteUint32(range.componentScene_)) {
         return;
     }
     if (!data.WriteInt32(animatorExpectedFrameRate)) {
@@ -1252,6 +1287,25 @@ void RSRenderServiceConnectionProxy::RepaintEverything()
     }
 }
 
+void RSRenderServiceConnectionProxy::ForceRefreshOneFrameWithNextVSync()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor())) {
+        ROSEN_LOGE("RSRenderServiceConnectionProxy::ForceRefreshOneFrameWithNextVSync: Send Request err.");
+        return;
+    }
+    option.SetFlags(MessageOption::TF_SYNC);
+    uint32_t code =
+        static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::FORCE_REFRESH_ONE_FRAME_WITH_NEXT_VSYNC);
+    int32_t err = SendRequest(code, data, reply, option);
+    if (err != NO_ERROR) {
+        return;
+    }
+}
+
 void RSRenderServiceConnectionProxy::DisablePowerOffRenderControl(ScreenId id)
 {
     MessageParcel data;
@@ -1355,8 +1409,9 @@ void RSRenderServiceConnectionProxy::TakeSurfaceCapture(NodeId id, sptr<RSISurfa
     }
 }
 
-void RSRenderServiceConnectionProxy::SetWindowFreezeImmediately(
-    NodeId id, bool isFreeze, sptr<RSISurfaceCaptureCallback> callback, const RSSurfaceCaptureConfig& captureConfig)
+void RSRenderServiceConnectionProxy::SetWindowFreezeImmediately(NodeId id, bool isFreeze,
+    sptr<RSISurfaceCaptureCallback> callback, const RSSurfaceCaptureConfig& captureConfig,
+    const RSSurfaceCaptureBlurParam& blurParam)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -1383,6 +1438,10 @@ void RSRenderServiceConnectionProxy::SetWindowFreezeImmediately(
             ROSEN_LOGE("%{public}s write captureConfig failed", __func__);
             return;
         }
+        if (!WriteSurfaceCaptureBlurParam(blurParam, data)) {
+            ROSEN_LOGE("%{public}s write blurParam failed", __func__);
+            return;
+        }
     }
 
     uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_WINDOW_FREEZE_IMMEDIATELY);
@@ -1398,7 +1457,11 @@ bool RSRenderServiceConnectionProxy::WriteSurfaceCaptureConfig(
 {
     if (!data.WriteFloat(captureConfig.scaleX) || !data.WriteFloat(captureConfig.scaleY) ||
         !data.WriteBool(captureConfig.useDma) || !data.WriteBool(captureConfig.useCurWindow) ||
-        !data.WriteUint8(static_cast<uint8_t>(captureConfig.captureType)) || !data.WriteBool(captureConfig.isSync)) {
+        !data.WriteUint8(static_cast<uint8_t>(captureConfig.captureType)) || !data.WriteBool(captureConfig.isSync) ||
+        !data.WriteFloat(captureConfig.mainScreenRect.left_) ||
+        !data.WriteFloat(captureConfig.mainScreenRect.top_) ||
+        !data.WriteFloat(captureConfig.mainScreenRect.right_) ||
+        !data.WriteFloat(captureConfig.mainScreenRect.bottom_)) {
         return false;
     }
     return true;
@@ -3118,6 +3181,29 @@ void RSRenderServiceConnectionProxy::NotifyRefreshRateEvent(const EventInfo& eve
     }
 }
 
+void RSRenderServiceConnectionProxy::NotifySoftVsyncEvent(uint32_t pid, uint32_t rateDiscount)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    if (!data.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor())) {
+        return;
+    }
+    if (!data.WriteUint32(pid)) {
+        return;
+    }
+    if (!data.WriteUint32(rateDiscount)) {
+        return;
+    }
+    option.SetFlags(MessageOption::TF_ASYNC);
+    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_SOFT_VSYNC_EVENT);
+    int32_t err = SendRequest(code, data, reply, option);
+    if (err != NO_ERROR) {
+        ROSEN_LOGE("RSRenderServiceConnectionProxy::NotifySoftVsyncEvent: Send Request err.");
+        return;
+    }
+}
+
 void RSRenderServiceConnectionProxy::NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt)
 {
     MessageParcel data;
@@ -3177,46 +3263,6 @@ void RSRenderServiceConnectionProxy::SetCacheEnabledForRotation(bool isEnabled)
     int32_t err = SendRequest(code, data, reply, option);
     if (err != NO_ERROR) {
         ROSEN_LOGE("RSRenderServiceConnectionProxy::SetCacheEnabledForRotation: Send Request err.");
-        return;
-    }
-}
-
-void RSRenderServiceConnectionProxy::SetScreenSwitchStatus(bool flag)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-    if (!data.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor())) {
-        return;
-    }
-    if (!data.WriteBool(flag)) {
-        return;
-    }
-    option.SetFlags(MessageOption::TF_ASYNC);
-    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_SCREEN_SWITCH_STATUS);
-    int32_t err = SendRequest(code, data, reply, option);
-    if (err != NO_ERROR) {
-        ROSEN_LOGE("RSRenderServiceConnectionProxy::SetScreenSwitchStatus: Send Request err.");
-        return;
-    }
-}
-
-void RSRenderServiceConnectionProxy::SetDefaultDeviceRotationOffset(uint32_t offset)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-    if (!data.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor())) {
-        return;
-    }
-    if (!data.WriteUint32(offset)) {
-        return;
-    }
-    option.SetFlags(MessageOption::TF_ASYNC);
-    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_DEFAULT_DEVICE_ROTATION_OFFSET);
-    int32_t err = SendRequest(code, data, reply, option);
-    if (err != NO_ERROR) {
-        ROSEN_LOGE("RSRenderServiceConnectionProxy::SetDefaultDeviceRotationOffset: Send Request err.");
         return;
     }
 }
@@ -3651,6 +3697,28 @@ int32_t RSRenderServiceConnectionProxy::SendRequest(uint32_t code, MessageParcel
         return static_cast<int32_t>(RSInterfaceErrorCode::NULLPTR_ERROR);
     }
     return Remote()->SendRequest(code, data, reply, option);
+}
+
+void RSRenderServiceConnectionProxy::NotifyScreenSwitched(ScreenId id)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    if (!data.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor())) {
+        ROSEN_LOGE("%{public}s: Write InterfaceToken val err.", __func__);
+        return;
+    }
+    if (!data.WriteUint64(id)) {
+        ROSEN_LOGE("%{public}s: write Uint64 val err.", __func__);
+        return;
+    }
+    option.SetFlags(MessageOption::TF_ASYNC);
+    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_SCREEN_SWITCHED);
+    int32_t err = SendRequest(code, data, reply, option);
+    if (err != NO_ERROR) {
+        ROSEN_LOGE("%{public}s: Send Request error.", __func__);
+        return;
+    }
 }
 } // namespace Rosen
 } // namespace OHOS

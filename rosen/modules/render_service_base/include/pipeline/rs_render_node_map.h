@@ -55,6 +55,7 @@ public:
     void MoveRenderNodeMap(
         std::shared_ptr<std::unordered_map<NodeId, std::shared_ptr<RSBaseRenderNode>>> subRenderNodeMap, pid_t pid);
     void TraversalNodes(std::function<void (const std::shared_ptr<RSBaseRenderNode>&)> func) const;
+    void TraversalNodesByPid(int pid, std::function<void (const std::shared_ptr<RSBaseRenderNode>&)> func) const;
     void TraverseSurfaceNodes(std::function<void (const std::shared_ptr<RSSurfaceRenderNode>&)> func) const;
     void TraverseDisplayNodes(std::function<void (const std::shared_ptr<RSDisplayRenderNode>&)> func) const;
     void TraverseCanvasDrawingNodes(std::function<void (const std::shared_ptr<RSCanvasDrawingRenderNode>&)> func) const;
@@ -85,6 +86,12 @@ private:
     RSRenderNodeMap& operator=(const RSRenderNodeMap&&) = delete;
 
 private:
+    std::weak_ptr<RSContext> context_;
+    NodeId entryViewNodeId_ = 0;
+    NodeId negativeScreenNodeId_ = 0;
+    NodeId wallpaperViewNodeId_ = 0;
+    NodeId screenLockWindowNodeId_ = 0;
+
     std::unordered_map<pid_t, std::unordered_map<NodeId, std::shared_ptr<RSBaseRenderNode>>> renderNodeMap_;
     std::unordered_map<NodeId, std::shared_ptr<RSSurfaceRenderNode>> surfaceNodeMap_;
     std::unordered_map<NodeId, std::shared_ptr<RSSurfaceRenderNode>> residentSurfaceNodeMap_;
@@ -92,13 +99,7 @@ private:
     std::unordered_map<NodeId, std::shared_ptr<RSCanvasDrawingRenderNode>> canvasDrawingNodeMap_;
     std::unordered_map<NodeId, bool> purgeableNodeMap_;
 
-    NodeId entryViewNodeId_ = 0;
-    NodeId negativeScreenNodeId_ = 0;
-    NodeId wallpaperViewNodeId_ = 0;
-    NodeId screenLockWindowNodeId_ = 0;
-
     void Initialize(const std::weak_ptr<RSContext>& context);
-    std::weak_ptr<RSContext> context_;
 
     void AddUIExtensionSurfaceNode(const std::shared_ptr<RSSurfaceRenderNode> surfaceNode);
     void RemoveUIExtensionSurfaceNode(const std::shared_ptr<RSSurfaceRenderNode> surfaceNode);

@@ -31,6 +31,10 @@
 #include "command/rs_surface_node_command.h"
 #include "common/rs_background_thread.h"
 #include "drawable/rs_canvas_drawing_render_node_drawable.h"
+#include "feature/capture/rs_uni_ui_capture.h"
+#include "feature/capture/rs_surface_capture_task.h"
+#include "feature/capture/rs_ui_capture_task_parallel.h"
+#include "feature/capture/rs_surface_capture_task_parallel.h"
 #include "include/gpu/GrDirectContext.h"
 #include "info_collection/rs_hdr_collection.h"
 #ifdef RS_ENABLE_GPU
@@ -47,14 +51,10 @@
 #include "pipeline/rs_render_node_map.h"
 #include "pipeline/rs_render_service_listener.h"
 #include "pipeline/rs_surface_buffer_callback_manager.h"
-#include "pipeline/rs_surface_capture_task.h"
-#include "pipeline/rs_surface_capture_task_parallel.h"
-#include "pipeline/rs_ui_capture_task_parallel.h"
 #include "pipeline/rs_surface_render_node.h"
 #include "pipeline/rs_task_dispatcher.h"
 #include "pipeline/rs_uifirst_manager.h"
 #include "pipeline/rs_uni_render_judgement.h"
-#include "pipeline/rs_uni_ui_capture.h"
 #include "pipeline/rs_unmarshal_thread.h"
 #include "pixel_map_from_surface.h"
 #include "platform/common/rs_log.h"
@@ -63,7 +63,7 @@
 #include "render/rs_typeface_cache.h"
 
 #ifdef TP_FEATURE_ENABLE
-#include "touch_screen/touch_screen.h"
+#include "screen_manager/touch_screen.h"
 #endif
 
 #ifdef RS_ENABLE_VK
@@ -75,6 +75,7 @@ namespace Rosen {
 namespace {
 constexpr int SLEEP_TIME_US = 1000;
 const std::string REGISTER_NODE = "RegisterNode";
+const std::string APS_SET_VSYNC = "APS_SET_VSYNC";
 }
 // we guarantee that when constructing this object,
 // all these pointers are valid, so will not check them.
@@ -209,6 +210,7 @@ void RSRenderServiceConnection::CleanAll(bool toDelete) noexcept
             connection->mainThread_->UnRegisterOcclusionChangeCallback(connection->remotePid_);
             connection->mainThread_->ClearSurfaceOcclusionChangeCallback(connection->remotePid_);
             connection->mainThread_->UnRegisterUIExtensionCallback(connection->remotePid_);
+            connection->mainThread_->GetRSVsyncRateReduceManager().ClearWindowLinkersMap(connection->remotePid_);
         }).wait();
     RSSurfaceBufferCallbackManager::Instance().UnregisterSurfaceBufferCallback(remotePid_);
     HgmTaskHandleThread::Instance().ScheduleTask([pid = remotePid_] () {
@@ -316,6 +318,13 @@ void RSRenderServiceConnection::ExecuteSynchronousTask(const std::shared_ptr<RSS
 {
     if (task == nullptr || mainThread_ == nullptr) {
         RS_LOGW("RSRenderServiceConnection::ExecuteSynchronousTask, task or main thread is null!");
+        return;
+    }
+    auto screenManager = CreateOrGetScreenManager();
+    if (screenManager && screenManager->IsScreenPoweringOn() && task->GetType() == RS_NODE_SYNCHRONOUS_READ_PROPERTY) {
+        RS_LOGI("RSRenderServiceConnection::ExecuteSynchronousTask, when screen is powering on, the task is executed "
+                "in the IPC thread");
+        task->Process(mainThread_->GetContext());
         return;
     }
     // After a synchronous task times out, it will no longer be executed.
@@ -467,7 +476,8 @@ sptr<IVSyncConnection> RSRenderServiceConnection::CreateVSyncConnection(const st
                 HgmCore::Instance().SetHgmTaskFlag(true);
             }
         };
-        mainThread_->ScheduleTask([weakThis = wptr<RSRenderServiceConnection>(this), id, observer]() {
+        mainThread_->ScheduleTask([weakThis = wptr<RSRenderServiceConnection>(this), id, observer,
+            &windowNodeId]() {
             sptr<RSRenderServiceConnection> connection = weakThis.promote();
             if (connection == nullptr || connection->mainThread_ == nullptr) {
                 return;
@@ -476,6 +486,7 @@ sptr<IVSyncConnection> RSRenderServiceConnection::CreateVSyncConnection(const st
             auto& context = connection->mainThread_->GetContext();
             auto& frameRateLinkerMap = context.GetMutableFrameRateLinkerMap();
             frameRateLinkerMap.RegisterFrameRateLinker(linker);
+            connection->mainThread_->GetRSVsyncRateReduceManager().SetWindowLinkersMap(windowNodeId, id);
         }).wait();
         conn->id_ = id;
         RS_LOGD("CreateVSyncConnection connect id: %{public}" PRIu64, id);
@@ -623,6 +634,15 @@ int32_t RSRenderServiceConnection::SetVirtualScreenSecurityExemptionList(
         return StatusCode::SCREEN_NOT_FOUND;
     }
     return screenManager_->SetVirtualScreenSecurityExemptionList(id, securityExemptionList);
+}
+
+int32_t RSRenderServiceConnection::SetScreenSecurityMask(ScreenId id,
+    std::shared_ptr<Media::PixelMap> securityMask)
+{
+    if (!screenManager_) {
+        return StatusCode::SCREEN_NOT_FOUND;
+    }
+    return screenManager_->SetScreenSecurityMask(id, std::move(securityMask));
 }
 
 int32_t RSRenderServiceConnection::SetMirrorScreenVisibleRect(ScreenId id, const Rect& mainScreenRect)
@@ -926,9 +946,35 @@ void RSRenderServiceConnection::MarkPowerOffNeedProcessOneFrame()
 
 void RSRenderServiceConnection::RepaintEverything()
 {
-    RS_LOGI("RepaintEverything, call SetDirtyflag, ForceRefreshForUni");
-    RSMainThread::Instance()->SetDirtyFlag();
-    RSMainThread::Instance()->ForceRefreshForUni();
+    if (mainThread_ == nullptr) {
+        RS_LOGE("RepaintEverything, mainThread_ is null, return");
+    }
+    auto task = []() -> void {
+        RS_LOGI("RepaintEverything, setDirtyflag, forceRefresh in mainThread");
+        RSMainThread::Instance()->SetDirtyFlag();
+        RSMainThread::Instance()->ForceRefreshForUni();
+    };
+    mainThread_->PostTask(task);
+}
+
+void RSRenderServiceConnection::ForceRefreshOneFrameWithNextVSync()
+{
+    if (!mainThread_) {
+        RS_LOGE("%{public}s mainThread_ is nullptr, return", __func__);
+        return;
+    }
+
+    auto task = [weakThis = wptr<RSRenderServiceConnection>(this)]() -> void {
+        sptr<RSRenderServiceConnection> connection = weakThis.promote();
+        if (connection == nullptr || connection->mainThread_ == nullptr) {
+            return;
+        }
+
+        RS_LOGI("ForceRefreshOneFrameWithNextVSync, setDirtyflag, forceRefresh in mainThread");
+        connection->mainThread_->SetDirtyFlag();
+        connection->mainThread_->RequestNextVSync();
+    };
+    mainThread_->PostTask(task);
 }
 
 void RSRenderServiceConnection::DisablePowerOffRenderControl(ScreenId id)
@@ -952,6 +998,7 @@ void RSRenderServiceConnection::DisablePowerOffRenderControl(ScreenId id)
 void RSRenderServiceConnection::SetScreenPowerStatus(ScreenId id, ScreenPowerStatus status)
 {
     if (screenManager_ == nullptr || mainThread_ == nullptr) {
+        RS_LOGE("%{public}s screenManager or mainThread is null, id: %{public}" PRIu64, __func__, id);
         return;
     }
     auto renderType = RSUniRenderJudgement::GetUniRenderEnabledType();
@@ -1095,14 +1142,15 @@ void RSRenderServiceConnection::TakeSurfaceCapture(NodeId id, sptr<RSISurfaceCap
     mainThread_->PostTask(captureTask);
 }
 
-void RSRenderServiceConnection::SetWindowFreezeImmediately(
-    NodeId id, bool isFreeze, sptr<RSISurfaceCaptureCallback> callback, const RSSurfaceCaptureConfig& captureConfig)
+void RSRenderServiceConnection::SetWindowFreezeImmediately(NodeId id, bool isFreeze,
+    sptr<RSISurfaceCaptureCallback> callback, const RSSurfaceCaptureConfig& captureConfig,
+    const RSSurfaceCaptureBlurParam& blurParam)
 {
     if (!mainThread_) {
         RS_LOGE("%{public}s mainThread_ is nullptr", __func__);
         return;
     }
-    std::function<void()> setWindowFreezeTask = [id, isFreeze, callback, captureConfig]() -> void {
+    std::function<void()> setWindowFreezeTask = [id, isFreeze, callback, captureConfig, blurParam]() -> void {
         auto node = RSMainThread::Instance()->GetContext().GetNodeMap().GetRenderNode(id);
         if (node == nullptr) {
             RS_LOGE("RSRenderServiceConnection::SetWindowFreezeImmediately failed, node is nullptr");
@@ -1117,7 +1165,7 @@ void RSRenderServiceConnection::SetWindowFreezeImmediately(
                 RSIRenderServiceConnectionInterfaceCodeAccessVerifier::codeEnumTypeName_ +
                 "::SET_WINDOW_FREEZE_IMMEDIATELY");
             RSSurfaceCaptureTaskParallel::CheckModifiers(id, captureConfig.useCurWindow);
-            RSSurfaceCaptureTaskParallel::Capture(id, callback, captureConfig, isSystemCalling, isFreeze);
+            RSSurfaceCaptureTaskParallel::Capture(id, callback, captureConfig, isSystemCalling, isFreeze, blurParam);
         } else {
             RSSurfaceCaptureTaskParallel::ClearCacheImageByFreeze(id);
         }
@@ -1941,7 +1989,14 @@ uint32_t RSRenderServiceConnection::SetScreenActiveRect(
         .w = activeRect.w,
         .h = activeRect.h,
     };
-    return screenManager_->SetScreenActiveRect(id, dstActiveRect);
+    auto result = screenManager_->SetScreenActiveRect(id, dstActiveRect);
+    if (result != StatusCode::SUCCESS) {
+        RS_LOGE("SetScreenActiveRect Fail with result: %{public}d", result);
+    }
+    HgmTaskHandleThread::Instance().PostTask([id, dstActiveRect]() {
+            OHOS::Rosen::HgmCore::Instance().NotifyScreenRectFrameRateChange(id, dstActiveRect);
+    });
+    return result;
 }
 
 int32_t RSRenderServiceConnection::RegisterOcclusionChangeCallback(sptr<RSIOcclusionChangeCallback> callback)
@@ -2158,6 +2213,14 @@ void RSRenderServiceConnection::NotifyRefreshRateEvent(const EventInfo& eventInf
     });
 }
 
+void RSRenderServiceConnection::NotifySoftVsyncEvent(uint32_t pid, uint32_t rateDiscount)
+{
+    if (!appVSyncDistributor_) {
+        return;
+    }
+    appVSyncDistributor_->SetQosVSyncRateByPidPublic(pid, rateDiscount, true);
+}
+
 void RSRenderServiceConnection::NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt)
 {
     auto frameRateMgr = HgmCore::Instance().GetFrameRateMgr();
@@ -2270,18 +2333,6 @@ void RSRenderServiceConnection::SetCacheEnabledForRotation(bool isEnabled)
         RSSystemProperties::SetCacheEnabledForRotation(isEnabled);
     };
     mainThread_->PostTask(task);
-}
-
-void RSRenderServiceConnection::SetScreenSwitchStatus(bool flag)
-{
-    RS_LOGD("RSRenderServiceConnection::SetScreenSwitchStatus %{public}d", flag);
-    RS_TRACE_NAME_FMT("SetScreenSwitchStatus %d", flag);
-    RSSystemProperties::SetScreenSwitchStatus(flag);
-}
-
-void RSRenderServiceConnection::SetDefaultDeviceRotationOffset(uint32_t offset)
-{
-    RSSystemProperties::SetDefaultDeviceRotationOffset(offset);
 }
 
 std::vector<ActiveDirtyRegionInfo> RSRenderServiceConnection::GetActiveDirtyRegionInfo()
@@ -2498,6 +2549,18 @@ void RSRenderServiceConnection::SetLayerTop(const std::string &nodeIdStr, bool i
         connection->mainThread_->RequestNextVSync();
     };
     mainThread_->PostTask(task);
+}
+
+void RSRenderServiceConnection::NotifyScreenSwitched(ScreenId id)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (!screenManager_) {
+        RS_LOGE("RSRenderServiceConnection::NotifyScreenSwitched screenManager_ is nullptr");
+        return;
+    }
+    RS_LOGD("RSRenderServiceConnection::NotifyScreenSwitched ScreenId: %{public}" PRIu64, id);
+    RS_TRACE_NAME_FMT("NotifyScreenSwitched, ScreenId: %" PRIu64, id);
+    screenManager_->SetScreenSwitchStatus(true, id);
 }
 } // namespace Rosen
 } // namespace OHOS

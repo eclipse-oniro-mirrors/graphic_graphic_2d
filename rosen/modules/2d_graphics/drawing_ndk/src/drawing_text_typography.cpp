@@ -436,13 +436,10 @@ void OH_Drawing_TypographyHandlerAddText(OH_Drawing_TypographyCreate* handler, c
     if (!text || !handler) {
         LOGE("null text");
         return;
-    } else if (!IsUtf8(text, strlen(text))) {
-        LOGE("text is not utf-8");
-        return;
     }
 
-    const std::u16string wideText =
-        std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> {}.from_bytes(text);
+    const std::u16string wideText = Str8ToStr16ByIcu(text);
+
     ConvertToOriginalText<TypographyCreate>(handler)->AppendText(wideText);
 }
 
@@ -939,6 +936,10 @@ void OH_Drawing_SetTypographyTextWordBreakType(OH_Drawing_TypographyStyle* style
         }
         case WORD_BREAK_TYPE_BREAK_WORD: {
             rosenWordBreakType = WordBreakType::BREAK_WORD;
+            break;
+        }
+        case WORD_BREAK_TYPE_BREAK_HYPHEN: {
+            rosenWordBreakType = WordBreakType::BREAK_HYPHEN;
             break;
         }
         default: {

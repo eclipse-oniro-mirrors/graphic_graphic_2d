@@ -64,6 +64,7 @@ static constexpr std::array descriptorCheckList = {
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::ADD_VIRTUAL_SCREEN_BLACKLIST),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REMOVE_VIRTUAL_SCREEN_BLACKLIST),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_SECURITY_EXEMPTION_LIST),
+    static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_SCREEN_SECURITY_MASK),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_MIRROR_SCREEN_VISIBLE_RECT),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REMOVE_VIRTUAL_SCREEN),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_SCREEN_CHANGE_CALLBACK),
@@ -79,6 +80,7 @@ static constexpr std::array descriptorCheckList = {
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_SHOW_REFRESH_RATE_ENABLED),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::MARK_POWER_OFF_NEED_PROCESS_ONE_FRAME),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REPAINT_EVERYTHING),
+    static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::FORCE_REFRESH_ONE_FRAME_WITH_NEXT_VSYNC),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::DISABLE_RENDER_CONTROL_SCREEN),
 #ifdef OHOS_BUILD_ENABLE_MAGICCURSOR
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_POINTER_COLOR_INVERSION_CONFIG),
@@ -137,6 +139,7 @@ static constexpr std::array descriptorCheckList = {
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_LIGHT_FACTOR_STATUS),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_PACKAGE_EVENT),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_REFRESH_RATE_EVENT),
+    static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_SOFT_VSYNC_EVENT),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REPORT_EVENT_RESPONSE),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REPORT_EVENT_COMPLETE),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REPORT_EVENT_JANK_FRAME),
@@ -149,8 +152,7 @@ static constexpr std::array descriptorCheckList = {
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::UNREGISTER_SURFACE_OCCLUSION_CHANGE_CALLBACK),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REGISTER_HGM_CFG_CALLBACK),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_ROTATION_CACHE_ENABLED),
-    static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_SCREEN_SWITCH_STATUS),
-    static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_DEFAULT_DEVICE_ROTATION_OFFSET),
+    static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_SCREEN_SWITCHED),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_TP_FEATURE_CONFIG),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_USING_STATUS),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REFRESH_RATE_MODE_CHANGE_CALLBACK),
@@ -627,6 +629,25 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             break;
         }
         case static_cast<uint32_t>(
+            RSIRenderServiceConnectionInterfaceCode::SET_SCREEN_SECURITY_MASK): {
+            // read the parcel data.
+            ScreenId id{INVALID_SCREEN_ID};
+            bool enable{false};
+            if (!data.ReadUint64(id) || !data.ReadBool(enable)) {
+                ret = ERR_INVALID_DATA;
+                break;
+            }
+            std::shared_ptr<Media::PixelMap> securityMask{nullptr};
+            if (enable) {
+                securityMask = std::shared_ptr<Media::PixelMap>(data.ReadParcelable<Media::PixelMap>());
+            }
+            int32_t result = SetScreenSecurityMask(id, std::move(securityMask));
+            if (!reply.WriteInt32(result)) {
+                ret = ERR_INVALID_REPLY;
+            }
+            break;
+        }
+        case static_cast<uint32_t>(
             RSIRenderServiceConnectionInterfaceCode::SET_MIRROR_SCREEN_VISIBLE_RECT): {
             // read the parcel data.
             ScreenId id = INVALID_SCREEN_ID;
@@ -810,13 +831,16 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             uint32_t max{0};
             uint32_t preferred{0};
             uint32_t type{0};
+            uint32_t componentScene{0};
             int32_t animatorExpectedFrameRate{0};
             if (!data.ReadUint32(min) || !data.ReadUint32(max) || !data.ReadUint32(preferred) ||
-                !data.ReadUint32(type) || !data.ReadInt32(animatorExpectedFrameRate)) {
+                !data.ReadUint32(type) || !data.ReadUint32(componentScene) ||
+                !data.ReadInt32(animatorExpectedFrameRate)) {
                 ret = ERR_INVALID_DATA;
                 break;
             }
-            SyncFrameRateRange(id, {min, max, preferred, type}, animatorExpectedFrameRate);
+            SyncFrameRateRange(id, {min, max, preferred, type, static_cast<ComponentScene>(componentScene)},
+                animatorExpectedFrameRate);
             break;
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::UNREGISTER_FRAME_RATE_LINKER): {
@@ -925,8 +949,11 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             break;
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REPAINT_EVERYTHING): {
-            RS_LOGI("call RepaintEverything");
             RepaintEverything();
+            break;
+        }
+        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::FORCE_REFRESH_ONE_FRAME_WITH_NEXT_VSYNC): {
+            ForceRefreshOneFrameWithNextVSync();
             break;
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::DISABLE_RENDER_CONTROL_SCREEN): {
@@ -1004,6 +1031,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             }
             sptr<RSISurfaceCaptureCallback> cb;
             RSSurfaceCaptureConfig captureConfig;
+            RSSurfaceCaptureBlurParam blurParam;
             if (isFreeze) {
                 auto remoteObject = data.ReadRemoteObject();
                 if (remoteObject == nullptr) {
@@ -1022,8 +1050,13 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                     RS_LOGE("RSRenderServiceConnectionStub::SET_WINDOW_FREEZE_IMMEDIATELY write captureConfig failed");
                     break;
                 }
+                if (!ReadSurfaceCaptureBlurParam(blurParam, data)) {
+                    ret = ERR_INVALID_DATA;
+                    RS_LOGE("RSRenderServiceConnectionStub::TakeSurfaceCapture read blurParam failed");
+                    break;
+                }
             }
-            SetWindowFreezeImmediately(id, isFreeze, cb, captureConfig);
+            SetWindowFreezeImmediately(id, isFreeze, cb, captureConfig, blurParam);
             break;
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_POINTER_POSITION): {
@@ -2162,6 +2195,16 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             NotifyRefreshRateEvent(eventInfo);
             break;
         }
+        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_SOFT_VSYNC_EVENT) : {
+            uint32_t pid{0};
+            uint32_t rateDiscount{0};
+            if (!data.ReadUint32(pid) || !data.ReadUint32(rateDiscount)) {
+                ret = ERR_INVALID_DATA;
+                break;
+            }
+            NotifySoftVsyncEvent(pid, rateDiscount);
+            break;
+        }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_DYNAMIC_MODE_EVENT) : {
             bool enableDynamicMode{false};
             if (!data.ReadBool(enableDynamicMode)) {
@@ -2265,24 +2308,6 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 break;
             }
             SetCacheEnabledForRotation(isEnabled);
-            break;
-        }
-        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_SCREEN_SWITCH_STATUS) : {
-            bool flag = false;
-            if (!data.ReadBool(flag)) {
-                ret = ERR_INVALID_REPLY;
-                break;
-            }
-            SetScreenSwitchStatus(flag);
-            break;
-        }
-        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_DEFAULT_DEVICE_ROTATION_OFFSET) : {
-            uint32_t offset{0};
-            if (!data.ReadUint32(offset)) {
-                ret = ERR_INVALID_DATA;
-                break;
-            }
-            SetDefaultDeviceRotationOffset(offset);
             break;
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_ACTIVE_DIRTY_REGION_INFO) : {
@@ -2548,6 +2573,15 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             SetLayerTop(nodeIdStr, isTop);
             break;
         }
+        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_SCREEN_SWITCHED) : {
+            ScreenId id{INVALID_SCREEN_ID};
+            if (!data.ReadUint64(id)) {
+                ret = ERR_INVALID_DATA;
+                break;
+            }
+            NotifyScreenSwitched(id);
+            break;
+        }
         default: {
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
         }
@@ -2586,7 +2620,11 @@ bool RSRenderServiceConnectionStub::ReadSurfaceCaptureConfig(RSSurfaceCaptureCon
     uint8_t captureType { 0 };
     if (!data.ReadFloat(captureConfig.scaleX) || !data.ReadFloat(captureConfig.scaleY) ||
         !data.ReadBool(captureConfig.useDma) || !data.ReadBool(captureConfig.useCurWindow) ||
-        !data.ReadUint8(captureType) || !data.ReadBool(captureConfig.isSync)) {
+        !data.ReadUint8(captureType) || !data.ReadBool(captureConfig.isSync) ||
+        !data.ReadFloat(captureConfig.mainScreenRect.left_) ||
+        !data.ReadFloat(captureConfig.mainScreenRect.top_) ||
+        !data.ReadFloat(captureConfig.mainScreenRect.right_) ||
+        !data.ReadFloat(captureConfig.mainScreenRect.bottom_)) {
         return false;
     }
     captureConfig.captureType = static_cast<SurfaceCaptureType>(captureType);

@@ -182,27 +182,9 @@ void RSSystemProperties::SetCacheEnabledForRotation(bool flag)
 {
 }
 
-void RSSystemProperties::SetDefaultDeviceRotationOffset(uint32_t offset)
-{
-}
-
-uint32_t RSSystemProperties::GetDefaultDeviceRotationOffset()
-{
-    return {};
-}
-
 bool RSSystemProperties::GetCacheEnabledForRotation()
 {
     return {};
-}
-
-void RSSystemProperties::SetScreenSwitchStatus(bool flag)
-{
-}
-
-bool RSSystemProperties::GetScreenSwitchStatus()
-{
-    return false;
 }
 
 ParallelRenderingType RSSystemProperties::GetPrepareParallelRenderingEnabled()
@@ -341,6 +323,16 @@ float RSSystemProperties::GetHpsBlurNoiseFactor()
 }
 
 bool RSSystemProperties::GetMESABlurFuzedEnabled()
+{
+    return false;
+}
+
+int RSSystemProperties::GetSimplifiedMesaEnabled()
+{
+    return 0;
+}
+
+bool RSSystemProperties::GetForceKawaseDisabled()
 {
     return false;
 }
@@ -516,6 +508,11 @@ SubTreePrepareCheckType RSSystemProperties::GetSubTreePrepareCheckType()
     return SubTreePrepareCheckType::ENABLED;
 }
 
+bool RSSystemProperties::GetSingleDrawableLockerEnabled()
+{
+    return false;
+}
+
 bool RSSystemProperties::GetTargetUIFirstDfxEnabled(std::vector<std::string>& SurfaceNames)
 {
     return false;
@@ -581,7 +578,7 @@ bool RSSystemProperties::GetDrmMarkedFilterEnabled()
     return false;
 }
 
-bool RSSystemProperties::GetDisableHebcEnabled()
+bool RSSystemProperties::GetHveFilterEnabled()
 {
     return false;
 }

@@ -106,6 +106,10 @@ template("drawing_ndk_source_set") {
     }
     if (rs_enable_gpu) {
       defines += [ "RS_ENABLE_GPU" ]
+      sources += [
+        "$drawing_utils_root/drawing_gpu_context_manager.cpp",
+        "$drawing_utils_root/drawing_surface_utils.cpp",
+      ]
     }
     if (is_emulator) {
       defines += [ "ROSEN_EMULATOR" ]
@@ -114,6 +118,7 @@ template("drawing_ndk_source_set") {
     include_dirs = [
       "$drawing_utils_root",
       "$graphic_2d_root/rosen/modules/render_service_base/include",
+      "$graphic_2d_root/rosen/modules/render_service_base/src",
       "$rosen_root/modules/texgine/src",
     ]
 

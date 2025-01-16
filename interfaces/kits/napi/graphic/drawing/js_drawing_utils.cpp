@@ -33,6 +33,8 @@ bool JsDrawingTestUtils::closeDrawingTest_ = true;
 #endif
 
 namespace Drawing {
+const char* const JSCOLOR[4] = {"alpha", "red", "green", "blue"};
+
 void BindNativeFunction(napi_env env, napi_value object, const char* name, const char* moduleName, napi_callback func)
 {
     std::string fullName;
@@ -100,6 +102,24 @@ bool ConvertFromJsColor(napi_env env, napi_value jsValue, int32_t* argb, size_t 
         napi_get_named_property(env, jsValue, g_argbString[idx], &tempValue);
         if (napi_get_value_int32(env, tempValue, curChannel) != napi_ok ||
             *curChannel < 0 || *curChannel > Color::RGB_MAX) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool ConvertFromAdaptHexJsColor(napi_env env, napi_value jsValue, Drawing::ColorQuad& jsColor)
+{
+    bool isJsColor = false;
+    napi_has_named_property(env, jsValue, JSCOLOR[0], &isJsColor);
+    if (isJsColor) {
+        int32_t argb[ARGC_FOUR] = {0};
+        if (!ConvertFromJsColor(env, jsValue, argb, ARGC_FOUR)) {
+            return false;
+        }
+        jsColor = Color::ColorQuadSetARGB(argb[ARGC_ZERO], argb[ARGC_ONE], argb[ARGC_TWO], argb[ARGC_THREE]);
+    } else {
+        if (napi_get_value_uint32(env, jsValue, &jsColor) != napi_ok) {
             return false;
         }
     }
@@ -197,6 +217,24 @@ bool ConvertFromJsPointsArray(napi_env env, napi_value array, Drawing::Point* po
             return false;
         }
         if (!GetDrawingPointFromJsValue(env, tempPoint, points[i])) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool ConvertFromJsPointsArrayOffset(napi_env env, napi_value array, Drawing::Point* points,
+    uint32_t count, uint32_t offset)
+{
+    if (points == nullptr) {
+        return false;
+    }
+    for (uint32_t i = offset; i < offset + count; i++)  {
+        napi_value tempPoint = nullptr;
+        if (napi_get_element(env, array, i, &tempPoint) != napi_ok) {
+            return false;
+        }
+        if (!GetDrawingPointFromJsValue(env, tempPoint, points[i - offset])) {
             return false;
         }
     }

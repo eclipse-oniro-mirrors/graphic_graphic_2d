@@ -132,11 +132,26 @@ public:
         screenInfo_ = screenInfo;
     }
 
+    void PredictDrawLargeAreaBlur(RSRenderNode& node, std::pair<bool, bool>& predictDrawLargeAreaBlur);
+    void GetPredictDrawLargeAreaBlur(std::pair<bool, bool>& predictDrawLargeAreaBlur)
+    {
+        predictDrawLargeAreaBlur.first = predictDrawLargeAreaBlur_.first;
+        predictDrawLargeAreaBlur.second = predictDrawLargeAreaBlur_.second;
+    }
+
+    void ResetPredictDrawLargeAreaBlur()
+    {
+        predictDrawLargeAreaBlur_.first = false;
+        predictDrawLargeAreaBlur_.second = false;
+    }
+
     // Use in updating hwcnode hardware state with background alpha
     void UpdateHardwareStateByHwcNodeBackgroundAlpha(const std::vector<std::weak_ptr<RSSurfaceRenderNode>>& hwcNodes);
 
     bool IsNodeAboveInsideOfNodeBelow(const RectI& rectAbove, std::list<RectI>& hwcNodeRectList);
     // Use end
+
+    void UpdateTransparentHwcNodeEnable(const std::vector<std::weak_ptr<RSSurfaceRenderNode>>& hwcNodes);
 
     void SurfaceOcclusionCallbackToWMS();
 
@@ -149,7 +164,7 @@ private:
     // restore node's flag and filter dirty collection
     void PostPrepare(RSRenderNode& node, bool subTreeSkipped = false);
     void UpdateNodeVisibleRegion(RSSurfaceRenderNode& node);
-    void CalculateOcclusion(RSSurfaceRenderNode& node);
+    void CalculateOpaqueAndTransparentRegion(RSSurfaceRenderNode& node);
 
     void CheckFilterCacheNeedForceClearOrSave(RSRenderNode& node);
     void UpdateOccludedStatusWithFilterNode(std::shared_ptr<RSSurfaceRenderNode>& surfaceNode) const;
@@ -216,9 +231,8 @@ private:
     void UpdateDstRect(RSSurfaceRenderNode& node, const RectI& absRect, const RectI& clipRect);
     void UpdateHwcNodeByTransform(RSSurfaceRenderNode& node, const Drawing::Matrix& totalMatrix);
     void UpdateHwcNodeEnableByRotateAndAlpha(std::shared_ptr<RSSurfaceRenderNode>& node);
-    void ProcessAncoNode(std::shared_ptr<RSSurfaceRenderNode>& hwcNodePtr);
-    void InitAncoStatus();
-    void UpdateAncoNodeHWCDisabledState();
+    void ProcessAncoNode(std::shared_ptr<RSSurfaceRenderNode>& hwcNodePtr, bool& ancoHasGpu);
+    void UpdateAncoNodeHWCDisabledState(std::unordered_set<std::shared_ptr<RSSurfaceRenderNode>>& ancoNodes);
     void UpdateHwcNodeEnableByHwcNodeBelowSelfInApp(std::vector<RectI>& hwcRects,
         std::shared_ptr<RSSurfaceRenderNode>& hwcNode);
     void UpdateChildHwcNodeEnableByHwcNodeBelow(std::vector<RectI>& hwcRects,
@@ -235,6 +249,7 @@ private:
     void UpdateHwcNodeEnable();
     void UpdateHwcNodeEnableByNodeBelow();
     void PrevalidateHwcNode();
+    bool PrepareForCloneNode(RSSurfaceRenderNode& node);
     void PrepareForCrossNode(RSSurfaceRenderNode& node);
 
     // use in QuickPrepareSurfaceRenderNode, update SurfaceRenderNode's uiFirst status
@@ -433,6 +448,9 @@ private:
     bool ancoHasGpu_ = false;
     std::unordered_set<std::shared_ptr<RSSurfaceRenderNode>> ancoNodes_;
     uint32_t layerNum_ = 0;
+    std::pair<bool, bool> predictDrawLargeAreaBlur_ = {false, false};
+
+    NodeId clonedSourceNodeId_ = INVALID_NODEID;
 };
 } // namespace Rosen
 } // namespace OHOS
