@@ -39,7 +39,8 @@ class XMLParserBase {
 public:
     virtual ~XMLParserBase() = default;
 
-    virtual int32_t ParseFeatureParam(FeatureParamMapType featureMap, xmlNode &node){
+    virtual int32_t ParseFeatureParam(FeatureParamMapType featureMap, xmlNode &node)
+    {
         return 0;
     };
 

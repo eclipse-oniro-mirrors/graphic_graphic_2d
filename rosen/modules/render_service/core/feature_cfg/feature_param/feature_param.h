@@ -25,7 +25,7 @@
 #include "platform/common/rs_log.h"
 
 namespace OHOS::Rosen {
-static std::vector<std::string> featureModules = {"HdrConfig", "DrmConfig", "HwcConfig"};
+std::vector<std::string> featureModules = {"HdrConfig", "DrmConfig", "HwcConfig"};
 
 enum FeatureModuleEnum {
     HDR = 0,
@@ -47,7 +47,6 @@ enum ParseErrCode {
 };
 
 class FeatureParam {
-
 public:
     FeatureParam() = default;
     ~FeatureParam() = default;

@@ -60,7 +60,7 @@ int32_t HWCParamParse::ParseHwcInternal(FeatureParamMapType featureMap, xmlNode 
         if (name == "HwcEnabled") {
             hwcParam_->SetHwcEnable(isEnabled);
             RS_LOGD("HWCParamParse parse HwcEnabled %{public}d", hwcParam_->IsHwcEnable());
-        } else if (name == "HwcMirrorEnabled"){
+        } else if (name == "HwcMirrorEnabled") {
             hwcParam_->SetHwcMirrorEnable(isEnabled);
             RS_LOGD("HWCParamParse parse HwcMirrorEnabled %{public}d", hwcParam_->IsHwcMirrorEnable());
         }

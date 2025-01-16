@@ -70,7 +70,7 @@ std::shared_ptr<FeatureParam> GraphicFeatureParamManager::GetFeatureParam(std::s
 
     auto iter = featureParamMap_.find(featureName);
     if (iter == featureParamMap_.end()) {
-        RS_LOGE("GraphicFeatureParamManager %{public}s : getFeatureParam featureName: %{public}s failed", __func__, featureName.c_str());
+        RS_LOGE("GraphicFeatureParamManager %{public}s : %{public}s failed", __func__, featureName.c_str());
         return nullptr;
     }
 
