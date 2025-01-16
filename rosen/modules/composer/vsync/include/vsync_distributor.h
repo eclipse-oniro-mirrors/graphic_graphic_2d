@@ -236,12 +236,12 @@ private:
         int64_t &period, int64_t &vsyncCount);
     sptr<VSyncController> dvsyncController_ = nullptr;
     bool dvsyncControllerEnabled_ = false;
+    // End of DVSync
     int64_t beforeWaitRnvTime_ = 0;
     int64_t afterWaitRnvTime_ = 0;
     int64_t lastNotifyTime_ = 0;
     std::atomic<int64_t> beforePostEvent_ = 0;
     std::atomic<int64_t> startPostEvent_ = 0;
-    // End of DVSync
 };
 } // namespace Rosen
 } // namespace OHOS
