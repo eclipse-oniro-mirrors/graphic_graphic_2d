@@ -3932,22 +3932,22 @@ void RSMainThread::ForceRefreshForUni(bool needDelay)
             auto now = std::chrono::duration_cast<std::chrono::nanoseconds>(
                 std::chrono::steady_clock::now().time_since_epoch()).count();
             RS_PROFILER_PATCH_TIME(now);
+            timestamp_ = timestamp_ + (now - curTime_);
             int64_t vsyncPeriod = 0;
             VsyncError ret = VSYNC_ERROR_UNKOWN;
             if (receiver_) {
                 ret = receiver_->GetVSyncPeriod(vsyncPeriod);
             }
-            if (ret != VSYNC_ERROR_OK || vsyncPeriod == 0) {
-                RequestNextVSync();
-                return;
+            if (ret == VSYNC_ERROR_OK && vsyncPeriod > 0) {
+                lastFastComposeTimeStampDiff_ = (now - curTime_) % vsyncPeriod;
+                lastFastComposeTimeStamp_ = timestamp_;
+                RS_TRACE_NAME_FMT("RSMainThread::ForceRefreshForUni record"
+                    "Time diff: %" PRIu64, lastFastComposeTimeStampDiff_);
+                // When fast compose by buffer, pipeline still need to delay to maintain smooth rendering
+                isForceRefresh_ = !needDelay;
+            } else {
+                isForceRefresh_ = true;
             }
-            timestamp_ = timestamp_ + (now - curTime_);
-            lastFastComposeTimeStampDiff_ = (now - curTime_) % vsyncPeriod;
-            lastFastComposeTimeStamp_ = timestamp_;
-            RS_TRACE_NAME_FMT("RSMainThread::ForceRefreshForUni record"
-                "Time diff: %" PRIu64, lastFastComposeTimeStampDiff_);
-            // When fast compose by buffer, pipeline still need to delay to maintain smooth rendering
-            isForceRefresh_ = !needDelay;
             curTime_ = now;
             // Not triggered by vsync, so we set frameCount to 0.
             SetFrameInfo(0, isForceRefresh_);
