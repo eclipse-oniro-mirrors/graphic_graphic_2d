@@ -17,7 +17,7 @@
 
 namespace OHOS::Rosen {
 
-int32_t HWCParamParse::ParseFeatureParam(FeatureParamMapType featureMap, xmlNode &node)
+int32_t HWCParamParse::ParseFeatureParam(FeatureParamMapType &featureMap, xmlNode &node)
 {
     RS_LOGI("HWCParamParse start");
     xmlNode *currNode = &node;
@@ -40,7 +40,7 @@ int32_t HWCParamParse::ParseFeatureParam(FeatureParamMapType featureMap, xmlNode
     return PARSE_EXEC_SUCCESS;
 }
 
-int32_t HWCParamParse::ParseHwcInternal(FeatureParamMapType featureMap, xmlNode &node)
+int32_t HWCParamParse::ParseHwcInternal(FeatureParamMapType &featureMap, xmlNode &node)
 {
     xmlNode *currNode = &node;
 
@@ -59,21 +59,21 @@ int32_t HWCParamParse::ParseHwcInternal(FeatureParamMapType featureMap, xmlNode 
         bool isEnabled = ParseFeatureSwitch(val);
         if (name == "HwcEnabled") {
             hwcParam_->SetHwcEnable(isEnabled);
-            RS_LOGD("HWCParamParse parse HwcEnabled %{public}d", hwcParam_->IsHwcEnable());
+            RS_LOGI("HWCParamParse parse HwcEnabled %{public}d", hwcParam_->IsHwcEnable());
         } else if (name == "HwcMirrorEnabled") {
             hwcParam_->SetHwcMirrorEnable(isEnabled);
-            RS_LOGD("HWCParamParse parse HwcMirrorEnabled %{public}d", hwcParam_->IsHwcMirrorEnable());
+            RS_LOGI("HWCParamParse parse HwcMirrorEnabled %{public}d", hwcParam_->IsHwcMirrorEnable());
         }
     } else if (xmlParamType == PARSE_XML_FEATURE_MULTIPARAM) {
         if (ParseFeatureMultiParamForApp(*currNode, name) != PARSE_EXEC_SUCCESS) {
-            RS_LOGD("HWCParamParse parse MultiParam fail");
+            RS_LOGE("HWCParamParse parse MultiParam fail");
         }
     }
 
     return PARSE_EXEC_SUCCESS;
 }
 
-int32_t HWCParamParse::ParseFeatureMultiParamForApp(xmlNode &node, std::string name)
+int32_t HWCParamParse::ParseFeatureMultiParamForApp(xmlNode &node, std::string &name)
 {
     xmlNode *currNode = &node;
     if (currNode->xmlChildrenNode == nullptr) {
@@ -87,6 +87,10 @@ int32_t HWCParamParse::ParseFeatureMultiParamForApp(xmlNode &node, std::string n
         }
         auto appName = ExtractPropertyValue("name", *currNode);
         auto val = ExtractPropertyValue("value", *currNode);
+        if (!IsNumber(val)) {
+            RS_LOGE("HWCParamParse ParseFeatureMultiParam val not number");
+            return PARSE_ERROR;
+        }
         if (name == "SourceTuningForYuv420") {
             hwcParam_->SetSourceTuningForApp(appName, val);
         } else if (name == "RsSolidColorLayerConfig") {

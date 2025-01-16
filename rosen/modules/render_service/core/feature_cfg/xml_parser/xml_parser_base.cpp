@@ -19,6 +19,9 @@
 #include "graphic_feature_param_manager.h"
 
 namespace OHOS::Rosen {
+namespace {
+constexpr uint32_t XML_STRING_MAX_LENGTH = 8;
+}
 
 int32_t XMLParserBase::LoadGraphicConfiguration(const char* fileDir)
 {
@@ -123,6 +126,17 @@ int32_t XMLParserBase::GetXmlNodeAsInt(xmlNode &node)
     return PARSE_XML_UNDEFINED;
 }
 
+bool XMLParserBase::IsNumber(const std::string& str)
+{
+    if (str.length() == 0 || str.length() > XML_STRING_MAX_LENGTH) {
+        return false;
+    }
+    auto number = static_cast<uint32_t>(std::count_if(str.begin(), str.end(), [](unsigned char c) {
+        return std::isdigit(c);
+    }));
+    return number == str.length() || (str.compare(0, 1, "-") == 0 && number == str.length() - 1);
+}
+
 bool XMLParserBase::ParseFeatureSwitch(std::string val)
 {
     return val == "true";
@@ -130,6 +144,6 @@ bool XMLParserBase::ParseFeatureSwitch(std::string val)
 
 int32_t XMLParserBase::ParseFeatureSingleParam(std::string val)
 {
-    return std::atoi(val.c_str());
+    return std::stoi(val.c_str());
 }
 } // namespace OHOS::Rosen

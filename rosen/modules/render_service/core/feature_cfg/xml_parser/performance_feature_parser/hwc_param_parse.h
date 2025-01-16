@@ -25,11 +25,11 @@ public:
     HWCParamParse() = default;
     ~HWCParamParse() = default;
 
-    int32_t ParseFeatureParam(FeatureParamMapType featureMap, xmlNode &node) override;
+    int32_t ParseFeatureParam(FeatureParamMapType &featureMap, xmlNode &node) override;
 
 private:
-    int32_t ParseHwcInternal(FeatureParamMapType featureMap, xmlNode &node);
-    int32_t ParseFeatureMultiParamForApp(xmlNode &node, std::string name);
+    int32_t ParseHwcInternal(FeatureParamMapType &featureMap, xmlNode &node);
+    int32_t ParseFeatureMultiParamForApp(xmlNode &node, std::string &name);
 
     std::shared_ptr<HWCParam> hwcParam_;
 };

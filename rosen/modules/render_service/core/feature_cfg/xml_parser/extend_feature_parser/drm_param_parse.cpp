@@ -17,7 +17,7 @@
 
 namespace OHOS::Rosen {
 
-int32_t DRMParamParse::ParseFeatureParam(FeatureParamMapType featureMap, xmlNode &node)
+int32_t DRMParamParse::ParseFeatureParam(FeatureParamMapType &featureMap, xmlNode &node)
 {
     RS_LOGI("DRMParamParse start");
     xmlNode *currNode = &node;
@@ -41,7 +41,7 @@ int32_t DRMParamParse::ParseFeatureParam(FeatureParamMapType featureMap, xmlNode
     return PARSE_EXEC_SUCCESS;
 }
 
-int32_t DRMParamParse::ParseDrmInternal(FeatureParamMapType featureMap, xmlNode &node)
+int32_t DRMParamParse::ParseDrmInternal(FeatureParamMapType &featureMap, xmlNode &node)
 {
     xmlNode *currNode = &node;
 
@@ -61,7 +61,7 @@ int32_t DRMParamParse::ParseDrmInternal(FeatureParamMapType featureMap, xmlNode 
         bool isEnabled = ParseFeatureSwitch(val);
         if (name == "DrmEnabled") {
             drmParam_->SetDrmEnable(isEnabled);
-            RS_LOGD("DRMParamParse parse DrmEnabled %{public}d", drmParam_->IsDrmEnable());
+            RS_LOGI("DRMParamParse parse DrmEnabled %{public}d", drmParam_->IsDrmEnable());
         } else {
             RS_LOGE("DRMParamParse stop parsing, not related feature");
         }

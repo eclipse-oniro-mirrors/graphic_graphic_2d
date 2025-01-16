@@ -59,11 +59,11 @@ void HWCParam::SetHwcMirrorEnable(bool isEnable)
 
 void HWCParam::SetSourceTuningForApp(std::string appName, std::string val)
 {
-    sourceTuningMap_[appName] = std::atoi(val.c_str());
+    sourceTuningMap_[appName] = std::stoi(val.c_str());
 }
 
 void HWCParam::SetSolidColorLayerForApp(std::string appName, std::string val)
 {
-    solidColorLayerMap_[appName] = std::atoi(val.c_str());
+    solidColorLayerMap_[appName] = std::stoi(val.c_str());
 }
 } // namespace OHOS::Rosen

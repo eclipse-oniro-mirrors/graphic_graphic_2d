@@ -17,7 +17,7 @@
 
 namespace OHOS::Rosen {
 
-int32_t HDRParamParse::ParseFeatureParam(FeatureParamMapType featureMap, xmlNode &node)
+int32_t HDRParamParse::ParseFeatureParam(FeatureParamMapType &featureMap, xmlNode &node)
 {
     RS_LOGI("HDRParamParse start");
     xmlNode *currNode = &node;
@@ -41,7 +41,7 @@ int32_t HDRParamParse::ParseFeatureParam(FeatureParamMapType featureMap, xmlNode
     return PARSE_EXEC_SUCCESS;
 }
 
-int32_t HDRParamParse::ParseHdrInternal(FeatureParamMapType featureMap, xmlNode &node)
+int32_t HDRParamParse::ParseHdrInternal(FeatureParamMapType &featureMap, xmlNode &node)
 {
     xmlNode *currNode = &node;
 
@@ -61,10 +61,10 @@ int32_t HDRParamParse::ParseHdrInternal(FeatureParamMapType featureMap, xmlNode 
         bool isEnabled = ParseFeatureSwitch(val);
         if (name == "HdrVideoEnabled") {
             hdrParam_->SetHdrVideoEnable(isEnabled);
-            RS_LOGD("HDRParamParse parse HdrVideoEnabled %{public}d", hdrParam_->IsHdrVideoEnable());
+            RS_LOGI("HDRParamParse parse HdrVideoEnabled %{public}d", hdrParam_->IsHdrVideoEnable());
         } else if (name == "HdrImageEnabled") {
             hdrParam_->SetHdrImageEnable(isEnabled);
-            RS_LOGD("HDRParamParse parse HdrImageEnabled %{public}d", hdrParam_->IsHdrImageEnable());
+            RS_LOGI("HDRParamParse parse HdrImageEnabled %{public}d", hdrParam_->IsHdrImageEnable());
         }
     }
 

@@ -39,7 +39,7 @@ class XMLParserBase {
 public:
     virtual ~XMLParserBase() = default;
 
-    virtual int32_t ParseFeatureParam(FeatureParamMapType featureMap, xmlNode &node)
+    virtual int32_t ParseFeatureParam(FeatureParamMapType &featureMap, xmlNode &node)
     {
         return 0;
     };
@@ -52,6 +52,7 @@ public:
 
     std::string ExtractPropertyValue(const std::string &propName, xmlNode &node);
     int32_t GetXmlNodeAsInt(xmlNode &node);
+    static bool IsNumber(const std::string& str);
 
 private:
     bool ParseInternal(xmlNode &node);
