@@ -531,7 +531,7 @@ bool RSSurfaceRenderNodeDrawable::DrawUIFirstCacheWithStarting(RSPaintFilterCanv
     {
         auto drawable = RSRenderNodeDrawableAdapter::GetDrawableById(id);
         if (!drawable) {
-            return ret;
+            return false;
         }
         RS_TRACE_NAME_FMT("drawStarting");
         drawable->Draw(rscanvas);
