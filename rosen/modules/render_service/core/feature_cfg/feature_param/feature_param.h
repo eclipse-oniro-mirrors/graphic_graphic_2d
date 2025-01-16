@@ -27,7 +27,7 @@
 namespace OHOS::Rosen {
 const std::vector<std::string> featureModules = {"HdrConfig", "DrmConfig", "HwcConfig"};
 
-enum FeatureModuleEnum {
+enum FeatureModule {
     HDR = 0,
     DRM,
     HWC,
