@@ -67,7 +67,7 @@ public:
         bool isBlurType);
 
     void SetCurrentBundleName(const char* bundleName);
-    std::string GetCurrentBundleName();
+    RSB_EXPORT std::string GetCurrentBundleName();
     static bool IsOpenPerf();
 private:
     std::map<std::string, std::vector<uint16_t>> statsBlur_;

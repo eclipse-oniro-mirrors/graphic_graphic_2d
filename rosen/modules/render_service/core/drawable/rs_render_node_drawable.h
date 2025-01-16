@@ -18,6 +18,8 @@
 
 #include <memory>
 #include <vector>
+#include <queue>
+#include <chrono>
 
 #include "common/rs_common_def.h"
 #include "draw/canvas.h"
@@ -30,6 +32,10 @@
 #include "platform/ohos/backend/native_buffer_utils.h"
 #endif
 #include "pipeline/rs_paint_filter_canvas.h"
+
+using std::chrono::high_resolution_clock;
+using std::chrono::microseconds;
+using std::chrono::milliseconds;
 
 namespace OHOS::Rosen {
 class RSRenderNode;
@@ -134,6 +140,10 @@ protected:
 
     void GenerateCacheIfNeed(Drawing::Canvas& canvas, RSRenderParams& params);
     void CheckCacheTypeAndDraw(Drawing::Canvas& canvas, const RSRenderParams& params, bool isInCapture = false);
+    bool NeedReportSubHealth(std::chrono::time_point<high_resolution_clock>& startTime);
+    bool CheckAllDrawingCacheDurationTimeout();
+    bool MeetReportFrequencyControl(std::chrono::time_point<high_resolution_clock>& startTime);
+    std::string GetUpdateCacheTimeTaken();
 
     static inline bool isDrawingCacheEnabled_ = false;
     static inline bool isDrawingCacheDfxEnabled_ = false;
@@ -195,6 +205,15 @@ private:
 
     static inline std::mutex drawingCacheMapMutex_;
     static inline std::unordered_map<NodeId, int32_t> drawingCacheUpdateTimeMap_;
+    static inline std::mutex drawingCacheTimeTakenMapMutex_;
+    static inline std::unordered_map<NodeId, std::vector<int64_t>> drawingCacheTimeTakenMap_;
+    static inline std::mutex drawingCacheLastTwoTimestampMapMutex_;
+    static inline std::unordered_map<NodeId,
+        std::queue<std::chrono::time_point<high_resolution_clock>>> drawingCacheLastTwoTimestampMap_;
+    static inline std::mutex drawingCacheLastReportTimeMapMutex_;
+    static inline std::unordered_map<NodeId,
+        std::chrono::time_point<high_resolution_clock>> drawingCacheLastReportTimeMap_;
+    static inline const std::string RENDERGROUP_SUBHEALTH_EVENT_NAME = "RENDERGROUP_SUBHEALTH_EVENT";
 
     static thread_local bool isOpDropped_;
     static thread_local bool isOffScreenWithClipHole_;

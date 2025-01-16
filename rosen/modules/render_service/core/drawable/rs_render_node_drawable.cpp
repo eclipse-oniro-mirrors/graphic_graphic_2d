@@ -22,11 +22,14 @@
 #include "pipeline/rs_task_dispatcher.h"
 #include "pipeline/rs_uni_render_thread.h"
 #include "pipeline/rs_uni_render_util.h"
+#include "gfx/performance/rs_perfmonitor_reporter.h"
 #include "platform/common/rs_log.h"
 #include "rs_trace.h"
 #include "system/rs_system_parameters.h"
 #include "pipeline/rs_main_thread.h"
 #include "include/gpu/vk/GrVulkanTrackerInterface.h"
+#include "hisysevent.h"
+#include "common/rs_background_thread.h"
 
 namespace OHOS::Rosen::DrawableV2 {
 #ifdef RS_ENABLE_VK
@@ -42,6 +45,11 @@ thread_local bool RSRenderNodeDrawable::isOffScreenWithClipHole_ = false;
 
 namespace {
 constexpr int32_t DRAWING_CACHE_MAX_UPDATE_TIME = 3;
+constexpr int32_t INTERVAL_THRESHOLD = 1000000;
+constexpr int32_t DRAWING_CACHE_DURATION_TIMEOUT_THRESHOLD = 1000;
+constexpr int32_t REPORT_INTERVAL = 120000000;
+constexpr int32_t DRAWING_CACHE_MAX_CONTINUOUS_UPDATE_TIME = 7;
+constexpr int32_t STORED_TIMESTAMP_COUNT = DRAWING_CACHE_MAX_UPDATE_TIME - 1;
 constexpr float CACHE_FILL_ALPHA = 0.2f;
 constexpr float CACHE_UPDATE_FILL_ALPHA = 0.8f;
 }
@@ -121,6 +129,8 @@ void RSRenderNodeDrawable::GenerateCacheIfNeed(Drawing::Canvas& canvas, RSRender
         {
             std::lock_guard<std::mutex> lock(drawingCacheMapMutex_);
             drawingCacheUpdateTimeMap_.erase(nodeId_);
+            drawingCacheTimeTakenMap._erase(nodeId_);
+            drawingCacheLastTwoTimestampMap._erase(nodeId_);
         }
         return;
     }
@@ -135,6 +145,8 @@ void RSRenderNodeDrawable::GenerateCacheIfNeed(Drawing::Canvas& canvas, RSRender
             // update time will accumulate.)
             std::lock_guard<std::mutex> mapLock(drawingCacheMapMutex_);
             drawingCacheUpdateTimeMap_.erase(nodeId_);
+            drawingCacheTimeTakenMap._erase(nodeId_);
+            drawingCacheLastTwoTimestampMap._erase(nodeId_);
         }
     }
     // generate(first time)/update cache(cache changed) [TARGET -> DISABLED if >= MAX UPDATE TIME]
@@ -758,6 +770,7 @@ bool RSRenderNodeDrawable::CheckIfNeedUpdateCache(RSRenderParams& params, int32_
 
 void RSRenderNodeDrawable::UpdateCacheSurface(Drawing::Canvas& canvas, const RSRenderParams& params)
 {
+    auto startTime = high_resolution_clock::now();
     auto curCanvas = static_cast<RSPaintFilterCanvas*>(&canvas);
     pid_t threadId = gettid();
     bool isHdrOn = false; // todo: temporary set false, fix in future
@@ -840,6 +853,113 @@ void RSRenderNodeDrawable::UpdateCacheSurface(Drawing::Canvas& canvas, const RSR
         std::lock_guard<std::mutex> lock(drawingCacheInfoMutex_);
         cacheUpdatedNodeMap_.emplace(params.GetId(), true);
     }
+    // caculate drawing duration
+    auto endTime = high_resolution_clock::now();
+    auto interval = std::chrono::duration_cast<microseconds>(endTime - startTime);
+    {
+        std::lock_guard<std::mutex> lock(drawingCacheTimeTakenMapMutex_);
+        drawingCacheTimeTakenMap_[nodeId_].emplace_back(interval.count());
+        if (drawingCacheTimeTakenMap_[nodeId_].size() > DRAWING_CACHE_MAX_UPDATE_TIME) {
+            drawingCacheTimeTakenMap_[nodeId_].erase(drawingCacheTimeTakenMap_[nodeId_].begin());
+        }
+    }
+    // check if need report subhealth event
+    if (NeedReportSubHealth(startTime)) {
+        auto reportTime = high_resolution_clock::now();
+        NodeId nodeId = nodeId_;
+        int updateTimes = drawingCacheUpdateTimeMap_[nodeId_];
+        std::string bundleName = RSPerfMonitorReporter::GetInstance().GetCurrentBundleName();
+        std::string timeTaken = GetUpdateCacheTimeTaken();
+        RSBackgroundThread::Instance().PostTask([nodeId, bundleName, updateTimes, timeTaken]() {
+            int ret = HiSysEventWrite(OHOS::HiviewDFX::HiSysEvent::Domain::GRAPHIC, RENDERGROUP_SUBHEALTH_EVENT_NAME,
+                OHOS::HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
+                "NODE_ID", nodeId,
+                "BUNDLE_NAME", bundleName,
+                "CONTINUOUS_UPDATE_CACHE_TIMES", updateTimes,
+                "UPDATE_CACHE_TIME_TAKEN", timeTaken
+                );
+        });
+        {
+            std::lock_guard<std::mutex> lock(drawingCacheLastReportTimeMapMutex_);
+            drawingCacheLastReportTimeMap_[nodeId_] = reportTime;
+        }
+    }
+    {
+        std::lock_guard<std::mutex> lock(drawingCacheLastTwoTimestampMapMutex_);
+        drawingCacheLastTwoTimestampMap_[nodeId_].push(startTime);
+        if (drawingCacheLastTwoTimestampMap_[nodeId_].size() > STORED_TIMESTAMP_COUNT) {
+            drawingCacheLastTwoTimestampMap_[nodeId_].pop();
+        }
+    }
+}
+
+bool RSRenderNodeDrawable::NeedReportSubHealth(std::chrono::time_point<high_resolution_clock>& startTime)
+{
+    if (!MeetReportFrequencyControl(startTime)) {
+        return false;
+    }
+    {
+        std::lock_guard<std::mutex> lock(drawingCacheLastTwoTimestampMapMutex_);
+        int timestampCounts = drawingCacheLastTwoTimestampMap_[nodeId_].size();
+        if (timestampCounts != STORED_TIMESTAMP_COUNT) {
+            return false;
+        }
+        auto firstTimestamp = drawingCacheLastTwoTimestampMap_[nodeId_].front();
+        auto interval = std::chrono::duration_cast<microseconds>(startTime - firstTimestamp);
+        if (interval.count() > INTERVAL_THRESHOLD) {
+            return false;
+        }
+    }
+    if (CheckAllDrawingCacheDurationTimeout()) {
+        return true;
+    }
+    {
+        std::lock_guard<std::mutex> lock(drawingCacheMapMutex_);
+        if (drawingCacheUpdateTimeMap_[nodeId_] >= DRAWING_CACHE_MAX_CONTINUOUS_UPDATE_TIME) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool RSRenderNodeDrawable::CheckAllDrawingCacheDurationTimeout()
+{
+    std::lock_guard<std::mutex> lock(drawingCacheTimeTakenMapMutex_);
+    for (auto& it: drawingCacheTimeTakenMap_[nodeId_]) {
+        if (it < DRAWING_CACHE_DURATION_TIMEOUT_THRESHOLD) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool RSRenderNodeDrawable::MeetReportFrequencyControl(std::chrono::time_point<high_resolution_clock>& startTime)
+{
+    std::lock_guard<std::mutex> lock(drawingCacheLastReportTimeMapMutex_);
+    if (drawingCacheLastReportTimeMap_.find(nodeId_) == drawingCacheLastReportTimeMap_.end()) {
+        return true;
+    } else {
+        auto lastTime = drawingCacheLastReportTimeMap_[nodeId_];
+        if (std::chrono::duration_cast<microseconds>(startTime - lastTime).count() > REPORT_INTERVAL) {
+            return true;
+        }
+    }
+    return false;
+}
+
+std::string RSRenderNodeDrawable::GetUpdateCacheTimeTaken()
+{
+    std::lock_guard<std::mutex> lock(drawingCacheTimeTakenMapMutex_);
+    std::string result;
+    if (drawingCacheTimeTakenMap_.find(nodeId_) != drawingCacheTimeTakenMap_.end()) {
+        for (auto& it: drawingCacheTimeTakenMap_[nodeId_]) {
+            result += std::to_string(it) + ",";
+        }
+    }
+    if (result.size() > 0 && result.back() == ",") {
+        result.pop_back();
+    }
+    return result;
 }
 
 int RSRenderNodeDrawable::GetTotalProcessedNodeCount()
