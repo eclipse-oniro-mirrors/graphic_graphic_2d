@@ -876,8 +876,7 @@ void RSRenderNodeDrawable::UpdateCacheSurface(Drawing::Canvas& canvas, const RSR
                 "NODE_ID", nodeId,
                 "BUNDLE_NAME", bundleName,
                 "CONTINUOUS_UPDATE_CACHE_TIMES", updateTimes,
-                "UPDATE_CACHE_TIME_TAKEN", timeTaken
-                );
+                "UPDATE_CACHE_TIME_TAKEN", timeTaken);
         });
         {
             std::lock_guard<std::mutex> lock(drawingCacheLastReportTimeMapMutex_);
