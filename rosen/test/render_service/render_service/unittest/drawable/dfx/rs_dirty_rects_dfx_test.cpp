@@ -258,7 +258,6 @@ HWTEST_F(RSDirtyRectsDFXTest, RefreshRateRotationProcess, TestSize.Level1)
 {
     ASSERT_NE(rsDirtyRectsDfx_, nullptr);
     ScreenRotation rotation = ScreenRotation::ROTATION_0;
-    uint64_t screenId = 0;
     int screenWidth = 1260;
     int screenHeight = 2720;
     bool res = rsDirtyRectsDfx_->RefreshRateRotationProcess(*canvas_, rotation, screenWidth, screenHeight);
