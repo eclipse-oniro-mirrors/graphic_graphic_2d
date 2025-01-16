@@ -129,8 +129,8 @@ void RSRenderNodeDrawable::GenerateCacheIfNeed(Drawing::Canvas& canvas, RSRender
         {
             std::lock_guard<std::mutex> lock(drawingCacheMapMutex_);
             drawingCacheUpdateTimeMap_.erase(nodeId_);
-            drawingCacheTimeTakenMap._erase(nodeId_);
-            drawingCacheLastTwoTimestampMap._erase(nodeId_);
+            drawingCacheTimeTakenMap_.erase(nodeId_);
+            drawingCacheLastTwoTimestampMap_.erase(nodeId_);
         }
         return;
     }
@@ -145,8 +145,8 @@ void RSRenderNodeDrawable::GenerateCacheIfNeed(Drawing::Canvas& canvas, RSRender
             // update time will accumulate.)
             std::lock_guard<std::mutex> mapLock(drawingCacheMapMutex_);
             drawingCacheUpdateTimeMap_.erase(nodeId_);
-            drawingCacheTimeTakenMap._erase(nodeId_);
-            drawingCacheLastTwoTimestampMap._erase(nodeId_);
+            drawingCacheTimeTakenMap_.erase(nodeId_);
+            drawingCacheLastTwoTimestampMap_.erase(nodeId_);
         }
     }
     // generate(first time)/update cache(cache changed) [TARGET -> DISABLED if >= MAX UPDATE TIME]
