@@ -245,7 +245,7 @@ bool RSInterfaces::SetWindowFreezeImmediately(std::shared_ptr<RSSurfaceNode> nod
         return false;
     }
     RSSurfaceCaptureBlurParam blurParam;
-    if (ROSEN_LE(blurRadius, 1.f)) {
+    if (ROSEN_GE(blurRadius, 1.f)) {
         blurParam.isNeedBlur = true;
         blurParam.blurRadius = blurRadius;
     }
