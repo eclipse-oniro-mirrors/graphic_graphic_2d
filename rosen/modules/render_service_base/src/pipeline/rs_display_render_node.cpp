@@ -30,8 +30,8 @@ constexpr int64_t MAX_JITTER_NS = 2000000; // 2ms
 
 RSDisplayRenderNode::RSDisplayRenderNode(
     NodeId id, const RSDisplayNodeConfig& config, const std::weak_ptr<RSContext>& context)
-    : RSRenderNode(id, context), screenId_(config.screenId), offsetX_(0), offsetY_(0),
-      isMirroredDisplay_(config.isMirrored), dirtyManager_(std::make_shared<RSDirtyRegionManager>(true))
+    : RSRenderNode(id, context), isMirroredDisplay_(config.isMirrored), offsetX_(0), offsetY_(0),
+      screenId_(config.screenId), dirtyManager_(std::make_shared<RSDirtyRegionManager>(true))
 {
     RS_LOGI("RSScreen RSDisplayRenderNode ctor id:%{public}" PRIu64 ", screenid:%{public}" PRIu64, id, screenId_);
     MemoryInfo info = {sizeof(*this), ExtractPid(id), id, MEMORY_TYPE::MEM_RENDER_NODE};
@@ -240,6 +240,7 @@ void RSDisplayRenderNode::UpdateRenderParams()
     auto mirroredNode = GetMirrorSource().lock();
     if (mirroredNode == nullptr) {
         displayParams->mirrorSourceId_ = INVALID_NODEID;
+        displayParams->mirrorSourceDrawable_.reset();
         RS_LOGW("RSDisplayRenderNode::UpdateRenderParams mirroredNode is null");
     } else {
         displayParams->mirrorSourceDrawable_ = mirroredNode->GetRenderDrawable();

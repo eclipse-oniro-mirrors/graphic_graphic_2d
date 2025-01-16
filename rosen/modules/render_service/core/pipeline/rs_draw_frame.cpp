@@ -21,6 +21,7 @@
 #include "rs_trace.h"
 
 #include "drawable/rs_canvas_drawing_render_node_drawable.h"
+#include "gfx/performance/rs_perfmonitor_reporter.h"
 #include "memory/rs_memory_manager.h"
 #include "pipeline/rs_main_thread.h"
 #include "pipeline/rs_render_node_gc.h"
@@ -65,7 +66,7 @@ void RSDrawFrame::RenderFrame()
     Render();
     ReleaseSelfDrawingNodeBuffer();
     NotifyClearGpuCache();
-    RsFrameReport::GetInstance().ReportSchedEvent(FrameSchedEvent::RS_UNI_RENDER_END, {});
+    RsFrameReport::GetInstance().ReportSchedEvent(FrameSchedEvent::RS_RENDER_END, {});
     RSMainThread::Instance()->CallbackDrawContextStatusToWMS(true);
     RSRenderNodeGC::Instance().ReleaseDrawableMemory();
     if (RSSystemProperties::GetPurgeBetweenFramesEnabled()) {
@@ -74,6 +75,7 @@ void RSDrawFrame::RenderFrame()
     unirenderInstance_.MemoryManagementBetweenFrames();
     MemoryManager::MemoryOverCheck(unirenderInstance_.GetRenderEngine()->GetRenderContext()->GetDrGPUContext());
     JankStatsRenderFrameEnd(doJankStats);
+    RSPerfMonitorReporter::GetInstance().ReportAtRsFrameEnd();
 }
 
 void RSDrawFrame::NotifyClearGpuCache()

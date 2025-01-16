@@ -55,7 +55,8 @@ RSUifirstManager& RSUifirstManager::Instance()
 RSUifirstManager::RSUifirstManager() :
 #if defined(RS_ENABLE_VK)
     useDmaBuffer_(RSSystemParameters::GetUIFirstDmaBufferEnabled() &&
-        RSSystemProperties::IsPhoneType() && RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN)
+        RSSystemProperties::IsPhoneType() && (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
+        RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR))
 #else
     useDmaBuffer_(false)
 #endif
@@ -375,6 +376,12 @@ bool RSUifirstManager::CheckVisibleDirtyRegionIsEmpty(const std::shared_ptr<RSSu
 {
     if (GetUiFirstMode() != UiFirstModeType::MULTI_WINDOW_MODE) {
         return false;
+    }
+    if (ROSEN_EQ(node->GetGlobalAlpha(), 0.0f) &&
+        RSMainThread::Instance()->GetSystemAnimatedScenes() == SystemAnimatedScenes::LOCKSCREEN_TO_LAUNCHER &&
+        node->IsLeashWindow()) {
+        RS_TRACE_NAME_FMT("Doing LOCKSCREEN_TO_LAUNCHER, fullTransparent node[%s] skips", node->GetName().c_str());
+        return true;
     }
     for (auto& child : *node->GetSortedChildren()) {
         if (std::shared_ptr<RSSurfaceRenderNode> surfaceNode =
@@ -1205,7 +1212,7 @@ bool RSUifirstManager::IsLeashWindowCache(RSSurfaceRenderNode& node, bool animat
             isNeedAssignToSubThread = animation && LeashWindowContainMainWindow(node);
         }
         // 1: Planning: support multi appwindows
-        isNeedAssignToSubThread = (isNeedAssignToSubThread || ROSEN_EQ(node.GetGlobalAlpha(), 0.0f) ||
+        isNeedAssignToSubThread = (isNeedAssignToSubThread ||
                 node.GetForceUIFirst()) && !node.HasFilter() && !RSUifirstManager::Instance().rotationChanged_;
     }
 
@@ -1306,15 +1313,6 @@ void RSUifirstManager::UpdateUifirstNodes(RSSurfaceRenderNode& node, bool ancest
     }
     if (!isUiFirstOn_ || !node.GetUifirstSupportFlag() || node.GetHasProtectedLayer()) {
         UifirstStateChange(node, MultiThreadCacheType::NONE);
-        if (GetUiFirstMode() == UiFirstModeType::MULTI_WINDOW_MODE) {
-            if (ancestorNodeHasAnimation && !node.isUifirstNode_) {
-                /* If window scaling behavior is interrupted by animation on pc, the tag can't be reset, so next
-                 vsync need to mark uifirst on the next frame
-                */
-                node.MarkUifirstNode(true);
-            }
-            return;
-        }
         if (!node.isUifirstNode_) {
             node.isUifirstDelay_++;
             if (node.isUifirstDelay_ > EVENT_STOP_TIMEOUT) {
@@ -1334,8 +1332,7 @@ void RSUifirstManager::UpdateUifirstNodes(RSSurfaceRenderNode& node, bool ancest
     if (RSUifirstManager::IsNonFocusWindowCache(node, ancestorNodeHasAnimation)) {
         // purpose: to avoid that RT waits uifirst cache long time when switching to uifirst first frame,
         // draw and cache win in RT on first frame, then use RT thread cache to draw until uifirst cache ready.
-        if (node.GetLastFrameUifirstFlag() == MultiThreadCacheType::NONE && !node.GetSubThreadAssignable()
-            && node.GetSurfaceWindowType() != SurfaceWindowType::SYSTEM_SCB_WINDOW) {
+        if (node.GetLastFrameUifirstFlag() == MultiThreadCacheType::NONE && !node.GetSubThreadAssignable()) {
             UifirstStateChange(node, MultiThreadCacheType::NONE);   // mark as draw win in RT thread
             node.SetSubThreadAssignable(true);                      // mark as assignable to uifirst next frame
             node.SetNeedCacheSurface(true);                         // mark as that needs cache win in RT
@@ -1529,7 +1526,8 @@ void RSUifirstManager::SetUseDmaBuffer(bool val)
     std::lock_guard<std::mutex> lock(useDmaBufferMutex_);
 #if defined(RS_ENABLE_VK)
     useDmaBuffer_ = val && RSSystemParameters::GetUIFirstDmaBufferEnabled() &&
-        RSSystemProperties::IsPhoneType() && RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN;
+        RSSystemProperties::IsPhoneType() && (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
+        RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR);
 #else
     useDmaBuffer_ = false;
 #endif

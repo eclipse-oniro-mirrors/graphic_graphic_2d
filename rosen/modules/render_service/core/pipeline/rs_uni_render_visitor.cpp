@@ -73,6 +73,8 @@ constexpr int MIN_OVERLAP = 2;
 constexpr float DEFAULT_HDR_RATIO = 1.0f;
 constexpr float DEFAULT_SCALER = 1000.0f / 203.0f;
 constexpr float GAMMA2_2 = 2.2f;
+constexpr uint32_t API14 = 14;
+constexpr uint32_t INVALID_API_COMPATIBLE_VERSION = 0;
 
 bool CheckRootNodeReadyToDraw(const std::shared_ptr<RSBaseRenderNode>& child)
 {
@@ -574,6 +576,8 @@ void RSUniRenderVisitor::UpdateSecuritySkipAndProtectedLayersRecord(RSSurfaceRen
     }
     if (node.GetHasProtectedLayer()) {
         displayHasProtectedSurface_[currentVisitDisplay_] = true;
+        screenManager_->SetScreenHasProtectedLayer(currentVisitDisplay_, true);
+        RS_TRACE_NAME_FMT("SetScreenHasProtectedLayer: %d", currentVisitDisplay_);
     }
     if (node.IsSpecialLayerChanged()) {
         displaySpecailSurfaceChanged_[currentVisitDisplay_] = true;
@@ -980,6 +984,10 @@ void RSUniRenderVisitor::QuickPrepareSurfaceRenderNode(RSSurfaceRenderNode& node
         ExtractPid(node.GetId()), static_cast<int>(node.GetSurfaceNodeType()), node.IsSubTreeDirty(),
         node.IsFirstLevelCrossNode());
 
+    if (PrepareForCloneNode(node)) {
+        return;
+    }
+
     // avoid cross node subtree visited twice or more
     UpdateSecuritySkipAndProtectedLayersRecord(node);
     if (CheckSkipAndPrepareForCrossNode(node)) {
@@ -1064,6 +1072,7 @@ void RSUniRenderVisitor::QuickPrepareSurfaceRenderNode(RSSurfaceRenderNode& node
     dirtyFlag_ = dirtyFlag;
     PrepareForUIFirstNode(node);
     PrepareForCrossNode(node);
+    node.UpdateInfoForClonedNode();
     node.OpincSetInAppStateEnd(unchangeMarkInApp_);
     ResetCurSurfaceInfoAsUpperSurfaceParent(node);
     curCornerRadius_ = curCornerRadius;
@@ -1074,6 +1083,29 @@ void RSUniRenderVisitor::QuickPrepareSurfaceRenderNode(RSSurfaceRenderNode& node
         node.UpdateDrawableBehindWindow();
         node.SetOldNeedDrawBehindWindow(node.NeedDrawBehindWindow());
     }
+}
+
+bool RSUniRenderVisitor::PrepareForCloneNode(RSSurfaceRenderNode& node)
+{
+    if (!node.IsCloneNode()) {
+        return false;
+    }
+    const auto& nodeMap = RSMainThread::Instance()->GetContext().GetNodeMap();
+    auto clonedNode = nodeMap.GetRenderNode<RSSurfaceRenderNode>(node.GetClonedNodeId());
+    if (clonedNode == nullptr) {
+        RS_LOGE("RSUniRenderVisitor::PrepareForCloneNode clonedNode is nullptr");
+        return false;
+    }
+    auto clonedNodeRenderDrawable = clonedNode->GetRenderDrawable();
+    if (clonedNodeRenderDrawable == nullptr) {
+        RS_LOGE("RSUniRenderVisitor::PrepareForCloneNode clonedNodeRenderDrawable is nullptr");
+        return false;
+    }
+    clonedSourceNodeId_ = node.GetClonedNodeId();
+    node.SetClonedNodeRenderDrawable(clonedNodeRenderDrawable);
+    node.UpdateRenderParams();
+    node.AddToPendingSyncList();
+    return true;
 }
 
 void RSUniRenderVisitor::PrepareForCrossNode(RSSurfaceRenderNode& node)
@@ -1427,6 +1459,14 @@ bool RSUniRenderVisitor::NeedPrepareChindrenInReverseOrder(RSRenderNode& node) c
     return IsLeashAndHasMainSubNode(node);
 }
 
+void RSUniRenderVisitor::PredictDrawLargeAreaBlur(RSRenderNode& node, std::pair<bool, bool>& predictDrawLargeAreaBlur)
+{
+    std::pair<bool, bool> nodeDrawLargeAreaBlur = {false, false};
+    node.NodeDrawLargeAreaBlur(nodeDrawLargeAreaBlur);
+    predictDrawLargeAreaBlur.first = predictDrawLargeAreaBlur.first || nodeDrawLargeAreaBlur.first;
+    predictDrawLargeAreaBlur.second = predictDrawLargeAreaBlur.second || nodeDrawLargeAreaBlur.second;
+}
+
 void RSUniRenderVisitor::QuickPrepareChildren(RSRenderNode& node)
 {
     MergeRemovedChildDirtyRegion(node, true);
@@ -1501,6 +1541,7 @@ bool RSUniRenderVisitor::InitDisplayInfo(RSDisplayRenderNode& node)
         screenInfo_.activeRect;
     curDisplayDirtyManager_->SetSurfaceSize(screenInfo_.width, screenInfo_.height);
     curDisplayDirtyManager_->SetActiveSurfaceRect(screenInfo_.activeRect);
+    screenManager_->SetScreenHasProtectedLayer(currentVisitDisplay_, false);
 
     // 3 init Occlusion info
     needRecalculateOcclusion_ = false;
@@ -1596,9 +1637,13 @@ bool RSUniRenderVisitor::BeforeUpdateSurfaceDirtyCalc(RSSurfaceRenderNode& node)
         node.SetBufferRelMatrix(RSUniRenderUtil::GetMatrixOfBufferToRelRect(node));
     }
 #ifdef RS_ENABLE_GPU
-    if (node.IsHardwareEnabledTopSurface() && node.ShouldPaint()) {
-        RSPointerWindowManager::Instance().CollectInfoForHardCursor(curDisplayNode_->GetId(),
-            node.GetRenderDrawable());
+    // 4. collect cursors and check for null
+    if (node.IsHardwareEnabledTopSurface()) {
+        auto surfaceNodeDrawable =
+            std::static_pointer_cast<DrawableV2::RSSurfaceRenderNodeDrawable>(node.GetRenderDrawable());
+        if (surfaceNodeDrawable) {
+            RSPointerWindowManager::Instance().CollectAllHardCursor(curDisplayNode_->GetId(), node.GetRenderDrawable());
+        }
     }
 #endif
     node.setQosCal((RSMainThread::Instance()->GetDeviceType() == DeviceType::PC) &&
@@ -1763,7 +1808,10 @@ void RSUniRenderVisitor::UpdateHwcNodeByTransform(RSSurfaceRenderNode& node, con
         return;
     }
     node.SetInFixedRotation(displayNodeRotationChanged_ || isScreenRotationAnimating_);
-    RSUniRenderUtil::DealWithNodeGravity(node, screenInfo_, totalMatrix);
+    const uint32_t apiCompatibleVersion = node.GetApiCompatibleVersion();
+    (apiCompatibleVersion != INVALID_API_COMPATIBLE_VERSION && apiCompatibleVersion <= API14) ?
+        RSUniRenderUtil::DealWithNodeGravityOldVersion(node, screenInfo_) :
+        RSUniRenderUtil::DealWithNodeGravity(node, screenInfo_, totalMatrix);
     RSUniRenderUtil::LayerRotate(node, screenInfo_);
     RSUniRenderUtil::LayerCrop(node, screenInfo_);
     RSUniRenderUtil::DealWithScalingMode(node, screenInfo_);
@@ -2826,6 +2874,7 @@ void RSUniRenderVisitor::CheckMergeDisplayDirtyByTransparentFilter(
                 globalFilter_.insert(*it);
             }
             filterNode->PostPrepareForBlurFilterNode(*(curDisplayNode_->GetDirtyManager()), needRequestNextVsync_);
+            PredictDrawLargeAreaBlur(*filterNode, predictDrawLargeAreaBlur_);
         }
     }
 }
@@ -3478,6 +3527,7 @@ void RSUniRenderVisitor::CollectFilterInfoAndUpdateDirty(RSRenderNode& node,
     }
     if (curSurfaceNode_ && !isNodeAddedToTransparentCleanFilters) {
         node.PostPrepareForBlurFilterNode(dirtyManager, needRequestNextVsync_);
+        PredictDrawLargeAreaBlur(node, predictDrawLargeAreaBlur_);
     }
 }
 
