@@ -301,6 +301,10 @@ public:
 
     virtual void ReportGameStateData(GameStateData info) = 0;
 
+    virtual void ReportRsSceneJankStart(AppInfo info) = 0;
+
+    virtual void ReportRsSceneJankEnd(AppInfo info) = 0;
+
     virtual void SetHardwareEnabled(NodeId id, bool isEnabled, SelfDrawingNodeType selfDrawingType,
         bool dynamicHardwareEnable) = 0;
 

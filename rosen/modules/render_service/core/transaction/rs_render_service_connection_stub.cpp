@@ -143,6 +143,8 @@ static constexpr std::array descriptorCheckList = {
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REPORT_EVENT_RESPONSE),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REPORT_EVENT_COMPLETE),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REPORT_EVENT_JANK_FRAME),
+    static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REPORT_RS_SENCE_JANK_START),
+    static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REPORT_RS_SENCE_JANK_END),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REPORT_EVENT_GAMESTATE),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_TOUCH_EVENT),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_DYNAMIC_MODE_EVENT),
@@ -2047,6 +2049,24 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             ReportEventJankFrame(info);
             break;
         }
+        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REPORT_RS_SENCE_JANK_START): {
+            AppInfo info;
+            if (!ReadAppInfo(info, data)) {
+                ret = ERR_INVALID_DATA;
+                break;
+            }
+            ReportRsSceneJankStart(info);
+            break;
+        }
+        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REPORT_RS_SENCE_JANK_END): {
+            AppInfo info;
+            if (!ReadAppInfo(info, data)) {
+                ret = ERR_INVALID_DATA;
+                break;
+            }
+            ReportRsSceneJankEnd(info);
+            break;
+        }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REPORT_EVENT_GAMESTATE): {
             GameStateData info;
             if (!ReadGameStateDataRs(info, data)) {
@@ -2602,6 +2622,17 @@ bool RSRenderServiceConnectionStub::ReadDataBaseRs(DataBaseRs& info, MessageParc
         !data.ReadString(info.sourceType) || !data.ReadString(info.note)) {
         return false;
     }
+    return true;
+}
+
+bool RSRenderServiceConnectionStub::ReadAppInfo(AppInfo& info, MessageParcel& data)
+{
+    if (!data.ReadInt64(info.startTime) || !data.ReadInt64(info.endTime) ||
+        !data.ReadInt32(info.pid) || !data.ReadString(info.versionName) ||
+        !data.ReadInt32(info.versionCode) || !data.ReadString(info.bundleName) ||
+        !data.ReadString(info.processName)) {
+            return false;
+        }
     return true;
 }
 

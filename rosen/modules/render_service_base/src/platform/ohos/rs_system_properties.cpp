@@ -82,6 +82,13 @@ int RSSystemProperties::GetDumpFrameNum()
     return ConvertToInt(num, 0);
 }
 
+int RSSystemProperties::GetSceneJankFrameTime()
+{
+    static int rsJankStandard =
+        std::atoi((system::GetParameter("persist.sys.graphic.rsJankStandard", "240")).c_str());
+    return rsJankStandard;
+}
+
 int RSSystemProperties::GetRecordingEnabled()
 {
     static CachedHandle g_Handle = CachedParameterCreate("debug.graphic.recording.enabled", "0");

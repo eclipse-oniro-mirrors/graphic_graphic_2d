@@ -290,6 +290,10 @@ public:
 
     void ReportGameStateData(GameStateData info);
 
+    void ReportRsSceneJankStart(AppInfo info);
+
+    void ReportRsSceneJankEnd(AppInfo info);
+
     void EnableCacheForRotation();
 
     void DisableCacheForRotation();

@@ -2274,6 +2274,22 @@ void RSRenderServiceConnection::ReportEventJankFrame(DataBaseRs info)
 #endif
 }
 
+void RSRenderServiceConnection::ReportRsSceneJankStart(AppInfo info)
+{
+    auto task = [info]() -> void {
+        RSJankStats::GetInstance().SetReportRsSceneJankStart(info);
+    };
+    renderThread_.PostTask(task);
+}
+
+void RSRenderServiceConnection::ReportRsSceneJankEnd(AppInfo info)
+{
+    auto task = [info]() -> void {
+        RSJankStats::GetInstance().SetReportRsSceneJankEnd(info);
+    };
+    renderThread_.PostTask(task);
+}
+
 void RSRenderServiceConnection::ReportGameStateData(GameStateData info)
 {
     RS_LOGD("RSRenderServiceConnection::ReportGameStateData = %{public}s, uid = %{public}d, state = %{public}d, "

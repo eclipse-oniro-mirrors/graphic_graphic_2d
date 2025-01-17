@@ -753,6 +753,16 @@ void RSInterfaces::ReportGameStateData(GameStateData info)
     renderServiceClient_->ReportGameStateData(info);
 }
 
+void RSInterfaces::ReportRsSceneJankStart(AppInfo info)
+{
+    renderServiceClient_->ReportRsSceneJankStart(info);
+}
+
+void RSInterfaces::ReportRsSceneJankEnd(AppInfo info)
+{
+    renderServiceClient_->ReportRsSceneJankEnd(info);
+}
+
 void RSInterfaces::EnableCacheForRotation()
 {
     renderServiceClient_->SetCacheEnabledForRotation(true);
