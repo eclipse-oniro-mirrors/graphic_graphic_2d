@@ -40,7 +40,7 @@ void HdrParamTest::TearDown() {}
  * @tc.name: SetHdrVideoEnable
  * @tc.desc: Verify the SetHdrVideoEnable function
  * @tc.type: FUNC
- * @tc.require:
+ * @tc.require: #IBIE4T
  */
 HWTEST_F(HdrParamTest, SetHdrVideoEnable, Function | SmallTest | Level1)
 {
@@ -55,7 +55,7 @@ HWTEST_F(HdrParamTest, SetHdrVideoEnable, Function | SmallTest | Level1)
  * @tc.name: SetHdrImageEnable
  * @tc.desc: Verify the SetHdrImageEnable function
  * @tc.type: FUNC
- * @tc.require:
+ * @tc.require: #IBIE4T
  */
 HWTEST_F(HdrParamTest, SetHdrImageEnable, Function | SmallTest | Level1)
 {
@@ -70,7 +70,7 @@ HWTEST_F(HdrParamTest, SetHdrImageEnable, Function | SmallTest | Level1)
  * @tc.name: IsHdrVideoEnable
  * @tc.desc: Verify the result of IsHdrVideoEnable function
  * @tc.type: FUNC
- * @tc.require:
+ * @tc.require: #IBIE4T
  */
 HWTEST_F(HdrParamTest, IsHdrVideoEnable, Function | SmallTest | Level1)
 {
@@ -85,7 +85,7 @@ HWTEST_F(HdrParamTest, IsHdrVideoEnable, Function | SmallTest | Level1)
  * @tc.name: IsHdrImageEnable
  * @tc.desc: Verify the result of IsHdrImageEnable function
  * @tc.type: FUNC
- * @tc.require:
+ * @tc.require: #IBIE4T
  */
 HWTEST_F(HdrParamTest, IsHdrImageEnable, Function | SmallTest | Level1)
 {

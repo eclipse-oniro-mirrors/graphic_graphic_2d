@@ -41,7 +41,7 @@ void GraphicFeatureParamManagerTest::TearDown() {}
  * @tc.name: Init
  * @tc.desc: Verify the GraphicFeatureParamManager Init function
  * @tc.type: FUNC
- * @tc.require:
+ * @tc.require: #IBIE4T
  */
 HWTEST_F(GraphicFeatureParamManagerTest, Init, Function | SmallTest | Level1)
 {
@@ -60,7 +60,7 @@ HWTEST_F(GraphicFeatureParamManagerTest, Init, Function | SmallTest | Level1)
  * @tc.name: FeatureParamParseEntry
  * @tc.desc: Verify the FeatureParamParseEntry function
  * @tc.type: FUNC
- * @tc.require:
+ * @tc.require: #IBIE4T
  */
 HWTEST_F(GraphicFeatureParamManagerTest, FeatureParamParseEntry, Function | SmallTest | Level1)
 {
@@ -74,7 +74,7 @@ HWTEST_F(GraphicFeatureParamManagerTest, FeatureParamParseEntry, Function | Smal
  * @tc.name: GetFeatureParam
  * @tc.desc: Verify the result of GetFeatureParam function
  * @tc.type: FUNC
- * @tc.require:
+ * @tc.require: #IBIE4T
  */
 HWTEST_F(GraphicFeatureParamManagerTest, GetFeatureParam, Function | SmallTest | Level1)
 {

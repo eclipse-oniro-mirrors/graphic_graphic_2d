@@ -43,7 +43,7 @@ void XmlParserBaseTest::TearDown() {}
  * @tc.name: LoadGraphicConfiguration
  * @tc.desc: Verify the result of LoadGraphicConfiguration function
  * @tc.type: FUNC
- * @tc.require:
+ * @tc.require: #IBIE4T
  */
 HWTEST_F(XmlParserBaseTest, LoadGraphicConfiguration, Function | SmallTest | Level1)
 {
@@ -68,13 +68,14 @@ HWTEST_F(XmlParserBaseTest, LoadGraphicConfiguration, Function | SmallTest | Lev
  * @tc.name: Parse
  * @tc.desc: Verify the result of parsing functions
  * @tc.type: FUNC
- * @tc.require:
+ * @tc.require: #IBIE4T
  */
 HWTEST_F(XmlParserBaseTest, Parse, Function | SmallTest | Level1)
 {
     std::unique_ptr<XMLParserBase> parser = std::make_unique<XMLParserBase>();
     parser->LoadGraphicConfiguration(config);
-    parser->Parse();
+    int parseSuccess = parser->Parse();
+    EXPECT_EQ(parseSuccess, PARSE_EXEC_SUCCESS);
 }
 } // namespace Rosen
 } // namespace OHOS

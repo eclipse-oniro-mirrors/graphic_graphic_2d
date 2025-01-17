@@ -40,7 +40,7 @@ void DrmParamTest::TearDown() {}
  * @tc.name: SetDrmEnable
  * @tc.desc: Verify the SetDrmEnable function
  * @tc.type: FUNC
- * @tc.require:
+ * @tc.require: #IBIE4T
  */
 HWTEST_F(DrmParamTest, SetDrmEnable, Function | SmallTest | Level1)
 {
@@ -55,7 +55,7 @@ HWTEST_F(DrmParamTest, SetDrmEnable, Function | SmallTest | Level1)
  * @tc.name: IsDrmEnable
  * @tc.desc: Verify the result of IsDrmEnable function
  * @tc.type: FUNC
- * @tc.require:
+ * @tc.require: #IBIE4T
  */
 HWTEST_F(DrmParamTest, IsDrmEnable, Function | SmallTest | Level1)
 {

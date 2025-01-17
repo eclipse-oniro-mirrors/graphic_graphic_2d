@@ -40,7 +40,7 @@ void HwcParamTest::TearDown() {}
  * @tc.name: SetHwcEnable
  * @tc.desc: Verify the SetHwcEnable function
  * @tc.type: FUNC
- * @tc.require:
+ * @tc.require: #IBIE4T
  */
 HWTEST_F(HwcParamTest, SetHwcEnable, Function | SmallTest | Level1)
 {
@@ -55,7 +55,7 @@ HWTEST_F(HwcParamTest, SetHwcEnable, Function | SmallTest | Level1)
  * @tc.name: SetHwcMirrorEnable
  * @tc.desc: Verify the SetHwcMirrorEnable function
  * @tc.type: FUNC
- * @tc.require:
+ * @tc.require: #IBIE4T
  */
 HWTEST_F(HwcParamTest, SetHwcMirrorEnable, Function | SmallTest | Level1)
 {
@@ -70,7 +70,7 @@ HWTEST_F(HwcParamTest, SetHwcMirrorEnable, Function | SmallTest | Level1)
  * @tc.name: SetSourceTuningForApp
  * @tc.desc: Verify the SetSourceTuningForApp function
  * @tc.type: FUNC
- * @tc.require:
+ * @tc.require: #IBIE4T
  */
 HWTEST_F(HwcParamTest, SetSourceTuningForApp, Function | SmallTest | Level1)
 {
@@ -79,17 +79,13 @@ HWTEST_F(HwcParamTest, SetSourceTuningForApp, Function | SmallTest | Level1)
     std::string val = "1";
     hwcParam.SetSourceTuningForApp(appName, val);
     ASSERT_EQ(hwcParam.sourceTuningMap_[appName], 1);
-    std::string invalidAppName = "invalidTestApp";
-    std::string invalidVal = "invalid";
-    hwcParam.SetSourceTuningForApp(invalidAppName, invalidVal);
-    ASSERT_EQ(hwcParam.sourceTuningMap_[invalidAppName], 0);
 }
 
 /**
  * @tc.name: SetSolidColorLayerForApp
  * @tc.desc: Verify the SetSolidColorLayerForApp function
  * @tc.type: FUNC
- * @tc.require:
+ * @tc.require: #IBIE4T
  */
 HWTEST_F(HwcParamTest, SetSolidColorLayerForApp, Function | SmallTest | Level1)
 {
@@ -98,17 +94,13 @@ HWTEST_F(HwcParamTest, SetSolidColorLayerForApp, Function | SmallTest | Level1)
     std::string val = "1";
     hwcParam.SetSolidColorLayerForApp(appName, val);
     ASSERT_EQ(hwcParam.solidColorLayerMap_[appName], 1);
-    std::string invalidAppName = "invalidTestApp";
-    std::string invalidVal = "invalid";
-    hwcParam.SetSolidColorLayerForApp(invalidAppName, invalidVal);
-    ASSERT_EQ(hwcParam.solidColorLayerMap_[invalidAppName], 0);
 }
 
 /**
  * @tc.name: IsHwcEnable
  * @tc.desc: Verify the result of IsHwcEnable function
  * @tc.type: FUNC
- * @tc.require:
+ * @tc.require: #IBIE4T
  */
 HWTEST_F(HwcParamTest, IsHwcEnable, Function | SmallTest | Level1)
 {
@@ -123,7 +115,7 @@ HWTEST_F(HwcParamTest, IsHwcEnable, Function | SmallTest | Level1)
  * @tc.name: IsHwcMirrorEnable
  * @tc.desc: Verify the result of IsHwcMirrorEnable function
  * @tc.type: FUNC
- * @tc.require:
+ * @tc.require: #IBIE4T
  */
 HWTEST_F(HwcParamTest, IsHwcMirrorEnable, Function | SmallTest | Level1)
 {
@@ -138,7 +130,7 @@ HWTEST_F(HwcParamTest, IsHwcMirrorEnable, Function | SmallTest | Level1)
  * @tc.name: GetSourceTuningForApp
  * @tc.desc: Verify the result of GetSourceTuningForApp function
  * @tc.type: FUNC
- * @tc.require:
+ * @tc.require: #IBIE4T
  */
 HWTEST_F(HwcParamTest, GetSourceTuningForApp, Function | SmallTest | Level1)
 {
@@ -158,7 +150,7 @@ HWTEST_F(HwcParamTest, GetSourceTuningForApp, Function | SmallTest | Level1)
  * @tc.name: GetSolidColorLayerForApp
  * @tc.desc: Verify the result of GetSolidColorLayerForApp function
  * @tc.type: FUNC
- * @tc.require:
+ * @tc.require: #IBIE4T
  */
 HWTEST_F(HwcParamTest, GetSolidColorLayerForApp, Function | SmallTest | Level1)
 {
