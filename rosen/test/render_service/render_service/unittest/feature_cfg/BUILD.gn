@@ -56,8 +56,8 @@ ohos_unittest("feature_cfg_test") {
   ]
 
   deps = [
+    "$graphic_2d_root/rosen/modules/render_service:librender_service",
     "$graphic_2d_root/utils/test_header:test_header",
-    "//foundation/graphic/graphic_2d/rosen/modules/render_service:librender_service",
   ]
 
   external_deps = [
