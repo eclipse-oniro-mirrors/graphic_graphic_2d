@@ -17,8 +17,8 @@
 #include <chrono>
 #include <condition_variable>
 #include <algorithm>
+#include <cinttypes>
 #include <cstdint>
-#include <inttypes.h>
 #include <mutex>
 #include <sched.h>
 #include <sys/resource.h>
