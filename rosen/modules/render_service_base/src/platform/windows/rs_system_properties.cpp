@@ -510,7 +510,7 @@ SubTreePrepareCheckType RSSystemProperties::GetSubTreePrepareCheckType()
 
 bool RSSystemProperties::GetSingleDrawableLockerEnabled()
 {
-    return false;
+    return true;
 }
 
 bool RSSystemProperties::GetTargetUIFirstDfxEnabled(std::vector<std::string>& SurfaceNames)
