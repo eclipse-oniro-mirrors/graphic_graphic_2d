@@ -71,7 +71,7 @@ void RSRenderServiceListener::OnBufferAvailable()
         if (ret == GSERROR_OK && supportFastCompose) {
             int64_t lastFlushedDesiredPresentTimeStamp = 0;
             ret = consumer->GetLastFlushedDesiredPresentTimeStamp(lastFlushedDesiredPresentTimeStamp);
-            if(ret == GSERROR_OK) {
+            if (ret == GSERROR_OK) {
                 RS_TRACE_NAME_FMT("RSRenderServiceListener::OnBufferAvailable SupportFastCompose : %d, " \
                 "bufferTimeStamp : %" PRId64, supportFastCompose, lastFlushedDesiredPresentTimeStamp);
                 RSMainThread::Instance()->CheckFastCompose(lastFlushedDesiredPresentTimeStamp);

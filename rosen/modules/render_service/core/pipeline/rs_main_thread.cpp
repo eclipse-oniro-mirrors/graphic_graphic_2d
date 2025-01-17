@@ -3881,7 +3881,7 @@ void RSMainThread::CheckFastCompose(int64_t lastFlushedDesiredPresentTimeStamp)
 {
     auto nowTime = SystemTime();
     int64_t vsyncPeriod = 0;
-    VsyncError ret = VSYNC_ERROR_UNKOWN; 
+    VsyncError ret = VSYNC_ERROR_UNKOWN;
     if (receiver_) {
         ret = receiver_->GetVSyncPeriod(vsyncPeriod);
     }
