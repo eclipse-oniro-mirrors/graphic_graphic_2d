@@ -1577,9 +1577,13 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
         if (surfaceHandler->GetAvailableBufferCount() > 0) {
             needRequestNextVsync = true;
         }
-        bool isHdrSurface = CheckIsHdrSurface(*surfaceNode);
-        surfaceNode->SetHdrVideo(isHdrSurface,
-            CheckIsAihdrSurface(*surfaceNode) ? HDR_TYPE::AIHDR_VIDEO : HDR_TYPE::VIDEO);
+        if (CheckIsHdrSurface(*surfaceNode)) {
+            if (CheckIsAihdrSurface(*surfaceNode)) {
+                surfaceNode->SetHdrVideo(HdrStatus::AI_HDR_VIDEO);
+            } else {
+                surfaceNode->SetHdrVideo(HdrStatus::HDR_VIDEO);
+            }
+        }
     });
     prevHdrSwitchStatus_ = RSLuminanceControl::Get().IsHdrPictureOn();
     if (needRequestNextVsync) {
@@ -2334,15 +2338,14 @@ bool RSMainThread::DoDirectComposition(std::shared_ptr<RSBaseRenderNode> rootNod
             RSHardwareThread::Instance().GetEventQueueDump().c_str());
     }
 #ifdef RS_ENABLE_GPU
-    bool hasHdrVideo = false;
-    HDR_TYPE hdrVideoType = HDR_TYPE::VIDEO;
     uint32_t screenId = displayNode->GetScreenId();
     for (auto& surfaceNode : hardwareEnabledNodes_) {
-        auto surfaceHandler = surfaceNode->GetRSSurfaceHandler();
-        if (surfaceNode->GetHdrVideo()) {
-            hasHdrVideo = true;
-            hdrVideoType = surfaceNode->GetHdrVideoType();
+        if (surfaceNode == nullptr) {
+            RS_LOGE("RSMainThread::DoDirectComposition: surfaceNode is null!");
+            return false;
         }
+        displayNode->SetHdrStatus(false, surfaceNode->GetHdrVideo());
+        auto surfaceHandler = surfaceNode->GetRSSurfaceHandler();
         if (!surfaceNode->IsHardwareForcedDisabled()) {
             auto params = static_cast<RSSurfaceRenderParams*>(surfaceNode->GetStagingRenderParams().get());
             if (!surfaceHandler->IsCurrentFrameBufferConsumed() && params->GetPreBuffer() != nullptr) {
@@ -2354,9 +2357,7 @@ bool RSMainThread::DoDirectComposition(std::shared_ptr<RSBaseRenderNode> rootNod
             params->SetBufferSynced(true);
         }
     }
-    RS_LOGD("RSMainThread::DoDirectComposition: has hdr video: %{public}d, hdr video type: %{public}d,"
-        " screenId: %{public}u", hasHdrVideo, hdrVideoType, screenId);
-    RSLuminanceControl::Get().SetHdrStatus(screenId, hasHdrVideo, hdrVideoType);
+    RSLuminanceControl::Get().SetHdrStatus(screenId, displayNode->GetHdrStatus());
 #endif
 #ifdef RS_ENABLE_GPU
     RSPointerWindowManager::Instance().HardCursorCreateLayerForDirect(processor);
