@@ -2574,12 +2574,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             break;
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_SCREEN_SWITCHED) : {
-            ScreenId id{INVALID_SCREEN_ID};
-            if (!data.ReadUint64(id)) {
-                ret = ERR_INVALID_DATA;
-                break;
-            }
-            NotifyScreenSwitched(id);
+            NotifyScreenSwitched();
             break;
         }
         default: {

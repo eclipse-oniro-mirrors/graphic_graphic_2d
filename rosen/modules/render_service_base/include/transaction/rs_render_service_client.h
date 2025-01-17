@@ -397,7 +397,7 @@ public:
 
     bool UnregisterSurfaceBufferCallback(pid_t pid, uint64_t uid);
 
-    void NotifyScreenSwitched(ScreenId id);
+    void NotifyScreenSwitched();
 
     void ForceRefreshOneFrameWithNextVSync();
 

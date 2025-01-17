@@ -601,7 +601,7 @@ void RSDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         return;
     }
 
-    if (RSSystemProperties::IsFoldScreenFlag() && screenManager->GetScreenSwitchStatus()) {
+    if (RSSystemProperties::IsFoldScreenFlag() && screenManager->IsScreenSwitching()) {
         SetDrawSkipType(DrawSkipType::RENDER_SKIP_IF_SCREEN_SWITCHING);
         RS_LOGI("RSDisplayRenderNodeDrawable::OnDraw FoldScreenNodeSwitching is true, do not drawframe");
         RS_TRACE_NAME_FMT("RSDisplayRenderNodeDrawable FoldScreenNodeSwitching is true");

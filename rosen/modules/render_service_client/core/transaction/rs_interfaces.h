@@ -294,8 +294,6 @@ public:
 
     void DisableCacheForRotation();
 
-    void SetScreenSwitching(bool flag);
-
     void SetOnRemoteDiedCallback(const OnRemoteDiedCallback& callback);
 
     void SetCurtainScreenUsingStatus(bool isCurtainScreenOn);
@@ -336,7 +334,7 @@ public:
     // Make this node(nodeIdStr) should do DSS composition and set the layer to top. otherwise do GPU composition.
     void SetLayerTop(const std::string &nodeIdStr, bool isTop);
 
-    void NotifyScreenSwitched(ScreenId id);
+    void NotifyScreenSwitched();
 
     void ForceRefreshOneFrameWithNextVSync();
 private:
