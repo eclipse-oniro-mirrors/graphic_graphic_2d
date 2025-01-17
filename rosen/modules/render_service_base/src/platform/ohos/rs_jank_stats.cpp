@@ -521,7 +521,7 @@ void RSJankStats::SetReportRsSceneJankStart(const AppInfo& info)
     std::lock_guard<std::mutex> lock(mutex_);
     RS_TRACE_NAME("RSJankStats::SetReportRsSceneJankStart receive notification: " + info.processName);
     auto currentTime = GetCurrentSteadyTimeMs();
-    if (!isLastReportSceneDone_ && info.startTime - appInfo_.startTime > MIN_FRAME_SHOW_TIME) {
+    if (!isLastReportSceneDone_ && currentTime - appInfo_.startTime > MIN_FRAME_SHOW_TIME) {
         appInfo_.endTime = currentTime;
         ReportSceneJankStats(appInfo_);
     }
