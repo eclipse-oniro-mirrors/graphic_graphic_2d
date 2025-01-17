@@ -520,6 +520,11 @@ public:
 
     void NotifyScreenNotSwitching();
 
+    // Window Container
+    void AttachToWindowContainer(std::shared_ptr<RSSurfaceRenderNode> node);
+    void DetachFromWindowContainer(std::shared_ptr<RSSurfaceRenderNode> node);
+    void SetWindowContainer(std::shared_ptr<RSBaseRenderNode> container);
+
 protected:
     void OnSync() override;
 private:
@@ -605,6 +610,9 @@ private:
 
     friend class DisplayNodeCommandHelper;
     static inline ScreenStatusNotifyTask screenStatusNotifyTask_ = nullptr;
+
+    // Window Container
+    std::shared_ptr<RSBaseRenderNode> windowContainer_;
 };
 } // namespace Rosen
 } // namespace OHOS

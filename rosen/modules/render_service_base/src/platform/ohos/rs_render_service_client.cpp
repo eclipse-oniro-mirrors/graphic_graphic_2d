@@ -1830,5 +1830,13 @@ void RSRenderServiceClient::NotifyScreenSwitched()
         renderService->NotifyScreenSwitched();
     }
 }
+
+void RSRenderServiceClient::SetWindowContainer(NodeId nodeId, bool value)
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService!= nullptr) {
+        renderService->SetWindowContainer(nodeId, value);
+    }
+}
 } // namespace Rosen
 } // namespace OHOS
