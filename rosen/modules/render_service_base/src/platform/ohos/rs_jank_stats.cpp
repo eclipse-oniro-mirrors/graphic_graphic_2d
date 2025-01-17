@@ -390,7 +390,7 @@ void RSJankStats::ReportSceneJankStats(const AppInfo& appInfo)
     int64_t reportDuration = reportTimeSteady - lastSceneReportTimeSteady_;
     int64_t lastReportTime = lastSceneReportTime_;
     std::vector<uint16_t> rsSceneJankStats = rsSceneJankStats_;
-    RS_TRACE_NAME("RSJankStats::ReportSceneJankStats receive notification: reportTime " + std::to_string(reportTime) +
+    RS_TRACE_NAME("RSJankStats::ReportSceneJankStats reportTime " + std::to_string(reportTime) +
                   ", lastJankFrame6FreqTime " + std::to_string(lastJankFrame6FreqTime));
 
     RSBackgroundThread::Instance().PostTask([reportDuration, lastReportTime, rsSceneJankStats, appInfo]() {
