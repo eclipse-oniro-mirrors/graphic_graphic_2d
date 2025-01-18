@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#include "gtest/gtest.h"
 #include "feature/anco_manager/rs_ext_node_operation.h"
+#include "gtest/gtest.h"
 using namespace testing;
 using namespace testing::ext;
 
