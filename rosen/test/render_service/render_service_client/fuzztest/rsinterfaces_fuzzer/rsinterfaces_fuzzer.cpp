@@ -153,6 +153,7 @@ bool RSPhysicalScreenFuzzTest(const uint8_t* data, size_t size)
     std::vector<float> partitionPoints;
     rsInterfaces.RegisterSurfaceOcclusionChangeCallback(static_cast<NodeId>(id), surfaceOcclusionCb, partitionPoints);
     rsInterfaces.UnRegisterSurfaceOcclusionChangeCallback(static_cast<NodeId>(id));
+    rsInterfaces.SetPhysicalScreenResolution(static_cast<NodeId>(id), width, height);
     rsInterfaces.ResizeVirtualScreen(static_cast<NodeId>(id), width, height);
     rsInterfaces.SetVirtualMirrorScreenCanvasRotation(static_cast<ScreenId>(id), canvasRotation);
     rsInterfaces.SetVirtualMirrorScreenScaleMode(static_cast<ScreenId>(id), static_cast<ScreenScaleMode>(scaleMode));

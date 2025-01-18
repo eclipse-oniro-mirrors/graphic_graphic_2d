@@ -23,14 +23,13 @@ namespace OHOS {
 namespace Rosen {
 class RSSLRScaleFunction {
 public:
-    RSSLRScaleFunction() = delete;
     RSSLRScaleFunction(float dstWidth, float dstHeight, float srcWidth, float srcHeight);
     ~RSSLRScaleFunction() = default;
     void CheckOrRefreshScreen(
         float dstWidth, float dstHeight, float srcWidth, float srcHeight);
     void CanvasScale(RSPaintFilterCanvas& canvas);
-    void ProcessCacheImage(RSPaintFilterCanvas& canvas,
-        Drawing::Image& cacheImageProcessed);
+    void ProcessCacheImage(RSPaintFilterCanvas& canvas, Drawing::Image& cacheImageProcessed);
+    void ProcessOffscreenImage(RSPaintFilterCanvas& canvas, Drawing::Image& offscreenImage);
 
     bool GetIsSLRCopy() const
     {

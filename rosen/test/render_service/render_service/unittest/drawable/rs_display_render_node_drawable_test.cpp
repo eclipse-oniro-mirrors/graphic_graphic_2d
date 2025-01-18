@@ -123,6 +123,34 @@ HWTEST_F(RSDisplayRenderNodeDrawableTest, CreateDisplayRenderNodeDrawable, TestS
 }
 
 /**
+ * @tc.name: ScaleCanvasIfNeeded
+ * @tc.desc: Test ScaleCanvasIfNeeded
+ * @tc.type: FUNC
+ * @tc.require: #I9NVOG
+ */
+HWTEST_F(RSDisplayRenderNodeDrawableTest, ScaleCanvasIfNeeded001, TestSize.Level1)
+{
+    ASSERT_NE(displayDrawable_, nullptr);
+    auto param = system::GetParameter("rosen.slr.expand.enabled", "");
+    ScreenInfo screenInfo = {
+        .phyWidth = DEFAULT_CANVAS_SIZE,
+        .phyHeight = DEFAULT_CANVAS_SIZE,
+        .width = DEFAULT_CANVAS_SIZE,
+        .height = DEFAULT_CANVAS_SIZE,
+        .isSamplingOn = false,
+    };
+    system::SetParameter("rosen.slr.expand.enabled", "1");
+    displayDrawable_->ScaleCanvasIfNeeded(screenInfo);
+    ASSERT_EQ(displayDrawable_->slrScale_, nullptr);
+
+    screenInfo.isSamplingOn = true;
+    system::SetParameter("rosen.slr.expand.enabled", "0");
+    displayDrawable_->ScaleCanvasIfNeeded(screenInfo);
+    ASSERT_EQ(displayDrawable_->slrScale_, nullptr);
+    system::SetParameter("rosen.slr.expand.enabled", param);
+}
+
+/**
  * @tc.name: PrepareOffscreenRender001
  * @tc.desc: Test PrepareOffscreenRender, if offscreenWidth/offscreenHeight were not initialized.
  * @tc.type: FUNC
@@ -1950,21 +1978,6 @@ HWTEST_F(RSDisplayRenderNodeDrawableTest, SkipFrameByInterval, TestSize.Level1)
     ASSERT_FALSE(res);
     res = displayDrawable_->SkipFrameByInterval(1, 2);
     ASSERT_FALSE(res);
-}
-
-/**
- * @tc.name: UseCanvasSizeTest
- * @tc.desc: Test SetUseCanvasSize and GetUseCanvasSize
- * @tc.type: FUNC
- * @tc.require: issueIAGR5V
- */
-HWTEST_F(RSDisplayRenderNodeDrawableTest, UseCanvasSizeTest, TestSize.Level1)
-{
-    ASSERT_NE(displayDrawable_, nullptr);
-    displayDrawable_->SetUseCanvasSize(true);
-    EXPECT_TRUE(displayDrawable_->GetUseCanvasSize());
-    displayDrawable_->SetUseCanvasSize(false);
-    EXPECT_FALSE(displayDrawable_->GetUseCanvasSize());
 }
 
 /**
