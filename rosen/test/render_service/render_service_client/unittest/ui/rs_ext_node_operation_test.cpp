@@ -14,7 +14,7 @@
  */
 
 #include "gtest/gtest.h"
-#include "ui/rs_ext_node_operation.h"
+#include "feature/anco_manager/rs_ext_node_operation.h"
 using namespace testing;
 using namespace testing::ext;
 
