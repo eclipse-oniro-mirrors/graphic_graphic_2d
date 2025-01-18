@@ -116,16 +116,6 @@ public:
         isFirstTimeToProcessor_ = false;
     }
 
-    void SetUseCanvasSize(bool useCanvasSize)
-    {
-        useCanvasSize_ = useCanvasSize;
-    }
-
-    bool GetUseCanvasSize() const
-    {
-        return useCanvasSize_;
-    }
-
     ScreenRotation GetOriginScreenRotation() const
     {
         return originScreenRotation_;
@@ -166,12 +156,15 @@ private:
     void SetSecurityMask(RSProcessor& processor);
     void SetScreenRotationForPointLight(RSDisplayRenderParams &params);
     // Prepare for off-screen render
+    void ScaleCanvasIfNeeded(const ScreenInfo& screenInfo);
+    void PrepareOffscreenRender(const RSDisplayRenderNodeDrawable& displayDrawable,
+        bool useFixedSize = false, bool useCanvasSize = true);
     void ClearTransparentBeforeSaveLayer();
-    void PrepareOffscreenRender(const RSDisplayRenderNodeDrawable& displayDrawable, bool useFixedSize = false);
     static std::shared_ptr<Drawing::ShaderEffect> MakeBrightnessAdjustmentShader(
         const std::shared_ptr<Drawing::Image>& image, const Drawing::SamplingOptions& sampling,
         float hdrBrightnessRatio);
-    void FinishOffscreenRender(const Drawing::SamplingOptions& sampling, float hdrBrightnessRatio = 1.0f);
+    void FinishOffscreenRender(const Drawing::SamplingOptions& sampling,
+        bool isSamplingOn = false, float hdrBrightnessRatio = 1.0f);
     void PrepareHdrDraw(int32_t offscreenWidth, int32_t offscreenHeight);
     void FinishHdrDraw(Drawing::Brush& paint, float hdrBrightnessRatio);
     int32_t GetSpecialLayerType(RSDisplayRenderParams& params, bool isSecLayerInVisivleRect = true);
@@ -191,8 +184,8 @@ private:
     static Registrar instance_;
     std::shared_ptr<RSSurfaceHandler> surfaceHandler_ = nullptr;
     mutable std::shared_ptr<RSPaintFilterCanvas> curCanvas_ = nullptr;
-    std::shared_ptr<Drawing::Surface> offscreenSurface_ = nullptr; // temporary holds offscreen surface
-    std::shared_ptr<RSPaintFilterCanvas> canvasBackup_ = nullptr; // backup current canvas before offscreen rende
+    std::shared_ptr<Drawing::Surface> offscreenSurface_ = nullptr; // temporarily holds offscreen surface
+    std::shared_ptr<RSPaintFilterCanvas> canvasBackup_ = nullptr; // backup current canvas before offscreen render
     std::unordered_set<NodeId> currentBlackList_ = {};
     std::unordered_set<NodeId> lastBlackList_ = {};
     bool curSecExemption_ = false;
@@ -209,8 +202,6 @@ private:
     uint64_t virtualSurfaceUniqueId_ = 0;
     bool resetRotate_ = false;
     bool isFirstTimeToProcessor_ = true;
-    // Do not use canvas size when recording HDR screen
-    bool useCanvasSize_ = true;
     ScreenRotation originScreenRotation_ = ScreenRotation::INVALID_SCREEN_ROTATION;
     // dirty manager
     std::shared_ptr<RSDirtyRegionManager> syncDirtyManager_ = nullptr;
@@ -221,6 +212,7 @@ private:
     bool surfaceCreated_ = false;
     std::shared_ptr<RSSurface> surface_ = nullptr;
     std::shared_ptr<RSSurface> virtualSurface_ = nullptr;
+    std::unique_ptr<RSSLRScaleFunction> slrScale_;
 
     static std::shared_ptr<Drawing::RuntimeEffect> brightnessAdjustmentShaderEffect_;
 
