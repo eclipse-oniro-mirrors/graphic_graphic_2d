@@ -283,6 +283,7 @@ public:
     {
         return instanceRootNodeId_;
     }
+
     const std::shared_ptr<RSRenderNode> GetInstanceRootNode() const;
     inline NodeId GetFirstLevelNodeId() const
     {
@@ -898,6 +899,11 @@ protected:
     virtual void OnSkipSync();
     virtual void ClearResource() {};
     virtual void ClearNeverOnTree() {};
+
+    void AddUIExtensionChild(SharedPtr child);
+    void MoveUIExtensionChild(SharedPtr child);
+    void RemoveUIExtensionChild(SharedPtr child);
+    bool NeedRoutedToUIExtension(SharedPtr child);
 
     void UpdateDrawableVecV2();
 

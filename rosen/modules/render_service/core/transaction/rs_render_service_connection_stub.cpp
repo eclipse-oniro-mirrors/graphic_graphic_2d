@@ -478,6 +478,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             bool isTextureExportNode = data.ReadBool();
             bool isSync = data.ReadBool();
             auto surfaceWindowType = static_cast<SurfaceWindowType>(data.ReadUint8());
+            bool unobscured = data.ReadBool();
             if (!CheckCreateNodeAndSurface(callingPid, type, surfaceWindowType)) {
                 ret = ERR_INVALID_DATA;
                 break;
@@ -486,7 +487,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 .id = nodeId, .name = surfaceName, .nodeType = type,
                 .isTextureExportNode = isTextureExportNode, .isSync = isSync,
                 .surfaceWindowType = surfaceWindowType};
-            sptr<Surface> surface = CreateNodeAndSurface(config);
+            sptr<Surface> surface = CreateNodeAndSurface(config, unobscured);
             if (surface == nullptr) {
                 ret = ERR_NULL_OBJECT;
                 break;

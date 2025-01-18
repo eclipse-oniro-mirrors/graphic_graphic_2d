@@ -1298,6 +1298,11 @@ public:
         return nodeType_ == RSSurfaceNodeType::UI_EXTENSION_SECURE_NODE;
     }
 
+    bool IsUnobscuredUIExtensionNode() const
+    {
+        return nodeType_ == RSSurfaceNodeType::UI_EXTENSION_COMMON_NODE && GetUIExtensionUnobscured();
+    }
+
     bool IsUIExtension() const
     {
         return nodeType_ == RSSurfaceNodeType::UI_EXTENSION_COMMON_NODE ||
@@ -1419,6 +1424,8 @@ public:
 
     void ResetIsBufferFlushed();
 
+    bool GetUIExtensionUnobscured() const;
+
 protected:
     void OnSync() override;
     void OnSkipSync() override;
@@ -1437,6 +1444,7 @@ private:
     bool IsHistoryOccludedDirtyRegionNeedSubmit();
     void ClearHistoryUnSubmittedDirtyInfo();
     void UpdateHistoryUnsubmittedDirtyInfo();
+    void SetUIExtensionUnobscured(bool obscured);
     inline bool IsHardwareDisabledBySrcRect() const
     {
         return isHardwareForcedDisabledBySrcRect_;
@@ -1548,6 +1556,7 @@ private:
     bool subThreadAssignable_ = false;
     bool oldNeedDrawBehindWindow_ = false;
     RectI skipFrameDirtyRect_;
+    bool UIExtensionUnobscured_ = false;
     std::atomic<bool> isNotifyRTBufferAvailable_ = false;
     std::atomic<bool> isNotifyUIBufferAvailable_ = true;
     std::atomic_bool isBufferAvailable_ = false;

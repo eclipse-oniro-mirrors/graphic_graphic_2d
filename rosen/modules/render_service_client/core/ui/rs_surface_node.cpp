@@ -56,7 +56,7 @@ RSSurfaceNode::SharedPtr RSSurfaceNode::Create(const RSSurfaceNodeConfig& surfac
 }
 
 RSSurfaceNode::SharedPtr RSSurfaceNode::Create(const RSSurfaceNodeConfig& surfaceNodeConfig,
-    RSSurfaceNodeType type, bool isWindow)
+    RSSurfaceNodeType type, bool isWindow, bool unobscured)
 {
     auto transactionProxy = RSTransactionProxy::GetInstance();
     if (transactionProxy == nullptr) {
@@ -86,7 +86,7 @@ RSSurfaceNode::SharedPtr RSSurfaceNode::Create(const RSSurfaceNodeConfig& surfac
             config.id, config.name, static_cast<uint8_t>(config.nodeType), config.surfaceWindowType);
         transactionProxy->AddCommand(command, isWindow);
     } else {
-        if (!node->CreateNodeAndSurface(config, surfaceNodeConfig.surfaceId)) {
+        if (!node->CreateNodeAndSurface(config, surfaceNodeConfig.surfaceId, unobscured)) {
             ROSEN_LOGE("RSSurfaceNode::Create, create node and surface failed");
             return nullptr;
         }
@@ -547,11 +547,11 @@ bool RSSurfaceNode::CreateNode(const RSSurfaceRenderNodeConfig& config)
         CreateNode(config);
 }
 
-bool RSSurfaceNode::CreateNodeAndSurface(const RSSurfaceRenderNodeConfig& config, SurfaceId surfaceId)
+bool RSSurfaceNode::CreateNodeAndSurface(const RSSurfaceRenderNodeConfig& config, SurfaceId surfaceId, bool unobscured)
 {
     if (surfaceId == 0) {
         surface_ = std::static_pointer_cast<RSRenderServiceClient>(RSIRenderClient::CreateRenderServiceClient())->
-        CreateNodeAndSurface(config);
+        CreateNodeAndSurface(config, unobscured);
     } else {
 #ifndef ROSEN_CROSS_PLATFORM
         sptr<Surface> surface = SurfaceUtils::GetInstance()->GetSurface(surfaceId);
