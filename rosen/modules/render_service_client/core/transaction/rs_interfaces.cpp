@@ -117,12 +117,12 @@ int32_t RSInterfaces::SetScreenSecurityMask(ScreenId id, std::shared_ptr<Media::
 #ifdef ROSEN_OHOS
     Media::ImageInfo imageInfo;
     if (securityMask) {
-        securityMask->GetImageInfo(ImageInfo);
+        securityMask->GetImageInfo(imageInfo);
     }
-    if (securityMask && (ImageInfo.size.width > SECURITYMASK_IMAGE_WIDTH_LIMIT ||
-        ImageInfo.size.height > SECURITYMASK_IMAGE_HEIGHT_LIMIT)) {
+    if (securityMask && (imageInfo.size.width > SECURITYMASK_IMAGE_WIDTH_LIMIT ||
+        imageInfo.size.height > SECURITYMASK_IMAGE_HEIGHT_LIMIT)) {
         ROSEN_LOGE("SetScreenSecurityMask failed, securityMask width: %{public}d, height: %{public}d is error",
-            ImageInfo.size.width, ImageInfo.size.height);
+            imageInfo.size.width, imageInfo.size.height);
         return RS_CONNECTION_ERROR;
     }
     return renderServiceClient_->SetScreenSecurityMask(id, std::move(securityMask));
