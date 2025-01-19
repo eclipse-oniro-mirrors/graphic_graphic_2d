@@ -47,8 +47,9 @@ public:
 
     HgmErrCode HandlePkgsEvent(const std::vector<std::string>& pkgs);
     void HandleTouchInfo(const TouchInfo& touchInfo);
-    void HandleLightFactorStatus(bool isSafe);
+    void HandleLightFactorStatus(int32_t state);
     void HandleLowAmbientStatus(bool isEffect);
+    void SetScreenType(bool isLtpo);
 
     void CalcVote();
     HgmErrCode GetVoteRes(PolicyConfigData::StrategyConfig& strategyRes) const;

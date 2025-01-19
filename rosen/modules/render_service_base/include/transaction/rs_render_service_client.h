@@ -338,7 +338,7 @@ public:
 
     void ReportJankStats();
 
-    void NotifyLightFactorStatus(bool isSafe);
+    void NotifyLightFactorStatus(int32_t lightFactorStatus);
 
     void NotifyPackageEvent(uint32_t listSize, const std::vector<std::string>& packageList);
 
