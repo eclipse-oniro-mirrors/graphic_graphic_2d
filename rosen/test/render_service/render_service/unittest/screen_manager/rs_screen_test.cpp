@@ -2021,12 +2021,12 @@ HWTEST_F(RSScreenTest, SetSecurityMask001, testing::ext::TestSize.Level1)
 }
 
 /*
- * @tc.name: SetSecurityMask001
+ * @tc.name: SetSecurityMask002
  * @tc.desc: SetSecurityMask Test with virtualScreenId
  * @tc.type: FUNC
  * @tc.require: issueIBIQ0Q
  */
-HWTEST_F(RSScreenTest, SetSecurityMask001, testing::ext::TestSize.Level1)
+HWTEST_F(RSScreenTest, SetSecurityMask002, testing::ext::TestSize.Level1)
 {
     ScreenId virtualScreenId = 1;
     auto rsScreen = std::make_unique<impl::RSScreen>(virtualScreenId, true, nullptr, nullptr);

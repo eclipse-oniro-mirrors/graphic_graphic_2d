@@ -3055,7 +3055,7 @@ HWTEST_F(RSScreenManagerTest, SetScreenSecurityMask001, TestSize.Level1)
     constexpr uint32_t sizeHeight = 1280;
     auto virtualScreenId = screenManager->CreateVirtualScreen("virtualScreen01", sizeWidth, sizeHeight, nullptr);
     auto ret = screenManager->SetScreenSecurityMask(virtualScreenId, nullptr);
-    ASSERT_EQ(res, StatusCode::SUCCESS);
+    ASSERT_EQ(ret, StatusCode::SUCCESS);
 }
 
 /*
@@ -3069,14 +3069,14 @@ HWTEST_F(RSScreenManagerTest, SetScreenSecurityMask002, TestSize.Level1)
     auto screenManager = CreateOrGetScreenManager();
     ASSERT_NE(nullptr, screenManager);
     auto csurface = IConsumerSurface::Create();
-    EXPECT_NE(csurface, nullptr);
+    ASSERT_NE(csurface, nullptr);
     auto producer = csurface->GetProducer();
     auto psurface = Surface::CreateSurfaceAsProducer(producer);
-    EXPECT_NE(psurface, nullptr);
+    ASSERT_NE(psurface, nullptr);
 
     constexpr uint32_t sizeWidth = 720;
     constexpr uint32_t sizeHeight = 1280;
-    ScreenId virtualScreenId = screenManager->CreateVirtualScreen(
+    auto virtualScreenId = screenManager->CreateVirtualScreen(
         "VirtualScreen01", sizeWidth, sizeHeight, psurface);
     const uint32_t color[1] = { 0x6f0000ff };
     uint32_t colorLength = sizeof(color) / sizeof(color[0]);
@@ -3104,7 +3104,7 @@ HWTEST_F(RSScreenManagerTest, GetScreenSecurityMask001, TestSize.Level1)
     constexpr uint32_t sizeHeight = 1280;
     auto virtualScreenId = screenManager->CreateVirtualScreen("virtualScreen01", sizeWidth, sizeHeight, nullptr);
     screenManager->SetScreenSecurityMask(virtualScreenId, nullptr);
-    auto ScreenSecurityMaskGet = screenManager->SetScreenSecurityMask(virtualScreenId);
+    auto ScreenSecurityMaskGet = screenManager->GetScreenSecurityMask(virtualScreenId);
     ASSERT_EQ(ScreenSecurityMaskGet, nullptr);
 }
 } // namespace OHOS::Rosen
