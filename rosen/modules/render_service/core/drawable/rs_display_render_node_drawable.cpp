@@ -1113,12 +1113,13 @@ void RSDisplayRenderNodeDrawable::DrawMirrorCopy(
     mirrorDrawable.SetOriginScreenRotation(GetOriginScreenRotation());
     virtualProcesser->CalculateTransform(mirrorDrawable);
     RSDirtyRectsDfx rsDirtyRectsDfx(*this);
+    auto slrManager = virtualProcesser->GetSlrManager();
     if (!uniParam.IsVirtualDirtyEnabled() || (enableVisibleRect_ && curVisibleRect_.GetTop() > 0)) {
         std::vector<RectI> emptyRects = {};
         virtualProcesser->SetRoiRegionToCodec(emptyRects);
     } else {
         auto dirtyRects = CalculateVirtualDirty(
-            virtualProcesser, params, virtualProcesser->GetCanvasMatrix());
+            virtualProcesser, params, slrManager ? slrManager->GetScaleMatrix() : virtualProcesser->GetCanvasMatrix());
         rsDirtyRectsDfx.SetVirtualDirtyRects(dirtyRects, params.GetScreenInfo());
     }
     curCanvas_ = virtualProcesser->GetCanvas();
@@ -1130,11 +1131,20 @@ void RSDisplayRenderNodeDrawable::DrawMirrorCopy(
     curCanvas_->Clear(Drawing::Color::COLOR_TRANSPARENT);
     virtualProcesser->CanvasClipRegionForUniscaleMode();
     RSUniRenderThread::SetCaptureParam(CaptureParam(false, false, true, 1.0f, 1.0f));
-    mirrorDrawable.DrawHardwareEnabledNodesMissedInCacheImage(*curCanvas_);
+    if (slrManager) {
+        curCanvas_->RestoreToCount(slrManager->GetSaveCount());
+        curCanvas_->Save();
+        auto scaleNum = slrManager->GetScaleNum();
+        curCanvas_->Scale(scaleNum, scaleNum);
+        mirrorDrawable.DrawHardwareEnabledNodesMissedInCacheImage(*curCanvas_);
+        curCanvas_->Restore();
+    } else {
+        mirrorDrawable.DrawHardwareEnabledNodesMissedInCacheImage(*curCanvas_);
+    }
     if (cacheImage && RSSystemProperties::GetDrawMirrorCacheImageEnabled()) {
         RS_TRACE_NAME("DrawMirrorCopy with cacheImage");
         if (!enableVisibleRect_) {
-            RSUniRenderUtil::ProcessCacheImage(*curCanvas_, *cacheImage);
+            virtualProcesser->ProcessCacheImage(*cacheImage);
         } else {
             RSUniRenderUtil::ProcessCacheImageRect(*curCanvas_, *cacheImage, curVisibleRect_,
                 Drawing::Rect(0, 0, curVisibleRect_.GetWidth(), curVisibleRect_.GetHeight()));
@@ -1143,7 +1153,16 @@ void RSDisplayRenderNodeDrawable::DrawMirrorCopy(
         RS_TRACE_NAME("DrawMirrorCopy with displaySurface");
         virtualProcesser->ProcessDisplaySurfaceForRenderThread(mirrorDrawable);
     }
-    mirrorDrawable.DrawHardwareEnabledTopNodesMissedInCacheImage(*curCanvas_);
+    if (slrManager) {
+        curCanvas_->RestoreToCount(slrManager->GetSaveCount());
+        curCanvas_->Save();
+        auto scaleNum = slrManager->GetScaleNum();
+        curCanvas_->Scale(scaleNum, scaleNum);
+        mirrorDrawable.DrawHardwareEnabledTopNodesMissedInCacheImage(*curCanvas_);
+        curCanvas_->Restore();
+    } else {
+        mirrorDrawable.DrawHardwareEnabledTopNodesMissedInCacheImage(*curCanvas_);
+    }
     RSUniRenderThread::ResetCaptureParam();
     uniParam.SetOpDropped(isOpDropped);
     // Restore the initial state of the canvas to avoid state accumulation

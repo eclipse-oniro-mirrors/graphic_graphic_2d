@@ -4314,10 +4314,12 @@ bool RSMainThread::IsSingleDisplay()
 
 bool RSMainThread::HasMirrorDisplay() const
 {
-    hasWiredMirrorDisplay_ = false;
-    bool hasVirtualMirrorDisplay_ = false;
+    bool hasWiredMirrorDisplay = false;
+    bool hasVirtualMirrorDisplay = false;
     const std::shared_ptr<RSBaseRenderNode> rootNode = context_->GetGlobalRootRenderNode();
     if (rootNode == nullptr || rootNode->GetChildrenCount() <= 1) {
+        hasWiredMirrorDisplay_.store(false);
+        hasVirtualMirrorDisplay_.store(false);
         return false;
     }
 
@@ -4331,13 +4333,15 @@ bool RSMainThread::HasMirrorDisplay() const
         }
         if (auto mirroredNode = displayNode->GetMirrorSource().lock()) {
             if (displayNode->GetCompositeType() == RSDisplayRenderNode::CompositeType::UNI_RENDER_COMPOSITE) {
-                hasWiredMirrorDisplay_ = true;
+                hasWiredMirrorDisplay = true;
             } else {
-                hasVirtualMirrorDisplay_ = true;
+                hasVirtualMirrorDisplay = true;
             }
         }
     }
-    return hasWiredMirrorDisplay_ || hasVirtualMirrorDisplay_;
+    hasWiredMirrorDisplay_.store(hasWiredMirrorDisplay);
+    hasVirtualMirrorDisplay_.store(hasVirtualMirrorDisplay);
+    return hasWiredMirrorDisplay || hasVirtualMirrorDisplay;
 }
 
 void RSMainThread::UpdateRogSizeIfNeeded()

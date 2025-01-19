@@ -394,9 +394,13 @@ public:
         return isMultiDisplayPre_;
     }
 
-    bool HasWiredMirrorDisplay()
+    bool HasWiredMirrorDisplay() const
     {
         return hasWiredMirrorDisplay_;
+    }
+    bool HasVirtualMirrorDisplay() const
+    {
+        return hasVirtualMirrorDisplay_;
     }
     uint64_t GetCurrentVsyncTime() const
     {
@@ -574,7 +578,8 @@ private:
     bool vsyncControlEnabled_ = true;
     bool systemAnimatedScenesEnabled_ = false;
     bool isFoldScreenDevice_ = false;
-    mutable bool hasWiredMirrorDisplay_ = false;
+    mutable std::atomic_bool hasWiredMirrorDisplay_ = false;
+    mutable std::atomic_bool hasVirtualMirrorDisplay_ = false;
     // used for hardware enabled case
     bool doDirectComposition_ = true;
 #ifdef RS_ENABLE_GPU
