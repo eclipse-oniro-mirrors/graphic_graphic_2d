@@ -1504,6 +1504,9 @@ Drawing::Rect RSDisplayRenderNodeDrawable::GetImageRegions(float screenWidth, fl
     float realImageWidth, float realImageHeight)
 {
     auto dstRect = Drawing::Rect(0, 0, screenWidth, screenHeight);
+    if (realImageWidth == 0.0f || realImageHeight == 0.0f) {
+        return dstRect;
+    }
     float imageScaleWidth = screenWidth / realImageWidth;
     float imageScaleHeight = screenHeight / realImageHeight;
     auto imageWidth = realImageWidth * imageScaleHeight;
