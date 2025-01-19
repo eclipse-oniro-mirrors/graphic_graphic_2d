@@ -1540,13 +1540,13 @@ void RSDisplayRenderNodeDrawable::SetSecurityMask(RSProcessor& processor)
 
         auto watermark = RSUniRenderThread::Instance().GetWatermarkImg();
         auto screenInfo = screenManager->QueryScreenInfo(params->GetScreenId());
-        auto realImageWidth = static_cast<float>(image->GetWidth());
-        auto realImageHeight = static_cast<float>(image->GetHeight());
+        float realImageWidth = static_cast<float>(image->GetWidth());
+        float realImageHeight = static_cast<float>(image->GetHeight());
 
         curCanvas_->Clear(Drawing::Color::COLOR_TRANSPARENT);
         auto srcRect = Drawing::Rect(0, 0, image->GetWidth(), image->GetHeight());
-        auto screenWidth = static_cast<float>(screenInfo.width);
-        auto screenHeight = static_cast<float>(screenInfo.height);
+        float screenWidth = static_cast<float>(screenInfo.width);
+        float screenHeight = static_cast<float>(screenInfo.height);
         // Area to be drawn in the actual image
         auto dstRect = GetImageRegions(screenWidth, screenHeight, realImageWidth, realImageHeight);
         // Make sure the canvas is oriented accurately.
