@@ -88,7 +88,8 @@ public:
 
     virtual std::shared_ptr<Media::PixelMap> GetScreenSecurityMask(ScreenId id) const = 0;
 
-    virtual int32_t SetMirrorScreenVisibleRect(ScreenId id, const Rect& mainScreenRect) = 0;
+    virtual int32_t SetMirrorScreenVisibleRect(ScreenId id, const Rect& mainScreenRect,
+        bool supportRotation) = 0;
 
     virtual Rect GetMirrorScreenVisibleRect(ScreenId id) const = 0;
 
@@ -257,6 +258,8 @@ public:
 
     virtual bool IsScreenPoweringOn() const = 0;
 
+    virtual bool IsVisibleRectSupportRotation(screenId id) const = 0;
+
     virtual void SetScreenHasProtectedLayer(ScreenId id, bool hasProtectedLayer) = 0;
 
     virtual void SetScreenSwitchStatus(bool flag) = 0;
@@ -319,11 +322,11 @@ public:
 
     const std::vector<uint64_t> GetVirtualScreenSecurityExemptionList(ScreenId id) const override;
 
+    int32_t SetMirrorScreenVisibleRect(ScreenId id, const Rect& mainScreenRect, bool supportRotation = false) override;
+
     int32_t SetScreenSecurityMask(ScreenId id, std::shared_ptr<Media::PixelMap> securityMask) override;
         
     std::shared_ptr<Media::PixelMap> GetScreenSecurityMask(ScreenId id) const override;
-
-    int32_t SetMirrorScreenVisibleRect(ScreenId id, const Rect& mainScreenRect) override;
 
     Rect GetMirrorScreenVisibleRect(ScreenId id) const override;
 
@@ -504,6 +507,22 @@ public:
     bool IsScreenPoweringOn() const override
     {
         return isScreenPoweringOn_;
+    }
+
+    bool IsVisibleRectSupportRotation(screenId id) const override
+    {
+        std::lock_guard<std:mutex> lock(mutex_);
+        auto mirrorScreen = screens_.find(id);
+        if (mirrorScreen == screens_.end()) {
+            RS_LOGW("RSScreenManager %{public}s: There is no screen for id %{public}"PRIu64".", __func__, id);
+            return false;
+        }
+
+        if(mirrorScreen->second == nullptr) {
+            RS_LOGW("RSScreenManager %{public}s: Null screen for id %{public}"PRIu64".", __func__, id);
+            return false;
+        }
+        return mirrorScreen->second->GetVisibleRectSupportRotation();
     }
 
     void SetScreenHasProtectedLayer(ScreenId id, bool hasProtectedLayer) override;

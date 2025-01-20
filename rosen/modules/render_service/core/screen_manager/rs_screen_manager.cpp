@@ -1200,7 +1200,7 @@ std::shared_ptr<Media::PixelMap> RSScreenManager::GetScreenSecurityMask(ScreenId
     return iter->second->GetSecurityMask();
 }
 
-int32_t RSScreenManager::SetMirrorScreenVisibleRect(ScreenId id, const Rect& mainScreenRect)
+int32_t RSScreenManager::SetMirrorScreenVisibleRect(ScreenId id, const Rect& mainScreenRect, bool supportRotation)
 {
     if (id == INVALID_SCREEN_ID) {
         RS_LOGD("RSScreenManager %{public}s: INVALID_SCREEN_ID.", __func__);
@@ -1221,9 +1221,10 @@ int32_t RSScreenManager::SetMirrorScreenVisibleRect(ScreenId id, const Rect& mai
     static Rect ZERO = {0, 0, 0, 0};
     mirrorScreen->second->SetEnableVisibleRect(mainScreenRect != ZERO);
     mirrorScreen->second->SetMainScreenVisibleRect(mainScreenRect);
+    mirrorScreen->second->SetVisibleRectSupportRotation(supportRotation);
     RS_LOGD("RSScreenManager %{public}s: mirror screen(id %{public}" PRIu64 "), "
-        "visible rect[%{public}d, %{public}d, %{public}d, %{public}d].",
-        __func__, id, mainScreenRect.x, mainScreenRect.y, mainScreenRect.w, mainScreenRect.h);
+        "visible rect[%{public}d, %{public}d, %{public}d, %{public}d]. supportRotation: %{public}d",
+        __func__, id, mainScreenRect.x, mainScreenRect.y, mainScreenRect.w, mainScreenRect.h, supportRotation);
     return SUCCESS;
 }
 

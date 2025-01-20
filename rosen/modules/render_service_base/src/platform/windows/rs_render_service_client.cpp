@@ -471,7 +471,7 @@ int32_t RSRenderServiceClient::SetScreenSecurityMask(ScreenId id,
 }
 
 int32_t RSRenderServiceClient::SetMirrorScreenVisibleRect(
-    ScreenId id, const Rect& mainScreenRect)
+    ScreenId id, const Rect& mainScreenRect, bool supportRotation)
 {
     return {};
 }

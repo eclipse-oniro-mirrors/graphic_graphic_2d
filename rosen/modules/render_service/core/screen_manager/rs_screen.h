@@ -134,6 +134,8 @@ public:
     virtual Rect GetMainScreenVisibleRect() const = 0;
     virtual void SetHasProtectedLayer(bool hasProtectedLayer) = 0;
     virtual bool GetHasProtectedLayer() = 0;
+    virtual bool GetVisibleRectSupportRotation() const = 0;
+    virtual void SetVisibleRectSupportRotation(bool supportRotation) = 0;
 };
 
 namespace impl {
@@ -238,6 +240,8 @@ public:
     Rect GetMainScreenVisibleRect() const override;
     void SetHasProtectedLayer(bool hasProtectedLayer) override;
     bool GetHasProtectedLayer() override;
+    bool GetVisibleRectSupportRotation() override;
+    void SetVisibleRectSupportRotation(bool supportRotation) override;
 
 private:
     // create hdiScreen and get some information from drivers.
@@ -315,6 +319,7 @@ private:
     std::atomic<bool> skipWindow_ = false;
     bool isHardCursorSupport_ = false;
     mutable std::mutex skipFrameMutex_;
+    bool isSupportRotation =false;
     bool hasProtectedLayer_ = false;
 };
 } // namespace impl
