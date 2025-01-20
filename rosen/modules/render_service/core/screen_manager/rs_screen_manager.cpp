@@ -2414,6 +2414,22 @@ void RSScreenManager::SetScreenHasProtectedLayer(ScreenId id, bool hasProtectedL
     screensIt->second->SetHasProtectedLayer(hasProtectedLayer);
 }
 
+bool IsVisibleRectSupportRotation(ScreenId id) const
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    auto mirrorScreen = screens_.find(id);
+    if (mirrorScreen == screens_.end()) {
+        RS_LOGW("RSScreenManager %{public}s: There is no screen for id %{public}" PRIu64 ".", __func__, id);
+        return false;
+    }
+
+    if (mirrorScreen->second == nullptr) {
+        RS_LOGW("RSScreenManager %{public}s: Null screen for id %{public}" PRIu64 ".", __func__, id);
+        return false;
+    }
+    return mirrorScreen->second->GetVisibleRectSupportRotation();
+}
+
 void RSScreenManager::SetScreenSwitchStatus(bool flag)
 {
     isScreenSwitching_ = flag;

@@ -1269,12 +1269,12 @@ bool RSScreen::GetHasProtectedLayer()
 
 bool RSScreen::GetVisibleRectSupportRotation() const
 {
-    return isSupportRotation;
+    return isSupportRotation_;
 }
 
 void RSScreen::SetVisibleRectSupportRotation(bool supportRotation)
 {
-    isSupportRotation = supportRotation;
+    isSupportRotation_ = supportRotation;
 }
 } // namespace impl
 } // namespace Rosen

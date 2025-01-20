@@ -89,7 +89,7 @@ public:
     virtual std::shared_ptr<Media::PixelMap> GetScreenSecurityMask(ScreenId id) const = 0;
 
     virtual int32_t SetMirrorScreenVisibleRect(ScreenId id, const Rect& mainScreenRect,
-        bool supportRotation) = 0;
+        bool supportRotation = false) = 0;
 
     virtual Rect GetMirrorScreenVisibleRect(ScreenId id) const = 0;
 
@@ -258,7 +258,7 @@ public:
 
     virtual bool IsScreenPoweringOn() const = 0;
 
-    virtual bool IsVisibleRectSupportRotation(screenId id) const = 0;
+    virtual bool IsVisibleRectSupportRotation(ScreenId id) const = 0;
 
     virtual void SetScreenHasProtectedLayer(ScreenId id, bool hasProtectedLayer) = 0;
 
@@ -509,23 +509,9 @@ public:
         return isScreenPoweringOn_;
     }
 
-    bool IsVisibleRectSupportRotation(screenId id) const override
-    {
-        std::lock_guard<std:mutex> lock(mutex_);
-        auto mirrorScreen = screens_.find(id);
-        if (mirrorScreen == screens_.end()) {
-            RS_LOGW("RSScreenManager %{public}s: There is no screen for id %{public}"PRIu64".", __func__, id);
-            return false;
-        }
-
-        if(mirrorScreen->second == nullptr) {
-            RS_LOGW("RSScreenManager %{public}s: Null screen for id %{public}"PRIu64".", __func__, id);
-            return false;
-        }
-        return mirrorScreen->second->GetVisibleRectSupportRotation();
-    }
-
     void SetScreenHasProtectedLayer(ScreenId id, bool hasProtectedLayer) override;
+
+    bool IsVisibleRectSupportRotation(ScreenId id) const override;
 
     void SetScreenSwitchStatus(bool flag) override;
 

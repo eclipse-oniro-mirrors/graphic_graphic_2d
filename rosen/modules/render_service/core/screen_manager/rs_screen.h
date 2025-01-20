@@ -240,7 +240,7 @@ public:
     Rect GetMainScreenVisibleRect() const override;
     void SetHasProtectedLayer(bool hasProtectedLayer) override;
     bool GetHasProtectedLayer() override;
-    bool GetVisibleRectSupportRotation() override;
+    bool GetVisibleRectSupportRotation() const override;
     void SetVisibleRectSupportRotation(bool supportRotation) override;
 
 private:
@@ -319,7 +319,7 @@ private:
     std::atomic<bool> skipWindow_ = false;
     bool isHardCursorSupport_ = false;
     mutable std::mutex skipFrameMutex_;
-    bool isSupportRotation =false;
+    bool isSupportRotation_ = false;
     bool hasProtectedLayer_ = false;
 };
 } // namespace impl

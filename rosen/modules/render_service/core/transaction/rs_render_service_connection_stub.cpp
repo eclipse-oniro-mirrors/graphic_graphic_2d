@@ -679,7 +679,11 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 .w = w,
                 .h = h
             };
-            bool supportRotation = data.ReadBool();
+            bool supportRotation{false};
+            if (!data.ReadBool(supportRotation)) {
+                ret = ERR_INVALID_DATA;
+                break;
+            }
             int32_t status = SetMirrorScreenVisibleRect(id, mainScreenRect, supportRotation);
             if (!reply.WriteInt32(status)) {
                 ret = ERR_INVALID_REPLY;

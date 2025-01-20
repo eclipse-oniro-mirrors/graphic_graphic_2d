@@ -64,7 +64,7 @@ bool RSUniRenderVirtualProcessor::InitForRenderThread(DrawableV2::RSDisplayRende
         const auto& rect = screenManager->GetMirrorScreenVisibleRect(virtualScreenId_);
         visibleRect_ = Drawing::RectI(rect.x, rect.y, rect.x + rect.w, rect.y + rect.h);
         // not support rotation for MirrorScreen visibleRect
-        canvasRotation_ = screenManager->IsVisibleRectSupportRotation(visibleScreenId_);
+        canvasRotation_ = screenManager->IsVisibleRectSupportRotation(virtualScreenId_);
     }
 
     auto mirroredDisplayDrawable =
