@@ -392,6 +392,13 @@ void RSSurfaceRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         RS_LOGE("RSSurfaceRenderNodeDrawable::OnDraw params is nullptr");
         return;
     }
+    auto cloneSourceDrawable = std::static_pointer_cast<RSSurfaceRenderNodeDrawable>(
+        surfaceParams->GetCloneSourceDrawable().lock());
+    auto cloneSourceParams = cloneSourceDrawable ? cloneSourceDrawable->GetRenderParams().get() : nullptr;
+    if (cloneSourceParams) {
+        cloneSourceDrawable->OnDraw(*rscanvas);
+        return;
+    }
     if (DrawCloneNode(*rscanvas, *uniParam, *surfaceParams, false)) {
         return;
     }
@@ -688,6 +695,14 @@ void RSSurfaceRenderNodeDrawable::OnCapture(Drawing::Canvas& canvas)
         return;
     }
 
+    auto cloneSourceDrawable = std::static_pointer_cast<RSSurfaceRenderNodeDrawable>(
+        surfaceParams->GetCloneSourceDrawable().lock());
+    auto cloneSourceParams = cloneSourceDrawable ? cloneSourceDrawable->GetRenderParams().get() : nullptr;
+    if (cloneSourceParams) {
+        cloneSourceDrawable->OnCapture(canvas);
+        return;
+    }
+
     if (vmaCacheOff_) {
         Drawing::StaticFactory::SetVmaCacheStatus(false); // render this frame with vma cache off
     }
@@ -874,24 +889,25 @@ void RSSurfaceRenderNodeDrawable::CaptureSurface(RSPaintFilterCanvas& canvas, RS
         RSUniRenderThread::GetCaptureParam().isSingleSurface_ &&
         !RSUniRenderThread::GetCaptureParam().isSystemCalling_;
     if (!(surfaceParams.HasSecurityLayer() || surfaceParams.HasSkipLayer() || surfaceParams.HasSnapshotSkipLayer() ||
-        surfaceParams.HasProtectedLayer() || surfaceParams.GetHDRPresent() || hasHidePrivacyContent) &&
-        DealWithUIFirstCache(canvas, surfaceParams, *uniParams)) {
-        surfaceParams.SetHardwareEnabled(hwcEnable);
-        if (RSUniRenderThread::GetCaptureParam().isSingleSurface_) {
-            RS_LOGI("%{public}s DealWithUIFirstCache", __func__);
+        surfaceParams.HasProtectedLayer() || surfaceParams.GetHDRPresent() || hasHidePrivacyContent)) {
+        if (drawWindowCache_.DealWithCachedWindow(this, canvas, surfaceParams, *uniParams)) {
+            surfaceParams.SetHardwareEnabled(hwcEnable);
+            if (RSUniRenderThread::GetCaptureParam().isSingleSurface_) {
+                RS_LOGI("%{public}s DealWithCachedWindow", __func__);
+            }
+            return;
         }
-        return;
-    }
-    if (drawWindowCache_.DealWithCachedWindow(this, canvas, surfaceParams, *uniParams)) {
-        surfaceParams.SetHardwareEnabled(hwcEnable);
-        return;
+        if (DealWithUIFirstCache(canvas, surfaceParams, *uniParams)) {
+            surfaceParams.SetHardwareEnabled(hwcEnable);
+            if (RSUniRenderThread::GetCaptureParam().isSingleSurface_) {
+                RS_LOGI("%{public}s DealWithUIFirstCache", __func__);
+            }
+            return;
+        }
     }
     surfaceParams.SetHardwareEnabled(hwcEnable);
 
-    // cannot useNodeMatchOptimize if leash window is on draw
-    auto cacheState = GetCacheSurfaceProcessedStatus();
-    auto useNodeMatchOptimize = cacheState != CacheProcessStatus::WAITING && cacheState != CacheProcessStatus::DOING;
-    if (!RSUiFirstProcessStateCheckerHelper::CheckMatchAndWaitNotify(surfaceParams, useNodeMatchOptimize)) {
+    if (!RSUiFirstProcessStateCheckerHelper::CheckMatchAndWaitNotify(surfaceParams, false)) {
         RS_LOGE("RSSurfaceRenderNodeDrawable::OnCapture CheckMatchAndWaitNotify failed");
         return;
     }

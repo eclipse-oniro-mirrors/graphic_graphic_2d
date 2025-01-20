@@ -385,6 +385,15 @@ public:
 
     uint64_t GetRealTimeOffsetOfDvsync(int64_t time);
 
+    bool GetMultiDisplayChange() const
+    {
+        return isMultiDisplayChange_;
+    }
+    bool GetMultiDisplayStatus() const
+    {
+        return isMultiDisplayPre_;
+    }
+
     bool HasWiredMirrorDisplay()
     {
         return hasWiredMirrorDisplay_;
@@ -394,10 +403,34 @@ public:
         return curTime_;
     }
 
-    std::set<uint32_t>& GetUnmappedCacheSet()
+    void StartGPUDraw();
+
+    void EndGPUDraw();
+
+    struct GPUCompositonCacheGuard {
+        GPUCompositonCacheGuard()
+        {
+            RSMainThread::Instance()->StartGPUDraw();
+        }
+
+        ~GPUCompositonCacheGuard()
+        {
+            RSMainThread::Instance()->EndGPUDraw();
+        }
+    };
+
+    void AddToUnmappedCacheSet(uint32_t bufferId)
     {
-        return unmappedCacheSet_;
+        std::lock_guard<std::mutex> lock(unmappedCacheSetMutex_);
+        unmappedCacheSet_.insert(bufferId);
     }
+
+    void AddToUnmappedCacheSet(const std::set<uint32_t>& seqNumSet)
+    {
+        std::lock_guard<std::mutex> lock(unmappedCacheSetMutex_);
+        unmappedCacheSet_.insert(seqNumSet.begin(), seqNumSet.end());
+    }
+    void ClearUnmappedCache();
 private:
     using TransactionDataIndexMap = std::unordered_map<pid_t,
         std::pair<uint64_t, std::vector<std::unique_ptr<RSTransactionData>>>>;
@@ -412,8 +445,6 @@ private:
     RSMainThread& operator=(const RSMainThread&&) = delete;
 
     void OnVsync(uint64_t timestamp, uint64_t frameCount, void* data);
-    void GetCurrentFrameDrawLargeAreaBlurPredictively();
-    void GetCurrentFrameDrawLargeAreaBlurPrecisely();
     void ProcessCommand();
     void UpdateSubSurfaceCnt();
     void Animate(uint64_t timestamp);
@@ -527,8 +558,8 @@ private:
 
     void ReportRSFrameDeadline(OHOS::Rosen::HgmCore& hgmCore, bool forceRefreshFlag);
 
-    // Used for closing HDR in PC multidisplay becauseof performance
-    void CloseHdrWhenMultiDisplayInPC(bool isMultiDisplay);
+    // Record change status of multi or single display
+    void MultiDisplayChange(bool isMultiDisplay);
 
     bool isUniRender_ = RSUniRenderJudgement::IsUniRender();
     bool needWaitUnmarshalFinished_ = true;
@@ -584,6 +615,7 @@ private:
     bool isForceRefresh_ = false;
     // record multidisplay status change
     bool isMultiDisplayPre_ = false;
+    bool isMultiDisplayChange_ = false;
 #ifdef RS_ENABLE_VK
     bool needCreateVkPipeline_ = true;
 #endif
@@ -595,8 +627,6 @@ private:
     // for statistic of jank frames
     std::atomic_bool discardJankFrames_ = false;
     std::atomic_bool skipJankAnimatorFrame_ = false;
-    bool predictBegin_ = false;
-    std::pair<bool, bool> predictDrawLargeAreaBlur_ = {false, false};
     pid_t lastCleanCachePid_ = -1;
     int preHardwareTid_ = -1;
     int32_t unmarshalFinishedCount_ = 0;
@@ -666,6 +696,15 @@ private:
      * removed from the GPU cache.
      */
     std::set<uint32_t> unmappedCacheSet_ = {};
+    std::mutex unmappedCacheSetMutex_;
+
+    /**
+     * @brief An atomic integer to keep track of the GPU draw count.
+     *
+     * This variable is used to safely increment and decrement the count of GPU draw operations
+     * across multiple threads without causing data races.
+     */
+    std::atomic<int> gpuDrawCount_ = 0;
 
     std::string transactionFlags_ = "";
     std::unordered_map<uint32_t, sptr<IApplicationAgent>> applicationAgentMap_;

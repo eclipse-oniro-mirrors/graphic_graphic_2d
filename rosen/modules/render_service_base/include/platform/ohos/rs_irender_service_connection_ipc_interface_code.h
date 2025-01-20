@@ -33,6 +33,7 @@ enum class RSIRenderServiceConnectionInterfaceCode : CodeUnderlyingType {
     GET_ACTIVE_SCREEN_ID = 6,
     GET_ALL_SCREEN_IDS = 7,
     CREATE_VIRTUAL_SCREEN = 8,
+    SET_PHYSICAL_SCREEN_RESOLUTION = 128,
     SET_VIRTUAL_SCREEN_RESOLUTION = 9,
     SET_VIRTUAL_SCREEN_SURFACE = 10,
     SET_VIRTUAL_SCREEN_BLACKLIST = 11,
@@ -153,6 +154,7 @@ enum class RSIRenderServiceConnectionInterfaceCode : CodeUnderlyingType {
     SET_HIDE_PRIVACY_CONTENT = 124,
     REPAINT_EVERYTHING = 125,
     FORCE_REFRESH_ONE_FRAME_WITH_NEXT_VSYNC = 126,
+    SET_WINDOW_CONTAINER = 127,
 // Special invocation. Do not change it.
     NOTIFY_LIGHT_FACTOR_STATUS = 1000,
     NOTIFY_PACKAGE_EVENT = 1001,

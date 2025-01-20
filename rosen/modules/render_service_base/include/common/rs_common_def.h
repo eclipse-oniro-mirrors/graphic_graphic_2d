@@ -301,6 +301,7 @@ enum class UiFirstModeType : uint8_t {
 enum class RSUIFirstSwitch {
     NONE = 0,               // follow RS rules
     MODAL_WINDOW_CLOSE = 1, // open app with modal window animation, close uifirst
+    FORCE_DISABLE = 2,      // force close uifirst
 };
 
 enum class SelfDrawingNodeType : uint8_t {

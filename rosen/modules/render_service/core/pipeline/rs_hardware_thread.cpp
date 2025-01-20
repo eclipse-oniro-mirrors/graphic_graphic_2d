@@ -29,7 +29,7 @@
 
 #include "common/rs_optional_trace.h"
 #include "common/rs_singleton.h"
-#include "pipeline/round_corner_display/rs_round_corner_display_manager.h"
+#include "feature/round_corner_display/rs_round_corner_display_manager.h"
 #include "pipeline/rs_base_render_util.h"
 #include "pipeline/rs_main_thread.h"
 #include "pipeline/rs_uni_render_engine.h"
@@ -157,11 +157,13 @@ uint32_t RSHardwareThread::GetunExecuteTaskNum()
 void RSHardwareThread::ClearRedrawGPUCompositionCache(const std::set<uint32_t>& bufferIds)
 {
     std::weak_ptr<RSBaseRenderEngine> uniRenderEngine = uniRenderEngine_;
-    PostTask([uniRenderEngine, bufferIds]() {
-        if (auto engine = uniRenderEngine.lock()) {
-            engine->ClearCacheSet(bufferIds);
-        }
-    });
+    PostDelayTask(
+        [uniRenderEngine, bufferIds]() {
+            if (auto engine = uniRenderEngine.lock()) {
+                engine->ClearCacheSet(bufferIds);
+            }
+        },
+        delayTime_);
 }
 
 void RSHardwareThread::RefreshRateCounts(std::string& dumpString)
@@ -756,11 +758,10 @@ void RSHardwareThread::Redraw(const sptr<Surface>& surface, const std::vector<La
         return;
     }
     bool isProtected = false;
-    bool isDefaultScreen = screenManager->GetDefaultScreenId() == ToScreenId(screenId);
 #ifdef RS_ENABLE_VK
     if (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
         RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) {
-        if (RSSystemProperties::GetDrmEnabled() && isDefaultScreen) {
+        if (RSSystemProperties::GetDrmEnabled()) {
             for (const auto& layer : layers) {
                 if (layer && layer->GetBuffer() && (layer->GetBuffer()->GetUsage() & BUFFER_USAGE_PROTECTED)) {
                     isProtected = true;
@@ -784,7 +785,7 @@ void RSHardwareThread::Redraw(const sptr<Surface>& surface, const std::vector<La
     GraphicColorGamut colorGamut = ComputeTargetColorGamut(layers);
     GraphicPixelFormat pixelFormat = ComputeTargetPixelFormat(layers);
     auto renderFrameConfig = RSBaseRenderUtil::GetFrameBufferRequestConfig(screenInfo,
-        true, isProtected, colorGamut, pixelFormat);
+        isProtected, colorGamut, pixelFormat);
     drawingColorSpace = RSBaseRenderEngine::ConvertColorGamutToDrawingColorSpace(colorGamut);
     // set color space to surface buffer metadata
     using namespace HDI::Display::Graphic::Common::V1_0;
@@ -795,7 +796,7 @@ void RSHardwareThread::Redraw(const sptr<Surface>& surface, const std::vector<La
         }
     }
 #else
-    auto renderFrameConfig = RSBaseRenderUtil::GetFrameBufferRequestConfig(screenInfo, true, isProtected);
+    auto renderFrameConfig = RSBaseRenderUtil::GetFrameBufferRequestConfig(screenInfo, isProtected);
 #endif
     // override redraw frame buffer with physical screen resolution.
     renderFrameConfig.width = static_cast<int32_t>(screenInfo.phyWidth);
