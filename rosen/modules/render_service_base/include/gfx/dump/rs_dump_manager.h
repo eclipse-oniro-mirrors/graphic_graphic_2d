@@ -105,7 +105,7 @@ const std::unordered_map<std::u16string, RSDumpCmd> cmdMap_ = {
 #endif
     { u"gles", { { RSDumpID::GPU_INFO }, "inquire gpu info" } },
     { u"dumpExistPidMem", { { RSDumpID::EXIST_PID_MEM_INFO }, "dumpExistPidMem [pid], dump exist pid mem info" } },
-    { u"DumpNode", { { RSDumpID::RS_RENDER_NODE_INFO }, "dump render node info" } },
+    { u"dumpNode", { { RSDumpID::RS_RENDER_NODE_INFO }, "dump render node info" } },
 };
 
 // Define the RSDumpManager class
