@@ -368,6 +368,7 @@ HWTEST_F(RSHardwareThreadTest, RecordTimestamp, TestSize.Level1)
     surfaceFpsManager.UnregisterSurfaceFps(layer1->GetNodeId());
 }
 
+/**
  * @tc.name: ExecuteSwitchRefreshRate
  * @tc.desc: Test RSHardwareThreadTest.ExecuteSwitchRefreshRate
  * @tc.type: FUNC
