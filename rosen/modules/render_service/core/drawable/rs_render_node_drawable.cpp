@@ -50,6 +50,7 @@ constexpr int32_t DRAWING_CACHE_DURATION_TIMEOUT_THRESHOLD = 1000;
 constexpr int32_t REPORT_INTERVAL = 120000000;
 constexpr int32_t DRAWING_CACHE_MAX_CONTINUOUS_UPDATE_TIME = 7;
 constexpr int32_t STORED_TIMESTAMP_COUNT = DRAWING_CACHE_MAX_UPDATE_TIME - 1;
+constexpr int32_t PRINT_SUBHEALTH_TRACE_INTERVAL = 5000;
 constexpr float CACHE_FILL_ALPHA = 0.2f;
 constexpr float CACHE_UPDATE_FILL_ALPHA = 0.8f;
 }
@@ -856,6 +857,10 @@ void RSRenderNodeDrawable::UpdateCacheSurface(Drawing::Canvas& canvas, const RSR
     // caculate drawing duration
     auto endTime = high_resolution_clock::now();
     auto interval = std::chrono::duration_cast<microseconds>(endTime - startTime);
+    bool needTrace = interval.count() > PRINT_SUBHEALTH_TRACE_INTERVAL;
+    if (needTrace) {
+        RS_TRACE_BEGIN("SubHealthEvent Rendergroup, updateCache interval:" + std::to_string(interval.count()));
+    }
     {
         std::lock_guard<std::mutex> lock(drawingCacheTimeTakenMapMutex_);
         drawingCacheTimeTakenMap_[nodeId_].emplace_back(interval.count());
@@ -865,7 +870,6 @@ void RSRenderNodeDrawable::UpdateCacheSurface(Drawing::Canvas& canvas, const RSR
     }
     // check if need report subhealth event
     if (NeedReportSubHealth(startTime)) {
-        RS_TRACE_BEGIN("SubHealthEvent Rendergroup, updateCache interval:" + std::to_string(interval.count()));
         auto reportTime = high_resolution_clock::now();
         NodeId nodeId = nodeId_;
         int updateTimes = drawingCacheUpdateTimeMap_[nodeId_];
@@ -883,7 +887,6 @@ void RSRenderNodeDrawable::UpdateCacheSurface(Drawing::Canvas& canvas, const RSR
             std::lock_guard<std::mutex> lock(drawingCacheLastReportTimeMapMutex_);
             drawingCacheLastReportTimeMap_[nodeId_] = reportTime;
         }
-        RS_TRACE_END();
     }
     {
         std::lock_guard<std::mutex> lock(drawingCacheLastTwoTimestampMapMutex_);
@@ -891,6 +894,9 @@ void RSRenderNodeDrawable::UpdateCacheSurface(Drawing::Canvas& canvas, const RSR
         if (drawingCacheLastTwoTimestampMap_[nodeId_].size() > STORED_TIMESTAMP_COUNT) {
             drawingCacheLastTwoTimestampMap_[nodeId_].pop();
         }
+    }
+    if (needTrace) {
+        RS_TRACE_END();
     }
 }
 
