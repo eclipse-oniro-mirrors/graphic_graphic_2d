@@ -54,7 +54,8 @@ enum class RSDumpID : int8_t {
     VK_TEXTURE_LIMIT,
 #endif
     GPU_INFO,
-    EXIST_PID_MEM_INFO
+    EXIST_PID_MEM_INFO,
+    RS_RENDER_NODE_INFO
 };
 
 // Define a function type alias for the dump point handling function
@@ -104,6 +105,7 @@ const std::unordered_map<std::u16string, RSDumpCmd> cmdMap_ = {
 #endif
     { u"gles", { { RSDumpID::GPU_INFO }, "inquire gpu info" } },
     { u"dumpExistPidMem", { { RSDumpID::EXIST_PID_MEM_INFO }, "dumpExistPidMem [pid], dump exist pid mem info" } },
+    { u"DumpNode", { { RSDumpID::RS_RENDER_NODE_INFO }, "dump render node info" } },
 };
 
 // Define the RSDumpManager class

@@ -22,6 +22,7 @@
 #include "transaction/rs_render_service_stub.h"
 #include "vsync_controller.h"
 #include "vsync_distributor.h"
+#include "gfx/dump/rs_dump_manager.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -44,7 +45,6 @@ private:
     void DoDump(std::unordered_set<std::u16string>& argSets, std::string& dumpString) const;
     void DumpNodesNotOnTheTree(std::string& dumpString) const;
     void DumpAllNodesMemSize(std::string& dumpString) const;
-    void DumpHelpInfo(std::string& dumpString) const;
     void DumpGpuInfo(std::string& dumpString) const;
     void DumpRSEvenParam(std::string& dumpString) const;
     void DumpRenderServiceTree(std::string& dumpString, bool forceDumpSingleFrame = true) const;
@@ -75,6 +75,13 @@ private:
     void RemoveConnection(sptr<IRemoteObject> token);
     void RegisterRcdMsg();
 
+    // RS Gfx register dump point 
+    void RSGfxDumpInit();
+    void RegisterRSTreeFuncs();
+    void RegisterMemFuncs();
+    void RegisterFpsFuncs();
+    void RegisterGpuFuncs();
+
     RSMainThread* mainThread_ = nullptr;
     sptr<RSScreenManager> screenManager_;
 
@@ -89,7 +96,7 @@ private:
     sptr<VSyncDistributor> appVSyncDistributor_;
 
     bool isRcdServiceRegister_ = false;
-
+    RSDumpManager* rsDumpManager_ = nullptr;
 #ifdef RS_PROFILER_ENABLED
     friend class RSProfiler;
 #endif
