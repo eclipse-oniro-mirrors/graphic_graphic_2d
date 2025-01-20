@@ -113,6 +113,7 @@ private:
     std::unique_ptr<TouchInfo> uniqueTouchInfo_ = nullptr;
     std::atomic<bool> lightFactorStatus_{ false };
     bool lowAmbientStatus_ = false;
+    bool isLtpo_ = true;
     std::vector<StrategyChangeCallback> strategyChangeCallbacks_;
 
     PolicyConfigData::ScreenSetting& screenSettingCache_;
