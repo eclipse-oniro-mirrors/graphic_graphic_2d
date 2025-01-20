@@ -3194,7 +3194,7 @@ void RSUniRenderVisitor::UpdateHwcNodeRectInSkippedSubTree(const RSRenderNode& r
             const auto& parentProperties = hwcNodeParent->GetRenderProperties();
             const auto& parentGeoPtr = parentProperties.GetBoundsGeometry();
             if (parentProperties.GetClipToBounds() || parentProperties.GetClipToFrame()) {
-                childRectMapped = hwcNodeParent->GetSelfDrawRect().ConvertTo().IntersectRect(childRectMapped);
+                childRectMapped = hwcNodeParent->GetSelfDrawRect().ConvertTo<int>().IntersectRect(childRectMapped);
                 childRectMapped = parentGeoPtr->MapRect(
                     {childRectMapped.left_, childRectMapped.top_,
                         childRectMapped.left_ + childRectMapped.width_,
