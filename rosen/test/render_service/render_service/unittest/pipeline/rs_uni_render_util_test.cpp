@@ -1149,7 +1149,7 @@ HWTEST_F(RSUniRenderUtilTest, DealWithNodeGravityTest004, Function | SmallTest |
     EXPECT_TRUE(node1.GetDstRect() == expectedDstRect);
     EXPECT_TRUE(node1.GetSrcRect() == expectedSrcRect);
 
-    NodeId id = 2;
+    id = 2;
     RSSurfaceRenderNode node2(id);
     node2.GetRSSurfaceHandler()->buffer_.buffer = OHOS::SurfaceBuffer::Create();
     node2.GetRSSurfaceHandler()->buffer_.buffer->SetSurfaceBufferTransform(GraphicTransformType::GRAPHIC_ROTATE_NONE);
@@ -1162,7 +1162,7 @@ HWTEST_F(RSUniRenderUtilTest, DealWithNodeGravityTest004, Function | SmallTest |
     node2.SetDstRect({873, 75, 358, 699});
     node2.SetSrcRect({0, 0, 1080, 554});
     node2.isFixRotationByUser_ = false;
-    totalMatrix.SetMatrix(0.0f, 0.646842, 873.114075, -0.646842, 0.0f, 774/0f, 0.0f, 0.0f, 1.0f);
+    totalMatrix.SetMatrix(0.0f, 0.646842, 873.114075, -0.646842, 0.0f, 774.0f, 0.0f, 0.0f, 1.0f);
     screenInfo.rotation = ScreenRotation::ROTATION_180;
     RSUniRenderUtil::DealWithNodeGravity(node2, screenInfo, totalMatrix);
     expectedDstRect = {0, 1106, 1080, 1135};
