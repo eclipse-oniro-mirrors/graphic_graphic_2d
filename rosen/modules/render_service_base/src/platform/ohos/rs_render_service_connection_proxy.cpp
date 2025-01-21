@@ -2998,6 +2998,40 @@ void RSRenderServiceConnectionProxy::ReportEventJankFrame(DataBaseRs info)
     }
 }
 
+void RSRenderServiceConnectionProxy::ReportRsSceneJankStart(AppInfo info)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    if (!data.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor())) {
+        return;
+    }
+    WriteAppInfo(data, reply, option, info);
+    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REPORT_RS_SCENE_JANK_START);
+    int32_t err = SendRequest(code, data, reply, option);
+    if (err != NO_ERROR) {
+        ROSEN_LOGE("RSRenderServiceConnectionProxy::ReportRsSceneJankStart: Send Request err.");
+        return;
+    }
+}
+
+void RSRenderServiceConnectionProxy::ReportRsSceneJankEnd(AppInfo info)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    if (!data.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor())) {
+        return;
+    }
+    WriteAppInfo(data, reply, option, info);
+    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REPORT_RS_SCENE_JANK_END);
+    int32_t err = SendRequest(code, data, reply, option);
+    if (err != NO_ERROR) {
+        ROSEN_LOGE("RSRenderServiceConnectionProxy::ReportRsSceneJankEnd: Send Request err.");
+        return;
+    }
+}
+
 void RSRenderServiceConnectionProxy::ReportDataBaseRs(
     MessageParcel& data, MessageParcel& reply, MessageOption& option, DataBaseRs info)
 {
@@ -3044,6 +3078,33 @@ void RSRenderServiceConnectionProxy::ReportDataBaseRs(
         return;
     }
     if (!data.WriteString(info.note)) {
+        return;
+    }
+    option.SetFlags(MessageOption::TF_ASYNC);
+}
+
+void RSRenderServiceConnectionProxy::WriteAppInfo(
+    MessageParcel& data, MessageParcel& reply, MessageOption& option, AppInfo info)
+{
+    if (!data.WriteInt64(info.startTime)) {
+        return;
+    }
+    if (!data.WriteInt64(info.endTime)) {
+        return;
+    }
+    if (!data.WriteInt32(info.pid)) {
+        return;
+    }
+    if (!data.WriteString(info.versionName)) {
+        return;
+    }
+    if (!data.WriteInt32(info.versionCode)) {
+        return;
+    }
+    if (!data.WriteString(info.bundleName)) {
+        return;
+    }
+    if (!data.WriteString(info.processName)) {
         return;
     }
     option.SetFlags(MessageOption::TF_ASYNC);
