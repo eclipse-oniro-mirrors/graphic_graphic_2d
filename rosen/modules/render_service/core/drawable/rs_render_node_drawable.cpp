@@ -43,7 +43,6 @@ thread_local bool RSRenderNodeDrawable::isOffScreenWithClipHole_ = false;
 
 namespace {
 constexpr int32_t DRAWING_CACHE_MAX_UPDATE_TIME = 3;
-constexpr int32_t PRINT_SUBHEALTH_TRACE_INTERVAL = 5000;
 constexpr float CACHE_FILL_ALPHA = 0.2f;
 constexpr float CACHE_UPDATE_FILL_ALPHA = 0.8f;
 }
@@ -120,11 +119,7 @@ void RSRenderNodeDrawable::GenerateCacheIfNeed(Drawing::Canvas& canvas, RSRender
     if ((params.GetDrawingCacheType() == RSDrawingCacheType::DISABLED_CACHE && !OpincGetCachedMark()) &&
         !params.GetRSFreezeFlag()) {
         ClearCachedSurface();
-        {
-            std::lock_guard<std::mutex> lock(drawingCacheMapMutex_);
-            drawingCacheUpdateTimeMap_.erase(nodeId_);
-            RSPerfMonitorReporter::GetInstance().ClearRendergroupDataMap(nodeId_);
-        }
+        ClearDrawingCacheDataMap();
         return;
     }
 
@@ -136,9 +131,7 @@ void RSRenderNodeDrawable::GenerateCacheIfNeed(Drawing::Canvas& canvas, RSRender
             // id in drawingCacheUpdateTimeMap_ [drawable will not be visited in RT].
             // If this node is marked node group by arkui again, we should first clear update time here, otherwise
             // update time will accumulate.)
-            std::lock_guard<std::mutex> mapLock(drawingCacheMapMutex_);
-            drawingCacheUpdateTimeMap_.erase(nodeId_);
-            RSPerfMonitorReporter::GetInstance().ClearRendergroupDataMap(nodeId_);
+            ClearDrawingCacheDataMap();
         }
     }
     // generate(first time)/update cache(cache changed) [TARGET -> DISABLED if >= MAX UPDATE TIME]
@@ -409,6 +402,14 @@ bool RSRenderNodeDrawable::IsIntersectedWithFilter(std::vector<FilterNodeInfo>::
         }
     }
     return isIntersected;
+}
+
+void RSRenderNodeDrawable::ClearDrawingCacheDataMap()
+{
+    std::lock_guard<std::mutex> lock(drawingCacheMapMutex_);
+    drawingCacheUpdateTimeMap_.erase(nodeId_);
+    // clear Rendergroup dfx data map
+    RSPerfMonitorReporter::GetInstance().ClearRendergroupDataMap(nodeId_);
 }
 
 void RSRenderNodeDrawable::UpdateCacheInfoForDfx(Drawing::Canvas& canvas, const Drawing::Rect& rect, NodeId id)
@@ -762,7 +763,7 @@ bool RSRenderNodeDrawable::CheckIfNeedUpdateCache(RSRenderParams& params, int32_
 
 void RSRenderNodeDrawable::UpdateCacheSurface(Drawing::Canvas& canvas, const RSRenderParams& params)
 {
-    auto startTime = high_resolution_clock::now();
+    auto startTime = RSPerfMonitorReporter::GetInstance().StartRendergroupMonitor();
     auto curCanvas = static_cast<RSPaintFilterCanvas*>(&canvas);
     pid_t threadId = gettid();
     bool isHdrOn = false; // todo: temporary set false, fix in future
@@ -845,19 +846,9 @@ void RSRenderNodeDrawable::UpdateCacheSurface(Drawing::Canvas& canvas, const RSR
         std::lock_guard<std::mutex> lock(drawingCacheInfoMutex_);
         cacheUpdatedNodeMap_.emplace(params.GetId(), true);
     }
-    // caculate drawing duration
-    auto endTime = high_resolution_clock::now();
-    auto interval = std::chrono::duration_cast<microseconds>(endTime - startTime);
-    bool needTrace = interval.count() > PRINT_SUBHEALTH_TRACE_INTERVAL;
-    if (needTrace) {
-        RS_TRACE_BEGIN("SubHealthEvent Rendergroup, updateCache interval:" + std::to_string(interval.count()));
-    }
-	int updateTimes = drawingCacheUpdateTimeMap_[nodeId_];
-    RSPerfMonitorReporter::GetInstance().ProcessRendergroupSubhealth(nodeId_, updateTimes, interval.count(),
-        startTime);
-	if (needTrace) {
-        RS_TRACE_END();
-    }
+
+    RSPerfMonitorReporter::GetInstance().EndRendergroupMonitor(startTime, nodeId_,
+        drawingCacheUpdateTimeMap_[nodeId_]);
 }
 
 int RSRenderNodeDrawable::GetTotalProcessedNodeCount()
