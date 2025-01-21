@@ -528,12 +528,12 @@ HWTEST_F(HgmMultiAppStrategyTest, LightFactor, Function | SmallTest | Level1)
         ASSERT_EQ(strategyConfig.min, OledRefreshRate::OLED_NULL_HZ);
         ASSERT_EQ(strategyConfig.max, OledRefreshRate::OLED_120_HZ);
 
-        multiAppStrategy_->HandleLightFactorStatus(LightFactorStatus::LOW_LEVEL);
+        multiAppStrategy_->HandleLightFactorStatus(LightFactorStatus::NORMAL_LOW);
         multiAppStrategy_->GetVoteRes(strategyConfig);
         ASSERT_EQ(strategyConfig.min, OledRefreshRate::OLED_120_HZ);
         ASSERT_EQ(strategyConfig.max, OledRefreshRate::OLED_120_HZ);
 
-        multiAppStrategy_->HandleLightFactorStatus(LightFactorStatus::HIGH_LEVEL);
+        multiAppStrategy_->HandleLightFactorStatus(LightFactorStatus::NORMAL_HIGH);
         multiAppStrategy_->GetVoteRes(strategyConfig);
         ASSERT_EQ(strategyConfig.min, OledRefreshRate::OLED_NULL_HZ);
         ASSERT_EQ(strategyConfig.max, OledRefreshRate::OLED_120_HZ);

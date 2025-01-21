@@ -92,7 +92,7 @@ void HgmMultiAppStrategy::HandleTouchInfo(const TouchInfo& touchInfo)
 
 void HgmMultiAppStrategy::HandleLightFactorStatus(int32_t state)
 {
-    RS_TRACE_NAME_FMT("[HandleLightFactorStatus] isSafe: %d", state);
+    RS_TRACE_NAME_FMT("[HandleLightFactorStatus] state: %d", state);
     if (lightFactorStatus_.load() == state) {
         return;
     }

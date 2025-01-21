@@ -111,7 +111,7 @@ private:
     }};
     TouchInfo touchInfo_ = { "", TouchState::IDLE_STATE, OLED_120_HZ }; // pkgName, touchState
     std::unique_ptr<TouchInfo> uniqueTouchInfo_ = nullptr;
-    std::atomic<bool> lightFactorStatus_{ false };
+    std::atomic<int32_t> lightFactorStatus_{ 0 };
     bool lowAmbientStatus_ = false;
     bool isLtpo_ = true;
     std::vector<StrategyChangeCallback> strategyChangeCallbacks_;

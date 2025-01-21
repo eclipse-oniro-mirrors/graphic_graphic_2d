@@ -286,8 +286,8 @@ HWTEST_F(HgmFrameRateMgrTest, MultiThread001, Function | SmallTest | Level1)
     HgmTaskHandleThread::Instance().PostTask([&]() {
         for (int i = 0; i < testThreadNum; i++) {
             // HandleLightFactorStatus
-            frameRateMgr.HandleLightFactorStatus(i, LightFactorStatus::LOW_LEVEL);
-            frameRateMgr.HandleLightFactorStatus(i, LightFactorStatus::HIGH_LEVEL);
+            frameRateMgr.HandleLightFactorStatus(i, LightFactorStatus::NORMAL_LOW);
+            frameRateMgr.HandleLightFactorStatus(i, LightFactorStatus::NORMAL_HIGH);
 
             // HandlePackageEvent
             frameRateMgr.HandlePackageEvent(i, {pkg0});
