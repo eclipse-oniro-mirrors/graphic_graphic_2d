@@ -2414,7 +2414,7 @@ void RSScreenManager::SetScreenHasProtectedLayer(ScreenId id, bool hasProtectedL
     screensIt->second->SetHasProtectedLayer(hasProtectedLayer);
 }
 
-bool IsVisibleRectSupportRotation(ScreenId id) const
+bool RSScreenManager::IsVisibleRectSupportRotation(ScreenId id) const
 {
     std::lock_guard<std::mutex> lock(mutex_);
     auto mirrorScreen = screens_.find(id);
