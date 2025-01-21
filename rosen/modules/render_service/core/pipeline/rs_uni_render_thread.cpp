@@ -782,14 +782,9 @@ void RSUniRenderThread::DumpMem(DfxString& log)
 
 void RSUniRenderThread::ClearGPUCompositionCache(const std::set<uint32_t>& unmappedCache)
 {
-    std::weak_ptr<RSBaseRenderEngine> weakUniRenderEngine = uniRenderEngine_;
-    auto task = [weakUniRenderEngine, unmappedCache]() {
-        if (auto uniRenderEngine = weakUniRenderEngine.lock()) {
-            uniRenderEngine->ClearCacheSet(unmappedCache);
-        }
-    };
-    PostTask(task);
-    RSSubThreadManager::Instance()->ClearGPUCompositionCache(task);
+    if (uniRenderEngine_) {
+        uniRenderEngine_->ClearCacheSet(unmappedCache);
+    }
 }
 
 void RSUniRenderThread::ClearMemoryCache(ClearMemoryMoment moment, bool deeply, pid_t pid)
