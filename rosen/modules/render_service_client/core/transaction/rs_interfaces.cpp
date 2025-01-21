@@ -114,7 +114,6 @@ int32_t RSInterfaces::SetVirtualScreenSecurityExemptionList(
 
 int32_t RSInterfaces::SetScreenSecurityMask(ScreenId id, std::shared_ptr<Media::PixelMap> securityMask)
 {
-#ifdef ROSEN_OHOS
     Media::ImageInfo imageInfo;
     if (securityMask) {
         securityMask->GetImageInfo(imageInfo);
@@ -126,9 +125,6 @@ int32_t RSInterfaces::SetScreenSecurityMask(ScreenId id, std::shared_ptr<Media::
         return RS_CONNECTION_ERROR;
     }
     return renderServiceClient_->SetScreenSecurityMask(id, std::move(securityMask));
-#else
-    return RS_CONNECTION_ERROR;
-#endif
 }
 
 int32_t RSInterfaces::SetMirrorScreenVisibleRect(ScreenId id, const Rect& mainScreenRect)

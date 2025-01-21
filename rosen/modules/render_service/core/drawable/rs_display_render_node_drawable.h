@@ -153,10 +153,8 @@ private:
     void RemoveClearMemoryTask() const;
     void PostClearMemoryTask() const;
     void SetCanvasBlack(RSProcessor& processor);
-    void SetScreenRotationForPointLight(RSDisplayRenderParams &params);
     void SetSecurityMask(RSProcessor& processor);
-    Drawing::Rect GetImageRegions(float screenWidth, float screenHeight,
-        float realImageWidth, float realImageHeight);
+    void SetScreenRotationForPointLight(RSDisplayRenderParams &params);
     // Prepare for off-screen render
     void ScaleCanvasIfNeeded(const ScreenInfo& screenInfo);
     void PrepareOffscreenRender(const RSDisplayRenderNodeDrawable& displayDrawable,
