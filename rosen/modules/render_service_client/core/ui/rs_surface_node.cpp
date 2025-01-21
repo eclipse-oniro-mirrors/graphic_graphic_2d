@@ -249,6 +249,7 @@ void RSSurfaceNode::OnBoundsSizeChanged() const
     std::lock_guard<std::mutex> lock(mutex_);
     if (boundsChangedCallback_) {
         boundsChangedCallback_(bounds);
+        RS_TRACE_NAME_FMT("RSSurfaceNode::OnBoundsSizeChanged already callback");
     }
 }
 
