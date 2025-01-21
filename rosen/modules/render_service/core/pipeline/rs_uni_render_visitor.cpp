@@ -3157,7 +3157,6 @@ void RSUniRenderVisitor::UpdateHwcNodeRectInSkippedSubTree(const RSRenderNode& r
         auto originalMatrix = geoPtr->GetMatrix();
         auto matrix = Drawing::Matrix();
         auto parent = hwcNodePtr->GetParent().lock();
-        bool findInRoot = parent ? parent->GetId() == rootNode.GetId() : false;
         if (!FindRootAndUpdateMatrix(parent, matrix, rootNode)) {
             continue;
         }
@@ -3167,7 +3166,6 @@ void RSUniRenderVisitor::UpdateHwcNodeRectInSkippedSubTree(const RSRenderNode& r
                 matrix.PostConcat(parentGeoPtr->GetMatrix());
             }
         }
-
         RectI clipRect;
         UpdateClipRect(hwcNodePtr, clipRect, rootNode);
         auto surfaceHandler = hwcNodePtr->GetMutableRSSurfaceHandler();
