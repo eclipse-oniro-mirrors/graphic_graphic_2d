@@ -409,6 +409,21 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, SetDirtyInfo_002, TestSize.Level2)
 }
 
 /**
+ * @tc.name: SetRoiRegionToCodec_001
+ * @tc.desc: test SetRoiRegionToCodec while renderFrame_ is nullptr
+ * @tc.type:FUNC
+ * @tc.require:issuesIBHR8N
+ */
+HWTEST_F(RSUniRenderVirtualProcessorTest, SetRoiRegionToCodec001, TestSize.Level2)
+{
+    ASSERT_NE(virtualProcessor_, nullptr);
+    virtualProcessor_->renderFrame_ = nullptr;
+
+    std::vector<RectI> damageRegion {};
+    ASSERT_EQ(virtualProcessor_->SetRoiRegionToCodec(damageRegion), GSERROR_INVALID_ARGUMENTS);
+}
+
+/**
  * @tc.name: ProcessDisplaySurfaceForRenderThread_001
  * @tc.desc: ProcessDisplaySurfaceForRenderThread Test, isExpand_ is true, return directly
  * @tc.type:FUNC

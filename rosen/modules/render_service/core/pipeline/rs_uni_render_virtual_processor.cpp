@@ -229,6 +229,11 @@ void RSUniRenderVirtualProcessor::SetDirtyInfo(std::vector<RectI>& damageRegion)
 
 GSError RSUniRenderVirtualProcessor::SetRoiRegionToCodec(std::vector<RectI>& damageRegion)
 {
+    if (renderFrame_ == nullptr) {
+        RS_LOGD("RSUniRenderVirtualProcessor::SetRoiRegionToCodec renderFrame is null.");
+        return GSERROR_INVALID_ARGUMENTS;
+    }
+
     auto& rsSurface = renderFrame_->GetSurface();
     if (rsSurface == nullptr) {
         RS_LOGD("RSUniRenderVirtualProcessor::SetRoiRegionToCodec surface is null.");
