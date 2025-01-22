@@ -82,7 +82,15 @@ void CacheData::DumpAbnormalCacheToFile(uint8_t *buffer, size_t bufferSize)
         LOGE("dump abnormal cache failed, because of empty filename");
         return;
     }
-    std::string abnormalCacheDir = cacheDir_ + "_abnormal";
+    char* canonicalPath = realPath(cacheDir_.c_str(), nullptr);
+    if (canonicalPath == nullptr) {
+        LOGE("dump abnormal cache failed, because of realpath check");
+        return;
+    }
+    std::string abnormalCacheDir = canonicalPath;
+    abnormalCacheDir = abnormalCacheDir + "_abnormal";
+    free(canonicalPath);
+    canonicalPath = nullptr;
     int fd = open(abnormalCacheDir.c_str(), O_CREAT | O_EXCL | O_RDWR, S_IRUSR | S_IWUSR);
     if (fd == ERR_NUMBER) {
         if (errno == EEXIST) {
