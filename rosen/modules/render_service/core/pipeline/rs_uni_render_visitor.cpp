@@ -3190,7 +3190,7 @@ void RSUniRenderVisitor::UpdateHwcNodeRectInSkippedSubTree(const RSRenderNode& r
 }
 
 bool RSUniRenderVisitor::FindRootAndUpdateMatrix(
-    std::shared_ptr<RSRenderrNode>& parent, Drawing::Matrix& matrix, const RSRenderNode& rootNode)
+    std::shared_ptr<RSRenderNode>& parent, Drawing::Matrix& matrix, const RSRenderNode& rootNode)
 {
     bool findInRoot = parent ? parent->GetId() == rootNode.GetId() : false;
     while (parent && parent->GetType() != RSRenderNodeType::DISPLAY_NODE) {
