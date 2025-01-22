@@ -302,7 +302,7 @@ private:
     bool FindRootAndUpdateMatrix(
         std::shared_ptr<RSRenderNode>& parent, Drawing::Matrix& matrix, const RSRenderNode& rootNode);
     void UpdateClipRect(
-        std::shared_ptr<RSSurfaceRenderNode>& hwcNodePtr, RectI& clipRect, const RSRenderNode& rootNode)
+        std::shared_ptr<RSSurfaceRenderNode>& hwcNodePtr, RectI& clipRect, const RSRenderNode& rootNode);
     void UpdateSubSurfaceNodeRectInSkippedSubTree(const RSRenderNode& rootNode);
     void CollectOcclusionInfoForWMS(RSSurfaceRenderNode& node);
     void CollectEffectInfo(RSRenderNode& node);
