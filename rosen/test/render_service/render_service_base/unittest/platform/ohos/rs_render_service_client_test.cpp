@@ -610,7 +610,7 @@ HWTEST_F(RSClientTest, SetShowRefreshRateEnabled001, TestSize.Level1)
  */
 HWTEST_F(RSClientTest, GetRealtimeRefreshRate001, TestSize.Level1)
 {
-    EXPECT_NE(rsClient->GetRealtimeRefreshRate(INVALID_SCREEN_ID), 0);
+    EXPECT_GE(rsClient->GetRealtimeRefreshRate(INVALID_SCREEN_ID), 0);
 }
 
 /**

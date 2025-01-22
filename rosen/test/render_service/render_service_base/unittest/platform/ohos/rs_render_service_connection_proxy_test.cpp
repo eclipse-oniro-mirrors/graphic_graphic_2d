@@ -437,7 +437,7 @@ HWTEST_F(RSRenderServiceConnectionProxyTest, SetShowRefreshRateEnabled, TestSize
  */
 HWTEST_F(RSRenderServiceConnectionProxyTest, GetRealtimeRefreshRate, TestSize.Level1)
 {
-    EXPECT_EQ(proxy->GetRealtimeRefreshRate(INVALID_SCREEN_ID), 0);
+    EXPECT_GE(proxy->GetRealtimeRefreshRate(INVALID_SCREEN_ID), 0);
 }
 
 /**

@@ -108,7 +108,13 @@ void RSRealtimeRefreshRateManager::StatisticsRefreshRateDataLocked(std::shared_p
 
 uint32_t RSRealtimeRefreshRateManager::GetRealtimeRefreshRate(ScreenId screenId)
 {
-    RS_LOGD("GetRealtimeRefreshRate: screenId[%{public}llu]", screenId);
+    RS_LOGD("GetRealtimeRefreshRate: screenId[%{public}" PRIu64"]", screenId);
+    {
+        std::unique_lock<std::mutex> threadLock(threadMutex_);
+        if (!showEnabled_ && !collectEnabled_) {
+            return 0;
+        }
+    }
     if (screenId == INVALID_SCREEN_ID) {
         auto frameRateMgr = HgmCore::Instance().GetFrameRateMgr();
         if (frameRateMgr == nullptr) {
