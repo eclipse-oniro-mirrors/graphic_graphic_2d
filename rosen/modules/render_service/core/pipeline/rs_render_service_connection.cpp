@@ -1209,11 +1209,13 @@ void RSRenderServiceConnection::SetHwcNodeBounds(int64_t rsNodeId, float positio
 void RSRenderServiceConnection::RegisterApplicationAgent(uint32_t pid, sptr<IApplicationAgent> app)
 {
     if (!mainThread_) {
+        RS_LOGE("RSRenderServiceConnection::RegisterApplicationAgent mainThread_ is nullptr");
         return;
     }
     auto captureTask = [weakThis = wptr<RSRenderServiceConnection>(this), pid, app]() -> void {
         sptr<RSRenderServiceConnection> connection = weakThis.promote();
         if (connection == nullptr || connection->mainThread_ == nullptr) {
+            RS_LOGE("RSRenderServiceConnection::RegisterApplicationAgent connection or mainThread_ is nullptr");
             return;
         }
         connection->mainThread_->RegisterApplicationAgent(pid, app);
