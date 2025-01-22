@@ -183,7 +183,7 @@ public:
 
     int32_t SetScreenSecurityMask(ScreenId id, std::shared_ptr<Media::PixelMap> securityMask);
 
-    int32_t SetMirrorScreenVisibleRect(ScreenId id, const Rect& mainScreenRect);
+    int32_t SetMirrorScreenVisibleRect(ScreenId id, const Rect& mainScreenRect, bool supportRotation = false);
 
     int32_t SetCastScreenEnableSkipWindow(ScreenId id, bool enable);
 

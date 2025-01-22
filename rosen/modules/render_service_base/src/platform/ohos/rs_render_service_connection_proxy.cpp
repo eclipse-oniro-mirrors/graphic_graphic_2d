@@ -698,7 +698,7 @@ int32_t RSRenderServiceConnectionProxy::SetScreenSecurityMask(ScreenId id,
 }
 
 int32_t RSRenderServiceConnectionProxy::SetMirrorScreenVisibleRect(
-    ScreenId id, const Rect& mainScreenRect)
+    ScreenId id, const Rect& mainScreenRect, bool supportRotation)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -714,6 +714,9 @@ int32_t RSRenderServiceConnectionProxy::SetMirrorScreenVisibleRect(
     }
     if (!data.WriteInt32(mainScreenRect.x) || !data.WriteInt32(mainScreenRect.y) ||
         !data.WriteInt32(mainScreenRect.w) || !data.WriteInt32(mainScreenRect.h)) {
+        return WRITE_PARCEL_ERR;
+    }
+    if (!data.WriteBool(supportRotation)) {
         return WRITE_PARCEL_ERR;
     }
     uint32_t code = static_cast<uint32_t>(

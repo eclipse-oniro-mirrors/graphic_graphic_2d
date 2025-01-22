@@ -127,9 +127,9 @@ int32_t RSInterfaces::SetScreenSecurityMask(ScreenId id, std::shared_ptr<Media::
     return renderServiceClient_->SetScreenSecurityMask(id, std::move(securityMask));
 }
 
-int32_t RSInterfaces::SetMirrorScreenVisibleRect(ScreenId id, const Rect& mainScreenRect)
+int32_t RSInterfaces::SetMirrorScreenVisibleRect(ScreenId id, const Rect& mainScreenRect, bool supportRotation)
 {
-    return renderServiceClient_->SetMirrorScreenVisibleRect(id, mainScreenRect);
+    return renderServiceClient_->SetMirrorScreenVisibleRect(id, mainScreenRect, supportRotation);
 }
 
 int32_t RSInterfaces::SetCastScreenEnableSkipWindow(ScreenId id, bool enable)

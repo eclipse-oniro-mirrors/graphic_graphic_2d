@@ -451,14 +451,14 @@ int32_t RSRenderServiceClient::SetScreenSecurityMask(ScreenId id,
     return renderService->SetScreenSecurityMask(id, std::move(securityMask));
 }
 
-int32_t RSRenderServiceClient::SetMirrorScreenVisibleRect(ScreenId id, const Rect& mainScreenRect)
+int32_t RSRenderServiceClient::SetMirrorScreenVisibleRect(ScreenId id, const Rect& mainScreenRect, bool supportRotation)
 {
     auto renderService = RSRenderServiceConnectHub::GetRenderService();
     if (renderService == nullptr) {
         return RENDER_SERVICE_NULL;
     }
 
-    return renderService->SetMirrorScreenVisibleRect(id, mainScreenRect);
+    return renderService->SetMirrorScreenVisibleRect(id, mainScreenRect, supportRotation);
 }
 
 int32_t RSRenderServiceClient::SetCastScreenEnableSkipWindow(ScreenId id, bool enable)

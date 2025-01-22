@@ -1290,6 +1290,16 @@ bool RSScreen::GetHasProtectedLayer()
 {
     return hasProtectedLayer_;
 }
+
+bool RSScreen::GetVisibleRectSupportRotation() const
+{
+    return isSupportRotation_;
+}
+
+void RSScreen::SetVisibleRectSupportRotation(bool supportRotation)
+{
+    isSupportRotation_ = supportRotation;
+}
 } // namespace impl
 } // namespace Rosen
 } // namespace OHOS
