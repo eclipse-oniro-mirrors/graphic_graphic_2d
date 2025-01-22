@@ -1504,6 +1504,22 @@ void RSRenderServiceClient::ReportEventJankFrame(DataBaseRs info)
     }
 }
 
+void RSRenderServiceClient::ReportRsSceneJankStart(AppInfo info)
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService != nullptr) {
+        renderService->ReportRsSceneJankStart(info);
+    }
+}
+
+void RSRenderServiceClient::ReportRsSceneJankEnd(AppInfo info)
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService != nullptr) {
+        renderService->ReportRsSceneJankEnd(info);
+    }
+}
+
 void RSRenderServiceClient::ReportGameStateData(GameStateData info)
 {
     auto renderService = RSRenderServiceConnectHub::GetRenderService();

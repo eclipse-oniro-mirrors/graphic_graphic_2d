@@ -415,7 +415,7 @@ void RSMainThread::TraverseCanvasDrawingNodesNotOnTree()
 void RSMainThread::Init()
 {
     mainLoop_ = [&]() {
-        RS_PROFILER_ON_FRAME_BEGIN();
+        RS_PROFILER_ON_FRAME_BEGIN(timestamp_);
         if (isUniRender_ && !renderThreadParams_) {
 #ifdef RS_ENABLE_GPU
             // fill the params, and sync to render thread later
@@ -3362,6 +3362,7 @@ void RSMainThread::RegisterApplicationAgent(uint32_t pid, sptr<IApplicationAgent
 
 void RSMainThread::UnRegisterApplicationAgent(sptr<IApplicationAgent> app)
 {
+    MemoryManager::CheckIsClearApp();
     EraseIf(applicationAgentMap_,
         [&app](const auto& iter) { return iter.second && app && iter.second->AsObject() == app->AsObject(); });
 }
@@ -4738,7 +4739,7 @@ void RSMainThread::ReportRSFrameDeadline(OHOS::Rosen::HgmCore& hgmCore, bool for
     drawingTime = (forceRefreshFlag) ? idealPeriod : idealPeriod + extraReserve;
     preIdealPeriod_ = idealPeriod;
     preExtraReserve_ = extraReserve;
-    RS_TRACE_NAME_FMT("currentRate: %u, vsyncOffset: " PRId64 ", reservedDrawingTime:" PRId64 "",
+    RS_TRACE_NAME_FMT("currentRate: %u, vsyncOffset: %" PRId64 ", reservedDrawingTime: %" PRId64 "",
         currentRate, vsyncOffset, drawingTime);
 
     std::unordered_map<std::string, std::string> payload = {};

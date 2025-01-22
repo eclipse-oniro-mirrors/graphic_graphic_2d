@@ -144,6 +144,8 @@ static constexpr std::array descriptorCheckList = {
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REPORT_EVENT_RESPONSE),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REPORT_EVENT_COMPLETE),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REPORT_EVENT_JANK_FRAME),
+    static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REPORT_RS_SCENE_JANK_START),
+    static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REPORT_RS_SCENE_JANK_END),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REPORT_EVENT_GAMESTATE),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_TOUCH_EVENT),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_DYNAMIC_MODE_EVENT),
@@ -336,7 +338,7 @@ void RSRenderServiceConnectionStub::SetQos()
 int RSRenderServiceConnectionStub::OnRemoteRequest(
     uint32_t code, MessageParcel& data, MessageParcel& reply, MessageOption& option)
 {
-    RS_PROFILER_ON_REMOTE_REQUEST(this, code, data, reply, option);
+    uint32_t parcelNumber = RS_PROFILER_ON_REMOTE_REQUEST(this, code, data, reply, option);
 
     AshmemFdContainer::SetIsUnmarshalThread(false);
     pid_t callingPid = GetCallingPid();
@@ -398,7 +400,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 if (parsedParcel == nullptr) {
                     // no need to copy or copy failed, use original parcel
                     // execute Unmarshalling immediately
-                    auto transactionData = RSBaseRenderUtil::ParseTransactionData(data);
+                    auto transactionData = RSBaseRenderUtil::ParseTransactionData(data, parcelNumber);
                     if (transactionData && isNonSystemAppCalling) {
                         const auto& nodeMap = RSMainThread::Instance()->GetContext().GetNodeMap();
                         if (!transactionData->IsCallingPidValid(callingPid, nodeMap)) {
@@ -413,6 +415,9 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 // should be parsed to normal parcel before Unmarshalling
                 parsedParcel = RSAshmemHelper::ParseFromAshmemParcel(&data, ashmemFdWorker, ashmemFlowControlUnit,
                     callingPid);
+                if (parsedParcel) {
+                    RS_PROFILER_ON_REMOTE_REQUEST(this, code, *parsedParcel, reply, option);
+                }
             }
             if (parsedParcel == nullptr) {
                 RS_LOGE("RSRenderServiceConnectionStub::COMMIT_TRANSACTION failed: parsed parcel is nullptr");
@@ -421,10 +426,10 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             if (isUniRender) {
                 // post Unmarshalling task to RSUnmarshalThread
                 RSUnmarshalThread::Instance().RecvParcel(parsedParcel, isNonSystemAppCalling, callingPid,
-                    std::move(ashmemFdWorker), ashmemFlowControlUnit);
+                    std::move(ashmemFdWorker), ashmemFlowControlUnit, parcelNumber);
             } else {
                 // execute Unmarshalling immediately
-                auto transactionData = RSBaseRenderUtil::ParseTransactionData(*parsedParcel);
+                auto transactionData = RSBaseRenderUtil::ParseTransactionData(*parsedParcel, parcelNumber);
                 if (transactionData && isNonSystemAppCalling) {
                     const auto& nodeMap = RSMainThread::Instance()->GetContext().GetNodeMap();
                     if (!transactionData->IsCallingPidValid(callingPid, nodeMap)) {
@@ -2084,6 +2089,24 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             ReportEventJankFrame(info);
             break;
         }
+        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REPORT_RS_SCENE_JANK_START): {
+            AppInfo info;
+            if (!ReadAppInfo(info, data)) {
+                ret = ERR_INVALID_DATA;
+                break;
+            }
+            ReportRsSceneJankStart(info);
+            break;
+        }
+        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REPORT_RS_SCENE_JANK_END): {
+            AppInfo info;
+            if (!ReadAppInfo(info, data)) {
+                ret = ERR_INVALID_DATA;
+                break;
+            }
+            ReportRsSceneJankEnd(info);
+            break;
+        }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REPORT_EVENT_GAMESTATE): {
             GameStateData info;
             if (!ReadGameStateDataRs(info, data)) {
@@ -2647,6 +2670,32 @@ bool RSRenderServiceConnectionStub::ReadDataBaseRs(DataBaseRs& info, MessageParc
         !data.ReadString(info.bundleName) || !data.ReadString(info.processName) ||
         !data.ReadString(info.abilityName) ||!data.ReadString(info.pageUrl) ||
         !data.ReadString(info.sourceType) || !data.ReadString(info.note)) {
+        return false;
+    }
+    return true;
+}
+
+bool RSRenderServiceConnectionStub::ReadAppInfo(AppInfo& info, MessageParcel& data)
+{
+    if (!data.ReadInt64(info.startTime)) {
+        return false;
+    }
+    if (!data.ReadInt64(info.endTime)) {
+        return false;
+    }
+    if (!data.ReadInt32(info.pid)) {
+        return false;
+    }
+    if (!data.ReadString(info.versionName)) {
+        return false;
+    }
+    if (!data.ReadInt32(info.versionCode)) {
+        return false;
+    }
+    if (!data.ReadString(info.bundleName)) {
+        return false;
+    }
+    if (!data.ReadString(info.processName)) {
         return false;
     }
     return true;
