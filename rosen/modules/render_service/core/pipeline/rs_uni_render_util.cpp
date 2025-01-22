@@ -2442,12 +2442,6 @@ void RSUniRenderUtil::RequestPerf(uint32_t layerLevel, bool onOffTag)
 
 void RSUniRenderUtil::MultiLayersPerf(size_t layerNum)
 {
-#ifdef FRAME_AWARE_TRACE
-    if (FrameAwareTraceBoost(layerNum)) {
-        RS_LOGD("FrameAwareTraceBoost return true");
-        return;
-    }
-#endif
     RS_LOGD("FrameAwareTraceBoost return false");
     static uint32_t lastLayerLevel = 0;
     constexpr uint32_t PERF_LEVEL_INTERVAL = 10;
