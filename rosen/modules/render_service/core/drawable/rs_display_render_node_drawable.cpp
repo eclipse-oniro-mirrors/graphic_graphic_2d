@@ -1181,6 +1181,8 @@ void RSDisplayRenderNodeDrawable::DrawExpandScreen(RSUniRenderVirtualProcessor& 
         RS_LOGE("RSDisplayRenderNodeDrawable::DrawExpandScreen failed to get canvas.");
         return;
     }
+    // Clean up the content of the previous frame
+    curCanvas_->Clear(Drawing::Color::COLOR_TRANSPARENT);
     float scaleX = 1.0f;
     float scaleY = 1.0f;
     // set expand screen capture param(isSnapshot, isSingleSurface, isMirror)
