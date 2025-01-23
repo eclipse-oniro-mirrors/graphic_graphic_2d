@@ -180,7 +180,7 @@ void ResschedEventListener::HandleFrameRateStatisticsEndAsync(uint32_t pid, uint
                 mapPayload["type"] = std::to_string(currentType_);
                 mapPayload["frameRate"] = std::to_string(frameRate);
                 RS_TRACE_BEGIN("FrameRateStatistics ReportFrameRateToRss");
-                    ReportFrameRateToRSS(mapPayload);
+                    ReportFrameRateToRss(mapPayload);
                 RS_TRACE_END();
             }
                 currentPid_.store(DEFAULT_PID);

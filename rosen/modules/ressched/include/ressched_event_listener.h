@@ -61,7 +61,7 @@ private:
     void HandleFrameRateStatisticsEndAsync(uint32_t pid, uint32_t type);
     void HandleFrameRateStatisticsBreakAsync(uint32_t pid, uint32_t type);
 
-    void ReportFrameRateToRss(const std::unordered_map<std::string, std::string>& mapPayload);
+    void ReportFrameRateToRSS(const std::unordered_map<std::string, std::string>& mapPayload);
 };
 } // namespace Rosen
 } // namespace OHOS
