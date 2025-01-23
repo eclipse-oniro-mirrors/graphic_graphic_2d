@@ -97,6 +97,26 @@ namespace OHOS {
         return layerInfo;
     }
 
+    void HdiLayerFuzzTest001(){
+        // get data
+        GraphicCompositionType type = GetData<GraphicCompositionType>();
+        uint32_t screenId = GetData<uint32_t>();
+
+        // test
+        std::shared_ptr<HdiLayer> hdiLayer = HdiLayer::CreateHdiLayer(screenId);
+        std::shared_ptr<HdiLayerInfo> layerInfo = nullptr;
+        sptr<SyncFence> fence = nullptr;
+        Rosen::HdiDevice* hdiDeviceMock = nullptr;
+
+        hdiLayer->Init(layerInfo);
+        hdiLayer->UpdateLayerInfo(layerInfo);
+        hdiLayer->MergeWithFramebufferFence(fence);
+        hdiLayer->MergeWithLayerFence(fence);
+        hdiLayer->UpdateCompositionType(type);
+        hdiLayer->SetHdiDeviceMock(hdiDeviceMock);
+        hdiLayer->SetReleaseFence(fence);
+    }
+    
     bool DoSomethingInterestingWithMyAPI(const uint8_t* data, size_t size)
     {
         if (data == nullptr || size < 0) {
@@ -119,6 +139,7 @@ namespace OHOS {
         uint32_t deleting = GetData<uint32_t>();
         std::vector<uint32_t> deletingList = { deleting };
         std::string windowName = GetStringFromData(STR_LEN);
+        bool doLayerInfoCompare = GetData<bool>();
 
         // test
         std::shared_ptr<HdiLayerInfo> layerInfo = GetLayerInfoFromData();
@@ -132,6 +153,7 @@ namespace OHOS {
         hdiLayer->MergeWithFramebufferFence(fence);
         hdiLayer->MergeWithLayerFence(fence);
         hdiLayer->UpdateCompositionType(type);
+        hdiLayer->SavePrevLayerInfo();
         hdiLayer->SetLayerCrop();
         hdiLayer->SetLayerVisibleRegion();
         hdiLayer->SetHdiDeviceMock(hdiDeviceMock);
@@ -146,6 +168,7 @@ namespace OHOS {
         hdiLayer->DumpMergedResult(result);
         hdiLayer->ClearDump();
 
+        HdiLayerFuzzTest001();
         return true;
     }
 }
