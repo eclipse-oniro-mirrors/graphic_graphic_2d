@@ -97,7 +97,8 @@ namespace OHOS {
         return layerInfo;
     }
 
-    void HdiLayerFuzzTest001(){
+    void HdiLayerFuzzTest001()
+    {
         // get data
         GraphicCompositionType type = GetData<GraphicCompositionType>();
         uint32_t screenId = GetData<uint32_t>();
