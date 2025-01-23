@@ -32,7 +32,7 @@ std::once_flag ResschedEventListener::createFlag_;
 sptr<ResschedEventListener> ResschedEventListener::instance_ = nullptr;
 std::shared_ptr<ffrt::queue> ResschedEventListener::ffrtQueue_ = nullptr;
 constexpr uint64_t SAMPLE_TIME = 100000000;
-const std::string RS_RESSCHED_EVENT_LISTENER_QUEUE = "res_ressched_event_listener_queue"
+const std::string RS_RESSCHED_EVENT_LISTENER_QUEUE = "res_ressched_event_listener_queue";
 sptr<ResschedEventListener> ResschedEventListener::GetInstance() noexcept
 {
     std::call_once(createFlag_, []() {
@@ -51,7 +51,7 @@ void ResschedEventListener::OnReceiveEvent(uint32_t eventType, uint32_t eventVal
     }
 }
 
-void HandleDrawFrameEventReport(uint32_t eventValue)
+void ResschedEventListener::HandleDrawFrameEventReport(uint32_t eventValue)
 {
     if (eventValue == ResourceSchedule::ResType::EventValue::EVENT_VALUE_DRAW_FRAME_REPORT_START) {
         isNeedReport_ = true;
@@ -120,15 +120,15 @@ void ResschedEventListener::HandleFrameRateStatisticsReport(uint32_t eventValue,
 
 void ResschedEventListener::ReportFrameRateToRss(const std::unordered_map<std::string, std::string>& mapPayload)
 {
-    uint32_t type = ResourceSchedule::ResType::EventType::RES_TYPE_FRAME_RATE_REPORT_FROM_RS;
-    int64_t value = ResourceSchedule::ResType::EventType::FrameRateReportState::FRAME_RATE_COMMON_REPORT;
-    OHOS::ResourceSchedule::ResScjedClient::GetOmstamce().ReportData(type, value, mapPayload);
+    uint32_t type = ResourceSchedule::ResType::ResType::RES_TYPE_FRAME_RATE_REPORT_FROM_RS;
+    int64_t value = ResourceSchedule::ResType::ResType::FrameRateReportState::FRAME_RATE_COMMON_REPORT;
+    OHOS::ResourceSchedule::ResSchedClient::GetInstance().ReportData(type, value, mapPayload);
 }
 
 void ResschedEventListener::ReportFrameCountAsync(uint32_t pid)
 {
     ffrtQueue_->submit([pid, this]() {
-        if (currentcollectType_ == DEFAULT_TYPE) {
+        if (currentType_ == DEFAULT_TYPE) {
             return;
         }
         if (pid != currentPid_.load()) {
