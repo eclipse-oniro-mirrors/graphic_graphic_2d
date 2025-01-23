@@ -138,7 +138,7 @@
 #include "system_ability_definition.h"
 #include "if_system_ability_manager.h"
 #include <iservice_registry.h>
-#include "rs_main_thread.cpp"
+#include "ressched_event_listener.h"
 #endif
 
 // cpu boost
