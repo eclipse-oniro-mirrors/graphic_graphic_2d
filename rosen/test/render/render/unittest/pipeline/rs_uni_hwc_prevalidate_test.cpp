@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
+#include "feature/hwc/rs_uni_hwc_prevalidate_util.h"
 #include "gtest/gtest.h"
-#include "pipeline/rs_uni_hwc_prevalidate_util.h"
 #include "rs_test_util.h"
 
 using namespace testing;

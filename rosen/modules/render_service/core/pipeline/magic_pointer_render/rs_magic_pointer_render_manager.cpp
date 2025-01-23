@@ -14,12 +14,12 @@
  */
 
 #include "common/rs_background_thread.h"
-#include "src/gpu/gl/GrGLDefines.h"
-#include "rs_trace.h"
-#include "pipeline/rs_uni_render_processor.h"
-#include "pipeline/rs_uni_render_util.h"
+#include "pipeline/render_thread/rs_uni_render_processor.h"
+#include "pipeline/render_thread/rs_uni_render_util.h"
 #include "pipeline/sk_resource_manager.h"
 #include "rs_magic_pointer_render_manager.h"
+#include "rs_trace.h"
+#include "src/gpu/gl/GrGLDefines.h"
 
 namespace OHOS {
 namespace Rosen {

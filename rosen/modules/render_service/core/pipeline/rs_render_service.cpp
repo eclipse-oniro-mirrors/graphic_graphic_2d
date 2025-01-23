@@ -39,7 +39,7 @@
 #include "feature/round_corner_display/rs_rcd_render_manager.h"
 #include "feature/round_corner_display/rs_round_corner_display_manager.h"
 #endif
-#include "pipeline/rs_hardware_thread.h"
+#include "pipeline/hardware_thread/rs_hardware_thread.h"
 #include "pipeline/rs_surface_render_node.h"
 #include "pipeline/rs_uni_render_judgement.h"
 #include "system/rs_system_parameters.h"

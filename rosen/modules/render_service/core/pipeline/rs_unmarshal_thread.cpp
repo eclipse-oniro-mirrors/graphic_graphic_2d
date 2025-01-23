@@ -17,7 +17,7 @@
 
 #include "app_mgr_client.h"
 #include "hisysevent.h"
-#include "pipeline/rs_base_render_util.h"
+#include "pipeline/render_thread/rs_base_render_util.h"
 #include "pipeline/rs_main_thread.h"
 #include "pipeline/rs_unmarshal_task_manager.h"
 #include "platform/common/rs_log.h"

@@ -23,8 +23,8 @@
 #include "drawable/rs_surface_render_node_drawable.h"
 #include "params/rs_display_render_params.h"
 #include "pipeline/parallel_render/rs_sub_thread_manager.h"
+#include "pipeline/render_thread/rs_uni_render_util.h"
 #include "pipeline/rs_canvas_render_node.h"
-#include "pipeline/rs_uni_render_util.h"
 #include "pipeline/rs_main_thread.h"
 #include "platform/common/rs_log.h"
 

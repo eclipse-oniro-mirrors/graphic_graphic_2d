@@ -47,7 +47,7 @@
 #include "image/gpu_context.h"
 
 #ifdef RS_ENABLE_VK
-#include "pipeline/rs_vk_image_manager.h"
+#include "feature/gpuComposition/rs_vk_image_manager.h"
 #include "platform/ohos/backend/rs_vulkan_context.h"
 #endif
 #ifdef RES_SCHED_ENABLE

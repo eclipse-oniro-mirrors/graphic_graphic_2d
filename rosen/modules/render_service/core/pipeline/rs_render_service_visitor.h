@@ -19,9 +19,9 @@
 #include <memory>
 
 #include "draw/canvas.h"
-#include "rs_base_render_engine.h"
 #include "pipeline/rs_paint_filter_canvas.h"
 #include "pipeline/rs_processor.h"
+#include "render_thread/rs_base_render_engine.h"
 #include "visitor/rs_node_visitor.h"
 
 namespace OHOS {

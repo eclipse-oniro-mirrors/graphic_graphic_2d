@@ -15,7 +15,7 @@
 
 #include "gtest/gtest.h"
 #include "limit_number.h"
-#include "pipeline/rs_base_render_util.h"
+#include "pipeline/render_thread/rs_base_render_util.h"
 #include "rs_test_util.h"
 #include "surface_buffer_impl.h"
 

@@ -17,9 +17,9 @@
 #define RENDER_SERVICE_DRAWABLE_RS_CANVAS_DRAWING_RENDER_NODE_DRAWABLE_H
 
 #include "drawable/rs_render_node_drawable.h"
+#include "pipeline/render_thread/rs_uni_render_thread.h"
 #include "pipeline/rs_canvas_drawing_render_node.h"
 #include "pipeline/rs_paint_filter_canvas.h"
-#include "pipeline/rs_uni_render_thread.h"
 
 namespace OHOS::Rosen::DrawableV2 {
 using ThreadInfo = std::pair<uint32_t, std::function<void(std::shared_ptr<Drawing::Surface>)>>;

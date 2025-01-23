@@ -20,10 +20,10 @@
 #include "gtest/gtest.h"
 #include "limit_number.h"
 #include "mock_hdi_device.h"
-#include "rs_irender_service.h"
-#include "pipeline/rs_composer_adapter.h"
+#include "pipeline/render_thread/rs_composer_adapter.h"
 #include "pipeline/rs_main_thread.h"
 #include "pipeline/rs_render_service_connection.h"
+#include "rs_irender_service.h"
 #include "transaction/rs_render_service_connection_stub.h"
 
 using namespace testing;

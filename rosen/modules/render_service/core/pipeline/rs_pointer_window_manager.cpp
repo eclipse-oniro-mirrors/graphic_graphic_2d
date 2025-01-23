@@ -17,7 +17,7 @@
 #include "common/rs_optional_trace.h"
 #include "pipeline/rs_main_thread.h"
 #ifdef RS_ENABLE_GPU
-#include "pipeline/rs_uni_render_util.h"
+#include "pipeline/render_thread/rs_uni_render_util.h"
 #include "screen_manager/screen_types.h"
 #endif
 namespace OHOS {

@@ -17,7 +17,7 @@
 #define RS_UNI_UI_CAPTURE
 
 #include "pixel_map.h"
-#include "pipeline/rs_base_render_engine.h"
+#include "pipeline/render_thread/rs_base_render_engine.h"
 
 #include "pipeline/rs_canvas_render_node.h"
 #include "pipeline/rs_display_render_node.h"

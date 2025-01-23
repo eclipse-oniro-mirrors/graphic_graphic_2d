@@ -22,8 +22,8 @@
 #include "utils/matrix.h"
 
 #include "drawable/rs_surface_render_node_drawable.h"
-#include "rs_base_render_engine.h"
 #include "pipeline/rs_surface_render_node.h"
+#include "render_thread/rs_base_render_engine.h"
 
 namespace OHOS {
 namespace Rosen {
