@@ -213,8 +213,6 @@ HWTEST_F(SkiaGPUContextTest, ReleaseByTag001, TestSize.Level1)
     ASSERT_TRUE(gpuContext != nullptr);
     GPUResourceTag tag;
     gpuContext->ReleaseByTag(tag);
-    GrMockOptions options;
-    gpuContext->SetGrContext(GrDirectContext::MakeMock(&options));
 }
 
 /**
