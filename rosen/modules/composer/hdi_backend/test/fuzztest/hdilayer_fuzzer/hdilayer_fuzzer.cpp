@@ -146,6 +146,7 @@ namespace OHOS {
         std::shared_ptr<HdiLayerInfo> layerInfo = GetLayerInfoFromData();
         std::shared_ptr<HdiLayer> hdiLayer = HdiLayer::CreateHdiLayer(screenId);
         Rosen::HdiDevice* hdiDeviceMock = Rosen::HdiDevice::GetInstance();
+        hdiLayer->doLayerInfoCompare_ = doLayerInfoCompare;
         hdiLayer->Init(layerInfo);
         hdiLayer->SetLayerStatus(inUsing);
         hdiLayer->UpdateLayerInfo(layerInfo);
