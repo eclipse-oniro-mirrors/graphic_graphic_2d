@@ -66,19 +66,21 @@ namespace OHOS {
         //get data
         uint32_t bufferSize = GetData<uint32_t>() % 10 + 1; // 1-10
         uint8_t operation = GetData<uint8_t>(); //operation choice
+        uint8_t operationCount = 4; //operation count
 
-        int operationCount = 4;
-        int tryReleaseFramebuffer = 0;
-        int clearFrameBuffer = 1;
-        int dump = 2;
-        int onBufferAvailable = 3;
+        enum FrameBufferAction {
+            TRY_RELEASE_FRAMEBUFFER = 0,
+            CLEAR_FRAMEBUFFER = 1,
+            DUMP = 2,
+            ON_BUFFER_AVAILABLE = 3
+        };
         // test
         fbSurface->SetBufferQueueSize(bufferSize);
         fbSurface->GetBufferQueueSize();
         fbSurface->OnBufferAvailable();
         auto fbEntry = fbSurface->GetFramebuffer();
         switch (operation % operationCount) {
-            case tryReleaseFramebuffer: {
+            case TRY_RELEASE_FRAMEBUFFER: {
                 // try ReleaseFramebuffer
                 if (fbEntry) {
                     auto buffer = fbEntry->buffer;
@@ -87,16 +89,16 @@ namespace OHOS {
                 }
                 break;
             }
-            case clearFrameBuffer: {
+            case CLEAR_FRAMEBUFFER: {
                 fbSurface->ClearFrameBuffer();
                 break;
             }
-            case dump: {
+            case DUMP: {
                 std::string result;
                 fbSurface->Dump(result);
                 break;
             }
-            case onBufferAvailable: {
+            case ON_BUFFER_AVAILABLE: {
                 // multiple OnBufferAvailable, see if it can trigger queue full, Acquire failure, etc.
                 fbSurface->OnBufferAvailable();
                 fbSurface->OnBufferAvailable();
