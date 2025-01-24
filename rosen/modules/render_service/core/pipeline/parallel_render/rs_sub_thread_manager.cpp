@@ -421,6 +421,9 @@ void RSSubThreadManager::ScheduleRenderNodeDrawable(
             RS_LOGE("RSSubThreadManager::ScheduleRenderNodeDrawable subThread param is nullptr");
             return;
         }
+
+        // The destructor of GPUCompositonCacheGuard, a memory release check will be performed
+        RSMainThread::GPUCompositonCacheGuard guard;
         std::unique_ptr<RSRenderThreadParams> uniParamUnique(uniParam);
         /* Task run in SubThread, the uniParamUnique which is copyed from uniRenderThread will sync to SubTread */
         RSRenderThreadParamsManager::Instance().SetRSRenderThreadParams(std::move(uniParamUnique));

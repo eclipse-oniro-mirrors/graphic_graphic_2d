@@ -31,7 +31,10 @@
 #include "gtest/gtest.h"
 #include "rosen_text/typography.h"
 #include "rosen_text/typography_create.h"
-
+#include "txt/text_bundle_config_parser.h"
+#ifndef OHOS_TEXT_ENABLE
+#define OHOS_TEXT_ENABLE
+#endif
 using namespace OHOS::Rosen;
 using namespace testing;
 using namespace testing::ext;
@@ -2686,5 +2689,41 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyTest111, TestSize.Level
     EXPECT_EQ(ConvertToOriginalText(typoStyle)->tab.location, -1.0);
     OH_Drawing_DestroyTextTab(textTab);
     OH_Drawing_DestroyTypographyStyle(typoStyle);
+}
+
+/*
+ * @tc.name: OH_Drawing_TypographyTest112
+ * @tc.desc: test for truncated emoji text drawing
+ * @tc.type: FUNC
+ */
+HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyTest112, TestSize.Level1)
+{
+    OH_Drawing_TypographyStyle* typoStyle = OH_Drawing_CreateTypographyStyle();
+    OH_Drawing_TextStyle* txtStyle = OH_Drawing_CreateTextStyle();
+    OH_Drawing_TypographyCreate* handler =
+        OH_Drawing_CreateTypographyHandler(typoStyle, OH_Drawing_CreateFontCollection());
+    EXPECT_NE(handler, nullptr);
+    OH_Drawing_SetTextStyleColor(txtStyle, OH_Drawing_ColorSetArgb(0xFF, 0x00, 0x00, 0x00));
+    OH_Drawing_SetTextStyleFontSize(txtStyle, ARC_FONT_SIZE);
+    OH_Drawing_SetTextStyleFontWeight(txtStyle, FONT_WEIGHT_400);
+    OH_Drawing_TypographyHandlerPushTextStyle(handler, txtStyle);
+    const char* text = "\xF0\x9F\x98";
+    OHOS::Rosen::SPText::TextBundleConfigParser::GetInstance().initStatus_ = true;
+    OHOS::Rosen::SPText::TextBundleConfigParser::GetInstance().bundleApiVersion_ =
+        OHOS::Rosen::SPText::SINCE_API16_VERSION;
+    OH_Drawing_TypographyHandlerAddText(handler, text);
+    OHOS::Rosen::SPText::TextBundleConfigParser::GetInstance().initStatus_ = false;
+    OH_Drawing_TypographyHandlerPopTextStyle(handler);
+    OH_Drawing_Typography* typography = OH_Drawing_CreateTypography(handler);
+    EXPECT_NE(typography, nullptr);
+    OH_Drawing_TypographyLayout(typography, MAX_WIDTH);
+
+    float longestLineWidth = OH_Drawing_TypographyGetLongestLine(typography);
+    ASSERT_TRUE(skia::textlayout::nearlyEqual(longestLineWidth, ARC_FONT_SIZE));
+ 
+    OH_Drawing_DestroyTypography(typography);
+    OH_Drawing_DestroyTypographyHandler(handler);
+    OH_Drawing_DestroyTypographyStyle(typoStyle);
+    OH_Drawing_DestroyTextStyle(txtStyle);
 }
 } // namespace OHOS

@@ -62,9 +62,14 @@ enum CleanPidCallbackType : uint32_t {
     GAMES,
 };
 
-struct DvsyncInfo {
-    bool isRsDvsyncOn = false;
-    bool isUiDvsyncOn = false;
+enum LightFactorStatus : int32_t {
+    // normal level
+    NORMAL_HIGH = 0,
+    NORMAL_LOW,
+    // brightness level
+    LOW_LEVEL = 3,
+    MIDDLE_LEVEL,
+    HIGH_LEVEL,
 };
 
 struct VoteInfo {
@@ -128,7 +133,7 @@ public:
     HgmFrameRateManager();
     ~HgmFrameRateManager() = default;
 
-    void HandleLightFactorStatus(pid_t pid, bool isSafe);
+    void HandleLightFactorStatus(pid_t pid, int32_t state);
     void HandlePackageEvent(pid_t pid, const std::vector<std::string>& packageList);
     void HandleRefreshRateEvent(pid_t pid, const EventInfo& eventInfo);
     void HandleTouchEvent(pid_t pid, int32_t touchStatus, int32_t touchCnt);
@@ -166,7 +171,7 @@ public:
         sptr<VSyncController> appController, sptr<VSyncGenerator> vsyncGenerator);
     void InitTouchManager();
     // called by RSMainThread
-    void ProcessPendingRefreshRate(uint64_t timestamp, int64_t vsyncId, uint32_t rsRate, const DvsyncInfo& dvsyncInfo);
+    void ProcessPendingRefreshRate(uint64_t timestamp, int64_t vsyncId, uint32_t rsRate, bool isUiDvsyncOn);
     HgmMultiAppStrategy& GetMultiAppStrategy() { return multiAppStrategy_; }
     HgmTouchManager& GetTouchManager() { return touchManager_; }
     HgmIdleDetector& GetIdleDetector() { return idleDetector_; }
@@ -237,7 +242,7 @@ private:
     void InitRsIdleTimer();
     void InitPowerTouchManager();
     // vrate voting to hgm linkerId means that frameLinkerid, appFrameRate means that vrate
-    void CollectVRateChange(uint64_t linkerId, int& appFrameRate);
+    void CollectVRateChange(uint64_t linkerId, FrameRateRange& appFrameRate);
 
     std::atomic<uint32_t> currRefreshRate_ = 0;
     uint32_t controllerRate_ = 0;
@@ -278,7 +283,7 @@ private:
     std::atomic<ScreenId> lastCurScreenId_ = 0;
     std::string curScreenStrategyId_ = "LTPO-DEFAULT";
     bool isLtpo_ = true;
-    bool isAmbientSafe_ = false;
+    int32_t isAmbientStatus_ = 0;
     bool isAmbientEffect_ = false;
     int32_t stylusMode_ = -1;
     int32_t idleFps_ = OLED_60_HZ;

@@ -121,6 +121,12 @@ std::shared_ptr<VSyncReceiver> RSRenderServiceClient::CreateVSyncReceiver(
     return std::make_shared<VSyncReceiverWindows>();
 }
 
+int32_t RSRenderServiceClient::GetPixelMapByProcessId(
+    std::vector<std::shared_ptr<Media::PixelMap>>& pixelMapVector, pid_t pid)
+{
+    return 0;
+}
+
 std::shared_ptr<Media::PixelMap> RSRenderServiceClient::CreatePixelMapFromSurfaceId(uint64_t surfaceId,
     const Rect &srcRect)
 {
@@ -128,13 +134,15 @@ std::shared_ptr<Media::PixelMap> RSRenderServiceClient::CreatePixelMapFromSurfac
 }
 
 bool RSRenderServiceClient::TakeSurfaceCapture(NodeId id, std::shared_ptr<SurfaceCaptureCallback> callback,
-    const RSSurfaceCaptureConfig& captureConfig, const RSSurfaceCaptureBlurParam& blurParam)
+    const RSSurfaceCaptureConfig& captureConfig, const RSSurfaceCaptureBlurParam& blurParam,
+    const Drawing::Rect& specifiedAreaRect)
 {
     return false;
 }
 
 bool RSRenderServiceClient::SetWindowFreezeImmediately(NodeId id, bool isFreeze,
-    std::shared_ptr<SurfaceCaptureCallback> callback, const RSSurfaceCaptureConfig& captureConfig)
+    std::shared_ptr<SurfaceCaptureCallback> callback, const RSSurfaceCaptureConfig& captureConfig,
+    const RSSurfaceCaptureBlurParam& blurParam)
 {
     return false;
 }
@@ -239,13 +247,23 @@ bool RSRenderServiceClient::GetShowRefreshRateEnabled()
     return false;
 }
 
-void RSRenderServiceClient::SetShowRefreshRateEnabled(bool enable)
+void RSRenderServiceClient::SetShowRefreshRateEnabled(bool enabled, int32_t type)
 {
+}
+
+uint32_t RSRenderServiceClient::GetRealtimeRefreshRate(ScreenId id)
+{
+    return {};
 }
 
 std::string RSRenderServiceClient::GetRefreshInfo(pid_t pid)
 {
     return "";
+}
+
+int32_t RSRenderServiceClient::SetPhysicalScreenResolution(ScreenId id, uint32_t width, uint32_t height)
+{
+    return 0;
 }
 
 int32_t RSRenderServiceClient::SetVirtualScreenResolution(ScreenId id, uint32_t width, uint32_t height)
@@ -263,6 +281,10 @@ void RSRenderServiceClient::MarkPowerOffNeedProcessOneFrame()
 }
 
 void RSRenderServiceClient::RepaintEverything()
+{
+}
+
+void RSRenderServiceClient::ForceRefreshOneFrameWithNextVSync()
 {
 }
 
@@ -455,13 +477,13 @@ int32_t RSRenderServiceClient::SetVirtualScreenSecurityExemptionList(
 }
 
 int32_t RSRenderServiceClient::SetScreenSecurityMask(ScreenId id,
-    const std::shared_ptr<Media::PixelMap> securityMask)
+    std::shared_ptr<Media::PixelMap> securityMask)
 {
     return 0;
 }
 
 int32_t RSRenderServiceClient::SetMirrorScreenVisibleRect(
-    ScreenId id, const Rect& mainScreenRect)
+    ScreenId id, const Rect& mainScreenRect, bool supportRotation)
 {
     return {};
 }
@@ -560,6 +582,14 @@ void RSRenderServiceClient::ReportEventJankFrame(DataBaseRs info)
 {
 }
 
+void RSRenderServiceClient::ReportRsSceneJankStart(AppInfo info)
+{
+}
+
+void RSRenderServiceClient::ReportRsSceneJankEnd(AppInfo info)
+{
+}
+
 void RSRenderServiceClient::ReportGameStateData(GameStateData info)
 {
 }
@@ -574,7 +604,7 @@ uint32_t RSRenderServiceClient::SetHidePrivacyContent(NodeId id, bool needHidePr
     return {};
 }
 
-void RSRenderServiceClient::NotifyLightFactorStatus(bool isSafe)
+void RSRenderServiceClient::NotifyLightFactorStatus(int32_t lightFactorStatus)
 {
 }
 
@@ -595,10 +625,6 @@ void RSRenderServiceClient::NotifyDynamicModeEvent(bool enableDynamicMode)
 }
 
 void RSRenderServiceClient::SetCacheEnabledForRotation(bool isEnabled)
-{
-}
-
-void RSRenderServiceClient::SetScreenSwitchStatus(bool flag)
 {
 }
 
@@ -686,6 +712,14 @@ bool RSRenderServiceClient::UnregisterSurfaceBufferCallback(pid_t pid, uint64_t 
 }
 
 void RSRenderServiceClient::SetLayerTop(const std::string &nodeIdStr, bool isTop)
+{
+}
+
+void RSRenderServiceClient::NotifyScreenSwitched()
+{
+}
+
+void RSRenderServiceClient::SetWindowContainer(NodeId nodeId, bool value)
 {
 }
 } // namespace Rosen

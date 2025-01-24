@@ -23,7 +23,7 @@
 #include "pipeline/rs_render_node.h"
 #include "pipeline/rs_surface_buffer_callback_manager.h"
 #include "offscreen_render/rs_offscreen_render_thread.h"
-#include "ui/rs_frame_rate_policy.h"
+#include "feature/hyper_graphic_manager/rs_frame_rate_policy.h"
 #include "ui/rs_proxy_node.h"
 #include "platform/common/rs_log.h"
 #include "render/rs_typeface_cache.h"
@@ -34,6 +34,8 @@ namespace Rosen {
 namespace {
 constexpr uint32_t WATERMARK_PIXELMAP_SIZE_LIMIT = 500 * 1024;
 constexpr uint32_t WATERMARK_NAME_LENGTH_LIMIT = 128;
+constexpr uint32_t SECURITYMASK_IMAGE_WIDTH_LIMIT = 4096;
+constexpr uint32_t SECURITYMASK_IMAGE_HEIGHT_LIMIT = 4096;
 }
 #endif
 RSInterfaces &RSInterfaces::GetInstance()
@@ -110,14 +112,24 @@ int32_t RSInterfaces::SetVirtualScreenSecurityExemptionList(
     return renderServiceClient_->SetVirtualScreenSecurityExemptionList(id, securityExemptionList);
 }
 
-int32_t RSInterfaces::SetScreenSecurityMask(ScreenId id, const std::shared_ptr<Media::PixelMap> securityMask)
+int32_t RSInterfaces::SetScreenSecurityMask(ScreenId id, std::shared_ptr<Media::PixelMap> securityMask)
 {
+    Media::ImageInfo imageInfo;
+    if (securityMask) {
+        securityMask->GetImageInfo(imageInfo);
+    }
+    if (securityMask && (imageInfo.size.width > SECURITYMASK_IMAGE_WIDTH_LIMIT ||
+        imageInfo.size.height > SECURITYMASK_IMAGE_HEIGHT_LIMIT)) {
+        ROSEN_LOGE("SetScreenSecurityMask failed, securityMask width: %{public}d, height: %{public}d is error",
+            imageInfo.size.width, imageInfo.size.height);
+        return RS_CONNECTION_ERROR;
+    }
     return renderServiceClient_->SetScreenSecurityMask(id, std::move(securityMask));
 }
 
-int32_t RSInterfaces::SetMirrorScreenVisibleRect(ScreenId id, const Rect& mainScreenRect)
+int32_t RSInterfaces::SetMirrorScreenVisibleRect(ScreenId id, const Rect& mainScreenRect, bool supportRotation)
 {
-    return renderServiceClient_->SetMirrorScreenVisibleRect(id, mainScreenRect);
+    return renderServiceClient_->SetMirrorScreenVisibleRect(id, mainScreenRect, supportRotation);
 }
 
 int32_t RSInterfaces::SetCastScreenEnableSkipWindow(ScreenId id, bool enable)
@@ -200,6 +212,11 @@ int32_t RSInterfaces::SetScreenChangeCallback(const ScreenChangeCallback &callba
     return renderServiceClient_->SetScreenChangeCallback(callback);
 }
 
+int32_t RSInterfaces::GetPixelMapByProcessId(std::vector<std::shared_ptr<Media::PixelMap>>& pixelMapVector, pid_t pid)
+{
+    return renderServiceClient_->GetPixelMapByProcessId(pixelMapVector, pid);
+}
+
 bool RSInterfaces::TakeSurfaceCapture(std::shared_ptr<RSSurfaceNode> node,
     std::shared_ptr<SurfaceCaptureCallback> callback, RSSurfaceCaptureConfig captureConfig)
 {
@@ -228,13 +245,19 @@ bool RSInterfaces::TakeSurfaceCaptureWithBlur(std::shared_ptr<RSSurfaceNode> nod
 }
 
 bool RSInterfaces::SetWindowFreezeImmediately(std::shared_ptr<RSSurfaceNode> node, bool isFreeze,
-    std::shared_ptr<SurfaceCaptureCallback> callback, RSSurfaceCaptureConfig captureConfig)
+    std::shared_ptr<SurfaceCaptureCallback> callback, RSSurfaceCaptureConfig captureConfig, float blurRadius)
 {
     if (!node) {
         ROSEN_LOGE("%{public}s node is nullptr", __func__);
         return false;
     }
-    return renderServiceClient_->SetWindowFreezeImmediately(node->GetId(), isFreeze, callback, captureConfig);
+    RSSurfaceCaptureBlurParam blurParam;
+    if (ROSEN_GE(blurRadius, 1.f)) {
+        blurParam.isNeedBlur = true;
+        blurParam.blurRadius = blurRadius;
+    }
+    return renderServiceClient_->SetWindowFreezeImmediately(
+        node->GetId(), isFreeze, callback, captureConfig, blurParam);
 }
 
 bool RSInterfaces::SetHwcNodeBounds(int64_t rsNodeId, float positionX, float positionY,
@@ -301,9 +324,14 @@ bool RSInterfaces::GetShowRefreshRateEnabled()
     return renderServiceClient_->GetShowRefreshRateEnabled();
 }
 
-void RSInterfaces::SetShowRefreshRateEnabled(bool enable)
+void RSInterfaces::SetShowRefreshRateEnabled(bool enabled, int32_t type)
 {
-    return renderServiceClient_->SetShowRefreshRateEnabled(enable);
+    return renderServiceClient_->SetShowRefreshRateEnabled(enabled, type);
+}
+
+uint32_t RSInterfaces::GetRealtimeRefreshRate(ScreenId id)
+{
+    return renderServiceClient_->GetRealtimeRefreshRate(id);
 }
 
 std::string RSInterfaces::GetRefreshInfo(pid_t pid)
@@ -312,7 +340,8 @@ std::string RSInterfaces::GetRefreshInfo(pid_t pid)
 }
 
 bool RSInterfaces::TakeSurfaceCaptureForUI(std::shared_ptr<RSNode> node,
-    std::shared_ptr<SurfaceCaptureCallback> callback, float scaleX, float scaleY, bool isSync)
+    std::shared_ptr<SurfaceCaptureCallback> callback, float scaleX, float scaleY,
+    bool isSync, const Drawing::Rect& specifiedAreaRect)
 {
     if (!node) {
         ROSEN_LOGW("RSInterfaces::TakeSurfaceCaptureForUI rsnode is nullpter return");
@@ -334,7 +363,7 @@ bool RSInterfaces::TakeSurfaceCaptureForUI(std::shared_ptr<RSNode> node,
         if (isSync) {
             node->SetTakeSurfaceForUIFlag();
         }
-        return renderServiceClient_->TakeSurfaceCapture(node->GetId(), callback, captureConfig);
+        return renderServiceClient_->TakeSurfaceCapture(node->GetId(), callback, captureConfig, {}, specifiedAreaRect);
     } else {
         return TakeSurfaceCaptureForUIWithoutUni(node->GetId(), callback, scaleX, scaleY);
     }
@@ -397,11 +426,17 @@ bool RSInterfaces::SetGlobalDarkColorMode(bool isDark)
 }
 
 #ifndef ROSEN_ARKUI_X
+int32_t RSInterfaces::SetPhysicalScreenResolution(ScreenId id, uint32_t width, uint32_t height)
+{
+    return renderServiceClient_->SetPhysicalScreenResolution(id, width, height);
+}
+
 int32_t RSInterfaces::SetVirtualScreenResolution(ScreenId id, uint32_t width, uint32_t height)
 {
     return renderServiceClient_->SetVirtualScreenResolution(id, width, height);
 }
 #endif // !ROSEN_ARKUI_X
+
 bool RSInterfaces::SetVirtualMirrorScreenCanvasRotation(ScreenId id, bool canvasRotation)
 {
     return renderServiceClient_->SetVirtualMirrorScreenCanvasRotation(id, canvasRotation);
@@ -426,6 +461,11 @@ void RSInterfaces::MarkPowerOffNeedProcessOneFrame()
 void RSInterfaces::RepaintEverything()
 {
     renderServiceClient_->RepaintEverything();
+}
+
+void RSInterfaces::ForceRefreshOneFrameWithNextVSync()
+{
+    renderServiceClient_->ForceRefreshOneFrameWithNextVSync();
 }
 
 void RSInterfaces::DisablePowerOffRenderControl(ScreenId id)
@@ -732,14 +772,24 @@ void RSInterfaces::ReportGameStateData(GameStateData info)
     renderServiceClient_->ReportGameStateData(info);
 }
 
+void RSInterfaces::ReportRsSceneJankStart(AppInfo info)
+{
+    renderServiceClient_->ReportRsSceneJankStart(info);
+}
+
+void RSInterfaces::ReportRsSceneJankEnd(AppInfo info)
+{
+    renderServiceClient_->ReportRsSceneJankEnd(info);
+}
+
 void RSInterfaces::EnableCacheForRotation()
 {
     renderServiceClient_->SetCacheEnabledForRotation(true);
 }
 
-void RSInterfaces::NotifyLightFactorStatus(bool isSafe)
+void RSInterfaces::NotifyLightFactorStatus(int32_t lightFactorStatus)
 {
-    renderServiceClient_->NotifyLightFactorStatus(isSafe);
+    renderServiceClient_->NotifyLightFactorStatus(lightFactorStatus);
 }
 
 void RSInterfaces::NotifyPackageEvent(uint32_t listSize, const std::vector<std::string>& packageList)
@@ -765,11 +815,6 @@ void RSInterfaces::NotifyDynamicModeEvent(bool enableDynamicMode)
 void RSInterfaces::DisableCacheForRotation()
 {
     renderServiceClient_->SetCacheEnabledForRotation(false);
-}
-
-void RSInterfaces::SetScreenSwitching(bool flag)
-{
-    renderServiceClient_->SetScreenSwitchStatus(flag);
 }
 
 void RSInterfaces::SetOnRemoteDiedCallback(const OnRemoteDiedCallback& callback)
@@ -886,6 +931,16 @@ bool RSInterfaces::UnregisterSurfaceBufferCallback(pid_t pid, uint64_t uid)
 void RSInterfaces::SetLayerTop(const std::string &nodeIdStr, bool isTop)
 {
     renderServiceClient_->SetLayerTop(nodeIdStr, isTop);
+}
+
+void RSInterfaces::NotifyScreenSwitched()
+{
+    renderServiceClient_->NotifyScreenSwitched();
+}
+
+void RSInterfaces::SetWindowContainer(NodeId nodeId, bool value)
+{
+    renderServiceClient_->SetWindowContainer(nodeId, value);
 }
 } // namespace Rosen
 } // namespace OHOS

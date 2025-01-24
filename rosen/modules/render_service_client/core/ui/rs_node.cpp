@@ -48,7 +48,7 @@
 #include "ui/rs_canvas_drawing_node.h"
 #include "ui/rs_canvas_node.h"
 #include "ui/rs_display_node.h"
-#include "ui/rs_frame_rate_policy.h"
+#include "feature/hyper_graphic_manager/rs_frame_rate_policy.h"
 #include "ui/rs_proxy_node.h"
 #include "ui/rs_root_node.h"
 #include "ui/rs_surface_node.h"
@@ -1210,6 +1210,12 @@ void RSNode::SetBackgroundShader(const std::shared_ptr<RSShader>& shader)
 {
     SetProperty<RSBackgroundShaderModifier, RSProperty<std::shared_ptr<RSShader>>>(
         RSModifierType::BACKGROUND_SHADER, shader);
+}
+
+void RSNode::SetBackgroundShaderProgress(const float& progress)
+{
+    SetProperty<RSBackgroundShaderProgressModifier, RSAnimatableProperty<float>>(
+        RSModifierType::BACKGROUND_SHADER_PROGRESS, progress);
 }
 
 // background

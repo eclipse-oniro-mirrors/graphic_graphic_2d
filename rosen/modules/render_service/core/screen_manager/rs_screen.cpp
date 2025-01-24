@@ -150,7 +150,7 @@ void RSScreen::PhysicalScreenInit() noexcept
                    back_inserter(supportedPhysicalHDRFormats_),
                    [](GraphicHDRFormat item) -> ScreenHDRFormat {return HDI_HDR_FORMAT_TO_RS_MAP[item];});
     auto status = GraphicDispPowerStatus::GRAPHIC_POWER_STATUS_ON;
-    if (RSMainThread::Instance()->GetDeviceType() != DeviceType::PC) {
+    if (RSMainThread::Instance()->GetDeviceType() != DeviceType::PC || id_ == 0) {
         if (hdiScreen_->SetScreenPowerStatus(status) < 0) {
             RS_LOGE("RSScreen %{public}s: RSScreen(id %{public}" PRIu64 ") failed to SetScreenPowerStatus.",
                 __func__, id_);
@@ -257,6 +257,26 @@ uint32_t RSScreen::PhyWidth() const
 uint32_t RSScreen::PhyHeight() const
 {
     return phyHeight_;
+}
+
+bool RSScreen::IsSamplingOn() const
+{
+    return isSamplingOn_;
+}
+
+float RSScreen::GetSamplingTranslateX() const
+{
+    return samplingTranslateX_;
+}
+
+float RSScreen::GetSamplingTranslateY() const
+{
+    return samplingTranslateY_;
+}
+
+float RSScreen::GetSamplingScale() const
+{
+    return samplingScale_;
 }
 
 RectI RSScreen::GetActiveRect() const
@@ -375,16 +395,30 @@ void RSScreen::SetRogResolution(uint32_t width, uint32_t height)
 	    __func__, id_, width_, height_, phyWidth_, phyHeight_);
 }
 
-
-void RSScreen::SetResolution(uint32_t width, uint32_t height)
+int32_t RSScreen::SetResolution(uint32_t width, uint32_t height)
 {
-    if (!IsVirtual()) {
-        RS_LOGW("RSScreen %{public}s: physical screen not support SetResolution.", __func__);
-        return;
+    RS_LOGI("RSScreen set resolution [%{public}u * %{public}u]", width, height);
+    if (IsVirtual()) {
+        width_ = width;
+        height_ = height;
+        return StatusCode::SUCCESS;
     }
-    RS_LOGD_IF(DEBUG_SCREEN, "RSScreen set resolution, w * h: [%{public}u * %{public}u]", width, height);
+    if (width < phyWidth_ || height < phyHeight_) {
+        return StatusCode::INVALID_ARGUMENTS;
+    }
     width_ = width;
     height_ = height;
+    isSamplingOn_ = width > phyWidth_ || height > phyHeight_;
+    if (isSamplingOn_ && width_ > 0 && height_ > 0) {
+        samplingScale_ = std::min(static_cast<float>(phyWidth_) / width_,
+            static_cast<float>(phyHeight_) / height_);
+        samplingTranslateX_ = (phyWidth_ - width_ * samplingScale_) / 2.f;
+        samplingTranslateY_ = (phyHeight_ - height_ * samplingScale_) / 2.f;
+        RS_LOGI("RSScreen %{public}s: sampling is enable. "
+            "scale: %{public}f, translateX: %{public}f, translateY: %{public}f",
+            __func__, samplingScale_, samplingTranslateX_, samplingTranslateY_);
+    }
+    return StatusCode::SUCCESS;
 }
 
 int32_t RSScreen::GetActiveModePosByModeId(int32_t modeId) const
@@ -1204,7 +1238,7 @@ const std::vector<uint64_t>& RSScreen::GetSecurityExemptionList() const
     return securityExemptionList_;
 }
 
-int32_t RSScreen::SetSecurityMask(const std::shared_ptr<Media::PixelMap> securityMask)
+int32_t RSScreen::SetSecurityMask(std::shared_ptr<Media::PixelMap> securityMask)
 {
     if (!IsVirtual()) {
         RS_LOGW("RSScreen::SetSecurityMask not virtual screen");
@@ -1252,6 +1286,26 @@ void RSScreen::SetDisplayPropertyForHardCursor()
 bool RSScreen::GetDisplayPropertyForHardCursor()
 {
     return isHardCursorSupport_;
+}
+
+void RSScreen::SetHasProtectedLayer(bool hasProtectedLayer)
+{
+    hasProtectedLayer_ = hasProtectedLayer;
+}
+
+bool RSScreen::GetHasProtectedLayer()
+{
+    return hasProtectedLayer_;
+}
+
+bool RSScreen::GetVisibleRectSupportRotation() const
+{
+    return isSupportRotation_;
+}
+
+void RSScreen::SetVisibleRectSupportRotation(bool supportRotation)
+{
+    isSupportRotation_ = supportRotation;
 }
 } // namespace impl
 } // namespace Rosen

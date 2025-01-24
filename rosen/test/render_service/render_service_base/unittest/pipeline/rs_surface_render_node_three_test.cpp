@@ -524,74 +524,6 @@ HWTEST_F(RSSurfaceRenderNodeThreeTest, NeedSetCallbackForRenderThreadRefresh, Te
 }
 
 /**
- * @tc.name: ProtectedLayer001
- * @tc.desc: Test ProtectedLayer when SetProtectedLayer is true.
- * @tc.type: FUNC
- * @tc.require: issueI7ZSC2
- */
-HWTEST_F(RSSurfaceRenderNodeThreeTest, ProtectedLayer001, TestSize.Level2)
-{
-    auto rsContext = std::make_shared<RSContext>();
-    auto node = std::make_shared<RSSurfaceRenderNode>(id, rsContext);
-    ASSERT_NE(node, nullptr);
-
-    node->SetProtectedLayer(true);
-    bool result = node->GetProtectedLayer();
-    ASSERT_EQ(result, true);
-}
-
-/**
- * @tc.name: ProtectedLayer002
- * @tc.desc: Test ProtectedLayer when SetProtectedLayer is false.
- * @tc.type: FUNC
- * @tc.require: issueI7ZSC2
- */
-HWTEST_F(RSSurfaceRenderNodeThreeTest, ProtectedLayer002, TestSize.Level2)
-{
-    auto rsContext = std::make_shared<RSContext>();
-    auto node = std::make_shared<RSSurfaceRenderNode>(id, rsContext);
-    ASSERT_NE(node, nullptr);
-
-    node->SetProtectedLayer(false);
-    bool result = node->GetProtectedLayer();
-    ASSERT_EQ(result, false);
-}
-
-/**
- * @tc.name: GetHasProtectedLayer001
- * @tc.desc: Test GetHasProtectedLayer when SetProtectedLayer is true.
- * @tc.type: FUNC
- * @tc.require: issueI7ZSC2
- */
-HWTEST_F(RSSurfaceRenderNodeThreeTest, GetHasProtectedLayer001, TestSize.Level2)
-{
-    auto rsContext = std::make_shared<RSContext>();
-    auto node = std::make_shared<RSSurfaceRenderNode>(id, rsContext);
-    ASSERT_NE(node, nullptr);
-
-    node->SetProtectedLayer(true);
-    bool result = node->GetHasProtectedLayer();
-    ASSERT_EQ(result, true);
-}
-
-/**
- * @tc.name: GetHasProtectedLayer002
- * @tc.desc: Test GetHasProtectedLayer when SetProtectedLayer is false.
- * @tc.type: FUNC
- * @tc.require: issueI7ZSC2
- */
-HWTEST_F(RSSurfaceRenderNodeThreeTest, GetHasProtectedLayer002, TestSize.Level2)
-{
-    auto rsContext = std::make_shared<RSContext>();
-    auto node = std::make_shared<RSSurfaceRenderNode>(id, rsContext);
-    ASSERT_NE(node, nullptr);
-
-    node->SetProtectedLayer(false);
-    bool result = node->GetHasProtectedLayer();
-    ASSERT_EQ(result, false);
-}
-
-/**
  * @tc.name: GetHasPrivacyContentLayer001
  * @tc.desc: Test GetHasPrivacyContentLayer when SetProtectedLayer is true.
  * @tc.type: FUNC
@@ -1082,6 +1014,43 @@ HWTEST_F(RSSurfaceRenderNodeThreeTest, QuickPrepare, TestSize.Level2)
     ASSERT_TRUE(node->IsScbScreen());
     node->QuickPrepare(visitor);
     node->isNotifyUIBufferAvailable_ = true;
+    ASSERT_TRUE(node->IsNotifyUIBufferAvailable());
+    node->QuickPrepare(visitor);
+    node->isNotifyUIBufferAvailable_ = false;
+    ASSERT_FALSE(node->IsNotifyUIBufferAvailable());
+    node->QuickPrepare(visitor);
+    ASSERT_TRUE(true);
+}
+
+/**
+ * @tc.name: QuickPrepare001
+ * @tc.desc: test results of QuickPrepare
+ * @tc.type:FUNC QuickPrepare
+ * @tc.require:
+ */
+HWTEST_F(RSSurfaceRenderNodeThreeTest, QuickPrepare001, TestSize.Level2)
+{
+    auto rsContext = std::make_shared<RSContext>();
+    auto node = std::make_shared<RSSurfaceRenderNode>(id, rsContext);
+    std::shared_ptr<RSNodeVisitor> visitor = nullptr;
+    node->QuickPrepare(visitor);
+    visitor = std::make_shared<RSTestVisitor>();
+    node->QuickPrepare(visitor);
+    node->nodeType_ = RSSurfaceNodeType::UI_EXTENSION_COMMON_NODE;
+    ASSERT_TRUE(node->IsUIExtension());
+    node->QuickPrepare(visitor);
+    node->isNotifyUIBufferAvailable_ = true;
+    node->isWaitUifirstFirstFrame_ = true;
+    ASSERT_TRUE(node->IsNotifyUIBufferAvailable());
+    node->QuickPrepare(visitor);
+    node->isNotifyUIBufferAvailable_ = false;
+    ASSERT_FALSE(node->IsNotifyUIBufferAvailable());
+    node->QuickPrepare(visitor);
+    node->nodeType_ = RSSurfaceNodeType::UI_EXTENSION_SECURE_NODE;
+    ASSERT_TRUE(node->IsUIExtension());
+    node->QuickPrepare(visitor);
+    node->isNotifyUIBufferAvailable_ = true;
+    node->isWaitUifirstFirstFrame_ = true;
     ASSERT_TRUE(node->IsNotifyUIBufferAvailable());
     node->QuickPrepare(visitor);
     node->isNotifyUIBufferAvailable_ = false;

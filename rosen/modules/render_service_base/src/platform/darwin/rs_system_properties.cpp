@@ -181,15 +181,6 @@ bool RSSystemProperties::GetCacheEnabledForRotation()
     return {};
 }
 
-void RSSystemProperties::SetScreenSwitchStatus(bool flag)
-{
-}
-
-bool RSSystemProperties::GetScreenSwitchStatus()
-{
-    return false;
-}
-
 #ifndef NEW_SKIA
 bool RSSystemProperties::GetReleaseResourceEnabled()
 {
@@ -223,6 +214,11 @@ HgmRefreshRateModes RSSystemProperties::GetHgmRefreshRateModesEnabled()
 }
 
 bool RSSystemProperties::GetHardCursorEnabled()
+{
+    return false;
+}
+
+bool RSSystemProperties::GetSLRScaleEnabled()
 {
     return false;
 }
@@ -471,7 +467,7 @@ bool RSSystemProperties::GetSubSurfaceEnabled()
 
 bool RSSystemProperties::GetSingleDrawableLockerEnabled()
 {
-    return false;
+    return true;
 }
 
 bool RSSystemProperties::GetTargetUIFirstDfxEnabled(std::vector<std::string>& SurfaceNames)

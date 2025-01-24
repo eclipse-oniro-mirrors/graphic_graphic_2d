@@ -122,20 +122,21 @@ enum class ColorFilterMode {
     COLOR_FILTER_END = 32,
 };
 
+constexpr int32_t ROUND_ANGLE = 360;
+
 class RSBaseRenderUtil {
 public:
     static bool IsNeedClient(RSRenderNode& node, const ComposeInfo& info);
     static void SetNeedClient(bool flag);
     static bool IsBufferValid(const sptr<SurfaceBuffer>& buffer);
-    static BufferRequestConfig GetFrameBufferRequestConfig(const ScreenInfo& screenInfo, bool isPhysical = true,
-        bool isProtected = false,
+    static BufferRequestConfig GetFrameBufferRequestConfig(const ScreenInfo& screenInfo, bool isProtected = false,
         GraphicColorGamut colorGamut = GRAPHIC_COLOR_GAMUT_SRGB,
         GraphicPixelFormat pixelFormat = GRAPHIC_PIXEL_FMT_RGBA_8888);
 
     static GraphicTransformType GetSurfaceBufferTransformType(
         const sptr<IConsumerSurface>& consumer, const sptr<SurfaceBuffer>& buffer);
     static Drawing::Matrix GetSurfaceTransformMatrix(GraphicTransformType rotationTransform, const RectF &bounds,
-        const RectF &bufferBounds = {0.0f, 0.0f, 0.0f, 0.0f}, Gravity gravity = Gravity::RESIZE);
+        const RectF &bufferBounds = {0.0f, 0.0f, 0.0f, 0.0f});
     static Drawing::Matrix GetSurfaceTransformMatrixForRotationFixed(GraphicTransformType rotationTransform,
         const RectF &bounds, const RectF &bufferBounds = {0.0f, 0.0f, 0.0f, 0.0f}, Gravity gravity = Gravity::RESIZE);
     static Drawing::Matrix GetGravityMatrix(Gravity gravity, const RectF& bufferSize, const RectF& bounds);
@@ -149,7 +150,7 @@ public:
         uint64_t presentWhen = CONSUME_DIRECTLY, bool dropFrameByPidEnable = false);
     static bool ReleaseBuffer(RSSurfaceHandler& surfaceHandler);
 
-    static std::unique_ptr<RSTransactionData> ParseTransactionData(MessageParcel& parcel);
+    static std::unique_ptr<RSTransactionData> ParseTransactionData(MessageParcel& parcel, uint32_t parcelNumber);
 
     static bool ConvertBufferToBitmap(sptr<SurfaceBuffer> buffer, std::vector<uint8_t>& newBuffer,
         GraphicColorGamut dstGamut, Drawing::Bitmap& bitmap, const std::vector<GraphicHDRMetaData>& metaDatas = {});

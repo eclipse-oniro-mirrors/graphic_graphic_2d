@@ -82,6 +82,13 @@ int RSSystemProperties::GetDumpFrameNum()
     return ConvertToInt(num, 0);
 }
 
+int RSSystemProperties::GetSceneJankFrameThreshold()
+{
+    static int sceneJankFrameThreshold =
+        std::atoi((system::GetParameter("persist.sys.graphic.sceneJankFrameThreshold", "50")).c_str());
+    return sceneJankFrameThreshold;
+}
+
 int RSSystemProperties::GetRecordingEnabled()
 {
     static CachedHandle g_Handle = CachedParameterCreate("debug.graphic.recording.enabled", "0");
@@ -452,16 +459,6 @@ bool RSSystemProperties::GetCacheEnabledForRotation()
     return cacheEnabledForRotation_;
 }
 
-void RSSystemProperties::SetScreenSwitchStatus(bool flag)
-{
-    isScreenSwitching_ = flag;
-}
-
-bool RSSystemProperties::GetScreenSwitchStatus()
-{
-    return isScreenSwitching_;
-}
-
 ParallelRenderingType RSSystemProperties::GetPrepareParallelRenderingEnabled()
 {
     static ParallelRenderingType systemPropertiePrepareType = static_cast<ParallelRenderingType>(
@@ -586,6 +583,14 @@ bool RSSystemProperties::GetMotionBlurEnabled()
     static bool enabled =
         std::atoi((system::GetParameter("persist.sys.graphic.motionBlurEnabled", "1")).c_str()) != 0;
     return enabled;
+}
+
+bool RSSystemProperties::GetSLRScaleEnabled()
+{
+    static CachedHandle g_Handle = CachedParameterCreate("rosen.SLRScale.enabled", "1");
+    int changed = 0;
+    const char *enable = CachedParameterGetChanged(g_Handle, &changed);
+    return ConvertToInt(enable, 1) != 0;
 }
 
 bool RSSystemProperties::GetDynamicBrightnessEnabled()

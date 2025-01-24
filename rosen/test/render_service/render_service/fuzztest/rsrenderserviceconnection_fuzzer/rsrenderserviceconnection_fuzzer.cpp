@@ -237,6 +237,16 @@ bool DoSetScreenSkipFrameInterval()
     return true;
 }
 
+bool DoSetPhysicalScreenResolution()
+{
+    if (rsConn_ == nullptr) {
+        return false;
+    }
+    ScreenId id = GetData<uint64_t>();
+    rsConn_->SetPhysicalScreenResolution(id, SCREEN_WIDTH, SCREEN_HEIGHT);
+    return true;
+}
+
 bool DoSetVirtualScreenResolution()
 {
     if (rsConn_ == nullptr) {
@@ -461,13 +471,15 @@ bool DoSetScreenRefreshRate()
     ScreenId id = GetData<uint64_t>();
     int32_t sceneId = GetData<int32_t>();
     int32_t rate = GetData<int32_t>();
-    bool enable = GetData<bool>();
+    bool enabled = GetData<bool>();
+    int32_t type = GetData<int32_t>();
     rsConn_->SetScreenRefreshRate(id, sceneId, rate);
     rsConn_->GetScreenCurrentRefreshRate(id);
     rsConn_->GetScreenSupportedRefreshRates(id);
     rsConn_->GetCurrentRefreshRateMode();
     rsConn_->GetShowRefreshRateEnabled();
-    rsConn_->SetShowRefreshRateEnabled(enable);
+    rsConn_->SetShowRefreshRateEnabled(enabled, type);
+    rsConn_->GetRealtimeRefreshRate(id);
     return true;
 }
 
@@ -1067,8 +1079,8 @@ bool DONotifyLightFactorStatus()
     if (rsConn_ == nullptr) {
         return false;
     }
-    bool isSafe = GetData<bool>();
-    rsConn_->NotifyLightFactorStatus(isSafe);
+    int32_t lightFactorStatus = GetData<int32_t>();
+    rsConn_->NotifyLightFactorStatus(lightFactorStatus);
     return true;
 }
 
@@ -1261,6 +1273,7 @@ void DoFuzzerTest1()
     DoGetScreenType();
     DoRegisterBufferAvailableListener();
     DoSetScreenSkipFrameInterval();
+    DoSetPhysicalScreenResolution();
     DoSetVirtualScreenResolution();
     DoGetScreenSupportedColorGamuts();
     DoGetScreenSupportedModes();

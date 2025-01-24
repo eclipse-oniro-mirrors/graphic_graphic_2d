@@ -2777,6 +2777,23 @@ HWTEST_F(RSMainThreadTest, ForceRefreshForUni002, TestSize.Level1)
 }
 
 /**
+ * @tc.name: ForceRefreshForUni003
+ * @tc.desc: ForceRefreshForUni Test, with fastcompose
+ * @tc.type: FUNC
+ * @tc.require: issueIBGV2W
+ */
+HWTEST_F(RSMainThreadTest, ForceRefreshForUni003, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    auto isUniRender = mainThread->isUniRender_;
+    mainThread->isUniRender_ = true;
+    mainThread->ForceRefreshForUni(true);
+    ASSERT_EQ(mainThread->isForceRefresh_, false);
+    mainThread->isUniRender_ = isUniRender;
+}
+
+/**
  * @tc.name: PerfForBlurIfNeeded
  * @tc.desc: PerfForBlurIfNeeded Test
  * @tc.type: FUNC
@@ -4846,17 +4863,48 @@ HWTEST_F(RSMainThreadTest, DoDirectComposition002, TestSize.Level1)
 }
 
 /**
- * @tc.name: CloseHdrWhenMultiDisplayInPCTest
- * @tc.desc: test CloseHdrWhenMultiDisplayInPCTest
+ * @tc.name: MultiDisplayChangeTest
+ * @tc.desc: test MultiDisplayChangeTest
  * @tc.type: FUNC
  * @tc.require: issueIBF9OU
  */
-HWTEST_F(RSMainThreadTest, CloseHdrWhenMultiDisplayInPCTest, TestSize.Level2)
+HWTEST_F(RSMainThreadTest, MultiDisplayChangeTest, TestSize.Level2)
 {
     auto mainThread = RSMainThread::Instance();
     ASSERT_NE(mainThread, nullptr);
-    auto isMultiDisplayPre = mainThread->isMultiDisplayPre_;
-    mainThread->CloseHdrWhenMultiDisplayInPC(isMultiDisplayPre);
-    EXPECT_EQ(isMultiDisplayPre, mainThread->isMultiDisplayPre_);
+    mainThread->isMultiDisplayPre_ = false;
+    auto getMultiDisplayStatus = mainThread->GetMultiDisplayStatus();
+    EXPECT_FALSE(getMultiDisplayStatus);
+    mainThread->isMultiDisplayChange_ = false;
+    EXPECT_FALSE(mainThread->GetMultiDisplayChange());
+    mainThread->MultiDisplayChange(getMultiDisplayStatus);
+}
+
+/**
+ * @tc.name: CheckFastCompose
+ * @tc.desc: test CheckFastCompose
+ * @tc.type: FUNC
+ * @tc.require: issueIBGV2W
+ */
+HWTEST_F(RSMainThreadTest, CheckFastCompose001, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    auto receiver = mainThread->receiver_;
+    if (mainThread->rsVSyncDistributor_ == nullptr) {
+        auto vsyncGenerator = CreateVSyncGenerator();
+        auto vsyncController = new VSyncController(vsyncGenerator, 0);
+        mainThread->rsVSyncDistributor_ = new VSyncDistributor(vsyncController, "rs");
+    }
+    sptr<VSyncConnection> conn = new VSyncConnection(mainThread->rsVSyncDistributor_, "rs");
+    mainThread->receiver_ = nullptr;
+    mainThread->CheckFastCompose(0);
+    mainThread->receiver_ = std::make_shared<VSyncReceiver>(conn);
+    mainThread->lastFastComposeTimeStamp_ = 0;
+    mainThread->CheckFastCompose(mainThread->timestamp_ - 1);
+    mainThread->lastFastComposeTimeStamp_ = mainThread->timestamp_;
+    mainThread->CheckFastCompose(mainThread->timestamp_ - 1);
+    ASSERT_NE(mainThread->requestNextVsyncNum_.load(), 0);
+    mainThread->receiver_ = receiver;
 }
 } // namespace OHOS::Rosen

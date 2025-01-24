@@ -153,6 +153,7 @@ bool RSPhysicalScreenFuzzTest(const uint8_t* data, size_t size)
     std::vector<float> partitionPoints;
     rsInterfaces.RegisterSurfaceOcclusionChangeCallback(static_cast<NodeId>(id), surfaceOcclusionCb, partitionPoints);
     rsInterfaces.UnRegisterSurfaceOcclusionChangeCallback(static_cast<NodeId>(id));
+    rsInterfaces.SetPhysicalScreenResolution(static_cast<NodeId>(id), width, height);
     rsInterfaces.ResizeVirtualScreen(static_cast<NodeId>(id), width, height);
     rsInterfaces.SetVirtualMirrorScreenCanvasRotation(static_cast<ScreenId>(id), canvasRotation);
     rsInterfaces.SetVirtualMirrorScreenScaleMode(static_cast<ScreenId>(id), static_cast<ScreenScaleMode>(scaleMode));
@@ -162,6 +163,7 @@ bool RSPhysicalScreenFuzzTest(const uint8_t* data, size_t size)
     rsInterfaces.SetVirtualScreenBlackList(static_cast<ScreenId>(id), blackListVector);
     rsInterfaces.AddVirtualScreenBlackList(static_cast<ScreenId>(id), blackListVector);
     rsInterfaces.RemoveVirtualScreenBlackList(static_cast<ScreenId>(id), blackListVector);
+    rsInterfaces.SetScreenSecurityMask(static_cast<ScreenId>(id), nullptr);
     std::vector<NodeId> secExemptionList = {};
     secExemptionList.emplace_back(id);
     rsInterfaces.SetVirtualScreenSecurityExemptionList(static_cast<ScreenId>(id), secExemptionList);
@@ -188,10 +190,13 @@ bool RSPhysicalScreenFuzzTest(const uint8_t* data, size_t size)
     rsInterfaces.RemoveVirtualScreen(static_cast<ScreenId>(id));
     ScreenId screenId = INVALID_SCREEN_ID;
     ScreenEvent screenEvent = ScreenEvent::UNKNOWN;
+    ScreenChangeReason errorReason = ScreenChangeReason::DEFAULT;
     bool callbacked = false;
-    ScreenChangeCallback changeCallback = [&screenId, &screenEvent, &callbacked](ScreenId id, ScreenEvent event) {
+    ScreenChangeCallback changeCallback = [&screenId, &screenEvent, &errorReason, &callbacked]
+        (ScreenId id, ScreenEvent event, ScreenChangeReason reason) {
         screenId = id;
         screenEvent = event;
+        errorReason = reason;
         callbacked = true;
     };
     rsInterfaces.SetScreenChangeCallback(changeCallback);
@@ -214,6 +219,7 @@ bool RSPhysicalScreenFuzzTest(const uint8_t* data, size_t size)
     std::string nodeIdStr = GetData<std::string>();
     bool isTop = GetData<bool>();
     rsInterfaces.SetLayerTop(nodeIdStr, isTop);
+    rsInterfaces.NotifyScreenSwitched();
     return true;
 }
 

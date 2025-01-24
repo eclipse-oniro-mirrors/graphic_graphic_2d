@@ -123,6 +123,64 @@ HWTEST_F(RSDisplayRenderNodeDrawableTest, CreateDisplayRenderNodeDrawable, TestS
 }
 
 /**
+ * @tc.name: UpdateSlrScale001
+ * @tc.desc: Test UpdateSlrScale
+ * @tc.type: FUNC
+ * @tc.require: #IBIOQ4
+ */
+HWTEST_F(RSDisplayRenderNodeDrawableTest, UpdateSlrScale001, TestSize.Level1)
+{
+    ASSERT_NE(displayDrawable_, nullptr);
+    auto param = system::GetParameter("rosen.SLRScale.enabled", "");
+    const int32_t width = DEFAULT_CANVAS_SIZE * 2;
+    const int32_t height = DEFAULT_CANVAS_SIZE * 2;
+    ScreenInfo screenInfo = {
+        .phyWidth = DEFAULT_CANVAS_SIZE,
+        .phyHeight = DEFAULT_CANVAS_SIZE,
+        .width = width,
+        .height = height,
+        .isSamplingOn = true,
+    };
+    system::SetParameter("rosen.SLRScale.enabled", "1");
+    displayDrawable_->UpdateSlrScale(screenInfo);
+    ASSERT_NE(displayDrawable_->slrScale_, nullptr);
+    EXPECT_EQ(screenInfo.samplingDistance, displayDrawable_->slrScale_->GetKernelSize());
+
+    system::SetParameter("rosen.SLRScale.enabled", "0");
+    displayDrawable_->UpdateSlrScale(screenInfo);
+    EXPECT_EQ(displayDrawable_->slrScale_, nullptr);
+    system::SetParameter("rosen.SLRScale.enabled", param);
+}
+
+/**
+ * @tc.name: ScaleCanvasIfNeeded
+ * @tc.desc: Test ScaleCanvasIfNeeded
+ * @tc.type: FUNC
+ * @tc.require: #I9NVOG
+ */
+HWTEST_F(RSDisplayRenderNodeDrawableTest, ScaleCanvasIfNeeded001, TestSize.Level1)
+{
+    ASSERT_NE(displayDrawable_, nullptr);
+    auto param = system::GetParameter("rosen.SLRScale.enabled", "");
+    ScreenInfo screenInfo = {
+        .phyWidth = DEFAULT_CANVAS_SIZE,
+        .phyHeight = DEFAULT_CANVAS_SIZE,
+        .width = DEFAULT_CANVAS_SIZE,
+        .height = DEFAULT_CANVAS_SIZE,
+        .isSamplingOn = false,
+    };
+    system::SetParameter("rosen.SLRScale.enabled", "1");
+    displayDrawable_->ScaleCanvasIfNeeded(screenInfo);
+    ASSERT_EQ(displayDrawable_->slrScale_, nullptr);
+
+    screenInfo.isSamplingOn = true;
+    system::SetParameter("rosen.SLRScale.enabled", "0");
+    displayDrawable_->ScaleCanvasIfNeeded(screenInfo);
+    ASSERT_EQ(displayDrawable_->slrScale_, nullptr);
+    system::SetParameter("rosen.SLRScale.enabled", param);
+}
+
+/**
  * @tc.name: PrepareOffscreenRender001
  * @tc.desc: Test PrepareOffscreenRender, if offscreenWidth/offscreenHeight were not initialized.
  * @tc.type: FUNC
@@ -457,6 +515,23 @@ HWTEST_F(RSDisplayRenderNodeDrawableTest, RenderOverDraw, TestSize.Level1)
 }
 
 /**
+ * @tc.name: SetScreenRotationForPointLight
+ * @tc.desc: Test SetScreenRotationForPointLight
+ * @tc.type: FUNC
+ * @tc.require: #I9NVOG
+ */
+HWTEST_F(RSDisplayRenderNodeDrawableTest, SetScreenRotationForPointLight, TestSize.Level1)
+{
+    ASSERT_NE(renderNode_, nullptr);
+    ASSERT_NE(displayDrawable_, nullptr);
+    ASSERT_NE(displayDrawable_->renderParams_, nullptr);
+
+    auto params = static_cast<RSDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
+    ASSERT_NE(params, nullptr);
+    displayDrawable_->SetScreenRotationForPointLight(*params);
+}
+
+/**
  * @tc.name: HardCursorCreateLayer
  * @tc.desc: Test HardCursorCreateLayer
  * @tc.type: FUNC
@@ -476,16 +551,18 @@ HWTEST_F(RSDisplayRenderNodeDrawableTest, HardCursorCreateLayerTest, TestSize.Le
     auto result = displayDrawable_->HardCursorCreateLayer(processor);
     ASSERT_EQ(result, false);
 
-    HardCursorInfo hardInfo;
-    hardInfo.id = 1;
-    auto renderNode = std::make_shared<RSRenderNode>(hardInfo.id);
-    hardInfo.drawablePtr = RSRenderNodeDrawableAdapter::OnGenerate(renderNode);
-    EXPECT_NE(hardInfo.drawablePtr, nullptr);
+    NodeId nodeId = 1;
+    auto renderNode = std::make_shared<RSRenderNode>(nodeId);
+    auto drawablePtr = RSRenderNodeDrawableAdapter::OnGenerate(renderNode);
+    EXPECT_NE(drawablePtr, nullptr);
+    RSUniRenderThread::Instance().GetRSRenderThreadParams()->hardCursorDrawableMap_ = {
+        {nodeId, drawablePtr}
+    };
     result = displayDrawable_->HardCursorCreateLayer(processor);
     ASSERT_EQ(result, false);
 
     NodeId id = 1;
-    hardInfo.drawablePtr->renderParams_ = std::make_unique<RSRenderParams>(id);
+    drawablePtr->renderParams_ = std::make_unique<RSRenderParams>(id);
     result = displayDrawable_->HardCursorCreateLayer(processor);
     ASSERT_EQ(result, false);
 }
@@ -523,7 +600,7 @@ HWTEST_F(RSDisplayRenderNodeDrawableTest, CheckDisplayNodeSkipTest, TestSize.Lev
     result = displayDrawable_->CheckDisplayNodeSkip(*params, processor);
     ASSERT_EQ(result, false);
 
-    RSUifirstManager::Instance().hasDoneNode_ = true;
+    RSUifirstManager::Instance().hasForceUpdateNode_ = true;
     result = displayDrawable_->CheckDisplayNodeSkip(*params, processor);
     ASSERT_EQ(result, false);
 
@@ -538,7 +615,7 @@ HWTEST_F(RSDisplayRenderNodeDrawableTest, CheckDisplayNodeSkipTest, TestSize.Lev
     RSUniRenderThread::Instance().uniRenderEngine_ = nullptr;
     RSUniRenderThread::Instance().GetRSRenderThreadParams()->isForceCommitLayer_ = false;
     RSMainThread::Instance()->isDirty_ = false;
-    RSUifirstManager::Instance().hasDoneNode_ = false;
+    RSUifirstManager::Instance().hasForceUpdateNode_ = false;
     RSUifirstManager::Instance().pendingPostDrawables_.clear();
 }
 
@@ -1845,6 +1922,18 @@ HWTEST_F(RSDisplayRenderNodeDrawableTest, FindHardwareEnabledNodes, TestSize.Lev
     ASSERT_NE(params, nullptr);
     displayDrawable_->FindHardwareEnabledNodes(*params);
     ASSERT_EQ(RSUniRenderThread::Instance().GetRSRenderThreadParams()->hardwareEnabledTypeDrawables_.size(), 2);
+
+    NodeId nodeId = 1;
+    auto renderNode = std::make_shared<RSRenderNode>(nodeId);
+    auto drawablePtr = RSRenderNodeDrawableAdapter::OnGenerate(renderNode);
+    EXPECT_NE(drawablePtr, nullptr);
+    RSUniRenderThread::Instance().GetRSRenderThreadParams()->hardCursorDrawableMap_ = {
+        {nodeId, drawablePtr}
+    };
+
+    RSUniRenderThread::GetCaptureParam().isSnapshot_ = false;
+    displayDrawable_->FindHardwareEnabledNodes(*params);
+    ASSERT_EQ(RSUniRenderThread::Instance().GetRSRenderThreadParams()->hardCursorDrawableMap_.size(), 1);
 }
 
 /**
@@ -1919,21 +2008,6 @@ HWTEST_F(RSDisplayRenderNodeDrawableTest, SkipFrameByInterval, TestSize.Level1)
     ASSERT_FALSE(res);
     res = displayDrawable_->SkipFrameByInterval(1, 2);
     ASSERT_FALSE(res);
-}
-
-/**
- * @tc.name: UseCanvasSizeTest
- * @tc.desc: Test SetUseCanvasSize and GetUseCanvasSize
- * @tc.type: FUNC
- * @tc.require: issueIAGR5V
- */
-HWTEST_F(RSDisplayRenderNodeDrawableTest, UseCanvasSizeTest, TestSize.Level1)
-{
-    ASSERT_NE(displayDrawable_, nullptr);
-    displayDrawable_->SetUseCanvasSize(true);
-    EXPECT_TRUE(displayDrawable_->GetUseCanvasSize());
-    displayDrawable_->SetUseCanvasSize(false);
-    EXPECT_FALSE(displayDrawable_->GetUseCanvasSize());
 }
 
 /**
