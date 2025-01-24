@@ -27,10 +27,10 @@
 #include "params/rs_render_params.h"
 #include "params/rs_render_thread_params.h"
 #include "params/rs_surface_render_params.h"
+#include "pipeline/render_thread/rs_uni_render_thread.h"
 #include "pipeline/rs_display_render_node.h"
 #include "pipeline/rs_recording_canvas.h"
 #include "pipeline/rs_surface_render_node.h"
-#include "pipeline/rs_uni_render_thread.h"
 namespace OHOS::Rosen {
 
 class RSDirtyRectsDfx {

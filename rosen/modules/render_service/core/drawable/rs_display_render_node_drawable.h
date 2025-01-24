@@ -22,12 +22,12 @@
 #include "common/rs_occlusion_region.h"
 #include "drawable/rs_render_node_drawable.h"
 #include "params/rs_render_thread_params.h"
-#include "pipeline/rs_base_render_engine.h"
+#include "pipeline/render_thread/rs_base_render_engine.h"
+#include "pipeline/render_thread/rs_uni_render_virtual_processor.h"
 #include "pipeline/rs_processor_factory.h"
 #include "pipeline/rs_render_node.h"
 #include "pipeline/rs_slr_scale.h"
 #include "pipeline/rs_surface_handler.h"
-#include "pipeline/rs_uni_render_virtual_processor.h"
 #include "screen_manager/rs_screen_manager.h"
 
 namespace OHOS::Rosen {

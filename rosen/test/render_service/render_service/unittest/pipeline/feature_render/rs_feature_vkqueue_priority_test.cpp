@@ -14,8 +14,8 @@
  */
 
 #include "gtest/gtest.h"
+#include "pipeline/hardware_thread/rs_hardware_thread.h"
 #include "pipeline/parallel_render/rs_sub_thread.h"
-#include "pipeline/rs_hardware_thread.h"
 
 using namespace testing;
 using namespace testing::ext;

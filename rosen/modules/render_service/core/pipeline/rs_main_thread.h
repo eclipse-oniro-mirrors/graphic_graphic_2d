@@ -25,8 +25,8 @@
 #include <thread>
 
 #include "refbase.h"
-#include "rs_base_render_engine.h"
-#include "rs_draw_frame.h"
+#include "render_thread/rs_base_render_engine.h"
+#include "render_thread/rs_draw_frame.h"
 #include "vsync_distributor.h"
 #include "vsync_receiver.h"
 
@@ -43,7 +43,6 @@
 #include "memory/rs_memory_graphic.h"
 #include "params/rs_render_thread_params.h"
 #include "pipeline/rs_context.h"
-#include "pipeline/rs_draw_frame.h"
 #include "pipeline/rs_uni_render_judgement.h"
 #include "pipeline/rs_vsync_rate_reduce_manager.h"
 #include "platform/common/rs_event_manager.h"

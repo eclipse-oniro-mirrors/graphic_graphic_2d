@@ -17,12 +17,12 @@
 #include "drawable/rs_display_render_node_drawable.h"
 #include "drawable/rs_surface_render_node_drawable.h"
 #include "params/rs_render_thread_params.h"
+#include "pipeline/render_thread/rs_render_engine.h"
+#include "pipeline/render_thread/rs_uni_render_engine.h"
+#include "pipeline/render_thread/rs_uni_render_thread.h"
 #include "pipeline/rs_display_render_node.h"
-#include "pipeline/rs_render_engine.h"
 #include "pipeline/rs_surface_render_node.h"
-#include "pipeline/rs_uni_render_thread.h"
 #include "params/rs_render_thread_params.h"
-#include "pipeline/rs_uni_render_engine.h"
 #include "gfx/fps_info/rs_surface_fps_manager.h"
 
 using namespace testing;

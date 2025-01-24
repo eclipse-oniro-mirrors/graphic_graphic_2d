@@ -22,16 +22,16 @@
 #include <parameters.h>
 #include <set>
 
-#include "rs_base_render_engine.h"
+#include "render_thread/rs_base_render_engine.h"
 #include "system/rs_system_parameters.h"
 
+#include "feature/hwc/rs_uni_hwc_prevalidate_util.h"
 #include "common/rs_special_layer_manager.h"
 #include "params/rs_render_thread_params.h"
 #include "feature/round_corner_display/rs_rcd_render_manager.h"
 #include "pipeline/rs_dirty_region_manager.h"
 #include "pipeline/rs_main_thread.h"
 #include "pipeline/rs_pointer_window_manager.h"
-#include "pipeline/rs_uni_hwc_prevalidate_util.h"
 #include "platform/ohos/overdraw/rs_overdraw_controller.h"
 #include "screen_manager/rs_screen_manager.h"
 #include "visitor/rs_node_visitor.h"

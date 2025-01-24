@@ -18,10 +18,10 @@
 #include "limit_number.h"
 #include "surface_buffer_impl.h"
 #include "mock/mock_hdi_device.h"
-#include "transaction/rs_interfaces.h"
-#include "pipeline/rs_hardware_thread.h"
-#include "pipeline/rs_composer_adapter.h"
+#include "pipeline/hardware_thread/rs_hardware_thread.h"
+#include "pipeline/render_thread/rs_composer_adapter.h"
 #include "screen_manager/rs_screen_manager.h"
+#include "transaction/rs_interfaces.h"
 #include "drawable/rs_display_render_node_drawable.h"
 
 using namespace testing;
