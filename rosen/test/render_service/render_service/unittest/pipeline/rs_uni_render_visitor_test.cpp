@@ -40,8 +40,8 @@
 #include "pipeline/rs_uni_render_thread.h"
 #include "pipeline/rs_uni_render_util.h"
 #include "pipeline/rs_uni_render_visitor.h"
-#include "pipeline/round_corner_display/rs_round_corner_display.h"
-#include "pipeline/round_corner_display/rs_round_corner_display_manager.h"
+#include "feature/round_corner_display/rs_round_corner_display.h"
+#include "feature/round_corner_display/rs_round_corner_display_manager.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -264,150 +264,177 @@ HWTEST_F(RSUniRenderVisitorTest, AfterUpdateSurfaceDirtyCalc_003, TestSize.Level
 
 /**
  * @tc.name: UpdateLeashWindowVisibleRegionEmpty_001
- * @tc.desc: UpdateLeashWindowVisibleRegionEmpty Test, node IsLeashWindow,
- * childSurfaceNode not null and  childSurfaceNode->IsAppWindow() is true
- * childSurfaceNode->GetVisibleRegion().IsEmpty() is false
- * expect isLeashWindowVisibleRegionEmpty_ = false
+ * @tc.desc: test UpdateLeashWindowVisibleRegionEmpty while nodeType isn't leash window
  * @tc.type:FUNC
- * @tc.require:issuesIAJO0U
+ * @tc.require:issuesIBHR8N
  */
 HWTEST_F(RSUniRenderVisitorTest, UpdateLeashWindowVisibleRegionEmpty_001, TestSize.Level2)
 {
+    auto node = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(node, nullptr);
+    
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
     ASSERT_NE(rsUniRenderVisitor, nullptr);
-
-    NodeId id = 1;
-    auto node = std::make_shared<RSSurfaceRenderNode>(id);
-    ASSERT_NE(node, nullptr);
-
-    node->nodeType_ = RSSurfaceNodeType::LEASH_WINDOW_NODE;
-    ASSERT_TRUE(node->IsLeashWindow());
-
-    auto child = std::make_shared<RSSurfaceRenderNode>(id + 1);
-    node->AddChild(child);
-    node->GenerateFullChildrenList();
-    ASSERT_NE((*(node->GetSortedChildren())).size(), 0);
-
-    auto childSurfaceNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(child);
-    ASSERT_NE(childSurfaceNode, nullptr);
-    childSurfaceNode->nodeType_ = RSSurfaceNodeType::APP_WINDOW_NODE;
-    ASSERT_TRUE(childSurfaceNode->IsAppWindow());
-    childSurfaceNode->visibleRegion_.rects_.resize(1);
-    childSurfaceNode->visibleRegion_.bound_ = OHOS::Rosen::Occlusion::Rect(1, 1, 2, 2);
-    ASSERT_FALSE(childSurfaceNode->GetVisibleRegion().IsEmpty());
-
-    node->isLeashWindowVisibleRegionEmpty_ = true;
     rsUniRenderVisitor->UpdateLeashWindowVisibleRegionEmpty(*node);
-    ASSERT_FALSE(node->isLeashWindowVisibleRegionEmpty_);
+    ASSERT_FALSE(node->GetLeashWindowVisibleRegionEmpty());
 }
 
 /**
  * @tc.name: UpdateLeashWindowVisibleRegionEmpty_002
- * @tc.desc: UpdateLeashWindowVisibleRegionEmpty Test, node IsLeashWindow,
- * childSurfaceNode not null and  childSurfaceNode->IsAppWindow() is true
- * childSurfaceNode->GetVisibleRegion().IsEmpty() is true
- * expect isLeashWindowVisibleRegionEmpty_ = true
+ * @tc.desc: test UpdateLeashWindowVisibleRegionEmpty while leash window is dirty
  * @tc.type:FUNC
- * @tc.require:issuesIAJO0U
+ * @tc.require:issuesIBHR8N
  */
 HWTEST_F(RSUniRenderVisitorTest, UpdateLeashWindowVisibleRegionEmpty_002, TestSize.Level2)
 {
+    auto leashWindowNode = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(leashWindowNode, nullptr);
+    leashWindowNode->SetSurfaceNodeType(RSSurfaceNodeType::LEASH_WINDOW_NODE);
+
+    // let leash window is current frame dirty
+    auto dirtyManager = leashWindowNode->GetDirtyManager();
+    ASSERT_NE(dirtyManager, nullptr);
+    dirtyManager->currentFrameDirtyRegion_ = {0, 0, 1, 1};
+    dirtyManager->debugRect_ = {0, 0, 0, 0};
+    
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
     ASSERT_NE(rsUniRenderVisitor, nullptr);
-
-    NodeId id = 1;
-    auto node = std::make_shared<RSSurfaceRenderNode>(id);
-    ASSERT_NE(node, nullptr);
-
-    node->nodeType_ = RSSurfaceNodeType::LEASH_WINDOW_NODE;
-    ASSERT_TRUE(node->IsLeashWindow());
-
-    auto child = std::make_shared<RSSurfaceRenderNode>(id + 1);
-    node->AddChild(child);
-    node->GenerateFullChildrenList();
-    ASSERT_NE((*(node->GetSortedChildren())).size(), 0);
-
-    auto childSurfaceNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(child);
-    ASSERT_NE(childSurfaceNode, nullptr);
-    childSurfaceNode->nodeType_ = RSSurfaceNodeType::APP_WINDOW_NODE;
-    ASSERT_TRUE(childSurfaceNode->IsAppWindow());
-    childSurfaceNode->visibleRegion_.rects_.resize(0);
-    childSurfaceNode->visibleRegion_.bound_ = OHOS::Rosen::Occlusion::Rect();
-    ASSERT_TRUE(childSurfaceNode->GetVisibleRegion().IsEmpty());
-
-    node->isLeashWindowVisibleRegionEmpty_ = false;
-    rsUniRenderVisitor->UpdateLeashWindowVisibleRegionEmpty(*node);
-    ASSERT_TRUE(node->isLeashWindowVisibleRegionEmpty_);
+    rsUniRenderVisitor->UpdateLeashWindowVisibleRegionEmpty(*leashWindowNode);
+    ASSERT_FALSE(leashWindowNode->GetLeashWindowVisibleRegionEmpty());
 }
 
 /**
  * @tc.name: UpdateLeashWindowVisibleRegionEmpty_003
- * @tc.desc: UpdateLeashWindowVisibleRegionEmpty Test, node IsLeashWindow,
- * childSurfaceNode not null and  childSurfaceNode->IsAppWindow() is false
- * expect isLeashWindowVisibleRegionEmpty_ = false
+ * @tc.desc: test UpdateLeashWindowVisibleRegionEmpty while leashWindow node don't has children
  * @tc.type:FUNC
- * @tc.require:issuesIAJO0U
+ * @tc.require:issuesIBHR8N
  */
 HWTEST_F(RSUniRenderVisitorTest, UpdateLeashWindowVisibleRegionEmpty_003, TestSize.Level2)
 {
+    auto leashWindowNode = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(leashWindowNode, nullptr);
+    leashWindowNode->SetSurfaceNodeType(RSSurfaceNodeType::LEASH_WINDOW_NODE);
+    
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
     ASSERT_NE(rsUniRenderVisitor, nullptr);
-
-    NodeId id = 1;
-    auto node = std::make_shared<RSSurfaceRenderNode>(id);
-    ASSERT_NE(node, nullptr);
-
-    node->nodeType_ = RSSurfaceNodeType::LEASH_WINDOW_NODE;
-    ASSERT_TRUE(node->IsLeashWindow());
-
-    auto child = std::make_shared<RSSurfaceRenderNode>(id + 1);
-    node->AddChild(child);
-    node->GenerateFullChildrenList();
-    ASSERT_NE((*(node->GetSortedChildren())).size(), 0);
-
-    auto childSurfaceNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(child);
-    ASSERT_NE(childSurfaceNode, nullptr);
-    childSurfaceNode->nodeType_ = RSSurfaceNodeType::UI_EXTENSION_COMMON_NODE;
-    ASSERT_FALSE(childSurfaceNode->IsAppWindow());
-
-    node->isLeashWindowVisibleRegionEmpty_ = true;
-    rsUniRenderVisitor->UpdateLeashWindowVisibleRegionEmpty(*node);
-    ASSERT_FALSE(node->isLeashWindowVisibleRegionEmpty_);
+    rsUniRenderVisitor->UpdateLeashWindowVisibleRegionEmpty(*leashWindowNode);
+    ASSERT_TRUE(leashWindowNode->GetLeashWindowVisibleRegionEmpty());
 }
 
 /**
  * @tc.name: UpdateLeashWindowVisibleRegionEmpty_004
- * @tc.desc: UpdateLeashWindowVisibleRegionEmpty Test, node IsLeashWindow,
- * childSurfaceNode is null
- * expect isLeashWindowVisibleRegionEmpty_ = false
+ * @tc.desc: test UpdateLeashWindowVisibleRegionEmpty while all child are app windows with empty visible region
  * @tc.type:FUNC
- * @tc.require:issuesIAJO0U
+ * @tc.require:issuesIBHR8N
  */
 HWTEST_F(RSUniRenderVisitorTest, UpdateLeashWindowVisibleRegionEmpty_004, TestSize.Level2)
 {
+    auto leashWindowNode = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(leashWindowNode, nullptr);
+    leashWindowNode->SetSurfaceNodeType(RSSurfaceNodeType::LEASH_WINDOW_NODE);
+
+    auto childNode = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(childNode, nullptr);
+    childNode->SetSurfaceNodeType(RSSurfaceNodeType::APP_WINDOW_NODE);
+
+    leashWindowNode->AddChild(childNode);
+    leashWindowNode->GenerateFullChildrenList();
+    
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
     ASSERT_NE(rsUniRenderVisitor, nullptr);
+    rsUniRenderVisitor->UpdateLeashWindowVisibleRegionEmpty(*leashWindowNode);
+    ASSERT_TRUE(leashWindowNode->GetLeashWindowVisibleRegionEmpty());
+}
 
-    NodeId id = 1;
-    auto node = std::make_shared<RSSurfaceRenderNode>(id);
-    ASSERT_NE(node, nullptr);
+/**
+ * @tc.name: UpdateLeashWindowVisibleRegionEmpty_005
+ * @tc.desc: test UpdateLeashWindowVisibleRegionEmpty while has child that isn't surface node
+ * @tc.type:FUNC
+ * @tc.require:issuesIBHR8N
+ */
+HWTEST_F(RSUniRenderVisitorTest, UpdateLeashWindowVisibleRegionEmpty_005, TestSize.Level2)
+{
+    auto leashWindowNode = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(leashWindowNode, nullptr);
+    leashWindowNode->SetSurfaceNodeType(RSSurfaceNodeType::LEASH_WINDOW_NODE);
 
-    node->nodeType_ = RSSurfaceNodeType::LEASH_WINDOW_NODE;
-    ASSERT_TRUE(node->IsLeashWindow());
+    // childNode1: app windows with empty visible region
+    auto childNode1 = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(childNode1, nullptr);
+    childNode1->SetSurfaceNodeType(RSSurfaceNodeType::APP_WINDOW_NODE);
+    leashWindowNode->AddChild(childNode1);
 
-    const std::vector<std::shared_ptr<RSRenderNode>> constChildrenList { nullptr, nullptr };
-    node->fullChildrenList_ = std::make_shared<const std::vector<std::shared_ptr<RSRenderNode>>>(constChildrenList);
+    // childNode2: canvas node
+    auto childNode2 = std::make_shared<RSCanvasRenderNode>(childNode1->GetId() + 1);
+    leashWindowNode->AddChild(childNode2);
+    leashWindowNode->GenerateFullChildrenList();
 
-    auto& childrenList = *(node->GetSortedChildren());
-    ASSERT_NE(childrenList.size(), 0);
-    for (const auto& child : childrenList) {
-        auto childSurfaceNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(child);
-        ASSERT_EQ(childSurfaceNode, nullptr);
-    }
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    ASSERT_NE(rsUniRenderVisitor, nullptr);
+    rsUniRenderVisitor->UpdateLeashWindowVisibleRegionEmpty(*leashWindowNode);
+    ASSERT_FALSE(leashWindowNode->GetLeashWindowVisibleRegionEmpty());
+}
 
-    node->isLeashWindowVisibleRegionEmpty_ = true;
-    rsUniRenderVisitor->UpdateLeashWindowVisibleRegionEmpty(*node);
-    ASSERT_FALSE(node->isLeashWindowVisibleRegionEmpty_);
+/**
+ * @tc.name: UpdateLeashWindowVisibleRegionEmpty_006
+ * @tc.desc: test UpdateLeashWindowVisibleRegionEmpty while has child that isn't app window
+ * @tc.type:FUNC
+ * @tc.require:issuesIBHR8N
+ */
+HWTEST_F(RSUniRenderVisitorTest, UpdateLeashWindowVisibleRegionEmpty_006, TestSize.Level2)
+{
+    auto leashWindowNode = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(leashWindowNode, nullptr);
+    leashWindowNode->SetSurfaceNodeType(RSSurfaceNodeType::LEASH_WINDOW_NODE);
+
+    // childNode1: app windows with empty visible region
+    auto childNode1 = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(childNode1, nullptr);
+    childNode1->SetSurfaceNodeType(RSSurfaceNodeType::APP_WINDOW_NODE);
+    leashWindowNode->AddChild(childNode1);
+
+    // childNode2: default surface node
+    auto childNode2 = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(childNode2, nullptr);
+    leashWindowNode->AddChild(childNode2);
+    leashWindowNode->GenerateFullChildrenList();
+
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    ASSERT_NE(rsUniRenderVisitor, nullptr);
+    rsUniRenderVisitor->UpdateLeashWindowVisibleRegionEmpty(*leashWindowNode);
+    ASSERT_FALSE(leashWindowNode->GetLeashWindowVisibleRegionEmpty());
+}
+
+/**
+ * @tc.name: UpdateLeashWindowVisibleRegionEmpty_007
+ * @tc.desc: test UpdateLeashWindowVisibleRegionEmpty while has child that is app window with visible region
+ * @tc.type:FUNC
+ * @tc.require:issuesIBHR8N
+ */
+HWTEST_F(RSUniRenderVisitorTest, UpdateLeashWindowVisibleRegionEmpty_007, TestSize.Level2)
+{
+    auto leashWindowNode = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(leashWindowNode, nullptr);
+    leashWindowNode->SetSurfaceNodeType(RSSurfaceNodeType::LEASH_WINDOW_NODE);
+
+    // childNode1: app windows with empty visible region
+    auto childNode1 = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(childNode1, nullptr);
+    childNode1->SetSurfaceNodeType(RSSurfaceNodeType::APP_WINDOW_NODE);
+    leashWindowNode->AddChild(childNode1);
+
+    // childNode2: app windows with visible region
+    auto childNode2 = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(childNode2, nullptr);
+    childNode2->SetSurfaceNodeType(RSSurfaceNodeType::APP_WINDOW_NODE);
+    childNode2->SetVisibleRegion(Occlusion::Region(RectI(0, 0, 1, 1)));
+    leashWindowNode->AddChild(childNode2);
+    leashWindowNode->GenerateFullChildrenList();
+
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    ASSERT_NE(rsUniRenderVisitor, nullptr);
+    rsUniRenderVisitor->UpdateLeashWindowVisibleRegionEmpty(*leashWindowNode);
+    ASSERT_FALSE(leashWindowNode->GetLeashWindowVisibleRegionEmpty());
 }
 
 /**
@@ -1223,6 +1250,22 @@ HWTEST_F(RSUniRenderVisitorTest, CheckColorSpace001, TestSize.Level2)
 }
 
 /**
+ * @tc.name: PrepareForCloneNode
+ * @tc.desc: Test PrepareForCloneNode
+ * @tc.type: FUNC
+ * @tc.require: issueIBH7WD
+ */
+HWTEST_F(RSUniRenderVisitorTest, PrepareForCloneNode, TestSize.Level1)
+{
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    ASSERT_NE(rsUniRenderVisitor, nullptr);
+    auto surfaceRenderNode = RSSurfaceRenderNode(1);
+
+    auto result = rsUniRenderVisitor->PrepareForCloneNode(surfaceRenderNode);
+    ASSERT_FALSE(result);
+}
+
+/**
  * @tc.name: PrepareForCrossNodeTest
  * @tc.desc: Test PrepareForCrossNode
  * @tc.type: FUNC
@@ -1780,9 +1823,9 @@ HWTEST_F(RSUniRenderVisitorTest, QuickPrepareSurfaceRenderNode001, TestSize.Leve
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
     ASSERT_NE(rsUniRenderVisitor, nullptr);
     rsUniRenderVisitor->curDisplayNode_ = displayNode;
-    rsUniRenderVisitor->displayHasSecSurface_[rsUniRenderVisitor->currentVisitDisplay_] = false;
+    rsUniRenderVisitor->curDisplayNode_->GetMultableSpecialLayerMgr().RemoveIds(SpecialLayerType::SKIP, id);
     rsUniRenderVisitor->QuickPrepareSurfaceRenderNode(*surfaceNode);
-    ASSERT_EQ(rsUniRenderVisitor->displayHasSecSurface_[rsUniRenderVisitor->currentVisitDisplay_], true);
+    ASSERT_EQ(rsUniRenderVisitor->curDisplayNode_->GetSpecialLayerMgr().Find(SpecialLayerType::HAS_SKIP), false);
 }
 
 /*
@@ -1809,9 +1852,10 @@ HWTEST_F(RSUniRenderVisitorTest, QuickPrepareSurfaceRenderNode002, TestSize.Leve
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
     ASSERT_NE(rsUniRenderVisitor, nullptr);
     rsUniRenderVisitor->curDisplayNode_ = displayNode;
-    rsUniRenderVisitor->displayHasSkipSurface_[rsUniRenderVisitor->currentVisitDisplay_] = false;
     rsUniRenderVisitor->QuickPrepareSurfaceRenderNode(*surfaceNode);
-    ASSERT_EQ(rsUniRenderVisitor->displayHasSkipSurface_[rsUniRenderVisitor->currentVisitDisplay_], true);
+    rsUniRenderVisitor->curDisplayNode_->GetMultableSpecialLayerMgr().
+        RemoveIds(SpecialLayerType::SKIP, surfaceNode->GetId());
+    ASSERT_EQ(rsUniRenderVisitor->curDisplayNode_->GetSpecialLayerMgr().Find(SpecialLayerType::SKIP), false);
 }
 
 /*
@@ -1863,8 +1907,10 @@ HWTEST_F(RSUniRenderVisitorTest, QuickPrepareSurfaceRenderNode004, TestSize.Leve
     displayNode->AddChild(surfaceNode, 0);
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
     ASSERT_NE(rsUniRenderVisitor, nullptr);
+    auto screenManager = CreateOrGetScreenManager();
+    rsUniRenderVisitor->screenManager_ = screenManager;
     rsUniRenderVisitor->curDisplayNode_ = displayNode;
-    rsUniRenderVisitor->displayHasProtectedSurface_[rsUniRenderVisitor->currentVisitDisplay_] = true;
+    rsUniRenderVisitor->curDisplayNode_->GetMultableSpecialLayerMgr().RemoveIds(SpecialLayerType::PROTECTED, id);
     rsUniRenderVisitor->QuickPrepareSurfaceRenderNode(*surfaceNode);
 }
 
@@ -1890,7 +1936,7 @@ HWTEST_F(RSUniRenderVisitorTest, PrepareSurfaceRenderNode005, TestSize.Level2)
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
     ASSERT_NE(rsUniRenderVisitor, nullptr);
     rsUniRenderVisitor->curDisplayNode_ = displayNode;
-    rsUniRenderVisitor->displayHasProtectedSurface_[rsUniRenderVisitor->currentVisitDisplay_] = false;
+    rsUniRenderVisitor->curDisplayNode_->GetMultableSpecialLayerMgr().RemoveIds(SpecialLayerType::PROTECTED, id);
     rsUniRenderVisitor->PrepareSurfaceRenderNode(*surfaceNode);
 }
 
@@ -2544,12 +2590,12 @@ HWTEST_F(RSUniRenderVisitorTest, IsLeashAndHasMainSubNode001, TestSize.Level2)
 }
 
 /**
- * @tc.name: CalculateOcclusion001
- * @tc.desc: Test CalculateOcclusion with empty node
+ * @tc.name: CalculateOpaqueAndTransparentRegion001
+ * @tc.desc: Test CalculateOpaqueAndTransparentRegion with empty node
  * @tc.type: FUNC
- * @tc.require: issueI9RR2Y
+ * @tc.require: issueIBCR0E
  */
-HWTEST_F(RSUniRenderVisitorTest, CalculateOcclusion001, TestSize.Level2)
+HWTEST_F(RSUniRenderVisitorTest, CalculateOpaqueAndTransparentRegion001, TestSize.Level2)
 {
     auto rsContext = std::make_shared<RSContext>();
     RSSurfaceRenderNodeConfig config;
@@ -2563,7 +2609,7 @@ HWTEST_F(RSUniRenderVisitorTest, CalculateOcclusion001, TestSize.Level2)
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
     rsUniRenderVisitor->InitDisplayInfo(*rsDisplayRenderNode);
 
-    rsUniRenderVisitor->CalculateOcclusion(*rsSurfaceRenderNode);
+    rsUniRenderVisitor->CalculateOpaqueAndTransparentRegion(*rsSurfaceRenderNode);
     ASSERT_FALSE(rsUniRenderVisitor->needRecalculateOcclusion_);
 }
 
@@ -2894,7 +2940,7 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeEnableBySrcRect_002, TestSize.Leve
     auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
     ASSERT_NE(surfaceNode, nullptr);
 
-    surfaceNode->isProtectedLayer_ = true;
+    surfaceNode->GetMultableSpecialLayerMgr().Set(SpecialLayerType::PROTECTED, true);
     surfaceNode->isOnTheTree_ = true;
     ASSERT_FALSE(surfaceNode->IsHardwareForcedDisabled());
     ASSERT_NE(surfaceNode->GetRSSurfaceHandler()->GetConsumer(), nullptr);
@@ -2915,7 +2961,7 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeEnableBySrcRect_003, TestSize.Leve
     auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
     ASSERT_NE(surfaceNode, nullptr);
 
-    surfaceNode->isProtectedLayer_ = true;
+    surfaceNode->GetMultableSpecialLayerMgr().Set(SpecialLayerType::PROTECTED, true);
     surfaceNode->isOnTheTree_ = true;
     ASSERT_FALSE(surfaceNode->IsHardwareForcedDisabled());
     surfaceNode->isHardwareForcedDisabledBySrcRect_ = true;
@@ -2956,7 +3002,7 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeEnableByHwcNodeBelowSelfInApp_002,
     auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
     ASSERT_NE(surfaceNode, nullptr);
 
-    surfaceNode->isProtectedLayer_ = true;
+    surfaceNode->GetMultableSpecialLayerMgr().Set(SpecialLayerType::PROTECTED, true);
     surfaceNode->isOnTheTree_ = true;
     ASSERT_FALSE(surfaceNode->IsHardwareForcedDisabled());
     surfaceNode->SetAncoForceDoDirect(true);
@@ -2981,7 +3027,7 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeEnableByHwcNodeBelowSelfInApp_003,
     auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
     ASSERT_NE(surfaceNode, nullptr);
 
-    surfaceNode->isProtectedLayer_ = true;
+    surfaceNode->GetMultableSpecialLayerMgr().Set(SpecialLayerType::PROTECTED, true);
     surfaceNode->isOnTheTree_ = true;
     ASSERT_FALSE(surfaceNode->IsHardwareForcedDisabled());
     surfaceNode->SetAncoForceDoDirect(false);
@@ -3009,7 +3055,7 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeEnableByHwcNodeBelowSelfInApp_004,
     auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
     ASSERT_NE(surfaceNode, nullptr);
 
-    surfaceNode->isProtectedLayer_ = true;
+    surfaceNode->GetMultableSpecialLayerMgr().Set(SpecialLayerType::PROTECTED, true);
     surfaceNode->isOnTheTree_ = true;
     ASSERT_FALSE(surfaceNode->IsHardwareForcedDisabled());
     surfaceNode->SetAncoForceDoDirect(false);
@@ -3132,7 +3178,7 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeEnableByHwcNodeBelowSelf_002, Test
     auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
     ASSERT_NE(surfaceNode, nullptr);
 
-    surfaceNode->isProtectedLayer_ = true;
+    surfaceNode->GetMultableSpecialLayerMgr().Set(SpecialLayerType::PROTECTED, true);
     surfaceNode->isOnTheTree_ = true;
     ASSERT_FALSE(surfaceNode->IsHardwareForcedDisabled());
     surfaceNode->SetAncoForceDoDirect(true);
@@ -3160,7 +3206,7 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeEnableByHwcNodeBelowSelf_003, Test
     auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
     ASSERT_NE(surfaceNode, nullptr);
 
-    surfaceNode->isProtectedLayer_ = true;
+    surfaceNode->GetMultableSpecialLayerMgr().Set(SpecialLayerType::PROTECTED, true);
     surfaceNode->isOnTheTree_ = true;
     ASSERT_FALSE(surfaceNode->IsHardwareForcedDisabled());
     surfaceNode->SetAncoForceDoDirect(false);
@@ -3191,7 +3237,7 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeEnableByHwcNodeBelowSelf_004, Test
     auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
     ASSERT_NE(surfaceNode, nullptr);
 
-    surfaceNode->isProtectedLayer_ = true;
+    surfaceNode->GetMultableSpecialLayerMgr().Set(SpecialLayerType::PROTECTED, true);
     surfaceNode->isOnTheTree_ = true;
     ASSERT_FALSE(surfaceNode->IsHardwareForcedDisabled());
     surfaceNode->SetAncoForceDoDirect(false);
@@ -4784,27 +4830,27 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeDirtyRegionForApp002, TestSize.Lev
 }
 
 /**
- * @tc.name: CalculateOcclusion
- * @tc.desc: Test CalculateOcclusion002, curDisplayNode_ = nullptr
+ * @tc.name: CalculateOpaqueAndTransparentRegion
+ * @tc.desc: Test CalculateOpaqueAndTransparentRegion002, curDisplayNode_ = nullptr
  * @tc.type: FUNC
- * @tc.require: issueIAJSIS
+ * @tc.require: issueIBCR0E
  */
-HWTEST_F(RSUniRenderVisitorTest, CalculateOcclusion002, TestSize.Level1)
+HWTEST_F(RSUniRenderVisitorTest, CalculateOpaqueAndTransparentRegion002, TestSize.Level1)
 {
     auto node = RSTestUtil::CreateSurfaceNode();
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
     ASSERT_NE(rsUniRenderVisitor, nullptr);
     rsUniRenderVisitor->curDisplayNode_ = nullptr;
-    rsUniRenderVisitor->CalculateOcclusion(*node);
+    rsUniRenderVisitor->CalculateOpaqueAndTransparentRegion(*node);
 }
 
 /**
- * @tc.name: CalculateOcclusion
- * @tc.desc: Test CalculateOcclusion003, isAllSurfaceVisibleDebugEnabled_ = true
+ * @tc.name: CalculateOpaqueAndTransparentRegion
+ * @tc.desc: Test CalculateOpaqueAndTransparentRegion003, isAllSurfaceVisibleDebugEnabled_ = true
  * @tc.type: FUNC
- * @tc.require: issueIAJSIS
+ * @tc.require: issueIBCR0E
  */
-HWTEST_F(RSUniRenderVisitorTest, CalculateOcclusion003, TestSize.Level1)
+HWTEST_F(RSUniRenderVisitorTest, CalculateOpaqueAndTransparentRegion003, TestSize.Level1)
 {
     auto node = RSTestUtil::CreateSurfaceNode();
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
@@ -4813,7 +4859,7 @@ HWTEST_F(RSUniRenderVisitorTest, CalculateOcclusion003, TestSize.Level1)
     RSDisplayNodeConfig config;
     rsUniRenderVisitor->curDisplayNode_ = std::make_shared<RSDisplayRenderNode>(displayNodeId, config);
     rsUniRenderVisitor->isAllSurfaceVisibleDebugEnabled_ = true;
-    rsUniRenderVisitor->CalculateOcclusion(*node);
+    rsUniRenderVisitor->CalculateOpaqueAndTransparentRegion(*node);
 }
 
 /**
@@ -5034,7 +5080,7 @@ HWTEST_F(RSUniRenderVisitorTest, PrepareForUIFirstNode001, TestSize.Level2)
     rsUniRenderVisitor->PrepareForUIFirstNode(*rsSurfaceRenderNode);
 
     rsSurfaceRenderNode->lastFrameUifirstFlag_ = MultiThreadCacheType::LEASH_WINDOW;
-    rsSurfaceRenderNode->isProtectedLayer_ = true;
+    rsSurfaceRenderNode->GetMultableSpecialLayerMgr().Set(SpecialLayerType::PROTECTED, true);
     rsUniRenderVisitor->PrepareForUIFirstNode(*rsSurfaceRenderNode);
 }
 
@@ -5056,37 +5102,34 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateNodeVisibleRegion001, TestSize.Level2)
 }
 
 /**
- * @tc.name: CalculateOcclusion004
- * @tc.desc: Test CalculateOcclusion with multi-rsSurfaceRenderNode
+ * @tc.name: CalculateOpaqueAndTransparentRegion004
+ * @tc.desc: Test CalculateOpaqueAndTransparentRegion with multi-rsSurfaceRenderNode
  * @tc.type: FUNC
- * @tc.require: issueIASE3Z
+ * @tc.require: issueIBCR0E
  */
-HWTEST_F(RSUniRenderVisitorTest, CalculateOcclusion004, TestSize.Level2)
+HWTEST_F(RSUniRenderVisitorTest, CalculateOpaqueAndTransparentRegion004, TestSize.Level2)
 {
-    std::shared_ptr<RSSurfaceRenderNode> rsSurfaceRenderNode = nullptr;
-    ASSERT_EQ(rsSurfaceRenderNode, nullptr);
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
     ASSERT_NE(rsUniRenderVisitor, nullptr);
-    rsUniRenderVisitor->CalculateOcclusion(*rsSurfaceRenderNode);
 
     auto rsContext = std::make_shared<RSContext>();
     ASSERT_NE(rsContext, nullptr);
     RSSurfaceRenderNodeConfig config;
     config.id = 1;
-    rsSurfaceRenderNode = std::make_shared<RSSurfaceRenderNode>(config, rsContext->weak_from_this());
+    auto rsSurfaceRenderNode = std::make_shared<RSSurfaceRenderNode>(config, rsContext->weak_from_this());
     ASSERT_NE(rsSurfaceRenderNode, nullptr);
     rsUniRenderVisitor->needRecalculateOcclusion_ = true;
     rsUniRenderVisitor->isAllSurfaceVisibleDebugEnabled_ = true;
-    rsUniRenderVisitor->CalculateOcclusion(*rsSurfaceRenderNode);
+    rsUniRenderVisitor->CalculateOpaqueAndTransparentRegion(*rsSurfaceRenderNode);
 }
 
 /**
- * @tc.name: CalculateOcclusion005
- * @tc.desc: Test CalculateOcclusion if need skip in expand screen
+ * @tc.name: CalculateOpaqueAndTransparentRegion005
+ * @tc.desc: Test CalculateOpaqueAndTransparentRegion if need skip in expand screen
  * @tc.type: FUNC
- * @tc.require: issueIB35IS
+ * @tc.require: issueIBCR0E
  */
-HWTEST_F(RSUniRenderVisitorTest, CalculateOcclusion005, TestSize.Level2)
+HWTEST_F(RSUniRenderVisitorTest, CalculateOpaqueAndTransparentRegion005, TestSize.Level2)
 {
     auto rsContext = std::make_shared<RSContext>();
     ASSERT_NE(rsContext, nullptr);
@@ -5105,14 +5148,14 @@ HWTEST_F(RSUniRenderVisitorTest, CalculateOcclusion005, TestSize.Level2)
     rsUniRenderVisitor->InitDisplayInfo(*rsDisplayRenderNode);
     ASSERT_NE(rsUniRenderVisitor->curDisplayNode_, nullptr);
     rsUniRenderVisitor->curDisplayNode_->SetIsFirstVisitCrossNodeDisplay(true);
-    rsUniRenderVisitor->CalculateOcclusion(*rsSurfaceRenderNode);
+    rsUniRenderVisitor->CalculateOpaqueAndTransparentRegion(*rsSurfaceRenderNode);
 
     rsUniRenderVisitor->curDisplayNode_->SetIsFirstVisitCrossNodeDisplay(false);
-    rsUniRenderVisitor->CalculateOcclusion(*rsSurfaceRenderNode);
+    rsUniRenderVisitor->CalculateOpaqueAndTransparentRegion(*rsSurfaceRenderNode);
 
     rsSurfaceRenderNode->isCrossNode_ = true;
     rsSurfaceRenderNode->firstLevelNodeId_ = config.id;
-    rsUniRenderVisitor->CalculateOcclusion(*rsSurfaceRenderNode);
+    rsUniRenderVisitor->CalculateOpaqueAndTransparentRegion(*rsSurfaceRenderNode);
 }
 
 /**
@@ -5559,5 +5602,26 @@ HWTEST_F(RSUniRenderVisitorTest, CheckFilterNodeInSkippedSubTreeNeedClearCache00
     ASSERT_NE(rsUniRenderVisitor, nullptr);
     RSDirtyRegionManager dirtyManager;
     rsUniRenderVisitor->CheckFilterNodeInSkippedSubTreeNeedClearCache(*rsRootRenderNode, dirtyManager);
+}
+
+/*
+ * @tc.name: SetHdrWhenMultiDisplayChangeInPCTest
+ * @tc.desc: Test SetHdrWhenMultiDisplayChangeInPCTest
+ * @tc.type: FUNC
+ * @tc.require: issueIBF9OU
+ */
+HWTEST_F(RSUniRenderVisitorTest, SetHdrWhenMultiDisplayChangeInPCTest, TestSize.Level2)
+{
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    ASSERT_NE(rsUniRenderVisitor, nullptr);
+    bool isForceCloseHdr = RSLuminanceControl::Get().IsForceCloseHdr();
+    auto mainThread = RSMainThread::Instance();
+    auto isMultiDisplay = mainThread->GetMultiDisplayStatus();
+    rsUniRenderVisitor->SetHdrWhenMultiDisplayChangeInPC();
+    if (mainThread->GetDeviceType() != DeviceType::PC) {
+        EXPECT_EQ(isForceCloseHdr, RSLuminanceControl::Get().IsForceCloseHdr());
+    } else {
+        EXPECT_EQ(isMultiDisplay, RSLuminanceControl::Get().IsForceCloseHdr());
+    }
 }
 } // OHOS::Rosen

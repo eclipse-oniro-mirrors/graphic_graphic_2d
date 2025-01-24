@@ -14,10 +14,12 @@
  */
 #include "pipeline/rs_uni_render_thread.h"
 
+#include <fstream>
 #include <malloc.h>
 #include <memory>
 #include <parameters.h>
 
+#include "common/rs_background_thread.h"
 #include "common/rs_common_def.h"
 #include "common/rs_optional_trace.h"
 #include "common/rs_singleton.h"
@@ -32,7 +34,7 @@
 #include "params/rs_display_render_params.h"
 #include "params/rs_surface_render_params.h"
 #include "pipeline/parallel_render/rs_sub_thread_manager.h"
-#include "pipeline/round_corner_display/rs_round_corner_display_manager.h"
+#include "feature/round_corner_display/rs_round_corner_display_manager.h"
 #include "pipeline/rs_hardware_thread.h"
 #include "pipeline/rs_main_thread.h"
 #include "pipeline/rs_render_node_gc.h"
@@ -70,17 +72,23 @@ namespace Rosen {
 namespace {
 constexpr const char* CLEAR_GPU_CACHE = "ClearGpuCache";
 constexpr const char* DEFAULT_CLEAR_GPU_CACHE = "DefaultClearGpuCache";
+constexpr const char* RECLAIM_MEMORY = "ReclaimMemory";
 constexpr const char* PURGE_CACHE_BETWEEN_FRAMES = "PurgeCacheBetweenFrames";
 constexpr const char* SUPPRESS_GPUCACHE_BELOW_CERTAIN_RATIO = "SuppressGpuCacheBelowCertainRatio";
 const std::string PERF_FOR_BLUR_IF_NEEDED_TASK_NAME = "PerfForBlurIfNeeded";
 constexpr uint32_t TIME_OF_EIGHT_FRAMES = 8000;
 constexpr uint32_t TIME_OF_THE_FRAMES = 1000;
 constexpr uint32_t TIME_OF_DEFAULT_CLEAR_GPU_CACHE = 5000;
+constexpr uint32_t TIME_OF_RECLAIM_MEMORY = 12000;
 constexpr uint32_t WAIT_FOR_RELEASED_BUFFER_TIMEOUT = 3000;
 constexpr uint32_t RELEASE_IN_HARDWARE_THREAD_TASK_NUM = 4;
 constexpr uint64_t PERF_PERIOD_BLUR = 480000000;
 constexpr uint64_t PERF_PERIOD_BLUR_TIMEOUT = 80000000;
 constexpr size_t ONE_MEGABYTE = 1000 * 1000;
+
+#ifdef OHOS_PLATFORM
+const std::string RECLAIM_FILE_STRING = "1"; // for HM
+#endif
 
 const std::map<int, int32_t> BLUR_CNT_TO_BLUR_CODE {
     { 1, 10021 },
@@ -152,7 +160,8 @@ void RSUniRenderThread::InitGrContext()
             RSUniRenderThread::Instance().PostImageReleaseTask(task);
         });
     }
-    if (Drawing::SystemProperties::GetGpuApiType() == GpuApiType::VULKAN) {
+    if (Drawing::SystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
+        Drawing::SystemProperties::GetGpuApiType() == GpuApiType::DDGR) {
         if (RSSystemProperties::IsFoldScreenFlag()) {
             vmaOptimizeFlag_ = true;
         }
@@ -468,6 +477,12 @@ uint64_t RSUniRenderThread::GetPendingConstraintRelativeTime() const
     return renderThreadParams ? renderThreadParams->GetPendingConstraintRelativeTime() : 0;
 }
 
+uint64_t RSUniRenderThread::GetFastComposeTimeStampDiff() const
+{
+    auto& renderThreadParams = GetRSRenderThreadParams();
+    return renderThreadParams ? renderThreadParams->GetFastComposeTimeStampDiff() : 0;
+}
+
 #ifdef RES_SCHED_ENABLE
 void RSUniRenderThread::SubScribeSystemAbility()
 {
@@ -773,18 +788,10 @@ void RSUniRenderThread::DumpMem(DfxString& log)
     });
 }
 
-void RSUniRenderThread::ClearGPUCompositionCache()
+void RSUniRenderThread::ClearGPUCompositionCache(const std::set<uint32_t>& unmappedCache)
 {
-    if (!uniRenderEngine_) {
-        return;
-    }
-    auto& unmappedCacheSet = GetRSRenderThreadParams()->GetUnmappedCacheSet();
-    if (!unmappedCacheSet.empty()) {
-        RS_OPTIONAL_TRACE_NAME_FMT("Clear GPU composition cache, %zu buffers need to be deleted",
-            unmappedCacheSet.size());
-        uniRenderEngine_->ClearCacheSet(unmappedCacheSet);
-        RSHardwareThread::Instance().ClearRedrawGPUCompositionCache(unmappedCacheSet);
-        GetRSRenderThreadParams()->ClearUnmappedCacheSet();
+    if (uniRenderEngine_) {
+        uniRenderEngine_->ClearCacheSet(unmappedCache);
     }
 }
 
@@ -871,11 +878,71 @@ void RSUniRenderThread::PostClearMemoryTask(ClearMemoryMoment moment, bool deepl
         this->SetClearMoment(ClearMemoryMoment::NO_CLEAR);
     };
     if (!isDefaultClean) {
+        auto rate = GetRefreshRate();
+        if (rate == 0) {
+            RS_LOGE("PostClearMemoryTask::GetRefreshRate == 0, change refreshRate to 60.");
+            const int defaultRefreshRate = 60;
+            rate = defaultRefreshRate;
+        }
         PostTask(task, CLEAR_GPU_CACHE,
-            (this->deviceType_ == DeviceType::PHONE ? TIME_OF_EIGHT_FRAMES : TIME_OF_THE_FRAMES) / GetRefreshRate());
+            (this->deviceType_ == DeviceType::PHONE ? TIME_OF_EIGHT_FRAMES : TIME_OF_THE_FRAMES) / rate);
     } else {
         PostTask(task, DEFAULT_CLEAR_GPU_CACHE, TIME_OF_DEFAULT_CLEAR_GPU_CACHE);
     }
+}
+
+void RSUniRenderThread::ReclaimMemory()
+{
+    if (!RSSystemProperties::GetReleaseResourceEnabled()) {
+        return;
+    }
+
+    // When exited two apps in one second, post reclaim task.
+    if (isTimeToReclaim_) {
+        // Reclaim memory when no render in 12s.
+        PostReclaimMemoryTask(ClearMemoryMoment::RECLAIM_CLEAN, true);
+    }
+}
+
+void RSUniRenderThread::PostReclaimMemoryTask(ClearMemoryMoment moment, bool isReclaim)
+{
+    auto task = [this, moment, isReclaim]() {
+        if (!uniRenderEngine_) {
+            return;
+        }
+        auto renderContext = uniRenderEngine_->GetRenderContext();
+        if (!renderContext) {
+            return;
+        }
+        auto grContext = renderContext->GetDrGPUContext();
+        if (UNLIKELY(!grContext)) {
+            return;
+        }
+        RS_LOGD("Clear memory cache %{public}d", moment);
+        RS_TRACE_NAME_FMT("Reclaim Memory, cause the moment [%d] happen", moment);
+        std::lock_guard<std::mutex> lock(clearMemoryMutex_);
+        if (isReclaim) {
+#ifdef OHOS_PLATFORM
+            RSBackgroundThread::Instance().PostTask([]() {
+                RS_LOGI("RSUniRenderThread::PostReclaimMemoryTask Start Reclaim File");
+                std::string reclaimPath = "/proc/" + std::to_string(getpid()) + "/reclaim";
+                std::string reclaimContent = RECLAIM_FILE_STRING;
+                std::ofstream outfile(reclaimPath);
+                if (outfile.is_open()) {
+                    outfile << reclaimContent;
+                    outfile.close();
+                } else {
+                    RS_LOGE("RSUniRenderThread::PostReclaimMemoryTask reclaim cannot open file");
+                }
+            });
+#endif
+            this->isReclaimMemoryFinished_ = true;
+            this->isTimeToReclaim_ = false;
+            this->SetClearMoment(ClearMemoryMoment::NO_CLEAR);
+        }
+    };
+
+    PostTask(task, RECLAIM_MEMORY, TIME_OF_RECLAIM_MEMORY);
 }
 
 void RSUniRenderThread::ResetClearMemoryTask(const std::unordered_map<NodeId, bool>&& ids, bool isDoDirectComposition)
@@ -899,6 +966,32 @@ void RSUniRenderThread::ResetClearMemoryTask(const std::unordered_map<NodeId, bo
             DefaultClearMemoryCache();
         }
     }
+    if (!isReclaimMemoryFinished_) {
+        RemoveTask(RECLAIM_MEMORY);
+        if (!isDoDirectComposition) {
+            ReclaimMemory();
+        }
+    }
+}
+
+void RSUniRenderThread::SetReclaimMemoryFinished(bool isFinished)
+{
+    isReclaimMemoryFinished_ = isFinished;
+}
+
+bool RSUniRenderThread::IsReclaimMemoryFinished()
+{
+    return isReclaimMemoryFinished_;
+}
+
+void RSUniRenderThread::SetTimeToReclaim(bool isTimeToReclaim)
+{
+    isTimeToReclaim_ = isTimeToReclaim;
+}
+
+bool RSUniRenderThread::IsTimeToReclaim()
+{
+    return isTimeToReclaim_;
 }
 
 void RSUniRenderThread::SetDefaultClearMemoryFinished(bool isFinished)

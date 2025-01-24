@@ -64,9 +64,12 @@ CacheProcessStatus RSSurfaceRenderNodeDrawable::GetCacheSurfaceProcessedStatus()
 
 void RSSurfaceRenderNodeDrawable::SetCacheSurfaceProcessedStatus(CacheProcessStatus cacheProcessStatus)
 {
-    uiFirstParams.cacheProcessStatus_.store(cacheProcessStatus);
     if (cacheProcessStatus == CacheProcessStatus::DONE || cacheProcessStatus == CacheProcessStatus::SKIPPED) {
-        RSUiFirstProcessStateCheckerHelper::NotifyAll();
+        RSUiFirstProcessStateCheckerHelper::NotifyAll([this, cacheProcessStatus] {
+            uiFirstParams.cacheProcessStatus_.store(cacheProcessStatus);
+        });
+    } else {
+        uiFirstParams.cacheProcessStatus_.store(cacheProcessStatus);
     }
 }
 
@@ -174,9 +177,10 @@ std::shared_ptr<Drawing::Image> RSSurfaceRenderNodeDrawable::GetCompletedImage(
 #ifdef RS_ENABLE_VK
         if (OHOS::Rosen::RSSystemProperties::GetGpuApiType() == OHOS::Rosen::GpuApiType::VULKAN ||
             OHOS::Rosen::RSSystemProperties::GetGpuApiType() == OHOS::Rosen::GpuApiType::DDGR) {
+            auto colorSpace = targetColorGamut_ == GRAPHIC_COLOR_GAMUT_SRGB ? Drawing::ColorSpace::CreateSRGB() :
+                Drawing::ColorSpace::CreateRGB(Drawing::CMSTransferFuncType::SRGB, Drawing::CMSMatrixType::DCIP3);
             image->BuildFromTexture(*gpuContext, cacheCompletedBackendTexture_.GetTextureInfo(),
-                origin, info, nullptr,
-                NativeBufferUtils::DeleteVkImage, cacheCompletedCleanupHelper_->Ref());
+                origin, info, colorSpace, NativeBufferUtils::DeleteVkImage, cacheCompletedCleanupHelper_->Ref());
         }
 #endif
         return image;
@@ -250,12 +254,7 @@ bool RSSurfaceRenderNodeDrawable::DrawCacheSurface(RSPaintFilterCanvas& canvas, 
     }
     Drawing::Brush brush;
     canvas.AttachBrush(brush);
-    Drawing::MipmapMode mipmapMode = Drawing::MipmapMode::NONE;
-    // do not use linear on pc to avoid effecting the load and memory.
-    if (RSMainThread::Instance()->GetDeviceType() != DeviceType::PC) {
-        mipmapMode = Drawing::MipmapMode::LINEAR;
-    }
-    auto samplingOptions = Drawing::SamplingOptions(Drawing::FilterMode::LINEAR, mipmapMode);
+    auto samplingOptions = Drawing::SamplingOptions(Drawing::FilterMode::LINEAR, Drawing::MipmapMode::NONE);
     auto translateX = gravityMatrix.Get(Drawing::Matrix::TRANS_X);
     auto translateY = gravityMatrix.Get(Drawing::Matrix::TRANS_Y);
     canvas.DrawImage(*cacheImage, translateX, translateY, samplingOptions);
@@ -335,10 +334,11 @@ void RSSurfaceRenderNodeDrawable::InitCacheSurface(Drawing::GPUContext* gpuConte
         }
         cacheCleanupHelper_ = new NativeBufferUtils::VulkanCleanupHelper(RsVulkanContext::GetSingleton(),
             vkTextureInfo->vkImage, vkTextureInfo->vkAlloc.memory);
+        auto colorSpace = targetColorGamut_ == GRAPHIC_COLOR_GAMUT_SRGB ? Drawing::ColorSpace::CreateSRGB() :
+            Drawing::ColorSpace::CreateRGB(Drawing::CMSTransferFuncType::SRGB, Drawing::CMSMatrixType::DCIP3);
         cacheSurface_ = Drawing::Surface::MakeFromBackendTexture(
             gpuContext, cacheBackendTexture_.GetTextureInfo(), Drawing::TextureOrigin::BOTTOM_LEFT,
-            1, colorType, nullptr,
-            NativeBufferUtils::DeleteVkImage, cacheCleanupHelper_);
+            1, colorType, colorSpace, NativeBufferUtils::DeleteVkImage, cacheCleanupHelper_);
     }
 #endif
 #else
@@ -476,7 +476,9 @@ void RSSurfaceRenderNodeDrawable::SubDraw(Drawing::Canvas& canvas)
     auto parentSurfaceMatrix = RSRenderParams::GetParentSurfaceMatrix();
     RSRenderParams::SetParentSurfaceMatrix(IDENTITY_MATRIX);
 
+    ClearTotalProcessedSurfaceCount();
     RSRenderNodeDrawable::DrawUifirstContentChildren(*rscanvas, bounds);
+    RS_TRACE_NAME_FMT("SubDraw the number of total ProcessedSurface: %d", GetTotalProcessedSurfaceCount());
     RSRenderParams::SetParentSurfaceMatrix(parentSurfaceMatrix);
 }
 
@@ -517,22 +519,29 @@ bool RSSurfaceRenderNodeDrawable::DrawUIFirstCache(RSPaintFilterCanvas& rscanvas
 bool RSSurfaceRenderNodeDrawable::DrawUIFirstCacheWithStarting(RSPaintFilterCanvas& rscanvas, NodeId id)
 {
     RS_TRACE_NAME_FMT("DrawUIFirstCacheWithStarting %d, nodeID:%" PRIu64 "", HasCachedTexture(), id);
+    bool ret = true;
+    auto drawable = RSRenderNodeDrawableAdapter::GetDrawableById(id);
+    if (drawable) {
+        const auto& startingParams = drawable->GetRenderParams();
+        if (!HasCachedTexture() && startingParams && !ROSEN_EQ(startingParams->GetAlpha(), 1.0f)) {
+            ret = DrawUIFirstCache(rscanvas, false);
+            RS_TRACE_NAME_FMT("wait and drawStarting, GetAlpha:%f, GetGlobalAlpha:%f",
+                startingParams->GetAlpha(), startingParams->GetGlobalAlpha());
+            drawable->Draw(rscanvas);
+            return ret;
+        }
+    }
     const auto& params = GetRenderParams();
     if (!params) {
         RS_LOGE("RSUniRenderUtil::HandleSubThreadNodeDrawable params is nullptr");
         return false;
     }
-    bool ret = true;
     // draw surface content&&childrensss
     if (HasCachedTexture()) {
         ret = DrawCacheSurface(rscanvas, params->GetCacheSize(), UNI_MAIN_THREAD_INDEX, true);
     }
     // draw starting window
-    {
-        auto drawable = RSRenderNodeDrawableAdapter::GetDrawableById(id);
-        if (!drawable) {
-            return false;
-        }
+    if (drawable) {
         RS_TRACE_NAME_FMT("drawStarting");
         drawable->Draw(rscanvas);
     }
@@ -542,5 +551,32 @@ bool RSSurfaceRenderNodeDrawable::DrawUIFirstCacheWithStarting(RSPaintFilterCanv
 void RSSurfaceRenderNodeDrawable::SetSubThreadSkip(bool isSubThreadSkip)
 {
     isSubThreadSkip_ = isSubThreadSkip;
+}
+
+int RSSurfaceRenderNodeDrawable::GetTotalProcessedSurfaceCount() const
+{
+    return totalProcessedSurfaceCount_;
+}
+
+void RSSurfaceRenderNodeDrawable::TotalProcessedSurfaceCountInc(RSPaintFilterCanvas& canvas)
+{
+    if (canvas.GetIsParallelCanvas()) {
+        ++totalProcessedSurfaceCount_;
+    }
+}
+
+void RSSurfaceRenderNodeDrawable::ClearTotalProcessedSurfaceCount()
+{
+    totalProcessedSurfaceCount_ = 0;
+}
+
+uint32_t RSSurfaceRenderNodeDrawable::GetUifirstPostOrder() const
+{
+    return uifirstPostOrder_;
+}
+
+void RSSurfaceRenderNodeDrawable::SetUifirstPostOrder(uint32_t order)
+{
+    uifirstPostOrder_ = order;
 }
 } // namespace OHOS::Rosen

@@ -22,8 +22,10 @@
 #include "pipeline/rs_uni_render_engine.h"
 #include "pipeline/rs_uni_render_virtual_processor.h"
 #include "common/rs_obj_abs_geometry.h"
-#include "pipeline/round_corner_display/rs_rcd_surface_render_node.h"
+#include "feature/round_corner_display/rs_rcd_surface_render_node.h"
 #include "pipeline/rs_render_engine.h"
+#include "params/rs_display_render_params.h"
+#include "rs_test_util.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -112,6 +114,70 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, Init001, TestSize.Level2)
     auto renderEngine = uniRenderThread.GetRenderEngine();
     ASSERT_NE(nullptr, processor);
     ASSERT_EQ(false, processor->Init(rsDisplayRenderNode, offsetX, offsetY, INVALID_SCREEN_ID, renderEngine));
+}
+
+/**
+ * @tc.name: InitForRenderThread001
+ * @tc.desc: Test RSUniRenderVirtualProcessorTest.InitForRenderThread when main screen set wide color gamut or sRGB
+ * @tc.type:FUNC
+ * @tc.require: issueIB7AGV
+ */
+HWTEST(RSUniRenderVirtualProcessorTest, InitForRenderThread001, TestSize.Level1)
+{
+    auto screenManager = CreateOrGetScreenManager();
+    auto surface = Surface::CreateSurfaceAsConsumer("test_surface");
+    ASSERT_NE(surface, nullptr);
+    auto screenId = screenManager->CreateVirtualScreen("virtual_screen", 10, 10, surface, 0UL, 0, {});
+    screenManager->SetVirtualScreenStatus(screenId, VirtualScreenStatus::VIRTUAL_SCREEN_PLAY);
+
+    NodeId mainNodeId = 1;
+    NodeId virtualNodeId = 2;
+    RSDisplayNodeConfig mainConfig{0, false, 0, false};
+    auto mainNode = std::make_shared<RSDisplayRenderNode>(mainNodeId, mainConfig);
+    mainNode->InitRenderParams();
+    RSDisplayNodeConfig virtualConfig{screenId, true, mainNodeId, false};
+    auto virtualNode = std::make_shared<RSDisplayRenderNode>(virtualNodeId, virtualConfig);
+    virtualNode->InitRenderParams();
+    ASSERT_NE(mainNode->renderDrawable_, nullptr);
+    ASSERT_NE(virtualNode->renderDrawable_, nullptr);
+    ASSERT_NE(mainNode->renderDrawable_->renderParams_, nullptr);
+    ASSERT_NE(virtualNode->renderDrawable_->renderParams_, nullptr);
+
+    auto mainRenderDrawable = static_cast<RSDisplayRenderNodeDrawable* >(mainNode->renderDrawable_.get());
+    auto virtualRenderDrawable = static_cast<RSDisplayRenderNodeDrawable* >(virtualNode->renderDrawable_.get());
+    ASSERT_NE(mainRenderDrawable, nullptr);
+    ASSERT_NE(virtualRenderDrawable, nullptr);
+    auto mainRenderParams = static_cast<RSDisplayRenderParams* >(mainRenderDrawable->GetRenderParams().get());
+    auto virtualRenderParams = static_cast<RSDisplayRenderParams* >(virtualRenderDrawable->GetRenderParams().get());
+    ASSERT_NE(mainRenderParams, nullptr);
+    ASSERT_NE(virtualRenderParams, nullptr);
+    virtualRenderParams->mirrorSourceDrawable_ = mainNode->renderDrawable_;
+    virtualRenderParams->screenId_ = screenId;
+
+    auto renderEngine = RSUniRenderThread::Instance().GetRenderEngine();
+    ASSERT_NE(renderEngine, nullptr);
+    renderEngine->Init();
+
+    virtualRenderParams->newColorSpace_ = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3;
+    mainRenderParams->newColorSpace_ = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3;
+    auto processor = RSProcessorFactory::CreateProcessor(RSDisplayRenderNode::CompositeType::
+        UNI_RENDER_MIRROR_COMPOSITE);
+    auto virtualProcessor = std::static_pointer_cast<RSUniRenderVirtualProcessor>(processor);
+    ASSERT_NE(virtualProcessor, nullptr);
+    virtualProcessor->InitForRenderThread(*virtualRenderDrawable, 0, renderEngine);
+    auto targetSurface = virtualRenderDrawable->virtualSurface_;
+    ASSERT_NE(targetSurface, nullptr);
+    ASSERT_EQ(targetSurface->GetColorSpace(), mainRenderParams->GetNewColorSpace());
+
+    mainRenderParams->newColorSpace_ = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
+    auto newProcessor = RSProcessorFactory::CreateProcessor(RSDisplayRenderNode::CompositeType::
+        UNI_RENDER_MIRROR_COMPOSITE);
+    auto newVirtualProcessor = std::static_pointer_cast<RSUniRenderVirtualProcessor>(newProcessor);
+    ASSERT_NE(newVirtualProcessor, nullptr);
+    newVirtualProcessor->InitForRenderThread(*virtualRenderDrawable, 0, renderEngine);
+    targetSurface = virtualRenderDrawable->virtualSurface_;
+    ASSERT_NE(targetSurface, nullptr);
+    ASSERT_EQ(targetSurface->GetColorSpace(), mainRenderParams->GetNewColorSpace());
 }
 
 /**
@@ -344,6 +410,21 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, SetDirtyInfo_002, TestSize.Level2)
 }
 
 /**
+ * @tc.name: SetRoiRegionToCodec_001
+ * @tc.desc: test SetRoiRegionToCodec while renderFrame_ is nullptr
+ * @tc.type:FUNC
+ * @tc.require:issuesIBHR8N
+ */
+HWTEST_F(RSUniRenderVirtualProcessorTest, SetRoiRegionToCodec001, TestSize.Level2)
+{
+    ASSERT_NE(virtualProcessor_, nullptr);
+    virtualProcessor_->renderFrame_ = nullptr;
+
+    std::vector<RectI> damageRegion {};
+    ASSERT_EQ(virtualProcessor_->SetRoiRegionToCodec(damageRegion), GSERROR_INVALID_ARGUMENTS);
+}
+
+/**
  * @tc.name: ProcessDisplaySurfaceForRenderThread_001
  * @tc.desc: ProcessDisplaySurfaceForRenderThread Test, isExpand_ is true, return directly
  * @tc.type:FUNC
@@ -442,5 +523,39 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, CanvasClipRegionForUniscaleMode, TestS
     auto virtualProcessor = std::static_pointer_cast<RSUniRenderVirtualProcessor>(processor);
     ASSERT_NE(nullptr, virtualProcessor);
     virtualProcessor_->CanvasClipRegionForUniscaleMode();
+}
+
+/**
+ * @tc.name: ProcessCacheImage
+ * @tc.desc: draw virtual screen by cache image.
+ * @tc.type:FUNC
+ * @tc.require:issuesIBIPST
+ */
+HWTEST_F(RSUniRenderVirtualProcessorTest, ProcessCacheImage, TestSize.Level2)
+{
+    auto processor = RSProcessorFactory::CreateProcessor(RSDisplayRenderNode::CompositeType::
+        UNI_RENDER_MIRROR_COMPOSITE);
+    auto virtualProcessor = std::static_pointer_cast<RSUniRenderVirtualProcessor>(processor);
+    ASSERT_NE(nullptr, virtualProcessor);
+    
+    Drawing::Canvas canvas;
+    RSPaintFilterCanvas paintCanvase(&canvas);
+    std::shared_ptr<Drawing::Image> image = std::make_shared<Drawing::Image>();
+    BufferDrawParam params;
+    auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
+    params.buffer = surfaceNode->GetRSSurfaceHandler()->GetBuffer();
+    Drawing::Rect srcRect(0.0f, 0.0f, 10, 20);
+    Drawing::Rect dstRect(0.0f, 0.0f, 10, 20);
+    Drawing::Brush paint;
+    params.srcRect = srcRect;
+    params.dstRect = dstRect;
+    params.paint = paint;
+    Drawing::SamplingOptions samplingOptions(Drawing::FilterMode::LINEAR, Drawing::MipmapMode::NEAREST);
+    auto renderEngine = std::make_shared<RSRenderEngine>();
+    ASSERT_NE(renderEngine, nullptr);
+    renderEngine->DrawImageRect(paintCanvase, image, params, samplingOptions);
+    ASSERT_NE(image, nullptr);
+
+    virtualProcessor->ProcessCacheImage(*image);
 }
 } // namespace OHOS::Rosen

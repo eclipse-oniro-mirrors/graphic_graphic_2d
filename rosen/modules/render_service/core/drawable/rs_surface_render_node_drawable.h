@@ -119,7 +119,6 @@ public:
 
     void ResetUifirst(bool isNotClearCompleteCacheSurface)
     {
-        drawWindowCache_.ClearCache();
         if (isNotClearCompleteCacheSurface) {
             ClearCacheSurfaceOnly();
         } else {
@@ -227,6 +226,10 @@ public:
     bool PrepareOffscreenRender();
     void FinishOffscreenRender(const Drawing::SamplingOptions& sampling);
     bool IsHardwareEnabled();
+
+    uint32_t GetUifirstPostOrder() const;
+    void SetUifirstPostOrder(uint32_t order);
+
     std::shared_ptr<RSSurfaceHandler> GetMutableRSSurfaceHandlerUiFirstOnDraw()
     {
         return surfaceHandlerUiFirst_;
@@ -245,11 +248,7 @@ public:
     {
         return cacheSurface_ ? true : false;
     }
-
-    bool HasCache() const override
-    {
-        return drawWindowCache_.HasCache();
-    }
+    int GetTotalProcessedSurfaceCount() const;
 private:
     explicit RSSurfaceRenderNodeDrawable(std::shared_ptr<const RSRenderNode>&& node);
     bool DealWithUIFirstCache(
@@ -273,6 +272,8 @@ private:
     bool DrawUIFirstCacheWithStarting(RSPaintFilterCanvas& rscanvas, NodeId id);
     bool CheckDrawAndCacheWindowContent(RSSurfaceRenderParams& surfaceParams,
         RSRenderThreadParams& uniParams) const;
+    void TotalProcessedSurfaceCountInc(RSPaintFilterCanvas& canvas);
+    void ClearTotalProcessedSurfaceCount();
 
     void DrawUIFirstDfx(RSPaintFilterCanvas& canvas, MultiThreadCacheType enableType,
         RSSurfaceRenderParams& surfaceParams, bool drawCacheSuccess);
@@ -287,8 +288,14 @@ private:
     void DrawSelfDrawingNodeBuffer(RSPaintFilterCanvas& canvas,
         const RSSurfaceRenderParams& surfaceParams, BufferDrawParam& params);
 
+    // Draw cloneNode
+    bool DrawCloneNode(RSPaintFilterCanvas& canvas, RSRenderThreadParams& uniParam,
+        RSSurfaceRenderParams& surfaceParams, bool isCapture = false);
+
     // Watermark
     void DrawWatermark(RSPaintFilterCanvas& canvas, const RSSurfaceRenderParams& surfaceParams);
+
+    bool RecordTimestamp(NodeId id, uint32_t seqNum);
 
     void ClipHoleForSelfDrawingNode(RSPaintFilterCanvas& canvas, RSSurfaceRenderParams& surfaceParams);
     void DrawBufferForRotationFixed(RSPaintFilterCanvas& canvas, RSSurfaceRenderParams& surfaceParams);
@@ -348,7 +355,6 @@ private:
     Occlusion::Region alignedVisibleDirtyRegion_;
     bool isDirtyRegionAlignedEnable_ = false;
     Occlusion::Region globalDirtyRegion_;
-    bool globalDirtyRegionIsEmpty_ = false;
 
     // if a there a dirty layer under transparent clean layer, transparent layer should refreshed
     Occlusion::Region dirtyRegionBelowCurrentLayer_;
@@ -357,6 +363,8 @@ private:
     RSDrawWindowCache drawWindowCache_;
     friend class OHOS::Rosen::RSDrawWindowCache;
     bool vmaCacheOff_ = false;
+    static inline std::atomic<int> totalProcessedSurfaceCount_ = 0;
+    uint32_t uifirstPostOrder_ = 0;
 
     static inline bool isInRotationFixed_ = false;
 };

@@ -49,6 +49,8 @@ public:
                                                          NodeId windowNodeId = 0,
                                                          bool fromXcomponent = false) override;
 
+    int32_t GetPixelMapByProcessId(std::vector<std::shared_ptr<Media::PixelMap>>& pixelMapVector, pid_t pid) override;
+    
     std::shared_ptr<Media::PixelMap> CreatePixelMapFromSurface(sptr<Surface> surface, const Rect &srcRect) override;
 
     int32_t SetFocusAppInfo(
@@ -83,9 +85,9 @@ public:
     int32_t SetVirtualScreenSecurityExemptionList(
         ScreenId id, const std::vector<NodeId>& securityExemptionList) override;
 
-    int32_t SetScreenSecurityMask(ScreenId id, const std::shared_ptr<Media::PixelMap> securityMask) override;
+    int32_t SetScreenSecurityMask(ScreenId id, std::shared_ptr<Media::PixelMap> securityMask) override;
 
-    int32_t SetMirrorScreenVisibleRect(ScreenId id, const Rect& mainScreenRect) override;
+    int32_t SetMirrorScreenVisibleRect(ScreenId id, const Rect& mainScreenRect, bool supportRotation = false) override;
 
     int32_t SetCastScreenEnableSkipWindow(ScreenId id, bool enable) override;
 
@@ -123,15 +125,21 @@ public:
 
     bool GetShowRefreshRateEnabled() override;
 
-    void SetShowRefreshRateEnabled(bool enable) override;
+    void SetShowRefreshRateEnabled(bool enabled, int32_t type) override;
+
+    uint32_t GetRealtimeRefreshRate(ScreenId id) override;
 
     std::string GetRefreshInfo(pid_t pid) override;
+
+    int32_t SetPhysicalScreenResolution(ScreenId id, uint32_t width, uint32_t height) override;
 
     int32_t SetVirtualScreenResolution(ScreenId id, uint32_t width, uint32_t height) override;
 
     void MarkPowerOffNeedProcessOneFrame() override;
 
     void RepaintEverything() override;
+
+    void ForceRefreshOneFrameWithNextVSync() override;
 
     void DisablePowerOffRenderControl(ScreenId id) override;
 
@@ -141,14 +149,17 @@ public:
 
     void TakeSurfaceCapture(NodeId id, sptr<RSISurfaceCaptureCallback> callback,
         const RSSurfaceCaptureConfig& captureConfig, const RSSurfaceCaptureBlurParam& blurParam,
+        const Drawing::Rect& specifiedAreaRect = Drawing::Rect(0.f, 0.f, 0.f, 0.f),
         RSSurfaceCapturePermissions permissions = RSSurfaceCapturePermissions()) override;
 
     void SetWindowFreezeImmediately(NodeId id, bool isFreeze, sptr<RSISurfaceCaptureCallback> callback,
-        const RSSurfaceCaptureConfig& captureConfig) override;
+        const RSSurfaceCaptureConfig& captureConfig, const RSSurfaceCaptureBlurParam& blurParam) override;
 
     bool WriteSurfaceCaptureConfig(const RSSurfaceCaptureConfig& captureConfig, MessageParcel& data);
 
     bool WriteSurfaceCaptureBlurParam(const RSSurfaceCaptureBlurParam& blurParam, MessageParcel& data);
+
+    bool WriteSurfaceCaptureAreaRect(const Drawing::Rect& specifiedAreaRect, MessageParcel& data);
 
     void SetHwcNodeBounds(int64_t rsNodeId, float positionX, float positionY,
         float positionZ, float positionW) override;
@@ -253,7 +264,7 @@ public:
 
     void ReportJankStats() override;
 
-    void NotifyLightFactorStatus(bool isSafe) override;
+    void NotifyLightFactorStatus(int32_t lightFactorStatus) override;
 
     void NotifyPackageEvent(uint32_t listSize, const std::vector<std::string>& packageList) override;
 
@@ -271,6 +282,10 @@ public:
 
     void ReportEventJankFrame(DataBaseRs info) override;
 
+    void ReportRsSceneJankStart(AppInfo info) override;
+
+    void ReportRsSceneJankEnd(AppInfo info) override;
+
     void ReportGameStateData(GameStateData info) override;
 
     void SetHardwareEnabled(NodeId id, bool isEnabled, SelfDrawingNodeType selfDrawingType,
@@ -279,8 +294,6 @@ public:
     uint32_t SetHidePrivacyContent(NodeId id, bool needHidePrivacyContent) override;
 
     void SetCacheEnabledForRotation(bool isEnabled) override;
-
-    void SetScreenSwitchStatus(bool flag) override;
 
     void SetOnRemoteDiedCallback(const OnRemoteDiedCallback& callback) override;
 
@@ -318,11 +331,17 @@ public:
 
     void UnregisterSurfaceBufferCallback(pid_t pid, uint64_t uid) override;
 
+    void NotifyScreenSwitched() override;
+
+    void SetWindowContainer(NodeId nodeId, bool value) override;
+
 private:
     bool FillParcelWithTransactionData(
         std::unique_ptr<RSTransactionData>& transactionData, std::shared_ptr<MessageParcel>& data);
 
     void ReportDataBaseRs(MessageParcel& data, MessageParcel& reply, MessageOption& option, DataBaseRs info);
+
+    void WriteAppInfo(MessageParcel& data, MessageParcel& reply, MessageOption& option, AppInfo info);
 
     void ReportGameStateDataRs(MessageParcel& data, MessageParcel& reply, MessageOption& option, GameStateData info);
 

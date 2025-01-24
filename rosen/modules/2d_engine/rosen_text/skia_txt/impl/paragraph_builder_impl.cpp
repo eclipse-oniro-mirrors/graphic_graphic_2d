@@ -14,12 +14,15 @@
  */
 
 #include "paragraph_builder_impl.h"
+#include <string>
 
-#include "modules/skparagraph/include/ParagraphStyle.h"
-#include "modules/skparagraph/include/TextStyle.h"
 #include "paragraph_impl.h"
 #include "paragraph_line_fetcher_impl.h"
+#include "common_utils/string_util.h"
+#include "modules/skparagraph/include/ParagraphStyle.h"
+#include "modules/skparagraph/include/TextStyle.h"
 #include "txt/paragraph_style.h"
+#include "txt/text_bundle_config_parser.h"
 #include "utils/text_log.h"
 
 namespace skt = skia::textlayout;
@@ -28,6 +31,7 @@ namespace OHOS {
 namespace Rosen {
 namespace SPText {
 namespace {
+
 int ConvertToSkFontWeight(FontWeight fontWeight)
 {
     constexpr int weightBase = 100;
@@ -126,7 +130,13 @@ void ParagraphBuilderImpl::Pop()
 void ParagraphBuilderImpl::AddText(const std::u16string& text)
 {
     RecordDifferentPthreadCall(__FUNCTION__);
-    builder_->addText(text);
+    if (TextBundleConfigParser::GetInstance().IsTargetApiVersion(SINCE_API16_VERSION)) {
+        std::u16string wideText = text;
+        Utf16Utils::HandleIncompleteSurrogatePairs(wideText);
+        builder_->addText(wideText);
+    } else {
+        builder_->addText(text);
+    }
 }
 
 void ParagraphBuilderImpl::AddPlaceholder(PlaceholderRun& run)
@@ -188,6 +198,7 @@ void ParagraphBuilderImpl::TextStyleToSKStrutStyle(skt::StrutStyle& strutStyle, 
     std::vector<SkString> strutFonts;
     std::transform(txt.strutFontFamilies.begin(), txt.strutFontFamilies.end(), std::back_inserter(strutFonts),
         [](const std::string& f) { return SkString(f.c_str()); });
+    strutStyle.setHalfLeading(txt.strutHalfLeading);
     strutStyle.setFontFamilies(strutFonts);
     strutStyle.setLeading(txt.strutLeading);
     strutStyle.setForceStrutHeight(txt.forceStrutHeight);

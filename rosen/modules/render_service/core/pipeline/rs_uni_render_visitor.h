@@ -25,8 +25,9 @@
 #include "rs_base_render_engine.h"
 #include "system/rs_system_parameters.h"
 
+#include "common/rs_special_layer_manager.h"
 #include "params/rs_render_thread_params.h"
-#include "pipeline/round_corner_display/rs_rcd_render_manager.h"
+#include "feature/round_corner_display/rs_rcd_render_manager.h"
 #include "pipeline/rs_dirty_region_manager.h"
 #include "pipeline/rs_main_thread.h"
 #include "pipeline/rs_pointer_window_manager.h"
@@ -151,7 +152,7 @@ private:
     // restore node's flag and filter dirty collection
     void PostPrepare(RSRenderNode& node, bool subTreeSkipped = false);
     void UpdateNodeVisibleRegion(RSSurfaceRenderNode& node);
-    void CalculateOcclusion(RSSurfaceRenderNode& node);
+    void CalculateOpaqueAndTransparentRegion(RSSurfaceRenderNode& node);
 
     void CheckFilterCacheNeedForceClearOrSave(RSRenderNode& node);
     void UpdateOccludedStatusWithFilterNode(std::shared_ptr<RSSurfaceRenderNode>& surfaceNode) const;
@@ -186,6 +187,7 @@ private:
     bool CheckCurtainScreenUsingStatusChange() const;
     bool CheckLuminanceStatusChange(ScreenId id);
     bool CheckSkipCrossNode(RSSurfaceRenderNode& node);
+    bool CheckSkipAndPrepareForCrossNode(RSSurfaceRenderNode& node);
     bool IsFirstFrameOfPartialRender() const;
     bool IsFirstFrameOfOverdrawSwitch() const;
     bool IsFirstFrameOfDrawingCacheDfxSwitch() const;
@@ -236,6 +238,7 @@ private:
     void UpdateHwcNodeEnable();
     void UpdateHwcNodeEnableByNodeBelow();
     void PrevalidateHwcNode();
+    bool PrepareForCloneNode(RSSurfaceRenderNode& node);
     void PrepareForCrossNode(RSSurfaceRenderNode& node);
 
     // use in QuickPrepareSurfaceRenderNode, update SurfaceRenderNode's uiFirst status
@@ -283,7 +286,7 @@ private:
     void HandlePixelFormat(RSDisplayRenderNode& node, const sptr<RSScreenManager>& screenManager);
 
     bool IsHardwareComposerEnabled();
-    void UpdateSecuritySkipAndProtectedLayersRecord(RSSurfaceRenderNode& node);
+    void UpdateSpecialLayersRecord(RSSurfaceRenderNode& node);
     void SendRcdMessage(RSDisplayRenderNode& node);
 
     bool ForcePrepareSubTree()
@@ -292,12 +295,18 @@ private:
     }
     bool IsValidInVirtualScreen(RSSurfaceRenderNode& node) const
     {
-        return !node.GetSkipLayer() && !node.GetSecurityLayer() && (screenInfo_.whiteList.empty() ||
-            screenInfo_.whiteList.find(node.GetId()) != screenInfo_.whiteList.end());
+        const auto& specialLayerMgr = node.GetSpecialLayerMgr();
+        return !specialLayerMgr.Find(SpecialLayerType::SKIP) &&
+            !specialLayerMgr.Find(SpecialLayerType::SECURITY) &&
+            (screenInfo_.whiteList.empty() || screenInfo_.whiteList.find(node.GetId()) != screenInfo_.whiteList.end());
     }
     void UpdateRotationStatusForEffectNode(RSEffectRenderNode& node);
     void CheckFilterNodeInSkippedSubTreeNeedClearCache(const RSRenderNode& node, RSDirtyRegionManager& dirtyManager);
     void UpdateHwcNodeRectInSkippedSubTree(const RSRenderNode& node);
+    bool FindRootAndUpdateMatrix(std::shared_ptr<RSRenderNode>& parent, Drawing::Matrix& matrix,
+        const RSRenderNode& rootNode);
+    void UpdateHWCNodeClipRect(std::shared_ptr<RSSurfaceRenderNode>& hwcNodePtr, RectI& clipRect,
+        const RSRenderNode& rootNode);
     void UpdateSubSurfaceNodeRectInSkippedSubTree(const RSRenderNode& rootNode);
     void CollectOcclusionInfoForWMS(RSSurfaceRenderNode& node);
     void CollectEffectInfo(RSRenderNode& node);
@@ -315,6 +324,9 @@ private:
     void CheckIsGpuOverDrawBufferOptimizeNode(RSSurfaceRenderNode& node);
     void MarkBlurIntersectWithDRM(std::shared_ptr<RSRenderNode> node) const;
 
+    // Used for closing HDR in PC multidisplay becauseof performance and open when singledisplay
+    void SetHdrWhenMultiDisplayChangeInPC();
+
     std::vector<std::shared_ptr<RSSurfaceRenderNode>> hardwareEnabledNodes_;
     bool isCompleteRenderEnabled_ = false;
     std::shared_ptr<RSBaseRenderEngine> renderEngine_;
@@ -331,10 +343,7 @@ private:
     std::shared_ptr<RSDirtyRegionManager> curDisplayDirtyManager_;
     std::shared_ptr<RSSurfaceRenderNode> curSurfaceNode_;
     ScreenId currentVisitDisplay_ = INVALID_SCREEN_ID;
-    std::map<ScreenId, bool> displayHasSecSurface_;
-    std::map<ScreenId, bool> displayHasSkipSurface_;
-    std::map<ScreenId, bool> displayHasSnapshotSkipSurface_;
-    std::map<ScreenId, bool> displayHasProtectedSurface_;
+    RSSpecialLayerManager specialLayerManager_;
     std::map<ScreenId, bool> displaySpecailSurfaceChanged_;
     std::map<ScreenId, bool> hasCaptureWindow_;
     std::map<ScreenId, bool> hasFingerprint_;
@@ -368,6 +377,7 @@ private:
     RectI prepareClipRect_{0, 0, 0, 0}; // renderNode clip rect used in Prepare
     Vector4f curCornerRadius_{ 0.f, 0.f, 0.f, 0.f };
     Drawing::Matrix parentSurfaceNodeMatrix_;
+    bool isSwitchToSourceCrossNodePrepare_ = false;
     // visible filter in transparent surface or display must prepare
     bool filterInGlobal_ = true;
     // opinc feature
@@ -434,6 +444,8 @@ private:
     bool ancoHasGpu_ = false;
     std::unordered_set<std::shared_ptr<RSSurfaceRenderNode>> ancoNodes_;
     uint32_t layerNum_ = 0;
+
+    NodeId clonedSourceNodeId_ = INVALID_NODEID;
 };
 } // namespace Rosen
 } // namespace OHOS

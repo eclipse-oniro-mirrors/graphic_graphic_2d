@@ -34,21 +34,22 @@
 #include "rs_trace.h"
 
 #include "common/rs_singleton.h"
-#include "pipeline/round_corner_display/rs_message_bus.h"
+#include "feature/round_corner_display/rs_message_bus.h"
 #ifdef RS_ENABLE_GPU
-#include "pipeline/round_corner_display/rs_rcd_render_manager.h"
-#include "pipeline/round_corner_display/rs_round_corner_display_manager.h"
+#include "feature/round_corner_display/rs_rcd_render_manager.h"
+#include "feature/round_corner_display/rs_round_corner_display_manager.h"
 #endif
 #include "pipeline/rs_hardware_thread.h"
 #include "pipeline/rs_surface_render_node.h"
 #include "pipeline/rs_uni_render_judgement.h"
 #include "system/rs_system_parameters.h"
 #include "gfx/fps_info/rs_surface_fps_manager.h"
+#include "graphic_feature_param_manager.h"
 
 #include "text/font_mgr.h"
 
 #ifdef TP_FEATURE_ENABLE
-#include "touch_screen/touch_screen.h"
+#include "screen_manager/touch_screen.h"
 #endif
 
 namespace OHOS {
@@ -161,6 +162,9 @@ bool RSRenderService::Init()
     }
     samgr->AddSystemAbility(RENDER_SERVICE, this);
 
+    // feature param parse
+    GraphicFeatureParamManager::GetInstance().Init();
+
     RS_PROFILER_INIT(this);
 
     return true;
@@ -185,7 +189,7 @@ void RSRenderService::RegisterRcdMsg()
             auto& rcdInstance = RSSingleton<RoundCornerDisplayManager>::GetInstance();
             auto& rcdHardManager = RSRcdRenderManager::GetInstance();
             auto& msgBus = RSSingleton<RsMessageBus>::GetInstance();
-            msgBus.RegisterTopic<NodeId, uint32_t, uint32_t>(
+            msgBus.RegisterTopic<NodeId, uint32_t, uint32_t, uint32_t, uint32_t>(
                 TOPIC_RCD_DISPLAY_SIZE, &rcdInstance,
                 &RoundCornerDisplayManager::UpdateDisplayParameter);
             msgBus.RegisterTopic<NodeId, ScreenRotation>(
@@ -404,8 +408,20 @@ void RSRenderService::DumpFps(std::string& dumpString, std::string& fpsArg) cons
 void RSRenderService::DumpSurfaceNodeFps(std::string& dumpString, std::string& fpsArg) const
 {
     dumpString += "\n-- The recently fps records info of screens:\n";
-    const auto& surfaceFpsManager = RSSurfaceFpsManager::GetInstance();
-    surfaceFpsManager.Dump(dumpString, fpsArg);
+    auto renderType = RSUniRenderJudgement::GetUniRenderEnabledType();
+    if (renderType == UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL) {
+#ifdef RS_ENABLE_GPU
+        RSHardwareThread::Instance().ScheduleTask(
+            [this, &dumpString, &fpsArg]() {
+                return RSSurfaceFpsManager::GetInstance().Dump(dumpString, fpsArg);
+            }).wait();
+#endif
+    } else {
+        mainThread_->ScheduleTask(
+            [this, &dumpString, &fpsArg]() {
+                return RSSurfaceFpsManager::GetInstance().Dump(dumpString, fpsArg);
+            }).wait();
+    }
 }
 
 void RSRenderService::FPSDUMPClearProcess(std::unordered_set<std::u16string>& argSets,
@@ -452,8 +468,20 @@ void RSRenderService::ClearFps(std::string& dumpString, std::string& fpsArg) con
 void RSRenderService::ClearSurfaceNodeFps(std::string& dumpString, std::string& fpsArg) const
 {
     dumpString += "\n-- Clear fps records info of screens:\n";
-    const auto& surfaceFpsManager = RSSurfaceFpsManager::GetInstance();
-    surfaceFpsManager.ClearDump(dumpString, fpsArg);
+    auto renderType = RSUniRenderJudgement::GetUniRenderEnabledType();
+    if (renderType == UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL) {
+#ifdef RS_ENABLE_GPU
+        RSHardwareThread::Instance().ScheduleTask(
+            [this, &dumpString, &fpsArg]() {
+                return RSSurfaceFpsManager::GetInstance().ClearDump(dumpString, fpsArg);
+            }).wait();
+#endif
+    } else {
+        mainThread_->ScheduleTask(
+            [this, &dumpString, &fpsArg]() {
+                return RSSurfaceFpsManager::GetInstance().ClearDump(dumpString, fpsArg);
+            }).wait();
+    }
 }
 
 void RSRenderService::DumpRSEvenParam(std::string& dumpString) const

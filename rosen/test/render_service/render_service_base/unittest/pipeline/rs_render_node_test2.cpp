@@ -36,7 +36,7 @@ namespace OHOS {
 namespace Rosen {
 const std::string OUT_STR3 =
     ", Parent [null], Name [SurfaceNode], hasConsumer: 0, Alpha: 1.000000, Visible: 1, VisibleRegion [Empty], "
-    "OpaqueRegion [Empty], OcclusionBg: 0, SecurityLayer: 0, skipLayer: 0, surfaceType: 0, "
+    "OpaqueRegion [Empty], OcclusionBg: 0, SpecialLayer: 0, surfaceType: 0, "
     "ContainerConfig: [outR: 0 inR: 0 x: 0 y: 0 w: 0 h: 0]";
 const std::string OUT_STR4 = ", Visible: 1, Size: [-inf, -inf], EnableRender: 1";
 const std::string OUT_STR5 = ", skipLayer: 0";
@@ -2518,6 +2518,41 @@ HWTEST_F(RSRenderNodeTest2, UpdateDrawableBehindWindowTest, TestSize.Level1)
     auto node = std::make_shared<RSRenderNode>(0, rsContext);
     node->UpdateDrawableBehindWindow();
     EXPECT_TRUE(node->dirtySlots_.count(RSDrawableSlot::BACKGROUND_FILTER) != 0);
+}
+
+/**
+ * @tc.name: SetUIFirstSwitchTest001
+ * @tc.desc: SetUIFirstSwitch with Node does not have firstLevelNoode
+ * @tc.type: FUNC
+ * @tc.require: issueIBH5UD
+ */
+HWTEST_F(RSRenderNodeTest2, SetUIFirstSwitchTest001, TestSize.Level1)
+{
+    auto node = std::make_shared<RSRenderNode>(id);
+    ASSERT_NE(node, nullptr);
+    node->SetUIFirstSwitch(RSUIFirstSwitch::MODAL_WINDOW_CLOSE);
+    ASSERT_EQ(node->GetUIFirstSwitch(), RSUIFirstSwitch::MODAL_WINDOW_CLOSE);
+}
+
+/**
+ * @tc.name: SetUIFirstSwitchTest002
+ * @tc.desc: SetUIFirstSwitch with Node has firstLevelNoode
+ * @tc.type: FUNC
+ * @tc.require: issueIBH5UD
+ */
+HWTEST_F(RSRenderNodeTest2, SetUIFirstSwitchTest002, TestSize.Level1)
+{
+    auto rsContext = std::make_shared<RSContext>();
+    ASSERT_NE(rsContext, nullptr);
+    auto node = std::make_shared<RSRenderNode>(id, rsContext);
+    ASSERT_NE(node, nullptr);
+    auto firstNode = std::make_shared<RSSurfaceRenderNode>(id + 1, rsContext);
+    ASSERT_NE(firstNode, nullptr);
+    node->firstLevelNodeId_ = id + 1;
+    rsContext->nodeMap.RegisterRenderNode(node);
+    rsContext->nodeMap.RegisterRenderNode(firstNode);
+    node->SetUIFirstSwitch(RSUIFirstSwitch::MODAL_WINDOW_CLOSE);
+    ASSERT_EQ(firstNode->GetUIFirstSwitch(), RSUIFirstSwitch::MODAL_WINDOW_CLOSE);
 }
 } // namespace Rosen
 } // namespace OHOS

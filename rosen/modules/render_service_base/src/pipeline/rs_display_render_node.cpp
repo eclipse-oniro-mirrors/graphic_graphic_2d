@@ -17,6 +17,7 @@
 
 #include "common/rs_obj_abs_geometry.h"
 #include "common/rs_optional_trace.h"
+#include "common/rs_special_layer_manager.h"
 #include "params/rs_display_render_params.h"
 #include "pipeline/rs_render_node.h"
 #include "pipeline/rs_surface_render_node.h"
@@ -30,8 +31,8 @@ constexpr int64_t MAX_JITTER_NS = 2000000; // 2ms
 
 RSDisplayRenderNode::RSDisplayRenderNode(
     NodeId id, const RSDisplayNodeConfig& config, const std::weak_ptr<RSContext>& context)
-    : RSRenderNode(id, context), screenId_(config.screenId), offsetX_(0), offsetY_(0),
-      isMirroredDisplay_(config.isMirrored), dirtyManager_(std::make_shared<RSDirtyRegionManager>(true))
+    : RSRenderNode(id, context), isMirroredDisplay_(config.isMirrored), offsetX_(0), offsetY_(0),
+      screenId_(config.screenId), dirtyManager_(std::make_shared<RSDirtyRegionManager>(true))
 {
     RS_LOGI("RSScreen RSDisplayRenderNode ctor id:%{public}" PRIu64 ", screenid:%{public}" PRIu64, id, screenId_);
     MemoryInfo info = {sizeof(*this), ExtractPid(id), id, MEMORY_TYPE::MEM_RENDER_NODE};
@@ -240,6 +241,7 @@ void RSDisplayRenderNode::UpdateRenderParams()
     auto mirroredNode = GetMirrorSource().lock();
     if (mirroredNode == nullptr) {
         displayParams->mirrorSourceId_ = INVALID_NODEID;
+        displayParams->mirrorSourceDrawable_.reset();
         RS_LOGW("RSDisplayRenderNode::UpdateRenderParams mirroredNode is null");
     } else {
         displayParams->mirrorSourceDrawable_ = mirroredNode->GetRenderDrawable();
@@ -269,10 +271,7 @@ void RSDisplayRenderNode::UpdateScreenRenderParams(ScreenRenderParams& screenRen
     displayParams->isFirstVisitCrossNodeDisplay_ = IsFirstVisitCrossNodeDisplay();
     displayParams->isSecurityDisplay_ = GetSecurityDisplay();
     displayParams->screenInfo_ = std::move(screenRenderParams.screenInfo);
-    displayParams->displayHasSecSurface_ = std::move(screenRenderParams.displayHasSecSurface);
-    displayParams->displayHasSkipSurface_ = std::move(screenRenderParams.displayHasSkipSurface);
-    displayParams->displayHasSnapshotSkipSurface_ = std::move(screenRenderParams.displayHasSnapshotSkipSurface);
-    displayParams->displayHasProtectedSurface_ = std::move(screenRenderParams.displayHasProtectedSurface);
+    displayParams->specialLayerManager_ = specialLayerManager_;
     displayParams->displaySpecailSurfaceChanged_ = std::move(screenRenderParams.displaySpecailSurfaceChanged);
     displayParams->hasCaptureWindow_ = std::move(screenRenderParams.hasCaptureWindow);
 #endif
@@ -390,7 +389,7 @@ void RSDisplayRenderNode::UpdateRotation()
     lastRotation_ = boundsGeoPtr->GetRotation();
     preRotationStatus_ = curRotationStatus_;
     curRotationStatus_ = IsRotationChanged();
-    displayParams->SetRotationChanged(curRotationStatus_);
+    displayParams->SetRotationChanged(lastRotationChanged_);
 #endif
 }
 
@@ -582,6 +581,39 @@ Occlusion::Region RSDisplayRenderNode::GetDisappearedSurfaceRegionBelowCurrent(N
 bool RSDisplayRenderNode::IsZoomStateChange() const
 {
     return preZoomState_ != curZoomState_;
+}
+
+
+void RSDisplayRenderNode::SetScreenStatusNotifyTask(ScreenStatusNotifyTask task)
+{
+    screenStatusNotifyTask_ = task;
+}
+
+void RSDisplayRenderNode::NotifyScreenNotSwitching()
+{
+    if (screenStatusNotifyTask_) {
+        screenStatusNotifyTask_(false);
+        ROSEN_LOGI("RSDisplayRenderNode::NotifyScreenNotSwitching SetScreenSwitchStatus true");
+        RS_TRACE_NAME_FMT("NotifyScreenNotSwitching");
+    }
+}
+
+void RSDisplayRenderNode::SetWindowContainer(std::shared_ptr<RSBaseRenderNode> container)
+{
+    if (auto oldContainer = std::exchange(windowContainer_, container)) {
+        if (container) {
+            RS_LOGD("RSDisplayRenderNode::SetWindowContainer oldContainer: %{public}" PRIu64
+                ", newContainer: %{public}" PRIu64, oldContainer->GetId(), container->GetId());
+        } else {
+            RS_LOGD("RSDisplayRenderNode::SetWindowContainer oldContainer: %{public}" PRIu64,
+                oldContainer->GetId());
+        }
+    }
+}
+
+std::shared_ptr<RSBaseRenderNode> RSDisplayRenderNode::GetWindowContainer() const
+{
+    return windowContainer_;
 }
 } // namespace Rosen
 } // namespace OHOS

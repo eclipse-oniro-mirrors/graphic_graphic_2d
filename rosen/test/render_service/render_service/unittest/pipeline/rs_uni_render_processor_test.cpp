@@ -20,7 +20,7 @@
 
 #include "drawable/rs_display_render_node_drawable.h"
 #include "params/rs_display_render_params.h"
-#include "pipeline/round_corner_display/rs_rcd_surface_render_node.h"
+#include "feature/round_corner_display/rs_rcd_surface_render_node.h"
 #include "pipeline/rs_processor_factory.h"
 #include "pipeline/rs_uni_render_engine.h"
 #include "pipeline/rs_uni_render_processor.h"
@@ -487,7 +487,7 @@ HWTEST(RSUniRenderProcessorTest, GetForceClientForDRM001, TestSize.Level1)
     auto renderProcessor = std::make_shared<RSUniRenderProcessor>();
     ASSERT_NE(renderProcessor, nullptr);
     RSSurfaceRenderParams params(0);
-    params.isProtectedLayer_ = false;
+    params.GetMultableSpecialLayerMgr().Set(SpecialLayerType::PROTECTED, false);
     ASSERT_FALSE(renderProcessor->GetForceClientForDRM(params));
 }
 
@@ -505,7 +505,7 @@ HWTEST(RSUniRenderProcessorTest, GetForceClientForDRM002, TestSize.Level1)
     auto renderProcessor = std::make_shared<RSUniRenderProcessor>();
     ASSERT_NE(renderProcessor, nullptr);
     RSSurfaceRenderParams params(0);
-    params.isProtectedLayer_ = true;
+    params.GetMultableSpecialLayerMgr().Set(SpecialLayerType::PROTECTED, true);
     params.animateState_ = true;
     ASSERT_TRUE(renderProcessor->GetForceClientForDRM(params));
 }
@@ -524,7 +524,7 @@ HWTEST(RSUniRenderProcessorTest, GetForceClientForDRM003, TestSize.Level1)
     auto renderProcessor = std::make_shared<RSUniRenderProcessor>();
     ASSERT_NE(renderProcessor, nullptr);
     RSSurfaceRenderParams params(0);
-    params.isProtectedLayer_ = true;
+    params.GetMultableSpecialLayerMgr().Set(SpecialLayerType::PROTECTED, true);
     params.animateState_ = false;
     ASSERT_FALSE(renderProcessor->GetForceClientForDRM(params));
     // set totalMatrix to 30 degrees
@@ -546,7 +546,7 @@ HWTEST(RSUniRenderProcessorTest, GetForceClientForDRM004, TestSize.Level1)
     auto renderProcessor = std::make_shared<RSUniRenderProcessor>();
     ASSERT_NE(renderProcessor, nullptr);
     RSSurfaceRenderParams params(0);
-    params.isProtectedLayer_ = true;
+    params.GetMultableSpecialLayerMgr().Set(SpecialLayerType::PROTECTED, true);
     params.animateState_ = false;
     RSDisplayNodeConfig config;
     NodeId id = 1;

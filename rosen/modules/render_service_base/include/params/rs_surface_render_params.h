@@ -21,6 +21,7 @@
 #include <unordered_map>
 
 #include "common/rs_occlusion_region.h"
+#include "common/rs_special_layer_manager.h"
 #include "drawable/rs_render_node_drawable_adapter.h"
 #include "params/rs_render_params.h"
 #include "pipeline/rs_base_render_node.h"
@@ -129,23 +130,6 @@ public:
     {
         return rrect_;
     }
-
-    bool GetIsSecurityLayer() const
-    {
-        return isSecurityLayer_;
-    }
-    bool GetIsSkipLayer() const
-    {
-        return isSkipLayer_;
-    }
-    bool GetIsSnapshotSkipLayer() const
-    {
-        return isSnapshotSkipLayer_;
-    }
-    bool GetIsProtectedLayer() const
-    {
-        return isProtectedLayer_;
-    }
     bool GetAnimateState() const
     {
         return animateState_;
@@ -154,33 +138,13 @@ public:
     {
         return isRotating_;
     }
-    const std::set<NodeId>& GetSecurityLayerIds() const
+    RSSpecialLayerManager& GetMultableSpecialLayerMgr()
     {
-        return securityLayerIds_;
+        return specialLayerManager_;
     }
-    const std::set<NodeId>& GetSkipLayerIds() const
+    const RSSpecialLayerManager& GetSpecialLayerMgr() const
     {
-        return skipLayerIds_;
-    }
-    const std::set<NodeId>& GetSnapshotSkipLayerIds() const
-    {
-        return snapshotSkipLayerIds_;
-    }
-    bool HasSecurityLayer()
-    {
-        return securityLayerIds_.size() != 0;
-    }
-    bool HasSkipLayer()
-    {
-        return skipLayerIds_.size() != 0;
-    }
-    bool HasSnapshotSkipLayer()
-    {
-        return snapshotSkipLayerIds_.size() != 0;
-    }
-    bool HasProtectedLayer()
-    {
-        return protectedLayerIds_.size() != 0;
+        return specialLayerManager_;
     }
     bool HasPrivacyContentLayer()
     {
@@ -197,6 +161,9 @@ public:
         return name_;
     }
 
+    // [Attention] The function only used for unlocking screen for PC currently
+    DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr GetClonedNodeRenderDrawable();
+
     void SetLeashWindowVisibleRegionEmptyParam(bool isLeashWindowVisibleRegionEmpty)
     {
         if (isLeashWindowVisibleRegionEmpty_ == isLeashWindowVisibleRegionEmpty) {
@@ -211,13 +178,14 @@ public:
         return isLeashWindowVisibleRegionEmpty_;
     }
 
-    void SetUifirstNodeEnableParam(MultiThreadCacheType isUifirst)
+    bool SetUifirstNodeEnableParam(MultiThreadCacheType isUifirst)
     {
         if (uiFirstFlag_ == isUifirst) {
-            return;
+            return false;
         }
         uiFirstFlag_ = isUifirst;
         needSync_ = true;
+        return true;
     }
 
     MultiThreadCacheType GetUifirstNodeEnableParam() const
@@ -535,6 +503,9 @@ public:
         return brightnessRatio_;
     }
 
+    // [Attention] The function only used for unlocking screen for PC currently
+    bool IsCloneNode() const;
+
     bool GetIsHwcEnabledBySolidLayer()
     {
         return isHwcEnabledBySolidLayer_;
@@ -547,9 +518,6 @@ public:
 
     void SetNeedCacheSurface(bool needCacheSurface);
     bool GetNeedCacheSurface() const;
-    void SetUifirstStartingFlag(bool flag);
-    bool GetUifirstStartingFlag() const;
-
     inline bool HasSubSurfaceNodes() const
     {
         return hasSubSurfaceNodes_;
@@ -584,6 +552,22 @@ public:
         return apiCompatibleVersion_;
     }
 
+    // [Attention] The function only used for unlocking screen for PC currently
+    bool ClonedSourceNode() const
+    {
+        return clonedSourceNode_;
+    }
+
+    // [Attention] The function only used for unlocking screen for PC currently
+    void SetIsCloned(bool isCloned)
+    {
+        if (clonedSourceNode_ == isCloned) {
+            return;
+        }
+        clonedSourceNode_ = isCloned;
+        needSync_ = true;
+    }
+
     void SetIsBufferFlushed(bool isBufferFlushed)
     {
         if (isBufferFlushed_ == isBufferFlushed) {
@@ -607,9 +591,12 @@ private:
     SelfDrawingNodeType selfDrawingType_ = SelfDrawingNodeType::DEFAULT;
     RSRenderNode::WeakPtr ancestorDisplayNode_;
     DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr ancestorDisplayDrawable_;
+    DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr clonedNodeRenderDrawable_;
 
     float alpha_ = 0;
     bool isCrossNode_ = false;
+    bool isCloneNode_ = false;
+    bool clonedSourceNode_ = false;
     bool isTransparent_ = false;
     bool isSpherizeValid_ = false;
     bool isAttractionValid_ = false;
@@ -619,7 +606,6 @@ private:
     bool uiFirstParentFlag_ = false;
     Color backgroundColor_ = RgbPalette::Transparent();
     bool isHwcEnabledBySolidLayer_ = false;
-    bool uifirstStartingFlag_ = false;
 
     RectI dstRect_;
     RectI oldDirtyInSurface_;
@@ -661,20 +647,13 @@ private:
     bool isFixRotationByUser_ = false;
     bool isInFixedRotation_ = false;
     int32_t releaseInHardwareThreadTaskNum_ = 0;
-    bool isSecurityLayer_ = false;
-    bool isSkipLayer_ = false;
-    bool isSnapshotSkipLayer_ = false;
-    bool isProtectedLayer_ = false;
     bool animateState_ = false;
     bool isRotating_ = false;
     bool isSubSurfaceNode_ = false;
     bool isGlobalPositionEnabled_ = false;
     Gravity uiFirstFrameGravity_ = Gravity::TOP_LEFT;
     bool isNodeToBeCaptured_ = false;
-    std::set<NodeId> skipLayerIds_= {};
-    std::set<NodeId> snapshotSkipLayerIds_= {};
-    std::set<NodeId> securityLayerIds_= {};
-    std::set<NodeId> protectedLayerIds_= {};
+    RSSpecialLayerManager specialLayerManager_;
     std::set<NodeId> privacyContentLayerIds_ = {};
     std::set<int32_t> bufferCacheSet_ = {};
     std::string name_= "";

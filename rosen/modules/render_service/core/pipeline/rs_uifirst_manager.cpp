@@ -55,7 +55,8 @@ RSUifirstManager& RSUifirstManager::Instance()
 RSUifirstManager::RSUifirstManager() :
 #if defined(RS_ENABLE_VK)
     useDmaBuffer_(RSSystemParameters::GetUIFirstDmaBufferEnabled() &&
-        RSSystemProperties::IsPhoneType() && RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN)
+        RSSystemProperties::IsPhoneType() && (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
+        RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR))
 #else
     useDmaBuffer_(false)
 #endif
@@ -77,9 +78,9 @@ std::shared_ptr<DrawableV2::RSSurfaceRenderNodeDrawable> RSUifirstManager::GetSu
     return nullptr;
 }
 
-void RSUifirstManager::SetUifirstNodeEnableParam(RSSurfaceRenderNode& node, MultiThreadCacheType type)
+bool RSUifirstManager::SetUifirstNodeEnableParam(RSSurfaceRenderNode& node, MultiThreadCacheType type)
 {
-    node.SetUifirstNodeEnableParam(type); // update drawable param
+    auto ret = node.SetUifirstNodeEnableParam(type); // update drawable param
     auto isType = type == MultiThreadCacheType::LEASH_WINDOW || type == MultiThreadCacheType::NONFOCUS_WINDOW;
     if (node.IsLeashWindow() && type != MultiThreadCacheType::ARKTS_CARD) {
         for (auto& child : *(node.GetChildren())) {
@@ -96,6 +97,7 @@ void RSUifirstManager::SetUifirstNodeEnableParam(RSSurfaceRenderNode& node, Mult
             }
         }
     }
+    return ret;
 }
 
 // unref in sub when cache done
@@ -116,10 +118,12 @@ void RSUifirstManager::ResetUifirstNode(std::shared_ptr<RSSurfaceRenderNode>& no
         return;
     }
     nodePtr->SetUifirstUseStarting(false);
-    SetUifirstNodeEnableParam(*nodePtr, MultiThreadCacheType::NONE);
+    if (SetUifirstNodeEnableParam(*nodePtr, MultiThreadCacheType::NONE)) {
+        // enable ->disable
+        SetNodeNeedForceUpdateFlag(true);
+        pendingForceUpdateNode_.push_back(nodePtr->GetId());
+    }
     RSMainThread::Instance()->GetContext().AddPendingSyncNode(nodePtr);
-    RS_OPTIONAL_TRACE_NAME_FMT("ResetUifirstNode %" PRIu64", IsOnTheTree:%d, IsNodeToBeCaptured:%d",
-        nodePtr->GetId(), nodePtr->IsOnTheTree(), nodePtr->IsNodeToBeCaptured());
     auto drawable = GetSurfaceDrawableByID(nodePtr->GetId());
     if (!drawable) {
         return;
@@ -271,7 +275,7 @@ void RSUifirstManager::ProcessDoneNodeInner()
             drawable->CheckCacheSurface()) {
             drawable->UpdateCompletedCacheSurface();
             RenderGroupUpdate(drawable);
-            SetHasDoneNodeFlag(true);
+            SetNodeNeedForceUpdateFlag(true);
             pendingForceUpdateNode_.push_back(id);
         }
         subthreadProcessingNode_.erase(id);
@@ -283,7 +287,7 @@ void RSUifirstManager::ProcessDoneNode()
 #ifdef RS_ENABLE_PREFETCH
     __builtin_prefetch(&pendingResetNodes_, 0, 1);
 #endif
-    SetHasDoneNodeFlag(false);
+    SetNodeNeedForceUpdateFlag(false);
     ProcessDoneNodeInner();
 
     // reset node when node is not doing
@@ -322,8 +326,7 @@ void RSUifirstManager::ProcessDoneNode()
             continue;
         }
         auto cacheStatus = drawable->GetCacheSurfaceProcessedStatus();
-        if ((drawable->HasCachedTexture() && cacheStatus == CacheProcessStatus::WAITING) ||
-            cacheStatus == CacheProcessStatus::SKIPPED) {
+        if (cacheStatus == CacheProcessStatus::SKIPPED) {
             it = subthreadProcessingNode_.erase(it);
             continue;
         }
@@ -371,37 +374,70 @@ void RSUifirstManager::SyncHDRDisplayParam(std::shared_ptr<DrawableV2::RSSurface
 #endif
 }
 
+bool RSUifirstManager::CurSurfaceHasVisibleDirtyRegion(const std::shared_ptr<RSSurfaceRenderNode>& node)
+{
+    auto visibleRegion = node->GetVisibleRegion();
+    if (visibleRegion.IsEmpty()) {
+        RS_OPTIONAL_TRACE_NAME_FMT("curSurface name:%s id:%" PRIu64" visibleRegion is IsEmpty",
+        node->GetName().c_str(), node->GetId());
+        return false;
+    }
+    auto drawable = node->GetRenderDrawable();
+    if (!drawable) {
+        RS_TRACE_NAME_FMT("node id:%" PRIu64" drawable is nullptr", node->GetId());
+        return true;
+    }
+    auto surfaceDrawable = std::static_pointer_cast<DrawableV2::RSSurfaceRenderNodeDrawable>(drawable);
+    if (!surfaceDrawable) {
+        RS_TRACE_NAME_FMT("node id:%" PRIu64" surfaceDrawable is nullptr", node->GetId());
+        return true;
+    }
+    auto surfaceDirtyManager = surfaceDrawable->GetSyncDirtyManager();
+    if (!surfaceDirtyManager) {
+        RS_TRACE_NAME_FMT("node id:%" PRIu64" surfaceDirtyManager is nullptr", node->GetId());
+        return true;
+    }
+    auto surfaceDirtyRect = surfaceDirtyManager->GetCurrentFrameDirtyRegion();
+    Occlusion::Region surfaceDirtyRegion { { surfaceDirtyRect.left_, surfaceDirtyRect.top_,
+        surfaceDirtyRect.GetRight(), surfaceDirtyRect.GetBottom() } };
+    Occlusion::Region surfaceVisibleDirtyRegion = surfaceDirtyRegion.And(visibleRegion);
+    if (surfaceVisibleDirtyRegion.IsEmpty()) {
+        RS_OPTIONAL_TRACE_NAME_FMT("curSurface name:%s id:%" PRIu64" visibleDirtyRegion is IsEmpty",
+            node->GetName().c_str(), node->GetId());
+        return false;
+    }
+    return true;
+}
+
 bool RSUifirstManager::CheckVisibleDirtyRegionIsEmpty(const std::shared_ptr<RSSurfaceRenderNode>& node)
 {
     if (GetUiFirstMode() != UiFirstModeType::MULTI_WINDOW_MODE) {
         return false;
     }
-    for (auto& child : *node->GetSortedChildren()) {
-        if (std::shared_ptr<RSSurfaceRenderNode> surfaceNode =
-                RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(child)) {
-            auto visibleRegion = surfaceNode->GetVisibleRegion();
-            if (visibleRegion.IsEmpty()) {
-                surfaceNode->SetUIFirstIsPurge(false);
-                return true;
-            }
-            auto drawable = surfaceNode->GetRenderDrawable();
-            if (!drawable) {
-                continue;
-            }
-            auto surfaceDrawable = std::static_pointer_cast<DrawableV2::RSSurfaceRenderNodeDrawable>(drawable);
-            auto surfaceDirtyRect = surfaceDrawable->GetSyncDirtyManager()->GetCurrentFrameDirtyRegion();
-            Occlusion::Region surfaceDirtyRegion { { surfaceDirtyRect.left_, surfaceDirtyRect.top_,
-                surfaceDirtyRect.GetRight(), surfaceDirtyRect.GetBottom() } };
-            Occlusion::Region surfaceVisibleDirtyRegion = surfaceDirtyRegion.And(visibleRegion);
-            if (surfaceVisibleDirtyRegion.IsEmpty()) {
-                surfaceNode->SetUIFirstIsPurge(false);
-                return true;
-            }
-            if (!surfaceNode->GetUIFirstIsPurge()) {
-                surfaceNode->SetUIFirstIsPurge(true);
-                return false;
-            }
+    if (ROSEN_EQ(node->GetGlobalAlpha(), 0.0f) &&
+        RSMainThread::Instance()->GetSystemAnimatedScenes() == SystemAnimatedScenes::LOCKSCREEN_TO_LAUNCHER &&
+        node->IsLeashWindow()) {
+        RS_TRACE_NAME_FMT("Doing LOCKSCREEN_TO_LAUNCHER, fullTransparent node[%s] skips", node->GetName().c_str());
+        return true;
+    }
+    if (node->GetUifirstContentDirty()) {
+        return false;
+    }
+    bool hasSurfaceVisibleDirtyRegion = CurSurfaceHasVisibleDirtyRegion(node);
+    std::vector<std::pair<NodeId, std::weak_ptr<RSSurfaceRenderNode>>> allSubSurfaceNodes;
+    node->GetAllSubSurfaceNodes(allSubSurfaceNodes);
+    for (auto& [id, subSurfaceNode] : allSubSurfaceNodes) {
+        auto subSurfaceNodePtr = subSurfaceNode.lock();
+        if (!subSurfaceNodePtr) {
+            continue;
         }
+        hasSurfaceVisibleDirtyRegion =
+            hasSurfaceVisibleDirtyRegion || CurSurfaceHasVisibleDirtyRegion(subSurfaceNodePtr);
+    }
+    RS_TRACE_NAME_FMT("allSurface name:%s id:%" PRIu64" hasSurfaceVisibleDirtyRegion:%d",
+        node->GetName().c_str(), node->GetId(), hasSurfaceVisibleDirtyRegion);
+    if (!hasSurfaceVisibleDirtyRegion) {
+        return true;
     }
     return false;
 }
@@ -431,6 +467,8 @@ void RSUifirstManager::DoPurgePendingPostNodes(std::unordered_map<NodeId,
         }
 
         bool staticContent = drawable->IsCurFrameStatic(deviceType);
+        RS_TRACE_NAME_FMT("Purge node name: %s, HasCachedTexture:%d, staticContent: %d",
+            surfaceParams->GetName().c_str(), drawable->HasCachedTexture(), staticContent);
         if (drawable->HasCachedTexture() && (staticContent || CheckVisibleDirtyRegionIsEmpty(node)) &&
             (subthreadProcessingNode_.find(id) == subthreadProcessingNode_.end()) &&
             !drawable->IsSubThreadSkip()) {
@@ -458,7 +496,7 @@ void RSUifirstManager::PurgePendingPostNodes()
 
 void RSUifirstManager::PostSubTask(NodeId id)
 {
-    RS_TRACE_NAME("post UpdateCacheSurface");
+    RS_TRACE_NAME_FMT("post UpdateCacheSurface %" PRIu64"", id);
 
     if (subthreadProcessingNode_.find(id) != subthreadProcessingNode_.end()) { // drawable is doing, do not send
         RS_TRACE_NAME_FMT("node %" PRIu64" is doing", id);
@@ -763,7 +801,9 @@ void RSUifirstManager::SetNodePriorty(std::list<NodeId>& result,
     bool isFocusNodeFound = false;
     auto isFocusId = RSMainThread::Instance()->GetFocusNodeId();
     auto isLeashId = RSMainThread::Instance()->GetFocusLeashWindowId();
+    uint32_t postOrder = 0;
     for (auto& item : pendingNode) {
+        postOrder++;
         auto const& [id, value] = item;
         if (IsPreFirstLevelNodeDoingAndTryClear(value)) {
             continue;
@@ -771,13 +811,6 @@ void RSUifirstManager::SetNodePriorty(std::list<NodeId>& result,
         auto drawable = GetSurfaceDrawableByID(id);
         if (!drawable) {
             continue;
-        }
-        if (!isFocusNodeFound) {
-            if (id == isFocusId || id == isLeashId) {
-                // for resolving response latency
-                drawable->SetRenderCachePriority(NodePriorityType::SUB_FOCUSNODE_PRIORITY);
-                isFocusNodeFound = true;
-            }
         }
         if (drawable->HasCachedTexture()) {
             drawable->SetRenderCachePriority(NodePriorityType::SUB_LOW_PRIORITY);
@@ -787,10 +820,18 @@ void RSUifirstManager::SetNodePriorty(std::list<NodeId>& result,
         if (drawable->GetCacheSurfaceProcessedStatus() == CacheProcessStatus::WAITING) {
             drawable->SetRenderCachePriority(NodePriorityType::SUB_HIGH_PRIORITY);
         }
+        if (!isFocusNodeFound) {
+            if (id == isFocusId || id == isLeashId) {
+                // for resolving response latency
+                drawable->SetRenderCachePriority(NodePriorityType::SUB_FOCUSNODE_PRIORITY);
+                isFocusNodeFound = true;
+            }
+        }
         auto surfaceParams = static_cast<RSSurfaceRenderParams*>(drawable->GetRenderParams().get());
         if (surfaceParams && surfaceParams->GetPreSubHighPriorityType()) {
             drawable->SetRenderCachePriority(NodePriorityType::SUB_VIDEO_PRIORITY);
         }
+        drawable->SetUifirstPostOrder(postOrder);
         sortedSubThreadNodeIds_.emplace_back(id);
     }
 }
@@ -820,7 +861,7 @@ void RSUifirstManager::SortSubThreadNodesPriority()
             return false;
         }
         if (drawable1->GetRenderCachePriority() == drawable2->GetRenderCachePriority()) {
-            return surfaceParams2->GetPositionZ() < surfaceParams1->GetPositionZ();
+            return drawable1->GetUifirstPostOrder() > drawable2->GetUifirstPostOrder();
         } else {
             return drawable1->GetRenderCachePriority() < drawable2->GetRenderCachePriority();
         }
@@ -1202,10 +1243,10 @@ bool RSUifirstManager::IsLeashWindowCache(RSSurfaceRenderNode& node, bool animat
         if (RSUifirstManager::Instance().IsRecentTaskScene()) {
             isNeedAssignToSubThread = node.IsScale() && LeashWindowContainMainWindow(node);
         } else {
-            isNeedAssignToSubThread = animation && LeashWindowContainMainWindow(node);
+            isNeedAssignToSubThread = animation;
         }
         // 1: Planning: support multi appwindows
-        isNeedAssignToSubThread = (isNeedAssignToSubThread || ROSEN_EQ(node.GetGlobalAlpha(), 0.0f) ||
+        isNeedAssignToSubThread = (isNeedAssignToSubThread ||
                 node.GetForceUIFirst()) && !node.HasFilter() && !RSUifirstManager::Instance().rotationChanged_;
     }
 
@@ -1264,8 +1305,18 @@ bool RSUifirstManager::IsNonFocusWindowCache(RSSurfaceRenderNode& node, bool ani
 
 bool RSUifirstManager::ForceUpdateUifirstNodes(RSSurfaceRenderNode& node)
 {
-    // surfaceNode should not assign to subThread if it contains DRM children
-    if (node.isForceFlag_ && node.IsLeashWindow() && !node.GetHasProtectedLayer()) {
+    if (!isUiFirstOn_ || !node.GetUifirstSupportFlag() || node.GetUIFirstSwitch() == RSUIFirstSwitch::FORCE_DISABLE ||
+        !node.GetSpecialLayerMgr().Find(SpecialLayerType::HAS_PROTECTED)) {
+        UifirstStateChange(node, MultiThreadCacheType::NONE);
+        if (!node.isUifirstNode_) {
+            node.isUifirstDelay_++;
+            if (node.isUifirstDelay_ > EVENT_STOP_TIMEOUT) {
+                node.isUifirstNode_ = true;
+            }
+        }
+        return true;
+    }
+    if (node.isForceFlag_ && node.IsLeashWindow()) {
         RS_OPTIONAL_TRACE_NAME_FMT("ForceUpdateUifirstNodes: isUifirstEnable: %d", node.isUifirstEnable_);
         if (!node.isUifirstEnable_) {
             UifirstStateChange(node, MultiThreadCacheType::NONE);
@@ -1277,65 +1328,23 @@ bool RSUifirstManager::ForceUpdateUifirstNodes(RSSurfaceRenderNode& node)
     return false;
 }
 
-void RSUifirstManager::UifirstFirstFrameCacheState(RSSurfaceRenderNode& node)
-{
-    if (node.GetLastFrameUifirstFlag() == MultiThreadCacheType::NONE &&
-        !node.GetSubThreadAssignable()) {
-        UifirstStateChange(node, MultiThreadCacheType::NONE); // mark as draw win in RT thread
-        auto drawable = GetSurfaceDrawableByID(node.GetId());
-        if (drawable && drawable->HasCache()) {
-            node.SetSubThreadAssignable(true); // mark as assignable to uifirst next frame
-        }
-        node.SetNeedCacheSurface(true); // mark as that needs cache win in RT
-        // disable HWC, to prevent the rect of self-drawing nodes in cache from becoming transparent
-        node.SetHwcChildrenDisabledState();
-        node.SetUifirstStartingFlag(true);
-    } else {
-        UifirstStateChange(node, MultiThreadCacheType::LEASH_WINDOW);
-    }
-}
-
 void RSUifirstManager::UpdateUifirstNodes(RSSurfaceRenderNode& node, bool ancestorNodeHasAnimation)
 {
-    RS_TRACE_NAME_FMT("UpdateUifirstNodes: Id[%llu] name[%s] ForceFlag:[%d] FLId[%llu] Ani[%d] Support[%d] HdrVid[%d]"
-        " HDRPres[%d] SglDis[%d] UiFstOn[%d] HasProtLay:[%d]", node.GetId(), node.GetName().c_str(), node.isForceFlag_,
-        node.GetFirstLevelNodeId(), ancestorNodeHasAnimation, node.GetUifirstSupportFlag(), node.GetHdrVideo(),
-        node.GetHDRPresent(), RSMainThread::Instance()->IsSingleDisplay(), isUiFirstOn_, node.GetHasProtectedLayer());
+    RS_TRACE_NAME_FMT("UpdateUifirstNodes: Id[%llu] name[%s] FLId[%llu] Ani[%d] Support[%d] isUiFirstOn[%d],"
+        " isForceFlag:[%d], hasProtectedLayer:[%d] switch:[%d]", node.GetId(), node.GetName().c_str(),
+        node.GetFirstLevelNodeId(), ancestorNodeHasAnimation, node.GetUifirstSupportFlag(), isUiFirstOn_,
+        node.isForceFlag_, node.GetSpecialLayerMgr().Find(SpecialLayerType::HAS_PROTECTED), node.GetUIFirstSwitch());
     if (ForceUpdateUifirstNodes(node)) {
         return;
     }
-    if (!isUiFirstOn_ || !node.GetUifirstSupportFlag() || node.GetHasProtectedLayer()) {
-        UifirstStateChange(node, MultiThreadCacheType::NONE);
-        if (GetUiFirstMode() == UiFirstModeType::MULTI_WINDOW_MODE) {
-            if (ancestorNodeHasAnimation && !node.isUifirstNode_) {
-                /* If window scaling behavior is interrupted by animation on pc, the tag can't be reset, so next
-                 vsync need to mark uifirst on the next frame
-                */
-                node.MarkUifirstNode(true);
-            }
-            return;
-        }
-        if (!node.isUifirstNode_) {
-            node.isUifirstDelay_++;
-            if (node.isUifirstDelay_ > EVENT_STOP_TIMEOUT) {
-                node.isUifirstNode_ = true;
-            }
-            return;
-        }
-    }
-    if (RSMainThread::Instance()->IsSingleDisplay() && (node.GetHDRPresent() || node.GetHdrVideo())) {
-        UifirstStateChange(node, MultiThreadCacheType::NONE);
-        return;
-    }
     if (RSUifirstManager::IsLeashWindowCache(node, ancestorNodeHasAnimation)) {
-        UifirstFirstFrameCacheState(node);
+        UifirstStateChange(node, MultiThreadCacheType::LEASH_WINDOW);
         return;
     }
     if (RSUifirstManager::IsNonFocusWindowCache(node, ancestorNodeHasAnimation)) {
         // purpose: to avoid that RT waits uifirst cache long time when switching to uifirst first frame,
         // draw and cache win in RT on first frame, then use RT thread cache to draw until uifirst cache ready.
-        if (node.GetLastFrameUifirstFlag() == MultiThreadCacheType::NONE && !node.GetSubThreadAssignable()
-            && node.GetSurfaceWindowType() != SurfaceWindowType::SYSTEM_SCB_WINDOW) {
+        if (node.GetLastFrameUifirstFlag() == MultiThreadCacheType::NONE && !node.GetSubThreadAssignable()) {
             UifirstStateChange(node, MultiThreadCacheType::NONE);   // mark as draw win in RT thread
             node.SetSubThreadAssignable(true);                      // mark as assignable to uifirst next frame
             node.SetNeedCacheSurface(true);                         // mark as that needs cache win in RT
@@ -1394,6 +1403,10 @@ void RSUifirstManager::UifirstStateChange(RSSurfaceRenderNode& node, MultiThread
             if (currentFrameCacheType == MultiThreadCacheType::ARKTS_CARD) { // now only update ArkTSCardNode
                 node.UpdateTreeUifirstRootNodeId(node.GetId());
             }
+            if (currentFrameCacheType == MultiThreadCacheType::LEASH_WINDOW) {
+                node.SetUifirstUseStarting(LeashWindowContainMainWindowAndStarting(*surfaceNode));
+                NotifyUIStartingWindow(node.GetId(), true);
+            }
             auto func = &RSUifirstManager::ProcessTreeStateChange;
             node.RegisterTreeStateChangeCallback(func);
             node.SetUifirstStartTime(GetCurSysTime());
@@ -1401,12 +1414,10 @@ void RSUifirstManager::UifirstStateChange(RSSurfaceRenderNode& node, MultiThread
             AddCardNodes(node.GetId(), currentFrameCacheType);
             node.SetSubThreadAssignable(true);
             node.SetNeedCacheSurface(false);
-            node.SetUifirstStartingFlag(false);
         } else { // keep disable
             RS_OPTIONAL_TRACE_NAME_FMT("UIFirst_keep disable  %" PRIu64"", node.GetId());
             node.SetSubThreadAssignable(false);
             node.SetNeedCacheSurface(false);
-            node.SetUifirstStartingFlag(false);
         }
     } else { // last is enable
         auto surfaceNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(node.shared_from_this());
@@ -1428,7 +1439,6 @@ void RSUifirstManager::UifirstStateChange(RSSurfaceRenderNode& node, MultiThread
             RemoveCardNodes(node.GetId());
             node.SetSubThreadAssignable(false);
             node.SetNeedCacheSurface(false);
-            node.SetUifirstStartingFlag(false);
         }
     }
     node.SetLastFrameUifirstFlag(currentFrameCacheType);
@@ -1529,7 +1539,8 @@ void RSUifirstManager::SetUseDmaBuffer(bool val)
     std::lock_guard<std::mutex> lock(useDmaBufferMutex_);
 #if defined(RS_ENABLE_VK)
     useDmaBuffer_ = val && RSSystemParameters::GetUIFirstDmaBufferEnabled() &&
-        RSSystemProperties::IsPhoneType() && RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN;
+        RSSystemProperties::IsPhoneType() && (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
+        RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR);
 #else
     useDmaBuffer_ = false;
 #endif

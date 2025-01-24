@@ -811,10 +811,13 @@ HWTEST_F(RSInterfacesTest, SetScreenChangeCallback, Function | SmallTest | Level
 {
     ScreenId screenId = INVALID_SCREEN_ID;
     ScreenEvent screenEvent = ScreenEvent::UNKNOWN;
+    ScreenChangeReason errorReason = ScreenChangeReason::DEFAULT;
     bool callbacked = false;
-    auto callback = [&screenId, &screenEvent, &callbacked](ScreenId id, ScreenEvent event) {
+    auto callback = [&screenId, &screenEvent, &errorReason, &callbacked]
+        (ScreenId id, ScreenEvent event, ScreenChangeReason reason) {
         screenId = id;
         screenEvent = event;
+        errorReason = reason;
         callbacked = true;
     };
     int32_t status = rsInterfaces->SetScreenChangeCallback(callback);
@@ -1291,8 +1294,8 @@ HWTEST_F(RSInterfacesTest, RegisterHgmConfigChangeCallback_Test, Function | Smal
 HWTEST_F(RSInterfacesTest, NotifyLightFactorStatus001, Function | SmallTest | Level2)
 {
     ASSERT_NE(rsInterfaces, nullptr);
-    bool isSafe = false;
-    rsInterfaces->NotifyLightFactorStatus(isSafe);
+    int32_t lightFactorStatus = 0;
+    rsInterfaces->NotifyLightFactorStatus(lightFactorStatus);
     ASSERT_NE(rsInterfaces, nullptr);
 }
 
@@ -1775,6 +1778,18 @@ HWTEST_F(RSInterfacesTest, DisablePowerOffRenderControl, Function | SmallTest | 
 }
 
 /*
+ * @tc.name: ForceRefreshOneFrameWithNextVSync
+ * @tc.desc: Test ForceRefreshOneFrameWithNextVSync
+ * @tc.type: FUNC
+ * @tc.require:issueIBHG7Q
+ */
+HWTEST_F(RSInterfacesTest, ForceRefreshOneFrameWithNextVSync, Function | SmallTest | Level2)
+{
+    ASSERT_NE(rsInterfaces, nullptr);
+    rsInterfaces->ForceRefreshOneFrameWithNextVSync();
+}
+
+/*
  * @tc.name: SetCastScreenEnableSkipWindow
  * @tc.desc: Test SetCastScreenEnableSkipWindow
  * @tc.type: FUNC
@@ -2140,6 +2155,54 @@ HWTEST_F(RSInterfacesTest, SetScreenSecurityMask_002, Function | SmallTest | Lev
     std::unique_ptr<Media::PixelMap> pixelMap = Media::PixelMap::Create(color, colorLength, opts);
     int32_t ret = rsInterfaces->SetScreenSecurityMask(virtualScreenId, std::move(pixelMap));
     EXPECT_EQ(ret, SUCCESS);
+}
+
+/*
+ * @tc.name: SetScreenSecurityMask_003
+ * @tc.desc: Test SetScreenSecurityMask with too large pixelMap.
+ * @tc.type: FUNC
+ * @tc.require: issueIBCH1W
+ */
+HWTEST_F(RSInterfacesTest, SetScreenSecurityMask_003, Function | SmallTest | Level2)
+{
+    ASSERT_NE(rsInterfaces, nullptr);
+    constexpr uint32_t sizeWidth = 720;
+    constexpr uint32_t sizeHeight = 1280;
+    auto csurface = IConsumerSurface::Create();
+    EXPECT_NE(csurface, nullptr);
+    auto producer = csurface->GetProducer();
+    auto psurface = Surface::CreateSurfaceAsProducer(producer);
+    EXPECT_NE(psurface, nullptr);
+    ScreenId virtualScreenId = rsInterfaces->CreateVirtualScreen(
+        "VirtualScreenStatus0", sizeWidth, sizeHeight, psurface, INVALID_SCREEN_ID, -1);
+    EXPECT_NE(virtualScreenId, INVALID_SCREEN_ID);
+
+    constexpr uint32_t colorWidth = 5000;
+    constexpr uint32_t colorHeight = 5000;
+    uint32_t *color;
+    color = (uint32_t *)malloc(colorWidth * colorHeight * sizeof(uint32_t));
+    memset_s(color, colorWidth * colorHeight, 0xffffffff, colorWidth * colorHeight * 2);
+    uint32_t colorLength = colorWidth * colorHeight;
+    Media::InitializationOptions opts;
+    opts.size.width = colorWidth;
+    opts.size.height = colorHeight;
+    opts.pixelFormat = Media::PixelFormat::RGBA_8888;
+    opts.alphaType = Media::AlphaType::IMAGE_ALPHA_TYPE_OPAQUE;
+    std::unique_ptr<Media::PixelMap> pixelMap = Media::PixelMap::Create(color, colorLength, opts);
+    int32_t ret = rsInterfaces->SetScreenSecurityMask(virtualScreenId, std::move(pixelMap));
+    EXPECT_EQ(ret, RS_CONNECTION_ERROR);
+}
+
+/*
+ * @tc.name: NotifyScreenSwitched
+ * @tc.desc: Test NotifyScreenSwitched.
+ * @tc.type: FUNC
+ * @tc.require: issueIBH4PQ
+ */
+HWTEST_F(RSInterfacesTest, NotifyScreenSwitched, Function | SmallTest | Level2)
+{
+    ASSERT_NE(rsInterfaces, nullptr);
+    rsInterfaces->NotifyScreenSwitched();
 }
 } // namespace Rosen
 } // namespace OHOS

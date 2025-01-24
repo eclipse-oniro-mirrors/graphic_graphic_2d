@@ -41,7 +41,6 @@
 #include "common/rs_common_def.h"
 #include "common/rs_matrix3.h"
 #include "common/rs_vector4.h"
-#include "image/image.h"
 #include "modifier/rs_render_modifier.h"
 #include "pipeline/rs_draw_cmd.h"
 #include "platform/common/rs_log.h"
@@ -59,7 +58,6 @@
 #include "render/rs_path.h"
 #include "render/rs_pixel_map_shader.h"
 #include "render/rs_shader.h"
-#include "text/hm_symbol.h"
 #include "transaction/rs_ashmem_helper.h"
 #include "rs_trace.h"
 
@@ -589,18 +587,13 @@ bool RSMarshallingHelper::SkipImage(Parcel& parcel)
 // RSShader
 bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<RSShader>& val)
 {
-    if (!val || !val->GetDrawingShader()) {
+    if (!val) {
         ROSEN_LOGD("unirender: RSMarshallingHelper::Marshalling RSShader is nullptr");
         return parcel.WriteInt32(-1);
+    } else {
+        parcel.WriteInt32(0);
     }
-    auto& shaderEffect = val->GetDrawingShader();
-    int32_t type = static_cast<int32_t>(shaderEffect->GetType());
-    std::shared_ptr<Drawing::Data> data = shaderEffect->Serialize();
-    if (!data) {
-        ROSEN_LOGE("unirender: RSMarshallingHelper::Marshalling RSShader, data is nullptr");
-        return parcel.WriteInt32(-1);
-    }
-    return parcel.WriteInt32(type) && Marshalling(parcel, data);
+    return val->Marshalling(parcel);
 }
 
 bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<RSShader>& val)
@@ -610,22 +603,9 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<RSShader
         val = nullptr;
         return true;
     }
-    std::shared_ptr<Drawing::Data> data;
-    if (!Unmarshalling(parcel, data) || !data) {
-        ROSEN_LOGE("unirender: RSMarshallingHelper::Unmarshalling RSShader, data is nullptr");
-        return false;
-    }
-    Drawing::ShaderEffect::ShaderEffectType shaderEffectType = Drawing::ShaderEffect::ShaderEffectType::NO_TYPE;
-    if (type >= static_cast<int32_t>(Drawing::ShaderEffect::ShaderEffectType::COLOR_SHADER) &&
-        type <= static_cast<int32_t>(Drawing::ShaderEffect::ShaderEffectType::EXTEND_SHADER)) {
-        shaderEffectType = static_cast<Drawing::ShaderEffect::ShaderEffectType>(type);
-    }
-    auto shaderEffect = std::make_shared<Drawing::ShaderEffect>(shaderEffectType);
-    if (!shaderEffect->Deserialize(data)) {
-        ROSEN_LOGE("unirender: RSMarshallingHelper::Unmarshalling RSShader, Deserialize failed");
-        return false;
-    }
-    val = RSShader::CreateRSShader(shaderEffect);
+    val = RSShader::CreateRSShader(parcel);
+    if (val != nullptr)
+        ROSEN_LOGE("unirender: RSMarshallingHelper::Unmarshalling RSShader succes");
     return val != nullptr;
 }
 

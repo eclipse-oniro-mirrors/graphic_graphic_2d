@@ -70,6 +70,9 @@ public:
                                                          NodeId windowNodeId = 0,
                                                          bool fromXcomponent = false) = 0;
 
+    virtual int32_t GetPixelMapByProcessId(
+        std::vector<std::shared_ptr<Media::PixelMap>>& pixelMapVector, pid_t pid) = 0;
+
     virtual std::shared_ptr<Media::PixelMap> CreatePixelMapFromSurface(sptr<Surface> surface,
         const Rect &srcRect) = 0;
 
@@ -105,9 +108,10 @@ public:
         ScreenId id, const std::vector<NodeId>& securityExemptionList) = 0;
 
     virtual int32_t SetScreenSecurityMask(ScreenId id,
-        const std::shared_ptr<Media::PixelMap> securityMask) = 0;
+        std::shared_ptr<Media::PixelMap> securityMask) = 0;
 
-    virtual int32_t SetMirrorScreenVisibleRect(ScreenId id, const Rect& mainScreenRect) = 0;
+    virtual int32_t SetMirrorScreenVisibleRect(ScreenId id, const Rect& mainScreenRect,
+        bool supportRotation = false) = 0;
 
     virtual int32_t SetCastScreenEnableSkipWindow(ScreenId id, bool enable) = 0;
 
@@ -147,9 +151,13 @@ public:
 
     virtual bool GetShowRefreshRateEnabled() = 0;
 
-    virtual void SetShowRefreshRateEnabled(bool enable) = 0;
+    virtual void SetShowRefreshRateEnabled(bool enabled, int32_t type) = 0;
+
+    virtual uint32_t GetRealtimeRefreshRate(ScreenId screenId) = 0;
 
     virtual std::string GetRefreshInfo(pid_t pid) = 0;
+
+    virtual int32_t SetPhysicalScreenResolution(ScreenId id, uint32_t width, uint32_t height) = 0;
 
     virtual int32_t SetVirtualScreenResolution(ScreenId id, uint32_t width, uint32_t height) = 0;
 
@@ -157,16 +165,19 @@ public:
 
     virtual void RepaintEverything() = 0;
 
+    virtual void ForceRefreshOneFrameWithNextVSync() = 0;
+
     virtual void DisablePowerOffRenderControl(ScreenId id) = 0;
 
     virtual void SetScreenPowerStatus(ScreenId id, ScreenPowerStatus status) = 0;
 
     virtual void TakeSurfaceCapture(NodeId id, sptr<RSISurfaceCaptureCallback> callback,
         const RSSurfaceCaptureConfig& captureConfig, const RSSurfaceCaptureBlurParam& blurParam = {},
+        const Drawing::Rect& specifiedAreaRect = Drawing::Rect(0.f, 0.f, 0.f, 0.f),
         RSSurfaceCapturePermissions permissions = RSSurfaceCapturePermissions()) = 0;
 
     virtual void SetWindowFreezeImmediately(NodeId id, bool isFreeze, sptr<RSISurfaceCaptureCallback> callback,
-        const RSSurfaceCaptureConfig& captureConfig) = 0;
+        const RSSurfaceCaptureConfig& captureConfig, const RSSurfaceCaptureBlurParam& blurParam = {}) = 0;
 
     virtual void SetHwcNodeBounds(int64_t rsNodeId, float positionX, float positionY,
         float positionZ, float positionW) = 0;
@@ -279,7 +290,7 @@ public:
 
     virtual void ReportJankStats() = 0;
 
-    virtual void NotifyLightFactorStatus(bool isSafe) = 0;
+    virtual void NotifyLightFactorStatus(int32_t lightFactorStatus) = 0;
 
     virtual void NotifyPackageEvent(uint32_t listSize, const std::vector<std::string>& packageList) = 0;
 
@@ -299,14 +310,16 @@ public:
 
     virtual void ReportGameStateData(GameStateData info) = 0;
 
+    virtual void ReportRsSceneJankStart(AppInfo info) = 0;
+
+    virtual void ReportRsSceneJankEnd(AppInfo info) = 0;
+
     virtual void SetHardwareEnabled(NodeId id, bool isEnabled, SelfDrawingNodeType selfDrawingType,
         bool dynamicHardwareEnable) = 0;
 
     virtual uint32_t SetHidePrivacyContent(NodeId id, bool needHidePrivacyContent) = 0;
 
     virtual void SetCacheEnabledForRotation(bool isEnabled) = 0;
-
-    virtual void SetScreenSwitchStatus(bool flag) = 0;
 
     virtual void SetOnRemoteDiedCallback(const OnRemoteDiedCallback& callback) = 0;
 
@@ -347,6 +360,10 @@ public:
         sptr<RSISurfaceBufferCallback> callback) = 0;
 
     virtual void UnregisterSurfaceBufferCallback(pid_t pid, uint64_t uid) = 0;
+
+    virtual void NotifyScreenSwitched() = 0;
+
+    virtual void SetWindowContainer(NodeId nodeId, bool value) = 0;
 };
 } // namespace Rosen
 } // namespace OHOS
