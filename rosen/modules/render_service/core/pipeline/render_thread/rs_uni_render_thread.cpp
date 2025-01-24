@@ -898,7 +898,7 @@ void RSUniRenderThread::ReclaimMemory()
     }
 
     // When exited two apps in one second, post reclaim task.
-    if (isTimeToReclaim_) {
+    if (isTimeToReclaim_.load()) {
         // Reclaim memory when no render in 12s.
         PostReclaimMemoryTask(ClearMemoryMoment::RECLAIM_CLEAN, true);
     }
@@ -937,7 +937,7 @@ void RSUniRenderThread::PostReclaimMemoryTask(ClearMemoryMoment moment, bool isR
             });
 #endif
             this->isReclaimMemoryFinished_ = true;
-            this->isTimeToReclaim_ = false;
+            this->isTimeToReclaim_.store(false);
             this->SetClearMoment(ClearMemoryMoment::NO_CLEAR);
         }
     };
@@ -986,12 +986,12 @@ bool RSUniRenderThread::IsReclaimMemoryFinished()
 
 void RSUniRenderThread::SetTimeToReclaim(bool isTimeToReclaim)
 {
-    isTimeToReclaim_ = isTimeToReclaim;
+    isTimeToReclaim_.store(isTimeToReclaim);
 }
 
 bool RSUniRenderThread::IsTimeToReclaim()
 {
-    return isTimeToReclaim_;
+    return isTimeToReclaim_.load();
 }
 
 void RSUniRenderThread::SetDefaultClearMemoryFinished(bool isFinished)

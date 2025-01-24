@@ -225,7 +225,7 @@ private:
     bool isDefaultCleanTaskFinished_ = true;
     bool postImageReleaseTaskFlag_ = false;
     bool isReclaimMemoryFinished_ = true;
-    bool isTimeToReclaim_ = false;
+    std::atomic<bool> isTimeToReclaim_ {false};
     // vma cache
     bool vmaOptimizeFlag_ = false; // enable/disable vma cache, global flag
     // for statistic of jank frames
