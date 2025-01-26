@@ -131,6 +131,8 @@ private:
     std::mutex frameBufferSurfaceOhosMapMutex_;
     std::mutex surfaceMutex_;
 
+    bool needRetrySetRate_ = false;
+
     friend class RSUniRenderThread;
     friend class RSUifirstManager;
 };

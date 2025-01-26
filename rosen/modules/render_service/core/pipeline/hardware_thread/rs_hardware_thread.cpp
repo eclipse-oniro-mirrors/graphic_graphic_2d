@@ -608,12 +608,14 @@ void RSHardwareThread::ExecuteSwitchRefreshRate(const OutputPtr& output, uint32_
     }
     ScreenId curScreenId = hgmCore.GetFrameRateMgr()->GetCurScreenId();
     ScreenId lastCurScreenId = hgmCore.GetFrameRateMgr()->GetLastCurScreenId();
-    if (refreshRate != hgmCore.GetScreenCurrentRefreshRate(id) || lastCurScreenId != curScreenId) {
-        RS_LOGD("RSHardwareThread::CommitAndReleaseLayers screenId %{public}d refreshRate %{public}d",
-            static_cast<int>(id), refreshRate);
-        int32_t sceneId = (lastCurScreenId != curScreenId) ? SWITCH_SCREEN_SCENE : 0;
+    if (refreshRate != hgmCore.GetScreenCurrentRefreshRate(id) || lastCurScreenId != curScreenId ||
+        needRetrySetRate_) {
+        RS_LOGD("RSHardwareThread::CommitAndReleaseLayers screenId %{public}d refreshRate %{public}d \
+            needRetrySetRate %{public}d", static_cast<int>(id), refreshRate, needRetrySetRate_);
+        int32_t sceneId = (lastCurScreenId != curScreenId || needRetrySetRate_) ? SWITCH_SCREEN_SCENE : 0;
         hgmCore.GetFrameRateMgr()->SetLastCurScreenId(curScreenId);
         int32_t status = hgmCore.SetScreenRefreshRate(id, sceneId, refreshRate);
+        needRetrySetRate_ = false;
         if (status < EXEC_SUCCESS) {
             RS_LOGD("RSHardwareThread: failed to set refreshRate %{public}d, screenId %{public}" PRIu64 "", refreshRate,
                 id);
@@ -653,7 +655,10 @@ void RSHardwareThread::PerformSetActiveMode(OutputPtr output, uint64_t timestamp
                 mode.GetScreenWidth(), mode.GetScreenHeight(), mode.GetScreenRefreshRate(), mode.GetScreenModeId());
         }
 
-        screenManager->SetScreenActiveMode(id, modeId);
+        int32_t ret = screenManager->SetScreenActiveMode(id, modeId);
+        needRetrySetRate_ = (ret == StatusCode::SET_RATE_ERROR);
+        RS_LOGD_IF(needRetrySetRate_, "RSHardwareThread: need retry set modeId %{public}d", modeId);
+
         auto pendingPeriod = hgmCore.GetIdealPeriod(hgmCore.GetScreenCurrentRefreshRate(id));
         int64_t pendingTimestamp = static_cast<int64_t>(timestamp);
         if (hdiBackend_) {
