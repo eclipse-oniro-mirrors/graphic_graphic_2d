@@ -29,9 +29,7 @@ namespace SPText {
 #ifdef OHOS_TEXT_ENABLE
 const std::string ADAPTER_TEXT_HEIGHT_META_DATA = "ohos.graphics2d.text.adapter_text_height";
 const size_t VERSION_DIVISOR = 100;
-#endif
 
-#ifdef OHOS_TEXT_ENABLE
 bool TextBundleConfigParser::IsMetaDataExistInModule(const std::string& metaData,
     const AppExecFwk::BundleInfo& bundleInfo)
 {
@@ -50,25 +48,26 @@ bool TextBundleConfigParser::GetBundleInfo(AppExecFwk::BundleInfo& bundleInfo)
     sptr<ISystemAbilityManager> systemAbilityManager =
         SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     if (systemAbilityManager == nullptr) {
-        TEXT_LOGE("Failed to get systemAbilityManager");
+        TEXT_LOGE("Failed to get system ability manager");
         return false;
     }
 
     sptr<IRemoteObject> remoteObject =
         systemAbilityManager->GetSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
     if (remoteObject == nullptr) {
-        TEXT_LOGE("Failed to get remoteObject");
+        TEXT_LOGE("Failed to get remote object");
         return false;
     }
-    
-    sptr<AppExecFwk::IBundleMgr> iBundleMgr =
+
+    sptr<AppExecFwk::IBundleMgr> bundleMgr =
         iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
-    if (iBundleMgr == nullptr) {
-        TEXT_LOGE("Failed to get iBundleMgr");
+    if (bundleMgr == nullptr) {
+        TEXT_LOGE("Failed to get bundle manager");
         return false;
     }
-    if (iBundleMgr->GetBundleInfoForSelf(0, bundleInfo) != ERR_OK) {
-        TEXT_LOGE("Failed to get bundleInfo");
+    ErrCode errCode = bundleMgr->GetBundleInfoForSelf(0, bundleInfo);
+    if (errCode != ERR_OK) {
+        TEXT_LOGE("Failed to get bundle info, errcode: %{public}x", errCode);
         return false;
     }
     return true;
@@ -93,7 +92,7 @@ void TextBundleConfigParser::InitTextBundleConfig()
         InitTextBundleFailed();
         return;
     }
-    
+
     initStatus_ = true;
     bundleApiVersion_ = bundleInfo.targetVersion % VERSION_DIVISOR;
     adapterTextHeightEnable_ = IsMetaDataExistInModule(ADAPTER_TEXT_HEIGHT_META_DATA, bundleInfo);
