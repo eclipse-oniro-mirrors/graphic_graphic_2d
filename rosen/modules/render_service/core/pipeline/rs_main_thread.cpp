@@ -350,30 +350,10 @@ static inline void WaitUntilUploadTextureTaskFinished(bool isUniRender)
 #endif
 }
 
-bool RSMainThread::CheckIsAihdrSurface(const RSSurfaceRenderNode& surfaceNode)
+HdrStatus RSMainThread::CheckIsHdrSurface(const RSSurfaceRenderNode& surfaceNode)
 {
     if (!surfaceNode.IsOnTheTree()) {
-        return false;
-    }
-    const auto& surfaceBuffer = surfaceNode.GetRSSurfaceHandler()->GetBuffer();
-    if (surfaceBuffer == nullptr) {
-        return false;
-    }
-#ifdef USE_VIDEO_PROCESSING_ENGINE
-    std::vector<uint8_t> metadataType{};
-    if (surfaceBuffer->GetMetadata(Media::VideoProcessingEngine::ATTRKEY_HDR_METADATA_TYPE, metadataType) ==
-        GSERROR_OK && metadataType.size() > 0 &&
-        metadataType[0] == HDI::Display::Graphic::Common::V2_1::CM_VIDEO_AI_HDR) {
-        return true;
-    }
-#endif
-    return false;
-}
-
-bool RSMainThread::CheckIsHdrSurface(const RSSurfaceRenderNode& surfaceNode)
-{
-    if (!surfaceNode.IsOnTheTree()) {
-        return false;
+        return HdrStatus::NO_HDR;
     }
     return RSBaseRenderEngine::CheckIsHdrSurfaceBuffer(surfaceNode.GetRSSurfaceHandler()->GetBuffer());
 }
@@ -1567,13 +1547,7 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
         if (surfaceHandler->GetAvailableBufferCount() > 0) {
             needRequestNextVsync = true;
         }
-        if (CheckIsHdrSurface(*surfaceNode)) {
-            if (CheckIsAihdrSurface(*surfaceNode)) {
-                surfaceNode->SetHdrVideo(HdrStatus::AI_HDR_VIDEO);
-            } else {
-                surfaceNode->SetHdrVideo(HdrStatus::HDR_VIDEO);
-            }
-        }
+        surfaceNode->SetVideoHdrStatus(CheckIsHdrSurface(*surfaceNode));
     });
     prevHdrSwitchStatus_ = RSLuminanceControl::Get().IsHdrPictureOn();
     if (needRequestNextVsync) {
@@ -2354,9 +2328,10 @@ bool RSMainThread::DoDirectComposition(std::shared_ptr<RSBaseRenderNode> rootNod
     for (auto& surfaceNode : hardwareEnabledNodes_) {
         if (surfaceNode == nullptr) {
             RS_LOGE("RSMainThread::DoDirectComposition: surfaceNode is null!");
-            return false;
+            continue;
         }
-        displayNode->SetHdrStatus(false, surfaceNode->GetHdrVideo());
+        RSSurfaceRenderNode::UpdateSurfaceNodeNit(*surfaceNode, screenId);
+        displayNode->CollectHdrStatus(surfaceNode->GetVideoHdrStatus());
         auto surfaceHandler = surfaceNode->GetRSSurfaceHandler();
         if (!surfaceNode->IsHardwareForcedDisabled()) {
             auto params = static_cast<RSSurfaceRenderParams*>(surfaceNode->GetStagingRenderParams().get());
@@ -2369,7 +2344,7 @@ bool RSMainThread::DoDirectComposition(std::shared_ptr<RSBaseRenderNode> rootNod
             params->SetBufferSynced(true);
         }
     }
-    RSLuminanceControl::Get().SetHdrStatus(screenId, displayNode->GetHdrStatus());
+    RSLuminanceControl::Get().SetHdrStatus(screenId, displayNode->GetDisplayHdrStatus());
 #endif
 #ifdef RS_ENABLE_GPU
     RSPointerWindowManager::Instance().HardCursorCreateLayerForDirect(processor);
