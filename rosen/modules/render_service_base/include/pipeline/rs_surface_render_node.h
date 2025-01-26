@@ -1389,15 +1389,17 @@ public:
     {
         crossNodeSkippedDisplayOffsets_.clear();
     }
-    HdrStatus GetHdrVideo() const
+    HdrStatus GetVideoHdrStatus() const
     {
         return hdrVideoSurface_;
     }
 
-    void SetHdrVideo(HdrStatus hasHdrVideoSurface)
+    void SetVideoHdrStatus(HdrStatus hasHdrVideoSurface)
     {
         hdrVideoSurface_ = hasHdrVideoSurface;
     }
+    // use for updating hdr and sdr nit
+    static void UpdateSurfaceNodeNit(RSSurfaceRenderNode& surfaceNode, ScreenId screenId);
 
     void SetApiCompatibleVersion(uint32_t apiCompatibleVersion);
     uint32_t GetApiCompatibleVersion()

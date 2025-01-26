@@ -506,19 +506,19 @@ public:
     bool IsZoomStateChange() const;
     void HandleCurMainAndLeashSurfaceNodes();
 
-    // HDR Video
-    void SetHdrStatus(bool isNeedResetStatus, HdrStatus hdrStatus)
+    void CollectHdrStatus(HdrStatus hdrStatus)
     {
-        if (isNeedResetStatus) {
-            hasHdrStatus_ = HdrStatus::NO_HDR;
-            return;
-        }
-        hasHdrStatus_ = static_cast<HdrStatus>(hasHdrStatus_ | hdrStatus);
+        displayTotalHdrStatus_ = static_cast<HdrStatus>(displayTotalHdrStatus_ | hdrStatus);
     }
 
-    HdrStatus GetHdrStatus() const
+    void ResetDisplayHdrStatus()
     {
-        return hasHdrStatus_;
+        displayTotalHdrStatus_ = HdrStatus::NO_HDR;
+    }
+
+    HdrStatus GetDisplayHdrStatus() const
+    {
+        return displayTotalHdrStatus_;
     }
 
     using ScreenStatusNotifyTask = std::function<void(bool)>;
@@ -568,8 +568,7 @@ private:
     float lastRotation_ = 0.f;
     int32_t currentScbPid_ = -1;
     int32_t lastScbPid_ = -1;
-    // HDR Video
-    HdrStatus hasHdrStatus_ = HdrStatus::NO_HDR;
+    HdrStatus displayTotalHdrStatus_ = HdrStatus::NO_HDR;
     uint64_t screenId_ = 0;
     // Use in MultiLayersPerf
     size_t surfaceCountForMultiLayersPerf_ = 0;

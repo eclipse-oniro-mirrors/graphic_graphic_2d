@@ -16,6 +16,7 @@
 #include "gtest/gtest.h"
 #include "pipeline/render_thread/rs_base_render_engine.h"
 #include "pipeline/render_thread/rs_render_engine.h"
+#include "v2_1/cm_color_space.h"
 #include "foundation/graphic/graphic_2d/rosen/test/render_service/render_service/unittest/pipeline/rs_test_util.h"
 #include "recording/recording_canvas.h"
 
@@ -175,11 +176,20 @@ HWTEST(RSBaseRenderEngineUnitTest, CheckIsHdrSurfaceBuffer001, TestSize.Level1)
         return;
     }
     buffer->GetBufferHandle()->format = GraphicPixelFormat::GRAPHIC_PIXEL_FMT_YCBCR_420_SP;
-    bool ret = renderEngine->CheckIsHdrSurfaceBuffer(buffer);
-    ASSERT_EQ(ret, false);
+    HdrStatus ret = renderEngine->CheckIsHdrSurfaceBuffer(buffer);
+    ASSERT_EQ(ret, HdrStatus::NO_HDR);
     buffer->GetBufferHandle()->format = GraphicPixelFormat::GRAPHIC_PIXEL_FMT_YCBCR_P010;
     ret = renderEngine->CheckIsHdrSurfaceBuffer(buffer);
-    ASSERT_EQ(ret, false);
+    ASSERT_EQ(ret, HdrStatus::NO_HDR);
+#ifdef USE_VIDEO_PROCESSING_ENGINE
+    uint32_t hdrType = HDI::Display::Graphic::Common::V2_1::CM_VIDEO_AI_HDR;
+    std::vector<uint8_t> metadataType;
+    metadataType.resize(sizeof(hdrType));
+    memcpy_s(metadataType.data(), metadataType.size(), &hdrType, sizeof(hdrType));
+    buffer->SetMetadata(Media::VideoProcessingEngine::ATTRKEY_HDR_METADATA_TYPE, metadataType);
+    ret = renderEngine->CheckIsHdrSurfaceBuffer(buffer);
+    ASSERT_EQ(ret, HdrStatus::AI_HDR_VIDEO);
+#endif
 }
 
 #ifdef RS_ENABLE_EGLIMAGE
