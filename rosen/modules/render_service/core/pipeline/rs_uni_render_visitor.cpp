@@ -3209,11 +3209,15 @@ void RSUniRenderVisitor::UpdateHWCNodeClipRect(std::shared_ptr<RSSurfaceRenderNo
         !myFindInRoot) {
         const auto& parentProperties = hwcNodeParent->GetRenderProperties();
         const auto& parentGeoPtr = parentProperties.GetBoundsGeometry();
+        auto tempRectMapped = childRectMapped;
+        parentGeoPtr->GetMatrix().MapRect(childRectMapped, tempRectMapped);
         if (parentProperties.GetClipToBounds()) {
             auto parentDrawRectF = hwcNodeParent->GetSelfDrawRect();
             Drawing::Rect parentDrawRect(parentDrawRectF.left_, parentDrawRectF.top_,
             parentDrawRectF.GetRight(), parentDrawRectF.GetBottom());
-            childRectMapped.Intersect(parentDrawRect);
+            Drawing::Rect parentDrawClipRect;
+            parentGeoPtr->GetMatrix().MapRect(parentDrawClipRect, parentDrawRect);
+            childRectMapped.Intersect(parentDrawClipRect);
         }
         if (parentProperties.GetClipToFrame()) {
             auto left = parentProperties.GetFrameOffsetX() * parentGeoPtr->GetMatrix().Get(Drawing::Matrix::SCALE_X);
@@ -3224,8 +3228,6 @@ void RSUniRenderVisitor::UpdateHWCNodeClipRect(std::shared_ptr<RSSurfaceRenderNo
             parentGeoPtr->GetMatrix().MapRect(frameClipRect, frameRect);
             childRectMapped.Intersect(frameClipRect);
         }
-        auto tempRectMapped = childRectMapped;
-        parentGeoPtr->GetMatrix().MapRect(childRectMapped, tempRectMapped);
         hwcNodeParent = hwcNodeParent->GetParent().lock();
         if (!hwcNodeParent) {
             break;
