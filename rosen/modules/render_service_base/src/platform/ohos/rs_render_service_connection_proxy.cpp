@@ -232,7 +232,8 @@ bool RSRenderServiceConnectionProxy::CreateNode(const RSSurfaceRenderNodeConfig&
     return reply.ReadBool();
 }
 
-sptr<Surface> RSRenderServiceConnectionProxy::CreateNodeAndSurface(const RSSurfaceRenderNodeConfig& config)
+sptr<Surface> RSRenderServiceConnectionProxy::CreateNodeAndSurface(const RSSurfaceRenderNodeConfig& config,
+    bool unobscured)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -260,6 +261,10 @@ sptr<Surface> RSRenderServiceConnectionProxy::CreateNodeAndSurface(const RSSurfa
     }
     if (!data.WriteUint8(static_cast<uint8_t>(config.surfaceWindowType))) {
         ROSEN_LOGE("RSRenderServiceConnectionProxy::CreateNodeAndSurface: WriteUint8 config.surfaceWindowType err.");
+        return nullptr;
+    }
+    if (!data.WriteBool(unobscured)) {
+        ROSEN_LOGE("RSRenderServiceConnectionProxy::CreateNodeAndSurface: WriteBool unobscured err.");
         return nullptr;
     }
     option.SetFlags(MessageOption::TF_SYNC);

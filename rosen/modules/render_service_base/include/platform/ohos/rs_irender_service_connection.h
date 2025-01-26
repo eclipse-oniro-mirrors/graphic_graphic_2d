@@ -62,7 +62,7 @@ public:
 
     virtual bool CreateNode(const RSSurfaceRenderNodeConfig& config) = 0;
     virtual bool CreateNode(const RSDisplayNodeConfig& displayNodeConfig, NodeId nodeId) = 0;
-    virtual sptr<Surface> CreateNodeAndSurface(const RSSurfaceRenderNodeConfig& config) = 0;
+    virtual sptr<Surface> CreateNodeAndSurface(const RSSurfaceRenderNodeConfig& config, bool unobscured = false) = 0;
 
     virtual sptr<IVSyncConnection> CreateVSyncConnection(const std::string& name,
                                                          const sptr<VSyncIConnectionToken>& token = nullptr,

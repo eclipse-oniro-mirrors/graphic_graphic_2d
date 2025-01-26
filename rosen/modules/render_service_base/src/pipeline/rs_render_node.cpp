@@ -250,8 +250,39 @@ RSRenderNode::RSRenderNode(
       id_(id), context_(context)
 {}
 
+void RSRenderNode::AddUIExtensionChild(SharedPtr child)
+{
+    auto realParent = shared_from_this();
+    while (realParent) {
+        auto surfaceNode = realParent->ReinterpretCastTo<RSSurfaceRenderNode>();
+        if (surfaceNode && surfaceNode->IsAppWindow()) {
+            break;
+        }
+        realParent = realParent->GetParent().lock();
+    }
+    if (!realParent) {
+        return;
+    }
+    realParent->AddChild(child, -1);
+}
+
+// when child is UnobscuredUIExtension and parent is not main window, Mark Need, Rout to main window.
+bool RSRenderNode::NeedRoutedToUIExtension(SharedPtr child)
+{
+    if (!child) {
+        return false;
+    }
+    auto surfaceNode = child->ReinterpretCastTo<RSSurfaceRenderNode>();
+    bool isUnobscuredUIExtension = surfaceNode && surfaceNode->IsUnobscuredUIExtensionNode();
+    auto parent = ReinterpretCastTo<RSSurfaceRenderNode>();
+    return isUnobscuredUIExtension && !(parent && parent->IsMainWindowType());
+}
+
 void RSRenderNode::AddChild(SharedPtr child, int index)
 {
+    if (NeedRoutedToUIExtension(child)) {
+        return AddUIExtensionChild(child);
+    }
     // sanity check, avoid loop
     if (child == nullptr || child->GetId() == GetId()) {
         return;
@@ -275,8 +306,8 @@ void RSRenderNode::AddChild(SharedPtr child, int index)
     } else {
         children_.emplace(std::next(children_.begin(), index), child);
     }
-
     disappearingChildren_.remove_if([&child](const auto& pair) -> bool { return pair.first == child; });
+    
     // A child is not on the tree until its parent is on the tree
     if (isOnTheTree_) {
         child->SetIsOnTheTree(true, instanceRootNodeId_, firstLevelNodeId_, drawingCacheRootId_,
@@ -299,8 +330,23 @@ void RSRenderNode::SetContainBootAnimation(bool isContainBootAnimation)
     isFullChildrenListValid_ = false;
 }
 
+void RSRenderNode::MoveUIExtensionChild(SharedPtr child)
+{
+    if (!child) {
+        return;
+    }
+    auto parent = child->GetParent().lock();
+    if (!parent) {
+        return;
+    }
+    parent->MoveChild(child, -1);
+}
+
 void RSRenderNode::MoveChild(SharedPtr child, int index)
 {
+    if (NeedRoutedToUIExtension(child)) {
+        return MoveUIExtensionChild(child);
+    }
     if (child == nullptr || child->GetParent().lock().get() != this) {
         return;
     }
@@ -321,8 +367,23 @@ void RSRenderNode::MoveChild(SharedPtr child, int index)
     isFullChildrenListValid_ = false;
 }
 
+void RSRenderNode::RemoveUIExtensionChild(SharedPtr child)
+{
+    if (!child) {
+        return;
+    }
+    auto parent = child->GetParent().lock();
+    if (!parent) {
+        return;
+    }
+    parent->RemoveChild(child);
+}
+
 void RSRenderNode::RemoveChild(SharedPtr child, bool skipTransition)
 {
+    if (NeedRoutedToUIExtension(child)) {
+        return RemoveUIExtensionChild(child);
+    }
     if (child == nullptr) {
         return;
     }

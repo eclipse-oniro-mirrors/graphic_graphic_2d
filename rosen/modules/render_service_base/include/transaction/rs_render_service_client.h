@@ -137,7 +137,7 @@ public:
 
     bool CreateNode(const RSSurfaceRenderNodeConfig& config);
     bool CreateNode(const RSDisplayNodeConfig& displayNodeConfig, NodeId nodeId);
-    std::shared_ptr<RSSurface> CreateNodeAndSurface(const RSSurfaceRenderNodeConfig& config);
+    std::shared_ptr<RSSurface> CreateNodeAndSurface(const RSSurfaceRenderNodeConfig& config, bool unobscured = false);
     std::shared_ptr<VSyncReceiver> CreateVSyncReceiver(
         const std::string& name,
         const std::shared_ptr<OHOS::AppExecFwk::EventHandler> &looper = nullptr,

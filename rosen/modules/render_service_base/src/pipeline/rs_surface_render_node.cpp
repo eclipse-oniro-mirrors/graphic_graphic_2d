@@ -2745,10 +2745,10 @@ void RSSurfaceRenderNode::SetIsOnTheTree(bool onTree, NodeId instanceRootNodeId,
         firstLevelNodeId = GetId();
         auto parentNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(GetParent().lock());
         if (parentNode && parentNode->GetFirstLevelNodeId() != INVALID_NODEID) {
-            firstLevelNodeId = parentNode->GetFirstLevelNodeId ();
+            firstLevelNodeId = parentNode->GetFirstLevelNodeId();
         }
     }
-    if (IsSecureUIExtension()) {
+    if (IsSecureUIExtension() || IsUnobscuredUIExtensionNode()) {
         if (onTree) {
             secUIExtensionNodes_.insert(std::pair<NodeId, NodeId>(GetId(), instanceRootNodeId));
         } else {
@@ -2762,6 +2762,16 @@ void RSSurfaceRenderNode::SetIsOnTheTree(bool onTree, NodeId instanceRootNodeId,
     // in case prepare stage upper cacheRoot cannot specify dirty subnode
     RSBaseRenderNode::SetIsOnTheTree(onTree, instanceRootNodeId, firstLevelNodeId, cacheNodeId,
         INVALID_NODEID, displayNodeId);
+}
+
+void RSSurfaceRenderNode::SetUIExtensionUnobscured(bool obscured)
+{
+    UIExtensionUnobscured_ = obscured;
+}
+
+bool RSSurfaceRenderNode::GetUIExtensionUnobscured() const
+{
+    return UIExtensionUnobscured_;
 }
 
 CacheProcessStatus RSSurfaceRenderNode::GetCacheSurfaceProcessedStatus() const

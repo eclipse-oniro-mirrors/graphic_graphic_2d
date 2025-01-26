@@ -67,7 +67,7 @@ private:
 
     bool CreateNode(const RSSurfaceRenderNodeConfig& config) override;
     bool CreateNode(const RSDisplayNodeConfig& displayNodeConfig, NodeId nodeId) override;
-    sptr<Surface> CreateNodeAndSurface(const RSSurfaceRenderNodeConfig& config) override;
+    sptr<Surface> CreateNodeAndSurface(const RSSurfaceRenderNodeConfig& config, bool unobscured = false) override;
 
     sptr<IVSyncConnection> CreateVSyncConnection(const std::string& name,
                                                  const sptr<VSyncIConnectionToken>& token,
