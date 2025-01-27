@@ -1131,7 +1131,7 @@ void RSDisplayRenderNodeDrawable::DrawMirrorCopy(
     mirrorDrawable.SetOriginScreenRotation(GetOriginScreenRotation());
     virtualProcesser->CalculateTransform(mirrorDrawable);
     RSDirtyRectsDfx rsDirtyRectsDfx(*this);
-    auto slrManager = virtualProcesser->GetSlrManager();
+    std::shared_ptr<RSSLRScaleFunction> slrManager = enableVisibleRect_ ? nullptr : virtualProcesser->GetSlrManager();
     if (!uniParam.IsVirtualDirtyEnabled() || (enableVisibleRect_ && curVisibleRect_.GetTop() > 0)) {
         std::vector<RectI> emptyRects = {};
         virtualProcesser->SetRoiRegionToCodec(emptyRects);
