@@ -3498,7 +3498,7 @@ void RSMainThread::RenderServiceTreeDump(std::string& dumpString, bool forceDump
         dumpString.append("];\n");
         dumpString.append("-- CacheTransactionData: ");
         {
-            std::lock_guard<std::mutex> lock(transactionDataMutex_);
+            std::lock_guard<std::mutex> lock(transitionDataMutex_);
             TransactionDataMapDump(cachedTransactionDataMap_, dumpString);
         }
         dumpString.append("\n");

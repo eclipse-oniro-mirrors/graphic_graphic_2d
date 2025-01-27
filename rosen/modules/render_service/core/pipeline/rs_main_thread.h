@@ -816,7 +816,6 @@ private:
     // for record fastcompose time change
     uint64_t lastFastComposeTimeStamp_ = 0;
     uint64_t lastFastComposeTimeStampDiff_ = 0;
-    std::mutex transactionDataMutex_;
 };
 } // namespace OHOS::Rosen
 #endif // RS_MAIN_THREAD
