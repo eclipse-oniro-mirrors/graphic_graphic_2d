@@ -2549,7 +2549,8 @@ void RSRenderServiceConnection::DropFrameByPid(const std::vector<int32_t> pidLis
     );
 }
 
-int32_t RSRenderServiceConnection::RegisterUIExtensionCallback(uint64_t userId, sptr<RSIUIExtensionCallback> callback)
+int32_t RSRenderServiceConnection::RegisterUIExtensionCallback(uint64_t userId, sptr<RSIUIExtensionCallback> callback,
+    bool unobscured)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     if (!mainThread_) {
@@ -2559,7 +2560,7 @@ int32_t RSRenderServiceConnection::RegisterUIExtensionCallback(uint64_t userId, 
         RS_LOGE("RSRenderServiceConnection::RegisterUIExtensionCallback register null callback, failed.");
         return StatusCode::INVALID_ARGUMENTS;
     }
-    mainThread_->RegisterUIExtensionCallback(remotePid_, userId, callback);
+    mainThread_->RegisterUIExtensionCallback(remotePid_, userId, callback, unobscured);
     return StatusCode::SUCCESS;
 }
 

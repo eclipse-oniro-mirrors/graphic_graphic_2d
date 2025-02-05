@@ -903,7 +903,7 @@ protected:
     void AddUIExtensionChild(SharedPtr child);
     void MoveUIExtensionChild(SharedPtr child);
     void RemoveUIExtensionChild(SharedPtr child);
-    bool NeedRoutedToUIExtension(SharedPtr child);
+    bool NeedRoutedBasedOnUIExtension(SharedPtr child);
 
     void UpdateDrawableVecV2();
 
@@ -1080,6 +1080,8 @@ private:
     std::shared_ptr<Drawing::Surface> cacheSurface_ = nullptr;
     std::shared_ptr<Drawing::Surface> cacheCompletedSurface_ = nullptr;
     std::shared_ptr<RectF> drawRegion_ = nullptr;
+    std::shared_ptr<std::unordered_set<std::shared_ptr<RSRenderNode>>> originUECChildren_ =
+        std::make_shared<std::unordered_set<std::shared_ptr<RSRenderNode>>>();
     WeakPtr sourceCrossNode_;
     WeakPtr curCloneNodeParent_;
     std::weak_ptr<RSContext> context_ = {};
