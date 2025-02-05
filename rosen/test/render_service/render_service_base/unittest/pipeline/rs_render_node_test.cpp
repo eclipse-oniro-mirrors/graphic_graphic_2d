@@ -1334,12 +1334,12 @@ HWTEST_F(RSRenderNodeTest, UpdateAbsDrawRect, TestSize.Level1)
 }
 
 /**
- * @tc.name: UpdateHierarchyAndReturnIsLowerTest
+ * @tc.name: UpdateHierarchyTest
  * @tc.desc:
  * @tc.type: FUNC
  * @tc.require: issueI9T3XY
  */
-HWTEST_F(RSRenderNodeTest, UpdateHierarchyAndReturnIsLowerTest, TestSize.Level1)
+HWTEST_F(RSRenderNodeTest, UpdateHierarchyTest, TestSize.Level1)
 {
     auto inNodeId = id + 1;
     auto outNodeId = id + 2;
@@ -1348,22 +1348,112 @@ HWTEST_F(RSRenderNodeTest, UpdateHierarchyAndReturnIsLowerTest, TestSize.Level1)
     std::shared_ptr<RSRenderNode> outNode = std::make_shared<RSBaseRenderNode>(outNodeId, context);
     auto sharedTransitionParam = std::make_shared<SharedTransitionParam>(inNode, outNode);
     sharedTransitionParam->relation_ = SharedTransitionParam::NodeHierarchyRelation::IN_NODE_BELOW_OUT_NODE;
-    auto ret = sharedTransitionParam->UpdateHierarchyAndReturnIsLower(inNodeId);
+    auto ret = sharedTransitionParam->IsLower(inNodeId);
     EXPECT_TRUE(ret);
     sharedTransitionParam->relation_ = SharedTransitionParam::NodeHierarchyRelation::IN_NODE_ABOVE_OUT_NODE;
-    ret = sharedTransitionParam->UpdateHierarchyAndReturnIsLower(outNodeId);
+    ret = sharedTransitionParam->IsLower(outNodeId);
     EXPECT_TRUE(ret);
     sharedTransitionParam->relation_ = SharedTransitionParam::NodeHierarchyRelation::UNKNOWN;
-    ret = sharedTransitionParam->UpdateHierarchyAndReturnIsLower(otherNodeId);
+    ret = sharedTransitionParam->IsLower(otherNodeId);
     EXPECT_FALSE(ret);
     EXPECT_EQ(sharedTransitionParam->relation_, SharedTransitionParam::NodeHierarchyRelation::UNKNOWN);
 
-    ret = sharedTransitionParam->UpdateHierarchyAndReturnIsLower(outNodeId);
+    sharedTransitionParam->UpdateHierarchy(outNodeId);
     EXPECT_EQ(sharedTransitionParam->relation_, SharedTransitionParam::NodeHierarchyRelation::IN_NODE_ABOVE_OUT_NODE);
 
     sharedTransitionParam->relation_ = SharedTransitionParam::NodeHierarchyRelation::UNKNOWN;
-    ret = sharedTransitionParam->UpdateHierarchyAndReturnIsLower(inNodeId);
+    sharedTransitionParam->UpdateHierarchy(inNodeId);
     EXPECT_EQ(sharedTransitionParam->relation_, SharedTransitionParam::NodeHierarchyRelation::IN_NODE_BELOW_OUT_NODE);
+}
+
+/**
+ * @tc.name: HasRelation
+ * @tc.desc:
+ * @tc.type: FUNC
+ * @tc.require: issueI9T3XY
+ */
+HWTEST_F(RSRenderNodeTest, HasRelationTest, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderNode> inNode = std::make_shared<RSBaseRenderNode>(id + 1, context);
+    std::shared_ptr<RSRenderNode> outNode = std::make_shared<RSBaseRenderNode>(id + 2, context);
+    auto sharedTransitionParam = std::make_shared<SharedTransitionParam>(inNode, outNode);
+    EXPECT_FALSE(sharedTransitionParam->HasRelation());
+
+    sharedTransitionParam->UpdateHierarchy(inNode->GetId());
+    EXPECT_TRUE(sharedTransitionParam->HasRelation());
+}
+
+/**
+ * @tc.name: SetNeedGenerateDrawable
+ * @tc.desc:
+ * @tc.type: FUNC
+ * @tc.require: issueI9T3XY
+ */
+HWTEST_F(RSRenderNodeTest, SetNeedGenerateDrawableTest, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderNode> inNode = std::make_shared<RSBaseRenderNode>(id + 1, context);
+    std::shared_ptr<RSRenderNode> outNode = std::make_shared<RSBaseRenderNode>(id + 2, context);
+    auto sharedTransitionParam = std::make_shared<SharedTransitionParam>(inNode, outNode);
+
+    sharedTransitionParam->SetNeedGenerateDrawable(true);
+    EXPECT_TRUE(sharedTransitionParam->needGenerateDrawable_);
+
+    sharedTransitionParam->SetNeedGenerateDrawable(false);
+    EXPECT_FALSE(sharedTransitionParam->needGenerateDrawable_);
+}
+
+/**
+ * @tc.name: GenerateDrawable
+ * @tc.desc:
+ * @tc.type: FUNC
+ * @tc.require: issueI9T3XY
+ */
+HWTEST_F(RSRenderNodeTest, GenerateDrawableTest, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderNode> parent = std::make_shared<RSRenderNode>(0);
+    parent->stagingRenderParams_ = std::make_unique<RSRenderParams>(0);
+    parent->childHasSharedTransition_ = true;
+    std::shared_ptr<RSRenderNode> inNode = std::make_shared<RSBaseRenderNode>(id + 1, context);
+    std::shared_ptr<RSRenderNode> outNode = std::make_shared<RSBaseRenderNode>(id + 2, context);
+    inNode->parent_ = parent;
+    outNode->parent_ = parent;
+
+    auto sharedTransitionParam = std::make_shared<SharedTransitionParam>(inNode, outNode);
+    inNode->SetSharedTransitionParam(sharedTransitionParam);
+    outNode->SetSharedTransitionParam(sharedTransitionParam);
+
+    sharedTransitionParam->GenerateDrawable(*outNode);
+    EXPECT_FALSE(sharedTransitionParam->needGenerateDrawable_);
+
+    sharedTransitionParam->needGenerateDrawable_ = true;
+    sharedTransitionParam->UpdateHierarchy(inNode->GetId());
+    EXPECT_TRUE(sharedTransitionParam->IsLower(inNode->GetId()));
+    sharedTransitionParam->GenerateDrawable(*inNode);
+    EXPECT_TRUE(sharedTransitionParam->needGenerateDrawable_);
+
+    EXPECT_FALSE(sharedTransitionParam->IsLower(outNode->GetId()));
+    sharedTransitionParam->GenerateDrawable(*outNode);
+    EXPECT_FALSE(sharedTransitionParam->needGenerateDrawable_);
+}
+
+/**
+ * @tc.name: UpdateUnpairedSharedTransitionMap
+ * @tc.desc:
+ * @tc.type: FUNC
+ * @tc.require: issueI9T3XY
+ */
+HWTEST_F(RSRenderNodeTest, UpdateUnpairedSharedTransitionMapTest, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderNode> inNode = std::make_shared<RSBaseRenderNode>(id + 1, context);
+    std::shared_ptr<RSRenderNode> outNode = std::make_shared<RSBaseRenderNode>(id + 2, context);
+    auto sharedTransitionParam = std::make_shared<SharedTransitionParam>(inNode, outNode);
+    EXPECT_TRUE(SharedTransitionParam::unpairedShareTransitions_.empty());
+
+    SharedTransitionParam::UpdateUnpairedSharedTransitionMap(sharedTransitionParam);
+    EXPECT_FALSE(SharedTransitionParam::unpairedShareTransitions_.empty());
+
+    SharedTransitionParam::UpdateUnpairedSharedTransitionMap(sharedTransitionParam);
+    EXPECT_TRUE(SharedTransitionParam::unpairedShareTransitions_.empty());
 }
 
 /**
@@ -1378,7 +1468,7 @@ HWTEST_F(RSRenderNodeTest, ResetRelationTest, TestSize.Level1)
     std::shared_ptr<RSRenderNode> outNode = std::make_shared<RSBaseRenderNode>(id + 2, context);
     auto sharedTransitionParam = std::make_shared<SharedTransitionParam>(inNode, outNode);
 
-    (void)sharedTransitionParam->UpdateHierarchyAndReturnIsLower(inNode->GetId());
+    sharedTransitionParam->UpdateHierarchy(inNode->GetId());
     EXPECT_NE(sharedTransitionParam->relation_, SharedTransitionParam::NodeHierarchyRelation::UNKNOWN);
 
     sharedTransitionParam->ResetRelation();
