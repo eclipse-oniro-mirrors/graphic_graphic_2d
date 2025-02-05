@@ -1603,7 +1603,8 @@ void RSMainThread::CollectInfoForHardwareComposer()
 
     const auto& nodeMap = GetContext().GetNodeMap();
     nodeMap.TraverseSurfaceNodes(
-        [this, &nodeMap, &isGameNodeOnTree, gameNodeName, isAdaptive](const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode) mutable {
+        [this, &nodeMap, &isGameNodeOnTree, gameNodeName, isAdaptive]
+        (const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode) mutable {
             if (surfaceNode == nullptr) {
                 return;
             }
