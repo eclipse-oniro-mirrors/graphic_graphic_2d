@@ -1892,5 +1892,16 @@ void RSRenderServiceClient::SetWindowContainer(NodeId nodeId, bool value)
         renderService->SetWindowContainer(nodeId, value);
     }
 }
+
+#ifdef RS_ENABLE_OVERLAY_DISPLAY
+int32_t RSRenderServiceClient::SetOverlayDisplayMode(int32_t mode)
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService == nullptr) {
+        return RENDER_SERVICE_NULL;
+    }
+    return renderService->SetOverlayDisplayMode(mode);
+}
+#endif
 } // namespace Rosen
 } // namespace OHOS
