@@ -158,12 +158,21 @@ public:
     void SetShowRefreshRateEnabled(bool enable);
     bool IsLtpo() const { return isLtpo_; };
     bool IsAdaptive() const { return isAdaptive_.load(); };
-    bool IsGameNodeOnTree() const { return isGameNodeOnTree_; };
+    bool IsGameNodeOnTree() const { return isGameNodeOnTree_.load(); };
     void SetGameNodeOnTree(bool isOnTree)
     {
-        isGameNodeOnTree_ = isOnTree;
+        isGameNodeOnTree_.store(isOnTree);
     }
-    std::string GetGameNodeName() const { return curGameNodeName_; };
+    std::string GetGameNodeName() const
+    {
+        std::lock_guard<std::mutex> lock(curGameNodeNameMutex_);
+        return curGameNodeName_;
+    }
+    void SetGameNodeName(std::string nodeName)
+    {
+        std::lock_guard<std::mutex> lock(curGameNodeNameMutex_);
+        curGameNodeName_ = nodeName;
+    }
     void UniProcessDataForLtpo(uint64_t timestamp, std::shared_ptr<RSRenderFrameRateLinker> rsFrameRateLinker,
         const FrameRateLinkerMap& appFrameRateLinkers, const std::map<uint64_t, int>& vRatesMap);
 
@@ -320,8 +329,10 @@ private:
     bool isGameSupportAS_ = false;
     // current game app's self drawing node name
     std::string curGameNodeName_;
+    // concurrency protection
+    mutable std::mutex curGameNodeNameMutex_;
     // if current game's self drawing node is on tree,default false
-    bool isGameNodeOnTree_ = false;
+    std::atomic<bool> isGameNodeOnTree_ = false;
 
     std::atomic<uint64_t> timestamp_ = 0;
     std::shared_ptr<RSRenderFrameRateLinker> rsFrameRateLinker_ = nullptr;
