@@ -244,7 +244,7 @@ GSError RSUniRenderVirtualProcessor::SetColorSpace(GraphicColorGamut colorSpace)
             colorSpaceType = CM_SRGB_LIMIT;
             break;
         case GRAPHIC_COLOR_GAMUT_DISPLAY_P3:
-            colorSpaceType = CM_P3_FULL;
+            colorSpaceType = CM_P3_LIMIT;
             break;
         default:
             return GSERROR_OK;
