@@ -162,6 +162,7 @@ RSUniRenderVisitor::RSUniRenderVisitor()
 #endif
     isUIFirstDebugEnable_ = RSSystemProperties::GetUIFirstDebugEnabled();
     isCrossNodeOffscreenOn_ = RSSystemProperties::GetCrossNodeOffScreenStatus();
+    isDumpRsTreeDetailEnabled_ = RSSystemProperties::GetDumpRsTreeDetailEnabled();
 }
 
 void RSUniRenderVisitor::PartialRenderOptionInit()
@@ -212,6 +213,7 @@ RSUniRenderVisitor::RSUniRenderVisitor(const RSUniRenderVisitor& visitor) : RSUn
     doAnimate_ = visitor.doAnimate_;
     isDirty_ = visitor.isDirty_;
     layerNum_ = visitor.layerNum_;
+    isDumpRsTreeDetailEnabled_ = visitor.isDumpRsTreeDetailEnabled_;
 }
 
 RSUniRenderVisitor::~RSUniRenderVisitor() {}
@@ -763,8 +765,23 @@ void RSUniRenderVisitor::UpdateVirtualScreenVisibleRectSecurity(RSDisplayRenderN
     node.SetHasSecLayerInVisibleRect(hasSecLayerInVisibleRect);
 }
 
+void RSUniRenderVisitor::SetCurFrameInfoDetail(RSRenderNode& node, bool subTreeSkipped, bool isPostPrepare)
+{
+    if (GetDumpRsTreeDetailEnabled()) {
+        auto& curFrameInfoDetail = node.GetCurFrameInfoDetail();
+        curFrameInfoDetail.curFrameVsyncId = OHOS::Rosen::HgmCore::Instance().GetVsyncId();
+        curFrameInfoDetail.curFrameSubTreeSkipped = subTreeSkipped;
+        if (isPostPrepare) {
+            curFrameInfoDetail.curFramePostPrepareSeqNum = IncreasePostPrepareSeq();
+        } else {
+            curFrameInfoDetail.curFramePrepareSeqNum = IncreasePrepareSeq();
+        }
+    }
+}
+
 void RSUniRenderVisitor::QuickPrepareDisplayRenderNode(RSDisplayRenderNode& node)
 {
+    SetCurFrameInfoDetail(node);
     // 0. init display info
     RS_TRACE_NAME("RSUniRender:QuickPrepareDisplayRenderNode " + std::to_string(node.GetScreenId()));
     if (!InitDisplayInfo(node)) {
@@ -931,6 +948,7 @@ bool RSUniRenderVisitor::CheckSkipAndPrepareForCrossNode(RSSurfaceRenderNode& no
 
 void RSUniRenderVisitor::QuickPrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
 {
+    SetCurFrameInfoDetail(node);
     RS_OPTIONAL_TRACE_NAME_FMT("RSUniRender::QuickPrepare:[%s] nodeId[%" PRIu64 "] pid[%d] nodeType[%u]"
         " subTreeDirty[%d], crossDisplay:[%d]", node.GetName().c_str(), node.GetId(), ExtractPid(node.GetId()),
         static_cast<uint>(node.GetSurfaceNodeType()), node.IsSubTreeDirty(), node.IsFirstLevelCrossNode());
@@ -1087,6 +1105,8 @@ void RSUniRenderVisitor::PrepareForCrossNode(RSSurfaceRenderNode& node)
         bool needCacheSurface = node.QuerySubAssignable(curDisplayNode_->IsRotationChanged());
         if (needCacheSurface) {
             node.SetHwcChildrenDisabledState();
+            RS_OPTIONAL_TRACE_NAME_FMT("hwc debug: name:%s id:%" PRIu64 " children disabled by croseNode",
+                node.GetName().c_str(), node.GetId());
         }
         node.SetNeedCacheSurface(needCacheSurface);
     }
@@ -1280,6 +1300,7 @@ RSVisibleLevel RSUniRenderVisitor::GetRegionVisibleLevel(const Occlusion::Region
 
 void RSUniRenderVisitor::QuickPrepareEffectRenderNode(RSEffectRenderNode& node)
 {
+    SetCurFrameInfoDetail(node);
     // 0. check current node need to tranverse
     auto dirtyManager = curSurfaceNode_ ? curSurfaceDirtyManager_ : curDisplayDirtyManager_;
     if (!dirtyManager) {
@@ -1314,6 +1335,7 @@ void RSUniRenderVisitor::QuickPrepareEffectRenderNode(RSEffectRenderNode& node)
 
 void RSUniRenderVisitor::QuickPrepareCanvasRenderNode(RSCanvasRenderNode& node)
 {
+    SetCurFrameInfoDetail(node);
     // 0. check current node need to traverse
     auto dirtyManager = curSurfaceNode_ ? curSurfaceDirtyManager_ : curDisplayDirtyManager_;
     auto dirtyFlag = dirtyFlag_;
@@ -1437,6 +1459,10 @@ void RSUniRenderVisitor::QuickPrepareChildren(RSRenderNode& node)
     node.ResetChildUifirstSupportFlag();
     auto children = node.GetSortedChildren();
     if (NeedPrepareChindrenInReverseOrder(node)) {
+        auto& curFrameInfoDetail = node.GetCurFrameInfoDetail();
+        curFrameInfoDetail.curFrameReverseChildren = true;
+        RS_LOGD("RSUniRenderVisitor::QuickPrepareChildren NeedPrepareChindrenInReverseOrder nodeId: %{public}llu",
+            node.GetId());
         std::for_each(
             (*children).rbegin(), (*children).rend(), [this, &node](const std::shared_ptr<RSRenderNode>& child) {
             if (!child) {
@@ -1450,6 +1476,8 @@ void RSUniRenderVisitor::QuickPrepareChildren(RSRenderNode& node)
             curContainerDirty_ = containerDirty;
         });
     } else {
+        auto& curFrameInfoDetail = node.GetCurFrameInfoDetail();
+        curFrameInfoDetail.curFrameReverseChildren = false;
         std::for_each(
             (*children).begin(), (*children).end(), [this, &node](const std::shared_ptr<RSRenderNode>& child) {
             if (!child) {
@@ -1514,6 +1542,7 @@ bool RSUniRenderVisitor::InitDisplayInfo(RSDisplayRenderNode& node)
     }
     if (geoPtr->IsNeedClientCompose()) {
         isHardwareForcedDisabled_ = true;
+        RS_OPTIONAL_TRACE_NAME_FMT("hwc debug: id:%" PRIu64 " disabled by displayNode rotation", node.GetId());
     }
 
     // 5. check compositeType
@@ -1692,14 +1721,21 @@ void RSUniRenderVisitor::UpdateHwcNodeInfoForAppNode(RSSurfaceRenderNode& node)
         }
         if (!node.GetHardWareDisabledByReverse()) {
             node.SetHardwareForcedDisabledState(node.GetIsHwcPendingDisabled());
+            if (node.GetIsHwcPendingDisabled()) {
+                RS_OPTIONAL_TRACE_NAME_FMT("hwc debug: name:%s id:%" PRIu64 " disabled by IsHwcPendingDisabled",
+                    node.GetName().c_str(), node.GetId());
+            }
             node.SetIsHwcPendingDisabled(false);
         }
         node.SetInFixedRotation(displayNodeRotationChanged_ || isScreenRotationAnimating_);
         if (!IsHardwareComposerEnabled() || !node.IsDynamicHardwareEnable() ||
             curSurfaceNode_->GetVisibleRegion().IsEmpty() ||
             !node.GetRSSurfaceHandler() || !node.GetRSSurfaceHandler()->GetBuffer()) {
-            RS_OPTIONAL_TRACE_NAME_FMT("hwc debug: name:%s id:%" PRIu64 " disabled by param/invisible/no buffer",
-                node.GetName().c_str(), node.GetId());
+            RS_OPTIONAL_TRACE_NAME_FMT("hwc debug: name:%s id:%" PRIu64 " disabled by param/invisible/no buffer,"
+                "IsHardwareComposerEnabled[%d], IsDynamicHardwareEnable[%d], IsVisibleRegionEmpty[%d], IsNoBuffer[%d]",
+                node.GetName().c_str(), node.GetId(), IsHardwareComposerEnabled(), node.IsDynamicHardwareEnable(),
+                curSurfaceNode_->GetVisibleRegion().IsEmpty(),
+                node.GetRSSurfaceHandler() || node.GetRSSurfaceHandler()->GetBuffer());
 #ifdef HIPERF_TRACE_ENABLE
             RS_LOGW("hiperf_surface: name:%s disabled by param/invisible/no buffer, "
                 "surfaceRect: [%d, %d, %d, %d]->[%d, %d, %d, %d]", node.GetName().c_str(),
@@ -1792,8 +1828,6 @@ void RSUniRenderVisitor::UpdateHwcNodeEnableByBackgroundAlpha(RSSurfaceRenderNod
     bool isSolidColorEnbaled = stagingSurfaceParams->GetSelfDrawingNodeType() == SelfDrawingNodeType::XCOM &&
         node.GetRenderProperties().GetBackgroundColor() != RgbPalette::Black();
     if (bgTransport) {
-        RS_OPTIONAL_TRACE_NAME_FMT("hwc debug: name:%s id:%" PRIu64 " disabled by background color alpha < 1",
-            node.GetName().c_str(), node.GetId());
         // use in skip updating hardware state for hwcnode with background alpha in specific situation
         if (!RsCommonHook::Instance().GetHardwareEnabledByBackgroundAlphaFlag() &&
             !node.IsHardwareEnableHint()) {
@@ -1806,6 +1840,8 @@ void RSUniRenderVisitor::UpdateHwcNodeEnableByBackgroundAlpha(RSSurfaceRenderNod
                 node.GetSrcRect().GetTop(), node.GetSrcRect().GetBottom());
 #endif
             node.SetHardwareForcedDisabledState(true);
+            RS_OPTIONAL_TRACE_NAME_FMT("hwc debug: name:%s id:%" PRIu64 " disabled by background color alpha < 1",
+                node.GetName().c_str(), node.GetId());
         }
         curSurfaceNode_->SetExistTransparentHardwareEnabledNode(true);
         node.SetNodeHasBackgroundColorAlpha(true);
@@ -1903,6 +1939,9 @@ void RSUniRenderVisitor::UpdateHwcNodeEnableBySrcRect(RSSurfaceRenderNode& node)
             node.GetSrcRect().GetTop(), node.GetSrcRect().GetBottom());
 #endif
         node.SetHardwareForcedDisabledState(true);
+        RS_OPTIONAL_TRACE_NAME_FMT(
+            "hwc debug: name:%s id:%" PRIu64 " disabled by isYUVBufferFormat and localClip not match bounds",
+            node.GetName().c_str(), node.GetId());
         hwcDisabledReasonCollection_.UpdateHwcDisabledReasonForDFX(node.GetId(),
             HwcDisabledReasons::DISABLED_BY_SRC_PIXEL, node.GetName());
     }
@@ -1928,8 +1967,8 @@ void RSUniRenderVisitor::UpdateHwcNodeEnableByHwcNodeBelowSelfInApp(std::vector<
                 (rect.GetBottom() - dst.GetTop() <= MIN_OVERLAP && rect.GetBottom() - dst.GetTop() >= 0))) {
                 return;
             }
-            RS_OPTIONAL_TRACE_NAME_FMT("hwc debug: name:%s id:%" PRIu64 " disabled by hwc node above",
-                hwcNode->GetName().c_str(), hwcNode->GetId());
+            RS_OPTIONAL_TRACE_NAME_FMT("hwc debug: name:%s id:%" PRIu64 " disabled by hwc node above, rect:%s",
+                hwcNode->GetName().c_str(), hwcNode->GetId(), rect.ToString().c_str());
 #ifdef HIPERF_TRACE_ENABLE
             RS_LOGW("hiperf_surface: name:%s disabled by hwc node above, "
                 "surfaceRect: [%d, %d, %d, %d]->[%d, %d, %d, %d]", hwcNode->GetName().c_str(),
@@ -1952,7 +1991,7 @@ void RSUniRenderVisitor::UpdateHwcNodeEnableByRotateAndAlpha(std::shared_ptr<RSS
     auto alpha = hwcNode->GetGlobalAlpha();
     auto totalMatrix = hwcNode->GetTotalMatrix();
     if (alpha < 1.0f) {
-        RS_OPTIONAL_TRACE_NAME_FMT("hwc debug: name:%s id:%" PRIu64 " disabled by accumulated alpha:%.2f",
+        RS_OPTIONAL_TRACE_NAME_FMT("hwc debug: name:%s id:%" PRIu64 " disabled by accumulated alpha:%f",
             hwcNode->GetName().c_str(), hwcNode->GetId(), alpha);
 #ifdef HIPERF_TRACE_ENABLE
         RS_LOGW("hiperf_surface: name:%s disabled by accumulated alpha:%.2f, "
@@ -1974,7 +2013,7 @@ void RSUniRenderVisitor::UpdateHwcNodeEnableByRotateAndAlpha(std::shared_ptr<RSS
     bool hasRotate = !ROSEN_EQ(std::remainder(degree, 90.f), 0.f, EPSILON);
     hasRotate = hasRotate || RSUniRenderUtil::HasNonZRotationTransform(totalMatrix);
     if (hasRotate) {
-        RS_OPTIONAL_TRACE_NAME_FMT("hwc debug: name:%s id:%" PRIu64 " disabled by rotation:%d",
+        RS_OPTIONAL_TRACE_NAME_FMT("hwc debug: name:%s id:%" PRIu64 " disabled by rotation:%f",
             hwcNode->GetName().c_str(), hwcNode->GetId(), degree);
 #ifdef HIPERF_TRACE_ENABLE
         RS_LOGW("hiperf_surface: name:%s disabled by rotation:%d, surfaceRect: [%d, %d, %d, %d]->[%d, %d, %d, %d]",
@@ -2258,6 +2297,8 @@ void RSUniRenderVisitor::UpdatePointWindowDirtyStatus(std::shared_ptr<RSSurfaceR
         pointSurfaceHandler->SetGlobalZOrder(globalZOrder_ + 2);
         bool isHardCursor = RSPointerWindowManager::Instance().CheckHardCursorSupport(curDisplayNode_);
         pointWindow->SetHardwareForcedDisabledState(true);
+        RS_OPTIONAL_TRACE_NAME_FMT("hwc debug: name:%s id:%" PRIu64 " disabled by pointWindow and pointSurfaceHandler",
+            pointWindow->GetName().c_str(), pointWindow->GetId());
         bool isMirrorMode = RSPointerWindowManager::Instance().HasMirrorDisplay();
         RSPointerWindowManager::Instance().SetIsPointerEnableHwc(isHardCursor && !isMirrorMode);
         auto transform = RSUniRenderUtil::GetLayerTransform(*pointWindow, screenInfo_);
@@ -2276,8 +2317,15 @@ void RSUniRenderVisitor::UpdateTopLayersDirtyStatus(const std::vector<std::share
         if (topLayerSurfaceHandler) {
             topLayerSurfaceHandler->SetGlobalZOrder(globalZOrder_ + 1);
             topLayer->SetCalcRectInPrepare(false);
-            topLayer->SetHardwareForcedDisabledState(!IsHardwareComposerEnabled() || !topLayer->ShouldPaint() ||
-                curDisplayNode_->GetHasUniRenderHdrSurface() || !drmNodes_.empty());
+            bool disabled = !IsHardwareComposerEnabled() || !topLayer->ShouldPaint() ||
+                curDisplayNode_->GetHasUniRenderHdrSurface() || !drmNodes_.empty();
+            topLayer->SetHardwareForcedDisabledState(disabled);
+            if (disabled) {
+                RS_OPTIONAL_TRACE_NAME_FMT("hwc debug: name:%s id:%" PRIu64 " disabled by toplayers dirty status, "
+                    "IsHardwareComposerEnabled[%d],TopLayerShouldPaint[%d],HasUniRenderHdrSurface[%d],DrmNodeEmpty[%d]",
+                    topLayer->GetName().c_str(), topLayer->GetId(), IsHardwareComposerEnabled(),
+                    topLayer->ShouldPaint(), curDisplayNode_->GetHasUniRenderHdrSurface(), drmNodes_.empty());
+            }
             auto transform = RSUniRenderUtil::GetLayerTransform(*topLayer, screenInfo_);
             topLayer->UpdateHwcNodeLayerInfo(transform);
         }
@@ -2536,9 +2584,6 @@ void RSUniRenderVisitor::UpdateHwcNodeEnableByHwcNodeBelowSelf(std::vector<RectI
     for (const auto& rect : hwcRects) {
         for (auto& roundCornerAABB : hwcNode->GetIntersectedRoundCornerAABBs()) {
             if (!roundCornerAABB.IntersectRect(rect).IsEmpty()) {
-                RS_OPTIONAL_TRACE_NAME_FMT("hwc debug: name:%s id:%" PRIu64
-                    " disabled by corner radius + hwc node below",
-                    hwcNode->GetName().c_str(), hwcNode->GetId());
 #ifdef HIPERF_TRACE_ENABLE
                 RS_LOGW("hiperf_surface: name:%s disabled by corner radius + hwc node below, "
                     "surfaceRect: [%d, %d, %d, %d]->[%d, %d, %d, %d]", hwcNode->GetName().c_str(),
@@ -2550,6 +2595,8 @@ void RSUniRenderVisitor::UpdateHwcNodeEnableByHwcNodeBelowSelf(std::vector<RectI
                 if (hwcNode->GetSpecialLayerMgr().Find(SpecialLayerType::PROTECTED)) {
                     continue;
                 }
+                RS_OPTIONAL_TRACE_NAME_FMT("hwc debug: name:%s id:%" PRIu64 " disabled by corner radius +"
+                    " hwc node below, rect:%s", hwcNode->GetName().c_str(), hwcNode->GetId(), rect.ToString().c_str());
                 hwcNode->SetHardwareForcedDisabledState(true);
                 if (RSMainThread::CheckIsHdrSurface(*hwcNode) != HdrStatus::NO_HDR) {
                     curDisplayNode_->SetHasUniRenderHdrSurface(true);
@@ -2998,6 +3045,7 @@ void RSUniRenderVisitor::CollectEffectInfo(RSRenderNode& node)
 
 void RSUniRenderVisitor::PostPrepare(RSRenderNode& node, bool subTreeSkipped)
 {
+    SetCurFrameInfoDetail(node, subTreeSkipped, true);
     auto curDirtyManager = curSurfaceNode_ ? curSurfaceDirtyManager_ : curDisplayDirtyManager_;
     if (!curDirtyManager) {
         return;
@@ -3109,7 +3157,7 @@ void RSUniRenderVisitor::CheckFilterNodeInSkippedSubTreeNeedClearCache(
         }
         RectI filterRect;
         filterNode->UpdateFilterRegionInSkippedSubTree(dirtyManager, rootNode, filterRect, prepareClipRect_);
-        UpdateHwcNodeEnableByFilterRect(curSurfaceNode_, filterNode->GetOldDirtyInSurface());
+        UpdateHwcNodeEnableByFilterRect(curSurfaceNode_, filterNode->GetOldDirtyInSurface(), filterNode->GetId());
         CollectFilterInfoAndUpdateDirty(*filterNode, dirtyManager, filterRect);
     }
 }
@@ -3257,6 +3305,8 @@ void RSUniRenderVisitor::UpdateHardwareStateByHwcNodeBackgroundAlpha(
             continue;
         } else {
             hwcNodePtr->SetHardwareForcedDisabledState(true);
+            RS_OPTIONAL_TRACE_NAME_FMT("hwc debug: name:%s id:%" PRIu64 " disabled by hwc node backgound alpha",
+                hwcNodePtr->GetName().c_str(), hwcNodePtr->GetId());
         }
     }
 }
@@ -3271,8 +3321,8 @@ bool RSUniRenderVisitor::IsNodeAboveInsideOfNodeBelow(const RectI& rectAbove, st
     return false;
 }
 
-void RSUniRenderVisitor::CalcHwcNodeEnableByFilterRect(
-    std::shared_ptr<RSSurfaceRenderNode>& node, const RectI& filterRect, bool isReverseOrder)
+void RSUniRenderVisitor::CalcHwcNodeEnableByFilterRect(std::shared_ptr<RSSurfaceRenderNode>& node,
+    const RectI& filterRect, NodeId filterNodeId, bool isReverseOrder)
 {
     if (!node) {
         return;
@@ -3280,8 +3330,8 @@ void RSUniRenderVisitor::CalcHwcNodeEnableByFilterRect(
     auto dstRect = node->GetDstRect();
     bool isIntersect = !dstRect.IntersectRect(filterRect).IsEmpty();
     if (isIntersect) {
-        RS_OPTIONAL_TRACE_NAME_FMT("hwc debug: name:%s id:%" PRIu64 " disabled by filter rect",
-            node->GetName().c_str(), node->GetId());
+        RS_OPTIONAL_TRACE_NAME_FMT("hwc debug: name:%s id:%" PRIu64 " disabled by filter rect, filterId:%" PRIu64 "",
+            node->GetName().c_str(), node->GetId(), filterNodeId);
 #ifdef HIPERF_TRACE_ENABLE
         RS_LOGW("hiperf_surface: name:%s disabled by filter rect, surfaceRect: [%d, %d, %d, %d]->[%d, %d, %d, %d]",
             node->GetName().c_str(),
@@ -3298,8 +3348,8 @@ void RSUniRenderVisitor::CalcHwcNodeEnableByFilterRect(
     }
 }
 
-void RSUniRenderVisitor::UpdateHwcNodeEnableByFilterRect(
-    std::shared_ptr<RSSurfaceRenderNode>& node, const RectI& filterRect, bool isReverseOrder)
+void RSUniRenderVisitor::UpdateHwcNodeEnableByFilterRect(std::shared_ptr<RSSurfaceRenderNode>& node,
+    const RectI& filterRect, NodeId filterNodeId, bool isReverseOrder)
 {
     if (filterRect.IsEmpty()) {
         return;
@@ -3310,7 +3360,7 @@ void RSUniRenderVisitor::UpdateHwcNodeEnableByFilterRect(
             return;
         }
         for (auto hwcNode : selfDrawingNodes) {
-            CalcHwcNodeEnableByFilterRect(hwcNode, filterRect, isReverseOrder);
+            CalcHwcNodeEnableByFilterRect(hwcNode, filterRect, filterNodeId, isReverseOrder);
         }
     } else {
         const auto& hwcNodes = node->GetChildHardwareEnabledNodes();
@@ -3319,7 +3369,7 @@ void RSUniRenderVisitor::UpdateHwcNodeEnableByFilterRect(
         }
         for (auto hwcNode : hwcNodes) {
             auto hwcNodePtr = hwcNode.lock();
-            CalcHwcNodeEnableByFilterRect(hwcNodePtr, filterRect, isReverseOrder);
+            CalcHwcNodeEnableByFilterRect(hwcNodePtr, filterRect, filterNodeId, isReverseOrder);
         }
     }
 }
@@ -3360,8 +3410,8 @@ void RSUniRenderVisitor::UpdateHwcNodeEnableByGlobalFilter(std::shared_ptr<RSSur
             }
             for (auto filter = dirtyFilter->second.begin(); filter != dirtyFilter->second.end(); ++filter) {
                 if (hwcNodePtr->GetRenderProperties().GetBoundsGeometry()->GetAbsRect().Intersect(filter->second)) {
-                    RS_OPTIONAL_TRACE_NAME_FMT("hwc debug: name:%s id:%" PRIu64 " disabled by transparentDirtyFilter",
-                        hwcNodePtr->GetName().c_str(), hwcNodePtr->GetId());
+                    RS_OPTIONAL_TRACE_NAME_FMT("hwc debug: name:%s id:%" PRIu64 " disabled by transparentDirtyFilter, "
+                        "filterId:%" PRIu64 "", hwcNodePtr->GetName().c_str(), hwcNodePtr->GetId(), filter->first);
 #ifdef HIPERF_TRACE_ENABLE
                     RS_LOGW("hiperf_surface: name:%s disabled by transparentDirtyFilter, "
                         "surfaceRect: [%d, %d, %d, %d]->[%d, %d, %d, %d]", hwcNodePtr->GetName().c_str(),
@@ -3408,8 +3458,8 @@ void RSUniRenderVisitor::UpdateHwcNodeEnableByGlobalCleanFilter(
                     continue;
                 }
             }
-            RS_OPTIONAL_TRACE_NAME_FMT("hwc debug: name:%s id:%" PRIu64 " disabled by transparentCleanFilter",
-                hwcNodePtr.GetName().c_str(), hwcNodePtr.GetId());
+            RS_OPTIONAL_TRACE_NAME_FMT("hwc debug: name:%s id:%" PRIu64 " disabled by transparentCleanFilter, filterId:"
+                "%" PRIu64 "", hwcNodePtr.GetName().c_str(), hwcNodePtr.GetId(), filter->first);
 #ifdef HIPERF_TRACE_ENABLE
             RS_LOGW("hiperf_surface: name:%s disabled by transparentCleanFilter, "
                 "surfaceRect: [%d, %d, %d, %d]->[%d, %d, %d, %d]", hwcNodePtr.GetName().c_str(),

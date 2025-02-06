@@ -307,6 +307,20 @@ bool RSSystemProperties::GetHardwareComposerEnabled()
     return hardwareComposerEnabled;
 }
 
+bool RSSystemProperties::GetDoDirectCompositionEnabled()
+{
+    static bool doDirectCompositionEnabled = system::GetParameter(
+        "persist.rosen.doDirectComposition.enabled", "1") != "0";
+    return doDirectCompositionEnabled;
+}
+
+bool RSSystemProperties::GetDumpRsTreeDetailEnabled()
+{
+    static bool dumpRsTreeDetailEnabled = system::GetParameter(
+        "persist.rosen.dumpRsTreeDetail.enabled", "0") != "0";
+    return dumpRsTreeDetailEnabled;
+}
+
 bool RSSystemProperties::GetHardwareComposerEnabledForMirrorMode()
 {
     static bool hardwareComposerMirrorEnabled =

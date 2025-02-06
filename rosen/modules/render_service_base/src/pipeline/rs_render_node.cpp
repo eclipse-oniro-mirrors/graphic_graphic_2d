@@ -893,6 +893,15 @@ void RSRenderNode::DumpTree(int32_t depth, std::string& out) const
         out += ", abilityState: " +
             std::string(surfaceNode->GetAbilityState() == RSSurfaceNodeAbilityState::FOREGROUND ?
             "foreground" : "background");
+
+#if defined(ROSEN_OHOS)
+        out += ", FrameGravity: " + std::to_string((static_cast<int>(
+            surfaceNode->GetRenderProperties().GetFrameGravity())));
+        if (surfaceNode->GetRSSurfaceHandler() && surfaceNode->GetRSSurfaceHandler()->GetBuffer()) {
+            out += ", ScalingMode: " + std::to_string(
+                surfaceNode->GetRSSurfaceHandler()->GetBuffer()->GetSurfaceBufferScalingMode());
+        }
+#endif
     }
     if (sharedTransitionParam_) {
         out += sharedTransitionParam_->Dump();
@@ -909,6 +918,17 @@ void RSRenderNode::DumpTree(int32_t depth, std::string& out) const
     if (HasSubSurface()) {
         out += ", subSurfaceCnt: " + std::to_string(subSurfaceCnt_);
     }
+
+#if defined(ROSEN_OHOS)
+    if (RSSystemProperties::GetDumpRsTreeDetailEnabled()) {
+        out += ", PrepareSeq: " + std::to_string(curFrameInfoDetail_.curFramePrepareSeqNum);
+        out += ", PostPrepareSeq: " + std::to_string(curFrameInfoDetail_.curFramePostPrepareSeqNum);
+        out += ", VsyncId: " + std::to_string(curFrameInfoDetail_.curFrameVsyncId);
+        out += ", IsSubTreeSkipped: " + std::to_string(curFrameInfoDetail_.curFrameSubTreeSkipped);
+        out += ", ReverseChildren: " + std::to_string(curFrameInfoDetail_.curFrameReverseChildren);
+    }
+#endif
+    
     DumpSubClassNode(out);
     out += ", Properties: " + GetRenderProperties().Dump();
     if (GetBootAnimation()) {

@@ -63,6 +63,14 @@ class VulkanCleanupHelper;
 }
 struct SharedTransitionParam;
 
+struct CurFrameInfoDetail {
+    uint32_t curFramePrepareSeqNum;
+    uint32_t curFramePostPrepareSeqNum;
+    uint64_t curFrameVsyncId;
+    bool curFrameSubTreeSkipped;
+    bool curFrameReverseChildren;
+};
+
 class RSB_EXPORT RSRenderNode : public std::enable_shared_from_this<RSRenderNode>  {
 public:
     using WeakPtr = std::weak_ptr<RSRenderNode>;
@@ -867,6 +875,11 @@ public:
         return absRotation_;
     }
 
+    CurFrameInfoDetail& GetCurFrameInfoDetail()
+    {
+        return curFrameInfoDetail_;
+    }
+
 protected:
     virtual void OnApplyModifiers() {}
     void SetOldDirtyInSurface(RectI oldDirtyInSurface);
@@ -958,6 +971,8 @@ protected:
     RectI filterRegion_;
     ModifierDirtyTypes dirtyTypes_;
     ModifierDirtyTypes curDirtyTypes_;
+
+    CurFrameInfoDetail curFrameInfoDetail_;
 private:
     // mark cross node in physical extended screen model
     bool isCrossNode_ = false;

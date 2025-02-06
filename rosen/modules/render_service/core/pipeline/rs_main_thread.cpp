@@ -1760,6 +1760,7 @@ void RSMainThread::CheckIfHardwareForcedDisabled()
     if (isMultiDisplay && !isHardwareForcedDisabled_) {
         // Disable direct composition when hardware composer is enabled for virtual screen
         doDirectComposition_ = false;
+        RS_OPTIONAL_TRACE_NAME_FMT("rs debug: %s isMultiDisplay disable doDirectComposition", __func__);
     }
 }
 
@@ -2207,6 +2208,7 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
         RSUifirstManager::Instance().ProcessForceUpdateNode();
         RSPointerWindowManager::Instance().UpdatePointerInfo();
         doDirectComposition_ = false;
+        RS_OPTIONAL_TRACE_NAME_FMT("rs debug: %s needTraverseNodeTree disable doDirectComposition", __func__);
         uniVisitor->SetAnimateState(doWindowAnimate_);
         uniVisitor->SetDirtyFlag(isDirty_ || isAccessibilityConfigChanged_ || forceUIFirstChanged_);
         forceUIFirstChanged_ = false;
@@ -4204,7 +4206,11 @@ void RSMainThread::ResetHardwareEnabledState(bool isUniRender)
 #ifdef RS_ENABLE_GPU
         isHardwareForcedDisabled_ = !RSSystemProperties::GetHardwareComposerEnabled();
         isLastFrameDirectComposition_ = doDirectComposition_;
-        doDirectComposition_ = !isHardwareForcedDisabled_;
+        if (isHardwareForcedDisabled_) {
+            doDirectComposition_ = false;
+        } else {
+            doDirectComposition_ = RSSystemProperties::GetDoDirectCompositionEnabled();
+        }
         isHardwareEnabledBufferUpdated_ = false;
         hasProtectedLayer_ = false;
         hardwareEnabledNodes_.clear();
