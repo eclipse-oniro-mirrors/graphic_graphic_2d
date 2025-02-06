@@ -159,7 +159,7 @@ public:
     bool IsLtpo() const { return isLtpo_; };
     bool IsAdaptive() const { return isAdaptive_.load(); };
     bool IsGameNodeOnTree() const { return isGameNodeOnTree_; };
-    void SetGameNodeOnTree(const bool& isOnTree)
+    void SetGameNodeOnTree(bool isOnTree)
     {
         isGameNodeOnTree_ = isOnTree;
     }

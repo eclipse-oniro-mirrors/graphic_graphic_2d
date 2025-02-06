@@ -107,8 +107,6 @@ public:
         bool supportAS;
         // <bufferName, fps>
         std::unordered_map<std::string, int32_t> bufferFpsMap;
-        // game's self drawing node name
-        std::string nodeName;
     };
     // <"1", StrategyConfig>
     using StrategyConfigMap = std::unordered_map<std::string, StrategyConfig>;
