@@ -243,7 +243,7 @@ GSError RSUniRenderVirtualProcessor::SetColorSpaceForMetadata(GraphicColorGamut 
         return GSERROR_OK;
     }
     CM_ColorSpaceInfo colorSpaceInfo;
-    GSError ret = MetadataHelper::ConvertColorSpaceTypeToInfo(colorSpaceType, colorSpaceInfo);
+    GSError ret = MetadataHelper::ConvertColorSpaceTypeToInfo(iter->second, colorSpaceInfo);
     if (ret != GSERROR_OK) {
         RS_LOGD("RSUniRenderVirtualProcessor::SetColorSpaceForMetadata ConvertColorSpaceTypeToInfo failed.");
         return ret;
