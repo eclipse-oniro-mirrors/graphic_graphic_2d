@@ -262,12 +262,12 @@ void dumpCovData(const std::string& soPath)
 }
 
 const string DTK_HELP_LIST_STR = R"(
-Usage: rs_demo {testCaseName} [OPTIONS...]
+Usage: dtk {testCaseName} [OPTIONS...]
 Examples:
-  rs_demo drawrect
-  rs_demo drawline -testLevel 0 -testIndex 0
-  rs_demo drawrect -c 1 -f 1 -l 0 -i 0
-  rs_demo drawrect --offscreen --noDump --delay
+  dtk drawrect
+  dtk drawline -testLevel 0 -testIndex 0
+  dtk drawrect -c 1 -f 1 -l 0 -i 0
+  dtk drawrect --offscreen --noDump --delay
 OPTIONS:
   -l, -testLevel: Test Level. Run all test levels if it is -1 or not set.
   -i, -testIndex: Test index. Run all test indexes if it is -1 or not set.
