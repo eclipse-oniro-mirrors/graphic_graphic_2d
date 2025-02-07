@@ -225,21 +225,19 @@ GSError RSUniRenderVirtualProcessor::SetColorSpaceForMetadata(GraphicColorGamut 
         RS_LOGD("RSUniRenderVirtualProcessor::SetColorSpaceForMetadata renderFrame is null.");
         return GSERROR_INVALID_ARGUMENTS;
     }
-
     auto& rsSurface = renderFrame_->GetSurface();
     if (rsSurface == nullptr) {
         RS_LOGD("RSUniRenderVirtualProcessor::SetColorSpaceForMetadata surface is null.");
         return GSERROR_INVALID_ARGUMENTS;
     }
-
     auto buffer = rsSurface->GetCurrentBuffer();
     if (buffer == nullptr) {
         RS_LOGD("RSUniRenderVirtualProcessor::SetColorSpaceForMetadata buffer is null, not support get surfacebuffer.");
         return GSERROR_NO_BUFFER;
     }
     using namespace HDI::Display::Graphic::Common::V1_0;
-    auto iter = COLORSPACETYPE.find(colorSpace);
-    if (iter == COLORSPACETYPE.end()) {
+    auto iter = COLORSPACE_TYPE.find(colorSpace);
+    if (iter == COLORSPACE_TYPE.end()) {
         return GSERROR_OK;
     }
     CM_ColorSpaceInfo colorSpaceInfo;
