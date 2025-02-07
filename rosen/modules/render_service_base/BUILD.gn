@@ -673,7 +673,6 @@ ohos_source_set("librender_service_base_static") {
     debug = false
     blocklist = "./rs_base_blocklist.txt"
   }
-  all_dependent_configs = [ ":render_service_base_all_deps_config" ]
 
   public_configs = [ ":render_service_base_all_deps_config" ]
 
