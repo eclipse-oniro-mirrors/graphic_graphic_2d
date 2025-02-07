@@ -1226,14 +1226,15 @@ void HgmFrameRateManager::HandleMultiSelfOwnedScreenEvent(pid_t pid, EventInfo e
 
 void HgmFrameRateManager::MarkVoteChange(const std::string& voter)
 {
-    if (auto iter = voteRecord_.find(voter); voter != "" && (iter == voteRecord_.end() || !iter->second.second)) {
+    if (auto iter = voteRecord_.find(voter);
+        voter != "" && (iter == voteRecord_.end() || !iter->second.second) && !voterTouchEffective_) {
         return;
     }
     RS_TRACE_NAME_FMT("MarkVoteChange:%s", voter.c_str());
     Reset();
 
     VoteInfo resultVoteInfo = ProcessRefreshRateVote();
-    if (lastVoteInfo_ == resultVoteInfo) {
+    if (lastVoteInfo_ == resultVoteInfo && !voterTouchEffective_) {
         return;
     }
     lastVoteInfo_ = resultVoteInfo;
@@ -1243,7 +1244,7 @@ void HgmFrameRateManager::MarkVoteChange(const std::string& voter)
     // max used here
     FrameRateRange finalRange = {resultVoteInfo.max, resultVoteInfo.max, resultVoteInfo.max};
     auto refreshRate = CalcRefreshRate(curScreenId_.load(), finalRange);
-    if (refreshRate == currRefreshRate_ && isAmbientStatus_ < LightFactorStatus::LOW_LEVEL) {
+    if (refreshRate == currRefreshRate_ && isAmbientStatus_ < LightFactorStatus::LOW_LEVEL && !voterTouchEffective_) {
         return;
     }
 
