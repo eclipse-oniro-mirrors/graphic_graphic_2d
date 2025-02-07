@@ -1,5 +1,4 @@
 /*
- * SPDX-License-Identifier: Apache-2.0
  * Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
  */
 #ifndef DDGR_TEST_DTK_DTK_TEST_EXT_H
