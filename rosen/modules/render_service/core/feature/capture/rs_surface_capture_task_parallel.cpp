@@ -498,7 +498,7 @@ void RSSurfaceCaptureTaskParallel::AddBlur(
         }
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
         DmaMem dmaMem;
-        if (RSSystemProperties::GetDumpSurfaceType() != DumpSurfaceType::PIXELMAP && useDma &&
+        if (useDma &&
             (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
             RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR)) {
             sptr<SurfaceBuffer> surfaceBuffer = dmaMem.DmaMemAlloc(info, pixelmap);

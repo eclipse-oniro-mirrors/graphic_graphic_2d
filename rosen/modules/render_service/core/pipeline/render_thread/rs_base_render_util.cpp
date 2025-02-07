@@ -1730,7 +1730,7 @@ bool RSBaseRenderUtil::WritePixelMapToPng(Media::PixelMap& pixelMap)
     param.width = static_cast<uint32_t>(pixelMap.GetWidth());
     param.height = static_cast<uint32_t>(pixelMap.GetHeight());
     param.data = pixelMap.GetPixels();
-    param.stride = static_cast<uint32_t>(pixelMap.GetRowBytes());
+    param.stride = static_cast<uint32_t>(pixelMap.GetRowStride());
     param.bitDepth = Detail::BITMAP_DEPTH;
 
     return WriteToPng(filename, param);
