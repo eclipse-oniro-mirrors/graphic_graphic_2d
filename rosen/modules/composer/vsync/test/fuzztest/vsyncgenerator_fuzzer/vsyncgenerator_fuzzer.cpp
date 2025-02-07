@@ -26,6 +26,7 @@ namespace OHOS {
         const uint8_t* data_ = nullptr;
         size_t size_ = 0;
         size_t pos;
+        const int64_t kMaxVsyncInterval = 16666666; // 16.666666ms
     }
 
     /*
@@ -68,21 +69,21 @@ namespace OHOS {
 
         // get data
         bool enable = GetData<bool>();
-        int64_t period = GetData<int64_t>() % 16666666; // no more than 16666666ns
-        int64_t period2 = 16666666 + GetData<int64_t>() % 100000; // no more than 16666666 + 100000 ns
-        int64_t occurTimestamp = SystemTime() - (GetData<int64_t>() % 16666666);
-        int64_t nextTimestamp = SystemTime() - (GetData<int64_t>() % 16666666);
-        int64_t occurReferenceTime = SystemTime() - (GetData<int64_t>() % 16666666);
+        int64_t period = GetData<int64_t>() % kMaxVsyncInterval; // no more than 16666666ns
+        int64_t period2 = kMaxVsyncInterval + GetData<int64_t>() % 100000; // no more than 16666666 + 100000 ns
+        int64_t occurTimestamp = SystemTime() - (GetData<int64_t>() % kMaxVsyncInterval);
+        int64_t nextTimestamp = SystemTime() - (GetData<int64_t>() % kMaxVsyncInterval);
+        int64_t occurReferenceTime = SystemTime() - (GetData<int64_t>() % kMaxVsyncInterval);
         //bool isWakeup = GetData<bool>();
-        int64_t offset = GetData<int64_t>() % 16666666; // no more than 16666666ns
-        int phase = GetData<int64_t>() % 16666666; // no more than 16666666ns
-        int64_t lastTime = SystemTime() - (GetData<int64_t>() % 16666666);
-        int64_t lastTimeRecord = SystemTime() - (GetData<int64_t>() % 16666666);
+        int64_t offset = GetData<int64_t>() % kMaxVsyncInterval; // no more than 16666666ns
+        int phase = GetData<int64_t>() % kMaxVsyncInterval; // no more than 16666666ns
+        int64_t lastTime = SystemTime() - (GetData<int64_t>() % kMaxVsyncInterval);
+        int64_t lastTimeRecord = SystemTime() - (GetData<int64_t>() % kMaxVsyncInterval);
         int64_t now = SystemTime();
         std::pair<uint64_t, uint32_t> pair1 = {GetData<uint64_t>(), GetData<uint32_t>()};
         uint32_t generatorRefreshRate = GetData<uint32_t>();
         int64_t rsVsyncCount = GetData<int64_t>();
-        int64_t expectNextVsyncTime = SystemTime() + (GetData<int64_t>() % 16666666);
+        int64_t expectNextVsyncTime = SystemTime() + (GetData<int64_t>() % kMaxVsyncInterval);
         int32_t offsetByPulseNum = GetData<int32_t>();
         int64_t hardwareVsyncInterval = GetData<int64_t>();
         bool frameRateChanging = GetData<bool>();
