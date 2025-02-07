@@ -2725,6 +2725,10 @@ void RSRenderNode::ApplyModifiers()
     RS_LOGI_IF(DEBUG_NODE, "RSRenderNode::apply modifiers isFullChildrenListValid_:%{public}d"
         " isChildrenSorted_:%{public}d childrenHasSharedTransition_:%{public}d",
         isFullChildrenListValid_, isChildrenSorted_, childrenHasSharedTransition_);
+    if (const auto& sharedTransitionParam = GetSharedTransitionParam()) {
+        sharedTransitionParam->UpdateHierarchy(GetId());
+        SharedTransitionParam::UpdateUnpairedSharedTransitionMap(sharedTransitionParam);
+    }
     if (UNLIKELY(!isFullChildrenListValid_)) {
         GenerateFullChildrenList();
         AddDirtyType(RSModifierType::CHILDREN);
@@ -4864,24 +4868,64 @@ void RSRenderNode::SetChildrenHasUIExtension(bool childrenHasUIExtension)
     }
 }
 
-bool SharedTransitionParam::UpdateHierarchyAndReturnIsLower(const NodeId nodeId)
+bool SharedTransitionParam::HasRelation()
 {
-    // We already know which node is the lower one.
+    return relation_ != NodeHierarchyRelation::UNKNOWN;
+}
+
+void SharedTransitionParam::SetNeedGenerateDrawable(const bool needGenerateDrawable)
+{
+    needGenerateDrawable_ = needGenerateDrawable;
+}
+
+void SharedTransitionParam::GenerateDrawable(const RSRenderNode& node)
+{
+    if (!needGenerateDrawable_ || !HasRelation() || IsLower(node.GetId())) {
+        return;
+    }
+    if (auto parent = node.GetParent().lock()) {
+        parent->ApplyModifiers();
+    }
+    SetNeedGenerateDrawable(false);
+}
+
+void SharedTransitionParam::UpdateUnpairedSharedTransitionMap(const std::shared_ptr<SharedTransitionParam>& param)
+{
+    if (auto it = unpairedShareTransitions_.find(param->inNodeId_);
+        it != unpairedShareTransitions_.end()) {
+        // remove successfully paired share transition
+        unpairedShareTransitions_.erase(it);
+        param->paired_ = true;
+    } else {
+        // add unpaired share transition
+        unpairedShareTransitions_.emplace(param->inNodeId_, param);
+    }
+}
+
+bool SharedTransitionParam::IsLower(const NodeId nodeId) const
+{
+    if (relation_ == NodeHierarchyRelation::UNKNOWN) {
+        return false;
+    }
+    return relation_ == NodeHierarchyRelation::IN_NODE_BELOW_OUT_NODE ? inNodeId_ == nodeId : outNodeId_ == nodeId;
+}
+
+void SharedTransitionParam::UpdateHierarchy(const NodeId nodeId)
+{
+    // Skip if the hierarchy is already established
     if (relation_ != NodeHierarchyRelation::UNKNOWN) {
-        return relation_ == NodeHierarchyRelation::IN_NODE_BELOW_OUT_NODE ? inNodeId_ == nodeId : outNodeId_ == nodeId;
+        return;
     }
 
     bool visitingInNode = (nodeId == inNodeId_);
     if (!visitingInNode && nodeId != outNodeId_) {
-        return false;
+        return;
     }
     // Nodes in the same application will be traversed by order (first visited node has lower hierarchy), while
     // applications will be traversed by reverse order. If visitingInNode matches crossApplication_, inNode is above
     // outNode. Otherwise, inNode is below outNode.
     relation_ = (visitingInNode == crossApplication_) ? NodeHierarchyRelation::IN_NODE_ABOVE_OUT_NODE
                                                       : NodeHierarchyRelation::IN_NODE_BELOW_OUT_NODE;
-    // If crossApplication_ is true, first visited node (this node) has higher hierarchy. and vice versa.
-    return !crossApplication_;
 }
 
 std::string SharedTransitionParam::Dump() const

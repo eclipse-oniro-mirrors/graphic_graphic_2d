@@ -1239,19 +1239,25 @@ struct SharedTransitionParam {
     SharedTransitionParam(RSRenderNode::SharedPtr inNode, RSRenderNode::SharedPtr outNode);
 
     RSRenderNode::SharedPtr GetPairedNode(const NodeId nodeId) const;
-    bool UpdateHierarchyAndReturnIsLower(const NodeId nodeId);
+    bool IsLower(const NodeId nodeId) const;
+    void UpdateHierarchy(const NodeId nodeId);
     bool IsInAppTranSition() const
     {
         return !crossApplication_;
     }
     void InternalUnregisterSelf();
+    bool HasRelation();
+    void SetNeedGenerateDrawable(const bool needGenerateDrawable);
+    static void UpdateUnpairedSharedTransitionMap(const std::shared_ptr<SharedTransitionParam>& param);
     RSB_EXPORT std::string Dump() const;
     RSB_EXPORT void ResetRelation();
+    RSB_EXPORT void GenerateDrawable(const RSRenderNode& node);
 
     std::weak_ptr<RSRenderNode> inNode_;
     std::weak_ptr<RSRenderNode> outNode_;
     NodeId inNodeId_;
     NodeId outNodeId_;
+    bool needGenerateDrawable_ = false;
 
     RSB_EXPORT static std::map<NodeId, std::weak_ptr<SharedTransitionParam>> unpairedShareTransitions_;
     bool paired_ = true; // treated as paired by default, until we fail to pair them
