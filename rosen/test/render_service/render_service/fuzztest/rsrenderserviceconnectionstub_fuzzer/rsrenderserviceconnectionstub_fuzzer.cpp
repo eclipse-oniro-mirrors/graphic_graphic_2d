@@ -811,10 +811,31 @@ bool DoCreateVirtualScreen(const uint8_t* data, size_t size)
     MessageParcel dataParcel;
     MessageParcel replyParcel;
 
-    std::vector<uint8_t> subData =
-        fdp.ConsumeBytes<uint8_t>(fdp.ConsumeIntegralInRange<size_t>(0, fdp.remaining_bytes()));
+    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    auto remoteObject = samgr->GetSystemAbility(RENDER_SERVICE);
+    sptr<IBufferProducer> bufferProducer_ = iface_cast<IBufferProducer>(remoteObject);
+
+    uint32_t width = GetData<uint32_t>();
+    uint32_t height = GetData<uint32_t>();
+    bool useSurface = GetData<bool>();
+    uint64_t mirrorId = GetData<uint64_t>();
+    int32_t flags = GetData<int32_t>();
+    std::vector<NodeId> whiteList;
+    uint16_t listSize = GetData<uint16_t>();
+    for (int i = 0; i < listSize; i++) {
+        NodeId nodeId = GetData<NodeId>();
+        whiteList.push_back(nodeId);
+    }
     dataParcel.WriteInterfaceToken(GetDescriptor());
-    dataParcel.WriteBuffer(subData.data(), subData.size());
+    dataParcel.WriteString("name");
+    dataParcel.WriteUint32(width);
+    dataParcel.WriteUint32(height);
+    dataParcel.WriteBool(useSurface);
+    dataParcel.WriteRemoteObject(bufferProducer_->AsObject());
+    dataParcel.WriteUint64(mirrorId);
+    dataParcel.WriteInt32(flags);
+    dataParcel.WriteUInt64Vector(whiteList);
+    dataParcel.RewindRead(0);
     connectionStub_->OnRemoteRequest(code, dataParcel, replyParcel, option);
     return true;
 }
@@ -3107,6 +3128,11 @@ bool DoTakeSurfaceCapture(const uint8_t* data, size_t size)
     float top = GetData<float>();
     float right = GetData<float>();
     float bottom = GetData<float>();
+    float areaRectLeft = GetData<float>();
+    float areaRectTop = GetData<float>();
+    float areaRectRight = GetData<float>();
+    float areaRectBottom = GetData<float>();
+
     dataParcel.WriteUint64(nodeId);
     dataParcel.WriteRemoteObject(surfaceCaptureCallback->AsObject());
     dataParcel.WriteFloat(scaleX);
@@ -3121,6 +3147,10 @@ bool DoTakeSurfaceCapture(const uint8_t* data, size_t size)
     dataParcel.WriteFloat(bottom);
     dataParcel.WriteBool(isNeedBlur);
     dataParcel.WriteFloat(blurRadius);
+    dataParcel.WriteFloat(areaRectLeft);
+    dataParcel.WriteFloat(areaRectTop);
+    dataParcel.WriteFloat(areaRectRight);
+    dataParcel.WriteFloat(areaRectBottom);
     dataParcel.RewindRead(0);
     connectionStub_->OnRemoteRequest(code, dataParcel, replyParcel, option);
     return true;
@@ -3439,6 +3469,66 @@ bool DoGetScreenSupportedMetaDataKeys(const uint8_t* data, size_t size)
     connectionStub_->OnRemoteRequest(code, dataParcel, replyParcel, option);
     return true;
 }
+
+bool DoSetScreenRefreshRate(const uint8_t* data, size_t size)
+{
+    if (data == nullptr) {
+        return false;
+    }
+
+    // initialize
+    g_data = data;
+    g_size = size;
+    g_pos = 0;
+
+    auto newPid = getpid();
+    auto mainThread = RSMainThread::Instance();
+    sptr<RSIConnectionToken> token_ = new IRemoteStub<RSIConnectionToken>();
+    sptr<RSRenderServiceConnectionStub> connectionStub_ =
+        new RSRenderServiceConnection(newPid, nullptr, mainThread, nullptr, token_->AsObject(), nullptr);
+    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_SCREEN_REFRESH_RATE);
+    MessageOption option;
+    MessageParcel dataParcel;
+    MessageParcel replyParcel;
+
+    uint64_t id = GetData<uint64_t>();
+    int32_t sceneId = GetData<int32_t>();
+    int32_t rate = GetData<int32_t>();
+    dataParcel.WriteInterfaceToken(GetDescriptor());
+    dataParcel.WriteUint64(id);
+    dataParcel.WriteInt32(sceneId);
+    dataParcel.WriteInt32(rate);
+    connectionStub_->OnRemoteRequest(code, dataParcel, replyParcel, option);
+    return true;
+}
+
+bool DoGetScreenCurrentRefreshRate(const uint8_t* data, size_t size)
+{
+    if (data == nullptr) {
+        return false;
+    }
+
+    // initialize
+    g_data = data;
+    g_size = size;
+    g_pos = 0;
+
+    auto newPid = getpid();
+    auto mainThread = RSMainThread::Instance();
+    sptr<RSIConnectionToken> token_ = new IRemoteStub<RSIConnectionToken>();
+    sptr<RSRenderServiceConnectionStub> connectionStub_ =
+        new RSRenderServiceConnection(newPid, nullptr, mainThread, nullptr, token_->AsObject(), nullptr);
+    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_SCREEN_CURRENT_REFRESH_RATE);
+    MessageOption option;
+    MessageParcel dataParcel;
+    MessageParcel replyParcel;
+
+    uint64_t id = GetData<uint64_t>();
+    dataParcel.WriteInterfaceToken(GetDescriptor());
+    dataParcel.WriteUint64(id);
+    connectionStub_->OnRemoteRequest(code, dataParcel, replyParcel, option);
+    return true;
+}
 } // Rosen
 } // OHOS
 
@@ -3558,6 +3648,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::Rosen::DoRegisterOcclusionChangeCallback(data, size);
     OHOS::Rosen::DoSetVirtualScreenRefreshRate();
     OHOS::Rosen::DoGetScreenSupportedMetaDataKeys(data, size);
+    OHOS::Rosen::DoSetScreenRefreshRate(data, size);
+    OHOS::Rosen::DoGetScreenCurrentRefreshRate(data, size);
 
     return 0;
 }
