@@ -3004,6 +3004,9 @@ void RSUniRenderVisitor::CollectEffectInfo(RSRenderNode& node)
 
 void RSUniRenderVisitor::PostPrepare(RSRenderNode& node, bool subTreeSkipped)
 {
+    if (const auto& sharedTransitionParam = node.GetSharedTransitionParam()) {
+        sharedTransitionParam->GenerateDrawable(node);
+    }
     auto curDirtyManager = curSurfaceNode_ ? curSurfaceDirtyManager_ : curDisplayDirtyManager_;
     if (!curDirtyManager) {
         return;
@@ -3731,8 +3734,8 @@ void RSUniRenderVisitor::ProcessUnpairedSharedTransitionNode()
         if (!sharedTransitionParam) {
             continue;
         }
+        sharedTransitionParam->ResetRelation();
         if (!sharedTransitionParam->paired_) {
-            sharedTransitionParam->ResetRelation();
             continue;
         }
         ROSEN_LOGD("RSUniRenderVisitor::ProcessUnpairedSharedTransitionNode: mark %s as unpaired",
@@ -3740,7 +3743,6 @@ void RSUniRenderVisitor::ProcessUnpairedSharedTransitionNode()
         sharedTransitionParam->paired_ = false;
         unpairNode(sharedTransitionParam->inNode_);
         unpairNode(sharedTransitionParam->outNode_);
-        sharedTransitionParam->ResetRelation();
     }
 }
 
