@@ -1589,9 +1589,22 @@ void RSMainThread::CollectInfoForHardwareComposer()
         RS_OPTIONAL_TRACE_NAME("rs debug: uiCapture SetDoDirectComposition false");
         doDirectComposition_ = false;
     }
+
+    bool isAdaptive = false;
+    std::string gameNodeName = "";
+    bool isGameNodeOnTree = false;
+
+    auto& hgmCore = OHOS::Rosen::HgmCore::Instance();
+    auto frameRateMgr = hgmCore.GetFrameRateMgr();
+    if (LIKELY(frameRateMgr != nullptr)) {
+        isAdaptive = frameRateMgr->IsAdaptive();
+        gameNodeName = frameRateMgr->GetGameNodeName();
+    }
+
     const auto& nodeMap = GetContext().GetNodeMap();
     nodeMap.TraverseSurfaceNodes(
-        [this, &nodeMap](const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode) mutable {
+        [this, &nodeMap, &isGameNodeOnTree, gameNodeName, isAdaptive]
+        (const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode) mutable {
             if (surfaceNode == nullptr) {
                 return;
             }
@@ -1617,6 +1630,10 @@ void RSMainThread::CollectInfoForHardwareComposer()
                         "and buffer consumed", surfaceNode->GetName().c_str(), surfaceNode->GetId());
                 }
                 return;
+            }
+
+            if (isAdaptive && gameNodeName == surfaceNode->GetName()) {
+                isGameNodeOnTree = true;
             }
 
             if (surfaceNode->IsLeashWindow() && surfaceNode->GetForceUIFirstChanged()) {
@@ -1678,6 +1695,11 @@ void RSMainThread::CollectInfoForHardwareComposer()
                 isHardwareEnabledBufferUpdated_ = true;
             }
         });
+    if (isAdaptive && LIKELY(frameRateMgr != nullptr) && isGameNodeOnTree != isLastGameNodeOnTree_) {
+        RS_TRACE_NAME_FMT("Adaptive Sync Mode, game node on tree: %d", isGameNodeOnTree);
+        frameRateMgr->SetGameNodeOnTree(isGameNodeOnTree);
+    }
+    isLastGameNodeOnTree_ = isGameNodeOnTree;
 #endif
 }
 
@@ -3153,10 +3175,11 @@ void RSMainThread::Animate(uint64_t timestamp)
             return false;
         }
         totalAnimationSize += node->animationManager_.GetAnimationsSize();
-        auto frameRateGetFunc = [this](const RSPropertyUnit unit, float velocity) -> int32_t {
+        auto frameRateGetFunc =
+            [this](const RSPropertyUnit unit, float velocity, int32_t area, int32_t length) -> int32_t {
             auto frameRateMgr = HgmCore::Instance().GetFrameRateMgr();
             if (frameRateMgr != nullptr) {
-                return frameRateMgr->GetExpectedFrameRate(unit, velocity);
+                return frameRateMgr->GetExpectedFrameRate(unit, velocity, area, length);
             }
             return 0;
         };
@@ -3347,10 +3370,9 @@ void RSMainThread::RegisterApplicationAgent(uint32_t pid, sptr<IApplicationAgent
 
 void RSMainThread::UnRegisterApplicationAgent(sptr<IApplicationAgent> app)
 {
-    // Preferentially open in wearable
-    if (system::GetParameter("const.product.devicetype", "pc") == "wearable") {
-        MemoryManager::CheckIsClearApp();
-    }
+    // When exited two apps in one second, post reclaim task.
+    MemoryManager::CheckIsClearApp();
+
     EraseIf(applicationAgentMap_,
         [&app](const auto& iter) { return iter.second && app && iter.second->AsObject() == app->AsObject(); });
 }

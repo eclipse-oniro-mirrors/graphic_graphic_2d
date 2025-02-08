@@ -779,56 +779,87 @@ void HgmFrameRateManager::Reset()
     appChangeData_.clear();
 }
 
-int32_t HgmFrameRateManager::GetExpectedFrameRate(const RSPropertyUnit unit, float velocity) const
+int32_t HgmFrameRateManager::GetExpectedFrameRate(const RSPropertyUnit unit, float velocityPx,
+    int32_t areaPx, int32_t lengthPx) const
 {
-    switch (unit) {
-        case RSPropertyUnit::PIXEL_POSITION:
-            return GetPreferredFps("translate", PixelToMM(velocity));
-        case RSPropertyUnit::PIXEL_SIZE:
-        case RSPropertyUnit::RATIO_SCALE:
-            return GetPreferredFps("scale", PixelToMM(velocity));
-        case RSPropertyUnit::ANGLE_ROTATION:
-            return GetPreferredFps("rotation", PixelToMM(velocity));
-        default:
-            return 0;
+    static const std::map<RSPropertyUnit, std::string> typeMap = {
+        {RSPropertyUnit::PIXEL_POSITION, "translate"},
+        {RSPropertyUnit::PIXEL_SIZE, "scale"},
+        {RSPropertyUnit::RATIO_SCALE, "scale"},
+        {RSPropertyUnit::ANGLE_ROTATION, "rotation"}
+    };
+    if (auto it = typeMap.find(unit); it != typeMap.end()) {
+        return GetPreferredFps(it->second, PixelToMM(velocityPx), SqrPixelToSqrMM(areaPx), PixelToMM(lengthPx));
     }
+    return 0;
 }
 
-int32_t HgmFrameRateManager::GetPreferredFps(const std::string& type, float velocity) const
+int32_t HgmFrameRateManager::GetPreferredFps(const std::string& type, float velocityMM,
+    float areaSqrMM, float lengthMM) const
 {
     auto &configData = HgmCore::Instance().GetPolicyConfigData();
     if (!configData) {
         return 0;
     }
-    if (ROSEN_EQ(velocity, 0.f)) {
+    if (ROSEN_EQ(velocityMM, 0.f)) {
         return 0;
     }
+    const auto curScreenStrategyId = curScreenStrategyId_;
     const std::string settingMode = std::to_string(curRefreshRateMode_);
-    if (configData->screenConfigs_.count(curScreenStrategyId_) &&
-        configData->screenConfigs_[curScreenStrategyId_].count(settingMode) &&
-        configData->screenConfigs_[curScreenStrategyId_][settingMode].animationDynamicSettings.count(type)) {
-        auto& config = configData->screenConfigs_[curScreenStrategyId_][settingMode].animationDynamicSettings[type];
-        auto iter = std::find_if(config.begin(), config.end(), [&velocity](const auto& pair) {
-            return velocity >= pair.second.min && (velocity < pair.second.max || pair.second.max == -1);
-        });
+    if (configData->screenConfigs_.find(curScreenStrategyId) == configData->screenConfigs_.end() ||
+        configData->screenConfigs_[curScreenStrategyId].find(settingMode) ==
+        configData->screenConfigs_[curScreenStrategyId].end()) {
+        return 0;
+    }
+    auto& screenSetting = configData->screenConfigs_[curScreenStrategyId][settingMode];
+    auto matchFunc = [velocityMM](const auto& pair) {
+        return velocityMM >= pair.second.min && (velocityMM < pair.second.max || pair.second.max == -1);
+    };
+
+    // find result if it's small size animation
+    bool needCheck = screenSetting.smallSizeArea > 0 && screenSetting.smallSizeLength > 0;
+    bool matchArea = areaSqrMM > 0 && areaSqrMM < screenSetting.smallSizeArea;
+    bool matchLength = lengthMM > 0 && lengthMM < screenSetting.smallSizeLength;
+    if (needCheck && matchArea && matchLength &&
+        screenSetting.smallSizeAnimationDynamicSettings.find(type) !=
+        screenSetting.smallSizeAnimationDynamicSettings.end()) {
+        auto& config = screenSetting.smallSizeAnimationDynamicSettings[type];
+        auto iter = std::find_if(config.begin(), config.end(), matchFunc);
         if (iter != config.end()) {
-            RS_OPTIONAL_TRACE_NAME_FMT("GetPreferredFps: type: %s, speed: %f, rate: %d",
-                type.c_str(), velocity, iter->second.preferred_fps);
+            RS_OPTIONAL_TRACE_NAME_FMT("GetPreferredFps (small size): type: %s, speed: %f, area: %f, length: %f,"
+                "rate: %d", type.c_str(), velocityMM, areaSqrMM, lengthMM, iter->second.preferred_fps);
+            return iter->second.preferred_fps;
+        }
+    }
+
+    // it's not a small size animation or current small size config don't cover it, find result in normal config
+    if (screenSetting.animationDynamicSettings.find(type) != screenSetting.animationDynamicSettings.end()) {
+        auto& config = screenSetting.animationDynamicSettings[type];
+        auto iter = std::find_if(config.begin(), config.end(), matchFunc);
+        if (iter != config.end()) {
+            RS_OPTIONAL_TRACE_NAME_FMT("GetPreferredFps: type: %s, speed: %f, area: %f, length: %f, rate: %d",
+                type.c_str(), velocityMM, areaSqrMM, lengthMM, iter->second.preferred_fps);
             return iter->second.preferred_fps;
         }
     }
     return 0;
 }
 
-float HgmFrameRateManager::PixelToMM(float velocity)
+template<typename T>
+float HgmFrameRateManager::PixelToMM(T pixel)
 {
-    float velocityMM = 0.0f;
     auto& hgmCore = HgmCore::Instance();
     sptr<HgmScreen> hgmScreen = hgmCore.GetScreen(hgmCore.GetActiveScreenId());
     if (hgmScreen && hgmScreen->GetPpi() > 0.f) {
-        velocityMM = velocity / hgmScreen->GetPpi() * INCH_2_MM;
+        return pixel / hgmScreen->GetPpi() * INCH_2_MM;
     }
-    return velocityMM;
+    return 0.f;
+}
+
+template<typename T>
+float HgmFrameRateManager::SqrPixelToSqrMM(T sqrPixel)
+{
+    return PixelToMM(PixelToMM(sqrPixel));
 }
 
 void HgmFrameRateManager::HandleLightFactorStatus(pid_t pid, int32_t state)
@@ -1178,8 +1209,10 @@ void HgmFrameRateManager::HandleGamesEvent(pid_t pid, EventInfo eventInfo)
     PolicyConfigData::StrategyConfig config;
     if (multiAppStrategy_.GetAppStrategyConfig(pkgName, config) == EXEC_SUCCESS) {
         isGameSupportAS_ = config.supportAS;
+        SetGameNodeName(multiAppStrategy_.GetGameNodeName(pkgName));
     } else {
         isGameSupportAS_ = false;
+        SetGameNodeName("");
     }
     DeliverRefreshRateVote(
         {"VOTER_GAMES", eventInfo.minRefreshRate, eventInfo.maxRefreshRate, gamePid}, eventInfo.eventStatus);
@@ -1195,14 +1228,15 @@ void HgmFrameRateManager::HandleMultiSelfOwnedScreenEvent(pid_t pid, EventInfo e
 
 void HgmFrameRateManager::MarkVoteChange(const std::string& voter)
 {
-    if (auto iter = voteRecord_.find(voter); voter != "" && (iter == voteRecord_.end() || !iter->second.second)) {
+    if (auto iter = voteRecord_.find(voter);
+        voter != "" && (iter == voteRecord_.end() || !iter->second.second) && !voterTouchEffective_) {
         return;
     }
     RS_TRACE_NAME_FMT("MarkVoteChange:%s", voter.c_str());
     Reset();
 
     VoteInfo resultVoteInfo = ProcessRefreshRateVote();
-    if (lastVoteInfo_ == resultVoteInfo) {
+    if (lastVoteInfo_ == resultVoteInfo && !voterTouchEffective_) {
         return;
     }
     lastVoteInfo_ = resultVoteInfo;
@@ -1212,7 +1246,7 @@ void HgmFrameRateManager::MarkVoteChange(const std::string& voter)
     // max used here
     FrameRateRange finalRange = {resultVoteInfo.max, resultVoteInfo.max, resultVoteInfo.max};
     auto refreshRate = CalcRefreshRate(curScreenId_.load(), finalRange);
-    if (refreshRate == currRefreshRate_ && isAmbientStatus_ < LightFactorStatus::LOW_LEVEL) {
+    if (refreshRate == currRefreshRate_ && isAmbientStatus_ < LightFactorStatus::LOW_LEVEL && !voterTouchEffective_) {
         return;
     }
 

@@ -132,6 +132,8 @@ namespace OHOS {
         const FrameRateGetFunc func;
         float width = GetData<float>();
         float height = GetData<float>();
+        float scaleX = GetData<float>();
+        float scaleY = GetData<float>();
 
         PropertyId propertyId = GetData<PropertyId>();
         AnimationId animId = GetData<AnimationId>();
@@ -158,7 +160,8 @@ namespace OHOS {
         animationManager->GetFrameRateRange();
         animationManager->GetDecideFrameRateRange();
         animationManager->SetRateDeciderEnable(isEnable, func);
-        animationManager->SetRateDeciderScaleSize(width, height);
+        animationManager->SetRateDeciderSize(width, height);
+        animationManager->SetRateDeciderScale(scaleX, scaleY);
     }
 
     void RSAnimationTimingProtocolFuzzerTest()

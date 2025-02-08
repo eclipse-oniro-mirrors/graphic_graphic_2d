@@ -176,6 +176,7 @@ public:
     static bool GetPixelmapDfxEnabled();
     static bool GetAFBCEnabled();
     static bool GetReleaseResourceEnabled();
+    static bool GetReclaimMemoryEnabled();
     static bool GetRSScreenRoundCornerEnable();
 
     static void SetDrawTextAsBitmap(bool flag);
@@ -300,6 +301,7 @@ public:
     static std::string GetVersionType();
     static bool GetHwcDirtyRegionEnabled();
     static bool GetHveFilterEnabled();
+    static bool GetDmaReclaimParam();
 private:
     RSSystemProperties() = default;
 

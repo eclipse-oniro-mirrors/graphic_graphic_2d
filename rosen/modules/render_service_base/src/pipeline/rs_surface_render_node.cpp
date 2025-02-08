@@ -757,6 +757,7 @@ void RSSurfaceRenderNode::SetContextMatrix(const std::optional<Drawing::Matrix>&
     SetContentDirty();
     AddDirtyType(RSModifierType::SCALE);
     AddDirtyType(RSModifierType::SKEW);
+    AddDirtyType(RSModifierType::SCALE_Z);
     AddDirtyType(RSModifierType::PERSP);
     AddDirtyType(RSModifierType::TRANSLATE);
     if (!sendMsg) {
@@ -2757,7 +2758,7 @@ void RSSurfaceRenderNode::SetIsOnTheTree(bool onTree, NodeId instanceRootNodeId,
         firstLevelNodeId = GetId();
     } else if (IsAppWindow()) {
         firstLevelNodeId = GetId();
-        auto parentNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(GetParent().lock());
+        auto parentNode = GetParent().lock();
         if (parentNode && parentNode->GetFirstLevelNodeId() != INVALID_NODEID) {
             firstLevelNodeId = parentNode->GetFirstLevelNodeId();
         }
