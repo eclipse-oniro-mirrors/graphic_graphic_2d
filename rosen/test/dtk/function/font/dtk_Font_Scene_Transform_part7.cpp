@@ -61,7 +61,7 @@ DEF_DTK(Font_Scene_Transform, TestLevel::L2, 122)
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
     std::string themeName = "";
     fontMgr->GetFamilyName(0, themeName);
-    std::string emoji_familyName = "HMOS Color Emoji";
+    std::string emojiFamilyName = "HMOS Color Emoji";
     std::shared_ptr<Drawing::FontStyleSet> fontStyleSet(fontMgr->CreateStyleSet(0));
     auto typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
     fontMgr->LoadThemeFont(themeName, typeface);
@@ -112,7 +112,7 @@ DEF_DTK(Font_Scene_Transform, TestLevel::L2, 123)
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
     std::string themeName = "";
     fontMgr->GetFamilyName(0, themeName);
-    std::string emoji_familyName = "HMOS Color Emoji";
+    std::string emojiFamilyName = "HMOS Color Emoji";
     std::shared_ptr<Drawing::FontStyleSet> fontStyleSet(fontMgr->CreateStyleSet(0));
     auto typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
     fontMgr->LoadThemeFont(themeName, typeface);
@@ -160,14 +160,14 @@ DEF_DTK(Font_Scene_Transform, TestLevel::L2, 124)
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
     std::string themeName = "";
     fontMgr->GetFamilyName(0, themeName);
-    std::string emoji_familyName = "HMOS Color Emoji";
+    std::string emojiFamilyName = "HMOS Color Emoji";
     std::shared_ptr<Drawing::FontStyleSet> fontStyleSet(fontMgr->CreateStyleSet(0));
     auto typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
     fontMgr->LoadThemeFont(themeName, typeface);
     // 2.组合typeface操作接口
     std::string str = "CPAL";
     reverse(str.begin(), str.end());
-    uint32_t tagid = *static_cast<uint32_t*>(str.c_str());
+    uint32_t tagid = *reinterpret_cast<uint32_t*>(str.c_str());
     std::string typefacestr = "GetTableSize = " + std::to_string(typeface->GetTableSize(tagid));
     // 3.组合Font类接口,如果是操作类有返回值的接口,获取接口返回值加入vector容器
     auto font1 = Drawing::Font(typeface, 50.f, 1.0f, 1.0f);
@@ -207,7 +207,7 @@ DEF_DTK(Font_Scene_Transform, TestLevel::L2, 125)
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
     std::string themeName = "";
     fontMgr->GetFamilyName(0, themeName);
-    std::string emoji_familyName = "HMOS Color Emoji";
+    std::string emojiFamilyName = "HMOS Color Emoji";
     std::shared_ptr<Drawing::FontStyleSet> fontStyleSet(fontMgr->CreateStyleSet(0));
     auto typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
     fontMgr->LoadThemeFont(themeName, typeface);
@@ -266,7 +266,7 @@ DEF_DTK(Font_Scene_Transform, TestLevel::L2, 126)
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
     std::string themeName = "";
     fontMgr->GetFamilyName(0, themeName);
-    std::string emoji_familyName = "HMOS Color Emoji";
+    std::string emojiFamilyName = "HMOS Color Emoji";
     std::shared_ptr<Drawing::FontStyleSet> fontStyleSet(fontMgr->CreateStyleSet(0));
     auto typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
     fontMgr->LoadThemeFont(themeName, typeface);
@@ -328,7 +328,7 @@ DEF_DTK(Font_Scene_Transform, TestLevel::L2, 127)
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
     std::string themeName = "";
     fontMgr->GetFamilyName(0, themeName);
-    std::string emoji_familyName = "HMOS Color Emoji";
+    std::string emojiFamilyName = "HMOS Color Emoji";
     std::shared_ptr<Drawing::FontStyleSet> fontStyleSet(fontMgr->CreateStyleSet(0));
     auto typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
     fontMgr->LoadThemeFont(themeName, typeface);
@@ -338,7 +338,7 @@ DEF_DTK(Font_Scene_Transform, TestLevel::L2, 127)
     std::stringstream ss;
     ss<<std::hex<<s;
     ss>>a;
-    uint32_t tagid = *static_cast<uint32_t*>(s.c_str());
+    uint32_t tagid = *reinterpret_cast<uint32_t*>(s.c_str());
     std::string typefacestr = "GetTableData = "
         + std::to_string(typeface->GetTableData(tagid, a, typeface->GetTableSize(tagid), nullptr));
     // 3.组合Font类接口,如果是操作类有返回值的接口,获取接口返回值加入vector容器
@@ -391,7 +391,7 @@ DEF_DTK(Font_Scene_Transform, TestLevel::L2, 128)
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
     std::string themeName = "";
     fontMgr->GetFamilyName(0, themeName);
-    std::string emoji_familyName = "HMOS Color Emoji";
+    std::string emojiFamilyName = "HMOS Color Emoji";
     std::shared_ptr<Drawing::FontStyleSet> fontStyleSet(fontMgr->CreateStyleSet(0));
     auto typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
     fontMgr->LoadThemeFont(themeName, typeface);
@@ -401,7 +401,7 @@ DEF_DTK(Font_Scene_Transform, TestLevel::L2, 128)
     std::stringstream ss;
     ss<<std::hex<<s;
     ss>>a;
-    uint32_t tagid = *static_cast<uint32_t*>(s.c_str());
+    uint32_t tagid = *reinterpret_cast<uint32_t*>(s.c_str());
     std::string typefacestr = "GetTableData = "
         + std::to_string(typeface->GetTableData(tagid, a, typeface->GetTableSize(tagid), nullptr));
     // 3.组合Font类接口,如果是操作类有返回值的接口,获取接口返回值加入vector容器
@@ -447,7 +447,7 @@ DEF_DTK(Font_Scene_Transform, TestLevel::L2, 129)
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
     std::string themeName = "";
     fontMgr->GetFamilyName(0, themeName);
-    std::string emoji_familyName = "HMOS Color Emoji";
+    std::string emojiFamilyName = "HMOS Color Emoji";
     std::shared_ptr<Drawing::FontStyleSet> fontStyleSet(fontMgr->CreateStyleSet(0));
     auto typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
     fontMgr->LoadThemeFont(themeName, typeface);
@@ -494,7 +494,7 @@ DEF_DTK(Font_Scene_Transform, TestLevel::L2, 130)
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
     std::string themeName = "";
     fontMgr->GetFamilyName(0, themeName);
-    std::string emoji_familyName = "HMOS Color Emoji";
+    std::string emojiFamilyName = "HMOS Color Emoji";
     std::shared_ptr<Drawing::FontStyleSet> fontStyleSet(fontMgr->CreateStyleSet(0));
     auto typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
     fontMgr->LoadThemeFont(themeName, typeface);
@@ -547,7 +547,7 @@ DEF_DTK(Font_Scene_Transform, TestLevel::L2, 131)
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
     std::string themeName = "";
     fontMgr->GetFamilyName(0, themeName);
-    std::string emoji_familyName = "HMOS Color Emoji";
+    std::string emojiFamilyName = "HMOS Color Emoji";
     std::shared_ptr<Drawing::FontStyleSet> fontStyleSet(fontMgr->CreateStyleSet(0));
     auto typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
     fontMgr->LoadThemeFont(themeName, typeface);
@@ -602,7 +602,7 @@ DEF_DTK(Font_Scene_Transform, TestLevel::L2, 132)
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
     std::string themeName = "";
     fontMgr->GetFamilyName(0, themeName);
-    std::string emoji_familyName = "HMOS Color Emoji";
+    std::string emojiFamilyName = "HMOS Color Emoji";
     std::shared_ptr<Drawing::FontStyleSet> fontStyleSet(fontMgr->CreateStyleSet(0));
     auto typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
     fontMgr->LoadThemeFont(themeName, typeface);
@@ -661,7 +661,7 @@ DEF_DTK(Font_Scene_Transform, TestLevel::L2, 134)
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
     std::string themeName = "";
     fontMgr->GetFamilyName(0, themeName);
-    std::string emoji_familyName = "HMOS Color Emoji";
+    std::string emojiFamilyName = "HMOS Color Emoji";
     std::shared_ptr<Drawing::FontStyleSet> fontStyleSet(fontMgr->CreateStyleSet(0));
     auto typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
     fontMgr->LoadThemeFont(themeName, typeface);
