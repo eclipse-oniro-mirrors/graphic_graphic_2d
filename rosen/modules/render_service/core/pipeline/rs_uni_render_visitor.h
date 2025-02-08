@@ -222,10 +222,10 @@ private:
         RSSurfaceRenderNode& hwcNodePtr);
     void UpdateHwcNodeEnableByFilterRect(
         std::shared_ptr<RSSurfaceRenderNode>& node,
-        const RectI& filterRect, NodeId filterNodeId, bool isReverseOrder = false);
+        const RectI& filterRect, const NodeId filterNodeId, bool isReverseOrder = false);
     void CalcHwcNodeEnableByFilterRect(
         std::shared_ptr<RSSurfaceRenderNode>& node,
-        const RectI& filterRect, NodeId filterNodeId, bool isReverseOrder = false);
+        const RectI& filterRect, const NodeId filterNodeId, bool isReverseOrder = false);
     // This function is used for solving display problems caused by dirty blurfilter node half-obscured.
     void UpdateDisplayDirtyAndExtendVisibleRegion();
     // This function is used to update global dirty and visibleRegion
