@@ -75,12 +75,12 @@ bool TextBundleConfigParser::GetBundleInfo(AppExecFwk::BundleInfo& bundleInfo)
 }
 #endif
 
-bool TextBundleConfigParser::IsAdapterTextHeightEnabled()
+bool TextBundleConfigParser::IsAdapterTextHeightEnabled() const
 {
     return initStatus_ && adapterTextHeightEnable_;
 }
 
-bool TextBundleConfigParser::IsTargetApiVersion(size_t targetVersion)
+bool TextBundleConfigParser::IsTargetApiVersion(size_t targetVersion) const
 {
     return initStatus_ && bundleApiVersion_ >= targetVersion;
 }
