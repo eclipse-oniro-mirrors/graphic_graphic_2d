@@ -23,12 +23,16 @@
 #include <scoped_bytrace.h>
 #include <string>
 #include "common/rs_background_thread.h"
+#include "draw/canvas.h"
 #include "image/image.h"
 #include "native_window.h"
 #include "platform/common/rs_log.h"
 #include "platform/common/rs_system_properties.h"
 #if defined(RS_ENABLE_VK)
 #include "platform/ohos/backend/native_buffer_utils.h"
+#endif
+#ifdef USE_VIDEO_PROCESSING_ENGINE
+#include "render/rs_colorspace_convert.h"
 #endif
 #include "skia_adapter/skia_gpu_context.h"
 #include "surface_buffer.h"
@@ -211,6 +215,8 @@ private:
     std::unique_ptr<OHOS::Media::PixelMap> CreateForVK(const sptr<Surface> &surface, const OHOS::Media::Rect &srcRect);
     std::unique_ptr<OHOS::Media::PixelMap> CreateForVK(
         const sptr<SurfaceBuffer> &surfaceBuffer, const OHOS::Media::Rect &srcRect);
+    bool CanvasDrawImage(const std::shared_ptr<Drawing::Image> &drawingImage, const OHOS::Media::Rect &srcRect,
+        std::shared_ptr<Drawing::Canvas> &canvas);
     bool DrawImageRectVK(const std::shared_ptr<Drawing::Image> &drawingImage,
         OHNativeWindowBuffer *nativeWindowBufferTmp, const sptr<SurfaceBuffer> &surfaceBufferTmp,
         const OHOS::Media::Rect &srcRect);
@@ -393,6 +399,51 @@ void PixelMapFromSurface::DeleteVkImage(void *context)
 }
 #endif
 
+bool PixelMapFromSurface::CanvasDrawImage(const std::shared_ptr<Drawing::Image> &drawingImage,
+    const OHOS::Media::Rect &srcRect, std::shared_ptr<Drawing::Canvas> &canvas)
+{
+#if defined(RS_ENABLE_VK)
+    Drawing::Paint paint;
+    paint.SetStyle(Drawing::Paint::PaintStyle::PAINT_FILL);
+
+    Drawing::Rect srcDrawRect = Drawing::Rect(srcRect.left, srcRect.top, srcRect.width, srcRect.height);
+    Drawing::Rect dstRect = Drawing::Rect(0, 0, srcRect.width, srcRect.height);
+    Drawing::Matrix matrix; // Identity Matrix
+    auto sx = dstRect.GetWidth() / srcDrawRect.GetWidth();
+    auto sy = dstRect.GetHeight() / srcDrawRect.GetHeight();
+    auto tx = dstRect.GetLeft() - srcDrawRect.GetLeft() * sx;
+    auto ty = dstRect.GetTop() - srcDrawRect.GetTop() * sy;
+    matrix.SetScaleTranslate(sx, sy, tx, ty);
+
+    auto imageShader = Drawing::ShaderEffect::CreateImageShader(*drawingImage, Drawing::TileMode::CLAMP,
+        Drawing::TileMode::CLAMP, Drawing::SamplingOptions(Drawing::FilterMode::NEAREST), matrix);
+    if (!imageShader) {
+        RS_LOGE("[PixelMapFromSurface] CanvasDrawImage CreateImageShader fail");
+        return false;
+    }
+
+    sptr<SurfaceBuffer> sfBuffer(surfaceBuffer_);
+    auto targetColorSpace = GRAPHIC_COLOR_GAMUT_SRGB;
+    if (!RSColorSpaceConvert::Instance().ColorSpaceConvertor(imageShader, sfBuffer, paint, targetColorSpace, 0,
+        DynamicRangeMode::STANDARD)) {
+        RS_LOGE("[PixelMapFromSurface] CanvasDrawImage ColorSpaceConvertor fail");
+        return false;
+    }
+    canvas->AttachPaint(paint);
+    GraphicPixelFormat pixelFormat = static_cast<GraphicPixelFormat>(surfaceBuffer_->GetFormat());
+    if (pixelFormat == GRAPHIC_PIXEL_FMT_YCBCR_P010 || pixelFormat == GRAPHIC_PIXEL_FMT_YCRCB_P010 ||
+        pixelFormat == GRAPHIC_PIXEL_FMT_RGBA_1010102) {
+        canvas->DrawRect(dstRect);
+    } else {
+        canvas->DrawImageRect(*drawingImage, srcDrawRect, dstRect,
+            Drawing::SamplingOptions(Drawing::FilterMode::NEAREST),
+            Drawing::SrcRectConstraint::STRICT_SRC_RECT_CONSTRAINT);
+    }
+    return true;
+#else
+    return false;
+#endif
+}
 
 bool PixelMapFromSurface::DrawImageRectVK(const std::shared_ptr<Drawing::Image> &drawingImage,
     OHNativeWindowBuffer *nativeWindowBufferTmp, const sptr<SurfaceBuffer> &surfaceBufferTmp,
@@ -431,14 +482,9 @@ bool PixelMapFromSurface::DrawImageRectVK(const std::shared_ptr<Drawing::Image> 
     if (canvas == nullptr) {
         return false;
     }
-    Drawing::Paint paint;
-    paint.SetStyle(Drawing::Paint::PaintStyle::PAINT_FILL);
-    canvas->AttachPaint(paint);
-    canvas->DrawImageRect(*drawingImage,
-        OHOS::Rosen::Drawing::Rect(srcRect.left, srcRect.top, srcRect.width, srcRect.height),
-        OHOS::Rosen::Drawing::Rect(0, 0, srcRect.width, srcRect.height),
-        Drawing::SamplingOptions(Drawing::FilterMode::NEAREST),
-        OHOS::Rosen::Drawing::SrcRectConstraint::STRICT_SRC_RECT_CONSTRAINT);
+    if (!CanvasDrawImage(drawingImage, srcRect, canvas)) {
+        return false;
+    }
     ScopedBytrace trace2("FlushAndSubmit");
     drawingSurface->FlushAndSubmit(true);
     return true;
