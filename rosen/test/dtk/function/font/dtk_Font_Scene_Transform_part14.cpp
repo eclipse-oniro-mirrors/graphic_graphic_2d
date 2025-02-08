@@ -29,8 +29,8 @@
 namespace OHOS {
 namespace Rosen {
 
-void DrawTextBlob(std::vector<std::string>& texts, std::shared_ptr<Drawing::TextBlob> textBlob, Drawing::Font& font1,
-               TestPlaybackCanvas* playbackCanvas)
+static void DrawTextBlob(std::vector<std::string>& texts, std::shared_ptr<Drawing::TextBlob> textBlob,
+                         Drawing::Font& font1, TestPlaybackCanvas* playbackCanvas)
 {
     int line = 200;
     int interval1 = 100;
@@ -38,7 +38,7 @@ void DrawTextBlob(std::vector<std::string>& texts, std::shared_ptr<Drawing::Text
     int interval3 = 300;
     int interval4 = 400;
 
-    for(auto text : texts) {
+    for (auto text : texts) {
         std::shared_ptr<Drawing::TextBlob> textinfo = Drawing::TextBlob::MakeFromText(text.c_str(), text.size(), font1);
         Drawing::Brush brush;
         playbackCanvas->AttachBrush(brush);
@@ -67,7 +67,7 @@ DEF_DTK(Font_Scene_Transform, TestLevel::L2, 252)
     // 2.组合typeface操作接口
     std::string str = "CPAL";
     reverse(str.begin(), str.end());
-    uint32_t tagid = *(uint32_t*)(str.c_str());
+    uint32_t tagid = *static_cast<uint32_t*>(str.c_str());
     std::string typefacestr = "GetTableSize = " + std::to_string(typeface->GetTableSize(tagid));
     // 3.组合Font类接口,如果是操作类有返回值的接口,获取接口返回值加入vector容器
     auto font = Drawing::Font(typeface, 50.f, 1.0f, 1.0f);
@@ -166,9 +166,9 @@ DEF_DTK(Font_Scene_Transform, TestLevel::L2, 254)
     auto font1 = Drawing::Font(typeface, 50.f, 1.0f, 1.0f);
     font1.SetSubpixel(false);
     std::string text0 = "DDGR ddgr 鸿蒙 !@#￥%^&*; : , 。";
-    int GlyphCount = font1.CountText(text0.c_str(), text0.length(), Drawing::TextEncoding::UTF16);
-    uint16_t glyphs[GlyphCount - 1];
-    int count = font1.TextToGlyphs(text0.c_str(), text0.length(), Drawing::TextEncoding::UTF16, glyphs, GlyphCount + 1);
+    int glyphCount = font1.CountText(text0.c_str(), text0.length(), Drawing::TextEncoding::UTF16);
+    uint16_t glyphs[glyphCount - 1];
+    int count = font1.TextToGlyphs(text0.c_str(), text0.length(), Drawing::TextEncoding::UTF16, glyphs, glyphCount + 1);
     std::string text4 = "TextToGlyphs = " + std::to_string(count);
 
     // 4.创建TextBlob
@@ -378,7 +378,7 @@ DEF_DTK(Font_Scene_Transform, TestLevel::L2, 258)
     std::stringstream ss;
     ss<<std::hex<<s;
     ss>>a;
-    uint32_t tagid = *(uint32_t*)(s.c_str());
+    uint32_t tagid = *static_cast<uint32_t*>(s.c_str());
     std::string typefacestr = "GetTableData = "
         + std::to_string(typeface->GetTableData(tagid, a, typeface->GetTableSize(tagid), nullptr));
     // 3.组合Font类接口,如果是操作类有返回值的接口,获取接口返回值加入vector容器
@@ -744,7 +744,7 @@ DEF_DTK(Font_Scene_Transform, TestLevel::L2, 266)
     // 2.组合typeface操作接口
     std::string str = "CPAL";
     reverse(str.begin(), str.end());
-    uint32_t tagid = *(uint32_t*)(str.c_str());
+    uint32_t tagid = *static_cast<uint32_t*>(str.c_str());
     std::string typefacestr = "GetTableSize = " + std::to_string(typeface->GetTableSize(tagid));
     // 3.组合Font类接口,如果是操作类有返回值的接口,获取接口返回值加入vector容器
     auto font = Drawing::Font(typeface, 50.f, 1.0f, 1.0f);
@@ -808,12 +808,12 @@ DEF_DTK(Font_Scene_Transform, TestLevel::L2, 267)
     auto font1 = Drawing::Font(typeface1, 50.f, 1.0f, 1.0f);
     font1.SetSubpixel(false);
     std::string text0 = "DDGR ddgr 鸿蒙 !@#￥%^&*; : , 。";
-    int GlyphCount = font1.CountText(text0.c_str(), text0.length(), Drawing::TextEncoding::UTF8);
-    float widths_1[GlyphCount];
-    uint16_t glyphs[GlyphCount];
-    font1.TextToGlyphs(text0.c_str(), text0.length(), Drawing::TextEncoding::UTF8, glyphs, GlyphCount);
-    font1.GetWidths(glyphs, GlyphCount, widths_1);
-    std::string text4 = "Getwidths = " + std::to_string(widths_1[0]);
+    int glyphCount = font1.CountText(text0.c_str(), text0.length(), Drawing::TextEncoding::UTF8);
+    float widths[glyphCount];
+    uint16_t glyphs[glyphCount];
+    font1.TextToGlyphs(text0.c_str(), text0.length(), Drawing::TextEncoding::UTF8, glyphs, glyphCount);
+    font1.GetWidths(glyphs, glyphCount, widths);
+    std::string text4 = "Getwidths = " + std::to_string(widths[0]);
 
     // 4.创建TextBlob
     Drawing::TextBlobBuilder builder;
@@ -925,7 +925,7 @@ DEF_DTK(Font_Scene_Transform, TestLevel::L2, 269)
     std::stringstream ss;
     ss<<std::hex<<s;
     ss>>a;
-    uint32_t tagid = *(uint32_t*)(s.c_str());
+    uint32_t tagid = *static_cast<uint32_t*>(s.c_str());
     std::string typefacestr = "GetTableData = "
         + std::to_string(typeface->GetTableData(tagid, a, typeface->GetTableSize(tagid), nullptr));
     // 3.组合Font类接口,如果是操作类有返回值的接口,获取接口返回值加入vector容器
