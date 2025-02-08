@@ -2110,7 +2110,7 @@ SecSurfaceInfo RSUniRenderUtil::GenerateSecSurfaceInfoFromNode(
 }
 
 void RSUniRenderUtil::UIExtensionFindAndTraverseAncestor(
-    const RSRenderNodeMap& nodeMap, UIExtensionCallbackData& callbackData)
+    const RSRenderNodeMap& nodeMap, UIExtensionCallbackData& callbackData, bool isUnobscured)
 {
     const auto& secUIExtensionNodes = RSSurfaceRenderNode::GetSecUIExtensionNodes();
     for (auto it = secUIExtensionNodes.begin(); it != secUIExtensionNodes.end(); ++it) {
@@ -2125,13 +2125,13 @@ void RSUniRenderUtil::UIExtensionFindAndTraverseAncestor(
             return;
         }
         for (const auto& child : *hostNode->GetSortedChildren()) {
-            TraverseAndCollectUIExtensionInfo(child, Drawing::Matrix(), hostNode->GetId(), callbackData);
+            TraverseAndCollectUIExtensionInfo(child, Drawing::Matrix(), hostNode->GetId(), callbackData, isUnobscured);
         }
     }
 }
 
 void RSUniRenderUtil::TraverseAndCollectUIExtensionInfo(std::shared_ptr<RSRenderNode> node,
-    Drawing::Matrix parentMatrix, NodeId hostId, UIExtensionCallbackData& callbackData)
+    Drawing::Matrix parentMatrix, NodeId hostId, UIExtensionCallbackData& callbackData, bool isUnobscured)
 {
     if (!node) {
         return;
@@ -2150,7 +2150,8 @@ void RSUniRenderUtil::TraverseAndCollectUIExtensionInfo(std::shared_ptr<RSRender
     auto rect = boundsGeo.MapAbsRect(node->GetSelfDrawRect().JoinRect(node->GetChildrenRect().ConvertTo<float>()));
     // if node is UIExtension type, update its own info, and skip its children.
     if (auto surfaceNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(node)) {
-        if (surfaceNode->IsSecureUIExtension() || surfaceNode->IsUnobscuredUIExtensionNode()) {
+        if ((surfaceNode->IsSecureUIExtension() && !isUnobscured) ||
+            (surfaceNode->IsUnobscuredUIExtensionNode() && isUnobscured)) {
             currentUIExtensionIndex_++;
             // if host node is not recorded in callbackData, insert it.
             auto [iter, inserted] = callbackData.insert(std::pair(hostId, std::vector<SecSurfaceInfo>{}));

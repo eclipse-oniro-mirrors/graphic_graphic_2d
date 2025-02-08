@@ -3976,7 +3976,7 @@ void RSRenderServiceConnectionProxy::DropFrameByPid(const std::vector<int32_t> p
 }
 
 int32_t RSRenderServiceConnectionProxy::RegisterUIExtensionCallback(
-    uint64_t userId, sptr<RSIUIExtensionCallback> callback)
+    uint64_t userId, sptr<RSIUIExtensionCallback> callback, bool unobscured)
 {
     if (callback == nullptr) {
         ROSEN_LOGE("RSRenderServiceConnectionProxy::RegisterUIExtensionCallback: callback is nullptr.");
@@ -3990,7 +3990,7 @@ int32_t RSRenderServiceConnectionProxy::RegisterUIExtensionCallback(
         return RS_CONNECTION_ERROR;
     }
     option.SetFlags(MessageOption::TF_SYNC);
-    if (data.WriteUint64(userId) && data.WriteRemoteObject(callback->AsObject())) {
+    if (data.WriteUint64(userId) && data.WriteRemoteObject(callback->AsObject()) && data.WriteBool(unobscured)) {
         uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REGISTER_UIEXTENSION_CALLBACK);
         int32_t err = SendRequest(code, data, reply, option);
         if (err != NO_ERROR) {

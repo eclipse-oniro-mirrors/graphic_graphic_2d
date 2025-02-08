@@ -681,7 +681,8 @@ void RSRenderServiceClient::DropFrameByPid(const std::vector<int32_t> pidList)
 {
 }
 
-int32_t RSRenderServiceClient::RegisterUIExtensionCallback(uint64_t userId, const UIExtensionCallback& callback)
+int32_t RSRenderServiceClient::RegisterUIExtensionCallback(uint64_t userId, const UIExtensionCallback& callback,
+    bool unobscured)
 {
     return {};
 }

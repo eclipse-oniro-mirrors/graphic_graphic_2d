@@ -1732,7 +1732,8 @@ private:
     UIExtensionCallback cb_;
 };
 
-int32_t RSRenderServiceClient::RegisterUIExtensionCallback(uint64_t userId, const UIExtensionCallback& callback)
+int32_t RSRenderServiceClient::RegisterUIExtensionCallback(uint64_t userId, const UIExtensionCallback& callback,
+    bool unobscured)
 {
     auto renderService = RSRenderServiceConnectHub::GetRenderService();
     if (renderService == nullptr) {
@@ -1740,7 +1741,7 @@ int32_t RSRenderServiceClient::RegisterUIExtensionCallback(uint64_t userId, cons
         return RENDER_SERVICE_NULL;
     }
     sptr<CustomUIExtensionCallback> cb = new CustomUIExtensionCallback(callback);
-    return renderService->RegisterUIExtensionCallback(userId, cb);
+    return renderService->RegisterUIExtensionCallback(userId, cb, unobscured);
 }
 
 bool RSRenderServiceClient::SetAncoForceDoDirect(bool direct)

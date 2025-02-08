@@ -2541,7 +2541,12 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 ret = ERR_NULL_OBJECT;
                 break;
             }
-            int32_t status = RegisterUIExtensionCallback(userId, callback);
+            bool unobscured{false};
+            if (!data.ReadBool(unobscured)) {
+                ret = ERR_INVALID_DATA;
+                break;
+            }
+            int32_t status = RegisterUIExtensionCallback(userId, callback, unobscured);
             if (!reply.WriteInt32(status)) {
                 ret = ERR_INVALID_REPLY;
             }

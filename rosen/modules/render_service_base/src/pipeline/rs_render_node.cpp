@@ -267,7 +267,7 @@ void RSRenderNode::AddUIExtensionChild(SharedPtr child)
 }
 
 // when child is UnobscuredUIExtension and parent is not main window, Mark Need, Rout to main window.
-bool RSRenderNode::NeedRoutedToUIExtension(SharedPtr child)
+bool RSRenderNode::NeedRoutedBasedOnUIExtension(SharedPtr child)
 {
     if (!child) {
         return false;
@@ -280,7 +280,8 @@ bool RSRenderNode::NeedRoutedToUIExtension(SharedPtr child)
 
 void RSRenderNode::AddChild(SharedPtr child, int index)
 {
-    if (NeedRoutedToUIExtension(child)) {
+    if (NeedRoutedBasedOnUIExtension(child)) {
+        originUECChildren_->insert(child);
         return AddUIExtensionChild(child);
     }
     // sanity check, avoid loop
@@ -344,7 +345,7 @@ void RSRenderNode::MoveUIExtensionChild(SharedPtr child)
 
 void RSRenderNode::MoveChild(SharedPtr child, int index)
 {
-    if (NeedRoutedToUIExtension(child)) {
+    if (NeedRoutedBasedOnUIExtension(child)) {
         return MoveUIExtensionChild(child);
     }
     if (child == nullptr || child->GetParent().lock().get() != this) {
@@ -381,7 +382,8 @@ void RSRenderNode::RemoveUIExtensionChild(SharedPtr child)
 
 void RSRenderNode::RemoveChild(SharedPtr child, bool skipTransition)
 {
-    if (NeedRoutedToUIExtension(child)) {
+    if (NeedRoutedBasedOnUIExtension(child)) {
+        originUECChildren_->erase(child);
         return RemoveUIExtensionChild(child);
     }
     if (child == nullptr) {
@@ -3748,12 +3750,22 @@ void RSRenderNode::OnTreeStateChanged()
     if (!isOnTheTree_) {
         UpdateBlurEffectCounter(-curBlurDrawableCnt);
         startingWindowFlag_ = false;
+        if (originUECChildren_ && !originUECChildren_->empty()) {
+            for (auto uiExtension : *originUECChildren_) {
+                uiExtension->RemoveFromTree();
+            }
+        }
     }
     if (isOnTheTree_) {
         UpdateBlurEffectCounter(curBlurDrawableCnt);
         // Set dirty and force add to active node list, re-generate children list if needed
         SetDirty(true);
         SetParentSubTreeDirty();
+        if (originUECChildren_ && !originUECChildren_->empty()) {
+            for (auto uiExtension : *originUECChildren_) {
+                AddChild(uiExtension);
+            }
+        }
     } else if (sharedTransitionParam_) {
         // Mark shared transition unpaired, and mark paired node dirty
         sharedTransitionParam_->paired_ = false;

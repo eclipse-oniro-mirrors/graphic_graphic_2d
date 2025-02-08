@@ -4673,11 +4673,16 @@ void RSMainThread::UpdateLuminance()
     }
 }
 
-void RSMainThread::RegisterUIExtensionCallback(pid_t pid, uint64_t userId, sptr<RSIUIExtensionCallback> callback)
+void RSMainThread::RegisterUIExtensionCallback(pid_t pid, uint64_t userId, sptr<RSIUIExtensionCallback> callback,
+    bool unobscured)
 {
     std::lock_guard<std::mutex> lock(uiExtensionMutex_);
     RS_LOGI("RSMainThread::RegisterUIExtensionCallback for User: %{public}" PRIu64 " PID: %{public}d.", userId, pid);
-    uiExtensionListenners_[pid] = std::pair<uint64_t, sptr<RSIUIExtensionCallback>>(userId, callback);
+    if (!unobscured) {
+        uiExtensionListenners_[pid] = std::pair<uint64_t, sptr<RSIUIExtensionCallback>>(userId, callback);
+    } else {
+        uiUnobscuredExtensionListenners_[pid] = std::pair<uint64_t, sptr<RSIUIExtensionCallback>>(userId, callback);
+    }
 }
 
 void RSMainThread::UnRegisterUIExtensionCallback(pid_t pid)
@@ -4685,6 +4690,9 @@ void RSMainThread::UnRegisterUIExtensionCallback(pid_t pid)
     std::lock_guard<std::mutex> lock(uiExtensionMutex_);
     if (uiExtensionListenners_.erase(pid) != 0) {
         RS_LOGI("RSMainThread::UnRegisterUIExtensionCallback for PID: %{public}d.", pid);
+    }
+    if (uiUnobscuredExtensionListenners_.erase(pid) != 0) {
+        RS_LOGI("RSMainThread::UnRegisterUIUnobscuredExtensionCallback for PID: %{public}d.", pid);
     }
 }
 
@@ -4699,6 +4707,8 @@ void RSMainThread::UIExtensionNodesTraverseAndCallback()
     std::lock_guard<std::mutex> lock(uiExtensionMutex_);
 #ifdef RS_ENABLE_GPU
     RSUniRenderUtil::UIExtensionFindAndTraverseAncestor(context_->GetNodeMap(), uiExtensionCallbackData_);
+    RSUniRenderUtil::UIExtensionFindAndTraverseAncestor(context_->GetNodeMap(), unobscureduiExtensionCallbackData_,
+        true);
 #endif
     if (CheckUIExtensionCallbackDataChanged()) {
         RS_OPTIONAL_TRACE_NAME_FMT("RSMainThread::UIExtensionNodesTraverseAndCallback data size: [%lu]",
@@ -4708,6 +4718,14 @@ void RSMainThread::UIExtensionNodesTraverseAndCallback()
             auto callback = item.second.second;
             if (callback) {
                 callback->OnUIExtension(std::make_shared<RSUIExtensionData>(uiExtensionCallbackData_), userId);
+            }
+        }
+        for (const auto& item : uiUnobscuredExtensionListenners_) {
+            auto userId = item.second.first;
+            auto callback = item.second.second;
+            if (callback) {
+                callback->OnUIExtension(std::make_shared<RSUIExtensionData>(unobscureduiExtensionCallbackData_),
+                    userId);
             }
         }
     }
