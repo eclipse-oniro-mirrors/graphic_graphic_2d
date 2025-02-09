@@ -39,6 +39,9 @@
 #include "render/rs_skia_filter.h"
 #include "transaction/rs_render_service_client.h"
 #include "visitor/rs_node_visitor.h"
+#ifdef USE_VIDEO_PROCESSING_ENGINE
+#include "render/rs_colorspace_convert.h"
+#endif
 #ifndef ROSEN_CROSS_PLATFORM
 #include "metadata_helper.h"
 #include <v1_0/cm_color_space.h>
@@ -49,6 +52,12 @@ namespace Rosen {
 // set the offset value to prevent the situation where the float number
 // with the suffix 0.000x is still rounded up.
 constexpr float RECT_CEIL_DEVIATION = 0.001;
+#ifndef ROSEN_CROSS_PLATFORM
+constexpr float DEFAULT_HDR_RATIO = 1.0f;
+constexpr float DEFAULT_SCALER = 1000.0f / 203.0f;
+constexpr float GAMMA2_2 = 2.2f;
+constexpr uint32_t DEFAULT_DYNAMIC_METADATA_SIZE = 50;
+#endif
 
 namespace {
 bool CheckRootNodeReadyToDraw(const std::shared_ptr<RSBaseRenderNode>& child)
@@ -208,6 +217,8 @@ void RSSurfaceRenderNode::UpdateInfoForClonedNode()
     if (GetId() == clonedSourceNodeId_) {
         SetNeedCacheSurface(true);
         SetHwcChildrenDisabledState();
+        RS_OPTIONAL_TRACE_NAME_FMT("hwc debug: name:%s id:%" PRIu64 " children disabled by isCloneNode",
+            GetName().c_str(), GetId());
     }
     SetIsCloned(GetId() == clonedSourceNodeId_);
 }
@@ -572,11 +583,12 @@ void RSSurfaceRenderNode::QuickPrepare(const std::shared_ptr<RSNodeVisitor>& vis
     }
     ApplyModifiers();
     visitor->QuickPrepareSurfaceRenderNode(*this);
+}
 
-    if ((IsAppWindow() || IsScbScreen() || IsUIExtension())
-        && !IsNotifyUIBufferAvailable() && IsFirstFrameReadyToDraw(*this)) {
-        NotifyUIBufferAvailable();
-    }
+bool RSSurfaceRenderNode::IsUIBufferAvailable()
+{
+    return ((IsAppWindow() || IsScbScreen() || IsUIExtension())
+        && !IsNotifyUIBufferAvailable() && IsFirstFrameReadyToDraw(*this));
 }
 
 bool RSSurfaceRenderNode::IsSubTreeNeedPrepare(bool filterInGlobal, bool isOccluded)
@@ -745,6 +757,7 @@ void RSSurfaceRenderNode::SetContextMatrix(const std::optional<Drawing::Matrix>&
     SetContentDirty();
     AddDirtyType(RSModifierType::SCALE);
     AddDirtyType(RSModifierType::SKEW);
+    AddDirtyType(RSModifierType::SCALE_Z);
     AddDirtyType(RSModifierType::PERSP);
     AddDirtyType(RSModifierType::TRANSLATE);
     if (!sendMsg) {
@@ -2501,6 +2514,8 @@ void RSSurfaceRenderNode::SetHwcChildrenDisabledState()
                 continue;
             }
             hwcNodePtr->SetHardwareForcedDisabledState(true);
+            RS_OPTIONAL_TRACE_NAME_FMT("hwc debug: name:%s id:%" PRIu64 " disabled by parent",
+                GetName().c_str(), GetId());
         }
     } else if (IsLeashWindow()) {
         for (auto& child : *GetChildren()) {
@@ -2743,12 +2758,12 @@ void RSSurfaceRenderNode::SetIsOnTheTree(bool onTree, NodeId instanceRootNodeId,
         firstLevelNodeId = GetId();
     } else if (IsAppWindow()) {
         firstLevelNodeId = GetId();
-        auto parentNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(GetParent().lock());
+        auto parentNode = GetParent().lock();
         if (parentNode && parentNode->GetFirstLevelNodeId() != INVALID_NODEID) {
-            firstLevelNodeId = parentNode->GetFirstLevelNodeId ();
+            firstLevelNodeId = parentNode->GetFirstLevelNodeId();
         }
     }
-    if (IsSecureUIExtension()) {
+    if (IsSecureUIExtension() || IsUnobscuredUIExtensionNode()) {
         if (onTree) {
             secUIExtensionNodes_.insert(std::pair<NodeId, NodeId>(GetId(), instanceRootNodeId));
         } else {
@@ -2762,6 +2777,16 @@ void RSSurfaceRenderNode::SetIsOnTheTree(bool onTree, NodeId instanceRootNodeId,
     // in case prepare stage upper cacheRoot cannot specify dirty subnode
     RSBaseRenderNode::SetIsOnTheTree(onTree, instanceRootNodeId, firstLevelNodeId, cacheNodeId,
         INVALID_NODEID, displayNodeId);
+}
+
+void RSSurfaceRenderNode::SetUIExtensionUnobscured(bool obscured)
+{
+    UIExtensionUnobscured_ = obscured;
+}
+
+bool RSSurfaceRenderNode::GetUIExtensionUnobscured() const
+{
+    return UIExtensionUnobscured_;
 }
 
 CacheProcessStatus RSSurfaceRenderNode::GetCacheSurfaceProcessedStatus() const
@@ -3396,6 +3421,58 @@ void RSSurfaceRenderNode::ResetIsBufferFlushed()
     }
     surfaceParams->SetIsBufferFlushed(false);
     AddToPendingSyncList();
+}
+
+void RSSurfaceRenderNode::UpdateSurfaceNodeNit(RSSurfaceRenderNode& surfaceNode, ScreenId screenId)
+{
+#ifndef ROSEN_CROSS_PLATFORM
+    const sptr<SurfaceBuffer>& surfaceBuffer = surfaceNode.GetRSSurfaceHandler()->GetBuffer();
+    if (surfaceBuffer == nullptr) {
+        RS_LOGE("surfaceNode.GetRSSurfaceHandler is NULL");
+        return;
+    }
+
+    if (surfaceNode.GetVideoHdrStatus() == HdrStatus::NO_HDR) {
+        auto& rsLuminance = RSLuminanceControl::Get();
+        surfaceNode.SetDisplayNit(rsLuminance.GetSdrDisplayNits(screenId));
+        surfaceNode.SetSdrNit(rsLuminance.GetSdrDisplayNits(screenId));
+        surfaceNode.SetBrightnessRatio(rsLuminance.GetHdrBrightnessRatio(screenId, 0));
+        return;
+    }
+
+    using namespace HDI::Display::Graphic::Common::V1_0;
+    std::vector<uint8_t> hdrStaticMetadataVec;
+    std::vector<uint8_t> hdrDynamicMetadataVec;
+    GSError ret = GSERROR_OK;
+#ifdef USE_VIDEO_PROCESSING_ENGINE
+    RSColorSpaceConvert::Instance().GetHDRMetadata(surfaceBuffer, hdrStaticMetadataVec, hdrDynamicMetadataVec, ret);
+#endif
+    float scaler = DEFAULT_SCALER;
+    auto& rsLuminance = RSLuminanceControl::Get();
+    if (hdrStaticMetadataVec.size() != sizeof(HdrStaticMetadata) || hdrStaticMetadataVec.data() == nullptr) {
+        RS_LOGD("hdrStaticMetadataVec is invalid");
+        scaler = surfaceNode.GetHDRBrightness() * (scaler - 1.0f) + 1.0f;
+    } else {
+        const auto& data = *reinterpret_cast<HdrStaticMetadata*>(hdrStaticMetadataVec.data());
+        scaler = rsLuminance.CalScaler(data.cta861.maxContentLightLevel, ret == GSERROR_OK ?
+            hdrDynamicMetadataVec.size() : DEFAULT_DYNAMIC_METADATA_SIZE, surfaceNode.GetHDRBrightness());
+    }
+
+    float sdrNits = rsLuminance.GetSdrDisplayNits(screenId);
+    float displayNits = rsLuminance.GetDisplayNits(screenId);
+
+    float layerNits = std::clamp(sdrNits * scaler, sdrNits, displayNits);
+    surfaceNode.SetDisplayNit(layerNits);
+    surfaceNode.SetSdrNit(sdrNits);
+    if (ROSEN_LE(displayNits, 0.0f)) {
+        surfaceNode.SetBrightnessRatio(DEFAULT_HDR_RATIO);
+    } else {
+        surfaceNode.SetBrightnessRatio(std::pow(layerNits / displayNits, 1.0f / GAMMA2_2)); // gamma 2.2
+    }
+    RS_LOGD("RSSurfaceRenderNode::UpdateSurfaceNodeNit layerNits: %{public}.2f, displayNits: %{public}.2f,"
+        " sdrNits: %{public}.2f, scaler: %{public}.2f, HDRBrightness: %{public}f", layerNits, displayNits, sdrNits,
+        scaler, surfaceNode.GetHDRBrightness());
+#endif
 }
 } // namespace Rosen
 } // namespace OHOS

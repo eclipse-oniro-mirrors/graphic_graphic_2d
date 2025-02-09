@@ -429,13 +429,13 @@ HWTEST_F(HgmFrameRateMgrTest, HandleEventTest, Function | SmallTest | Level2)
     auto &hgm = HgmCore::Instance();
     mgr->DeliverRefreshRateVote({"VOTER_GAMES", 120, 90, 0}, true);
 
-    mgr->GetExpectedFrameRate(static_cast<RSPropertyUnit>(0xff), 100.f);
+    mgr->GetExpectedFrameRate(static_cast<RSPropertyUnit>(0xff), 100.f, 0, 0);
     EXPECT_NE(hgm.mPolicyConfigData_, nullptr);
     std::shared_ptr<PolicyConfigData> cachedPolicyConfigData = nullptr;
     std::swap(hgm.mPolicyConfigData_, cachedPolicyConfigData);
     EXPECT_EQ(hgm.mPolicyConfigData_, nullptr);
     ASSERT_EQ(nullptr, hgm.GetPolicyConfigData());
-    mgr->GetPreferredFps("translate", 100.f);
+    mgr->GetPreferredFps("translate", 100.f, 0.f, 0.f);
 
     EventInfo eventInfo = { .eventName = "VOTER_GAMES", .eventStatus = false,
         .description = pkg0,
@@ -621,6 +621,60 @@ HWTEST_F(HgmFrameRateMgrTest, CollectFrameRateChange, Function | SmallTest | Lev
     EXPECT_EQ(mgr.CollectFrameRateChange(finalRange, rsFrameRateLinker, appFrameRateLinkers), false);
 }
 
+/**
+ * @tc.name: CollectVRateChange
+ * @tc.desc: Verify the result of CollectVRateChange
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(HgmFrameRateMgrTest, CollectVRateChange, Function | SmallTest | Level2)
+{
+    HgmFrameRateManager mgr;
+    InitHgmFrameRateManager(mgr);
+    FrameRateRange finalRange = {OLED_60_HZ, OLED_120_HZ, OLED_60_HZ};
+    mgr.vRatesMap_ = {
+        {0, 0},
+        {1, 1},
+        {2, 2}
+    };
+    uint64_t linkerId = 2;
+    mgr.CollectVRateChange(linkerId, finalRange);
+    EXPECT_EQ(finalRange.min_, OLED_60_HZ);
+    EXPECT_EQ(finalRange.max_, OLED_120_HZ);
+    EXPECT_EQ(finalRange.preferred_, OLED_60_HZ);
+
+    linkerId = 0;
+    mgr.CollectVRateChange(linkerId, finalRange);
+    EXPECT_EQ(finalRange.min_, OLED_60_HZ);
+    EXPECT_EQ(finalRange.max_, OLED_120_HZ);
+    EXPECT_EQ(finalRange.preferred_, OLED_60_HZ);
+
+    linkerId = 1;
+    mgr.CollectVRateChange(linkerId, finalRange);
+    EXPECT_EQ(finalRange.min_, OLED_60_HZ);
+    EXPECT_EQ(finalRange.max_, OLED_120_HZ);
+    EXPECT_EQ(finalRange.preferred_, OLED_60_HZ);
+    
+    linkerId = 2;
+    mgr.CollectVRateChange(linkerId, finalRange);
+    EXPECT_EQ(finalRange.min_, OLED_60_HZ);
+    EXPECT_EQ(finalRange.max_, OLED_120_HZ);
+    EXPECT_EQ(finalRange.preferred_, OLED_60_HZ);
+
+    finalRange.preferred_ = 0;
+    mgr.controllerRate_ = 0;
+    mgr.CollectVRateChange(linkerId, finalRange);
+    EXPECT_EQ(finalRange.min_, OLED_NULL_HZ);
+    EXPECT_EQ(finalRange.max_, OLED_144_HZ);
+    EXPECT_EQ(finalRange.preferred_, 1);
+
+    finalRange.preferred_ = 0;
+    mgr.controllerRate_ = 100;
+    mgr.CollectVRateChange(linkerId, finalRange);
+    EXPECT_EQ(finalRange.min_, OLED_NULL_HZ);
+    EXPECT_EQ(finalRange.max_, OLED_144_HZ);
+    EXPECT_EQ(finalRange.preferred_, 50);
+}
 
 /**
  * @tc.name: HandleFrameRateChangeForLTPO
@@ -642,7 +696,7 @@ HWTEST_F(HgmFrameRateMgrTest, HandleFrameRateChangeForLTPO, Function | SmallTest
     frameRateMgr->HandleFrameRateChangeForLTPO(0, false);
     frameRateMgr->forceUpdateCallback_ = [](bool idleTimerExpired, bool forceUpdate) { return; };
     frameRateMgr->HandleFrameRateChangeForLTPO(0, false);
-    EXPECT_EQ(frameRateMgr->GetPreferredFps("translate", errorVelocity), 0);
+    EXPECT_EQ(frameRateMgr->GetPreferredFps("translate", errorVelocity, 0, 0), 0);
 }
 
 /**

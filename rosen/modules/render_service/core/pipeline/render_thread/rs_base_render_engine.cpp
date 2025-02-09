@@ -652,6 +652,27 @@ std::shared_ptr<Drawing::ColorSpace> RSBaseRenderEngine::ConvertColorGamutToDraw
     return colorSpace;
 }
 
+std::shared_ptr<Drawing::ColorSpace> RSBaseRenderEngine::ConvertColorSpaceNameToDrawingColorSpace(
+    OHOS::ColorManager::ColorSpaceName colorSpaceName)
+{
+    std::shared_ptr<Drawing::ColorSpace>  colorSpace = nullptr;
+    switch (colorSpaceName) {
+        case OHOS::ColorManager::ColorSpaceName::DISPLAY_P3:
+        case OHOS::ColorManager::ColorSpaceName::DCI_P3:
+            colorSpace = Drawing::ColorSpace::CreateRGB(
+                Drawing::CMSTransferFuncType::SRGB, Drawing::CMSMatrixType::DCIP3);
+            break;
+        case OHOS::ColorManager::ColorSpaceName::ADOBE_RGB:
+            colorSpace = Drawing::ColorSpace::CreateRGB(
+                Drawing::CMSTransferFuncType::SRGB, Drawing::CMSMatrixType::ADOBE_RGB);
+            break;
+        default:
+            colorSpace = Drawing::ColorSpace::CreateSRGB();
+            break;
+    }
+    return colorSpace;
+}
+
 std::shared_ptr<Drawing::Image> RSBaseRenderEngine::CreateImageFromBuffer(RSPaintFilterCanvas& canvas,
     BufferDrawParam& params, VideoInfo& videoInfo)
 {
@@ -818,32 +839,32 @@ void RSBaseRenderEngine::DrawImageRect(RSPaintFilterCanvas& canvas, std::shared_
     canvas.DetachBrush();
 }
 
-bool RSBaseRenderEngine::CheckIsHdrSurfaceBuffer(const sptr<SurfaceBuffer> surfaceBuffer)
+HdrStatus RSBaseRenderEngine::CheckIsHdrSurfaceBuffer(const sptr<SurfaceBuffer> surfaceBuffer)
 {
     if (surfaceBuffer == nullptr) {
-        return false;
+        return HdrStatus::NO_HDR;
     }
 #ifdef USE_VIDEO_PROCESSING_ENGINE
     std::vector<uint8_t> metadataType{};
     if (surfaceBuffer->GetMetadata(Media::VideoProcessingEngine::ATTRKEY_HDR_METADATA_TYPE, metadataType) ==
         GSERROR_OK && metadataType.size() > 0 &&
         metadataType[0] == HDI::Display::Graphic::Common::V2_1::CM_VIDEO_AI_HDR) {
-        return true;
+        return HdrStatus::AI_HDR_VIDEO;
     }
 #endif
     if (surfaceBuffer->GetFormat() != GRAPHIC_PIXEL_FMT_RGBA_1010102 &&
         surfaceBuffer->GetFormat() != GRAPHIC_PIXEL_FMT_YCBCR_P010 &&
         surfaceBuffer->GetFormat() != GRAPHIC_PIXEL_FMT_YCRCB_P010) {
-        return false;
+        return HdrStatus::NO_HDR;
     }
     using namespace HDI::Display::Graphic::Common::V1_0;
     CM_ColorSpaceInfo colorSpaceInfo;
     if (MetadataHelper::GetColorSpaceInfo(surfaceBuffer, colorSpaceInfo) == GSERROR_OK) {
         if (colorSpaceInfo.transfunc == TRANSFUNC_PQ || colorSpaceInfo.transfunc == TRANSFUNC_HLG) {
-            return true;
+            return HdrStatus::HDR_VIDEO;
         }
     }
-    return false;
+    return HdrStatus::NO_HDR;
 }
 
 void RSBaseRenderEngine::RegisterDeleteBufferListener(const sptr<IConsumerSurface>& consumer, bool isForUniRedraw)

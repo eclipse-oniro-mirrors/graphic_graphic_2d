@@ -201,7 +201,8 @@ public:
         return nodeType_ == RSSurfaceNodeType::SELF_DRAWING_NODE && isHardwareEnabledNode_ &&
             (name_ == "SceneViewer Model0" || name_ == "RosenWeb" || name_ == "VMWinXComponentSurface" ||
                 name_ == "VMLinuxXComponentSurface" || name_.find("oh_flutter") != std::string::npos ||
-                name_.find("HwStylusFeature") != std::string::npos);
+                name_.find("HwStylusFeature") != std::string::npos || name_ == "qtMainWindowSurface" ||
+                name_.find("xweb_") != std::string::npos);
     }
 
     void SetSubNodeShouldPaint()
@@ -1298,6 +1299,11 @@ public:
         return nodeType_ == RSSurfaceNodeType::UI_EXTENSION_SECURE_NODE;
     }
 
+    bool IsUnobscuredUIExtensionNode() const
+    {
+        return nodeType_ == RSSurfaceNodeType::UI_EXTENSION_COMMON_NODE && GetUIExtensionUnobscured();
+    }
+
     bool IsUIExtension() const
     {
         return nodeType_ == RSSurfaceNodeType::UI_EXTENSION_COMMON_NODE ||
@@ -1391,15 +1397,17 @@ public:
     {
         crossNodeSkippedDisplayOffsets_.clear();
     }
-    HdrStatus GetHdrVideo() const
+    HdrStatus GetVideoHdrStatus() const
     {
         return hdrVideoSurface_;
     }
 
-    void SetHdrVideo(HdrStatus hasHdrVideoSurface)
+    void SetVideoHdrStatus(HdrStatus hasHdrVideoSurface)
     {
         hdrVideoSurface_ = hasHdrVideoSurface;
     }
+    // use for updating hdr and sdr nit
+    static void UpdateSurfaceNodeNit(RSSurfaceRenderNode& surfaceNode, ScreenId screenId);
 
     void SetApiCompatibleVersion(uint32_t apiCompatibleVersion);
     uint32_t GetApiCompatibleVersion()
@@ -1419,6 +1427,15 @@ public:
 
     void ResetIsBufferFlushed();
 
+    bool IsUIBufferAvailable();
+
+    bool GetUIExtensionUnobscured() const;
+
+    std::shared_ptr<RSDirtyRegionManager>& GetDirtyManagerForUifirst()
+    {
+        return dirtyManager_;
+    }
+
 protected:
     void OnSync() override;
     void OnSkipSync() override;
@@ -1437,6 +1454,7 @@ private:
     bool IsHistoryOccludedDirtyRegionNeedSubmit();
     void ClearHistoryUnSubmittedDirtyInfo();
     void UpdateHistoryUnsubmittedDirtyInfo();
+    void SetUIExtensionUnobscured(bool obscured);
     inline bool IsHardwareDisabledBySrcRect() const
     {
         return isHardwareForcedDisabledBySrcRect_;
@@ -1548,6 +1566,7 @@ private:
     bool subThreadAssignable_ = false;
     bool oldNeedDrawBehindWindow_ = false;
     RectI skipFrameDirtyRect_;
+    bool UIExtensionUnobscured_ = false;
     std::atomic<bool> isNotifyRTBufferAvailable_ = false;
     std::atomic<bool> isNotifyUIBufferAvailable_ = true;
     std::atomic_bool isBufferAvailable_ = false;

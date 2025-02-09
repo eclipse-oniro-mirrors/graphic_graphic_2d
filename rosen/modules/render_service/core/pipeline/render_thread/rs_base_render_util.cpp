@@ -1305,6 +1305,9 @@ int32_t RSBaseRenderUtil::GetScreenRotationOffset(RSSurfaceRenderParams* nodePar
     uint32_t apiCompatibleVersion = nodeParams->GetApiCompatibleVersion();
     if (isCameraRotationCompensation && apiCompatibleVersion != INVALID_API_COMPATIBLE_VERSION &&
         apiCompatibleVersion < API14) {
+        if (RSSystemParameters::GetWindowScreenScanType() == 1) {
+            rotationDegree = RS_ROTATION_90;
+        }
         return rotationDegree;
     }
 
@@ -1730,7 +1733,7 @@ bool RSBaseRenderUtil::WritePixelMapToPng(Media::PixelMap& pixelMap)
     param.width = static_cast<uint32_t>(pixelMap.GetWidth());
     param.height = static_cast<uint32_t>(pixelMap.GetHeight());
     param.data = pixelMap.GetPixels();
-    param.stride = static_cast<uint32_t>(pixelMap.GetRowBytes());
+    param.stride = static_cast<uint32_t>(pixelMap.GetRowStride());
     param.bitDepth = Detail::BITMAP_DEPTH;
 
     return WriteToPng(filename, param);

@@ -65,7 +65,10 @@ bool TextBundleConfigParser::GetBundleInfo(AppExecFwk::BundleInfo& bundleInfo)
         TEXT_LOGE("Failed to get bundle manager");
         return false;
     }
-    ErrCode errCode = bundleMgr->GetBundleInfoForSelf(0, bundleInfo);
+    ErrCode errCode = bundleMgr->GetBundleInfoForSelf(
+        static_cast<int32_t>(AppExecFwk::GetBundleInfoFlag::GET_BUNDLE_INFO_WITH_HAP_MODULE) |
+        static_cast<int32_t>(AppExecFwk::GetBundleInfoFlag::GET_BUNDLE_INFO_WITH_METADATA),
+        bundleInfo);
     if (errCode != ERR_OK) {
         TEXT_LOGE("Failed to get bundle info, errcode: %{public}x", errCode);
         return false;
@@ -74,12 +77,12 @@ bool TextBundleConfigParser::GetBundleInfo(AppExecFwk::BundleInfo& bundleInfo)
 }
 #endif
 
-bool TextBundleConfigParser::IsAdapterTextHeightEnabled()
+bool TextBundleConfigParser::IsAdapterTextHeightEnabled() const
 {
     return initStatus_ && adapterTextHeightEnable_;
 }
 
-bool TextBundleConfigParser::IsTargetApiVersion(size_t targetVersion)
+bool TextBundleConfigParser::IsTargetApiVersion(size_t targetVersion) const
 {
     return initStatus_ && bundleApiVersion_ >= targetVersion;
 }

@@ -112,7 +112,7 @@ void RSRenderEngine::DrawLayers(RSPaintFilterCanvas& canvas, const std::vector<L
             params.tmoNits = layer->GetDisplayNit();
             params.displayNits = params.tmoNits / std::pow(layer->GetBrightnessRatio(), GAMMA2_2); // gamma 2.2
             if (node.GetRSSurfaceHandler() != nullptr &&
-                !CheckIsHdrSurfaceBuffer(node.GetRSSurfaceHandler()->GetBuffer())) {
+                CheckIsHdrSurfaceBuffer(node.GetRSSurfaceHandler()->GetBuffer()) == HdrStatus::NO_HDR) {
                 params.brightnessRatio = layer->GetBrightnessRatio();
             } else {
                 params.isHdrRedraw = true;
