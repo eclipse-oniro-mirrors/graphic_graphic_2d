@@ -15,6 +15,7 @@
 
 #include "gfx/fps_info/rs_surface_fps.h"
 #include "rs_trace.h"
+#include "platform/common/rs_log.h"
 
 namespace OHOS::Rosen {
 bool RSSurfaceFps::RecordPresentTime(uint64_t timestamp, uint32_t seqNum)
