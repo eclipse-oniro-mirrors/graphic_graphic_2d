@@ -20,6 +20,7 @@
 #include "platform/common/rs_log.h"
 #include "platform/common/rs_system_properties.h"
 #include "src/core/SkOpts.h"
+#include "rs_trace.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -43,7 +44,7 @@ RSMotionBlurFilter::~RSMotionBlurFilter() = default;
 void RSMotionBlurFilter::DrawImageRect(Drawing::Canvas& canvas, const std::shared_ptr<Drawing::Image>& image,
     const Drawing::Rect& src, const Drawing::Rect& dst) const
 {
-    RS_OPTIONAL_TRACE_NAME("RSMotionBlurFilter::MotionBlur");
+    RS_TRACE_NAME("RSMotionBlurFilter::MotionBlur");
 
     if (!image || image->GetWidth() == 0 || image->GetHeight() == 0) {
         lastRect_ = Drawing::Rect(0.f, 0.f, 0.f, 0.f);
