@@ -29,9 +29,7 @@ namespace SPText {
 #ifdef OHOS_TEXT_ENABLE
 const std::string ADAPTER_TEXT_HEIGHT_META_DATA = "ohos.graphics2d.text.adapter_text_height";
 const size_t VERSION_DIVISOR = 100;
-#endif
 
-#ifdef OHOS_TEXT_ENABLE
 bool TextBundleConfigParser::IsMetaDataExistInModule(const std::string& metaData,
     const AppExecFwk::BundleInfo& bundleInfo)
 {
@@ -50,28 +48,29 @@ bool TextBundleConfigParser::GetBundleInfo(AppExecFwk::BundleInfo& bundleInfo)
     sptr<ISystemAbilityManager> systemAbilityManager =
         SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     if (systemAbilityManager == nullptr) {
-        TEXT_LOGE("Failed to get systemAbilityManager");
+        TEXT_LOGE("Failed to get system ability manager");
         return false;
     }
 
     sptr<IRemoteObject> remoteObject =
         systemAbilityManager->GetSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
     if (remoteObject == nullptr) {
-        TEXT_LOGE("Failed to get remoteObject");
+        TEXT_LOGE("Failed to get remote object");
         return false;
     }
 
     sptr<AppExecFwk::IBundleMgr> bundleMgr =
         iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
     if (bundleMgr == nullptr) {
-        TEXT_LOGE("Failed to get iBundleMgr");
+        TEXT_LOGE("Failed to get bundle manager");
         return false;
     }
-    if (bundleMgr->GetBundleInfoForSelf(
+    ErrCode errCode = bundleMgr->GetBundleInfoForSelf(
         static_cast<int32_t>(AppExecFwk::GetBundleInfoFlag::GET_BUNDLE_INFO_WITH_HAP_MODULE) |
         static_cast<int32_t>(AppExecFwk::GetBundleInfoFlag::GET_BUNDLE_INFO_WITH_METADATA),
-        bundleInfo) != ERR_OK) {
-        TEXT_LOGE("Failed to get bundle info");
+        bundleInfo);
+    if (errCode != ERR_OK) {
+        TEXT_LOGE("Failed to get bundle info, errcode: %{public}x", errCode);
         return false;
     }
     return true;
