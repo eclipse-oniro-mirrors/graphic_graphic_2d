@@ -283,7 +283,7 @@ void FontDescriptorCache::GetFontDescSharedPtrByFullName(const std::string& full
     const int32_t& systemFontType, FontDescSharedPtr& result)
 {
     int32_t fontType = 0;
-    if (!CheckGetFontDescSharedPtrByFullNameParams(fullName, systemFontType,fontType)) {
+    if (!CheckGetFontDescSharedPtrByFullNameParams(fullName, systemFontType, fontType)) {
         return;
     }
 
