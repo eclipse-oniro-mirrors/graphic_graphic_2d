@@ -402,7 +402,9 @@ void RSCanvasDrawingRenderNodeDrawable::FlushForVK(float width, float height, st
     NodeId nodeId, RSPaintFilterCanvas& rscanvas)
 {
     if (!recordingCanvas_) {
+        REAL_ALLOC_CONFIG_SET_STATUS(true);
         image_ = surface_->GetImageSnapshot();
+        REAL_ALLOC_CONFIG_SET_STATUS(false);
     } else {
         auto cmds = recordingCanvas_->GetDrawCmdList();
         if (cmds && !cmds->IsEmpty()) {
@@ -702,9 +704,11 @@ bool RSCanvasDrawingRenderNodeDrawable::ResetSurfaceForVK(int width, int height,
             RsVulkanContext::GetSingleton(), vkTextureInfo->vkImage, vkTextureInfo->vkAlloc.memory);
             isNewCreate = true;
         }
+        REAL_ALLOC_CONFIG_SET_STATUS(true);
         surface_ = Drawing::Surface::MakeFromBackendTexture(gpuContext.get(), backendTexture_.GetTextureInfo(),
             Drawing::TextureOrigin::TOP_LEFT, 1, Drawing::ColorType::COLORTYPE_RGBA_8888, nullptr,
             NativeBufferUtils::DeleteVkImage, isNewCreate ? vulkanCleanupHelper_ : vulkanCleanupHelper_->Ref());
+        REAL_ALLOC_CONFIG_SET_STATUS(false);
         if (!surface_) {
             isGpuSurface_ = false;
             surface_ = Drawing::Surface::MakeRaster(info);
@@ -830,9 +834,11 @@ bool RSCanvasDrawingRenderNodeDrawable::GpuContextResetVK(
             RsVulkanContext::GetSingleton(), vkTextureInfo->vkImage, vkTextureInfo->vkAlloc.memory);
         isNewCreate = true;
     }
+    REAL_ALLOC_CONFIG_SET_STATUS(true);
     surface_ = Drawing::Surface::MakeFromBackendTexture(gpuContext.get(), backendTexture_.GetTextureInfo(),
         Drawing::TextureOrigin::TOP_LEFT, 1, Drawing::ColorType::COLORTYPE_RGBA_8888, nullptr,
         NativeBufferUtils::DeleteVkImage, isNewCreate ? vulkanCleanupHelper_ : vulkanCleanupHelper_->Ref());
+    REAL_ALLOC_CONFIG_SET_STATUS(false);
     if (!surface_) {
         isGpuSurface_ = false;
         surface_ = Drawing::Surface::MakeRaster(info);
