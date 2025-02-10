@@ -60,6 +60,8 @@ private:
     bool IsDefault(FontDescSharedPtr desc);
     int32_t WeightAlignment(int32_t weight);
     bool AdjustSystemFontTypeNotCustomized(uint32_t fontType);
+    bool CheckGetFontDescSharedPtrByFullNameParams(const std::string& fullName,
+        const int32_t& systemFontType, int32_t& fontType);
     
 private:
     TextEngine::FontParser parser_;
