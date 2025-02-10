@@ -30,9 +30,9 @@
 #include "platform/common/rs_system_properties.h"
 #if defined(RS_ENABLE_VK)
 #include "platform/ohos/backend/native_buffer_utils.h"
-#endif
 #ifdef USE_VIDEO_PROCESSING_ENGINE
 #include "render/rs_colorspace_convert.h"
+#endif
 #endif
 #include "skia_adapter/skia_gpu_context.h"
 #include "surface_buffer.h"
@@ -421,7 +421,7 @@ bool PixelMapFromSurface::CanvasDrawImage(const std::shared_ptr<Drawing::Image> 
         RS_LOGE("[PixelMapFromSurface] CanvasDrawImage CreateImageShader fail");
         return false;
     }
-
+#ifdef USE_VIDEO_PROCESSING_ENGINE
     sptr<SurfaceBuffer> sfBuffer(surfaceBuffer_);
     auto targetColorSpace = GRAPHIC_COLOR_GAMUT_SRGB;
     if (!RSColorSpaceConvert::Instance().ColorSpaceConvertor(imageShader, sfBuffer, paint, targetColorSpace, 0,
@@ -429,6 +429,7 @@ bool PixelMapFromSurface::CanvasDrawImage(const std::shared_ptr<Drawing::Image> 
         RS_LOGE("[PixelMapFromSurface] CanvasDrawImage ColorSpaceConvertor fail");
         return false;
     }
+#endif // USE_VIDEO_PROCESSING_ENGINE
     canvas->AttachPaint(paint);
     GraphicPixelFormat pixelFormat = static_cast<GraphicPixelFormat>(surfaceBuffer_->GetFormat());
     if (pixelFormat == GRAPHIC_PIXEL_FMT_YCBCR_P010 || pixelFormat == GRAPHIC_PIXEL_FMT_YCRCB_P010 ||
