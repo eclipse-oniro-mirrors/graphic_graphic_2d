@@ -29,6 +29,7 @@ bool RSSurfaceFpsManager::RegisterSurfaceFps(NodeId id, std::string name)
 {
     std::unique_lock<std::shared_mutex> lock(smtx);
     if (surfaceFpsMap_.find(id) != surfaceFpsMap_.end()) {
+        RS_LOGD("RSSurfaceFpsManager::RegisterSurfaceFps register node:%{public}" PRIu64 "already existed.", id);
         return false;
     }
     surfaceFpsMap_[id] = std::make_shared<RSSurfaceFps>(name);
@@ -39,7 +40,7 @@ bool RSSurfaceFpsManager::UnregisterSurfaceFps(NodeId id)
 {
     std::unique_lock<std::shared_mutex> lock(smtx);
     if (surfaceFpsMap_.find(id) == surfaceFpsMap_.end()) {
-        RS_LOGE("RSSurfaceFpsManager::Unregister node:%{public}" PRIu64 "not exist.", id);
+        RS_LOGD("RSSurfaceFpsManager::Unregister node:%{public}" PRIu64 "not exist.", id);
         return false;
     }
     surfaceFpsMap_.erase(id);
@@ -67,11 +68,11 @@ std::shared_ptr<RSSurfaceFps> RSSurfaceFpsManager::GetSurfaceFps(std::string nam
     return nullptr;
 }
 
-bool RSSurfaceFpsManager::RecordPresentTime(NodeId id, uint64_t timestamp, int32_t seqNum)
+bool RSSurfaceFpsManager::RecordPresentTime(NodeId id, uint64_t timestamp, uint32_t seqNum)
 {
     const auto& surfaceFps = GetSurfaceFps(id);
     if (surfaceFps == nullptr) {
-        RS_LOGE("RSSurfaceFpsManager::RecordPresentTime surfaceFps is nullptr.");
+        RS_LOGD("RSSurfaceFpsManager::RecordPresentTime surfaceFps is nullptr.");
         return false;
     }
     return surfaceFps->RecordPresentTime(timestamp, seqNum);
