@@ -1395,21 +1395,12 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
     }
     const auto& nodeMap = GetContext().GetNodeMap();
     bool isHdrSwitchChanged = RSLuminanceControl::Get().IsHdrPictureOn() != prevHdrSwitchStatus_;
-    uint32_t frameRatePidFromRSS = ResschedEventListener::GetInstance()->GetCurrentPid();
-    bool isCurrentFrameCounted = false;
     nodeMap.TraverseSurfaceNodes(
-        [this, &needRequestNextVsync, isHdrSwitchChanged, &isCurrentFrameCounted, frameRatePidFromRSS](
+        [this, &needRequestNextVsync, isHdrSwitchChanged](
             const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode) mutable {
         if (surfaceNode == nullptr) {
             return;
         }
-#ifdef RES_SCHED_ENABLE
-        uint32_t pidFromNode = ExtractPid(surfaceNode->GetId());
-        if (frameRatePidFromRSS == pidFromNode && !isCurrentFrameCounted) {
-            isCurrentFrameCounted = true;
-            ResschedEventListener::GetInstance()->ReportFrameCountAsync(pidFromNode);
-        }
-#endif // RES_SCHED_ENABLE
         surfaceNode->ResetAnimateState();
         surfaceNode->ResetRotateState();
         surfaceNode->ResetSpecialLayerChangedFlag();
@@ -2237,6 +2228,29 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
         uniVisitor->SetFocusedNodeId(focusNodeId_, focusLeashWindowId_);
         rsVsyncRateReduceManager_.SetFocusedNodeId(focusNodeId_);
         rootNode->QuickPrepare(uniVisitor);
+
+#ifdef RES_SCHED_ENABLE
+        const auto& nodeMapForFrameReport = GetContext().GetNodeMap();
+        uint32_t frameRatePidFromRSS = ResschedEventListener::GetInstance()->GetCurrentPid();
+        bool isCurrentFrameCounted = false;
+        nodeMapForFrameReport.TraverseSurfaceNodes(
+            [this, &frameRatePidFromRSS, &isCurrentFrameCounted](
+                const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode) {
+                if (surfaceNode == nullptr) {
+                    return;
+                }
+                uint32_t pidFromNode = ExtractPid(surfaceNode->GetId());
+                if (frameRatePidFromRSS == pidFromNode && !isCurrentFrameCounted) {
+                    auto dirtyManager = surfaceNode->GetDirtyManager();
+                    if (dirtyManager == nullptr || dirtyManager->GetCurrentFrameDirtyRegion().isEmpty()) {
+                        return;
+                    }
+                    isCurrentFrameCounted = true;
+                    ResschedEventListener::GetInstance()->ReportFrameCountAsync(pidFromNode);
+                }
+        });
+#endif // RES_SCHED_ENABLE
+
         if (deviceType_ != DeviceType::PHONE) {
             RSUniRenderUtil::MultiLayersPerf(uniVisitor->GetLayerNum());
         }
