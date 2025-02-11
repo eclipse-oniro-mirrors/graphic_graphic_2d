@@ -46,8 +46,6 @@
 #include "feature/uifirst/rs_sub_thread_manager.h"
 #endif
 #include "feature/uifirst/rs_uifirst_manager.h"
-#include "include/gpu/GrDirectContext.h"
-#include "info_collection/rs_hdr_collection.h"
 #include "pipeline/rs_canvas_drawing_render_node.h"
 #include "pipeline/rs_pointer_window_manager.h"
 #ifdef OHOS_BUILD_ENABLE_MAGICCURSOR
