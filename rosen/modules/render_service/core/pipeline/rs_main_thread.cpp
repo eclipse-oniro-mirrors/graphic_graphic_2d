@@ -3954,7 +3954,7 @@ void RSMainThread::CheckFastCompose(int64_t lastFlushedDesiredPresentTimeStamp)
     } else {
         lastVsyncTime = timestamp_;
     }
-    lastVsyncTime = nowTime - (((uint64_t)nowTime - lastVsyncTime) % (uint64_t)vsyncPeriod);
+    lastVsyncTime = (uint64_t)nowTime - (((uint64_t)nowTime - lastVsyncTime) % (uint64_t)vsyncPeriod);
     RS_TRACE_NAME_FMT("RSMainThread::CheckFastCompose now = %" PRIu64 "" \
         ", lastVsyncTime = %" PRIu64 ", timestamp_ = %" PRIu64, nowTime, lastVsyncTime, timestamp_);
     // ignore animation scenario and mult-window scenario
