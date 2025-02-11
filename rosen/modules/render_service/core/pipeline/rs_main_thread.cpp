@@ -3963,7 +3963,8 @@ void RSMainThread::CheckFastCompose(int64_t lastFlushedDesiredPresentTimeStamp)
     if (isNeedSingleFrameCompose && (uint64_t)nowTime - timestamp_ > (uint64_t)vsyncPeriod &&
         (uint64_t)lastFlushedDesiredPresentTimeStamp > lastVsyncTime - (uint64_t)vsyncPeriod &&
         (uint64_t)lastFlushedDesiredPresentTimeStamp < lastVsyncTime &&
-        (uint64_t)nowTime - lastVsyncTime < (uint64_t)(REFRESH_PERIOD / 2)) { // invoke when late less than 1/2 refresh period
+        (uint64_t)nowTime - lastVsyncTime <
+        (uint64_t)(REFRESH_PERIOD / 2)) { // invoke when late less than 1/2 refresh period
         RS_TRACE_NAME("RSMainThread::CheckFastCompose success, start fastcompose");
         RS_LOGD("RSMainThread::CheckFastCompose fastcompose start"
             ", buffer late for %{public}" PRIu64, nowTime - lastVsyncTime);
