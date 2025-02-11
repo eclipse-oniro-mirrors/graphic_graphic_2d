@@ -165,11 +165,9 @@ bool RSRenderService::Init()
     // feature param parse
     GraphicFeatureParamManager::GetInstance().Init();
 	
-	// Gfx Init
-    RSGfxDumpInit();
+    RSGfxDumpInit(); // Gfx Init
 
     RS_PROFILER_INIT(this);
-
     return true;
 }
 
@@ -713,17 +711,17 @@ void RSRenderService::DumpExistPidMem(std::unordered_set<std::u16string>& argSet
 }
 
 void RSRenderService::DoDump(std::unordered_set<std::u16string>& argSets, std::string& dumpString) const
-{   
+{
     if (argSets.empty()) {
         RS_LOGE("RSRenderService::DoDump failed, args is empty");
         return;
     }
 
-    std::string cmd_str;
+    std::string cmdStr;
     for (const std::u16string &cmd : argSets) {
-        cmd_str += std::string(cmd.begin(), cmd.end()) + " ";
+        cmdStr += std::string(cmd.begin(), cmd.end()) + " ";
     }
-    RS_TRACE_NAME("RSRenderService::DoDump args is [ " + cmd_str + " ]");
+    RS_TRACE_NAME("RSRenderService::DoDump args is [ " + cmdStr + " ]");
 
     if (!mainThread_ || !screenManager_ || !rsDumpManager_) {
         RS_LOGE("RSRenderService::DoDump failed, mainThread, screenManager or rsDumpManager_ is nullptr");
