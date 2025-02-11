@@ -2233,22 +2233,23 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
         const auto& nodeMapForFrameReport = GetContext().GetNodeMap();
         uint32_t frameRatePidFromRSS = ResschedEventListener::GetInstance()->GetCurrentPid();
         bool isCurrentFrameCounted = false;
-        nodeMapForFrameReport.TraverseSurfaceNodes(
+        nodeMapForFrameReport.TraverseSurfaceNodesBreakOnCondition(
             [this, &frameRatePidFromRSS, &isCurrentFrameCounted](
                 const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode) {
                 if (!isCurrentFrameCounted && surfaceNode == nullptr) {
-                    return;
+                    return false;
                 }
                 uint32_t pidFromNode = ExtractPid(surfaceNode->GetId());
                 if (frameRatePidFromRSS != pidFromNode) {
-                    return;
+                    return false;
                 }
                 auto dirtyManager = surfaceNode->GetDirtyManager();
-                if (dirtyManager == nullptr || dirtyManager->GetCurrentFrameDirtyRegion().isEmpty()) {
-                    return;
+                if (dirtyManager == nullptr || dirtyManager->GetCurrentFrameDirtyRegion().IsEmpty()) {
+                    return false;
                 }
                 isCurrentFrameCounted = true;
                 ResschedEventListener::GetInstance()->ReportFrameCountAsync(pidFromNode);
+                return true;
         });
 #endif // RES_SCHED_ENABLE
 
