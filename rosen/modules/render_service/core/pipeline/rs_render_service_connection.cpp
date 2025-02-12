@@ -2175,7 +2175,8 @@ void RSRenderServiceConnection::SetAppWindowNum(uint32_t num)
     mainThread_->PostTask(task);
 }
 
-bool RSRenderServiceConnection::SetSystemAnimatedScenes(SystemAnimatedScenes systemAnimatedScenes)
+bool RSRenderServiceConnection::SetSystemAnimatedScenes(
+    SystemAnimatedScenes systemAnimatedScenes, bool isRegularAnimation)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     if (!mainThread_) {
@@ -2183,7 +2184,7 @@ bool RSRenderServiceConnection::SetSystemAnimatedScenes(SystemAnimatedScenes sys
     }
 #ifdef RS_ENABLE_GPU
     RSUifirstManager::Instance().OnProcessAnimateScene(systemAnimatedScenes);
-    return mainThread_->SetSystemAnimatedScenes(systemAnimatedScenes);
+    return mainThread_->SetSystemAnimatedScenes(systemAnimatedScenes, isRegularAnimation);
 #else
     return false;
 #endif

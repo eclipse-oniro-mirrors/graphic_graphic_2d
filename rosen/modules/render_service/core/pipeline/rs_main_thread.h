@@ -225,8 +225,9 @@ public:
     void CountMem(int pid, MemoryGraphic& mem);
     void CountMem(std::vector<MemoryGraphic>& mems);
     void SetAppWindowNum(uint32_t num);
-    bool SetSystemAnimatedScenes(SystemAnimatedScenes systemAnimatedScenes);
+    bool SetSystemAnimatedScenes(SystemAnimatedScenes systemAnimatedScenes, bool isRegularAnimation = false);
     SystemAnimatedScenes GetSystemAnimatedScenes();
+    bool GetIsRegularAnimation() const;
     // Save marks, and use it for SurfaceNodes later.
     void SetWatermark(const std::string& name, std::shared_ptr<Media::PixelMap> watermark);
     // Save marks, and use it for DisplayNode later.
@@ -639,6 +640,7 @@ private:
     pid_t desktopPidForRotationScene_ = 0;
     int32_t subscribeFailCount_ = 0;
     SystemAnimatedScenes systemAnimatedScenes_ = SystemAnimatedScenes::OTHERS;
+    bool isRegularAnimation_ = false;
     uint32_t leashWindowCount_ = 0;
     pid_t exitedPid_ = -1;
     RsParallelType rsParallelType_;
