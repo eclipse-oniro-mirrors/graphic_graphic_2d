@@ -366,7 +366,7 @@ void RSRenderNodeMap::TraverseSurfaceNodesBreakOnCondition(
     std::function<bool (const std::shared_ptr<RSSurfaceRenderNode>&)> func) const
 {
     for (const auto& [_, node] : surfaceNodeMap_) {
-        if(func(node)) {
+        if (func(node)) {
             break;
         }
     }
