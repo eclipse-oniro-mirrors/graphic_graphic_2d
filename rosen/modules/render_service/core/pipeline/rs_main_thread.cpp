@@ -2233,7 +2233,7 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
         const auto& nodeMapForFrameReport = GetContext().GetNodeMap();
         uint32_t frameRatePidFromRSS = ResschedEventListener::GetInstance()->GetCurrentPid();
         nodeMapForFrameReport.TraverseSurfaceNodesBreakOnCondition(
-            [this, &frameRatePidFromRSS](
+            [this, frameRatePidFromRSS](
                 const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode) {
                 if (surfaceNode == nullptr) {
                     return false;
