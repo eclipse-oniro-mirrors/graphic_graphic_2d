@@ -3188,8 +3188,8 @@ void RSUniRenderVisitor::UpdateHwcNodeRectInSkippedSubTree(const RSRenderNode& r
         Drawing::Rect bounds = Drawing::Rect(0, 0, properties.GetBoundsWidth(), properties.GetBoundsHeight());
         Drawing::Rect absRect;
         matrix.MapRect(absRect, bounds);
-        RectI rect = {std::round(absRect.left_), std::round(absRect.top_),
-            std::round(absRect.GetWidth()), std::round(absRect.GetHeight())};
+        RectI rect = {std::floor(absRect.left_), std::floor(absRect.top_),
+            std::ceil(absRect.GetWidth()), std::ceil(absRect.GetHeight())};
         UpdateDstRect(*hwcNodePtr, rect, clipRect);
         UpdateSrcRect(*hwcNodePtr, matrix, rect);
         UpdateHwcNodeByTransform(*hwcNodePtr, matrix);
