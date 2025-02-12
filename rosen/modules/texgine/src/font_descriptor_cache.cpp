@@ -181,7 +181,7 @@ std::unordered_set<std::string> FontDescriptorCache::GetDynamicFontList()
     return fullNameList;
 }
 
-bool FontDescriptorCache::ProcessSystemFontType(const int32_t& systemFontType, int32_t& fontType)
+bool FontDescriptorCache::ProcessSystemFontType(int32_t systemFontType, int32_t& fontType)
 {
     if ((static_cast<uint32_t>(systemFontType) & (TextEngine::FontParser::SystemFontType::ALL |
         TextEngine::FontParser::SystemFontType::GENERIC |
@@ -202,7 +202,7 @@ bool FontDescriptorCache::ProcessSystemFontType(const int32_t& systemFontType, i
 }
 
 void FontDescriptorCache::GetSystemFontFullNamesByType(
-    const int32_t &systemFontType, std::unordered_set<std::string> &fontList)
+    int32_t systemFontType, std::unordered_set<std::string> &fontList)
 {
     if (systemFontType < 0) {
         TEXT_LOGE("SystemFontType is an invalid value");
@@ -277,7 +277,7 @@ bool FontDescriptorCache::GetFontTypeFromParams(const std::string& fullName,
 }
 
 void FontDescriptorCache::GetFontDescSharedPtrByFullName(const std::string& fullName,
-    const int32_t& systemFontType, FontDescSharedPtr& result)
+    int32_t systemFontType, FontDescSharedPtr& result)
 {
     int32_t fontType = 0;
     if (!GetFontTypeFromParams(fullName, systemFontType, fontType)) {
