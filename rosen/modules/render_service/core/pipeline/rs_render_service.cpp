@@ -95,6 +95,10 @@ bool RSRenderService::Init()
 
     RSMainThread::Instance();
     RSUniRenderJudgement::InitUniRenderConfig();
+
+    // feature param parse
+    GraphicFeatureParamManager::GetInstance().Init();
+
 #ifdef TP_FEATURE_ENABLE
     TOUCH_SCREEN->InitTouchScreen();
 #endif
@@ -161,9 +165,6 @@ bool RSRenderService::Init()
         return false;
     }
     samgr->AddSystemAbility(RENDER_SERVICE, this);
-
-    // feature param parse
-    GraphicFeatureParamManager::GetInstance().Init();
 
     RS_PROFILER_INIT(this);
 
