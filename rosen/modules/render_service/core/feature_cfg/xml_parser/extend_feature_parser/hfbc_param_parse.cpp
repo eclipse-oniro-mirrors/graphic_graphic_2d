@@ -68,7 +68,6 @@ int32_t HfbcParamParse::ParseHfbcInternal(FeatureParamMapType &featureMap, xmlNo
             HgmCore::Instance().SetHfbcConfigMap(hfbcParam_->GetHfbcConfigMap());
         }
     }
-    HgmCore::Instance().SetHfbcConfigMap(hfbcParam_->GetHfbcConfigMap());
     return PARSE_EXEC_SUCCESS;
 }
 
