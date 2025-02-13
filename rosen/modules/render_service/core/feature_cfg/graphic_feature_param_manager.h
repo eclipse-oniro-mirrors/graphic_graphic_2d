@@ -32,7 +32,7 @@
 
 namespace OHOS::Rosen {
 #define DEFINE_MOD(x) {FEATURE_CONFIGS[x], [] {return std::make_unique<x##ParamParse>(); }, \
-[] {return std::make_unique<x##Param>(); }}
+    [] {return std::make_unique<x##Param>(); }}
 
 struct ModuleConfig {
     std::string name;
