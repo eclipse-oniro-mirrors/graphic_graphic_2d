@@ -15,6 +15,7 @@
 
 #include "symbol_config_parser.h"
 
+#include <cstdlib>
 #include <functional>
 
 namespace {
@@ -36,11 +37,10 @@ constexpr char ANIMATION_INDEX[] = "animation_index";
 constexpr char ANIMATION_SETTINGS[] = "animation_settings";
 constexpr char ANIMATION_TYPES[] = "animation_types";
 
-constexpr uint32_t defaultColorHexLen = 9;
-constexpr uint32_t defaultColorStrLen = 7;
-constexpr uint32_t hexFlag = 16;
-constexpr uint32_t twoBytesBitsLen = 16;
-constexpr uint32_t oneByteBitsLen = 8;
+constexpr uint32_t DEFAULT_COLOR_HEX_LEN = 9;
+constexpr uint32_t DEFAULT_COLOR_STR_LEN = 7;
+constexpr uint32_t HEX_FLAG = 16;
+constexpr uint32_t BYTE_LEN = 8;
 
 using SymbolKeyFunc = std::function<void(const char*, const Json::Value&, RSSymbolLayersGroups&)>;
 using SymbolKeyFuncMap = std::unordered_map<std::string, SymbolKeyFunc>;
@@ -69,8 +69,6 @@ const std::unordered_map<std::string, RSSymbolRenderingStrategy> RENDER_STRATEGY
     {"hierarchical", RSSymbolRenderingStrategy::MULTIPLE_OPACITY},
 };
 };
-
-
 
 bool SymbolConfigParser::ParseSymbolLayersGrouping(const Json::Value& root,
     std::unordered_map<uint16_t, RSSymbolLayersGroups>& symbolConfig)
@@ -162,7 +160,7 @@ void SymbolConfigParser::ParseOneSymbolRenderCase(const char* key, const Json::V
 }
 
 void SymbolConfigParser::ParseRenderModes(const Json::Value& root,
-    std::map<RSSymbolRenderingStrategy,std::vector<RSRenderGroup>>& renderModesGroups)
+    std::map<RSSymbolRenderingStrategy, std::vector<RSRenderGroup>>& renderModesGroups)
 {
     for (uint32_t i = 0; i < root.size(); i++) {
         if (!root[i].isObject()) {
@@ -188,7 +186,7 @@ void SymbolConfigParser::ParseRenderModes(const Json::Value& root,
             }
             ParseRenderGroups(root[i][RENDER_GROUPS], renderGroups);
         }
-        renderModesGroups.insert({renderingStrategy, renderGroups});
+        renderModesGroups.emplace(renderingStrategy, renderGroups);
     }
 }
 
@@ -213,24 +211,27 @@ void SymbolConfigParser::ParseRenderGroups(const Json::Value& root, std::vector<
     }
 }
 
-void SymbolConfigParser::ParseDefaultColor(const char* defaultColor, RSRenderGroup& renderGroup)
+void SymbolConfigParser::ParseDefaultColor(const char* defaultColorStr, RSRenderGroup& renderGroup)
 {
-    char defaultColorHex[defaultColorHexLen];
+    char defaultColorHex[DEFAULT_COLOR_HEX_LEN];
     defaultColorHex[0] = '0';
     defaultColorHex[1] = 'X';
-    if (defaultColor == nullptr || strlen(defaultColor) != defaultColorStrLen) {
+    if (defaultColorStr == nullptr || strlen(defaultColorStr) != DEFAULT_COLOR_STR_LEN) {
         return;
     }
 
-    for (uint32_t i = 1; i < defaultColorStrLen; i++) {
-        defaultColorHex[i + 1] = defaultColor[i];
+    for (uint32_t i = 1; i < DEFAULT_COLOR_STR_LEN; i++) {
+        defaultColorHex[i + 1] = defaultColorStr[i];
     }
-    defaultColorHex[defaultColorHexLen - 1] = '\0';
-    char* endPtr = nullptr;
-    int defaultColorInt = strtol(defaultColorHex, &endPtr, hexFlag);
-    renderGroup.color.r = (defaultColorInt >> twoBytesBitsLen) & 0xFF;
-    renderGroup.color.g = (defaultColorInt >> oneByteBitsLen) & 0xFF;
-    renderGroup.color.b = defaultColorInt & 0xFF;
+    defaultColorHex[DEFAULT_COLOR_HEX_LEN - 1] = '\0';
+    char* end = nullptr;
+    uint32_t defaultColor = std::strtoul(defaultColorHex, &end, HEX_FLAG);
+    if (end == nullptr || *end != '\0') {
+        return;
+    }
+    renderGroup.color.r = (defaultColor >> (BYTE_LEN * 2)) & 0xFF;
+    renderGroup.color.g = (defaultColor >> BYTE_LEN) & 0xFF;
+    renderGroup.color.b = defaultColor & 0xFF;
 }
 
 void SymbolConfigParser::ParseGroupIndexes(const Json::Value& root, std::vector<RSGroupInfo>& groupInfos)

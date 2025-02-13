@@ -57,7 +57,6 @@ LoadSymbolErrorCode CustomSymbolConfig::ParseConfigOfCustomSymbol(const std::str
     }
     root.clear();
     return result;
-    
 }
 
 std::optional<RSSymbolLayersGroups> CustomSymbolConfig::GetSymbolLayersGroups(const std::string &familiName,

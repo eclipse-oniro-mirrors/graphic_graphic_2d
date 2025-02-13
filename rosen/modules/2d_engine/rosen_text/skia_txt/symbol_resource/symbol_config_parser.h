@@ -24,15 +24,13 @@
 #include "symbol_engine/drawing.h"
 #include "text/hm_symbol.h"
 
-class SymbolConfigParser
-{
+class SymbolConfigParser {
 public:
     bool ParseSymbolLayersGrouping(const Json::Value& root,
         std::unordered_map<uint16_t, RSSymbolLayersGroups>& symbolConfig);
 
 private:
     bool CheckSymbolLayersIsVaild(const Json::Value& root);
-
     void ParseOneSymbolNativeCase(const char* key, const Json::Value& root, RSSymbolLayersGroups& symbolLayersGroups,
         uint16_t& nativeGlyphId);
     void ParseComponets(const Json::Value& root, std::vector<size_t>& components);
@@ -54,6 +52,6 @@ private:
     void ParseGroupSettings(const Json::Value& root, std::vector<RSGroupSetting>& groupSettings);
     void ParseGroupSetting(const Json::Value& root, RSGroupSetting& groupSetting);
     void ParseOneSymbol(const Json::Value& root, std::unordered_map<uint16_t, RSSymbolLayersGroups>& symbolConfig);
-}; 
+};
 
 #endif // SYMBOL_CONFIG_PARSER_H
