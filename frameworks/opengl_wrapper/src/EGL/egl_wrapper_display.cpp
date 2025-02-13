@@ -482,7 +482,7 @@ EGLBoolean EglWrapperDisplay::DestroyEglContext(EGLContext context)
     return ret;
 }
 
-// Get the colorspace value that shoud be reported from queries.
+// Get the colorspace value that should be reported from queries.
 // When the colorspace is unknown (no attribute passed), default to reporting LINEAR.
 static EGLint getReportedColorSpace(EGLint colorSpace)
 {
