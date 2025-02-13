@@ -28,7 +28,8 @@ class EglWrapperDisplay;
 
 class EglWrapperSurface : public EglWrapperObject {
 public:
-    EglWrapperSurface(EglWrapperDisplay *disp, EGLSurface surf, NativeWindowType window = nullptr, EGLint colorSpace = EGL_UNKNOWN);
+    EglWrapperSurface(EglWrapperDisplay *disp, EGLSurface surf,
+                      NativeWindowType window = nullptr, EGLint colorSpace = EGL_UNKNOWN);
     static EglWrapperSurface *GetWrapperSurface(EGLSurface surf);
     inline EGLSurface GetEglSurface() const
     {
