@@ -22,15 +22,17 @@
 #include <parameters.h>
 #include <set>
 
-#include "rs_base_render_engine.h"
+#include "render_thread/rs_base_render_engine.h"
 #include "system/rs_system_parameters.h"
 
+#include "feature/hwc/rs_uni_hwc_prevalidate_util.h"
+#include "common/rs_special_layer_manager.h"
 #include "params/rs_render_thread_params.h"
 #include "feature/round_corner_display/rs_rcd_render_manager.h"
 #include "pipeline/rs_dirty_region_manager.h"
 #include "pipeline/rs_main_thread.h"
 #include "pipeline/rs_pointer_window_manager.h"
-#include "pipeline/rs_uni_hwc_prevalidate_util.h"
+#include "pipeline/rs_render_node.h"
 #include "platform/ohos/overdraw/rs_overdraw_controller.h"
 #include "screen_manager/rs_screen_manager.h"
 #include "visitor/rs_node_visitor.h"
@@ -143,6 +145,24 @@ public:
     void SurfaceOcclusionCallbackToWMS();
 
     using RenderParam = std::tuple<std::shared_ptr<RSRenderNode>, RSPaintFilterCanvas::CanvasStatus>;
+
+    bool GetDumpRsTreeDetailEnabled()
+    {
+        return isDumpRsTreeDetailEnabled_;
+    }
+
+    inline uint32_t IncreasePrepareSeq()
+    {
+        return ++nodePreparedSeqNum_;
+    }
+
+    inline uint32_t IncreasePostPrepareSeq()
+    {
+        return ++nodePostPreparedSeqNum_;
+    }
+
+    void SetCurFrameInfoDetail(RSRenderNode& node, bool subTreeSkipped = false, bool isPostPrepare = false);
+
 private:
     const std::unordered_set<NodeId> GetCurrentBlackList() const;
     /* Prepare relevant calculation */
@@ -201,9 +221,11 @@ private:
     void UpdateHwcNodeEnableByGlobalCleanFilter(const std::vector<std::pair<NodeId, RectI>>& cleanFilter,
         RSSurfaceRenderNode& hwcNodePtr);
     void UpdateHwcNodeEnableByFilterRect(
-        std::shared_ptr<RSSurfaceRenderNode>& node, const RectI& filterRect, bool isReverseOrder = false);
+        std::shared_ptr<RSSurfaceRenderNode>& node,
+        const RectI& filterRect, const NodeId filterNodeId, bool isReverseOrder = false);
     void CalcHwcNodeEnableByFilterRect(
-        std::shared_ptr<RSSurfaceRenderNode>& node, const RectI& filterRect, bool isReverseOrder = false);
+        std::shared_ptr<RSSurfaceRenderNode>& node,
+        const RectI& filterRect, const NodeId filterNodeId, bool isReverseOrder = false);
     // This function is used for solving display problems caused by dirty blurfilter node half-obscured.
     void UpdateDisplayDirtyAndExtendVisibleRegion();
     // This function is used to update global dirty and visibleRegion
@@ -221,8 +243,6 @@ private:
     void UpdateHwcNodeEnableByRotateAndAlpha(std::shared_ptr<RSSurfaceRenderNode>& node);
     void ProcessAncoNode(std::shared_ptr<RSSurfaceRenderNode>& hwcNodePtr, bool& ancoHasGpu);
     void UpdateAncoNodeHWCDisabledState(std::unordered_set<std::shared_ptr<RSSurfaceRenderNode>>& ancoNodes);
-    void UpdateHwcNodeEnableByHwcNodeBelowSelfInApp(std::vector<RectI>& hwcRects,
-        std::shared_ptr<RSSurfaceRenderNode>& hwcNode);
     void UpdateChildHwcNodeEnableByHwcNodeBelow(std::vector<RectI>& hwcRects,
         std::shared_ptr<RSSurfaceRenderNode>& appNode);
     void UpdateHwcNodeEnableByHwcNodeBelowSelf(std::vector<RectI>& hwcRects,
@@ -285,7 +305,7 @@ private:
     void HandlePixelFormat(RSDisplayRenderNode& node, const sptr<RSScreenManager>& screenManager);
 
     bool IsHardwareComposerEnabled();
-    void UpdateSecuritySkipAndProtectedLayersRecord(RSSurfaceRenderNode& node);
+    void UpdateSpecialLayersRecord(RSSurfaceRenderNode& node);
     void SendRcdMessage(RSDisplayRenderNode& node);
 
     bool ForcePrepareSubTree()
@@ -294,12 +314,18 @@ private:
     }
     bool IsValidInVirtualScreen(RSSurfaceRenderNode& node) const
     {
-        return !node.GetSkipLayer() && !node.GetSecurityLayer() && (screenInfo_.whiteList.empty() ||
-            screenInfo_.whiteList.find(node.GetId()) != screenInfo_.whiteList.end());
+        const auto& specialLayerMgr = node.GetSpecialLayerMgr();
+        return !specialLayerMgr.Find(SpecialLayerType::SKIP) &&
+            !specialLayerMgr.Find(SpecialLayerType::SECURITY) &&
+            (screenInfo_.whiteList.empty() || screenInfo_.whiteList.find(node.GetId()) != screenInfo_.whiteList.end());
     }
     void UpdateRotationStatusForEffectNode(RSEffectRenderNode& node);
     void CheckFilterNodeInSkippedSubTreeNeedClearCache(const RSRenderNode& node, RSDirtyRegionManager& dirtyManager);
     void UpdateHwcNodeRectInSkippedSubTree(const RSRenderNode& node);
+    bool FindRootAndUpdateMatrix(std::shared_ptr<RSRenderNode>& parent, Drawing::Matrix& matrix,
+        const RSRenderNode& rootNode);
+    void UpdateHWCNodeClipRect(std::shared_ptr<RSSurfaceRenderNode>& hwcNodePtr, RectI& clipRect,
+        const RSRenderNode& rootNode);
     void UpdateSubSurfaceNodeRectInSkippedSubTree(const RSRenderNode& rootNode);
     void CollectOcclusionInfoForWMS(RSSurfaceRenderNode& node);
     void CollectEffectInfo(RSRenderNode& node);
@@ -320,6 +346,8 @@ private:
     // Used for closing HDR in PC multidisplay becauseof performance and open when singledisplay
     void SetHdrWhenMultiDisplayChangeInPC();
 
+    void TryNotifyUIBufferAvailable();
+
     std::vector<std::shared_ptr<RSSurfaceRenderNode>> hardwareEnabledNodes_;
     bool isCompleteRenderEnabled_ = false;
     std::shared_ptr<RSBaseRenderEngine> renderEngine_;
@@ -336,10 +364,7 @@ private:
     std::shared_ptr<RSDirtyRegionManager> curDisplayDirtyManager_;
     std::shared_ptr<RSSurfaceRenderNode> curSurfaceNode_;
     ScreenId currentVisitDisplay_ = INVALID_SCREEN_ID;
-    std::map<ScreenId, bool> displayHasSecSurface_;
-    std::map<ScreenId, bool> displayHasSkipSurface_;
-    std::map<ScreenId, bool> displayHasSnapshotSkipSurface_;
-    std::map<ScreenId, bool> displayHasProtectedSurface_;
+    RSSpecialLayerManager specialLayerManager_;
     std::map<ScreenId, bool> displaySpecailSurfaceChanged_;
     std::map<ScreenId, bool> hasCaptureWindow_;
     std::map<ScreenId, bool> hasFingerprint_;
@@ -419,6 +444,7 @@ private:
     int32_t offsetY_ { 0 };
     bool isTargetUIFirstDfxEnabled_ = false;
     std::vector<std::string> dfxUIFirstSurfaceNames_;
+    std::vector<NodeId> uiBufferAvailableId_;
     PartialRenderType partialRenderType_;
     SurfaceRegionDebugType surfaceRegionDebugType_;
     uint32_t threadIndex_ = UNI_MAIN_THREAD_INDEX;
@@ -442,6 +468,12 @@ private:
     uint32_t layerNum_ = 0;
 
     NodeId clonedSourceNodeId_ = INVALID_NODEID;
+
+    bool isDumpRsTreeDetailEnabled_ = false;
+
+    uint32_t nodePreparedSeqNum_ = 0;
+
+    uint32_t nodePostPreparedSeqNum_ = 0;
 };
 } // namespace Rosen
 } // namespace OHOS

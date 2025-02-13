@@ -18,8 +18,8 @@
 #include "drawable/rs_display_render_node_drawable.h"
 #include "drawable/rs_surface_render_node_drawable.h"
 #include "params/rs_surface_render_params.h"
+#include "pipeline/render_thread/rs_uni_render_util.h"
 #include "pipeline/rs_main_thread.h"
-#include "pipeline/rs_uni_render_util.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -69,7 +69,7 @@ HWTEST_F(RSUniRenderUtilSecUIExtensionTest, UIExtensionFindAndTraverseAncestor_0
 
 /*
  * @tc.name: UIExtensionFindAndTraverseAncestor_002
- * @tc.desc: test when host node is surface node and one uiextension child, callback data is not empty
+ * @tc.desc: test when host node is surface node and one uiExtension child, callback data is not empty
  * @tc.type: FUNC
  * @tc.require: issueI9SDDH
  */

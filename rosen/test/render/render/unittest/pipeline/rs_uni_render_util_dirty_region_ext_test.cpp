@@ -19,8 +19,8 @@
 #include "drawable/rs_display_render_node_drawable.h"
 #include "drawable/rs_surface_render_node_drawable.h"
 #include "params/rs_surface_render_params.h"
+#include "pipeline/render_thread/rs_uni_render_util.h"
 #include "pipeline/rs_main_thread.h"
-#include "pipeline/rs_uni_render_util.h"
 #include "render/rs_material_filter.h"
 #include "render/rs_shadow.h"
 

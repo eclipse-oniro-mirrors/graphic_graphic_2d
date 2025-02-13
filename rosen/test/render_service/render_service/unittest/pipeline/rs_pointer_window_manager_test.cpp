@@ -16,9 +16,9 @@
 #include "gtest/gtest.h"
 #include "rs_test_util.h"
 
+#include "pipeline/render_thread/rs_uni_render_processor.h"
 #include "pipeline/rs_context.h"
 #include "pipeline/rs_pointer_window_manager.h"
-#include "pipeline/rs_uni_render_processor.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -90,7 +90,7 @@ HWTEST_F(RSPointerWindowManagerTest, SetHardCursorNodeInfoTest002, TestSize.Leve
     surfaceNode->name_ = "pointer window";
     auto& rsPointerWindowManager = RSPointerWindowManager::Instance();
     rsPointerWindowManager.SetHardCursorNodeInfo(surfaceNode);
-    ASSERT_NE(rsPointerWindowManager.hardCursorNodes_, nullptr);
+    ASSERT_NE(rsPointerWindowManager.hardCursorNodeMap_.size(), 0);
 }
 /**
  * @tc.name: HardCursorCreateLayerForDirect

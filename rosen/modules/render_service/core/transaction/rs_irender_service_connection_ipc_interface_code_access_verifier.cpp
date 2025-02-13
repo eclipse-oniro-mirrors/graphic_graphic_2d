@@ -260,7 +260,11 @@ bool RSIRenderServiceConnectionInterfaceCodeAccessVerifier::IsExclusiveVerificat
             break;
         }
         case static_cast<CodeUnderlyingType>(CodeEnumType::SET_SHOW_REFRESH_RATE_ENABLED): {
-            hasPermission = IsSystemApp();
+            hasPermission = IsSystemApp() || IsSystemCalling(codeEnumTypeName_ + "::SET_SHOW_REFRESH_RATE_ENABLED");
+            break;
+        }
+        case static_cast<CodeUnderlyingType>(CodeEnumType::GET_REALTIME_REFRESH_RATE): {
+            hasPermission = IsSystemApp() || IsSystemCalling(codeEnumTypeName_ + "::GET_REALTIME_REFRESH_RATE");
             break;
         }
         case static_cast<CodeUnderlyingType>(CodeEnumType::SET_SCREEN_REFRESH_RATE): {
@@ -281,6 +285,10 @@ bool RSIRenderServiceConnectionInterfaceCodeAccessVerifier::IsExclusiveVerificat
         }
         case static_cast<CodeUnderlyingType>(CodeEnumType::NOTIFY_PACKAGE_EVENT): {
             hasPermission = IsSystemCalling(codeEnumTypeName_ + "::NOTIFY_PACKAGE_EVENT");
+            break;
+        }
+        case static_cast<CodeUnderlyingType>(CodeEnumType::NOTIFY_APP_STRATEGY_CONFIG_CHANGE_EVENT): {
+            hasPermission = IsSystemCalling(codeEnumTypeName_ + "::NOTIFY_APP_STRATEGY_CONFIG_CHANGE_EVENT");
             break;
         }
         case static_cast<CodeUnderlyingType>(CodeEnumType::NOTIFY_REFRESH_RATE_EVENT): {
@@ -465,6 +473,16 @@ bool RSIRenderServiceConnectionInterfaceCodeAccessVerifier::IsExclusiveVerificat
             hasPermission = IsSystemCalling(codeEnumTypeName_ + "::SET_WINDOW_CONTAINER");
             break;
         }
+        case static_cast<CodeUnderlyingType>(CodeEnumType::GET_PIXELMAP_BY_PROCESSID): {
+            hasPermission = IsSystemCalling(codeEnumTypeName_ + "::GET_PIXELMAP_BY_PROCESSID");
+            break;
+        }
+#ifdef RS_ENABLE_OVERLAY_DISPLAY
+        case static_cast<CodeUnderlyingType>(CodeEnumType::SET_OVERLAY_DISPLAY_MODE): {
+            hasPermission = IsSystemCalling(codeEnumTypeName_ + "::SET_OVERLAY_DISPLAY_MODE");
+            break;
+        }
+#endif
         default: {
             break;
         }

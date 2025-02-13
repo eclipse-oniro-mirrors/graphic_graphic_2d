@@ -15,7 +15,7 @@
 
 #include "drawable/rs_effect_render_node_drawable.h"
 
-#include "pipeline/rs_uni_render_thread.h"
+#include "pipeline/render_thread/rs_uni_render_thread.h"
 #include "platform/common/rs_log.h"
 #include "include/gpu/vk/GrVulkanTrackerInterface.h"
 

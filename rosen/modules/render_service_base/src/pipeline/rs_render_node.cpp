@@ -250,8 +250,40 @@ RSRenderNode::RSRenderNode(
       id_(id), context_(context)
 {}
 
+void RSRenderNode::AddUIExtensionChild(SharedPtr child)
+{
+    auto realParent = shared_from_this();
+    while (realParent) {
+        auto surfaceNode = realParent->ReinterpretCastTo<RSSurfaceRenderNode>();
+        if (surfaceNode && surfaceNode->IsAppWindow()) {
+            break;
+        }
+        realParent = realParent->GetParent().lock();
+    }
+    if (!realParent) {
+        return;
+    }
+    realParent->AddChild(child, -1);
+}
+
+// when child is UnobscuredUIExtension and parent is not main window, Mark Need, Rout to main window.
+bool RSRenderNode::NeedRoutedBasedOnUIExtension(SharedPtr child)
+{
+    if (!child) {
+        return false;
+    }
+    auto surfaceNode = child->ReinterpretCastTo<RSSurfaceRenderNode>();
+    bool isUnobscuredUIExtension = surfaceNode && surfaceNode->IsUnobscuredUIExtensionNode();
+    auto parent = ReinterpretCastTo<RSSurfaceRenderNode>();
+    return isUnobscuredUIExtension && !(parent && parent->IsMainWindowType());
+}
+
 void RSRenderNode::AddChild(SharedPtr child, int index)
 {
+    if (NeedRoutedBasedOnUIExtension(child)) {
+        originUECChildren_->insert(child);
+        return AddUIExtensionChild(child);
+    }
     // sanity check, avoid loop
     if (child == nullptr || child->GetId() == GetId()) {
         return;
@@ -275,8 +307,8 @@ void RSRenderNode::AddChild(SharedPtr child, int index)
     } else {
         children_.emplace(std::next(children_.begin(), index), child);
     }
-
     disappearingChildren_.remove_if([&child](const auto& pair) -> bool { return pair.first == child; });
+    
     // A child is not on the tree until its parent is on the tree
     if (isOnTheTree_) {
         child->SetIsOnTheTree(true, instanceRootNodeId_, firstLevelNodeId_, drawingCacheRootId_,
@@ -299,8 +331,23 @@ void RSRenderNode::SetContainBootAnimation(bool isContainBootAnimation)
     isFullChildrenListValid_ = false;
 }
 
+void RSRenderNode::MoveUIExtensionChild(SharedPtr child)
+{
+    if (!child) {
+        return;
+    }
+    auto parent = child->GetParent().lock();
+    if (!parent) {
+        return;
+    }
+    parent->MoveChild(child, -1);
+}
+
 void RSRenderNode::MoveChild(SharedPtr child, int index)
 {
+    if (NeedRoutedBasedOnUIExtension(child)) {
+        return MoveUIExtensionChild(child);
+    }
     if (child == nullptr || child->GetParent().lock().get() != this) {
         return;
     }
@@ -321,8 +368,24 @@ void RSRenderNode::MoveChild(SharedPtr child, int index)
     isFullChildrenListValid_ = false;
 }
 
+void RSRenderNode::RemoveUIExtensionChild(SharedPtr child)
+{
+    if (!child) {
+        return;
+    }
+    auto parent = child->GetParent().lock();
+    if (!parent) {
+        return;
+    }
+    parent->RemoveChild(child);
+}
+
 void RSRenderNode::RemoveChild(SharedPtr child, bool skipTransition)
 {
+    if (NeedRoutedBasedOnUIExtension(child)) {
+        originUECChildren_->erase(child);
+        return RemoveUIExtensionChild(child);
+    }
     if (child == nullptr) {
         return;
     }
@@ -832,6 +895,15 @@ void RSRenderNode::DumpTree(int32_t depth, std::string& out) const
         out += ", abilityState: " +
             std::string(surfaceNode->GetAbilityState() == RSSurfaceNodeAbilityState::FOREGROUND ?
             "foreground" : "background");
+
+#if defined(ROSEN_OHOS)
+        out += ", FrameGravity: " + std::to_string((static_cast<int>(
+            surfaceNode->GetRenderProperties().GetFrameGravity())));
+        if (surfaceNode->GetRSSurfaceHandler() && surfaceNode->GetRSSurfaceHandler()->GetBuffer()) {
+            out += ", ScalingMode: " + std::to_string(
+                surfaceNode->GetRSSurfaceHandler()->GetBuffer()->GetSurfaceBufferScalingMode());
+        }
+#endif
     }
     if (sharedTransitionParam_) {
         out += sharedTransitionParam_->Dump();
@@ -848,6 +920,17 @@ void RSRenderNode::DumpTree(int32_t depth, std::string& out) const
     if (HasSubSurface()) {
         out += ", subSurfaceCnt: " + std::to_string(subSurfaceCnt_);
     }
+
+#if defined(ROSEN_OHOS)
+    if (RSSystemProperties::GetDumpRsTreeDetailEnabled()) {
+        out += ", PrepareSeq: " + std::to_string(curFrameInfoDetail_.curFramePrepareSeqNum);
+        out += ", PostPrepareSeq: " + std::to_string(curFrameInfoDetail_.curFramePostPrepareSeqNum);
+        out += ", VsyncId: " + std::to_string(curFrameInfoDetail_.curFrameVsyncId);
+        out += ", IsSubTreeSkipped: " + std::to_string(curFrameInfoDetail_.curFrameSubTreeSkipped);
+        out += ", ReverseChildren: " + std::to_string(curFrameInfoDetail_.curFrameReverseChildren);
+    }
+#endif
+    
     DumpSubClassNode(out);
     out += ", Properties: " + GetRenderProperties().Dump();
     if (GetBootAnimation()) {
@@ -978,11 +1061,8 @@ void RSRenderNode::DumpSubClassNode(std::string& out) const
         out += ", Visible" + surfaceNode->GetVisibleRegion().GetRegionInfo();
         out += ", Opaque" + surfaceNode->GetOpaqueRegion().GetRegionInfo();
         out += ", OcclusionBg: " + std::to_string(surfaceNode->GetAbilityBgAlpha());
-        out += ", SecurityLayer: " + std::to_string(surfaceNode->GetSecurityLayer());
-        out += ", skipLayer: " + std::to_string(surfaceNode->GetSkipLayer());
-        if (surfaceNode->GetSnapshotSkipLayer()) {
-            out += ", snapshotSkipLayer: " + std::to_string(surfaceNode->GetSnapshotSkipLayer());
-        }
+        const auto specialLayerManager = surfaceNode->GetSpecialLayerMgr();
+        out += ", SpecialLayer: " + std::to_string(specialLayerManager.Get());
         out += ", surfaceType: " + std::to_string((int)surfaceNode->GetSurfaceNodeType());
         out += ", ContainerConfig: " + surfaceNode->GetContainerConfigDump();
     } else if (GetType() == RSRenderNodeType::ROOT_NODE) {
@@ -2647,6 +2727,10 @@ void RSRenderNode::ApplyModifiers()
     RS_LOGI_IF(DEBUG_NODE, "RSRenderNode::apply modifiers isFullChildrenListValid_:%{public}d"
         " isChildrenSorted_:%{public}d childrenHasSharedTransition_:%{public}d",
         isFullChildrenListValid_, isChildrenSorted_, childrenHasSharedTransition_);
+    if (const auto& sharedTransitionParam = GetSharedTransitionParam()) {
+        sharedTransitionParam->UpdateHierarchy(GetId());
+        SharedTransitionParam::UpdateUnpairedSharedTransitionMap(sharedTransitionParam);
+    }
     if (UNLIKELY(!isFullChildrenListValid_)) {
         GenerateFullChildrenList();
         AddDirtyType(RSModifierType::CHILDREN);
@@ -2727,9 +2811,12 @@ void RSRenderNode::ApplyModifiers()
     dirtyTypes_.reset();
     AddToPendingSyncList();
 
-    // update rate decider scale reference size.
-    animationManager_.SetRateDeciderScaleSize(GetRenderProperties().GetBoundsWidth(),
+    // update rate decider scale reference size and scale.
+    animationManager_.SetRateDeciderSize(GetRenderProperties().GetBoundsWidth(),
         GetRenderProperties().GetBoundsHeight());
+    animationManager_.SetRateDeciderScale(GetRenderProperties().GetScaleX(), GetRenderProperties().GetScaleY());
+    auto& rect = GetRenderProperties().GetBoundsGeometry()->GetAbsRect();
+    animationManager_.SetRateDeciderAbsRect(rect.GetWidth(), rect.GetHeight());
 }
 
 void RSRenderNode::MarkParentNeedRegenerateChildren() const
@@ -3663,12 +3750,22 @@ void RSRenderNode::OnTreeStateChanged()
     if (!isOnTheTree_) {
         UpdateBlurEffectCounter(-curBlurDrawableCnt);
         startingWindowFlag_ = false;
+        if (originUECChildren_ && !originUECChildren_->empty()) {
+            for (auto uiExtension : *originUECChildren_) {
+                uiExtension->RemoveFromTree();
+            }
+        }
     }
     if (isOnTheTree_) {
         UpdateBlurEffectCounter(curBlurDrawableCnt);
         // Set dirty and force add to active node list, re-generate children list if needed
         SetDirty(true);
         SetParentSubTreeDirty();
+        if (originUECChildren_ && !originUECChildren_->empty()) {
+            for (auto uiExtension : *originUECChildren_) {
+                AddChild(uiExtension);
+            }
+        }
     } else if (sharedTransitionParam_) {
         // Mark shared transition unpaired, and mark paired node dirty
         sharedTransitionParam_->paired_ = false;
@@ -4583,6 +4680,13 @@ void RSRenderNode::OnSync()
     lastFrameSynced_ = !isLeashWindowPartialSkip;
 }
 
+void RSRenderNode::OnSkipSync()
+{
+    lastFrameSynced_ = false;
+    // clear flag: after skips sync, node not in RSMainThread::Instance()->GetContext.pendingSyncNodes_
+    addedToPendingSyncList_ = false;
+}
+
 bool RSRenderNode::ShouldClearSurface()
 {
 #ifdef RS_ENABLE_GPU
@@ -4779,24 +4883,64 @@ void RSRenderNode::SetChildrenHasUIExtension(bool childrenHasUIExtension)
     }
 }
 
-bool SharedTransitionParam::UpdateHierarchyAndReturnIsLower(const NodeId nodeId)
+bool SharedTransitionParam::HasRelation()
 {
-    // We already know which node is the lower one.
+    return relation_ != NodeHierarchyRelation::UNKNOWN;
+}
+
+void SharedTransitionParam::SetNeedGenerateDrawable(const bool needGenerateDrawable)
+{
+    needGenerateDrawable_ = needGenerateDrawable;
+}
+
+void SharedTransitionParam::GenerateDrawable(const RSRenderNode& node)
+{
+    if (!needGenerateDrawable_ || !HasRelation() || IsLower(node.GetId())) {
+        return;
+    }
+    if (auto parent = node.GetParent().lock()) {
+        parent->ApplyModifiers();
+    }
+    SetNeedGenerateDrawable(false);
+}
+
+void SharedTransitionParam::UpdateUnpairedSharedTransitionMap(const std::shared_ptr<SharedTransitionParam>& param)
+{
+    if (auto it = unpairedShareTransitions_.find(param->inNodeId_);
+        it != unpairedShareTransitions_.end()) {
+        // remove successfully paired share transition
+        unpairedShareTransitions_.erase(it);
+        param->paired_ = true;
+    } else {
+        // add unpaired share transition
+        unpairedShareTransitions_.emplace(param->inNodeId_, param);
+    }
+}
+
+bool SharedTransitionParam::IsLower(const NodeId nodeId) const
+{
+    if (relation_ == NodeHierarchyRelation::UNKNOWN) {
+        return false;
+    }
+    return relation_ == NodeHierarchyRelation::IN_NODE_BELOW_OUT_NODE ? inNodeId_ == nodeId : outNodeId_ == nodeId;
+}
+
+void SharedTransitionParam::UpdateHierarchy(const NodeId nodeId)
+{
+    // Skip if the hierarchy is already established
     if (relation_ != NodeHierarchyRelation::UNKNOWN) {
-        return relation_ == NodeHierarchyRelation::IN_NODE_BELOW_OUT_NODE ? inNodeId_ == nodeId : outNodeId_ == nodeId;
+        return;
     }
 
     bool visitingInNode = (nodeId == inNodeId_);
     if (!visitingInNode && nodeId != outNodeId_) {
-        return false;
+        return;
     }
     // Nodes in the same application will be traversed by order (first visited node has lower hierarchy), while
     // applications will be traversed by reverse order. If visitingInNode matches crossApplication_, inNode is above
     // outNode. Otherwise, inNode is below outNode.
     relation_ = (visitingInNode == crossApplication_) ? NodeHierarchyRelation::IN_NODE_ABOVE_OUT_NODE
                                                       : NodeHierarchyRelation::IN_NODE_BELOW_OUT_NODE;
-    // If crossApplication_ is true, first visited node (this node) has higher hierarchy. and vice versa.
-    return !crossApplication_;
 }
 
 std::string SharedTransitionParam::Dump() const

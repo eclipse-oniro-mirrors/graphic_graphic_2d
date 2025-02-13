@@ -177,7 +177,7 @@ private:
     Drawing::Paint paint_;
     uint32_t dynamicRangeMode_ = 0;
     std::optional<Drawing::Matrix> fitMatrix_ = std::nullopt;
-    bool isFitMatrixValid = false;
+    bool isFitMatrixValid_ = false;
 };
 
 template<>

@@ -163,6 +163,7 @@ bool RSPhysicalScreenFuzzTest(const uint8_t* data, size_t size)
     rsInterfaces.SetVirtualScreenBlackList(static_cast<ScreenId>(id), blackListVector);
     rsInterfaces.AddVirtualScreenBlackList(static_cast<ScreenId>(id), blackListVector);
     rsInterfaces.RemoveVirtualScreenBlackList(static_cast<ScreenId>(id), blackListVector);
+    rsInterfaces.SetScreenSecurityMask(static_cast<ScreenId>(id), nullptr);
     std::vector<NodeId> secExemptionList = {};
     secExemptionList.emplace_back(id);
     rsInterfaces.SetVirtualScreenSecurityExemptionList(static_cast<ScreenId>(id), secExemptionList);
@@ -189,10 +190,13 @@ bool RSPhysicalScreenFuzzTest(const uint8_t* data, size_t size)
     rsInterfaces.RemoveVirtualScreen(static_cast<ScreenId>(id));
     ScreenId screenId = INVALID_SCREEN_ID;
     ScreenEvent screenEvent = ScreenEvent::UNKNOWN;
+    ScreenChangeReason errorReason = ScreenChangeReason::DEFAULT;
     bool callbacked = false;
-    ScreenChangeCallback changeCallback = [&screenId, &screenEvent, &callbacked](ScreenId id, ScreenEvent event) {
+    ScreenChangeCallback changeCallback = [&screenId, &screenEvent, &errorReason, &callbacked]
+        (ScreenId id, ScreenEvent event, ScreenChangeReason reason) {
         screenId = id;
         screenEvent = event;
+        errorReason = reason;
         callbacked = true;
     };
     rsInterfaces.SetScreenChangeCallback(changeCallback);
@@ -286,6 +290,28 @@ bool DoDropFrameByPid(const uint8_t* data, size_t size)
     rsInterfaces.DropFrameByPid(pidList);
     return true;
 }
+
+#ifdef RS_ENABLE_OVERLAY_DISPLAY
+bool DoSetOverlayDisplayModeFuzzTest(const uint8_t* data, size_t size)
+{
+    if (data == nullptr) {
+        return false;
+    }
+
+    // initialize
+    g_data = data;
+    g_size = size;
+    g_pos = 0;
+
+    // get data
+    int32_t mode = GetData<int32_t>();
+
+    // test
+    auto& rsInterfaces = RSInterfaces::GetInstance();
+    rsInterfaces.SetOverlayDisplayMode(mode);
+    return true;
+}
+#endif
 } // namespace Rosen
 } // namespace OHOS
 
@@ -299,5 +325,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 #endif
     OHOS::Rosen::DoSetFreeMultiWindowStatus(data, size);
     OHOS::Rosen::DoDropFrameByPid(data, size);
+#ifdef RS_ENABLE_OVERLAY_DISPLAY
+    OHOS::Rosen::DoSetOverlayDisplayModeFuzzTest(data, size);
+#endif
     return 0;
 }

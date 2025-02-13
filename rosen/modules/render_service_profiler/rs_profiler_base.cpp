@@ -54,31 +54,18 @@ static pid_t g_pid = 0;
 static NodeId g_parentNode = 0;
 static std::atomic<uint32_t> g_commandCount = 0;        // UNMARSHALLING RSCOMMAND COUNT
 static std::atomic<uint32_t> g_commandExecuteCount = 0; // EXECUTE RSCOMMAND COUNT
-constexpr uint32_t COMMAND_PARSE_LIST_COUNT = 1024;
-constexpr uint32_t COMMAND_PARSE_LIST_SIZE = COMMAND_PARSE_LIST_COUNT * 2 + 5;
 
 static std::mutex g_msgBaseMutex;
 static std::queue<std::string> g_msgBaseList;
 
-#pragma pack(push, 1)
-struct PacketParsedCommandList {
-    double packetTime;
-    uint32_t packetSize;
-    uint16_t cmdCount;
-    uint32_t cmdCode[COMMAND_PARSE_LIST_SIZE];
-};
-#pragma pack(pop)
-
-static thread_local PacketParsedCommandList g_commandParseBuffer;
-constexpr uint32_t COMMAND_LOOP_SIZE = 32;
-static PacketParsedCommandList g_commandLoop[COMMAND_LOOP_SIZE];
-static std::atomic<uint32_t> g_commandLoopIndexStart = 0;
-static std::atomic<uint32_t> g_commandLoopIndexEnd = 0;
+static std::mutex g_mutexCommandOffsets;
+static std::map<uint32_t, std::vector<uint32_t>> g_parcelNumber2Offset;
 
 static uint64_t g_pauseAfterTime = 0;
-static uint64_t g_pauseCumulativeTime = 0;
+static int64_t g_pauseCumulativeTime = 0;
 static int64_t g_transactionTimeCorrection = 0;
 static int64_t g_replayStartTimeNano = 0.0;
+static double g_replaySpeed = 1.0f;
 
 static const size_t PARCEL_MAX_CAPACITY = 234 * 1024 * 1024;
 
@@ -242,6 +229,7 @@ void RSProfiler::SetMode(Mode mode)
     if (IsNoneMode()) {
         g_pauseAfterTime = 0;
         g_pauseCumulativeTime = 0;
+        g_replayStartTimeNano = 0;
     }
 }
 
@@ -284,24 +272,17 @@ uint64_t RSProfiler::PatchTime(uint64_t time)
         return 0.0;
     }
     if (time >= g_pauseAfterTime && g_pauseAfterTime > 0) {
-        return g_pauseAfterTime - g_pauseCumulativeTime;
+        return (static_cast<int64_t>(g_pauseAfterTime) - g_pauseCumulativeTime - g_replayStartTimeNano) *
+            BaseGetPlaybackSpeed() + g_replayStartTimeNano;
     }
-    return time - g_pauseCumulativeTime;
+    return (static_cast<int64_t>(time) - g_pauseCumulativeTime - g_replayStartTimeNano) *
+        BaseGetPlaybackSpeed() + g_replayStartTimeNano;
 }
 
 uint64_t RSProfiler::PatchTransactionTime(const Parcel& parcel, uint64_t time)
 {
     if (!IsEnabled()) {
         return time;
-    }
-
-    if (IsWriteMode()) {
-        g_commandParseBuffer.packetTime = Utils::ToSeconds(time);
-        g_commandParseBuffer.packetSize = parcel.GetDataSize();
-        uint32_t index = g_commandLoopIndexEnd++;
-        index %= COMMAND_LOOP_SIZE;
-        g_commandLoop[index] = g_commandParseBuffer;
-        g_commandParseBuffer.cmdCount = 0;
     }
 
     if (!IsReadMode()) {
@@ -317,14 +298,19 @@ uint64_t RSProfiler::PatchTransactionTime(const Parcel& parcel, uint64_t time)
     return PatchTime(time + g_transactionTimeCorrection);
 }
 
-void RSProfiler::TimePauseAt(uint64_t curTime, uint64_t newPauseAfterTime)
+void RSProfiler::TimePauseAt(uint64_t curTime, uint64_t newPauseAfterTime, bool immediate)
 {
     if (g_pauseAfterTime > 0) {
+        // second time pause
         if (curTime > g_pauseAfterTime) {
             g_pauseCumulativeTime += curTime - g_pauseAfterTime;
         }
     }
     g_pauseAfterTime = newPauseAfterTime;
+    if (immediate) {
+        g_pauseCumulativeTime += curTime - g_pauseAfterTime;
+        g_pauseAfterTime = curTime;
+    }
 }
 
 void RSProfiler::TimePauseResume(uint64_t curTime)
@@ -646,6 +632,7 @@ void RSProfiler::MarshalNodeModifiers(const RSRenderNode& node, std::stringstrea
             if (auto commandList = reinterpret_cast<Drawing::DrawCmdList*>(modifier->GetDrawCmdListId())) {
                 std::string allocData = commandList->ProfilerPushAllocators();
                 commandList->MarshallingDrawOps();
+                commandList->PatchTypefaceIds(true);
                 MarshalRenderModifier(*modifier, data);
                 commandList->ProfilerPopAllocators(allocData);
             } else {
@@ -996,30 +983,42 @@ void RSProfiler::SetTransactionTimeCorrection(double replayStartTime, double rec
     g_replayStartTimeNano = replayStartTime * NS_TO_S;
 }
 
-std::string RSProfiler::GetCommandParcelList(double recordStartTime)
+std::string RSProfiler::GetParcelCommandList()
 {
-    if (g_commandLoopIndexStart >= g_commandLoopIndexEnd) {
-        return "";
+    const std::lock_guard<std::mutex> guard(g_mutexCommandOffsets);
+    if (g_parcelNumber2Offset.size()) {
+        const auto it = g_parcelNumber2Offset.begin();
+        std::stringstream stream(std::ios::in | std::ios::out | std::ios::binary);
+        stream.write(reinterpret_cast<const char*>(&it->first), sizeof(it->first));
+        stream.write(reinterpret_cast<const char*>(it->second.data()), it->second.size() * sizeof(uint32_t));
+        g_parcelNumber2Offset.erase(it);
+        return stream.str();
     }
+    return "";
+}
 
-    uint32_t index = g_commandLoopIndexStart;
-    g_commandLoopIndexStart++;
-    index %= COMMAND_LOOP_SIZE;
-
-    std::string retStr;
-
-    uint16_t cmdCount = g_commandLoop[index].cmdCount;
-    if (cmdCount > COMMAND_PARSE_LIST_SIZE) {
-        cmdCount = COMMAND_PARSE_LIST_SIZE;
+void RSProfiler::PushOffset(std::vector<uint32_t>& commandOffsets, uint32_t offset)
+{
+    if (!IsEnabled()) {
+        return;
     }
-    if (cmdCount > 0) {
-        uint16_t copyBytes = sizeof(PacketParsedCommandList) - (COMMAND_PARSE_LIST_SIZE - cmdCount) * sizeof(uint32_t);
-        retStr.resize(copyBytes, ' ');
-        Utils::Move(retStr.data(), copyBytes, &g_commandLoop[index], copyBytes);
-        g_commandLoop[index].cmdCount = 0;
+    if (IsWriteMode()) {
+        commandOffsets.push_back(offset);
     }
+}
 
-    return retStr;
+void RSProfiler::PushOffsets(const Parcel& parcel, uint32_t parcelNumber, std::vector<uint32_t>& commandOffsets)
+{
+    if (!IsEnabled()) {
+        return;
+    }
+    if (!parcelNumber) {
+        return;
+    }
+    if (IsWriteMode()) {
+        const std::lock_guard<std::mutex> guard(g_mutexCommandOffsets);
+        g_parcelNumber2Offset[parcelNumber] = commandOffsets;
+    }
 }
 
 void RSProfiler::PatchCommand(const Parcel& parcel, RSCommand* command)
@@ -1031,19 +1030,12 @@ void RSProfiler::PatchCommand(const Parcel& parcel, RSCommand* command)
         return;
     }
 
-    if (IsWriteMode()) {
-        g_commandCount++;
-        uint16_t cmdCount = g_commandParseBuffer.cmdCount;
-        if (cmdCount < COMMAND_PARSE_LIST_COUNT) {
-            constexpr uint32_t bits = 16u;
-            g_commandParseBuffer.cmdCode[cmdCount] =
-                command->GetType() + (static_cast<uint32_t>(command->GetSubType()) << bits);
-        }
-        g_commandParseBuffer.cmdCount++;
-    }
-
     if (command && IsParcelMock(parcel)) {
         command->Patch(Utils::PatchNodeId);
+    }
+    
+    if (IsWriteMode()) {
+        g_commandCount++;
     }
 }
 
@@ -1345,5 +1337,36 @@ bool RSProfiler::IsRecordAbortRequested()
 {
     return recordAbortRequested_;
 }
+
+bool RSProfiler::BaseSetPlaybackSpeed(double speed)
+{
+    float invSpeed = 1.0f;
+    if (speed <= .0f) {
+        return false;
+    } else {
+        invSpeed /= speed > 0.0f ? speed : 1.0f;
+    }
+
+    if (IsReadMode()) {
+        if (Utils::Now() >= g_pauseAfterTime && g_pauseAfterTime > 0) {
+            // paused can change speed but need adjust start time then
+            int64_t curTime = static_cast<int64_t>(g_pauseAfterTime) - g_pauseCumulativeTime - g_replayStartTimeNano;
+            g_pauseCumulativeTime = static_cast<int64_t>(g_pauseAfterTime) - g_replayStartTimeNano -
+                    curTime * g_replaySpeed * invSpeed;
+            g_replaySpeed = speed;
+            return true;
+        }
+        // change of speed when replay in progress is not possible
+        return false;
+    }
+    g_replaySpeed = speed;
+    return true;
+}
+
+double RSProfiler::BaseGetPlaybackSpeed()
+{
+    return g_replaySpeed;
+}
+
 
 } // namespace OHOS::Rosen

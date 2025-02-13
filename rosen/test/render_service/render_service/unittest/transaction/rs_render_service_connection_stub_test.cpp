@@ -20,10 +20,10 @@
 #include "gtest/gtest.h"
 #include "limit_number.h"
 #include "mock_hdi_device.h"
-#include "rs_irender_service.h"
-#include "pipeline/rs_composer_adapter.h"
+#include "pipeline/render_thread/rs_composer_adapter.h"
 #include "pipeline/rs_main_thread.h"
 #include "pipeline/rs_render_service_connection.h"
+#include "rs_irender_service.h"
 #include "transaction/rs_render_service_connection_stub.h"
 
 using namespace testing;
@@ -233,7 +233,9 @@ HWTEST_F(RSRenderServiceConnectionStubTest, TestRSRenderServiceConnectionStub004
     EXPECT_EQ(OnRemoteRequestTest(static_cast<uint32_t>(
         RSIRenderServiceConnectionInterfaceCode::GET_SHOW_REFRESH_RATE_ENABLED)), ERR_INVALID_STATE);
     EXPECT_EQ(OnRemoteRequestTest(static_cast<uint32_t>(
-        RSIRenderServiceConnectionInterfaceCode::SET_SHOW_REFRESH_RATE_ENABLED)), ERR_INVALID_STATE);
+        RSIRenderServiceConnectionInterfaceCode::SET_SHOW_REFRESH_RATE_ENABLED)), ERR_INVALID_DATA);
+    EXPECT_EQ(OnRemoteRequestTest(static_cast<uint32_t>(
+        RSIRenderServiceConnectionInterfaceCode::GET_REALTIME_REFRESH_RATE)), ERR_INVALID_DATA);
     EXPECT_EQ(OnRemoteRequestTest(
         static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_REFRESH_INFO)), ERR_NONE);
 }
@@ -484,20 +486,25 @@ HWTEST_F(RSRenderServiceConnectionStubTest, TestRSRenderServiceConnectionStub012
     ASSERT_EQ(OnRemoteRequestTest(
         static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_PACKAGE_EVENT)), ERR_INVALID_DATA);
     ASSERT_EQ(OnRemoteRequestTest(
+        static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_APP_STRATEGY_CONFIG_CHANGE_EVENT)),
+        ERR_INVALID_DATA);
+    ASSERT_EQ(OnRemoteRequestTest(
         static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_REFRESH_RATE_EVENT)), ERR_INVALID_DATA);
     ASSERT_EQ(OnRemoteRequestTest(
         static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_ANCO_FORCE_DO_DIRECT)), ERR_INVALID_STATE);
     ASSERT_EQ(OnRemoteRequestTest(
-        static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_SOFT_VSYNC_EVENT)), ERR_NONE);
+        static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_SOFT_VSYNC_EVENT)), ERR_INVALID_DATA);
     ASSERT_EQ(OnRemoteRequestTest(
         static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_WINDOW_CONTAINER)), ERR_INVALID_DATA);
+    ASSERT_EQ(OnRemoteRequestTest(
+        static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_PIXELMAP_BY_PROCESSID)), ERR_NONE);
 }
 
 /**
  * @tc.name: TestRSRenderServiceConnectionStub013
  * @tc.desc: Test
  * @tc.type: FUNC
- * @tc.require:
+ * @tc.require: issueIBJFIK
  */
  HWTEST_F(RSRenderServiceConnectionStubTest, TestRSRenderServiceConnectionStub013, TestSize.Level1)
 {

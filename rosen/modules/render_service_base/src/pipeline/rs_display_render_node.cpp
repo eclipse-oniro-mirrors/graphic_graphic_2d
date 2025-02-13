@@ -17,6 +17,7 @@
 
 #include "common/rs_obj_abs_geometry.h"
 #include "common/rs_optional_trace.h"
+#include "common/rs_special_layer_manager.h"
 #include "params/rs_display_render_params.h"
 #include "pipeline/rs_render_node.h"
 #include "pipeline/rs_surface_render_node.h"
@@ -270,10 +271,7 @@ void RSDisplayRenderNode::UpdateScreenRenderParams(ScreenRenderParams& screenRen
     displayParams->isFirstVisitCrossNodeDisplay_ = IsFirstVisitCrossNodeDisplay();
     displayParams->isSecurityDisplay_ = GetSecurityDisplay();
     displayParams->screenInfo_ = std::move(screenRenderParams.screenInfo);
-    displayParams->displayHasSecSurface_ = std::move(screenRenderParams.displayHasSecSurface);
-    displayParams->displayHasSkipSurface_ = std::move(screenRenderParams.displayHasSkipSurface);
-    displayParams->displayHasSnapshotSkipSurface_ = std::move(screenRenderParams.displayHasSnapshotSkipSurface);
-    displayParams->displayHasProtectedSurface_ = std::move(screenRenderParams.displayHasProtectedSurface);
+    displayParams->specialLayerManager_ = specialLayerManager_;
     displayParams->displaySpecailSurfaceChanged_ = std::move(screenRenderParams.displaySpecailSurfaceChanged);
     displayParams->hasCaptureWindow_ = std::move(screenRenderParams.hasCaptureWindow);
 #endif
@@ -373,6 +371,18 @@ bool RSDisplayRenderNode::IsRotationChanged() const
     return !(ROSEN_EQ(boundsGeoPtr->GetRotation(), lastRotation_) && isRotationEnd);
 }
 
+bool RSDisplayRenderNode::IsRotationFinished() const
+{
+    auto& boundsGeoPtr = (GetRenderProperties().GetBoundsGeometry());
+    if (boundsGeoPtr == nullptr) {
+        return false;
+    }
+    // boundsGeoPtr->IsNeedClientCompose() return false if rotation degree is times of 90
+    // which means rotation is end.
+    bool isRotationEnd = !boundsGeoPtr->IsNeedClientCompose();
+    return !ROSEN_EQ(boundsGeoPtr->GetRotation(), lastRotation_) && isRotationEnd;
+}
+
 void RSDisplayRenderNode::UpdateRotation()
 {
 #ifdef RS_ENABLE_GPU
@@ -387,11 +397,12 @@ void RSDisplayRenderNode::UpdateRotation()
     if (boundsGeoPtr == nullptr) {
         return;
     }
+    displayParams->SetRotationFinished(IsRotationFinished());
     lastRotationChanged_ = IsRotationChanged();
     lastRotation_ = boundsGeoPtr->GetRotation();
     preRotationStatus_ = curRotationStatus_;
     curRotationStatus_ = IsRotationChanged();
-    displayParams->SetRotationChanged(lastRotationChanged_);
+    displayParams->SetRotationChanged(curRotationStatus_);
 #endif
 }
 

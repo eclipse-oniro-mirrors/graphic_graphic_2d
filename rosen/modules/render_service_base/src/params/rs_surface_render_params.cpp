@@ -498,6 +498,7 @@ void RSSurfaceRenderParams::OnSync(const std::unique_ptr<RSRenderParams>& target
     targetSurfaceParams->ancestorDisplayNode_ = ancestorDisplayNode_;
     targetSurfaceParams->ancestorDisplayDrawable_ = ancestorDisplayDrawable_;
     targetSurfaceParams->clonedNodeRenderDrawable_ = clonedNodeRenderDrawable_;
+    targetSurfaceParams->isClonedNodeOnTheTree_ = isClonedNodeOnTheTree_;
     targetSurfaceParams->isCloneNode_ = isCloneNode_;
     targetSurfaceParams->clonedSourceNode_ = clonedSourceNode_;
     targetSurfaceParams->alpha_ = alpha_;
@@ -524,22 +525,14 @@ void RSSurfaceRenderParams::OnSync(const std::unique_ptr<RSRenderParams>& target
     targetSurfaceParams->uiFirstFlag_ = uiFirstFlag_;
     targetSurfaceParams->uiFirstParentFlag_ = uiFirstParentFlag_;
     targetSurfaceParams->uifirstUseStarting_ = uifirstUseStarting_;
-    targetSurfaceParams->uifirstStartingFlag_ = uifirstStartingFlag_;
     targetSurfaceParams->childrenDirtyRect_ = childrenDirtyRect_;
     targetSurfaceParams->isOccludedByFilterCache_ = isOccludedByFilterCache_;
-    targetSurfaceParams->isSecurityLayer_ = isSecurityLayer_;
     targetSurfaceParams->leashPersistentId_ = leashPersistentId_;
-    targetSurfaceParams->isSkipLayer_ = isSkipLayer_;
-    targetSurfaceParams->isSnapshotSkipLayer_ = isSnapshotSkipLayer_;
-    targetSurfaceParams->isProtectedLayer_ = isProtectedLayer_;
     targetSurfaceParams->drmCornerRadiusInfo_ = drmCornerRadiusInfo_;
     targetSurfaceParams->isForceDisableClipHoleForDRM_ = isForceDisableClipHoleForDRM_;
     targetSurfaceParams->animateState_ = animateState_;
     targetSurfaceParams->isRotating_ = isRotating_;
-    targetSurfaceParams->skipLayerIds_= skipLayerIds_;
-    targetSurfaceParams->snapshotSkipLayerIds_= snapshotSkipLayerIds_;
-    targetSurfaceParams->securityLayerIds_= securityLayerIds_;
-    targetSurfaceParams->protectedLayerIds_ = protectedLayerIds_;
+    targetSurfaceParams->specialLayerManager_ = specialLayerManager_;
     targetSurfaceParams->privacyContentLayerIds_ = privacyContentLayerIds_;
     targetSurfaceParams->name_ = name_;
     targetSurfaceParams->surfaceCacheContentStatic_ = surfaceCacheContentStatic_;
@@ -574,8 +567,7 @@ void RSSurfaceRenderParams::OnSync(const std::unique_ptr<RSRenderParams>& target
     targetSurfaceParams->isHwcEnabledBySolidLayer_ = isHwcEnabledBySolidLayer_;
     targetSurfaceParams->hasSubSurfaceNodes_ = hasSubSurfaceNodes_;
     targetSurfaceParams->allSubSurfaceNodeIds_ = std::move(allSubSurfaceNodeIds_);
-    targetSurfaceParams->preparedDisplayOffset_ = preparedDisplayOffset_;
-    targetSurfaceParams->crossNodeSkippedDisplayOffsets_ = crossNodeSkippedDisplayOffsets_;
+    targetSurfaceParams->crossNodeSkipDisplayConversionMatrices_ = crossNodeSkipDisplayConversionMatrices_;
     targetSurfaceParams->apiCompatibleVersion_ = apiCompatibleVersion_;
     targetSurfaceParams->isBufferFlushed_ = isBufferFlushed_;
     RSRenderParams::OnSync(target);
@@ -634,17 +626,4 @@ bool RSSurfaceRenderParams::GetNeedCacheSurface() const
     return needCacheSurface_;
 }
 
-void RSSurfaceRenderParams::SetUifirstStartingFlag(bool flag)
-{
-    if (uifirstStartingFlag_ == flag) {
-        return;
-    }
-    uifirstStartingFlag_ = flag;
-    needSync_ = true;
-}
-
-bool RSSurfaceRenderParams::GetUifirstStartingFlag() const
-{
-    return uifirstStartingFlag_;
-}
 } // namespace OHOS::Rosen

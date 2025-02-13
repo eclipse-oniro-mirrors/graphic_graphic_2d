@@ -62,13 +62,16 @@ public:
 
     virtual bool CreateNode(const RSSurfaceRenderNodeConfig& config) = 0;
     virtual bool CreateNode(const RSDisplayNodeConfig& displayNodeConfig, NodeId nodeId) = 0;
-    virtual sptr<Surface> CreateNodeAndSurface(const RSSurfaceRenderNodeConfig& config) = 0;
+    virtual sptr<Surface> CreateNodeAndSurface(const RSSurfaceRenderNodeConfig& config, bool unobscured = false) = 0;
 
     virtual sptr<IVSyncConnection> CreateVSyncConnection(const std::string& name,
                                                          const sptr<VSyncIConnectionToken>& token = nullptr,
                                                          uint64_t id = 0,
                                                          NodeId windowNodeId = 0,
                                                          bool fromXcomponent = false) = 0;
+
+    virtual int32_t GetPixelMapByProcessId(
+        std::vector<std::shared_ptr<Media::PixelMap>>& pixelMapVector, pid_t pid) = 0;
 
     virtual std::shared_ptr<Media::PixelMap> CreatePixelMapFromSurface(sptr<Surface> surface,
         const Rect &srcRect) = 0;
@@ -107,7 +110,8 @@ public:
     virtual int32_t SetScreenSecurityMask(ScreenId id,
         std::shared_ptr<Media::PixelMap> securityMask) = 0;
 
-    virtual int32_t SetMirrorScreenVisibleRect(ScreenId id, const Rect& mainScreenRect) = 0;
+    virtual int32_t SetMirrorScreenVisibleRect(ScreenId id, const Rect& mainScreenRect,
+        bool supportRotation = false) = 0;
 
     virtual int32_t SetCastScreenEnableSkipWindow(ScreenId id, bool enable) = 0;
 
@@ -147,7 +151,9 @@ public:
 
     virtual bool GetShowRefreshRateEnabled() = 0;
 
-    virtual void SetShowRefreshRateEnabled(bool enable) = 0;
+    virtual void SetShowRefreshRateEnabled(bool enabled, int32_t type) = 0;
+
+    virtual uint32_t GetRealtimeRefreshRate(ScreenId screenId) = 0;
 
     virtual std::string GetRefreshInfo(pid_t pid) = 0;
 
@@ -284,9 +290,12 @@ public:
 
     virtual void ReportJankStats() = 0;
 
-    virtual void NotifyLightFactorStatus(bool isSafe) = 0;
+    virtual void NotifyLightFactorStatus(int32_t lightFactorStatus) = 0;
 
     virtual void NotifyPackageEvent(uint32_t listSize, const std::vector<std::string>& packageList) = 0;
+
+    virtual void NotifyAppStrategyConfigChangeEvent(const std::string& pkgName, uint32_t listSize,
+        const std::vector<std::pair<std::string, std::string>>& newConfig) = 0;
 
     virtual void NotifyRefreshRateEvent(const EventInfo& eventInfo) = 0;
 
@@ -303,6 +312,10 @@ public:
     virtual void ReportEventJankFrame(DataBaseRs info) = 0;
 
     virtual void ReportGameStateData(GameStateData info) = 0;
+
+    virtual void ReportRsSceneJankStart(AppInfo info) = 0;
+
+    virtual void ReportRsSceneJankEnd(AppInfo info) = 0;
 
     virtual void SetHardwareEnabled(NodeId id, bool isEnabled, SelfDrawingNodeType selfDrawingType,
         bool dynamicHardwareEnable) = 0;
@@ -333,13 +346,18 @@ public:
 
     virtual void SetVmaCacheStatus(bool flag) = 0;
 
-    virtual int32_t RegisterUIExtensionCallback(uint64_t userId, sptr<RSIUIExtensionCallback> callback) = 0;
+    virtual int32_t RegisterUIExtensionCallback(uint64_t userId, sptr<RSIUIExtensionCallback> callback,
+        bool unobscured = false) = 0;
 
     virtual bool SetAncoForceDoDirect(bool direct) = 0;
 
     virtual bool SetVirtualScreenStatus(ScreenId id, VirtualScreenStatus screenStatus) = 0;
 
     virtual void SetFreeMultiWindowStatus(bool enable) = 0;
+
+#ifdef RS_ENABLE_OVERLAY_DISPLAY
+    virtual int32_t SetOverlayDisplayMode(int32_t mode) = 0;
+#endif
 
     virtual void SetLayerTop(const std::string &nodeIdStr, bool isTop) = 0;
 #ifdef TP_FEATURE_ENABLE

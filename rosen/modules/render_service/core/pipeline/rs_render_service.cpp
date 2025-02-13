@@ -39,7 +39,7 @@
 #include "feature/round_corner_display/rs_rcd_render_manager.h"
 #include "feature/round_corner_display/rs_round_corner_display_manager.h"
 #endif
-#include "pipeline/rs_hardware_thread.h"
+#include "pipeline/hardware_thread/rs_hardware_thread.h"
 #include "pipeline/rs_surface_render_node.h"
 #include "pipeline/rs_uni_render_judgement.h"
 #include "system/rs_system_parameters.h"
@@ -95,6 +95,10 @@ bool RSRenderService::Init()
 
     RSMainThread::Instance();
     RSUniRenderJudgement::InitUniRenderConfig();
+
+    // feature param parse
+    GraphicFeatureParamManager::GetInstance().Init();
+
 #ifdef TP_FEATURE_ENABLE
     TOUCH_SCREEN->InitTouchScreen();
 #endif
@@ -161,13 +165,11 @@ bool RSRenderService::Init()
         return false;
     }
     samgr->AddSystemAbility(RENDER_SERVICE, this);
-
-    // feature param parse
-    GraphicFeatureParamManager::GetInstance().Init();
 	
     RSGfxDumpInit(); // Gfx Init
 
     RS_PROFILER_INIT(this);
+    
     return true;
 }
 
@@ -190,7 +192,7 @@ void RSRenderService::RegisterRcdMsg()
             auto& rcdInstance = RSSingleton<RoundCornerDisplayManager>::GetInstance();
             auto& rcdHardManager = RSRcdRenderManager::GetInstance();
             auto& msgBus = RSSingleton<RsMessageBus>::GetInstance();
-            msgBus.RegisterTopic<NodeId, uint32_t, uint32_t>(
+            msgBus.RegisterTopic<NodeId, uint32_t, uint32_t, uint32_t, uint32_t>(
                 TOPIC_RCD_DISPLAY_SIZE, &rcdInstance,
                 &RoundCornerDisplayManager::UpdateDisplayParameter);
             msgBus.RegisterTopic<NodeId, ScreenRotation>(
@@ -443,7 +445,7 @@ void RSRenderService::DumpRenderServiceTree(std::string& dumpString, bool forceD
     dumpString.append("\n");
     dumpString.append("-- RenderServiceTreeDump: \n");
 #ifdef RS_ENABLE_GPU
-    mainThread_->RenderServiceTreeDump(dumpString, forceDumpSingleFrame);
+    mainThread_->RenderServiceTreeDump(dumpString, forceDumpSingleFrame, true);
 #endif
 }
 

@@ -132,13 +132,14 @@ bool RSRenderServiceClient::CreateNode(const RSSurfaceRenderNodeConfig& config)
     return renderService->CreateNode(config);
 }
 
-std::shared_ptr<RSSurface> RSRenderServiceClient::CreateNodeAndSurface(const RSSurfaceRenderNodeConfig& config)
+std::shared_ptr<RSSurface> RSRenderServiceClient::CreateNodeAndSurface(const RSSurfaceRenderNodeConfig& config,
+    bool unobscured)
 {
     auto renderService = RSRenderServiceConnectHub::GetRenderService();
     if (renderService == nullptr) {
         return nullptr;
     }
-    sptr<Surface> surface = renderService->CreateNodeAndSurface(config);
+    sptr<Surface> surface = renderService->CreateNodeAndSurface(config, unobscured);
     if (surface == nullptr) {
         ROSEN_LOGE("RSRenderServiceClient::CreateNodeAndSurface surface is nullptr.");
         return nullptr;
@@ -182,6 +183,16 @@ std::shared_ptr<VSyncReceiver> RSRenderServiceClient::CreateVSyncReceiver(
         return nullptr;
     }
     return std::make_shared<VSyncReceiver>(conn, token->AsObject(), looper, name);
+}
+
+int32_t RSRenderServiceClient::GetPixelMapByProcessId(
+    std::vector<std::shared_ptr<Media::PixelMap>>& pixelMapVector, pid_t pid)
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService == nullptr) {
+        return RENDER_SERVICE_NULL;
+    }
+    return renderService->GetPixelMapByProcessId(pixelMapVector, pid);
 }
 
 std::shared_ptr<Media::PixelMap> RSRenderServiceClient::CreatePixelMapFromSurfaceId(uint64_t surfaceId,
@@ -451,14 +462,14 @@ int32_t RSRenderServiceClient::SetScreenSecurityMask(ScreenId id,
     return renderService->SetScreenSecurityMask(id, std::move(securityMask));
 }
 
-int32_t RSRenderServiceClient::SetMirrorScreenVisibleRect(ScreenId id, const Rect& mainScreenRect)
+int32_t RSRenderServiceClient::SetMirrorScreenVisibleRect(ScreenId id, const Rect& mainScreenRect, bool supportRotation)
 {
     auto renderService = RSRenderServiceConnectHub::GetRenderService();
     if (renderService == nullptr) {
         return RENDER_SERVICE_NULL;
     }
 
-    return renderService->SetMirrorScreenVisibleRect(id, mainScreenRect);
+    return renderService->SetMirrorScreenVisibleRect(id, mainScreenRect, supportRotation);
 }
 
 int32_t RSRenderServiceClient::SetCastScreenEnableSkipWindow(ScreenId id, bool enable)
@@ -557,10 +568,11 @@ public:
     explicit CustomScreenChangeCallback(const ScreenChangeCallback &callback) : cb_(callback) {}
     ~CustomScreenChangeCallback() override {};
 
-    void OnScreenChanged(ScreenId id, ScreenEvent event) override
+    void OnScreenChanged(ScreenId id, ScreenEvent event,
+        ScreenChangeReason reason) override
     {
         if (cb_ != nullptr) {
-            cb_(id, event);
+            cb_(id, event, reason);
         }
     }
 
@@ -687,7 +699,7 @@ std::string RSRenderServiceClient::GetRefreshInfo(pid_t pid)
     return renderService->GetRefreshInfo(pid);
 }
 
-void RSRenderServiceClient::SetShowRefreshRateEnabled(bool enable)
+void RSRenderServiceClient::SetShowRefreshRateEnabled(bool enabled, int32_t type)
 {
     auto renderService = RSRenderServiceConnectHub::GetRenderService();
     if (renderService == nullptr) {
@@ -695,7 +707,18 @@ void RSRenderServiceClient::SetShowRefreshRateEnabled(bool enable)
         return;
     }
 
-    return renderService->SetShowRefreshRateEnabled(enable);
+    return renderService->SetShowRefreshRateEnabled(enabled, type);
+}
+
+uint32_t RSRenderServiceClient::GetRealtimeRefreshRate(ScreenId id)
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService == nullptr) {
+        ROSEN_LOGW("RSRenderServiceClient renderService == nullptr!");
+        return RENDER_SERVICE_NULL;
+    }
+
+    return renderService->GetRealtimeRefreshRate(id);
 }
 
 int32_t RSRenderServiceClient::SetPhysicalScreenResolution(ScreenId id, uint32_t width, uint32_t height)
@@ -1504,6 +1527,22 @@ void RSRenderServiceClient::ReportEventJankFrame(DataBaseRs info)
     }
 }
 
+void RSRenderServiceClient::ReportRsSceneJankStart(AppInfo info)
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService != nullptr) {
+        renderService->ReportRsSceneJankStart(info);
+    }
+}
+
+void RSRenderServiceClient::ReportRsSceneJankEnd(AppInfo info)
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService != nullptr) {
+        renderService->ReportRsSceneJankEnd(info);
+    }
+}
+
 void RSRenderServiceClient::ReportGameStateData(GameStateData info)
 {
     auto renderService = RSRenderServiceConnectHub::GetRenderService();
@@ -1530,11 +1569,11 @@ uint32_t RSRenderServiceClient::SetHidePrivacyContent(NodeId id, bool needHidePr
     return static_cast<uint32_t>(RSInterfaceErrorCode::UNKNOWN_ERROR);
 }
 
-void RSRenderServiceClient::NotifyLightFactorStatus(bool isSafe)
+void RSRenderServiceClient::NotifyLightFactorStatus(int32_t lightFactorStatus)
 {
     auto renderService = RSRenderServiceConnectHub::GetRenderService();
     if (renderService != nullptr) {
-        renderService->NotifyLightFactorStatus(isSafe);
+        renderService->NotifyLightFactorStatus(lightFactorStatus);
     }
 }
 
@@ -1543,6 +1582,15 @@ void RSRenderServiceClient::NotifyPackageEvent(uint32_t listSize, const std::vec
     auto renderService = RSRenderServiceConnectHub::GetRenderService();
     if (renderService != nullptr) {
         renderService->NotifyPackageEvent(listSize, packageList);
+    }
+}
+
+void RSRenderServiceClient::NotifyAppStrategyConfigChangeEvent(const std::string& pkgName, uint32_t listSize,
+    const std::vector<std::pair<std::string, std::string>>& newConfig)
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService != nullptr) {
+        renderService->NotifyAppStrategyConfigChangeEvent(pkgName, listSize, newConfig);
     }
 }
 
@@ -1693,7 +1741,8 @@ private:
     UIExtensionCallback cb_;
 };
 
-int32_t RSRenderServiceClient::RegisterUIExtensionCallback(uint64_t userId, const UIExtensionCallback& callback)
+int32_t RSRenderServiceClient::RegisterUIExtensionCallback(uint64_t userId, const UIExtensionCallback& callback,
+    bool unobscured)
 {
     auto renderService = RSRenderServiceConnectHub::GetRenderService();
     if (renderService == nullptr) {
@@ -1701,7 +1750,7 @@ int32_t RSRenderServiceClient::RegisterUIExtensionCallback(uint64_t userId, cons
         return RENDER_SERVICE_NULL;
     }
     sptr<CustomUIExtensionCallback> cb = new CustomUIExtensionCallback(callback);
-    return renderService->RegisterUIExtensionCallback(userId, cb);
+    return renderService->RegisterUIExtensionCallback(userId, cb, unobscured);
 }
 
 bool RSRenderServiceClient::SetAncoForceDoDirect(bool direct)
@@ -1853,5 +1902,16 @@ void RSRenderServiceClient::SetWindowContainer(NodeId nodeId, bool value)
         renderService->SetWindowContainer(nodeId, value);
     }
 }
+
+#ifdef RS_ENABLE_OVERLAY_DISPLAY
+int32_t RSRenderServiceClient::SetOverlayDisplayMode(int32_t mode)
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService == nullptr) {
+        return RENDER_SERVICE_NULL;
+    }
+    return renderService->SetOverlayDisplayMode(mode);
+}
+#endif
 } // namespace Rosen
 } // namespace OHOS

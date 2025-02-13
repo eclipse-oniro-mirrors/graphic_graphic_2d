@@ -72,7 +72,7 @@ public:
 
     int32_t SetScreenSecurityMask(ScreenId id, std::shared_ptr<Media::PixelMap> securityMask);
 
-    int32_t SetMirrorScreenVisibleRect(ScreenId id, const Rect& mainScreenRect);
+    int32_t SetMirrorScreenVisibleRect(ScreenId id, const Rect& mainScreenRect, bool supportRotation = false);
 
     int32_t SetCastScreenEnableSkipWindow(ScreenId id, bool enable);
 
@@ -83,11 +83,11 @@ public:
 
 #ifdef OHOS_BUILD_ENABLE_MAGICCURSOR
     int32_t SetPointerColorInversionConfig(float darkBuffer, float brightBuffer, int64_t interval, int32_t rangeSize);
- 
+
     int32_t SetPointerColorInversionEnabled(bool enable);
- 
+
     int32_t RegisterPointerLuminanceChangeCallback(const PointerLuminanceChangeCallback &callback);
- 
+
     int32_t UnRegisterPointerLuminanceChangeCallback();
 #endif
 
@@ -95,6 +95,8 @@ public:
 
     // if return true, the setting is successful. otherwise failed. The function is setted watermark for SurfaceNode
     bool SetWatermark(const std::string& name, std::shared_ptr<Media::PixelMap> watermark);
+
+    int32_t GetPixelMapByProcessId(std::vector<std::shared_ptr<Media::PixelMap>>& pixelMapVector, pid_t pid);
 
     bool TakeSurfaceCapture(std::shared_ptr<RSSurfaceNode> node, std::shared_ptr<SurfaceCaptureCallback> callback,
         RSSurfaceCaptureConfig captureConfig = {});
@@ -131,6 +133,7 @@ public:
     bool GetTotalAppMemSize(float& cpuMemSize, float& gpuMemSize);
 
 #ifndef ROSEN_ARKUI_X
+    // width and height should be greater than physical width and height
     int32_t SetPhysicalScreenResolution(ScreenId id, uint32_t width, uint32_t height);
 
     int32_t SetVirtualScreenResolution(ScreenId id, uint32_t width, uint32_t height);
@@ -171,7 +174,9 @@ public:
 
     bool GetShowRefreshRateEnabled();
 
-    void SetShowRefreshRateEnabled(bool enable);
+    void SetShowRefreshRateEnabled(bool enabled, int32_t type = 1);
+
+    uint32_t GetRealtimeRefreshRate(ScreenId id);
 
     std::string GetRefreshInfo(pid_t pid);
 
@@ -275,9 +280,12 @@ public:
 
     void ReportJankStats();
 
-    void NotifyLightFactorStatus(bool isSafe);
+    void NotifyLightFactorStatus(int32_t lightFactorStatus);
 
     void NotifyPackageEvent(uint32_t listSize, const std::vector<std::string>& packageList);
+
+    void NotifyAppStrategyConfigChangeEvent(const std::string& pkgName, uint32_t listSize,
+        const std::vector<std::pair<std::string, std::string>>& newConfig);
 
     void NotifyRefreshRateEvent(const EventInfo& eventInfo);
 
@@ -292,6 +300,10 @@ public:
     void ReportEventJankFrame(DataBaseRs info);
 
     void ReportGameStateData(GameStateData info);
+
+    void ReportRsSceneJankStart(AppInfo info);
+
+    void ReportRsSceneJankEnd(AppInfo info);
 
     void EnableCacheForRotation();
 
@@ -321,7 +333,7 @@ public:
 #endif
     void SetVirtualScreenUsingStatus(bool isVirtualScreenUsingStatus);
 
-    int32_t RegisterUIExtensionCallback(uint64_t userId, const UIExtensionCallback& callback);
+    int32_t RegisterUIExtensionCallback(uint64_t userId, const UIExtensionCallback& callback, bool unobscured = false);
 
     bool SetVirtualScreenStatus(ScreenId id, VirtualScreenStatus screenStatus);
 
@@ -342,6 +354,10 @@ public:
     void ForceRefreshOneFrameWithNextVSync();
 
     void SetWindowContainer(NodeId nodeId, bool value);
+
+#ifdef RS_ENABLE_OVERLAY_DISPLAY
+    int32_t SetOverlayDisplayMode(int32_t mode);
+#endif
 private:
     RSInterfaces();
     ~RSInterfaces() noexcept;

@@ -349,7 +349,13 @@ void BlobCache::WriteToDisk()
 void BlobCache::BlobCacheReadFromDisk(const std::string filePath)
 {
     WLOGI("filePath:%{public}s", filePath.c_str());
-    int fd = open(filePath.c_str(), O_RDONLY, 0);
+    char tmpPath[PATH_MAX] = {0};
+    if (realpath(filePath.c_str(), tmpPath) == nullptr) {
+        WLOGE("open file failed, because of realpath check");
+        return;
+    }
+    std::string realPath = tmpPath;
+    int fd = open(realPath.c_str(), O_RDONLY, 0);
     if (fd == -1) {
         WLOGE("open failed, errno:%{public}d", errno);
         close(fd);

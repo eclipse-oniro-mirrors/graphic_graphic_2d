@@ -18,9 +18,9 @@
 #include "rs_trace.h"
 
 #include "common/rs_optional_trace.h"
+#include "pipeline/render_thread/rs_uni_render_thread.h"
 #include "pipeline/rs_canvas_render_node.h"
 #include "pipeline/rs_paint_filter_canvas.h"
-#include "pipeline/rs_uni_render_thread.h"
 #include "platform/common/rs_log.h"
 #include "utils/rect.h"
 #include "utils/region.h"

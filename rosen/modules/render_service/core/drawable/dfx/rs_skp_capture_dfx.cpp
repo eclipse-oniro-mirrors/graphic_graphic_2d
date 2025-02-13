@@ -17,7 +17,7 @@
 
 #include "rs_trace.h"
 
-#include "pipeline/rs_uni_render_thread.h"
+#include "pipeline/render_thread/rs_uni_render_thread.h"
 #include "platform/common/rs_log.h"
 #include "platform/common/rs_system_properties.h"
 

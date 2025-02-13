@@ -61,6 +61,11 @@ enum class ScreenEvent : uint8_t {
     UNKNOWN,
 };
 
+enum class ScreenChangeReason : uint8_t {
+    DEFAULT = 0,
+    HWCDEAD = 1,
+};
+
 enum class ScreenRotation : uint32_t {
     ROTATION_0 = 0,
     ROTATION_90,
@@ -191,6 +196,8 @@ typedef enum : uint32_t {
     HDI_ERROR,
     SCREEN_MANAGER_NULL,
     BLACKLIST_IS_EMPTY,
+    SET_RATE_ERROR,
+    VIRTUAL_SCREEN,
 } StatusCode;
 
 typedef enum {

@@ -31,12 +31,7 @@
 #include "gtest/gtest.h"
 #include "rosen_text/typography.h"
 #include "rosen_text/typography_create.h"
-#define private public
-#ifndef OHOS_TEXT_ENABLE
-#define OHOS_TEXT_ENABLE
-#endif
 #include "txt/text_bundle_config_parser.h"
-#undef private
 
 using namespace OHOS::Rosen;
 using namespace testing;
@@ -2712,7 +2707,7 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyTest112, TestSize.Level
     OH_Drawing_TypographyHandlerPushTextStyle(handler, txtStyle);
     const char* text = "\xF0\x9F\x98";
     OHOS::Rosen::SPText::TextBundleConfigParser::GetInstance().initStatus_ = true;
-    OHOS::Rosen::SPText::TextBundleConfigParser::GetInstance().targetApiVersionResult_ =
+    OHOS::Rosen::SPText::TextBundleConfigParser::GetInstance().bundleApiVersion_ =
         OHOS::Rosen::SPText::SINCE_API16_VERSION;
     OH_Drawing_TypographyHandlerAddText(handler, text);
     OHOS::Rosen::SPText::TextBundleConfigParser::GetInstance().initStatus_ = false;
@@ -2723,7 +2718,7 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyTest112, TestSize.Level
 
     float longestLineWidth = OH_Drawing_TypographyGetLongestLine(typography);
     ASSERT_TRUE(skia::textlayout::nearlyEqual(longestLineWidth, ARC_FONT_SIZE));
- 
+
     OH_Drawing_DestroyTypography(typography);
     OH_Drawing_DestroyTypographyHandler(handler);
     OH_Drawing_DestroyTypographyStyle(typoStyle);

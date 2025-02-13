@@ -23,6 +23,7 @@
 #include <unistd.h>
 
 #include "ipc_callbacks/buffer_clear_callback_proxy.h"
+#include "gmock/gmock.h"
 #include "pipeline/rs_context.h"
 #include "params/rs_surface_render_params.h"
 #include "pipeline/rs_render_thread_visitor.h"
@@ -49,6 +50,8 @@ public:
     uint8_t MAX_ALPHA = 255;
     static constexpr float outerRadius = 30.4f;
     RRect rrect = RRect({0, 0, 0, 0}, outerRadius, outerRadius);
+    RectI defaultLargeRect = {0, 0, 100, 100};
+    RectI defaultSmallRect = {0, 0, 20, 20};
 };
 
 void RSSurfaceRenderNodeTest::SetUpTestCase()
@@ -69,6 +72,16 @@ public:
         : RSRenderNodeDrawableAdapter(std::move(node))
     {}
     void Draw(Drawing::Canvas& canvas) {}
+};
+
+class MockRSSurfaceRenderNode : public RSSurfaceRenderNode {
+public:
+    explicit MockRSSurfaceRenderNode(NodeId id,
+        const std::weak_ptr<RSContext>& context = {}, bool isTextureExportNode = false)
+        : RSSurfaceRenderNode(id, context, isTextureExportNode) {}
+    ~MockRSSurfaceRenderNode() override {}
+    MOCK_CONST_METHOD0(NeedDrawBehindWindow, bool());
+    MOCK_CONST_METHOD0(GetFilterRect, RectI());
 };
 
 /**
@@ -425,6 +438,87 @@ HWTEST_F(RSSurfaceRenderNodeTest, FingerprintTest, TestSize.Level1)
 }
 
 /**
+ * @tc.name: IsCloneNode
+ * @tc.desc: function test IsCloneNode
+ * @tc.type:FUNC
+ * @tc.require: issueIBKU7U
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, IsCloneNode, TestSize.Level1)
+{
+    RSSurfaceRenderNode surfaceRenderNode(id, context);
+    surfaceRenderNode.isCloneNode_ = true;
+    ASSERT_TRUE(surfaceRenderNode.IsCloneNode());
+}
+
+/**
+ * @tc.name: SetClonedNodeId
+ * @tc.desc: function test SetClonedNodeId
+ * @tc.type:FUNC
+ * @tc.require: issueIBKU7U
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, SetClonedNodeId, TestSize.Level1)
+{
+    RSSurfaceRenderNode surfaceRenderNode(id, context);
+    surfaceRenderNode.SetClonedNodeId(id + 1);
+    bool result = surfaceRenderNode.clonedSourceNodeId_ == id + 1;
+    ASSERT_TRUE(result);
+}
+
+/**
+ * @tc.name: SetClonedNodeRenderDrawable
+ * @tc.desc: function test SetClonedNodeRenderDrawable
+ * @tc.type:FUNC
+ * @tc.require: issueIBKU7U
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, SetClonedNodeRenderDrawable, TestSize.Level1)
+{
+    RSSurfaceRenderNode surfaceRenderNode(id, context);
+    surfaceRenderNode.stagingRenderParams_ = nullptr;
+    DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr clonedNodeRenderDrawable;
+    surfaceRenderNode.SetClonedNodeRenderDrawable(clonedNodeRenderDrawable);
+
+    ASSERT_EQ(surfaceRenderNode.stagingRenderParams_, nullptr);
+}
+
+/**
+ * @tc.name: SetIsCloned
+ * @tc.desc: function test SetIsCloned
+ * @tc.type:FUNC
+ * @tc.require: issueIBKU7U
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, SetIsCloned, TestSize.Level1)
+{
+    RSSurfaceRenderNode surfaceRenderNode(id, context);
+    surfaceRenderNode.stagingRenderParams_ = nullptr;
+    surfaceRenderNode.SetIsCloned(true);
+    ASSERT_EQ(surfaceRenderNode.stagingRenderParams_, nullptr);
+
+    surfaceRenderNode.stagingRenderParams_ = std::make_unique<RSSurfaceRenderParams>(id + 1);
+    ASSERT_NE(surfaceRenderNode.stagingRenderParams_, nullptr);
+    surfaceRenderNode.SetIsCloned(true);
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceRenderNode.stagingRenderParams_.get());
+    ASSERT_TRUE(surfaceParams->clonedSourceNode_);
+}
+
+/**
+ * @tc.name: UpdateInfoForClonedNode
+ * @tc.desc: function test UpdateInfoForClonedNode
+ * @tc.type:FUNC
+ * @tc.require: issueIBKU7U
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, UpdateInfoForClonedNode, TestSize.Level1)
+{
+    RSSurfaceRenderNode surfaceRenderNode(id, context);
+    surfaceRenderNode.clonedSourceNodeId_ = surfaceRenderNode.GetId();
+    surfaceRenderNode.stagingRenderParams_ = std::make_unique<RSSurfaceRenderParams>(id + 1);
+    ASSERT_NE(surfaceRenderNode.stagingRenderParams_, nullptr);
+
+    surfaceRenderNode.UpdateInfoForClonedNode(surfaceRenderNode.clonedSourceNodeId_);
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceRenderNode.stagingRenderParams_.get());
+    ASSERT_FALSE(surfaceParams->GetNeedCacheSurface());
+}
+
+/**
  * @tc.name: ShouldPrepareSubnodesTest
  * @tc.desc: function test
  * @tc.type:FUNC
@@ -633,7 +727,7 @@ HWTEST_F(RSSurfaceRenderNodeTest, SetSkipLayer001, TestSize.Level2)
     ASSERT_NE(node, nullptr);
 
     node->SetSkipLayer(true);
-    ASSERT_TRUE(node->GetSkipLayer());
+    ASSERT_TRUE(node->GetSpecialLayerMgr().Find(SpecialLayerType::SKIP));
 }
 
 /**
@@ -650,7 +744,7 @@ HWTEST_F(RSSurfaceRenderNodeTest, SetSnapshotSkipLayer001, TestSize.Level2)
     ASSERT_NE(node, nullptr);
 
     node->SetSnapshotSkipLayer(true);
-    ASSERT_TRUE(node->GetSnapshotSkipLayer());
+    ASSERT_TRUE(node->GetSpecialLayerMgr().Find(SpecialLayerType::SNAPSHOT_SKIP));
 }
 
 /**
@@ -680,7 +774,7 @@ HWTEST_F(RSSurfaceRenderNodeTest, SetSkipLayer002, TestSize.Level2)
     parentNode->SetIsOnTheTree(true);
     skipLayerNode->SetSkipLayer(true);
 
-    ASSERT_TRUE(parentNode->GetHasSkipLayer());
+    ASSERT_TRUE(skipLayerNode->GetSpecialLayerMgr().Find(SpecialLayerType::HAS_SKIP));
 }
 
 /**
@@ -710,7 +804,7 @@ HWTEST_F(RSSurfaceRenderNodeTest, SetSnapshotSkipLayer002, TestSize.Level2)
     parentNode->SetIsOnTheTree(true);
     snapshotSkipLayerNode->SetSnapshotSkipLayer(true);
 
-    ASSERT_TRUE(parentNode->GetHasSnapshotSkipLayer());
+    ASSERT_TRUE(parentNode->GetSpecialLayerMgr().Find(SpecialLayerType::HAS_SNAPSHOT_SKIP));
 }
 
 /**
@@ -727,7 +821,7 @@ HWTEST_F(RSSurfaceRenderNodeTest, SetSecurityLayer001, TestSize.Level2)
     ASSERT_NE(node, nullptr);
 
     node->SetSecurityLayer(true);
-    ASSERT_TRUE(node->GetSecurityLayer());
+    ASSERT_TRUE(node->GetSpecialLayerMgr().Find(SpecialLayerType::SECURITY));
 }
 
 /**
@@ -757,7 +851,7 @@ HWTEST_F(RSSurfaceRenderNodeTest, SetSecurityLayer002, TestSize.Level2)
     parentNode->SetIsOnTheTree(true);
     securityLayerNode->SetSecurityLayer(true);
 
-    ASSERT_TRUE(parentNode->GetHasSecurityLayer());
+    ASSERT_TRUE(parentNode->GetSpecialLayerMgr().Find(SpecialLayerType::HAS_SECURITY));
 }
 
 /**
@@ -1343,19 +1437,19 @@ HWTEST_F(RSSurfaceRenderNodeTest, SetContextAlphaTest, TestSize.Level1)
 
 /**
  * @tc.name: HdrVideoTest
- * @tc.desc: test results of SetHdrVideo, GetHdrVideo
+ * @tc.desc: test results of SetVideoHdrStatus, GetVideoHdrStatus
  * @tc.type: FUNC
  * @tc.require: issuesIBANP9
  */
 HWTEST_F(RSSurfaceRenderNodeTest, HdrVideoTest, TestSize.Level1)
 {
     std::shared_ptr<RSSurfaceRenderNode> testNode = std::make_shared<RSSurfaceRenderNode>(id, context);
-    testNode->SetHdrVideo(HdrStatus::HDR_VIDEO);
-    EXPECT_EQ(testNode->GetHdrVideo(), HdrStatus::HDR_VIDEO);
-    testNode->SetHdrVideo(HdrStatus::NO_HDR);
-    EXPECT_EQ(testNode->GetHdrVideo(), HdrStatus::NO_HDR);
-    testNode->SetHdrVideo(HdrStatus::AI_HDR_VIDEO);
-    EXPECT_EQ(testNode->GetHdrVideo(), HdrStatus::AI_HDR_VIDEO);
+    testNode->SetVideoHdrStatus(HdrStatus::HDR_VIDEO);
+    EXPECT_EQ(testNode->GetVideoHdrStatus(), HdrStatus::HDR_VIDEO);
+    testNode->SetVideoHdrStatus(HdrStatus::NO_HDR);
+    EXPECT_EQ(testNode->GetVideoHdrStatus(), HdrStatus::NO_HDR);
+    testNode->SetVideoHdrStatus(HdrStatus::AI_HDR_VIDEO);
+    EXPECT_EQ(testNode->GetVideoHdrStatus(), HdrStatus::AI_HDR_VIDEO);
 }
 
 /**
@@ -1385,9 +1479,9 @@ HWTEST_F(RSSurfaceRenderNodeTest, SetSkipLayerTest, TestSize.Level1)
 {
     std::shared_ptr<RSSurfaceRenderNode> node = std::make_shared<RSSurfaceRenderNode>(id, context);
     node->SetSkipLayer(true);
-    EXPECT_TRUE(node->isSkipLayer_);
+    EXPECT_TRUE(node->GetSpecialLayerMgr().Find(SpecialLayerType::SKIP));
     node->SetSkipLayer(false);
-    EXPECT_FALSE(node->isSkipLayer_);
+    EXPECT_FALSE(node->GetSpecialLayerMgr().Find(SpecialLayerType::SKIP));
 }
 
 /**
@@ -1400,48 +1494,9 @@ HWTEST_F(RSSurfaceRenderNodeTest, SetSnapshotSkipLayerTest, TestSize.Level1)
 {
     std::shared_ptr<RSSurfaceRenderNode> node = std::make_shared<RSSurfaceRenderNode>(id, context);
     node->SetSnapshotSkipLayer(true);
-    EXPECT_TRUE(node->isSnapshotSkipLayer_);
+    EXPECT_TRUE(node->GetSpecialLayerMgr().Find(SpecialLayerType::SNAPSHOT_SKIP));
     node->SetSnapshotSkipLayer(false);
-    EXPECT_FALSE(node->isSnapshotSkipLayer_);
-}
-
-/**
- * @tc.name: SyncSecurityInfoToFirstLevelNodeTest
- * @tc.desc: test results of SyncSecurityInfoToFirstLevelNode
- * @tc.type: FUNC
- * @tc.require: issueI9JAFQ
- */
-HWTEST_F(RSSurfaceRenderNodeTest, SyncSecurityInfoToFirstLevelNodeTest, TestSize.Level1)
-{
-    auto node = std::make_shared<RSSurfaceRenderNode>(id, context);
-    node->SyncSecurityInfoToFirstLevelNode();
-    EXPECT_FALSE(node->isSkipLayer_);
-}
-
-/**
- * @tc.name: SyncSkipInfoToFirstLevelNode
- * @tc.desc: test results of SyncSkipInfoToFirstLevelNode
- * @tc.type: FUNC
- * @tc.require: issueI9JAFQ
- */
-HWTEST_F(RSSurfaceRenderNodeTest, SyncSkipInfoToFirstLevelNode, TestSize.Level1)
-{
-    auto node = std::make_shared<RSSurfaceRenderNode>(id, context);
-    node->SyncSkipInfoToFirstLevelNode();
-    EXPECT_FALSE(node->isSkipLayer_);
-}
-
-/**
- * @tc.name: SyncSnapshotSkipInfoToFirstLevelNode
- * @tc.desc: test results of SyncSnapshotSkipInfoToFirstLevelNode
- * @tc.type: FUNC
- * @tc.require: issueI9JAFQ
- */
-HWTEST_F(RSSurfaceRenderNodeTest, SyncSnapshotSkipInfoToFirstLevelNode, TestSize.Level1)
-{
-    auto node = std::make_shared<RSSurfaceRenderNode>(id, context);
-    node->SyncSnapshotSkipInfoToFirstLevelNode();
-    EXPECT_FALSE(node->isSnapshotSkipLayer_);
+    EXPECT_FALSE(node->GetSpecialLayerMgr().Find(SpecialLayerType::SNAPSHOT_SKIP));
 }
 
 /**
@@ -1489,7 +1544,7 @@ HWTEST_F(RSSurfaceRenderNodeTest, RegisterBufferAvailableListenerTest001, TestSi
     sptr<RSIBufferAvailableCallback> callback;
     bool isFromRenderThread = false;
     testNode->RegisterBufferAvailableListener(callback, isFromRenderThread);
-    EXPECT_FALSE(testNode->isSkipLayer_);
+    EXPECT_FALSE(testNode->GetSpecialLayerMgr().Find(SpecialLayerType::SKIP));
 }
 
 /**
@@ -1515,7 +1570,7 @@ HWTEST_F(RSSurfaceRenderNodeTest, ConnectToNodeInRenderServiceTest, TestSize.Lev
 {
     std::shared_ptr<RSSurfaceRenderNode> testNode = std::make_shared<RSSurfaceRenderNode>(id, context);
     testNode->ConnectToNodeInRenderService();
-    EXPECT_FALSE(testNode->isSkipLayer_);
+    EXPECT_FALSE(testNode->GetSpecialLayerMgr().Find(SpecialLayerType::SKIP));
 }
 
 /**
@@ -2385,6 +2440,46 @@ HWTEST_F(RSSurfaceRenderNodeTest, ResetIsBufferFlushed, TestSize.Level1)
     testNode->ResetIsBufferFlushed();
     auto surfaceParams = static_cast<RSSurfaceRenderParams*>(testNode->stagingRenderParams_.get());
     ASSERT_FALSE(surfaceParams->GetIsBufferFlushed());
+}
+
+/**
+ * @tc.name: DealWithDrawBehindWindowTransparentRegion
+ * @tc.desc: DealWithDrawBehindWindowTransparentRegion, without such effect, noting updated.
+ * @tc.type: FUNC
+ * @tc.require: issueIBJJRI
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, DealWithDrawBehindWindowTransparentRegion001, TestSize.Level1)
+{
+    std::shared_ptr<RSSurfaceRenderNode> testNode = std::make_shared<RSSurfaceRenderNode>(id, context);
+    ASSERT_NE(testNode, nullptr);
+    auto regionBeforeProcess = Occlusion::Region{Occlusion::Rect{defaultLargeRect}};
+    testNode->opaqueRegion_ = regionBeforeProcess;
+    testNode->DealWithDrawBehindWindowTransparentRegion();
+    ASSERT_TRUE(regionBeforeProcess.Sub(testNode->opaqueRegion_).IsEmpty());
+}
+
+/**
+ * @tc.name: DealWithDrawBehindWindowTransparentRegion
+ * @tc.desc: DealWithDrawBehindWindowTransparentRegion, filter rect should be subtract from opaque region.
+ * @tc.type: FUNC
+ * @tc.require: issueIBJJRI
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, DealWithDrawBehindWindowTransparentRegion002, TestSize.Level1)
+{
+    auto testNode = std::make_shared<MockRSSurfaceRenderNode>(id);
+    ASSERT_NE(testNode, nullptr);
+
+    auto regionBeforeProcess = Occlusion::Region{Occlusion::Rect{defaultLargeRect}};
+    testNode->opaqueRegion_ = regionBeforeProcess;
+    testNode->GetMutableRenderProperties().backgroundFilter_ = std::make_shared<RSFilter>();
+    testNode->drawBehindWindowRegion_ = defaultSmallRect;
+    testNode->childrenBlurBehindWindow_ = { INVALID_NODEID };
+
+    EXPECT_CALL(*testNode, NeedDrawBehindWindow()).WillRepeatedly(testing::Return(true));
+    EXPECT_CALL(*testNode, GetFilterRect()).WillRepeatedly(testing::Return(defaultSmallRect));
+
+    testNode->DealWithDrawBehindWindowTransparentRegion();
+    ASSERT_FALSE(regionBeforeProcess.Sub(testNode->opaqueRegion_).IsEmpty());
 }
 } // namespace Rosen
 } // namespace OHOS

@@ -17,10 +17,10 @@
 #include "drawable/dfx/rs_dirty_rects_dfx.h"
 #include "drawable/rs_display_render_node_drawable.h"
 #include "params/rs_render_thread_params.h"
+#include "pipeline/render_thread/rs_uni_render_thread.h"
 #include "pipeline/rs_display_render_node.h"
 #include "pipeline/hardware_thread/rs_realtime_refresh_rate_manager.h"
 #include "pipeline/rs_render_node.h"
-#include "pipeline/rs_uni_render_thread.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -103,7 +103,7 @@ HWTEST_F(RSDirtyRectsDFXTest, OnDraw, TestSize.Level1)
     renderThreadParams->isPartialRenderEnabled_ = true;
     renderThreadParams->isOpaqueRegionDfxEnabled_ = true;
     renderThreadParams->isVisibleRegionDfxEnabled_ = true;
-    RSRealtimeRefreshRateManager::Instance().enableState_ = true;
+    RSRealtimeRefreshRateManager::Instance().showEnabled_ = true;
     rsDirtyRectsDfx_->OnDraw(*canvas_);
 
     renderThreadParams->isDirtyRegionDfxEnabled_ = true;
@@ -113,7 +113,7 @@ HWTEST_F(RSDirtyRectsDFXTest, OnDraw, TestSize.Level1)
     renderThreadParams->isPartialRenderEnabled_ = false;
     renderThreadParams->isOpaqueRegionDfxEnabled_ = false;
     renderThreadParams->isVisibleRegionDfxEnabled_ = false;
-    RSRealtimeRefreshRateManager::Instance().enableState_ = false;
+    RSRealtimeRefreshRateManager::Instance().showEnabled_ = false;
     renderThreadParams->isDirtyRegionDfxEnabled_ = false;
     renderThreadParams->isTargetDirtyRegionDfxEnabled_ = false;
     renderThreadParams->isDisplayDirtyDfxEnabled_ = false;
@@ -258,26 +258,27 @@ HWTEST_F(RSDirtyRectsDFXTest, RefreshRateRotationProcess, TestSize.Level1)
 {
     ASSERT_NE(rsDirtyRectsDfx_, nullptr);
     ScreenRotation rotation = ScreenRotation::ROTATION_0;
-    uint64_t screenId = 0;
-    bool res = rsDirtyRectsDfx_->RefreshRateRotationProcess(*canvas_, rotation, screenId);
+    int screenWidth = 1260;
+    int screenHeight = 2720;
+    bool res = rsDirtyRectsDfx_->RefreshRateRotationProcess(*canvas_, rotation, screenWidth, screenHeight);
     ASSERT_TRUE(res);
 
     rotation = ScreenRotation::ROTATION_90;
     auto drawingCanvas = std::make_unique<Drawing::Canvas>();
     canvas_ = std::make_shared<RSPaintFilterCanvas>(drawingCanvas.get());
-    res = rsDirtyRectsDfx_->RefreshRateRotationProcess(*canvas_, rotation, screenId);
+    res = rsDirtyRectsDfx_->RefreshRateRotationProcess(*canvas_, rotation, screenWidth, screenHeight);
     ASSERT_TRUE(res);
 
     rotation = ScreenRotation::ROTATION_180;
-    res = rsDirtyRectsDfx_->RefreshRateRotationProcess(*canvas_, rotation, screenId);
+    res = rsDirtyRectsDfx_->RefreshRateRotationProcess(*canvas_, rotation, screenWidth, screenHeight);
     ASSERT_TRUE(res);
 
     rotation = ScreenRotation::ROTATION_270;
-    res = rsDirtyRectsDfx_->RefreshRateRotationProcess(*canvas_, rotation, screenId);
+    res = rsDirtyRectsDfx_->RefreshRateRotationProcess(*canvas_, rotation, screenWidth, screenHeight);
     ASSERT_TRUE(res);
 
     rotation = ScreenRotation::INVALID_SCREEN_ROTATION;
-    res = rsDirtyRectsDfx_->RefreshRateRotationProcess(*canvas_, rotation, screenId);
+    res = rsDirtyRectsDfx_->RefreshRateRotationProcess(*canvas_, rotation, screenWidth, screenHeight);
     ASSERT_FALSE(res);
 }
 

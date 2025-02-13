@@ -57,7 +57,7 @@
 namespace OHOS {
 namespace Rosen {
 // normal callback functor for client users.
-using ScreenChangeCallback = std::function<void(ScreenId, ScreenEvent)>;
+using ScreenChangeCallback = std::function<void(ScreenId, ScreenEvent, ScreenChangeReason)>;
 #ifdef OHOS_BUILD_ENABLE_MAGICCURSOR
 using PointerLuminanceChangeCallback = std::function<void(int32_t)>;
 #endif
@@ -90,6 +90,15 @@ struct DataBaseRs {
     std::string note;
 };
 
+struct AppInfo {
+    int64_t startTime = 0;
+    int64_t endTime = 0;
+    int32_t pid = 0;
+    std::string versionName;
+    int32_t versionCode = -1;
+    std::string bundleName;
+    std::string processName;
+};
 struct GameStateData {
     int32_t pid = -1;
     int32_t uid = 0;
@@ -128,13 +137,15 @@ public:
 
     bool CreateNode(const RSSurfaceRenderNodeConfig& config);
     bool CreateNode(const RSDisplayNodeConfig& displayNodeConfig, NodeId nodeId);
-    std::shared_ptr<RSSurface> CreateNodeAndSurface(const RSSurfaceRenderNodeConfig& config);
+    std::shared_ptr<RSSurface> CreateNodeAndSurface(const RSSurfaceRenderNodeConfig& config, bool unobscured = false);
     std::shared_ptr<VSyncReceiver> CreateVSyncReceiver(
         const std::string& name,
         const std::shared_ptr<OHOS::AppExecFwk::EventHandler> &looper = nullptr,
         uint64_t id = 0,
         NodeId windowNodeId = 0,
         bool fromXcomponent = false);
+
+    int32_t GetPixelMapByProcessId(std::vector<std::shared_ptr<Media::PixelMap>>& pixelMapVector, pid_t pid);
 
     std::shared_ptr<Media::PixelMap> CreatePixelMapFromSurfaceId(uint64_t surfaceid, const Rect &srcRect);
 
@@ -174,7 +185,7 @@ public:
 
     int32_t SetScreenSecurityMask(ScreenId id, std::shared_ptr<Media::PixelMap> securityMask);
 
-    int32_t SetMirrorScreenVisibleRect(ScreenId id, const Rect& mainScreenRect);
+    int32_t SetMirrorScreenVisibleRect(ScreenId id, const Rect& mainScreenRect, bool supportRotation = false);
 
     int32_t SetCastScreenEnableSkipWindow(ScreenId id, bool enable);
 
@@ -214,7 +225,9 @@ public:
 
     bool GetShowRefreshRateEnabled();
 
-    void SetShowRefreshRateEnabled(bool enable);
+    void SetShowRefreshRateEnabled(bool enabled, int32_t type);
+
+    uint32_t GetRealtimeRefreshRate(ScreenId screenId);
 
     std::string GetRefreshInfo(pid_t pid);
 
@@ -339,9 +352,12 @@ public:
 
     void ReportJankStats();
 
-    void NotifyLightFactorStatus(bool isSafe);
+    void NotifyLightFactorStatus(int32_t lightFactorStatus);
 
     void NotifyPackageEvent(uint32_t listSize, const std::vector<std::string>& packageList);
+
+    void NotifyAppStrategyConfigChangeEvent(const std::string& pkgName, uint32_t listSize,
+        const std::vector<std::pair<std::string, std::string>>& newConfig);
 
     void NotifyRefreshRateEvent(const EventInfo& eventInfo);
 
@@ -354,6 +370,10 @@ public:
     void ReportEventComplete(DataBaseRs info);
 
     void ReportEventJankFrame(DataBaseRs info);
+
+    void ReportRsSceneJankStart(AppInfo info);
+
+    void ReportRsSceneJankEnd(AppInfo info);
 
     void ReportGameStateData(GameStateData info);
 
@@ -377,11 +397,16 @@ public:
 
     void SetVmaCacheStatus(bool flag);
 
-    int32_t RegisterUIExtensionCallback(uint64_t userId, const UIExtensionCallback& callback);
+    int32_t RegisterUIExtensionCallback(uint64_t userId, const UIExtensionCallback& callback, bool unobscured = false);
 
     bool SetAncoForceDoDirect(bool direct);
 
     void SetLayerTop(const std::string &nodeIdStr, bool isTop);
+
+#ifdef RS_ENABLE_OVERLAY_DISPLAY
+    int32_t SetOverlayDisplayMode(int32_t mode);
+#endif
+
 #ifdef TP_FEATURE_ENABLE
     void SetTpFeatureConfig(int32_t feature, const char* config,
         TpFeatureConfigType tpFeatureConfigType = TpFeatureConfigType::DEFAULT_TP_FEATURE);

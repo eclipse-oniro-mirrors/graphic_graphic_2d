@@ -24,10 +24,10 @@
 
 #include "command/rs_base_node_command.h"
 #include "memory/rs_memory_track.h"
+#include "pipeline/render_thread/rs_render_engine.h"
+#include "pipeline/render_thread/rs_uni_render_engine.h"
 #include "pipeline/rs_main_thread.h"
-#include "pipeline/rs_render_engine.h"
 #include "pipeline/rs_root_render_node.h"
-#include "pipeline/rs_uni_render_engine.h"
 #include "pipeline/rs_canvas_drawing_render_node.h"
 #include "platform/common/rs_innovation.h"
 #include "platform/common/rs_system_properties.h"
@@ -4489,35 +4489,6 @@ HWTEST_F(RSMainThreadTest, TraverseCanvasDrawingNodesNotOnTree, TestSize.Level2)
 }
 
 /**
- * @tc.name: CheckIsAihdrSurface
- * @tc.desc: Test CheckIsAihdrSurface
- * @tc.type: FUNC
- * @tc.require:
- */
-#ifdef USE_VIDEO_PROCESSING_ENGINE
-HWTEST_F(RSMainThreadTest, CheckIsAihdrSurface, TestSize.Level1)
-{
-    auto mainThread = RSMainThread::Instance();
-    mainThread->context_->activeNodesInRoot_.clear();
-    // valid nodeid
-    NodeId id = 1;
-    auto node = std::make_shared<RSSurfaceRenderNode>(id, mainThread->context_);
-    ASSERT_NE(node, nullptr);
-    const auto& surfaceBuffer = node->GetRSSurfaceHandler()->GetBuffer();
-    if (surfaceBuffer == nullptr) {
-        return;
-    }
-    uint32_t hdrType = HDI::Display::Graphic::Common::V2_1::CM_VIDEO_AI_HDR;
-    std::vector<uint8_t> metadataType;
-    metadataType.resize(sizeof(hdrType));
-    memcpy_s(metadataType.data(), metadataType.size(), &hdrType, sizeof(hdrType));
-    surfaceBuffer->SetMetadata(Media::VideoProcessingEngine::ATTRKEY_HDR_METADATA_TYPE,
-        metadataType);
-    ASSERT_EQ(mainThread->CheckIsAihdrSurface(*node), true);
-}
-#endif
-
-/**
  * @tc.name: RenderServiceAllNodeDump01
  * @tc.desc: RenderServiceAllNodeDump Test
  * @tc.type: FUNC
@@ -4548,9 +4519,6 @@ HWTEST_F(RSMainThreadTest, ConnectChipsetVsyncSer, TestSize.Level2)
     mainThread->initVsyncServiceFlag_ = false;
     mainThread->ConnectChipsetVsyncSer();
     ASSERT_EQ(mainThread->initVsyncServiceFlag_, false);
-    mainThread->initVsyncServiceFlag_ = true;
-    mainThread->ConnectChipsetVsyncSer();
-    ASSERT_EQ(mainThread->initVsyncServiceFlag_, true);
 }
 #endif
 
@@ -4890,13 +4858,21 @@ HWTEST_F(RSMainThreadTest, CheckFastCompose001, TestSize.Level1)
 {
     auto mainThread = RSMainThread::Instance();
     ASSERT_NE(mainThread, nullptr);
+    auto receiver = mainThread->receiver_;
+    if (mainThread->rsVSyncDistributor_ == nullptr) {
+        auto vsyncGenerator = CreateVSyncGenerator();
+        auto vsyncController = new VSyncController(vsyncGenerator, 0);
+        mainThread->rsVSyncDistributor_ = new VSyncDistributor(vsyncController, "rs");
+    }
     sptr<VSyncConnection> conn = new VSyncConnection(mainThread->rsVSyncDistributor_, "rs");
-    mainThread->receiver_->init_ = false;
+    mainThread->receiver_ = nullptr;
     mainThread->CheckFastCompose(0);
-    mainThread->receiver_->init_ = true;
+    mainThread->receiver_ = std::make_shared<VSyncReceiver>(conn);
     mainThread->lastFastComposeTimeStamp_ = 0;
     mainThread->CheckFastCompose(mainThread->timestamp_ - 1);
     mainThread->lastFastComposeTimeStamp_ = mainThread->timestamp_;
     mainThread->CheckFastCompose(mainThread->timestamp_ - 1);
+    ASSERT_NE(mainThread->requestNextVsyncNum_.load(), 0);
+    mainThread->receiver_ = receiver;
 }
 } // namespace OHOS::Rosen

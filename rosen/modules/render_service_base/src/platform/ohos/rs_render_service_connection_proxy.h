@@ -41,7 +41,7 @@ public:
 
     bool CreateNode(const RSSurfaceRenderNodeConfig& config) override;
     bool CreateNode(const RSDisplayNodeConfig& displayNodeConfig, NodeId nodeId) override;
-    sptr<Surface> CreateNodeAndSurface(const RSSurfaceRenderNodeConfig& config) override;
+    sptr<Surface> CreateNodeAndSurface(const RSSurfaceRenderNodeConfig& config, bool unobscured = false) override;
 
     virtual sptr<IVSyncConnection> CreateVSyncConnection(const std::string& name,
                                                          const sptr<VSyncIConnectionToken>& token,
@@ -49,6 +49,8 @@ public:
                                                          NodeId windowNodeId = 0,
                                                          bool fromXcomponent = false) override;
 
+    int32_t GetPixelMapByProcessId(std::vector<std::shared_ptr<Media::PixelMap>>& pixelMapVector, pid_t pid) override;
+    
     std::shared_ptr<Media::PixelMap> CreatePixelMapFromSurface(sptr<Surface> surface, const Rect &srcRect) override;
 
     int32_t SetFocusAppInfo(
@@ -85,7 +87,7 @@ public:
 
     int32_t SetScreenSecurityMask(ScreenId id, std::shared_ptr<Media::PixelMap> securityMask) override;
 
-    int32_t SetMirrorScreenVisibleRect(ScreenId id, const Rect& mainScreenRect) override;
+    int32_t SetMirrorScreenVisibleRect(ScreenId id, const Rect& mainScreenRect, bool supportRotation = false) override;
 
     int32_t SetCastScreenEnableSkipWindow(ScreenId id, bool enable) override;
 
@@ -123,7 +125,9 @@ public:
 
     bool GetShowRefreshRateEnabled() override;
 
-    void SetShowRefreshRateEnabled(bool enable) override;
+    void SetShowRefreshRateEnabled(bool enabled, int32_t type) override;
+
+    uint32_t GetRealtimeRefreshRate(ScreenId id) override;
 
     std::string GetRefreshInfo(pid_t pid) override;
 
@@ -260,9 +264,12 @@ public:
 
     void ReportJankStats() override;
 
-    void NotifyLightFactorStatus(bool isSafe) override;
+    void NotifyLightFactorStatus(int32_t lightFactorStatus) override;
 
     void NotifyPackageEvent(uint32_t listSize, const std::vector<std::string>& packageList) override;
+
+    void NotifyAppStrategyConfigChangeEvent(const std::string& pkgName, uint32_t listSize,
+        const std::vector<std::pair<std::string, std::string>>& newConfig) override;
 
     void NotifyRefreshRateEvent(const EventInfo& eventInfo) override;
 
@@ -277,6 +284,10 @@ public:
     void ReportEventComplete(DataBaseRs info) override;
 
     void ReportEventJankFrame(DataBaseRs info) override;
+
+    void ReportRsSceneJankStart(AppInfo info) override;
+
+    void ReportRsSceneJankEnd(AppInfo info) override;
 
     void ReportGameStateData(GameStateData info) override;
 
@@ -303,7 +314,8 @@ public:
 
     void SetVmaCacheStatus(bool flag) override;
 
-    int32_t RegisterUIExtensionCallback(uint64_t userId, sptr<RSIUIExtensionCallback> callback) override;
+    int32_t RegisterUIExtensionCallback(uint64_t userId, sptr<RSIUIExtensionCallback> callback,
+        bool unobscured = false) override;
 
 #ifdef TP_FEATURE_ENABLE
     void SetTpFeatureConfig(int32_t feature, const char* config,
@@ -333,6 +345,8 @@ private:
 
     void ReportDataBaseRs(MessageParcel& data, MessageParcel& reply, MessageOption& option, DataBaseRs info);
 
+    void WriteAppInfo(MessageParcel& data, MessageParcel& reply, MessageOption& option, AppInfo info);
+
     void ReportGameStateDataRs(MessageParcel& data, MessageParcel& reply, MessageOption& option, GameStateData info);
 
     int32_t SendRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
@@ -340,6 +354,10 @@ private:
     bool SetAncoForceDoDirect(bool direct) override;
 
     void SetLayerTop(const std::string &nodeIdStr, bool isTop) override;
+
+#ifdef RS_ENABLE_OVERLAY_DISPLAY
+    int32_t SetOverlayDisplayMode(int32_t mode) override;
+#endif
 
     static inline BrokerDelegator<RSRenderServiceConnectionProxy> delegator_;
 

@@ -341,14 +341,10 @@ void VSyncGenerator::ComputeDVSyncListenerTimeStamp(const Listener& listener, in
 #endif
 }
 
-int64_t VSyncGenerator::SetCurrentRefreshRate(uint32_t currRefreshRate, uint32_t lastRefreshRate, bool followRs)
+int64_t VSyncGenerator::SetCurrentRefreshRate(uint32_t currRefreshRate, uint32_t lastRefreshRate)
 {
     int64_t delayTime = 0;
 #if defined(RS_ENABLE_DVSYNC_2)
-    if (followRs) {
-        delayTime = DVSync::Instance().GetCurrDelayTime();
-        return delayTime;
-    }
     std::lock_guard<std::mutex> locker(mutex_);
     delayTime = DVSync::Instance().SetCurrentRefreshRate(currRefreshRate, lastRefreshRate);
     if (currRefreshRate != 0 && delayTime != 0) {
@@ -359,6 +355,17 @@ int64_t VSyncGenerator::SetCurrentRefreshRate(uint32_t currRefreshRate, uint32_t
     RS_TRACE_NAME_FMT("DVSync::UiDVSync setCurrentRefreshRate isLtpoNeedChange:%d, currRefreshRate:%u, delayTime:%ld",
         isLtpoNeedChange_, currRefreshRate, delayTime);
     return delayTime;
+}
+
+void VSyncGenerator::DVSyncRateChanged(uint32_t currRefreshRate, bool &frameRateChanged)
+{
+#if defined(RS_ENABLE_DVSYNC_2)
+    uint32_t dvsyncRate = 0;
+    bool dvsyncRateChanged = DVSync::Instance().DVSyncRateChanged(currRefreshRate, dvsyncRate);
+    if (dvsyncRate != 0) {
+        frameRateChanged = dvsyncRateChanged;
+    }
+#endif
 }
 
 int64_t VSyncGenerator::CollectDVSyncListener(const Listener &listener, int64_t now,
@@ -434,7 +441,7 @@ VsyncError VSyncGenerator::RemoveDVSyncListener(const sptr<OHOS::Rosen::VSyncGen
     if (cb == nullptr) {
         return VSYNC_ERROR_INVALID_ARGUMENTS;
     }
-    dvsyncListener_ = {0, nullptr, 0, 0};
+    dvsyncListener_ = {0, nullptr, 0};
     return VSYNC_ERROR_OK;
 }
 // End of DVSync
@@ -1094,8 +1101,8 @@ void VSyncGenerator::PrintGeneratorStatus()
     VLOGI("PrintGeneratorStatus, period:" VPUBI64 ", phase:" VPUBI64 ", referenceTime:" VPUBI64
         ", vsyncMode:%{public}d, listeners size:%{public}u", period_, phase_, referenceTime_, vsyncMode_,
         static_cast<uint32_t>(listeners_.size()));
-    for (int i = 0; i < listeners_.size(); i++) {
-        VLOGI("i:%{public}d, listener phase is " VPUBI64 ", timeStamp is " VPUBI64,
+    for (uint32_t i = 0; i < listeners_.size(); i++) {
+        VLOGI("i:%{public}u, listener phase is " VPUBI64 ", timeStamp is " VPUBI64,
             i, listeners_[i].phase_, listeners_[i].lastTime_);
     }
 }

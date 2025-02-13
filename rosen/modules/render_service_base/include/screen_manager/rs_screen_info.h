@@ -40,11 +40,17 @@ struct ScreenInfo {
     uint32_t phyWidth = 0; // physical screen resolution
     uint32_t phyHeight = 0;
     bool isSamplingOn = false;
+    int samplingDistance = 1;
+    float samplingTranslateX = 0.f;
+    float samplingTranslateY = 0.f;
+    float samplingScale = 1.f;
     ScreenColorGamut colorGamut = ScreenColorGamut::COLOR_GAMUT_SRGB;
     ScreenState state = ScreenState::UNKNOWN;
     ScreenRotation rotation = ScreenRotation::ROTATION_0;
     std::unordered_set<uint64_t> whiteList = {};
     RectI activeRect;
+    RectI maskRect;
+    RectI reviseRect;
 
     uint32_t skipFrameInterval = DEFAULT_SKIP_FRAME_INTERVAL; // skip frame interval for change screen refresh rate
     uint32_t expectedRefreshRate = INVALID_EXPECTED_REFRESH_RATE;

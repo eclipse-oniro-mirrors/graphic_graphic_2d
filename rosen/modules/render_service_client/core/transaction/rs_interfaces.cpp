@@ -34,7 +34,8 @@ namespace Rosen {
 namespace {
 constexpr uint32_t WATERMARK_PIXELMAP_SIZE_LIMIT = 500 * 1024;
 constexpr uint32_t WATERMARK_NAME_LENGTH_LIMIT = 128;
-constexpr uint32_t SECURITYMASK_PIXELMAP_SIZE_LIMIT = 4096 * 4096;
+constexpr int32_t SECURITYMASK_IMAGE_WIDTH_LIMIT = 4096;
+constexpr int32_t SECURITYMASK_IMAGE_HEIGHT_LIMIT = 4096;
 }
 #endif
 RSInterfaces &RSInterfaces::GetInstance()
@@ -113,21 +114,22 @@ int32_t RSInterfaces::SetVirtualScreenSecurityExemptionList(
 
 int32_t RSInterfaces::SetScreenSecurityMask(ScreenId id, std::shared_ptr<Media::PixelMap> securityMask)
 {
-#ifdef ROSEN_OHOS
-    if (securityMask &&  securityMask->GetCapacity() > SECURITYMASK_PIXELMAP_SIZE_LIMIT) {
-        ROSEN_LOGE("SetScreenSecurityMask failed, securityMask %{public}d is error",
-            securityMask->GetCapacity());
+    Media::ImageInfo imageInfo;
+    if (securityMask) {
+        securityMask->GetImageInfo(imageInfo);
+    }
+    if (securityMask && (imageInfo.size.width > SECURITYMASK_IMAGE_WIDTH_LIMIT ||
+        imageInfo.size.height > SECURITYMASK_IMAGE_HEIGHT_LIMIT)) {
+        ROSEN_LOGE("SetScreenSecurityMask failed, securityMask width: %{public}d, height: %{public}d is error",
+            imageInfo.size.width, imageInfo.size.height);
         return RS_CONNECTION_ERROR;
     }
     return renderServiceClient_->SetScreenSecurityMask(id, std::move(securityMask));
-#else
-    return RS_CONNECTION_ERROR;
-#endif
 }
 
-int32_t RSInterfaces::SetMirrorScreenVisibleRect(ScreenId id, const Rect& mainScreenRect)
+int32_t RSInterfaces::SetMirrorScreenVisibleRect(ScreenId id, const Rect& mainScreenRect, bool supportRotation)
 {
-    return renderServiceClient_->SetMirrorScreenVisibleRect(id, mainScreenRect);
+    return renderServiceClient_->SetMirrorScreenVisibleRect(id, mainScreenRect, supportRotation);
 }
 
 int32_t RSInterfaces::SetCastScreenEnableSkipWindow(ScreenId id, bool enable)
@@ -208,6 +210,11 @@ int32_t RSInterfaces::UnRegisterPointerLuminanceChangeCallback()
 int32_t RSInterfaces::SetScreenChangeCallback(const ScreenChangeCallback &callback)
 {
     return renderServiceClient_->SetScreenChangeCallback(callback);
+}
+
+int32_t RSInterfaces::GetPixelMapByProcessId(std::vector<std::shared_ptr<Media::PixelMap>>& pixelMapVector, pid_t pid)
+{
+    return renderServiceClient_->GetPixelMapByProcessId(pixelMapVector, pid);
 }
 
 bool RSInterfaces::TakeSurfaceCapture(std::shared_ptr<RSSurfaceNode> node,
@@ -317,9 +324,14 @@ bool RSInterfaces::GetShowRefreshRateEnabled()
     return renderServiceClient_->GetShowRefreshRateEnabled();
 }
 
-void RSInterfaces::SetShowRefreshRateEnabled(bool enable)
+void RSInterfaces::SetShowRefreshRateEnabled(bool enabled, int32_t type)
 {
-    return renderServiceClient_->SetShowRefreshRateEnabled(enable);
+    return renderServiceClient_->SetShowRefreshRateEnabled(enabled, type);
+}
+
+uint32_t RSInterfaces::GetRealtimeRefreshRate(ScreenId id)
+{
+    return renderServiceClient_->GetRealtimeRefreshRate(id);
 }
 
 std::string RSInterfaces::GetRefreshInfo(pid_t pid)
@@ -760,19 +772,35 @@ void RSInterfaces::ReportGameStateData(GameStateData info)
     renderServiceClient_->ReportGameStateData(info);
 }
 
+void RSInterfaces::ReportRsSceneJankStart(AppInfo info)
+{
+    renderServiceClient_->ReportRsSceneJankStart(info);
+}
+
+void RSInterfaces::ReportRsSceneJankEnd(AppInfo info)
+{
+    renderServiceClient_->ReportRsSceneJankEnd(info);
+}
+
 void RSInterfaces::EnableCacheForRotation()
 {
     renderServiceClient_->SetCacheEnabledForRotation(true);
 }
 
-void RSInterfaces::NotifyLightFactorStatus(bool isSafe)
+void RSInterfaces::NotifyLightFactorStatus(int32_t lightFactorStatus)
 {
-    renderServiceClient_->NotifyLightFactorStatus(isSafe);
+    renderServiceClient_->NotifyLightFactorStatus(lightFactorStatus);
 }
 
 void RSInterfaces::NotifyPackageEvent(uint32_t listSize, const std::vector<std::string>& packageList)
 {
     renderServiceClient_->NotifyPackageEvent(listSize, packageList);
+}
+
+void RSInterfaces::NotifyAppStrategyConfigChangeEvent(const std::string& pkgName, uint32_t listSize,
+    const std::vector<std::pair<std::string, std::string>>& newConfig)
+{
+    renderServiceClient_->NotifyAppStrategyConfigChangeEvent(pkgName, listSize, newConfig);
 }
 
 void RSInterfaces::NotifyRefreshRateEvent(const EventInfo& eventInfo)
@@ -860,9 +888,9 @@ void RSInterfaces::DropFrameByPid(const std::vector<int32_t> pidList)
     renderServiceClient_->DropFrameByPid(pidList);
 }
 
-int32_t RSInterfaces::RegisterUIExtensionCallback(uint64_t userId, const UIExtensionCallback& callback)
+int32_t RSInterfaces::RegisterUIExtensionCallback(uint64_t userId, const UIExtensionCallback& callback, bool unobscured)
 {
-    return renderServiceClient_->RegisterUIExtensionCallback(userId, callback);
+    return renderServiceClient_->RegisterUIExtensionCallback(userId, callback, unobscured);
 }
 
 bool RSInterfaces::SetAncoForceDoDirect(bool direct)
@@ -920,5 +948,13 @@ void RSInterfaces::SetWindowContainer(NodeId nodeId, bool value)
 {
     renderServiceClient_->SetWindowContainer(nodeId, value);
 }
+
+#ifdef RS_ENABLE_OVERLAY_DISPLAY
+int32_t RSInterfaces::SetOverlayDisplayMode(int32_t mode)
+{
+    ROSEN_LOGI("RSInterfaces::SetOverlayDisplayMode enter.");
+    return renderServiceClient_->SetOverlayDisplayMode(mode);
+}
+#endif
 } // namespace Rosen
 } // namespace OHOS

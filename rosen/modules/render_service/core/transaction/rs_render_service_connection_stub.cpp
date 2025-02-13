@@ -30,7 +30,7 @@
 #include "common/rs_xcollie.h"
 #include "hgm_frame_rate_manager.h"
 #include "memory/rs_memory_flow_control.h"
-#include "pipeline/rs_base_render_util.h"
+#include "pipeline/render_thread/rs_base_render_util.h"
 #include "pipeline/rs_main_thread.h"
 #include "pipeline/rs_uni_render_judgement.h"
 #include "pipeline/rs_unmarshal_thread.h"
@@ -79,6 +79,7 @@ static constexpr std::array descriptorCheckList = {
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_SCREEN_SUPPORTED_REFRESH_RATES),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_SHOW_REFRESH_RATE_ENABLED),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_SHOW_REFRESH_RATE_ENABLED),
+    static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_REALTIME_REFRESH_RATE),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::MARK_POWER_OFF_NEED_PROCESS_ONE_FRAME),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REPAINT_EVERYTHING),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::FORCE_REFRESH_ONE_FRAME_WITH_NEXT_VSYNC),
@@ -144,6 +145,8 @@ static constexpr std::array descriptorCheckList = {
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REPORT_EVENT_RESPONSE),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REPORT_EVENT_COMPLETE),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REPORT_EVENT_JANK_FRAME),
+    static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REPORT_RS_SCENE_JANK_START),
+    static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REPORT_RS_SCENE_JANK_END),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REPORT_EVENT_GAMESTATE),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_TOUCH_EVENT),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_DYNAMIC_MODE_EVENT),
@@ -178,6 +181,9 @@ static constexpr std::array descriptorCheckList = {
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::UNREGISTER_SURFACE_BUFFER_CALLBACK),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_LAYER_TOP),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_WINDOW_CONTAINER),
+#ifdef RS_ENABLE_OVERLAY_DISPLAY
+    static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_OVERLAY_DISPLAY_MODE),
+#endif
 };
 
 void CopyFileDescriptor(MessageParcel& old, MessageParcel& copied)
@@ -336,7 +342,7 @@ void RSRenderServiceConnectionStub::SetQos()
 int RSRenderServiceConnectionStub::OnRemoteRequest(
     uint32_t code, MessageParcel& data, MessageParcel& reply, MessageOption& option)
 {
-    RS_PROFILER_ON_REMOTE_REQUEST(this, code, data, reply, option);
+    uint32_t parcelNumber = RS_PROFILER_ON_REMOTE_REQUEST(this, code, data, reply, option);
 
     AshmemFdContainer::SetIsUnmarshalThread(false);
     pid_t callingPid = GetCallingPid();
@@ -398,7 +404,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 if (parsedParcel == nullptr) {
                     // no need to copy or copy failed, use original parcel
                     // execute Unmarshalling immediately
-                    auto transactionData = RSBaseRenderUtil::ParseTransactionData(data);
+                    auto transactionData = RSBaseRenderUtil::ParseTransactionData(data, parcelNumber);
                     if (transactionData && isNonSystemAppCalling) {
                         const auto& nodeMap = RSMainThread::Instance()->GetContext().GetNodeMap();
                         if (!transactionData->IsCallingPidValid(callingPid, nodeMap)) {
@@ -413,6 +419,9 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 // should be parsed to normal parcel before Unmarshalling
                 parsedParcel = RSAshmemHelper::ParseFromAshmemParcel(&data, ashmemFdWorker, ashmemFlowControlUnit,
                     callingPid);
+                if (parsedParcel) {
+                    RS_PROFILER_ON_REMOTE_REQUEST(this, code, *parsedParcel, reply, option);
+                }
             }
             if (parsedParcel == nullptr) {
                 RS_LOGE("RSRenderServiceConnectionStub::COMMIT_TRANSACTION failed: parsed parcel is nullptr");
@@ -421,10 +430,10 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             if (isUniRender) {
                 // post Unmarshalling task to RSUnmarshalThread
                 RSUnmarshalThread::Instance().RecvParcel(parsedParcel, isNonSystemAppCalling, callingPid,
-                    std::move(ashmemFdWorker), ashmemFlowControlUnit);
+                    std::move(ashmemFdWorker), ashmemFlowControlUnit, parcelNumber);
             } else {
                 // execute Unmarshalling immediately
-                auto transactionData = RSBaseRenderUtil::ParseTransactionData(*parsedParcel);
+                auto transactionData = RSBaseRenderUtil::ParseTransactionData(*parsedParcel, parcelNumber);
                 if (transactionData && isNonSystemAppCalling) {
                     const auto& nodeMap = RSMainThread::Instance()->GetContext().GetNodeMap();
                     if (!transactionData->IsCallingPidValid(callingPid, nodeMap)) {
@@ -472,6 +481,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             bool isTextureExportNode = data.ReadBool();
             bool isSync = data.ReadBool();
             auto surfaceWindowType = static_cast<SurfaceWindowType>(data.ReadUint8());
+            bool unobscured = data.ReadBool();
             if (!CheckCreateNodeAndSurface(callingPid, type, surfaceWindowType)) {
                 ret = ERR_INVALID_DATA;
                 break;
@@ -480,7 +490,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 .id = nodeId, .name = surfaceName, .nodeType = type,
                 .isTextureExportNode = isTextureExportNode, .isSync = isSync,
                 .surfaceWindowType = surfaceWindowType};
-            sptr<Surface> surface = CreateNodeAndSurface(config);
+            sptr<Surface> surface = CreateNodeAndSurface(config, unobscured);
             if (surface == nullptr) {
                 ret = ERR_NULL_OBJECT;
                 break;
@@ -679,7 +689,12 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 .w = w,
                 .h = h
             };
-            int32_t status = SetMirrorScreenVisibleRect(id, mainScreenRect);
+            bool supportRotation{false};
+            if (!data.ReadBool(supportRotation)) {
+                ret = ERR_INVALID_DATA;
+                break;
+            }
+            int32_t status = SetMirrorScreenVisibleRect(id, mainScreenRect, supportRotation);
             if (!reply.WriteInt32(status)) {
                 ret = ERR_INVALID_REPLY;
             }
@@ -906,19 +921,32 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             break;
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_SHOW_REFRESH_RATE_ENABLED): {
-            bool enable = GetShowRefreshRateEnabled();
-            if (!reply.WriteBool(enable)) {
+            bool enabled = GetShowRefreshRateEnabled();
+            if (!reply.WriteBool(enabled)) {
                 ret = ERR_INVALID_REPLY;
             }
             break;
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_SHOW_REFRESH_RATE_ENABLED): {
-            bool enable{false};
-            if (!data.ReadBool(enable)) {
+            bool enabled{false};
+            int32_t type{0};
+            if (!data.ReadBool(enabled) || !data.ReadInt32(type)) {
                 ret = ERR_INVALID_DATA;
                 break;
             }
-            SetShowRefreshRateEnabled(enable);
+            SetShowRefreshRateEnabled(enabled, type);
+            break;
+        }
+        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_REALTIME_REFRESH_RATE): {
+            ScreenId id{INVALID_SCREEN_ID};
+            if (!data.ReadUint64(id)) {
+                ret = ERR_INVALID_DATA;
+                break;
+            }
+            uint32_t refreshRate = GetRealtimeRefreshRate(id);
+            if (!reply.WriteUint32(refreshRate)) {
+                ret = ERR_INVALID_REPLY;
+            }
             break;
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_REFRESH_INFO): {
@@ -1508,6 +1536,24 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             }
             break;
         }
+        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_PIXELMAP_BY_PROCESSID): {
+            uint64_t pid;
+            if (!data.ReadUint64(pid)) {
+                ret = ERR_INVALID_DATA;
+                break;
+            }
+            std::vector<std::shared_ptr<Media::PixelMap>> pixelMapVector;
+            int32_t result = GetPixelMapByProcessId(pixelMapVector, static_cast<pid_t>(pid));
+            if (!reply.WriteInt32(result)) {
+                ret = ERR_INVALID_REPLY;
+                break;
+            }
+            if (!RSMarshallingHelper::MarshallingVec(reply, pixelMapVector)) {
+                ret = ERR_INVALID_REPLY;
+                break;
+            }
+            break;
+        }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::CREATE_PIXEL_MAP_FROM_SURFACE): {
             auto remoteObject = data.ReadRemoteObject();
             if (remoteObject == nullptr) {
@@ -2084,6 +2130,24 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             ReportEventJankFrame(info);
             break;
         }
+        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REPORT_RS_SCENE_JANK_START): {
+            AppInfo info;
+            if (!ReadAppInfo(info, data)) {
+                ret = ERR_INVALID_DATA;
+                break;
+            }
+            ReportRsSceneJankStart(info);
+            break;
+        }
+        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REPORT_RS_SCENE_JANK_END): {
+            AppInfo info;
+            if (!ReadAppInfo(info, data)) {
+                ret = ERR_INVALID_DATA;
+                break;
+            }
+            ReportRsSceneJankEnd(info);
+            break;
+        }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REPORT_EVENT_GAMESTATE): {
             GameStateData info;
             if (!ReadGameStateDataRs(info, data)) {
@@ -2179,12 +2243,12 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             break;
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_LIGHT_FACTOR_STATUS) : {
-            bool isSafe{false};
-            if (!data.ReadBool(isSafe)) {
+            int32_t lightFactorStatus{0};
+            if (!data.ReadInt32(lightFactorStatus)) {
                 ret = ERR_INVALID_DATA;
                 break;
             }
-            NotifyLightFactorStatus(isSafe);
+            NotifyLightFactorStatus(lightFactorStatus);
             break;
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_PACKAGE_EVENT) : {
@@ -2214,6 +2278,36 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             }
             NotifyPackageEvent(listSize, packageList);
             break;
+        }
+        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_APP_STRATEGY_CONFIG_CHANGE_EVENT) : {
+            std::string pkgName;
+            uint32_t listSize{0};
+            if (!data.ReadString(pkgName) || !data.ReadUint32(listSize)) {
+                ret = ERR_INVALID_DATA;
+                break;
+            }
+            const uint32_t MAX_LIST_SIZE = 50;
+            if (listSize > MAX_LIST_SIZE) {
+                ret = ERR_INVALID_STATE;
+                break;
+            }
+
+            std::vector<std::pair<std::string, std::string>> newConfig;
+            bool errFlag{false};
+            for (uint32_t i = 0; i < listSize; i++) {
+                std::string key;
+                std::string value;
+                if (!data.ReadString(key) || !data.ReadString(value)) {
+                    errFlag = true;
+                    break;
+                }
+                newConfig.push_back(make_pair(key, value));
+            }
+            if (errFlag) {
+                ret = ERR_INVALID_STATE;
+                break;
+            }
+            NotifyAppStrategyConfigChangeEvent(pkgName, listSize, newConfig);
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_REFRESH_RATE_EVENT) : {
             std::string eventName;
@@ -2480,7 +2574,12 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 ret = ERR_NULL_OBJECT;
                 break;
             }
-            int32_t status = RegisterUIExtensionCallback(userId, callback);
+            bool unobscured{false};
+            if (!data.ReadBool(unobscured)) {
+                ret = ERR_INVALID_DATA;
+                break;
+            }
+            int32_t status = RegisterUIExtensionCallback(userId, callback, unobscured);
             if (!reply.WriteInt32(status)) {
                 ret = ERR_INVALID_REPLY;
             }
@@ -2629,6 +2728,19 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             SetWindowContainer(nodeId, isEnabled);
             break;
         }
+#ifdef RS_ENABLE_OVERLAY_DISPLAY
+        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_OVERLAY_DISPLAY_MODE) : {
+            RS_LOGI("RSRenderServicrConnectionStub::OnRemoteRequest SET_OVERLAY_DISPLAY_MODE");
+            int32_t mode{0};
+            if (!data.ReadInt32(mode)) {
+                ret = ERR_INVALID_DATA;
+                break;
+            }
+            int32_t result = SetOverlayDisplayMode(mode);
+            reply.WriteInt32(result);
+            break;
+        }
+#endif
         default: {
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
         }
@@ -2647,6 +2759,32 @@ bool RSRenderServiceConnectionStub::ReadDataBaseRs(DataBaseRs& info, MessageParc
         !data.ReadString(info.bundleName) || !data.ReadString(info.processName) ||
         !data.ReadString(info.abilityName) ||!data.ReadString(info.pageUrl) ||
         !data.ReadString(info.sourceType) || !data.ReadString(info.note)) {
+        return false;
+    }
+    return true;
+}
+
+bool RSRenderServiceConnectionStub::ReadAppInfo(AppInfo& info, MessageParcel& data)
+{
+    if (!data.ReadInt64(info.startTime)) {
+        return false;
+    }
+    if (!data.ReadInt64(info.endTime)) {
+        return false;
+    }
+    if (!data.ReadInt32(info.pid)) {
+        return false;
+    }
+    if (!data.ReadString(info.versionName)) {
+        return false;
+    }
+    if (!data.ReadInt32(info.versionCode)) {
+        return false;
+    }
+    if (!data.ReadString(info.bundleName)) {
+        return false;
+    }
+    if (!data.ReadString(info.processName)) {
         return false;
     }
     return true;

@@ -26,9 +26,11 @@
 #include "draw/surface.h"
 #include "drawable/rs_display_render_node_drawable.h"
 #include "memory/rs_tag_tracker.h"
+#include "pipeline/render_thread/rs_base_render_engine.h"
+#include "pipeline/render_thread/rs_composer_adapter.h"
+#include "pipeline/render_thread/rs_uni_render_util.h"
 #include "pipeline/rs_base_render_node.h"
 #include "pipeline/rs_canvas_drawing_render_node.h"
-#include "pipeline/rs_composer_adapter.h"
 #include "pipeline/rs_display_render_node.h"
 #include "pipeline/rs_divided_render_util.h"
 #include "pipeline/rs_effect_render_node.h"
@@ -36,9 +38,7 @@
 #include "pipeline/rs_render_service_connection.h"
 #include "pipeline/rs_root_render_node.h"
 #include "pipeline/rs_surface_render_node.h"
-#include "pipeline/rs_base_render_engine.h"
 #include "pipeline/rs_uni_render_judgement.h"
-#include "pipeline/rs_uni_render_util.h"
 #include "platform/common/rs_log.h"
 #include "platform/drawing/rs_surface.h"
 #include "render/rs_drawing_filter.h"
@@ -215,11 +215,6 @@ bool CopyDataToPixelMap(std::shared_ptr<Drawing::Image> img, const std::unique_p
     void* fdPtr = new int32_t();
     *static_cast<int32_t*>(fdPtr) = fd;
     pixelmap->SetPixelsAddr(data, fdPtr, size, Media::AllocatorType::SHARE_MEM_ALLOC, nullptr);
-    if (colorSpace != nullptr) {
-        pixelmap->InnerSetColorSpace(colorSpace->IsSRGB()?
-            OHOS::ColorManager::ColorSpace(OHOS::ColorManager::ColorSpaceName::SRGB):
-            OHOS::ColorManager::ColorSpace(OHOS::ColorManager::ColorSpaceName::DISPLAY_P3));
-    }
 #else
     auto data = (uint8_t *)malloc(size);
     if (data == nullptr) {
@@ -339,7 +334,8 @@ void RSSurfaceCaptureVisitor::CaptureSingleSurfaceNodeWithoutUni(RSSurfaceRender
         translateMatrix.PreTranslate(
             thisNodetranslateX - parentNodeTranslateX, thisNodetranslateY - parentNodeTranslateY);
     }
-    if (node.GetSecurityLayer() || node.GetSkipLayer()) {
+    if (node.GetSpecialLayerMgr().Find(SpecialLayerType::SECURITY) ||
+        node.GetSpecialLayerMgr().Find(SpecialLayerType::SKIP)) {
         RS_LOGD("RSSurfaceCaptureVisitor::CaptureSingleSurfaceNodeWithoutUni: \
             process RSSurfaceRenderNode(id:[%{public}" PRIu64 "]) clear white since it is security layer.",
             node.GetId());
@@ -372,7 +368,8 @@ void RSSurfaceCaptureVisitor::CaptureSingleSurfaceNodeWithoutUni(RSSurfaceRender
 
 void RSSurfaceCaptureVisitor::CaptureSurfaceInDisplayWithoutUni(RSSurfaceRenderNode& node)
 {
-    if (node.GetSecurityLayer() || node.GetSkipLayer()) {
+    if (node.GetSpecialLayerMgr().Find(SpecialLayerType::SECURITY) ||
+        node.GetSpecialLayerMgr().Find(SpecialLayerType::SKIP)) {
         RS_LOGD("RSSurfaceCaptureVisitor::CaptureSurfaceInDisplayWithoutUni: \
             process RSSurfaceRenderNode(id:[%{public}" PRIu64 "]) paused since it is security layer.",
             node.GetId());

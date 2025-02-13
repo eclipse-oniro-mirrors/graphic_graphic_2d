@@ -47,7 +47,7 @@
 #include "image/gpu_context.h"
 
 #ifdef RS_ENABLE_VK
-#include "pipeline/rs_vk_image_manager.h"
+#include "feature/gpuComposition/rs_vk_image_manager.h"
 #include "platform/ohos/backend/rs_vulkan_context.h"
 #endif
 #ifdef RES_SCHED_ENABLE
@@ -71,6 +71,7 @@ const std::string KERNEL_CONFIG_PATH = "/system/etc/hiview/kernel_leak_config.js
 constexpr uint32_t MEMUNIT_RATE = 1024;
 constexpr uint32_t MEMORY_REPORT_INTERVAL = 24 * 60 * 60 * 1000; // Each process can report at most once a day.
 constexpr uint32_t FRAME_NUMBER = 10; // Check memory every ten frames.
+constexpr uint32_t CLEAR_TWO_APPS_TIME = 1000; // 1000ms
 constexpr const char* MEM_RS_TYPE = "renderservice";
 constexpr const char* MEM_CPU_TYPE = "cpu";
 constexpr const char* MEM_GPU_TYPE = "gpu";
@@ -317,6 +318,7 @@ void MemoryManager::CountMemory(
 
 static std::tuple<uint64_t, std::string, RectI> FindGeoById(uint64_t nodeId)
 {
+    constexpr int maxTreeDepth = 256;
     const auto& nodeMap = RSMainThread::Instance()->GetContext().GetNodeMap();
     auto node = nodeMap.GetRenderNode<RSRenderNode>(nodeId);
     uint64_t windowId = nodeId;
@@ -330,7 +332,8 @@ static std::tuple<uint64_t, std::string, RectI> FindGeoById(uint64_t nodeId)
     // Obtain the window according to childId
     auto parent = node->GetParent().lock();
     bool windowsNameFlag = false;
-    while (parent) {
+    int seekDepth = 0;
+    while (parent && seekDepth < maxTreeDepth) {
         if (parent->IsInstanceOf<RSSurfaceRenderNode>()) {
             const auto& surfaceNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(parent);
             windowName = surfaceNode->GetName();
@@ -339,6 +342,7 @@ static std::tuple<uint64_t, std::string, RectI> FindGeoById(uint64_t nodeId)
             break;
         }
         parent = parent->GetParent().lock();
+        seekDepth++;
     }
     if (!windowsNameFlag) {
         windowName = "EXISTS-BUT-NO-SURFACE";
@@ -508,8 +512,53 @@ void MemoryManager::DumpGpuStats(DfxString& log, const Drawing::GPUContext* gpuC
 #endif
 }
 
+void ProcessJemallocString(std::string* sp, const char* str)
+{
+    sp->append("strbuf size = " + std::to_string(strlen(str)) + "\n");
+    // split ///////////////////////////////
+    std::vector<std::string> lines;
+    std::string currentLine;
+
+    for (int i = 0; str[i] != '\0' && i < INT_MAX; ++i) {
+        if (str[i] == '\n') {
+            lines.push_back(currentLine);
+            currentLine.clear();
+        } else {
+            currentLine += str[i];
+        }
+    }
+    // last line
+    if (!currentLine.empty()) {
+        lines.push_back(currentLine);
+    }
+
+    // compute tcache and decay free ///////////////////////
+    // tcache_bytes:                     784
+    // decaying:  time       npages       sweeps     madvises       purged
+    //   dirty:   N/A           94         5084        55957       295998
+    //   muzzy:   N/A            0         3812        39219       178519
+    const char* strArray[] = {"tcache_bytes:", "decaying:", "   dirty:", "   muzzy:"};
+    size_t size = sizeof(strArray) / sizeof(strArray[0]);
+    size_t total = 0;
+    for (const auto& line : lines) {
+        for (size_t i = 0; i < size; ++i) {
+            if (strncmp(line.c_str(), strArray[i], strlen(strArray[i])) == 0) {
+                sp->append(line + "\n");
+                total ++;
+            }
+        }
+
+        // get first one: (the total one, others are separated by threads)
+        if (total >= size) {
+            break;
+        }
+    }
+}
+
 void MemoryManager::DumpMallocStat(std::string& log)
 {
+    log.append("malloc stats :\n");
+
     malloc_stats_print(
         [](void* fp, const char* str) {
             if (!fp) {
@@ -518,12 +567,7 @@ void MemoryManager::DumpMallocStat(std::string& log)
             }
             std::string* sp = static_cast<std::string*>(fp);
             if (str) {
-                // cause log only support 2096 len. we need to only output critical log
-                // and only put total log in RSLOG
-                // get allocated string
-                if (strncmp(str, "Allocated", strlen("Allocated")) == 0) {
-                    sp->append(str);
-                }
+                ProcessJemallocString(sp, str);
                 RS_LOGW("[mallocstat]:%{public}s", str);
             }
         },
@@ -532,13 +576,14 @@ void MemoryManager::DumpMallocStat(std::string& log)
 
 void MemoryManager::DumpMemorySnapshot(DfxString& log)
 {
-    log.AppendFormat("\n---------------\nmemorySnapshots:\n");
+    size_t totalMemory = MemorySnapshot::Instance().GetTotalMemory();
+    log.AppendFormat("\n---------------\nmemorySnapshots, totalMemory %zuKB\n", totalMemory / MEMUNIT_RATE);
     std::unordered_map<pid_t, MemorySnapshotInfo> memorySnapshotInfo;
     MemorySnapshot::Instance().GetMemorySnapshot(memorySnapshotInfo);
     for (auto& [pid, snapshotInfo] : memorySnapshotInfo) {
         std::string infoStr = "pid: " + std::to_string(pid) +
-            ", cpu: " + std::to_string(snapshotInfo.cpuMemory) +
-            ", gpu: " + std::to_string(snapshotInfo.gpuMemory);
+            ", cpu: " + std::to_string(snapshotInfo.cpuMemory / MEMUNIT_RATE) +
+            "KB, gpu: " + std::to_string(snapshotInfo.gpuMemory / MEMUNIT_RATE) + "KB";
         log.AppendFormat("%s\n", infoStr.c_str());
     }
 }
@@ -718,6 +763,23 @@ void MemoryManager::MemoryOverflow(pid_t pid, size_t overflowMemory, bool isGpu)
     MemoryOverReport(pid, info, bundleName, "RENDER_MEMORY_OVER_ERROR");
     KillProcessByPid(pid, bundleName, reason);
     RS_LOGE("RSMemoryOverflow pid[%{public}d] cpu[%{public}zu] gpu[%{public}zu]", pid, info.cpuMemory, info.gpuMemory);
+}
+
+void MemoryManager::CheckIsClearApp()
+{
+    // Clear two Applications in one second, post task to reclaim.
+    auto& unirenderThread = RSUniRenderThread::Instance();
+    if (!unirenderThread.IsTimeToReclaim()) {
+        static std::chrono::steady_clock::time_point lastClearAppTime = std::chrono::steady_clock::now();
+        auto currentTime = std::chrono::steady_clock::now();
+        bool isTimeToReclaim = std::chrono::duration_cast<std::chrono::milliseconds>(
+            currentTime - lastClearAppTime).count() < CLEAR_TWO_APPS_TIME;
+        if (isTimeToReclaim) {
+            unirenderThread.ReclaimMemory();
+            unirenderThread.SetTimeToReclaim(true);
+        }
+        lastClearAppTime = currentTime;
+    }
 }
 
 void MemoryManager::MemoryOverReport(const pid_t pid, const MemorySnapshotInfo& info, const std::string& bundleName,

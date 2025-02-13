@@ -25,8 +25,8 @@
 #include <thread>
 
 #include "refbase.h"
-#include "rs_base_render_engine.h"
-#include "rs_draw_frame.h"
+#include "render_thread/rs_base_render_engine.h"
+#include "render_thread/rs_draw_frame.h"
 #include "vsync_distributor.h"
 #include "vsync_receiver.h"
 
@@ -43,7 +43,6 @@
 #include "memory/rs_memory_graphic.h"
 #include "params/rs_render_thread_params.h"
 #include "pipeline/rs_context.h"
-#include "pipeline/rs_draw_frame.h"
 #include "pipeline/rs_uni_render_judgement.h"
 #include "pipeline/rs_vsync_rate_reduce_manager.h"
 #include "platform/common/rs_event_manager.h"
@@ -106,7 +105,9 @@ public:
     void RemoveTask(const std::string& name);
     void PostSyncTask(RSTaskMessage::RSTask task);
     bool IsIdle() const;
-    void RenderServiceTreeDump(std::string& dumpString, bool forceDumpSingleFrame = true);
+    void TransactionDataMapDump(const TransactionDataMap& transactionDataMap, std::string& dumpString);
+    void RenderServiceTreeDump(std::string& dumpString, bool forceDumpSingleFrame = true,
+        bool needUpdateJankStats = false);
     void RenderServiceAllNodeDump(DfxString& log);
     void SendClientDumpNodeTreeCommands(uint32_t taskId);
     void CollectClientNodeTreeResult(uint32_t taskId, std::string& dumpString, size_t timeout);
@@ -116,8 +117,7 @@ public:
     void ResetAnimateNodeFlag();
     void GetAppMemoryInMB(float& cpuMemSize, float& gpuMemSize);
     void ClearMemoryCache(ClearMemoryMoment moment, bool deeply = false, pid_t pid = -1);
-    static bool CheckIsHdrSurface(const RSSurfaceRenderNode& surfaceNode);
-    static bool CheckIsAihdrSurface(const RSSurfaceRenderNode& surfaceNode);
+    static HdrStatus CheckIsHdrSurface(const RSSurfaceRenderNode& surfaceNode);
 
     template<typename Task, typename Return = std::invoke_result_t<Task>>
     std::future<Return> ScheduleTask(Task&& task)
@@ -363,7 +363,8 @@ public:
 
     void CallbackDrawContextStatusToWMS(bool isUniRender = false);
     void SetHardwareTaskNum(uint32_t num);
-    void RegisterUIExtensionCallback(pid_t pid, uint64_t userId, sptr<RSIUIExtensionCallback> callback);
+    void RegisterUIExtensionCallback(pid_t pid, uint64_t userId, sptr<RSIUIExtensionCallback> callback,
+        bool unobscured = false);
     void UnRegisterUIExtensionCallback(pid_t pid);
 
     void SetAncoForceDoDirect(bool direct);
@@ -394,9 +395,13 @@ public:
         return isMultiDisplayPre_;
     }
 
-    bool HasWiredMirrorDisplay()
+    bool HasWiredMirrorDisplay() const
     {
         return hasWiredMirrorDisplay_;
+    }
+    bool HasVirtualMirrorDisplay() const
+    {
+        return hasVirtualMirrorDisplay_;
     }
     uint64_t GetCurrentVsyncTime() const
     {
@@ -574,7 +579,8 @@ private:
     bool vsyncControlEnabled_ = true;
     bool systemAnimatedScenesEnabled_ = false;
     bool isFoldScreenDevice_ = false;
-    mutable bool hasWiredMirrorDisplay_ = false;
+    mutable std::atomic_bool hasWiredMirrorDisplay_ = false;
+    mutable std::atomic_bool hasVirtualMirrorDisplay_ = false;
     // used for hardware enabled case
     bool doDirectComposition_ = true;
 #ifdef RS_ENABLE_GPU
@@ -628,7 +634,6 @@ private:
     std::atomic_bool discardJankFrames_ = false;
     std::atomic_bool skipJankAnimatorFrame_ = false;
     pid_t lastCleanCachePid_ = -1;
-    int preHardwareTid_ = -1;
     int32_t unmarshalFinishedCount_ = 0;
     uint32_t appWindowNum_ = 0;
     pid_t desktopPidForRotationScene_ = 0;
@@ -637,8 +642,6 @@ private:
     uint32_t leashWindowCount_ = 0;
     pid_t exitedPid_ = -1;
     RsParallelType rsParallelType_;
-    // render start hardware task count
-    uint32_t preUnExecuteTaskNum_ = 0;
     std::atomic<int32_t> focusAppPid_ = -1;
     std::atomic<int32_t> focusAppUid_ = -1;
     std::atomic<uint32_t> requestNextVsyncNum_ = 0;
@@ -795,8 +798,10 @@ private:
     // uiextension
     std::mutex uiExtensionMutex_;
     UIExtensionCallbackData uiExtensionCallbackData_;
+    UIExtensionCallbackData unobscureduiExtensionCallbackData_;
     // <pid, <uid, callback>>
     std::map<pid_t, std::pair<uint64_t, sptr<RSIUIExtensionCallback>>> uiExtensionListenners_ = {};
+    std::map<pid_t, std::pair<uint64_t, sptr<RSIUIExtensionCallback>>> uiUnobscuredExtensionListenners_ = {};
 
 #ifdef RS_PROFILER_ENABLED
     friend class RSProfiler;
@@ -812,6 +817,8 @@ private:
     // for record fastcompose time change
     uint64_t lastFastComposeTimeStamp_ = 0;
     uint64_t lastFastComposeTimeStampDiff_ = 0;
+    // last frame game self-drawing node is on tree or not
+    bool isLastGameNodeOnTree_ = false;
 };
 } // namespace OHOS::Rosen
 #endif // RS_MAIN_THREAD

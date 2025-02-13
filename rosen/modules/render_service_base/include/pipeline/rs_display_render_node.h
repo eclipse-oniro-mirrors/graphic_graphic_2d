@@ -29,6 +29,7 @@
 
 #include "common/rs_macros.h"
 #include "common/rs_occlusion_region.h"
+#include "common/rs_special_layer_manager.h"
 #include "memory/rs_memory_track.h"
 #include "pipeline/rs_render_node.h"
 #include "pipeline/rs_surface_handler.h"
@@ -47,10 +48,6 @@ public:
     struct ScreenRenderParams
     {
         ScreenInfo screenInfo;
-        std::map<ScreenId, bool> displayHasSecSurface;
-        std::map<ScreenId, bool> displayHasSkipSurface;
-        std::map<ScreenId, bool> displayHasSnapshotSkipSurface;
-        std::map<ScreenId, bool> displayHasProtectedSurface;
         std::map<ScreenId, bool> displaySpecailSurfaceChanged;
         std::map<ScreenId, bool> hasCaptureWindow;
     };
@@ -248,6 +245,16 @@ public:
         return securityLayerList_;
     }
 
+    RSSpecialLayerManager& GetMultableSpecialLayerMgr()
+    {
+        return specialLayerManager_;
+    }
+
+    const RSSpecialLayerManager& GetSpecialLayerMgr() const
+    {
+        return specialLayerManager_;
+    }
+
     void SetSecurityExemption(bool isSecurityExemption)
     {
         isSecurityExemption_ = isSecurityExemption;
@@ -330,6 +337,7 @@ public:
 
     void UpdateRotation();
     bool IsRotationChanged() const;
+    bool IsRotationFinished() const;
     bool IsLastRotationChanged() const {
         return lastRotationChanged_;
     }
@@ -375,6 +383,16 @@ public:
     bool GetHasUniRenderHdrSurface() const
     {
         return hasUniRenderHdrSurface_;
+    }
+
+    void SetIsLuminanceStatusChange(bool isLuminanceStatusChange)
+    {
+        isLuminanceStatusChange_ = isLuminanceStatusChange;
+    }
+
+    bool GetIsLuminanceStatusChange() const
+    {
+        return isLuminanceStatusChange_;
     }
 
     void SetMainAndLeashSurfaceDirty(bool isDirty);
@@ -499,19 +517,19 @@ public:
     bool IsZoomStateChange() const;
     void HandleCurMainAndLeashSurfaceNodes();
 
-    // HDR Video
-    void SetHdrStatus(bool isNeedResetStatus, HdrStatus hdrStatus)
+    void CollectHdrStatus(HdrStatus hdrStatus)
     {
-        if (isNeedResetStatus) {
-            hasHdrStatus_ = HdrStatus::NO_HDR;
-            return;
-        }
-        hasHdrStatus_ = static_cast<HdrStatus>(hasHdrStatus_ | hdrStatus);
+        displayTotalHdrStatus_ = static_cast<HdrStatus>(displayTotalHdrStatus_ | hdrStatus);
     }
 
-    HdrStatus GetHdrStatus() const
+    void ResetDisplayHdrStatus()
     {
-        return hasHdrStatus_;
+        displayTotalHdrStatus_ = HdrStatus::NO_HDR;
+    }
+
+    HdrStatus GetDisplayHdrStatus() const
+    {
+        return displayTotalHdrStatus_;
     }
 
     using ScreenStatusNotifyTask = std::function<void(bool)>;
@@ -538,6 +556,7 @@ private:
     bool isMirroredDisplay_ = false;
     bool isSecurityDisplay_ = false;
     bool hasUniRenderHdrSurface_ = false;
+    bool isLuminanceStatusChange_ = false;
     bool preRotationStatus_ = false;
     bool curRotationStatus_ = false;
     bool lastRotationChanged_ = false;
@@ -561,8 +580,7 @@ private:
     float lastRotation_ = 0.f;
     int32_t currentScbPid_ = -1;
     int32_t lastScbPid_ = -1;
-    // HDR Video
-    HdrStatus hasHdrStatus_ = HdrStatus::NO_HDR;
+    HdrStatus displayTotalHdrStatus_ = HdrStatus::NO_HDR;
     uint64_t screenId_ = 0;
     // Use in MultiLayersPerf
     size_t surfaceCountForMultiLayersPerf_ = 0;
@@ -588,6 +606,7 @@ private:
 
     // Use in virtual screen security exemption
     std::vector<NodeId> securityLayerList_;  // leashPersistentId and surface node id
+    RSSpecialLayerManager specialLayerManager_;
 
     // Use in mirror screen visible rect projection
     std::vector<NodeId> securityVisibleLayerList_;  // surface node id

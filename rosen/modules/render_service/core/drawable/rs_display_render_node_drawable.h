@@ -22,12 +22,12 @@
 #include "common/rs_occlusion_region.h"
 #include "drawable/rs_render_node_drawable.h"
 #include "params/rs_render_thread_params.h"
-#include "pipeline/rs_base_render_engine.h"
+#include "pipeline/render_thread/rs_base_render_engine.h"
+#include "pipeline/render_thread/rs_uni_render_virtual_processor.h"
 #include "pipeline/rs_processor_factory.h"
 #include "pipeline/rs_render_node.h"
-#include "pipeline/rs_slr_scale.h"
 #include "pipeline/rs_surface_handler.h"
-#include "pipeline/rs_uni_render_virtual_processor.h"
+#include "pipeline/slr_scale/rs_slr_scale.h"
 #include "screen_manager/rs_screen_manager.h"
 
 namespace OHOS::Rosen {
@@ -136,7 +136,7 @@ private:
     std::vector<RectI> CalculateVirtualDirtyForWiredScreen(
         std::unique_ptr<RSRenderFrame>& renderFrame, RSDisplayRenderParams& params, Drawing::Matrix canvasMatrix);
     void DrawWatermarkIfNeed(RSDisplayRenderParams& params, RSPaintFilterCanvas& canvas) const;
-    void RotateMirrorCanvas(ScreenRotation& rotation, float mainWidth, float mainHeight);
+    void RotateMirrorCanvas(ScreenRotation& rotation, float width, float height);
 
     void DrawMirrorScreen(RSDisplayRenderParams& params,
         std::shared_ptr<RSProcessor> processor);
@@ -150,12 +150,14 @@ private:
     void DrawExpandScreen(RSUniRenderVirtualProcessor& processor);
     void DrawCurtainScreen() const;
     void InitTranslateForWallpaper();
+    void CalculateTranslationForWallpaper();
     void RemoveClearMemoryTask() const;
     void PostClearMemoryTask() const;
     void SetCanvasBlack(RSProcessor& processor);
     void SetSecurityMask(RSProcessor& processor);
     void SetScreenRotationForPointLight(RSDisplayRenderParams &params);
     // Prepare for off-screen render
+    void UpdateSlrScale(ScreenInfo& screenInfo);
     void ScaleCanvasIfNeeded(const ScreenInfo& screenInfo);
     void PrepareOffscreenRender(const RSDisplayRenderNodeDrawable& displayDrawable,
         bool useFixedSize = false, bool useCanvasSize = true);

@@ -20,7 +20,7 @@
 #include "pipeline/rs_display_render_node.h"
 #include "pipeline/rs_processor.h"
 #ifdef RS_ENABLE_VK
-#include "pipeline/rs_vk_image_manager.h"
+#include "feature/gpuComposition/rs_vk_image_manager.h"
 #endif
 
 namespace OHOS::Rosen {

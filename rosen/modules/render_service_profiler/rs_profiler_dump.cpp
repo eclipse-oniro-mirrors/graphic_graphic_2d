@@ -87,10 +87,10 @@ void RSProfiler::DumpNodeAbsoluteProperties(const RSRenderNode& node, JsonWriter
     auto accParent = [&](RSRenderNode::SharedPtr node) {
         if (node) {
             const auto& prop = node->GetRenderProperties();
-            upperLeftX += prop.GetBoundsPositionX();
-            upperLeftY += prop.GetBoundsPositionY();
-            scaleX *= prop.GetScaleX();
-            scaleY *= prop.GetScaleY();
+            upperLeftX += std::isfinite(prop.GetBoundsPositionX()) ? prop.GetBoundsPositionX() : 0.0f;
+            upperLeftY += std::isfinite(prop.GetBoundsPositionY()) ? prop.GetBoundsPositionY() : 0.0f;
+            scaleX *= std::isfinite(prop.GetScaleX()) ? prop.GetScaleX() : 1.0f;
+            scaleY *= std::isfinite(prop.GetScaleY()) ? prop.GetScaleY() : 1.0f;
         }
     };
     while (!parentStack.empty()) {
@@ -122,6 +122,7 @@ void RSProfiler::DumpNodeBaseInfo(const RSRenderNode& node, JsonWriter& out, boo
     out["type"] = type;
     out["id"] = AdjustNodeId(node.GetId(), clearMockFlag);
     out["instanceRootNodeId"] = AdjustNodeId(node.GetInstanceRootNodeId(), clearMockFlag);
+    out["firstLevelNodeId"] = AdjustNodeId(node.GetFirstLevelNodeId(), clearMockFlag);
     DumpNodeSubsurfaces(node, out);
     auto sharedTrans = node.GetSharedTransitionParam();
     if (sharedTrans) {
@@ -129,7 +130,9 @@ void RSProfiler::DumpNodeBaseInfo(const RSRenderNode& node, JsonWriter& out, boo
             std::to_string(sharedTrans->inNodeId_) + " -> " + std::to_string(sharedTrans->outNodeId_);
     }
     if (node.IsSuggestedDrawInGroup()) {
+        const auto& renderParams = const_cast<RSRenderNode&>(node).GetStagingRenderParams();
         out["nodeGroup"] = static_cast<int>(node.nodeGroupType_);
+        out["nodeGroupReuseCache"] = renderParams ? static_cast<int>(!renderParams->GetNeedUpdateCache()) : 0;
     }
     if (node.GetUifirstRootNodeId() != INVALID_NODEID) {
         out["uifirstRootNodeId"] = node.GetUifirstRootNodeId();
@@ -168,9 +171,8 @@ void RSProfiler::DumpNodeSubClassNode(const RSRenderNode& node, JsonWriter& out)
                               surfaceNode.GetVisibleRegion().GetRegionInfo();
         subclass["Opaque"] = surfaceNode.GetOpaqueRegion().GetRegionInfo();
         subclass["OcclusionBg"] = std::to_string((surfaceNode.GetAbilityBgAlpha()));
-        subclass["SecurityLayer"] = surfaceNode.GetSecurityLayer();
-        subclass["skipLayer"] = surfaceNode.GetSkipLayer();
-        subclass["snapshotSkipLayer"] = surfaceNode.GetSnapshotSkipLayer();
+        const auto specialLayerManager = surfaceNode.GetSpecialLayerMgr();
+        subclass["SpecialLayer"] = std::to_string(specialLayerManager.Get());
     } else if (node.GetType() == RSRenderNodeType::ROOT_NODE) {
         auto& rootNode = static_cast<const RSRootRenderNode&>(node);
         subclass["Visible"] = rootNode.GetRenderProperties().GetVisible();
@@ -396,14 +398,6 @@ void RSProfiler::DumpNodePropertiesDecoration(const RSProperties& properties, Js
     if (!ROSEN_EQ(properties.GetSpherize(), 0.f)) {
         out["Spherize"] = properties.GetSpherize();
     }
-    if (!ROSEN_EQ(properties.GetAttractionFraction(), 0.f)) {
-        out["AttractFraction"] = properties.GetAttractionFraction();
-    }
-    Vector2f attractionDstpoint = properties.GetAttractionDstPoint();
-    if ((!ROSEN_EQ(attractionDstpoint[0], 0.f) || !ROSEN_EQ(attractionDstpoint[1], 0.f))) {
-        out["AttractionDstPoint"] = { attractionDstpoint[0], attractionDstpoint[1] };
-    }
-    
     if (!ROSEN_EQ(properties.GetForegroundColor(), RgbPalette::Transparent())) {
         out["ForegroundColor"] = "#" + Hex(properties.GetForegroundColor().AsArgbInt()) + " (ARGB)";
     }

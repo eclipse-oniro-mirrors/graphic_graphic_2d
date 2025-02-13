@@ -44,15 +44,6 @@ constexpr int32_t DEGREE_NINETY = 90;
 RSImage::~RSImage()
 {}
 
-inline void ReMapPixelMap(std::shared_ptr<Media::PixelMap>& pixelMap)
-{
-#ifdef ROSEN_OHOS
-    if (pixelMap && pixelMap->IsUnMap()) {
-        pixelMap->ReMap();
-    }
-#endif
-}
-
 bool RSImage::IsEqual(const RSImage& other) const
 {
     bool radiusEq = true;
@@ -151,11 +142,13 @@ void RSImage::CanvasDrawImage(Drawing::Canvas& canvas, const Drawing::Rect& rect
     if (canvas.GetRecordingState() && RSSystemProperties::GetDumpUICaptureEnabled() && pixelMap_) {
         CommonTools::SavePixelmapToFile(pixelMap_, "/data/rsImage_");
     }
-    isFitMatrixValid = !isBackground && imageFit_ == ImageFit::MATRIX &&
+    isFitMatrixValid_ = !isBackground && imageFit_ == ImageFit::MATRIX &&
                                 fitMatrix_.has_value() && !fitMatrix_.value().IsIdentity();
+    // Temporary value to avoid pixelMap_ being Unmapped during using it.
+    auto pixelMap = DePurge();
     if (!isDrawn_ || rect != lastRect_) {
         UpdateNodeIdToPicture(nodeId_);
-        bool needCanvasRestore = HasRadius() || isFitMatrixValid || (rotateDegree_ != 0);
+        bool needCanvasRestore = HasRadius() || isFitMatrixValid_ || (rotateDegree_ != 0);
         Drawing::AutoCanvasRestore acr(canvas, needCanvasRestore);
         if (!canvas.GetOffscreen()) {
             frameRect_.SetAll(rect.GetLeft(), rect.GetTop(), rect.GetWidth(), rect.GetHeight());
@@ -164,7 +157,7 @@ void RSImage::CanvasDrawImage(Drawing::Canvas& canvas, const Drawing::Rect& rect
             ApplyImageFit();
             ApplyCanvasClip(canvas);
         }
-        if (isFitMatrixValid) {
+        if (isFitMatrixValid_) {
             canvas.ConcatMatrix(fitMatrix_.value());
         }
         if (rotateDegree_ != 0) {
@@ -175,15 +168,14 @@ void RSImage::CanvasDrawImage(Drawing::Canvas& canvas, const Drawing::Rect& rect
         DrawImageRepeatRect(samplingOptions, canvas);
     } else {
         bool needCanvasRestore = HasRadius() || (pixelMap_ != nullptr && pixelMap_->IsAstc()) ||
-                                 isFitMatrixValid;
+                                 isFitMatrixValid_;
         Drawing::AutoCanvasRestore acr(canvas, needCanvasRestore);
         if (pixelMap_ != nullptr && pixelMap_->IsAstc()) {
             RSPixelMapUtil::TransformDataSetForAstc(pixelMap_, src_, dst_, canvas);
         }
-        if (isFitMatrixValid) {
+        if (isFitMatrixValid_) {
             canvas.ConcatMatrix(fitMatrix_.value());
         }
-        ReMapPixelMap(pixelMap_);
         if (image_) {
             if (!isBackground) {
                 ApplyCanvasClip(canvas);
@@ -214,9 +206,9 @@ void RSImage::DrawImageRect(
     if (imageShader != nullptr) {
         DrawImageShaderRectOnCanvas(canvas, imageShader);
     } else {
-        if (isFitMatrixValid &&
-            fitMatrix_->Get(Drawing::Matrix::Index::SKEW_X) != 0 &&
-            fitMatrix_->Get(Drawing::Matrix::Index::SKEW_Y) != 0) {
+        if (imageRepeat_ == ImageRepeat::NO_REPEAT && isFitMatrixValid_ &&
+            (fitMatrix_->Get(Drawing::Matrix::Index::SKEW_X) != 0 ||
+            fitMatrix_->Get(Drawing::Matrix::Index::SKEW_Y) != 0)) {
             DrawImageWithFirMatrixRotateOnCanvas(samplingOptions, canvas);
             return;
         }
@@ -511,7 +503,6 @@ void RSImage::UploadGpu(Drawing::Canvas& canvas)
 
 void RSImage::DrawImageRepeatRect(const Drawing::SamplingOptions& samplingOptions, Drawing::Canvas& canvas)
 {
-    ReMapPixelMap(pixelMap_);
     int minX = 0;
     int minY = 0;
     int maxX = 0;
@@ -586,6 +577,14 @@ void RSImage::DrawImageShaderRectOnCanvas(
         return;
     }
     Drawing::Paint paint;
+
+    if (imageRepeat_ == ImageRepeat::NO_REPEAT && isFitMatrixValid_ && fitMatrix_->HasPerspective()) {
+        Drawing::Filter filter;
+        Drawing::scalar sigma = 1;
+        filter.SetMaskFilter(Drawing::MaskFilter::CreateBlurMaskFilter(Drawing::BlurType::NORMAL, sigma, false));
+        paint.SetFilter(filter);
+    }
+    
     paint.SetShaderEffect(imageShader);
     paint.SetStyle(Drawing::Paint::PAINT_FILL_STROKE);
     canvas.AttachPaint(paint);
@@ -611,9 +610,9 @@ void RSImage::DrawImageOnCanvas(
             return;
         }
 
-        if (isFitMatrixValid &&
-            fitMatrix_->Get(Drawing::Matrix::Index::SKEW_X) != 0 &&
-            fitMatrix_->Get(Drawing::Matrix::Index::SKEW_Y) != 0) {
+        if (imageRepeat_ == ImageRepeat::NO_REPEAT && isFitMatrixValid_ &&
+            (fitMatrix_->Get(Drawing::Matrix::Index::SKEW_X) != 0 ||
+            fitMatrix_->Get(Drawing::Matrix::Index::SKEW_Y) != 0)) {
             DrawImageWithFirMatrixRotateOnCanvas(samplingOptions, canvas);
             return;
         }
@@ -769,6 +768,9 @@ bool RSImage::Marshalling(Parcel& parcel) const
                    RSMarshallingHelper::Marshalling(parcel, rotateDegree_) &&
                    parcel.WriteBool(fitMatrix_.has_value()) &&
                    fitMatrix_.has_value() ? RSMarshallingHelper::Marshalling(parcel, fitMatrix_.value()) : true;
+    if (!success) {
+        ROSEN_LOGE("RSImage::Marshalling failed");
+    }
     return success;
 }
 

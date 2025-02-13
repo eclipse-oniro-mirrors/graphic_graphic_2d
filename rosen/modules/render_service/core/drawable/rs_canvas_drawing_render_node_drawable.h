@@ -17,9 +17,9 @@
 #define RENDER_SERVICE_DRAWABLE_RS_CANVAS_DRAWING_RENDER_NODE_DRAWABLE_H
 
 #include "drawable/rs_render_node_drawable.h"
+#include "pipeline/render_thread/rs_uni_render_thread.h"
 #include "pipeline/rs_canvas_drawing_render_node.h"
 #include "pipeline/rs_paint_filter_canvas.h"
-#include "pipeline/rs_uni_render_thread.h"
 
 namespace OHOS::Rosen::DrawableV2 {
 using ThreadInfo = std::pair<uint32_t, std::function<void(std::shared_ptr<Drawing::Surface>)>>;
@@ -31,7 +31,6 @@ public:
     void OnDraw(Drawing::Canvas& canvas) override;
     void OnCapture(Drawing::Canvas& canvas) override;
 
-    void Purge() override;
     void CheckAndSetThreadIdx(uint32_t& threadIdx);
     bool CheckPostplaybackParamValid(NodeId, pid_t);
     void PostPlaybackInCorrespondThread();
@@ -104,9 +103,6 @@ private:
     std::shared_ptr<ExtendRecordingCanvas> recordingCanvas_;
 #if (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
     bool isGpuSurface_ = true;
-    bool isPurge_ = false;
-    bool isPurgeMatrix_ = false;
-    Drawing::Matrix purgeMatrix_;
     Drawing::BackendTexture backendTexture_;
     NativeBufferUtils::VulkanCleanupHelper* vulkanCleanupHelper_ = nullptr;
 #endif

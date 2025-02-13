@@ -18,6 +18,8 @@
 #include "rs_test_util.h"
 
 #include "common/rs_obj_abs_geometry.h"
+#include "pipeline/render_thread/rs_uni_render_engine.h"
+#include "pipeline/render_thread/rs_uni_render_thread.h"
 #include "pipeline/rs_base_render_node.h"
 #include "pipeline/rs_display_render_node.h"
 #include "pipeline/rs_processor_factory.h"
@@ -26,8 +28,6 @@
 #include "pipeline/rs_render_thread.h"
 #include "pipeline/rs_root_render_node.h"
 #include "pipeline/rs_surface_render_node.h"
-#include "pipeline/rs_uni_render_engine.h"
-#include "pipeline/rs_uni_render_thread.h"
 #include "screen_manager/rs_screen_manager.h"
 
 using namespace testing;
@@ -340,8 +340,8 @@ HWTEST_F(RSRenderServiceVisitorTest, PrepareSurfaceRenderNode002, TestSize.Level
     RSSurfaceRenderNodeConfig config;
     RSSurfaceRenderNode rsSurfaceRenderNode(config);
     rsRenderServiceVisitor->isSecurityDisplay_ = true;
-    rsSurfaceRenderNode.SetSkipLayer(true);
-    ASSERT_EQ(true, rsSurfaceRenderNode.GetSkipLayer());
+    rsSurfaceRenderNode.GetMultableSpecialLayerMgr().Set(SpecialLayerType::SKIP, true);
+    ASSERT_EQ(true, rsSurfaceRenderNode.GetSpecialLayerMgr().Find(SpecialLayerType::SKIP));
     rsRenderServiceVisitor->PrepareSurfaceRenderNode(rsSurfaceRenderNode);
 }
 
@@ -856,8 +856,8 @@ HWTEST_F(RSRenderServiceVisitorTest, ProcessSurfaceRenderNode005, TestSize.Level
     auto rsSurfaceRenderNode = std::make_shared<RSSurfaceRenderNode>(config);
     rsRenderServiceVisitor->processor_ =
         RSProcessorFactory::CreateProcessor(RSDisplayRenderNode::CompositeType::HARDWARE_COMPOSITE);
-    rsSurfaceRenderNode->SetSkipLayer(true);
-    ASSERT_EQ(true, rsSurfaceRenderNode->GetSkipLayer());
+    rsSurfaceRenderNode->GetMultableSpecialLayerMgr().Set(SpecialLayerType::SKIP, true);
+    ASSERT_EQ(true, rsSurfaceRenderNode->GetSpecialLayerMgr().Find(SpecialLayerType::SKIP));
     rsRenderServiceVisitor->ProcessSurfaceRenderNode(*rsSurfaceRenderNode);
 }
 

@@ -28,12 +28,12 @@
 #include "params/rs_display_render_params.h"
 #include "params/rs_surface_render_params.h"
 #include "pipeline/parallel_render/rs_sub_thread_manager.h"
+#include "pipeline/render_thread/rs_uni_render_thread.h"
+#include "pipeline/render_thread/rs_uni_render_util.h"
 #include "pipeline/rs_main_thread.h"
 #include "pipeline/rs_paint_filter_canvas.h"
 #include "pipeline/rs_surface_render_node.h"
 #include "pipeline/rs_uifirst_manager.h"
-#include "pipeline/rs_uni_render_thread.h"
-#include "pipeline/rs_uni_render_util.h"
 #include "pipeline/sk_resource_manager.h"
 #include "platform/common/rs_log.h"
 #include "rs_profiler.h"
@@ -177,9 +177,10 @@ std::shared_ptr<Drawing::Image> RSSurfaceRenderNodeDrawable::GetCompletedImage(
 #ifdef RS_ENABLE_VK
         if (OHOS::Rosen::RSSystemProperties::GetGpuApiType() == OHOS::Rosen::GpuApiType::VULKAN ||
             OHOS::Rosen::RSSystemProperties::GetGpuApiType() == OHOS::Rosen::GpuApiType::DDGR) {
+            auto colorSpace = targetColorGamut_ == GRAPHIC_COLOR_GAMUT_SRGB ? Drawing::ColorSpace::CreateSRGB() :
+                Drawing::ColorSpace::CreateRGB(Drawing::CMSTransferFuncType::SRGB, Drawing::CMSMatrixType::DCIP3);
             image->BuildFromTexture(*gpuContext, cacheCompletedBackendTexture_.GetTextureInfo(),
-                origin, info, nullptr,
-                NativeBufferUtils::DeleteVkImage, cacheCompletedCleanupHelper_->Ref());
+                origin, info, colorSpace, NativeBufferUtils::DeleteVkImage, cacheCompletedCleanupHelper_->Ref());
         }
 #endif
         return image;
@@ -333,10 +334,11 @@ void RSSurfaceRenderNodeDrawable::InitCacheSurface(Drawing::GPUContext* gpuConte
         }
         cacheCleanupHelper_ = new NativeBufferUtils::VulkanCleanupHelper(RsVulkanContext::GetSingleton(),
             vkTextureInfo->vkImage, vkTextureInfo->vkAlloc.memory);
+        auto colorSpace = targetColorGamut_ == GRAPHIC_COLOR_GAMUT_SRGB ? Drawing::ColorSpace::CreateSRGB() :
+            Drawing::ColorSpace::CreateRGB(Drawing::CMSTransferFuncType::SRGB, Drawing::CMSMatrixType::DCIP3);
         cacheSurface_ = Drawing::Surface::MakeFromBackendTexture(
             gpuContext, cacheBackendTexture_.GetTextureInfo(), Drawing::TextureOrigin::BOTTOM_LEFT,
-            1, colorType, nullptr,
-            NativeBufferUtils::DeleteVkImage, cacheCleanupHelper_);
+            1, colorType, colorSpace, NativeBufferUtils::DeleteVkImage, cacheCleanupHelper_);
     }
 #endif
 #else
@@ -378,6 +380,7 @@ void RSSurfaceRenderNodeDrawable::UpdateBackendTexture()
 {
     RS_TRACE_NAME("RSRenderNodeDrawable::UpdateBackendTexture()");
     if (cacheSurface_ == nullptr) {
+        RS_LOGE("UpdateBackendTexture cacheSurface is nullptr");
         return;
     }
     cacheBackendTexture_ = cacheSurface_->GetBackendTexture();
@@ -498,16 +501,11 @@ bool RSSurfaceRenderNodeDrawable::DrawUIFirstCache(RSPaintFilterCanvas& rscanvas
             return false; // draw nothing
         }
 #if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
-        bool frameParamEnable = RsFrameReport::GetInstance().GetEnable();
-        if (frameParamEnable) {
-            RsFrameReport::GetInstance().SetFrameParam(
-                REQUEST_SET_FRAME_LOAD_ID, REQUEST_FRAME_AWARE_LOAD, 0, GetLastFrameUsedThreadIndex());
-        }
+        RsFrameReport::GetInstance().SetFrameParam(
+            REQUEST_SET_FRAME_LOAD_ID, REQUEST_FRAME_AWARE_LOAD, 0, GetLastFrameUsedThreadIndex());
         RSSubThreadManager::Instance()->WaitNodeTask(nodeId_);
-        if (frameParamEnable) {
-            RsFrameReport::GetInstance().SetFrameParam(
-                REQUEST_SET_FRAME_LOAD_ID, REQUEST_FRAME_STANDARD_LOAD, 0, GetLastFrameUsedThreadIndex());
-        }
+        RsFrameReport::GetInstance().SetFrameParam(
+            REQUEST_SET_FRAME_LOAD_ID, REQUEST_FRAME_STANDARD_LOAD, 0, GetLastFrameUsedThreadIndex());
         UpdateCompletedCacheSurface();
 #endif
     }

@@ -68,7 +68,8 @@ bool RSRenderServiceClient::CreateNode(const RSSurfaceRenderNodeConfig& config)
     return {};
 }
 
-std::shared_ptr<RSSurface> RSRenderServiceClient::CreateNodeAndSurface(const RSSurfaceRenderNodeConfig& config)
+std::shared_ptr<RSSurface> RSRenderServiceClient::CreateNodeAndSurface(const RSSurfaceRenderNodeConfig& config,
+    bool unobscured)
 {
     return std::make_shared<RSSurfaceWindows>(reinterpret_cast<OnRenderFunc>(config.additionalData));
 }
@@ -119,6 +120,12 @@ std::shared_ptr<VSyncReceiver> RSRenderServiceClient::CreateVSyncReceiver(
     bool fromXcomponent)
 {
     return std::make_shared<VSyncReceiverWindows>();
+}
+
+int32_t RSRenderServiceClient::GetPixelMapByProcessId(
+    std::vector<std::shared_ptr<Media::PixelMap>>& pixelMapVector, pid_t pid)
+{
+    return 0;
 }
 
 std::shared_ptr<Media::PixelMap> RSRenderServiceClient::CreatePixelMapFromSurfaceId(uint64_t surfaceId,
@@ -241,8 +248,13 @@ bool RSRenderServiceClient::GetShowRefreshRateEnabled()
     return false;
 }
 
-void RSRenderServiceClient::SetShowRefreshRateEnabled(bool enable)
+void RSRenderServiceClient::SetShowRefreshRateEnabled(bool enabled, int32_t type)
 {
+}
+
+uint32_t RSRenderServiceClient::GetRealtimeRefreshRate(ScreenId id)
+{
+    return {};
 }
 
 std::string RSRenderServiceClient::GetRefreshInfo(pid_t pid)
@@ -472,7 +484,7 @@ int32_t RSRenderServiceClient::SetScreenSecurityMask(ScreenId id,
 }
 
 int32_t RSRenderServiceClient::SetMirrorScreenVisibleRect(
-    ScreenId id, const Rect& mainScreenRect)
+    ScreenId id, const Rect& mainScreenRect, bool supportRotation)
 {
     return {};
 }
@@ -571,6 +583,14 @@ void RSRenderServiceClient::ReportEventJankFrame(DataBaseRs info)
 {
 }
 
+void RSRenderServiceClient::ReportRsSceneJankStart(AppInfo info)
+{
+}
+
+void RSRenderServiceClient::ReportRsSceneJankEnd(AppInfo info)
+{
+}
+
 void RSRenderServiceClient::ReportGameStateData(GameStateData info)
 {
 }
@@ -585,11 +605,16 @@ uint32_t RSRenderServiceClient::SetHidePrivacyContent(NodeId id, bool needHidePr
     return {};
 }
 
-void RSRenderServiceClient::NotifyLightFactorStatus(bool isSafe)
+void RSRenderServiceClient::NotifyLightFactorStatus(int32_t lightFactorStatus)
 {
 }
 
 void RSRenderServiceClient::NotifyPackageEvent(uint32_t listSize, const std::vector<std::string>& packageList)
+{
+}
+
+void RSRenderServiceClient::NotifyAppStrategyConfigChangeEvent(const std::string& pkgName, uint32_t listSize,
+    const std::vector<std::pair<std::string, std::string>>& newConfig)
 {
 }
 
@@ -661,7 +686,8 @@ void RSRenderServiceClient::DropFrameByPid(const std::vector<int32_t> pidList)
 {
 }
 
-int32_t RSRenderServiceClient::RegisterUIExtensionCallback(uint64_t userId, const UIExtensionCallback& callback)
+int32_t RSRenderServiceClient::RegisterUIExtensionCallback(uint64_t userId, const UIExtensionCallback& callback,
+    bool unobscured)
 {
     return {};
 }
@@ -703,5 +729,12 @@ void RSRenderServiceClient::NotifyScreenSwitched()
 void RSRenderServiceClient::SetWindowContainer(NodeId nodeId, bool value)
 {
 }
+
+#ifdef RS_ENABLE_OVERLAY_DISPLAY
+int32_t SetOverlayDisplayMode(int32_t mode)
+{
+    return {};
+}
+#endif
 } // namespace Rosen
 } // namespace OHOS

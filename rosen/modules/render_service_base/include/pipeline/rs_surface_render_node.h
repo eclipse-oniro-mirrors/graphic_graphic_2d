@@ -26,6 +26,7 @@
 
 #include "common/rs_macros.h"
 #include "common/rs_occlusion_region.h"
+#include "common/rs_special_layer_manager.h"
 #include "common/rs_vector4.h"
 #include "ipc_callbacks/buffer_available_callback.h"
 #include "ipc_callbacks/buffer_clear_callback.h"
@@ -197,10 +198,7 @@ public:
 
     bool NeedBilinearInterpolation() const
     {
-        return nodeType_ == RSSurfaceNodeType::SELF_DRAWING_NODE && isHardwareEnabledNode_ &&
-            (name_ == "SceneViewer Model0" || name_ == "RosenWeb" || name_ == "VMWinXComponentSurface" ||
-                name_ == "VMLinuxXComponentSurface" || name_.find("oh_flutter") != std::string::npos ||
-                name_.find("HwStylusFeature") != std::string::npos);
+        return nodeType_ == RSSurfaceNodeType::SELF_DRAWING_NODE && isHardwareEnabledNode_;
     }
 
     void SetSubNodeShouldPaint()
@@ -308,7 +306,7 @@ public:
 
     bool IsHardwareNeedMakeImage() const
     {
-        if (isProtectedLayer_) {
+        if (specialLayerManager_.Find(SpecialLayerType::PROTECTED)) {
             return false;
         }
         return hardwareNeedMakeImage_;
@@ -338,7 +336,7 @@ public:
     {
         // a protected node not on the tree need to release buffer when producer produce buffers
         // release buffer in ReleaseSelfDrawingNodeBuffer function
-        if (isProtectedLayer_ && IsOnTheTree()) {
+        if (specialLayerManager_.Find(SpecialLayerType::PROTECTED) && IsOnTheTree()) {
             constexpr float DRM_MIN_ALPHA = 0.1f;
             return GetGlobalAlpha() < DRM_MIN_ALPHA; // if alpha less than 0.1, drm layer display black background.
         }
@@ -529,10 +527,6 @@ public:
     void SetProtectedLayer(bool isProtectedLayer);
 
     // get whether it is a security/skip layer itself
-    bool GetSecurityLayer() const;
-    bool GetSkipLayer() const;
-    bool GetSnapshotSkipLayer() const;
-    bool GetProtectedLayer() const;
     LeashPersistentId GetLeashPersistentId() const;
 
     // set ability state that surfaceNode belongs to as foreground or background
@@ -540,10 +534,6 @@ public:
     RSSurfaceNodeAbilityState GetAbilityState() const override;
 
     // get whether it and it's subtree contain security layer
-    bool GetHasSecurityLayer() const;
-    bool GetHasSkipLayer() const;
-    bool GetHasSnapshotSkipLayer() const;
-    bool GetHasProtectedLayer() const;
     bool GetHasPrivacyContentLayer() const;
 
     void ResetSpecialLayerChangedFlag()
@@ -556,12 +546,10 @@ public:
         return specialLayerChanged_;
     }
 
-    void SyncSecurityInfoToFirstLevelNode();
-    void SyncSkipInfoToFirstLevelNode();
-    void SyncOnTheTreeInfoToFirstLevelNode();
-    void SyncSnapshotSkipInfoToFirstLevelNode();
-    void SyncProtectedInfoToFirstLevelNode();
+    void UpdateSpecialLayerInfoByTypeChange(uint32_t type, bool isSpecialLayer);
+    void UpdateSpecialLayerInfoByOnTreeStateChange();
     void SyncPrivacyContentInfoToFirstLevelNode();
+    void SyncColorGamutInfoToFirstLevelNode();
 
     void SetFingerprint(bool hasFingerprint);
     bool GetFingerprint() const;
@@ -571,6 +559,7 @@ public:
     bool IsCloneNode() const;
     void SetClonedNodeId(NodeId id);
     void SetIsCloned(bool isCloned);
+    void SetIsClonedNodeOnTheTree(bool isOnTheTree);
 
     void SetForceUIFirst(bool forceUIFirst);
     bool GetForceUIFirst() const;
@@ -798,7 +787,7 @@ public:
 
     void UpdateSurfaceDefaultSize(float width, float height);
 
-    void UpdateInfoForClonedNode();
+    void UpdateInfoForClonedNode(NodeId nodeId);
 
     // Only SurfaceNode in RS calls "RegisterBufferAvailableListener"
     // to save callback method sent by RT or UI which depends on the value of "isFromRenderThread".
@@ -968,6 +957,8 @@ public:
         const bool isFocusWindow, const Vector4<int>& cornerRadius) const;
     void SetOpaqueRegionBaseInfo(const RectI& screeninfo, const RectI& absRect, const ScreenRotation screenRotation,
         const bool isFocusWindow, const Vector4<int>& cornerRadius);
+    void DealWithDrawBehindWindowTransparentRegion();
+
     bool IsStartAnimationFinished() const;
     void SetStartAnimationFinished();
     // if surfacenode's buffer has been consumed, it should be set dirty
@@ -1101,6 +1092,13 @@ public:
     bool GetSurfaceCacheContentStatic()
     {
         return surfaceCacheContentStatic_;
+    }
+
+    bool GetUifirstContentDirty()
+    {
+        bool uifirstContentDirty = uifirstContentDirty_;
+        uifirstContentDirty_ = false;
+        return uifirstContentDirty;
     }
 
     void UpdateSurfaceCacheContentStatic();
@@ -1298,6 +1296,11 @@ public:
         return nodeType_ == RSSurfaceNodeType::UI_EXTENSION_SECURE_NODE;
     }
 
+    bool IsUnobscuredUIExtensionNode() const
+    {
+        return nodeType_ == RSSurfaceNodeType::UI_EXTENSION_COMMON_NODE && GetUIExtensionUnobscured();
+    }
+
     bool IsUIExtension() const
     {
         return nodeType_ == RSSurfaceNodeType::UI_EXTENSION_COMMON_NODE ||
@@ -1329,7 +1332,7 @@ public:
 
     void CheckContainerDirtyStatusAndUpdateDirty(bool containerDirty)
     {
-        if (!IsLeashWindow()) {
+        if (!IsLeashOrMainWindow()) {
             return;
         }
         dirtyStatus_ = containerDirty ? NodeDirty::DIRTY : dirtyStatus_;
@@ -1364,6 +1367,15 @@ public:
     {
         subThreadAssignable_ = subThreadAssignable;
     }
+    RSSpecialLayerManager& GetMultableSpecialLayerMgr()
+    {
+        return specialLayerManager_;
+    }
+
+    const RSSpecialLayerManager& GetSpecialLayerMgr() const
+    {
+        return specialLayerManager_;
+    }
 
     bool NeedUpdateDrawableBehindWindow() const override;
     void SetOldNeedDrawBehindWindow(bool val);
@@ -1374,24 +1386,29 @@ public:
     void CalDrawBehindWindowRegion() override;
     RectI GetFilterRect() const override;
     RectI GetBehindWindowRegion() const override;
-    void SetUifirstStartingFlag(bool flag);
-    void UpdateCrossNodeSkippedDisplayOffset(NodeId displayId, int32_t offsetX, int32_t offsetY)
+    void UpdateCrossNodeSkipDisplayConversionMatrices(NodeId displayId, const Drawing::Matrix& matrix)
     {
-        crossNodeSkippedDisplayOffsets_[displayId] = { offsetX, offsetY };
+        crossNodeSkipDisplayConversionMatrices_[displayId] = matrix;
     }
-    void ClearCrossNodeSkippedDisplayOffset()
+    const Drawing::Matrix& GetCrossNodeSkipDisplayConversionMatrix(NodeId displayId)
     {
-        crossNodeSkippedDisplayOffsets_.clear();
+        return crossNodeSkipDisplayConversionMatrices_[displayId];
     }
-    HdrStatus GetHdrVideo() const
+    void ClearCrossNodeSkipDisplayConversionMatrices()
+    {
+        crossNodeSkipDisplayConversionMatrices_.clear();
+    }
+    HdrStatus GetVideoHdrStatus() const
     {
         return hdrVideoSurface_;
     }
 
-    void SetHdrVideo(HdrStatus hasHdrVideoSurface)
+    void SetVideoHdrStatus(HdrStatus hasHdrVideoSurface)
     {
         hdrVideoSurface_ = hasHdrVideoSurface;
     }
+    // use for updating hdr and sdr nit
+    static void UpdateSurfaceNodeNit(RSSurfaceRenderNode& surfaceNode, ScreenId screenId);
 
     void SetApiCompatibleVersion(uint32_t apiCompatibleVersion);
     uint32_t GetApiCompatibleVersion()
@@ -1411,9 +1428,18 @@ public:
 
     void ResetIsBufferFlushed();
 
+    bool IsUIBufferAvailable();
+
+    bool GetUIExtensionUnobscured() const;
+
+    std::shared_ptr<RSDirtyRegionManager>& GetDirtyManagerForUifirst()
+    {
+        return dirtyManager_;
+    }
+
 protected:
     void OnSync() override;
-
+    void OnSkipSync() override;
     // rotate corner by rotation degreee. Every 90 degrees clockwise rotation, the vector
     // of corner radius loops one element to the right
     void RotateCorner(int rotationDegree, Vector4<int>& cornerRadius) const;
@@ -1429,6 +1455,7 @@ private:
     bool IsHistoryOccludedDirtyRegionNeedSubmit();
     void ClearHistoryUnSubmittedDirtyInfo();
     void UpdateHistoryUnsubmittedDirtyInfo();
+    void SetUIExtensionUnobscured(bool obscured);
     inline bool IsHardwareDisabledBySrcRect() const
     {
         return isHardwareForcedDisabledBySrcRect_;
@@ -1442,10 +1469,7 @@ private:
     std::unordered_set<NodeId> GetAllSubSurfaceNodeIds() const;
     bool IsCurFrameSwitchToPaint();
 
-    bool isSecurityLayer_ = false;
-    bool isSkipLayer_ = false;
-    bool isSnapshotSkipLayer_ = false;
-    bool isProtectedLayer_ = false;
+    RSSpecialLayerManager specialLayerManager_;
     bool specialLayerChanged_ = false;
     bool isGlobalPositionEnabled_ = false;
     bool hasFingerprint_ = false;
@@ -1524,6 +1548,7 @@ private:
     bool lastFrameShouldPaint_ = true;
     // node only have translate and scale changes
     bool surfaceCacheContentStatic_ = false;
+    bool uifirstContentDirty_ = false;
     // point window
     bool isHardCursor_ = false;
     bool isLastHardCursor_ = false;
@@ -1541,6 +1566,8 @@ private:
     bool arsrTag_ = true;
     bool subThreadAssignable_ = false;
     bool oldNeedDrawBehindWindow_ = false;
+    RectI skipFrameDirtyRect_;
+    bool UIExtensionUnobscured_ = false;
     std::atomic<bool> isNotifyRTBufferAvailable_ = false;
     std::atomic<bool> isNotifyUIBufferAvailable_ = true;
     std::atomic_bool isBufferAvailable_ = false;
@@ -1698,6 +1725,8 @@ private:
         bool hasContainerWindow_ = false;
         Vector4<int> cornerRadius_;
         ContainerConfig containerConfig_;
+        bool needDrawBehindWindow_ = false;
+        RectI absDrawBehindWindowRegion_ = RectI();
     };
 
     //<screenRect, absRect, screenRotation, isFocusWindow, isTransparent, hasContainerWindow>
@@ -1711,11 +1740,12 @@ private:
     // [Attention] The variable only used for unlocking screen for PC currently
     bool isCloneNode_ = false;
     NodeId clonedSourceNodeId_ = INVALID_NODEID;
+    bool isClonedNodeOnTheTree_ = false;
 
     std::map<NodeId, RSSurfaceRenderNode::WeakPtr> childSubSurfaceNodes_;
     std::unordered_map<std::string, bool> watermarkHandles_ = {};
     std::unordered_set<NodeId> childrenBlurBehindWindow_ = {};
-    std::unordered_map<NodeId, Vector2<int32_t>> crossNodeSkippedDisplayOffsets_ = {};
+    std::unordered_map<NodeId, Drawing::Matrix> crossNodeSkipDisplayConversionMatrices_ = {};
 
     // UIExtension record, <UIExtension, hostAPP>
     inline static std::unordered_map<NodeId, NodeId> secUIExtensionNodes_ = {};

@@ -35,8 +35,6 @@ public:
     void PostTask(const std::function<void()>& task, uint32_t threadIndex, bool isSyncTask = false);
     void WaitNodeTask(uint64_t nodeId);
     void NodeTaskNotify(uint64_t nodeId);
-    void SubmitSubThreadTask(const std::shared_ptr<RSDisplayRenderNode>& node,
-        const std::list<std::shared_ptr<RSSurfaceRenderNode>>& subThreadNodes);
     void ResetSubThreadGrContext();
     void CancelReleaseResourceTask();
     void ReleaseTexture();
@@ -46,7 +44,6 @@ public:
     void DumpMem(DfxString& log);
     float GetAppGpuMemoryInMB();
     std::vector<MemoryGraphic> CountSubMem(int pid);
-    void ClearGPUCompositionCache(const std::function<void()>& task);
     void ReleaseSurface(uint32_t threadIndex) const;
     void AddToReleaseQueue(std::shared_ptr<Drawing::Surface>&& surface, uint32_t threadIndex);
     std::unordered_map<uint32_t, pid_t> GetReThreadIndexMap() const;

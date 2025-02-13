@@ -26,8 +26,8 @@
 #include "common/rs_common_def.h"
 #include "drawable/rs_render_node_drawable.h"
 #include "params/rs_surface_render_params.h"
-#include "pipeline/rs_base_render_engine.h"
 #include "params/rs_display_render_params.h"
+#include "pipeline/render_thread/rs_base_render_engine.h"
 #include "pipeline/rs_surface_render_node.h"
 #include "pipeline/rs_draw_window_cache.h"
 
@@ -119,7 +119,6 @@ public:
 
     void ResetUifirst(bool isNotClearCompleteCacheSurface)
     {
-        drawWindowCache_.ClearCache();
         if (isNotClearCompleteCacheSurface) {
             ClearCacheSurfaceOnly();
         } else {
@@ -250,11 +249,6 @@ public:
         return cacheSurface_ ? true : false;
     }
     int GetTotalProcessedSurfaceCount() const;
-
-    bool HasCache() const override
-    {
-        return drawWindowCache_.HasCache();
-    }
 private:
     explicit RSSurfaceRenderNodeDrawable(std::shared_ptr<const RSRenderNode>&& node);
     bool DealWithUIFirstCache(
@@ -268,7 +262,7 @@ private:
         RSSurfaceRenderParams& surfaceParams, Occlusion::Region& surfaceDirtyRegion) const;
     Drawing::Region CalculateVisibleDirtyRegion(RSRenderThreadParams& uniParam, RSSurfaceRenderParams& surfaceParams,
         RSSurfaceRenderNodeDrawable& surfaceDrawable, bool isOffscreen) const;
-    void CrossDisplaySurfaceDirtyRegionOffset(
+    void CrossDisplaySurfaceDirtyRegionConversion(
         const RSRenderThreadParams& uniParam, const RSSurfaceRenderParams& surfaceParam, RectI& surfaceDirtyRect) const;
     bool HasCornerRadius(const RSSurfaceRenderParams& surfaceParams) const;
     using Registrar = RenderNodeDrawableRegistrar<RSRenderNodeType::SURFACE_NODE, OnGenerate>;
@@ -361,7 +355,6 @@ private:
     Occlusion::Region alignedVisibleDirtyRegion_;
     bool isDirtyRegionAlignedEnable_ = false;
     Occlusion::Region globalDirtyRegion_;
-    bool globalDirtyRegionIsEmpty_ = false;
 
     // if a there a dirty layer under transparent clean layer, transparent layer should refreshed
     Occlusion::Region dirtyRegionBelowCurrentLayer_;

@@ -22,7 +22,7 @@
 #include "surface_utils.h"
 #include "transaction/rs_interfaces.h"
 #include "common/rs_background_thread.h"
-#include "core/pipeline/rs_render_engine.h"
+#include "core/pipeline/render_thread/rs_render_engine.h"
 
 namespace OHOS {
     using namespace Rosen;

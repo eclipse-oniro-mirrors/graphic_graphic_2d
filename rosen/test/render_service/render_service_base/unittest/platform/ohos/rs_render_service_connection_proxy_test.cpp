@@ -26,6 +26,7 @@
 #include "command/rs_animation_command.h"
 #include "command/rs_node_showing_command.h"
 #include "iconsumer_surface.h"
+#include "pixel_map.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -425,8 +426,19 @@ HWTEST_F(RSRenderServiceConnectionProxyTest, GetScreenSupportedRefreshRates, Tes
  */
 HWTEST_F(RSRenderServiceConnectionProxyTest, SetShowRefreshRateEnabled, TestSize.Level1)
 {
-    proxy->SetShowRefreshRateEnabled(true);
+    proxy->SetShowRefreshRateEnabled(true, 0);
     ASSERT_EQ(proxy->transactionDataIndex_, 0);
+}
+
+/**
+ * @tc.name: GetCurrentRefreshRateMode Test
+ * @tc.desc: GetCurrentRefreshRateMode Test
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSRenderServiceConnectionProxyTest, GetRealtimeRefreshRate, TestSize.Level1)
+{
+    EXPECT_GE(proxy->GetRealtimeRefreshRate(INVALID_SCREEN_ID), 0);
 }
 
 /**
@@ -931,7 +943,7 @@ HWTEST_F(RSRenderServiceConnectionProxyTest, NotifyLightFactorStatus, TestSize.L
     proxy->ReportGameStateData(info);
     NodeId id = 1;
     proxy->SetHardwareEnabled(id, true, SelfDrawingNodeType::DEFAULT, true);
-    proxy->NotifyLightFactorStatus(true);
+    proxy->NotifyLightFactorStatus(1);
     ASSERT_EQ(proxy->transactionDataIndex_, 0);
 }
 
@@ -945,6 +957,8 @@ HWTEST_F(RSRenderServiceConnectionProxyTest, SetCacheEnabledForRotation, TestSiz
 {
     std::vector<std::string> packageList;
     proxy->NotifyPackageEvent(1, packageList);
+    std::vector<std::pair<std::string, std::string>> newConfig;
+    proxy->NotifyAppStrategyConfigChangeEvent("test", 1, newConfig);
     EventInfo eventInfo;
     proxy->NotifyRefreshRateEvent(eventInfo);
     int32_t touchStatus = 1;
@@ -1092,6 +1106,20 @@ HWTEST_F(RSRenderServiceConnectionProxyTest, SetWindowContainer, TestSize.Level1
     NodeId nodeId = {};
     proxy->SetWindowContainer(nodeId, false);
     ASSERT_TRUE(proxy);
+}
+
+/**
+ * @tc.name: GetPixelMapByProcessIdTest
+ * @tc.desc: Test GetPixelMapByProcessId
+ * @tc.type: FUNC
+ * @tc.require: issueIBJFIK
+ */
+HWTEST_F(RSRenderServiceConnectionProxyTest, GetPixelMapByProcessIdTest, TestSize.Level1)
+{
+    pid_t pid = 0;
+    std::vector<std::shared_ptr<Media::PixelMap>> pixelMapVector;
+    int32_t res = proxy->GetPixelMapByProcessId(pixelMapVector, pid);
+    ASSERT_EQ(res, RS_CONNECTION_ERROR);
 }
 } // namespace Rosen
 } // namespace OHOS
