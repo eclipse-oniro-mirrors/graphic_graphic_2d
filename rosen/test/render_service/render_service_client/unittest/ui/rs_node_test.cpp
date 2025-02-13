@@ -6173,6 +6173,8 @@ HWTEST_F(RSNodeTest, SetColorBlendApplyType, TestSize.Level1)
     rsNode->SetColorBlendApplyType(colorBlendApplyType);
     colorBlendApplyType = RSColorBlendApplyType::SAVE_LAYER;
     rsNode->SetColorBlendApplyType(colorBlendApplyType);
+    colorBlendApplyType = RSColorBlendApplyType::SAVE_LAYER_ALPHA;
+    rsNode->SetColorBlendApplyType(colorBlendApplyType);
     colorBlendApplyType = RSColorBlendApplyType::MAX;
     rsNode->SetColorBlendApplyType(colorBlendApplyType);
     ASSERT_FALSE(rsNode == nullptr);
