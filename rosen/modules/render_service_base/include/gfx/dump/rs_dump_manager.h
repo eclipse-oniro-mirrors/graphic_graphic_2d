@@ -97,7 +97,7 @@ const std::unordered_map<std::u16string, RSDumpCmd> cmdMap_ = {
     { u"client", { { RSDumpID::CLIENT_INFO }, "dump client ui node trees" } },
     { u"allInfo",
       { { RSDumpID::SCREEN_INFO, RSDumpID::SURFACE_INFO, RSDumpID::RS_NOT_ON_TREE_INFO, RSDumpID::SURFACE_MEM_INFO,
-          RSDumpID::RSTREE_INFO, RSDumpID::MULTI_RSTREES_INFO, RSDumpID::EVENT_PARAM_LIST, RSDumpID::FPS_COUNT,
+          RSDumpID::RSTREE_INFO, RSDumpID::EVENT_PARAM_LIST, RSDumpID::FPS_COUNT,
           RSDumpID::CLIENT_INFO },
         "dump all info" } },
 #ifdef RS_ENABLE_VK
