@@ -3504,7 +3504,7 @@ void RSMainThread::RenderServiceTreeDump(std::string& dumpString, bool forceDump
         rootNode->DumpTree(0, dumpString);
 #ifdef RS_ENABLE_GPU
         dumpString += "\n====================================\n";
-		dumpString += "\n-- RenderServiceUniThread\n";
+        dumpString += "\n-- RenderServiceUniThread\n";
         RSUniRenderThread::Instance().RenderServiceTreeDump(dumpString);
 #endif
     } else {
