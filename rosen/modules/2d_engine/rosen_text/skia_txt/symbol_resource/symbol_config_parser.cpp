@@ -74,22 +74,14 @@ const std::unordered_map<std::string, RSSymbolRenderingStrategy> RENDER_STRATEGY
 bool SymbolConfigParser::ParseSymbolLayersGrouping(const Json::Value& root,
     std::unordered_map<uint16_t, RSSymbolLayersGroups>& symbolConfig)
 {
-    if (!CheckSymbolLayersIsVaild(root)) {
+    if (!root.isMember(SYMBOL_LAYERS_GROUPING) || !root[SYMBOL_LAYERS_GROUPING].isArray()) {
         return false;
     }
-    for (uint32_t i = 0; i < root.size(); i++) {
+    for (uint32_t i = 0; i < root[SYMBOL_LAYERS_GROUPING].size(); i++) {
         if (!root[SYMBOL_LAYERS_GROUPING][i].isObject()) {
             continue;
         }
         ParseOneSymbol(root[SYMBOL_LAYERS_GROUPING][i], symbolConfig);
-    }
-    return true;
-}
-
-bool SymbolConfigParser::CheckSymbolLayersIsVaild(const Json::Value& root)
-{
-    if (!root.isMember(SYMBOL_LAYERS_GROUPING) || !root[SYMBOL_LAYERS_GROUPING].isArray()) {
-        return false;
     }
     return true;
 }

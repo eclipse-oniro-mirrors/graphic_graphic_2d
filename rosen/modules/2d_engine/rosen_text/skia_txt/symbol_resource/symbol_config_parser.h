@@ -30,7 +30,6 @@ public:
         std::unordered_map<uint16_t, RSSymbolLayersGroups>& symbolConfig);
 
 private:
-    bool CheckSymbolLayersIsVaild(const Json::Value& root);
     void ParseOneSymbolNativeCase(const char* key, const Json::Value& root, uint16_t& nativeGlyphId);
     void ParseComponets(const Json::Value& root, std::vector<size_t>& components);
     void SymbolGlyphCase(const char* key, const Json::Value& root, RSSymbolLayersGroups& symbolLayersGroups);
