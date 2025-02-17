@@ -371,6 +371,8 @@ private:
     bool enableDynamicMode_ = true;
     std::atomic<bool> multiSelfOwnedScreenEnable_{ false };
     std::atomic<bool> postHgmTaskFlag_{ true };
+
+    friend class HWCParam;
 };
 } // namespace OHOS::Rosen
 #endif // HGM_CORE_H
