@@ -27,7 +27,7 @@ namespace OHOS::Rosen {
 static const std::string RS_CLIENT_TAG = "RenderServiceClient";
 static const std::string RS_MAIN_THREAD_TAG = "RenderServiceMainThread";
 static const std::string RS_UNI_THREAD_TAG = "RenderServiceUniThread";
-static const std::string RS_HW_THREAD_TAG = "RenderServiceHwcThread";
+static const std::string RS_HW_THREAD_TAG = "RenderServiceHWCThread";
 
 // Define different dump points
 enum class RSDumpID : uint8_t {
@@ -98,17 +98,17 @@ const std::unordered_map<std::u16string, RSDumpCmd> cmdMap_ = {
     { u"client", { { RSDumpID::CLIENT_INFO }, "dump client ui node trees" } },
     { u"allInfo",
       { { RSDumpID::SCREEN_INFO,
-          // hwc thread
+          // -- RenderServiceHWCThread
           RSDumpID::SURFACE_INFO,
           RSDumpID::SURFACE_MEM_INFO,
-          // main thread
+          // -- RenderServiceMainThread
           RSDumpID::RENDER_NODE_INFO,
           RSDumpID::RS_NOT_ON_TREE_INFO,
-          // uni thread
+          // -- RenderServiceUniThread
           RSDumpID::DRAWABLE_INFO,
           RSDumpID::EVENT_PARAM_LIST,
           RSDumpID::FPS_COUNT,
-          // client
+          // -- RenderServiceClient
           RSDumpID::CLIENT_INFO },
           "dump all info" } },
 #ifdef RS_ENABLE_VK

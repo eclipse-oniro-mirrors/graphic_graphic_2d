@@ -40,7 +40,7 @@ void RSDumpManagerTest::TearDown() {}
 HWTEST_F(RSDumpManagerTest, Dump_DumpIdExist, TestSize.Level1)
 {
     RSDumpManager* rsDumpManager = RSDumpManager::GetInstance();
-    RSDumpHander rsDumpHander = { RSDumpID::RSTREE_INFO,
+    RSDumpHander rsDumpHander = { RSDumpID::RENDER_NODE_INFO,
         [](const std::u16string &cmd, std::unordered_set<std::u16string> &argSets,
             std::string &dumpString) -> void {
             dumpString = "Test RSTree Information";
@@ -51,7 +51,7 @@ HWTEST_F(RSDumpManagerTest, Dump_DumpIdExist, TestSize.Level1)
     std::unordered_set<std::u16string> argSets = { cmd };
     std::string out;
 
-    auto it = rsDumpManager->rsDumpHanderMap_.find(RSDumpID::RSTREE_INFO);
+    auto it = rsDumpManager->rsDumpHanderMap_.find(RSDumpID::RENDER_NODE_INFO);
     RSDumpHander hander = it->second;
     hander.func(cmd, argSets, out);
     EXPECT_EQ(out, "Test RSTree Information");
@@ -61,7 +61,7 @@ HWTEST_F(RSDumpManagerTest, Dump_DumpIdExist, TestSize.Level1)
 HWTEST_F(RSDumpManagerTest, Register_WhenModuleIdExist, TestSize.Level1)
 {
     RSDumpManager* rsDumpManager = RSDumpManager::GetInstance();
-    RSDumpHander rsDumpHander = { RSDumpID::RSTREE_INFO,
+    RSDumpHander rsDumpHander = { RSDumpID::RENDER_NODE_INFO,
         [](const std::u16string &cmd, std::unordered_set<std::u16string> &argSets,
             std::string &dumpString) -> void {
             dumpString = "Test RSTree Information";
@@ -76,21 +76,21 @@ HWTEST_F(RSDumpManagerTest, Register_WhenModuleIdExist, TestSize.Level1)
 HWTEST_F(RSDumpManagerTest, UnRegister_DumpIdExist, TestSize.Level1)
 {
     RSDumpManager* rsDumpManager = RSDumpManager::GetInstance();
-    RSDumpHander rsDumpHander = { RSDumpID::RSTREE_INFO,
+    RSDumpHander rsDumpHander = { RSDumpID::RENDER_NODE_INFO,
         [](const std::u16string &cmd, std::unordered_set<std::u16string> &argSets,
             std::string &dumpString) -> void {
             dumpString = "Test RSTree Information";
         } };
     rsDumpManager->Register(rsDumpHander);
-    rsDumpManager->UnRegister(RSDumpID::RSTREE_INFO);
-    EXPECT_EQ(rsDumpManager->rsDumpHanderMap_.find(RSDumpID::RSTREE_INFO), rsDumpManager->rsDumpHanderMap_.end());
+    rsDumpManager->UnRegister(RSDumpID::RENDER_NODE_INFO);
+    EXPECT_EQ(rsDumpManager->rsDumpHanderMap_.find(RSDumpID::RENDER_NODE_INFO), rsDumpManager->rsDumpHanderMap_.end());
 }
 
 // Test case for UnRegister method
 HWTEST_F(RSDumpManagerTest, UnRegister_DumpIdNotExist, TestSize.Level1)
 {
     RSDumpManager* rsDumpManager = RSDumpManager::GetInstance();
-    rsDumpManager->UnRegister(RSDumpID::RSTREE_INFO);
+    rsDumpManager->UnRegister(RSDumpID::RENDER_NODE_INFO);
     EXPECT_EQ(rsDumpManager->rsDumpHanderMap_.size(), 1);
 }
 
@@ -98,7 +98,7 @@ HWTEST_F(RSDumpManagerTest, UnRegister_DumpIdNotExist, TestSize.Level1)
 HWTEST_F(RSDumpManagerTest, CmdExec_WhenCommandExist, TestSize.Level1)
 {
     RSDumpManager* rsDumpManager = RSDumpManager::GetInstance();
-    RSDumpHander rsDumpHander = { RSDumpID::RSTREE_INFO,
+    RSDumpHander rsDumpHander = { RSDumpID::RENDER_NODE_INFO,
         [](const std::u16string &cmd, std::unordered_set<std::u16string> &argSets,
             std::string &dumpString) -> void {
             dumpString = "Test RSTree Information";

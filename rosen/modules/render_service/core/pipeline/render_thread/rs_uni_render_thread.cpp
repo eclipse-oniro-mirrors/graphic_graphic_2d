@@ -1092,7 +1092,7 @@ void RSUniRenderThread::RSUniRenderGfxDumpInit()
     };
 
     std::vector<RSDumpHander> handers = {
-        { RSDumpID::DRAWABLE_INFO, rsUniRenderTreeFunc , RS_UNI_THREAD_TAG}
+        { RSDumpID::DRAWABLE_INFO, rsUniRenderTreeFunc , RS_UNI_THREAD_TAG }
     };
 
     rsDumpManager_->Register(handers);
