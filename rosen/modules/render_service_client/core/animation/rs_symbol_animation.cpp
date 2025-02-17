@@ -21,7 +21,7 @@
 
 namespace OHOS {
 namespace Rosen {
-using SymnolBaseFunc = std::function<void(const Drawing::DrawingPiecewiseParameter& parameter)>;
+using SymnolBaseFunc = std::function<void(Drawing::DrawingPiecewiseParameter& parameter)>;
 using SymbolBaseFuncMap = std::unordered_map<std::string, SymnolBaseFunc>;
 
 static const Vector2f CENTER_NODE_COORDINATE = { 0.5f, 0.5f }; // scale center node
@@ -468,8 +468,7 @@ void RSSymbolAnimation::SetNodePivot(const std::shared_ptr<RSNode>& rsNode)
 }
 
 void RSSymbolAnimation::SpliceAnimation(const std::shared_ptr<RSNode>& rsNode,
-    std::vector<Drawing::DrawingPiecewiseParameter>& parameters,
-    const Drawing::DrawingEffectStrategy& effectStrategy)
+    std::vector<Drawing::DrawingPiecewiseParameter>& parameters)
 {
     if (rsNode == nullptr) {
         ROSEN_LOGD("RsNode is null, failed to SpliceAnimation.");
@@ -479,20 +478,20 @@ void RSSymbolAnimation::SpliceAnimation(const std::shared_ptr<RSNode>& rsNode,
     std::shared_ptr<RSAnimatableProperty<float>> alphaProperty = nullptr;
     std::vector<std::shared_ptr<RSAnimation>> groupAnimation = {};
     SymbolBaseFuncMap funcMap = {
-        {SCALE_PROP_X, [&, this](const Drawing::DrawingPiecewiseParameter& parameter)
+        {SCALE_PROP_X, [&, this](Drawing::DrawingPiecewiseParameter& parameter)
             {
                 ScaleAnimationBase(rsNode, scaleProperty, parameter, groupAnimation);
             }
         },
-        {ALPHA_PROP, [&, this](const Drawing::DrawingPiecewiseParameter& parameter)
+        {ALPHA_PROP, [&, this](Drawing::DrawingPiecewiseParameter& parameter)
             {
                 AlphaAnimationBase(rsNode, alphaProperty, parameter, groupAnimation);
             }
         }
     };
 
-    for (auto parameter: parameters) {
-        for(const auto& pair: parameter.properties) {
+    for (auto parameter : parameters) {
+        for (const auto& pair : parameter.properties) {
             if (funcMap.count(pair.first) > 0) {
                 funcMap[pair.first](parameter);
                 break;
@@ -723,14 +722,14 @@ std::shared_ptr<RSAnimation> RSSymbolAnimation::KeyframeAlphaSymbolAnimation(con
 // base atomizated animation
 void RSSymbolAnimation::ScaleAnimationBase(const std::shared_ptr<RSNode>& rsNode,
     std::shared_ptr<RSAnimatableProperty<Vector2f>>& scaleProperty,
-    const Drawing::DrawingPiecewiseParameter& scaleParameter, std::vector<std::shared_ptr<RSAnimation>>& animations)
+    Drawing::DrawingPiecewiseParameter& scaleParameter, std::vector<std::shared_ptr<RSAnimation>>& animations)
 {
     if (scaleProperty == nullptr) {
         ROSEN_LOGD("[%{public}s] : scaleProperty is nullptr", __func__);
         return;
     }
 
-    const auto& properties = scaleParameter.properties;
+    auto& properties = scaleParameter.properties;
     if (properties.count(SCALE_PROP_X) <= 0 || properties.count(SCALE_PROP_Y) <= 0 ||
         properties[SCALE_PROP_X].size() < PROPERTIES ||
         properties[SCALE_PROP_Y].size() < PROPERTIES) {
@@ -744,7 +743,7 @@ void RSSymbolAnimation::ScaleAnimationBase(const std::shared_ptr<RSNode>& rsNode
         SymbolAnimation::CreateOrSetModifierValue(scaleProperty, scaleValueBegin);
         auto scaleModifier = std::make_shared<Rosen::RSScaleModifier>(scaleProperty);
         rsNode->AddModifier(scaleModifier);
-     }
+    }
 
     const Vector2f scaleValueEnd = {properties[SCALE_PROP_X][PROP_END], properties[SCALE_PROP_Y][PROP_END]};
 
@@ -769,14 +768,14 @@ void RSSymbolAnimation::ScaleAnimationBase(const std::shared_ptr<RSNode>& rsNode
 
 void RSSymbolAnimation::AlphaAnimationBase(const std::shared_ptr<RSNode>& rsNode,
     std::shared_ptr<RSAnimatableProperty<float>>& alphaProperty,
-    const Drawing::DrawingPiecewiseParameter& alphaParameter, std::vector<std::shared_ptr<RSAnimation>>& animations)
+    Drawing::DrawingPiecewiseParameter& alphaParameter, std::vector<std::shared_ptr<RSAnimation>>& animations)
 {
     // validation input
     if (rsNode == nullptr) {
         ROSEN_LOGD("[%{public}s] : invalid input", __func__);
         return;
     }
-    auto properties = alphaParameter.properties;
+    auto& properties = alphaParameter.properties;
     if (properties.count(ALPHA_PROP) <= 0 || properties[ALPHA_PROP].size() < PROPERTIES) {
         ROSEN_LOGD("invalid alphaParameter input");
         return;

@@ -121,7 +121,7 @@ void HMSymbolRun::UpdataSymbolLayersGroups(uint16_t glyphId)
         symbolLayersGroups_ = groups;
     } else {
         auto groups = CustomSymbolConfig::GetInstance()->GetSymbolLayersGroups(symbolTxt_.familyName_, glyphId);
-        if (!groups.has_value()){
+        if (!groups.has_value()) {
             TEXT_LOGD("Custom symbol GetSymbolLayersGroups of graphId %{public}hu failed", glyphId);
             symbolLayersGroups_.renderModeGroups = {};
             return;
