@@ -220,7 +220,7 @@ void SymbolConfigParser::ParseDefaultColor(const char* defaultColorStr, RSRender
     if (end == nullptr || *end != '\0') {
         return;
     }
-    renderGroup.color.r = (defaultColor >> (BYTE_LEN * 2)) & 0xFF;
+    renderGroup.color.r = (defaultColor >> (BYTE_LEN + BYTE_LEN)) & 0xFF;
     renderGroup.color.g = (defaultColor >> BYTE_LEN) & 0xFF;
     renderGroup.color.b = defaultColor & 0xFF;
 }

@@ -79,7 +79,7 @@ template("skia_libtxt") {
       "$txt_root/txt/typeface_font_asset_provider.cpp",
     ]
 
-    external_deps = []
+    external_deps = [ "jsoncpp:jsoncpp" ]
     if (platform == "ohos" || platform == "ohos_ng") {
       external_deps += [
         "bundle_framework:appexecfwk_base",
@@ -87,7 +87,6 @@ template("skia_libtxt") {
         "init:libbegetutil",
         "ipc:ipc_core",
         "samgr:samgr_proxy",
-        "jsoncpp:jsoncpp",
       ]
       defines += [ "HM_SYMBOL_TXT_ENABLE" ]
       defines += [ "OHOS_TEXT_ENABLE" ]
