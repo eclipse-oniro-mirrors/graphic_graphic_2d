@@ -234,8 +234,8 @@ void RSDirtyRectsDfx::DrawCurrentRefreshRate(RSPaintFilterCanvas& canvas)
     auto activeRect = screenInfo.activeRect;
     if (!activeRect.IsEmpty()) {
         canvas.Translate(activeRect.left_, activeRect.top_);
-        screenWidth = activeRect.width_;
-        screenHeight = activeRect.height_;
+        screenWidth = static_cast<uint32_t>(activeRect.width_);
+        screenHeight = static_cast<uint32_t>(activeRect.height_);
     }
     auto saveCount = canvas.Save();
     if (!RefreshRateRotationProcess(canvas, rotation, screenWidth, screenHeight)) {
