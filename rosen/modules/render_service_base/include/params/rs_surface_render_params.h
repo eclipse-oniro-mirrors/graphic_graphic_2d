@@ -578,6 +578,16 @@ public:
         return isBufferFlushed_;
     }
 
+    void SetIsSurfaceCapturePipeline(bool isSurfaceCapturePipeline)
+    {
+        isSurfaceCapturePipeline_ = isSurfaceCapturePipeline;
+    }
+
+    bool GetIsSurfaceCapturePipeline() const
+    {
+        return isSurfaceCapturePipeline_;
+    }
+
 protected:
 private:
     bool isMainWindowType_ = false;
@@ -681,6 +691,8 @@ private:
     std::unordered_map<NodeId, Drawing::Matrix> crossNodeSkipDisplayConversionMatrices_ = {};
 
     uint32_t apiCompatibleVersion_ = 0;
+
+    bool isSurfaceCapturePipeline_ = false;
 
     friend class RSSurfaceRenderNode;
     friend class RSUniRenderProcessor;
