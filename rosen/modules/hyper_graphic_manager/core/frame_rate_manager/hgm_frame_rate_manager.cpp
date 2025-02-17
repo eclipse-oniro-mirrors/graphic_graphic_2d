@@ -318,6 +318,7 @@ void HgmFrameRateManager::ProcessPendingRefreshRate(
 
 void HgmFrameRateManager::UpdateSurfaceTime(const std::string& surfaceName, pid_t pid, UIFWKType uiFwkType)
 {
+    HgmEnergyConsumptionPolicy::Instance().StatisticAnimationTime(pid, surfaceName);
     if (!voterTouchEffective_) {
         return;
     }
@@ -574,6 +575,8 @@ bool HgmFrameRateManager::CollectFrameRateChange(FrameRateRange finalRange,
             continue;
         }
         auto expectedRange = linker.second->GetExpectedRange();
+        HgmEnergyConsumptionPolicy::Instance().GetVideoCallFrameRate(
+            ExtractPid(linker.first), linker.second->GetVsyncName(), expectedRange);
         CollectVRateChange(linker.first, expectedRange);
         auto appFrameRate = touchManager_.GetState() == TouchState::IDLE_STATE ?
                             GetDrawingFrameRate(currRefreshRate_, expectedRange) : OLED_NULL_HZ;
@@ -911,6 +914,10 @@ void HgmFrameRateManager::HandlePackageEvent(pid_t pid, const std::vector<std::s
 void HgmFrameRateManager::HandleRefreshRateEvent(pid_t pid, const EventInfo& eventInfo)
 {
     std::string eventName = eventInfo.eventName;
+    if (eventName == "VOTER_VIDEO_CALL") {
+        HgmEnergyConsumptionPolicy::Instance().SetVideoCallSceneInfo(eventInfo);
+        return;
+    }
     auto event = std::find(voters_.begin(), voters_.end(), eventName);
     if (event == voters_.end()) {
         HGM_LOGW("HgmFrameRateManager:unknown event, eventName is %{public}s", eventName.c_str());
@@ -1736,6 +1743,7 @@ bool HgmFrameRateManager::UpdateUIFrameworkDirtyNodes(
     std::vector<std::weak_ptr<RSRenderNode>>& uiFwkDirtyNodes, uint64_t timestamp)
 {
     timestamp_ = timestamp;
+    HgmEnergyConsumptionPolicy::Instance().CheckOnlyVideoCallExist();
     if (!voterTouchEffective_ || voterGamesEffective_) {
         surfaceData_.clear();
         return false;
