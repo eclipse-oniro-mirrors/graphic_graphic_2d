@@ -1107,10 +1107,10 @@ void RSDisplayRenderNodeDrawable::DrawMirror(RSDisplayRenderParams& params,
         std::vector<RectI> emptyRects = {};
         virtualProcesser->SetRoiRegionToCodec(emptyRects);
         auto screenManager = CreateOrGetScreenManager();
-        if (!screenManager->GetScreenSecurityMask(params.GetScreenId())) {
-            SetCanvasBlack(*virtualProcesser);
-        } else {
+        if (screenManager->GetScreenSecurityMask(params.GetScreenId())) {
             SetSecurityMask(*virtualProcesser);
+        } else {
+            SetCanvasBlack(*virtualProcesser);
         }
         virtualDirtyRefresh_ = true;
         curCanvas_->RestoreToCount(0);
