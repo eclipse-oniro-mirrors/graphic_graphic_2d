@@ -27,7 +27,7 @@ public:
     const std::unordered_map<std::string, std::string>& GetHfbcConfigMap() const;
 
 protected:
-    void SetHfbcConfigForApp(std::string appName, std::string val);
+    void SetHfbcConfigForApp(const std::string& appName, const std::string& val);
 
 private:
     // <"pkgName", "1">
