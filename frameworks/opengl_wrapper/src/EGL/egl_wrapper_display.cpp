@@ -484,7 +484,7 @@ EGLBoolean EglWrapperDisplay::DestroyEglContext(EGLContext context)
 
 // Get the colorspace value that should be reported from queries.
 // When the colorspace is unknown (no attribute passed), default to reporting LINEAR.
-static EGLint getReportedColorSpace(EGLint colorSpace)
+static EGLint GetReportedColorSpace(EGLint colorSpace)
 {
     return colorSpace == EGL_UNKNOWN ? EGL_GL_COLORSPACE_LINEAR_KHR : colorSpace;
 }
@@ -502,9 +502,9 @@ EGLSurface EglWrapperDisplay::CreateEglSurface(EGLConfig config, NativeWindowTyp
 
     // select correct colorspace and dataspace based on user's attribute list.
     EGLint colorSpace = EGL_UNKNOWN;
-    for (const EGLint* attr = attribList; attr && attr[0] != EGL_NONE; attr +=2) {
+    for (const EGLint* attr = attribList; attr && attr[0] != EGL_NONE; attr += 2) {
         if (attr[0] == EGL_GL_COLORSPACE_KHR &&
-        (attr[1] == EGL_GL_COLORSPACE_LINEAR_KHR || attr[1] == EGL_GL_COLORSPACE_SRGB_KHR)) {
+            (attr[1] == EGL_GL_COLORSPACE_LINEAR_KHR || attr[1] == EGL_GL_COLORSPACE_SRGB_KHR)) {
             colorSpace = static_cast<EGLint>(attr[1]);
         }
     }
@@ -513,7 +513,7 @@ EGLSurface EglWrapperDisplay::CreateEglSurface(EGLConfig config, NativeWindowTyp
     if (table->isLoad && table->egl.eglCreateWindowSurface) {
         EGLSurface surf = table->egl.eglCreateWindowSurface(disp_, config, window, attribList);
         if (surf != EGL_NO_SURFACE) {
-            return new EglWrapperSurface(this, surf, window, getReportedColorSpace(colorSpace));
+            return new EglWrapperSurface(this, surf, window, GetReportedColorSpace(colorSpace));
         } else {
             WLOGE("egl.eglCreateWindowSurface error.");
         }
@@ -685,7 +685,7 @@ EGLBoolean EglWrapperDisplay::QuerySurface(EGLSurface surf, EGLint attribute, EG
         return EGL_FALSE;
     }
 
-    if (surfPtr->getColorSpaceAttribute(attribute, value)) {
+    if (surfPtr->GetColorSpaceAttribute(attribute, value)) {
         return EGL_TRUE;
     }
 
