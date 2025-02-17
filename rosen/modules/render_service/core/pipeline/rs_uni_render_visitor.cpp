@@ -3265,8 +3265,8 @@ void RSUniRenderVisitor::UpdateHWCNodeClipRect(std::shared_ptr<RSSurfaceRenderNo
     constexpr float MAX_FLOAT = std::numeric_limits<float>::max();
     Drawing::Rect childRectMapped(0.0f, 0.0f, MAX_FLOAT, MAX_FLOAT);
     RSRenderNode::SharedPtr hwcNodeParent = hwcNodePtr;
-    while ((hwcNodeParent && hwcNodeParent->GetType() != RSRenderNodeType::DISPLAY_NODE) &&
-        hwcNodeParent->GetId() != rootNode.GetId()) {
+    while (hwcNodeParent && hwcNodeParent->GetType() != RSRenderNodeType::DISPLAY_NODE &&
+           hwcNodeParent->GetId() != rootNode.GetId()) {
         const auto& parentProperties = hwcNodeParent->GetRenderProperties();
         const auto& parentGeoPtr = parentProperties.GetBoundsGeometry();
         parentGeoPtr->GetMatrix().MapRect(childRectMapped, childRectMapped);
