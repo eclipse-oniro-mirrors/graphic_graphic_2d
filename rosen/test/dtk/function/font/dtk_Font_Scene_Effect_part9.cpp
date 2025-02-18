@@ -53,7 +53,7 @@ static void DrawTextBlob(Drawing::Brush brush, std::vector<std::string>& texts,
     }
 }
 
-static std::shared_ptr<Drawing::TextBlob> MakeTextBlob()
+static std::shared_ptr<Drawing::TextBlob> MakeTextBlob(Drawing::Font& font1)
 {
     Drawing::TextBlobBuilder builder;
     auto buffer = builder.AllocRunPos(font1, 20, nullptr);
@@ -666,7 +666,7 @@ DEF_DTK(Font_Scene_Effect_9, TestLevel::L2, 146)
     font1.SetEmbeddedBitmaps(font.IsEmbeddedBitmaps());
 
     // 4.创建TextBlob
-    std::shared_ptr<Drawing::TextBlob> textBlob = MakeTextBlob();
+    std::shared_ptr<Drawing::TextBlob> textBlob = MakeTextBlob(font1);
 
     // 5.组合textBlob类接口,如果有返回值则获取上一步创建的textBlob返回值打印
     Drawing::Paint paint;
@@ -715,7 +715,7 @@ DEF_DTK(Font_Scene_Effect_9, TestLevel::L2, 147)
     font1.SetLinearMetrics(font.IsLinearMetrics());
 
     // 4.创建TextBlob
-    std::shared_ptr<Drawing::TextBlob> textBlob = MakeTextBlob();
+    std::shared_ptr<Drawing::TextBlob> textBlob = MakeTextBlob(font1);
 
     // 5.组合textBlob类接口,如果有返回值则获取上一步创建的textBlob返回值打印
     std::vector<Drawing::Point> points;
@@ -773,7 +773,7 @@ DEF_DTK(Font_Scene_Effect_9, TestLevel::L2, 148)
     std::string text4 = "Recommended spacing between lines = " + std::to_string(SpaceLine);
 
     // 4.创建TextBlob
-    std::shared_ptr<Drawing::TextBlob> textBlob = MakeTextBlob();
+    std::shared_ptr<Drawing::TextBlob> textBlob = MakeTextBlob(font1);
 
     // 5.组合textBlob类接口,如果有返回值则获取上一步创建的textBlob返回值打印
     std::string text = "harmony_os";

@@ -53,7 +53,7 @@ static void DrawTextBlob(Drawing::Brush brush, std::vector<std::string>& texts,
     }
 }
 
-static std::shared_ptr<Drawing::TextBlob> MakeTextBlob()
+static std::shared_ptr<Drawing::TextBlob> MakeTextBlob(Drawing::Font& font1)
 {
     Drawing::TextBlobBuilder builder;
     auto buffer = builder.AllocRunPos(font1, 20, nullptr);
@@ -340,7 +340,7 @@ DEF_DTK(Font_Scene_Effect_18, TestLevel::L2, 290)
     font1.SetBaselineSnap(font.IsBaselineSnap());
 
     // 4.创建TextBlob
-    std::shared_ptr<Drawing::TextBlob> textBlob = MakeTextBlob();
+    std::shared_ptr<Drawing::TextBlob> textBlob = MakeTextBlob(font1);
 
     // 5.组合textBlob类接口,如果有返回值则获取上一步创建的textBlob返回值打印
     std::string name1 = "HMOS Color Emoji";
@@ -390,7 +390,7 @@ DEF_DTK(Font_Scene_Effect_18, TestLevel::L2, 291)
     font1.SetEmbolden(font.IsEmbolden());
 
     // 4.创建TextBlob
-    std::shared_ptr<Drawing::TextBlob> textBlob = MakeTextBlob();
+    std::shared_ptr<Drawing::TextBlob> textBlob = MakeTextBlob(font1);
 
     // 5.组合textBlob类接口,如果有返回值则获取上一步创建的textBlob返回值打印
     std::string name1 = "HMOS Color Emoji";
@@ -436,7 +436,7 @@ DEF_DTK(Font_Scene_Effect_18, TestLevel::L2, 292)
     std::string text4 = "Glyphs = " + std::to_string(scalar);
 
     // 4.创建TextBlob
-    std::shared_ptr<Drawing::TextBlob> textBlob = MakeTextBlob();
+    std::shared_ptr<Drawing::TextBlob> textBlob = MakeTextBlob(font1);
 
     // 5.组合textBlob类接口,如果有返回值则获取上一步创建的textBlob返回值打印
     std::string text = "harmony_os";

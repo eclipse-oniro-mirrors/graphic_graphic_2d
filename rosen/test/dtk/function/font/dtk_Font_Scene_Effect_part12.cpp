@@ -53,7 +53,7 @@ static void DrawTextBlob(Drawing::Brush brush, std::vector<std::string>& texts,
     }
 }
 
-static std::shared_ptr<Drawing::TextBlob> MakeTextBlob()
+static std::shared_ptr<Drawing::TextBlob> MakeTextBlob(Drawing::Font& font1)
 {
     Drawing::TextBlobBuilder builder;
     auto buffer = builder.AllocRunPos(font1, 20, nullptr);
@@ -842,7 +842,7 @@ DEF_DTK(Font_Scene_Effect_12, TestLevel::L2, 200)
     font1.SetSubpixel(font.IsSubpixel());
 
     // 4.创建TextBlob
-    std::shared_ptr<Drawing::TextBlob> textBlob = MakeTextBlob();
+    std::shared_ptr<Drawing::TextBlob> textBlob = MakeTextBlob(font1);
 
     // 5.组合textBlob类接口,如果有返回值则获取上一步创建的textBlob返回值打印
     auto rect = textBlob->Bounds();
@@ -883,7 +883,7 @@ DEF_DTK(Font_Scene_Effect_12, TestLevel::L2, 201)
     std::string text4 = "Recommended spacing between lines = " + std::to_string(SpaceLine);
 
     // 4.创建TextBlob
-    std::shared_ptr<Drawing::TextBlob> textBlob = MakeTextBlob();
+    std::shared_ptr<Drawing::TextBlob> textBlob = MakeTextBlob(font1);
 
     // 5.组合textBlob类接口,如果有返回值则获取上一步创建的textBlob返回值打印
     std::string text = "harmony_os";
@@ -936,7 +936,7 @@ DEF_DTK(Font_Scene_Effect_12, TestLevel::L2, 202)
     std::string text4 = "glyphsCount = " + std::to_string(glyphsCount);
 
     // 4.创建TextBlob
-    std::shared_ptr<Drawing::TextBlob> textBlob = MakeTextBlob();
+    std::shared_ptr<Drawing::TextBlob> textBlob = MakeTextBlob(font1);
 
     // 5.组合textBlob类接口,如果有返回值则获取上一步创建的textBlob返回值打印
     std::string textinfo1 = "Deserialize @Hello World";
