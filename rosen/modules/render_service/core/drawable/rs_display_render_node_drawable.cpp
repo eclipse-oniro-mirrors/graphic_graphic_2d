@@ -1375,12 +1375,14 @@ void RSDisplayRenderNodeDrawable::DrawWiredMirrorOnDraw(
     curCanvas_->SetOnMultipleScreen(true);
     curCanvas_->SetDisableFilterCache(true);
 
-    auto hasSecSurface = mirroredParams->GetSpecialLayerMgr().Find(SpecialLayerType::HAS_SECURITY);
-    if (hasSecSurface) {
-        curCanvas_->Clear(Drawing::Color::COLOR_BLACK);
-        RS_LOGI("RSDisplayRenderNodeDrawable::DrawWiredMirrorOnDraw, "
-            "set canvas to black because of security layer.");
-        return;
+    if (RSMainThread::Instance()->GetDeviceType() != DeviceType::PC) {
+        auto hasSecSurface = mirroredParams->GetSpecialLayerMgr().Find(SpecialLayerType::HAS_SECURITY);
+        if (hasSecSurface) {
+            curCanvas_->Clear(Drawing::Color::COLOR_BLACK);
+            RS_LOGI("RSDisplayRenderNodeDrawable::DrawWiredMirrorOnDraw, "
+                "set canvas to black because of security layer.");
+            return;
+        }
     }
 
     curCanvas_->SetHighContrast(RSUniRenderThread::Instance().IsHighContrastTextModeOn());
