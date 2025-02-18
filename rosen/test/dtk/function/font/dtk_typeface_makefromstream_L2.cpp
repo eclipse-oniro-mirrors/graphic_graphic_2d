@@ -985,6 +985,116 @@ DEF_DTK(typeface_makefromstream, TestLevel::L2, 161)
     DrawTexts(texts, font, playbackCanvas_);
 }
 
+//对应用例 TypeFace_3162
+DEF_DTK(typeface_makefromstream, TestLevel::L2, 162)
+{
+    std::shared_ptr<Drawing::Typeface> typeface0 = Drawing::Typeface::MakeDefault();
+    auto data = typeface0->Serialize();
+    auto stream = std::make_unique<Drawing::MemoryStream>(data->GetData(), data->GetSize());
+    auto typeface = Drawing::Typeface::MakeFromStream(std::move(stream), -5);
+    auto font = Drawing::Font(typeface, 50.f, 1.0f, 0.f);
+
+    uint32_t tagid = MakeTagId("CPAL");
+    int a = MakeOffset("015e7260");
+    std::string text4 = "GetTableData=" +
+        std::to_string(typeface->GetTableData(tagid, a, typeface->GetTableSize(tagid) + 1, nullptr));
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+
+    DrawTexts(texts, font, playbackCanvas_);
+}
+
+//对应用例 TypeFace_3163
+DEF_DTK(typeface_makefromstream, TestLevel::L2, 163)
+{
+    std::shared_ptr<Drawing::Typeface> typeface0 = Drawing::Typeface::MakeDefault();
+    auto data = typeface0->Serialize();
+    auto stream = std::make_unique<Drawing::MemoryStream>(data->GetData(), data->GetSize());
+    auto typeface = Drawing::Typeface::MakeFromStream(std::move(stream), -5);
+    auto font = Drawing::Font(typeface, 50.f, 1.0f, 0.f);
+
+    std::string text4 = "GetItalic=" + std::to_string(typeface->GetItalic());
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+
+    DrawTexts(texts, font, playbackCanvas_);
+}
+
+//对应用例 TypeFace_3164
+DEF_DTK(typeface_makefromstream, TestLevel::L2, 164)
+{
+    std::shared_ptr<Drawing::Typeface> typeface0 = Drawing::Typeface::MakeDefault();
+    auto data = typeface0->Serialize();
+    auto stream = std::make_unique<Drawing::MemoryStream>(data->GetData(), data->GetSize());
+    auto typeface = Drawing::Typeface::MakeFromStream(std::move(stream), -5);
+    auto font = Drawing::Font(typeface, 50.f, 1.0f, 0.f);
+
+    std::string text4 = "GetUniqueID=" + std::to_string(typeface->GetUniqueID());
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+
+    DrawTexts(texts, font, playbackCanvas_);
+}
+
+//对应用例 TypeFace_3165
+DEF_DTK(typeface_makefromstream, TestLevel::L2, 165)
+{
+    std::shared_ptr<Drawing::Typeface> typeface0 = Drawing::Typeface::MakeDefault();
+    auto data = typeface0->Serialize();
+    auto stream = std::make_unique<Drawing::MemoryStream>(data->GetData(), data->GetSize());
+    auto typeface = Drawing::Typeface::MakeFromStream(std::move(stream), -5);
+    auto font = Drawing::Font(typeface, 50.f, 1.0f, 0.f);
+
+    std::string text4 = "GetUnitsPerEm=" + std::to_string(typeface->GetUnitsPerEm());
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+
+    DrawTexts(texts, font, playbackCanvas_);
+}
+
+//对应用例 TypeFace_3166
+DEF_DTK(typeface_makefromstream, TestLevel::L2, 166)
+{
+    std::shared_ptr<Drawing::Typeface> typeface0 = Drawing::Typeface::MakeDefault();
+    auto data = typeface0->Serialize();
+    auto stream = std::make_unique<Drawing::MemoryStream>(data->GetData(), data->GetSize());
+    auto typeface = Drawing::Typeface::MakeFromStream(std::move(stream), -5);
+    auto font = Drawing::Font(typeface, 50.f, 1.0f, 0.f);
+
+    std::string text4 = "IsCustomTypeface=" +  std::to_string(typeface->IsCustomTypeface());
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+
+    DrawTexts(texts, font, playbackCanvas_);
+}
+
+//对应用例 TypeFace_3167
+DEF_DTK(typeface_makefromstream, TestLevel::L2, 167)
+{
+    std::shared_ptr<Drawing::Typeface> typeface0 = Drawing::Typeface::MakeDefault();
+    auto data = typeface0->Serialize();
+    auto stream = std::make_unique<Drawing::MemoryStream>(data->GetData(), data->GetSize());
+    auto typeface = Drawing::Typeface::MakeFromStream(std::move(stream), -5);
+    auto font = Drawing::Font(typeface, 50.f, 1.0f, 0.f);
+
+    std::string text4 = "GetHash=" + std::to_string(typeface->GetHash());
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+
+    DrawTexts(texts, font, playbackCanvas_);
+}
+
+//对应用例 TypeFace_3168
+DEF_DTK(typeface_makefromstream, TestLevel::L2, 168)
+{
+    std::shared_ptr<Drawing::Typeface> typefacex = Drawing::Typeface::MakeDefault();
+    auto data0 = typefacex->Serialize();
+    auto stream = std::make_unique<Drawing::MemoryStream>(data0->GetData(), data0->GetSize());
+    auto typeface = Drawing::Typeface::MakeFromStream(std::move(stream), -5);
+    auto data = typeface->Serialize();
+    auto typeface0 = Drawing::Typeface::Deserialize(data->GetData(), typeface->GetSize());
+    auto font = Drawing::Font(typeface, 50.f, 1.0f, 0.f);
+
+    std::string text4 = "GetHash=" + std::to_string(typeface0->GetHash());
+    std::string text5 = "GetHash=" + std::to_string(typeface->GetHash());
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4, text5};
+
+    DrawTexts(texts, font, playbackCanvas_);
+}
 
 }
 }

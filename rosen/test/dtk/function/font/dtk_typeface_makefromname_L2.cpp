@@ -965,7 +965,110 @@ DEF_DTK(typeface_makefromname, TestLevel::L2, 222)
     DrawTexts(texts, font, playbackCanvas_);
 }
 
+//对应用例 TypeFace_3223
+DEF_DTK(typeface_makefromname, TestLevel::L2, 223)
+{
+    std::shared_ptr<Drawing::Typeface> typeface = Drawing::Typeface::MakeFromName("HarmonyOS Sans SC",
+        {
+            Drawing::FontStyle::EXTRA_BLACK_WEIGHT,
+            Drawing::FontStyle::ULTRA_CONDENSED_WIDTH,
+            Drawing::FontStyle::UPRIGHT_SLANT
+        });
+    auto font = Drawing::Font(typeface, 50.f, 1.0f, 0.f);
 
+    std::string text4 = "GetItalic=" + std::to_string(typeface->GetItalic());
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+
+    DrawTexts(texts, font, playbackCanvas_);
+}
+
+//对应用例 TypeFace_3224
+DEF_DTK(typeface_makefromname, TestLevel::L2, 224)
+{
+    std::shared_ptr<Drawing::Typeface> typeface = Drawing::Typeface::MakeFromName("HarmonyOS Sans SC",
+        {
+            Drawing::FontStyle::EXTRA_BLACK_WEIGHT,
+            Drawing::FontStyle::ULTRA_CONDENSED_WIDTH,
+            Drawing::FontStyle::UPRIGHT_SLANT
+        });
+    auto font = Drawing::Font(typeface, 50.f, 1.0f, 0.f);
+
+    std::string text4 = "GetUniqueID=" + std::to_string(typeface->GetUniqueID());
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+
+    DrawTexts(texts, font, playbackCanvas_);
+}
+
+//对应用例 TypeFace_3225
+DEF_DTK(typeface_makefromname, TestLevel::L2, 225)
+{
+    std::shared_ptr<Drawing::Typeface> typeface = Drawing::Typeface::MakeFromName("HarmonyOS Sans SC",
+        {
+            Drawing::FontStyle::EXTRA_BLACK_WEIGHT,
+            Drawing::FontStyle::ULTRA_CONDENSED_WIDTH,
+            Drawing::FontStyle::UPRIGHT_SLANT
+        });
+    auto font = Drawing::Font(typeface, 50.f, 1.0f, 0.f);
+
+    std::string text4 = "GetUnitsPerEm=" + std::to_string(typeface->GetUnitsPerEm());
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+
+    DrawTexts(texts, font, playbackCanvas_);
+}
+
+//对应用例 TypeFace_3226
+DEF_DTK(typeface_makefromname, TestLevel::L2, 226)
+{
+    std::shared_ptr<Drawing::Typeface> typeface = Drawing::Typeface::MakeFromName("HarmonyOS Sans SC",
+        {
+            Drawing::FontStyle::EXTRA_BLACK_WEIGHT,
+            Drawing::FontStyle::ULTRA_CONDENSED_WIDTH,
+            Drawing::FontStyle::UPRIGHT_SLANT
+        });
+    auto font = Drawing::Font(typeface, 50.f, 1.0f, 0.f);
+
+    std::string text4 = "IsCustomTypeface=" +  std::to_string(typeface->IsCustomTypeface());
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+
+    DrawTexts(texts, font, playbackCanvas_);
+}
+
+//对应用例 TypeFace_3227
+DEF_DTK(typeface_makefromname, TestLevel::L2, 227)
+{
+    std::shared_ptr<Drawing::Typeface> typeface = Drawing::Typeface::MakeFromName("HarmonyOS Sans SC",
+        {
+            Drawing::FontStyle::EXTRA_BLACK_WEIGHT,
+            Drawing::FontStyle::ULTRA_CONDENSED_WIDTH,
+            Drawing::FontStyle::UPRIGHT_SLANT
+        });
+    auto font = Drawing::Font(typeface, 50.f, 1.0f, 0.f);
+
+    std::string text4 = "GetHash=" + std::to_string(typeface->GetHash());
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+
+    DrawTexts(texts, font, playbackCanvas_);
+}
+
+//对应用例 TypeFace_3228
+DEF_DTK(typeface_makefromname, TestLevel::L2, 228)
+{
+    std::shared_ptr<Drawing::Typeface> typeface = Drawing::Typeface::MakeFromName("HarmonyOS Sans SC",
+        {
+            Drawing::FontStyle::EXTRA_BLACK_WEIGHT,
+            Drawing::FontStyle::ULTRA_CONDENSED_WIDTH,
+            Drawing::FontStyle::UPRIGHT_SLANT
+        });
+    auto data = typeface->Serialize();
+    auto typeface0 = Drawing::Typeface::Deserialize(data->GetData(), typeface->GetSize());
+    auto font = Drawing::Font(typeface, 50.f, 1.0f, 0.f);
+
+    std::string text4 = "GetHash=" + std::to_string(typeface0->GetHash());
+    std::string text5 = "GetHash=" + std::to_string(typeface->GetHash());
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4, text5};
+
+    DrawTexts(texts, font, playbackCanvas_);
+}
 
 }
 }

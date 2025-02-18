@@ -980,6 +980,428 @@ DEF_DTK(typeface_makefromfile, TestLevel::L2, 78)
     DrawTexts(texts, font, playbackCanvas_);
 }
 
+//对应用例 TypeFace_3079
+DEF_DTK(typeface_makefromfile, TestLevel::L2, 79)
+{
+    std::shared_ptr<Drawing::Typeface> typeface =
+        Drawing::Typeface::MakeFromFile("/system/fonts/HarmonyOS_Sans.ttf", 0);
+    auto font = Drawing::Font(typeface, 50.f, 1.0f, 0.f);
+
+    std::string text4 = "GetItalic=" + std::to_string(typeface->GetItalic());
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+
+    DrawTexts(texts, font, playbackCanvas_);
+}
+
+//对应用例 TypeFace_3080
+DEF_DTK(typeface_makefromfile, TestLevel::L2, 80)
+{
+    std::shared_ptr<Drawing::Typeface> typeface =
+        Drawing::Typeface::MakeFromFile("/system/fonts/HarmonyOS_Sans.ttf", 0);
+    auto font = Drawing::Font(typeface, 50.f, 1.0f, 0.f);
+
+    std::string text4 = "GetUniqueID=" + std::to_string(typeface->GetUniqueID());
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+
+    DrawTexts(texts, font, playbackCanvas_);
+}
+
+//对应用例 TypeFace_3081
+DEF_DTK(typeface_makefromfile, TestLevel::L2, 81)
+{
+    std::shared_ptr<Drawing::Typeface> typeface =
+        Drawing::Typeface::MakeFromFile("/system/fonts/HarmonyOS_Sans.ttf", 0);
+    auto font = Drawing::Font(typeface, 50.f, 1.0f, 0.f);
+
+    std::string text4 = "GetUnitsPerEm=" + std::to_string(typeface->GetUnitsPerEm());
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+
+    DrawTexts(texts, font, playbackCanvas_);
+}
+
+//对应用例 TypeFace_3082
+DEF_DTK(typeface_makefromfile, TestLevel::L2, 82)
+{
+    std::shared_ptr<Drawing::Typeface> typeface =
+        Drawing::Typeface::MakeFromFile("/system/fonts/HarmonyOS_Sans.ttf", 0);
+    auto font = Drawing::Font(typeface, 50.f, 1.0f, 0.f);
+
+    std::string text4 = "IsCustomTypeface=" +  std::to_string(typeface->IsCustomTypeface());
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+
+    DrawTexts(texts, font, playbackCanvas_);
+}
+
+//对应用例 TypeFace_3083
+DEF_DTK(typeface_makefromfile, TestLevel::L2, 83)
+{
+    std::shared_ptr<Drawing::Typeface> typeface =
+        Drawing::Typeface::MakeFromFile("/system/fonts/HarmonyOS_Sans.ttf", 0);
+    auto font = Drawing::Font(typeface, 50.f, 1.0f, 0.f);
+
+    std::string text4 = "GetHash=" + std::to_string(typeface->GetHash());
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+
+    DrawTexts(texts, font, playbackCanvas_);
+}
+
+//对应用例 TypeFace_3084
+DEF_DTK(typeface_makefromfile, TestLevel::L2, 84)
+{
+    std::shared_ptr<Drawing::Typeface> typeface =
+        Drawing::Typeface::MakeFromFile("/system/fonts/HarmonyOS_Sans.ttf", 0);
+    auto data = typeface->Serialize();
+    auto typeface0 = Drawing::Typeface::Deserialize(data->GetData(), typeface->GetSize());
+    auto font = Drawing::Font(typeface, 50.f, 1.0f, 0.f);
+
+    std::string text4 = "GetHash=" + std::to_string(typeface0->GetHash());
+    std::string text5 = "GetHash=" + std::to_string(typeface->GetHash());
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4, text5};
+
+    DrawTexts(texts, font, playbackCanvas_);
+}
+
+//对应用例 TypeFace_3085
+DEF_DTK(typeface_makefromfile, TestLevel::L2, 85)
+{
+    std::shared_ptr<Drawing::Typeface> typeface =
+        Drawing::Typeface::MakeFromFile("/system/fonts/HarmonyOS_Sans.ttf", -5);
+    auto font = Drawing::Font(typeface, 50.f, 1.0f, 0.f);
+
+    std::string text4 = "GetFamilyName=" + typeface->GetFamilyName();
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+
+    DrawTexts(texts, font, playbackCanvas_);
+}
+
+//对应用例 TypeFace_3086
+DEF_DTK(typeface_makefromfile, TestLevel::L2, 86)
+{
+    std::shared_ptr<Drawing::Typeface> typeface =
+        Drawing::Typeface::MakeFromFile("/system/fonts/HarmonyOS_Sans.ttf", -5);
+    std::shared_ptr<Drawing::Typeface> typeface0 =
+        Drawing::Typeface::MakeFromName(typeface->GetFamilyName().c_str(), typeface->GetFontStyle());
+    auto font = Drawing::Font(typeface, 50.f, 1.0f, 0.f);
+
+    std::string text4 = "GetHash=" + std::to_string(typeface0->GetHash());
+    std::string text5 = "GetHash=" + std::to_string(typeface->GetHash());
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4, text5};
+
+    DrawTexts(texts, font, playbackCanvas_);
+}
+
+//对应用例 TypeFace_3087
+DEF_DTK(typeface_makefromfile, TestLevel::L2, 87)
+{
+    std::shared_ptr<Drawing::Typeface> typeface =
+        Drawing::Typeface::MakeFromFile("/system/fonts/HarmonyOS_Sans.ttf", -5);
+    auto font = Drawing::Font(typeface, 50.f, 1.0f, 0.f);
+
+    uint32_t tagid = MakeTagId("DSIG");
+    std::string text4 = "GetTableSize=" + std::to_string(typeface->GetTableSize(tagid));
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+
+    DrawTexts(texts, font, playbackCanvas_);
+}
+
+//对应用例 TypeFace_3088
+DEF_DTK(typeface_makefromfile, TestLevel::L2, 88)
+{
+    std::shared_ptr<Drawing::Typeface> typeface =
+        Drawing::Typeface::MakeFromFile("/system/fonts/HarmonyOS_Sans.ttf", -5);
+    auto font = Drawing::Font(typeface, 50.f, 1.0f, 0.f);
+
+    uint32_t tagid = MakeTagId("CPAL");
+    std::string text4 = "GetTableSize=" + std::to_string(typeface->GetTableSize(tagid));
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+
+    DrawTexts(texts, font, playbackCanvas_);
+}
+
+//对应用例 TypeFace_3089
+DEF_DTK(typeface_makefromfile, TestLevel::L2, 89)
+{
+    std::shared_ptr<Drawing::Typeface> typeface =
+        Drawing::Typeface::MakeFromFile("/system/fonts/HarmonyOS_Sans.ttf", -5);
+    auto font = Drawing::Font(typeface, 50.f, 1.0f, 0.f);
+
+    uint32_t tagid = MakeTagId("DSIG");
+    int a = MakeOffset("011c50");
+    char abc[100];
+    std::string text4 = "GetTableData=" +
+        std::to_string(typeface->GetTableData(tagid, a, typeface->GetTableSize(tagid), (void*)abc));
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+
+    DrawTexts(texts, font, playbackCanvas_);
+}
+
+//对应用例 TypeFace_3090
+DEF_DTK(typeface_makefromfile, TestLevel::L2, 90)
+{
+    std::shared_ptr<Drawing::Typeface> typeface =
+        Drawing::Typeface::MakeFromFile("/system/fonts/HarmonyOS_Sans.ttf", -5);
+    auto font = Drawing::Font(typeface, 50.f, 1.0f, 0.f);
+
+    uint32_t tagid = MakeTagId("CPAL");
+    int a = MakeOffset("015e7260");
+    std::string text4 = "GetTableData=" +
+        std::to_string(typeface->GetTableData(tagid, a, typeface->GetTableSize(tagid) + 1, nullptr));
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+
+    DrawTexts(texts, font, playbackCanvas_);
+}
+
+//对应用例 TypeFace_3091
+DEF_DTK(typeface_makefromfile, TestLevel::L2, 91)
+{
+    std::shared_ptr<Drawing::Typeface> typeface =
+        Drawing::Typeface::MakeFromFile("/system/fonts/HarmonyOS_Sans.ttf", -5);
+    auto font = Drawing::Font(typeface, 50.f, 1.0f, 0.f);
+
+    std::string text4 = "GetItalic=" + std::to_string(typeface->GetItalic());
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+
+    DrawTexts(texts, font, playbackCanvas_);
+}
+
+//对应用例 TypeFace_3092
+DEF_DTK(typeface_makefromfile, TestLevel::L2, 92)
+{
+    std::shared_ptr<Drawing::Typeface> typeface =
+        Drawing::Typeface::MakeFromFile("/system/fonts/HarmonyOS_Sans.ttf", -5);
+    auto font = Drawing::Font(typeface, 50.f, 1.0f, 0.f);
+
+    std::string text4 = "GetUniqueID=" + std::to_string(typeface->GetUniqueID());
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+
+    DrawTexts(texts, font, playbackCanvas_);
+}
+
+//对应用例 TypeFace_3093
+DEF_DTK(typeface_makefromfile, TestLevel::L2, 93)
+{
+    std::shared_ptr<Drawing::Typeface> typeface =
+        Drawing::Typeface::MakeFromFile("/system/fonts/HarmonyOS_Sans.ttf", -5);
+    auto font = Drawing::Font(typeface, 50.f, 1.0f, 0.f);
+
+    std::string text4 = "GetUnitsPerEm=" + std::to_string(typeface->GetUnitsPerEm());
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+
+    DrawTexts(texts, font, playbackCanvas_);
+}
+
+//对应用例 TypeFace_3094
+DEF_DTK(typeface_makefromfile, TestLevel::L2, 94)
+{
+    std::shared_ptr<Drawing::Typeface> typeface =
+        Drawing::Typeface::MakeFromFile("/system/fonts/HarmonyOS_Sans.ttf", -5);
+    auto font = Drawing::Font(typeface, 50.f, 1.0f, 0.f);
+
+    std::string text4 = "IsCustomTypeface=" +  std::to_string(typeface->IsCustomTypeface());
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+
+    DrawTexts(texts, font, playbackCanvas_);
+}
+
+//对应用例 TypeFace_3095
+DEF_DTK(typeface_makefromfile, TestLevel::L2, 95)
+{
+    std::shared_ptr<Drawing::Typeface> typeface =
+        Drawing::Typeface::MakeFromFile("/system/fonts/HarmonyOS_Sans.ttf", -5);
+    auto font = Drawing::Font(typeface, 50.f, 1.0f, 0.f);
+
+    std::string text4 = "GetHash=" + std::to_string(typeface->GetHash());
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+
+    DrawTexts(texts, font, playbackCanvas_);
+}
+
+//对应用例 TypeFace_3096
+DEF_DTK(typeface_makefromfile, TestLevel::L2, 96)
+{
+    std::shared_ptr<Drawing::Typeface> typeface =
+        Drawing::Typeface::MakeFromFile("/system/fonts/HarmonyOS_Sans.ttf", -5);
+    auto data = typeface->Serialize();
+    auto typeface0 = Drawing::Typeface::Deserialize(data->GetData(), typeface->GetSize());
+    auto font = Drawing::Font(typeface, 50.f, 1.0f, 0.f);
+
+    std::string text4 = "GetHash=" + std::to_string(typeface0->GetHash());
+    std::string text5 = "GetHash=" + std::to_string(typeface->GetHash());
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4, text5};
+
+    DrawTexts(texts, font, playbackCanvas_);
+}
+
+//对应用例 TypeFace_3097
+DEF_DTK(typeface_makefromfile, TestLevel::L2, 97)
+{
+    std::shared_ptr<Drawing::Typeface> typeface =
+        Drawing::Typeface::MakeFromFile("/system/fonts/HarmonyOS_Sans.ttf", 100);
+    auto font = Drawing::Font(typeface, 50.f, 1.0f, 0.f);
+
+    std::string text4 = "GetFamilyName=" + typeface->GetFamilyName();
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+
+    DrawTexts(texts, font, playbackCanvas_);
+}
+
+//对应用例 TypeFace_3098
+DEF_DTK(typeface_makefromfile, TestLevel::L2, 98)
+{
+    std::shared_ptr<Drawing::Typeface> typeface =
+        Drawing::Typeface::MakeFromFile("/system/fonts/HarmonyOS_Sans.ttf", 100);
+    std::shared_ptr<Drawing::Typeface> typeface0 =
+        Drawing::Typeface::MakeFromName(typeface->GetFamilyName().c_str(), typeface->GetFontStyle());
+    auto font = Drawing::Font(typeface, 50.f, 1.0f, 0.f);
+
+    std::string text4 = "GetHash=" + std::to_string(typeface0->GetHash());
+    std::string text5 = "GetHash=" + std::to_string(typeface->GetHash());
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4, text5};
+
+    DrawTexts(texts, font, playbackCanvas_);
+}
+
+//对应用例 TypeFace_3099
+DEF_DTK(typeface_makefromfile, TestLevel::L2, 99)
+{
+    std::shared_ptr<Drawing::Typeface> typeface =
+        Drawing::Typeface::MakeFromFile("/system/fonts/HarmonyOS_Sans.ttf", 100);
+    auto font = Drawing::Font(typeface, 50.f, 1.0f, 0.f);
+
+    uint32_t tagid = MakeTagId("DSIG");
+    std::string text4 = "GetTableSize=" + std::to_string(typeface->GetTableSize(tagid));
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+
+    DrawTexts(texts, font, playbackCanvas_);
+}
+
+//对应用例 TypeFace_3100
+DEF_DTK(typeface_makefromfile, TestLevel::L2, 100)
+{
+    std::shared_ptr<Drawing::Typeface> typeface =
+        Drawing::Typeface::MakeFromFile("/system/fonts/HarmonyOS_Sans.ttf", 100);
+    auto font = Drawing::Font(typeface, 50.f, 1.0f, 0.f);
+
+    uint32_t tagid = MakeTagId("CPAL");
+    std::string text4 = "GetTableSize=" + std::to_string(typeface->GetTableSize(tagid));
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+
+    DrawTexts(texts, font, playbackCanvas_);
+}
+
+//对应用例 TypeFace_3101
+DEF_DTK(typeface_makefromfile, TestLevel::L2, 101)
+{
+    std::shared_ptr<Drawing::Typeface> typeface =
+        Drawing::Typeface::MakeFromFile("/system/fonts/HarmonyOS_Sans.ttf", 100);
+    auto font = Drawing::Font(typeface, 50.f, 1.0f, 0.f);
+
+    uint32_t tagid = MakeTagId("DSIG");
+    int a = MakeOffset("011c50");
+    char abc[100];
+    std::string text4 = "GetTableData=" +
+        std::to_string(typeface->GetTableData(tagid, a, typeface->GetTableSize(tagid), (void*)abc));
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+
+    DrawTexts(texts, font, playbackCanvas_);
+}
+
+//对应用例 TypeFace_3102
+DEF_DTK(typeface_makefromfile, TestLevel::L2, 102)
+{
+    std::shared_ptr<Drawing::Typeface> typeface =
+        Drawing::Typeface::MakeFromFile("/system/fonts/HarmonyOS_Sans.ttf", 100);
+    auto font = Drawing::Font(typeface, 50.f, 1.0f, 0.f);
+
+    uint32_t tagid = MakeTagId("CPAL");
+    int a = MakeOffset("015e7260");
+    std::string text4 = "GetTableData=" +
+        std::to_string(typeface->GetTableData(tagid, a, typeface->GetTableSize(tagid) + 1, nullptr));
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+
+    DrawTexts(texts, font, playbackCanvas_);
+}
+
+//对应用例 TypeFace_3103
+DEF_DTK(typeface_makefromfile, TestLevel::L2, 103)
+{
+    std::shared_ptr<Drawing::Typeface> typeface =
+        Drawing::Typeface::MakeFromFile("/system/fonts/HarmonyOS_Sans.ttf", 100);
+    auto font = Drawing::Font(typeface, 50.f, 1.0f, 0.f);
+
+    std::string text4 = "GetItalic=" + std::to_string(typeface->GetItalic());
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+
+    DrawTexts(texts, font, playbackCanvas_);
+}
+
+//对应用例 TypeFace_3104
+DEF_DTK(typeface_makefromfile, TestLevel::L2, 104)
+{
+    std::shared_ptr<Drawing::Typeface> typeface =
+        Drawing::Typeface::MakeFromFile("/system/fonts/HarmonyOS_Sans.ttf", 100);
+    auto font = Drawing::Font(typeface, 50.f, 1.0f, 0.f);
+
+    std::string text4 = "GetUniqueID=" + std::to_string(typeface->GetUniqueID());
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+
+    DrawTexts(texts, font, playbackCanvas_);
+}
+
+//对应用例 TypeFace_3105
+DEF_DTK(typeface_makefromfile, TestLevel::L2, 105)
+{
+    std::shared_ptr<Drawing::Typeface> typeface =
+        Drawing::Typeface::MakeFromFile("/system/fonts/HarmonyOS_Sans.ttf", 100);
+    auto font = Drawing::Font(typeface, 50.f, 1.0f, 0.f);
+
+    std::string text4 = "GetUnitsPerEm=" + std::to_string(typeface->GetUnitsPerEm());
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+
+    DrawTexts(texts, font, playbackCanvas_);
+}
+
+//对应用例 TypeFace_3106
+DEF_DTK(typeface_makefromfile, TestLevel::L2, 106)
+{
+    std::shared_ptr<Drawing::Typeface> typeface =
+        Drawing::Typeface::MakeFromFile("/system/fonts/HarmonyOS_Sans.ttf", 100);
+    auto font = Drawing::Font(typeface, 50.f, 1.0f, 0.f);
+
+    std::string text4 = "IsCustomTypeface=" +  std::to_string(typeface->IsCustomTypeface());
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+
+    DrawTexts(texts, font, playbackCanvas_);
+}
+
+//对应用例 TypeFace_3107
+DEF_DTK(typeface_makefromfile, TestLevel::L2, 107)
+{
+    std::shared_ptr<Drawing::Typeface> typeface =
+        Drawing::Typeface::MakeFromFile("/system/fonts/HarmonyOS_Sans.ttf", 100);
+    auto font = Drawing::Font(typeface, 50.f, 1.0f, 0.f);
+
+    std::string text4 = "GetHash=" + std::to_string(typeface->GetHash());
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+
+    DrawTexts(texts, font, playbackCanvas_);
+}
+
+//对应用例 TypeFace_3108
+DEF_DTK(typeface_makefromfile, TestLevel::L2, 108)
+{
+    std::shared_ptr<Drawing::Typeface> typeface =
+        Drawing::Typeface::MakeFromFile("/system/fonts/HarmonyOS_Sans.ttf", 100);
+    auto data = typeface->Serialize();
+    auto typeface0 = Drawing::Typeface::Deserialize(data->GetData(), typeface->GetSize());
+    auto font = Drawing::Font(typeface, 50.f, 1.0f, 0.f);
+
+    std::string text4 = "GetHash=" + std::to_string(typeface0->GetHash());
+    std::string text5 = "GetHash=" + std::to_string(typeface->GetHash());
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4, text5};
+
+    DrawTexts(texts, font, playbackCanvas_);
+}
 
 }
 }
