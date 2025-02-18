@@ -4829,7 +4829,7 @@ void RSMainThread::SetFrameInfo(uint64_t frameCount, bool forceRefreshFlag)
     hgmCore.SetVsyncId(frameCount);
 
     auto &frameDeadline = OHOS::Rosen::RsFrameDeadlinePredict::GetInstance();
-    frameDeadline.ReportRSFrameDeadline(hgmCore, forceRefreshFlag);
+    frameDeadline.ReportRsFrameDeadline(hgmCore, forceRefreshFlag);
 }
 
 void RSMainThread::MultiDisplayChange(bool isMultiDisplay)
