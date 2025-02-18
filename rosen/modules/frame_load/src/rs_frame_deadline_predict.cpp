@@ -45,10 +45,10 @@ void RsFrameDeadlinePredict::ReportRsFrameDeadline(OHOS::Rosen::HgmCore& hgmCore
                 extraReserve = SINGLE_SHIFT;
             } else if (vsyncOffset > DOUBLE_SHIFT && vsyncOffset < idealPeriod) {
                 extraReserve = DOUBLE_SHIFT;
-			}
+            }
         } else {
             extraReserve = FIXED_EXTRA_DRAWING_TIME;
-		}
+        }
     }
 
     if (idealPeriod == preIdealPeriod_ && (extraReserve == preExtraReserve_ || currentRate != OLED_120_HZ)) {
@@ -58,8 +58,8 @@ void RsFrameDeadlinePredict::ReportRsFrameDeadline(OHOS::Rosen::HgmCore& hgmCore
     preIdealPeriod_ = idealPeriod;
     preExtraReserve_ = extraReserve;
     RS_TRACE_NAME_FMT("FrameDeadline: isForceRefresh: %d, currentRate: %u,"
-		"vsyncOffset: %" PRId64 ", reservedDrawingTime: %" PRId64 "",
-		forceRefreshFlag, currentRate, vsyncOffset, drawingTime);
+        "vsyncOffset: %" PRId64 ", reservedDrawingTime: %" PRId64 "",
+        forceRefreshFlag, currentRate, vsyncOffset, drawingTime);
 
     RsFrameReport::GetInstance().ReportFrameDeadline(drawingTime);
 }

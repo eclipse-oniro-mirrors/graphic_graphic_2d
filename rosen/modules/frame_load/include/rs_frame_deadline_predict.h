@@ -26,11 +26,11 @@
 namespace OHOS::Rosen {
 class RsFrameDeadlinePredict {
 public:
-	static RsFrameDeadlinePredict& GetInstance();
+    static RsFrameDeadlinePredict& GetInstance();
     void ReportRsFrameDeadline(OHOS::Rosen::HgmCore& hgmCore, bool forceRefreshFlag);
 
 private:
-	RsFrameDeadlinePredict();
+    RsFrameDeadlinePredict();
     ~RsFrameDeadlinePredict() = default;
 
     int64_t preIdealPeriod_ = 0;
