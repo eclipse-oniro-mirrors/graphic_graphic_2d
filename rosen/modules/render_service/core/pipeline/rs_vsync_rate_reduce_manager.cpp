@@ -280,7 +280,8 @@ int RSVsyncRateReduceManager::GetRateByBalanceLevel(double vVal)
     }
     int minRate = rsRefreshRate_ / MIN_REFRESH_RATE;
     auto& rates = VSYNC_RATE_TABLE[curRatesLevel_];
-    for (int i = 1; i < sizeof(V_VAL_INTERVALS); ++i) {
+    int intervalsSize = sizeof(V_VAL_INTERVALS) / sizeof(float);
+    for (int i = 1; i < intervalsSize; ++i) {
         if (vVal > V_VAL_INTERVALS[i]) {
             return std::min(minRate, rates[i - 1]);
         }
@@ -325,8 +326,9 @@ Occlusion::Rect RSVsyncRateReduceManager::CalcMaxVisibleRect(const Occlusion::Re
     }
     xPositions.assign(xPositionSet.begin(), xPositionSet.end());
     std::sort(xPositions.begin(), xPositions.end());
-    for (int i = 0; i < xPositions.size() - 1; ++i) {
-        for (int j = i + 1; j < xPositions.size(); ++j) {
+    int xPositionsSize = xPositions.size();
+    for (int i = 0; i < xPositionsSize - 1; ++i) {
+        for (int j = i + 1; j < xPositionsSize; ++j) {
             Occlusion::Rect subBound(xPositions[i], srcBound.top_, xPositions[j], srcBound.bottom_);
             int baseArea = std::max(maxRArea, minArea);
             if (subBound.Area() <= baseArea) {
