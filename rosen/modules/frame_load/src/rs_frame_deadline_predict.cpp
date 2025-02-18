@@ -49,7 +49,7 @@ void RsFrameDeadlinePredict::ReportRsFrameDeadline(OHOS::Rosen::HgmCore& hgmCore
         } else {
             extraReserve = FIXED_EXTRA_DRAWING_TIME;
 		}
-	}
+    }
 
     if (idealPeriod == preIdealPeriod_ && (extraReserve == preExtraReserve_ || currentRate != OLED_120_HZ)) {
         return;
