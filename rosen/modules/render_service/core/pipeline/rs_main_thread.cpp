@@ -2258,23 +2258,25 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
 #ifdef RES_SCHED_ENABLE
         const auto& nodeMapForFrameReport = GetContext().GetNodeMap();
         uint32_t frameRatePidFromRSS = ResschedEventListener::GetInstance()->GetCurrentPid();
-        nodeMapForFrameReport.TraverseSurfaceNodesBreakOnCondition(
-            [this, frameRatePidFromRSS](
-                const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode) {
-                if (surfaceNode == nullptr) {
-                    return false;
-                }
-                uint32_t pidFromNode = ExtractPid(surfaceNode->GetId());
-                if (frameRatePidFromRSS != pidFromNode) {
-                    return false;
-                }
-                auto dirtyManager = surfaceNode->GetDirtyManager();
-                if (dirtyManager == nullptr || dirtyManager->GetCurrentFrameDirtyRegion().IsEmpty()) {
-                    return false;
-                }
-                ResschedEventListener::GetInstance()->ReportFrameCountAsync(pidFromNode);
-                return true;
-        });
+        if (frameRatePidFromRSS != 0) {
+            nodeMapForFrameReport.TraverseSurfaceNodesBreakOnCondition(
+                [this, frameRatePidFromRSS](
+                    const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode) {
+                    if (surfaceNode == nullptr) {
+                        return false;
+                    }
+                    uint32_t pidFromNode = ExtractPid(surfaceNode->GetId());
+                    if (frameRatePidFromRSS != pidFromNode) {
+                        return false;
+                    }
+                    auto dirtyManager = surfaceNode->GetDirtyManager();
+                    if (dirtyManager == nullptr || dirtyManager->GetCurrentFrameDirtyRegion().IsEmpty()) {
+                        return false;
+                    }
+                    ResschedEventListener::GetInstance()->ReportFrameCountAsync(pidFromNode);
+                    return true;
+            });
+        }
 #endif // RES_SCHED_ENABLE
 
         if (deviceType_ != DeviceType::PHONE) {
