@@ -2499,7 +2499,7 @@ Drawing::Rect RSUniRenderUtil::GetImageRegions(float screenWidth, float screenHe
     float realImageWidth, float realImageHeight)
 {
     auto dstRect = Drawing::Rect(0, 0, screenWidth, screenHeight);
-    if (realImageWidth == 0.0f || realImageHeight == 0.0f) {
+    if (ROSEN_EQ(realImageWidth, 0.0f) || ROSEN_EQ(realImageHeight, 0.0f)) {
         return dstRect;
     }
     float imageScaleWidth = screenWidth / static_cast<float>(realImageWidth);
