@@ -239,8 +239,7 @@ bool RSSurfaceCaptureTaskParallel::Run(sptr<RSISurfaceCaptureCallback> callback,
             AddBlur(canvas, surface, blurParam.blurRadius);
         }
     } else if (displayNodeDrawable_) {
-        RSUniRenderThread::SetCaptureParam(
-            CaptureParam(true, false, false));
+        RSUniRenderThread::SetCaptureParam(CaptureParam(true, false, false));
         displayNodeDrawable_->OnCapture(canvas);
     } else {
         RS_LOGE("RSSurfaceCaptureTaskParallel::Run: Invalid RSRenderNodeDrawable!");
