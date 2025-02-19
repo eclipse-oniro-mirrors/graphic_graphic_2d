@@ -1592,6 +1592,7 @@ void RSUniRenderUtil::CalcSrcRectByBufferFlip(RSSurfaceRenderNode& node, const S
             } else if (dstRect.left_ + dstRect.width_ >= static_cast<int32_t>(screenInfo.width)) {
                 srcRect.left_ = bufferWidth - srcRect.width_;
             }
+            break;
         }
         case GraphicTransformType::GRAPHIC_FLIP_V: {
             if (srcRect.top_ >= 0) {
@@ -1599,6 +1600,7 @@ void RSUniRenderUtil::CalcSrcRectByBufferFlip(RSSurfaceRenderNode& node, const S
             } else if (dstRect.top_ + dstRect.height_ >= static_cast<int32_t>(screenInfo.height)) {
                 srcRect.top_ = bufferHeight - srcRect.height_;
             }
+            break;
         }
         default:
             break;
