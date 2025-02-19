@@ -98,7 +98,7 @@ typedef struct {
  * @return Returns the pointer to the <b>InnerApiDemoMgr</b> instance created.
  * Creation failed, cause memory shortage.
  */
-OH_InnerApiDemoMgr* OH_InnerApiDemoMgr_CreateFromName(Enum1 enum);
+OH_InnerApiDemoMgr* CreateFromName(Enum1 enum);
 
 /**
  * @brief Creates a <b>InnerApiDemoMgr</b> instance by primaries and gamma.
@@ -109,15 +109,14 @@ OH_InnerApiDemoMgr* OH_InnerApiDemoMgr_CreateFromName(Enum1 enum);
  * @return Returns the pointer to the <b>InnerApiDemoMgr</b> instance created.
  * Creation failed, cause memory shortage.
  */
-OH_InnerApiDemoMgr* OH_InnerApiDemoMgr_CreateFromPrimariesAndGamma(
-    SpacePrimaries primaries, float gamma);
+OH_InnerApiDemoMgr* CreateFromPrimariesAndGamma(SpacePrimaries primaries, float gamma);
 
 /**
  * @brief Delete the InnerApiDemoMgr instance.
  *
  * @param mgr Indicates the pointer to a <b>InnerApiDemoMgr</b> instance.
  */
-void OH_InnerApiDemoMgr_Destroy(OH_InnerApiDemoMgr* mgr);
+void Destroy(OH_InnerApiDemoMgr* mgr);
 
 /**
  * @brief Get colorSpace name.
@@ -125,7 +124,7 @@ void OH_InnerApiDemoMgr_Destroy(OH_InnerApiDemoMgr* mgr);
  * @param mgr Indicates the pointer to a <b>InnerApiDemoMgr</b> instance.
  * @return Returns value, return value > 0 && value <= 25, success, return value == 0 , failed.
  */
-int OH_InnerApiDemoMgr_GetEnum1(OH_InnerApiDemoMgr* mgr);
+int GetEnum1(OH_InnerApiDemoMgr* mgr);
 
 /**
  * @brief Get white point.
@@ -133,7 +132,7 @@ int OH_InnerApiDemoMgr_GetEnum1(OH_InnerApiDemoMgr* mgr);
  * @param mgr Indicates the pointer to a <b>InnerApiDemoMgr</b> instance.
  * @return Returns float array, return array = <0.f, 0.f>, failed, otherwise, true.
  */
-WhitePointArray OH_InnerApiDemoMgr_GetWhitePoint(OH_InnerApiDemoMgr* mgr);
+WhitePointArray GetWhitePoint(OH_InnerApiDemoMgr* mgr);
 
 /**
  * @brief Get gamma.
@@ -141,7 +140,7 @@ WhitePointArray OH_InnerApiDemoMgr_GetWhitePoint(OH_InnerApiDemoMgr* mgr);
  * @param mgr Indicates the pointer to a <b>InnerApiDemoMgr</b> instance.
  * @return Returns float, return value == 0.f, failed, otherwise, true.
  */
-float OH_InnerApiDemoMgr_GetGamma(OH_InnerApiDemoMgr* mgr);
+float GetGamma(OH_InnerApiDemoMgr* mgr);
 
 #ifdef __cplusplus
 }
