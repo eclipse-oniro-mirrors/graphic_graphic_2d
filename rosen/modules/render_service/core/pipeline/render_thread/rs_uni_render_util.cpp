@@ -1631,9 +1631,8 @@ RectI RSUniRenderUtil::SrcRectRotateTransform(const SurfaceBuffer& buffer,
             srcRect = RectI {left, bufferHeight - height - top, width, height};
             break;
         }
-        default: {
+        default:
             break;
-        }
     }
     return srcRect;
 }
