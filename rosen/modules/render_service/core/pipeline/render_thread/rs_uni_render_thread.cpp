@@ -52,6 +52,7 @@
 #include "surface.h"
 #include "sync_fence.h"
 #include "system/rs_system_parameters.h"
+#include "gfx/dump/rs_dump_manager.h"
 
 #ifdef RES_SCHED_ENABLE
 #include <iservice_registry.h>
@@ -1082,9 +1083,6 @@ void RSUniRenderThread::RenderServiceTreeDump(std::string& dumpString)
 
 void RSUniRenderThread::RSUniRenderGfxDumpInit()
 {
-    // Get the instance of RSDumpManager
-    rsDumpManager_ = RSDumpManager::GetInstance();
-
      // uni render tree
     RSDumpFunc rsUniRenderTreeFunc = [this](const std::u16string &cmd, std::unordered_set<std::u16string> &argSets,
                                             std::string &dumpString) -> void {
@@ -1092,7 +1090,7 @@ void RSUniRenderThread::RSUniRenderGfxDumpInit()
     };
 
     std::vector<RSDumpHander> handers = { { RSDumpID::DRAWABLE_INFO, rsUniRenderTreeFunc, RS_UNI_THREAD_TAG } };
-    rsDumpManager_->Register(handers);
+    RSDumpManager::GetInstance().Register(handers);
 }
 
 void RSUniRenderThread::UpdateDisplayNodeScreenId()

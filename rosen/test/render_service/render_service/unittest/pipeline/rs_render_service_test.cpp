@@ -44,7 +44,6 @@ sptr<RSRenderService> GetAndInitRenderService()
     if (renderService) {
         renderService->mainThread_ = RSMainThread::Instance();
         renderService->screenManager_ = CreateOrGetScreenManager();
-        renderService->rsDumpManager_ = RSDumpManager::GetInstance();
     }
     if (renderService->mainThread_) {
         renderService->mainThread_->runner_ = AppExecFwk::EventRunner::Create(true);

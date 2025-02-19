@@ -22,7 +22,6 @@
 #include "transaction/rs_render_service_stub.h"
 #include "vsync_controller.h"
 #include "vsync_distributor.h"
-#include "gfx/dump/rs_dump_manager.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -97,7 +96,6 @@ private:
     sptr<VSyncDistributor> appVSyncDistributor_;
 
     bool isRcdServiceRegister_ = false;
-    RSDumpManager* rsDumpManager_ = nullptr;
 #ifdef RS_PROFILER_ENABLED
     friend class RSProfiler;
 #endif

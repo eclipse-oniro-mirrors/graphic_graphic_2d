@@ -36,11 +36,11 @@ RSDumpManager::RSDumpManager()
 }
 
 // Get the instance of RSDumpManager
-RSDumpManager* RSDumpManager::GetInstance()
+RSDumpManager& RSDumpManager::GetInstance()
 {
     // Define a static RSDumpManager object to ensure only one instance is created
     static RSDumpManager instance;
-    return &instance;
+    return instance;
 }
 
 // Register a module to RSDumpManager

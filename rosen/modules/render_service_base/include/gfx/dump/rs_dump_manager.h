@@ -125,7 +125,7 @@ public:
     RSDumpManager();
     ~RSDumpManager() = default;
 
-    static RSDumpManager* GetInstance();
+    static RSDumpManager& GetInstance();
 
     // Register dump handers
     void Register(RSDumpHander rsDumpHander);

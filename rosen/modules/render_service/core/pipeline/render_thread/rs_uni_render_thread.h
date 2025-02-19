@@ -29,7 +29,6 @@
 #ifdef RES_SCHED_ENABLE
 #include "vsync_system_ability_listener.h"
 #endif
-#include "gfx/dump/rs_dump_manager.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -301,7 +300,6 @@ private:
     void SubScribeSystemAbility();
     sptr<VSyncSystemAbilityListener> saStatusChangeListener_ = nullptr;
 #endif
-    RSDumpManager* rsDumpManager_ = nullptr;
 };
 } // namespace Rosen
 } // namespace OHOS

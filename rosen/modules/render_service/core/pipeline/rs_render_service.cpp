@@ -725,19 +725,16 @@ void RSRenderService::DoDump(std::unordered_set<std::u16string>& argSets, std::s
     }
     RS_TRACE_NAME("RSRenderService::DoDump args is [ " + cmdStr + " ]");
 
-    if (!mainThread_ || !screenManager_ || !rsDumpManager_) {
-        RS_LOGE("RSRenderService::DoDump failed, mainThread, screenManager or rsDumpManager_ is nullptr");
+    if (!mainThread_ || !screenManager_) {
+        RS_LOGE("RSRenderService::DoDump failed, mainThread, screenManager is nullptr");
         return;
     }
 
-    rsDumpManager_->CmdExec(argSets, dumpString);
+    RSDumpManager::GetInstance().CmdExec(argSets, dumpString);
 }
 
 void RSRenderService::RSGfxDumpInit()
 {
-    // Get the instance of RSDumpManager
-    rsDumpManager_ = RSDumpManager::GetInstance();
-
     RegisterRSGfxFuncs();
     RegisterRSTreeFuncs();
     RegisterMemFuncs();
@@ -796,7 +793,7 @@ void RSRenderService::RegisterRSGfxFuncs()
         { RSDumpID::RS_LOG_FLAG, rsLogFlagFunc },
         { RSDumpID::RS_FLUSH_JANK_STATS, flushJankStatsRsFunc },
     };
-    rsDumpManager_->Register(handers);
+    RSDumpManager::GetInstance().Register(handers);
 }
 
 void RSRenderService::RegisterRSTreeFuncs()
@@ -855,7 +852,7 @@ void RSRenderService::RegisterRSTreeFuncs()
         { RSDumpID::RS_RENDER_NODE_INFO, dumpNodeFunc },
     };
 
-    rsDumpManager_->Register(handers);
+    RSDumpManager::GetInstance().Register(handers);
 }
 
 void RSRenderService::RegisterMemFuncs()
@@ -900,7 +897,7 @@ void RSRenderService::RegisterMemFuncs()
         { RSDumpID::EXIST_PID_MEM_INFO, existPidMemFunc },
     };
 
-    rsDumpManager_->Register(handers);
+    RSDumpManager::GetInstance().Register(handers);
 }
 
 void RSRenderService::RegisterFpsFuncs()
@@ -941,7 +938,7 @@ void RSRenderService::RegisterFpsFuncs()
         { RSDumpID::HITCHS, hitchsFunc },
     };
 
-    rsDumpManager_->Register(handers);
+    RSDumpManager::GetInstance().Register(handers);
 }
 
 void RSRenderService::RegisterGpuFuncs()
@@ -968,7 +965,7 @@ void RSRenderService::RegisterGpuFuncs()
 #endif
     };
 
-    rsDumpManager_->Register(handers);
+    RSDumpManager::GetInstance().Register(handers);
 }
 } // namespace Rosen
 } // namespace OHOS
