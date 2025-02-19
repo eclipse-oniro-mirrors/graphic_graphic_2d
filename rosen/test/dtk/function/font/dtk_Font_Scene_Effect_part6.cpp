@@ -86,14 +86,17 @@ static std::vector<Drawing::BlendMode> MakeBlendModes()
 
 static std::shared_ptr<Drawing::TextBlob> MakeTextBlob2(Drawing::Font& font1)
 {
+    const int count = 20;
+    const int offset = 4;
+    const int t = 100;
     Drawing::TextBlobBuilder builder;
-    auto buffer = builder.AllocRunRSXform(font1, 20);
-    for (int i = 0; i < 20; i++) {
+    auto buffer = builder.AllocRunRSXform(font1, count);
+    for (int i = 0; i < count; i++) {
         buffer.glyphs[i] = font1.UnicharToGlyph(0x30);
-        buffer.pos[i * 4] = cos(i * 18);
-        buffer.pos[i * 4 + 1] = sin(18 * i);
-        buffer.pos[i * 4 + 2] = 100;
-        buffer.pos[i * 4 + 3] = 100;
+        buffer.pos[i * offset] = cos(i * 18);
+        buffer.pos[i * offset + 1] = sin(18 * i);
+        buffer.pos[i * offset + 2] = t;
+        buffer.pos[i * offset + 3] = t;
     }
     std::shared_ptr<Drawing::TextBlob> textBlob = builder.Make();
 

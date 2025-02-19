@@ -29,6 +29,12 @@
 namespace OHOS {
 namespace Rosen {
 
+static std::shared_ptr<Drawing::ImageFilter> CreateImageFilter()
+{
+    return Drawing::ImageFilter::CreateBlurImageFilter(
+        1.0f, 1.0f, Drawing::TileMode::REPEAT, nullptr, Drawing::ImageBlurType::GAUSS);
+}
+
 static void DrawTextBlob(Drawing::Brush brush, std::vector<std::string>& texts,
     std::shared_ptr<Drawing::TextBlob> textBlob, Drawing::Font& font1, TestPlaybackCanvas* playbackCanvas)
 {
@@ -71,11 +77,14 @@ static std::vector<Drawing::BlendMode> MakeBlendModes()
 
 static void SettingxForm(Drawing::RSXform xform[], int maxGlyphCount)
 {
+    const int r = 10;
+    const int t = 100;
+    const int offset = 40;
     for (int i = 0; i < maxGlyphCount; ++i) {
-        xform[i].cos_ = cos(10 * i) + 0.1 * i;
-        xform[i].sin_ = sin(10 * i);
-        xform[i].tx_ = 40 * i + 100;
-        xform[i].ty_ = 100;
+        xform[i].cos_ = cos(r * i) + 0.1 * i;
+        xform[i].sin_ = sin(r * i);
+        xform[i].tx_ = offset * i + t;
+        xform[i].ty_ = t;
     }
 }
 
@@ -341,10 +350,8 @@ DEF_DTK(Font_Scene_Effect_20, TestLevel::L2, 323)
     
     int rectPos = 0;
     for (auto blendMode : blendModes) {
-        auto background = Drawing::ImageFilter::CreateBlurImageFilter(
-            1.0f, 1.0f, Drawing::TileMode::REPEAT, nullptr, Drawing::ImageBlurType::GAUSS);
-        auto foreground = Drawing::ImageFilter::CreateBlurImageFilter(
-            1.0f, 1.0f, Drawing::TileMode::REPEAT, nullptr, Drawing::ImageBlurType::GAUSS);
+        auto background = CreateImageFilter();
+        auto foreground = CreateImageFilter();
         auto filter = Drawing::Filter();
         filter.SetImageFilter(Drawing::ImageFilter::CreateBlendImageFilter(blendMode, background, foreground));
         brush.SetFilter(filter);

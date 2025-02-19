@@ -86,11 +86,14 @@ static std::vector<Drawing::BlendMode> MakeBlendModes()
 
 static void SettingxForm(Drawing::RSXform xform[], int maxGlyphCount)
 {
+    const int r = 10;
+    const int t = 100;
+    const int offset = 40;
     for (int i = 0; i < maxGlyphCount; ++i) {
-        xform[i].cos_ = cos(10 * i) + 0.1 * i;
-        xform[i].sin_ = sin(10 * i);
-        xform[i].tx_ = 40 * i + 100;
-        xform[i].ty_ = 100;
+        xform[i].cos_ = cos(r * i) + 0.1 * i;
+        xform[i].sin_ = sin(r * i);
+        xform[i].tx_ = offset * i + t;
+        xform[i].ty_ = t;
     }
 }
 

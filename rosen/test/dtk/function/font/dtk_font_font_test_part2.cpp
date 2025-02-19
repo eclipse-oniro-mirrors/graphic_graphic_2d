@@ -24,14 +24,19 @@
 namespace OHOS {
 namespace Rosen {
 
-#define MAKE_FONTS(size, scalex, skewx) auto font = Drawing::Font(); \
-    font.SetTypeface(typeface); \
-    font.SetSize(size); \
-    font.SetScaleX(scalex); \
-    font.SetSkewX(skewx); \
-    auto font1 = Drawing::Font(font.GetTypeface(), font.GetSize(), font.GetScaleX(), font.GetSkewX()); \
-    font.SetSubpixel(false); \
-    font1.SetSubpixel(false)
+static Drawing::Font MakeFont1(Drawing::Font& font,
+    std::shared_ptr<Drawing::Typeface> typeface, float size, float scalex, float skewx)
+{
+    font.SetTypeface(typeface);
+    font.SetSize(size);
+    font.SetScaleX(scalex);
+    font.SetSkewX(skewx);
+    auto font1 = Drawing::Font(font.GetTypeface(), font.GetSize(), font.GetScaleX(), font.GetSkewX());
+    font.SetSubpixel(false);
+    font1.SetSubpixel(false);
+
+    return font1;
+}
 
 static std::string g_text1 = "DDGR ddgr 鸿蒙 !@#%￥^&*;：，。";
 static std::string g_text2 = "-_=+()123`.---~|{}【】,./?、？<>《》";
@@ -72,7 +77,8 @@ DEF_DTK(font_font_2, TestLevel::L2, 58)
         Drawing::Typeface::MakeFromFile("/system/fonts/HmosColorEmojiCompat.ttf");
     
     // 设置fontsize到LinearMetrics的属性
-    MAKE_FONTS(-15.34f, 30.f, 0.7f);
+    auto font = Drawing::Font();
+    auto font1 = MakeFont1(font, typeface, -15.34f, 30.f, 0.7f);
     font.SetForceAutoHinting(true);
     font1.SetForceAutoHinting(font.IsForceAutoHinting());
     font.SetEmbeddedBitmaps(true);
@@ -98,7 +104,8 @@ DEF_DTK(font_font_2, TestLevel::L2, 59)
         Drawing::Typeface::MakeFromFile("/system/fonts/HmosColorEmojiCompat.ttf");
     
     // 设置fontsize到LinearMetrics的属性
-    MAKE_FONTS(0, -30.f, 0);
+    auto font = Drawing::Font();
+    auto font1 = MakeFont1(font, typeface, 0, -30.f, 0);
     font.SetEdging(Drawing::FontEdging::SUBPIXEL_ANTI_ALIAS);
     font1.SetEdging(font.GetEdging());
     font.SetForceAutoHinting(false);
@@ -123,7 +130,8 @@ DEF_DTK(font_font_2, TestLevel::L2, 60)
         Drawing::Typeface::MakeFromFile("/system/fonts/HmosColorEmojiCompat.ttf");
     
     // 设置fontsize到LinearMetrics的属性
-    MAKE_FONTS(0, -0.5f, 1.f);
+    auto font = Drawing::Font();
+    auto font1 = MakeFont1(font, typeface, 0, -0.5f, 1.f);
     font.SetBaselineSnap(true);
     font1.SetBaselineSnap(font.IsBaselineSnap());
     font.SetEdging(Drawing::FontEdging::ANTI_ALIAS);
@@ -157,7 +165,8 @@ DEF_DTK(font_font_2, TestLevel::L2, 61)
         Drawing::Typeface::MakeFromFile("/system/fonts/HmosColorEmojiCompat.ttf");
     
     // 设置fontsize到LinearMetrics的属性
-    MAKE_FONTS(0, 0, 1.f);
+    auto font = Drawing::Font();
+    auto font1 = MakeFont1(font, typeface, 0, 0, 1.f);
     font.SetBaselineSnap(true);
     font1.SetBaselineSnap(font.IsBaselineSnap());
     font.SetEdging(Drawing::FontEdging::ALIAS);
@@ -187,7 +196,8 @@ DEF_DTK(font_font_2, TestLevel::L2, 62)
         Drawing::Typeface::MakeFromFile("/system/fonts/HmosColorEmojiCompat.ttf");
     
     // 设置fontsize到LinearMetrics的属性
-    MAKE_FONTS(0, 0.7f, 1.f);
+    auto font = Drawing::Font();
+    auto font1 = MakeFont1(font, typeface, 0, 0.7f, 1.f);
     font.SetBaselineSnap(false);
     font1.SetBaselineSnap(font.IsBaselineSnap());
     font.SetEdging(Drawing::FontEdging::SUBPIXEL_ANTI_ALIAS);
@@ -216,7 +226,8 @@ DEF_DTK(font_font_2, TestLevel::L2, 63)
         Drawing::Typeface::MakeFromFile("/system/fonts/HmosColorEmojiCompat.ttf");
     
     // 设置fontsize到LinearMetrics的属性
-    MAKE_FONTS(0, 1.f, -0.5f);
+    auto font = Drawing::Font();
+    auto font1 = MakeFont1(font, typeface, 0, 1.f, -0.5f);
     font.SetBaselineSnap(true);
     font1.SetBaselineSnap(font.IsBaselineSnap());
     font.SetHinting(Drawing::FontHinting::SLIGHT);
@@ -248,7 +259,8 @@ DEF_DTK(font_font_2, TestLevel::L2, 64)
         Drawing::Typeface::MakeFromFile("/system/fonts/HmosColorEmojiCompat.ttf");
     
     // 设置fontsize到LinearMetrics的属性
-    MAKE_FONTS(0, 1.f, -0.5f);
+    auto font = Drawing::Font();
+    auto font1 = MakeFont1(font, typeface, 0, 1.f, -0.5f);
     font.SetBaselineSnap(false);
     font1.SetBaselineSnap(font.IsBaselineSnap());
     font.SetEdging(Drawing::FontEdging::SUBPIXEL_ANTI_ALIAS);
@@ -282,7 +294,8 @@ DEF_DTK(font_font_2, TestLevel::L2, 65)
         Drawing::Typeface::MakeFromFile("/system/fonts/HmosColorEmojiCompat.ttf");
     
     // 设置fontsize到LinearMetrics的属性
-    MAKE_FONTS(27.13f, -30.f, 1.f);
+    auto font = Drawing::Font();
+    auto font1 = MakeFont1(font, typeface, 27.13f, -30.f, 1.f);
     font.SetBaselineSnap(false);
     font1.SetBaselineSnap(font.IsBaselineSnap());
     font.SetEdging(Drawing::FontEdging::SUBPIXEL_ANTI_ALIAS);
@@ -311,7 +324,8 @@ DEF_DTK(font_font_2, TestLevel::L2, 66)
         Drawing::Typeface::MakeFromFile("/system/fonts/HmosColorEmojiCompat.ttf");
     
     // 设置fontsize到LinearMetrics的属性
-    MAKE_FONTS(27.13f, -1.f, -30.f);
+    auto font = Drawing::Font();
+    auto font1 = MakeFont1(font, typeface, 27.13f, -1.f, -30.f);
     font.SetEdging(Drawing::FontEdging::SUBPIXEL_ANTI_ALIAS);
     font1.SetEdging(font.GetEdging());
     font.SetHinting(Drawing::FontHinting::NONE);
@@ -334,7 +348,8 @@ DEF_DTK(font_font_2, TestLevel::L2, 67)
         Drawing::Typeface::MakeFromFile("/system/fonts/HmosColorEmojiCompat.ttf");
     
     // 设置fontsize到LinearMetrics的属性
-    MAKE_FONTS(27.13f, 0, -0.5f);
+    auto font = Drawing::Font();
+    auto font1 = MakeFont1(font, typeface, 27.13f, 0, -0.5f);
     font.SetBaselineSnap(false);
     font1.SetBaselineSnap(font.IsBaselineSnap());
     font.SetEdging(Drawing::FontEdging::ANTI_ALIAS);
@@ -365,7 +380,8 @@ DEF_DTK(font_font_2, TestLevel::L2, 68)
         Drawing::Typeface::MakeFromFile("/system/fonts/HmosColorEmojiCompat.ttf");
     
     // 设置fontsize到LinearMetrics的属性
-    MAKE_FONTS(27.13f, 1.f, 0);
+    auto font = Drawing::Font();
+    auto font1 = MakeFont1(font, typeface, 27.13f, 1.f, 0);
     font.SetHinting(Drawing::FontHinting::NORMAL);
     font1.SetHinting(font.GetHinting());
 
@@ -385,7 +401,8 @@ DEF_DTK(font_font_2, TestLevel::L2, 69)
         Drawing::Typeface::MakeFromFile("/system/fonts/HmosColorEmojiCompat.ttf");
     
     // 设置fontsize到LinearMetrics的属性
-    MAKE_FONTS(27.13f, 1.f, 0.7f);
+    auto font = Drawing::Font();
+    auto font1 = MakeFont1(font, typeface, 27.13f, 1.f, 0.7f);
     font.SetEdging(Drawing::FontEdging::ALIAS);
     font1.SetEdging(font.GetEdging());
     font.SetHinting(Drawing::FontHinting::NONE);
@@ -409,7 +426,8 @@ DEF_DTK(font_font_2, TestLevel::L2, 70)
         Drawing::Typeface::MakeFromFile("/system/fonts/HmosColorEmojiCompat.ttf");
     
     // 设置fontsize到LinearMetrics的属性
-    MAKE_FONTS(71.f, -1.f, 0);
+    auto font = Drawing::Font();
+    auto font1 = MakeFont1(font, typeface, 71.f, -1.f, 0);
     font.SetBaselineSnap(false);
     font1.SetBaselineSnap(font.IsBaselineSnap());
     font.SetForceAutoHinting(false);
@@ -439,7 +457,8 @@ DEF_DTK(font_font_2, TestLevel::L2, 71)
         Drawing::Typeface::MakeFromFile("/system/fonts/HmosColorEmojiCompat.ttf");
     
     // 设置fontsize到LinearMetrics的属性
-    MAKE_FONTS(71.f, -0.5f, -1.f);
+    auto font = Drawing::Font();
+    auto font1 = MakeFont1(font, typeface, 71.f, -0.5f, -1.f);
     font.SetBaselineSnap(true);
     font1.SetBaselineSnap(font.IsBaselineSnap());
     font.SetEdging(Drawing::FontEdging::SUBPIXEL_ANTI_ALIAS);
@@ -468,7 +487,8 @@ DEF_DTK(font_font_2, TestLevel::L2, 72)
         Drawing::Typeface::MakeFromFile("/system/fonts/HmosColorEmojiCompat.ttf");
     
     // 设置fontsize到LinearMetrics的属性
-    MAKE_FONTS(71.f, 0.7f, 0);
+    auto font = Drawing::Font();
+    auto font1 = MakeFont1(font, typeface, 71.f, 0.7f, 0);
     font.SetEdging(Drawing::FontEdging::SUBPIXEL_ANTI_ALIAS);
     font1.SetEdging(font.GetEdging());
     font.SetHinting(Drawing::FontHinting::SLIGHT);
@@ -489,7 +509,8 @@ DEF_DTK(font_font_2, TestLevel::L2, 73)
         Drawing::Typeface::MakeFromFile("/system/fonts/HmosColorEmojiCompat.ttf");
     
     // 设置fontsize到LinearMetrics的属性
-    MAKE_FONTS(71.f, 30.f, 30.f);
+    auto font = Drawing::Font();
+    auto font1 = MakeFont1(font, typeface, 71.f, 30.f, 30.f);
     font.SetBaselineSnap(true);
     font1.SetBaselineSnap(font.IsBaselineSnap());
     font.SetEdging(Drawing::FontEdging::ALIAS);
@@ -520,7 +541,8 @@ DEF_DTK(font_font_2, TestLevel::L2, 74)
         Drawing::Typeface::MakeFromFile("/system/fonts/HmosColorEmojiCompat.ttf");
     
     // 设置fontsize到LinearMetrics的属性
-    MAKE_FONTS(500.f, -30.f, 0.7f);
+    auto font = Drawing::Font();
+    auto font1 = MakeFont1(font, typeface, 500.f, -30.f, 0.7f);
     font.SetEdging(Drawing::FontEdging::SUBPIXEL_ANTI_ALIAS);
     font1.SetEdging(font.GetEdging());
     font.SetHinting(Drawing::FontHinting::NONE);
@@ -541,7 +563,8 @@ DEF_DTK(font_font_2, TestLevel::L2, 75)
         Drawing::Typeface::MakeFromFile("/system/fonts/HmosColorEmojiCompat.ttf");
     
     // 设置fontsize到LinearMetrics的属性
-    MAKE_FONTS(500.f, 0, -0.5f);
+    auto font = Drawing::Font();
+    auto font1 = MakeFont1(font, typeface, 500.f, 0, -0.5f);
     font.SetForceAutoHinting(false);
     font1.SetForceAutoHinting(font.IsForceAutoHinting());
     font.SetEmbeddedBitmaps(false);
@@ -570,7 +593,8 @@ DEF_DTK(font_font_2, TestLevel::L2, 225)
         themeName.c_str(), fontStyle, nullptr, 1, 0x74));
     
     // 设置fontsize到LinearMetrics的属性
-    MAKE_FONTS(500.f, -30.f, -0.5f);
+    auto font = Drawing::Font();
+    auto font1 = MakeFont1(font, typeface, 500.f, -30.f, -0.5f);
     font.SetEdging(Drawing::FontEdging::SUBPIXEL_ANTI_ALIAS);
     font1.SetEdging(font.GetEdging());
     font.SetHinting(Drawing::FontHinting::NORMAL);
@@ -599,7 +623,8 @@ DEF_DTK(font_font_2, TestLevel::L2, 226)
         themeName.c_str(), fontStyle, nullptr, 1, 0x74));
     
     // 设置fontsize到LinearMetrics的属性
-    MAKE_FONTS(500.f, -1.f, -0.5f);
+    auto font = Drawing::Font();
+    auto font1 = MakeFont1(font, typeface, 500.f, -1.f, -0.5f);
     font.SetBaselineSnap(false);
     font1.SetBaselineSnap(font.IsBaselineSnap());
     font.SetEdging(Drawing::FontEdging::ALIAS);
@@ -636,7 +661,8 @@ DEF_DTK(font_font_2, TestLevel::L2, 227)
     auto typeface = std::shared_ptr<Drawing::Typeface>(fontMgr->MatchFamilyStyle(familyName.c_str(), fontStyle));
     
     // 设置fontsize到LinearMetrics的属性
-    MAKE_FONTS(-50.f, -1.f, 0);
+    auto font = Drawing::Font();
+    auto font1 = MakeFont1(font, typeface, -50.f, -1.f, 0);
     font.SetBaselineSnap(true);
     font1.SetBaselineSnap(font.IsBaselineSnap());
     font.SetEdging(Drawing::FontEdging::ALIAS);
@@ -671,7 +697,8 @@ DEF_DTK(font_font_2, TestLevel::L2, 228)
     auto typeface = std::shared_ptr<Drawing::Typeface>(fontMgr->MatchFamilyStyle(familyName.c_str(), fontStyle));
     
     // 设置fontsize到LinearMetrics的属性
-    MAKE_FONTS(-50.f, -1.f, 0);
+    auto font = Drawing::Font();
+    auto font1 = MakeFont1(font, typeface, -50.f, -1.f, 0);
     font.SetEdging(Drawing::FontEdging::ANTI_ALIAS);
     font1.SetEdging(font.GetEdging());
     font.SetHinting(Drawing::FontHinting::NORMAL);
@@ -700,7 +727,8 @@ DEF_DTK(font_font_2, TestLevel::L2, 229)
     auto typeface = std::shared_ptr<Drawing::Typeface>(fontMgr->MatchFamilyStyle(familyName.c_str(), fontStyle));
     
     // 设置fontsize到LinearMetrics的属性
-    MAKE_FONTS(-50.f, -0.5f, -0.5f);
+    auto font = Drawing::Font();
+    auto font1 = MakeFont1(font, typeface, -50.f, -0.5f, -0.5f);
     font.SetEdging(Drawing::FontEdging::ANTI_ALIAS);
     font1.SetEdging(font.GetEdging());
     font.SetHinting(Drawing::FontHinting::NONE);
@@ -729,7 +757,8 @@ DEF_DTK(font_font_2, TestLevel::L2, 230)
     auto typeface = std::shared_ptr<Drawing::Typeface>(fontMgr->MatchFamilyStyle(familyName.c_str(), fontStyle));
     
     // 设置fontsize到LinearMetrics的属性
-    MAKE_FONTS(-31.f, -0.5f, 0.7f);
+    auto font = Drawing::Font();
+    auto font1 = MakeFont1(font, typeface, -31.f, -0.5f, 0.7f);
     font.SetBaselineSnap(true);
     font1.SetBaselineSnap(font.IsBaselineSnap());
     font.SetEdging(Drawing::FontEdging::SUBPIXEL_ANTI_ALIAS);
@@ -768,7 +797,8 @@ DEF_DTK(font_font_2, TestLevel::L2, 231)
     auto typeface = std::shared_ptr<Drawing::Typeface>(fontMgr->MatchFamilyStyle(familyName.c_str(), fontStyle));
     
     // 设置fontsize到LinearMetrics的属性
-    MAKE_FONTS(-31.f, -0.5f, 0.7f);
+    auto font = Drawing::Font();
+    auto font1 = MakeFont1(font, typeface, -31.f, -0.5f, 0.7f);
     font.SetBaselineSnap(false);
     font1.SetBaselineSnap(font.IsBaselineSnap());
     font.SetEdging(Drawing::FontEdging::ANTI_ALIAS);
@@ -805,7 +835,8 @@ DEF_DTK(font_font_2, TestLevel::L2, 232)
     auto typeface = std::shared_ptr<Drawing::Typeface>(fontMgr->MatchFamilyStyle(familyName.c_str(), fontStyle));
     
     // 设置fontsize到LinearMetrics的属性
-    MAKE_FONTS(-31.f, 0, -1.f);
+    auto font = Drawing::Font();
+    auto font1 = MakeFont1(font, typeface, -31.f, 0, -1.f);
     font.SetBaselineSnap(true);
     font1.SetBaselineSnap(font.IsBaselineSnap());
     font.SetEdging(Drawing::FontEdging::SUBPIXEL_ANTI_ALIAS);
@@ -842,7 +873,8 @@ DEF_DTK(font_font_2, TestLevel::L2, 233)
     auto typeface = std::shared_ptr<Drawing::Typeface>(fontMgr->MatchFamilyStyle(familyName.c_str(), fontStyle));
     
     // 设置fontsize到LinearMetrics的属性
-    MAKE_FONTS(-15.34f, 0, 1.f);
+    auto font = Drawing::Font();
+    auto font1 = MakeFont1(font, typeface, -15.34f, 0, 1.f);
     font.SetBaselineSnap(false);
     font1.SetBaselineSnap(font.IsBaselineSnap());
     font.SetForceAutoHinting(false);
@@ -876,7 +908,8 @@ DEF_DTK(font_font_2, TestLevel::L2, 234)
     auto typeface = std::shared_ptr<Drawing::Typeface>(fontMgr->MatchFamilyStyle(familyName.c_str(), fontStyle));
     
     // 设置fontsize到LinearMetrics的属性
-    MAKE_FONTS(-15.34f, 0, 1.f);
+    auto font = Drawing::Font();
+    auto font1 = MakeFont1(font, typeface, -15.34f, 0, 1.f);
     font.SetEdging(Drawing::FontEdging::SUBPIXEL_ANTI_ALIAS);
     font1.SetEdging(font.GetEdging());
     font.SetHinting(Drawing::FontHinting::SLIGHT);
@@ -903,7 +936,8 @@ DEF_DTK(font_font_2, TestLevel::L2, 235)
     auto typeface = std::shared_ptr<Drawing::Typeface>(fontMgr->MatchFamilyStyle(familyName.c_str(), fontStyle));
     
     // 设置fontsize到LinearMetrics的属性
-    MAKE_FONTS(-15.34f, 0.7f, 0.7f);
+    auto font = Drawing::Font();
+    auto font1 = MakeFont1(font, typeface, -15.34f, 0.7f, 0.7f);
     font.SetBaselineSnap(false);
     font1.SetBaselineSnap(font.IsBaselineSnap());
     font.SetHinting(Drawing::FontHinting::NORMAL);
@@ -938,7 +972,8 @@ DEF_DTK(font_font_2, TestLevel::L2, 236)
     auto typeface = std::shared_ptr<Drawing::Typeface>(fontMgr->MatchFamilyStyle(familyName.c_str(), fontStyle));
     
     // 设置fontsize到LinearMetrics的属性
-    MAKE_FONTS(0, 0.7f, 30.f);
+    auto font = Drawing::Font();
+    auto font1 = MakeFont1(font, typeface, 0, 0.7f, 30.f);
     font.SetBaselineSnap(true);
     font1.SetBaselineSnap(font.IsBaselineSnap());
     font.SetHinting(Drawing::FontHinting::NORMAL);
