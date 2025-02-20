@@ -1329,18 +1329,18 @@ HWTEST_F(RSUniRenderUtilTest, CalcSrcRectBufferFlipTest, Function | SmallTest | 
     node.GetRSSurfaceHandler()->buffer_.buffer->SetSurfaceBufferTransform(GraphicTransformType::GRAPHIC_FLIP_H_ROT90);
     node.SetSrcRect({left, top, width, height});
     RSUniRenderUtil::CalcSrcRectByBufferFlip(node, screenInfo);
-    RectI newSrcRect = node.GetSrcRect();
+    newSrcRect = node.GetSrcRect();
     EXPECT_EQ(newSrcRect, desiredSrcRect);
     node.GetRSSurfaceHandler()->buffer_.buffer->SetSurfaceBufferTransform(GraphicTransformType::GRAPHIC_FLIP_V);
     node.SetSrcRect({left, top, width, height});
     RSUniRenderUtil::CalcSrcRectByBufferFlip(node, screenInfo);
-    RectI newSrcRect = node.GetSrcRect();
+    newSrcRect = node.GetSrcRect();
     desiredSrcRect = {left, DEFAULT_FRAME_HEIGHT - top - height, width, height};
     EXPECT_EQ(newSrcRect, desiredSrcRect);
     node.GetRSSurfaceHandler()->buffer_.buffer->SetSurfaceBufferTransform(GraphicTransformType::GRAPHIC_FLIP_V_ROT90);
     node.SetSrcRect({left, top, width, height});
     RSUniRenderUtil::CalcSrcRectByBufferFlip(node, screenInfo);
-    RectI newSrcRect = node.GetSrcRect();
+    newSrcRect = node.GetSrcRect();
     EXPECT_EQ(newSrcRect, desiredSrcRect);
 }
 
