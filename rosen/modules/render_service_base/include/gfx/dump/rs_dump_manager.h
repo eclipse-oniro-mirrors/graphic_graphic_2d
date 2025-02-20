@@ -20,6 +20,7 @@
 #include <functional>
 #include <unordered_map>
 #include <unordered_set>
+#include <vector>
 #include "common/rs_macros.h"
 
 namespace OHOS::Rosen {
