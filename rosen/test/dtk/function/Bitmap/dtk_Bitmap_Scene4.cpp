@@ -1172,17 +1172,6 @@ DEF_DTK(Bitmap_Scene11, TestLevel::L2, 21)
 
     // 5.设置视效效果，将效果添加到笔刷
     // CreateComposeColorFilter
-    std::vector<Drawing::BlendMode> blendModes = { Drawing::BlendMode::CLEAR, Drawing::BlendMode::SRC,
-        Drawing::BlendMode::DST, Drawing::BlendMode::SRC_OVER, Drawing::BlendMode::DST_OVER, Drawing::BlendMode::SRC_IN,
-        Drawing::BlendMode::DST_IN, Drawing::BlendMode::SRC_OUT, Drawing::BlendMode::DST_OUT,
-        Drawing::BlendMode::SRC_ATOP, Drawing::BlendMode::DST_ATOP, Drawing::BlendMode::XOR, Drawing::BlendMode::PLUS,
-        Drawing::BlendMode::MODULATE, Drawing::BlendMode::SCREEN, Drawing::BlendMode::OVERLAY,
-        Drawing::BlendMode::DARKEN, Drawing::BlendMode::LIGHTEN, Drawing::BlendMode::COLOR_DODGE,
-        Drawing::BlendMode::COLOR_BURN, Drawing::BlendMode::HARD_LIGHT, Drawing::BlendMode::SOFT_LIGHT,
-        Drawing::BlendMode::DIFFERENCE, Drawing::BlendMode::EXCLUSION, Drawing::BlendMode::MULTIPLY,
-        Drawing::BlendMode::HUE, Drawing::BlendMode::STATURATION, Drawing::BlendMode::COLOR_MODE,
-        Drawing::BlendMode::LUMINOSITY };
-
     for (auto blendMode1 : blendModes) {
         std::shared_ptr<Drawing::ColorFilter> colorFilter1 =
             Drawing::ColorFilter::CreateBlendModeColorFilter(0xFFFF0000, blendMode1);
@@ -1314,17 +1303,6 @@ DEF_DTK(Bitmap_Scene11, TestLevel::L2, 23)
     playbackCanvas_->Rotate(30, 10, 10);
 
     // 5.设置视效效果，将效果添加到笔刷
-    std::vector<Drawing::BlendMode> blendModes = { Drawing::BlendMode::CLEAR, Drawing::BlendMode::SRC,
-        Drawing::BlendMode::DST, Drawing::BlendMode::SRC_OVER, Drawing::BlendMode::DST_OVER, Drawing::BlendMode::SRC_IN,
-        Drawing::BlendMode::DST_IN, Drawing::BlendMode::SRC_OUT, Drawing::BlendMode::DST_OUT,
-        Drawing::BlendMode::SRC_ATOP, Drawing::BlendMode::DST_ATOP, Drawing::BlendMode::XOR, Drawing::BlendMode::PLUS,
-        Drawing::BlendMode::MODULATE, Drawing::BlendMode::SCREEN, Drawing::BlendMode::OVERLAY,
-        Drawing::BlendMode::DARKEN, Drawing::BlendMode::LIGHTEN, Drawing::BlendMode::COLOR_DODGE,
-        Drawing::BlendMode::COLOR_BURN, Drawing::BlendMode::HARD_LIGHT, Drawing::BlendMode::SOFT_LIGHT,
-        Drawing::BlendMode::DIFFERENCE, Drawing::BlendMode::EXCLUSION, Drawing::BlendMode::MULTIPLY,
-        Drawing::BlendMode::HUE, Drawing::BlendMode::STATURATION, Drawing::BlendMode::COLOR_MODE,
-        Drawing::BlendMode::LUMINOSITY };
-
     for (auto blendMode : blendModes) {
         auto background = Drawing::ImageFilter::CreateBlurImageFilter(
             1.0f, 1.0f, Drawing::TileMode::REPEAT, nullptr, Drawing::ImageBlurType::GAUSS);
@@ -1379,17 +1357,6 @@ DEF_DTK(Bitmap_Scene11, TestLevel::L2, 24)
 
     // 5.设置视效效果，将效果添加到笔刷
     // CreateBlendShader
-    std::vector<Drawing::BlendMode> blendModes = { Drawing::BlendMode::CLEAR, Drawing::BlendMode::SRC,
-        Drawing::BlendMode::DST, Drawing::BlendMode::SRC_OVER, Drawing::BlendMode::DST_OVER, Drawing::BlendMode::SRC_IN,
-        Drawing::BlendMode::DST_IN, Drawing::BlendMode::SRC_OUT, Drawing::BlendMode::DST_OUT,
-        Drawing::BlendMode::SRC_ATOP, Drawing::BlendMode::DST_ATOP, Drawing::BlendMode::XOR, Drawing::BlendMode::PLUS,
-        Drawing::BlendMode::MODULATE, Drawing::BlendMode::SCREEN, Drawing::BlendMode::OVERLAY,
-        Drawing::BlendMode::DARKEN, Drawing::BlendMode::LIGHTEN, Drawing::BlendMode::COLOR_DODGE,
-        Drawing::BlendMode::COLOR_BURN, Drawing::BlendMode::HARD_LIGHT, Drawing::BlendMode::SOFT_LIGHT,
-        Drawing::BlendMode::DIFFERENCE, Drawing::BlendMode::EXCLUSION, Drawing::BlendMode::MULTIPLY,
-        Drawing::BlendMode::HUE, Drawing::BlendMode::STATURATION, Drawing::BlendMode::COLOR_MODE,
-        Drawing::BlendMode::LUMINOSITY };
-
     auto dst = Drawing::ShaderEffect::CreateColorShader(Drawing::Color::COLOR_RED);
     auto src = Drawing::ShaderEffect::CreateColorShader(Drawing::Color::COLOR_GREEN);
     for (auto blendMode : blendModes) {
@@ -1766,28 +1733,6 @@ DEF_DTK(Bitmap_Scene11, TestLevel::L2, 30)
     // 5.设置视效效果，将效果添加到笔刷
     // CreateMatrixColorFilter
     Drawing::ColorMatrix matrix1;
-    float arr[] = {
-        1.0f,
-        1.0f,
-        0.0f,
-        0.0f,
-        0.0f,
-        0.0f,
-        0.0f,
-        0.0f,
-        0.0f,
-        0.0f,
-        0.0f,
-        0.0f,
-        0.0f,
-        0.0f,
-        0.0f,
-        0.0f,
-        0.0f,
-        0.0f,
-        1.0f,
-        0.0f,
-    };
     matrix1.SetArray(arr);
     auto cf = Drawing::ColorFilter::CreateMatrixColorFilter(matrix1);
     auto filter = Drawing::Filter();
