@@ -278,6 +278,7 @@ public:
         childrenRect_.Clear();
     }
     RectI GetChildrenRect() const;
+    RectI GetRemovedChildrenRect() const;
 
     bool ChildHasVisibleFilter() const;
     void SetChildHasVisibleFilter(bool val);
@@ -1115,6 +1116,7 @@ private:
     RectI oldDirtyInSurface_;
     RectI childrenRect_;
     RectI oldChildrenRect_;
+    RectI removedChildrenRect_;
     RectI oldClipRect_;
     // aim to record children rect in abs coords, without considering clip
     RectI absChildrenRect_;

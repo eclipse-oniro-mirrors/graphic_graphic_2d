@@ -321,7 +321,8 @@ void RSRenderNode::AddChild(SharedPtr child, int index)
             isOnTheTree_);
         }
     }
-    SetContentDirty();
+    (RSSystemProperties::GetOptimizeParentNodeRegionEnabled() && child->GetType() == RSRenderNodeType::SURFACE_NODE) ?
+        SetParentSubTreeDirty() : SetContentDirty();
     isFullChildrenListValid_ = false;
 }
 
@@ -411,7 +412,8 @@ void RSRenderNode::RemoveChild(SharedPtr child, bool skipTransition)
     if (child->GetBootAnimation()) {
         SetContainBootAnimation(false);
     }
-    SetContentDirty();
+    (RSSystemProperties::GetOptimizeParentNodeRegionEnabled() && child->GetType() == RSRenderNodeType::SURFACE_NODE) ?
+        SetParentSubTreeDirty() : SetContentDirty();
     isFullChildrenListValid_ = false;
 }
 
@@ -778,7 +780,14 @@ void RSRenderNode::ResetParent()
             }
         }
         parentNode->hasRemovedChild_ = true;
-        parentNode->SetContentDirty();
+        auto geoPtr = GetRenderProperties().GetBoundsGeometry();
+        if (geoPtr != nullptr) {
+            parentNode->removedChildrenRect_ = removedChildrenRect_.JoinRect(
+                geoPtr->MapRect(selfDrawRect_.JoinRect(childrenRect_.ConvertTo<float>()), geoPtr->GetMatrix()));
+        }
+        (RSSystemProperties::GetOptimizeParentNodeRegionEnabled() && GetType() == RSRenderNodeType::SURFACE_NODE)
+            ? parentNode->SetParentSubTreeDirty()
+            : parentNode->SetContentDirty();
         AddSubSurfaceUpdateInfo(nullptr, parentNode);
     }
     SetIsOnTheTree(false);
@@ -3987,6 +3996,10 @@ RectI RSRenderNode::GetChildrenRect() const
 {
     return childrenRect_;
 }
+RectI RSRenderNode::GetRemovedChildrenRect() const
+{
+    return removedChildrenRect_;
+}
 bool RSRenderNode::ChildHasVisibleFilter() const
 {
     return childHasVisibleFilter_;
@@ -4563,6 +4576,7 @@ void RSRenderNode::ResetChangeState()
 {
     srcOrClipedAbsDrawRectChangeFlag_ = false;
     geometryChangeNotPerceived_ = false;
+    removedChildrenRect_.Clear();
 }
 
 void RSRenderNode::UpdateSrcOrClipedAbsDrawRectChangeState(const RectI& clipRect)
