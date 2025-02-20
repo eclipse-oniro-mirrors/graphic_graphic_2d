@@ -860,7 +860,6 @@ void RSSurfaceRenderNodeDrawable::CaptureSurface(RSPaintFilterCanvas& canvas, RS
     }
     const auto& specialLayerManager = surfaceParams.GetSpecialLayerMgr();
     bool isSecLayersNotExempted = specialLayerManager.Find(SpecialLayerType::SECURITY) && !uniParams->GetSecExemption();
-
     // Draw White
     if (RSUniRenderThread::GetCaptureParam().isSingleSurface_ &&
         ((isSecLayersNotExempted && !RSUniRenderThread::GetCaptureParam().isNeedBlur_) ||
