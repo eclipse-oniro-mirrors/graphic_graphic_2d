@@ -1078,7 +1078,7 @@ DEF_DTK(Bitmap_Scene10, TestLevel::L2, 18)
     playbackCanvas_->Shear(10.0f, 10.0f); // slope
 
     Drawing::ColorMatrix matrix1;
-    matrix1.SetArray(arr);
+    matrix1.SetArray(ARR);
     auto cf = Drawing::ColorFilter::CreateMatrixColorFilter(matrix1);
     auto filter = Drawing::Filter();
 
@@ -1615,7 +1615,7 @@ DEF_DTK(Bitmap_Scene10, TestLevel::L2, 27)
     bitmap1.ReadPixels(imageInfo1, bitmap.GetPixels(), bitmap.GetRowBytes(), 50, 50); // (50, 50) is position
 
     Drawing::ColorMatrix matrix1;
-    matrix1.SetArray(arr);
+    matrix1.SetArray(ARR);
     auto cf = Drawing::ColorFilter::CreateMatrixColorFilter(matrix1);
 
     // 4.设置视效效果，将效果添加到笔刷

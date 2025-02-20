@@ -1733,7 +1733,7 @@ DEF_DTK(Bitmap_Scene11, TestLevel::L2, 30)
     // 5.设置视效效果，将效果添加到笔刷
     // CreateMatrixColorFilter
     Drawing::ColorMatrix matrix1;
-    matrix1.SetArray(arr);
+    matrix1.SetArray(ARR);
     auto cf = Drawing::ColorFilter::CreateMatrixColorFilter(matrix1);
     auto filter = Drawing::Filter();
     filter.SetImageFilter(Drawing::ImageFilter::CreateColorFilterImageFilter(*cf, nullptr));
