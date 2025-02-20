@@ -295,7 +295,12 @@ void HgmEnergyConsumptionPolicy::StatisticsVideoCallBufferCount(pid_t pid, const
     if (!isEnableVideoCall_.load() || pid != videoCallPid_.load()) {
         return;
     }
-    if (surfaceName.find("oh_flutter") != std::string::npos) {
+    std::string videoCallLayerName;
+    {
+        std::lock_guard<std::mutex> lock(videoCallLock_);
+        videoCallLayerName = videoCallLayerName_;
+    }
+    if (videoCallLayerName != "" && surfaceName.find(videoCallLayerName) != std::string::npos) {
         videoBufferCount_.fetch_add(1);
     }
 }
@@ -308,13 +313,13 @@ void HgmEnergyConsumptionPolicy::CheckOnlyVideoCallExist()
     if (videoBufferCount_.load() > 1 && (isOnlyVideoCallExist_.load() || isSubmitDecisionTask_.load())) {
         HgmTaskHandleThread::Instance().RemoveEvent(DESCISION_VIDEO_CALL_TASK_ID);
         isSubmitDecisionTask_.store(false);
-        if (!isOnlyVideoCallExist_.load()) {
+        if (isOnlyVideoCallExist_.load()) {
             isOnlyVideoCallExist_.store(false);
             isVideoCallVsyncChange_.store(true);
         }
         return;
     }
-    if (videoBufferCount_.load() <= 1 && !isOnlyVideoCallExist_.load() && !isSubmitDecisionTask_.load()) {
+    if (videoBufferCount_.load() == 1 && !isOnlyVideoCallExist_.load() && !isSubmitDecisionTask_.load()) {
         HgmTaskHandleThread::Instance().PostEvent(
             DESCISION_VIDEO_CALL_TASK_ID,
             [this]() {
@@ -343,6 +348,24 @@ void HgmEnergyConsumptionPolicy::GetVideoCallFrameRate(
     }
     finalRange.Merge({ OLED_NULL_HZ, OLED_144_HZ, videoCallMaxFrameRate_ });
     RS_TRACE_NAME_FMT("GetVideoCallFrameRate limit video call frame rate %d", finalRange.preferred_);
+}
+
+void HgmEnergyConsumptionPolicy::SetCurrentPkgName(const std::vector<std::string>& pkgs)
+{
+    if (pkgs.size() != 1) {
+        std::lock_guard<std::mutex> lock(videoCallLock_);
+        videoCallLayerName_ = "";
+        return;
+    }
+    auto configData = HgmCore::Instance().GetPolicyConfigData();
+    if (configData == nullptr) {
+        return;
+    }
+    std::string pkgName = pkgs[0].substr(0, pkgs[0].find(":"));
+    auto& videoCallLayerConfig = configData->videoCallLayerConfig_;
+    auto videoCallLayerName = videoCallLayerCofig.find(pkgName);
+    std::lock_guard<std::mutex> lock(videoCallLock_);
+    videoCallLayerName_ = videoCallLayerName == videoCallLayerConfig.end() ? "" : videoCallLayerConfig->second;
 }
 
 int32_t HgmEnergyConsumptionPolicy::GetComponentEnergyConsumptionConfig(const std::string& componentName)

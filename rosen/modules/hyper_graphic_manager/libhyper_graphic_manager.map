@@ -61,6 +61,7 @@
       *HgmEnergyConsumptionPolicy::StatisticsVideoCallBufferCount*;
       *HgmEnergyConsumptionPolicy::CheckOnlyVideoCallExist*;
       *HgmEnergyConsumptionPolicy::GetVideoCallFrameRate*;
+      *HgmEnergyConsumptionPolicy::SetCurrentPkgName*;
 
       *HgmFrameRateManager::ChangePriority*;
       *HgmFrameRateManager::CleanVote*;

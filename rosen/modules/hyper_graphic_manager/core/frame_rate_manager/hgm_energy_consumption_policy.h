@@ -28,7 +28,7 @@
 #include "common/rs_common_def.h"
 
 namespace OHOS::Rosen {
-class HgmEnergyConsumptionPolicy {
+class                          HgmEnergyConsumptionPolicy {
 public:
     static HgmEnergyConsumptionPolicy& Instance();
     void SetEnergyConsumptionConfig(std::unordered_map<std::string, std::string> animationPowerConfig);
@@ -52,6 +52,7 @@ public:
     // called by RSMainThread
     bool GetVideoCallVsyncChange();
     void GetVideoCallFrameRate(pid_t pid, const std::string &vsyncName, FrameRateRange &finalRange);
+    void SetCurrentPkgName(const std::vector<std::string> &pkgs);
 
 private:
     // <rateType, <isEnable, idleFps>>
@@ -76,6 +77,10 @@ private:
     std::atomic<bool> isSubmitDecisionTask_ = { false };
     std::atomic<bool> isOnlyVideoCallExist_ = { false };
     std::atomic<bool> isVideoCallVsyncChange_ = { false };
+    // concurrency protection >>>
+    mutable std::mutex videoCallLock_;
+    std::string videoCallLayerName_ = "";
+    // concurrency protection <<<
 
     HgmEnergyConsumptionPolicy();
     ~HgmEnergyConsumptionPolicy() = default;

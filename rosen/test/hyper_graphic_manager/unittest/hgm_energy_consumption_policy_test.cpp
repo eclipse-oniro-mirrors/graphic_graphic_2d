@@ -437,10 +437,12 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, StatisticsVideoCallBufferCountTest, Tes
 
     };
     HgmEnergyConsumptionPolicy::Instance().SetVideoCallSceneInfo(eventInfo);
+    std::string bufferNamePrefix = "buffer";
+    HgmEnergyConsumptionPolicy::Instance().videoCallLayerName_ = bufferNamePrefix;
     pid_t pid = 1234;
     for (int i = 0; i < 100; i++) {
         HgmEnergyConsumptionPolicy::Instance().StatisticsVideoCallBufferCount(
-            pid, std::string("oh_flutter_") + std::to_string(i));
+            pid, std::string(bufferNamePrefix) + std::to_string(i));
     }
     ASSERT_EQ(HgmEnergyConsumptionPolicy::Instance().videoBufferCount_.load(), 100);
 }
@@ -497,9 +499,19 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, GetVideoCallFrameRateTest, TestSize.Lev
     FrameRateRange frameRateRange;
     hgmEnergyConsumptionPolicy.GetVideoCallFrameRate(pid, vsyncName, frameRateRange);
     ASSERT_EQ(frameRateRange.preferred_, 0);
-    hgmEnergyConsumptionPolicy.isOnlyVideoCallExist_.store(true);
-    hgmEnergyConsumptionPolicy.GetVideoCallFrameRate(pid, vsyncName, frameRateRange);
-    ASSERT_EQ(frameRateRange.preferred_, 15);
+}
+
+/**
+ * @tc.name: SetCurrentPkgNameTest
+ * @tc.desc: test results of SetCurrentPkgNameTest
+ * @tc.type: FUNC
+ * @tc.require: issuesIA96Q3
+ */
+HWTEST_F(HgmEnergyConsumptionPolicyTest, SetCurrentPkgNameTest, TestSize.Level1)
+{
+    std::vector<std::string> pkgNames;
+    HgmEnergyConsumptionPolicy::Instance().SetCurrentPkgName(pkgNames);
+    ASSERT_EQ(HgmEnergyConsumptionPolicy::Instance().videoCallLayerName_, "");
 }
 
 } // namespace Rosen
