@@ -17,6 +17,7 @@
 #define RENDER_SERVICE_BASE_GFX_RS_DUMP_MANAGER_H
 
 #include <string>
+#include <vector>
 #include <functional>
 #include <unordered_map>
 #include <unordered_set>
