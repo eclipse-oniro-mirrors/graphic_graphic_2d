@@ -27,10 +27,10 @@
 #include "drm_param.h"
 #include "hdr_param_parse.h"
 #include "hdr_param.h"
-#include "hwc_param_parse.h"
-#include "hwc_param.h"
 #include "hfbc_param_parse.h"
 #include "hfbc_param.h"
+#include "hwc_param_parse.h"
+#include "hwc_param.h"
 
 namespace OHOS::Rosen {
 struct ModuleConfig {
