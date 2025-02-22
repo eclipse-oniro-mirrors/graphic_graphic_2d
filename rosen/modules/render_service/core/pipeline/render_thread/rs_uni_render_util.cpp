@@ -1910,7 +1910,7 @@ void RSUniRenderUtil::DealWithScalingMode(RSSurfaceRenderNode& node, const Scree
         RS_LOGE("surface or buffer is nullptr");
         return;
     }
-
+    node.SetIsOutOfScreen(false);
     ScalingMode scalingMode = buffer->GetSurfaceBufferScalingMode();
     if (scalingMode == ScalingMode::SCALING_MODE_SCALE_CROP) {
         RSUniRenderUtil::LayerScaleDown(node);
@@ -1932,6 +1932,7 @@ void RSUniRenderUtil::DealWithScalingMode(RSSurfaceRenderNode& node, const Scree
                 absBoundsRect.GetLeft() + absBoundsRect.GetWidth() > screenInfo.width ||
                 absBoundsRect.GetTop() + absBoundsRect.GetHeight() > screenInfo.height) {
                 node.SetHardwareForcedDisabledState(true);
+                node.SetIsOutOfScreen(true);
                 RS_OPTIONAL_TRACE_NAME_FMT("hwc debug: name %s id %llu disabled by scale fit bounds out of screen. "
                     "bounds: %s, screenWidth: %u, screenHeight: %u bufferAspectRatio: %f, boundsAspectRatio: %f",
                     node.GetName().c_str(), node.GetId(), absBoundsRect.ToString().c_str(), screenInfo.width,
