@@ -3781,7 +3781,7 @@ void RSRenderServiceConnectionProxy::NotifyHgmConfigEvent(const std::string &eve
     MessageParcel reply;
     MessageOption option;
     if (!data.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor())) {
-        ROSEN_LOGE("NotifyDynamicModeEvent::NotifyHgmConfigEvent GetDescriptor err.");
+        ROSEN_LOGE("NotifyHgmConfigEvent: GetDescriptor err.");
         return;
     }
     if (!data.WriteString(eventName)) {
