@@ -1904,10 +1904,8 @@ void RSSurfaceRenderNode::UpdateSurfaceCacheContentStaticFlag(bool isAccessibili
             }
         }
         contentStatic = (!IsSubTreeDirty() || GetForceUpdateByUifirst()) && !HasRemovedChild();
-    } else if (IsAbilityComponent()) {
-        contentStatic = (!IsSubTreeDirty() || GetForceUpdateByUifirst()) && !IsContentDirty();
     } else {
-        contentStatic = surfaceCacheContentStatic_;
+        contentStatic = (!IsSubTreeDirty() || GetForceUpdateByUifirst()) && !IsContentDirty();
     }
     contentStatic = contentStatic && !isAccessibilityChanged;
     uifirstContentDirty_ = uifirstContentDirty_ || uifirstContentDirty || HasRemovedChild();
