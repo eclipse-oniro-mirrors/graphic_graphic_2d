@@ -349,7 +349,7 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, OnCapture, TestSize.Level1)
 }
 
 /**
- * @tc.name: CaptureSurface
+ * @tc.name: CaptureSurface001
  * @tc.desc: Test CaptureSurface, default case
  * @tc.type: FUNC
  * @tc.require: #I9NVOG
@@ -410,7 +410,7 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, DealWithHdr, TestSize.Level1)
 #endif
 
 /**
- * @tc.name: CaptureSurface
+ * @tc.name: CaptureSurface002
  * @tc.desc: Test CaptureSurface, special case: security/protected layer.
  * @tc.type: FUNC
  * @tc.require: #I9NVOG
@@ -428,8 +428,8 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, CaptureSurface002, TestSize.Level1)
 }
 
 /**
- * @tc.name: CaptureSurface
- * @tc.desc: Test CaptureSurface, general capture special layer cases.
+ * @tc.name: CaptureSurface003
+ * @tc.desc: Test CaptureSurface, special layer cases for screen mirrorring.
  * @tc.type: FUNC
  * @tc.require: #IBNN3I
  */
@@ -472,8 +472,8 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, CaptureSurface003, TestSize.Level1)
 }
 
 /**
- * @tc.name: CaptureSurface
- * @tc.desc: Test CaptureSurface, capture single surface special layer cases.
+ * @tc.name: CaptureSurface004
+ * @tc.desc: Test CaptureSurface, special layer cases for capture single surface.
  * @tc.type: FUNC
  * @tc.require: #IBNN3I
  */
@@ -527,8 +527,8 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, CaptureSurface004, TestSize.Level1)
 
 
 /**
- * @tc.name: CaptureSurface
- * @tc.desc: Test CaptureSurface, screenshot special layer cases.
+ * @tc.name: CaptureSurface005
+ * @tc.desc: Test CaptureSurface, special layer cases for screenshot.
  * @tc.type: FUNC
  * @tc.require: #IBNN3I
  */
