@@ -1390,7 +1390,6 @@ void DoFuzzerTest2()
     DONotifyRefreshRateEvent();
     DONotifyTouchEvent();
     DONotifyDynamicModeEvent();
-    DONotifyHgmConfigEvent();
     DOSetCacheEnabledForRotation();
     DOSetOnRemoteDiedCallback();
     DOSetVmaCacheStatus();
@@ -1407,6 +1406,7 @@ void DoFuzzerTest2()
 void DoFuzzerTest3()
 {
     DoNotifySoftVsyncEvent();
+    DONotifyHgmConfigEvent();
     DoCreatePixelMapFromSurface();
 #ifdef RS_ENABLE_OVERLAY_DISPLAY
     DoSetOverlayDisplayMode();
