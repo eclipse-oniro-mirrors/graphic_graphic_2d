@@ -27,7 +27,8 @@ const std::vector<std::string> FEATURE_CONFIGS = {
     "HdrConfig",
     "DrmConfig",
     "HwcConfig",
-    "HfbcConfig"
+    "HfbcConfig",
+    "UIFirstConfig"
 };
 
 enum FeatureModule {
@@ -35,6 +36,7 @@ enum FeatureModule {
     DRM,
     HWC,
     HFBC,
+    UIFirst,
 };
 
 enum ParseErrCode {
