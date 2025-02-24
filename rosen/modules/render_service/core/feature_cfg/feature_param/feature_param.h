@@ -28,6 +28,7 @@ const std::vector<std::string> FEATURE_CONFIGS = {
     "DrmConfig",
     "HwcConfig",
     "HfbcConfig",
+    "OPIncConfig"
     "UIFirstConfig"
 };
 
@@ -36,6 +37,7 @@ enum FeatureModule {
     DRM,
     HWC,
     HFBC,
+    OPInc,
     UIFirst,
 };
 
