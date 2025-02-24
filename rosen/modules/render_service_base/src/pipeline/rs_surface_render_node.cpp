@@ -1798,7 +1798,7 @@ void RSSurfaceRenderNode::SetVisibleRegionRecursive(const Occlusion::Region& reg
 void RSSurfaceRenderNode::ResetSurfaceOpaqueRegion(const RectI& screeninfo, const RectI& absRect,
     const ScreenRotation screenRotation, const bool isFocusWindow, const Vector4<int>& cornerRadius)
 {
-    Occlusion::Rect absRectR { absRect };
+    Occlusion::Region absRegion { absRect };
     Occlusion::Region oldOpaqueRegion { opaqueRegion_ };
 
     // The transparent region of surfaceNode should include shadow area
@@ -1816,7 +1816,8 @@ void RSSurfaceRenderNode::ResetSurfaceOpaqueRegion(const RectI& screeninfo, cons
             RS_OPTIONAL_TRACE_NAME_FMT("CalcOpaqueRegion [%s] has container: inR:[%d], outR:[%d], innerRect:[%s], "
                 "isFocus:[%d]", GetName().c_str(), containerConfig_.inR_, containerConfig_.outR_,
                 containerConfig_.innerRect_.ToString().c_str(), isFocusWindow);
-            opaqueRegion_ = ResetOpaqueRegion(absRect, screenRotation, isFocusWindow);
+            opaqueRegion_ = ResetOpaqueRegion(GetAbsDrawRect(), screenRotation, isFocusWindow);
+            opaqueRegion_.AndSelf(absRegion);
         } else {
             if (!cornerRadius.IsZero()) {
                 Vector4<int> dstCornerRadius((cornerRadius.x_ > 0 ? maxRadius : 0),
@@ -1827,7 +1828,7 @@ void RSSurfaceRenderNode::ResetSurfaceOpaqueRegion(const RectI& screeninfo, cons
                     GetName().c_str(), dstCornerRadius.x_, dstCornerRadius.y_, dstCornerRadius.z_, dstCornerRadius.w_);
                 SetCornerRadiusOpaqueRegion(absRect, dstCornerRadius);
             } else {
-                opaqueRegion_ = Occlusion::Region{absRectR};
+                opaqueRegion_ = absRegion;
                 roundedCornerRegion_ = Occlusion::Region();
             }
         }
@@ -2286,7 +2287,7 @@ void RSSurfaceRenderNode::RotateCorner(int rotationDegree, Vector4<int>& cornerR
 void RSSurfaceRenderNode::CheckAndUpdateOpaqueRegion(const RectI& screeninfo, const ScreenRotation screenRotation,
     const bool isFocusWindow)
 {
-    auto absRect = GetAbsDrawRect();
+    auto absRect = GetInnerAbsDrawRect();
     Vector4f tmpCornerRadius;
     Vector4f::Max(GetWindowCornerRadius(), GetGlobalCornerRadius(), tmpCornerRadius);
     Vector4<int> cornerRadius(static_cast<int>(std::round(tmpCornerRadius.x_)),
