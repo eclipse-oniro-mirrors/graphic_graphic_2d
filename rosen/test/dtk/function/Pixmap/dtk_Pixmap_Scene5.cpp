@@ -14,6 +14,7 @@
  */
 
 #include "../../dtk_constants.h"
+#include "../../dtk_test_base.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -985,29 +986,7 @@ DEF_DTK(DTK_Pixmap_Scene5, TestLevel::L2, 17)
 
     // 4.设置视效效果CreateMatrixColorFilter，将效果添加到笔刷
     Drawing::ColorMatrix matrix;
-    float arr[] = {
-        1.0f,
-        1.0f,
-        0.0f,
-        0.0f,
-        0.0f,
-        0.0f,
-        0.0f,
-        0.0f,
-        0.0f,
-        0.0f,
-        0.0f,
-        0.0f,
-        0.0f,
-        0.0f,
-        0.0f,
-        0.0f,
-        0.0f,
-        0.0f,
-        1.0f,
-        0.0f,
-    };
-    matrix.SetArray(arr);
+    matrix.SetArray(ARR);
     auto cf = Drawing::ColorFilter::CreateMatrixColorFilter(matrix);
     auto filter = Drawing::Filter();
     filter.SetImageFilter(Drawing::ImageFilter::CreateColorFilterImageFilter(*cf, nullptr));
@@ -1031,13 +1010,7 @@ DEF_DTK(DTK_Pixmap_Scene5, TestLevel::L2, 17)
     playbackCanvas_->DetachBrush();
 
     // 7.组合Clip函数ClipPath，cilp也有抗锯齿效果，默认和笔刷效果保持一致
-    Drawing::Path path;
-    path.AddRect({ 200, 300, 700, 800 }); // rect region (200, 300, 700, 800)
-    path.SetFillStyle(Drawing::PathFillType::INVERSE_WINDING);
-    playbackCanvas_->Save();
-    playbackCanvas_->ClipPath(path, Drawing::ClipOp::DIFFERENCE, true);
-    playbackCanvas_->Clear(Drawing::Color::COLOR_GREEN);
-    playbackCanvas_->Restore();
+    TestBase::ClipPath(true);
 }
 
 // Pixmap_Scene_0138

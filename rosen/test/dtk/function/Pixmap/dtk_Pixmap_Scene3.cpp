@@ -14,6 +14,7 @@
  */
 
 #include "../../dtk_constants.h"
+#include "../../dtk_test_base.h"
 #include "../../dtk_test_ext.h"
 #include "../../utils.h"
 
@@ -320,13 +321,7 @@ DEF_DTK(Pixmap_Scene3, TestLevel::L2, 5)
     playbackCanvas_->DetachBrush();
 
     // 7.组合Clip函数，cilp也有抗锯齿效果，默认和笔刷效果保持一致
-    Drawing::Path path;
-    path.AddRect({ 200, 300, 700, 800 }); // rect region (200, 300, 700, 800)
-    path.SetFillStyle(Drawing::PathFillType::INVERSE_WINDING);
-    playbackCanvas_->Save();
-    playbackCanvas_->ClipPath(path, Drawing::ClipOp::DIFFERENCE, true);
-    playbackCanvas_->Clear(Drawing::Color::COLOR_GREEN);
-    playbackCanvas_->Restore();
+    TestBase::ClipPath(true);
 }
 
 // Pixmap_Scene_0066

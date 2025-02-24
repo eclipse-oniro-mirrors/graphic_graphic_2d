@@ -14,6 +14,7 @@
  */
 
 #include "../../dtk_constants.h"
+#include "../../dtk_test_base.h"
 #include "../../dtk_test_ext.h"
 #include "../../utils.h"
 
@@ -153,12 +154,7 @@ DEF_DTK(Pixmap_Scene2, TestLevel::L2, 2)
     playbackCanvas_->DetachBrush();
 
     // 7.组合Clip函数，cilp也有抗锯齿效果，默认和笔刷效果保持一致
-    auto rect = Drawing::Rect(100, 100, 200, 200);       // rect region (100, 100, 200, 200)
-    auto rrect = Drawing::RoundRect(rect, 30.0f, 30.0f); // 30.0f is angle
-    playbackCanvas_->Save();
-    playbackCanvas_->ClipRoundRect(rrect, Drawing::ClipOp::DIFFERENCE, true);
-    playbackCanvas_->Clear(Drawing::Color::COLOR_RED);
-    playbackCanvas_->Restore();
+    TestBase::ClipRoundRect_notG2(true);
 }
 
 // Pixmap_Scene_0033
@@ -619,12 +615,7 @@ DEF_DTK(Pixmap_Scene2, TestLevel::L2, 9)
     playbackCanvas_->DetachBrush();
 
     // 7.组合Clip函数，cilp也有抗锯齿效果，默认和笔刷效果保持一致
-    auto rect = Drawing::Rect(100, 100, 250, 250);       // rect region (100, 100, 250, 250)
-    auto rrect = Drawing::RoundRect(rect, 30.0f, 30.0f); // 30.0f is angle
-    playbackCanvas_->Save();
-    playbackCanvas_->ClipRoundRect(rrect, Drawing::ClipOp::DIFFERENCE, true);
-    playbackCanvas_->Clear(Drawing::Color::COLOR_RED);
-    playbackCanvas_->Restore();
+    TestBase::ClipRoundRect_G2(true);
 }
 
 // Pixmap_Scene_0040
@@ -1151,12 +1142,7 @@ DEF_DTK(Pixmap_Scene2, TestLevel::L2, 18)
     playbackCanvas_->DetachBrush();
 
     // 7.组合Clip函数，cilp也有抗锯齿效果，默认和笔刷效果保持一致
-    auto rect = Drawing::Rect(100, 100, 250, 250);       // rect region (100, 100, 250, 250)
-    auto rrect = Drawing::RoundRect(rect, 30.0f, 30.0f); // 30.0f is angle
-    playbackCanvas_->Save();
-    playbackCanvas_->ClipRoundRect(rrect, Drawing::ClipOp::DIFFERENCE, true);
-    playbackCanvas_->Clear(Drawing::Color::COLOR_RED);
-    playbackCanvas_->Restore();
+    TestBase::ClipRoundRect_G2(true);
 }
 
 // Pixmap_Scene_0049
@@ -1480,15 +1466,7 @@ DEF_DTK(Pixmap_Scene2, TestLevel::L2, 24)
     brush.SetAntiAlias(true); // 设置笔刷抗锯齿，true为AA（抗锯齿），false为非AA（不抗锯齿）
 
     // 2.Pixmap构造接口
-    Drawing::CMSMatrix3x3 matrix;
-    int seed = 2333;
-    srand(seed);
-    for (int i = 0; i < 3; ++i) {
-        for (int j = 0; j < 3; ++j) {
-            matrix.vals[i][j] = static_cast<float>(rand() / RAND_MAX);
-        }
-    }
-    auto colorspace = Drawing::ColorSpace::CreateCustomRGB(PQ1, matrix);
+    auto colorspace = Drawing::ColorSpace::CreateCustomRGB(PQ1, SRGBMatrix);
     ImageInfo imageInfo(512, 512, Drawing::ColorType::COLORTYPE_UNKNOWN, Drawing::AlphaType::ALPHATYPE_UNKNOWN,
         colorspace); // 512 width * 512 height
     Pixmap pixmap(imageInfo, nullptr, imageInfo.GetBytesPerPixel() * imageInfo.GetWidth());
@@ -1550,15 +1528,7 @@ DEF_DTK(Pixmap_Scene2, TestLevel::L2, 25)
     brush.SetAntiAlias(true); // 设置笔刷抗锯齿，true为AA（抗锯齿），false为非AA（不抗锯齿）
 
     // 2.Pixmap构造接口
-    Drawing::CMSMatrix3x3 matrix;
-    int seed = 2333;
-    srand(seed);
-    for (int i = 0; i < 3; ++i) {
-        for (int j = 0; j < 3; ++j) {
-            matrix.vals[i][j] = static_cast<float>(rand() / RAND_MAX);
-        }
-    }
-    auto colorspace = Drawing::ColorSpace::CreateCustomRGB(PQ1, matrix);
+    auto colorspace = Drawing::ColorSpace::CreateCustomRGB(PQ1, SRGBMatrix);
     ImageInfo imageInfo(512, 512, Drawing::ColorType::COLORTYPE_UNKNOWN, Drawing::AlphaType::ALPHATYPE_UNKNOWN,
         colorspace); // 512 width * 512 height
     Pixmap pixmap(imageInfo, nullptr, imageInfo.GetBytesPerPixel() * imageInfo.GetWidth());
@@ -1615,15 +1585,7 @@ DEF_DTK(Pixmap_Scene2, TestLevel::L2, 26)
     brush.SetAntiAlias(false); // 设置笔刷抗锯齿，true为AA（抗锯齿），false为非AA（不抗锯齿）
 
     // 2.Pixmap构造接口
-    Drawing::CMSMatrix3x3 matrix;
-    int seed = 2333;
-    srand(seed);
-    for (int i = 0; i < 3; ++i) {
-        for (int j = 0; j < 3; ++j) {
-            matrix.vals[i][j] = static_cast<float>(rand() / RAND_MAX);
-        }
-    }
-    auto colorspace = Drawing::ColorSpace::CreateCustomRGB(PQ1, matrix);
+    auto colorspace = Drawing::ColorSpace::CreateCustomRGB(PQ1, SRGBMatrix);
     ImageInfo imageInfo(512, 512, Drawing::ColorType::COLORTYPE_UNKNOWN, Drawing::AlphaType::ALPHATYPE_UNKNOWN,
         colorspace); // 512 width * 512 height
     Pixmap pixmap(imageInfo, nullptr, imageInfo.GetBytesPerPixel() * imageInfo.GetWidth());
@@ -1682,15 +1644,7 @@ DEF_DTK(Pixmap_Scene2, TestLevel::L2, 27)
     brush.SetAntiAlias(false); // 设置笔刷抗锯齿，true为AA（抗锯齿），false为非AA（不抗锯齿）
 
     // 2.Pixmap构造接口
-    Drawing::CMSMatrix3x3 matrix;
-    int seed = 2333;
-    srand(seed);
-    for (int i = 0; i < 3; ++i) {
-        for (int j = 0; j < 3; ++j) {
-            matrix.vals[i][j] = static_cast<float>(rand() / RAND_MAX);
-        }
-    }
-    auto colorspace = Drawing::ColorSpace::CreateCustomRGB(PQ1, matrix);
+    auto colorspace = Drawing::ColorSpace::CreateCustomRGB(PQ1, SRGBMatrix);
     ImageInfo imageInfo(512, 512, Drawing::ColorType::COLORTYPE_UNKNOWN, Drawing::AlphaType::ALPHATYPE_UNKNOWN,
         colorspace); // 512 width * 512 height
     Pixmap pixmap(imageInfo, nullptr, imageInfo.GetBytesPerPixel() * imageInfo.GetWidth());
@@ -1735,15 +1689,7 @@ DEF_DTK(Pixmap_Scene2, TestLevel::L2, 28)
     brush.SetAntiAlias(true); // 设置笔刷抗锯齿，true为AA（抗锯齿），false为非AA（不抗锯齿）
 
     // 2.Pixmap构造接口
-    Drawing::CMSMatrix3x3 matrix;
-    int seed = 2333;
-    srand(seed);
-    for (int i = 0; i < 3; ++i) {
-        for (int j = 0; j < 3; ++j) {
-            matrix.vals[i][j] = static_cast<float>(rand() / RAND_MAX);
-        }
-    }
-    auto colorspace = Drawing::ColorSpace::CreateCustomRGB(PQ1, matrix);
+    auto colorspace = Drawing::ColorSpace::CreateCustomRGB(PQ1, SRGBMatrix);
     ImageInfo imageInfo(512, 512, Drawing::ColorType::COLORTYPE_UNKNOWN, Drawing::AlphaType::ALPHATYPE_UNKNOWN,
         colorspace); // 512 width * 512 height
     Pixmap pixmap(imageInfo, nullptr, imageInfo.GetBytesPerPixel() * imageInfo.GetWidth());
@@ -1786,13 +1732,7 @@ DEF_DTK(Pixmap_Scene2, TestLevel::L2, 28)
     playbackCanvas_->DetachBrush();
 
     // 7.组合Clip函数，cilp也有抗锯齿效果，默认和笔刷效果保持一致
-    Drawing::Path path;
-    path.AddRect({ 200, 300, 700, 800 }); // rect region (200, 300, 700, 800)
-    path.SetFillStyle(Drawing::PathFillType::INVERSE_WINDING);
-    playbackCanvas_->Save();
-    playbackCanvas_->ClipPath(path, Drawing::ClipOp::DIFFERENCE, true);
-    playbackCanvas_->Clear(Drawing::Color::COLOR_GREEN);
-    playbackCanvas_->Restore();
+    TestBase::ClipPath(true);
 }
 
 // Pixmap_Scene_0059
@@ -1811,15 +1751,7 @@ DEF_DTK(Pixmap_Scene2, TestLevel::L2, 29)
     brush.SetAntiAlias(false); // 设置笔刷抗锯齿，true为AA（抗锯齿），false为非AA（不抗锯齿）
 
     // 2.Pixmap构造接口
-    Drawing::CMSMatrix3x3 matrix;
-    int seed = 2333;
-    srand(seed);
-    for (int i = 0; i < 3; ++i) {
-        for (int j = 0; j < 3; ++j) {
-            matrix.vals[i][j] = static_cast<float>(rand() / RAND_MAX);
-        }
-    }
-    auto colorspace = Drawing::ColorSpace::CreateCustomRGB(PQ1, matrix);
+    auto colorspace = Drawing::ColorSpace::CreateCustomRGB(PQ1, SRGBMatrix);
     ImageInfo imageInfo(512, 512, Drawing::ColorType::COLORTYPE_UNKNOWN, Drawing::AlphaType::ALPHATYPE_UNKNOWN,
         colorspace); // 512 width * 512 height
     Pixmap pixmap(imageInfo, nullptr, imageInfo.GetBytesPerPixel() * imageInfo.GetWidth());
@@ -1881,15 +1813,7 @@ DEF_DTK(Pixmap_Scene2, TestLevel::L2, 30)
     brush.SetAntiAlias(true); // 设置笔刷抗锯齿，true为AA（抗锯齿），false为非AA（不抗锯齿）
 
     // 2.Pixmap构造接口
-    Drawing::CMSMatrix3x3 matrix;
-    int seed = 2333;
-    srand(seed);
-    for (int i = 0; i < 3; ++i) {
-        for (int j = 0; j < 3; ++j) {
-            matrix.vals[i][j] = static_cast<float>(rand() / RAND_MAX);
-        }
-    }
-    auto colorspace = Drawing::ColorSpace::CreateCustomRGB(PQ1, matrix);
+    auto colorspace = Drawing::ColorSpace::CreateCustomRGB(PQ1, SRGBMatrix);
     ImageInfo imageInfo(512, 512, Drawing::ColorType::COLORTYPE_UNKNOWN, Drawing::AlphaType::ALPHATYPE_UNKNOWN,
         colorspace); // 512 width * 512 height
     Pixmap pixmap(imageInfo, nullptr, imageInfo.GetBytesPerPixel() * imageInfo.GetWidth());

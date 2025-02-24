@@ -66,7 +66,6 @@ DEF_DTK(DTK_Pixmap_Scene7, TestLevel::L2, 1)
     brush.SetColor(0xFFFF0000);
 
     for (auto blurType : blurTypes) {
-        // auto filter = Drawing::Filter();
         Drawing::Filter filter;
         // 5.设置视效效果，将效果添加到笔刷
         filter.SetMaskFilter(Drawing::MaskFilter::CreateBlurMaskFilter(blurType, 10.0f, true));
@@ -916,7 +915,6 @@ DEF_DTK(DTK_Pixmap_Scene7, TestLevel::L2, 14)
     brush.SetColor(0xFFFF0000);
 
     for (auto blurType : blurTypes) {
-        // auto filter = Drawing::Filter();
         Drawing::Filter filter;
         // 5.设置视效效果，将效果添加到笔刷
         filter.SetMaskFilter(Drawing::MaskFilter::CreateBlurMaskFilter(blurType, 10.0f, true));
