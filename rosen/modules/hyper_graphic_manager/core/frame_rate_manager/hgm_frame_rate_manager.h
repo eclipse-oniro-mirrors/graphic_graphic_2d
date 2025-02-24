@@ -154,6 +154,7 @@ public:
     void HandleRefreshRateMode(int32_t refreshRateMode);
     void HandleScreenPowerStatus(ScreenId id, ScreenPowerStatus status);
     void HandleScreenRectFrameRate(ScreenId id, const GraphicIRect& activeRect);
+    void HandleThermalFrameRate(bool status);
 
     // called by RSHardwareThread
     void HandleRsFrame();
@@ -244,6 +245,7 @@ private:
     void HandleMultiSelfOwnedScreenEvent(pid_t pid, EventInfo eventInfo);
     void HandleTouchTask(pid_t pid, int32_t touchStatus, int32_t touchCnt);
     void HandleScreenFrameRate(std::string curScreenName);
+    void UpdateScreenFrameRate();
 
     void GetLowBrightVec(const std::shared_ptr<PolicyConfigData>& configData);
     void GetStylusVec(const std::shared_ptr<PolicyConfigData>& configData);
@@ -319,6 +321,7 @@ private:
     std::atomic<ScreenId> lastCurScreenId_ = 0;
     std::string curScreenStrategyId_ = "LTPO-DEFAULT";
     bool isLtpo_ = true;
+    bool isEnableThermalStrategy_ = false;
     int32_t isAmbientStatus_ = 0;
     bool isAmbientEffect_ = false;
     int32_t stylusMode_ = -1;

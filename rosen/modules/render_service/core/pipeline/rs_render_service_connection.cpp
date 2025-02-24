@@ -2364,6 +2364,20 @@ void RSRenderServiceConnection::NotifyDynamicModeEvent(bool enableDynamicModeEve
     });
 }
 
+void RSRenderServiceConnection::NotifyHgmConfigEvent(const std::string &eventName, bool state)
+{
+    HgmTaskHandleThread::Instance().PostTask([eventName, state] () {
+        auto frameRateMgr = HgmCore::Instance().GetFrameRateMgr();
+        if (frameRateMgr == nullptr) {
+            RS_LOGW("RSRenderServiceConnection::NotifyHgmConfigEvent: frameRateMgr is nullptr.");
+            return;
+        }
+        if (eventName == "HGMCONFIG_HIGH_TEMP") {
+            frameRateMgr->HandleThermalFrameRate(state);
+        }
+    });
+}
+
 void RSRenderServiceConnection::ReportEventResponse(DataBaseRs info)
 {
     auto task = [info]() -> void {
