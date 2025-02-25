@@ -412,7 +412,7 @@ void RSScreenManager::OnHwcDeadEvent()
         std::lock_guard<std::mutex> lock(mutex_);
         screens = std::move(screens_);
     }
-    for (const auto &[id, screen] : screens) {
+    for (const auto& [id, screen] : screens) {
         if (screen) {
             // In sceneboard, we should not notify the WMS to remove node from RSTree
             if (screen->IsVirtual()) {
@@ -652,18 +652,18 @@ void RSScreenManager::ProcessScreenConnected(std::shared_ptr<HdiOutput> &output)
         RS_LOGW("%{public}s The screen for id %{public}" PRIu64 " already existed.", __func__, id);
     }
     auto screen = std::make_shared<RSScreen>(id, isVirtual, output, nullptr);
-    {
-        std::lock_guard<std::mutex> lock(mutex_);
-        screens_[id] = screen;
-        if (isFoldScreenFlag_ && screens_.size() == ORIGINAL_FOLD_SCREEN_AMOUNT) {
-            std::vector<uint64_t> foldScreenIds;
-            for (auto screen : screens_) {
-                foldScreenIds.push_back(screen.first);
-            }
-            CreateVSyncSampler()->SetIsFoldScreenFlag(isFoldScreenFlag_);
-            CreateVSyncSampler()->SetFoldScreenIds(foldScreenIds);
+
+    std::unique_lock<std::mutex> lock(mutex_);
+    screens_[id] = screen;
+    if (isFoldScreenFlag_ && screens_.size() == ORIGINAL_FOLD_SCREEN_AMOUNT) {
+        std::vector<uint64_t> foldScreenIds;
+        for (auto screen : screens_) {
+            foldScreenIds.push_back(screen.first);
         }
+        CreateVSyncSampler()->SetIsFoldScreenFlag(isFoldScreenFlag_);
+        CreateVSyncSampler()->SetFoldScreenIds(foldScreenIds);
     }
+    lock.unlock();
 
     ScreenId defaultScreenId = defaultScreenId_;
     if (screen->GetCapability().type == GraphicInterfaceType::GRAPHIC_DISP_INTF_MIPI) {
@@ -693,7 +693,7 @@ void RSScreenManager::ProcessScreenConnected(std::shared_ptr<HdiOutput> &output)
         externalScreenId_ = id;
     }
 #endif
-    std::lock_guard<std::mutex> lock(hotPlugAndConnectMutex_);
+    std::lock_guard<std::mutex> connectLock(hotPlugAndConnectMutex_);
     pendingConnectedIds_.emplace_back(id);
 }
 
@@ -1436,7 +1436,13 @@ uint32_t RSScreenManager::SetScreenActiveRect(ScreenId id, const GraphicIRect& a
         RS_LOGW("%{public}s: There is no screen for id %{public}" PRIu64, __func__, id);
         return StatusCode::SCREEN_NOT_FOUND;
     }
-    return screen->SetScreenActiveRect(activeRect);
+
+    RSHardwareThread::Instance().ScheduleTask([screen, activeRect]() {
+        if (screen->SetScreenActiveRect(activeRect) != StatusCode::SUCCESS) {
+            RS_LOGW("%{public}s: Invalid param", __func__);
+        }
+    }).wait();
+    return StatusCode::SUCCESS;
 }
 
 int32_t RSScreenManager::SetPhysicalScreenResolution(ScreenId id, uint32_t width, uint32_t height)
