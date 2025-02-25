@@ -68,7 +68,7 @@ static void DrawTexts(TestPlaybackCanvas* playbackCanvas, std::shared_ptr<Drawin
 }
 
 //对应用例 FontMgr_MatchFamilyStyleCharacter_3233
-DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 233)
+DEF_DTK(fontmgr_matchfamilystylecharater_3, TestLevel::L1, 233)
 {
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDynamicFontMgr());
     std::string themeName = "";
@@ -84,7 +84,7 @@ DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 233)
 }
 
 //对应用例 FontMgr_MatchFamilyStyleCharacter_3234
-DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 234)
+DEF_DTK(fontmgr_matchfamilystylecharater_3, TestLevel::L1, 234)
 {
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDynamicFontMgr());
     std::string themeName = "";
@@ -100,7 +100,7 @@ DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 234)
 }
 
 //对应用例 FontMgr_MatchFamilyStyleCharacter_3235
-DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 235)
+DEF_DTK(fontmgr_matchfamilystylecharater_3, TestLevel::L1, 235)
 {
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
     std::string themeName = "HMOS Color Emoji";
@@ -116,7 +116,7 @@ DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 235)
 }
 
 //对应用例 FontMgr_MatchFamilyStyleCharacter_3236
-DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 236)
+DEF_DTK(fontmgr_matchfamilystylecharater_3, TestLevel::L1, 236)
 {
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
     std::string themeName = "";
@@ -133,7 +133,7 @@ DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 236)
 }
 
 //对应用例 FontMgr_MatchFamilyStyleCharacter_3237
-DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 237)
+DEF_DTK(fontmgr_matchfamilystylecharater_3, TestLevel::L1, 237)
 {
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
     std::string themeName = "HMOS Color Emoji";
@@ -149,7 +149,7 @@ DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 237)
 }
 
 //对应用例 FontMgr_MatchFamilyStyleCharacter_3238
-DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 238)
+DEF_DTK(fontmgr_matchfamilystylecharater_3, TestLevel::L1, 238)
 {
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDynamicFontMgr());
     std::string themeName = "HMOS Color Emoji";
@@ -165,7 +165,7 @@ DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 238)
 }
 
 //对应用例 FontMgr_MatchFamilyStyleCharacter_3239
-DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 239)
+DEF_DTK(fontmgr_matchfamilystylecharater_3, TestLevel::L1, 239)
 {
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
     std::string themeName = "HMOS Color Emoji";
@@ -180,7 +180,7 @@ DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 239)
 }
 
 //对应用例 FontMgr_MatchFamilyStyleCharacter_3240
-DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 240)
+DEF_DTK(fontmgr_matchfamilystylecharater_3, TestLevel::L1, 240)
 {
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
     std::string themeName = "abcd";
@@ -196,7 +196,7 @@ DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 240)
 }
 
 //对应用例 FontMgr_MatchFamilyStyleCharacter_3241
-DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 241)
+DEF_DTK(fontmgr_matchfamilystylecharater_3, TestLevel::L1, 241)
 {
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDynamicFontMgr());
     std::string themeName = "";
@@ -211,7 +211,7 @@ DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 241)
 }
 
 //对应用例 FontMgr_MatchFamilyStyleCharacter_3242
-DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 242)
+DEF_DTK(fontmgr_matchfamilystylecharater_3, TestLevel::L1, 242)
 {
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
     std::string themeName = "abcd";
@@ -227,7 +227,7 @@ DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 242)
 }
 
 //对应用例 FontMgr_MatchFamilyStyleCharacter_3243
-DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 243)
+DEF_DTK(fontmgr_matchfamilystylecharater_3, TestLevel::L1, 243)
 {
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
     std::string themeName = "abcd";
@@ -243,7 +243,7 @@ DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 243)
 }
 
 //对应用例 FontMgr_MatchFamilyStyleCharacter_3244
-DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 244)
+DEF_DTK(fontmgr_matchfamilystylecharater_3, TestLevel::L1, 244)
 {
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDynamicFontMgr());
     std::string themeName = "";
@@ -260,7 +260,7 @@ DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 244)
 }
 
 //对应用例 FontMgr_MatchFamilyStyleCharacter_3245
-DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 245)
+DEF_DTK(fontmgr_matchfamilystylecharater_3, TestLevel::L1, 245)
 {
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDynamicFontMgr());
     std::string themeName = "";
@@ -275,7 +275,7 @@ DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 245)
 }
 
 //对应用例 FontMgr_MatchFamilyStyleCharacter_3246
-DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 246)
+DEF_DTK(fontmgr_matchfamilystylecharater_3, TestLevel::L1, 246)
 {
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDynamicFontMgr());
     std::string themeName = "";
@@ -291,7 +291,7 @@ DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 246)
 }
 
 //对应用例 FontMgr_MatchFamilyStyleCharacter_3247
-DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 247)
+DEF_DTK(fontmgr_matchfamilystylecharater_3, TestLevel::L1, 247)
 {
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDynamicFontMgr());
     std::string themeName = "";
@@ -306,7 +306,7 @@ DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 247)
 }
 
 //对应用例 FontMgr_MatchFamilyStyleCharacter_3248
-DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 248)
+DEF_DTK(fontmgr_matchfamilystylecharater_3, TestLevel::L1, 248)
 {
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
     std::string themeName = "HMOS Color Emoji";
@@ -321,7 +321,7 @@ DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 248)
 }
 
 //对应用例 FontMgr_MatchFamilyStyleCharacter_3249
-DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 249)
+DEF_DTK(fontmgr_matchfamilystylecharater_3, TestLevel::L1, 249)
 {
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDynamicFontMgr());
     std::string themeName = "";
@@ -337,7 +337,7 @@ DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 249)
 }
 
 //对应用例 FontMgr_MatchFamilyStyleCharacter_3250
-DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 250)
+DEF_DTK(fontmgr_matchfamilystylecharater_3, TestLevel::L1, 250)
 {
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDynamicFontMgr());
     std::string themeName = "abcd";
@@ -353,7 +353,7 @@ DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 250)
 }
 
 //对应用例 FontMgr_MatchFamilyStyleCharacter_3251
-DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 251)
+DEF_DTK(fontmgr_matchfamilystylecharater_3, TestLevel::L1, 251)
 {
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
     std::string themeName = "";
@@ -370,7 +370,7 @@ DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 251)
 }
 
 //对应用例 FontMgr_MatchFamilyStyleCharacter_3252
-DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 252)
+DEF_DTK(fontmgr_matchfamilystylecharater_3, TestLevel::L1, 252)
 {
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDynamicFontMgr());
     std::string themeName = "";
@@ -387,7 +387,7 @@ DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 252)
 }
 
 //对应用例 FontMgr_MatchFamilyStyleCharacter_3253
-DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 253)
+DEF_DTK(fontmgr_matchfamilystylecharater_3, TestLevel::L1, 253)
 {
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
     std::string themeName = "";
@@ -404,7 +404,7 @@ DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 253)
 }
 
 //对应用例 FontMgr_MatchFamilyStyleCharacter_3254
-DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 254)
+DEF_DTK(fontmgr_matchfamilystylecharater_3, TestLevel::L1, 254)
 {
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDynamicFontMgr());
     std::string themeName = "";
@@ -420,7 +420,7 @@ DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 254)
 }
 
 //对应用例 FontMgr_MatchFamilyStyleCharacter_3255
-DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 255)
+DEF_DTK(fontmgr_matchfamilystylecharater_3, TestLevel::L1, 255)
 {
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDynamicFontMgr());
     std::string themeName = "HMOS Color Emoji";
@@ -436,7 +436,7 @@ DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 255)
 }
 
 //对应用例 FontMgr_MatchFamilyStyleCharacter_3256
-DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 256)
+DEF_DTK(fontmgr_matchfamilystylecharater_3, TestLevel::L1, 256)
 {
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
     std::string themeName = "HMOS Color Emoji";
@@ -451,7 +451,7 @@ DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 256)
 }
 
 //对应用例 FontMgr_MatchFamilyStyleCharacter_3257
-DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 257)
+DEF_DTK(fontmgr_matchfamilystylecharater_3, TestLevel::L1, 257)
 {
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
     std::string themeName = "";
@@ -467,7 +467,7 @@ DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 257)
 }
 
 //对应用例 FontMgr_MatchFamilyStyleCharacter_3258
-DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 258)
+DEF_DTK(fontmgr_matchfamilystylecharater_3, TestLevel::L1, 258)
 {
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
     std::string themeName = "abcd";
@@ -483,7 +483,7 @@ DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 258)
 }
 
 //对应用例 FontMgr_MatchFamilyStyleCharacter_3259
-DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 259)
+DEF_DTK(fontmgr_matchfamilystylecharater_3, TestLevel::L1, 259)
 {
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDynamicFontMgr());
     std::string themeName = "abcd";
@@ -499,7 +499,7 @@ DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 259)
 }
 
 //对应用例 FontMgr_MatchFamilyStyleCharacter_3260
-DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 260)
+DEF_DTK(fontmgr_matchfamilystylecharater_3, TestLevel::L1, 260)
 {
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDynamicFontMgr());
     std::string themeName = "HMOS Color Emoji";
@@ -515,7 +515,7 @@ DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 260)
 }
 
 //对应用例 FontMgr_MatchFamilyStyleCharacter_3261
-DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 261)
+DEF_DTK(fontmgr_matchfamilystylecharater_3, TestLevel::L1, 261)
 {
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDynamicFontMgr());
     std::string themeName = "";
@@ -531,7 +531,7 @@ DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 261)
 }
 
 //对应用例 FontMgr_MatchFamilyStyleCharacter_3262
-DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 262)
+DEF_DTK(fontmgr_matchfamilystylecharater_3, TestLevel::L1, 262)
 {
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
     std::string themeName = "HMOS Color Emoji";
@@ -546,7 +546,7 @@ DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 262)
 }
 
 //对应用例 FontMgr_MatchFamilyStyleCharacter_3263
-DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 263)
+DEF_DTK(fontmgr_matchfamilystylecharater_3, TestLevel::L1, 263)
 {
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDynamicFontMgr());
     std::string themeName = "HMOS Color Emoji";
@@ -561,7 +561,7 @@ DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 263)
 }
 
 //对应用例 FontMgr_MatchFamilyStyleCharacter_3264
-DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 264)
+DEF_DTK(fontmgr_matchfamilystylecharater_3, TestLevel::L1, 264)
 {
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDynamicFontMgr());
     std::string themeName = "abcd";
@@ -576,7 +576,7 @@ DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 264)
 }
 
 //对应用例 FontMgr_MatchFamilyStyleCharacter_3265
-DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 265)
+DEF_DTK(fontmgr_matchfamilystylecharater_3, TestLevel::L1, 265)
 {
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDynamicFontMgr());
     std::string themeName = "";
@@ -593,7 +593,7 @@ DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 265)
 }
 
 //对应用例 FontMgr_MatchFamilyStyleCharacter_3266
-DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 266)
+DEF_DTK(fontmgr_matchfamilystylecharater_3, TestLevel::L1, 266)
 {
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDynamicFontMgr());
     std::string themeName = "HMOS Color Emoji";
@@ -609,7 +609,7 @@ DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 266)
 }
 
 //对应用例 FontMgr_MatchFamilyStyleCharacter_3267
-DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 267)
+DEF_DTK(fontmgr_matchfamilystylecharater_3, TestLevel::L1, 267)
 {
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDynamicFontMgr());
     std::string themeName = "";
@@ -625,7 +625,7 @@ DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 267)
 }
 
 //对应用例 FontMgr_MatchFamilyStyleCharacter_3268
-DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 268)
+DEF_DTK(fontmgr_matchfamilystylecharater_3, TestLevel::L1, 268)
 {
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
     std::string themeName = "";
@@ -640,7 +640,7 @@ DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 268)
 }
 
 //对应用例 FontMgr_MatchFamilyStyleCharacter_3269
-DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 269)
+DEF_DTK(fontmgr_matchfamilystylecharater_3, TestLevel::L1, 269)
 {
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDynamicFontMgr());
     std::string themeName = "abcd";
@@ -656,7 +656,7 @@ DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 269)
 }
 
 //对应用例 FontMgr_MatchFamilyStyleCharacter_3270
-DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 270)
+DEF_DTK(fontmgr_matchfamilystylecharater_3, TestLevel::L1, 270)
 {
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
     std::string themeName = "";
@@ -672,7 +672,7 @@ DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 270)
 }
 
 //对应用例 FontMgr_MatchFamilyStyleCharacter_3271
-DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 271)
+DEF_DTK(fontmgr_matchfamilystylecharater_3, TestLevel::L1, 271)
 {
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDynamicFontMgr());
     std::string themeName = "HMOS Color Emoji";
@@ -688,7 +688,7 @@ DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 271)
 }
 
 //对应用例 FontMgr_MatchFamilyStyleCharacter_3272
-DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 272)
+DEF_DTK(fontmgr_matchfamilystylecharater_3, TestLevel::L1, 272)
 {
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
     std::string themeName = "abcd";
@@ -704,7 +704,7 @@ DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 272)
 }
 
 //对应用例 FontMgr_MatchFamilyStyleCharacter_3273
-DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 273)
+DEF_DTK(fontmgr_matchfamilystylecharater_3, TestLevel::L1, 273)
 {
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
     std::string themeName = "abcd";
@@ -719,7 +719,7 @@ DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 273)
 }
 
 //对应用例 FontMgr_MatchFamilyStyleCharacter_3274
-DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 274)
+DEF_DTK(fontmgr_matchfamilystylecharater_3, TestLevel::L1, 274)
 {
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDynamicFontMgr());
     std::string themeName = "";
@@ -736,7 +736,7 @@ DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 274)
 }
 
 //对应用例 FontMgr_MatchFamilyStyleCharacter_3275
-DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 275)
+DEF_DTK(fontmgr_matchfamilystylecharater_3, TestLevel::L1, 275)
 {
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
     std::string themeName = "abcd";
@@ -751,7 +751,7 @@ DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 275)
 }
 
 //对应用例 FontMgr_MatchFamilyStyleCharacter_3276
-DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 276)
+DEF_DTK(fontmgr_matchfamilystylecharater_3, TestLevel::L1, 276)
 {
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
     std::string themeName = "abcd";
@@ -767,7 +767,7 @@ DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 276)
 }
 
 //对应用例 FontMgr_MatchFamilyStyleCharacter_3277
-DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 277)
+DEF_DTK(fontmgr_matchfamilystylecharater_3, TestLevel::L1, 277)
 {
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDynamicFontMgr());
     std::string themeName = "abcd";
@@ -782,7 +782,7 @@ DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 277)
 }
 
 //对应用例 FontMgr_MatchFamilyStyleCharacter_3278
-DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 278)
+DEF_DTK(fontmgr_matchfamilystylecharater_3, TestLevel::L1, 278)
 {
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDynamicFontMgr());
     std::string themeName = "";
@@ -798,7 +798,7 @@ DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 278)
 }
 
 //对应用例 FontMgr_MatchFamilyStyleCharacter_3279
-DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 279)
+DEF_DTK(fontmgr_matchfamilystylecharater_3, TestLevel::L1, 279)
 {
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
     std::string themeName = "abcd";
@@ -814,7 +814,7 @@ DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 279)
 }
 
 //对应用例 FontMgr_MatchFamilyStyleCharacter_3280
-DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 280)
+DEF_DTK(fontmgr_matchfamilystylecharater_3, TestLevel::L1, 280)
 {
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
     std::string themeName = "";
@@ -830,7 +830,7 @@ DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 280)
 }
 
 //对应用例 FontMgr_MatchFamilyStyleCharacter_3281
-DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 281)
+DEF_DTK(fontmgr_matchfamilystylecharater_3, TestLevel::L1, 281)
 {
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDynamicFontMgr());
     std::string themeName = "abcd";
@@ -845,7 +845,7 @@ DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 281)
 }
 
 //对应用例 FontMgr_MatchFamilyStyleCharacter_3282
-DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 282)
+DEF_DTK(fontmgr_matchfamilystylecharater_3, TestLevel::L1, 282)
 {
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
     std::string themeName = "abcd";
@@ -861,7 +861,7 @@ DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 282)
 }
 
 //对应用例 FontMgr_MatchFamilyStyleCharacter_3283
-DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 283)
+DEF_DTK(fontmgr_matchfamilystylecharater_3, TestLevel::L1, 283)
 {
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDynamicFontMgr());
     std::string themeName = "HMOS Color Emoji";
@@ -876,7 +876,7 @@ DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 283)
 }
 
 //对应用例 FontMgr_MatchFamilyStyleCharacter_3284
-DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 284)
+DEF_DTK(fontmgr_matchfamilystylecharater_3, TestLevel::L1, 284)
 {
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
     std::string themeName = "HMOS Color Emoji";
@@ -892,7 +892,7 @@ DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 284)
 }
 
 //对应用例 FontMgr_MatchFamilyStyleCharacter_3285
-DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 285)
+DEF_DTK(fontmgr_matchfamilystylecharater_3, TestLevel::L1, 285)
 {
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDynamicFontMgr());
     std::string themeName = "abcd";
@@ -908,7 +908,7 @@ DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 285)
 }
 
 //对应用例 FontMgr_MatchFamilyStyleCharacter_3286
-DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 286)
+DEF_DTK(fontmgr_matchfamilystylecharater_3, TestLevel::L1, 286)
 {
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDynamicFontMgr());
     std::string themeName = "HMOS Color Emoji";
@@ -924,7 +924,7 @@ DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 286)
 }
 
 //对应用例 FontMgr_MatchFamilyStyleCharacter_3287
-DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 287)
+DEF_DTK(fontmgr_matchfamilystylecharater_3, TestLevel::L1, 287)
 {
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
     std::string themeName = "";
@@ -941,7 +941,7 @@ DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 287)
 }
 
 //对应用例 FontMgr_MatchFamilyStyleCharacter_3288
-DEF_DTK(fontmgr_matchfamilystylecharater_5, TestLevel::L1, 288)
+DEF_DTK(fontmgr_matchfamilystylecharater_3, TestLevel::L1, 288)
 {
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
     std::string themeName = "HMOS Color Emoji";
