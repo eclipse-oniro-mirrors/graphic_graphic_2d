@@ -213,11 +213,11 @@ HWTEST_F(RSFilterCacheManagerTest, DrawFilterTest, TestSize.Level1)
     RSPaintFilterCanvas filterCanvas(&canvas);
     auto shaderFilter = std::make_shared<RSShaderFilter>();
     auto filter = std::make_shared<RSDrawingFilter>(shaderFilter);
-    bool shouldClearFilteredCache = false;
     // for test
     std::optional<Drawing::RectI> srcRect(Drawing::RectI { 0, 0, 100, 100 });
     std::optional<Drawing::RectI> dstRect(Drawing::RectI { 0, 0, 100, 100 });
-    rsFilterCacheManager->DrawFilter(filterCanvas, filter, shouldClearFilteredCache, srcRect, dstRect);
+    rsFilterCacheManager->renderClearFilteredCacheAfterDrawing_ = false;
+    rsFilterCacheManager->DrawFilter(filterCanvas, filter, srcRect, dstRect);
     EXPECT_TRUE(filterCanvas.GetDeviceClipBounds().IsEmpty());
 }
 
@@ -242,13 +242,13 @@ HWTEST_F(RSFilterCacheManagerTest, DrawFilterTest002, TestSize.Level1)
     std::shared_ptr<Drawing::Surface> surface = Drawing::Surface::MakeRaster(imageInfo);
     RSPaintFilterCanvas filterCanvas(surface.get());
     EXPECT_FALSE(filterCanvas.GetDeviceClipBounds().IsEmpty());
-    bool shouldClearFilteredCache = false;
-    rsFilterCacheManager->DrawFilter(filterCanvas, drawingFilter, shouldClearFilteredCache, srcRect, dstRect);
+    rsFilterCacheManager->renderClearFilteredCacheAfterDrawing_ = false;
+    rsFilterCacheManager->DrawFilter(filterCanvas, drawingFilter, srcRect, dstRect);
     EXPECT_NE(rsFilterCacheManager->cachedSnapshot_, nullptr);
     EXPECT_NE(rsFilterCacheManager->cachedFilteredSnapshot_, nullptr);
-    rsFilterCacheManager->CompactFilterCache(shouldClearFilteredCache);
-    shouldClearFilteredCache = true;
-    rsFilterCacheManager->CompactFilterCache(shouldClearFilteredCache);
+    rsFilterCacheManager->CompactFilterCache();
+    rsFilterCacheManager->renderClearFilteredCacheAfterDrawing_ = true;
+    rsFilterCacheManager->CompactFilterCache();
     EXPECT_EQ(rsFilterCacheManager->cachedSnapshot_, nullptr);
     EXPECT_EQ(rsFilterCacheManager->cachedFilteredSnapshot_, nullptr);
 }

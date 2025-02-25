@@ -80,6 +80,16 @@ RSRenderService::~RSRenderService() noexcept {}
 
 bool RSRenderService::Init()
 {
+    // feature param parse
+    GraphicFeatureParamManager::GetInstance().Init();
+
+    auto filterParam = GraphicFeatureParamManager::GetInstance().featureParamMap_[FEATURE_CONFIGS[FILTER]];
+    RSFilterCacheManager::isCCMFilterCacheEnable_ =
+        std::static_pointer_cast<FilterParam>(filterParam)->IsFilterCacheEnable();
+    RSFilterCacheManager::isCCMEffectMergeEnable_ =
+        std::static_pointer_cast<FilterParam>(filterParam)->IsEffectMergeEnable();
+    RSProperties::SetFilterCacheEnabledByCCM(RSFilterCacheManager::isCCMFilterCacheEnable_);
+
     system::SetParameter(BOOTEVENT_RENDER_SERVICE_READY.c_str(), "false");
     std::thread preLoadSysTTFThread([]() {
         Drawing::FontMgr::CreateDefaultFontMgr();
@@ -96,9 +106,6 @@ bool RSRenderService::Init()
 
     RSMainThread::Instance();
     RSUniRenderJudgement::InitUniRenderConfig();
-
-    // feature param parse
-    GraphicFeatureParamManager::GetInstance().Init();
 
 #ifdef TP_FEATURE_ENABLE
     TOUCH_SCREEN->InitTouchScreen();
