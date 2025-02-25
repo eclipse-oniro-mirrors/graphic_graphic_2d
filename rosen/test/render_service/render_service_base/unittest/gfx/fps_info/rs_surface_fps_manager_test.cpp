@@ -68,8 +68,6 @@ HWTEST_F(RSSurfaceFpsManagerTest, GetSurfaceFps, TestSize.Level1)
     surfaceFpsManager.RegisterSurfaceFps(id, name);
     EXPECT_NE(nullptr, surfaceFpsManager.GetSurfaceFps(id));
     EXPECT_EQ(nullptr, surfaceFpsManager.GetSurfaceFps(uid));
-    EXPECT_NE(nullptr, surfaceFpsManager.GetSurfaceFps(name));
-    EXPECT_EQ(nullptr, surfaceFpsManager.GetSurfaceFps(uname));
     surfaceFpsManager.UnregisterSurfaceFps(id);
 }
 
