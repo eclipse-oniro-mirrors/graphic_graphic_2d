@@ -204,7 +204,7 @@ void VideoPlayerCallback::OnInfo(Media::PlayerOnInfoType type, int32_t extra, co
             LOGI("PlayerCallback: Volume Changed");
             break;
         default:
-            OnOnperateInfo(type, exta);
+            OnOnperateInfo(type, extra);
             break;
     }
 }
