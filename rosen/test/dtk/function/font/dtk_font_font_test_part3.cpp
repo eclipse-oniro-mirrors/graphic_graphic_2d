@@ -69,8 +69,8 @@ static void DrawTexts(std::vector<std::string>& texts, Drawing::Font& font,
     }
 }
 
-// 对应用例 font_font_3237
-DEF_DTK(font_font_3, TestLevel::L2, 237)
+// 对应用例 font_font_2237
+DEF_DTK(font_font_2, TestLevel::L2, 237)
 {
     // 创建typeface
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
@@ -106,8 +106,8 @@ DEF_DTK(font_font_3, TestLevel::L2, 237)
     DrawTexts(texts, font, font1, playbackCanvas_);
 }
 
-// 对应用例 font_font_3238
-DEF_DTK(font_font_3, TestLevel::L2, 238)
+// 对应用例 font_font_2238
+DEF_DTK(font_font_2, TestLevel::L2, 238)
 {
     // 创建typeface
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
@@ -136,8 +136,8 @@ DEF_DTK(font_font_3, TestLevel::L2, 238)
     DrawTexts(texts, font, font1, playbackCanvas_);
 }
 
-// 对应用例 font_font_3239
-DEF_DTK(font_font_3, TestLevel::L2, 239)
+// 对应用例 font_font_2239
+DEF_DTK(font_font_2, TestLevel::L2, 239)
 {
     // 创建typeface
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
@@ -165,8 +165,8 @@ DEF_DTK(font_font_3, TestLevel::L2, 239)
     DrawTexts(texts, font, font1, playbackCanvas_);
 }
 
-// 对应用例 font_font_3240
-DEF_DTK(font_font_3, TestLevel::L2, 240)
+// 对应用例 font_font_2240
+DEF_DTK(font_font_2, TestLevel::L2, 240)
 {
     // 创建typeface
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
@@ -205,8 +205,8 @@ DEF_DTK(font_font_3, TestLevel::L2, 240)
     DrawTexts(texts, font, font1, playbackCanvas_);
 }
 
-// 对应用例 font_font_3241
-DEF_DTK(font_font_3, TestLevel::L2, 241)
+// 对应用例 font_font_2241
+DEF_DTK(font_font_2, TestLevel::L2, 241)
 {
     // 创建typeface
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
@@ -242,8 +242,8 @@ DEF_DTK(font_font_3, TestLevel::L2, 241)
     DrawTexts(texts, font, font1, playbackCanvas_);
 }
 
-// 对应用例 font_font_3242
-DEF_DTK(font_font_3, TestLevel::L2, 242)
+// 对应用例 font_font_2242
+DEF_DTK(font_font_2, TestLevel::L2, 242)
 {
     // 创建typeface
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
@@ -271,8 +271,8 @@ DEF_DTK(font_font_3, TestLevel::L2, 242)
     DrawTexts(texts, font, font1, playbackCanvas_);
 }
 
-// 对应用例 font_font_3243
-DEF_DTK(font_font_3, TestLevel::L2, 243)
+// 对应用例 font_font_2243
+DEF_DTK(font_font_2, TestLevel::L2, 243)
 {
     // 创建typeface
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
@@ -302,8 +302,8 @@ DEF_DTK(font_font_3, TestLevel::L2, 243)
     DrawTexts(texts, font, font1, playbackCanvas_);
 }
 
-// 对应用例 font_font_3244
-DEF_DTK(font_font_3, TestLevel::L2, 244)
+// 对应用例 font_font_2244
+DEF_DTK(font_font_2, TestLevel::L2, 244)
 {
     // 创建typeface
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
@@ -339,8 +339,8 @@ DEF_DTK(font_font_3, TestLevel::L2, 244)
     DrawTexts(texts, font, font1, playbackCanvas_);
 }
 
-// 对应用例 font_font_3245
-DEF_DTK(font_font_3, TestLevel::L2, 245)
+// 对应用例 font_font_2245
+DEF_DTK(font_font_2, TestLevel::L2, 245)
 {
     // 创建typeface
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
@@ -374,8 +374,8 @@ DEF_DTK(font_font_3, TestLevel::L2, 245)
     DrawTexts(texts, font, font1, playbackCanvas_);
 }
 
-// 对应用例 font_font_3246
-DEF_DTK(font_font_3, TestLevel::L2, 246)
+// 对应用例 font_font_2246
+DEF_DTK(font_font_2, TestLevel::L2, 246)
 {
     // 创建typeface
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
@@ -414,8 +414,8 @@ DEF_DTK(font_font_3, TestLevel::L2, 246)
     DrawTexts(texts, font, font1, playbackCanvas_);
 }
 
-// 对应用例 font_font_3247
-DEF_DTK(font_font_3, TestLevel::L2, 247)
+// 对应用例 font_font_2247
+DEF_DTK(font_font_2, TestLevel::L2, 247)
 {
     // 创建typeface
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
@@ -439,8 +439,8 @@ DEF_DTK(font_font_3, TestLevel::L2, 247)
     DrawTexts(texts, font, font1, playbackCanvas_);
 }
 
-// 对应用例 font_font_3248
-DEF_DTK(font_font_3, TestLevel::L2, 248)
+// 对应用例 font_font_2248
+DEF_DTK(font_font_2, TestLevel::L2, 248)
 {
     // 创建typeface
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
@@ -476,8 +476,8 @@ DEF_DTK(font_font_3, TestLevel::L2, 248)
     DrawTexts(texts, font, font1, playbackCanvas_);
 }
 
-// 对应用例 font_font_3249
-DEF_DTK(font_font_3, TestLevel::L2, 249)
+// 对应用例 font_font_2249
+DEF_DTK(font_font_2, TestLevel::L2, 249)
 {
     // 创建typeface
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
@@ -516,8 +516,8 @@ DEF_DTK(font_font_3, TestLevel::L2, 249)
     DrawTexts(texts, font, font1, playbackCanvas_);
 }
 
-// 对应用例 font_font_3250
-DEF_DTK(font_font_3, TestLevel::L2, 250)
+// 对应用例 font_font_2250
+DEF_DTK(font_font_2, TestLevel::L2, 250)
 {
     // 创建typeface
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
@@ -542,8 +542,8 @@ DEF_DTK(font_font_3, TestLevel::L2, 250)
     DrawTexts(texts, font, font1, playbackCanvas_);
 }
 
-// 对应用例 font_font_3251
-DEF_DTK(font_font_3, TestLevel::L2, 251)
+// 对应用例 font_font_2251
+DEF_DTK(font_font_2, TestLevel::L2, 251)
 {
     // 创建typeface
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
@@ -569,8 +569,8 @@ DEF_DTK(font_font_3, TestLevel::L2, 251)
     DrawTexts(texts, font, font1, playbackCanvas_);
 }
 
-// 对应用例 font_font_3278
-DEF_DTK(font_font_3, TestLevel::L2, 278)
+// 对应用例 font_font_2278
+DEF_DTK(font_font_2, TestLevel::L2, 278)
 {
     // 创建typeface
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
@@ -603,8 +603,8 @@ DEF_DTK(font_font_3, TestLevel::L2, 278)
     DrawTexts(texts, font, font1, playbackCanvas_);
 }
 
-// 对应用例 font_font_3279
-DEF_DTK(font_font_3, TestLevel::L2, 279)
+// 对应用例 font_font_2279
+DEF_DTK(font_font_2, TestLevel::L2, 279)
 {
     // 创建typeface
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
@@ -637,8 +637,8 @@ DEF_DTK(font_font_3, TestLevel::L2, 279)
     DrawTexts(texts, font, font1, playbackCanvas_);
 }
 
-// 对应用例 font_font_3280
-DEF_DTK(font_font_3, TestLevel::L2, 280)
+// 对应用例 font_font_2280
+DEF_DTK(font_font_2, TestLevel::L2, 280)
 {
     // 创建typeface
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
@@ -660,8 +660,8 @@ DEF_DTK(font_font_3, TestLevel::L2, 280)
     DrawTexts(texts, font, font1, playbackCanvas_);
 }
 
-// 对应用例 font_font_3281
-DEF_DTK(font_font_3, TestLevel::L2, 281)
+// 对应用例 font_font_2281
+DEF_DTK(font_font_2, TestLevel::L2, 281)
 {
     // 创建typeface
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
@@ -690,8 +690,8 @@ DEF_DTK(font_font_3, TestLevel::L2, 281)
     DrawTexts(texts, font, font1, playbackCanvas_);
 }
 
-// 对应用例 font_font_3282
-DEF_DTK(font_font_3, TestLevel::L2, 282)
+// 对应用例 font_font_2282
+DEF_DTK(font_font_2, TestLevel::L2, 282)
 {
     // 创建typeface
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
@@ -727,8 +727,8 @@ DEF_DTK(font_font_3, TestLevel::L2, 282)
     DrawTexts(texts, font, font1, playbackCanvas_);
 }
 
-// 对应用例 font_font_3283
-DEF_DTK(font_font_3, TestLevel::L2, 283)
+// 对应用例 font_font_2283
+DEF_DTK(font_font_2, TestLevel::L2, 283)
 {
     // 创建typeface
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
@@ -759,8 +759,8 @@ DEF_DTK(font_font_3, TestLevel::L2, 283)
     DrawTexts(texts, font, font1, playbackCanvas_);
 }
 
-// 对应用例 font_font_3284
-DEF_DTK(font_font_3, TestLevel::L2, 284)
+// 对应用例 font_font_2284
+DEF_DTK(font_font_2, TestLevel::L2, 284)
 {
     // 创建typeface
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
@@ -783,8 +783,8 @@ DEF_DTK(font_font_3, TestLevel::L2, 284)
     DrawTexts(texts, font, font1, playbackCanvas_);
 }
 
-// 对应用例 font_font_3285
-DEF_DTK(font_font_3, TestLevel::L2, 285)
+// 对应用例 font_font_2285
+DEF_DTK(font_font_2, TestLevel::L2, 285)
 {
     // 创建typeface
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
@@ -810,8 +810,8 @@ DEF_DTK(font_font_3, TestLevel::L2, 285)
     DrawTexts(texts, font, font1, playbackCanvas_);
 }
 
-// 对应用例 font_font_3286
-DEF_DTK(font_font_3, TestLevel::L2, 286)
+// 对应用例 font_font_2286
+DEF_DTK(font_font_2, TestLevel::L2, 286)
 {
     // 创建typeface
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
@@ -842,8 +842,8 @@ DEF_DTK(font_font_3, TestLevel::L2, 286)
     DrawTexts(texts, font, font1, playbackCanvas_);
 }
 
-// 对应用例 font_font_3287
-DEF_DTK(font_font_3, TestLevel::L2, 287)
+// 对应用例 font_font_2287
+DEF_DTK(font_font_2, TestLevel::L2, 287)
 {
     // 创建typeface
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
@@ -879,8 +879,8 @@ DEF_DTK(font_font_3, TestLevel::L2, 287)
     DrawTexts(texts, font, font1, playbackCanvas_);
 }
 
-// 对应用例 font_font_3288
-DEF_DTK(font_font_3, TestLevel::L2, 288)
+// 对应用例 font_font_2288
+DEF_DTK(font_font_2, TestLevel::L2, 288)
 {
     // 创建typeface
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
@@ -903,8 +903,8 @@ DEF_DTK(font_font_3, TestLevel::L2, 288)
     DrawTexts(texts, font, font1, playbackCanvas_);
 }
 
-// 对应用例 font_font_3289
-DEF_DTK(font_font_3, TestLevel::L2, 289)
+// 对应用例 font_font_2289
+DEF_DTK(font_font_2, TestLevel::L2, 289)
 {
     // 创建typeface
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
@@ -937,8 +937,8 @@ DEF_DTK(font_font_3, TestLevel::L2, 289)
     DrawTexts(texts, font, font1, playbackCanvas_);
 }
 
-// 对应用例 font_font_3290
-DEF_DTK(font_font_3, TestLevel::L2, 290)
+// 对应用例 font_font_2290
+DEF_DTK(font_font_2, TestLevel::L2, 290)
 {
     // 创建typeface
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
@@ -972,8 +972,8 @@ DEF_DTK(font_font_3, TestLevel::L2, 290)
     DrawTexts(texts, font, font1, playbackCanvas_);
 }
 
-// 对应用例 font_font_3291
-DEF_DTK(font_font_3, TestLevel::L2, 291)
+// 对应用例 font_font_2291
+DEF_DTK(font_font_2, TestLevel::L2, 291)
 {
     // 创建typeface
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
@@ -993,6 +993,963 @@ DEF_DTK(font_font_3, TestLevel::L2, 291)
     Drawing::Rect bounds;
     auto scalar = font.MeasureText(g_text.c_str(), g_text.size(), Drawing::TextEncoding::UTF8, &bounds);
     std::string text4 = "MeasureTextWidths = " + std::to_string(scalar);
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+    DrawTexts(texts, font, font1, playbackCanvas_);
+}
+
+// 对应用例 font_font_2292
+DEF_DTK(font_font_2, TestLevel::L2, 292)
+{
+    // 创建typeface
+    std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
+    std::string familyName = "HMOS Color Emoji";
+    std::shared_ptr<Drawing::FontStyleSet> fontStyleSet(fontMgr->MatchFamily(familyName.c_str()));
+    auto typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
+    
+    // 设置fontsize到LinearMetrics的属性
+    auto font = Drawing::Font();
+    auto font1 = MakeFont1(font, typeface, 0, 1.f, 1.f);
+    font.SetBaselineSnap(false);
+    font1.SetBaselineSnap(font.IsBaselineSnap());
+    font.SetEdging(Drawing::FontEdging::SUBPIXEL_ANTI_ALIAS);
+    font1.SetEdging(font.GetEdging());
+    font.SetHinting(Drawing::FontHinting::NORMAL);
+    font1.SetHinting(font.GetHinting());
+    font.SetForceAutoHinting(false);
+    font1.SetForceAutoHinting(font.IsForceAutoHinting());
+    font.SetEmbeddedBitmaps(false);
+    font1.SetEmbeddedBitmaps(font.IsEmbeddedBitmaps());
+    font.SetEmbolden(true);
+    font1.SetEmbolden(font.IsEmbolden());
+    font.SetLinearMetrics(false);
+    font1.SetLinearMetrics(font.IsLinearMetrics());
+
+    // font操作接口，如果涉及，获取返回值赋值给text4，并将text4加入vector容器
+    Drawing::Rect bounds;
+    auto scalar = font.MeasureText(g_text.c_str(), g_text.size(), Drawing::TextEncoding::UTF16, &bounds);
+    std::string text4 = "MeasureTextWidths = " + std::to_string(scalar);
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+    DrawTexts(texts, font, font1, playbackCanvas_);
+}
+
+// 对应用例 font_font_2293
+DEF_DTK(font_font_2, TestLevel::L2, 293)
+{
+    // 创建typeface
+    std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
+    std::string familyName = "HMOS Color Emoji";
+    std::shared_ptr<Drawing::FontStyleSet> fontStyleSet(fontMgr->MatchFamily(familyName.c_str()));
+    auto typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
+    
+    // 设置fontsize到LinearMetrics的属性
+    auto font = Drawing::Font();
+    auto font1 = MakeFont1(font, typeface, 27.13f, 1.f, -30.f);
+    font.SetBaselineSnap(true);
+    font1.SetBaselineSnap(font.IsBaselineSnap());
+    font.SetHinting(Drawing::FontHinting::FULL);
+    font1.SetHinting(font.GetHinting());
+    font.SetForceAutoHinting(true);
+    font1.SetForceAutoHinting(font.IsForceAutoHinting());
+    font.SetEmbeddedBitmaps(true);
+    font1.SetEmbeddedBitmaps(font.IsEmbeddedBitmaps());
+    font.SetEmbolden(true);
+    font1.SetEmbolden(font.IsEmbolden());
+    font.SetLinearMetrics(true);
+    font1.SetLinearMetrics(font.IsLinearMetrics());
+
+    // font操作接口，如果涉及，获取返回值赋值给text4，并将text4加入vector容器
+    Drawing::Rect bounds;
+    auto scalar = font.MeasureText(g_text.c_str(), g_text.size(), Drawing::TextEncoding::UTF8, &bounds);
+    std::string text4 = "MeasureTextWidths = " + std::to_string(scalar);
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+    DrawTexts(texts, font, font1, playbackCanvas_);
+}
+
+// 对应用例 font_font_2294
+DEF_DTK(font_font_2, TestLevel::L2, 294)
+{
+    // 创建typeface
+    std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
+    std::string familyName = "HMOS Color Emoji";
+    std::shared_ptr<Drawing::FontStyleSet> fontStyleSet(fontMgr->MatchFamily(familyName.c_str()));
+    auto typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
+    
+    // 设置fontsize到LinearMetrics的属性
+    auto font = Drawing::Font();
+    auto font1 = MakeFont1(font, typeface, 27.13f, 1.f, -30.f);
+    font.SetEdging(Drawing::FontEdging::ALIAS);
+    font1.SetEdging(font.GetEdging());
+    font.SetHinting(Drawing::FontHinting::SLIGHT);
+    font1.SetHinting(font.GetHinting());
+
+    // font操作接口，如果涉及，获取返回值赋值给text4，并将text4加入vector容器
+    int glyphCount = font.CountText(g_text.c_str(), g_text.length(), Drawing::TextEncoding::UTF8);
+    uint16_t glyphs[glyphCount];
+    int count = font.TextToGlyphs(g_text.c_str(), g_text.length(), Drawing::TextEncoding::GLYPH_ID,
+        glyphs, glyphCount + 1);
+    std::string text4 = "GlyphsCount = " + std::to_string(count);
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+    DrawTexts(texts, font, font1, playbackCanvas_);
+}
+
+// 对应用例 font_font_2295
+DEF_DTK(font_font_2, TestLevel::L2, 295)
+{
+    // 创建typeface
+    std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
+    std::string familyName = "HMOS Color Emoji";
+    std::shared_ptr<Drawing::FontStyleSet> fontStyleSet(fontMgr->MatchFamily(familyName.c_str()));
+    auto typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
+    
+    // 设置fontsize到LinearMetrics的属性
+    auto font = Drawing::Font();
+    auto font1 = MakeFont1(font, typeface, 27.13f, 30.f, 30.f);
+    font.SetHinting(Drawing::FontHinting::FULL);
+    font1.SetHinting(font.GetHinting());
+    font.SetEmbolden(false);
+    font1.SetEmbolden(font.IsEmbolden());
+
+    // font操作接口，如果涉及，获取返回值赋值给text4，并将text4加入vector容器
+    Drawing::Rect bounds;
+    auto scalar = font.MeasureText(g_text.c_str(), g_text.size(), Drawing::TextEncoding::UTF32, &bounds);
+    std::string text4 = "MeasureTextWidths = " + std::to_string(scalar);
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+    DrawTexts(texts, font, font1, playbackCanvas_);
+}
+
+// 对应用例 font_font_2296
+DEF_DTK(font_font_2, TestLevel::L2, 296)
+{
+    // 创建typeface
+    std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
+    std::string familyName = "HMOS Color Emoji";
+    std::shared_ptr<Drawing::FontStyleSet> fontStyleSet(fontMgr->MatchFamily(familyName.c_str()));
+    auto typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
+    
+    // 设置fontsize到LinearMetrics的属性
+    auto font = Drawing::Font();
+    auto font1 = MakeFont1(font, typeface, 71.f, -30.f, -30.f);
+    font.SetBaselineSnap(true);
+    font1.SetBaselineSnap(font.IsBaselineSnap());
+    font.SetEdging(Drawing::FontEdging::ALIAS);
+    font1.SetEdging(font.GetEdging());
+    font.SetHinting(Drawing::FontHinting::SLIGHT);
+    font1.SetHinting(font.GetHinting());
+    font.SetForceAutoHinting(true);
+    font1.SetForceAutoHinting(font.IsForceAutoHinting());
+    font.SetEmbeddedBitmaps(true);
+    font1.SetEmbeddedBitmaps(font.IsEmbeddedBitmaps());
+    font.SetLinearMetrics(true);
+    font1.SetLinearMetrics(font.IsLinearMetrics());
+
+    // font操作接口，如果涉及，获取返回值赋值给text4，并将text4加入vector容器
+    auto glyphsCount = font.CountText(g_text.c_str(), g_text.length(), Drawing::TextEncoding::GLYPH_ID);
+    std::string text4 = "glyphsCount = " + std::to_string(glyphsCount);
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+    DrawTexts(texts, font, font1, playbackCanvas_);
+}
+
+// 对应用例 font_font_2297
+DEF_DTK(font_font_2, TestLevel::L2, 297)
+{
+    // 创建typeface
+    std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
+    std::string familyName = "HMOS Color Emoji";
+    std::shared_ptr<Drawing::FontStyleSet> fontStyleSet(fontMgr->MatchFamily(familyName.c_str()));
+    auto typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
+    
+    // 设置fontsize到LinearMetrics的属性
+    auto font = Drawing::Font();
+    auto font1 = MakeFont1(font, typeface, 71.f, 30.f, -1.f);
+    font.SetBaselineSnap(true);
+    font1.SetBaselineSnap(font.IsBaselineSnap());
+    font.SetEdging(Drawing::FontEdging::ANTI_ALIAS);
+    font1.SetEdging(font.GetEdging());
+    font.SetHinting(Drawing::FontHinting::NORMAL);
+    font1.SetHinting(font.GetHinting());
+    font.SetForceAutoHinting(true);
+    font1.SetForceAutoHinting(font.IsForceAutoHinting());
+    font.SetEmbeddedBitmaps(true);
+    font1.SetEmbeddedBitmaps(font.IsEmbeddedBitmaps());
+    font.SetEmbolden(true);
+    font1.SetEmbolden(font.IsEmbolden());
+    font.SetLinearMetrics(true);
+    font1.SetLinearMetrics(font.IsLinearMetrics());
+
+    // font操作接口，如果涉及，获取返回值赋值给text4，并将text4加入vector容器
+    int glyphCount = font.CountText(g_text.c_str(), g_text.length(), Drawing::TextEncoding::UTF8);
+    uint16_t glyphs[glyphCount + 1];
+    int count = font.TextToGlyphs(g_text.c_str(), g_text.length(), Drawing::TextEncoding::GLYPH_ID,
+        glyphs, glyphCount + 1);
+    std::string text4 = "GlyphsCount = " + std::to_string(count);
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+    DrawTexts(texts, font, font1, playbackCanvas_);
+}
+
+// 对应用例 font_font_2298
+DEF_DTK(font_font_2, TestLevel::L2, 298)
+{
+    // 创建typeface
+    std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
+    std::string familyName = "HMOS Color Emoji";
+    std::shared_ptr<Drawing::FontStyleSet> fontStyleSet(fontMgr->MatchFamily(familyName.c_str()));
+    auto typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
+    
+    // 设置fontsize到LinearMetrics的属性
+    auto font = Drawing::Font();
+    auto font1 = MakeFont1(font, typeface, 71.f, 30.f, -1.f);
+    font.SetBaselineSnap(false);
+    font1.SetBaselineSnap(font.IsBaselineSnap());
+    font.SetEdging(Drawing::FontEdging::ALIAS);
+    font1.SetEdging(font.GetEdging());
+    font.SetForceAutoHinting(false);
+    font1.SetForceAutoHinting(font.IsForceAutoHinting());
+    font.SetEmbeddedBitmaps(false);
+    font1.SetEmbeddedBitmaps(font.IsEmbeddedBitmaps());
+    font.SetEmbolden(false);
+    font1.SetEmbolden(font.IsEmbolden());
+    font.SetLinearMetrics(false);
+    font1.SetLinearMetrics(font.IsLinearMetrics());
+
+    // font操作接口，如果涉及，获取返回值赋值给text4，并将text4加入vector容器
+    Drawing::Rect bounds;
+    auto scalar = font.MeasureText(g_text.c_str(), g_text.size(), Drawing::TextEncoding::GLYPH_ID, &bounds);
+    std::string text4 = "MeasureTextWidths = " + std::to_string(scalar);
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+    DrawTexts(texts, font, font1, playbackCanvas_);
+}
+
+// 对应用例 font_font_2299
+DEF_DTK(font_font_2, TestLevel::L2, 299)
+{
+    // 创建typeface
+    std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
+    std::string familyName = "HMOS Color Emoji";
+    std::shared_ptr<Drawing::FontStyleSet> fontStyleSet(fontMgr->MatchFamily(familyName.c_str()));
+    auto typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
+    
+    // 设置fontsize到LinearMetrics的属性
+    auto font = Drawing::Font();
+    auto font1 = MakeFont1(font, typeface, 71.f, 30.f, -1.f);
+    font.SetEdging(Drawing::FontEdging::SUBPIXEL_ANTI_ALIAS);
+    font1.SetEdging(font.GetEdging());
+    font.SetHinting(Drawing::FontHinting::NONE);
+    font1.SetHinting(font.GetHinting());
+
+    // font操作接口，如果涉及，获取返回值赋值给text4，并将text4加入vector容器
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3};
+    DrawTexts(texts, font, font1, playbackCanvas_);
+}
+
+// 对应用例 font_font_2300
+DEF_DTK(font_font_2, TestLevel::L2, 300)
+{
+    // 创建typeface
+    std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
+    std::string familyName = "HMOS Color Emoji";
+    std::shared_ptr<Drawing::FontStyleSet> fontStyleSet(fontMgr->MatchFamily(familyName.c_str()));
+    auto typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
+    
+    // 设置fontsize到LinearMetrics的属性
+    auto font = Drawing::Font();
+    auto font1 = MakeFont1(font, typeface, 500.f, -30.f, -0.5f);
+    font.SetBaselineSnap(true);
+    font1.SetBaselineSnap(font.IsBaselineSnap());
+    font.SetHinting(Drawing::FontHinting::SLIGHT);
+    font1.SetHinting(font.GetHinting());
+    font.SetForceAutoHinting(true);
+    font1.SetForceAutoHinting(font.IsForceAutoHinting());
+    font.SetEmbeddedBitmaps(true);
+    font1.SetEmbeddedBitmaps(font.IsEmbeddedBitmaps());
+    font.SetEmbolden(true);
+    font1.SetEmbolden(font.IsEmbolden());
+    font.SetLinearMetrics(true);
+    font1.SetLinearMetrics(font.IsLinearMetrics());
+
+    // font操作接口，如果涉及，获取返回值赋值给text4，并将text4加入vector容器
+    Drawing::FontMetrics metrics;
+    auto SpaceLine = font.GetMetrics(&metrics);
+    std::string text4 = "Recommended spaceing between lines = " + std::to_string(SpaceLine);
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+    DrawTexts(texts, font, font1, playbackCanvas_);
+}
+
+// 对应用例 font_font_2301
+DEF_DTK(font_font_2, TestLevel::L2, 301)
+{
+    // 创建typeface
+    std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
+    std::string familyName = "HMOS Color Emoji";
+    std::shared_ptr<Drawing::FontStyleSet> fontStyleSet(fontMgr->MatchFamily(familyName.c_str()));
+    auto typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
+    
+    // 设置fontsize到LinearMetrics的属性
+    auto font = Drawing::Font();
+    auto font1 = MakeFont1(font, typeface, 500.f, -30.f, -0.5f);
+    font.SetBaselineSnap(false);
+    font1.SetBaselineSnap(font.IsBaselineSnap());
+    font.SetEdging(Drawing::FontEdging::SUBPIXEL_ANTI_ALIAS);
+    font1.SetEdging(font.GetEdging());
+    font.SetHinting(Drawing::FontHinting::FULL);
+    font1.SetHinting(font.GetHinting());
+    font.SetForceAutoHinting(false);
+    font1.SetForceAutoHinting(font.IsForceAutoHinting());
+    font.SetEmbeddedBitmaps(false);
+    font1.SetEmbeddedBitmaps(font.IsEmbeddedBitmaps());
+    font.SetEmbolden(false);
+    font1.SetEmbolden(font.IsEmbolden());
+    font.SetLinearMetrics(false);
+    font1.SetLinearMetrics(font.IsLinearMetrics());
+
+    // font操作接口，如果涉及，获取返回值赋值给text4，并将text4加入vector容器
+    int glyphCount = font.CountText(g_text.c_str(), g_text.length(), Drawing::TextEncoding::UTF8);
+    uint16_t glyphs[glyphCount - 1];
+    int count = font.TextToGlyphs(g_text.c_str(), g_text.length(), Drawing::TextEncoding::GLYPH_ID, glyphs, glyphCount);
+    std::string text4 = "GlyphsCount = " + std::to_string(count);
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+    DrawTexts(texts, font, font1, playbackCanvas_);
+}
+
+// 对应用例 font_font_2302
+DEF_DTK(font_font_2, TestLevel::L2, 302)
+{
+    // 创建typeface
+    std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
+    std::string familyName = "HMOS Color Emoji";
+    std::shared_ptr<Drawing::FontStyleSet> fontStyleSet(fontMgr->MatchFamily(familyName.c_str()));
+    auto typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
+    
+    // 设置fontsize到LinearMetrics的属性
+    auto font = Drawing::Font();
+    auto font1 = MakeFont1(font, typeface, 500.f, -30.f, -0.5f);
+    font.SetEdging(Drawing::FontEdging::ANTI_ALIAS);
+    font1.SetEdging(font.GetEdging());
+    font.SetHinting(Drawing::FontHinting::NONE);
+    font1.SetHinting(font.GetHinting());
+
+    // font操作接口，如果涉及，获取返回值赋值给text4，并将text4加入vector容器
+    auto scalar = font.MeasureSingleCharacter(0xEEEEE);
+    std::string text4 = "Recommended spaceing between lines = " + std::to_string(scalar);
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+    DrawTexts(texts, font, font1, playbackCanvas_);
+}
+
+// 对应用例 font_font_2303
+DEF_DTK(font_font_2, TestLevel::L2, 303)
+{
+    // 创建typeface
+    std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
+    std::string familyName = "HMOS Color Emoji";
+    std::shared_ptr<Drawing::FontStyleSet> fontStyleSet(fontMgr->MatchFamily(familyName.c_str()));
+    auto typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->CreateTypeface(0));
+    
+    // 设置fontsize到LinearMetrics的属性
+    auto font = Drawing::Font();
+    auto font1 = MakeFont1(font, typeface, 500.f, -1.f, -1.f);
+    font.SetBaselineSnap(false);
+    font1.SetBaselineSnap(font.IsBaselineSnap());
+    font.SetEdging(Drawing::FontEdging::ANTI_ALIAS);
+    font1.SetEdging(font.GetEdging());
+    font.SetHinting(Drawing::FontHinting::NORMAL);
+    font1.SetHinting(font.GetHinting());
+    font.SetForceAutoHinting(false);
+    font1.SetForceAutoHinting(font.IsForceAutoHinting());
+    font.SetEmbeddedBitmaps(false);
+    font1.SetEmbeddedBitmaps(font.IsEmbeddedBitmaps());
+    font.SetEmbolden(true);
+    font1.SetEmbolden(font.IsEmbolden());
+    font.SetLinearMetrics(false);
+    font1.SetLinearMetrics(font.IsLinearMetrics());
+
+    // font操作接口，如果涉及，获取返回值赋值给text4，并将text4加入vector容器
+    int glyphCount = font.CountText(g_text.c_str(), g_text.length(), Drawing::TextEncoding::UTF16);
+    float widths[glyphCount];
+    uint16_t glyphs[glyphCount];
+    font.TextToGlyphs(g_text.c_str(), g_text.length(), Drawing::TextEncoding::UTF8, glyphs, glyphCount);
+    font.GetWidths(glyphs, glyphCount, widths);
+    std::string text4 = "GetWidths = " + std::to_string(widths[0]);
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+    DrawTexts(texts, font, font1, playbackCanvas_);
+}
+
+// 对应用例 font_font_2304
+DEF_DTK(font_font_2, TestLevel::L2, 304)
+{
+    // 创建typeface
+    std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
+    std::string familyName = "HMOS Color Emoji";
+    std::shared_ptr<Drawing::FontStyleSet> fontStyleSet(fontMgr->MatchFamily(familyName.c_str()));
+    auto typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->MatchStyle({
+        Drawing::FontStyle::INVISIBLE_WEIGHT,
+        Drawing::FontStyle::ULTRA_CONDENSED_WIDTH,
+        Drawing::FontStyle::OBLIQUE_SLANT}));
+    
+    // 设置fontsize到LinearMetrics的属性
+    auto font = Drawing::Font();
+    auto font1 = MakeFont1(font, typeface, -50.f, -1.f, 0);
+    font.SetBaselineSnap(false);
+    font1.SetBaselineSnap(font.IsBaselineSnap());
+    font.SetEdging(Drawing::FontEdging::ANTI_ALIAS);
+    font1.SetEdging(font.GetEdging());
+    font.SetHinting(Drawing::FontHinting::FULL);
+    font1.SetHinting(font.GetHinting());
+    font.SetForceAutoHinting(false);
+    font1.SetForceAutoHinting(font.IsForceAutoHinting());
+    font.SetEmbeddedBitmaps(false);
+    font1.SetEmbeddedBitmaps(font.IsEmbeddedBitmaps());
+    font.SetEmbolden(false);
+    font1.SetEmbolden(font.IsEmbolden());
+    font.SetLinearMetrics(false);
+    font1.SetLinearMetrics(font.IsLinearMetrics());
+
+    // font操作接口，如果涉及，获取返回值赋值给text4，并将text4加入vector容器
+    int glyphCount = font.CountText(g_text.c_str(), g_text.length(), Drawing::TextEncoding::UTF8);
+    uint16_t glyphs[glyphCount];
+    int count = font.TextToGlyphs(g_text.c_str(), g_text.length(), Drawing::TextEncoding::GLYPH_ID,
+        glyphs, glyphCount + 1);
+    std::string text4 = "GlyphsCount = " + std::to_string(count);
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+    DrawTexts(texts, font, font1, playbackCanvas_);
+}
+
+// 对应用例 font_font_2305
+DEF_DTK(font_font_2, TestLevel::L2, 305)
+{
+    // 创建typeface
+    std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
+    std::string familyName = "HMOS Color Emoji";
+    std::shared_ptr<Drawing::FontStyleSet> fontStyleSet(fontMgr->MatchFamily(familyName.c_str()));
+    auto typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->MatchStyle({
+        Drawing::FontStyle::INVISIBLE_WEIGHT,
+        Drawing::FontStyle::ULTRA_CONDENSED_WIDTH,
+        Drawing::FontStyle::OBLIQUE_SLANT}));
+    
+    // 设置fontsize到LinearMetrics的属性
+    auto font = Drawing::Font();
+    auto font1 = MakeFont1(font, typeface, -50.f, -1.f, 0);
+    font.SetEdging(Drawing::FontEdging::ALIAS);
+    font1.SetEdging(font.GetEdging());
+    font.SetHinting(Drawing::FontHinting::NONE);
+    font1.SetHinting(font.GetHinting());
+
+    // font操作接口，如果涉及，获取返回值赋值给text4，并将text4加入vector容器
+    Drawing::Rect bounds;
+    auto scalar = font.MeasureText(g_text.c_str(), g_text.size(), Drawing::TextEncoding::UTF8, &bounds);
+    std::string text4 = "MeasureTextWidths = " + std::to_string(scalar);
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+    DrawTexts(texts, font, font1, playbackCanvas_);
+}
+
+// 对应用例 font_font_2306
+DEF_DTK(font_font_2, TestLevel::L2, 306)
+{
+    // 创建typeface
+    std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
+    std::string familyName = "HMOS Color Emoji";
+    std::shared_ptr<Drawing::FontStyleSet> fontStyleSet(fontMgr->MatchFamily(familyName.c_str()));
+    auto typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->MatchStyle({
+        Drawing::FontStyle::INVISIBLE_WEIGHT,
+        Drawing::FontStyle::ULTRA_CONDENSED_WIDTH,
+        Drawing::FontStyle::OBLIQUE_SLANT}));
+    
+    // 设置fontsize到LinearMetrics的属性
+    auto font = Drawing::Font();
+    auto font1 = MakeFont1(font, typeface, -50.f, -0.5f, -0.5f);
+    font.SetEdging(Drawing::FontEdging::SUBPIXEL_ANTI_ALIAS);
+    font1.SetEdging(font.GetEdging());
+    font.SetHinting(Drawing::FontHinting::SLIGHT);
+    font1.SetHinting(font.GetHinting());
+
+    // font操作接口，如果涉及，获取返回值赋值给text4，并将text4加入vector容器
+    Drawing::Rect bounds;
+    auto scalar = font.MeasureText(g_text.c_str(), g_text.size(), Drawing::TextEncoding::UTF8, &bounds);
+    std::string text4 = "MeasureTextWidths = " + std::to_string(scalar);
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+    DrawTexts(texts, font, font1, playbackCanvas_);
+}
+
+// 对应用例 font_font_2307
+DEF_DTK(font_font_2, TestLevel::L2, 307)
+{
+    // 创建typeface
+    std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
+    std::string familyName = "HMOS Color Emoji";
+    std::shared_ptr<Drawing::FontStyleSet> fontStyleSet(fontMgr->MatchFamily(familyName.c_str()));
+    auto typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->MatchStyle({
+        Drawing::FontStyle::INVISIBLE_WEIGHT,
+        Drawing::FontStyle::ULTRA_CONDENSED_WIDTH,
+        Drawing::FontStyle::OBLIQUE_SLANT}));
+    
+    // 设置fontsize到LinearMetrics的属性
+    auto font = Drawing::Font();
+    auto font1 = MakeFont1(font, typeface, -31.f, -0.5f, 0.7f);
+    font.SetBaselineSnap(true);
+    font1.SetBaselineSnap(font.IsBaselineSnap());
+    font.SetEdging(Drawing::FontEdging::ANTI_ALIAS);
+    font1.SetEdging(font.GetEdging());
+    font.SetHinting(Drawing::FontHinting::SLIGHT);
+    font1.SetHinting(font.GetHinting());
+    font.SetForceAutoHinting(true);
+    font1.SetForceAutoHinting(font.IsForceAutoHinting());
+    font.SetEmbeddedBitmaps(true);
+    font1.SetEmbeddedBitmaps(font.IsEmbeddedBitmaps());
+    font.SetEmbolden(true);
+    font1.SetEmbolden(font.IsEmbolden());
+    font.SetLinearMetrics(true);
+    font1.SetLinearMetrics(font.IsLinearMetrics());
+
+    // font操作接口，如果涉及，获取返回值赋值给text4，并将text4加入vector容器
+    Drawing::Rect bounds;
+    auto scalar = font.MeasureText(g_text.c_str(), g_text.size(), Drawing::TextEncoding::UTF16, &bounds);
+    std::string text4 = "MeasureTextWidths = " + std::to_string(scalar);
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+    DrawTexts(texts, font, font1, playbackCanvas_);
+}
+
+// 对应用例 font_font_2308
+DEF_DTK(font_font_2, TestLevel::L2, 308)
+{
+    // 创建typeface
+    std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
+    std::string familyName = "HMOS Color Emoji";
+    std::shared_ptr<Drawing::FontStyleSet> fontStyleSet(fontMgr->MatchFamily(familyName.c_str()));
+    auto typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->MatchStyle({
+        Drawing::FontStyle::INVISIBLE_WEIGHT,
+        Drawing::FontStyle::ULTRA_CONDENSED_WIDTH,
+        Drawing::FontStyle::OBLIQUE_SLANT}));
+    
+    // 设置fontsize到LinearMetrics的属性
+    auto font = Drawing::Font();
+    auto font1 = MakeFont1(font, typeface, -31.f, -0.5f, 0.7f);
+    font.SetEdging(Drawing::FontEdging::SUBPIXEL_ANTI_ALIAS);
+    font1.SetEdging(font.GetEdging());
+
+    // font操作接口，如果涉及，获取返回值赋值给text4，并将text4加入vector容器
+    int glyphCount = font.CountText(g_text.c_str(), g_text.length(), Drawing::TextEncoding::UTF8);
+    uint16_t glyphs[glyphCount + 1];
+    int count = font.TextToGlyphs(g_text.c_str(), g_text.length(), Drawing::TextEncoding::GLYPH_ID,
+        glyphs, glyphCount + 1);
+    std::string text4 = "GlyphsCount = " + std::to_string(count);
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+    DrawTexts(texts, font, font1, playbackCanvas_);
+}
+
+// 对应用例 font_font_2309
+DEF_DTK(font_font_2, TestLevel::L2, 309)
+{
+    // 创建typeface
+    std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
+    std::string familyName = "HMOS Color Emoji";
+    std::shared_ptr<Drawing::FontStyleSet> fontStyleSet(fontMgr->MatchFamily(familyName.c_str()));
+    auto typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->MatchStyle({
+        Drawing::FontStyle::INVISIBLE_WEIGHT,
+        Drawing::FontStyle::ULTRA_CONDENSED_WIDTH,
+        Drawing::FontStyle::OBLIQUE_SLANT}));
+    
+    // 设置fontsize到LinearMetrics的属性
+    auto font = Drawing::Font();
+    auto font1 = MakeFont1(font, typeface, -31.f, 0, 0);
+    font.SetBaselineSnap(true);
+    font1.SetBaselineSnap(font.IsBaselineSnap());
+    font.SetHinting(Drawing::FontHinting::NORMAL);
+    font1.SetHinting(font.GetHinting());
+    font.SetForceAutoHinting(true);
+    font1.SetForceAutoHinting(font.IsForceAutoHinting());
+    font.SetEmbeddedBitmaps(true);
+    font1.SetEmbeddedBitmaps(font.IsEmbeddedBitmaps());
+    font.SetEmbolden(true);
+    font1.SetEmbolden(font.IsEmbolden());
+    font.SetLinearMetrics(true);
+    font1.SetLinearMetrics(font.IsLinearMetrics());
+
+    // font操作接口，如果涉及，获取返回值赋值给text4，并将text4加入vector容器
+    int glyphCount = font.CountText(g_text.c_str(), g_text.length(), Drawing::TextEncoding::UTF8);
+    uint16_t glyphs[glyphCount - 1];
+    int count = font.TextToGlyphs(g_text.c_str(), g_text.length(), Drawing::TextEncoding::GLYPH_ID,
+        glyphs, glyphCount + 1);
+    std::string text4 = "GlyphsCount = " + std::to_string(count);
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+    DrawTexts(texts, font, font1, playbackCanvas_);
+}
+
+// 对应用例 font_font_2310
+DEF_DTK(font_font_2, TestLevel::L2, 310)
+{
+    // 创建typeface
+    std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
+    std::string familyName = "HMOS Color Emoji";
+    std::shared_ptr<Drawing::FontStyleSet> fontStyleSet(fontMgr->MatchFamily(familyName.c_str()));
+    auto typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->MatchStyle({
+        Drawing::FontStyle::INVISIBLE_WEIGHT,
+        Drawing::FontStyle::ULTRA_CONDENSED_WIDTH,
+        Drawing::FontStyle::OBLIQUE_SLANT}));
+    
+    // 设置fontsize到LinearMetrics的属性
+    auto font = Drawing::Font();
+    auto font1 = MakeFont1(font, typeface, -15.34f, 0, 1.f);
+    font.SetBaselineSnap(true);
+    font1.SetBaselineSnap(font.IsBaselineSnap());
+    font.SetHinting(Drawing::FontHinting::NONE);
+    font1.SetHinting(font.GetHinting());
+    font.SetForceAutoHinting(true);
+    font1.SetForceAutoHinting(font.IsForceAutoHinting());
+    font.SetEmbeddedBitmaps(true);
+    font1.SetEmbeddedBitmaps(font.IsEmbeddedBitmaps());
+    font.SetEmbolden(true);
+    font1.SetEmbolden(font.IsEmbolden());
+    font.SetLinearMetrics(true);
+    font1.SetLinearMetrics(font.IsLinearMetrics());
+
+    // font操作接口，如果涉及，获取返回值赋值给text4，并将text4加入vector容器
+    int glyphCount = font.CountText(g_text.c_str(), g_text.length(), Drawing::TextEncoding::UTF8);
+    uint16_t glyphs[glyphCount - 1];
+    int count = font.TextToGlyphs(g_text.c_str(), g_text.length(), Drawing::TextEncoding::GLYPH_ID, glyphs, glyphCount);
+    std::string text4 = "GlyphsCount = " + std::to_string(count);
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+    DrawTexts(texts, font, font1, playbackCanvas_);
+}
+
+// 对应用例 font_font_2311
+DEF_DTK(font_font_2, TestLevel::L2, 311)
+{
+    // 创建typeface
+    std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
+    std::string familyName = "HMOS Color Emoji";
+    std::shared_ptr<Drawing::FontStyleSet> fontStyleSet(fontMgr->MatchFamily(familyName.c_str()));
+    auto typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->MatchStyle({
+        Drawing::FontStyle::INVISIBLE_WEIGHT,
+        Drawing::FontStyle::ULTRA_CONDENSED_WIDTH,
+        Drawing::FontStyle::OBLIQUE_SLANT}));
+    
+    // 设置fontsize到LinearMetrics的属性
+    auto font = Drawing::Font();
+    auto font1 = MakeFont1(font, typeface, -15.34f, 0, 1.f);
+    font.SetBaselineSnap(false);
+    font1.SetBaselineSnap(font.IsBaselineSnap());
+    font.SetEdging(Drawing::FontEdging::SUBPIXEL_ANTI_ALIAS);
+    font1.SetEdging(font.GetEdging());
+    font.SetHinting(Drawing::FontHinting::NORMAL);
+    font1.SetHinting(font.GetHinting());
+    font.SetForceAutoHinting(false);
+    font1.SetForceAutoHinting(font.IsForceAutoHinting());
+    font.SetEmbeddedBitmaps(false);
+    font1.SetEmbeddedBitmaps(font.IsEmbeddedBitmaps());
+    font.SetEmbolden(false);
+    font1.SetEmbolden(font.IsEmbolden());
+    font.SetLinearMetrics(false);
+    font1.SetLinearMetrics(font.IsLinearMetrics());
+
+    // font操作接口，如果涉及，获取返回值赋值给text4，并将text4加入vector容器
+    Drawing::Rect bounds;
+    auto scalar = font.MeasureText(g_text.c_str(), g_text.size(), Drawing::TextEncoding::UTF32, &bounds);
+    std::string text4 = "MeasureTextWidths = " + std::to_string(scalar);
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+    DrawTexts(texts, font, font1, playbackCanvas_);
+}
+
+// 对应用例 font_font_2312
+DEF_DTK(font_font_2, TestLevel::L2, 312)
+{
+    // 创建typeface
+    std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
+    std::string familyName = "HMOS Color Emoji";
+    std::shared_ptr<Drawing::FontStyleSet> fontStyleSet(fontMgr->MatchFamily(familyName.c_str()));
+    auto typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->MatchStyle({
+        Drawing::FontStyle::INVISIBLE_WEIGHT,
+        Drawing::FontStyle::ULTRA_CONDENSED_WIDTH,
+        Drawing::FontStyle::OBLIQUE_SLANT}));
+    
+    // 设置fontsize到LinearMetrics的属性
+    auto font = Drawing::Font();
+    auto font1 = MakeFont1(font, typeface, -15.34f, 0.7f, 0.7f);
+    font.SetBaselineSnap(false);
+    font1.SetBaselineSnap(font.IsBaselineSnap());
+    font.SetEdging(Drawing::FontEdging::ALIAS);
+    font1.SetEdging(font.GetEdging());
+    font.SetHinting(Drawing::FontHinting::FULL);
+    font1.SetHinting(font.GetHinting());
+    font.SetForceAutoHinting(false);
+    font1.SetForceAutoHinting(font.IsForceAutoHinting());
+    font.SetEmbeddedBitmaps(false);
+    font1.SetEmbeddedBitmaps(font.IsEmbeddedBitmaps());
+    font.SetEmbolden(false);
+    font1.SetEmbolden(font.IsEmbolden());
+    font.SetLinearMetrics(false);
+    font1.SetLinearMetrics(font.IsLinearMetrics());
+
+    // font操作接口，如果涉及，获取返回值赋值给text4，并将text4加入vector容器
+    Drawing::FontMetrics metrics;
+    auto SpaceLine = font.GetMetrics(&metrics);
+    std::string text4 = "Recommended spaceing between lines = " + std::to_string(SpaceLine);
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+    DrawTexts(texts, font, font1, playbackCanvas_);
+}
+
+// 对应用例 font_font_2313
+DEF_DTK(font_font_2, TestLevel::L2, 313)
+{
+    // 创建typeface
+    std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
+    std::string familyName = "HMOS Color Emoji";
+    std::shared_ptr<Drawing::FontStyleSet> fontStyleSet(fontMgr->MatchFamily(familyName.c_str()));
+    auto typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->MatchStyle({
+        Drawing::FontStyle::INVISIBLE_WEIGHT,
+        Drawing::FontStyle::ULTRA_CONDENSED_WIDTH,
+        Drawing::FontStyle::OBLIQUE_SLANT}));
+    
+    // 设置fontsize到LinearMetrics的属性
+    auto font = Drawing::Font();
+    auto font1 = MakeFont1(font, typeface, 0, 0.7f, 30.f);
+    font.SetBaselineSnap(true);
+    font1.SetBaselineSnap(font.IsBaselineSnap());
+    font.SetEdging(Drawing::FontEdging::ANTI_ALIAS);
+    font1.SetEdging(font.GetEdging());
+    font.SetForceAutoHinting(true);
+    font1.SetForceAutoHinting(font.IsForceAutoHinting());
+    font.SetEmbeddedBitmaps(true);
+    font1.SetEmbeddedBitmaps(font.IsEmbeddedBitmaps());
+    font.SetEmbolden(true);
+    font1.SetEmbolden(font.IsEmbolden());
+    font.SetLinearMetrics(true);
+    font1.SetLinearMetrics(font.IsLinearMetrics());
+
+    // font操作接口，如果涉及，获取返回值赋值给text4，并将text4加入vector容器
+    auto SpaceLine = font.GetMetrics(nullptr);
+    std::string text4 = "Recommended spaceing between lines = " + std::to_string(SpaceLine);
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+    DrawTexts(texts, font, font1, playbackCanvas_);
+}
+
+// 对应用例 font_font_2314
+DEF_DTK(font_font_2, TestLevel::L2, 314)
+{
+    // 创建typeface
+    std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
+    std::string familyName = "HMOS Color Emoji";
+    std::shared_ptr<Drawing::FontStyleSet> fontStyleSet(fontMgr->MatchFamily(familyName.c_str()));
+    auto typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->MatchStyle({
+        Drawing::FontStyle::INVISIBLE_WEIGHT,
+        Drawing::FontStyle::ULTRA_CONDENSED_WIDTH,
+        Drawing::FontStyle::OBLIQUE_SLANT}));
+    
+    // 设置fontsize到LinearMetrics的属性
+    auto font = Drawing::Font();
+    auto font1 = MakeFont1(font, typeface, 0, 0.7f, 30.f);
+    font.SetBaselineSnap(false);
+    font1.SetBaselineSnap(font.IsBaselineSnap());
+    font.SetEdging(Drawing::FontEdging::ALIAS);
+    font1.SetEdging(font.GetEdging());
+    font.SetHinting(Drawing::FontHinting::SLIGHT);
+    font1.SetHinting(font.GetHinting());
+    font.SetForceAutoHinting(false);
+    font1.SetForceAutoHinting(font.IsForceAutoHinting());
+    font.SetEmbeddedBitmaps(false);
+    font1.SetEmbeddedBitmaps(font.IsEmbeddedBitmaps());
+    font.SetEmbolden(false);
+    font1.SetEmbolden(font.IsEmbolden());
+    font.SetLinearMetrics(false);
+    font1.SetLinearMetrics(font.IsLinearMetrics());
+
+    // font操作接口，如果涉及，获取返回值赋值给text4，并将text4加入vector容器
+    int glyphCount = font.CountText(g_text.c_str(), g_text.length(), Drawing::TextEncoding::UTF8);
+    uint16_t glyphs[glyphCount - 1];
+    int count = font.TextToGlyphs(g_text.c_str(), g_text.length(), Drawing::TextEncoding::GLYPH_ID,
+        glyphs, glyphCount - 1);
+    std::string text4 = "GlyphsCount = " + std::to_string(count);
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+    DrawTexts(texts, font, font1, playbackCanvas_);
+}
+
+// 对应用例 font_font_2315
+DEF_DTK(font_font_2, TestLevel::L2, 315)
+{
+    // 创建typeface
+    std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
+    std::string familyName = "HMOS Color Emoji";
+    std::shared_ptr<Drawing::FontStyleSet> fontStyleSet(fontMgr->MatchFamily(familyName.c_str()));
+    auto typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->MatchStyle({
+        Drawing::FontStyle::INVISIBLE_WEIGHT,
+        Drawing::FontStyle::ULTRA_CONDENSED_WIDTH,
+        Drawing::FontStyle::OBLIQUE_SLANT}));
+    
+    // 设置fontsize到LinearMetrics的属性
+    auto font = Drawing::Font();
+    auto font1 = MakeFont1(font, typeface, 0, 0.7f, 30.f);
+    font.SetHinting(Drawing::FontHinting::FULL);
+    font1.SetHinting(font.GetHinting());
+
+    // font操作接口，如果涉及，获取返回值赋值给text4，并将text4加入vector容器
+    Drawing::Rect bounds;
+    auto scalar = font.MeasureText(g_text.c_str(), g_text.size(), Drawing::TextEncoding::GLYPH_ID, &bounds);
+    std::string text4 = "MeasureTextWidths = " + std::to_string(scalar);
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+    DrawTexts(texts, font, font1, playbackCanvas_);
+}
+
+// 对应用例 font_font_2316
+DEF_DTK(font_font_2, TestLevel::L2, 316)
+{
+    // 创建typeface
+    std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
+    std::string familyName = "HMOS Color Emoji";
+    std::shared_ptr<Drawing::FontStyleSet> fontStyleSet(fontMgr->MatchFamily(familyName.c_str()));
+    auto typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->MatchStyle({
+        Drawing::FontStyle::INVISIBLE_WEIGHT,
+        Drawing::FontStyle::ULTRA_CONDENSED_WIDTH,
+        Drawing::FontStyle::OBLIQUE_SLANT}));
+    
+    // 设置fontsize到LinearMetrics的属性
+    auto font = Drawing::Font();
+    auto font1 = MakeFont1(font, typeface, 0, 1.f, 1.f);
+    font.SetEdging(Drawing::FontEdging::ANTI_ALIAS);
+    font1.SetEdging(font.GetEdging());
+    font.SetEmbolden(false);
+    font1.SetEmbolden(font.IsEmbolden());
+
+    // font操作接口，如果涉及，获取返回值赋值给text4，并将text4加入vector容器
+    auto glyphsCount = font.CountText(g_text.c_str(), g_text.length(), Drawing::TextEncoding::UTF16);
+    std::string text4 = "glyphsCount = " + std::to_string(glyphsCount);
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+    DrawTexts(texts, font, font1, playbackCanvas_);
+}
+
+// 对应用例 font_font_2317
+DEF_DTK(font_font_2, TestLevel::L2, 317)
+{
+    // 创建typeface
+    std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
+    std::string familyName = "HMOS Color Emoji";
+    std::shared_ptr<Drawing::FontStyleSet> fontStyleSet(fontMgr->MatchFamily(familyName.c_str()));
+    auto typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->MatchStyle({
+        Drawing::FontStyle::INVISIBLE_WEIGHT,
+        Drawing::FontStyle::ULTRA_CONDENSED_WIDTH,
+        Drawing::FontStyle::OBLIQUE_SLANT}));
+    
+    // 设置fontsize到LinearMetrics的属性
+    auto font = Drawing::Font();
+    auto font1 = MakeFont1(font, typeface, 27.13f, 1.f, -30.f);
+    font.SetBaselineSnap(true);
+    font1.SetBaselineSnap(font.IsBaselineSnap());
+    font.SetEdging(Drawing::FontEdging::ALIAS);
+    font1.SetEdging(font.GetEdging());
+    font.SetForceAutoHinting(true);
+    font1.SetForceAutoHinting(font.IsForceAutoHinting());
+    font.SetEmbeddedBitmaps(true);
+    font1.SetEmbeddedBitmaps(font.IsEmbeddedBitmaps());
+    font.SetEmbolden(true);
+    font1.SetEmbolden(font.IsEmbolden());
+    font.SetLinearMetrics(true);
+    font1.SetLinearMetrics(font.IsLinearMetrics());
+
+    // font操作接口，如果涉及，获取返回值赋值给text4，并将text4加入vector容器
+    auto scalar = font.MeasureSingleCharacter(0x44);
+    std::string text4 = "Recommended spaceing between lines = " + std::to_string(scalar);
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+    DrawTexts(texts, font, font1, playbackCanvas_);
+}
+
+// 对应用例 font_font_2318
+DEF_DTK(font_font_2, TestLevel::L2, 318)
+{
+    // 创建typeface
+    std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
+    std::string familyName = "HMOS Color Emoji";
+    std::shared_ptr<Drawing::FontStyleSet> fontStyleSet(fontMgr->MatchFamily(familyName.c_str()));
+    auto typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->MatchStyle({
+        Drawing::FontStyle::INVISIBLE_WEIGHT,
+        Drawing::FontStyle::ULTRA_CONDENSED_WIDTH,
+        Drawing::FontStyle::OBLIQUE_SLANT}));
+    
+    // 设置fontsize到LinearMetrics的属性
+    auto font = Drawing::Font();
+    auto font1 = MakeFont1(font, typeface, 27.13f, 1.f, -30.f);
+    font.SetBaselineSnap(false);
+    font1.SetBaselineSnap(font.IsBaselineSnap());
+    font.SetEdging(Drawing::FontEdging::SUBPIXEL_ANTI_ALIAS);
+    font1.SetEdging(font.GetEdging());
+    font.SetHinting(Drawing::FontHinting::NONE);
+    font1.SetHinting(font.GetHinting());
+    font.SetForceAutoHinting(false);
+    font1.SetForceAutoHinting(font.IsForceAutoHinting());
+    font.SetEmbeddedBitmaps(false);
+    font1.SetEmbeddedBitmaps(font.IsEmbeddedBitmaps());
+    font.SetEmbolden(false);
+    font1.SetEmbolden(font.IsEmbolden());
+    font.SetLinearMetrics(false);
+    font1.SetLinearMetrics(font.IsLinearMetrics());
+
+    // font操作接口，如果涉及，获取返回值赋值给text4，并将text4加入vector容器
+    int glyphCount = font.CountText(g_text.c_str(), g_text.length(), Drawing::TextEncoding::UTF16);
+    float widths[glyphCount];
+    uint16_t glyphs[glyphCount];
+    font.TextToGlyphs(g_text.c_str(), g_text.length(), Drawing::TextEncoding::UTF8, glyphs, glyphCount);
+    font.GetWidths(glyphs, glyphCount, widths);
+    std::string text4 = "GetWidths = " + std::to_string(widths[0]);
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+    DrawTexts(texts, font, font1, playbackCanvas_);
+}
+
+// 对应用例 font_font_2319
+DEF_DTK(font_font_2, TestLevel::L2, 319)
+{
+    // 创建typeface
+    std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
+    std::string familyName = "HMOS Color Emoji";
+    std::shared_ptr<Drawing::FontStyleSet> fontStyleSet(fontMgr->MatchFamily(familyName.c_str()));
+    auto typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->MatchStyle({
+        Drawing::FontStyle::INVISIBLE_WEIGHT,
+        Drawing::FontStyle::ULTRA_CONDENSED_WIDTH,
+        Drawing::FontStyle::OBLIQUE_SLANT}));
+    
+    // 设置fontsize到LinearMetrics的属性
+    auto font = Drawing::Font();
+    auto font1 = MakeFont1(font, typeface, 27.13f, 1.f, -30.f);
+    font.SetEdging(Drawing::FontEdging::ANTI_ALIAS);
+    font1.SetEdging(font.GetEdging());
+    font.SetHinting(Drawing::FontHinting::NORMAL);
+    font1.SetHinting(font.GetHinting());
+
+    // font操作接口，如果涉及，获取返回值赋值给text4，并将text4加入vector容器
+    int glyphCount = font.CountText(g_text.c_str(), g_text.length(), Drawing::TextEncoding::UTF16);
+    uint16_t glyphs[glyphCount - 1];
+    int count = font.TextToGlyphs(g_text.c_str(), g_text.length(), Drawing::TextEncoding::GLYPH_ID,
+        glyphs, glyphCount + 1);
+    std::string text4 = "GlyphsCount = " + std::to_string(count);
+    std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
+    DrawTexts(texts, font, font1, playbackCanvas_);
+}
+
+// 对应用例 font_font_2320
+DEF_DTK(font_font_2, TestLevel::L2, 320)
+{
+    // 创建typeface
+    std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
+    std::string familyName = "HMOS Color Emoji";
+    std::shared_ptr<Drawing::FontStyleSet> fontStyleSet(fontMgr->MatchFamily(familyName.c_str()));
+    auto typeface = std::shared_ptr<Drawing::Typeface>(fontStyleSet->MatchStyle({
+        Drawing::FontStyle::INVISIBLE_WEIGHT,
+        Drawing::FontStyle::ULTRA_CONDENSED_WIDTH,
+        Drawing::FontStyle::OBLIQUE_SLANT}));
+    
+    // 设置fontsize到LinearMetrics的属性
+    auto font = Drawing::Font();
+    auto font1 = MakeFont1(font, typeface, 27.13f, 30.f, 30.f);
+    font.SetBaselineSnap(true);
+    font1.SetBaselineSnap(font.IsBaselineSnap());
+    font.SetEdging(Drawing::FontEdging::SUBPIXEL_ANTI_ALIAS);
+    font1.SetEdging(font.GetEdging());
+    font.SetHinting(Drawing::FontHinting::NONE);
+    font1.SetHinting(font.GetHinting());
+    font.SetForceAutoHinting(true);
+    font1.SetForceAutoHinting(font.IsForceAutoHinting());
+    font.SetEmbeddedBitmaps(true);
+    font1.SetEmbeddedBitmaps(font.IsEmbeddedBitmaps());
+    font.SetLinearMetrics(true);
+    font1.SetLinearMetrics(font.IsLinearMetrics());
+
+    // font操作接口，如果涉及，获取返回值赋值给text4，并将text4加入vector容器
+    auto glyphsCount = font.CountText(g_text.c_str(), g_text.length(), Drawing::TextEncoding::UTF32);
+    std::string text4 = "glyphsCount = " + std::to_string(glyphsCount);
     std::vector<std::string> texts = {g_text1, g_text2, g_text3, text4};
     DrawTexts(texts, font, font1, playbackCanvas_);
 }
