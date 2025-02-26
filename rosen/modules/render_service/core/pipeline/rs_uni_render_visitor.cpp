@@ -355,15 +355,14 @@ void RSUniRenderVisitor::HandleColorGamuts(RSDisplayRenderNode& node, const sptr
             return;
         }
         node.SetColorSpace(static_cast<GraphicColorGamut>(screenColorGamut));
-    } else if (RSMainThread::Instance()->GetDeviceType() == DeviceType::PC &&
-        (RSMainThread::Instance()->HasWiredMirrorDisplay() || RSMainThread::Instance()->HasVirtualMirrorDisplay())) {
-        // wired and virtual mirror screen close P3
+    }
+
+    if (RSMainThread::Instance()->GetDeviceType() == DeviceType::PC &&
+        (RSMainThread::Instance()->HasWiredMirrorDisplay() || RSMainThread::Instance()->HasVirtualMirrorDisplay() ||
+        (node.GetScreenId() != 0 && screenType != VIRTUAL_TYPE_SCREEN))) {
+        RS_LOGD("RSUniRenderVisitor::HandleColorGamuts close multi-screen P3.");
+        // wired screen and virtual mirror screen close P3
         node.SetColorSpace(GRAPHIC_COLOR_GAMUT_SRGB);
-    } else if (node.GetScreenId() != 0) {
-        if (!IsScreenSupportedWideColorGamut(node.GetScreenId(), screenManager)) {
-            node.SetColorSpace(GRAPHIC_COLOR_GAMUT_SRGB);
-            RS_LOGD("RSUniRenderVisitor::HandleColorGamuts physical extended screen not support wide color gamut.");
-        }
     }
 }
 
