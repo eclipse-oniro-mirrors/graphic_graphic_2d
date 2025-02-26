@@ -465,7 +465,7 @@ private:
     sptr<RSIScreenChangeCallback> screenChangeCb_;
     sptr<RSISurfaceCaptureCallback> surfaceCaptureCbDirector_;
     std::unordered_map<std::pair<NodeId, RSSurfaceCaptureConfig>,
-        std::vector<std::shared_ptr<SurfaceCaptureCallback>>> surfaceCaptureCbMap_;
+        std::vector<std::shared_ptr<SurfaceCaptureCallback>>, PairHash> surfaceCaptureCbMap_;
 
     sptr<RSISurfaceBufferCallback> surfaceBufferCbDirector_;
     std::map<uint64_t, std::shared_ptr<SurfaceBufferCallback>> surfaceBufferCallbacks_;
