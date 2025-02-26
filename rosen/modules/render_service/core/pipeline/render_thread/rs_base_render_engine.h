@@ -226,6 +226,7 @@ public:
         return captureSkContext_;
     }
 #endif
+    void DumpVkImageInfo(std::string &dumpString);
 protected:
     void DrawImage(RSPaintFilterCanvas& canvas, BufferDrawParam& params);
 

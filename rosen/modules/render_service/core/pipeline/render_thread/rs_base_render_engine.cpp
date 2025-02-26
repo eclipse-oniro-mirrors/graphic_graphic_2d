@@ -674,6 +674,17 @@ std::shared_ptr<Drawing::ColorSpace> RSBaseRenderEngine::ConvertColorSpaceNameTo
     return colorSpace;
 }
 
+void RSBaseRenderEngine::DumpVkImageInfo(std::string &dumpString)
+{
+#ifdef RS_ENABLE_VK
+    if (RSSystemProperties::IsUseVulkan() && vkImageManager_) {
+        vkImageManager_->DumpVkImageInfo(dumpString);
+    }
+#else
+    (void) dumpString;
+#endif
+}
+
 std::shared_ptr<Drawing::Image> RSBaseRenderEngine::CreateImageFromBuffer(RSPaintFilterCanvas& canvas,
     BufferDrawParam& params, VideoInfo& videoInfo)
 {
@@ -702,6 +713,9 @@ std::shared_ptr<Drawing::Image> RSBaseRenderEngine::CreateImageFromBuffer(RSPain
     if (RSSystemProperties::IsUseVulkan()) {
         auto imageCache = vkImageManager_->MapVkImageFromSurfaceBuffer(params.buffer,
             params.acquireFence, params.threadIndex, params.screenId);
+        if (params.buffer != nullptr && params.buffer->GetBufferDeleteFromCacheFlag()) {
+            vkImageManager_->UnMapVkImageFromSurfaceBuffer(params.buffer->GetSeqNum(), true);
+        }
         auto bitmapFormat = RSBaseRenderUtil::GenerateDrawingBitmapFormat(params.buffer);
 #ifndef ROSEN_EMULATOR
         auto surfaceOrigin = Drawing::TextureOrigin::TOP_LEFT;
