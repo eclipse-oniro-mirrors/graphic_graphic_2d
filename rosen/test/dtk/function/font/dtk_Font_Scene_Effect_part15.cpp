@@ -85,7 +85,7 @@ static std::vector<Drawing::BlendMode> MakeBlendModes()
 }
 
 // 用例 Font_Scene_Effect_0236
-DEF_DTK(Font_Scene_Effect_15, TestLevel::L2, 236)
+DEF_DTK(Font_Scene_Effect_8, TestLevel::L2, 236)
 {
     // 1.创建typeface
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
@@ -125,7 +125,7 @@ DEF_DTK(Font_Scene_Effect_15, TestLevel::L2, 236)
 }
 
 // 用例 Font_Scene_Effect_0237
-DEF_DTK(Font_Scene_Effect_15, TestLevel::L2, 237)
+DEF_DTK(Font_Scene_Effect_8, TestLevel::L2, 237)
 {
     // 1.创建typeface
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
@@ -177,7 +177,7 @@ DEF_DTK(Font_Scene_Effect_15, TestLevel::L2, 237)
 }
 
 // 用例 Font_Scene_Effect_0238
-DEF_DTK(Font_Scene_Effect_15, TestLevel::L2, 238)
+DEF_DTK(Font_Scene_Effect_8, TestLevel::L2, 238)
 {
     // 1.创建typeface
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
@@ -228,7 +228,7 @@ DEF_DTK(Font_Scene_Effect_15, TestLevel::L2, 238)
 }
 
 // 用例 Font_Scene_Effect_0239
-DEF_DTK(Font_Scene_Effect_15, TestLevel::L2, 239)
+DEF_DTK(Font_Scene_Effect_8, TestLevel::L2, 239)
 {
     // 1.创建typeface
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
@@ -285,7 +285,7 @@ DEF_DTK(Font_Scene_Effect_15, TestLevel::L2, 239)
 }
 
 // 用例 Font_Scene_Effect_0240
-DEF_DTK(Font_Scene_Effect_15, TestLevel::L2, 240)
+DEF_DTK(Font_Scene_Effect_8, TestLevel::L2, 240)
 {
     // 1.创建typeface
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
@@ -343,7 +343,7 @@ DEF_DTK(Font_Scene_Effect_15, TestLevel::L2, 240)
 }
 
 // 用例 Font_Scene_Effect_0241
-DEF_DTK(Font_Scene_Effect_15, TestLevel::L2, 241)
+DEF_DTK(Font_Scene_Effect_8, TestLevel::L2, 241)
 {
     // 1.创建typeface
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
@@ -405,7 +405,7 @@ DEF_DTK(Font_Scene_Effect_15, TestLevel::L2, 241)
 }
 
 // 用例 Font_Scene_Effect_0242
-DEF_DTK(Font_Scene_Effect_15, TestLevel::L2, 242)
+DEF_DTK(Font_Scene_Effect_8, TestLevel::L2, 242)
 {
     // 1.创建typeface
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
@@ -451,7 +451,7 @@ DEF_DTK(Font_Scene_Effect_15, TestLevel::L2, 242)
 }
 
 // 用例 Font_Scene_Effect_0243
-DEF_DTK(Font_Scene_Effect_15, TestLevel::L2, 243)
+DEF_DTK(Font_Scene_Effect_8, TestLevel::L2, 243)
 {
     // 1.创建typeface
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
@@ -498,7 +498,7 @@ DEF_DTK(Font_Scene_Effect_15, TestLevel::L2, 243)
 }
 
 // 用例 Font_Scene_Effect_0244
-DEF_DTK(Font_Scene_Effect_15, TestLevel::L2, 244)
+DEF_DTK(Font_Scene_Effect_8, TestLevel::L2, 244)
 {
     // 1.创建typeface
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
@@ -551,7 +551,7 @@ DEF_DTK(Font_Scene_Effect_15, TestLevel::L2, 244)
 }
 
 // 用例 Font_Scene_Effect_0245
-DEF_DTK(Font_Scene_Effect_15, TestLevel::L2, 245)
+DEF_DTK(Font_Scene_Effect_8, TestLevel::L2, 245)
 {
     // 1.创建typeface
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
@@ -611,7 +611,7 @@ DEF_DTK(Font_Scene_Effect_15, TestLevel::L2, 245)
 }
 
 // 用例 Font_Scene_Effect_0246
-DEF_DTK(Font_Scene_Effect_15, TestLevel::L2, 246)
+DEF_DTK(Font_Scene_Effect_8, TestLevel::L2, 246)
 {
     // 1.创建typeface
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
@@ -660,7 +660,7 @@ DEF_DTK(Font_Scene_Effect_15, TestLevel::L2, 246)
 }
 
 // 用例 Font_Scene_Effect_0247
-DEF_DTK(Font_Scene_Effect_15, TestLevel::L2, 247)
+DEF_DTK(Font_Scene_Effect_8, TestLevel::L2, 247)
 {
     // 1.创建typeface
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
@@ -721,7 +721,7 @@ DEF_DTK(Font_Scene_Effect_15, TestLevel::L2, 247)
 }
 
 // 用例 Font_Scene_Effect_0248
-DEF_DTK(Font_Scene_Effect_15, TestLevel::L2, 248)
+DEF_DTK(Font_Scene_Effect_8, TestLevel::L2, 248)
 {
     // 1.创建typeface
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
@@ -760,7 +760,7 @@ DEF_DTK(Font_Scene_Effect_15, TestLevel::L2, 248)
 }
 
 // 用例 Font_Scene_Effect_0249
-DEF_DTK(Font_Scene_Effect_15, TestLevel::L2, 249)
+DEF_DTK(Font_Scene_Effect_8, TestLevel::L2, 249)
 {
     // 1.创建typeface
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
@@ -808,7 +808,7 @@ DEF_DTK(Font_Scene_Effect_15, TestLevel::L2, 249)
 }
 
 // 用例 Font_Scene_Effect_0250
-DEF_DTK(Font_Scene_Effect_15, TestLevel::L2, 250)
+DEF_DTK(Font_Scene_Effect_8, TestLevel::L2, 250)
 {
     // 1.创建typeface
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
@@ -855,7 +855,7 @@ DEF_DTK(Font_Scene_Effect_15, TestLevel::L2, 250)
 }
 
 // 用例 Font_Scene_Effect_0251
-DEF_DTK(Font_Scene_Effect_15, TestLevel::L2, 251)
+DEF_DTK(Font_Scene_Effect_8, TestLevel::L2, 251)
 {
     // 1.创建typeface
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
@@ -910,7 +910,7 @@ DEF_DTK(Font_Scene_Effect_15, TestLevel::L2, 251)
 }
 
 // 用例 Font_Scene_Effect_0252
-DEF_DTK(Font_Scene_Effect_15, TestLevel::L2, 252)
+DEF_DTK(Font_Scene_Effect_8, TestLevel::L2, 252)
 {
     // 1.创建typeface
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
@@ -962,7 +962,7 @@ DEF_DTK(Font_Scene_Effect_15, TestLevel::L2, 252)
 }
 
 // 用例 Font_Scene_Effect_0253
-DEF_DTK(Font_Scene_Effect_16, TestLevel::L2, 253)
+DEF_DTK(Font_Scene_Effect_8, TestLevel::L2, 253)
 {
     // 1.创建typeface
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
@@ -1025,7 +1025,7 @@ DEF_DTK(Font_Scene_Effect_16, TestLevel::L2, 253)
 }
 
 // 用例 Font_Scene_Effect_0254
-DEF_DTK(Font_Scene_Effect_16, TestLevel::L2, 254)
+DEF_DTK(Font_Scene_Effect_8, TestLevel::L2, 254)
 {
     // 1.创建typeface
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
@@ -1064,7 +1064,7 @@ DEF_DTK(Font_Scene_Effect_16, TestLevel::L2, 254)
 }
 
 // 用例 Font_Scene_Effect_0255
-DEF_DTK(Font_Scene_Effect_16, TestLevel::L2, 255)
+DEF_DTK(Font_Scene_Effect_8, TestLevel::L2, 255)
 {
     // 1.创建typeface
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
@@ -1116,7 +1116,7 @@ DEF_DTK(Font_Scene_Effect_16, TestLevel::L2, 255)
 }
 
 // 用例 Font_Scene_Effect_0256
-DEF_DTK(Font_Scene_Effect_16, TestLevel::L2, 256)
+DEF_DTK(Font_Scene_Effect_8, TestLevel::L2, 256)
 {
     // 1.创建typeface
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
@@ -1170,7 +1170,7 @@ DEF_DTK(Font_Scene_Effect_16, TestLevel::L2, 256)
 }
 
 // 用例 Font_Scene_Effect_0257
-DEF_DTK(Font_Scene_Effect_16, TestLevel::L2, 257)
+DEF_DTK(Font_Scene_Effect_8, TestLevel::L2, 257)
 {
     // 1.创建typeface
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
@@ -1216,7 +1216,7 @@ DEF_DTK(Font_Scene_Effect_16, TestLevel::L2, 257)
 }
 
 // 用例 Font_Scene_Effect_0258
-DEF_DTK(Font_Scene_Effect_16, TestLevel::L2, 258)
+DEF_DTK(Font_Scene_Effect_8, TestLevel::L2, 258)
 {
     // 1.创建typeface
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
@@ -1267,7 +1267,7 @@ DEF_DTK(Font_Scene_Effect_16, TestLevel::L2, 258)
 }
 
 // 用例 Font_Scene_Effect_0259
-DEF_DTK(Font_Scene_Effect_16, TestLevel::L2, 259)
+DEF_DTK(Font_Scene_Effect_8, TestLevel::L2, 259)
 {
     // 1.创建typeface
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
@@ -1328,7 +1328,7 @@ DEF_DTK(Font_Scene_Effect_16, TestLevel::L2, 259)
 }
 
 // 用例 Font_Scene_Effect_0260
-DEF_DTK(Font_Scene_Effect_16, TestLevel::L2, 260)
+DEF_DTK(Font_Scene_Effect_8, TestLevel::L2, 260)
 {
     // 1.创建typeface
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
@@ -1377,7 +1377,7 @@ DEF_DTK(Font_Scene_Effect_16, TestLevel::L2, 260)
 }
 
 // 用例 Font_Scene_Effect_0261
-DEF_DTK(Font_Scene_Effect_16, TestLevel::L2, 261)
+DEF_DTK(Font_Scene_Effect_8, TestLevel::L2, 261)
 {
     // 1.创建typeface
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
@@ -1422,7 +1422,7 @@ DEF_DTK(Font_Scene_Effect_16, TestLevel::L2, 261)
 }
 
 // 用例 Font_Scene_Effect_0262
-DEF_DTK(Font_Scene_Effect_16, TestLevel::L2, 262)
+DEF_DTK(Font_Scene_Effect_8, TestLevel::L2, 262)
 {
     // 1.创建typeface
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
@@ -1482,7 +1482,7 @@ DEF_DTK(Font_Scene_Effect_16, TestLevel::L2, 262)
 }
 
 // 用例 Font_Scene_Effect_0263
-DEF_DTK(Font_Scene_Effect_16, TestLevel::L2, 263)
+DEF_DTK(Font_Scene_Effect_8, TestLevel::L2, 263)
 {
     // 1.创建typeface
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
@@ -1546,7 +1546,7 @@ DEF_DTK(Font_Scene_Effect_16, TestLevel::L2, 263)
 }
 
 // 用例 Font_Scene_Effect_0264
-DEF_DTK(Font_Scene_Effect_16, TestLevel::L2, 264)
+DEF_DTK(Font_Scene_Effect_8, TestLevel::L2, 264)
 {
     // 1.创建typeface
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
@@ -1605,7 +1605,7 @@ DEF_DTK(Font_Scene_Effect_16, TestLevel::L2, 264)
 }
 
 // 用例 Font_Scene_Effect_0265
-DEF_DTK(Font_Scene_Effect_16, TestLevel::L2, 265)
+DEF_DTK(Font_Scene_Effect_8, TestLevel::L2, 265)
 {
     // 1.创建typeface
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
@@ -1663,7 +1663,7 @@ DEF_DTK(Font_Scene_Effect_16, TestLevel::L2, 265)
 }
 
 // 用例 Font_Scene_Effect_0266
-DEF_DTK(Font_Scene_Effect_16, TestLevel::L2, 266)
+DEF_DTK(Font_Scene_Effect_8, TestLevel::L2, 266)
 {
     // 1.创建typeface
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
@@ -1708,7 +1708,7 @@ DEF_DTK(Font_Scene_Effect_16, TestLevel::L2, 266)
 }
 
 // 用例 Font_Scene_Effect_0267
-DEF_DTK(Font_Scene_Effect_16, TestLevel::L2, 267)
+DEF_DTK(Font_Scene_Effect_8, TestLevel::L2, 267)
 {
     // 1.创建typeface
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
@@ -1756,7 +1756,7 @@ DEF_DTK(Font_Scene_Effect_16, TestLevel::L2, 267)
 }
 
 // 用例 Font_Scene_Effect_0268
-DEF_DTK(Font_Scene_Effect_16, TestLevel::L2, 268)
+DEF_DTK(Font_Scene_Effect_8, TestLevel::L2, 268)
 {
     // 1.创建typeface
     std::shared_ptr<Drawing::FontMgr> fontMgr(Drawing::FontMgr::CreateDefaultFontMgr());
