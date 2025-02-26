@@ -70,7 +70,7 @@ static void DrawTexts(std::vector<std::string>& texts, Drawing::Font& font,
 }
 
 // 对应用例 font_font_3492
-DEF_DTK(font_font_11, TestLevel::L2, 492)
+DEF_DTK(font_font_6, TestLevel::L2, 492)
 {
     // 创建typeface
     std::shared_ptr<Drawing::Typeface> typeface = nullptr;
@@ -99,7 +99,7 @@ DEF_DTK(font_font_11, TestLevel::L2, 492)
 }
 
 // 对应用例 font_font_3493
-DEF_DTK(font_font_11, TestLevel::L2, 493)
+DEF_DTK(font_font_6, TestLevel::L2, 493)
 {
     // 创建typeface
     std::shared_ptr<Drawing::Typeface> typeface = nullptr;
@@ -130,7 +130,7 @@ DEF_DTK(font_font_11, TestLevel::L2, 493)
 }
 
 // 对应用例 font_font_3494
-DEF_DTK(font_font_11, TestLevel::L2, 494)
+DEF_DTK(font_font_6, TestLevel::L2, 494)
 {
     // 创建typeface
     std::shared_ptr<Drawing::Typeface> typeface = nullptr;
@@ -159,7 +159,7 @@ DEF_DTK(font_font_11, TestLevel::L2, 494)
 }
 
 // 对应用例 font_font_3495
-DEF_DTK(font_font_11, TestLevel::L2, 495)
+DEF_DTK(font_font_6, TestLevel::L2, 495)
 {
     // 创建typeface
     std::shared_ptr<Drawing::Typeface> typeface = nullptr;
@@ -181,7 +181,7 @@ DEF_DTK(font_font_11, TestLevel::L2, 495)
 }
 
 // 对应用例 font_font_3496
-DEF_DTK(font_font_11, TestLevel::L2, 496)
+DEF_DTK(font_font_6, TestLevel::L2, 496)
 {
     // 创建typeface
     std::shared_ptr<Drawing::Typeface> typeface = nullptr;
@@ -209,7 +209,7 @@ DEF_DTK(font_font_11, TestLevel::L2, 496)
 }
 
 // 对应用例 font_font_3497
-DEF_DTK(font_font_11, TestLevel::L2, 497)
+DEF_DTK(font_font_6, TestLevel::L2, 497)
 {
     // 创建typeface
     std::shared_ptr<Drawing::Typeface> typeface = nullptr;
@@ -232,7 +232,7 @@ DEF_DTK(font_font_11, TestLevel::L2, 497)
 }
 
 // 对应用例 font_font_3498
-DEF_DTK(font_font_11, TestLevel::L2, 498)
+DEF_DTK(font_font_6, TestLevel::L2, 498)
 {
     // 创建typeface
     std::shared_ptr<Drawing::Typeface> typeface = nullptr;
@@ -263,7 +263,7 @@ DEF_DTK(font_font_11, TestLevel::L2, 498)
 }
 
 // 对应用例 font_font_3499
-DEF_DTK(font_font_11, TestLevel::L2, 499)
+DEF_DTK(font_font_6, TestLevel::L2, 499)
 {
     // 创建typeface
     std::shared_ptr<Drawing::Typeface> typeface = nullptr;
@@ -292,7 +292,7 @@ DEF_DTK(font_font_11, TestLevel::L2, 499)
 }
 
 // 对应用例 font_font_3500
-DEF_DTK(font_font_11, TestLevel::L2, 500)
+DEF_DTK(font_font_6, TestLevel::L2, 500)
 {
     // 创建typeface
     std::shared_ptr<Drawing::Typeface> typeface = nullptr;
@@ -314,7 +314,7 @@ DEF_DTK(font_font_11, TestLevel::L2, 500)
 }
 
 // 对应用例 font_font_3501
-DEF_DTK(font_font_11, TestLevel::L2, 501)
+DEF_DTK(font_font_6, TestLevel::L2, 501)
 {
     // 创建typeface
     std::shared_ptr<Drawing::Typeface> typeface = nullptr;
@@ -349,7 +349,7 @@ DEF_DTK(font_font_11, TestLevel::L2, 501)
 }
 
 // 对应用例 font_font_3502
-DEF_DTK(font_font_11, TestLevel::L2, 502)
+DEF_DTK(font_font_6, TestLevel::L2, 502)
 {
     // 创建typeface
     std::shared_ptr<Drawing::Typeface> typeface = nullptr;
@@ -383,7 +383,7 @@ DEF_DTK(font_font_11, TestLevel::L2, 502)
 }
 
 // 对应用例 font_font_3503
-DEF_DTK(font_font_11, TestLevel::L2, 503)
+DEF_DTK(font_font_6, TestLevel::L2, 503)
 {
     // 创建typeface
     std::shared_ptr<Drawing::Typeface> typeface = nullptr;
@@ -404,7 +404,7 @@ DEF_DTK(font_font_11, TestLevel::L2, 503)
 }
 
 // 对应用例 font_font_3504
-DEF_DTK(font_font_11, TestLevel::L2, 504)
+DEF_DTK(font_font_6, TestLevel::L2, 504)
 {
     // 创建typeface
     std::shared_ptr<Drawing::Typeface> typeface = nullptr;
