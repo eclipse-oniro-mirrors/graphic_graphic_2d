@@ -204,14 +204,14 @@ void VideoPlayerCallback::OnInfo(Media::PlayerOnInfoType type, int32_t extra, co
             LOGI("PlayerCallback: Volume Changed");
             break;
         default:
-            OnOnperateInfo(type, extra);
+            OnOperateInfo(type, extra);
             break;
     }
 }
 #endif
 
 #ifdef PLAYER_FRAMEWORK_ENABLE
-void VideoPlayerCallback::OnOnperateInfo(Media::PlayerOnInfoType type, int32_t extra)
+void VideoPlayerCallback::OnOperateInfo(Media::PlayerOnInfoType type, int32_t extra)
 {
     auto boot = boot_.lock();
     if (!boot) {
