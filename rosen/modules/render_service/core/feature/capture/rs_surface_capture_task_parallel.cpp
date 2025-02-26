@@ -256,7 +256,7 @@ bool RSSurfaceCaptureTaskParallel::Run(sptr<RSISurfaceCaptureCallback> callback,
     }
     if (RSSystemProperties::GetSnapshotWithDMAEnabled()) {
         auto copytask = CreateSurfaceSyncCopyTask(surface, std::move(pixelMap_),
-            nodeId_, captureConfig_, callback, finalRotationAngle_, captureConfig_.useDma);
+            nodeId_, captureConfig_, callback, finalRotationAngle_);
         if (!copytask) {
             RS_LOGE("RSSurfaceCaptureTaskParallel::Run: create capture task failed!");
             return false;
@@ -463,7 +463,7 @@ void RSSurfaceCaptureTaskParallel::AddBlur(
     std::function<void()> RSSurfaceCaptureTaskParallel::CreateSurfaceSyncCopyTask(
         std::shared_ptr<Drawing::Surface> surface, std::unique_ptr<Media::PixelMap> pixelMap, NodeId id,
         const RSSurfaceCaptureConfig& captureConfig, sptr<RSISurfaceCaptureCallback> callback,
-        int32_t rotation, bool useDma)
+        int32_t rotation)
 {
     if (surface == nullptr) {
         RS_LOGE("RSSurfaceCaptureTaskParallel: nodeId:[%{public}" PRIu64 "], surface is nullptr", id);
@@ -478,6 +478,7 @@ void RSSurfaceCaptureTaskParallel::AddBlur(
     std::get<0>(*wrapper) = std::move(pixelMap);
     auto wrapperSf = std::make_shared<std::tuple<std::shared_ptr<Drawing::Surface>>>();
     std::get<0>(*wrapperSf) = std::move(surface);
+    bool useDma = captureConfig.useDma;
     std::function<void()> copytask = [wrapper, captureConfig, callback, backendTexture, wrapperSf, id,
         rotation, useDma]() -> void {
         RS_TRACE_NAME_FMT("copy and send capture useDma:%d", useDma);

@@ -376,7 +376,7 @@ std::shared_ptr<Drawing::Surface> RSUiCaptureTaskParallel::CreateSurface(
 std::function<void()> RSUiCaptureTaskParallel::CreateSurfaceSyncCopyTask(
     std::shared_ptr<Drawing::Surface> surface, std::unique_ptr<Media::PixelMap> pixelMap,
     NodeId id, const RSSurfaceCaptureConfig& captureConfig, sptr<RSISurfaceCaptureCallback> callback,
-    int32_t rotation, bool useDma)
+    int32_t rotation)
 {
     Drawing::BackendTexture backendTexture = surface->GetBackendTexture();
     if (!backendTexture.IsValid()) {
@@ -387,6 +387,7 @@ std::function<void()> RSUiCaptureTaskParallel::CreateSurfaceSyncCopyTask(
     std::get<0>(*wrapper) = std::move(pixelMap);
     auto wrapperSf = std::make_shared<std::tuple<std::shared_ptr<Drawing::Surface>>>();
     std::get<0>(*wrapperSf) = std::move(surface);
+    bool useDma = captureConfig.useDma;
     std::function<void()> copytask = [
         wrapper, captureConfig, callback, backendTexture, wrapperSf, id, rotation, useDma]() -> void {
         RS_TRACE_NAME_FMT("copy and send capture useDma:%d", useDma);

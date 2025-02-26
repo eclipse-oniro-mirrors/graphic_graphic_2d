@@ -35,7 +35,6 @@ bool RSSurfaceCaptureCallbackProxy::WriteSurfaceCaptureConfig(
         !data.WriteFloat(captureConfig.mainScreenRect.top_) ||
         !data.WriteFloat(captureConfig.mainScreenRect.right_) ||
         !data.WriteFloat(captureConfig.mainScreenRect.bottom_)) {
-        ROSEN_LOGE("WriteSurfaceCaptureConfig captureConfig error.");
         return false;
     }
     return true;
@@ -56,7 +55,7 @@ void RSSurfaceCaptureCallbackProxy::OnSurfaceCapture(NodeId id, const RSSurfaceC
         return;
     }
     if (!WriteSurfaceCaptureConfig(captureConfig, data)) {
-        ROSEN_LOGE("SurfaceCaptureCallbackProxy::WriteSurfaceCaptureConfig failed");
+        ROSEN_LOGE("SurfaceCaptureCallbackProxy::OnSurfaceCapture WriteSurfaceCaptureConfig failed");
         return;
     }
     if (!data.WriteParcelable(pixelmap)) {

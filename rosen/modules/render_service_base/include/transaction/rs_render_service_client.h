@@ -442,10 +442,10 @@ private:
     void TriggerOnAfterAcquireBuffer(const AfterAcquireBufferRet& ret) const;
     struct RectFHash {
         std::size_t operator()(const Drawing::Rect& rect) const {
-            std::size_t h1 = std::hash<float>()(rect.left_);
-            std::size_t h2 = std::hash<float>()(rect.top_);
-            std::size_t h3 = std::hash<float>()(rect.right_);
-            std::size_t h4 = std::hash<float>()(rect.bottom_);
+            std::size_t h1 = std::hash<scalar>()(rect.left_);
+            std::size_t h2 = std::hash<scalar>()(rect.top_);
+            std::size_t h3 = std::hash<scalar>()(rect.right_);
+            std::size_t h4 = std::hash<scalar>()(rect.bottom_);
             return h1 ^ (h2 << 1) ^ (h3 << 2) ^ (h4 << 3);
         }
     };
