@@ -84,6 +84,20 @@ static std::vector<Drawing::BlendMode> MakeBlendModes()
     return blendModes;
 }
 
+static void SettingxForm(Drawing::RSXform xform[], int maxGlyphCount)
+{
+    const int r = 10;
+    const int t = 100;
+    const int offset = 40;
+    const float f = 0.1;
+    for (int i = 0; i < maxGlyphCount; ++i) {
+        xform[i].cos_ = cos(r * i) + f * i;
+        xform[i].sin_ = sin(r * i);
+        xform[i].tx_ = offset * i + t;
+        xform[i].ty_ = t;
+    }
+}
+
 // 用例 Font_Scene_Effect_0269
 DEF_DTK(Font_Scene_Effect_9, TestLevel::L2, 269)
 {

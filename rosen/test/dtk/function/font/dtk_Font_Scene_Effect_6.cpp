@@ -29,6 +29,8 @@
 namespace OHOS {
 namespace Rosen {
 
+using namespace Drawing;
+
 static void DrawTextBlob(Drawing::Brush brush, std::vector<std::string>& texts,
     std::shared_ptr<Drawing::TextBlob> textBlob, Drawing::Font& font1, TestPlaybackCanvas* playbackCanvas)
 {
