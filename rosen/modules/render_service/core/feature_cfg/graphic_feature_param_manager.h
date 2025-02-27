@@ -35,6 +35,8 @@
 #include "opinc_param.h"
 #include "prevalidate_param_parse.h"
 #include "prevalidate_param.h"
+#include "speciallayer_param.h"
+#include "speciallayer_param_parse.h"
 #include "uifirst_param_parse.h"
 #include "uifirst_param.h"
 
@@ -52,6 +54,8 @@ const std::vector<ModuleConfig> FEATURE_MODULES = {
     {FEATURE_CONFIGS[HWC], [] {return std::make_unique<HWCParamParse>(); }, [] {return std::make_unique<HWCParam>(); }},
     {FEATURE_CONFIGS[HFBC], [] {return std::make_unique<HFBCParamParse>(); },
         [] {return std::make_unique<HFBCParam>(); }},
+    {FEATURE_CONFIGS[SPECIALLAYER], [] {return std::make_unique<SpecialLayerParamParse>(); },
+        [] {return std::make_unique<SpecialLayerParam>(); }},
     {FEATURE_CONFIGS[OPInc], [] {return std::make_unique<OPIncParamParse>(); },
         [] {return std::make_unique<OPIncParam>(); }},
     {FEATURE_CONFIGS[PREVALIDATE], [] {return std::make_unique<PrevalidateParamParse>(); },
