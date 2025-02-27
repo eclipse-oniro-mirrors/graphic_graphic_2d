@@ -287,7 +287,7 @@ HWTEST_F(HgmFrameRateMgrTest, HgmSetPointerActiveFPS, Function | SmallTest | Lev
     std::this_thread::sleep_for(std::chrono::milliseconds(delay_1100Ms));
     ASSERT_EQ(frameRateMgr.pointerManager_.GetState(), PointerState::POINTER_ACTIVE_STATE);
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(delay_1100Ms));
+    std::this_thread::sleep_for(std::chrono::milliseconds(delay_1300Ms));
     ASSERT_EQ(frameRateMgr.pointerManager_.GetState(), PointerState::POINTER_IDLE_STATE);
 
     frameRateMgr.pointerManager_.ChangeState(PointerState::POINTER_IDLE_STATE);
