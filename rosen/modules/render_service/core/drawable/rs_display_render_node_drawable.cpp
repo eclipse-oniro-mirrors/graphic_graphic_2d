@@ -668,8 +668,8 @@ void RSDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
             RSUniRenderThread::Instance().SetVisibleRect(Drawing::RectI());
             RSUniRenderThread::Instance().SetEnableVisiableRect(false);
         } else {
-            RS_TRACE_NAME("RSDisplayRenderNodeDrawable::Ondraw Expand screen");
-            RS_LOGD("RSDisplayRenderNodeDrawable::Ondraw Expand screen");
+            RS_TRACE_NAME("RSDisplayRenderNodeDrawable::OnDraw Expand screen");
+            RS_LOGD("RSDisplayRenderNodeDrawable::OnDraw Expand screen");
             bool isOpDropped = uniParam->IsOpDropped();
             uniParam->SetOpDropped(false);
             auto expandProcessor = RSProcessor::ReinterpretCast<RSUniRenderVirtualProcessor>(processor);
@@ -1373,7 +1373,7 @@ void RSDisplayRenderNodeDrawable::DrawWiredMirrorCopy(RSDisplayRenderNodeDrawabl
             RS_TRACE_NAME("DrawWiredMirrorCopy with SkiaScale");
             RSUniRenderUtil::ProcessCacheImage(*curCanvas_, *cacheImage);
         } else {
-            RS_TRACE_NAME("DrawWiredMirrorCopy with VisibleRect[%d, %d, %d, %d]",
+            RS_TRACE_NAME_FMT("DrawWiredMirrorCopy with VisibleRect[%d, %d, %d, %d]",
                 curVisibleRect_.GetLeft(), curVisibleRect_.GetTop(),
                 curVisibleRect_.GetWidth(), curVisibleRect_.GetHeight());
             RSUniRenderUtil::ProcessCacheImageRect(*curCanvas_, *cacheImage, curVisibleRect_,
