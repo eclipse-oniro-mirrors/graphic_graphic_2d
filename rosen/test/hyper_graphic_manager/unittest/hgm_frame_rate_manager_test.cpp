@@ -291,7 +291,7 @@ HWTEST_F(HgmFrameRateMgrTest, HgmSetPointerActiveFPS, Function | SmallTest | Lev
     ASSERT_EQ(frameRateMgr.pointerManager_.GetState(), PointerState::POINTER_IDLE_STATE);
 
     frameRateMgr.pointerManager_.ChangeState(PointerState::POINTER_IDLE_STATE)；
-    sleep(1); //wait for handle task finished
+    sleep(1); //wait for handler task finished
 }
 
 /**

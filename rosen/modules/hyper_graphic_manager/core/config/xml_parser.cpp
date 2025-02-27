@@ -248,7 +248,7 @@ int32_t XMLParser::ParseStrategyConfig(xmlNode &node)
         strategy.dynamicMode = static_cast<DynamicModeType>(std::stoi(dynamicMode));
         strategy.pointerMode = IsNumber(pointerMode) ?
             static_cast<PointerModeType>(std::stoi(pointerMode)) :
-            PointerModeType::POINTER_DISENABLED
+            PointerModeType::POINTER_DISENABLED;
         strategy.idleFps = IsNumber(idleFps) ?
             std::clamp(std::stoi(idleFps), strategy.min, strategy.max) :
             std::max(strategy.min, static_cast<int32_t>(OLED_60_HZ));

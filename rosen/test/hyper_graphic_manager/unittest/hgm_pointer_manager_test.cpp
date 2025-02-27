@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -43,7 +43,7 @@ public:
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(HgmTouchManagerTest, QuickClick, Function | SmallTest | Level1)
+HWTEST_F(HgmPointerManagerTest, QuickClick, Function | SmallTest | Level1)
 {
     int32_t clickNum = 100;
     auto pointerManager = HgmPointerManager();
@@ -62,7 +62,7 @@ HWTEST_F(HgmTouchManagerTest, QuickClick, Function | SmallTest | Level1)
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(HgmTouchManagerTest, ChangeState, Function | SmallTest | Level1)
+HWTEST_F(HgmPointerManagerTest, ChangeState, Function | SmallTest | Level1)
 {
     PART("CaseDescription") {
         auto pointerManager = HgmPointerManager();
@@ -84,7 +84,7 @@ HWTEST_F(HgmTouchManagerTest, ChangeState, Function | SmallTest | Level1)
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(HgmTouchManagerTest, Active2IdleState, Function | SmallTest | Level1)
+HWTEST_F(HgmPointerManagerTest, Active2IdleState, Function | SmallTest | Level1)
 {
     PART("CaseDescription") {
         auto pointerManager = HgmPointerManager();
@@ -126,7 +126,7 @@ HWTEST_F(HgmTouchManagerTest, Active2IdleState, Function | SmallTest | Level1)
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(HgmTouchManagerTest, HandleTimerResetEvent, Function | SmallTest | Level1)
+HWTEST_F(HgmPointerManagerTest, HandleTimerResetEvent, Function | SmallTest | Level1)
 {
     PART("CaseDescription") {
         auto pointerManager = HgmPointerManager();

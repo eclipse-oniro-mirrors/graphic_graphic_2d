@@ -929,7 +929,7 @@ void HgmFrameRateManager::HandleTouchEvent(pid_t pid, int32_t touchStatus, int32
     }
     if (voterGamesEffective_ &&
         (touchStatus ==  TOUCH_MOVE || touchStatus ==  TOUCH_BUTTON_DOWN || touchStatus ==  TOUCH_BUTTON_UP)) {
-
+        return;
     }
     HgmTaskHandleThread::Instance().PostTask([this, pid, touchStatus, touchCnt] () {
         if (touchStatus ==  TOUCH_MOVE || touchStatus ==  TOUCH_BUTTON_DOWN || touchStatus ==  TOUCH_BUTTON_UP) {
@@ -976,11 +976,11 @@ void HgmFrameRateManager::HandlePointerTask(pid_t pid, int32_t pointerStatus, in
 
     if (pointerStatus ==  TOUCH_MOVE || pointerStatus ==  TOUCH_BUTTON_DOWN || pointerStatus ==  TOUCH_BUTTON_UP) {
         PolicyConfigData::StrategyConfig strategyRes;
-        if (multiAppStrategy_.GetFocusAppStrategyConfig(strategyRes) == EXEC_SUCCESS ||
-            settingStrategy.pointerMode == PointerModeType::POINTER_DISENABLED) {
-            HGM_LOGD("pointer manager active");
-            pinterManager_.HandleTimerReset();
-            pinterManager_.handlePointerEvent(PointerEvent::POINTER_ACTIVE_EVENT, "");
+        if (multiAppStrategy_.GetFocusAppStrategyConfig(strategyRes) == EXEC_SUCCESS &&
+            strategyRes.pointerMode != PointerModeType::POINTER_DISENABLED) {
+            HGM_LOGD("[pointer manager] active");
+            pointerManager_.HandleTimerReset();
+            pointerManager_.handlePointerEvent(PointerEvent::POINTER_ACTIVE_EVENT, "");
         }
     }
 }

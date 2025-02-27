@@ -35,17 +35,18 @@ enum PointerState : int32_t {
 };
 
 struct PointerInfo {
-    POINTER_IDLE_STATE,
-    POINTER_ACTIVE_STATE,
+    std::string pkgName;
+    PointerState pointerState,
+    int32_t upExpectFps,
 };
 
 class HgmFrameRateManager;
-class HgmPointManager final : public HgmStateMachine<PointerState, PointerEvent> {
+class HgmPointerManager final : public HgmStateMachine<PointerState, PointerEvent> {
 public:
-    HgmPointManager();
-    ~HgmPointManager() = default;
+    HgmPointerManager();
+    ~HgmPointerManager() = default;
 
-    void HandlePointerEvent(TouchEvent event, const std::string& pkgName = "");
+    void HandlePointerEvent(PointerEvent event, const std::string& pkgName = "");
     void HandleRsFrame();
     void HandleTimerReset();
 

@@ -29,7 +29,7 @@ namespace {
     constexpr int32_t RS_IDLE_TIMEOUT_MS = 1200;
 }
 
-HgmPointManager::HgmPointerManager() : HgmStateMachine<PointerState, PointerEvent>(PointerState::POINTER_IDLE_STATE),
+HgmPointerManager::HgmPointerManager() : HgmStateMachine<PointerState, PointerEvent>(PointerState::POINTER_IDLE_STATE),
     activeTimeoutTimer_("up_timeout_timer", std::chrono::milliseconds(UP_TIMEOUT_MS), nullptr, [this] () {
         OnEvent(PointerEvent::POINTER_ACTIVE_TIMEOUT_EVENT);
     }),
@@ -52,19 +52,19 @@ HgmPointManager::HgmPointerManager() : HgmStateMachine<PointerState, PointerEven
         [this] (PointerState lastState, PointerState newState) {
         activeTimeoutTimer_.Start();
         rsIdleTimeoutTimer_.Start();
-        pointerInfo_ = { GetPkgName(), newState, OLED_120_HZ }
+        pointerInfo_ = { GetPkgName(), newState, OLED_120_HZ };
         Vote();
     });
-    RegisterExitStateCallback(PointerState::POINTER_IDLE_STATE,
+    RegisterEnterStateCallback(PointerState::POINTER_IDLE_STATE,
         [this] (PointerState lastState, PointerState newState) {
-        pointerInfo_ = { GetPkgName(), newState }
+        pointerInfo_ = { GetPkgName(), newState };
         activeTimeoutTimer_.Stop();
         rsIdleTimeoutTimer_.Stop();
         Vote();
     });
 }
 
-void HgmPointManager::Vote()
+void HgmPointerManager::Vote()
 {
     auto frameRateMgr = HgmCore::Instance().GetFrameRateMgr();
     if (frameRateMgr == nullptr) {
@@ -72,7 +72,7 @@ void HgmPointManager::Vote()
     }
     HgmMultiAppStrategy& multiAppStrategy = frameRateMgr->GetMultiAppStrategy();
     std::vector<std::string> pkgs = multiAppStrategy.GetPackages();
-    if (pointerInfo_.pkgName == "" && pkgs.empty()) {
+    if (pointerInfo_.pkgName == "" && !pkgs.empty()) {
         auto [focusPkgName, pid, appType] = multiAppStrategy.AnalyzePkgParam(pkgs.front());
         pointerInfo_.pkgName = focusPkgName;
         HGM_LOGD("auto change pointer pkgName to focusPkgName:%{public}s", focusPkgName.c_str());
@@ -80,13 +80,14 @@ void HgmPointManager::Vote()
     UpdateStrategyByPointer();
 }
 
-void HgmPointManager::UpdateStrategyByPointer()
+void HgmPointerManager::UpdateStrategyByPointer()
 {
     auto frameRateMgr = HgmCore::Instance().GetFrameRateMgr();
     if (frameRateMgr == nullptr) {
         return;
     }
     HgmMultiAppStrategy& multiAppStrategy = frameRateMgr->GetMultiAppStrategy();
+
     PolicyConfigData::StrategyConfig settingStrategy;
     if (multiAppStrategy.GetFocusAppStrategyConfig(settingStrategy) == EXEC_SUCCESS &&
         pointerInfo_.pointerState == PointerState::POINTER_ACTIVE_STATE &&
@@ -104,29 +105,28 @@ void HgmPointManager::UpdateStrategyByPointer()
         frameRateMgr->handleRefreshRateEvent(DEFAULT_PID, {"VOTER_POINTER", false});
         return;
     }
-
     frameRateMgr->handleRefreshRateEvent(DEFAULT_PID,
         {"VOTER_POINTER", true, settingStrategy.down, settingStrategy.down});
 }
 
-void HgmPointManager::HandlePointerEvent(PointerEvent event, const std::string& pkgName)
+void HgmPointerManager::HandlePointerEvent(PointerEvent event, const std::string& pkgName)
 {
     pkgName_ = pkgName;
     OnEvent(event);
 }
 
-void HgmPointManager::HandleTimerReset()
+void HgmPointerManager::HandleTimerReset()
 {
     activeTimeoutTimer_.Reset();
     rsIdleTimeoutTimer_.Reset();
 }
 
-void HgmPointManager::HandleRsFrame()
+void HgmPointerManager::HandleRsFrame()
 {
     rsIdleTimeoutTimer_.Reset();
 }
 
-std::string HgmPointManager::State2String(State state) const
+std::string HgmPointerManager::State2String(State state) const
 {
     static std::map<PointerState, std::string> stateStringMap = {
         { PointerState::POINTER_ACTIVE_STATE, "PointerActive" },
@@ -138,7 +138,7 @@ std::string HgmPointManager::State2String(State state) const
     return std::to_string(state);
 }
 
-bool HgmPointManager::CheckChangeStateValid(PointerState lastState, PointerState newState)
+bool HgmPointerManager::CheckChangeStateValid(PointerState lastState, PointerState newState)
 {
     static std::map<PointerState, std::set<PointerState>> stateChangeMap = {
         { PointerState::POINTER_ACTIVE_STATE, { PointerState::POINTER_IDLE_STATE } },
