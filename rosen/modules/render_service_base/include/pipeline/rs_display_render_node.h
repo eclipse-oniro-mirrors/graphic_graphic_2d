@@ -332,11 +332,13 @@ public:
     void UpdatePartialRenderParams();
     void UpdateScreenRenderParams(ScreenRenderParams& screenRenderParams);
     void UpdateOffscreenRenderParams(bool needOffscreen);
+    void RecordTopSurfaceOpaqueRects(Occlusion::Rect rect);
     void RecordMainAndLeashSurfaces(RSBaseRenderNode::SharedPtr surface);
     std::vector<RSBaseRenderNode::SharedPtr>& GetAllMainAndLeashSurfaces() { return curMainAndLeashSurfaceNodes_;}
 
     void UpdateRotation();
     bool IsRotationChanged() const;
+    bool IsRotationFinished() const;
     bool IsLastRotationChanged() const {
         return lastRotationChanged_;
     }
@@ -382,6 +384,16 @@ public:
     bool GetHasUniRenderHdrSurface() const
     {
         return hasUniRenderHdrSurface_;
+    }
+
+    void SetIsLuminanceStatusChange(bool isLuminanceStatusChange)
+    {
+        isLuminanceStatusChange_ = isLuminanceStatusChange;
+    }
+
+    bool GetIsLuminanceStatusChange() const
+    {
+        return isLuminanceStatusChange_;
     }
 
     void SetMainAndLeashSurfaceDirty(bool isDirty);
@@ -506,19 +518,19 @@ public:
     bool IsZoomStateChange() const;
     void HandleCurMainAndLeashSurfaceNodes();
 
-    // HDR Video
-    void SetHdrStatus(bool isNeedResetStatus, HdrStatus hdrStatus)
+    void CollectHdrStatus(HdrStatus hdrStatus)
     {
-        if (isNeedResetStatus) {
-            hasHdrStatus_ = HdrStatus::NO_HDR;
-            return;
-        }
-        hasHdrStatus_ = static_cast<HdrStatus>(hasHdrStatus_ | hdrStatus);
+        displayTotalHdrStatus_ = static_cast<HdrStatus>(displayTotalHdrStatus_ | hdrStatus);
     }
 
-    HdrStatus GetHdrStatus() const
+    void ResetDisplayHdrStatus()
     {
-        return hasHdrStatus_;
+        displayTotalHdrStatus_ = HdrStatus::NO_HDR;
+    }
+
+    HdrStatus GetDisplayHdrStatus() const
+    {
+        return displayTotalHdrStatus_;
     }
 
     using ScreenStatusNotifyTask = std::function<void(bool)>;
@@ -545,6 +557,7 @@ private:
     bool isMirroredDisplay_ = false;
     bool isSecurityDisplay_ = false;
     bool hasUniRenderHdrSurface_ = false;
+    bool isLuminanceStatusChange_ = false;
     bool preRotationStatus_ = false;
     bool curRotationStatus_ = false;
     bool lastRotationChanged_ = false;
@@ -568,8 +581,7 @@ private:
     float lastRotation_ = 0.f;
     int32_t currentScbPid_ = -1;
     int32_t lastScbPid_ = -1;
-    // HDR Video
-    HdrStatus hasHdrStatus_ = HdrStatus::NO_HDR;
+    HdrStatus displayTotalHdrStatus_ = HdrStatus::NO_HDR;
     uint64_t screenId_ = 0;
     // Use in MultiLayersPerf
     size_t surfaceCountForMultiLayersPerf_ = 0;
@@ -589,6 +601,7 @@ private:
 
     std::map<NodeId, RectI> lastFrameSurfacePos_;
     std::map<NodeId, RectI> currentFrameSurfacePos_;
+    std::vector<Occlusion::Rect> topSurfaceOpaqueRects_;
     std::vector<std::pair<NodeId, RectI>> lastFrameSurfacesByDescZOrder_;
     std::vector<std::pair<NodeId, RectI>> currentFrameSurfacesByDescZOrder_;
     std::vector<std::string> windowsName_;

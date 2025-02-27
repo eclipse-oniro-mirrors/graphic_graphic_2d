@@ -63,6 +63,14 @@ class VulkanCleanupHelper;
 }
 struct SharedTransitionParam;
 
+struct CurFrameInfoDetail {
+    uint32_t curFramePrepareSeqNum = 0;
+    uint32_t curFramePostPrepareSeqNum = 0;
+    uint64_t curFrameVsyncId = 0;
+    bool curFrameSubTreeSkipped = false;
+    bool curFrameReverseChildren = false;
+};
+
 class RSB_EXPORT RSRenderNode : public std::enable_shared_from_this<RSRenderNode>  {
 public:
     using WeakPtr = std::weak_ptr<RSRenderNode>;
@@ -102,7 +110,8 @@ public:
     void SetIsCrossNode(bool isCrossNode);
 
     // Only used in PC extend screen
-    void AddCrossScreenChild(const SharedPtr& child, NodeId cloneNodeId, int32_t index = -1);
+    void AddCrossScreenChild(const SharedPtr& child, NodeId cloneNodeId, int32_t index = -1,
+        bool autoClearCloneNode = false);
     void RemoveCrossScreenChild(const SharedPtr& child);
     void ClearCloneCrossNode();
 
@@ -269,6 +278,7 @@ public:
         childrenRect_.Clear();
     }
     RectI GetChildrenRect() const;
+    RectI GetRemovedChildrenRect() const;
 
     bool ChildHasVisibleFilter() const;
     void SetChildHasVisibleFilter(bool val);
@@ -283,6 +293,7 @@ public:
     {
         return instanceRootNodeId_;
     }
+
     const std::shared_ptr<RSRenderNode> GetInstanceRootNode() const;
     inline NodeId GetFirstLevelNodeId() const
     {
@@ -373,6 +384,11 @@ public:
     inline bool ShouldPaint() const
     {
         return shouldPaint_;
+    }
+
+    inline RectI GetInnerAbsDrawRect() const noexcept
+    {
+        return innerAbsDrawRect_;
     }
 
     // dirty rect of current frame after update dirty, last frame before update
@@ -748,9 +764,7 @@ public:
 
     void SkipSync()
     {
-        lastFrameSynced_ = false;
-        // clear flag: after skips sync, node not in RSMainThread::Instance()->GetContext.pendingSyncNodes_
-        addedToPendingSyncList_ = false;
+        OnSkipSync();
     }
     void Sync()
     {
@@ -868,6 +882,11 @@ public:
         return absRotation_;
     }
 
+    CurFrameInfoDetail& GetCurFrameInfoDetail() { return curFrameInfoDetail_; }
+
+    bool HasUnobscuredUEC() const;
+    void SetHasUnobscuredUEC();
+
 protected:
     virtual void OnApplyModifiers() {}
     void SetOldDirtyInSurface(RectI oldDirtyInSurface);
@@ -897,10 +916,17 @@ protected:
 
     virtual void InitRenderParams();
     virtual void OnSync();
+    virtual void OnSkipSync();
     virtual void ClearResource() {};
     virtual void ClearNeverOnTree() {};
 
+    void AddUIExtensionChild(SharedPtr child);
+    void MoveUIExtensionChild(SharedPtr child);
+    void RemoveUIExtensionChild(SharedPtr child);
+    bool NeedRoutedBasedOnUIExtension(SharedPtr child);
+
     void UpdateDrawableVecV2();
+    void ClearDrawableVec2();
 
     inline void DrawPropertyDrawable(RSPropertyDrawableSlot slot, RSPaintFilterCanvas& canvas)
     {
@@ -953,11 +979,15 @@ protected:
     RectI filterRegion_;
     ModifierDirtyTypes dirtyTypes_;
     ModifierDirtyTypes curDirtyTypes_;
+
+    CurFrameInfoDetail curFrameInfoDetail_;
+
 private:
     // mark cross node in physical extended screen model
     bool isCrossNode_ = false;
     bool isCloneCrossNode_ = false;
     bool isFirstLevelCrossNode_ = false;
+    bool autoClearCloneNode_ = false;
     bool isChildrenSorted_ = true;
     bool childrenHasSharedTransition_ = false;
     uint8_t nodeGroupType_ = NodeGroupType::NONE;
@@ -970,6 +1000,8 @@ private:
     // Test pipeline
     bool addedToPendingSyncList_ = false;
     bool drawCmdListNeedSync_ = false;
+    bool drawableVecNeedClear_ = false;
+    bool unobscuredUECChildrenNeedSync_ = false;
     // accumulate all children's region rect for dirty merging when any child has been removed
     bool hasRemovedChild_ = false;
     bool lastFrameSubTreeSkipped_ = false;
@@ -1075,6 +1107,8 @@ private:
     std::shared_ptr<Drawing::Surface> cacheSurface_ = nullptr;
     std::shared_ptr<Drawing::Surface> cacheCompletedSurface_ = nullptr;
     std::shared_ptr<RectF> drawRegion_ = nullptr;
+    std::shared_ptr<std::unordered_set<std::shared_ptr<RSRenderNode>>> stagingUECChildren_ =
+        std::make_shared<std::unordered_set<std::shared_ptr<RSRenderNode>>>();
     WeakPtr sourceCrossNode_;
     WeakPtr curCloneNodeParent_;
     std::weak_ptr<RSContext> context_ = {};
@@ -1088,11 +1122,15 @@ private:
     RectI localDistortionEffectRect_;
     // map parentMatrix
     RectI absDrawRect_;
+    RectF absDrawRectF_;
     RectI oldAbsDrawRect_;
+    // round in by absDrawRectF_ or selfDrawingNodeAbsDirtyRectF_, and apply the clip of parent component
+    RectI innerAbsDrawRect_;
     RectI oldDirty_;
     RectI oldDirtyInSurface_;
     RectI childrenRect_;
     RectI oldChildrenRect_;
+    RectI removedChildrenRect_;
     RectI oldClipRect_;
     // aim to record children rect in abs coords, without considering clip
     RectI absChildrenRect_;
@@ -1101,6 +1139,7 @@ private:
     Vector4f globalCornerRadius_{ 0.f, 0.f, 0.f, 0.f };
     RectF selfDrawingNodeDirtyRect_;
     RectI selfDrawingNodeAbsDirtyRect_;
+    RectF selfDrawingNodeAbsDirtyRectF_;
     // used in old pipline
     RectI oldRectFromRenderProperties_;
     // for blur cache
@@ -1191,9 +1230,6 @@ private:
     void RecordCloneCrossNode(SharedPtr node);
 
     void OnRegister(const std::weak_ptr<RSContext>& context);
-    // purge resource
-    inline void SetPurgeStatus(bool flag);
-    inline void SyncPurgeFunc();
 
     friend class DrawFuncOpItem;
     friend class RSAliasDrawable;
@@ -1219,19 +1255,25 @@ struct SharedTransitionParam {
     SharedTransitionParam(RSRenderNode::SharedPtr inNode, RSRenderNode::SharedPtr outNode);
 
     RSRenderNode::SharedPtr GetPairedNode(const NodeId nodeId) const;
-    bool UpdateHierarchyAndReturnIsLower(const NodeId nodeId);
+    bool IsLower(const NodeId nodeId) const;
+    void UpdateHierarchy(const NodeId nodeId);
     bool IsInAppTranSition() const
     {
         return !crossApplication_;
     }
     void InternalUnregisterSelf();
+    bool HasRelation();
+    void SetNeedGenerateDrawable(const bool needGenerateDrawable);
+    static void UpdateUnpairedSharedTransitionMap(const std::shared_ptr<SharedTransitionParam>& param);
     RSB_EXPORT std::string Dump() const;
     RSB_EXPORT void ResetRelation();
+    RSB_EXPORT void GenerateDrawable(const RSRenderNode& node);
 
     std::weak_ptr<RSRenderNode> inNode_;
     std::weak_ptr<RSRenderNode> outNode_;
     NodeId inNodeId_;
     NodeId outNodeId_;
+    bool needGenerateDrawable_ = false;
 
     RSB_EXPORT static std::map<NodeId, std::weak_ptr<SharedTransitionParam>> unpairedShareTransitions_;
     bool paired_ = true; // treated as paired by default, until we fail to pair them

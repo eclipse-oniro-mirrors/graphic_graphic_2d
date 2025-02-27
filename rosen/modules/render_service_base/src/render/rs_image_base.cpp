@@ -41,6 +41,17 @@
 #include "platform/ohos/backend/rs_vulkan_context.h"
 #endif
 namespace OHOS::Rosen {
+namespace {
+#ifdef ROSEN_OHOS
+bool PixelMapCanBePurge(std::shared_ptr<Media::PixelMap>& pixelMap)
+{
+    return RSSystemProperties::GetRSImagePurgeEnabled() && pixelMap &&
+        pixelMap->GetAllocatorType() == Media::AllocatorType::SHARE_MEM_ALLOC &&
+        !RSPixelMapUtil::IsYUVFormat(pixelMap) &&
+        !pixelMap->IsEditable() && !pixelMap->IsAstc() && !pixelMap->IsHdr();
+}
+#endif
+}
 RSImageBase::~RSImageBase()
 {
     if (pixelMap_) {
@@ -108,9 +119,8 @@ void RSImageBase::DrawImage(Drawing::Canvas& canvas, const Drawing::SamplingOpti
     Drawing::SrcRectConstraint constraint)
 {
 #ifdef ROSEN_OHOS
-    if (pixelMap_ && pixelMap_->IsUnMap()) {
-        pixelMap_->ReMap();
-    }
+    auto pixelMapUseCountGuard = PixelMapUseCountGuard(pixelMap_, IsPurgeable());
+    DePurge();
 #endif
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
     if (pixelMap_ && pixelMap_->GetAllocatorType() == Media::AllocatorType::DMA_ALLOC) {
@@ -133,9 +143,8 @@ void RSImageBase::DrawImageNine(Drawing::Canvas& canvas, const Drawing::RectI& c
     Drawing::FilterMode filterMode)
 {
 #ifdef ROSEN_OHOS
-    if (pixelMap_) {
-        pixelMap_->ReMap();
-    }
+    auto pixelMapUseCountGuard = PixelMapUseCountGuard(pixelMap_, IsPurgeable());
+    DePurge();
 #endif
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
     if (pixelMap_ && pixelMap_->GetAllocatorType() == Media::AllocatorType::DMA_ALLOC) {
@@ -156,9 +165,8 @@ void RSImageBase::DrawImageLattice(Drawing::Canvas& canvas, const Drawing::Latti
     Drawing::FilterMode filterMode)
 {
 #ifdef ROSEN_OHOS
-    if (pixelMap_) {
-        pixelMap_->ReMap();
-    }
+    auto pixelMapUseCountGuard = PixelMapUseCountGuard(pixelMap_, IsPurgeable());
+    DePurge();
 #endif
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
     if (pixelMap_ && pixelMap_->GetAllocatorType() == Media::AllocatorType::DMA_ALLOC) {
@@ -209,12 +217,12 @@ void RSImageBase::SetPixelMap(const std::shared_ptr<Media::PixelMap>& pixelmap)
     if (pixelMap_) {
         pixelMap_->DecreaseUseCount();
     }
+    if (pixelmap) {
+        pixelmap->IncreaseUseCount();
+    }
 #endif
     pixelMap_ = pixelmap;
     if (pixelMap_) {
-#ifdef ROSEN_OHOS
-        pixelMap_->IncreaseUseCount();
-#endif
         srcRect_.SetAll(0.0, 0.0, pixelMap_->GetWidth(), pixelMap_->GetHeight());
         image_ = nullptr;
         GenUniqueId(pixelMap_->GetUniqueId());
@@ -280,38 +288,63 @@ void RSImageBase::Purge()
 {
 #ifdef ROSEN_OHOS
     if (canPurgeShareMemFlag_ != CanPurgeFlag::ENABLED ||
-        image_ == nullptr ||
-        uniqueId_ <= 0) {
-        return;
-    }
-    if (!pixelMap_ || pixelMap_->IsUnMap() ||
-        pixelMap_->GetAllocatorType() != Media::AllocatorType::SHARE_MEM_ALLOC) {
+        uniqueId_ <= 0 || !pixelMap_ || pixelMap_->IsUnMap()) {
         return;
     }
 
-    int refCount = RSImageCache::Instance().CheckRefCntAndReleaseImageCache(uniqueId_, pixelMap_, image_);
-    if (refCount > 1) { // skip purge if multi RsImage Holds this PixelMap
+    constexpr int USE_COUNT_FOR_PURGE = 2; // one in this RSImage, one in RSImageCache
+    auto imageUseCount = image_.use_count();
+    auto pixelMapCount = pixelMap_.use_count();
+    if (!(imageUseCount == USE_COUNT_FOR_PURGE && pixelMapCount == USE_COUNT_FOR_PURGE + 1) &&
+        !(imageUseCount == 0 && pixelMapCount == USE_COUNT_FOR_PURGE)) {
+        return;
+    }
+    // skip purge if multi RsImage Holds this PixelMap
+    if (!RSImageCache::Instance().CheckRefCntAndReleaseImageCache(uniqueId_, pixelMap_)) {
         return;
     }
     isDrawn_ = false;
     image_ = nullptr;
+    bool unmapResult = pixelMap_->UnMap();
+    if (unmapResult && pixelMap_.use_count() > USE_COUNT_FOR_PURGE) {
+        RS_LOGW("UNMAP_LOG Purge while use_count > USE_COUNT_FOR_PURGE");
+    }
+#endif
+}
+
+void RSImageBase::DePurge()
+{
+#ifdef ROSEN_OHOS
+    if (canPurgeShareMemFlag_ != CanPurgeFlag::ENABLED ||
+        uniqueId_ <= 0 || !pixelMap_ || !pixelMap_->IsUnMap()) {
+        return;
+    }
+    if (image_ != nullptr) {
+        RS_LOGW("UNMAP_LOG Image is not reset when PixelMap is unmap");
+        isDrawn_ = false;
+        image_ = nullptr;
+    }
+    pixelMap_->ReMap();
 #endif
 }
 
 void RSImageBase::MarkRenderServiceImage()
 {
     renderServiceImage_ = true;
+}
+
+void RSImageBase::MarkPurgeable()
+{
 #ifdef ROSEN_OHOS
-    if (canPurgeShareMemFlag_ == CanPurgeFlag::UNINITED &&
-        RSSystemProperties::GetRSImagePurgeEnabled() &&
-        pixelMap_ &&
-        (pixelMap_->GetAllocatorType() == Media::AllocatorType::SHARE_MEM_ALLOC) &&
-        !pixelMap_->IsEditable() &&
-        !pixelMap_->IsAstc() &&
-        !pixelMap_->IsHdr()) {
+    if (renderServiceImage_ && canPurgeShareMemFlag_ == CanPurgeFlag::UNINITED && PixelMapCanBePurge(pixelMap_)) {
         canPurgeShareMemFlag_ = CanPurgeFlag::ENABLED;
     }
 #endif
+}
+
+bool RSImageBase::IsPurgeable() const
+{
+    return canPurgeShareMemFlag_ == CanPurgeFlag::ENABLED;
 }
 
 #ifdef ROSEN_OHOS
@@ -436,6 +469,9 @@ bool RSImageBase::Marshalling(Parcel& parcel) const
                    RSMarshallingHelper::Marshalling(parcel, versionId) &&
                    RSMarshallingHelper::Marshalling(parcel, image_) &&
                    RSMarshallingHelper::Marshalling(parcel, pixelMap_);
+    if (!success) {
+        RS_LOGE("RSImageBase::Marshalling parcel fail");
+    }
     return success;
 }
 
@@ -600,6 +636,23 @@ void RSImageBase::BindPixelMapToDrawingImage(Drawing::Canvas& canvas)
                 RSImageCache::Instance().CacheRenderDrawingImageByPixelMapId(uniqueId_, image_, gettid());
             }
         }
+    }
+}
+#endif
+
+#ifdef ROSEN_OHOS
+RSImageBase::PixelMapUseCountGuard::PixelMapUseCountGuard(std::shared_ptr<Media::PixelMap> pixelMap, bool purgeable)
+    : pixelMap_(pixelMap), purgeable_(purgeable)
+{
+    if (purgeable_) {
+        pixelMap_->IncreaseUseCount();
+    }
+}
+
+RSImageBase::PixelMapUseCountGuard::~PixelMapUseCountGuard()
+{
+    if (purgeable_) {
+        pixelMap_->DecreaseUseCount();
     }
 }
 #endif

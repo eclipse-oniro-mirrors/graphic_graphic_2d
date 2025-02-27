@@ -27,10 +27,10 @@
 #include "params/rs_render_params.h"
 #include "params/rs_render_thread_params.h"
 #include "params/rs_surface_render_params.h"
+#include "pipeline/render_thread/rs_uni_render_thread.h"
 #include "pipeline/rs_display_render_node.h"
 #include "pipeline/rs_recording_canvas.h"
 #include "pipeline/rs_surface_render_node.h"
-#include "pipeline/rs_uni_render_thread.h"
 namespace OHOS::Rosen {
 
 class RSDirtyRectsDfx {
@@ -67,7 +67,8 @@ private:
     const DrawableV2::RSDisplayRenderNodeDrawable& targetDrawable_;
     const std::unique_ptr<RSRenderParams>& displayParams_;
 
-    bool RefreshRateRotationProcess(RSPaintFilterCanvas& canvas, ScreenRotation rotation, uint64_t screenId);
+    bool RefreshRateRotationProcess(RSPaintFilterCanvas& canvas,
+        ScreenRotation rotation, int translateWidth, int translateHeight);
     void DrawCurrentRefreshRate(RSPaintFilterCanvas& canvas);
     void DrawDirtyRectForDFX(RSPaintFilterCanvas& canvas, RectI dirtyRect, const Drawing::Color color,
         const RSPaintStyle fillType, int edgeWidth = 6, bool isTextOutsideRect = false) const;

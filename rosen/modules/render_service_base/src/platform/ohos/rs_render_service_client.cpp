@@ -132,13 +132,14 @@ bool RSRenderServiceClient::CreateNode(const RSSurfaceRenderNodeConfig& config)
     return renderService->CreateNode(config);
 }
 
-std::shared_ptr<RSSurface> RSRenderServiceClient::CreateNodeAndSurface(const RSSurfaceRenderNodeConfig& config)
+std::shared_ptr<RSSurface> RSRenderServiceClient::CreateNodeAndSurface(const RSSurfaceRenderNodeConfig& config,
+    bool unobscured)
 {
     auto renderService = RSRenderServiceConnectHub::GetRenderService();
     if (renderService == nullptr) {
         return nullptr;
     }
-    sptr<Surface> surface = renderService->CreateNodeAndSurface(config);
+    sptr<Surface> surface = renderService->CreateNodeAndSurface(config, unobscured);
     if (surface == nullptr) {
         ROSEN_LOGE("RSRenderServiceClient::CreateNodeAndSurface surface is nullptr.");
         return nullptr;
@@ -209,13 +210,14 @@ std::shared_ptr<Media::PixelMap> RSRenderServiceClient::CreatePixelMapFromSurfac
     return renderService->CreatePixelMapFromSurface(surface, srcRect);
 }
 
-void RSRenderServiceClient::TriggerSurfaceCaptureCallback(NodeId id, std::shared_ptr<Media::PixelMap> pixelmap)
+void RSRenderServiceClient::TriggerSurfaceCaptureCallback(NodeId id, const RSSurfaceCaptureConfig& captureConfig,
+    std::shared_ptr<Media::PixelMap> pixelmap)
 {
     ROSEN_LOGD("RSRenderServiceClient::Into TriggerSurfaceCaptureCallback nodeId:[%{public}" PRIu64 "]", id);
     std::vector<std::shared_ptr<SurfaceCaptureCallback>> callbackVector;
     {
         std::lock_guard<std::mutex> lock(mutex_);
-        auto iter = surfaceCaptureCbMap_.find(id);
+        auto iter = surfaceCaptureCbMap_.find({ id, captureConfig });
         if (iter != surfaceCaptureCbMap_.end()) {
             callbackVector = iter->second;
             surfaceCaptureCbMap_.erase(iter);
@@ -250,10 +252,10 @@ class SurfaceCaptureCallbackDirector : public RSSurfaceCaptureCallbackStub
 public:
     explicit SurfaceCaptureCallbackDirector(RSRenderServiceClient* client) : client_(client) {}
     ~SurfaceCaptureCallbackDirector() override {};
-    void OnSurfaceCapture(NodeId id, Media::PixelMap* pixelmap) override
+    void OnSurfaceCapture(NodeId id, const RSSurfaceCaptureConfig& captureConfig, Media::PixelMap* pixelmap) override
     {
         std::shared_ptr<Media::PixelMap> surfaceCapture(pixelmap);
-        client_->TriggerSurfaceCaptureCallback(id, surfaceCapture);
+        client_->TriggerSurfaceCaptureCallback(id, captureConfig, surfaceCapture);
     };
 
 private:
@@ -275,14 +277,14 @@ bool RSRenderServiceClient::TakeSurfaceCapture(NodeId id, std::shared_ptr<Surfac
     }
     {
         std::lock_guard<std::mutex> lock(mutex_);
-        auto iter = surfaceCaptureCbMap_.find(id);
+        auto iter = surfaceCaptureCbMap_.find({ id, captureConfig });
         if (iter != surfaceCaptureCbMap_.end()) {
             ROSEN_LOGD("RSRenderServiceClient::TakeSurfaceCapture surfaceCaptureCbMap_.count(id) != 0");
             iter->second.emplace_back(callback);
             return true;
         }
         std::vector<std::shared_ptr<SurfaceCaptureCallback>> callbackVector = {callback};
-        surfaceCaptureCbMap_.emplace(id, callbackVector);
+        surfaceCaptureCbMap_.emplace(std::make_pair(id, captureConfig), callbackVector);
     }
 
     if (surfaceCaptureCbDirector_ == nullptr) {
@@ -311,14 +313,14 @@ bool RSRenderServiceClient::SetWindowFreezeImmediately(NodeId id, bool isFreeze,
     }
     {
         std::lock_guard<std::mutex> lock(mutex_);
-        auto iter = surfaceCaptureCbMap_.find(id);
+        auto iter = surfaceCaptureCbMap_.find({ id, captureConfig });
         if (iter != surfaceCaptureCbMap_.end()) {
             ROSEN_LOGD("RSRenderServiceClient::SetWindowFreezeImmediately surfaceCaptureCbMap_.count(id) != 0");
             iter->second.emplace_back(callback);
             return true;
         }
         std::vector<std::shared_ptr<SurfaceCaptureCallback>> callbackVector = {callback};
-        surfaceCaptureCbMap_.emplace(id, callbackVector);
+        surfaceCaptureCbMap_.emplace(std::make_pair(id, captureConfig), callbackVector);
     }
 
     if (surfaceCaptureCbDirector_ == nullptr) {
@@ -1208,6 +1210,16 @@ bool RSRenderServiceClient::UnRegisterTypeface(std::shared_ptr<Drawing::Typeface
     return renderService->UnRegisterTypeface(globalUniqueId);
 }
 
+int32_t RSRenderServiceClient::GetDisplayIdentificationData(ScreenId id, uint8_t& outPort,
+    std::vector<uint8_t>& edidData)
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService == nullptr) {
+        return RENDER_SERVICE_NULL;
+    }
+    return renderService->GetDisplayIdentificationData(id, outPort, edidData);
+}
+
 int32_t RSRenderServiceClient::SetScreenSkipFrameInterval(ScreenId id, uint32_t skipFrameInterval)
 {
     auto renderService = RSRenderServiceConnectHub::GetRenderService();
@@ -1464,14 +1476,14 @@ void RSRenderServiceClient::SetAppWindowNum(uint32_t num)
     }
 }
 
-bool RSRenderServiceClient::SetSystemAnimatedScenes(SystemAnimatedScenes systemAnimatedScenes)
+bool RSRenderServiceClient::SetSystemAnimatedScenes(SystemAnimatedScenes systemAnimatedScenes, bool isRegularAnimation)
 {
     auto renderService = RSRenderServiceConnectHub::GetRenderService();
     if (renderService == nullptr) {
         ROSEN_LOGE("RSRenderServiceClient::SetSystemAnimatedScenes renderService == nullptr!");
         return false;
     }
-    return renderService->SetSystemAnimatedScenes(systemAnimatedScenes);
+    return renderService->SetSystemAnimatedScenes(systemAnimatedScenes, isRegularAnimation);
 }
 
 void RSRenderServiceClient::ShowWatermark(const std::shared_ptr<Media::PixelMap> &watermarkImg, bool isShow)
@@ -1584,11 +1596,28 @@ void RSRenderServiceClient::NotifyPackageEvent(uint32_t listSize, const std::vec
     }
 }
 
+void RSRenderServiceClient::NotifyAppStrategyConfigChangeEvent(const std::string& pkgName, uint32_t listSize,
+    const std::vector<std::pair<std::string, std::string>>& newConfig)
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService != nullptr) {
+        renderService->NotifyAppStrategyConfigChangeEvent(pkgName, listSize, newConfig);
+    }
+}
+
 void RSRenderServiceClient::NotifyRefreshRateEvent(const EventInfo& eventInfo)
 {
     auto renderService = RSRenderServiceConnectHub::GetRenderService();
     if (renderService != nullptr) {
         renderService->NotifyRefreshRateEvent(eventInfo);
+    }
+}
+
+void RSRenderServiceClient::NotifyHgmConfigEvent(const std::string &eventName, bool state)
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService != nullptr) {
+        renderService->NotifyHgmConfigEvent(eventName, state);
     }
 }
 
@@ -1731,7 +1760,8 @@ private:
     UIExtensionCallback cb_;
 };
 
-int32_t RSRenderServiceClient::RegisterUIExtensionCallback(uint64_t userId, const UIExtensionCallback& callback)
+int32_t RSRenderServiceClient::RegisterUIExtensionCallback(uint64_t userId, const UIExtensionCallback& callback,
+    bool unobscured)
 {
     auto renderService = RSRenderServiceConnectHub::GetRenderService();
     if (renderService == nullptr) {
@@ -1739,7 +1769,7 @@ int32_t RSRenderServiceClient::RegisterUIExtensionCallback(uint64_t userId, cons
         return RENDER_SERVICE_NULL;
     }
     sptr<CustomUIExtensionCallback> cb = new CustomUIExtensionCallback(callback);
-    return renderService->RegisterUIExtensionCallback(userId, cb);
+    return renderService->RegisterUIExtensionCallback(userId, cb, unobscured);
 }
 
 bool RSRenderServiceClient::SetAncoForceDoDirect(bool direct)
@@ -1891,5 +1921,16 @@ void RSRenderServiceClient::SetWindowContainer(NodeId nodeId, bool value)
         renderService->SetWindowContainer(nodeId, value);
     }
 }
+
+#ifdef RS_ENABLE_OVERLAY_DISPLAY
+int32_t RSRenderServiceClient::SetOverlayDisplayMode(int32_t mode)
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService == nullptr) {
+        return RENDER_SERVICE_NULL;
+    }
+    return renderService->SetOverlayDisplayMode(mode);
+}
+#endif
 } // namespace Rosen
 } // namespace OHOS

@@ -33,6 +33,7 @@ constexpr int ADAPTIVE_SYNC_ENABLED = 1;
 constexpr int32_t SWITCH_SCREEN_SCENE = 1;
 constexpr int32_t STRING_BUFFER_MAX_SIZE = 256;
 constexpr int64_t IDEAL_PULSE = 2777778; // 2.777778ms
+const std::string HGM_CONFIG_TYPE_THERMAL_SUFFIX = "_THERMAL";
 
 enum OledRefreshRate {
     OLED_NULL_HZ = 0,
@@ -150,6 +151,9 @@ public:
         std::unordered_map<std::string, std::string> gameSceneList;
         DynamicSettingMap animationDynamicSettings;
         DynamicSettingMap aceSceneDynamicSettings;
+        int32_t smallSizeArea = -1;
+        int32_t smallSizeLength = -1;
+        DynamicSettingMap smallSizeAnimationDynamicSettings;
         // <CONFIG_NAME, VALUE>
         std::unordered_map<std::string, std::string> animationPowerConfig;
         // <rateTypeName, idleFps>
@@ -158,6 +162,9 @@ public:
         SceneConfigMap ancoSceneList;
         // <componentCode, idleFps>
         std::unordered_map<std::string, int32_t> componentPowerConfig;
+        // <"pkgName", "UnityPlayerSurface">
+        std::unordered_map<std::string, std::string> gameAppNodeList;
+        std::unordered_map<std::string, std::string> performanceConfig;
     };
     // <"-1", ScreenSetting>
     using ScreenConfig = std::unordered_map<std::string, ScreenSetting>;
@@ -177,6 +184,7 @@ public:
     std::unordered_map<std::string, std::string> screenStrategyConfigs_;
     std::unordered_map<std::string, std::string> sourceTuningConfig_;
     std::unordered_map<std::string, std::string> solidLayerConfig_;
+    std::unordered_map<std::string, std::string> videoCallLayerConfig_;
     // <"pkgName", "1">
     std::unordered_map<std::string, std::string> hfbcConfig_;
     StrategyConfigMap strategyConfigs_;

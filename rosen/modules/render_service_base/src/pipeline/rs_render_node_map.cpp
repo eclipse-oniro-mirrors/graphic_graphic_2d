@@ -219,7 +219,6 @@ void RSRenderNodeMap::UnregisterRenderNode(NodeId id)
     residentSurfaceNodeMap_.erase(id);
     displayNodeMap_.erase(id);
     canvasDrawingNodeMap_.erase(id);
-    purgeableNodeMap_.erase(id);
 }
 
 void RSRenderNodeMap::EraseSelfDrawingNodeOfProcess(NodeId id)
@@ -308,6 +307,10 @@ void RSRenderNodeMap::FilterNodeByPid(pid_t pid)
         return ExtractPid(pair.first) == pid;
     });
 
+    EraseIf(selfDrawingNodeInProcess_, [pid](const auto& pair) -> bool {
+        return pair.first == pid;
+    });
+
     EraseIf(displayNodeMap_, [pid](const auto& pair) -> bool {
         if (ExtractPid(pair.first) != pid && pair.second) {
             ROSEN_LOGD("RSRenderNodeMap::FilterNodeByPid removing all nodes belong to pid %{public}llu",
@@ -358,6 +361,16 @@ void RSRenderNodeMap::TraverseSurfaceNodes(std::function<void (const std::shared
     }
 }
 
+void RSRenderNodeMap::TraverseSurfaceNodesBreakOnCondition(
+    std::function<bool (const std::shared_ptr<RSSurfaceRenderNode>&)> func) const
+{
+    for (const auto& [_, node] : surfaceNodeMap_) {
+        if (func(node)) {
+            break;
+        }
+    }
+}
+
 bool RSRenderNodeMap::ContainPid(pid_t pid) const
 {
     return std::any_of(surfaceNodeMap_.begin(), surfaceNodeMap_.end(),
@@ -399,21 +412,6 @@ const std::shared_ptr<RSRenderNode> RSRenderNodeMap::GetAnimationFallbackNode() 
         }
     }
     return nullptr;
-}
-
-void RSRenderNodeMap::AddOffTreeNode(NodeId nodeId)
-{
-    purgeableNodeMap_.insert(std::pair(nodeId, true));
-}
-
-void RSRenderNodeMap::RemoveOffTreeNode(NodeId nodeId)
-{
-    purgeableNodeMap_.insert(std::pair(nodeId, false));
-}
-
-std::unordered_map<NodeId, bool>&& RSRenderNodeMap::GetAndClearPurgeableNodeIds()
-{
-    return std::move(purgeableNodeMap_);
 }
 
 std::unordered_map<NodeId, std::shared_ptr<RSSurfaceRenderNode>> RSRenderNodeMap::GetSelfDrawingNodeInProcess(pid_t pid)

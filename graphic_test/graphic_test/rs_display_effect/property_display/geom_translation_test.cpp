@@ -85,4 +85,63 @@ GRAPHIC_TEST(GeometryTest, CONTENT_DISPLAY_TEST, Geometry_SetPositionZ_Test_1)
     }
 }
 
+GRAPHIC_TEST(GeometryTest, CONTENT_DISPLAY_TEST, Geometry_SetPositionX_Test_1)
+{
+    std::array<float, 3> translateData = { 0.f, 20.f, -20.f};
+    for (int i = 0; i < translateData.size(); i++) {
+        auto testNode = SetUpNodeBgImage("/data/local/tmp/geom_test.jpg", {380, i * 350 + 20, 300, 300});
+        testNode->SetRotation(Quaternion(0.0, 0.0, 0.382, 0.923));
+        testNode->SetTranslate(translateData[i], 0.5, 0.0);
+        GetRootNode()->AddChild(testNode);
+        RegisterNode(testNode);
+    }
+}
+
+GRAPHIC_TEST(GeometryTest, CONTENT_DISPLAY_TEST, Geometry_SetPositionX_Test_2)
+{
+    std::array<float, 3> translateData = { 0.f, 20.f, -20.f};
+    for (int i = 0; i < translateData.size(); i++) {
+        auto testNode = SetUpNodeBgImage("/data/local/tmp/geom_test.jpg", {380, i * 350 + 20, 300, 300});
+        testNode->SetPivot(Vector2f(0.5, 0.5));
+        testNode->SetRotation(0.0, 0, 45.0);
+        testNode->SetTranslate(translateData[i], 0.5, 0.0);
+        GetRootNode()->AddChild(testNode);
+        RegisterNode(testNode);
+    }
+}
+
+GRAPHIC_TEST(GeometryTest, CONTENT_DISPLAY_TEST, Geometry_SetPositionX_Test_3)
+{
+    std::array<float, 3> translateData = { 0.f, 20.f, -20.f};
+    for (int i = 0; i < translateData.size(); i++) {
+        auto testNode = SetUpNodeBgImage("/data/local/tmp/geom_test.jpg", {380, i * 350 + 20, 300, 300});
+        testNode->SetPivot(Vector2f(0.5, 0.5));
+        testNode->SetRotation(45.0, 0, 0.0);
+        testNode->SetTranslate(translateData[i], 0.5, 0.0);
+        GetRootNode()->AddChild(testNode);
+        RegisterNode(testNode);
+    }
+}
+
+GRAPHIC_TEST(GeometryTest, CONTENT_DISPLAY_TEST, Geometry_SetPosition_linear_Test_1)
+{
+    int row = 5;
+    int col = 3;
+    int nodeSize[2] = {screenWidth / col, screenHeight / row};
+    int nodeSpace[2] = {150, 250}; // col space , row space
+    float translates[3] = {0.0, 0.0, 0.0};  // {0.0, 0.0, 0.0} -> x, y, z
+    for (int i = 0; i < row; i++) {
+        for (int j = 0; j < col; j++) {
+            auto testNode = SetUpNodeBgImage("/data/local/tmp/geom_test.jpg",
+                {j * nodeSize[0], i * nodeSize[1], nodeSize[0] - nodeSpace[0], nodeSize[1] - nodeSpace[1]});
+            testNode->SetScaleY(0.5);
+            testNode->SetScaleY(0.7);
+            testNode->SetTranslate(translates[0], translates[1], translates[2]);
+            GetRootNode()->AddChild(testNode);
+            RegisterNode(testNode);
+        }
+        translates[0] += (nodeSpace[0] / row);
+        translates[1] += ((nodeSpace[1] / row) + 20);
+    }
+}
 } // namespace OHOS::Rosen

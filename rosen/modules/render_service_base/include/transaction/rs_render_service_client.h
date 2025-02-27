@@ -53,6 +53,7 @@
 #include "info_collection/rs_gpu_dirty_region_collection.h"
 #include "info_collection/rs_hardware_compose_disabled_reason_collection.h"
 #include "info_collection/rs_layer_compose_collection.h"
+#include "utils/scalar.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -137,7 +138,7 @@ public:
 
     bool CreateNode(const RSSurfaceRenderNodeConfig& config);
     bool CreateNode(const RSDisplayNodeConfig& displayNodeConfig, NodeId nodeId);
-    std::shared_ptr<RSSurface> CreateNodeAndSurface(const RSSurfaceRenderNodeConfig& config);
+    std::shared_ptr<RSSurface> CreateNodeAndSurface(const RSSurfaceRenderNodeConfig& config, bool unobscured = false);
     std::shared_ptr<VSyncReceiver> CreateVSyncReceiver(
         const std::string& name,
         const std::shared_ptr<OHOS::AppExecFwk::EventHandler> &looper = nullptr,
@@ -320,6 +321,8 @@ public:
     bool RegisterTypeface(std::shared_ptr<Drawing::Typeface>& typeface);
     bool UnRegisterTypeface(std::shared_ptr<Drawing::Typeface>& typeface);
 
+    int32_t GetDisplayIdentificationData(ScreenId id, uint8_t& outPort, std::vector<uint8_t>& edidData);
+
     int32_t SetScreenSkipFrameInterval(ScreenId id, uint32_t skipFrameInterval);
 
     int32_t SetVirtualScreenRefreshRate(ScreenId id, uint32_t maxRefreshRate, uint32_t& actualRefreshRate);
@@ -344,7 +347,7 @@ public:
 
     void SetAppWindowNum(uint32_t num);
 
-    bool SetSystemAnimatedScenes(SystemAnimatedScenes systemAnimatedScenes);
+    bool SetSystemAnimatedScenes(SystemAnimatedScenes systemAnimatedScenes, bool isRegularAnimation = false);
 
     void ShowWatermark(const std::shared_ptr<Media::PixelMap> &watermarkImg, bool isShow);
 
@@ -356,11 +359,16 @@ public:
 
     void NotifyPackageEvent(uint32_t listSize, const std::vector<std::string>& packageList);
 
+    void NotifyAppStrategyConfigChangeEvent(const std::string& pkgName, uint32_t listSize,
+        const std::vector<std::pair<std::string, std::string>>& newConfig);
+
     void NotifyRefreshRateEvent(const EventInfo& eventInfo);
 
     void NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt);
 
     void NotifyDynamicModeEvent(bool enableDynamicMode);
+
+    void NotifyHgmConfigEvent(const std::string &eventName, bool state);
 
     void ReportEventResponse(DataBaseRs info);
 
@@ -394,11 +402,16 @@ public:
 
     void SetVmaCacheStatus(bool flag);
 
-    int32_t RegisterUIExtensionCallback(uint64_t userId, const UIExtensionCallback& callback);
+    int32_t RegisterUIExtensionCallback(uint64_t userId, const UIExtensionCallback& callback, bool unobscured = false);
 
     bool SetAncoForceDoDirect(bool direct);
 
     void SetLayerTop(const std::string &nodeIdStr, bool isTop);
+
+#ifdef RS_ENABLE_OVERLAY_DISPLAY
+    int32_t SetOverlayDisplayMode(int32_t mode);
+#endif
+
 #ifdef TP_FEATURE_ENABLE
     void SetTpFeatureConfig(int32_t feature, const char* config,
         TpFeatureConfigType tpFeatureConfigType = TpFeatureConfigType::DEFAULT_TP_FEATURE);
@@ -424,17 +437,36 @@ public:
     void SetWindowContainer(NodeId nodeId, bool value);
 
 private:
-    void TriggerSurfaceCaptureCallback(NodeId id, std::shared_ptr<Media::PixelMap> pixelmap);
+    void TriggerSurfaceCaptureCallback(NodeId id, const RSSurfaceCaptureConfig& captureConfig,
+        std::shared_ptr<Media::PixelMap> pixelmap);
     void TriggerOnFinish(const FinishCallbackRet& ret) const;
     void TriggerOnAfterAcquireBuffer(const AfterAcquireBufferRet& ret) const;
+    struct RectHash {
+        std::size_t operator()(const Drawing::Rect& rect) const {
+            std::size_t h1 = std::hash<Drawing::scalar>()(rect.left_);
+            std::size_t h2 = std::hash<Drawing::scalar>()(rect.top_);
+            std::size_t h3 = std::hash<Drawing::scalar>()(rect.right_);
+            std::size_t h4 = std::hash<Drawing::scalar>()(rect.bottom_);
+            return h1 ^ (h2 << 1) ^ (h3 << 2) ^ (h4 << 3);
+        }
+    };
+
+    struct PairHash {
+        std::size_t operator()(const std::pair<NodeId, RSSurfaceCaptureConfig>& p) const {
+            std::size_t h1 = std::hash<NodeId>()(p.first);
+            std::size_t h2 = RectHash()(p.second.mainScreenRect);
+            return h1 ^ (h2 << 1);
+        }
+    };
 
     std::mutex mutex_;
     std::map<NodeId, sptr<RSIBufferAvailableCallback>> bufferAvailableCbRTMap_;
     std::mutex mapMutex_;
     std::map<NodeId, sptr<RSIBufferAvailableCallback>> bufferAvailableCbUIMap_;
-    sptr<RSIScreenChangeCallback> screenChangeCb_;
-    sptr<RSISurfaceCaptureCallback> surfaceCaptureCbDirector_;
-    std::map<NodeId, std::vector<std::shared_ptr<SurfaceCaptureCallback>>> surfaceCaptureCbMap_;
+    sptr<RSIScreenChangeCallback> screenChangeCb_ = nullptr;
+    sptr<RSISurfaceCaptureCallback> surfaceCaptureCbDirector_ = nullptr;
+    std::unordered_map<std::pair<NodeId, RSSurfaceCaptureConfig>,
+        std::vector<std::shared_ptr<SurfaceCaptureCallback>>, PairHash> surfaceCaptureCbMap_;
 
     sptr<RSISurfaceBufferCallback> surfaceBufferCbDirector_;
     std::map<uint64_t, std::shared_ptr<SurfaceBufferCallback>> surfaceBufferCallbacks_;

@@ -157,8 +157,8 @@ int32_t XMLParser::ParseSubSequentParams(xmlNode &node, std::string &paraName)
         setResult = ParseSimplex(node, mParsedData_->sourceTuningConfig_);
     } else if (paraName == "rs_solid_color_layer_config") {
         setResult = ParseSimplex(node, mParsedData_->solidLayerConfig_);
-    } else if (paraName == "hfbc_config") {
-        setResult = ParseSimplex(node, mParsedData_->hfbcConfig_);
+    } else if (paraName == "video_call_layer_config") {
+        setResult = ParseSimplex(node, mParsedData_->videoCallLayerConfig_);
     } else {
         setResult = EXEC_SUCCESS;
     }
@@ -334,6 +334,15 @@ int32_t XMLParser::ParseScreenConfig(xmlNode &node)
         screenConfig[id] = screenSetting;
         HGM_LOGI("HgmXMLParser ParseScreenConfig id=%{public}s", id.c_str());
     }
+    if (size_t pos = type.find(HGM_CONFIG_TYPE_THERMAL_SUFFIX); pos != std::string::npos) {
+        auto defaultScreenConfig = mParsedData_->screenConfigs_.find(type.substr(0, pos));
+        if (defaultScreenConfig != mParsedData_->screenConfigs_.end()) {
+            ReplenishMissThermalConfig(defaultScreenConfig->second, screenConfig);
+        } else {
+            HGM_LOGE("XMLParser failed to ReplenishMissThermalConfig %{public}s", type.c_str());
+            return EXEC_SUCCESS;
+        }
+    }
     mParsedData_->screenConfigs_[type] = screenConfig;
     return EXEC_SUCCESS;
 }
@@ -349,9 +358,11 @@ int32_t XMLParser::ParseSubScreenConfig(xmlNode &node, PolicyConfigData::ScreenS
     if (name == "LTPO_config") {
         setResult = ParseSimplex(*thresholdNode, screenSetting.ltpoConfig);
     } else if (name == "property_animation_dynamic_settings") {
-        setResult = ParserDynamicSetting(*thresholdNode, screenSetting.animationDynamicSettings);
+        setResult = ParseDynamicSetting(*thresholdNode, screenSetting.animationDynamicSettings);
     } else if (name == "ace_scene_dynamic_settings") {
-        setResult = ParserDynamicSetting(*thresholdNode, screenSetting.aceSceneDynamicSettings);
+        setResult = ParseDynamicSetting(*thresholdNode, screenSetting.aceSceneDynamicSettings);
+    } else if (name == "small_size_property_animation_dynamic_settings") {
+        setResult = ParseSmallSizeDynamicSetting(*thresholdNode, screenSetting);
     } else if (name == "scene_list") {
         setResult = ParseSceneList(*thresholdNode, screenSetting.sceneList);
     } else if (name == "game_scene_list") {
@@ -368,6 +379,8 @@ int32_t XMLParser::ParseSubScreenConfig(xmlNode &node, PolicyConfigData::ScreenS
         setResult = ParseSimplex(*thresholdNode, screenSetting.uiPowerConfig);
     } else if (name == "component_power_config") {
         setResult = ParsePowerStrategy(*thresholdNode, screenSetting.componentPowerConfig);
+    } else if (name == "performance_config") {
+        setResult = ParsePerformanceConfig(*thresholdNode, screenSetting.performanceConfig);
     } else {
         setResult = EXEC_SUCCESS;
     }
@@ -379,7 +392,8 @@ int32_t XMLParser::ParseSubScreenConfig(xmlNode &node, PolicyConfigData::ScreenS
 }
 
 int32_t XMLParser::ParseSimplex(xmlNode &node, std::unordered_map<std::string, std::string> &config,
-                                const std::string &valueName, const std::string &keyName)
+                                const std::string &valueName, const std::string &keyName,
+                                const bool &canBeEmpty)
 {
     HGM_LOGD("XMLParser parsing simplex");
     xmlNode *currNode = &node;
@@ -398,9 +412,18 @@ int32_t XMLParser::ParseSimplex(xmlNode &node, std::unordered_map<std::string, s
 
         auto key = ExtractPropertyValue(keyName, *currNode);
         auto value = ExtractPropertyValue(valueName, *currNode);
-        if (key.empty() || value.empty()) {
+        if (key.empty()) {
             return XML_PARSE_INTERNAL_FAIL;
         }
+
+        if (value.empty()) {
+            if (canBeEmpty) {
+                continue;
+            } else {
+                return XML_PARSE_INTERNAL_FAIL;
+            }
+        }
+
         config[key] = value;
 
         HGM_LOGI("HgmXMLParser ParseSimplex %{public}s=%{public}s %{public}s=%{public}s",
@@ -428,7 +451,19 @@ int32_t XMLParser::ParsePowerStrategy(xmlNode& node, std::unordered_map<std::str
     return EXEC_SUCCESS;
 }
 
-int32_t XMLParser::ParserDynamicSetting(xmlNode &node, PolicyConfigData::DynamicSettingMap &dynamicSettingMap)
+int32_t XMLParser::ParseSmallSizeDynamicSetting(xmlNode& node, PolicyConfigData::ScreenSetting& screenSetting)
+{
+    auto area = ExtractPropertyValue("area", node);
+    auto length = ExtractPropertyValue("length", node);
+    if (!IsNumber(area) || !IsNumber(length)) {
+        return HGM_ERROR;
+    }
+    screenSetting.smallSizeArea = std::stoi(area);
+    screenSetting.smallSizeLength = std::stoi(length);
+    return ParseDynamicSetting(node, screenSetting.smallSizeAnimationDynamicSettings);
+}
+
+int32_t XMLParser::ParseDynamicSetting(xmlNode &node, PolicyConfigData::DynamicSettingMap &dynamicSettingMap)
 {
     HGM_LOGD("XMLParser parsing dynamicSetting");
     xmlNode *currNode = &node;
@@ -462,7 +497,7 @@ int32_t XMLParser::ParserDynamicSetting(xmlNode &node, PolicyConfigData::Dynamic
             dynamicConfig.preferred_fps = std::stoi(preferred_fps);
             dynamicSettingMap[dynamicSettingType][name] = dynamicConfig;
 
-            HGM_LOGI("HgmXMLParser ParserDynamicSetting dynamicType=%{public}s name=%{public}s min=%{public}d",
+            HGM_LOGI("HgmXMLParser ParseDynamicSetting dynamicType=%{public}s name=%{public}s min=%{public}d",
                      dynamicSettingType.c_str(), name.c_str(), dynamicSettingMap[dynamicSettingType][name].min);
         }
     }
@@ -542,6 +577,7 @@ int32_t XMLParser::ParseMultiAppStrategy(xmlNode &node, PolicyConfigData::Screen
     } else {
         screenSetting.multiAppStrategyType = MultiAppStrategyType::USE_MAX;
     }
+    ParseSimplex(node, screenSetting.gameAppNodeList, "nodeName", "name", true);
     return ParseSimplex(node, screenSetting.appList, "strategy");
 }
 
@@ -569,6 +605,45 @@ int32_t XMLParser::ParseAppTypes(xmlNode &node, std::unordered_map<int32_t, std:
         auto strategy = ExtractPropertyValue("strategy", *currNode);
         appTypes[std::stoi(name)] = strategy;
         HGM_LOGI("HgmXMLParser ParseAppTypes name=%{public}s strategy=%{public}s", name.c_str(), strategy.c_str());
+    }
+
+    return EXEC_SUCCESS;
+}
+
+int32_t XMLParser::ReplenishMissThermalConfig(const PolicyConfigData::ScreenConfig &screenConfigDefault,
+                                              PolicyConfigData::ScreenConfig &screenConfig)
+{
+    HGM_LOGD("HgmXMLParser ReplenishMissThermalConfig");
+    for (const auto& [id, screenSettingDefalut] : screenConfigDefault) {
+        if (screenConfig.find(id) == screenConfig.end()) {
+            screenConfig[id] = screenSettingDefalut;
+        }
+    }
+
+    return EXEC_SUCCESS;
+}
+
+int32_t XMLParser::ParsePerformanceConfig(
+    xmlNode &node, std::unordered_map<std::string, std::string> &performanceConfig)
+{
+    HGM_LOGD("XMLParser parsing performanceConfig");
+    xmlNode *currNode = &node;
+    if (currNode->xmlChildrenNode == nullptr) {
+        HGM_LOGD("XMLParser stop parsing performanceConfig, no children nodes");
+        return HGM_ERROR;
+    }
+
+    // re-parse
+    performanceConfig.clear();
+    currNode = currNode->xmlChildrenNode;
+    for (; currNode; currNode = currNode->next) {
+        if (currNode->type != XML_ELEMENT_NODE) {
+            continue;
+        }
+        auto name = ExtractPropertyValue("name", *currNode);
+        auto value = ExtractPropertyValue("value", *currNode);
+        performanceConfig[name] = value;
+        HGM_LOGI("HgmXMLParser performanceConfig name=%{public}s strategy=%{public}s", name.c_str(), value.c_str());
     }
 
     return EXEC_SUCCESS;

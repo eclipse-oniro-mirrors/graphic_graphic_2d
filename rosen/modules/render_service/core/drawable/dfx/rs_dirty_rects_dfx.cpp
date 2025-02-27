@@ -31,7 +31,7 @@
 #include "hgm_core.h"
 
 #include "pipeline/hardware_thread/rs_realtime_refresh_rate_manager.h"
-#include "pipeline/rs_uni_render_util.h"
+#include "pipeline/render_thread/rs_uni_render_util.h"
 
 namespace OHOS::Rosen {
 namespace {
@@ -156,24 +156,35 @@ void RSDirtyRectsDfx::DrawDirtyRegionInVirtual(RSPaintFilterCanvas& canvas) cons
 }
 
 bool RSDirtyRectsDfx::RefreshRateRotationProcess(RSPaintFilterCanvas& canvas,
-    ScreenRotation rotation, uint64_t screenId)
+    ScreenRotation rotation, int translateWidth, int translateHeight)
 {
+    auto screenManager = CreateOrGetScreenManager();
+    if (UNLIKELY(displayParams_ == nullptr || screenManager == nullptr)) {
+        return false;
+    }
+    auto screenId = displayParams_->GetScreenId();
+    auto screenCorrection = screenManager->GetScreenCorrection(screenId);
+    if (screenCorrection != ScreenRotation::INVALID_SCREEN_ROTATION &&
+        screenCorrection != ScreenRotation::ROTATION_0) {
+        // Recaculate rotation if mirrored screen has additional rotation angle
+        rotation = static_cast<ScreenRotation>((static_cast<int>(rotation) + SCREEN_ROTATION_NUM
+            - static_cast<int>(screenCorrection)) % SCREEN_ROTATION_NUM);
+    }
+    if (rotation == ScreenRotation::ROTATION_90 || rotation == ScreenRotation::ROTATION_270) {
+        std::swap(translateWidth, translateHeight);
+    }
+
     if (rotation != ScreenRotation::ROTATION_0) {
-        auto screenManager = CreateOrGetScreenManager();
-        if (screenManager == nullptr) {
-            return false;
-        }
-        auto mainScreenInfo = screenManager->QueryScreenInfo(screenId);
         if (rotation == ScreenRotation::ROTATION_90) {
             canvas.Rotate(-90, 0, 0); // 90 degree for text draw
-            canvas.Translate(-(static_cast<float>(mainScreenInfo.height)), 0);
+            canvas.Translate(-(static_cast<float>(translateWidth)), 0);
         } else if (rotation == ScreenRotation::ROTATION_180) {
             // 180 degree for text draw
-            canvas.Rotate(-180, static_cast<float>(mainScreenInfo.width) / 2, // 2 half of screen width
-                static_cast<float>(mainScreenInfo.height) / 2);                 // 2 half of screen height
+            canvas.Rotate(-180, static_cast<float>(translateWidth) / 2, // 2 half of screen width
+                static_cast<float>(translateHeight) / 2);                 // 2 half of screen height
         } else if (rotation == ScreenRotation::ROTATION_270) {
             canvas.Rotate(-270, 0, 0); // 270 degree for text draw
-            canvas.Translate(0, -(static_cast<float>(mainScreenInfo.width)));
+            canvas.Translate(0, -(static_cast<float>(translateHeight)));
         } else {
             return false;
         }
@@ -190,7 +201,6 @@ void RSDirtyRectsDfx::DrawCurrentRefreshRate(RSPaintFilterCanvas& canvas)
     auto screenId = displayParams_->GetScreenId();
     static const std::string FOLD_SCREEN_TYPE = system::GetParameter("const.window.foldscreen.type", "0,0,0,0");
     const char dualDisplay = '2';
-    const char dualDisplayNewFMT = '4';
     // fold device with two logic screens
     if ((FOLD_SCREEN_TYPE[0] == dualDisplay) && screenId != 0) {
         return;
@@ -214,22 +224,21 @@ void RSDirtyRectsDfx::DrawCurrentRefreshRate(RSPaintFilterCanvas& canvas)
     RSAutoCanvasRestore acr(&canvas);
     canvas.AttachBrush(brush);
     auto rotation = displayParams_->GetScreenRotation();
-    // fold device with one logic screen
-    bool isOneLogicScreenDevice = FOLD_SCREEN_TYPE[0] != dualDisplay &&
-                                    FOLD_SCREEN_TYPE[0] != dualDisplayNewFMT;
-    if (RSSystemProperties::IsFoldScreenFlag() && isOneLogicScreenDevice && screenId == 0) {
-        rotation =
-            (rotation == ScreenRotation::ROTATION_270 ? ScreenRotation::ROTATION_0
-                                                      : static_cast<ScreenRotation>(static_cast<int>(rotation) + 1));
+    auto screenManager = CreateOrGetScreenManager();
+    if (screenManager == nullptr) {
+        return;
     }
-    // fold device with new format
-    if (RSSystemProperties::IsFoldScreenFlag() && FOLD_SCREEN_TYPE[0] == dualDisplayNewFMT && screenId != 0) {
-        rotation =
-            (rotation == ScreenRotation::ROTATION_0 ? ScreenRotation::ROTATION_270
-                                                      : static_cast<ScreenRotation>(static_cast<int>(rotation) - 1));
+    auto screenInfo = screenManager->QueryScreenInfo(screenId);
+    auto screenWidth = screenInfo.width;
+    auto screenHeight = screenInfo.height;
+    auto activeRect = screenInfo.activeRect;
+    if (!activeRect.IsEmpty()) {
+        canvas.Translate(activeRect.left_, activeRect.top_);
+        screenWidth = static_cast<uint32_t>(activeRect.width_);
+        screenHeight = static_cast<uint32_t>(activeRect.height_);
     }
     auto saveCount = canvas.Save();
-    if (!RefreshRateRotationProcess(canvas, rotation, screenId)) {
+    if (!RefreshRateRotationProcess(canvas, rotation, screenWidth, screenHeight)) {
         return;
     }
     // 100.f:Scalar x of drawing TextBlob; 200.f:Scalar y of drawing TextBlob
@@ -365,6 +374,13 @@ bool RSDirtyRectsDfx::DrawDetailedTypesOfDirtyRegionForDFX(RSPaintFilterCanvas& 
 void RSDirtyRectsDfx::DrawSurfaceOpaqueRegionForDFX(RSPaintFilterCanvas& canvas,
     RSSurfaceRenderParams& surfaceParams) const
 {
+    if (!displayParams_) {
+        return;
+    }
+    auto params = static_cast<RSDisplayRenderParams*>(displayParams_.get());
+    if (surfaceParams.IsFirstLevelCrossNode() && !params->IsFirstVisitCrossNodeDisplay()) {
+        return;
+    }
     const auto& opaqueRegionRects = surfaceParams.GetOpaqueRegion().GetRegionRects();
     for (const auto& subRect : opaqueRegionRects) {
         DrawDirtyRectForDFX(canvas, subRect.ToRectI(), Drawing::Color::COLOR_GREEN, RSPaintStyle::FILL, 0);

@@ -39,6 +39,7 @@
 namespace OHOS::Rosen::DrawableV2 {
 std::map<RSRenderNodeType, RSRenderNodeDrawableAdapter::Generator> RSRenderNodeDrawableAdapter::GeneratorMap;
 std::map<NodeId, RSRenderNodeDrawableAdapter::WeakPtr> RSRenderNodeDrawableAdapter::RenderNodeDrawableCache_;
+std::unordered_map<NodeId, Drawing::Matrix> RSRenderNodeDrawableAdapter::unobscuredUECMatrixMap_;
 #ifdef ROSEN_OHOS
 thread_local RSRenderNodeDrawableAdapter* RSRenderNodeDrawableAdapter::curDrawingCacheRoot_ = nullptr;
 #else
@@ -249,6 +250,19 @@ void RSRenderNodeDrawableAdapter::DrawBackground(Drawing::Canvas& canvas, const 
     DrawRangeImpl(canvas, rect, 0, drawCmdIndex_.backgroundEndIndex_);
 }
 
+void RSRenderNodeDrawableAdapter::DrawLeashWindowBackground(Drawing::Canvas& canvas, const Drawing::Rect& rect,
+    bool isStencilPixelOcclusionCullingEnabled, int64_t stencilVal) const
+{
+    if (!isStencilPixelOcclusionCullingEnabled) {
+        DrawRangeImpl(canvas, rect, 0, drawCmdIndex_.backgroundEndIndex_);
+        return;
+    }
+    DrawRangeImpl(canvas, rect, 0, drawCmdIndex_.shadowIndex_);
+    // [planning] enable limited to shadow
+    DrawRangeImpl(canvas, rect, drawCmdIndex_.shadowIndex_, drawCmdIndex_.shadowIndex_ + 1);
+    DrawRangeImpl(canvas, rect, drawCmdIndex_.shadowIndex_ + 1, drawCmdIndex_.backgroundEndIndex_);
+}
+
 void RSRenderNodeDrawableAdapter::DrawContent(Drawing::Canvas& canvas, const Drawing::Rect& rect) const
 {
     if (drawCmdList_.empty()) {
@@ -421,6 +435,20 @@ void RSRenderNodeDrawableAdapter::CollectInfoForNodeWithoutFilter(Drawing::Canva
     curDrawingCacheRoot_->withoutFilterMatrixMap_[GetId()] = canvas.GetTotalMatrix();
 }
 
+void RSRenderNodeDrawableAdapter::CollectInfoForUnobscuredUEC(Drawing::Canvas& canvas)
+{
+    if (!UECChildrenIds_ || UECChildrenIds_->empty()) {
+        return;
+    }
+    for (auto childId : *UECChildrenIds_) {
+        unobscuredUECMatrixMap_[childId] = canvas.GetTotalMatrix();
+        auto drawable = GetDrawableById(childId);
+        if (drawable) {
+            drawable->SetUIExtensionNeedToDraw(true);
+        }
+    }
+}
+
 void RSRenderNodeDrawableAdapter::DrawBackgroundWithoutFilterAndEffect(
     Drawing::Canvas& canvas, const RSRenderParams& params)
 {
@@ -433,6 +461,7 @@ void RSRenderNodeDrawableAdapter::DrawBackgroundWithoutFilterAndEffect(
     auto curCanvas = static_cast<RSPaintFilterCanvas*>(&canvas);
     for (auto index = 0; index < backgroundIndex; ++index) {
         if (index == drawCmdIndex_.shadowIndex_) {
+            CollectInfoForNodeWithoutFilter(canvas);
             if (!params.GetShadowRect().IsEmpty()) {
                 auto shadowRect = params.GetShadowRect();
                 RS_OPTIONAL_TRACE_NAME_FMT("ClipHoleForBlur shadowRect:[%.2f, %.2f, %.2f, %.2f]", shadowRect.GetLeft(),

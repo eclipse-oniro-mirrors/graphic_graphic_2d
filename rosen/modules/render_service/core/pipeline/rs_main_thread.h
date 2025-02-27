@@ -25,8 +25,8 @@
 #include <thread>
 
 #include "refbase.h"
-#include "rs_base_render_engine.h"
-#include "rs_draw_frame.h"
+#include "render_thread/rs_base_render_engine.h"
+#include "render_thread/rs_draw_frame.h"
 #include "vsync_distributor.h"
 #include "vsync_receiver.h"
 
@@ -43,7 +43,6 @@
 #include "memory/rs_memory_graphic.h"
 #include "params/rs_render_thread_params.h"
 #include "pipeline/rs_context.h"
-#include "pipeline/rs_draw_frame.h"
 #include "pipeline/rs_uni_render_judgement.h"
 #include "pipeline/rs_vsync_rate_reduce_manager.h"
 #include "platform/common/rs_event_manager.h"
@@ -107,7 +106,8 @@ public:
     void PostSyncTask(RSTaskMessage::RSTask task);
     bool IsIdle() const;
     void TransactionDataMapDump(const TransactionDataMap& transactionDataMap, std::string& dumpString);
-    void RenderServiceTreeDump(std::string& dumpString, bool forceDumpSingleFrame = true);
+    void RenderServiceTreeDump(std::string& dumpString, bool forceDumpSingleFrame = true,
+        bool needUpdateJankStats = false);
     void RenderServiceAllNodeDump(DfxString& log);
     void SendClientDumpNodeTreeCommands(uint32_t taskId);
     void CollectClientNodeTreeResult(uint32_t taskId, std::string& dumpString, size_t timeout);
@@ -117,8 +117,7 @@ public:
     void ResetAnimateNodeFlag();
     void GetAppMemoryInMB(float& cpuMemSize, float& gpuMemSize);
     void ClearMemoryCache(ClearMemoryMoment moment, bool deeply = false, pid_t pid = -1);
-    static bool CheckIsHdrSurface(const RSSurfaceRenderNode& surfaceNode);
-    static bool CheckIsAihdrSurface(const RSSurfaceRenderNode& surfaceNode);
+    static HdrStatus CheckIsHdrSurface(const RSSurfaceRenderNode& surfaceNode);
 
     template<typename Task, typename Return = std::invoke_result_t<Task>>
     std::future<Return> ScheduleTask(Task&& task)
@@ -226,8 +225,9 @@ public:
     void CountMem(int pid, MemoryGraphic& mem);
     void CountMem(std::vector<MemoryGraphic>& mems);
     void SetAppWindowNum(uint32_t num);
-    bool SetSystemAnimatedScenes(SystemAnimatedScenes systemAnimatedScenes);
+    bool SetSystemAnimatedScenes(SystemAnimatedScenes systemAnimatedScenes, bool isRegularAnimation = false);
     SystemAnimatedScenes GetSystemAnimatedScenes();
+    bool GetIsRegularAnimation() const;
     // Save marks, and use it for SurfaceNodes later.
     void SetWatermark(const std::string& name, std::shared_ptr<Media::PixelMap> watermark);
     // Save marks, and use it for DisplayNode later.
@@ -364,7 +364,8 @@ public:
 
     void CallbackDrawContextStatusToWMS(bool isUniRender = false);
     void SetHardwareTaskNum(uint32_t num);
-    void RegisterUIExtensionCallback(pid_t pid, uint64_t userId, sptr<RSIUIExtensionCallback> callback);
+    void RegisterUIExtensionCallback(pid_t pid, uint64_t userId, sptr<RSIUIExtensionCallback> callback,
+        bool unobscured = false);
     void UnRegisterUIExtensionCallback(pid_t pid);
 
     void SetAncoForceDoDirect(bool direct);
@@ -430,12 +431,22 @@ public:
         unmappedCacheSet_.insert(bufferId);
     }
 
+    void AddToUnmappedMirrorCacheSet(uint32_t bufferId)
+    {
+        std::lock_guard<std::mutex> lock(unmappedCacheSetMutex_);
+        unmappedVirScreenCacheSet_.insert(bufferId);
+    }
+
     void AddToUnmappedCacheSet(const std::set<uint32_t>& seqNumSet)
     {
         std::lock_guard<std::mutex> lock(unmappedCacheSetMutex_);
         unmappedCacheSet_.insert(seqNumSet.begin(), seqNumSet.end());
     }
+
     void ClearUnmappedCache();
+    void NotifyPackageEvent(const std::vector<std::string>& packageList);
+    void NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt);
+    void InitVulkanErrorCallback(Drawing::GPUContext* gpuContext);
 private:
     using TransactionDataIndexMap = std::unordered_map<pid_t,
         std::pair<uint64_t, std::vector<std::unique_ptr<RSTransactionData>>>>;
@@ -549,7 +560,7 @@ private:
     int64_t GetCurrentSteadyTimeMs() const;
     float GetCurrentSteadyTimeMsFloat() const;
     void RequestNextVsyncForCachedCommand(std::string& transactionFlags, pid_t pid, uint64_t curIndex);
-    void UpdateLuminance();
+    void UpdateLuminanceAndColorTemp();
 
     void PrepareUiCaptureTasks(std::shared_ptr<RSUniRenderVisitor> uniVisitor);
     void UIExtensionNodesTraverseAndCallback();
@@ -560,8 +571,6 @@ private:
 
     // Used for CommitAndReleaseLayers task
     void SetFrameInfo(uint64_t frameCount, bool forceRefreshFlag);
-
-    void ReportRSFrameDeadline(OHOS::Rosen::HgmCore& hgmCore, bool forceRefreshFlag);
 
     // Record change status of multi or single display
     void MultiDisplayChange(bool isMultiDisplay);
@@ -634,17 +643,15 @@ private:
     std::atomic_bool discardJankFrames_ = false;
     std::atomic_bool skipJankAnimatorFrame_ = false;
     pid_t lastCleanCachePid_ = -1;
-    int preHardwareTid_ = -1;
     int32_t unmarshalFinishedCount_ = 0;
     uint32_t appWindowNum_ = 0;
     pid_t desktopPidForRotationScene_ = 0;
     int32_t subscribeFailCount_ = 0;
     SystemAnimatedScenes systemAnimatedScenes_ = SystemAnimatedScenes::OTHERS;
+    bool isRegularAnimation_ = false;
     uint32_t leashWindowCount_ = 0;
     pid_t exitedPid_ = -1;
     RsParallelType rsParallelType_;
-    // render start hardware task count
-    uint32_t preUnExecuteTaskNum_ = 0;
     std::atomic<int32_t> focusAppPid_ = -1;
     std::atomic<int32_t> focusAppUid_ = -1;
     std::atomic<uint32_t> requestNextVsyncNum_ = 0;
@@ -655,9 +662,11 @@ private:
     uint64_t prePerfTimestamp_ = 0;
     uint64_t lastCleanCacheTimestamp_ = 0;
     uint64_t focusLeashWindowId_ = 0;
+    std::string focusLeashWindowName_ = "";
+    std::string appWindowName_ = "";
+    uint32_t appPid_ = 0;
     uint64_t lastFocusNodeId_ = 0;
-    int64_t preIdealPeriod_ = 0;
-    int64_t preExtraReserve_ = 0;
+    uint64_t appWindowId_ = 0;
     ScreenId displayNodeScreenId_ = 0;
     std::atomic<uint64_t> focusNodeId_ = 0;
     std::atomic<uint64_t> frameCount_ = 0;
@@ -701,7 +710,8 @@ private:
      * if an image is found in this set, it means that the image is no longer needed and can be safely
      * removed from the GPU cache.
      */
-    std::set<uint32_t> unmappedCacheSet_ = {};
+    std::set<uint32_t> unmappedCacheSet_ = {}; // must protected by unmappedCacheSetMutex_
+    std::set<uint32_t> unmappedVirScreenCacheSet_ = {}; // must protected by unmappedCacheSetMutex_
     std::mutex unmappedCacheSetMutex_;
 
     /**
@@ -801,8 +811,10 @@ private:
     // uiextension
     std::mutex uiExtensionMutex_;
     UIExtensionCallbackData uiExtensionCallbackData_;
+    UIExtensionCallbackData unobscureduiExtensionCallbackData_;
     // <pid, <uid, callback>>
     std::map<pid_t, std::pair<uint64_t, sptr<RSIUIExtensionCallback>>> uiExtensionListenners_ = {};
+    std::map<pid_t, std::pair<uint64_t, sptr<RSIUIExtensionCallback>>> uiUnobscuredExtensionListenners_ = {};
 
 #ifdef RS_PROFILER_ENABLED
     friend class RSProfiler;
@@ -818,7 +830,8 @@ private:
     // for record fastcompose time change
     uint64_t lastFastComposeTimeStamp_ = 0;
     uint64_t lastFastComposeTimeStampDiff_ = 0;
-    std::mutex transactionDataMutex_;
+    // last frame game self-drawing node is on tree or not
+    bool isLastGameNodeOnTree_ = false;
 };
 } // namespace OHOS::Rosen
 #endif // RS_MAIN_THREAD

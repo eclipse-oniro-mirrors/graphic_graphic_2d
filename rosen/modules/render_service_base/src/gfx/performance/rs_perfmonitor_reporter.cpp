@@ -45,10 +45,10 @@ RSPerfMonitorReporter& RSPerfMonitorReporter::GetInstance()
 void RSPerfMonitorReporter::SetFocusAppInfo(const char* bundleName)
 {
 #ifdef ROSEN_OHOS
+    SetCurrentBundleName(bundleName);
     if (!IsOpenPerf()) {
         return;
     }
-    SetCurrentBundleName(bundleName);
     auto task = [this]() {
         this->ReportBlurStatEvent();
         this->ReportTextureStatEvent();
@@ -292,8 +292,14 @@ void RSPerfMonitorReporter::EndRendergroupMonitor(std::chrono::time_point<high_r
 void RSPerfMonitorReporter::ClearRendergroupDataMap(NodeId& nodeId)
 {
 #ifdef ROSEN_OHOS
-    drawingCacheTimeTakenMap_.erase(nodeId);
-    drawingCacheLastTwoTimestampMap_.erase(nodeId);
+    {
+        std::lock_guard<std::mutex> lock(drawingCacheTimeTakenMapMutex_);
+        drawingCacheTimeTakenMap_.erase(nodeId);
+    }
+    {
+        std::lock_guard<std::mutex> lock(drawingCacheLastTwoTimestampMapMutex_);
+        drawingCacheLastTwoTimestampMap_.erase(nodeId);
+    }
 #endif
 }
 
@@ -314,6 +320,7 @@ void RSPerfMonitorReporter::ProcessRendergroupSubhealth(NodeId& nodeId, int upda
         std::string bundleName = GetCurrentBundleName();
         std::string timeTaken = GetUpdateCacheTimeTaken(nodeId);
         RSBackgroundThread::Instance().PostTask([nodeId, bundleName, updateTimes, timeTaken]() {
+            RS_TRACE_NAME("RSPerfMonitorReporter::ProcessRendergroupSubhealth HiSysEventWrite in RSBackgroundThread");
             HiSysEventWrite(OHOS::HiviewDFX::HiSysEvent::Domain::GRAPHIC, RENDERGROUP_SUBHEALTH_EVENT_NAME,
                 OHOS::HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
                 "NODE_ID", nodeId,
@@ -345,7 +352,7 @@ bool RSPerfMonitorReporter::NeedReportSubHealth(NodeId& nodeId, int updateTimes,
     }
     {
         std::lock_guard<std::mutex> lock(drawingCacheLastTwoTimestampMapMutex_);
-        int timestampCounts = drawingCacheLastTwoTimestampMap_[nodeId].size();
+        size_t timestampCounts = drawingCacheLastTwoTimestampMap_[nodeId].size();
         if (timestampCounts != STORED_TIMESTAMP_COUNT) {
             return false;
         }

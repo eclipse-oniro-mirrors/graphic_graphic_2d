@@ -849,27 +849,22 @@ void RSPropertyDrawableUtils::DrawPixelStretch(Drawing::Canvas* canvas, const st
         ROSEN_LOGE("RSPropertyDrawableUtils::DrawPixelStretch get invert matrix failed.");
         return;
     }
-
-    // convert local coord to world coord
-    Drawing::Rect tmpBounds;
-    auto bounds = Rect2DrawingRect(boundsRect);
-    if (!canvas->GetTotalMatrix().MapRect(tmpBounds, bounds)) {
-        ROSEN_LOGE("RSPropertyDrawableUtils::DrawPixelStretch map rect failed.");
-        return;
-    }
+    Drawing::Rect localClipBounds;
+    canvas->Save();
+    canvas->ClipRect(Rect2DrawingRect(boundsRect), Drawing::ClipOp::INTERSECT, false);
+    auto tmpBounds = canvas->GetDeviceClipBounds();
     RS_OPTIONAL_TRACE_NAME_FMT_LEVEL(TRACE_LEVEL_TWO,
         "RSPropertyDrawableUtils::DrawPixelStretch, tmpBounds: %s", tmpBounds.ToString().c_str());
-
+    canvas->Restore();
     Drawing::Rect clipBounds(
         tmpBounds.GetLeft(), tmpBounds.GetTop(), tmpBounds.GetRight() - 1, tmpBounds.GetBottom() - 1);
     Drawing::Rect fClipBounds(clipBounds.GetLeft(), clipBounds.GetTop(), clipBounds.GetRight(), clipBounds.GetBottom());
 
-    Drawing::Rect localClipBounds;
     if (!worldToLocalMat.MapRect(localClipBounds, fClipBounds)) {
         ROSEN_LOGE("RSPropertyDrawableUtils::DrawPixelStretch map rect failed.");
         return;
     }
-
+    auto bounds = Rect2DrawingRect(boundsRect);
     if (!bounds.Intersect(localClipBounds)) {
         ROSEN_LOGE("RSPropertyDrawableUtils::DrawPixelStretch intersect clipbounds failed");
         return;
@@ -1082,6 +1077,13 @@ void RSPropertyDrawableUtils::BeginBlender(RSPaintFilterCanvas& canvas, std::sha
 
     // save layer mode
     Drawing::Brush blendBrush_;
+
+    // The savelayer in the RSPaintFilterCanvas will automatically apply alpha to the brush.
+    // If the alpha of the canvas is set to the brush here, the final transparency will be
+    // alpha * alpha, not alpha.
+    if (blendModeApplyType == static_cast<int>(RSColorBlendApplyType::SAVE_LAYER_ALPHA)) {
+        blendBrush_.SetAlphaF(canvas.GetAlpha());
+    }
     blendBrush_.SetBlender(blender);
     Drawing::SaveLayerOps maskLayerRec(nullptr, &blendBrush_, 0);
     canvas.SaveLayer(maskLayerRec);

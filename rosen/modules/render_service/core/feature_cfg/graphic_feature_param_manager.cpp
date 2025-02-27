@@ -14,6 +14,7 @@
  */
 
 #include "graphic_feature_param_manager.h"
+
 #include "platform/common/rs_log.h"
 
 namespace OHOS::Rosen {
@@ -34,16 +35,13 @@ GraphicFeatureParamManager::~GraphicFeatureParamManager() noexcept
 void GraphicFeatureParamManager::Init()
 {
     RS_LOGI("GraphicFeatureParamManager %{public}s : Init feature map", __func__);
-    // parse map init
-    featureParseMap_[featureModules[HDR]] = std::make_unique<HDRParamParse>();
-    featureParseMap_[featureModules[DRM]] = std::make_unique<DRMParamParse>();
-    featureParseMap_[featureModules[HWC]] = std::make_unique<HWCParamParse>();
+    // Init feature configs
+    for (const auto& module : FEATURE_MODULES) {
+        featureParseMap_.emplace(module.name, module.xmlParser());
+        featureParamMap_.emplace(module.name, module.featureParam());
+    }
 
-    // param map init
-    featureParamMap_[featureModules[HDR]] = std::make_unique<HDRParam>();
-    featureParamMap_[featureModules[DRM]] = std::make_unique<DRMParam>();
-    featureParamMap_[featureModules[HWC]] = std::make_unique<HWCParam>();
-
+    // Start parse feature
     FeatureParamParseEntry();
 }
 
@@ -54,12 +52,16 @@ void GraphicFeatureParamManager::FeatureParamParseEntry()
         featureParser_ = std::make_unique<XMLParserBase>();
     }
 
-    if (featureParser_->LoadGraphicConfiguration(GRAPHIC_CONFIG_FILE_PRODUCT) != PARSE_EXEC_SUCCESS) {
-        RS_LOGD("GraphicFeatureParamManager failed to load prod xml configuration file");
+    if (featureParser_->LoadGraphicConfiguration(graphicConfigPath_) != PARSE_EXEC_SUCCESS) {
+        RS_LOGD("GraphicFeatureParamManager failed to load xml configuration file");
         return;
     }
 
-    if (featureParser_->Parse() != PARSE_EXEC_SUCCESS) {
+    if (featureParser_->ParseSysDoc() != PARSE_EXEC_SUCCESS) {
+        RS_LOGD("GraphicFeatureParamManager failed to parse sys xml configuration");
+    }
+
+    if (featureParser_->ParseProdDoc() != PARSE_EXEC_SUCCESS) {
         RS_LOGD("GraphicFeatureParamManager failed to parse prod xml configuration");
     }
 }

@@ -145,23 +145,31 @@ public:
     void SetScale(Vector2f scale);
     void SetScaleX(float sx);
     void SetScaleY(float sy);
+    void SetScaleZ(float sz);
     Vector2f GetScale() const;
     float GetScaleX() const;
     float GetScaleY() const;
+    float GetScaleZ() const;
 
-    void SetSkew(Vector2f skew);
+    void SetSkew(const Vector3f& skew);
     void SetSkewX(float skewX);
     void SetSkewY(float skewY);
-    Vector2f GetSkew() const;
+    void SetSkewZ(float skewZ);
+    Vector3f GetSkew() const;
     float GetSkewX() const;
     float GetSkewY() const;
+    float GetSkewZ() const;
 
-    void SetPersp(Vector2f persp);
+    void SetPersp(const Vector4f& persp);
     void SetPerspX(float perspX);
     void SetPerspY(float perspY);
-    Vector2f GetPersp() const;
+    void SetPerspZ(float perspZ);
+    void SetPerspW(float perspW);
+    Vector4f GetPersp() const;
     float GetPerspX() const;
     float GetPerspY() const;
+    float GetPerspZ() const;
+    float GetPerspW() const;
 
     void SetAlpha(float alpha);
     float GetAlpha() const;
@@ -466,6 +474,7 @@ public:
     float GetAttractionFraction() const;
     Vector2f GetAttractionDstPoint() const;
     void CreateAttractionEffectFilter();
+    void CreateColorfulShadowFilter();
     RectI GetAttractionEffectCurrentDirtyRegion() const;
     void SetLightUpEffect(float lightUpEffectDegree);
     float GetLightUpEffect() const;
@@ -563,6 +572,11 @@ public:
     void OnApplyModifiers();
 
 private:
+    inline float DecreasePrecision(float value)
+    {
+        // preserve two digital precision when calculating hash, this can reuse filterCache as much as possible.
+        return 0.01 * round(value * 100);
+    }
     void ResetProperty(const std::bitset<static_cast<int>(RSModifierType::MAX_RS_MODIFIER_TYPE)>& dirtyTypes);
     void SetDirty();
     void ResetDirty();

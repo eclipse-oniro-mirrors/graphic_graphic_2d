@@ -17,7 +17,7 @@
 
 #include "drawable/rs_surface_render_node_drawable.h"
 #include "pipeline/rs_main_thread.h"
-#include "rs_uni_render_thread.h"
+#include "render_thread/rs_uni_render_thread.h"
 #include "rs_trace.h"
 
 namespace OHOS {

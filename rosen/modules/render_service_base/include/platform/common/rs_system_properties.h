@@ -168,13 +168,17 @@ public:
     static SurfaceRegionDebugType GetSurfaceRegionDfxType();
     static bool GetDumpLayersEnabled();
     static bool GetHardwareComposerEnabled();
+    static bool GetDoDirectCompositionEnabled();
+    static bool GetDumpRsTreeDetailEnabled();
     static bool GetHardwareComposerEnabledForMirrorMode();
     static bool GetHwcRegionDfxEnabled();
     static bool GetDrawMirrorCacheImageEnabled();
     static bool GetPixelmapDfxEnabled();
     static bool GetAFBCEnabled();
     static bool GetReleaseResourceEnabled();
+    static bool GetReclaimMemoryEnabled();
     static bool GetRSScreenRoundCornerEnable();
+    static bool GetVmaPreAllocEnabled();
 
     static void SetDrawTextAsBitmap(bool flag);
     static bool GetDrawTextAsBitmap();
@@ -247,6 +251,7 @@ public:
     static bool IsPhoneType();
     static bool IsTabletType();
     static bool IsPcType();
+    static bool IsSuperFoldDisplay();
     static bool IsBetaRelease();
     static bool GetSyncTransactionEnabled();
     static int GetSyncTransactionWaitDelay();
@@ -298,6 +303,9 @@ public:
     static std::string GetVersionType();
     static bool GetHwcDirtyRegionEnabled();
     static bool GetHveFilterEnabled();
+    static bool GetDmaReclaimParam();
+    static bool GetOptimizeParentNodeRegionEnabled();
+    static bool GetOptimizeHwcComposeAreaEnabled();
 private:
     RSSystemProperties() = default;
 

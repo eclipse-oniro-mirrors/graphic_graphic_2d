@@ -22,9 +22,9 @@
 #include "hgm_config_callback_manager.h"
 #include "ipc_callbacks/buffer_available_callback.h"
 #include "ipc_callbacks/buffer_clear_callback.h"
+#include "pipeline/hardware_thread/rs_hardware_thread.h"
+#include "pipeline/render_thread/rs_uni_render_thread.h"
 #include "pipeline/rs_render_service.h"
-#include "pipeline/rs_hardware_thread.h"
-#include "pipeline/rs_uni_render_thread.h"
 #include "screen_manager/rs_screen_manager.h"
 #include "transaction/rs_render_service_connection_stub.h"
 #include "vsync_distributor.h"
@@ -67,7 +67,7 @@ private:
 
     bool CreateNode(const RSSurfaceRenderNodeConfig& config) override;
     bool CreateNode(const RSDisplayNodeConfig& displayNodeConfig, NodeId nodeId) override;
-    sptr<Surface> CreateNodeAndSurface(const RSSurfaceRenderNodeConfig& config) override;
+    sptr<Surface> CreateNodeAndSurface(const RSSurfaceRenderNodeConfig& config, bool unobscured = false) override;
 
     sptr<IVSyncConnection> CreateVSyncConnection(const std::string& name,
                                                  const sptr<VSyncIConnectionToken>& token,
@@ -253,6 +253,8 @@ private:
     bool RegisterTypeface(uint64_t globalUniqueId, std::shared_ptr<Drawing::Typeface>& typeface) override;
     bool UnRegisterTypeface(uint64_t globalUniqueId) override;
 
+    int32_t GetDisplayIdentificationData(ScreenId id, uint8_t& outPort, std::vector<uint8_t>& edidData) override;
+
     int32_t SetScreenSkipFrameInterval(ScreenId id, uint32_t skipFrameInterval) override;
 
     int32_t SetVirtualScreenRefreshRate(ScreenId id, uint32_t maxRefreshRate, uint32_t& actualRefreshRate) override;
@@ -277,7 +279,7 @@ private:
 
     void SetAppWindowNum(uint32_t num) override;
 
-    bool SetSystemAnimatedScenes(SystemAnimatedScenes systemAnimatedScenes) override;
+    bool SetSystemAnimatedScenes(SystemAnimatedScenes systemAnimatedScenes, bool isRegularAnimation) override;
 
     void ShowWatermark(const std::shared_ptr<Media::PixelMap> &watermarkImg, bool isShow) override;
 
@@ -308,6 +310,9 @@ private:
 
     void NotifyPackageEvent(uint32_t listSize, const std::vector<std::string>& packageList) override;
 
+    void NotifyAppStrategyConfigChangeEvent(const std::string& pkgName, uint32_t listSize,
+        const std::vector<std::pair<std::string, std::string>>& newConfig) override;
+
     void NotifyRefreshRateEvent(const EventInfo& eventInfo) override;
 
     void NotifySoftVsyncEvent(uint32_t pid, uint32_t rateDiscount) override;
@@ -315,6 +320,8 @@ private:
     void NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt) override;
 
     void NotifyDynamicModeEvent(bool enableDynamicModeEvent) override;
+
+    void NotifyHgmConfigEvent(const std::string &eventName, bool state) override;
 
     void SetCacheEnabledForRotation(bool isEnabled) override;
 
@@ -332,7 +339,8 @@ private:
 
     void SetVmaCacheStatus(bool flag) override;
 
-    int32_t RegisterUIExtensionCallback(uint64_t userId, sptr<RSIUIExtensionCallback> callback) override;
+    int32_t RegisterUIExtensionCallback(uint64_t userId, sptr<RSIUIExtensionCallback> callback,
+        bool unobscured = false) override;
 
 #ifdef TP_FEATURE_ENABLE
     void SetTpFeatureConfig(int32_t feature, const char* config, TpFeatureConfigType tpFeatureConfigType) override;
@@ -356,6 +364,10 @@ private:
     void NotifyScreenSwitched() override;
 
     void SetWindowContainer(NodeId nodeId, bool value) override;
+
+#ifdef RS_ENABLE_OVERLAY_DISPLAY
+    int32_t SetOverlayDisplayMode(int32_t mode) override;
+#endif
 
     pid_t remotePid_;
     wptr<RSRenderService> renderService_;

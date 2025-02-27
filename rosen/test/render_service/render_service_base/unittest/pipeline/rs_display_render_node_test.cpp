@@ -617,6 +617,22 @@ HWTEST_F(RSDisplayRenderNodeTest, HasUniRenderHdrSurfaceTest, TestSize.Level1)
 }
 
 /**
+ * @tc.name: IsLuminanceStatusChange
+ * @tc.desc: test results of Get and Set IsLuminanceStatusChange
+ * @tc.type:FUNC
+ * @tc.require: issuesIB6QKS
+ */
+HWTEST_F(RSDisplayRenderNodeTest, IsLuminanceStatusChangeTest, TestSize.Level1)
+{
+    auto node = std::make_shared<RSDisplayRenderNode>(id, config, context);
+    ASSERT_NE(node, nullptr);
+    node->InitRenderParams();
+    EXPECT_EQ(node->GetIsLuminanceStatusChange(), false);
+    node->SetIsLuminanceStatusChange(true);
+    EXPECT_EQ(node->GetIsLuminanceStatusChange(), true);
+}
+
+/**
  * @tc.name: AddSecurityLayer001
  * @tc.desc: test results of AddSecurityLayer
  * @tc.type:FUNC
@@ -757,29 +773,20 @@ HWTEST_F(RSDisplayRenderNodeTest, SetColorSpaceTest, TestSize.Level1)
 
 /**
  * @tc.name: HdrStatusTest
- * @tc.desc: test results of SetHdrStatus, GetHdrStatus
+ * @tc.desc: test results of CollectHdrStatus, GetDisplayHdrStatus, ResetDisplayHdrStatus
  * @tc.type: FUNC
  * @tc.require: issuesIBANP9
  */
 HWTEST_F(RSDisplayRenderNodeTest, HdrStatusTest, TestSize.Level1)
 {
     auto displayNode = std::make_shared<RSDisplayRenderNode>(id, config, context);
-    displayNode->SetHdrStatus(false, HdrStatus::HDR_VIDEO);
-    EXPECT_EQ(displayNode->GetHdrStatus(), HdrStatus::HDR_VIDEO);
-    displayNode->SetHdrStatus(true, HdrStatus::HDR_VIDEO);
-    EXPECT_EQ(displayNode->GetHdrStatus(), HdrStatus::NO_HDR);
-    displayNode->SetHdrStatus(false, HdrStatus::AI_HDR_VIDEO);
-    EXPECT_EQ(displayNode->GetHdrStatus(), HdrStatus::AI_HDR_VIDEO);
-    displayNode->SetHdrStatus(true, HdrStatus::AI_HDR_VIDEO);
-    EXPECT_EQ(displayNode->GetHdrStatus(), HdrStatus::NO_HDR);
-    displayNode->SetHdrStatus(false, HdrStatus::HDR_PHOTO);
-    EXPECT_EQ(displayNode->GetHdrStatus(), HdrStatus::HDR_PHOTO);
-    displayNode->SetHdrStatus(true, HdrStatus::HDR_PHOTO);
-    EXPECT_EQ(displayNode->GetHdrStatus(), HdrStatus::NO_HDR);
-    displayNode->SetHdrStatus(false, HdrStatus::HDR_PHOTO);
-    displayNode->SetHdrStatus(false, HdrStatus::HDR_VIDEO);
-    displayNode->SetHdrStatus(false, HdrStatus::AI_HDR_VIDEO);
-    EXPECT_EQ(displayNode->GetHdrStatus(), HdrStatus::HDR_PHOTO | HdrStatus::HDR_VIDEO | HdrStatus::AI_HDR_VIDEO);
+    displayNode->CollectHdrStatus(HdrStatus::HDR_PHOTO);
+    displayNode->CollectHdrStatus(HdrStatus::HDR_VIDEO);
+    displayNode->CollectHdrStatus(HdrStatus::AI_HDR_VIDEO);
+    EXPECT_EQ(displayNode->GetDisplayHdrStatus(), HdrStatus::HDR_PHOTO | HdrStatus::HDR_VIDEO |
+        HdrStatus::AI_HDR_VIDEO);
+    displayNode->ResetDisplayHdrStatus();
+    EXPECT_EQ(displayNode->GetDisplayHdrStatus(), HdrStatus::NO_HDR);
 }
 
 /**

@@ -14,7 +14,7 @@
  */
 
 #include "gtest/gtest.h"
-#include "pipeline/rs_uni_render_thread.h"
+#include "pipeline/render_thread/rs_uni_render_thread.h"
 #include "pipeline/rs_canvas_render_node.h"
 #include "drawable/rs_canvas_render_node_drawable.h"
 

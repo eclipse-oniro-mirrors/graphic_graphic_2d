@@ -83,7 +83,7 @@ public:
     static void CreateWithConfig(
         RSContext& context, NodeId nodeId, std::string name, uint8_t type, enum SurfaceWindowType surfaceWindowType);
     static std::shared_ptr<RSSurfaceRenderNode> CreateWithConfigInRS(
-        const RSSurfaceRenderNodeConfig& config, RSContext& context);
+        const RSSurfaceRenderNodeConfig& config, RSContext& context, bool unobscured = false);
     static void SetContextMatrix(RSContext& context, NodeId nodeId, const std::optional<Drawing::Matrix>& matrix);
     static void SetContextAlpha(RSContext& context, NodeId nodeId, float alpha);
     static void SetContextClipRegion(RSContext& context, NodeId nodeId, const std::optional<Drawing::Rect>& clipRect);

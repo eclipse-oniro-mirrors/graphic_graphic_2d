@@ -32,6 +32,11 @@ constexpr size_t MATRIXTYPE_SIZE = 5;
 constexpr size_t MAX_SIZE = 5000;
 } // namespace
 namespace Drawing {
+/*
+ * 测试以下 CmdListHelper 接口：
+ * 1. AddImageToCmdList
+ * 2. GetImageFromCmdList
+ */
 bool CmdListHelperFuzzTest001(const uint8_t* data, size_t size)
 {
     if (data == nullptr) {
@@ -69,6 +74,11 @@ bool CmdListHelperFuzzTest001(const uint8_t* data, size_t size)
     return true;
 }
 
+/*
+ * 测试以下 CmdListHelper 接口：
+ * 1. AddVerticesToCmdList
+ * 2. GetVerticesFromCmdList
+ */
 bool CmdListHelperFuzzTest002(const uint8_t* data, size_t size)
 {
     if (data == nullptr) {
@@ -131,6 +141,11 @@ bool CmdListHelperFuzzTest002(const uint8_t* data, size_t size)
     return true;
 }
 
+/*
+ * 测试以下 CmdListHelper 接口：
+ * 1. AddBitmapToCmdList
+ * 2. GetBitmapFromCmdList
+ */
 bool CmdListHelperFuzzTest003(const uint8_t* data, size_t size)
 {
     if (data == nullptr) {
@@ -170,6 +185,16 @@ bool CmdListHelperFuzzTest003(const uint8_t* data, size_t size)
     return true;
 }
 
+/*
+ * 测试以下 CmdListHelper 接口：
+ * 1. GetRecordCmdFromCmdList
+ * 2. AddImageObjectToCmdList
+ * 3. GetImageObjectFromCmdList
+ * 4. AddImageBaseObjToCmdList
+ * 5. GetImageBaseObjFromCmdList
+ * 6. AddPictureToCmdList
+ * 7. GetPictureFromCmdList
+ */
 bool CmdListHelperFuzzTest004(const uint8_t* data, size_t size)
 {
     if (data == nullptr) {
@@ -216,6 +241,13 @@ bool CmdListHelperFuzzTest004(const uint8_t* data, size_t size)
     return true;
 }
 
+/*
+ * 测试以下 CmdListHelper 接口：
+ * 1. AddCompressDataToCmdList
+ * 2. GetCompressDataFromCmdList
+ * 3. AddDrawFuncObjToCmdList
+ * 4. GetDrawFuncObjFromCmdList
+ */
 bool CmdListHelperFuzzTest005(const uint8_t* data, size_t size)
 {
     if (data == nullptr) {
@@ -254,6 +286,11 @@ bool CmdListHelperFuzzTest005(const uint8_t* data, size_t size)
     return true;
 }
 
+/*
+ * 测试以下 CmdListHelper 接口：
+ * 1. AddTextBlobToCmdList
+ * 2. GetTextBlobFromCmdList
+ */
 bool CmdListHelperFuzzTest006(const uint8_t* data, size_t size)
 {
     if (data == nullptr) {
@@ -300,6 +337,12 @@ bool CmdListHelperFuzzTest006(const uint8_t* data, size_t size)
     return true;
 }
 
+/*
+ * CmdListHelperFuzzTest007(const uint8_t* data, size_t size)
+ * 测试以下 CmdListHelper 接口：
+ * 1. AddDataToCmdList
+ * 2. GetDataFromCmdList
+ */
 bool CmdListHelperFuzzTest007(const uint8_t* data, size_t size)
 {
     if (data == nullptr) {
@@ -325,28 +368,22 @@ bool CmdListHelperFuzzTest007(const uint8_t* data, size_t size)
     OpDataHandle dataHandle = { GetObject<uint32_t>(), length };
     CmdListHelper::AddDataToCmdList(*cmdList, &dataVal);
     CmdListHelper::GetDataFromCmdList(*cmdList, dataHandle);
-    Path path;
-    uint32_t strCount = GetObject<uint32_t>() % MAX_SIZE + 1;
-    char* str = new char[strCount];
-    for (size_t i = 0; i < strCount; i++) {
-        str[i] = GetObject<char>();
-    }
-    str[strCount - 1] = '\0';
-    path.BuildFromSVGString(str);
-    OpDataHandle pathHandle = { GetObject<uint32_t>(), length };
-    CmdListHelper::AddPathToCmdList(*cmdList, path);
-    CmdListHelper::GetPathFromCmdList(*cmdList, pathHandle);
     if (dataText != nullptr) {
         delete [] dataText;
         dataText = nullptr;
     }
-    if (str != nullptr) {
-        delete [] str;
-        str = nullptr;
-    }
     return true;
 }
 
+/*
+ * 测试以下 CmdListHelper 接口：
+ * 1. AddRegionToCmdList
+ * 2. GetRegionFromCmdList
+ * 3. AddColorSpaceToCmdList
+ * 4. GetColorSpaceFromCmdList
+ * 5. AddShaderEffectToCmdList
+ * 6. GetShaderEffectFromCmdList
+ */
 bool CmdListHelperFuzzTest008(const uint8_t* data, size_t size)
 {
     if (data == nullptr) {
@@ -393,6 +430,15 @@ bool CmdListHelperFuzzTest008(const uint8_t* data, size_t size)
     return true;
 }
 
+/*
+ * 测试以下 CmdListHelper 接口：
+ * 1. AddPathEffectToCmdList
+ * 2. GetPathEffectFromCmdList
+ * 3. AddMaskFilterToCmdList
+ * 4. GetMaskFilterFromCmdList
+ * 5. AddColorFilterToCmdList
+ * 6. GetColorFilterFromCmdList
+ */
 bool CmdListHelperFuzzTest009(const uint8_t* data, size_t size)
 {
     if (data == nullptr) {
@@ -438,6 +484,15 @@ bool CmdListHelperFuzzTest009(const uint8_t* data, size_t size)
     return true;
 }
 
+/*
+ * 测试以下 CmdListHelper 接口：
+ * 1. AddImageFilterToCmdList
+ * 2. GetImageFilterFromCmdList
+ * 3. AddBlurDrawLooperToCmdList
+ * 4. GetBlurDrawLooperFromCmdList
+ * 5. AddLatticeToCmdList
+ * 6. GetLatticeFromCmdList
+ */
 bool CmdListHelperFuzzTest010(const uint8_t* data, size_t size)
 {
     if (data == nullptr) {
@@ -488,6 +543,13 @@ bool CmdListHelperFuzzTest010(const uint8_t* data, size_t size)
     return true;
 }
 
+/*
+ * 测试以下 CmdListHelper 接口：
+ * 1. AddSymbolToCmdList
+ * 2. GetSymbolFromCmdList
+ * 3. AddSymbolLayersToCmdList
+ * 4. GetSymbolLayersFromCmdList
+ */
 bool CmdListHelperFuzzTest011(const uint8_t* data, size_t size)
 {
     if (data == nullptr) {
@@ -537,6 +599,13 @@ bool CmdListHelperFuzzTest011(const uint8_t* data, size_t size)
     return true;
 }
 
+/*
+ * 测试以下 CmdListHelper 接口：
+ * 1. AddRenderGroupToCmdList
+ * 2. AddGroupInfoToCmdList
+ * 3. AddExtendObjectToCmdList
+ * 4. GetExtendObjectFromCmdList
+ */
 bool CmdListHelperFuzzTest012(const uint8_t* data, size_t size)
 {
     if (data == nullptr) {
@@ -577,6 +646,54 @@ bool CmdListHelperFuzzTest012(const uint8_t* data, size_t size)
     return true;
 }
 
+/*
+ * 测试以下 CmdListHelper 接口：
+ * 1. AddPathToCmdList
+ * 2. GetPathFromCmdList
+ */
+bool CmdListHelperFuzzTest013(const uint8_t* data, size_t size)
+{
+    if (data == nullptr) {
+        return false;
+    }
+
+    // initialize
+    g_data = data;
+    g_size = size;
+    g_pos = 0;
+    Data dataVal;
+    size_t length = GetObject<size_t>() % MAX_SIZE + 1;
+    char* dataText = new char[length];
+    for (size_t i = 0; i < length; i++) {
+        dataText[i] = GetObject<char>();
+    }
+    dataText[length - 1] = '\0';
+    CmdListData cmdListData;
+    cmdListData.first = dataText;
+    cmdListData.second = length;
+    std::shared_ptr<CmdList> cmdList = MaskCmdList::CreateFromData(cmdListData, false);
+    Path path;
+    uint32_t strCount = GetObject<uint32_t>() % MAX_SIZE + 1;
+    char* str = new char[strCount];
+    for (size_t i = 0; i < strCount; i++) {
+        str[i] = GetObject<char>();
+    }
+    str[strCount - 1] = '\0';
+    path.BuildFromSVGString(str);
+    OpDataHandle pathHandle = { GetObject<uint32_t>(), length };
+    CmdListHelper::AddPathToCmdList(*cmdList, path);
+    CmdListHelper::GetPathFromCmdList(*cmdList, pathHandle);
+    if (dataText != nullptr) {
+        delete [] dataText;
+        dataText = nullptr;
+    }
+    if (str != nullptr) {
+        delete [] str;
+        str = nullptr;
+    }
+    return true;
+}
+
 } // namespace Drawing
 } // namespace Rosen
 } // namespace OHOS
@@ -597,5 +714,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::Rosen::Drawing::CmdListHelperFuzzTest010(data, size);
     OHOS::Rosen::Drawing::CmdListHelperFuzzTest011(data, size);
     OHOS::Rosen::Drawing::CmdListHelperFuzzTest012(data, size);
+    OHOS::Rosen::Drawing::CmdListHelperFuzzTest013(data, size);
     return 0;
 }

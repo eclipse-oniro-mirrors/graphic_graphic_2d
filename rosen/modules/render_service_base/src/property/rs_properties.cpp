@@ -44,6 +44,7 @@
 #include "render/rs_water_ripple_shader_filter.h"
 #include "render/rs_fly_out_shader_filter.h"
 #include "render/rs_distortion_shader_filter.h"
+#include "drawable/rs_property_drawable_utils.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -83,8 +84,9 @@ constexpr static std::array<ResetPropertyFunc, static_cast<int>(RSModifierType::
     [](RSProperties* prop) { prop->SetRotationY(0.f); },                 // ROTATION_Y
     [](RSProperties* prop) { prop->SetCameraDistance(0.f); },            // CAMERA_DISTANCE
     [](RSProperties* prop) { prop->SetScale(Vector2f(1.f, 1.f)); },      // SCALE
-    [](RSProperties* prop) { prop->SetSkew(Vector2f(0.f, 0.f)); },       // SKEW
-    [](RSProperties* prop) { prop->SetPersp(Vector2f(0.f, 0.f)); },      // PERSP
+    [](RSProperties* prop) { prop->SetScaleZ(1.f); },                    // SCALE_Z
+    [](RSProperties* prop) { prop->SetSkew({0.f, 0.f, 0.f}); },          // SKEW
+    [](RSProperties* prop) { prop->SetPersp({0.f, 0.f, 0.f, 1.f}); },    // PERSP
     [](RSProperties* prop) { prop->SetTranslate(Vector2f(0.f, 0.f)); },  // TRANSLATE
     [](RSProperties* prop) { prop->SetTranslateZ(0.f); },                // TRANSLATE_Z
     [](RSProperties* prop) { prop->SetSublayerTransform({}); },          // SUBLAYER_TRANSFORM
@@ -254,6 +256,9 @@ void RSProperties::SetBounds(Vector4f bounds)
     hasBounds_ = true;
     geoDirty_ = true;
     SetDirty();
+    if (GetShadowMask()) {
+        filterNeedUpdate_ = true;
+    }
 }
 
 void RSProperties::SetBoundsSize(Vector2f size)
@@ -629,6 +634,10 @@ void RSProperties::SetCornerRadius(const Vector4f& cornerRadius)
 {
     cornerRadius_ = cornerRadius;
     SetDirty();
+    if (GetShadowMask()) {
+        filterNeedUpdate_ = true;
+    }
+    contentDirty_ = true;
 }
 
 const Vector4f& RSProperties::GetCornerRadius() const
@@ -678,6 +687,13 @@ void RSProperties::SetScale(Vector2f scale)
     SetDirty();
 }
 
+void RSProperties::SetScaleZ(float sz)
+{
+    boundsGeo_->SetScaleZ(sz);
+    geoDirty_ = true;
+    SetDirty();
+}
+
 void RSProperties::SetScaleX(float sx)
 {
     boundsGeo_->SetScaleX(sx);
@@ -692,9 +708,9 @@ void RSProperties::SetScaleY(float sy)
     SetDirty();
 }
 
-void RSProperties::SetSkew(Vector2f skew)
+void RSProperties::SetSkew(const Vector3f& skew)
 {
-    boundsGeo_->SetSkew(skew.x_, skew.y_);
+    boundsGeo_->SetSkew(skew.x_, skew.y_, skew.z_);
     geoDirty_ = true;
     SetDirty();
 }
@@ -713,9 +729,16 @@ void RSProperties::SetSkewY(float skewY)
     SetDirty();
 }
 
-void RSProperties::SetPersp(Vector2f persp)
+void RSProperties::SetSkewZ(float skewZ)
 {
-    boundsGeo_->SetPersp(persp.x_, persp.y_);
+    boundsGeo_->SetSkewZ(skewZ);
+    geoDirty_ = true;
+    SetDirty();
+}
+
+void RSProperties::SetPersp(const Vector4f& persp)
+{
+    boundsGeo_->SetPersp(persp.x_, persp.y_, persp.z_, persp.w_);
     geoDirty_ = true;
     SetDirty();
 }
@@ -730,6 +753,20 @@ void RSProperties::SetPerspX(float perspX)
 void RSProperties::SetPerspY(float perspY)
 {
     boundsGeo_->SetPerspY(perspY);
+    geoDirty_ = true;
+    SetDirty();
+}
+
+void RSProperties::SetPerspZ(float perspZ)
+{
+    boundsGeo_->SetPerspZ(perspZ);
+    geoDirty_ = true;
+    SetDirty();
+}
+
+void RSProperties::SetPerspW(float perspW)
+{
+    boundsGeo_->SetPerspW(perspW);
     geoDirty_ = true;
     SetDirty();
 }
@@ -798,6 +835,11 @@ float RSProperties::GetScaleY() const
     return boundsGeo_->GetScaleY();
 }
 
+float RSProperties::GetScaleZ() const
+{
+    return boundsGeo_->GetScaleZ();
+}
+
 Vector2f RSProperties::GetScale() const
 {
     return { boundsGeo_->GetScaleX(), boundsGeo_->GetScaleY() };
@@ -813,9 +855,14 @@ float RSProperties::GetSkewY() const
     return boundsGeo_->GetSkewY();
 }
 
-Vector2f RSProperties::GetSkew() const
+float RSProperties::GetSkewZ() const
 {
-    return { boundsGeo_->GetSkewX(), boundsGeo_->GetSkewY() };
+    return boundsGeo_->GetSkewZ();
+}
+
+Vector3f RSProperties::GetSkew() const
+{
+    return { boundsGeo_->GetSkewX(), boundsGeo_->GetSkewY(), boundsGeo_->GetSkewZ() };
 }
 
 float RSProperties::GetPerspX() const
@@ -828,9 +875,19 @@ float RSProperties::GetPerspY() const
     return boundsGeo_->GetPerspY();
 }
 
-Vector2f RSProperties::GetPersp() const
+float RSProperties::GetPerspZ() const
 {
-    return { boundsGeo_->GetPerspX(), boundsGeo_->GetPerspY() };
+    return boundsGeo_->GetPerspZ();
+}
+
+float RSProperties::GetPerspW() const
+{
+    return boundsGeo_->GetPerspW();
+}
+
+Vector4f RSProperties::GetPersp() const
+{
+    return { boundsGeo_->GetPerspX(), boundsGeo_->GetPerspY(), boundsGeo_->GetPerspZ(), boundsGeo_->GetPerspW() };
 }
 
 Vector2f RSProperties::GetTranslate() const
@@ -1982,6 +2039,9 @@ void RSProperties::SetShadowPath(std::shared_ptr<RSPath> shadowPath)
     }
     shadow_->SetPath(shadowPath);
     SetDirty();
+    if (GetShadowMask()) {
+        filterNeedUpdate_ = true;
+    }
     // [planning] if shadow stores as texture and out of node
     // node content would not be affected
     contentDirty_ = true;
@@ -2007,6 +2067,9 @@ void RSProperties::SetShadowIsFilled(bool shadowIsFilled)
     }
     shadow_->SetIsFilled(shadowIsFilled);
     SetDirty();
+    if (GetShadowMask()) {
+        filterNeedUpdate_ = true;
+    }
     // [planning] if shadow stores as texture and out of node
     // node content would not be affected
     contentDirty_ = true;
@@ -2443,6 +2506,21 @@ void RSProperties::CreateAttractionEffectFilter()
     foregroundFilter_ = attractionEffectFilter;
 }
 
+void RSProperties::CreateColorfulShadowFilter()
+{
+    float elevation = GetShadowElevation();
+    Drawing::scalar n1 = 0.25f * elevation * (1 + elevation / 128.0f); // 0.25f 128.0f
+    Drawing::scalar blurRadius = elevation > 0.0f ? n1 : GetShadowRadius();
+    Drawing::Path path = RSPropertyDrawableUtils::CreateShadowPath(GetShadowPath(), GetClipBounds(), GetRRect());
+    auto colorfulShadowFilter = std::make_shared<RSColorfulShadowFilter>(
+        blurRadius, GetShadowOffsetX(), GetShadowOffsetY(), path, GetShadowIsFilled());
+    if (IS_UNI_RENDER) {
+        foregroundFilterCache_ = colorfulShadowFilter;
+    } else {
+        foregroundFilter_ = colorfulShadowFilter;
+    }
+}
+
 RectI RSProperties::GetAttractionEffectCurrentDirtyRegion() const
 {
     return attractionEffectCurrentDirtyRegion_;
@@ -2862,7 +2940,14 @@ void RSProperties::GenerateBackgroundMaterialBlurFilter()
     if (backgroundColorMode_ == BLUR_COLOR_MODE::FASTAVERAGE) {
         backgroundColorMode_ = BLUR_COLOR_MODE::AVERAGE;
     }
-    uint32_t hash = SkOpts::hash(&backgroundBlurRadius_, sizeof(backgroundBlurRadius_), 0);
+
+    float radiusForHash = DecreasePrecision(backgroundBlurRadius_);
+    float saturationForHash = DecreasePrecision(backgroundBlurSaturation_);
+    float brightnessForHash = DecreasePrecision(backgroundBlurBrightness_);
+    uint32_t hash = SkOpts::hash(&radiusForHash, sizeof(radiusForHash), 0);
+    hash = SkOpts::hash(&saturationForHash, sizeof(saturationForHash), hash);
+    hash = SkOpts::hash(&brightnessForHash, sizeof(brightnessForHash), hash);
+
     std::shared_ptr<Drawing::ColorFilter> colorFilter = GetMaterialColorFilter(
         backgroundBlurSaturation_, backgroundBlurBrightness_);
     std::shared_ptr<Drawing::ImageFilter> blurColorFilter =
@@ -2890,8 +2975,6 @@ void RSProperties::GenerateBackgroundMaterialBlurFilter()
             originalFilter->Compose(colorImageFilter, hash) : std::make_shared<RSDrawingFilter>(colorImageFilter, hash);
         originalFilter = originalFilter->Compose(std::static_pointer_cast<RSShaderFilter>(kawaseBlurFilter));
     } else {
-        hash = SkOpts::hash(&backgroundBlurSaturation_, sizeof(backgroundBlurSaturation_), hash);
-        hash = SkOpts::hash(&backgroundBlurBrightness_, sizeof(backgroundBlurBrightness_), hash);
         originalFilter = originalFilter?
             originalFilter->Compose(blurColorFilter, hash) : std::make_shared<RSDrawingFilter>(blurColorFilter, hash);
     }
@@ -4311,10 +4394,10 @@ void RSProperties::OnApplyModifiers()
         greyCoefNeedUpdate_ = false;
         filterNeedUpdate_ = true;
     }
+    GenerateRRect();
     if (filterNeedUpdate_) {
         UpdateFilter();
     }
-    GenerateRRect();
 }
 
 void RSProperties::UpdateFilter()
@@ -4341,7 +4424,7 @@ void RSProperties::UpdateFilter()
                   IsDynamicDimValid() || GetShadowColorStrategy() != SHADOW_COLOR_STRATEGY::COLOR_STRATEGY_NONE ||
                   foregroundFilter_ != nullptr || IsFgBrightnessValid() || IsBgBrightnessValid() ||
                   foregroundFilterCache_ != nullptr || IsWaterRippleValid() || needDrawBehindWindow_ ||
-                  mask_;
+                  mask_ || colorBlendApplyType_ == static_cast<int>(RSColorBlendApplyType::SAVE_LAYER);
 }
 
 void RSProperties::UpdateForegroundFilter()
@@ -4367,16 +4450,7 @@ void RSProperties::UpdateForegroundFilter()
     } else if (IsAttractionValid()) {
         CreateAttractionEffectFilter();
     } else if (GetShadowMask()) {
-        float elevation = GetShadowElevation();
-        Drawing::scalar n1 = 0.25f * elevation * (1 + elevation / 128.0f);  // 0.25f 128.0f
-        Drawing::scalar blurRadius = elevation > 0.0f ? n1 : GetShadowRadius();
-        auto colorfulShadowFilter =
-            std::make_shared<RSColorfulShadowFilter>(blurRadius, GetShadowOffsetX(), GetShadowOffsetY());
-        if (IS_UNI_RENDER) {
-            foregroundFilterCache_ = colorfulShadowFilter;
-        } else {
-            foregroundFilter_ = colorfulShadowFilter;
-        }
+        CreateColorfulShadowFilter();
     } else if (IsDistortionKValid()) {
         foregroundFilter_ = std::make_shared<RSDistortionFilter>(*distortionK_);
     } else {
@@ -4485,6 +4559,7 @@ void RSProperties::SetColorBlendApplyType(int colorBlendApplyType)
     isDrawn_ = true;
     SetDirty();
     contentDirty_ = true;
+    filterNeedUpdate_ = true;
 }
 
 int RSProperties::GetColorBlendApplyType() const

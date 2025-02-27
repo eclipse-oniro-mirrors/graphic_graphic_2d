@@ -34,8 +34,8 @@ namespace Rosen {
 namespace {
 constexpr uint32_t WATERMARK_PIXELMAP_SIZE_LIMIT = 500 * 1024;
 constexpr uint32_t WATERMARK_NAME_LENGTH_LIMIT = 128;
-constexpr uint32_t SECURITYMASK_IMAGE_WIDTH_LIMIT = 4096;
-constexpr uint32_t SECURITYMASK_IMAGE_HEIGHT_LIMIT = 4096;
+constexpr int32_t SECURITYMASK_IMAGE_WIDTH_LIMIT = 4096;
+constexpr int32_t SECURITYMASK_IMAGE_HEIGHT_LIMIT = 4096;
 }
 #endif
 RSInterfaces &RSInterfaces::GetInstance()
@@ -645,6 +645,11 @@ int32_t RSInterfaces::GetScreenType(ScreenId id, RSScreenType& screenType)
     return renderServiceClient_->GetScreenType(id, screenType);
 }
 
+int32_t RSInterfaces::GetDisplayIdentificationData(ScreenId id, uint8_t& outPort, std::vector<uint8_t>& edidData)
+{
+    return renderServiceClient_->GetDisplayIdentificationData(id, outPort, edidData);
+}
+
 int32_t RSInterfaces::SetScreenSkipFrameInterval(ScreenId id, uint32_t skipFrameInterval)
 {
     return renderServiceClient_->SetScreenSkipFrameInterval(id, skipFrameInterval);
@@ -660,9 +665,9 @@ int32_t RSInterfaces::SetVirtualScreenRefreshRate(ScreenId id, uint32_t maxRefre
     return renderServiceClient_->SetVirtualScreenRefreshRate(id, maxRefreshRate, actualRefreshRate);
 }
 
-bool RSInterfaces::SetSystemAnimatedScenes(SystemAnimatedScenes systemAnimatedScenes)
+bool RSInterfaces::SetSystemAnimatedScenes(SystemAnimatedScenes systemAnimatedScenes, bool isRegularAnimation)
 {
-    return renderServiceClient_->SetSystemAnimatedScenes(systemAnimatedScenes);
+    return renderServiceClient_->SetSystemAnimatedScenes(systemAnimatedScenes, isRegularAnimation);
 }
 
 int32_t RSInterfaces::RegisterOcclusionChangeCallback(const OcclusionChangeCallback& callback)
@@ -797,6 +802,12 @@ void RSInterfaces::NotifyPackageEvent(uint32_t listSize, const std::vector<std::
     renderServiceClient_->NotifyPackageEvent(listSize, packageList);
 }
 
+void RSInterfaces::NotifyAppStrategyConfigChangeEvent(const std::string& pkgName, uint32_t listSize,
+    const std::vector<std::pair<std::string, std::string>>& newConfig)
+{
+    renderServiceClient_->NotifyAppStrategyConfigChangeEvent(pkgName, listSize, newConfig);
+}
+
 void RSInterfaces::NotifyRefreshRateEvent(const EventInfo& eventInfo)
 {
     renderServiceClient_->NotifyRefreshRateEvent(eventInfo);
@@ -810,6 +821,11 @@ void RSInterfaces::NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt)
 void RSInterfaces::NotifyDynamicModeEvent(bool enableDynamicMode)
 {
     renderServiceClient_->NotifyDynamicModeEvent(enableDynamicMode);
+}
+
+void RSInterfaces::NotifyHgmConfigEvent(const std::string &eventName, bool state)
+{
+    renderServiceClient_->NotifyHgmConfigEvent(eventName, state);
 }
 
 void RSInterfaces::DisableCacheForRotation()
@@ -882,9 +898,9 @@ void RSInterfaces::DropFrameByPid(const std::vector<int32_t> pidList)
     renderServiceClient_->DropFrameByPid(pidList);
 }
 
-int32_t RSInterfaces::RegisterUIExtensionCallback(uint64_t userId, const UIExtensionCallback& callback)
+int32_t RSInterfaces::RegisterUIExtensionCallback(uint64_t userId, const UIExtensionCallback& callback, bool unobscured)
 {
-    return renderServiceClient_->RegisterUIExtensionCallback(userId, callback);
+    return renderServiceClient_->RegisterUIExtensionCallback(userId, callback, unobscured);
 }
 
 bool RSInterfaces::SetAncoForceDoDirect(bool direct)
@@ -942,5 +958,13 @@ void RSInterfaces::SetWindowContainer(NodeId nodeId, bool value)
 {
     renderServiceClient_->SetWindowContainer(nodeId, value);
 }
+
+#ifdef RS_ENABLE_OVERLAY_DISPLAY
+int32_t RSInterfaces::SetOverlayDisplayMode(int32_t mode)
+{
+    ROSEN_LOGI("RSInterfaces::SetOverlayDisplayMode enter.");
+    return renderServiceClient_->SetOverlayDisplayMode(mode);
+}
+#endif
 } // namespace Rosen
 } // namespace OHOS

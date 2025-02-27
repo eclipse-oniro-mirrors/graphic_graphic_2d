@@ -22,19 +22,27 @@
 #include <libxml/parser.h>
 #include <libxml/tree.h>
 
-#include "platform/common/rs_log.h"
-
 namespace OHOS::Rosen {
-const std::vector<std::string> featureModules = {
+const std::vector<std::string> FEATURE_CONFIGS = {
     "HdrConfig",
     "DrmConfig",
-    "HwcConfig"
+    "HwcConfig",
+    "HfbcConfig",
+    "SpecialLayerConfig",
+    "OPIncConfig",
+    "PrevalidateConfig",
+    "UIFirstConfig"
 };
 
 enum FeatureModule {
     HDR = 0,
     DRM,
     HWC,
+    HFBC,
+    SPECIALLAYER,
+    OPInc,
+    PREVALIDATE,
+    UIFirst,
 };
 
 enum ParseErrCode {
@@ -44,7 +52,8 @@ enum ParseErrCode {
 
     PARSE_NO_PARAM = 100,
 
-    PARSE_FILE_LOAD_FAIL = 200,
+    PARSE_SYS_FILE_LOAD_FAIL = 200,
+    PARSE_PROD_FILE_LOAD_FAIL,
     PARSE_GET_ROOT_FAIL,
     PARSE_GET_CHILD_FAIL,
     PARSE_INTERNAL_FAIL,

@@ -16,7 +16,6 @@
 #include <filesystem>
 #include "gtest/gtest.h"
 #include "common/rs_singleton.h"
-#include "pipeline/parallel_render/rs_sub_thread_manager.h"
 #include "feature/round_corner_display/rs_message_bus.h"
 #include "feature/round_corner_display/rs_round_corner_display.h"
 #include "feature/round_corner_display/rs_round_corner_display_manager.h"
@@ -25,6 +24,7 @@
 #include "feature/round_corner_display/rs_rcd_surface_render_node.h"
 #include "feature/round_corner_display/rs_rcd_render_listener.h"
 #include "feature/round_corner_display/rs_rcd_render_visitor.h"
+#include "feature/uifirst/rs_sub_thread_manager.h"
 #include "pipeline/rs_display_render_node.h"
 #include "surface_buffer_impl.h"
 #include "rs_test_util.h"
@@ -1049,8 +1049,7 @@ HWTEST_F(RSRoundCornerDisplayTest, RcdChooseHardwareResourceTest, TestSize.Level
 
     rcdInstance.showResourceType_ = 4;
     rcdInstance.RcdChooseHardwareResource();
-    int type = 4;
-    EXPECT_EQ(rcdInstance.showResourceType_, type);
+    EXPECT_EQ(nullptr, rcdInstance.hardInfo_.bottomLayer->curBitmap);
 
     rs_rcd::RogPortrait rogPortrait{};
     rcdInstance.rog_->portraitMap[rs_rcd::NODE_PORTRAIT] = rogPortrait;
@@ -1069,7 +1068,7 @@ HWTEST_F(RSRoundCornerDisplayTest, RcdChooseHardwareResourceTest, TestSize.Level
     rcdInstance.showResourceType_ = 4;
     rcdInstance.RcdChooseHardwareResource();
 
-    EXPECT_EQ(rcdInstance.showResourceType_, type);
+    EXPECT_EQ(&rcdInstance.bitmapBottomPortrait_, rcdInstance.hardInfo_.bottomLayer->curBitmap);
     rcdInstance.rog_ = nullptr;
     GTEST_LOG_(INFO) << "RSSymbolAnimationTest RcdChooseHardwareResourceTest end";
 }

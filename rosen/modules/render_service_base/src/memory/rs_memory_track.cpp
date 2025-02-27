@@ -23,7 +23,7 @@ constexpr uint32_t MEM_MAX_SIZE = 2;
 constexpr uint32_t MEM_SIZE_STRING_LEN = 10;
 constexpr uint32_t MEM_ADDR_STRING_LEN = 16;
 constexpr uint32_t MEM_TYPE_STRING_LEN = 16;
-constexpr uint32_t PIXELMAP_INFO_STRING_LEN = 32;
+constexpr uint32_t PIXELMAP_INFO_STRING_LEN = 36;
 constexpr uint32_t MEM_PID_STRING_LEN = 8;
 constexpr uint32_t MEM_WID_STRING_LEN = 20;
 constexpr uint32_t MEM_UID_STRING_LEN = 8;
@@ -136,9 +136,9 @@ MemoryGraphic MemoryTrack::CountRSMemory(const pid_t pid)
     if (nodeInfoOfPid.empty()) {
         memNodeOfPidMap_.erase(pid);
     } else {
-        int totalMemSize = 0;
+        uint64_t totalMemSize = 0;
         std::for_each(nodeInfoOfPid.begin(), nodeInfoOfPid.end(), [&totalMemSize](MemoryNodeOfPid& info) {
-            totalMemSize += info.GetMemSize();
+            totalMemSize += static_cast<uint64_t>(info.GetMemSize());
         });
 
         for (auto it = memPicRecord_.begin(); it != memPicRecord_.end(); it++) {
@@ -186,12 +186,12 @@ void MemoryTrack::DumpMemoryNodeStatistics(DfxString& log)
 {
     log.AppendFormat("\nRSRenderNode:\n");
 
-    int totalSize = 0;
+    uint64_t totalSize = 0;
     int count = 0;
     //calculate by byte
     for (auto& [nodeId, info] : memNodeMap_) {
         //total of all
-        totalSize += static_cast<int>(info.size);
+        totalSize += static_cast<uint64_t>(info.size);
         count++;
     }
     log.AppendFormat("Total Node Size = %d KB (%d entries)\n", totalSize / BYTE_CONVERT, count);
@@ -225,20 +225,60 @@ const char* MemoryTrack::MemoryType2String(MEMORY_TYPE type)
 const std::string MemoryTrack::PixelMapInfo2String(MemoryInfo info)
 {
     std::string alloc_type_str = AllocatorType2String(info.allocType);
-    std::string use_cnt_str = "-1";
-    std::string is_un_map_str = "-1";
-    std::string un_map_cnt_str = "-1";
+    std::string pixelformat_str = "UNDEFINED";
+#ifdef ROSEN_OHOS
+    pixelformat_str = PixelFormat2String(info.pixelMapFormat);
+#endif
+    return alloc_type_str + "," + pixelformat_str;
+}
 
 #ifdef ROSEN_OHOS
-    auto pixelMap = info.pixelMap.lock();
-    if (pixelMap) {
-        use_cnt_str = std::to_string(pixelMap->GetUseCount());
-        is_un_map_str = std::to_string(pixelMap->IsUnMap());
-        un_map_cnt_str = std::to_string(pixelMap->GetUnMapCount());
+const std::string MemoryTrack::PixelFormat2String(OHOS::Media::PixelFormat type)
+{
+    // sync with foundation/multimedia/image_framework/interfaces/innerkits/include/image_type.h
+    switch (type) {
+        case OHOS::Media::PixelFormat::ARGB_8888:
+            return "ARGB_8888";
+        case OHOS::Media::PixelFormat::RGB_565:
+            return "RGB_565";
+        case OHOS::Media::PixelFormat::RGBA_8888:
+            return "RGBA_8888";
+        case OHOS::Media::PixelFormat::BGRA_8888:
+            return "BGRA_8888";
+        case OHOS::Media::PixelFormat::RGB_888:
+            return "RGB_888";
+        case OHOS::Media::PixelFormat::ALPHA_8:
+            return "ALPHA_8";
+        case OHOS::Media::PixelFormat::RGBA_F16:
+            return "RGBA_F16";
+        case OHOS::Media::PixelFormat::NV21:
+            return "NV21";
+        case OHOS::Media::PixelFormat::NV12:
+            return "NV12";
+        case OHOS::Media::PixelFormat::RGBA_1010102:
+            return "RGBA_1010102";
+        case OHOS::Media::PixelFormat::YCBCR_P010:
+            return "YCBCR_P010";
+        case OHOS::Media::PixelFormat::YCRCB_P010:
+            return "YCRCB_P010";
+        case OHOS::Media::PixelFormat::RGBA_U16:
+            return "RGBA_U16";
+        case OHOS::Media::PixelFormat::YUV_400:
+            return "YUV_400";
+        case OHOS::Media::PixelFormat::CMYK:
+            return "CMYK";
+        case OHOS::Media::PixelFormat::ASTC_4x4:
+            return "ASTC_4x4";
+        case OHOS::Media::PixelFormat::ASTC_6x6:
+            return "ASTC_6x6";
+        case OHOS::Media::PixelFormat::ASTC_8x8:
+            return "ASTC_8x8";
+        default :
+            return std::to_string(static_cast<int32_t>(type));
     }
-#endif
-    return alloc_type_str + "," + use_cnt_str + "," + is_un_map_str + "," + un_map_cnt_str;
+    return "UNKNOW";
 }
+#endif
 
 const std::string MemoryTrack::AllocatorType2String(OHOS::Media::AllocatorType type)
 {
@@ -272,7 +312,7 @@ std::string MemoryTrack::GenerateDumpTitle()
 {
     std::string size_title = Data2String("Size", MEM_SIZE_STRING_LEN);
     std::string type_title = Data2String("Type", MEM_TYPE_STRING_LEN);
-    std::string pixelmap_info_title = Data2String("Type,UseCnt,IsUnMap,UnMapCnt", PIXELMAP_INFO_STRING_LEN);
+    std::string pixelmap_info_title = Data2String("Type,UseCnt,IsUnMap,UnMapCnt,Format", PIXELMAP_INFO_STRING_LEN);
     std::string pid_title = Data2String("Pid", MEM_PID_STRING_LEN);
     std::string wid_title = Data2String("Wid", MEM_WID_STRING_LEN);
     std::string uid_title = Data2String("Uid", MEM_UID_STRING_LEN);
@@ -310,17 +350,13 @@ void MemoryTrack::DumpMemoryPicStatistics(DfxString& log,
     int arrCount[MEM_MAX_SIZE] = {0};
     int arrWithoutDMATotal[MEM_MAX_SIZE] = {0};
     int arrWithoutDMACount[MEM_MAX_SIZE] = {0};
-    int totalSize = 0;
+    uint64_t totalSize = 0;
     int count = 0;
     int totalWithoutDMASize = 0;
     int countWithoutDMA = 0;
-#ifdef ROSEN_OHOS
-    int totalUnMapSize = 0;
-    int totalUnMapCount = 0;
-#endif
     //calculate by byte
     for (auto& info : memPicRecord) {
-        int size = static_cast<int>(info.size / BYTE_CONVERT); // k
+        int size = static_cast<uint64_t>(info.size / BYTE_CONVERT); // k
         //total of type
         arrTotal[info.type] += size;
         arrCount[info.type]++;
@@ -334,13 +370,6 @@ void MemoryTrack::DumpMemoryPicStatistics(DfxString& log,
             arrWithoutDMACount[info.type]++;
             totalWithoutDMASize += size;
             countWithoutDMA++;
-#ifdef ROSEN_OHOS
-            auto pixelMap = info.pixelMap.lock();
-            if (pixelMap && pixelMap->IsUnMap()) {
-                totalUnMapSize += size;
-                totalUnMapCount++;
-            }
-#endif
         }
 
         auto [windowId, windowName, nodeFrameRect] = func(info.nid);
@@ -355,9 +384,6 @@ void MemoryTrack::DumpMemoryPicStatistics(DfxString& log,
     }
     log.AppendFormat("Total Size = %d KB (%d entries)\n", totalSize, count);
     log.AppendFormat("Total Without DMA Size = %d KB (%d entries)\n", totalWithoutDMASize, countWithoutDMA);
-#ifdef ROSEN_OHOS
-    log.AppendFormat("Total UnMap Size = %d KB (%d entries)\n", totalUnMapSize, totalUnMapCount);
-#endif
 }
 
 void MemoryTrack::AddPictureRecord(const void* addr, MemoryInfo info)

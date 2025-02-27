@@ -85,7 +85,7 @@ int RSSystemProperties::GetDumpFrameNum()
 int RSSystemProperties::GetSceneJankFrameThreshold()
 {
     static int sceneJankFrameThreshold =
-        std::atoi((system::GetParameter("persist.sys.graphic.sceneJankFrameThreshold", "50")).c_str());
+        std::stoi((system::GetParameter("persist.sys.graphic.sceneJankFrameThreshold", "50")).c_str());
     return sceneJankFrameThreshold;
 }
 
@@ -202,21 +202,27 @@ bool RSSystemProperties::GetRSScreenRoundCornerEnable()
     return isNeedScreenRCD;
 }
 
+bool RSSystemProperties::GetVmaPreAllocEnabled()
+{
+    static bool isPreAlloc = system::GetParameter("persist.rosen.isprealloc.enabled", "0") != "0";
+    return isPreAlloc;
+}
+
 bool RSSystemProperties::GetRenderNodePurgeEnabled()
 {
-    static bool isPurgeable = system::GetParameter("persist.rosen.rendernode.purge.enabled", "0") != "0";
+    static bool isPurgeable = system::GetParameter("persist.rosen.rendernode.purge.enabled", "1") != "0";
     return isPurgeable;
 }
 
 bool RSSystemProperties::GetRSImagePurgeEnabled()
 {
-    static bool isPurgeable = system::GetParameter("persist.rosen.rsimage.purge.enabled", "0") != "0";
+    static bool isPurgeable = system::GetParameter("persist.rosen.rsimage.purge.enabled", "1") != "0";
     return isPurgeable;
 }
 
 bool RSSystemProperties::GetClosePixelMapFdEnabled()
 {
-    static bool isClosePixelMapFd = system::GetParameter("persist.rosen.rsimage.purge.enabled", "0") != "0";
+    static bool isClosePixelMapFd = system::GetParameter("persist.rosen.rsimage.close.fd", "0") != "0";
     return isClosePixelMapFd;
 }
 
@@ -292,6 +298,14 @@ bool RSSystemProperties::GetReleaseResourceEnabled()
     return ConvertToInt(enable, 1) != 0;
 }
 
+bool RSSystemProperties::GetReclaimMemoryEnabled()
+{
+    static CachedHandle g_Handle = CachedParameterCreate("persist.reclaim.memory.enabled", "1");
+    int changed = 0;
+    const char *enable = CachedParameterGetChanged(g_Handle, &changed);
+    return (ConvertToInt(enable, 1) != 0) && (system::GetParameter("const.product.devicetype", "pc") != "wearable");
+}
+
 bool RSSystemProperties::GetOcclusionEnabled()
 {
     static CachedHandle g_Handle = CachedParameterCreate("rosen.occlusion.enabled", "1");
@@ -305,6 +319,20 @@ bool RSSystemProperties::GetHardwareComposerEnabled()
     static bool hardwareComposerEnabled = system::GetParameter(
         "persist.rosen.hardwarecomposer.enabled", "1") != "0";
     return hardwareComposerEnabled;
+}
+
+bool RSSystemProperties::GetDoDirectCompositionEnabled()
+{
+    static bool doDirectCompositionEnabled = system::GetParameter(
+        "persist.rosen.doDirectComposition.enabled", "1") != "0";
+    return doDirectCompositionEnabled;
+}
+
+bool RSSystemProperties::GetDumpRsTreeDetailEnabled()
+{
+    static bool dumpRsTreeDetailEnabled = system::GetParameter(
+        "persist.rosen.dumpRsTreeDetail.enabled", "0") != "0";
+    return dumpRsTreeDetailEnabled;
 }
 
 bool RSSystemProperties::GetHardwareComposerEnabledForMirrorMode()
@@ -965,6 +993,13 @@ bool RSSystemProperties::IsPcType()
     return isPc;
 }
 
+bool RSSystemProperties::IsSuperFoldDisplay()
+{
+    static const std::string foldScreenType = system::GetParameter("const.window.foldscreen.type", "0,0,0,0");
+    static const bool IsSuperFoldDisplay = foldScreenType.size() > 0 ? foldScreenType[0] == '6' : false;
+    return IsSuperFoldDisplay;
+}
+
 bool RSSystemProperties::IsBetaRelease()
 {
     static bool isBetaRelease = system::GetParameter("const.logsystem.versiontype", "") == "beta";
@@ -1230,6 +1265,27 @@ bool RSSystemProperties::GetHveFilterEnabled()
     static bool hveFilterEnabled =
         std::atoi((system::GetParameter("persist.sys.graphic.HveFilterEnable", "1")).c_str()) != 0;
     return hveFilterEnabled;
+}
+
+bool RSSystemProperties::GetDmaReclaimParam()
+{
+    return system::GetBoolParameter("resourceschedule.memmgr.dma.reclaimable", false);
+}
+
+bool RSSystemProperties::GetOptimizeParentNodeRegionEnabled()
+{
+    static CachedHandle g_Handle = CachedParameterCreate("rosen.graphic.optimizeParentNodeRegion.enabled", "1");
+    int changed = 0;
+    const char *enable = CachedParameterGetChanged(g_Handle, &changed);
+    return ConvertToInt(enable, 1) != 0;
+}
+
+bool RSSystemProperties::GetOptimizeHwcComposeAreaEnabled()
+{
+    static CachedHandle g_Handle = CachedParameterCreate("rosen.graphic.optimizeHwcComposeArea.enabled", "1");
+    int changed = 0;
+    const char *enable = CachedParameterGetChanged(g_Handle, &changed);
+    return ConvertToInt(enable, 1) != 0;
 }
 } // namespace Rosen
 } // namespace OHOS

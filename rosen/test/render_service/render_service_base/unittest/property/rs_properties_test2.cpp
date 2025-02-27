@@ -572,6 +572,12 @@ HWTEST_F(PropertiesTest, SetShadowIsFilledTest, TestSize.Level1)
 
     properties.SetShadowIsFilled(true);
     EXPECT_EQ(properties.contentDirty_, true);
+    EXPECT_EQ(properties.filterNeedUpdate_, false);
+    RSShadow shadow;
+    shadow.SetMask(true);
+    properties.shadow_ = shadow;
+    properties.SetShadowIsFilled(true);
+    EXPECT_EQ(properties.filterNeedUpdate_, true);
 }
 
 /**
@@ -938,7 +944,6 @@ HWTEST_F(PropertiesTest, IsDistortionKValidTest, TestSize.Level1)
     ASSERT_TRUE(properties.IsDistortionKValid());
 }
 
-
 /**
  * @tc.name: GetDistortionDirtyTest
  * @tc.desc: test results of GetDistortionDirty
@@ -962,6 +967,28 @@ HWTEST_F(PropertiesTest, GetDistortionDirtyTest, TestSize.Level1)
     // if distortionK_ > 0 and < 1
     properties.SetDistortionK(0.7f);
     ASSERT_TRUE(properties.GetDistortionDirty());
+}
+
+/**
+ * @tc.name: TransformFactor
+ * @tc.desc: test results of transform data: skew, perspect, scale, translate
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(PropertiesTest, TransformFactor, TestSize.Level1)
+{
+    RSProperties properties;
+    properties.SetScaleZ(1.0f);
+    EXPECT_EQ(properties.GetScaleZ(), 1.0f);
+
+    properties.SetPersp(Vector4f(1.0, 1.0, 1.0, 1.0));
+    EXPECT_EQ(properties.GetPersp(), Vector4f(1.0, 1.0, 1.0, 1.0));
+
+    properties.SetPerspZ(2.0);
+    EXPECT_EQ(properties.GetPerspZ(), 2.0);
+
+    properties.SetPerspW(3.0);
+    EXPECT_EQ(properties.GetPerspW(), 3.0);
 }
 } // namespace Rosen
 } // namespace OHOS

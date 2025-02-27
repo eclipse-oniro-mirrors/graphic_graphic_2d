@@ -230,7 +230,7 @@ bool DoSomethingInterestingWithMyAPI(const uint8_t* data, size_t size)
     rsRenderServiceConnectionProxy.RegisterHgmRefreshRateModeChangeCallback(rsIHgmConfigChangeCallback);
     rsRenderServiceConnectionProxy.RegisterHgmRefreshRateUpdateCallback(rsIHgmConfigChangeCallback);
     rsRenderServiceConnectionProxy.SetAppWindowNum(width);
-    rsRenderServiceConnectionProxy.SetSystemAnimatedScenes(systemAnimatedScenes);
+    rsRenderServiceConnectionProxy.SetSystemAnimatedScenes(systemAnimatedScenes, false);
     rsRenderServiceConnectionProxy.ShowWatermark(watermarkImg, true);
     rsRenderServiceConnectionProxy.ResizeVirtualScreen(id1, width, height);
     rsRenderServiceConnectionProxy.ReportJankStats();
@@ -239,6 +239,7 @@ bool DoSomethingInterestingWithMyAPI(const uint8_t* data, size_t size)
     rsRenderServiceConnectionProxy.NotifyRefreshRateEvent(eventInfo);
     rsRenderServiceConnectionProxy.NotifyTouchEvent(pid1, uid);
     rsRenderServiceConnectionProxy.NotifyDynamicModeEvent(true);
+    rsRenderServiceConnectionProxy.NotifyHgmConfigEvent(name, true);
     rsRenderServiceConnectionProxy.ReportEventResponse(info);
     rsRenderServiceConnectionProxy.ReportEventComplete(info);
     rsRenderServiceConnectionProxy.ReportEventJankFrame(info);
@@ -293,6 +294,30 @@ bool OHOS::Rosen::DoSetTpFeatureConfigFuzzTest(const uint8_t* data, size_t size)
     return true;
 }
 #endif
+
+#ifdef RS_ENABLE_OVERLAY_DISPLAY
+bool DoSetOverlayDisplayModeFuzzTest(const uint8_t* data, size_t size)
+{
+    if (data == nullptr) {
+        return false;
+    }
+
+    // initialize
+    g_data = data;
+    g_size = size;
+    g_pos = 0;
+
+    // get data
+    int32_t mode = GetData<int32_t>();
+
+    // test
+    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    auto remoteObject = samgr->GetSystemAbility(RENDER_SERVICE);
+    RSRenderServiceConnectionProxy rsRenderServiceConnectionProxy(remoteObject);
+    rsRenderServiceConnectionProxy.SetOverlayDisplayMode(mode);
+    return true;
+}
+#endif
 } // namespace Rosen
 } // namespace OHOS
 
@@ -303,6 +328,9 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::Rosen::DoSomethingInterestingWithMyAPI(data, size);
 #ifdef TP_FEATURE_ENABLE
     OHOS::Rosen::DoSetTpFeatureConfigFuzzTest(data, size);
+#endif
+#ifdef RS_ENABLE_OVERLAY_DISPLAY
+    OHOS::Rosen::DoSetOverlayDisplayModeFuzzTest(data, size);
 #endif
     return 0;
 }

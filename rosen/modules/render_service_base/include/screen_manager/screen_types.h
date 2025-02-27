@@ -196,6 +196,9 @@ typedef enum : uint32_t {
     HDI_ERROR,
     SCREEN_MANAGER_NULL,
     BLACKLIST_IS_EMPTY,
+    SET_RATE_ERROR,
+    VIRTUAL_SCREEN,
+    READ_PARCEL_ERR,
 } StatusCode;
 
 typedef enum {

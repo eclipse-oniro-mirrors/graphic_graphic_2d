@@ -23,10 +23,10 @@
 #include "token_setproc.h"
 #endif
 #include "gtest/gtest.h"
+#include "pipeline/render_thread/rs_base_render_util.h"
+#include "pipeline/rs_render_service_listener.h"
 #include "limit_number.h"
 #include "surface.h"
-#include "pipeline/rs_base_render_util.h"
-#include "pipeline/rs_render_service_listener.h"
 #include "wm/window.h"
 #include "draw/color.h"
 #include "platform/common/rs_system_properties.h"

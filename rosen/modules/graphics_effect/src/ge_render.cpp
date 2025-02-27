@@ -77,11 +77,24 @@ std::shared_ptr<GEShaderFilter> GERender::GenerateExtShaderFilter(
         case Drawing::GEVisualEffectImpl::FilterType::MESA_BLUR: {
             const auto& mesaParams = ve->GetMESAParams();
             auto object = GEExternalDynamicLoader::GetInstance().CreateGEXObjectByType(
-                (uint32_t)type, sizeof(Drawing::GEMESABlurShaderFilterParams), (void*)(mesaParams.get()));
+                static_cast<uint32_t>(type), sizeof(Drawing::GEMESABlurShaderFilterParams),
+                static_cast<void*>(mesaParams.get()));
             if (!object) {
                 return std::make_shared<GEMESABlurShaderFilter>(*mesaParams);
             }
             std::shared_ptr<GEMESABlurShaderFilter> dmShader(static_cast<GEMESABlurShaderFilter*>(object));
+            return dmShader;
+        }
+        case Drawing::GEVisualEffectImpl::FilterType::LINEAR_GRADIENT_BLUR: {
+            const auto& linearGradientBlurParams = ve->GetLinearGradientBlurParams();
+            auto object = GEExternalDynamicLoader::GetInstance().CreateGEXObjectByType(
+                static_cast<uint32_t>(type), sizeof(Drawing::GELinearGradientBlurShaderFilterParams),
+                static_cast<void*>(linearGradientBlurParams.get()));
+            if (!object) {
+                return std::make_shared<GELinearGradientBlurShaderFilter>(*linearGradientBlurParams);
+            }
+            std::shared_ptr<GELinearGradientBlurShaderFilter>
+                dmShader(static_cast<GELinearGradientBlurShaderFilter*>(object));
             return dmShader;
         }
         default:
@@ -120,8 +133,7 @@ std::vector<std::shared_ptr<GEShaderFilter>> GERender::GenerateShaderFilter(
                 break;
             }
             case Drawing::GEVisualEffectImpl::FilterType::LINEAR_GRADIENT_BLUR: {
-                const auto& linearGradientBlurParams = ve->GetLinearGradientBlurParams();
-                shaderFilter = std::make_shared<GELinearGradientBlurShaderFilter>(*linearGradientBlurParams);
+                shaderFilter = GenerateExtShaderFilter(ve);
                 break;
             }
             case Drawing::GEVisualEffectImpl::FilterType::MAGNIFIER: {

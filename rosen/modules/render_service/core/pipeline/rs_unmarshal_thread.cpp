@@ -17,7 +17,7 @@
 
 #include "app_mgr_client.h"
 #include "hisysevent.h"
-#include "pipeline/rs_base_render_util.h"
+#include "pipeline/render_thread/rs_base_render_util.h"
 #include "pipeline/rs_main_thread.h"
 #include "pipeline/rs_unmarshal_task_manager.h"
 #include "platform/common/rs_log.h"
@@ -30,6 +30,8 @@
 #include "command/rs_node_command.h"
 #include "command/rs_canvas_node_command.h"
 #include "recording/draw_cmd_list.h"
+#include "rs_trace.h"
+#include "platform/common/rs_hisysevent.h"
 
 #ifdef RES_SCHED_ENABLE
 #include "qos.h"
@@ -133,12 +135,20 @@ void RSUnmarshalThread::RecvParcel(std::shared_ptr<MessageParcel>& parcel, bool 
             }
         }
         RS_PROFILER_ON_PARCEL_RECEIVE(parcel.get(), transData.get());
+        int64_t time = transData == nullptr ? 0 : transData->GetTimestamp();
         {
             std::lock_guard<std::mutex> lock(transactionDataMutex_);
             cachedTransactionDataMap_[transData->GetSendingPid()].emplace_back(std::move(transData));
         }
         if (isPendingUnmarshal) {
-            RSMainThread::Instance()->RequestNextVSync();
+            RSMainThread::Instance()->RequestNextVSync("UI", time);
+        } else {
+            const auto &now = std::chrono::steady_clock::now().time_since_epoch();
+            int64_t currentTime = std::chrono::duration_cast<std::chrono::nanoseconds>(now).count();
+            constexpr int64_t ONE_PERIOD = 8000000;
+            if (currentTime - time > ONE_PERIOD && time != 0) {
+                RSMainThread::Instance()->RequestNextVSync("UI", time);
+            }
         }
         // ashmem parcel flow control ends in the destructor of ashmemFlowControlUnit
     };
@@ -184,9 +194,7 @@ bool RSUnmarshalThread::CachedTransactionDataEmpty()
 }
 void RSUnmarshalThread::SetFrameParam(int requestId, int load, int frameNum, int value)
 {
-    if (RsFrameReport::GetInstance().GetEnable()) {
-        RsFrameReport::GetInstance().SetFrameParam(requestId, load, frameNum, value);
-    }
+    RsFrameReport::GetInstance().SetFrameParam(requestId, load, frameNum, value);
 }
 void RSUnmarshalThread::SetFrameLoad(int load)
 {
@@ -276,8 +284,10 @@ bool RSUnmarshalThread::ReportTransactionDataStatistics(pid_t pid,
     std::string bundleName;
     appMgrClient->GetBundleNameByPid(pid, bundleName, uid);
 
-    HiSysEventWrite(OHOS::HiviewDFX::HiSysEvent::Domain::GRAPHIC, TRANSACTION_REPORT_NAME,
-        OHOS::HiviewDFX::HiSysEvent::EventType::STATISTIC, "PID", pid, "UID", uid,
+    RS_TRACE_NAME_FMT("RSUnmarshalThread::ReportTransactionDataStatistics HiSysEventWrite pid[%d] uid[%d]"
+        " bundleName[%s] opCount[%zu] exceeded[%d]",
+        pid, uid, bundleName.c_str(), totalCount, totalCount > TRANSACTION_DATA_KILL_COUNT);
+    RSHiSysEvent::EventWrite(RSEventName::IPC_DATA_OVER_ERROR, RSEventType::RS_STATISTIC, "PID", pid, "UID", uid,
         "BUNDLE_NAME", bundleName, "TRANSACTION_DATA_SIZE", totalCount);
     RS_LOGW("TransactionDataStatistics pid[%{public}d] uid[%{public}d]"
             " bundleName[%{public}s] opCount[%{public}zu] exceeded[%{public}d]",

@@ -16,7 +16,7 @@
 #include "gtest/gtest.h"
 #include "drawable/rs_render_node_drawable.h"
 #include "params/rs_render_params.h"
-#include "pipeline/rs_uni_render_thread.h"
+#include "pipeline/render_thread/rs_uni_render_thread.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -513,8 +513,6 @@ HWTEST_F(RSRenderNodeDrawableTest, CheckCacheTypeAndDrawTest, TestSize.Level1)
     drawable->CheckCacheTypeAndDraw(canvas, params);
     ASSERT_FALSE(!params.ChildHasVisibleEffect());
 
-    auto curCanvas = static_cast<RSPaintFilterCanvas*>(&canvas);
-    curCanvas->SetCacheType(RSPaintFilterCanvas::CacheType::DISABLED);
     drawable->CheckCacheTypeAndDraw(canvas, params);
     ASSERT_FALSE(drawable->HasFilterOrEffect());
     drawable->drawCmdIndex_.shadowIndex_ = 1;

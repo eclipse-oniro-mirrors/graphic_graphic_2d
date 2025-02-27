@@ -26,8 +26,8 @@
 #include "common/rs_common_def.h"
 #include "drawable/rs_render_node_drawable.h"
 #include "params/rs_surface_render_params.h"
-#include "pipeline/rs_base_render_engine.h"
 #include "params/rs_display_render_params.h"
+#include "pipeline/render_thread/rs_base_render_engine.h"
 #include "pipeline/rs_surface_render_node.h"
 #include "pipeline/rs_draw_window_cache.h"
 
@@ -223,6 +223,16 @@ public:
     void DealWithSelfDrawingNodeBuffer(RSPaintFilterCanvas& canvas, RSSurfaceRenderParams& surfaceParams);
     void ClearCacheSurfaceOnly();
 
+    void SetUIExtensionNeedToDraw(bool needToDraw) override
+    {
+        uiExtensionNeedToDraw_ = needToDraw;
+    }
+
+    bool UIExtensionNeedToDraw() const override
+    {
+        return uiExtensionNeedToDraw_;
+    }
+
     bool PrepareOffscreenRender();
     void FinishOffscreenRender(const Drawing::SamplingOptions& sampling);
     bool IsHardwareEnabled();
@@ -249,6 +259,7 @@ public:
         return cacheSurface_ ? true : false;
     }
     int GetTotalProcessedSurfaceCount() const;
+    void UpdateCacheSurfaceInfo();
 private:
     explicit RSSurfaceRenderNodeDrawable(std::shared_ptr<const RSRenderNode>&& node);
     bool DealWithUIFirstCache(
@@ -262,7 +273,7 @@ private:
         RSSurfaceRenderParams& surfaceParams, Occlusion::Region& surfaceDirtyRegion) const;
     Drawing::Region CalculateVisibleDirtyRegion(RSRenderThreadParams& uniParam, RSSurfaceRenderParams& surfaceParams,
         RSSurfaceRenderNodeDrawable& surfaceDrawable, bool isOffscreen) const;
-    void CrossDisplaySurfaceDirtyRegionOffset(
+    void CrossDisplaySurfaceDirtyRegionConversion(
         const RSRenderThreadParams& uniParam, const RSSurfaceRenderParams& surfaceParam, RectI& surfaceDirtyRect) const;
     bool HasCornerRadius(const RSSurfaceRenderParams& surfaceParams) const;
     using Registrar = RenderNodeDrawableRegistrar<RSRenderNodeType::SURFACE_NODE, OnGenerate>;
@@ -274,6 +285,7 @@ private:
         RSRenderThreadParams& uniParams) const;
     void TotalProcessedSurfaceCountInc(RSPaintFilterCanvas& canvas);
     void ClearTotalProcessedSurfaceCount();
+    void PreprocessUnobscuredUEC(RSPaintFilterCanvas& canvas);
 
     void DrawUIFirstDfx(RSPaintFilterCanvas& canvas, MultiThreadCacheType enableType,
         RSSurfaceRenderParams& surfaceParams, bool drawCacheSuccess);
@@ -307,6 +319,7 @@ private:
 #endif
     std::shared_ptr<RSSurface> surface_ = nullptr;
     bool surfaceCreated_ = false;
+    bool uiExtensionNeedToDraw_ = false;
 
     // UIFIRST
     std::shared_ptr<RSSurfaceHandler> surfaceHandlerUiFirst_ = nullptr;
@@ -315,6 +328,12 @@ private:
     uint32_t cacheSurfaceThreadIndex_ = UNI_MAIN_THREAD_INDEX;
     uint32_t completedSurfaceThreadIndex_ = UNI_MAIN_THREAD_INDEX;
     mutable std::recursive_mutex completeResourceMutex_; // only lock complete Resource
+    struct CacheSurfaceInfo {
+        int processedSurfaceCount = -1;
+        float alpha = -1.f;
+    };
+    CacheSurfaceInfo cacheSurfaceInfo_;
+    CacheSurfaceInfo cacheCompletedSurfaceInfo_;
     std::shared_ptr<Drawing::Surface> cacheSurface_ = nullptr;
     std::shared_ptr<Drawing::Surface> cacheCompletedSurface_ = nullptr;
 #ifdef RS_ENABLE_GPU

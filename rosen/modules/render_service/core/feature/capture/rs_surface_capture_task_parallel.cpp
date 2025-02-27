@@ -24,19 +24,19 @@
 
 #include "common/rs_background_thread.h"
 #include "common/rs_obj_abs_geometry.h"
+#include "feature/uifirst/rs_uifirst_manager.h"
 #include "memory/rs_tag_tracker.h"
 #include "params/rs_surface_render_params.h"
+#include "pipeline/render_thread/rs_base_render_engine.h"
+#include "pipeline/render_thread/rs_uni_render_util.h"
 #include "pipeline/rs_base_render_node.h"
 #include "pipeline/rs_display_render_node.h"
 #include "pipeline/rs_main_thread.h"
-#include "pipeline/rs_base_render_engine.h"
 #include "pipeline/rs_paint_filter_canvas.h"
 #include "pipeline/rs_pointer_window_manager.h"
 #include "pipeline/rs_render_service_connection.h"
 #include "pipeline/rs_surface_render_node.h"
-#include "pipeline/rs_uifirst_manager.h"
 #include "pipeline/rs_uni_render_judgement.h"
-#include "pipeline/rs_uni_render_util.h"
 #include "platform/common/rs_log.h"
 #include "platform/drawing/rs_surface.h"
 #include "render/rs_drawing_filter.h"
@@ -86,6 +86,10 @@ void RSSurfaceCaptureTaskParallel::CheckModifiers(NodeId id, bool useCurWindow)
             if (node == nullptr) {
                 continue;
             }
+            if (node->GetType() == RSRenderNodeType::SURFACE_NODE) {
+                auto params = static_cast<RSSurfaceRenderParams*>(node->GetStagingRenderParams().get());
+                params->MarkSurfaceCapturePipeline();
+            }
             if (!RSUifirstManager::Instance().CollectSkipSyncNode(node)) {
                 node->Sync();
             } else {
@@ -113,14 +117,15 @@ void RSSurfaceCaptureTaskParallel::Capture(NodeId id, sptr<RSISurfaceCaptureCall
     std::shared_ptr<RSSurfaceCaptureTaskParallel> captureHandle =
         std::make_shared<RSSurfaceCaptureTaskParallel>(id, captureConfig);
     if (!captureHandle->CreateResources()) {
-        callback->OnSurfaceCapture(id, nullptr);
+        callback->OnSurfaceCapture(id, captureConfig, nullptr);
         return;
     }
 
-    std::function<void()> captureTask = [captureHandle, id, callback, blurParam, isSystemCalling, isFreeze]() -> void {
+    std::function<void()> captureTask = [captureHandle, id, captureConfig, callback, blurParam,
+        isSystemCalling, isFreeze]() -> void {
         RS_TRACE_NAME("RSSurfaceCaptureTaskParallel::TakeSurfaceCapture");
         if (!captureHandle->Run(callback, blurParam, isSystemCalling, isFreeze)) {
-            callback->OnSurfaceCapture(id, nullptr);
+            callback->OnSurfaceCapture(id, captureConfig, nullptr);
         }
     };
     RSUniRenderThread::Instance().PostSyncTask(captureTask);
@@ -224,8 +229,8 @@ bool RSSurfaceCaptureTaskParallel::Run(sptr<RSISurfaceCaptureCallback> callback,
         curNodeParams = static_cast<RSSurfaceRenderParams*>(surfaceNodeDrawable_->GetRenderParams().get());
         RSUiFirstProcessStateCheckerHelper stateCheckerHelper(
             curNodeParams->GetFirstLevelNodeId(), curNodeParams->GetUifirstRootNodeId());
-        RSUniRenderThread::SetCaptureParam(CaptureParam(true, true, false, captureConfig_.scaleX, captureConfig_.scaleY,
-            true, isSystemCalling, blurParam.isNeedBlur));
+        RSUniRenderThread::SetCaptureParam(CaptureParam(true, true, false, true, isSystemCalling,
+            blurParam.isNeedBlur));
         canvas.SetIsWindowFreezeCapture(isFreeze);
         surfaceNodeDrawable_->OnCapture(canvas);
         if (isFreeze) {
@@ -235,8 +240,7 @@ bool RSSurfaceCaptureTaskParallel::Run(sptr<RSISurfaceCaptureCallback> callback,
             AddBlur(canvas, surface, blurParam.blurRadius);
         }
     } else if (displayNodeDrawable_) {
-        RSUniRenderThread::SetCaptureParam(
-            CaptureParam(true, false, false, captureConfig_.scaleX, captureConfig_.scaleY));
+        RSUniRenderThread::SetCaptureParam(CaptureParam(true, false, false));
         displayNodeDrawable_->OnCapture(canvas);
     } else {
         RS_LOGE("RSSurfaceCaptureTaskParallel::Run: Invalid RSRenderNodeDrawable!");
@@ -252,7 +256,7 @@ bool RSSurfaceCaptureTaskParallel::Run(sptr<RSISurfaceCaptureCallback> callback,
     }
     if (RSSystemProperties::GetSnapshotWithDMAEnabled()) {
         auto copytask = CreateSurfaceSyncCopyTask(surface, std::move(pixelMap_),
-            nodeId_, callback, finalRotationAngle_, captureConfig_.useDma);
+            nodeId_, captureConfig_, callback, finalRotationAngle_);
         if (!copytask) {
             RS_LOGE("RSSurfaceCaptureTaskParallel::Run: create capture task failed!");
             return false;
@@ -277,7 +281,7 @@ bool RSSurfaceCaptureTaskParallel::Run(sptr<RSISurfaceCaptureCallback> callback,
     // To get dump image
     // execute "param set rosen.dumpsurfacetype.enabled 3 && setenforce 0"
     RSBaseRenderUtil::WritePixelMapToPng(*pixelMap_);
-    callback->OnSurfaceCapture(nodeId_, pixelMap_.get());
+    callback->OnSurfaceCapture(nodeId_, captureConfig_, pixelMap_.get());
     return true;
 }
 
@@ -304,7 +308,19 @@ std::unique_ptr<Media::PixelMap> RSSurfaceCaptureTaskParallel::CreatePixelMapByS
         node->GetId(), pixmapWidth, pixmapHeight, captureConfig_.scaleX, captureConfig_.scaleY,
         captureConfig_.useDma, captureConfig_.useCurWindow, node->IsOnTheTree(),
         !surfaceNode_->GetVisibleRegion().IsEmpty());
-    return Media::PixelMap::Create(opts);
+    std::unique_ptr<Media::PixelMap> pixelMap = Media::PixelMap::Create(opts);
+    if (pixelMap) {
+        GraphicColorGamut windowColorGamut = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
+        if (node->IsLeashWindow()) {
+            windowColorGamut = node->GetFirstLevelNodeColorGamut();
+        } else {
+            windowColorGamut = node->GetColorSpace();
+        }
+        pixelMap->InnerSetColorSpace(windowColorGamut == GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB ?
+            OHOS::ColorManager::ColorSpace(OHOS::ColorManager::ColorSpaceName::SRGB) :
+            OHOS::ColorManager::ColorSpace(OHOS::ColorManager::ColorSpaceName::DISPLAY_P3));
+    }
+    return pixelMap;
 }
 
 std::unique_ptr<Media::PixelMap> RSSurfaceCaptureTaskParallel::CreatePixelMapByDisplayNode(
@@ -345,7 +361,14 @@ std::unique_ptr<Media::PixelMap> RSSurfaceCaptureTaskParallel::CreatePixelMapByD
         node->GetId(), pixmapWidth, pixmapHeight, captureConfig_.scaleX, captureConfig_.scaleY,
         rect.GetLeft(), rect.GetTop(), rect.GetWidth(), rect.GetHeight(),
         captureConfig_.useDma, screenRotation_, screenCorrection_);
-    return Media::PixelMap::Create(opts);
+    std::unique_ptr<Media::PixelMap> pixelMap = Media::PixelMap::Create(opts);
+    if (pixelMap) {
+        GraphicColorGamut windowColorGamut = node->GetColorSpace();
+        pixelMap->InnerSetColorSpace(windowColorGamut == GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB ?
+            OHOS::ColorManager::ColorSpace(OHOS::ColorManager::ColorSpaceName::SRGB) :
+            OHOS::ColorManager::ColorSpace(OHOS::ColorManager::ColorSpaceName::DISPLAY_P3));
+    }
+    return pixelMap;
 }
 
 std::shared_ptr<Drawing::Surface> RSSurfaceCaptureTaskParallel::CreateSurface(
@@ -360,13 +383,8 @@ std::shared_ptr<Drawing::Surface> RSSurfaceCaptureTaskParallel::CreateSurface(
         RS_LOGE("RSSurfaceCaptureTaskParallel::CreateSurface: address == nullptr");
         return nullptr;
     }
-    GraphicColorGamut colorGamut = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
-    RSDisplayRenderParams* curNodeParams = nullptr;
-    if (displayNodeDrawable_) {
-        curNodeParams = static_cast<RSDisplayRenderParams*>(displayNodeDrawable_->GetRenderParams().get());
-        colorGamut = curNodeParams->GetNewColorSpace();
-    }
-    colorSpace_ = RSBaseRenderEngine::ConvertColorGamutToDrawingColorSpace(colorGamut);
+    OHOS::ColorManager::ColorSpaceName colorSpaceName = pixelmap->InnerGetGrColorSpace().GetColorSpaceName();
+    colorSpace_ = RSBaseRenderEngine::ConvertColorSpaceNameToDrawingColorSpace(colorSpaceName);
     Drawing::ImageInfo info = Drawing::ImageInfo{pixelmap->GetWidth(), pixelmap->GetHeight(),
         Drawing::ColorType::COLORTYPE_RGBA_8888, Drawing::AlphaType::ALPHATYPE_PREMUL, colorSpace_};
 
@@ -444,7 +462,8 @@ void RSSurfaceCaptureTaskParallel::AddBlur(
 #ifdef RS_ENABLE_UNI_RENDER
     std::function<void()> RSSurfaceCaptureTaskParallel::CreateSurfaceSyncCopyTask(
         std::shared_ptr<Drawing::Surface> surface, std::unique_ptr<Media::PixelMap> pixelMap, NodeId id,
-        sptr<RSISurfaceCaptureCallback> callback, int32_t rotation, bool useDma)
+        const RSSurfaceCaptureConfig& captureConfig, sptr<RSISurfaceCaptureCallback> callback,
+        int32_t rotation)
 {
     if (surface == nullptr) {
         RS_LOGE("RSSurfaceCaptureTaskParallel: nodeId:[%{public}" PRIu64 "], surface is nullptr", id);
@@ -459,8 +478,9 @@ void RSSurfaceCaptureTaskParallel::AddBlur(
     std::get<0>(*wrapper) = std::move(pixelMap);
     auto wrapperSf = std::make_shared<std::tuple<std::shared_ptr<Drawing::Surface>>>();
     std::get<0>(*wrapperSf) = std::move(surface);
-    std::function<void()> copytask = [wrapper, callback, backendTexture, wrapperSf, id, rotation, useDma]() -> void {
-        RS_TRACE_NAME_FMT("copy and send capture useDma:%d", useDma);
+    std::function<void()> copytask = [wrapper, captureConfig, callback, backendTexture, wrapperSf, id,
+        rotation]() -> void {
+        RS_TRACE_NAME_FMT("copy and send capture useDma:%d", captureConfig.useDma);
         if (callback == nullptr) {
             RS_LOGE("RSSurfaceCaptureTaskParallel: nodeId:[%{public}" PRIu64 "], callback is nullptr", id);
             return;
@@ -468,7 +488,7 @@ void RSSurfaceCaptureTaskParallel::AddBlur(
         auto colorSpace = std::get<0>(*wrapperSf)->GetImageInfo().GetColorSpace();
         if (!backendTexture.IsValid()) {
             RS_LOGE("RSSurfaceCaptureTaskParallel: Surface bind Image failed: BackendTexture is invalid");
-            callback->OnSurfaceCapture(id, nullptr);
+            callback->OnSurfaceCapture(id, captureConfig, nullptr);
             RSUniRenderUtil::ClearNodeCacheSurface(
                 std::move(std::get<0>(*wrapperSf)), nullptr, UNI_MAIN_THREAD_INDEX, 0);
             return;
@@ -476,7 +496,7 @@ void RSSurfaceCaptureTaskParallel::AddBlur(
         auto pixelmap = std::move(std::get<0>(*wrapper));
         if (pixelmap == nullptr) {
             RS_LOGE("RSSurfaceCaptureTaskParallel: pixelmap == nullptr");
-            callback->OnSurfaceCapture(id, nullptr);
+            callback->OnSurfaceCapture(id, captureConfig, nullptr);
             RSUniRenderUtil::ClearNodeCacheSurface(
                 std::move(std::get<0>(*wrapperSf)), nullptr, UNI_MAIN_THREAD_INDEX, 0);
             return;
@@ -491,14 +511,14 @@ void RSSurfaceCaptureTaskParallel::AddBlur(
         auto grContext = RSBackgroundThread::Instance().GetShareGPUContext();
         if (!grContext) {
             RS_LOGE("RSSurfaceCaptureTaskParallel: grContext == nullptr");
-            callback->OnSurfaceCapture(id, nullptr);
+            callback->OnSurfaceCapture(id, captureConfig, nullptr);
             RSUniRenderUtil::ClearNodeCacheSurface(
                 std::move(std::get<0>(*wrapperSf)), nullptr, UNI_MAIN_THREAD_INDEX, 0);
             return;
         }
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
         DmaMem dmaMem;
-        if (useDma &&
+        if (captureConfig.useDma &&
             (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
             RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR)) {
             sptr<SurfaceBuffer> surfaceBuffer = dmaMem.DmaMemAlloc(info, pixelmap);
@@ -508,18 +528,13 @@ void RSSurfaceCaptureTaskParallel::AddBlur(
             surface = dmaMem.GetSurfaceFromSurfaceBuffer(surfaceBuffer, grContext);
             if (surface == nullptr) {
                 RS_LOGE("RSSurfaceCaptureTaskParallel: GetSurfaceFromSurfaceBuffer fail.");
-                callback->OnSurfaceCapture(id, nullptr);
+                callback->OnSurfaceCapture(id, captureConfig, nullptr);
                 RSUniRenderUtil::ClearNodeCacheSurface(
                     std::move(std::get<0>(*wrapperSf)), nullptr, UNI_MAIN_THREAD_INDEX, 0);
                 return;
             }
             auto tmpImg = std::make_shared<Drawing::Image>();
             DrawCapturedImg(*tmpImg, *surface, backendTexture, textureOrigin, bitmapFormat);
-            if (colorSpace != nullptr) {
-                pixelmap->InnerSetColorSpace(colorSpace->IsSRGB() ?
-                    OHOS::ColorManager::ColorSpace(OHOS::ColorManager::ColorSpaceName::SRGB) :
-                    OHOS::ColorManager::ColorSpace(OHOS::ColorManager::ColorSpaceName::DISPLAY_P3));
-            }
         } else {
 #else
         {
@@ -529,7 +544,7 @@ void RSSurfaceCaptureTaskParallel::AddBlur(
                 textureOrigin, bitmapFormat, colorSpace);
             if (!CopyDataToPixelMap(tmpImg, pixelmap, colorSpace)) {
                 RS_LOGE("RSSurfaceCaptureTaskParallel: CopyDataToPixelMap failed");
-                callback->OnSurfaceCapture(id, nullptr);
+                callback->OnSurfaceCapture(id, captureConfig, nullptr);
                 RSUniRenderUtil::ClearNodeCacheSurface(
                     std::move(std::get<0>(*wrapperSf)), nullptr, UNI_MAIN_THREAD_INDEX, 0);
                 return;
@@ -544,7 +559,7 @@ void RSSurfaceCaptureTaskParallel::AddBlur(
         // execute "param set rosen.dumpsurfacetype.enabled 3 && setenforce 0"
         RSBaseRenderUtil::WritePixelMapToPng(*pixelmap);
         pixelmap->SetMemoryName("RSSurfaceCaptureForClient");
-        callback->OnSurfaceCapture(id, pixelmap.get());
+        callback->OnSurfaceCapture(id, captureConfig, pixelmap.get());
         RSBackgroundThread::Instance().CleanGrResource();
         RSUniRenderUtil::ClearNodeCacheSurface(
             std::move(std::get<0>(*wrapperSf)), nullptr, UNI_MAIN_THREAD_INDEX, 0);

@@ -77,7 +77,11 @@ void RSDisplayNode::RemoveDisplayNodeFromTree()
 
 bool RSDisplayNode::Marshalling(Parcel& parcel) const
 {
-    return parcel.WriteUint64(GetId()) && parcel.WriteUint64(screenId_) && parcel.WriteBool(isMirroredDisplay_);
+    bool success = parcel.WriteUint64(GetId()) && parcel.WriteUint64(screenId_) && parcel.WriteBool(isMirroredDisplay_);
+    if (!success) {
+        ROSEN_LOGE("RSDisplayNode::Marshalling failed");
+    }
+    return success;
 }
 
 RSDisplayNode::SharedPtr RSDisplayNode::Unmarshalling(Parcel& parcel)
@@ -124,6 +128,8 @@ void RSDisplayNode::SetScreenId(uint64_t screenId)
         transactionProxy->AddCommand(command, true);
     }
 #ifdef ROSEN_OHOS
+    RS_TRACE_NAME_FMT("RSDisplayNode::SetScreenId HiSysEventWrite, DisplayNode: %" PRIu64 ", ScreenId: %" PRIu64,
+        GetId(), screenId);
     int32_t ret = HiSysEventWrite(
         OHOS::HiviewDFX::HiSysEvent::Domain::GRAPHIC,
         "SET_SCREENID",

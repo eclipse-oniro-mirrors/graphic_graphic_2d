@@ -17,10 +17,10 @@
 #include "drawable/dfx/rs_dirty_rects_dfx.h"
 #include "drawable/rs_display_render_node_drawable.h"
 #include "params/rs_render_thread_params.h"
+#include "pipeline/render_thread/rs_uni_render_thread.h"
 #include "pipeline/rs_display_render_node.h"
 #include "pipeline/hardware_thread/rs_realtime_refresh_rate_manager.h"
 #include "pipeline/rs_render_node.h"
-#include "pipeline/rs_uni_render_thread.h"
 
 using namespace testing;
 using namespace testing::ext;

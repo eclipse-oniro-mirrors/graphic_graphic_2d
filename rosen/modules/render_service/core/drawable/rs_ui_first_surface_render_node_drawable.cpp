@@ -24,16 +24,16 @@
 #include "common/rs_optional_trace.h"
 #include "draw/brush.h"
 #include "drawable/rs_surface_render_node_drawable.h"
+#include "feature/uifirst/rs_sub_thread_manager.h"
+#include "feature/uifirst/rs_uifirst_manager.h"
 #include "memory/rs_tag_tracker.h"
 #include "params/rs_display_render_params.h"
 #include "params/rs_surface_render_params.h"
-#include "pipeline/parallel_render/rs_sub_thread_manager.h"
+#include "pipeline/render_thread/rs_uni_render_thread.h"
+#include "pipeline/render_thread/rs_uni_render_util.h"
 #include "pipeline/rs_main_thread.h"
 #include "pipeline/rs_paint_filter_canvas.h"
 #include "pipeline/rs_surface_render_node.h"
-#include "pipeline/rs_uifirst_manager.h"
-#include "pipeline/rs_uni_render_thread.h"
-#include "pipeline/rs_uni_render_util.h"
 #include "pipeline/sk_resource_manager.h"
 #include "platform/common/rs_log.h"
 #include "rs_profiler.h"
@@ -380,6 +380,7 @@ void RSSurfaceRenderNodeDrawable::UpdateBackendTexture()
 {
     RS_TRACE_NAME("RSRenderNodeDrawable::UpdateBackendTexture()");
     if (cacheSurface_ == nullptr) {
+        RS_LOGE("UpdateBackendTexture cacheSurface is nullptr");
         return;
     }
     cacheBackendTexture_ = cacheSurface_->GetBackendTexture();
@@ -392,6 +393,7 @@ void RSSurfaceRenderNodeDrawable::UpdateCompletedCacheSurface()
     // renderthread not use, subthread done not use
     std::swap(cacheSurface_, cacheCompletedSurface_);
     std::swap(cacheSurfaceThreadIndex_, completedSurfaceThreadIndex_);
+    std::swap(cacheSurfaceInfo_, cacheCompletedSurfaceInfo_);
 #if (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
     std::swap(cacheBackendTexture_, cacheCompletedBackendTexture_);
 #ifdef RS_ENABLE_VK
@@ -415,6 +417,7 @@ void RSSurfaceRenderNodeDrawable::SetTextureValidFlag(bool isValid)
 void RSSurfaceRenderNodeDrawable::ClearCacheSurface(bool isClearCompletedCacheSurface)
 {
     cacheSurface_ = nullptr;
+    cacheSurfaceInfo_ = { -1, -1.f };
 #ifdef RS_ENABLE_VK
     if (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
         RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) {
@@ -424,6 +427,7 @@ void RSSurfaceRenderNodeDrawable::ClearCacheSurface(bool isClearCompletedCacheSu
     if (isClearCompletedCacheSurface) {
         std::scoped_lock<std::recursive_mutex> lock(completeResourceMutex_);
         cacheCompletedSurface_ = nullptr;
+        cacheCompletedSurfaceInfo_ = { -1, -1.f };
 #ifdef RS_ENABLE_VK
         if (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
             RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) {
@@ -500,16 +504,11 @@ bool RSSurfaceRenderNodeDrawable::DrawUIFirstCache(RSPaintFilterCanvas& rscanvas
             return false; // draw nothing
         }
 #if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
-        bool frameParamEnable = RsFrameReport::GetInstance().GetEnable();
-        if (frameParamEnable) {
-            RsFrameReport::GetInstance().SetFrameParam(
-                REQUEST_SET_FRAME_LOAD_ID, REQUEST_FRAME_AWARE_LOAD, 0, GetLastFrameUsedThreadIndex());
-        }
+        RsFrameReport::GetInstance().SetFrameParam(
+            REQUEST_SET_FRAME_LOAD_ID, REQUEST_FRAME_AWARE_LOAD, 0, GetLastFrameUsedThreadIndex());
         RSSubThreadManager::Instance()->WaitNodeTask(nodeId_);
-        if (frameParamEnable) {
-            RsFrameReport::GetInstance().SetFrameParam(
-                REQUEST_SET_FRAME_LOAD_ID, REQUEST_FRAME_STANDARD_LOAD, 0, GetLastFrameUsedThreadIndex());
-        }
+        RsFrameReport::GetInstance().SetFrameParam(
+            REQUEST_SET_FRAME_LOAD_ID, REQUEST_FRAME_STANDARD_LOAD, 0, GetLastFrameUsedThreadIndex());
         UpdateCompletedCacheSurface();
 #endif
     }
@@ -578,5 +577,14 @@ uint32_t RSSurfaceRenderNodeDrawable::GetUifirstPostOrder() const
 void RSSurfaceRenderNodeDrawable::SetUifirstPostOrder(uint32_t order)
 {
     uifirstPostOrder_ = order;
+}
+
+void RSSurfaceRenderNodeDrawable::UpdateCacheSurfaceInfo()
+{
+    const auto& params = GetRenderParams();
+    if (params) {
+        cacheSurfaceInfo_.processedSurfaceCount = GetTotalProcessedSurfaceCount();
+        cacheSurfaceInfo_.alpha = params->GetGlobalAlpha();
+    }
 }
 } // namespace OHOS::Rosen

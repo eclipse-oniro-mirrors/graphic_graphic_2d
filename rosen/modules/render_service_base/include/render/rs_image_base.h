@@ -43,6 +43,17 @@ class VulkanCleanupHelper;
 #endif
 class RSB_EXPORT RSImageBase {
 public:
+#ifdef ROSEN_OHOS
+    /* This class is used to avoid Unmap is being called after ReMap and before pixelMap is used. */
+    class PixelMapUseCountGuard {
+    public:
+        PixelMapUseCountGuard(std::shared_ptr<Media::PixelMap> pixelMap, bool purgeable);
+        ~PixelMapUseCountGuard();
+    private:
+        std::shared_ptr<Media::PixelMap> pixelMap_ = nullptr;
+        bool purgeable_ = false;
+    };
+#endif
     RSImageBase() = default;
     virtual ~RSImageBase();
 
@@ -63,6 +74,8 @@ public:
     void SetImagePixelAddr(void* addr);
     void UpdateNodeIdToPicture(NodeId nodeId);
     void MarkRenderServiceImage();
+    void MarkPurgeable();
+    bool IsPurgeable() const;
     std::shared_ptr<Media::PixelMap> GetPixelMap() const;
     void DumpPicture(DfxString& info) const;
     uint64_t GetUniqueId() const;
@@ -73,13 +86,12 @@ public:
 
     void ConvertPixelMapToDrawingImage(bool parallelUpload = false);
 
+    /*
+     * This function is used to reduce memory usage by unmap the memory of the pixelMap_.
+     * Only the pixelMap_ with one RefCount and one UseCount can be purged.
+    */
     void Purge();
-    enum class CanPurgeFlag : int8_t {
-        UNINITED = -1,
-        DISABLED = 0,
-        ENABLED = 1,
-    };
-    CanPurgeFlag canPurgeShareMemFlag_ = CanPurgeFlag::UNINITED;
+    void DePurge();
 
 protected:
     void GenUniqueId(uint32_t id);
@@ -116,6 +128,13 @@ protected:
     mutable Drawing::BackendTexture backendTexture_ = {};
     mutable NativeBufferUtils::VulkanCleanupHelper* cleanUpHelper_ = nullptr;
 #endif
+
+    enum class CanPurgeFlag : int8_t {
+        UNINITED = -1,
+        DISABLED = 0,
+        ENABLED = 1,
+    };
+    CanPurgeFlag canPurgeShareMemFlag_ = CanPurgeFlag::UNINITED;
 };
 } // namespace Rosen
 } // namespace OHOS

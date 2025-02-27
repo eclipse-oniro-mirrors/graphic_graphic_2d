@@ -44,6 +44,8 @@ constexpr uint64_t INVALID_NODEID = 0;
 constexpr int32_t INSTANCE_ID_UNDEFINED = -1;
 constexpr uint32_t RGBA_MAX = 255;
 constexpr uint64_t INVALID_LEASH_PERSISTENTID = 0;
+constexpr uint8_t TOP_OCCLUSION_SURFACES_NUM = 3;
+constexpr uint8_t OCCLUSION_ENABLE_SCENE_NUM = 2;
 
 // types in the same layer should be 0/1/2/4/8
 // types for UINode
@@ -220,6 +222,10 @@ struct RSSurfaceCaptureConfig {
     SurfaceCaptureType captureType = SurfaceCaptureType::DEFAULT_CAPTURE;
     bool isSync = false;
     Drawing::Rect mainScreenRect = {};
+    bool operator==(const RSSurfaceCaptureConfig& config) const
+    {
+        return mainScreenRect == config.mainScreenRect;
+    }
 };
 
 struct RSSurfaceCaptureBlurParam {
@@ -265,6 +271,8 @@ enum class SystemAnimatedScenes : uint32_t {
     ENTER_RECENTS, // Enter recents only for phone, end with EXIT_RECENTS instead of OTHERS
     EXIT_RECENTS, // Exit recents only for phone
     LOCKSCREEN_TO_LAUNCHER, // Enter unlock screen for pc scene
+    ENTER_MIN_WINDOW, // Enter the window minimization state
+    RECOVER_MIN_WINDOW, // Recover minimized window
     OTHERS, // 1.Default state 2.The state in which the animation ends
 };
 
@@ -303,6 +311,9 @@ enum class RSUIFirstSwitch {
     NONE = 0,               // follow RS rules
     MODAL_WINDOW_CLOSE = 1, // open app with modal window animation, close uifirst
     FORCE_DISABLE = 2,      // force close uifirst
+    FORCE_ENABLE = 3,       // force open uifirst
+    FORCE_ENABLE_LIMIT = 4, // force open uifirst, but for limited
+    FORCE_DISABLE_NONFOCUS = 5, // force close uifirst when only in nonfocus window
 };
 
 enum class SelfDrawingNodeType : uint8_t {

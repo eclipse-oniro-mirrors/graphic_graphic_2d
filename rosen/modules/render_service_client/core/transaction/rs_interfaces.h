@@ -83,11 +83,11 @@ public:
 
 #ifdef OHOS_BUILD_ENABLE_MAGICCURSOR
     int32_t SetPointerColorInversionConfig(float darkBuffer, float brightBuffer, int64_t interval, int32_t rangeSize);
- 
+
     int32_t SetPointerColorInversionEnabled(bool enable);
- 
+
     int32_t RegisterPointerLuminanceChangeCallback(const PointerLuminanceChangeCallback &callback);
- 
+
     int32_t UnRegisterPointerLuminanceChangeCallback();
 #endif
 
@@ -133,7 +133,7 @@ public:
     bool GetTotalAppMemSize(float& cpuMemSize, float& gpuMemSize);
 
 #ifndef ROSEN_ARKUI_X
-    // width and height should be greater then physical width and height
+    // width and height should be greater than physical width and height
     int32_t SetPhysicalScreenResolution(ScreenId id, uint32_t width, uint32_t height);
 
     int32_t SetVirtualScreenResolution(ScreenId id, uint32_t width, uint32_t height);
@@ -227,6 +227,8 @@ public:
 
     int32_t GetScreenType(ScreenId id, RSScreenType& screenType);
 
+    int32_t GetDisplayIdentificationData(ScreenId id, uint8_t& outPort, std::vector<uint8_t>& edidData);
+
     /* skipFrameInterval : decide how many frames apart to refresh a frame,
        DEFAULT_SKIP_FRAME_INTERVAL means refresh each frame,
        change screen refresh rate finally */
@@ -271,8 +273,13 @@ public:
 
     void SetAppWindowNum(uint32_t num);
 
-    // Set the system overload Animated Scenes to RS for special load shedding
-    bool SetSystemAnimatedScenes(SystemAnimatedScenes systemAnimatedScenes);
+    /*
+    * @brief Set the system overload Animated Scenes to RS for special load shedding
+    * @param systemAnimatedScenes indicates the system animation scene
+    * @param isRegularAnimation indicates irregular windows in the animation scene
+    * @return true if succeed, otherwise false
+    */
+    bool SetSystemAnimatedScenes(SystemAnimatedScenes systemAnimatedScenes, bool isRegularAnimation = false);
 
     void ShowWatermark(const std::shared_ptr<Media::PixelMap> &watermarkImg, bool isShow);
 
@@ -284,11 +291,16 @@ public:
 
     void NotifyPackageEvent(uint32_t listSize, const std::vector<std::string>& packageList);
 
+    void NotifyAppStrategyConfigChangeEvent(const std::string& pkgName, uint32_t listSize,
+        const std::vector<std::pair<std::string, std::string>>& newConfig);
+
     void NotifyRefreshRateEvent(const EventInfo& eventInfo);
 
     void NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt);
 
     void NotifyDynamicModeEvent(bool enableDynamicMode);
+
+    void NotifyHgmConfigEvent(const std::string &eventName, bool state);
 
     void ReportEventResponse(DataBaseRs info);
 
@@ -330,7 +342,7 @@ public:
 #endif
     void SetVirtualScreenUsingStatus(bool isVirtualScreenUsingStatus);
 
-    int32_t RegisterUIExtensionCallback(uint64_t userId, const UIExtensionCallback& callback);
+    int32_t RegisterUIExtensionCallback(uint64_t userId, const UIExtensionCallback& callback, bool unobscured = false);
 
     bool SetVirtualScreenStatus(ScreenId id, VirtualScreenStatus screenStatus);
 
@@ -351,6 +363,10 @@ public:
     void ForceRefreshOneFrameWithNextVSync();
 
     void SetWindowContainer(NodeId nodeId, bool value);
+
+#ifdef RS_ENABLE_OVERLAY_DISPLAY
+    int32_t SetOverlayDisplayMode(int32_t mode);
+#endif
 private:
     RSInterfaces();
     ~RSInterfaces() noexcept;
