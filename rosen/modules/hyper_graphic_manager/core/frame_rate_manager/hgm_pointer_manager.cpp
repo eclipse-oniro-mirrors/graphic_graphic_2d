@@ -96,16 +96,16 @@ void HgmPointerManager::UpdateStrategyByPointer()
     }
 
     if (pointerInfo_.pointerState == PointerState::POINTER_IDLE_STATE) {
-        frameRateMgr->handleRefreshRateEvent(DEFAULT_PID, {"VOTER_POINTER", false});
+        frameRateMgr->HandleRefreshRateEvent(DEFAULT_PID, {"VOTER_POINTER", false});
         return;
     }
 
     if (multiAppStrategy.GetFocusAppStrategyConfig(settingStrategy) != EXEC_SUCCESS ||
         settingStrategy.pointerMode == PointerModeType::POINTER_DISENABLED) {
-        frameRateMgr->handleRefreshRateEvent(DEFAULT_PID, {"VOTER_POINTER", false});
+        frameRateMgr->HandleRefreshRateEvent(DEFAULT_PID, {"VOTER_POINTER", false});
         return;
     }
-    frameRateMgr->handleRefreshRateEvent(DEFAULT_PID,
+    frameRateMgr->HandleRefreshRateEvent(DEFAULT_PID,
         {"VOTER_POINTER", true, settingStrategy.down, settingStrategy.down});
 }
 

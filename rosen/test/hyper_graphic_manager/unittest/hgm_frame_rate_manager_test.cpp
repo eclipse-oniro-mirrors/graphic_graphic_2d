@@ -152,7 +152,7 @@ void HgmFrameRateMgrTest::InitHgmFrameRateManager(HgmFrameRateManager &frameRate
     auto screenSetting = frameRateMgr.multiAppStrategy_.GetScreenSetting();
     frameRateMgr.HandleAppStrategyConfigEvent(DEFAULT_PID, "", {});
     strategyConfigs[settingStrategyName] = { .min = OLED_NULL_HZ, .max = OLED_120_HZ, .down = OLED_144_HZ,
-        .dynamicMode = DynamicModeType::TOUCH_ENABLED, .pointerMode = PointerModerType::POINTER_ENABLED,
+        .dynamicMode = DynamicModeType::TOUCH_ENABLED, .pointerMode = PointerModeType::POINTER_ENABLED,
         .isFactor = true };
     screenSetting.strategy = settingStrategyName;
     frameRateMgr.multiAppStrategy_.SetStrategyConfigs(strategyConfigs);
@@ -290,7 +290,7 @@ HWTEST_F(HgmFrameRateMgrTest, HgmSetPointerActiveFPS, Function | SmallTest | Lev
     std::this_thread::sleep_for(std::chrono::milliseconds(delay_1300ms));
     ASSERT_EQ(frameRateMgr.pointerManager_.GetState(), PointerState::POINTER_IDLE_STATE);
 
-    frameRateMgr.pointerManager_.ChangeState(PointerState::POINTER_IDLE_STATE)；
+    frameRateMgr.pointerManager_.ChangeState(PointerState::POINTER_IDLE_STATE);
     sleep(1); //wait for handler task finished
 }
 
