@@ -45,8 +45,7 @@ namespace OHOS {
 namespace Rosen {
 static std::mutex drawingMutex_;
 namespace {
-constexpr uint32_t DRAWCMDLIST_COUNT_LIMIT = 500;
-constexpr uint32_t DRAWCMDLIST_OPSIZE_COUNT_LIMIT = 50000;
+    constexpr uint32_t DRAWCMDLIST_COUNT_LIMIT = 500;
 }
 RSCanvasDrawingRenderNode::RSCanvasDrawingRenderNode(
     NodeId id, const std::weak_ptr<RSContext>& context, bool isTextureExportNode)
@@ -571,13 +570,6 @@ void RSCanvasDrawingRenderNode::AddDirtyType(RSModifierType modifierType)
         }
         auto cmd = std::static_pointer_cast<RSRenderProperty<Drawing::DrawCmdListPtr>>(prop)->Get();
         if (cmd == nullptr) {
-            continue;
-        }
-        
-        if (cmd->GetOpItemSize() > DRAWCMDLIST_OPSIZE_COUNT_LIMIT) {
-            RS_LOGE("CanvasDrawingNode AddDirtyType NodeId[%{public}" PRIu64 "] Cmd oversize"
-                    " Add DrawOpSize [%{public}zu]",
-                GetId(), cmd->GetOpItemSize());
             continue;
         }
 
