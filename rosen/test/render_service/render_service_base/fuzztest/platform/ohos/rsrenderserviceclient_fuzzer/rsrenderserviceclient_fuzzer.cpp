@@ -301,7 +301,7 @@ bool DoTriggerSurfaceCaptureCallback(const uint8_t* data, size_t size)
     captureConfig.useDma = GetData<bool>();
     captureConfig.useCurWindow = GetData<bool>();
     uint8_t type = GetData<uint8_t>();
-    captureConfig.captureType = (SurfaceCaptureType)type;
+    captureConfig.captureType = static_cast<SurfaceCaptureType>(type);
     captureConfig.isSync = GetData<bool>();
     captureConfig.mainScreenRect.left_ = GetData<float>();
     captureConfig.mainScreenRect.top_ = GetData<float>();
