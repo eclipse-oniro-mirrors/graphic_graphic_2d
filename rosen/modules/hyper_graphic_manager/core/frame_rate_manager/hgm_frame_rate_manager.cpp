@@ -70,6 +70,7 @@ namespace {
         "VOTER_PACKAGES",
         "VOTER_LTPO",
         "VOTER_TOUCH",
+        "VOTER_POINTER",
         "VOTER_SCENE",
         "VOTER_VIDEO",
         "VOTER_IDLE"
@@ -926,8 +927,16 @@ void HgmFrameRateManager::HandleTouchEvent(pid_t pid, int32_t touchStatus, int32
     if (voterGamesEffective_ && touchManager_.GetState() == TouchState::DOWN_STATE) {
         return;
     }
+    if (voterGamesEffective_ &&
+        (touchStatus ==  TOUCH_MOVE || touchStatus ==  TOUCH_BUTTON_DOWN || touchStatus ==  TOUCH_BUTTON_UP)) {
+
+    }
     HgmTaskHandleThread::Instance().PostTask([this, pid, touchStatus, touchCnt] () {
-        HandleTouchTask(pid, touchStatus, touchCnt);
+        if (touchStatus ==  TOUCH_MOVE || touchStatus ==  TOUCH_BUTTON_DOWN || touchStatus ==  TOUCH_BUTTON_UP) {
+            HandlePointerTask(pid, touchStatus, touchCnt);
+        } else {
+            HandleTouchTask(pid, touchStatus, touchCnt);
+        }
     });
 }
 
@@ -956,6 +965,23 @@ void HgmFrameRateManager::HandleTouchTask(pid_t pid, int32_t touchStatus, int32_
         }
     } else {
         HGM_LOGD("[touch manager] other touch status not support");
+    }
+}
+
+void HgmFrameRateManager::HandlePointerTask(pid_t pid, int32_t pointerStatus, int32_t pointerCnt)
+{
+    if (pid != DEFAULT_PID) {
+        cleanPidCallback_[pid].insert(CleanPidCallbackType::TOUCH_EVENT);
+    }
+
+    if (pointerStatus ==  TOUCH_MOVE || pointerStatus ==  TOUCH_BUTTON_DOWN || pointerStatus ==  TOUCH_BUTTON_UP) {
+        PolicyConfigData::StrategyConfig strategyRes;
+        if (multiAppStrategy_.GetFocusAppStrategyConfig(strategyRes) == EXEC_SUCCESS ||
+            settingStrategy.pointerMode == PointerModeType::POINTER_DISENABLED) {
+            HGM_LOGD("pointer manager active");
+            pinterManager_.HandleTimerReset();
+            pinterManager_.handlePointerEvent(PointerEvent::POINTER_ACTIVE_EVENT, "");
+        }
     }
 }
 
@@ -1149,6 +1175,7 @@ void HgmFrameRateManager::HandleRsFrame()
         rsIdleTimer_->Start();
     }
     touchManager_.HandleRsFrame();
+    pointerManager_.HandleRsFrame();
 }
 
 void HgmFrameRateManager::HandleSceneEvent(pid_t pid, EventInfo eventInfo)
