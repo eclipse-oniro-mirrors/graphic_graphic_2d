@@ -334,6 +334,15 @@ int32_t XMLParser::ParseScreenConfig(xmlNode &node)
         screenConfig[id] = screenSetting;
         HGM_LOGI("HgmXMLParser ParseScreenConfig id=%{public}s", id.c_str());
     }
+    if (size_t pos = type.find(HGM_CONFIG_TYPE_THERMAL_SUFFIX); pos != std::string::npos) {
+        auto defaultScreenConfig = mParsedData_->screenConfigs_.find(type.substr(0, pos));
+        if (defaultScreenConfig != mParsedData_->screenConfigs_.end()) {
+            ReplenishMissThermalConfig(defaultScreenConfig->second, screenConfig);
+        } else {
+            HGM_LOGE("XMLParser failed to ReplenishMissThermalConfig %{public}s", type.c_str());
+            return EXEC_SUCCESS;
+        }
+    }
     mParsedData_->screenConfigs_[type] = screenConfig;
     return EXEC_SUCCESS;
 }
@@ -370,6 +379,8 @@ int32_t XMLParser::ParseSubScreenConfig(xmlNode &node, PolicyConfigData::ScreenS
         setResult = ParseSimplex(*thresholdNode, screenSetting.uiPowerConfig);
     } else if (name == "component_power_config") {
         setResult = ParsePowerStrategy(*thresholdNode, screenSetting.componentPowerConfig);
+    } else if (name == "performance_config") {
+        setResult = ParsePerformanceConfig(*thresholdNode, screenSetting.performanceConfig);
     } else {
         setResult = EXEC_SUCCESS;
     }
@@ -594,6 +605,45 @@ int32_t XMLParser::ParseAppTypes(xmlNode &node, std::unordered_map<int32_t, std:
         auto strategy = ExtractPropertyValue("strategy", *currNode);
         appTypes[std::stoi(name)] = strategy;
         HGM_LOGI("HgmXMLParser ParseAppTypes name=%{public}s strategy=%{public}s", name.c_str(), strategy.c_str());
+    }
+
+    return EXEC_SUCCESS;
+}
+
+int32_t XMLParser::ReplenishMissThermalConfig(const PolicyConfigData::ScreenConfig &screenConfigDefault,
+                                              PolicyConfigData::ScreenConfig &screenConfig)
+{
+    HGM_LOGD("HgmXMLParser ReplenishMissThermalConfig");
+    for (const auto& [id, screenSettingDefalut] : screenConfigDefault) {
+        if (screenConfig.find(id) == screenConfig.end()) {
+            screenConfig[id] = screenSettingDefalut;
+        }
+    }
+
+    return EXEC_SUCCESS;
+}
+
+int32_t XMLParser::ParsePerformanceConfig(
+    xmlNode &node, std::unordered_map<std::string, std::string> &performanceConfig)
+{
+    HGM_LOGD("XMLParser parsing performanceConfig");
+    xmlNode *currNode = &node;
+    if (currNode->xmlChildrenNode == nullptr) {
+        HGM_LOGD("XMLParser stop parsing performanceConfig, no children nodes");
+        return HGM_ERROR;
+    }
+
+    // re-parse
+    performanceConfig.clear();
+    currNode = currNode->xmlChildrenNode;
+    for (; currNode; currNode = currNode->next) {
+        if (currNode->type != XML_ELEMENT_NODE) {
+            continue;
+        }
+        auto name = ExtractPropertyValue("name", *currNode);
+        auto value = ExtractPropertyValue("value", *currNode);
+        performanceConfig[name] = value;
+        HGM_LOGI("HgmXMLParser performanceConfig name=%{public}s strategy=%{public}s", name.c_str(), value.c_str());
     }
 
     return EXEC_SUCCESS;

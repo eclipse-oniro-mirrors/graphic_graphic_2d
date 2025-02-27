@@ -138,6 +138,26 @@ public:
     {
         return animateState_;
     }
+    void SetStencilVal(int64_t stencilVal)
+    {
+        stencilVal_ = stencilVal;
+    }
+    int64_t GetStencilVal() const
+    {
+        return stencilVal_;
+    }
+    void SetIsOutOfScreen(bool isOutOfScreen)
+    {
+        if (isOutOfScreen_ == isOutOfScreen) {
+            return;
+        }
+        isOutOfScreen_ = isOutOfScreen;
+        needSync_ = true;
+    }
+    bool GetIsOutOfScreen()
+    {
+        return isOutOfScreen_;
+    }
     bool GetIsRotating() const
     {
         return isRotating_;
@@ -676,6 +696,7 @@ private:
     bool isInFixedRotation_ = false;
     int32_t releaseInHardwareThreadTaskNum_ = 0;
     bool animateState_ = false;
+    bool isOutOfScreen_ = false;
     bool isRotating_ = false;
     bool isSubSurfaceNode_ = false;
     bool isGlobalPositionEnabled_ = false;
@@ -693,6 +714,7 @@ private:
     bool needOffscreen_ = false;
     bool layerCreated_ = false;
     int32_t layerSource_ = 0;
+    int64_t stencilVal_ = -1;
     std::unordered_map<std::string, bool> watermarkHandles_ = {};
     std::vector<float> drmCornerRadiusInfo_;
     bool isForceDisableClipHoleForDRM_ = false;

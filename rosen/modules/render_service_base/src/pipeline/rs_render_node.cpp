@@ -325,7 +325,8 @@ void RSRenderNode::AddChild(SharedPtr child, int index)
             isOnTheTree_);
         }
     }
-    SetContentDirty();
+    (RSSystemProperties::GetOptimizeParentNodeRegionEnabled() && child->GetType() == RSRenderNodeType::SURFACE_NODE) ?
+        SetParentSubTreeDirty() : SetContentDirty();
     isFullChildrenListValid_ = false;
 }
 
@@ -419,7 +420,8 @@ void RSRenderNode::RemoveChild(SharedPtr child, bool skipTransition)
     if (child->GetBootAnimation()) {
         SetContainBootAnimation(false);
     }
-    SetContentDirty();
+    (RSSystemProperties::GetOptimizeParentNodeRegionEnabled() && child->GetType() == RSRenderNodeType::SURFACE_NODE) ?
+        SetParentSubTreeDirty() : SetContentDirty();
     isFullChildrenListValid_ = false;
 }
 
@@ -808,7 +810,14 @@ void RSRenderNode::ResetParent()
             }
         }
         parentNode->hasRemovedChild_ = true;
-        parentNode->SetContentDirty();
+        auto geoPtr = GetRenderProperties().GetBoundsGeometry();
+        if (geoPtr != nullptr) {
+            parentNode->removedChildrenRect_ = removedChildrenRect_.JoinRect(
+                geoPtr->MapRect(selfDrawRect_.JoinRect(childrenRect_.ConvertTo<float>()), geoPtr->GetMatrix()));
+        }
+        (RSSystemProperties::GetOptimizeParentNodeRegionEnabled() && GetType() == RSRenderNodeType::SURFACE_NODE)
+            ? parentNode->SetParentSubTreeDirty()
+            : parentNode->SetContentDirty();
         AddSubSurfaceUpdateInfo(nullptr, parentNode);
     }
     SetIsOnTheTree(false);
@@ -990,6 +999,9 @@ void RSRenderNode::DumpTree(int32_t depth, std::string& out) const
     }
     if (!oldDirty_.IsEmpty()) {
         out += ", oldDirty: " + oldDirty_.ToString();
+    }
+    if (!innerAbsDrawRect_.IsEmpty()) {
+        out += ", innerAbsDrawRect: " + innerAbsDrawRect_.ToString();
     }
     if (!localShadowRect_.IsEmpty()) {
         out += ", localShadowRect: " + localShadowRect_.ToString();
@@ -1705,6 +1717,12 @@ void RSRenderNode::UpdateAbsDirtyRegion(RSDirtyRegionManager& dirtyManager, cons
         dirtyManager.MergeDirtyRect(dirtyRect);
         isDirtyRegionUpdated_ = true;
     }
+    // compute inward-rounding abs draw rect, used for opaque region calculations
+    auto dirtyRectF = isSelfDrawingNode_ ? selfDrawingNodeAbsDirtyRectF_ : absDrawRectF_;
+    innerAbsDrawRect_ = RSObjAbsGeometry::DeflateToRectI(dirtyRectF);
+    if (!IsFirstLevelCrossNode()) {
+        innerAbsDrawRect_ = innerAbsDrawRect_.IntersectRect(clipRect);
+    }
 }
 
 bool RSRenderNode::UpdateDrawRectAndDirtyRegion(RSDirtyRegionManager& dirtyManager, bool accumGeoDirty,
@@ -1740,9 +1758,12 @@ bool RSRenderNode::UpdateDrawRectAndDirtyRegion(RSDirtyRegionManager& dirtyManag
         // selfdrawing node's geo may not dirty when its dirty region changes
         if (geoPtr && (CheckAndUpdateGeoTrans(geoPtr) || accumGeoDirty || properties.geoDirty_ ||
             isSelfDrawingNode_ || selfDrawRectChanged)) {
-            absDrawRect_ = geoPtr->MapAbsRect(selfDrawRect_);
+            absDrawRectF_ = geoPtr->MapRectWithoutRounding(selfDrawRect_, geoPtr->GetAbsMatrix());
+            absDrawRect_ = geoPtr->InflateToRectI(absDrawRectF_);
             if (isSelfDrawingNode_) {
-                selfDrawingNodeAbsDirtyRect_ = geoPtr->MapAbsRect(selfDrawingNodeDirtyRect_);
+                selfDrawingNodeAbsDirtyRectF_ = geoPtr->MapRectWithoutRounding(
+                    selfDrawingNodeDirtyRect_, geoPtr->GetAbsMatrix());
+                selfDrawingNodeAbsDirtyRect_ = geoPtr->InflateToRectI(selfDrawingNodeAbsDirtyRectF_);
             }
             UpdateSrcOrClipedAbsDrawRectChangeState(clipRect);
         }
@@ -2829,8 +2850,17 @@ void RSRenderNode::ApplyModifiers()
         auto paramCopy = sharedTransitionParam_;
         paramCopy->InternalUnregisterSelf();
     }
-    if (dirtyTypes_.test(static_cast<size_t>(RSModifierType::FOREGROUND_EFFECT_RADIUS))) {
-        GetMutableRenderProperties().SetForegroundEffectDirty(true);
+    if (dirtyTypes_.test(static_cast<size_t>(RSModifierType::FOREGROUND_EFFECT_RADIUS)) ||
+        dirtyTypes_.test(static_cast<size_t>(RSModifierType::BOUNDS))) {
+        std::shared_ptr<RSFilter> foregroundFilter = nullptr;
+        if (RSProperties::IS_UNI_RENDER) {
+            foregroundFilter = GetRenderProperties().GetForegroundFilterCache();
+        } else {
+            foregroundFilter = GetRenderProperties().GetForegroundFilter();
+        }
+        if (foregroundFilter) {
+            GetMutableRenderProperties().SetForegroundEffectDirty(true);
+        }
     }
 
     // Temporary code, copy matrix into render params
@@ -3814,6 +3844,7 @@ void RSRenderNode::OnTreeStateChanged()
             pairedNode->SetDirty(true);
         }
     }
+    drawableVecNeedClear_ = !isOnTheTree_;
     if (!isOnTheTree_ && HasBlurFilter()) { // force clear blur cache
         RS_OPTIONAL_TRACE_NAME_FMT("node[%llu] off the tree", GetId());
         MarkForceClearFilterCacheWithInvisible();
@@ -4016,6 +4047,10 @@ bool RSRenderNode::HasRemovedChild() const
 RectI RSRenderNode::GetChildrenRect() const
 {
     return childrenRect_;
+}
+RectI RSRenderNode::GetRemovedChildrenRect() const
+{
+    return removedChildrenRect_;
 }
 bool RSRenderNode::ChildHasVisibleFilter() const
 {
@@ -4593,6 +4628,7 @@ void RSRenderNode::ResetChangeState()
 {
     srcOrClipedAbsDrawRectChangeFlag_ = false;
     geometryChangeNotPerceived_ = false;
+    removedChildrenRect_.Clear();
 }
 
 void RSRenderNode::UpdateSrcOrClipedAbsDrawRectChangeState(const RectI& clipRect)
@@ -4654,6 +4690,11 @@ void RSRenderNode::OnSync()
         SyncPurgeFunc();
         drawCmdListNeedSync_ = false;
     }
+    
+    if (drawableVecNeedClear_) {
+        ClearDrawableVec2();
+    }
+
 #ifdef RS_ENABLE_GPU
     renderDrawable_->backgroundFilterDrawable_ = GetFilterDrawable(false);
     renderDrawable_->compositingFilterDrawable_ = GetFilterDrawable(true);
@@ -5100,6 +5141,34 @@ size_t RSRenderNode::GetAllModifierSize()
     }
 
     return totalSize;
+}
+
+void RSRenderNode::ClearDrawableVec2()
+{
+    if (drawableVecNeedClear_) {
+        if (GetType() != RSRenderNodeType::CANVAS_DRAWING_NODE &&
+            drawableVec_[static_cast<int8_t>(RSDrawableSlot::CONTENT_STYLE)]) {
+            drawableVec_[static_cast<int8_t>(RSDrawableSlot::CONTENT_STYLE)].reset();
+            dirtyTypes_.set(static_cast<int>(RSModifierType::CONTENT_STYLE), true);
+        }
+        if (drawableVec_[static_cast<int8_t>(RSDrawableSlot::TRANSITION)]) {
+            drawableVec_[static_cast<int8_t>(RSDrawableSlot::TRANSITION)].reset();
+            dirtyTypes_.set(static_cast<int>(RSModifierType::TRANSITION), true);
+        }
+        if (drawableVec_[static_cast<int8_t>(RSDrawableSlot::BACKGROUND_STYLE)]) {
+            drawableVec_[static_cast<int8_t>(RSDrawableSlot::BACKGROUND_STYLE)].reset();
+            dirtyTypes_.set(static_cast<int>(RSModifierType::BACKGROUND_STYLE), true);
+        }
+        if (drawableVec_[static_cast<int8_t>(RSDrawableSlot::FOREGROUND_STYLE)]) {
+            drawableVec_[static_cast<int8_t>(RSDrawableSlot::FOREGROUND_STYLE)].reset();
+            dirtyTypes_.set(static_cast<int>(RSModifierType::FOREGROUND_STYLE), true);
+        }
+        if (drawableVec_[static_cast<int8_t>(RSDrawableSlot::OVERLAY)]) {
+            drawableVec_[static_cast<int8_t>(RSDrawableSlot::OVERLAY)].reset();
+            dirtyTypes_.set(static_cast<int>(RSModifierType::OVERLAY_STYLE), true);
+        }
+        drawableVecNeedClear_ = false;
+    }
 }
 } // namespace Rosen
 } // namespace OHOS
