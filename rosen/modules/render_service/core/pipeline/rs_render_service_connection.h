@@ -416,6 +416,7 @@ private:
 #ifdef RS_PROFILER_ENABLED
     friend class RSProfiler;
 #endif
+    bool lastScreenBacklightWithHdr_ = false;
 };
 } // namespace Rosen
 } // namespace OHOS

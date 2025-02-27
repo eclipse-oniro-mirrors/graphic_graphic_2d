@@ -127,9 +127,18 @@ void RSSurfaceRenderNodeDrawable::OnGeneralProcess(RSPaintFilterCanvas& canvas,
         auto matrix = surfaceParams.GetTotalMatrix();
         matrix.Translate(-offsetX_, -offsetY_);
         canvas.ConcatMatrix(matrix);
-        RS_LOGD("RSSurfaceRenderNodeDrawable::OnGeneralProcess Translate screenId=[%{public}" PRIu64 "] "
-            "offsetX=%{public}d offsetY=%{public}d", curDisplayScreenId_, offsetX_, offsetY_);
+        if (!lastGlobalPositionEnabled_) {
+            lastGlobalPositionEnabled_ = true;
+            RS_LOGI("RSSurfaceRenderNodeDrawable::OnGeneralProcess Translate screenId=[%{public}" PRIu64 "] "
+                "offsetX=%{public}d offsetY=%{public}d", curDisplayScreenId_, offsetX_, offsetY_);
+        }
+    } esle {
+        if (lastGlobalPositionEnabled_) {
+            lastGlobalPositionEnabled_ = false;
+        }
     }
+    RS_TRACE_NAME_FMT("RSSurfaceRenderNodeDrawable::OnGeneralProcess Translate screenId=[%" PRIu64 "] "
+        "offsetX=%d offsetY=%d", curDisplayScreenId_, offsetX_, offsetY_);
 
     // 1. draw background
     DrawBackground(canvas, bounds);
