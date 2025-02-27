@@ -268,26 +268,26 @@ HWTEST_F(HgmFrameRateMgrTest, HgmConfigCallbackManagerTest, Function | SmallTest
 HWTEST_F(HgmFrameRateMgrTest, HgmSetPointerActiveFPS, Function | SmallTest | Level1)
 {
     HgmFrameRateManager frameRateMgr;
-    constexpr uint32_t delay_1100ms = 1100;
-    constexpr uint32_t delay_1300ms = 1300;
+    constexpr uint32_t delay_1100Ms = 1100;
+    constexpr uint32_t delay_1300Ms = 1300;
     InitHgmFrameRateManager(frameRateMgr);
     frameRateMgr.HandleTouchEvent(appPid, TouchStatus::TOUCH_BUTTON_DOWN, touchCount);
-    std::this_thread::sleep_for(std::chrono::milliseconds(delay_110ms));
+    std::this_thread::sleep_for(std::chrono::milliseconds(delay_110Ms));
     ASSERT_EQ(frameRateMgr.pointerManager_.GetState(), PointerState::POINTER_ACTIVE_STATE);
 
     frameRateMgr.HandleTouchEvent(appPid, TouchStatus::TOUCH_MOVE, touchCount);
-    std::this_thread::sleep_for(std::chrono::milliseconds(delay_110ms));
+    std::this_thread::sleep_for(std::chrono::milliseconds(delay_110Ms));
     ASSERT_EQ(frameRateMgr.pointerManager_.GetState(), PointerState::POINTER_ACTIVE_STATE);
 
     frameRateMgr.HandleTouchEvent(appPid, TouchStatus::TOUCH_BUTTON_UP, touchCount);
-    std::this_thread::sleep_for(std::chrono::milliseconds(delay_110ms));
+    std::this_thread::sleep_for(std::chrono::milliseconds(delay_110Ms));
     ASSERT_EQ(frameRateMgr.pointerManager_.GetState(), PointerState::POINTER_ACTIVE_STATE);
 
     frameRateMgr.HandleTouchEvent(appPid, TouchStatus::TOUCH_MOVE, touchCount);
-    std::this_thread::sleep_for(std::chrono::milliseconds(delay_1100ms));
+    std::this_thread::sleep_for(std::chrono::milliseconds(delay_1100Ms));
     ASSERT_EQ(frameRateMgr.pointerManager_.GetState(), PointerState::POINTER_ACTIVE_STATE);
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(delay_1300ms));
+    std::this_thread::sleep_for(std::chrono::milliseconds(delay_1100Ms));
     ASSERT_EQ(frameRateMgr.pointerManager_.GetState(), PointerState::POINTER_IDLE_STATE);
 
     frameRateMgr.pointerManager_.ChangeState(PointerState::POINTER_IDLE_STATE);
