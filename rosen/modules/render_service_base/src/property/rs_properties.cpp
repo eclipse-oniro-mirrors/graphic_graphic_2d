@@ -224,7 +224,7 @@ void RSProperties::SetFilterCacheEnabledByCCM(bool isCCMFilterCacheEnable)
         isCCMFilterCacheEnable) && RSUniRenderJudgement::IsUniRender();
 }
 #else
-const bool RSProperties::FilterCacheEnabled = false;
+bool RSProperties::FilterCacheEnabled = false;
 #endif
 #endif
 
