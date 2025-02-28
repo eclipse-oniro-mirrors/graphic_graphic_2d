@@ -31,6 +31,8 @@
 #include "hfbc_param.h"
 #include "hwc_param_parse.h"
 #include "hwc_param.h"
+#include "mem_param_parse.h"
+#include "mem_param.h"
 #include "opinc_param_parse.h"
 #include "opinc_param.h"
 #include "prevalidate_param_parse.h"
@@ -56,6 +58,8 @@ const std::vector<ModuleConfig> FEATURE_MODULES = {
     {FEATURE_CONFIGS[HWC], [] {return std::make_unique<HWCParamParse>(); }, [] {return std::make_unique<HWCParam>(); }},
     {FEATURE_CONFIGS[HFBC], [] {return std::make_unique<HFBCParamParse>(); },
         [] {return std::make_unique<HFBCParam>(); }},
+    {FEATURE_CONFIGS[MEM], [] { return std::make_unique<MEMParamParse>(); },
+        [] { return std::make_unique<MEMParam>(); }},
     {FEATURE_CONFIGS[SPECIALLAYER], [] {return std::make_unique<SpecialLayerParamParse>(); },
         [] {return std::make_unique<SpecialLayerParam>(); }},
     {FEATURE_CONFIGS[OPInc], [] {return std::make_unique<OPIncParamParse>(); },
