@@ -643,8 +643,7 @@ void RSDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
                 const auto& rect = screenManager->GetMirrorScreenVisibleRect(paramScreenId);
                 RS_TRACE_NAME_FMT("RSDisplayRenderNodeDrawable::OnDraw VisibleRect[%d, %d, %d, %d] to [%d, %d, %d, %d]",
                     curVisibleRect_.GetLeft(), curVisibleRect_.GetTop(),
-                    curVisibleRect_.GetWidth(), curVisibleRect_.GetHeight(),
-                    rect.x, rect.y, rect.w, rect.h);
+                    curVisibleRect_.GetWidth(), curVisibleRect_.GetHeight(), rect.x, rect.y, rect.w, rect.h);
                 curVisibleRect_ = Drawing::RectI(rect.x, rect.y, rect.x + rect.w, rect.y + rect.h);
                 RSUniRenderThread::Instance().SetVisibleRect(curVisibleRect_);
                 RSUniRenderThread::Instance().SetEnableVisiableRect(enableVisibleRect_);
