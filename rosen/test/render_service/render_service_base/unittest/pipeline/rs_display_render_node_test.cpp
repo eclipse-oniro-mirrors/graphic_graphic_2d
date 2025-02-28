@@ -19,7 +19,7 @@
 #include "display_engine/rs_luminance_control.h"
 #include "pipeline/rs_canvas_render_node.h"
 #include "pipeline/rs_display_render_node.h"
-#include "pipeline/rs_render_thread_visitor.h"
+#include "render_thread/rs_render_thread_visitor.h"
 #include "pipeline/rs_surface_render_node.h"
 
 using namespace testing;

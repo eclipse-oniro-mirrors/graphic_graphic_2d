@@ -39,7 +39,7 @@
 #include "feature_cfg/feature_param/extend_feature/mem_param.h"
 #include "feature_cfg/graphic_feature_param_manager.h"
 #include "memory/rs_tag_tracker.h"
-#include "pipeline/rs_main_thread.h"
+#include "pipeline/main_thread/rs_main_thread.h"
 #include "pipeline/rs_surface_render_node.h"
 #include "platform/common/rs_log.h"
 #include "platform/common/rs_system_properties.h"
