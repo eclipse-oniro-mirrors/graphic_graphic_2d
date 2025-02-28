@@ -668,8 +668,6 @@ void RSDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
             RSUniRenderThread::Instance().SetVisibleRect(Drawing::RectI());
             RSUniRenderThread::Instance().SetEnableVisiableRect(false);
         } else {
-            RS_TRACE_NAME("RSDisplayRenderNodeDrawable::OnDraw Expand screen");
-            RS_LOGD("RSDisplayRenderNodeDrawable::OnDraw Expand screen");
             bool isOpDropped = uniParam->IsOpDropped();
             uniParam->SetOpDropped(false);
             auto expandProcessor = RSProcessor::ReinterpretCast<RSUniRenderVirtualProcessor>(processor);
