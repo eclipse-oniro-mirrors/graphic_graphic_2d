@@ -87,7 +87,7 @@ public:
     bool hintingIsOn = false;
     BreakStrategy breakStrategy = BreakStrategy::GREEDY;
     TextTab tab;
-    float paragraphStyleSpacing { 0.0f };
+    float paragraphSpacing { 0.0f };
     bool isEndAddParagraphSpacing { false };
 };
 } // namespace SPText
