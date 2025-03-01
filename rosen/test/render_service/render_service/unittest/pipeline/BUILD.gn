@@ -44,6 +44,7 @@ group("unittest") {
     ":RSUniRenderUtilSecUIExtensionTest",
     ":RSUniRenderUtilTest",
     ":RSUniRenderVirtualProcessorTest",
+    ":RSUniRenderVisitorTest",
     ":RSVirtualScreenProcessorTest",
     ":RSVsyncRateReduceManagerTest",
   ]
