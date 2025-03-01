@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef SOCPERF_PARSE_H
-#define SOCPERF_PARSE_H
+#ifndef SOCPERF_PARAM_PARSE_H
+#define SOCPERF_PARAM_PARSE_H
 
 #include "xml_parser_base.h"
 #include "socperf_param.h"
@@ -32,4 +32,4 @@ private:
     std::shared_ptr<SOCPerfParam> socPerfParam_;
 };
 } // namespace OHOS::Rosen
-#endif // SOCPERF_PARSE_H
+#endif // SOCPERF_PARAM_PARSE_H
