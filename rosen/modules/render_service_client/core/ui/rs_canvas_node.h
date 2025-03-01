@@ -50,8 +50,18 @@ public:
     void SetBoundsChangedCallback(BoundsChangedCallback callback) override;
 
     void CheckThread();
+
+    /**
+     * @brief Set linked node id in PC window resize scenario.
+     * @param rootNodeId source RSRootNode id.
+     */
+    void SetLinkedRootNodeId(NodeId rootNodeId);
+
+    bool Marshalling(Parcel& parcel) const;
+    static SharedPtr Unmarshalling(Parcel& parcel);
 protected:
     RSCanvasNode(bool isRenderServiceNode, bool isTextureExportNode = false);
+    RSCanvasNode(bool isRenderServiceNode, NodeId id, bool isTextureExportNode = false);
     RSCanvasNode(const RSCanvasNode&) = delete;
     RSCanvasNode(const RSCanvasNode&&) = delete;
     RSCanvasNode& operator=(const RSCanvasNode&) = delete;

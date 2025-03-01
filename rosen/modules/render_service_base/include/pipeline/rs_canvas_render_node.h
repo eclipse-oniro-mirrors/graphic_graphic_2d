@@ -69,6 +69,11 @@ public:
     void SetHDRPresent(bool hasHdrPresent);
     bool GetHDRPresent() const;
 
+    // [Attention] Only used in PC window resize scene
+    void SetLinkedRootNodeId(NodeId rootNodeId);
+    RSB_EXPORT NodeId GetLinkedRootNodeId() const;
+    RSB_EXPORT void SetLinkedRootNodeDrawable(DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr drawable);
+
 protected:
     explicit RSCanvasRenderNode(NodeId id,
         const std::weak_ptr<RSContext>& context = {}, bool isTextureExportNode = false);
@@ -87,6 +92,7 @@ private:
     friend class RSRenderTransition;
     friend class RSPropertiesPainter;
     bool hasHdrPresent_ = false;
+    NodeId linkedRootNodeId_ = INVALID_NODEID;
 };
 } // namespace Rosen
 } // namespace OHOS

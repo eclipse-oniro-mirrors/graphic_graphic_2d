@@ -30,10 +30,20 @@ public:
     void OnDraw(Drawing::Canvas& canvas) override;
     void OnCapture(Drawing::Canvas& canvas) override;
 
+    // [Attention] Only used in PC window resize scene
+    bool DrawOffscreenToBuffer(Drawing::Canvas& canvas);
+    bool DrawOffscreenBuffer(RSPaintFilterCanvas& canvas, const Drawing::Rect& bounds, float alpha, bool isFreezed);
+
 private:
     explicit RSRootRenderNodeDrawable(std::shared_ptr<const RSRenderNode>&& node);
+    bool DrawOffscreenImgToBuffer(Drawing::Canvas& canvas, const RSRenderParams& params,
+        const Drawing::Rect& bounds, std::shared_ptr<Drawing::Surface>& surface);
+
     using Registrar = RenderNodeDrawableRegistrar<RSRenderNodeType::ROOT_NODE, OnGenerate>;
     static Registrar instance_;
+
+    std::shared_ptr<Drawing::Image> cachedOffscreenImg_ = nullptr;
+    std::shared_ptr<Drawing::Image> preCachedOffscreenImg_ = nullptr;
 };
 } // namespace DrawableV2
 } // namespace OHOS::Rosen

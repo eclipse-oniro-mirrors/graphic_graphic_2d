@@ -5550,4 +5550,35 @@ HWTEST_F(RSUniRenderVisitorTest, SetHdrWhenMultiDisplayChangeTest, TestSize.Leve
     ASSERT_NE(rsUniRenderVisitor, nullptr);
     rsUniRenderVisitor->SetHdrWhenMultiDisplayChange();
 }
+
+/*
+ * @tc.name: PrepareRootNodeOffscreen
+ * @tc.desc: Test PrepareRootNodeOffscreen
+ * @tc.type: FUNC
+ * @tc.require: #IBPVN9
+ */
+HWTEST_F(RSUniRenderVisitorTest, PrepareRootNodeOffscreen, TestSize.Level2)
+{
+    auto rsContext = std::make_shared<RSContext>();
+    auto appNode = std::make_shared<RSSurfaceRenderNode>(0, rsContext->weak_from_this());
+    ASSERT_NE(appNode, nullptr);
+    appNode->InitRenderParams();
+
+    auto visitor = std::make_shared<RSUniRenderVisitor>();
+    ASSERT_NE(visitor, nullptr);
+    visitor->PrepareRootNodeOffscreen(*appNode);
+
+    NodeId rootNodeId = static_cast<NodeId>(1);
+    auto rootNode = std::make_shared<RSRootRenderNode>(rootNodeId, rsContext->weak_from_this());
+    ASSERT_NE(rootNode, nullptr);
+
+    RSMainThread::Instance()->GetContext().GetMutableNodeMap().RegisterRenderNode(rootNode);
+    NodeId canvasNodeId = static_cast<NodeId>(2);
+    auto canvasNode = std::make_shared<RSCanvasRenderNode>(canvasNodeId, rsContext->weak_from_this());
+    ASSERT_NE(canvasNode, nullptr);
+
+    RSMainThread::Instance()->GetContext().GetMutableNodeMap().RegisterRenderNode(canvasNode);
+    visitor->linkedNodeMap_[rootNodeId] = canvasNodeId;
+    visitor->PrepareRootNodeOffscreen(*appNode);
+}
 } // OHOS::Rosen

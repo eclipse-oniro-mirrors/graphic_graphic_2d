@@ -23,6 +23,7 @@
 #include "recording/recording_canvas.h"
 #include "memory/rs_memory_track.h"
 #include "memory/rs_tag_tracker.h"
+#include "params/rs_render_params.h"
 #include "pipeline/rs_paint_filter_canvas.h"
 #include "property/rs_properties_painter.h"
 #include "render/rs_blur_filter.h"
@@ -288,6 +289,32 @@ void RSCanvasRenderNode::SetHDRPresent(bool hasHdrPresent)
 bool RSCanvasRenderNode::GetHDRPresent() const
 {
     return hasHdrPresent_;
+}
+
+void RSCanvasRenderNode::SetLinkedRootNodeId(NodeId rootNodeId)
+{
+    if (rootNodeId == linkedRootNodeId_) {
+        return;
+    }
+
+    linkedRootNodeId_ = rootNodeId;
+}
+
+NodeId RSCanvasRenderNode::GetLinkedRootNodeId() const
+{
+    return linkedRootNodeId_;
+}
+
+void RSCanvasRenderNode::SetLinkedRootNodeDrawable(DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr drawable)
+{
+    if (stagingRenderParams_ == nullptr) {
+        RS_LOGE("RSCanvasRenderNode::SetLinkedRootNodeDrawable stagingRenderParams is nullptr");
+        return;
+    }
+    stagingRenderParams_->SetLinkedRootNodeDrawable(drawable);
+    stagingRenderParams_->SetShouldPaint(true);
+    stagingRenderParams_->SetContentEmpty(false);
+    AddToPendingSyncList();
 }
 
 } // namespace Rosen

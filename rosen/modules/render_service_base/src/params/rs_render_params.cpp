@@ -516,6 +516,10 @@ void RSRenderParams::OnSync(const std::unique_ptr<RSRenderParams>& target)
     target->isCrossNodeOffscreenOn_ = isCrossNodeOffscreenOn_;
     target->absRotation_ = absRotation_;
     target->hasUnobscuredUEC_ = hasUnobscuredUEC_;
+    target->needOffscreen_ = needOffscreen_;
+    target->linkedRootNodeDrawable_ = linkedRootNodeDrawable_;
+    target->needSwapBuffer_ = needSwapBuffer_;
+    target->cacheNodeFrameRect_ = cacheNodeFrameRect_;
     needSync_ = false;
 }
 
@@ -611,5 +615,58 @@ DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr RSRenderParams::GetCloneSourceD
 void RSRenderParams::SetCloneSourceDrawable(DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr drawable)
 {
     cloneSourceDrawable_ = drawable;
+}
+
+void RSRenderParams::SetNeedOffscreen(bool needOffscreen)
+{
+    if (needOffscreen_ == needOffscreen) {
+        return;
+    }
+    needOffscreen_ = needOffscreen;
+    needSync_ = true;
+}
+
+bool RSRenderParams::GetNeedOffscreen() const
+{
+    return needOffscreen_;
+}
+
+void RSRenderParams::SetLinkedRootNodeDrawable(DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr drawable)
+{
+    linkedRootNodeDrawable_ = drawable;
+    needSync_ = true;
+}
+
+DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr RSRenderParams::GetLinkedRootNodeDrawable()
+{
+    return linkedRootNodeDrawable_;
+}
+
+void RSRenderParams::SetNeedSwapBuffer(bool needSwapBuffer)
+{
+    if (needSwapBuffer_ == needSwapBuffer) {
+        return;
+    }
+    needSwapBuffer_ = needSwapBuffer;
+    needSync_ = true;
+}
+
+bool RSRenderParams::GetNeedSwapBuffer() const
+{
+    return needSwapBuffer_;
+}
+
+void RSRenderParams::SetCacheNodeFrameRect(const Drawing::RectF& cacheNodeFrameRect)
+{
+    if (cacheNodeFrameRect_ == cacheNodeFrameRect) {
+        return;
+    }
+    cacheNodeFrameRect_ = cacheNodeFrameRect;
+    needSync_ = true;
+}
+
+const Drawing::RectF& RSRenderParams::GetCacheNodeFrameRect() const
+{
+    return cacheNodeFrameRect_;
 }
 } // namespace OHOS::Rosen

@@ -1285,7 +1285,7 @@ public:
     void SetSkipDraw(bool skip);
     bool GetSkipDraw() const;
     void SetHidePrivacyContent(bool needHidePrivacyContent);
-    void SetNeedOffscreen(bool needOffscreen);
+    void SetNeedOffscreen(bool needOffscreen) override;
     void SetSdrNit(float sdrNit);
     void SetDisplayNit(float displayNit);
     void SetBrightnessRatio(float brightnessRatio);

@@ -593,5 +593,10 @@ bool RSSystemProperties::GetOptimizeHwcComposeAreaEnabled()
 {
     return true;
 }
+
+bool RSSystemProperties::GetSurfaceOffscreenEnadbled()
+{
+    return true;
+}
 } // namespace Rosen
 } // namespace OHOS

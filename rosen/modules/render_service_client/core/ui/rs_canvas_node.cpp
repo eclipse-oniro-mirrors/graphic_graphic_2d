@@ -63,6 +63,12 @@ RSCanvasNode::RSCanvasNode(bool isRenderServiceNode, bool isTextureExportNode)
     tid_ = gettid();
 }
 
+RSCanvasNode::RSCanvasNode(bool isRenderServiceNode, NodeId id, bool isTextureExportNode)
+    : RSNode(isRenderServiceNode, id, isTextureExportNode)
+{
+    tid_ = gettid();
+}
+
 RSCanvasNode::~RSCanvasNode()
 {
     CheckThread();
@@ -227,5 +233,50 @@ void RSCanvasNode::CheckThread()
         ROSEN_LOGE("RSCanvasNode::CheckThread Must be called on same thread");
     }
 }
+
+void RSCanvasNode::SetLinkedRootNodeId(NodeId rootNodeId)
+{
+    auto transactionProxy = RSTransactionProxy::GetInstance();
+    if (transactionProxy == nullptr) {
+        ROSEN_LOGE("RSCanvasNode::SetLinkedRootNodeId transactionProxy is nullptr");
+        return;
+    }
+
+    ROSEN_LOGI("RSCanvasNode::SetLinkedRootNodeId nodeId: %{public}" PRIu64 ", rootNode: %{public}" PRIu64 "",
+         GetId(), rootNodeId);
+    std::unique_ptr<RSCommand> command =
+        std::make_unique<RSCanvasNodeSetLinkedRootNodeId>(GetId(), rootNodeId);
+    transactionProxy->AddCommand(command, true);
+}
+
+bool RSCanvasNode::Marshalling(Parcel& parcel) const
+{
+    return parcel.WriteUint64(GetId()) && parcel.WriteBool(IsRenderServiceNode());
+}
+
+RSCanvasNode::SharedPtr RSCanvasNode::Unmarshalling(Parcel& parcel)
+{
+    uint64_t id = UINT64_MAX;
+    bool isRenderServiceNode = false;
+    if (!(parcel.ReadUint64(id) && parcel.ReadBool(isRenderServiceNode))) {
+        ROSEN_LOGE("RSCanvasNode::Unmarshalling, read param failed");
+        return nullptr;
+    }
+
+    if (auto prevNode = RSNodeMap::Instance().GetNode(id)) {
+        RS_LOGW("RSCanvasNode::Unmarshalling, the node id is already in the map");
+        // if the node id is already in the map, we should not create a new node
+        return prevNode->ReinterpretCastTo<RSCanvasNode>();
+    }
+
+    SharedPtr canvasNode(new RSCanvasNode(isRenderServiceNode, id));
+    RSNodeMap::MutableInstance().RegisterNode(canvasNode);
+
+    // for nodes constructed by unmarshalling, we should not destroy the corresponding render node on destruction
+    canvasNode->skipDestroyCommandInDestructor_ = true;
+
+    return canvasNode;
+}
+
 } // namespace Rosen
 } // namespace OHOS

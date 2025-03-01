@@ -80,5 +80,12 @@ void RSCanvasNodeCommandHelper::SetHDRPresent(RSContext& context, NodeId nodeId,
     }
 }
 
+void RSCanvasNodeCommandHelper::SetLinkedRootNodeId(RSContext& context, NodeId nodeId, NodeId rootNodeId)
+{
+    if (auto node = context.GetNodeMap().GetRenderNode<RSCanvasRenderNode>(nodeId)) {
+        node->SetLinkedRootNodeId(rootNodeId);
+    }
+}
+
 } // namespace Rosen
 } // namespace OHOS

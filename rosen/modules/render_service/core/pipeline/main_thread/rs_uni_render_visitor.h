@@ -337,6 +337,8 @@ private:
     void CheckIsGpuOverDrawBufferOptimizeNode(RSSurfaceRenderNode& node);
     void MarkBlurIntersectWithDRM(std::shared_ptr<RSRenderNode> node) const;
 
+    void PrepareRootNodeOffscreen(RSSurfaceRenderNode& surfaceNode);
+
     // Used for closing HDR in PC multidisplay becauseof performance and open when singledisplay
     void SetHdrWhenMultiDisplayChange();
 
@@ -471,6 +473,9 @@ private:
     bool isDumpRsTreeDetailEnabled_ = false;
     uint32_t nodePreparedSeqNum_ = 0;
     uint32_t nodePostPreparedSeqNum_ = 0;
+
+    // <key: linked node, value: source node id>. Used for PC window resize scene
+    std::unordered_map<NodeId, NodeId> linkedNodeMap_;
 };
 } // namespace Rosen
 } // namespace OHOS
