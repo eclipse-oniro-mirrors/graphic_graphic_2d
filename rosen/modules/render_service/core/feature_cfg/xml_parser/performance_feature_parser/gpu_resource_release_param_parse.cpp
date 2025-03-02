@@ -60,7 +60,7 @@ int32_t DeeplyRelGpuResParamParse::ParseDeeplyRelGpuResInternal(FeatureParamMapT
         bool isEnabled = ParseFeatureSwitch(val);
         if (name == "DeeplyReleaseGpuResourceEnabled") {
             deeplyRelGpuResParam_->SetDeeplyRelGpuResEnable(isEnabled);
-            RS_LOGI("DeeplyRelGpuResParamParse parse DeeplyReleaseGpuResourceEnabled %{public}d", 
+            RS_LOGI("DeeplyRelGpuResParamParse parse DeeplyReleaseGpuResourceEnabled %{public}d",
                 deeplyRelGpuResParam_->IsDeeplyRelGpuResEnable());
         }
     }

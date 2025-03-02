@@ -60,15 +60,15 @@ int32_t SOCPerfParamParse::ParseSOCPerfInternal(FeatureParamMapType &featureMap,
         bool isEnabled = ParseFeatureSwitch(val);
         if (name == "MultilayersSocperfEnabled") {
             socPerfParam_->SetMultilayersSOCPerfEnable(isEnabled);
-            RS_LOGI("SOCPerfParamParse parse MultilayersSocperfEnabled %{public}d", 
+            RS_LOGI("SOCPerfParamParse parse MultilayersSocperfEnabled %{public}d",
                 socPerfParam_->IsMultilayersSOCPerfEnable());
         } else if (name == "UnlockSocperfEnabled") {
             socPerfParam_->SetUnlockSOCPerfEnable(isEnabled);
-            RS_LOGI("SOCPerfParamParse parse UnlockSocperfEnabled %{public}d", 
+            RS_LOGI("SOCPerfParamParse parse UnlockSocperfEnabled %{public}d",
                 socPerfParam_->IsUnlockSOCPerfEnable());
         } else if (name == "BlurSocperfEnabled") {
             socPerfParam_->SetBlurSOCPerfEnable(isEnabled);
-            RS_LOGI("SOCPerfParamParse parse BlurSocperfEnabled %{public}d", 
+            RS_LOGI("SOCPerfParamParse parse BlurSocperfEnabled %{public}d",
                 socPerfParam_->IsBlurSOCPerfEnable());
         }
     }
