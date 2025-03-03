@@ -147,22 +147,9 @@ void HgmFrameRateManager::Init(sptr<VSyncController> rsController,
     InitTouchManager();
     hgmCore.SetLtpoConfig();
     multiAppStrategy_.CalcVote();
-    appPageUrlStrategy_.RegisterPageUrlVoterCallback([this] (int32_t pid,
+    appPageUrlStrategy_.RegisterPageUrlVoterCallback([this] (pid_t pid,
         std::string strategy, const bool isAddVoter) {
-        if (isAddVoter) {
-            auto configData = HgmCore::Instance().GetPolicyConfigData();
-            if (configData != nullptr &&
-                configData->strategyConfigs_.find(strategy) != configData->strategyConfigs_.end()) {
-                auto min = static_cast<uint32_t>(configData->strategyConfigs_[strategy].min);
-                auto max = static_cast<uint32_t>(configData->strategyConfigs_[strategy].max);
-                DeliverRefreshRateVote({"VOTER_PAGE_URL", min, max, pid}, ADD_VOTE);
-            }
-            if (pid != DEFAULT_PID) {
-                cleanPidCallback_[pid].insert(CleanPidCallbackType::PAGE_URL);
-            }
-        } else {
-            DeliverRefreshRateVote({"VOTER_PAGE_URL", 0, 0, pid}, REMOVE_VOTE);
-        }
+        ProcessPageUrlVote(pid, strategy, isAddVoter);
     });
 }
 
@@ -1875,6 +1862,24 @@ void HgmFrameRateManager::SetChangeGeneratorRateValid(bool valid)
         changeGeneratorRateValidTimer_.Start();
     }
 }
+
+void HgmFrameRateManager::ProcessPageUrlVote(pid_t pid, std::string strategy, const bool isAddVoter)
+{
+    if (isAddVoter) {
+        PolicyConfigData::StrategyConfig strategyConfig;
+        if (multiAppStrategy_.GetStrategyConfig(strategy, strategyConfig)) {
+            auto min = strategyConfig.min;
+            auto max = strategyConfig.max;
+            DeliverRefreshRateVote({"VOTER_PAGE_URL", min, max, pid}, ADD_VOTE);
+        }
+        if (pid != DEFAULT_PID) {
+            cleanPidCallback_[pid].insert(CleanPidCallbackType::PAGE_URL);
+        }
+    } else {
+        DeliverRefreshRateVote({"VOTER_PAGE_URL", 0, 0, pid}, REMOVE_VOTE);
+    }
+}
+
 void HgmFrameRateManager::CleanPageUrlVote(pid_t pid)
 {
     DeliverRefreshRateVote({"VOTER_PAGE_URL", 0, 0, pid}, REMOVE_VOTE);
