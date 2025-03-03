@@ -1987,9 +1987,9 @@ void RSUniRenderUtil::DealWithScalingMode(RSSurfaceRenderNode& node, const Drawi
         std::swap(bufferWidth, bufferHeight);
     }
     Drawing::Matrix gravityMatrix;
-    Drawing::Matrix rawScalingModeMatrix;
     RSPropertiesPainter::GetGravityMatrix(frameGravity,
         {0.f, 0.f, boundsWidth, boundsHeight}, bufferWidth, bufferHeight, gravityMatrix);
+    Drawing::Matrix rawScalingModeMatrix;
     RSPropertiesPainter::GetScalingModeMatrix(scalingMode,
         {0.f, 0.f, boundsWidth, boundsHeight}, bufferWidth, bufferHeight, rawScalingModeMatrix);
     Drawing::Rect rawSrcRect;
@@ -2003,7 +2003,7 @@ void RSUniRenderUtil::DealWithScalingMode(RSSurfaceRenderNode& node, const Drawi
     float xTranslate = (bufferWidth - adjustedSrcRect.GetWidth()) / 2.0f;
     float yTranslate = (bufferHeight - adjustedSrcRect.GetHeight()) / 2.0f;
     scalingModeMatrix.PostTranslate(xTranslate, yTranslate);
-    RSUniRenderUtil::UpdateHwcNodeByScalingMode(node, totalMatrix, gravityMatrix, scalingModeMatrix);
+    UpdateHwcNodeByScalingMode(node, totalMatrix, gravityMatrix, scalingModeMatrix);
 }
 
 void RSUniRenderUtil::UpdateHwcNodeByScalingMode(RSSurfaceRenderNode& node, const Drawing::Matrix& totalMatrix,
