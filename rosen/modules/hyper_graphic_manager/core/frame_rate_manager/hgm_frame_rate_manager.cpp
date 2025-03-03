@@ -142,8 +142,9 @@ void HgmFrameRateManager::Init(sptr<VSyncController> rsController,
     RegisterCoreCallbacksAndInitController(rsController, appController, vsyncGenerator);
     multiAppStrategy_.RegisterStrategyChangeCallback([this] (const PolicyConfigData::StrategyConfig& strategy) {
         DeliverRefreshRateVote({"VOTER_PACKAGES", strategy.min, strategy.max}, ADD_VOTE);
+        idleFps_ = strategy.idleFps;
+        HandleIdleEvent(true);
     });
-    InitRsIdleTimer();
     InitTouchManager();
     hgmCore.SetLtpoConfig();
     multiAppStrategy_.CalcVote();
@@ -191,35 +192,6 @@ void HgmFrameRateManager::RegisterCoreCallbacksAndInitController(sptr<VSyncContr
     });
 
     controller_ = std::make_shared<HgmVSyncGeneratorController>(rsController, appController, vsyncGenerator);
-}
-
-void HgmFrameRateManager::InitRsIdleTimer()
-{
-    SetShowRefreshRateEnabled(false);
-
-    auto resetTask = [this] () {
-        PolicyConfigData::StrategyConfig strategy;
-        multiAppStrategy_.GetVoteRes(strategy);
-        minIdleFps_ = static_cast<int32_t>(OLED_60_HZ);
-        idleFps_ = std::max(strategy.min, minIdleFps_);
-        HandleIdleEvent(true);
-    };
-    auto timeoutTask = [this] () {
-        PolicyConfigData::StrategyConfig strategy;
-        multiAppStrategy_.GetVoteRes(strategy);
-        if (minIdleFps_ != strategy.idleFps) {
-            minIdleFps_ = strategy.idleFps;
-            idleFps_ = std::max(minIdleFps_, strategy.min);
-            HandleIdleEvent(true);
-            curSkipCount_ = 0;
-        }
-    };
-
-    static std::once_flag createFlag;
-    std::call_once(createFlag, [this, resetTask, timeoutTask] () {
-        rsIdleTimer_ = std::make_unique<HgmSimpleTimer>("rs_idle_timer",
-            std::chrono::milliseconds(RS_IDLE_TIMEOUT_MS), resetTask, timeoutTask);
-    });
 }
 
 void HgmFrameRateManager::InitTouchManager()
@@ -408,7 +380,7 @@ void HgmFrameRateManager::UniProcessDataForLtpo(uint64_t timestamp,
 void HgmFrameRateManager::UpdateSoftVSync(bool followRs)
 {
     auto& hgmCore = HgmCore::Instance();
-    if (!hgmCore.IsLTPOSwitchOn() || rsFrameRateLinker_ == nullptr) {
+    if (rsFrameRateLinker_ == nullptr) {
         return;
     }
     Reset();
@@ -1168,26 +1140,8 @@ void HgmFrameRateManager::UpdateScreenFrameRate()
     }
 }
 
-void HgmFrameRateManager::SetShowRefreshRateEnabled(bool enable)
-{
-    // Each time rsIdleTimer_ vote the idleFps by config, hgm will call forceUpdateCallback_, which lead to Reset of
-    // rsIdleTimer_, so the idleFps will be update(to 60hz at least) soon by rsIdleTimer_. With no new frame update
-    // for RS_IDLE_TIMEOUT_MS, rsIdleTimer_ will vote the idleFps by config again. To avoid entering this loop,
-    // rsIdleTimer_ should filter the RS frame.
-    // 1: the RefreshRate Change Request lead to 1 frame update.
-    constexpr int countToUpdateScreenRefreshRate = 0;
-    // 2: when ShowRefreshRate enabled, the change of RefreshRate need to update displayed value by 1 more update
-    constexpr int countToUpdateDisplayedFpsValue = 1;
-    skipFrame_ = enable ? countToUpdateDisplayedFpsValue : countToUpdateScreenRefreshRate;
-}
-
 void HgmFrameRateManager::HandleRsFrame()
 {
-    if (curSkipCount_ < skipFrame_) {
-        curSkipCount_++;
-    } else if (rsIdleTimer_) {
-        rsIdleTimer_->Start();
-    }
     touchManager_.HandleRsFrame();
     pointerManager_.HandleRsFrame();
 }
@@ -1460,14 +1414,16 @@ bool HgmFrameRateManager::MergeLtpo2IdleVote(
             continue;
         }
         if (curVoteInfo.voterName == "VOTER_VIDEO") {
+            std::string voterPkgName = "";
             auto foregroundPidApp = multiAppStrategy_.GetForegroundPidApp();
-            if (foregroundPidApp.find(curVoteInfo.pid) == foregroundPidApp.end()) {
-                ProcessVoteLog(curVoteInfo, true);
-                continue;
+            if (foregroundPidApp.find(curVoteInfo.pid) != foregroundPidApp.end()) {
+                voterPkgName = foregroundPidApp[curVoteInfo.pid].second;
+            } else if (auto pkgs = multiAppStrategy_.GetPackages(); !pkgs.empty()) { // Get the current package name
+                voterPkgName = std::get<0>(HgmMultiAppStrategy::AnalyzePkgParam(pkgs.front()));
             }
             auto configData = HgmCore::Instance().GetPolicyConfigData();
-            if (configData != nullptr && configData->videoFrameRateList_.find(
-                foregroundPidApp[curVoteInfo.pid].second) == configData->videoFrameRateList_.end()) {
+            if (configData != nullptr &&
+                configData->videoFrameRateList_.find(voterPkgName) == configData->videoFrameRateList_.end()) {
                 ProcessVoteLog(curVoteInfo, true);
                 continue;
             }
