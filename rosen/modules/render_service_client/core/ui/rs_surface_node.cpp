@@ -957,9 +957,6 @@ bool RSSurfaceNode::GetSkipDraw() const
 void RSSurfaceNode::SetWatermarkEnabled(const std::string& name, bool isEnabled)
 {
 #ifdef ROSEN_OHOS
-    if (!RSSystemProperties::IsPcType()) {
-        return;
-    }
     if (name.empty() || name.length() > WATERMARK_NAME_LENGTH_LIMIT) {
         ROSEN_LOGE("SetWatermarkEnabled name[%{public}s] is error.", name.c_str());
         return;

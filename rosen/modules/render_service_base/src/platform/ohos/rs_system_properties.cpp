@@ -960,11 +960,7 @@ int RSSystemProperties::WatchSystemProperty(const char* name, OnSystemPropertyCh
 
 bool RSSystemProperties::GetSnapshotWithDMAEnabled()
 {
-    static bool isSupportDma = (system::GetParameter("const.product.devicetype", "pc") == "phone" ||
-        system::GetParameter("const.product.devicetype", "pc") == "tablet" ||
-        system::GetParameter("const.product.devicetype", "pc") == "pc" ||
-        system::GetParameter("const.product.devicetype", "pc") == "2in1") &&
-        system::GetBoolParameter("rosen.snapshotDma.enabled", true);
+    static bool isSupportDma = system::GetBoolParameter("rosen.snapshotDma.enabled", true);
     return isSupportDma;
 }
 

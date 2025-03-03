@@ -46,6 +46,7 @@
 #include "feature/uifirst/rs_sub_thread_manager.h"
 #endif
 #include "feature/uifirst/rs_uifirst_manager.h"
+#include "feature_cfg/graphic_feature_param_manager.h"
 #include "pipeline/rs_canvas_drawing_render_node.h"
 #include "pipeline/rs_pointer_window_manager.h"
 #ifdef OHOS_BUILD_ENABLE_MAGICCURSOR
@@ -606,6 +607,10 @@ int32_t RSRenderServiceConnection::SetFocusAppInfo(
 bool RSRenderServiceConnection::SetWatermark(const std::string& name, std::shared_ptr<Media::PixelMap> watermark)
 {
     if (!mainThread_) {
+        return false;
+    }
+    if (GetFeatureParamValue("SurfaceWatermarkConfig",
+        SurfaceWatermarkParam::IsSurfaceWatermarkEnable).value_or(false)) {
         return false;
     }
     mainThread_->SetWatermark(name, watermark);
