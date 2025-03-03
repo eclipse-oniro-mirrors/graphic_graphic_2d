@@ -525,7 +525,7 @@ void RSScreenManager::ProcessScreenHotPlugEvents()
         for (auto &cb : screenChangeCallbacks_) {
             if (!isHwcDead_) {
                 cb->OnScreenChanged(id, ScreenEvent::CONNECTED);
-            } else if (id != 0 && RSMainThread::Instance()->GetDeviceType() == DeviceType::PC) {
+            } else if (id != 0 && RSSystemProperties::IsPcType()) {
                 cb->OnScreenChanged(id, ScreenEvent::CONNECTED, ScreenChangeReason::HWCDEAD);
             }
         }
