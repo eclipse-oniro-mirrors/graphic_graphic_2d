@@ -734,7 +734,7 @@ size_t DrawCmdList::GetSize()
     return totoalSize;
 }
 
-void SetCanvasDrawingOpLimitEnable(bool isEnable)
+void DrawCmdList::SetCanvasDrawingOpLimitEnable(bool isEnable)
 {
     isCanvasDrawingOpLimitEnabled_ = isEnable;
 }
