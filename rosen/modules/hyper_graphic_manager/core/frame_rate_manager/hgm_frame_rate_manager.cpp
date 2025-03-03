@@ -151,9 +151,9 @@ void HgmFrameRateManager::Init(sptr<VSyncController> rsController,
         std::string strategy, const bool isAddVoter) {
         if (isAddVoter) {
             auto configData = HgmCore::Instance().GetPolicyConfigData();
-            if (configData->strategyConfig_.find(strategy) != configData->strategyConfig_.end()) {
-                auto min = static_cast<uint32_t>(configData->strategyConfig_[strategy].min);
-                auto max = static_cast<uint32_t>(configData->strategyConfig_[strategy].max);
+            if (configData->strategyConfigs_.find(strategy) != configData->strategyConfigs_.end()) {
+                auto min = static_cast<uint32_t>(configData->strategyConfigs_[strategy].min);
+                auto max = static_cast<uint32_t>(configData->strategyConfigs_[strategy].max);
                 DeliverRefreshRateVote({"VOTER_PAGE_URL", min, max, pid}, ADD_VOTE);
             }
             if (pid != DEFAULT_PID) {
