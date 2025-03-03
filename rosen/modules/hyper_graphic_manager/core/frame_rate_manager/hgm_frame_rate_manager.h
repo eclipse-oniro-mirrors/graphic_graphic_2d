@@ -165,7 +165,6 @@ public:
 
     // called by RSHardwareThread
     void HandleRsFrame();
-    void SetShowRefreshRateEnabled(bool enable);
     bool IsLtpo() const { return isLtpo_; };
     bool IsAdaptive() const { return isAdaptive_.load(); };
     // called by RSMainThread
@@ -279,7 +278,6 @@ private:
     static void ProcessVoteLog(const VoteInfo& curVoteInfo, bool isSkip);
     void RegisterCoreCallbacksAndInitController(sptr<VSyncController> rsController,
         sptr<VSyncController> appController, sptr<VSyncGenerator> vsyncGenerator);
-    void InitRsIdleTimer();
     // vrate voting to hgm linkerId means that frameLinkerid, appFrameRate means that vrate
     void CollectVRateChange(uint64_t linkerId, FrameRateRange& appFrameRate);
     void SetGameNodeName(std::string nodeName)
@@ -337,11 +335,6 @@ private:
     bool isAmbientEffect_ = false;
     int32_t stylusMode_ = -1;
     int32_t idleFps_ = OLED_60_HZ;
-    int32_t minIdleFps_ = OLED_60_HZ;
-    // rsIdleTimer_ skip rsFrame(see in SetShowRefreshRateEnabled), default value is 1 while ShowRefreshRate disabled
-    std::atomic<int32_t> skipFrame_ = 1;
-    std::atomic<int32_t> curSkipCount_ = 0xFF;
-    std::unique_ptr<HgmSimpleTimer> rsIdleTimer_ = nullptr;
     VoteInfo lastVoteInfo_;
     HgmMultiAppStrategy multiAppStrategy_;
     HgmTouchManager touchManager_;
