@@ -34,6 +34,7 @@ const std::vector<std::string> FEATURE_CONFIGS = {
     "OPIncConfig",
     "PrevalidateConfig",
     "UIFirstConfig",
+    "DvsyncConfig",
     "SocperfConfig",
     "DeeplyReleaseGpuResourceConfig",
     "NodeGroupConfig",
@@ -42,6 +43,7 @@ const std::vector<std::string> FEATURE_CONFIGS = {
     "UICaptureConfig",
     "CaptureConfig",
     "BackgroundDrawableConfig",
+    "AccessibilityConfig"
 };
 
 enum FeatureModule {
@@ -55,6 +57,7 @@ enum FeatureModule {
     PREVALIDATE,
     UIFirst,
     FILTER,
+    DVSYNC,
     SOC_PERF,
     DEEPLY_REL_GPU_RES,
     NODE_GROUP,
@@ -63,6 +66,7 @@ enum FeatureModule {
     UI_CAPTURE,
     CAPTURE,
     BACKGROUND_DRAWABLE,
+    Accessibility,
 };
 
 enum ParseErrCode {

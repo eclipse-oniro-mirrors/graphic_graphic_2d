@@ -23,6 +23,8 @@
 #include "refbase.h"
 #include "xml_parser_base.h"
 
+#include "accessibility_param_parse.h"
+#include "accessibility_param.h"
 #include "background_drawable_param_parse.h"
 #include "background_drawable_param.h"
 #include "capture_base_param_parse.h"
@@ -49,6 +51,8 @@
 #include "uifirst_param.h"
 #include "filter_param_parse.h"
 #include "filter_param.h"
+#include "dvsync_param_parse.h"
+#include "dvsync_param.h"
 #include "socperf_param_parse.h"
 #include "socperf_param.h"
 #include "surface_watermark_param_parse.h"
@@ -86,6 +90,8 @@ const std::vector<ModuleConfig> FEATURE_MODULES = {
         [] {return std::make_unique<UIFirstParam>(); }},
     {FEATURE_CONFIGS[FILTER], [] { return std::make_unique<FilterParamParse>(); },
         [] { return std::make_unique<FilterParam>(); }},
+    {FEATURE_CONFIGS[DVSYNC], [] { return std::make_unique<DVSyncParamParse>(); },
+        [] { return std::make_unique<DVSyncParam>(); }},
     {FEATURE_CONFIGS[SOC_PERF], [] { return std::make_unique<SOCPerfParamParse>(); },
         [] { return std::make_unique<SOCPerfParam>(); }},
     {FEATURE_CONFIGS[DEEPLY_REL_GPU_RES], [] { return std::make_unique<DeeplyRelGpuResParamParse>(); },
@@ -102,6 +108,8 @@ const std::vector<ModuleConfig> FEATURE_MODULES = {
         [] {return std::make_unique<CaptureBaseParam>(); }},
     {FEATURE_CONFIGS[BACKGROUND_DRAWABLE], [] {return std::make_unique<BackgroundDrawableParamParse>(); },
         [] {return std::make_unique<BackgroundDrawableParam>(); }},
+    {FEATURE_CONFIGS[Accessibility], [] {return std::make_unique<AccessibilityParamParse>(); },
+        [] {return std::make_unique<AccessibilityParam>(); }},
 };
 
 class GraphicFeatureParamManager : public RefBase {
