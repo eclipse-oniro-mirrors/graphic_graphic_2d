@@ -45,7 +45,7 @@ namespace OHOS {
 namespace Rosen {
 static std::mutex drawingMutex_;
 namespace {
-    constexpr uint32_t DRAWCMDLIST_COUNT_LIMIT = 500;
+constexpr uint32_t DRAWCMDLIST_COUNT_LIMIT = 500;
 }
 RSCanvasDrawingRenderNode::RSCanvasDrawingRenderNode(
     NodeId id, const std::weak_ptr<RSContext>& context, bool isTextureExportNode)
@@ -573,6 +573,7 @@ void RSCanvasDrawingRenderNode::AddDirtyType(RSModifierType modifierType)
             continue;
         }
 
+        cmd->SetCanvasDrawingOpLimitEnable(true);
         drawCmdLists_[modifierType].emplace_back(cmd);
         SetNeedProcess(true);
     }

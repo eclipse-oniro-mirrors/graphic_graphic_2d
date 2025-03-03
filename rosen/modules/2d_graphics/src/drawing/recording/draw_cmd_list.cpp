@@ -568,7 +568,7 @@ void DrawCmdList::PlaybackByVector(Canvas& canvas, const Rect* rect)
     }
     uint32_t opCount = 0;
     for (auto op : drawOpItems_) {
-        if (opCount > DRAWCMDLIST_OPSIZE_COUNT_LIMIT) {
+        if (isCanvasDrawingOpLimitEnabled_ && opCount > DRAWCMDLIST_OPSIZE_COUNT_LIMIT) {
             LOGE("DrawCmdList::PlaybackByVector Out of DrawOp limit, DrawOpCount: %{public}d", opCount);
             break;
         }
@@ -610,7 +610,7 @@ void DrawCmdList::PlaybackByBuffer(Canvas& canvas, const Rect* rect)
     }
     uint32_t opCount = 0;
     for (auto op : drawOpItems_) {
-        if (opCount > DRAWCMDLIST_OPSIZE_COUNT_LIMIT) {
+        if (isCanvasDrawingOpLimitEnabled_ && opCount > DRAWCMDLIST_OPSIZE_COUNT_LIMIT) {
             LOGE("DrawCmdList::PlaybackByBuffer Out of DrawOp limit, DrawOpCount: %{public}d", opCount);
             break;
         }
@@ -732,6 +732,11 @@ size_t DrawCmdList::GetSize()
         }
     }
     return totoalSize;
+}
+
+void SetCanvasDrawingOpLimitEnable(bool isEnable)
+{
+    isCanvasDrawingOpLimitEnabled_ = isEnable;
 }
 } // namespace Drawing
 } // namespace Rosen
