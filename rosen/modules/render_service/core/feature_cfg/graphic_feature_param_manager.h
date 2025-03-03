@@ -43,6 +43,8 @@
 #include "uifirst_param.h"
 #include "filter_param_parse.h"
 #include "filter_param.h"
+#include "dvsync_param_parse.h"
+#include "dvsync_param.h"
 
 namespace OHOS::Rosen {
 struct ModuleConfig {
@@ -70,6 +72,8 @@ const std::vector<ModuleConfig> FEATURE_MODULES = {
         [] {return std::make_unique<UIFirstParam>(); }},
     {FEATURE_CONFIGS[FILTER], [] { return std::make_unique<FilterParamParse>(); },
         [] { return std::make_unique<FilterParam>(); }},
+    {FEATURE_CONFIGS[DVSYNC], [] { return std::make_unique<DVSyncParamParse>(); },
+        [] { return std::make_unique<DVSyncParam>(); }},
 };
 
 class GraphicFeatureParamManager : public RefBase {
