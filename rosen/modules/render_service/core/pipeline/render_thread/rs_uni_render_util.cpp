@@ -1773,8 +1773,8 @@ void RSUniRenderUtil::DealWithNodeGravity(RSSurfaceRenderNode& node, const Drawi
     inverseGravityMatrix.MapRect(newSrcRect, newSrcRect);
     if (consumerTransformType == GraphicTransformType::GRAPHIC_ROTATE_90 ||
         consumerTransformType == GraphicTransformType::GRAPHIC_ROTATE_270) {
-        std::swap(localIntersectRect.left_, localIntersectRect.top_);
-        std::swap(localIntersectRect.right_, localIntersectRect.bottom_);
+        std::swap(newSrcRect.left_, newSrcRect.top_);
+        std::swap(newSrcRect.right_, newSrcRect.bottom_);
     }
     newSrcRect = CalcSrcRectByBufferRotation(*buffer, consumerTransformType, newSrcRect);
     node.SetSrcRect({newSrcRect.GetLeft(), newSrcRect.GetTop(), newSrcRect.GetWidth(), newSrcRect.GetHeight()});
