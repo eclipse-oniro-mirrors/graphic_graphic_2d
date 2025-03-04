@@ -97,6 +97,16 @@ DirtyRegionDebugType RSSystemProperties::GetDirtyRegionDebugType()
     return {};
 }
 
+AdvancedDirtyRegionType RSSystemProperties::GetAdvancedDirtyRegionEnabled()
+{
+    return {};
+}
+
+DirtyAlignType RSSystemProperties::GetDirtyAlignEnabled()
+{
+    return {};
+}
+
 PartialRenderType RSSystemProperties::GetPartialRenderEnabled()
 {
     return {};
