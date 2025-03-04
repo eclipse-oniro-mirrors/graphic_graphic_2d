@@ -104,6 +104,7 @@
       *HgmFrameRateManager::UpdateSurfaceTime*;
       *HgmFrameRateManager::UpdateUIFrameworkDirtyNodes*;
       *HgmFrameRateManager::UpdateVoteRule*;
+      *HgmFrameRateManager::UpdateSoftVSync*;
 
       *HgmHfbcConfig::HandleHfbcConfig*;
 
@@ -112,6 +113,7 @@
       *HgmIdleDetector::SetAceAnimatorIdleState*;
       *HgmIdleDetector::SetAppSupportedState*;
       *HgmIdleDetector::UpdateSurfaceTime*;
+      *HgmIdleDetector::UpdateSurfaceState*;
 
       *HgmMultiAppStrategy::AnalyzePkgParam*;
       *HgmMultiAppStrategy::CalcVote*;
