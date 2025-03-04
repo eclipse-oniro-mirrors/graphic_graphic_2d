@@ -2455,7 +2455,8 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
         isAccessibilityConfigChanged_ = false;
         isCurtainScreenUsingStatusChanged_ = false;
         RSPointLightManager::Instance()->PrepareLight();
-        vsyncControlEnabled_ = (deviceType_ == DeviceType::PC) && RSSystemParameters::GetVSyncControlEnabled();
+        vsyncControlEnabled_ = rsVsyncRateReduceManager_.GetVRateDeviceSupport()
+                               && RSSystemParameters::GetVSyncControlEnabled();
         systemAnimatedScenesEnabled_ = RSSystemParameters::GetSystemAnimatedScenesEnabled();
         if (RSSystemProperties::GetGpuApiType() != GpuApiType::DDGR) {
             WaitUntilUploadTextureTaskFinished(isUniRender_);
@@ -2901,7 +2902,8 @@ void RSMainThread::CalcOcclusionImplementation(const std::shared_ptr<RSDisplayRe
     for (auto it = curAllSurfaces.rbegin(); it != curAllSurfaces.rend(); ++it) {
         auto curSurface = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(*it);
         if (curSurface && !curSurface->IsLeashWindow()) {
-            curSurface->SetOcclusionInSpecificScenes(deviceType_ == DeviceType::PC && !threeFingerScenesList_.empty());
+            curSurface->SetOcclusionInSpecificScenes(rsVsyncRateReduceManager_.GetVRateDeviceSupport()
+                                                    && !threeFingerScenesList_.empty());
             calculator(curSurface, true);
         }
     }
