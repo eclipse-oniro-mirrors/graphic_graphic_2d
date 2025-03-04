@@ -33,6 +33,7 @@
 #include "drawable/rs_render_node_drawable_adapter.h"
 #include "modifier/rs_modifier_type.h"
 #include "offscreen_render/rs_offscreen_render_thread.h"
+#include "parameters.h"
 #include "params/rs_render_params.h"
 #include "pipeline/rs_context.h"
 #include "pipeline/rs_display_render_node.h"
@@ -3536,8 +3537,9 @@ void RSRenderNode::MarkNodeGroup(NodeGroupType type, bool isNodeGroup, bool incl
     RS_LOGI_IF(DEBUG_NODE, "RSRenderNode::MarkNodeGP type:%{public}d isNodeGroup:%{public}d id:%{public}" PRIu64,
         type, isNodeGroup, GetId());
     if (isNodeGroup && type == NodeGroupType::GROUPED_BY_UI) {
+        bool isEnableFeature = system::GetBoolParameter("const.graphic.enable_grouped_by_ui", false);
         auto context = GetContext().lock();
-        if (context && context->GetNodeMap().IsResidentProcessNode(GetId()) && !RSSystemProperties::IsPcType()) {
+        if (context && context->GetNodeMap().IsResidentProcessNode(GetId()) && isEnableFeature) {
             nodeGroupType_ |= type;
             SetDirty();
 #ifdef RS_ENABLE_GPU

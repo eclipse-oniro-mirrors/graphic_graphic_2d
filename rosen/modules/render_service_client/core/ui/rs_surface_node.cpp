@@ -22,6 +22,7 @@
 #include "command/rs_node_command.h"
 #include "command/rs_surface_node_command.h"
 #include "ipc_callbacks/rs_rt_refresh_callback.h"
+#include "parameters.h"
 #include "pipeline/rs_node_map.h"
 #include "pipeline/rs_render_thread.h"
 #include "platform/common/rs_log.h"
@@ -894,7 +895,8 @@ void RSSurfaceNode::SetWatermarkEnabled(const std::string& name, bool isEnabled)
 #ifdef ROSEN_OHOS
     bool isEnableFeature = system::GetBoolParameter("const.graphic.enable_surface_watermark", false);
     if (!isEnableFeature) {
-        return false;
+        ROSEN_LOGE("surface watermark is not an enabled feature.");
+        return;
     }
     if (name.empty() || name.length() > WATERMARK_NAME_LENGTH_LIMIT) {
         ROSEN_LOGE("SetWatermarkEnabled name[%{public}s] is error.", name.c_str());

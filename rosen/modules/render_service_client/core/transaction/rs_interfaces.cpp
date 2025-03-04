@@ -18,6 +18,7 @@
 #include "rs_interfaces.h"
 #include "rs_trace.h"
 
+#include "parameters.h"
 #include "platform/common/rs_system_properties.h"
 #include "pipeline/rs_render_node.h"
 #include "pipeline/rs_surface_buffer_callback_manager.h"
