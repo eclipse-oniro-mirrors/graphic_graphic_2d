@@ -72,78 +72,7 @@ ohos_source_set("libtexgine_source") {
     "//build/config/compiler:rtti",
   ]
 
-    public_configs = [ ":libtexgine_public_config" ]
-
-    platform = current_os
-    if (platform == "mingw") {
-      platform = "windows"
-    }
-
-    public_deps = [ "texgine_drawing:libtexgine_drawing" ]
-
-    defines = []
-    if (is_arkui_x) {
-      defines += [ "CROSS_PLATFORM" ]
-      public_deps += [ "//third_party/jsoncpp:jsoncpp_static" ]
-    }
-    if (defined(use_rosen_drawing) && use_rosen_drawing) {
-      defines += [ "USE_ROSEN_DRAWING" ]
-      if (rs_enable_gpu) {
-        defines += [ "RS_ENABLE_GPU" ]
-      }
-    }
-    if (enable_text_gine) {
-      defines += [ "USE_GRAPHIC_TEXT_GINE" ]
-    }
-    if (is_arkui_x) {
-      deps = [ "//third_party/bounds_checking_function:libsec_static" ]
-      deps += [ "//third_party/cJSON:cjson_static" ]
-    } else {
-      external_deps = [
-        "bounds_checking_function:libsec_static",
-        "cJSON:cjson_static",
-      ]
-    }
-
-    if (platform == "ohos") {
-      defines += [
-        "BUILD_NON_SDK_VER",
-        "OHOS_TEXT_ENABLE",
-      ]
-
-      if (logger_enable_scope) {
-        defines += [ "LOGGER_ENABLE_SCOPE" ]
-      }
-
-      if (texgine_enable_debug_log) {
-        defines += [ "TEXGINE_ENABLE_DEBUGLOG" ]
-      }
-
-      external_deps += [
-        "c_utils:utils",
-        "hilog:libhilog",
-        "hitrace:hitrace_meter",
-        "icu:shared_icuuc",
-      ]
-    } else {
-      if (platform == "mac") {
-        defines += [ "BUILD_SDK_MAC" ]
-      }
-      if (platform == "android") {
-        defines += [ "BUILD_SDK_ANDROID" ]
-      }
-      if (platform == "ios") {
-        defines += [ "BUILD_SDK_IOS" ]
-      }
-    }
-  }
-
-  part_name = "graphic_2d"
-  subsystem_name = "graphic"
-}
-
-ohos_shared_library("libtexgine") {
-  deps = [ ":libtexgine_source" ]
+  public_configs = [ ":libtexgine_public_config" ]
 
   platform = current_os
   if (platform == "mingw") {
@@ -192,20 +121,11 @@ ohos_shared_library("libtexgine") {
       "c_utils:utils",
       "hilog:libhilog",
       "hitrace:hitrace_meter",
+      "icu:shared_icuuc",
     ]
-
-    public_deps += [ "$graphic_2d_root/rosen/build/icu:rosen_libicu_$platform" ]
   } else {
     if (platform == "mac") {
       defines += [ "BUILD_SDK_MAC" ]
-      public_deps += [
-        "$graphic_2d_root/rosen/build/harfbuzz:rosen_libharfbuzz_$platform",
-      ]
-    } else {
-      if (!(host_os == "linux" && host_cpu == "arm64")) {
-        public_deps +=
-            [ "$graphic_2d_root/rosen/build/icu:rosen_libicu_$platform" ]
-      }
     }
     if (platform == "android") {
       defines += [ "BUILD_SDK_ANDROID" ]
