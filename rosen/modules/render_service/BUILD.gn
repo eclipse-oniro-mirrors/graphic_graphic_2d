@@ -392,7 +392,10 @@ ohos_shared_library("librender_service") {
   }
 
   if (rosen_is_ohos) {
-    external_deps += [ "image_framework:image_native" ]
+    external_deps += [
+      "image_framework:image_native",
+      "lz4:liblz4_shared",
+    ]
   }
 
   if (defined(global_parts_info) &&
