@@ -56,7 +56,7 @@ HWTEST_F(OH_Drawing_FontCollectionTest, OH_Drawing_FontCollectionTest001, TestSi
 HWTEST_F(OH_Drawing_FontCollectionTest, OH_Drawing_FontCollectionTest002, TestSize.Level1)
 {
     auto fontCollection = OHOS::Rosen::FontCollection::Create();
-    std::ifstream shuc("/system/fonts/ShuS-SC.ttf", std::ios::binary);
+    std::ifstream shuc("/system/fonts/NotoSans[wdth,wght].ttf", std::ios::binary);
     std::stringstream shucStream;
     shucStream << shuc.rdbuf();
     std::string shucData = shucStream.str();
@@ -131,13 +131,13 @@ HWTEST_F(OH_Drawing_FontCollectionTest, OH_Drawing_FontCollectionTest004, TestSi
 HWTEST_F(OH_Drawing_FontCollectionTest, OH_Drawing_FontCollectionTest005, TestSize.Level1)
 {
     auto fontCollection = OHOS::Rosen::FontCollection::Create();
-    std::ifstream italic("/system/fonts/HarmonyOS_Sans_Italic.ttf", std::ios::binary);
-    std::ifstream shuc("/system/fonts/ShuS-SC.ttf", std::ios::binary);
-    ASSERT_TRUE(shuc.is_open() && italic.is_open());
+    std::ifstream notosans("/system/fonts/NotoSans[wdth,wght].ttf", std::ios::binary);
+    std::ifstream cjk("/system/fonts/NotoSansCJK-Regular.ttc", std::ios::binary);
+    ASSERT_TRUE(cjk.is_open() && notosans.is_open());
     std::stringstream italicStream;
     std::stringstream shucStream;
-    italicStream << italic.rdbuf();
-    shucStream << shuc.rdbuf();
+    italicStream << notosans.rdbuf();
+    shucStream << cjk.rdbuf();
     std::string italicData = italicStream.str();
     std::string shucData = shucStream.str();
     // 10000 just for test
@@ -155,21 +155,29 @@ HWTEST_F(OH_Drawing_FontCollectionTest, OH_Drawing_FontCollectionTest005, TestSi
     // 2 is the theme families' size
     ASSERT_EQ(themeFamilies.size(), 2);
     EXPECT_EQ(themeFamilies[0], SPText::OHOS_THEME_FONT);
-    EXPECT_EQ(themeFamilies[1], SPText::DefaultFamilyNameMgr::GetInstance().GenThemeFont(1));
+    EXPECT_EQ(themeFamilies[1], SPText::DefaultFamilyNameMgr::GetInstance().GenerateThemeFamilyName(1));
 
-    auto styleSet = fontCollection->GetFontMgr()->MatchFamily(SPText::DefaultFamilyNameMgr::GenThemeFont(0).c_str());
+    auto styleSet =
+        fontCollection->GetFontMgr()->MatchFamily(SPText::DefaultFamilyNameMgr::GenerateThemeFamilyName(0).c_str());
     ASSERT_NE(styleSet, nullptr);
     EXPECT_EQ(styleSet->Count(), 1);
     auto typeface = styleSet->CreateTypeface(0);
     ASSERT_NE(typeface, nullptr);
-    EXPECT_EQ(typeface->GetFamilyName(), "HarmonyOS Sans");
+    EXPECT_EQ(typeface->GetFamilyName(), "Noto Sans");
 
-    styleSet = fontCollection->GetFontMgr()->MatchFamily(SPText::DefaultFamilyNameMgr::GenThemeFont(1).c_str());
+    styleSet =
+        fontCollection->GetFontMgr()->MatchFamily(SPText::DefaultFamilyNameMgr::GenerateThemeFamilyName(1).c_str());
     ASSERT_NE(styleSet, nullptr);
     EXPECT_EQ(styleSet->Count(), 1);
     typeface = styleSet->CreateTypeface(0);
     ASSERT_NE(typeface, nullptr);
-    EXPECT_EQ(typeface->GetFamilyName(), "ShuS-SC");
+    EXPECT_EQ(typeface->GetFamilyName(), "Noto Sans CJK JP");
+
+    fontCollection->ClearThemeFont();
+    styleSet =
+        fontCollection->GetFontMgr()->MatchFamily(SPText::DefaultFamilyNameMgr::GenerateThemeFamilyName(0).c_str());
+    ASSERT_NE(styleSet, nullptr);
+    EXPECT_EQ(styleSet->Count(), 0);
 }
 } // namespace Rosen
 } // namespace OHOS

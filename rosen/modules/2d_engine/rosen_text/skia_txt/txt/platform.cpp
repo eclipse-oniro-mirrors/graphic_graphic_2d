@@ -52,11 +52,11 @@ void DefaultFamilyNameMgr::ModifyThemeFontFamilies(size_t index)
     std::unique_lock<std::shared_mutex> writeLock(lock_);
     themeFamilies_.clear();
     for (size_t i = 0; i < index; i += 1) {
-        themeFamilies_.emplace_back(GenThemeFont(i));
+        themeFamilies_.emplace_back(GenerateThemeFamilyName(i));
     }
 }
 
-std::string DefaultFamilyNameMgr::GenThemeFont(size_t index)
+std::string DefaultFamilyNameMgr::GenerateThemeFamilyName(size_t index)
 {
     if (index == 0) {
         return OHOS_THEME_FONT;

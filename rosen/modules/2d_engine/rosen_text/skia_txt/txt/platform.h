@@ -34,7 +34,7 @@ public:
     std::vector<std::string> GetDefaultFontFamilies() const;
     std::vector<std::string> GetThemeFontFamilies() const;
     void ModifyThemeFontFamilies(size_t index);
-    static std::string GenThemeFont(size_t index);
+    static std::string GenerateThemeFamilyName(size_t index);
 
 private:
     DefaultFamilyNameMgr();

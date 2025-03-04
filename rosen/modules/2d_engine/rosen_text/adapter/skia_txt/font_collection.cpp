@@ -158,15 +158,14 @@ std::vector<std::shared_ptr<Drawing::Typeface>> FontCollection::LoadThemeFont(
 
     std::vector<std::shared_ptr<Drawing::Typeface>> res;
     for (size_t i = 0; i < data.size(); i += 1) {
-        std::string themeFamily = SPText::DefaultFamilyNameMgr::GetInstance().GenThemeFont(i);
+        std::string themeFamily = SPText::DefaultFamilyNameMgr::GetInstance().GenerateThemeFamilyName(i);
         std::shared_ptr<Drawing::Typeface> face(
             dfmanager_->LoadThemeFont(familyName, themeFamily, data[i].first, data[i].second));
-        if (face == nullptr) {
+        TypefaceWithAlias ta(themeFamily, face);
+        if (!RegisterTypeface(ta)) {
             TEXT_LOGE("Failed to load font %{public}s", familyName.c_str());
             continue;
         }
-        TypefaceWithAlias ta(themeFamily, face);
-        RegisterTypeface(ta);
         res.emplace_back(face);
     }
     SPText::DefaultFamilyNameMgr::GetInstance().ModifyThemeFontFamilies(res.size());
@@ -175,9 +174,8 @@ std::vector<std::shared_ptr<Drawing::Typeface>> FontCollection::LoadThemeFont(
     return res;
 }
 
-bool FontCollection::ClearThemeFont()
+void FontCollection::ClearThemeFont()
 {
-    bool clear = true;
     for (const auto& themeFamily : SPText::DefaultFamilyNameMgr::GetInstance().GetThemeFontFamilies()) {
         std::shared_ptr<Drawing::Typeface> face(dfmanager_->MatchFamilyStyle(themeFamily.c_str(), {}));
         TypefaceWithAlias ta(themeFamily, face);
@@ -185,11 +183,10 @@ bool FontCollection::ClearThemeFont()
         dfmanager_->LoadThemeFont("", themeFamily, nullptr, 0);
         if (face != nullptr && Drawing::Typeface::GetTypefaceUnRegisterCallBack() != nullptr &&
             SPText::TextBundleConfigParser::GetInstance().IsTargetApiVersion(SPText::SINCE_API18_VERSION)) {
-            clear &= Drawing::Typeface::GetTypefaceUnRegisterCallBack()(face);
+            Drawing::Typeface::GetTypefaceUnRegisterCallBack()(face);
         }
     }
     fontCollection_->ClearFontFamilyCache();
-    return clear;
 }
 
 void FontCollection::ClearCaches()

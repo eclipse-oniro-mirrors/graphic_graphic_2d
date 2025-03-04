@@ -63,7 +63,7 @@ public:
         const std::string& familyName, const uint8_t* data, size_t datalen) override;
     std::vector<std::shared_ptr<Drawing::Typeface>> LoadThemeFont(
         const std::string& familyName, const std::vector<std::pair<const uint8_t*, size_t>>& data) override;
-    bool ClearThemeFont() override;
+    void ClearThemeFont() override;
     std::shared_ptr<Drawing::FontMgr> GetFontMgr() override;
     LoadSymbolErrorCode LoadSymbolFont(const std::string& familyName, const uint8_t* data, size_t datalen) override;
     LoadSymbolErrorCode LoadSymbolJson(const std::string& familyName, const uint8_t* data, size_t datalen) override;
