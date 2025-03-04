@@ -438,7 +438,7 @@ HWTEST_F(RSRenderBastUtilTest, SetSharedTransitionParam, TestSize.Level1)
     std::shared_ptr<SharedTransitionParam> sharedTransitionParam;
     node->SetSharedTransitionParam(sharedTransitionParam);
 
-    sharedTransitionParam = std::make_shared<SharedTransitionParam>(inNode, outNode);
+    sharedTransitionParam = std::make_shared<SharedTransitionParam>(inNode, outNode, true);
     node->SetSharedTransitionParam(sharedTransitionParam);
 
     node->SetSharedTransitionParam(sharedTransitionParam);

@@ -96,7 +96,7 @@ HWTEST_F(RSNodeCmdUniTest, RegisterGeometryTransitionPairUniTest, TestSize.Level
     RSContext context;
     NodeId inNodeId = static_cast<NodeId>(1);
     NodeId outNodeId = static_cast<NodeId>(1);
-    RSNodeCommandHelper::RegisterGeometryTransitionPair(context, inNodeId, outNodeId);
+    RSNodeCommandHelper::RegisterGeometryTransitionPair(context, inNodeId, outNodeId, true);
 }
 
 /**
@@ -259,16 +259,16 @@ HWTEST_F(RSNodeCmdUniTest, RegisterGeometryTransitionPairUniTest001, TestSize.Le
     RSContext context;
     NodeId inNodeId = 0;
     NodeId outNodeId = 0;
-    RSNodeCommandHelper::RegisterGeometryTransitionPair(context, inNodeId, outNodeId);
+    RSNodeCommandHelper::RegisterGeometryTransitionPair(context, inNodeId, outNodeId, true);
 
     inNodeId = 1;
-    RSNodeCommandHelper::RegisterGeometryTransitionPair(context, inNodeId, outNodeId);
+    RSNodeCommandHelper::RegisterGeometryTransitionPair(context, inNodeId, outNodeId, true);
 
     outNodeId = 1;
-    RSNodeCommandHelper::RegisterGeometryTransitionPair(context, inNodeId, outNodeId);
+    RSNodeCommandHelper::RegisterGeometryTransitionPair(context, inNodeId, outNodeId, true);
 
     inNodeId = 0;
-    RSNodeCommandHelper::RegisterGeometryTransitionPair(context, inNodeId, outNodeId);
+    RSNodeCommandHelper::RegisterGeometryTransitionPair(context, inNodeId, outNodeId, true);
     ASSERT_NE(context.GetNodeMap().GetRenderNode<RSRenderNode>(0), nullptr);
     ASSERT_EQ(context.GetNodeMap().GetRenderNode<RSRenderNode>(1), nullptr);
 }
