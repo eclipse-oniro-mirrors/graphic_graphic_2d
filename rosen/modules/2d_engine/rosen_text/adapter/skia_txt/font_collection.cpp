@@ -60,10 +60,9 @@ FontCollection::~FontCollection()
     std::unique_lock<std::shared_mutex> lock(mutex_);
     for (const auto& ta : typefaceSet_) {
         Drawing::Typeface::GetTypefaceUnRegisterCallBack()(ta.GetTypeface());
-        auto it = familyNames_.find(ta.GetHash());
-        if (it != familyNames_.end()) {
-            FontDescriptorMgrInstance.DeleteDynamicTypefaceFromCache(it->second);
-        }
+    }
+    for (const auto& family : familyNames_) {
+        FontDescriptorMgrInstance.DeleteDynamicTypefaceFromCache(family.second);
     }
     typefaceSet_.clear();
     familyNames_.clear();
