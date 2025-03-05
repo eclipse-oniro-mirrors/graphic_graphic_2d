@@ -242,18 +242,27 @@ void RSCanvasNode::SetLinkedRootNodeId(NodeId rootNodeId)
     std::unique_ptr<RSCommand> command =
         std::make_unique<RSCanvasNodeSetLinkedRootNodeId>(GetId(), rootNodeId);
     transactionProxy->AddCommand(command, true);
+    linkedRootNodeId_ = rootNodeId
+}
+
+NodeId RSCanvasNode::GetLinkedRootNodeId()
+{
+    return linkedRootNodeId_;
 }
 
 bool RSCanvasNode::Marshalling(Parcel& parcel) const
 {
-    return parcel.WriteUint64(GetId()) && parcel.WriteBool(IsRenderServiceNode());
+    return parcel.WriteUint64(GetId()) &&
+        parcel.WriteBool(IsRenderServiceNode()) &&
+        parcel.WriteUint64(linkedRootNodeId_);
 }
 
 RSCanvasNode::SharedPtr RSCanvasNode::Unmarshalling(Parcel& parcel)
 {
     uint64_t id = UINT64_MAX;
+    NodeId linkedRootNodeId = INVALID_NODEID;
     bool isRenderServiceNode = false;
-    if (!(parcel.ReadUint64(id) && parcel.ReadBool(isRenderServiceNode))) {
+    if (!(parcel.ReadUint64(id) && parcel.ReadBool(isRenderServiceNode) && parcel.ReadUint64(linkedRootNodeId))) {
         ROSEN_LOGE("RSCanvasNode::Unmarshalling, read param failed");
         return nullptr;
     }
@@ -269,6 +278,7 @@ RSCanvasNode::SharedPtr RSCanvasNode::Unmarshalling(Parcel& parcel)
 
     // for nodes constructed by unmarshalling, we should not destroy the corresponding render node on destruction
     canvasNode->skipDestroyCommandInDestructor_ = true;
+    canvasNode->linkedRootNodeId_ = linkedRootNodeId;
 
     return canvasNode;
 }

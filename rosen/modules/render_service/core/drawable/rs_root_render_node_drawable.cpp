@@ -34,9 +34,12 @@ RSRenderNodeDrawable::Ptr RSRootRenderNodeDrawable::OnGenerate(std::shared_ptr<c
 void RSRootRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
 {
     RS_LOGD("RSRootRenderNodeDrawable::OnDraw node: %{public}" PRIu64, nodeId_);
-    if (DrawOffscreenToBuffer(canvas)) {
+
+    // for PC app window size changed by drag
+    if (UNLIKELY(DrawOffscreenToBuffer(canvas))) {
         return;
     }
+
     RSCanvasRenderNodeDrawable::OnDraw(canvas);
 }
 
@@ -50,32 +53,37 @@ void RSRootRenderNodeDrawable::OnCapture(Drawing::Canvas& canvas)
 bool RSRootRenderNodeDrawable::DrawOffscreenToBuffer(Drawing::Canvas& canvas)
 {
     const auto& params = GetRenderParams();
-    auto& uniParams = RSUniRenderThread::Instance().GetRSRenderThreadParams();
-    if (params == nullptr || uniParams == nullptr) {
-        RS_LOGE("RSRootRenderNodeDrawable::DrawOffscreenToBuffer renderParams or uniParams is nullptr");
+    if (UNLIKELY(params == nullptr)) {
+        RS_LOGE("RSRootRenderNodeDrawable::DrawOffscreenToBuffer renderParamsis nullptr");
         return false;
     }
-    if (!params->GetNeedOffscreen()) {
+    if (LIKELY(!params->GetNeedOffscreen())) {
         cachedOffscreenImg_ = nullptr;
         preCachedOffscreenImg_ = nullptr;
         return false;
     }
 
+    auto& uniParams = RSUniRenderThread::Instance().GetRSRenderThreadParams();
+    if (UNLIKELY(uniParams == nullptr)) {
+        RS_LOGE("RSRootRenderNodeDrawable::DrawOffscreenToBuffer uniParams is nullptr");
+        return false;
+    }
+
     auto curCanvas = static_cast<RSPaintFilterCanvas*>(&canvas);
     auto curSurface = curCanvas->GetSurface();
-    if (curSurface == nullptr) {
+    if (UNLIKELY(curSurface == nullptr)) {
         RS_LOGE("RSRootRenderNodeDrawable::DrawOffscreenToBuffer surface is nullptr");
         return false;
     }
 
     auto bounds = params->GetFrameRect();
     auto cacheSurface = curSurface->MakeSurface(bounds.GetWidth(), bounds.GetHeight());
-    if (cacheSurface == nullptr) {
+    if (UNLIKELY(cacheSurface == nullptr)) {
         RS_LOGE("RSRootRenderNodeDrawable::DrawOffscreenToBuffer make surface failed");
         return false;
     }
     auto cacheCanvas = std::make_shared<RSPaintFilterCanvas>(cacheSurface.get());
-    if (cacheCanvas == nullptr) {
+    if (UNLIKELY(cacheCanvas == nullptr)) {
         RS_LOGE("RSRootRenderNodeDrawable::DrawOffscreenToBuffer make canvas failed");
         return false;
     }

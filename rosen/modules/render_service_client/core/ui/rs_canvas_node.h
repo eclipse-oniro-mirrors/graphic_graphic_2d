@@ -57,6 +57,7 @@ public:
      * @param rootNodeId source RSRootNode id.
      */
     void SetLinkedRootNodeId(NodeId rootNodeId);
+    NodeId GetLinkedRootNodeId();
 
     bool Marshalling(Parcel& parcel) const;
     static SharedPtr Unmarshalling(Parcel& parcel);
@@ -86,6 +87,7 @@ private:
     void CreateRenderNodeForTextureExportSwitch() override;
     void RegisterNodeMap() override;
     pid_t tid_;
+    NodeId linkedRootNodeId_ = INVALID_NODEID;
 };
 } // namespace Rosen
 } // namespace OHOS
