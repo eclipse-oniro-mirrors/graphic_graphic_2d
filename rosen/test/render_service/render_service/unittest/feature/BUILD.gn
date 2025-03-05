@@ -20,13 +20,13 @@ group("unittest") {
   testonly = true
   deps = [
     ":RSAncoManagerTest",
+    ":RSOpincManagerTest",
     ":RSSurfaceCaptureParallelTaskTest",
     ":RSSurfaceCaptureTaskTest",
     ":RSUiCaptureTaskParallelTest",
     ":RSUniHwcPrevalidateUtilTest",
     ":RSUniUiCaptureTest",
     ":RSVBlankIdleCorrectorTest",
-    ":RSOpincManagerTest",
   ]
   if (graphic_2d_feature_enable_rspipeline) {
     deps += [ ":RSUifirstManagerTest" ]
@@ -194,9 +194,7 @@ ohos_unittest("RSUifirstManagerTest") {
 ## Build RSOpincManagerTest
 ohos_unittest("RSOpincManagerTest") {
   module_out_path = module_output_path
-  sources = [
-    "opinc/rs_opinc_manager_test.cpp",
-  ]
+  sources = [ "opinc/rs_opinc_manager_test.cpp" ]
   deps = [ ":rs_test_common" ]
   external_deps = [
     "c_utils:utils",
