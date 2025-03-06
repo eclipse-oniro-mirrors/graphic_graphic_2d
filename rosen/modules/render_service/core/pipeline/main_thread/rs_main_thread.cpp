@@ -1894,11 +1894,11 @@ void RSMainThread::CheckIfHardwareForcedDisabled()
     bool isMultiDisplay = rootNode->GetChildrenCount() > 1;
     MultiDisplayChange(isMultiDisplay);
 
+    auto hwcFeatureParam = std::static_pointer_cast<HWCParam>(
+        GraphicFeatureParamManager::GetInstance().GetFeatureParam(FEATURE_CONFIGS[HWC]));
     // check all children of global root node, and only disable hardware composer
     // in case node's composite type is UNI_RENDER_EXPAND_COMPOSITE or Wired projection
     const auto& children = rootNode->GetChildren();
-    auto hwcFeatureParam = std::static_pointer_cast<HWCParam>(
-        GraphicFeatureParamManager::GetInstance().GetFeatureParam(FEATURE_CONFIGS[HWC]));
     auto itr = std::find_if(children->begin(), children->end(),
         [hwcFeature = hwcFeatureParam](const std::shared_ptr<RSRenderNode>& child) -> bool {
             if (child == nullptr || child->GetType() != RSRenderNodeType::DISPLAY_NODE) {
@@ -1909,7 +1909,7 @@ void RSMainThread::CheckIfHardwareForcedDisabled()
                 // wired projection case
                 return displayNodeSp->GetCompositeType() == RSDisplayRenderNode::CompositeType::UNI_RENDER_COMPOSITE;
             }
-            if (hwcFeature->IsHwcExpandingScreenEnabled()) {
+            if (hwcFeature != nullptr && hwcFeature->IsHwcExpandingScreenEnabled()) {
                 return displayNodeSp->GetCompositeType() ==
                     RSDisplayRenderNode::CompositeType::UNI_RENDER_EXPAND_COMPOSITE;
             }
