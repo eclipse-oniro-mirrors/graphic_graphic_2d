@@ -394,7 +394,7 @@ uint32_t RSScreen::SetScreenActiveRect(const GraphicIRect& activeRect)
     if (activeRect.x < 0 || activeRect.y < 0 || activeRect.w <= 0 || activeRect.h <= 0 ||
         static_cast<uint32_t>(activeRect.x + activeRect.w) > width_ ||
         static_cast<uint32_t>(activeRect.y + activeRect.h) > height_) {
-        RS_LOGW("RSScreen %{public}s failed:, for activeRect: "
+        RS_LOGW("%{public}s failed:, for activeRect: "
             "(%{public}" PRId32 ", %{public}" PRId32 ", %{public}" PRId32 ", %{public}" PRId32 ")",
             __func__, activeRect.x, activeRect.y, activeRect.w, activeRect.h);
         return StatusCode::INVALID_ARGUMENTS;
