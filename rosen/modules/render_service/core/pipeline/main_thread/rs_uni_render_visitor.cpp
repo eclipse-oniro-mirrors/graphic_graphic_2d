@@ -1123,7 +1123,7 @@ void RSUniRenderVisitor::QuickPrepareSurfaceRenderNode(RSSurfaceRenderNode& node
     ResetCurSurfaceInfoAsUpperSurfaceParent(node);
     curCornerRadius_ = curCornerRadius;
     parentSurfaceNodeMatrix_ = parentSurfaceNodeMatrix;
-    PrepareRootNodeOffscreen(node);
+    windowKeyFrameNodeInf_.PrepareRootNodeOffscreen(node);
     node.RenderTraceDebug();
     node.SetNeedOffscreen(isScreenRotationAnimating_);
     if (node.NeedUpdateDrawableBehindWindow()) {
@@ -1488,9 +1488,13 @@ void RSUniRenderVisitor::QuickPrepareCanvasRenderNode(RSCanvasRenderNode& node)
     curAlpha_ = prevAlpha;
     curCornerRadius_ = curCornerRadius;
     node.OpincUpdateRootFlag(unchangeMarkEnable_);
-    if (node.GetLinkedRootNodeId() != INVALID_NODEID) {
-        linkedNodeMap_[node.GetLinkedRootNodeId()] = node.GetId();
+
+    // for PC app window size changed by drag
+    NodeId linedRootNodeId = node.GetLinkedRootNodeId();
+    if (UNLIKELY(linedRootNodeId != INVALID_NODEID)) {
+        windowKeyFrameNodeInf_.UpdateLinkedNodeId(node.GetId(), linedRootNodeId);
     }
+
     node.RenderTraceDebug();
 }
 
@@ -1682,7 +1686,7 @@ bool RSUniRenderVisitor::InitDisplayInfo(RSDisplayRenderNode& node)
     node.ResetDisplayHdrStatus();
     node.SetPixelFormat(GraphicPixelFormat::GRAPHIC_PIXEL_FMT_RGBA_8888);
     node.SetColorSpace(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB);
-    linkedNodeMap_.clear();
+    windowKeyFrameNodeInf_.ClearLinkedNodeInfo();
     return true;
 }
 
@@ -3784,42 +3788,6 @@ void RSUniRenderVisitor::PrepareRootRenderNode(RSRootRenderNode& node)
     parentSurfaceNodeMatrix_ = parentSurfaceNodeMatrix;
     dirtyFlag_ = dirtyFlag;
     prepareClipRect_ = prepareClipRect;
-}
-
-void RSUniRenderVisitor::PrepareRootNodeOffscreen(RSSurfaceRenderNode& surfaceNode)
-{
-    if (linkedNodeMap_.empty()) {
-        return;
-    }
-
-    for (const auto& pair : linkedNodeMap_) {
-        NodeId linkedRootNodeId = pair.first;
-        NodeId sourceNodeId = pair.second;
-        const auto& nodeMap = RSMainThread::Instance()->GetContext().GetNodeMap();
-        auto rootNode = nodeMap.GetRenderNode<RSRootRenderNode>(linkedRootNodeId);
-        auto canvasNode = nodeMap.GetRenderNode<RSCanvasRenderNode>(sourceNodeId);
-        if (rootNode == nullptr || canvasNode == nullptr) {
-            RS_LOGE("RSUniRenderVisitor::PrepareRootNodeOffscreen rootNode or canvasNode is nullptr");
-            continue;
-        }
-        auto parentNode = rootNode->GetParent().lock();
-        if (parentNode == nullptr || parentNode->GetId() != surfaceNode.GetId()) {
-            continue;
-        }
-        auto rootNodeDrawable = rootNode->GetRenderDrawable();
-        auto& rootNodeStagingRenderParams = rootNode->GetStagingRenderParams();
-        if (rootNodeDrawable == nullptr || rootNodeStagingRenderParams == nullptr) {
-            RS_LOGE("RSUniRenderVisitor::PrepareRootNodeOffscreen stageRenderParams or rootNodeDrawable is nullptr");
-            continue;
-        }
-
-        surfaceNode.SetHwcChildrenDisabledState();
-        rootNode->SetNeedOffscreen(true);
-        canvasNode->SetLinkedRootNodeDrawable(rootNodeDrawable);
-        rootNodeStagingRenderParams->SetNeedSwapBuffer(!canvasNode->IsStaticCached());
-        rootNodeStagingRenderParams->SetCacheNodeFrameRect({0, 0, canvasNode->GetRenderProperties().GetFrameWidth(),
-            canvasNode->GetRenderProperties().GetFrameHeight()});
-    }
 }
 
 void RSUniRenderVisitor::SetUniRenderThreadParam(std::unique_ptr<RSRenderThreadParams>& renderThreadParams)

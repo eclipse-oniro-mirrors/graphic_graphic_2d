@@ -293,28 +293,12 @@ bool RSCanvasRenderNode::GetHDRPresent() const
 
 void RSCanvasRenderNode::SetLinkedRootNodeId(NodeId rootNodeId)
 {
-    if (rootNodeId == linkedRootNodeId_) {
-        return;
-    }
-
     linkedRootNodeId_ = rootNodeId;
 }
 
 NodeId RSCanvasRenderNode::GetLinkedRootNodeId() const
 {
     return linkedRootNodeId_;
-}
-
-void RSCanvasRenderNode::SetLinkedRootNodeDrawable(DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr drawable)
-{
-    if (stagingRenderParams_ == nullptr) {
-        RS_LOGE("RSCanvasRenderNode::SetLinkedRootNodeDrawable stagingRenderParams is nullptr");
-        return;
-    }
-    stagingRenderParams_->SetLinkedRootNodeDrawable(drawable);
-    stagingRenderParams_->SetShouldPaint(true);
-    stagingRenderParams_->SetContentEmpty(false);
-    AddToPendingSyncList();
 }
 
 } // namespace Rosen

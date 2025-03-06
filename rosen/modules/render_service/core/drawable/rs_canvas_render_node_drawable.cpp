@@ -75,7 +75,7 @@ void RSCanvasRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     auto& uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
     if ((UNLIKELY(!uniParam) || uniParam->IsOpDropped()) && GetOpDropped() &&
         QuickReject(canvas, params->GetLocalDrawRect()) && isOpincDraw && !params->HasUnobscuredUEC() &&
-        linkedDrawable == nullptr) {
+        LIKELY(linkedDrawable == nullptr)) {
         SetDrawSkipType(DrawSkipType::OCCLUSION_SKIP);
         return;
     }
@@ -90,7 +90,7 @@ void RSCanvasRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         }
     }
 
-    if (linkedDrawable != nullptr) {
+    if (UNLIKELY(linkedDrawable != nullptr)) {
         linkedDrawable->DrawOffscreenBuffer(*paintFilterCanvas, params->GetFrameRect(),
             params->GetAlpha(), params->GetRSFreezeFlag());
         return;

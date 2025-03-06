@@ -17,6 +17,7 @@
 #define RENDER_SERVICE_DRAWABLE_RS_ROOT_RENDER_NODE_DRAWABLE_H
 
 #include "drawable/rs_canvas_render_node_drawable.h"
+#include "feature/window_keyframe/rs_window_keyframe_buffer.h"
 
 namespace OHOS::Rosen {
 class RSRootRenderNode;
@@ -31,19 +32,15 @@ public:
     void OnCapture(Drawing::Canvas& canvas) override;
 
     // [Attention] Only used in PC window resize scene
-    bool DrawOffscreenToBuffer(Drawing::Canvas& canvas);
     bool DrawOffscreenBuffer(RSPaintFilterCanvas& canvas, const Drawing::Rect& bounds, float alpha, bool isFreezed);
 
 private:
     explicit RSRootRenderNodeDrawable(std::shared_ptr<const RSRenderNode>&& node);
-    bool DrawOffscreenImgToBuffer(Drawing::Canvas& canvas, const RSRenderParams& params,
-        const Drawing::Rect& bounds, std::shared_ptr<Drawing::Surface>& surface);
 
     using Registrar = RenderNodeDrawableRegistrar<RSRenderNodeType::ROOT_NODE, OnGenerate>;
     static Registrar instance_;
 
-    std::shared_ptr<Drawing::Image> cachedOffscreenImg_ = nullptr;
-    std::shared_ptr<Drawing::Image> preCachedOffscreenImg_ = nullptr;
+    RSWindowKeyframeBuffer windowKeyframeBuffer_;
 };
 } // namespace DrawableV2
 } // namespace OHOS::Rosen

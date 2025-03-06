@@ -72,7 +72,6 @@ public:
     // [Attention] Only used in PC window resize scene
     void SetLinkedRootNodeId(NodeId rootNodeId);
     RSB_EXPORT NodeId GetLinkedRootNodeId() const;
-    RSB_EXPORT void SetLinkedRootNodeDrawable(DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr drawable);
 
 protected:
     explicit RSCanvasRenderNode(NodeId id,
