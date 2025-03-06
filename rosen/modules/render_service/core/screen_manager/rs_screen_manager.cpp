@@ -656,12 +656,9 @@ void RSScreenManager::ProcessScreenConnected(std::shared_ptr<HdiOutput>& output)
     std::unique_lock<std::mutex> lock(mutex_);
     screens_[id] = screen;
     if (isFoldScreenFlag_ && screens_.size() == ORIGINAL_FOLD_SCREEN_AMOUNT) {
-        std::vector<uint64_t> foldScreenIds;
         for (auto screen : screens_) {
-            foldScreenIds.push_back(screen.first);
+            foldScreenIds_[screen.first] = true;
         }
-        CreateVSyncSampler()->SetIsFoldScreenFlag(isFoldScreenFlag_);
-        CreateVSyncSampler()->SetFoldScreenIds(foldScreenIds);
     }
     lock.unlock();
 
@@ -675,18 +672,11 @@ void RSScreenManager::ProcessScreenConnected(std::shared_ptr<HdiOutput>& output)
     }
     defaultScreenId_ = defaultScreenId;
 
-    ScreenId vsyncEnabledScreenId = id;
-    if (RSSystemProperties::IsPcType() || RSSystemProperties::IsTabletType()) {
-        vsyncEnabledScreenId = defaultScreenId;
-        if (defaultScreenId == id) {
-            screen->SetScreenVsyncEnabled(true);
-        }
+    if (defaultScreenId_ == id) {
+        screen->SetScreenVsyncEnabled(true);
     }
-    if (RSUniRenderJudgement::GetUniRenderEnabledType() != UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL) {
-        RegSetScreenVsyncEnabledCallbackForMainThread(vsyncEnabledScreenId);
-    } else {
-        RegSetScreenVsyncEnabledCallbackForHardwareThread(vsyncEnabledScreenId);
-    }
+    uint64_t vsyncEnabledScreenId = JudgeVSyncEnabledScreenWhileHotPlug(id, true);
+    UpdateVsyncEnabledScreenId(vsyncEnabledScreenId);
 
 #ifdef RS_SUBSCRIBE_SENSOR_ENABLE
     if (isFoldScreenFlag_ && id != 0) {
@@ -722,20 +712,33 @@ void RSScreenManager::ProcessScreenDisConnected(std::shared_ptr<HdiOutput>& outp
         HandleDefaultScreenDisConnected();
     }
 
-    ScreenId vsyncEnabledScreenId = INVALID_SCREEN_ID;
-    if (RSSystemProperties::IsPcType() || RSSystemProperties::IsTabletType()) {
-        vsyncEnabledScreenId = defaultScreenId_;
-    } else {
-        std::lock_guard<std::mutex> lock(mutex_);
-        if (screens_.size() != 0) {
-            vsyncEnabledScreenId = screens_.rbegin()->first;
+    uint64_t vsyncEnabledScreenId = JudgeVSyncEnabledScreenWhileHotPlug(id, false);
+    UpdateVsyncEnabledScreenId(vsyncEnabledScreenId);
+}
+
+void RSScreenManager::UpdateVsyncEnabledScreenId(ScreenId screenId)
+{
+    std::unique_lock<std::mutex> lock(mutex_);
+    if (isFoldScreenFlag_ && foldScreenIds_.size() == ORIGINAL_FOLD_SCREEN_AMOUNT) {
+        bool isAllFoldScreenDisconnected = true;
+        for (const auto &[id, connected] : foldScreenIds_) {
+            if (connected) {
+                isAllFoldScreenDisconnected = false;
+                break;
+            }
+        }
+        auto it = foldScreenIds_.find(screenId);
+        if (it == foldScreenIds_.end() && !isAllFoldScreenDisconnected) {
+            return;
         }
     }
+    lock.unlock();
+
     auto renderType = RSUniRenderJudgement::GetUniRenderEnabledType();
     if (renderType != UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL) {
-        RegSetScreenVsyncEnabledCallbackForMainThread(vsyncEnabledScreenId);
+        RegSetScreenVsyncEnabledCallbackForMainThread(screenId);
     } else {
-        RegSetScreenVsyncEnabledCallbackForHardwareThread(vsyncEnabledScreenId);
+        RegSetScreenVsyncEnabledCallbackForHardwareThread(screenId);
     }
 }
 
@@ -812,6 +815,45 @@ void RSScreenManager::HandleDefaultScreenDisConnected()
         defaultScreenId = screens_.cbegin()->first;
     }
     defaultScreenId_ = defaultScreenId;
+}
+
+uint64_t RSScreenManager::JudgeVSyncEnabledScreenWhileHotPlug(ScreenId screenId, bool connected)
+{
+    std::unique_lock<std::mutex> lock(mutex_);
+    if (isFoldScreenFlag_) {
+        auto it = foldScreenIds_.find(screenId);
+        if (it != foldScreenIds_.end()) {
+            it->second = connected;
+        }
+    }
+
+    auto vsyncSampler = CreateVSyncSampler();
+    if (vsyncSampler == nullptr) {
+        RS_LOGE("%{public}s failed, vsyncSampler is null", __func__);
+        return screenId;
+    }
+    uint64_t vsyncEnabledScreenId = vsyncSampler->GetVsyncEnabledScreenId();
+    if (connected) { // screen connected
+        if (vsyncEnabledScreenId == UINT64_MAX) {
+            return screenId;
+        }
+    } else { // screen disconnected
+        if (vsyncEnabledScreenId != screenId) {
+            return vsyncEnabledScreenId;
+        }
+        vsyncEnabledScreenId = UINT64_MAX;
+        for (const auto &[id, screen] : screens_) {
+            if (screen == nullptr) {
+                RS_LOGW("%{public}s: screen %{public}" PRIu64 " not found", __func__, id);
+                continue;
+            }
+            if (!screen->IsVirtual()) {
+                vsyncEnabledScreenId = id;
+                break;
+            }
+        }
+    }
+    return vsyncEnabledScreenId;
 }
 
 // if SetVirtualScreenSurface success, force a refresh of one frame, avoiding prolong black screen
@@ -1466,6 +1508,10 @@ void RSScreenManager::SetScreenPowerStatus(ScreenId id, ScreenPowerStatus status
     if (ret != static_cast<int32_t>(StatusCode::SUCCESS)) {
         RS_LOGE("[UL_POWER] %{public}s: Failed to set power status of id %{public}" PRIu64, __func__, id);
         return;
+    }
+
+    if (isFoldScreenFlag_ && status == ScreenPowerStatus::POWER_STATUS_ON) {
+        UpdateVsyncEnabledScreenId(id);
     }
 
     /*

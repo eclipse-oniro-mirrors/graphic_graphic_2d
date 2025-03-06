@@ -578,10 +578,12 @@ private:
 
     void RegSetScreenVsyncEnabledCallbackForMainThread(ScreenId vsyncEnabledScreenId);
     void RegSetScreenVsyncEnabledCallbackForHardwareThread(ScreenId vsyncEnabledScreenId);
+    void UpdateVsyncEnabledScreenId(ScreenId screenId);
 
     void TriggerCallbacks(ScreenId id, ScreenEvent event,
         ScreenChangeReason reason = ScreenChangeReason::DEFAULT) const;
     std::shared_ptr<OHOS::Rosen::RSScreen> GetScreen(ScreenId id) const;
+    uint64_t JudgeVSyncEnabledScreenWhileHotPlug(ScreenId screenId, bool connected);
 
     mutable std::mutex mutex_;
     mutable std::mutex renderControlMutex_;
@@ -629,6 +631,7 @@ private:
     bool isPostureSensorDataHandled_ = false;
     std::condition_variable activeScreenIdAssignedCV_;
     mutable std::mutex activeScreenIdAssignedMutex_;
+    std::unordered_map<uint64_t, bool> foldScreenIds_; // screenId, isConnected
 #endif
 };
 } // namespace impl
