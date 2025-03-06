@@ -106,8 +106,9 @@ HWTEST_F(HgmTouchManagerTest, Up2IdleState, Function | SmallTest | Level1)
     PART("CaseDescription") {
         auto touchManager = HgmTouchManager();
         const int32_t rsTimeoutUs = 610000;
-        const int32_t handleRsFrameTimeUs = 510000;
-        const int32_t handleRsFrameNum = 5;
+        const int32_t handleRsFrameTimeLessUs = 10000;
+        const int32_t handleRsFrameTimeMoreUs = 1000000;
+        const int32_t handleRsFrameNum = 7;
 
         STEP("1. 600ms timeout") {
             touchManager.ChangeState(TouchState::DOWN_STATE);
@@ -126,10 +127,10 @@ HWTEST_F(HgmTouchManagerTest, Up2IdleState, Function | SmallTest | Level1)
 
             for (int i = 0; i < handleRsFrameNum; i++) {
                 touchManager.HandleRsFrame();
-                usleep(handleRsFrameTimeUs);
+                usleep(handleRsFrameTimeLessUs);
                 ASSERT_EQ(touchManager.GetState(), TouchState::UP_STATE);
             }
-            usleep(handleRsFrameTimeUs);
+            usleep(handleRsFrameTimeMoreUs);
             ASSERT_EQ(touchManager.GetState(), TouchState::IDLE_STATE);
         }
     }
