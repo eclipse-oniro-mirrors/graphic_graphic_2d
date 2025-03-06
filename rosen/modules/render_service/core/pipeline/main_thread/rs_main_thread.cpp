@@ -2419,7 +2419,7 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
 
         auto socPerfParam = std::static_pointer_cast<SOCPerfParam>(
             GraphicFeatureParamManager::GetInstance().GetFeatureParam(FEATURE_CONFIGS[SOC_PERF]));
-        if (socPerfParam != nullptr && socPerfParam->isMultilayersSOCPerfEnable()) {
+        if (socPerfParam != nullptr && socPerfParam->IsMultilayersSOCPerfEnable()) {
             RSUniRenderUtil::MultiLayersPerf(uniVisitor->GetLayerNum());
         }
         CheckBlurEffectCountStatistics(rootNode);
