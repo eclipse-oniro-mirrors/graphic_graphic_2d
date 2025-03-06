@@ -341,6 +341,8 @@ private:
 
     void TryNotifyUIBufferAvailable();
 
+    void CollectSelfDrawingNodeRectInfo(RSSurfaceRenderNode& node);
+
     friend class RSUniHwcVisitor;
     std::unique_ptr<RSUniHwcVisitor> rsUniHwcVisitor_;
     std::vector<std::shared_ptr<RSSurfaceRenderNode>> hardwareEnabledNodes_;

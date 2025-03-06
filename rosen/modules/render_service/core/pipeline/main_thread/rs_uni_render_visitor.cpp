@@ -31,6 +31,7 @@
 #include "feature/hdr/rs_hdr_util.h"
 #include "feature/uifirst/rs_sub_thread_manager.h"
 #include "feature/uifirst/rs_uifirst_manager.h"
+#include "monitor/self_drawing_node_monitor.h"
 #ifdef RS_ENABLE_OVERLAY_DISPLAY
 #include "feature/overlay_display/rs_overlay_display_manager.h"
 #endif
@@ -1017,6 +1018,7 @@ void RSUniRenderVisitor::QuickPrepareSurfaceRenderNode(RSSurfaceRenderNode& node
             node.SetContentDirty(); // HDR content is dirty on Dimming status.
         }
     }
+    CollectSelfDrawingNodeRectInfo(node);
     hasAccumulatedClip_ = node.SetAccumulatedClipFlag(hasAccumulatedClip_);
     bool isSubTreeNeedPrepare = node.IsSubTreeNeedPrepare(filterInGlobal_, IsSubTreeOccluded(node)) ||
         ForcePrepareSubTree();
@@ -3973,6 +3975,21 @@ void RSUniRenderVisitor::TryNotifyUIBufferAvailable()
         }
     }
     uiBufferAvailableId_.clear();
+}
+
+void RSUniRenderVisitor::CollectSelfDrawingNodeRectInfo(RSSurfaceRenderNode& node)
+{
+    auto& monitor = SelfDrawingNodeMonitor::GetInstance();
+    if (!monitor.IsListeningEnabled()) {
+        return;
+    }
+
+    if (!node.IsSelfDrawingType()) {
+        return;
+    }
+    auto rect = node.GetRenderProperties().GetBoundsGeometry()->GetAbsRect();
+    std::string nodeName = node.GetName();
+    monitor.InsertCurRectMap(node.GetId(), nodeName, rect);
 }
 } // namespace Rosen
 } // namespace OHOS

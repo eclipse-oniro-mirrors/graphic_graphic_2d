@@ -24,6 +24,7 @@
 
 #include "consumer_surface.h"
 #include "draw/color.h"
+#include "monitor/self_drawing_node_monitor.h"
 #include "pipeline/render_thread/rs_uni_render_engine.h"
 #include "pipeline/render_thread/rs_uni_render_thread.h"
 #include "pipeline/render_thread/rs_uni_render_util.h"
@@ -5419,5 +5420,21 @@ HWTEST_F(RSUniRenderVisitorTest, SetHdrWhenMultiDisplayChangeTest, TestSize.Leve
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
     ASSERT_NE(rsUniRenderVisitor, nullptr);
     rsUniRenderVisitor->SetHdrWhenMultiDisplayChange();
+}
+
+/*
+ * @tc.name: CollectSelfDrawingNodeRectInfoTest
+ * @tc.desc: Test CollectSelfDrawingNodeRectInfo
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSUniRenderVisitorTest, CollectSelfDrawingNodeRectInfoTest, TestSize.Level2)
+{
+    RSSurfaceRenderNode node(1);
+
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    ASSERT_NE(rsUniRenderVisitor, nullptr);
+    rsUniRenderVisitor->CollectSelfDrawingNodeRectInfo(node);
+    ASSERT_EQ(SelfDrawingNodeMonitor::GetInstance().curRect_.size(), 0);
 }
 } // OHOS::Rosen
