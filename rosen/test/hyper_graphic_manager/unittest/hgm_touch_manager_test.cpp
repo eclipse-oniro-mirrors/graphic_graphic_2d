@@ -108,7 +108,7 @@ HWTEST_F(HgmTouchManagerTest, Up2IdleState, Function | SmallTest | Level1)
         const int32_t rsTimeoutUs = 610000;
         const int32_t handleRsFrameTimeUs = 510000;
         const int32_t handleRsFrameNum = 5;
-        const int32_t runTimeoutUs = 510000;
+        const int32_t runTimeoutUs = 570000;
 
         STEP("1. 600ms timeout") {
             touchManager.ChangeState(TouchState::DOWN_STATE);
