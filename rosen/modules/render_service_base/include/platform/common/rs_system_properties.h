@@ -258,7 +258,6 @@ public:
     static bool GetASTCEnabled();
     static bool GetCachedBlurPartialRenderEnabled();
     static bool GetImageGpuResourceCacheEnable(int width, int height);
-    static bool GetSnapshotWithDMAEnabled();
     static bool GetDrmEnabled();
     static bool GetSurfaceNodeWatermarkEnabled();
     static bool IsPhoneType();
@@ -318,6 +317,8 @@ public:
     static bool GetDmaReclaimParam();
     static bool GetOptimizeParentNodeRegionEnabled();
     static bool GetOptimizeHwcComposeAreaEnabled();
+
+    static bool GetNodeGroupGroupedByUIEnabled();
 private:
     RSSystemProperties() = default;
 

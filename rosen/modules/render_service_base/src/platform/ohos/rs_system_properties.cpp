@@ -982,16 +982,6 @@ int RSSystemProperties::WatchSystemProperty(const char* name, OnSystemPropertyCh
     return WatchParameter(name, func, context);
 }
 
-bool RSSystemProperties::GetSnapshotWithDMAEnabled()
-{
-    static bool isSupportDma = (system::GetParameter("const.product.devicetype", "pc") == "phone" ||
-        system::GetParameter("const.product.devicetype", "pc") == "tablet" ||
-        system::GetParameter("const.product.devicetype", "pc") == "pc" ||
-        system::GetParameter("const.product.devicetype", "pc") == "2in1") &&
-        system::GetBoolParameter("rosen.snapshotDma.enabled", true);
-    return isSupportDma;
-}
-
 bool RSSystemProperties::IsPhoneType()
 {
     static bool isPhone = system::GetParameter("const.product.devicetype", "pc") == "phone";
@@ -1297,6 +1287,13 @@ bool RSSystemProperties::GetOptimizeHwcComposeAreaEnabled()
     int changed = 0;
     const char *enable = CachedParameterGetChanged(g_Handle, &changed);
     return ConvertToInt(enable, 1) != 0;
+}
+
+bool RSSystemProperties::GetNodeGroupGroupedByUIEnabled()
+{
+    static auto groupedByUIEnabled =
+        system::GetBoolParameter("const.graphic.enable_grouped_by_ui", false);
+    return groupedByUIEnabled;
 }
 } // namespace Rosen
 } // namespace OHOS
