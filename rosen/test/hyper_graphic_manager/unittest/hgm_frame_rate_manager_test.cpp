@@ -590,6 +590,7 @@ HWTEST_F(HgmFrameRateMgrTest, ProcessRefreshRateVoteTest2, Function | SmallTest 
     frameRateMgr.DeliverRefreshRateVote({"VOTER_PACKAGES", OLED_30_HZ, OLED_120_HZ, 0}, true);
     resVoteInfo = frameRateMgr.ProcessRefreshRateVote();
     EXPECT_EQ(resVoteInfo.max, OLED_30_HZ);
+    sleep(1); // wait for handler task finished
 }
 
 /**
