@@ -80,7 +80,7 @@ void RSRenderServiceListener::OnBufferAvailable()
             
         }
     }
-    SetBufferInfoAndRequest(node, surfaceHandler, consumer);
+    SetBufferInfoAndRequest(node, surfaceHandler, surfaceHandler->GetConsumer());
 }
 
 void RSRenderServiceListener::SetBufferInfoAndRequest(std::shared_ptr<RSSurfaceRenderNode> &node,
