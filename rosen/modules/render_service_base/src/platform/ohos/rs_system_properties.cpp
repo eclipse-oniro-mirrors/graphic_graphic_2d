@@ -31,6 +31,8 @@ constexpr int DEFAULT_CACHE_WIDTH = 1250;
 constexpr int DEFAULT_CACHE_HEIGHT = 2710;
 constexpr int DEFAULT_PARTIAL_RENDER_ENABLED_VALUE = 2;
 constexpr int DEFAULT_UNI_PARTIAL_RENDER_ENABLED_VALUE = 4;
+constexpr int DEFAULT_ADVANCED_DIRTY_REGION_ENABLED_VALUE = 1;
+constexpr int DEFAULT_DIRTY_ALIGN_ENABLED_VALUE = 0;
 constexpr int DEFAULT_CORRECTION_MODE_VALUE = 999;
 constexpr int DEFAULT_SCALE_MODE = 2;
 constexpr const char* DEFAULT_CLIP_RECT_THRESHOLD = "0.9";
@@ -248,6 +250,22 @@ PartialRenderType RSSystemProperties::GetUniPartialRenderEnabled()
     static CachedHandle g_Handle = CachedParameterCreate("rosen.uni.partialrender.enabled", "4");
     const char *enable = CachedParameterGetChanged(g_Handle, &changed);
     return static_cast<PartialRenderType>(ConvertToInt(enable, DEFAULT_UNI_PARTIAL_RENDER_ENABLED_VALUE));
+}
+
+AdvancedDirtyRegionType RSSystemProperties::GetAdvancedDirtyRegionEnabled()
+{
+    static CachedHandle g_Handle = CachedParameterCreate("rosen.advanceddirtyregion.enabled", "1");
+    int changed = 0;
+    const char *enable = CachedParameterGetChanged(g_Handle, &changed);
+    return static_cast<AdvancedDirtyRegionType>(ConvertToInt(enable, DEFAULT_ADVANCED_DIRTY_REGION_ENABLED_VALUE));
+}
+
+DirtyAlignType RSSystemProperties::GetDirtyAlignEnabled()
+{
+    static CachedHandle g_Handle = CachedParameterCreate("rosen.dirtyalign.enabled", "0");
+    int changed = 0;
+    const char *enable = CachedParameterGetChanged(g_Handle, &changed);
+    return static_cast<DirtyAlignType>(ConvertToInt(enable, DEFAULT_DIRTY_ALIGN_ENABLED_VALUE));
 }
 
 float RSSystemProperties::GetClipRectThreshold()
@@ -964,16 +982,6 @@ int RSSystemProperties::WatchSystemProperty(const char* name, OnSystemPropertyCh
     return WatchParameter(name, func, context);
 }
 
-bool RSSystemProperties::GetSnapshotWithDMAEnabled()
-{
-    static bool isSupportDma = (system::GetParameter("const.product.devicetype", "pc") == "phone" ||
-        system::GetParameter("const.product.devicetype", "pc") == "tablet" ||
-        system::GetParameter("const.product.devicetype", "pc") == "pc" ||
-        system::GetParameter("const.product.devicetype", "pc") == "2in1") &&
-        system::GetBoolParameter("rosen.snapshotDma.enabled", true);
-    return isSupportDma;
-}
-
 bool RSSystemProperties::IsPhoneType()
 {
     static bool isPhone = system::GetParameter("const.product.devicetype", "pc") == "phone";
@@ -1165,12 +1173,16 @@ SubTreePrepareCheckType RSSystemProperties::GetSubTreePrepareCheckType()
     return static_cast<SubTreePrepareCheckType>(ConvertToInt(type, 2)); // Default value 2
 }
 
-bool RSSystemProperties::GetHDRImageEnable()
+bool RSSystemProperties::GetHdrImageEnabled()
 {
-    static CachedHandle g_Handle = CachedParameterCreate("rosen.hdrimage.enable", "1");
-    int changed = 0;
-    const char *num = CachedParameterGetChanged(g_Handle, &changed);
-    return ConvertToInt(num, 0);
+    static bool isHdrImageEnabled = system::GetBoolParameter("persist.sys.graphic.hdrimage.enabled", true);
+    return isHdrImageEnabled;
+}
+
+bool RSSystemProperties::GetHdrVideoEnabled()
+{
+    static bool isHdrVideoEnabled = system::GetBoolParameter("persist.sys.graphic.hdrvideo.enabled", true);
+    return isHdrVideoEnabled;
 }
 
 bool RSSystemProperties::IsForceClient()
@@ -1279,6 +1291,13 @@ bool RSSystemProperties::GetOptimizeHwcComposeAreaEnabled()
     int changed = 0;
     const char *enable = CachedParameterGetChanged(g_Handle, &changed);
     return ConvertToInt(enable, 1) != 0;
+}
+
+bool RSSystemProperties::GetNodeGroupGroupedByUIEnabled()
+{
+    static auto groupedByUIEnabled =
+        system::GetBoolParameter("const.graphic.enable_grouped_by_ui", false);
+    return groupedByUIEnabled;
 }
 } // namespace Rosen
 } // namespace OHOS

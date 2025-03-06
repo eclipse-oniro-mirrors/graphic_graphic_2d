@@ -159,7 +159,9 @@ void RSDisplayRenderNode::SetIsMirrorDisplay(bool isMirror)
         hasMirroredDisplayChanged_ = true;
     }
     isMirroredDisplay_ = isMirror;
-    RS_LOGD("RSDisplayRenderNode::SetIsMirrorDisplay, node id:[%{public}" PRIu64 "], isMirrorDisplay: [%{public}s]",
+    RS_TRACE_NAME_FMT("RSDisplayRenderNode::SetIsMirrorDisplay, node id:[%" PRIu64 "], isMirrorDisplay: [%s]",
+        GetId(), IsMirrorDisplay() ? "true" : "false");
+    RS_LOGI("RSDisplayRenderNode::SetIsMirrorDisplay, node id:[%{public}" PRIu64 "], isMirrorDisplay: [%{public}s]",
         GetId(), IsMirrorDisplay() ? "true" : "false");
 }
 
@@ -502,30 +504,6 @@ void RSDisplayRenderNode::SetBrightnessRatio(float brightnessRatio)
         AddToPendingSyncList();
     }
 #endif
-}
-
-void RSDisplayRenderNode::SetPixelFormat(const GraphicPixelFormat& pixelFormat)
-{
-#ifdef RS_ENABLE_GPU
-    if (pixelFormat_ == pixelFormat) {
-        return;
-    }
-    auto displayParams = static_cast<RSDisplayRenderParams*>(stagingRenderParams_.get());
-    if (!displayParams) {
-        RS_LOGE("%{public}s displayParams is nullptr", __func__);
-        return;
-    }
-    displayParams->SetNewPixelFormat(pixelFormat);
-    if (stagingRenderParams_->NeedSync()) {
-        AddToPendingSyncList();
-    }
-    pixelFormat_ = pixelFormat;
-#endif
-}
-
-GraphicPixelFormat RSDisplayRenderNode::GetPixelFormat() const
-{
-    return pixelFormat_;
 }
 
 void RSDisplayRenderNode::SetColorSpace(const GraphicColorGamut& colorSpace)

@@ -39,7 +39,6 @@
 #include "rs_profiler.h"
 #include "rs_trace.h"
 #include "hisysevent.h"
-#include "v2_1/cm_color_space.h"
 #include "scene_board_judgement.h"
 #include "vsync_iconnection_token.h"
 #include "xcollie/watchdog.h"
@@ -54,6 +53,7 @@
 #include "display_engine/rs_color_temperature.h"
 #include "display_engine/rs_luminance_control.h"
 #include "drawable/rs_canvas_drawing_render_node_drawable.h"
+#include "feature/hdr/rs_hdr_util.h"
 #include "feature/anco_manager/rs_anco_manager.h"
 #include "feature/uifirst/rs_uifirst_manager.h"
 #ifdef RS_ENABLE_OVERLAY_DISPLAY
@@ -186,7 +186,6 @@ constexpr uint32_t WAIT_FOR_HARDWARE_THREAD_TASK_TIMEOUT = 3000;
 constexpr uint32_t WAIT_FOR_SURFACE_CAPTURE_PROCESS_TIMEOUT = 1000;
 constexpr uint32_t WAIT_FOR_UNMARSHAL_THREAD_TASK_TIMEOUT = 4000;
 constexpr uint32_t WATCHDOG_TIMEVAL = 5000;
-constexpr uint32_t WATCHDOG_TIMEVAL_FOR_PC = 10000;
 constexpr uint32_t HARDWARE_THREAD_TASK_NUM = 2;
 constexpr uint32_t NODE_DUMP_STRING_LEN = 8;
 constexpr int32_t SIMI_VISIBLE_RATE = 2;
@@ -381,22 +380,6 @@ static inline void WaitUntilUploadTextureTaskFinished(bool isUniRender)
     return;
 #endif
 #endif
-}
-
-HdrStatus RSMainThread::CheckIsHdrSurface(const RSSurfaceRenderNode& surfaceNode)
-{
-    if (!surfaceNode.IsOnTheTree()) {
-        return HdrStatus::NO_HDR;
-    }
-    return RSBaseRenderEngine::CheckIsHdrSurfaceBuffer(surfaceNode.GetRSSurfaceHandler()->GetBuffer());
-}
-
-bool RSMainThread::CheckIsSurfaceWithMetadata(const RSSurfaceRenderNode& surfaceNode)
-{
-    if (!surfaceNode.IsOnTheTree()) {
-        return false;
-    }
-    return RSBaseRenderEngine::CheckIsSurfaceBufferWithMetadata(surfaceNode.GetRSSurfaceHandler()->GetBuffer());
 }
 
 RSMainThread* RSMainThread::Instance()
@@ -598,7 +581,7 @@ void RSMainThread::Init()
 
     runner_ = AppExecFwk::EventRunner::Create(false);
     handler_ = std::make_shared<AppExecFwk::EventHandler>(runner_);
-    uint32_t timeForWatchDog = deviceType_ == DeviceType::PC ? WATCHDOG_TIMEVAL_FOR_PC : WATCHDOG_TIMEVAL;
+    uint32_t timeForWatchDog = WATCHDOG_TIMEVAL;
     int ret = HiviewDFX::Watchdog::GetInstance().AddThread("RenderService", handler_, timeForWatchDog);
     if (ret != 0) {
         RS_LOGW("Add watchdog thread failed");
@@ -842,9 +825,9 @@ void RSMainThread::InitVulkanErrorCallback(Drawing::GPUContext* gpuContext)
         int ret = OH_HiSysEvent_Write("GRPHIC", "RS_VULKAN_ERROR", HISYSEVENT_FAULT, paramsHebcFault,
             sizeof(paramsHebcFault) / sizeof(paramsHebcFault[0]));
         if (ret == 0) {
-            RS_LOGE("Successed to upload hebc fault event.");
+            RS_LOGE("Successed to rs_vulkan_error fault event.");
         } else {
-            RS_LOGE("Faild to upload rs_vulkan_error event, ret = %{publid}d", ret);
+            RS_LOGE("Faild to upload rs_vulkan_error event, ret = %{public}d", ret);
         }
     });
 }
@@ -1554,10 +1537,15 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
     if (!isUniRender_) {
         dividedRenderbufferTimestamps_.clear();
     }
+
+    static bool isCCMDrmEnabled = std::static_pointer_cast<DRMParam>(
+        GraphicFeatureParamManager::GetInstance().GetFeatureParam(FEATURE_CONFIGS[DRM]))->IsDrmEnable();
+    bool isDrmEnabled = RSSystemProperties::GetDrmEnabled() && isCCMDrmEnabled;
+
     const auto& nodeMap = GetContext().GetNodeMap();
     bool isHdrSwitchChanged = RSLuminanceControl::Get().IsHdrPictureOn() != prevHdrSwitchStatus_;
     nodeMap.TraverseSurfaceNodes(
-        [this, &needRequestNextVsync, isHdrSwitchChanged](
+        [this, &needRequestNextVsync, isHdrSwitchChanged, isDrmEnabled](
             const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode) mutable {
         if (surfaceNode == nullptr) {
             return;
@@ -1647,7 +1635,7 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
         }
 #ifdef RS_ENABLE_VK
         if ((RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
-            RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) && RSSystemProperties::GetDrmEnabled() &&
+            RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) && isDrmEnabled &&
             (surfaceHandler->GetBufferUsage() & BUFFER_USAGE_PROTECTED)) {
             if (!surfaceNode->GetSpecialLayerMgr().Find(SpecialLayerType::PROTECTED)) {
                 surfaceNode->SetProtectedLayer(true);
@@ -1692,9 +1680,9 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
         if (surfaceHandler->GetAvailableBufferCount() > 0) {
             needRequestNextVsync = true;
         }
-        surfaceNode->SetVideoHdrStatus(CheckIsHdrSurface(*surfaceNode));
+        surfaceNode->SetVideoHdrStatus(RSHdrUtil::CheckIsHdrSurface(*surfaceNode));
         if (surfaceNode->GetVideoHdrStatus() == HdrStatus::NO_HDR) {
-            surfaceNode->SetSdrHasMetadata(CheckIsSurfaceWithMetadata(*surfaceNode));
+            surfaceNode->SetSdrHasMetadata(RSHdrUtil::CheckIsSurfaceWithMetadata(*surfaceNode));
         }
     });
     prevHdrSwitchStatus_ = RSLuminanceControl::Get().IsHdrPictureOn();
@@ -2207,9 +2195,7 @@ void RSMainThread::ProcessHgmFrameRate(uint64_t timestamp)
                                         appFrameRateLinkers = GetContext().GetFrameRateLinkerMap().Get(),
                                         linkers = rsVsyncRateReduceManager_.GetVrateMap() ]() mutable {
         RS_TRACE_NAME("ProcessHgmFrameRate");
-        if (auto frameRateMgr = HgmCore::Instance().GetFrameRateMgr(); frameRateMgr != nullptr &&
-            frameRateMgr->GetCurScreenStrategyId().find("LTPO") != std::string::npos) {
-            // hgm warning: use IsLtpo instead after GetDisplaySupportedModes ready
+        if (auto frameRateMgr = HgmCore::Instance().GetFrameRateMgr(); frameRateMgr != nullptr) {
             frameRateMgr->UniProcessDataForLtpo(timestamp, rsFrameRateLinker, appFrameRateLinkers, linkers);
         }
     });
@@ -2455,7 +2441,8 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
         isAccessibilityConfigChanged_ = false;
         isCurtainScreenUsingStatusChanged_ = false;
         RSPointLightManager::Instance()->PrepareLight();
-        vsyncControlEnabled_ = (deviceType_ == DeviceType::PC) && RSSystemParameters::GetVSyncControlEnabled();
+        vsyncControlEnabled_ = rsVsyncRateReduceManager_.GetVRateDeviceSupport()
+                               && RSSystemParameters::GetVSyncControlEnabled();
         systemAnimatedScenesEnabled_ = RSSystemParameters::GetSystemAnimatedScenesEnabled();
         if (RSSystemProperties::GetGpuApiType() != GpuApiType::DDGR) {
             WaitUntilUploadTextureTaskFinished(isUniRender_);
@@ -2555,7 +2542,7 @@ bool RSMainThread::DoDirectComposition(std::shared_ptr<RSBaseRenderNode> rootNod
             RS_LOGE("RSMainThread::DoDirectComposition: surfaceNode is null!");
             continue;
         }
-        RSSurfaceRenderNode::UpdateSurfaceNodeNit(*surfaceNode, screenId);
+        RSHdrUtil::UpdateSurfaceNodeNit(*surfaceNode, screenId);
         displayNode->CollectHdrStatus(surfaceNode->GetVideoHdrStatus());
         auto surfaceHandler = surfaceNode->GetRSSurfaceHandler();
         if (!surfaceNode->IsHardwareForcedDisabled()) {
@@ -2901,7 +2888,8 @@ void RSMainThread::CalcOcclusionImplementation(const std::shared_ptr<RSDisplayRe
     for (auto it = curAllSurfaces.rbegin(); it != curAllSurfaces.rend(); ++it) {
         auto curSurface = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(*it);
         if (curSurface && !curSurface->IsLeashWindow()) {
-            curSurface->SetOcclusionInSpecificScenes(deviceType_ == DeviceType::PC && !threeFingerScenesList_.empty());
+            curSurface->SetOcclusionInSpecificScenes(rsVsyncRateReduceManager_.GetVRateDeviceSupport()
+                                                    && !threeFingerScenesList_.empty());
             calculator(curSurface, true);
         }
     }

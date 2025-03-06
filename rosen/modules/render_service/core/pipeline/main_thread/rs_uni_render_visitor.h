@@ -137,6 +137,8 @@ public:
         screenInfo_ = screenInfo;
     }
 
+    bool IsStencilPixelOcclusionCullingEnable() const;
+
     // Use in updating hwcnode hardware state with background alpha
     void UpdateHardwareStateByHwcNodeBackgroundAlpha(const std::vector<std::weak_ptr<RSSurfaceRenderNode>>& hwcNodes);
 
@@ -293,8 +295,6 @@ private:
     void CheckColorSpace(RSSurfaceRenderNode& node);
     void CheckColorSpaceWithSelfDrawingNode(RSSurfaceRenderNode& node, GraphicColorGamut& newColorSpace);
     void UpdateColorSpaceAfterHwcCalc(RSDisplayRenderNode& node);
-    void CheckPixelFormatWithSelfDrawingNode(RSSurfaceRenderNode& node, GraphicPixelFormat& pixelFormat);
-    void UpdatePixelFormatAfterHwcCalc(RSDisplayRenderNode& node);
     void HandleColorGamuts(RSDisplayRenderNode& node, const sptr<RSScreenManager>& screenManager);
     void CheckPixelFormat(RSSurfaceRenderNode& node);
     void HandlePixelFormat(RSDisplayRenderNode& node, const sptr<RSScreenManager>& screenManager);
@@ -324,7 +324,6 @@ private:
     void UpdateSubSurfaceNodeRectInSkippedSubTree(const RSRenderNode& rootNode);
     void CollectOcclusionInfoForWMS(RSSurfaceRenderNode& node);
     void CollectEffectInfo(RSRenderNode& node);
-    void SetHDRParam(RSSurfaceRenderNode& node, bool flag);
 
     void UpdateVirtualScreenInfo(RSDisplayRenderNode& node);
     void UpdateVirtualScreenSecurityExemption(RSDisplayRenderNode& node, RSDisplayRenderNode& mirrorNode);
@@ -437,6 +436,7 @@ private:
     bool needRequestNextVsync_ = true;
     CrossNodeOffScreenRenderDebugType isCrossNodeOffscreenOn_ = CrossNodeOffScreenRenderDebugType::ENABLE;
     DirtyRegionDebugType dirtyRegionDebugType_;
+    AdvancedDirtyRegionType advancedDirtyType_;
     std::vector<std::string> dfxTargetSurfaceNames_;
 
     std::stack<std::shared_ptr<RSDirtyRegionManager>> surfaceDirtyManager_;

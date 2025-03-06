@@ -229,6 +229,7 @@ void RSUIDirector::Destroy(bool isTextureExport)
         root_ = 0;
     }
     GoBackground(isTextureExport);
+    SendMessages();
     if (rsUIContext_ != nullptr) {
         RSUIContextManager::MutableInstance().DestroyContext(rsUIContext_->GetToken());
         rsUIContext_ = nullptr;
@@ -515,6 +516,10 @@ void RSUIDirector::ProcessMessages(std::shared_ptr<RSTransactionData> cmds, bool
         ROSEN_LOGI("Post messageId:%{public}d, cmdCount:%{public}lu, token:%{public}" PRIu64, msgId,
             static_cast<unsigned long>(commands.size()), token);
         auto rsUICtx = RSUIContextManager::Instance().GetRSUIContext(token);
+        if (rsUICtx == nullptr) {
+            ROSEN_LOGI("RSUIDirector::ProcessMessages, can not get rsUIContext with token:%{public}" PRIu64 "", token);
+            return;
+        }
         rsUICtx->PostTask([cmds = std::make_shared<std::vector<std::unique_ptr<RSCommand>>>(std::move(commands)),
                               counter, msgId, tempToken = token, &rsUICtx] {
             RS_TRACE_NAME_FMT("RSUIDirector::ProcessMessages Process messageId:%lu", msgId);

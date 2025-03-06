@@ -17,6 +17,7 @@
 
 #include <cmath>
 #include <functional>
+#include <limits.h>
 #include <limits>
 #include <memory>
 #include <string>
@@ -353,6 +354,25 @@ struct RSSurfaceRenderNodeConfig {
     bool isSync = false;
     enum SurfaceWindowType surfaceWindowType = SurfaceWindowType::DEFAULT_WINDOW;
 };
+
+struct RSAdvancedDirtyConfig {
+    // a threshold, if the number of rectangles is larger than it, we will merge all rectangles to one
+    static const int RECT_NUM_MERGING_ALL = 35;
+    // a threshold, if the number of rectangles is larger than it, we will merge all rectangles by level
+    static const int RECT_NUM_MERGING_BY_LEVEL = 20;
+    // maximal number of dirty rectangles in one surface/display node when advancedDirty is opened
+    static const int MAX_RECT_NUM_EACH_NODE = 10;
+    // number of dirty rectangles in one surface/display node when advancedDirty is closed
+    static const int DISABLED_RECT_NUM_EACH_NODE = 1;
+    // expected number of rectangles after merging
+    static const int EXPECTED_OUTPUT_NUM = 3;
+    // maximal tolerable cost in merging
+    // if the merging cost of two rectangles is larger than it, we will not merge
+    // later it could be set to a quantity related to screen area
+    static const int MAX_TOLERABLE_COST = INT_MAX;
+};
+
+static RSAdvancedDirtyConfig advancedDirtyConfig;
 
 // codes for arkui-x start
 // types for RSSurfaceExt

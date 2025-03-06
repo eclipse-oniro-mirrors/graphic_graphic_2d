@@ -103,6 +103,16 @@ DirtyRegionDebugType RSSystemProperties::GetDirtyRegionDebugType()
     return {};
 }
 
+AdvancedDirtyRegionType RSSystemProperties::GetAdvancedDirtyRegionEnabled()
+{
+    return {};
+}
+
+DirtyAlignType RSSystemProperties::GetDirtyAlignEnabled()
+{
+    return {};
+}
+
 PartialRenderType RSSystemProperties::GetPartialRenderEnabled()
 {
     return {};
@@ -603,6 +613,11 @@ bool RSSystemProperties::GetOptimizeHwcComposeAreaEnabled()
 bool RSSystemProperties::GetSurfaceOffscreenEnadbled()
 {
     return true;
+}
+
+bool RSSystemProperties::GetNodeGroupGroupedByUIEnabled()
+{
+    return false;
 }
 } // namespace Rosen
 } // namespace OHOS

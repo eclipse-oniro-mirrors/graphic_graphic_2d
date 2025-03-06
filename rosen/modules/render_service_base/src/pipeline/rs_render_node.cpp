@@ -2091,7 +2091,7 @@ void RSRenderNode::UpdateParentChildrenRect(std::shared_ptr<RSRenderNode> parent
 bool RSRenderNode::IsFilterCacheValid() const
 {
 #ifdef RS_ENABLE_GPU
-    if (!RSSystemProperties::GetBlurEnabled() || !RSProperties::FilterCacheEnabled) {
+    if (!RSSystemProperties::GetBlurEnabled() || !RSProperties::filterCacheEnabled_) {
         ROSEN_LOGD("IsBackgroundFilterCacheValid::blur is disabled or filter cache is disabled.");
         return false;
     }
@@ -2107,7 +2107,7 @@ bool RSRenderNode::IsFilterCacheValid() const
 
 bool RSRenderNode::IsAIBarFilter() const
 {
-    if (!RSSystemProperties::GetBlurEnabled() || !RSProperties::FilterCacheEnabled) {
+    if (!RSSystemProperties::GetBlurEnabled() || !RSProperties::filterCacheEnabled_) {
         ROSEN_LOGD("blur is disabled or filter cache is disabled.");
         return false;
     }
@@ -2122,7 +2122,7 @@ bool RSRenderNode::IsAIBarFilter() const
 bool RSRenderNode::IsAIBarFilterCacheValid() const
 {
 #ifdef RS_ENABLE_GPU
-    if (!RSSystemProperties::GetBlurEnabled() || !RSProperties::FilterCacheEnabled) {
+    if (!RSSystemProperties::GetBlurEnabled() || !RSProperties::filterCacheEnabled_) {
         ROSEN_LOGD("IsBackgroundFilterCacheValid::blur is disabled or filter cache is disabled.");
         return false;
     }
@@ -2273,7 +2273,7 @@ std::shared_ptr<DrawableV2::RSFilterDrawable> RSRenderNode::GetFilterDrawable(bo
 void RSRenderNode::UpdateFilterCacheWithBackgroundDirty()
 {
 #if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
-    if (!RSProperties::FilterCacheEnabled) {
+    if (!RSProperties::filterCacheEnabled_) {
         return;
     }
     auto filterDrawable = GetFilterDrawable(false);
@@ -2295,7 +2295,7 @@ void RSRenderNode::UpdateFilterCacheWithBackgroundDirty()
 void RSRenderNode::UpdateFilterCacheWithBelowDirty(RSDirtyRegionManager& dirtyManager, bool isForeground)
 {
 #if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
-    if (!RSProperties::FilterCacheEnabled) {
+    if (!RSProperties::filterCacheEnabled_) {
         ROSEN_LOGE("RSRenderNode::UpdateFilterCacheWithBelowDirty filter cache is disabled.");
         return;
     }
@@ -2316,7 +2316,7 @@ void RSRenderNode::UpdateFilterCacheWithBelowDirty(RSDirtyRegionManager& dirtyMa
 void RSRenderNode::UpdateFilterCacheWithSelfDirty()
 {
 #if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
-    if (!RSProperties::FilterCacheEnabled) {
+    if (!RSProperties::filterCacheEnabled_) {
         ROSEN_LOGE("RSRenderNode::UpdateFilterCacheWithSelfDirty filter cache is disabled.");
         return;
     }
@@ -2364,7 +2364,7 @@ void RSRenderNode::PostPrepareForBlurFilterNode(RSDirtyRegionManager& dirtyManag
 {
 #ifdef RS_ENABLE_GPU
     MarkFilterHasEffectChildren();
-    if (!RSProperties::FilterCacheEnabled) {
+    if (!RSProperties::filterCacheEnabled_) {
         ROSEN_LOGE("RSRenderNode::PostPrepareForBlurFilterNode filter cache is disabled.");
         return;
     }
@@ -3543,7 +3543,7 @@ void RSRenderNode::MarkNodeGroup(NodeGroupType type, bool isNodeGroup, bool incl
         type, isNodeGroup, GetId());
     if (isNodeGroup && type == NodeGroupType::GROUPED_BY_UI) {
         auto context = GetContext().lock();
-        if (context && context->GetNodeMap().IsResidentProcessNode(GetId()) && !RSSystemProperties::IsPcType()) {
+        if (context && context->GetNodeMap().IsResidentProcessNode(GetId())) {
             nodeGroupType_ |= type;
             SetDirty();
 #ifdef RS_ENABLE_GPU
