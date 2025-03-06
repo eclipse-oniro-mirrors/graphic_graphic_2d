@@ -132,7 +132,7 @@ HWTEST_F(HgmTouchManagerTest, Up2IdleState, Function | SmallTest | Level1)
                 usleep(handleRsFrameTimeUs);
                 auto end  = std::chrono::steady_clock::now();
                 if (!isNeedSkipCheck) {
-                    if (std::chrono::duration_cast<std::chrono::microseconds>(end-start).count() < runTimeoutUs) {
+                    if (std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() < runTimeoutUs) {
                         ASSERT_EQ(touchManager.GetState(), TouchState::UP_STATE);
                     } else {
                         isNeedSkipCheck = true;
