@@ -842,10 +842,11 @@ void RSDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
             rsDirtyRectsDfx.OnDraw(*curCanvas_);
             curCanvas_->Restore();
             DrawCurtainScreen();
+            bool displayP3Enable = (params->GetNewColorSpace() == GRAPHIC_COLOR_GAMUT_DISPLAY_P3);
             if (screenInfo.isSamplingOn) {
                 // In expand screen down-sampling situation, process watermark and color filter during offscreen render.
                 DrawWatermarkIfNeed(*params, *curCanvas_);
-                SwitchColorFilter(*curCanvas_, hdrBrightnessRatio);
+                SwitchColorFilter(*curCanvas_, hdrBrightnessRatio, displayP3Enable);
             }
             if (needOffscreen && canvasBackup_) {
                 Drawing::AutoCanvasRestore acr(*canvasBackup_, true);
@@ -860,7 +861,7 @@ void RSDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
             if (!screenInfo.isSamplingOn) {
                 // In normal situation, process watermark and color filter after offscreen render.
                 DrawWatermarkIfNeed(*params, *curCanvas_);
-                SwitchColorFilter(*curCanvas_, hdrBrightnessRatio);
+                SwitchColorFilter(*curCanvas_, hdrBrightnessRatio, displayP3Enable);
             }
 #ifdef RS_ENABLE_OVERLAY_DISPLAY
             RSOverlayDisplayManager::Instance().PostProcFilter(*curCanvas_);
@@ -1437,7 +1438,8 @@ void RSDisplayRenderNodeDrawable::DrawWiredMirrorOnDraw(
     mirroredDrawable.RSRenderNodeDrawable::OnDraw(*curCanvas_);
     DrawCurtainScreen();
     DrawWatermarkIfNeed(*mirroredParams, *curCanvas_);
-    SwitchColorFilter(*curCanvas_, 1.f); // 1.f: wired screen not use hdr, use default value 1.f
+    bool displayP3Enable = (params.GetNewColorSpace() == GRAPHIC_COLOR_GAMUT_DISPLAY_P3);
+    SwitchColorFilter(*curCanvas_, 1.f, displayP3Enable); // 1.f: wired screen not use hdr, use default value 1.f
     RSUniRenderThread::ResetCaptureParam();
 
     uniParam->SetOpDropped(isOpDropped);
@@ -1816,7 +1818,8 @@ void RSDisplayRenderNodeDrawable::FindHardCursorNodes(RSDisplayRenderParams& par
     }
 }
 
-void RSDisplayRenderNodeDrawable::SwitchColorFilter(RSPaintFilterCanvas& canvas, float hdrBrightnessRatio) const
+void RSDisplayRenderNodeDrawable::SwitchColorFilter(RSPaintFilterCanvas& canvas, float hdrBrightnessRatio,
+    bool displayP3Enable) const
 {
     const auto& renderEngine = RSUniRenderThread::Instance().GetRenderEngine();
     if (!renderEngine) {
@@ -1826,6 +1829,11 @@ void RSDisplayRenderNodeDrawable::SwitchColorFilter(RSPaintFilterCanvas& canvas,
     ColorFilterMode colorFilterMode = renderEngine->GetColorFilterMode();
     if (colorFilterMode == ColorFilterMode::INVERT_COLOR_DISABLE_MODE ||
         colorFilterMode >= ColorFilterMode::DALTONIZATION_NORMAL_MODE) {
+        return;
+    }
+
+    if (displayP3Enable) {
+        SwitchColorFilterWithP3(canvas, colorFilterMode, hdrBrightnessRatio);
         return;
     }
 
@@ -1841,6 +1849,33 @@ void RSDisplayRenderNodeDrawable::SwitchColorFilter(RSPaintFilterCanvas& canvas,
 #endif
     Drawing::SaveLayerOps slr(nullptr, &brush, Drawing::SaveLayerOps::INIT_WITH_PREVIOUS);
     canvas.SaveLayer(slr);
+}
+
+void RSDisplayRenderNodeDrawable::SwitchColorFilterWithP3(RSPaintFilterCanvas& canvas,
+    ColorFilterMode colorFilterMode, float hdrBrightnessRatio) const
+{
+    RS_TRACE_NAME_FMT("RSDisplayRenderNodeDrawable::SwitchColorFilterWithP3 mode:%d",
+        static_cast<int32_t>(colorFilterMode));
+
+    int32_t offscreenWidth = canvas.GetWidth();
+    int32_t offscreenHeight = canvas.GetHeight();
+    auto originSurface = canvas.GetSurface();
+    Drawing::ColorType originColorType = originSurface->GetImageInfo().GetColorType();
+
+    Drawing::ImageInfo info = Drawing::ImageInfo { offscreenWidth, offscreenHeight,
+        originColorType, Drawing::ALPHATYPE_PREMUL, Drawing::ColorSpace::CreateSRGB()};
+    auto offscreenSurface = canvas.GetSurface()->MakeSurface(info);
+    auto offscreenCanvas = std::make_shared<RSPaintFilterCanvas>(offscreenSurface.get());
+
+    Drawing::Brush brush;
+    auto originSurfaceImage = canvas.GetSurface()->GetImageSnapshot();
+    RSBaseRenderUtil::SetColorFilterModeToPaint(colorFilterMode, brush, hdrBrightnessRatio);
+    offscreenCanvas->AttachBrush(brush);
+    offscreenCanvas->DrawImage(*originSurfaceImage, 0.f, 0.f, Drawing::SamplingOptions());
+    offscreenCanvas->DetachBrush();
+
+    auto offscreenImage = offscreenCanvas->GetSurface()->GetImageSnapshot();
+    canvas.DrawImage(*offscreenImage, 0.f, 0.f, Drawing::SamplingOptions());
 }
 
 void RSDisplayRenderNodeDrawable::FindHardwareEnabledNodes(RSDisplayRenderParams& params)
