@@ -96,8 +96,10 @@ HgmFrameRateManager::HgmFrameRateManager()
             UpdateSoftVSync(false);
     }),
     rsFrameRateTimer_("rsFrameRate", std::chrono::milliseconds(IDLE_TIMER_EXPIRED), nullptr, [this] () {
-        rsFrameRateLinker_->SetExpectedRange({});
-        UpdateSoftVSync(false);
+        if (rsFrameRateLinker_ != nullptr) {
+            rsFrameRateLinker_->SetExpectedRange({});
+            UpdateSoftVSync(false);
+        }
     }),
     voters_(std::begin(VOTER_NAME), std::end(VOTER_NAME))
 {

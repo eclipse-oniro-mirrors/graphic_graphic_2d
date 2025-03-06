@@ -15,6 +15,7 @@
 
 #include <cstdint>
 #include <functional>
+
 #include "rs_interfaces.h"
 #include "rs_trace.h"
 
@@ -151,9 +152,6 @@ void RSInterfaces::RemoveVirtualScreen(ScreenId id)
 bool RSInterfaces::SetWatermark(const std::string& name, std::shared_ptr<Media::PixelMap> watermark)
 {
 #ifdef ROSEN_OHOS
-    if (!RSSystemProperties::IsPcType()) {
-        return false;
-    }
     if (renderServiceClient_ == nullptr) {
         return false;
     }
@@ -331,6 +329,7 @@ void RSInterfaces::SetShowRefreshRateEnabled(bool enabled, int32_t type)
 
 uint32_t RSInterfaces::GetRealtimeRefreshRate(ScreenId id)
 {
+    RS_LOGD("GetRealtimeRefreshRate: screenId[%{public}" PRIu64"]", id);
     return renderServiceClient_->GetRealtimeRefreshRate(id);
 }
 
