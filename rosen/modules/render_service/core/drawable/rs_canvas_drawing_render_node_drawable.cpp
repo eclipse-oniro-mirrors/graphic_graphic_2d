@@ -467,7 +467,10 @@ void RSCanvasDrawingRenderNodeDrawable::ProcessCPURenderInBackgroundThread(std::
         if (image) {
             SKResourceManager::Instance().HoldResource(image);
         }
-        canvasDrawingDrawable->image_ = image;
+        {
+            std::unique_lock<std::recursive_mutex> lock(canvasDrawingDrawable->drawableMutex_);
+            canvasDrawingDrawable->image_ = image;
+        }
         if (UNLIKELY(!ctx)) {
             return;
         }
