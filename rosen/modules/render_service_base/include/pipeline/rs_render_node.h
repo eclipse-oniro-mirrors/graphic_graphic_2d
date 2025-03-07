@@ -862,6 +862,7 @@ public:
     virtual void RemoveChildBlurBehindWindow(NodeId id) {}
     virtual void CalDrawBehindWindowRegion() {}
     virtual RectI GetBehindWindowRegion() const { return {}; };
+    virtual void SetNeedOffscreen(bool needOffscreen);
 
     void SetAbsRotation(float degree)
     {

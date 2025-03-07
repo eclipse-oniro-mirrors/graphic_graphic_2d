@@ -1065,6 +1065,10 @@ void RSUniRenderVisitor::QuickPrepareSurfaceRenderNode(RSSurfaceRenderNode& node
     ResetCurSurfaceInfoAsUpperSurfaceParent(node);
     curCornerRadius_ = curCornerRadius;
     parentSurfaceNodeMatrix_ = parentSurfaceNodeMatrix;
+
+    // [Attention] Only used in PC window resize scene now
+    windowKeyFrameNodeInf_.PrepareRootNodeOffscreen(node);
+
     node.RenderTraceDebug();
     node.SetNeedOffscreen(isScreenRotationAnimating_);
     if (node.NeedUpdateDrawableBehindWindow()) {
@@ -1419,6 +1423,13 @@ void RSUniRenderVisitor::QuickPrepareCanvasRenderNode(RSCanvasRenderNode& node)
     curAlpha_ = prevAlpha;
     curCornerRadius_ = curCornerRadius;
     node.OpincUpdateRootFlag(unchangeMarkEnable_);
+
+    // [Attention] Only used in PC window resize scene now
+    NodeId linedRootNodeId = node.GetLinkedRootNodeId();
+    if (UNLIKELY(linedRootNodeId != INVALID_NODEID)) {
+        windowKeyFrameNodeInf_.UpdateLinkedNodeId(node.GetId(), linedRootNodeId);
+    }
+
     node.RenderTraceDebug();
 }
 
@@ -1612,6 +1623,10 @@ bool RSUniRenderVisitor::InitDisplayInfo(RSDisplayRenderNode& node)
     node.ResetDisplayHdrStatus();
     node.SetPixelFormat(GraphicPixelFormat::GRAPHIC_PIXEL_FMT_RGBA_8888);
     node.SetColorSpace(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB);
+
+    // [Attention] Only used in PC window resize scene now
+    windowKeyFrameNodeInf_.ClearLinkedNodeInfo();
+
     return true;
 }
 
@@ -3717,6 +3732,8 @@ void RSUniRenderVisitor::PrepareRootRenderNode(RSRootRenderNode& node)
     if (geoPtr != nullptr) {
         parentSurfaceNodeMatrix_ = geoPtr->GetAbsMatrix();
     }
+
+    node.SetNeedOffscreen(false);
 
     bool isSubTreeNeedPrepare = node.IsSubTreeNeedPrepare(filterInGlobal_) || ForcePrepareSubTree();
     isSubTreeNeedPrepare ? QuickPrepareChildren(node) :
