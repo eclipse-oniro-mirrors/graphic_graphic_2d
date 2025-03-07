@@ -3830,28 +3830,29 @@ void RSRenderServiceConnectionProxy::NotifyDynamicModeEvent(bool enableDynamicMo
     }
 }
 
-void RSRenderServiceConnectionProxy::NotifyHgmConfigEvent(const std::string &eventName, bool state)
+ErrCode RSRenderServiceConnectionProxy::NotifyHgmConfigEvent(const std::string &eventName, bool state)
 {
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
     if (!data.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor())) {
         ROSEN_LOGE("NotifyHgmConfigEvent: GetDescriptor err.");
-        return;
+        return ERR_INVALID_VALUE;
     }
     if (!data.WriteString(eventName)) {
-        return;
+        return ERR_INVALID_VALUE;
     }
     if (!data.WriteBool(state)) {
-        return;
+        return ERR_INVALID_VALUE;
     }
     option.SetFlags(MessageOption::TF_ASYNC);
     uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_HGMCONFIG_EVENT);
     int32_t err = SendRequest(code, data, reply, option);
     if (err != NO_ERROR) {
         ROSEN_LOGE("RSRenderServiceConnectionProxy::NotifyHgmConfigEvent: Send Request err.");
-        return;
+        return ERR_INVALID_VALUE;
     }
+    return ERR_OK;
 }
 
 void RSRenderServiceConnectionProxy::SetCacheEnabledForRotation(bool isEnabled)
@@ -3992,24 +3993,24 @@ HwcDisabledReasonInfos RSRenderServiceConnectionProxy::GetHwcDisabledReasonInfo(
     return hwcDisabledReasonInfos;
 }
 
-int64_t RSRenderServiceConnectionProxy::GetHdrOnDuration()
+ErrCode RSRenderServiceConnectionProxy::GetHdrOnDuration(int64_t& hdrOnDuration)
 {
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
     if (!data.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor())) {
         ROSEN_LOGE("GetHdrOnDuration: WriteInterfaceToken GetDescriptor err.");
-        return RS_CONNECTION_ERROR;
+        return ERR_INVALID_VALUE;
     }
     option.SetFlags(MessageOption::TF_SYNC);
 
     uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_HDR_ON_DURATION);
     int32_t err = SendRequest(code, data, reply, option);
     if (err != NO_ERROR) {
-        return RS_CONNECTION_ERROR;
+        return ERR_INVALID_VALUE;
     }
-    int64_t result = reply.ReadInt64();
-    return result;
+    hdrOnDuration = reply.ReadInt64();
+    return ERR_OK;
 }
 
 ErrCode RSRenderServiceConnectionProxy::SetVmaCacheStatus(bool flag)
