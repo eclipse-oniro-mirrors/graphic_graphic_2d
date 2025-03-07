@@ -62,6 +62,7 @@ void RSLuminanceControl::CloseLibrary()
     getNonlinearRatio_ = nullptr;
     calScaler_ = nullptr;
     isHdrPictureOn_ = nullptr;
+    isCloseHardwareHdr_ = nullptr;
 }
 
 void RSLuminanceControl::Init()
@@ -137,6 +138,12 @@ bool RSLuminanceControl::LoadStatusControl()
     forceCloseHdr_ = reinterpret_cast<ForceCloseHdrFunc>(dlsym(extLibHandle_, "ForceCloseHdr"));
     if (forceCloseHdr_ == nullptr) {
         RS_LOGE("LumCtr link ForceCloseHdr error!");
+        return false;
+    }
+    isCloseHardwareHdr_ = reinterpret_cast<IsCloseHardwareHdrFunc>(dlsym(extLibHandle_,
+         "isCloseHardwareHdr"));
+    if (isCloseHardwareHdr_ == nullptr) {
+        RS_LOGE("LumCtr link IsCloseHardwareHdrFunc error!");
         return false;
     }
     return true;

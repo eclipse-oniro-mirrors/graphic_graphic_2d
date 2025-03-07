@@ -346,6 +346,7 @@ private:
     void SetHdrWhenMultiDisplayChange();
 
     void TryNotifyUIBufferAvailable();
+    bool IsHdrUseUnireder(bool hasUniRenderHdrSurface,std::shared_ptr<RSSurfaceRenderNode>& hwcNodePtr);
 
     void CollectSelfDrawingNodeRectInfo(RSSurfaceRenderNode& node);
 
