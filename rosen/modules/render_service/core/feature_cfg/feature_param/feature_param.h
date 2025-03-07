@@ -44,6 +44,7 @@ const std::vector<std::string> FEATURE_CONFIGS = {
     "DeeplyReleaseGpuResourceConfig",
     "AccessibilityConfig",
     "VRateConfig",
+    "RotateOffScreenConfig",
 };
 
 enum FeatureModule {
@@ -67,6 +68,7 @@ enum FeatureModule {
     DEEPLY_REL_GPU_RES,
     Accessibility,
     VRate,
+    RotateOffScreen,
 };
 
 enum ParseErrCode {
