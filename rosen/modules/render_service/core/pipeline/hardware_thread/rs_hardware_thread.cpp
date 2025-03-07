@@ -376,7 +376,6 @@ void RSHardwareThread::ChangeLayersForActiveRectOutside(std::vector<LayerInfoPtr
         if (layerSurface != nullptr) {
             auto rcdlayerInfo = RSRcdManager::GetInstance().GetLayerPair(layerSurface->GetName());
             if (rcdlayerInfo.second != RoundCornerDisplayManager::RCDLayerType::INVALID) {
-                rcdLayerInfoList.push_back(rcdlayerInfo);
                 continue;
             }
         }
