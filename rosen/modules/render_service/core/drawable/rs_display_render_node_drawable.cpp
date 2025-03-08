@@ -1859,11 +1859,9 @@ void RSDisplayRenderNodeDrawable::SwitchColorFilterWithP3(RSPaintFilterCanvas& c
 
     int32_t offscreenWidth = canvas.GetWidth();
     int32_t offscreenHeight = canvas.GetHeight();
-    auto originSurface = canvas.GetSurface();
-    Drawing::ColorType originColorType = originSurface->GetImageInfo().GetColorType();
 
     Drawing::ImageInfo info = Drawing::ImageInfo { offscreenWidth, offscreenHeight,
-        originColorType, Drawing::ALPHATYPE_PREMUL, Drawing::ColorSpace::CreateSRGB()};
+        Drawing::COLORTYPE_RGBA_F16, Drawing::ALPHATYPE_PREMUL, Drawing::ColorSpace::CreateSRGB()};
     auto offscreenSurface = canvas.GetSurface()->MakeSurface(info);
     auto offscreenCanvas = std::make_shared<RSPaintFilterCanvas>(offscreenSurface.get());
 
