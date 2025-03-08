@@ -417,11 +417,11 @@ void RSUniRenderVisitor::HandlePixelFormat(RSDisplayRenderNode& node, const sptr
         RSSystemProperties::GetHdrImageEnabled(), RSSystemProperties::GetHdrVideoEnabled());
     ScreenId screenId = node.GetScreenId();
     bool hasUniRenderHdrSurface = node.GetHasUniRenderHdrSurface();
-    if (RSLuminanceControl::Get().IsCloseHardwareHdr() && !drmNodes_empty()){
+    if (RSLuminanceControl::Get().IsCloseHardwareHdr() && !drmNodes_.empty()){
         // Disable hdr when drm videos exist to avoid flicker
-        RSLuminanceControl::Get().SetHdrStatus(screenId,HdrStatus::NO_HDR);
+        RSLuminanceControl::Get().SetHdrStatus(screenId, HdrStatus::NO_HDR);
     } else {
-        RSLuminanceControl::Get().SetHdrStatus(screenId,node.GetDisplayHdrStatus());
+        RSLuminanceControl::Get().SetHdrStatus(screenId, node.GetDisplayHdrStatus());
     }
     bool isHdrOn = RSLuminanceControl::Get().IsHdrOn(screenId);
     rsHdrCollection_->HandleHdrState(isHdrOn);
@@ -2286,7 +2286,7 @@ void RSUniRenderVisitor::UpdateHwcNodeDirtyRegionAndCreateLayer(std::shared_ptr<
             topLayers.emplace_back(hwcNodePtr);
             continue;
         }
-        if (IsHdrUseUnirender(curDisplayNode_->GetHasUniRenderHdrSurface(),hwcNodePtr)){
+        if (IsHdrUseUnirender(curDisplayNode_->GetHasUniRenderHdrSurface(), hwcNodePtr)){
             hwcNodePtr->SetHardwareForcedDisabledState(true);
             // DRM will force HDR to use unirender
             curDisplayNode_->SetHasUniRenderHdrSurface(curDisplayNode_->GetHasUniRenderHdrSurface() ||
@@ -2324,7 +2324,7 @@ bool RSUniRenderVisitor::IsHdrUseUnirender(bool hasUniRenderHdrSurface,
     if (hasUniRenderHdrSurface || !drmNodes_.empty() || hasFingerprint_[currentVisitDisplay_] ||
         isHdrHardwareDisabled) {
         RS_OPTIONAL_TRACE_NAME_FMT("hwc debug: name:%s id:%" PRIu64
-            " isHdrHardwareDisabled:%d disabled by having UniRenderHdrSurface/DRM nodes",
+            " disabled by having UniRenderHdrSurface/DRM nodes, isHdrHardwareDisabled:%d",
             hwcNodePtr->GetName().c_str(),hwcNodePtr->GetId(),isHdrHardwareDisabled);
         PrintHiperfLog(hwcNodePtr,"unirender HDR");
         return true;
