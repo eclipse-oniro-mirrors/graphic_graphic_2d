@@ -2646,8 +2646,9 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             break;
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_HDR_ON_DURATION) : {
-            int64_t hdrOnDuration = GetHdrOnDuration();
-            if (!reply.WriteInt64(hdrOnDuration)) {
+            int64_t hdrOnDuration = 0;
+            auto errCode = GetHdrOnDuration(hdrOnDuration);
+            if (errCode != ERR_OK || !reply.WriteInt64(hdrOnDuration)) {
                 ret = ERR_INVALID_REPLY;
             }
             break;
