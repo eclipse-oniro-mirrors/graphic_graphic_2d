@@ -1029,7 +1029,8 @@ void RSSurfaceRenderNode::SyncPrivacyContentInfoToFirstLevelNode()
 
 void RSSurfaceRenderNode::SyncColorGamutInfoToFirstLevelNode()
 {
-    if (GetColorSpace() != GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB) {
+    // When the P3 appWindow node is up or down the tree, it transmits color gamut information to leashWindow node.
+    if (colorSpace_ != GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB) {
         auto firstLevelNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(GetFirstLevelNode());
         if (firstLevelNode) {
             firstLevelNode->SetFirstLevelNodeColorGamut(IsOnTheTree());
@@ -1219,11 +1220,17 @@ void RSSurfaceRenderNode::SetColorSpace(GraphicColorGamut colorSpace)
 
 GraphicColorGamut RSSurfaceRenderNode::GetColorSpace() const
 {
+    if (!RSSystemProperties::GetWideColorSpaceEnabled()) {
+        return GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
+    }
     return colorSpace_;
 }
 
 GraphicColorGamut RSSurfaceRenderNode::GetFirstLevelNodeColorGamut() const
 {
+    if (!RSSystemProperties::GetWideColorSpaceEnabled()) {
+        return GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
+    }
     if (wideColorGamutInChildNodeCount_ > 0) {
         return GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3;
     } else {
