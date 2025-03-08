@@ -25,8 +25,8 @@ namespace {
     const std::string VIDEO_RATE_FLAG = "VIDEO_RATE";
     const std::string VIDEO_VOTE_FLAG = "VOTER_VIDEO";
     // USE DURATION TO DETERMINE BARRAGE AND UI
-    constexpr uint64_t DANMU_MAX_INTERVAL_TIME = 50;   
-    constexpr int32_t VIDEO_VOTE_DELAYS_TIME = 1000 * 1000;  
+    constexpr uint64_t DANMU_MAX_INTERVAL_TIME = 50;
+    constexpr int32_t VIDEO_VOTE_DELAYS_TIME = 1000 * 1000;
 }
 
 RSFrameRateVote::RSFrameRateVote()
@@ -55,7 +55,7 @@ bool RSFrameRateVote::CheckSurfaceAndUi(OHSurfaceSource sourceType)
     std::string transactionFlags = "";
     {
         std::lock_guard<std::mutex> lock(mutex_);
-        transactionFlags = transactionFlags_; 
+        transactionFlags = transactionFlags_;
     }
     // transactionFlags_ format is [pid, eventId]
     if (sourceType == OHSurfaceSource::OH_SURFACE_SOURCE_VIDEO &&
@@ -64,7 +64,7 @@ bool RSFrameRateVote::CheckSurfaceAndUi(OHSurfaceSource sourceType)
     }
     auto lastUpdateTime = currentUpdateTime_;
     currentUpdateTime_ = OHOS::Rosen::HgmCore::Instance().GetCurrentTimestamp() / NS_PER_MS;
-    auto duration = currentUpdateTime_ > lastUpdateTime ? currentUpdateTime_ - lastUiUpdateTime : 0;
+    auto duration = currentUpdateTime_ > lastUpdateTime ? currentUpdateTime_ - lastUpdateTime : 0;
     if (duration < DANMU_MAX_INTERVAL_TIME) {
         return true;
     } else {
