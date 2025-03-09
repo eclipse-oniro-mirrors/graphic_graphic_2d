@@ -1758,7 +1758,7 @@ void RSMainThread::CollectInfoForHardwareComposer()
                 !surfaceNode->GetSpecialLayerMgr().Find(SpecialLayerType::PROTECTED)) {
                 doDirectComposition_ = false;
                 RS_OPTIONAL_TRACE_NAME_FMT("rs debug: name %s, id %" PRIu64", HDR disable direct composition",
-                    surfaceNode->GetName().c_str(),surfaceNode->GetId());
+                    surfaceNode->GetName().c_str(), surfaceNode->GetId());
             }
 
             if (!surfaceNode->IsOnTheTree()) {
