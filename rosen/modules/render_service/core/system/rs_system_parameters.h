@@ -85,7 +85,7 @@ public:
     static int32_t GetWindowScreenScanType();
     static bool GetAnimationOcclusionEnabled();
     static bool GetUIFirstPurgeEnabled();
-    static bool GetUifirstOcclusionEnabled();
+    static bool GetUIFirstOcclusionEnabled();
 };
 
 } // namespace Rosen

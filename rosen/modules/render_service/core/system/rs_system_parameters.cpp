@@ -273,7 +273,7 @@ bool RSSystemParameters::GetUIFirstPurgeEnabled()
     return ConvertToInt(enable, 0) != 0;
 }
 
-bool RSSystemParameters::GetUifirstOcclusionEnabled()
+bool RSSystemParameters::GetUIFirstOcclusionEnabled()
 {
     static CachedHandle g_Handle = CachedParameterCreate("rosen.uni.uifirst.occlusion.enable", "1");
     int changed = 0;
