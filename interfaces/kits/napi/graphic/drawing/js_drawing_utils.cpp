@@ -273,7 +273,7 @@ napi_value GetFontMetricsAndConvertToJsValue(napi_env env, FontMetrics* metrics)
 
 std::shared_ptr<Font> GetThemeFont(std::shared_ptr<Font> font)
 {
-    std::shared_ptr<FontMgr> fontMgr = GetFontMgr();
+    std::shared_ptr<FontMgr> fontMgr = GetFontMgr(font);
     if (fontMgr == nullptr) {
         return nullptr;
     }
@@ -289,7 +289,7 @@ std::shared_ptr<Font> GetThemeFont(std::shared_ptr<Font> font)
 
 std::shared_ptr<Font> MatchThemeFont(std::shared_ptr<Font> font, int32_t unicode)
 {
-    std::shared_ptr<FontMgr> fontMgr = GetFontMgr();
+    std::shared_ptr<FontMgr> fontMgr = GetFontMgr(font);
     if (fontMgr == nullptr) {
         return nullptr;
     }

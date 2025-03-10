@@ -42,7 +42,7 @@ std::shared_ptr<Drawing::Typeface> DrawingFontUtils::GetZhCnTypeface()
 
 std::shared_ptr<Drawing::Font> DrawingFontUtils::GetThemeFont(const Drawing::Font* font)
 {
-    std::shared_ptr<Drawing::FontMgr> fontMgr = DrawingFontUtils::GetFontMgr();
+    std::shared_ptr<Drawing::FontMgr> fontMgr = DrawingFontUtils::GetFontMgr(font);
     if (fontMgr == nullptr) {
         return nullptr;
     }
@@ -58,7 +58,7 @@ std::shared_ptr<Drawing::Font> DrawingFontUtils::GetThemeFont(const Drawing::Fon
 
 std::shared_ptr<Drawing::Font> DrawingFontUtils::MatchThemeFont(const Drawing::Font* font, int32_t unicode)
 {
-    std::shared_ptr<Drawing::FontMgr> fontMgr = DrawingFontUtils::GetFontMgr();
+    std::shared_ptr<Drawing::FontMgr> fontMgr = DrawingFontUtils::GetFontMgr(font);
     if (fontMgr == nullptr) {
         return nullptr;
     }
