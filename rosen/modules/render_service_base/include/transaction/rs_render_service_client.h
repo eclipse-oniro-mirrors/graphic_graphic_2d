@@ -166,8 +166,7 @@ public:
     bool SetHwcNodeBounds(int64_t rsNodeId, float positionX, float positionY,
         float positionZ, float positionW);
 
-    int32_t SetFocusAppInfo(int32_t pid, int32_t uid, const std::string &bundleName, const std::string &abilityName,
-        uint64_t focusNodeId);
+    int32_t SetFocusAppInfo(const FocusAppInfo& info);
 
     ScreenId GetDefaultScreenId();
     ScreenId GetActiveScreenId();

@@ -933,15 +933,14 @@ void RSMainThread::SetRSEventDetectorLoopFinishTag()
     }
 }
 
-void RSMainThread::SetFocusAppInfo(
-    int32_t pid, int32_t uid, const std::string& bundleName, const std::string& abilityName, uint64_t focusNodeId)
+void RSMainThread::SetFocusAppInfo(const FocusAppInfo& info)
 {
-    focusAppPid_ = pid;
-    focusAppUid_ = uid;
-    focusAppBundleName_ = bundleName;
-    focusAppAbilityName_ = abilityName;
-    UpdateFocusNodeId(focusNodeId);
-    RSPerfMonitorReporter::GetInstance().SetFocusAppInfo(bundleName.c_str());
+    focusAppPid_ = info.pid;
+    focusAppUid_ = info.uid;
+    focusAppBundleName_ = info.bundleName;
+    focusAppAbilityName_ = info.abilityName;
+    UpdateFocusNodeId(info.focusNodeId);
+    RSPerfMonitorReporter::GetInstance().SetFocusAppInfo(info.bundleName.c_str());
 }
 
 void RSMainThread::UpdateFocusNodeId(NodeId focusNodeId)
