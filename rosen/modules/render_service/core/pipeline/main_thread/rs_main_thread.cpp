@@ -4700,6 +4700,7 @@ const uint32_t FOLD_DEVICE_SCREEN_NUMBER = 2; // alt device has two screens
 void RSMainThread::UpdateUIFirstSwitch()
 {
 #ifdef RS_ENABLE_GPU
+    RSUifirstManager::Instance().SetPurgeEnable(RSSystemParameters::GetUIFirstPurgeEnabled());
     const std::shared_ptr<RSBaseRenderNode> rootNode = context_->GetGlobalRootRenderNode();
     if (!rootNode) {
         RSUifirstManager::Instance().SetUiFirstSwitch(isUiFirstOn_);

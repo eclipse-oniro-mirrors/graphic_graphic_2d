@@ -1745,7 +1745,7 @@ bool RSUniRenderVisitor::AfterUpdateSurfaceDirtyCalc(RSSurfaceRenderNode& node)
 
 void RSUniRenderVisitor::UpdateLeashWindowVisibleRegionEmpty(RSSurfaceRenderNode& node)
 {
-    if (!node.IsLeashWindow()) {
+    if (!node.IsLeashWindow() || !RSSystemParameters::GetUifirstOcclusionEnabled()) {
         return;
     }
 
