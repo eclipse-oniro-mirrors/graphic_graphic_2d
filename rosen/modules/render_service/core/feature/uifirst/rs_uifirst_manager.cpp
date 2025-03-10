@@ -497,9 +497,10 @@ void RSUifirstManager::DoPurgePendingPostNodes(std::unordered_map<NodeId,
         }
 
         bool staticContent = drawable->IsCurFrameStatic();
-        RS_TRACE_NAME_FMT("Purge node name: %s, HasCachedTexture:%d, staticContent: %d",
-            surfaceParams->GetName().c_str(), drawable->HasCachedTexture(), staticContent);
-        if (drawable->HasCachedTexture() && (staticContent || CheckVisibleDirtyRegionIsEmpty(node)) &&
+        RS_TRACE_NAME_FMT("Purge node name: %s, PurgeEnable:%d, HasCachedTexture:%d, staticContent: %d",
+            surfaceParams->GetName().c_str(), purgeEnable_, drawable->HasCachedTexture(), staticContent);
+        if (purgeEnable_ && drawable->HasCachedTexture() &&
+            (staticContent || CheckVisibleDirtyRegionIsEmpty(node)) &&
             (subthreadProcessingNode_.find(id) == subthreadProcessingNode_.end()) &&
             !drawable->IsSubThreadSkip()) {
             RS_OPTIONAL_TRACE_NAME_FMT("Purge node name %s", surfaceParams->GetName().c_str());
