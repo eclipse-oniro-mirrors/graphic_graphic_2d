@@ -21,10 +21,7 @@ group("drawingnapi") {
 }
 
 config("drawing_config") {
-  include_dirs = [
-    "../drawing",
-    "../../../../../rosen/modules/2d_engine/rosen_text/skia_txt/txt"
-  ]
+  include_dirs = [ "../drawing" ]
 }
 
 config("local_drawing_config") {
@@ -95,8 +92,6 @@ if (is_arkui_x) {
     defines = []
     configs = [ ":local_drawing_config" ]
     public_configs = [ ":drawing_config" ]
-
-    public_external_deps = [ "skia:skia_canvaskit" ]
 
     deps = [
       "../../../../../rosen/modules/2d_graphics:2d_graphics",
@@ -178,8 +173,6 @@ if (is_arkui_x) {
       defines += [ "WINDOWS_PLATFORM" ]
     }
 
-    public_external_deps = [ "skia:skia_canvaskit" ]
-    
     innerapi_tags = [ "platformsdk" ]
     part_name = "graphic_2d"
     subsystem_name = "graphic"
