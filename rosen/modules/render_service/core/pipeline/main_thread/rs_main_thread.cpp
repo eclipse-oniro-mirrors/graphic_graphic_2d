@@ -1526,9 +1526,8 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
         dividedRenderbufferTimestamps_.clear();
     }
 
-    auto drmParam = std::static_pointer_cast<DRMParam>(
-        GraphicFeatureParamManager::GetInstance().GetFeatureParam(FEATURE_CONFIGS[DRM]));
-    static bool isCCMDrmEnabled = drmParam ? drmParam->IsDrmEnable() : false;
+    static bool isCCMDrmEnabled = std::static_pointer_cast<DRMParam>(
+        GraphicFeatureParamManager::GetInstance().GetFeatureParam(FEATURE_CONFIGS[DRM]))->IsDrmEnable();
     bool isDrmEnabled = RSSystemProperties::GetDrmEnabled() && isCCMDrmEnabled;
 
     const auto& nodeMap = GetContext().GetNodeMap();
