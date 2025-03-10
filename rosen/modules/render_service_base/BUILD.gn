@@ -510,6 +510,7 @@ ohos_source_set("render_service_base_src") {
       "hicollie:libhicollie",
       "hisysevent:libhisysevent",
       "image_framework:image_native",
+      "lz4:liblz4_shared",
     ]
   }
 
