@@ -1803,172 +1803,215 @@ int32_t RSRenderServiceConnection::GetScreenHDRCapability(ScreenId id, RSScreenH
     return screenManager_->GetScreenHDRCapability(id, screenHdrCapability);
 }
 
-int32_t RSRenderServiceConnection::GetPixelFormat(ScreenId id, GraphicPixelFormat& pixelFormat)
+ErrCode RSRenderServiceConnection::GetPixelFormat(ScreenId id, GraphicPixelFormat& pixelFormat, int32_t& resCode)
 {
     if (!screenManager_) {
-        return StatusCode::SCREEN_NOT_FOUND;
+        resCode = StatusCode::SCREEN_NOT_FOUND;
+        return ERR_INVALID_VALUE;
     }
     auto renderType = RSUniRenderJudgement::GetUniRenderEnabledType();
     if (renderType == UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL) {
 #ifdef RS_ENABLE_GPU
-        return RSHardwareThread::Instance().ScheduleTask(
+        resCode = RSHardwareThread::Instance().ScheduleTask(
             [=, &pixelFormat]() { return screenManager_->GetPixelFormat(id, pixelFormat); }).get();
+        return ERR_OK;
 #else
-        return StatusCode::SCREEN_NOT_FOUND;
+        resCode = StatusCode::SCREEN_NOT_FOUND;
+        return ERR_INVALID_VALUE;
 #endif
     } else if (mainThread_ != nullptr) {
-        return mainThread_->ScheduleTask(
+        resCode = mainThread_->ScheduleTask(
             [=, &pixelFormat]() { return screenManager_->GetPixelFormat(id, pixelFormat); }).get();
+        return ERR_OK;
     } else {
-        return StatusCode::SCREEN_NOT_FOUND;
+        resCode = StatusCode::SCREEN_NOT_FOUND;
+        return ERR_INVALID_VALUE;
     }
 }
 
-int32_t RSRenderServiceConnection::SetPixelFormat(ScreenId id, GraphicPixelFormat pixelFormat)
+ErrCode RSRenderServiceConnection::SetPixelFormat(ScreenId id, GraphicPixelFormat pixelFormat, int32_t& resCode)
 {
     if (!screenManager_) {
-        return StatusCode::SCREEN_NOT_FOUND;
+        resCode = StatusCode::SCREEN_NOT_FOUND;
+        return ERR_INVALID_VALUE;
     }
     auto renderType = RSUniRenderJudgement::GetUniRenderEnabledType();
     if (renderType == UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL) {
 #ifdef RS_ENABLE_GPU
-        return RSHardwareThread::Instance().ScheduleTask(
+        resCode = RSHardwareThread::Instance().ScheduleTask(
             [=]() { return screenManager_->SetPixelFormat(id, pixelFormat); }).get();
+        return ERR_OK;
 #else
-        return StatusCode::SCREEN_NOT_FOUND;
+        resCode = StatusCode::SCREEN_NOT_FOUND;
+        return ERR_INVALID_VALUE;
 #endif
     } else if (mainThread_ != nullptr) {
-        return mainThread_->ScheduleTask(
+        resCode = mainThread_->ScheduleTask(
             [=]() { return screenManager_->SetPixelFormat(id, pixelFormat); }).get();
+        return ERR_OK;
     } else {
-        return StatusCode::SCREEN_NOT_FOUND;
+        resCode = StatusCode::SCREEN_NOT_FOUND;
+        return ERR_INVALID_VALUE;
     }
 }
 
-int32_t RSRenderServiceConnection::GetScreenSupportedHDRFormats(ScreenId id, std::vector<ScreenHDRFormat>& hdrFormats)
+ErrCode RSRenderServiceConnection::GetScreenSupportedHDRFormats(
+    ScreenId id, std::vector<ScreenHDRFormat>& hdrFormats, int32_t& resCode)
 {
     if (!screenManager_) {
-        return StatusCode::SCREEN_NOT_FOUND;
+        resCode = StatusCode::SCREEN_NOT_FOUND;
+        return ERR_INVALID_VALUE;
     }
     auto renderType = RSUniRenderJudgement::GetUniRenderEnabledType();
     if (renderType == UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL) {
 #ifdef RS_ENABLE_GPU
-        return RSHardwareThread::Instance().ScheduleTask(
+        resCode = RSHardwareThread::Instance().ScheduleTask(
             [=, &hdrFormats]() { return screenManager_->GetScreenSupportedHDRFormats(id, hdrFormats); }).get();
+        return ERR_OK;
 #else
-        return StatusCode::SCREEN_NOT_FOUND;
+        resCode = StatusCode::SCREEN_NOT_FOUND;
+        return ERR_INVALID_VALUE;
 #endif
     } else if (mainThread_ != nullptr) {
-        return mainThread_->ScheduleTask(
+        resCode = mainThread_->ScheduleTask(
             [=, &hdrFormats]() { return screenManager_->GetScreenSupportedHDRFormats(id, hdrFormats); }).get();
+        return ERR_OK;
     } else {
-        return StatusCode::SCREEN_NOT_FOUND;
+        resCode = StatusCode::SCREEN_NOT_FOUND;
+        return ERR_INVALID_VALUE;
     }
 }
 
-int32_t RSRenderServiceConnection::GetScreenHDRFormat(ScreenId id, ScreenHDRFormat& hdrFormat)
+ErrCode RSRenderServiceConnection::GetScreenHDRFormat(ScreenId id, ScreenHDRFormat& hdrFormat, int32_t& resCode)
 {
     if (!screenManager_) {
-        return StatusCode::SCREEN_NOT_FOUND;
+        resCode = StatusCode::SCREEN_NOT_FOUND;
+        return ERR_INVALID_VALUE;
     }
     auto renderType = RSUniRenderJudgement::GetUniRenderEnabledType();
     if (renderType == UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL) {
 #ifdef RS_ENABLE_GPU
-        return RSHardwareThread::Instance().ScheduleTask(
+        resCode = RSHardwareThread::Instance().ScheduleTask(
             [=, &hdrFormat]() { return screenManager_->GetScreenHDRFormat(id, hdrFormat); }).get();
+        return ERR_OK;
 #else
-        return StatusCode::SCREEN_NOT_FOUND;
+        resCode = StatusCode::SCREEN_NOT_FOUND;
+        return ERR_INVALID_VALUE;
 #endif
     } else if (mainThread_ != nullptr) {
-        return mainThread_->ScheduleTask(
+        resCode = mainThread_->ScheduleTask(
             [=, &hdrFormat]() { return screenManager_->GetScreenHDRFormat(id, hdrFormat); }).get();
+        return ERR_OK;
     } else {
-        return StatusCode::SCREEN_NOT_FOUND;
+        resCode = StatusCode::SCREEN_NOT_FOUND;
+        return ERR_INVALID_VALUE;
     }
 }
 
-int32_t RSRenderServiceConnection::SetScreenHDRFormat(ScreenId id, int32_t modeIdx)
+ErrCode RSRenderServiceConnection::SetScreenHDRFormat(ScreenId id, int32_t modeIdx, int32_t& resCode)
 {
     if (!screenManager_) {
-        return StatusCode::SCREEN_NOT_FOUND;
+        resCode = StatusCode::SCREEN_NOT_FOUND;
+        return ERR_INVALID_VALUE;
     }
     auto renderType = RSUniRenderJudgement::GetUniRenderEnabledType();
     if (renderType == UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL) {
 #ifdef RS_ENABLE_GPU
-        return RSHardwareThread::Instance().ScheduleTask(
+        resCode = RSHardwareThread::Instance().ScheduleTask(
             [=]() { return screenManager_->SetScreenHDRFormat(id, modeIdx); }).get();
+        return ERR_OK;
 #else
-        return StatusCode::SCREEN_NOT_FOUND;
+        resCode = StatusCode::SCREEN_NOT_FOUND;
+        return ERR_INVALID_VALUE;
 #endif
     } else if (mainThread_ != nullptr) {
-        return mainThread_->ScheduleTask(
+        resCode = mainThread_->ScheduleTask(
             [=]() { return screenManager_->SetScreenHDRFormat(id, modeIdx); }).get();
+        return ERR_OK;
     } else {
-        return StatusCode::SCREEN_NOT_FOUND;
+        resCode = StatusCode::SCREEN_NOT_FOUND;
+        return ERR_INVALID_VALUE;
     }
 }
 
-int32_t RSRenderServiceConnection::GetScreenSupportedColorSpaces(
-    ScreenId id, std::vector<GraphicCM_ColorSpaceType>& colorSpaces)
+ErrCode RSRenderServiceConnection::GetScreenSupportedColorSpaces(
+    ScreenId id, std::vector<GraphicCM_ColorSpaceType>& colorSpaces, int32_t& resCode)
 {
     if (!screenManager_) {
-        return StatusCode::SCREEN_NOT_FOUND;
+        resCode = StatusCode::SCREEN_NOT_FOUND;
+        return ERR_INVALID_VALUE;
     }
     auto renderType = RSUniRenderJudgement::GetUniRenderEnabledType();
     if (renderType == UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL) {
 #ifdef RS_ENABLE_GPU
-        return RSHardwareThread::Instance().ScheduleTask(
+        resCode = RSHardwareThread::Instance().ScheduleTask(
             [=, &colorSpaces]() { return screenManager_->GetScreenSupportedColorSpaces(id, colorSpaces); }).get();
+        return ERR_OK;
 #else
-        return StatusCode::SCREEN_NOT_FOUND;
+        resCode = StatusCode::SCREEN_NOT_FOUND;
+        return ERR_INVALID_VALUE;
 #endif
     } else if (mainThread_ != nullptr) {
-        return mainThread_->ScheduleTask(
+        resCode = mainThread_->ScheduleTask(
             [=, &colorSpaces]() { return screenManager_->GetScreenSupportedColorSpaces(id, colorSpaces); }).get();
+        return ERR_OK;
     } else {
-        return StatusCode::SCREEN_NOT_FOUND;
+        resCode = StatusCode::SCREEN_NOT_FOUND;
+        return ERR_INVALID_VALUE;
     }
 }
 
-int32_t RSRenderServiceConnection::GetScreenColorSpace(ScreenId id, GraphicCM_ColorSpaceType& colorSpace)
+ErrCode RSRenderServiceConnection::GetScreenColorSpace(
+    ScreenId id, GraphicCM_ColorSpaceType& colorSpace, int32_t& resCode)
 {
     if (!screenManager_) {
-        return StatusCode::SCREEN_NOT_FOUND;
+        resCode = StatusCode::SCREEN_NOT_FOUND;
+        return ERR_INVALID_VALUE;
     }
     auto renderType = RSUniRenderJudgement::GetUniRenderEnabledType();
     if (renderType == UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL) {
 #ifdef RS_ENABLE_GPU
-        return RSHardwareThread::Instance().ScheduleTask(
+        resCode = RSHardwareThread::Instance().ScheduleTask(
             [=, &colorSpace]() { return screenManager_->GetScreenColorSpace(id, colorSpace); }).get();
+        return ERR_OK;
 #else
-        return StatusCode::SCREEN_NOT_FOUND;
+        resCode = StatusCode::SCREEN_NOT_FOUND;
+        return ERR_INVALID_VALUE;
 #endif
     } else if (mainThread_ != nullptr) {
-        return mainThread_->ScheduleTask(
+        resCode = mainThread_->ScheduleTask(
             [=, &colorSpace]() { return screenManager_->GetScreenColorSpace(id, colorSpace); }).get();
+        return ERR_OK;
     } else {
-        return StatusCode::SCREEN_NOT_FOUND;
+        resCode = StatusCode::SCREEN_NOT_FOUND;
+        return ERR_INVALID_VALUE;
     }
 }
 
-int32_t RSRenderServiceConnection::SetScreenColorSpace(ScreenId id, GraphicCM_ColorSpaceType colorSpace)
+ErrCode RSRenderServiceConnection::SetScreenColorSpace(
+    ScreenId id, GraphicCM_ColorSpaceType colorSpace, int32_t& resCode)
 {
     if (!screenManager_) {
-        return StatusCode::SCREEN_NOT_FOUND;
+        resCode = StatusCode::SCREEN_NOT_FOUND;
+        return ERR_INVALID_VALUE;
     }
     auto renderType = RSUniRenderJudgement::GetUniRenderEnabledType();
     if (renderType == UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL) {
 #ifdef RS_ENABLE_GPU
-        return RSHardwareThread::Instance().ScheduleTask(
+        resCode = RSHardwareThread::Instance().ScheduleTask(
             [=]() { return screenManager_->SetScreenColorSpace(id, colorSpace); }).get();
+        return ERR_OK;
 #else
-        return StatusCode::SCREEN_NOT_FOUND;
+        resCode = StatusCode::SCREEN_NOT_FOUND;
+        return ERR_INVALID_VALUE;
 #endif
     } else if (mainThread_ != nullptr) {
-        return mainThread_->ScheduleTask(
+        resCode = mainThread_->ScheduleTask(
             [=]() { return screenManager_->SetScreenColorSpace(id, colorSpace); }).get();
+        return ERR_OK;
     } else {
-        return StatusCode::SCREEN_NOT_FOUND;
+        resCode = StatusCode::SCREEN_NOT_FOUND;
+        return ERR_INVALID_VALUE;
     }
 }
 
@@ -2662,10 +2705,10 @@ void RSRenderServiceConnection::SetVirtualScreenUsingStatus(bool isVirtualScreen
     return;
 }
 
-void RSRenderServiceConnection::SetCurtainScreenUsingStatus(bool isCurtainScreenOn)
+ErrCode RSRenderServiceConnection::SetCurtainScreenUsingStatus(bool isCurtainScreenOn)
 {
     if (!mainThread_) {
-        return;
+        return ERR_INVALID_VALUE;
     }
     auto task = [weakThis = wptr<RSRenderServiceConnection>(this), isCurtainScreenOn]() -> void {
         sptr<RSRenderServiceConnection> connection = weakThis.promote();
@@ -2675,6 +2718,7 @@ void RSRenderServiceConnection::SetCurtainScreenUsingStatus(bool isCurtainScreen
         connection->mainThread_->SetCurtainScreenUsingStatus(isCurtainScreenOn);
     };
     mainThread_->PostTask(task);
+    return ERR_OK;
 }
 
 void RSRenderServiceConnection::DropFrameByPid(const std::vector<int32_t> pidList)
