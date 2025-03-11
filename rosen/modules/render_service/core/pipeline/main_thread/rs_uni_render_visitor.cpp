@@ -3331,7 +3331,7 @@ bool RSUniRenderVisitor::FindRootAndUpdateMatrix(std::shared_ptr<RSRenderNode>& 
 void RSUniRenderVisitor::UpdateHWCNodeClipRect(std::shared_ptr<RSSurfaceRenderNode>& hwcNodePtr, RectI& clipRect,
     const RSRenderNode& rootNode)
 {
-    // The value here represent an imaginary plane of infinite width and infinite height,
+    // The value here represents an imaginary plane of infinite width and infinite height,
     // using values summarized empirically.
     constexpr float MAX_FLOAT = std::numeric_limits<float>::max() * 1e-30;
     Drawing::Rect childRectMapped(0.0f, 0.0f, MAX_FLOAT, MAX_FLOAT);
