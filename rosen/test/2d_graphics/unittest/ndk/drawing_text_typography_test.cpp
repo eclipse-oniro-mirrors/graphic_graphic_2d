@@ -3005,6 +3005,113 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_SetTypographyTextEllipsisTest001,
 }
 
 /*
+ * @tc.name: OH_Drawing_TypographyHandlerPushTextStyle001
+ * @tc.desc: test for the actual effective value of textstyle.
+ * @tc.type: FUNC
+ * @tc.require: IALK43
+ */
+HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyHandlerPushTextStyle001, TestSize.Level1)
+{
+    // Use interfaces such as OH_Drawing_SetTypographyTextFontSize to test the fallback textstyle.
+    OH_Drawing_TypographyStyle* typoStyle = OH_Drawing_CreateTypographyStyle();
+    OH_Drawing_SetTypographyTextFontSize(typoStyle, 100);
+    OH_Drawing_SetTypographyTextFontHeight(typoStyle, 1);
+    OH_Drawing_TextStyle* textStyle = OH_Drawing_TypographyGetTextStyle(typoStyle);
+    ASSERT_NE(textStyle, nullptr);
+    OH_Drawing_TypographyCreate* handler =
+        OH_Drawing_CreateTypographyHandler(typoStyle, OH_Drawing_CreateSharedFontCollection());
+    EXPECT_NE(handler, nullptr);
+    const char* text = "test OH_Drawing_SetTypographyTextLineStylexxx";
+    OH_Drawing_TypographyHandlerAddText(handler, text);
+    OH_Drawing_Typography* typography = OH_Drawing_CreateTypography(handler);
+    double maxWidth = 10000.0;
+    OH_Drawing_TypographyLayout(typography, maxWidth);
+    ASSERT_EQ(OH_Drawing_TypographyGetHeight(typography), 100);
+
+    // After setting the default text style in typographstyle, the fallback text style becomes ineffective.
+    OH_Drawing_TypographyStyle* typoStyle2 = OH_Drawing_CreateTypographyStyle();
+    OH_Drawing_SetTypographyTextFontSize(typoStyle2, 500);
+    OH_Drawing_SetTypographyTextFontHeight(typoStyle2, 1);
+    OH_Drawing_TextStyle* textStyle2 = OH_Drawing_CreateTextStyle();
+    OH_Drawing_SetTextStyleFontSize(textStyle2, 30);
+    OH_Drawing_SetTextStyleFontHeight(textStyle2, 2);
+    OH_Drawing_SetTypographyTextStyle(typoStyle2, textStyle2);
+    OH_Drawing_TypographyCreate* handler2 =
+        OH_Drawing_CreateTypographyHandler(typoStyle2, OH_Drawing_CreateSharedFontCollection());
+    EXPECT_NE(handler2, nullptr);
+    const char* text2 = "test OH_Drawing_OH_Drawing_SetTypographyTextStyle, 该方法优先";
+    OH_Drawing_TypographyHandlerAddText(handler2, text2);
+    OH_Drawing_Typography* typography2 = OH_Drawing_CreateTypography(handler2);
+    OH_Drawing_TypographyLayout(typography2, maxWidth);
+    ASSERT_EQ(OH_Drawing_TypographyGetHeight(typography2), 60);
+
+    // After pushing a new text style, the default text style becomes ineffective.
+    OH_Drawing_TypographyStyle* typoStyle3 = OH_Drawing_CreateTypographyStyle();
+    OH_Drawing_SetTypographyTextFontSize(typoStyle3, 500);
+    OH_Drawing_SetTypographyTextFontHeight(typoStyle3, 1);
+    OH_Drawing_TextStyle* textStyle3 = OH_Drawing_CreateTextStyle();
+    OH_Drawing_SetTextStyleFontSize(textStyle3, 30);
+    OH_Drawing_SetTextStyleFontHeight(textStyle3, 2);
+    OH_Drawing_SetTypographyTextStyle(typoStyle3, textStyle3);
+    OH_Drawing_SetTextStyleFontSize(textStyle3, 80);
+    OH_Drawing_SetTextStyleFontHeight(textStyle3, 3);
+    OH_Drawing_TypographyCreate* handler3 =
+        OH_Drawing_CreateTypographyHandler(typoStyle3, OH_Drawing_CreateSharedFontCollection());
+    EXPECT_NE(handler3, nullptr);
+    OH_Drawing_TypographyHandlerPushTextStyle(handler3, textStyle3);
+    const char* text3 = "test OH_Drawing_TypographyHandlerPushTextStyle, 该方法优先";
+    OH_Drawing_TypographyHandlerAddText(handler3, text3);
+    OH_Drawing_Typography* typography3 = OH_Drawing_CreateTypography(handler3);
+    OH_Drawing_TypographyLayout(typography3, maxWidth);
+    ASSERT_EQ(OH_Drawing_TypographyGetHeight(typography3), 240);
+}
+
+/*
+ * @tc.name: OH_Drawing_TypographyHandlerPushTextStyle002
+ * @tc.desc: test for the actual effective value of textstyle.
+ * @tc.type: FUNC
+ * @tc.require: IALK43
+ */
+HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyHandlerPushTextStyle002, TestSize.Level1)
+{
+    // After pushing a new text style, the default text style becomes ineffective.
+    OH_Drawing_TypographyStyle* typoStyle3 = OH_Drawing_CreateTypographyStyle();
+    OH_Drawing_SetTypographyTextFontSize(typoStyle3, 500);
+    OH_Drawing_SetTypographyTextFontHeight(typoStyle3, 1);
+    OH_Drawing_TextStyle* textStyle3 = OH_Drawing_CreateTextStyle();
+    OH_Drawing_SetTextStyleFontSize(textStyle3, 30);
+    OH_Drawing_SetTextStyleFontHeight(textStyle3, 2);
+    OH_Drawing_SetTypographyTextStyle(typoStyle3, textStyle3);
+    OH_Drawing_SetTextStyleFontSize(textStyle3, 80);
+    OH_Drawing_SetTextStyleFontHeight(textStyle3, 3);
+    
+    // 测试维语
+    const char* text4 = "بۇ ئۇسۇل ئالدىنقى ئورۇندا";
+    OH_Drawing_TypographyCreate* handler4 =
+        OH_Drawing_CreateTypographyHandler(typoStyle3, OH_Drawing_CreateSharedFontCollection());
+    EXPECT_NE(handler4, nullptr);
+    OH_Drawing_TypographyHandlerPushTextStyle(handler4, textStyle3);
+    OH_Drawing_TypographyHandlerAddText(handler4, text4);
+    OH_Drawing_Typography* typography4 = OH_Drawing_CreateTypography(handler4);
+    double maxWidth = 10000.0;
+    OH_Drawing_TypographyLayout(typography4, maxWidth);
+    ASSERT_NE(OH_Drawing_TypographyGetHeight(typography4), 240);
+    ASSERT_EQ(OH_Drawing_TypographyGetHeight(typography4), 242);
+
+    // 测试藏语
+    const char* text5 = "ཐབས་ལམ་འདི་ལྡནཐབས་ལམ་འདི་ལྡན";
+    OH_Drawing_TypographyCreate* handler5 =
+        OH_Drawing_CreateTypographyHandler(typoStyle3, OH_Drawing_CreateSharedFontCollection());
+    EXPECT_NE(handler4, nullptr);
+    OH_Drawing_TypographyHandlerPushTextStyle(handler5, textStyle3);
+    OH_Drawing_TypographyHandlerAddText(handler5, text5);
+    OH_Drawing_Typography* typography5 = OH_Drawing_CreateTypography(handler5);
+    OH_Drawing_TypographyLayout(typography5, maxWidth);
+    ASSERT_NE(OH_Drawing_TypographyGetHeight(typography5), 240);
+    ASSERT_EQ(OH_Drawing_TypographyGetHeight(typography5), 190); // 藏文有个压缩
+}
+
+/*
  * @tc.name: OH_Drawing_FontFamiliesTest001
  * @tc.desc: test for the OH_Drawing_TypographyTextlineStyleDestroyFontFamilies.
  * @tc.type: FUNC
