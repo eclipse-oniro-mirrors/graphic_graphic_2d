@@ -489,7 +489,6 @@ HWTEST_F(RSColorspaceConvertTest, GetFovMetadata001, TestSize.Level1)
  */
 HWTEST_F(RSColorspaceConvertTest, GetFovMetadata002, TestSize.Level1)
 {
-    VPEParameter parameter;
     BufferRequestConfig requestConfig = {
         .width = 0x100,
         .height = 0x100,
@@ -507,6 +506,7 @@ HWTEST_F(RSColorspaceConvertTest, GetFovMetadata002, TestSize.Level1)
         138, 13, 158, 100, 41, 50, 189, 111, 144, 3, 153, 75, 210, 243, 237, 19, 12, 128};
     ret = MetadataHelper::SetAdaptiveFOVMetadata(surfaceBuffer, metadataSet);
     ASSERT_TRUE(ret == GSERROR_OK || ret == GSERROR_HDI_ERROR);
+    VPEParameter parameter;
     RSColorSpaceConvert::Instance().GetFOVMetadata(surfaceBuffer, parameter.adaptiveFOVMetadata, ret);
     ASSERT_TRUE(ret == GSERROR_OK || ret == GSERROR_HDI_ERROR);
 }
