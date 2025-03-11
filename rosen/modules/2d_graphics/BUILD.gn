@@ -467,23 +467,6 @@ if (!is_arkui_x) {
   }
 }
 
-if (enable_text_gine) {
-  ohos_shared_library("2d_graphics_new") {
-    platform = current_os
-    if (platform == "mingw") {
-      platform = "windows"
-    }
-    deps = [ ":2d_graphics_source_$platform" ]
-    external_deps = [ "hilog:libhilog" ]
-    public_external_deps = [ "bounds_checking_function:libsec_static" ]
-    defines += [ "USE_GRAPHIC_TEXT_GINE" ]
-    public_configs = [ ":2d_graphics_config" ]
-    innerapi_tags = [ "platformsdk_indirect" ]
-    part_name = "graphic_2d"
-    subsystem_name = "graphic"
-  }
-}
-
 ## Build 2d_graphics.so
 ohos_shared_library("2d_graphics_canvaskit0310") {
   sanitize = {

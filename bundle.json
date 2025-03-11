@@ -341,18 +341,6 @@
           },
           {
             "type": "so",
-            "name": "//foundation/graphic/graphic_2d/rosen/modules/2d_graphics:2d_graphics_new",
-            "header": {
-              "header_files": [
-                "draw/canvas.h",
-                "draw/pen.h",
-                "image/bitmap.h"
-              ],
-              "header_base": "//foundation/graphic/graphic_2d/rosen/modules/2d_graphics/include"
-            }
-          },
-          {
-            "type": "so",
             "name": "//foundation/graphic/graphic_2d/rosen/modules/effect/color_picker:color_picker",
             "header": {
               "header_files": [
