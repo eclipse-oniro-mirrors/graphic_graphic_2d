@@ -123,7 +123,6 @@ private:
     int64_t pendingPeriod_ = 0;
     std::atomic<bool> enableVsyncSample_ = true;
     uint64_t vsyncEnabledScreenId_ = UINT64_MAX;
-    bool isFoldScreenFlag_ = false;
 };
 } // impl
 } // namespace Rosen

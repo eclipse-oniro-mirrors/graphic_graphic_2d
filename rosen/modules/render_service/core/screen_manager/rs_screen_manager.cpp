@@ -655,10 +655,8 @@ void RSScreenManager::ProcessScreenConnected(std::shared_ptr<HdiOutput>& output)
 
     std::unique_lock<std::mutex> lock(mutex_);
     screens_[id] = screen;
-    if (isFoldScreenFlag_ && screens_.size() == ORIGINAL_FOLD_SCREEN_AMOUNT) {
-        for (auto screen : screens_) {
-            foldScreenIds_[screen.first] = true;
-        }
+    if (isFoldScreenFlag_ && foldScreenIds_.size() < ORIGINAL_FOLD_SCREEN_AMOUNT) {
+        foldScreenIds_[id] = {true, false};
     }
     lock.unlock();
 
@@ -672,11 +670,11 @@ void RSScreenManager::ProcessScreenConnected(std::shared_ptr<HdiOutput>& output)
     }
     defaultScreenId_ = defaultScreenId;
 
-    if (defaultScreenId_ == id) {
-        screen->SetScreenVsyncEnabled(true);
-    }
     uint64_t vsyncEnabledScreenId = JudgeVSyncEnabledScreenWhileHotPlug(id, true);
     UpdateVsyncEnabledScreenId(vsyncEnabledScreenId);
+    if (vsyncEnabledScreenId == id) {
+        screen->SetScreenVsyncEnabled(true);
+    }
 
 #ifdef RS_SUBSCRIBE_SENSOR_ENABLE
     if (isFoldScreenFlag_ && id != 0) {
@@ -721,8 +719,8 @@ void RSScreenManager::UpdateVsyncEnabledScreenId(ScreenId screenId)
     std::unique_lock<std::mutex> lock(mutex_);
     if (isFoldScreenFlag_ && foldScreenIds_.size() == ORIGINAL_FOLD_SCREEN_AMOUNT) {
         bool isAllFoldScreenDisconnected = true;
-        for (const auto &[id, connected] : foldScreenIds_) {
-            if (connected) {
+        for (const auto &[foldScreenId, foldScreenStatus] : foldScreenIds_) {
+            if (foldScreenStatus.isConnected) {
                 isAllFoldScreenDisconnected = false;
                 break;
             }
@@ -817,15 +815,20 @@ void RSScreenManager::HandleDefaultScreenDisConnected()
     defaultScreenId_ = defaultScreenId;
 }
 
-uint64_t RSScreenManager::JudgeVSyncEnabledScreenWhileHotPlug(ScreenId screenId, bool connected)
+void RSScreenManager::UpdateFoldScreenConnectStatusLocked(ScreenId screenId, bool connected)
 {
-    std::unique_lock<std::mutex> lock(mutex_);
     if (isFoldScreenFlag_) {
         auto it = foldScreenIds_.find(screenId);
         if (it != foldScreenIds_.end()) {
-            it->second = connected;
+            it->second.isConnected = connected;
         }
     }
+}
+
+uint64_t RSScreenManager::JudgeVSyncEnabledScreenWhileHotPlug(ScreenId screenId, bool connected)
+{
+    std::unique_lock<std::mutex> lock(mutex_);
+    UpdateFoldScreenConnectStatusLocked(screenId, connected);
 
     auto vsyncSampler = CreateVSyncSampler();
     if (vsyncSampler == nullptr) {
@@ -850,6 +853,35 @@ uint64_t RSScreenManager::JudgeVSyncEnabledScreenWhileHotPlug(ScreenId screenId,
             if (!screen->IsVirtual()) {
                 vsyncEnabledScreenId = id;
                 break;
+            }
+        }
+    }
+    return vsyncEnabledScreenId;
+}
+
+uint64_t RSScreenManager::JudgeVSyncEnabledScreenWhilePowerStatusChanged(ScreenId screenId, ScreenPowerStatus status)
+{
+    std::unique_lock<std::mutex> lock(mutex_);
+    uint64_t vsyncEnabledScreenId = CreateVSyncSampler()->GetVsyncEnabledScreenId();
+    auto it = foldScreenIds_.find(screenId);
+    if (it == foldScreenIds_.end()) {
+        return vsyncEnabledScreenId;
+    }
+
+    if (status == ScreenPowerStatus::POWER_STATUS_ON) {
+        it->second.isPowerOn = true;
+        auto vsyncScreenIt = foldScreenIds_.find(vsyncEnabledScreenId);
+        if (vsyncScreenIt == foldScreenIds_.end() || vsyncScreenIt->second.isPowerOn == false) {
+            return screenId;
+        }
+    } else if (status == ScreenPowerStatus::POWER_STATUS_OFF) {
+        it->second.isPowerOn = false;
+        if (screenId != vsyncEnabledScreenId) {
+            return vsyncEnabledScreenId;
+        }
+        for (auto &[foldScreenId, status] : foldScreenIds_) {
+            if (status.isConnected && status.isPowerOn) {
+                return foldScreenId;
             }
         }
     }
@@ -1510,8 +1542,9 @@ void RSScreenManager::SetScreenPowerStatus(ScreenId id, ScreenPowerStatus status
         return;
     }
 
-    if (isFoldScreenFlag_ && status == ScreenPowerStatus::POWER_STATUS_ON) {
-        UpdateVsyncEnabledScreenId(id);
+    if (isFoldScreenFlag_) {
+        uint64_t vsyncEnabledScreenId = JudgeVSyncEnabledScreenWhilePowerStatusChanged(id, status);
+        UpdateVsyncEnabledScreenId(vsyncEnabledScreenId);
     }
 
     /*
@@ -1857,6 +1890,15 @@ void RSScreenManager::DisplayDump(std::string& dumpString)
         }
         screen->DisplayDump(index, dumpString);
         index++;
+    }
+    if (isFoldScreenFlag_) {
+        dumpString += "===================\n";
+        dumpString += "foldScreenIds_ size is " + std::to_string(foldScreenIds_.size()) + "\n";
+        for (auto &[screenId, status] : foldScreenIds_) {
+            dumpString += "foldScreenId:" + std::to_string(screenId) +
+                ", isConnected:" + std::to_string(status.isConnected) +
+                ", isPowerOn:" + std::to_string(status.isPowerOn) + "\n";
+        }
     }
 }
 
