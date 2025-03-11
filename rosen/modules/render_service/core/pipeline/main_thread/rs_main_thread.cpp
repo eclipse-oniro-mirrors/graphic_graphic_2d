@@ -1754,15 +1754,6 @@ void RSMainThread::CollectInfoForHardwareComposer()
                 surfaceNode->SetDoDirectComposition(true);
             }
 
-            // If hardware don't support hdr render, should disable direct composition
-            if (RSLuminanceControl::Get().IsCloseHardwareHdr() &&
-                surfaceNode->GetVideoHdrStatus() != HdrStatus::NO_HDR &&
-                !surfaceNode->GetSpecialLayerMgr().Find(SpecialLayerType::PROTECTED)) {
-                doDirectComposition_ = false;
-                RS_OPTIONAL_TRACE_NAME_FMT("rs debug: name %s, id %" PRIu64", HDR disable direct composition",
-                    surfaceNode->GetName().c_str(), surfaceNode->GetId());
-            }
-
             if (!surfaceNode->IsOnTheTree()) {
                 if (surfaceHandler->IsCurrentFrameBufferConsumed()) {
                     surfaceNode->UpdateHardwareDisabledState(true);
@@ -1771,6 +1762,15 @@ void RSMainThread::CollectInfoForHardwareComposer()
                         "and buffer consumed", surfaceNode->GetName().c_str(), surfaceNode->GetId());
                 }
                 return;
+            }
+
+            // If hardware don't support hdr render, should disable direct composition
+            if (RSLuminanceControl::Get().IsCloseHardwareHdr() &&
+                surfaceNode->GetVideoHdrStatus() != HdrStatus::NO_HDR &&
+                !surfaceNode->GetSpecialLayerMgr().Find(SpecialLayerType::PROTECTED)) {
+                doDirectComposition_ = false;
+                RS_OPTIONAL_TRACE_NAME_FMT("rs debug: name %s, id %" PRIu64", HDR disable direct composition",
+                    surfaceNode->GetName().c_str(), surfaceNode->GetId());
             }
 
             if (isAdaptive && gameNodeName == surfaceNode->GetName()) {
