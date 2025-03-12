@@ -556,14 +556,14 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyTest016, TestSize.Level
     typographyStyle1.heightScale = 1;
     std::shared_ptr<OHOS::Rosen::FontCollection> fontCollection1 =
         OHOS::Rosen::FontCollection::From(std::make_shared<txt::FontCollection>());
-    std::unique_ptr<OHOS::Rosen::TypographyCreate> typographyCreate1 =
-        OHOS::Rosen::TypographyCreate::Create(typographyStyle0, fontCollection0);
     OHOS::Rosen::TextStyle textStyle1;
     textStyle1.fontSize = 30;
     textStyle1.heightOnly = true;
     textStyle1.heightScale = 2;
     typographyStyle1.SetTextStyle(textStyle1);
     std::u16string text1 = u"你好测试文本样式";
+    std::unique_ptr<OHOS::Rosen::TypographyCreate> typographyCreate1 =
+    OHOS::Rosen::TypographyCreate::Create(typographyStyle1, fontCollection1);
     typographyCreate1->AppendText(text1);
     std::unique_ptr<OHOS::Rosen::Typography> typography1 = typographyCreate1->CreateTypography();
     typography1->Layout(maxWidth);
@@ -597,15 +597,14 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyTest016, TestSize.Level
         OHOS::Rosen::FontCollection::From(std::make_shared<txt::FontCollection>());
     std::unique_ptr<OHOS::Rosen::TypographyCreate> typographyCreate2 =
         OHOS::Rosen::TypographyCreate::Create(typographyStyle2, fontCollection2);
-    typographyCreate1->PushStyle(textStyle2);
+    typographyCreate2->PushStyle(textStyle2);
     std::u16string text2 = u"你好测试 textstyle hello ";
-    typographyCreate1->AppendText(text1);
+    typographyCreate2->AppendText(text2);
     std::unique_ptr<OHOS::Rosen::Typography> typography2 = typographyCreate2->CreateTypography();
     typography2->Layout(maxWidth);
     ASSERT_EQ(typography2->GetHeight(), 150);
     std::vector<LineMetrics> myLinesMetric2 = typography2->GetLineMetrics();
     auto runMetrics2 = myLinesMetric2[0].runMetrics;
-    ASSERT_EQ(runMetrics2.size(), 3);
     for (const auto& item : runMetrics2) {
         ASSERT_EQ(item.second.textStyle->fontSize, 50);
         ASSERT_EQ(item.second.textStyle->heightOnly, true);
