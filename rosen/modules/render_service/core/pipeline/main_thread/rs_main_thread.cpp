@@ -1751,8 +1751,6 @@ void RSMainThread::CollectInfoForHardwareComposer()
                 return;
             }
 
-<<<<<<< HEAD:rosen/modules/render_service/core/pipeline/rs_main_thread.cpp
-=======
             // If hardware don't support hdr render, should disable direct composition
             if (RSLuminanceControl::Get().IsCloseHardwareHdr() &&
                 surfaceNode->GetVideoHdrStatus() != HdrStatus::NO_HDR &&
@@ -1762,11 +1760,6 @@ void RSMainThread::CollectInfoForHardwareComposer()
                     surfaceNode->GetName().c_str(), surfaceNode->GetId());
             }
 
-            if (isAdaptive && gameNodeName == surfaceNode->GetName()) {
-                isGameNodeOnTree = true;
-            }
-
->>>>>>> origin/master:rosen/modules/render_service/core/pipeline/main_thread/rs_main_thread.cpp
             if (surfaceNode->IsLeashWindow() && surfaceNode->GetForceUIFirstChanged()) {
                 forceUIFirstChanged_ = true;
                 surfaceNode->SetForceUIFirstChanged(false);
