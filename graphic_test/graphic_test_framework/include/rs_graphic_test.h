@@ -51,6 +51,9 @@ public:
 private:
     std::string GetImageSavePath(const std::string path);
     bool IsSingleTest();
+    UIPoint GetScreenCapacity(const std::string testCase);
+    UIPoint GetPos(int id, int cl);
+    bool WaitOtherTest();
 
     bool shouldRunTest_ = true;
     Vector4f surfaceBounds_;
