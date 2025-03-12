@@ -70,7 +70,8 @@ public:
 
 #define GRAPHIC_TEST_PARAMS(test_case_name, test_name, test_type, test_mode, multiple_test) \
     bool GTEST_TEST_UNIQUE_ID_(test_case_name, test_name, __LINE__) = \
-        OHOS::Rosen::TestDefManager::Instance().Regist(#test_case_name, #test_name, test_type, test_mode, __FILE__, multiple_test); \
+        OHOS::Rosen::TestDefManager::Instance().Regist( \
+        #test_case_name, #test_name, test_type, test_mode, __FILE__, multiple_test); \
     TEST_F(test_case_name, test_name)
 
 #define GRAPHIC_TEST_2(test_type, test_name) \

@@ -47,7 +47,8 @@ std::shared_ptr<Media::PixelMap> DecodePixelMap(const std::string& pathName, con
     return pixelmap;
 }
 
-std::shared_ptr<Media::PixelMap> DecodePixelMap(const uint8_t* data, uint32_t size, const Media::AllocatorType& allocatorType)
+std::shared_ptr<Media::PixelMap> DecodePixelMap(
+    const uint8_t* data, uint32_t size, const Media::AllocatorType& allocatorType)
 {
     uint32_t errCode = 0;
     std::unique_ptr<Media::ImageSource> imageSource =

@@ -75,20 +75,21 @@ UIPoint GetScreenCapacity(const string testCase)
     int num = 1;
     while (num < testCnt) {
         cl++;
-        num = cl*cl;
+        num = cl * cl;
     }
-    int rl = ceil((double) testCnt/cl); 
+    int rl = ceil(static_cast<double>testCnt) / cl); 
     return {cl, rl};
 }
 
 UIPoint GetPos(int id, int cl)
 {
-    if (cl <= 0) {
-        return {0, 0};
+    if (cl > 0) {
+        int x = id % cl;
+        int y = id / cl;
+        return {x, y};
     }
-    int x = id % cl;
-    int y = id / cl;
-    return {x, y};
+
+    return {0, 0};
 }
 
 void RSGraphicTest::SetUp()
@@ -147,7 +148,8 @@ void RSGraphicTest::TearDown()
     const auto& extInfo = ::OHOS::Rosen::TestDefManager::Instance().GetTestInfo(
         testInfo->test_case_name(), testInfo->name());
 
-    if ((extInfo->isMultiple) && (++imageWriteId_ < ::OHOS::Rosen::TestDefManager::Instance().GetTestCaseCnt(string(testInfo->test_case_name)))) {
+    if ((extInfo->isMultiple) && (++imageWriteId_ < ::OHOS::Rosen::TestDefManager::Instance().GetTestCaseCnt(
+        string(testInfo->test_case_name)))) {
         return;
     }
 
