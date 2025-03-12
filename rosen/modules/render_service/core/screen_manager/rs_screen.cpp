@@ -139,9 +139,6 @@ void RSScreen::PhysicalScreenInit() noexcept
     }
 
     hdiScreen_->Init();
-    if (!RSSystemProperties::IsPcType() && !RSSystemProperties::IsTabletType()) {
-        hdiScreen_->SetScreenVsyncEnabled(true);
-    }
     if (hdiScreen_->GetScreenSupportedModes(supportedModes_) < 0) {
         RS_LOGE("%{public}s: RSScreen(id %{public}" PRIu64 ") failed to GetScreenSupportedModes.",
             __func__, id_);
@@ -535,14 +532,6 @@ int32_t RSScreen::SetPowerStatus(uint32_t powerStatus)
     powerStatus_ = static_cast<ScreenPowerStatus>(powerStatus);
     lock.unlock();
 
-    if ((powerStatus == GraphicDispPowerStatus::GRAPHIC_POWER_STATUS_ON ||
-        powerStatus == GraphicDispPowerStatus::GRAPHIC_POWER_STATUS_ON_ADVANCED) &&
-        !RSSystemProperties::IsPcType() && !RSSystemProperties::IsTabletType()) {
-        RS_LOGW("[UL_POWER] %{public}s Enable hardware vsync", __func__);
-        if (hdiScreen_->SetScreenVsyncEnabled(true) != GRAPHIC_DISPLAY_SUCCESS) {
-            RS_LOGE("[UL_POWER] %{public}s SetScreenVsyncEnabled failed", __func__);
-        }
-    }
     RS_LOGW("[UL_POWER]RSScreen_%{public}" PRIu64 " SetPowerStatus: %{public}u done.", id_, powerStatus);
     return StatusCode::SUCCESS;
 }
