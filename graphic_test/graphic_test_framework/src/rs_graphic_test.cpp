@@ -18,6 +18,7 @@
 #include "rs_graphic_test_utils.h"
 #include "rs_parameter_parse.h"
 #include "rs_trace.h"
+#include "transaction/rs_interfaces.h"
 #include "ui/rs_root_node.h"
 #include "ui/rs_surface_node.h"
 

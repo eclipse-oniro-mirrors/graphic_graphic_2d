@@ -35,7 +35,7 @@ private:
     const int screenHeight = 1000;
 };
 
-GRAPHIC_TEST(TestTemplateNineTest, CONTENT_DISPLAY_TEST, test1)
+GRAPHIC_TESTS(TestTemplateNineTest, CONTENT_DISPLAY_TEST, test1)
 {
     auto testNode = RSCanvasNode::Create();
     testNode->SetBounds({0, 0, screenWidth, screenHeight});
@@ -54,7 +54,7 @@ GRAPHIC_TEST(TestTemplateNineTest, CONTENT_DISPLAY_TEST, test1)
     RegisterNode(testNode2);
 }
 
-GRAPHIC_TEST(TestTemplateNineTest, CONTENT_DISPLAY_TEST, test2)
+GRAPHIC_TESTS(TestTemplateNineTest, CONTENT_DISPLAY_TEST, test2)
 {
     auto testNode = RSCanvasNode::Create();
     testNode->SetBounds({0, 0, screenWidth, screenHeight});
@@ -73,7 +73,7 @@ GRAPHIC_TEST(TestTemplateNineTest, CONTENT_DISPLAY_TEST, test2)
     RegisterNode(testNode2);
 }
 
-GRAPHIC_TEST(TestTemplateNineTest, CONTENT_DISPLAY_TEST, test3)
+GRAPHIC_TESTS(TestTemplateNineTest, CONTENT_DISPLAY_TEST, test3)
 {
     auto testNode = RSCanvasNode::Create();
     testNode->SetBounds({0, 0, screenWidth, screenHeight});
@@ -92,7 +92,7 @@ GRAPHIC_TEST(TestTemplateNineTest, CONTENT_DISPLAY_TEST, test3)
     RegisterNode(testNode2);
 }
 
-GRAPHIC_TEST(TestTemplateNineTest, CONTENT_DISPLAY_TEST, test4)
+GRAPHIC_TESTS(TestTemplateNineTest, CONTENT_DISPLAY_TEST, test4)
 {
     auto testNode = RSCanvasNode::Create();
     testNode->SetBounds({0, 0, screenWidth, screenHeight});
@@ -111,7 +111,7 @@ GRAPHIC_TEST(TestTemplateNineTest, CONTENT_DISPLAY_TEST, test4)
     RegisterNode(testNode2);
 }
 
-GRAPHIC_TEST(TestTemplateNineTest, CONTENT_DISPLAY_TEST, test5)
+GRAPHIC_TESTS(TestTemplateNineTest, CONTENT_DISPLAY_TEST, test5)
 {
     auto testNode = RSCanvasNode::Create();
     testNode->SetBounds({0, 0, screenWidth, screenHeight});
@@ -130,7 +130,7 @@ GRAPHIC_TEST(TestTemplateNineTest, CONTENT_DISPLAY_TEST, test5)
     RegisterNode(testNode2);
 }
 
-GRAPHIC_TEST(TestTemplateNineTest, CONTENT_DISPLAY_TEST, test6)
+GRAPHIC_TESTS(TestTemplateNineTest, CONTENT_DISPLAY_TEST, test6)
 {
     auto testNode = RSCanvasNode::Create();
     testNode->SetBounds({0, 0, screenWidth, screenHeight});
@@ -149,7 +149,7 @@ GRAPHIC_TEST(TestTemplateNineTest, CONTENT_DISPLAY_TEST, test6)
     RegisterNode(testNode2);
 }
 
-GRAPHIC_TEST(TestTemplateNineTest, CONTENT_DISPLAY_TEST, test7)
+GRAPHIC_TESTS(TestTemplateNineTest, CONTENT_DISPLAY_TEST, test7)
 {
     auto testNode = RSCanvasNode::Create();
     testNode->SetBounds({0, 0, screenWidth, screenHeight});
@@ -168,7 +168,7 @@ GRAPHIC_TEST(TestTemplateNineTest, CONTENT_DISPLAY_TEST, test7)
     RegisterNode(testNode2);
 }
 
-GRAPHIC_TEST(TestTemplateNineTest, CONTENT_DISPLAY_TEST, test8)
+GRAPHIC_TESTS(TestTemplateNineTest, CONTENT_DISPLAY_TEST, test8)
 {
     auto testNode = RSCanvasNode::Create();
     testNode->SetBounds({0, 0, screenWidth, screenHeight});
@@ -187,7 +187,7 @@ GRAPHIC_TEST(TestTemplateNineTest, CONTENT_DISPLAY_TEST, test8)
     RegisterNode(testNode2);
 }
 
-GRAPHIC_TEST(TestTemplateNineTest, CONTENT_DISPLAY_TEST, test9)
+GRAPHIC_TESTS(TestTemplateNineTest, CONTENT_DISPLAY_TEST, test9)
 {
     auto testNode = RSCanvasNode::Create();
     testNode->SetBounds({0, 0, screenWidth, screenHeight});

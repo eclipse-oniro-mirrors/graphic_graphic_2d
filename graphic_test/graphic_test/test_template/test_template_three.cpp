@@ -35,7 +35,7 @@ private:
     const int screenHeight = 1000;
 };
 
-GRAPHIC_TEST(TestTemplateThreeTest, CONTENT_DISPLAY_TEST, test1)
+GRAPHIC_TESTS(TestTemplateThreeTest, CONTENT_DISPLAY_TEST, test1)
 {
     auto testNode = RSCanvasNode::Create();
     testNode->SetBounds({0, 0, screenWidth, screenHeight});
@@ -54,7 +54,7 @@ GRAPHIC_TEST(TestTemplateThreeTest, CONTENT_DISPLAY_TEST, test1)
     RegisterNode(testNode2);
 }
 
-GRAPHIC_TEST(TestTemplateThreeTest, CONTENT_DISPLAY_TEST, test2)
+GRAPHIC_TESTS(TestTemplateThreeTest, CONTENT_DISPLAY_TEST, test2)
 {
     auto testNode = RSCanvasNode::Create();
     testNode->SetBounds({0, 0, screenWidth, screenHeight});
@@ -73,7 +73,7 @@ GRAPHIC_TEST(TestTemplateThreeTest, CONTENT_DISPLAY_TEST, test2)
     RegisterNode(testNode2);
 }
 
-GRAPHIC_TEST(TestTemplateThreeTest, CONTENT_DISPLAY_TEST, test3)
+GRAPHIC_TESTS(TestTemplateThreeTest, CONTENT_DISPLAY_TEST, test3)
 {
     auto testNode = RSCanvasNode::Create();
     testNode->SetBounds({0, 0, screenWidth, screenHeight});
