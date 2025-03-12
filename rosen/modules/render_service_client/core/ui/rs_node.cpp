@@ -1913,7 +1913,7 @@ void RSNode::SetForegroundEffectRadius(const float blurRadius)
         RSModifierType::FOREGROUND_EFFECT_RADIUS, blurRadius);
 }
 
-void RSNode::SetForegroundEffectDisableSystemAdaptation(const bool disableSystemAdaptation)
+void RSNode::SetForegroundEffectDisableSystemAdaptation(bool disableSystemAdaptation)
 {
     return;
 }

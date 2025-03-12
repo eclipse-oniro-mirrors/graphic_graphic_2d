@@ -44,14 +44,14 @@ public:
     virtual std::string GetDescription();
     virtual std::string GetDetailedDescription();
     static std::shared_ptr<RSFilter> CreateBlurFilter(float blurRadiusX, float blurRadiusY,
-        const bool disableSystemAdaptation = true);
+        bool disableSystemAdaptation = true);
     static std::shared_ptr<RSFilter> CreateMaterialFilter(
         int style, float dipScale, BLUR_COLOR_MODE mode = DEFAULT, float ratio = 1.0,
-        const bool disableSystemAdaptation = true);
+        bool disableSystemAdaptation = true);
     static std::shared_ptr<RSFilter> CreateMaterialFilter(
         float radius, float saturation, float brightness, uint32_t colorValue,
         BLUR_COLOR_MODE mode = BLUR_COLOR_MODE::DEFAULT,
-        const bool disableSystemAdaptation = true);
+        bool disableSystemAdaptation = true);
     static std::shared_ptr<RSFilter> CreateLightUpEffectFilter(float lightUpDegree);
     static float RadiusVp2Sigma(float radiusVp, float dipScale);
 
