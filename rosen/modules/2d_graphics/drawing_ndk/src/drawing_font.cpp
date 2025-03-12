@@ -260,8 +260,6 @@ OH_Drawing_ErrorCode OH_Drawing_FontMeasureSingleCharacter(const OH_Drawing_Font
     if (themeFont != nullptr) {
         font = themeFont.get();
     }
-    const char* currentStr = str;
-    int32_t unicode = SkUTF::NextUTF8(&currentStr, currentStr + len);
     *textWidth = font->MeasureSingleCharacter(unicode);
     return OH_DRAWING_SUCCESS;
 }

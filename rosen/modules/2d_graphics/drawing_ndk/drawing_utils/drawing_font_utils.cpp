@@ -65,7 +65,7 @@ std::shared_ptr<Drawing::Font> DrawingFontUtils::MatchThemeFont(const Drawing::F
     auto themeFamilies = SPText::DefaultFamilyNameMgr::GetInstance().GetDefaultFontFamilies();
     std::shared_ptr<Drawing::Font> themeFont = std::make_shared<Drawing::Font>(*font);
     for (const auto& family : themeFamilies) {
-        std|::shared_ptr<Drawing::Typeface> themeTypeface =
+        std::shared_ptr<Drawing::Typeface> themeTypeface =
             std::shared_ptr<Drawing::Typeface>(fontMgr->MatchFamilyStyle(family.c_str(), Drawing::FontStyle()));
         themeFont->SetTypeface(themeTypeface);
         if (themeFont->UnicharToGlyph(unicode)) {
