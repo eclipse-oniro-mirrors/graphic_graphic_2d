@@ -3085,7 +3085,7 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyHandlerPushTextStyle002
     OH_Drawing_SetTextStyleFontSize(textStyle3, 80);
     OH_Drawing_SetTextStyleFontHeight(textStyle3, 3);
     
-    // 测试维语
+    // Testing the line height of Uyghur text in 'heightonly' mode
     const char* text4 = "بۇ ئۇسۇل ئالدىنقى ئورۇندا";
     OH_Drawing_TypographyCreate* handler4 =
         OH_Drawing_CreateTypographyHandler(typoStyle3, OH_Drawing_CreateSharedFontCollection());
@@ -3098,7 +3098,7 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyHandlerPushTextStyle002
     ASSERT_NE(OH_Drawing_TypographyGetHeight(typography4), 240);
     ASSERT_EQ(OH_Drawing_TypographyGetHeight(typography4), 242);
 
-    // 测试藏语
+    // Testing the line height of Tibetan text in 'heightonly' mode.
     const char* text5 = "ཐབས་ལམ་འདི་ལྡནཐབས་ལམ་འདི་ལྡན";
     OH_Drawing_TypographyCreate* handler5 =
         OH_Drawing_CreateTypographyHandler(typoStyle3, OH_Drawing_CreateSharedFontCollection());
@@ -3108,7 +3108,7 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyHandlerPushTextStyle002
     OH_Drawing_Typography* typography5 = OH_Drawing_CreateTypography(handler5);
     OH_Drawing_TypographyLayout(typography5, maxWidth);
     ASSERT_NE(OH_Drawing_TypographyGetHeight(typography5), 240);
-    ASSERT_EQ(OH_Drawing_TypographyGetHeight(typography5), 190); // 藏文有个压缩
+    ASSERT_EQ(OH_Drawing_TypographyGetHeight(typography5), 190);
 }
 
 /*
