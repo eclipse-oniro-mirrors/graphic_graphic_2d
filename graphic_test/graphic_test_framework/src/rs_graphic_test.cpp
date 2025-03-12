@@ -78,7 +78,7 @@ UIPoint GetScreenCapacity(const string testCase)
         cl++;
         num = cl * cl;
     }
-    int rl = ceil(static_cast<double>(testCnt / cl)); 
+    int rl = ceil(static_cast<double>(testCnt / cl));
     return {cl, rl};
 }
       
@@ -237,7 +237,7 @@ void RSGraphicTest::SetScreenSize(float width, float height)
 
 bool RSGraphicTest::IsSingleTest()
 {
-    RSGraphicTestDirector::Instance().IsSingleTest();
+    return RSGraphicTestDirector::Instance().IsSingleTest();
 }
 
 std::string RSGraphicTest::GetImageSavePath(const std::string path)
