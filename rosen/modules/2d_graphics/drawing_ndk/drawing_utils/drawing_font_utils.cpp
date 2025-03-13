@@ -20,7 +20,6 @@ using namespace OHOS;
 using namespace Rosen;
 
 namespace {
-constexpr char THEME_FONT[] = "OhosThemeFont";
 // Default typeface does not support chinese characters, needs to load chinese character ttf file.
 constexpr char ZH_CN_TTF[] = "/system/fonts/HarmonyOS_Sans_SC.ttf";
 }
@@ -47,7 +46,7 @@ std::shared_ptr<Drawing::Font> DrawingFontUtils::GetThemeFont(const Drawing::Fon
         return nullptr;
     }
     std::shared_ptr<Drawing::Typeface> themeTypeface =
-        std::shared_ptr<Drawing::Typeface>(fontMgr->MatchFamilyStyle(THEME_FONT, Drawing::FontStyle()));
+        std::shared_ptr<Drawing::Typeface>(fontMgr->MatchFamilyStyle(OHOS_THEME_FONT, Drawing::FontStyle()));
     if (themeTypeface == nullptr) {
         return nullptr;
     }
