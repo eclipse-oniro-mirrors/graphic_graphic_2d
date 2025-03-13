@@ -3816,7 +3816,7 @@ void RSUniRenderVisitor::PrepareRootRenderNode(RSRootRenderNode& node)
         parentSurfaceNodeMatrix_ = geoPtr->GetAbsMatrix();
     }
 
-    node.SetNeedOffscreen(false);
+    node.EnableWindowKeyFrame(false);
 
     bool isSubTreeNeedPrepare = node.IsSubTreeNeedPrepare(filterInGlobal_) || ForcePrepareSubTree();
     isSubTreeNeedPrepare ? QuickPrepareChildren(node) :
