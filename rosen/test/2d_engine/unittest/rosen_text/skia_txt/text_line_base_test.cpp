@@ -197,6 +197,6 @@ HWTEST_F(TextLineBaseTest, TextLineBaseTest007, TestSize.Level1)
     ASSERT_NE(paragraph_, nullptr);
     paragraph_->Layout(layoutWidth_);
     PositionWithAffinity pos = paragraph_->GetGlyphPositionAtCoordinate(40, 0);
-    ASSERT_EQ(pos.position, 3);
+    EXPECT_EQ(pos.position, 3);
 }
 } // namespace txt
