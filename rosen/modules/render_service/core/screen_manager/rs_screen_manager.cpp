@@ -185,11 +185,13 @@ void RSScreenManager::HandleSensorData(float angle)
     std::unique_lock<std::mutex> lock(activeScreenIdAssignedMutex_);
     FoldState foldState = TransferAngleToScreenState(angle);
     if (foldState == FoldState::FOLDED) {
-        RS_LOGI("%{public}s: foldState == FoldState::FOLDED.", __func__);
-        activeScreenId_ = externalScreenId_;
-    } else {
-        RS_LOGI("%{public}s: foldState != FoldState::FOLDED.", __func__);
+        if (activeScreenId_ != externalScreenId_) {
+            activeScreenId_ = externalScreenId_;
+            RS_LOGI("%{public}s: foldState is FoldState::FOLDED.", __func__);
+        }
+    } else if (activeScreenId_ != innerScreenId_) {
         activeScreenId_ = innerScreenId_;
+        RS_LOGI("%{public}s: foldState is not FoldState::FOLDED.", __func__);
     }
     isPostureSensorDataHandled_ = true;
     HgmCore::Instance().SetActiveScreenId(activeScreenId_);
@@ -421,9 +423,9 @@ void RSScreenManager::OnHwcDeadEvent()
             } else {
 #ifdef RS_ENABLE_GPU
                 RSHardwareThread::Instance().ClearFrameBuffers(screen->GetOutput());
+#endif
             }
         }
-#endif
     }
     isHwcDead_ = true;
     defaultScreenId_ = INVALID_SCREEN_ID;
@@ -2431,7 +2433,7 @@ bool RSScreenManager::IsScreenPowerOff(ScreenId id) const
 {
     std::shared_lock<std::shared_mutex> lock(powerStatusMutex_);
     if (screenPowerStatus_.count(id) == 0) {
-        RS_LOGE("%{public}s: screen %{public}" PRIu64 " not found.", __func__, id);
+        RS_LOGD("%{public}s: screen %{public}" PRIu64 " not found.", __func__, id);
         return false;
     }
     return screenPowerStatus_.at(id) == GraphicDispPowerStatus::GRAPHIC_POWER_STATUS_SUSPEND ||
