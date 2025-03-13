@@ -156,7 +156,8 @@ float ParagraphImpl::DetectIndents(size_t index)
 
 void ParagraphImpl::InitSymbolRuns()
 {
-    std::call_once(initSymbolRunsFlag_, [this]() {
+    std::call_once(initSymbolRunsFlag_, [&paints_ = paints_, &hmSymbols_ = hmSymbols_,
+        &animationFunc_ = animationFunc_]() {
         for (const PaintRecord& p : paints_) {
             if (!p.isSymbolGlyph) {
                 continue;
