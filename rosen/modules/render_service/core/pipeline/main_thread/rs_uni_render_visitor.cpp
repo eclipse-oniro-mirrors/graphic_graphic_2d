@@ -3177,15 +3177,8 @@ void RSUniRenderVisitor::PostPrepare(RSRenderNode& node, bool subTreeSkipped)
     if (node.NeedUpdateDrawableBehindWindow()) {
         node.GetMutableRenderProperties().SetNeedDrawBehindWindow(node.NeedDrawBehindWindow());
     }
-    RectI globalFilterRect;
-    if (node.IsInstanceOf<RSEffectRenderNode>() && !node.FirstFrameHasEffectChildren()) {
-        GetVisibleEffectDirty(node);
-        if (!globalFilterRect.IsEmpty()) {
-            globalFilterRect.JoinRect(node.GetFilterRect());
-        }
-    } else {
-        globalFilterRect = node.GetOldDirtyInSurface();
-    }
+    auto globalFilterRect = node.IsInstanceOf<RSEffectRenderNode>() && !node.FirstFrameHasEffectChildren() ?
+        GetVisibleEffectDirty(node) : node.GetOldDirtyInSurface();
     if (node.NeedDrawBehindWindow()) {
         node.CalDrawBehindWindowRegion();
         globalFilterRect = node.GetFilterRect();
@@ -3695,6 +3688,9 @@ RectI RSUniRenderVisitor::GetVisibleEffectDirty(RSRenderNode& node) const
         if (auto& subnode = nodeMap.GetRenderNode<RSRenderNode>(nodeId)) {
             childEffectRect = childEffectRect.JoinRect(subnode->GetOldDirtyInSurface());
         }
+    }
+    if (!childEffectRect.IsEmpty()) {
+        childEffectRect.JoinRect(node.GetFilterRect());
     }
     return childEffectRect;
 }
