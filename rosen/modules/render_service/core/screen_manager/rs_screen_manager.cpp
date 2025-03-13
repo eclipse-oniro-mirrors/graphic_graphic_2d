@@ -1693,7 +1693,6 @@ ScreenRotation RSScreenManager::GetScreenCorrection(ScreenId id) const
 
 RSScreenData RSScreenManager::GetScreenData(ScreenId id) const
 {
-    std::lock_guard<std::mutex> lock(mutex_);
     RSScreenData screenData;
     if (GetScreen(id) == nullptr) {
         RS_LOGW("%{public}s: There is no screen for id %{public}" PRIu64, __func__, id);
