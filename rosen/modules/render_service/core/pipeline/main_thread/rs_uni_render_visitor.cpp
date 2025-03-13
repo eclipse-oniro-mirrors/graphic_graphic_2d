@@ -3294,6 +3294,15 @@ void RSUniRenderVisitor::UpdateHwcNodeRectInSkippedSubTree(const RSRenderNode& r
         if (!hwcNodePtr || !hwcNodePtr->IsOnTheTree() || hwcNodePtr->GetCalcRectInPrepare()) {
             continue;
         }
+        if (!hwcNodePtr->GetRSSurfaceHandler() || !hwcNodePtr->GetRSSurfaceHandler()->GetBuffer()) {
+            RS_OPTIONAL_TRACE_NAME_FMT("hwc debug: name:%s id:%" PRIu64 " disabled by no buffer, IsNoBuffer[%d]",
+                hwcNodePtr->GetName().c_str(), hwcNodePtr->GetId(),
+                hwcNodePtr->GetRSSurfaceHandler() || hwcNodePtr->GetRSSurfaceHandler()->GetBuffer());
+            hwcNodePtr->SetHardwareForcedDisabledState(true);
+            hwcDisabledReasonCollection_.UpdateHwcDisabledReasonForDFX(hwcNodePtr->GetId(),
+                HwcDisabledReasons::DISABLED_BY_INVALID_PARAM, hwcNodePtr->GetName());
+            continue;
+        }
         const auto& property = hwcNodePtr->GetRenderProperties();
         auto geoPtr = property.GetBoundsGeometry();
         if (geoPtr == nullptr) {
