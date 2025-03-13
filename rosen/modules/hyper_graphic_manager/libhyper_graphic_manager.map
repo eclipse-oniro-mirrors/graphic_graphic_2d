@@ -109,6 +109,7 @@
       *HgmFrameRateManager::UpdateSurfaceTime*;
       *HgmFrameRateManager::UpdateUIFrameworkDirtyNodes*;
       *HgmFrameRateManager::UpdateVoteRule*;
+      *HgmFrameRateManager::HandleGameNode*;
       *HgmFrameRateManager::UpdateSoftVSync*;
 
       *HgmHfbcConfig::HandleHfbcConfig*;
