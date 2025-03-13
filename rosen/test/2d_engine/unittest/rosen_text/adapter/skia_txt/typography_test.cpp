@@ -526,9 +526,9 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyTest016, TestSize.Level
     typographyStyle0.heightOnly = true;
     typographyStyle0.heightScale = 1;
     OHOS::Rosen::TextStyle textStyle = typographyStyle0.GetTextStyle();
-    ASSERT_EQ(textStyle.fontSize, 100);
-    ASSERT_EQ(textStyle.heightOnly, true);
-    ASSERT_EQ(textStyle.heightScale, 1);
+    EXPECT_EQ(textStyle.fontSize, 100);
+    EXPECT_EQ(textStyle.heightOnly, true);
+    EXPECT_EQ(textStyle.heightScale, 1);
     std::shared_ptr<OHOS::Rosen::FontCollection> fontCollection0 =
         OHOS::Rosen::FontCollection::From(std::make_shared<txt::FontCollection>());
     std::unique_ptr<OHOS::Rosen::TypographyCreate> typographyCreate0 =
@@ -538,13 +538,13 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyTest016, TestSize.Level
     std::unique_ptr<OHOS::Rosen::Typography> typography0 = typographyCreate0->CreateTypography();
     double maxWidth = 10000.0;
     typography0->Layout(maxWidth);
-    ASSERT_EQ(typography0->GetHeight(), 100);
+    EXPECT_EQ(typography0->GetHeight(), 100);
     std::vector<LineMetrics> myLinesMetric = typography0->GetLineMetrics();
     auto runMetrics = myLinesMetric[0].runMetrics;
-    ASSERT_EQ(runMetrics.size(), 1);
+    EXPECT_EQ(runMetrics.size(), 1);
     for (const auto& item : runMetrics) {
-        ASSERT_EQ(item.second.textStyle->fontSize, 100);
-        ASSERT_EQ(item.second.textStyle->heightScale, 1);
+        EXPECT_EQ(item.second.textStyle->fontSize, 100);
+        EXPECT_EQ(item.second.textStyle->heightScale, 1);
     }
 }
 
@@ -574,13 +574,13 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyTest016, TestSize.Level
      std::unique_ptr<OHOS::Rosen::Typography> typography1 = typographyCreate1->CreateTypography();
      double maxWidth = 10000.0;
      typography1->Layout(maxWidth);
-     ASSERT_EQ(typography1->GetHeight(), 60);
+     EXPECT_EQ(typography1->GetHeight(), 60);
      std::vector<LineMetrics> myLinesMetric1 = typography1->GetLineMetrics();
      auto runMetrics1 = myLinesMetric1[0].runMetrics;
-     ASSERT_EQ(runMetrics1.size(), 1);
+     EXPECT_EQ(runMetrics1.size(), 1);
      for (const auto& item : runMetrics1) {
-         ASSERT_EQ(item.second.textStyle->fontSize, 30);
-         ASSERT_EQ(item.second.textStyle->heightScale, 2);
+         EXPECT_EQ(item.second.textStyle->fontSize, 30);
+         EXPECT_EQ(item.second.textStyle->heightScale, 2);
      }
  }
 
@@ -600,9 +600,9 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyTest018, TestSize.Level
     textStyle2.fontSize = 30;
     textStyle2.heightOnly = true;
     textStyle2.heightScale = 2;
-    ASSERT_EQ(textStyle2.fontSize, 30);
-    ASSERT_EQ(textStyle2.heightOnly, true);
-    ASSERT_EQ(textStyle2.heightScale, 2);
+    EXPECT_EQ(textStyle2.fontSize, 30);
+    EXPECT_EQ(textStyle2.heightOnly, true);
+    EXPECT_EQ(textStyle2.heightScale, 2);
     typographyStyle2.SetTextStyle(textStyle2);
     textStyle2.fontSize = 50;
     textStyle2.heightOnly = true;
@@ -617,12 +617,12 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyTest018, TestSize.Level
     std::unique_ptr<OHOS::Rosen::Typography> typography2 = typographyCreate2->CreateTypography();
     double maxWidth = 10000.0;
     typography2->Layout(maxWidth);
-    ASSERT_EQ(typography2->GetHeight(), 150);
+    EXPECT_EQ(typography2->GetHeight(), 150);
     std::vector<LineMetrics> myLinesMetric2 = typography2->GetLineMetrics();
     auto runMetrics2 = myLinesMetric2[0].runMetrics;
     for (const auto& item : runMetrics2) {
-        ASSERT_EQ(item.second.textStyle->fontSize, 50);
-        ASSERT_EQ(item.second.textStyle->heightScale, 3);
+        EXPECT_EQ(item.second.textStyle->fontSize, 50);
+        EXPECT_EQ(item.second.textStyle->heightScale, 3);
     }
 }
 } // namespace Rosen
