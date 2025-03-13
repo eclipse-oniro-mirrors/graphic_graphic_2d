@@ -187,11 +187,11 @@ void RSScreenManager::HandleSensorData(float angle)
     if (foldState == FoldState::FOLDED) {
         if (activeScreenId_ != externalScreenId_) {
             activeScreenId_ = externalScreenId_;
-            RS_LOGI("%{public}s: foldState == FoldState::FOLDED.", __func__);
+            RS_LOGI("%{public}s: foldState is FoldState::FOLDED.", __func__);
         }
     } else {
         if (activeScreenId_ != innerScreenId_) {
-            RS_LOGI("%{public}s: foldState != FoldState::FOLDED.", __func__);
+            RS_LOGI("%{public}s: foldState is not FoldState::FOLDED.", __func__);
             activeScreenId_ = innerScreenId_;
         }
     }
@@ -2441,7 +2441,7 @@ bool RSScreenManager::IsScreenPowerOff(ScreenId id) const
     }
 
     if (screenPowerStatus_.count(id) == 0) {
-        RS_LOGD("%{public}s: screenPowerStatusNotFound %{public}" PRIu64 " not found.", __func__, id);
+        RS_LOGD("%{public}s: screenPowerStatus screen %{public}" PRIu64 " not found.", __func__, id);
         return false;
     }
     return screenPowerStatus_.at(id) == GraphicDispPowerStatus::GRAPHIC_POWER_STATUS_SUSPEND ||
