@@ -12,10 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <cstddef>
 
 #include "gtest/gtest.h"
 #include "font_collection.h"
 #include "modules/skparagraph/src/ParagraphImpl.h"
+#include "ohos/init_data.h"
 #include "paragraph_builder.h"
 #include "paragraph_impl.h"
 #include "paragraph_style.h"
@@ -46,6 +48,7 @@ protected:
 
 void ParagraphTest::SetUp()
 {
+    SetHwIcuDirectory();
     ParagraphStyle paragraphStyle;
     std::shared_ptr<FontCollection> fontCollection = std::make_shared<FontCollection>();
     ASSERT_NE(fontCollection, nullptr);
@@ -324,12 +327,10 @@ HWTEST_F(ParagraphTest, ParagraphTest014, TestSize.Level1)
 HWTEST_F(ParagraphTest, ParagraphTest015, TestSize.Level1)
 {
     OHOS::Rosen::SPText::TextStyle style;
-    style.locale = "en-gb";
     style.fontSize = 50;
     ParagraphStyle paragraphStyle;
     paragraphStyle.maxLines = 10;
-    paragraphStyle.spTextStyle = style;
-    paragraphStyle.customSpTextStyle = true;
+    paragraphStyle.locale = "en-gb";
     paragraphStyle.wordBreakType = OHOS::Rosen::SPText::WordBreakType::BREAK_HYPHEN;
     std::shared_ptr<FontCollection> fontCollection = std::make_shared<FontCollection>();
     ASSERT_NE(fontCollection, nullptr);
@@ -338,21 +339,22 @@ HWTEST_F(ParagraphTest, ParagraphTest015, TestSize.Level1)
     ASSERT_NE(paragraphBuilder, nullptr);
     std::u16string text = u"British English is the official language of the United Kingdom. It has some differences in "
                           u"spelling, pronunciation, and vocabulary compared to American English.";
+    paragraphBuilder->PushStyle(style);
     paragraphBuilder->AddText(text);
     std::shared_ptr<Paragraph> paragraph = paragraphBuilder->Build();
     ASSERT_NE(paragraph, nullptr);
-    paragraph->Layout(693);
+    paragraph->Layout(687);
     std::vector<std::unique_ptr<SPText::TextLineBase>> textLines = paragraph->GetTextLines();
-    size_t lineCount = paragraph_->GetLineCount();
-    ASSERT_EQ(lineCount, 7);
-    ASSERT_EQ(textLines.size(), lineCount);
-    std::unique_ptr<SPText::TextLineBase>& textLine = textLines.at(0);
-    std::vector<std::unique_ptr<SPText::Run>> runs = textLine->GetGlyphRuns();
-    for (size_t i = 0;i < runs.size(); i++) {
-        std::vector<uint16_t> glyphs = runs.at(i)->GetGlyphs();
-        for (size_t j = 0;j < glyphs.size(); j++) {
-            std::cout << "glyph:" << glyphs.at(j) << std::endl;
-        }
+    ASSERT_EQ(textLines.size(), 6);
+    //expect lines 2,3,4 to have hyphenation breakpoints,
+    //and the last charater of each line to have a hyphen glyphid of 800
+    size_t breakArr[3] = {2, 3, 4};
+    for (std::size_t i = 0; i < 3; i++) {
+        ASSERT_NE(textLines.at(breakArr[i]), nullptr);
+        std::vector<std::unique_ptr<SPText::Run>> runs = textLines.at(breakArr[i])->GetGlyphRuns();
+        ASSERT_NE(runs.back(), nullptr);
+        std::vector<uint16_t> glyphs = runs.back()->GetGlyphs();
+        EXPECT_EQ(glyphs.back(), 800);
     }
 }
 
@@ -367,13 +369,13 @@ HWTEST_F(ParagraphTest, ParagraphTest016, TestSize.Level1)
     style.fontSize = 30;
     ParagraphStyle paragraphStyle;
     paragraphStyle.spTextStyle = style;
-    paragraphStyle.customSpTextStyle = true;
     std::shared_ptr<FontCollection> fontCollection = std::make_shared<FontCollection>();
     ASSERT_NE(fontCollection, nullptr);
     fontCollection->SetupDefaultFontManager();
     std::shared_ptr<ParagraphBuilder> paragraphBuilder = ParagraphBuilder::Create(paragraphStyle, fontCollection);
     ASSERT_NE(paragraphBuilder, nullptr);
-    std::u16string text = u"art゙゙";
+    std::u16string text = u"brt゙゙";
+    paragraphBuilder->PushStyle(style);
     paragraphBuilder->AddText(text);
     std::shared_ptr<Paragraph> paragraph = paragraphBuilder->Build();
     ASSERT_NE(paragraph, nullptr);
@@ -382,13 +384,17 @@ HWTEST_F(ParagraphTest, ParagraphTest016, TestSize.Level1)
     ASSERT_EQ(textLines.size(), 1);
     std::unique_ptr<SPText::TextLineBase>& textLine = textLines.at(0);
     std::vector<std::unique_ptr<SPText::Run>> runs = textLine->GetGlyphRuns();
-    ASSERT_EQ(runs.size(), 1);
-    std::vector<uint16_t> glyphs = runs.at(0)->GetGlyphs();
-    ASSERT_EQ(glyphs.size(), 5);
-    EXPECT_EQ(glyphs.at(0), 66);
-    EXPECT_EQ(glyphs.at(1), 83);
-    EXPECT_EQ(glyphs.at(2), 85);
-    EXPECT_EQ(glyphs.at(3), 1546);
-    EXPECT_EQ(glyphs.at(4), 1546);
+    ASSERT_EQ(runs.size(), 2);
+    // 'a' will hit HM Sans
+    std::vector<uint16_t> glyphs1 = runs.at(0)->GetGlyphs();
+    ASSERT_EQ(glyphs1.size(), 1);
+    EXPECT_EQ(glyphs1.at(0), 217);
+    // 'rt゙゙' will hit cjk
+    std::vector<uint16_t> glyphs2 = runs.at(1)->GetGlyphs();
+    ASSERT_EQ(glyphs2.size(), 4);
+    EXPECT_EQ(glyphs2.at(0), 83);
+    EXPECT_EQ(glyphs2.at(1), 85);
+    EXPECT_EQ(glyphs2.at(2), 1546);
+    EXPECT_EQ(glyphs2.at(3), 1546);
 }
 } // namespace txt
