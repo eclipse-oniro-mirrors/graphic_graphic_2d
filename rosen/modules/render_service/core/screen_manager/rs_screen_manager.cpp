@@ -425,9 +425,9 @@ void RSScreenManager::OnHwcDeadEvent()
             } else {
 #ifdef RS_ENABLE_GPU
                 RSHardwareThread::Instance().ClearFrameBuffers(screen->GetOutput());
+#endif
             }
         }
-#endif
     }
     isHwcDead_ = true;
     defaultScreenId_ = INVALID_SCREEN_ID;
