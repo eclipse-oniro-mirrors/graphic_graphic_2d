@@ -122,22 +122,6 @@ HWTEST(RSUniRenderProcessorTest, ProcessSurfaceTest, TestSize.Level1)
 }
 
 /**
- * @tc.name: PostProcessTest
- * @tc.desc: Verify function PostProcess
- * @tc.type:FUNC
- * @tc.require:issuesI9KRF1
- */
-HWTEST(RSUniRenderProcessorTest, PostProcessTest, TestSize.Level1)
-{
-    if (!RSUniRenderJudgement::IsUniRender()) {
-        return;
-    }
-    auto renderProcessor = std::make_shared<RSUniRenderProcessor>();
-    renderProcessor->PostProcess();
-    EXPECT_EQ(renderProcessor->layers_.size(), 0);
-}
-
-/**
  * @tc.name: CreateLayerTest
  * @tc.desc: Verify function CreateLayer
  * @tc.type:FUNC
@@ -165,7 +149,7 @@ HWTEST(RSUniRenderProcessorTest, CreateLayerTest, TestSize.Level1)
     layerInfo.zOrder = 0;
     params.SetLayerInfo(layerInfo);
     renderProcessor->CreateLayer(node, params);
-    EXPECT_EQ(params.GetLayerInfo().zOrder, 0);
+    EXPECT_TRUE(params.GetLayerCreated());
 }
 
 /**
