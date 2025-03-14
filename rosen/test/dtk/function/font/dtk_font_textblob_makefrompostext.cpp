@@ -36,7 +36,9 @@ namespace Rosen {
 static void MakeTextBlob(TestPlaybackCanvas* playbackCanvas, std::string name, std::string textInfo,
     size_t length, Drawing::Point p[], Drawing::TextEncoding encoding)
 {
-    int line = 200, interval1 = 100, interval2 = 200, interval3 = 300;
+    int value1 = 200;
+    int value2 = 300;
+
     Drawing::Brush brush;
     Drawing::Pen pen;
     std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
@@ -50,11 +52,11 @@ static void MakeTextBlob(TestPlaybackCanvas* playbackCanvas, std::string name, s
     std::shared_ptr<Drawing::TextBlob> infoTextBlob1 = Drawing::TextBlob::MakeFromPosText(
         textInfo.c_str(), length, p, font, encoding);
     playbackCanvas->AttachBrush(brush);
-    playbackCanvas->DrawTextBlob(infoTextBlob1.get(), interval2, line);
+    playbackCanvas->DrawTextBlob(infoTextBlob1.get(), value1, value1);
     playbackCanvas->DetachBrush();
 
     playbackCanvas->AttachPen(pen);
-    playbackCanvas->DrawTextBlob(infoTextBlob1.get(), interval3, line + interval1);
+    playbackCanvas->DrawTextBlob(infoTextBlob1.get(), value2, value2);
     playbackCanvas->DetachPen();
 }
 
