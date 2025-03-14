@@ -73,6 +73,8 @@ struct CurFrameInfoDetail {
 
 class RSB_EXPORT RSRenderNode : public std::enable_shared_from_this<RSRenderNode>  {
 public:
+    // Used to check if hwc should enable for this selfdraw-surface
+    int32_t zOrderForCalcHwcNodeEnableByFilter_ = 0;
     using WeakPtr = std::weak_ptr<RSRenderNode>;
     using SharedPtr = std::shared_ptr<RSRenderNode>;
     static inline constexpr RSRenderNodeType Type = RSRenderNodeType::RS_NODE;
@@ -1245,7 +1247,7 @@ private:
 using RSBaseRenderNode = RSRenderNode;
 
 struct SharedTransitionParam {
-    SharedTransitionParam(RSRenderNode::SharedPtr inNode, RSRenderNode::SharedPtr outNode);
+    SharedTransitionParam(RSRenderNode::SharedPtr inNode, RSRenderNode::SharedPtr outNode, bool isInSameWindow);
 
     RSRenderNode::SharedPtr GetPairedNode(const NodeId nodeId) const;
     bool IsLower(const NodeId nodeId) const;

@@ -31,7 +31,7 @@ public:
     virtual ~RSRenderServiceConnectionProxy() noexcept = default;
 
     ErrCode CommitTransaction(std::unique_ptr<RSTransactionData>& transactionData) override;
-    void ExecuteSynchronousTask(const std::shared_ptr<RSSyncTask>& task) override;
+    ErrCode ExecuteSynchronousTask(const std::shared_ptr<RSSyncTask>& task) override;
 
     ErrCode GetMemoryGraphic(int pid, MemoryGraphic& memoryGraphic) override;
     ErrCode GetMemoryGraphics(std::vector<MemoryGraphic>& memoryGraphics) override;
@@ -154,6 +154,9 @@ public:
         const RSSurfaceCaptureConfig& captureConfig, const RSSurfaceCaptureBlurParam& blurParam,
         const Drawing::Rect& specifiedAreaRect = Drawing::Rect(0.f, 0.f, 0.f, 0.f),
         RSSurfaceCapturePermissions permissions = RSSurfaceCapturePermissions()) override;
+
+    void TakeSelfSurfaceCapture(NodeId id, sptr<RSISurfaceCaptureCallback> callback,
+        const RSSurfaceCaptureConfig& captureConfig) override;
 
     ErrCode SetWindowFreezeImmediately(NodeId id, bool isFreeze, sptr<RSISurfaceCaptureCallback> callback,
         const RSSurfaceCaptureConfig& captureConfig, const RSSurfaceCaptureBlurParam& blurParam) override;
@@ -303,7 +306,7 @@ public:
 
     ErrCode SetHidePrivacyContent(NodeId id, bool needHidePrivacyContent, uint32_t& resCode) override;
 
-    void SetCacheEnabledForRotation(bool isEnabled) override;
+    ErrCode SetCacheEnabledForRotation(bool isEnabled) override;
 
     void SetOnRemoteDiedCallback(const OnRemoteDiedCallback& callback) override;
 

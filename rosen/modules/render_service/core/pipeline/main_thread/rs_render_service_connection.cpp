@@ -351,18 +351,18 @@ ErrCode RSRenderServiceConnection::CommitTransaction(std::unique_ptr<RSTransacti
     return ERR_OK;
 }
 
-void RSRenderServiceConnection::ExecuteSynchronousTask(const std::shared_ptr<RSSyncTask>& task)
+ErrCode RSRenderServiceConnection::ExecuteSynchronousTask(const std::shared_ptr<RSSyncTask>& task)
 {
     if (task == nullptr || mainThread_ == nullptr) {
         RS_LOGW("RSRenderServiceConnection::ExecuteSynchronousTask, task or main thread is null!");
-        return;
+        return ERR_INVALID_VALUE;
     }
     auto screenManager = CreateOrGetScreenManager();
     if (screenManager && screenManager->IsScreenPoweringOn() && task->GetType() == RS_NODE_SYNCHRONOUS_READ_PROPERTY) {
         RS_LOGI("RSRenderServiceConnection::ExecuteSynchronousTask, when screen is powering on, the task is executed "
                 "in the IPC thread");
         task->Process(mainThread_->GetContext());
-        return;
+        return ERR_INVALID_VALUE;
     }
     // After a synchronous task times out, it will no longer be executed.
     auto isTimeout = std::make_shared<bool>(0);
@@ -375,6 +375,7 @@ void RSRenderServiceConnection::ExecuteSynchronousTask(const std::shared_ptr<RSS
         task->Process(mainThread->GetContext());
     }).wait_for(span);
     isTimeout.reset();
+    return ERR_OK;
 }
 
 ErrCode RSRenderServiceConnection::GetUniRenderEnabled(bool& enable)
@@ -1270,12 +1271,47 @@ void RSRenderServiceConnection::TakeSurfaceCapture(NodeId id, sptr<RSISurfaceCap
             ROSEN_TRACE_END(HITRACE_TAG_GRAPHIC_AGP);
         } else {
 #ifdef RS_ENABLE_GPU
+            RSSurfaceCaptureParam captureParam;
+            captureParam.id = id;
+            captureParam.config = captureConfig;
+            captureParam.isSystemCalling = isSystemCalling;
+            captureParam.blurParam = blurParam;
             RSSurfaceCaptureTaskParallel::CheckModifiers(id, captureConfig.useCurWindow);
-            RSSurfaceCaptureTaskParallel::Capture(id, callback, captureConfig, isSystemCalling, false, blurParam);
+            RSSurfaceCaptureTaskParallel::Capture(callback, captureParam);
 #endif
         }
     };
     mainThread_->PostTask(captureTask);
+}
+
+void RSRenderServiceConnection::TakeSelfSurfaceCapture(
+    NodeId id, sptr<RSISurfaceCaptureCallback> callback, const RSSurfaceCaptureConfig& captureConfig)
+{
+    if (!mainThread_) {
+        RS_LOGE("%{public}s mainThread_ is nullptr", __func__);
+        return;
+    }
+    std::function<void()> selfCaptureTask = [id, callback, captureConfig]() -> void {
+        auto node = RSMainThread::Instance()->GetContext().GetNodeMap().GetRenderNode(id);
+        if (node == nullptr) {
+            RS_LOGE("RSRenderServiceConnection::TakeSelfSurfaceCapture failed, node is nullptr");
+            if (callback) {
+                callback->OnSurfaceCapture(id, captureConfig, nullptr);
+            }
+            return;
+        }
+        bool isSystemCalling = RSInterfaceCodeAccessVerifierBase::IsSystemCalling(
+            RSIRenderServiceConnectionInterfaceCodeAccessVerifier::codeEnumTypeName_ +
+            "::TAKE_SELF_SURFACE_CAPTURE");
+        RSSurfaceCaptureParam captureParam;
+        captureParam.id = id;
+        captureParam.config = captureConfig;
+        captureParam.isSystemCalling = isSystemCalling;
+        captureParam.isSelfCapture = true;
+        RSSurfaceCaptureTaskParallel::CheckModifiers(id, captureConfig.useCurWindow);
+        RSSurfaceCaptureTaskParallel::Capture(callback, captureParam);
+    };
+    mainThread_->PostTask(selfCaptureTask);
 }
 
 ErrCode RSRenderServiceConnection::SetWindowFreezeImmediately(NodeId id, bool isFreeze,
@@ -1300,8 +1336,14 @@ ErrCode RSRenderServiceConnection::SetWindowFreezeImmediately(NodeId id, bool is
             bool isSystemCalling = RSInterfaceCodeAccessVerifierBase::IsSystemCalling(
                 RSIRenderServiceConnectionInterfaceCodeAccessVerifier::codeEnumTypeName_ +
                 "::SET_WINDOW_FREEZE_IMMEDIATELY");
+            RSSurfaceCaptureParam captureParam;
+            captureParam.id = id;
+            captureParam.config = captureConfig;
+            captureParam.isSystemCalling = isSystemCalling;
+            captureParam.isFreeze = isFreeze;
+            captureParam.blurParam = blurParam;
             RSSurfaceCaptureTaskParallel::CheckModifiers(id, captureConfig.useCurWindow);
-            RSSurfaceCaptureTaskParallel::Capture(id, callback, captureConfig, isSystemCalling, isFreeze, blurParam);
+            RSSurfaceCaptureTaskParallel::Capture(callback, captureParam);
         } else {
             RSSurfaceCaptureTaskParallel::ClearCacheImageByFreeze(id);
         }
@@ -2546,15 +2588,16 @@ ErrCode RSRenderServiceConnection::SetHidePrivacyContent(NodeId id, bool needHid
     return ERR_OK;
 }
 
-void RSRenderServiceConnection::SetCacheEnabledForRotation(bool isEnabled)
+ErrCode RSRenderServiceConnection::SetCacheEnabledForRotation(bool isEnabled)
 {
     if (!mainThread_) {
-        return;
+        return ERR_INVALID_VALUE;
     }
     auto task = [isEnabled]() {
         RSSystemProperties::SetCacheEnabledForRotation(isEnabled);
     };
     mainThread_->PostTask(task);
+    return ERR_OK;
 }
 
 std::vector<ActiveDirtyRegionInfo> RSRenderServiceConnection::GetActiveDirtyRegionInfo()

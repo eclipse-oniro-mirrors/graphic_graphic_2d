@@ -161,7 +161,7 @@ public:
         const RSAnimationTimingProtocol& timingProtocol, const RSAnimationTimingCurve& timingCurve,
         const PropertyCallback& callback);
 
-    static void RegisterTransitionPair(NodeId inNodeId, NodeId outNodeId);
+    static void RegisterTransitionPair(NodeId inNodeId, NodeId outNodeId, const bool isInSameWindow);
     static void UnregisterTransitionPair(NodeId inNodeId, NodeId outNodeId);
 
     static void OpenImplicitAnimation(const RSAnimationTimingProtocol& timingProtocol,
@@ -193,7 +193,7 @@ public:
         const RSAnimationTimingCurve& timingCurve, const PropertyCallback& callback);
 
     static void RegisterTransitionPair(const std::shared_ptr<RSUIContext> rsUIContext,
-        NodeId inNodeId, NodeId outNodeId);
+        NodeId inNodeId, NodeId outNodeId, const bool isInSameWindow);
     static void UnregisterTransitionPair(const std::shared_ptr<RSUIContext> rsUIContext,
         NodeId inNodeId, NodeId outNodeId);
 
