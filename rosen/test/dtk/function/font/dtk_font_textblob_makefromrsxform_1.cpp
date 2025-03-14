@@ -33,6 +33,55 @@ rs_demo_draw_textblob_makefromrsxform_L1
 namespace OHOS {
 namespace Rosen {
 
+static void FillRSXform(Drawing::RSXform xform[], int maxGlyphCount, int mode)
+{
+    const int mode1 = 1;
+    const int mode2 = 2;
+    const int mode3 = 3;
+    const int mode4 = 4;
+    if (mode == mode1) {
+        const int cosvalue = 1;
+        const int t = 100;
+        for (int i = 0; i < maxGlyphCount; ++i) {
+            xform[i].cos_ = i+cosvalue;
+            xform[i].sin_ = 0;
+            xform[i].tx_ = t;
+            xform[i].ty_ = t;
+        }
+    } else if (mode == mode2) {
+        for (int i = 0; i < maxGlyphCount; ++i) {
+            const int factor = 10;
+            const int t = 100;
+
+            xform[i].cos_ = cos(factor*i);
+            xform[i].sin_ = sin(factor*i);
+            xform[i].tx_ = t;
+            xform[i].ty_ = t;
+        }
+    } else if (mode == mode3) {
+        const int cosvalue = 1;
+        const int t = 100;
+        const int factor = 30;
+        for (int i = 0; i < maxGlyphCount; ++i) {
+            xform[i].cos_ = cosvalue;
+            xform[i].sin_ = 0;
+            xform[i].tx_ = t+factor*i;
+            xform[i].ty_ = t;
+        }
+    } else if (mode == mode4) {
+        const int factor = 10;
+        const int f = 0.1;
+        const int t = 100;
+        const int offset = 40;
+        for (int i = 0; i < maxGlyphCount; ++i) {
+            xform[i].cos_ = cos(factor * i) + f * i;
+            xform[i].sin_ = sin(factor * i);
+            xform[i].tx_ = factor*i+t;
+            xform[i].ty_ = t;
+        }
+    }
+}
+
 static void DrawTexts(TestPlaybackCanvas* playbackCanvas,
     std::string name, std::string textInfo, size_t length, int symbol,
     Drawing::TextEncoding encoding, const char* p)
@@ -52,40 +101,7 @@ static void DrawTexts(TestPlaybackCanvas* playbackCanvas,
     pen.SetWidth(2.25f);
     int maxGlyphCount = font.CountText(textInfo.c_str(), count, Drawing::TextEncoding::UTF8);
     Drawing::RSXform xform[maxGlyphCount];
-    switch (symbol) {
-        case 1:
-            for (int i = 0; i < maxGlyphCount; ++i) {
-                xform[i].cos_ = i+1;
-                xform[i].sin_ = 0;
-                xform[i].tx_ = 100;
-                xform[i].ty_ = 100;
-            }
-            break;
-        case 2:
-            for (int i = 0; i < maxGlyphCount; ++i) {
-                xform[i].cos_ = cos(10*i);
-                xform[i].sin_ = sin(10*i);
-                xform[i].tx_ = 100;
-                xform[i].ty_ = 100;
-            }
-            break;
-        case 3:
-            for (int i = 0; i < maxGlyphCount; ++i) {
-                xform[i].cos_ = 1;
-                xform[i].sin_ = 0;
-                xform[i].tx_ = 100+30*i;
-                xform[i].ty_ = 100;
-            }
-            break;
-        case 4:
-            for (int i = 0; i < maxGlyphCount; ++i) {
-                xform[i].cos_ = cos(10 * i) + 0.1 * i;
-                xform[i].sin_ = sin(10 * i);
-                xform[i].tx_ = 40*i+100;
-                xform[i].ty_ = 100;
-            }
-            break;
-    }
+    FillRSXform(xform, maxGlyphCount, symbol);
     auto infoTextBlob = Drawing::TextBlob::MakeFromRSXform(
         p,
         length,
@@ -1675,7 +1691,7 @@ DEF_DTK(textblob_makefromrsxform_1, TestLevel::L1, 193)
     DrawTexts(playbackCanvas_, "HMOS Color Emoji",
         textInfo,
         textInfo.size(), 1,
-    Drawing::TextEncoding::UTF8,
+        Drawing::TextEncoding::UTF8,
         textInfo.c_str());
 }
 
@@ -1686,7 +1702,7 @@ DEF_DTK(textblob_makefromrsxform_1, TestLevel::L1, 194)
     DrawTexts(playbackCanvas_, "HMOS Color Emoji",
         textInfo,
         textInfo.size(), 1,
-    Drawing::TextEncoding::UTF16,
+        Drawing::TextEncoding::UTF16,
         textInfo.c_str());
 }
 
@@ -1697,7 +1713,7 @@ DEF_DTK(textblob_makefromrsxform_1, TestLevel::L1, 195)
     DrawTexts(playbackCanvas_, "HMOS Color Emoji",
         textInfo,
         textInfo.size(), 1,
-    Drawing::TextEncoding::UTF32,
+        Drawing::TextEncoding::UTF32,
         textInfo.c_str());
 }
 
@@ -1752,7 +1768,7 @@ DEF_DTK(textblob_makefromrsxform_1, TestLevel::L1, 200)
     DrawTexts(playbackCanvas_, "HMOS Color Emoji",
         textInfo,
         textInfo.size(), 2,
-    Drawing::TextEncoding::GLYPH_ID,
+        Drawing::TextEncoding::GLYPH_ID,
         textInfo.c_str());
 }
 
@@ -1973,17 +1989,6 @@ DEF_DTK(textblob_makefromrsxform_1, TestLevel::L1, 220)
         textInfo,
         textInfo.size()+1, 3,
         Drawing::TextEncoding::GLYPH_ID,
-        textInfo.c_str());
-}
-
-//对应用例makefromrsxform_3221
-DEF_DTK(textblob_makefromrsxform_1, TestLevel::L1, 221)
-{
-    std::string textInfo = "\xE2\x99\x88\xE2\x99\x89\xE2\x99\x8A\xE2\x99\x8B\xE2\x99\x89\xE2\x99\x8A\xE2\x99";
-    DrawTexts(playbackCanvas_, "HMOS Color Emoji",
-        textInfo,
-        textInfo.size()+1, 4,
-        Drawing::TextEncoding::UTF8,
         textInfo.c_str());
 }
 

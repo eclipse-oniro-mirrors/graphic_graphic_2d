@@ -118,6 +118,17 @@ static void DrawTexts(TestPlaybackCanvas* playbackCanvas,
     playbackCanvas->DetachBrush();
 }
 
+//对应用例makefromrsxform_3221
+DEF_DTK(textblob_makefromrsxform_1, TestLevel::L1, 221)
+{
+    std::string textInfo = "\xE2\x99\x88\xE2\x99\x89\xE2\x99\x8A\xE2\x99\x8B\xE2\x99\x89\xE2\x99\x8A\xE2\x99";
+    DrawTexts(playbackCanvas_, "HMOS Color Emoji",
+        textInfo,
+        textInfo.size()+1, 4,
+        Drawing::TextEncoding::UTF8,
+        textInfo.c_str());
+}
+
 //对应用例makefromrsxform_3222
 DEF_DTK(textblob_makefromrsxform_2, TestLevel::L1, 222)
 {

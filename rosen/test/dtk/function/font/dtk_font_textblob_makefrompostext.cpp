@@ -33,11 +33,16 @@
 namespace OHOS {
 namespace Rosen {
 
-static void MakeTextBlob(TestPlaybackCanvas* playbackCanvas, std::string name, std::string textInfo,
+static void MakeTextBlob(TestPlaybackCanvas* playbackCanvas, std::string textInfo,
     size_t length, Drawing::Point p[], Drawing::TextEncoding encoding)
 {
     int value1 = 200;
     int value2 = 300;
+
+    std::string name = "HarmonyOS Sans SC";
+    if (textInfo == "\xE2\x99\x88\xE2\x99\x89\xE2\x99\x8A\xE2\x99\x8B\xE2\x99\x89\xE2\x99\x8A\xE2\x99") {
+        name = "HMOS Color Emoji";
+    }
 
     Drawing::Brush brush;
     Drawing::Pen pen;
@@ -73,7 +78,6 @@ DEF_DTK(textblob_makefrompostext, TestLevel::L1, 1)
 
     MakeTextBlob(
         playbackCanvas_,
-        "HarmonyOS Sans SC",
         textInfo,
         textInfo.size(),
         p,
@@ -93,7 +97,6 @@ DEF_DTK(textblob_makefrompostext, TestLevel::L1, 2)
 
     MakeTextBlob(
         playbackCanvas_,
-        "HarmonyOS Sans SC",
         textInfo,
         10,
         p,
@@ -113,7 +116,6 @@ DEF_DTK(textblob_makefrompostext, TestLevel::L1, 3)
 
     MakeTextBlob(
         playbackCanvas_,
-        "HarmonyOS Sans SC",
         textInfo,
         textInfo.size() - 1,
         p,
@@ -133,7 +135,6 @@ DEF_DTK(textblob_makefrompostext, TestLevel::L1, 4)
 
     MakeTextBlob(
         playbackCanvas_,
-        "HarmonyOS Sans SC",
         textInfo,
         textInfo.size() + 1,
         p,
@@ -153,7 +154,6 @@ DEF_DTK(textblob_makefrompostext, TestLevel::L1, 5)
 
     MakeTextBlob(
         playbackCanvas_,
-        "HarmonyOS Sans SC",
         textInfo,
         0,
         p,
@@ -173,7 +173,6 @@ DEF_DTK(textblob_makefrompostext, TestLevel::L1, 6)
 
     MakeTextBlob(
         playbackCanvas_,
-        "HarmonyOS Sans SC",
         textInfo,
         textInfo.size(),
         p,
@@ -193,7 +192,6 @@ DEF_DTK(textblob_makefrompostext, TestLevel::L1, 7)
 
     MakeTextBlob(
         playbackCanvas_,
-        "HarmonyOS Sans SC",
         textInfo,
         10,
         p,
@@ -213,7 +211,6 @@ DEF_DTK(textblob_makefrompostext, TestLevel::L1, 8)
 
     MakeTextBlob(
         playbackCanvas_,
-        "HarmonyOS Sans SC",
         textInfo,
         textInfo.size() - 1,
         p,
@@ -233,7 +230,6 @@ DEF_DTK(textblob_makefrompostext, TestLevel::L1, 9)
 
     MakeTextBlob(
         playbackCanvas_,
-        "HarmonyOS Sans SC",
         textInfo,
         textInfo.size() + 1,
         p,
@@ -253,7 +249,6 @@ DEF_DTK(textblob_makefrompostext, TestLevel::L1, 10)
 
     MakeTextBlob(
         playbackCanvas_,
-        "HarmonyOS Sans SC",
         textInfo,
         0,
         p,
@@ -273,7 +268,6 @@ DEF_DTK(textblob_makefrompostext, TestLevel::L1, 11)
 
     MakeTextBlob(
         playbackCanvas_,
-        "HarmonyOS Sans SC",
         textInfo,
         textInfo.size(),
         p,
@@ -293,7 +287,6 @@ DEF_DTK(textblob_makefrompostext, TestLevel::L1, 12)
 
     MakeTextBlob(
         playbackCanvas_,
-        "HarmonyOS Sans SC",
         textInfo,
         textInfo.size(),
         p,
@@ -313,7 +306,6 @@ DEF_DTK(textblob_makefrompostext, TestLevel::L1, 13)
 
     MakeTextBlob(
         playbackCanvas_,
-        "HarmonyOS Sans SC",
         textInfo,
         10,
         p,
@@ -333,7 +325,6 @@ DEF_DTK(textblob_makefrompostext, TestLevel::L1, 14)
 
     MakeTextBlob(
         playbackCanvas_,
-        "HarmonyOS Sans SC",
         textInfo,
         textInfo.size() - 1,
         p,
@@ -353,7 +344,6 @@ DEF_DTK(textblob_makefrompostext, TestLevel::L1, 15)
 
     MakeTextBlob(
         playbackCanvas_,
-        "HarmonyOS Sans SC",
         textInfo,
         textInfo.size() + 1,
         p,
@@ -373,7 +363,6 @@ DEF_DTK(textblob_makefrompostext, TestLevel::L1, 16)
 
     MakeTextBlob(
         playbackCanvas_,
-        "HarmonyOS Sans SC",
         textInfo,
         0,
         p,
@@ -393,7 +382,6 @@ DEF_DTK(textblob_makefrompostext, TestLevel::L1, 17)
 
     MakeTextBlob(
         playbackCanvas_,
-        "HarmonyOS Sans SC",
         textInfo,
         textInfo.size(),
         p,
@@ -413,7 +401,6 @@ DEF_DTK(textblob_makefrompostext, TestLevel::L1, 18)
 
     MakeTextBlob(
         playbackCanvas_,
-        "HarmonyOS Sans SC",
         textInfo,
         10,
         p,
@@ -433,7 +420,6 @@ DEF_DTK(textblob_makefrompostext, TestLevel::L1, 19)
 
     MakeTextBlob(
         playbackCanvas_,
-        "HarmonyOS Sans SC",
         textInfo,
         textInfo.size() - 1,
         p,
@@ -453,7 +439,6 @@ DEF_DTK(textblob_makefrompostext, TestLevel::L1, 20)
 
     MakeTextBlob(
         playbackCanvas_,
-        "HarmonyOS Sans SC",
         textInfo,
         textInfo.size() + 1,
         p,
@@ -473,7 +458,6 @@ DEF_DTK(textblob_makefrompostext, TestLevel::L1, 21)
 
     MakeTextBlob(
         playbackCanvas_,
-        "HarmonyOS Sans SC",
         textInfo,
         0,
         p,
@@ -493,7 +477,6 @@ DEF_DTK(textblob_makefrompostext, TestLevel::L1, 22)
 
     MakeTextBlob(
         playbackCanvas_,
-        "HarmonyOS Sans SC",
         textInfo,
         textInfo.size(),
         p,
@@ -513,7 +496,6 @@ DEF_DTK(textblob_makefrompostext, TestLevel::L1, 23)
 
     MakeTextBlob(
         playbackCanvas_,
-        "HarmonyOS Sans SC",
         nullptr,
         10,
         p,
@@ -533,7 +515,6 @@ DEF_DTK(textblob_makefrompostext, TestLevel::L1, 24)
 
     MakeTextBlob(
         playbackCanvas_,
-        "HarmonyOS Sans SC",
         nullptr,
         textInfo.size() - 1,
         p,
@@ -553,7 +534,6 @@ DEF_DTK(textblob_makefrompostext, TestLevel::L1, 25)
 
     MakeTextBlob(
         playbackCanvas_,
-        "HarmonyOS Sans SC",
         nullptr,
         textInfo.size() + 1,
         p,
@@ -573,7 +553,6 @@ DEF_DTK(textblob_makefrompostext, TestLevel::L1, 26)
 
     MakeTextBlob(
         playbackCanvas_,
-        "HarmonyOS Sans SC",
         nullptr,
         0,
         p,
@@ -593,7 +572,6 @@ DEF_DTK(textblob_makefrompostext, TestLevel::L1, 27)
 
     MakeTextBlob(
         playbackCanvas_,
-        "HMOS Color Emoji",
         textInfo,
         textInfo.size(),
         p,
@@ -613,7 +591,6 @@ DEF_DTK(textblob_makefrompostext, TestLevel::L1, 28)
 
     MakeTextBlob(
         playbackCanvas_,
-        "HMOS Color Emoji",
         textInfo,
         10,
         p,
@@ -633,7 +610,6 @@ DEF_DTK(textblob_makefrompostext, TestLevel::L1, 29)
 
     MakeTextBlob(
         playbackCanvas_,
-        "HMOS Color Emoji",
         textInfo,
         textInfo.size() - 1,
         p,
@@ -653,7 +629,6 @@ DEF_DTK(textblob_makefrompostext, TestLevel::L1, 30)
 
     MakeTextBlob(
         playbackCanvas_,
-        "HMOS Color Emoji",
         textInfo,
         textInfo.size() + 1,
         p,
@@ -673,7 +648,6 @@ DEF_DTK(textblob_makefrompostext, TestLevel::L1, 31)
 
     MakeTextBlob(
         playbackCanvas_,
-        "HMOS Color Emoji",
         textInfo,
         0,
         p,
