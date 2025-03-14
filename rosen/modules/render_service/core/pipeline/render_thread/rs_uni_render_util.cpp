@@ -1511,17 +1511,13 @@ RectI RSUniRenderUtil::SrcRectRotateTransform(const SurfaceBuffer& buffer,
 Drawing::Rect RSUniRenderUtil::CalcSrcRectByBufferRotation(const SurfaceBuffer& buffer,
     const GraphicTransformType consumerTransformType, Drawing::Rect newSrcRect)
 {
-    const float frameWidth = buffer.GetSurfaceBufferWidth();
-    const float frameHeight = buffer.GetSurfaceBufferHeight();
-    int left = std::clamp<int>(newSrcRect.GetLeft(), 0, frameWidth);
-    int top = std::clamp<int>(newSrcRect.GetTop(), 0, frameHeight);
-    int width = std::clamp<int>(newSrcRect.GetWidth(), 0, frameWidth - left);
-    int height = std::clamp<int>(newSrcRect.GetHeight(), 0, frameHeight - top);
+    const auto frameWidth = buffer.GetSurfaceBufferWidth();
+    const auto frameHeight = buffer.GetSurfaceBufferHeight();
+    auto left = newSrcRect.left_;
+    auto top = newSrcRect.top_;
+    auto width = newSrcRect.right_ - newSrcRect.left_;
+    auto height = newSrcRect.bottom_ - newSrcRect.top_;
     switch (consumerTransformType) {
-        case GraphicTransformType::GRAPHIC_ROTATE_NONE: {
-            newSrcRect = Drawing::Rect(left, top, left + width, top + height);
-            break;
-        }
         case GraphicTransformType::GRAPHIC_ROTATE_90: {
             newSrcRect = Drawing::Rect(frameWidth - width - left, top, frameWidth - left, top + height);
             break;
@@ -1538,6 +1534,10 @@ Drawing::Rect RSUniRenderUtil::CalcSrcRectByBufferRotation(const SurfaceBuffer& 
         default:
             break;
     }
+    newSrcRect.left_ = std::clamp<int>(std::floor(newSrcRect.GetLeft()), 0, frameWidth);
+    newSrcRect.top_ = std::clamp<int>(std::floor(newSrcRect.GetTop()), 0, frameHeight);
+    newSrcRect.right_ = std::clamp<int>(std::ceil(newSrcRect.GetRight()), left, frameWidth);
+    newSrcRect.bottom_ = std::clamp<int>(std::ceil(newSrcRect.GetBottom()), top, frameHeight);
     return newSrcRect;
 }
 
