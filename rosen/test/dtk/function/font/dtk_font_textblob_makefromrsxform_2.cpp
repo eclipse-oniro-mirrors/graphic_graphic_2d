@@ -69,13 +69,13 @@ static void FillRSXform(Drawing::RSXform xform[], int maxGlyphCount, int mode)
             xform[i].ty_ = t;
         }
     } else if (mode == mode4) {
-        const int factor = 10;
-        const int f = 0.1;
+        const int m = 10;
+        const float f = 0.1;
         const int t = 100;
-        const int offset = 40;
+        const int factor = 40;
         for (int i = 0; i < maxGlyphCount; ++i) {
-            xform[i].cos_ = cos(factor * i) + f * i;
-            xform[i].sin_ = sin(factor * i);
+            xform[i].cos_ = cos(m * i) + f * i;
+            xform[i].sin_ = sin(m * i);
             xform[i].tx_ = factor*i+t;
             xform[i].ty_ = t;
         }
@@ -83,14 +83,23 @@ static void FillRSXform(Drawing::RSXform xform[], int maxGlyphCount, int mode)
 }
 
 static void DrawTexts(TestPlaybackCanvas* playbackCanvas,
-    std::string name, std::string textInfo, size_t length, int symbol,
-    Drawing::TextEncoding encoding, const char* p)
+    std::string textInfo, size_t length, int symbol,
+    Drawing::TextEncoding encoding)
 {
     int line1 = 200;
     int interval = 200;
     int line2 = 800;
     Drawing::Brush brush;
     Drawing::Pen pen;
+
+    char* p = nullptr;
+    if (textInfo != "harmony_os") {
+        p = (char*)textInfo.c_str();
+    }
+    std::string name = "HarmonyOS Sans SC";
+    if (textInfo == "\xE2\x99\x88\xE2\x99\x89\xE2\x99\x8A\xE2\x99\x8B\xE2\x99\x89\xE2\x99\x8A\xE2\x99") {
+        name = "HMOS Color Emoji";
+    }
 
     std::shared_ptr<Drawing::FontMgr> font_mgr(Drawing::FontMgr::CreateDefaultFontMgr());
     auto font = Drawing::Font(Drawing::Typeface::MakeDefault(), 100.f, 1.f, 0.f);
@@ -119,367 +128,331 @@ static void DrawTexts(TestPlaybackCanvas* playbackCanvas,
 }
 
 //对应用例makefromrsxform_3221
-DEF_DTK(textblob_makefromrsxform_1, TestLevel::L1, 221)
+DEF_DTK(textblob_makefromrsxform_2, TestLevel::L1, 221)
 {
     std::string textInfo = "\xE2\x99\x88\xE2\x99\x89\xE2\x99\x8A\xE2\x99\x8B\xE2\x99\x89\xE2\x99\x8A\xE2\x99";
-    DrawTexts(playbackCanvas_, "HMOS Color Emoji",
+    DrawTexts(playbackCanvas_,
         textInfo,
         textInfo.size()+1, 4,
-        Drawing::TextEncoding::UTF8,
-        textInfo.c_str());
+        Drawing::TextEncoding::UTF8);
 }
 
 //对应用例makefromrsxform_3222
 DEF_DTK(textblob_makefromrsxform_2, TestLevel::L1, 222)
 {
     std::string textInfo = "\xE2\x99\x88\xE2\x99\x89\xE2\x99\x8A\xE2\x99\x8B\xE2\x99\x89\xE2\x99\x8A\xE2\x99";
-    DrawTexts(playbackCanvas_, "HMOS Color Emoji",
+    DrawTexts(playbackCanvas_,
         textInfo,
         textInfo.size()+1, 4,
-        Drawing::TextEncoding::UTF16,
-        textInfo.c_str());
+        Drawing::TextEncoding::UTF16);
 }
 
 //对应用例makefromrsxform_3223
 DEF_DTK(textblob_makefromrsxform_2, TestLevel::L1, 223)
 {
     std::string textInfo = "\xE2\x99\x88\xE2\x99\x89\xE2\x99\x8A\xE2\x99\x8B\xE2\x99\x89\xE2\x99\x8A\xE2\x99";
-    DrawTexts(playbackCanvas_, "HMOS Color Emoji",
+    DrawTexts(playbackCanvas_,
         textInfo,
         textInfo.size()+1, 4,
-        Drawing::TextEncoding::UTF32,
-        textInfo.c_str());
+        Drawing::TextEncoding::UTF32);
 }
 
 //对应用例makefromrsxform_3224
 DEF_DTK(textblob_makefromrsxform_2, TestLevel::L1, 224)
 {
     std::string textInfo = "\xE2\x99\x88\xE2\x99\x89\xE2\x99\x8A\xE2\x99\x8B\xE2\x99\x89\xE2\x99\x8A\xE2\x99";
-    DrawTexts(playbackCanvas_, "HMOS Color Emoji",
+    DrawTexts(playbackCanvas_,
         textInfo,
         textInfo.size()+1, 4,
-        Drawing::TextEncoding::GLYPH_ID,
-        textInfo.c_str());
+        Drawing::TextEncoding::GLYPH_ID);
 }
 
 //对应用例makefromrsxform_3225
 DEF_DTK(textblob_makefromrsxform_2, TestLevel::L1, 225)
 {
     std::string textInfo = "\xE2\x99\x88\xE2\x99\x89\xE2\x99\x8A\xE2\x99\x8B\xE2\x99\x89\xE2\x99\x8A\xE2\x99";
-    DrawTexts(playbackCanvas_, "HMOS Color Emoji",
+    DrawTexts(playbackCanvas_,
         textInfo,
-        0, 1, Drawing::TextEncoding::UTF8,
-        textInfo.c_str());
+        0, 1, Drawing::TextEncoding::UTF8);
 }
 
 //对应用例makefromrsxform_3226
 DEF_DTK(textblob_makefromrsxform_2, TestLevel::L1, 226)
 {
     std::string textInfo = "\xE2\x99\x88\xE2\x99\x89\xE2\x99\x8A\xE2\x99\x8B\xE2\x99\x89\xE2\x99\x8A\xE2\x99";
-    DrawTexts(playbackCanvas_, "HMOS Color Emoji",
+    DrawTexts(playbackCanvas_,
         textInfo,
-        0, 1, Drawing::TextEncoding::UTF16,
-        textInfo.c_str());
+        0, 1, Drawing::TextEncoding::UTF16);
 }
 
 //对应用例makefromrsxform_3227
 DEF_DTK(textblob_makefromrsxform_2, TestLevel::L1, 227)
 {
     std::string textInfo = "\xE2\x99\x88\xE2\x99\x89\xE2\x99\x8A\xE2\x99\x8B\xE2\x99\x89\xE2\x99\x8A\xE2\x99";
-    DrawTexts(playbackCanvas_, "HMOS Color Emoji",
+    DrawTexts(playbackCanvas_,
         textInfo,
-        0, 1, Drawing::TextEncoding::UTF32,
-        textInfo.c_str());
+        0, 1, Drawing::TextEncoding::UTF32);
 }
 
 //对应用例makefromrsxform_3228
 DEF_DTK(textblob_makefromrsxform_2, TestLevel::L1, 228)
 {
     std::string textInfo = "\xE2\x99\x88\xE2\x99\x89\xE2\x99\x8A\xE2\x99\x8B\xE2\x99\x89\xE2\x99\x8A\xE2\x99";
-    DrawTexts(playbackCanvas_, "HMOS Color Emoji",
+    DrawTexts(playbackCanvas_,
         textInfo,
-        0, 1, Drawing::TextEncoding::GLYPH_ID,
-        textInfo.c_str());
+        0, 1, Drawing::TextEncoding::GLYPH_ID);
 }
 
 //对应用例makefromrsxform_3229
 DEF_DTK(textblob_makefromrsxform_2, TestLevel::L1, 229)
 {
     std::string textInfo = "\xE2\x99\x88\xE2\x99\x89\xE2\x99\x8A\xE2\x99\x8B\xE2\x99\x89\xE2\x99\x8A\xE2\x99";
-    DrawTexts(playbackCanvas_, "HMOS Color Emoji",
+    DrawTexts(playbackCanvas_,
         textInfo,
-        0, 2, Drawing::TextEncoding::UTF8,
-        textInfo.c_str());
+        0, 2, Drawing::TextEncoding::UTF8);
 }
 
 //对应用例makefromrsxform_3230
 DEF_DTK(textblob_makefromrsxform_2, TestLevel::L1, 230)
 {
     std::string textInfo = "\xE2\x99\x88\xE2\x99\x89\xE2\x99\x8A\xE2\x99\x8B\xE2\x99\x89\xE2\x99\x8A\xE2\x99";
-    DrawTexts(playbackCanvas_, "HMOS Color Emoji",
+    DrawTexts(playbackCanvas_,
         textInfo,
-        0, 2, Drawing::TextEncoding::UTF16,
-        textInfo.c_str());
+        0, 2, Drawing::TextEncoding::UTF16);
 }
 
 //对应用例makefromrsxform_3231
 DEF_DTK(textblob_makefromrsxform_2, TestLevel::L1, 231)
 {
     std::string textInfo = "\xE2\x99\x88\xE2\x99\x89\xE2\x99\x8A\xE2\x99\x8B\xE2\x99\x89\xE2\x99\x8A\xE2\x99";
-    DrawTexts(playbackCanvas_, "HMOS Color Emoji",
+    DrawTexts(playbackCanvas_,
         textInfo,
-        0, 2, Drawing::TextEncoding::UTF32,
-        textInfo.c_str());
+        0, 2, Drawing::TextEncoding::UTF32);
 }
 
 //对应用例makefromrsxform_3232
 DEF_DTK(textblob_makefromrsxform_2, TestLevel::L1, 232)
 {
     std::string textInfo = "\xE2\x99\x88\xE2\x99\x89\xE2\x99\x8A\xE2\x99\x8B\xE2\x99\x89\xE2\x99\x8A\xE2\x99";
-    DrawTexts(playbackCanvas_, "HMOS Color Emoji",
+    DrawTexts(playbackCanvas_,
         textInfo,
-        0, 2, Drawing::TextEncoding::GLYPH_ID,
-        textInfo.c_str());
+        0, 2, Drawing::TextEncoding::GLYPH_ID);
 }
 
 //对应用例makefromrsxform_3233
 DEF_DTK(textblob_makefromrsxform_2, TestLevel::L1, 233)
 {
     std::string textInfo = "\xE2\x99\x88\xE2\x99\x89\xE2\x99\x8A\xE2\x99\x8B\xE2\x99\x89\xE2\x99\x8A\xE2\x99";
-    DrawTexts(playbackCanvas_, "HMOS Color Emoji",
+    DrawTexts(playbackCanvas_,
         textInfo,
-        0, 3, Drawing::TextEncoding::UTF8,
-        textInfo.c_str());
+        0, 3, Drawing::TextEncoding::UTF8);
 }
 
 //对应用例makefromrsxform_3234
 DEF_DTK(textblob_makefromrsxform_2, TestLevel::L1, 234)
 {
     std::string textInfo = "\xE2\x99\x88\xE2\x99\x89\xE2\x99\x8A\xE2\x99\x8B\xE2\x99\x89\xE2\x99\x8A\xE2\x99";
-    DrawTexts(playbackCanvas_, "HMOS Color Emoji",
+    DrawTexts(playbackCanvas_,
         textInfo,
-        0, 3, Drawing::TextEncoding::UTF16,
-        textInfo.c_str());
+        0, 3, Drawing::TextEncoding::UTF16);
 }
 
 //对应用例makefromrsxform_3235
 DEF_DTK(textblob_makefromrsxform_2, TestLevel::L1, 235)
 {
     std::string textInfo = "\xE2\x99\x88\xE2\x99\x89\xE2\x99\x8A\xE2\x99\x8B\xE2\x99\x89\xE2\x99\x8A\xE2\x99";
-    DrawTexts(playbackCanvas_, "HMOS Color Emoji",
+    DrawTexts(playbackCanvas_,
         textInfo,
-        0, 3, Drawing::TextEncoding::UTF32,
-        textInfo.c_str());
+        0, 3, Drawing::TextEncoding::UTF32);
 }
 
 //对应用例makefromrsxform_3236
 DEF_DTK(textblob_makefromrsxform_2, TestLevel::L1, 236)
 {
     std::string textInfo = "\xE2\x99\x88\xE2\x99\x89\xE2\x99\x8A\xE2\x99\x8B\xE2\x99\x89\xE2\x99\x8A\xE2\x99";
-    DrawTexts(playbackCanvas_, "HMOS Color Emoji",
+    DrawTexts(playbackCanvas_,
         textInfo,
-        0, 3, Drawing::TextEncoding::GLYPH_ID,
-        textInfo.c_str());
+        0, 3, Drawing::TextEncoding::GLYPH_ID);
 }
 
 //对应用例makefromrsxform_3237
 DEF_DTK(textblob_makefromrsxform_2, TestLevel::L1, 237)
 {
     std::string textInfo = "\xE2\x99\x88\xE2\x99\x89\xE2\x99\x8A\xE2\x99\x8B\xE2\x99\x89\xE2\x99\x8A\xE2\x99";
-    DrawTexts(playbackCanvas_, "HMOS Color Emoji",
+    DrawTexts(playbackCanvas_,
         textInfo,
-        0, 4, Drawing::TextEncoding::UTF8,
-        textInfo.c_str());
+        0, 4, Drawing::TextEncoding::UTF8);
 }
 
 //对应用例makefromrsxform_3238
 DEF_DTK(textblob_makefromrsxform_2, TestLevel::L1, 238)
 {
     std::string textInfo = "\xE2\x99\x88\xE2\x99\x89\xE2\x99\x8A\xE2\x99\x8B\xE2\x99\x89\xE2\x99\x8A\xE2\x99";
-    DrawTexts(playbackCanvas_, "HMOS Color Emoji",
+    DrawTexts(playbackCanvas_,
         textInfo,
-        0, 4, Drawing::TextEncoding::UTF16,
-        textInfo.c_str());
+        0, 4, Drawing::TextEncoding::UTF16);
 }
 
 //对应用例makefromrsxform_3239
 DEF_DTK(textblob_makefromrsxform_2, TestLevel::L1, 239)
 {
     std::string textInfo = "\xE2\x99\x88\xE2\x99\x89\xE2\x99\x8A\xE2\x99\x8B\xE2\x99\x89\xE2\x99\x8A\xE2\x99";
-    DrawTexts(playbackCanvas_, "HMOS Color Emoji",
+    DrawTexts(playbackCanvas_,
         textInfo,
-        0, 4, Drawing::TextEncoding::UTF32,
-        textInfo.c_str());
+        0, 4, Drawing::TextEncoding::UTF32);
 }
 
 //对应用例makefromrsxform_3240
 DEF_DTK(textblob_makefromrsxform_2, TestLevel::L1, 240)
 {
     std::string textInfo = "\xE2\x99\x88\xE2\x99\x89\xE2\x99\x8A\xE2\x99\x8B\xE2\x99\x89\xE2\x99\x8A\xE2\x99";
-    DrawTexts(playbackCanvas_, "HMOS Color Emoji",
+    DrawTexts(playbackCanvas_,
         textInfo,
-        0, 4, Drawing::TextEncoding::GLYPH_ID,
-        textInfo.c_str());
+        0, 4, Drawing::TextEncoding::GLYPH_ID);
 }
 
 //对应用例makefromrsxform_3241
 DEF_DTK(textblob_makefromrsxform_2, TestLevel::L1, 241)
 {
     std::string textInfo = "\xE2\x99\x88\xE2\x99\x89\xE2\x99\x8A\xE2\x99\x8B\xE2\x99\x89\xE2\x99\x8A\xE2\x99";
-    DrawTexts(playbackCanvas_, "HMOS Color Emoji",
+    DrawTexts(playbackCanvas_,
         textInfo,
-        -5, 1, Drawing::TextEncoding::UTF8,
-        textInfo.c_str());
+        -5, 1, Drawing::TextEncoding::UTF8);
 }
 
 //对应用例makefromrsxform_3242
 DEF_DTK(textblob_makefromrsxform_2, TestLevel::L1, 242)
 {
     std::string textInfo = "\xE2\x99\x88\xE2\x99\x89\xE2\x99\x8A\xE2\x99\x8B\xE2\x99\x89\xE2\x99\x8A\xE2\x99";
-    DrawTexts(playbackCanvas_, "HMOS Color Emoji",
+    DrawTexts(playbackCanvas_,
         textInfo,
-        -5, 1, Drawing::TextEncoding::UTF16,
-        textInfo.c_str());
+        -5, 1, Drawing::TextEncoding::UTF16);
 }
 
 //对应用例makefromrsxform_3243
 DEF_DTK(textblob_makefromrsxform_2, TestLevel::L1, 243)
 {
     std::string textInfo = "\xE2\x99\x88\xE2\x99\x89\xE2\x99\x8A\xE2\x99\x8B\xE2\x99\x89\xE2\x99\x8A\xE2\x99";
-    DrawTexts(playbackCanvas_, "HMOS Color Emoji",
+    DrawTexts(playbackCanvas_,
         textInfo,
-        -5, 1, Drawing::TextEncoding::UTF32,
-        textInfo.c_str());
+        -5, 1, Drawing::TextEncoding::UTF32);
 }
 
 //对应用例makefromrsxform_3244
 DEF_DTK(textblob_makefromrsxform_2, TestLevel::L1, 244)
 {
     std::string textInfo = "\xE2\x99\x88\xE2\x99\x89\xE2\x99\x8A\xE2\x99\x8B\xE2\x99\x89\xE2\x99\x8A\xE2\x99";
-    DrawTexts(playbackCanvas_, "HMOS Color Emoji",
+    DrawTexts(playbackCanvas_,
         textInfo,
-        -5, 1, Drawing::TextEncoding::GLYPH_ID,
-        textInfo.c_str());
+        -5, 1, Drawing::TextEncoding::GLYPH_ID);
 }
 
 //对应用例makefromrsxform_3245
 DEF_DTK(textblob_makefromrsxform_2, TestLevel::L1, 245)
 {
     std::string textInfo = "\xE2\x99\x88\xE2\x99\x89\xE2\x99\x8A\xE2\x99\x8B\xE2\x99\x89\xE2\x99\x8A\xE2\x99";
-    DrawTexts(playbackCanvas_, "HMOS Color Emoji",
+    DrawTexts(playbackCanvas_,
         textInfo,
-        -5, 2, Drawing::TextEncoding::UTF8,
-        textInfo.c_str());
+        -5, 2, Drawing::TextEncoding::UTF8);
 }
 
 //对应用例makefromrsxform_3246
 DEF_DTK(textblob_makefromrsxform_2, TestLevel::L1, 246)
 {
     std::string textInfo = "\xE2\x99\x88\xE2\x99\x89\xE2\x99\x8A\xE2\x99\x8B\xE2\x99\x89\xE2\x99\x8A\xE2\x99";
-    DrawTexts(playbackCanvas_, "HMOS Color Emoji",
+    DrawTexts(playbackCanvas_,
         textInfo,
-        -5, 2, Drawing::TextEncoding::UTF16,
-        textInfo.c_str());
+        -5, 2, Drawing::TextEncoding::UTF16);
 }
 
 //对应用例makefromrsxform_3247
 DEF_DTK(textblob_makefromrsxform_2, TestLevel::L1, 247)
 {
     std::string textInfo = "\xE2\x99\x88\xE2\x99\x89\xE2\x99\x8A\xE2\x99\x8B\xE2\x99\x89\xE2\x99\x8A\xE2\x99";
-    DrawTexts(playbackCanvas_, "HMOS Color Emoji",
+    DrawTexts(playbackCanvas_,
         textInfo,
-        -5, 2, Drawing::TextEncoding::UTF32,
-        textInfo.c_str());
+        -5, 2, Drawing::TextEncoding::UTF32);
 }
 
 //对应用例makefromrsxform_3248
 DEF_DTK(textblob_makefromrsxform_2, TestLevel::L1, 248)
 {
     std::string textInfo = "\xE2\x99\x88\xE2\x99\x89\xE2\x99\x8A\xE2\x99\x8B\xE2\x99\x89\xE2\x99\x8A\xE2\x99";
-    DrawTexts(playbackCanvas_, "HMOS Color Emoji",
+    DrawTexts(playbackCanvas_,
         textInfo,
-        -5, 2, Drawing::TextEncoding::GLYPH_ID,
-        textInfo.c_str());
+        -5, 2, Drawing::TextEncoding::GLYPH_ID);
 }
 
 //对应用例makefromrsxform_3249
 DEF_DTK(textblob_makefromrsxform_2, TestLevel::L1, 249)
 {
     std::string textInfo = "\xE2\x99\x88\xE2\x99\x89\xE2\x99\x8A\xE2\x99\x8B\xE2\x99\x89\xE2\x99\x8A\xE2\x99";
-    DrawTexts(playbackCanvas_, "HMOS Color Emoji",
+    DrawTexts(playbackCanvas_,
         textInfo,
-        -5, 3, Drawing::TextEncoding::UTF8,
-        textInfo.c_str());
+        -5, 3, Drawing::TextEncoding::UTF8);
 }
 
 //对应用例makefromrsxform_3250
 DEF_DTK(textblob_makefromrsxform_2, TestLevel::L1, 250)
 {
     std::string textInfo = "\xE2\x99\x88\xE2\x99\x89\xE2\x99\x8A\xE2\x99\x8B\xE2\x99\x89\xE2\x99\x8A\xE2\x99";
-    DrawTexts(playbackCanvas_, "HMOS Color Emoji",
+    DrawTexts(playbackCanvas_,
         textInfo,
-        -5, 3, Drawing::TextEncoding::UTF16,
-        textInfo.c_str());
+        -5, 3, Drawing::TextEncoding::UTF16);
 }
 
 //对应用例makefromrsxform_3251
 DEF_DTK(textblob_makefromrsxform_2, TestLevel::L1, 251)
 {
     std::string textInfo = "\xE2\x99\x88\xE2\x99\x89\xE2\x99\x8A\xE2\x99\x8B\xE2\x99\x89\xE2\x99\x8A\xE2\x99";
-    DrawTexts(playbackCanvas_, "HMOS Color Emoji",
+    DrawTexts(playbackCanvas_,
         textInfo,
-        -5, 3, Drawing::TextEncoding::UTF32,
-        textInfo.c_str());
+        -5, 3, Drawing::TextEncoding::UTF32);
 }
 
 //对应用例makefromrsxform_3252
 DEF_DTK(textblob_makefromrsxform_2, TestLevel::L1, 252)
 {
     std::string textInfo = "\xE2\x99\x88\xE2\x99\x89\xE2\x99\x8A\xE2\x99\x8B\xE2\x99\x89\xE2\x99\x8A\xE2\x99";
-    DrawTexts(playbackCanvas_, "HMOS Color Emoji",
+    DrawTexts(playbackCanvas_,
         textInfo,
-        -5, 3, Drawing::TextEncoding::GLYPH_ID,
-        textInfo.c_str());
+        -5, 3, Drawing::TextEncoding::GLYPH_ID);
 }
 
 //对应用例makefromrsxform_3253
 DEF_DTK(textblob_makefromrsxform_2, TestLevel::L1, 253)
 {
     std::string textInfo = "\xE2\x99\x88\xE2\x99\x89\xE2\x99\x8A\xE2\x99\x8B\xE2\x99\x89\xE2\x99\x8A\xE2\x99";
-    DrawTexts(playbackCanvas_, "HMOS Color Emoji",
+    DrawTexts(playbackCanvas_,
         textInfo,
-        -5, 4, Drawing::TextEncoding::UTF8,
-        textInfo.c_str());
+        -5, 4, Drawing::TextEncoding::UTF8);
 }
 
 //对应用例makefromrsxform_3254
 DEF_DTK(textblob_makefromrsxform_2, TestLevel::L1, 254)
 {
     std::string textInfo = "\xE2\x99\x88\xE2\x99\x89\xE2\x99\x8A\xE2\x99\x8B\xE2\x99\x89\xE2\x99\x8A\xE2\x99";
-    DrawTexts(playbackCanvas_, "HMOS Color Emoji",
+    DrawTexts(playbackCanvas_,
         textInfo,
-        -5, 3, Drawing::TextEncoding::UTF16,
-        textInfo.c_str());
+        -5, 3, Drawing::TextEncoding::UTF16);
 }
 
 //对应用例makefromrsxform_3255
 DEF_DTK(textblob_makefromrsxform_2, TestLevel::L1, 255)
 {
     std::string textInfo = "\xE2\x99\x88\xE2\x99\x89\xE2\x99\x8A\xE2\x99\x8B\xE2\x99\x89\xE2\x99\x8A\xE2\x99";
-    DrawTexts(playbackCanvas_, "HMOS Color Emoji",
+    DrawTexts(playbackCanvas_,
         textInfo,
-        -5, 3, Drawing::TextEncoding::UTF32,
-        textInfo.c_str());
+        -5, 3, Drawing::TextEncoding::UTF32);
 }
 
 //对应用例makefromrsxform_3256
 DEF_DTK(textblob_makefromrsxform_2, TestLevel::L1, 256)
 {
     std::string textInfo = "\xE2\x99\x88\xE2\x99\x89\xE2\x99\x8A\xE2\x99\x8B\xE2\x99\x89\xE2\x99\x8A\xE2\x99";
-    DrawTexts(playbackCanvas_, "HMOS Color Emoji",
+    DrawTexts(playbackCanvas_,
         textInfo,
-        -5, 3, Drawing::TextEncoding::GLYPH_ID,
-        textInfo.c_str());
+        -5, 3, Drawing::TextEncoding::GLYPH_ID);
 }
 
 }
