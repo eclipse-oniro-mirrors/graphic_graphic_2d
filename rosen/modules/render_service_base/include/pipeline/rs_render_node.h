@@ -1247,7 +1247,7 @@ private:
 using RSBaseRenderNode = RSRenderNode;
 
 struct SharedTransitionParam {
-    SharedTransitionParam(RSRenderNode::SharedPtr inNode, RSRenderNode::SharedPtr outNode);
+    SharedTransitionParam(RSRenderNode::SharedPtr inNode, RSRenderNode::SharedPtr outNode, bool isInSameWindow);
 
     RSRenderNode::SharedPtr GetPairedNode(const NodeId nodeId) const;
     bool IsLower(const NodeId nodeId) const;

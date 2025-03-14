@@ -532,7 +532,7 @@ HWTEST_F(RSRenderNodeUnitTest, OnTreeStateChangedTest, TestSize.Level1)
 
     std::shared_ptr<RSRenderNode> inNode = std::make_shared<RSBaseRenderNode>(id, context);
     std::shared_ptr<RSRenderNode> outNode = std::make_shared<RSBaseRenderNode>(id + 1, context);
-    auto sharedTransitionParam = std::make_shared<SharedTransitionParam>(inNode, outNode);
+    auto sharedTransitionParam = std::make_shared<SharedTransitionParam>(inNode, outNode, true);
     node.SetSharedTransitionParam(sharedTransitionParam);
     node.OnTreeStateChanged();
     EXPECT_FALSE(node.sharedTransitionParam_->paired_);
@@ -967,7 +967,7 @@ HWTEST_F(RSRenderNodeUnitTest, GetPairedNodeTest, TestSize.Level1)
 {
     std::shared_ptr<RSRenderNode> inNode = std::make_shared<RSBaseRenderNode>(id + 1, context);
     std::shared_ptr<RSRenderNode> outNode = std::make_shared<RSBaseRenderNode>(id + 2, context);
-    auto sharedTransitionParam = std::make_shared<SharedTransitionParam>(inNode, outNode);
+    auto sharedTransitionParam = std::make_shared<SharedTransitionParam>(inNode, outNode, true);
     auto ptr = sharedTransitionParam->GetPairedNode(id + 1);
     EXPECT_EQ(ptr, outNode);
     ptr = sharedTransitionParam->GetPairedNode(id + 2);

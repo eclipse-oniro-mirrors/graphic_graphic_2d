@@ -1133,7 +1133,7 @@ HWTEST_F(RSAnimationTest, RSAnimationTest022, TestSize.Level1)
     node->AddDurationKeyFrame(100, timingCurve, finishCallback); // 100 Set duration is 100ms
     NodeId id1 = 0;
     NodeId id2 = 1;
-    node->RegisterTransitionPair(id1, id2);
+    node->RegisterTransitionPair(id1, id2, true);
     node->UnregisterTransitionPair(id1, id2);
     node->AnimateWithCurrentCallback(timingProtocol, timingCurve, finishCallback);
     std::optional<Vector2f> vec(Vector2f(1.f, 1.f));
