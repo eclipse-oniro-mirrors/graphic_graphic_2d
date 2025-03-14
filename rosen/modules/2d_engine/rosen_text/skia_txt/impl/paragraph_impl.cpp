@@ -302,6 +302,13 @@ TextStyle ParagraphImpl::SkStyleToTextStyle(const skt::TextStyle& skStyle)
     txt.wordSpacing = SkScalarToDouble(skStyle.getWordSpacing());
     txt.height = SkScalarToDouble(skStyle.getHeight());
     txt.heightOverride = skStyle.getHeightOverride();
+    txt.halfLeading = skStyle.getHalfLeading();
+    txt.baseLineShift = SkScalarToDouble(skStyle.getBaselineShift());
+
+    txt.locale = skStyle.getLocale().c_str();
+    txt.backgroundRect = { skStyle.getBackgroundRect().color, skStyle.getBackgroundRect().leftTopRadius,
+        skStyle.getBackgroundRect().rightTopRadius, skStyle.getBackgroundRect().rightBottomRadius,
+        skStyle.getBackgroundRect().leftBottomRadius };
 
     txt.locale = skStyle.getLocale().c_str();
     if (skStyle.hasBackground()) {
@@ -320,7 +327,9 @@ TextStyle ParagraphImpl::SkStyleToTextStyle(const skt::TextStyle& skStyle)
             TEXT_LOGW("Invalid foreground id %{public}d", foregroundId);
         }
     }
-
+    for (const auto& [tag, value] : skStyle.getFontFeatures()) {
+        txt.fontFeatures.SetFeature(tag.c_str(), value);
+    }
     txt.textShadows.clear();
     for (const skt::TextShadow& skShadow : skStyle.getShadows()) {
         TextShadow shadow;
