@@ -132,7 +132,15 @@ void Typography::Relayout(double width, const TypographyStyle &typograhyStyle, c
         return;
     }
 
-    if (!typograhyStyle.relayoutChangeBitmap.any()) {
+    bool isTextStyleChange = false;
+    for (const TextStyle& style : textStyles) {
+        if (style.relayoutChangeBitmap.any()) {
+            isTextStyleChange = true;
+            break;
+        }
+    }
+
+    if (!typograhyStyle.relayoutChangeBitmap.any() && !isTextStyleChange) {
         if (width >= paragraph_->GetLongestLineWithIndent() && width <= paragraph_->GetMaxWidth()) {
             TEXT_LOGI("No relayout required");
             return;
