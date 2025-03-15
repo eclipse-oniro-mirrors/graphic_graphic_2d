@@ -2948,7 +2948,7 @@ std::shared_ptr<RSDrawingFilter> RSProperties::GenerateLightBlurFilter(float rad
     } else {
         originalFilter->Compose(lightBlurShaderFilter);
     }
-    originalFilter->SetSkipFrame(RSDrawingFilter::CanSkipFrame(backgroundBlurRadiusX_));
+    originalFilter->SetSkipFrame(RSDrawingFilter::CanSkipFrame(radius));
     originalFilter->SetFilterType(RSFilter::BLUR);
     return originalFilter;
 }

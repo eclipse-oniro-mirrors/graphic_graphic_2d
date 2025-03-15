@@ -13,21 +13,24 @@
  * limitations under the License.
  */
 
+#include "draw/surface.h"
 #include "platform/common/rs_log.h"
 #include "render/rs_light_blur_shader_filter.h"
 namespace OHOS {
 namespace Rosen {
+namespace {
 const int MAX_DOWN_SAMPLE_NUM = 12;
 const int DOWN_SAMPLE_BOUNDARY_PIXEL_SIZE = 100;
 const int DOWN_SAMPLE_STEP_4 = 4;
 const int DOWN_SAMPLE_STEP_2 = 2;
-const int PARAM_3 = 3;
+const int MIX_COLOR_FACTOR = 3;
 const int COLOR_MAX = 255;
 const Drawing::SamplingOptions SMAPLING_OPTIONS(Drawing::FilterMode::LINEAR, Drawing::MipmapMode::NONE);
-const float TWO_FRAME_BEFORE_COLOR_WEIGHT = 0.6;
-const float ONE_FRAME_BEFORE_COLOR_WEIGHT = 0.9;
-const float CUR_FRAME_BEFORE_COLOR_WEIGHT = 1.5;
-const float COLOR_THRESHOLD = 5;
+const float TWO_FRAME_BEFORE_COLOR_WEIGHT = 0.6f;
+const float ONE_FRAME_BEFORE_COLOR_WEIGHT = 0.9f;
+const float CUR_FRAME_BEFORE_COLOR_WEIGHT = 1.5f;
+const float COLOR_THRESHOLD = 5.f;
+}
 
 RSLightBlurShaderFilter::RSLightBlurShaderFilter(int radius) : radius_(radius)
 {
@@ -78,20 +81,21 @@ std::shared_ptr<Drawing::Image> RSLightBlurShaderFilter::GetDownSampleImage(Draw
     return offscreenSurface->GetImageSnapshot();
 }
 
-RSColor RSLightBlurShaderFilter::MixColor(RSColor twoFrameBefore, RSColor oneFrameBefore, RSColor curColor) const
+RSColor RSLightBlurShaderFilter::MixColor(const RSColor& twoFrameBefore,
+    const RSColor& oneFrameBefore, const RSColor& curColor) const
 {
-    uint32_t alpha = (twoFrameBefore.GetAlpha() * TWO_FRAME_BEFORE_COLOR_WEIGHT +
+    int16_t alpha = (twoFrameBefore.GetAlpha() * TWO_FRAME_BEFORE_COLOR_WEIGHT +
         oneFrameBefore.GetAlpha() * ONE_FRAME_BEFORE_COLOR_WEIGHT +
-        curColor.GetAlpha() * CUR_FRAME_BEFORE_COLOR_WEIGHT) / PARAM_3;
-    uint32_t red = (twoFrameBefore.GetRed() * TWO_FRAME_BEFORE_COLOR_WEIGHT +
+        curColor.GetAlpha() * CUR_FRAME_BEFORE_COLOR_WEIGHT) / MIX_COLOR_FACTOR;
+    int16_t red = (twoFrameBefore.GetRed() * TWO_FRAME_BEFORE_COLOR_WEIGHT +
         oneFrameBefore.GetRed() * ONE_FRAME_BEFORE_COLOR_WEIGHT +
-        curColor.GetRed() * CUR_FRAME_BEFORE_COLOR_WEIGHT) / PARAM_3;
-    uint32_t green = (twoFrameBefore.GetGreen() * TWO_FRAME_BEFORE_COLOR_WEIGHT +
+        curColor.GetRed() * CUR_FRAME_BEFORE_COLOR_WEIGHT) / MIX_COLOR_FACTOR;
+    int16_t green = (twoFrameBefore.GetGreen() * TWO_FRAME_BEFORE_COLOR_WEIGHT +
         oneFrameBefore.GetGreen() * ONE_FRAME_BEFORE_COLOR_WEIGHT +
-        curColor.GetGreen() * CUR_FRAME_BEFORE_COLOR_WEIGHT) / PARAM_3;
-    uint32_t blue = (twoFrameBefore.GetBlue() * TWO_FRAME_BEFORE_COLOR_WEIGHT +
+        curColor.GetGreen() * CUR_FRAME_BEFORE_COLOR_WEIGHT) / MIX_COLOR_FACTOR;
+    int16_t blue = (twoFrameBefore.GetBlue() * TWO_FRAME_BEFORE_COLOR_WEIGHT +
         oneFrameBefore.GetBlue() * ONE_FRAME_BEFORE_COLOR_WEIGHT +
-        curColor.GetBlue() * CUR_FRAME_BEFORE_COLOR_WEIGHT) / PARAM_3;
+        curColor.GetBlue() * CUR_FRAME_BEFORE_COLOR_WEIGHT) / MIX_COLOR_FACTOR;
     return RSColor(red, green, blue, alpha);
 }
 
@@ -194,7 +198,7 @@ void RSLightBlurShaderFilter::ApplyLightBlur(Drawing::Canvas& canvas,
     canvas.DetachBrush();
 }
 
-void RSLightBlurShaderFilter::UpdateLightBlurResultCache(RSColor color)
+void RSLightBlurShaderFilter::UpdateLightBlurResultCache(const RSColor& color)
 {
     if (lightBlurResultCache_ == nullptr) {
         lightBlurResultCache_ = std::make_unique<std::pair<RSColor, RSColor>>(color, color);
@@ -203,5 +207,5 @@ void RSLightBlurShaderFilter::UpdateLightBlurResultCache(RSColor color)
     lightBlurResultCache_->first = lightBlurResultCache_->second;
     lightBlurResultCache_->second = color;
 }
-}
-}
+} // namespace Rosen
+} // namespace OHOS

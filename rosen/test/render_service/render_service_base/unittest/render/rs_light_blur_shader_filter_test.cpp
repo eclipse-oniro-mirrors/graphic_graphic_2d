@@ -66,6 +66,7 @@ HWTEST_F(RSLightBlurShaderFilterTest, RSLightBlurShaderFilterTest002, TestSize.L
     Drawing::Rect src(0, 0, 10, 10);
     Drawing::Rect dst(0, 0, 5, 5);
     LightBlurParameter para { src, dst, Drawing::Brush() };
+    EXPECT_EQ(filter->GetRadius(), 1);
     filter->ApplyLightBlur(canvas, image, para);
 }
 
@@ -84,6 +85,7 @@ HWTEST_F(RSLightBlurShaderFilterTest, RSLightBlurShaderFilterTest003, TestSize.L
     Drawing::Rect src(12, 12, 10, 10);
     Drawing::Rect dst(8, 8, 5, 5);
     LightBlurParameter para { src, dst, Drawing::Brush() };
+    EXPECT_EQ(filter->GetRadius(), 1);
     filter->ApplyLightBlur(canvas, image, para);
 }
 } // namespace Rosen

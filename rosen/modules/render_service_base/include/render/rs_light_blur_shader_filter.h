@@ -16,7 +16,6 @@
 #define RENDER_SERVICE_BASE_CORE_RENDER_RS_LIGHT_BLUR_SHADER_FILTER_H
 
 #include "common/rs_macros.h"
-#include "render/rs_filter_cache_manager.h"
 #include "render/rs_shader_filter.h"
 namespace OHOS {
 namespace Rosen {
@@ -37,9 +36,9 @@ private:
     Drawing::Rect GetDownSampleRect(int width, int height) const;
     std::shared_ptr<Drawing::Image> GetDownSampleImage(Drawing::Image& srcImage,
         Drawing::Surface& surface, Drawing::Rect& src, Drawing::Rect& dst) const;
-    RSColor MixColor(RSColor twoFrameBefore, RSColor oneFrameBefore, RSColor curColor) const;
+    RSColor MixColor(const RSColor& twoFrameBefore, const RSColor& oneFrameBefore, const RSColor& curColor) const;
     bool GetAverageColorFromImageAndCache(Drawing::Image& image, RSColor& color) const;
-    void UpdateLightBlurResultCache(RSColor color);
+    void UpdateLightBlurResultCache(const RSColor& color);
     int radius_ {0};
 
     // save light blur result, if current is the nth light blur, first is the (n-2) result, second is n-1.
