@@ -217,7 +217,7 @@ GRAPHIC_TEST(AppearanceTest02, CONTENT_DISPLAY_TEST, Appearance_Border_DashGap_T
 {
     std::vector<float> gapList = { 0, 20, 120, 250, -20 };
 
-    const int nodeCount = widthList.size();
+    const int nodeCount = gapList.size();
     const int columnCount = 2;
     const int nodeSize = 500;
     const int nodePos = 510;
