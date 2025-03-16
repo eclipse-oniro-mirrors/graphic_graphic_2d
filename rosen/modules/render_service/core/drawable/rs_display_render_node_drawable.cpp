@@ -1172,21 +1172,10 @@ void RSDisplayRenderNodeDrawable::DrawMirror(RSDisplayRenderParams& params,
     // for HDR
     curCanvas_->SetOnMultipleScreen(true);
     curCanvas_->SetDisableFilterCache(true);
-    if (params.GetVirtualScreenMuteStatus()) {
-        std::vector<RectI> emptyRects = {};
-        virtualProcesser->SetRoiRegionToCodec(emptyRects);
-        curCanvas_->Clear(Drawing::Color::COLOR_BLACK);
-        virtualProcesser->PostProcess();
-        RS_LOGI("RSDisplayRenderNodeDrawable::DrawMirror, set canvas to black because of virtual screen mute.");
-        curCanvas_->SetDisableFilterCache(false);
-        virtualDirtyRefresh_ = true;
-        curCanvas_->RestoreToCount(0);
-        return;
-    }
     auto hasSecSurface = static_cast<RSDisplayRenderParams*>
         (mirroredParams.get())->GetSpecialLayerMgr().Find(SpecialLayerType::HAS_SECURITY);
-    if (((!enableVisibleRect_ && hasSecSurface) || (enableVisibleRect_ && params.HasSecLayerInVisibleRect())) &&
-        !uniParam.GetSecExemption()) {
+    if ((((!enableVisibleRect_ && hasSecSurface) || (enableVisibleRect_ && params.HasSecLayerInVisibleRect())) &&
+        !uniParam.GetSecExemption()) || params.GetVirtualScreenMuteStatus()) {
         std::vector<RectI> emptyRects = {};
         virtualProcesser->SetRoiRegionToCodec(emptyRects);
         auto screenManager = CreateOrGetScreenManager();
@@ -1622,7 +1611,7 @@ void RSDisplayRenderNodeDrawable::SetCanvasBlack(RSProcessor& processor)
 {
     curCanvas_->Clear(Drawing::Color::COLOR_BLACK);
     processor.PostProcess();
-    RS_LOGI("RSDisplayRenderNodeDrawable::SetCanvasBlack, set canvas to black because of security layer.");
+    RS_LOGI("RSDisplayRenderNodeDrawable::SetCanvasBlack, set canvas to black because of security layer/mute status.");
     curCanvas_->SetDisableFilterCache(false);
 }
 
