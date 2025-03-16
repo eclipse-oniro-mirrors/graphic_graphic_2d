@@ -320,7 +320,7 @@ HWTEST_F(RSDisplayNodeCommandTest, SetVirtualScreenMuteStatus, TestSize.Level1)
     }
 
     DisplayNodeCommandHelper::SetVirtualScreenMuteStatus(context, id, false);
-    if(auto node = context.GetNodeMap().GetRenderNode<RSDisplayRenderNode>(id)) {
+    if (auto node = context.GetNodeMap().GetRenderNode<RSDisplayRenderNode>(id)) {
         ASSERT_FALSE(node->GetVirtualScreenMuteStatus());
     }
 }
