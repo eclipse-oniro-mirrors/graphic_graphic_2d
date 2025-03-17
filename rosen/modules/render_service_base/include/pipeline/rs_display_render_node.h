@@ -161,7 +161,7 @@ public:
         virtualScreenMuteStatus_ = virtualScreenMuteStatus;
     }
 
-    bool GetVirtualScreenMuteStatus()
+    bool GetVirtualScreenMuteStatus() const
     {
         return virtualScreenMuteStatus_;
     }
