@@ -572,6 +572,7 @@ napi_value CreateShadowArrayJsValue(napi_env env, const std::vector<TextShadow>&
 {
     napi_value jsArray = nullptr;
     if (napi_create_array_with_length(env, textShadows.size(), &jsArray) != napi_ok) {
+        TEXT_LOGE("Failed to create textShadows arrayStatus");
         return nullptr;
     }
     size_t index = 0;
@@ -625,6 +626,7 @@ napi_value CreateArrayFontFeatureJsValue(napi_env env, const FontFeatures& fontF
     napi_value jsArray;
     napi_status arrayStatus = napi_create_array(env, &jsArray);
     if (arrayStatus != napi_ok) {
+        TEXT_LOGE("Failed to create fontFeatures arrayStatus");
         return nullptr;
     }
     const std::vector<std::pair<std::string, int>>& featureSet = fontFeatures.GetFontFeatures();

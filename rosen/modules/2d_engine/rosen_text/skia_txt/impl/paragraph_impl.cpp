@@ -304,13 +304,10 @@ TextStyle ParagraphImpl::SkStyleToTextStyle(const skt::TextStyle& skStyle)
     txt.heightOverride = skStyle.getHeightOverride();
     txt.halfLeading = skStyle.getHalfLeading();
     txt.baseLineShift = SkScalarToDouble(skStyle.getBaselineShift());
-
     txt.locale = skStyle.getLocale().c_str();
     txt.backgroundRect = { skStyle.getBackgroundRect().color, skStyle.getBackgroundRect().leftTopRadius,
         skStyle.getBackgroundRect().rightTopRadius, skStyle.getBackgroundRect().rightBottomRadius,
         skStyle.getBackgroundRect().leftBottomRadius };
-
-    txt.locale = skStyle.getLocale().c_str();
     if (skStyle.hasBackground()) {
         PaintID backgroundId = std::get<PaintID>(skStyle.getBackgroundPaintOrID());
         if ((0 <= backgroundId) && (backgroundId < static_cast<int>(paints_.size()))) {
