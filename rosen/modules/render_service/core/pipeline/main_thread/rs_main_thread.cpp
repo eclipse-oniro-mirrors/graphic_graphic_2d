@@ -1530,15 +1530,10 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
     if (!isUniRender_) {
         dividedRenderbufferTimestamps_.clear();
     }
-
-    static bool isCCMDrmEnabled = std::static_pointer_cast<DRMParam>(
-        GraphicFeatureParamManager::GetInstance().GetFeatureParam(FEATURE_CONFIGS[DRM]))->IsDrmEnable();
-    bool isDrmEnabled = RSSystemProperties::GetDrmEnabled() && isCCMDrmEnabled;
-
     const auto& nodeMap = GetContext().GetNodeMap();
     bool isHdrSwitchChanged = RSLuminanceControl::Get().IsHdrPictureOn() != prevHdrSwitchStatus_;
     nodeMap.TraverseSurfaceNodes(
-        [this, &needRequestNextVsync, isHdrSwitchChanged, isDrmEnabled](
+        [this, &needRequestNextVsync, isHdrSwitchChanged](
             const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode) mutable {
         if (surfaceNode == nullptr) {
             return;
@@ -1630,7 +1625,7 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
         }
 #ifdef RS_ENABLE_VK
         if ((RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
-            RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) && isDrmEnabled &&
+            RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) &&
             (surfaceHandler->GetBufferUsage() & BUFFER_USAGE_PROTECTED)) {
             if (!surfaceNode->GetSpecialLayerMgr().Find(SpecialLayerType::PROTECTED)) {
                 surfaceNode->SetProtectedLayer(true);
