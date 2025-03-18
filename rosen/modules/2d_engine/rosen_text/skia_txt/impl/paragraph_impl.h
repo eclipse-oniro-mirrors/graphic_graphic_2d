@@ -136,8 +136,8 @@ public:
 private:
     void ParagraphStyleUpdater(skt::Paragraph& skiaParagraph, const ParagraphStyle& spParagraphStyle,
         skt::InternalState& state);
-        
-    void ProcessAdditionalAttributes(const skt::TextStyle& skStyle, TextStyle& txt);
+
+    void GetExtraTextStyleAttributes(const skt::TextStyle& skStyle, TextStyle& txt);
 
     void ApplyParagraphStyleChanges(const ParagraphStyle& style);
 

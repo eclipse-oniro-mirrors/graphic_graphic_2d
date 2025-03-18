@@ -573,7 +573,7 @@ napi_value CreateShadowArrayJsValue(napi_env env, const std::vector<TextShadow>&
     napi_value jsArray = nullptr;
     napi_status arrayStatus = napi_create_array_with_length(env, textShadows.size(), &jsArray);
     if (arrayStatus != napi_ok) {
-        TEXT_LOGE("Failed to create textShadows array. Error code: %{public}d", arrayStatus);
+        TEXT_LOGE("Failed to create text Shadows array, ret %{public}d", arrayStatus);
         return nullptr;
     }
     size_t index = 0;
@@ -584,7 +584,7 @@ napi_value CreateShadowArrayJsValue(napi_env env, const std::vector<TextShadow>&
         napi_value shadowObj = nullptr;
         napi_status status = napi_create_object(env, &shadowObj);
         if (status != napi_ok) {
-            TEXT_LOGE("Failed to create shadow object. Error code: %{public}d", status);
+            TEXT_LOGE("Failed to create shadow object, ret %{public}d", status);
             continue;
         }
         napi_set_named_property(
@@ -594,7 +594,7 @@ napi_value CreateShadowArrayJsValue(napi_env env, const std::vector<TextShadow>&
         napi_set_named_property(env, shadowObj, "blurRadius", CreateJsNumber(env, shadow.blurRadius));
         status = napi_set_element(env, jsArray, index, shadowObj);
         if (status != napi_ok) {
-            TEXT_LOGE("Failed to set shadow in textShadows. Error code: %{public}d", status);
+            TEXT_LOGE("Failed to set shadow in textShadows, ret %{public}d", status);
             continue;
         }
         index++;
@@ -633,7 +633,7 @@ napi_value CreateFontFeatureArrayJsValue(napi_env env, const FontFeatures& fontF
     napi_value jsArray;
     napi_status arrayStatus = napi_create_array(env, &jsArray);
     if (arrayStatus != napi_ok) {
-        TEXT_LOGE("Failed to create FontFeature Array. Error code: %{public}d", arrayStatus);
+        TEXT_LOGE("Failed to create fontFeature array, ret %{public}d", arrayStatus);
         return nullptr;
     }
     const std::vector<std::pair<std::string, int>>& featureSet = fontFeatures.GetFontFeatures();
@@ -642,7 +642,7 @@ napi_value CreateFontFeatureArrayJsValue(napi_env env, const FontFeatures& fontF
         napi_value jsObject;
         napi_status status = napi_create_object(env, &jsObject);
         if (status != napi_ok) {
-            TEXT_LOGE("Failed to create fontFeature. Error code: %{public}d", status);
+            TEXT_LOGE("Failed to create fontFeature, ret %{public}d", status);
             continue;
         }
         napi_set_named_property(env, jsObject, "name", CreateStringJsValue(env, Str8ToStr16(feature.first)));
@@ -650,7 +650,7 @@ napi_value CreateFontFeatureArrayJsValue(napi_env env, const FontFeatures& fontF
         napi_set_element(env, jsArray, i, jsObject);
         status = napi_set_element(env, jsArray, i, jsObject);
         if (status != napi_ok) {
-            TEXT_LOGE("Failed to set fontFeature. Error code: %{public}d", status);
+            TEXT_LOGE("Failed to set fontFeature, ret %{public}d", status);
             continue;
         }
     }
