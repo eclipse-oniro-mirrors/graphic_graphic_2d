@@ -232,10 +232,6 @@ private:
     }
     bool isOpincMarkCached_ = false;
     bool IsOpincNodeInScreenRect(RSRenderParams& params);
-    // used for rendergroup  perfmonitor
-    void UpdateInstanceRootNodeName();
-    static inline std::mutex instanceRootNodeNameMapMutex_;
-    static inline std::unordered_map<NodeId, std::string> instanceRootNodeNameMap_;
 };
 } // namespace DrawableV2
 } // namespace OHOS::Rosen
