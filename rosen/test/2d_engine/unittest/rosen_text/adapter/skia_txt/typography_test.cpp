@@ -657,8 +657,7 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyTest019, TestSize.Level
     std::unique_ptr<OHOS::Rosen::TypographyCreate> typographyCreate =
         OHOS::Rosen::TypographyCreate::Create(typographyStyle, fontCollection);
     typographyCreate->PushStyle(textStyle);
-    std::u16string text =
-        u"你好, 测试, textstyle中的runMetrics: fontSize, heightOnly, heightScale, color, shadows, decoration.";
+    std::u16string text = u"测试textstyle的runMetrics: fontSize, heightOnly, heightScale, color, shadows, decoration.";
     typographyCreate->AppendText(text);
     std::unique_ptr<OHOS::Rosen::Typography> typography = typographyCreate->CreateTypography();
     double maxWidth = 100.0;
