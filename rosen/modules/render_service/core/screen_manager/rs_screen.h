@@ -296,15 +296,17 @@ private:
     std::atomic<VirtualScreenStatus> screenStatus_ = VIRTUAL_SCREEN_PLAY;
 
     bool isVirtual_ = true;
-    bool isVirtualSurfaceUpdateFlag_ = false;
+    std::atomic<bool> isVirtualSurfaceUpdateFlag_ = false;
     std::shared_ptr<HdiOutput> hdiOutput_ = nullptr; // has value if the screen is physical
     std::unique_ptr<HdiScreen> hdiScreen_ = nullptr; // has value if the screen is physical
     std::vector<GraphicDisplayModeInfo> supportedModes_;
     GraphicDisplayCapability capability_ = {"test1", GRAPHIC_DISP_INTF_HDMI, 1921, 1081, 0, 0, true, 0};
     GraphicHDRCapability hdrCapability_;
+
+    mutable std::mutex producerSurfaceMutex_;
     sptr<Surface> producerSurface_ = nullptr;  // has value if the screen is virtual
     ScreenPowerStatus powerStatus_ = ScreenPowerStatus::INVALID_POWER_STATUS;
-    GraphicPixelFormat pixelFormat_;
+    std::atomic<GraphicPixelFormat> pixelFormat_;
 
     std::vector<ScreenColorGamut> supportedVirtualColorGamuts_ = {
         COLOR_GAMUT_SRGB,
@@ -329,27 +331,35 @@ private:
     bool isEqualVsyncPeriod_ = true;
 
     std::atomic<ScreenRotation> screenRotation_ = ScreenRotation::ROTATION_0;
-    bool canvasRotation_ = false; // just for virtual screen to use
-    ScreenScaleMode scaleMode_ = ScreenScaleMode::UNISCALE_MODE; // just for virtual screen to use
+    std::atomic<bool> canvasRotation_ = false; // just for virtual screen to use
+    std::atomic<ScreenScaleMode> scaleMode_ = ScreenScaleMode::UNISCALE_MODE; // just for virtual screen to use
     static std::map<GraphicColorGamut, GraphicCM_ColorSpaceType> RS_TO_COMMON_COLOR_SPACE_TYPE_MAP;
     static std::map<GraphicCM_ColorSpaceType, GraphicColorGamut> COMMON_COLOR_SPACE_TYPE_TO_RS_MAP;
     static std::map<GraphicHDRFormat, ScreenHDRFormat> HDI_HDR_FORMAT_TO_RS_MAP;
     static std::map<ScreenHDRFormat, GraphicHDRFormat> RS_TO_HDI_HDR_FORMAT_MAP;
     std::unordered_set<uint64_t> whiteList_ = {};
+
+    mutable std::mutex blackListMutex_;
     std::unordered_set<uint64_t> blackList_ = {};
+
+    mutable std::mutex securityExemptionMutex_;
     std::vector<uint64_t> securityExemptionList_ = {};
+
+    mutable std::mutex securityMaskMutex_;
     std::shared_ptr<Media::PixelMap> securityMask_ = nullptr;
-    bool enableVisibleRect_ = false;
+
+    mutable std::mutex visibleRectMutex_;
     Rect mainScreenVisibleRect_ = {};
+
+    std::atomic<bool> enableVisibleRect_ = false;
     std::atomic<bool> skipWindow_ = false;
 
     std::once_flag hardCursorSupportedFlag_;
     bool isHardCursorSupport_ = false;
 
-    bool isSupportRotation_ = false;
-    bool hasProtectedLayer_ = false;
+    std::atomic<bool> isSupportRotation_ = false;
+    std::atomic<bool> hasProtectedLayer_ = false;
 
-    std::shared_mutex linearMatrixMutex_;
     std::vector<float> linearMatrix_ = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f};
 };
 } // namespace impl
