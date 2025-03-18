@@ -447,10 +447,6 @@ void RSRenderNodeDrawable::ClearDrawingCacheDataMap()
         std::lock_guard<std::mutex> lock(drawingCacheMapMutex_);
         drawingCacheUpdateTimeMap_.erase(nodeId_);
     }
-    {
-        std::lock_guard<std::mutex> lock(instanceRootNodeNameMapMutex_);
-        instanceRootNodeNameMap_.erase(nodeId_);
-    }
     // clear Rendergroup dfx data map
     RSPerfMonitorReporter::GetInstance().ClearRendergroupDataMap(nodeId_);
 }
@@ -904,31 +900,9 @@ void RSRenderNodeDrawable::UpdateCacheSurface(Drawing::Canvas& canvas, const RSR
         std::lock_guard<std::mutex> lock(drawingCacheInfoMutex_);
         cacheUpdatedNodeMap_.emplace(params.GetId(), true);
     }
-    UpdateInstanceRootNodeName();
-    RSPerfMonitorReporter::GetInstance().EndRendergroupMonitor(startTime, nodeId_, instanceRootNodeNameMap_[nodeId_],
-        drawingCacheUpdateTimeMap_[nodeId_]);
-}
-
-void RSRenderNodeDrawable::UpdateInstanceRootNodeName()
-{
-    {
-        std::lock_guard<std::mutex> lock(instanceRootNodeNameMapMutex_);
-        if (instanceRootNodeNameMap_.find(nodeId_) != instanceRootNodeNameMap_.end()) {
-            return;
-        }
-    }
     auto ctx = RSUniRenderThread::Instance().GetRSRenderThreadParams()->GetContext();
-    RSMainThread::Instance()->PostTask([ctx, this]() {
-        auto renderNode = ctx->GetNodeMap().GetRenderNode(this->nodeId_);
-        if (renderNode == nullptr) {
-            RS_LOGE("RSRenderNodeDrawable::UpdateInstanceRootNodeName renderNode is nullptr");
-        }
-        auto instanceRootNode = RSRenderNode::ReinterpretCast<RSSurfaceRenderNode>(renderNode->GetInstanceRootNode());
-        if (instanceRootNode != nullptr && instanceRootNode->GetType() == RSRenderNodeType::SURFACE_NODE) {
-            std::lock_guard<std::mutex> lock(this->instanceRootNodeNameMapMutex_);
-            this->instanceRootNodeNameMap_[this->nodeId_] = instanceRootNode->GetName();
-        }
-    });
+    RSPerfMonitorReporter::GetInstance().EndRendergroupMonitor(startTime, nodeId_, ctx,
+        drawingCacheUpdateTimeMap_[nodeId_]);
 }
 
 int RSRenderNodeDrawable::GetTotalProcessedNodeCount()
