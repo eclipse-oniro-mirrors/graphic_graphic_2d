@@ -354,6 +354,8 @@ void HgmEnergyConsumptionPolicy::SetCurrentPkgName(const std::vector<std::string
 {
     auto configData = HgmCore::Instance().GetPolicyConfigData();
     if (configData == nullptr) {
+        std::lock_guard<std::mutex> lock(videoCallLock_);
+        videoCallLayerName_ = "";
         return;
     }
     for (const auto &pkg: pkgs) {
