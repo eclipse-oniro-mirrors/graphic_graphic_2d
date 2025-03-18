@@ -1406,43 +1406,38 @@ void RSScreenManager::RemoveVirtualScreen(ScreenId id)
 {
     {
         std::lock_guard<std::mutex> lock(mutex_);
-        RemoveVirtualScreenLocked(id);
+        auto screensIt = screens_.find(id);
+        if (screensIt == screens_.end() || screensIt->second == nullptr) {
+            RS_LOGW("%{public}s: There is no screen for id %{public}" PRIu64, __func__, id);
+            return;
+        }
+        if (!screensIt->second->IsVirtual()) {
+            RS_LOGW("%{public}s: The screen is not virtual, id %{public}" PRIu64, __func__, id);
+            return;
+        }
+
+        screens_.erase(screensIt);
+        --currentVirtualScreenNum_;
+
+        // Update other screens' mirrorId.
+        for (auto& [id, screen] : screens_) {
+            if (screen == nullptr) {
+                RS_LOGW("%{public}s: screen %{public}" PRIu64 " not found", __func__, id);
+                continue;
+            }
+            if (screen->MirroredId() == id) {
+                screen->SetMirror(INVALID_SCREEN_ID);
+            }
+        }
+        RS_LOGI("%{public}s: remove virtual screen(id %{public}" PRIu64 ").", __func__, id);
+        freeVirtualScreenIds_.push(id);
     }
+
     // when virtual screen doesn't exist no more, render control can be recovered.
     {
         std::lock_guard<std::mutex> lock(renderControlMutex_);
         disableRenderControlScreens_.erase(id);
     }
-}
-
-void RSScreenManager::RemoveVirtualScreenLocked(ScreenId id)
-{
-    auto screensIt = screens_.find(id);
-    if (screensIt == screens_.end() || screensIt->second == nullptr) {
-        RS_LOGW("%{public}s: There is no screen for id %{public}" PRIu64, __func__, id);
-        return;
-    }
-    if (!screensIt->second->IsVirtual()) {
-        RS_LOGW("%{public}s: The screen is not virtual, id %{public}" PRIu64, __func__, id);
-        return;
-    }
-
-    screens_.erase(screensIt);
-    --currentVirtualScreenNum_;
-
-    // Update other screens' mirrorId.
-    for (auto& [id, screen] : screens_) {
-        if (screen == nullptr) {
-            RS_LOGW("%{public}s: screen %{public}" PRIu64 " not found", __func__, id);
-            continue;
-        }
-        if (screen->MirroredId() == id) {
-            screen->SetMirror(INVALID_SCREEN_ID);
-        }
-    }
-    RS_LOGI("%{public}s: remove virtual screen(id %{public}" PRIu64 ").", __func__, id);
-
-    freeVirtualScreenIds_.push(id);
 }
 
 uint32_t RSScreenManager::SetScreenActiveMode(ScreenId id, uint32_t modeId)
@@ -1683,30 +1678,18 @@ void RSScreenManager::SetScreenBacklight(ScreenId id, uint32_t level)
 
 ScreenInfo RSScreenManager::QueryDefaultScreenInfo() const
 {
-    std::lock_guard<std::mutex> lock(mutex_);
-    return QueryScreenInfoLocked(defaultScreenId_);
+    return QueryScreenInfo(defaultScreenId_);
 }
 
 ScreenInfo RSScreenManager::QueryScreenInfo(ScreenId id) const
 {
-    std::lock_guard<std::mutex> lock(mutex_);
-    return QueryScreenInfoLocked(id);
-}
-
-ScreenInfo RSScreenManager::QueryScreenInfoLocked(ScreenId id) const
-{
     ScreenInfo info;
-    auto screensIt = screens_.find(id);
-    if (screensIt == screens_.end()) {
+    auto screen = GetScreen(id);
+    if (screen == nullptr) {
         RS_LOGE("%{public}s: There is no screen for id %{public}" PRIu64, __func__, id);
         return info;
     }
 
-    const auto& screen = screensIt->second;
-    if (!screen) {
-        RS_LOGE("%{public}s: screen %{public}" PRIu64 " has no info.", __func__, id);
-        return info;
-    }
     info.id = id;
     info.width = screen->Width();
     info.height = screen->Height();
@@ -2225,21 +2208,24 @@ uint32_t RSScreenManager::GetActualScreensNum() const
 
 ScreenInfo RSScreenManager::GetActualScreenMaxResolution() const
 {
-    std::lock_guard<std::mutex> lock(mutex_);
-    uint32_t maxResolution = 0;
     ScreenId maxScreenId = INVALID_SCREEN_ID;
-    for (const auto& [id, screen] : screens_) {
-        if (!screen || screen->IsVirtual()) {
-            RS_LOGE("%{public}s: screen %{public}" PRIu64 " not found.", __func__, id);
-            continue;
-        }
-        uint32_t resolution = screen->PhyWidth() * screen->PhyHeight();
-        if (resolution > maxResolution) {
-            maxScreenId = id;
-            maxResolution = resolution;
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        uint32_t maxResolution = 0;
+        for (const auto& [id, screen] : screens_) {
+            if (!screen || screen->IsVirtual()) {
+                RS_LOGE("%{public}s: screen %{public}" PRIu64 " not found.", __func__, id);
+                continue;
+            }
+            uint32_t resolution = screen->PhyWidth() * screen->PhyHeight();
+            if (resolution > maxResolution) {
+                maxScreenId = id;
+                maxResolution = resolution;
+            }
         }
     }
-    return QueryScreenInfoLocked(maxScreenId);
+
+    return QueryScreenInfo(maxScreenId);
 }
 
 void RSScreenManager::MarkPowerOffNeedProcessOneFrame()

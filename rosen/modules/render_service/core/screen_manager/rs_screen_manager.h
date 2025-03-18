@@ -553,7 +553,6 @@ private:
     void HandleDefaultScreenDisConnected();
     void ForceRefreshOneFrame() const;
 
-    void RemoveVirtualScreenLocked(ScreenId id);
     ScreenId GenerateVirtualScreenId();
 
     ScreenInfo QueryScreenInfoLocked(ScreenId id) const;
