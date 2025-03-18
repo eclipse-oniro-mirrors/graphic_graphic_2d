@@ -438,7 +438,7 @@ inline napi_value CreateStringJsValue(napi_env env, const std::u16string& u16Str
     return jsStr;
 }
 
-napi_value CreateArrayFontFeatureJsValue(napi_env env, const FontFeatures& fontFeatures);
+napi_value CreateFontFeatureArrayJsValue(napi_env env, const FontFeatures& fontFeatures);
 
 napi_value CreateRectStyleJsValue(napi_env env, RectStyle& rectStyle);
 

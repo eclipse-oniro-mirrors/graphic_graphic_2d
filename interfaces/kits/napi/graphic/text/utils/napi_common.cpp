@@ -571,8 +571,9 @@ napi_value CreateLineMetricsJsValue(napi_env env, OHOS::Rosen::LineMetrics& line
 napi_value CreateShadowArrayJsValue(napi_env env, const std::vector<TextShadow>& textShadows)
 {
     napi_value jsArray = nullptr;
-    if (napi_create_array_with_length(env, textShadows.size(), &jsArray) != napi_ok) {
-        TEXT_LOGE("Failed to create textShadows arrayStatus");
+    napi_status arrayStatus = napi_create_array_with_length(env, textShadows.size(), &jsArray);
+    if (arrayStatus != napi_ok) {
+        TEXT_LOGE("Failed to create textShadows array. Error code: %{public}d", arrayStatus);
         return nullptr;
     }
     size_t index = 0;
@@ -583,6 +584,7 @@ napi_value CreateShadowArrayJsValue(napi_env env, const std::vector<TextShadow>&
         napi_value shadowObj = nullptr;
         napi_status status = napi_create_object(env, &shadowObj);
         if (status != napi_ok) {
+            TEXT_LOGE("Failed to create shadow object. Error code: %{public}d", status);
             continue;
         }
         napi_set_named_property(
@@ -590,7 +592,12 @@ napi_value CreateShadowArrayJsValue(napi_env env, const std::vector<TextShadow>&
         napi_set_named_property(
             env, shadowObj, "point", CreatePointJsValue(env, (OHOS::Rosen::Drawing::PointF)shadow.offset));
         napi_set_named_property(env, shadowObj, "blurRadius", CreateJsNumber(env, shadow.blurRadius));
-        napi_set_element(env, jsArray, index++, shadowObj);
+        status = napi_set_element(env, jsArray, index, shadowObj);
+        if (status != napi_ok) {
+            TEXT_LOGE("Failed to set shadow in textShadows. Error code: %{public}d", status);
+            continue;
+        }
+        index++;
     }
     
     return jsArray;
@@ -621,12 +628,12 @@ napi_value CreateRectStyleJsValue(napi_env env, RectStyle& rectStyle)
     return objValue;
 }
 
-napi_value CreateArrayFontFeatureJsValue(napi_env env, const FontFeatures& fontFeatures)
+napi_value CreateFontFeatureArrayJsValue(napi_env env, const FontFeatures& fontFeatures)
 {
     napi_value jsArray;
     napi_status arrayStatus = napi_create_array(env, &jsArray);
     if (arrayStatus != napi_ok) {
-        TEXT_LOGE("Failed to create fontFeatures arrayStatus");
+        TEXT_LOGE("Failed to create FontFeature Array. Error code: %{public}d", arrayStatus);
         return nullptr;
     }
     const std::vector<std::pair<std::string, int>>& featureSet = fontFeatures.GetFontFeatures();
@@ -635,11 +642,17 @@ napi_value CreateArrayFontFeatureJsValue(napi_env env, const FontFeatures& fontF
         napi_value jsObject;
         napi_status status = napi_create_object(env, &jsObject);
         if (status != napi_ok) {
+            TEXT_LOGE("Failed to create fontFeature. Error code: %{public}d", status);
             continue;
         }
         napi_set_named_property(env, jsObject, "name", CreateStringJsValue(env, Str8ToStr16(feature.first)));
         napi_set_named_property(env, jsObject, "value", CreateJsNumber(env, feature.second));
         napi_set_element(env, jsArray, i, jsObject);
+        status = napi_set_element(env, jsArray, i, jsObject);
+        if (status != napi_ok) {
+            TEXT_LOGE("Failed to set fontFeature. Error code: %{public}d", status);
+            continue;
+        }
     }
 
     return jsArray;
@@ -691,7 +704,8 @@ napi_value CreateTextStyleJsValue(napi_env env, TextStyle textStyle)
         napi_set_named_property(env, objValue, "baselineShift", CreateJsNumber(env, textStyle.baseLineShift));
         napi_set_named_property(env, objValue, "backgroundRect", CreateRectStyleJsValue(env, textStyle.backgroundRect));
         napi_set_named_property(env, objValue, "textShadows", CreateShadowArrayJsValue(env, textStyle.shadows));
-        napi_set_named_property(env, objValue, "fontFeatures", CreateArrayFontFeatureJsValue(env, textStyle.fontFeatures));
+        napi_set_named_property(
+            env, objValue, "fontFeatures", CreateFontFeatureArrayJsValue(env, textStyle.fontFeatures));
     }
     return objValue;
 }
