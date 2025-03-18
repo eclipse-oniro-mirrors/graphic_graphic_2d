@@ -14,7 +14,7 @@
  */
 
 #include "rosen/test/dtk/dtk_constants.h"
-#include "../../dtk_test_base.h"
+#include "rosen/test/dtk/dtk_test_base.h"
 
 namespace OHOS {
 namespace Rosen {
