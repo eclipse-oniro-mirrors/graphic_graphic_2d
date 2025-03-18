@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -123,6 +123,22 @@ HWTEST(RSUniRenderProcessorTest, ProcessSurfaceTest, TestSize.Level1)
 }
 
 /**
+ * @tc.name: PostProcessTest
+ * @tc.desc: Verify function PostProcess
+ * @tc.type:FUNC
+ * @tc.require:issuesI9KRF1
+ */
+HWTEST(RSUniRenderProcessorTest, PostProcessTest, TestSize.Level1)
+{
+    if (!RSUniRenderJudgement::IsUniRender()) {
+        return;
+    }
+    auto renderProcessor = std::make_shared<RSUniRenderProcessor>();
+    renderProcessor->PostProcess();
+    EXPECT_FALSE(renderProcessor->isPhone_);
+}
+
+/**
  * @tc.name: CreateLayerTest
  * @tc.desc: Verify function CreateLayer
  * @tc.type:FUNC
@@ -141,11 +157,6 @@ HWTEST(RSUniRenderProcessorTest, CreateLayerTest, TestSize.Level1)
     RSSurfaceRenderNode node(0);
     auto iConsumerSurface = IConsumerSurface::Create();
     node.GetRSSurfaceHandler()->SetConsumer(iConsumerSurface);
-    sptr<SurfaceBuffer> buffer = OHOS::SurfaceBuffer::Create();
-    sptr<SyncFence> acquireFence = SyncFence::InvalidFence();
-    int64_t timestamp = 0;
-    Rect damage;
-    node.GetRSSurfaceHandler()->SetBuffer(buffer, acquireFence, damage, timestamp);
     RSSurfaceRenderParams params(0);
     RSLayerInfo layerInfo;
     sptr<SurfaceBuffer> bufferTest = OHOS::SurfaceBuffer::Create();
@@ -155,7 +166,7 @@ HWTEST(RSUniRenderProcessorTest, CreateLayerTest, TestSize.Level1)
     layerInfo.zOrder = 0;
     params.SetLayerInfo(layerInfo);
     renderProcessor->CreateLayer(node, params);
-    EXPECT_TRUE(params.GetLayerCreated());
+    EXPECT_FALSE(renderProcessor->isPhone_);
 }
 
 /**

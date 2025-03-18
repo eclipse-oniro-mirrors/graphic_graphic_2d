@@ -39,6 +39,8 @@ namespace {
     const std::string CLEAR_CACHE_TASK_PREFIX = "uifirst_clear_cache_";
     constexpr std::string_view ARKTSCARDNODE_NAME = "ArkTSCardNode";
     constexpr std::string_view EVENT_DISABLE_UIFIRST = "APP_LIST_FLING";
+    constexpr int UIFIRST_TASKSKIP_PRIO_THRESHOLD = 3;
+    constexpr int UIFIRST_POSTTASK_HIGHPRIO_MAX = 6;
     inline int64_t GetCurSysTime()
     {
         auto curTime = std::chrono::system_clock::now().time_since_epoch();
@@ -535,6 +537,8 @@ void RSUifirstManager::PostSubTask(NodeId id)
     // 1.find in cache list(done to dele) 2.find in global list
     auto drawable = DrawableV2::RSRenderNodeDrawableAdapter::GetDrawableById(id);
     if (drawable) {
+        // record uifirst dirty region
+        drawable->UpdateUifirstDirtyManager();
         // ref drawable
         subthreadProcessingNode_.emplace(id, drawable);
         // post task
@@ -826,7 +830,6 @@ bool RSUifirstManager::IsPreFirstLevelNodeDoingAndTryClear(std::shared_ptr<RSRen
 void RSUifirstManager::SetNodePriorty(std::list<NodeId>& result,
     std::unordered_map<NodeId, std::shared_ptr<RSSurfaceRenderNode>>& pendingNode)
 {
-    bool isFocusNodeFound = false;
     auto isFocusId = RSMainThread::Instance()->GetFocusNodeId();
     auto isLeashId = RSMainThread::Instance()->GetFocusLeashWindowId();
     uint32_t postOrder = 0;
@@ -848,18 +851,25 @@ void RSUifirstManager::SetNodePriorty(std::list<NodeId>& result,
         if (drawable->GetCacheSurfaceProcessedStatus() == CacheProcessStatus::WAITING) {
             drawable->SetRenderCachePriority(NodePriorityType::SUB_HIGH_PRIORITY);
         }
-        if (!isFocusNodeFound) {
-            if (id == isFocusId || id == isLeashId) {
-                // for resolving response latency
-                drawable->SetRenderCachePriority(NodePriorityType::SUB_FOCUSNODE_PRIORITY);
-                isFocusNodeFound = true;
-            }
-        }
         auto surfaceParams = static_cast<RSSurfaceRenderParams*>(drawable->GetRenderParams().get());
         if (surfaceParams && surfaceParams->GetPreSubHighPriorityType()) {
             drawable->SetRenderCachePriority(NodePriorityType::SUB_VIDEO_PRIORITY);
         }
+        // focusWindow is hightest priority.
+        if (!isFocusNodeFound_) {
+            if (id == isFocusId || id == isLeashId) {
+                // for resolving response latency
+                drawable->SetRenderCachePriority(NodePriorityType::SUB_FOCUSNODE_PRIORITY);
+                isFocusNodeFound_ = true;
+                focusNodeThreadIndex_ = drawable->GetLastFrameUsedThreadIndex();
+            }
+        }
+        if (RSSystemProperties::GetUIFirstOptScheduleEnabled() &&
+            drawable->GetSurfaceSkipCount() >= UIFIRST_TASKSKIP_PRIO_THRESHOLD) {
+            postOrder += drawable->GetSurfaceSkipPriority();
+        }
         drawable->SetUifirstPostOrder(postOrder);
+        drawable->SetHighPostPriority(false);
         sortedSubThreadNodeIds_.emplace_back(id);
     }
     RS_TRACE_NAME_FMT("SetNodePriorty result [%zu] pendingNode [%zu]", result.size(), pendingNode.size());
@@ -868,9 +878,11 @@ void RSUifirstManager::SetNodePriorty(std::list<NodeId>& result,
 void RSUifirstManager::SortSubThreadNodesPriority()
 {
     sortedSubThreadNodeIds_.clear();
+    isFocusNodeFound_ = false;
+    focusNodeThreadIndex_ = UINT32_MAX;
     SetNodePriorty(sortedSubThreadNodeIds_, pendingPostNodes_);
     SetNodePriorty(sortedSubThreadNodeIds_, pendingPostCardNodes_);
-    RS_LOGI("SetNodePriorty result [%{public}zu] pendingNode [%{public}zu] pendingCardNode [%{public}zu]",
+    RS_LOGD("SetNodePriorty result [%{public}zu] pendingNode [%{public}zu] pendingCardNode [%{public}zu]",
         sortedSubThreadNodeIds_.size(), pendingPostNodes_.size(), pendingPostCardNodes_.size());
     sortedSubThreadNodeIds_.sort([this](const auto& first, const auto& second) -> bool {
         auto drawable1 = GetSurfaceDrawableByID(first);
@@ -898,6 +910,38 @@ void RSUifirstManager::SortSubThreadNodesPriority()
     });
 }
 
+void RSUifirstManager::MarkPostNodesPriority()
+{
+    if (!RSSystemProperties::GetUIFirstOptScheduleEnabled()) {
+        return;
+    }
+    int postTaskCount = 0;
+    for (auto& id : sortedSubThreadNodeIds_) {
+        auto drawable = GetSurfaceDrawableByID(id);
+        if (!drawable) {
+            continue;
+        }
+        postTaskCount++;
+        if (drawable->GetRenderCachePriority() > NodePriorityType::SUB_LOW_PRIORITY) {
+            drawable->SetHighPostPriority(true);
+            continue;
+        }
+        if (!isFocusNodeFound_) {
+            if (postTaskCount < UIFIRST_POSTTASK_HIGHPRIO_MAX) {
+                drawable->SetHighPostPriority(true);
+            } else {
+                drawable->SetHighPostPriority(false);
+            }
+        } else {
+            if (focusNodeThreadIndex_ == drawable->GetLastFrameUsedThreadIndex()) {
+                drawable->SetHighPostPriority(true);
+            } else {
+                drawable->SetHighPostPriority(false);
+            }
+        }
+    }
+}
+
 // post in drawframe sync time
 void RSUifirstManager::PostUifistSubTasks()
 {
@@ -907,6 +951,7 @@ void RSUifirstManager::PostUifistSubTasks()
     }
     PurgePendingPostNodes();
     SortSubThreadNodesPriority();
+    MarkPostNodesPriority();
     if (sortedSubThreadNodeIds_.size() > 0) {
         RS_TRACE_NAME_FMT("PostUifistSubTasks %zu", sortedSubThreadNodeIds_.size());
         for (auto& id : sortedSubThreadNodeIds_) {
@@ -985,6 +1030,7 @@ void RSUifirstManager::AddPendingPostNode(NodeId id, std::shared_ptr<RSSurfaceRe
             }
         }
         pendingPostNodes_[id] = node;
+        RS_OPTIONAL_TRACE_NAME_FMT("Add pending id:%" PRIu64 " size:%d", node->GetId(), pendingPostNodes_.size());
     } else if (currentFrameCacheType == MultiThreadCacheType::ARKTS_CARD) {
         pendingPostCardNodes_[id] = node;
     }

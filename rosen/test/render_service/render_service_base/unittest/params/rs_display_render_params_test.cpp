@@ -282,4 +282,18 @@ HWTEST_F(RSDisplayRenderParamsTest, GetTargetSurfaceRenderNodeDrawable, TestSize
     params.SetTargetSurfaceRenderNodeDrawable(std::weak_ptr<DrawableV2::RSRenderNodeDrawableAdapter>());
     EXPECT_TRUE(params.GetTargetSurfaceRenderNodeDrawable().expired());
 }
+
+/**
+ * @tc.name: GetVirtualScreenMuteStatus
+ * @tc.desc: test result of GetVirtualScreenMuteStatus
+ * @tc.type: FUNC
+ * @tc.require: issueIBTNC3
+ */
+HWTEST_F(RSDisplayRenderParamsTest, GetVirtualScreenMuteStatus, TestSize.Level1)
+{
+    constexpr NodeId id = TestSrc::limitNumber::Uint64[0];
+    RSDisplayRenderParams params(id);
+    params.virtualScreenMuteStatus_ = true;
+    ASSERT_TRUE(params.GetVirtualScreenMuteStatus());
+}
 } // namespace OHOS::Rosen

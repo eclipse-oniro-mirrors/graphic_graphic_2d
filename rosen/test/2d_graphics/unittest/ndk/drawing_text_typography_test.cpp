@@ -1491,7 +1491,7 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyTest054, TestSize.Level
 
 /*
  * @tc.name: OH_Drawing_TypographyTest055
- * @tc.desc: test for halfleading, uselinestyle linestyleonly of text typography
+ * @tc.desc: test for unresolved glyphs count of text typography
  * @tc.type: FUNC
  */
 HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyTest055, TestSize.Level1)
@@ -1502,10 +1502,18 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyTest055, TestSize.Level
     ASSERT_NE(fontCollection, nullptr);
     OH_Drawing_TypographyCreate* handler = OH_Drawing_CreateTypographyHandler(typoStyle, fontCollection);
     ASSERT_NE(handler, nullptr);
+    const char* text = "OpenHarmony";
+    OH_Drawing_TypographyHandlerAddText(handler, text);
     OH_Drawing_Typography* typography = OH_Drawing_CreateTypography(handler);
     ASSERT_NE(typography, nullptr);
     int32_t result = OH_Drawing_TypographyGetUnresolvedGlyphsCount(typography);
     EXPECT_NE(result, 0);
+    const char* unresolvedGlyphText = "\uFFFF";
+    OH_Drawing_TypographyHandlerAddText(handler, unresolvedGlyphText);
+    typography = OH_Drawing_CreateTypography(handler);
+    ASSERT_NE(typography, nullptr);
+    result = OH_Drawing_TypographyGetUnresolvedGlyphsCount(typography);
+    EXPECT_NE(result, 1);
     result = OH_Drawing_TypographyGetUnresolvedGlyphsCount(nullptr);
     EXPECT_EQ(result, 0);
     OH_Drawing_DestroyTypographyStyle(typoStyle);
@@ -2523,8 +2531,23 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyTest106, TestSize.Level
     OH_Drawing_TypographyStyle* typoStyle = OH_Drawing_CreateTypographyStyle();
     OH_Drawing_TypographyCreate* handler =
         OH_Drawing_CreateTypographyHandler(typoStyle, OH_Drawing_CreateFontCollection());
+
+    OH_Drawing_PlaceholderSpan *placeholderSpan = new OH_Drawing_PlaceholderSpan();
+    placeholderSpan->width = 150.0;
+    placeholderSpan->height = 160.0;
+    OH_Drawing_TypographyHandlerAddPlaceholder(handler, placeholderSpan);
+    OH_Drawing_TypographyHandlerAddPlaceholder(handler, placeholderSpan);
     OH_Drawing_Typography* typography = OH_Drawing_CreateTypography(handler);
+    OH_Drawing_TypographyLayout(typography, MAX_WIDTH);
     OH_Drawing_TextBox* textBox = OH_Drawing_TypographyGetRectsForPlaceholders(typography);
+    int size = OH_Drawing_GetSizeOfTextBox(textBox);
+    EXPECT_EQ(size, 2);
+    for (int i = 0; i < size; i++) {
+        EXPECT_EQ(OH_Drawing_GetLeftFromTextBox(textBox, i), 0.000000 + i * 150.000000);
+        EXPECT_EQ(OH_Drawing_GetRightFromTextBox(textBox, i), 150.000000 + i * 150.000000);
+        EXPECT_EQ(static_cast<int>(OH_Drawing_GetTopFromTextBox(textBox, i)), 0);
+        EXPECT_EQ(static_cast<int>(OH_Drawing_GetBottomFromTextBox(textBox, i)), 159);
+    }
     OH_Drawing_TypographyGetRectsForPlaceholders(nullptr);
     EXPECT_NE(textBox, nullptr);
     OH_Drawing_DestroyTypographyStyle(typoStyle);
@@ -3195,5 +3218,113 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TextStyleAddFontVariationTest001,
     OH_Drawing_TextStyleAddFontVariation(textStyle, nullptr, value);
     OH_Drawing_TextStyleAddFontVariation(nullptr, axis, value);
     OH_Drawing_DestroyTypographyStyle(style);
+}
+
+/*
+* @tc.name: OH_Drawing_TypographyLineInfoTest001
+* @tc.desc: test for getting line info and line font metrics for one line with white space
+* @tc.type: FUNC
+*/
+HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyLineInfoTest001, TestSize.Level1)
+{
+    OH_Drawing_TypographyStyle* typoStyle = OH_Drawing_CreateTypographyStyle();
+    OH_Drawing_TextStyle *txtStyle = OH_Drawing_CreateTextStyle();
+    const char fontFamiliesTest[] = { 0x48, 0x61, 0x72, 0x6d, 0x6f, 0x6e, 0x79,
+        0x4f, 0x53, 0x5f, 0x53, 0x61, 0x6e, 0x73 };
+    const char *fontFamilies[] = {fontFamiliesTest};
+    OH_Drawing_SetTextStyleFontFamilies(txtStyle, 1, fontFamilies);
+    OH_Drawing_SetTextStyleFontSize(txtStyle, 50);
+    OH_Drawing_TypographyCreate* handler =
+        OH_Drawing_CreateTypographyHandler(typoStyle, OH_Drawing_CreateFontCollection());
+    OH_Drawing_TypographyHandlerPushTextStyle(handler, txtStyle);
+    const char *text = "这是一个 test123排版信息获取接口   ";
+    OH_Drawing_TypographyHandlerAddText(handler, text);
+    OH_Drawing_Typography* typography = OH_Drawing_CreateTypography(handler);
+    OH_Drawing_TypographyLayout(typography, MAX_WIDTH);
+ 
+    OH_Drawing_LineMetrics lineInfoNoSpace;
+    OH_Drawing_TypographyGetLineInfo(typography, 0, true, false, &lineInfoNoSpace);
+    OH_Drawing_LineMetrics lineInfoHasSpace;
+    OH_Drawing_TypographyGetLineInfo(typography, 0, true, true, &lineInfoHasSpace);
+ 
+    EXPECT_EQ(lineInfoNoSpace.startIndex, 0);
+    EXPECT_EQ(lineInfoNoSpace.endIndex, 23);
+    EXPECT_EQ(static_cast<int>(lineInfoNoSpace.width), 786);
+    EXPECT_EQ(lineInfoHasSpace.startIndex, 0);
+    EXPECT_EQ(lineInfoHasSpace.endIndex, 23);
+    EXPECT_EQ(static_cast<int>(lineInfoHasSpace.width), 826);
+ 
+    OH_Drawing_Font_Metrics textStyleMetrics;
+    OH_Drawing_TextStyleGetFontMetrics(typography, txtStyle, &textStyleMetrics);
+    EXPECT_EQ(static_cast<int>(textStyleMetrics.top), -52);
+    EXPECT_EQ(static_cast<int>(textStyleMetrics.avgCharWidth), 25);
+    EXPECT_EQ(static_cast<int>(textStyleMetrics.maxCharWidth), 124);
+    EXPECT_EQ(static_cast<int>(textStyleMetrics.xHeight), 25);
+    EXPECT_EQ(static_cast<int>(textStyleMetrics.capHeight), 35);
+    EXPECT_EQ(static_cast<int>(textStyleMetrics.underlineThickness), 2);
+    EXPECT_EQ(static_cast<int>(textStyleMetrics.underlinePosition), 10);
+    EXPECT_EQ(static_cast<int>(textStyleMetrics.strikeoutThickness), 2);
+    EXPECT_EQ(static_cast<int>(textStyleMetrics.strikeoutPosition), -15);
+    OH_Drawing_DestroyTypography(typography);
+    OH_Drawing_DestroyTypographyStyle(typoStyle);
+    OH_Drawing_DestroyTypographyHandler(handler);
+    OH_Drawing_DestroyTextStyle(txtStyle);
+}
+
+/*
+* @tc.name: OH_Drawing_TypographyLineInfoTest002
+* @tc.desc: test for getting line info and line font metrics for one line with white space
+* @tc.type: FUNC
+*/
+HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyLineInfoTest002, TestSize.Level1)
+{
+    OH_Drawing_TypographyStyle* typoStyle = OH_Drawing_CreateTypographyStyle();
+    OH_Drawing_TextStyle *txtStyle = OH_Drawing_CreateTextStyle();
+    const char fontFamiliesTest[] = { 0x48, 0x61, 0x72, 0x6d, 0x6f, 0x6e, 0x79,
+        0x4f, 0x53, 0x5f, 0x53, 0x61, 0x6e, 0x73 };
+    const char *fontFamilies[] = {fontFamiliesTest};
+    OH_Drawing_SetTextStyleFontFamilies(txtStyle, 1, fontFamilies);
+    OH_Drawing_SetTextStyleFontSize(txtStyle, 50);
+    OH_Drawing_TypographyCreate* handler =
+        OH_Drawing_CreateTypographyHandler(typoStyle, OH_Drawing_CreateFontCollection());
+    OH_Drawing_TypographyHandlerPushTextStyle(handler, txtStyle);
+    const char *text = "这是一个 test123排版信息获取接口   123444  Test  ";
+    OH_Drawing_TypographyHandlerAddText(handler, text);
+    OH_Drawing_Typography* typography = OH_Drawing_CreateTypography(handler);
+    OH_Drawing_TypographyLayout(typography, MAX_WIDTH);
+ 
+    OH_Drawing_LineMetrics lineInfoNoSpace;
+    OH_Drawing_TypographyGetLineInfo(typography, 1, false, false, &lineInfoNoSpace);
+    OH_Drawing_LineMetrics lineInfoHasSpace;
+    OH_Drawing_TypographyGetLineInfo(typography, 1, false, true, &lineInfoHasSpace);
+ 
+    EXPECT_EQ(lineInfoNoSpace.startIndex, 23);
+    EXPECT_EQ(lineInfoNoSpace.endIndex, 37);
+    EXPECT_EQ(static_cast<int>(lineInfoNoSpace.width), 289);
+    EXPECT_EQ(lineInfoHasSpace.startIndex, 23);
+    EXPECT_EQ(lineInfoHasSpace.endIndex, 37);
+    EXPECT_EQ(static_cast<int>(lineInfoHasSpace.width), 316);
+ 
+    size_t fontMetricsSize = 0;
+    OH_Drawing_Font_Metrics* metrics = OH_Drawing_TypographyGetLineFontMetrics(typography, 2,
+         &fontMetricsSize);
+    EXPECT_NE(metrics, nullptr);
+    EXPECT_EQ(fontMetricsSize, 12);
+    EXPECT_EQ(static_cast<int>(metrics[1].top), -52);
+    EXPECT_EQ(static_cast<int>(metrics[1].avgCharWidth), 25);
+    EXPECT_EQ(static_cast<int>(metrics[1].maxCharWidth), 124);
+    EXPECT_EQ(static_cast<int>(metrics[1].xMin), -27);
+    EXPECT_EQ(static_cast<int>(metrics[1].xMax), 96);
+    EXPECT_EQ(static_cast<int>(metrics[1].xHeight), 25);
+    EXPECT_EQ(static_cast<int>(metrics[1].capHeight), 35);
+    EXPECT_EQ(static_cast<int>(metrics[1].underlineThickness), 2);
+    EXPECT_EQ(static_cast<int>(metrics[1].underlinePosition), 10);
+    EXPECT_EQ(static_cast<int>(metrics[1].strikeoutThickness), 2);
+    EXPECT_EQ(static_cast<int>(metrics[1].strikeoutPosition), -15);
+    OH_Drawing_TypographyDestroyLineFontMetrics(metrics);
+    OH_Drawing_DestroyTypography(typography);
+    OH_Drawing_DestroyTypographyStyle(typoStyle);
+    OH_Drawing_DestroyTypographyHandler(handler);
+    OH_Drawing_DestroyTextStyle(txtStyle);
 }
 } // namespace OHOS

@@ -1027,7 +1027,8 @@ void RSDisplayRenderNodeDrawable::DrawMirrorScreen(
     auto hardwareDrawables = uniParam->GetHardwareEnabledTypeDrawables();
     //if specialLayer is visible and no CacheImg
     if ((mirroredParams->GetSecurityDisplay() != params.GetSecurityDisplay() &&
-        specialLayerType_ == HAS_SPECIAL_LAYER) || !mirroredDrawable->GetCacheImgForCapture()) {
+        specialLayerType_ == HAS_SPECIAL_LAYER) || !mirroredDrawable->GetCacheImgForCapture() ||
+        params.GetVirtualScreenMuteStatus()) {
         virtualProcesser->SetDrawVirtualMirrorCopy(false);
         DrawMirror(params, virtualProcesser, &RSDisplayRenderNodeDrawable::OnCapture, *uniParam);
     } else {
@@ -1173,8 +1174,8 @@ void RSDisplayRenderNodeDrawable::DrawMirror(RSDisplayRenderParams& params,
     curCanvas_->SetDisableFilterCache(true);
     auto hasSecSurface = static_cast<RSDisplayRenderParams*>
         (mirroredParams.get())->GetSpecialLayerMgr().Find(SpecialLayerType::HAS_SECURITY);
-    if (((!enableVisibleRect_ && hasSecSurface) || (enableVisibleRect_ && params.HasSecLayerInVisibleRect())) &&
-        !uniParam.GetSecExemption()) {
+    if ((((!enableVisibleRect_ && hasSecSurface) || (enableVisibleRect_ && params.HasSecLayerInVisibleRect())) &&
+        !uniParam.GetSecExemption()) || params.GetVirtualScreenMuteStatus()) {
         std::vector<RectI> emptyRects = {};
         virtualProcesser->SetRoiRegionToCodec(emptyRects);
         auto screenManager = CreateOrGetScreenManager();
@@ -1464,6 +1465,7 @@ void RSDisplayRenderNodeDrawable::DrawWiredMirrorOnDraw(
         auto hasSecSurface = mirroredParams->GetSpecialLayerMgr().Find(SpecialLayerType::HAS_SECURITY);
         if (hasSecSurface) {
             curCanvas_->Clear(Drawing::Color::COLOR_BLACK);
+            virtualDirtyRefresh_ = true;
             RS_LOGI("RSDisplayRenderNodeDrawable::DrawWiredMirrorOnDraw, "
                 "set canvas to black because of security layer.");
             return;
@@ -1531,8 +1533,10 @@ std::vector<RectI> RSDisplayRenderNodeDrawable::CalculateVirtualDirtyForWiredScr
     auto syncDirtyManager = GetSyncDirtyManager();
     // reset dirty rect as mirrored wired screen size when first time connection or matrix changed
     if (!(lastMatrix_ == canvasMatrix) || !(lastMirrorMatrix_ == mirroredParams->GetMatrix()) ||
-        uniParam->GetForceMirrorScreenDirty() || (enableVisibleRect_ && lastVisibleRect_ != curVisibleRect_)) {
+        uniParam->GetForceMirrorScreenDirty() || (enableVisibleRect_ && lastVisibleRect_ != curVisibleRect_) ||
+        lastBlackList_ != currentBlackList_ || virtualDirtyRefresh_) {
         GetSyncDirtyManager()->ResetDirtyAsSurfaceSize();
+        virtualDirtyRefresh_ = false;
         lastMatrix_ = canvasMatrix;
         lastMirrorMatrix_ = mirroredParams->GetMatrix();
     }
@@ -1619,7 +1623,7 @@ void RSDisplayRenderNodeDrawable::SetCanvasBlack(RSProcessor& processor)
 {
     curCanvas_->Clear(Drawing::Color::COLOR_BLACK);
     processor.PostProcess();
-    RS_LOGI("RSDisplayRenderNodeDrawable::SetCanvasBlack, set canvas to black because of security layer.");
+    RS_LOGI("RSDisplayRenderNodeDrawable::SetCanvasBlack, set canvas to black because of security layer/mute status.");
     curCanvas_->SetDisableFilterCache(false);
 }
 

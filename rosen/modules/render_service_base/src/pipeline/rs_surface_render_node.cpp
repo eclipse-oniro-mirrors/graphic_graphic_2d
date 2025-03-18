@@ -2188,9 +2188,10 @@ void RSSurfaceRenderNode::OnSync()
 {
 #ifdef RS_ENABLE_GPU
     if (!skipFrameDirtyRect_.IsEmpty()) {
-        auto surfaceDirtyRect = dirtyManager_->GetCurrentFrameDirtyRegion();
-        surfaceDirtyRect = surfaceDirtyRect.JoinRect(skipFrameDirtyRect_);
-        dirtyManager_->SetCurrentFrameDirtyRect(surfaceDirtyRect);
+        dirtyManager_->MergeDirtyRect(skipFrameDirtyRect_);
+        auto uifirstDirtyRect = dirtyManager_->GetUifirstFrameDirtyRegion();
+        uifirstDirtyRect = uifirstDirtyRect.JoinRect(skipFrameDirtyRect_);
+        dirtyManager_->SetUifirstFrameDirtyRect(uifirstDirtyRect);
         skipFrameDirtyRect_.Clear();
     }
     RS_OPTIONAL_TRACE_NAME_FMT("RSSurfaceRenderNode::OnSync name[%s] dirty[%s]",
@@ -2298,6 +2299,9 @@ void RSSurfaceRenderNode::CheckAndUpdateOpaqueRegion(const RectI& screeninfo, co
     auto boundsGeometry = GetRenderProperties().GetBoundsGeometry();
     if (boundsGeometry) {
         absRect = absRect.IntersectRect(boundsGeometry->GetAbsRect());
+        auto absChildrenRectF = boundsGeometry->MapRectWithoutRounding(GetChildrenRect().ConvertTo<float>(),
+            boundsGeometry->GetAbsMatrix());
+        absRect = absRect.IntersectRect(boundsGeometry->DeflateToRectI(absChildrenRectF));
         const auto& absMatrix = boundsGeometry->GetAbsMatrix();
         auto rotationDegree = static_cast<int>(-round(atan2(absMatrix.Get(Drawing::Matrix::SKEW_X),
             absMatrix.Get(Drawing::Matrix::SCALE_X)) * (RS_ROTATION_180 / PI)));

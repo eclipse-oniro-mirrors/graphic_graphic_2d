@@ -187,6 +187,7 @@ public:
     bool IsSubHighPriorityType(RSSurfaceRenderNode& node) const;
     void CheckHwcChildrenType(RSSurfaceRenderNode& node, SurfaceHwcNodeType& enabledType);
     void MarkSubHighPriorityType(RSSurfaceRenderNode& node);
+    void MarkPostNodesPriority();
 private:
     RSUifirstManager();
     ~RSUifirstManager() = default;
@@ -266,6 +267,10 @@ private:
 
     std::map<NodeId, CacheProcessStatus> uifirstCacheState_;
 
+    // priority
+    bool isFocusNodeFound_ = false;
+    pid_t focusNodeThreadIndex_ = UINT32_MAX;
+
     // only use in RT
     std::unordered_map<NodeId, std::shared_ptr<DrawableV2::RSRenderNodeDrawableAdapter>> subthreadProcessingNode_;
     std::set<NodeId> processingNodeSkipSync_;
@@ -284,7 +289,7 @@ private:
     std::unordered_map<NodeId, std::shared_ptr<RSSurfaceRenderNode>> pendingResetNodes_;
     std::vector<std::shared_ptr<DrawableV2::RSSurfaceRenderNodeDrawable>> pendingPostDrawables_;
     std::list<NodeId> sortedSubThreadNodeIds_;
-    std::vector<std::shared_ptr<RSSurfaceRenderNode>>  pindingResetWindowCachedNodes_;
+    std::vector<std::shared_ptr<RSSurfaceRenderNode>> pindingResetWindowCachedNodes_;
 
     std::set<NodeId> reuseNodes_;
     std::set<NodeId> collectedCardNodes_;

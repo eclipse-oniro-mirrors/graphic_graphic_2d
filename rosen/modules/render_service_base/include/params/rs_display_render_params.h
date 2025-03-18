@@ -198,6 +198,11 @@ public:
         return roundCornerSurfaceDrawables_;
     }
 
+    bool GetVirtualScreenMuteStatus() const
+    {
+        return virtualScreenMuteStatus_;
+    }
+
     // dfx
     std::string ToString() const override;
 
@@ -234,6 +239,7 @@ private:
     bool isRotationFinished_ = false;
     bool hasFingerprint_ = false;
     bool hasHdrPresent_ = false;
+    bool virtualScreenMuteStatus_ = false;
     float brightnessRatio_ = 1.0f;
     float zOrder_ = 0.0f;
     bool isZoomed_ = false;

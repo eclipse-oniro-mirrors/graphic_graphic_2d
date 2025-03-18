@@ -250,6 +250,7 @@ void RSDisplayRenderParams::OnSync(const std::unique_ptr<RSRenderParams>& target
     targetDisplayParams->isZoomed_ = isZoomed_;
     targetDisplayParams->targetSurfaceRenderNodeDrawable_ = targetSurfaceRenderNodeDrawable_;
     targetDisplayParams->roundCornerSurfaceDrawables_ = roundCornerSurfaceDrawables_;
+    targetDisplayParams->virtualScreenMuteStatus_ = virtualScreenMuteStatus_;
     RSRenderParams::OnSync(target);
 }
 
