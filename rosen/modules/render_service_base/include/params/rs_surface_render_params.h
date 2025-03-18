@@ -637,11 +637,6 @@ public:
         return IsUnobscuredUIExtension_;
     }
 
-    void MarkSurfaceCapturePipeline()
-    {
-        isSurfaceCapturePipeline_ = true;
-    }
-
     DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr GetSourceDisplayRenderNodeDrawable() const
     {
         return sourceDisplayRenderNodeDrawable_;
@@ -757,8 +752,6 @@ private:
     std::unordered_map<NodeId, Drawing::Matrix> crossNodeSkipDisplayConversionMatrices_ = {};
 
     uint32_t apiCompatibleVersion_ = 0;
-
-    bool isSurfaceCapturePipeline_ = false;
 
     friend class RSSurfaceRenderNode;
     friend class RSUniRenderProcessor;
