@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "rosen/test/dtk/dtk_test_ext.h"
+#include "dtk_test_ext.h"
 #include <string>
 #include "rosen/modules/2d_graphics/include/text/font.h"
 #include "rosen/modules/2d_graphics/include/text/font_mgr.h"
