@@ -199,4 +199,27 @@ HWTEST_F(TextLineBaseTest, TextLineBaseTest007, TestSize.Level1)
     PositionWithAffinity pos = paragraph_->GetGlyphPositionAtCoordinate(40, 0);
     EXPECT_EQ(pos.position, 3);
 }
+
+/*
+ * @tc.name: TextLineBaseTest008
+ * @tc.desc: test for GetGlyphPositionAtCoordinate when the index of the ellipsis
+    exceeds the size of the fUTF16IndexForUTF8Index
+ * @tc.type: FUNC
+ */
+HWTEST_F(TextLineBaseTest, TextLineBaseTest008, TestSize.Level1)
+{
+    ParagraphStyle paragraphStyle;
+    paragraphStyle.maxLines = 1;
+    std::shared_ptr<FontCollection> fontCollection = std::make_shared<FontCollection>();
+    ASSERT_NE(fontCollection, nullptr);
+    fontCollection->SetupDefaultFontManager();
+    std::shared_ptr<ParagraphBuilder> paragraphBuilder = ParagraphBuilder::Create(paragraphStyle, fontCollection);
+    ASSERT_NE(paragraphBuilder, nullptr);
+    paragraphBuilder->AddText(u"\nB");
+    paragraph_ = paragraphBuilder->Build();
+    ASSERT_NE(paragraph_, nullptr);
+    paragraph_->Layout(layoutWidth_);
+    PositionWithAffinity pos = paragraph_->GetGlyphPositionAtCoordinate(10, 0);
+    EXPECT_EQ(pos.position, 0);
+}
 } // namespace txt
