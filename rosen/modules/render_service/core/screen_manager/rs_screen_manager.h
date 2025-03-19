@@ -555,8 +555,6 @@ private:
 
     ScreenId GenerateVirtualScreenId();
 
-    ScreenInfo QueryScreenInfoLocked(ScreenId id) const;
-
 #ifdef RS_SUBSCRIBE_SENSOR_ENABLE
     void RegisterSensorCallback();
     void UnRegisterSensorCallback();
@@ -575,7 +573,7 @@ private:
     uint64_t JudgeVSyncEnabledScreenWhileHotPlug(ScreenId screenId, bool connected);
     uint64_t JudgeVSyncEnabledScreenWhilePowerStatusChanged(ScreenId screenId, ScreenPowerStatus status);
 
-    mutable std::mutex mutex_;
+    mutable std::mutex screenMapmutex_;
     std::map<ScreenId, std::shared_ptr<OHOS::Rosen::RSScreen>> screens_;
     using ScreenNode = decltype(screens_)::value_type;
     bool AnyScreenFits(std::function<bool(const ScreenNode&)> func) const;

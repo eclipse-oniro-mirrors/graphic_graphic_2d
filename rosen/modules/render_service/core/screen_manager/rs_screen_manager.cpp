@@ -253,7 +253,7 @@ ScreenId RSScreenManager::GetActiveScreenId()
 
 bool RSScreenManager::IsAllScreensPowerOff() const
 {
-    std::scoped_lock lock(mutex_, powerStatusMutex_);
+    std::scoped_lock lock(screenMapmutex_, powerStatusMutex_);
     if (screenPowerStatus_.empty()) {
         RS_LOGE("%{public}s: screenPowerStatus_ is empty.", __func__);
         return false;
@@ -412,7 +412,7 @@ void RSScreenManager::OnHwcDeadEvent()
 {
     std::map<ScreenId, std::shared_ptr<OHOS::Rosen::RSScreen>> screens;
     {
-        std::lock_guard<std::mutex> lock(mutex_);
+        std::lock_guard<std::mutex> lock(screenMapmutex_);
         screens = std::move(screens_);
     }
     for (const auto& [id, screen] : screens) {
@@ -660,7 +660,7 @@ void RSScreenManager::ProcessScreenConnected(std::shared_ptr<HdiOutput>& output)
     }
     auto screen = std::make_shared<RSScreen>(id, isVirtual, output, nullptr);
 
-    std::unique_lock<std::mutex> lock(mutex_);
+    std::unique_lock<std::mutex> lock(screenMapmutex_);
     screens_[id] = screen;
     if (isFoldScreenFlag_ && foldScreenIds_.size() < ORIGINAL_FOLD_SCREEN_AMOUNT) {
         foldScreenIds_[id] = {true, false};
@@ -700,7 +700,7 @@ void RSScreenManager::ProcessScreenDisConnected(std::shared_ptr<HdiOutput>& outp
         RS_LOGW("%{public}s: There is no screen for id %{public}" PRIu64, __func__, id);
     } else {
         TriggerCallbacks(id, ScreenEvent::DISCONNECTED);
-        std::lock_guard<std::mutex> lock(mutex_);
+        std::lock_guard<std::mutex> lock(screenMapmutex_);
         screens_.erase(id);
         RS_LOGI("%{public}s: Screen(id %{public}" PRIu64 ") disconnected.", __func__, id);
     }
@@ -723,7 +723,7 @@ void RSScreenManager::ProcessScreenDisConnected(std::shared_ptr<HdiOutput>& outp
 
 void RSScreenManager::UpdateVsyncEnabledScreenId(ScreenId screenId)
 {
-    std::unique_lock<std::mutex> lock(mutex_);
+    std::unique_lock<std::mutex> lock(screenMapmutex_);
     if (isFoldScreenFlag_ && foldScreenIds_.size() == ORIGINAL_FOLD_SCREEN_AMOUNT) {
         bool isAllFoldScreenDisconnected = true;
         for (const auto &[foldScreenId, foldScreenStatus] : foldScreenIds_) {
@@ -804,7 +804,7 @@ void RSScreenManager::RegSetScreenVsyncEnabledCallbackForHardwareThread(ScreenId
 void RSScreenManager::HandleDefaultScreenDisConnected()
 {
     ScreenId defaultScreenId = INVALID_SCREEN_ID;
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::lock_guard<std::mutex> lock(screenMapmutex_);
     for (const auto& [id, screen] : screens_) {
         if (screen == nullptr) {
             RS_LOGW("%{public}s: screen %{public}" PRIu64 " not found", __func__, id);
@@ -834,7 +834,7 @@ void RSScreenManager::UpdateFoldScreenConnectStatusLocked(ScreenId screenId, boo
 
 uint64_t RSScreenManager::JudgeVSyncEnabledScreenWhileHotPlug(ScreenId screenId, bool connected)
 {
-    std::unique_lock<std::mutex> lock(mutex_);
+    std::unique_lock<std::mutex> lock(screenMapmutex_);
     UpdateFoldScreenConnectStatusLocked(screenId, connected);
 
     auto vsyncSampler = CreateVSyncSampler();
@@ -868,7 +868,7 @@ uint64_t RSScreenManager::JudgeVSyncEnabledScreenWhileHotPlug(ScreenId screenId,
 
 uint64_t RSScreenManager::JudgeVSyncEnabledScreenWhilePowerStatusChanged(ScreenId screenId, ScreenPowerStatus status)
 {
-    std::unique_lock<std::mutex> lock(mutex_);
+    std::unique_lock<std::mutex> lock(screenMapmutex_);
     uint64_t vsyncEnabledScreenId = CreateVSyncSampler()->GetVsyncEnabledScreenId();
     auto it = foldScreenIds_.find(screenId);
     if (it == foldScreenIds_.end()) {
@@ -1052,7 +1052,7 @@ ScreenId RSScreenManager::GetDefaultScreenId() const
 
 std::vector<ScreenId> RSScreenManager::GetAllScreenIds() const
 {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::lock_guard<std::mutex> lock(screenMapmutex_);
     std::vector<ScreenId> ids;
     for (auto iter = screens_.begin(); iter != screens_.end(); ++iter) {
         ids.emplace_back(iter->first);
@@ -1107,7 +1107,7 @@ ScreenId RSScreenManager::CreateVirtualScreen(
     configs.whiteList = std::unordered_set<NodeId>(whiteList.begin(), whiteList.end());
 
     {
-        std::lock_guard<std::mutex> lock(mutex_);
+        std::lock_guard<std::mutex> lock(screenMapmutex_);
         screens_[newId] = std::make_shared<RSScreen>(configs);
     }
     ++currentVirtualScreenNum_;
@@ -1192,7 +1192,7 @@ int32_t RSScreenManager::RemoveVirtualScreenBlackList(ScreenId id, const std::ve
 
     ScreenId mainId = GetDefaultScreenId();
     if (mainId != id) {
-        auto mainScreen = GetScreen(id);
+        auto mainScreen = GetScreen(mainId);
         if (mainScreen == nullptr) {
             RS_LOGW("%{public}s: There is no screen for id %{public}" PRIu64, __func__, mainId);
             return SCREEN_NOT_FOUND;
@@ -1317,7 +1317,7 @@ const std::unordered_set<NodeId> RSScreenManager::GetVirtualScreenBlackList(Scre
 std::unordered_set<uint64_t> RSScreenManager::GetAllBlackList() const
 {
     std::unordered_set<uint64_t> allBlackList;
-    std::scoped_lock lock(mutex_, blackListMutex_);
+    std::scoped_lock lock(screenMapmutex_, blackListMutex_);
     for (const auto& [_, screen] : screens_) {
         if (screen == nullptr) {
             continue;
@@ -1334,7 +1334,7 @@ std::unordered_set<uint64_t> RSScreenManager::GetAllBlackList() const
 
 std::unordered_set<uint64_t> RSScreenManager::GetAllWhiteList() const
 {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::lock_guard<std::mutex> lock(screenMapmutex_);
     std::unordered_set<uint64_t> allWhiteList;
     for (const auto& screen : screens_) {
         if (screen.second != nullptr) {
@@ -1405,7 +1405,7 @@ bool RSScreenManager::GetAndResetVirtualSurfaceUpdateFlag(ScreenId id) const
 void RSScreenManager::RemoveVirtualScreen(ScreenId id)
 {
     {
-        std::lock_guard<std::mutex> lock(mutex_);
+        std::lock_guard<std::mutex> lock(screenMapmutex_);
         auto screensIt = screens_.find(id);
         if (screensIt == screens_.end() || screensIt->second == nullptr) {
             RS_LOGW("%{public}s: There is no screen for id %{public}" PRIu64, __func__, id);
@@ -1777,7 +1777,7 @@ int32_t RSScreenManager::AddScreenChangeCallback(const sptr<RSIScreenChangeCallb
     }
 
     {
-        std::lock_guard<std::mutex> lock(mutex_);
+        std::lock_guard<std::mutex> lock(screenMapmutex_);
         // when the callback first registered, maybe there were some physical screens already connected,
         // so notify to remote immediately.
         for (const auto& [id, screen] : screens_) {
@@ -1811,7 +1811,7 @@ void RSScreenManager::RemoveScreenChangeCallback(const sptr<RSIScreenChangeCallb
 
 void RSScreenManager::DisplayDump(std::string& dumpString)
 {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::lock_guard<std::mutex> lock(screenMapmutex_);
     int32_t index = 0;
     for (const auto& [id, screen] : screens_) {
         if (screen == nullptr) {
@@ -1834,7 +1834,7 @@ void RSScreenManager::DisplayDump(std::string& dumpString)
 
 void RSScreenManager::SurfaceDump(std::string& dumpString)
 {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::lock_guard<std::mutex> lock(screenMapmutex_);
     int32_t index = 0;
     for (const auto& [id, screen] : screens_) {
         if (screen == nullptr) {
@@ -1848,7 +1848,7 @@ void RSScreenManager::SurfaceDump(std::string& dumpString)
 
 void RSScreenManager::FpsDump(std::string& dumpString, std::string& arg)
 {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::lock_guard<std::mutex> lock(screenMapmutex_);
     int32_t index = 0;
     dumpString += "\n-- The recently fps records info of screens:\n";
     for (const auto& [id, screen] : screens_) {
@@ -1863,7 +1863,7 @@ void RSScreenManager::FpsDump(std::string& dumpString, std::string& arg)
 
 void RSScreenManager::ClearFpsDump(std::string& dumpString, std::string& arg)
 {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::lock_guard<std::mutex> lock(screenMapmutex_);
     int32_t index = 0;
     dumpString += "\n-- Clear fps records info of screens:\n";
     for (const auto& [id, screen] : screens_) {
@@ -1880,7 +1880,7 @@ void RSScreenManager::ClearFrameBufferIfNeed()
 {
 #ifdef RS_ENABLE_GPU
     RSHardwareThread::Instance().PostTask([this]() {
-        std::lock_guard<std::mutex> lock(mutex_);
+        std::lock_guard<std::mutex> lock(screenMapmutex_);
         for (const auto& [id, screen] : screens_) {
             if (!screen || !screen->GetOutput()) {
                 RS_LOGE("%{public}s: screen %{public}" PRIu64 " not found.", __func__, id);
@@ -1913,7 +1913,7 @@ int32_t RSScreenManager::SetScreenConstraint(ScreenId id, uint64_t timestamp, Sc
 
 void RSScreenManager::HitchsDump(std::string& dumpString, std::string& arg)
 {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::lock_guard<std::mutex> lock(screenMapmutex_);
     int32_t index = 0;
     dumpString += "\n-- The recently window hitchs records info of screens:\n";
     for (const auto& [id, screen] : screens_) {
@@ -2188,7 +2188,7 @@ int32_t RSScreenManager::SetScreenColorSpace(ScreenId id, GraphicCM_ColorSpaceTy
 
 uint32_t RSScreenManager::GetActualScreensNum() const
 {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::lock_guard<std::mutex> lock(screenMapmutex_);
     uint32_t num = 0;
     for (const auto& [id, screen] : screens_) {
         if (!screen) {
@@ -2210,7 +2210,7 @@ ScreenInfo RSScreenManager::GetActualScreenMaxResolution() const
 {
     ScreenId maxScreenId = INVALID_SCREEN_ID;
     {
-        std::lock_guard<std::mutex> lock(mutex_);
+        std::lock_guard<std::mutex> lock(screenMapmutex_);
         uint32_t maxResolution = 0;
         for (const auto& [id, screen] : screens_) {
             if (!screen || screen->IsVirtual()) {
@@ -2348,7 +2348,7 @@ int32_t RSScreenManager::SetScreenLinearMatrix(ScreenId id, const std::vector<fl
 
 bool RSScreenManager::AnyScreenFits(std::function<bool(const ScreenNode&)> func) const
 {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::lock_guard<std::mutex> lock(screenMapmutex_);
     return std::any_of(screens_.cbegin(), screens_.cend(), func);
 }
 
@@ -2362,7 +2362,7 @@ void RSScreenManager::TriggerCallbacks(ScreenId id, ScreenEvent event, ScreenCha
 
 std::shared_ptr<OHOS::Rosen::RSScreen> RSScreenManager::GetScreen(ScreenId id) const
 {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::lock_guard<std::mutex> lock(screenMapmutex_);
     auto iter = screens_.find(id);
     if (iter == screens_.end() || iter->second == nullptr) {
         return nullptr;
