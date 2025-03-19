@@ -1508,7 +1508,7 @@ public:
     explicit CustomFirstFrameCommitCallback(const FirstFrameCommitCallback& callback) : cb_(callback) {}
     ~CustomFirstFrameCommitCallback() override {};
 
-    void OnFirstFrameCommit(uint32_t screenId, int64_t timestamp) override
+    void OnFirstFrameCommit(uint64_t screenId, int64_t timestamp) override
     {
         ROSEN_LOGD("CustomFirstFrameCommitCallback::OnFirstFrameCommit called");
         if (cb_ != nullptr) {

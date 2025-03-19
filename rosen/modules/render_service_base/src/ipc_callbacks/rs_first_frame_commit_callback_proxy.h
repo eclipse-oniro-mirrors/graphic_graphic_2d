@@ -28,7 +28,7 @@ public:
     explicit RSFirstFrameCommitCallbackProxy(const sptr<IRemoteObject>& impl);
     virtual ~RSFirstFrameCommitCallbackProxy() noexcept = default;
 
-    void OnFirstFrameCommit(uint32_t screenId, int64_t timestamp) override;
+    void OnFirstFrameCommit(uint64_t screenId, int64_t timestamp) override;
 
 private:
     static inline BrokerDelegator<RSFirstFrameCommitCallbackProxy> delegator_;

@@ -1280,7 +1280,7 @@ HWTEST_F(RSInterfacesTest, UnRegisterHgmRefreshRateUpdateCallback_Test, Function
 HWTEST_F(RSInterfacesTest, RegisterFirstFrameCommitCallback_Test, Function | SmallTest | Level2)
 {
     ASSERT_NE(rsInterfaces, nullptr);
-    FirstFrameCommitCallback cb = [](uint32_t screenId, int64_t timestamp){};
+    FirstFrameCommitCallback cb = [](uint64_t screenId, int64_t timestamp){};
     int32_t ret = rsInterfaces->RegisterFirstFrameCommitCallback(cb);
     ASSERT_EQ(ret, 0);
 }

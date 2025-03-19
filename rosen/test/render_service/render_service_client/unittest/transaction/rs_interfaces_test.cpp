@@ -531,7 +531,7 @@ HWTEST_F(RSInterfacesTest, RegisterAndUnRegisterFirstFrameCommitCallback001, Tes
     RSInterfaces& instance = RSInterfaces::GetInstance();
     instance.renderServiceClient_ = std::make_unique<RSRenderServiceClient>();
 
-    auto callback = [](uint32_t, int64_t) {};
+    auto callback = [](uint64_t, int64_t) {};
     EXPECT_EQ(instance.RegisterFirstFrameCommitCallback(callback), 0);
     EXPECT_EQ(instance.UnRegisterFirstFrameCommitCallback(), 0);
 }

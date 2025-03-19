@@ -26,7 +26,7 @@ class RSFirstFrameCommitCallbackStubMock : public RSFirstFrameCommitCallbackStub
 public:
     RSFirstFrameCommitCallbackStubMock() = default;
     virtual ~RSFirstFrameCommitCallbackStubMock() = default;
-    void OnFirstFrameCommit(uint32_t screenId, int64_t timestamp) override {};
+    void OnFirstFrameCommit(uint64_t screenId, int64_t timestamp) override {};
 };
 
 class RSFirstFrameCommitCallbackStubTest : public testing::Test {

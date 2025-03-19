@@ -137,7 +137,8 @@ bool DoSomethingInterestingWithMyAPI(const uint8_t* data, size_t size)
     sptr<RSIOcclusionChangeCallback> rsIOcclusionChangeCallback = iface_cast<RSIOcclusionChangeCallback>(remoteObject);
     sptr<RSISurfaceOcclusionChangeCallback> callbackTwo = iface_cast<RSISurfaceOcclusionChangeCallback>(remoteObject);
     sptr<RSIHgmConfigChangeCallback> rsIHgmConfigChangeCallback = iface_cast<RSIHgmConfigChangeCallback>(remoteObject);
-    sptr<RSIFirstFrameCommitCallback> rsIFirstFrameCommitCallback = iface_cast<RSIFirstFrameCommitCallback>(remoteObject);
+    sptr<RSIFirstFrameCommitCallback> rsIFirstFrameCommitCallback =
+        iface_cast<RSIFirstFrameCommitCallback>(remoteObject);
     sptr<RSIFrameRateLinkerExpectedFpsUpdateCallback> rsIFrameRateLinkerExpectedFpsUpdateCallback =
         iface_cast<RSIFrameRateLinkerExpectedFpsUpdateCallback>(remoteObject);
     std::vector<ScreenColorGamut> mode;

@@ -38,17 +38,18 @@ void RSFirstFrameNotifier::RegisterFirstFrameCommitCallback(
     firstFrameCommitCallbacks_[pid] = callback;
     RS_LOGD("FirstFrameCommitCallback: add a remote callback succeed.");
 }
-void RSFirstFrameNotifier::OnFirstFrameCommitCallback(uint32_t screenId)
+
+void RSFirstFrameNotifier::OnFirstFrameCommitCallback(ScreenId screenId)
 {
     int64_t timestamp = std::chrono::duration_cast<std::chrono::nanoseconds>(
         std::chrono::steady_clock::now().time_since_epoch()).count();
-    RS_TRACE_NAME_FMT("OnFirstFrameCommitCallback screenId:%" PRIu32 ", timestamp:%" PRId64 ".",
+    RS_TRACE_NAME_FMT("OnFirstFrameCommitCallback screenId:%" PRIu64 ", timestamp:%" PRId64 ".",
         screenId, timestamp);
-    RS_LOGI("OnFirstFrameCommitCallback screenId:%{public}" PRIu32 ", timestamp:%{public}" PRId64 ".",
+    RS_LOGI("OnFirstFrameCommitCallback screenId:%{public}" PRIu64 ", timestamp:%{public}" PRId64 ".",
         screenId, timestamp);
     for (const auto& callback : firstFrameCommitCallbacks_) {
         if (callback.second != nullptr) {
-            callback.second->OnPowerOnFirstFrame(screenId, timestamp);
+            callback.second->OnFirstFrameCommit(screenId, timestamp);
         }
     }
 }
@@ -56,8 +57,8 @@ void RSFirstFrameNotifier::OnFirstFrameCommitCallback(uint32_t screenId)
 void RSFirstFrameNotifier::ExecIfFirstFrameCommit(ScreenId screenId)
 {
     if (firstFrameCommitScreens_.find(screenId) != firstFrameCommitScreens_.end()) {
-        RS_TRACE_NAME_FMT("ExecIfFirstFrameCommit screenId:%" PRIu32 ".", screenId);
-        RS_LOGI("ExecIfFirstFrameCommit screenId:%{public}" PRIu32 ".", screenId);
+        RS_TRACE_NAME_FMT("ExecIfFirstFrameCommit screenId:%" PRIu64 ".", screenId);
+        RS_LOGI("ExecIfFirstFrameCommit screenId:%{public}" PRIu64 ".", screenId);
         RSBackgroundThread::Instance().PostTask([this, screenId]() {
             OnFirstFrameCommitCallback(screenId);
         });
@@ -65,9 +66,8 @@ void RSFirstFrameNotifier::ExecIfFirstFrameCommit(ScreenId screenId)
     }
 }
 
-void RSFirstFrameNotifier::AddScreenIfPowerOn(ScreenId screenId, bool isScreenPoweringOn_)
+void RSFirstFrameNotifier::AddFirstFrameCommitScreen(ScreenId screenId)
 {   
-    if (isScreenPoweringOn_) {
-        firstFrameCommitScreens_.insert(screenId);
-    }
+    firstFrameCommitScreens_.insert(screenId);
+}
 }

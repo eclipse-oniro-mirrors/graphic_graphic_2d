@@ -30,9 +30,9 @@ int RSFirstFrameCommitCallbackStub::OnRemoteRequest(
     int ret = ERR_NONE;
     switch (code) {
         case static_cast<uint32_t>(RSIFirstFrameCommitCallbackInterfaceCode::ON_FIRST_FRAME_COMMIT): {
-            uint32_t screenId{0};
+            uint64_t screenId{0};
             int64_t timestamp{0};
-            if (!data.ReadUint32(screenId)) {
+            if (!data.ReadUint64(screenId)) {
                 RS_LOGE("RSFirstFrameCommitCallbackStub::OnRemoteRequest read screenId failed!");
                 ret = ERR_INVALID_DATA;
                 break;

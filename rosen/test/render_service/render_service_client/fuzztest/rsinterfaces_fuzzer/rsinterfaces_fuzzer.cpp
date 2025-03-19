@@ -212,7 +212,7 @@ bool RSPhysicalScreenFuzzTest(const uint8_t* data, size_t size)
     UIExtensionCallback uiExtensionCallback = [](std::shared_ptr<RSUIExtensionData>, uint64_t) {};
     rsInterfaces.RegisterUIExtensionCallback(id, uiExtensionCallback);
     usleep(usleepTime);
-    auto firstFrameCommitCallback = [](uint32_t, int64_t) {};
+    auto firstFrameCommitCallback = [](uint64_t, int64_t) {};
     rsInterfaces.RegisterFirstFrameCommitCallback(firstFrameCommitCallback);
     rsInterfaces.UnRegisterFirstFrameCommitCallback();
 

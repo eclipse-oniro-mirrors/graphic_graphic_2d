@@ -25,7 +25,7 @@ public:
     DECLARE_INTERFACE_DESCRIPTOR(u"ohos.rosen.FirstFrameCommitCallback");
     RSIFirstFrameCommitCallback() = default;
     virtual ~RSIFirstFrameCommitCallback() noexcept = default;
-    virtual void OnFirstFrameCommit(uint32_t screenId, int64_t timestamp) = 0;
+    virtual void OnFirstFrameCommit(uint64_t screenId, int64_t timestamp) = 0;
 };
 }
 }

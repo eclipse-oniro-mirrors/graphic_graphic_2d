@@ -3431,7 +3431,7 @@ int32_t RSRenderServiceConnectionProxy::RegisterFirstFrameCommitCallback(
             return WRITE_PARCEL_ERR;
         }
     }
-    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::FIRST_FRAME_COMMIT_CALLBACK);
+    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::ON_FIRST_FRAME_COMMIT);
     int32_t err = SendRequest(code, data, reply, option);
     if (err != NO_ERROR) {
         ROSEN_LOGE("RSRenderServiceConnectionProxy::RegisterFirstFrameCommitCallback: Send Request err.");

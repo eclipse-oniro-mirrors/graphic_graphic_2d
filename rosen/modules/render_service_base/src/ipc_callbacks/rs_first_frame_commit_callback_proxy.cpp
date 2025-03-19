@@ -27,7 +27,7 @@ RSFirstFrameCommitCallbackProxy::RSFirstFrameCommitCallbackProxy(const sptr<IRem
 {
 }
 
-void RSFirstFrameCommitCallbackProxy::OnFirstFrameCommit(uint32_t screenId, int64_t timestamp)
+void RSFirstFrameCommitCallbackProxy::OnFirstFrameCommit(uint64_t screenId, int64_t timestamp)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -39,8 +39,8 @@ void RSFirstFrameCommitCallbackProxy::OnFirstFrameCommit(uint32_t screenId, int6
     }
 
     option.SetFlags(MessageOption::TF_ASYNC);
-    if (!data.WriteUint32(screenId)) {
-        ROSEN_LOGE("RSFirstFrameCommitCallbackProxy::OnFirstFrameCommit WriteUint32 failed");
+    if (!data.WriteUint64(screenId)) {
+        ROSEN_LOGE("RSFirstFrameCommitCallbackProxy::OnFirstFrameCommit WriteUint64 failed");
         return;
     }
     if (!data.WriteInt64(timestamp)) {
@@ -48,7 +48,7 @@ void RSFirstFrameCommitCallbackProxy::OnFirstFrameCommit(uint32_t screenId, int6
         return;
     }
     uint32_t code =
-        static_cast<uint32_t>(RSIFirstFrameCommitCallbackInterfaceCode::ON_POWER_ON);
+        static_cast<uint32_t>(RSIFirstFrameCommitCallbackInterfaceCode::ON_FIRST_FRAME_COMMIT);
     auto remote = Remote();
     if (remote == nullptr) {
         ROSEN_LOGE("RSFirstFrameCommitCallbackProxy::OnFirstFrameCommit remote is null!");

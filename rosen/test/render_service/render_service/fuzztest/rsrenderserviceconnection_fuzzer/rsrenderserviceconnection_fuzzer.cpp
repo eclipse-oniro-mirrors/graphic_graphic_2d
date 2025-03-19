@@ -402,7 +402,6 @@ bool DoRegisterPointerLuminanceChangeCallback()
     PointerLuminanceChangeCallback callback = [](int32_t brightness) {};
     sptr<CustomPointerLuminanceChangeCallback> cb = new CustomPointerLuminanceChangeCallback(callback);
     rsConn_->RegisterPointerLuminanceChangeCallback(cb);
-
     return true;
 }
 
@@ -1323,7 +1322,7 @@ public:
     explicit CustomFirstFrameCommitCallback(const FirstFrameCommitCallback& callback) : cb_(callback) {}
     ~CustomFirstFrameCommitCallback() override {};
 
-    void OnFirstFrameCommit(uint32_t screenId, int64_t timestamp) override
+    void OnFirstFrameCommit(uint64_t screenId, int64_t timestamp) override
     {
         if (cb_ != nullptr) {
             cb_(screenId, timestamp);
@@ -1339,7 +1338,7 @@ bool DoRegisterFirstFrameCommitCallback()
     if (rsConn_ == nullptr) {
         return false;
     }
-    FirstFrameCommitCallback callback = [](uint32_t screenId, int64_t timestamp) {};
+    FirstFrameCommitCallback callback = [](uint64_t screenId, int64_t timestamp) {};
     sptr<CustomFirstFrameCommitCallback> cb = new CustomFirstFrameCommitCallback(callback);
     rsConn_->RegisterFirstFrameCommitCallback(cb);
     return true;

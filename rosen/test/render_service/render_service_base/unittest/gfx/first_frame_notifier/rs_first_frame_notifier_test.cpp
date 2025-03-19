@@ -44,11 +44,9 @@ HWTEST_F(RSFirstFrameNotifierTest, RSFirstFrameNotifier001, TestSize.Level1)
     ScreenId screenId = 0;
     pid_t pid0 = 0;
     pid_t pid1 = 1;
-    auto firstFrameCommitCallback = [](uint32_t, int64_t) {};
+    auto firstFrameCommitCallback = [](uint64_t, int64_t) {};
     RSFirstFrameNotifier& firstFrameNotifier = RSFirstFrameNotifier::GetInstance();
-    firstFrameNotifier.AddScreenIfPowerOn(screenId, false);
-    EXPECT_EQ(firstFrameNotifier.firstFrameCommitScreens_.size(), 0);
-    firstFrameNotifier.AddScreenIfPowerOn(screenId, true);
+    firstFrameNotifier.AddFirstFrameCommitScreen(screenId);
     EXPECT_EQ(firstFrameNotifier.firstFrameCommitScreens_.size(), 1);
     firstFrameNotifier.RegisterFirstFrameCommitCallback(pid0, firstFrameCommitCallback);
     EXPECT_EQ(firstFrameNotifier.firstFrameCommitCallbacks_.size(), 1);

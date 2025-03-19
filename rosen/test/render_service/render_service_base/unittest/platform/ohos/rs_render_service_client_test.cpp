@@ -502,7 +502,7 @@ HWTEST_F(RSClientTest, UnRegisterPointerLuminanceChangeCallback001, TestSize.Lev
  */
 HWTEST_F(RSClientTest, RegisterFirstFrameCommitCallback001, TestSize.Level1)
 {
-    EXPECT_EQ(rsClient->RegisterFirstFrameCommitCallback([](uint32_t screenId, int64_t timestamp) -> void {}),
+    EXPECT_EQ(rsClient->RegisterFirstFrameCommitCallback([](uint64_t screenId, int64_t timestamp) -> void {}),
         StatusCode::SUCCESS);
     EXPECT_EQ(rsClient->RegisterFirstFrameCommitCallback(nullptr), StatusCode::SUCCESS);
 

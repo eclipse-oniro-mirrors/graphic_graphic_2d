@@ -22,14 +22,16 @@
 
 #include "common/rs_common_def.h"
 #include "ipc_callbacks/rs_ifirst_frame_commit_callback.h"
+#include "screen_manager/screen_types.h"
 
 namespace OHOS::Rosen {
 class RSB_EXPORT RSFirstFrameNotifier {
 public:
     static RSFirstFrameNotifier &GetInstance();
     void RegisterFirstFrameCommitCallback(pid_t pid, const sptr<RSIFirstFrameCommitCallback>& callback);
-    void OnFirstFrameCommitCallback(uint32_t screenId);
-    void AddScreenIfPowerOn(ScreenId screenId, bool isScreenPoweringOn_);
+    void OnFirstFrameCommitCallback(ScreenId screenId);
+    void ExecIfFirstFrameCommit(ScreenId screenId);
+    void AddFirstFrameCommitScreen(ScreenId screenId);
 private:
     RSFirstFrameNotifier() = default;
     ~RSFirstFrameNotifier() = default;
@@ -39,7 +41,7 @@ private:
     RSFirstFrameNotifier& operator=(const RSFirstFrameNotifier&&) = delete;
 
     std::unordered_set<ScreenId> firstFrameCommitScreens_;
-    std::unordered_map<pid_t, sptr<RSIFirstFrameCommitCallback>> firstFrameCommitCallback_;
+    std::unordered_map<pid_t, sptr<RSIFirstFrameCommitCallback>> firstFrameCommitCallbacks_;
 };
 }
 #endif
