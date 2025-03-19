@@ -13,11 +13,11 @@
  * limitations under the License.
  */
 
-#include "../../dtk_test_ext.h"
-#include "text/font.h"
-#include "text/font_mgr.h"
-#include "text/font_style_set.h"
-#include "text/typeface.h"
+#include "dtk_test_ext.h"
+#include "modules/2d_graphics/include/text/font.h"
+#include "modules/2d_graphics/include/text/font_mgr.h"
+#include "modules/2d_graphics/include/text/font_style_set.h"
+#include "modules/2d_graphics/include/text/typeface.h"
 
 /*
 测试类：textblob
