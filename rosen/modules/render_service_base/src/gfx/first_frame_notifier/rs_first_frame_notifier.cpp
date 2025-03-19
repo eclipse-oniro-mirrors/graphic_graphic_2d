@@ -67,7 +67,7 @@ void RSFirstFrameNotifier::ExecIfFirstFrameCommit(ScreenId screenId)
 }
 
 void RSFirstFrameNotifier::AddFirstFrameCommitScreen(ScreenId screenId)
-{   
+{
     firstFrameCommitScreens_.insert(screenId);
 }
 }
