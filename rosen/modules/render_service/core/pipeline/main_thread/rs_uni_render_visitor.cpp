@@ -4024,7 +4024,7 @@ void RSUniRenderVisitor::CheckMergeDebugRectforRefreshRate(std::vector<RSBaseRen
         bool needMapAbsRect = true;
         if (curDisplayNode_->GetWindowContainer()) {
             Vector2f scale = curDisplayNode_->GetWindowContainer()->GetRenderProperties().GetScale();
-            if (!ROSEN_EQ(std::abs(scale.x_, 1.0f), EPSILON_SCALE) || !ROSEN_EQ(std::abs(scale.y_, 1.0f), EPSILON_SCALE)) {
+            if (!ROSEN_EQ(scale.x_, 1.0f, EPSILON_SCALE) || !ROSEN_EQ(scale.y_, 1.0f, EPSILON_SCALE)) {
                 needMapAbsRect = false;
             }
         }
