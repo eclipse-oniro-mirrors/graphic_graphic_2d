@@ -68,6 +68,7 @@ void RSUifirstManagerTest::TearDownTestCase()
     uifirstManager_.pendingPostNodes_.clear();
     uifirstManager_.pendingPostCardNodes_.clear();
     uifirstManager_.pendingResetNodes_.clear();
+    uifirstManager_.pindingResetWindowCachedNodes_.clear();
 
     mainThread->context_->globalRootRenderNode_->renderDrawable_ = nullptr;
     mainThread->context_->globalRootRenderNode_ = nullptr;
@@ -477,8 +478,8 @@ HWTEST_F(RSUifirstManagerTest, ProcessTreeStateChange, TestSize.Level1)
 
     auto surfaceNode2 = RSTestUtil::CreateSurfaceNode();
     ASSERT_NE(surfaceNode2, nullptr);
-    surfaceNode1->SetIsOnTheTree(false);
-    surfaceNode1->SetIsNodeToBeCaptured(true);
+    surfaceNode2->SetIsOnTheTree(false);
+    surfaceNode2->SetIsNodeToBeCaptured(true);
     uifirstManager_.ProcessTreeStateChange(*surfaceNode2);
 }
 
