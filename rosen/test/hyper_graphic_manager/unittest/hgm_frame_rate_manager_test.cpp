@@ -901,7 +901,7 @@ HWTEST_F(HgmFrameRateMgrTest, GetLowBrightVec, Function | SmallTest | Level2)
         configData->supportedModeConfigs_[screenConfig] = supportedMode2;
         mgr.GetLowBrightVec(configData);
         ASSERT_EQ(mgr.isAmbientEffect_, false);
-        ASSERT_EQ(mgr.lowBrightVec_.empty());
+        ASSERT_TRUE(mgr.lowBrightVec_.empty());
     }
 }
 
