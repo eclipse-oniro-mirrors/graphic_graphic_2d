@@ -196,13 +196,6 @@ bool RSSystemParameters::GetHideNotchStatus()
     return (strcmp(enable, "2") == 0);
 }
 
-bool RSSystemParameters::GetUIFirstDmaBufferEnabled()
-{
-    static bool enable =
-        std::atoi((system::GetParameter("persist.sys.graphic.ui.first.dma.enabled", "1")).c_str()) != 0;
-    return enable;
-}
-
 bool RSSystemParameters::GetTcacheEnabled()
 {
     static bool flag = system::GetBoolParameter("persist.sys.graphic.tcache.enable", true);
@@ -263,6 +256,13 @@ int32_t RSSystemParameters::GetWindowScreenScanType()
 {
     static int32_t screenScanType = system::GetIntParameter<int32_t>("const.window.screen.scan_type", 0);
     return screenScanType;
+}
+
+int32_t RSSystemParameters::GetPurgeableResourceLimit()
+{
+    static int32_t purgeableResourceLimit =
+        system::GetIntParameter<int32_t>("persist.sys.graphic.purgeableResourceLimit", 40000); // purge limit: 40000
+    return purgeableResourceLimit;
 }
 
 bool RSSystemParameters::GetAnimationOcclusionEnabled()

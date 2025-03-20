@@ -50,7 +50,7 @@ public:
                                                          NodeId windowNodeId = 0,
                                                          bool fromXcomponent = false) override;
 
-    ErrCode GetPixelMapByProcessId(std::vector<std::shared_ptr<Media::PixelMap>>& pixelMapVector, pid_t pid,
+    ErrCode GetPixelMapByProcessId(std::vector<PixelMapInfo>& pixelMapInfoVector, pid_t pid,
         int32_t& repCode) override;
     
     ErrCode CreatePixelMapFromSurface(sptr<Surface> surface, const Rect &srcRect,
@@ -338,7 +338,7 @@ public:
     
     void DropFrameByPid(const std::vector<int32_t> pidList) override;
 
-    bool SetVirtualScreenStatus(ScreenId id, VirtualScreenStatus screenStatus) override;
+    ErrCode SetVirtualScreenStatus(ScreenId id, VirtualScreenStatus screenStatus, bool& success) override;
 
     void SetFreeMultiWindowStatus(bool enable) override;
 
@@ -353,7 +353,7 @@ public:
 
     int32_t RegisterSelfDrawingNodeRectChangeCallback(sptr<RSISelfDrawingNodeRectChangeCallback> callback) override;
 
-    void NotifyPageName(const std::string &packageName, const std::string &pageName, bool isEnter) override;
+    ErrCode NotifyPageName(const std::string &packageName, const std::string &pageName, bool isEnter) override;
 
     void TestLoadFileSubTreeToNode(NodeId nodeId, const std::string &filePath) override;
 private:

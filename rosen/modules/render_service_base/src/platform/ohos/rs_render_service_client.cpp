@@ -199,15 +199,14 @@ std::shared_ptr<VSyncReceiver> RSRenderServiceClient::CreateVSyncReceiver(
     return std::make_shared<VSyncReceiver>(conn, token->AsObject(), looper, name);
 }
 
-int32_t RSRenderServiceClient::GetPixelMapByProcessId(
-    std::vector<std::shared_ptr<Media::PixelMap>>& pixelMapVector, pid_t pid)
+int32_t RSRenderServiceClient::GetPixelMapByProcessId(std::vector<PixelMapInfo>& pixelMapInfoVector, pid_t pid)
 {
     auto renderService = RSRenderServiceConnectHub::GetRenderService();
     if (renderService == nullptr) {
         return RENDER_SERVICE_NULL;
     }
     int32_t repCode;
-    renderService->GetPixelMapByProcessId(pixelMapVector, pid, repCode);
+    renderService->GetPixelMapByProcessId(pixelMapInfoVector, pid, repCode);
     return repCode;
 }
 
@@ -1866,10 +1865,11 @@ bool RSRenderServiceClient::SetAncoForceDoDirect(bool direct)
 bool RSRenderServiceClient::SetVirtualScreenStatus(ScreenId id, VirtualScreenStatus screenStatus)
 {
     auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    bool success = false;
     if (renderService != nullptr) {
-        return renderService->SetVirtualScreenStatus(id, screenStatus);
+        renderService->SetVirtualScreenStatus(id, screenStatus, success);
     }
-    return false;
+    return success;
 }
 
 void RSRenderServiceClient::SetFreeMultiWindowStatus(bool enable)

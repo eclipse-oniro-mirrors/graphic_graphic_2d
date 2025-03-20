@@ -124,6 +124,13 @@ public:
 
     void SetFrameGravity(Gravity gravity);
 
+    void SetHDRBrightness(float hdrBrightness);
+
+    inline float GetHDRBrightness() const
+    {
+        return hdrBrightness_;
+    }
+
     void SetNeedFilter(bool needFilter);
 
     inline bool NeedFilter() const
@@ -390,6 +397,8 @@ private:
     RectI absDrawRect_;
     Vector2f cacheSize_;
     Gravity frameGravity_ = Gravity::CENTER;
+    // default 1.0f means max available headroom
+    float hdrBrightness_ = 1.0f;
     bool freezeFlag_ = false;
     bool childHasVisibleEffect_ = false;
     bool childHasVisibleFilter_ = false;

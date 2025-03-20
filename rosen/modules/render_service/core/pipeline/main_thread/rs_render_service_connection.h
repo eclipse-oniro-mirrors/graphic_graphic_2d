@@ -76,8 +76,7 @@ private:
                                                  NodeId windowNodeId = 0,
                                                  bool fromXcomponent = false) override;
 
-    ErrCode GetPixelMapByProcessId(std::vector<std::shared_ptr<Media::PixelMap>>& pixelMapVector, pid_t pid,
-        int32_t& repCode) override;
+    ErrCode GetPixelMapByProcessId(std::vector<PixelMapInfo>& pixelMapInfoVector, pid_t pid, int32_t& repCode) override;
 
     ErrCode CreatePixelMapFromSurface(sptr<Surface> surface,
         const Rect &srcRect, std::shared_ptr<Media::PixelMap> &pixelMap) override;
@@ -333,7 +332,7 @@ private:
 
     ErrCode SetCacheEnabledForRotation(bool isEnabled) override;
 
-    bool SetVirtualScreenStatus(ScreenId id, VirtualScreenStatus screenStatus) override;
+    ErrCode SetVirtualScreenStatus(ScreenId id, VirtualScreenStatus screenStatus, bool& success) override;
 
     std::vector<ActiveDirtyRegionInfo> GetActiveDirtyRegionInfo() override;
 
@@ -379,7 +378,7 @@ private:
     ErrCode SetOverlayDisplayMode(int32_t mode) override;
 #endif
 
-    void NotifyPageName(const std::string &packageName, const std::string &pageName, bool isEnter) override;
+    ErrCode NotifyPageName(const std::string &packageName, const std::string &pageName, bool isEnter) override;
 
     void TestLoadFileSubTreeToNode(NodeId nodeId, const std::string &filePath) override {};
 

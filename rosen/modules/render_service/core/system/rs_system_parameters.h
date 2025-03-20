@@ -74,7 +74,6 @@ public:
     static bool GetSolidLayerHwcEnabled();
     static bool GetControlBufferConsumeEnabled();
     static bool GetHideNotchStatus();
-    static bool GetUIFirstDmaBufferEnabled();
     static bool GetTcacheEnabled();
     static bool GetDumpCanvasDrawingNodeEnabled();
     static bool IsNeedScRGBForP3(const GraphicColorGamut& currentGamut);
@@ -84,6 +83,7 @@ public:
     static bool GetMultimediaEnableCameraRotationCompensation();
     static bool GetCanvasDrawingNodeRegionEnabled();
     static int32_t GetWindowScreenScanType();
+    static int32_t GetPurgeableResourceLimit();
     static bool GetAnimationOcclusionEnabled();
     static bool GetUIFirstPurgeEnabled();
     static bool GetUIFirstOcclusionEnabled();

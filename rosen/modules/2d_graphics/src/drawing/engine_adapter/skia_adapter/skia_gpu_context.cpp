@@ -95,6 +95,9 @@ bool SkiaGPUContext::BuildFromGL(const GPUContextOptions& options)
     grOptions.fAllowPathMaskCaching = options.GetAllowPathMaskCaching();
     grOptions.fPersistentCache = skiaPersistentCache_.get();
     grOptions.fExecutor = &g_defaultExecutor;
+#ifdef SKIA_OHOS
+    grOptions.clearSmallTexture = options.GetIsUniRender();
+#endif
     grContext_ = GrDirectContext::MakeGL(std::move(glInterface), grOptions);
     return grContext_ != nullptr ? true : false;
 }
@@ -189,6 +192,20 @@ void SkiaGPUContext::SetResourceCacheLimits(int maxResource, size_t maxResourceB
         return;
     }
     grContext_->setResourceCacheLimits(maxResource, maxResourceBytes);
+}
+
+void SkiaGPUContext::SetPurgeableResourceLimit(int purgeableMaxCount)
+{
+#ifdef SKIA_OHOS
+    if (!grContext_) {
+        LOGD("SkiaGPUContext::SetPurgeableResourceLimit, grContext_ is nullptr");
+        return;
+    }
+    grContext_->setPurgeableResourceLimit(purgeableMaxCount);
+#else
+    static_cast<void>(purgeableMaxCount);
+    LOGD("SkiaGPUContext::SetPurgeableResourceLimit, unsupported");
+#endif
 }
 
 void SkiaGPUContext::GetResourceCacheUsage(int* resourceCount, size_t* resourceBytes) const

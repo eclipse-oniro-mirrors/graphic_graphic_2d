@@ -830,4 +830,46 @@ HWTEST_F(RSDisplayRenderNodeTest, GetWindowContainer, TestSize.Level1)
     std::ignore = displayNode->GetWindowContainer();
     ASSERT_NE(displayNode, nullptr);
 }
+
+/**
+ * @tc.name: GetTargetSurfaceRenderNodeId
+ * @tc.desc: test results of Set/GetTargetSurfaceRenderNodeId
+ * @tc.type: FUNC
+ * @tc.require: issuesIBIK1X
+ */
+HWTEST_F(RSDisplayRenderNodeTest, GetTargetSurfaceRenderNodeId, TestSize.Level1)
+{
+    NodeId id = 1;
+    auto displayNode = std::make_shared<RSDisplayRenderNode>(id, config, context);
+    NodeId targetSurfaceRenderNodeId = 2;
+    displayNode->SetTargetSurfaceRenderNodeId(targetSurfaceRenderNodeId);
+    ASSERT_EQ(displayNode->GetTargetSurfaceRenderNodeId(), targetSurfaceRenderNodeId);
+}
+
+/**
+ * @tc.name: GetVirtualScreenMuteStatus
+ * @tc.desc: test results of GetVirtualScreenMuteStatus
+ * @tc.type: FUNC
+ * @tc.require: issuesIBTNC3
+ */
+HWTEST_F(RSDisplayRenderNodeTest, GetVirtualScreenMuteStatus, TestSize.Level1)
+{
+    auto displayNode = std::make_shared<RSDisplayRenderNode>(id, config, context);
+    ASSERT_NE(displayNode, nullptr);
+    ASSERT_FALSE(displayNode->GetVirtualScreenMuteStatus());
+}
+
+/**
+ * @tc.name: SetVirtualScreenMuteStatus
+ * @tc.desc: test results of SetVirtualScreenMuteStatus
+ * @tc.type: FUNC
+ * @tc.require: issuesIBTNC3
+ */
+HWTEST_F(RSDisplayRenderNodeTest, SetVirtualScreenMuteStatus, TestSize.Level1)
+{
+    auto displayNode = std::make_shared<RSDisplayRenderNode>(id, config, context);
+    ASSERT_NE(displayNode, nullptr);
+    displayNode->SetVirtualScreenMuteStatus(true);
+    ASSERT_TRUE(displayNode->GetVirtualScreenMuteStatus());
+}
 } // namespace OHOS::Rosen

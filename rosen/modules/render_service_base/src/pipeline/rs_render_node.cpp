@@ -1038,6 +1038,7 @@ void RSRenderNode::DumpSubClassNode(std::string& out) const
         auto displayNode = static_cast<const RSDisplayRenderNode*>(this);
         out += ", skipLayer: " + std::to_string(displayNode->GetSecurityDisplay());
         out += ", securityExemption: " + std::to_string(displayNode->GetSecurityExemption());
+        out += ", virtualScreenMuteStatus: " + std::to_string(displayNode->GetVirtualScreenMuteStatus());
     } else if (GetType() == RSRenderNodeType::CANVAS_NODE) {
         auto canvasNode = static_cast<const RSCanvasRenderNode*>(this);
         NodeId linkedRootNodeId = canvasNode->GetLinkedRootNodeId();
@@ -1167,6 +1168,13 @@ void RSRenderNode::CollectSurface(
 {
     for (auto& child : *node->GetSortedChildren()) {
         child->CollectSurface(child, vec, isUniRender, onlyFirstLevel);
+    }
+}
+
+void RSRenderNode::CollectSelfDrawingChild(const std::shared_ptr<RSRenderNode>& node, std::vector<NodeId>& vec)
+{
+    for (auto& child : *node->GetSortedChildren()) {
+        child->CollectSelfDrawingChild(child, vec);
     }
 }
 
@@ -4519,6 +4527,7 @@ void RSRenderNode::UpdateRenderParams()
     stagingRenderParams_->SetAlphaOffScreen(GetRenderProperties().GetAlphaOffscreen());
     stagingRenderParams_->SetForegroundFilterCache(GetRenderProperties().GetForegroundFilterCache());
     stagingRenderParams_->SetNeedFilter(GetRenderProperties().NeedFilter());
+    stagingRenderParams_->SetHDRBrightness(GetHDRBrightness());
     stagingRenderParams_->SetHasBlurFilter(HasBlurFilter());
     stagingRenderParams_->SetNodeType(GetType());
     stagingRenderParams_->SetEffectNodeShouldPaint(EffectNodeShouldPaint());

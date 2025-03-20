@@ -156,6 +156,16 @@ public:
         return screenRotation_;
     }
 
+    void SetVirtualScreenMuteStatus(bool virtualScreenMuteStatus)
+    {
+        virtualScreenMuteStatus_ = virtualScreenMuteStatus;
+    }
+
+    bool GetVirtualScreenMuteStatus() const
+    {
+        return virtualScreenMuteStatus_;
+    }
+
     void CollectSurface(
         const std::shared_ptr<RSBaseRenderNode>& node, std::vector<RSBaseRenderNode::SharedPtr>& vec,
         bool isUniRender, bool onlyFirstLevel) override;
@@ -339,7 +349,6 @@ public:
 
     void UpdateRotation();
     bool IsRotationChanged() const;
-    bool IsRotationFinished() const;
     bool IsLastRotationChanged() const {
         return lastRotationChanged_;
     }
@@ -573,6 +582,18 @@ public:
     void SetWindowContainer(std::shared_ptr<RSBaseRenderNode> container);
     std::shared_ptr<RSBaseRenderNode> GetWindowContainer() const;
 
+    void SetTargetSurfaceRenderNodeId(NodeId nodeId)
+    {
+        targetSurfaceRenderNodeId_ = nodeId;
+    }
+
+    NodeId GetTargetSurfaceRenderNodeId() const
+    {
+        return targetSurfaceRenderNodeId_;
+    }
+
+    void SetTargetSurfaceRenderNodeDrawable(DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr drawable);
+
 protected:
     void OnSync() override;
 private:
@@ -602,6 +623,7 @@ private:
     mutable bool isNeedWaitNewScbPid_ = false;
     bool curZoomState_ = false;
     bool preZoomState_ = false;
+    bool virtualScreenMuteStatus_ = false;
     CompositeType compositeType_ { HARDWARE_COMPOSITE };
     ScreenRotation screenRotation_ = ScreenRotation::ROTATION_0;
     ScreenRotation originScreenRotation_ = ScreenRotation::ROTATION_0;
@@ -664,6 +686,7 @@ private:
     RSBaseRenderNode::SharedPtr rcdSurfaceNodeTop_ = nullptr;
     RSBaseRenderNode::SharedPtr rcdSurfaceNodeBottom_ = nullptr;
 
+    NodeId targetSurfaceRenderNodeId_ = INVALID_NODEID;
     friend class DisplayNodeCommandHelper;
     static inline ScreenStatusNotifyTask screenStatusNotifyTask_ = nullptr;
 

@@ -252,6 +252,15 @@ PartialRenderType RSSystemProperties::GetUniPartialRenderEnabled()
     return static_cast<PartialRenderType>(ConvertToInt(enable, DEFAULT_UNI_PARTIAL_RENDER_ENABLED_VALUE));
 }
 
+StencilPixelOcclusionCullingType RSSystemProperties::GetStencilPixelOcclusionCullingEnabled()
+{
+    static CachedHandle g_Handle = CachedParameterCreate("rosen.stencilpixelocclusionculling.enabled", "-1");
+    int changed = 0;
+    const char *enable = CachedParameterGetChanged(g_Handle, &changed);
+    return static_cast<StencilPixelOcclusionCullingType>(ConvertToInt(enable,
+        static_cast<int>(StencilPixelOcclusionCullingType::DEFAULT)));
+}
+
 AdvancedDirtyRegionType RSSystemProperties::GetAdvancedDirtyRegionEnabled()
 {
     static CachedHandle g_Handle = CachedParameterCreate("rosen.advanceddirtyregion.enabled", "1");
@@ -805,6 +814,30 @@ bool RSSystemProperties::GetUIFirstEnabled()
     const char *enable = CachedParameterGetChanged(g_Handle, &changed);
     return ConvertToInt(enable, 1) != 0;
 #endif
+}
+
+bool RSSystemProperties::GetUIFirstOptScheduleEnabled()
+{
+    static CachedHandle g_Handle = CachedParameterCreate("rosen.ui.first.optSchedule.enabled", "1");
+    int changed = 0;
+    const char *enable = CachedParameterGetChanged(g_Handle, &changed);
+    return ConvertToInt(enable, 1) != 0;
+}
+
+bool RSSystemProperties::GetUIFirstDirtyEnabled()
+{
+    static CachedHandle g_Handle = CachedParameterCreate("rosen.ui.first.dirty.enabled", "1");
+    int changed = 0;
+    const char *enable = CachedParameterGetChanged(g_Handle, &changed);
+    return ConvertToInt(enable, 1) != 0;
+}
+
+bool RSSystemProperties::GetUIFirstDirtyDebugEnabled()
+{
+    static CachedHandle g_Handle = CachedParameterCreate("rosen.ui.first.dirty.dfx.enabled", "0");
+    int changed = 0;
+    const char *enable = CachedParameterGetChanged(g_Handle, &changed);
+    return ConvertToInt(enable, 1) != 0;
 }
 
 bool RSSystemProperties::GetSurfaceOffscreenEnadbled()

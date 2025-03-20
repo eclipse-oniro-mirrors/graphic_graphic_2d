@@ -268,8 +268,9 @@ void RSRenderNodeDrawableAdapter::DrawLeashWindowBackground(Drawing::Canvas& can
         return;
     }
     DrawRangeImpl(canvas, rect, 0, drawCmdIndex_.shadowIndex_);
-    // [planning] enable limited to shadow
+    canvas.SetStencilVal(stencilVal);
     DrawRangeImpl(canvas, rect, drawCmdIndex_.shadowIndex_, drawCmdIndex_.shadowIndex_ + 1);
+    canvas.SetStencilVal(Drawing::Canvas::INVALID_STENCIL_VAL);
     DrawRangeImpl(canvas, rect, drawCmdIndex_.shadowIndex_ + 1, drawCmdIndex_.backgroundEndIndex_);
 }
 
@@ -423,7 +424,7 @@ std::string RSRenderNodeDrawableAdapter::DumpDrawableVec(const std::shared_ptr<R
 bool RSRenderNodeDrawableAdapter::QuickReject(Drawing::Canvas& canvas, const RectF& localDrawRect)
 {
     auto paintFilterCanvas = static_cast<RSPaintFilterCanvas*>(&canvas);
-    if (paintFilterCanvas->IsDirtyRegionStackEmpty() || paintFilterCanvas->GetIsParallelCanvas()) {
+    if (paintFilterCanvas->IsDirtyRegionStackEmpty()) {
         return false;
     }
 

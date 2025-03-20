@@ -87,6 +87,8 @@ namespace {
         {"STYLUS_NO_LINK", STYLUS_NO_LINK},
         {"STYLUS_LINK_UNUSED", STYLUS_LINK_UNUSED},
         {"STYLUS_LINK_WRITE", STYLUS_LINK_WRITE}};
+    constexpr uint32_t FRAME_RATE_REPORT_MAX_RETRY_TIMES = 3;
+    constexpr uint32_t FRAME_RATE_REPORT_DELAY_TIME = 20000;
 }
 
 HgmFrameRateManager::HgmFrameRateManager()
@@ -154,6 +156,7 @@ void HgmFrameRateManager::Init(sptr<VSyncController> rsController,
         std::string strategy, const bool isAddVoter) {
         ProcessPageUrlVote(pid, strategy, isAddVoter);
     });
+    FrameRateReportTask(FRAME_RATE_REPORT_MAX_RETRY_TIMES);
 }
 
 void HgmFrameRateManager::RegisterCoreCallbacksAndInitController(sptr<VSyncController> rsController,
@@ -1125,7 +1128,7 @@ void HgmFrameRateManager::UpdateScreenFrameRate()
     }
 
     if (!IsCurrentScreenSupportAS()) {
-        isAdaptive_.store(false);
+        isAdaptive_.store(SupportASStatus::NOT_SUPPORT);
     }
 }
 
@@ -1209,6 +1212,7 @@ void HgmFrameRateManager::HandleVirtualDisplayEvent(pid_t pid, EventInfo eventIn
 void HgmFrameRateManager::HandleGamesEvent(pid_t pid, EventInfo eventInfo)
 {
     if (!eventInfo.eventStatus) {
+        isGameSupportAS_ = SupportASStatus::NOT_SUPPORT;
         DeliverRefreshRateVote({"VOTER_GAMES"}, false);
         return;
     }
@@ -1225,7 +1229,7 @@ void HgmFrameRateManager::HandleGamesEvent(pid_t pid, EventInfo eventInfo)
         isGameSupportAS_ = config.supportAS;
         SetGameNodeName(multiAppStrategy_.GetGameNodeName(pkgName));
     } else {
-        isGameSupportAS_ = false;
+        isGameSupportAS_ = SupportASStatus::NOT_SUPPORT;
         SetGameNodeName("");
     }
     DeliverRefreshRateVote(
@@ -1273,7 +1277,7 @@ void HgmFrameRateManager::MarkVoteChange(const std::string& voter)
     bool needChangeDssRefreshRate = currRefreshRate_.load() != refreshRate;
     RS_TRACE_NAME_FMT("MarkVoteChange: %d %d", currRefreshRate_.load(), refreshRate);
     currRefreshRate_.store(refreshRate);
-    schedulePreferredFpsChange_ = true;
+    schedulePreferredFpsChange_ = needChangeDssRefreshRate;
     FrameRateReport();
 
     bool frameRateChanged = false;
@@ -1449,6 +1453,12 @@ bool HgmFrameRateManager::IsCurrentScreenSupportAS()
 void HgmFrameRateManager::ProcessAdaptiveSync(const std::string& voterName)
 {
     bool isAdaptiveSyncEnabled = HgmCore::Instance().GetAdaptiveSyncEnabled();
+
+    if (isGameSupportAS_ != SupportASStatus::SUPPORT_AS) {
+        isAdaptive_.store(isGameSupportAS_);
+        return;
+    }
+
     if (!isAdaptiveSyncEnabled) {
         return;
     }
@@ -1456,11 +1466,12 @@ void HgmFrameRateManager::ProcessAdaptiveSync(const std::string& voterName)
     // VOTER_GAMES wins, enter adaptive vsync mode
     bool isGameVoter = voterName == "VOTER_GAMES";
 
-    if (isAdaptive_.load() == isGameVoter) {
+    if ((isAdaptive_.load() == SupportASStatus::SUPPORT_AS && isGameVoter) ||
+        (isAdaptive_.load() == SupportASStatus::NOT_SUPPORT && !isGameVoter)) {
         return;
     }
 
-    if (isGameVoter && !isGameSupportAS_) {
+    if (isGameVoter && isGameSupportAS_ != SupportASStatus::SUPPORT_AS) {
         HGM_LOGI("this game does not support adaptive sync mode");
         return;
     }
@@ -1472,7 +1483,8 @@ void HgmFrameRateManager::ProcessAdaptiveSync(const std::string& voterName)
 
     HGM_LOGI("ProcessHgmFrameRate RSAdaptiveVsync change mode");
     RS_TRACE_BEGIN("ProcessHgmFrameRate RSAdaptiveVsync change mode");
-    isAdaptive_.store(!isAdaptive_.load());
+    isAdaptive_.load() == SupportASStatus::NOT_SUPPORT ? isAdaptive_.store(SupportASStatus::SUPPORT_AS) :
+        isAdaptive_.store(SupportASStatus::NOT_SUPPORT);
     RS_TRACE_END();
 }
 
@@ -1886,6 +1898,22 @@ void HgmFrameRateManager::CheckRefreshRateChange(bool followRs, bool frameRateCh
             changeDssRefreshRateCb_(curScreenId_.load(), refreshRate, true);
         }
     }
+}
+
+void HgmFrameRateManager::FrameRateReportTask(uint32_t leftRetryTimes)
+{
+    HgmTaskHandleThread::Instance().PostTask([this, leftRetryTimes] () {
+            HGM_LOGI("FrameRateReportTask left retry: %{public}d", leftRetryTimes);
+            if (leftRetryTimes == 1 || system::GetBoolParameter("bootevent.boot.completed", false)) {
+                HGM_LOGI("FrameRateReportTask run.");
+                schedulePreferredFpsChange_ = true;
+                FrameRateReport();
+                return;
+            }
+            if (leftRetryTimes > 1) {
+                FrameRateReportTask(leftRetryTimes - 1);
+            }
+        }, FRAME_RATE_REPORT_DELAY_TIME);
 }
 } // namespace Rosen
 } // namespace OHOS

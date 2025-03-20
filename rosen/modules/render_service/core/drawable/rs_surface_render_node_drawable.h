@@ -57,7 +57,6 @@ public:
     void ResetVirtualScreenWhiteListRootId(NodeId id);
 
     void SubDraw(Drawing::Canvas& canvas);
-    void ClipRoundRect(Drawing::Canvas& canvas);
 
     void UpdateCacheSurface();
     void SetCacheSurfaceProcessedStatus(CacheProcessStatus cacheProcessStatus);
@@ -67,23 +66,6 @@ public:
     {
         return name_;
     }
-
-    // Dma Buffer
-    bool UseDmaBuffer();
-
-    bool IsSurfaceCreated() const
-    {
-        return surfaceCreated_;
-    }
-
-    void ClearBufferQueue();
-
-#ifndef ROSEN_CROSS_PLATFORM
-    bool CreateSurface();
-#endif
-    BufferRequestConfig GetFrameBufferRequestConfig();
-    std::unique_ptr<RSRenderFrame> RequestFrame(
-        RenderContext* renderContext, std::shared_ptr<Drawing::GPUContext> grContext);
 
     // UIFirst
     void SetSubmittedSubThreadIndex(uint32_t index)
@@ -211,6 +193,14 @@ public:
     {
         return isSubThreadSkip_;
     }
+
+    void ProcessSurfaceSkipCount();
+    void ResetSurfaceSkipCount();
+    int32_t GetSurfaceSkipCount() const;
+    int32_t GetSurfaceSkipPriority();
+    bool IsHighPostPriority();
+    void SetHighPostPriority(bool postPriority);
+
     void SetTaskFrameCount(uint64_t frameCount);
 
     uint64_t GetTaskFrameCount() const;
@@ -223,6 +213,21 @@ public:
     void SetDirtyRegionAlignedEnable(bool enable);
     void SetDirtyRegionBelowCurrentLayer(Occlusion::Region& region);
     std::shared_ptr<RSDirtyRegionManager> GetSyncDirtyManager() const override;
+
+    // uifirst dirtyRegion
+    std::shared_ptr<RSDirtyRegionManager> GetSyncUifirstDirtyManager() const;
+    void UpdateCacheSurfaceDirtyManager(bool hasCompleteCache, int bufferAge = 1); // 1 means buffer age
+    void UpdateUifirstDirtyManager() override;
+    void SetUifirstDirtyRegion(Drawing::Region dirtyRegion);
+    Drawing::Region GetUifirstDirtyRegion() const;
+    Drawing::RectI CalculateUifirstDirtyRegion(bool dirtyEnableFlag);
+    Drawing::RectI MergeUifirstAllSurfaceDirtyRegion(bool dirtyEnableFlag);
+    void SetUifrstDirtyEnableFlag(bool dirtyEnableFlag);
+    bool GetUifrstDirtyEnableFlag() const;
+    void PushDirtyRegionToStack(RSPaintFilterCanvas& canvas, Drawing::Region& resultRegion);
+    bool IsCacheValid() const;
+    void UifirstDirtyRegionDfx(Drawing::Canvas& canvas, Drawing::RectI& surfaceDrawRect);
+
     GraphicColorGamut GetAncestorDisplayColorGamut(const RSSurfaceRenderParams& surfaceParams);
     void DealWithSelfDrawingNodeBuffer(RSPaintFilterCanvas& canvas, RSSurfaceRenderParams& surfaceParams);
     void ClearCacheSurfaceOnly();
@@ -244,10 +249,6 @@ public:
     uint32_t GetUifirstPostOrder() const;
     void SetUifirstPostOrder(uint32_t order);
 
-    std::shared_ptr<RSSurfaceHandler> GetMutableRSSurfaceHandlerUiFirstOnDraw()
-    {
-        return surfaceHandlerUiFirst_;
-    }
 #ifndef ROSEN_CROSS_PLATFORM
     sptr<IConsumerSurface> GetConsumerOnDraw() const
     {
@@ -310,6 +311,8 @@ private:
 
     bool RecordTimestamp(NodeId id, uint32_t seqNum);
 
+    bool DrawCacheImageForMultiScreenView(RSPaintFilterCanvas& canvas, const RSSurfaceRenderParams& surfaceParams);
+
     void ClipHoleForSelfDrawingNode(RSPaintFilterCanvas& canvas, RSSurfaceRenderParams& surfaceParams);
     void DrawBufferForRotationFixed(RSPaintFilterCanvas& canvas, RSSurfaceRenderParams& surfaceParams);
 
@@ -323,7 +326,8 @@ private:
     bool uiExtensionNeedToDraw_ = false;
 
     // UIFIRST
-    std::shared_ptr<RSSurfaceHandler> surfaceHandlerUiFirst_ = nullptr;
+    bool isCacheValid_ = false;
+    bool isCacheCompletedValid_ = false;
     UIFirstParams uiFirstParams;
     ClearCacheSurfaceFunc clearCacheSurfaceFunc_ = nullptr;
     uint32_t cacheSurfaceThreadIndex_ = UNI_MAIN_THREAD_INDEX;
@@ -355,6 +359,9 @@ private:
     ScreenId screenId_ = INVALID_SCREEN_ID;
     uint64_t frameCount_ = 0;
     bool isSubThreadSkip_ = false;
+    int32_t isSurfaceSkipCount_ = 0;
+    int32_t isSurfaceSkipPriority_ = 0;
+    bool isHighPostPriority_ = false;
 
     RSPaintFilterCanvas* curCanvas_ = nullptr;
     std::shared_ptr<Drawing::Surface> offscreenSurface_ = nullptr; // temporary holds offscreen surface
@@ -371,10 +378,13 @@ private:
 
     // dirty manager
     std::shared_ptr<RSDirtyRegionManager> syncDirtyManager_ = nullptr;
+    std::shared_ptr<RSDirtyRegionManager> syncUifirstDirtyManager_ = nullptr;
     Occlusion::Region visibleDirtyRegion_;
     Occlusion::Region alignedVisibleDirtyRegion_;
     bool isDirtyRegionAlignedEnable_ = false;
     Occlusion::Region globalDirtyRegion_;
+    Drawing::Region uifirstDirtyRegion_;
+    bool uifrstDirtyEnableFlag_ = false;
 
     // if a there a dirty layer under transparent clean layer, transparent layer should refreshed
     Occlusion::Region dirtyRegionBelowCurrentLayer_;

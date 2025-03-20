@@ -408,7 +408,8 @@ public:
 
     bool GetNeedOffscreen() const
     {
-        return RSSystemProperties::GetSurfaceOffscreenEnadbled() ? needOffscreen_ : false;
+        return (RSSystemProperties::GetSurfaceOffscreenEnadbled() &&
+                !RSSystemProperties::IsPcType()) ? needOffscreen_ : false;
     }
 
     void SetLayerCreated(bool layerCreated) override
@@ -637,11 +638,10 @@ public:
         return IsUnobscuredUIExtension_;
     }
 
-    void MarkSurfaceCapturePipeline()
+    DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr GetSourceDisplayRenderNodeDrawable() const
     {
-        isSurfaceCapturePipeline_ = true;
+        return sourceDisplayRenderNodeDrawable_;
     }
-
 protected:
 private:
     bool isMainWindowType_ = false;
@@ -652,6 +652,7 @@ private:
     RSRenderNode::WeakPtr ancestorDisplayNode_;
     DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr ancestorDisplayDrawable_;
     DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr clonedNodeRenderDrawable_;
+    DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr sourceDisplayRenderNodeDrawable_;
 
     float alpha_ = 0;
     bool isClonedNodeOnTheTree_ = false;
@@ -752,8 +753,6 @@ private:
     std::unordered_map<NodeId, Drawing::Matrix> crossNodeSkipDisplayConversionMatrices_ = {};
 
     uint32_t apiCompatibleVersion_ = 0;
-
-    bool isSurfaceCapturePipeline_ = false;
 
     friend class RSSurfaceRenderNode;
     friend class RSUniRenderProcessor;

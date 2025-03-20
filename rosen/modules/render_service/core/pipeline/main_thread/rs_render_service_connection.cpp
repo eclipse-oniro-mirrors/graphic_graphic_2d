@@ -33,6 +33,7 @@
 #include "common/rs_background_thread.h"
 #include "display_engine/rs_luminance_control.h"
 #include "drawable/rs_canvas_drawing_render_node_drawable.h"
+#include "feature/capture/rs_ui_capture.h"
 #include "feature/capture/rs_uni_ui_capture.h"
 #include "feature/capture/rs_surface_capture_task.h"
 #include "feature/capture/rs_ui_capture_task_parallel.h"
@@ -547,44 +548,47 @@ sptr<IVSyncConnection> RSRenderServiceConnection::CreateVSyncConnection(const st
 }
 
 ErrCode RSRenderServiceConnection::GetPixelMapByProcessId(
-    std::vector<std::shared_ptr<Media::PixelMap>>& pixelMapVector, pid_t pid, int32_t& repCode)
+    std::vector<PixelMapInfo>& pixelMapInfoVector, pid_t pid, int32_t& repCode)
 {
     if (mainThread_ == nullptr) {
         repCode = INVALID_ARGUMENTS;
         return ERR_INVALID_VALUE;
     }
-    std::vector<sptr<SurfaceBuffer>> surfaceBufferVector;
+    std::vector<std::tuple<sptr<SurfaceBuffer>, std::string, RectI>> sfBufferInfoVector;
     std::function<void()> getSurfaceBufferByPidTask = [weakThis = wptr<RSRenderServiceConnection>(this),
-                                                          &pixelMapVector, &surfaceBufferVector, pid]() -> void {
+                                                          &sfBufferInfoVector, pid]() -> void {
         sptr<RSRenderServiceConnection> connection = weakThis.promote();
         if (connection == nullptr || connection->mainThread_ == nullptr) {
             return;
         }
-        auto selfDrawingNodeMap =
+        auto selfDrawingNodeVector =
             connection->mainThread_->GetContext().GetMutableNodeMap().GetSelfDrawingNodeInProcess(pid);
-        for (auto iter = selfDrawingNodeMap.begin(); iter != selfDrawingNodeMap.end(); ++iter) {
-            auto surfaceNode = iter->second;
-            if (surfaceNode) {
+        for (auto iter = selfDrawingNodeVector.rbegin(); iter != selfDrawingNodeVector.rend(); ++iter) {
+            auto node = RSMainThread::Instance()->GetContext().GetNodeMap().GetRenderNode(*iter);
+            if (auto surfaceNode = node->ReinterpretCastTo<RSSurfaceRenderNode>()) {
                 auto surfaceBuffer = surfaceNode->GetRSSurfaceHandler()->GetBuffer();
-                surfaceBufferVector.push_back(surfaceBuffer);
+                auto surfaceBufferInfo = std::make_tuple(surfaceBuffer, surfaceNode->GetName(),
+                    surfaceNode->GetRenderProperties().GetBoundsGeometry()->GetAbsRect());
+                sfBufferInfoVector.push_back(surfaceBufferInfo);
             }
         }
     };
     mainThread_->PostSyncTask(getSurfaceBufferByPidTask);
 
-    for (const auto &surfaceBuffer : surfaceBufferVector) {
+    for (uint32_t i = 0; i < sfBufferInfoVector.size(); i++) {
+        auto surfaceBuffer = std::get<0>(sfBufferInfoVector[i]);
         if (surfaceBuffer) {
-            OHOS::Media::Rect rect = {
-                .left = 0,
-                .top = 0,
-                .width = surfaceBuffer->GetWidth(),
-                .height = surfaceBuffer->GetHeight(),
-            };
+            OHOS::Media::Rect rect = {0, 0, surfaceBuffer->GetWidth(), surfaceBuffer->GetHeight()};
             std::shared_ptr<Media::PixelMap> pixelmap = nullptr;
             RSBackgroundThread::Instance().PostSyncTask([&surfaceBuffer, rect, &pixelmap]() {
                 pixelmap = OHOS::Rosen::CreatePixelMapFromSurfaceBuffer(surfaceBuffer, rect);
             });
-            pixelMapVector.push_back(pixelmap);
+            PixelMapInfo info;
+            info.pixelMap = pixelmap;
+            RectI absRect = std::get<2>(sfBufferInfoVector[i]);
+            info.location = {absRect.GetLeft(), absRect.GetTop(), absRect.GetWidth(), absRect.GetHeight(), i};
+            info.nodeName = std::get<1>(sfBufferInfoVector[i]);
+            pixelMapInfoVector.push_back(info);
         } else {
             RS_LOGE("RSRenderServiceConnection::CreatePixelMapFromSurface surfaceBuffer is null");
         }
@@ -1291,7 +1295,9 @@ void RSRenderServiceConnection::TakeSelfSurfaceCapture(
         RS_LOGE("%{public}s mainThread_ is nullptr", __func__);
         return;
     }
-    std::function<void()> selfCaptureTask = [id, callback, captureConfig]() -> void {
+    bool isSystemCalling = RSInterfaceCodeAccessVerifierBase::IsSystemCalling(
+        RSIRenderServiceConnectionInterfaceCodeAccessVerifier::codeEnumTypeName_ + "::TAKE_SELF_SURFACE_CAPTURE");
+    std::function<void()> selfCaptureTask = [id, callback, captureConfig, isSystemCalling]() -> void {
         auto node = RSMainThread::Instance()->GetContext().GetNodeMap().GetRenderNode(id);
         if (node == nullptr) {
             RS_LOGE("RSRenderServiceConnection::TakeSelfSurfaceCapture failed, node is nullptr");
@@ -1300,9 +1306,6 @@ void RSRenderServiceConnection::TakeSelfSurfaceCapture(
             }
             return;
         }
-        bool isSystemCalling = RSInterfaceCodeAccessVerifierBase::IsSystemCalling(
-            RSIRenderServiceConnectionInterfaceCodeAccessVerifier::codeEnumTypeName_ +
-            "::TAKE_SELF_SURFACE_CAPTURE");
         RSSurfaceCaptureParam captureParam;
         captureParam.id = id;
         captureParam.config = captureConfig;
@@ -2792,14 +2795,17 @@ int32_t RSRenderServiceConnection::RegisterUIExtensionCallback(uint64_t userId, 
     return StatusCode::SUCCESS;
 }
 
-bool RSRenderServiceConnection::SetVirtualScreenStatus(ScreenId id, VirtualScreenStatus screenStatus)
+ErrCode RSRenderServiceConnection::SetVirtualScreenStatus(ScreenId id,
+    VirtualScreenStatus screenStatus, bool& success)
 {
     if (!screenManager_) {
+        success = false;
         return StatusCode::SCREEN_NOT_FOUND;
     }
     RS_LOGD("RSRenderServiceConnection::SetVirtualScreenStatus ScreenId:%{public}" PRIu64 " screenStatus:%{public}d",
         id, screenStatus);
-    return screenManager_->SetVirtualScreenStatus(id, screenStatus);
+    success = screenManager_->SetVirtualScreenStatus(id, screenStatus);
+    return StatusCode::SUCCESS;
 }
 
 ErrCode RSRenderServiceConnection::SetAncoForceDoDirect(bool direct, bool& res)
@@ -2936,7 +2942,7 @@ ErrCode RSRenderServiceConnection::SetOverlayDisplayMode(int32_t mode)
 }
 #endif
 
-void RSRenderServiceConnection::NotifyPageName(const std::string &packageName,
+ErrCode RSRenderServiceConnection::NotifyPageName(const std::string &packageName,
     const std::string &pageName, bool isEnter)
 {
     HgmTaskHandleThread::Instance().PostTask([pid = remotePid_, packageName, pageName, isEnter]() {
@@ -2945,6 +2951,7 @@ void RSRenderServiceConnection::NotifyPageName(const std::string &packageName,
             frameRateMgr->NotifyPageName(pid, packageName, pageName, isEnter);
         }
     });
+    return StatusCode::SUCCESS;
 }
 } // namespace Rosen
 } // namespace OHOS
