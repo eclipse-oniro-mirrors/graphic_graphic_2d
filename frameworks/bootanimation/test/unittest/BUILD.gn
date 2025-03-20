@@ -62,6 +62,7 @@ ohos_unittest("bootanimation_test") {
     "cJSON:cjson_static",
     "c_utils:utils",
     "config_policy:configpolicy_util",
+    "hitrace:hitrace_meter",
     "init:libbegetutil",
     "zlib:libz",
   ]
@@ -85,7 +86,6 @@ config("bootanimation_test_config") {
   include_dirs = [
     "$graphic_2d_root/frameworks/bootanimation/include",
     "$graphic_2d_root/interfaces/inner_api/bootanimation",
-    "//third_party/cJSON",
   ]
 
   cflags = [
