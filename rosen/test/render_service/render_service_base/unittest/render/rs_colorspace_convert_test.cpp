@@ -310,6 +310,7 @@ HWTEST_F(RSColorspaceConvertTest, ColorSpaceConvertor004, TestSize.Level1)
     GraphicColorGamut targetColorSpace = GRAPHIC_COLOR_GAMUT_DISPLAY_P3;
     ScreenId screenId = 0;
     uint32_t dynamicRangeMode = 1;
+    float hdrBrightness = 1.0f;
     Drawing::Paint paint;
 
     EXPECT_CALL(*mockRSColorspaceConvert, SetColorSpaceConverterDisplayParameter(_, _, _, _, _, _))
@@ -324,7 +325,7 @@ HWTEST_F(RSColorspaceConvertTest, ColorSpaceConvertor004, TestSize.Level1)
     ASSERT_TRUE(imageShader != nullptr);
 
     bool ret = mockRSColorspaceConvert->ColorSpaceConvertor(imageShader, surfaceBuffer, paint,
-        targetColorSpace, screenId, dynamicRangeMode);
+        targetColorSpace, screenId, dynamicRangeMode, hdrBrightness);
     ASSERT_TRUE(ret == false);
 }
 
@@ -339,13 +340,14 @@ HWTEST_F(RSColorspaceConvertTest, SetColorSpaceConverterDisplayParameter001, Tes
     GraphicColorGamut targetColorSpace = GRAPHIC_COLOR_GAMUT_DISPLAY_P3;
     ScreenId screenId = 0;
     uint32_t dynamicRangeMode = 1;
+    float hdrBrightness = 1.0f;
 
     sptr<SurfaceBuffer> surfaceBuffer = SurfaceBuffer::Create().GetRefPtr();
     ASSERT_TRUE(surfaceBuffer != nullptr);
     VPEParameter parameter;
 
     bool ret = RSColorSpaceConvert::Instance().SetColorSpaceConverterDisplayParameter(surfaceBuffer, parameter,
-        targetColorSpace, screenId, dynamicRangeMode);
+        targetColorSpace, screenId, dynamicRangeMode, hdrBrightness);
     ASSERT_TRUE(ret == false);
 }
 
@@ -360,12 +362,13 @@ HWTEST_F(RSColorspaceConvertTest, SetColorSpaceConverterDisplayParameter002, Tes
     GraphicColorGamut targetColorSpace = GRAPHIC_COLOR_GAMUT_DISPLAY_P3;
     ScreenId screenId = 0;
     uint32_t dynamicRangeMode = 1;
+    float hdrBrightness = 1.0f;
 
     sptr<SurfaceBuffer> surfaceBuffer;
     VPEParameter parameter;
 
     bool ret = RSColorSpaceConvert::Instance().SetColorSpaceConverterDisplayParameter(nullptr, parameter,
-        targetColorSpace, screenId, dynamicRangeMode);
+        targetColorSpace, screenId, dynamicRangeMode, hdrBrightness);
     ASSERT_TRUE(ret == false);
 }
 

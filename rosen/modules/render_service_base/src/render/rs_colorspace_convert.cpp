@@ -86,7 +86,7 @@ bool RSColorSpaceConvert::ColorSpaceConvertor(std::shared_ptr<Drawing::ShaderEff
 {
     RS_LOGD("RSColorSpaceConvertor HDRDraw targetColorSpace: %{public}d, screenId: %{public}" PRIu64 ""
         ", dynamicRangeMode: %{public}u, hdrBrightness: %{public}f",
-        targetColorSpace, screenId, dynamicRangeMode);
+        targetColorSpace, screenId, dynamicRangeMode, hdrBrightness);
     RS_TRACE_NAME_FMT("RSColorSpaceConvertor HDRDraw targetColorSpace: %d, screenId: %" PRIu64 ""
         ", dynamicRangeMode: %u, hdrBrightness: %f", targetColorSpace, screenId, dynamicRangeMode, hdrBrightness);
     VPEParameter parameter;
