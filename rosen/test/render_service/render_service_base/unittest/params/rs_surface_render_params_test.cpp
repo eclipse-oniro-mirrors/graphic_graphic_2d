@@ -15,6 +15,7 @@
 
 #include "gtest/gtest.h"
 #include "params/rs_surface_render_params.h"
+#include "pipeline/rs_display_render_node.h"
 #include "limit_number.h"
 
 using namespace testing;
@@ -455,6 +456,20 @@ HWTEST_F(RSSurfaceRenderParamsTest, LayerLinearMatrixTest, TestSize.Level1)
 }
 
 /**
+ * @tc.name: GetSourceDisplayRenderNodeDrawable
+ * @tc.desc: Test function GetSourceDisplayRenderNodeDrawable
+ * @tc.type:FUNC
+ * @tc.require: issueIBKU7U
+ */
+HWTEST_F(RSSurfaceRenderParamsTest, GetSourceDisplayRenderNodeDrawable, TestSize.Level1)
+{
+    constexpr NodeId id = 124;
+    RSSurfaceRenderParams params(id);
+    params.sourceDisplayRenderNodeDrawable_ = std::weak_ptr<DrawableV2::RSRenderNodeDrawableAdapter>();
+    EXPECT_TRUE(params.GetSourceDisplayRenderNodeDrawable().expired());
+}
+
+/**
  * @tc.name: SetOffsetX
  * @tc.desc:
  * @tc.type:FUNC
@@ -462,7 +477,7 @@ HWTEST_F(RSSurfaceRenderParamsTest, LayerLinearMatrixTest, TestSize.Level1)
  */
 HWTEST_F(RSSurfaceRenderParamsTest, SetOffsetX, TestSize.Level1)
 {
-    RSSurfaceRenderParams params(124);
+    RSSurfaceRenderParams params(125);
     params.SetOffsetX(1);
     EXPECT_EQ(params.GetOffsetX(), 1);
 }
@@ -475,7 +490,7 @@ HWTEST_F(RSSurfaceRenderParamsTest, SetOffsetX, TestSize.Level1)
  */
 HWTEST_F(RSSurfaceRenderParamsTest, SetOffsetY, TestSize.Level1)
 {
-    RSSurfaceRenderParams params(125);
+    RSSurfaceRenderParams params(126);
     params.SetOffsetY(1);
     EXPECT_EQ(params.GetOffsetY(), 1);
 }
@@ -488,7 +503,7 @@ HWTEST_F(RSSurfaceRenderParamsTest, SetOffsetY, TestSize.Level1)
  */
 HWTEST_F(RSSurfaceRenderParamsTest, SetRogWidthRatio, TestSize.Level1)
 {
-    RSSurfaceRenderParams params(126);
+    RSSurfaceRenderParams params(127);
     params.SetRogWidthRatio(1.0);
     EXPECT_EQ(params.GetRogWidthRatio(), 1.0);
 }

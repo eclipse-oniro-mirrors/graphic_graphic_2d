@@ -2339,6 +2339,9 @@ void RSSurfaceRenderNode::CheckAndUpdateOpaqueRegion(const RectI& screeninfo, co
     auto boundsGeometry = GetRenderProperties().GetBoundsGeometry();
     if (boundsGeometry) {
         absRect = absRect.IntersectRect(boundsGeometry->GetAbsRect());
+        auto absChildrenRectF = boundsGeometry->MapRectWithoutRounding(GetChildrenRect().ConvertTo<float>(),
+            boundsGeometry->GetAbsMatrix());
+        absRect = absRect.IntersectRect(boundsGeometry->DeflateToRectI(absChildrenRectF));
         const auto& absMatrix = boundsGeometry->GetAbsMatrix();
         auto rotationDegree = static_cast<int>(-round(atan2(absMatrix.Get(Drawing::Matrix::SKEW_X),
             absMatrix.Get(Drawing::Matrix::SCALE_X)) * (RS_ROTATION_180 / PI)));
@@ -3048,6 +3051,20 @@ void RSSurfaceRenderNode::SetClonedNodeRenderDrawable(
     AddToPendingSyncList();
 }
 
+void RSSurfaceRenderNode::SetSourceDisplayRenderNodeDrawable(
+    DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr drawable)
+{
+    auto stagingSurfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
+    if (stagingSurfaceParams == nullptr) {
+        RS_LOGE("RSSurfaceRenderNode::SetSourceDisplayRenderNodeDrawable stagingSurfaceParams is null");
+        return;
+    }
+    // CacheImg does not support UIFirst, clost UIFirst
+    SetUIFirstSwitch(RSUIFirstSwitch::FORCE_DISABLE);
+    stagingSurfaceParams->sourceDisplayRenderNodeDrawable_ = drawable;
+    AddToPendingSyncList();
+}
+
 void RSSurfaceRenderNode::UpdateAncestorDisplayNodeInRenderParams()
 {
 #ifdef RS_ENABLE_GPU
@@ -3349,6 +3366,7 @@ void RSSurfaceRenderNode::CalDrawBehindWindowRegion()
     auto context = GetContext().lock();
     if (!context) {
         RS_LOGE("RSSurfaceRenderNode::CalDrawBehindWindowRegion, invalid context");
+        return;
     }
     RectI region;
     auto geoPtr = GetMutableRenderProperties().GetBoundsGeometry();
