@@ -660,7 +660,6 @@ void RSMainThread::Init()
 #endif
     }
 #endif
-    GraphicFeatureParamManager::GetInstance().GetFeatureParam(FEATURE_CONFIGS[ACCESSIBILITY]);
 
 #if defined(ACCESSIBILITY_ENABLE)
     accessibilityObserver_ = std::make_shared<AccessibilityObserver>();
