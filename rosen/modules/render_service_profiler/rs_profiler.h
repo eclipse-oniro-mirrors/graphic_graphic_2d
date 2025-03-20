@@ -512,9 +512,6 @@ private:
     RSB_EXPORT static std::atomic_bool dcnRedraw_;
     RSB_EXPORT static std::atomic_bool recordAbortRequested_;
 
-    RSB_EXPORT static RSContext* context_;
-    RSB_EXPORT static RSMainThread* mainThread_;
-
     RSB_EXPORT static std::vector<std::shared_ptr<RSRenderNode>> testTree_;
     friend class TestTreeBuilder;
 };
