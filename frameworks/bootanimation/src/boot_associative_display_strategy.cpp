@@ -17,9 +17,15 @@
 
 #include "log.h"
 #include "transaction/rs_interfaces.h"
-#include 
+#include <parameters.h>
 
 using namespace OHOS;
+
+namespace {
+    const bool IS_COORDINATION_SUPPORT =
+    system::GetBoolParameter("const.window.foldabledevice.is_coordination_support", false);
+    const std::string FOLD_SCREEN_TYPE = system::GetParameter("const.window.foldscreen.type", "");
+}
 
 void BootAssociativeDisplayStrategy::Display(int32_t duration, std::vector<BootAnimationConfig>& configs)
 {
@@ -38,7 +44,9 @@ void BootAssociativeDisplayStrategy::Display(int32_t duration, std::vector<BootA
     Rosen::ScreenId defaultId = interface.GetDefaultScreenId();
     Rosen::ScreenId activeId = interface.GetActiveScreenId();
     LOGI("defaultId: " BPUBU64 ", activeId: " BPUBU64 "", defaultId, activeId);
-    if (defaultId != activeId) {
+    bool isSupportCoordination = IsSupportCoordination();
+    LOGI("isSupportCoordination = %{public}d", isSupportCoordination);
+    if (defaultId != activeId && isSupportCoordination) {
         LOGD("SetScreenPowerStatus POWER_STATUS_OFF_FAKE: " BPUBU64 "", defaultId);
         interface.SetScreenPowerStatus(defaultId, Rosen::ScreenPowerStatus::POWER_STATUS_OFF_FAKE);
         LOGD("SetScreenPowerStatus POWER_STATUS_ON: " BPUBU64 "", activeId);
