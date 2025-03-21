@@ -1786,7 +1786,7 @@ bool RSUniRenderVisitor::AfterUpdateSurfaceDirtyCalc(RSSurfaceRenderNode& node)
     // 3. Update HwcNode Info for appNode
     UpdateHwcNodeInfoForAppNode(node);
     if (node.IsHardwareEnabledTopSurface()) {
-        UpdateSrcRect(node, geoPtr->GetAbsMatrix(), geoPtr->GetAbsRect());
+        UpdateSrcRect(node, geoPtr->GetAbsMatrix());
     }
     // 4. Update color gamut for appNode
     if (ColorGamutParam::IsCoveredSurfaceCloseP3() || !node.GetVisibleRegion().IsEmpty() || !GetIsOpDropped()) {
@@ -1877,7 +1877,7 @@ void RSUniRenderVisitor::UpdateHwcNodeInfoForAppNode(RSSurfaceRenderNode& node)
         if (geo == nullptr) {
             return;
         }
-        UpdateSrcRect(node, geo->GetAbsMatrix(), geo->GetAbsRect());
+        UpdateSrcRect(node, geo->GetAbsMatrix());
         UpdateHwcNodeByTransform(node, geo->GetAbsMatrix());
         UpdateHwcNodeEnableByBackgroundAlpha(node);
         UpdateHwcNodeEnableByBufferSize(node);
@@ -1885,19 +1885,51 @@ void RSUniRenderVisitor::UpdateHwcNodeInfoForAppNode(RSSurfaceRenderNode& node)
     }
 }
 
-void RSUniRenderVisitor::UpdateSrcRect(RSSurfaceRenderNode& node,
-    const Drawing::Matrix& absMatrix, const RectI& absRect)
+void RSUniRenderVisitor::UpdateSrcRect(RSSurfaceRenderNode& node, const Drawing::Matrix& totalMatrix)
 {
-    auto canvas = std::make_unique<Rosen::Drawing::Canvas>(screenInfo_.phyWidth, screenInfo_.phyHeight);
-    canvas->ConcatMatrix(absMatrix);
-
-    const auto& dstRect = node.GetDstRect();
-    Drawing::RectI dst = { std::round(dstRect.GetLeft()), std::round(dstRect.GetTop()), std::round(dstRect.GetRight()),
-                           std::round(dstRect.GetBottom()) };
-    node.UpdateSrcRect(*canvas.get(), dst);
-    if (node.GetRSSurfaceHandler() && node.GetRSSurfaceHandler()->GetBuffer()) {
-        RSUniRenderUtil::UpdateRealSrcRect(node, absRect);
+    auto surfaceHandler = node.GetRSSurfaceHandler();
+    if (!surfaceHandler) {
+        return;
     }
+    const auto buffer = surfaceHandler->GetBuffer();
+    const auto consumer = surfaceHandler->GetConsumer();
+    if (!consumer || !buffer) {
+        return;
+    }
+    const auto& property = node.GetRenderProperties();
+    auto bufferWidth = buffer->GetSurfaceBufferWidth();
+    auto bufferHeight = buffer->GetSurfaceBufferHeight();
+    const auto boundsWidth = property.GetBoundsWidth();
+    const auto boundsHeight = property.GetBoundsHeight();
+    const auto frameGravity = Gravity::RESIZE;
+    const GraphicTransformType consumerTransformType = node.GetFixRotationByUser() ?
+        RSUniRenderUtil::GetRotateTransformForRotationFixed(node, consumer) :
+        RSUniRenderUtil::GetConsumerTransform(node, buffer, consumer);
+    const auto dstRect = node.GetDstRect();
+    Drawing::Rect dst(dstRect.left_, dstRect.top_, dstRect.GetRight(), dstRect.GetBottom());
+    if (consumerTransformType == GraphicTransformType::GRAPHIC_ROTATE_90 ||
+        consumerTransformType == GraphicTransformType::GRAPHIC_ROTATE_270) {
+        std::swap(bufferWidth, bufferHeight);
+    }
+    Drawing::Matrix gravityMatrix;
+    RSPropertiesPainter::GetGravityMatrix(frameGravity,
+        {0.f, 0.f, boundsWidth, boundsHeight}, bufferWidth, bufferHeight, gravityMatrix);
+    Drawing::Matrix inverseTotalMatrix;
+    Drawing::Matrix inverseGravityMatrix;
+    if (!totalMatrix.Invert(inverseTotalMatrix) || !gravityMatrix.Invert(inverseGravityMatrix)) {
+        node.SetSrcRect({0, 0, screenInfo_.width, screenInfo_.height});
+        return;
+    }
+    Drawing::Rect srcRect;
+    inverseTotalMatrix.MapRect(srcRect, dst);
+    inverseGravityMatrix.MapRect(srcRect, srcRect);
+    if (consumerTransformType == GraphicTransformType::GRAPHIC_ROTATE_90 ||
+        consumerTransformType == GraphicTransformType::GRAPHIC_ROTATE_270) {
+        std::swap(srcRect.left_, srcRect.top_);
+        std::swap(srcRect.right_, srcRect.bottom_);
+    }
+    srcRect = RSUniRenderUtil::CalcSrcRectByBufferRotation(*buffer, consumerTransformType, srcRect);
+    node.SetSrcRect({srcRect.GetLeft(), srcRect.GetTop(), srcRect.GetWidth(), srcRect.GetHeight()});
 }
 
 void RSUniRenderVisitor::UpdateDstRect(RSSurfaceRenderNode& node, const RectI& absRect, const RectI& clipRect)
@@ -3361,7 +3393,7 @@ void RSUniRenderVisitor::UpdateHwcNodeRectInSkippedSubTree(const RSRenderNode& r
         rect.width_ = static_cast<int>(std::ceil(absRect.GetRight() - rect.left_));
         rect.height_ = static_cast<int>(std::ceil(absRect.GetBottom() - rect.top_));
         UpdateDstRect(*hwcNodePtr, rect, clipRect);
-        UpdateSrcRect(*hwcNodePtr, matrix, rect);
+        UpdateSrcRect(*hwcNodePtr, matrix);
         UpdateHwcNodeByTransform(*hwcNodePtr, matrix);
         UpdateHwcNodeEnableByBackgroundAlpha(*hwcNodePtr);
         UpdateHwcNodeEnableBySrcRect(*hwcNodePtr);

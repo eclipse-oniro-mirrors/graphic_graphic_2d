@@ -2578,29 +2578,92 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateDstRect001, TestSize.Level2)
  * @tc.name: UpdateSrcRect001
  * @tc.desc: Test UpdateSrcRect with empty matrix
  * @tc.type: FUNC
- * @tc.require: issueI9RR2Y
+ * @tc.require:
  */
 HWTEST_F(RSUniRenderVisitorTest, UpdateSrcRect001, TestSize.Level2)
 {
-    auto rsContext = std::make_shared<RSContext>();
-    RSSurfaceRenderNodeConfig config;
-    RSDisplayNodeConfig displayConfig;
-    config.id = 10;
-    auto rsSurfaceRenderNode = std::make_shared<RSSurfaceRenderNode>(config, rsContext->weak_from_this());
-    ASSERT_NE(rsSurfaceRenderNode, nullptr);
-    rsSurfaceRenderNode->InitRenderParams();
-    // 11 non-zero node id
-    auto rsDisplayRenderNode = std::make_shared<RSDisplayRenderNode>(11, displayConfig, rsContext->weak_from_this());
-    ASSERT_NE(rsDisplayRenderNode, nullptr);
-    rsDisplayRenderNode->InitRenderParams();
+    NodeId id = 1;
+    RSSurfaceRenderNode node1(id);
+    node1.GetRSSurfaceHandler()->buffer_.buffer = OHOS::SurfaceBuffer::Create();
+    node1.GetRSSurfaceHandler()->buffer_.buffer->SetSurfaceBufferTransform(GraphicTransformType::GRAPHIC_ROTATE_NONE);
+    node1.GetRSSurfaceHandler()->buffer_.buffer->SetSurfaceBufferWidth(1080);
+    node1.GetRSSurfaceHandler()->buffer_.buffer->SetSurfaceBufferHeight(1653);
+    node1.GetRSSurfaceHandler()->consumer_ = OHOS::IConsumerSurface::Create();
+    node1.renderContent_->renderProperties_.SetBoundsWidth(2440);
+    node1.renderContent_->renderProperties_.SetBoundsHeight(1080);
+    node1.renderContent_->renderProperties_.frameGravity_ = Gravity::TOP_LEFT;
+    node1.SetDstRect({0, 1000, 2440, 1080});
+    node1.isFixRotationByUser_ = false;
+    Drawing::Matrix totalMatrix = Drawing::Matrix();
+    totalMatrix.SetMatrix(1, 0, 0, 0, 0, 0, 0, 0, 1);
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
-    rsUniRenderVisitor->InitDisplayInfo(*rsDisplayRenderNode);
+    ScreenInfo screenInfo;
+    screenInfo.width = 1440;
+    screenInfo.height = 1080;
+    rsUniRenderVisitor->screenInfo_ = screenInfo;
+    rsUniRenderVisitor->UpdateSrcRect(node1, totalMatrix);
+    RectI expectedSrcRect = {0, 0, 1440, 1080};
+    EXPECT_TRUE(node1.GetSrcRect() == expectedSrcRect);
+}
 
-    Drawing::Matrix absMatrix;
-    RectI absRect(0, 0, 0, 0);
-    rsSurfaceRenderNode->GetMutableRenderProperties().SetBounds({0, 0, 0, 0});
-    rsUniRenderVisitor->UpdateSrcRect(*rsSurfaceRenderNode, absMatrix, absRect);
-    ASSERT_EQ(rsSurfaceRenderNode->GetSrcRect().left_, 0);
+/**
+ * @tc.name: UpdateSrcRect002
+ * @tc.desc: Test UpdateSrcRect after applying valid clipRects to the boundary of a surface node
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSUniRenderVisitorTest, UpdateSrcRect002, TestSize.Level2)
+{
+    NodeId id = 1;
+    RSSurfaceRenderNode node1(id);
+    node1.GetRSSurfaceHandler()->buffer_.buffer = OHOS::SurfaceBuffer::Create();
+    node1.GetRSSurfaceHandler()->buffer_.buffer->SetSurfaceBufferTransform(GraphicTransformType::GRAPHIC_ROTATE_NONE);
+    node1.GetRSSurfaceHandler()->buffer_.buffer->SetSurfaceBufferWidth(1080);
+    node1.GetRSSurfaceHandler()->buffer_.buffer->SetSurfaceBufferHeight(1653);
+    node1.GetRSSurfaceHandler()->consumer_ = OHOS::IConsumerSurface::Create();
+    node1.renderContent_->renderProperties_.SetBoundsWidth(2440);
+    node1.renderContent_->renderProperties_.SetBoundsHeight(1080);
+    node1.renderContent_->renderProperties_.frameGravity_ = Gravity::TOP_LEFT;
+    node1.SetDstRect({0, 1000, 1440, 880});
+    node1.isFixRotationByUser_ = false;
+    Drawing::Matrix totalMatrix = Drawing::Matrix();
+    totalMatrix.SetMatrix(1, 0, 0, 0, 1, 800, 0, 0, 1);
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    ScreenInfo screenInfo;
+    screenInfo.width = 1440;
+    screenInfo.height = 1080;
+    rsUniRenderVisitor->screenInfo_ = screenInfo;
+    rsUniRenderVisitor->UpdateSrcRect(node1, totalMatrix);
+    RectI expectedSrcRect = {0, 306, 638, 1347};
+    EXPECT_TRUE(node1.GetSrcRect() == expectedSrcRect);
+}
+
+/**
+ * @tc.name: UpdateSrcRect003
+ * @tc.desc: Test UpdateSrcRect when we use the full boundary of a surface node
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSUniRenderVisitorTest, UpdateSrcRect003, TestSize.Level2)
+{
+    NodeId id = 1;
+    RSSurfaceRenderNode node1(id);
+    node1.GetRSSurfaceHandler()->buffer_.buffer = OHOS::SurfaceBuffer::Create();
+    node1.GetRSSurfaceHandler()->buffer_.buffer->SetSurfaceBufferTransform(GraphicTransformType::GRAPHIC_ROTATE_NONE);
+    node1.GetRSSurfaceHandler()->buffer_.buffer->SetSurfaceBufferWidth(1080);
+    node1.GetRSSurfaceHandler()->buffer_.buffer->SetSurfaceBufferHeight(1653);
+    node1.GetRSSurfaceHandler()->consumer_ = OHOS::IConsumerSurface::Create();
+    node1.renderContent_->renderProperties_.SetBoundsWidth(2440);
+    node1.renderContent_->renderProperties_.SetBoundsHeight(1080);
+    node1.renderContent_->renderProperties_.frameGravity_ = Gravity::RESIZE;
+    node1.SetDstRect({0, 1000, 2440, 1080});
+    node1.isFixRotationByUser_ = false;
+    Drawing::Matrix totalMatrix = Drawing::Matrix();
+    totalMatrix.SetMatrix(1, 0, 0, 0, 1, 1000, 0, 0, 1);
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    rsUniRenderVisitor->UpdateSrcRect(node1, totalMatrix);
+    RectI expectedSrcRect = {0, 0, 1080, 1653};
+    EXPECT_TRUE(node1.GetSrcRect() == expectedSrcRect);
 }
 
 /**
