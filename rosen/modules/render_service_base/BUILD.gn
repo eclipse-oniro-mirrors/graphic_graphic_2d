@@ -477,7 +477,6 @@ ohos_source_set("render_service_base_src") {
   include_dirs = [
     "$graphic_2d_root/rosen/modules/utils",
     "$graphic_2d_root/interfaces/inner_api/common",
-    "$graphic_2d_root/rosen/modules/graphics_effect/include",
     "$graphic_2d_root/rosen/modules/render_service_base/src",
     "$graphic_2d_root/rosen/modules/render_service_base/include",
     "$graphic_2d_root/utils/color_manager/export",
@@ -494,13 +493,13 @@ ohos_source_set("render_service_base_src") {
 
   deps = [
     "$graphic_2d_root/utils/sandbox:sandbox_utils",
-    "$rosen_root/modules/graphics_effect:libgraphics_effect",
     "$rosen_root/modules/platform:hilog",
     "$rosen_root/modules/platform:ipc_core",
   ]
 
   external_deps = [
     "graphic_surface:surface_headers",
+    "graphics_effect:graphics_effect_core",
     "hilog:libhilog",
   ]
 
