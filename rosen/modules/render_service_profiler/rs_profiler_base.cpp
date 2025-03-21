@@ -74,8 +74,6 @@ static std::unordered_map<AnimationId, std::vector<int64_t>> g_animeStartMap;
 
 bool RSProfiler::testing_ = false;
 std::vector<std::shared_ptr<RSRenderNode>> RSProfiler::testTree_ = std::vector<std::shared_ptr<RSRenderNode>>();
-RSContext* RSProfiler::context_ = nullptr;
-RSMainThread* RSProfiler::mainThread_ = nullptr;
 bool RSProfiler::enabled_ = RSSystemProperties::GetProfilerEnabled();
 bool RSProfiler::betaRecordingEnabled_ = RSSystemProperties::GetBetaRecordingMode() != 0;
 int8_t RSProfiler::signalFlagChanged_ = 0;
