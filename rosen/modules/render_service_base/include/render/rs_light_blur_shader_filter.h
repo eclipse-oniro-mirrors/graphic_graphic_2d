@@ -16,6 +16,8 @@
 #define RENDER_SERVICE_BASE_CORE_RENDER_RS_LIGHT_BLUR_SHADER_FILTER_H
 
 #include "common/rs_macros.h"
+#include "draw/canvas.h"
+#include "image/image.h"
 #include "render/rs_shader_filter.h"
 namespace OHOS {
 namespace Rosen {
@@ -43,8 +45,9 @@ private:
     std::shared_ptr<Drawing::Image> GetDownSample4xAndMixImage(Drawing::Canvas& canvas,
         const std::shared_ptr<Drawing::Image>& image) const;
     void UpdateLightBlurResultCache(const std::shared_ptr<Drawing::Image>& image);
+    void DrawImageOnCanvas(Drawing::Canvas& canvas, const Drawing::Image& image, const LightBlurParameter& param);
 
-    static std::shared_ptr<Drawing::RuntimeEffect> downsample4xAndMixShader_;
+    static std::shared_ptr<Drawing::RuntimeEffect> downSample4xAndMixShader_;
     static std::shared_ptr<Drawing::RuntimeEffect> downSample4xShader_;
 
     int radius_ {0};
