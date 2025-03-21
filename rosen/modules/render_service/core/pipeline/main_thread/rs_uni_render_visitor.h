@@ -158,6 +158,8 @@ public:
 
     void UpdateCurFrameInfoDetail(RSRenderNode& node, bool subTreeSkipped = false, bool isPostPrepare = false);
 
+    void ResetCrossNodesVisitedStatus();
+
 private:
     /* Prepare relevant calculation */
     // considering occlusion info for app surface as well as widget
@@ -233,8 +235,7 @@ private:
     void UpdateHwcNodeEnableBySrcRect(RSSurfaceRenderNode& node);
     void UpdateHwcNodeEnableByBufferSize(RSSurfaceRenderNode& node);
     void UpdateHwcNodeInfoForAppNode(RSSurfaceRenderNode& node);
-    void UpdateSrcRect(RSSurfaceRenderNode& node,
-        const Drawing::Matrix& absMatrix, const RectI& clipRect);
+    void UpdateSrcRect(RSSurfaceRenderNode& node, const Drawing::Matrix& totalMatrix);
     void UpdateDstRect(RSSurfaceRenderNode& node, const RectI& absRect, const RectI& clipRect);
     void UpdateHwcNodeByTransform(RSSurfaceRenderNode& node, const Drawing::Matrix& totalMatrix);
     void UpdateHwcNodeEnableByRotateAndAlpha(std::shared_ptr<RSSurfaceRenderNode>& node);
@@ -259,6 +260,9 @@ private:
 
     // use in QuickPrepareSurfaceRenderNode, update SurfaceRenderNode's uiFirst status
     void PrepareForUIFirstNode(RSSurfaceRenderNode& node);
+
+    void PrepareForMultiScreenViewSurfaceNode(RSSurfaceRenderNode& node);
+    void PrepareForMultiScreenViewDisplayNode(RSDisplayRenderNode& node);
 
     void UpdateHwcNodeDirtyRegionForApp(std::shared_ptr<RSSurfaceRenderNode>& appNode,
         std::shared_ptr<RSSurfaceRenderNode>& hwcNode);
@@ -421,7 +425,6 @@ private:
     Gravity frameGravity_ = Gravity::DEFAULT;
     // vector of current displaynode mainwindow surface visible info
     VisibleData dstCurVisVec_;
-    std::vector<RectI> globalSurfaceBounds_;
     // record container nodes which need filter
     FilterRectISet containerFilter_;
     // record nodes in surface which has filter may influence globalDirty
@@ -431,7 +434,7 @@ private:
     // vector of current frame mainwindow surface visible info
     VisibleData allDstCurVisVec_;
     bool hasDisplayHdrOn_ = false;
-    bool hasVisitCrossNode_ = false;
+    std::vector<NodeId> hasVisitedCrossNodeIds_;
     bool isDirtyRegionDfxEnabled_ = false; // dirtyRegion DFX visualization
     bool isTargetDirtyRegionDfxEnabled_ = false;
     bool isOpaqueRegionDfxEnabled_ = false;

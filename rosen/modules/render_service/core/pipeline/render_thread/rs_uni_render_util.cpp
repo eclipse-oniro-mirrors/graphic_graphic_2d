@@ -1511,17 +1511,13 @@ RectI RSUniRenderUtil::SrcRectRotateTransform(const SurfaceBuffer& buffer,
 Drawing::Rect RSUniRenderUtil::CalcSrcRectByBufferRotation(const SurfaceBuffer& buffer,
     const GraphicTransformType consumerTransformType, Drawing::Rect newSrcRect)
 {
-    const float frameWidth = buffer.GetSurfaceBufferWidth();
-    const float frameHeight = buffer.GetSurfaceBufferHeight();
-    int left = std::clamp<int>(newSrcRect.GetLeft(), 0, frameWidth);
-    int top = std::clamp<int>(newSrcRect.GetTop(), 0, frameHeight);
-    int width = std::clamp<int>(newSrcRect.GetWidth(), 0, frameWidth - left);
-    int height = std::clamp<int>(newSrcRect.GetHeight(), 0, frameHeight - top);
+    const auto frameWidth = buffer.GetSurfaceBufferWidth();
+    const auto frameHeight = buffer.GetSurfaceBufferHeight();
+    auto left = newSrcRect.left_;
+    auto top = newSrcRect.top_;
+    auto width = newSrcRect.right_ - newSrcRect.left_;
+    auto height = newSrcRect.bottom_ - newSrcRect.top_;
     switch (consumerTransformType) {
-        case GraphicTransformType::GRAPHIC_ROTATE_NONE: {
-            newSrcRect = Drawing::Rect(left, top, left + width, top + height);
-            break;
-        }
         case GraphicTransformType::GRAPHIC_ROTATE_90: {
             newSrcRect = Drawing::Rect(frameWidth - width - left, top, frameWidth - left, top + height);
             break;
@@ -1538,6 +1534,10 @@ Drawing::Rect RSUniRenderUtil::CalcSrcRectByBufferRotation(const SurfaceBuffer& 
         default:
             break;
     }
+    newSrcRect.left_ = std::clamp<int>(std::floor(newSrcRect.GetLeft()), 0, frameWidth);
+    newSrcRect.top_ = std::clamp<int>(std::floor(newSrcRect.GetTop()), 0, frameHeight);
+    newSrcRect.right_ = std::clamp<int>(std::ceil(newSrcRect.GetRight()), left, frameWidth);
+    newSrcRect.bottom_ = std::clamp<int>(std::ceil(newSrcRect.GetBottom()), top, frameHeight);
     return newSrcRect;
 }
 
@@ -1753,6 +1753,9 @@ GraphicTransformType RSUniRenderUtil::GetLayerTransform(RSSurfaceRenderNode& nod
 
 void RSUniRenderUtil::LayerCrop(RSSurfaceRenderNode& node, const ScreenInfo& screenInfo)
 {
+    if (node.GetDRMGlobalPositionEnabled()) {
+        return;
+    }
     auto dstRect = node.GetDstRect();
     auto srcRect = node.GetSrcRect();
     auto originSrcRect = srcRect;
@@ -2075,6 +2078,28 @@ void RSUniRenderUtil::ProcessCacheImageRect(RSPaintFilterCanvas& canvas, Drawing
     // Be cautious when changing FilterMode and MipmapMode that may affect clarity
     auto sampling = Drawing::SamplingOptions(Drawing::FilterMode::LINEAR, Drawing::MipmapMode::NEAREST);
     canvas.DrawImageRect(cacheImageProcessed, src, dst, sampling, Drawing::SrcRectConstraint::FAST_SRC_RECT_CONSTRAINT);
+    canvas.DetachBrush();
+}
+
+void RSUniRenderUtil::ProcessCacheImageForMultiScreenView(RSPaintFilterCanvas& canvas,
+    Drawing::Image& cacheImageProcessed, const RectF& rect)
+{
+    if (cacheImageProcessed.GetWidth() == 0 || cacheImageProcessed.GetHeight() == 0) {
+        RS_TRACE_NAME("ProcessCacheImageForMultiScreenView cacheImageProcessed is invalid");
+        return;
+    }
+    Drawing::Brush brush;
+    brush.SetAntiAlias(true);
+    canvas.AttachBrush(brush);
+    // Be cautious when changing FilterMode and MipmapMode that may affect clarity
+    auto sampling = Drawing::SamplingOptions(Drawing::FilterMode::LINEAR, Drawing::MipmapMode::NEAREST);
+    canvas.Save();
+    // Use Fill Mode
+    const float scaleX = rect.GetWidth() / cacheImageProcessed.GetWidth();
+    const float scaleY = rect.GetHeight() / cacheImageProcessed.GetHeight();
+    canvas.Scale(scaleX, scaleY);
+    canvas.DrawImage(cacheImageProcessed, 0, 0, sampling);
+    canvas.Restore();
     canvas.DetachBrush();
 }
 
