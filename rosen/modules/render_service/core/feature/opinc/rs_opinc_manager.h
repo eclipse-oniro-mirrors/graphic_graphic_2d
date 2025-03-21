@@ -23,7 +23,7 @@ class RSOpincManager {
 public:
     static RSOpincManager& Instance();
 
-    bool ReadOPIncCcmParam();
+    void ReadOPIncCcmParam();
     bool GetOPIncSwitch() const
     {
         return isOPIncOn_;
@@ -42,6 +42,7 @@ private:
     RSOpincManager& operator=(const RSOpincManager&&);
 
     bool isOPIncOn_ = false;
+    bool haveReadParam_ = false;
 };
 }
 #endif // RS_OPINC_MANAGER_H

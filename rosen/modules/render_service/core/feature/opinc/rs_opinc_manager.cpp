@@ -25,12 +25,12 @@ RSOpincManager& RSOpincManager::Instance()
     return instance;
 }
 
-bool RSOpincManager::ReadOPIncCcmParam()
+void RSOpincManager::ReadOPIncCcmParam()
 {
     isOPIncOn_ = OPIncParam::IsOPIncEnable();
     RS_LOGI("RSOpincManager::ReadOPIncCcmParam isOPIncOn_=%{public}d", isOPIncOn_);
     DrawableV2::RSRenderNodeDrawable::SetAutoCacheEnable(isOPIncOn_);
-    return true;
+    haveReadParam_ = true;
 }
 }
 }
