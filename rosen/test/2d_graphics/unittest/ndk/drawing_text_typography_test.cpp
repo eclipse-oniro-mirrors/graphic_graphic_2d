@@ -3674,7 +3674,6 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyGetLineTextRangeTest001
     const char *elipss = "...";
     OH_Drawing_SetTypographyTextEllipsis(typoStyle, elipss);
     OH_Drawing_SetTypographyTextEllipsisModal(typoStyle, 2);
-        OH_Drawing_CreateTypographyHandler(typoStyle, OH_Drawing_CreateFontCollection());
     OH_Drawing_TypographyHandlerPushTextStyle(handler, txtStyle);
     const char *text = "这是一个排版信息دددھساسااساساس获取接口的测试文本：Hello World     \n是版信息获取接测试文本Drawing.";
     OH_Drawing_TypographyHandlerAddText(handler, text);
@@ -3708,6 +3707,44 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyGetLineTextRangeTest001
     int aPositionClusterUp = OH_Drawing_GetPositionFromPositionAndAffinity(posAAClusrterUp);
     EXPECT_EQ(1, affinityClusterUp);
     EXPECT_EQ(25, aPositionClusterUp);
+    OH_Drawing_DestroyTypography(typography);
+    OH_Drawing_DestroyTypographyStyle(typoStyle);
+    OH_Drawing_DestroyTypographyHandler(handler);
+    OH_Drawing_DestroyTextStyle(txtStyle);
+}
+
+/*
+* @tc.name: OH_Drawing_TypographyGetLineTextRangeTest002
+* @tc.desc: test for typography mutiple lines，but set Set end line spaces and ellipsis
+* @tc.type: FUNC
+*/
+HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyGetLineTextRangeTest002, TestSize.Level1)
+{
+    OH_Drawing_TypographyStyle* typoStyle = OH_Drawing_CreateTypographyStyle();
+    OH_Drawing_TextStyle *txtStyle = OH_Drawing_CreateTextStyle();
+    OH_Drawing_SetTextStyleColor(txtStyle, OH_Drawing_ColorSetArgb(0xFF, 0x11, 0x11, 0xFF));
+    OH_Drawing_SetTextStyleFontSize(txtStyle, 50);
+    OH_Drawing_SetTypographyTextMaxLines (typoStyle, 4);
+    OH_Drawing_TypographyCreate* handler =
+        OH_Drawing_CreateTypographyHandler(typoStyle, OH_Drawing_CreateFontCollection());
+    const char *elipss = "...";
+    OH_Drawing_SetTypographyTextEllipsis(typoStyle, elipss);
+    OH_Drawing_SetTypographyTextEllipsisModal(typoStyle, 2);
+    OH_Drawing_TypographyHandlerPushTextStyle(handler, txtStyle);
+    const char *text = "这是一个排版信息دددھساسااساساس获取接口的测试文本：Hello World     \n是版信息获取接测试文本Drawing.";
+    OH_Drawing_TypographyHandlerAddText(handler, text);
+    text = "这是一个排版信息བསདབད获取接口的སངབངསབ测试文lo World这是一个 ..... \u1234排版信息的测试文སསསས本Drawing.དདདདདད.       ";
+    OH_Drawing_TypographyHandlerAddText(handler, text);
+    OH_Drawing_Typography* typography = OH_Drawing_CreateTypography(handler);
+    OH_Drawing_Range *range1 = OH_Drawing_TypographyGetLineTextRange(typography, 0, false);
+    EXPECT_EQ(0, OH_Drawing_GetStartFromRange(range1));
+    EXPECT_EQ(0, OH_Drawing_GetEndFromRange(range1));
+    OH_Drawing_TypographyLayout(typography, MAX_WIDTH);
+    double lineCount = OH_Drawing_TypographyGetLineCount(typography);
+ 
+    OH_Drawing_Range *range2 = OH_Drawing_TypographyGetLineTextRange(typography, lineCount, false);
+    EXPECT_EQ(0, OH_Drawing_GetStartFromRange(range2));
+    EXPECT_EQ(0, OH_Drawing_GetEndFromRange(range2));
     OH_Drawing_DestroyTypography(typography);
     OH_Drawing_DestroyTypographyStyle(typoStyle);
     OH_Drawing_DestroyTypographyHandler(handler);
