@@ -412,12 +412,12 @@ void ParagraphTest::PrepareMiddleEllipsis(size_t& maxLines, const std::u16string
     std::shared_ptr<ParagraphBuilder> paragraphBuilder = ParagraphBuilder::Create(paragraphStyle, fontCollection);
     ASSERT_NE(paragraphBuilder, nullptr);
     OHOS::Rosen::SPText::TextStyle style;
-    style.fontSize = 30;
+    style.fontSize = 30; // 30 default fontsize
     paragraphBuilder->PushStyle(style);
     paragraphBuilder->AddText(text);
     paragraphMiddleEllipsis_ = paragraphBuilder->Build();
     ASSERT_NE(paragraphMiddleEllipsis_, nullptr);
-} 
+}
 
 /*
  * @tc.name: ParagraphTestMiddleEllipsis001
@@ -432,7 +432,7 @@ HWTEST_F(ParagraphTest, ParagraphTestMiddleEllipsis001, TestSize.Level1)
     OHOS::Rosen::SPText::Range<size_t> range = paragraphMiddleEllipsis_->GetEllipsisTextRange();
     EXPECT_EQ(range.start, 2);
     EXPECT_EQ(range.end, 8);
-} 
+}
 
 /*
  * @tc.name: ParagraphTestMiddleEllipsis002
@@ -446,7 +446,7 @@ HWTEST_F(ParagraphTest, ParagraphTestMiddleEllipsis002, TestSize.Level1)
     paragraphMiddleEllipsis_->Layout(200);
     OHOS::Rosen::SPText::Range<size_t> range = paragraphMiddleEllipsis_->GetEllipsisTextRange();
     EXPECT_EQ(range.start, 5);
-    EXPECT_EQ(range.end, 27);
+    EXPECT_EQ(range.end, 30);
 }
 
 /*
