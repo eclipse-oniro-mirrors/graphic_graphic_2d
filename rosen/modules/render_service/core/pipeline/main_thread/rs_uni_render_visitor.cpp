@@ -3446,7 +3446,7 @@ void RSUniRenderVisitor::UpdateHWCNodeClipRect(std::shared_ptr<RSSurfaceRenderNo
     rootNodeAbsMatrix.MapRect(absClipRect, childRectMapped);
     Drawing::Rect prepareClipRect(prepareClipRect_.left_, prepareClipRect_.top_,
         prepareClipRect_.GetRight(), prepareClipRect_.GetBottom());
-    absClipRect.Intersect(prepareClipRect);
+    absClipRect.IntersectRect(prepareClipRect);
     clipRect.left_ = static_cast<int>(std::floor(absClipRect.GetLeft()));
     clipRect.top_ = static_cast<int>(std::floor(absClipRect.GetTop()));
     clipRect.width_ = static_cast<int>(std::ceil(absClipRect.GetRight() - clipRect.left_));
