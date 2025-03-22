@@ -43,7 +43,7 @@ config("export_config") {
     "$graphic_2d_root/utils/color_manager/export",
     "$rosen_root/modules/render_service_base/include",
     "$rosen_root/modules/texgine/texgine_drawing/src",
-    "$rosen_root/modules/2d_engine/rosen_text/export",
+    "$text_root/interface/export",
   ]
 
   if (rs_enable_gpu) {
@@ -212,8 +212,7 @@ template("graphics2d_source_set") {
       "$drawing_core_src_dir",
       "$drawing_core_src_dir/engine_adapter",
       "$rosen_root/modules/render_service_base/include",
-      "$rosen_root/modules/texgine/src",
-      "$rosen_root/modules/texgine/texgine_drawing/src",
+      "$text_root/texgine/src",
       "$rosen_root/../interfaces/kits/napi/graphic/drawing/common_napi",
     ]
 
@@ -291,9 +290,9 @@ template("graphics2d_source_set") {
         defines += [ "USE_TEXGINE" ]
       }
       include_dirs += [
-        "$rosen_root/modules/2d_engine/rosen_text",
-        "$rosen_root/modules/2d_engine/rosen_text/adapter",
-        "$rosen_root/modules/2d_engine/rosen_text/export",
+        "$text_root",
+        "$text_root/service",
+        "$text_root/interface/export",
         "$platform_dir/image_native",
       ]
       if (defined(use_new_skia) && use_new_skia) {
@@ -368,8 +367,7 @@ template("graphics2d_source_set") {
       deps += [ "$graphic_2d_root/text:rosen_text_inner" ]
       defines += [ "USE_GRAPHIC_TEXT_GINE" ]
       if (use_skia_txt) {
-        include_dirs +=
-            [ "$text_root/adapter/skia" ]
+        include_dirs += [ "$text_root/adapter/skia" ]
       }
     }
     if (rosen_is_ohos) {

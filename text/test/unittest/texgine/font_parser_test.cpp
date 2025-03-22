@@ -19,7 +19,6 @@
 
 #include "font_config.h"
 #include "font_parser.h"
-#include "utils/text_log.h"
 #include "cmap_table_parser.h"
 #include "name_table_parser.h"
 #include "post_table_parser.h"
@@ -46,17 +45,6 @@ std::vector<std::string> GetFontSet(const char* fname)
 {
     FontConfig fontConfig(fname);
     return fontConfig.GetFontSet();
-}
-
-void ShowVisibilityFonts(std::vector<FontParser::FontDescriptor>& visibilityFonts)
-{
-    for (auto& it : visibilityFonts) {
-        TEXT_LOGI("fontFamily: %{public}s\nfontSubfamily: %{public}s\nfullName: %{public}s\nitalic: %{public}d\n"
-                  "monoSpace: %{public}d\npath: %{public}s\npostScriptName: %{public}s\nsymbolic: %{public}d\n"
-                  "weight: %{public}d\nwidth: %{public}d",
-            it.fontFamily.c_str(), it.fontSubfamily.c_str(), it.fullName.c_str(), it.italic, it.monoSpace,
-            it.path.c_str(), it.postScriptName.c_str(), it.symbolic, it.weight, it.width);
-    }
 }
 
 /**
@@ -93,7 +81,6 @@ HWTEST_F(FontParserTest, FontParserTest2, TestSize.Level1)
     std::ifstream fileStream(FILE_NAME.c_str());
     if (fileStream.is_open()) {
         EXPECT_NE(visibilityFonts.size(), 0);
-        ShowVisibilityFonts(visibilityFonts);
         fileStream.close();
     } else {
         EXPECT_EQ(visibilityFonts.size(), 0);

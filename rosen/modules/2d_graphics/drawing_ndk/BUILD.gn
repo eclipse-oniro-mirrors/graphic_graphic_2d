@@ -128,9 +128,9 @@ template("drawing_ndk_source_set") {
         defines += [ "USE_TEXGINE" ]
       }
       include_dirs += [
-        "$rosen_root/modules/2d_engine/rosen_text",
-        "$rosen_root/modules/2d_engine/rosen_text/adapter",
-        "$rosen_root/modules/2d_engine/rosen_text/export",
+        "$text_root",
+        "$text_root/service",
+        "$text_root/interface/export",
       ]
     } else {
       include_dirs += [

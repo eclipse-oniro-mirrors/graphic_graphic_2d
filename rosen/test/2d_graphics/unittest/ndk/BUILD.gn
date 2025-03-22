@@ -13,6 +13,7 @@
 
 import("//build/test.gni")
 import("//foundation/graphic/graphic_2d/graphic_config.gni")
+import("//foundation/graphic/graphic_2d/text/config.gni")
 
 module_output_path = "graphic_2d/graphic_2d/rosen/modules/2d_graphics/ndk/"
 

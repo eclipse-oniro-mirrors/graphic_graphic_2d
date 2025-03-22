@@ -17,8 +17,7 @@ group("fuzztest") {
   deps = []
 
   deps += [
-    # deps file
-    "adapter/skia_txt:fuzztest",
+    "skia_txt:fuzztest",
     "hm_symbol:fuzztest",
   ]
 }

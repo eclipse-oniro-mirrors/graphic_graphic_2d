@@ -13,6 +13,7 @@
 
 import("//build/test.gni")
 import("//foundation/graphic/graphic_2d/graphic_config.gni")
+import("$graphic_2d_root/text/config.gni")
 
 module_output_path = "graphic_2d/graphic_2d/rosen/test/texgine/unittest"
 
@@ -39,6 +40,7 @@ group("common_deps") {
   testonly = true
   public_deps = [
     "$graphic_2d_root/utils/test_header:test_header",
+    "//third_party/googletest:gmock",
     "//third_party/googletest:gtest",
   ]
 

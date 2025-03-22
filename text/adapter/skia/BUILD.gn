@@ -18,6 +18,7 @@ import("$graphic_2d_root/text/config.gni")
 
 config("skia_libtxt_config") {
   include_dirs = [
+    "$text_root",
     "$text_root/interface/export",
     "$text_root/interface/export/rosen_text",
   ]
@@ -48,9 +49,10 @@ template("skia_libtxt") {
       "$graphic_2d_root/rosen/modules/2d_graphics/src",
       "$graphic_2d_root/rosen/modules/2d_graphics/src/drawing",
       "$graphic_2d_root/rosen/modules/2d_graphics/src/drawing/engine_adapter",
+      "$text_root",
       "$text_root/service/skia_txt",
-      "$text_root/skia",
-      "$text_root/skia/txt",
+      "$text_root/adapter/skia",
+      "$text_root/adapter/skia/txt",
       "$text_root/service/texgine/src",
     ]
 
