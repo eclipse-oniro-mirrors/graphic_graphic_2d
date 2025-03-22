@@ -180,7 +180,7 @@ HWTEST_F(TextLineBaseTest, TextLineBaseTest006, TestSize.Level1)
 /*
  * @tc.name: TextLineBaseTest007
  * @tc.desc: test for GetGlyphPositionAtCoordinate when the index of the ellipsis
-    exceeds the size of the fUTF16IndexForUTF8Index
+ *  exceeds the size of the fUTF16IndexForUTF8Index, the point is to the right of the ellipsisRun's rect
  * @tc.type: FUNC
  */
 HWTEST_F(TextLineBaseTest, TextLineBaseTest007, TestSize.Level1)
@@ -203,7 +203,7 @@ HWTEST_F(TextLineBaseTest, TextLineBaseTest007, TestSize.Level1)
 /*
  * @tc.name: TextLineBaseTest008
  * @tc.desc: test for GetGlyphPositionAtCoordinate when the index of the ellipsis
-    exceeds the size of the fUTF16IndexForUTF8Index
+ *  exceeds the size of the fUTF16IndexForUTF8Index, the point is inside the ellipsisRun's rect
  * @tc.type: FUNC
  */
 HWTEST_F(TextLineBaseTest, TextLineBaseTest008, TestSize.Level1)
