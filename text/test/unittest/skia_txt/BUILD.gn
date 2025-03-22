@@ -15,11 +15,10 @@ import("//build/test.gni")
 import("//foundation/graphic/graphic_2d/graphic_config.gni")
 import("$graphic_2d_root/text/config.gni")
 
-module_output_path =
-    "graphic_2d/graphic_2d/rosen/modules/2d_engine/rosen_text/skia_txt"
+module_out_path = "graphic_2d/graphic_2d/text"
 
 ohos_unittest("rosen_text_skia_txt_test") {
-  module_out_path = module_output_path
+  module_out_path = module_out_path
   sources = [
     "asset_font_manager_test.cpp",
     "drawing_painter_impl_test.cpp",

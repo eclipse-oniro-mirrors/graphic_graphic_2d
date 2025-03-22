@@ -15,7 +15,7 @@ import("//build/test.gni")
 import("//foundation/graphic/graphic_2d/graphic_config.gni")
 import("$graphic_2d_root/text/config.gni")
 
-module_output_path = "graphic_2d/graphic_2d/rosen/texgine/"
+module_out_path = "graphic_2d/graphic_2d/text"
 
 group("unittest") {
   testonly = true
@@ -46,7 +46,7 @@ group("common_deps") {
 }
 
 ohos_unittest("texgine_unittest_part3") {
-  module_out_path = module_output_path
+  module_out_path = module_out_path
   if (defined(use_rosen_drawing) && use_rosen_drawing) {
     defines = [ "USE_ROSEN_DRAWING" ]
   }
@@ -66,7 +66,7 @@ ohos_unittest("texgine_unittest_part3") {
 }
 
 ohos_unittest("texgine_unittest_part6") {
-  module_out_path = module_output_path
+  module_out_path = module_out_path
 
   sources = [ "font_parser_test.cpp" ]
 
@@ -84,7 +84,7 @@ ohos_unittest("texgine_unittest_part6") {
 }
 
 ohos_unittest("texgine_unittest_part7") {
-  module_out_path = module_output_path
+  module_out_path = module_out_path
 
   sources = [ "font_descriptor_cache_test.cpp" ]
 
