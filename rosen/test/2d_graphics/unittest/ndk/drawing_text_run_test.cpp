@@ -280,7 +280,7 @@ HWTEST_F(NativeDrawingRunTest, OH_Drawing_RunTest005, TestSize.Level1)
     size_t runsSize = OH_Drawing_GetDrawingArraySize(runs);
     ASSERT_GT(runsSize, 0);
     
-    std::vector<int32_t> widthArr = {78, 59, 8, 81, 187, 64};
+    std::vector<float> widthArr = {78.929932, 59.999939, 8.099991, 81.509903, 187.187500, 64.349945};
     for (int i = 0; i < runsSize; i++) {
         OH_Drawing_Run* run = OH_Drawing_GetRunByIndex(runs, i);
         float ascent = 0.0;
