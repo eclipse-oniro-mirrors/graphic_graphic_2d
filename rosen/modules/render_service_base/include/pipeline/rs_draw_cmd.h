@@ -166,7 +166,7 @@ private:
 };
 
 namespace Drawing {
-class DrawImageWithParmOpItem : public DrawWithPaintOpItem {
+class RSB_EXPORT DrawImageWithParmOpItem : public DrawWithPaintOpItem {
 public:
     struct ConstructorHandle : public OpItem {
         ConstructorHandle(const OpDataHandle& objectHandle, const SamplingOptions& sampling,
@@ -193,7 +193,7 @@ private:
     std::shared_ptr<ExtendImageObject> objectHandle_;
 };
 
-class DrawPixelMapWithParmOpItem : public DrawWithPaintOpItem {
+class RSB_EXPORT DrawPixelMapWithParmOpItem : public DrawWithPaintOpItem {
 public:
     struct ConstructorHandle : public OpItem {
         ConstructorHandle(const OpDataHandle& objectHandle, const SamplingOptions& sampling,
@@ -226,7 +226,7 @@ private:
     std::shared_ptr<ExtendImageObject> objectHandle_;
 };
 
-class DrawPixelMapRectOpItem : public DrawWithPaintOpItem {
+class RSB_EXPORT DrawPixelMapRectOpItem : public DrawWithPaintOpItem {
 public:
     struct ConstructorHandle : public OpItem {
         ConstructorHandle(const OpDataHandle& objectHandle, const SamplingOptions& sampling,
@@ -261,7 +261,7 @@ private:
     std::shared_ptr<ExtendImageBaseObj> objectHandle_;
 };
 
-class DrawFuncOpItem : public DrawOpItem {
+class RSB_EXPORT DrawFuncOpItem : public DrawOpItem {
 public:
     struct ConstructorHandle : public OpItem {
         ConstructorHandle(uint32_t funcObjectId)
@@ -375,7 +375,7 @@ struct RSB_EXPORT DrawSurfaceBufferOpItemCb {
     std::function<void(const DrawSurfaceBufferAfterAcquireCbData&)> OnAfterAcquireBuffer;
 };
 
-class DrawSurfaceBufferOpItem : public DrawWithPaintOpItem {
+class RSB_EXPORT DrawSurfaceBufferOpItem : public DrawWithPaintOpItem {
 public:
     struct ConstructorHandle : public OpItem {
         ConstructorHandle(uint32_t surfaceBufferId, int offSetX, int offSetY, int width, int height, pid_t pid,
