@@ -33,13 +33,11 @@ ohos_unittest("2d_engine_rosen_text_skia_test") {
     "$rosen_root/modules/render_service_base/include",
     "$rosen_text_root/rosen_text",
     "$rosen_text_root/interface/export/rosen_text",
-    "//third_party/googletest/googletest/include",
   ]
 
-  deps = [
-    "$rosen_root/modules/2d_graphics:2d_graphics",
-    "//third_party/googletest:gtest_main",
-  ]
+  deps = [ "$rosen_root/modules/2d_graphics:2d_graphics" ]
+
+  external_deps = [ "googletest:gtest_main" ]
 
   defines = [ "USE_GRAPHIC_TEXT_GINE" ]
 

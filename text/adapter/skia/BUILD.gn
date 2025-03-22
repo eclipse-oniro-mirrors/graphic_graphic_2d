@@ -30,6 +30,7 @@ config("skia_libtxt_config") {
   ]
 }
 
+skparagraph_root = "//third_party/skia/modules/skparagraph"
 skunicode_root = "//third_party/skia/modules/skunicode"
 skshaper_root = "//third_party/skia/modules/skshaper"
 
@@ -173,35 +174,35 @@ ohos_source_set("skia_paragraph") {
     "$graphic_2d_root/rosen/modules/2d_graphics/src",
     "$graphic_2d_root/rosen/modules/2d_graphics/src/drawing",
     "$graphic_2d_root/rosen/modules/2d_graphics/src/drawing/engine_adapter",
-    "//third_party/skia/modules/skparagraph",
+    "$skparagraph_root",
   ]
 
   defines = [ "OHOS_SUPPORT" ]
 
   sources = [
-    "//third_party/skia/modules/skparagraph/src/Decorations.cpp",
-    "//third_party/skia/modules/skparagraph/src/FontArguments.cpp",
-    "//third_party/skia/modules/skparagraph/src/FontCollection.cpp",
-    "//third_party/skia/modules/skparagraph/src/HyphenTrie.cpp",
-    "//third_party/skia/modules/skparagraph/src/Hyphenator.cpp",
-    "//third_party/skia/modules/skparagraph/src/OneLineShaper.cpp",
-    "//third_party/skia/modules/skparagraph/src/ParagraphBuilderImpl.cpp",
-    "//third_party/skia/modules/skparagraph/src/ParagraphCache.cpp",
-    "//third_party/skia/modules/skparagraph/src/ParagraphImpl.cpp",
-    "//third_party/skia/modules/skparagraph/src/ParagraphLineFetcherImpl.cpp",
-    "//third_party/skia/modules/skparagraph/src/ParagraphPainterImpl.cpp",
-    "//third_party/skia/modules/skparagraph/src/ParagraphStyle.cpp",
-    "//third_party/skia/modules/skparagraph/src/Run.cpp",
-    "//third_party/skia/modules/skparagraph/src/RunBaseImpl.cpp",
-    "//third_party/skia/modules/skparagraph/src/TextGlobalConfig.cpp",
-    "//third_party/skia/modules/skparagraph/src/TextLine.cpp",
-    "//third_party/skia/modules/skparagraph/src/TextLineBaseImpl.cpp",
-    "//third_party/skia/modules/skparagraph/src/TextLineJustify.cpp",
-    "//third_party/skia/modules/skparagraph/src/TextShadow.cpp",
-    "//third_party/skia/modules/skparagraph/src/TextStyle.cpp",
-    "//third_party/skia/modules/skparagraph/src/TextTabAlign.cpp",
-    "//third_party/skia/modules/skparagraph/src/TextWrapper.cpp",
-    "//third_party/skia/modules/skparagraph/src/TypefaceFontProvider.cpp",
+    "$skparagraph_root/src/Decorations.cpp",
+    "$skparagraph_root/src/FontArguments.cpp",
+    "$skparagraph_root/src/FontCollection.cpp",
+    "$skparagraph_root/src/HyphenTrie.cpp",
+    "$skparagraph_root/src/Hyphenator.cpp",
+    "$skparagraph_root/src/OneLineShaper.cpp",
+    "$skparagraph_root/src/ParagraphBuilderImpl.cpp",
+    "$skparagraph_root/src/ParagraphCache.cpp",
+    "$skparagraph_root/src/ParagraphImpl.cpp",
+    "$skparagraph_root/src/ParagraphLineFetcherImpl.cpp",
+    "$skparagraph_root/src/ParagraphPainterImpl.cpp",
+    "$skparagraph_root/src/ParagraphStyle.cpp",
+    "$skparagraph_root/src/Run.cpp",
+    "$skparagraph_root/src/RunBaseImpl.cpp",
+    "$skparagraph_root/src/TextGlobalConfig.cpp",
+    "$skparagraph_root/src/TextLine.cpp",
+    "$skparagraph_root/src/TextLineBaseImpl.cpp",
+    "$skparagraph_root/src/TextLineJustify.cpp",
+    "$skparagraph_root/src/TextShadow.cpp",
+    "$skparagraph_root/src/TextStyle.cpp",
+    "$skparagraph_root/src/TextTabAlign.cpp",
+    "$skparagraph_root/src/TextWrapper.cpp",
+    "$skparagraph_root/src/TypefaceFontProvider.cpp",
   ]
 
   if (defined(use_rosen_drawing) && use_rosen_drawing) {

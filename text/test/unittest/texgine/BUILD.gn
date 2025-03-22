@@ -38,11 +38,7 @@ config("texgine_test_config") {
 
 group("common_deps") {
   testonly = true
-  public_deps = [
-    "$graphic_2d_root/utils/test_header:test_header",
-    "//third_party/googletest:gmock",
-    "//third_party/googletest:gtest",
-  ]
+  public_deps = [ "$graphic_2d_root/utils/test_header:test_header" ]
 
   if (defined(use_rosen_drawing) && use_rosen_drawing) {
     public_deps += [ "$graphic_2d_root/rosen/modules/2d_graphics:2d_graphics" ]
@@ -58,6 +54,10 @@ ohos_unittest("texgine_unittest_part3") {
 
   public_configs = [ ":texgine_test_config" ]
   public_deps = [ ":common_deps" ]
+  external_deps = [
+    "googletest:gmock",
+    "googletest:gtest_main",
+  ]
 
   use_exceptions = true
 
@@ -72,6 +72,10 @@ ohos_unittest("texgine_unittest_part6") {
 
   public_configs = [ ":texgine_test_config" ]
   public_deps = [ ":common_deps" ]
+  external_deps = [
+    "googletest:gmock",
+    "googletest:gtest_main",
+  ]
 
   use_exceptions = true
 
@@ -86,6 +90,10 @@ ohos_unittest("texgine_unittest_part7") {
 
   public_configs = [ ":texgine_test_config" ]
   public_deps = [ ":common_deps" ]
+  external_deps = [
+    "googletest:gmock",
+    "googletest:gtest_main",
+  ]
 
   use_exceptions = true
 

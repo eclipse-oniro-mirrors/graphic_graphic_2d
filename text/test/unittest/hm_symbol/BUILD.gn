@@ -28,7 +28,6 @@ ohos_unittest("hm_symbol_engine_test") {
     ]
   }
   include_dirs = [
-    "//third_party/googletest/googletest/include",
     "$rosen_text_root",
     "$rosen_text_root/service/skia_txt",
     "$rosen_text_root/interface/export",
@@ -62,12 +61,10 @@ ohos_unittest("hm_symbol_engine_test") {
     }
   }
 
-  deps = [
-    "$rosen_root/modules/2d_graphics:2d_graphics",
-    "//third_party/googletest:gtest_main",
-  ]
+  deps = [ "$rosen_root/modules/2d_graphics:2d_graphics" ]
 
   external_deps = [
+    "googletest:gtest_main",
     "hilog:libhilog",
     "skia:skia_canvaskit",
   ]
