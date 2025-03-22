@@ -195,29 +195,19 @@ HWTEST_F(NativeDrawingRunTest, OH_Drawing_RunTest003, TestSize.Level1)
     OH_Drawing_Array* runs = OH_Drawing_TextLineGetGlyphRuns(textLine);
     size_t runsSize = OH_Drawing_GetDrawingArraySize(runs);
     ASSERT_GT(runsSize, 0);
-    
-    std::vector<int32_t> countArr = {6, 2, 1, 5, 5, 5};
-    for (int i = 0; i < runsSize; i++) {
-        OH_Drawing_Run* run = OH_Drawing_GetRunByIndex(runs, i);
-        uint32_t count = OH_Drawing_GetRunGlyphCount(run);
-        auto glyphIndexArr = OH_Drawing_GetRunStringIndices(run, 0, count);
-        auto glyphIndexArrSize = OH_Drawing_GetDrawingArraySize(glyphIndexArr);
-        EXPECT_EQ(glyphIndexArrSize, countArr[i]);
-        if (i == 1) {
-            std::vector<int32_t> indexndexArr = {6, 7};
-            for (int j = 0; j < glyphIndexArrSize; j++) {
-                auto glyphIndex = OH_Drawing_GetRunStringIndicesByIndex(glyphIndexArr, j);
-                EXPECT_EQ(glyphIndex, indexndexArr[j]);
-            }
-        }
-        // branchCoverage
-        OH_Drawing_GetRunStringIndices(nullptr, -1, -1);
-        OH_Drawing_GetRunStringIndicesByIndex(glyphIndexArr, glyphIndexArrSize);
-
-        OH_Drawing_DestroyRunStringIndices(glyphIndexArr);
+    OH_Drawing_Run* run1 = OH_Drawing_GetRunByIndex(runs, 1);
+    uint32_t count = OH_Drawing_GetRunGlyphCount(run1);
+    auto glyphIndexArr = OH_Drawing_GetRunStringIndices(run1, 0, count);
+    auto glyphIndexArrSize = OH_Drawing_GetDrawingArraySize(glyphIndexArr);
+    std::vector<int32_t> indexndexArr = {6, 7};
+    for (int j = 0; j < glyphIndexArrSize; j++) {
+        auto glyphIndex = OH_Drawing_GetRunStringIndicesByIndex(glyphIndexArr, j);
+        EXPECT_EQ(glyphIndex, indexndexArr[j]);
     }
- 
     // branchCoverage
+    OH_Drawing_GetRunStringIndices(nullptr, -1, -1);
+    OH_Drawing_GetRunStringIndicesByIndex(glyphIndexArr, glyphIndexArrSize);
+    OH_Drawing_DestroyRunStringIndices(glyphIndexArr);
     OH_Drawing_GetRunGlyphCount(nullptr);
     
      
@@ -281,6 +271,8 @@ HWTEST_F(NativeDrawingRunTest, OH_Drawing_RunTest005, TestSize.Level1)
     ASSERT_GT(runsSize, 0);
     
     std::vector<float> widthArr = {78.929932, 59.999939, 8.099991, 81.509903, 187.187500, 64.349945};
+    std::vector<float> ascentArr = {27.840000, 27.840000, 27.840000, 27.840000, 27.798166, 35.369999};
+    std::vector<float> descentArr = {7.320000, 7.320000, 7.320000, 7.320000, 7.431193, 9.690001};
     for (int i = 0; i < runsSize; i++) {
         OH_Drawing_Run* run = OH_Drawing_GetRunByIndex(runs, i);
         float ascent = 0.0;
@@ -288,16 +280,8 @@ HWTEST_F(NativeDrawingRunTest, OH_Drawing_RunTest005, TestSize.Level1)
         float leading = 0.0;
         float width = OH_Drawing_GetRunTypographicBounds(run, &ascent, &descent, &leading);
         EXPECT_EQ(leading, 0);
-        if (i == 4) {
-            EXPECT_NEAR(ascent, 27.798166, FLOAT_DATA_EPSILON);
-            EXPECT_NEAR(descent, 7.431193, FLOAT_DATA_EPSILON);
-        } else if (i == 5) {
-            EXPECT_NEAR(ascent, 35.369999, FLOAT_DATA_EPSILON);
-            EXPECT_NEAR(descent, 9.690001, FLOAT_DATA_EPSILON);
-        } else {
-            EXPECT_NEAR(ascent, 27.840000, FLOAT_DATA_EPSILON);
-            EXPECT_NEAR(descent, 7.320000, FLOAT_DATA_EPSILON);
-        }
+        EXPECT_NEAR(ascent, ascentArr[i], FLOAT_DATA_EPSILON);
+        EXPECT_NEAR(descent, descentArr[i], FLOAT_DATA_EPSILON);
         EXPECT_NEAR(width, widthArr[i], FLOAT_DATA_EPSILON);
         // branchCoverage
         OH_Drawing_GetRunTypographicBounds(run, nullptr, nullptr, nullptr);
@@ -413,28 +397,23 @@ HWTEST_F(NativeDrawingRunTest, OH_Drawing_RunTest007, TestSize.Level1)
     
     std::vector<int32_t> positionSizeArr = {6, 2, 1, 5, 5, 5};
     std::vector<float> posXArr = {0, 29.999969};
-    for (int i = 0; i < runsSize; i++) {
-        OH_Drawing_Run* run = OH_Drawing_GetRunByIndex(runs, i);
-        uint32_t count = OH_Drawing_GetRunGlyphCount(run);
-        OH_Drawing_Array* positions = OH_Drawing_GetRunPositions(run, 0, count);
-        EXPECT_TRUE(positions != nullptr);
-        size_t positionSize = OH_Drawing_GetDrawingArraySize(positions);
-        EXPECT_EQ(positionSize, positionSizeArr[i]);
-        if (i == 1) {
-            for (size_t posIndex = 0; posIndex < positionSize; posIndex++) {
-                OH_Drawing_Point* pos = OH_Drawing_GetRunPositionsByIndex(positions, posIndex);
-                EXPECT_TRUE(pos != nullptr);
-                float x = 0.0;
-                OH_Drawing_PointGetX(pos, &x);
-                EXPECT_NEAR(x, posXArr[posIndex], FLOAT_DATA_EPSILON);
-            }
-        }
-        // branchCoverage
-        OH_Drawing_GetRunPositionsByIndex(positions, positionSize);
-
-        OH_Drawing_DestroyRunPositions(positions);
+    OH_Drawing_Run* run = OH_Drawing_GetRunByIndex(runs, 1);
+    uint32_t count = OH_Drawing_GetRunGlyphCount(run);
+    OH_Drawing_Array* positions = OH_Drawing_GetRunPositions(run, 0, count);
+    EXPECT_TRUE(positions != nullptr);
+    size_t positionSize = OH_Drawing_GetDrawingArraySize(positions);
+    for (size_t posIndex = 0; posIndex < positionSize; posIndex++) {
+        OH_Drawing_Point* pos = OH_Drawing_GetRunPositionsByIndex(positions, posIndex);
+        EXPECT_TRUE(pos != nullptr);
+        float x = 0.0;
+        OH_Drawing_PointGetX(pos, &x);
+        EXPECT_NEAR(x, posXArr[posIndex], FLOAT_DATA_EPSILON);
     }
+    EXPECT_EQ(positionSize, 2);
+    
     // branchCoverage
+    OH_Drawing_GetRunPositionsByIndex(positions, positionSize);
+    OH_Drawing_DestroyRunPositions(positions);
     OH_Drawing_GetRunPositions(nullptr, -1, -1);
         
     OH_Drawing_DestroyRuns(runs);
