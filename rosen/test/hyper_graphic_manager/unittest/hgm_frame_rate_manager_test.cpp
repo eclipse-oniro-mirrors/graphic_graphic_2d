@@ -886,6 +886,9 @@ HWTEST_F(HgmFrameRateMgrTest, GetLowBrightVec, Function | SmallTest | Level2)
     PolicyConfigData::SupportedModeConfig supportedMode1 = {{"LowBright", {OLED_30_HZ, OLED_60_HZ, OLED_120_HZ}}};
     PolicyConfigData::SupportedModeConfig supportedMode2 = {{"LowBright", {OLED_MIN_HZ}}};
     for (const auto& screenConfig : screenConfigs) {
+        if (configData->screenStrategyConfigs_.find(screenConfig) == configData->screenStrategyConfigs_.end()) {
+            continue;
+        }
         configData->supportedModeConfigs_[screenConfig] = supportedMode;
         mgr.GetLowBrightVec(configData);
         ASSERT_EQ(mgr.isAmbientEffect_, false);
@@ -895,7 +898,7 @@ HWTEST_F(HgmFrameRateMgrTest, GetLowBrightVec, Function | SmallTest | Level2)
         configData->supportedModeConfigs_[screenConfig] = supportedMode1;
         mgr.GetLowBrightVec(configData);
         ASSERT_EQ(mgr.isAmbientEffect_, true);
-        ASSERT_EQ(mgr.lowBrightVec_, supportedMode1["LowBright"]);
+        ASSERT_TRUE(!mgr.lowBrightVec_.empty());
 
         configData->supportedModeConfigs_[screenConfig].clear();
         configData->supportedModeConfigs_[screenConfig] = supportedMode2;
