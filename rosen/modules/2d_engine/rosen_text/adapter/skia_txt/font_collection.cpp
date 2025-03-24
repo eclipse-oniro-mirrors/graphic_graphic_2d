@@ -198,6 +198,7 @@ void FontCollection::ClearThemeFont()
         dfmanager_->LoadThemeFont("", themeFamily, nullptr, 0);
     }
     fontCollection_->ClearFontFamilyCache();
+    SPText::DefaultFamilyNameMgr::GetInstance().ModifyThemeFontFamilies(0);
 }
 
 void FontCollection::ClearCaches()

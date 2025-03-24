@@ -776,11 +776,11 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyTest021, TestSize.Level
         EXPECT_EQ(item.second.textStyle->fontWeight, FontWeight::W100);
         EXPECT_EQ(item.second.textStyle->fontStyle, FontStyle::ITALIC);
         EXPECT_EQ(item.second.textStyle->baseline, TextBaseline::ALPHABETIC);
-        EXPECT_EQ(item.second.textStyle->fontFamilies.size(), 4);
+        EXPECT_EQ(item.second.textStyle->fontFamilies.size(), 3);
 
         // The first two are the theme font and the system font, respectively.
-        EXPECT_EQ(item.second.textStyle->fontFamilies.at(2), "Text");
-        EXPECT_EQ(item.second.textStyle->fontFamilies.at(3), "Text2");
+        EXPECT_EQ(item.second.textStyle->fontFamilies.at(1), "Text");
+        EXPECT_EQ(item.second.textStyle->fontFamilies.at(2), "Text2");
         EXPECT_EQ(item.second.textStyle->letterSpacing, -10);
         EXPECT_EQ(item.second.textStyle->wordSpacing, 5);
         EXPECT_EQ(item.second.textStyle->halfLeading, true);
