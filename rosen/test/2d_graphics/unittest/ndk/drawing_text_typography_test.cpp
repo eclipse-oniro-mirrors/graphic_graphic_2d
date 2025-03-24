@@ -3166,13 +3166,12 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TextStyleGetTest002, TestSize.Lev
     EXPECT_EQ(OH_Drawing_BrushGetAlpha(brush), OH_Drawing_BrushGetAlpha(brush1));
     EXPECT_NE(brush, brush1);
 
-    EXPECT_EQ(OH_Drawing_TextStyleIsPlaceholder(txtStyle), false);
-    EXPECT_EQ(OH_Drawing_TextStyleIsPlaceholder(txtStyle), false);
-    EXPECT_EQ(OH_Drawing_TextStyleIsPlaceholder(nullptr), false);
+    EXPECT_FALSE(OH_Drawing_TextStyleIsPlaceholder(txtStyle));
+    EXPECT_FALSE(OH_Drawing_TextStyleIsPlaceholder(nullptr));
     OH_Drawing_TextStyleSetPlaceholder(txtStyle);
-    EXPECT_EQ(OH_Drawing_TextStyleIsPlaceholder(txtStyle), true);
+    EXPECT_TRUE(OH_Drawing_TextStyleIsPlaceholder(txtStyle));
     OH_Drawing_TextStyleSetPlaceholder(txtStyle);
-    EXPECT_EQ(OH_Drawing_TextStyleIsPlaceholder(txtStyle), true);
+    EXPECT_TRUE(OH_Drawing_TextStyleIsPlaceholder(txtStyle));
 }
 
 /*
