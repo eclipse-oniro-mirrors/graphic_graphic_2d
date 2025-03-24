@@ -6022,7 +6022,7 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateAncoPrepareClip001, TestSize.Level1)
     auto hwcNodePtr = RSTestUtil::CreateSurfaceNodeWithBuffer();
     ASSERT_NE(hwcNodePtr, nullptr);
     hwcNodePtr->SetAncoFlags(static_cast<uint32_t>(AncoFlags::ANCO_SFV_NODE));
-    hwcNodePtr->GetMutableRenderProperties().clipToBounts_ = true;
+    hwcNodePtr->GetMutableRenderProperties().clipToBounds_ = true;
     hwcNodePtr->GetMutableRenderProperties().clipToFrame_ = true;
     rsUniRenderVisitor->UpdateAncoPrepareClip(*hwcNodePtr);
     hwcNodePtr->SetAncoFlags(static_cast<uint32_t>(AncoFlags::IS_ANCO_NODE));
