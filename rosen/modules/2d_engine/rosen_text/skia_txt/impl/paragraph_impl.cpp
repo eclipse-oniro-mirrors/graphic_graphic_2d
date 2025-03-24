@@ -267,7 +267,7 @@ Range<size_t> ParagraphImpl::GetWordBoundary(size_t offset)
 Range<size_t> ParagraphImpl::GetActualTextRange(int lineNumber, bool includeSpaces)
 {
     RecordDifferentPthreadCall(__FUNCTION__);
-    if (lineNumber >=0 && lineNumber <= static_cast<int>(paragraph_->lineNumber())) {
+    if (lineNumber >= 0 && lineNumber < static_cast<int>(paragraph_->lineNumber())) {
         skt::SkRange<size_t> range = paragraph_->getActualTextRange(lineNumber, includeSpaces);
         return Range<size_t>(range.start, range.end);
     } else {
