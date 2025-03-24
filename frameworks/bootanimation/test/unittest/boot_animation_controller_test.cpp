@@ -113,6 +113,7 @@ HWTEST_F(BootAnimationControllerTest, BootAnimationControllerTest_006, TestSize.
 {
     std::shared_ptr<BootAnimationController> controller = std::make_shared<BootAnimationController>();
     std::string path = controller->GetConfigFilePath();
+    std::string filePath = "/sys_prod/etc/bootanimation/"
     EXPECT_EQ(path.empty(), false);
 }
 

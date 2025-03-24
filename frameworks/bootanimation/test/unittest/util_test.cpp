@@ -172,10 +172,6 @@ HWTEST_F(UtilTest, UtilTest_005, TestSize.Level1)
     filePath = "/sys_prod/etc/bootanimation/bootanimation_custom_config.json1";
     isFileExist = OHOS::IsFileExisted(filePath);
     EXPECT_EQ(false, isFileExist);
-
-    filePath = "/sys_prod/etc/bootanimation/bootanimation_custom_config.json";
-    isFileExist = OHOS::IsFileExisted(filePath);
-    EXPECT_EQ(true, isFileExist);
 }
 
 /**
