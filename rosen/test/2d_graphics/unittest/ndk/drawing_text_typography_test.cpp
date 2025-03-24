@@ -2995,19 +2995,6 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyTest114, TestSize.Level
     OH_Drawing_TypographyGetLineMetricsAt(typography, 0, &lineMerics);
     EXPECT_EQ(lineMerics.height, 85);
 
-    // branch coverage
-    OH_Drawing_SetTypographyStyleTextStrutStyle(typoStyle, nullptr);
-    
-    // branch coverage
-    OH_Drawing_StrutStyle* strutstyle1 = new OH_Drawing_StrutStyle();
-    strutstyle1->familiesSize = 0;
-    strutstyle1->families = (char**)malloc(1 * sizeof(char*));
-    OH_Drawing_SetTypographyStyleTextStrutStyle(typoStyle, strutstyle1);
-    OH_Drawing_TypographyStyleGetStrutStyle(typoStyle);
-    OH_Drawing_TypographyStyleDestroyStrutStyle(nullptr);
-
-    free(strutstyle1->families);
-    OH_Drawing_TypographyStyleDestroyStrutStyle(strutstyle1);
     OH_Drawing_DestroyTypography(typography);
     OH_Drawing_DestroyTextStyle(textStyle);
     OH_Drawing_DestroyTypographyHandler(handler);
@@ -3055,6 +3042,33 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyTest115, TestSize.Level
     OH_Drawing_TypographyStyleDestroyStrutStyle(to);
     OH_Drawing_TypographyStyleDestroyStrutStyle(from1);
     OH_Drawing_TypographyStyleDestroyStrutStyle(to1);
+}
+
+/*
+ * @tc.name: OH_Drawing_TypographyTest116
+ * @tc.desc: test for getting strut style where familySize equals 0
+ * @tc.type: FUNC
+ */
+HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyTest116, TestSize.Level1)
+{
+    OH_Drawing_TypographyStyle* typoStyle = OH_Drawing_CreateTypographyStyle();
+    OH_Drawing_StrutStyle* strutstyle1 = new OH_Drawing_StrutStyle();
+    strutstyle1->familiesSize = 0;
+    strutstyle1->families = (char**)malloc(1 * sizeof(char*));
+    OH_Drawing_SetTypographyStyleTextStrutStyle(typoStyle, strutstyle1);
+    OH_Drawing_StrutStyle* structStyle = OH_Drawing_TypographyStyleGetStrutStyle(typoStyle);
+    EXPECT_EQ(structStyle->familiesSize, 0);
+    EXPECT_EQ(structStyle->families, nullptr);
+
+    free(strutstyle1->families);
+    OH_Drawing_TypographyStyleDestroyStrutStyle(strutstyle1);
+
+    // branch coverage
+    OH_Drawing_SetTypographyStyleTextStrutStyle(typoStyle, nullptr);
+    OH_Drawing_TypographyStyleDestroyStrutStyle(nullptr);
+    
+    OH_Drawing_TypographyStyleDestroyStrutStyle(structStyle);
+    OH_Drawing_DestroyTypographyStyle(typoStyle);
 }
 
 /*
