@@ -43,6 +43,7 @@ config("export_config") {
     "$rosen_root/modules/render_service_base/include",
     "$rosen_text_root/interface/export",
     "$rosen_text_root/interface/export/rosen_text",
+    "$rosen_text_root/service",
   ]
 
   if (rs_enable_gpu) {
