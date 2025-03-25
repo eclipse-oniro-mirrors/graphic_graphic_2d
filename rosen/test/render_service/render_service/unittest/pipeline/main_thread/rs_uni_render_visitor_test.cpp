@@ -6026,6 +6026,6 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateAncoPrepareClip001, TestSize.Level1)
     hwcNodePtr->GetMutableRenderProperties().clipToFrame_ = true;
     rsUniRenderVisitor->UpdateAncoPrepareClip(*hwcNodePtr);
     hwcNodePtr->SetAncoFlags(static_cast<uint32_t>(AncoFlags::IS_ANCO_NODE));
-    rsUniRenderVisitor->UpdateAncoPrepareClip(*hwcNodePtr);	
+    rsUniRenderVisitor->UpdateAncoPrepareClip(*hwcNodePtr);
 }
 } // OHOS::Rosen
