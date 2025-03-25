@@ -2226,7 +2226,6 @@ void RSMainThread::PrepareUiCaptureTasks(std::shared_ptr<RSUniRenderVisitor> uni
         auto node = nodeMap.GetRenderNode(id);
         bool flag = context_->GetUiCaptureCmdsExecutedFlag(id);
         if (!flag) {
-            RS_LOGD("RSMainThread::PrepareUiCaptureTasks cmds not be processed, id: %{public}llu", id);
             remainUiCaptureTasks.emplace_back(id, captureTask);
             continue;
         }
