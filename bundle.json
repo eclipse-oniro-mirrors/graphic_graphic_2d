@@ -412,6 +412,14 @@
           },
           {
             "type": "so",
+            "name": "//foundation/graphic/graphic_2d/interfaces/kits/cj/effect_kit:cj_effect_kit_ffi",
+            "header": {
+              "header_files": [],
+              "header_base": "//foundation/graphic/graphic_2d/interfaces/kits/cj/effect_kit"
+            }
+          },
+          {
+            "type": "so",
             "name": "//foundation/graphic/graphic_2d/rosen/modules/2d_engine/ddgr:libddgr",
             "header": {
               "header_files": [],
