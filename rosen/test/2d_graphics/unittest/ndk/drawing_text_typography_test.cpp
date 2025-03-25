@@ -1277,12 +1277,8 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyTest043, TestSize.Level
  */
 HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyTest044, TestSize.Level1)
 {
-    OH_Drawing_TypographyStyle* typoStyle = OH_Drawing_CreateTypographyStyle();
+    CreateTypographyHandler();
     OH_Drawing_TextStyle* txtStyle = OH_Drawing_CreateTextStyle();
-    OH_Drawing_TypographyCreate* handler =
-        OH_Drawing_CreateTypographyHandler(typoStyle, OH_Drawing_CreateFontCollection());
-    EXPECT_NE(handler, nullptr);
-
     OH_Drawing_SetTextStyleColor(txtStyle, OH_Drawing_ColorSetArgb(0xFF, 0x00, 0x00, 0x00));
     double fontSize = 30;
     OH_Drawing_SetTextStyleFontSize(txtStyle, fontSize);
@@ -1291,11 +1287,11 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyTest044, TestSize.Level
     OH_Drawing_SetTextStyleHalfLeading(txtStyle, halfLeading);
     const char* fontFamilies[] = {"Roboto"};
     OH_Drawing_SetTextStyleFontFamilies(txtStyle, 1, fontFamilies);
-    OH_Drawing_TypographyHandlerPushTextStyle(handler, txtStyle);
+    OH_Drawing_TypographyHandlerPushTextStyle(fHandler, txtStyle);
     const char* text = "OpenHarmony\n";
-    OH_Drawing_TypographyHandlerAddText(handler, text);
-    OH_Drawing_TypographyHandlerPopTextStyle(handler);
-    OH_Drawing_Typography* typography = OH_Drawing_CreateTypography(handler);
+    OH_Drawing_TypographyHandlerAddText(fHandler, text);
+    OH_Drawing_TypographyHandlerPopTextStyle(fHandler);
+    OH_Drawing_Typography* typography = OH_Drawing_CreateTypography(fHandler);
     double maxWidth = 800.0;
     OH_Drawing_TypographyLayout(typography, maxWidth);
     double position[2] = {10.0, 15.0};
@@ -1314,22 +1310,21 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyTest044, TestSize.Level
     OH_Drawing_DisableFontCollectionFallback(OH_Drawing_CreateFontCollection());
     OH_Drawing_DisableFontCollectionFallback(nullptr);
     OH_Drawing_DisableFontCollectionSystemFont(OH_Drawing_CreateFontCollection());
-    OH_Drawing_SetTypographyTextEllipsis(typoStyle, text);
-    OH_Drawing_SetTypographyTextLocale(typoStyle, text);
-    OH_Drawing_SetTypographyTextSplitRatio(typoStyle, -10);
-    OH_Drawing_SetTypographyTextSplitRatio(typoStyle, 100);
-    OH_Drawing_SetTypographyTextSplitRatio(typoStyle, 0.1);
-    OH_Drawing_TypographyGetTextStyle(typoStyle);
-    EXPECT_TRUE(OH_Drawing_TypographyGetEffectiveAlignment(typoStyle) >= 0);
-    EXPECT_NE(OH_Drawing_TypographyIsLineUnlimited(typoStyle), 0);
-    EXPECT_NE(OH_Drawing_TypographyIsEllipsized(typoStyle), 0);
-    OH_Drawing_SetTypographyTextStyle(typoStyle, txtStyle);
+    OH_Drawing_SetTypographyTextEllipsis(fTypoStyle, text);
+    OH_Drawing_SetTypographyTextLocale(fTypoStyle, text);
+    OH_Drawing_SetTypographyTextSplitRatio(fTypoStyle, -10);
+    OH_Drawing_SetTypographyTextSplitRatio(fTypoStyle, 100);
+    OH_Drawing_SetTypographyTextSplitRatio(fTypoStyle, 0.1);
+    OH_Drawing_TypographyGetTextStyle(fTypoStyle);
+    EXPECT_TRUE(OH_Drawing_TypographyGetEffectiveAlignment(fTypoStyle) >= 0);
+    EXPECT_NE(OH_Drawing_TypographyIsLineUnlimited(fTypoStyle), 0);
+    EXPECT_NE(OH_Drawing_TypographyIsEllipsized(fTypoStyle), 0);
+    OH_Drawing_SetTypographyTextStyle(fTypoStyle, txtStyle);
     OH_Drawing_TypographyLayout(typography, fLayoutWidth);
     OH_Drawing_PositionAndAffinity* positionAndAffinity =
         OH_Drawing_TypographyGetGlyphPositionAtCoordinateWithCluster(typography, 100, 10);
     EXPECT_EQ(OH_Drawing_GetPositionFromPositionAndAffinity(positionAndAffinity), 2);
     OH_Drawing_DestroyTypography(typography);
-    OH_Drawing_DestroyTypographyHandler(handler);
 }
 
 /*
