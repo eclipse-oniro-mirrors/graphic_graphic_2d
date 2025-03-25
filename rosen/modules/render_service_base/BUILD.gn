@@ -487,6 +487,7 @@ ohos_source_set("render_service_base_src") {
     include_dirs += [
       "$graphic_2d_root/utils/color_manager/export",
       "//foundation/multimedia/image_framework/interfaces/innerkits/include",
+      "//foundation/graphic/graphics_effect/include",
       "//foundation/graphic/graphic_surface/interfaces/inner_api/surface",
     ]
   }
@@ -496,6 +497,10 @@ ohos_source_set("render_service_base_src") {
     "$rosen_root/modules/platform:hilog",
     "$rosen_root/modules/platform:ipc_core",
   ]
+
+  if (is_arkui_x) {
+    deps += [ "//foundation/graphic/graphics_effect:libgraphics_effect" ]
+  }
 
   external_deps = [
     "graphic_surface:surface_headers",
