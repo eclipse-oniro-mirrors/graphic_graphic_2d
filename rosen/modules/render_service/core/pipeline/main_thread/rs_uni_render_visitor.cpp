@@ -1801,6 +1801,7 @@ bool RSUniRenderVisitor::AfterUpdateSurfaceDirtyCalc(RSSurfaceRenderNode& node)
             node.SetDRMCrossNode(firstLevelNode->IsFirstLevelCrossNode());
         }
     }
+    UpdateAncoPrepareClip(node);
     UpdateDstRect(node, geoPtr->GetAbsRect(), prepareClipRect_);
     node.UpdatePositionZ();
     if (node.IsHardwareEnabledType() && node.GetZorderChanged() && curSurfaceNode_) {
@@ -3483,32 +3484,35 @@ void RSUniRenderVisitor::UpdateHWCNodeClipRect(std::shared_ptr<RSSurfaceRenderNo
     RSRenderNode::SharedPtr hwcNodeParent = hwcNodePtr;
     while (hwcNodeParent && hwcNodeParent->GetType() != RSRenderNodeType::DISPLAY_NODE &&
            hwcNodeParent->GetId() != rootNode.GetId()) {
-        const auto& parentProperties = hwcNodeParent->GetRenderProperties();
-        const auto& parentGeoPtr = parentProperties.GetBoundsGeometry();
-        parentGeoPtr->GetMatrix().MapRect(childRectMapped, childRectMapped);
-        if (parentProperties.GetClipToBounds()) {
-            auto selfDrawRectF = hwcNodeParent->GetSelfDrawRect();
-            Drawing::Rect clipSelfDrawRect(selfDrawRectF.left_, selfDrawRectF.top_,
-                selfDrawRectF.GetRight(), selfDrawRectF.GetBottom());
-            Drawing::Rect clipBoundRectMapped;
-            parentGeoPtr->GetMatrix().MapRect(clipBoundRectMapped, clipSelfDrawRect);
-            childRectMapped.Intersect(clipBoundRectMapped);
-        }
-        if (parentProperties.GetClipToFrame()) {
-            auto left = parentProperties.GetFrameOffsetX() * parentGeoPtr->GetMatrix().Get(Drawing::Matrix::SCALE_X);
-            auto top = parentProperties.GetFrameOffsetY() * parentGeoPtr->GetMatrix().Get(Drawing::Matrix::SCALE_Y);
-            Drawing::Rect clipFrameRect(
-                left, top, left + parentProperties.GetFrameWidth(), top + parentProperties.GetFrameHeight());
-            Drawing::Rect clipFrameRectMapped;
-            parentGeoPtr->GetMatrix().MapRect(clipFrameRectMapped, clipFrameRect);
-            childRectMapped.Intersect(clipFrameRectMapped);
-        }
-        if (parentProperties.GetClipToRRect()) {
-            RectF rectF = parentProperties.GetClipRRect().rect_;
-            Drawing::Rect clipRect(rectF.left_, rectF.top_, rectF.GetRight(), rectF.GetBottom());
-            Drawing::Rect clipRectMapped;
-            parentGeoPtr->GetMatrix().MapRect(clipRectMapped, clipRect);
-            childRectMapped.Intersect(clipRectMapped);
+        if (hwcNodeParent->GetType() == RSRenderNodeType::CANVAS_NODE) {
+            const auto& parentProperties = hwcNodeParent->GetRenderProperties();
+            const auto& parentGeoPtr = parentProperties.GetBoundsGeometry();
+            parentGeoPtr->GetMatrix().MapRect(childRectMapped, childRectMapped);
+            if (parentProperties.GetClipToBounds()) {
+                auto selfDrawRectF = hwcNodeParent->GetSelfDrawRect();
+                Drawing::Rect clipSelfDrawRect(selfDrawRectF.left_, selfDrawRectF.top_,
+                    selfDrawRectF.GetRight(), selfDrawRectF.GetBottom());
+                Drawing::Rect clipBoundRectMapped;
+                parentGeoPtr->GetMatrix().MapRect(clipBoundRectMapped, clipSelfDrawRect);
+                childRectMapped.IntersectRect(clipBoundRectMapped);
+            }
+            if (parentProperties.GetClipToFrame()) {
+                auto left = parentProperties.GetFrameOffsetX() *
+                    parentGeoPtr->GetMatrix().Get(Drawing::Matrix::SCALE_X);
+                auto top = parentProperties.GetFrameOffsetY() * parentGeoPtr->GetMatrix().Get(Drawing::Matrix::SCALE_Y);
+                Drawing::Rect clipFrameRect(
+                    left, top, left + parentProperties.GetFrameWidth(), top + parentProperties.GetFrameHeight());
+                Drawing::Rect clipFrameRectMapped;
+                parentGeoPtr->GetMatrix().MapRect(clipFrameRectMapped, clipFrameRect);
+                childRectMapped.IntersectRect(clipFrameRectMapped);
+            }
+            if (parentProperties.GetClipToRRect()) {
+                RectF rectF = parentProperties.GetClipRRect().rect_;
+                Drawing::Rect clipRect(rectF.left_, rectF.top_, rectF.GetRight(), rectF.GetBottom());
+                Drawing::Rect clipRectMapped;
+                parentGeoPtr->GetMatrix().MapRect(clipRectMapped, clipRect);
+                childRectMapped.IntersectRect(clipRectMapped);
+            }
         }
         hwcNodeParent = hwcNodeParent->GetParent().lock();
     }
@@ -3517,7 +3521,7 @@ void RSUniRenderVisitor::UpdateHWCNodeClipRect(std::shared_ptr<RSSurfaceRenderNo
     rootNodeAbsMatrix.MapRect(absClipRect, childRectMapped);
     Drawing::Rect prepareClipRect(prepareClipRect_.left_, prepareClipRect_.top_,
         prepareClipRect_.GetRight(), prepareClipRect_.GetBottom());
-    absClipRect.Intersect(prepareClipRect);
+    absClipRect.IntersectRect(prepareClipRect);
     clipRect.left_ = static_cast<int>(std::floor(absClipRect.GetLeft()));
     clipRect.top_ = static_cast<int>(std::floor(absClipRect.GetTop()));
     clipRect.width_ = static_cast<int>(std::ceil(absClipRect.GetRight() - clipRect.left_));
@@ -3577,12 +3581,14 @@ void RSUniRenderVisitor::CalcHwcNodeEnableByFilterRect(std::shared_ptr<RSSurface
         return;
     }
     auto filterNode = RSMainThread::Instance()->GetContext().GetNodeMap().GetRenderNode<RSRenderNode>(filterNodeId);
-    bool isBackground = filterNode->GetRenderProperties().GetBackgroundFilter() != nullptr;
-    bool isReverseNode = filterNode->GetCurFrameInfoDetail().curFrameReverseChildren ||
-         node->GetCurFrameInfoDetail().curFrameReverseChildren;
-    if (filterZorder != 0 && node->zOrderForCalcHwcNodeEnableByFilter_ != 0 && isBackground && !isReverseNode &&
-        !isReverseOrder && node->zOrderForCalcHwcNodeEnableByFilter_ > filterZorder) {
-        return;
+    if (filterNode) {
+        bool isBackground = filterNode->GetRenderProperties().GetBackgroundFilter() != nullptr;
+        bool isReverseNode = filterNode->GetCurFrameInfoDetail().curFrameReverseChildren ||
+            node->GetCurFrameInfoDetail().curFrameReverseChildren;
+        if (filterZorder != 0 && node->zOrderForCalcHwcNodeEnableByFilter_ != 0 && isBackground && !isReverseNode &&
+            !isReverseOrder && node->zOrderForCalcHwcNodeEnableByFilter_ > filterZorder) {
+            return;
+        }
     }
     auto bound = node->GetRenderProperties().GetBoundsGeometry()->GetAbsRect();
     bool isIntersect = !bound.IntersectRect(filterRect).IsEmpty();
@@ -4229,6 +4235,26 @@ void RSUniRenderVisitor::CollectSelfDrawingNodeRectInfo(RSSurfaceRenderNode& nod
     auto rect = node.GetRenderProperties().GetBoundsGeometry()->GetAbsRect();
     std::string nodeName = node.GetName();
     monitor.InsertCurRectMap(node.GetId(), nodeName, rect);
+}
+
+void RSUniRenderVisitor::UpdateAncoPrepareClip(RSSurfaceRenderNode& node)
+{
+    const auto& property = node.GetRenderProperties();
+    auto& geoPtr = property.GetBoundsGeometry();
+    if (geoPtr == nullptr) {
+        return;
+    }
+    if (node.GetAncoFlags() == static_cast<uint32_t>(AncoFlags::ANCO_SFV_NODE)) {
+        // Dirty Region use abstract coordinate, property of node use relative coordinate
+        // BoundsRect(if exists) is mapped to absRect_ of RSObjAbsGeometry
+        if (property.GetClipToBounds()) {
+            prepareClipRect_ = prepareClipRect_.IntersectRect(geoPtr->GetAbsRect());
+        }
+        if (property.GetClipToRRect()) {
+            RectF rect = property.GetClipRRect().rect_;
+            prepareClipRect_ = prepareClipRect_.IntersectRect(geoPtr->MapAbsRect(rect));
+        }
+    }
 }
 } // namespace Rosen
 } // namespace OHOS

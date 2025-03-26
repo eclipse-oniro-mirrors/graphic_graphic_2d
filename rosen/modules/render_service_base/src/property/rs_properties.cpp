@@ -72,143 +72,198 @@ using ResetPropertyFunc = void (*)(RSProperties* prop);
 // Every modifier before RSModifierType::CUSTOM is property modifier, and it should have a ResetPropertyFunc
 // NOTE: alway add new resetter when adding new property modifier
 static const std::unordered_map<RSModifierType, ResetPropertyFunc> g_propertyResetterLUT = {
-        { RSModifierType::INVALID,                              nullptr},                                                                   // INVALID
-        { RSModifierType::BOUNDS,                               nullptr},                                                                   // BOUNDS
-        { RSModifierType::FRAME,                                nullptr},                                                                   // FRAME
-        { RSModifierType::POSITION_Z,                           [](RSProperties* prop) { prop->SetPositionZ(0.f); }},                       // POSITION_Z
-        { RSModifierType::POSITION_Z_APPLICABLE_CAMERA3D,       [](RSProperties* prop) { prop->SetPositionZApplicableCamera3D(true); }},    // POSITION_Z_APPLICABLE_CAMERA3D
-        { RSModifierType::PIVOT,                                [](RSProperties* prop) { prop->SetPivot(Vector2f(0.5f, 0.5f)); }},    // PIVOT
-        { RSModifierType::PIVOT_Z,                              [](RSProperties* prop) { prop->SetPivotZ(0.f); }},                    // PIVOT_Z
-        { RSModifierType::QUATERNION,                           [](RSProperties* prop) { prop->SetQuaternion(Quaternion()); }},       // QUATERNION
-        { RSModifierType::ROTATION,                             [](RSProperties* prop) { prop->SetRotation(0.f); }},                  // ROTATION
-        { RSModifierType::ROTATION_X,                           [](RSProperties* prop) { prop->SetRotationX(0.f); }},                 // ROTATION_X
-        { RSModifierType::ROTATION_Y,                           [](RSProperties* prop) { prop->SetRotationY(0.f); }},                 // ROTATION_Y
-        { RSModifierType::CAMERA_DISTANCE,                      [](RSProperties* prop) { prop->SetCameraDistance(0.f); }},            // CAMERA_DISTANCE
-        { RSModifierType::SCALE,                                [](RSProperties* prop) { prop->SetScale(Vector2f(1.f, 1.f)); }},      // SCALE
-        { RSModifierType::SCALE_Z,                              [](RSProperties* prop) { prop->SetScaleZ(1.f); }},                    // SCALE_Z
-        { RSModifierType::SKEW,                                 [](RSProperties* prop) { prop->SetSkew({0.f, 0.f, 0.f}); }},          // SKEW
-        { RSModifierType::PERSP,                                [](RSProperties* prop) { prop->SetPersp({0.f, 0.f, 0.f, 1.f}); }},    // PERSP
-        { RSModifierType::TRANSLATE,                            [](RSProperties* prop) { prop->SetTranslate(Vector2f(0.f, 0.f)); }},  // TRANSLATE
-        { RSModifierType::TRANSLATE_Z,                          [](RSProperties* prop) { prop->SetTranslateZ(0.f); }},                // TRANSLATE_Z
-        { RSModifierType::SUBLAYER_TRANSFORM,                   [](RSProperties* prop) { prop->SetSublayerTransform({}); }},          // SUBLAYER_TRANSFORM
-        { RSModifierType::CORNER_RADIUS,                        [](RSProperties* prop) { prop->SetCornerRadius(0.f); }},              // CORNER_RADIUS
-        { RSModifierType::ALPHA,                                [](RSProperties* prop) { prop->SetAlpha(1.f); }},                     // ALPHA
-        { RSModifierType::ALPHA_OFFSCREEN,                      [](RSProperties* prop) { prop->SetAlphaOffscreen(false); }},          // ALPHA_OFFSCREEN
-        { RSModifierType::FOREGROUND_COLOR,                     [](RSProperties* prop) { prop->SetForegroundColor({}); }},            // FOREGROUND_COLOR
-        { RSModifierType::BACKGROUND_COLOR,                     [](RSProperties* prop) { prop->SetBackgroundColor({}); }},            // BACKGROUND_COLOR
-        { RSModifierType::BACKGROUND_SHADER,                    [](RSProperties* prop) { prop->SetBackgroundShader({}); }},           // BACKGROUND_SHADER
-        { RSModifierType::BACKGROUND_SHADER_PROGRESS,           [](RSProperties* prop) { prop->SetBackgroundShaderProgress(0.f); }},  // BACKGROUND_SHADER_PROGRESS
-        { RSModifierType::BG_IMAGE,                             [](RSProperties* prop) { prop->SetBgImage({}); }},                    // BG_IMAGE
-        { RSModifierType::BG_IMAGE_INNER_RECT,                  [](RSProperties* prop) { prop->SetBgImageInnerRect({}); }},           // BG_IMAGE_INNER_RECT
-        { RSModifierType::BG_IMAGE_WIDTH,                       [](RSProperties* prop) { prop->SetBgImageWidth(0.f); }},              // BG_IMAGE_WIDTH
-        { RSModifierType::BG_IMAGE_HEIGHT,                      [](RSProperties* prop) { prop->SetBgImageHeight(0.f); }},             // BG_IMAGE_HEIGHT
-        { RSModifierType::BG_IMAGE_POSITION_X,                  [](RSProperties* prop) { prop->SetBgImagePositionX(0.f); }},          // BG_IMAGE_POSITION_X
-        { RSModifierType::BG_IMAGE_POSITION_Y,                  [](RSProperties* prop) { prop->SetBgImagePositionY(0.f); }},          // BG_IMAGE_POSITION_Y
-        { RSModifierType::SURFACE_BG_COLOR,                     nullptr},                                                             // SURFACE_BG_COLOR
-        { RSModifierType::BORDER_COLOR,                         [](RSProperties* prop) { prop->SetBorderColor(RSColor()); }},         // BORDER_COLOR
-        { RSModifierType::BORDER_WIDTH,                         [](RSProperties* prop) { prop->SetBorderWidth(0.f); }},               // BORDER_WIDTH
-        { RSModifierType::BORDER_STYLE,                         [](RSProperties* prop) { prop->SetBorderStyle(BORDER_TYPE_NONE); }},  // BORDER_STYLE
-        { RSModifierType::BORDER_DASH_WIDTH,                    [](RSProperties* prop) { prop->SetBorderDashWidth({-1.f}); }},        // BORDER_DASH_WIDTH
-        { RSModifierType::BORDER_DASH_GAP,                      [](RSProperties* prop) { prop->SetBorderDashGap({-1.f}); }},          // BORDER_DASH_GAP
-        { RSModifierType::FILTER,                               [](RSProperties* prop) { prop->SetFilter({}); }},                     // FILTER
-        { RSModifierType::BACKGROUND_FILTER,                    [](RSProperties* prop) { prop->SetBackgroundFilter({}); }},           // BACKGROUND_FILTER
-        { RSModifierType::LINEAR_GRADIENT_BLUR_PARA,            [](RSProperties* prop) { prop->SetLinearGradientBlurPara({}); }},     // LINEAR_GRADIENT_BLUR_PARA
-        { RSModifierType::DYNAMIC_LIGHT_UP_RATE,                [](RSProperties* prop) { prop->SetDynamicLightUpRate({}); }},         // DYNAMIC_LIGHT_UP_RATE
-        { RSModifierType::DYNAMIC_LIGHT_UP_DEGREE,              [](RSProperties* prop) { prop->SetDynamicLightUpDegree({}); }},       // DYNAMIC_LIGHT_UP_DEGREE
-        { RSModifierType::FG_BRIGHTNESS_RATES,                  [](RSProperties* prop) { prop->SetFgBrightnessRates({}); }},          // FG_BRIGHTNESS_PARAMS
-        { RSModifierType::FG_BRIGHTNESS_SATURATION,             [](RSProperties* prop) { prop->SetFgBrightnessSaturation(0.0); }},     // FG_BRIGHTNESS_PARAMS
-        { RSModifierType::FG_BRIGHTNESS_POSCOEFF,               [](RSProperties* prop) { prop->SetFgBrightnessPosCoeff({}); }},       // FG_BRIGHTNESS_PARAMS
-        { RSModifierType::FG_BRIGHTNESS_NEGCOEFF,               [](RSProperties* prop) { prop->SetFgBrightnessNegCoeff({}); }},       // FG_BRIGHTNESS_PARAMS
-        { RSModifierType::FG_BRIGHTNESS_FRACTION,               [](RSProperties* prop) { prop->SetFgBrightnessFract({}); }},          // FG_BRIGHTNESS_FRACTION
-        { RSModifierType::BG_BRIGHTNESS_RATES,                  [](RSProperties* prop) { prop->SetBgBrightnessRates({}); }},          // BG_BRIGHTNESS_PARAMS
-        { RSModifierType::BG_BRIGHTNESS_SATURATION,             [](RSProperties* prop) { prop->SetBgBrightnessSaturation(0.0); }},     // BG_BRIGHTNESS_PARAMS
-        { RSModifierType::BG_BRIGHTNESS_POSCOEFF,               [](RSProperties* prop) { prop->SetBgBrightnessPosCoeff({}); }},       // BG_BRIGHTNESS_PARAMS
-        { RSModifierType::BG_BRIGHTNESS_NEGCOEFF,               [](RSProperties* prop) { prop->SetBgBrightnessNegCoeff({}); }},       // BG_BRIGHTNESS_PARAMS
-        { RSModifierType::BG_BRIGHTNESS_FRACTION,               [](RSProperties* prop) { prop->SetBgBrightnessFract(1.0); }},          // BG_BRIGHTNESS_FRACTION
-        { RSModifierType::FRAME_GRAVITY,                        [](RSProperties* prop) { prop->SetFrameGravity(Gravity::DEFAULT); }}, // FRAME_GRAVITY
-        { RSModifierType::CLIP_RRECT,                           [](RSProperties* prop) { prop->SetClipRRect({}); }},                  // CLIP_RRECT
-        { RSModifierType::CLIP_BOUNDS,                          [](RSProperties* prop) { prop->SetClipBounds({}); }},                 // CLIP_BOUNDS
-        { RSModifierType::CLIP_TO_BOUNDS,                       [](RSProperties* prop) { prop->SetClipToBounds(false); }},            // CLIP_TO_BOUNDS
-        { RSModifierType::CLIP_TO_FRAME,                        [](RSProperties* prop) { prop->SetClipToFrame(false); }},             // CLIP_TO_FRAME
-        { RSModifierType::VISIBLE,                              [](RSProperties* prop) { prop->SetVisible(true); }},                  // VISIBLE
-        { RSModifierType::SHADOW_COLOR,                         [](RSProperties* prop) { prop->SetShadowColor({}); }},                // SHADOW_COLOR
-        { RSModifierType::SHADOW_OFFSET_X,                      [](RSProperties* prop) { prop->SetShadowOffsetX(0.f); }},             // SHADOW_OFFSET_X
-        { RSModifierType::SHADOW_OFFSET_Y,                      [](RSProperties* prop) { prop->SetShadowOffsetY(0.f); }},             // SHADOW_OFFSET_Y
-        { RSModifierType::SHADOW_ALPHA,                         [](RSProperties* prop) { prop->SetShadowAlpha(0.f); }},               // SHADOW_ALPHA
-        { RSModifierType::SHADOW_ELEVATION,                     [](RSProperties* prop) { prop->SetShadowElevation(0.f); }},           // SHADOW_ELEVATION
-        { RSModifierType::SHADOW_RADIUS,                        [](RSProperties* prop) { prop->SetShadowRadius(0.f); }},              // SHADOW_RADIUS
-        { RSModifierType::SHADOW_PATH,                          [](RSProperties* prop) { prop->SetShadowPath({}); }},                 // SHADOW_PATH
-        { RSModifierType::SHADOW_MASK,                          [](RSProperties* prop) { prop->SetShadowMask(false); }},              // SHADOW_MASK
-        { RSModifierType::SHADOW_COLOR_STRATEGY,                [](RSProperties* prop) {
-                                                                    prop->SetShadowColorStrategy(SHADOW_COLOR_STRATEGY::COLOR_STRATEGY_NONE); }}, // SHADOW_COLOR_STRATEGY
-        { RSModifierType::MASK,                                 [](RSProperties* prop) { prop->SetMask({}); }
-                                                                },                       // MASK
-        { RSModifierType::SPHERIZE,                             [](RSProperties* prop) { prop->SetSpherize(0.f); }},                  // SPHERIZE
-        { RSModifierType::LIGHT_UP_EFFECT,                      [](RSProperties* prop) { prop->SetLightUpEffect(1.f); }},             // LIGHT_UP_EFFECT
-        { RSModifierType::PIXEL_STRETCH,                        [](RSProperties* prop) { prop->SetPixelStretch({}); }},               // PIXEL_STRETCH
-        { RSModifierType::PIXEL_STRETCH_PERCENT,                [](RSProperties* prop) { prop->SetPixelStretch({});
-                                                                                         prop->SetPixelStretchPercent({}); }},        // PIXEL_STRETCH_PERCENT
-        { RSModifierType::PIXEL_STRETCH_TILE_MODE,              [](RSProperties* prop) { prop->SetPixelStretchTileMode(0); }},        // PIXEL_STRETCH_TILE_MODE
-        { RSModifierType::USE_EFFECT,                           [](RSProperties* prop) { prop->SetUseEffect(false); }},               // USE_EFFECT
-        { RSModifierType::USE_EFFECT_TYPE,                      [](RSProperties* prop) { prop->SetUseEffectType(0); }},               // USE_EFFECT_TYPE
-        { RSModifierType::COLOR_BLEND_MODE,                     [](RSProperties* prop) { prop->SetColorBlendMode(0); }},              // COLOR_BLEND_MODE
-        { RSModifierType::COLOR_BLEND_APPLY_TYPE,               [](RSProperties* prop) { prop->SetColorBlendApplyType(0); }},         // COLOR_BLEND_APPLY_TYPE
-        { RSModifierType::SANDBOX,                              [](RSProperties* prop) { prop->ResetSandBox(); }},                    // SANDBOX
-        { RSModifierType::GRAY_SCALE,                           [](RSProperties* prop) { prop->SetGrayScale({}); }},                  // GRAY_SCALE
-        { RSModifierType::BRIGHTNESS,                           [](RSProperties* prop) { prop->SetBrightness({}); }},                 // BRIGHTNESS
-        { RSModifierType::CONTRAST,                             [](RSProperties* prop) { prop->SetContrast({}); }},                   // CONTRAST
-        { RSModifierType::SATURATE,                             [](RSProperties* prop) { prop->SetSaturate({}); }},                   // SATURATE
-        { RSModifierType::SEPIA,                                [](RSProperties* prop) { prop->SetSepia({}); }},                      // SEPIA
-        { RSModifierType::INVERT,                               [](RSProperties* prop) { prop->SetInvert({}); }},                     // INVERT
-        { RSModifierType::AIINVERT,                             [](RSProperties* prop) { prop->SetAiInvert({}); }},                   // AIINVERT
-        { RSModifierType::SYSTEMBAREFFECT,                      [](RSProperties* prop) { prop->SetSystemBarEffect({}); }},            // SYSTEMBAREFFECT
-        { RSModifierType::WATER_RIPPLE_PROGRESS,                [](RSProperties* prop) { prop->SetWaterRippleProgress(0.0f); }},      // WATER_RIPPLE_PROGRESS
-        { RSModifierType::WATER_RIPPLE_PARAMS,                  [](RSProperties* prop) { prop->SetWaterRippleParams({}); }},          // WATER_RIPPLE_PARAMS
-        { RSModifierType::HUE_ROTATE,                           [](RSProperties* prop) { prop->SetHueRotate({}); }},                  // HUE_ROTATE
-        { RSModifierType::COLOR_BLEND,                          [](RSProperties* prop) { prop->SetColorBlend({}); }},                 // COLOR_BLEND
-        { RSModifierType::PARTICLE,                             [](RSProperties* prop) { prop->SetParticles({}); }},                  // PARTICLE
-        { RSModifierType::SHADOW_IS_FILLED,                     [](RSProperties* prop) { prop->SetShadowIsFilled(false); }},          // SHADOW_IS_FILLED
-        { RSModifierType::OUTLINE_COLOR,                        [](RSProperties* prop) { prop->SetOutlineColor(RSColor()); }},        // OUTLINE_COLOR
-        { RSModifierType::OUTLINE_WIDTH,                        [](RSProperties* prop) { prop->SetOutlineWidth(0.f); }},              // OUTLINE_WIDTH
-        { RSModifierType::OUTLINE_STYLE,                        [](RSProperties* prop) { prop->SetOutlineStyle(BORDER_TYPE_NONE); }}, // OUTLINE_STYLE
-        { RSModifierType::OUTLINE_DASH_WIDTH,                   [](RSProperties* prop) { prop->SetOutlineDashWidth({-1.f}); }},       // OUTLINE_DASH_WIDTH
-        { RSModifierType::OUTLINE_DASH_GAP,                     [](RSProperties* prop) { prop->SetOutlineDashGap({-1.f}); }},         // OUTLINE_DASH_GAP
-        { RSModifierType::OUTLINE_RADIUS,                       [](RSProperties* prop) { prop->SetOutlineRadius(0.f); }},             // OUTLINE_RADIUS
-        { RSModifierType::GREY_COEF,                            [](RSProperties* prop) { prop->SetGreyCoef(std::nullopt); }},         // GREY_COEF
-        { RSModifierType::LIGHT_INTENSITY,                      [](RSProperties* prop) { prop->SetLightIntensity(-1.f); }},           // LIGHT_INTENSITY
-        { RSModifierType::LIGHT_COLOR,                          [](RSProperties* prop) { prop->SetLightColor({}); }},                 // LIGHT_COLOR
-        { RSModifierType::LIGHT_POSITION,                       [](RSProperties* prop) { prop->SetLightPosition({}); }},              // LIGHT_POSITION
-        { RSModifierType::ILLUMINATED_BORDER_WIDTH,             [](RSProperties* prop) { prop->SetIlluminatedBorderWidth({}); }},     // ILLUMINATED_BORDER_WIDTH
-        { RSModifierType::ILLUMINATED_TYPE,                     [](RSProperties* prop) { prop->SetIlluminatedType(-1); }},            // ILLUMINATED_TYPE
-        { RSModifierType::BLOOM,                                [](RSProperties* prop) { prop->SetBloom({}); }},                      // BLOOM
-        { RSModifierType::FOREGROUND_EFFECT_RADIUS,             [](RSProperties* prop) { prop->SetForegroundEffectRadius(0.f); }},    // FOREGROUND_EFFECT_RADIUS
-        { RSModifierType::USE_SHADOW_BATCHING,                  [](RSProperties* prop) { prop->SetUseShadowBatching(false); }},       // USE_SHADOW_BATCHING
-        { RSModifierType::MOTION_BLUR_PARA,                     [](RSProperties* prop) { prop->SetMotionBlurPara({}); }},             // MOTION_BLUR_PARA
-        { RSModifierType::PARTICLE_EMITTER_UPDATER,             [](RSProperties* prop) { prop->SetEmitterUpdater({}); }},             // PARTICLE_EMITTER_UPDATER
-        { RSModifierType::PARTICLE_NOISE_FIELD,                 [](RSProperties* prop) { prop->SetParticleNoiseFields({}); }},        // PARTICLE_NOISE_FIELD
-        { RSModifierType::FLY_OUT_DEGREE,                       [](RSProperties* prop) { prop->SetFlyOutDegree(0.0f); }},             // FLY_OUT_DEGREE
-        { RSModifierType::FLY_OUT_PARAMS,                       [](RSProperties* prop) { prop->SetFlyOutParams({}); }},               // FLY_OUT_PARAMS
-        { RSModifierType::DISTORTION_K,                         [](RSProperties* prop) { prop->SetDistortionK(0.0f); }},              // DISTORTION_K
-        { RSModifierType::DYNAMIC_DIM_DEGREE,                   [](RSProperties* prop) { prop->SetDynamicDimDegree({}); }},           // DYNAMIC_DIM_DEGREE
-        { RSModifierType::MAGNIFIER_PARA,                       [](RSProperties* prop) { prop->SetMagnifierParams({}); }},            // MAGNIFIER_PARA
-        { RSModifierType::BACKGROUND_BLUR_RADIUS,               [](RSProperties* prop) { prop->SetBackgroundBlurRadius(0.f); }},      // BACKGROUND_BLUR_RADIUS
-        { RSModifierType::BACKGROUND_BLUR_SATURATION,           [](RSProperties* prop) { prop->SetBackgroundBlurSaturation({}); }},   // BACKGROUND_BLUR_SATURATION
-        { RSModifierType::BACKGROUND_BLUR_BRIGHTNESS,           [](RSProperties* prop) { prop->SetBackgroundBlurBrightness({}); }},   // BACKGROUND_BLUR_BRIGHTNESS
-        { RSModifierType::BACKGROUND_BLUR_MASK_COLOR,           [](RSProperties* prop) { prop->SetBackgroundBlurMaskColor(RSColor()); }}, // BACKGROUND_BLUR_MASKCOLOR
-        { RSModifierType::BACKGROUND_BLUR_COLOR_MODE,           [](RSProperties* prop) { prop->SetBackgroundBlurColorMode(BLUR_COLOR_MODE::DEFAULT); }}, // BACKGROUND_BLUR_COLORMODE
-        { RSModifierType::BACKGROUND_BLUR_RADIUS_X,             [](RSProperties* prop) { prop->SetBackgroundBlurRadiusX(0.f); }},     // BACKGROUND_BLUR_RADIUS_X
-        { RSModifierType::BACKGROUND_BLUR_RADIUS_Y,             [](RSProperties* prop) { prop->SetBackgroundBlurRadiusY(0.f); }},     // BACKGROUND_BLUR_RADIUS_Y
-        { RSModifierType::BG_BLUR_DISABLE_SYSTEM_ADAPTATION,    [](RSProperties* prop) { prop->SetBgBlurDisableSystemAdaptation(true); }}, // BG_BLUR_DISABLE_SYSTEM_ADAPTATION
-        { RSModifierType::FOREGROUND_BLUR_RADIUS,               [](RSProperties* prop) { prop->SetForegroundBlurRadius(0.f); }},      // FOREGROUND_BLUR_RADIUS
-        { RSModifierType::FOREGROUND_BLUR_SATURATION,           [](RSProperties* prop) { prop->SetForegroundBlurSaturation({}); }},   // FOREGROUND_BLUR_SATURATION
-        { RSModifierType::FOREGROUND_BLUR_BRIGHTNESS,           [](RSProperties* prop) { prop->SetForegroundBlurBrightness({}); }},   // FOREGROUND_BLUR_BRIGHTNESS
-        { RSModifierType::FOREGROUND_BLUR_MASK_COLOR,           [](RSProperties* prop) { prop->SetForegroundBlurMaskColor(RSColor()); }}, // FOREGROUND_BLUR_MASKCOLOR
-        { RSModifierType::FOREGROUND_BLUR_COLOR_MODE,           [](RSProperties* prop) { prop->SetForegroundBlurColorMode(BLUR_COLOR_MODE::DEFAULT); }}, // FOREGROUND_BLUR_COLORMODE
-        { RSModifierType::FOREGROUND_BLUR_RADIUS_X,             [](RSProperties* prop) { prop->SetForegroundBlurRadiusX(0.f); }},     // FOREGROUND_BLUR_RADIUS_X
-        { RSModifierType::FOREGROUND_BLUR_RADIUS_Y,             [](RSProperties* prop) { prop->SetForegroundBlurRadiusY(0.f); }},     // FOREGROUND_BLUR_RADIUS_Y
-        { RSModifierType::FG_BLUR_DISABLE_SYSTEM_ADAPTATION,    [](RSProperties* prop) { prop->SetFgBlurDisableSystemAdaptation(true); }}, // FG_BLUR_DISABLE_SYSTEM_ADAPTATION
-        { RSModifierType::ATTRACTION_FRACTION,                  [](RSProperties* prop) { prop->SetAttractionFraction(0.f); }},        // ATTRACTION_FRACTION
-        { RSModifierType::ATTRACTION_DSTPOINT,                  [](RSProperties* prop) { prop->SetAttractionDstPoint({}); }},         // ATTRACTION_DSTPOINT
+    { RSModifierType::INVALID,                              nullptr},
+    { RSModifierType::BOUNDS,                               nullptr},
+    { RSModifierType::FRAME,                                nullptr},
+    { RSModifierType::POSITION_Z,                           [](RSProperties* prop) { prop->SetPositionZ(0.f); }},
+    { RSModifierType::POSITION_Z_APPLICABLE_CAMERA3D,       [](RSProperties* prop) {
+                                                                prop->SetPositionZApplicableCamera3D(true); }},
+    { RSModifierType::PIVOT,                                [](RSProperties* prop) {
+                                                                prop->SetPivot(Vector2f(0.5f, 0.5f)); }},
+    { RSModifierType::PIVOT_Z,                              [](RSProperties* prop) { prop->SetPivotZ(0.f); }},
+    { RSModifierType::QUATERNION,                           [](RSProperties* prop) {
+                                                                prop->SetQuaternion(Quaternion()); }},
+    { RSModifierType::ROTATION,                             [](RSProperties* prop) { prop->SetRotation(0.f); }},
+    { RSModifierType::ROTATION_X,                           [](RSProperties* prop) { prop->SetRotationX(0.f); }},
+    { RSModifierType::ROTATION_Y,                           [](RSProperties* prop) { prop->SetRotationY(0.f); }},
+    { RSModifierType::CAMERA_DISTANCE,                      [](RSProperties* prop) { prop->SetCameraDistance(0.f); }},
+    { RSModifierType::SCALE,                                [](RSProperties* prop) {
+                                                                prop->SetScale(Vector2f(1.f, 1.f)); }},
+    { RSModifierType::SCALE_Z,                              [](RSProperties* prop) { prop->SetScaleZ(1.f); }},
+    { RSModifierType::SKEW,                                 [](RSProperties* prop) { prop->SetSkew({0.f, 0.f, 0.f}); }},
+    { RSModifierType::PERSP,                                [](RSProperties* prop) {
+                                                                prop->SetPersp({0.f, 0.f, 0.f, 1.f}); }},
+    { RSModifierType::TRANSLATE,                            [](RSProperties* prop) {
+                                                                prop->SetTranslate(Vector2f(0.f, 0.f)); }},
+    { RSModifierType::TRANSLATE_Z,                          [](RSProperties* prop) { prop->SetTranslateZ(0.f); }},
+    { RSModifierType::SUBLAYER_TRANSFORM,                   [](RSProperties* prop) { prop->SetSublayerTransform({}); }},
+    { RSModifierType::CORNER_RADIUS,                        [](RSProperties* prop) { prop->SetCornerRadius(0.f); }},
+    { RSModifierType::ALPHA,                                [](RSProperties* prop) { prop->SetAlpha(1.f); }},
+    { RSModifierType::ALPHA_OFFSCREEN,                      [](RSProperties* prop) { prop->SetAlphaOffscreen(false); }},
+    { RSModifierType::FOREGROUND_COLOR,                     [](RSProperties* prop) { prop->SetForegroundColor({}); }},
+    { RSModifierType::BACKGROUND_COLOR,                     [](RSProperties* prop) { prop->SetBackgroundColor({}); }},
+    { RSModifierType::BACKGROUND_SHADER,                    [](RSProperties* prop) { prop->SetBackgroundShader({}); }},
+    { RSModifierType::BACKGROUND_SHADER_PROGRESS,           [](RSProperties* prop) {
+                                                                prop->SetBackgroundShaderProgress(0.f); }},
+    { RSModifierType::BG_IMAGE,                             [](RSProperties* prop) { prop->SetBgImage({}); }},
+    { RSModifierType::BG_IMAGE_INNER_RECT,                  [](RSProperties* prop) { prop->SetBgImageInnerRect({}); }},
+    { RSModifierType::BG_IMAGE_WIDTH,                       [](RSProperties* prop) { prop->SetBgImageWidth(0.f); }},
+    { RSModifierType::BG_IMAGE_HEIGHT,                      [](RSProperties* prop) { prop->SetBgImageHeight(0.f); }},
+    { RSModifierType::BG_IMAGE_POSITION_X,                  [](RSProperties* prop) { prop->SetBgImagePositionX(0.f); }},
+    { RSModifierType::BG_IMAGE_POSITION_Y,                  [](RSProperties* prop) { prop->SetBgImagePositionY(0.f); }},
+    { RSModifierType::SURFACE_BG_COLOR,                     nullptr},
+    { RSModifierType::BORDER_COLOR,                         [](RSProperties* prop) {
+                                                                prop->SetBorderColor(RSColor()); }},
+    { RSModifierType::BORDER_WIDTH,                         [](RSProperties* prop) { prop->SetBorderWidth(0.f); }},
+    { RSModifierType::BORDER_STYLE,                         [](RSProperties* prop) {
+                                                                prop->SetBorderStyle(BORDER_TYPE_NONE); }},
+    { RSModifierType::BORDER_DASH_WIDTH,                    [](RSProperties* prop) {
+                                                                prop->SetBorderDashWidth({-1.f}); }},
+    { RSModifierType::BORDER_DASH_GAP,                      [](RSProperties* prop) { prop->SetBorderDashGap({-1.f}); }},
+    { RSModifierType::FILTER,                               [](RSProperties* prop) { prop->SetFilter({}); }},
+    { RSModifierType::BACKGROUND_FILTER,                    [](RSProperties* prop) { prop->SetBackgroundFilter({}); }},
+    { RSModifierType::LINEAR_GRADIENT_BLUR_PARA,            [](RSProperties* prop) {
+                                                                prop->SetLinearGradientBlurPara({}); }},
+    { RSModifierType::DYNAMIC_LIGHT_UP_RATE,                [](RSProperties* prop) {
+                                                                prop->SetDynamicLightUpRate({}); }},
+    { RSModifierType::DYNAMIC_LIGHT_UP_DEGREE,              [](RSProperties* prop) {
+                                                                prop->SetDynamicLightUpDegree({}); }},
+    { RSModifierType::FG_BRIGHTNESS_RATES,                  [](RSProperties* prop) { prop->SetFgBrightnessRates({}); }},
+    { RSModifierType::FG_BRIGHTNESS_SATURATION,             [](RSProperties* prop) {
+                                                                prop->SetFgBrightnessSaturation(0.0); }},
+    { RSModifierType::FG_BRIGHTNESS_POSCOEFF,               [](RSProperties* prop) {
+                                                                prop->SetFgBrightnessPosCoeff({}); }},
+    { RSModifierType::FG_BRIGHTNESS_NEGCOEFF,               [](RSProperties* prop) {
+                                                                prop->SetFgBrightnessNegCoeff({}); }},
+    { RSModifierType::FG_BRIGHTNESS_FRACTION,               [](RSProperties* prop) { prop->SetFgBrightnessFract({}); }},
+    { RSModifierType::BG_BRIGHTNESS_RATES,                  [](RSProperties* prop) { prop->SetBgBrightnessRates({}); }},
+    { RSModifierType::BG_BRIGHTNESS_SATURATION,             [](RSProperties* prop) {
+                                                                prop->SetBgBrightnessSaturation(0.0); }},
+    { RSModifierType::BG_BRIGHTNESS_POSCOEFF,               [](RSProperties* prop) {
+                                                                prop->SetBgBrightnessPosCoeff({}); }},
+    { RSModifierType::BG_BRIGHTNESS_NEGCOEFF,               [](RSProperties* prop) {
+                                                                prop->SetBgBrightnessNegCoeff({}); }},
+    { RSModifierType::BG_BRIGHTNESS_FRACTION,               [](RSProperties* prop) {
+                                                                prop->SetBgBrightnessFract(1.0); }},
+    { RSModifierType::FRAME_GRAVITY,                        [](RSProperties* prop) {
+                                                                prop->SetFrameGravity(Gravity::DEFAULT); }},
+    { RSModifierType::CLIP_RRECT,                           [](RSProperties* prop) { prop->SetClipRRect({}); }},
+    { RSModifierType::CLIP_BOUNDS,                          [](RSProperties* prop) { prop->SetClipBounds({}); }},
+    { RSModifierType::CLIP_TO_BOUNDS,                       [](RSProperties* prop) { prop->SetClipToBounds(false); }},
+    { RSModifierType::CLIP_TO_FRAME,                        [](RSProperties* prop) { prop->SetClipToFrame(false); }},
+    { RSModifierType::VISIBLE,                              [](RSProperties* prop) { prop->SetVisible(true); }},
+    { RSModifierType::SHADOW_COLOR,                         [](RSProperties* prop) { prop->SetShadowColor({}); }},
+    { RSModifierType::SHADOW_OFFSET_X,                      [](RSProperties* prop) { prop->SetShadowOffsetX(0.f); }},
+    { RSModifierType::SHADOW_OFFSET_Y,                      [](RSProperties* prop) { prop->SetShadowOffsetY(0.f); }},
+    { RSModifierType::SHADOW_ALPHA,                         [](RSProperties* prop) { prop->SetShadowAlpha(0.f); }},
+    { RSModifierType::SHADOW_ELEVATION,                     [](RSProperties* prop) { prop->SetShadowElevation(0.f); }},
+    { RSModifierType::SHADOW_RADIUS,                        [](RSProperties* prop) { prop->SetShadowRadius(0.f); }},
+    { RSModifierType::SHADOW_PATH,                          [](RSProperties* prop) { prop->SetShadowPath({}); }},
+    { RSModifierType::SHADOW_MASK,                          [](RSProperties* prop) { prop->SetShadowMask(false); }},
+    { RSModifierType::SHADOW_COLOR_STRATEGY,                [](RSProperties* prop) {
+                                                                prop->SetShadowColorStrategy(
+                                                                    SHADOW_COLOR_STRATEGY::COLOR_STRATEGY_NONE); }},
+    { RSModifierType::MASK,                                 [](RSProperties* prop) { prop->SetMask({}); }
+                                                            },
+    { RSModifierType::SPHERIZE,                             [](RSProperties* prop) { prop->SetSpherize(0.f); }},
+    { RSModifierType::LIGHT_UP_EFFECT,                      [](RSProperties* prop) { prop->SetLightUpEffect(1.f); }},
+    { RSModifierType::PIXEL_STRETCH,                        [](RSProperties* prop) { prop->SetPixelStretch({}); }},
+    { RSModifierType::PIXEL_STRETCH_PERCENT,                [](RSProperties* prop) {
+                                                                prop->SetPixelStretch({});
+                                                                prop->SetPixelStretchPercent({}); }},
+    { RSModifierType::PIXEL_STRETCH_TILE_MODE,              [](RSProperties* prop) {
+                                                                prop->SetPixelStretchTileMode(0); }},
+    { RSModifierType::USE_EFFECT,                           [](RSProperties* prop) { prop->SetUseEffect(false); }},
+    { RSModifierType::USE_EFFECT_TYPE,                      [](RSProperties* prop) { prop->SetUseEffectType(0); }},
+    { RSModifierType::COLOR_BLEND_MODE,                     [](RSProperties* prop) { prop->SetColorBlendMode(0); }},
+    { RSModifierType::COLOR_BLEND_APPLY_TYPE,               [](RSProperties* prop) {
+                                                                prop->SetColorBlendApplyType(0); }},
+    { RSModifierType::SANDBOX,                              [](RSProperties* prop) { prop->ResetSandBox(); }},
+    { RSModifierType::GRAY_SCALE,                           [](RSProperties* prop) { prop->SetGrayScale({}); }},
+    { RSModifierType::BRIGHTNESS,                           [](RSProperties* prop) { prop->SetBrightness({}); }},
+    { RSModifierType::CONTRAST,                             [](RSProperties* prop) { prop->SetContrast({}); }},
+    { RSModifierType::SATURATE,                             [](RSProperties* prop) { prop->SetSaturate({}); }},
+    { RSModifierType::SEPIA,                                [](RSProperties* prop) { prop->SetSepia({}); }},
+    { RSModifierType::INVERT,                               [](RSProperties* prop) { prop->SetInvert({}); }},
+    { RSModifierType::AIINVERT,                             [](RSProperties* prop) { prop->SetAiInvert({}); }},
+    { RSModifierType::SYSTEMBAREFFECT,                      [](RSProperties* prop) { prop->SetSystemBarEffect({}); }},
+    { RSModifierType::WATER_RIPPLE_PROGRESS,                [](RSProperties* prop) {
+                                                                prop->SetWaterRippleProgress(0.0f); }},
+    { RSModifierType::WATER_RIPPLE_PARAMS,                  [](RSProperties* prop) { prop->SetWaterRippleParams({}); }},
+    { RSModifierType::HUE_ROTATE,                           [](RSProperties* prop) { prop->SetHueRotate({}); }},
+    { RSModifierType::COLOR_BLEND,                          [](RSProperties* prop) { prop->SetColorBlend({}); }},
+    { RSModifierType::PARTICLE,                             [](RSProperties* prop) { prop->SetParticles({}); }},
+    { RSModifierType::SHADOW_IS_FILLED,                     [](RSProperties* prop) { prop->SetShadowIsFilled(false); }},
+    { RSModifierType::OUTLINE_COLOR,                        [](RSProperties* prop) {
+                                                                prop->SetOutlineColor(RSColor()); }},
+    { RSModifierType::OUTLINE_WIDTH,                        [](RSProperties* prop) { prop->SetOutlineWidth(0.f); }},
+    { RSModifierType::OUTLINE_STYLE,                        [](RSProperties* prop) {
+                                                                prop->SetOutlineStyle(BORDER_TYPE_NONE); }},
+    { RSModifierType::OUTLINE_DASH_WIDTH,                   [](RSProperties* prop) {
+                                                                prop->SetOutlineDashWidth({-1.f}); }},
+    { RSModifierType::OUTLINE_DASH_GAP,                     [](RSProperties* prop) {
+                                                                prop->SetOutlineDashGap({-1.f}); }},
+    { RSModifierType::OUTLINE_RADIUS,                       [](RSProperties* prop) { prop->SetOutlineRadius(0.f); }},
+    { RSModifierType::GREY_COEF,                            [](RSProperties* prop) {
+                                                                prop->SetGreyCoef(std::nullopt); }},
+    { RSModifierType::LIGHT_INTENSITY,                      [](RSProperties* prop) { prop->SetLightIntensity(-1.f); }},
+    { RSModifierType::LIGHT_COLOR,                          [](RSProperties* prop) { prop->SetLightColor({}); }},
+    { RSModifierType::LIGHT_POSITION,                       [](RSProperties* prop) { prop->SetLightPosition({}); }},
+    { RSModifierType::ILLUMINATED_BORDER_WIDTH,             [](RSProperties* prop) {
+                                                                prop->SetIlluminatedBorderWidth({}); }},
+    { RSModifierType::ILLUMINATED_TYPE,                     [](RSProperties* prop) { prop->SetIlluminatedType(-1); }},
+    { RSModifierType::BLOOM,                                [](RSProperties* prop) { prop->SetBloom({}); }},
+    { RSModifierType::FOREGROUND_EFFECT_RADIUS,             [](RSProperties* prop) {
+                                                                prop->SetForegroundEffectRadius(0.f); }},
+    { RSModifierType::USE_SHADOW_BATCHING,                  [](RSProperties* prop) {
+                                                                prop->SetUseShadowBatching(false); }},
+    { RSModifierType::MOTION_BLUR_PARA,                     [](RSProperties* prop) { prop->SetMotionBlurPara({}); }},
+    { RSModifierType::PARTICLE_EMITTER_UPDATER,             [](RSProperties* prop) { prop->SetEmitterUpdater({}); }},
+    { RSModifierType::PARTICLE_NOISE_FIELD,                 [](RSProperties* prop) {
+                                                                prop->SetParticleNoiseFields({}); }},
+    { RSModifierType::FLY_OUT_DEGREE,                       [](RSProperties* prop) { prop->SetFlyOutDegree(0.0f); }},
+    { RSModifierType::FLY_OUT_PARAMS,                       [](RSProperties* prop) { prop->SetFlyOutParams({}); }},
+    { RSModifierType::DISTORTION_K,                         [](RSProperties* prop) { prop->SetDistortionK(0.0f); }},
+    { RSModifierType::DYNAMIC_DIM_DEGREE,                   [](RSProperties* prop) { prop->SetDynamicDimDegree({}); }},
+    { RSModifierType::MAGNIFIER_PARA,                       [](RSProperties* prop) { prop->SetMagnifierParams({}); }},
+    { RSModifierType::BACKGROUND_BLUR_RADIUS,               [](RSProperties* prop) {
+                                                                prop->SetBackgroundBlurRadius(0.f); }},
+    { RSModifierType::BACKGROUND_BLUR_SATURATION,           [](RSProperties* prop) {
+                                                                prop->SetBackgroundBlurSaturation({}); }},
+    { RSModifierType::BACKGROUND_BLUR_BRIGHTNESS,           [](RSProperties* prop) {
+                                                                prop->SetBackgroundBlurBrightness({}); }},
+    { RSModifierType::BACKGROUND_BLUR_MASK_COLOR,           [](RSProperties* prop) {
+                                                                prop->SetBackgroundBlurMaskColor(RSColor()); }},
+    { RSModifierType::BACKGROUND_BLUR_COLOR_MODE,           [](RSProperties* prop) {
+                                                                prop->SetBackgroundBlurColorMode(
+                                                                    BLUR_COLOR_MODE::DEFAULT); }},
+    { RSModifierType::BACKGROUND_BLUR_RADIUS_X,             [](RSProperties* prop) {
+                                                                prop->SetBackgroundBlurRadiusX(0.f); }},
+    { RSModifierType::BACKGROUND_BLUR_RADIUS_Y,             [](RSProperties* prop) {
+                                                                prop->SetBackgroundBlurRadiusY(0.f); }},
+    { RSModifierType::BG_BLUR_DISABLE_SYSTEM_ADAPTATION,    [](RSProperties* prop) {
+                                                                prop->SetBgBlurDisableSystemAdaptation(true); }},
+    { RSModifierType::FOREGROUND_BLUR_RADIUS,               [](RSProperties* prop) {
+                                                                prop->SetForegroundBlurRadius(0.f); }},
+    { RSModifierType::FOREGROUND_BLUR_SATURATION,           [](RSProperties* prop) {
+                                                                prop->SetForegroundBlurSaturation({}); }},
+    { RSModifierType::FOREGROUND_BLUR_BRIGHTNESS,           [](RSProperties* prop) {
+                                                                prop->SetForegroundBlurBrightness({}); }},
+    { RSModifierType::FOREGROUND_BLUR_MASK_COLOR,           [](RSProperties* prop) {
+                                                                prop->SetForegroundBlurMaskColor(RSColor()); }},
+    { RSModifierType::FOREGROUND_BLUR_COLOR_MODE,           [](RSProperties* prop) {
+                                                                prop->SetForegroundBlurColorMode(
+                                                                    BLUR_COLOR_MODE::DEFAULT); }},
+    { RSModifierType::FOREGROUND_BLUR_RADIUS_X,             [](RSProperties* prop) {
+                                                                prop->SetForegroundBlurRadiusX(0.f); }},
+    { RSModifierType::FOREGROUND_BLUR_RADIUS_Y,             [](RSProperties* prop) {
+                                                                prop->SetForegroundBlurRadiusY(0.f); }},
+    { RSModifierType::FG_BLUR_DISABLE_SYSTEM_ADAPTATION,    [](RSProperties* prop) {
+                                                                prop->SetFgBlurDisableSystemAdaptation(true); }},
+    { RSModifierType::ATTRACTION_FRACTION,                  [](RSProperties* prop) {
+                                                                prop->SetAttractionFraction(0.f); }},
+    { RSModifierType::ATTRACTION_DSTPOINT,                  [](RSProperties* prop) {
+                                                                prop->SetAttractionDstPoint({}); }},
 };
 
 } // namespace

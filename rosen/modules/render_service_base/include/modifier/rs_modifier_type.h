@@ -30,7 +30,7 @@ namespace Rosen {
 // 3. Each command HAVE TO have UNIQUE ID in ALL HISTORY
 //    If a command is not used and you want to delete it, just COMMENT it
 // 4. MAX_RS_MODIFIER_TYPE always MUST be equla (GREATEST_ID_VALUE_IN_ENUM + 1)
-//    Exumple: If you added new enum value which id equla 400 and it greatest value in enum,
+//    Example: If you added new enum value which id equal 400 and it greatest value in enum,
 //    you HAVE TO change MAX_RS_MODIFIER_TYPE id to 401
 enum class RSModifierType : int16_t {
     INVALID = 0,
@@ -167,26 +167,28 @@ enum class RSModifierType : int16_t {
     FG_BLUR_DISABLE_SYSTEM_ADAPTATION = 131,
     ATTRACTION_FRACTION = 132,
     ATTRACTION_DSTPOINT = 133,
-    CUSTOM = 255,
-    EXTENDED = 256,
-    TRANSITION = 257,
-    BACKGROUND_STYLE = 258,
-    CONTENT_STYLE = 259,
-    FOREGROUND_STYLE = 260,
-    OVERLAY_STYLE = 261,
-    NODE_MODIFIER = 262,
-    ENV_FOREGROUND_COLOR = 263,
-    ENV_FOREGROUND_COLOR_STRATEGY = 264,
-    GEOMETRYTRANS = 265,
-    CUSTOM_CLIP_TO_FRAME = 266,
-    HDR_BRIGHTNESS = 267,
-    BEHIND_WINDOW_FILTER_ENABLED = 268,
-    BEHIND_WINDOW_FILTER_RADIUS = 269,
-    BEHIND_WINDOW_FILTER_SATURATION = 270,
-    BEHIND_WINDOW_FILTER_BRIGHTNESS = 271,
-    BEHIND_WINDOW_FILTER_MASK_COLOR = 272,
-    CHILDREN = 273, // PLACEHOLDER, no such modifier, but we need a dirty flag
-    MAX_RS_MODIFIER_TYPE = 274,
+
+    CUSTOM = 200,
+    EXTENDED = 201,
+    TRANSITION = 202,
+    BACKGROUND_STYLE = 203,
+    CONTENT_STYLE = 204,
+    FOREGROUND_STYLE = 205,
+    OVERLAY_STYLE = 206,
+    NODE_MODIFIER = 207,
+    ENV_FOREGROUND_COLOR = 208,
+    ENV_FOREGROUND_COLOR_STRATEGY = 209,
+    GEOMETRYTRANS = 211,
+    CUSTOM_CLIP_TO_FRAME = 212,
+    HDR_BRIGHTNESS = 213,
+    BEHIND_WINDOW_FILTER_RADIUS = 214,
+    BEHIND_WINDOW_FILTER_SATURATION = 215,
+    BEHIND_WINDOW_FILTER_BRIGHTNESS = 216,
+    BEHIND_WINDOW_FILTER_MASK_COLOR = 217,
+
+    CHILDREN = 240, // PLACEHOLDER, no such modifier, but we need a dirty flag
+    
+    MAX_RS_MODIFIER_TYPE = 255,
 };
 
 enum class RSPropertyModifierType : uint8_t {
@@ -369,7 +371,6 @@ public:
             case RSModifierType::GEOMETRYTRANS: return "Geometrytrans";
             case RSModifierType::CUSTOM_CLIP_TO_FRAME: return "CustomClipToFrame";
             case RSModifierType::HDR_BRIGHTNESS: return "HDRBrightness";
-            case RSModifierType::BEHIND_WINDOW_FILTER_ENABLED: return "BehindWindowFilterEnabled";
             case RSModifierType::BEHIND_WINDOW_FILTER_RADIUS: return "BehindWindowFilterRadius";
             case RSModifierType::BEHIND_WINDOW_FILTER_SATURATION: return "BehindWindowFilterSaturation";
             case RSModifierType::BEHIND_WINDOW_FILTER_BRIGHTNESS: return "BehindWindowFilterBrightness";
