@@ -22,6 +22,10 @@ config("skia_libtxt_config") {
     "USE_SKIA_TXT",
   ]
 
+  if (rs_enable_gpu) {
+    defines += [ "RS_ENABLE_GPU" ]
+  }
+
   include_dirs = [
     "$rosen_text_root",
     "$rosen_text_root/interface/export",

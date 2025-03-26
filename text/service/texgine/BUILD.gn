@@ -76,6 +76,9 @@ ohos_source_set("libtexgine_source") {
   public_deps = []
   defines = []
 
+  if (rs_enable_gpu) {
+    defines += [ "RS_ENABLE_GPU" ]
+  }
   if (is_arkui_x) {
     defines += [ "CROSS_PLATFORM" ]
     public_deps += [
