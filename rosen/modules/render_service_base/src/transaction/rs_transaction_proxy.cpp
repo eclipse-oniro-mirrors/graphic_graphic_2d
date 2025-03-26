@@ -145,8 +145,14 @@ void RSTransactionProxy::FlushImplicitTransaction(uint64_t timestamp, const std:
         return;
     }
     timestamp_ = std::max(timestamp, timestamp_);
+#ifdef RS_ENABLE_VK
+    pid_t tid = gettid();
+#endif
     if (renderThreadClient_ != nullptr && !implicitCommonTransactionData_->IsEmpty()) {
         implicitCommonTransactionData_->timestamp_ = timestamp_;
+#ifdef RS_ENABLE_VK
+        implicitCommonTransactionData_->tid_ = tid;
+#endif
         implicitCommonTransactionData_->abilityName_ = abilityName;
         renderThreadClient_->CommitTransaction(implicitCommonTransactionData_);
         implicitCommonTransactionData_ = std::make_unique<RSTransactionData>();
@@ -158,8 +164,23 @@ void RSTransactionProxy::FlushImplicitTransaction(uint64_t timestamp, const std:
 
     if (renderServiceClient_ != nullptr && !implicitRemoteTransactionData_->IsEmpty()) {
         implicitRemoteTransactionData_->timestamp_ = timestamp_;
-        renderServiceClient_->CommitTransaction(implicitRemoteTransactionData_);
-        transactionDataIndex_ = implicitRemoteTransactionData_->GetIndex();
+#ifdef RS_ENABLE_VK
+        implicitCommonTransactionData_->tid_ = tid;
+        if (RSSystemProperties::GetHybridRenderEnabled()) {
+            if (commitTransactionCallback_ != nullptr) {
+                commitTransactionCallback_(renderServiceClient_,
+                    std::move(implicitRemoteTransactionData_), transactionDataIndex_);
+            } else {
+                renderServiceClient_->CommitTransaction(implicitRemoteTransactionData_);
+                transactionDataIndex_ = implicitRemoteTransactionData_->GetIndex();
+            }
+        } else {
+#endif
+            renderServiceClient_->CommitTransaction(implicitRemoteTransactionData_);
+            transactionDataIndex_ = implicitRemoteTransactionData_->GetIndex();
+#ifdef RS_ENABLE_VK
+        }
+#endif
         implicitRemoteTransactionData_ = std::make_unique<RSTransactionData>();
     } else {
         RS_LOGE_LIMIT(__func__, __line__, "FlushImplicitTransaction return, [renderServiceClient_:%{public}d," \

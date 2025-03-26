@@ -30,6 +30,10 @@ class RSTransactionData;
 class RSUIContext;
 using TaskRunner = std::function<void(const std::function<void()>&, uint32_t)>;
 using FlushEmptyCallback = std::function<bool(const uint64_t)>;
+#ifdef RS_ENABLE_VK
+using CommitTransactionCallback =
+    std::function<void(std::shared_ptr<RSIRenderClient>&, std::unique_ptr<RSTransactionData>&&, uint32_t&)>;
+#endif
 
 class RSC_EXPORT RSUIDirector final {
 public:
@@ -90,6 +94,10 @@ private:
     static void PostTask(const std::function<void()>& task, int32_t instanceId = INSTANCE_ID_UNDEFINED); // planing
     static void PostDelayTask(
         const std::function<void()>& task, uint32_t delay = 0, int32_t instanceId = INSTANCE_ID_UNDEFINED); // planing
+
+#ifdef RS_ENABLE_VK
+    void SetCommitTransactionCallback(CommitTransactionCallback commitTransactionCallback);
+#endif
 
     RSUIDirector() = default;
     RSUIDirector(const RSUIDirector&) = delete;

@@ -25,6 +25,25 @@ namespace Drawing {
 class DrawOpItem;
 class DRAWING_API DrawCmdList : public CmdList {
 public:
+#ifdef RS_ENABLE_VK
+    /**
+     * @brief   there are five enable type for Hybrid Render
+     * @param   NONE       default type, not enable Hybrid Render
+     * @param   TEXT       text type
+     * @param   SVG        svg type
+     * @param   HMSYMBOL   HMSymbol type
+     * @param   CANVAS     canvasDrawingNode type
+     * @detail  enable type for Hybrid Render
+     */
+    enum class HybridRenderType {
+        NONE,
+        TEXT,
+        SVG,
+        HMSYMBOL,
+        CANVAS
+    };
+#endif
+
     /**
      * @brief   there are two mode for DrawCmdList to add new op
      * @param   IMMEDIATE   add op to continouns buffer immediately, overload will benefit from this
@@ -201,9 +220,13 @@ public:
 
     void SetReplacedOpList(std::vector<std::pair<size_t, size_t>> replacedOpList);
 
-    void UpdateNodeIdToPicture(NodeId nodeId);
+#ifdef RS_ENABLE_VK
+    DrawCmdList::HybridRenderType GetHybridRenderType() const;
 
-    size_t CountTextBlobNum();
+    void SetHybridRenderType(DrawCmdList::HybridRenderType hybridRenderType);
+#endif
+
+    void UpdateNodeIdToPicture(NodeId nodeId);
 
     void Dump(std::string& out);
 
@@ -242,6 +265,10 @@ private:
     bool isNeedUnmarshalOnDestruct_ = false;
     bool noNeedUICaptured_ = false;
     bool isCanvasDrawingOpLimitEnabled_ = false;
+
+#ifdef RS_ENABLE_VK
+    DrawCmdList::HybridRenderType hybridRenderType_ = DrawCmdList::HybridRenderType::NONE;
+#endif
 };
 
 using DrawCmdListPtr = std::shared_ptr<DrawCmdList>;

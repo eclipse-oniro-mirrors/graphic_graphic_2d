@@ -102,6 +102,18 @@ public:
         return pid_;
     }
 
+#ifdef RS_ENABLE_VK
+    void SetSendingTid(pid_t tid)
+    {
+        tid_ = tid;
+    }
+
+    pid_t GetSendingTid() const
+    {
+        return tid_;
+    }
+#endif
+
     void SetIndex(uint64_t index)
     {
         index_ = index;
@@ -188,6 +200,9 @@ private:
     uint64_t timestamp_ = 0;
     std::string abilityName_;
     pid_t pid_ = 0;
+#ifdef RS_ENABLE_VK
+    pid_t tid_ = 0;
+#endif
     uint64_t index_ = 0;
     mutable size_t marshallingIndex_ = 0;
     bool needSync_ { false };
