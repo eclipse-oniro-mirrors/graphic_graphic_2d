@@ -140,17 +140,24 @@ bool RSRenderServiceConnectionProxy::FillParcelWithTransactionData(
         return false;
     }
 
-    // 1. marshalling RSTransactionData
-    RS_TRACE_BEGIN("MarshRSTransactionData cmdCount:" + std::to_string(transactionData->GetCommandCount()) +
-        " transactionFlag:[" + std::to_string(pid_) + "," + std::to_string(transactionData->GetIndex()) + "]");
-    ROSEN_LOGI_IF(DEBUG_PIPELINE,
-        "MarshRSTransactionData cmdCount:%{public}lu transactionFlag:[pid:%{public}d index:%{public}" PRIu64 "]",
-        transactionData->GetCommandCount(), pid_, transactionData->GetIndex());
-    bool success = data->WriteParcelable(transactionData.get());
-    RS_TRACE_END();
-    if (!success) {
-        ROSEN_LOGE("FillParcelWithTransactionData data.WriteParcelable failed!");
-        return false;
+    {
+        // 1. marshalling RSTransactionData
+#ifdef RS_ENABLE_VK
+        RS_TRACE_NAME_FMT("MarshRSTransactionData cmdCount: %lu, transactionFlag:[%d, %d, %" PRIu64 "], timestamp:%ld",
+            transactionData->GetCommandCount(), pid_, transactionData->GetSendingTid(), transactionData->GetIndex(),
+            transactionData->GetTimestamp());
+#else
+        RS_TRACE_NAME_FMT("MarshRSTransactionData cmdCount: %lu, transactionFlag:[%d, %" PRIu64 "], timestamp:%ld",
+            transactionData->GetCommandCount(), pid_, transactionData->GetIndex(), transactionData->GetTimestamp());
+#endif
+        ROSEN_LOGI_IF(DEBUG_PIPELINE,
+            "MarshRSTransactionData cmdCount:%{public}lu transactionFlag:[pid:%{public}d index:%{public}" PRIu64 "]",
+            transactionData->GetCommandCount(), pid_, transactionData->GetIndex());
+        bool success = data->WriteParcelable(transactionData.get());
+        if (!success) {
+            ROSEN_LOGE("FillParcelWithTransactionData data.WriteParcelable failed!");
+            return false;
+        }
     }
 
     // 2. convert data to new ashmem parcel if size over threshold
@@ -4778,6 +4785,20 @@ int32_t RSRenderServiceConnectionProxy::RegisterSelfDrawingNodeRectChangeCallbac
         return READ_PARCEL_ERR;
     }
     return result;
+}
+
+bool RSRenderServiceConnectionProxy::GetHighContrastTextState()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_HIGH_CONTRAST_TEXT_STATE);
+    int32_t err = SendRequest(code, data, reply, option);
+    if (err != NO_ERROR) {
+        ROSEN_LOGE("RSRenderServiceConnectionProxy::GetHighContrastTextState: Send Request err.");
+        return false;
+    }
+    return reply.ReadBool();
 }
 
 int32_t RSRenderServiceConnectionProxy::SendRequest(uint32_t code, MessageParcel &data,

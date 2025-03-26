@@ -2104,5 +2104,14 @@ void RSRenderServiceClient::TestLoadFileSubTreeToNode(NodeId nodeId, const std::
         renderService->TestLoadFileSubTreeToNode(nodeId, filePath);
     }
 }
+
+bool RSRenderServiceClient::GetHighContrastTextState()
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService != nullptr) {
+        return renderService->GetHighContrastTextState();
+    }
+    return false;
+}
 } // namespace Rosen
 } // namespace OHOS

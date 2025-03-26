@@ -384,6 +384,8 @@ private:
 
     void TestLoadFileSubTreeToNode(NodeId nodeId, const std::string &filePath) override {};
 
+    bool GetHighContrastTextState() override;
+
     pid_t remotePid_;
     wptr<RSRenderService> renderService_;
     RSMainThread* mainThread_ = nullptr;

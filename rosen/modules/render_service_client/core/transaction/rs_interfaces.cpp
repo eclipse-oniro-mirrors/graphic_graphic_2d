@@ -1010,5 +1010,10 @@ void RSInterfaces::TestLoadFileSubTreeToNode(NodeId nodeId, const std::string &f
 {
     renderServiceClient_->TestLoadFileSubTreeToNode(nodeId, filePath);
 }
+
+bool RSInterfaces::GetHighContrastTextState()
+{
+    return renderServiceClient_->GetHighContrastTextState();
+}
 } // namespace Rosen
 } // namespace OHOS

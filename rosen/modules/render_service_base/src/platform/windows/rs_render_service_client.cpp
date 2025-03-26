@@ -772,5 +772,10 @@ void RSRenderServiceClient::NotifyPageName(const std::string &packageName,
 void RSRenderServiceClient::TestLoadFileSubTreeToNode(NodeId nodeId, const std::string &filePath)
 {
 }
+
+bool RSRenderServiceClient::GetHighContrastTextState()
+{
+    return false;
+}
 } // namespace Rosen
 } // namespace OHOS

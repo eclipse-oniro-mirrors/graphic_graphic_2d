@@ -3279,6 +3279,13 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             RS_PROFILER_TEST_LOAD_FILE_SUB_TREE(nodeId, filePath);
             break;
         }
+        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_HIGH_CONTRAST_TEXT_STATE) : {
+            bool highContrast = GetHighContrastTextState();
+            if (!reply.WriteBool(highContrast)) {
+                ret = ERR_INVALID_REPLY;
+            }
+            break;
+        }
         default: {
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
         }

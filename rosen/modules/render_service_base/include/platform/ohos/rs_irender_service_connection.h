@@ -395,6 +395,8 @@ public:
     virtual ErrCode NotifyPageName(const std::string &packageName, const std::string &pageName, bool isEnter) = 0;
 
     virtual void TestLoadFileSubTreeToNode(NodeId nodeId, const std::string &filePath) = 0;
+
+    virtual bool GetHighContrastTextState() = 0;
 };
 } // namespace Rosen
 } // namespace OHOS
