@@ -15,11 +15,12 @@ import("//build/test.gni")
 import("//foundation/graphic/graphic_2d/graphic_config.gni")
 import("$graphic_2d_root/text/config.gni")
 
-module_out_path = "graphic_2d/graphic_2d/text"
-
 group("unittest") {
   testonly = true
-  deps = [ ":texgine_unittest_part3" ]
+  deps = [
+    ":texgine_unittest_part3",
+    ":texgine_unittest_part7",
+  ]
 }
 
 config("texgine_test_config") {
@@ -38,36 +39,14 @@ config("texgine_test_config") {
 
 group("common_deps") {
   testonly = true
-  public_deps = [ "$graphic_2d_root/utils/test_header:test_header" ]
-
-  if (defined(use_rosen_drawing) && use_rosen_drawing) {
-    public_deps += [ "$graphic_2d_root/rosen/modules/2d_graphics:2d_graphics" ]
-  }
+  public_deps = [
+    "$graphic_2d_root/rosen/modules/2d_graphics:2d_graphics",
+    "$graphic_2d_root/utils/test_header:test_header",
+  ]
 }
 
 ohos_unittest("texgine_unittest_part3") {
-  module_out_path = module_out_path
-  if (defined(use_rosen_drawing) && use_rosen_drawing) {
-    defines = [ "USE_ROSEN_DRAWING" ]
-  }
-  sources = [ "font_parser_test.cpp" ]
-
-  public_configs = [ ":texgine_test_config" ]
-  public_deps = [ ":common_deps" ]
-  external_deps = [
-    "googletest:gmock",
-    "googletest:gtest_main",
-  ]
-
-  use_exceptions = true
-
-  part_name = "graphic_2d"
-  subsystem_name = "graphic"
-}
-
-ohos_unittest("texgine_unittest_part6") {
-  module_out_path = module_out_path
-
+  module_out_path = text_test_out_path
   sources = [ "font_parser_test.cpp" ]
 
   public_configs = [ ":texgine_test_config" ]
@@ -84,7 +63,7 @@ ohos_unittest("texgine_unittest_part6") {
 }
 
 ohos_unittest("texgine_unittest_part7") {
-  module_out_path = module_out_path
+  module_out_path = text_test_out_path
 
   sources = [ "font_descriptor_cache_test.cpp" ]
 

@@ -15,13 +15,9 @@ import("//build/test.gni")
 import("//foundation/graphic/graphic_2d/graphic_config.gni")
 import("$graphic_2d_root/text/config.gni")
 
-module_out_path = "graphic_2d/graphic_2d/text"
-
 ohos_unittest("symbol_resource_test") {
-  module_out_path = module_out_path
-  if (use_skia_txt) {
-    sources = [ "symbol_config_parser_test.cpp" ]
-  }
+  module_out_path = text_test_out_path
+  sources = [ "symbol_config_parser_test.cpp" ]
   include_dirs = [
     "$rosen_text_root",
     "$rosen_text_root/service/skia_txt",
@@ -31,23 +27,9 @@ ohos_unittest("symbol_resource_test") {
     "$rosen_text_root/adapter/skia/txt",
   ]
 
-  defines = [
-    "USE_GRAPHIC_TEXT_GINE",
-    "WINDOWS_PLATFORM",
-  ]
-  cflags = [
+  cflags_cc = [
     "-Dprivate=public",
     "-std=c++17",
-  ]
-
-  platform = current_os
-  if (platform == "mingw") {
-    platform = "windows"
-  }
-
-  defines += [
-    "USE_ROSEN_DRAWING",
-    "USE_SKIA_TXT",
   ]
 
   deps = [ "$rosen_root/modules/2d_graphics:2d_graphics" ]

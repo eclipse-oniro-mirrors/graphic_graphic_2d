@@ -15,9 +15,11 @@ import("//build/ohos.gni")
 
 # Config path
 rosen_text_root = "//foundation/graphic/graphic_2d/text"
+text_test_out_path = "graphic_2d/graphic_2d/text"
 
 rosen_is_ohos = current_os == "ohos"
-rosen_is_ios = current_os == "ios" || current_os == "tvos"
-rosen_is_mac = current_os == "mac"
-rosen_is_win = current_os == "win" || current_os == "mingw"
-rosen_is_linux = current_os == "linux"
+
+platform = current_os
+if (platform == "mingw") {
+  platform = "windows"
+}

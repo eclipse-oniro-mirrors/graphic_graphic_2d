@@ -73,28 +73,15 @@ ohos_source_set("libtexgine_source") {
 
   public_configs = [ ":libtexgine_public_config" ]
 
-  platform = current_os
-  if (platform == "mingw") {
-    platform = "windows"
-  }
-
   public_deps = []
-
   defines = []
+
   if (is_arkui_x) {
     defines += [ "CROSS_PLATFORM" ]
     public_deps += [
       "//third_party/jsoncpp:jsoncpp_static",
       "//third_party/skia:skia_$platform",
     ]
-  }
-  if (defined(use_rosen_drawing) && use_rosen_drawing) {
-    defines += [ "USE_ROSEN_DRAWING" ]
-    if (rs_enable_gpu) {
-      defines += [ "RS_ENABLE_GPU" ]
-    }
-  }
-  if (is_arkui_x) {
     deps = [
       "//third_party/bounds_checking_function:libsec_static",
       "//third_party/cJSON:cjson_static",
@@ -119,16 +106,6 @@ ohos_source_set("libtexgine_source") {
       "hitrace:hitrace_meter",
       "icu:shared_icuuc",
     ]
-  } else {
-    if (platform == "mac") {
-      defines += [ "BUILD_SDK_MAC" ]
-    }
-    if (platform == "android") {
-      defines += [ "BUILD_SDK_ANDROID" ]
-    }
-    if (platform == "ios") {
-      defines += [ "BUILD_SDK_IOS" ]
-    }
   }
 
   part_name = "graphic_2d"

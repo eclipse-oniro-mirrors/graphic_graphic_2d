@@ -17,6 +17,11 @@ import("//foundation/graphic/graphic_2d/graphic_config.gni")
 import("$graphic_2d_root/text/config.gni")
 
 config("skia_libtxt_config") {
+  defines = [
+    "OHOS_SUPPORT",
+    "USE_SKIA_TXT",
+  ]
+
   include_dirs = [
     "$rosen_text_root",
     "$rosen_text_root/interface/export",
@@ -88,30 +93,17 @@ template("skia_libtxt") {
       external_deps += [
         "bundle_framework:appexecfwk_base",
         "bundle_framework:appexecfwk_core",
+        "hitrace:hitrace_meter",
         "init:libbegetutil",
         "ipc:ipc_core",
         "samgr:samgr_proxy",
       ]
-      defines += [ "HM_SYMBOL_TXT_ENABLE" ]
-      defines += [ "OHOS_TEXT_ENABLE" ]
+      defines += [
+        "OHOS_TEXT_ENABLE",
+        "HM_SYMBOL_TXT_ENABLE",
+      ]
     } else {
       defines += [ "MODULE_TEXTING" ]
-    }
-
-    defines += [ "OHOS_SUPPORT" ]
-
-    is_cross_platform =
-        current_os == "mac" || current_os == "mingw" || current_os == "linux" ||
-        current_os == "android" || current_os == "ios"
-
-    if (defined(use_rosen_drawing) && use_rosen_drawing) {
-      defines += [
-        "USE_ROSEN_DRAWING",
-        "USE_SKIA_TXT",
-      ]
-      if (rs_enable_gpu) {
-        defines += [ "RS_ENABLE_GPU" ]
-      }
     }
 
     deps = [
@@ -134,16 +126,11 @@ template("skia_libtxt") {
       ]
       defines += [ "OHOS_STANDARD_SYSTEM" ]
     }
-
-    if (!is_cross_platform) {
-      external_deps += [ "hitrace:hitrace_meter" ]
-    }
   }
 }
 
 foreach(item, ace_platforms) {
   skia_libtxt("skia_libtxt_" + item.name) {
-    platform = item.name
     defines = []
     cflags_cc = []
     config = {
@@ -177,8 +164,6 @@ ohos_source_set("skia_paragraph") {
     "$skparagraph_root",
   ]
 
-  defines = [ "OHOS_SUPPORT" ]
-
   sources = [
     "$skparagraph_root/src/Decorations.cpp",
     "$skparagraph_root/src/FontArguments.cpp",
@@ -205,20 +190,6 @@ ohos_source_set("skia_paragraph") {
     "$skparagraph_root/src/TypefaceFontProvider.cpp",
   ]
 
-  if (defined(use_rosen_drawing) && use_rosen_drawing) {
-    defines += [
-      "USE_ROSEN_DRAWING",
-      "USE_SKIA_TXT",
-    ]
-    if (rs_enable_gpu) {
-      defines += [ "RS_ENABLE_GPU" ]
-    }
-  }
-
-  platform = current_os
-  if (platform == "mingw") {
-    platform = "windows"
-  }
   deps = [
     ":skia_shaper",
     ":skia_unicode",
@@ -240,12 +211,8 @@ ohos_source_set("skia_paragraph") {
     ]
   }
 
-  is_cross_platform =
-      current_os == "mac" || current_os == "mingw" || current_os == "linux" ||
-      current_os == "android" || current_os == "ios"
-
-  if (!is_cross_platform) {
-    defines += [ "OHOS_TEXT_ENABLE" ]
+  if (platform == "ohos" || platform == "ohos_ng") {
+    defines = [ "OHOS_TEXT_ENABLE" ]
     external_deps += [
       "hitrace:hitrace_meter",
       "init:libbegetutil",
@@ -259,28 +226,23 @@ ohos_source_set("skia_unicode") {
 
   public_configs = [ ":skia_libtxt_config" ]
   include_dirs = []
-  defines = [ "OHOS_SUPPORT" ]
-  sources = []
-
+  defines = [
+    "SKUNICODE_IMPLEMENTATION=1",
+    "SK_UNICODE_AVAILABLE",
+    "SK_UNICODE_ICU_IMPLEMENTATION",
+  ]
   public = [ "$skunicode_root/include/SkUnicode.h" ]
-  defines += [ "SKUNICODE_IMPLEMENTATION=1" ]
-  defines += [ "SK_UNICODE_AVAILABLE" ]
-  defines += [ "SK_UNICODE_ICU_IMPLEMENTATION" ]
   if (!is_arkui_x) {
-    sources += [ "$skunicode_root/src/SkUnicode.cpp" ]
-    sources += [
+    sources = [
+      "$skunicode_root/src/SkUnicode.cpp",
       "$skunicode_root/src/SkUnicode_icu.cpp",
       "$skunicode_root/src/SkUnicode_icu.h",
       "$skunicode_root/src/SkUnicode_icu_bidi.cpp",
       "$skunicode_root/src/SkUnicode_icu_bidi.h",
+      "$skunicode_root/src/SkUnicode_icu_builtin.cpp",
     ]
-    sources += [ "$skunicode_root/src/SkUnicode_icu_builtin.cpp" ]
   }
 
-  platform = current_os
-  if (platform == "mingw") {
-    platform = "windows"
-  }
   external_deps = [
     "icu:shared_icuuc",
     "skia:skia_canvaskit",
@@ -299,29 +261,14 @@ ohos_source_set("skia_shaper") {
     "$graphic_2d_root/rosen/modules/2d_graphics/src/drawing",
     "$graphic_2d_root/rosen/modules/2d_graphics/src/drawing/engine_adapter",
   ]
-  defines = []
+  defines = [ "SKSHAPER_IMPLEMENTATION=1" ]
 
-  if (defined(use_rosen_drawing) && use_rosen_drawing) {
-    defines += [
-      "USE_ROSEN_DRAWING",
-      "USE_SKIA_TXT",
-    ]
-    if (rs_enable_gpu) {
-      defines += [ "RS_ENABLE_GPU" ]
-    }
-  }
-
-  defines += [ "SKSHAPER_IMPLEMENTATION=1" ]
   sources = [
     "$skshaper_root/src/SkShaper.cpp",
     "$skshaper_root/src/SkShaper_harfbuzz.cpp",
     "$skshaper_root/src/SkShaper_primitive.cpp",
   ]
 
-  platform = current_os
-  if (platform == "mingw") {
-    platform = "windows"
-  }
   deps = [ ":skia_unicode" ]
 
   if (is_arkui_x) {

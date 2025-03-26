@@ -16,11 +16,10 @@ import("//build/config/features.gni")
 import("//build/test.gni")
 import("//foundation/graphic/graphic_2d/graphic_config.gni")
 import("//foundation/graphic/graphic_2d/text/config.gni")
-module_out_path = "graphic_2d/graphic_2d/text"
 
 ##############################fuzztest##########################################
 ohos_fuzztest("DrawingRunFuzzTest") {
-  module_out_path = module_out_path
+  module_out_path = text_test_out_path
   fuzz_config_file = "."
 
   include_dirs = [

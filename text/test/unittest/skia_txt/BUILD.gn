@@ -15,10 +15,8 @@ import("//build/test.gni")
 import("//foundation/graphic/graphic_2d/graphic_config.gni")
 import("$graphic_2d_root/text/config.gni")
 
-module_out_path = "graphic_2d/graphic_2d/text"
-
 ohos_unittest("rosen_text_skia_txt_test") {
-  module_out_path = module_out_path
+  module_out_path = text_test_out_path
   sources = [
     "asset_font_manager_test.cpp",
     "drawing_painter_impl_test.cpp",
@@ -52,22 +50,6 @@ ohos_unittest("rosen_text_skia_txt_test") {
     "-Dprotected=public",
   ]
 
-  platform = current_os
-  if (platform == "mingw") {
-    platform = "windows"
-  }
-
-  if (defined(use_rosen_drawing) && use_rosen_drawing) {
-    defines = [
-      "USE_ROSEN_DRAWING",
-      "USE_SKIA_TXT",
-      "OHOS_SUPPORT",
-    ]
-    if (rs_enable_gpu) {
-      defines += [ "RS_ENABLE_GPU" ]
-    }
-  }
-
   deps = [
     "$rosen_root/modules/2d_graphics:2d_graphics",
     "$rosen_text_root/adapter/skia:skia_libtxt_$platform",
@@ -84,7 +66,7 @@ ohos_unittest("rosen_text_skia_txt_test") {
       "ipc:ipc_core",
       "samgr:samgr_proxy",
     ]
-    defines += [ "OHOS_TEXT_ENABLE" ]
+    defines = [ "OHOS_TEXT_ENABLE" ]
   }
 
   part_name = "graphic_2d"
