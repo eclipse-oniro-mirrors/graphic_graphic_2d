@@ -282,7 +282,7 @@ HWTEST_F(RSRenderInterpolatingSpringAnimationTest, SetFraction001, TestSize.Leve
     renderInterpolatingSpringAnimation->valueEstimator_ = nullptr;
     renderInterpolatingSpringAnimation->property_ = std::make_shared<RSRenderPropertyBase>();
     renderInterpolatingSpringAnimation->property_->CreateRSValueEstimator(RSValueEstimatorType::CURVE_VALUE_ESTIMATOR);
-    EXPECT_TRUE(renderInterpolatingSpringAnimation->valueEstimator_ == nullptr);
+    EXPECT_FALSE(renderInterpolatingSpringAnimation->valueEstimator_);
 
     auto velocity = renderInterpolatingSpringAnimation->CalculateVelocity(0.0);
     EXPECT_TRUE(velocity == nullptr);
