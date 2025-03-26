@@ -67,10 +67,10 @@ void HgmSimpleTimer::Reset()
     }
 }
 
-void HgmSimpleTimer::SetInterval(Interval value)
+void HgmSimpleTimer::SetInterval(Interval valueMs)
 {
-    if (interval_.load() != value) {
-        interval_.store(value);
+    if (interval_.load() != valueMs) {
+        interval_.store(valueMs);
     }
 }
 

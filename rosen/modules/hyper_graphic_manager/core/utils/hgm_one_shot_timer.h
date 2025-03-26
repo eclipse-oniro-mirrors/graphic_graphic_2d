@@ -51,7 +51,7 @@ public:
     // Resets the wakeup time and fires the reset callback.
     void Reset();
     // Set interval value
-    void SetInterval(Interval value);
+    void SetInterval(Interval valueMs);
 private:
     void Loop();
 

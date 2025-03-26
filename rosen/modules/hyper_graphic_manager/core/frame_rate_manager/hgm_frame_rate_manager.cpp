@@ -197,7 +197,7 @@ void HgmFrameRateManager::RegisterCoreCallbacksAndInitController(sptr<VSyncContr
 
 void HgmFrameRateManager::SetTimeoutParamsFromConfig(const std::shared_ptr<PolicyConfigData>& configData)
 {
-    if (!configData || configData->timeoutStrategyConfig_.empty()) {
+    if (configData == nullptr || configData->timeoutStrategyConfig_.empty()) {
         return;
     }
     int32_t upTimeoutMs = 0;
@@ -210,7 +210,7 @@ void HgmFrameRateManager::SetTimeoutParamsFromConfig(const std::shared_ptr<Polic
         XMLParser::IsNumber(configData->timeoutStrategyConfig_[S_RS_IDLE_TIMEOUT_MS])) {
         rsIdleTimeoutMs = static_cast<int32_t>(std::stoi(configData->timeoutStrategyConfig_[S_RS_IDLE_TIMEOUT_MS]));
     }
-    if (upTimeoutMs && rsIdleTimeoutMs) {
+    if (upTimeoutMs != 0 && rsIdleTimeoutMs != 0) {
         touchManager_.SetUpTimeout(upTimeoutMs);
         touchManager_.SetRsIdleTimeout(rsIdleTimeoutMs);
         HGM_LOGI("Changed timeout params from Config");
@@ -643,7 +643,7 @@ void HgmFrameRateManager::GetLowBrightVec(const std::shared_ptr<PolicyConfigData
 {
     isAmbientEffect_ = false;
     multiAppStrategy_.HandleLowAmbientStatus(isAmbientEffect_);
-    if (!configData) {
+    if (configData == nullptr) {
         return;
     }
 

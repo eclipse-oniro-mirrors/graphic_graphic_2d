@@ -71,14 +71,14 @@ void HgmTouchManager::HandleThirdFrameIdle()
     ChangeState(TouchState::IDLE_STATE);
 }
 
-void HgmTouchManager::SetUpTimeout(int32_t value)
+void HgmTouchManager::SetUpTimeout(int32_t valueMs)
 {
-    upTimeoutTimer_.SetInterval(std::chrono::milliseconds(value));
+    upTimeoutTimer_.SetInterval(std::chrono::milliseconds(valueMs));
 }
 
-void HgmTouchManager::SetRsIdleTimeout(int32_t value)
+void HgmTouchManager::SetRsIdleTimeout(int32_t valueMs)
 {
-    rsIdleTimeoutTimer_.SetInterval(std::chrono::milliseconds(value));
+    rsIdleTimeoutTimer_.SetInterval(std::chrono::milliseconds(valueMs));
 }
 
 std::string HgmTouchManager::State2String(State state) const

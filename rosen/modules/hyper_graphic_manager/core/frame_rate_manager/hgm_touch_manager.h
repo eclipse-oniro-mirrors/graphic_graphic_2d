@@ -47,8 +47,8 @@ public:
 
     std::string GetPkgName() const { return pkgName_; }
 
-    void SetUpTimeout(int32_t value);
-    void SetRsIdleTimeout(int32_t value);
+    void SetUpTimeout(int32_t valueMs);
+    void SetRsIdleTimeout(int32_t valueMs);
 protected:
     std::string State2String(State state) const override;
     bool CheckChangeStateValid(State lastState, State newState) override;
