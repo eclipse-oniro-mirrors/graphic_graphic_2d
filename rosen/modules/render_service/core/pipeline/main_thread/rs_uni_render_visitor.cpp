@@ -2623,8 +2623,11 @@ void RSUniRenderVisitor::UpdateHwcNodeEnableByNodeBelow()
     auto& curMainAndLeashSurfaces = curDisplayNode_->GetAllMainAndLeashSurfaces();
     // this is used to record mainAndLeash surface accumulatedDirtyRegion by Pre-order traversal
     std::vector<RectI> hwcRects;
-    std::for_each(curMainAndLeashSurfaces.rbegin(), curMainAndLeashSurfaces.rend(),
-        [this, &hwcRects](RSBaseRenderNode::SharedPtr& nodePtr) {
+    RectI backgroundAlphaRect;
+    bool isHardwareEnableByBackgroundAlpha = false;
+    std::for_each(curMainAndLeashSurfaces.begin(), curMainAndLeashSurfaces.end(),
+        [this, &backgroundAlphaRect, &isHardwareEnableByBackgroundAlpha]
+        (RSBaseRenderNode::SharedPtr& nodePtr) {
         auto surfaceNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(nodePtr);
         if (!surfaceNode) {
             RS_LOGE("RSUniRenderVisitor::UpdateHwcNodeEnableByNodeBelow surfaceNode is nullptr");
@@ -2634,9 +2637,19 @@ void RSUniRenderVisitor::UpdateHwcNodeEnableByNodeBelow()
         auto& hwcNodes = surfaceNode->GetChildHardwareEnabledNodes();
         if (!hwcNodes.empty() && RsCommonHook::Instance().GetHardwareEnabledByBackgroundAlphaFlag() &&
             RsCommonHook::Instance().GetHardwareEnabledByHwcnodeBelowSelfInAppFlag()) {
-            UpdateHardwareStateByHwcNodeBackgroundAlpha(hwcNodes);
+            UpdateHardwareStateByHwcNodeBackgroundAlpha(hwcNodes, backgroundAlphaRect,
+                isHardwareEnableByBackgroundAlpha);
         } else if (surfaceNode->ExistTransparentHardwareEnabledNode()) {
             UpdateTransparentHwcNodeEnable(hwcNodes);
+        }
+    });
+
+    std::for_each(curMainAndLeashSurfaces.rbegin(), curMainAndLeashSurfaces.rend(),
+        [this, &hwcRects](RSBaseRenderNode::SharedPtr& nodePtr) {
+        auto surfaceNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(nodePtr);
+        if (!surfaceNode) {
+            RS_LOGE("RSUniRenderVisitor::UpdateHwcNodeEnableByNodeBelow surfaceNode is nullptr");
+            return;
         }
         // use end
         UpdateChildHwcNodeEnableByHwcNodeBelow(hwcRects, surfaceNode);
@@ -3543,7 +3556,8 @@ bool RSUniRenderVisitor::IsStencilPixelOcclusionCullingEnable() const
 }
 
 void RSUniRenderVisitor::UpdateHardwareStateByHwcNodeBackgroundAlpha(
-    const std::vector<std::weak_ptr<RSSurfaceRenderNode>>& hwcNodes)
+    const std::vector<std::weak_ptr<RSSurfaceRenderNode>>& hwcNodes, RectI& backgroundAlphaRect,
+    bool& isHardwareEnableByBackgroundAlpha)
 {
     std::list<RectI> hwcRects;
     for (size_t i = 0; i < hwcNodes.size(); i++) {
@@ -3551,10 +3565,21 @@ void RSUniRenderVisitor::UpdateHardwareStateByHwcNodeBackgroundAlpha(
         if (!hwcNodePtr) {
             continue;
         }
+
+        bool isIntersect = !backgroundAlphaRect.IntersectRect(
+            hwcNodePtr->GetRenderProperties().GetBoundsGeometry()->GetAbsRect()
+            ).IsEmpty();
+        if (isHardwareEnableByBackgroundAlpha && !hwcNodePtr->IsHardwareForcedDisabled() && isIntersect) {
+            hwcNodePtr->SetHardwareForcedDisabledState(true);
+            continue;
+        }
+
         if (!hwcNodePtr->IsNodeHasBackgroundColorAlpha() && !hwcNodePtr->IsHardwareForcedDisabled()) {
             hwcRects.push_back(hwcNodePtr->GetDstRect());
         } else if (hwcNodePtr->IsNodeHasBackgroundColorAlpha() && !hwcNodePtr->IsHardwareForcedDisabled() &&
             hwcRects.size() != 0) {
+            isHardwareEnableByBackgroundAlpha = true;
+            backgroundAlphaRect = hwcNodePtr->GetRenderProperties().GetBoundsGeometry()->GetAbsRect();
             continue;
         } else {
             hwcNodePtr->SetHardwareForcedDisabledState(true);
