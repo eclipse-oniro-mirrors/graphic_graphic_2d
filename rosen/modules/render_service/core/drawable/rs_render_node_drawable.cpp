@@ -894,10 +894,11 @@ void RSRenderNodeDrawable::UpdateCacheSurface(Drawing::Canvas& canvas, const RSR
     }
 #endif
     // update cache updateTimes
+    int32_t updateTimes = 0;
     {
         std::lock_guard<std::mutex> lock(drawingCacheMapMutex_);
         drawingCacheUpdateTimeMap_[nodeId_]++;
-        int32_t updateTimes = drawingCacheUpdateTimeMap_[nodeId_];
+        updateTimes = drawingCacheUpdateTimeMap_[nodeId_];
     }
     {
         std::lock_guard<std::mutex> lock(drawingCacheContiUpdateTimeMapMutex_);
