@@ -131,7 +131,7 @@ HWTEST_F(RSTransitionTest, CustomTransitionEffectTest001, TestSize.Level1)
     EXPECT_FALSE(animations[FIRST_ANIMATION] == nullptr);
     EXPECT_TRUE(animations[FIRST_ANIMATION]->IsRunning());
     NotifyStartAnimation();
-    EXPECT_TRUE(isFinished == true);
+    EXPECT_TRUE(isFinished);
 
     /**
      * @tc.steps: step3. start transition-out test
@@ -146,7 +146,7 @@ HWTEST_F(RSTransitionTest, CustomTransitionEffectTest001, TestSize.Level1)
     EXPECT_FALSE(animations[FIRST_ANIMATION] == nullptr);
     EXPECT_TRUE(animations[FIRST_ANIMATION]->IsRunning());
     NotifyStartAnimation();
-    EXPECT_TRUE(isFinished == true);
+    EXPECT_TRUE(isFinished);
 
     GTEST_LOG_(INFO) << "RSTransitionTest CustomTransitionEffectTest001 end";
 }
@@ -189,7 +189,7 @@ HWTEST_F(RSTransitionTest, CustomTransitionEffectTest002, TestSize.Level1)
     EXPECT_FALSE(animations[FIRST_ANIMATION] == nullptr);
     EXPECT_TRUE(animations[FIRST_ANIMATION]->IsRunning());
     NotifyStartAnimation();
-    EXPECT_TRUE(isFinished == true);
+    EXPECT_TRUE(isFinished);
 
     /**
      * @tc.steps: step3. start transition-out test
@@ -204,7 +204,7 @@ HWTEST_F(RSTransitionTest, CustomTransitionEffectTest002, TestSize.Level1)
     EXPECT_FALSE(animations[FIRST_ANIMATION] == nullptr);
     EXPECT_TRUE(animations[FIRST_ANIMATION]->IsRunning());
     NotifyStartAnimation();
-    EXPECT_TRUE(isFinished == true);
+    EXPECT_TRUE(isFinished);
 
     GTEST_LOG_(INFO) << "RSTransitionTest CustomTransitionEffectTest002 end";
 }
@@ -246,7 +246,7 @@ HWTEST_F(RSTransitionTest, CustomTransitionEffectTest003, TestSize.Level1)
     EXPECT_FALSE(animations[FIRST_ANIMATION] == nullptr);
     EXPECT_TRUE(animations[FIRST_ANIMATION]->IsRunning());
     NotifyStartAnimation();
-    EXPECT_TRUE(isFinished == true);
+    EXPECT_TRUE(isFinished);
 
     /**
      * @tc.steps: step3. start transition-out test
@@ -261,7 +261,7 @@ HWTEST_F(RSTransitionTest, CustomTransitionEffectTest003, TestSize.Level1)
     EXPECT_FALSE(animations[FIRST_ANIMATION] == nullptr);
     EXPECT_TRUE(animations[FIRST_ANIMATION]->IsRunning());
     NotifyStartAnimation();
-    EXPECT_TRUE(isFinished == true);
+    EXPECT_TRUE(isFinished);
 
     GTEST_LOG_(INFO) << "RSTransitionTest CustomTransitionEffectTest003 end";
 }
@@ -310,7 +310,7 @@ HWTEST_F(RSTransitionTest, CombinedTransitionEffectTest001, TestSize.Level1)
     EXPECT_FALSE(animations[FIRST_ANIMATION] == nullptr);
     EXPECT_TRUE(animations[FIRST_ANIMATION]->IsRunning());
     NotifyStartAnimation();
-    EXPECT_TRUE(isFinished == true);
+    EXPECT_TRUE(isFinished);
 
     /**
      * @tc.steps: step3. start transition-out test
@@ -325,7 +325,7 @@ HWTEST_F(RSTransitionTest, CombinedTransitionEffectTest001, TestSize.Level1)
     EXPECT_FALSE(animations[FIRST_ANIMATION] == nullptr);
     EXPECT_TRUE(animations[FIRST_ANIMATION]->IsRunning());
     NotifyStartAnimation();
-    EXPECT_TRUE(isFinished == true);
+    EXPECT_TRUE(isFinished);
 
     GTEST_LOG_(INFO) << "RSTransitionTest CombinedTransitionEffectTest001 end";
 }
@@ -376,7 +376,7 @@ HWTEST_F(RSTransitionTest, CombinedTransitionEffectTest002, TestSize.Level1)
     EXPECT_FALSE(animations[FIRST_ANIMATION] == nullptr);
     EXPECT_TRUE(animations[FIRST_ANIMATION]->IsRunning());
     NotifyStartAnimation();
-    EXPECT_TRUE(isFinished == true);
+    EXPECT_TRUE(isFinished);
 
     /**
      * @tc.steps: step3. start transition-out test
@@ -391,7 +391,7 @@ HWTEST_F(RSTransitionTest, CombinedTransitionEffectTest002, TestSize.Level1)
     EXPECT_FALSE(animations[FIRST_ANIMATION] == nullptr);
     EXPECT_TRUE(animations[FIRST_ANIMATION]->IsRunning());
     NotifyStartAnimation();
-    EXPECT_TRUE(isFinished == true);
+    EXPECT_TRUE(isFinished);
 
     GTEST_LOG_(INFO) << "RSTransitionTest CombinedTransitionEffectTest002 end";
 }
@@ -441,7 +441,7 @@ HWTEST_F(RSTransitionTest, CombinedTransitionEffectTest003, TestSize.Level1)
     EXPECT_FALSE(animations[FIRST_ANIMATION] == nullptr);
     EXPECT_TRUE(animations[FIRST_ANIMATION]->IsRunning());
     NotifyStartAnimation();
-    EXPECT_TRUE(isFinished == true);
+    EXPECT_TRUE(isFinished);
 
     /**
      * @tc.steps: step3. start transition-out test
@@ -456,7 +456,7 @@ HWTEST_F(RSTransitionTest, CombinedTransitionEffectTest003, TestSize.Level1)
     EXPECT_FALSE(animations[FIRST_ANIMATION] == nullptr);
     EXPECT_TRUE(animations[FIRST_ANIMATION]->IsRunning());
     NotifyStartAnimation();
-    EXPECT_TRUE(isFinished == true);
+    EXPECT_TRUE(isFinished);
 
     GTEST_LOG_(INFO) << "RSTransitionTest CombinedTransitionEffectTest003 end";
 }
