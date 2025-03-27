@@ -3021,7 +3021,7 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyTest115, TestSize.Level
     }
     OH_Drawing_StrutStyle* to = new OH_Drawing_StrutStyle();
     // 3 For families size
-    to->familiesSize = 4;
+    to->familiesSize = 3;
     to->families = (char**)malloc(to->familiesSize * sizeof(char*));
     const char* temp1[] = { "3", "2", "1"};
     for (int i = 0; i < to->familiesSize; i++) {
