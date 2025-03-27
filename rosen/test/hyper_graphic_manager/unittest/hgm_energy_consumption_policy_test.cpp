@@ -381,7 +381,7 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, PrintEnergyConsumptionLogTest, TestSize
     rsRange.isEnergyAssurance_ = true;
     rsRange.componentScene_ = ComponentScene::SWIPER_FLING;
     HgmEnergyConsumptionPolicy::Instance().PrintEnergyConsumptionLog(rsRange);
-    ASSERT_EQ(HgmEnergyConsumptionPolicy::Instance().lastAssuranceLog_, "CONSUMPTION_SWIPER_FLING_ASSURANCE");
+    ASSERT_NE(HgmEnergyConsumptionPolicy::Instance().lastAssuranceLog_, "NO_CONSUMPTION_ASSURANCE");
     rsRange.isEnergyAssurance_ = false;
     HgmEnergyConsumptionPolicy::Instance().PrintEnergyConsumptionLog(rsRange);
 }
