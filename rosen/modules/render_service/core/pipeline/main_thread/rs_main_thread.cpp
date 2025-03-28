@@ -156,6 +156,7 @@
 // blur predict
 #include "rs_frame_blur_predict.h"
 #include "rs_frame_deadline_predict.h"
+#include "feature_cfg/feature_param/extend_feature/mem_param.h"
 
 using namespace FRAME_TRACE;
 static const std::string RS_INTERVAL_NAME = "renderservice";
@@ -770,11 +771,12 @@ void RSMainThread::UpdateGpuContextCacheSize()
     if (cacheLimitsResourceSize > maxResourcesSize) {
         gpuContext->SetResourceCacheLimits(maxResources, cacheLimitsResourceSize);
     }
-    int systemCacheLimitsResourceSize =
-            std::atoi((system::GetParameter("persist.sys.graphics.skiacachelimit", "0")).c_str());
-    if (systemCacheLimitsResourceSize > 0) {
-        gpuContext->SetResourceCacheLimits(maxResources, systemCacheLimitsResourceSize);
+    static int systemCacheLimitReasourceSize = MEMParam::GetRSCacheLimitsResourceSize();
+    RS_LOGD("systemCacheLimitReasourceSize: %{public}d", systemCacheLimitReasourceSize);
+    if (systemCacheLimitReasourceSize > 0) {
+        gpuContext->SetResourceCacheLimits(maxResources, systemCacheLimitReasourceSize);
     }
+
     auto purgeableMaxCount = RSSystemParameters::GetPurgeableResourceLimit();
     gpuContext->SetPurgeableResourceLimit(purgeableMaxCount);
 #endif

@@ -25,12 +25,15 @@ public:
     ~MEMParam() = default;
 
     std::string GetRSWatchPoint() const;
+    static int GetRSCacheLimitsResourceSize();
 
 protected:
     void SetRSWatchPoint(std::string rsWatchPoint);
+    static void SetRSCacheLimitsResourceSize(int rsCacheLimitsResourceSize);
 
 private:
     std::string rsWatchPoint_ = "";
+    inline static int rsCacheLimitsResourceSize_ = 0;
 
     friend class MEMParamParse;
 };
