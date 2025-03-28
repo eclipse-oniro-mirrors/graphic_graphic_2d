@@ -303,11 +303,11 @@ void SurfaceNodeCommandHelper::SetSurfaceId(RSContext& context, NodeId nodeId, S
     }
 }
 
-void SurfaceNodeCommandHelper::SetClonedNodeId(
+void SurfaceNodeCommandHelper::SetClonedNodeInfo(
     RSContext& context, NodeId nodeId, NodeId cloneNodeId, bool needOffscreen)
 {
     if (auto node = context.GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(nodeId)) {
-        node->SetClonedNodeId(cloneNodeId, needOffscreen);
+        node->SetClonedNodeInfo(cloneNodeId, needOffscreen);
     }
 }
 

@@ -1109,20 +1109,20 @@ bool RSSurfaceRenderNode::IsCloneNode() const
     return isCloneNode_;
 }
 
-void RSSurfaceRenderNode::SetClonedNodeId(NodeId id, bool needOffscreen)
+void RSSurfaceRenderNode::SetClonedNodeInfo(NodeId id, bool needOffscreen)
 {
     isCloneNode_ = (id != INVALID_NODEID);
     clonedSourceNodeId_ = id;
     auto context = GetContext().lock();
     if (!context) {
-        RS_LOGE("RSSurfaceRenderNode::SetClonedNodeId invalid context");
+        RS_LOGE("RSSurfaceRenderNode::SetClonedNodeInfo invalid context");
         return;
     }
     auto clonedSurfaceNode = context->GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(clonedSourceNodeId_);
     if (clonedSurfaceNode) {
         clonedSurfaceNode->clonedSourceNodeNeedOffscreen_ = needOffscreen;
     }
-    RS_LOGD("RSSurfaceRenderNode::SetClonedNodeId clonedNode[%{public}" PRIu64 "] needOffscreen: %{public}d",
+    RS_LOGD("RSSurfaceRenderNode::SetClonedNodeInfo clonedNode[%{public}" PRIu64 "] needOffscreen: %{public}d",
         id, needOffscreen);
 }
 

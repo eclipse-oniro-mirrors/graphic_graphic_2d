@@ -570,7 +570,7 @@ public:
     // [Attention] The function only used for unlocking screen for PC currently
     void SetClonedNodeRenderDrawable(DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr clonedNodeRenderDrawable);
     bool IsCloneNode() const;
-    void SetClonedNodeId(NodeId id, bool needOffscreen);
+    void SetClonedNodeInfo(NodeId id, bool needOffscreen);
     void SetIsCloned(bool isCloned);
     void SetIsClonedNodeOnTheTree(bool isOnTheTree);
 
