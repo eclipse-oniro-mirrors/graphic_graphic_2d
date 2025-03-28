@@ -4568,7 +4568,8 @@ HWTEST_F(RSUniRenderVisitorTest, CollectFilterInfoAndUpdateDirty004, TestSize.Le
     rsUniRenderVisitor->curDisplayDirtyManager_->currentFrameDirtyRegion_ = {};
 
     ASSERT_TRUE(rsUniRenderVisitor->transparentCleanFilter_.empty());
-    rsUniRenderVisitor->CollectFilterInfoAndUpdateDirty(*surfaceNode, *dirtyManager, globalFilterRect, globalFilterRect);
+    rsUniRenderVisitor->CollectFilterInfoAndUpdateDirty(*surfaceNode, *dirtyManager,
+        globalFilterRect, globalFilterRect);
     ASSERT_FALSE(rsUniRenderVisitor->transparentCleanFilter_.empty());
 }
 
