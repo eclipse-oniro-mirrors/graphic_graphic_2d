@@ -37,7 +37,7 @@
 namespace OHOS {
 namespace Rosen {
 enum class VulkanInterfaceType : uint32_t {
-    UNI_RENDER = 0,
+    BASIC_RENDER = 0,
     PROTECTED_REDRAW,
     UNPROTECTED_REDRAW,
     MAX_INTERFACE_TYPE,
@@ -222,7 +222,7 @@ private:
     std::mutex hGraphicsQueueMutex_;
     static void* handle_;
     bool acquiredMandatoryProcAddresses_ = false;
-    VkInstance instance_ = VK_NULL_HANDLE;
+    static VkInstance instance_;
     VkPhysicalDevice physicalDevice_ = VK_NULL_HANDLE;
     uint32_t graphicsQueueFamilyIndex_ = UINT32_MAX;
     VkDevice device_ = VK_NULL_HANDLE;
@@ -235,7 +235,7 @@ private:
 
     // static thread_local GrVkBackendContext backendContext_;
     GrVkBackendContext backendContext_;
-    VulkanInterfaceType interfaceType_ = VulkanInterfaceType::UNI_RENDER;
+    VulkanInterfaceType interfaceType_ = VulkanInterfaceType::BASIC_RENDER;
     RsVulkanInterface(const RsVulkanInterface &) = delete;
     RsVulkanInterface &operator=(const RsVulkanInterface &) = delete;
 
@@ -265,6 +265,8 @@ class RsVulkanContext {
 public:
     static RsVulkanContext& GetSingleton(const std::string& cacheDir = "");
     explicit RsVulkanContext(std::string cacheDir = "");
+    void InitVulkanContextForHybridRender(const std::string& cacheDir);
+    void InitVulkanContextForUniRender(const std::string& cacheDir);
     ~RsVulkanContext() {};
 
     RsVulkanContext(const RsVulkanContext&) = delete;
@@ -338,10 +340,21 @@ public:
         return isProtected_;
     }
 
+    static bool IsHybridRender()
+    {
+        return isHybridRender_;
+    }
+
+    static void SetHybridRender(bool isHybridRender)
+    {
+        isHybridRender_ = isHybridRender;
+    }
+
 private:
     static thread_local bool isProtected_;
+    static bool isHybridRender_;
     static thread_local VulkanInterfaceType vulkanInterfaceType_;
-    std::vector<std::shared_ptr<RsVulkanInterface>> vulkanInterfaceVec;
+    std::vector<std::shared_ptr<RsVulkanInterface>> vulkanInterfaceVec_;
     static thread_local std::shared_ptr<Drawing::GPUContext> drawingContext_;
     static thread_local std::shared_ptr<Drawing::GPUContext> protectedDrawingContext_;
 };
