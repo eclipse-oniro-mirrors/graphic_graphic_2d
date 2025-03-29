@@ -621,17 +621,7 @@ void HgmFrameRateManager::HandleFrameRateChangeForLTPO(uint64_t timestamp, bool 
     // Start of DVSync
     int64_t delayTime = CreateVSyncGenerator()->SetCurrentRefreshRate(controllerRate_, lastRefreshRate);
     if (delayTime != 0) {
-        int64_t controllerRate = controllerRate_;
-        std::vector<std::pair<FrameRateLinkerId, uint32_t>> appChangeData = appChangeData_;
-        bool needUpdate = isNeedUpdateAppOffset_;
-        RSTaskMessage::RSTask task = [this, targetTime, controllerRate, appChangeData, needUpdate]() {
-            if (controller_) {
-                vsyncCountOfChangeGeneratorRate_ = controller_->ChangeGeneratorRate(controllerRate,
-                    appChangeData, targetTime, needUpdate);
-            }
-            CreateVSyncGenerator()->SetCurrentRefreshRate(0, 0);
-        };
-        HgmTaskHandleThread::Instance().PostTask(task, delayTime);
+        DVSyncTaskProcessor(delayTime, targetTime);
     } else if (controller_) {
         vsyncCountOfChangeGeneratorRate_ = controller_->ChangeGeneratorRate(
             controllerRate_, appChangeData_, targetTime, isNeedUpdateAppOffset_);
@@ -640,6 +630,21 @@ void HgmFrameRateManager::HandleFrameRateChangeForLTPO(uint64_t timestamp, bool 
     isNeedUpdateAppOffset_ = false;
     pendingRefreshRate_ = std::make_shared<uint32_t>(currRefreshRate_);
     SetChangeGeneratorRateValid(false);
+}
+
+void HgmFrameRateManager::DVSyncTaskProcessor(int64_t delayTime, uint64_t targetTime)
+{
+    int64_t controllerRate = controllerRate_;
+    std::vector<std::pair<FrameRateLinkerId, uint32_t>> appChangeData = appChangeData_;
+    bool needUpdate = isNeedUpdateAppOffset_;
+    RSTaskMessage::RSTask task = [this, targetTime, controllerRate, appChangeData, needUpdate]() {
+        if (controller_) {
+            vsyncCountOfChangeGeneratorRate_ = controller_->ChangeGeneratorRate(controllerRate,
+                appChangeData, targetTime, needUpdate);
+        }
+        CreateVSyncGenerator()->SetCurrentRefreshRate(0, 0);
+    };
+    HgmTaskHandleThread::Instance().PostTask(task, delayTime);
 }
 
 void HgmFrameRateManager::GetLowBrightVec(const std::shared_ptr<PolicyConfigData>& configData)
