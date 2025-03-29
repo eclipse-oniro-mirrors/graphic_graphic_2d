@@ -304,6 +304,15 @@ void HgmCore::SetHfbcConfigMap(const std::unordered_map<std::string, std::string
     mPolicyConfigData_->hfbcConfig_ = hfbcConfig;
 }
 
+void HgmCore::SetHfbcControlMode(bool mode)
+{
+    if (!mPolicyConfigData_) {
+        HGM_LOGE("Fail to set hfbcConfig, HgmCore is not initialized");
+        return;
+    }
+    mPolicyConfigData_->hfbcMode_ = mode;
+}
+
 int32_t HgmCore::SetScreenRefreshRate(ScreenId id, int32_t sceneId, int32_t rate)
 {
     if (!IsEnabled()) {

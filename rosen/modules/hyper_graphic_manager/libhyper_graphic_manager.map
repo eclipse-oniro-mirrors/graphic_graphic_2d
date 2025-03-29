@@ -45,6 +45,7 @@
       *HgmCore::SetASConfig*;
       *HgmCore::SetActiveScreenId*;
       *HgmCore::SetHfbcConfigMap*;
+      *HgmCore::SetHfbcControlMode*;
       *HgmCore::SetRateAndResolution*;
       *HgmCore::SetRefreshRateMode*;
       *HgmCore::SetScreenRefreshRate*;

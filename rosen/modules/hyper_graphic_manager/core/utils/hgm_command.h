@@ -205,6 +205,7 @@ public:
     std::unordered_map<std::string, std::string> videoCallLayerConfig_;
     // <"pkgName", "1">
     std::unordered_map<std::string, std::string> hfbcConfig_;
+    bool hfbcMode_ = true; // true: blacklist, false: whitelist
     StrategyConfigMap strategyConfigs_;
     ScreenConfigMap screenConfigs_;
     SupportedModeMap supportedModeConfigs_;
