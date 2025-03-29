@@ -61,12 +61,12 @@ HWTEST_F(RSSurfaceFpsManagerTest, RegisterAndUnregister, TestSize.Level1)
 HWTEST_F(RSSurfaceFpsManagerTest, GetSurfaceFps, TestSize.Level1)
 {
     RSSurfaceFpsManager& surfaceFpsManager = RSSurfaceFpsManager::GetInstance();
-    NodeId id = 1000;
+    pid_t pid = 1;
+    NodeId id = 1ull << 32;
     std::string name = "surfacefps0";
-    pid_t pid = id << 32u;
-    NodeId uid = 1001;
+    pid_t upid = 2;
+    NodeId uid = 2ull << 32;
     std::string uname = "surfacefps1";
-    pid_t upid = 0;
     surfaceFpsManager.RegisterSurfaceFps(id, name);
     EXPECT_NE(nullptr, surfaceFpsManager.GetSurfaceFps(id));
     EXPECT_EQ(nullptr, surfaceFpsManager.GetSurfaceFps(uid));
@@ -109,12 +109,12 @@ HWTEST_F(RSSurfaceFpsManagerTest, RecordPresentTime, TestSize.Level1)
 HWTEST_F(RSSurfaceFpsManagerTest, DumpAndClearDump, TestSize.Level1)
 {
     RSSurfaceFpsManager& surfaceFpsManager = RSSurfaceFpsManager::GetInstance();
-    NodeId id = 1000;
+    pid_t pid = 1;
+    NodeId id = 1ull << 32;
     std::string name = "surfacefps0";
-    pid_t pid = id << 32u;
-    NodeId uid = 1001;
+    pid_t upid = 2;
+    NodeId uid = 2ull << 32;
     std::string uname = "surfacefps1";
-    pid_t upid = 0;
     surfaceFpsManager.RegisterSurfaceFps(id, name);
     std::string result("");
     surfaceFpsManager.Dump(result, id);
