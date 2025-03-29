@@ -17,19 +17,19 @@
 
 namespace OHOS::Rosen {
 
-bool FilterParam::IsFilterCacheEnable() const
+bool FilterParam::IsFilterCacheEnable()
 {
     return isFilterCacheEnable_;
 }
 
-bool FilterParam::IsEffectMergeEnable() const
+bool FilterParam::IsEffectMergeEnable()
 {
     return isEffectMergeEnable_;
 }
 
-bool FilterParam::IsBlurAdaptiveAdjust() const
+bool FilterParam::IsBlurAdaptiveAdjust()
 {
-    return isBlurAdaptiveAdjust;
+    return isBlurAdaptiveAdjust_;
 }
 
 void FilterParam::SetFilterCacheEnable(bool isEnable)
@@ -44,6 +44,6 @@ void FilterParam::SetEffectMergeEnable(bool isEnable)
 
 void FilterParam::SetBlurAdaptiveAdjust(bool isEnable)
 {
-    isBlurAdaptiveAdjust = isEnable;
+    isBlurAdaptiveAdjust_ = isEnable;
 }
 } // namespace OHOS::Rosen

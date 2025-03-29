@@ -44,11 +44,10 @@ void FilterParamTest::TearDown() {}
  */
 HWTEST_F(FilterParamTest, SetFilterCacheEnable, Function | SmallTest | Level1)
 {
-    FilterParam filterParam;
-    filterParam.SetFilterCacheEnable(true);
-    EXPECT_EQ(filterParam.isFilterCacheEnable_, true);
-    filterParam.SetFilterCacheEnable(false);
-    EXPECT_EQ(filterParam.isFilterCacheEnable_, false);
+    FilterParam::SetFilterCacheEnable(true);
+    EXPECT_EQ(FilterParam::IsFilterCacheEnable(), true);
+    FilterParam::SetFilterCacheEnable(false);
+    EXPECT_EQ(FilterParam::IsFilterCacheEnable(), false);
 }
 
 /**
@@ -59,11 +58,10 @@ HWTEST_F(FilterParamTest, SetFilterCacheEnable, Function | SmallTest | Level1)
  */
 HWTEST_F(FilterParamTest, SetEffectMergeEnable, Function | SmallTest | Level1)
 {
-    FilterParam filterParam;
-    filterParam.SetEffectMergeEnable(true);
-    EXPECT_EQ(filterParam.isEffectMergeEnable_, true);
-    filterParam.SetEffectMergeEnable(false);
-    EXPECT_EQ(filterParam.isEffectMergeEnable_, false);
+    FilterParam::SetEffectMergeEnable(true);
+    EXPECT_EQ(FilterParam::IsEffectMergeEnable(), true);
+    FilterParam::SetEffectMergeEnable(false);
+    EXPECT_EQ(FilterParam::IsEffectMergeEnable(), false);
 }
 
 /**
@@ -74,56 +72,10 @@ HWTEST_F(FilterParamTest, SetEffectMergeEnable, Function | SmallTest | Level1)
  */
 HWTEST_F(FilterParamTest, SetBlurAdaptiveAdjust, Function | SmallTest | Level1)
 {
-    FilterParam filterParam;
-    filterParam.SetBlurAdaptiveAdjust(true);
-    EXPECT_EQ(filterParam.isBlurAdaptiveAdjust, true);
-    filterParam.SetBlurAdaptiveAdjust(false);
-    EXPECT_EQ(filterParam.isBlurAdaptiveAdjust, false);
-}
-
-/**
- * @tc.name: IsFilterCacheEnable
- * @tc.desc: Verify the result of IsFilterCacheEnable function
- * @tc.type: FUNC
- * @tc.require: #IBIE4T
- */
-HWTEST_F(FilterParamTest, IsFilterCacheEnable, Function | SmallTest | Level1)
-{
-    FilterParam filterParam;
-    filterParam.isFilterCacheEnable_ = true;
-    EXPECT_TRUE(filterParam.IsFilterCacheEnable());
-    filterParam.isFilterCacheEnable_ = false;
-    EXPECT_FALSE(filterParam.IsFilterCacheEnable());
-}
-
-/**
- * @tc.name: IsEffectMergeEnable
- * @tc.desc: Verify the result of IsEffectMergeEnable function
- * @tc.type: FUNC
- * @tc.require: #IBIE4T
- */
-HWTEST_F(FilterParamTest, IsEffectMergeEnable, Function | SmallTest | Level1)
-{
-    FilterParam filterParam;
-    filterParam.isEffectMergeEnable_ = true;
-    EXPECT_TRUE(filterParam.IsEffectMergeEnable());
-    filterParam.isEffectMergeEnable_ = false;
-    EXPECT_FALSE(filterParam.IsEffectMergeEnable());
-}
-
-/**
- * @tc.name: IsBlurAdaptiveAdjust
- * @tc.desc: Verify the result of IsBlurAdaptiveAdjust function
- * @tc.type: FUNC
- * @tc.require: #IBIE4T
- */
-HWTEST_F(FilterParamTest, IsBlurAdaptiveAdjust, Function | SmallTest | Level1)
-{
-    FilterParam filterParam;
-    filterParam.isBlurAdaptiveAdjust = true;
-    EXPECT_TRUE(filterParam.IsBlurAdaptiveAdjust());
-    filterParam.isBlurAdaptiveAdjust = false;
-    EXPECT_FALSE(filterParam.IsBlurAdaptiveAdjust());
+    FilterParam::SetBlurAdaptiveAdjust(true);
+    EXPECT_EQ(FilterParam::IsBlurAdaptiveAdjust(), true);
+    FilterParam::SetBlurAdaptiveAdjust(false);
+    EXPECT_EQ(FilterParam::IsBlurAdaptiveAdjust(), false);
 }
 } // namespace Rosen
 } // namespace OHOS

@@ -35,4 +35,14 @@ void MEMParam::SetRSCacheLimitsResourceSize(int rsCacheLimitsResourceSize)
 {
     rsCacheLimitsResourceSize_ = rsCacheLimitsResourceSize;
 }
+
+bool MEMParam::IsReclaimEnabled()
+{
+    return isReclaimEnabled_;
+}
+
+void MEMParam::SetReclaimEnabled(bool isEnabled)
+{
+    isReclaimEnabled_ = isEnabled;
+}
 } // namespace OHOS::Rosen
