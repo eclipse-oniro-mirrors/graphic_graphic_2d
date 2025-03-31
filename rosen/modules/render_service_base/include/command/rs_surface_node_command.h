@@ -61,7 +61,7 @@ enum RSSurfaceNodeCommandType : uint16_t {
     SURFACE_NODE_CREATE_SURFACE_EXT = 26,
     SURFACE_NODE_SET_FOREGROUND = 27,
     SURFACE_NODE_SET_SURFACE_ID = 28,
-    SURFACE_NODE_SET_CLONED_NODE_ID = 29,
+    SURFACE_NODE_SET_CLONED_NODE_INFO = 29,
     SURFACE_NODE_SET_FORCE_UIFIRST = 30,
     SURFACE_NODE_SET_ANCO_FLAGS = 31,
     SURFACE_NODE_SET_HDR_PRESENT = 32,
@@ -74,6 +74,7 @@ enum RSSurfaceNodeCommandType : uint16_t {
     SURFACE_NODE_SET_HARDWARE_ENABLE_HINT = 39,
     SURFACE_NODE_ATTACH_TO_WINDOW_CONTAINER = 40,
     SURFACE_NODE_DETACH_FROM_WINDOW_CONTAINER = 41,
+    SURFACE_NODE_SET_SOURCE_VIRTUAL_DISPLAY_ID = 42,
 };
 
 class RSB_EXPORT SurfaceNodeCommandHelper {
@@ -114,7 +115,7 @@ public:
 #endif
     static void SetForeground(RSContext& context, NodeId nodeId, bool isForeground);
     static void SetSurfaceId(RSContext& context, NodeId nodeId, SurfaceId surfaceId);
-    static void SetClonedNodeId(RSContext& context, NodeId nodeId, NodeId cloneNodeId);
+    static void SetClonedNodeInfo(RSContext& context, NodeId nodeId, NodeId cloneNodeId, bool needOffscreen);
     static void SetForceUIFirst(RSContext& context, NodeId nodeId, bool forceUIFirst);
     static void SetAncoFlags(RSContext& context, NodeId nodeId, uint32_t flags);
     static void SetHDRPresent(RSContext& context, NodeId nodeId, bool hdrPresent);
@@ -123,6 +124,7 @@ public:
     static void SetAbilityState(RSContext& context, NodeId nodeId, RSSurfaceNodeAbilityState abilityState);
     static void SetApiCompatibleVersion(RSContext& context, NodeId nodeId, uint32_t apiCompatibleVersion);
     static void SetHardwareEnableHint(RSContext& context, NodeId nodeId, bool enable);
+    static void SetSourceVirtualDisplayId(RSContext& context, NodeId nodeId, ScreenId screenId);
     static void AttachToWindowContainer(RSContext& context, NodeId nodeId, ScreenId screenId);
     static void DetachFromWindowContainer(RSContext& context, NodeId nodeId, ScreenId screenId);
 };
@@ -220,9 +222,9 @@ ADD_COMMAND(RSSurfaceNodeCreateSurfaceExt,
 ADD_COMMAND(RSSurfaceNodeSetForeground,
     ARG(PERMISSION_APP, SURFACE_NODE, SURFACE_NODE_SET_FOREGROUND,
         SurfaceNodeCommandHelper::SetForeground, NodeId, bool))
-ADD_COMMAND(RSSurfaceNodeSetClonedNodeId,
-    ARG(PERMISSION_SYSTEM, SURFACE_NODE, SURFACE_NODE_SET_CLONED_NODE_ID,
-        SurfaceNodeCommandHelper::SetClonedNodeId, NodeId, NodeId))
+ADD_COMMAND(RSSurfaceNodeSetClonedNodeInfo,
+    ARG(PERMISSION_SYSTEM, SURFACE_NODE, SURFACE_NODE_SET_CLONED_NODE_INFO,
+        SurfaceNodeCommandHelper::SetClonedNodeInfo, NodeId, NodeId, bool))
 ADD_COMMAND(RSSurfaceNodeSetForceUIFirst,
     ARG(PERMISSION_SYSTEM, SURFACE_NODE, SURFACE_NODE_SET_FORCE_UIFIRST,
         SurfaceNodeCommandHelper::SetForceUIFirst, NodeId, bool))
@@ -253,6 +255,9 @@ ADD_COMMAND(RSSurfaceNodeAttachToWindowContainer,
 ADD_COMMAND(RSSurfaceNodeDetachFromWindowContainer,
     ARG(PERMISSION_APP, SURFACE_NODE, SURFACE_NODE_DETACH_FROM_WINDOW_CONTAINER,
         SurfaceNodeCommandHelper::DetachFromWindowContainer, NodeId, ScreenId))
+ADD_COMMAND(RSSurfaceNodeSetSourceVirtualDisplayId,
+    ARG(PERMISSION_APP, SURFACE_NODE, SURFACE_NODE_SET_SOURCE_VIRTUAL_DISPLAY_ID,
+        SurfaceNodeCommandHelper::SetSourceVirtualDisplayId, NodeId, ScreenId))
 } // namespace Rosen
 } // namespace OHOS
 #endif // ROSEN_RENDER_SERVICE_BASE_COMMAND_RS_SURFACE_NODE_COMMAND_H

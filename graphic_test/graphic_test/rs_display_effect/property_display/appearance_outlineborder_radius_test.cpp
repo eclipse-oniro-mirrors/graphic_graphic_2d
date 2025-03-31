@@ -29,7 +29,7 @@ public:
     // called before each tests
     void BeforeEach() override
     {
-        SetScreenSurfaceBounds({ 0, 0, screenWidth, screenHeight });
+        SetScreenSize(screenWidth, screenHeight);
     }
 
     void setNode(std::shared_ptr<RSCanvasNode>& node, const Vector4f& bounds, Vector4<Color> outLineColor)
@@ -500,6 +500,10 @@ GRAPHIC_TEST(AppearanceTest03, CONTENT_DISPLAY_TEST, Appearance_Outline_Radius_T
 
 GRAPHIC_TEST(AppearanceTest03, CONTENT_DISPLAY_TEST, Appearance_Outline_BackgroundColor_Test_1)
 {
+    int columnCount = 2;
+    int rowCount = 3;
+    auto sizeX = screenWidth / columnCount;
+    auto sizeY = screenHeight / rowCount;
     vector<float> vecs1 = {0, 0, 1, 1, 2, 2};
     vector<float> vecs2 = {0, 0, 20, 20, 20, 20};
     vector<float> vecs3 = {0, 0, 20, 20, 20, 20};
@@ -508,7 +512,10 @@ GRAPHIC_TEST(AppearanceTest03, CONTENT_DISPLAY_TEST, Appearance_Outline_Backgrou
     Vector4<Color> color(Color::FromArgbInt(0xFF00FF00), Color::FromArgbInt(0xFF00FF00),
         Color::FromArgbInt(0xFF00FF00), Color::FromArgbInt(0xFF00FF00));
     for (int i = 0; i < vecs1.size(); i++) {
+        int x = (i % columnCount) * sizeX;
+        int y = (i / columnCount) * sizeY;
         auto testNode = RSCanvasNode::Create();
+        testNode->SetBounds({x, y, sizeX - 10, sizeY - 10});
         testNode->SetBackgroundColor(0x8F0000FF);
         testNode->SetOutlineColor(color);
         testNode->SetOutlineWidth(20);
@@ -529,6 +536,7 @@ GRAPHIC_TEST(AppearanceTest03, CONTENT_DISPLAY_TEST, Appearance_CornerRadius_Tes
     for (int i = 0; i < vecs.size(); i++) {
         auto testNode = RSCanvasNode::Create();
         testNode->SetBounds({380, i * 350 + 20, 400, 300});
+        testNode->SetBackgroundColor(0x8F0000FF);
         testNode->SetCornerRadius(vecs[i]);
         GetRootNode()->AddChild(testNode);
         RegisterNode(testNode);
@@ -541,6 +549,7 @@ GRAPHIC_TEST(AppearanceTest03, CONTENT_DISPLAY_TEST, Appearance_CornerRadius_Tes
     for (int i = 0; i < vecs.size(); i++) {
         auto testNode = RSCanvasNode::Create();
         testNode->SetBounds({380, i * 350 + 20, 400, 300});
+        testNode->SetBackgroundColor(0x8F0000FF);
         testNode->SetCornerRadius(vecs[i]);
         GetRootNode()->AddChild(testNode);
         RegisterNode(testNode);

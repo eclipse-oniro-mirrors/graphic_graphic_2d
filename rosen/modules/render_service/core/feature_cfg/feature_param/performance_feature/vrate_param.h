@@ -24,12 +24,13 @@ public:
     VRateParam() = default;
     ~VRateParam() = default;
 
-    bool GetVRateEnable() const;
+    static bool GetVRateEnable();
 
 protected:
-    void SetVRateEnable(bool isVRateEnable);
+    static void SetVRateEnable(bool isVRateEnable);
+
 private:
-    bool isVRateEnable_ = false;
+    inline static bool isVRateEnable_ = false;
 
     friend class VRateParamParse;
 };

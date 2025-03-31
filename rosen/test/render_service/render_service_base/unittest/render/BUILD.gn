@@ -15,7 +15,8 @@ import("//build/test.gni")
 import("//foundation/graphic/graphic_2d/ace_platforms.gni")
 import("//foundation/graphic/graphic_2d/graphic_config.gni")
 
-module_output_path = "graphic_2d/rosen_engine/render_service_base/render"
+module_output_path =
+    "graphic_2d/graphic_2d/rosen_engine/render_service_base/render"
 
 ##############################  RSRenderServiceBaseRenderTest  ##################################
 ohos_unittest("RSAibarShaderFilterTest") {
@@ -25,6 +26,7 @@ ohos_unittest("RSAibarShaderFilterTest") {
     "rs_aibar_shader_filter_test.cpp",
     "rs_attraction_effect_filter_test.cpp",
     "rs_blur_filter_test.cpp",
+    "rs_filter_cache_manager_test.cpp",
   ]
 
   cflags = [
@@ -39,7 +41,6 @@ ohos_unittest("RSAibarShaderFilterTest") {
 
   include_dirs = [
     "$graphic_2d_root/rosen/modules/render_service_base/include",
-    "$graphic_2d_root/rosen/modules/graphics_effect/include",
     "$graphic_2d_root/rosen/modules/2d_graphics/src/drawing/engine_adapter/skia_adapter/",
     "$graphic_2d_root/rosen/include",
     "$graphic_2d_root/rosen/test/include",
@@ -56,6 +57,7 @@ ohos_unittest("RSAibarShaderFilterTest") {
   external_deps = [
     "c_utils:utils",
     "graphic_surface:surface",
+    "graphics_effect:graphics_effect_core",
     "hilog:libhilog",
     "image_framework:image_native",
     "init:libbegetutil",
@@ -91,7 +93,6 @@ ohos_unittest("RSBorderTest") {
 
   include_dirs = [
     "$graphic_2d_root/rosen/modules/render_service_base/include",
-    "$graphic_2d_root/rosen/modules/graphics_effect/include",
     "$graphic_2d_root/rosen/modules/2d_graphics/src/drawing/engine_adapter/skia_adapter/",
     "$graphic_2d_root/rosen/include",
     "$graphic_2d_root/rosen/test/include",
@@ -108,6 +109,7 @@ ohos_unittest("RSBorderTest") {
   external_deps = [
     "c_utils:utils",
     "graphic_surface:surface",
+    "graphics_effect:graphics_effect_core",
     "hilog:libhilog",
     "image_framework:image_native",
     "init:libbegetutil",
@@ -146,7 +148,6 @@ ohos_unittest("RSColorExtractTest") {
 
   include_dirs = [
     "$graphic_2d_root/rosen/modules/render_service_base/include",
-    "$graphic_2d_root/rosen/modules/graphics_effect/include",
     "$graphic_2d_root/rosen/modules/2d_graphics/src/drawing/engine_adapter/skia_adapter/",
     "$graphic_2d_root/rosen/include",
     "$graphic_2d_root/rosen/test/include",
@@ -163,6 +164,7 @@ ohos_unittest("RSColorExtractTest") {
   external_deps = [
     "c_utils:utils",
     "graphic_surface:surface",
+    "graphics_effect:graphics_effect_core",
     "hilog:libhilog",
     "image_framework:image_native",
     "init:libbegetutil",
@@ -207,7 +209,6 @@ ohos_unittest("RSColorfulShadowFilterTest") {
 
   include_dirs = [
     "$graphic_2d_root/rosen/modules/render_service_base/include",
-    "$graphic_2d_root/rosen/modules/graphics_effect/include",
     "$graphic_2d_root/rosen/modules/2d_graphics/src/drawing/engine_adapter/skia_adapter/",
     "$graphic_2d_root/rosen/include",
     "$graphic_2d_root/rosen/test/include",
@@ -224,6 +225,7 @@ ohos_unittest("RSColorfulShadowFilterTest") {
   external_deps = [
     "c_utils:utils",
     "graphic_surface:surface",
+    "graphics_effect:graphics_effect_core",
     "hilog:libhilog",
     "image_framework:image_native",
     "init:libbegetutil",
@@ -262,7 +264,6 @@ ohos_unittest("RSImageCacheTest") {
 
   include_dirs = [
     "$graphic_2d_root/rosen/modules/render_service_base/include",
-    "$graphic_2d_root/rosen/modules/graphics_effect/include",
     "$graphic_2d_root/rosen/modules/2d_graphics/src/drawing/engine_adapter/skia_adapter/",
     "$graphic_2d_root/rosen/include",
     "$graphic_2d_root/rosen/test/include",
@@ -279,6 +280,7 @@ ohos_unittest("RSImageCacheTest") {
   external_deps = [
     "c_utils:utils",
     "graphic_surface:surface",
+    "graphics_effect:graphics_effect_core",
     "hilog:libhilog",
     "image_framework:image_native",
     "init:libbegetutil",
@@ -314,7 +316,6 @@ ohos_unittest("RSKawaseBlurShaderFilterTest") {
 
   include_dirs = [
     "$graphic_2d_root/rosen/modules/render_service_base/include",
-    "$graphic_2d_root/rosen/modules/graphics_effect/include",
     "$graphic_2d_root/rosen/modules/2d_graphics/src/drawing/engine_adapter/skia_adapter/",
     "$graphic_2d_root/rosen/include",
     "$graphic_2d_root/rosen/test/include",
@@ -331,6 +332,7 @@ ohos_unittest("RSKawaseBlurShaderFilterTest") {
   external_deps = [
     "c_utils:utils",
     "graphic_surface:surface",
+    "graphics_effect:graphics_effect_core",
     "hilog:libhilog",
     "image_framework:image_native",
     "init:libbegetutil",
@@ -366,7 +368,6 @@ ohos_unittest("RSHpsBlurTest") {
 
   include_dirs = [
     "$graphic_2d_root/rosen/modules/render_service_base/include",
-    "$graphic_2d_root/rosen/modules/graphics_effect/include",
     "$graphic_2d_root/rosen/modules/2d_graphics/src/drawing/engine_adapter/skia_adapter/",
     "$graphic_2d_root/rosen/include",
     "$graphic_2d_root/rosen/test/include",
@@ -383,6 +384,7 @@ ohos_unittest("RSHpsBlurTest") {
   external_deps = [
     "c_utils:utils",
     "graphic_surface:surface",
+    "graphics_effect:graphics_effect_core",
     "hilog:libhilog",
     "image_framework:image_native",
     "init:libbegetutil",
@@ -418,7 +420,6 @@ ohos_unittest("RSHveFilterTest") {
 
   include_dirs = [
     "$graphic_2d_root/rosen/modules/render_service_base/include",
-    "$graphic_2d_root/rosen/modules/graphics_effect/include",
     "$graphic_2d_root/rosen/modules/2d_graphics/src/drawing/engine_adapter/skia_adapter/",
     "$graphic_2d_root/rosen/include",
     "$graphic_2d_root/rosen/test/include",
@@ -436,6 +437,7 @@ ohos_unittest("RSHveFilterTest") {
     "googletest:gmock",
     "googletest:gtest_main",
     "graphic_surface:surface",
+    "graphics_effect:graphics_effect_core",
     "hilog:libhilog",
     "image_framework:image_native",
     "init:libbegetutil",
@@ -463,7 +465,6 @@ ohos_unittest("RSMESABlurShaderFilterTest") {
 
   include_dirs = [
     "$graphic_2d_root/rosen/modules/render_service_base/include",
-    "$graphic_2d_root/rosen/modules/graphics_effect/include",
     "$graphic_2d_root/rosen/modules/2d_graphics/src/drawing/engine_adapter/skia_adapter/",
     "$graphic_2d_root/rosen/include",
     "$graphic_2d_root/rosen/test/include",
@@ -480,6 +481,7 @@ ohos_unittest("RSMESABlurShaderFilterTest") {
   external_deps = [
     "c_utils:utils",
     "graphic_surface:surface",
+    "graphics_effect:graphics_effect_core",
     "hilog:libhilog",
     "image_framework:image_native",
     "init:libbegetutil",
@@ -532,6 +534,7 @@ ohos_unittest("RSLightBlurShaderFilterTest") {
     "googletest:gmock",
     "googletest:gtest_main",
     "graphic_surface:surface",
+    "graphics_effect:graphics_effect_core",
     "hilog:libhilog",
     "image_framework:image_native",
     "init:libbegetutil",
@@ -567,7 +570,6 @@ ohos_unittest("RSLightUpEffectFilterTest") {
 
   include_dirs = [
     "$graphic_2d_root/rosen/modules/render_service_base/include",
-    "$graphic_2d_root/rosen/modules/graphics_effect/include",
     "$graphic_2d_root/rosen/modules/2d_graphics/src/drawing/engine_adapter/skia_adapter/",
     "$graphic_2d_root/rosen/include",
     "$graphic_2d_root/rosen/test/include",
@@ -584,6 +586,7 @@ ohos_unittest("RSLightUpEffectFilterTest") {
   external_deps = [
     "c_utils:utils",
     "graphic_surface:surface",
+    "graphics_effect:graphics_effect_core",
     "hilog:libhilog",
     "image_framework:image_native",
     "init:libbegetutil",
@@ -624,7 +627,6 @@ ohos_unittest("RSMagnifierShaderFilterTest") {
 
   include_dirs = [
     "$graphic_2d_root/rosen/modules/render_service_base/include",
-    "$graphic_2d_root/rosen/modules/graphics_effect/include",
     "$graphic_2d_root/rosen/modules/2d_graphics/src/drawing/engine_adapter/skia_adapter/",
     "$graphic_2d_root/rosen/include",
     "$graphic_2d_root/rosen/test/include",
@@ -641,6 +643,7 @@ ohos_unittest("RSMagnifierShaderFilterTest") {
   external_deps = [
     "c_utils:utils",
     "graphic_surface:surface",
+    "graphics_effect:graphics_effect_core",
     "hilog:libhilog",
     "image_framework:image_native",
     "init:libbegetutil",
@@ -681,7 +684,6 @@ ohos_unittest("RSMaterialFilterTest") {
 
   include_dirs = [
     "$graphic_2d_root/rosen/modules/render_service_base/include",
-    "$graphic_2d_root/rosen/modules/graphics_effect/include",
     "$graphic_2d_root/rosen/modules/2d_graphics/src/drawing/engine_adapter/skia_adapter/",
     "$graphic_2d_root/rosen/include",
     "$graphic_2d_root/rosen/test/include",
@@ -698,6 +700,7 @@ ohos_unittest("RSMaterialFilterTest") {
   external_deps = [
     "c_utils:utils",
     "graphic_surface:surface",
+    "graphics_effect:graphics_effect_core",
     "hilog:libhilog",
     "image_framework:image_native",
     "init:libbegetutil",
@@ -742,7 +745,6 @@ ohos_unittest("RSPixelMapUtilTest") {
   include_dirs = [
     "$graphic_2d_root/rosen/modules/render_service/core",
     "$graphic_2d_root/rosen/modules/render_service_base/include",
-    "$graphic_2d_root/rosen/modules/graphics_effect/include",
     "$graphic_2d_root/rosen/modules/2d_graphics/src/drawing/engine_adapter/skia_adapter/",
     "$graphic_2d_root/rosen/include",
     "$graphic_2d_root/rosen/test/include",
@@ -760,6 +762,7 @@ ohos_unittest("RSPixelMapUtilTest") {
   external_deps = [
     "c_utils:utils",
     "graphic_surface:surface",
+    "graphics_effect:graphics_effect_core",
     "hilog:libhilog",
     "image_framework:image_native",
     "init:libbegetutil",
@@ -796,7 +799,6 @@ ohos_unittest("RSColorspaceConvertTest") {
   include_dirs = [
     "$graphic_2d_root/rosen/modules/render_service/core",
     "$graphic_2d_root/rosen/modules/render_service_base/include",
-    "$graphic_2d_root/rosen/modules/graphics_effect/include",
     "$graphic_2d_root/rosen/modules/2d_graphics/src/drawing/engine_adapter/skia_adapter/",
     "$graphic_2d_root/rosen/include",
     "$graphic_2d_root/rosen/test/include",

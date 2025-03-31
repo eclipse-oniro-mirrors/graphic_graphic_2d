@@ -607,6 +607,37 @@ bool RSRenderNode::IsCrossNode() const
     return isCrossNode_ || isCloneCrossNode_;
 }
 
+bool RSRenderNode::HasVisitedCrossNode() const
+{
+    return hasVisitedCrossNode_;
+}
+
+void RSRenderNode::SetCrossNodeVisitedStatus(bool hasVisited)
+{
+    if (isCrossNode_) {
+        hasVisitedCrossNode_ = hasVisited;
+        RS_LOGD("%{public}s NodeId[%{public}" PRIu64 "] hasVisited:%{public}d", __func__, GetId(), hasVisited);
+        for (auto cloneNode : cloneCrossNodeVec_) {
+            if (!cloneNode) {
+                RS_LOGE("%{public}s cloneNode is nullptr sourceNodeId[%{public}" PRIu64 "] hasVisited:%{public}d",
+                        __func__, GetId(), hasVisited);
+                continue;
+            }
+            cloneNode->hasVisitedCrossNode_ = hasVisited;
+            RS_LOGD("%{public}s cloneNodeId[%{public}" PRIu64 "] hasVisited:%{public}d",
+                    __func__, cloneNode->GetId(), hasVisited);
+        }
+    } else if (isCloneCrossNode_) {
+        auto sourceNode = GetSourceCrossNode().lock();
+        if (!sourceNode) {
+            RS_LOGE("%{public}s sourceNode is nullptr cloneNodeId[%{public}" PRIu64 "] hasVisited:%{public}d",
+                    __func__, GetId(), hasVisited);
+            return;
+        }
+        sourceNode->SetCrossNodeVisitedStatus(hasVisited);
+    }
+}
+
 void RSRenderNode::AddCrossParentChild(const SharedPtr& child, int32_t index)
 {
     // AddCrossParentChild only used as: the child is under multiple parents(e.g. a window cross multi-screens),
@@ -1038,6 +1069,7 @@ void RSRenderNode::DumpSubClassNode(std::string& out) const
         auto displayNode = static_cast<const RSDisplayRenderNode*>(this);
         out += ", skipLayer: " + std::to_string(displayNode->GetSecurityDisplay());
         out += ", securityExemption: " + std::to_string(displayNode->GetSecurityExemption());
+        out += ", virtualScreenMuteStatus: " + std::to_string(displayNode->GetVirtualScreenMuteStatus());
     } else if (GetType() == RSRenderNodeType::CANVAS_NODE) {
         auto canvasNode = static_cast<const RSCanvasRenderNode*>(this);
         NodeId linkedRootNodeId = canvasNode->GetLinkedRootNodeId();
@@ -4526,6 +4558,7 @@ void RSRenderNode::UpdateRenderParams()
     stagingRenderParams_->SetAlphaOffScreen(GetRenderProperties().GetAlphaOffscreen());
     stagingRenderParams_->SetForegroundFilterCache(GetRenderProperties().GetForegroundFilterCache());
     stagingRenderParams_->SetNeedFilter(GetRenderProperties().NeedFilter());
+    stagingRenderParams_->SetHDRBrightness(GetHDRBrightness());
     stagingRenderParams_->SetHasBlurFilter(HasBlurFilter());
     stagingRenderParams_->SetNodeType(GetType());
     stagingRenderParams_->SetEffectNodeShouldPaint(EffectNodeShouldPaint());

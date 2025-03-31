@@ -451,15 +451,15 @@ HWTEST_F(RSSurfaceRenderNodeTest, IsCloneNode, TestSize.Level1)
 }
 
 /**
- * @tc.name: SetClonedNodeId
- * @tc.desc: function test SetClonedNodeId
+ * @tc.name: SetClonedNodeInfo
+ * @tc.desc: function test SetClonedNodeInfo
  * @tc.type:FUNC
  * @tc.require: issueIBKU7U
  */
-HWTEST_F(RSSurfaceRenderNodeTest, SetClonedNodeId, TestSize.Level1)
+HWTEST_F(RSSurfaceRenderNodeTest, SetClonedNodeInfo, TestSize.Level1)
 {
     RSSurfaceRenderNode surfaceRenderNode(id, context);
-    surfaceRenderNode.SetClonedNodeId(id + 1);
+    surfaceRenderNode.SetClonedNodeInfo(id + 1, true);
     bool result = surfaceRenderNode.clonedSourceNodeId_ == id + 1;
     ASSERT_TRUE(result);
 }
@@ -650,6 +650,36 @@ HWTEST_F(RSSurfaceRenderNodeTest, SetGlobalPositionEnabledTest, TestSize.Level1)
     ASSERT_EQ(node->GetGlobalPositionEnabled(), true);
     node->SetGlobalPositionEnabled(false);
     ASSERT_FALSE(node->GetGlobalPositionEnabled());
+}
+
+/**
+ * @tc.name: SetDRMGlobalPositionEnabledTest
+ * @tc.desc: SetDRMGlobalPositionEnabled and GetDRMGlobalPositionEnabled
+ * @tc.type:FUNC
+ * @tc.require: issueIATYMW
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, SetDRMGlobalPositionEnabledTest, TestSize.Level1)
+{
+    auto node = std::make_shared<RSSurfaceRenderNode>(id, context);
+    node->stagingRenderParams_ = std::make_unique<RSRenderParams>(id);
+    node->SetDRMGlobalPositionEnabled(true);
+    ASSERT_EQ(node->GetDRMGlobalPositionEnabled(), true);
+}
+
+/**
+ * @tc.name: SetDRMCrossNodeTest
+ * @tc.desc: SetDRMCrossNode and GetDRMCrossNode
+ * @tc.type:FUNC
+ * @tc.require: issueIATYMW
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, SetDRMCrossNodeTest, TestSize.Level1)
+{
+    auto node = std::make_shared<RSSurfaceRenderNode>(id, context);
+    node->stagingRenderParams_ = std::make_unique<RSRenderParams>(id);
+    node->SetDRMCrossNode(true);
+    ASSERT_EQ(node->IsDRMCrossNode(), true);
+    node->SetDRMCrossNode(false);
+    ASSERT_FALSE(node->IsDRMCrossNode());
 }
 
 /**
@@ -2240,6 +2270,43 @@ HWTEST_F(RSSurfaceRenderNodeTest, HDRPresentTest002, TestSize.Level1)
 }
 
 /**
+ * @tc.name: GetIsWideColorGamut001
+ * @tc.desc: GetIsWideColorGamut test
+ * @tc.type: FUNC
+ * @tc.require: issueIB6Y6O
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, GetIsWideColorGamut001, TestSize.Level1)
+{
+    auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(id);
+    ASSERT_NE(surfaceNode, nullptr);
+
+    surfaceNode->wideColorGamutNum_ = 0;
+    ASSERT_FALSE(surfaceNode->GetIsWideColorGamut());
+    surfaceNode->wideColorGamutNum_++;
+    ASSERT_TRUE(surfaceNode->GetIsWideColorGamut());
+}
+
+/**
+ * @tc.name: IncreaseWideColorGamutNum001
+ * @tc.desc: IncreaseWideColorGamutNum and ReduceWideColorGamutNum test
+ * @tc.type: FUNC
+ * @tc.require: issueIB6Y6O
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, IncreaseWideColorGamutNum001, TestSize.Level1)
+{
+    auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(id);
+    ASSERT_NE(surfaceNode, nullptr);
+    surfaceNode->wideColorGamutNum_ = 0;
+    EXPECT_TRUE(surfaceNode->GetContext().lock() == nullptr);
+
+    surfaceNode->firstLevelNodeId_ = id + 1;
+    surfaceNode->IncreaseWideColorGamutNum();
+    ASSERT_TRUE(surfaceNode->GetIsWideColorGamut());
+    surfaceNode->ReduceWideColorGamutNum();
+    ASSERT_FALSE(surfaceNode->GetIsWideColorGamut());
+}
+
+/**
  * @tc.name: CheckIfOcclusionReusable
  * @tc.desc: test results of CheckIfOcclusionReusable
  * @tc.type: FUNC
@@ -2515,6 +2582,21 @@ HWTEST_F(RSSurfaceRenderNodeTest, DealWithDrawBehindWindowTransparentRegion002, 
 
     testNode->DealWithDrawBehindWindowTransparentRegion();
     ASSERT_FALSE(regionBeforeProcess.Sub(testNode->opaqueRegion_).IsEmpty());
+}
+
+/**
+ * @tc.name: GetSourceDisplayRenderNodeId
+ * @tc.desc: test Set/GetSourceDisplayRenderNodeId.
+ * @tc.type: FUNC
+ * @tc.require: issueIBJJRI
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, GetSourceDisplayRenderNodeId, TestSize.Level1)
+{
+    auto testNode = std::make_shared<RSSurfaceRenderNode>(id, context);
+    ASSERT_NE(testNode, nullptr);
+    NodeId sourceDisplayRenderNodeId = 1;
+    testNode->SetSourceDisplayRenderNodeId(sourceDisplayRenderNodeId);
+    ASSERT_EQ(testNode->GetSourceDisplayRenderNodeId(), sourceDisplayRenderNodeId);
 }
 } // namespace Rosen
 } // namespace OHOS

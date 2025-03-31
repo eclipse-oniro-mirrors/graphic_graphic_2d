@@ -34,6 +34,7 @@
 #include "ipc_callbacks/buffer_available_callback_stub.h"
 #include "ipc_callbacks/buffer_clear_callback_stub.h"
 #include "ipc_callbacks/hgm_config_change_callback_stub.h"
+#include "ipc_callbacks/rs_first_frame_commit_callback_stub.h"
 #include "ipc_callbacks/rs_occlusion_change_callback_stub.h"
 #include "ipc_callbacks/rs_self_drawing_node_rect_change_callback_stub.h"
 #include "ipc_callbacks/rs_surface_buffer_callback_stub.h"
@@ -190,8 +191,9 @@ std::shared_ptr<VSyncReceiver> RSRenderServiceClient::CreateVSyncReceiver(
         return nullptr;
     }
     sptr<VSyncIConnectionToken> token = new IRemoteStub<VSyncIConnectionToken>();
-    sptr<IVSyncConnection> conn = renderService->
-        CreateVSyncConnection(name, token, id, windowNodeId, fromXcomponent);
+    sptr<IVSyncConnection> conn = nullptr;
+    VSyncConnParam vsyncConnParam = {id, windowNodeId, fromXcomponent};
+    renderService->CreateVSyncConnection(conn, name, token, vsyncConnParam);
     if (conn == nullptr) {
         ROSEN_LOGE("RSRenderServiceClient::CreateVSyncReceiver Failed");
         return nullptr;
@@ -1307,7 +1309,9 @@ int32_t RSRenderServiceClient::SetVirtualScreenRefreshRate(
     if (renderService == nullptr) {
         return RENDER_SERVICE_NULL;
     }
-    return renderService->SetVirtualScreenRefreshRate(id, maxRefreshRate, actualRefreshRate);
+    int32_t retVal = 0;
+    renderService->SetVirtualScreenRefreshRate(id, maxRefreshRate, actualRefreshRate, retVal);
+    return retVal;
 }
 
 uint32_t RSRenderServiceClient::SetScreenActiveRect(ScreenId id, const Rect& activeRect)
@@ -1499,6 +1503,42 @@ int32_t RSRenderServiceClient::RegisterHgmRefreshRateUpdateCallback(
 
     ROSEN_LOGD("RSRenderServiceClient::RegisterHgmRefreshRateUpdateCallback called");
     return renderService->RegisterHgmRefreshRateUpdateCallback(cb);
+}
+
+class CustomFirstFrameCommitCallback : public RSFirstFrameCommitCallbackStub
+{
+public:
+    explicit CustomFirstFrameCommitCallback(const FirstFrameCommitCallback& callback) : cb_(callback) {}
+    ~CustomFirstFrameCommitCallback() override {};
+
+    void OnFirstFrameCommit(uint64_t screenId, int64_t timestamp) override
+    {
+        ROSEN_LOGD("CustomFirstFrameCommitCallback::OnFirstFrameCommit called");
+        if (cb_ != nullptr) {
+            cb_(screenId, timestamp);
+        }
+    }
+
+private:
+    FirstFrameCommitCallback cb_;
+};
+
+int32_t RSRenderServiceClient::RegisterFirstFrameCommitCallback(
+    const FirstFrameCommitCallback& callback)
+{
+    sptr<CustomFirstFrameCommitCallback> cb = nullptr;
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService == nullptr) {
+        ROSEN_LOGE("RSRenderServiceClient::RegisterFirstFrameCommitCallback renderService == nullptr!");
+        return RENDER_SERVICE_NULL;
+    }
+
+    if (callback) {
+        cb = new CustomFirstFrameCommitCallback(callback);
+    }
+
+    ROSEN_LOGD("RSRenderServiceClient::RegisterFirstFrameCommitCallback called");
+    return renderService->RegisterFirstFrameCommitCallback(cb);
 }
 
 class CustomFrameRateLinkerExpectedFpsUpdateCallback : public RSFrameRateLinkerExpectedFpsUpdateCallbackStub
@@ -1865,10 +1905,11 @@ bool RSRenderServiceClient::SetAncoForceDoDirect(bool direct)
 bool RSRenderServiceClient::SetVirtualScreenStatus(ScreenId id, VirtualScreenStatus screenStatus)
 {
     auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    bool success = false;
     if (renderService != nullptr) {
-        return renderService->SetVirtualScreenStatus(id, screenStatus);
+        renderService->SetVirtualScreenStatus(id, screenStatus, success);
     }
-    return false;
+    return success;
 }
 
 void RSRenderServiceClient::SetFreeMultiWindowStatus(bool enable)

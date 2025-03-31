@@ -143,9 +143,13 @@ HWTEST_F(RSRenderServiceConnectionProxyTest, CreateVSyncConnection, TestSize.Lev
     std::string name("name");
     uint64_t id = 1;
     NodeId windowNodeId = 1;
-    ASSERT_EQ(proxy->CreateVSyncConnection(name, token, id, windowNodeId), nullptr);
+    sptr<IVSyncConnection> conn = nullptr;
+    VSyncConnParam vsyncConnParam = {id, windowNodeId, false};
+    proxy->CreateVSyncConnection(conn, name, token, vsyncConnParam);
+    ASSERT_EQ(conn, nullptr);
     token = new IRemoteStub<VSyncIConnectionToken>();
-    ASSERT_EQ(proxy->CreateVSyncConnection(name, token, id, windowNodeId), nullptr);
+    proxy->CreateVSyncConnection(conn, name, token, vsyncConnParam);
+    ASSERT_EQ(conn, nullptr);
 }
 
 /**
@@ -447,6 +451,20 @@ HWTEST_F(RSRenderServiceConnectionProxyTest, SetShowRefreshRateEnabled, TestSize
 HWTEST_F(RSRenderServiceConnectionProxyTest, GetRealtimeRefreshRate, TestSize.Level1)
 {
     EXPECT_GE(proxy->GetRealtimeRefreshRate(INVALID_SCREEN_ID), 0);
+}
+
+/**
+ * @tc.name: SetPhysicalScreenResolution Test
+ * @tc.desc: SetPhysicalScreenResolution Test
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderServiceConnectionProxyTest, SetPhysicalScreenResolution, TestSize.Level1)
+{
+    ScreenId id = INVALID_SCREEN_ID;
+    uint32_t newWidth = 1920;
+    uint32_t newHeight = 1080;
+    auto ret = proxy->SetPhysicalScreenResolution(id, newWidth, newHeight);
+    EXPECT_EQ(ret, StatusCode::RS_CONNECTION_ERROR);
 }
 
 /**
@@ -902,6 +920,21 @@ HWTEST_F(RSRenderServiceConnectionProxyTest, RegisterHgmRefreshRateUpdateCallbac
     EXPECT_EQ(proxy->RegisterHgmConfigChangeCallback(callback), 2);
     EXPECT_EQ(proxy->RegisterHgmRefreshRateModeChangeCallback(callback), 2);
     ASSERT_EQ(proxy->RegisterHgmRefreshRateUpdateCallback(callback), 2);
+}
+
+/**
+ * @tc.name: RegisterFirstFrameCommitCallback Test
+ * @tc.desc: RegisterFirstFrameCommitCallback Test
+ * @tc.type:FUNC
+ * @tc.require: issuesIBTF2E
+ */
+HWTEST_F(RSRenderServiceConnectionProxyTest, RegisterFirstFrameCommitCallback, TestSize.Level1)
+{
+    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    ASSERT_NE(samgr, nullptr);
+    auto remoteObject = samgr->GetSystemAbility(RENDER_SERVICE);
+    sptr<RSIFirstFrameCommitCallback> callback = iface_cast<RSIFirstFrameCommitCallback>(remoteObject);
+    EXPECT_EQ(proxy->RegisterFirstFrameCommitCallback(callback), 2);
 }
 
 /**

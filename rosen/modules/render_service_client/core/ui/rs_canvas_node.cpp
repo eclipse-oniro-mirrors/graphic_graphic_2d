@@ -86,6 +86,12 @@ void RSCanvasNode::SetHDRPresent(bool hdrPresent)
     }
 }
 
+void RSCanvasNode::SetIsWideColorGamut(bool isWideColorGamut)
+{
+    std::unique_ptr<RSCommand> command = std::make_unique<RSCanvasNodeSetIsWideColorGamut>(GetId(), isWideColorGamut);
+    AddCommand(command, true);
+}
+
 ExtendRecordingCanvas* RSCanvasNode::BeginRecording(int width, int height)
 {
     CheckThread();
@@ -254,9 +260,12 @@ NodeId RSCanvasNode::GetLinkedRootNodeId()
 
 bool RSCanvasNode::Marshalling(Parcel& parcel) const
 {
-    return parcel.WriteUint64(GetId()) &&
-        parcel.WriteBool(IsRenderServiceNode()) &&
-        parcel.WriteUint64(linkedRootNodeId_);
+    bool success =
+        parcel.WriteUint64(GetId()) && parcel.WriteBool(IsRenderServiceNode()) && parcel.WriteUint64(linkedRootNodeId_);
+    if (!success) {
+        ROSEN_LOGE("RSCanvasNode::Marshalling, read parcel failed");
+    }
+    return success;
 }
 
 RSCanvasNode::SharedPtr RSCanvasNode::Unmarshalling(Parcel& parcel)

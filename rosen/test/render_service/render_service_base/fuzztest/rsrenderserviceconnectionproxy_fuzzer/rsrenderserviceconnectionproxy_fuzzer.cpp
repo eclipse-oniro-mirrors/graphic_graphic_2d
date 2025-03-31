@@ -137,6 +137,8 @@ bool DoSomethingInterestingWithMyAPI(const uint8_t* data, size_t size)
     sptr<RSIOcclusionChangeCallback> rsIOcclusionChangeCallback = iface_cast<RSIOcclusionChangeCallback>(remoteObject);
     sptr<RSISurfaceOcclusionChangeCallback> callbackTwo = iface_cast<RSISurfaceOcclusionChangeCallback>(remoteObject);
     sptr<RSIHgmConfigChangeCallback> rsIHgmConfigChangeCallback = iface_cast<RSIHgmConfigChangeCallback>(remoteObject);
+    sptr<RSIFirstFrameCommitCallback> rsIFirstFrameCommitCallback =
+        iface_cast<RSIFirstFrameCommitCallback>(remoteObject);
     sptr<RSIFrameRateLinkerExpectedFpsUpdateCallback> rsIFrameRateLinkerExpectedFpsUpdateCallback =
         iface_cast<RSIFrameRateLinkerExpectedFpsUpdateCallback>(remoteObject);
     std::vector<ScreenColorGamut> mode;
@@ -178,7 +180,9 @@ bool DoSomethingInterestingWithMyAPI(const uint8_t* data, size_t size)
     rsRenderServiceConnectionProxy.CreateNode(config, createNodeSuccess);
     sptr<Surface> sface = nullptr;
     rsRenderServiceConnectionProxy.CreateNodeAndSurface(config, sface);
-    rsRenderServiceConnectionProxy.CreateVSyncConnection(name, token, id1, windowNodeId);
+    sptr<IVSyncConnection> conn = nullptr;
+    VSyncConnParam vsyncConnParam = {id1, windowNodeId, false};
+    rsRenderServiceConnectionProxy.CreateVSyncConnection(conn, name, token, vsyncConnParam);
     std::shared_ptr<Media::PixelMap> pixelMap = nullptr;
     rsRenderServiceConnectionProxy.CreatePixelMapFromSurface(surface, srcRect, pixelMap);
     rsRenderServiceConnectionProxy.SetFocusAppInfo(pid1, uid, name, name, id1);
@@ -241,6 +245,7 @@ bool DoSomethingInterestingWithMyAPI(const uint8_t* data, size_t size)
     rsRenderServiceConnectionProxy.RegisterHgmConfigChangeCallback(rsIHgmConfigChangeCallback);
     rsRenderServiceConnectionProxy.RegisterHgmRefreshRateModeChangeCallback(rsIHgmConfigChangeCallback);
     rsRenderServiceConnectionProxy.RegisterHgmRefreshRateUpdateCallback(rsIHgmConfigChangeCallback);
+    rsRenderServiceConnectionProxy.RegisterFirstFrameCommitCallback(rsIFirstFrameCommitCallback);
     rsRenderServiceConnectionProxy.SetAppWindowNum(width);
     rsRenderServiceConnectionProxy.SetSystemAnimatedScenes(systemAnimatedScenes, false);
     rsRenderServiceConnectionProxy.ShowWatermark(watermarkImg, true);

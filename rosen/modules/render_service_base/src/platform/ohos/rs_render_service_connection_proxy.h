@@ -44,11 +44,10 @@ public:
     ErrCode CreateNodeAndSurface(const RSSurfaceRenderNodeConfig& config, sptr<Surface>& sfc,
         bool unobscured = false) override;
 
-    virtual sptr<IVSyncConnection> CreateVSyncConnection(const std::string& name,
-                                                         const sptr<VSyncIConnectionToken>& token,
-                                                         uint64_t id = 0,
-                                                         NodeId windowNodeId = 0,
-                                                         bool fromXcomponent = false) override;
+    virtual ErrCode CreateVSyncConnection(sptr<IVSyncConnection>& vsyncConn,
+                                          const std::string& name,
+                                          const sptr<VSyncIConnectionToken>& token,
+                                          VSyncConnParam vsyncConnParam = {0, 0, false}) override;
 
     ErrCode GetPixelMapByProcessId(std::vector<PixelMapInfo>& pixelMapInfoVector, pid_t pid,
         int32_t& repCode) override;
@@ -244,7 +243,8 @@ public:
 
     int32_t SetScreenSkipFrameInterval(ScreenId id, uint32_t skipFrameInterval) override;
 
-    int32_t SetVirtualScreenRefreshRate(ScreenId id, uint32_t maxRefreshRate, uint32_t& actualRefreshRate) override;
+    ErrCode SetVirtualScreenRefreshRate(
+        ScreenId id, uint32_t maxRefreshRate, uint32_t& actualRefreshRate, int32_t& retVal) override;
 
     uint32_t SetScreenActiveRect(ScreenId id, const Rect& activeRect) override;
 
@@ -260,6 +260,8 @@ public:
     int32_t RegisterHgmRefreshRateModeChangeCallback(sptr<RSIHgmConfigChangeCallback> callback) override;
 
     int32_t RegisterHgmRefreshRateUpdateCallback(sptr<RSIHgmConfigChangeCallback> callback) override;
+
+    int32_t RegisterFirstFrameCommitCallback(sptr<RSIFirstFrameCommitCallback> callback) override;
 
     int32_t RegisterFrameRateLinkerExpectedFpsUpdateCallback(int32_t dstPid,
         sptr<RSIFrameRateLinkerExpectedFpsUpdateCallback> callback) override;
@@ -338,7 +340,7 @@ public:
     
     void DropFrameByPid(const std::vector<int32_t> pidList) override;
 
-    bool SetVirtualScreenStatus(ScreenId id, VirtualScreenStatus screenStatus) override;
+    ErrCode SetVirtualScreenStatus(ScreenId id, VirtualScreenStatus screenStatus, bool& success) override;
 
     void SetFreeMultiWindowStatus(bool enable) override;
 
@@ -353,7 +355,7 @@ public:
 
     int32_t RegisterSelfDrawingNodeRectChangeCallback(sptr<RSISelfDrawingNodeRectChangeCallback> callback) override;
 
-    void NotifyPageName(const std::string &packageName, const std::string &pageName, bool isEnter) override;
+    ErrCode NotifyPageName(const std::string &packageName, const std::string &pageName, bool isEnter) override;
 
     void TestLoadFileSubTreeToNode(NodeId nodeId, const std::string &filePath) override;
 private:

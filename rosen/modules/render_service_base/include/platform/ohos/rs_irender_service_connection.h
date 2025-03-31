@@ -43,6 +43,7 @@
 #include "transaction/rs_render_service_client.h"
 #include "ivsync_connection.h"
 #include "ipc_callbacks/rs_ihgm_config_change_callback.h"
+#include "ipc_callbacks/rs_ifirst_frame_commit_callback.h"
 #include "ipc_callbacks/rs_iocclusion_change_callback.h"
 #include "ipc_callbacks/rs_iuiextension_callback.h"
 #include "vsync_iconnection_token.h"
@@ -67,11 +68,10 @@ public:
     virtual ErrCode CreateNodeAndSurface(const RSSurfaceRenderNodeConfig& config, sptr<Surface>& sfc,
         bool unobscured = false) = 0;
 
-    virtual sptr<IVSyncConnection> CreateVSyncConnection(const std::string& name,
-                                                         const sptr<VSyncIConnectionToken>& token = nullptr,
-                                                         uint64_t id = 0,
-                                                         NodeId windowNodeId = 0,
-                                                         bool fromXcomponent = false) = 0;
+    virtual ErrCode CreateVSyncConnection(sptr<IVSyncConnection>& vsyncConn,
+                                          const std::string& name,
+                                          const sptr<VSyncIConnectionToken>& token = nullptr,
+                                          VSyncConnParam vsyncConnParam = {0, 0, false}) = 0;
 
     virtual ErrCode GetPixelMapByProcessId(std::vector<PixelMapInfo>& pixelMapInfoVector, pid_t pid,
         int32_t& repCode) = 0;
@@ -270,7 +270,8 @@ public:
 
     virtual int32_t SetScreenSkipFrameInterval(ScreenId id, uint32_t skipFrameInterval) = 0;
 
-    virtual int32_t SetVirtualScreenRefreshRate(ScreenId id, uint32_t maxRefreshRate, uint32_t& actualRefreshRate) = 0;
+    virtual ErrCode SetVirtualScreenRefreshRate(
+        ScreenId id, uint32_t maxRefreshRate, uint32_t& actualRefreshRate, int32_t& retVal) = 0;
 
     virtual uint32_t SetScreenActiveRect(ScreenId id, const Rect& activeRect) = 0;
 
@@ -288,6 +289,8 @@ public:
     virtual ErrCode SetAppWindowNum(uint32_t num) = 0;
 
     virtual int32_t RegisterHgmRefreshRateUpdateCallback(sptr<RSIHgmConfigChangeCallback> callback) = 0;
+
+    virtual int32_t RegisterFirstFrameCommitCallback(sptr<RSIFirstFrameCommitCallback> callback) = 0;
 
     virtual int32_t RegisterFrameRateLinkerExpectedFpsUpdateCallback(int32_t pid,
         sptr<RSIFrameRateLinkerExpectedFpsUpdateCallback> callback) = 0;
@@ -363,7 +366,7 @@ public:
 
     virtual ErrCode SetAncoForceDoDirect(bool direct, bool& res) = 0;
 
-    virtual bool SetVirtualScreenStatus(ScreenId id, VirtualScreenStatus screenStatus) = 0;
+    virtual ErrCode SetVirtualScreenStatus(ScreenId id, VirtualScreenStatus screenStatus, bool& success) = 0;
 
     virtual void SetFreeMultiWindowStatus(bool enable) = 0;
 
@@ -389,7 +392,7 @@ public:
 
     virtual int32_t RegisterSelfDrawingNodeRectChangeCallback(sptr<RSISelfDrawingNodeRectChangeCallback> callback) = 0;
 
-    virtual void NotifyPageName(const std::string &packageName, const std::string &pageName, bool isEnter) = 0;
+    virtual ErrCode NotifyPageName(const std::string &packageName, const std::string &pageName, bool isEnter) = 0;
 
     virtual void TestLoadFileSubTreeToNode(NodeId nodeId, const std::string &filePath) = 0;
 };

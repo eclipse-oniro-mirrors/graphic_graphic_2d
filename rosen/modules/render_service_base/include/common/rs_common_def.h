@@ -374,6 +374,7 @@ struct RSSurfaceRenderNodeConfig {
     bool isTextureExportNode = false;
     bool isSync = false;
     enum SurfaceWindowType surfaceWindowType = SurfaceWindowType::DEFAULT_WINDOW;
+    std::string bundleName = "";
 };
 
 struct RSAdvancedDirtyConfig {
@@ -560,6 +561,11 @@ enum class RSInterfaceErrorCode : uint32_t {
     NULLPTR_ERROR,
 };
 
+struct VSyncConnParam {
+    uint64_t id = 0;
+    NodeId windowNodeId = 0;
+    bool fromXcomponent = false;
+};
 } // namespace Rosen
 } // namespace OHOS
 #endif // RENDER_SERVICE_CLIENT_CORE_COMMON_RS_COMMON_DEF_H

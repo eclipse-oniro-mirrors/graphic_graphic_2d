@@ -93,21 +93,17 @@ std::shared_ptr<Drawing::Surface> RSSurfaceRenderNodeDrawable::GetCacheSurface(u
 
 void RSSurfaceRenderNodeDrawable::ClearCacheSurfaceInThread()
 {
-    if (UseDmaBuffer()) {
-        ClearBufferQueue();
-    } else {
-        std::scoped_lock<std::recursive_mutex> lock(completeResourceMutex_);
-        if (clearCacheSurfaceFunc_) {
-            clearCacheSurfaceFunc_(std::move(cacheSurface_), std::move(cacheCompletedSurface_),
-                cacheSurfaceThreadIndex_, completedSurfaceThreadIndex_);
-        }
-        ClearCacheSurface();
+    std::scoped_lock<std::recursive_mutex> lock(completeResourceMutex_);
+    if (clearCacheSurfaceFunc_) {
+        clearCacheSurfaceFunc_(std::move(cacheSurface_), std::move(cacheCompletedSurface_),
+            cacheSurfaceThreadIndex_, completedSurfaceThreadIndex_);
     }
+    ClearCacheSurface();
 }
 
 void RSSurfaceRenderNodeDrawable::ClearCacheSurfaceOnly()
 {
-    RS_TRACE_NAME("ClearCacheSurfaceOnly");
+    RS_TRACE_NAME_FMT("ClearCacheSurfaceOnly id:%" PRIu64, nodeId_);
     if (cacheSurface_ == nullptr) {
         return;
     }
@@ -163,8 +159,14 @@ std::shared_ptr<Drawing::Image> RSSurfaceRenderNodeDrawable::GetCompletedImage(
             }
         }
         auto vkTexture = cacheCompletedBackendTexture_.GetTextureInfo().GetVKTextureInfo();
+        // When the colorType is FP16, the colorspace of the uifirst buffer must be sRGB
+        // In other cases, the colorspace follows the targetColorGamut_
+        auto colorSpace = Drawing::ColorSpace::CreateSRGB();
         if (vkTexture != nullptr && vkTexture->format == VK_FORMAT_R16G16B16A16_SFLOAT) {
             colorType = Drawing::ColorType::COLORTYPE_RGBA_F16;
+        } else if (targetColorGamut_ != GRAPHIC_COLOR_GAMUT_SRGB) {
+            colorSpace =
+                Drawing::ColorSpace::CreateRGB(Drawing::CMSTransferFuncType::SRGB, Drawing::CMSMatrixType::DCIP3);
         }
 #endif
         auto image = std::make_shared<Drawing::Image>();
@@ -182,8 +184,6 @@ std::shared_ptr<Drawing::Image> RSSurfaceRenderNodeDrawable::GetCompletedImage(
 #ifdef RS_ENABLE_VK
         if (OHOS::Rosen::RSSystemProperties::GetGpuApiType() == OHOS::Rosen::GpuApiType::VULKAN ||
             OHOS::Rosen::RSSystemProperties::GetGpuApiType() == OHOS::Rosen::GpuApiType::DDGR) {
-            auto colorSpace = targetColorGamut_ == GRAPHIC_COLOR_GAMUT_SRGB ? Drawing::ColorSpace::CreateSRGB() :
-                Drawing::ColorSpace::CreateRGB(Drawing::CMSTransferFuncType::SRGB, Drawing::CMSMatrixType::DCIP3);
             image->BuildFromTexture(*gpuContext, cacheCompletedBackendTexture_.GetTextureInfo(),
                 origin, info, colorSpace, NativeBufferUtils::DeleteVkImage, cacheCompletedCleanupHelper_->Ref());
         }
@@ -193,12 +193,12 @@ std::shared_ptr<Drawing::Image> RSSurfaceRenderNodeDrawable::GetCompletedImage(
     }
 
     if (!cacheCompletedSurface_) {
-        RS_LOGE("RSSurfaceRenderNodeDrawable::GetCompletedImage DrawCacheSurface invalid cacheCompletedSurface");
+        RS_LOGE("RSSurfaceRenderNodeDrawable::GetCompletedImage invalid cacheCompletedSurface");
         return nullptr;
     }
     auto completeImage = cacheCompletedSurface_->GetImageSnapshot();
     if (!completeImage) {
-        RS_LOGE("RSSurfaceRenderNodeDrawable::GetCompletedImage DrawCacheSurface Get complete image failed");
+        RS_LOGE("RSSurfaceRenderNodeDrawable::GetCompletedImage Get complete image failed");
         return nullptr;
     }
     if (threadIndex == completedSurfaceThreadIndex_) {
@@ -208,7 +208,7 @@ std::shared_ptr<Drawing::Image> RSSurfaceRenderNodeDrawable::GetCompletedImage(
     Drawing::TextureOrigin origin = Drawing::TextureOrigin::BOTTOM_LEFT;
     auto backendTexture = completeImage->GetBackendTexture(false, &origin);
     if (!backendTexture.IsValid()) {
-        RS_LOGE("RSSurfaceRenderNodeDrawable::GetCompletedImage DrawCacheSurface get backendTexture failed");
+        RS_LOGE("RSSurfaceRenderNodeDrawable::GetCompletedImage get backendTexture failed");
         return nullptr;
     }
     SharedTextureContext* sharedContext = new SharedTextureContext(completeImage);
@@ -267,6 +267,7 @@ bool RSSurfaceRenderNodeDrawable::DrawCacheSurface(RSPaintFilterCanvas& canvas, 
     auto stencilVal = canvas.GetStencilVal();
     if (stencilVal > Drawing::Canvas::INVALID_STENCIL_VAL && stencilVal < canvas.GetMaxStencilVal()) {
         RS_OPTIONAL_TRACE_NAME_FMT("DrawImageWithStencil, stencilVal: %" PRId64 "", stencilVal);
+        RS_LOGD("DrawImageWithStencil, stencilVal: %{public}" PRId64 "", stencilVal);
         canvas.DrawImageWithStencil(*cacheImage, translateX, translateY, samplingOptions,
             static_cast<uint32_t>(stencilVal));
     } else {
@@ -332,9 +333,15 @@ void RSSurfaceRenderNodeDrawable::InitCacheSurface(Drawing::GPUContext* gpuConte
         OHOS::Rosen::RSSystemProperties::GetGpuApiType() == OHOS::Rosen::GpuApiType::DDGR) {
         VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
         auto colorType = Drawing::ColorType::COLORTYPE_RGBA_8888;
+        // When the colorType is FP16, the colorspace of the uifirst buffer must be sRGB
+        // In other cases, the colorspace follows the targetColorGamut_
+        auto colorSpace = Drawing::ColorSpace::CreateSRGB();
         if (isNeedFP16) {
             format = VK_FORMAT_R16G16B16A16_SFLOAT;
             colorType = Drawing::ColorType::COLORTYPE_RGBA_F16;
+        } else if (targetColorGamut_ != GRAPHIC_COLOR_GAMUT_SRGB) {
+            colorSpace =
+                Drawing::ColorSpace::CreateRGB(Drawing::CMSTransferFuncType::SRGB, Drawing::CMSMatrixType::DCIP3);
         }
         cacheBackendTexture_ = RSUniRenderUtil::MakeBackendTexture(width, height, format);
         auto vkTextureInfo = cacheBackendTexture_.GetTextureInfo().GetVKTextureInfo();
@@ -350,8 +357,6 @@ void RSSurfaceRenderNodeDrawable::InitCacheSurface(Drawing::GPUContext* gpuConte
         }
         cacheCleanupHelper_ = new NativeBufferUtils::VulkanCleanupHelper(RsVulkanContext::GetSingleton(),
             vkTextureInfo->vkImage, vkTextureInfo->vkAlloc.memory);
-        auto colorSpace = targetColorGamut_ == GRAPHIC_COLOR_GAMUT_SRGB ? Drawing::ColorSpace::CreateSRGB() :
-            Drawing::ColorSpace::CreateRGB(Drawing::CMSTransferFuncType::SRGB, Drawing::CMSMatrixType::DCIP3);
         cacheSurface_ = Drawing::Surface::MakeFromBackendTexture(
             gpuContext, cacheBackendTexture_.GetTextureInfo(), Drawing::TextureOrigin::BOTTOM_LEFT,
             1, colorType, colorSpace, NativeBufferUtils::DeleteVkImage, cacheCleanupHelper_);
@@ -364,10 +369,15 @@ void RSSurfaceRenderNodeDrawable::InitCacheSurface(Drawing::GPUContext* gpuConte
 bool RSSurfaceRenderNodeDrawable::HasCachedTexture() const
 {
 #if (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
-    return isTextureValid_.load() || surfaceHandlerUiFirst_->GetBuffer() != nullptr;
+    return isTextureValid_.load();
 #else
     return true;
 #endif
+}
+
+bool RSSurfaceRenderNodeDrawable::IsCacheValid() const
+{
+    return isCacheValid_;
 }
 
 bool RSSurfaceRenderNodeDrawable::NeedInitCacheSurface()
@@ -394,18 +404,19 @@ bool RSSurfaceRenderNodeDrawable::NeedInitCacheSurface()
 #if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
 void RSSurfaceRenderNodeDrawable::UpdateBackendTexture()
 {
-    RS_TRACE_NAME("RSRenderNodeDrawable::UpdateBackendTexture()");
+    RS_TRACE_NAME_FMT("UpdateBackendTexture id:%" PRIu64, nodeId_);
     if (cacheSurface_ == nullptr) {
         RS_LOGE("UpdateBackendTexture cacheSurface is nullptr");
         return;
     }
     cacheBackendTexture_ = cacheSurface_->GetBackendTexture();
+    isCacheValid_ = true;
 }
 #endif
 
 void RSSurfaceRenderNodeDrawable::UpdateCompletedCacheSurface()
 {
-    RS_TRACE_NAME("RSRenderNodeDrawable::UpdateCompletedCacheSurface()");
+    RS_TRACE_NAME_FMT("UpdateCompletedCacheSurface id:%" PRIu64, nodeId_);
     // renderthread not use, subthread done not use
     std::swap(cacheSurface_, cacheCompletedSurface_);
     std::swap(cacheSurfaceThreadIndex_, completedSurfaceThreadIndex_);
@@ -418,22 +429,26 @@ void RSSurfaceRenderNodeDrawable::UpdateCompletedCacheSurface()
         std::swap(cacheCleanupHelper_, cacheCompletedCleanupHelper_);
     }
 #endif
+    std::swap(isCacheValid_, isCacheCompletedValid_);
     SetTextureValidFlag(true);
     SetCacheSurfaceNeedUpdated(false);
 #endif
     RSBaseRenderUtil::WriteCacheImageRenderNodeToPng(cacheSurface_, "cacheSurface_");
     RSBaseRenderUtil::WriteCacheImageRenderNodeToPng(cacheCompletedSurface_, "cacheCompletedSurface_");
 }
+
 void RSSurfaceRenderNodeDrawable::SetTextureValidFlag(bool isValid)
 {
 #if (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
     isTextureValid_.store(isValid);
 #endif
 }
+
 void RSSurfaceRenderNodeDrawable::ClearCacheSurface(bool isClearCompletedCacheSurface)
 {
     cacheSurface_ = nullptr;
-    cacheSurfaceInfo_ = { -1, -1.f };
+    cacheSurfaceInfo_ = { -1, -1, -1.f };
+    isCacheValid_ = false;
 #ifdef RS_ENABLE_VK
     if (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
         RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) {
@@ -443,7 +458,8 @@ void RSSurfaceRenderNodeDrawable::ClearCacheSurface(bool isClearCompletedCacheSu
     if (isClearCompletedCacheSurface) {
         std::scoped_lock<std::recursive_mutex> lock(completeResourceMutex_);
         cacheCompletedSurface_ = nullptr;
-        cacheCompletedSurfaceInfo_ = { -1, -1.f };
+        cacheCompletedSurfaceInfo_ = { -1, -1, -1.f };
+        isCacheCompletedValid_ = false;
 #ifdef RS_ENABLE_VK
         if (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
             RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) {
@@ -460,12 +476,9 @@ bool RSSurfaceRenderNodeDrawable::IsCurFrameStatic()
 {
     auto surfaceParams = static_cast<RSSurfaceRenderParams*>(GetRenderParams().get());
     if (!surfaceParams) {
-        RS_LOGE("RSSurfaceRenderNodeDrawable::OnDraw params is nullptr");
+        RS_LOGE("RSSurfaceRenderNodeDrawable::IsCurFrameStatic params is nullptr");
         return false;
     }
-    RS_OPTIONAL_TRACE_NAME_FMT("RSSurfaceRenderNodeDrawable::GetSurfaceCacheContentStatic:"
-        "[%d] name [%s] Id:%" PRIu64 "", surfaceParams->GetSurfaceCacheContentStatic(),
-        surfaceParams->GetName().c_str(), surfaceParams->GetId());
     return surfaceParams->GetSurfaceCacheContentStatic();
 }
 
@@ -479,6 +492,187 @@ uint64_t RSSurfaceRenderNodeDrawable::GetTaskFrameCount() const
     return frameCount_;
 }
 
+std::shared_ptr<RSDirtyRegionManager> RSSurfaceRenderNodeDrawable::GetSyncUifirstDirtyManager() const
+{
+    return syncUifirstDirtyManager_;
+}
+
+bool RSSurfaceRenderNodeDrawable::UpdateCacheSurfaceDirtyManager(bool hasCompleteCache)
+{
+    if (!syncUifirstDirtyManager_ || !syncDirtyManager_) {
+        RS_LOGE("UpdateCacheSurfaceDirtyManager dirty manager is nullptr");
+        return false;
+    }
+    syncUifirstDirtyManager_->Clear();
+    auto curDirtyRegion = syncDirtyManager_->GetDirtyRegion();
+    auto& curFrameDirtyRegion = syncDirtyManager_->GetUifirstFrameDirtyRegion();
+    curDirtyRegion = curDirtyRegion.JoinRect(curFrameDirtyRegion);
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(GetRenderParams().get());
+    if (!surfaceParams) {
+        RS_LOGE("UpdateCacheSurfaceDirtyManager surfaceParams is nullptr");
+        return false;
+    }
+    RS_TRACE_NAME_FMT("UpdateCacheSurfaceDirtyManager[%s] %" PRIu64", curDirtyRegion[%d %d %d %d], hasCache:%d",
+        GetName().c_str(), GetId(), curDirtyRegion.GetLeft(), curDirtyRegion.GetTop(),
+        curDirtyRegion.GetWidth(), curDirtyRegion.GetHeight(), hasCompleteCache);
+    if (!hasCompleteCache) {
+        RectI surfaceDirtyRect = surfaceParams->GetAbsDrawRect();
+        syncUifirstDirtyManager_->MergeDirtyRect(surfaceDirtyRect);
+    } else {
+        syncUifirstDirtyManager_->MergeDirtyRect(curDirtyRegion);
+    }
+    // set history dirty count
+    syncUifirstDirtyManager_->SetBufferAge(1); // 1 means buffer age
+    // update history dirty count
+    syncUifirstDirtyManager_->UpdateDirty(false);
+    return true;
+}
+
+void RSSurfaceRenderNodeDrawable::UpdateUifirstDirtyManager()
+{
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(GetRenderParams().get());
+    if (!surfaceParams) {
+        RS_LOGE("UpdateUifirstDirtyManager params is nullptr");
+        UpdateDirtyRecordCompletatedState(false);
+        return;
+    }
+    auto isCacheValid = IsCacheValid();
+    auto isRecordCompletate = UpdateCacheSurfaceDirtyManager(isCacheValid);
+    // nested surfacenode uifirstDirtyManager update is required
+    for (const auto& nestedDrawable : GetDrawableVectorById(surfaceParams->GetAllSubSurfaceNodeIds())) {
+        auto surfaceNodeDrawable = std::static_pointer_cast<RSSurfaceRenderNodeDrawable>(nestedDrawable);
+        if (surfaceNodeDrawable) {
+            isRecordCompletate =
+                isRecordCompletate && surfaceNodeDrawable->UpdateCacheSurfaceDirtyManager(isCacheValid);
+        }
+    }
+    UpdateDirtyRecordCompletatedState(isRecordCompletate);
+}
+
+bool RSSurfaceRenderNodeDrawable::IsDirtyRecordCompletated()
+{
+    bool isDirtyRecordCompletated = isDirtyRecordCompletated_;
+    isDirtyRecordCompletated_ = false;
+    return isDirtyRecordCompletated;
+}
+
+void RSSurfaceRenderNodeDrawable::UpdateDirtyRecordCompletatedState(bool isCompletate)
+{
+    isDirtyRecordCompletated_ = isCompletate;
+}
+
+void RSSurfaceRenderNodeDrawable::SetUifirstDirtyRegion(Drawing::Region dirtyRegion)
+{
+    uifirstDirtyRegion_ = dirtyRegion;
+}
+
+Drawing::Region RSSurfaceRenderNodeDrawable::GetUifirstDirtyRegion() const
+{
+    return uifirstDirtyRegion_;
+}
+
+void RSSurfaceRenderNodeDrawable::SetUifrstDirtyEnableFlag(bool dirtyEnableFlag)
+{
+    uifrstDirtyEnableFlag_ = dirtyEnableFlag;
+}
+
+bool RSSurfaceRenderNodeDrawable::GetUifrstDirtyEnableFlag() const
+{
+    return uifrstDirtyEnableFlag_;
+}
+
+bool RSSurfaceRenderNodeDrawable::CalculateUifirstDirtyRegion(Drawing::RectI& dirtyRect)
+{
+    auto uifirstDirtyManager = GetSyncUifirstDirtyManager();
+    if (!uifirstDirtyManager) {
+        RS_LOGE("CalculateUifirstDirtyRegion uifirstDirtyManager is nullptr");
+        return false;
+    }
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(GetRenderParams().get());
+    if (!surfaceParams) {
+        RS_LOGE("CalculateUifirstDirtyRegion surfaceParams is nullptr");
+        return false;
+    }
+    RectI latestDirtyRect = uifirstDirtyManager->GetUiLatestHistoryDirtyRegions();
+    if (latestDirtyRect.IsEmpty()) {
+        dirtyRect = {};
+        RS_TRACE_NAME_FMT("uifirstDirtyManager[%s] %" PRIu64", dirtyRect[%d %d %d %d]", GetName().c_str(), GetId(),
+            dirtyRect.GetLeft(), dirtyRect.GetTop(), dirtyRect.GetWidth(), dirtyRect.GetHeight());
+        return true;
+    }
+    auto absDrawRect = surfaceParams->GetAbsDrawRect();
+    if (absDrawRect.GetWidth() == 0 || absDrawRect.GetHeight() == 0) {
+        RS_LOGE("absDrawRect width or height is zero");
+        return true;
+    }
+    auto surfaceBounds = surfaceParams->GetBounds();
+    float widthScale = surfaceBounds.GetWidth() / static_cast<float>(absDrawRect.GetWidth());
+    float heightScale = surfaceBounds.GetHeight() / static_cast<float>(absDrawRect.GetHeight());
+    float left = (static_cast<float>(latestDirtyRect.GetLeft() - absDrawRect.GetLeft())) * widthScale;
+    float top = (static_cast<float>(latestDirtyRect.GetTop() - absDrawRect.GetTop())) * heightScale;
+    float width = static_cast<float>(latestDirtyRect.GetWidth()) * widthScale;
+    float height = static_cast<float>(latestDirtyRect.GetHeight()) * heightScale;
+    Drawing::RectF tempRect = Drawing::RectF(left, top, left + width, top + height);
+    dirtyRect = tempRect.RoundOut();
+    RS_TRACE_NAME_FMT("uifirstDirtyManager[%s] %" PRIu64", scaleW:%.1f scaleH:%.1f, bounds[w:%.1f h:%.1f]"
+        ", lR[%d %d %d %d], absR[%d %d %d %d], tR[%.1f %.1f %.1f %.1f], resultR[%d %d %d %d]",
+        GetName().c_str(), GetId(), widthScale, heightScale, surfaceBounds.GetWidth(), surfaceBounds.GetHeight(),
+        latestDirtyRect.GetLeft(), latestDirtyRect.GetTop(), latestDirtyRect.GetWidth(), latestDirtyRect.GetHeight(),
+        absDrawRect.GetLeft(), absDrawRect.GetTop(), absDrawRect.GetWidth(), absDrawRect.GetHeight(),
+        tempRect.GetLeft(), tempRect.GetTop(), tempRect.GetWidth(), tempRect.GetHeight(),
+        dirtyRect.GetLeft(), dirtyRect.GetTop(), dirtyRect.GetWidth(), dirtyRect.GetHeight());
+    return true;
+}
+
+bool RSSurfaceRenderNodeDrawable::MergeUifirstAllSurfaceDirtyRegion(Drawing::RectI& dirtyRects)
+{
+    uifirstMergedDirtyRegion_ = {};
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(GetRenderParams().get());
+    if (!surfaceParams) {
+        RS_LOGE("CalculateUifirstDirtyRegion params is nullptr");
+        return false;
+    }
+    if (!surfaceParams->IsLeashWindow() || !IsDirtyRecordCompletated()) {
+        RS_LOGD("MergeUifirstAllSurfaceDirtyRegion not support");
+        return false;
+    }
+    Drawing::RectI tempRect = {};
+    bool isCalculateSucc = CalculateUifirstDirtyRegion(tempRect);
+    uifirstMergedDirtyRegion_.SetRect(tempRect);
+    dirtyRects.Join(tempRect);
+    for (const auto& nestedDrawable : GetDrawableVectorById(surfaceParams->GetAllSubSurfaceNodeIds())) {
+        auto surfaceNodeDrawable = std::static_pointer_cast<RSSurfaceRenderNodeDrawable>(nestedDrawable);
+        if (surfaceNodeDrawable) {
+            tempRect = {};
+            isCalculateSucc = isCalculateSucc &&
+                surfaceNodeDrawable->CalculateUifirstDirtyRegion(tempRect);
+            Drawing::Region resultRegion;
+            resultRegion.SetRect(tempRect);
+            uifirstMergedDirtyRegion_.Op(resultRegion, Drawing::RegionOp::UNION);
+            dirtyRects.Join(tempRect);
+        }
+    }
+    return isCalculateSucc;
+}
+
+void RSSurfaceRenderNodeDrawable::UpadteAllSurfaceUifirstDirtyEnableState(bool isEnableDirtyRegion)
+{
+    SetUifirstDirtyRegion(uifirstMergedDirtyRegion_);
+    SetUifrstDirtyEnableFlag(isEnableDirtyRegion);
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(GetRenderParams().get());
+    if (!surfaceParams) {
+        RS_LOGE("UpadteAllSurfaceUifirstDirtyState params is nullptr");
+        return;
+    }
+    for (const auto& nestedDrawable : GetDrawableVectorById(surfaceParams->GetAllSubSurfaceNodeIds())) {
+        auto surfaceNodeDrawable = std::static_pointer_cast<RSSurfaceRenderNodeDrawable>(nestedDrawable);
+        if (surfaceNodeDrawable) {
+            surfaceNodeDrawable->SetUifirstDirtyRegion(uifirstMergedDirtyRegion_);
+            surfaceNodeDrawable->SetUifrstDirtyEnableFlag(isEnableDirtyRegion);
+        }
+    }
+}
+
 void RSSurfaceRenderNodeDrawable::SubDraw(Drawing::Canvas& canvas)
 {
     RECORD_GPURESOURCE_CORETRACE_CALLER(Drawing::CoreFunction::
@@ -490,7 +684,7 @@ void RSSurfaceRenderNodeDrawable::SubDraw(Drawing::Canvas& canvas)
 
     auto rscanvas = reinterpret_cast<RSPaintFilterCanvas*>(&canvas);
     if (!rscanvas) {
-        RS_LOGE("RSSurfaceRenderNodeDrawable::SubDraw, rscanvas us nullptr");
+        RS_LOGE("RSSurfaceRenderNodeDrawable::SubDraw, rscanvas is nullptr");
         return;
     }
     Drawing::Rect bounds = uifirstParams ? uifirstParams->GetBounds() : Drawing::Rect(0, 0, 0, 0);
@@ -498,10 +692,79 @@ void RSSurfaceRenderNodeDrawable::SubDraw(Drawing::Canvas& canvas)
     auto parentSurfaceMatrix = RSRenderParams::GetParentSurfaceMatrix();
     RSRenderParams::SetParentSurfaceMatrix(IDENTITY_MATRIX);
 
+    // merge uifirst dirty region
+    Drawing::RectI uifirstSurfaceDrawRects = {};
+    auto dirtyEnableFlag = MergeUifirstAllSurfaceDirtyRegion(uifirstSurfaceDrawRects) &&
+        RSSystemProperties::GetUIFirstDirtyEnabled() &&
+        RSUifirstManager::Instance().GetUiFirstType() == UiFirstCcmType::MULTI;
+    UpadteAllSurfaceUifirstDirtyEnableState(dirtyEnableFlag);
+    if (!dirtyEnableFlag) {
+        rscanvas->Clear(Drawing::Color::COLOR_TRANSPARENT);
+    } else {
+        rscanvas->ClipRegion(uifirstMergedDirtyRegion_);
+        rscanvas->Clear(Drawing::Color::COLOR_TRANSPARENT);
+    }
+    {
+        RS_TRACE_NAME_FMT("uifirstDirtyMerged[%d %d %d %d], dirtyEnableFlag:%d",
+            uifirstSurfaceDrawRects.GetLeft(), uifirstSurfaceDrawRects.GetTop(),
+            uifirstSurfaceDrawRects.GetWidth(), uifirstSurfaceDrawRects.GetHeight(), dirtyEnableFlag);
+    }
+
     ClearTotalProcessedSurfaceCount();
+    RSRenderNodeDrawable::ClearProcessedNodeCount();
     RSRenderNodeDrawable::DrawUifirstContentChildren(*rscanvas, bounds);
-    RS_TRACE_NAME_FMT("SubDraw the number of total ProcessedSurface: %d", GetTotalProcessedSurfaceCount());
+    int totalNodes = GetProcessedNodeCount();
+    int totalSurfaces = GetTotalProcessedSurfaceCount();
+    const auto& params = GetRenderParams();
+    float globalAlpha = params? params->GetGlobalAlpha() : -1.f;
+    RS_TRACE_NAME_FMT("SubDraw totalSurfaces:%d totalNodes:%d alpha:%f", totalSurfaces, totalNodes, globalAlpha);
+    if (totalSurfaces <= 0 || totalNodes <= 0) {
+        RS_LOGI("uifirst subDraw id:%{public}" PRIu64 ",name:%{public}s,totalSurfaces:%{public}d,totalNodes:%{public}d"
+            ",alpha:%{public}f", nodeId_, name_.c_str(), totalSurfaces, totalNodes, globalAlpha);
+    } else {
+        RS_LOGD("uifirst subDraw id:%{public}" PRIu64 ",name:%{public}s,totalSurfaces:%{public}d,totalNodes:%{public}d"
+            ",alpha:%{public}f", nodeId_, name_.c_str(), totalSurfaces, totalNodes, globalAlpha);
+    }
     RSRenderParams::SetParentSurfaceMatrix(parentSurfaceMatrix);
+    // uifirst dirty dfx
+    UifirstDirtyRegionDfx(*rscanvas, uifirstSurfaceDrawRects);
+}
+
+void RSSurfaceRenderNodeDrawable::PushDirtyRegionToStack(RSPaintFilterCanvas& canvas, Drawing::Region& resultRegion)
+{
+    if (canvas.GetIsParallelCanvas()) {
+        if (GetUifrstDirtyEnableFlag()) {
+            auto uifirstDirtyRegion = GetUifirstDirtyRegion();
+            canvas.PushDirtyRegion(uifirstDirtyRegion);
+        }
+    } else {
+        canvas.PushDirtyRegion(resultRegion);
+    }
+}
+
+void RSSurfaceRenderNodeDrawable::UifirstDirtyRegionDfx(Drawing::Canvas& canvas, Drawing::RectI& surfaceDrawRect)
+{
+    if (!RSSystemProperties::GetUIFirstDirtyDebugEnabled()) {
+        return;
+    }
+    const int defaultTextOffsetX = 6; // text position is 6 pixelSize right side of the Rect
+    const int defaultTextOffsetY = 30; // text position has 30 pixelSize under the Rect
+    Drawing::Brush rectBrush;
+    rectBrush.SetColor(Drawing::Color(0x80FFB6C1));
+    rectBrush.SetAntiAlias(true);
+    rectBrush.SetAlphaF(0.4f); // alpha 0.4 by default
+    std::shared_ptr<Drawing::Typeface> typeFace = nullptr;
+    std::string position = "pos:[" + surfaceDrawRect.ToString() + "]";
+    // font size: 24
+    std::shared_ptr<Drawing::TextBlob> textBlob =
+        Drawing::TextBlob::MakeFromString(position.c_str(), Drawing::Font(typeFace, 24.0f, 0.6f, 0.0f));
+    canvas.AttachBrush(rectBrush);
+    canvas.DrawRect(surfaceDrawRect);
+    canvas.DetachBrush();
+    canvas.AttachBrush(Drawing::Brush());
+    canvas.DrawTextBlob(textBlob.get(),
+        surfaceDrawRect.GetLeft() + defaultTextOffsetX, surfaceDrawRect.GetTop() + defaultTextOffsetY);
+    canvas.DetachBrush();
 }
 
 bool RSSurfaceRenderNodeDrawable::DrawUIFirstCache(RSPaintFilterCanvas& rscanvas, bool canSkipWait)
@@ -521,6 +784,7 @@ bool RSSurfaceRenderNodeDrawable::DrawUIFirstCache(RSPaintFilterCanvas& rscanvas
     if (!HasCachedTexture()) {
         RS_TRACE_NAME_FMT("HandleSubThreadNode wait %d %" PRIu64 "", canSkipWait, nodeId_);
         if (canSkipWait) {
+            RS_LOGI("uifirst skip wait id:%{public}" PRIu64 ",name:%{public}s", nodeId_, name_.c_str());
             return false; // draw nothing
         }
 #if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
@@ -642,6 +906,7 @@ void RSSurfaceRenderNodeDrawable::UpdateCacheSurfaceInfo()
     const auto& params = GetRenderParams();
     if (params) {
         cacheSurfaceInfo_.processedSurfaceCount = GetTotalProcessedSurfaceCount();
+        cacheSurfaceInfo_.processedNodeCount = GetProcessedNodeCount();
         cacheSurfaceInfo_.alpha = params->GetGlobalAlpha();
     }
 }

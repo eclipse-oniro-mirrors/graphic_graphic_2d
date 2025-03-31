@@ -156,6 +156,7 @@
 // blur predict
 #include "rs_frame_blur_predict.h"
 #include "rs_frame_deadline_predict.h"
+#include "feature_cfg/feature_param/extend_feature/mem_param.h"
 
 using namespace FRAME_TRACE;
 static const std::string RS_INTERVAL_NAME = "renderservice";
@@ -321,8 +322,7 @@ public:
     {
         ColorFilterMode mode = ColorFilterMode::COLOR_FILTER_END;
         if (id == CONFIG_ID::CONFIG_DALTONIZATION_COLOR_FILTER) {
-            if (accessibilityParamConfig_ != nullptr
-                && !accessibilityParamConfig_->IsColorCorrectionEnabled()) {
+            if (!AccessibilityParam::IsColorCorrectionEnabled()) {
                 RS_LOGE("RSAccessibility ColorCorrectionEnabled is not supported");
                 return;
             }
@@ -347,8 +347,7 @@ public:
             }
             RSBaseRenderEngine::SetColorFilterMode(mode);
         } else if (id == CONFIG_ID::CONFIG_INVERT_COLOR) {
-            if (accessibilityParamConfig_ != nullptr
-                && !accessibilityParamConfig_->IsColorReverseEnabled()) {
+            if (!AccessibilityParam::IsColorReverseEnabled()) {
                 RS_LOGE("RSAccessibility ColorReverseEnabled is not supported");
                 return;
             }
@@ -358,8 +357,7 @@ public:
                                         ColorFilterMode::INVERT_COLOR_DISABLE_MODE;
             RSBaseRenderEngine::SetColorFilterMode(mode);
         } else if (id == CONFIG_ID::CONFIG_HIGH_CONTRAST_TEXT) {
-            if (accessibilityParamConfig_ != nullptr
-                && !accessibilityParamConfig_->IsHighContrastEnabled()) {
+            if (!AccessibilityParam::IsHighContrastEnabled()) {
                 RS_LOGE("RSAccessibility HighContrastEnabled is not supported");
                 return;
             }
@@ -374,14 +372,6 @@ public:
             RSMainThread::Instance()->RequestNextVSync();
         });
     }
-
-    void SetAccessiblityParamConfig(std::shared_ptr<AccessibilityParam>& config)
-    {
-        accessibilityParamConfig_ = config;
-    }
-
-private:
-    std::shared_ptr<AccessibilityParam> accessibilityParamConfig_ = nullptr;
 };
 #endif
 static inline void WaitUntilUploadTextureTaskFinished(bool isUniRender)
@@ -618,7 +608,6 @@ void RSMainThread::Init()
     }
     RSOpincManager::Instance().ReadOPIncCcmParam();
     RSUifirstManager::Instance().ReadUIFirstCcmParam();
-    isUiFirstOn_ = RSUifirstManager::Instance().GetUiFirstSwitch();
     auto PostTaskProxy = [](RSTaskMessage::RSTask task, const std::string& name, int64_t delayTime,
         AppExecFwk::EventQueue::Priority priority) {
         RSMainThread::Instance()->PostTask(task, name, delayTime, priority);
@@ -672,13 +661,8 @@ void RSMainThread::Init()
     }
 #endif
 
-auto accessibilityFeatureParam =
-        GraphicFeatureParamManager::GetInstance().GetFeatureParam(FEATURE_CONFIGS[Accessibility]);
-    accessibilityParamConfig_ = std::static_pointer_cast<AccessibilityParam>(accessibilityFeatureParam);
-
 #if defined(ACCESSIBILITY_ENABLE)
     accessibilityObserver_ = std::make_shared<AccessibilityObserver>();
-    accessibilityObserver_->SetAccessiblityParamConfig(accessibilityParamConfig_);
     auto &config = OHOS::AccessibilityConfig::AccessibilityConfig::GetInstance();
     config.InitializeContext();
     config.SubscribeConfigObserver(CONFIG_ID::CONFIG_DALTONIZATION_COLOR_FILTER, accessibilityObserver_);
@@ -787,11 +771,12 @@ void RSMainThread::UpdateGpuContextCacheSize()
     if (cacheLimitsResourceSize > maxResourcesSize) {
         gpuContext->SetResourceCacheLimits(maxResources, cacheLimitsResourceSize);
     }
-    int systemCacheLimitsResourceSize =
-            std::atoi((system::GetParameter("persist.sys.graphics.skiacachelimit", "0")).c_str());
-    if (systemCacheLimitsResourceSize > 0) {
-        gpuContext->SetResourceCacheLimits(maxResources, systemCacheLimitsResourceSize);
+    static int systemCacheLimitResourceSize = MEMParam::GetRSCacheLimitsResourceSize();
+    RS_LOGD("systemCacheLimitResourceSize: %{public}d", systemCacheLimitResourceSize);
+    if (systemCacheLimitResourceSize > 0) {
+        gpuContext->SetResourceCacheLimits(maxResources, systemCacheLimitResourceSize);
     }
+
     auto purgeableMaxCount = RSSystemParameters::GetPurgeableResourceLimit();
     gpuContext->SetPurgeableResourceLimit(purgeableMaxCount);
 #endif
@@ -1135,7 +1120,7 @@ bool RSMainThread::CheckParallelSubThreadNodesStatus()
     cacheCmdSkippedNodes_.clear();
     if (subThreadNodes_.empty() &&
         (RSUifirstManager::Instance().GetUiFirstType() != UiFirstCcmType::MULTI
-            || (leashWindowCount_ > 0 && isUiFirstOn_ == false))) {
+            || (leashWindowCount_ > 0 && !RSUifirstManager::Instance().GetUiFirstSwitch()))) {
 #ifdef RS_ENABLE_GPU
         if (!isUniRender_) {
             RSSubThreadManager::Instance()->ResetSubThreadGrContext(); // planning: move to prepare
@@ -1192,7 +1177,7 @@ bool RSMainThread::CheckParallelSubThreadNodesStatus()
     if (!cacheCmdSkippedNodes_.empty()) {
         return true;
     }
-    if (!isUiFirstOn_) {
+    if (!RSUifirstManager::Instance().GetUiFirstSwitch()) {
         // clear subThreadNodes_ when UIFirst off and none of subThreadNodes_ is in the state of doing
         subThreadNodes_.clear();
     }
@@ -1374,8 +1359,11 @@ void RSMainThread::ProcessCommandForUniRender()
     if (transactionDataEffective != nullptr && !transactionDataEffective->empty()) {
         for (auto& rsTransactionElem : *transactionDataEffective) {
             for (auto& rsTransaction : rsTransactionElem.second) {
-                if (rsTransaction &&
-                    (rsTransaction->IsNeedSync() || syncTransactionData_.count(rsTransactionElem.first) > 0)) {
+                // If this transaction is marked as requiring synchronization and the SyncId for synchronization is not
+                // 0, or if there have been previous transactions of this process considered as synchronous, then all
+                // subsequent transactions of this process will be synchronized.
+                if (rsTransaction && ((rsTransaction->IsNeedSync() && rsTransaction->GetSyncId() > 0) ||
+                    syncTransactionData_.count(rsTransactionElem.first) > 0)) {
                     ProcessSyncRSTransactionData(rsTransaction, rsTransactionElem.first);
                 } else if (rsTransaction) {
                     ProcessRSTransactionData(rsTransaction, rsTransactionElem.first);
@@ -1530,15 +1518,11 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
     if (!isUniRender_) {
         dividedRenderbufferTimestamps_.clear();
     }
-
-    static bool isCCMDrmEnabled = std::static_pointer_cast<DRMParam>(
-        GraphicFeatureParamManager::GetInstance().GetFeatureParam(FEATURE_CONFIGS[DRM]))->IsDrmEnable();
-    bool isDrmEnabled = RSSystemProperties::GetDrmEnabled() && isCCMDrmEnabled;
-
+    drmNodes_.clear();
     const auto& nodeMap = GetContext().GetNodeMap();
     bool isHdrSwitchChanged = RSLuminanceControl::Get().IsHdrPictureOn() != prevHdrSwitchStatus_;
     nodeMap.TraverseSurfaceNodes(
-        [this, &needRequestNextVsync, isHdrSwitchChanged, isDrmEnabled](
+        [this, &needRequestNextVsync, isHdrSwitchChanged](
             const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode) mutable {
         if (surfaceNode == nullptr) {
             return;
@@ -1618,7 +1602,7 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
                 }
 #endif
             }
-            if (isUiFirstOn_ && surfaceHandler->IsCurrentFrameBufferConsumed()
+            if (RSUifirstManager::Instance().GetUiFirstSwitch() && surfaceHandler->IsCurrentFrameBufferConsumed()
                 && surfaceNode->IsHardwareEnabledType() && surfaceNode->IsHardwareForcedDisabledByFilter()) {
                     RS_OPTIONAL_TRACE_NAME(surfaceNode->GetName() +
                         " SetContentDirty for UIFirst assigning to subthread");
@@ -1630,7 +1614,7 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
         }
 #ifdef RS_ENABLE_VK
         if ((RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
-            RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) && isDrmEnabled &&
+            RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) &&
             (surfaceHandler->GetBufferUsage() & BUFFER_USAGE_PROTECTED)) {
             if (!surfaceNode->GetSpecialLayerMgr().Find(SpecialLayerType::PROTECTED)) {
                 surfaceNode->SetProtectedLayer(true);
@@ -1638,6 +1622,11 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
             const auto& instanceNode = surfaceNode->GetInstanceRootNode();
             if (instanceNode && instanceNode->IsOnTheTree()) {
                 hasProtectedLayer_ = true;
+                auto firstLevelNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(
+                    surfaceNode->GetFirstLevelNode());
+                if (firstLevelNode && firstLevelNode->IsOnTheTree()) {
+                    drmNodes_[firstLevelNode->GetId()].push_back(surfaceNode);
+                }
                 auto displayLock = surfaceNode->GetAncestorDisplayNode().lock();
                 std::shared_ptr<RSDisplayRenderNode> ancestor = nullptr;
                 if (displayLock != nullptr) {
@@ -1729,6 +1718,24 @@ void RSMainThread::CollectInfoForHardwareComposer()
         [this, &nodeMap](const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode) mutable {
             if (surfaceNode == nullptr) {
                 return;
+            }
+            if (surfaceNode->IsCloneCrossNode()) {
+                auto sourceNode = surfaceNode->GetSourceCrossNode().lock();
+                auto sourceSurface = sourceNode == nullptr ? nullptr:
+                    sourceNode->ReinterpretCastTo<RSSurfaceRenderNode>();
+                auto leashWindowNode = sourceSurface == nullptr ? nullptr :
+                    RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(sourceSurface->GetFirstLevelNode());
+                if (leashWindowNode && leashWindowNode->GetSpecialLayerMgr().Find(SpecialLayerType::HAS_PROTECTED) &&
+                    surfaceNode->GetDisplayNodeId() != INVALID_NODEID) {
+                        if (drmNodes_.find(leashWindowNode->GetId()) != drmNodes_.end()) {
+                            for (auto& node : drmNodes_[leashWindowNode->GetId()]) {
+                                if (node->IsOnTheTree()) {
+                                    hardwareEnabledDrwawables_.emplace_back(
+                                        std::make_pair(surfaceNode->GetDisplayNodeId(), node->GetRenderDrawable()));
+                                }
+                            }
+                        }
+                    }
             }
             auto surfaceHandler = surfaceNode->GetMutableRSSurfaceHandler();
             if (surfaceHandler->GetBuffer() != nullptr) {
@@ -2223,13 +2230,14 @@ void RSMainThread::AddUiCaptureTask(NodeId id, std::function<void()> task)
 
 void RSMainThread::PrepareUiCaptureTasks(std::shared_ptr<RSUniRenderVisitor> uniVisitor)
 {
+    std::vector<std::tuple<NodeId, std::function<void()>>> remainUiCaptureTasks;
     const auto& nodeMap = context_->GetNodeMap();
     for (auto [id, captureTask]: pendingUiCaptureTasks_) {
         auto node = nodeMap.GetRenderNode(id);
         bool flag = context_->GetUiCaptureCmdsExecutedFlag(id);
         if (!flag) {
-            RS_LOGD("RSMainThread::PrepareUiCaptureTasks cmds not be processed, id: %{public}llu", id);
-            return;
+            remainUiCaptureTasks.emplace_back(id, captureTask);
+            continue;
         }
         context_->EraseUiCaptureCmdsExecutedFlag(id);
         if (!node) {
@@ -2240,6 +2248,9 @@ void RSMainThread::PrepareUiCaptureTasks(std::shared_ptr<RSUniRenderVisitor> uni
         uiCaptureTasks_.emplace(id, captureTask);
     }
     pendingUiCaptureTasks_.clear();
+    pendingUiCaptureTasks_.insert(pendingUiCaptureTasks_.end(),
+        remainUiCaptureTasks.begin(), remainUiCaptureTasks.end());
+    remainUiCaptureTasks.clear();
 }
 
 void RSMainThread::ProcessUiCaptureTasks()
@@ -2339,7 +2350,7 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
     if (isAccessibilityConfigChanged_) {
         RS_LOGD("RSMainThread::UniRender AccessibilityConfig has Changed");
     }
-    UpdateUIFirstSwitch();
+    RSUifirstManager::Instance().RefreshUIFirstParam();
     UpdateRogSizeIfNeeded();
     auto uniVisitor = std::make_shared<RSUniRenderVisitor>();
     uniVisitor->SetProcessorRenderEngine(GetRenderEngine());
@@ -2354,6 +2365,8 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
         doDirectComposition_ = false;
         RS_OPTIONAL_TRACE_NAME_FMT("rs debug: %s HardwareForcedDisabled is true", __func__);
     }
+    // need draw skipped node at cur frame
+    doDirectComposition_ &= LIKELY(!RSUifirstManager::Instance().NeedNextDrawForSkippedNode());
     bool needTraverseNodeTree = true;
     needDrawFrame_ = true;
     bool pointerSkip = !RSPointerWindowManager::Instance().IsPointerCanSkipFrameCompareChange(false, true);
@@ -2404,6 +2417,7 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
         uniVisitor->SetFocusedNodeId(focusNodeId_, focusLeashWindowId_);
         rsVsyncRateReduceManager_.SetFocusedNodeId(focusNodeId_);
         rootNode->QuickPrepare(uniVisitor);
+        uniVisitor->ResetCrossNodesVisitedStatus();
 
 #ifdef RES_SCHED_ENABLE
         const auto& nodeMapForFrameReport = GetContext().GetNodeMap();
@@ -2554,6 +2568,21 @@ bool RSMainThread::DoDirectComposition(std::shared_ptr<RSBaseRenderNode> rootNod
                 params->SetPreBuffer(nullptr);
                 surfaceNode->AddToPendingSyncList();
             }
+            auto displayLock = surfaceNode->GetAncestorDisplayNode().lock();
+            std::shared_ptr<RSDisplayRenderNode> ancestor = nullptr;
+            if (displayLock != nullptr) {
+                ancestor = displayLock->ReinterpretCastTo<RSDisplayRenderNode>();
+            }
+            if (ancestor != nullptr && params->GetDRMGlobalPositionEnabled()) {
+                params->SetOffsetX(ancestor->GetDisplayOffsetX());
+                params->SetOffsetY(ancestor->GetDisplayOffsetY());
+                params->SetRogWidthRatio(params->IsDRMCrossNode() ?
+                    screenManager->QueryScreenInfo(ancestor->GetScreenId()).GetRogWidthRatio() : 1.0f);
+            } else {
+                params->SetOffsetX(0);
+                params->SetOffsetY(0);
+                params->SetRogWidthRatio(1.0f);
+            }
             processor->CreateLayer(*surfaceNode, *params);
             // buffer is synced to directComposition
             params->SetBufferSynced(true);
@@ -2563,7 +2592,6 @@ bool RSMainThread::DoDirectComposition(std::shared_ptr<RSBaseRenderNode> rootNod
 #endif
 #ifdef RS_ENABLE_GPU
     RSPointerWindowManager::Instance().HardCursorCreateLayerForDirect(processor);
-    RSUifirstManager::Instance().CreateUIFirstLayer(processor);
     if (RSSingleton<RoundCornerDisplayManager>::GetInstance().GetRcdEnable()) {
         DoScreenRcdTask(*displayNode, processor);
     }
@@ -3211,7 +3239,7 @@ std::string RSMainThread::SubHistoryEventQueue(std::string input)
         lines.push_back(line);
     }
     std::string result;
-    for (int i = 0; i < lines.size(); ++i) {
+    for (int i = 0; i < static_cast<int>(lines.size()); ++i) {
         if (lines[i].find(TARGET_STRING) != std::string::npos) {
             foundTargetStr = true;
             int start = std::max(0, i - CONTEXT_LINES);
@@ -3418,8 +3446,6 @@ void RSMainThread::Animate(uint64_t timestamp)
         return;
     }
     UpdateAnimateNodeFlag();
-    doDirectComposition_ = false;
-    RS_OPTIONAL_TRACE_NAME_FMT("rs debug: %s doDirectComposition false", __func__);
     bool curWinAnim = false;
     bool needRequestNextVsync = false;
     // isCalculateAnimationValue is embedded modify for stat animate frame drop
@@ -3503,6 +3529,8 @@ void RSMainThread::Animate(uint64_t timestamp)
     RS_LOGD("RSMainThread::Animate end, animating nodes remains, has window animation: %{public}d", curWinAnim);
 
     if (needRequestNextVsync) {
+        doDirectComposition_ = false;
+        RS_OPTIONAL_TRACE_NAME_FMT("rs debug: %s doDirectComposition false", __func__);
         HgmEnergyConsumptionPolicy::Instance().StatisticAnimationTime(timestamp / NS_PER_MS);
         RequestNextVSync("animate", timestamp_);
     } else if (isUniRender_) {
@@ -3813,6 +3841,9 @@ void RSMainThread::RenderServiceTreeDump(std::string& dumpString, bool forceDump
             return;
         }
         rootNode->DumpTree(0, dumpString);
+
+        dumpString += "\n-- RenderServiceUniThread\n";
+        RSUniRenderThread::Instance().RenderServiceTreeDump(dumpString);
 
         if (needUpdateJankStats) {
             needPostAndWait_ = false;
@@ -4773,34 +4804,6 @@ void RSMainThread::UpdateDisplayNodeScreenId()
 
 const uint32_t FOLD_DEVICE_SCREEN_NUMBER = 2; // alt device has two screens
 
-void RSMainThread::UpdateUIFirstSwitch()
-{
-#ifdef RS_ENABLE_GPU
-    RSUifirstManager::Instance().SetPurgeEnable(RSSystemParameters::GetUIFirstPurgeEnabled());
-    const std::shared_ptr<RSBaseRenderNode> rootNode = context_->GetGlobalRootRenderNode();
-    if (!rootNode) {
-        RSUifirstManager::Instance().SetUiFirstSwitch(isUiFirstOn_);
-        return;
-    }
-    auto firstChildren = rootNode->GetFirstChild();
-    if (!firstChildren) {
-        RSUifirstManager::Instance().SetUiFirstSwitch(isUiFirstOn_);
-        return;
-    }
-    auto displayNode = RSBaseRenderNode::ReinterpretCast<RSDisplayRenderNode>(firstChildren);
-    if (!displayNode) {
-        RSUifirstManager::Instance().SetUiFirstSwitch(isUiFirstOn_);
-        return;
-    }
-    RSUifirstManager::Instance().SetUiFirstSwitch(isUiFirstOn_);
-#endif
-}
-
-bool RSMainThread::IsUIFirstOn() const
-{
-    return isUiFirstOn_;
-}
-
 void RSMainThread::UpdateAnimateNodeFlag()
 {
     if (!context_) {
@@ -4910,8 +4913,7 @@ void RSMainThread::HandleOnTrim(Memory::SystemMemoryLevel level)
 
 void RSMainThread::SetCurtainScreenUsingStatus(bool isCurtainScreenOn)
 {
-    if (accessibilityParamConfig_ != nullptr
-        && !accessibilityParamConfig_->IsCurtainScreenEnabled()) {
+    if (!AccessibilityParam::IsCurtainScreenEnabled()) {
         RS_LOGE("RSMainThread::SetCurtainScreenUsingStatus CurtainScreenEnabled is not supported");
         return;
     }
@@ -4921,7 +4923,6 @@ void RSMainThread::SetCurtainScreenUsingStatus(bool isCurtainScreenOn)
         RS_LOGD("RSMainThread::SetCurtainScreenUsingStatus: curtain screen status not change");
         return;
     }
-    RSUifirstManager::Instance().SetUseDmaBuffer(!isCurtainScreenOn);
     isCurtainScreenOn_ = isCurtainScreenOn;
     isCurtainScreenUsingStatusChanged_ = true;
     SetDirtyFlag();
