@@ -666,7 +666,7 @@ void RSRenderService::DumpNode(std::unordered_set<std::u16string>& argSets, std:
         return;
     }
     uint64_t nodeId = 0;
-    if (!type.empty() && IsNumber(type) && type.length() < 21) {
+    if (!type.empty() && IsNumber(type) && type.length() < 20) {
         nodeId = std::stoull(type);
     }
     mainThread_->ScheduleTask(
