@@ -155,7 +155,7 @@ ohos_unittest("RSUnmarshalThreadTest") {
     defines += [ "USE_VIDEO_PROCESSING_ENGINE" ]
     external_deps += [
       "drivers_interface_display:libdisplay_commontype_proxy_1.0",
-      "video_processing_engine:videoprocessingengine"
+      "video_processing_engine:videoprocessingengine",
     ]
   }
 }

@@ -47,7 +47,7 @@ ohos_systemtest("RSBaseRenderEngineTest") {
     defines += [ "USE_VIDEO_PROCESSING_ENGINE" ]
     external_deps += [
       "drivers_interface_display:display_commontype_idl_headers",
-      "video_processing_engine:videoprocessingengine"
+      "video_processing_engine:videoprocessingengine",
     ]
   }
 }
@@ -68,7 +68,7 @@ ohos_systemtest("RSDropFrameProcessorSystemTest") {
     defines += [ "USE_VIDEO_PROCESSING_ENGINE" ]
     external_deps += [
       "drivers_interface_display:display_commontype_idl_headers",
-      "video_processing_engine:videoprocessingengine"
+      "video_processing_engine:videoprocessingengine",
     ]
   }
 }
@@ -89,7 +89,7 @@ ohos_systemtest("RSRenderServiceTest") {
     defines += [ "USE_VIDEO_PROCESSING_ENGINE" ]
     external_deps += [
       "drivers_interface_display:display_commontype_idl_headers",
-      "video_processing_engine:videoprocessingengine"
+      "video_processing_engine:videoprocessingengine",
     ]
 
   }
