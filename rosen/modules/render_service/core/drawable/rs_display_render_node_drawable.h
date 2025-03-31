@@ -141,6 +141,7 @@ private:
     void AdjustZOrderAndDrawSurfaceNode(std::vector<DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr>& drawables,
         Drawing::Canvas& canvas, RSDisplayRenderParams& params) const;
     void WiredScreenProjection(RSDisplayRenderParams& params, std::shared_ptr<RSProcessor> processor);
+    bool RecalculateCoordinates(int angle);
     void ScaleAndRotateMirrorForWiredScreen(RSDisplayRenderNodeDrawable& mirroredDrawable);
     void DrawWiredMirrorCopy(RSDisplayRenderNodeDrawable& mirroredDrawable);
     void DrawWiredMirrorOnDraw(RSDisplayRenderNodeDrawable& mirroredDrawable, RSDisplayRenderParams& params);
