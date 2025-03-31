@@ -13,7 +13,7 @@
 
 import("//build/ohos.gni")
 import("//foundation/graphic/graphic_2d/graphic_config.gni")
-import("//foundation/graphic/graphic_2d/text/config.gni")
+import("//foundation/graphic/graphic_2d/frameworks/text/config.gni")
 
 group("textnapi") {
   deps = [
