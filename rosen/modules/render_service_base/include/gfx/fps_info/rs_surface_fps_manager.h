@@ -44,7 +44,7 @@ private:
     RSSurfaceFpsManager& operator=(const RSSurfaceFpsManager&&) = delete;
 
     std::shared_ptr<RSSurfaceFps> GetSurfaceFps(NodeId id);
-    std::shared_ptr<RSSurfaceFps> GetSurfaceFps(const std::string& name);
+    std::shared_ptr<RSSurfaceFps> GetSurfaceFps(const std::string& name, bool& isUnique);
     std::shared_ptr<RSSurfaceFps> GetSurfaceFpsByPid(pid_t pid);
     std::unordered_map<NodeId, std::shared_ptr<RSSurfaceFps>> surfaceFpsMap_;
     std::shared_mutex smtx;

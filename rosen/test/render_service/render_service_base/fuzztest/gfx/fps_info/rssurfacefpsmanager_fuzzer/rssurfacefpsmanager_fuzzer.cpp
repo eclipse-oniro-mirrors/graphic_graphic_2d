@@ -93,6 +93,7 @@ bool RSSurfaceFpsManagerFuzzTest(const uint8_t* data, size_t size)
     pid_t upid = GetData<pid_t>();
     uint64_t timestamp = GetData<uint64_t>();
     uint32_t seqNum = GetData<uint32_t>();
+    bool isUnique = GetData<bool>();
 
     RSSurfaceFpsManager& surfaceFpsManager = RSSurfaceFpsManager::GetInstance();
     surfaceFpsManager.RegisterSurfaceFps(id, name);
@@ -113,8 +114,8 @@ bool RSSurfaceFpsManagerFuzzTest(const uint8_t* data, size_t size)
     surfaceFpsManager.ClearDumpByPid(result, upid);
     surfaceFpsManager.GetSurfaceFps(id);
     surfaceFpsManager.GetSurfaceFps(uid);
-    surfaceFpsManager.GetSurfaceFps(name);
-    surfaceFpsManager.GetSurfaceFps(uname);
+    surfaceFpsManager.GetSurfaceFps(name, isUnique);
+    surfaceFpsManager.GetSurfaceFps(uname, isUnique);
     surfaceFpsManager.GetSurfaceFpsByPid(pid);
     surfaceFpsManager.GetSurfaceFpsByPid(upid);
     surfaceFpsManager.UnregisterSurfaceFps(id);

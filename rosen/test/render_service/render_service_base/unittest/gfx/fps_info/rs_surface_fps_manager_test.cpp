@@ -67,11 +67,12 @@ HWTEST_F(RSSurfaceFpsManagerTest, GetSurfaceFps, TestSize.Level1)
     pid_t upid = 2;
     NodeId uid = 2ull << 32;
     std::string uname = "surfacefps1";
+    bool isUnique = false;
     surfaceFpsManager.RegisterSurfaceFps(id, name);
     EXPECT_NE(nullptr, surfaceFpsManager.GetSurfaceFps(id));
     EXPECT_EQ(nullptr, surfaceFpsManager.GetSurfaceFps(uid));
-    EXPECT_NE(nullptr, surfaceFpsManager.GetSurfaceFps(name));
-    EXPECT_EQ(nullptr, surfaceFpsManager.GetSurfaceFps(uname));
+    EXPECT_NE(nullptr, surfaceFpsManager.GetSurfaceFps(name, isUnique));
+    EXPECT_EQ(nullptr, surfaceFpsManager.GetSurfaceFps(uname, isUnique));
     EXPECT_NE(nullptr, surfaceFpsManager.GetSurfaceFpsByPid(pid));
     EXPECT_EQ(nullptr, surfaceFpsManager.GetSurfaceFpsByPid(upid));
     surfaceFpsManager.UnregisterSurfaceFps(id);

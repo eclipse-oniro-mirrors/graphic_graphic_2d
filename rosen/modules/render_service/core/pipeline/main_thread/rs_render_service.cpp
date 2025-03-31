@@ -319,14 +319,6 @@ void RSRenderService::DumpAllNodesMemSize(std::string& dumpString) const
     });
 }
 
-static bool IsNumber(const std::string& type)
-{
-    auto number = static_cast<uint32_t>(std::count_if(type.begin(), type.end(), [](unsigned char c) {
-        return std::isdigit(c);
-    }));
-    return number == type.length();
-}
-
 static unsigned long long SafeStringToULL(const std::string& str)
 {
     char* endptr = nullptr;
@@ -351,26 +343,30 @@ void RSRenderService::FPSDUMPProcess(std::unordered_set<std::u16string>& argSets
         return ;
     }
     RS_TRACE_NAME("RSRenderService::FPSDUMPProcess");
-    NodeId nodeId = 0;
-    std::string layerName("");
+    std::unordered_set<std::string> options("-name", "-id");
+    std::unordered_set<std::string> args{"DisplayNode", "composer", "UniRender"};
+    std::string argStr("");
+    std::string option("-name");
     for (const std::u16string& arg : argSets) {
-        std::string argStr = std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> {}
+        std::string str = std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> {}
             .to_bytes(arg);
-        if (!argStr.empty() && IsNumber(argStr)) {
-            nodeId = static_cast<NodeId>(SafeStringToULL(argStr));
+        if (options.find(str) != options.end()) {
+            option = str;
         } else {
-            layerName = argStr;
+            argStr = str;
         }
     }
-    std::unordered_set<std::string> args{"DisplayNode", "composer", "UniRender"};
-    if (args.find(layerName) != args.end()) {
-        DumpFps(dumpString, layerName);
-        return ;
-    }
-    if (nodeId != 0) {
-        DumpSurfaceNodeFps(dumpString, nodeId);
-    } else {
-        DumpSurfaceNodeFps(dumpString, layerName);
+    switch (option) {
+        case "-id":
+            DumpSurfaceNodeFps(dumpString, SafeStringToULL(argStr));
+            break;
+        default:
+            if (args.find(layerName) != args.end()) {
+                DumpFps(dumpString, layerName);
+            } else {
+                DumpSurfaceNodeFps(dumpString, layerName);
+            }
+            break;
     }
 }
 
@@ -439,26 +435,30 @@ void RSRenderService::FPSDUMPClearProcess(std::unordered_set<std::u16string>& ar
         return ;
     }
     RS_TRACE_NAME("RSRenderService::FPSDUMPClearProcess");
-    NodeId nodeId = 0;
-    std::string layerName("");
+    std::unordered_set<std::string> options("-name", "-id");
+    std::unordered_set<std::string> args{"DisplayNode", "composer"};
+    std::string argStr("");
+    std::string option("-name");
     for (const std::u16string& arg : argSets) {
-        std::string argStr = std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> {}
+        std::string str = std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> {}
             .to_bytes(arg);
-        if (!argStr.empty() && IsNumber(argStr)) {
-            nodeId = static_cast<NodeId>(SafeStringToULL(argStr));
+        if (options.find(str) != options.end()) {
+            option = str;
         } else {
-            layerName = argStr;
+            argStr = str;
         }
     }
-    std::unordered_set<std::string> args{"DisplayNode", "composer"};
-    if (args.find(layerName) != args.end()) {
-        ClearFps(dumpString, layerName);
-        return ;
-    }
-    if (nodeId != 0) {
-        ClearSurfaceNodeFps(dumpString, nodeId);
-    } else {
-        ClearSurfaceNodeFps(dumpString, layerName);
+    switch (option) {
+        case "-id":
+            DumpSurfaceNodeFps(dumpString, SafeStringToULL(argStr));
+            break;
+        default:
+            if (args.find(layerName) != args.end()) {
+                DumpFps(dumpString, layerName);
+            } else {
+                DumpSurfaceNodeFps(dumpString, layerName);
+            }
+            break;
     }
 }
 
@@ -622,6 +622,14 @@ void RSRenderService::DumpSurfaceNode(std::string& dumpString, NodeId id) const
     }
     dumpString += "Consumer Info: \n";
     consumer->Dump(dumpString);
+}
+
+static bool IsNumber(const std::string& type)
+{
+    auto number = static_cast<uint32_t>(std::count_if(type.begin(), type.end(), [](unsigned char c) {
+        return std::isdigit(c);
+    }));
+    return number == type.length();
 }
 
 static bool ExtractDumpInfo(std::unordered_set<std::u16string>& argSets, std::string& dumpInfo, std::u16string title)

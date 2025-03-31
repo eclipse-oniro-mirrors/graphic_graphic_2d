@@ -55,15 +55,19 @@ std::shared_ptr<RSSurfaceFps> RSSurfaceFpsManager::GetSurfaceFps(NodeId id)
     return iter->second;
 }
 
-std::shared_ptr<RSSurfaceFps> RSSurfaceFpsManager::GetSurfaceFps(const std::string& name)
+std::shared_ptr<RSSurfaceFps> RSSurfaceFpsManager::GetSurfaceFps(const std::string& name, bool& isUnique)
 {
     std::shared_lock<std::shared_mutex> lock(smtx);
+    std::shared_ptr<RSSurfaceFps> surfaceFpsPtr = nullptr;
+    uint8_t sameNameNumber = 0;
     for (auto [id, surfaceFps] : surfaceFpsMap_) {
         if (surfaceFps->GetName() == name) {
-            return surfaceFps;
+            surfaceFpsPtr = surfaceFps;
+            sameNameNumber++;
         }
     }
-    return nullptr;
+    isUnique = (sameNameNumber == 1);
+    return surfaceFpsPtr;
 }
 
 std::shared_ptr<RSSurfaceFps> RSSurfaceFpsManager::GetSurfaceFpsByPid(pid_t pid)
@@ -88,8 +92,12 @@ bool RSSurfaceFpsManager::RecordPresentTime(NodeId id, uint64_t timestamp, uint3
 
 void RSSurfaceFpsManager::Dump(std::string& result, const std::string& name)
 {
-    const auto& surfaceFps = GetSurfaceFps(name);
+    bool isUnique(false);
+    const auto& surfaceFps = GetSurfaceFps(name, isUnique);
     if (surfaceFps == nullptr) {
+        return ;
+    } else if (!isUnique) {
+        result += "There are multiple surfaces with the same name, please use \"fps -id nodeId\" to query.\n";
         return ;
     }
     result += " surface [" + name + "]:\n";
@@ -98,8 +106,12 @@ void RSSurfaceFpsManager::Dump(std::string& result, const std::string& name)
 
 void RSSurfaceFpsManager::ClearDump(std::string& result, const std::string& name)
 {
-    const auto& surfaceFps = GetSurfaceFps(name);
+    bool isUnique(false);
+    const auto& surfaceFps = GetSurfaceFps(name, isUnique);
     if (surfaceFps == nullptr) {
+        return ;
+    } else if (!isUnique) {
+        result += "There are multiple surfaces with the same name, please use \"fps -id nodeId\" to query.\n";
         return ;
     }
     result += " The fps info of surface [" + name + "] is cleared.\n";
