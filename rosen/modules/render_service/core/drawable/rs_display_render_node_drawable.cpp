@@ -1569,11 +1569,6 @@ std::vector<RectI> RSDisplayRenderNodeDrawable::CalculateVirtualDirtyForWiredScr
     return damageRegionRects;
 }
 
-bool RSDisplayRenderNodeDrawable::RecalculateCoordinates(int angle)
-{
-    return RSSystemProperties::IsSuperFoldDisplay() && (angle == RS_ROTATION_90 || angle == RS_ROTATION_270);
-}
-
 void RSDisplayRenderNodeDrawable::ScaleAndRotateMirrorForWiredScreen(RSDisplayRenderNodeDrawable& mirroredDrawable)
 {
     const auto& mirroredParams = mirroredDrawable.GetRenderParams();
@@ -1634,7 +1629,7 @@ void RSDisplayRenderNodeDrawable::ScaleAndRotateMirrorForWiredScreen(RSDisplayRe
         } else {
             auto scaleNum = std::min(mirrorWidth / mainWidth, mirrorHeight / mainHeight);
             int angle = RSUniRenderUtil::GetRotationFromMatrix(curCanvas_->GetTotalMatrix());
-            if (RecalculateCoordinates(angle)) {
+            if (RSBaseRenderUtil::RecalculateCoordinates(angle)) {
                 scaleNum = mirrorHeight / mainWidth;
                 curCanvas_->Translate((mirrorHeight - scaleNum * mainWidth) / HALF,
                     (mirrorWidth - scaleNum * mainHeight) / HALF);
