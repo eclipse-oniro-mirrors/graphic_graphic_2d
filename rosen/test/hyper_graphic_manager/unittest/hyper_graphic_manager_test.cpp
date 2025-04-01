@@ -695,42 +695,6 @@ HWTEST_F(HyperGraphicManagerTest, SetEnableDynamicMode, Function | SmallTest | L
 }
 
 /**
- * @tc.name: SetHfbcConfigMap
- * @tc.desc: Verify the result of SetHfbcConfigMap function
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(HyperGraphicManagerTest, SetHfbcConfigMap, Function | SmallTest | Level2)
-{
-    auto &hgmCore = HgmCore::Instance();
-    EXPECT_EQ(hgmCore.mPolicyConfigData_->hfbcConfig_.size(), 0);
-    std::unordered_map<std::string, std::string> hfbcConfig = {
-        { "com.test.allowapp", "1" }, { "com.test.allowapp2", "1" }
-    };
-    hgmCore.SetHfbcConfigMap(hfbcConfig);
-    EXPECT_EQ(hgmCore.mPolicyConfigData_->hfbcConfig_.size(), hfbcConfig.size());
-    for (const auto& pkg : hfbcConfig) {
-        EXPECT_EQ(hgmCore.mPolicyConfigData_->hfbcConfig_.find(pkg.first) !=
-            hgmCore.mPolicyConfigData_->hfbcConfig_.end(), true);
-    }
-}
-
-/**
- * @tc.name: SetHfbcControlMode
- * @tc.desc: Verify the result of SetHfbcControlMode function
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(HyperGraphicManagerTest, SetHfbcControlMode, Function | SmallTest | Level2)
-{
-    auto &hgmCore = HgmCore::Instance();
-    hgmCore.SetHfbcControlMode(true);
-    EXPECT_EQ(hgmCore.mPolicyConfigData_->isHfbcDisableListMode_, true);
-    hgmCore.SetHfbcControlMode(false);
-    EXPECT_EQ(hgmCore.mPolicyConfigData_->isHfbcDisableListMode_, false);
-}
-
-/**
  * @tc.name: TestAbnormalCase
  * @tc.desc: Verify the abnormal case of HgmCore
  * @tc.type: FUNC
