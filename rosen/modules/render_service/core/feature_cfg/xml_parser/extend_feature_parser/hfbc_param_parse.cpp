@@ -15,8 +15,7 @@
 
 #include "hfbc_param_parse.h"
 
-#include "hgm_core.h"
-#include "hgm_frame_rate_manager.h"
+#include "hgm_hfbc_config.h"
 
 namespace OHOS::Rosen {
 
