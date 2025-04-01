@@ -14,10 +14,6 @@
 import("//build/ohos.gni")
 import("//foundation/graphic/graphic_2d/graphic_config.gni")
 
-declare_args() {
-    frame_report_root = "$graphic_2d_root/rosen/modules/frame_report"
-}
-
 ohos_static_library("frame_report") {
     sanitize = {
         cfi = true
@@ -31,11 +27,11 @@ ohos_static_library("frame_report") {
     external_deps = []
 
     if (current_os == "ohos") {
-        sources += [ "$frame_report_root/src/rs_frame_report.cpp" ]
+        sources += [ "src/rs_frame_report.cpp" ]
     } else {
-        sources += [ "$frame_report_root/src/mingw/rs_frame_report.cpp" ]
+        sources += [ "src/mingw/rs_frame_report.cpp" ]
     }
-    include_dirs += [ "$frame_report_root/include" ]
+    include_dirs += [ "include" ]
     external_deps += [ "hilog:libhilog" ]
 
     part_name = "graphic_2d"
