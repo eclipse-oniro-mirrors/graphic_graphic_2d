@@ -44,8 +44,6 @@
       *HgmCore::RemoveScreen*;
       *HgmCore::SetASConfig*;
       *HgmCore::SetActiveScreenId*;
-      *HgmCore::SetHfbcConfigMap*;
-      *HgmCore::SetHfbcControlMode*;
       *HgmCore::SetRateAndResolution*;
       *HgmCore::SetRefreshRateMode*;
       *HgmCore::SetScreenRefreshRate*;
@@ -113,6 +111,8 @@
       *HgmFrameRateManager::UpdateSoftVSync*;
 
       *HgmHfbcConfig::HandleHfbcConfig*;
+      *HgmHfbcConfig::SetHfbcConfigMap*;
+      *HgmHfbcConfig::SetHfbcControlMode*;
 
       *HgmIdleDetector::GetSurfaceIdleState*;
       *HgmIdleDetector::GetTouchUpExpectedFPS*;

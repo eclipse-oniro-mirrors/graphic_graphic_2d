@@ -57,11 +57,11 @@ int32_t HFBCParamParse::ParseHfbcInternal(xmlNode &node)
             RS_LOGE("HFBCParamParse parse MultiParam fail");
         }
         if (name == "HfbcDisable") {
-            HgmCore::Instance().SetHfbcConfigMap(HFBCParam::GetHfbcConfigMap());
-            if (val == "0") { // whitelist
-                HgmCore::Instance().SetHfbcControlMode(false);
+            HgmHfbcConfig::SetHfbcConfigMap(HFBCParam::GetHfbcConfigMap());
+            if (val == "0") { // enable list mode
+                HgmHfbcConfig::SetHfbcControlMode(false);
             } else {
-                HgmCore::Instance().SetHfbcControlMode(true);
+                HgmHfbcConfig::SetHfbcControlMode(true);
             }
         }
     }
