@@ -836,10 +836,10 @@ void RSSurfaceNode::SetForeground(bool isForeground)
     AddCommand(commandRT, false);
 }
 
-void RSSurfaceNode::SetClonedNodeId(NodeId nodeId)
+void RSSurfaceNode::SetClonedNodeInfo(NodeId nodeId, bool needOffscreen)
 {
     std::unique_ptr<RSCommand> command =
-        std::make_unique<RSSurfaceNodeSetClonedNodeId>(GetId(), nodeId);
+        std::make_unique<RSSurfaceNodeSetClonedNodeInfo>(GetId(), nodeId, needOffscreen);
     AddCommand(command, true);
 }
 
@@ -947,6 +947,13 @@ void RSSurfaceNode::SetApiCompatibleVersion(uint32_t version)
     std::unique_ptr<RSCommand> command = std::make_unique<RSSurfaceNodeSetApiCompatibleVersion>(GetId(), version);
     AddCommand(command, true);
     RS_LOGD("RSSurfaceNode::SetApiCompatibleVersion: Node: %{public}" PRIu64 ", version: %{public}u", GetId(), version);
+}
+
+void RSSurfaceNode::SetSourceVirtualDisplayId(ScreenId screenId)
+{
+    std::unique_ptr<RSCommand> command =
+        std::make_unique<RSSurfaceNodeSetSourceVirtualDisplayId>(GetId(), screenId);
+    AddCommand(command, true);
 }
 
 void RSSurfaceNode::AttachToWindowContainer(ScreenId screenId)

@@ -127,6 +127,10 @@ public:
         return isCloneCrossNode_;
     }
 
+    bool HasVisitedCrossNode() const;
+
+    void SetCrossNodeVisitedStatus(bool hasVisited);
+
     void SetCurCloneNodeParent(SharedPtr node)
     {
         curCloneNodeParent_ = node;
@@ -324,6 +328,8 @@ public:
     void UpdateChildrenRect(const RectI& subRect);
     void UpdateCurCornerRadius(Vector4f& curCornerRadius);
     void SetDirty(bool forceAddToActiveList = false);
+    void SetBlendWithBackground(bool isBlendWithBackground);
+    bool IsBlendWithBackground() const;
 
     virtual void AddDirtyType(RSModifierType type)
     {
@@ -1057,6 +1063,7 @@ private:
     bool foregroundFilterRegionChanged_ = false;
     bool foregroundFilterInteractWithDirty_ = false;
     bool isOccluded_ = false;
+    bool isBlendWithBackground_ = false;
     // for UIExtension info collection
     bool childrenHasUIExtension_ = false;
     bool isAccessibilityConfigChanged_ = false;
@@ -1142,6 +1149,7 @@ private:
     // for blur cache
     RectI lastFilterRegion_;
     std::vector<SharedPtr> cloneCrossNodeVec_;
+    bool hasVisitedCrossNode_ = false;
     std::map<PropertyId, std::shared_ptr<RSRenderModifier>> modifiers_;
     std::unordered_set<RSDrawableSlot> dirtySlots_;
     DrawCmdIndex stagingDrawCmdIndex_;

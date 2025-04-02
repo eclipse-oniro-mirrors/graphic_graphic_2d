@@ -29,6 +29,8 @@ ohos_unittest("RSRenderServiceBaseIpcCallBacksTest") {
     "hgm_config_change_callback_proxy_test.cpp",
     "hgm_config_change_callback_stub_test.cpp",
     "rs_application_agent_proxy_test.cpp",
+    "rs_first_frame_commit_callback_proxy_test.cpp",
+    "rs_first_frame_commit_callback_stub_test.cpp",
     "rs_occlusion_change_callback_proxy_test.cpp",
     "rs_occlusion_change_callback_stub_test.cpp",
     "rs_rt_refresh_callback_test.cpp",
@@ -68,7 +70,6 @@ ohos_unittest("RSRenderServiceBaseIpcCallBacksTest") {
   ]
 
   deps = [
-    "$graphic_2d_root/rosen/modules/graphics_effect:libgraphics_effect",
     "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
     "$graphic_2d_root/rosen/modules/render_service_client:render_service_client_src",
     "../../../../../modules/render_service_base:render_service_base_src",
@@ -77,6 +78,7 @@ ohos_unittest("RSRenderServiceBaseIpcCallBacksTest") {
 
   external_deps = [
     "c_utils:utils",
+    "graphics_effect:graphics_effect_core",
     "hitrace:hitrace_meter",
     "init:libbegetutil",
   ]

@@ -256,6 +256,8 @@ public:
     static bool GetUIFirstEnabled();
     static bool GetUIFirstDebugEnabled();
     static bool GetUIFirstOptScheduleEnabled();
+    static bool GetUIFirstDirtyEnabled();
+    static bool GetUIFirstDirtyDebugEnabled();
     static bool GetTargetUIFirstDfxEnabled(std::vector<std::string>& SurfaceNames);
     static bool GetWideColorSpaceEnabled();
     static bool GetSurfaceOffscreenEnadbled();
@@ -270,8 +272,6 @@ public:
     static bool GetDrmEnabled();
     static bool GetSurfaceNodeWatermarkEnabled();
     static bool IsPhoneType();
-    static bool IsTabletType();
-    static bool IsPcType();
     static bool IsSuperFoldDisplay();
     static bool IsBetaRelease();
     static bool GetSyncTransactionEnabled();

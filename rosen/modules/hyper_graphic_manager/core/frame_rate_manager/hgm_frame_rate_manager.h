@@ -187,6 +187,7 @@ public:
 
     void Init(sptr<VSyncController> rsController,
         sptr<VSyncController> appController, sptr<VSyncGenerator> vsyncGenerator);
+    void SetTimeoutParamsFromConfig(const std::shared_ptr<PolicyConfigData>& configData);
     void InitTouchManager();
     // called by RSMainThread
     void ProcessPendingRefreshRate(uint64_t timestamp, int64_t vsyncId, uint32_t rsRate, bool isUiDvsyncOn);
@@ -290,6 +291,7 @@ private:
         std::lock_guard<std::mutex> lock(pendingMutex_);
         curGameNodeName_ = nodeName;
     }
+    void FrameRateReportTask(uint32_t leftRetryTimes);
 
     std::atomic<uint32_t> currRefreshRate_ = 0;
     uint32_t controllerRate_ = 0;

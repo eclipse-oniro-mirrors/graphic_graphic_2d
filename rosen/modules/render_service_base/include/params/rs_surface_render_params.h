@@ -147,6 +147,30 @@ public:
     {
         return stencilVal_;
     }
+    void SetOffsetX(int32_t offsetX)
+    {
+        offsetX_ = offsetX;
+    }
+    int32_t GetOffsetX() const
+    {
+        return offsetX_;
+    }
+    void SetOffsetY(int32_t offsetY)
+    {
+        offsetY_ = offsetY;
+    }
+    int32_t GetOffsetY() const
+    {
+        return offsetY_;
+    }
+    void SetRogWidthRatio(float rogWidthRatio)
+    {
+        rogWidthRatio_ = rogWidthRatio;
+    }
+    float GetRogWidthRatio() const
+    {
+        return rogWidthRatio_;
+    }
     void SetIsOutOfScreen(bool isOutOfScreen)
     {
         if (isOutOfScreen_ == isOutOfScreen) {
@@ -184,6 +208,11 @@ public:
     std::string GetName() const
     {
         return name_;
+    }
+
+    std::string GetBundleName() const
+    {
+        return bundleName_;
     }
 
     // [Attention] The function only used for unlocking screen for PC currently
@@ -283,6 +312,9 @@ public:
         return uiFirstFrameGravity_;
     }
 
+    RectI GetScreenRect() const;
+    void RecordScreenRect(RectI rect);
+
     void SetOcclusionVisible(bool visible);
     bool GetOcclusionVisible() const override;
 
@@ -342,6 +374,12 @@ public:
 
     void SetGlobalPositionEnabled(bool isEnabled);
     bool GetGlobalPositionEnabled() const;
+
+    void SetDRMGlobalPositionEnabled(bool isEnabled);
+    bool GetDRMGlobalPositionEnabled() const;
+
+    void SetDRMCrossNode(bool isCrossNode);
+    bool IsDRMCrossNode() const;
 
     void SetIsNodeToBeCaptured(bool isNodeToBeCaptured);
     bool IsNodeToBeCaptured() const;
@@ -500,6 +538,20 @@ public:
         return sdrNit_;
     }
 
+    void SetColorFollow(bool colorFollow)
+    {
+        if (colorFollow_ == colorFollow) {
+            return;
+        }
+        colorFollow_ = colorFollow;
+        needSync_ = true;
+    }
+
+    bool GetColorFollow() const
+    {
+        return colorFollow_;
+    }
+
     void SetDisplayNit(float displayNit)
     {
         if (ROSEN_EQ(displayNit_, displayNit)) {
@@ -637,12 +689,11 @@ public:
         return IsUnobscuredUIExtension_;
     }
 
-    void MarkSurfaceCapturePipeline()
+    DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr GetSourceDisplayRenderNodeDrawable() const
     {
-        isSurfaceCapturePipeline_ = true;
+        return sourceDisplayRenderNodeDrawable_;
     }
 
-protected:
 private:
     bool isMainWindowType_ = false;
     bool isLeashWindow_ = false;
@@ -652,6 +703,7 @@ private:
     RSRenderNode::WeakPtr ancestorDisplayNode_;
     DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr ancestorDisplayDrawable_;
     DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr clonedNodeRenderDrawable_;
+    DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr sourceDisplayRenderNodeDrawable_;
 
     float alpha_ = 0;
     bool isClonedNodeOnTheTree_ = false;
@@ -667,6 +719,7 @@ private:
     bool uiFirstParentFlag_ = false;
     Color backgroundColor_ = RgbPalette::Transparent();
     bool isHwcEnabledBySolidLayer_ = false;
+    RectI screenRect_;
 
     RectI dstRect_;
     RectI oldDirtyInSurface_;
@@ -721,6 +774,7 @@ private:
     std::set<NodeId> privacyContentLayerIds_ = {};
     std::set<int32_t> bufferCacheSet_ = {};
     std::string name_= "";
+    std::string bundleName_= "";
     Vector4f overDrawBufferNodeCornerRadius_;
     bool isGpuOverDrawBufferOptimizeNode_ = false;
     bool isSkipDraw_ = false;
@@ -734,6 +788,12 @@ private:
     std::vector<float> drmCornerRadiusInfo_;
     bool isForceDisableClipHoleForDRM_ = false;
 
+    int32_t offsetX_ = 0;
+    int32_t offsetY_ = 0;
+    float rogWidthRatio_ = 1.0f;
+    bool isDRMGlobalPositionEnabled_ = false;
+    bool isDRMCrossNode_ = false;
+
     Drawing::Matrix totalMatrix_;
     float globalAlpha_ = 1.0f;
     bool hasFingerprint_ = false;
@@ -742,6 +802,8 @@ private:
     float sdrNit_ = 500.0f; // default sdrNit
     float displayNit_ = 500.0f; // default displayNit_
     float brightnessRatio_ = 1.0f; // 1.0f means no discount.
+    bool colorFollow_ = false;
+
     // color temperature
     std::vector<float> layerLinearMatrix_; // matrix for linear colorspace
     bool hasMetadata_ = false; // SDR with metadata
@@ -752,8 +814,6 @@ private:
     std::unordered_map<NodeId, Drawing::Matrix> crossNodeSkipDisplayConversionMatrices_ = {};
 
     uint32_t apiCompatibleVersion_ = 0;
-
-    bool isSurfaceCapturePipeline_ = false;
 
     friend class RSSurfaceRenderNode;
     friend class RSUniRenderProcessor;

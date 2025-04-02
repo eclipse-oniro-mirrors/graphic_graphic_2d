@@ -55,7 +55,6 @@ ohos_unittest("vsync_test_st") {
     "//foundation/graphic/graphic_2d/interfaces/inner_api/common",
     "//foundation/graphic/graphic_2d/rosen/modules/composer/vsync/include",
     "//foundation/graphic/graphic_2d/rosen/modules/composer/vsync/test",
-    "//utils/system/safwk/native/include",
   ]
 
   cflags = [
@@ -67,13 +66,13 @@ ohos_unittest("vsync_test_st") {
   deps = [
     "//foundation/graphic/graphic_2d/rosen/modules/composer/vsync:libvsync",
     "//foundation/graphic/graphic_2d/utils:socketpair",
-    "//foundation/systemabilitymgr/samgr/interfaces/innerkits/samgr_proxy:samgr_proxy",
   ]
   external_deps = [
     "access_token:libaccesstoken_sdk",
     "c_utils:utils",
     "googletest:gtest_main",
     "ipc:ipc_core",
+    "samgr:samgr_proxy",
   ]
 
   defines = []
@@ -677,10 +676,7 @@ ohos_unittest("vsync_limit_test_st") {
     "-g3",
   ]
 
-  deps = [
-    "../../../native_vsync:libnative_vsync",
-  ]
-  external_deps = [ "googletest:gtest_main" ]
+  deps = [ "../../../native_vsync:libnative_vsync" ]
 }
 
 ## SystemTest vsync_limit_test }}}
@@ -702,10 +698,7 @@ ohos_unittest("nativeVsync_getPeriod_test_st") {
     "-g3",
   ]
 
-  deps = [
-    "../../../native_vsync:libnative_vsync",
-  ]
-  external_deps = [ "googletest:gtest_main" ]
+  deps = [ "../../../native_vsync:libnative_vsync" ]
 }
 
 ## SystemTest nativeVsync_getPeriod_test }}}
@@ -724,10 +717,7 @@ ohos_unittest("nativeVsync_requestFrame_test_st") {
     "-g3",
   ]
 
-  deps = [
-    "../../../native_vsync:libnative_vsync",
-  ]
-  external_deps = [ "googletest:gtest_main" ]
+  deps = [ "../../../native_vsync:libnative_vsync" ]
 }
 
 ## SystemTest nativeVsync_requestFrame_test }}}
@@ -746,10 +736,7 @@ ohos_unittest("nativeVsync_requestMultiCB_test_st") {
     "-g3",
   ]
 
-  deps = [
-    "../../../native_vsync:libnative_vsync",
-  ]
-  external_deps = [ "googletest:gtest_main" ]
+  deps = [ "../../../native_vsync:libnative_vsync" ]
 }
 
 ## SystemTest nativeVsync_requestMultiCB_test }}}

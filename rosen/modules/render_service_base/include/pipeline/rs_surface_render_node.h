@@ -151,6 +151,18 @@ public:
         return isHardwareEnableHint_;
     }
 
+    void SetSourceDisplayRenderNodeId(NodeId nodeId)
+    {
+        sourceDisplayRenderNodeId_ = nodeId;
+    }
+
+    NodeId GetSourceDisplayRenderNodeId() const
+    {
+        return sourceDisplayRenderNodeId_;
+    }
+
+    void SetSourceDisplayRenderNodeDrawable(DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr drawable);
+
     void SetExistTransparentHardwareEnabledNode(bool exist)
     {
         existTransparentHardwareEnabledNode_ = exist;
@@ -279,11 +291,6 @@ public:
         return isHardwareForcedByBackgroundAlpha_;
     }
 
-    void SetHardwareDisabledByCache(bool disabledByCache)
-    {
-        isHardwareDisabledByCache_ = disabledByCache;
-    }
-
     void SetHardwareForcedDisabledStateByFilter(bool forcesDisabled)
     {
         isHardwareForcedDisabledByFilter_ = forcesDisabled;
@@ -336,8 +343,7 @@ public:
             constexpr float DRM_MIN_ALPHA = 0.1f;
             return GetGlobalAlpha() < DRM_MIN_ALPHA; // if alpha less than 0.1, drm layer display black background.
         }
-        return isHardwareForcedDisabled_ ||
-            GetDstRect().GetWidth() <= 1 || GetDstRect().GetHeight() <= 1; // avoid fallback by composer
+        return isHardwareForcedDisabled_;
     }
 
     bool IsLeashOrMainWindow() const
@@ -423,6 +429,11 @@ public:
     const std::string& GetName() const
     {
         return name_;
+    }
+
+    const std::string& GetBundleName() const
+    {
+        return bundleName_;
     }
 
     void SetOffSetX(int32_t offset)
@@ -515,6 +526,12 @@ public:
     void SetGlobalPositionEnabled(bool isEnabled);
     bool GetGlobalPositionEnabled() const override;
 
+    void SetDRMGlobalPositionEnabled(bool isEnabled);
+    bool GetDRMGlobalPositionEnabled() const;
+
+    void SetDRMCrossNode(bool isCrossNode);
+    bool IsDRMCrossNode() const;
+
     void SetSecurityLayer(bool isSecurityLayer);
     void SetLeashPersistentId(uint64_t leashPersistentId);
     void SetSkipLayer(bool isSkipLayer);
@@ -553,12 +570,15 @@ public:
     // [Attention] The function only used for unlocking screen for PC currently
     void SetClonedNodeRenderDrawable(DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr clonedNodeRenderDrawable);
     bool IsCloneNode() const;
-    void SetClonedNodeId(NodeId id);
+    void SetClonedNodeInfo(NodeId id, bool needOffscreen);
     void SetIsCloned(bool isCloned);
     void SetIsClonedNodeOnTheTree(bool isOnTheTree);
 
     void SetForceUIFirst(bool forceUIFirst);
     bool GetForceUIFirst() const;
+
+    bool GetForceDrawWithSkipped() const;
+    void SetForceDrawWithSkipped(bool GetForceDrawWithSkipped);
 
     void SetUIFirstIsPurge(bool IsPurge)
     {
@@ -585,6 +605,11 @@ public:
 
     void IncreaseHDRNum();
     void ReduceHDRNum();
+
+    bool GetIsWideColorGamut() const;
+
+    void IncreaseWideColorGamutNum();
+    void ReduceWideColorGamutNum();
 
     const std::shared_ptr<RSDirtyRegionManager>& GetDirtyManager() const;
     std::shared_ptr<RSDirtyRegionManager> GetCacheSurfaceDirtyManager() const;
@@ -782,7 +807,8 @@ public:
     GraphicColorGamut GetColorSpace() const;
     // Only call this if the node is first level node.
     GraphicColorGamut GetFirstLevelNodeColorGamut() const;
-    void SetFirstLevelNodeColorGamut(bool changeToP3);
+    void SetFirstLevelNodeColorGamutByResource(bool changeToP3);
+    void SetFirstLevelNodeColorGamutByWindow(bool changeToP3);
 
     // Only call this if the node is self-drawing surface node.
     void UpdateColorSpaceWithMetadata();
@@ -1295,6 +1321,7 @@ public:
     void SetNeedOffscreen(bool needOffscreen);
     void SetSdrNit(float sdrNit);
     void SetDisplayNit(float displayNit);
+    void SetColorFollow(bool colorFollow);
     void SetBrightnessRatio(float brightnessRatio);
     void SetLayerLinearMatrix(const std::vector<float>& layerLinearMatrix);
     void SetSdrHasMetadata(bool hasMetadata);
@@ -1389,7 +1416,6 @@ public:
     bool NeedUpdateDrawableBehindWindow() const override;
     void SetOldNeedDrawBehindWindow(bool val);
     bool NeedDrawBehindWindow() const override;
-    bool GetBehindWindowFilterEnabled() const;
     void AddChildBlurBehindWindow(NodeId id) override;
     void RemoveChildBlurBehindWindow(NodeId id) override;
     void CalDrawBehindWindowRegion() override;
@@ -1490,6 +1516,8 @@ private:
     RSSpecialLayerManager specialLayerManager_;
     bool specialLayerChanged_ = false;
     bool isGlobalPositionEnabled_ = false;
+    bool isDRMGlobalPositionEnabled_ = false;
+    bool isDRMCrossNode_ = false;
     bool hasFingerprint_ = false;
     // hdr video
     HdrStatus hdrVideoSurface_ = HdrStatus::NO_HDR;
@@ -1502,6 +1530,7 @@ private:
     // the self-drawing node use hardware composer in some condition,
     // such as transparent background.
     bool isHardwareEnableHint_ = false;
+    NodeId sourceDisplayRenderNodeId_ = INVALID_NODEID;
     const enum SurfaceWindowType surfaceWindowType_ = SurfaceWindowType::DEFAULT_WINDOW;
     bool isNotifyRTBufferAvailablePre_ = false;
     bool isRefresh_ = false;
@@ -1548,7 +1577,6 @@ private:
     // For certain buffer format(YUV), dss restriction on src : srcRect % 2 == 0
     // To avoid switch between gpu and dss during sliding, we disable dss when srcHeight != bufferHeight
     bool isHardwareForcedDisabledBySrcRect_ = false;
-    bool isHardwareDisabledByCache_ = false;
     // Mark if the leash or main window node has transparent self-drawing node
     bool existTransparentHardwareEnabledNode_ = false;
     bool animateState_ = false;
@@ -1573,6 +1601,7 @@ private:
     bool needDrawFocusChange_ = false;
     bool forceUIFirstChanged_ = false;
     bool forceUIFirst_ = false;
+    bool uifirstForceDrawWithSkipped_ = false;
     bool hasTransparentSurface_ = false;
     bool isGpuOverDrawBufferOptimizeNode_ = false;
     bool isSubSurfaceNode_ = false;
@@ -1598,6 +1627,7 @@ private:
     float contextAlpha_ = 1.0f;
     // Count the number of hdr pictures. If hdrNum_ > 0, it means there are hdr pictures
     int hdrNum_ = 0;
+    int wideColorGamutNum_ = 0;
     int32_t offsetX_ = 0;
     int32_t offsetY_ = 0;
     int64_t stencilVal_ = -1;
@@ -1616,7 +1646,8 @@ private:
     uint32_t processZOrder_ = -1;
     int32_t nodeCost_ = 0;
     uint32_t submittedSubThreadIndex_ = INT_MAX;
-    uint32_t wideColorGamutInChildNodeCount_ = 0;
+    uint32_t wideColorGamutWindowCount_ = 0;
+    uint32_t wideColorGamutResourceWindowCount_ = 0;
     uint32_t apiCompatibleVersion_ = 0;
     std::atomic<uint32_t> ancoFlags_ = 0;
     Drawing::GPUContext* grContext_ = nullptr;
@@ -1668,6 +1699,7 @@ private:
     std::vector<float> drmCornerRadiusInfo_;
 
     std::string name_;
+    std::string bundleName_;
     std::vector<NodeId> childSurfaceNodeIds_;
     friend class RSRenderThreadVisitor;
     /*
@@ -1761,6 +1793,7 @@ private:
     bool isCloneNode_ = false;
     NodeId clonedSourceNodeId_ = INVALID_NODEID;
     bool isClonedNodeOnTheTree_ = false;
+    bool clonedSourceNodeNeedOffscreen_ = true;
 
     std::map<NodeId, RSSurfaceRenderNode::WeakPtr> childSubSurfaceNodes_;
     std::unordered_map<std::string, bool> watermarkHandles_ = {};
