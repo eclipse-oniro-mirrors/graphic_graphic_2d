@@ -1634,7 +1634,7 @@ void RSDisplayRenderNodeDrawable::ScaleAndRotateMirrorForWiredScreen(RSDisplayRe
                 std::swap(mirrorWidth, mirrorHeight);
             }
             curCanvas_->Translate((mirrorWidth - scaleNum * mainWidth) / HALF,
-                    (mirrorHeight - scaleNum * mainHeight) / HALF);
+                (mirrorHeight - scaleNum * mainHeight) / HALF);
             curCanvas_->Scale(scaleNum, scaleNum);
             curCanvas_->ClipRect(Drawing::Rect(0, 0, mainWidth, mainHeight), Drawing::ClipOp::INTERSECT, false);
         }
