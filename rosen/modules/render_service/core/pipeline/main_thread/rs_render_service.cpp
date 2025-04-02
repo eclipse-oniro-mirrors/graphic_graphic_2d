@@ -359,10 +359,10 @@ void RSRenderService::FPSDUMPProcess(std::unordered_set<std::u16string>& argSets
     if (option == "id") {
         DumpSurfaceNodeFps(dumpString, SafeStringToULL(argStr));
     } else {
-        if (args.find(layerName) != args.end()) {
-            DumpFps(dumpString, layerName);
+        if (args.find(argStr) != args.end()) {
+            DumpFps(dumpString, argStr);
         } else {
-            DumpSurfaceNodeFps(dumpString, layerName);
+            DumpSurfaceNodeFps(dumpString, argStr);
         }
     }
 }
@@ -448,10 +448,10 @@ void RSRenderService::FPSDUMPClearProcess(std::unordered_set<std::u16string>& ar
     if (option == "id") {
         DumpSurfaceNodeFps(dumpString, SafeStringToULL(argStr));
     } else {
-        if (args.find(layerName) != args.end()) {
-            DumpFps(dumpString, layerName);
+        if (args.find(argStr) != args.end()) {
+            DumpFps(dumpString, argStr);
         } else {
-            DumpSurfaceNodeFps(dumpString, layerName);
+            DumpSurfaceNodeFps(dumpString, argStr);
         }
     }
 }

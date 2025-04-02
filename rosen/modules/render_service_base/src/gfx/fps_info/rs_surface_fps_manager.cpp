@@ -97,7 +97,7 @@ void RSSurfaceFpsManager::Dump(std::string& result, const std::string& name)
     if (surfaceFps == nullptr) {
         return ;
     } else if (!isUnique) {
-        result += "There are multiple surfaces with the same name, please use \"fps -id nodeId\" to query.\n";
+        result = "There are multiple surfaces with the same name, please use \"fps -id NodeId\" to query.\n";
         return ;
     }
     result += " surface [" + name + "]:\n";
@@ -111,7 +111,7 @@ void RSSurfaceFpsManager::ClearDump(std::string& result, const std::string& name
     if (surfaceFps == nullptr) {
         return ;
     } else if (!isUnique) {
-        result += "There are multiple surfaces with the same name, please use \"fps -id nodeId\" to query.\n";
+        result = "There are multiple surfaces with the same name, please use \"fps -id NodeId\" to query.\n";
         return ;
     }
     result += " The fps info of surface [" + name + "] is cleared.\n";
