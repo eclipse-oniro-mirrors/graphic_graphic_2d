@@ -96,6 +96,7 @@ private:
         const std::function<void()>& task, uint32_t delay = 0, int32_t instanceId = INSTANCE_ID_UNDEFINED); // planing
 
 #ifdef RS_ENABLE_VK
+    void InitHybridRender();
     void SetCommitTransactionCallback(CommitTransactionCallback commitTransactionCallback);
 #endif
 

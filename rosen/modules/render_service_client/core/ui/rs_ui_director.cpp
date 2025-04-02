@@ -106,19 +106,7 @@ void RSUIDirector::Init(bool shouldCreateRenderThread, bool isMultiInstance)
         // force fallback animaiions send to RS if no render thread
         RSNodeMap::Instance().GetAnimationFallbackNode()->isRenderServiceNode_ = true; // ToDo
 #ifdef RS_ENABLE_VK
-        if (RSSystemProperties.GetHybridRenderEnabled() && !cacheDir_.empty()) {
-            RSModifiersDrawThread::Instance().SetCacheDir(cacheDir_);
-            CommitTransactionCallback callback =
-                [] (std::shared_ptr<RSIRenderClient> &renderServiceClient,
-                std::unique_ptr<RSTransactionData>&& rsTransactionData, uint32_t& transactionDataIndex) {
-                auto task = [renderServiceClient, transactionData = std::move(rsTransactionData), &transactionDataIndex]() mutable {
-                    renderServiceClient->CommitTransaction(RSModifiersDrawThread::ConvertTransaction(transactionData));
-                    transactionDataIndex = transactionData->GetIndex();
-                };
-                RSModifiersDrawThread::Instance().ScheduleTask(task);
-            };
-            SetCommitTransactionCallback(callback);
-        }
+        InitHybridRender():
 #endif
     }
     if (!cacheDir_.empty()) {
@@ -148,6 +136,23 @@ void RSUIDirector::SetFlushEmptyCallback(FlushEmptyCallback flushEmptyCallback)
 }
 
 #ifdef RS_ENABLE_VK
+void RSUIDirector::InitHybridRender()
+{
+    if (RSSystemProperties.GetHybridRenderEnabled() && !cacheDir_.empty()) {
+        RSModifiersDrawThread::Instance().SetCacheDir(cacheDir_);
+        CommitTransactionCallback callback =
+            [] (std::shared_ptr<RSIRenderClient> &renderServiceClient,
+            std::unique_ptr<RSTransactionData>&& rsTransactionData, uint32_t& transactionDataIndex) {
+            auto task = [renderServiceClient, transactionData = std::move(rsTransactionData),
+                &transactionDataIndex]() mutable {
+                renderServiceClient->CommitTransaction(RSModifiersDrawThread::ConvertTransaction(transactionData));
+                transactionDataIndex = transactionData->GetIndex();
+            };
+            RSModifiersDrawThread::Instance().ScheduleTask(task);
+        };
+        SetCommitTransactionCallback(callback);
+    }
+}
 void RSUIDirector::SetCommitTransactionCallback(CommitTransactionCallback commitTransactionCallback)
 {
     if (rsUIContext_) {

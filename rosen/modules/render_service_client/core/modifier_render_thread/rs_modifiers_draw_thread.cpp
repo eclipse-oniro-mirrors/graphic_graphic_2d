@@ -208,7 +208,8 @@ std::unique_ptr<RSTransactionData>& RSModifiersDrawThread::ConvertTransaction(
             case Drawing::DrawCmdList::HybridRenderType::SVG:
             case Drawing::DrawCmdList::HybridRenderType::HMSYMBOL:
                 if (RSSystemProperties::GetHybridRenderParallelConvertEnabled()) {
-                    handles.emplace_back(queue->submit.h([cmdList = std::move(drawCmdList), nodeId = command->GetNodeId()]() {
+                    handles.emplace_back(queue->submit.h(
+                        [cmdList = std::move(drawCmdList), nodeId = command->GetNodeId()]() {
                         RSModifiersDraw::ConvertCmdList(cmdList, nodeId);
                     }));
                 } else {
