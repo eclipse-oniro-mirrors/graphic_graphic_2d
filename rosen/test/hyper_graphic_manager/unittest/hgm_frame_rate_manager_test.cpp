@@ -193,6 +193,7 @@ void HgmFrameRateMgrTest::InitHgmFrameRateManager(HgmFrameRateManager &frameRate
         STEP("3. Test with a game surfaceNode not on tree") {
             config.id = 2;
             config.name = "gameNode";
+            config.nodeType = RSSurfaceNodeType::SELF_DRAWING_NODE;
             auto gameNode1 = std::make_shared<RSSurfaceRenderNode>(config);
             gameNode1->SetIsOnTheTree(false);
             nodeMap.RegisterRenderNode(gameNode1);
@@ -201,12 +202,20 @@ void HgmFrameRateMgrTest::InitHgmFrameRateManager(HgmFrameRateManager &frameRate
         }
         STEP("4. Test with a game surfaceNode on tree") {
             config.id = 3;
-            config.name = "gameNode";
             auto gameNode2 = std::make_shared<RSSurfaceRenderNode>(config);
             gameNode2->SetIsOnTheTree(true);
             nodeMap.RegisterRenderNode(gameNode2);
             frameRateMgr.HandleGameNode(nodeMap);
             ASSERT_EQ(frameRateMgr.isGameNodeOnTree_.load(), true);
+        }
+        STEP("5. Test with a game surfaceNode on tree and other self node on tree") {
+            config.id = 4;
+            config.name = "other";
+            auto otherNode = std::make_shared<RSSurfaceRenderNode>(config);
+            otherNode->SetIsOnTheTree(true);
+            nodeMap.RegisterRenderNode(otherNode);
+            frameRateMgr.HandleGameNode(nodeMap);
+            ASSERT_EQ(frameRateMgr.isGameNodeOnTree_.load(), false);
         }
     }
     sleep(1);

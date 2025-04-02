@@ -239,7 +239,7 @@ void VSyncGenerator::WaitForTimeout(int64_t occurTimestamp, int64_t nextTimeStam
                 ScopedBytrace func("VSyncGenerator::ThreadLoop::Continue");
                 return;
             }
-         }
+        }
     }
     ListenerVsyncEventCB(occurTimestamp, nextTimeStamp, occurReferenceTime, isWakeup);
 }
