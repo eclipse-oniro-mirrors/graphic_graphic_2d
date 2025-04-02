@@ -232,7 +232,7 @@ void VSyncGenerator::WaitForTimeout(int64_t occurTimestamp, int64_t nextTimeStam
             auto err = waitForTimeoutCon_.wait_for(lck, std::chrono::nanoseconds(nextTimeStamp - occurTimestamp));
             if (err == std::cv_status::timeout) {
                 isWakeup = true;
-            } else if (!isUrgent_.load()) {
+            } else if (isUrgent_.load()) {
                 // upon being awakened and is urgent, execute immediately
                 RS_TRACE_NAME_FMT("VSyncGenerator::WaitForTimeout  isurgent");
             } else {
