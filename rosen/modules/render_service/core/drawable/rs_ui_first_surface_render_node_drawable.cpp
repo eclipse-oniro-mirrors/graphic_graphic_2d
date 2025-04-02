@@ -512,9 +512,17 @@ bool RSSurfaceRenderNodeDrawable::UpdateCacheSurfaceDirtyManager(bool hasComplet
         RS_LOGE("UpdateCacheSurfaceDirtyManager surfaceParams is nullptr");
         return false;
     }
+    if (curDirtyRegion.IsEmpty()) {
+        RS_LOGD("Name:%{public}s Id:%{public}" PRIu64 " curDirtyRegion is empty", GetName().c_str(), GetId());
+        return true;
+    }
     RS_TRACE_NAME_FMT("UpdateCacheSurfaceDirtyManager[%s] %" PRIu64", curDirtyRegion[%d %d %d %d], hasCache:%d",
         GetName().c_str(), GetId(), curDirtyRegion.GetLeft(), curDirtyRegion.GetTop(),
         curDirtyRegion.GetWidth(), curDirtyRegion.GetHeight(), hasCompleteCache);
+    if (!surfaceParams->GetAbsDrawRect().IsInsideOf(surfaceParams->GetScreenRect())) {
+        RS_LOGD("surface outof dispaly updateCacheSurfaceDirtyManager not support");
+        return false;
+    }
     if (!hasCompleteCache) {
         RectI surfaceDirtyRect = surfaceParams->GetAbsDrawRect();
         syncUifirstDirtyManager_->MergeDirtyRect(surfaceDirtyRect);
