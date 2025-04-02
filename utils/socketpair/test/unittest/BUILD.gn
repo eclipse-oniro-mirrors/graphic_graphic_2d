@@ -49,8 +49,8 @@ ohos_static_library("socketpair_test_common") {
 
   public_deps = [
     "//foundation/graphic/graphic_2d/utils/socketpair:socketpair",
-    "//third_party/googletest:gtest_main",
   ]
+  external_deps = [ "googletest:gtest_main" ]
   subsystem_name = "graphic"
   part_name = "graphic_2d"
 }
