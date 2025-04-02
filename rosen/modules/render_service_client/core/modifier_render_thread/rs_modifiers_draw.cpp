@@ -26,8 +26,12 @@ std::mutex RSModifiersDraw::surfaceEntryMutex_;
 std::unordered_map<NodeId, RSModifiersDraw::SurfaceEntry> RSModifiersDraw::surfaceEntryMap_;
 std::mutex RSModifiersDraw::dirtyNodeMutex_;
 std::unordered_set<NodeId> RSModifiersDraw::dirtyNodes_;
-std::unordered_set<NodeId> RSModifiersDraw::offTreeNodes_;
+std::unordered_set<NodeId> RSModifiersDraw::allOffTreeNodes;
+bool RSModifiersDraw::offTreeNodesChange_ = false;
+std::unordered_map<NodeId, std::unordered_set<NodeId>> RSModifiersDraw::offTreeNodes_;
 std::mutex RSModifiersDraw::nodeStatusMutex_;
+std::unordered_set<NodeId> RSModifiersDraw::foregroundRootSet_;
+std::mutex RSModifiersDraw::foregroundRootSetMutex_;
 
 sptr<SurfaceBuffer> RSModifiersDraw::DmaMemAlloc(
     int32_t width, int32_t height, const std::unique_ptr<Media::PixelMap>& pixelMap)
@@ -95,12 +99,17 @@ void RSModifiersDraw::ClearOffTreeNodeMemory(NodeId nodeId)
     return;
 }
 
-void RSModifiersDraw::InsertOffTreeNode(NodeId nodeId)
+void RSModifiersDraw::InsertOffTreeNode(NodeId instanceId, NodeId nodeId)
 {
     return;
 }
 
-void RSModifiersDraw::EraseOffTreeNode(NodeId nodeId)
+void RSModifiersDraw::EraseOffTreeNode(NodeId instanceId, NodeId nodeId)
+{
+    return;
+}
+
+void RSModifiersDraw::MergeOffTreeNodeSet()
 {
     return;
 }
@@ -126,6 +135,26 @@ bool RSModifiersDraw::CheckNodeIsOffTree(NodeId nodeId)
 }
 
 void RSModifiersDraw::CreateNextFrameSurface()
+{
+    return;
+}
+
+void RSModifiersDraw::InsertForegroundRoot(NodeId nodeId)
+{
+    return;
+}
+
+void RSModifiersDraw::EraseForegroundRoot(NodeId nodeId)
+{
+    return;
+}
+
+bool RSModifiersDraw::IsBackground()
+{
+    return false;
+}
+
+void RSModifiersDraw::ClearBackGroundMemory()
 {
     return;
 }

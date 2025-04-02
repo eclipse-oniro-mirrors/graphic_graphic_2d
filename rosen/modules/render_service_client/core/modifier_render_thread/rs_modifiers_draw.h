@@ -17,6 +17,7 @@
 #define RS_MODIFIERS_DRAW_H
 
 #include <unordered_map>
+#include <unordered_set>
 
 #include "recording/cmd_list_helper.h"
 #include "recording/draw_cmd_list.h"
@@ -44,10 +45,19 @@ public:
 
     static void ClearOffTreeNodeMemory(NodeId nodeId);
 
-    static void InsertOffTreeNode(NodeId nodeId);
+    static void InsertOffTreeNode(NodeId insatnceId, NodeId nodeId);
 
-    static void EraseOffTreeNode(NodeId nodeId);
+    static void EraseOffTreeNode(NodeId insatnceId, NodeId nodeId);
 
+    static void MergeOffTreeNodeSet();
+
+    static void InsertForegroundRoot(NodeId nodeId);
+
+    static void EraseForegroundRoot(NodeId nodeId);
+
+    static bool IsBackground();
+
+    static void ClearBackGroundMemory();
 private:
     struct SurfaceEntry {
         std::shared_ptr<Drawing::Surface> surface = nullptr;
@@ -93,9 +103,17 @@ private:
 
     static std::mutex dirtyNodeMutex_;
 
-    static std::unordered_set<NodeId> offTreeNodes_;
+    static std::unordered_map<NodeId, std::unordered_set<NodeId>> offTreeNodes_;
+
+    static bool offTreeNodesChange_;
+
+    static std::unordered_set<NodeId> allOffTreeNodes;
 
     static std::mutex nodeStatusMutex_;
+
+    static std::unordered_set<NodeId> foregroundRootSet_;
+
+    static std::mutex foregroundRootSetMutex_;
 };
 } // namespace Rosen
 } // namespace OHOS

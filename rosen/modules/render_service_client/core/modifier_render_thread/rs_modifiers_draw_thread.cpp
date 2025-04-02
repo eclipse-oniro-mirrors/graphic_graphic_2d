@@ -199,6 +199,7 @@ std::unique_ptr<RSTransactionData>& RSModifiersDrawThread::ConvertTransaction(
 
         RS_OPTIONAL_TRACE_NAME_FMT("RSModifiersDrawThread hybridRenderType=%d, width=%d, height=%d, nodeId=%" PRId64,
             hybridRenderType, drawCmdList->GetWidth(), drawCmdList->GetHeight(), command->GetNodeId());
+        RSModifiersDraw::MergeOffTreeNodeSet();
         switch (hybridRenderType) {
             case Drawing::DrawCmdList::HybridRenderType::CANVAS:
                 RSModifiersDraw::ConvertCmdListForCanvas(drawCmdList, command->GetNodeId());
