@@ -2528,7 +2528,7 @@ ErrCode RSRenderServiceConnection::NotifySoftVsyncEvent(uint32_t pid, uint32_t r
 
 void RSRenderServiceConnection::NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt)
 {
-    if(mainThread_ != nullptr) {
+    if (mainThread_ != nullptr) {
         mainThread_->NotifyTouchEvent(touchStatus, touchCnt);
     }
     auto frameRateMgr = HgmCore::Instance().GetFrameRateMgr();
