@@ -1974,7 +1974,7 @@ pid_t RSBaseRenderUtil::GetLastSendingPid()
     return lastSendingPid_;
 }
 
-bool RSBaseRenderUtil::PortaitAngle(int angle)
+bool RSBaseRenderUtil::PortraitAngle(int angle)
 {
     return angle == RS_ROTATION_90 || angle == RS_ROTATION_270;
 }
