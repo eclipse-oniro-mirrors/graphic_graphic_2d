@@ -49,7 +49,7 @@ VsyncError VSyncController::SetEnable(bool enable, bool& isGeneratorEnable)
         // We need to tell the distributor to use the software vsync
         isGeneratorEnable = generator->IsEnable();
         if (isGeneratorEnable) {
-            ret = generator->AddListener(phaseOffset, this);
+            ret = generator->AddListener(phaseOffset, this, isUrgent_, lastVsyncTime_);
             if (ret != VSYNC_ERROR_OK) {
                 isGeneratorEnable = false;
             }
@@ -63,6 +63,7 @@ VsyncError VSyncController::SetEnable(bool enable, bool& isGeneratorEnable)
         }
     }
 
+    isUrgent_ = false;
     enabled_ = isGeneratorEnable;
     return ret;
 }
@@ -102,6 +103,7 @@ void VSyncController::OnVSyncEvent(int64_t now, int64_t period,
         cb = callback_;
     }
     if (cb != nullptr) {
+        lastVsyncTime_ = now;
         cb->OnVSyncEvent(now, period, refreshRate, vsyncMode, vsyncMaxRefreshRate);
     }
 }

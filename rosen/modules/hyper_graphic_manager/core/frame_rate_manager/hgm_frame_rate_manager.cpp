@@ -1853,7 +1853,6 @@ bool HgmFrameRateManager::HandleGameNode(const RSRenderNodeMap& nodeMap)
                 } else {
                     isOtherSelfNodeOnTree = true;
                 }
-                
             }
         }
     );
