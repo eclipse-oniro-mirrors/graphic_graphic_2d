@@ -28,7 +28,7 @@
 #include "transaction/rs_transaction_proxy.h"
 #include "ui/rs_ui_context.h"
 #ifdef RS_ENABLE_VK
-#include "platform/ohos/rs_modifiers_draw.h"
+#include "modifier_render_thread/rs_modifiers_draw.h"
 #include "media_errors.h"
 #endif
 
