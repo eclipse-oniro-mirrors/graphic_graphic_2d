@@ -15,7 +15,7 @@
 
 #include "hfbc_param_parse.h"
 
-#include "hgm_hfbc_config.h"
+#include "hgm_core.h"
 
 namespace OHOS::Rosen {
 
@@ -56,12 +56,16 @@ int32_t HFBCParamParse::ParseHfbcInternal(xmlNode &node)
             RS_LOGE("HFBCParamParse parse MultiParam fail");
         }
         if (name == "HfbcDisable") {
-            HgmHfbcConfig::SetHfbcConfigMap(HFBCParam::GetHfbcConfigMap());
-            if (val == "0") { // enable list mode
-                HgmHfbcConfig::SetHfbcControlMode(false);
-            } else {
-                HgmHfbcConfig::SetHfbcControlMode(true);
-            }
+            HgmTaskHandleThread::Instance().PostTask([val] () {
+                HgmHfbcConfig& hfbcConfig = HgmCore::Instance().GetHfbcConfig();
+                RS_LOGI("HFBCParamParse postTask about hfbcConfig");
+                hfbcConfig.SetHfbcConfigMap(HFBCParam::GetHfbcConfigMap());
+                if (val == "0") { // enable list mode
+                    hfbcConfig.SetHfbcControlMode(false);
+                } else {
+                    hfbcConfig.SetHfbcControlMode(true);
+                }
+            });
         }
     }
     return PARSE_EXEC_SUCCESS;
