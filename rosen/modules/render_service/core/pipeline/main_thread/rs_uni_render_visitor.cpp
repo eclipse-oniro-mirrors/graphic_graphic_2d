@@ -385,11 +385,6 @@ void RSUniRenderVisitor::HandleColorGamuts(RSDisplayRenderNode& node, const sptr
         }
         node.SetColorSpace(static_cast<GraphicColorGamut>(screenColorGamut));
     }
-    if (ColorGamutParam::IsSLRCloseP3() && RSMainThread::Instance()->HasVirtualMirrorDisplay()) {
-        RS_LOGD("RSUniRenderVisitor::HandleColorGamuts close multi-screen P3.");
-        // wired screen and virtual mirror screen close P3
-        node.SetColorSpace(GRAPHIC_COLOR_GAMUT_SRGB);
-    }
 }
 
 void RSUniRenderVisitor::CheckPixelFormat(RSSurfaceRenderNode& node)
