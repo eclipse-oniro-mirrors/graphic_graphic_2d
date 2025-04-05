@@ -131,6 +131,15 @@ void RSUniHwcVisitor::UpdateHwcNodeByTransform(RSSurfaceRenderNode& node, const 
     node.SetCalcRectInPrepare(true);
 }
 
+RectI RSUniHwcVisitor::GetHwcVisibleEffectDirty(RSRenderNode& node, const RectI& globalFilterRect) const
+{
+    RectI childEffectRect;
+    if (!globalFilterRect.IsEmpty()) {
+        childEffectRect = globalFilterRect.JoinRect(node.GetFilterRect());
+    }
+    return childEffectRect;
+}
+
 bool RSUniHwcVisitor::UpdateIsOffscreen(RSCanvasRenderNode& node)
 {
     const auto& property = node.GetRenderProperties();
@@ -143,5 +152,6 @@ bool RSUniHwcVisitor::UpdateIsOffscreen(RSCanvasRenderNode& node)
     node.GetHwcRecorder().SetBlendWithBackground(!isCurrOffscreen && isOffscreen_ && property.IsColorBlendModeValid());
     return isCurrOffscreen;
 }
+
 } // namespace Rosen
 } // namespace OHOS
