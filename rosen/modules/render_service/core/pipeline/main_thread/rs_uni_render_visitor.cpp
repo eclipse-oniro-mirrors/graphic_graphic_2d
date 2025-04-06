@@ -1905,7 +1905,7 @@ void RSUniRenderVisitor::UpdateHwcNodeInfoForAppNode(RSSurfaceRenderNode& node)
                 node.GetSrcRect().GetTop(), node.GetSrcRect().GetBottom());
 #endif
             node.SetHardwareForcedDisabledState(true);
-            hwcDisabledReasonCollection_.UpdateHwcDisabledReasonForDFX(node.GetId(),
+            rsUniHwcVisitor_->Statistics().UpdateHwcDisabledReasonForDFX(node.GetId(),
                 HwcDisabledReasons::DISABLED_BY_INVALID_PARAM, node.GetName());
             if (!node.GetFixRotationByUser()) {
                 return;
@@ -1966,7 +1966,7 @@ void RSUniRenderVisitor::UpdateHwcNodeEnableByBackgroundAlpha(RSSurfaceRenderNod
         }
         curSurfaceNode_->SetExistTransparentHardwareEnabledNode(true);
         node.SetNodeHasBackgroundColorAlpha(true);
-        hwcDisabledReasonCollection_.UpdateHwcDisabledReasonForDFX(node.GetId(),
+        rsUniHwcVisitor_->Statistics().UpdateHwcDisabledReasonForDFX(node.GetId(),
             HwcDisabledReasons::DISABLED_BY_BACKGROUND_ALPHA, node.GetName());
     } else if (RsCommonHook::Instance().GetIsWhiteListForSolidColorLayerFlag() && isSolidColorEnbaled) {
         if (!RSSystemParameters::GetSolidLayerHwcEnabled()) {
@@ -1980,7 +1980,7 @@ void RSUniRenderVisitor::UpdateHwcNodeEnableByBackgroundAlpha(RSSurfaceRenderNod
         node.SetHardwareForcedDisabledState(true);
         RS_OPTIONAL_TRACE_NAME_FMT("hwc debug: name:%s id:%" PRIu64 " disabled by solid background color",
             node.GetName().c_str(), node.GetId());
-        hwcDisabledReasonCollection_.UpdateHwcDisabledReasonForDFX(node.GetId(),
+        rsUniHwcVisitor_->Statistics().UpdateHwcDisabledReasonForDFX(node.GetId(),
             HwcDisabledReasons::DISABLED_BY_SOLID_BACKGROUND_ALPHA, node.GetName());
     }
 }
@@ -2032,7 +2032,7 @@ void RSUniRenderVisitor::UpdateHwcNodeEnableByBufferSize(RSSurfaceRenderNode& no
                 node.GetSrcRect().GetTop(), node.GetSrcRect().GetBottom());
 #endif
         node.SetHardwareForcedDisabledState(true);
-        hwcDisabledReasonCollection_.UpdateHwcDisabledReasonForDFX(
+        rsUniHwcVisitor_->Statistics().UpdateHwcDisabledReasonForDFX(
             node.GetId(), HwcDisabledReasons::DISABLED_BY_BUFFER_NONMATCH, node.GetName());
     }
 }
@@ -2063,7 +2063,7 @@ void RSUniRenderVisitor::UpdateHwcNodeEnableBySrcRect(RSSurfaceRenderNode& node)
         RS_OPTIONAL_TRACE_NAME_FMT(
             "hwc debug: name:%s id:%" PRIu64 " disabled by isYUVBufferFormat and localClip not match bounds",
             node.GetName().c_str(), node.GetId());
-        hwcDisabledReasonCollection_.UpdateHwcDisabledReasonForDFX(node.GetId(),
+        rsUniHwcVisitor_->Statistics().UpdateHwcDisabledReasonForDFX(node.GetId(),
             HwcDisabledReasons::DISABLED_BY_SRC_PIXEL, node.GetName());
     }
 }
@@ -2085,7 +2085,7 @@ void RSUniRenderVisitor::UpdateHwcNodeEnableByRotateAndAlpha(std::shared_ptr<RSS
 #endif
         hwcNode->SetHardwareForcedDisabledState(true);
         if (!ROSEN_EQ(alpha, 0.f)) {
-            hwcDisabledReasonCollection_.UpdateHwcDisabledReasonForDFX(hwcNode->GetId(),
+            rsUniHwcVisitor_->Statistics().UpdateHwcDisabledReasonForDFX(hwcNode->GetId(),
                 HwcDisabledReasons::DISABLED_BY_ACCUMULATED_ALPHA, hwcNode->GetName());
         }
         return;
@@ -2106,7 +2106,7 @@ void RSUniRenderVisitor::UpdateHwcNodeEnableByRotateAndAlpha(std::shared_ptr<RSS
             hwcNode->GetSrcRect().GetTop(), hwcNode->GetSrcRect().GetBottom());
 #endif
         hwcNode->SetHardwareForcedDisabledState(true);
-        hwcDisabledReasonCollection_.UpdateHwcDisabledReasonForDFX(hwcNode->GetId(),
+        rsUniHwcVisitor_->Statistics().UpdateHwcDisabledReasonForDFX(hwcNode->GetId(),
             HwcDisabledReasons::DISABLED_BY_ROTATION, hwcNode->GetName());
         return;
     }
@@ -2307,7 +2307,7 @@ void RSUniRenderVisitor::PrevalidateHwcNode()
         if (node->GetRSSurfaceHandler()) {
             node->GetRSSurfaceHandler()->SetGlobalZOrder(-1.f);
         }
-        hwcDisabledReasonCollection_.UpdateHwcDisabledReasonForDFX(node->GetId(),
+        rsUniHwcVisitor_->Statistics().UpdateHwcDisabledReasonForDFX(node->GetId(),
             HwcDisabledReasons::DISABLED_BY_PREVALIDATE, node->GetName());
     }
 }
@@ -2334,7 +2334,7 @@ void RSUniRenderVisitor::UpdateHwcNodeDirtyRegionAndCreateLayer(std::shared_ptr<
             // DRM will force HDR to use unirender
             curDisplayNode_->SetHasUniRenderHdrSurface(curDisplayNode_->GetHasUniRenderHdrSurface() ||
                 RSHdrUtil::CheckIsHdrSurface(*hwcNodePtr) != HdrStatus::NO_HDR);
-            hwcDisabledReasonCollection_.UpdateHwcDisabledReasonForDFX(hwcNodePtr->GetId(),
+            rsUniHwcVisitor_->Statistics().UpdateHwcDisabledReasonForDFX(hwcNodePtr->GetId(),
                 HwcDisabledReasons::DISABLED_BY_RENDER_HDR_SURFACE, hwcNodePtr->GetName());
         }
         UpdateHwcNodeDirtyRegionForApp(node, hwcNodePtr);
@@ -2746,7 +2746,7 @@ void RSUniRenderVisitor::UpdateHwcNodeEnableByHwcNodeBelowSelf(std::vector<RectI
                 if (RSHdrUtil::CheckIsHdrSurface(*hwcNode) != HdrStatus::NO_HDR) {
                     curDisplayNode_->SetHasUniRenderHdrSurface(true);
                 }
-                hwcDisabledReasonCollection_.UpdateHwcDisabledReasonForDFX(hwcNode->GetId(),
+                rsUniHwcVisitor_->Statistics().UpdateHwcDisabledReasonForDFX(hwcNode->GetId(),
                     HwcDisabledReasons::DISABLED_BY_HWC_NODE_ABOVE, hwcNode->GetName());
                 return;
             }
@@ -3336,7 +3336,7 @@ void RSUniRenderVisitor::UpdateHwcNodeRectInSkippedSubTree(const RSRenderNode& r
                 "HasBuffer[%d]", hwcNodePtr->GetName().c_str(), hwcNodePtr->GetId(),
                 hwcNodePtr->GetRSSurfaceHandler() && hwcNodePtr->GetRSSurfaceHandler()->GetBuffer());
             hwcNodePtr->SetHardwareForcedDisabledState(true);
-            hwcDisabledReasonCollection_.UpdateHwcDisabledReasonForDFX(hwcNodePtr->GetId(),
+            rsUniHwcVisitor_->Statistics().UpdateHwcDisabledReasonForDFX(hwcNodePtr->GetId(),
                 HwcDisabledReasons::DISABLED_BY_INVALID_PARAM, hwcNodePtr->GetName());
             continue;
         }
@@ -3559,7 +3559,7 @@ void RSUniRenderVisitor::CalcHwcNodeEnableByFilterRect(std::shared_ptr<RSSurface
         node->SetIsHwcPendingDisabled(true);
         node->SetHardwareForcedDisabledState(true);
         node->SetHardWareDisabledByReverse(isReverseOrder);
-        hwcDisabledReasonCollection_.UpdateHwcDisabledReasonForDFX(node->GetId(),
+        rsUniHwcVisitor_->Statistics().UpdateHwcDisabledReasonForDFX(node->GetId(),
             HwcDisabledReasons::DISABLED_BY_FLITER_RECT, node->GetName());
     }
 }
@@ -3637,7 +3637,7 @@ void RSUniRenderVisitor::UpdateHwcNodeEnableByGlobalFilter(std::shared_ptr<RSSur
                         hwcNodePtr->GetSrcRect().GetTop(), hwcNodePtr->GetSrcRect().GetBottom());
 #endif
                     hwcNodePtr->SetHardwareForcedDisabledState(true);
-                    hwcDisabledReasonCollection_.UpdateHwcDisabledReasonForDFX(hwcNodePtr->GetId(),
+                    rsUniHwcVisitor_->Statistics().UpdateHwcDisabledReasonForDFX(hwcNodePtr->GetId(),
                         HwcDisabledReasons::DISABLED_BY_TRANSPARENT_DIRTY_FLITER, hwcNodePtr->GetName());
                     break;
                 }
@@ -3685,7 +3685,7 @@ void RSUniRenderVisitor::UpdateHwcNodeEnableByGlobalCleanFilter(
                 hwcNodePtr.GetSrcRect().GetTop(), hwcNodePtr.GetSrcRect().GetBottom());
 #endif
             hwcNodePtr.SetHardwareForcedDisabledState(true);
-            hwcDisabledReasonCollection_.UpdateHwcDisabledReasonForDFX(hwcNodePtr.GetId(),
+            rsUniHwcVisitor_->Statistics().UpdateHwcDisabledReasonForDFX(hwcNodePtr.GetId(),
                 HwcDisabledReasons::DISABLED_BY_TRANSPARENT_CLEAN_FLITER, hwcNodePtr.GetName());
             break;
         }

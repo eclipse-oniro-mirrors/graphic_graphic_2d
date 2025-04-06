@@ -477,8 +477,7 @@ private:
     static void ProcessUnpairedSharedTransitionNode();
     NodeId FindInstanceChildOfDisplay(std::shared_ptr<RSRenderNode> node);
     void UpdateSurfaceRenderNodeScale(RSSurfaceRenderNode& node);
-    // use for hardware compose disabled reason collection
-    HwcDisabledReasonCollection& hwcDisabledReasonCollection_ = HwcDisabledReasonCollection::GetInstance();
+
     std::shared_ptr<RsHdrCollection> rsHdrCollection_ = RsHdrCollection::GetInstance();
 
     bool zoomStateChange_ = false;
