@@ -47,7 +47,7 @@ class RSUniRenderVisitor : public RSNodeVisitor {
 public:
     using SurfaceDirtyMgrPair = std::pair<std::shared_ptr<RSSurfaceRenderNode>, std::shared_ptr<RSSurfaceRenderNode>>;
     RSUniRenderVisitor();
-    explicit RSUniRenderVisitor(const RSUniRenderVisitor& visitor);
+    RSUniRenderVisitor(const RSUniRenderVisitor& visitor) = delete;
     ~RSUniRenderVisitor() override;
 
     // To prepare nodes between displayRenderNode and app nodes.
@@ -353,7 +353,7 @@ private:
     void CollectSelfDrawingNodeRectInfo(RSSurfaceRenderNode& node);
 
     friend class RSUniHwcVisitor;
-    std::unique_ptr<RSUniHwcVisitor> rsUniHwcVisitor_;
+    std::unique_ptr<RSUniHwcVisitor> hwcVisitor_;
     std::vector<std::shared_ptr<RSSurfaceRenderNode>> hardwareEnabledNodes_;
     bool isCompleteRenderEnabled_ = false;
     std::shared_ptr<RSBaseRenderEngine> renderEngine_;
@@ -471,8 +471,7 @@ private:
     static void ProcessUnpairedSharedTransitionNode();
     NodeId FindInstanceChildOfDisplay(std::shared_ptr<RSRenderNode> node);
     void UpdateSurfaceRenderNodeScale(RSSurfaceRenderNode& node);
-    // use for hardware compose disabled reason collection
-    HwcDisabledReasonCollection& hwcDisabledReasonCollection_ = HwcDisabledReasonCollection::GetInstance();
+
     std::shared_ptr<RsHdrCollection> rsHdrCollection_ = RsHdrCollection::GetInstance();
 
     bool zoomStateChange_ = false;

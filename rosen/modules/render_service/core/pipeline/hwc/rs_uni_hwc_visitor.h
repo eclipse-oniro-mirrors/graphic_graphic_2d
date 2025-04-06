@@ -36,6 +36,9 @@ public:
     bool UpdateIsOffscreen(RSCanvasRenderNode& node);
     void RestoreIsOffscreen(bool isOffscreen) { isOffscreen_ = isOffscreen; }
 
+    // DFX
+    HwcDisabledReasonCollection& Statistics() { return hwcDisabledReasonCollection_; }
+
 private:
     friend class RSUniRenderVisitor;
     RSUniRenderVisitor& uniRenderVisitor_;
@@ -48,6 +51,9 @@ private:
     int32_t curZorderForCalcHwcNodeEnableByFilter_ = 0;
 
     bool isOffscreen_ = false;
+
+    // use for hardware compose disabled reason collection
+    HwcDisabledReasonCollection& hwcDisabledReasonCollection_ = HwcDisabledReasonCollection::GetInstance();
 };
 } // namespace Rosen
 } // namespace OHOS
