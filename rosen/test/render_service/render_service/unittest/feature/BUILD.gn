@@ -14,7 +14,7 @@
 import("//build/test.gni")
 import("//foundation/graphic/graphic_2d/graphic_config.gni")
 
-module_output_path = "graphic_2d/rosen_engine/render_service/feature"
+module_output_path = "graphic_2d/graphic_2d/rosen_engine/render_service/feature"
 
 group("unittest") {
   testonly = true
@@ -22,6 +22,7 @@ group("unittest") {
     ":RSAncoManagerTest",
     ":RSHdrUtilTest",
     ":RSOpincManagerTest",
+    ":RSSubThreadCacheTest",
     ":RSSurfaceCaptureParallelTaskTest",
     ":RSSurfaceCaptureTaskTest",
     ":RSUiCaptureTaskParallelTest",
@@ -293,6 +294,20 @@ ohos_unittest("RSSubThreadTest") {
   }
 }
 
+## Build RSSubThreadCacheTest
+ohos_unittest("RSSubThreadCacheTest") {
+  module_out_path = module_output_path
+  sources = [ "uifirst/rs_sub_thread_cache_test.cpp" ]
+  deps = [ ":rs_test_common" ]
+  external_deps = [
+    "c_utils:utils",
+    "hilog:libhilog",
+  ]
+  if (defined(global_parts_info) && defined(global_parts_info.sensors_sensor)) {
+    external_deps += [ "sensor:sensor_interface_native" ]
+  }
+}
+
 ## Build RSVsyncRateReduceManagerTest
 ohos_unittest("RSVsyncRateReduceManagerTest") {
   module_out_path = module_output_path
@@ -517,9 +532,10 @@ ohos_unittest("RSUniHwcComputeUtilTest") {
   if (defined(use_video_processing_engine) && use_video_processing_engine) {
     include_dirs = []
     defines += [ "USE_VIDEO_PROCESSING_ENGINE" ]
-    include_dirs += [ "$video_processing_engine_root/interfaces/inner_api" ]
-    external_deps +=
-        [ "drivers_interface_display:libdisplay_commontype_proxy_1.0" ]
+    external_deps += [
+      "drivers_interface_display:libdisplay_commontype_proxy_1.0",
+      "video_processing_engine:videoprocessingengine",
+    ]
   }
 }
 
