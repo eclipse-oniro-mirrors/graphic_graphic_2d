@@ -43,11 +43,6 @@ constexpr int DEFAULT_SCALE_MODE = 2;
 constexpr const char* DEFAULT_CLIP_RECT_THRESHOLD = "0.9";
 #ifdef RS_ENABLE_VK
 constexpr int DEFAULT_TEXTBLOB_LINE_COUNT = 9;
-struct GetComponentSwitch {
-    ComponentEnableSwitch type;
-    bool (*ComponentHybridSwitch)();
-};
-
 struct GetComponentSwitch ComponentSwitchTable[] = {
     {ComponentEnableSwitch::TEXTBLOB, RSSystemProperties::GetHybridRenderTextBlobEnabled},
     {ComponentEnableSwitch::SVG, RSSystemProperties::GetHybridRenderSvgEnabled},
@@ -1377,13 +1372,14 @@ bool RSSystemProperties::GetHybridRenderEnabled()
 
 int32_t RSSystemProperties::GetHybridRenderCcmEnabled()
 {
-    static int32_t hybridRenderCcmEnabled = std::atoi((system::GetParameter("const.graphics.hybridrenderenable", "0")).c_str());
+    static int32_t hybridRenderCcmEnabled =
+        std::atoi((system::GetParameter("const.graphics.hybridrenderenable", "0")).c_str());
     return hybridRenderCcmEnabled;
 }
 
 bool RSSystemProperties::GetHybridRenderSystemEnabled()
 {
-    static bool hybridRenderSystemEnabled = Drawing::SystemProperties::GetSystemGraphicGpuType() == GpuApiType::VULKAN &&
+    static bool hybridRenderSystemEnabled = Drawing::SystemProperties::IsUseVulkan() &&
         system::GetBoolParameter("persist.sys.graphic.hybrid_render", false);
     return hybridRenderSystemEnabled;
 }
@@ -1425,7 +1421,7 @@ bool RSSystemProperties::GetHybridRenderMemeoryReleaseEnabled()
 
 bool RSSystemProperties::GetHybridRenderTextBlobEnabled()
 {
-    static bool textblobEnabled = GetHybridRenderSystemEnabled() &&
+    static bool textblobEnabled =
         system::GetBoolParameter("persist.sys.graphic.hybrid_render_textblob_enabled", false);
     return textblobEnabled;
 }
