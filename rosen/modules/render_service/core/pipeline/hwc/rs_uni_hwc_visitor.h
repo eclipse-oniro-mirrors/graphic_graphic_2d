@@ -36,6 +36,16 @@ public:
     bool UpdateIsOffscreen(RSCanvasRenderNode& node);
     void RestoreIsOffscreen(bool isOffscreen) { isOffscreen_ = isOffscreen; }
 
+    void CalcHwcNodeEnableByFilterRect(std::shared_ptr<RSSurfaceRenderNode>& node,
+        const RectI& filterRect, NodeId filterNodeId, bool isReverseOrder = false, int32_t filterZorder = 0);
+    void UpdateHwcNodeEnableByFilterRect(std::shared_ptr<RSSurfaceRenderNode>& node,
+        const RectI& filterRect, NodeId filterNodeId, bool isReverseOrder = false, int32_t filterZorder = 0);
+    void UpdateHwcNodeEnableByGlobalFilter(std::shared_ptr<RSSurfaceRenderNode>& node);
+    void UpdateHwcNodeEnableByGlobalCleanFilter(const std::vector<std::pair<NodeId, RectI>>& cleanFilter,
+        RSSurfaceRenderNode& hwcNode);
+    void UpdateHwcNodeEnableByGlobalDirtyFilter(const std::vector<std::pair<NodeId, RectI>>& dirtyFilter,
+        RSSurfaceRenderNode& hwcNode);
+
     // DFX
     HwcDisabledReasonCollection& Statistics() { return hwcDisabledReasonCollection_; }
 
