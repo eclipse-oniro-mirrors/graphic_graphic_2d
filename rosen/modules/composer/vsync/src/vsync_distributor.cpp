@@ -1584,7 +1584,8 @@ bool VSyncDistributor::VSyncCheckPreexecuteAndUpdateTs(const sptr<VSyncConnectio
     }
     bool NeedPreexecute = controller_->NeedPreexecuteAndUpdateTs(timestamp, period);
     if (NeedPreexecute) {
-        RS_TRACE_NAME_FMT("VSyncDistributor::VSyncCheckPreexecuteAndUpdateTs timestamp:%ld, period:%ld", timestamp, period);
+        RS_TRACE_NAME_FMT("VSyncDistributor::VSyncCheckPreexecuteAndUpdateTs timestamp:%ld, period:%ld",
+            timestamp, period);
         event_.vsyncCount++;
         vsyncCount = event_.vsyncCount;
         if (connection->rate_ == 0) {

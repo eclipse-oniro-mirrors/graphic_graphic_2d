@@ -39,7 +39,7 @@ bool VSyncController::NeedPreexecuteAndUpdateTs(int64_t& timestamp, int64_t& per
         return false;
     }
 
-    return generator->NeedPreexecute(timestamp, period, lastVsyncTime_);
+    return generator->NeedPreexecuteAndUpdateTs(timestamp, period, lastVsyncTime_);
 }
 
 VsyncError VSyncController::SetEnable(bool enable, bool& isGeneratorEnable)
