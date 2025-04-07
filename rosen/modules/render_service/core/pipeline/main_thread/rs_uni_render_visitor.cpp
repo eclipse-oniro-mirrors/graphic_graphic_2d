@@ -2273,7 +2273,6 @@ void RSUniRenderVisitor::UpdateDisplayRcdRenderNode()
 {
     RSSingleton<RoundCornerDisplayManager>::GetInstance().RefreshFlagAndUpdateResource(curDisplayNode_->GetId());
     bool isRcdEnabled = RSSingleton<RoundCornerDisplayManager>::GetInstance().GetRcdEnable();
-
     if (isRcdEnabled) {
         if (!curDisplayNode_->GetRcdSurfaceNodeTop()) {
             auto node = RSRcdSurfaceRenderNode::Create(
@@ -2285,21 +2284,18 @@ void RSUniRenderVisitor::UpdateDisplayRcdRenderNode()
                 curDisplayNode_->GetId(), RCDSurfaceType::BOTTOM, curDisplayNode_->GetContext());
             curDisplayNode_->SetRcdSurfaceNodeBottom(node);
         }
-
         auto hardInfo =
             RSSingleton<RoundCornerDisplayManager>::GetInstance().PrepareHardwareInfo(curDisplayNode_->GetId());
         if (hardInfo.topLayer && hardInfo.bottomLayer) {
             auto topNode = std::static_pointer_cast<RSRcdSurfaceRenderNode>(curDisplayNode_->GetRcdSurfaceNodeTop());
             auto bottomNode =
                 std::static_pointer_cast<RSRcdSurfaceRenderNode>(curDisplayNode_->GetRcdSurfaceNodeBottom());
-
             if (hardInfo.resourceChanged) {
                 topNode->SetRenderDisplayRect(hardInfo.displayRect);
                 topNode->PrepareHardwareResource(hardInfo.topLayer);
                 bottomNode->SetRenderDisplayRect(hardInfo.displayRect);
                 bottomNode->PrepareHardwareResource(hardInfo.bottomLayer);
             }
-
             topNode->UpdateRcdRenderParams(hardInfo.resourceChanged, hardInfo.topLayer->curBitmap);
             bottomNode->UpdateRcdRenderParams(hardInfo.resourceChanged, hardInfo.bottomLayer->curBitmap);
         }
@@ -3578,7 +3574,7 @@ void RSUniRenderVisitor::CheckMergeDisplayDirtyByRoundCornerDisplay() const
         curDisplayNode_->GetDirtyManager()->MergeDirtyRect(dirtyRectTop);
     }
     if (RSSingleton<RoundCornerDisplayManager>::GetInstance().HandleRoundCornerDirtyRect(
-            curDisplayNode_->GetId(), dirtyRectBottom, RoundCornerDisplayManager::RCDLayerType::BOTTOM)) {
+        curDisplayNode_->GetId(), dirtyRectBottom, RoundCornerDisplayManager::RCDLayerType::BOTTOM)) {
         RS_LOGD("RSUniRenderVisitor::CheckMergeDisplayDirtyByRoundCornerDisplay global merge bottomRcdNode dirty "
                 "%{public}s, global dirty %{public}s, add rect %{public}s",
             std::to_string(curDisplayNode_->GetScreenId()).c_str(),

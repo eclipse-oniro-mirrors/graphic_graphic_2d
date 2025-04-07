@@ -780,8 +780,10 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateHardwareStateByHwcNodeBackgroundAlpha003, Te
     std::vector<std::weak_ptr<RSSurfaceRenderNode>> hwcNodes;
     hwcNodes.push_back(std::weak_ptr<RSSurfaceRenderNode>(surfaceNode1));
     hwcNodes.push_back(std::weak_ptr<RSSurfaceRenderNode>(surfaceNode2));
-}
-
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    ASSERT_NE(rsUniRenderVisitor, nullptr);
+    auto rsUniHwcVisitor = std::make_shared<RSUniHwcVisitor>(*rsUniRenderVisitor);
+    ASSERT_NE(rsUniHwcVisitor, nullptr);
     RectI rect;
     bool isHardwareEnableByBackgroundAlpha = false;
     rsUniHwcVisitor->UpdateHardwareStateByHwcNodeBackgroundAlpha(hwcNodes, rect, isHardwareEnableByBackgroundAlpha);
@@ -1005,7 +1007,6 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateHwcNodeEnableByFilterRect001, TestSize.Level
     surfaceNode2->SetDstRect(rect);
     surfaceNode1->AddChildHardwareEnabledNode(surfaceNode2);
 
-    ASSERT_NE(rsUniHwcVisitor, nullptr);
     rsUniHwcVisitor->UpdateHwcNodeEnableByFilterRect(surfaceNode1, rect, 1, false, 0);
     ASSERT_TRUE(surfaceNode2->IsHardwareForcedDisabled());
 }
@@ -1033,7 +1034,6 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateHwcNodeEnableByFilterRect002, TestSize.Level
     uint32_t width = 0;
     uint32_t height = 0;
     RectI rect{left, top, width, height};
-    ASSERT_NE(rsUniHwcVisitor, nullptr);
     rsUniHwcVisitor->UpdateHwcNodeEnableByFilterRect(surfaceNode1, rect, 1, false, 0);
 }
 
@@ -1060,7 +1060,6 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateHwcNodeEnableByFilterRect003, TestSize.Level
     uint32_t width = 300;
     uint32_t height = 300;
     RectI rect{left, top, width, height};
-    ASSERT_NE(rsUniHwcVisitor, nullptr);
     rsUniHwcVisitor->UpdateHwcNodeEnableByFilterRect(surfaceNode, rect, 1, false, 0);
 }
 
