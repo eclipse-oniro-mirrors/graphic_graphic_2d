@@ -907,7 +907,13 @@ std::string RSProfiler::FirstFrameUnmarshalling(const std::string& data, uint32_
     focusNodeId = Utils::PatchNodeId(focusNodeId);
 
     CreateMockConnection(focusPid);
-    g_mainThread->SetFocusAppInfo(focusPid, focusUid, bundleName, abilityName, focusNodeId);
+    FocusAppInfo info = {
+        .pid = focusPid,
+        .uid = focusUid,
+        .bundleName = bundleName,
+        .abilityName = abilityName,
+        .focusNodeId = focusNodeId};
+    g_mainThread->SetFocusAppInfo(info);
 
     return "";
 }
