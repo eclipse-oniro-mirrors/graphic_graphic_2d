@@ -147,7 +147,7 @@ bool RSUniRenderVisitor::isLastFrameRotating_ = false;
 
 RSUniRenderVisitor::RSUniRenderVisitor()
     : hwcVisitor_(std::make_unique<RSUniHwcVisitor>(*this)),
-    curSurfaceDirtyManager_(std::make_shared<RSDirtyRegionManager>())
+      curSurfaceDirtyManager_(std::make_shared<RSDirtyRegionManager>())
 {
     PartialRenderOptionInit();
     auto mainThread = RSMainThread::Instance();
@@ -1494,7 +1494,7 @@ void RSUniRenderVisitor::QuickPrepareCanvasRenderNode(RSCanvasRenderNode& node)
 
 void RSUniRenderVisitor::UpdateRotationStatusForEffectNode(RSEffectRenderNode& node)
 {
-    // folding/expanding screen force invalidate cache.
+     // folding/expanding screen force invalidate cache.
     node.SetFoldStatusChanged(doAnimate_ &&
         curDisplayNode_->GetScreenId() != node.GetCurrentAttachedScreenId());
     node.SetCurrentAttachedScreenId(curDisplayNode_->GetScreenId());
@@ -2795,7 +2795,7 @@ void RSUniRenderVisitor::CheckMergeGlobalFilterForDisplay(Occlusion::Region& acc
         auto filterRegion = Occlusion::Region{ Occlusion::Rect{ it->second } };
         auto filterDirtyRegion = filterRegion.And(accumulatedDirtyRegion);
         RS_OPTIONAL_TRACE_NAME_FMT("CheckMergeGlobalFilterForDisplay::filternode:%" PRIu64
-                                ", filterRect:%s, dirtyRegion:%s",
+                                   ", filterRect:%s, dirtyRegion:%s",
             filterNode->GetId(), it->second.ToString().c_str(), accumulatedDirtyRegion.GetRegionInfo().c_str());
         if (!filterDirtyRegion.IsEmpty()) {
             RS_LOGD("RSUniRenderVisitor::CheckMergeGlobalFilterForDisplay global merge, "
@@ -3071,7 +3071,7 @@ void RSUniRenderVisitor::UpdateHWCNodeClipRect(std::shared_ptr<RSSurfaceRenderNo
     Drawing::Rect childRectMapped(0.0f, 0.0f, MAX_FLOAT, MAX_FLOAT);
     RSRenderNode::SharedPtr hwcNodeParent = hwcNodePtr;
     while (hwcNodeParent && hwcNodeParent->GetType() != RSRenderNodeType::DISPLAY_NODE &&
-        hwcNodeParent->GetId() != rootNode.GetId()) {
+           hwcNodeParent->GetId() != rootNode.GetId()) {
         if (hwcNodeParent->GetType() == RSRenderNodeType::CANVAS_NODE) {
             const auto& parentProperties = hwcNodeParent->GetRenderProperties();
             const auto& parentGeoPtr = parentProperties.GetBoundsGeometry();

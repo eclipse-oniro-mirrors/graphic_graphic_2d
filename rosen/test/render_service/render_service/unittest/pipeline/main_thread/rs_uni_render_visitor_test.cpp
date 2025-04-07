@@ -1,17 +1,17 @@
 /*
-* Copyright (c) 2022 Huawei Device Co., Ltd.
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 #include <memory>
 
@@ -641,11 +641,11 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeByTransform_004, TestSize.Level2)
 }
 
 /*
-* @tc.name: UpdateSurfaceRenderNodeScaleTest
-* @tc.desc: Test RSUniRenderVisitorTest.UpdateSurfaceRenderNodeScaleTest
-* @tc.type: FUNC
-* @tc.require: issueI79U8E
-*/
+ * @tc.name: UpdateSurfaceRenderNodeScaleTest
+ * @tc.desc: Test RSUniRenderVisitorTest.UpdateSurfaceRenderNodeScaleTest
+ * @tc.type: FUNC
+ * @tc.require: issueI79U8E
+ */
 HWTEST_F(RSUniRenderVisitorTest, UpdateSurfaceRenderNodeScaleTest, TestSize.Level2)
 {
     auto rsContext = std::make_shared<RSContext>();
@@ -666,11 +666,11 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateSurfaceRenderNodeScaleTest, TestSize.Leve
 }
 
 /*
-* @tc.name: CheckLuminanceStatusChangeTest
-* @tc.desc: Test RSUniRenderVisitorTest.CheckLuminanceStatusChangeTest
-* @tc.type: FUNC
-* @tc.require: issueI79U8E
-*/
+ * @tc.name: CheckLuminanceStatusChangeTest
+ * @tc.desc: Test RSUniRenderVisitorTest.CheckLuminanceStatusChangeTest
+ * @tc.type: FUNC
+ * @tc.require: issueI79U8E
+ */
 HWTEST_F(RSUniRenderVisitorTest, CheckLuminanceStatusChangeTest, TestSize.Level2)
 {
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
@@ -689,11 +689,11 @@ HWTEST_F(RSUniRenderVisitorTest, CheckLuminanceStatusChangeTest, TestSize.Level2
 }
 
 /*
-* @tc.name: PrepareCanvasRenderNodeTest
-* @tc.desc: Test RSUniRenderVisitorTest.PrepareCanvasRenderNodeTest
-* @tc.type: FUNC
-* @tc.require: issueI79U8E
-*/
+ * @tc.name: PrepareCanvasRenderNodeTest
+ * @tc.desc: Test RSUniRenderVisitorTest.PrepareCanvasRenderNodeTest
+ * @tc.type: FUNC
+ * @tc.require: issueI79U8E
+ */
 HWTEST_F(RSUniRenderVisitorTest, PrepareCanvasRenderNodeTest, TestSize.Level2)
 {
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
@@ -731,11 +731,11 @@ HWTEST_F(RSUniRenderVisitorTest, PrepareCanvasRenderNodeTest, TestSize.Level2)
 }
 
 /*
-* @tc.name: PrepareChildren001
-* @tc.desc: PrepareChildren Test
-* @tc.type: FUNC
-* @tc.require: issueI79U8E
-*/
+ * @tc.name: PrepareChildren001
+ * @tc.desc: PrepareChildren Test
+ * @tc.type: FUNC
+ * @tc.require: issueI79U8E
+ */
 HWTEST_F(RSUniRenderVisitorTest, PrepareChildren001, TestSize.Level1)
 {
     auto rsContext = std::make_shared<RSContext>();
@@ -783,11 +783,11 @@ HWTEST_F(RSUniRenderVisitorTest, RSDisplayRenderNode001, TestSize.Level1)
 }
 
 /*
-* @tc.name: CheckQuickSkipPrepareParamSetAndGetValid001
-* @tc.desc: Check if param set and get apis are valid.
-* @tc.type: FUNC
-* @tc.require: I67FKA
-*/
+ * @tc.name: CheckQuickSkipPrepareParamSetAndGetValid001
+ * @tc.desc: Check if param set and get apis are valid.
+ * @tc.type: FUNC
+ * @tc.require: I67FKA
+ */
 HWTEST_F(RSUniRenderVisitorTest, CheckQuickSkipPrepareParamSetAndGetValid001, TestSize.Level1)
 {
     int defaultParam = (int)RSSystemParameters::GetQuickSkipPrepareType();
@@ -809,12 +809,12 @@ HWTEST_F(RSUniRenderVisitorTest, CheckQuickSkipPrepareParamSetAndGetValid001, Te
 }
 
 /*
-* @tc.name: CheckSurfaceRenderNodeNotStatic001
-* @tc.desc: Generate not static surface render node(self drawing, leash window) and execute preparation step.
-*           Get trace and check corresponding node's preparation exists and no 'Skip' info.
-* @tc.type: FUNC
-* @tc.require: I67FKA
-*/
+ * @tc.name: CheckSurfaceRenderNodeNotStatic001
+ * @tc.desc: Generate not static surface render node(self drawing, leash window) and execute preparation step.
+ *           Get trace and check corresponding node's preparation exists and no 'Skip' info.
+ * @tc.type: FUNC
+ * @tc.require: I67FKA
+ */
 HWTEST_F(RSUniRenderVisitorTest, CheckSurfaceRenderNodeNotStatic001, TestSize.Level1)
 {
     auto rsContext = std::make_shared<RSContext>();
@@ -844,12 +844,12 @@ HWTEST_F(RSUniRenderVisitorTest, CheckSurfaceRenderNodeNotStatic001, TestSize.Le
 }
 
 /*
-* @tc.name: CheckSurfaceRenderNodeStatic001
-* @tc.desc: Generate static surface render node(app window node) and execute preparation step.
-*           Get trace and check corresponding node's preparation and 'Skip' info exist.
-* @tc.type: FUNC
-* @tc.require: I67FKA
-*/
+ * @tc.name: CheckSurfaceRenderNodeStatic001
+ * @tc.desc: Generate static surface render node(app window node) and execute preparation step.
+ *           Get trace and check corresponding node's preparation and 'Skip' info exist.
+ * @tc.type: FUNC
+ * @tc.require: I67FKA
+ */
 HWTEST_F(RSUniRenderVisitorTest, CheckSurfaceRenderNodeStatic001, TestSize.Level1)
 {
     auto rsContext = std::make_shared<RSContext>();
@@ -899,11 +899,11 @@ HWTEST_F(RSUniRenderVisitorTest, PrepareRootRenderNode001, TestSize.Level1)
 }
 
 /*
-* @tc.name: CalcDirtyDisplayRegion
-* @tc.desc: Set surface to transparent, add a canvas node to create a transparent dirty region
-* @tc.type: FUNC
-* @tc.require: I68IPR
-*/
+ * @tc.name: CalcDirtyDisplayRegion
+ * @tc.desc: Set surface to transparent, add a canvas node to create a transparent dirty region
+ * @tc.type: FUNC
+ * @tc.require: I68IPR
+ */
 HWTEST_F(RSUniRenderVisitorTest, CalcDirtyDisplayRegion, TestSize.Level1)
 {
     auto rsContext = std::make_shared<RSContext>();
@@ -938,11 +938,11 @@ HWTEST_F(RSUniRenderVisitorTest, CalcDirtyDisplayRegion, TestSize.Level1)
 }
 
 /*
-* @tc.name: CalcDirtyRegionForFilterNode
-* @tc.desc: Create a filter effect to test filter node
-* @tc.type: FUNC
-* @tc.require: I68IPR
-*/
+ * @tc.name: CalcDirtyRegionForFilterNode
+ * @tc.desc: Create a filter effect to test filter node
+ * @tc.type: FUNC
+ * @tc.require: I68IPR
+ */
 HWTEST_F(RSUniRenderVisitorTest, CalcDirtyRegionForFilterNode, TestSize.Level1)
 {
     auto rsContext = std::make_shared<RSContext>();
@@ -989,11 +989,11 @@ HWTEST_F(RSUniRenderVisitorTest, CollectTopOcclusionSurfacesInfo001, TestSize.Le
 }
 
 /*
-* @tc.name: SetSurfafaceGlobalDirtyRegion
-* @tc.desc: Add two surfacenode child to test global dirty region
-* @tc.type: FUNC
-* @tc.require: I68IPR
-*/
+ * @tc.name: SetSurfafaceGlobalDirtyRegion
+ * @tc.desc: Add two surfacenode child to test global dirty region
+ * @tc.type: FUNC
+ * @tc.require: I68IPR
+ */
 HWTEST_F(RSUniRenderVisitorTest, SetSurfafaceGlobalDirtyRegion, TestSize.Level1)
 {
     auto rsContext = std::make_shared<RSContext>();
@@ -1026,11 +1026,11 @@ HWTEST_F(RSUniRenderVisitorTest, SetSurfafaceGlobalDirtyRegion, TestSize.Level1)
 }
 
 /*
-* @tc.name: IsWatermarkFlagChanged
-* @tc.desc: Test RSUniRenderVisitorTest.IsWatermarkFlagChanged test
-* @tc.type: FUNC
-* @tc.require: issuesIA8LNR
-*/
+ * @tc.name: IsWatermarkFlagChanged
+ * @tc.desc: Test RSUniRenderVisitorTest.IsWatermarkFlagChanged test
+ * @tc.type: FUNC
+ * @tc.require: issuesIA8LNR
+ */
 HWTEST_F(RSUniRenderVisitorTest, IsWatermarkFlagChanged, TestSize.Level1)
 {
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
@@ -1039,11 +1039,11 @@ HWTEST_F(RSUniRenderVisitorTest, IsWatermarkFlagChanged, TestSize.Level1)
 }
 
 /*
-* @tc.name: CheckPixelFormat
-* @tc.desc: Test RSUniRenderVisitorTest.CheckPixelFormat test
-* @tc.type: FUNC
-* @tc.require: issuesIBSNHZ
-*/
+ * @tc.name: CheckPixelFormat
+ * @tc.desc: Test RSUniRenderVisitorTest.CheckPixelFormat test
+ * @tc.type: FUNC
+ * @tc.require: issuesIBSNHZ
+ */
 HWTEST_F(RSUniRenderVisitorTest, CheckPixelFormat, TestSize.Level1)
 {
     RSSurfaceRenderNodeConfig config;
@@ -1735,11 +1735,11 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateColorSpaceWithMetadata002, TestSize.Level
 #endif
 
 /*
-* @tc.name: UpdateColorSpaceAfterHwcCalc_001
-* @tc.desc: Test UpdateColorSpaceAfterHwcCalc when there is a P3 selfDrawingNode.
-* @tc.type: FUNC
-* @tc.require: issueIAW3W0
-*/
+ * @tc.name: UpdateColorSpaceAfterHwcCalc_001
+ * @tc.desc: Test UpdateColorSpaceAfterHwcCalc when there is a P3 selfDrawingNode.
+ * @tc.type: FUNC
+ * @tc.require: issueIAW3W0
+ */
 HWTEST_F(RSUniRenderVisitorTest, UpdateColorSpaceAfterHwcCalc_001, TestSize.Level2)
 {
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
@@ -1772,11 +1772,11 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateColorSpaceAfterHwcCalc_001, TestSize.Leve
 }
 
 /*
-* @tc.name: ResetCurSurfaceInfoAsUpperSurfaceParent001
-* @tc.desc: Reset but keep single node's surfaceInfo
-* @tc.type: FUNC
-* @tc.require: issuesI8MQCS
-*/
+ * @tc.name: ResetCurSurfaceInfoAsUpperSurfaceParent001
+ * @tc.desc: Reset but keep single node's surfaceInfo
+ * @tc.type: FUNC
+ * @tc.require: issuesI8MQCS
+ */
 HWTEST_F(RSUniRenderVisitorTest, ResetCurSurfaceInfoAsUpperSurfaceParent001, TestSize.Level2)
 {
     auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
@@ -1799,11 +1799,11 @@ HWTEST_F(RSUniRenderVisitorTest, ResetCurSurfaceInfoAsUpperSurfaceParent001, Tes
 }
 
 /*
-* @tc.name: ResetCurSurfaceInfoAsUpperSurfaceParent002
-* @tc.desc: Reset but keep node's surfaceInfo since upper surface's InstanceRootNode is not registered
-* @tc.type: FUNC
-* @tc.require: issuesI8MQCS
-*/
+ * @tc.name: ResetCurSurfaceInfoAsUpperSurfaceParent002
+ * @tc.desc: Reset but keep node's surfaceInfo since upper surface's InstanceRootNode is not registered
+ * @tc.type: FUNC
+ * @tc.require: issuesI8MQCS
+ */
 HWTEST_F(RSUniRenderVisitorTest, ResetCurSurfaceInfoAsUpperSurfaceParent002, TestSize.Level2)
 {
     auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
@@ -1828,11 +1828,11 @@ HWTEST_F(RSUniRenderVisitorTest, ResetCurSurfaceInfoAsUpperSurfaceParent002, Tes
 }
 
 /*
-* @tc.name: ResetCurSurfaceInfoAsUpperSurfaceParent003
-* @tc.desc: Reset curSurfaceInfo when upper surface is leash/main window
-* @tc.type: FUNC
-* @tc.require: issuesI8MQCS
-*/
+ * @tc.name: ResetCurSurfaceInfoAsUpperSurfaceParent003
+ * @tc.desc: Reset curSurfaceInfo when upper surface is leash/main window
+ * @tc.type: FUNC
+ * @tc.require: issuesI8MQCS
+ */
 HWTEST_F(RSUniRenderVisitorTest, ResetCurSurfaceInfoAsUpperSurfaceParent003, TestSize.Level2)
 {
     auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
@@ -1853,11 +1853,11 @@ HWTEST_F(RSUniRenderVisitorTest, ResetCurSurfaceInfoAsUpperSurfaceParent003, Tes
 }
 
 /*
-* @tc.name: UpdateCornerRadiusInfoForDRM
-* @tc.desc: Test RSUniRenderVistorTest.UpdateCornerRadiusInfoForDRM
-* @tc.type: FUNC
-* @tc.require: issuesIBE1C8
-*/
+ * @tc.name: UpdateCornerRadiusInfoForDRM
+ * @tc.desc: Test RSUniRenderVistorTest.UpdateCornerRadiusInfoForDRM
+ * @tc.type: FUNC
+ * @tc.require: issuesIBE1C8
+ */
 HWTEST_F(RSUniRenderVisitorTest, UpdateCornerRadiusInfoForDRM, TestSize.Level2)
 {
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
@@ -1906,11 +1906,11 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateCornerRadiusInfoForDRM, TestSize.Level2)
 }
 
 /*
-* @tc.name: CheckIfRoundCornerIntersectDRM
-* @tc.desc: Test CheckIfRoundCornerIntersectDRM
-* @tc.type: FUNC
-* @tc.require: issuesIBE1C8
-*/
+ * @tc.name: CheckIfRoundCornerIntersectDRM
+ * @tc.desc: Test CheckIfRoundCornerIntersectDRM
+ * @tc.type: FUNC
+ * @tc.require: issuesIBE1C8
+ */
 HWTEST_F(RSUniRenderVisitorTest, CheckIfRoundCornerIntersectDRM, TestSize.Level2)
 {
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
@@ -1952,11 +1952,11 @@ HWTEST_F(RSUniRenderVisitorTest, CheckIfRoundCornerIntersectDRM, TestSize.Level2
 }
 
 /*
-* @tc.name: PrepareForUIFirstNode001
-* @tc.desc: Test PrePareForUIFirstNode with last frame uifirst flag is not leash window and hardware enabled
-* @tc.type: FUNC
-* @tc.require: issuesI8MQCS
-*/
+ * @tc.name: PrepareForUIFirstNode001
+ * @tc.desc: Test PrePareForUIFirstNode with last frame uifirst flag is not leash window and hardware enabled
+ * @tc.type: FUNC
+ * @tc.require: issuesI8MQCS
+ */
 HWTEST_F(RSUniRenderVisitorTest, PrepareForCapsuleWindowMode001, TestSize.Level2)
 {
     auto surfaceNode = RSTestUtil::CreateSurfaceNode();
@@ -1968,11 +1968,11 @@ HWTEST_F(RSUniRenderVisitorTest, PrepareForCapsuleWindowMode001, TestSize.Level2
 }
 
 /*
-* @tc.name: PrepareForUIFirstNode002
-* @tc.desc: Test PrePareForUIFirstNode with last frame uifirst flag is leash window and hardware disabled
-* @tc.type: FUNC
-* @tc.require: issuesI8MQCS
-*/
+ * @tc.name: PrepareForUIFirstNode002
+ * @tc.desc: Test PrePareForUIFirstNode with last frame uifirst flag is leash window and hardware disabled
+ * @tc.type: FUNC
+ * @tc.require: issuesI8MQCS
+ */
 HWTEST_F(RSUniRenderVisitorTest, PrepareForCapsuleWindowMode002, TestSize.Level2)
 {
     auto surfaceNode = RSTestUtil::CreateSurfaceNode();
@@ -1984,11 +1984,11 @@ HWTEST_F(RSUniRenderVisitorTest, PrepareForCapsuleWindowMode002, TestSize.Level2
 }
 
 /*
-* @tc.name: QuickPrepareSurfaceRenderNode001
-* @tc.desc: Test RSUniRenderVisitorTest.PrepareSurfaceRenderNode while surface node has security layer
-* @tc.type: FUNC
-* @tc.require: issuesI7SAJC
-*/
+ * @tc.name: QuickPrepareSurfaceRenderNode001
+ * @tc.desc: Test RSUniRenderVisitorTest.PrepareSurfaceRenderNode while surface node has security layer
+ * @tc.type: FUNC
+ * @tc.require: issuesI7SAJC
+ */
 HWTEST_F(RSUniRenderVisitorTest, QuickPrepareSurfaceRenderNode001, TestSize.Level2)
 {
     auto surfaceNode = RSTestUtil::CreateSurfaceNode();
@@ -2012,11 +2012,11 @@ HWTEST_F(RSUniRenderVisitorTest, QuickPrepareSurfaceRenderNode001, TestSize.Leve
 }
 
 /*
-* @tc.name: QuickPrepareSurfaceRenderNode002
-* @tc.desc: Test RSUniRenderVisitorTest.QuickPrepareSurfaceRenderNode while surface node has skip layer
-* @tc.type: FUNC
-* @tc.require: issuesI7SAJC
-*/
+ * @tc.name: QuickPrepareSurfaceRenderNode002
+ * @tc.desc: Test RSUniRenderVisitorTest.QuickPrepareSurfaceRenderNode while surface node has skip layer
+ * @tc.type: FUNC
+ * @tc.require: issuesI7SAJC
+ */
 HWTEST_F(RSUniRenderVisitorTest, QuickPrepareSurfaceRenderNode002, TestSize.Level2)
 {
     auto surfaceNode = RSTestUtil::CreateSurfaceNode();
@@ -2042,11 +2042,11 @@ HWTEST_F(RSUniRenderVisitorTest, QuickPrepareSurfaceRenderNode002, TestSize.Leve
 }
 
 /*
-* @tc.name: QuickPrepareSurfaceRenderNode003
-* @tc.desc: Test RSUniRenderVisitorTest.QuickPrepareSurfaceRenderNode while surface node is capture window
-* @tc.type: FUNC
-* @tc.require: issuesI7SAJC
-*/
+ * @tc.name: QuickPrepareSurfaceRenderNode003
+ * @tc.desc: Test RSUniRenderVisitorTest.QuickPrepareSurfaceRenderNode while surface node is capture window
+ * @tc.type: FUNC
+ * @tc.require: issuesI7SAJC
+ */
 HWTEST_F(RSUniRenderVisitorTest, QuickPrepareSurfaceRenderNode003, TestSize.Level2)
 {
     auto surfaceNode = RSTestUtil::CreateSurfaceNode();
@@ -2070,11 +2070,11 @@ HWTEST_F(RSUniRenderVisitorTest, QuickPrepareSurfaceRenderNode003, TestSize.Leve
 }
 
 /*
-* @tc.name: QuickPrepareSurfaceRenderNode004
-* @tc.desc: Test RSUniRenderVisitorTest.QuickPrepareSurfaceRenderNode while surface node has protected layer
-* @tc.type: FUNC
-* @tc.require: issueI7ZSC2
-*/
+ * @tc.name: QuickPrepareSurfaceRenderNode004
+ * @tc.desc: Test RSUniRenderVisitorTest.QuickPrepareSurfaceRenderNode while surface node has protected layer
+ * @tc.type: FUNC
+ * @tc.require: issueI7ZSC2
+ */
 HWTEST_F(RSUniRenderVisitorTest, QuickPrepareSurfaceRenderNode004, TestSize.Level2)
 {
     auto surfaceNode = RSTestUtil::CreateSurfaceNode();
@@ -2098,11 +2098,11 @@ HWTEST_F(RSUniRenderVisitorTest, QuickPrepareSurfaceRenderNode004, TestSize.Leve
 }
 
 /*
-* @tc.name: PrepareSurfaceRenderNode005
-* @tc.desc: Test RSUniRenderVisitorTest.PrepareSurfaceRenderNode while surface node does not have protected layer
-* @tc.type: FUNC
-* @tc.require: issueI7ZSC2
-*/
+ * @tc.name: PrepareSurfaceRenderNode005
+ * @tc.desc: Test RSUniRenderVisitorTest.PrepareSurfaceRenderNode while surface node does not have protected layer
+ * @tc.type: FUNC
+ * @tc.require: issueI7ZSC2
+ */
 HWTEST_F(RSUniRenderVisitorTest, PrepareSurfaceRenderNode005, TestSize.Level2)
 {
     auto surfaceNode = RSTestUtil::CreateSurfaceNode();
@@ -2200,11 +2200,11 @@ HWTEST_F(RSUniRenderVisitorTest, FindInstanceChildOfDisplay004, TestSize.Level2)
 }
 
 /*
-* @tc.name: CheckMergeFilterDirtyByIntersectWithDirty001
-* @tc.desc: Test CheckMergeFilterDirtyByIntersectWithDirty
-* @tc.type: FUNC
-* @tc.require: issueIAO5GW
-*/
+ * @tc.name: CheckMergeFilterDirtyByIntersectWithDirty001
+ * @tc.desc: Test CheckMergeFilterDirtyByIntersectWithDirty
+ * @tc.type: FUNC
+ * @tc.require: issueIAO5GW
+ */
 HWTEST_F(RSUniRenderVisitorTest, CheckMergeFilterDirtyByIntersectWithDirty001, TestSize.Level1)
 {
     auto rsContext = std::make_shared<RSContext>();
@@ -2238,11 +2238,11 @@ HWTEST_F(RSUniRenderVisitorTest, CheckMergeFilterDirtyByIntersectWithDirty001, T
 }
 
 /*
-* @tc.name: CheckMergeSurfaceDirtysForDisplay001
-* @tc.desc: Test CheckMergeSurfaceDirtysForDisplay with transparent node
-* @tc.type: FUNC
-* @tc.require: issueI9RR2Y
-*/
+ * @tc.name: CheckMergeSurfaceDirtysForDisplay001
+ * @tc.desc: Test CheckMergeSurfaceDirtysForDisplay with transparent node
+ * @tc.type: FUNC
+ * @tc.require: issueI9RR2Y
+ */
 HWTEST_F(RSUniRenderVisitorTest, CheckMergeSurfaceDirtysForDisplay001, TestSize.Level1)
 {
     auto rsContext = std::make_shared<RSContext>();
@@ -2277,11 +2277,11 @@ HWTEST_F(RSUniRenderVisitorTest, CheckMergeSurfaceDirtysForDisplay001, TestSize.
 
 
 /*
-* @tc.name: UpdateDisplayDirtyAndExtendVisibleRegion
-* @tc.desc: Test UpdateDisplayDirtyAndExtendVisibleRegion
-* @tc.type: FUNC
-* @tc.require: issueIAN75I
-*/
+ * @tc.name: UpdateDisplayDirtyAndExtendVisibleRegion
+ * @tc.desc: Test UpdateDisplayDirtyAndExtendVisibleRegion
+ * @tc.type: FUNC
+ * @tc.require: issueIAN75I
+ */
 HWTEST_F(RSUniRenderVisitorTest, UpdateDisplayDirtyAndExtendVisibleRegion, TestSize.Level1)
 {
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
@@ -2323,11 +2323,11 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateDisplayDirtyAndExtendVisibleRegion, TestS
 }
 
 /*
-* @tc.name: CheckMergeDisplayDirtyByTransparent001
-* @tc.desc: Test CheckMergeDisplayDirtyByTransparent with transparent node
-* @tc.type: FUNC
-* @tc.require: issueIAD6OW
-*/
+ * @tc.name: CheckMergeDisplayDirtyByTransparent001
+ * @tc.desc: Test CheckMergeDisplayDirtyByTransparent with transparent node
+ * @tc.type: FUNC
+ * @tc.require: issueIAD6OW
+ */
 HWTEST_F(RSUniRenderVisitorTest, CheckMergeDisplayDirtyByTransparent001, TestSize.Level1)
 {
     auto rsContext = std::make_shared<RSContext>();
@@ -2361,11 +2361,11 @@ HWTEST_F(RSUniRenderVisitorTest, CheckMergeDisplayDirtyByTransparent001, TestSiz
 }
 
 /*
-* @tc.name: CheckMergeDisplayDirtyByZorderChanged001
-* @tc.desc: Test CheckMergeDisplayDirtyByZorderChanged with Z order change node
-* @tc.type: FUNC
-* @tc.require: issueIAD6OW
-*/
+ * @tc.name: CheckMergeDisplayDirtyByZorderChanged001
+ * @tc.desc: Test CheckMergeDisplayDirtyByZorderChanged with Z order change node
+ * @tc.type: FUNC
+ * @tc.require: issueIAD6OW
+ */
 HWTEST_F(RSUniRenderVisitorTest, CheckMergeDisplayDirtyByZorderChanged001, TestSize.Level1)
 {
     auto rsContext = std::make_shared<RSContext>();
@@ -2393,11 +2393,11 @@ HWTEST_F(RSUniRenderVisitorTest, CheckMergeDisplayDirtyByZorderChanged001, TestS
 }
 
 /*
-* @tc.name: CheckMergeDisplayDirtyByPosChanged001
-* @tc.desc: Test CheckMergeDisplayDirtyByPosChanged with position change
-* @tc.type: FUNC
-* @tc.require: issueIAD6OW
-*/
+ * @tc.name: CheckMergeDisplayDirtyByPosChanged001
+ * @tc.desc: Test CheckMergeDisplayDirtyByPosChanged with position change
+ * @tc.type: FUNC
+ * @tc.require: issueIAD6OW
+ */
 HWTEST_F(RSUniRenderVisitorTest, CheckMergeDisplayDirtyByPosChanged001, TestSize.Level1)
 {
     auto rsContext = std::make_shared<RSContext>();
@@ -2426,11 +2426,11 @@ HWTEST_F(RSUniRenderVisitorTest, CheckMergeDisplayDirtyByPosChanged001, TestSize
 }
 
 /*
-* @tc.name: CheckMergeDisplayDirtyByShadowChanged001
-* @tc.desc: Test CheckMergeDisplayDirtyByShadowChanged with shadow change
-* @tc.type: FUNC
-* @tc.require: issueIAD6OW
-*/
+ * @tc.name: CheckMergeDisplayDirtyByShadowChanged001
+ * @tc.desc: Test CheckMergeDisplayDirtyByShadowChanged with shadow change
+ * @tc.type: FUNC
+ * @tc.require: issueIAD6OW
+ */
 HWTEST_F(RSUniRenderVisitorTest, CheckMergeDisplayDirtyByShadowChanged001, TestSize.Level1)
 {
     auto rsContext = std::make_shared<RSContext>();
@@ -2459,11 +2459,11 @@ HWTEST_F(RSUniRenderVisitorTest, CheckMergeDisplayDirtyByShadowChanged001, TestS
 }
 
 /*
-* @tc.name: UpdateSurfaceDirtyAndGlobalDirty001
-* @tc.desc: Test UpdateSurfaceDirtyAndGlobalDirty
-* @tc.type: FUNC
-* @tc.require: issueI9RR2Y
-*/
+ * @tc.name: UpdateSurfaceDirtyAndGlobalDirty001
+ * @tc.desc: Test UpdateSurfaceDirtyAndGlobalDirty
+ * @tc.type: FUNC
+ * @tc.require: issueI9RR2Y
+ */
 HWTEST_F(RSUniRenderVisitorTest, UpdateSurfaceDirtyAndGlobalDirty001, TestSize.Level1)
 {
     auto rsContext = std::make_shared<RSContext>();
@@ -2929,11 +2929,11 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateSurfaceRenderNodeRotate001, TestSize.Leve
 }
 
 /*
-* @tc.name: UpdateHwcNodeEnableByFilterRect
-* @tc.desc: Test RSUniRenderVisitorTest.UpdateHwcNodeEnableByFilterRect with intersect rect
-* @tc.type: FUNC
-* @tc.require: issuesI9V0N7
-*/
+ * @tc.name: UpdateHwcNodeEnableByFilterRect
+ * @tc.desc: Test RSUniRenderVisitorTest.UpdateHwcNodeEnableByFilterRect with intersect rect
+ * @tc.type: FUNC
+ * @tc.require: issuesI9V0N7
+ */
 HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeEnableByFilterRect001, TestSize.Level2)
 {
     RSSurfaceRenderNodeConfig surfaceConfig;
@@ -2959,11 +2959,11 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeEnableByFilterRect001, TestSize.Le
 }
 
 /*
-* @tc.name: UpdateHwcNodeEnableByFilterRect
-* @tc.desc: Test RSUniRenderVisitorTest.UpdateHwcNodeEnableByFilterRect with empty rect
-* @tc.type: FUNC
-* @tc.require: issuesI9V0N7
-*/
+ * @tc.name: UpdateHwcNodeEnableByFilterRect
+ * @tc.desc: Test RSUniRenderVisitorTest.UpdateHwcNodeEnableByFilterRect with empty rect
+ * @tc.type: FUNC
+ * @tc.require: issuesI9V0N7
+ */
 HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeEnableByFilterRect002, TestSize.Level2)
 {
     RSSurfaceRenderNodeConfig surfaceConfig;
@@ -2982,11 +2982,11 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeEnableByFilterRect002, TestSize.Le
 }
 
 /*
-* @tc.name: UpdateHwcNodeEnableByFilterRect
-* @tc.desc: Test RSUniRenderVisitorTest.UpdateHwcNodeEnableByFilterRect with no hwcNode
-* @tc.type: FUNC
-* @tc.require: issuesI9V0N7
-*/
+ * @tc.name: UpdateHwcNodeEnableByFilterRect
+ * @tc.desc: Test RSUniRenderVisitorTest.UpdateHwcNodeEnableByFilterRect with no hwcNode
+ * @tc.type: FUNC
+ * @tc.require: issuesI9V0N7
+ */
 HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeEnableByFilterRect003, TestSize.Level2)
 {
     RSSurfaceRenderNodeConfig surfaceConfig;
@@ -3005,11 +3005,11 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeEnableByFilterRect003, TestSize.Le
 }
 
 /*
-* @tc.name: UpdateHwcNodeEnableByGlobalCleanFilter_001
-* @tc.desc: Test UpdateHwcNodeEnableByGlobalCleanFilter when Intersect return false.
-* @tc.type: FUNC
-* @tc.require: issueIAJY2P
-*/
+ * @tc.name: UpdateHwcNodeEnableByGlobalCleanFilter_001
+ * @tc.desc: Test UpdateHwcNodeEnableByGlobalCleanFilter when Intersect return false.
+ * @tc.type: FUNC
+ * @tc.require: issueIAJY2P
+ */
 HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeEnableByGlobalCleanFilter_001, TestSize.Level2)
 {
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
@@ -3027,11 +3027,11 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeEnableByGlobalCleanFilter_001, Tes
 }
 
 /*
-* @tc.name: UpdateHwcNodeEnableByGlobalCleanFilter_002
-* @tc.desc: Test UpdateHwcNodeEnableByGlobalCleanFilter when rendernode is nullptr.
-* @tc.type: FUNC
-* @tc.require: issueIAJY2P
-*/
+ * @tc.name: UpdateHwcNodeEnableByGlobalCleanFilter_002
+ * @tc.desc: Test UpdateHwcNodeEnableByGlobalCleanFilter when rendernode is nullptr.
+ * @tc.type: FUNC
+ * @tc.require: issueIAJY2P
+ */
 HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeEnableByGlobalCleanFilter_002, TestSize.Level2)
 {
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
@@ -3052,11 +3052,11 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeEnableByGlobalCleanFilter_002, Tes
 }
 
 /*
-* @tc.name: UpdateHwcNodeEnableByGlobalCleanFilter_003
-* @tc.desc: Test UpdateHwcNodeEnableByGlobalCleanFilter when rendernode is not null and AIBarFilterCache is not valid.
-* @tc.type: FUNC
-* @tc.require: issueIAJY2P
-*/
+ * @tc.name: UpdateHwcNodeEnableByGlobalCleanFilter_003
+ * @tc.desc: Test UpdateHwcNodeEnableByGlobalCleanFilter when rendernode is not null and AIBarFilterCache is not valid.
+ * @tc.type: FUNC
+ * @tc.require: issueIAJY2P
+ */
 HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeEnableByGlobalCleanFilter_003, TestSize.Level2)
 {
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
@@ -3080,11 +3080,11 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeEnableByGlobalCleanFilter_003, Tes
 }
 
 /*
-* @tc.name: UpdateHwcNodeEnableBySrcRect_001
-* @tc.desc: Test UpdateHwcNodeEnableBySrcRect when node is hardware forced disabled.
-* @tc.type: FUNC
-* @tc.require: issueIAJY2P
-*/
+ * @tc.name: UpdateHwcNodeEnableBySrcRect_001
+ * @tc.desc: Test UpdateHwcNodeEnableBySrcRect when node is hardware forced disabled.
+ * @tc.type: FUNC
+ * @tc.require: issueIAJY2P
+ */
 HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeEnableBySrcRect_001, TestSize.Level2)
 {
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
@@ -3097,11 +3097,11 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeEnableBySrcRect_001, TestSize.Leve
 }
 
 /*
-* @tc.name: UpdateHwcNodeEnableBySrcRect_002
-* @tc.desc: Test UpdateHwcNodeEnableBySrcRect when consumer is not nullptr.
-* @tc.type: FUNC
-* @tc.require: issueIAJY2P
-*/
+ * @tc.name: UpdateHwcNodeEnableBySrcRect_002
+ * @tc.desc: Test UpdateHwcNodeEnableBySrcRect when consumer is not nullptr.
+ * @tc.type: FUNC
+ * @tc.require: issueIAJY2P
+ */
 HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeEnableBySrcRect_002, TestSize.Level2)
 {
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
@@ -3118,11 +3118,11 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeEnableBySrcRect_002, TestSize.Leve
 }
 
 /*
-* @tc.name: UpdateHwcNodeEnableBySrcRect_003
-* @tc.desc: Test UpdateHwcNodeEnableBySrcRect when node is hardware disabled by src rect.
-* @tc.type: FUNC
-* @tc.require: issueIAJY2P
-*/
+ * @tc.name: UpdateHwcNodeEnableBySrcRect_003
+ * @tc.desc: Test UpdateHwcNodeEnableBySrcRect when node is hardware disabled by src rect.
+ * @tc.type: FUNC
+ * @tc.require: issueIAJY2P
+ */
 HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeEnableBySrcRect_003, TestSize.Level2)
 {
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
@@ -3141,12 +3141,12 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeEnableBySrcRect_003, TestSize.Leve
 
 
 /*
-* @tc.name: UpdateHwcNodeRectInSkippedSubTree_001
-* @tc.desc: Test UpdateHwcNodeRectInSkippedSubTree when RS_PROFILER_SHOULD_BLOCK_HWCNODE() is false,
-*           curSurfaceNode_ is null or hwcNodes is empty.
-* @tc.type: FUNC
-* @tc.require: issueIAKJFE
-*/
+ * @tc.name: UpdateHwcNodeRectInSkippedSubTree_001
+ * @tc.desc: Test UpdateHwcNodeRectInSkippedSubTree when RS_PROFILER_SHOULD_BLOCK_HWCNODE() is false,
+ *           curSurfaceNode_ is null or hwcNodes is empty.
+ * @tc.type: FUNC
+ * @tc.require: issueIAKJFE
+ */
 HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeRectInSkippedSubTree_001, TestSize.Level2)
 {
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
@@ -3171,12 +3171,12 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeRectInSkippedSubTree_001, TestSize
 }
 
 /*
-* @tc.name: UpdateHwcNodeRectInSkippedSubTree_002
-* @tc.desc: Test UpdateHwcNodeRectInSkippedSubTree when RS_PROFILER_SHOULD_BLOCK_HWCNODE() is false,
-*           hwcNodePtr is nullptr or hwcNodePtr is not on the tree or GetCalcRectInPrepare is true.
-* @tc.type: FUNC
-* @tc.require: issueIAKJFE
-*/
+ * @tc.name: UpdateHwcNodeRectInSkippedSubTree_002
+ * @tc.desc: Test UpdateHwcNodeRectInSkippedSubTree when RS_PROFILER_SHOULD_BLOCK_HWCNODE() is false,
+ *           hwcNodePtr is nullptr or hwcNodePtr is not on the tree or GetCalcRectInPrepare is true.
+ * @tc.type: FUNC
+ * @tc.require: issueIAKJFE
+ */
 HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeRectInSkippedSubTree_002, TestSize.Level2)
 {
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
@@ -3226,11 +3226,11 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeRectInSkippedSubTree_002, TestSize
 }
 
 /*
-* @tc.name: UpdateHwcNodeRectInSkippedSubTree_003
-* @tc.desc: Test UpdateHwcNodeRectInSkippedSubTree when RS_PROFILER_SHOULD_BLOCK_HWCNODE() is false and parent is null.
-* @tc.type: FUNC
-* @tc.require: issueIAKJFE
-*/
+ * @tc.name: UpdateHwcNodeRectInSkippedSubTree_003
+ * @tc.desc: Test UpdateHwcNodeRectInSkippedSubTree when RS_PROFILER_SHOULD_BLOCK_HWCNODE() is false and parent is null.
+ * @tc.type: FUNC
+ * @tc.require: issueIAKJFE
+ */
 HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeRectInSkippedSubTree_003, TestSize.Level2)
 {
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
@@ -3258,12 +3258,12 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeRectInSkippedSubTree_003, TestSize
 }
 
 /*
-* @tc.name: UpdateHwcNodeRectInSkippedSubTree_004
-* @tc.desc: Test UpdateHwcNodeRectInSkippedSubTree when RS_PROFILER_SHOULD_BLOCK_HWCNODE() is false,
-*           parent is not null and findInRoot is false.
-* @tc.type: FUNC
-* @tc.require: issueIAKJFE
-*/
+ * @tc.name: UpdateHwcNodeRectInSkippedSubTree_004
+ * @tc.desc: Test UpdateHwcNodeRectInSkippedSubTree when RS_PROFILER_SHOULD_BLOCK_HWCNODE() is false,
+ *           parent is not null and findInRoot is false.
+ * @tc.type: FUNC
+ * @tc.require: issueIAKJFE
+ */
 HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeRectInSkippedSubTree_004, TestSize.Level2)
 {
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
@@ -3299,12 +3299,12 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeRectInSkippedSubTree_004, TestSize
 }
 
 /*
-* @tc.name: UpdateHwcNodeRectInSkippedSubTree_005
-* @tc.desc: Test UpdateHwcNodeRectInSkippedSubTree when RS_PROFILER_SHOULD_BLOCK_HWCNODE() is false,
-*           parent is not null and findInRoot is true.
-* @tc.type: FUNC
-* @tc.require: issueIAKJFE
-*/
+ * @tc.name: UpdateHwcNodeRectInSkippedSubTree_005
+ * @tc.desc: Test UpdateHwcNodeRectInSkippedSubTree when RS_PROFILER_SHOULD_BLOCK_HWCNODE() is false,
+ *           parent is not null and findInRoot is true.
+ * @tc.type: FUNC
+ * @tc.require: issueIAKJFE
+ */
 HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeRectInSkippedSubTree_005, TestSize.Level2)
 {
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
@@ -3339,12 +3339,12 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeRectInSkippedSubTree_005, TestSize
 }
 
 /*
-* @tc.name: UpdateHwcNodeRectInSkippedSubTree_006
-* @tc.desc: Test UpdateHwcNodeRectInSkippedSubTree when RS_PROFILER_SHOULD_BLOCK_HWCNODE() is false and
-*           parent's parent is not null.
-* @tc.type: FUNC
-* @tc.require: issueIAKJFE
-*/
+ * @tc.name: UpdateHwcNodeRectInSkippedSubTree_006
+ * @tc.desc: Test UpdateHwcNodeRectInSkippedSubTree when RS_PROFILER_SHOULD_BLOCK_HWCNODE() is false and
+ *           parent's parent is not null.
+ * @tc.type: FUNC
+ * @tc.require: issueIAKJFE
+ */
 HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeRectInSkippedSubTree_006, TestSize.Level2)
 {
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
@@ -3390,11 +3390,11 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeRectInSkippedSubTree_006, TestSize
 }
 
 /*
-* @tc.name: CheckMergeGlobalFilterForDisplay
-* @tc.desc: Test RSUniRenderVisitorTest.CheckMergeGlobalFilterForDisplay
-* @tc.type: FUNC
-* @tc.require: issuesI9V0N7
-*/
+ * @tc.name: CheckMergeGlobalFilterForDisplay
+ * @tc.desc: Test RSUniRenderVisitorTest.CheckMergeGlobalFilterForDisplay
+ * @tc.type: FUNC
+ * @tc.require: issuesI9V0N7
+ */
 HWTEST_F(RSUniRenderVisitorTest, CheckMergeGlobalFilterForDisplay001, TestSize.Level2)
 {
     auto& nodeMap = RSMainThread::Instance()->GetContext().GetMutableNodeMap();
@@ -3426,11 +3426,11 @@ HWTEST_F(RSUniRenderVisitorTest, CheckMergeGlobalFilterForDisplay001, TestSize.L
 }
 
 /*
-* @tc.name: UpdateOccludedStatusWithFilterNode
-* @tc.desc: Test RSUniRenderVisitorTest.UpdateOccludedStatusWithFilterNode while surface node nullptr
-* @tc.type: FUNC
-* @tc.require: issuesI9V0N7
-*/
+ * @tc.name: UpdateOccludedStatusWithFilterNode
+ * @tc.desc: Test RSUniRenderVisitorTest.UpdateOccludedStatusWithFilterNode while surface node nullptr
+ * @tc.type: FUNC
+ * @tc.require: issuesI9V0N7
+ */
 HWTEST_F(RSUniRenderVisitorTest, UpdateOccludedStatusWithFilterNode001, TestSize.Level2)
 {
     std::shared_ptr<RSSurfaceRenderNode> surfaceNode = nullptr;
@@ -3440,11 +3440,11 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateOccludedStatusWithFilterNode001, TestSize
 }
 
 /*
-* @tc.name: UpdateOccludedStatusWithFilterNode
-* @tc.desc: Test RSUniRenderVisitorTest.UpdateOccludedStatusWithFilterNode with surfaceNode
-* @tc.type: FUNC
-* @tc.require: issuesI9V0N7
-*/
+ * @tc.name: UpdateOccludedStatusWithFilterNode
+ * @tc.desc: Test RSUniRenderVisitorTest.UpdateOccludedStatusWithFilterNode with surfaceNode
+ * @tc.type: FUNC
+ * @tc.require: issuesI9V0N7
+ */
 HWTEST_F(RSUniRenderVisitorTest, UpdateOccludedStatusWithFilterNode002, TestSize.Level2)
 {
     RSSurfaceRenderNodeConfig surfaceConfig;
@@ -3480,11 +3480,11 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateOccludedStatusWithFilterNode002, TestSize
 }
 
 /*
-* @tc.name: MarkBlurIntersectWithDRM
-* @tc.desc: Test RSUniRenderVisitorTest.MarkBlurIntersectWithDRM001 while surface node nullptr
-* @tc.type: FUNC
-* @tc.require: issuesIAQZ4I
-*/
+ * @tc.name: MarkBlurIntersectWithDRM
+ * @tc.desc: Test RSUniRenderVisitorTest.MarkBlurIntersectWithDRM001 while surface node nullptr
+ * @tc.type: FUNC
+ * @tc.require: issuesIAQZ4I
+ */
 HWTEST_F(RSUniRenderVisitorTest, MarkBlurIntersectWithDRM001, TestSize.Level2)
 {
     RSSurfaceRenderNodeConfig surfaceConfig;
@@ -3497,11 +3497,11 @@ HWTEST_F(RSUniRenderVisitorTest, MarkBlurIntersectWithDRM001, TestSize.Level2)
 }
 
 /*
-* @tc.name: CheckMergeDisplayDirtyByTransparentFilter
-* @tc.desc: Test RSUniRenderVisitorTest.CheckMergeDisplayDirtyByTransparentFilter with mainWindow
-* @tc.type: FUNC
-* @tc.require: issuesI9V0N7
-*/
+ * @tc.name: CheckMergeDisplayDirtyByTransparentFilter
+ * @tc.desc: Test RSUniRenderVisitorTest.CheckMergeDisplayDirtyByTransparentFilter with mainWindow
+ * @tc.type: FUNC
+ * @tc.require: issuesI9V0N7
+ */
 HWTEST_F(RSUniRenderVisitorTest, CheckMergeDisplayDirtyByTransparentFilter001, TestSize.Level2)
 {
     RSSurfaceRenderNodeConfig surfaceConfig;
@@ -3528,11 +3528,11 @@ HWTEST_F(RSUniRenderVisitorTest, CheckMergeDisplayDirtyByTransparentFilter001, T
 }
 
 /*
-* @tc.name: CheckMergeDisplayDirtyByTransparentFilter
-* @tc.desc: Test RSUniRenderVisitorTest.CheckMergeDisplayDirtyByTransparentFilter
-* @tc.type: FUNC
-* @tc.require: issuesI9V0N7
-*/
+ * @tc.name: CheckMergeDisplayDirtyByTransparentFilter
+ * @tc.desc: Test RSUniRenderVisitorTest.CheckMergeDisplayDirtyByTransparentFilter
+ * @tc.type: FUNC
+ * @tc.require: issuesI9V0N7
+ */
 HWTEST_F(RSUniRenderVisitorTest, CheckMergeDisplayDirtyByTransparentFilter002, TestSize.Level2)
 {
     RSSurfaceRenderNodeConfig surfaceConfig;
@@ -3585,11 +3585,11 @@ HWTEST_F(RSUniRenderVisitorTest, CheckMergeDisplayDirtyByTransparentFilter002, T
 }
 
 /*
-* @tc.name: CheckMergeDisplayDirtyByTransparentFilter
-* @tc.desc: Test RSUniRenderVisitorTest.CheckMergeDisplayDirtyByTransparentFilter
-* @tc.type: FUNC
-* @tc.require: issueIB0UQV
-*/
+ * @tc.name: CheckMergeDisplayDirtyByTransparentFilter
+ * @tc.desc: Test RSUniRenderVisitorTest.CheckMergeDisplayDirtyByTransparentFilter
+ * @tc.type: FUNC
+ * @tc.require: issueIB0UQV
+ */
 HWTEST_F(RSUniRenderVisitorTest, CheckMergeDisplayDirtyByTransparentFilter003, TestSize.Level2)
 {
     RSSurfaceRenderNodeConfig surfaceConfig;
@@ -3638,11 +3638,11 @@ HWTEST_F(RSUniRenderVisitorTest, CheckMergeDisplayDirtyByTransparentFilter003, T
 }
 
 /*
-* @tc.name: CheckMergeDisplayDirtyByTransparentRegions
-* @tc.desc: Test RSUniRenderVisitorTest.CheckMergeDisplayDirtyByTransparentRegions with container window
-* @tc.type: FUNC
-* @tc.require: issuesI9V0N7
-*/
+ * @tc.name: CheckMergeDisplayDirtyByTransparentRegions
+ * @tc.desc: Test RSUniRenderVisitorTest.CheckMergeDisplayDirtyByTransparentRegions with container window
+ * @tc.type: FUNC
+ * @tc.require: issuesI9V0N7
+ */
 HWTEST_F(RSUniRenderVisitorTest, CheckMergeDisplayDirtyByTransparentRegions001, TestSize.Level2)
 {
     RSSurfaceRenderNodeConfig surfaceConfig;
@@ -3675,11 +3675,11 @@ HWTEST_F(RSUniRenderVisitorTest, CheckMergeDisplayDirtyByTransparentRegions001, 
 }
 
 /*
-* @tc.name: CheckMergeDisplayDirtyByTransparentRegions
-* @tc.desc: Test RSUniRenderVisitorTest.CheckMergeDisplayDirtyByTransparentRegions with no container window
-* @tc.type: FUNC
-* @tc.require: issuesI9V0N7
-*/
+ * @tc.name: CheckMergeDisplayDirtyByTransparentRegions
+ * @tc.desc: Test RSUniRenderVisitorTest.CheckMergeDisplayDirtyByTransparentRegions with no container window
+ * @tc.type: FUNC
+ * @tc.require: issuesI9V0N7
+ */
 HWTEST_F(RSUniRenderVisitorTest, CheckMergeDisplayDirtyByTransparentRegions002, TestSize.Level2)
 {
     RSSurfaceRenderNodeConfig surfaceConfig;
@@ -3903,11 +3903,11 @@ HWTEST_F(RSUniRenderVisitorTest, CollectEffectInfo003, TestSize.Level2)
 }
 
 /*
-* @tc.name: CheckIsGpuOverDrawBufferOptimizeNode001
-* @tc.desc: Verify function CheckIsGpuOverDrawBufferOptimizeNode while node has no child
-* @tc.type: FUNC
-* @tc.require: issuesIAE0Q3
-*/
+ * @tc.name: CheckIsGpuOverDrawBufferOptimizeNode001
+ * @tc.desc: Verify function CheckIsGpuOverDrawBufferOptimizeNode while node has no child
+ * @tc.type: FUNC
+ * @tc.require: issuesIAE0Q3
+ */
 HWTEST_F(RSUniRenderVisitorTest, CheckIsGpuOverDrawBufferOptimizeNode001, TestSize.Level2)
 {
     auto rsContext = std::make_shared<RSContext>();
@@ -3935,11 +3935,11 @@ HWTEST_F(RSUniRenderVisitorTest, CheckIsGpuOverDrawBufferOptimizeNode001, TestSi
 }
 
 /*
-* @tc.name: CheckIsGpuOverDrawBufferOptimizeNode002
-* @tc.desc: Verify function CheckIsGpuOverDrawBufferOptimizeNode while node has child
-* @tc.type: FUNC
-* @tc.require: issuesIAE0Q3
-*/
+ * @tc.name: CheckIsGpuOverDrawBufferOptimizeNode002
+ * @tc.desc: Verify function CheckIsGpuOverDrawBufferOptimizeNode while node has child
+ * @tc.type: FUNC
+ * @tc.require: issuesIAE0Q3
+ */
 HWTEST_F(RSUniRenderVisitorTest, CheckIsGpuOverDrawBufferOptimizeNode002, TestSize.Level2)
 {
     auto rsContext = std::make_shared<RSContext>();
@@ -3975,11 +3975,11 @@ HWTEST_F(RSUniRenderVisitorTest, CheckIsGpuOverDrawBufferOptimizeNode002, TestSi
 }
 
 /*
-* @tc.name: MergeRemovedChildDirtyRegion001
-* @tc.desc: Test MergeRemovedChildDirtyRegion while node has removed child which dirty rect is empty
-* @tc.type: FUNC
-* @tc.require: issueIAJJ43
-*/
+ * @tc.name: MergeRemovedChildDirtyRegion001
+ * @tc.desc: Test MergeRemovedChildDirtyRegion while node has removed child which dirty rect is empty
+ * @tc.type: FUNC
+ * @tc.require: issueIAJJ43
+ */
 HWTEST_F(RSUniRenderVisitorTest, MergeRemovedChildDirtyRegion001, TestSize.Level2)
 {
     auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
@@ -3997,11 +3997,11 @@ HWTEST_F(RSUniRenderVisitorTest, MergeRemovedChildDirtyRegion001, TestSize.Level
 }
 
 /*
-* @tc.name: MergeRemovedChildDirtyRegion002
-* @tc.desc: Test MergeRemovedChildDirtyRegion while has removed child which dirty rect isn't empty
-* @tc.type: FUNC
-* @tc.require: issueIAJJ43
-*/
+ * @tc.name: MergeRemovedChildDirtyRegion002
+ * @tc.desc: Test MergeRemovedChildDirtyRegion while has removed child which dirty rect isn't empty
+ * @tc.type: FUNC
+ * @tc.require: issueIAJJ43
+ */
 HWTEST_F(RSUniRenderVisitorTest, MergeRemovedChildDirtyRegion002, TestSize.Level2)
 {
     auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
@@ -4020,11 +4020,11 @@ HWTEST_F(RSUniRenderVisitorTest, MergeRemovedChildDirtyRegion002, TestSize.Level
 }
 
 /*
-* @tc.name: MergeRemovedChildDirtyRegion003
-* @tc.desc: Test MergeRemovedChildDirtyRegion while curSurfaceDirtyManager_ is nullptr
-* @tc.type: FUNC
-* @tc.require: issueIAJJ43
-*/
+ * @tc.name: MergeRemovedChildDirtyRegion003
+ * @tc.desc: Test MergeRemovedChildDirtyRegion while curSurfaceDirtyManager_ is nullptr
+ * @tc.type: FUNC
+ * @tc.require: issueIAJJ43
+ */
 HWTEST_F(RSUniRenderVisitorTest, MergeRemovedChildDirtyRegion003, TestSize.Level2)
 {
     auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
@@ -4048,11 +4048,11 @@ HWTEST_F(RSUniRenderVisitorTest, MergeRemovedChildDirtyRegion003, TestSize.Level
 }
 
 /*
-* @tc.name: MergeRemovedChildDirtyRegion004
-* @tc.desc: Test MergeRemovedChildDirtyRegion while curSurfaceDirtyManager_ is not nullptr
-* @tc.type: FUNC
-* @tc.require: issuesIBSNHZ
-*/
+ * @tc.name: MergeRemovedChildDirtyRegion004
+ * @tc.desc: Test MergeRemovedChildDirtyRegion while curSurfaceDirtyManager_ is not nullptr
+ * @tc.type: FUNC
+ * @tc.require: issuesIBSNHZ
+ */
 HWTEST_F(RSUniRenderVisitorTest, MergeRemovedChildDirtyRegion004, TestSize.Level2)
 {
     auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
@@ -4072,11 +4072,11 @@ HWTEST_F(RSUniRenderVisitorTest, MergeRemovedChildDirtyRegion004, TestSize.Level
 }
 
 /*
-* @tc.name: MergeRemovedChildDirtyRegion005
-* @tc.desc: Test MergeRemovedChildDirtyRegion while node's bounds geometry is nullptr
-* @tc.type: FUNC
-* @tc.require: issuesIBSNHZ
-*/
+ * @tc.name: MergeRemovedChildDirtyRegion005
+ * @tc.desc: Test MergeRemovedChildDirtyRegion while node's bounds geometry is nullptr
+ * @tc.type: FUNC
+ * @tc.require: issuesIBSNHZ
+ */
 HWTEST_F(RSUniRenderVisitorTest, MergeRemovedChildDirtyRegion005, TestSize.Level2)
 {
     auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
@@ -4097,11 +4097,11 @@ HWTEST_F(RSUniRenderVisitorTest, MergeRemovedChildDirtyRegion005, TestSize.Level
 }
 
 /*
-* @tc.name: MergeRemovedChildDirtyRegion006
-* @tc.desc: Test MergeRemovedChildDirtyRegion while dirtyManager is target for DFX
-* @tc.type: FUNC
-* @tc.require: issuesIBSNHZ
-*/
+ * @tc.name: MergeRemovedChildDirtyRegion006
+ * @tc.desc: Test MergeRemovedChildDirtyRegion while dirtyManager is target for DFX
+ * @tc.type: FUNC
+ * @tc.require: issuesIBSNHZ
+ */
 HWTEST_F(RSUniRenderVisitorTest, MergeRemovedChildDirtyRegion006, TestSize.Level2)
 {
     auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
@@ -4122,11 +4122,11 @@ HWTEST_F(RSUniRenderVisitorTest, MergeRemovedChildDirtyRegion006, TestSize.Level
 }
 
 /*
-* @tc.name: PrevalidateHwcNode001
-* @tc.desc: Test while prevalidate hwcNode disable
-* @tc.type: FUNC
-* @tc.require: issueIAJJ43
-*/
+ * @tc.name: PrevalidateHwcNode001
+ * @tc.desc: Test while prevalidate hwcNode disable
+ * @tc.type: FUNC
+ * @tc.require: issueIAJJ43
+ */
 HWTEST_F(RSUniRenderVisitorTest, PrevalidateHwcNode001, TestSize.Level2)
 {
     auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
@@ -4145,11 +4145,11 @@ HWTEST_F(RSUniRenderVisitorTest, PrevalidateHwcNode001, TestSize.Level2)
 }
 
 /*
-* @tc.name: UpdateSurfaceDirtyAndGlobalDirty002
-* @tc.desc: Test while surface node has hardware enabled node as child
-* @tc.type: FUNC
-* @tc.require: issueIAJJ43
-*/
+ * @tc.name: UpdateSurfaceDirtyAndGlobalDirty002
+ * @tc.desc: Test while surface node has hardware enabled node as child
+ * @tc.type: FUNC
+ * @tc.require: issueIAJJ43
+ */
 HWTEST_F(RSUniRenderVisitorTest, UpdateSurfaceDirtyAndGlobalDirty002, TestSize.Level2)
 {
     NodeId id = 1;
@@ -4173,11 +4173,11 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateSurfaceDirtyAndGlobalDirty002, TestSize.L
 }
 
 /*
-* @tc.name: UpdateSurfaceDirtyAndGlobalDirty003
-* @tc.desc: Test while current frame dirty
-* @tc.type: FUNC
-* @tc.require: issueIAJJ43
-*/
+ * @tc.name: UpdateSurfaceDirtyAndGlobalDirty003
+ * @tc.desc: Test while current frame dirty
+ * @tc.type: FUNC
+ * @tc.require: issueIAJJ43
+ */
 HWTEST_F(RSUniRenderVisitorTest, UpdateSurfaceDirtyAndGlobalDirty003, TestSize.Level2)
 {
     NodeId id = 1;
@@ -4204,11 +4204,11 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateSurfaceDirtyAndGlobalDirty003, TestSize.L
 }
 
 /*
-* @tc.name: UpdateSurfaceDirtyAndGlobalDirty004
-* @tc.desc: Test while app window node skip in calculate global dirty
-* @tc.type: FUNC
-* @tc.require: issueIAJJ43
-*/
+ * @tc.name: UpdateSurfaceDirtyAndGlobalDirty004
+ * @tc.desc: Test while app window node skip in calculate global dirty
+ * @tc.type: FUNC
+ * @tc.require: issueIAJJ43
+ */
 HWTEST_F(RSUniRenderVisitorTest, UpdateSurfaceDirtyAndGlobalDirty004, TestSize.Level2)
 {
     NodeId id = 1;
@@ -4236,11 +4236,11 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateSurfaceDirtyAndGlobalDirty004, TestSize.L
 }
 
 /*
-* @tc.name: CollectFilterInfoAndUpdateDirty001
-* @tc.desc: Verify function CollectFilterInfoAndUpdateDirty without curSurfaceNode_
-* @tc.type: FUNC
-* @tc.require: issuesIAE0Q3
-*/
+ * @tc.name: CollectFilterInfoAndUpdateDirty001
+ * @tc.desc: Verify function CollectFilterInfoAndUpdateDirty without curSurfaceNode_
+ * @tc.type: FUNC
+ * @tc.require: issuesIAE0Q3
+ */
 HWTEST_F(RSUniRenderVisitorTest, CollectFilterInfoAndUpdateDirty001, TestSize.Level2)
 {
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
@@ -4260,11 +4260,11 @@ HWTEST_F(RSUniRenderVisitorTest, CollectFilterInfoAndUpdateDirty001, TestSize.Le
 }
 
 /*
-* @tc.name: CollectFilterInfoAndUpdateDirty002
-* @tc.desc: Verify function CollectFilterInfoAndUpdateDirty with non-transparent curSurfaceNode_
-* @tc.type: FUNC
-* @tc.require: issuesIAE0Q3
-*/
+ * @tc.name: CollectFilterInfoAndUpdateDirty002
+ * @tc.desc: Verify function CollectFilterInfoAndUpdateDirty with non-transparent curSurfaceNode_
+ * @tc.type: FUNC
+ * @tc.require: issuesIAE0Q3
+ */
 HWTEST_F(RSUniRenderVisitorTest, CollectFilterInfoAndUpdateDirty002, TestSize.Level2)
 {
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
@@ -4286,11 +4286,11 @@ HWTEST_F(RSUniRenderVisitorTest, CollectFilterInfoAndUpdateDirty002, TestSize.Le
 }
 
 /*
-* @tc.name: CollectFilterInfoAndUpdateDirty003
-* @tc.desc: Verify function CollectFilterInfoAndUpdateDirty with transparent curSurfaceNode_
-* @tc.type: FUNC
-* @tc.require: issuesIAE0Q3
-*/
+ * @tc.name: CollectFilterInfoAndUpdateDirty003
+ * @tc.desc: Verify function CollectFilterInfoAndUpdateDirty with transparent curSurfaceNode_
+ * @tc.type: FUNC
+ * @tc.require: issuesIAE0Q3
+ */
 HWTEST_F(RSUniRenderVisitorTest, CollectFilterInfoAndUpdateDirty003, TestSize.Level2)
 {
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
@@ -4312,11 +4312,11 @@ HWTEST_F(RSUniRenderVisitorTest, CollectFilterInfoAndUpdateDirty003, TestSize.Le
 }
 
 /*
-* @tc.name: CollectFilterInfoAndUpdateDirty004
-* @tc.desc: Verify function CollectFilterInfoAndUpdateDirty with transparent(needDrawBehindWindow) curSurfaceNode
-* @tc.type: FUNC
-* @tc.require: issuesIAE0Q3
-*/
+ * @tc.name: CollectFilterInfoAndUpdateDirty004
+ * @tc.desc: Verify function CollectFilterInfoAndUpdateDirty with transparent(needDrawBehindWindow) curSurfaceNode
+ * @tc.type: FUNC
+ * @tc.require: issuesIAE0Q3
+ */
 HWTEST_F(RSUniRenderVisitorTest, CollectFilterInfoAndUpdateDirty004, TestSize.Level2)
 {
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
@@ -5142,11 +5142,11 @@ HWTEST_F(RSUniRenderVisitorTest, IsFirstFrameOfOverdrawSwitch, TestSize.Level1)
 }
 
 /*
-* @tc.name: CheckMergeDisplayDirtyByRoundCornerDisplay001
-* @tc.desc: Test RSUniRenderVisitorTest.CheckMergeDisplayDirtyByRoundCornerDisplay001
-* @tc.type: FUNC
-* @tc.require: issueIB2P2F
-*/
+ * @tc.name: CheckMergeDisplayDirtyByRoundCornerDisplay001
+ * @tc.desc: Test RSUniRenderVisitorTest.CheckMergeDisplayDirtyByRoundCornerDisplay001
+ * @tc.type: FUNC
+ * @tc.require: issueIB2P2F
+ */
 HWTEST_F(RSUniRenderVisitorTest, CheckMergeDisplayDirtyByRoundCornerDisplay001, TestSize.Level2)
 {
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
@@ -5167,11 +5167,11 @@ HWTEST_F(RSUniRenderVisitorTest, CheckMergeDisplayDirtyByRoundCornerDisplay001, 
 }
 
 /*
-* @tc.name: CheckMergeDisplayDirtyByRoundCornerDisplay002
-* @tc.desc: Test RSUniRenderVisitorTest.CheckMergeDisplayDirtyByRoundCornerDisplay002
-* @tc.type: FUNC
-* @tc.require: issueIB2P2F
-*/
+ * @tc.name: CheckMergeDisplayDirtyByRoundCornerDisplay002
+ * @tc.desc: Test RSUniRenderVisitorTest.CheckMergeDisplayDirtyByRoundCornerDisplay002
+ * @tc.type: FUNC
+ * @tc.require: issueIB2P2F
+ */
 HWTEST_F(RSUniRenderVisitorTest, CheckMergeDisplayDirtyByRoundCornerDisplay002, TestSize.Level2)
 {
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
@@ -5201,11 +5201,11 @@ HWTEST_F(RSUniRenderVisitorTest, CheckMergeDisplayDirtyByRoundCornerDisplay002, 
 }
 
 /*
-* @tc.name: UpdateAncoNodeHWCDisabledState
-* @tc.desc: Test RSUniRenderVisitorTest.UpdateAncoNodeHWCDisabledState
-* @tc.type: FUNC
-* @tc.require: IAHFXD
-*/
+ * @tc.name: UpdateAncoNodeHWCDisabledState
+ * @tc.desc: Test RSUniRenderVisitorTest.UpdateAncoNodeHWCDisabledState
+ * @tc.type: FUNC
+ * @tc.require: IAHFXD
+ */
 HWTEST_F(RSUniRenderVisitorTest, UpdateAncoNodeHWCDisabledState, TestSize.Level1)
 {
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
@@ -5219,11 +5219,11 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateAncoNodeHWCDisabledState, TestSize.Level1
 }
 
 /*
-* @tc.name: UpdatePointWindowDirtyStatus001
-* @tc.desc: Test UpdatePointWindowDirtyStatus while pointSurfaceHandler isn't nullptr
-* @tc.type: FUNC
-* @tc.require: issueIBE0XP
-*/
+ * @tc.name: UpdatePointWindowDirtyStatus001
+ * @tc.desc: Test UpdatePointWindowDirtyStatus while pointSurfaceHandler isn't nullptr
+ * @tc.type: FUNC
+ * @tc.require: issueIBE0XP
+ */
 HWTEST_F(RSUniRenderVisitorTest, UpdatePointWindowDirtyStatus001, TestSize.Level2)
 {
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
@@ -5242,11 +5242,11 @@ HWTEST_F(RSUniRenderVisitorTest, UpdatePointWindowDirtyStatus001, TestSize.Level
 }
 
 /*
-* @tc.name: MarkBlurIntersectWithDRM002
-* @tc.desc: Test MarkBlurIntersectWithDRM while appWindowNode isn't nullptr
-* @tc.type: FUNC
-* @tc.require: issueIBE0XP
-*/
+ * @tc.name: MarkBlurIntersectWithDRM002
+ * @tc.desc: Test MarkBlurIntersectWithDRM while appWindowNode isn't nullptr
+ * @tc.type: FUNC
+ * @tc.require: issueIBE0XP
+ */
 HWTEST_F(RSUniRenderVisitorTest, MarkBlurIntersectWithDRM002, TestSize.Level2)
 {
     RSSurfaceRenderNodeConfig surfaceConfig;
@@ -5271,11 +5271,11 @@ HWTEST_F(RSUniRenderVisitorTest, MarkBlurIntersectWithDRM002, TestSize.Level2)
 }
 
 /*
-* @tc.name: IsValidInVirtualScreen001
-* @tc.desc: Test IsValidInVirtualScreen with normal layer
-* @tc.type: FUNC
-* @tc.require: issueIBR5DD
-*/
+ * @tc.name: IsValidInVirtualScreen001
+ * @tc.desc: Test IsValidInVirtualScreen with normal layer
+ * @tc.type: FUNC
+ * @tc.require: issueIBR5DD
+ */
 HWTEST_F(RSUniRenderVisitorTest, IsValidInVirtualScreen001, TestSize.Level2)
 {
     auto surfaceNode = RSTestUtil::CreateSurfaceNode();
@@ -5289,11 +5289,11 @@ HWTEST_F(RSUniRenderVisitorTest, IsValidInVirtualScreen001, TestSize.Level2)
 }
 
 /*
-* @tc.name: IsValidInVirtualScreen002
-* @tc.desc: Test IsValidInVirtualScreen with security layer
-* @tc.type: FUNC
-* @tc.require: issueIBR5DD
-*/
+ * @tc.name: IsValidInVirtualScreen002
+ * @tc.desc: Test IsValidInVirtualScreen with security layer
+ * @tc.type: FUNC
+ * @tc.require: issueIBR5DD
+ */
 HWTEST_F(RSUniRenderVisitorTest, IsValidInVirtualScreen002, TestSize.Level2)
 {
     auto surfaceNode = RSTestUtil::CreateSurfaceNode();
@@ -5308,11 +5308,11 @@ HWTEST_F(RSUniRenderVisitorTest, IsValidInVirtualScreen002, TestSize.Level2)
 }
 
 /*
-* @tc.name: IsValidInVirtualScreen003
-* @tc.desc: Test IsValidInVirtualScreen with skip layer
-* @tc.type: FUNC
-* @tc.require: issueIBR5DD
-*/
+ * @tc.name: IsValidInVirtualScreen003
+ * @tc.desc: Test IsValidInVirtualScreen with skip layer
+ * @tc.type: FUNC
+ * @tc.require: issueIBR5DD
+ */
 HWTEST_F(RSUniRenderVisitorTest, IsValidInVirtualScreen003, TestSize.Level2)
 {
     auto surfaceNode = RSTestUtil::CreateSurfaceNode();
@@ -5327,11 +5327,11 @@ HWTEST_F(RSUniRenderVisitorTest, IsValidInVirtualScreen003, TestSize.Level2)
 }
 
 /*
-* @tc.name: IsValidInVirtualScreen004
-* @tc.desc: Test IsValidInVirtualScreen with protected layer
-* @tc.type: FUNC
-* @tc.require: issueIBR5DD
-*/
+ * @tc.name: IsValidInVirtualScreen004
+ * @tc.desc: Test IsValidInVirtualScreen with protected layer
+ * @tc.type: FUNC
+ * @tc.require: issueIBR5DD
+ */
 HWTEST_F(RSUniRenderVisitorTest, IsValidInVirtualScreen004, TestSize.Level2)
 {
     auto surfaceNode = RSTestUtil::CreateSurfaceNode();
@@ -5346,11 +5346,11 @@ HWTEST_F(RSUniRenderVisitorTest, IsValidInVirtualScreen004, TestSize.Level2)
 }
 
 /*
-* @tc.name: IsValidInVirtualScreen005
-* @tc.desc: Test IsValidInVirtualScreen with snapshot skip layer
-* @tc.type: FUNC
-* @tc.require: issueIBR5DD
-*/
+ * @tc.name: IsValidInVirtualScreen005
+ * @tc.desc: Test IsValidInVirtualScreen with snapshot skip layer
+ * @tc.type: FUNC
+ * @tc.require: issueIBR5DD
+ */
 HWTEST_F(RSUniRenderVisitorTest, IsValidInVirtualScreen005, TestSize.Level2)
 {
     auto surfaceNode = RSTestUtil::CreateSurfaceNode();
@@ -5365,11 +5365,11 @@ HWTEST_F(RSUniRenderVisitorTest, IsValidInVirtualScreen005, TestSize.Level2)
 }
 
 /*
-* @tc.name: IsValidInVirtualScreen006
-* @tc.desc: Test IsValidInVirtualScreen with whitelist cast
-* @tc.type: FUNC
-* @tc.require: issueIBR5DD
-*/
+ * @tc.name: IsValidInVirtualScreen006
+ * @tc.desc: Test IsValidInVirtualScreen with whitelist cast
+ * @tc.type: FUNC
+ * @tc.require: issueIBR5DD
+ */
 HWTEST_F(RSUniRenderVisitorTest, IsValidInVirtualScreen006, TestSize.Level2)
 {
     auto surfaceNode = RSTestUtil::CreateSurfaceNode();
@@ -5384,11 +5384,11 @@ HWTEST_F(RSUniRenderVisitorTest, IsValidInVirtualScreen006, TestSize.Level2)
 }
 
 /*
-* @tc.name: IsValidInVirtualScreen007
-* @tc.desc: Test IsValidInVirtualScreen with surface is in blacklist
-* @tc.type: FUNC
-* @tc.require: issueIBR5DD
-*/
+ * @tc.name: IsValidInVirtualScreen007
+ * @tc.desc: Test IsValidInVirtualScreen with surface is in blacklist
+ * @tc.type: FUNC
+ * @tc.require: issueIBR5DD
+ */
 HWTEST_F(RSUniRenderVisitorTest, IsValidInVirtualScreen007, TestSize.Level2)
 {
     auto surfaceNode = RSTestUtil::CreateSurfaceNode();
@@ -5403,11 +5403,11 @@ HWTEST_F(RSUniRenderVisitorTest, IsValidInVirtualScreen007, TestSize.Level2)
 }
 
 /*
-* @tc.name: IsValidInVirtualScreen008
-* @tc.desc: Test IsValidInVirtualScreen with surface is not in blacklist
-* @tc.type: FUNC
-* @tc.require: issueIBR5DD
-*/
+ * @tc.name: IsValidInVirtualScreen008
+ * @tc.desc: Test IsValidInVirtualScreen with surface is not in blacklist
+ * @tc.type: FUNC
+ * @tc.require: issueIBR5DD
+ */
 HWTEST_F(RSUniRenderVisitorTest, IsValidInVirtualScreen008, TestSize.Level2)
 {
     auto surfaceNode = RSTestUtil::CreateSurfaceNode();
@@ -5424,11 +5424,11 @@ HWTEST_F(RSUniRenderVisitorTest, IsValidInVirtualScreen008, TestSize.Level2)
 }
 
 /*
-* @tc.name: CheckFilterNodeInSkippedSubTreeNeedClearCache001
-* @tc.desc: Test CheckFilterNodeInSkippedSubTreeNeedClearCache while effectNode with fiter
-* @tc.type: FUNC
-* @tc.require: issueIBE0XP
-*/
+ * @tc.name: CheckFilterNodeInSkippedSubTreeNeedClearCache001
+ * @tc.desc: Test CheckFilterNodeInSkippedSubTreeNeedClearCache while effectNode with fiter
+ * @tc.type: FUNC
+ * @tc.require: issueIBE0XP
+ */
 HWTEST_F(RSUniRenderVisitorTest, CheckFilterNodeInSkippedSubTreeNeedClearCache001, TestSize.Level2)
 {
     auto rsContext = std::make_shared<RSContext>();
@@ -5454,11 +5454,11 @@ HWTEST_F(RSUniRenderVisitorTest, CheckFilterNodeInSkippedSubTreeNeedClearCache00
 }
 
 /*
-* @tc.name: CheckFilterNodeInSkippedSubTreeNeedClearCache002
-* @tc.desc: Test CheckFilterNodeInSkippedSubTreeNeedClearCache while surfaceNode not included in the nodemap
-* @tc.type: FUNC
-* @tc.require: issueIBE0XP
-*/
+ * @tc.name: CheckFilterNodeInSkippedSubTreeNeedClearCache002
+ * @tc.desc: Test CheckFilterNodeInSkippedSubTreeNeedClearCache while surfaceNode not included in the nodemap
+ * @tc.type: FUNC
+ * @tc.require: issueIBE0XP
+ */
 HWTEST_F(RSUniRenderVisitorTest, CheckFilterNodeInSkippedSubTreeNeedClearCache002, TestSize.Level2)
 {
     auto rsContext = std::make_shared<RSContext>();
@@ -5479,11 +5479,11 @@ HWTEST_F(RSUniRenderVisitorTest, CheckFilterNodeInSkippedSubTreeNeedClearCache00
 }
 
 /*
-* @tc.name: SetHdrWhenMultiDisplayChangeTest
-* @tc.desc: Test SetHdrWhenMultiDisplayChangeTest
-* @tc.type: FUNC
-* @tc.require: issueIBF9OU
-*/
+ * @tc.name: SetHdrWhenMultiDisplayChangeTest
+ * @tc.desc: Test SetHdrWhenMultiDisplayChangeTest
+ * @tc.type: FUNC
+ * @tc.require: issueIBF9OU
+ */
 HWTEST_F(RSUniRenderVisitorTest, SetHdrWhenMultiDisplayChangeTest, TestSize.Level2)
 {
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
@@ -5492,11 +5492,11 @@ HWTEST_F(RSUniRenderVisitorTest, SetHdrWhenMultiDisplayChangeTest, TestSize.Leve
 }
 
 /*
-* @tc.name: TryNotifyUIBufferAvailable
-* @tc.desc: Test RSUniRenderVisitorTest.TryNotifyUIBufferAvailable test
-* @tc.type: FUNC
-* @tc.require: issuesIBSNHZ
-*/
+ * @tc.name: TryNotifyUIBufferAvailable
+ * @tc.desc: Test RSUniRenderVisitorTest.TryNotifyUIBufferAvailable test
+ * @tc.type: FUNC
+ * @tc.require: issuesIBSNHZ
+ */
 HWTEST_F(RSUniRenderVisitorTest, TryNotifyUIBufferAvailable, TestSize.Level1)
 {
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
@@ -5512,11 +5512,11 @@ HWTEST_F(RSUniRenderVisitorTest, TryNotifyUIBufferAvailable, TestSize.Level1)
 }
 
 /*
-* @tc.name: CheckMergeDebugRectforRefreshRate
-* @tc.desc: Test RSUniRenderVisitorTest.CheckMergeDebugRectforRefreshRate test
-* @tc.type: FUNC
-* @tc.require: issuesIBSNHZ
-*/
+ * @tc.name: CheckMergeDebugRectforRefreshRate
+ * @tc.desc: Test RSUniRenderVisitorTest.CheckMergeDebugRectforRefreshRate test
+ * @tc.type: FUNC
+ * @tc.require: issuesIBSNHZ
+ */
 HWTEST_F(RSUniRenderVisitorTest, CheckMergeDebugRectforRefreshRate, TestSize.Level1)
 {
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
@@ -5542,11 +5542,11 @@ HWTEST_F(RSUniRenderVisitorTest, CheckMergeDebugRectforRefreshRate, TestSize.Lev
 }
 
 /*
-* @tc.name: SetUniRenderThreadParam
-* @tc.desc: Test RSUniRenderVisitorTest.SetUniRenderThreadParam test
-* @tc.type: FUNC
-* @tc.require: issuesIBSNHZ
-*/
+ * @tc.name: SetUniRenderThreadParam
+ * @tc.desc: Test RSUniRenderVisitorTest.SetUniRenderThreadParam test
+ * @tc.type: FUNC
+ * @tc.require: issuesIBSNHZ
+ */
 HWTEST_F(RSUniRenderVisitorTest, SetUniRenderThreadParam, TestSize.Level1)
 {
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
@@ -5559,11 +5559,11 @@ HWTEST_F(RSUniRenderVisitorTest, SetUniRenderThreadParam, TestSize.Level1)
 
 
 /*
-* @tc.name: CollectSelfDrawingNodeRectInfoTest
-* @tc.desc: Test CollectSelfDrawingNodeRectInfo
-* @tc.type: FUNC
-* @tc.require:
-*/
+ * @tc.name: CollectSelfDrawingNodeRectInfoTest
+ * @tc.desc: Test CollectSelfDrawingNodeRectInfo
+ * @tc.type: FUNC
+ * @tc.require:
+ */
 HWTEST_F(RSUniRenderVisitorTest, CollectSelfDrawingNodeRectInfoTest, TestSize.Level2)
 {
     RSSurfaceRenderNode node(1);
@@ -5575,11 +5575,11 @@ HWTEST_F(RSUniRenderVisitorTest, CollectSelfDrawingNodeRectInfoTest, TestSize.Le
 }
 
 /*
-* @tc.name: UpdateDisplayRcdRenderNodeTest
-* @tc.desc: Test UpdateDisplayRcdRenderNodeTest
-* @tc.type: FUNC
-* @tc.require: issueIBF9OU
-*/
+ * @tc.name: UpdateDisplayRcdRenderNodeTest
+ * @tc.desc: Test UpdateDisplayRcdRenderNodeTest
+ * @tc.type: FUNC
+ * @tc.require: issueIBF9OU
+ */
 HWTEST_F(RSUniRenderVisitorTest, UpdateDisplayRcdRenderNodeTest, TestSize.Level2)
 {
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
@@ -5592,11 +5592,11 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateDisplayRcdRenderNodeTest, TestSize.Level2
 }
 
 /*
-* @tc.name: UpdateAncoPrepareClip
-* @tc.desc: Test UpdateAncoPrepareClip001, clipToBounds_ & clipToFrame_ = true;
-* @tc.type: FUNC
-* @tc.require: issueIAJSIS
-*/
+ * @tc.name: UpdateAncoPrepareClip
+ * @tc.desc: Test UpdateAncoPrepareClip001, clipToBounds_ & clipToFrame_ = true;
+ * @tc.type: FUNC
+ * @tc.require: issueIAJSIS
+ */
 HWTEST_F(RSUniRenderVisitorTest, UpdateAncoPrepareClip001, TestSize.Level1)
 {
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
