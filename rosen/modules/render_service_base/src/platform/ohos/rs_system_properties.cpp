@@ -1442,16 +1442,19 @@ bool RSSystemProperties::GetHybridRenderHmsymbolEnabled()
 
 int32_t RSSystemProperties::GetHybridRenderSwitch(ComponentEnableSwitch bitSeq)
 {
-    static int32_t hybridRenderFeatureSwitch = std::stol((system::GetParameter("const.graphics.hybridrenderfeatureswitch", "0x00")).c_str(), nullptr, 16);
+    static int32_t hybridRenderFeatureSwitch =
+        std::stol((system::GetParameter("const.graphics.hybridrenderfeatureswitch", "0x00")).c_str(), nullptr, 16);
     static std::vector<int> hybridRenderSystemProperty(std::size(ComponentSwitchTable));
 
     if (!GetHybridRenderEnabled()) {
         return 0;
     }
 
-    hybridRenderSystemProperty[static_cast<int>(bitSeq)] = ComponentSwitchTable[static_cast<int>(bitSeq)].ComponentHybridSwitch();
+    hybridRenderSystemProperty[static_cast<int>(bitSeq)] =
+        ComponentSwitchTable[static_cast<int>(bitSeq)].ComponentHybridSwitch();
 
-    return (GetHybridRenderCcmEnabled() && (!hybridRenderFeatureSwitch ? 1 : (1 << static_cast<int>(bitSeq)) & hybridRenderFeatureSwitch)) ||
+    return (GetHybridRenderCcmEnabled() && (!hybridRenderFeatureSwitch ?
+        1 : (1 << static_cast<int>(bitSeq)) & hybridRenderFeatureSwitch)) ||
         hybridRenderSystemProperty[static_cast<int>(bitSeq)];
 }
 #endif
