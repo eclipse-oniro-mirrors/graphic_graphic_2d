@@ -188,13 +188,15 @@ bool VSyncSampler::AddSample(int64_t timeStamp)
     bool shouldDisableScreenVsync;
     {
         std::lock_guard<std::mutex> lock(mutex_);
-        auto preSample = samples_[(firstSampleIndex_ + numSamples_ - 1) % MAX_SAMPLES];
         if (numSamples_ > 0) {
+            auto preSample = samples_[(firstSampleIndex_ + numSamples_ - 1) % MAX_SAMPLES];
             auto intervalStamp = timeStamp - preSample;
+
             if (intervalStamp <= 0) {
                 numSamples_ = 0;
                 return true;
             }
+            
             if (isAdaptive_.load() && CreateVsyncGenerator() -> CheckSampleIsAdaptive(intervalStamp)) {
                 numSamples_ = 0;
                 return true;

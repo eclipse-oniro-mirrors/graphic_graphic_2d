@@ -1107,6 +1107,11 @@ void VSyncGenerator::Dump(std::string &result)
     result += "\nperiodCheckCounter_:" + std::to_string(periodCheckCounter_);
 }
 
+bool VSyncGenerator::CheckSampleIsAdaptive(int64_t hardwareVsyncInterval)
+{
+    return hardwareVsyncInterval > period_ + PERIOD_CHECK_THRESHOLD;
+}
+
 void VSyncGenerator::PrintGeneratorStatus()
 {
     std::unique_lock<std::mutex> lock(mutex_);
