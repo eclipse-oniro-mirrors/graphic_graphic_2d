@@ -19,13 +19,12 @@
 #include <unordered_map>
 #include <unordered_set>
 
+#include "common/rs_optional_trace.h"
+#include "platform/ohos/backend/native_buffer_utils.h"
+#include "pipeline/rs_draw_cmd.h"
 #include "recording/cmd_list_helper.h"
 #include "recording/draw_cmd_list.h"
 #include "surface_buffer.h"
-
-#include "common/rs_optional_trace.h"
-#include "pipeline/rs_draw_cmd.h"
-#include "platform/ohos/backend/native_buffer_utils.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -80,10 +79,12 @@ private:
     static std::shared_ptr<Drawing::Surface> CreateSurface(std::unique_ptr<Media::PixelMap>& pixelMap,
         int32_t width, int32_t height);
 
-    static void Playback(const std::shared_ptr<Drawing::Surface>& surface,
+    static bool Playback(const std::shared_ptr<Drawing::Surface>& surface,
         const std::shared_ptr<Drawing::DrawCmdList>& cmdList, bool isCanvasType);
 
     static void InvalidateSurfaceCache(const std::shared_ptr<Media::PixelMap>& pixelMap);
+
+    static void DrawSnapshot(std::shared_ptr<Drawing::Canvas>& canvas, std::shared_ptr<Drawing::Image>& snapshot);
 
     static void AddPixelMapDrawOp(const std::shared_ptr<Drawing::DrawCmdList>& cmdList,
         const std::shared_ptr<Media::PixelMap>& pixelMap, int32_t width, int32_t height,
@@ -107,7 +108,7 @@ private:
 
     static bool offTreeNodesChange_;
 
-    static std::unordered_set<NodeId> allOffTreeNodes;
+    static std::unordered_set<NodeId> allOffTreeNodes_;
 
     static std::mutex nodeStatusMutex_;
 

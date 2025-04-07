@@ -19,10 +19,9 @@
 #include <future>
 #include <mutex>
 
+#include "common/rs_common_def.h"
 #include "event_handler.h"
 #include "refbase.h"
-
-#include "common/rs_common_def.h"
 #include "transaction/rs_transaction_data.h"
 
 #ifdef ACCESSIBILITY_ENABLE
@@ -68,7 +67,7 @@ public:
     {
         // Non-system app, the first value is incorrect.
         if (!first_ || IsSystemApp()) {
-            highContrast_ = value.hightContrastText;
+            highContrast_ = value.highContrastText;
         }
         first_ = false;
     }

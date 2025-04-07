@@ -40,6 +40,7 @@
 #include "ui/rs_ui_context_manager.h"
 #ifdef RS_ENABLE_VK
 #include "modifier_render_thread/rs_modifiers_draw_thread.h"
+#include "modifier_render_thread/rs_modifiers_draw.h"
 #endif
 
 #ifdef _WIN32
@@ -106,7 +107,7 @@ void RSUIDirector::Init(bool shouldCreateRenderThread, bool isMultiInstance)
         // force fallback animaiions send to RS if no render thread
         RSNodeMap::Instance().GetAnimationFallbackNode()->isRenderServiceNode_ = true; // ToDo
 #ifdef RS_ENABLE_VK
-        InitHybridRender():
+        InitHybridRender();
 #endif
     }
     if (!cacheDir_.empty()) {
@@ -138,7 +139,7 @@ void RSUIDirector::SetFlushEmptyCallback(FlushEmptyCallback flushEmptyCallback)
 #ifdef RS_ENABLE_VK
 void RSUIDirector::InitHybridRender()
 {
-    if (RSSystemProperties.GetHybridRenderEnabled() && !cacheDir_.empty()) {
+    if (RSSystemProperties::GetHybridRenderEnabled() && !cacheDir_.empty()) {
         RSModifiersDrawThread::Instance().SetCacheDir(cacheDir_);
         CommitTransactionCallback callback =
             [] (std::shared_ptr<RSIRenderClient> &renderServiceClient,
@@ -153,6 +154,7 @@ void RSUIDirector::InitHybridRender()
         SetCommitTransactionCallback(callback);
     }
 }
+
 void RSUIDirector::SetCommitTransactionCallback(CommitTransactionCallback commitTransactionCallback)
 {
     if (rsUIContext_) {
@@ -210,6 +212,9 @@ void RSUIDirector::GoForeground(bool isTextureExport)
             surfaceNode->SetAbilityState(RSSurfaceNodeAbilityState::FOREGROUND);
         }
     }
+#ifdef RS_ENABLE_VK
+    RSModifiersDraw::InsertForegroundRoot(root_);
+#endif
 }
 
 void RSUIDirector::GoBackground(bool isTextureExport)
@@ -232,6 +237,9 @@ void RSUIDirector::GoBackground(bool isTextureExport)
             surfaceNode->SetAbilityState(RSSurfaceNodeAbilityState::BACKGROUND);
         }
         if (isTextureExport || isUniRenderEnabled_) {
+#ifdef RS_ENABLE_VK
+            RSModifiersDraw::EraseForegroundRoot(root_);
+#endif
             return;
         }
         // clean bufferQueue cache
@@ -256,6 +264,9 @@ void RSUIDirector::GoBackground(bool isTextureExport)
         });
 #endif
     }
+#ifdef RS_ENABLE_VK
+    RSModifiersDraw::EraseForegroundRoot(root_);
+#endif
 }
 
 void RSUIDirector::Destroy(bool isTextureExport)

@@ -25,7 +25,6 @@ namespace Drawing {
 class DrawOpItem;
 class DRAWING_API DrawCmdList : public CmdList {
 public:
-#ifdef RS_ENABLE_VK
     /**
      * @brief   there are five enable type for Hybrid Render
      * @param   NONE       default type, not enable Hybrid Render
@@ -35,14 +34,13 @@ public:
      * @param   CANVAS     canvasDrawingNode type
      * @detail  enable type for Hybrid Render
      */
-    enum class HybridRenderType {
+    enum class HybridRenderType : uint32_t {
         NONE,
         TEXT,
         SVG,
         HMSYMBOL,
         CANVAS
     };
-#endif
 
     /**
      * @brief   there are two mode for DrawCmdList to add new op

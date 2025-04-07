@@ -18,15 +18,15 @@
 #ifdef ACCESSIBILITY_ENABLE
 #include "transaction/rs_render_service_client.h"
 #endif
-#include "platform/common/rs_log.h"
-#include "qos.h"
-#include "render_context/shader_cache.h"
-#include "modifier_render_thread/rs_modifiers_draw.h"
 #include "command/rs_canvas_node_command.h"
 #include "command/rs_command.h"
 #include "command/rs_node_command.h"
-
 #include "ffrt_inner.h"
+#include "modifier_render_thread/rs_modifiers_draw.h"
+#include "platform/common/rs_log.h"
+#include "platform/ohos/backend/rs_vulkan_context.h"
+#include "qos.h"
+#include "render_context/shader_cache.h"
 #include "rs_frame_report.h"
 
 namespace OHOS {
@@ -69,7 +69,7 @@ void RSModifiersDrawThread::SetCacheDir(const std::string& path)
 #ifdef ACCESSIBILITY_ENABLE
 void RSModifiersDrawThread::SubscribeHighContrastChange()
 {
-    if (!RSSystemProperties::GetHybridRenderEnable() || highContrastObserver_ != nullptr) {
+    if (!RSSystemProperties::GetHybridRenderEnabled() || highContrastObserver_ != nullptr) {
         return;
     }
     auto& config = AccessibilityConfig::AccessibilityConfig::GetInstance();
@@ -117,6 +117,7 @@ void RSModifiersDrawThread::Start()
     if (isStarted_) {
         return;
     }
+    RsVulkanContext::SetHybridRender(true);
     runner_ = AppExecFwk::EventRunner::Create("ModifiersDraw");
     handler_ = std::make_shared<AppExecFwk::EventHandler>(runner_);
     runner_->Run();
@@ -156,13 +157,13 @@ bool RSModifiersDrawThread::TargetCommad(
         return false;
     }
 #ifdef ACCESSIBILITY_ENABLE
-    if (RSModifiersDrawThread::Instance().GetHighContrast &&
+    if (RSModifiersDrawThread::Instance().GetHighContrast() &&
         hybridRenderType == Drawing::DrawCmdList::HybridRenderType::TEXT) {
             return false;
         }
 #endif
     bool targetCmd = false;
-    switch (cmd->GetType()) {
+    switch (type) {
         case RSCommandType::RS_NODE:
             if (subType == OHOS::Rosen::RSNodeCommandType::UPDATE_MODIFIER_DRAW_CMD_LIST ||
                 subType == OHOS::Rosen::RSNodeCommandType::ADD_MODIFIER) {
@@ -209,7 +210,7 @@ std::unique_ptr<RSTransactionData>& RSModifiersDrawThread::ConvertTransaction(
             case Drawing::DrawCmdList::HybridRenderType::SVG:
             case Drawing::DrawCmdList::HybridRenderType::HMSYMBOL:
                 if (RSSystemProperties::GetHybridRenderParallelConvertEnabled()) {
-                    handles.emplace_back(queue->submit.h(
+                    handles.emplace_back(queue->submit_h(
                         [cmdList = std::move(drawCmdList), nodeId = command->GetNodeId()]() {
                         RSModifiersDraw::ConvertCmdList(cmdList, nodeId);
                     }));

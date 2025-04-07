@@ -26,7 +26,7 @@ std::mutex RSModifiersDraw::surfaceEntryMutex_;
 std::unordered_map<NodeId, RSModifiersDraw::SurfaceEntry> RSModifiersDraw::surfaceEntryMap_;
 std::mutex RSModifiersDraw::dirtyNodeMutex_;
 std::unordered_set<NodeId> RSModifiersDraw::dirtyNodes_;
-std::unordered_set<NodeId> RSModifiersDraw::allOffTreeNodes;
+std::unordered_set<NodeId> RSModifiersDraw::allOffTreeNodes_;
 bool RSModifiersDraw::offTreeNodesChange_ = false;
 std::unordered_map<NodeId, std::unordered_set<NodeId>> RSModifiersDraw::offTreeNodes_;
 std::mutex RSModifiersDraw::nodeStatusMutex_;
@@ -84,12 +84,17 @@ void RSModifiersDraw::InvalidateSurfaceCache(const std::shared_ptr<Media::PixelM
     return;
 }
 
+void RSModifiersDraw::DrawSnapshot(std::shared_ptr<Drawing::Canvas>& canvas, std::shared_ptr<Drawing::Image>& snapshot)
+{
+    return;
+}
+
 void RSModifiersDraw::ConvertCmdListForCanvas(const std::shared_ptr<Drawing::DrawCmdList>& cmdList, NodeId nodeId)
 {
     return;
 }
 
-void RSModifiersDraw::ConvertCmdList(const std::shared_ptr<Drawing::DrawCmdList>& cmdList)
+void RSModifiersDraw::ConvertCmdList(const std::shared_ptr<Drawing::DrawCmdList>& cmdList, NodeId nodeId)
 {
     return;
 }

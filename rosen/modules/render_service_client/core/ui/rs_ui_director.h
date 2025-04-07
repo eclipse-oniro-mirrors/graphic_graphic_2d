@@ -21,6 +21,7 @@
 
 #include "command/rs_animation_command.h"
 #include "common/rs_common_def.h"
+#include "transaction/rs_irender_client.h"
 
 namespace OHOS {
 class Surface;
