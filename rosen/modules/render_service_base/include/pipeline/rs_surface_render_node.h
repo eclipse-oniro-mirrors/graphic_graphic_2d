@@ -1807,6 +1807,7 @@ private:
     friend class SurfaceNodeCommandHelper;
     friend class RSUifirstManager;
     friend class RSUniRenderVisitor;
+    friend class RSUniHwcVisitor;
     friend class RSRenderNode;
     friend class RSRenderService;
 #ifdef RS_PROFILER_ENABLED

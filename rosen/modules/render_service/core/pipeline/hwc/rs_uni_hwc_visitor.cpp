@@ -15,8 +15,10 @@
 #include "rs_uni_hwc_visitor.h"
 
 #include "feature/hwc/rs_uni_hwc_compute_util.h"
+#include "feature/hdr/rs_hdr_util.h"
 #include "pipeline/rs_canvas_render_node.h"
 
+#include "common/rs_common_hook.h"
 #include "common/rs_optional_trace.h"
 
 namespace OHOS {
@@ -482,7 +484,7 @@ void RSUniHwcVisitor::UpdateChildHwcNodeEnableByHwcNodeBelow(std::vector<RectI>&
 void RSUniHwcVisitor::UpdateHwcNodeEnableByHwcNodeBelowSelf(std::vector<RectI>& hwcRects,
     std::shared_ptr<RSSurfaceRenderNode>& hwcNode, bool isIntersectWithRoundCorner)
 {
-    if (!curDisplayNode_) {
+    if (!uniRenderVisitor_.curDisplayNode_) {
         RS_LOGE("RSUniRenderVisitor::UpdateHwcNodeEnableByHwcNodeBelowSelf curDisplayNode is null");
         return;
     }
@@ -750,6 +752,5 @@ void RSUniHwcVisitor::UpdateHwcNodeEnableByGlobalDirtyFilter(
         }
     }
 }
-
 } // namespace Rosen
 } // namespace OHOS
