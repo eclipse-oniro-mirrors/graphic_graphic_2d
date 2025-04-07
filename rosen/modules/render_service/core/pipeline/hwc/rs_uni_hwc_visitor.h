@@ -61,6 +61,9 @@ private:
     int32_t curZorderForCalcHwcNodeEnableByFilter_ = 0;
 
     bool isOffscreen_ = false;
+
+    // use for hardware compose disabled reason collection
+    HwcDisabledReasonCollection& hwcDisabledReasonCollection_ = HwcDisabledReasonCollection::GetInstance();
 };
 } // namespace Rosen
 } // namespace OHOS
