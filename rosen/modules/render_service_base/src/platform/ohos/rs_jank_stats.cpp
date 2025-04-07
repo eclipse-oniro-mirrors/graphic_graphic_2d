@@ -948,6 +948,7 @@ void RSJankStats::RecordAnimationDynamicFrameRate(JankFrames& jankFrames, bool i
 
 void RSJankStats::SetAnimationTraceBegin(std::pair<int64_t, std::string> animationId, JankFrames& jankFrames)
 {
+    jankFrames.isUpdateJankFrame_ = true;
     if (jankFrames.isAnimationEnded_) {
         return;
     }
@@ -974,11 +975,12 @@ void RSJankStats::SetAnimationTraceBegin(std::pair<int64_t, std::string> animati
         implicitAnimationTotal_++;
     }
     RS_ASYNC_TRACE_BEGIN(traceName, traceId);
-    jankFrames.isUpdateJankFrame_ = true;
 }
 
 void RSJankStats::SetAnimationTraceEnd(JankFrames& jankFrames)
 {
+    jankFrames.isUpdateJankFrame_ = false;
+    jankFrames.isAnimationEnded_ = true;
     const int32_t traceId = jankFrames.traceId_;
     if (traceId == TRACE_ID_INITIAL) {
         ROSEN_LOGE("RSJankStats::SetAnimationTraceEnd traceId not initialized");
@@ -997,8 +999,6 @@ void RSJankStats::SetAnimationTraceEnd(JankFrames& jankFrames)
     } else {
         implicitAnimationTotal_--;
     }
-    jankFrames.isUpdateJankFrame_ = false;
-    jankFrames.isAnimationEnded_ = true;
 }
 
 void RSJankStats::CheckAnimationTraceTimeout()
