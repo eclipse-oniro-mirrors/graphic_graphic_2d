@@ -23,7 +23,7 @@
 #include "common/rs_macros.h"
 #include "utils/system_properties.h"
 
-namespace OHOS { 
+namespace OHOS {
 namespace Rosen {
 
 enum class CrossNodeOffScreenRenderDebugType {
