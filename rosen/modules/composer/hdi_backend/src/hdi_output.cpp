@@ -290,6 +290,7 @@ void HdiOutput::GetLayerInfos(std::vector<LayerInfoPtr>& layerInfos)
 
 void HdiOutput::UpdatePrevLayerInfoLocked()
 {
+    RS_TRACE_NAME_FMT("HdiOutput::UpdatePrevLayerInfoLocked, layerIdMap size %u", layerIdMap_.size());
     for (auto iter = layerIdMap_.begin(); iter != layerIdMap_.end(); iter++) {
         LayerPtr layer = iter->second;
         layer->SavePrevLayerInfo();
@@ -524,6 +525,7 @@ int32_t HdiOutput::CommitAndGetReleaseFence(
 
 int32_t HdiOutput::UpdateInfosAfterCommit(sptr<SyncFence> fbFence)
 {
+    RS_TRACE_NAME("HdiOutput::UpdateInfosAfterCommit");
     std::unique_lock<std::mutex> lock(mutex_);
     if (thirdFrameAheadPresentFence_ == nullptr) {
         return GRAPHIC_DISPLAY_NULL_PTR;
@@ -595,6 +597,7 @@ int32_t HdiOutput::ReleaseFramebuffer(const sptr<SyncFence>& releaseFence)
         if (!CheckFbSurface()) { // wrong check
             ret = GRAPHIC_DISPLAY_NULL_PTR;
         } else {
+            RS_TRACE_NAME_FMT("HdiOutput::ReleaseFramebuffer, seqNum %u", lastFrameBuffer_->GetSeqNum());
             ret = fbSurface_->ReleaseFramebuffer(lastFrameBuffer_, releaseFence);
         }
     }
@@ -615,7 +618,7 @@ void HdiOutput::ReleaseSurfaceBuffer(sptr<SyncFence>& releaseFence)
         if (buffer == nullptr) {
             return;
         }
-        RS_TRACE_NAME("HdiOutput::ReleaseBuffer");
+        RS_TRACE_NAME_FMT("HdiOutput::ReleaseBuffer, seqNum %u", buffer->GetSeqNum());
         auto ret = cSurface->ReleaseBuffer(buffer, releaseFence);
         if (ret == OHOS::SURFACE_ERROR_OK) {
             // reset prevBuffer if we release it successfully,
