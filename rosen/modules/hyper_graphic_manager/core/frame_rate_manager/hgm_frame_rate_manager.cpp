@@ -410,7 +410,6 @@ uint32_t HgmFrameRateManager::AvoidChangeRateFrequent(uint32_t refreshRate)
     lastLtpoRefreshRate_ = refreshRate;
     lastLtpoVoteTime_ = curTime;
     return refreshRate;
-
 }
 
 void HgmFrameRateManager::UniProcessDataForLtpo(uint64_t timestamp,

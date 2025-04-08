@@ -51,7 +51,8 @@ public:
         : min_(min), max_(max), preferred_(preferred), type_(type), componentScene_(componentScene) {}
 
     FrameRateRange(int min, int max, int preferred, uint32_t type, ComponentScene componentScene, int32_t dragScene)
-        : min_(min), max_(max), preferred_(preferred), type_(type), componentScene_(componentScene), dragScene_(dragScene) {}
+        : min_(min), max_(max), preferred_(preferred), type_(type), componentScene_(componentScene),
+          dragScene_(dragScene) {}
 
     bool IsZero() const
     {
