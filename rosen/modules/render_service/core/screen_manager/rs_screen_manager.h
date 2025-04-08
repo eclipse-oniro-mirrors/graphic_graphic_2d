@@ -110,8 +110,8 @@ public:
     virtual void SetScreenPowerStatus(ScreenId id, ScreenPowerStatus status) = 0;
     virtual ScreenPowerStatus GetScreenPowerStatus(ScreenId id) const = 0;
     virtual bool IsScreenPoweringOn() const = 0;
-    virtual bool IsScreenPowerOff(ScreenId id) const = 0;
     virtual bool IsScreenPoweringOff(ScreenId id) const = 0;
+    virtual bool IsScreenPowerOff(ScreenId id) const = 0;
     virtual bool IsAllScreensPowerOff() const = 0;
     virtual void DisablePowerOffRenderControl(ScreenId id) = 0;
     virtual int GetDisableRenderControlScreensCount() const = 0;
@@ -196,9 +196,6 @@ public:
 
     virtual int32_t SetCastScreenEnableSkipWindow(ScreenId id, bool enable) = 0;
     virtual int32_t SetVirtualScreenRefreshRate(ScreenId id, uint32_t maxRefreshRate, uint32_t& actualRefreshRate) = 0;
-
-private:
-    virtual void UpdateScreenPowerStatus(ScreenId id, ScreenPowerStatus status) = 0;
 };
 
 sptr<RSScreenManager> CreateOrGetScreenManager();
@@ -284,8 +281,8 @@ public:
     void SetScreenPowerStatus(ScreenId id, ScreenPowerStatus status) override;
     ScreenPowerStatus GetScreenPowerStatus(ScreenId id) const override;
     bool IsScreenPoweringOn() const override;
-    bool IsScreenPowerOff(ScreenId id) const override;
     bool IsScreenPoweringOff(ScreenId id) const override;
+    bool IsScreenPowerOff(ScreenId id) const override;
     bool IsAllScreensPowerOff() const override;
     void DisablePowerOffRenderControl(ScreenId id) override;
     int GetDisableRenderControlScreensCount() const override;
@@ -395,13 +392,14 @@ private:
     void ProcessScreenDisConnected(std::shared_ptr<HdiOutput>& output);
     void HandleDefaultScreenDisConnected();
 
+    void UpdateScreenPowerStatus(ScreenId id, ScreenPowerStatus status);
+
     void RegSetScreenVsyncEnabledCallbackForMainThread(ScreenId vsyncEnabledScreenId);
     void RegSetScreenVsyncEnabledCallbackForHardwareThread(ScreenId vsyncEnabledScreenId);
     void UpdateVsyncEnabledScreenId(ScreenId screenId);
     void UpdateFoldScreenConnectStatusLocked(ScreenId screenId, bool connected);
     uint64_t JudgeVSyncEnabledScreenWhileHotPlug(ScreenId screenId, bool connected);
     uint64_t JudgeVSyncEnabledScreenWhilePowerStatusChanged(ScreenId screenId, ScreenPowerStatus status);
-    void UpdateScreenPowerStatus(ScreenId id, ScreenPowerStatus status) override;
 
     void AddScreenToHgm(std::shared_ptr<HdiOutput>& output);
     void RemoveScreenFromHgm(std::shared_ptr<HdiOutput>& output);

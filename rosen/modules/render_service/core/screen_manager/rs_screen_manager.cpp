@@ -1532,7 +1532,6 @@ void RSScreenManager::SetScreenPowerStatus(ScreenId id, ScreenPowerStatus status
 {
     RSBackgroundThread::Instance().PostTask([id, status, this]() {
         if (status == ScreenPowerStatus::POWER_STATUS_OFF) {
-            RS_LOGD("[powering_off] ScreenID: %{public}" PRIu64 " PowerStatus is %{public}d", id, status);
             std::lock_guard<std::shared_mutex> lock(powerStatusMutex_);
             isScreenPoweringOff_.insert(id);
         }
@@ -1547,6 +1546,12 @@ void RSScreenManager::SetScreenPowerStatus(ScreenId id, ScreenPowerStatus status
 bool RSScreenManager::IsScreenPoweringOn() const
 {
     return isScreenPoweringOn_;
+}
+
+bool RSScreenManager::IsScreenPoweringOff(ScreenId id) const
+{
+    std::shared_lock<std::shared_mutex> lock(powerStatusMutex_);
+    return isScreenPoweringOff_.count(id) != 0;
 }
 
 bool RSScreenManager::SetVirtualMirrorScreenCanvasRotation(ScreenId id, bool canvasRotation)
@@ -2222,12 +2227,6 @@ bool RSScreenManager::IsScreenPowerOff(ScreenId id) const
     }
     return screenPowerStatus_.at(id) == GraphicDispPowerStatus::GRAPHIC_POWER_STATUS_SUSPEND ||
         screenPowerStatus_.at(id) == GraphicDispPowerStatus::GRAPHIC_POWER_STATUS_OFF;
-}
-
-bool RSScreenManager::IsScreenPoweringOff(ScreenId id) const
-{
-    std::shared_lock<std::shared_mutex> lock(powerStatusMutex_);
-    return isScreenPoweringOff_.find(id) != isScreenPoweringOff_.end();
 }
 
 void RSScreenManager::DisablePowerOffRenderControl(ScreenId id)
