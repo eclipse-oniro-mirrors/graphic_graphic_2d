@@ -1963,7 +1963,7 @@ void RSUniRenderVisitor::ProcessAncoNode(std::shared_ptr<RSSurfaceRenderNode>& h
 
 void RSUniRenderVisitor::UpdateHwcNodeEnable()
 {
-hwcVisitor_->UpdateHwcNodeEnable();
+    hwcVisitor_->UpdateHwcNodeEnable();
 }
 
 void RSUniRenderVisitor::UpdateAncoNodeHWCDisabledState(
