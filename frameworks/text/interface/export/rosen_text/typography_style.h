@@ -51,6 +51,9 @@ enum class RelayoutParagraphStyleAttribute {
     ELLIPSIS = 21,
     ELLIPSIS_MODAL = 22,
     TEXT_ALIGN = 23,
+    SPACING = 24,
+    SPACING_IS_END = 25,
+    TEXT_HEIGHT_BEHAVIOR = 26,
 
     PARAGRAPH_STYLE_ATTRIBUTE_BUTT,
 };
