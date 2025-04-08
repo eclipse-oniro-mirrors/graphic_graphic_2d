@@ -36,19 +36,19 @@ class RSUIDirector;
 #ifdef ROSEN_INSTANTIATE_COMMAND_TEMPLATE
 #define ADD_COMMAND(ALIAS, TYPE)           \
     using ALIAS = RSCommandTemplate<TYPE>; \
-    template class RSCommandTemplate<TYPE>;
+    template class RSB_EXPORT RSCommandTemplate<TYPE>;
 #else
-#define ADD_COMMAND(ALIAS, TYPE) using ALIAS = RSCommandTemplate<TYPE>;
+#define ADD_COMMAND(ALIAS, TYPE)           \
+    using ALIAS = RSCommandTemplate<TYPE>; \
+    extern template class RSB_EXPORT RSCommandTemplate<TYPE>;
 #endif
 
 template<RSCommandPermissionType permissionType, uint16_t commandType, uint16_t commandSubType, auto processFunc,
     typename... Params>
 class RSCommandTemplate : public RSCommand {
 public:
-    RSCommandTemplate(const Params&... params)
-        : params_(params...), commandType_(commandType), commandSubType_(commandSubType) {}
-    RSCommandTemplate(std::tuple<Params...>&& params)
-        : params_(std::move(params)), commandType_(commandType), commandSubType_(commandSubType) {}
+    RSCommandTemplate(const Params&... params) : params_(params...) {}
+    RSCommandTemplate(std::tuple<Params...>&& params) : params_(std::move(params)) {}
     ~RSCommandTemplate() override = default;
 
     RSCommandPermissionType GetAccessPermission() const override
@@ -58,11 +58,11 @@ public:
 
     uint16_t GetType() const override
     {
-        return commandType_;
+        return commandType;
     }
     uint16_t GetSubType() const override
     {
-        return commandSubType_;
+        return commandSubType;
     }
 
     std::shared_ptr<Drawing::DrawCmdList> GetDrawCmdList() const override
@@ -130,8 +130,6 @@ public:
 
 private:
     std::tuple<Params...> params_;
-    uint16_t commandType_;
-    uint16_t commandSubType_;
 
 #ifdef RS_PROFILER_ENABLED
     void Patch(PatchFunction function) override
