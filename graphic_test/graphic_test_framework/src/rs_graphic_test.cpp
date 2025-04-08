@@ -120,6 +120,7 @@ void RSGraphicTest::SetUp()
         testInfo->test_case_name(), testInfo->name());
 
     auto size = GetScreenSize();
+    cout << "SetUp:size:" << size.x_ << "*" << size.y_ << endl;
     if (!extInfo->isMultiple) {
         cout << "SetUp:isMultiple is false" << endl;
         SetScreenSurfaceBounds({0, 0, size.x_, size.y_});
@@ -151,6 +152,9 @@ bool RSGraphicTest::WaitOtherTest()
         testInfo->test_case_name(), testInfo->name());
     int testCaseCnt = ::OHOS::Rosen::TestDefManager::Instance().GetTestCaseCnt(
         string(testInfo->test_case_name()));
+    if (extInfo == nullptr) {
+        return true;
+    }
     if (!extInfo->isMultiple) {
         return false;
     }
