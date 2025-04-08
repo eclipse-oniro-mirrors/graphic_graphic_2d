@@ -678,15 +678,15 @@ VsyncError VSyncGenerator::UpdateMode(int64_t period, int64_t phase, int64_t ref
 
 bool VSyncGenerator::NeedPreexecuteAndUpdateTs(int64_t& timestamp, int64_t& period, int64_t lastVsyncTime)
 {
+    std::lock_guard<std::mutex> locker(mutex_);
     int64_t now = SystemTime();
     int64_t offset = (now - lastVsyncTime) % period_;
     if (period_ - offset > PERIOD_CHECK_THRESHOLD) {
         timestamp = now;
         period = period_;
-        std::lock_guard<std::mutex> locker(mutex_);
         referenceTime_ = referenceTime_ + offset - wakeupDelay_;
         RS_TRACE_NAME_FMT("NeedPreexecuteAndUpdateTs, new referenceTime:%ld, timestamp:%ld, period:%ld,",
-        referenceTime_, timestamp, period);
+            referenceTime_, timestamp, period);
         return true;
     }
     return false;
