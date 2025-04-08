@@ -266,7 +266,7 @@ void RSHardwareThread::CommitAndReleaseLayers(OutputPtr output, const std::vecto
         }
         RS_TRACE_NAME_FMT("RSHardwareThread::CommitAndReleaseLayers rate: %u, now: %" PRIu64 ", " \
             "vsyncId: %" PRIu64 ", size: %zu, %s", currentRate, param.frameTimestamp, param.vsyncId, layers.size(),
-            surfaceName.c_str());
+            GetSurfaceNameInLayersForTrace(layers).c_str());
         RS_LOGD_IF(DEBUG_COMPOSER, "RSHardwareThread::CommitAndReleaseLayers rate:%{public}u, " \
             "now:%{public}" PRIu64 ", vsyncId:%{public}" PRIu64 ", size:%{public}zu, %{public}s",
             currentRate, param.frameTimestamp, param.vsyncId, layers.size(), surfaceName.c_str());
