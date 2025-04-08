@@ -1004,6 +1004,11 @@ void RSInterfaces::SetLayerTop(const std::string &nodeIdStr, bool isTop)
     renderServiceClient_->SetLayerTop(nodeIdStr, isTop);
 }
 
+void RSInterfaces::SetColorFollow(const std::string &nodeIdStr, bool isColorFollow)
+{
+    renderServiceClient_->SetColorFollow(nodeIdStr, isColorFollow);
+}
+
 void RSInterfaces::NotifyScreenSwitched()
 {
     renderServiceClient_->NotifyScreenSwitched();
