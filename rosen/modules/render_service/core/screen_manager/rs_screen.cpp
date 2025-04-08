@@ -420,7 +420,7 @@ bool RSScreen::CalculateMaskRectAndReviseRect(const GraphicIRect& activeRect, Gr
 {
 #ifdef ROSEN_EMULATOR
     RS_LOGD("{public}s emulator device do not revise rect", __func__);
-    return;
+    return false;
 #endif
     if (!RSSystemProperties::IsSuperFoldDisplay()) {
         RS_LOGE("device is not super fold display");
