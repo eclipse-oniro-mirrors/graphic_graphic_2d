@@ -123,7 +123,7 @@ private:
     RSModifiersDrawThread& operator=(const RSModifiersDrawThread&&) = delete;
 
     static bool TargetCommad(
-    Drawing::DrawCmdList::HybridRenderType hybridRenderType, uint16_t type, uint16_t subType, bool cmdListEmpty);
+        Drawing::DrawCmdList::HybridRenderType hybridRenderType, uint16_t type, uint16_t subType, bool cmdListEmpty);
 
 #ifdef ACCESSIBILITY_ENABLE
     void SubscribeHighContrastChange();

@@ -201,6 +201,7 @@ private:
     std::string abilityName_;
     pid_t pid_ = 0;
 #ifdef RS_ENABLE_VK
+    // only use for hybrid render client, no need to marshalling
     pid_t tid_ = 0;
 #endif
     uint64_t index_ = 0;
