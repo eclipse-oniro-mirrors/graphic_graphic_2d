@@ -4778,7 +4778,7 @@ void RSMainThread::UpdateRogSizeIfNeeded()
             return;
         }
         ScreenInfo screenInfo = screenManager->QueryScreenInfo(displayNode->GetScreenId());
-        if(screenInfo.id == INVALID_SCREEN_ID) {
+        if (screenInfo.id == INVALID_SCREEN_ID) {
             return;
         }
         uint32_t rogWidth = displayNode->GetRogWidth();
