@@ -96,10 +96,6 @@ private:
 class RSB_EXPORT RSModifiersDrawThread final {
 public:
     static RSModifiersDrawThread& Instance();
-    static bool IsHybridRender()
-    {
-        return isHybridRender_;
-    }
 
     void SetCacheDir(const std::string& path);
 #ifdef ACCESSIBILITY_ENABLE
@@ -134,7 +130,6 @@ private:
     void UnsubscribeHighContrastChange();
 #endif
 
-    static std::atomic<bool> isHybridRender_;
     std::shared_ptr<AppExecFwk::EventRunner> runner_ = nullptr;
     std::shared_ptr<AppExecFwk::EventHandler> handler_ = nullptr;
     std::mutex mutex_;

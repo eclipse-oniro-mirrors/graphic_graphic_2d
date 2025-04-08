@@ -32,7 +32,6 @@
 namespace OHOS {
 namespace Rosen {
 constexpr uint32_t DEFAULT_MODIFIERS_DRAW_THREAD_LOOP_NUM = 3;
-std::atomic<bool> RSModifiersDrawThread::isHybridRender_ = false;
 RSModifiersDrawThread::RSModifiersDrawThread() {}
 
 RSModifiersDrawThread::~RSModifiersDrawThread()
@@ -51,7 +50,6 @@ RSModifiersDrawThread::~RSModifiersDrawThread()
 #ifdef ACCESSIBILITY_ENABLE
     UnsubscribeHighContrastChange();
 #endif
-    RSModifiersDrawThread::isHybridRender_ = false;
 }
 
 RSModifiersDrawThread& RSModifiersDrawThread::Instance()
@@ -104,7 +102,7 @@ void RSModifiersDrawThread::UnsubscribeHighContrastChange()
     highContrastObserver_ = nullptr;
 }
 
-bool RSModifiersDrawThread::GetHighContrast()
+bool RSModifiersDrawThread::GetHighContrast() const
 {
     return highContrast_;
 }
@@ -112,7 +110,6 @@ bool RSModifiersDrawThread::GetHighContrast()
 
 void RSModifiersDrawThread::Start()
 {
-    RSModifiersDrawThread::isHybridRender_ = true;
     std::lock_guard<std::mutex> lock(mutex_);
     if (isStarted_) {
         return;
