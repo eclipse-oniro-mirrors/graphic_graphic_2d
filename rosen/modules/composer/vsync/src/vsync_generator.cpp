@@ -1109,6 +1109,7 @@ void VSyncGenerator::Dump(std::string &result)
 
 bool VSyncGenerator::CheckSampleIsAdaptive(int64_t hardwareVsyncInterval)
 {
+    std::unique_lock<std::mutex> lock(mutex_);
     return hardwareVsyncInterval > period_ + PERIOD_CHECK_THRESHOLD;
 }
 
