@@ -315,14 +315,6 @@ public:
     void SetHdrOn(bool isHdrOn);
     bool GetIsWindowFreezeCapture() const;
     void SetIsWindowFreezeCapture(bool isWindowFreezeCapture);
-#ifdef RS_ENABLE_VK
-    bool IsRenderWithForegroundColor() const {
-        return isRenderWithForegroundColor;
-    }
-    void SetRenderWithForegroundColor(bool renderFilterStatus) {
-        isRenderWithForegroundColor = renderFilterStatus;
-    }
-#endif
 
 protected:
     using Env = struct {
@@ -367,9 +359,6 @@ private:
     bool multipleScreen_ = false;
     bool isHdrOn_ = false;
     bool isWindowFreezeCapture_ = false;
-#ifdef RS_ENABLE_VK
-    bool isRenderWithForegroundColor = false;
-#endif
 
     CacheType cacheType_ { RSPaintFilterCanvas::CacheType::UNDEFINED };
     std::atomic_bool isHighContrastEnabled_ { false };
@@ -411,6 +400,15 @@ public:
 
     //Override the AttachPaint method
     CoreCanvas& AttachPaint(const Drawing::Paint& paint) override;
+
+    bool IsRenderWithForegroundColor() const {
+        return isRenderWithForegroundColor;
+    }
+    void SetRenderWithForegroundColor(bool renderFilterStatus) {
+        isRenderWithForegroundColor = renderFilterStatus;
+    }
+private:
+    bool isRenderWithForegroundColor = false;
 };
 #endif
 
