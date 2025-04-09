@@ -383,7 +383,7 @@ void HgmFrameRateManager::UpdateGuaranteedPlanVote(uint64_t timestamp)
 
 void HgmFrameRateManager::ProcessLtpoVote(const FrameRateRange& finalRange)
 {
-    isDragScene_ = finalRange.dragScene_ == 1;
+    isDragScene_ = finalRange.type_ == DRAG_SCENE_FRAME_RATE_TYPE;
     if (finalRange.IsValid()) {
         auto refreshRate = AvoidChangeRateFrequent(CalcRefreshRate(curScreenId_.load(), finalRange));
         RS_TRACE_NAME_FMT("ProcessLtpoVote isDragScene_: [%d], refreshRate: [%d], lastLtpoRefreshRate_: [%d]",
