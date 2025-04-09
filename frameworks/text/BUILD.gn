@@ -14,7 +14,16 @@
 import("//build/ohos.gni")
 
 ohos_shared_library("rosen_text") {
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    cfi_no_nvcall = true
+    debug = false
+  }
+
   deps = [ "service:rosen_text_skia" ]
+
+  external_deps = [ "hilog:libhilog" ]
 
   part_name = "graphic_2d"
   subsystem_name = "graphic"
