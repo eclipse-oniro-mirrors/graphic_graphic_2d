@@ -217,6 +217,14 @@ enum class TpFeatureConfigType : uint8_t {
 };
 #endif
 
+struct FocusAppInfo {
+    int32_t pid = -1;
+    int32_t uid = -1;
+    std::string bundleName = "";
+    std::string abilityName = "";
+    uint64_t focusNodeId = 0;
+};
+
 struct RSSurfaceCaptureConfig {
     float scaleX = 1.0f;
     float scaleY = 1.0f;
@@ -374,6 +382,7 @@ struct RSSurfaceRenderNodeConfig {
     bool isTextureExportNode = false;
     bool isSync = false;
     enum SurfaceWindowType surfaceWindowType = SurfaceWindowType::DEFAULT_WINDOW;
+    std::string bundleName = "";
 };
 
 struct RSAdvancedDirtyConfig {
@@ -560,6 +569,11 @@ enum class RSInterfaceErrorCode : uint32_t {
     NULLPTR_ERROR,
 };
 
+struct VSyncConnParam {
+    uint64_t id = 0;
+    NodeId windowNodeId = 0;
+    bool fromXcomponent = false;
+};
 } // namespace Rosen
 } // namespace OHOS
 #endif // RENDER_SERVICE_CLIENT_CORE_COMMON_RS_COMMON_DEF_H
