@@ -225,10 +225,6 @@ public:
     CoreCanvas& AttachBrush(const Drawing::Brush& brush) override;
     CoreCanvas& AttachPaint(const Drawing::Paint& paint) override;
 
-#ifdef RS_ENABLE_VK
-    void AttachPaintWithColor(const Drawing::Paint& paint);
-#endif
-
     void SetParallelThreadIdx(uint32_t idx);
     uint32_t GetParallelThreadIdx() const;
     void SetIsParallelCanvas(bool isParallel);
@@ -359,7 +355,6 @@ private:
     bool multipleScreen_ = false;
     bool isHdrOn_ = false;
     bool isWindowFreezeCapture_ = false;
-
     CacheType cacheType_ { RSPaintFilterCanvas::CacheType::UNDEFINED };
     std::atomic_bool isHighContrastEnabled_ { false };
     GraphicColorGamut targetColorGamut_ = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
