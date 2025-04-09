@@ -796,7 +796,7 @@ void DrawHybridPixelMapOpItem::Playback(Canvas* canvas, const Rect* rect)
     OHOS::Rosen::RSPaintFilterCanvas* paintCanvas = static_cast<OHOS::Rosen::RSPaintFilterCanvas*>(canvas);
     Drawing::Filter filter;
 
-    filter.SetColorFilter(ColorFilter::CreateBlendModeColorFilter(this->GetEnvForegroundColor(), BlendMode::SRC_ATOP));
+    filter.SetColorFilter(ColorFilter::CreateBlendModeColorFilter(paintCanvas->GetEnvForegroundColor(), BlendMode::SRC_ATOP));
     paint_.SetFilter(filter);
 
     objectHandle_->SetPaint(paint_);
