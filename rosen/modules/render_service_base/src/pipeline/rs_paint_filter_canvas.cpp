@@ -1647,5 +1647,15 @@ void RSPaintFilterCanvas::SetIsWindowFreezeCapture(bool isWindowFreezeCapture)
 {
     isWindowFreezeCapture_ = isWindowFreezeCapture;
 }
+
+#ifdef RS_ENABLE_VK
+CoreCanvas& RSHybridRenderPaintFilterCanvas::AttachPaint(const Drawing::Paint& paint)
+{
+    if (paint.GetColor() == Color::COLOR_FOREGROUND) {
+        SetRenderWithForegroundColor(true);
+    }
+    return RSPaintFilterCanvas::AttachPaint(paint);
+}
+#endif
 } // namespace Rosen
 } // namespace OHOS
