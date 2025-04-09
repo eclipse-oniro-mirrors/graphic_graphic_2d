@@ -37,7 +37,7 @@
 #include "feature/gpuComposition/rs_egl_image_manager.h"
 #endif // RS_ENABLE_EGLIMAGE
 #ifdef USE_VIDEO_PROCESSING_ENGINE
-#include "pipeline/colorspace_converter_display.h"
+#include "colorspace_converter_display.h"
 #endif
 
 namespace OHOS {

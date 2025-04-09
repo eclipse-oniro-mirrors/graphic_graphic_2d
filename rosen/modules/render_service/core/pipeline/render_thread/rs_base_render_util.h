@@ -195,6 +195,7 @@ public:
     static GraphicTransformType RotateEnumToInt(int angle,
         GraphicTransformType flip = GraphicTransformType::GRAPHIC_ROTATE_NONE);
     static Rect MergeBufferDamages(const std::vector<Rect>& damages);
+    static void MergeBufferDamages(Rect& surfaceDamage, const std::vector<Rect>& damages);
     static bool WriteCacheImageRenderNodeToPng(std::shared_ptr<Drawing::Surface> surface, std::string debugInfo);
     static bool WriteCacheImageRenderNodeToPng(std::shared_ptr<Drawing::Image> image, std::string debugInfo);
     static bool WriteCacheImageRenderNodeToPng(std::shared_ptr<Drawing::Bitmap> bitmap, std::string debugInfo);
@@ -203,6 +204,8 @@ public:
     static void IncAcquiredBufferCount();
     static void DecAcquiredBufferCount();
     static pid_t GetLastSendingPid();
+    static bool PortraitAngle(int angle);
+
 private:
     static bool CreateYuvToRGBABitMap(sptr<OHOS::SurfaceBuffer> buffer, std::vector<uint8_t>& newBuffer,
         Drawing::Bitmap& bitmap);

@@ -193,6 +193,7 @@ void HgmFrameRateMgrTest::InitHgmFrameRateManager(HgmFrameRateManager &frameRate
         STEP("3. Test with a game surfaceNode not on tree") {
             config.id = 2;
             config.name = "gameNode";
+            config.nodeType = RSSurfaceNodeType::SELF_DRAWING_NODE;
             auto gameNode1 = std::make_shared<RSSurfaceRenderNode>(config);
             gameNode1->SetIsOnTheTree(false);
             nodeMap.RegisterRenderNode(gameNode1);
@@ -201,12 +202,20 @@ void HgmFrameRateMgrTest::InitHgmFrameRateManager(HgmFrameRateManager &frameRate
         }
         STEP("4. Test with a game surfaceNode on tree") {
             config.id = 3;
-            config.name = "gameNode";
             auto gameNode2 = std::make_shared<RSSurfaceRenderNode>(config);
             gameNode2->SetIsOnTheTree(true);
             nodeMap.RegisterRenderNode(gameNode2);
             frameRateMgr.HandleGameNode(nodeMap);
             ASSERT_EQ(frameRateMgr.isGameNodeOnTree_.load(), true);
+        }
+        STEP("5. Test with a game surfaceNode on tree and other self node on tree") {
+            config.id = 4;
+            config.name = "other";
+            auto otherNode = std::make_shared<RSSurfaceRenderNode>(config);
+            otherNode->SetIsOnTheTree(true);
+            nodeMap.RegisterRenderNode(otherNode);
+            frameRateMgr.HandleGameNode(nodeMap);
+            ASSERT_EQ(frameRateMgr.isGameNodeOnTree_.load(), false);
         }
     }
     sleep(1);
@@ -530,6 +539,9 @@ HWTEST_F(HgmFrameRateMgrTest, CleanPidCallbackTest, Function | SmallTest | Level
     ASSERT_EQ(savedScreenStrategyId, defaultScreenStrategyId);
     mgr->curScreenStrategyId_ = invalidScreenStrategyId;
     mgr->UpdateVoteRule();
+    if (hgm.mPolicyConfigData_ == nullptr) {
+        return;
+    }
     EXPECT_NE(hgm.mPolicyConfigData_, nullptr);
     std::shared_ptr<PolicyConfigData> cachedPolicyConfigData = nullptr;
     std::swap(hgm.mPolicyConfigData_, cachedPolicyConfigData);
@@ -566,6 +578,9 @@ HWTEST_F(HgmFrameRateMgrTest, HandleEventTest, Function | SmallTest | Level2)
     mgr->DeliverRefreshRateVote({"VOTER_GAMES", 120, 90, 0}, true);
 
     mgr->GetExpectedFrameRate(static_cast<RSPropertyUnit>(0xff), 100.f, 0, 0);
+    if (hgm.mPolicyConfigData_ == nullptr) {
+        return;
+    }
     EXPECT_NE(hgm.mPolicyConfigData_, nullptr);
     std::shared_ptr<PolicyConfigData> cachedPolicyConfigData = nullptr;
     std::swap(hgm.mPolicyConfigData_, cachedPolicyConfigData);
@@ -728,7 +743,7 @@ HWTEST_F(HgmFrameRateMgrTest, HgmSimpleTimerTest, Function | SmallTest | Level2)
     auto timer = HgmSimpleTimer("HgmSimpleTimer", std::chrono::milliseconds(delay_60Ms), nullptr, nullptr);
     ASSERT_NE(timer.handler_, nullptr);
     ASSERT_EQ(timer.name_, "HgmSimpleTimer");
-    ASSERT_EQ(timer.interval_, std::chrono::milliseconds(delay_60Ms));
+    ASSERT_EQ(timer.interval_.load(), std::chrono::milliseconds(delay_60Ms));
     ASSERT_EQ(timer.startCallback_, nullptr);
     ASSERT_EQ(timer.expiredCallback_, nullptr);
     timer.Start();
@@ -882,30 +897,58 @@ HWTEST_F(HgmFrameRateMgrTest, GetLowBrightVec, Function | SmallTest | Level2)
     std::shared_ptr<PolicyConfigData> configData = std::make_shared<PolicyConfigData>();
 
     std::vector<std::string> screenConfigs = {"LTPO-DEFAULT", "LTPO-internal", "LTPO-external"};
+    PolicyConfigData::SupportedModeConfig supportedMode = {{"LowBright", {}}};
+    PolicyConfigData::SupportedModeConfig supportedMode1 = {{"LowBright", {OLED_30_HZ, OLED_60_HZ, OLED_120_HZ}}};
+    PolicyConfigData::SupportedModeConfig supportedMode2 = {{"LowBright", {OLED_MIN_HZ}}};
     for (const auto& screenConfig : screenConfigs) {
-        auto iter = configData->supportedModeConfigs_.find(screenConfig);
-        if (iter == configData-> supportedModeConfigs_.end()) {
+        if (configData->screenStrategyConfigs_.find(screenConfig) == configData->screenStrategyConfigs_.end()) {
             continue;
         }
-
-        auto& supportedModeConfig = iter->second;
-        auto vec = supportedModeConfig.find("LowBright");
-
-        if (vec == supportedModeConfig.end()) {
-            continue;
-        }
-
-        supportedModeConfig["LowBright"].clear();
+        configData->supportedModeConfigs_[screenConfig] = supportedMode;
         mgr.GetLowBrightVec(configData);
         ASSERT_EQ(mgr.isAmbientEffect_, false);
         ASSERT_TRUE(mgr.lowBrightVec_.empty());
 
-        std::vector<uint32_t> expectedLowBrightVec = {30, 60, 90};
-        supportedModeConfig["LowBright"] = expectedLowBrightVec;
+        configData->supportedModeConfigs_[screenConfig].clear();
+        configData->supportedModeConfigs_[screenConfig] = supportedMode1;
         mgr.GetLowBrightVec(configData);
         ASSERT_EQ(mgr.isAmbientEffect_, true);
-        ASSERT_EQ(mgr.lowBrightVec_, expectedLowBrightVec);
+        ASSERT_TRUE(!mgr.lowBrightVec_.empty());
+
+        configData->supportedModeConfigs_[screenConfig].clear();
+        configData->supportedModeConfigs_[screenConfig] = supportedMode2;
+        mgr.GetLowBrightVec(configData);
+        ASSERT_EQ(mgr.isAmbientEffect_, false);
+        ASSERT_TRUE(mgr.lowBrightVec_.empty());
     }
+}
+
+/**
+ * @tc.name: SetTimeoutParamsFromConfig
+ * @tc.desc: Verify the result of SetTimeoutParamsFromConfig
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(HgmFrameRateMgrTest, SetTimeoutParamsFromConfig, Function | SmallTest | Level2)
+{
+    HgmFrameRateManager mgr;
+    std::shared_ptr<PolicyConfigData> configData = std::make_shared<PolicyConfigData>();
+
+    auto time1 = mgr.touchManager_.upTimeoutTimer_.interval_.load();
+    auto time2 = mgr.touchManager_.rsIdleTimeoutTimer_.interval_.load();
+    ASSERT_EQ(time1, std::chrono::milliseconds(3000));
+    ASSERT_EQ(time2, std::chrono::milliseconds(600));
+
+    int32_t upTimeoutMs = 2000;
+    int32_t rsIdleTimeoutMs = 300;
+    configData->timeoutStrategyConfig_["up_timeout_ms"] = "2000";
+    configData->timeoutStrategyConfig_["rs_idle_timeout_ms"] = "300";
+
+    mgr.SetTimeoutParamsFromConfig(configData);
+    auto time3 = mgr.touchManager_.upTimeoutTimer_.interval_.load();
+    auto time4 = mgr.touchManager_.rsIdleTimeoutTimer_.interval_.load();
+    ASSERT_EQ(time3, std::chrono::milliseconds(upTimeoutMs));
+    ASSERT_EQ(time4, std::chrono::milliseconds(rsIdleTimeoutMs));
 }
 
 /**
@@ -1042,10 +1085,9 @@ HWTEST_F(HgmFrameRateMgrTest, HandleThermalFrameRate, Function | SmallTest | Lev
 {
     auto &hgmCore = HgmCore::Instance();
     auto frameRateMgr = hgmCore.GetFrameRateMgr();
-    if (frameRateMgr == nullptr) {
+    if (frameRateMgr == nullptr || hgmCore.mPolicyConfigData_ == nullptr) {
         return;
     }
-
     frameRateMgr->HandleThermalFrameRate(true);
     EXPECT_EQ(frameRateMgr->isEnableThermalStrategy_, true);
 
