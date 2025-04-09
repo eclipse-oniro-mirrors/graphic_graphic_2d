@@ -186,8 +186,7 @@ public:
     void ClearTransactionDataPidInfo(pid_t remotePid);
     void AddTransactionDataPidInfo(pid_t remotePid);
 
-    void SetFocusAppInfo(
-        int32_t pid, int32_t uid, const std::string& bundleName, const std::string& abilityName, uint64_t focusNodeId);
+    void SetFocusAppInfo(const FocusAppInfo& info);
     const std::unordered_map<NodeId, bool>& GetCacheCmdSkippedNodes() const;
 
     sptr<VSyncDistributor> rsVSyncDistributor_;
@@ -209,6 +208,7 @@ public:
     bool IsAccessibilityConfigChanged() const;
     bool IsCurtainScreenUsingStatusChanged() const;
     void CheckFastCompose(int64_t bufferTimeStamp);
+    bool CheckAdaptiveCompose();
     void ForceRefreshForUni(bool needDelay = false);
     void TrimMem(std::unordered_set<std::u16string>& argSets, std::string& result);
     void DumpMem(std::unordered_set<std::u16string>& argSets, std::string& result, std::string& type, pid_t pid = 0);
@@ -593,6 +593,7 @@ private:
 #ifdef RS_ENABLE_GPU
     bool needDrawFrame_ = true;
     bool needPostAndWait_ = true;
+    bool isLastFrameNeedPostAndWait_ = true;
 #endif
 
     bool isNeedResetClearMemoryTask_ = false;
@@ -838,6 +839,8 @@ private:
 #ifdef RES_SCHED_ENABLE
     sptr<VSyncSystemAbilityListener> saStatusChangeListener_ = nullptr;
 #endif
+
+    std::function<void(const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode)> consumeAndUpdateNode_;
 };
 } // namespace OHOS::Rosen
 #endif // RS_MAIN_THREAD

@@ -72,6 +72,12 @@ enum class FollowType : uint8_t {
 #define LIKELY(exp) (__builtin_expect((exp) != 0, true))
 #define UNLIKELY(exp) (__builtin_expect((exp) != 0, false))
 
+#ifdef CM_FEATURE_ENABLE
+#define CM_INLINE __attribute__((always_inline))
+#else
+#define CM_INLINE
+#endif
+
 // types for RenderNode
 enum class RSRenderNodeType : uint32_t {
     UNKNOW              = 0x0000u,
@@ -216,6 +222,14 @@ enum class TpFeatureConfigType : uint8_t {
     AFT_TP_FEATURE,
 };
 #endif
+
+struct FocusAppInfo {
+    int32_t pid = -1;
+    int32_t uid = -1;
+    std::string bundleName = "";
+    std::string abilityName = "";
+    uint64_t focusNodeId = 0;
+};
 
 struct RSSurfaceCaptureConfig {
     float scaleX = 1.0f;

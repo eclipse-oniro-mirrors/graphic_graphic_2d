@@ -727,33 +727,6 @@ HWTEST_F(RSScreenManagerTest, GetScreenType_001, TestSize.Level1)
 }
 
 /*
- * @tc.name: SetScreenMirror_001
- * @tc.desc: Test SetScreenMirror
- * @tc.type: FUNC
- * @tc.require: issueI5ZK2I
- */
-HWTEST_F(RSScreenManagerTest, SetScreenMirror_001, testing::ext::TestSize.Level2)
-{
-    auto screenManager = CreateOrGetScreenManager();
-    ASSERT_NE(nullptr, screenManager);
-    ScreenId id = screenManager->GetDefaultScreenId();
-
-    std::string name = "virtualScreen01";
-    uint32_t width = 480;
-    uint32_t height = 320;
-
-    auto csurface = IConsumerSurface::Create();
-    ASSERT_NE(csurface, nullptr);
-    auto producer = csurface->GetProducer();
-    auto psurface = Surface::CreateSurfaceAsProducer(producer);
-    ASSERT_NE(psurface, nullptr);
-
-    auto mirrorId = screenManager->CreateVirtualScreen(name, width, height, psurface);
-    ASSERT_NE(INVALID_SCREEN_ID, mirrorId);
-    screenManager->SetScreenMirror(id, mirrorId);
-}
-
-/*
  * @tc.name: SetScreenConstraint_001
  * @tc.desc: Test SetScreenConstraint
  * @tc.type: FUNC
@@ -969,7 +942,6 @@ HWTEST_F(RSScreenManagerTest, GetScreenData_003, TestSize.Level1)
     rsScreen->hdiScreen_->device_ = hdiDeviceMock_;
     screenManager->MockHdiScreenConnected(rsScreen);
     screenManager->SetScreenPowerStatus(screenId, POWER_STATUS_ON_ADVANCED);
-    usleep(SLEEP_TIME_FOR_BACKGROUD);
     RSScreenData screenData = screenManager->GetScreenData(screenId);
     ASSERT_EQ(screenData.GetPowerStatus(), POWER_STATUS_ON_ADVANCED);
 }
@@ -1252,7 +1224,6 @@ HWTEST_F(RSScreenManagerTest, GetScreenPowerStatus_001, TestSize.Level1)
     auto screenManager = CreateOrGetScreenManager();
     ScreenId screenId = INVALID_SCREEN_ID;
     screenManager->SetScreenPowerStatus(screenId, ScreenPowerStatus::POWER_STATUS_ON);
-    usleep(SLEEP_TIME_FOR_BACKGROUD);
     ASSERT_EQ(screenManager->GetScreenPowerStatus(screenId), INVALID_POWER_STATUS);
 }
 
@@ -1270,7 +1241,6 @@ HWTEST_F(RSScreenManagerTest, GetScreenPowerStatus_002, TestSize.Level1)
     auto rsScreen = std::make_shared<impl::RSScreen>(screenId, true, hdiOutput, nullptr);
     screenManager->MockHdiScreenConnected(rsScreen);
     screenManager->SetScreenPowerStatus(screenId, ScreenPowerStatus::POWER_STATUS_ON);
-    usleep(SLEEP_TIME_FOR_BACKGROUD);
     ASSERT_EQ(screenManager->GetScreenPowerStatus(screenId), ScreenPowerStatus::INVALID_POWER_STATUS);
 }
 
@@ -1290,22 +1260,16 @@ HWTEST_F(RSScreenManagerTest, GetScreenPowerStatus_003, TestSize.Level1)
     rsScreen->hdiScreen_->device_ = hdiDeviceMock_;
     screenManager->MockHdiScreenConnected(rsScreen);
     screenManager->SetScreenPowerStatus(screenId, ScreenPowerStatus::POWER_STATUS_ON);
-    usleep(SLEEP_TIME_FOR_BACKGROUD);
     ASSERT_EQ(screenManager->GetScreenPowerStatus(screenId), POWER_STATUS_ON);
     screenManager->SetScreenPowerStatus(screenId, ScreenPowerStatus::POWER_STATUS_ON_ADVANCED);
-    usleep(SLEEP_TIME_FOR_BACKGROUD);
     ASSERT_EQ(screenManager->GetScreenPowerStatus(screenId), POWER_STATUS_ON_ADVANCED);
     screenManager->SetScreenPowerStatus(screenId, ScreenPowerStatus::POWER_STATUS_OFF);
-    usleep(SLEEP_TIME_FOR_BACKGROUD);
     ASSERT_EQ(screenManager->GetScreenPowerStatus(screenId), POWER_STATUS_OFF);
     screenManager->SetScreenPowerStatus(screenId, ScreenPowerStatus::POWER_STATUS_OFF_ADVANCED);
-    usleep(SLEEP_TIME_FOR_BACKGROUD);
     ASSERT_EQ(screenManager->GetScreenPowerStatus(screenId), POWER_STATUS_OFF_ADVANCED);
     screenManager->SetScreenPowerStatus(screenId, ScreenPowerStatus::POWER_STATUS_DOZE);
-    usleep(SLEEP_TIME_FOR_BACKGROUD);
     ASSERT_EQ(screenManager->GetScreenPowerStatus(screenId), POWER_STATUS_DOZE);
     screenManager->SetScreenPowerStatus(screenId, ScreenPowerStatus::POWER_STATUS_DOZE_SUSPEND);
-    usleep(SLEEP_TIME_FOR_BACKGROUD);
     ASSERT_EQ(screenManager->GetScreenPowerStatus(screenId), POWER_STATUS_DOZE_SUSPEND);
 }
 

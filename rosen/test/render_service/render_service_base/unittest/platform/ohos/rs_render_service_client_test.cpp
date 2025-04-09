@@ -27,7 +27,7 @@ using namespace testing::ext;
 
 namespace OHOS {
 namespace Rosen {
-static constexpr uint32_t SET_REFRESHRATE_SLEEP_US = 1000000;  // wait for refreshrate change
+static constexpr uint32_t SET_REFRESHRATE_SLEEP_US = 50000;  // wait for refreshrate change
 static constexpr uint64_t TEST_ID = 123;
 class RSClientTest : public testing::Test {
 public:
@@ -361,7 +361,13 @@ HWTEST_F(RSClientTest, CreatePixelMapFromSurfaceId001, TestSize.Level1)
 HWTEST_F(RSClientTest, SetFocusAppInfo001, TestSize.Level1)
 {
     ASSERT_NE(rsClient, nullptr);
-    auto ret = rsClient->SetFocusAppInfo(1, 1, "bundleNameTest", "abilityNameTest", 1);
+    FocusAppInfo info = {
+        .pid = 1,
+        .uid = 1,
+        .bundleName = "bundleNameTest",
+        .abilityName = "abilityNameTest",
+        .focusNodeId = 1};
+    auto ret = rsClient->SetFocusAppInfo(info);
     ASSERT_EQ(ret, SUCCESS);
 }
 

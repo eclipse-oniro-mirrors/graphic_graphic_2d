@@ -14,6 +14,7 @@
 {
   global:
     extern "C++" {
+      *HgmAppPageUrlStrategy::CleanPageUrlVote*;
       *HgmAppPageUrlStrategy::NotifyPageName*;
       *HgmAppPageUrlStrategy::NotifyScreenSettingChange*;
       *HgmAppPageUrlStrategy::SetPageUrlConfig*;
@@ -69,7 +70,9 @@
       *HgmEnergyConsumptionPolicy::SetCurrentPkgName*;
 
       *HgmFrameRateManager::AvoidChangeRateFrequent*;
+      *HgmFrameRateManager::CalcRefreshRate*;
       *HgmFrameRateManager::ChangePriority*;
+      *HgmFrameRateManager::CleanPageUrlVote*;
       *HgmFrameRateManager::CleanVote*;
       *HgmFrameRateManager::CollectFrameRateChange*;
       *HgmFrameRateManager::CollectVRateChange*;
@@ -100,6 +103,7 @@
       *HgmFrameRateManager::MergeRangeByPriority*;
       *HgmFrameRateManager::NotifyPageName*;
       *HgmFrameRateManager::ProcessAdaptiveSync*;
+      *HgmFrameRateManager::ProcessPageUrlVote*;
       *HgmFrameRateManager::ProcessPendingRefreshRate*;
       *HgmFrameRateManager::ProcessRefreshRateVote*;
       *HgmFrameRateManager::ReportHiSysEvent*;

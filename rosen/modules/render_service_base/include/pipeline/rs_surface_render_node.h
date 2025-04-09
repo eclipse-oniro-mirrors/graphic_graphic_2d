@@ -1460,6 +1460,8 @@ public:
 
     void ResetIsBufferFlushed();
 
+    void ResetSurfaceNodeStates();
+
     bool IsUIBufferAvailable();
 
     bool GetUIExtensionUnobscured() const;
@@ -1478,6 +1480,11 @@ public:
     bool GetSelfAndParentShouldPaint() const
     {
         return selfAndParentShouldPaint_;
+    }
+
+    inline bool IsHardwareDisabledBySrcRect() const
+    {
+        return isHardwareForcedDisabledBySrcRect_;
     }
 
 protected:
@@ -1499,10 +1506,6 @@ private:
     void ClearHistoryUnSubmittedDirtyInfo();
     void UpdateHistoryUnsubmittedDirtyInfo();
     void SetUIExtensionUnobscured(bool obscured);
-    inline bool IsHardwareDisabledBySrcRect() const
-    {
-        return isHardwareForcedDisabledBySrcRect_;
-    }
     void OnSubSurfaceChanged();
     void UpdateChildSubSurfaceNodes(RSSurfaceRenderNode::SharedPtr node, bool isOnTheTree);
     bool IsYUVBufferFormat() const;

@@ -17,6 +17,7 @@
 #define GRAPHIC_COMPOSER_DISPLAY_TYPE_H
 #include "buffer_handle.h"
 #include "surface_type.h"
+#include "sync_fence.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -87,8 +88,7 @@ typedef enum {
     GRAPHIC_POWER_STATUS_OFF_ADVANCED,    /**< Power-off the screen in advance. */
     GRAPHIC_POWER_STATUS_DOZE,            /**< The power status is doze. */
     GRAPHIC_POWER_STATUS_DOZE_SUSPEND,    /**< The power status is doze suspend. */
-    GRAPHIC_POWER_STATUS_BUTT,
-    GRAPHIC_POWER_STATUS_OFF_ONGOING,     /**< Power-off but not end */
+    GRAPHIC_POWER_STATUS_BUTT
 } GraphicDispPowerStatus;
 
 /**
