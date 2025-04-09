@@ -45,6 +45,8 @@
 #include "multiscreen_param.h"
 #include "opinc_param_parse.h"
 #include "opinc_param.h"
+#include "occlusion_culling_param_parse.h"
+#include "occlusion_culling_param.h"
 #include "prevalidate_param_parse.h"
 #include "prevalidate_param.h"
 #include "rotateoffscreen_param_parse.h"
@@ -120,6 +122,8 @@ const std::vector<ModuleConfig> FEATURE_MODULES = {
         [] { return std::make_unique<VRateParam>(); }},
     {FEATURE_CONFIGS[ROTATEOFFSCREEN], [] { return std::make_unique<RotateOffScreenParamParse>(); },
         [] { return std::make_unique<RotateOffScreenParam>(); }},
+    {FEATURE_CONFIGS[OCCLUSION_CULLING], [] { return std::make_unique<OcclusionCullingParamParse>(); },
+        [] { return std::make_unique<OcclusionCullingParam>(); }}
 };
 
 class GraphicFeatureParamManager : public RefBase {
