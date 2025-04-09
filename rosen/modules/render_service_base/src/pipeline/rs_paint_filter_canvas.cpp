@@ -1665,7 +1665,7 @@ void RSPaintFilterCanvas::SetIsWindowFreezeCapture(bool isWindowFreezeCapture)
 CoreCanvas& RSHybridRenderPaintFilterCanvas::AttachPaint(const Drawing::Paint& paint)
 {
     if (paint.GetColor() == Color::COLOR_FOREGROUND) {
-        RSPaintFilterCanvas::SetRenderWithForegroundColor(true);
+        SetRenderWithForegroundColor(true);
     }
     return RSPaintFilterCanvas::AttachPaint(paint);
 }
