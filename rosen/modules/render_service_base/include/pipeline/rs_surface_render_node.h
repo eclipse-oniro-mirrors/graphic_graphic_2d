@@ -526,10 +526,10 @@ public:
     void SetGlobalPositionEnabled(bool isEnabled);
     bool GetGlobalPositionEnabled() const override;
 
-    void SetDRMGlobalPositionEnabled(bool isEnabled);
-    bool GetDRMGlobalPositionEnabled() const;
+    void SetHwcGlobalPositionEnabled(bool isEnabled);
+    bool GetHwcGlobalPositionEnabled() const;
 
-    void SetDRMCrossNode(bool isCrossNode);
+    void SetHwcCrossNode(bool isCrossNode);
     bool IsDRMCrossNode() const;
 
     void SetSecurityLayer(bool isSecurityLayer);
@@ -1460,6 +1460,8 @@ public:
 
     void ResetIsBufferFlushed();
 
+    void ResetSurfaceNodeStates();
+
     bool IsUIBufferAvailable();
 
     bool GetUIExtensionUnobscured() const;
@@ -1478,6 +1480,11 @@ public:
     bool GetSelfAndParentShouldPaint() const
     {
         return selfAndParentShouldPaint_;
+    }
+
+    inline bool IsHardwareDisabledBySrcRect() const
+    {
+        return isHardwareForcedDisabledBySrcRect_;
     }
 
 protected:
@@ -1499,10 +1506,6 @@ private:
     void ClearHistoryUnSubmittedDirtyInfo();
     void UpdateHistoryUnsubmittedDirtyInfo();
     void SetUIExtensionUnobscured(bool obscured);
-    inline bool IsHardwareDisabledBySrcRect() const
-    {
-        return isHardwareForcedDisabledBySrcRect_;
-    }
     void OnSubSurfaceChanged();
     void UpdateChildSubSurfaceNodes(RSSurfaceRenderNode::SharedPtr node, bool isOnTheTree);
     bool IsYUVBufferFormat() const;
@@ -1515,8 +1518,8 @@ private:
     RSSpecialLayerManager specialLayerManager_;
     bool specialLayerChanged_ = false;
     bool isGlobalPositionEnabled_ = false;
-    bool isDRMGlobalPositionEnabled_ = false;
-    bool isDRMCrossNode_ = false;
+    bool isHwcGlobalPositionEnabled_ = false;
+    bool isHwcCrossNode_ = false;
     bool hasFingerprint_ = false;
     // hdr video
     HdrStatus hdrVideoSurface_ = HdrStatus::NO_HDR;
