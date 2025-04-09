@@ -265,7 +265,7 @@ void RSHardwareThread::CommitAndReleaseLayers(OutputPtr output, const std::vecto
             startTimeNs = std::chrono::duration_cast<std::chrono::nanoseconds>(
                 std::chrono::steady_clock::now().time_since_epoch()).count();
         }
-        RS_TRACE_NAME_FMT("CommitLayers rate:%u,now:%" PRIu64 ",vsyncId:%" PRIu64 ",size:%zu, %s",
+        RS_TRACE_NAME_FMT("CommitLayers rate:%u,now:%" PRIu64 ",vsyncId:%" PRIu64 ",size:%zu,%s",
             currentRate, param.frameTimestamp, param.vsyncId, layers.size(),
             GetSurfaceNameInLayersForTrace(layers).c_str());
         RS_LOGD_IF(DEBUG_COMPOSER, "RSHardwareThread::CommitAndReleaseLayers rate:%{public}u, " \
