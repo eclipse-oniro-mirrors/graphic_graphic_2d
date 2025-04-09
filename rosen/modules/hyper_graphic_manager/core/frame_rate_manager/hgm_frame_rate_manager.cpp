@@ -1620,7 +1620,7 @@ VoteInfo HgmFrameRateManager::ProcessRefreshRateVote()
     SetResultVoteInfo(resultVoteInfo, min, max);
     ProcessAdaptiveSync(resultVoteInfo.voterName);
 
-    auto sampler = CreateVsyncSampler();
+    auto sampler = CreateVSyncSampler();
     sampler->SetAdaptive(isAdaptive_.load() == SupportASStatus::SUPPORT_AS);
     return resultVoteInfo;
 }
