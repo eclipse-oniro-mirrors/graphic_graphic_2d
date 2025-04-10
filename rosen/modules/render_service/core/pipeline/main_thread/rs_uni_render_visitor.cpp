@@ -358,6 +358,27 @@ void RSUniRenderVisitor::HandleColorGamuts(RSDisplayRenderNode& node, const sptr
             return;
         }
         node.SetColorSpace(static_cast<GraphicColorGamut>(screenColorGamut));
+        return;
+    }
+
+    if (RSMainThread::Instance()->HasWiredMirrorDisplay() && !MultiScreenParam::IsMirrorDisplayCloseP3()) {
+        std::shared_ptr<RSDisplayRenderNode> mirrorNode = node.GetMirrorSource().lock();
+        if (!mirrorNode) {
+            return;
+        }
+        std::vector<ScreenColorGamut> mode;
+        int32_t ret = screenManager->GetScreenSupportedColorGamuts(node.GetScreenId(), mode);
+        if (ret != SUCCESS) {
+            RS_LOGD("RSUniRenderVisitor::HandleColorGamuts GetScreenSupportedColorGamuts failed, errorCode=%{public}d",
+                ret);
+            return;
+        };
+        bool isSupportedDisplayP3 =
+            std::any_of(mode.begin(), mode.end(), [](const auto& gamut) { return gamut == COLOR_GAMUT_DISPLAY_P3; });
+        if (isSupportedDisplayP3) {
+            // wired mirror and mirror support P3, mirror gamut = main gamut
+            node.SetColorSpace(mirrorNode->GetColorSpace());
+        }
     }
 }
 
@@ -1251,7 +1272,7 @@ void RSUniRenderVisitor::CollectTopOcclusionSurfacesInfo(RSSurfaceRenderNode& no
     }
 }
 
-void RSUniRenderVisitor::PrepareForUIFirstNode(RSSurfaceRenderNode& node)
+CM_INLINE void RSUniRenderVisitor::PrepareForUIFirstNode(RSSurfaceRenderNode& node)
 {
     RSUifirstManager::Instance().MarkSubHighPriorityType(node);
     auto isSurface = CheckIfSurfaceForUIFirstDFX(node.GetName());
@@ -1293,7 +1314,7 @@ void RSUniRenderVisitor::UpdateNodeVisibleRegion(RSSurfaceRenderNode& node)
         node.GetName().c_str(), node.GetVisibleRegion().GetRegionInfo().c_str());
 }
 
-void RSUniRenderVisitor::CalculateOpaqueAndTransparentRegion(RSSurfaceRenderNode& node)
+CM_INLINE void RSUniRenderVisitor::CalculateOpaqueAndTransparentRegion(RSSurfaceRenderNode& node)
 {
     if (!curDisplayNode_) {
         RS_LOGE("RSUniRenderVisitor::CalculateOpaqueAndTransparentRegion curDisplayNode is nullptr");
@@ -1699,7 +1720,7 @@ bool RSUniRenderVisitor::InitDisplayInfo(RSDisplayRenderNode& node)
     return true;
 }
 
-bool RSUniRenderVisitor::BeforeUpdateSurfaceDirtyCalc(RSSurfaceRenderNode& node)
+CM_INLINE bool RSUniRenderVisitor::BeforeUpdateSurfaceDirtyCalc(RSSurfaceRenderNode& node)
 {
     // 1. init and record surface info
     if (node.GetName().find(CAPTURE_WINDOW_NAME) != std::string::npos) {
@@ -1758,7 +1779,7 @@ bool RSUniRenderVisitor::BeforeUpdateSurfaceDirtyCalc(RSSurfaceRenderNode& node)
     return true;
 }
 
-bool RSUniRenderVisitor::AfterUpdateSurfaceDirtyCalc(RSSurfaceRenderNode& node)
+CM_INLINE bool RSUniRenderVisitor::AfterUpdateSurfaceDirtyCalc(RSSurfaceRenderNode& node)
 {
     // 1. Update surfaceNode info and AppWindow gravity
     const auto& property = node.GetRenderProperties();
@@ -2845,7 +2866,7 @@ void RSUniRenderVisitor::CollectEffectInfo(RSRenderNode& node)
     }
 }
 
-void RSUniRenderVisitor::PostPrepare(RSRenderNode& node, bool subTreeSkipped)
+CM_INLINE void RSUniRenderVisitor::PostPrepare(RSRenderNode& node, bool subTreeSkipped)
 {
     UpdateCurFrameInfoDetail(node, subTreeSkipped, true);
     if (const auto& sharedTransitionParam = node.GetSharedTransitionParam()) {

@@ -356,6 +356,10 @@ void RSHardwareThread::CommitAndReleaseLayers(OutputPtr output, const std::vecto
 
 void RSHardwareThread::ChangeLayersForActiveRectOutside(std::vector<LayerInfoPtr>& layers, ScreenId screenId)
 {
+#ifdef ROSEN_EMULATOR
+    RS_LOGD("RSHardwareThread::emulator device do not need add layer");
+    return;
+#endif
     if (!RSSystemProperties::IsSuperFoldDisplay() || layers.size() == 0) {
         return;
     }
