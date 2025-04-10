@@ -983,6 +983,31 @@ HWTEST_F(HgmFrameRateMgrTest, HandleFrameRateChangeForLTPO, Function | SmallTest
 }
 
 /**
+ * @tc.name: DVSyncTaskProcess
+ * @tc.desc: Verify the result of DVSyncTaskProcess
+ * @tc.type: FUNC
+ * @tc.require: issueIBX8OW
+ */
+HWTEST_F(HgmFrameRateMgrTest, DVSyncTaskProcessor, Function | SmallTest | Level2)
+{
+    auto &hgmCore = HgmCore::Instance();
+    auto frameRateMgr = hgmCore.GetFrameRateMgr();
+    hgmCore.SetPendingScreenRefreshRate(OLED_144_HZ);
+    auto lastRefreshRate = hgmCore.GetPendingScreenRefreshRate();
+    frameRateMgr->controllerRate_ = OLED_30_HZ;
+    frameRateMgr->currRefreshRate_ = OLED_120_HZ;
+    VSyncController* rsController = nullptr;
+    VSyncController* appController = nullptr;
+    VSyncGenerator* vsyncGenerator = nullptr;
+    frameRateMgr->controller_ = std::make_shared<HgmVSyncGeneratorController>(rsController,
+        appController, vsyncGenerator);
+    ASSERT_NE(frameRateMgr->controller_, nullptr);
+    int64_t delayTime = 10;
+    uint64_t targetTime = 0;
+    frameRateMgr->DVSyncTaskProcessor(delayTime, targetTime);
+}
+
+/**
  * @tc.name: GetLowBrightVec
  * @tc.desc: Verify the result of GetLowBrightVec
  * @tc.type: FUNC

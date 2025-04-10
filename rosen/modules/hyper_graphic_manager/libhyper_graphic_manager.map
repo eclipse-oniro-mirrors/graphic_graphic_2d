@@ -85,6 +85,7 @@
       *HgmFrameRateManager::HandleAppStrategyConfigEvent*;
       *HgmFrameRateManager::HandleDynamicModeEvent*;
       *HgmFrameRateManager::HandleFrameRateChangeForLTPO*;
+      *HgmFrameRateManager::DVSyncTaskProcessor*;
       *HgmFrameRateManager::HandleGamesEvent*;
       *HgmFrameRateManager::HandleIdleEvent*;
       *HgmFrameRateManager::HandleLightFactorStatus*;
