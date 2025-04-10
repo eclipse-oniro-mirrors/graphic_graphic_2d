@@ -972,7 +972,20 @@ void RSRenderNode::DumpTree(int32_t depth, std::string& out) const
     DumpDrawCmdModifiers(out);
     DumpModifiers(out);
     animationManager_.DumpAnimations(out);
+    ChildrenListDump(out);
+    
+    for (auto& child : children_) {
+        if (auto c = child.lock()) {
+            c->DumpTree(depth + 1, out);
+        }
+    }
+    for (auto& [child, pos] : disappearingChildren_) {
+        child->DumpTree(depth + 1, out);
+    }
+}
 
+void RSRenderNode::ChildrenListDump(std::string& out) const
+{
     auto sortedChildren = GetSortedChildren();
     const int childrenCntLimit = 10;
     if (!isFullChildrenListValid_) {
@@ -996,7 +1009,7 @@ void RSRenderNode::DumpTree(int32_t depth, std::string& out) const
         if (!sortedChildren->empty()) {
             int cnt = 0;
             out += "(";
-            for (auto child = fullChildrenList_->begin(); child != fullChildrenList_->end(); child++) {
+            for (auto child = sortedChildren->begin(); child != sortedChildren->end(); child++) {
                 if (cnt > childrenCntLimit) {
                     break;
                 }
@@ -1008,12 +1021,11 @@ void RSRenderNode::DumpTree(int32_t depth, std::string& out) const
             }
             out += ")";
         }
-        
     } else if (!sortedChildren->empty()) {
         out += ", sortedChildren: " + std::to_string(sortedChildren->size());
         int cnt = 0;
         out += "(";
-        for (auto child = fullChildrenList_->begin(); child != fullChildrenList_->end(); child++) {
+        for (auto child = sortedChildren->begin(); child != sortedChildren->end(); child++) {
             if (cnt > childrenCntLimit) {
                 break;
             }
@@ -1029,29 +1041,19 @@ void RSRenderNode::DumpTree(int32_t depth, std::string& out) const
         out += ", disappearingChildren: " + std::to_string(disappearingChildren_.size());
         int cnt = 0;
         out += "(";
-        for (auto child = fullChildrenList_->begin(); child != fullChildrenList_->end(); child++) {
+        for (auto& [child, _] : disappearingChildren_) {
             if (cnt > childrenCntLimit) {
                 break;
             }
-            if ((*child) == nullptr) {
+            if (child == nullptr) {
                 continue;
             }
-            out += std::to_string((*child)->GetId()) + " ";
+            out += std::to_string(child->GetId()) + " ";
             cnt++;
         }
         out += ")";
     }
-
     out += "\n";
-
-    for (auto& child : children_) {
-        if (auto c = child.lock()) {
-            c->DumpTree(depth + 1, out);
-        }
-    }
-    for (auto& [child, pos] : disappearingChildren_) {
-        child->DumpTree(depth + 1, out);
-    }
 }
 
 void RSRenderNode::DumpNodeType(RSRenderNodeType nodeType, std::string& out)
@@ -2815,18 +2817,7 @@ CM_INLINE void RSRenderNode::ApplyModifiers()
         GenerateFullChildrenList();
         AddDirtyType(RSModifierType::CHILDREN);
     } else if (UNLIKELY(!isChildrenSorted_)) {
-        RS_LOGE("RSRenderNode::ApplyModifiers sortchildren id:%{public}" PRIu64, GetId());
-        uint64_t currTime = static_cast<uint64_t>(
-            std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
         ResortChildren();
-        uint64_t currTime12 = static_cast<uint64_t>(
-            std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
-        GenerateFullChildrenList();
-        uint64_t end = static_cast<uint64_t>(
-            std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
-        auto cost = currTime12 - currTime;
-        auto cost1 = end - currTime12;
-        RS_LOGE("RSRenderNode::ApplyModifiers sortchildren cost:%{public}lu, cost1:%{public}lu, cost1 - cost:%{public}lu", cost, cost1, (cost1 - cost));
         AddDirtyType(RSModifierType::CHILDREN);
     } else if (UNLIKELY(childrenHasSharedTransition_)) {
         // if children has shared transition, force regenerate RSChildrenDrawable
