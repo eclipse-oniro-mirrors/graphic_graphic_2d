@@ -314,6 +314,8 @@ public:
 
     RectI GetScreenRect() const;
     void RecordScreenRect(RectI rect);
+    void RecordDirtyRegionMatrix(const Drawing::Matrix& matrix);
+    const Drawing::Matrix& GetDirtyRegionMatrix();
 
     void SetOcclusionVisible(bool visible);
     bool GetOcclusionVisible() const override;
@@ -730,6 +732,7 @@ private:
     Color backgroundColor_ = RgbPalette::Transparent();
     bool isHwcEnabledBySolidLayer_ = false;
     RectI screenRect_;
+    Drawing::Matrix dirtyRegionMatrix_;
     Color solidLayerColor_ = RgbPalette::Transparent();
 
     RectI dstRect_;
