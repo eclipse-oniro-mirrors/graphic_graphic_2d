@@ -200,6 +200,8 @@ bool RSEffectRenderNode::CheckFilterCacheNeedForceClear()
         " preRotationStatus_:%d, isRotationChanged_:%d, preStaticStatus_:%d, isStaticCached:%d",
         GetId(), foldStatusChanged_, preRotationStatus_, isRotationChanged_, preStaticStatus_, IsStaticCached());
     if (preStaticStatus_ != isStaticCached_) {
+        RS_TRACE_NAME_FMT("RSEffectRenderNode[%llu]::CheckFilterCacheNeedForceClear"
+            " preStaticStatus_:%d, isStaticCached:%d", GetId(), preStaticStatus_, IsStaticCached());
         RS_LOGI("RSEffectRenderNode[%{public}lld]::CheckFilterCacheNeedForceClear foldStatusChanged_:%{public}d,"
             " preRotationStatus_:%{public}d, isRotationChanged_:%{public}d,"
             " preStaticStatus_:%{public}d, isStaticCached:%{public}d", static_cast<long long>(GetId()),
