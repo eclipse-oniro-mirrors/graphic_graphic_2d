@@ -144,10 +144,7 @@ bool RSUniHwcPrevalidateUtil::CreateSurfaceNodeLayerInfo(uint32_t zorder,
         info.perFrameParameters["ArsrDoEnhance"] = std::vector<int8_t> {1};
         node->SetArsrTag(true);
     }
-    if (isCopybitSupported_ = && CheckIfDoCopybit(node, transform)) {
-        info.perFrameParameters["TryToDoCopybit"] = std::vector<int8_t> {1};
-        node->SetCopybitTag(true);
-    }
+    CheckIfDoCopybit(node, transform, info);
     RS_LOGD_IF(DEBUG_PREVALIDATE, "RSUniHwcPrevalidateUtil::CreateSurfaceNodeLayerInfo %{public}s,"
         " %{public}" PRIu64 ", src: %{public}s, dst: %{public}s, z: %{public}" PRIu32 ","
         " usage: %{public}" PRIu64 ", format: %{public}d, transform: %{public}d, fps: %{public}d",
@@ -366,16 +363,18 @@ bool RSUniHwcPrevalidateUtil::CheckIfDoArsrPre(const RSSurfaceRenderNode::Shared
     return false;
 }
 
-bool RSUniHwcPrevalidateUtil::CheckIfDoCopybit(const RSSurfaceRenderNode::SharedPtr node,
-    GraphicTransformType transform)
+void RSUniHwcPrevalidateUtil::CheckIfDoCopybit(const RSSurfaceRenderNode::SharedPtr node,
+    GraphicTransformType transform, RequestLayerInfo& info)
 {
-    if (node->GetRSSurfaceHandler()->GetBuffer() == nullptr) {
-        return false;
+    if (!isCopybitSupported_ || node->GetRSSurfaceHandler()->GetBuffer() == nullptr) {
+        return;
     }
     if (IsYUVBufferFormat(node) && IsNeedDssRotate(transform)) {
-        return true;
+        info.perFrameParameters["TryToDoCopybit"] = std::vector<int8_t> {1};
+        node->SetCopybitTag(true);
+        return;
     }
-    return false;
+    return;
 }
 } //Rosen
 } //OHOS

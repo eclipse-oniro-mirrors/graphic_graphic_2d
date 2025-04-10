@@ -88,7 +88,8 @@ private:
     void LayerRotate(
         RequestLayerInfo& info, const sptr<IConsumerSurface>& surface, const ScreenInfo &screenInfo);
     bool CheckIfDoArsrPre(const RSSurfaceRenderNode::SharedPtr node);
-    bool CheckIfDoCopybit(const RSSurfaceRenderNode::SharedPtr node, GraphicTransformType transform);
+    void CheckIfDoCopybit(const RSSurfaceRenderNode::SharedPtr node, GraphicTransformType transform,
+        RequestLayerInfo& info);
     static bool CheckHwcNodeAndGetPointerWindow(
         const RSSurfaceRenderNode::SharedPtr& node, RSSurfaceRenderNode::SharedPtr& pointerWindow);
     static void EmplaceSurfaceNodeLayer(
