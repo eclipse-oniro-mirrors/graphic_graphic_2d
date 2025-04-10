@@ -1898,16 +1898,7 @@ void RSUniRenderVisitor::UpdateHwcNodeInfoForAppNode(RSSurfaceRenderNode& node)
 void RSUniRenderVisitor::UpdateTopSurfaceSrcRect(RSSurfaceRenderNode& node,
     const Drawing::Matrix& absMatrix, const RectI& absRect)
 {
-    auto canvas = std::make_unique<Rosen::Drawing::Canvas>(screenInfo_.phyWidth, screenInfo_.phyHeight);
-    canvas->ConcatMatrix(absMatrix);
-
-    const auto& dstRect = node.GetDstRect();
-    Drawing::RectI dst = { std::round(dstRect.GetLeft()), std::round(dstRect.GetTop()), std::round(dstRect.GetRight()),
-                           std::round(dstRect.GetBottom()) };
-    node.UpdateSrcRect(*canvas.get(), dst);
-    if (node.GetRSSurfaceHandler() && node.GetRSSurfaceHandler()->GetBuffer()) {
-        RSUniHwcComputeUtil::UpdateRealSrcRect(node, absRect);
-    }
+    hwcVisitor_->UpdateTopSurfaceSrcRect(node, absMatrix, absRect);
 }
 
 void RSUniRenderVisitor::UpdateSrcRect(RSSurfaceRenderNode& node, const Drawing::Matrix& totalMatrix)

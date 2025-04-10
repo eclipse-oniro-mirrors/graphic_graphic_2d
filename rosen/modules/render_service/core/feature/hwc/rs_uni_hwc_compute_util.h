@@ -59,8 +59,6 @@ public:
         const GraphicTransformType consumerTransformType);
     static void DealWithNodeGravityOldVersion(RSSurfaceRenderNode& node, const ScreenInfo& screenInfo);
     static void DealWithScalingMode(RSSurfaceRenderNode& node, const Drawing::Matrix& totalMatrix);
-    static bool IsHwcEnabledByGravity(RSSurfaceRenderNode& node, const Gravity frameGravity);
-    static bool IsHwcEnabledByScalingMode(RSSurfaceRenderNode& node, const ScalingMode scalingMode);
     static void LayerCrop(RSSurfaceRenderNode& node, const ScreenInfo& screenInfo);
     static void LayerRotate(RSSurfaceRenderNode& node, const ScreenInfo& screenInfo);
     static RectI SrcRectRotateTransform(const SurfaceBuffer& buffer,
