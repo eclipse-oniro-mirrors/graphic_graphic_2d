@@ -3054,5 +3054,11 @@ ErrCode RSRenderServiceConnection::NotifyPageName(const std::string &packageName
     });
     return StatusCode::SUCCESS;
 }
+
+bool RSRenderServiceConnection::GetHighContrastTextState()
+{
+    return RSBaseRenderEngine::IsHighContrastEnabled();
+}
+
 } // namespace Rosen
 } // namespace OHOS
