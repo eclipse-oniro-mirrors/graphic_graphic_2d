@@ -44,8 +44,8 @@ public:
     constexpr static bool IS_ANY_NULLPTR(Args... args)
     {
         const auto results = std::make_tuple((IS_NULLPTR(args))...);
-        const bool anyNull = std::apply([](const auto&... results){
-            return (results || ...);
+        const bool anyNull = std::apply([](const auto&... result) {
+            return (result || ...);
         }, results);
         return anyNull;
     }
