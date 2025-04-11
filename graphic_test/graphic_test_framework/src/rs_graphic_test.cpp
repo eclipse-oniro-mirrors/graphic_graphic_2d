@@ -169,7 +169,7 @@ bool RSGraphicTest::WaitOtherTest()
 void RSGraphicTest::TestCaseCapture(bool isScreenshot)
 {
     const ::testing::TestInfo* const testInfo =
-    ::testing::UnitTest::GetInstance()->current_test_info();
+        ::testing::UnitTest::GetInstance()->current_test_info();
     const auto& extInfo = ::OHOS::Rosen::TestDefManager::Instance().GetTestInfo(
         testInfo->test_case_name(), testInfo->name());
 
