@@ -1562,6 +1562,8 @@ void HgmFrameRateManager::CheckAncoVoter(const std::string& voter, VoteInfo& cur
             min = static_cast<uint32_t>(configData->strategyConfigs_[ancoSceneIt->second.strategy].min);
             max = static_cast<uint32_t>(configData->strategyConfigs_[ancoSceneIt->second.strategy].max);
         }
+        min = std::max(min, curVoteInfo.min);
+        max = std::max(min, max);
         curVoteInfo.SetRange(min, max);
     }
 }
