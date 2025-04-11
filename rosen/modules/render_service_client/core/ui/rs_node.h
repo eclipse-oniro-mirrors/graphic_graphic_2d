@@ -559,6 +559,12 @@ public:
     void SetRSUIContext(std::shared_ptr<RSUIContext> rsUIContext);
 
     void SetSkipCheckInMultiInstance(bool isSkipCheckInMultiInstance);
+
+#ifdef RS_ENABLE_VK
+    bool IsHybridRenderCanvas() const;
+    void SetHybridRenderCanvas(bool hybridRenderCanvas);
+#endif
+
 protected:
     explicit RSNode(
         bool isRenderServiceNode, bool isTextureExportNode = false, std::shared_ptr<RSUIContext> rsUIContext = nullptr);
@@ -690,6 +696,10 @@ private:
 
     std::recursive_mutex animationMutex_;
     mutable std::recursive_mutex propertyMutex_;
+
+#ifdef RS_ENABLE_VK
+    bool hybridRenderCanvas_ = false;
+#endif
 
     friend class RSUIDirector;
     friend class RSTransition;

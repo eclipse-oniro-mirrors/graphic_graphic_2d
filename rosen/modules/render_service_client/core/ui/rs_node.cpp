@@ -3401,6 +3401,18 @@ RSNode::SharedPtr RSNode::GetParent()
                                : RSNodeMap::Instance().GetNode(parent_);
 }
 
+#ifdef RS_ENABLE_VK
+bool RSNode::IsHybridRenderCanvas() const
+{
+    return hybridRenderCanvas_;
+}
+
+void RSNode::SetHybridRenderCanvas(bool hybridRenderCanvas)
+{
+    hybridRenderCanvas_ = hybridRenderCanvas;
+}
+#endif
+
 void RSNode::DumpTree(int depth, std::string& out) const
 {
     for (int i = 0; i < depth; i++) {
@@ -3452,6 +3464,10 @@ void RSNode::Dump(std::string& out) const
         out += "null";
     }
     out += "], outOfParent[" + std::to_string(static_cast<int>(outOfParent_));
+#ifdef RS_ENABLE_VK
+    out += "], hybridRenderCanvas[";
+    out += hybridRenderCanvas_ ? "true" : "false";
+#endif
     out += "], animations[";
     for (const auto& [id, anim] : animations_) {
         out += "{id:" + std::to_string(id);
