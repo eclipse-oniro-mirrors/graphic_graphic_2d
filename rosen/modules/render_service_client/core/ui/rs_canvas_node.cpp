@@ -104,6 +104,12 @@ void RSCanvasNode::SetIsWideColorGamut(bool isWideColorGamut)
 ExtendRecordingCanvas* RSCanvasNode::BeginRecording(int width, int height)
 {
     CheckThread();
+
+    if (recordingCanvas_) {
+        delete recordingCanvas_;
+        recordingCanvas_ = nullptr;
+    }
+
     recordingCanvas_ = new ExtendRecordingCanvas(width, height);
     recordingCanvas_->SetIsCustomTextType(isCustomTextType_);
     recordingCanvas_->SetIsCustomTypeface(isCustomTypeface_);
