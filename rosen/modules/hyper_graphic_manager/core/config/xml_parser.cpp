@@ -616,19 +616,19 @@ int32_t XMLParser::ParseAppTypes(xmlNode& node, std::unordered_map<int32_t, std:
 void XMLParser::ReplenishMissThermalAppGameConfig(PolicyConfigData::ScreenSetting& screenSetting, 
                                                   const PolicyConfigData::ScreenSetting& screenSettingDefalut)
 {
-    if (screenSetting->second.appList.empty()) {
-        screenSetting->second.appList = screenConfigDefault.appList;
-        screenSetting->second.multiAppStrategyType = screenSettingDefalut.multiAppStrategyType;
-        screenSetting->second.multiAppStrategyName = screenSettingDefalut.multiAppStrategyName;
+    if (screenSetting.appList.empty()) {
+        screenSetting.appList = screenConfigDefault.appList;
+        screenSetting.multiAppStrategyType = screenSettingDefalut.multiAppStrategyType;
+        screenSetting.multiAppStrategyName = screenSettingDefalut.multiAppStrategyName;
     }
-    if (screenSetting->second.appTypes.empty()) {
-        screenSetting->second.appTypes = screenSettingDefalut.appTypes;
+    if (screenSetting.appTypes.empty()) {
+        screenSetting.appTypes = screenSettingDefalut.appTypes;
     }
-    if (screenSetting->second.gameSceneList.empty()) {
-        screenSetting->second.gameSceneList = screenSettingDefalut.gameSceneList;
+    if (screenSetting.gameSceneList.empty()) {
+        screenSetting.gameSceneList = screenSettingDefalut.gameSceneList;
     }
-    if (screenSetting->second.gameAppNodeList.empty()) {
-        screenSetting->second.gameAppNodeList = screenSettingDefalut.gameAppNodeList;
+    if (screenSetting.gameAppNodeList.empty()) {l
+        screenSetting.gameAppNodeList = screenSettingDefalut.gameAppNodeList;
     }
 }
 
@@ -674,7 +674,7 @@ int32_t XMLParser::ReplenishMissThermalConfig(const PolicyConfigData::ScreenConf
             if (screenSetting->second.performanceConfig.empty()) {
                 screenSetting->second.performanceConfig = screenSettingDefalut.performanceConfig;
             }
-            ReplenishMissThermalAppGameConfig(screenSetting, screenSettingDefalut);
+            ReplenishMissThermalAppGameConfig(screenSetting->second, screenSettingDefalut);
         } else {
             screenConfig[id] = screenSettingDefalut;
         }

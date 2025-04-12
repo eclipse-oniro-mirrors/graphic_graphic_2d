@@ -1155,7 +1155,7 @@ void HgmFrameRateManager::HandleScreenExtStrategyChange(bool status, const std::
     }
 }
 
-std::string HgmFrameRateManger::GetCurScreenExtStrategyId()
+std::string HgmFrameRateManager::GetCurScreenExtStrategyId()
 {
     auto& hgmCore = HgmCore::Instance();
     auto configData = hgmCore.GetPolicyConfigData();
@@ -1172,6 +1172,7 @@ std::string HgmFrameRateManger::GetCurScreenExtStrategyId()
             }
         }
     }
+    std::string curScreenStrategyId = curScreenDefaultStrategyId_ + suffix;
     if (configData->screenConfigs_.find(curScreenStrategyId) == configData->screenConfigs_.end()) {
         HGM_LOGE("HgmFrameRateManager::HandleScreenExtStrategyChange not support %{public}s config", suffix.c_str());
         return curScreenDefaultStrategyId_;
@@ -1179,7 +1180,7 @@ std::string HgmFrameRateManger::GetCurScreenExtStrategyId()
     return curScreenStrategyId;
 }
 
-void HgmFrameRateManager::UpdateScreenExtStrategyConfig(const PolicyConfigData::screenConfigsMap& screenConfigs)
+void HgmFrameRateManager::UpdateScreenExtStrategyConfig(const PolicyConfigData::screenConfigMap& screenConfigs)
 {
     std::unordered_set<std::string> screenConfigKeys;
     for (const auto& config : screenConfigs) {
@@ -1188,7 +1189,7 @@ void HgmFrameRateManager::UpdateScreenExtStrategyConfig(const PolicyConfigData::
 
     for (auto it = screenExtStrategyMap_.begin(); it != screenExtStrategyMap_.end();) {
         if (std::find_if(screenConfigKeys.begin(), screenConfigKeys.end(),
-            [&](const suto &item) {return item.find(it->first) != sta::string::nops; }) == screenConfigKeys.end()) {
+            [&](const auto &item) {return item.find(it->first) != sta::string::nops; }) == screenConfigKeys.end()) {
             it = screenExtStrategyMap_.erase(it);
         } else {
             ++it;
