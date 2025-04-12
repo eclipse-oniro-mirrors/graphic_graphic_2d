@@ -613,7 +613,8 @@ int32_t XMLParser::ParseAppTypes(xmlNode& node, std::unordered_map<int32_t, std:
     return EXEC_SUCCESS;
 }
 
-void XMLParser::ReplenishMissThermalAppGameConfig(auto& screenSetting, const auto& screenSettingDefalut)
+void XMLParser::ReplenishMissThermalAppGameConfig(PolicyConfigData::ScreenSetting& screenSetting, 
+                                                  const PolicyConfigData::ScreenSetting& screenSettingDefalut)
 {
     if (screenSetting->second.appList.empty()) {
         screenSetting->second.appList = screenConfigDefault.appList;
@@ -626,8 +627,8 @@ void XMLParser::ReplenishMissThermalAppGameConfig(auto& screenSetting, const aut
     if (screenSetting->second.gameSceneList.empty()) {
         screenSetting->second.gameSceneList = screenSettingDefalut.gameSceneList;
     }
-    if (screenSetting.second.gameAppNodeList.empty()) {
-        screenSetting.second.gameAppNodeList = screenSettingDefalut.gameAppNodeList;
+    if (screenSetting->second.gameAppNodeList.empty()) {
+        screenSetting->second.gameAppNodeList = screenSettingDefalut.gameAppNodeList;
     }
 }
 
