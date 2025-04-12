@@ -71,6 +71,7 @@ const std::string TEST_XML_CONTENT = (R"(<?xml version="1.0" encoding="UTF-8" st
             <Ltpo name="adaptiveSync" value="0"/>
             <Ltpo name="vBlankIdleCorrectSwitch" value="100"/>
             <Ltpo name="lowRateToHighQuickSwitch" value="100"/>
+            <Ltpo name="xxx" value="100"/>
         </Category>
         <Category name="rs_animation_power_config">
             <Setting name="aaa" value="60"/>
