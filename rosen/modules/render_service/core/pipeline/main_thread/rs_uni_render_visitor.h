@@ -123,11 +123,6 @@ public:
         return layerNum_;
     }
 
-    void SetScreenInfo(ScreenInfo screenInfo)
-    {
-        screenInfo_ = screenInfo;
-    }
-
     void SurfaceOcclusionCallbackToWMS();
 
     using RenderParam = std::tuple<std::shared_ptr<RSRenderNode>, RSPaintFilterCanvas::CanvasStatus>;
