@@ -170,7 +170,7 @@ public:
     void HandleScreenRectFrameRate(ScreenId id, const GraphicIRect& activeRect);
     void HandleScreenExtStrategyChange(bool status, const std::string& suffix);
     std::string GetCurScreenExtStrategyId();
-    void UpdateScreenExtStrategyConfig(const PolicyConfigData::ScreenConfigsMap& screenConfigs);
+    void UpdateScreenExtStrategyConfig(const PolicyConfigData::ScreenConfigMap& screenConfigs);
 
     // called by RSHardwareThread
     void HandleRsFrame();
