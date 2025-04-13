@@ -3489,29 +3489,6 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeInfoForAppNode, TestSize.Level2)
 }
 
 /**
- * @tc.name: UpdateHwcNodeEnableByGlobalFilter
- * @tc.desc: Test RSUnitRenderVisitorTest.UpdateHwcNodeEnableByGlobalFilter with not nullptr
- * @tc.type: FUNC
- * @tc.require: issuesIAE6YM
- */
-HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeEnableByGlobalFilter, TestSize.Level2)
-{
-    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
-    ASSERT_NE(rsUniRenderVisitor, nullptr);
-
-    NodeId id = 0;
-    std::weak_ptr<RSContext> context;
-    auto node = std::make_shared<RSSurfaceRenderNode>(id, context);
-    ASSERT_NE(node, nullptr);
-    NodeId displayNodeId = 3;
-    RSDisplayNodeConfig config;
-    rsUniRenderVisitor->curDisplayNode_ = std::make_shared<RSDisplayRenderNode>(displayNodeId, config);
-    rsUniRenderVisitor->curDisplayNode_->InitRenderParams();
-
-    rsUniRenderVisitor->UpdateHwcNodeEnableByGlobalFilter(node);
-}
-
-/**
  * @tc.name: CollectEffectInfo001
  * @tc.desc: Test RSUnitRenderVisitorTest.CollectEffectInfo with not parent node.
  * @tc.type: FUNC
@@ -4027,89 +4004,6 @@ HWTEST_F(RSUniRenderVisitorTest, IsNodeAboveInsideOfNodeBelow, TestSize.Level1)
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
     ASSERT_NE(rsUniRenderVisitor, nullptr);
     ASSERT_FALSE(rsUniRenderVisitor->IsNodeAboveInsideOfNodeBelow(rectAbove, hwcNodeRectList));
-}
-
-/**
- * @tc.name: UpdateHwcNodeEnableByGlobalFilter
- * @tc.desc: Test UpdateHwcNodeEnableByGlobalFilter nullptr / eqeual nodeid / hwcNodes empty.
- * @tc.type: FUNC
- * @tc.require: IAHFXD
- */
-HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeEnableByGlobalFilter001, TestSize.Level1)
-{
-    // create input args.
-    auto node = RSTestUtil::CreateSurfaceNodeWithBuffer();
-    // create display node.
-    RSDisplayNodeConfig config;
-    NodeId displayId = 1;
-    auto displayNode = std::make_shared<RSDisplayRenderNode>(displayId, config);
-    displayNode->curMainAndLeashSurfaceNodes_.push_back(nullptr);
-    displayNode->curMainAndLeashSurfaceNodes_.push_back(std::make_shared<RSSurfaceRenderNode>(node->GetId()));
-
-    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
-    ASSERT_NE(rsUniRenderVisitor, nullptr);
-    rsUniRenderVisitor->curDisplayNode_ = displayNode;
-    rsUniRenderVisitor->UpdateHwcNodeEnableByGlobalFilter(node);
-}
-
-/**
- * @tc.name: UpdateHwcNodeEnableByGlobalFilter
- * @tc.desc: Test UpdateHwcNodeEnableByGlobalFilter, child node force disabled hardware.
- * @tc.type: FUNC
- * @tc.require: IAHFXD
- */
-HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeEnableByGlobalFilter002, TestSize.Level1)
-{
-    // create input args.
-    auto node = RSTestUtil::CreateSurfaceNodeWithBuffer();
-    // create display node and surface node.
-    RSDisplayNodeConfig config;
-    NodeId displayId = 1;
-    auto displayNode = std::make_shared<RSDisplayRenderNode>(displayId, config);
-    NodeId surfaceId = 2;
-    auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(surfaceId);
-    auto childNode = std::make_shared<RSSurfaceRenderNode>(++surfaceId);
-    childNode->isHardwareForcedDisabled_ = true;
-    surfaceNode->AddChildHardwareEnabledNode(childNode);
-
-    displayNode->curMainAndLeashSurfaceNodes_.push_back(surfaceNode);
-
-    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
-    ASSERT_NE(rsUniRenderVisitor, nullptr);
-    rsUniRenderVisitor->curDisplayNode_ = displayNode;
-    rsUniRenderVisitor->UpdateHwcNodeEnableByGlobalFilter(node);
-    ASSERT_TRUE(childNode->isHardwareForcedDisabled_);
-}
-
-/**
- * @tc.name: UpdateHwcNodeEnableByGlobalFilter
- * @tc.desc: Test UpdateHwcNodeEnableByGlobalFilter, dirty filter found.
- * @tc.type: FUNC
- * @tc.require: IAHFXD
- */
-HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeEnableByGlobalFilter003, TestSize.Level1)
-{
-    // create input args.
-    auto node = RSTestUtil::CreateSurfaceNodeWithBuffer();
-    // create display node and surface node.
-    RSDisplayNodeConfig config;
-    NodeId displayId = 1;
-    auto displayNode = std::make_shared<RSDisplayRenderNode>(displayId, config);
-    NodeId surfaceId = 2;
-    auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(surfaceId);
-    auto childNode = std::make_shared<RSSurfaceRenderNode>(++surfaceId);
-    childNode->isHardwareForcedDisabled_ = false;
-    childNode->dstRect_ = DEFAULT_RECT;
-    surfaceNode->AddChildHardwareEnabledNode(childNode);
-
-    displayNode->curMainAndLeashSurfaceNodes_.push_back(surfaceNode);
-
-    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
-    ASSERT_NE(rsUniRenderVisitor, nullptr);
-    rsUniRenderVisitor->curDisplayNode_ = displayNode;
-    rsUniRenderVisitor->transparentDirtyFilter_[node->GetId()].push_back(std::pair(node->GetId(), DEFAULT_RECT));
-    rsUniRenderVisitor->UpdateHwcNodeEnableByGlobalFilter(node);
-    ASSERT_FALSE(childNode->isHardwareForcedDisabled_);
 }
 
 /**
