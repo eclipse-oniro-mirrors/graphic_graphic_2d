@@ -45,6 +45,9 @@
 using namespace testing;
 using namespace testing::ext;
 
+namespace {
+    const OHOS::Rosen::RectI DEFAULT_RECT = {0, 80, 1000, 1000};
+}
 namespace OHOS::Rosen {
 class RSUniHwcVisitorTest : public testing::Test {
 public:
@@ -1136,6 +1139,120 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateHwcNodeEnableByGlobalDirtyFilter_002, TestSi
 
     rsUniHwcVisitor->UpdateHwcNodeEnableByGlobalDirtyFilter(dirtyFilter, *surfaceNode);
     EXPECT_TRUE(surfaceNode->isHardwareForcedDisabled_);
+}
+
+/**
+ * @tc.name: UpdateHwcNodeEnableByGlobalFilter
+ * @tc.desc: Test RSUnitRenderVisitorTest.UpdateHwcNodeEnableByGlobalFilter with not nullptr
+ * @tc.type: FUNC
+ * @tc.require: issuesIAE6YM
+ */
+HWTEST_F(RSUniHwcVisitorTest, UpdateHwcNodeEnableByGlobalFilter, TestSize.Level2)
+{
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    ASSERT_NE(rsUniRenderVisitor, nullptr);
+    auto rsUniHwcVisitor = std::make_shared<RSUniHwcVisitor>(*rsUniRenderVisitor);
+    ASSERT_NE(rsUniHwcVisitor, nullptr);
+
+    NodeId id = 0;
+    std::weak_ptr<RSContext> context;
+    auto node = std::make_shared<RSSurfaceRenderNode>(id, context);
+    ASSERT_NE(node, nullptr);
+    NodeId displayNodeId = 3;
+    RSDisplayNodeConfig config;
+    rsUniRenderVisitor->curDisplayNode_ = std::make_shared<RSDisplayRenderNode>(displayNodeId, config);
+    rsUniRenderVisitor->curDisplayNode_->InitRenderParams();
+
+    rsUniHwcVisitor->UpdateHwcNodeEnableByGlobalFilter(node);
+}
+
+/**
+ * @tc.name: UpdateHwcNodeEnableByGlobalFilter
+ * @tc.desc: Test UpdateHwcNodeEnableByGlobalFilter nullptr / eqeual nodeid / hwcNodes empty.
+ * @tc.type: FUNC
+ * @tc.require: IAHFXD
+ */
+HWTEST_F(RSUniHwcVisitorTest, UpdateHwcNodeEnableByGlobalFilter001, TestSize.Level1)
+{
+    // create input args.
+    auto node = RSTestUtil::CreateSurfaceNodeWithBuffer();
+    // create display node.
+    RSDisplayNodeConfig config;
+    NodeId displayId = 1;
+    auto displayNode = std::make_shared<RSDisplayRenderNode>(displayId, config);
+    displayNode->curMainAndLeashSurfaceNodes_.push_back(nullptr);
+    displayNode->curMainAndLeashSurfaceNodes_.push_back(std::make_shared<RSSurfaceRenderNode>(node->GetId()));
+
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    ASSERT_NE(rsUniRenderVisitor, nullptr);
+    auto rsUniHwcVisitor = std::make_shared<RSUniHwcVisitor>(*rsUniRenderVisitor);
+    ASSERT_NE(rsUniHwcVisitor, nullptr);
+    rsUniRenderVisitor->curDisplayNode_ = displayNode;
+    rsUniHwcVisitor->UpdateHwcNodeEnableByGlobalFilter(node);
+}
+
+/**
+ * @tc.name: UpdateHwcNodeEnableByGlobalFilter
+ * @tc.desc: Test UpdateHwcNodeEnableByGlobalFilter, child node force disabled hardware.
+ * @tc.type: FUNC
+ * @tc.require: IAHFXD
+ */
+HWTEST_F(RSUniHwcVisitorTest, UpdateHwcNodeEnableByGlobalFilter002, TestSize.Level1)
+{
+    // create input args.
+    auto node = RSTestUtil::CreateSurfaceNodeWithBuffer();
+    // create display node and surface node.
+    RSDisplayNodeConfig config;
+    NodeId displayId = 1;
+    auto displayNode = std::make_shared<RSDisplayRenderNode>(displayId, config);
+    NodeId surfaceId = 2;
+    auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(surfaceId);
+    auto childNode = std::make_shared<RSSurfaceRenderNode>(++surfaceId);
+    childNode->isHardwareForcedDisabled_ = true;
+    surfaceNode->AddChildHardwareEnabledNode(childNode);
+
+    displayNode->curMainAndLeashSurfaceNodes_.push_back(surfaceNode);
+
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    ASSERT_NE(rsUniRenderVisitor, nullptr);
+    auto rsUniHwcVisitor = std::make_shared<RSUniHwcVisitor>(*rsUniRenderVisitor);
+    ASSERT_NE(rsUniHwcVisitor, nullptr);
+    rsUniRenderVisitor->curDisplayNode_ = displayNode;
+    rsUniHwcVisitor->UpdateHwcNodeEnableByGlobalFilter(node);
+    ASSERT_TRUE(childNode->isHardwareForcedDisabled_);
+}
+
+/**
+ * @tc.name: UpdateHwcNodeEnableByGlobalFilter
+ * @tc.desc: Test UpdateHwcNodeEnableByGlobalFilter, dirty filter found.
+ * @tc.type: FUNC
+ * @tc.require: IAHFXD
+ */
+HWTEST_F(RSUniHwcVisitorTest, UpdateHwcNodeEnableByGlobalFilter003, TestSize.Level1)
+{
+    // create input args.
+    auto node = RSTestUtil::CreateSurfaceNodeWithBuffer();
+    // create display node and surface node.
+    RSDisplayNodeConfig config;
+    NodeId displayId = 1;
+    auto displayNode = std::make_shared<RSDisplayRenderNode>(displayId, config);
+    NodeId surfaceId = 2;
+    auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(surfaceId);
+    auto childNode = std::make_shared<RSSurfaceRenderNode>(++surfaceId);
+    childNode->isHardwareForcedDisabled_ = false;
+    childNode->dstRect_ = DEFAULT_RECT;
+    surfaceNode->AddChildHardwareEnabledNode(childNode);
+
+    displayNode->curMainAndLeashSurfaceNodes_.push_back(surfaceNode);
+
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    ASSERT_NE(rsUniRenderVisitor, nullptr);
+    auto rsUniHwcVisitor = std::make_shared<RSUniHwcVisitor>(*rsUniRenderVisitor);
+    ASSERT_NE(rsUniHwcVisitor, nullptr);
+    rsUniRenderVisitor->curDisplayNode_ = displayNode;
+    rsUniHwcVisitor->transparentHwcDirtyFilter_[node->GetId()].push_back(std::pair(node->GetId(), DEFAULT_RECT));
+    rsUniHwcVisitor->UpdateHwcNodeEnableByGlobalFilter(node);
+    ASSERT_FALSE(childNode->isHardwareForcedDisabled_);
 }
 
 /**
