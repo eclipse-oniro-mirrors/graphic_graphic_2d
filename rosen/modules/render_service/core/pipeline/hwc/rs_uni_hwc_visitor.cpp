@@ -25,6 +25,9 @@
 #include "common/rs_optional_trace.h"
 #include "rs_profiler.h"
 
+#undef LOG_TAG
+#define LOG_TAG "RSUniHwcVisitor"
+
 namespace OHOS {
 namespace Rosen {
 constexpr int32_t MAX_ALPHA = 255;
@@ -1100,9 +1103,6 @@ void RSUniHwcVisitor::UpdatePrepareClip(RSRenderNode& node)
 {
     const auto& property = node.GetRenderProperties();
     auto& geoPtr = property.GetBoundsGeometry();
-    if (geoPtr == nullptr) {
-        return;
-    }
     // Dirty Region use abstract coordinate, property of node use relative coordinate
     // BoundsRect(if exists) is mapped to absRect_ of RSObjAbsGeometry.
     if (property.GetClipToBounds()) {
