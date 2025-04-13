@@ -45,6 +45,9 @@
 using namespace testing;
 using namespace testing::ext;
 
+namespace {
+    const OHOS::Rosen::RectI DEFAULT_RECT = {0, 80, 1000, 1000};
+}
 namespace OHOS::Rosen {
 class RSUniHwcVisitorTest : public testing::Test {
 public:
