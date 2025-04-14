@@ -88,6 +88,7 @@ namespace {
     constexpr int32_t STYLUS_NO_LINK = 0;
     constexpr int32_t STYLUS_LINK_UNUSED = 1;
     constexpr int32_t STYLUS_LINK_WRITE = 2;
+    constexpr int32_t VIRTUAL_KEYBOARD_FINGERS_MIN_CNT = 8;
     const std::unordered_map<std::string, int32_t> STYLUS_STATUS_MAP = {
         {"STYLUS_NO_LINK", STYLUS_NO_LINK},
         {"STYLUS_LINK_UNUSED", STYLUS_LINK_UNUSED},
@@ -1004,6 +1005,9 @@ void HgmFrameRateManager::HandleTouchTask(pid_t pid, int32_t touchStatus, int32_
             HGM_LOGD("[touch manager] up");
             touchManager_.HandleTouchEvent(TouchEvent::UP_EVENT, "");
         }
+    } else if (touchStatus == TOUCH_CANCEL && touchCnt >= VIRTUAL_KEYBOARD_FINGERS_MIN_CNT) {
+        HGM_LOGD("[touch manager] cancel");
+        touchManager_.HandleTouchEvent(TouchEvent::UP_EVENT, "");
     } else {
         HGM_LOGD("[touch manager] other touch status not support");
     }
