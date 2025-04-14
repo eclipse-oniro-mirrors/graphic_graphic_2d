@@ -376,7 +376,7 @@ napi_value FilterNapi::SetRadiusGradientBlurPara(napi_env env, napi_callback_inf
         FILTER_LOG_E("FilterNapi SetRadiusGradientBlurPara parsing input fail"));
 
     std::shared_ptr<RadiusGradientBlurPara> para = std::make_shared<RadiusGradientBlurPara>();
-    UIEFFECT_NAPI_CHECK_RET_D(status == napi_ok, nullptr,
+    UIEFFECT_NAPI_CHECK_RET_D(para != nullptr, nullptr,
         FILTER_LOG_E("FilterNapi SetRadiusGradientBlurPara para is nullptr"));
 
     if (argCount != NUM_2) {
