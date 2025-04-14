@@ -68,7 +68,7 @@ void RSAshmemHelperTest::TearDown()
 
 void RSAshmemHelperTest::CheckReadSafeFd(const int fd)
 {
-    const std::shared_ptr<MessageParcel> parcel = std::make_shared<MessageParcel>();
+    const auto parcel = std::make_shared<MessageParcel>();
     ASSERT_TRUE(parcel);
     parcel->WriteFileDescriptor(fd);
 
@@ -101,7 +101,7 @@ HWTEST_F(RSAshmemHelperTest, ReadSafeFdExactly24bytes, TestSize.Level1 | Reliabi
     const size_t dataSize = 100;
     const auto ashmemAllocator = AshmemAllocator::CreateAshmemAllocator(dataSize, PROT_READ | PROT_WRITE);
     ASSERT_TRUE(ashmemAllocator);
-    const int fd = ashmemAllocator->GetFd();
+    const auto fd = ashmemAllocator->GetFd();
     EXPECT_TRUE(fd > 0);
 
     CheckReadSafeFd(fd);
