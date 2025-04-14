@@ -144,18 +144,18 @@ void RSProfiler::SaveSkp(const ArgList& args)
 
 void RSProfiler::SaveOffscreenSkp(const ArgList& args)
 {
+    if(!context_) {
+        return;
+    }
     const auto nodeIdArg = args.Node();
     SendMessage("Trying to playback the drawing commands for node: %" PRId64 "", nodeIdArg);
     if (nodeIdArg == 0) {
         SendMessage("Pass correct node id in args: save_offscreen <node_id>");
         return;
     }
-    if(!context_) {
-        return;
-    }
     const auto& map = context_->GetMutableNodeMap();
     map.TraversalNodes([nodeIdArg](const std::shared_ptr<RSBaseRenderNode>& node) {
-        if (node->GetId() != nodeIdArg) {
+        if (!node || (node->GetId() != nodeIdArg)) {
             return;
         }
         if (node->IsOnTheTree()) {
@@ -163,8 +163,7 @@ void RSProfiler::SaveOffscreenSkp(const ArgList& args)
             return;
         }
         SendMessage("Node found, trying to capture");
-        auto adapter = node->GetRenderDrawable();
-        auto drawable = std::reinterpret_pointer_cast<DrawableV2::RSRenderNodeDrawable>(adapter);
+        auto drawable = std::reinterpret_pointer_cast<DrawableV2::RSRenderNodeDrawable>(node->GetRenderDrawable());
         if (drawable == nullptr) {
             return;
         }
