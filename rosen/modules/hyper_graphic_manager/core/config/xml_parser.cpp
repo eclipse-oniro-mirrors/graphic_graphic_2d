@@ -614,7 +614,7 @@ int32_t XMLParser::ParseAppTypes(xmlNode& node, std::unordered_map<int32_t, std:
 }
 
 void XMLParser::ReplenishMissingScreenAppGameConfig(PolicyConfigData::ScreenSetting& screenSetting,
-                                                  const PolicyConfigData::ScreenSetting& screenSettingDefalut)
+    const PolicyConfigData::ScreenSetting& screenSettingDefalut)
 {
     if (screenSetting.appList.empty()) {
         screenSetting.appList = screenSettingDefalut.appList;
@@ -633,7 +633,7 @@ void XMLParser::ReplenishMissingScreenAppGameConfig(PolicyConfigData::ScreenSett
 }
 
 int32_t XMLParser::ReplenishMissingScreenConfig(const PolicyConfigData::ScreenConfig& screenConfigDefault,
-                                              PolicyConfigData::ScreenConfig& screenConfig)
+    PolicyConfigData::ScreenConfig& screenConfig)
 {
     HGM_LOGD("HgmXMLParser ReplenishMissingScreenConfig");
     for (const auto& [id, screenSettingDefalut] : screenConfigDefault) {

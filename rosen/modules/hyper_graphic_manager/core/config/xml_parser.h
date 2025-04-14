@@ -65,9 +65,9 @@ private:
     int32_t ParseMultiAppStrategy(xmlNode &node, PolicyConfigData::ScreenSetting &screenSetting);
     int32_t ParseAppTypes(xmlNode &node, std::unordered_map<int32_t, std::string> &appTypes);
     int32_t ReplenishMissingScreenConfig(const PolicyConfigData::ScreenConfig &ScreenConfigDefalut,
-                                       PolicyConfigData::ScreenConfig &screenConfig);
+        PolicyConfigData::ScreenConfig &screenConfig);
     void ReplenishMissingScreenAppGameConfig(PolicyConfigData::ScreenSetting& screenSetting,
-                                            const PolicyConfigData::ScreenSetting& screenSettingDefalut);
+        const PolicyConfigData::ScreenSetting& screenSettingDefalut);
     int32_t ParsePerformanceConfig(xmlNode &node, std::unordered_map<std::string, std::string> &performanceConfig);
     int32_t ParseVideoFrameVoteConfig(xmlNode &node);
     std::string ExtractPropertyValue(const std::string &propName, xmlNode &node);
