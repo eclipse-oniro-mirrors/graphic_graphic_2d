@@ -15,12 +15,14 @@
 
 #include "js_paragraph_builder.h"
 
+#include <string>
+
 #include "fontcollection_napi/js_fontcollection.h"
 #include "js_native_api.h"
 #include "line_typeset_napi/js_line_typeset.h"
 #include "napi_common.h"
 #include "paragraph_napi/js_paragraph.h"
-#include "text/text_bundle_config_parser.h"
+#include "txt/text_bundle_config_parser.h"
 #include "utils/string_util.h"
 #include "utils/text_log.h"
 
@@ -187,7 +189,7 @@ napi_value JsParagraphBuilder::OnAddText(napi_env env, napi_callback_info info)
             TEXT_LOGE("Failed to get utf16");
             return NapiGetUndefined(env);
         }
-        typographyCreate_->AppendText(buffer.get());
+        typographyCreate_->AppendText(std::u16string {buffer.get()});
     } else {
         std::string text = "";
         if (ConvertFromJsValue(env, argv[0], text)) {
