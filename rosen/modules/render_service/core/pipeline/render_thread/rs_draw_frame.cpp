@@ -57,7 +57,7 @@ void RSDrawFrame::RenderFrame()
     RS_TRACE_NAME_FMT("RenderFrame");
     // The destructor of GPUCompositonCacheGuard, a memory release check will be performed
     RSMainThread::GPUCompositonCacheGuard guard;
-    RsFrameReport::GetInstance().ReportSchedEvent(FrameSchedEvent::RS_UNI_RENDER_START, {});
+    RsFrameReport::GetInstance().UniRenderStart();
     JankStatsRenderFrameStart();
     unirenderInstance_.IncreaseFrameCount();
     RSUifirstManager::Instance().ProcessSubDoneNode();
@@ -69,7 +69,6 @@ void RSDrawFrame::RenderFrame()
     UnblockMainThread();
     RsFrameReport::GetInstance().UnblockMainThread();
     Render();
-    RsFrameReport::GetInstance().ReportSchedEvent(FrameSchedEvent::RS_RENDER_END, {});
     ReleaseSelfDrawingNodeBuffer();
     NotifyClearGpuCache();
     RSMainThread::Instance()->CallbackDrawContextStatusToWMS(true);
@@ -82,7 +81,7 @@ void RSDrawFrame::RenderFrame()
     MemoryManager::MemoryOverCheck(unirenderInstance_.GetRenderEngine()->GetRenderContext()->GetDrGPUContext());
     JankStatsRenderFrameEnd(doJankStats);
     RSPerfMonitorReporter::GetInstance().ReportAtRsFrameEnd();
-    RsFrameReport::GetInstance().RenderEnd();
+    RsFrameReport::GetInstance().UniRenderEnd();
 }
 
 void RSDrawFrame::NotifyClearGpuCache()
