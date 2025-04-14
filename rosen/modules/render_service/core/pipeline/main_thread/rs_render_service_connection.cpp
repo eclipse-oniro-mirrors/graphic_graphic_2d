@@ -2597,8 +2597,14 @@ ErrCode RSRenderServiceConnection::NotifyHgmConfigEvent(const std::string &event
             RS_LOGW("RSRenderServiceConnection::NotifyHgmConfigEvent: frameRateMgr is nullptr.");
             return;
         }
+        RS_LOGI("RSRenderServiceConnection::NotifyHgmConfigEvent: recive notify %{public}s, %{public}d",
+            eventName.c_str(), state);
         if (eventName == "HGMCONFIG_HIGH_TEMP") {
-            frameRateMgr->HandleThermalFrameRate(state);
+            frameRateMgr->HandleScreenExtStrategyChange(state, HGM_CONFIG_TYPE_THERMAL_SUFFIX);
+        } else if (eventName == "IA_DRAG_SLIDE") {
+            frameRateMgr->HandleScreenExtStrategyChange(state, HGM_CONFIG_TYPE_DRAGSLIDE_SUFFIX);
+        } else if (eventName == "IL_THROW_SLIDE") {
+            frameRateMgr->HandleScreenExtStrategyChange(state, HGM_CONFIG_TYPE_THROWSLIDE_SUFFIX);
         }
     });
     return ERR_OK;

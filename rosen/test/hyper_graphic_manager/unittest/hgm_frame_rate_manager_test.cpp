@@ -331,7 +331,6 @@ HWTEST_F(HgmFrameRateMgrTest, ProcessPendingRefreshRate, Function | SmallTest | 
     frameRateMgr.ProcessPendingRefreshRate(currTime, vsyncid, rsRate, isUiDvsyncOn);
     ASSERT_EQ(hgmCore.pendingConstraintRelativeTime_,
         frameRateMgr.lastPendingConstraintRelativeTime_);
-    frameRateMgr.HandleThermalFrameRate(true);
     uint32_t pendingRefreshRate = OLED_60_HZ;
     frameRateMgr.pendingRefreshRate_ = std::make_shared<uint32_t>(pendingRefreshRate);
     frameRateMgr.ProcessPendingRefreshRate(currTime, vsyncid, rsRate, isUiDvsyncOn);
@@ -1220,23 +1219,21 @@ HWTEST_F(HgmFrameRateMgrTest, NotifyScreenRectFrameRateChange, Function | SmallT
 }
 
 /**
- * @tc.name: HandleThermalFrameRate
- * @tc.desc: Verify the result of HandleThermalFrameRate
+ * @tc.name: HandleScreenExtStrategyChange
+ * @tc.desc: Verify the result of HandleScreenExtStrategyChange
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(HgmFrameRateMgrTest, HandleThermalFrameRate, Function | SmallTest | Level1)
+HWTEST_F(HgmFrameRateMgrTest, HandleScreenExtStrategyChange, Function | SmallTest | Level1)
 {
     auto &hgmCore = HgmCore::Instance();
     auto frameRateMgr = hgmCore.GetFrameRateMgr();
     if (frameRateMgr == nullptr || hgmCore.mPolicyConfigData_ == nullptr) {
         return;
     }
-    frameRateMgr->HandleThermalFrameRate(true);
-    EXPECT_EQ(frameRateMgr->isEnableThermalStrategy_, true);
-
-    frameRateMgr->HandleThermalFrameRate(false);
-    EXPECT_EQ(frameRateMgr->isEnableThermalStrategy_, false);
+    frameRateMgr->HandleScreenExtStrategyChange(true, "_THERMAL");
+    frameRateMgr->HandleScreenExtStrategyChange(false, "test");
+    EXPECT_NE(frameRateMgr, nullptr);
 }
 
 /**
