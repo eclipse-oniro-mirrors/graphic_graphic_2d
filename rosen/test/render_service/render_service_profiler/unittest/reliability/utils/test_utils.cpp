@@ -77,44 +77,42 @@ bool CheckConsistencyWithData(std::shared_ptr<Drawing::Data> data, size_t positi
 {
     Parcel parcel;
 
-    // Read and Write Position should be zero
     EXPECT_EQ(parcel.GetReadPosition(), 0);
     EXPECT_EQ(parcel.GetWritePosition(), 0);
 
     EXPECT_TRUE(RSMarshallingHelper::Marshalling(parcel, data));
-    // Read should be zero and Write Position should be X
+
     EXPECT_EQ(parcel.GetReadPosition(), 0);
     EXPECT_EQ(parcel.GetWritePosition(), position);
 
     EXPECT_TRUE(RSMarshallingHelper::Unmarshalling(parcel, data));
-    // Read and Write Position should be X
+
     EXPECT_EQ(parcel.GetReadPosition(), position);
     EXPECT_EQ(parcel.GetWritePosition(), position);
     parcel.FlushBuffer();
 
-    // Read and Write Position should be zero
     EXPECT_EQ(parcel.GetReadPosition(), 0);
     EXPECT_EQ(parcel.GetWritePosition(), 0);
 
     EXPECT_TRUE(RSMarshallingHelper::Marshalling(parcel, data));
-    // Read should be zero and Write Position should be X
+
     EXPECT_EQ(parcel.GetReadPosition(), 0);
     EXPECT_EQ(parcel.GetWritePosition(), position);
 
     EXPECT_TRUE(RSMarshallingHelper::SkipData(parcel));
-    // Read and Write Position should be X
+
     EXPECT_EQ(parcel.GetReadPosition(), position);
     EXPECT_EQ(parcel.GetWritePosition(), position);
     parcel.FlushBuffer();
 
     EXPECT_TRUE(RSMarshallingHelper::Marshalling(parcel, data));
-    // Read should be zero and Write Position should be X
+
     EXPECT_EQ(parcel.GetReadPosition(), 0);
     EXPECT_EQ(parcel.GetWritePosition(), position);
 
     parcel.SkipBytes(sizeof(int32_t));
     EXPECT_TRUE(RSMarshallingHelper::SkipFromParcel(parcel, data->GetSize()));
-    // Read and Write Position should be X
+    
     EXPECT_EQ(parcel.GetReadPosition(), position);
     EXPECT_EQ(parcel.GetWritePosition(), position);
     parcel.FlushBuffer();
