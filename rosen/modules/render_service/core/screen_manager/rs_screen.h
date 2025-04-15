@@ -176,7 +176,7 @@ public:
 namespace impl {
 class RSScreen : public OHOS::Rosen::RSScreen {
 public:
-    RSScreen(ScreenId id, std::shared_ptr<HdiOutput> output);
+    RSScreen(ScreenId id, bool isVirtual, std::shared_ptr<HdiOutput> output, sptr<Surface> surface);
     RSScreen(const VirtualScreenConfigs& configs);
     ~RSScreen() override = default;
 

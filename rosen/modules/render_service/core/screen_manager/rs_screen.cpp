@@ -78,16 +78,22 @@ std::map<ScreenHDRFormat, GraphicHDRFormat> RSScreen::RS_TO_HDI_HDR_FORMAT_MAP {
 
 constexpr int MAX_LUM = 1000;
 
-RSScreen::RSScreen(ScreenId id, std::shared_ptr<HdiOutput> output)
+RSScreen::RSScreen(ScreenId id,
+    bool isVirtual,
+    std::shared_ptr<HdiOutput> output,
+    sptr<Surface> surface)
     : id_(id),
-      isVirtual_(false),
-      hdiOutput_(std::move(output))
+      isVirtual_(isVirtual),
+      hdiOutput_(std::move(output)),
+      producerSurface_(std::move(surface))
 {
-    hdrCapability_.formatCount = 0;
-    name_ = "Screen_" + std::to_string(id_);
-    PhysicalScreenInit();
-    RS_LOGW("init physical: {id: %{public}" PRIu64 ", w * h: [%{public}u * %{public}u], "
-        "screenType: %{public}u}", id_, width_, height_, screenType_);
+    if (!IsVirtual()) {
+        hdrCapability_.formatCount = 0;
+        name_ = "Screen_" + std::to_string(id_);
+        PhysicalScreenInit();
+        RS_LOGW("init physical: {id: %{public}" PRIu64 ", w * h: [%{public}u * %{public}u], "
+            "screenType: %{public}u}", id_, width_, height_, screenType_);
+    }
     capability_.props.clear();
 }
 
