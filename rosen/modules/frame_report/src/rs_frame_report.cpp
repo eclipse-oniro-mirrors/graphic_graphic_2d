@@ -53,10 +53,7 @@ RsFrameReport::RsFrameReport()
     }
 }
 
-RsFrameReport::~RsFrameReport()
-{
-    CloseLibrary();
-}
+RsFrameReport::~RsFrameReport() {}
 
 void RsFrameReport::Init()
 {
