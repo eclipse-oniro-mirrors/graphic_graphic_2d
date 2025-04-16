@@ -99,6 +99,7 @@ ExtendRecordingCanvas* RSCanvasNode::BeginRecording(int width, int height)
     if (recordingCanvas_) {
         delete recordingCanvas_;
         recordingCanvas_ = nullptr;
+        RS_LOGE("RSCanvasNode::BeginRecording last beginRecording without finishRecording");
     }
 
     recordingCanvas_ = new ExtendRecordingCanvas(width, height);
