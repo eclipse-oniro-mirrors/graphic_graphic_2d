@@ -2751,7 +2751,8 @@ void RSUniRenderVisitor::CollectEffectInfo(RSRenderNode& node)
     if (nodeParent == nullptr) {
         return;
     }
-    if (node.GetRenderProperties().NeedFilter() || node.ChildHasVisibleFilter()) {
+    if (node.GetRenderProperties().NeedFilter() || node.ChildHasVisibleFilter() ||
+        node.GetHwcRecorder().IsBlendWithBackground()) {
         nodeParent->SetChildHasVisibleFilter(true);
         nodeParent->UpdateVisibleFilterChild(node);
     }

@@ -4081,7 +4081,7 @@ const std::vector<NodeId>& RSRenderNode::GetVisibleFilterChild() const
 }
 void RSRenderNode::UpdateVisibleFilterChild(RSRenderNode& childNode)
 {
-    if (childNode.GetRenderProperties().NeedFilter()) {
+    if (childNode.GetRenderProperties().NeedFilter() || childNode.GetHwcRecorder().IsBlendWithBackground()) {
         visibleFilterChild_.emplace_back(childNode.GetId());
     }
     auto& childFilterNodes = childNode.GetVisibleFilterChild();
