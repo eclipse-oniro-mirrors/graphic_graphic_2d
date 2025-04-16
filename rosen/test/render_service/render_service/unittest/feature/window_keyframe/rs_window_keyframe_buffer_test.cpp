@@ -66,7 +66,7 @@ void RSWindowKeyframeBufferTest::SetUp()
         return;
     }
     rootNodeDrawable_ = std::static_pointer_cast<RSRootRenderNodeDrawable>(
-        DrawableV2::RSRenderNodeDrawablerAdapter::OnGenerate(renderNode_));
+        DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(renderNode_));
     if (rootNodeDrawable_) {
         rootNodeDrawable_->renderParams_ = std::make_unique<RSRenderParams>(DEFAULT_ID);
     }
@@ -161,14 +161,14 @@ HWTEST_F(RSWindowKeyframeBufferTest, OnDraw_002, TestSize.Level1)
     MockRSPaintFilterCanvas mockRSPaintFilterCanvas(&canvas);
     MockSurface mockSurface1;
     EXPECT_CALL(mockRSPaintFilterCanvas, GetSurface()).Times(AnyNumber()).WillOnce(Return(&mockSurface1));
-    EXPECT_CALL(mockSurface1, MakeSurface(A<int>, A<int>)).Times(AnyNumber()).WillOnce(Return(nullptr));
+    EXPECT_CALL(mockSurface1, MakeSurface(A<int>(), A<int>())).Times(AnyNumber()).WillOnce(Return(nullptr));
     RSWindowKeyframeBuffer windowKeyframeBuffer1(*rootNodeDrawable_);
     auto ret1 = windowKeyframeBuffer1.OnDraw(mockRSPaintFilterCanvas, *rootNodeDrawable_->GetRenderParams());
     EXPECT_FALSE(ret1);
 
     MockSurface mockSurface2;
     RSPaintFilterCanvas filterCanvas(&mockSurface2);
-    EXPECT_CALL(mockSurface2, MakeSurface(A<int>, A<int>)).Times(AnyNumber()).WillOnce(Return(nullptr));
+    EXPECT_CALL(mockSurface2, MakeSurface(A<int>(), A<int>())).Times(AnyNumber()).WillOnce(Return(nullptr));
     RSWindowKeyframeBuffer windowKeyframeBuffer2(*rootNodeDrawable_);
     auto ret2 = windowKeyframeBuffer2.OnDraw(filterCanvas, *rootNodeDrawable_->GetRenderParams());
     EXPECT_FALSE(ret2);
@@ -203,7 +203,7 @@ HWTEST_F(RSWindowKeyframeBufferTest, OnDraw_003, TestSize.Level1)
     EXPECT_TRUE(ret);
 
     rootNodeDrawable_->GetRenderParams()->SetCacheNodeFrameRect({0, 0, 1, 1});
-    auto ret = windowKeyframeBuffer.OnDraw(filterCanvas, *rootNodeDrawable_->GetRenderParams());
+    ret = windowKeyframeBuffer.OnDraw(filterCanvas, *rootNodeDrawable_->GetRenderParams());
     EXPECT_TRUE(ret);
 
     RSUniRenderThread::Instance().Sync(nullptr);
