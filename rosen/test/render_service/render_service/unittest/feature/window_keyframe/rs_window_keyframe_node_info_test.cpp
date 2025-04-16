@@ -73,11 +73,11 @@ HWTEST_F(RSWindowKeyframeNodeInfoTest, UpdateLinkedNodeId, TestSize.Level2)
 HWTEST_F(RSWindowKeyframeNodeInfoTest, ClearLinkedNodeInfo, TestSize.Level2)
 {
     RSWindowKeyframeNodeInfo info;
-    EXPECT_EQ(info->GetLinkedNodeCount(), 0);
+    EXPECT_EQ(info.GetLinkedNodeCount(), 0);
     info.linkedNodeMap_[1] = 1;
-    EXPECT_EQ(info->GetLinkedNodeCount(), 1);
+    EXPECT_EQ(info.GetLinkedNodeCount(), 1);
     info.ClearLinkedNodeInfo();
-    EXPECT_EQ(info->GetLinkedNodeCount(), 0);
+    EXPECT_EQ(info.GetLinkedNodeCount(), 0);
 }
 
 /**
@@ -89,9 +89,9 @@ HWTEST_F(RSWindowKeyframeNodeInfoTest, ClearLinkedNodeInfo, TestSize.Level2)
 HWTEST_F(RSWindowKeyframeNodeInfoTest, GetLinkedNodeCount, TestSize.Level2)
 {
     RSWindowKeyframeNodeInfo info;
-    EXPECT_EQ(info->GetLinkedNodeCount(), 0);
+    EXPECT_EQ(info.GetLinkedNodeCount(), 0);
     info.linkedNodeMap_[1] = 1;
-    EXPECT_EQ(info->GetLinkedNodeCount(), 1);
+    EXPECT_EQ(info.GetLinkedNodeCount(), 1);
 }
 
 /*
