@@ -903,13 +903,15 @@ ohos_unittest("RSUniRenderEngineTest") {
 ohos_unittest("RSMagicPointerRenderManagerTest") {
   module_out_path = module_output_path
   if (defined(input_ext_feature_magiccursor) && input_ext_feature_magiccursor) {
-    sources = [ "magic_pointer_render/rs_magic_pointer_render_manager_test.cpp" ]
+    sources = 
+        [ "magic_pointer_render/rs_magic_pointer_render_manager_test.cpp" ]
     deps = [ ":rs_test_common" ]
     external_deps = [
       "c_utils:utils",
       "hilog:libhilog",
     ]
-    if (defined(global_parts_info) && defined(global_parts_info.sensors_sensor)) {
+    if (defined(global_parts_info) &&
+        defined(global_parts_info.sensors_sensor)) {
       external_deps += [ "sensor:sensor_interface_native" ]
     }
     defines = []
