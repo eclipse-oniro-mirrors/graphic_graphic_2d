@@ -865,13 +865,13 @@ void RSRenderService::RegisterFpsFuncs()
     // fps info cmd, [windowname]/composer fps
     RSDumpFunc fpsInfoFunc = [this](const std::u16string &cmd, std::unordered_set<std::u16string> &argSets,
                                            std::string &dumpString) -> void {
-        FPSDUMPProcess(argSets, dumpString, cmd);
+        FPSDumpProcess(argSets, dumpString, cmd);
     };
 
     // fps clear cmd : [surface name]/composer fpsClear
     RSDumpFunc fpsClearFunc = [this](const std::u16string &cmd, std::unordered_set<std::u16string> &argSets,
                                             std::string &dumpString) -> void {
-        FPSDUMPClearProcess(argSets, dumpString, cmd);
+        FPSDumpClearProcess(argSets, dumpString, cmd);
     };
 
     // fps count
