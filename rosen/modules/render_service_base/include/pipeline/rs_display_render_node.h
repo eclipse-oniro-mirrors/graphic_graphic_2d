@@ -581,7 +581,17 @@ public:
     // Window Container
     void SetWindowContainer(std::shared_ptr<RSBaseRenderNode> container);
     std::shared_ptr<RSBaseRenderNode> GetWindowContainer() const;
+    void SetNeedForceUpdateHwcNodes(bool needForceUpdate, bool hasVisibleHwcNodes);
+    bool GetNeedForceUpdateHwcNodes() const
+    {
+        return needForceUpdateHwcNodes_;
+    }
 
+    bool GetHwcNodeIsVisible() const
+    {
+        return hasVisibleHwcNodes_;
+    }
+    
     void SetTargetSurfaceRenderNodeId(NodeId nodeId)
     {
         targetSurfaceRenderNodeId_ = nodeId;
@@ -639,6 +649,8 @@ private:
     // Use in MultiLayersPerf
     size_t surfaceCountForMultiLayersPerf_ = 0;
     int64_t lastRefreshTime_ = 0;
+    bool needForceUpdateHwcNodes_ = false;
+    bool hasVisibleHwcNodes_ = false;
     static ReleaseDmaBufferTask releaseScreenDmaBufferTask_;
     std::shared_ptr<RSDirtyRegionManager> dirtyManager_ = nullptr;
     // Use in screen recording optimization

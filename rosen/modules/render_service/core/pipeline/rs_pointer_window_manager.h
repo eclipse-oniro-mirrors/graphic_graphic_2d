@@ -16,6 +16,7 @@
 #ifndef RENDER_SERVICE_CORE_PIPELINE_RS_POINTER_WINDOW_MANAGER_H
 #define RENDER_SERVICE_CORE_PIPELINE_RS_POINTER_WINDOW_MANAGER_H
 
+#include "drawable/rs_surface_render_node_drawable.h"
 #include "params/rs_render_thread_params.h"
 #include "pipeline/rs_display_render_node.h"
 #include "pipeline/rs_surface_render_node.h"
@@ -152,6 +153,8 @@ public:
 
     bool CheckHardCursorSupport(uint32_t screenId);
     bool HasMirrorDisplay() const;
+    std::shared_ptr<DrawableV2::RSSurfaceRenderNodeDrawable> GetHardCursorDrawable(NodeId id);
+
     static void CheckHardCursorValid(const RSSurfaceRenderNode& node);
 private:
     bool isNeedForceCommitByPointer_{ false };

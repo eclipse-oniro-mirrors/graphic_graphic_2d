@@ -346,6 +346,16 @@ public:
         return isHardwareForcedDisabled_;
     }
 
+    void SetLastFrameIsVisible(bool lastFrameIsVisible)
+    {
+        lastFrameIsVisible_ = lastFrameIsVisible;
+    }
+
+    bool GetLastFrameIsVisible() const
+    {
+        return lastFrameIsVisible_;
+    }
+
     bool IsLeashOrMainWindow() const
     {
         return nodeType_ <= RSSurfaceNodeType::LEASH_WINDOW_NODE || nodeType_ == RSSurfaceNodeType::CURSOR_NODE;
@@ -1629,6 +1639,7 @@ private:
     bool isSubSurfaceNode_ = false;
     bool isNodeToBeCaptured_ = false;
     bool doDirectComposition_ = true;
+    bool lastFrameIsVisible_ = true;
     bool isSkipDraw_ = false;
     bool needHidePrivacyContent_ = false;
     bool isHardwareForcedByBackgroundAlpha_ = false;

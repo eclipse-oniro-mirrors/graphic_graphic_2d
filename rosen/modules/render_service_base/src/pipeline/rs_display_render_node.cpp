@@ -452,6 +452,20 @@ void RSDisplayRenderNode::SetMainAndLeashSurfaceDirty(bool isDirty)
 #endif
 }
 
+void RSDisplayRenderNode::SetNeedForceUpdateHwcNodes(bool needForceUpdate, bool hasVisibleHwcNodes)
+{
+    auto displayParams = static_cast<RSDisplayRenderParams*>(stagingRenderParams_.get());
+    if (displayParams == nullptr) {
+        return;
+    }
+    needForceUpdateHwcNodes_ = needForceUpdate;
+    hasVisibleHwcNodes_ = hasVisibleHwcNodes;
+    displayParams->SetNeedForceUpdateHwcNodes(needForceUpdate);
+    if (stagingRenderParams_->NeedSync()) {
+        AddToPendingSyncList();
+    }
+}
+
 void RSDisplayRenderNode::SetFingerprint(bool hasFingerprint)
 {
 #ifdef RS_ENABLE_GPU

@@ -244,6 +244,7 @@ private:
     int32_t offscreenTranslateY_ = 0;
 
     bool isRenderSkipIfScreenOff_ = false;
+    bool hardCursorLastCommitSuccess_ = false;
 };
 } // namespace DrawableV2
 } // namespace OHOS::Rosen

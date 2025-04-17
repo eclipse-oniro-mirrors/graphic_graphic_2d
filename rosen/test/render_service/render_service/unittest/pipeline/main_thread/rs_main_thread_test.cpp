@@ -4903,4 +4903,52 @@ HWTEST_F(RSMainThreadTest, RenderServiceAllSurafceDump01, TestSize.Level1)
     mainThread->RenderServiceAllSurafceDump(log);
 }
 
+/**
+ * @tc.name: BufferIsVisibleUpdateTest
+ * @tc.desc: RenderServiceAllSurafceDump Test
+ * @tc.type: FUNC
+ * @tc.require: issueIC0AQO
+ */
+HWTEST_F(RSMainThreadTest, BufferIsVisibleUpdateTest, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    EXPECT_FALSE(mainThread->BufferIsVisibleUpdate());
+    std::vector<std::shared_ptr<RSSurfaceRenderNode>> hardwareEnabledNodes;
+    NodeId id = 0;
+    auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(id, mainThread->context_);
+    sptr<SurfaceBuffer> preBuffer = OHOS::SurfaceBuffer::Create();
+    sptr<SyncFence> acquireFence = SyncFence::InvalidFence();
+    Rect damageRect = {0, 0, 0, 0};
+    int64_t timestamp = 0;
+    ASSERT_NE(surfaceNode->surfaceHandler_, nullptr);
+    surfaceNode->surfaceHandler_->SetBuffer(preBuffer, acquireFence, damageRect, timestamp);
+    surfaceNode->surfaceHandler_->isCurrentFrameBufferConsumed_ = true;
+    surfaceNode->lastFrameIsVisible_ = true;
+    hardwareEnabledNodes.push_back(surfaceNode);
+    mainThread->hardwareEnabledNodes_ = hardwareEnabledNodes;
+    EXPECT_TRUE(mainThread->BufferIsVisibleUpdate());
+}
+
+/**
+ * @tc.name: GetForceCommitReasonTest
+ * @tc.desc: GetForceCommitReasonTest
+ * @tc.type: FUNC
+ * @tc.require: issueIC0AQO
+ */
+HWTEST_F(RSMainThreadTest, GetForceCommitReasonTest, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    mainThread->isHardwareEnabledBufferUpdated_ = false;
+    mainThread->forceUpdateUniRenderFlag_ = false;
+    EXPECT_EQ(mainThread->GetForceCommitReason(), 0);
+    uint32_t forceCommitReason = 0;
+    forceCommitReason |= ForceCommitReason::FORCED_BY_HWCUPDATE;
+    mainThread->isHardwareEnabledBufferUpdated_ = true;
+    EXPECT_EQ(mainThread->GetForceCommitReason(), forceCommitReason);
+    mainThread->forceUpdateUniRenderFlag_ = true;
+    forceCommitReason |= ForceCommitReason::FORCED_BY_UNIRENDERFLAG;
+    EXPECT_EQ(mainThread->GetForceCommitReason(), forceCommitReason);
+}
 } // namespace OHOS::Rosen
