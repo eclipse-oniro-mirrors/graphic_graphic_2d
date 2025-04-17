@@ -4252,17 +4252,17 @@ bool RSMainThread::IsFastComposeAllow(uint64_t unsignedVsyncPeriod, bool nextVsy
     if (!context_) {
         return false;
     }
-    // only support 60hz fastcompose 
-    if(unsignedVsyncPeriod > REFRESH_PERIOD + PERIOD_MAX_OFFSET ||
+    // only support 60hz fastcompose
+    if (unsignedVsyncPeriod > REFRESH_PERIOD + PERIOD_MAX_OFFSET ||
         unsignedVsyncPeriod < REFRESH_PERIOD - PERIOD_MAX_OFFSET) {
         return false;
     }
     // fastcompose not work at dvsync preTime scene
-    if(timestamp_ > curTime_ && timestamp_ - curTime_ > PERIOD_MAX_OFFSET) {
+    if (timestamp_ > curTime_ && timestamp_ - curTime_ > PERIOD_MAX_OFFSET) {
         return false;
     }
-    // if buffer come after Vsync and before onVsync invoke by others, don't fastcompose  
-    if(nextVsyncRequested && (unsignedNowTime - lastVsyncTime) % unsignedVsyncPeriod < FASTCOMPOSE_OFFSET) {
+    // if buffer come after Vsync and before onVsync invoke by others, don't fastcompose
+    if (nextVsyncRequested && (unsignedNowTime - lastVsyncTime) % unsignedVsyncPeriod < FASTCOMPOSE_OFFSET) {
         return false;
     }
     return true;
