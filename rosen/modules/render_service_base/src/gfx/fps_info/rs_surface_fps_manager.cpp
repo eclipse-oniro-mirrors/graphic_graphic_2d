@@ -14,6 +14,9 @@
  */
 
 #include <memory>
+#include <string>
+#include <codecvt>
+#include <locale>
 
 #include "common/rs_common_def.h"
 #include "gfx/fps_info/rs_surface_fps_manager.h"
@@ -175,14 +178,38 @@ void RSSurfaceFpsManager::ClearDumpByPid(std::string& result, pid_t pid)
     surfaceFps->ClearDump();
 }
 
-void RSSurfaceFpsManager::DumpSurfaceNodeFps(std::string& dumpString, const std::string& option, const std::string& arg) const
+void RSSurfaceFpsManager::ProcessParam(
+    const std::unordered_set<std::u16string>& argSets, std::string& option, std::string& argStr)
+{
+    if (argSets.size() == 1) {
+        option = PARAM_NAME;
+    }
+    for (const std::u16string& arg : argSets) {
+        std::string str = std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> {}
+            .to_bytes(arg);
+        if (options.find(str) != options.end()) {
+            option = str;
+        } else {
+            argStr = str;
+        }
+    }
+    return ;
+}
+
+bool RSSurfaceFpsManager::IsSurface(const std::string& option, const std::string& argStr)
+{
+    return option == PARAM_ID || uniRenderArgs.find(argStr) == uniRenderArgs.end();
+}
+
+void RSSurfaceFpsManager::DumpSurfaceNodeFps(
+    std::string& dumpString, const std::string& option, const std::string& arg)
 {
     dumpString += "\n-- The recently fps records info of screens:\n";
-    if (option == "-name") {
+    if (option == PARAM_NAME) {
         Dump(dumpString, arg);
-    } else if (option == "-id") {
+    } else if (option == PARAM_ID) {
         NodeId nodeId = 0;
-        if (!convertToLongLongUint(arg, nodeId)) {
+        if (!ConvertToLongLongUint(arg, nodeId)) {
             dumpString = "The input nodeId is invalid, please re-enter";
             return ;
         } else {
@@ -194,14 +221,15 @@ void RSSurfaceFpsManager::DumpSurfaceNodeFps(std::string& dumpString, const std:
     }
 }
 
-void RSSurfaceFpsManager::ClearSurfaceNodeFps(std::string& dumpString, const std::string& option, const std::string& arg) const
+void RSSurfaceFpsManager::ClearSurfaceNodeFps(
+    std::string& dumpString, const std::string& option, const std::string& arg)
 {
     dumpString += "\n-- Clear fps records info of screens:\n";
-    if (option == "-name") {
+    if (option == PARAM_NAME) {
         ClearDump(dumpString, arg);
-    } else if (option == "-id") {
+    } else if (option == PARAM_ID) {
         NodeId nodeId = 0;
-        if (!convertToLongLongUint(arg, nodeId)) {
+        if (!ConvertToLongLongUint(arg, nodeId)) {
             dumpString = "The input nodeId is invalid, please re-enter";
             return ;
         } else {
