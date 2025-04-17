@@ -582,15 +582,9 @@ public:
     void SetWindowContainer(std::shared_ptr<RSBaseRenderNode> container);
     std::shared_ptr<RSBaseRenderNode> GetWindowContainer() const;
     void SetNeedForceUpdateHwcNodes(bool needForceUpdate, bool hasVisibleHwcNodes);
-    bool GetNeedForceUpdateHwcNodes() const
-    {
-        return needForceUpdateHwcNodes_;
-    }
+    bool GetNeedForceUpdateHwcNodes() const { return needForceUpdateHwcNodes_; }
 
-    bool GetHwcNodeIsVisible() const
-    {
-        return hasVisibleHwcNodes_;
-    }
+    bool GetHwcNodeIsVisible() const { return hasVisibleHwcNodes_; }
     
     void SetTargetSurfaceRenderNodeId(NodeId nodeId)
     {

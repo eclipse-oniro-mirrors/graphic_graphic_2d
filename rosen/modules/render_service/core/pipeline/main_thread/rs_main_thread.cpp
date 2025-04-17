@@ -2586,7 +2586,7 @@ bool RSMainThread::BufferIsVisibleUpdate()
             continue;
         }
         if (surfaceNode->GetRSSurfaceHandler()->IsCurrentFrameBufferConsumed() &&
-            surfaceNode->GetLastFrameIsVisible()) {
+            surfaceNode->GetLastFrameHasVisibleRegion()) {
             bufferNeedUpdate = true;
             break;
         }

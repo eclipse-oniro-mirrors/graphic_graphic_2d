@@ -346,14 +346,14 @@ public:
         return isHardwareForcedDisabled_;
     }
 
-    void SetLastFrameIsVisible(bool lastFrameIsVisible)
+    void SetLastFrameHasVisibleRegion(bool lastFrameHasVisibleRegion)
     {
-        lastFrameIsVisible_ = lastFrameIsVisible;
+        lastFrameHasVisibleRegion_ = lastFrameHasVisibleRegion;
     }
 
-    bool GetLastFrameIsVisible() const
+    bool GetLastFrameHasVisibleRegion() const
     {
-        return lastFrameIsVisible_;
+        return lastFrameHasVisibleRegion_;
     }
 
     bool IsLeashOrMainWindow() const
@@ -1639,7 +1639,7 @@ private:
     bool isSubSurfaceNode_ = false;
     bool isNodeToBeCaptured_ = false;
     bool doDirectComposition_ = true;
-    bool lastFrameIsVisible_ = true;
+    bool lastFrameHasVisibleRegion_ = true;
     bool isSkipDraw_ = false;
     bool needHidePrivacyContent_ = false;
     bool isHardwareForcedByBackgroundAlpha_ = false;

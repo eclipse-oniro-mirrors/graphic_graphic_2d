@@ -4719,12 +4719,12 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateAncoPrepareClip001, TestSize.Level1)
 }
 
 /*
- * @tc.name: UpdateHwcNodesVisibleTest
- * @tc.desc: Test UpdateHwcNodesVisibleTest;
+ * @tc.name: UpdateHwcNodesIfVisibleForAppTest
+ * @tc.desc: Test UpdateHwcNodesIfVisibleForAppTest;
  * @tc.type: FUNC
  * @tc.require: issueIC0AQO
  */
-HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodesVisibleTest, TestSize.Level2)
+HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodesIfVisibleForAppTest, TestSize.Level2)
 {
     bool hasVisibleHwcNodes = false;
     bool needForceUpdateHwcNodes = false;
@@ -4748,7 +4748,7 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodesVisibleTest, TestSize.Level2)
     std::vector<std::weak_ptr<RSSurfaceRenderNode>> hwcNodes;
     hwcNodes.push_back(std::weak_ptr<RSSurfaceRenderNode>(opacitySurfaceNode));
     hwcNodes.push_back(std::weak_ptr<RSSurfaceRenderNode>(surfaceNode));
-    rsUniRenderVisitor->UpdateHwcNodesVisible(surfaceNode, hwcNodes, hasVisibleHwcNodes,
+    rsUniRenderVisitor->UpdateHwcNodesIfVisibleForApp(surfaceNode, hwcNodes, hasVisibleHwcNodes,
         needForceUpdateHwcNodes);
     EXPECT_FALSE(hasVisibleHwcNodes);
     EXPECT_FALSE(needForceUpdateHwcNodes);

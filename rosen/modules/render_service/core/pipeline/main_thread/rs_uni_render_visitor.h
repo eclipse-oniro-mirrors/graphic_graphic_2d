@@ -211,8 +211,8 @@ private:
     void UpdateCornerRadiusInfoForDRM(std::shared_ptr<RSSurfaceRenderNode> hwcNode, std::vector<RectI>& hwcRects);
     bool CheckIfRoundCornerIntersectDRM(const float& ratio, std::vector<float>& ratioVector,
         const Vector4f& instanceCornerRadius, const RectI& instanceAbsRect, const RectI& hwcAbsRect);
-    void UpdateHasVisibleHwcNodes(std::vector<RSBaseRenderNode::SharedPtr>& curMainAndLeashSurfaces);
-    void UpdateHwcNodesVisible(std::shared_ptr<RSSurfaceRenderNode>& surfaceNode,
+    void UpdateIfHwcNodesHaveVisibleRegion(std::vector<RSBaseRenderNode::SharedPtr>& curMainAndLeashSurfaces);
+    void UpdateHwcNodesIfVisibleForApp(std::shared_ptr<RSSurfaceRenderNode>& surfaceNode,
         const std::vector<std::weak_ptr<RSSurfaceRenderNode>>& hwcNodes,
         bool& hasVisibleHwcNodes, bool& needForceUpdateHwcNodes);
     void PrevalidateHwcNode();
