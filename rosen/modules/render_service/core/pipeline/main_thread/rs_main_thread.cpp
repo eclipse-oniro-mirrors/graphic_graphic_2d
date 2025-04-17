@@ -4247,7 +4247,7 @@ void RSMainThread::PerfAfterAnim(bool needRequestNextVsync)
 }
 
 bool RSMainThread::IsFastComposeAllow(uint64_t unsignedVsyncPeriod, bool nextVsyncRequested,
-    uint64_t unsignedNowTime, uint64 lastVsyncTime)
+    uint64_t unsignedNowTime, uint64_t lastVsyncTime)
 {
     if (unsignedVsyncPeriod == 0) {
         return false;
