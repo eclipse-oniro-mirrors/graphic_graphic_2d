@@ -37,13 +37,13 @@ public:
     explicit MockRSPaintFilterCanvas(Drawing::Canvas* canvas) : RSPaintFilterCanvas(canvas) {}
     explicit MockRSPaintFilterCanvas(Drawing::Surface* surface) : RSPaintFilterCanvas(surface) {}
     MOCK_METHOD(Drawing::Surface*, GetSurface, (), (const));
-}
+};
 
 class MockSurface : public Drawing::Surface {
 public:
     explicit MockSurface() : Drawing::Surface() {}
     MOCK_METHOD(std::shared_ptr<Drawing::Surface>, MakeSurface, (int, int), (const));
-}
+};
 
 class RSWindowKeyframeBufferTest : public testing::Test {
 public:
