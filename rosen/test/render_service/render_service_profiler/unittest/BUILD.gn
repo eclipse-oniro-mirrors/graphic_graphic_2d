@@ -30,8 +30,8 @@ group("test") {
   testonly = true
   deps = [
     "reliability/platform/ohos:unittest",
-    "standard/transaction:unittest",
     "standard/platform/ohos:unittest",
+    "standard/transaction:unittest",
   ]
 }
 

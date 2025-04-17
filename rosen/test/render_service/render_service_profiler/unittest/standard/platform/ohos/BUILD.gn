@@ -96,7 +96,5 @@ config("render_test") {
 group("unittest") {
   testonly = true
 
-  deps = [
-    ":RSAshmemHelperStandardTest",
-  ]
+  deps = [ ":RSAshmemHelperStandardTest" ]
 }
