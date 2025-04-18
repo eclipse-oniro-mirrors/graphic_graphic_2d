@@ -82,11 +82,11 @@ public:
         int64_t startTime = GetSystemCurrentTime();
         int64_t endTime = startTime;
         while ((endTime - startTime) < MAX_WAIT_MEDIA_CREATE_TIME
-            && (saMgr.CheckSystemAbility(OHOS::PLAYER_DISTRIBUTED_SERVICE_ID)) == nullptr) {
+            && (saMgr->CheckSystemAbility(OHOS::PLAYER_DISTRIBUTED_SERVICE_ID)) == nullptr) {
             usleep(SLEEP_TIME_US_10);
             endTime = GetSystemCurrentTime();
         }
-        if (saMgr.CheckSystemAbility(OHOS::PLAYER_DISTRIBUTED_SERVICE_ID)) == nullptr) {
+        if (saMgr->CheckSystemAbility(OHOS::PLAYER_DISTRIBUTED_SERVICE_ID)) == nullptr) {
             LOGE("CheckMediaSa fail");
             return;
         }
