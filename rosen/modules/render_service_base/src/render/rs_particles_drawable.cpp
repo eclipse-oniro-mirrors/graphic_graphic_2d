@@ -234,7 +234,6 @@ bool CheckImageNull(std::shared_ptr<Drawing::Image>& image, const std::shared_pt
     }
 
     if (drawImage) {
-        ROSEN_LOGE("RSParticlesDrawable::Draw !pixel && image_");
         image = drawImage;
         return false;
     }
@@ -249,7 +248,6 @@ void RSParticlesDrawable::DrawImages(Drawing::Canvas& canvas)
         if (imageVector_[imageCount_] != nullptr) {
             std::shared_ptr<Drawing::Image> image = nullptr;
             if (pixelmap) {
-                ROSEN_LOGE("RSParticlesDrawable::Draw pixel");
                 image = RSPixelMapUtil::ExtractDrawingImage(pixelmap);
             }
 
