@@ -1382,15 +1382,13 @@ void HgmFrameRateManager::MarkVoteChange(const std::string& voter)
     bool needForceUpdate = currRefreshRate_.load() != hgmCore.GetPendingScreenRefreshRate();
     if (hgmCore.GetLtpoEnabled() && (frameRateChanged || isNeedUpdateAppOffset_)) {
         HandleFrameRateChangeForLTPO(timestamp_.load(), false);
-        if (needChangeDssRefreshRate && changeDssRefreshRateCb_ != nullptr) {
-            changeDssRefreshRateCb_(curScreenId_, refreshRate, true);
-        }
     } else {
         std::lock_guard<std::mutex> lock(pendingMutex_);
         pendingRefreshRate_ = std::make_shared<uint32_t>(currRefreshRate_);
-        if (needChangeDssRefreshRate && changeDssRefreshRateCb_ != nullptr) {
-            changeDssRefreshRateCb_(curScreenId_, refreshRate, true);
-        }
+    }
+
+    if (needChangeDssRefreshRate && changeDssRefreshRateCb_ != nullptr) {
+        changeDssRefreshRateCb_(curScreenId_, refreshRate, true);
     }
     ReportHiSysEvent(resultVoteInfo);
 }
@@ -1997,15 +1995,13 @@ void HgmFrameRateManager::CheckRefreshRateChange(bool followRs, bool frameRateCh
     CreateVSyncGenerator()->DVSyncRateChanged(controllerRate_, frameRateChanged);
     if (HgmCore::Instance().GetLtpoEnabled() && (frameRateChanged || isNeedUpdateAppOffset_)) {
         HandleFrameRateChangeForLTPO(timestamp_.load(), followRs);
-        if (needChangeDssRefreshRate && changeDssRefreshRateCb_ != nullptr) {
-            changeDssRefreshRateCb_(curScreenId_.load(), refreshRate, true);
-        }
     } else {
         std::lock_guard<std::mutex> lock(pendingMutex_);
         pendingRefreshRate_ = std::make_shared<uint32_t>(currRefreshRate_);
-        if (needChangeDssRefreshRate && changeDssRefreshRateCb_ != nullptr) {
-            changeDssRefreshRateCb_(curScreenId_.load(), refreshRate, true);
-        }
+    }
+
+    if (needChangeDssRefreshRate && changeDssRefreshRateCb_ != nullptr) {
+        changeDssRefreshRateCb_(curScreenId_.load(), refreshRate, true);
     }
 }
 
