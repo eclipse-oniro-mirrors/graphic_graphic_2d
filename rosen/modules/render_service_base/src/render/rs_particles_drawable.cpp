@@ -125,8 +125,8 @@ void RSParticlesDrawable::CaculateImageAtlsArry(Drawing::Canvas& canvas,
         Color color = particle->GetColor();
         auto alpha = color.GetAlpha();
         color.SetAlpha(alpha * opacity);
-        auto width = pixelMap == nullptr ? drawImage->GetWidth() : pixelMap->GetWidth();
-        auto height = pixelMap == nullptr ? drawImage->GetHeight() : pixelMap->GetHeight();
+        auto width = pixelmap == nullptr ? drawImage->GetWidth() : pixelmap->GetWidth();
+        auto height = pixelmap == nullptr ? drawImage->GetHeight() : pixelmap->GetHeight();
         imageRsxform_[imageIndex].push_back(
             MakeRSXform(Vector2f(width / DOUBLE, height / DOUBLE), position, spin,
                 image->GetDstRect().GetWidth() / width * scale));
