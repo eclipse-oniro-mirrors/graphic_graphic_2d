@@ -3399,7 +3399,6 @@ void RSMainThread::Animate(uint64_t timestamp)
     lastAnimateTimestamp_ = timestamp;
     rsCurrRange_.Reset();
     needRequestNextVsyncAnimate_ = false;
-    doDirectComposition_ = true;
     if (context_->animatingNodeList_.empty()) {
         doWindowAnimate_ = false;
         context_->SetRequestedNextVsyncAnimate(false);
@@ -3499,18 +3498,18 @@ void RSMainThread::Animate(uint64_t timestamp)
     context_->SetRequestedNextVsyncAnimate(needRequestNextVsync);
 
     PerfAfterAnim(needRequestNextVsync);
-    ChangeDirectCompositionFlag(needRequestNextVsync);
+    UpdateDirectCompositionByAnimate(needRequestNextVsync);
 }
 
-void RSMainThread::ChangeDirectCompositionFlag(bool needAnimateRequestNextVsync)
+void RSMainThread::UpdateDirectCompositionByAnimate(bool animateNeedRequestNextVsync)
 {
     // if the animation is running or it's on the last frame of the animation, then change the doDirectComposition_ flag
     // to false.
-    if (needAnimateRequestNextVsync || (!needAnimateRequestNextVsync && lastNeedAnimateRequestNextVsync_)) {
+    if (animateNeedRequestNextVsync || (!animateNeedRequestNextVsync && lastAnimateNeedRequestNextVsync_)) {
         doDirectComposition_ = false;
         RS_OPTIONAL_TRACE_NAME_FMT("rs debug: %s doDirectComposition false", __func__);
     }
-    lastNeedAnimateRequestNextVsync_ = needAnimateRequestNextVsync;
+    lastAnimateNeedRequestNextVsync_ = animateNeedRequestNextVsync;
 }
 
 bool RSMainThread::IsNeedProcessBySingleFrameComposer(std::unique_ptr<RSTransactionData>& rsTransactionData)
