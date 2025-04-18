@@ -583,7 +583,6 @@ public:
     std::shared_ptr<RSBaseRenderNode> GetWindowContainer() const;
 
     void SetNeedForceUpdateHwcNodes(bool needForceUpdate, bool hasVisibleHwcNodes);
-    
     bool GetNeedForceUpdateHwcNodes() const { return needForceUpdateHwcNodes_; }
 
     bool HasVisibleHwcNodes() const { return hasVisibleHwcNodes_; }
