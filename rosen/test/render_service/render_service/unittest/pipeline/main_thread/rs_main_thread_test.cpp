@@ -4904,16 +4904,16 @@ HWTEST_F(RSMainThreadTest, RenderServiceAllSurafceDump01, TestSize.Level1)
 }
 
 /**
- * @tc.name: ExitsBufferIsVisibleAndUpdateTest
+ * @tc.name: ExistBufferIsVisibleAndUpdateTest
  * @tc.desc: RenderServiceAllSurafceDump Test
  * @tc.type: FUNC
  * @tc.require: issueIC0AQO
  */
-HWTEST_F(RSMainThreadTest, ExitsBufferIsVisibleAndUpdateTest, TestSize.Level1)
+HWTEST_F(RSMainThreadTest, ExistBufferIsVisibleAndUpdateTest, TestSize.Level1)
 {
     auto mainThread = RSMainThread::Instance();
     ASSERT_NE(mainThread, nullptr);
-    EXPECT_FALSE(mainThread->ExitsBufferIsVisibleAndUpdate());
+    EXPECT_FALSE(mainThread->ExistBufferIsVisibleAndUpdate());
     std::vector<std::shared_ptr<RSSurfaceRenderNode>> hardwareEnabledNodes;
     NodeId id = 0;
     auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(id, mainThread->context_);
@@ -4927,7 +4927,7 @@ HWTEST_F(RSMainThreadTest, ExitsBufferIsVisibleAndUpdateTest, TestSize.Level1)
     surfaceNode->lastFrameHasVisibleRegion_ = true;
     hardwareEnabledNodes.push_back(surfaceNode);
     mainThread->hardwareEnabledNodes_ = hardwareEnabledNodes;
-    EXPECT_TRUE(mainThread->ExitsBufferIsVisibleAndUpdate());
+    EXPECT_TRUE(mainThread->ExistBufferIsVisibleAndUpdate());
 }
 
 /**
