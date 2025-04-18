@@ -103,7 +103,7 @@ void RSParticlesDrawable::CaculateImageAtlsArry(Drawing::Canvas& canvas,
         return;
     }
     auto pixelmap = image->GetPixelMap();
-    auto drawImage = image->GetImage;
+    auto drawImage = image->GetImage();
     if (pixelmap == nullptr && drawImage == nullptr) {
         return;
     }
