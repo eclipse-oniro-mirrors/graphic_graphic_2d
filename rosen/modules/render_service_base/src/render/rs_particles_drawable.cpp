@@ -228,18 +228,32 @@ void RSParticlesDrawable::DrawCircle(Drawing::Canvas& canvas)
     canvas.DetachBrush();
 }
 
+bool CheckImageNull(std::shared_ptr<Drawing::Image>& image, const std::shared_ptr<Drawing::Image>& drawImage) {
+    if (image) {
+        return false;
+    }
+
+    if (drawImage) {
+        ROSEN_LOGE("RSParticlesDrawable::Draw !pixel && image_");
+        image = drawImage;
+        return false;
+    }
+
+    ROSEN_LOGE("RSParticlesDrawable::Draw !image");
+    return true;
+}
+
 void RSParticlesDrawable::DrawImages(Drawing::Canvas& canvas)
 {
     while (imageCount_--) {
         if (imageVector_[imageCount_] != nullptr) {
-            auto pixelmap = imageVector_[imageCount_]->GetPixelMap();
-            if (!pixelmap) {
-                ROSEN_LOGE("RSParticlesDrawable::Draw !pixel");
-                return;
+            std::shared_ptr<Drawing::Image> image = nullptr;
+            if (pixelmap) {
+                ROSEN_LOGE("RSParticlesDrawable::Draw pixel");
+                image = RSPixelMapUtil::ExtractDrawingImage(pixelmap);
             }
-            auto image = RSPixelMapUtil::ExtractDrawingImage(pixelmap);
-            if (!image) {
-                ROSEN_LOGE("RSParticlesDrawable::Draw !image");
+
+            if (CheckImageNull(image, imageVector_[imageCount_]->GetImage())) {
                 return;
             }
             Drawing::Brush brush;
