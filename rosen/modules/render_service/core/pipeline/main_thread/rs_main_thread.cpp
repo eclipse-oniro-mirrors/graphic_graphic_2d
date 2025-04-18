@@ -2476,7 +2476,7 @@ bool RSMainThread::DoDirectComposition(std::shared_ptr<RSBaseRenderNode> rootNod
     }
 
     // children->size() is 1, the extended screen is not supported
-    // there is no hwcNode in visibleRegion or no Buffer is visible or need update
+    // there is no hwc Node in visible region or no buffer is visible or need update
     if (children->size() == 1 && (!displayNode->HasVisibleHwcNodes() || !ExitsBufferIsVisibleAndUpdate())) {
         RS_TRACE_NAME("[%{public}s]: no hwcNode in visibleRegion", __func__);
         return true;
