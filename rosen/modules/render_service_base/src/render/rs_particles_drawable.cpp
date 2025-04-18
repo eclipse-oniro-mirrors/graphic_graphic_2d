@@ -238,7 +238,6 @@ bool CheckImageNull(std::shared_ptr<Drawing::Image>& image, const std::shared_pt
         return false;
     }
 
-    ROSEN_LOGE("RSParticlesDrawable::Draw !image");
     return true;
 }
 
@@ -252,6 +251,7 @@ void RSParticlesDrawable::DrawImages(Drawing::Canvas& canvas)
             }
 
             if (CheckImageNull(image, imageVector_[imageCount_]->GetImage())) {
+                ROSEN_LOGE("RSParticlesDrawable::Draw !pixel and !image_");
                 return;
             }
             Drawing::Brush brush;
