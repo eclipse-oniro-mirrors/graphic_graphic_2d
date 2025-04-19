@@ -115,7 +115,6 @@ private:
     float currentTransformMatrixV2_[TRANSFORM_MATRIX_ELE_COUNT] = {0.0};
     float currentBufferMatrix_[TRANSFORM_MATRIX_ELE_COUNT] = {0.0};
     uint64_t uniqueId_ = 0;
-    uint32_t maxQueueSize_ = 0;
 
     /**
      * @brief Represents the properties of a graphics buffer frame
