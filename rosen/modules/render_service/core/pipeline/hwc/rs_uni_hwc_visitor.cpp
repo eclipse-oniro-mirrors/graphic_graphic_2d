@@ -1060,10 +1060,7 @@ void RSUniHwcVisitor::UpdateHwcNodeRectInSkippedSubTree(const RSRenderNode& root
             }
         }
         UpdateDstRect(*hwcNodePtr, rect, clipRect);
-        UpdateSrcRect(*hwcNodePtr, matrix);
-        UpdateHwcNodeByTransform(*hwcNodePtr, matrix);
-        UpdateHwcNodeEnableByBackgroundAlpha(*hwcNodePtr);
-        UpdateHwcNodeEnableByBufferSize(*hwcNodePtr);
+        UpdateHwcNodeInfo(*hwcNodePtr, matrix, true)
         hwcNodePtr->SetTotalMatrix(matrix);
         hwcNodePtr->SetOldDirtyInSurface(geoPtr->MapRect(hwcNodePtr->GetSelfDrawRect(), matrix));
     }
@@ -1202,31 +1199,31 @@ bool RSUniHwcVisitor::IsDisableHwcOnExpandScreen() const
 }
 
 void RSUniHwcVisitor::UpdateHwcNodeInfo(RSSurfaceRenderNode& node,
-    const Drawing::Matrix& absMatrix, bool isSubTreeSkipped)
+    const Drawing::Matrix& absMatrix, bool subTreeSkipped)
 {
-    if (!node.GetHardwareDisabledByReverse()) {
-        node.SetHardwareDisabledState(node.GetIsHwcPendingDisabled());
-        if (node.GetIsHwcPendingDisbaled()) {
-            RS_OPTIONAL_TRACE_NAME_FMT("hwc debug: name:%s id:%" PRIu64 "disabled by IsHwcPendingDisabled",
+    if (!node.GetHardWareDisabledByReverse()) {
+        node.SetHardwareForcedDisabledState(node.GetIsHwcPendingDisabled());
+        if (node.GetIsHwcPendingDisabled()) {
+            RS_OPTIONAL_TRACE_NAME_FMT("hwc debug: name:%s id:%" PRIu64 " disabled by IsHwcPendingDisabled",
                 node.GetName().c_str(), node.GetId());
         }
         node.SetIsHwcPendingDisabled(false);
     }
     node.SetInFixedRotation(uniRenderVisitor_.displayNodeRotationChanged_ ||
                             uniRenderVisitor_.isScreenRotationAnimating_);
-    node.SetHardwareForceDisabledByAlpha(false);
+    node.SetHardwareForcedDisabledByAlpha(false);
     if (!uniRenderVisitor_.IsHardwareComposerEnabled() || !node.IsDynamicHardwareEnable() ||
-        IsDisabledHwcOnExpandScreen() || uniRenderVisitor_.curSurfaceNode_->GetVisibleRegion().IsEmpty() ||
-        !node.GetRSSUrfaceHandler() || !node.GetRSSurfaceHander()->GetBuffer(0)) {
+        IsDisableHwcOnExpandScreen() || uniRenderVisitor_.curSurfaceNode_->GetVisibleRegion().IsEmpty() ||
+        !node.GetRSSurfaceHandler() || !node.GetRSSurfaceHandler()->GetBuffer()) {
         RS_OPTIONAL_TRACE_NAME_FMT("hwc debug: name:%s id:%" PRIu64 " disabled by param/invisible/no buffer, "
-            "IsHardwareComposerEnabled[%d], IsDynamicHardwareEnabled[%d], IsDisabledHwcOnExpandScreen[%d], "
+            "IsHardwareComposerEnabled[%d], IsDynamicHardwareEnable[%d], IsDisableHwcOnExpandScreen[%d], "
             "IsVisibleRegionEmpty[%d], HasBuffer[%d]", node.GetName().c_str(), node.GetId(),
             uniRenderVisitor_.IsHardwareComposerEnabled(), node.IsDynamicHardwareEnable(),
             IsDisableHwcOnExpandScreen(), uniRenderVisitor_.curSurfaceNode_->GetVisibleRegion().IsEmpty(),
             node.GetRSSurfaceHandler() && node.GetRSSurfaceHandler()->GetBuffer());
 #ifdef HIPERF_TRACE_ENABLE
-        RS_LOGW("hiperf_surface: name:%s disbaled by param/invisible/no buffer, "
-            "surfaceRect: {%d, %d, %d, %d} - > {%d, %d, %d, %d}",
+        RS_LOGW("hiperf_surface: name:%s disabled by param/invisible/no buffer, "
+            "surfaceRect: [%d, %d, %d, %d]->[%d, %d, %d, %d]",
             node.GetName().c_str(),
             node.GetSrcRect().GetLeft(), node.GetSrcRect().GetRight(),
             node.GetSrcRect().GetTop(), node.GetSrcRect().GetBottom(),
@@ -1236,7 +1233,7 @@ void RSUniHwcVisitor::UpdateHwcNodeInfo(RSSurfaceRenderNode& node,
         node.SetHardwareForcedDisabledState(true);
         Statistics().UpdateHwcDisabledReasonForDFX(node.GetId(),
             HwcDisabledReasons::DISABLED_BY_INVALID_PARAM, node.GetName());
-        if (!node.GetFixRotationByUser() && !isSubTreeSkipped) {
+        if (!node.GetFixRotationByUser() && !subTreeSkipped) {
             return;
         }
     }

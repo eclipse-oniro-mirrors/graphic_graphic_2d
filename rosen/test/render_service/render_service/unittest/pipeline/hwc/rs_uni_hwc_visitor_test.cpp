@@ -1585,14 +1585,14 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateHwcNodeInfo_001, TestSize.Level2)
     ASSERT_NE(rsSurfaceRenderNode, nullptr);
     rsSurfaceRenderNode->isHardWareDisabledByReverse_ = false;
     rsSurfaceRenderNode->SetIsHwcPendingDisabled(true);
-    rsSurfaceRenderNode->nodeType_ = RSSurfaceNodeType::SELF_DRAWING_NODE; 
+    rsSurfaceRenderNode->nodeType_ = RSSurfaceNodeType::SELF_DRAWING_NODE;
 
     NodeId surfaceNodeId = 1;
     auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(surfaceNodeId);
     ASSERT_NE(surfaceNode, nullptr);
     surfaceNode->needCollectHwcNode_ = true;
 
-    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>(surfaceNodeId);
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
     ASSERT_NE(rsUniRenderVisitor, nullptr);
     rsUniRenderVisitor->curSurfaceNode_ = surfaceNode;
 
@@ -1617,6 +1617,6 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateHwcNodeInfo_001, TestSize.Level2)
     rsUniHwcVisitor->UpdateHwcNodeInfo(*rsSurfaceRenderNode, absMatrix);
 
     rsSurfaceRenderNode->isFixRotationByUser_ = false;
-    rsUniHwcVisitor->UpdateHwcNodeInfo(*rsSurfaceRenderNode, absMatrix);
+    rsUniHwcVisitor->UpdateHwcNodeInfo(*rsSurfaceRenderNode, absMatrix, true);
 }
 }
