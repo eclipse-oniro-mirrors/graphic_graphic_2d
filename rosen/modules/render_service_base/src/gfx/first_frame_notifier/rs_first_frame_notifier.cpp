@@ -28,7 +28,7 @@ RSFirstFrameNotifier& RSFirstFrameNotifier::GetInstance()
 void RSFirstFrameNotifier::RegisterFirstFrameCommitCallback(
     pid_t pid, const sptr<RSIFirstFrameCommitCallback>& callback)
 {
-    std::unique_lock<std::shared_mutex> lock(smtx);
+    std::unique_lock<std::shared_mutex> lock(callbacksMutex_);
     if (callback == nullptr) {
         if (firstFrameCommitCallbacks_.find(pid) != firstFrameCommitCallbacks_.end()) {
             firstFrameCommitCallbacks_.erase(pid);
@@ -42,7 +42,7 @@ void RSFirstFrameNotifier::RegisterFirstFrameCommitCallback(
 
 void RSFirstFrameNotifier::OnFirstFrameCommitCallback(ScreenId screenId)
 {
-    std::shared_lock<std::shared_mutex> lock(smtx);
+    std::shared_lock<std::shared_mutex> lock(callbacksMutex_);
     int64_t timestamp = std::chrono::duration_cast<std::chrono::nanoseconds>(
         std::chrono::steady_clock::now().time_since_epoch()).count();
     RS_TRACE_NAME_FMT("OnFirstFrameCommitCallback screenId:%" PRIu64 ", timestamp:%" PRId64 ".",
@@ -56,18 +56,20 @@ void RSFirstFrameNotifier::OnFirstFrameCommitCallback(ScreenId screenId)
 
 void RSFirstFrameNotifier::ExecIfFirstFrameCommit(ScreenId screenId)
 {
+    std::unique_lock<std::mutex> lock(screensMutex_);
     if (firstFrameCommitScreens_.find(screenId) != firstFrameCommitScreens_.end()) {
+        firstFrameCommitScreens_.erase(screenId);
         RS_TRACE_NAME_FMT("ExecIfFirstFrameCommit screenId:%" PRIu64 ".", screenId);
-        RS_LOGI("ExecIfFirstFrameCommit screenId:%{public}" PRIu64 ".", screenId);
+        RS_LOGD("ExecIfFirstFrameCommit screenId:%{public}" PRIu64 ".", screenId);
         RSBackgroundThread::Instance().PostTask([this, screenId]() {
             OnFirstFrameCommitCallback(screenId);
         });
-        firstFrameCommitScreens_.erase(screenId);
     }
 }
 
 void RSFirstFrameNotifier::AddFirstFrameCommitScreen(ScreenId screenId)
 {
+    std::unique_lock<std::mutex> lock(screensMutex_);
     firstFrameCommitScreens_.insert(screenId);
 }
 }

@@ -184,6 +184,21 @@ HWTEST_F(VSyncDistributorTest, RequestNextVSync005, Function | MediumTest| Level
 }
 
 /*
+* Function: RequestNextVSync006
+* Type: Function
+* Rank: Important(2)
+* EnvConditions: N/A
+* CaseDescription: 1. call RequestNextVSync
+ */
+HWTEST_F(VSyncDistributorTest, RequestNextVSync006, Function | MediumTest| Level3)
+{
+    sptr<VSyncConnection> conn = new VSyncConnection(vsyncDistributor, "VSyncDistributorTest");
+    VSyncDistributorTest::vsyncDistributor->AddConnection(conn);
+    ASSERT_EQ(VSyncDistributorTest::vsyncDistributor->RequestNextVSync(conn, "UrgentSelfdrawing", 0), VSYNC_ERROR_OK);
+    ASSERT_EQ(VSyncDistributorTest::vsyncDistributor->RemoveConnection(conn), VSYNC_ERROR_OK);
+}
+
+/*
 * Function: SetVSyncRate001
 * Type: Function
 * Rank: Important(2)
@@ -1048,6 +1063,28 @@ HWTEST_F(VSyncDistributorTest, AdaptiveDVSyncEnableTest001, Function | MediumTes
     bool needConsume = true;
     vsyncDistributor->AdaptiveDVSyncEnable(nodeName, 0, 0, needConsume);
     ASSERT_EQ(needConsume, true);
+}
+
+/*
+* Function: SetVsyncRateDiscountLTPSTest001
+* Type: Function
+* Rank: Important(2)
+* EnvConditions: N/A
+* CaseDescription: 1. test SetVsyncRateDiscountLTPS
+ */
+HWTEST_F(VSyncDistributorTest, SetVsyncRateDiscountLTPSTest001, Function | MediumTest| Level3)
+{
+    std::string name = "UnityChoreographer";
+    sptr<VSyncConnection> conn = new VSyncConnection(vsyncDistributor, name, nullptr, 4294967296);
+
+    vsyncDistributor->GetVsyncNameLinkerIds(1, name);
+    ASSERT_EQ(vsyncDistributor->SetVsyncRateDiscountLTPS(1, name, 1), VSYNC_ERROR_INVALID_ARGUMENTS);
+
+    ASSERT_EQ(vsyncDistributor->AddConnection(conn, 0), VSYNC_ERROR_OK);
+    vsyncDistributor->GetVsyncNameLinkerIds(1, name);
+    ASSERT_EQ(vsyncDistributor->SetVsyncRateDiscountLTPS(1, name, 1), VSYNC_ERROR_OK);
+    ASSERT_EQ(vsyncDistributor->SetVsyncRateDiscountLTPS(1, name, 2), VSYNC_ERROR_OK);
+    ASSERT_EQ(vsyncDistributor->RemoveConnection(conn), VSYNC_ERROR_OK);
 }
 } // namespace
 } // namespace Rosen

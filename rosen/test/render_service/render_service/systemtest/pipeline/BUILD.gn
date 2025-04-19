@@ -24,9 +24,6 @@ group("systemtest") {
     ":RSDropFrameProcessorSystemTest",
     ":RSRenderServiceTest",
   ]
-  if (graphic_2d_feature_rs_enable_uni_render) {
-    deps += [ ":RSUniRenderTest" ]
-  }
 }
 
 ###############################################################################
@@ -48,9 +45,10 @@ ohos_systemtest("RSBaseRenderEngineTest") {
   defines += gpu_defines
   if (defined(use_video_processing_engine) && use_video_processing_engine) {
     defines += [ "USE_VIDEO_PROCESSING_ENGINE" ]
-    include_dirs += [ "$video_processing_engine_root/interfaces/inner_api" ]
-    external_deps +=
-        [ "drivers_interface_display:display_commontype_idl_headers" ]
+    external_deps += [
+      "drivers_interface_display:display_commontype_idl_headers",
+      "video_processing_engine:videoprocessingengine",
+    ]
   }
 }
 
@@ -68,9 +66,10 @@ ohos_systemtest("RSDropFrameProcessorSystemTest") {
   if (defined(use_video_processing_engine) && use_video_processing_engine) {
     include_dirs = []
     defines += [ "USE_VIDEO_PROCESSING_ENGINE" ]
-    include_dirs += [ "$video_processing_engine_root/interfaces/inner_api" ]
-    external_deps +=
-        [ "drivers_interface_display:display_commontype_idl_headers" ]
+    external_deps += [
+      "drivers_interface_display:display_commontype_idl_headers",
+      "video_processing_engine:videoprocessingengine",
+    ]
   }
 }
 
@@ -88,42 +87,10 @@ ohos_systemtest("RSRenderServiceTest") {
   if (defined(use_video_processing_engine) && use_video_processing_engine) {
     include_dirs = []
     defines += [ "USE_VIDEO_PROCESSING_ENGINE" ]
-    include_dirs += [ "$video_processing_engine_root/interfaces/inner_api" ]
-    external_deps +=
-        [ "drivers_interface_display:display_commontype_idl_headers" ]
-  }
-}
-
-if (graphic_2d_feature_rs_enable_uni_render) {
-  ## Build RSUniRenderTest
-  ohos_systemtest("RSUniRenderTest") {
-    module_out_path = module_output_path
-    sources = [ "rs_uni_render_test.cpp" ]
-    deps = [ ":rs_test_common" ]
-    external_deps = [
-      "access_token:libaccesstoken_sdk",
-      "sensor:sensor_interface_native",
+    external_deps += [
+      "drivers_interface_display:display_commontype_idl_headers",
+      "video_processing_engine:videoprocessingengine",
     ]
-    defines = []
-    defines += gpu_defines
-    if (defined(use_rosen_drawing) && use_rosen_drawing) {
-      defines += [ "USE_ROSEN_DRAWING" ]
-    }
-    if (defined(use_video_processing_engine) && use_video_processing_engine) {
-      include_dirs = []
-      defines += [ "USE_VIDEO_PROCESSING_ENGINE" ]
-      include_dirs += [ "$video_processing_engine_root/interfaces/inner_api" ]
-      external_deps +=
-          [ "drivers_interface_display:display_commontype_idl_headers" ]
-    }
-
-    if (graphic_2d_support_access_token) {
-      external_deps += [
-        "access_token:libnativetoken",
-        "access_token:libtoken_setproc",
-      ]
-      defines += [ "SUPPORT_ACCESS_TOKEN" ]
-    }
   }
 }
 
@@ -146,12 +113,6 @@ config("rs_test_common_public_config") {
     "$graphic_2d_root/rosen/modules/render_service_client/core",
     "$graphic_2d_root/rosen/modules/render_service_base/src",
     "$graphic_2d_root/rosen/test/include",
-    "$memmgr_plugin_root/interface/innerkits/include",
-    "$memmgr_plugin_root/services/memmgrservice/include/memory_level_manager",
-    "$memmgr_root/interface/innerkits/include",
-    "$memmgr_root/services/memmgrservice/include/memory_level_manager",
-    "//foundation/barrierfree/accessibility/interfaces/innerkits/acfwk/include",
-    "//foundation/window/window_manager/interfaces/innerkits",
   ]
 
   cflags = [
@@ -176,20 +137,24 @@ ohos_static_library("rs_test_common") {
     "$graphic_2d_root/rosen/modules/render_service:librender_service",
     "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",
     "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
-    "//foundation/window/window_manager/wm:libwm",
-    "//foundation/window/window_manager/wmserver:libwms",
-    "//third_party/googletest:gtest_main",
   ]
 
   public_deps += [ "../../../../../modules/2d_graphics:2d_graphics" ]
 
   public_external_deps = [
     "c_utils:utils",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "hitrace:hitrace_meter",
     "init:libbegetutil",
     "ipc:ipc_core",
+    "window_manager:libwm",
+    "window_manager:libwms",
   ]
+
+  if (use_memmgr_plugin || use_memmgr) {
+    public_external_deps += [ "memmgr:memmgrclient" ]
+  }
 
   subsystem_name = "graphic"
   part_name = "graphic_2d"

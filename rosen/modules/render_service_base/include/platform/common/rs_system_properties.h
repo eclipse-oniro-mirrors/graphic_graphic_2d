@@ -134,6 +134,20 @@ enum class DdgrOpincDfxType {
     OPINC_DFX_AUTO,
 };
 
+#ifdef RS_ENABLE_VK
+enum class ComponentEnableSwitch {
+    TEXTBLOB = 0,
+    SVG,
+    HMSYMBOL,
+    CANVAS,
+};
+
+struct GetComponentSwitch {
+    ComponentEnableSwitch type;
+    bool (*ComponentHybridSwitch)();
+};
+#endif
+
 using OnSystemPropertyChanged = void(*)(const char*, const char*, void*);
 
 class RSB_EXPORT RSSystemProperties final {
@@ -265,6 +279,7 @@ public:
     static int GetDebugTraceLevel();
     static bool FindNodeInTargetList(std::string node);
     static bool IsFoldScreenFlag();
+    static bool IsSmallFoldDevice();
     static bool GetCacheCmdEnabled();
     static bool GetASTCEnabled();
     static bool GetCachedBlurPartialRenderEnabled();
@@ -272,8 +287,6 @@ public:
     static bool GetDrmEnabled();
     static bool GetSurfaceNodeWatermarkEnabled();
     static bool IsPhoneType();
-    static bool IsTabletType();
-    static bool IsPcType();
     static bool IsSuperFoldDisplay();
     static bool IsBetaRelease();
     static bool GetSyncTransactionEnabled();
@@ -322,6 +335,7 @@ public:
         return RSSystemProperties::GetGpuApiType() != GpuApiType::OPENGL;
     }
 
+    static bool GetJankLoadOptimizeEnabled();
     static int GetRSNodeLimit();
     static std::string GetVersionType();
     static bool GetHwcDirtyRegionEnabled();
@@ -331,6 +345,22 @@ public:
     static bool GetOptimizeHwcComposeAreaEnabled();
     static bool GetWindowKeyFrameEnabled();
     static bool GetNodeGroupGroupedByUIEnabled();
+
+#ifdef RS_ENABLE_VK
+    static bool GetHybridRenderEnabled();
+    static bool GetHybridRenderDfxEnabled();
+    static uint32_t GetHybridRenderTextBlobLenCount();
+    static bool GetHybridRenderParallelConvertEnabled();
+    static bool GetHybridRenderCanvasEnabled();
+    static bool GetHybridRenderMemeoryReleaseEnabled();
+    static bool GetHybridRenderSystemEnabled();
+    static int32_t GetHybridRenderCcmEnabled();
+    static int32_t GetHybridRenderSwitch(ComponentEnableSwitch bitSeq);
+    static bool GetHybridRenderTextBlobEnabled();
+    static bool GetHybridRenderSvgEnabled();
+    static bool GetHybridRenderHmsymbolEnabled();
+#endif
+
 private:
     RSSystemProperties() = default;
 

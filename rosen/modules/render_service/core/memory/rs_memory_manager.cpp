@@ -50,13 +50,13 @@
 #include "image/gpu_context.h"
 #include "platform/common/rs_hisysevent.h"
 
+#ifdef RS_ENABLE_UNI_RENDER
+#include "ability_manager_client.h"
+#endif
+
 #ifdef RS_ENABLE_VK
 #include "feature/gpuComposition/rs_vk_image_manager.h"
 #include "platform/ohos/backend/rs_vulkan_context.h"
-#endif
-#ifdef RES_SCHED_ENABLE
-#include "res_sched_client.h"
-#include "res_sched_kill_reason.h"
 #endif
 static inline const char* GetThreadName()
 {
@@ -72,6 +72,7 @@ static inline const char* GetThreadName()
 namespace OHOS::Rosen {
 namespace {
 const std::string KERNEL_CONFIG_PATH = "/system/etc/hiview/kernel_leak_config.json";
+const std::string GPUMEM_INFO_PATH = "/proc/gpumem_process_info";
 const std::string EVENT_ENTER_RECENTS = "GESTURE_TO_RECENTS";
 constexpr uint32_t MEMUNIT_RATE = 1024;
 constexpr uint32_t MEMORY_REPORT_INTERVAL = 24 * 60 * 60 * 1000; // Each process can report at most once a day.
@@ -83,10 +84,11 @@ constexpr const char* MEM_GPU_TYPE = "gpu";
 constexpr const char* MEM_JEMALLOC_TYPE = "jemalloc";
 constexpr const char* MEM_SNAPSHOT = "snapshot";
 constexpr int DUPM_STRING_BUF_SIZE = 4000;
+constexpr int KILL_PROCESS_TYPE = 301;
 }
 
 std::mutex MemoryManager::mutex_;
-std::unordered_map<pid_t, std::pair<std::string, uint64_t>> MemoryManager::pidInfo_;
+std::unordered_map<pid_t, uint64_t> MemoryManager::pidInfo_;
 uint32_t MemoryManager::frameCount_ = 0;
 uint64_t MemoryManager::memoryWarning_ = UINT64_MAX;
 uint64_t MemoryManager::gpuMemoryControl_ = UINT64_MAX;
@@ -321,7 +323,7 @@ void MemoryManager::CountMemory(
     std::for_each(pids.begin(), pids.end(), countMem);
 }
 
-static std::tuple<uint64_t, std::string, RectI> FindGeoById(uint64_t nodeId)
+static std::tuple<uint64_t, std::string, RectI, bool> FindGeoById(uint64_t nodeId)
 {
     constexpr int maxTreeDepth = 256;
     const auto& nodeMap = RSMainThread::Instance()->GetContext().GetNodeMap();
@@ -330,7 +332,7 @@ static std::tuple<uint64_t, std::string, RectI> FindGeoById(uint64_t nodeId)
     std::string windowName = "NONE";
     RectI nodeFrameRect;
     if (!node) {
-        return { windowId, windowName, nodeFrameRect };
+        return { windowId, windowName, nodeFrameRect, true };
     }
     nodeFrameRect =
         (node->GetRenderProperties().GetBoundsGeometry())->GetAbsRect();
@@ -352,7 +354,7 @@ static std::tuple<uint64_t, std::string, RectI> FindGeoById(uint64_t nodeId)
     if (!windowsNameFlag) {
         windowName = "EXISTS-BUT-NO-SURFACE";
     }
-    return { windowId, windowName, nodeFrameRect };
+    return { windowId, windowName, nodeFrameRect, false };
 }
 
 void MemoryManager::DumpRenderServiceMemory(DfxString& log)
@@ -361,6 +363,10 @@ void MemoryManager::DumpRenderServiceMemory(DfxString& log)
     MemoryTrack::Instance().DumpMemoryStatistics(log, FindGeoById);
     RSMainThread::Instance()->RenderServiceAllNodeDump(log);
     RSMainThread::Instance()->RenderServiceAllSurafceDump(log);
+#ifdef RS_ENABLE_VK
+    RsVulkanMemStat& memStat = RsVulkanContext::GetSingleton().GetRsVkMemStat();
+    memStat.DumpMemoryStatistics(&gpuTracer);
+#endif
 }
 
 void MemoryManager::DumpDrawingCpuMemory(DfxString& log)
@@ -416,10 +422,6 @@ void MemoryManager::DumpGpuCache(
         gpuContext->DumpMemoryStatisticsByTag(&gpuTracer, *tag);
     } else {
         gpuContext->DumpMemoryStatistics(&gpuTracer);
-#ifdef RS_ENABLE_VK
-        RsVulkanMemStat& memStat = RsVulkanContext::GetSingleton().GetRsVkMemStat();
-        memStat.DumpMemoryStatistics(&gpuTracer);
-#endif
     }
     gpuTracer.LogOutput(log);
     log.AppendFormat("Total GPU memory usage:\n");
@@ -505,7 +507,7 @@ void MemoryManager::DumpGpuStats(DfxString& log, const Drawing::GPUContext* gpuC
     }
     log.AppendFormat("\ndumpGpuStats end\n---------------\n");
 #if defined (SK_VULKAN) && defined (SKIA_DFX_FOR_RECORD_VKIMAGE)
-    if (ParallelDebug::IsVkImageDfxEnabled()) {
+    {
         static thread_local int tid = gettid();
         log.AppendFormat("\n------------------\n[%s:%d] dumpAllResource:\n", GetThreadName(), tid);
         std::stringstream allResources;
@@ -597,7 +599,7 @@ void MemoryManager::DumpMemorySnapshot(DfxString& log)
     std::unordered_map<pid_t, MemorySnapshotInfo> memorySnapshotInfo;
     MemorySnapshot::Instance().GetMemorySnapshot(memorySnapshotInfo);
     for (auto& [pid, snapshotInfo] : memorySnapshotInfo) {
-        std::string infoStr = "pid: " + std::to_string(pid) +
+        std::string infoStr = "pid: " + std::to_string(pid) + " " + snapshotInfo.bundleName +
             ", cpu: " + std::to_string(snapshotInfo.cpuMemory / MEMUNIT_RATE) +
             "KB, gpu: " + std::to_string(snapshotInfo.gpuMemory / MEMUNIT_RATE) + "KB";
         log.AppendFormat("%s\n", infoStr.c_str());
@@ -690,6 +692,8 @@ void MemoryManager::MemoryOverCheck(Drawing::GPUContext* gpuContext)
         return;
     }
     frameCount_ = 0;
+
+    FillMemorySnapshot();
     std::unordered_map<pid_t, size_t> gpuMemory;
     gpuContext->GetUpdatedMemoryMap(gpuMemory);
 
@@ -705,7 +709,6 @@ void MemoryManager::MemoryOverCheck(Drawing::GPUContext* gpuContext)
             totalMemoryReportTime_ = currentTime + MEMORY_REPORT_INTERVAL;
         }
 
-        std::string bundleName;
         bool needReport = false;
         for (const auto& [pid, memoryInfo] : infoMap) {
             if (memoryInfo.TotalMemory() <= memoryWarning_) {
@@ -716,37 +719,48 @@ void MemoryManager::MemoryOverCheck(Drawing::GPUContext* gpuContext)
                 std::lock_guard<std::mutex> lock(mutex_);
                 auto it = pidInfo_.find(pid);
                 if (it == pidInfo_.end()) {
-                    int32_t uid;
-                    auto& appMgrClient = RSSingleton<AppExecFwk::AppMgrClient>::GetInstance();
-                    appMgrClient.GetBundleNameByPid(pid, bundleName, uid);
-                    pidInfo_.emplace(pid, std::make_pair(bundleName, currentTime + MEMORY_REPORT_INTERVAL));
+                    pidInfo_.emplace(pid, currentTime + MEMORY_REPORT_INTERVAL);
                     needReport = true;
-                } else if (currentTime > it->second.second) {
-                    it->second.second = currentTime + MEMORY_REPORT_INTERVAL;
-                    bundleName = it->second.first;
+                } else if (currentTime > it->second) {
+                    it->second = currentTime + MEMORY_REPORT_INTERVAL;
                     needReport = true;
                 }
             }
             if (needReport) {
-                MemoryOverReport(pid, memoryInfo, bundleName, RSEventName::RENDER_MEMORY_OVER_WARNING);
+                MemoryOverReport(pid, memoryInfo, RSEventName::RENDER_MEMORY_OVER_WARNING);
             }
         }
     };
     RSBackgroundThread::Instance().PostTask(task);
 #endif
 }
+ 
+void MemoryManager::FillMemorySnapshot()
+{
+    std::vector<pid_t> pidList;
+    MemorySnapshot::Instance().GetDirtyMemorySnapshot(pidList);
+    if (pidList.size() == 0) {
+        return;
+    }
+
+    std::unordered_map<pid_t, MemorySnapshotInfo> infoMap;
+    for (auto& pid : pidList) {
+        MemorySnapshotInfo& mInfo = infoMap[pid];
+        int32_t uid;
+        auto& appMgrClient = RSSingleton<AppExecFwk::AppMgrClient>::GetInstance();
+        appMgrClient.GetBundleNameByPid(pid, mInfo.bundleName, uid);
+    }
+    MemorySnapshot::Instance().FillMemorySnapshot(infoMap);
+}
 
 static void KillProcessByPid(const pid_t pid, const std::string& processName, const std::string& reason)
 {
-#ifdef RES_SCHED_ENABLE
-    std::unordered_map<std::string, std::string> killInfo;
-    killInfo["pid"] = std::to_string(pid);
-    killInfo["processName"] = processName;
-    killInfo["killReason"] = reason;
+#ifdef RS_ENABLE_UNI_RENDER
     if (pid > 0) {
         int32_t eventWriteStatus = -1;
-        int32_t killStatus = ResourceSchedule::ResSchedClient::GetInstance().KillProcess(killInfo);
-        if (killStatus == 0) {
+        AAFwk::ExitReason killReason{AAFwk::Reason::REASON_RESOURCE_CONTROL, KILL_PROCESS_TYPE, reason};
+        int32_t ret = (int32_t)AAFwk::AbilityManagerClient::GetInstance()->KillProcessWithReason(pid, killReason);
+        if (ret != ERR_OK) {
             RS_TRACE_NAME("KillProcessByPid HiSysEventWrite");
             eventWriteStatus = HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::FRAMEWORK, "PROCESS_KILL",
                 HiviewDFX::HiSysEvent::EventType::FAULT, "PID", pid, "PROCESS_NAME", processName,
@@ -755,7 +769,7 @@ static void KillProcessByPid(const pid_t pid, const std::string& processName, co
         // To prevent the print from being filtered, use RS_LOGE.
         RS_LOGE("KillProcessByPid, pid: %{public}d, process name: %{public}s, "
             "killStatus: %{public}d, eventWriteStatus: %{public}d, reason: %{public}s",
-            static_cast<int32_t>(pid), processName.c_str(), killStatus, eventWriteStatus, reason.c_str());
+            static_cast<int32_t>(pid), processName.c_str(), ret, eventWriteStatus, reason.c_str());
     }
 #endif
 }
@@ -767,10 +781,6 @@ void MemoryManager::MemoryOverflow(pid_t pid, size_t overflowMemory, bool isGpu)
     if (isGpu) {
         info.gpuMemory = overflowMemory;
     }
-    int32_t uid;
-    std::string bundleName;
-    auto& appMgrClient = RSSingleton<AppExecFwk::AppMgrClient>::GetInstance();
-    appMgrClient.GetBundleNameByPid(pid, bundleName, uid);
     RSMainThread::Instance()->PostTask([]() {
         RS_TRACE_NAME_FMT("RSMem Dump Task");
         std::unordered_set<std::u16string> argSets;
@@ -788,24 +798,43 @@ void MemoryManager::MemoryOverflow(pid_t pid, size_t overflowMemory, bool isGpu)
     std::string reason = "RENDER_MEMORY_OVER_ERROR: cpu[" + std::to_string(info.cpuMemory)
         + "], gpu[" + std::to_string(info.gpuMemory) + "], total["
         + std::to_string(info.TotalMemory()) + "]";
-    MemoryOverReport(pid, info, bundleName, RSEventName::RENDER_MEMORY_OVER_ERROR);
-    KillProcessByPid(pid, bundleName, reason);
+
+    if (info.bundleName.empty()) {
+        int32_t uid;
+        auto& appMgrClient = RSSingleton<AppExecFwk::AppMgrClient>::GetInstance();
+        appMgrClient.GetBundleNameByPid(pid, info.bundleName, uid);
+    }
+    MemoryOverReport(pid, info, RSEventName::RENDER_MEMORY_OVER_ERROR);
+    KillProcessByPid(pid, info.bundleName, reason);
     RS_LOGE("RSMemoryOverflow pid[%{public}d] cpu[%{public}zu] gpu[%{public}zu]", pid, info.cpuMemory, info.gpuMemory);
 }
 
-void MemoryManager::MemoryOverReport(const pid_t pid, const MemorySnapshotInfo& info, const std::string& bundleName,
-    const std::string& reportName)
+void MemoryManager::MemoryOverReport(const pid_t pid, const MemorySnapshotInfo& info, const std::string& reportName)
 {
+    std::string gpuMemInfo;
+    std::ifstream gpuMemInfoFile;
+    gpuMemInfoFile.open(GPUMEM_INFO_PATH);
+    if (gpuMemInfoFile.is_open()) {
+        std::stringstream gpuMemInfoStream;
+        gpuMemInfoStream << gpuMemInfoFile.rdbuf();
+        gpuMemInfo = gpuMemInfoStream.str();
+        gpuMemInfoFile.close();
+    } else {
+        gpuMemInfo = reportName;
+        RS_LOGE("MemoryManager::MemoryOverReport can not open gpumem info");
+    }
+
     RS_TRACE_NAME("MemoryManager::MemoryOverReport HiSysEventWrite");
     int ret = RSHiSysEvent::EventWrite(reportName, RSEventType::RS_STATISTIC,
         "PID", pid,
-        "BUNDLE_NAME", bundleName,
+        "BUNDLE_NAME", info.bundleName,
         "CPU_MEMORY", info.cpuMemory,
         "GPU_MEMORY", info.gpuMemory,
-        "TOTAL_MEMORY", info.TotalMemory());
-    RS_LOGW("RSMemoryOverReport pid[%{public}d] bundleName[%{public}s] cpu[%{public}zu] "
-        "gpu[%{public}zu] total[%{public}zu] ret[%{public}d]",
-        pid, bundleName.c_str(), info.cpuMemory, info.gpuMemory, info.TotalMemory(), ret);
+        "TOTAL_MEMORY", info.TotalMemory(),
+        "GPU_PROCESS_INFO", gpuMemInfo);
+    RS_LOGW("hisysevent writ result=%{public}d, send event [FRAMEWORK,PROCESS_KILL], "
+        "pid[%{public}d] bundleName[%{public}s] cpu[%{public}zu] gpu[%{public}zu] total[%{public}zu]",
+        ret, pid, info.bundleName.c_str(), info.cpuMemory, info.gpuMemory, info.TotalMemory());
 }
 
 void MemoryManager::TotalMemoryOverReport(const std::unordered_map<pid_t, MemorySnapshotInfo>& infoMap)

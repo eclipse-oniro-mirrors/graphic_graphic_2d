@@ -68,11 +68,10 @@ public:
     virtual ErrCode CreateNodeAndSurface(const RSSurfaceRenderNodeConfig& config, sptr<Surface>& sfc,
         bool unobscured = false) = 0;
 
-    virtual sptr<IVSyncConnection> CreateVSyncConnection(const std::string& name,
-                                                         const sptr<VSyncIConnectionToken>& token = nullptr,
-                                                         uint64_t id = 0,
-                                                         NodeId windowNodeId = 0,
-                                                         bool fromXcomponent = false) = 0;
+    virtual ErrCode CreateVSyncConnection(sptr<IVSyncConnection>& vsyncConn,
+                                          const std::string& name,
+                                          const sptr<VSyncIConnectionToken>& token = nullptr,
+                                          VSyncConnParam vsyncConnParam = {0, 0, false}) = 0;
 
     virtual ErrCode GetPixelMapByProcessId(std::vector<PixelMapInfo>& pixelMapInfoVector, pid_t pid,
         int32_t& repCode) = 0;
@@ -80,9 +79,7 @@ public:
     virtual ErrCode CreatePixelMapFromSurface(sptr<Surface> surface,
         const Rect &srcRect, std::shared_ptr<Media::PixelMap> &pixelMap) = 0;
 
-    virtual int32_t SetFocusAppInfo(
-        int32_t pid, int32_t uid, const std::string &bundleName, const std::string &abilityName,
-        uint64_t focusNodeId) = 0;
+    virtual ErrCode SetFocusAppInfo(const FocusAppInfo& info, int32_t& repCode) = 0;
 
     virtual ScreenId GetDefaultScreenId() = 0;
 
@@ -101,6 +98,9 @@ public:
         std::vector<NodeId> whiteList = {}) = 0;
 
     virtual int32_t SetVirtualScreenBlackList(ScreenId id, std::vector<NodeId>& blackListVector) = 0;
+
+    virtual ErrCode SetVirtualScreenTypeBlackList(
+        ScreenId id, std::vector<NodeType>& typeBlackListVector, int32_t& repCode) = 0;
 
     virtual ErrCode AddVirtualScreenBlackList(ScreenId id, std::vector<NodeId>& blackListVector, int32_t& repCode) = 0;
     
@@ -237,7 +237,7 @@ public:
 
     virtual bool SetVirtualMirrorScreenScaleMode(ScreenId id, ScreenScaleMode scaleMode) = 0;
 
-    virtual bool SetGlobalDarkColorMode(bool isDark) = 0;
+    virtual ErrCode SetGlobalDarkColorMode(bool isDark, bool& success) = 0;
 
     virtual int32_t GetScreenGamutMap(ScreenId id, ScreenGamutMap& mode) = 0;
 
@@ -271,11 +271,12 @@ public:
 
     virtual int32_t SetScreenSkipFrameInterval(ScreenId id, uint32_t skipFrameInterval) = 0;
 
-    virtual int32_t SetVirtualScreenRefreshRate(ScreenId id, uint32_t maxRefreshRate, uint32_t& actualRefreshRate) = 0;
+    virtual ErrCode SetVirtualScreenRefreshRate(
+        ScreenId id, uint32_t maxRefreshRate, uint32_t& actualRefreshRate, int32_t& retVal) = 0;
 
-    virtual uint32_t SetScreenActiveRect(ScreenId id, const Rect& activeRect) = 0;
+    virtual ErrCode SetScreenActiveRect(ScreenId id, const Rect& activeRect, uint32_t& repCode) = 0;
 
-    virtual int32_t RegisterOcclusionChangeCallback(sptr<RSIOcclusionChangeCallback> callback) = 0;
+    virtual ErrCode RegisterOcclusionChangeCallback(sptr<RSIOcclusionChangeCallback> callback, int32_t& repCode) = 0;
 
     virtual int32_t RegisterSurfaceOcclusionChangeCallback(
         NodeId id, sptr<RSISurfaceOcclusionChangeCallback> callback, std::vector<float>& partitionPoints) = 0;
@@ -295,7 +296,8 @@ public:
     virtual int32_t RegisterFrameRateLinkerExpectedFpsUpdateCallback(int32_t pid,
         sptr<RSIFrameRateLinkerExpectedFpsUpdateCallback> callback) = 0;
 
-    virtual bool SetSystemAnimatedScenes(SystemAnimatedScenes systemAnimatedScenes, bool isRegularAnimation) = 0;
+    virtual ErrCode SetSystemAnimatedScenes(
+        SystemAnimatedScenes systemAnimatedScenes, bool isRegularAnimation, bool& success) = 0;
 
     virtual void ShowWatermark(const std::shared_ptr<Media::PixelMap> &watermarkImg, bool isShow) = 0;
 
@@ -313,6 +315,8 @@ public:
     virtual void NotifyRefreshRateEvent(const EventInfo& eventInfo) = 0;
 
     virtual ErrCode NotifySoftVsyncEvent(uint32_t pid, uint32_t rateDiscount) = 0;
+
+    virtual bool NotifySoftVsyncRateDiscountEvent(uint32_t pid, const std::string &name, uint32_t rateDiscount) = 0;
 
     virtual void NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt) = 0;
 
@@ -347,7 +351,7 @@ public:
 
     virtual ErrCode SetCurtainScreenUsingStatus(bool isCurtainScreenOn) = 0;
 
-    virtual void DropFrameByPid(const std::vector<int32_t> pidList) = 0;
+    virtual ErrCode DropFrameByPid(const std::vector<int32_t> pidList) = 0;
 
     virtual std::vector<ActiveDirtyRegionInfo> GetActiveDirtyRegionInfo() = 0;
 
@@ -377,8 +381,11 @@ public:
 #endif
 
     virtual void SetLayerTop(const std::string &nodeIdStr, bool isTop) = 0;
+
+    virtual void SetColorFollow(const std::string &nodeIdStr, bool isColorFollow) = 0;
 #ifdef TP_FEATURE_ENABLE
-    virtual void SetTpFeatureConfig(int32_t feature, const char* config, TpFeatureConfigType tpFeatureConfigType) = 0;
+    virtual ErrCode SetTpFeatureConfig(
+        int32_t feature, const char* config, TpFeatureConfigType tpFeatureConfigType) = 0;
 #endif
 
     virtual ErrCode RegisterSurfaceBufferCallback(pid_t pid, uint64_t uid,
@@ -394,7 +401,7 @@ public:
 
     virtual ErrCode NotifyPageName(const std::string &packageName, const std::string &pageName, bool isEnter) = 0;
 
-    virtual void TestLoadFileSubTreeToNode(NodeId nodeId, const std::string &filePath) = 0;
+    virtual bool GetHighContrastTextState() = 0;
 };
 } // namespace Rosen
 } // namespace OHOS

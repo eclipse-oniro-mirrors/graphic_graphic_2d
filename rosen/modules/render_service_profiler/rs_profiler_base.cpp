@@ -26,6 +26,7 @@
 #include "message_parcel.h"
 #include "rs_profiler.h"
 #include "rs_profiler_cache.h"
+#include "rs_profiler_capture_recorder.h"
 #include "rs_profiler_file.h"
 #include "rs_profiler_log.h"
 #include "rs_profiler_network.h"
@@ -78,6 +79,7 @@ bool RSProfiler::enabled_ = RSSystemProperties::GetProfilerEnabled();
 bool RSProfiler::betaRecordingEnabled_ = RSSystemProperties::GetBetaRecordingMode() != 0;
 int8_t RSProfiler::signalFlagChanged_ = 0;
 std::atomic_bool RSProfiler::dcnRedraw_ = false;
+std::atomic_bool RSProfiler::renderNodeKeepDrawCmdList_ = false;
 std::vector<RSRenderNode::WeakPtr> g_childOfDisplayNodesPostponed;
 
 static TextureRecordType g_textureRecordType = TextureRecordType::LZ4;
@@ -321,7 +323,7 @@ void RSProfiler::TimePauseResume(uint64_t curTime)
 {
     if (g_pauseAfterTime > 0) {
         if (curTime > g_pauseAfterTime) {
-            g_pauseCumulativeTime += curTime - g_pauseAfterTime;
+            g_pauseCumulativeTime += static_cast<int64_t>(curTime - g_pauseAfterTime);
         }
     }
     g_pauseAfterTime = 0;
@@ -622,12 +624,15 @@ static void MarshalDrawCmdModifiers(
             if (!modifier) {
                 continue;
             }
-            if (auto commandList = reinterpret_cast<Drawing::DrawCmdList*>(modifier->GetDrawCmdListId())) {
-                std::string allocData = commandList->ProfilerPushAllocators();
-                commandList->MarshallingDrawOps();
-                commandList->PatchTypefaceIds(true);
+            if (auto oldCmdList = modifier->GetPropertyDrawCmdList()) {
+                auto newCmdList = std::make_shared<Drawing::DrawCmdList>(oldCmdList->GetWidth(),
+                    oldCmdList->GetHeight(), Drawing::DrawCmdList::UnmarshalMode::IMMEDIATE);
+                oldCmdList->MarshallingDrawOps(newCmdList.get());
+                newCmdList->PatchTypefaceIds(oldCmdList);
+
+                modifier->SetPropertyDrawCmdList(newCmdList);
                 MarshalRenderModifier(*modifier, data);
-                commandList->ProfilerPopAllocators(allocData);
+                modifier->SetPropertyDrawCmdList(oldCmdList);
             } else {
                 MarshalRenderModifier(*modifier, data);
             }
@@ -1212,6 +1217,16 @@ void RSProfiler::DrawingNodeAddClearOp(const std::shared_ptr<Drawing::DrawCmdLis
     drawCmdList->ClearOp();
 }
 
+void RSProfiler::SetRenderNodeKeepDrawCmd(bool enable)
+{
+    renderNodeKeepDrawCmdList_ = enable && IsEnabled();
+}
+
+void RSProfiler::KeepDrawCmd(bool& drawCmdListNeedSync)
+{
+    drawCmdListNeedSync = !renderNodeKeepDrawCmdList_;
+}
+
 static uint64_t NewAshmemDataCacheId()
 {
     static std::atomic_uint32_t id = 0u;
@@ -1474,7 +1489,7 @@ std::string RSProfiler::UnmarshalSubTreeLo(RSContext& context, std::stringstream
     uint32_t childCount;
     data.read(reinterpret_cast<char*>(&childCount), sizeof(childCount));
     for (uint32_t i = 0; i < childCount; i++) {
-        UnmarshalSubTreeLo(context, data, *node, fileVersion);
+        errorReason = UnmarshalSubTreeLo(context, data, *node, fileVersion);
         if (errorReason.size()) {
             return errorReason;
         }

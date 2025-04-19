@@ -123,14 +123,18 @@ ComposeInfo RSUniRenderComposerAdapter::BuildComposeInfo(DrawableV2::RSDisplayRe
         return info;
     }
     const auto& buffer = surfaceHandler->GetBuffer(); // we guarantee the buffer is valid.
+#ifndef ROSEN_EMULATOR
     const auto& activeRect = params->GetScreenInfo().activeRect;
+#endif
     info.srcRect = GraphicIRect {0, 0, buffer->GetSurfaceBufferWidth(), buffer->GetSurfaceBufferHeight()};
     info.dstRect = GraphicIRect {0, 0, static_cast<int32_t>(screenInfo_.GetRotatedPhyWidth()),
         static_cast<int32_t>(screenInfo_.GetRotatedPhyHeight())};
+#ifndef ROSEN_EMULATOR
     if (activeRect.width_ > 0 && activeRect.height_ > 0) {
         info.srcRect = GraphicIRect {activeRect.left_, activeRect.top_, activeRect.width_, activeRect.height_};
         info.dstRect = GraphicIRect {activeRect.left_, activeRect.top_, activeRect.width_, activeRect.height_};
     }
+#endif
     auto bound = params->GetBounds();
     info.boundRect = {0, 0,
         static_cast<int32_t>(bound.GetWidth()), static_cast<int32_t>(bound.GetHeight())};
@@ -1286,8 +1290,6 @@ LayerInfoPtr RSUniRenderComposerAdapter::CreateBufferLayer(
             surfaceDrawable.GetId());
         return nullptr;
     }
-    RS_TRACE_NAME_FMT("CreateLayer:%s XYWH[%d %d %d %d]", surfaceDrawable.GetName().c_str(),
-        info.dstRect.x, info.dstRect.y, info.dstRect.w, info.dstRect.h);
     if (info.buffer) {
         RS_LOGD("RsDebug RSUniRenderComposerAdapter::CreateBufferLayer surfaceNode id:%{public}" PRIu64 " name:"
             "[%{public}s] dst [%{public}d %{public}d %{public}d %{public}d] SrcRect [%{public}d %{public}d]"
@@ -1316,6 +1318,12 @@ LayerInfoPtr RSUniRenderComposerAdapter::CreateBufferLayer(
     } else if (scalingMode == ScalingMode::SCALING_MODE_SCALE_FIT) {
         LayerScaleFit(layer);
     }
+    auto& layerRect = layer->GetLayerSize();
+    auto& cropRect = layer->GetCropRect();
+    RS_TRACE_NAME_FMT("CreateLayer:%s ScreenId:%llu layerRect XYWH[%d %d %d %d], "
+        "cropRect XYWH[%d %d %d %d], transform:%d", surfaceDrawable.GetName().c_str(), screenInfo_.id,
+        layerRect.x, layerRect.y, layerRect.w, layerRect.h,
+        cropRect.x, cropRect.y, cropRect.w, cropRect.h, layer->GetTransformType());
     return layer;
 }
 

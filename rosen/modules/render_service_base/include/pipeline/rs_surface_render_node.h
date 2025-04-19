@@ -291,11 +291,6 @@ public:
         return isHardwareForcedByBackgroundAlpha_;
     }
 
-    void SetHardwareDisabledByCache(bool disabledByCache)
-    {
-        isHardwareDisabledByCache_ = disabledByCache;
-    }
-
     void SetHardwareForcedDisabledStateByFilter(bool forcesDisabled)
     {
         isHardwareForcedDisabledByFilter_ = forcesDisabled;
@@ -353,14 +348,14 @@ public:
 
     bool IsLeashOrMainWindow() const
     {
-        return nodeType_ <= RSSurfaceNodeType::LEASH_WINDOW_NODE;
+        return nodeType_ <= RSSurfaceNodeType::LEASH_WINDOW_NODE || nodeType_ == RSSurfaceNodeType::CURSOR_NODE;
     }
 
     bool IsMainWindowType() const
     {
         // a mainWindowType surfacenode will not mounted under another mainWindowType surfacenode
         // including app main window, starting window, and selfdrawing window
-        return nodeType_ <= RSSurfaceNodeType::SELF_DRAWING_WINDOW_NODE;
+        return nodeType_ <= RSSurfaceNodeType::SELF_DRAWING_WINDOW_NODE || nodeType_ == RSSurfaceNodeType::CURSOR_NODE;
     }
 
     bool GetIsLastFrameHwcEnabled() const
@@ -403,7 +398,8 @@ public:
         // self drawing surfacenode has its own buffer, and rendered in its own progress/thread
         // such as surfaceview (web/videos) and self draw windows (such as mouse pointer and boot animation)
         return nodeType_ == RSSurfaceNodeType::SELF_DRAWING_NODE ||
-               nodeType_ == RSSurfaceNodeType::SELF_DRAWING_WINDOW_NODE;
+                nodeType_ == RSSurfaceNodeType::SELF_DRAWING_WINDOW_NODE ||
+                nodeType_ == RSSurfaceNodeType::CURSOR_NODE;
     }
 
     bool IsUIFirstSelfDrawCheck();
@@ -434,6 +430,11 @@ public:
     const std::string& GetName() const
     {
         return name_;
+    }
+
+    const std::string& GetBundleName() const
+    {
+        return bundleName_;
     }
 
     void SetOffSetX(int32_t offset)
@@ -475,6 +476,16 @@ public:
     void SetArsrTag(bool arsrTag)
     {
         arsrTag_ = arsrTag;
+    }
+
+    bool GetCopybitTag() const
+    {
+        return copybitTag_;
+    }
+
+    void SetCopybitTag(bool copybitTag)
+    {
+        copybitTag_ = copybitTag;
     }
 
     void CollectSurface(const std::shared_ptr<RSBaseRenderNode>& node, std::vector<RSBaseRenderNode::SharedPtr>& vec,
@@ -526,10 +537,10 @@ public:
     void SetGlobalPositionEnabled(bool isEnabled);
     bool GetGlobalPositionEnabled() const override;
 
-    void SetDRMGlobalPositionEnabled(bool isEnabled);
-    bool GetDRMGlobalPositionEnabled() const;
+    void SetHwcGlobalPositionEnabled(bool isEnabled);
+    bool GetHwcGlobalPositionEnabled() const;
 
-    void SetDRMCrossNode(bool isCrossNode);
+    void SetHwcCrossNode(bool isCrossNode);
     bool IsDRMCrossNode() const;
 
     void SetSecurityLayer(bool isSecurityLayer);
@@ -570,12 +581,15 @@ public:
     // [Attention] The function only used for unlocking screen for PC currently
     void SetClonedNodeRenderDrawable(DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr clonedNodeRenderDrawable);
     bool IsCloneNode() const;
-    void SetClonedNodeId(NodeId id);
+    void SetClonedNodeInfo(NodeId id, bool needOffscreen);
     void SetIsCloned(bool isCloned);
     void SetIsClonedNodeOnTheTree(bool isOnTheTree);
 
     void SetForceUIFirst(bool forceUIFirst);
     bool GetForceUIFirst() const;
+
+    bool GetForceDrawWithSkipped() const;
+    void SetForceDrawWithSkipped(bool GetForceDrawWithSkipped);
 
     void SetUIFirstIsPurge(bool IsPurge)
     {
@@ -602,6 +616,11 @@ public:
 
     void IncreaseHDRNum();
     void ReduceHDRNum();
+
+    bool GetIsWideColorGamut() const;
+
+    void IncreaseWideColorGamutNum();
+    void ReduceWideColorGamutNum();
 
     const std::shared_ptr<RSDirtyRegionManager>& GetDirtyManager() const;
     std::shared_ptr<RSDirtyRegionManager> GetCacheSurfaceDirtyManager() const;
@@ -799,7 +818,8 @@ public:
     GraphicColorGamut GetColorSpace() const;
     // Only call this if the node is first level node.
     GraphicColorGamut GetFirstLevelNodeColorGamut() const;
-    void SetFirstLevelNodeColorGamut(bool changeToP3);
+    void SetFirstLevelNodeColorGamutByResource(bool changeToP3);
+    void SetFirstLevelNodeColorGamutByWindow(bool changeToP3);
 
     // Only call this if the node is self-drawing surface node.
     void UpdateColorSpaceWithMetadata();
@@ -990,11 +1010,9 @@ public:
     bool UpdateDirtyIfFrameBufferConsumed();
 
     void UpdateSrcRect(const Drawing::Canvas& canvas, const Drawing::RectI& dstRect, bool hasRotation = false);
-    void UpdateHwcDisabledBySrcRect(bool hasRotation);
 
     // if a surfacenode's dstrect is empty, its subnodes' prepare stage can be skipped
     bool ShouldPrepareSubnodes();
-    void StoreMustRenewedInfo() override;
 
     void SetNodeCost(int32_t cost)
     {
@@ -1407,7 +1425,6 @@ public:
     bool NeedUpdateDrawableBehindWindow() const override;
     void SetOldNeedDrawBehindWindow(bool val);
     bool NeedDrawBehindWindow() const override;
-    bool GetBehindWindowFilterEnabled() const;
     void AddChildBlurBehindWindow(NodeId id) override;
     void RemoveChildBlurBehindWindow(NodeId id) override;
     void CalDrawBehindWindowRegion() override;
@@ -1453,6 +1470,8 @@ public:
 
     void ResetIsBufferFlushed();
 
+    void ResetSurfaceNodeStates();
+
     bool IsUIBufferAvailable();
 
     bool GetUIExtensionUnobscured() const;
@@ -1471,6 +1490,21 @@ public:
     bool GetSelfAndParentShouldPaint() const
     {
         return selfAndParentShouldPaint_;
+    }
+
+    inline bool IsHardwareDisabledBySrcRect() const
+    {
+        return isHardwareForcedDisabledBySrcRect_;
+    }
+
+    void SetAppWindowZOrder(int32_t appWindowZOrder)
+    {
+        appWindowZOrder_ = appWindowZOrder;
+    }
+
+    int32_t GetAppWindowZOrder() const
+    {
+        return appWindowZOrder_;
     }
 
 protected:
@@ -1492,10 +1526,6 @@ private:
     void ClearHistoryUnSubmittedDirtyInfo();
     void UpdateHistoryUnsubmittedDirtyInfo();
     void SetUIExtensionUnobscured(bool obscured);
-    inline bool IsHardwareDisabledBySrcRect() const
-    {
-        return isHardwareForcedDisabledBySrcRect_;
-    }
     void OnSubSurfaceChanged();
     void UpdateChildSubSurfaceNodes(RSSurfaceRenderNode::SharedPtr node, bool isOnTheTree);
     bool IsYUVBufferFormat() const;
@@ -1508,8 +1538,8 @@ private:
     RSSpecialLayerManager specialLayerManager_;
     bool specialLayerChanged_ = false;
     bool isGlobalPositionEnabled_ = false;
-    bool isDRMGlobalPositionEnabled_ = false;
-    bool isDRMCrossNode_ = false;
+    bool isHwcGlobalPositionEnabled_ = false;
+    bool isHwcCrossNode_ = false;
     bool hasFingerprint_ = false;
     // hdr video
     HdrStatus hdrVideoSurface_ = HdrStatus::NO_HDR;
@@ -1569,7 +1599,6 @@ private:
     // For certain buffer format(YUV), dss restriction on src : srcRect % 2 == 0
     // To avoid switch between gpu and dss during sliding, we disable dss when srcHeight != bufferHeight
     bool isHardwareForcedDisabledBySrcRect_ = false;
-    bool isHardwareDisabledByCache_ = false;
     // Mark if the leash or main window node has transparent self-drawing node
     bool existTransparentHardwareEnabledNode_ = false;
     bool animateState_ = false;
@@ -1594,6 +1623,7 @@ private:
     bool needDrawFocusChange_ = false;
     bool forceUIFirstChanged_ = false;
     bool forceUIFirst_ = false;
+    bool uifirstForceDrawWithSkipped_ = false;
     bool hasTransparentSurface_ = false;
     bool isGpuOverDrawBufferOptimizeNode_ = false;
     bool isSubSurfaceNode_ = false;
@@ -1603,6 +1633,7 @@ private:
     bool needHidePrivacyContent_ = false;
     bool isHardwareForcedByBackgroundAlpha_ = false;
     bool arsrTag_ = true;
+    bool copybitTag_ = false;
     bool subThreadAssignable_ = false;
     bool oldNeedDrawBehindWindow_ = false;
     RectI skipFrameDirtyRect_;
@@ -1619,6 +1650,7 @@ private:
     float contextAlpha_ = 1.0f;
     // Count the number of hdr pictures. If hdrNum_ > 0, it means there are hdr pictures
     int hdrNum_ = 0;
+    int wideColorGamutNum_ = 0;
     int32_t offsetX_ = 0;
     int32_t offsetY_ = 0;
     int64_t stencilVal_ = -1;
@@ -1637,7 +1669,8 @@ private:
     uint32_t processZOrder_ = -1;
     int32_t nodeCost_ = 0;
     uint32_t submittedSubThreadIndex_ = INT_MAX;
-    uint32_t wideColorGamutInChildNodeCount_ = 0;
+    uint32_t wideColorGamutWindowCount_ = 0;
+    uint32_t wideColorGamutResourceWindowCount_ = 0;
     uint32_t apiCompatibleVersion_ = 0;
     std::atomic<uint32_t> ancoFlags_ = 0;
     Drawing::GPUContext* grContext_ = nullptr;
@@ -1689,6 +1722,7 @@ private:
     std::vector<float> drmCornerRadiusInfo_;
 
     std::string name_;
+    std::string bundleName_;
     std::vector<NodeId> childSurfaceNodeIds_;
     friend class RSRenderThreadVisitor;
     /*
@@ -1722,6 +1756,7 @@ private:
     // valid filter nodes within, including itself
     std::vector<std::shared_ptr<RSRenderNode>> filterNodes_;
     std::unordered_map<NodeId, std::weak_ptr<RSRenderNode>> drawingCacheNodes_;
+    int32_t appWindowZOrder_ = 0;
 
     /*
         ContainerWindow configs acquired from arkui, including container window state, screen density, container border
@@ -1782,6 +1817,7 @@ private:
     bool isCloneNode_ = false;
     NodeId clonedSourceNodeId_ = INVALID_NODEID;
     bool isClonedNodeOnTheTree_ = false;
+    bool clonedSourceNodeNeedOffscreen_ = true;
 
     std::map<NodeId, RSSurfaceRenderNode::WeakPtr> childSubSurfaceNodes_;
     std::unordered_map<std::string, bool> watermarkHandles_ = {};

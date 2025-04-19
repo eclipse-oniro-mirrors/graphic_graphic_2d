@@ -34,6 +34,14 @@ constexpr int32_t SWITCH_SCREEN_SCENE = 1;
 constexpr int32_t STRING_BUFFER_MAX_SIZE = 256;
 constexpr int64_t IDEAL_PULSE = 2777778; // 2.777778ms
 const std::string HGM_CONFIG_TYPE_THERMAL_SUFFIX = "_THERMAL";
+const std::string HGM_CONFIG_TYPE_DRAGSLIDE_SUFFIX = "_DRAGSLIDE";
+const std::string HGM_CONFIG_TYPE_THROWSLIDE_SUFFIX = "_THROWSLIDE";
+// {Suffix, {Priority, State}}
+const std::unordered_map<std::string, std::pair<int32_t, bool>> HGM_CONFIG_SCREENEXT_STRATEGY_MAP = {
+    {HGM_CONFIG_TYPE_THERMAL_SUFFIX, {1, false}},
+    {HGM_CONFIG_TYPE_DRAGSLIDE_SUFFIX, {2, false}},
+    {HGM_CONFIG_TYPE_THROWSLIDE_SUFFIX, {3, false}},
+};
 
 enum OledRefreshRate {
     OLED_NULL_HZ = 0,
@@ -110,8 +118,10 @@ public:
         int32_t drawMin;
         int32_t drawMax;
         int32_t down;
-        // Does this game app require Adaptive Sync?
+        // Does this game app require Adaptive Sync? Yes/No/Skip Required
         int32_t supportAS;
+        // milliseconds
+        int32_t upTimeOut;
         // <bufferName, fps>
         std::unordered_map<std::string, int32_t> bufferFpsMap;
     };
@@ -192,21 +202,27 @@ public:
     // <"VIRTUAL_AXX", "4">
     std::unordered_map<std::string, std::string> virtualDisplayConfigs_;
     bool virtualDisplaySwitch_;
+    // <"p3NodeCount", "0">
+    bool p3NodeCountSwitch_ = false;
+    // <"isCoveredSurfaceCloseP3", "0">
+    bool isCoveredSurfaceCloseP3_ = false;
     // <"screen0_LTPO", "LTPO-DEFAULT">
     std::unordered_map<std::string, std::string> screenStrategyConfigs_;
     std::unordered_map<std::string, std::string> sourceTuningConfig_;
     std::unordered_map<std::string, std::string> solidLayerConfig_;
     std::unordered_map<std::string, std::string> hwcSourceTuningConfig_;
     std::unordered_map<std::string, std::string> hwcSolidLayerConfig_;
+    // <"up_timeout_ms", 3000>
+    std::unordered_map<std::string, std::string> timeoutStrategyConfig_;
     std::unordered_map<std::string, std::string> videoCallLayerConfig_;
-    // <"pkgName", "1">
-    std::unordered_map<std::string, std::string> hfbcConfig_;
     StrategyConfigMap strategyConfigs_;
     ScreenConfigMap screenConfigs_;
     SupportedModeMap supportedModeConfigs_;
     bool videoFrameRateVoteSwitch_ = false;
     // <"pkgName", "1">
     std::unordered_map<std::string, std::string> videoFrameRateList_;
+    // vrate <"minifps", "1">
+    std::unordered_map<std::string, std::string> vRateControlList_;
 
     DynamicSettingMap GetAceSceneDynamicSettingMap(const std::string& screenType, const std::string& settingMode)
     {

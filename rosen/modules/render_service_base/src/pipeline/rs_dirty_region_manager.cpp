@@ -215,6 +215,7 @@ void RSDirtyRegionManager::OnSync(std::shared_ptr<RSDirtyRegionManager> targetMa
     ptr->surfaceRect_ = surfaceRect_;
     ptr->dirtyRegion_ = dirtyRegion_;
     ptr->advancedDirtyRegion_ = advancedDirtyRegion_;
+    ptr->advancedDirtyRegionType_ = advancedDirtyRegionType_;
     ptr->hwcDirtyRegion_ = hwcDirtyRegion_;
     ptr->currentFrameDirtyRegion_ = currentFrameDirtyRegion_;
     ptr->uifirstFrameDirtyRegion_ = uifirstFrameDirtyRegion_;
@@ -497,7 +498,11 @@ void RSDirtyRegionManager::MergeAdvancedDirtyHistory(unsigned int age)
             tempRegion.OrSelf(region);
         }
     }
-    advancedDirtyRegion_ = tempRegion.GetRegionRectIs();
+    if (advancedDirtyRegionType_ == AdvancedDirtyRegionType::DISABLED) {
+        advancedDirtyRegion_ = {tempRegion.GetBound().ToRectI()};
+    } else {
+        advancedDirtyRegion_ = tempRegion.GetRegionRectIs();
+    }
 }
 
 void RSDirtyRegionManager::PushHistory(RectI rect)
@@ -533,6 +538,7 @@ std::vector<RectI> RSDirtyRegionManager::GetAdvancedDirtyHistory(unsigned int i)
     return advancedDirtyHistory_[i];
 }
 
+// for uifirst
 const RectI RSDirtyRegionManager::GetUiLatestHistoryDirtyRegions(const int historyIndex) const
 {
     if (historyHead_ < 0) {

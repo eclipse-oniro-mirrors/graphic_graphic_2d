@@ -39,6 +39,7 @@
 #include "render/rs_typeface_cache.h"
 #include "rs_trace.h"
 #include "rs_profiler.h"
+#include "app_mgr_client.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -62,6 +63,7 @@ static constexpr std::array descriptorCheckList = {
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_RESOLUTION),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_SURFACE),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_BLACKLIST),
+    static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_TYPE_BLACKLIST),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::ADD_VIRTUAL_SCREEN_BLACKLIST),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REMOVE_VIRTUAL_SCREEN_BLACKLIST),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_SECURITY_EXEMPTION_LIST),
@@ -143,6 +145,7 @@ static constexpr std::array descriptorCheckList = {
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_PACKAGE_EVENT),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_REFRESH_RATE_EVENT),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_SOFT_VSYNC_EVENT),
+    static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_SOFT_VSYNC_RATE_DISCOUNT_EVENT),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REPORT_EVENT_RESPONSE),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REPORT_EVENT_COMPLETE),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REPORT_EVENT_JANK_FRAME),
@@ -183,13 +186,13 @@ static constexpr std::array descriptorCheckList = {
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REGISTER_SURFACE_BUFFER_CALLBACK),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::UNREGISTER_SURFACE_BUFFER_CALLBACK),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_LAYER_TOP),
+    static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_COLOR_FOLLOW),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_WINDOW_CONTAINER),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REGISTER_SELF_DRAWING_NODE_RECT_CHANGE_CALLBACK),
 #ifdef RS_ENABLE_OVERLAY_DISPLAY
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_OVERLAY_DISPLAY_MODE),
 #endif
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_PAGE_NAME),
-    static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::TEST_LOAD_FILE_SUB_TREE),
 };
 
 void CopyFileDescriptor(MessageParcel& old, MessageParcel& copied)
@@ -274,7 +277,7 @@ std::shared_ptr<MessageParcel> CopyParcelIfNeed(MessageParcel& old, pid_t callin
 bool CheckCreateNodeAndSurface(pid_t pid, RSSurfaceNodeType nodeType, SurfaceWindowType windowType)
 {
     constexpr int nodeTypeMin = static_cast<int>(RSSurfaceNodeType::DEFAULT);
-    constexpr int nodeTypeMax = static_cast<int>(RSSurfaceNodeType::UI_EXTENSION_SECURE_NODE);
+    constexpr int nodeTypeMax = static_cast<int>(RSSurfaceNodeType::NODE_MAX);
 
     int typeNum = static_cast<int>(nodeType);
     if (typeNum < nodeTypeMin || typeNum > nodeTypeMax) {
@@ -306,6 +309,19 @@ bool CheckCreateNodeAndSurface(pid_t pid, RSSurfaceNodeType nodeType, SurfaceWin
     }
 
     return true;
+}
+
+std::string GetBundleName(pid_t pid)
+{
+    std::string bundleName;
+    static const auto appMgrClient = std::make_shared<AppExecFwk::AppMgrClient>();
+    if (appMgrClient == nullptr) {
+        RS_LOGE("GetBundleName get appMgrClient fail.");
+        return bundleName;
+    }
+    int32_t uid = 0;
+    appMgrClient->GetBundleNameByPid(pid, bundleName, uid);
+    return bundleName;
 }
 
 bool IsValidCallingPid(pid_t pid, pid_t callingPid)
@@ -525,7 +541,8 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 .nodeType = static_cast<RSSurfaceNodeType>(type),
                 .isTextureExportNode = isTextureExportNode,
                 .isSync = isSync,
-                .surfaceWindowType = static_cast<SurfaceWindowType>(surfaceWindowType) };
+                .surfaceWindowType = static_cast<SurfaceWindowType>(surfaceWindowType),
+                .bundleName = surfaceName == "RosenWeb" ? GetBundleName(ExtractPid(nodeId)) : "" };
             sptr<Surface> surface = nullptr;
             ErrCode err = CreateNodeAndSurface(config, surface, unobscured);
             if ((err != ERR_OK) || (surface == nullptr)) {
@@ -558,8 +575,14 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 break;
             }
             RS_PROFILER_PATCH_NODE_ID(data, focusNodeId);
-            int32_t status = SetFocusAppInfo(pid, uid, bundleName, abilityName, focusNodeId);
-            if (!reply.WriteInt32(status)) {
+            FocusAppInfo info = {
+                .pid = pid,
+                .uid = uid,
+                .bundleName = bundleName,
+                .abilityName = abilityName,
+                .focusNodeId = focusNodeId};
+            int32_t repCode;
+            if (SetFocusAppInfo(info, repCode) != ERR_OK || !reply.WriteInt32(repCode)) {
                 RS_LOGE("RSRenderServiceConnectionStub::SET_FOCUS_APP_INFO Write status failed!");
                 ret = ERR_INVALID_REPLY;
             }
@@ -644,6 +667,23 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             int32_t status = SetVirtualScreenBlackList(id, blackListVector);
             if (!reply.WriteInt32(status)) {
                 RS_LOGE("RSRenderServiceConnectionStub::SET_VIRTUAL_SCREEN_BLACKLIST Write status failed!");
+                ret = ERR_INVALID_REPLY;
+            }
+            break;
+        }
+        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_TYPE_BLACKLIST): {
+            // read the parcel data.
+            ScreenId id{INVALID_SCREEN_ID};
+            std::vector<NodeType> typeBlackListVector;
+            if (!data.ReadUint64(id) || !data.ReadUInt8Vector(&typeBlackListVector)) {
+                RS_LOGE("RSRenderServiceConnectionStub::SET_VIRTUAL_SCREEN_TYPE_BLACKLIST read parcel failed!");
+                ret = ERR_INVALID_DATA;
+                break;
+            }
+            int32_t repCode;
+            SetVirtualScreenTypeBlackList(id, typeBlackListVector, repCode);
+            if (!reply.WriteInt32(repCode)) {
+                RS_LOGE("RSRenderServiceConnectionStub::SET_VIRTUAL_SCREEN_TYPE_BLACKLIST Write repCode failed!");
                 ret = ERR_INVALID_REPLY;
             }
             break;
@@ -1721,8 +1761,8 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 ret = ERR_INVALID_DATA;
                 break;
             }
-            bool result = SetGlobalDarkColorMode(isDark);
-            if (!reply.WriteBool(result)) {
+            bool success;
+            if (SetGlobalDarkColorMode(isDark, success) != ERR_OK || !reply.WriteBool(success)) {
                 RS_LOGE("RSRenderServiceConnectionStub::SET_GLOBAL_DARK_COLOR_MODE Write result failed!");
                 ret = ERR_INVALID_REPLY;
             }
@@ -1780,7 +1820,9 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 ret = ERR_UNKNOWN_OBJECT;
                 break;
             }
-            sptr<IVSyncConnection> conn = CreateVSyncConnection(name, token, id, windowNodeID);
+            sptr<IVSyncConnection> conn = nullptr;
+            VSyncConnParam vsyncConnParam = {id, windowNodeID, false};
+            CreateVSyncConnection(conn, name, token, vsyncConnParam);
             if (conn == nullptr) {
                 ret = ERR_NULL_OBJECT;
                 break;
@@ -2268,7 +2310,8 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 break;
             }
             uint32_t actualRefreshRate = 0;
-            int32_t result = SetVirtualScreenRefreshRate(id, maxRefreshRate, actualRefreshRate);
+            int32_t result = 0;
+            SetVirtualScreenRefreshRate(id, maxRefreshRate, actualRefreshRate, result);
             if (!reply.WriteInt32(result)) {
                 RS_LOGE("RSRenderServiceConnectionStub::SET_VIRTUAL_SCREEN_REFRESH_RATE Write result failed!");
                 return ERR_INVALID_REPLY;
@@ -2298,8 +2341,8 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 .w = w,
                 .h = h
             };
-            uint32_t result = SetScreenActiveRect(id, activeRect);
-            if (!reply.WriteUint32(result)) {
+            uint32_t repCode;
+            if (SetScreenActiveRect(id, activeRect, repCode) != ERR_OK || !reply.WriteUint32(repCode)) {
                 RS_LOGE("RSRenderServiceConnectionStub::SET_SCREEN_ACTIVE_RECT Write result failed!");
                 return ERR_INVALID_REPLY;
             }
@@ -2317,8 +2360,8 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 ret = ERR_NULL_OBJECT;
                 break;
             }
-            int32_t status = RegisterOcclusionChangeCallback(callback);
-            if (!reply.WriteInt32(status)) {
+            int32_t repCode;
+            if (RegisterOcclusionChangeCallback(callback, repCode) != ERR_OK || !reply.WriteInt32(repCode)) {
                 RS_LOGE("RSRenderServiceConnectionStub::REGISTER_OCCLUSION_CHANGE_CALLBACK Write status failed!");
                 ret = ERR_INVALID_REPLY;
             }
@@ -2409,9 +2452,9 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 ret = ERR_INVALID_DATA;
                 break;
             }
-            bool result = SetSystemAnimatedScenes(
-                static_cast<SystemAnimatedScenes>(systemAnimatedScenes), isRegularAnimation);
-            if (!reply.WriteBool(result)) {
+            bool success;
+            if (SetSystemAnimatedScenes(static_cast<SystemAnimatedScenes>(systemAnimatedScenes),
+                isRegularAnimation, success) != ERR_OK || !reply.WriteBool(success)) {
                 RS_LOGE("RSRenderServiceConnectionStub::SET_SYSTEM_ANIMATED_SCENES Write result failed!");
                 ret = ERR_INVALID_REPLY;
             }
@@ -2725,6 +2768,21 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 break;
             }
             NotifySoftVsyncEvent(pid, rateDiscount);
+            break;
+        }
+        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_SOFT_VSYNC_RATE_DISCOUNT_EVENT) : {
+            uint32_t pid{0};
+            std::string name;
+            uint32_t rateDiscount{0};
+            if (!data.ReadUint32(pid) || !data.ReadString(name) || !data.ReadUint32(rateDiscount)) {
+                RS_LOGE("RSRenderServiceConnectionStub::NOTIFY_SOFT_VSYNC_RATE_DISCOUNT_EVENT Read parcel failed!");
+                ret = ERR_INVALID_DATA;
+                break;
+            }
+            bool result = NotifySoftVsyncRateDiscountEvent(pid, name, rateDiscount);
+            if (!reply.WriteBool(result)) {
+                ret = ERR_INVALID_REPLY;
+            }
             break;
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_DYNAMIC_MODE_EVENT) : {
@@ -3208,6 +3266,18 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             SetLayerTop(nodeIdStr, isTop);
             break;
         }
+        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_COLOR_FOLLOW) : {
+            std::string nodeIdStr;
+            bool isColorFollow{false};
+            if (!data.ReadString(nodeIdStr) ||
+                !data.ReadBool(isColorFollow)) {
+                RS_LOGE("RSRenderServiceConnectionStub::SET_COLOR_FOLLOW Read parcel failed!");
+                ret = ERR_INVALID_DATA;
+                break;
+            }
+            SetColorFollow(nodeIdStr, isColorFollow);
+            break;
+        }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_SCREEN_SWITCHED) : {
             NotifyScreenSwitched();
             break;
@@ -3268,15 +3338,11 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             break;
         }
 #endif
-        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::TEST_LOAD_FILE_SUB_TREE) : {
-            NodeId nodeId = {};
-            std::string filePath;
-            if (!data.ReadUint64(nodeId) || !data.ReadString(filePath)) {
-                RS_LOGE("RSRenderServiceConnectionStub::TEST_LOAD_FILE_SUB_TREE Read parcel failed!");
-                ret = ERR_INVALID_DATA;
-                break;
+        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_HIGH_CONTRAST_TEXT_STATE) : {
+            bool highContrast = GetHighContrastTextState();
+            if (!reply.WriteBool(highContrast)) {
+                ret = ERR_INVALID_REPLY;
             }
-            RS_PROFILER_TEST_LOAD_FILE_SUB_TREE(nodeId, filePath);
             break;
         }
         default: {

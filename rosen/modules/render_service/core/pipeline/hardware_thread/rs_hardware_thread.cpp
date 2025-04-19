@@ -80,7 +80,9 @@ constexpr int64_t COMMIT_DELTA_TIME = 2; // 2ms
 constexpr int64_t MAX_DELAY_TIME = 100; // 100ms
 constexpr int64_t NS_MS_UNIT_CONVERSION = 1000000;
 constexpr int64_t UNI_RENDER_VSYNC_OFFSET_DELAY_MODE = 3300000; // 3.3ms
-constexpr uint32_t DELAY_TIME_OFFSET = 5; // 5ms
+constexpr uint32_t DELAY_TIME_OFFSET = 100; // 5ms
+constexpr uint32_t MAX_TOTAL_SURFACE_NAME_LENGTH = 320;
+constexpr uint32_t MAX_SINGLE_SURFACE_NAME_LENGTH = 20;
 }
 
 static int64_t SystemTime()
@@ -263,23 +265,34 @@ void RSHardwareThread::CommitAndReleaseLayers(OutputPtr output, const std::vecto
             startTimeNs = std::chrono::duration_cast<std::chrono::nanoseconds>(
                 std::chrono::steady_clock::now().time_since_epoch()).count();
         }
-        RS_TRACE_NAME_FMT("RSHardwareThread::CommitAndReleaseLayers rate: %u, now: %" PRIu64 ", " \
-            "vsyncId: %" PRIu64 ", size: %zu, %s", currentRate, param.frameTimestamp, param.vsyncId, layers.size(),
-            surfaceName.c_str());
+        RS_TRACE_NAME_FMT("CommitLayers rate:%u,now:%" PRIu64 ",vsyncId:%" PRIu64 ",size:%zu,%s",
+            currentRate, param.frameTimestamp, param.vsyncId, layers.size(),
+            GetSurfaceNameInLayersForTrace(layers).c_str());
         RS_LOGD_IF(DEBUG_COMPOSER, "RSHardwareThread::CommitAndReleaseLayers rate:%{public}u, " \
             "now:%{public}" PRIu64 ", vsyncId:%{public}" PRIu64 ", size:%{public}zu, %{public}s",
             currentRate, param.frameTimestamp, param.vsyncId, layers.size(), surfaceName.c_str());
-        ExecuteSwitchRefreshRate(output, param.rate);
-        PerformSetActiveMode(output, param.frameTimestamp, param.constraintRelativeTime);
-        AddRefreshRateCount(output);
-        if (RSSystemProperties::IsSuperFoldDisplay()) {
+
+        bool isScreenPoweringOff = false;
+        auto screenManager = CreateOrGetScreenManager();
+        if (screenManager) {
+            isScreenPoweringOff = RSSystemProperties::IsSmallFoldDevice() &&
+                screenManager->IsScreenPoweringOff(output->GetScreenId());
+        }
+
+        if (!isScreenPoweringOff) {
+            ExecuteSwitchRefreshRate(output, param.rate);
+            PerformSetActiveMode(output, param.frameTimestamp, param.constraintRelativeTime);
+            AddRefreshRateCount(output);
+        }
+
+        if (RSSystemProperties::IsSuperFoldDisplay() && output->GetScreenId() == 0) {
             std::vector<LayerInfoPtr> reviseLayers = layers;
             ChangeLayersForActiveRectOutside(reviseLayers, curScreenId);
             output->SetLayerInfo(reviseLayers);
         } else {
             output->SetLayerInfo(layers);
         }
-        if (output->IsDeviceValid()) {
+        if (output->IsDeviceValid() && !isScreenPoweringOff) {
             hdiBackend_->Repaint(output);
             RecordTimestamp(layers);
         }
@@ -346,6 +359,10 @@ void RSHardwareThread::CommitAndReleaseLayers(OutputPtr output, const std::vecto
 
 void RSHardwareThread::ChangeLayersForActiveRectOutside(std::vector<LayerInfoPtr>& layers, ScreenId screenId)
 {
+#ifdef ROSEN_EMULATOR
+    RS_LOGD("RSHardwareThread::emulator device do not need add layer");
+    return;
+#endif
     if (!RSSystemProperties::IsSuperFoldDisplay() || layers.size() == 0) {
         return;
     }
@@ -414,6 +431,27 @@ std::string RSHardwareThread::GetSurfaceNameInLayers(const std::vector<LayerInfo
     return surfaceName;
 }
 
+std::string RSHardwareThread::GetSurfaceNameInLayersForTrace(const std::vector<LayerInfoPtr>& layers)
+{
+    uint32_t count = layers.size();
+    for (const auto& layer : layers) {
+        if (layer == nullptr || layer->GetSurface() == nullptr) {
+            continue;
+        }
+        count += layer->GetSurface()->GetName().length();
+    }
+    bool exceedLimit = count > MAX_TOTAL_SURFACE_NAME_LENGTH;
+    std::string surfaceName = "Names:";
+    for (const auto& layer : layers) {
+        if (layer == nullptr || layer->GetSurface() == nullptr) {
+            continue;
+        }
+        surfaceName += (exceedLimit ? layer->GetSurface()->GetName().substr(0, MAX_SINGLE_SURFACE_NAME_LENGTH) :
+                                      layer->GetSurface()->GetName()) + ",";
+    }
+    return surfaceName;
+}
+
 void RSHardwareThread::RecordTimestamp(const std::vector<LayerInfoPtr>& layers)
 {
     uint64_t currentTime = static_cast<uint64_t>(
@@ -445,14 +483,13 @@ bool RSHardwareThread::IsDelayRequired(OHOS::Rosen::HgmCore& hgmCore, RefreshRat
         if (AdaptiveModeStatus(output) == SupportASStatus::SUPPORT_AS) {
             RS_LOGD("RSHardwareThread::CommitAndReleaseLayers in Adaptive Mode");
             RS_TRACE_NAME("CommitAndReleaseLayers in Adaptive Mode");
-            isLastAdaptive_ = true;
             return false;
         }
         if (hasGameScene && AdaptiveModeStatus(output) == SupportASStatus::GAME_SCENE_SKIP) {
-            RS_LOGD("RSHardwareThread::CommitAndReleaseLayers skip dalayTime Calculation");
+            RS_LOGD("RSHardwareThread::CommitAndReleaseLayers skip delayTime Calculation");
+            RS_TRACE_NAME("CommitAndReleaseLayers in Game Scene and skiped delayTime Calculation");
             return false;
         }
-        isLastAdaptive_ = false;
     } else {
         if (!hgmCore.IsDelayMode()) {
             return false;
@@ -618,7 +655,6 @@ int32_t RSHardwareThread::AdaptiveModeStatus(const OutputPtr &output)
         return SupportASStatus::NOT_SUPPORT;
     }
 
-    bool isSamplerEnabled = hdiBackend_->GetVsyncSamplerEnabled(output);
     auto& hgmCore = OHOS::Rosen::HgmCore::Instance();
 
     // if in game adaptive vsync mode and do direct composition,send layer immediately
@@ -627,22 +663,12 @@ int32_t RSHardwareThread::AdaptiveModeStatus(const OutputPtr &output)
         int32_t adaptiveStatus = frameRateMgr->AdaptiveStatus();
         RS_LOGD("RSHardwareThread::CommitAndReleaseLayers send layer adaptiveStatus: %{public}u", adaptiveStatus);
         if (adaptiveStatus == SupportASStatus::SUPPORT_AS) {
-            if (isSamplerEnabled) {
-                // when phone enter game adaptive sync mode must disable vsync sampler
-                hdiBackend_->SetVsyncSamplerEnabled(output, false);
-            }
             return SupportASStatus::SUPPORT_AS;
         }
         if (adaptiveStatus == SupportASStatus::GAME_SCENE_SKIP) {
             return SupportASStatus::GAME_SCENE_SKIP;
         }
     }
-    if (isLastAdaptive_ && !isSamplerEnabled) {
-        // exit adaptive sync mode must restore vsync sampler, and startSample immediately
-        hdiBackend_->SetVsyncSamplerEnabled(output, true);
-        hdiBackend_->StartSample(output);
-    }
-
     return SupportASStatus::NOT_SUPPORT;
 }
 
@@ -790,17 +816,18 @@ void RSHardwareThread::ChangeDssRefreshRate(ScreenId screenId, uint32_t refreshR
         PostDelayTask(task, period / NS_MS_UNIT_CONVERSION + delayTime_ + DELAY_TIME_OFFSET);
     } else {
         auto outputIter = outputMap_.find(screenId);
-        if (outputIter == outputMap_.end() || outputIter->second == nullptr) {
+        if (outputIter == outputMap_.end()) {
             return;
         }
-        if (HgmCore::Instance().GetActiveScreenId() != screenId) {
+        auto output = outputIter->second.lock();
+        if (output == nullptr || HgmCore::Instance().GetActiveScreenId() != screenId) {
             return;
         }
-        ExecuteSwitchRefreshRate(outputIter->second, refreshRate);
+        ExecuteSwitchRefreshRate(output, refreshRate);
         PerformSetActiveMode(
-            outputIter->second, refreshRateParam_.frameTimestamp, refreshRateParam_.constraintRelativeTime);
-        if (outputIter->second->IsDeviceValid()) {
-            hdiBackend_->Repaint(outputIter->second);
+            output, refreshRateParam_.frameTimestamp, refreshRateParam_.constraintRelativeTime);
+        if (output->IsDeviceValid()) {
+            hdiBackend_->Repaint(output);
         }
     }
 }

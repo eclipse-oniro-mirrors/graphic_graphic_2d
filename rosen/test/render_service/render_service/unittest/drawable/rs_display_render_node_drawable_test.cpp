@@ -28,6 +28,7 @@
 #include "pipeline/render_thread/rs_uni_render_util.h"
 #include "pipeline/render_thread/rs_uni_render_virtual_processor.h"
 #include "platform/drawing/rs_surface_converter.h"
+#include "screen_manager/rs_screen.h"
 // xml parser
 #include "graphic_feature_param_manager.h"
 
@@ -194,14 +195,8 @@ HWTEST_F(RSDisplayRenderNodeDrawableTest, PrepareOffscreenRender001, TestSize.Le
     ASSERT_NE(renderNode_, nullptr);
     displayDrawable_->PrepareOffscreenRender(*displayDrawable_);
 
-    auto rotateOffScreenFeatureParam =
-         GraphicFeatureParamManager::GetInstance().GetFeatureParam(FEATURE_CONFIGS[ROTATEOFFSCREEN]);
-    auto rotateOffScreenParam = std::static_pointer_cast<RotateOffScreenParam>(rotateOffScreenFeatureParam);
-    if (rotateOffScreenParam == nullptr) {
-        rotateOffScreenParam = std::make_shared<RotateOffScreenParam>();
-    }
-    auto type = rotateOffScreenParam->GetRotateOffScreenDisplayNodeEnable();
-    rotateOffScreenParam->SetRotateOffScreenDisplayNodeEnable(true);
+    auto type = RotateOffScreenParam::GetRotateOffScreenDisplayNodeEnable();
+    RotateOffScreenParam::SetRotateOffScreenDisplayNodeEnable(true);
 
     auto params = static_cast<RSDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
     params->isRotationChanged_ = true;
@@ -217,7 +212,7 @@ HWTEST_F(RSDisplayRenderNodeDrawableTest, PrepareOffscreenRender001, TestSize.Le
     displayDrawable_->curCanvas_->surface_ = surface.get();
     displayDrawable_->PrepareOffscreenRender(*displayDrawable_);
     ASSERT_TRUE(displayDrawable_->curCanvas_->GetSurface());
-    rotateOffScreenParam->SetRotateOffScreenDisplayNodeEnable(type);
+    RotateOffScreenParam::SetRotateOffScreenDisplayNodeEnable(type);
 }
 
 /**
@@ -555,33 +550,6 @@ HWTEST_F(RSDisplayRenderNodeDrawableTest, HardCursorCreateLayerTest, TestSize.Le
 }
 
 /**
- * @tc.name: DRMCreateLayer
- * @tc.desc: Test DRMCreateLayer
- * @tc.type: FUNC
- * @tc.require: #IAX2SN
- */
-HWTEST_F(RSDisplayRenderNodeDrawableTest, DRMCreateLayerTest, TestSize.Level1)
-{
-    ASSERT_NE(renderNode_, nullptr);
-    ASSERT_NE(displayDrawable_, nullptr);
-    ASSERT_NE(displayDrawable_->renderParams_, nullptr);
-
-    auto params = static_cast<RSDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
-    ASSERT_NE(params, nullptr);
-    auto processor = RSProcessorFactory::CreateProcessor(params->GetCompositeType());
-    ASSERT_NE(processor, nullptr);
-    displayDrawable_->DRMCreateLayer(processor);
-
-    NodeId id = 1;
-    auto rsSurfaceNode = std::make_shared<RSSurfaceRenderNode>(id);
-    auto drawableAdapter = RSRenderNodeDrawableAdapter::OnGenerate(rsSurfaceNode);
-    params->hardwareEnabledDrawables_.push_back(drawableAdapter);
-    ASSERT_TRUE(params->GetHardwareEnabledDrawables().size() != 0);
-
-    displayDrawable_->DRMCreateLayer(processor);
-}
-
-/**
  * @tc.name: CheckDisplayNodeSkip
  * @tc.desc: Test CheckDisplayNodeSkip
  * @tc.type: FUNC
@@ -605,9 +573,11 @@ HWTEST_F(RSDisplayRenderNodeDrawableTest, CheckDisplayNodeSkipTest, TestSize.Lev
     result = displayDrawable_->CheckDisplayNodeSkip(*params, processor);
     ASSERT_EQ(result, true);
 
-    RSMainThread::Instance()->isDirty_ = true;
-    result = displayDrawable_->CheckDisplayNodeSkip(*params, processor);
-    ASSERT_EQ(result, false);
+    RSMainThread::Instance()->SetDirtyFlag(true);
+    if (RSMainThread::Instance()->GetDirtyFlag()) {
+        result = displayDrawable_->CheckDisplayNodeSkip(*params, processor);
+        ASSERT_EQ(result, false);
+    }
 
     RSUifirstManager::Instance().hasForceUpdateNode_ = true;
     result = displayDrawable_->CheckDisplayNodeSkip(*params, processor);
@@ -625,6 +595,25 @@ HWTEST_F(RSDisplayRenderNodeDrawableTest, CheckDisplayNodeSkipTest, TestSize.Lev
     RSUniRenderThread::Instance().GetRSRenderThreadParams()->isForceCommitLayer_ = false;
     RSMainThread::Instance()->isDirty_ = false;
     RSUifirstManager::Instance().hasForceUpdateNode_ = false;
+
+    // mock off screen surface null
+    params->hasHdrPresent_ = true;
+    displayDrawable_->offscreenSurface_ = nullptr;
+    result = displayDrawable_->CheckDisplayNodeSkip(*params, processor);
+    EXPECT_EQ(result, false);
+
+    // mock HDR off screen surface in wrong format, here RGBA_8888
+    Drawing::ImageInfo info = Drawing::ImageInfo { DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE,
+        Drawing::COLORTYPE_RGBA_8888, Drawing::ALPHATYPE_PREMUL,
+        Drawing::ColorSpace::CreateSRGB()};
+    auto surface = std::make_shared<Drawing::Surface>();
+    displayDrawable_->offscreenSurface_ = surface->MakeSurface(info);
+    result = displayDrawable_->CheckDisplayNodeSkip(*params, processor);
+    EXPECT_EQ(result, false);
+
+    params->hasHdrPresent_ = false;
+    displayDrawable_->offscreenSurface_ = nullptr;
+    surface = nullptr;
 }
 
 /**

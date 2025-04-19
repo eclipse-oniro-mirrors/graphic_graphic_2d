@@ -343,6 +343,7 @@ public:
     void UpdatePartialRenderParams();
     void UpdateScreenRenderParams(ScreenRenderParams& screenRenderParams);
     void UpdateOffscreenRenderParams(bool needOffscreen);
+    Occlusion::Region GetTopSurfaceOpaqueRegion() const;
     void RecordTopSurfaceOpaqueRects(Occlusion::Rect rect);
     void RecordMainAndLeashSurfaces(RSBaseRenderNode::SharedPtr surface);
     std::vector<RSBaseRenderNode::SharedPtr>& GetAllMainAndLeashSurfaces() { return curMainAndLeashSurfaceNodes_;}
@@ -407,6 +408,10 @@ public:
     }
 
     void SetMainAndLeashSurfaceDirty(bool isDirty);
+
+    void SetForceCloseHdr(bool isForceCloseHdr);
+
+    bool GetForceCloseHdr() const;
 
     void SetHDRPresent(bool hdrPresent);
 
@@ -608,6 +613,7 @@ private:
     bool isMirroredDisplay_ = false;
     bool hasMirroredDisplayChanged_ = false;
     bool isSecurityDisplay_ = false;
+    bool isForceCloseHdr_ = false;
     bool hasUniRenderHdrSurface_ = false;
     bool isLuminanceStatusChange_ = false;
     bool preRotationStatus_ = false;

@@ -35,6 +35,9 @@ public:
     static void TearDownTestCase();
     void SetUp() override;
     void TearDown() override;
+    static inline Occlusion::Rect DEFAULT_RECT1 {0, 0, 500, 500};
+    static inline Occlusion::Rect DEFAULT_RECT2 {500, 500, 1000, 1000};
+    static inline Occlusion::Rect DEFAULT_RECT3 {1, 1, 501, 501};
 };
 
 void RSUniRenderUtilDirtyRegionTest::SetUpTestCase()
@@ -120,6 +123,9 @@ HWTEST_F(RSUniRenderUtilDirtyRegionTest, MergeDirtyHistoryInVirtual003, Function
 HWTEST_F(RSUniRenderUtilDirtyRegionTest, MergeVisibleDirtyRegionInVirtualTest001, Function | SmallTest | Level2)
 {
     NodeId nodeId = 1;
+    auto topNode = std::make_shared<RSRenderNode>(nodeId++);
+    DrawableV2::RSDisplayRenderNodeDrawable displayNodeDrawable(topNode);
+    auto displayNodeDrawableParam = std::make_unique<RSDisplayRenderParams>(displayNodeDrawable.nodeId_);
     std::vector<DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr> allSurfaceNodeDrawables;
     auto node = std::make_shared<RSSurfaceRenderNode>(nodeId);
     auto drawable = std::make_shared<DrawableV2::RSSurfaceRenderNodeDrawable>(node);
@@ -130,8 +136,8 @@ HWTEST_F(RSUniRenderUtilDirtyRegionTest, MergeVisibleDirtyRegionInVirtualTest001
     drawable->renderParams_ = std::move(param);
     allSurfaceNodeDrawables.push_back(nullptr);
     allSurfaceNodeDrawables.push_back(drawable);
-    RSUniRenderUtil::MergeVisibleDirtyRegionInVirtual(allSurfaceNodeDrawables);
-    RSUniRenderUtil::MergeVisibleDirtyRegionInVirtual(allSurfaceNodeDrawables);
+    RSUniRenderUtil::MergeVisibleDirtyRegionInVirtual(allSurfaceNodeDrawables, *displayNodeDrawableParam);
+    RSUniRenderUtil::MergeVisibleDirtyRegionInVirtual(allSurfaceNodeDrawables, *displayNodeDrawableParam);
     ASSERT_NE(drawable->renderParams_, nullptr);
 }
 
@@ -144,6 +150,9 @@ HWTEST_F(RSUniRenderUtilDirtyRegionTest, MergeVisibleDirtyRegionInVirtualTest001
 HWTEST_F(RSUniRenderUtilDirtyRegionTest, MergeVisibleDirtyRegionInVirtualTest002, Function | SmallTest | Level2)
 {
     NodeId nodeId = 1;
+    auto topNode = std::make_shared<RSRenderNode>(nodeId++);
+    DrawableV2::RSDisplayRenderNodeDrawable displayNodeDrawable(topNode);
+    auto displayNodeDrawableParam = std::make_unique<RSDisplayRenderParams>(displayNodeDrawable.nodeId_);
     std::vector<DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr> allSurfaceNodeDrawables;
     auto node = std::make_shared<RSSurfaceRenderNode>(nodeId);
     auto drawable = std::make_shared<DrawableV2::RSSurfaceRenderNodeDrawable>(node);
@@ -153,8 +162,8 @@ HWTEST_F(RSUniRenderUtilDirtyRegionTest, MergeVisibleDirtyRegionInVirtualTest002
     param->isAppWindow_ = false;
     drawable->renderParams_ = std::move(param);
     allSurfaceNodeDrawables.push_back(drawable);
-    RSUniRenderUtil::MergeVisibleDirtyRegionInVirtual(allSurfaceNodeDrawables);
-    RSUniRenderUtil::MergeVisibleDirtyRegionInVirtual(allSurfaceNodeDrawables);
+    RSUniRenderUtil::MergeVisibleDirtyRegionInVirtual(allSurfaceNodeDrawables, *displayNodeDrawableParam);
+    RSUniRenderUtil::MergeVisibleDirtyRegionInVirtual(allSurfaceNodeDrawables, *displayNodeDrawableParam);
     ASSERT_NE(drawable->renderParams_, nullptr);
 }
 
@@ -167,12 +176,15 @@ HWTEST_F(RSUniRenderUtilDirtyRegionTest, MergeVisibleDirtyRegionInVirtualTest002
 HWTEST_F(RSUniRenderUtilDirtyRegionTest, MergeVisibleDirtyRegionInVirtualTest003, Function | SmallTest | Level2)
 {
     NodeId nodeId = 1;
+    auto topNode = std::make_shared<RSRenderNode>(nodeId++);
+    DrawableV2::RSDisplayRenderNodeDrawable displayNodeDrawable(topNode);
+    auto displayNodeDrawableParam = std::make_unique<RSDisplayRenderParams>(displayNodeDrawable.nodeId_);
     std::vector<DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr> allSurfaceNodeDrawables;
     auto node = std::make_shared<RSSurfaceRenderNode>(nodeId);
     auto drawable = std::make_shared<DrawableV2::RSSurfaceRenderNodeDrawable>(node);
     allSurfaceNodeDrawables.push_back(drawable);
-    RSUniRenderUtil::MergeVisibleDirtyRegionInVirtual(allSurfaceNodeDrawables);
-    RSUniRenderUtil::MergeVisibleDirtyRegionInVirtual(allSurfaceNodeDrawables);
+    RSUniRenderUtil::MergeVisibleDirtyRegionInVirtual(allSurfaceNodeDrawables, *displayNodeDrawableParam);
+    RSUniRenderUtil::MergeVisibleDirtyRegionInVirtual(allSurfaceNodeDrawables, *displayNodeDrawableParam);
     ASSERT_EQ(drawable->renderParams_, nullptr);
 }
 
@@ -402,5 +414,68 @@ HWTEST_F(RSUniRenderUtilDirtyRegionTest, ScreenIntersectDirtyRectsTest, Function
     Occlusion::Region region;
     ScreenInfo screenInfo;
     EXPECT_TRUE(RSUniRenderUtil::ScreenIntersectDirtyRects(region, screenInfo).empty());
+}
+
+/**
+ * @tc.name: ExpandDamageRegionToSingleRect001
+ * @tc.desc: Verify function ExpandDamageRegionToSingleRect, if region is empty, nothing will happen.
+ * @tc.type:FUNC
+ * @tc.require:issuesIC0Y3E
+ */
+HWTEST_F(RSUniRenderUtilDirtyRegionTest, ExpandDamageRegionToSingleRect001, Function | SmallTest | Level2)
+{
+    Occlusion::Region region;
+    RSUniRenderUtil::ExpandDamageRegionToSingleRect(region);
+    EXPECT_TRUE(region.IsEmpty());
+}
+
+/**
+ * @tc.name: ExpandDamageRegionToSingleRect002
+ * @tc.desc: Verify function ExpandDamageRegionToSingleRect, if region is single rect, nothing will happen.
+ * @tc.type:FUNC
+ * @tc.require:issuesIC0Y3E
+ */
+HWTEST_F(RSUniRenderUtilDirtyRegionTest, ExpandDamageRegionToSingleRect002, Function | SmallTest | Level2)
+{
+    Occlusion::Region region = Occlusion::Region { DEFAULT_RECT1 };
+    RSUniRenderUtil::ExpandDamageRegionToSingleRect(region);
+    EXPECT_EQ(region.GetSize(), 1);
+    EXPECT_EQ(region.Area(), DEFAULT_RECT1.Area());
+}
+
+/**
+ * @tc.name: ExpandDamageRegionToSingleRect003
+ * @tc.desc: Verify function ExpandDamageRegionToSingleRect, if expanding is too expensive, nothing will happen.
+ * @tc.type:FUNC
+ * @tc.require:issuesIC0Y3E
+ */
+HWTEST_F(RSUniRenderUtilDirtyRegionTest, ExpandDamageRegionToSingleRect003, Function | SmallTest | Level2)
+{
+    const auto clipRectThreshold = RSSystemProperties::GetClipRectThreshold();
+    Occlusion::Region region1 = Occlusion::Region { DEFAULT_RECT1 };
+    Occlusion::Region region2 = Occlusion::Region { DEFAULT_RECT2 };
+    Occlusion::Region damageRegion;
+    damageRegion = region1.Or(region2);
+    RSUniRenderUtil::ExpandDamageRegionToSingleRect(damageRegion);
+    EXPECT_FALSE(damageRegion.Area() > damageRegion.GetBound().Area() * clipRectThreshold);
+    EXPECT_EQ(damageRegion.GetSize(), 2);
+}
+
+/**
+ * @tc.name: ExpandDamageRegionToSingleRect004
+ * @tc.desc: ExpandDamageRegionToSingleRect, multi-rects will be joined as one rect if expanding is at reasonable cost.
+ * @tc.type:FUNC
+ * @tc.require:issuesIC0Y3E
+ */
+HWTEST_F(RSUniRenderUtilDirtyRegionTest, ExpandDamageRegionToSingleRect004, Function | SmallTest | Level2)
+{
+    const auto clipRectThreshold = RSSystemProperties::GetClipRectThreshold();
+    Occlusion::Region region1 = Occlusion::Region { DEFAULT_RECT1 };
+    Occlusion::Region region2 = Occlusion::Region { DEFAULT_RECT3 };
+    Occlusion::Region damageRegion;
+    damageRegion = region1.Or(region2);
+    RSUniRenderUtil::ExpandDamageRegionToSingleRect(damageRegion);
+    EXPECT_TRUE(damageRegion.Area() > damageRegion.GetBound().Area() * clipRectThreshold);
+    EXPECT_EQ(damageRegion.GetSize(), 1);
 }
 } // namespace OHOS::Rosen
