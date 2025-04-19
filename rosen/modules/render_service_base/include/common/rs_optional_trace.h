@@ -107,9 +107,9 @@ private:
     static const int maxSize_ = 256; // 256 Maximum length of a character string to be printed
 };
 
-class RSOptionFmtTrace {
+class RSOptionalFmtTrace {
 public:
-    RSOptionFmtTrace(const char* fmt, ...)
+    RSOptionalFmtTrace(const char* fmt, ...)
     {
         debugTraceEnable_ = OHOS::Rosen::RSSystemProperties::GetDebugFmtTraceEnabled();
         if (debugTraceEnable_) {
