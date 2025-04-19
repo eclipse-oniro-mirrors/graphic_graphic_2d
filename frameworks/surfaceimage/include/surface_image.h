@@ -36,6 +36,7 @@ struct ImageCacheSeq {
     EGLSyncKHR eglSync_;
 };
 
+static constexpr uint32_t SINGLE_MODE_MAX_QUEUE_SIZE = 1;
 static constexpr uint32_t TRANSFORM_MATRIX_ELE_COUNT = 16;
 typedef void (*OnBufferAvailableListener)(void *context);
 
@@ -82,6 +83,7 @@ public:
     
     SurfaceError SetDefaultUsage(uint64_t usage);
     SurfaceError SetDefaultSize(int32_t width, int32_t height);
+    SurfaceError SetMaxQueueSize(uint32_t queueSize);
 private:
     void UpdateBasicInfo(const sptr<SurfaceBuffer>& buffer, int64_t timestamp);
     Rect GetBufferCropRegion(const sptr<OHOS::SurfaceBuffer>& buffer);
@@ -113,6 +115,7 @@ private:
     float currentTransformMatrixV2_[TRANSFORM_MATRIX_ELE_COUNT] = {0.0};
     float currentBufferMatrix_[TRANSFORM_MATRIX_ELE_COUNT] = {0.0};
     uint64_t uniqueId_ = 0;
+    uint32_t maxQueueSize_ = 0;
 
     /**
      * @brief Represents the properties of a graphics buffer frame
