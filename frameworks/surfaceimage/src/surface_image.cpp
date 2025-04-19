@@ -539,6 +539,6 @@ SurfaceError SurfaceImage::SetMaxQueueSize(uint32_t queueSize)
     if (queueSize == 0) {
         return SURFACE_ERROR_INVALID_PARAM;
     }
-    return SetMaxQueueSize(queueSize);
+    return ConsumerSurface::SetMaxQueueSize(queueSize);
 }
 } // namespace OHOS
