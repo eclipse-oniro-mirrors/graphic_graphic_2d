@@ -331,7 +331,7 @@ int32_t OH_ConsumerSurface_SetDefaultSize(OH_NativeImage* image, int32_t width, 
  * This mode can not simultaneously guarantee high frame rate requirements.\n
  * After enabling this mode, setting the buffer queue size on the producer will not take effect.\n
  * After this mode is enabled, it cannot be reverted to normal mode.\n
- * This interface must be called before the <b>OH_NativeImage_AcquireNativeWindow</b> call.\n
+ * This interface must be called after the <b>OH_NativeImage_Create</b> call immediately.\n
  * This interface is a non-thread-safe type interface.\n
  *
  * @syscap SystemCapability.Graphic.Graphic2D.NativeImage
