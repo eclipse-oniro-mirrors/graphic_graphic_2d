@@ -73,6 +73,9 @@ public:
         const Drawing::Matrix& absMatrix, const RectI& absRect);
 
     bool IsDisableHwcOnExpandScreen() const;
+    
+    void UpdateHwcNodeInfo(RSSurfaceRenderNode& node,
+        const Drawing::Matrix& absMatrix, bool isSubTreeSkipped = false);
 
     // DFX
     HwcDisabledReasonCollection& Statistics() { return hwcDisabledReasonCollection_; }
