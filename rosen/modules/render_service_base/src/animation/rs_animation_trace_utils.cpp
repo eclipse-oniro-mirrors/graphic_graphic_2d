@@ -167,7 +167,7 @@ void RSAnimationTraceUtils::addAnimationFrameTrace(const uint64_t nodeId, const 
             propertyValue.c_str(), time, dur, repeat);
     } else {
         RS_TRACE_NAME_FMT("frame animation node[%llu] name[%s]",
-            "dur[%d], repeat[%d]", nodeId, nodeName, c_str(), dur, repeat);
+            "dur[%d], repeat[%d]", nodeId, nodeName.c_str(), dur, repeat);
     }
 }
 
