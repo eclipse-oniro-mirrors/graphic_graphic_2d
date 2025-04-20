@@ -79,5 +79,19 @@ HWTEST_F(HwcParamTest, SetDisableHwcOnExpandScreen, Function | SmallTest | Level
     HWCParam::SetDisableHwcOnExpandScreen(false);
     ASSERT_FALSE(HWCParam::IsDisableHwcOnExpandScreen());
 }
+
+/**
+ * @tc.name: SetSolidLayerEnable
+ * @tc.desc: Verify the SetSolidLayerEnable function
+ * @tc.type: FUNC
+ * @tc.require: #IBMVNU
+ */
+HWTEST_F(HwcParamTest, SetSolidLayerEnable, Function | SmallTest | Level1)
+{
+    HWCParam::SetSolidLayerEnable(true);
+    ASSERT_TRUE(HWCParam::IsSolidLayerEnable());
+    HWCParam::SetSolidLayerEnable(false);
+    ASSERT_FALSE(HWCParam::IsSolidLayerEnable());
+}
 } // namespace Rosen
 } // namespace OHOS

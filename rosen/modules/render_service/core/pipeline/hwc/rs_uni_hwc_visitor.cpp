@@ -17,23 +17,29 @@
 
 #include "feature/hwc/rs_uni_hwc_compute_util.h"
 #include "feature/hdr/rs_hdr_util.h"
-#include "feature_cfg/graphic_feature_param_manager.h"
-#include "feature_cfg/feature_param/feature_param.h"
 #include "pipeline/rs_canvas_render_node.h"
-#include "platform/common/rs_system_properties.h"
 
 #include "common/rs_common_hook.h"
 #include "common/rs_optional_trace.h"
 #include "rs_profiler.h"
+#include "feature_cfg/graphic_feature_param_manager.h"
 
 #undef LOG_TAG
 #define LOG_TAG "RSUniHwcVisitor"
 
 namespace OHOS {
 namespace Rosen {
+namespace {
 constexpr int32_t MAX_ALPHA = 255;
 constexpr uint32_t API18 = 18;
 constexpr uint32_t INVALID_API_COMPATIBLE_VERSION = 0;
+
+bool GetSolidLayerEnabled()
+{
+    return (HWCParam::IsSolidLayerEnable() || RsCommonHook::Instance().GetIsWhiteListForSolidColorLayerFlag()) &&
+        OHOS::Rosen::RSSystemParameters::GetSolidLayerHwcEnabled();
+}
+}
 
 RSUniHwcVisitor::RSUniHwcVisitor(RSUniRenderVisitor& visitor) : uniRenderVisitor_(visitor) {}
 RSUniHwcVisitor::~RSUniHwcVisitor() {}
@@ -165,69 +171,67 @@ bool RSUniHwcVisitor::UpdateIsOffscreen(RSCanvasRenderNode& node)
 }
 
 bool RSUniHwcVisitor::CheckNodeOcclusion(const std::shared_ptr<RSRenderNode>& node,
-    const RectI& nodeAbsRect, Color& nodeBgColor)
+    const RectI& surfaceNodeAbsRect, Color& validBgColor)
 {
-    nodeBgColor = RgbPalette::Transparent();
+    validBgColor = RgbPalette::Transparent();
     if (node == nullptr) {
         return false;
     }
     if (node->IsPureContainer() && !node->ShouldPaint()) {
         return false;
     }
-    const auto& canvasProperties = node->GetRenderProperties();
-    auto canvasAbsRect = RectI();
-    if (auto geo = canvasProperties.GetBoundsGeometry()) {
-        canvasAbsRect = geo->GetAbsRect();
-    }
+    const auto& nodeProperties = node->GetRenderProperties();
+    auto absRect = nodeProperties.GetBoundsGeometry()->GetAbsRect();
     // The canvas node intersects with the surface node.
-    if (!canvasAbsRect.IsEmpty() && !nodeAbsRect.IsEmpty() && canvasAbsRect.Intersect(nodeAbsRect)) {
+    if (!absRect.IsEmpty() && !surfaceNodeAbsRect.IsEmpty() && absRect.Intersect(surfaceNodeAbsRect)) {
         if (node->GetType() != RSRenderNodeType::CANVAS_NODE) {
             RS_LOGD("solidLayer: node type isn't canvas node, id:%{public}" PRIu64 " ", node->GetId());
             return true;
         }
-        bool isSolid =
-            canvasProperties.GetAlpha() == 1 && canvasProperties.GetBackgroundColor().GetAlpha() == MAX_ALPHA;
-        bool noDrawing = node->GetDrawCmdModifiers().size() == 0;
-        bool isTransparent = canvasProperties.GetBackgroundColor().GetAlpha() == 0;
-        if (nodeAbsRect.IsInsideOf(canvasAbsRect) && isSolid && noDrawing) {
-            nodeBgColor = canvasProperties.GetBackgroundColor();
+        const auto& nodeBgColor = nodeProperties.GetBackgroundColor();
+        const auto& nodeBgColorAlpha = nodeBgColor.GetAlpha();
+        bool isSolid = ROSEN_EQ(nodeProperties.GetAlpha(), 1.f) && (nodeBgColorAlpha == MAX_ALPHA);
+        bool willNotDraw = (node->GetDrawCmdModifiers().size() == 0);
+        bool isTransparent = (nodeBgColorAlpha == 0);
+        bool isInside = surfaceNodeAbsRect.IsInsideOf(absRect);
+        if (isInside && isSolid && willNotDraw) {
+            validBgColor = nodeBgColor;
             RS_LOGD("solidLayer: canvas node color, id:%{public}" PRIu64 ", color:%{public}08x",
-                node->GetId(), nodeBgColor.AsArgbInt());
+                node->GetId(), validBgColor.AsArgbInt());
             return false;
         } else if (isTransparent) {
             return false;
         } else {
-            RS_LOGD("solidLayer: check node, id:%{public}" PRIu64 ", isSolid:%{public}d, noDrawing:%{public}d, "
-                    "isInsideOf:%{public}d", node->GetId(), isSolid, noDrawing,
-                    nodeAbsRect.IsInsideOf(canvasAbsRect));
+            RS_LOGD("solidLayer: check node, id:%{public}" PRIu64 ", isSolid:%{public}d, willNotDraw:%{public}d, "
+                    "isInsideOf:%{public}d", node->GetId(), isSolid, willNotDraw, isInside);
             return true;
         }
     }
     return false;
 }
 
-bool RSUniHwcVisitor::CheckBranchOcclusion(const std::shared_ptr<RSRenderNode>& branchNode,
-    const RectI& nodeAbsRect, std::stack<Color>& nodeBgColor)
+bool RSUniHwcVisitor::CheckSubTreeOcclusion(
+    const std::shared_ptr<RSRenderNode>& branchNode, const RectI& surfaceNodeAbsRect, std::stack<Color>& validBgColors)
 {
     // Recursive operation, checking branches from top to bottpm, looking for background color
     if (branchNode == nullptr) {
         return false;
     }
-    RS_LOGD("solidLayer: check branch, id:%{public}" PRIu64 "", branchNode->GetId());
+    RS_LOGD("solidLayer: check branch, id:%{public}" PRIu64, branchNode->GetId());
     Color bgColor = RgbPalette::Transparent();
-    if (CheckNodeOcclusion(branchNode, nodeAbsRect, bgColor)) {
-        RS_LOGD("solidLayer: node is occlusion, id:%{public}" PRIu64 "", branchNode->GetId());
-        while (!nodeBgColor.empty()) {
-            nodeBgColor.pop();
+    if (CheckNodeOcclusion(branchNode, surfaceNodeAbsRect, bgColor)) {
+        RS_LOGD("solidLayer: node is occlusion, id:%{public}" PRIu64, branchNode->GetId());
+        while (!validBgColors.empty()) {
+            validBgColors.pop();
         }
         return true;
     } else if (bgColor != RgbPalette::Transparent()) {
-        nodeBgColor.push(bgColor);
+        validBgColors.push(bgColor);
     }
     for (const auto& child : *branchNode->GetSortedChildren()) {
-        if (child != nullptr && CheckBranchOcclusion(child, nodeAbsRect, nodeBgColor)) {
-            while (!nodeBgColor.empty()) {
-                nodeBgColor.pop();
+        if (child != nullptr && CheckSubTreeOcclusion(child, surfaceNodeAbsRect, validBgColors)) {
+            while (!validBgColors.empty()) {
+                validBgColors.pop();
             }
             return true;
         }
@@ -235,22 +239,18 @@ bool RSUniHwcVisitor::CheckBranchOcclusion(const std::shared_ptr<RSRenderNode>& 
     return false;
 }
 
-const Color& RSUniHwcVisitor::FindAppBackgroundColor(RSSurfaceRenderNode& node)
+Color RSUniHwcVisitor::FindAppBackgroundColor(RSSurfaceRenderNode& node)
 {
-    RS_OPTIONAL_TRACE_NAME_FMT("solidLayer: FindAppBackgroundColor name:%s id:%" PRIu64 "",
-        node.GetName().c_str(), node.GetId());
-    Color backgroundColor = RgbPalette::Transparent();
+    RS_OPTIONAL_TRACE_NAME_FMT(
+        "solidLayer:%s name:%s id:%" PRIu64, __func__, node.GetName().c_str(), node.GetId());
+
     auto rootNode = uniRenderVisitor_.curSurfaceNode_->GetFirstChild();
     auto parent = node.GetParent().lock();
     auto childId = node.GetId();
-    auto nodeAbsRect = RectI();
-    if (auto geo = node.GetRenderProperties().GetBoundsGeometry()) {
-        nodeAbsRect = geo->GetAbsRect();
-    }
+    auto surfaceNodeAbsRect = node.GetRenderProperties().GetBoundsGeometry()->GetAbsRect();
     // Check the node from bottom up to look for the background color.
-    while (parent && rootNode && parent->GetId() != rootNode->GetId()) {
+    while (rootNode && parent && parent->GetId() != rootNode->GetId()) {
         auto sortedChildren = parent->GetSortedChildren();
-        std::stack<Color> nodeBgColor;
         auto iter = std::find_if(
             (*sortedChildren).begin(), (*sortedChildren).end(), [&childId](const std::shared_ptr<RSRenderNode>& node) {
                 return node != nullptr && node->GetId() == childId;
@@ -260,26 +260,26 @@ const Color& RSUniHwcVisitor::FindAppBackgroundColor(RSSurfaceRenderNode& node)
         }
         size_t index = std::distance((*sortedChildren).begin(), iter);
         // Check branches from near to far
-        for (size_t i = 1; i <= index; ++i) {
+        std::stack<Color> validBgColors;
+        for (size_t i = 1; i <= index; i++) {
             const auto& child = sortedChildren->at(index - i);
             if (child == nullptr) {
                 continue;
             }
-            if (CheckBranchOcclusion(child, nodeAbsRect, nodeBgColor)) {
+            if (CheckSubTreeOcclusion(child, surfaceNodeAbsRect, validBgColors)) {
                 return RgbPalette::Transparent();
-            } else if (!nodeBgColor.empty()) {
-                backgroundColor = nodeBgColor.top();
-                RS_LOGD("solidLayer: branch color, branch id:%{public}" PRIu64 ", color:%{public}08x",
+            } else if (!validBgColors.empty()) {
+                Color backgroundColor = validBgColors.top();
+                RS_LOGD("solidLayer:  branch color, branch id:%{public}" PRIu64 ", color:%{public}08x",
                     node.GetId(), backgroundColor.AsArgbInt());
                 return backgroundColor;
             }
         }
         Color bgColor = RgbPalette::Transparent();
-        if (CheckNodeOcclusion(parent, nodeAbsRect, bgColor)) {
+        if (CheckNodeOcclusion(parent, surfaceNodeAbsRect, bgColor)) {
             return RgbPalette::Transparent();
         } else if (bgColor != RgbPalette::Transparent()) {
-            backgroundColor = bgColor;
-            return backgroundColor;
+            return bgColor;
         }
         childId = parent->GetId();
         parent = parent->GetParent().lock();
@@ -287,40 +287,28 @@ const Color& RSUniHwcVisitor::FindAppBackgroundColor(RSSurfaceRenderNode& node)
     return RgbPalette::Transparent();
 }
 
-bool RSUniHwcVisitor::GetSolidLayerEnabled()
+void RSUniHwcVisitor::ProcessSolidLayerDisabled(RSSurfaceRenderNode& node)
 {
-    auto solidLayerFeatureParam = GraphicFeatureParamManager::GetInstance().GetFeatureParam(FEATURE_CONFIGS[HWC]);
-    auto solidLayerFeature = std::static_pointer_cast<HWCParam>(solidLayerFeatureParam);
-    bool isSolidLayerEnableByCfgSwitch = false;
-    if (solidLayerFeature != nullptr) {
-        isSolidLayerEnableByCfgSwitch = solidLayerFeature->IsSolidLayerEnable();
-    }
-    return (isSolidLayerEnableByCfgSwitch || RsCommonHook::Instance().GetIsWhiteListForSolidColorLayerFlag()) &&
-        OHOS::Rosen::RSSystemParameters::GetSolidLayerHwcEnabled();
-}
-
-void RSUniHwcVisitor::SolidLayerDisabled(RSSurfaceRenderNode& node)
-{
-    RS_OPTIONAL_TRACE_NAME_FMT("solidLayer: name:%s id:%" PRIu64 " solidlayer enabling condition is not met.",
+    RS_OPTIONAL_TRACE_NAME_FMT("solidLayer: name:%s id:%" PRIu64 " solidLayer enabling condition is not met.",
         node.GetName().c_str(), node.GetId());
-    RS_LOGD("solidLayer: solidlayer enabling condition is not met, name: %{public}s", node.GetName().c_str());
+    RS_LOGD("solidLayer: solidLayer enabling condition is not met, name: %{public}s", node.GetName().c_str());
     const auto& renderProperties = node.GetRenderProperties();
-    auto stagingSurfaceParams = static_cast<RSSurfaceRenderParams *>(node.GetStagingRenderParams().get());
     Color appBackgroundColor = renderProperties.GetBackgroundColor();
-    bool isSpecialNodeType = RsCommonHook::Instance().GetHardwareEnabledByBackgroundAlphaFlag() ||
-        node.IsHardwareEnableHint();
     // Non-xcom or pure black nodes are not processed and are allowed to pass.
     if (static_cast<uint8_t>(appBackgroundColor.GetAlpha()) == MAX_ALPHA &&
         appBackgroundColor == RgbPalette::Black()) {
         RS_LOGD("solidLayer: background color is black: %{public}s, go hwc directly", node.GetName().c_str());
         return;
     }
+    auto stagingSurfaceParams = static_cast<RSSurfaceRenderParams *>(node.GetStagingRenderParams().get());
     if (static_cast<uint8_t>(appBackgroundColor.GetAlpha()) == MAX_ALPHA &&
         stagingSurfaceParams->GetSelfDrawingNodeType() != SelfDrawingNodeType::XCOM) {
         RS_LOGD("solidLayer: solid color surface node: %{public}s, go hwc directly", node.GetName().c_str());
         return;
     }
     if (static_cast<uint8_t>(appBackgroundColor.GetAlpha()) < MAX_ALPHA) {
+        bool isSpecialNodeType = RsCommonHook::Instance().GetHardwareEnabledByBackgroundAlphaFlag() ||
+            node.IsHardwareEnableHint();
         if (!isSpecialNodeType) {
             RS_OPTIONAL_TRACE_NAME_FMT("solidLayer: name:%s id:%" PRIu64 " disabled by background color alpha < 1",
                 node.GetName().c_str(), node.GetId());
@@ -338,25 +326,39 @@ void RSUniHwcVisitor::SolidLayerDisabled(RSSurfaceRenderNode& node)
             Statistics().UpdateHwcDisabledReasonForDFX(
                 node.GetId(), HwcDisabledReasons::DISABLED_BY_BACKGROUND_ALPHA, node.GetName());
         }
+        uniRenderVisitor_.curSurfaceNode_->SetExistTransparentHardwareEnabledNode(true);
+        node.SetNodeHasBackgroundColorAlpha(true);
+    } else {
+        RS_OPTIONAL_TRACE_NAME_FMT("hwc debug: name:%s id:%" PRIu64 " disabled by background solidcolor && HDR",
+            node.GetName().c_str(), node.GetId());
+        RS_LOGD("solidLayer: disabled by background solidcolor && HDR: %{public}s", node.GetName().c_str());
+#ifdef HIPERF_TRACE_ENABLE
+        RS_LOGW("hiperf_surface: name:%{public}s disabled by background solidcolor && HDR, "
+            "surfaceRect: [%{public}d, %{public}d, %{public}d, %{public}d]->"
+            "[%{public}d, %{public}d, %{public}d, %{public}d]", node.GetName().c_str(),
+            node.GetSrcRect().GetLeft(), node.GetSrcRect().GetRight(),
+            node.GetSrcRect().GetTop(), node.GetSrcRect().GetBottom(),
+            node.GetSrcRect().GetLeft(), node.GetSrcRect().GetRight(),
+            node.GetSrcRect().GetTop(), node.GetSrcRect().GetBottom());
+#endif
+        node.SetHardwareForcedDisabledState(true);
+        Statistics().UpdateHwcDisabledReasonForDFX(
+            node.GetId(), HwcDisabledReasons::DISABLED_BY_SOLID_BACKGROUND_ALPHA, node.GetName());
     }
-    uniRenderVisitor_.curSurfaceNode_->SetExistTransparentHardwareEnabledNode(true);
-    node.SetNodeHasBackgroundColorAlpha(true);
 }
 
-void RSUniHwcVisitor::SolidLayerEnabled(RSSurfaceRenderNode& node)
+void RSUniHwcVisitor::ProcessSolidLayerEnabled(RSSurfaceRenderNode& node)
 {
     if (!GetSolidLayerEnabled()) {
-        RS_LOGD("solidLayer: solidlayer enabling condition is met, but the switch is disabled! name: %{public}s",
+        RS_LOGD("solidLayer: solidLayer enabling condition is met, but the switch is disabled! name: %{public}s",
             node.GetName().c_str());
         node.SetHardwareForcedDisabledState(true);
         return;
     }
-
-    RS_OPTIONAL_TRACE_NAME_FMT("solidLayer: name:%s id:%" PRIu64 " solidlayer enabling condition is met.",
+    RS_OPTIONAL_TRACE_NAME_FMT("solidLayer: name:%s id:%" PRIu64 " solidLayer enabling condition is met.",
         node.GetName().c_str(), node.GetId());
-    RS_LOGD("solidLayer: solidlayer enabling condition is met, name: %{public}s", node.GetName().c_str());
+    RS_LOGD("solidLayer: solidLayer enabling condition is met, name: %{public}s", node.GetName().c_str());
     const auto& renderProperties = node.GetRenderProperties();
-    auto stagingSurfaceParams = static_cast<RSSurfaceRenderParams *>(node.GetStagingRenderParams().get());
     Color appBackgroundColor = renderProperties.GetBackgroundColor();
     if (static_cast<uint8_t>(appBackgroundColor.GetAlpha()) == 0) {
         appBackgroundColor = FindAppBackgroundColor(node);
@@ -373,7 +375,7 @@ void RSUniHwcVisitor::SolidLayerEnabled(RSSurfaceRenderNode& node)
     if (static_cast<uint8_t>(appBackgroundColor.GetAlpha()) < MAX_ALPHA) {
         RS_OPTIONAL_TRACE_NAME_FMT("solidLayer: name:%s id:%" PRIu64 " disabled by background color not found",
             node.GetName().c_str(), node.GetId());
-        RS_LOGD("solidLayer: disabled by background color not found: %{public}s ", node.GetName().c_str());
+        RS_LOGD("solidLayer: disabled by background color not found: %{public}s", node.GetName().c_str());
 #ifdef HIPERF_TRACE_ENABLE
         RS_LOGW("hiperf_surface: name:%{public}s disabled by background color not found, "
             "surfaceRect: [%{public}d, %{public}d, %{public}d, %{public}d]->"
@@ -391,6 +393,7 @@ void RSUniHwcVisitor::SolidLayerEnabled(RSSurfaceRenderNode& node)
     RS_OPTIONAL_TRACE_NAME_FMT("solidLayer: Set solid layer color, name:%s id:%" PRIu64 ", color:%08x",
         node.GetName().c_str(), node.GetId(), appBackgroundColor.AsArgbInt());
     RS_LOGD("solidLayer: Set solid layer color:%{public}08x", appBackgroundColor.AsArgbInt());
+    auto stagingSurfaceParams = static_cast<RSSurfaceRenderParams *>(node.GetStagingRenderParams().get());
     stagingSurfaceParams->SetIsHwcEnabledBySolidLayer(true);
     stagingSurfaceParams->SetSolidLayerColor(appBackgroundColor);
 }
@@ -400,30 +403,43 @@ void RSUniHwcVisitor::UpdateHwcNodeEnableByBackgroundAlpha(RSSurfaceRenderNode& 
     if (node.GetAncoForceDoDirect()) {
         return;
     }
-    RS_LOGD("solidLayer: ==UpdateHwcNodeEnableByBackgroundAlpha==, name: %{public}s id: %{public}" PRIu64 "",
-        node.GetName().c_str(), node.GetId());
+    RS_LOGD("solidLayer: %{public}s, name: %{public}s id: %{public}" PRIu64,
+        __func__, node.GetName().c_str(), node.GetId());
     const auto& renderProperties = node.GetRenderProperties();
-    auto stagingSurfaceParams = static_cast<RSSurfaceRenderParams *>(node.GetStagingRenderParams().get());
     Color appBackgroundColor = renderProperties.GetBackgroundColor();
+    auto stagingSurfaceParams = static_cast<RSSurfaceRenderParams *>(node.GetStagingRenderParams().get());
     // Enabling conditions: target type, overall a==1, pure color non-black/pure transparent,
     // no bullet screen
     bool isTargetNodeType = stagingSurfaceParams->GetSelfDrawingNodeType() == SelfDrawingNodeType::XCOM ||
-                            (node.IsRosenWeb() && static_cast<uint8_t>(appBackgroundColor.GetAlpha()) == 0);
+        (node.IsRosenWeb() && static_cast<uint8_t>(appBackgroundColor.GetAlpha()) == 0);
     bool isTargetColor = (static_cast<uint8_t>(appBackgroundColor.GetAlpha()) == MAX_ALPHA &&
                           appBackgroundColor != RgbPalette::Black()) ||
                           static_cast<uint8_t>(appBackgroundColor.GetAlpha()) == 0;
     bool isSpecialNodeType = RsCommonHook::Instance().GetHardwareEnabledByBackgroundAlphaFlag() ||
-        node.IsHardwareEnableHint();
+                             node.IsHardwareEnableHint();
+    auto GetHwcNodeHdrEnabled = [this]() {
+        const auto &selfDrawingNodes = RSMainThread::Instance()->GetSelfDrawingNodes();
+        for (auto surfaceNode : selfDrawingNodes) {
+            if (surfaceNode && RSHdrUtil::CheckIsHdrSurface(*surfaceNode) != HdrStatus::NO_HDR) {
+                return true;
+            }
+        }
+        return false;
+    };
     bool isSolidLayerEnabled =
         isTargetNodeType && isTargetColor && renderProperties.GetAlpha() == 1 && !isSpecialNodeType;
-    RS_LOGD("solidLayer: SolidLayer enabling conditions, isTargetNodeType:%{public}d, isTargetColor:%{public}d, "
-        "Alpha:%{public}d, !isSpecialNodeType:%{public}d", isTargetNodeType, isTargetColor,
-        renderProperties.GetAlpha() == 1, !isSpecialNodeType);
-    if (!isSolidLayerEnabled) {
-        SolidLayerDisabled(node);
-        return;
+    bool isHdrOn = false;
+    if (isSolidLayerEnabled) {
+        isHdrOn = uniRenderVisitor_.curDisplayNode_->GetHasUniRenderHdrSurface() || GetHwcNodeHdrEnabled();
+        if (!isHdrOn) {
+            ProcessSolidLayerEnabled(node);
+            return;
+        }
     }
-    SolidLayerEnabled(node);
+    RS_LOGD("solidLayer: SolidLayer enabling conditions, isTargetNodeType:%{public}d, isTargetColor:%{public}d, "
+        "Alpha:%{public}d, !isSpecialNodeType:%{public}d, !isHdrOn: %{public}d", isTargetNodeType, isTargetColor,
+        renderProperties.GetAlpha() == 1, !isSpecialNodeType, !isHdrOn);
+    ProcessSolidLayerDisabled(node);
 }
 
 void RSUniHwcVisitor::UpdateHwcNodeEnableByBufferSize(RSSurfaceRenderNode& node)
