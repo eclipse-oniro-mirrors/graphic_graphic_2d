@@ -532,7 +532,7 @@ HWTEST_F(RSInterfacesTest, GetRefreshInfo001, TestSize.Level1)
 HWTEST_F(RSInterfacesTest, GetRefreshInfoToSP001, TestSize.Level1)
 {
     RSInterfaces& instance = RSInterfaces::GetInstance();
-    NodeId id;
+    NodeId id = 0;
     std::string str = instance.GetRefreshInfoToSP(id);
     EXPECT_TRUE(str == "");
 }
