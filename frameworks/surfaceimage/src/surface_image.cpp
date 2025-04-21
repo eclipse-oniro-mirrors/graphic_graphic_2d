@@ -156,9 +156,9 @@ SurfaceError SurfaceImage::UpdateSurfaceImage()
 
     // acquire buffer
     sptr<SurfaceBuffer> buffer = nullptr;
+    sptr<SyncFence> acquireFence = SyncFence::InvalidFence();
     int64_t timestamp = 0;
     Rect damage;
-    sptr<SyncFence> acquireFence = SyncFence::InvalidFence();
     if (!dropFrameMode_) {
         ret = AcquireBuffer(buffer, acquireFence, timestamp, damage);
         if (ret != SURFACE_ERROR_OK) {
