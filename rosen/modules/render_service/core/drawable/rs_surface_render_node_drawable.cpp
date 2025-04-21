@@ -321,6 +321,10 @@ void RSSurfaceRenderNodeDrawable::FinishOffscreenRender(const Drawing::SamplingO
         RS_LOGE("RSSurfaceRenderNodeDrawable::FinishOffscreenRender, Surface::GetImageSnapshot is nullptr");
         return;
     }
+#ifdef RS_ENABLE_GPU
+    RSTagTracker tagTracker(canvasBackup_->GetGPUContext().get(),
+        RSTagTracker::SOURCETYPE::SOURCE_FINISHOFFSCREENRENDER);
+#endif
     // draw offscreen surface to current canvas
     Drawing::Brush paint;
     paint.SetAntiAlias(true);
@@ -407,6 +411,7 @@ void RSSurfaceRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     if (vmaCacheOff_) {
         Drawing::StaticFactory::SetVmaCacheStatus(false); // render this frame with vma cache off
     }
+    Drawing::GPUResourceTag::SetCurrentNodeId(GetId());
     auto rscanvas = reinterpret_cast<RSPaintFilterCanvas*>(&canvas);
     if (!rscanvas) {
         SetDrawSkipType(DrawSkipType::CANVAS_NULL);
@@ -564,7 +569,7 @@ void RSSurfaceRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     } else {
         gpuContext = RSSubThreadManager::Instance()->GetGrContextFromSubThread(realTid);
     }
-    RSTagTracker tagTracker(gpuContext.get(), surfaceParams->GetId(), surfaceParams->GetId(),
+    RSTagTracker tagTracker(gpuContext.get(), surfaceParams->GetId(),
         RSTagTracker::TAGTYPE::TAG_DRAW_SURFACENODE, surfaceParams->GetName());
 
     // Draw base pipeline start
@@ -737,6 +742,10 @@ void RSSurfaceRenderNodeDrawable::OnCapture(Drawing::Canvas& canvas)
         RS_LOGE("RSSurfaceRenderNodeDrawable::OnCapture, rscanvas us nullptr");
         return;
     }
+
+#ifdef RS_ENABLE_GPU
+    RSTagTracker tagTracker(rscanvas->GetGPUContext().get(), RSTagTracker::SOURCETYPE::SOURCE_ONCAPTURE);
+#endif
 
     if (DrawCloneNode(*rscanvas, *uniParam, *surfaceParams, true)) {
         return;
@@ -1181,6 +1190,9 @@ void RSSurfaceRenderNodeDrawable::DrawSelfDrawingNodeBuffer(
 {
     RECORD_GPURESOURCE_CORETRACE_CALLER(Drawing::CoreFunction::
         RS_RSSURFACERENDERNODEDRAWABLE_DRAWSELFDRAWINGNODEBUFFER);
+#ifdef RS_ENABLE_GPU
+    RSTagTracker tagTracker(canvas.GetGPUContext().get(), RSTagTracker::SOURCETYPE::SOURCE_DRAWSELFDRAWINGNODEBUFFER);
+#endif
     if (params.buffer == nullptr) {
         RS_LOGE("RSSurfaceRenderNodeDrawable::DrawSelfDrawingNodeBuffer params.buffer is nullptr");
     } else {
