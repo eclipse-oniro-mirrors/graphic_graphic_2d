@@ -86,7 +86,7 @@ static inline int g_debugLevel = OHOS::Rosen::RSSystemProperties::GetDebugTraceL
 
 #define RS_PROCESS_TRACE(forceEnable, name) RSProcessTrace processTrace(forceEnable, name)
 
-#define RS_OPTIONAL_TRACE_FMT(fmt, ...) RSOptionalTrace optionalFmtTrace(fmt, ##__VA_ARGS__)
+#define RS_OPTIONAL_TRACE_FMT(fmt, ...) RSOptionalFmtTrace optionalFmtTrace(fmt, ##__VA_ARGS__)
 
 class RenderTrace {
 public:
