@@ -5187,7 +5187,7 @@ void RSMainThread::OnFmtTraceSwitchCallback(const char *key, const char *value, 
         return;
     }
     bool isTraceEnable = (std::atoi(value) != 0);
-    RSSystemProperties::SetDebugFmtTraceEnabled(isTraceEnabled);
+    RSSystemProperties::SetDebugFmtTraceEnabled(isTraceEnable);
 }
 } // namespace Rosen
 } // namespace OHOS
