@@ -328,7 +328,7 @@ int32_t OH_ConsumerSurface_SetDefaultSize(OH_NativeImage* image, int32_t width, 
 /**
  * @brief Set the rendering in drop buffer mode of the <b>OH_NativeImage</b>.\n
  * In this mode, most of the buffers produced by the producer will be discarded,
- * and the lastest buffer will be selectd for rending.\n
+ * and the latest buffer will be selected for rending.\n
  * This mode can not simultaneously guarantee high frame rate requirements.\n
  * This interface suggest be called after the <b>OH_NativeImage_Create</b> call immediately.\n
  * This interface is a non-thread-safe type interface.\n
