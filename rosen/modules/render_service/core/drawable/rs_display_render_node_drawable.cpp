@@ -335,6 +335,19 @@ void RSDisplayRenderNodeDrawable::RenderOverDraw()
     curCanvas_->DetachBrush();
 }
 
+static inline bool IsForceCommit(uint32_t forceCommitReason, bool needForceUpdateHwcNode,
+    bool hasHardCursor)
+{
+    /* force commit in 3 situations:
+     1.force commit reasons is not hwc nodes updated or cursor moved
+     2.hwc nodes forced commit and hwc nodes is visible
+     3.soft cursor's position changed */
+    return (forceCommitReason & ~(ForceCommitReason::FORCED_BY_HWC_UPDATE |
+                                  ForceCommitReason::FORCED_BY_POINTER_WINDOW)) ||
+           ((forceCommitReason & ForceCommitReason::FORCED_BY_HWC_UPDATE) && needForceUpdateHwcNode) ||
+           ((forceCommitReason & ForceCommitReason::FORCED_BY_POINTER_WINDOW) && !hasHardCursor);
+}
+
 bool RSDisplayRenderNodeDrawable::CheckDisplayNodeSkip(
     RSDisplayRenderParams& params, std::shared_ptr<RSProcessor> processor)
 {
@@ -360,10 +373,14 @@ bool RSDisplayRenderNodeDrawable::CheckDisplayNodeSkip(
 #ifdef OHOS_PLATFORM
     RSUniRenderThread::Instance().SetSkipJankAnimatorFrame(true);
 #endif
-    auto isHardCursor = HardCursorCreateLayer(processor);
-    RS_TRACE_NAME_FMT("DisplayNode skip, isForceCommitLayer: %d, isHardCursor: %d",
-        RSUniRenderThread::Instance().GetRSRenderThreadParams()->GetForceCommitLayer(), isHardCursor);
-    if (!RSUniRenderThread::Instance().GetRSRenderThreadParams()->GetForceCommitLayer() && !isHardCursor) {
+    auto hardCursorDrawable = RSPointerWindowManager::Instance().GetHardCursorDrawable(GetId());
+    bool hasHardCursor = (hardCursorDrawable != nullptr);
+    bool hardCursorNeedCommit = (hasHardCursor != hardCursorLastCommitSuccess_);
+    auto forceCommitReason = uniParam->GetForceCommitReason();
+    bool layersNeedCommit = IsForceCommit(forceCommitReason, params.GetNeedForceUpdateHwcNodes(), hasHardCursor);
+    RS_TRACE_NAME_FMT("DisplayNode skip, forceCommitReason: %d, forceUpdateByHwcNodes %d, "
+        "byHardCursor: %d", forceCommitReason, params.GetNeedForceUpdateHwcNodes(), hardCursorNeedCommit);
+    if (!layersNeedCommit && !hardCursorNeedCommit) {
         RS_TRACE_NAME("DisplayNodeSkip skip commit");
         return true;
     }
@@ -372,7 +389,10 @@ bool RSDisplayRenderNodeDrawable::CheckDisplayNodeSkip(
         RS_LOGE("RSDisplayRenderNodeDrawable::CheckDisplayNodeSkip processor init failed");
         return false;
     }
-
+    hardCursorLastCommitSuccess_ = hasHardCursor;
+    if (hardCursorDrawable != nullptr) {
+        processor->CreateLayerForRenderThread(*hardCursorDrawable);
+    }
     auto& hardwareDrawables =
         RSUniRenderThread::Instance().GetRSRenderThreadParams()->GetHardwareEnabledTypeDrawables();
     for (const auto& [displayNodeId, drawable] : hardwareDrawables) {

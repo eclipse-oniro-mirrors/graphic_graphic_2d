@@ -246,6 +246,7 @@ private:
     int32_t offscreenTranslateY_ = 0;
 
     bool isRenderSkipIfScreenOff_ = false;
+    bool hardCursorLastCommitSuccess_ = false;
 
     // mirror screen drawing path dfx
     bool mirrorRedraw_ = false;

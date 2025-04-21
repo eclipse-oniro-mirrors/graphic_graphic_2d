@@ -2227,12 +2227,67 @@ void RSUniRenderVisitor::UpdateSurfaceDirtyAndGlobalDirty()
             curDisplayDirtyManager_->MergeDirtyRect(curDisplayDirtyManager_->GetSurfaceRect());
         }
     }
+    UpdateIfHwcNodesHaveVisibleRegion(curMainAndLeashSurfaces);
     curDisplayNode_->ClearCurrentSurfacePos();
     std::swap(preMainAndLeashWindowNodesIds_, curMainAndLeashWindowNodesIds_);
 
 #ifdef RS_PROFILER_ENABLED
     RS_PROFILER_SET_DIRTY_REGION(accumulatedDirtyRegion);
 #endif
+}
+
+void RSUniRenderVisitor::UpdateIfHwcNodesHaveVisibleRegion(
+    std::vector<RSBaseRenderNode::SharedPtr>& curMainAndLeashSurfaces)
+{
+    bool needForceUpdateHwcNodes = false;
+    bool hasVisibleHwcNodes = false;
+    for (auto& nodePtr : curMainAndLeashSurfaces) {
+        auto surfaceNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(nodePtr);
+        if (!surfaceNode) {
+            RS_LOGD("[%{public}s]: surfaceNode is nullptr", __func__);
+            continue;
+        }
+        if (surfaceNode->GetVisibleRegion().IsEmpty()) {
+            continue;
+        }
+        const auto& hwcNodes = surfaceNode->GetChildHardwareEnabledNodes();
+        if (hwcNodes.empty()) {
+            continue;
+        }
+        UpdateHwcNodesIfVisibleForApp(surfaceNode, hwcNodes, hasVisibleHwcNodes, needForceUpdateHwcNodes);
+        if (needForceUpdateHwcNodes) {
+            break;
+        }
+    }
+    curDisplayNode_->SetNeedForceUpdateHwcNodes(needForceUpdateHwcNodes, hasVisibleHwcNodes);
+}
+
+void RSUniRenderVisitor::UpdateHwcNodesIfVisibleForApp(std::shared_ptr<RSSurfaceRenderNode>& surfaceNode,
+    const std::vector<std::weak_ptr<RSSurfaceRenderNode>>& hwcNodes,
+    bool& hasVisibleHwcNodes, bool& needForceUpdateHwcNodes)
+{
+    for (auto& hwcNode : hwcNodes) {
+        auto hwcNodePtr = hwcNode.lock();
+        if (!hwcNodePtr || !hwcNodePtr->IsOnTheTree()) {
+            continue;
+        }
+        if (hwcNodePtr->IsHardwareForcedDisabled()) {
+            continue;
+        }
+        Occlusion::Rect dstRect(hwcNodePtr->GetDstRect());
+        if (surfaceNode->GetVisibleRegion().IsIntersectWith(dstRect)) {
+            hwcNodePtr->SetLastFrameHasVisibleRegion(true); // visible Region
+            hasVisibleHwcNodes = true;
+            if (hwcNodePtr->GetRSSurfaceHandler() == nullptr) {
+                continue;
+            }
+            if (hwcNodePtr->GetRSSurfaceHandler()->IsCurrentFrameBufferConsumed()) {
+                needForceUpdateHwcNodes = true;
+            }
+        } else {
+            hwcNodePtr->SetLastFrameHasVisibleRegion(false); // invisible Region
+        }
+    }
 }
 
 void RSUniRenderVisitor::UpdateDisplayRcdRenderNode()
@@ -3202,8 +3257,9 @@ void RSUniRenderVisitor::SetUniRenderThreadParam(std::unique_ptr<RSRenderThreadP
     renderThreadParams->advancedDirtyType_ = advancedDirtyType_;
     renderThreadParams->hasDisplayHdrOn_ = hasDisplayHdrOn_;
     renderThreadParams->hasMirrorDisplay_ = hasMirrorDisplay_;
-    renderThreadParams->isForceCommitLayer_ |=
-        RSPointerWindowManager::Instance().IsNeedForceCommitByPointer();
+    if (RSPointerWindowManager::Instance().IsNeedForceCommitByPointer()) {
+        renderThreadParams->forceCommitReason_ |= ForceCommitReason::FORCED_BY_POINTER_WINDOW;
+    }
 }
 
 void RSUniRenderVisitor::SendRcdMessage(RSDisplayRenderNode& node)

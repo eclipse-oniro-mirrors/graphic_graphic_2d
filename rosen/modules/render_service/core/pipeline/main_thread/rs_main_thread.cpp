@@ -2476,6 +2476,14 @@ bool RSMainThread::DoDirectComposition(std::shared_ptr<RSBaseRenderNode> rootNod
         RS_LOGE("DoDirectComposition: ScreenState error!");
         return false;
     }
+
+    // children->size() is 1, the extended screen is not supported
+    // there is no visible hwc node or visible hwc nodes don't need update
+    if (children->size() == 1 && (!displayNode->HasVisibleHwcNodes() || !ExistBufferIsVisibleAndUpdate())) {
+        RS_TRACE_NAME_FMT("%s: no hwcNode in visibleRegion", __func__);
+        return true;
+    }
+
 #ifdef RS_ENABLE_GPU
     auto processor = RSProcessorFactory::CreateProcessor(displayNode->GetCompositeType());
     auto renderEngine = GetRenderEngine();
@@ -2576,9 +2584,41 @@ bool RSMainThread::DoDirectComposition(std::shared_ptr<RSBaseRenderNode> rootNod
     return true;
 }
 
+bool RSMainThread::ExistBufferIsVisibleAndUpdate()
+{
+    bool bufferNeedUpdate = false;
+    for (auto& surfaceNode : hardwareEnabledNodes_) {
+        if (surfaceNode == nullptr) {
+            RS_LOGD("[%{public}s]: surfaceNode is null", __func__);
+            continue;
+        }
+        if (surfaceNode->GetRSSurfaceHandler() == nullptr) {
+            continue;
+        }
+        if (surfaceNode->GetRSSurfaceHandler()->IsCurrentFrameBufferConsumed() &&
+            surfaceNode->GetLastFrameHasVisibleRegion()) {
+            bufferNeedUpdate = true;
+            break;
+        }
+    }
+    return bufferNeedUpdate;
+}
+
 pid_t RSMainThread::GetDesktopPidForRotationScene() const
 {
     return desktopPidForRotationScene_;
+}
+
+uint32_t RSMainThread::GetForceCommitReason() const
+{
+    uint32_t forceCommitReason = 0;
+    if (isHardwareEnabledBufferUpdated_) {
+        forceCommitReason |= ForceCommitReason::FORCED_BY_HWC_UPDATE;
+    }
+    if (forceUpdateUniRenderFlag_) {
+        forceCommitReason |= ForceCommitReason::FORCED_BY_UNI_RENDER_FLAG;
+    }
+    return forceCommitReason;
 }
 
 void RSMainThread::Render()
@@ -2606,7 +2646,7 @@ void RSMainThread::Render()
         renderThreadParams_->SetRequestNextVsyncFlag(needRequestNextVsyncAnimate_);
         renderThreadParams_->SetPendingScreenRefreshRate(hgmCore.GetPendingScreenRefreshRate());
         renderThreadParams_->SetPendingConstraintRelativeTime(hgmCore.GetPendingConstraintRelativeTime());
-        renderThreadParams_->SetForceCommitLayer(isHardwareEnabledBufferUpdated_ || forceUpdateUniRenderFlag_);
+        renderThreadParams_->SetForceCommitLayer(GetForceCommitReason());
         renderThreadParams_->SetOcclusionEnabled(RSSystemProperties::GetOcclusionEnabled());
         renderThreadParams_->SetCacheEnabledForRotation(RSSystemProperties::GetCacheEnabledForRotation());
         renderThreadParams_->SetUIFirstCurrentFrameCanSkipFirstWait(
