@@ -156,12 +156,25 @@ SurfaceError SurfaceImage::UpdateSurfaceImage()
 
     // acquire buffer
     sptr<SurfaceBuffer> buffer = nullptr;
-    sptr<SyncFence> acquireFence = SyncFence::InvalidFence();
     int64_t timestamp = 0;
     Rect damage;
-    ret = AcquireBuffer(buffer, acquireFence, timestamp, damage);
-    if (ret != SURFACE_ERROR_OK) {
-        return ret;
+    sptr<SyncFence> acquireFence = SyncFence::InvalidFence();
+    if (!dropFrameMode_) {
+        ret = AcquireBuffer(buffer, acquireFence, timestamp, damage);
+        if (ret != SURFACE_ERROR_OK) {
+            return ret;
+        }
+    } else {
+        AcquireBufferReturnValue returnValue;
+        ret = AcquireBuffer(returnValue, INT64_MAX, true);
+        if (ret != SURFACE_ERROR_OK) {
+            BLOGE("AcquireBuffer falied: %{public}d, uniqueId: %{public}" PRIu64, ret, uniqueId_);
+            return ret;
+        }
+        buffer = returnValue.buffer;
+        acquireFence = returnValue.fence;
+        timestamp = returnValue.timestamp;
+        damage = returnValue.damages.at(0);
     }
 
     ret = UpdateEGLImageAndTexture(buffer);
@@ -392,12 +405,6 @@ SurfaceError SurfaceImage::UpdateEGLImageAndTexture(const sptr<SurfaceBuffer>& b
             "uniqueId: %{public}" PRIu64 ".", textureTarget_, error, uniqueId_);
         return SURFACE_ERROR_EGL_API_FAILED;
     }
-    uint32_t queueSize = 0;
-    GetMaxQueueSize(queueSize);
-    if (queueSize == SINGLE_MODE_MAX_QUEUE_SIZE) {
-        currentSurfaceImage_ = seqNum;
-        currentSurfaceBuffer_ = buffer;
-    }
 
     // Create fence object for current image
     auto iter = imageCacheSeqs_.find(currentSurfaceImage_);
@@ -534,11 +541,14 @@ SurfaceError SurfaceImage::SetDefaultSize(int32_t width, int32_t height)
     return ret;
 }
 
-SurfaceError SurfaceImage::SetMaxQueueSize(uint32_t queueSize)
+SurfaceError SurfaceImage::SetDropBufferSwitch(bool switch)
 {
-    if (queueSize == 0) {
+    if (switch == dropFrameMode_) {
+        BLOGE("SetDropBufferSwitch failed, switch: %{public}d", switch);
         return SURFACE_ERROR_INVALID_PARAM;
     }
-    return ConsumerSurface::SetMaxQueueSize(queueSize);
+    BLOGI("SetDropBufferSwitch switch: %{public}d", switch);
+    dropFrameMode_ = switch;
+    return SURFACE_ERROR_OK;
 }
 } // namespace OHOS
