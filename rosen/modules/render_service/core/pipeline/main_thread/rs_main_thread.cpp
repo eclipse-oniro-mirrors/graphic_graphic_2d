@@ -219,7 +219,7 @@ constexpr const char* CAPTURE_WINDOW_NAME = "CapsuleWindow";
 constexpr const char* HIDE_NOTCH_STATUS = "persist.sys.graphic.hideNotch.status";
 constexpr const char* DRAWING_CACHE_DFX = "rosen.drawingCache.enabledDfx";
 constexpr const char* DEFAULT_SURFACE_NODE_NAME = "DefaultSurfaceNodeName";
-constexpr const char* DEFAULT_DEBUG_FMT_TRACE = "sys.graphic.openTestModeTrace";
+constexpr const char* ENABLE_DEBUG_FMT_TRACE = "sys.graphic.openTestModeTrace";
 
 #ifdef RS_ENABLE_GL
 constexpr size_t DEFAULT_SKIA_CACHE_SIZE        = 96 * (1 << 20);
