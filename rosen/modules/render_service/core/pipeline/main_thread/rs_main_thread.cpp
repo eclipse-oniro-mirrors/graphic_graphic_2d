@@ -2591,6 +2591,9 @@ bool RSMainThread::ExistBufferIsVisibleAndUpdate()
             RS_LOGD("[%{public}s]: surfaceNode is null", __func__);
             continue;
         }
+        if (surfaceNode->GetRSSurfaceHandler() == nullptr) {
+            continue;
+        }
         if (surfaceNode->GetRSSurfaceHandler()->IsCurrentFrameBufferConsumed() &&
             surfaceNode->GetLastFrameHasVisibleRegion()) {
             bufferNeedUpdate = true;
