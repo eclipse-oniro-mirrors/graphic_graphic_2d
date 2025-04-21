@@ -337,7 +337,7 @@ int32_t OH_ConsumerSurface_SetDefaultSize(OH_NativeImage* image, int32_t width, 
  * @param image Indicates the pointer to a <b>OH_NativeImage</b> instance.
  * @param isOpen Indicates the switch of drop buffer mode.
  * @return {@link NATIVE_ERROR_OK} 0 - Success.
- *     {@link NATIVE_ERROR_INVALID_ARGUMENTS} 40001000 - image is NULL or switch repeated set.
+ *     {@link NATIVE_ERROR_INVALID_ARGUMENTS} 40001000 - image is NULL.
  * @since 17
  * @version 1.0
  */

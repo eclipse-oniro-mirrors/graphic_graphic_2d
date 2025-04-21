@@ -1501,9 +1501,7 @@ HWTEST_F(NativeImageTest, OH_NativeImage_SetDropBufferMode001, Function | Medium
     OH_NativeImage* consumerSurface = OH_ConsumerSurface_Create();
     ASSERT_NE(consumerSurface, nullptr);
     ASSERT_EQ(OH_NativeImage_SetDropBufferMode(nullptr, true), SURFACE_ERROR_INVALID_PARAM);
-    ASSERT_EQ(OH_NativeImage_SetDropBufferMode(consumerSurface, false), SURFACE_ERROR_INVALID_PARAM);
     ASSERT_EQ(OH_NativeImage_SetDropBufferMode(consumerSurface, true), GSERROR_OK);
-    ASSERT_EQ(OH_NativeImage_SetDropBufferMode(consumerSurface, true), SURFACE_ERROR_INVALID_PARAM);
     ASSERT_EQ(OH_NativeImage_SetDropBufferMode(consumerSurface, false), GSERROR_OK);
     OH_NativeImage_Destroy(&consumerSurface);
 }
