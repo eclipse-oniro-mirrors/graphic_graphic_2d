@@ -589,16 +589,16 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             break;
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_DEFAULT_SCREEN_ID): {
-            ScreenId id = GetDefaultScreenId();
-            if (!reply.WriteUint64(id)) {
+            uint64_t screenId = INVALID_SCREEN_ID;
+            if (GetDefaultScreenId(screenId) != ERR_OK || !reply.WriteUint64(screenId)) {
                 RS_LOGE("RSRenderServiceConnectionStub::GET_DEFAULT_SCREEN_ID Write id failed!");
                 ret = ERR_INVALID_REPLY;
             }
             break;
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_ACTIVE_SCREEN_ID): {
-            ScreenId id = GetActiveScreenId();
-            if (!reply.WriteUint64(id)) {
+            uint64_t screenId = INVALID_SCREEN_ID;
+            if (GetActiveScreenId(screenId) != ERR_OK || !reply.WriteUint64(screenId)) {
                 RS_LOGE("RSRenderServiceConnectionStub::GET_ACTIVE_SCREEN_ID Write id failed!");
                 ret = ERR_INVALID_REPLY;
             }
@@ -1393,8 +1393,8 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 ret = ERR_INVALID_DATA;
                 break;
             }
-            RSScreenModeInfo screenModeInfo = GetScreenActiveMode(id);
-            if (!reply.WriteParcelable(&screenModeInfo)) {
+            RSScreenModeInfo screenModeInfo;
+            if (GetScreenActiveMode(id, screenModeInfo) != ERR_OK || !reply.WriteParcelable(&screenModeInfo)) {
                 RS_LOGE("RSRenderServiceConnectionStub::GET_SCREEN_ACTIVE_MODE Write screenModeInfo failed!");
                 ret = ERR_INVALID_REPLY;
             }
@@ -1464,9 +1464,8 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_TOTAL_APP_MEM_SIZE): {
             float cpuMemSize = 0.f;
             float gpuMemSize = 0.f;
-            bool success;
-            if (GetTotalAppMemSize(cpuMemSize, gpuMemSize, success) != ERR_OK || !success ||
-                !reply.WriteFloat(cpuMemSize) || !reply.WriteFloat(gpuMemSize)) {
+            if (GetTotalAppMemSize(cpuMemSize, gpuMemSize) != ERR_OK || !reply.WriteFloat(cpuMemSize)
+                || !reply.WriteFloat(gpuMemSize)) {
                 RS_LOGE("RSRenderServiceConnectionStub::GET_TOTAL_APP_MEM_SIZE Write parcel failed!");
                 ret = ERR_INVALID_REPLY;
             }
@@ -1493,8 +1492,8 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 ret = ERR_INVALID_DATA;
                 break;
             }
-            ScreenPowerStatus status = GetScreenPowerStatus(id);
-            if (!reply.WriteUint32(static_cast<uint32_t>(status))) {
+            uint32_t powerStatus{static_cast<uint32_t>(INVALID_POWER_STATUS)};
+            if (GetScreenPowerStatus(id, powerStatus) != ERR_OK || !reply.WriteUint32(powerStatus)) {
                 RS_LOGE("RSRenderServiceConnectionStub::GET_SCREEN_POWER_STATUS Write status failed!");
                 ret = ERR_INVALID_REPLY;
             }
@@ -1521,8 +1520,8 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 ret = ERR_INVALID_DATA;
                 break;
             }
-            int32_t level = GetScreenBacklight(id);
-            if (!reply.WriteInt32(level)) {
+            int32_t backLightLevel{static_cast<int32_t>(INVALID_BACKLIGHT_VALUE)};
+            if (GetScreenBacklight(id, backLightLevel) != ERR_OK || !reply.WriteInt32(backLightLevel)) {
                 RS_LOGE("RSRenderServiceConnectionStub::GET_SCREEN_BACK_LIGHT Write level failed!");
                 ret = ERR_INVALID_REPLY;
             }
@@ -1761,8 +1760,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 ret = ERR_INVALID_DATA;
                 break;
             }
-            bool success;
-            if (SetGlobalDarkColorMode(isDark, success) != ERR_OK || !reply.WriteBool(success)) {
+            if (SetGlobalDarkColorMode(isDark) != ERR_OK) {
                 RS_LOGE("RSRenderServiceConnectionStub::SET_GLOBAL_DARK_COLOR_MODE Write result failed!");
                 ret = ERR_INVALID_REPLY;
             }
@@ -2294,8 +2292,9 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 ret = ERR_INVALID_DATA;
                 break;
             }
-            int32_t result = SetScreenSkipFrameInterval(id, skipFrameInterval);
-            if (!reply.WriteInt32(result)) {
+            int32_t statusCode{ SUCCESS };
+            if (SetScreenSkipFrameInterval(id, skipFrameInterval, statusCode) != ERR_OK ||
+                !reply.WriteInt32(statusCode)) {
                 RS_LOGE("RSRenderServiceConnectionStub::SET_SCREEN_SKIP_FRAME_INTERVAL Write result failed!");
                 ret = ERR_INVALID_REPLY;
             }
