@@ -978,7 +978,7 @@ HWTEST_F(HgmFrameRateMgrTest, CollectVRateChange, Function | SmallTest | Level2)
     mgr.CollectVRateChange(linkerId, finalRange);
     EXPECT_EQ(finalRange.min_, OLED_NULL_HZ);
     EXPECT_EQ(finalRange.max_, OLED_144_HZ);
-    EXPECT_EQ(finalRange.preferred_, 1);
+    EXPECT_EQ(finalRange.preferred_, mgr.vrateControlMinifpsValue_);
 
     finalRange.preferred_ = 0;
     mgr.controllerRate_ = 100;
