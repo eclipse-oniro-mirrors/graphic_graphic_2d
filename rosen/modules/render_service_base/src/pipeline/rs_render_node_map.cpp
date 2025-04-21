@@ -179,21 +179,12 @@ bool RSRenderNodeMap::RegisterRenderNode(const std::shared_ptr<RSBaseRenderNode>
     return true;
 }
 
-<<<<<<< Updated upstream
-void RegisterUnTreeNode(NodeId id)
-{
-    unInTreeNodeSet_.emplace(childNodeId);
-}
-
-bool UnRegisterUnTreeNode(NodeId id)
-=======
 void RSRenderNodeMap::RegisterUnTreeNode(NodeId id)
 {
     unInTreeNodeSet_.emplace(id);
 }
 
 bool RSRenderNodeMap::UnRegisterUnTreeNode(NodeId id)
->>>>>>> Stashed changes
 {
     auto iter = unInTreeNodeSet_.find(id);
     if (iter != unInTreeNodeSet_.end()) {
