@@ -292,7 +292,8 @@ private:
         std::lock_guard<std::mutex> lock(pendingMutex_);
         return curGameNodeName_;
     }
-    void CheckRefreshRateChange(bool followRs, bool frameRateChanged, uint32_t refreshRate);
+    void CheckRefreshRateChange(
+        bool followRs, bool frameRateChanged, uint32_t refreshRate, bool needChangeDssRefreshRate);
     void SetGameNodeName(std::string nodeName)
     {
         std::lock_guard<std::mutex> lock(pendingMutex_);
@@ -385,6 +386,12 @@ private:
     bool isDragScene_ = false;
     uint32_t lastLtpoRefreshRate_ = 0;
     long lastLtpoVoteTime_ = 0;
+
+    // Vrate
+    std::string vrateControlMinifps_ = "minifps";
+    //defalut value is 30, visiable lower than 10%.
+    int32_t vrateControlMinifpsValue_ = 30;
+    void GetVRateMiniFPS(const std::shared_ptr<PolicyConfigData>& configData);
 };
 } // namespace Rosen
 } // namespace OHOS

@@ -207,6 +207,8 @@ public:
     bool GetScreenPowerOnChanged() const;
     bool IsAccessibilityConfigChanged() const;
     bool IsCurtainScreenUsingStatusChanged() const;
+    bool IsFastComposeAllow(uint64_t unsignedVsyncPeriod, bool nextVsyncRequested,
+        uint64_t unsignedNowTime, uint64_t lastVsyncTime);
     void CheckFastCompose(int64_t bufferTimeStamp);
     bool CheckAdaptiveCompose();
     void ForceRefreshForUni(bool needDelay = false);
@@ -576,6 +578,7 @@ private:
     void CheckIfHardwareForcedDisabled();
     bool DoDirectComposition(std::shared_ptr<RSBaseRenderNode> rootNode, bool waitForRT);
     bool ExistBufferIsVisibleAndUpdate();
+    void UpdateDirectCompositionByAnimate(bool animateNeedRequestNextVsync);
 
     bool isUniRender_ = RSUniRenderJudgement::IsUniRender();
     bool needWaitUnmarshalFinished_ = true;
@@ -768,6 +771,7 @@ private:
     bool isHardwareForcedDisabled_ = false; // if app node has shadow or filter, disable hardware composer for all
     bool doDirectComposition_ = true;
     bool isLastFrameDirectComposition_ = false;
+    bool lastAnimateNeedRequestNextVsync_ = false;
 
     // for client node tree dump
     struct NodeTreeDumpTask {
