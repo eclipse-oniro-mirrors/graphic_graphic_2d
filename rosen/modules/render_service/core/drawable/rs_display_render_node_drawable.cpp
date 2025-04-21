@@ -2460,6 +2460,6 @@ void RSDisplayRenderNodeDrawable::MirrorRedrawDFX(bool mirrorRedraw, ScreenId sc
         mirrorRedraw_ = mirrorRedraw;
         RS_LOGI("RSDisplayRenderNodeDrawable::%{public}s mirror screenId: %{public}" PRIu64
             " drawing path changed, mirrorRedraw_: %{public}d", __func__, screenId, mirrorRedraw_);
-    }    
+    }
 }
 } // namespace OHOS::Rosen::DrawableV2
