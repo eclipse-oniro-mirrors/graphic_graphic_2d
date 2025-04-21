@@ -158,7 +158,7 @@ SurfaceError SurfaceImage::UpdateSurfaceImage()
     sptr<SurfaceBuffer> buffer = nullptr;
     sptr<SyncFence> acquireFence = SyncFence::InvalidFence();
     int64_t timestamp = 0;
-    Rect damage;
+    Rect damage = {0, 0, 0, 0};
     if (!dropFrameMode_) {
         ret = AcquireBuffer(buffer, acquireFence, timestamp, damage);
         if (ret != SURFACE_ERROR_OK) {
@@ -174,7 +174,9 @@ SurfaceError SurfaceImage::UpdateSurfaceImage()
         buffer = returnValue.buffer;
         acquireFence = returnValue.fence;
         timestamp = returnValue.timestamp;
-        damage = returnValue.damages.at(0);
+        if (returnValue.damages.size() != 0) {
+            damage = returnValue.damages.at(0);
+        }
     }
 
     ret = UpdateEGLImageAndTexture(buffer);
