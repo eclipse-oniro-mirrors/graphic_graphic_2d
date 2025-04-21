@@ -95,6 +95,7 @@ namespace {
         {"STYLUS_LINK_WRITE", STYLUS_LINK_WRITE}};
     constexpr uint32_t FRAME_RATE_REPORT_MAX_RETRY_TIMES = 3;
     constexpr uint32_t FRAME_RATE_REPORT_DELAY_TIME = 20000;
+    const std::string VRATE_CONTROL_MINIFPS = "minifps";
 }
 
 HgmFrameRateManager::HgmFrameRateManager()
@@ -484,16 +485,16 @@ void HgmFrameRateManager::GetVRateMiniFPS(const std::shared_ptr<PolicyConfigData
         HGM_LOGE("GetVRateMiniFPS configData is nullptr use dafault value");
         return;
     }
-    if (configData->vRateControlList_.find(vrateControlMinifps_) == configData->vRateControlList_.end()) {
-        HGM_LOGE("GetVRateMiniFPS vrateControlMinifps_ config is invalid use dafault value");
+    if (configData->vRateControlList_.find(VRATE_CONTROL_MINIFPS) == configData->vRateControlList_.end()) {
+        HGM_LOGE("GetVRateMiniFPS VRATE_CONTROL_MINIFPS config is invalid use dafault value");
         return;
     }
-    if (!XMLParser::IsNumber(configData->vRateControlList_[vrateControlMinifps_])) {
-        HGM_LOGE("GetVRateMiniFPS vrateControlMinifps_ config is Is Not Number use dafault value");
+    if (!XMLParser::IsNumber(configData->vRateControlList_[VRATE_CONTROL_MINIFPS])) {
+        HGM_LOGE("GetVRateMiniFPS VRATE_CONTROL_MINIFPS config is Is Not Number use dafault value");
         return;
     }
 
-    vrateControlMinifpsValue_ = static_cast<int32_t>(std::stoi(configData->vRateControlList_[vrateControlMinifps_]));
+    vrateControlMinifpsValue_ = static_cast<int32_t>(std::stoi(configData->vRateControlList_[VRATE_CONTROL_MINIFPS]));
     HGM_LOGI("GetVRateMiniFPS vrateControlMinifpsValue:%{public}d", vrateControlMinifpsValue_);
 }
 

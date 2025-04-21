@@ -145,6 +145,9 @@ const std::string TEST_XML_CONTENT = (R"(<?xml version="1.0" encoding="UTF-8" st
     <Params name="xxx">
         <App name="aaa" value="1"/>
     </Params>
+    <Params name="vrate_control_config">
+        <Vrate name="aaa" value="1"/>
+    </Params>
     </HgmConfig>)");
 
 inline xmlDoc* StringToXmlDoc(const std::string& xmlContent)
