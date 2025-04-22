@@ -1407,18 +1407,18 @@ ErrCode RSRenderServiceConnectionProxy::GetShowRefreshRateEnabled(bool& enable)
 
     if (!data.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor())) {
         ROSEN_LOGE("RSRenderServiceProxy failed to get descriptor");
-        return INVALID_SCREEN_ID;
+        return ERR_INVALID_VALUE;
     }
     option.SetFlags(MessageOption::TF_SYNC);
     uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_SHOW_REFRESH_RATE_ENABLED);
     int32_t err = SendRequest(code, data, reply, option);
     if (err != NO_ERROR) {
         ROSEN_LOGE("RSRenderServiceProxy sendrequest error : %{public}d", err);
-        return INVALID_SCREEN_ID;
+        return ERR_INVALID_VALUE;
     }
     if (!reply.ReadBool(enable)) {
         ROSEN_LOGE("RSRenderServiceConnectionProxy::GetCurrentRefreshRateMode Read enable failed");
-        return INVALID_SCREEN_ID;
+        return ERR_INVALID_VALUE;
     }
     return ERR_OK;
 }

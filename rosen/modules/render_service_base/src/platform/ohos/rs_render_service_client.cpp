@@ -914,7 +914,7 @@ ScreenPowerStatus RSRenderServiceClient::GetScreenPowerStatus(ScreenId id)
     }
     uint32_t status {static_cast<int32_t>(ScreenPowerStatus::INVALID_POWER_STATUS)};
     renderService->GetScreenPowerStatus(id, status);
-    return static_cast<INVALID_POWER_STATUS>(status);
+    return static_cast<ScreenPowerStatus>(status);
 }
 
 RSScreenData RSRenderServiceClient::GetScreenData(ScreenId id)
@@ -933,7 +933,7 @@ int32_t RSRenderServiceClient::GetScreenBacklight(ScreenId id)
     if (renderService == nullptr) {
         return INVALID_BACKLIGHT_VALUE;
     }
-    uint32_t backLightLevel = INVALID_BACKLIGHT_VALUE;
+    int32_t backLightLevel = INVALID_BACKLIGHT_VALUE;
     renderService->GetScreenBacklight(id, backLightLevel);
     return backLightLevel;
 }
@@ -1331,7 +1331,7 @@ int32_t RSRenderServiceClient::SetVirtualScreenRefreshRate(
     if (renderService == nullptr) {
         return RENDER_SERVICE_NULL;
     }
-    renderService->SetVirtualScreenRefreshRate(id, maxRefreshRate, resCode, actualRefreshRate);
+    renderService->SetVirtualScreenRefreshRate(id, maxRefreshRate, actualRefreshRate, resCode);
     return resCode;
 }
 
