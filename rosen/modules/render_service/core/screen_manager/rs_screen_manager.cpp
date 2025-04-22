@@ -943,7 +943,7 @@ RSScreenCapability RSScreenManager::GetScreenCapability(ScreenId id) const
     }
 
     const auto& capability = screen->GetCapability();
-    std::vector<RSScreenProps> props(capability.propertyCount);
+    std::vector<RSScreenProps> props(capability.props.size());
     std::transform(capability.props.cbegin(), capability.props.cend(), props.begin(), [](const auto& node) {
         return RSScreenProps(node.name, node.propId, node.value);
     });
@@ -2068,7 +2068,7 @@ int32_t RSScreenManager::GetScreenHDRCapability(ScreenId id, RSScreenHDRCapabili
     }
 
     GraphicHDRCapability hdrCapability = screen->GetHDRCapability();
-    std::vector<ScreenHDRFormat> hdrFormats(hdrCapability.formatCount);
+    std::vector<ScreenHDRFormat> hdrFormats(hdrCapability.formats.size());
     std::transform(hdrCapability.formats.cbegin(), hdrCapability.formats.cend(), hdrFormats.begin(),
         [](const auto& node) { return static_cast<ScreenHDRFormat>(node); }
     );
