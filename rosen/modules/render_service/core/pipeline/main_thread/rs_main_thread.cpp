@@ -4742,11 +4742,11 @@ void RSMainThread::UpdateRogSizeIfNeeded()
         if (displayNode == nullptr) {
             return;
         }
-        auto screenManager_ = CreateOrGetScreenManager();
-        if (screenManager_ == nullptr) {
+        auto screenManager = CreateOrGetScreenManager();
+        if (screenManager == nullptr) {
             return;
         }
-        screenManager_->SetRogScreenResolution(
+        screenManager->SetRogScreenResolution(
             displayNode->GetScreenId(), displayNode->GetRogWidth(), displayNode->GetRogHeight());
     }
 }
