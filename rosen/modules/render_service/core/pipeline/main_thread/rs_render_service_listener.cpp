@@ -101,7 +101,9 @@ void RSRenderServiceListener::SetBufferInfoAndRequest(std::shared_ptr<RSSurfaceR
     int32_t bufferCount = surfaceHandler->GetAvailableBufferCount();
     std::string name = node->GetName();
     RSMainThread::Instance()->SetBufferInfo(id, name, queueSize, bufferCount, lastConsumeTime);
-    RSMainThread::Instance()->RequestNextVSync("selfdrawing");
+    int64_t desiredPresentTimestamp = 0;
+    RSMainThread::Instance()->GetFrontBufferDesiredPresentTimeStamp(consumer, desiredPresentTimestamp);
+    RSMainThread::Instance()->RequestNextVSync("selfdrawing", 0, desiredPresentTimestamp);
 }
 
 void RSRenderServiceListener::OnTunnelHandleChange()

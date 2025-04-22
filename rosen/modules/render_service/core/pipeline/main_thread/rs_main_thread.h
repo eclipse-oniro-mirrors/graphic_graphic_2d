@@ -98,7 +98,8 @@ public:
     void UpdateNeedDrawFocusChange(NodeId id);
     void ProcessDataBySingleFrameComposer(std::unique_ptr<RSTransactionData>& rsTransactionData);
     void RecvRSTransactionData(std::unique_ptr<RSTransactionData>& rsTransactionData);
-    void RequestNextVSync(const std::string& fromWhom = "unknown", int64_t lastVSyncTS = 0);
+    void RequestNextVSync(
+        const std::string& fromWhom = "unknown", int64_t lastVSyncTS = 0, const int64_t& requestVsyncTime = 0);
     void PostTask(RSTaskMessage::RSTask task);
     void PostTask(RSTaskMessage::RSTask task, const std::string& name, int64_t delayTime,
         AppExecFwk::EventQueue::Priority priority = AppExecFwk::EventQueue::Priority::IDLE);
@@ -440,6 +441,8 @@ public:
     void NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt);
     void SetBufferInfo(uint64_t id, const std::string &name, uint32_t queueSize,
         int32_t bufferCount, int64_t lastConsumeTime);
+    void GetFrontBufferDesiredPresentTimeStamp(
+        const sptr<IConsumerSurface>& consumer, int64_t& desiredPresentTimeStamp);
 
     // Enable HWCompose
     bool IsHardwareEnabledNodesNeedSync();
@@ -560,6 +563,8 @@ private:
     void PrepareUiCaptureTasks(std::shared_ptr<RSUniRenderVisitor> uniVisitor);
     void UIExtensionNodesTraverseAndCallback();
     bool CheckUIExtensionCallbackDataChanged() const;
+    void RequestNextVSyncInner(VSyncReceiver::FrameCallback callback,
+        const std::string& fromWhom = "unknown", int64_t lastVSyncTS = 0, const int64_t& requestVsyncTime = 0);
 
     void CheckBlurEffectCountStatistics(std::shared_ptr<RSBaseRenderNode> rootNode);
     void OnCommitDumpClientNodeTree(NodeId nodeId, pid_t pid, uint32_t taskId, const std::string& result);
@@ -699,7 +704,7 @@ private:
     std::map<pid_t, std::vector<std::unique_ptr<RSTransactionData>>> cachedSkipTransactionDataMap_;
     std::unordered_map<pid_t, uint64_t> transactionDataLastWaitTime_;
 
-    bool needRequestNextVsync_ = false;
+    int64_t requestNextVsyncTime_ = -1;
     bool isHdrSwitchChanged_ = false;
 
     /**

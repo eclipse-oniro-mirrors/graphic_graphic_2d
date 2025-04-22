@@ -220,6 +220,7 @@ constexpr const char* HIDE_NOTCH_STATUS = "persist.sys.graphic.hideNotch.status"
 constexpr const char* DRAWING_CACHE_DFX = "rosen.drawingCache.enabledDfx";
 constexpr const char* DEFAULT_SURFACE_NODE_NAME = "DefaultSurfaceNodeName";
 constexpr const char* ENABLE_DEBUG_FMT_TRACE = "sys.graphic.openTestModeTrace";
+constexpr int64_t ONE_SECOND_TIMESTAMP = 1e9;
 
 #ifdef RS_ENABLE_GL
 constexpr size_t DEFAULT_SKIA_CACHE_SIZE        = 96 * (1 << 20);
@@ -741,6 +742,27 @@ void RSMainThread::Init()
     MemoryManager::SetGpuMemoryLimit(GetRenderEngine()->GetRenderContext()->GetDrGPUContext());
 #endif
     RSSystemProperties::WatchSystemProperty(ENABLE_DEBUG_FMT_TRACE, OnFmtTraceSwitchCallback, nullptr);
+}
+
+void RSMainThread::GetFrontBufferDesiredPresentTimeStamp(
+    const sptr<IConsumerSurface>& consumer, int64_t& desiredPresentTimeStamp)
+{
+    if (consumer == nullptr) {
+        return;
+    }
+    bool isAutoTimeStamp = false;
+    int64_t fronDesiredPresentTimeStamp = 0;
+    if (consumer->GetFrontDesiredPresentTimeStamp(fronDesiredPresentTimeStamp, isAutoTimeStamp) !=
+            GSError::GSERROR_OK || fronDesiredPresentTimeStamp == 0) {
+        desiredPresentTimeStamp = 0;
+        return;
+    }
+    if (isAutoTimeStamp || fronDesiredPresentTimeStamp <= static_cast<int64_t>(timestamp_) ||
+        fronDesiredPresentTimeStamp - ONE_SECOND_TIMESTAMP > static_cast<int64_t>(timestamp_)) {
+        desiredPresentTimeStamp = 0;
+        return;
+    }
+    desiredPresentTimeStamp = fronDesiredPresentTimeStamp;
 }
 
 void RSMainThread::NotifyUnmarshalTask(int64_t uiTimestamp)
@@ -1529,7 +1551,7 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
 {
     ResetHardwareEnabledState(isUniRender_);
     RS_OPTIONAL_TRACE_BEGIN("RSMainThread::ConsumeAndUpdateAllNodes");
-    needRequestNextVsync_ = false;
+    requestNextVsyncTime_ = -1;
     if (!isUniRender_) {
         dividedRenderbufferTimestamps_.clear();
     }
@@ -1671,7 +1693,12 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
 #endif
             // still have buffer(s) to consume.
             if (surfaceHandler->GetAvailableBufferCount() > 0) {
-                needRequestNextVsync_ = true;
+                const auto& consumer = surfaceHandle->GetConsumer();
+                int64_t nextVsyncTime = 0;
+                GetFrontBufferDesiredPresentTimeStamp(consumer, nextVsyncTime);
+                if (requestNextVsyncTime_ == -1 || requestNextVsyncTime_ > nextVsyncTime) {
+                    requestNextVsyncTime_ = nextVsyncTime;
+                }
             }
             surfaceNode->SetVideoHdrStatus(RSHdrUtil::CheckIsHdrSurface(*surfaceNode));
             if (surfaceNode->GetVideoHdrStatus() == HdrStatus::NO_HDR) {
@@ -1681,8 +1708,8 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
     }
     nodeMap.TraverseSurfaceNodes(consumeAndUpdateNode_);
     prevHdrSwitchStatus_ = RSLuminanceControl::Get().IsHdrPictureOn();
-    if (needRequestNextVsync_) {
-        RequestNextVSync();
+    if (requestNextVsyncTime_ != -1) {
+        RequestNextVSync("unknown", 0, requestNextVsyncTime_);
     }
     RS_OPTIONAL_TRACE_END();
 }
@@ -3186,7 +3213,7 @@ void RSMainThread::NotifyHardwareThreadCanExecuteTask()
     hardwareThreadTaskCond_.notify_one();
 }
 
-void RSMainThread::RequestNextVSync(const std::string& fromWhom, int64_t lastVSyncTS)
+void RSMainThread::RequestNextVSync(const std::string& fromWhom, int64_t lastVSyncTS, const int64_t& requestVsyncTime)
 {
     RS_OPTIONAL_TRACE_FUNC();
     VSyncReceiver::FrameCallback fcb = {
@@ -3204,7 +3231,7 @@ void RSMainThread::RequestNextVSync(const std::string& fromWhom, int64_t lastVSy
                 DumpEventHandlerInfo();
             }
         }
-        receiver_->RequestNextVSync(fcb, fromWhom, lastVSyncTS);
+        RequestNextVSyncInner(fcb, fromWhom, lastVSyncTS, requestVsyncTime);
         if (requestNextVsyncNum_ >= VSYNC_LOG_ENABLED_TIMES_THRESHOLD &&
             requestNextVsyncNum_ % VSYNC_LOG_ENABLED_STEP_TIMES == 0) {
             vsyncGenerator_->PrintGeneratorStatus();
@@ -5170,6 +5197,17 @@ bool RSMainThread::CheckUIExtensionCallbackDataChanged() const
     }
     RS_OPTIONAL_TRACE_NAME("RSMainThread::CheckUIExtensionCallbackDataChanged, all host nodes were not changed.");
     return false;
+}
+
+void RSMainThread::RequestNextVsyncInner(VSyncReceiver::FrameCallback callback, const std::string& fromWhom,
+    int64_t lastVSyncTS, const int64_t& requestVsyncTime)
+{
+    if (Rosen::RSSystemProperties::GetTimeVsyncDisabled()) {
+        receiver_->RequestNextVsync(callback, fromWhom, lastVSyncTS);
+    } else {
+        receiver_->RequestNextVsync(callback, fromWhom, lastVSyncTS,
+            requestVsyncTime < static_cast<int64_t>(timestamp_) ? 0 : requestVsyncTime);
+    }
 }
 
 void RSMainThread::SetHardwareTaskNum(uint32_t num)

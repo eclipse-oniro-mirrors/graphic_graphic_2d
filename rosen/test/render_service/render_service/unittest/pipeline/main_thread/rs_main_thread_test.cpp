@@ -21,6 +21,7 @@
 #include "gtest/gtest.h"
 #include "limit_number.h"
 #include "pipeline/rs_test_util.h"
+#include "consumer_surface.h"
 
 #include "command/rs_base_node_command.h"
 #include "memory/rs_memory_track.h"
@@ -1683,6 +1684,46 @@ HWTEST_F(RSMainThreadTest, IsFirstFrameOfOverdrawSwitch, TestSize.Level1)
     ASSERT_NE(mainThread, nullptr);
     mainThread->isOverDrawEnabledOfCurFrame_ = true;
     ASSERT_TRUE(mainThread->IsFirstFrameOfOverdrawSwitch());
+}
+
+/**
+ * @tc.name: GetFrontBufferDesiredPresentTimeStamp
+ * @tc.desc: test GetFrontBufferDesiredPresentTimeStamp
+ * @tc.type: FUNC
+ * @tc.require: issueIAKQC3
+ */
+HWTEST_F(RSMainThreadTest, GetFrontBufferDesiredPresentTimeStamp001, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    const sptr<ConsumerSurface> consumer = new ConsumerSurface("test1");
+    consumer->Init();
+    int64_t resultValue = 100;
+    int64_t desiredPresentTimestamp = resultValue;
+    mainThread_->GetFrontBufferDesiredPresentTimeStamp(consumer, desiredPresentTimestamp);
+    ASSERT_EQ(desiredPresentTimestamp, 0);
+}
+
+/**
+ * @tc.name: GetFrontBufferDesiredPresentTimeStamp
+ * @tc.desc: test GetFrontBufferDesiredPresentTimeStamp
+ * @tc.type: FUNC
+ * @tc.require: issueIAKQC3
+ */
+HWTEST_F(RSMainThreadTest, GetFrontBufferDesiredPresentTimeStamp002, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    const sptr<ConsumerSurface> consumer = new ConsumerSurface("test2");
+    consumer->Init();
+    int64_t resultValue = 100;
+    int64_t desiredPresentTimestamp = resultValue;
+    uint32_t seqId = 1;
+    consumer->consumer_->bufferQueue_->dirtyList_.clear();
+    consumer->consumer_->bufferQueue_->dirtyList_.push_back(seqId);
+    consumer->consumer_->bufferQueue_->bufferQueueCache_[seqId].isAutoTimestamp = true;
+    mainThread_->GetFrontBufferDesiredPresentTimeStamp(consumer, desiredPresentTimestamp);
+    ASSERT_EQ(desiredPresentTimestamp, 0);
 }
 
 /**
