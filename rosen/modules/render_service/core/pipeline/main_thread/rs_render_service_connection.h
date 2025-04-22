@@ -62,7 +62,7 @@ private:
     ErrCode ExecuteSynchronousTask(const std::shared_ptr<RSSyncTask>& task) override;
     ErrCode GetMemoryGraphic(int pid, MemoryGraphic& memoryGraphic) override;
     ErrCode GetMemoryGraphics(std::vector<MemoryGraphic>& memoryGraphics) override;
-    ErrCode GetTotalAppMemSize(float& cpuMemSize, float& gpuMemSize, bool& success) override;
+    ErrCode GetTotalAppMemSize(float& cpuMemSize, float& gpuMemSize) override;
     ErrCode GetUniRenderEnabled(bool& enable) override;
 
     ErrCode CreateNode(const RSSurfaceRenderNodeConfig& config, bool& success) override;
