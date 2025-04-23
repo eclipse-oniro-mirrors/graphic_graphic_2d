@@ -1721,7 +1721,7 @@ HWTEST_F(RSMainThreadTest, GetFrontBufferDesiredPresentTimeStamp002, TestSize.Le
     uint32_t seqId = 1;
     consumer->consumer_->bufferQueue_->dirtyList_.clear();
     consumer->consumer_->bufferQueue_->dirtyList_.push_back(seqId);
-    mainThread->consumer_->bufferQueue_->bufferQueueCache_[seqId].isAutoTimestamp = true;
+    consumer->consumer_->bufferQueue_->bufferQueueCache_[seqId].isAutoTimestamp = true;
     mainThread->GetFrontBufferDesiredPresentTimeStamp(consumer, desiredPresentTimestamp);
     ASSERT_EQ(desiredPresentTimestamp, 0);
 }
