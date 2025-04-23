@@ -2295,11 +2295,9 @@ void RSMainThread::EndGPUDraw()
 void RSMainThread::ClearUnmappedCache()
 {
     std::set<uint32_t> bufferIds;
-    std::set<uint32_t> bufferMirrorIds;
     {
         std::lock_guard<std::mutex> lock(unmappedCacheSetMutex_);
         bufferIds.swap(unmappedCacheSet_);
-        bufferMirrorIds.swap(unmappedVirScreenCacheSet_);
     }
     if (!bufferIds.empty()) {
         auto engine = GetRenderEngine();
@@ -2307,12 +2305,6 @@ void RSMainThread::ClearUnmappedCache()
             engine->ClearCacheSet(bufferIds);
         }
         RSHardwareThread::Instance().ClearRedrawGPUCompositionCache(bufferIds);
-    }
-    if (!bufferMirrorIds.empty()) {
-        auto engine = GetRenderEngine();
-        if (engine) {
-            engine->ClearCacheSet(bufferIds, true);
-        }
     }
 }
 

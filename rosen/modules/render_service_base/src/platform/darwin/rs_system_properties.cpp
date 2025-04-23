@@ -697,6 +697,11 @@ int32_t RSSystemProperties::GetHybridRenderSwitch(ComponentEnableSwitch bitSeq)
 }
 #endif
 
+bool RSSystemProperties::GetVKImageUseEnabled()
+{
+    return false;
+}
+
 void RSSystemProperties::SetDebugFmtTraceEnabled(bool flag)
 {
     debugFmtTraceEnable_ = flag;

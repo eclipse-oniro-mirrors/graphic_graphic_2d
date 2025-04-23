@@ -1458,6 +1458,13 @@ int32_t RSSystemProperties::GetHybridRenderSwitch(ComponentEnableSwitch bitSeq)
 }
 #endif
 
+bool RSSystemProperties::GetVKImageUseEnabled()
+{
+    static bool enable = IsUseVulkan() &&
+        system::GetBoolParameter("persist.sys.graphic.vkimage_reuse", true);
+    return enable;
+}
+
 void RSSystemProperties::SetDebugFmtTraceEnabled(bool flag)
 {
     debugFmtTraceEnable_ = flag;
