@@ -41,6 +41,9 @@ public:
 
     std::unique_ptr<PolicyConfigData> GetParsedData()
     {
+        if (mParsedData_) {
+            return std::make_unique<PolicyConfigData>(*mParsedData_)
+        }
         return std::move(mParsedData_);
     }
 
