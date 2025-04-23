@@ -1117,7 +1117,7 @@ HWTEST_F(VSyncDistributorTest, RemoveTriggeredVsync001, Function | MediumTest | 
     vsyncConnection->requestVsyncTimestamp_.clear();
     vsyncConnection->requestVsyncTimestamp_.insert(100);
     int64_t currentTime = 1000;
-    vsyncConnection->RemoveTriggeredVsync(timestamp);
+    vsyncConnection->RemoveTriggeredVsync(currentTime);
     ASSERT_EQ(vsyncConnection->requestVsyncTimestamp_.size(), 0);
 }
 
@@ -1134,7 +1134,7 @@ HWTEST_F(VSyncDistributorTest, NeedTriggeredVsync001, Function | MediumTest | Le
     vsyncConnection->requestVsyncTimestamp_.insert(100);
     int64_t currentTime = 1000;
     ASSERT_TRUE(vsyncConnection->NeedTriggeredVsync(currentTime));
-    int64_t currentTime = 10;
+    currentTime = 10;
     ASSERT_TRUE(vsyncConnection->NeedTriggeredVsync(currentTime));
 }
 } // namespace
