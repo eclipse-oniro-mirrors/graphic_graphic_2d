@@ -130,7 +130,7 @@ void RSAnimationTraceUtils::addAnimationFinishTrace(
     const std::string info, const uint64_t nodeId, const uint64_t animationId, bool isAddLogInfo) const
 {
     RS_TRACE_NAME_FMT("%s node[%llu] animate[%llu]", info.c_str(), nodeId, animationId);
-    if (isDebugOpen_  && isAddLogInfo) {
+    if (isDebugOpen_ && isAddLogInfo) {
         ROSEN_LOGI("%{public}s node[%{public}" PRIu64 "] animate[%{public}" PRIu64 "]",
         info.c_str(), nodeId, animationId);
     }
