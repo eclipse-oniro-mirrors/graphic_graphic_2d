@@ -701,5 +701,15 @@ bool RSSystemProperties::GetVKImageUseEnabled()
     return false;
 }
 
+void RSSystemProperties::SetDebugFmtTraceEnabled(bool flag)
+{
+    debugFmtTraceEnable_ = flag;
+}
+
+bool RSSystemProperties::GetDebugFmtTraceEnabled()
+{
+    return GetDebugTraceEnabled();
+}
+
 } // namespace Rosen
 } // namespace OHOS

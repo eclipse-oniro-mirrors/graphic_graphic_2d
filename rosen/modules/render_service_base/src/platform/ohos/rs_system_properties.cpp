@@ -35,7 +35,7 @@ constexpr int DEFAULT_ADVANCED_DIRTY_REGION_ENABLED_VALUE = 1;
 constexpr int DEFAULT_DIRTY_ALIGN_ENABLED_VALUE = 0;
 constexpr int DEFAULT_CORRECTION_MODE_VALUE = 999;
 constexpr int DEFAULT_SCALE_MODE = 2;
-constexpr const char* DEFAULT_CLIP_RECT_THRESHOLD = "0.9";
+constexpr const char* DEFAULT_CLIP_RECT_THRESHOLD = "0.7";
 #ifdef RS_ENABLE_VK
 constexpr int DEFAULT_TEXTBLOB_LINE_COUNT = 9;
 struct GetComponentSwitch ComponentSwitchTable[] = {
@@ -1463,6 +1463,17 @@ bool RSSystemProperties::GetVKImageUseEnabled()
     static bool enable = IsUseVulkan() &&
         system::GetBoolParameter("persist.sys.graphic.vkimage_reuse", true);
     return enable;
+}
+
+void RSSystemProperties::SetDebugFmtTraceEnabled(bool flag)
+{
+    debugFmtTraceEnable_ = flag;
+    ROSEN_LOGI("RSSystemProperties::SetDebugFmtTraceEnabled:%{public}d", debugFmtTraceEnable_);
+}
+
+bool RSSystemProperties::GetDebugFmtTraceEnabled()
+{
+    return GetDebugTraceEnabled() || debugFmtTraceEnable_;
 }
 
 } // namespace Rosen

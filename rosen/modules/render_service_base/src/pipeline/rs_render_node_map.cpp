@@ -179,6 +179,21 @@ bool RSRenderNodeMap::RegisterRenderNode(const std::shared_ptr<RSBaseRenderNode>
     return true;
 }
 
+void RSRenderNodeMap::RegisterUnTreeNode(NodeId id)
+{
+    unInTreeNodeSet_.emplace(id);
+}
+
+bool RSRenderNodeMap::UnRegisterUnTreeNode(NodeId id)
+{
+    auto iter = unInTreeNodeSet_.find(id);
+    if (iter != unInTreeNodeSet_.end()) {
+        unInTreeNodeSet_.erase(iter);
+        return true;
+    }
+    return false;
+}
+
 bool RSRenderNodeMap::RegisterDisplayRenderNode(const std::shared_ptr<RSDisplayRenderNode>& nodePtr)
 {
     NodeId id = nodePtr->GetId();
@@ -295,6 +310,10 @@ void RSRenderNodeMap::FilterNodeByPid(pid_t pid)
             pair.second->FilterModifiersByPid(pid);
         }
         return ExtractPid(pair.first) == pid;
+    });
+
+    EraseIf(unInTreeNodeSet_, [pid](const auto& nodeId) -> bool {
+        return ExtractPid(nodeId) == pid;
     });
 
     if (auto fallbackNode = GetAnimationFallbackNode()) {

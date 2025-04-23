@@ -50,6 +50,14 @@ struct HardCursorInfo {
     NodeId id = INVALID_NODEID;
     DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr drawablePtr = nullptr;
 };
+
+enum ForceCommitReason {
+    NO_FORCE = 0,
+    FORCED_BY_UNI_RENDER_FLAG = 1,
+    FORCED_BY_HWC_UPDATE = 1 << 1,
+    FORCED_BY_POINTER_WINDOW = 1 << 2,
+};
+
 class RSB_EXPORT RSRenderThreadParams {
 public:
     using DrawablesVec = std::vector<std::pair<NodeId,
@@ -289,14 +297,14 @@ public:
         return isCurtainScreenOn_;
     }
     
-    void SetForceCommitLayer(bool forceCommit)
+    void SetForceCommitLayer(uint32_t forceCommitReason)
     {
-        isForceCommitLayer_ = forceCommit;
+        forceCommitReason_ = forceCommitReason;
     }
 
-    bool GetForceCommitLayer() const
+    uint32_t GetForceCommitReason() const
     {
-        return isForceCommitLayer_;
+        return forceCommitReason_;
     }
 
     void SetCacheEnabledForRotation(bool flag)
@@ -511,7 +519,7 @@ private:
     std::vector<DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr> selfDrawables_;
     DrawablesVec hardwareEnabledTypeDrawables_;
     std::map<NodeId, DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr> hardCursorDrawableMap_;
-    bool isForceCommitLayer_ = false;
+    uint32_t forceCommitReason_ = 0;
     bool hasMirrorDisplay_ = false;
     // accumulatedDirtyRegion to decide whether to skip tranasparent nodes.
     Occlusion::Region accumulatedDirtyRegion_;
