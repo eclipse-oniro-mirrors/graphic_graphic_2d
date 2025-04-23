@@ -1452,9 +1452,17 @@ uint32_t RSScreenManager::SetScreenActiveRect(ScreenId id, const GraphicIRect& a
         return StatusCode::SCREEN_NOT_FOUND;
     }
 
-    RSHardwareThread::Instance().ScheduleTask([screen, activeRect]() {
+    RSHardwareThread::Instance().ScheduleTask([screen, activeRect, id]() {
         if (screen->SetScreenActiveRect(activeRect) != StatusCode::SUCCESS) {
             RS_LOGW("%{public}s: Invalid param", __func__);
+            return;
+        }
+        auto screenManager = CreateOrGetScreenManager();
+        if (screenManager) {
+            auto output = screenManager->GetOutput(id);
+            if (output) {
+                output->SetActiveRectSwitchStatus(true);
+            }
         }
     }).wait();
     return StatusCode::SUCCESS;
