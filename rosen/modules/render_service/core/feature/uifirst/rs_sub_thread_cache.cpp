@@ -82,23 +82,18 @@ void RsSubThreadCache::SetCacheSurfaceProcessedStatus(CacheProcessStatus cachePr
     }
 }
 
-std::shared_ptr<Drawing::Surface> RsSubThreadCache::GetCacheSurface(uint32_t threadIndex,
-    bool needCheckThread, bool releaseAfterGet)
+std::shared_ptr<Drawing::Surface> RsSubThreadCache::GetCacheSurface(uint32_t threadIndex)
 {
-    if (releaseAfterGet) {
-        return std::move(cacheSurface_);
-    }
-    if (!needCheckThread || cacheSurfaceThreadIndex_ == threadIndex || !cacheSurface_) {
+    if (cacheSurfaceThreadIndex_ == threadIndex) {
         return cacheSurface_;
     }
-
-    // freeze cache scene
-    ClearCacheSurfaceInThread();
     return nullptr;
 }
 
 void RsSubThreadCache::ClearCacheSurfaceInThread()
 {
+    RS_TRACE_NAME_FMT("ClearCacheSurfaceInThread id:%" PRIu64, GetNodeId());
+    RS_LOGI("ClearCacheSurfaceInThread id:%{public}" PRIu64, GetNodeId());
     std::scoped_lock<std::recursive_mutex> lock(completeResourceMutex_);
     if (clearCacheSurfaceFunc_) {
         clearCacheSurfaceFunc_(std::move(cacheSurface_), std::move(cacheCompletedSurface_),
@@ -109,7 +104,8 @@ void RsSubThreadCache::ClearCacheSurfaceInThread()
 
 void RsSubThreadCache::ClearCacheSurfaceOnly()
 {
-    RS_TRACE_NAME_FMT("ClearCacheSurfaceOnly");
+    RS_TRACE_NAME_FMT("ClearCacheSurfaceOnly id:%" PRIu64, GetNodeId());
+    RS_LOGI("ClearCacheSurfaceOnly id:%{public}" PRIu64, GetNodeId());
     if (cacheSurface_ == nullptr) {
         return;
     }
@@ -368,13 +364,20 @@ void RsSubThreadCache::InitCacheSurface(Drawing::GPUContext* gpuContext,
     cacheSurface_ = Drawing::Surface::MakeRasterN32Premul(width, height);
 #endif
 }
+
+void RsSubThreadCache::ResetUifirst(bool isOnlyClearCache)
+{
+    RS_LOGI("ResetUifirst id:%{public}" PRIu64 ", isOnlyClearCache:%{public}d", GetNodeId(), isOnlyClearCache);
+    if (isOnlyClearCache) {
+        ClearCacheSurfaceOnly();
+    } else {
+        ClearCacheSurfaceInThread();
+    }
+}
+
 bool RsSubThreadCache::HasCachedTexture() const
 {
-#if (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
-    return isTextureValid_.load();
-#else
-    return true;
-#endif
+    return isCacheCompletedValid_;
 }
 
 bool RsSubThreadCache::IsCacheValid() const
@@ -419,6 +422,11 @@ void RsSubThreadCache::UpdateBackendTexture()
 void RsSubThreadCache::UpdateCompletedCacheSurface()
 {
     RS_TRACE_NAME_FMT("UpdateCompletedCacheSurface");
+    if (cacheSurface_ == nullptr || !IsCacheValid()) {
+        RS_LOGE("cacheSurface is nullptr, cache and completeCache swap failed");
+        isCacheValid_ = false;
+        return;
+    }
     // renderthread not use, subthread done not use
     std::swap(cacheSurface_, cacheCompletedSurface_);
     std::swap(cacheSurfaceThreadIndex_, completedSurfaceThreadIndex_);
