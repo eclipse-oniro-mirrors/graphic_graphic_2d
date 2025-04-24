@@ -2636,7 +2636,7 @@ void RSSurfaceRenderNode::SetHwcChildrenDisabledState()
             }
             for (auto hwcNode : hwcNodes) {
                 auto hwcNodePtr = hwcNode.lock();
-                if (!hwcNodePtr || hwcNodePtr->IsHadwareForcedDisabled()) {
+                if (!hwcNodePtr || hwcNodePtr->IsHardwareForcedDisabled()) {
                     continue;
                 }
                 hwcNodePtr->SetHardwareForcedDisabledState(true);
