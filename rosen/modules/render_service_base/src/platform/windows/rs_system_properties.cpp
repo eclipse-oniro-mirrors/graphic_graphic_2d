@@ -629,6 +629,11 @@ bool RSSystemProperties::GetNodeGroupGroupedByUIEnabled()
     return false;
 }
 
+bool RSSystemProperties::GetTimeVsyncDisabled()
+{
+    return false;
+}
+
 #ifdef RS_ENABLE_VK
 bool RSSystemProperties::GetHybridRenderEnabled()
 {

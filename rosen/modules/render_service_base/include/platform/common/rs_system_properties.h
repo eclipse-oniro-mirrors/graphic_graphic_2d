@@ -345,6 +345,7 @@ public:
     static bool GetOptimizeHwcComposeAreaEnabled();
     static bool GetWindowKeyFrameEnabled();
     static bool GetNodeGroupGroupedByUIEnabled();
+    static bool GetTimeVsyncDisabled();
     static void SetDebugFmtTraceEnabled(bool flag);
     static bool GetDebugFmtTraceEnabled();
 

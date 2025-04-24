@@ -1358,6 +1358,13 @@ bool RSSystemProperties::GetNodeGroupGroupedByUIEnabled()
     return groupedByUIEnabled;
 }
 
+bool RSSystemProperties::GetTimeVsyncDisabled()
+{
+    static bool timeVsyncDisabled =
+        std::atoi((system::GetParameter("persist.sys.graphic.timeVsyncDisabled", "0")).c_str()) != 0;
+    return timeVsyncDisabled;
+}
+
 #ifdef RS_ENABLE_VK
 bool RSSystemProperties::GetHybridRenderEnabled()
 {
