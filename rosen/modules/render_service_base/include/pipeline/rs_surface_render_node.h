@@ -856,22 +856,6 @@ public:
         RSVisibleLevel visibleLevel = RSVisibleLevel::RS_UNKNOW_VISIBLE_LEVEL,
         bool isSystemAnimatedScenes = false);
 
-    void SetLeashWindowVisibleRegionEmpty(bool isLeashWindowVisibleRegionEmpty)
-    {
-        if (!IsLeashWindow()) {
-            return;
-        }
-        isLeashWindowVisibleRegionEmpty_ = isLeashWindowVisibleRegionEmpty;
-        SetLeashWindowVisibleRegionEmptyParam();
-    }
-
-    bool GetLeashWindowVisibleRegionEmpty() const
-    {
-        return isLeashWindowVisibleRegionEmpty_;
-    }
-
-    void SetLeashWindowVisibleRegionEmptyParam();
-
     void SetExtraDirtyRegionAfterAlignment(const Occlusion::Region& region)
     {
         extraDirtyRegionAfterAlignment_ = region;
@@ -1670,7 +1654,6 @@ private:
     const enum SurfaceWindowType surfaceWindowType_ = SurfaceWindowType::DEFAULT_WINDOW;
     bool isNotifyRTBufferAvailablePre_ = false;
     bool isRefresh_ = false;
-    bool isLeashWindowVisibleRegionEmpty_ = false;
     bool isOcclusionVisible_ = true;
     bool isOcclusionVisibleWithoutFilter_ = true;
     bool isOcclusionInSpecificScenes_ = false;
