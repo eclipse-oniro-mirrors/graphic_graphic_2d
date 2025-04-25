@@ -2635,7 +2635,7 @@ void RSSurfaceRenderNode::SetHwcChildrenDisabledState()
             RS_OPTIONAL_TRACE_NAME_FMT("hwc debug: name:%s id:%" PRIu64 " disabled by parent",
                 hwcNodePtr->GetName().c_str(), hwcNodePtr->GetId());
         }
-    };;
+    };
     TraverseHwcNodes(GetChildHardwareEnabledNodes());
     std::vector<std::pair<NodeId, RSSurfaceRenderNode::WeakPtr>> allSubSurfaceNodes;
     GetAllSubSurfaceNodes(allSubSurfaceNodes);
