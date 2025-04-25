@@ -77,11 +77,9 @@ void RSFrameRateVote::VideoFrameRateVote(uint64_t surfaceNodeId, OHSurfaceSource
 {
     // OH SURFACE SOURCE VIDEO AN UI VOTE
     if (lastVotedRate_ != OLED_NULL_HZ && CheckSurfaceAndUi(sourceType)) {
-        std::lock_guard<ffrt::mutex> autoLock(ffrtMutex_);
-        if (surfaceVideoFrameRateVote_.find(lastSurfaceNodeId_) != surfaceVideoFrameRateVote_.end()) {
-            if (surfaceVideoFrameRateVote_[lastSurfaceNodeId_]) {
-                surfaceVideoFrameRateVote_[lastSurfaceNodeId_]->ReSetLastRate();
-            }
+        auto votingAddress = surfaceVideoFrameRateVote_.find(lastSurfaceNodeId_);
+        if (votingAddress != surfaceVideoFrameRateVote_.end() && votingAddress->second) {
+            votingAddress->second->ReSetLastRate();
         }
         SurfaceVideoVote(lastSurfaceNodeId_, 0);
         return;
