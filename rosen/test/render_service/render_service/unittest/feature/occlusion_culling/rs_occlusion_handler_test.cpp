@@ -112,7 +112,7 @@ HWTEST_F(RSOcclusionHandlerTest, CollectNode_001, TestSize.Level1)
  * @tc.name: CollectNode_002
  * @tc.desc: Test CollectNode
  * @tc.type: FUNC
- * @tc.require: issueIC2H2 
+ * @tc.require: issueIC2H2
  */
 HWTEST_F(RSOcclusionHandlerTest, CollectNode_002, TestSize.Level1)
 {
