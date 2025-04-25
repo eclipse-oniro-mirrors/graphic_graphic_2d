@@ -1189,7 +1189,7 @@ HWTEST_F(RSInterfacesTest, SetScreenRefreshRate001, Function | SmallTest | Level
 HWTEST_F(RSInterfacesTest, SetShowRefreshRateEnabled, Function | SmallTest | Level2)
 {
     bool enabled = true;
-    int32_t type =0;
+    int32_t type = 0;
     rsInterfaces->SetShowRefreshRateEnabled(enabled, type);
     EXPECT_GE(rsInterfaces->GetShowRefreshRateEnabled(), 0);
 }
