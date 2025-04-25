@@ -98,7 +98,8 @@ public:
     void UpdateNeedDrawFocusChange(NodeId id);
     void ProcessDataBySingleFrameComposer(std::unique_ptr<RSTransactionData>& rsTransactionData);
     void RecvRSTransactionData(std::unique_ptr<RSTransactionData>& rsTransactionData);
-    void RequestNextVSync(const std::string& fromWhom = "unknown", int64_t lastVSyncTS = 0);
+    void RequestNextVSync(
+        const std::string& fromWhom = "unknown", int64_t lastVSyncTS = 0, const int64_t& requestVsyncTime = 0);
     void PostTask(RSTaskMessage::RSTask task);
     void PostTask(RSTaskMessage::RSTask task, const std::string& name, int64_t delayTime,
         AppExecFwk::EventQueue::Priority priority = AppExecFwk::EventQueue::Priority::IDLE);
@@ -421,12 +422,6 @@ public:
         unmappedCacheSet_.insert(bufferId);
     }
 
-    void AddToUnmappedMirrorCacheSet(uint32_t bufferId)
-    {
-        std::lock_guard<std::mutex> lock(unmappedCacheSetMutex_);
-        unmappedVirScreenCacheSet_.insert(bufferId);
-    }
-
     void AddToUnmappedCacheSet(const std::set<uint32_t>& seqNumSet)
     {
         std::lock_guard<std::mutex> lock(unmappedCacheSetMutex_);
@@ -440,6 +435,8 @@ public:
     void NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt);
     void SetBufferInfo(uint64_t id, const std::string &name, uint32_t queueSize,
         int32_t bufferCount, int64_t lastConsumeTime);
+    void GetFrontBufferDesiredPresentTimeStamp(
+        const sptr<IConsumerSurface>& consumer, int64_t& desiredPresentTimeStamp);
 
     // Enable HWCompose
     bool IsHardwareEnabledNodesNeedSync();
@@ -492,10 +489,11 @@ private:
     void SkipCommandByNodeId(std::vector<std::unique_ptr<RSTransactionData>>& transactionVec, pid_t pid);
     static void OnHideNotchStatusCallback(const char *key, const char *value, void *context);
     static void OnDrawingCacheDfxSwitchCallback(const char *key, const char *value, void *context);
+    static void OnFmtTraceSwitchCallback(const char *key, const char *value, void *context);
 
     bool DoParallelComposition(std::shared_ptr<RSBaseRenderNode> rootNode);
 
-    void ClassifyRSTransactionData(std::unique_ptr<RSTransactionData>& rsTransactionData);
+    void ClassifyRSTransactionData(std::shared_ptr<RSTransactionData> rsTransactionData);
     void ProcessRSTransactionData(std::unique_ptr<RSTransactionData>& rsTransactionData, pid_t pid);
     void ProcessSyncRSTransactionData(std::unique_ptr<RSTransactionData>& rsTransactionData, pid_t pid);
     void ProcessSyncTransactionCount(std::unique_ptr<RSTransactionData>& rsTransactionData);
@@ -516,6 +514,7 @@ private:
 
     bool IsResidentProcess(pid_t pid) const;
     bool IsNeedSkip(NodeId instanceRootNodeId, pid_t pid);
+    uint32_t GetForceCommitReason() const;
 
     // UIFirst
     bool CheckParallelSubThreadNodesStatus();
@@ -558,6 +557,8 @@ private:
     void PrepareUiCaptureTasks(std::shared_ptr<RSUniRenderVisitor> uniVisitor);
     void UIExtensionNodesTraverseAndCallback();
     bool CheckUIExtensionCallbackDataChanged() const;
+    void RequestNextVSyncInner(VSyncReceiver::FrameCallback callback,
+        const std::string& fromWhom = "unknown", int64_t lastVSyncTS = 0, const int64_t& requestVsyncTime = 0);
 
     void CheckBlurEffectCountStatistics(std::shared_ptr<RSBaseRenderNode> rootNode);
     void OnCommitDumpClientNodeTree(NodeId nodeId, pid_t pid, uint32_t taskId, const std::string& result);
@@ -576,6 +577,7 @@ private:
     void ResetHardwareEnabledState(bool isUniRender);
     void CheckIfHardwareForcedDisabled();
     bool DoDirectComposition(std::shared_ptr<RSBaseRenderNode> rootNode, bool waitForRT);
+    bool ExistBufferIsVisibleAndUpdate();
     void UpdateDirectCompositionByAnimate(bool animateNeedRequestNextVsync);
 
     bool isUniRender_ = RSUniRenderJudgement::IsUniRender();
@@ -696,7 +698,7 @@ private:
     std::map<pid_t, std::vector<std::unique_ptr<RSTransactionData>>> cachedSkipTransactionDataMap_;
     std::unordered_map<pid_t, uint64_t> transactionDataLastWaitTime_;
 
-    bool needRequestNextVsync_ = false;
+    int64_t requestNextVsyncTime_ = -1;
     bool isHdrSwitchChanged_ = false;
 
     /**
@@ -708,7 +710,6 @@ private:
      * removed from the GPU cache.
      */
     std::set<uint32_t> unmappedCacheSet_ = {}; // must protected by unmappedCacheSetMutex_
-    std::set<uint32_t> unmappedVirScreenCacheSet_ = {}; // must protected by unmappedCacheSetMutex_
     std::mutex unmappedCacheSetMutex_;
 
     /**

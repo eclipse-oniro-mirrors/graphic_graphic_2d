@@ -345,6 +345,9 @@ public:
     static bool GetOptimizeHwcComposeAreaEnabled();
     static bool GetWindowKeyFrameEnabled();
     static bool GetNodeGroupGroupedByUIEnabled();
+    static bool GetTimeVsyncDisabled();
+    static void SetDebugFmtTraceEnabled(bool flag);
+    static bool GetDebugFmtTraceEnabled();
 
 #ifdef RS_ENABLE_VK
     static bool GetHybridRenderEnabled();
@@ -360,6 +363,7 @@ public:
     static bool GetHybridRenderSvgEnabled();
     static bool GetHybridRenderHmsymbolEnabled();
 #endif
+    static bool GetVKImageUseEnabled();
 
 private:
     RSSystemProperties() = default;
@@ -368,6 +372,7 @@ private:
     inline static bool isDrawTextAsBitmap_ = false;
     inline static bool cacheEnabledForRotation_ = false;
     static inline bool forceHpsBlurDisabled_ = false;
+    static inline bool debugFmtTraceEnable_ = false;
     static const GpuApiType systemGpuApiType_;
     static const DdgrOpincType ddgrOpincType_;
     static const DdgrOpincDfxType ddgrOpincDfxType_;

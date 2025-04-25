@@ -95,6 +95,7 @@ namespace {
         {"STYLUS_LINK_WRITE", STYLUS_LINK_WRITE}};
     constexpr uint32_t FRAME_RATE_REPORT_MAX_RETRY_TIMES = 3;
     constexpr uint32_t FRAME_RATE_REPORT_DELAY_TIME = 20000;
+    const std::string VRATE_CONTROL_MINIFPS = "minifps";
 }
 
 HgmFrameRateManager::HgmFrameRateManager()
@@ -483,16 +484,16 @@ void HgmFrameRateManager::GetVRateMiniFPS(const std::shared_ptr<PolicyConfigData
         HGM_LOGE("GetVRateMiniFPS configData is nullptr use dafault value");
         return;
     }
-    if (configData->vRateControlList_.find(vrateControlMinifps_) == configData->vRateControlList_.end()) {
-        HGM_LOGE("GetVRateMiniFPS vrateControlMinifps_ config is invalid use dafault value");
+    if (configData->vRateControlList_.find(VRATE_CONTROL_MINIFPS) == configData->vRateControlList_.end()) {
+        HGM_LOGE("GetVRateMiniFPS VRATE_CONTROL_MINIFPS config is invalid use dafault value");
         return;
     }
-    if (!XMLParser::IsNumber(configData->vRateControlList_[vrateControlMinifps_])) {
-        HGM_LOGE("GetVRateMiniFPS vrateControlMinifps_ config is Is Not Number use dafault value");
+    if (!XMLParser::IsNumber(configData->vRateControlList_[VRATE_CONTROL_MINIFPS])) {
+        HGM_LOGE("GetVRateMiniFPS VRATE_CONTROL_MINIFPS config is Is Not Number use dafault value");
         return;
     }
 
-    vrateControlMinifpsValue_ = static_cast<int32_t>(std::stoi(configData->vRateControlList_[vrateControlMinifps_]));
+    vrateControlMinifpsValue_ = static_cast<int32_t>(std::stoi(configData->vRateControlList_[VRATE_CONTROL_MINIFPS]));
     HGM_LOGI("GetVRateMiniFPS vrateControlMinifpsValue:%{public}d", vrateControlMinifpsValue_);
 }
 
@@ -2003,11 +2004,25 @@ void HgmFrameRateManager::NotifyPageName(pid_t pid, const std::string &packageNa
     appPageUrlStrategy_.NotifyPageName(pid, packageName, pageName, isEnter);
 }
 
+void HgmFrameRateManager::CheckNeedUpdateAppOffset(uint32_t refreshRate)
+{
+    if (refreshRate > OLED_60_HZ || isNeedUpdateAppOffset_) {
+        return;
+    }
+    if (auto iter = voteRecord_.find("VOTER_THERMAL");
+        iter != voteRecord_.end() && !iter->second.first.empty() &&
+        iter->second.first.back().max > 0 && iter->second.first.back().max <= OLED_60_HZ) {
+        isNeedUpdateAppOffset_ = true;
+        return;
+    }
+}
+
 void HgmFrameRateManager::CheckRefreshRateChange(
     bool followRs, bool frameRateChanged, uint32_t refreshRate, bool needChangeDssRefreshRate)
 {
     // 当dvsync在连续延迟切帧阶段，使用dvsync内记录的刷新率判断是否变化
     CreateVSyncGenerator()->DVSyncRateChanged(controllerRate_, frameRateChanged);
+    CheckNeedUpdateAppOffset(refreshRate);
     if (HgmCore::Instance().GetLtpoEnabled() && (frameRateChanged || isNeedUpdateAppOffset_)) {
         HandleFrameRateChangeForLTPO(timestamp_.load(), followRs);
         if (needChangeDssRefreshRate && changeDssRefreshRateCb_ != nullptr) {

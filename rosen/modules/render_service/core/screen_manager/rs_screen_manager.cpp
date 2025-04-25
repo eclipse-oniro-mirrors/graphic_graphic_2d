@@ -943,7 +943,7 @@ RSScreenCapability RSScreenManager::GetScreenCapability(ScreenId id) const
     }
 
     const auto& capability = screen->GetCapability();
-    std::vector<RSScreenProps> props(capability.propertyCount);
+    std::vector<RSScreenProps> props(capability.props.size());
     std::transform(capability.props.cbegin(), capability.props.cend(), props.begin(), [](const auto& node) {
         return RSScreenProps(node.name, node.propId, node.value);
     });
@@ -1452,9 +1452,17 @@ uint32_t RSScreenManager::SetScreenActiveRect(ScreenId id, const GraphicIRect& a
         return StatusCode::SCREEN_NOT_FOUND;
     }
 
-    RSHardwareThread::Instance().ScheduleTask([screen, activeRect]() {
+    RSHardwareThread::Instance().ScheduleTask([screen, activeRect, id]() {
         if (screen->SetScreenActiveRect(activeRect) != StatusCode::SUCCESS) {
             RS_LOGW("%{public}s: Invalid param", __func__);
+            return;
+        }
+        auto screenManager = CreateOrGetScreenManager();
+        if (screenManager) {
+            auto output = screenManager->GetOutput(id);
+            if (output) {
+                output->SetActiveRectSwitchStatus(true);
+            }
         }
     }).wait();
     return StatusCode::SUCCESS;
@@ -2068,7 +2076,7 @@ int32_t RSScreenManager::GetScreenHDRCapability(ScreenId id, RSScreenHDRCapabili
     }
 
     GraphicHDRCapability hdrCapability = screen->GetHDRCapability();
-    std::vector<ScreenHDRFormat> hdrFormats(hdrCapability.formatCount);
+    std::vector<ScreenHDRFormat> hdrFormats(hdrCapability.formats.size());
     std::transform(hdrCapability.formats.cbegin(), hdrCapability.formats.cend(), hdrFormats.begin(),
         [](const auto& node) { return static_cast<ScreenHDRFormat>(node); }
     );
@@ -2370,7 +2378,7 @@ int32_t RSScreenManager::SetScreenLinearMatrix(ScreenId id, const std::vector<fl
     return StatusCode::SUCCESS;
 }
 
-bool RSScreenManager::IsVisibleRectSupportRotation(ScreenId id) const
+bool RSScreenManager::IsVisibleRectSupportRotation(ScreenId id)
 {
     auto screen = GetScreen(id);
     if (screen == nullptr) {

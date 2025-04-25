@@ -35,7 +35,7 @@ constexpr int DEFAULT_ADVANCED_DIRTY_REGION_ENABLED_VALUE = 1;
 constexpr int DEFAULT_DIRTY_ALIGN_ENABLED_VALUE = 0;
 constexpr int DEFAULT_CORRECTION_MODE_VALUE = 999;
 constexpr int DEFAULT_SCALE_MODE = 2;
-constexpr const char* DEFAULT_CLIP_RECT_THRESHOLD = "0.9";
+constexpr const char* DEFAULT_CLIP_RECT_THRESHOLD = "0.7";
 #ifdef RS_ENABLE_VK
 constexpr int DEFAULT_TEXTBLOB_LINE_COUNT = 9;
 struct GetComponentSwitch ComponentSwitchTable[] = {
@@ -1358,6 +1358,13 @@ bool RSSystemProperties::GetNodeGroupGroupedByUIEnabled()
     return groupedByUIEnabled;
 }
 
+bool RSSystemProperties::GetTimeVsyncDisabled()
+{
+    static bool timeVsyncDisabled =
+        std::atoi((system::GetParameter("persist.sys.graphic.timeVsyncDisabled", "0")).c_str()) != 0;
+    return timeVsyncDisabled;
+}
+
 #ifdef RS_ENABLE_VK
 bool RSSystemProperties::GetHybridRenderEnabled()
 {
@@ -1457,6 +1464,24 @@ int32_t RSSystemProperties::GetHybridRenderSwitch(ComponentEnableSwitch bitSeq)
         hybridRenderSystemProperty[static_cast<int>(bitSeq)];
 }
 #endif
+
+bool RSSystemProperties::GetVKImageUseEnabled()
+{
+    static bool enable = IsUseVulkan() &&
+        system::GetBoolParameter("persist.sys.graphic.vkimage_reuse", true);
+    return enable;
+}
+
+void RSSystemProperties::SetDebugFmtTraceEnabled(bool flag)
+{
+    debugFmtTraceEnable_ = flag;
+    ROSEN_LOGI("RSSystemProperties::SetDebugFmtTraceEnabled:%{public}d", debugFmtTraceEnable_);
+}
+
+bool RSSystemProperties::GetDebugFmtTraceEnabled()
+{
+    return GetDebugTraceEnabled() || debugFmtTraceEnable_;
+}
 
 } // namespace Rosen
 } // namespace OHOS

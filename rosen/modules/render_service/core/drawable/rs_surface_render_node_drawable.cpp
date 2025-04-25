@@ -81,6 +81,7 @@ RSSurfaceRenderNodeDrawable::RSSurfaceRenderNodeDrawable(std::shared_ptr<const R
 #ifndef ROSEN_CROSS_PLATFORM
     consumerOnDraw_ = surfaceNode->GetRSSurfaceHandler()->GetConsumer();
 #endif
+    subThreadCache_.SetNodeId(GetId());
 }
 
 RSRenderNodeDrawable::Ptr RSSurfaceRenderNodeDrawable::OnGenerate(std::shared_ptr<const RSRenderNode> node)
@@ -526,12 +527,6 @@ void RSSurfaceRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
 
     RSUiFirstProcessStateCheckerHelper stateCheckerHelper(
         surfaceParams->GetFirstLevelNodeId(), surfaceParams->GetUifirstRootNodeId(), nodeId_);
-    if (!RSUiFirstProcessStateCheckerHelper::CheckMatchAndWaitNotify(*surfaceParams)) {
-        SetDrawSkipType(DrawSkipType::CHECK_MATCH_AND_WAIT_NOTIFY_FAIL);
-        RS_LOGE("RSSurfaceRenderNodeDrawable::OnDraw CheckMatchAndWaitNotify failed");
-        return;
-    }
-
     // Regional screen recording does not enable uifirst.
     bool enableVisiableRect = RSUniRenderThread::Instance().GetEnableVisiableRect();
     if (!enableVisiableRect) {
@@ -543,8 +538,10 @@ void RSSurfaceRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         }
     }
 
-    auto cacheState = subThreadCache_.GetCacheSurfaceProcessedStatus();
-    auto useNodeMatchOptimize = cacheState != CacheProcessStatus::WAITING && cacheState != CacheProcessStatus::DOING;
+    // can't use NodeMatchOptimize if leash window is on draw
+    auto cacheState = RSUifirstManager::Instance().GetCacheSurfaceProcessedStatus(*surfaceParams);
+    auto useNodeMatchOptimize = rscanvas->GetIsParallelCanvas() &&
+        (cacheState == CacheProcessStatus::WAITING || cacheState == CacheProcessStatus::DOING);
     if (!RSUiFirstProcessStateCheckerHelper::CheckMatchAndWaitNotify(*surfaceParams, useNodeMatchOptimize)) {
         SetDrawSkipType(DrawSkipType::CHECK_MATCH_AND_WAIT_NOTIFY_FAIL);
         RS_LOGE("RSSurfaceRenderNodeDrawable::OnDraw CheckMatchAndWaitNotify failed");
@@ -1084,9 +1081,6 @@ void RSSurfaceRenderNodeDrawable::DealWithSelfDrawingNodeBuffer(
     pid_t threadId = gettid();
     auto params = RSUniRenderUtil::CreateBufferDrawParam(*this, false, threadId);
     params.targetColorGamut = GetAncestorDisplayColorGamut(surfaceParams);
-    if (threadId == RSUniRenderThread::Instance().GetTid()) {
-        params.screenId = RSUniRenderThread::Instance().GetRSRenderThreadParams()->GetScreenInfo().id;
-    }
 #ifdef USE_VIDEO_PROCESSING_ENGINE
     params.sdrNits = surfaceParams.GetSdrNit();
     params.tmoNits = surfaceParams.GetDisplayNit();

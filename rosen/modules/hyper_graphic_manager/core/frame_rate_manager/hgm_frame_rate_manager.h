@@ -301,6 +301,9 @@ private:
     }
     void FrameRateReportTask(uint32_t leftRetryTimes);
     void EraseGameRateDiscountMap(pid_t pid);
+    // Vrate
+    void GetVRateMiniFPS(const std::shared_ptr<PolicyConfigData>& configData);
+    void CheckNeedUpdateAppOffset(uint32_t refreshRate);
 
     std::atomic<uint32_t> currRefreshRate_ = 0;
     uint32_t controllerRate_ = 0;
@@ -388,10 +391,8 @@ private:
     long lastLtpoVoteTime_ = 0;
 
     // Vrate
-    std::string vrateControlMinifps_ = "minifps";
-    //defalut value is 30, visiable lower than 10%.
-    int32_t vrateControlMinifpsValue_ = 30;
-    void GetVRateMiniFPS(const std::shared_ptr<PolicyConfigData>& configData);
+    //defalut value is 1, visiable lower than 10%.
+    int32_t vrateControlMinifpsValue_ = 1;
 };
 } // namespace Rosen
 } // namespace OHOS
