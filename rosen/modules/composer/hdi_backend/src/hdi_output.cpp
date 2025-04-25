@@ -131,8 +131,8 @@ RosenError HdiOutput::SetHdiOutputDevice(HdiDevice* device)
 
 void HdiOutput::SetLayerInfo(const std::vector<LayerInfoPtr> &layerInfos)
 {
-    std::unique_lock<std::mutex> lock(mutex_);
     uint32_t solidLayerCount = 0;
+    std::unique_lock<std::mutex> lock(mutex_);
     for (auto &layerInfo : layerInfos) {
         if (layerInfo == nullptr) {
             HLOGE("current layerInfo is null");
@@ -156,7 +156,7 @@ void HdiOutput::SetLayerInfo(const std::vector<LayerInfoPtr> &layerInfos)
         uint64_t surfaceId = layerInfo->GetSurface()->GetUniqueId();
         auto iter = surfaceIdMap_.find(surfaceId);
         if (iter != surfaceIdMap_.end()) {
-            const LayerPtr &layer = iter->second;
+            const LayerPtr& layer = iter->second;
             layer->UpdateLayerInfo(layerInfo);
             continue;
         }
@@ -187,17 +187,17 @@ void HdiOutput::CleanLayerBufferBySurfaceId(uint64_t surfaceId)
 
 void HdiOutput::DeletePrevLayersLocked()
 {
-    auto surfaceIter = solidSurfaceIdMap_.begin();
-    while (surfaceIter != solidSurfaceIdMap_.end()) {
-        const LayerPtr &layer = surfaceIter->second;
+    auto solidSurfaceIter = solidSurfaceIdMap_.begin();
+    while (solidSurfaceIter != solidSurfaceIdMap_.end()) {
+        const LayerPtr& layer = solidSurfaceIter->second;
         if (!layer->GetLayerStatus()) {
-            solidSurfaceIdMap_.erase(surfaceIter++);
+            solidSurfaceIdMap_.erase(solidSurfaceIter++);
         } else {
-            ++surfaceIter;
+            ++solidSurfaceIter;
         }
     }
 
-    surfaceIter = surfaceIdMap_.begin();
+    auto surfaceIter = surfaceIdMap_.begin();
     while (surfaceIter != surfaceIdMap_.end()) {
         const LayerPtr &layer = surfaceIter->second;
         if (!layer->GetLayerStatus()) {
@@ -903,26 +903,26 @@ static inline bool Cmp(const LayerDumpInfo &layer1, const LayerDumpInfo &layer2)
 
 void HdiOutput::ReorderLayerInfoLocked(std::vector<LayerDumpInfo> &dumpLayerInfos) const
 {
-    for (auto iter = surfaceIdMap_.begin(); iter != surfaceIdMap_.end(); ++iter) {
-        if (iter->second == nullptr || iter->second->GetLayerInfo() == nullptr) {
+    for (const auto& [surfaceId, layer] : surfaceIdMap_) {
+        if (layer == nullptr || layer->GetLayerInfo() == nullptr) {
             continue;
         }
         struct LayerDumpInfo layerInfo = {
-            .nodeId = iter->second->GetLayerInfo()->GetNodeId(),
-            .surfaceId = iter->first,
-            .layer = iter->second,
+            .nodeId = layer->GetLayerInfo()->GetNodeId(),
+            .surfaceId = surfaceId,
+            .layer = layer,
         };
         dumpLayerInfos.emplace_back(layerInfo);
     }
 
-    for (auto iter = solidSurfaceIdMap_.begin(); iter != solidSurfaceIdMap_.end(); ++iter) {
-        if (iter->second == nullptr || iter->second->GetLayerInfo() == nullptr) {
+    for (const auto& [solidSurfaceId, solidLayer] : solidSurfaceIdMap_) {
+        if (solidLayer == nullptr || solidLayer->GetLayerInfo() == nullptr) {
             continue;
         }
         struct LayerDumpInfo layerInfo = {
-            .nodeId = iter->second->GetLayerInfo()->GetNodeId(),
-            .surfaceId = iter->first,
-            .layer = iter->second,
+            .nodeId = solidLayer->GetLayerInfo()->GetNodeId(),
+            .surfaceId = solidSurfaceId,
+            .layer = solidLayer,
         };
 
         dumpLayerInfos.emplace_back(layerInfo);

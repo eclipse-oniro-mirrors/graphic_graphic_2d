@@ -624,15 +624,8 @@ public:
         isHwcEnabledBySolidLayer_ = isHwcEnabledBySolidLayer;
     }
 
-    const Color& GetSolidLayerColor() const
-    {
-        return solidLayerColor_;
-    }
-
-    void SetSolidLayerColor(Color solidLayerColor)
-    {
-        solidLayerColor_ = solidLayerColor;
-    }
+    Color GetSolidLayerColor() const { return solidLayerColor_; }
+    void SetSolidLayerColor(const Color& solidLayerColor) { solidLayerColor_ = solidLayerColor; }
 
     void SetNeedCacheSurface(bool needCacheSurface);
     bool GetNeedCacheSurface() const;
