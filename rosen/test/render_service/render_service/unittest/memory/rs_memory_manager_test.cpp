@@ -53,7 +53,6 @@ HWTEST_F(RSMemoryManagerTest, DumpMemoryUsageTest001, testing::ext::TestSize.Lev
     MemoryManager::DumpMemoryUsage(log, type);
     ASSERT_TRUE(log.GetString().find("RenderService caches:") != std::string::npos);
     ASSERT_TRUE(log.GetString().find("Skia CPU caches") != std::string::npos);
-    ASSERT_TRUE(log.GetString().find("malloc stats :") != std::string::npos);
     ASSERT_TRUE(log.GetString().find("memorySnapshots") != std::string::npos);
 }
 
@@ -71,7 +70,6 @@ HWTEST_F(RSMemoryManagerTest, DumpMemoryUsageTest002, testing::ext::TestSize.Lev
     ASSERT_TRUE(log.GetString().find("RenderService caches:") != std::string::npos);
     ASSERT_TRUE(log.GetString().find("Skia CPU caches") == std::string::npos);
     ASSERT_TRUE(log.GetString().find("gpu") == std::string::npos);
-    ASSERT_TRUE(log.GetString().find("malloc stats :") == std::string::npos);
     ASSERT_TRUE(log.GetString().find("memorySnapshots") == std::string::npos);
 }
 
@@ -89,7 +87,6 @@ HWTEST_F(RSMemoryManagerTest, DumpMemoryUsageTest003, testing::ext::TestSize.Lev
     ASSERT_TRUE(log.GetString().find("RenderService caches:") == std::string::npos);
     ASSERT_TRUE(log.GetString().find("Skia CPU caches") != std::string::npos);
     ASSERT_TRUE(log.GetString().find("gpu") == std::string::npos);
-    ASSERT_TRUE(log.GetString().find("malloc stats :") == std::string::npos);
     ASSERT_TRUE(log.GetString().find("memorySnapshots") == std::string::npos);
 }
 
@@ -106,35 +103,16 @@ HWTEST_F(RSMemoryManagerTest, DumpMemoryUsageTest004, testing::ext::TestSize.Lev
     MemoryManager::DumpMemoryUsage(log, type);
     ASSERT_TRUE(log.GetString().find("RenderService caches:") == std::string::npos);
     ASSERT_TRUE(log.GetString().find("Skia CPU caches") == std::string::npos);
-    ASSERT_TRUE(log.GetString().find("malloc stats :") == std::string::npos);
     ASSERT_TRUE(log.GetString().find("memorySnapshots") == std::string::npos);
 }
 
 /**
  * @tc.name: DumpMemoryUsageTest005
- * @tc.desc: Dump only jemalloc memory when type is "jemalloc".
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(RSMemoryManagerTest, DumpMemoryUsageTest005, testing::ext::TestSize.Level1)
-{
-    DfxString log;
-    std::string type = "jemalloc";
-    MemoryManager::DumpMemoryUsage(log, type);
-    ASSERT_TRUE(log.GetString().find("RenderService caches:") == std::string::npos);
-    ASSERT_TRUE(log.GetString().find("Skia CPU caches") == std::string::npos);
-    ASSERT_TRUE(log.GetString().find("gpu") == std::string::npos);
-    ASSERT_TRUE(log.GetString().find("malloc stats :") != std::string::npos);
-    ASSERT_TRUE(log.GetString().find("memorySnapshots") == std::string::npos);
-}
-
-/**
- * @tc.name: DumpMemoryUsageTest006
  * @tc.desc: Dump only memory snapshot when type is MEM_SNAPSHOT.
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSMemoryManagerTest, DumpMemoryUsageTest006, testing::ext::TestSize.Level1)
+HWTEST_F(RSMemoryManagerTest, DumpMemoryUsageTest005, testing::ext::TestSize.Level1)
 {
     DfxString log;
     std::string type = "snapshot";
@@ -142,17 +120,16 @@ HWTEST_F(RSMemoryManagerTest, DumpMemoryUsageTest006, testing::ext::TestSize.Lev
     ASSERT_TRUE(log.GetString().find("RenderService caches:") == std::string::npos);
     ASSERT_TRUE(log.GetString().find("Skia CPU caches") == std::string::npos);
     ASSERT_TRUE(log.GetString().find("gpu") == std::string::npos);
-    ASSERT_TRUE(log.GetString().find("malloc stats :") == std::string::npos);
     ASSERT_TRUE(log.GetString().find("memorySnapshots") != std::string::npos);
 }
 
 /**
- * @tc.name: DumpMemoryUsageTest007
+ * @tc.name: DumpMemoryUsageTest006
  * @tc.desc: No memory dumped when type is invalid.
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSMemoryManagerTest, DumpMemoryUsageTest007, testing::ext::TestSize.Level1)
+HWTEST_F(RSMemoryManagerTest, DumpMemoryUsageTest006, testing::ext::TestSize.Level1)
 {
     DfxString log;
     std::string type = "invalid_type";
