@@ -1149,5 +1149,49 @@ HWTEST_F(RSSystemPropertiesTest, GetHybridRenderMemeoryReleaseEnabled, TestSize.
 {
     EXPECT_FALSE(RSSystemProperties::GetHybridRenderMemeoryReleaseEnabled());
 }
+
+/**
+ * @tc.name: GetHybridRenderTextBlobEnabled
+ * @tc.desc: GetHybridRenderTextBlobEnabled Test
+ * @tc.type:FUNC
+ * @tc.require:issuesIC3UZH
+*/
+HWTEST_F(RSSystemPropertiesTest, GetHybridRenderTextBlobEnabled, TestSize.Level1)
+{
+    EXPECT_FALSE(RSSystemProperties::GetHybridRenderTextBlobEnabled());
+}
+ 
+/**
+ * @tc.name: GetHybridRenderSvgEnabled
+ * @tc.desc: GetHybridRenderSvgEnabled Test
+ * @tc.type:FUNC
+ * @tc.require:issuesIC3UZH
+*/
+HWTEST_F(RSSystemPropertiesTest, GetHybridRenderSvgEnabled, TestSize.Level1)
+{
+    EXPECT_FALSE(RSSystemProperties::GetHybridRenderSvgEnabled());
+}
+ 
+/**
+ * @tc.name: GetHybridRenderHmsymbolEnabled
+ * @tc.desc: GetHybridRenderHmsymbolEnabled Test
+ * @tc.type:FUNC
+ * @tc.require:issuesIC3UZH
+*/
+HWTEST_F(RSSystemPropertiesTest, GetHybridRenderHmsymbolEnabled, TestSize.Level1)
+{
+    EXPECT_FALSE(RSSystemProperties::GetHybridRenderHmsymbolEnabled());
+}
+ 
+/**
+ * @tc.name: GetHybridRenderSwitch
+ * @tc.desc: GetHybridRenderSwitch Test
+ * @tc.type:FUNC
+ * @tc.require:issuesIC3UZH
+*/
+HWTEST_F(RSSystemPropertiesTest, GetHybridRenderSwitch, TestSize.Level1)
+{
+    EXPECT_EQ(RSSystemProperties::GetHybridRenderSwitch(ComponentEnableSwitch::TEXTBLOB), 0);
+}
 } // namespace Rosen
 } // namespace OHOS
