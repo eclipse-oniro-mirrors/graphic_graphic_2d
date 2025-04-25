@@ -416,7 +416,7 @@ HWTEST_F(HgmFrameRateMgrTest, HgmConfigCallbackManagerTest002, Function | SmallT
             hccMgr->refreshRateUpdateCallbacks_.try_emplace(0, cb);
             hccMgr->SyncRefreshRateUpdateCallback(OLED_60_HZ);
             std::unordered_map<pid_t, std::pair<int32_t, std::string>> foregroundPidAppMap;
-            foregroundPidAppMap.try_empalce(pid, std::pair<int32_t, std::string>{0, "com.app10"});
+            foregroundPidAppMap.try_emplace(pid, std::pair<int32_t, std::string>{0, "com.app10"});
             hccMgr->SyncRefreshRateUpdateCallback(foregroundPidAppMap);
             ASSERT_EQ(hccMgr->pendingAnimDynamicCfgCallbacks_.find(pid) ==
                 hccMgr->pendingAnimDynamicCfgCallbacks_.end(), true);
