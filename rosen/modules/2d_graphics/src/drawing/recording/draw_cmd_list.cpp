@@ -432,7 +432,6 @@ void DrawCmdList::SetReplacedOpList(std::vector<std::pair<size_t, size_t>> repla
     replacedOpListForBuffer_ = replacedOpList;
 }
 
-#ifdef RS_ENABLE_VK
 DrawCmdList::HybridRenderType DrawCmdList::GetHybridRenderType() const
 {
     return hybridRenderType_;
@@ -442,7 +441,6 @@ void DrawCmdList::SetHybridRenderType(DrawCmdList::HybridRenderType hybridRender
 {
     hybridRenderType_ = hybridRenderType;
 }
-#endif
 
 void DrawCmdList::UpdateNodeIdToPicture(NodeId nodeId)
 {
@@ -598,10 +596,10 @@ void DrawCmdList::PlaybackByVector(Canvas& canvas, const Rect* rect)
     canvas.DetachPaint();
 }
 
-void DrawCmdList::PlaybackByBuffer(Canvas& canvas, const Rect* rect)
+bool DrawCmdList::UnmarshallingDrawOpsSimple()
 {
     if (opAllocator_.GetSize() <= offset_) {
-        return;
+        return false;
     }
     size_t offset = offset_;
     if (lastOpGenSize_ != opAllocator_.GetSize()) {
@@ -626,6 +624,14 @@ void DrawCmdList::PlaybackByBuffer(Canvas& canvas, const Rect* rect)
         } while (offset != 0 && count <= MAX_OPITEMSIZE);
         lastOpGenSize_ = opAllocator_.GetSize();
     }
+    return true;
+}
+
+void DrawCmdList::PlaybackByBuffer(Canvas& canvas, const Rect* rect)
+{
+    if (!UnmarshallingDrawOpsSimple()) {
+        return;
+    }
     uint32_t opCount = 0;
     for (auto op : drawOpItems_) {
         if (isCanvasDrawingOpLimitEnabled_ && opCount > DRAWCMDLIST_OPSIZE_COUNT_LIMIT) {
@@ -638,6 +644,30 @@ void DrawCmdList::PlaybackByBuffer(Canvas& canvas, const Rect* rect)
         }
     }
     canvas.DetachPaint();
+}
+
+bool DrawCmdList::GetBounds(Rect& rect)
+{
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+    if (!UnmarshallingDrawOpsSimple()) {
+        return false;
+    }
+    Rect tmpRect;
+    float width = 0.0f;
+    float height = 0.0f;
+    for (auto op : drawOpItems_) {
+        if (op == nullptr || op->GetType() != DrawOpItem::TEXT_BLOB_OPITEM) {
+            continue;
+        }
+        DrawTextBlobOpItem* textBlobOp = static_cast<DrawTextBlobOpItem*>(op.get());
+        auto bounds = textBlobOp->GetBounds();
+        tmpRect.Join(bounds);
+        width = std::max(width, bounds.GetWidth());
+        height += bounds.GetHeight();
+    }
+    // paragraph rect
+    rect = Rect(tmpRect.GetLeft(), tmpRect.GetTop(), tmpRect.GetLeft() + width, tmpRect.GetTop() + height);
+    return true;
 }
 
 void DrawCmdList::ProfilerTextBlob(void* handle, uint32_t count, std::shared_ptr<Drawing::DrawCmdList> refDrawCmdList)
