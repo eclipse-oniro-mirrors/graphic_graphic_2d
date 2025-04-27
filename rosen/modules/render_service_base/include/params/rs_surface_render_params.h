@@ -614,7 +614,7 @@ public:
     // [Attention] The function only used for unlocking screen for PC currently
     bool IsCloneNode() const;
 
-    bool GetIsHwcEnabledBySolidLayer()
+    bool GetIsHwcEnabledBySolidLayer() const
     {
         return isHwcEnabledBySolidLayer_;
     }
