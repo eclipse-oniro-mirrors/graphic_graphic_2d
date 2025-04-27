@@ -188,24 +188,28 @@ bool RSUniHwcVisitor::CheckNodeOcclusion(const std::shared_ptr<RSRenderNode>& no
             RS_LOGD("solidLayer: node type isn't canvas node, id:%{public}" PRIu64 " ", node->GetId());
             return true;
         }
+
+        bool willNotDraw = (node->GetDrawCmdModifiers().size() == 0);
+        RS_LOGD("solidLayer: id:%{public}" PRIu64 ", willNotDraw: %{public}d", node->GetId(), willNotDraw);
+        if (!willNotDraw) {
+            RS_LOGD("solidLayer: presence drawing, id:%{public}" PRIu64, node->GetId());
+            return true;
+        }
         const auto& nodeBgColor = nodeProperties.GetBackgroundColor();
         const auto& nodeBgColorAlpha = nodeBgColor.GetAlpha();
         bool isSolid = ROSEN_EQ(nodeProperties.GetAlpha(), 1.f) && (nodeBgColorAlpha == MAX_ALPHA);
-        bool willNotDraw = (node->GetDrawCmdModifiers().size() == 0);
-        bool isTransparent = (nodeBgColorAlpha == 0);
-        bool isInside = surfaceNodeAbsRect.IsInsideOf(absRect);
-        if (isInside && isSolid && willNotDraw) {
-            validBgColor = nodeBgColor;
-            RS_LOGD("solidLayer: canvas node color, id:%{public}" PRIu64 ", color:%{public}08x",
-                node->GetId(), validBgColor.AsArgbInt());
-            return false;
-        } else if (isTransparent) {
-            return false;
-        } else {
-            RS_LOGD("solidLayer: check node, id:%{public}" PRIu64 ", isSolid:%{public}d, willNotDraw:%{public}d, "
-                    "isInsideOf:%{public}d", node->GetId(), isSolid, willNotDraw, isInside);
+        if (isSolid) {
+            if (surfaceNodeAbsRect.IsInsideOf(absRect)) {
+                validBgColor = nodeBgColor;
+                RS_LOGD("solidLayer: canvas node color, id:%{public}" PRIu64 ", color:%{public}08x",
+                    node->GetId(), validBgColor.AsArgbInt());
+                return false;
+            }
+            RS_LOGD("solidLayer: the background color node doesn't cover the surface node, id:%{public}" PRIu64,
+                node->GetId());
             return true;
         }
+        return nodeBgColorAlpha != 0;
     }
     return false;
 }
