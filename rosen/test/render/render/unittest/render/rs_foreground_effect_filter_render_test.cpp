@@ -27,7 +27,7 @@
  namespace OHOS {
  namespace Rosen {
  
- class RSForegroundEffectFilterRenderTest : public testing::Test {
+ class RSForegroundEffectFilterTest : public testing::Test {
  public:
      static void SetUpTestCase();
      static void TearDownTestCase();
@@ -35,18 +35,18 @@
      void TearDown() override;
  };
  
- void RSForegroundEffectFilterRenderTest::SetUpTestCase() {}
- void RSForegroundEffectFilterRenderTest::TearDownTestCase() {}
- void RSForegroundEffectFilterRenderTest::SetUp() {}
- void RSForegroundEffectFilterRenderTest::TearDown() {}
+ void RSForegroundEffectFilterTest::SetUpTestCase() {}
+ void RSForegroundEffectFilterTest::TearDownTestCase() {}
+ void RSForegroundEffectFilterTest::SetUp() {}
+ void RSForegroundEffectFilterTest::TearDown() {}
  
  /**
-  * @tc.name: TestMakeForegroundEffect
+  * @tc.name: MakeForegroundEffectTest
   * @tc.desc: Verify function MakeForegroundEffect
-  * @tc.type: FUNC
-  * @tc.require:
+  * @tc.type:FUNC
+  * @tc.require: issuesI9PH4G
   */
- HWTEST_F(RSForegroundEffectFilterRenderTest, TestMakeForegroundEffect, TestSize.Level1)
+ HWTEST_F(RSForegroundEffectFilterTest, MakeForegroundEffectTest, TestSize.Level1)
  {
      auto rsForegroundEffectFilter = std::make_shared<RSForegroundEffectFilter>(1.0f);
      auto blurBuilder = rsForegroundEffectFilter->MakeForegroundEffect();
@@ -54,12 +54,12 @@
  }
  
  /**
-  * @tc.name: TestMakeForegroundEffect01
+  * @tc.name: MakeForegroundEffectTest
   * @tc.desc: radius is invalid
-  * @tc.type: FUNC
-  * @tc.require:
+  * @tc.type:FUNC
+  * @tc.require: issuesI9PH4G
   */
- HWTEST_F(RSForegroundEffectFilterRenderTest, TestMakeForegroundEffect01, TestSize.Level1)
+ HWTEST_F(RSForegroundEffectFilterTest, MakeForegroundEffectTest001, TestSize.Level1)
  {
      auto rsForegroundEffectFilter = std::make_shared<RSForegroundEffectFilter>(-1.0f);
      auto blurBuilder = rsForegroundEffectFilter->MakeForegroundEffect();
@@ -67,12 +67,12 @@
  }
  
  /**
-  * @tc.name: TestMakeForegroundEffect02
+  * @tc.name: MakeForegroundEffectTest002
   * @tc.desc: radius is max
-  * @tc.type: FUNC
-  * @tc.require:
+  * @tc.type:FUNC
+  * @tc.require: issuesI9PH4G
   */
- HWTEST_F(RSForegroundEffectFilterRenderTest, TestMakeForegroundEffect02, TestSize.Level1)
+ HWTEST_F(RSForegroundEffectFilterTest, MakeForegroundEffectTest002, TestSize.Level1)
  {
      auto rsForegroundEffectFilter = std::make_shared<RSForegroundEffectFilter>(1000000.0f);
      auto blurBuilder = rsForegroundEffectFilter->MakeForegroundEffect();
@@ -80,12 +80,12 @@
  }
  
  /**
-  * @tc.name: TestAdjustRadiusAndScale
+  * @tc.name: AdjustRadiusAndScaleTest
   * @tc.desc: Verify function AdjustRadiusAndScale
-  * @tc.type: FUNC
-  * @tc.require:
+  * @tc.type:FUNC
+  * @tc.require: issuesI9PH4G
   */
- HWTEST_F(RSForegroundEffectFilterRenderTest, TestAdjustRadiusAndScale, TestSize.Level1)
+ HWTEST_F(RSForegroundEffectFilterTest, AdjustRadiusAndScaleTest, TestSize.Level1)
  {
      auto rsForegroundEffectFilter = std::make_shared<RSForegroundEffectFilter>(1.0f);
      // fot test
@@ -101,12 +101,12 @@
  }
  
  /**
-  * @tc.name: TestComputePassesAndUnit
+  * @tc.name: ComputePassesAndUnitTest
   * @tc.desc: Verify function ComputePassesAndUnit
-  * @tc.type: FUNC
-  * @tc.require:
+  * @tc.type:FUNC
+  * @tc.require: issuesI9PH4G
   */
- HWTEST_F(RSForegroundEffectFilterRenderTest, TestComputePassesAndUnit, TestSize.Level1)
+ HWTEST_F(RSForegroundEffectFilterTest, ComputePassesAndUnitTest, TestSize.Level1)
  {
      auto rsForegroundEffectFilter = std::make_shared<RSForegroundEffectFilter>(1.0f);
      // fot test
@@ -116,12 +116,12 @@
  }
  
  /**
-  * @tc.name: TestGetDirtyExtension
+  * @tc.name: GetDirtyExtensionTest
   * @tc.desc: Verify function GetDirtyExtension
-  * @tc.type: FUNC
-  * @tc.require:
+  * @tc.type:FUNC
+  * @tc.require: issuesI9PH4G
   */
- HWTEST_F(RSForegroundEffectFilterRenderTest, TestGetDirtyExtension, TestSize.Level1)
+ HWTEST_F(RSForegroundEffectFilterTest, GetDirtyExtensionTest, TestSize.Level1)
  {
      auto rsForegroundEffectFilter = std::make_shared<RSForegroundEffectFilter>(1.0f);
      // fot test
@@ -132,12 +132,12 @@
  }
  
  /**
-  * @tc.name: TestApplyForegroundEffect
+  * @tc.name: ApplyForegroundEffectTest
   * @tc.desc: Verify function ApplyForegroundEffect
-  * @tc.type: FUNC
-  * @tc.require:
+  * @tc.type:FUNC
+  * @tc.require: issuesI9PH4G
   */
- HWTEST_F(RSForegroundEffectFilterRenderTest, TestApplyForegroundEffect, TestSize.Level1)
+ HWTEST_F(RSForegroundEffectFilterTest, ApplyForegroundEffectTest, TestSize.Level1)
  {
      auto rsForegroundEffectFilter = std::make_shared<RSForegroundEffectFilter>(1.0f);
      Drawing::Canvas canvas;
@@ -165,12 +165,12 @@
  }
  
  /**
-  * @tc.name: TestApplyForegroundEffect01
+  * @tc.name: ApplyForegroundEffectTest001
   * @tc.desc: radius is invalid
-  * @tc.type: FUNC
-  * @tc.require:
+  * @tc.type:FUNC
+  * @tc.require: issuesI9PH4G
   */
- HWTEST_F(RSForegroundEffectFilterRenderTest, TestApplyForegroundEffect01, TestSize.Level1)
+ HWTEST_F(RSForegroundEffectFilterTest, ApplyForegroundEffectTest001, TestSize.Level1)
  {
      auto rsForegroundEffectFilter = std::make_shared<RSForegroundEffectFilter>(-1.0f);
      Drawing::Canvas canvas;
@@ -198,12 +198,12 @@
  }
  
  /**
-  * @tc.name: TestApplyForegroundEffect02
+  * @tc.name: ApplyForegroundEffectTest002
   * @tc.desc: radius is max
-  * @tc.type: FUNC
-  * @tc.require:
+  * @tc.type:FUNC
+  * @tc.require: issuesI9PH4G
   */
- HWTEST_F(RSForegroundEffectFilterRenderTest, TestApplyForegroundEffect02, TestSize.Level1)
+ HWTEST_F(RSForegroundEffectFilterTest, ApplyForegroundEffectTest002, TestSize.Level1)
  {
      auto rsForegroundEffectFilter = std::make_shared<RSForegroundEffectFilter>(1000000.0f);
      Drawing::Canvas canvas;
@@ -231,12 +231,12 @@
  }
  
  /**
-  * @tc.name: TestApplyForegroundEffect03
+  * @tc.name: ApplyForegroundEffectTest003
   * @tc.desc: ImageInfo  ColorType is COLORTYPE_UNKNOWN
-  * @tc.type: FUNC
-  * @tc.require:
+  * @tc.type:FUNC
+  * @tc.require: issuesI9PH4G
   */
- HWTEST_F(RSForegroundEffectFilterRenderTest, TestApplyForegroundEffect03, TestSize.Level1)
+ HWTEST_F(RSForegroundEffectFilterTest, ApplyForegroundEffectTest003, TestSize.Level1)
  {
      auto rsForegroundEffectFilter = std::make_shared<RSForegroundEffectFilter>(10.0f);
      Drawing::Canvas canvas;
@@ -265,12 +265,12 @@
  
  
  /**
-  * @tc.name: TestApplyForegroundEffect104
+  * @tc.name: ApplyForegroundEffectTest004
   * @tc.desc: ImageInfo  ColorType is COLORTYPE_RGB_565
-  * @tc.type: FUNC
-  * @tc.require:
+  * @tc.type:FUNC
+  * @tc.require: issuesI9PH4G
   */
- HWTEST_F(RSForegroundEffectFilterRenderTest, TestApplyForegroundEffect104, TestSize.Level1)
+ HWTEST_F(RSForegroundEffectFilterTest, ApplyForegroundEffectTest104, TestSize.Level1)
  {
      auto rsForegroundEffectFilter = std::make_shared<RSForegroundEffectFilter>(10.0f);
      Drawing::Canvas canvas;
@@ -298,12 +298,12 @@
  }
  
  /**
-  * @tc.name: TestApplyForegroundEffect04
+  * @tc.name: ApplyForegroundEffectTest004
   * @tc.desc: ImageInfo  ColorType is COLORTYPE_RGB_565
-  * @tc.type: FUNC
-  * @tc.require:
+  * @tc.type:FUNC
+  * @tc.require: issuesI9PH4G
   */
- HWTEST_F(RSForegroundEffectFilterRenderTest, TestApplyForegroundEffect04, TestSize.Level1)
+ HWTEST_F(RSForegroundEffectFilterTest, ApplyForegroundEffectTest004, TestSize.Level1)
  {
      auto rsForegroundEffectFilter = std::make_shared<RSForegroundEffectFilter>(10.0f);
      Drawing::Canvas canvas;
@@ -331,12 +331,12 @@
  }
  
  /**
-  * @tc.name: TestApplyForegroundEffect05
+  * @tc.name: ApplyForegroundEffectTest005
   * @tc.desc: ImageInfo  ColorType is COLORTYPE_RGBA_8888
-  * @tc.type: FUNC
-  * @tc.require:
+  * @tc.type:FUNC
+  * @tc.require: issuesI9PH4G
   */
- HWTEST_F(RSForegroundEffectFilterRenderTest, TestApplyForegroundEffect05, TestSize.Level1)
+ HWTEST_F(RSForegroundEffectFilterTest, ApplyForegroundEffectTest005, TestSize.Level1)
  {
      auto rsForegroundEffectFilter = std::make_shared<RSForegroundEffectFilter>(10.0f);
      Drawing::Canvas canvas;
@@ -364,12 +364,12 @@
  }
  
  /**
-  * @tc.name: TestApplyForegroundEffect06
+  * @tc.name: ApplyForegroundEffectTest006
   * @tc.desc: ImageInfo  ColorType is COLORTYPE_BGRA_8888
-  * @tc.type: FUNC
-  * @tc.require:
+  * @tc.type:FUNC
+  * @tc.require: issuesI9PH4G
   */
- HWTEST_F(RSForegroundEffectFilterRenderTest, TestApplyForegroundEffect06, TestSize.Level1)
+ HWTEST_F(RSForegroundEffectFilterTest, ApplyForegroundEffectTest006, TestSize.Level1)
  {
      auto rsForegroundEffectFilter = std::make_shared<RSForegroundEffectFilter>(10.0f);
      Drawing::Canvas canvas;
@@ -397,12 +397,12 @@
  }
  
  /**
-  * @tc.name: TestApplyForegroundEffect07
+  * @tc.name: ApplyForegroundEffectTest007
   * @tc.desc: ImageInfo  ColorType is COLORTYPE_RGBA_F16
-  * @tc.type: FUNC
-  * @tc.require:
+  * @tc.type:FUNC
+  * @tc.require: issuesI9PH4G
   */
- HWTEST_F(RSForegroundEffectFilterRenderTest, TestApplyForegroundEffect07, TestSize.Level1)
+ HWTEST_F(RSForegroundEffectFilterTest, ApplyForegroundEffectTest007, TestSize.Level1)
  {
      auto rsForegroundEffectFilter = std::make_shared<RSForegroundEffectFilter>(10.0f);
      Drawing::Canvas canvas;
@@ -430,12 +430,12 @@
  }
  
  /**
-  * @tc.name: TestApplyForegroundEffect08
+  * @tc.name: ApplyForegroundEffectTest008
   * @tc.desc: ImageInfo  ColorType is COLORTYPE_N32
-  * @tc.type: FUNC
-  * @tc.require:
+  * @tc.type:FUNC
+  * @tc.require: issuesI9PH4G
   */
- HWTEST_F(RSForegroundEffectFilterRenderTest, TestApplyForegroundEffect08, TestSize.Level1)
+ HWTEST_F(RSForegroundEffectFilterTest, ApplyForegroundEffectTest008, TestSize.Level1)
  {
      auto rsForegroundEffectFilter = std::make_shared<RSForegroundEffectFilter>(10.0f);
      Drawing::Canvas canvas;
@@ -463,12 +463,12 @@
  }
  
  /**
-  * @tc.name: TestApplyForegroundEffect09
+  * @tc.name: ApplyForegroundEffectTest009
   * @tc.desc: ImageInfo  ColorType is COLORTYPE_RGBA_1010102
-  * @tc.type: FUNC
-  * @tc.require:
+  * @tc.type:FUNC
+  * @tc.require: issuesI9PH4G
   */
- HWTEST_F(RSForegroundEffectFilterRenderTest, TestApplyForegroundEffect09, TestSize.Level1)
+ HWTEST_F(RSForegroundEffectFilterTest, ApplyForegroundEffectTest009, TestSize.Level1)
  {
      auto rsForegroundEffectFilter = std::make_shared<RSForegroundEffectFilter>(10.0f);
      Drawing::Canvas canvas;
@@ -497,12 +497,12 @@
  }
  
  /**
-  * @tc.name: TestApplyForegroundEffect010
+  * @tc.name: ApplyForegroundEffectTest010
   * @tc.desc: ImageInfo  ColorType is COLORTYPE_GRAY_8
-  * @tc.type: FUNC
-  * @tc.require:
+  * @tc.type:FUNC
+  * @tc.require: issuesI9PH4G
   */
- HWTEST_F(RSForegroundEffectFilterRenderTest, TestApplyForegroundEffect010, TestSize.Level1)
+ HWTEST_F(RSForegroundEffectFilterTest, ApplyForegroundEffectTest010, TestSize.Level1)
  {
      auto rsForegroundEffectFilter = std::make_shared<RSForegroundEffectFilter>(10.0f);
      Drawing::Canvas canvas;
@@ -530,12 +530,12 @@
  }
  
  /**
-  * @tc.name: TestApplyForegroundEffect011
+  * @tc.name: ApplyForegroundEffectTest011
   * @tc.desc: ImageInfo  ColorType is COLORTYPE_RGB_888X
-  * @tc.type: FUNC
-  * @tc.require:
+  * @tc.type:FUNC
+  * @tc.require: issuesI9PH4G
   */
- HWTEST_F(RSForegroundEffectFilterRenderTest, TestApplyForegroundEffect011, TestSize.Level1)
+ HWTEST_F(RSForegroundEffectFilterTest, ApplyForegroundEffectTest011, TestSize.Level1)
  {
      auto rsForegroundEffectFilter = std::make_shared<RSForegroundEffectFilter>(10.0f);
      Drawing::Canvas canvas;
@@ -564,12 +564,12 @@
  
  
  /**
-  * @tc.name: TestApplyForegroundEffect012
+  * @tc.name: ApplyForegroundEffectTest012
   * @tc.desc: ImageInfo  AlphaType is ALPHATYPE_UNKNOWN
-  * @tc.type: FUNC
-  * @tc.require:
+  * @tc.type:FUNC
+  * @tc.require: issuesI9PH4G
   */
- HWTEST_F(RSForegroundEffectFilterRenderTest, TestApplyForegroundEffect012, TestSize.Level1)
+ HWTEST_F(RSForegroundEffectFilterTest, ApplyForegroundEffectTest012, TestSize.Level1)
  {
      auto rsForegroundEffectFilter = std::make_shared<RSForegroundEffectFilter>(10.0f);
      Drawing::Canvas canvas;
@@ -597,12 +597,12 @@
  }
  
  /**
-  * @tc.name: TestApplyForegroundEffect013
+  * @tc.name: ApplyForegroundEffectTest013
   * @tc.desc: ImageInfo  AlphaType is ALPHATYPE_PREMUL
-  * @tc.type: FUNC
-  * @tc.require:
+  * @tc.type:FUNC
+  * @tc.require: issuesI9PH4G
   */
- HWTEST_F(RSForegroundEffectFilterRenderTest, TestApplyForegroundEffect013, TestSize.Level1)
+ HWTEST_F(RSForegroundEffectFilterTest, ApplyForegroundEffectTest013, TestSize.Level1)
  {
      auto rsForegroundEffectFilter = std::make_shared<RSForegroundEffectFilter>(10.0f);
      Drawing::Canvas canvas;
@@ -630,12 +630,12 @@
  }
  
  /**
-  * @tc.name: TestApplyForegroundEffect014
+  * @tc.name: ApplyForegroundEffectTest014
   * @tc.desc: ImageInfo  AlphaType is ALPHATYPE_UNPREMUL
-  * @tc.type: FUNC
-  * @tc.require:
+  * @tc.type:FUNC
+  * @tc.require: issuesI9PH4G
   */
- HWTEST_F(RSForegroundEffectFilterRenderTest, TestApplyForegroundEffect014, TestSize.Level1)
+ HWTEST_F(RSForegroundEffectFilterTest, ApplyForegroundEffectTest014, TestSize.Level1)
  {
      auto rsForegroundEffectFilter = std::make_shared<RSForegroundEffectFilter>(10.0f);
      Drawing::Canvas canvas;
@@ -663,12 +663,11 @@
  }
  
  /**
-  * @tc.name: TestGetDescription
+  * @tc.name: GetDescriptionTest
   * @tc.desc: Verify function GetDescription
-  * @tc.type: FUNC
-  * @tc.require:
+  * @tc.type:FUNC
   */
- HWTEST_F(RSForegroundEffectFilterRenderTest, TestGetDescription, TestSize.Level1)
+ HWTEST_F(RSForegroundEffectFilterTest, GetDescriptionTest, TestSize.Level1)
  {
      float blurRadius = 401.f;
      auto rsForegroundEffectFilter = std::make_shared<RSForegroundEffectFilter>(blurRadius);
@@ -684,12 +683,11 @@
  }
  
  /**
-  * @tc.name: TestIsValid
+  * @tc.name: IsValidTest
   * @tc.desc: Verify function IsValid
-  * @tc.type: FUNC
-  * @tc.require:
+  * @tc.type:FUNC
   */
- HWTEST_F(RSForegroundEffectFilterRenderTest, TestIsValid, TestSize.Level1)
+ HWTEST_F(RSForegroundEffectFilterTest, IsValidTest, TestSize.Level1)
  {
      auto rsForegroundEffectFilter = std::make_shared<RSForegroundEffectFilter>(1.0f);
      std::string expectRes;
@@ -697,12 +695,11 @@
  }
  
  /**
-  * @tc.name: TestDrawImageRect
+  * @tc.name: DrawImageRectTest
   * @tc.desc: Verify function DrawImageRect
-  * @tc.type: FUNC
-  * @tc.require:
+  * @tc.type:FUNC
   */
- HWTEST_F(RSForegroundEffectFilterRenderTest, TestDrawImageRect, TestSize.Level1)
+ HWTEST_F(RSForegroundEffectFilterTest, DrawImageRectTest, TestSize.Level1)
  {
      auto rsForegroundEffectFilter = std::make_shared<RSForegroundEffectFilter>(1.0f);
      std::shared_ptr<Drawing::Image> image = std::make_shared<Drawing::Image>();
@@ -714,12 +711,11 @@
  }
  
  /**
-  * @tc.name: TestMakeImage
+  * @tc.name: MakeImageTest
   * @tc.desc: Verify function MakeImage
-  * @tc.type: FUNC
-  * @tc.require:
+  * @tc.type:FUNC
   */
- HWTEST_F(RSForegroundEffectFilterRenderTest, TestMakeImage, TestSize.Level1)
+ HWTEST_F(RSForegroundEffectFilterTest, MakeImageTest, TestSize.Level1)
  {
      auto rsForegroundEffectFilter = std::make_shared<RSForegroundEffectFilter>(1.0f); // blur radius
      std::shared_ptr<Drawing::Image> image = std::make_shared<Drawing::Image>();
