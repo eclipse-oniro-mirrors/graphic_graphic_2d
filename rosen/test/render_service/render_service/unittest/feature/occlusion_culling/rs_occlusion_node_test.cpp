@@ -30,6 +30,13 @@ namespace OHOS::Rosen {
 
 class RSOcclusionNodeTest : public testing::Test {
 public:
+    static const NodeId nodeId;
+    static const NodeId parentId;
+    static const NodeId firstNodeId;
+    static const NodeId secondNodeId;
+    static const NodeId thirdNodeId;
+    static const NodeId fouthNodeId;
+    static const PropertyId propertyId;
     static void SetUpTestCase();
     static void TearDownTestCase();
     void SetUp() override;
@@ -41,6 +48,14 @@ void RSOcclusionNodeTest::TearDownTestCase() {}
 void RSOcclusionNodeTest::SetUp() {}
 void RSOcclusionNodeTest::TearDown() {}
 
+const NodeId RSOcclusionNodeTest::parentId = 0;
+const NodeId RSOcclusionNodeTest::nodeId = 1;
+const NodeId RSOcclusionNodeTest::firstNodeId = 2;
+const NodeId RSOcclusionNodeTest::secondNodeId = 3;
+const NodeId RSOcclusionNodeTest::thirdNodeId = 4;
+const NodeId RSOcclusionNodeTest::fouthNodeId = 5;
+const PropertyId RSOcclusionNodeTest::propertyId = 0;
+
 /*
  * @tc.name: OcclusionNode_001
  * @tc.desc: Test OcclusionNode
@@ -49,7 +64,6 @@ void RSOcclusionNodeTest::TearDown() {}
  */
 HWTEST_F(RSOcclusionNodeTest, OcclusionNode_001, TestSize.Level1)
 {
-    NodeId nodeId(0);
     OcclusionNode node = OcclusionNode(nodeId, RSRenderNodeType::ROOT_NODE);
     EXPECT_EQ(node.id_, nodeId);
     EXPECT_EQ(node.type_, RSRenderNodeType::ROOT_NODE);
@@ -63,7 +77,6 @@ HWTEST_F(RSOcclusionNodeTest, OcclusionNode_001, TestSize.Level1)
  */
 HWTEST_F(RSOcclusionNodeTest, GetId_001, TestSize.Level1)
 {
-    NodeId nodeId(0);
     OcclusionNode node = OcclusionNode(nodeId, RSRenderNodeType::ROOT_NODE);
     EXPECT_EQ(node.GetId(), nodeId);
 }
@@ -76,12 +89,11 @@ HWTEST_F(RSOcclusionNodeTest, GetId_001, TestSize.Level1)
  */
 HWTEST_F(RSOcclusionNodeTest, GetParentOcNode_001, TestSize.Level1)
 {
-    NodeId nodeId(1);
     OcclusionNode node = OcclusionNode(nodeId, RSRenderNodeType::CANVAS_NODE);
-    NodeId parentId(0);
     std::shared_ptr<OcclusionNode> parentOcNode =
         std::make_shared<OcclusionNode>(parentId, RSRenderNodeType::ROOT_NODE);
     node.parentOcNode_ = parentOcNode;
+    ASSERT_FALSE(node.GetParentOcNode().expired());
     EXPECT_EQ(node.GetParentOcNode().lock()->GetId(), parentId);
 }
 
@@ -93,7 +105,6 @@ HWTEST_F(RSOcclusionNodeTest, GetParentOcNode_001, TestSize.Level1)
  */
 HWTEST_F(RSOcclusionNodeTest, UpdateChildrenOutOfRectInfo_001, TestSize.Level1)
 {
-    NodeId nodeId(0);
     std::shared_ptr<OcclusionNode> node = std::make_shared<OcclusionNode>(nodeId, RSRenderNodeType::ROOT_NODE);
     node->UpdateChildrenOutOfRectInfo(true);
     EXPECT_TRUE(node->hasChildrenOutOfRect_);
@@ -109,10 +120,10 @@ HWTEST_F(RSOcclusionNodeTest, UpdateChildrenOutOfRectInfo_001, TestSize.Level1)
  */
 HWTEST_F(RSOcclusionNodeTest, MarkAsRootOcclusionNode_001, TestSize.Level1)
 {
-    NodeId nodeId(0);
     std::shared_ptr<OcclusionNode> node = std::make_shared<OcclusionNode>(nodeId, RSRenderNodeType::ROOT_NODE);
     node->MarkAsRootOcclusionNode();
     EXPECT_TRUE(node->isValidInCurrentFrame_);
+    ASSERT_FALSE(node->rootOcclusionNode_.expired());
     EXPECT_EQ(node->rootOcclusionNode_.lock()->GetId(), nodeId);
 }
 
@@ -124,7 +135,6 @@ HWTEST_F(RSOcclusionNodeTest, MarkAsRootOcclusionNode_001, TestSize.Level1)
  */
 HWTEST_F(RSOcclusionNodeTest, IsSubTreeIgnored_001, TestSize.Level1)
 {
-    NodeId nodeId(0);
     std::shared_ptr<OcclusionNode> node = std::make_shared<OcclusionNode>(nodeId, RSRenderNodeType::ROOT_NODE);
     node->isSubTreeIgnored_ = true;
     EXPECT_TRUE(node->IsSubTreeIgnored());
@@ -134,13 +144,12 @@ HWTEST_F(RSOcclusionNodeTest, IsSubTreeIgnored_001, TestSize.Level1)
 
 /*
  * @tc.name: ForwardOrderInsert_001
- * @tc.desc: Test ForwardOrderInsert
+ * @tc.desc: Test ForwardOrderInsert when node is nullptr
  * @tc.type: FUNC
  * @tc.require: issueIC2H2
  */
 HWTEST_F(RSOcclusionNodeTest, ForwardOrderInsert_001, TestSize.Level1)
 {
-    NodeId nodeId(0);
     std::shared_ptr<OcclusionNode> node = std::make_shared<OcclusionNode>(nodeId, RSRenderNodeType::ROOT_NODE);
     node->ForwardOrderInsert(nullptr);
     EXPECT_EQ(node->lastChild_, nullptr);
@@ -148,68 +157,66 @@ HWTEST_F(RSOcclusionNodeTest, ForwardOrderInsert_001, TestSize.Level1)
 
 /*
  * @tc.name: ForwardOrderInsert_002
- * @tc.desc: Test ForwardOrderInsert
+ * @tc.desc: Test ForwardOrderInsert when node has only one child
  * @tc.type: FUNC
  * @tc.require: issueIC2H2
  */
 HWTEST_F(RSOcclusionNodeTest, ForwardOrderInsert_002, TestSize.Level1)
 {
-    NodeId firstNodeId(0);
     std::shared_ptr<OcclusionNode> fisrt_node =
         std::make_shared<OcclusionNode>(firstNodeId, RSRenderNodeType::ROOT_NODE);
-    NodeId secondNodeId(1);
     std::shared_ptr<OcclusionNode> second_node =
         std::make_shared<OcclusionNode>(secondNodeId, RSRenderNodeType::CANVAS_NODE);
     fisrt_node->ForwardOrderInsert(second_node);
+    ASSERT_FALSE(second_node->parentOcNode_.expired());
     EXPECT_EQ(second_node->parentOcNode_.lock()->id_, fisrt_node->id_);
+    ASSERT_NE(fisrt_node->firstChild_, nullptr);
     EXPECT_EQ(fisrt_node->firstChild_->id_, second_node->id_);
+    ASSERT_NE(fisrt_node->lastChild_, nullptr);
     EXPECT_EQ(fisrt_node->lastChild_->id_, second_node->id_);
     EXPECT_TRUE(second_node->isValidInCurrentFrame_);
 }
 
 /*
  * @tc.name: ForwardOrderInsert_003
- * @tc.desc: Test ForwardOrderInsert
+ * @tc.desc: Test ForwardOrderInsert when node has more than one child
  * @tc.type: FUNC
  * @tc.require: issueIC2H2
  */
 HWTEST_F(RSOcclusionNodeTest, ForwardOrderInsert_003, TestSize.Level1)
 {
-    NodeId firstNodeId(0);
     std::shared_ptr<OcclusionNode> fisrt_node =
         std::make_shared<OcclusionNode>(firstNodeId, RSRenderNodeType::ROOT_NODE);
-    NodeId secondNodeId(1);
     std::shared_ptr<OcclusionNode> second_node =
         std::make_shared<OcclusionNode>(secondNodeId, RSRenderNodeType::CANVAS_NODE);
     fisrt_node->ForwardOrderInsert(second_node);
-    NodeId thirdNodeId(2);
     std::shared_ptr<OcclusionNode> third_node =
         std::make_shared<OcclusionNode>(thirdNodeId, RSRenderNodeType::CANVAS_NODE);
     fisrt_node->ForwardOrderInsert(third_node);
+    ASSERT_FALSE(second_node->rightSibling_.expired());
     EXPECT_EQ(second_node->rightSibling_.lock()->id_, third_node->id_);
+    ASSERT_FALSE(third_node->leftSibling_.expired());
     EXPECT_EQ(third_node->leftSibling_.lock()->id_, second_node->id_);
+    ASSERT_NE(fisrt_node->lastChild_, nullptr);
     EXPECT_EQ(fisrt_node->lastChild_->id_, third_node->id_);
 }
 
 /*
  * @tc.name: RemoveChild_001
- * @tc.desc: Test RemoveChild
+ * @tc.desc: Test RemoveChild in anomalous situations.
  * @tc.type: FUNC
  * @tc.require: issueIC2H2
  */
 HWTEST_F(RSOcclusionNodeTest, RemoveChild_001, TestSize.Level1)
 {
-    NodeId firstNodeId(0);
     std::shared_ptr<OcclusionNode> fisrt_node =
         std::make_shared<OcclusionNode>(firstNodeId, RSRenderNodeType::ROOT_NODE);
     bool result = fisrt_node->RemoveChild(nullptr);
     EXPECT_FALSE(result);
-    NodeId secondNodeId(1);
     std::shared_ptr<OcclusionNode> second_node =
         std::make_shared<OcclusionNode>(secondNodeId, RSRenderNodeType::CANVAS_NODE);
     result = fisrt_node->RemoveChild(second_node);
     EXPECT_FALSE(result);
-    NodeId thirdNodeId(2);
     std::shared_ptr<OcclusionNode> third_node =
         std::make_shared<OcclusionNode>(thirdNodeId, RSRenderNodeType::ROOT_NODE);
     second_node->parentOcNode_ = third_node;
@@ -219,24 +226,20 @@ HWTEST_F(RSOcclusionNodeTest, RemoveChild_001, TestSize.Level1)
 
 /*
  * @tc.name: RemoveChild_002
- * @tc.desc: Test RemoveChild
+ * @tc.desc: Test RemoveChild in non-anomalous situations.
  * @tc.type: FUNC
  * @tc.require: issueIC2H2
  */
 HWTEST_F(RSOcclusionNodeTest, RemoveChild_002, TestSize.Level1)
 {
-    NodeId firstNodeId(0);
     std::shared_ptr<OcclusionNode> fisrt_node =
         std::make_shared<OcclusionNode>(firstNodeId, RSRenderNodeType::ROOT_NODE);
-    NodeId secondNodeId(1);
     std::shared_ptr<OcclusionNode> second_node =
         std::make_shared<OcclusionNode>(secondNodeId, RSRenderNodeType::CANVAS_NODE);
     fisrt_node->ForwardOrderInsert(second_node);
-    NodeId thirdNodeId(2);
     std::shared_ptr<OcclusionNode> third_node =
         std::make_shared<OcclusionNode>(thirdNodeId, RSRenderNodeType::CANVAS_NODE);
     second_node->ForwardOrderInsert(third_node);
-    NodeId fouthNodeId(3);
     std::shared_ptr<OcclusionNode> fouth_node =
         std::make_shared<OcclusionNode>(fouthNodeId, RSRenderNodeType::CANVAS_NODE);
     second_node->ForwardOrderInsert(fouth_node);
@@ -252,21 +255,17 @@ HWTEST_F(RSOcclusionNodeTest, RemoveChild_002, TestSize.Level1)
 
 /*
  * @tc.name: CollectNodeProperties_001
- * @tc.desc: Test CollectNodeProperties
+ * @tc.desc: Test CollectNodeProperties in anomalous situations.
  * @tc.type: FUNC
  * @tc.require: issueIC2H2
  */
 HWTEST_F(RSOcclusionNodeTest, CollectNodeProperties_001, TestSize.Level1)
 {
-    NodeId rootNodeId(0);
-    std::shared_ptr<OcclusionNode> rootNode = std::make_shared<OcclusionNode>(rootNodeId, RSRenderNodeType::ROOT_NODE);
-    RSRenderNode renderNode(rootNodeId);
-
+    std::shared_ptr<OcclusionNode> rootNode = std::make_shared<OcclusionNode>(nodeId, RSRenderNodeType::ROOT_NODE);
+    RSRenderNode renderNode(nodeId);
     rootNode->CollectNodeProperties(renderNode);
     EXPECT_TRUE(rootNode->isSubTreeIgnored_);
-
     renderNode.nodeGroupType_ = RSRenderNode::NodeGroupType::GROUPED_BY_ANIM;
-    NodeId firstNodeId(0);
     std::shared_ptr<OcclusionNode> firstNode =
         std::make_shared<OcclusionNode>(firstNodeId, RSRenderNodeType::ROOT_NODE);
     firstNode->parentOcNode_ = rootNode;
@@ -281,21 +280,18 @@ HWTEST_F(RSOcclusionNodeTest, CollectNodeProperties_001, TestSize.Level1)
 
 /*
  * @tc.name: CollectNodeProperties_002
- * @tc.desc: Test CollectNodeProperties
+ * @tc.desc: Test CollectNodeProperties with modifier white list
  * @tc.type: FUNC
  * @tc.require: issueIC2H2
  */
 HWTEST_F(RSOcclusionNodeTest, CollectNodeProperties_002, TestSize.Level1)
 {
-    NodeId rootNodeId(1);
     std::shared_ptr<OcclusionNode> rootNode =
-        std::make_shared<OcclusionNode>(rootNodeId, RSRenderNodeType::CANVAS_NODE);
-    NodeId parentId(0);
+        std::make_shared<OcclusionNode>(nodeId, RSRenderNodeType::CANVAS_NODE);
     std::shared_ptr<OcclusionNode> parentOcNode =
         std::make_shared<OcclusionNode>(parentId, RSRenderNodeType::ROOT_NODE);
     std::shared_ptr<RSRenderNode> renderNode = std::make_shared<RSRenderNode>(parentId);
     float stagingValue(1.0f);
-    PropertyId propertyId(1);
     auto renderProperty = std::make_shared<RSRenderProperty<float>>(stagingValue, propertyId);
     auto renderModifier = std::make_shared<RSShadowColorRenderModifier>(renderProperty);
     renderNode->modifiers_.emplace(renderModifier->GetPropertyId(), renderModifier);
@@ -305,21 +301,18 @@ HWTEST_F(RSOcclusionNodeTest, CollectNodeProperties_002, TestSize.Level1)
 
 /*
  * @tc.name: CollectNodeProperties_003
- * @tc.desc: Test CollectNodeProperties
+ * @tc.desc: Test CollectNodeProperties when clipToBounds_ is true
  * @tc.type: FUNC
  * @tc.require: issueIC2H2
  */
 HWTEST_F(RSOcclusionNodeTest, CollectNodeProperties_003, TestSize.Level1)
 {
-    NodeId rootNodeId(1);
     std::shared_ptr<OcclusionNode> rootNode =
-        std::make_shared<OcclusionNode>(rootNodeId, RSRenderNodeType::CANVAS_NODE);
-    NodeId parentId(0);
+        std::make_shared<OcclusionNode>(nodeId, RSRenderNodeType::CANVAS_NODE);
     std::shared_ptr<OcclusionNode> parentOcNode =
         std::make_shared<OcclusionNode>(parentId, RSRenderNodeType::ROOT_NODE);
     std::shared_ptr<RSRenderNode> renderNode = std::make_shared<RSRenderNode>(parentId);
     Vector4f property(100.f, 100.f, 200.f, 300.f);
-    PropertyId propertyId(0);
     auto boundsProperty = std::make_shared<RSRenderPropertyBase>(propertyId);
     boundsProperty->modifierType_ = RSModifierType::BOUNDS;
     auto boundsModifier = std::make_shared<RSBoundsRenderModifier>(boundsProperty);
@@ -331,21 +324,18 @@ HWTEST_F(RSOcclusionNodeTest, CollectNodeProperties_003, TestSize.Level1)
 
 /*
  * @tc.name: CollectNodeProperties_004
- * @tc.desc: Test CollectNodeProperties
+ * @tc.desc: Test CollectNodeProperties in non-anomalous situations.
  * @tc.type: FUNC
  * @tc.require: issueIC2H2
  */
 HWTEST_F(RSOcclusionNodeTest, CollectNodeProperties_004, TestSize.Level1)
 {
-    NodeId rootNodeId(1);
     std::shared_ptr<OcclusionNode> rootNode =
-        std::make_shared<OcclusionNode>(rootNodeId, RSRenderNodeType::CANVAS_NODE);
-    NodeId parentId(0);
+        std::make_shared<OcclusionNode>(nodeId, RSRenderNodeType::CANVAS_NODE);
     std::shared_ptr<OcclusionNode> parentOcNode =
         std::make_shared<OcclusionNode>(parentId, RSRenderNodeType::ROOT_NODE);
     rootNode->parentOcNode_ = parentOcNode;
     std::shared_ptr<RSRenderNode> renderNode = std::make_shared<RSRenderNode>(parentId);
-    PropertyId propertyId(0);
     auto boundsProperty = std::make_shared<RSRenderPropertyBase>(propertyId);
     boundsProperty->modifierType_ = RSModifierType::BOUNDS;
     auto boundsModifier = std::make_shared<RSBoundsRenderModifier>(boundsProperty);
@@ -366,19 +356,17 @@ HWTEST_F(RSOcclusionNodeTest, CollectNodeProperties_004, TestSize.Level1)
 
 /*
  * @tc.name: CalculateNodeAllBounds_001
- * @tc.desc: Test CalculateNodeAllBounds
+ * @tc.desc: Test CalculateNodeAllBounds when isSubTreeIgnored_ is true
  * @tc.type: FUNC
  * @tc.require: issueIC2H2
  */
 HWTEST_F(RSOcclusionNodeTest, CalculateNodeAllBounds_001, TestSize.Level1)
 {
     RectI16 result;
-    NodeId rootNodeId(1);
     std::shared_ptr<OcclusionNode> rootNode =
-        std::make_shared<OcclusionNode>(rootNodeId, RSRenderNodeType::CANVAS_NODE);
+        std::make_shared<OcclusionNode>(nodeId, RSRenderNodeType::CANVAS_NODE);
     rootNode->CalculateNodeAllBounds();
     EXPECT_EQ(rootNode->innerRect_, result);
-    NodeId parentId(0);
     std::shared_ptr<OcclusionNode> parentOcNode =
         std::make_shared<OcclusionNode>(parentId, RSRenderNodeType::ROOT_NODE);
     rootNode->parentOcNode_ = parentOcNode;
@@ -389,16 +377,14 @@ HWTEST_F(RSOcclusionNodeTest, CalculateNodeAllBounds_001, TestSize.Level1)
 
 /*
  * @tc.name: CalculateNodeAllBounds_002
- * @tc.desc: Test CalculateNodeAllBounds
+ * @tc.desc: Test CalculateNodeAllBounds in non-anomalous situations.
  * @tc.type: FUNC
  * @tc.require: issueIC2H2
  */
 HWTEST_F(RSOcclusionNodeTest, CalculateNodeAllBounds_002, TestSize.Level1)
 {
-    NodeId rootNodeId(1);
     std::shared_ptr<OcclusionNode> rootNode =
-        std::make_shared<OcclusionNode>(rootNodeId, RSRenderNodeType::CANVAS_NODE);
-    NodeId parentId(0);
+        std::make_shared<OcclusionNode>(nodeId, RSRenderNodeType::CANVAS_NODE);
     std::shared_ptr<OcclusionNode> parentOcNode =
         std::make_shared<OcclusionNode>(parentId, RSRenderNodeType::ROOT_NODE);
     parentOcNode->localScale_ = { 0.5f, 0.5f };
@@ -433,11 +419,9 @@ HWTEST_F(RSOcclusionNodeTest, CalculateNodeAllBounds_002, TestSize.Level1)
  */
 HWTEST_F(RSOcclusionNodeTest, UpdateClipRect_001, TestSize.Level1)
 {
-    NodeId rootNodeId(1);
     std::shared_ptr<OcclusionNode> rootNode =
-        std::make_shared<OcclusionNode>(rootNodeId, RSRenderNodeType::CANVAS_NODE);
-    NodeId renderNodeId(0);
-    std::shared_ptr<RSRenderNode> renderNode = std::make_shared<RSRenderNode>(renderNodeId);
+        std::make_shared<OcclusionNode>(nodeId, RSRenderNodeType::CANVAS_NODE);
+    std::shared_ptr<RSRenderNode> renderNode = std::make_shared<RSRenderNode>(nodeId);
     renderNode->renderContent_->renderProperties_.boundsGeo_->width_ = 100.0f;
     renderNode->renderContent_->renderProperties_.boundsGeo_->height_ = 200.0f;
     rootNode->UpdateClipRect(*renderNode);
@@ -461,15 +445,12 @@ HWTEST_F(RSOcclusionNodeTest, UpdateClipRect_001, TestSize.Level1)
  */
 HWTEST_F(RSOcclusionNodeTest, UpdateSubTreeProp_001, TestSize.Level1)
 {
-    NodeId rootNodeId(1);
     std::shared_ptr<OcclusionNode> rootNode =
-        std::make_shared<OcclusionNode>(rootNodeId, RSRenderNodeType::CANVAS_NODE);
-    NodeId parentId(0);
+        std::make_shared<OcclusionNode>(nodeId, RSRenderNodeType::CANVAS_NODE);
     std::shared_ptr<OcclusionNode> parentOcNode =
         std::make_shared<OcclusionNode>(parentId, RSRenderNodeType::ROOT_NODE);
-    NodeId childId(2);
     std::shared_ptr<OcclusionNode> children =
-        std::make_shared<OcclusionNode>(childId, RSRenderNodeType::CANVAS_NODE);
+        std::make_shared<OcclusionNode>(firstNodeId, RSRenderNodeType::CANVAS_NODE);
     parentOcNode->localScale_ = { 0.5f, 0.5f };
     parentOcNode->absPositions_ = { 50.0f, 100.0f };
     parentOcNode->clipOuterRect_ = { 60.0f, 60.0f, 300.0f, 300.0f };
@@ -507,23 +488,19 @@ HWTEST_F(RSOcclusionNodeTest, UpdateSubTreeProp_001, TestSize.Level1)
 
 /*
  * @tc.name: DetectOcclusion_001
- * @tc.desc: Test DetectOcclusion
+ * @tc.desc: Test DetectOcclusion when isValidInCurrentFrame_ is false
  * @tc.type: FUNC
  * @tc.require: issueIC2H2
  */
 HWTEST_F(RSOcclusionNodeTest, DetectOcclusion_001, TestSize.Level1)
 {
-    NodeId rootNodeId(0);
-    std::shared_ptr<OcclusionNode> rootNode = std::make_shared<OcclusionNode>(rootNodeId, RSRenderNodeType::ROOT_NODE);
-    NodeId firstChildId(1);
+    std::shared_ptr<OcclusionNode> rootNode = std::make_shared<OcclusionNode>(nodeId, RSRenderNodeType::ROOT_NODE);
     std::shared_ptr<OcclusionNode> firstChild =
-        std::make_shared<OcclusionNode>(firstChildId, RSRenderNodeType::CANVAS_NODE);
-    NodeId secondChildId(2);
+        std::make_shared<OcclusionNode>(firstNodeId, RSRenderNodeType::CANVAS_NODE);
     std::shared_ptr<OcclusionNode> secondChild =
-        std::make_shared<OcclusionNode>(secondChildId, RSRenderNodeType::CANVAS_NODE);
-    NodeId thirdChildId(3);
+        std::make_shared<OcclusionNode>(secondNodeId, RSRenderNodeType::CANVAS_NODE);
     std::shared_ptr<OcclusionNode> thirdChild =
-        std::make_shared<OcclusionNode>(thirdChildId, RSRenderNodeType::CANVAS_NODE);
+        std::make_shared<OcclusionNode>(thirdNodeId, RSRenderNodeType::CANVAS_NODE);
     rootNode->lastChild_ = firstChild;
     firstChild->lastChild_ = thirdChild;
     firstChild->firstChild_ = secondChild;
@@ -538,30 +515,26 @@ HWTEST_F(RSOcclusionNodeTest, DetectOcclusion_001, TestSize.Level1)
 
 /*
  * @tc.name: DetectOcclusion_002
- * @tc.desc: Test DetectOcclusion
+ * @tc.desc: Test DetectOcclusion when isOutOfRootRect_ is true
  * @tc.type: FUNC
  * @tc.require: issueIC2H2
  */
 HWTEST_F(RSOcclusionNodeTest, DetectOcclusion_002, TestSize.Level1)
 {
-    NodeId rootNodeId(0);
     std::shared_ptr<OcclusionNode> rootNode =
-        std::make_shared<OcclusionNode>(rootNodeId, RSRenderNodeType::ROOT_NODE);
+        std::make_shared<OcclusionNode>(nodeId, RSRenderNodeType::ROOT_NODE);
     rootNode->isValidInCurrentFrame_ = true;
     rootNode->isOutOfRootRect_ = true;
-    NodeId firstChildId(1);
     std::shared_ptr<OcclusionNode> firstChild =
-        std::make_shared<OcclusionNode>(firstChildId, RSRenderNodeType::CANVAS_NODE);
+        std::make_shared<OcclusionNode>(firstNodeId, RSRenderNodeType::CANVAS_NODE);
     firstChild->isValidInCurrentFrame_ = true;
     firstChild->isOutOfRootRect_ = true;
-    NodeId secondChildId(2);
     std::shared_ptr<OcclusionNode> secondChild =
-        std::make_shared<OcclusionNode>(secondChildId, RSRenderNodeType::CANVAS_NODE);
+        std::make_shared<OcclusionNode>(secondNodeId, RSRenderNodeType::CANVAS_NODE);
     secondChild->isValidInCurrentFrame_ = true;
     secondChild->isOutOfRootRect_ = true;
-    NodeId thirdChildId(3);
     std::shared_ptr<OcclusionNode> thirdChild =
-        std::make_shared<OcclusionNode>(thirdChildId, RSRenderNodeType::CANVAS_NODE);
+        std::make_shared<OcclusionNode>(thirdNodeId, RSRenderNodeType::CANVAS_NODE);
     thirdChild->isValidInCurrentFrame_ = true;
     thirdChild->isOutOfRootRect_ = true;
     rootNode->lastChild_ = firstChild;
@@ -578,30 +551,26 @@ HWTEST_F(RSOcclusionNodeTest, DetectOcclusion_002, TestSize.Level1)
 
 /*
  * @tc.name: DetectOcclusion_003
- * @tc.desc: Test DetectOcclusion
+ * @tc.desc: Test DetectOcclusion with node type
  * @tc.type: FUNC
  * @tc.require: issueIC2H2
  */
 HWTEST_F(RSOcclusionNodeTest, DetectOcclusion_003, TestSize.Level1)
 {
-    NodeId rootNodeId(0);
     std::shared_ptr<OcclusionNode> rootNode =
-        std::make_shared<OcclusionNode>(rootNodeId, RSRenderNodeType::ROOT_NODE);
+        std::make_shared<OcclusionNode>(nodeId, RSRenderNodeType::ROOT_NODE);
     rootNode->isValidInCurrentFrame_ = true;
     rootNode->isOutOfRootRect_ = true;
-    NodeId firstChildId(1);
     std::shared_ptr<OcclusionNode> firstChild =
-        std::make_shared<OcclusionNode>(firstChildId, RSRenderNodeType::SURFACE_NODE);
+        std::make_shared<OcclusionNode>(firstNodeId, RSRenderNodeType::SURFACE_NODE);
     firstChild->isValidInCurrentFrame_ = true;
     firstChild->isOutOfRootRect_ = true;
-    NodeId secondChildId(2);
     std::shared_ptr<OcclusionNode> secondChild =
-        std::make_shared<OcclusionNode>(secondChildId, RSRenderNodeType::CANVAS_NODE);
+        std::make_shared<OcclusionNode>(secondNodeId, RSRenderNodeType::CANVAS_NODE);
     secondChild->isValidInCurrentFrame_ = true;
     secondChild->isOutOfRootRect_ = true;
-    NodeId thirdChildId(3);
     std::shared_ptr<OcclusionNode> thirdChild =
-        std::make_shared<OcclusionNode>(thirdChildId, RSRenderNodeType::CANVAS_NODE);
+        std::make_shared<OcclusionNode>(thirdNodeId, RSRenderNodeType::CANVAS_NODE);
     thirdChild->isValidInCurrentFrame_ = true;
     thirdChild->isOutOfRootRect_ = true;
     rootNode->lastChild_ = firstChild;
@@ -618,31 +587,27 @@ HWTEST_F(RSOcclusionNodeTest, DetectOcclusion_003, TestSize.Level1)
 
 /*
  * @tc.name: DetectOcclusion_004
- * @tc.desc: Test DetectOcclusion
+ * @tc.desc: Test DetectOcclusion with isNeedClip_ is false
  * @tc.type: FUNC
  * @tc.require: issueIC2H2
  */
 HWTEST_F(RSOcclusionNodeTest, DetectOcclusion_004, TestSize.Level1)
 {
-    NodeId rootNodeId(0);
     std::shared_ptr<OcclusionNode> rootNode =
-        std::make_shared<OcclusionNode>(rootNodeId, RSRenderNodeType::ROOT_NODE);
+        std::make_shared<OcclusionNode>(nodeId, RSRenderNodeType::ROOT_NODE);
     rootNode->isValidInCurrentFrame_ = true;
     rootNode->isOutOfRootRect_ = true;
-    NodeId firstChildId(1);
     std::shared_ptr<OcclusionNode> firstChild =
-        std::make_shared<OcclusionNode>(firstChildId, RSRenderNodeType::CANVAS_NODE);
+        std::make_shared<OcclusionNode>(firstNodeId, RSRenderNodeType::CANVAS_NODE);
     firstChild->isValidInCurrentFrame_ = true;
     firstChild->isOutOfRootRect_ = true;
     firstChild->isNeedClip_ = true;
-    NodeId secondChildId(2);
     std::shared_ptr<OcclusionNode> secondChild =
-        std::make_shared<OcclusionNode>(secondChildId, RSRenderNodeType::CANVAS_NODE);
+        std::make_shared<OcclusionNode>(secondNodeId, RSRenderNodeType::CANVAS_NODE);
     secondChild->isValidInCurrentFrame_ = true;
     secondChild->isOutOfRootRect_ = true;
-    NodeId thirdChildId(3);
     std::shared_ptr<OcclusionNode> thirdChild =
-        std::make_shared<OcclusionNode>(thirdChildId, RSRenderNodeType::CANVAS_NODE);
+        std::make_shared<OcclusionNode>(thirdNodeId, RSRenderNodeType::CANVAS_NODE);
     thirdChild->isValidInCurrentFrame_ = true;
     thirdChild->isOutOfRootRect_ = true;
     rootNode->lastChild_ = firstChild;
@@ -659,24 +624,20 @@ HWTEST_F(RSOcclusionNodeTest, DetectOcclusion_004, TestSize.Level1)
 
 /*
  * @tc.name: DetectOcclusion_005
- * @tc.desc: Test DetectOcclusion
+ * @tc.desc: Test DetectOcclusion with multiple nodes occluding one node
  * @tc.type: FUNC
  * @tc.require: issueIC2H2
  */
 HWTEST_F(RSOcclusionNodeTest, DetectOcclusion_005, TestSize.Level1)
 {
-    NodeId rootNodeId(0);
     std::shared_ptr<OcclusionNode> rootNode =
-        std::make_shared<OcclusionNode>(rootNodeId, RSRenderNodeType::ROOT_NODE);
-    NodeId firstChildId(1);
+        std::make_shared<OcclusionNode>(nodeId, RSRenderNodeType::ROOT_NODE);
     std::shared_ptr<OcclusionNode> firstChild =
-        std::make_shared<OcclusionNode>(firstChildId, RSRenderNodeType::CANVAS_NODE);
-    NodeId secondChildId(2);
+        std::make_shared<OcclusionNode>(firstNodeId, RSRenderNodeType::CANVAS_NODE);
     std::shared_ptr<OcclusionNode> secondChild =
-        std::make_shared<OcclusionNode>(secondChildId, RSRenderNodeType::CANVAS_NODE);
-    NodeId thirdChildId(3);
+        std::make_shared<OcclusionNode>(secondNodeId, RSRenderNodeType::CANVAS_NODE);
     std::shared_ptr<OcclusionNode> thirdChild =
-        std::make_shared<OcclusionNode>(thirdChildId, RSRenderNodeType::CANVAS_NODE);
+        std::make_shared<OcclusionNode>(thirdNodeId, RSRenderNodeType::CANVAS_NODE);
     thirdChild->isValidInCurrentFrame_ = true;
     thirdChild->isOpaque_ = true;
     secondChild->isValidInCurrentFrame_ = true;
@@ -708,24 +669,20 @@ HWTEST_F(RSOcclusionNodeTest, DetectOcclusion_005, TestSize.Level1)
 
 /*
  * @tc.name: DetectOcclusion_006
- * @tc.desc: Test DetectOcclusion
+ * @tc.desc: Test DetectOcclusion with node will be not occluded as expected
  * @tc.type: FUNC
  * @tc.require: issueIC2H2
  */
 HWTEST_F(RSOcclusionNodeTest, DetectOcclusion_006, TestSize.Level1)
 {
-    NodeId rootNodeId(0);
     std::shared_ptr<OcclusionNode> rootNode =
-        std::make_shared<OcclusionNode>(rootNodeId, RSRenderNodeType::ROOT_NODE);
-    NodeId firstChildId(1);
+        std::make_shared<OcclusionNode>(nodeId, RSRenderNodeType::ROOT_NODE);
     std::shared_ptr<OcclusionNode> firstChild =
-        std::make_shared<OcclusionNode>(firstChildId, RSRenderNodeType::CANVAS_NODE);
-    NodeId secondChildId(2);
+        std::make_shared<OcclusionNode>(firstNodeId, RSRenderNodeType::CANVAS_NODE);
     std::shared_ptr<OcclusionNode> secondChild =
-        std::make_shared<OcclusionNode>(secondChildId, RSRenderNodeType::CANVAS_NODE);
-    NodeId thirdChildId(3);
+        std::make_shared<OcclusionNode>(secondNodeId, RSRenderNodeType::CANVAS_NODE);
     std::shared_ptr<OcclusionNode> thirdChild =
-        std::make_shared<OcclusionNode>(thirdChildId, RSRenderNodeType::CANVAS_NODE);
+        std::make_shared<OcclusionNode>(thirdNodeId, RSRenderNodeType::CANVAS_NODE);
     thirdChild->isValidInCurrentFrame_ = true;
     thirdChild->isOpaque_ = true;
     secondChild->isValidInCurrentFrame_ = true;
@@ -756,24 +713,20 @@ HWTEST_F(RSOcclusionNodeTest, DetectOcclusion_006, TestSize.Level1)
 
 /*
  * @tc.name: DetectOcclusion_007
- * @tc.desc: Test DetectOcclusion
+ * @tc.desc: Test DetectOcclusion with inner and outer rect
  * @tc.type: FUNC
  * @tc.require: issueIC2H2
  */
 HWTEST_F(RSOcclusionNodeTest, DetectOcclusion_007, TestSize.Level1)
 {
-    NodeId rootNodeId(0);
     std::shared_ptr<OcclusionNode> rootNode =
-        std::make_shared<OcclusionNode>(rootNodeId, RSRenderNodeType::ROOT_NODE);
-    NodeId firstChildId(1);
+        std::make_shared<OcclusionNode>(nodeId, RSRenderNodeType::ROOT_NODE);
     std::shared_ptr<OcclusionNode> firstChild =
-        std::make_shared<OcclusionNode>(firstChildId, RSRenderNodeType::CANVAS_NODE);
-    NodeId secondChildId(2);
+        std::make_shared<OcclusionNode>(firstNodeId, RSRenderNodeType::CANVAS_NODE);
     std::shared_ptr<OcclusionNode> secondChild =
-        std::make_shared<OcclusionNode>(secondChildId, RSRenderNodeType::CANVAS_NODE);
-    NodeId thirdChildId(3);
+        std::make_shared<OcclusionNode>(secondNodeId, RSRenderNodeType::CANVAS_NODE);
     std::shared_ptr<OcclusionNode> thirdChild =
-        std::make_shared<OcclusionNode>(thirdChildId, RSRenderNodeType::CANVAS_NODE);
+        std::make_shared<OcclusionNode>(thirdNodeId, RSRenderNodeType::CANVAS_NODE);
     thirdChild->isValidInCurrentFrame_ = true;
     thirdChild->isOpaque_ = true;
     secondChild->isValidInCurrentFrame_ = true;
@@ -805,15 +758,14 @@ HWTEST_F(RSOcclusionNodeTest, DetectOcclusion_007, TestSize.Level1)
 
 /*
  * @tc.name: DetectOcclusion_008
- * @tc.desc: Test DetectOcclusion
+ * @tc.desc: Test DetectOcclusion in non-anomalous situations.
  * @tc.type: FUNC
  * @tc.require: issueIC2H2
  */
 HWTEST_F(RSOcclusionNodeTest, DetectOcclusion_008, TestSize.Level1)
 {
-    NodeId rootNodeId(0);
     std::shared_ptr<OcclusionNode> rootNode =
-        std::make_shared<OcclusionNode>(rootNodeId, RSRenderNodeType::ROOT_NODE);
+        std::make_shared<OcclusionNode>(nodeId, RSRenderNodeType::ROOT_NODE);
     NodeId firstChildId(1);
     std::shared_ptr<OcclusionNode> firstChild =
         std::make_shared<OcclusionNode>(firstChildId, RSRenderNodeType::CANVAS_NODE);
