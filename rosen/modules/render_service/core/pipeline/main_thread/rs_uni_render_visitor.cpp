@@ -362,6 +362,12 @@ void RSUniRenderVisitor::HandleColorGamuts(RSDisplayRenderNode& node, const sptr
         }
         node.SetColorSpace(static_cast<GraphicColorGamut>(screenColorGamut));
         return;
+    } else if (ColorGamutParam::IsWiredExtendScreenCloseP3() && !RSMainThread::Instance()->HasWiredMirrorDisplay() &&
+        node.GetScreenId() != 0) {
+        // Current PC external screen do not support P3.
+        // The wired extended screen is fixed to sRGB color space.
+        node.SetColorSpace(GRAPHIC_COLOR_GAMUT_SRGB);
+        return;
     }
 
     if (RSMainThread::Instance()->HasWiredMirrorDisplay() && !MultiScreenParam::IsMirrorDisplayCloseP3()) {
