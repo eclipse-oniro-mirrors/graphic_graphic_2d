@@ -41,7 +41,6 @@ const uint8_t TARGET_SIZE = 6;
 const uint8_t* g_data = nullptr;
 size_t g_size = 0;
 size_t g_pos;
-} // namespace
 
 template<class T>
 T GetData()
@@ -58,55 +57,42 @@ T GetData()
     g_pos += objectSize;
     return object;
 }
-bool DoGetCanvas(const uint8_t* data, size_t size)
+
+bool Init(const uint8_t* data, size_t size)
 {
     if (data == nullptr) {
         return false;
     }
 
-    // initialize
     g_data = data;
     g_size = size;
     g_pos = 0;
+    return true;
+}
+} // namespace
 
+void DoGetCanvas(const uint8_t* data, size_t size)
+{
     int32_t width = GetData<int32_t>();
     int32_t height = GetData<int32_t>();
     int32_t bufferAge = GetData<int32_t>();
     auto value = std::make_shared<Drawing::Surface>();
     auto rsSurfaceFrameOhosVulkan = std::make_shared<RSSurfaceFrameOhosVulkan>(value, width, height, bufferAge);
     rsSurfaceFrameOhosVulkan->GetCanvas();
-    return true;
 }
-bool DoGetSurface(const uint8_t* data, size_t size)
+
+void DoGetSurface(const uint8_t* data, size_t size)
 {
-    if (data == nullptr) {
-        return false;
-    }
-
-    // initialize
-    g_data = data;
-    g_size = size;
-    g_pos = 0;
-
     int32_t width = GetData<int32_t>();
     int32_t height = GetData<int32_t>();
     int32_t bufferAge = GetData<int32_t>();
     auto value = std::make_shared<Drawing::Surface>();
     auto rsSurfaceFrameOhosVulkan = std::make_shared<RSSurfaceFrameOhosVulkan>(value, width, height, bufferAge);
     rsSurfaceFrameOhosVulkan->GetSurface();
-    return true;
 }
-bool DoSetDamageRegion(const uint8_t* data, size_t size)
+
+void DoSetDamageRegion(const uint8_t* data, size_t size)
 {
-    if (data == nullptr) {
-        return false;
-    }
-
-    // initialize
-    g_data = data;
-    g_size = size;
-    g_pos = 0;
-
     int32_t width = GetData<int32_t>();
     int32_t height = GetData<int32_t>();
     int32_t bufferAge = GetData<int32_t>();
@@ -120,39 +106,20 @@ bool DoSetDamageRegion(const uint8_t* data, size_t size)
     rsSurfaceFrameOhosVulkan->SetDamageRegion(left, top, width1, height1);
     std::vector<OHOS::Rosen::RectI> rects;
     rsSurfaceFrameOhosVulkan->SetDamageRegion(rects);
-    return true;
 }
-bool DoGetReleaseFence(const uint8_t* data, size_t size)
+
+void DoGetReleaseFence(const uint8_t* data, size_t size)
 {
-    if (data == nullptr) {
-        return false;
-    }
-
-    // initialize
-    g_data = data;
-    g_size = size;
-    g_pos = 0;
-
     int32_t width = GetData<int32_t>();
     int32_t height = GetData<int32_t>();
     int32_t bufferAge = GetData<int32_t>();
     auto value = std::make_shared<Drawing::Surface>();
     auto rsSurfaceFrameOhosVulkan = std::make_shared<RSSurfaceFrameOhosVulkan>(value, width, height, bufferAge);
     rsSurfaceFrameOhosVulkan->GetReleaseFence();
-    return true;
 }
 
-bool DoSetReleaseFence(const uint8_t* data, size_t size)
+void DoSetReleaseFence(const uint8_t* data, size_t size)
 {
-    if (data == nullptr) {
-        return false;
-    }
-
-    // initialize
-    g_data = data;
-    g_size = size;
-    g_pos = 0;
-
     int32_t width = GetData<int32_t>();
     int32_t height = GetData<int32_t>();
     int32_t bufferAge = GetData<int32_t>();
@@ -160,26 +127,16 @@ bool DoSetReleaseFence(const uint8_t* data, size_t size)
     auto rsSurfaceFrameOhosVulkan = std::make_shared<RSSurfaceFrameOhosVulkan>(value, width, height, bufferAge);
     int32_t fence = GetData<int32_t>();
     rsSurfaceFrameOhosVulkan->SetReleaseFence(fence);
-    return true;
 }
-bool DoGetBufferAge(const uint8_t* data, size_t size)
+
+void DoGetBufferAge(const uint8_t* data, size_t size)
 {
-    if (data == nullptr) {
-        return false;
-    }
-
-    // initialize
-    g_data = data;
-    g_size = size;
-    g_pos = 0;
-
     int32_t width = GetData<int32_t>();
     int32_t height = GetData<int32_t>();
     int32_t bufferAge = GetData<int32_t>();
     auto value = std::make_shared<Drawing::Surface>();
     auto rsSurfaceFrameOhosVulkan = std::make_shared<RSSurfaceFrameOhosVulkan>(value, width, height, bufferAge);
     rsSurfaceFrameOhosVulkan->GetBufferAge();
-    return true;
 }
 } // namespace Rosen
 } // namespace OHOS
@@ -189,7 +146,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
     /* Run your code on data */
     if (!OHOS::Rosen::Init(data, size)) {
-        return 0;
+        return -1;
     }
     uint8_t tarPos = OHOS::Rosen::GetData<uint8_t>() % OHOS::Rosen::TARGET_SIZE;
     switch (tarPos) {

@@ -89,7 +89,7 @@ T GetData()
     return object;
 }
 
-void Init(const uint8_t* data, size_t size)
+bool Init(const uint8_t* data, size_t size)
 {
     if (data == nullptr) {
         return false;
@@ -98,6 +98,7 @@ void Init(const uint8_t* data, size_t size)
     g_data = data;
     g_size = size;
     g_pos = 0;
+    return true;
 }
 } // namespace
 
@@ -366,7 +367,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
     /* Run your code on data */
     if (!OHOS::Rosen::Init(data, size)) {
-        return 0;
+        return -1;
     }
     uint8_t tarPos = OHOS::Rosen::GetData<uint8_t>() % OHOS::Rosen::TARGET_SIZE;
     switch (tarPos) {

@@ -52,6 +52,7 @@ T GetData()
     g_pos += objectSize;
     return object;
 }
+
 bool DoSomethingInterestingWithMyAPI(const uint8_t* data, size_t size)
 {
     if (data == nullptr) {
