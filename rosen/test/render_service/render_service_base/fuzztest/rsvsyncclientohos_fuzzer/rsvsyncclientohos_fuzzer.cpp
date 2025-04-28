@@ -65,9 +65,11 @@ bool DoSomethingInterestingWithMyAPI(const uint8_t* data, size_t size)
     int64_t nanoTimestamp = GetData<int64_t>();
     int64_t frameCount = GetData<int64_t>();
     RSVsyncClient::VsyncCallback callback = [](int64_t valuex, int64_t valuey) { return; };
-    RSVsyncClientOhos rsVsyncClientOhos;
-    rsVsyncClientOhos.SetVsyncCallback(callback);
-    RSVsyncClientOhos::OnVsync(nanoTimestamp, frameCount, &rsVsyncClientOhos);
+    auto client = RSVsyncClient::Create();
+    client->SetVsyncCallback(callback);
+    client->RequestNextVsync();
+    RSVsyncClientOhos::OnVsync(nanoTimestamp, frameCount, client.get());
+    RSVsyncClientOhos::OnVsync(nanoTimestamp, frameCount, nullptr);
     return true;
 }
 } // namespace Rosen
