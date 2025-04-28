@@ -85,9 +85,9 @@ void InitRenderContext()
         RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) {
         auto drawingContext = RsVulkanContext::GetSingleton().CreateDrawingContext();
         g_context->SetUpGpuContext(drawingContext);
-        } else {
-            g_context->SetUpGpuContext();
-        }
+    } else {
+        g_context->SetUpGpuContext();
+    }
 #else
     g_context->SetUpGpuContext();
 #endif
@@ -104,7 +104,7 @@ void ReleaseRenderContext()
         RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) {
         g_context->drGPUContext_->ReleaseResourcesAndAbandonContext();
         g_context->drGPUContext_ = nullptr;
-        }
+    }
 #endif
     g_context = nullptr;
 }
