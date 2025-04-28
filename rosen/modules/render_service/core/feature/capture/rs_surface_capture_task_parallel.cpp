@@ -243,7 +243,10 @@ bool RSSurfaceCaptureTaskParallel::Run(
         }
     } else if (displayNodeDrawable_) {
         RSUniRenderThread::SetCaptureParam(CaptureParam(true, false, false));
+        std::unordered_set<NodeId> blackList(captureConfig_.blackList.begin(), captureConfig_.blackList.end());
+        RSUniRenderThread::Instance().SetBlackList(std::move(blackList));
         displayNodeDrawable_->OnCapture(canvas);
+        RSUniRenderThread::Instance().SetBlackList({});
     } else {
         RS_LOGE("RSSurfaceCaptureTaskParallel::Run: Invalid RSRenderNodeDrawable!");
         return false;

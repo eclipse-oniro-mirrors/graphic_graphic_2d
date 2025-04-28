@@ -800,7 +800,8 @@ void RSSurfaceRenderNodeDrawable::OnCapture(Drawing::Canvas& canvas)
 bool RSSurfaceRenderNodeDrawable::CheckIfSurfaceSkipInMirror(const RSSurfaceRenderParams& surfaceParams)
 {
     const auto& uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
-    if (uniParam && !uniParam->IsMirrorScreen()) {
+    const auto& captureParam = RSUniRenderThread::GetCaptureParam();
+    if (uniParam && !uniParam->IsMirrorScreen() && (!captureParam.isSnapshot_ || captureParam.isSingleSurface_)) {
         return false;
     }
     // Check black list.

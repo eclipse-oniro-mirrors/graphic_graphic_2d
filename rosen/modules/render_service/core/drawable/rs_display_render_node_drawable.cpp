@@ -1737,8 +1737,10 @@ void RSDisplayRenderNodeDrawable::OnCapture(Drawing::Canvas& canvas)
     }
 
     specialLayerType_ = GetSpecialLayerType(*params);
+    auto currentBlackList = RSUniRenderThread::Instance().GetBlackList();
     if (specialLayerType_ != NO_SPECIAL_LAYER || UNLIKELY(noBuffer) || params->GetScreenInfo().isSamplingOn ||
-        UNLIKELY(RSUniRenderThread::GetCaptureParam().isMirror_) || isRenderSkipIfScreenOff_) {
+        UNLIKELY(RSUniRenderThread::GetCaptureParam().isMirror_) || isRenderSkipIfScreenOff_ ||
+        !currentBlackList.empty()) {
         RS_LOGD("RSDisplayRenderNodeDrawable::OnCapture: \
             process RSDisplayRenderNode(id:[%{public}" PRIu64 "]) Not using UniRender buffer.",
             params->GetId());
