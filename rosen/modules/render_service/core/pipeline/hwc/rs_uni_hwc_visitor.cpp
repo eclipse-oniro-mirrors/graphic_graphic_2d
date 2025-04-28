@@ -783,73 +783,22 @@ void RSUniHwcVisitor::UpdateHardwareStateByHwcNodeBackgroundAlpha(
     }
 }
 
-bool RSUniHwcVisitor::IsBackFilterBehindSurface(std::shared_ptr<RSSurfaceRenderNode>& node, NodeId filterNodeId)
-{
-    if (node == nullptr) {
-        return false;
-    }
-    auto filterNode = RSMainThread::Instance()->GetContext().GetNodeMap().GetRenderNode<RSRenderNode>(filterNodeId);
-    if (filterNode == nullptr) {
-        return false;
-    }
-    if (filterNode->GetRenderProperties().GetBackgroundFilter() == nullptr) {
-        return false;
-    }
-    std::stack<std::shared_ptr<RSRenderNode>> filterNodeStack;
-    auto filterParent = filterNode;
-    while (filterParent != nullptr) {
-        filterNodeStack.push(filterParent);
-        filterParent = (filterParent->GetParent()).lock();
-    }
-    std::stack<std::shared_ptr<RSRenderNode>> surfaceNodeStack;
-    std::shared_ptr<RSRenderNode> surfaceParent = node;
-    while (surfaceParent != nullptr) {
-        surfaceNodeStack.push(surfaceParent);
-        surfaceParent = surfaceParent->GetParent().lock();
-    }
-    if (surfaceNodeStack.top() != filterNodeStack.top()) {
-        return false;
-    }
-    std::shared_ptr<RSRenderNode> parentNode = nullptr;
-    while (surfaceNodeStack.size() > 1 && filterNodeStack.size() > 1 &&
-        surfaceNodeStack.top() == filterNodeStack.top()) {
-        parentNode = surfaceNodeStack.top();
-        surfaceNodeStack.pop();
-        filterNodeStack.pop();
-    }
-    if (parentNode == nullptr) {
-        return false;
-    }
-    surfaceParent = surfaceNodeStack.top();
-    filterParent = filterNodeStack.top();
-    if (surfaceParent == filterParent) {
-        return (surfaceParent != node && filterParent == filterNode);
-    } else {
-        int32_t surfaceZOrder = surfaceParent->GetHwcRecorder().zOrderForCalcHwcNodeEnableByFilter_;
-        int32_t filterZOrder = filterParent->GetHwcRecorder().zOrderForCalcHwcNodeEnableByFilter_;
-        return (parentNode->GetCurFrameInfoDetail().curFrameReverseChildren)?
-            (filterZOrder > surfaceZOrder):(filterZOrder < surfaceZOrder);
-    }
-}
-
 void RSUniHwcVisitor::CalcHwcNodeEnableByFilterRect(std::shared_ptr<RSSurfaceRenderNode>& node,
-    const RectI& filterRect, NodeId filterNodeId, bool isReverseOrder, int32_t filterZorder)
+    RSRenderNode& filterNode, bool isReverseOrder, int32_t filterZOrder)
 {
     if (!node) {
         return;
     }
+    if (filterNode.GetRenderProperties().GetBackgroundFilter() != nullptr && filterZOrder != 0 &&
+        node->GetHwcRecorder().GetZOrderForHwcEnableByFilter() != 0 &&
+        node->GetHwcRecorder().GetZOrderForHwcEnableByFilter() > filterZOrder) {
+        return;
+    }
     auto bound = node->GetRenderProperties().GetBoundsGeometry()->GetAbsRect();
-    bool isIntersect = !bound.IntersectRect(filterRect).IsEmpty();
+    bool isIntersect = !bound.IntersectRect(filterNode.GetOldDirtyInSurface()).IsEmpty();
     if (isIntersect) {
-        if (filterZorder != 0 && node->GetHwcRecorder().zOrderForCalcHwcNodeEnableByFilter_ != 0 &&
-            IsBackFilterBehindSurface(node, filterNodeId)) {
-#ifdef HIPERF_TRACE_ENABLE
-            RS_LOGW("hiperf_surface: name:%s has background filter behind surface", node->GetName().c_str());
-#endif
-            return;
-        }
         RS_OPTIONAL_TRACE_FMT("hwc debug: name:%s id:%" PRIu64 " disabled by filter rect, filterId:%" PRIu64,
-            node->GetName().c_str(), node->GetId(), filterNodeId);
+            node->GetName().c_str(), node->GetId(), filterNode.GetId());
 #ifdef HIPERF_TRACE_ENABLE
         RS_LOGW("hiperf_surface: name:%s disabled by filter rect, surfaceRect: [%d, %d, %d, %d]->[%d, %d, %d, %d]",
             node->GetName().c_str(),
@@ -867,9 +816,9 @@ void RSUniHwcVisitor::CalcHwcNodeEnableByFilterRect(std::shared_ptr<RSSurfaceRen
 }
 
 void RSUniHwcVisitor::UpdateHwcNodeEnableByFilterRect(std::shared_ptr<RSSurfaceRenderNode>& node,
-    const RectI& filterRect, NodeId filterNodeId, bool isReverseOrder, int32_t filterZorder)
+    RSRenderNode& filterNode, bool isReverseOrder, int32_t filterZOrder)
 {
-    if (filterRect.IsEmpty()) {
+    if (filterNode.GetOldDirtyInSurface().IsEmpty()) {
         return;
     }
     if (!node) {
@@ -878,7 +827,7 @@ void RSUniHwcVisitor::UpdateHwcNodeEnableByFilterRect(std::shared_ptr<RSSurfaceR
             return;
         }
         for (auto hwcNode : selfDrawingNodes) {
-            CalcHwcNodeEnableByFilterRect(hwcNode, filterRect, filterNodeId, isReverseOrder, filterZorder);
+            CalcHwcNodeEnableByFilterRect(hwcNode, filterNode, isReverseOrder, filterZOrder);
         }
     } else {
         const auto& hwcNodes = node->GetChildHardwareEnabledNodes();
@@ -887,7 +836,7 @@ void RSUniHwcVisitor::UpdateHwcNodeEnableByFilterRect(std::shared_ptr<RSSurfaceR
         }
         for (auto hwcNode : hwcNodes) {
             auto hwcNodePtr = hwcNode.lock();
-            CalcHwcNodeEnableByFilterRect(hwcNodePtr, filterRect, filterNodeId, isReverseOrder, filterZorder);
+            CalcHwcNodeEnableByFilterRect(hwcNodePtr, filterNode, isReverseOrder, filterZOrder);
         }
     }
 }
@@ -1262,6 +1211,23 @@ void RSUniHwcVisitor::UpdateHwcNodeInfo(RSSurfaceRenderNode& node,
     UpdateHwcNodeByTransform(node, absMatrix);
     UpdateHwcNodeEnableByBackgroundAlpha(node);
     UpdateHwcNodeEnableByBufferSize(node);
+}
+void RSUniHwcVisitor::QuickPrepareChildrenOnlyOrder(RSRenderNode& node)
+{
+    const auto orderFunc = [this](const std::shared_ptr<RSRenderNode>& child) {
+        if (!child) {
+            return;
+        }
+        child->GetHwcRecorder().SetZOrderForHwcEnableByFilter(curZOrderForHwcEnableByFilter_++);
+        QuickPrepareChildrenOnlyOrder(*child);
+    };
+ 
+    auto children = node.GetSortedChildren();
+    if (uniRenderVisitor_.NeedPrepareChindrenInReverseOrder(node)) {
+        std::for_each((*children).rbegin(), (*children).rend(), orderFunc);
+    } else {
+        std::for_each((*children).begin(), (*children).end(), orderFunc);
+    }
 }
 } // namespace Rosen
 } // namespace OHOS
