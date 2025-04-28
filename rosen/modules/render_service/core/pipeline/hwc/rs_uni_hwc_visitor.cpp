@@ -666,7 +666,7 @@ void RSUniHwcVisitor::UpdateHwcNodeEnableByHwcNodeBelowSelf(std::vector<RectI>& 
     }
     for (const auto& rect : hwcRects) {
         for (auto& roundCornerAABB : hwcNode->GetIntersectedRoundCornerAABBs()) {
-            if (!roundCornerAABB.IntersectRect(rect).IsEmpty()) {               
+            if (!roundCornerAABB.IntersectRect(rect).IsEmpty()) {
                 if (hwcNode->GetSpecialLayerMgr().Find(SpecialLayerType::PROTECTED)) {
                     continue;
                 }
