@@ -1173,13 +1173,13 @@ void RSUniHwcVisitor::UpdateHwcNodeInfo(RSSurfaceRenderNode& node,
     UpdateHwcNodeEnableByBufferSize(node);
 }
 
-void PrintHiperfCounterLog(const char* const counterContext, uint64_t counter)
+void RSUniHwcVisitor::PrintHiperfCounterLog(const char* const counterContext, uint64_t counter)
 {
 #ifdef HIPERF_TRACE_ENABLE
     RS_LOGW("hiperf_surface_%{public}s %{public}" PRIu64, counterContext, counter);
 #endif
 }
-void PrintHiperfLog(RSSurfaceRenderNode* node, const char* const disabledContext)
+void RSUniHwcVisitor::PrintHiperfLog(RSSurfaceRenderNode* node, const char* const disabledContext)
 {
 #ifdef HIPERF_TRACE_ENABLE
     RS_LOGW("hiperf_surface: name:%{public}s disabled by %{public}s "
@@ -1192,7 +1192,7 @@ void PrintHiperfLog(RSSurfaceRenderNode* node, const char* const disabledContext
         node->GetDstRect().GetTop(), node->GetDstRect().GetBottom());
 #endif
 }
-void PrintHiperfLog(std::shared_ptr<RSSurfaceRenderNode>& node, const char* const disabledContext)
+void RSUniHwcVisitor::PrintHiperfLog(std::shared_ptr<RSSurfaceRenderNode>& node, const char* const disabledContext)
 {
 #ifdef HIPERF_TRACE_ENABLE
     RS_LOGW("hiperf_surface: name:%{public}s disabled by %{public}s "
