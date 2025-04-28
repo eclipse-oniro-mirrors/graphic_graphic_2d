@@ -88,7 +88,7 @@ constexpr float EPSILON_SCALE = 0.00001f;
 static const std::string CAPTURE_WINDOW_NAME = "CapsuleWindow";
 constexpr const char* RELIABLE_GESTURE_BACK_SURFACE_NAME = "SCBGestureBack";
 constexpr int MIN_OVERLAP = 2;
-constexpr uint64_t INPUT_HW_CLAYERS = 3;
+constexpr uint64_t INPUT_HWC_LAYERS = 3;
 
 bool CheckRootNodeReadyToDraw(const std::shared_ptr<RSBaseRenderNode>& child)
 {
@@ -1964,7 +1964,7 @@ void RSUniRenderVisitor::PrevalidateHwcNode()
     RS_TRACE_NAME_FMT("PrevalidateHwcNode hwcLayer: %u", prevalidLayers.size());
     if (prevalidLayers.size() == 0) {
         RS_LOGI_IF(DEBUG_PREVALIDATE, "RSUniRenderVisitor::PrevalidateHwcNode no hardware layer");
-        hwcVisitor_->PrintHiperfCounterLog("counter2", INPUT_HW_CLAYERS);
+        hwcVisitor_->PrintHiperfCounterLog("counter2", INPUT_HWC_LAYERS);
         return;
     }
     // add display layer
@@ -2011,9 +2011,9 @@ void RSUniRenderVisitor::PrevalidateHwcNode()
         if (node->IsInFixedRotation() || node->GetSpecialLayerMgr().Find(SpecialLayerType::PROTECTED)) {
             continue;
         }
-        RS_OPTIONAL_TRACE_FMT("hwc debug: name:%s id:%" PRIu64 " disabled by prevalidate",
+        RS_OPTIONAL_TRACE_FMT("hwc debug: name:%s id:%" PRIu64 " disabled by preValidate",
             node->GetName().c_str(), node->GetId());
-        hwcVisitor_->PrintHiperfLog(node, "prevalidate");
+        hwcVisitor_->PrintHiperfLog(node, "preValidate");
         node->SetHardwareForcedDisabledState(true);
         if (node->GetRSSurfaceHandler()) {
             node->GetRSSurfaceHandler()->SetGlobalZOrder(-1.f);
@@ -2082,7 +2082,7 @@ bool RSUniRenderVisitor::IsHdrUseUnirender(bool hasUniRenderHdrSurface,
         RS_OPTIONAL_TRACE_FMT("hwc debug: name:%s id:%" PRIu64
             " disabled by having UniRenderHdrSurface/DRM nodes, isHdrHardwareDisabled:%d",
             hwcNodePtr->GetName().c_str(), hwcNodePtr->GetId(), isHdrHardwareDisabled);
-        hwcVisitor_->PrintHiperfLog(hwcNodePtr, "unirender HDR");
+        hwcVisitor_->PrintHiperfLog(hwcNodePtr, "uniRender HDR");
         return true;
     }
     return false;

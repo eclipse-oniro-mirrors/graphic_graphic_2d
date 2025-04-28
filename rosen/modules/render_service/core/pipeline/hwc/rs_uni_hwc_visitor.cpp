@@ -326,10 +326,10 @@ void RSUniHwcVisitor::ProcessSolidLayerDisabled(RSSurfaceRenderNode& node)
         uniRenderVisitor_.curSurfaceNode_->SetExistTransparentHardwareEnabledNode(true);
         node.SetNodeHasBackgroundColorAlpha(true);
     } else {
-        RS_OPTIONAL_TRACE_NAME_FMT("hwc debug: name:%s id:%" PRIu64 " disabled by background solidcolor && HDR",
+        RS_OPTIONAL_TRACE_NAME_FMT("hwc debug: name:%s id:%" PRIu64 " disabled by background solidColor && HDR",
             node.GetName().c_str(), node.GetId());
-        RS_LOGD("solidLayer: disabled by background solidcolor && HDR: %{public}s", node.GetName().c_str());
-        PrintHiperfLog(&node, "background solidcolor && HDR");
+        RS_LOGD("solidLayer: disabled by background solidColor && HDR: %{public}s", node.GetName().c_str());
+        PrintHiperfLog(&node, "background solidColor && HDR");
         node.SetHardwareForcedDisabledState(true);
         Statistics().UpdateHwcDisabledReasonForDFX(
             node.GetId(), HwcDisabledReasons::DISABLED_BY_SOLID_BACKGROUND_ALPHA, node.GetName());
@@ -1179,6 +1179,7 @@ void RSUniHwcVisitor::PrintHiperfCounterLog(const char* const counterContext, ui
     RS_LOGW("hiperf_surface_%{public}s %{public}" PRIu64, counterContext, counter);
 #endif
 }
+
 void RSUniHwcVisitor::PrintHiperfLog(RSSurfaceRenderNode* node, const char* const disabledContext)
 {
 #ifdef HIPERF_TRACE_ENABLE
@@ -1192,6 +1193,7 @@ void RSUniHwcVisitor::PrintHiperfLog(RSSurfaceRenderNode* node, const char* cons
         node->GetDstRect().GetTop(), node->GetDstRect().GetBottom());
 #endif
 }
+
 void RSUniHwcVisitor::PrintHiperfLog(std::shared_ptr<RSSurfaceRenderNode>& node, const char* const disabledContext)
 {
 #ifdef HIPERF_TRACE_ENABLE
