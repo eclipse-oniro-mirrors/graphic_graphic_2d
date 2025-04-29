@@ -1864,6 +1864,7 @@ private:
     friend class RSUniRenderVisitor;
     friend class RSRenderNode;
     friend class RSRenderService;
+    friend class RSHdrUtil;
 #ifdef RS_PROFILER_ENABLED
     friend class RSProfiler;
 #endif
