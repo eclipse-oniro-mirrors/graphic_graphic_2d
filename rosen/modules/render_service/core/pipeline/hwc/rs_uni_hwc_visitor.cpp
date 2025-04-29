@@ -18,6 +18,7 @@
 #include "feature/hwc/rs_uni_hwc_compute_util.h"
 #include "feature/hdr/rs_hdr_util.h"
 #include "pipeline/rs_canvas_render_node.h"
+#include "pipeline/main_thread/rs_uni_render_visitor.h"
 
 #include "common/rs_common_hook.h"
 #include "common/rs_optional_trace.h"

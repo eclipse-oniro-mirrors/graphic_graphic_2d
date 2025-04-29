@@ -15,8 +15,6 @@
 #ifndef RS_UNI_HWC_VISITOR_H
 #define RS_UNI_HWC_VISITOR_H
 
-#include "pipeline/main_thread/rs_uni_render_visitor.h"
-
 namespace OHOS {
 namespace Rosen {
 class RSCanvasRenderNode;
