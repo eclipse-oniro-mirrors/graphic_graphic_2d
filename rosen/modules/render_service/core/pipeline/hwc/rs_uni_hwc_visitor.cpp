@@ -1212,6 +1212,7 @@ void RSUniHwcVisitor::UpdateHwcNodeInfo(RSSurfaceRenderNode& node,
     UpdateHwcNodeEnableByBackgroundAlpha(node);
     UpdateHwcNodeEnableByBufferSize(node);
 }
+
 void RSUniHwcVisitor::QuickPrepareChildrenOnlyOrder(RSRenderNode& node)
 {
     const auto orderFunc = [this](const std::shared_ptr<RSRenderNode>& child) {
