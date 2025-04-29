@@ -12,16 +12,16 @@
 # limitations under the License.
 
 import("//build/test.gni")
+
 group("fuzztest") {
   testonly = true
-  deps = []
 
-  deps += [
+  deps = [
     "drawing_fuzzer:fuzztest",
     "drawingaddtext_fuzzer:fuzztest",
     "drawingrun_fuzzer:fuzztest",
     "drawingtext_fuzzer:fuzztest",
     "hm_symbol:fuzztest",
-    "skia_txt:fuzztest",
+    "typography:fuzztest",
   ]
 }
