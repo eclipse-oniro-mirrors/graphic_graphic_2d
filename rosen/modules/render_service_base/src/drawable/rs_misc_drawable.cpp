@@ -19,11 +19,11 @@
 #include "common/rs_optional_trace.h"
 #include "drawable/rs_property_drawable_utils.h"
 #include "drawable/rs_render_node_drawable_adapter.h"
+#include "memory/rs_tag_tracker.h"
 #include "pipeline/rs_canvas_drawing_render_node.h"
 #include "pipeline/rs_render_node.h"
 
 #include "rs_profiler.h"
-#include "memory/rs_tag_tracker.h"
 #include "utils/graphic_coretrace.h"
 
 namespace OHOS::Rosen {
