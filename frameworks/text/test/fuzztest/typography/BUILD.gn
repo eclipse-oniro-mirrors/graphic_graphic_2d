@@ -12,6 +12,8 @@
 # limitations under the License.
 
 group("fuzztest") {
+  testonly = true
+
   deps = [
     "convert_fuzzer:fuzztest",
     "linetypography_fuzzer:fuzztest",
