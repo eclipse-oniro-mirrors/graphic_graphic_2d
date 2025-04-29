@@ -37,7 +37,7 @@ ohos_fuzztest("Point3FuzzTest") {
 
   include_dirs = [
     "$graphic_2d_root/rosen/modules/2d_graphics/include",
-    "$graphic_2d_root/rosen/rosen/modules/2d_graphics/src",
+    "$graphic_2d_root/rosen/modules/2d_graphics/src",
     "$graphic_2d_root/rosen/test/2d_graphics/fuzztest",
   ]
 
