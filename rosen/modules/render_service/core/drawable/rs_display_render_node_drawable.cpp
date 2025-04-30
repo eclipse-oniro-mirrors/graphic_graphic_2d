@@ -1737,7 +1737,7 @@ void RSDisplayRenderNodeDrawable::OnCapture(Drawing::Canvas& canvas)
     }
 
     specialLayerType_ = GetSpecialLayerType(*params);
-    // Screenshot blacklist/excludeList
+    // Screenshot blacklist, exclude surfacenode in blacklist while capturing displaynode
     auto currentBlackList = RSUniRenderThread::Instance().GetBlackList();
     if (specialLayerType_ != NO_SPECIAL_LAYER || UNLIKELY(noBuffer) || params->GetScreenInfo().isSamplingOn ||
         UNLIKELY(RSUniRenderThread::GetCaptureParam().isMirror_) || isRenderSkipIfScreenOff_ ||

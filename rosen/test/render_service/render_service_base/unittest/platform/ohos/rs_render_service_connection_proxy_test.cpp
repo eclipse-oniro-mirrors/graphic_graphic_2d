@@ -542,8 +542,8 @@ HWTEST_F(RSRenderServiceConnectionProxyTest, TakeSurfaceCapture, TestSize.Level1
     captureConfig.useDma = false;
     captureConfig.captureType = SurfaceCaptureType::UICAPTURE;
     captureConfig.isSync = true;
-    captureConfig.excludeList = std::vector<NodeId>{0};
-    ASSERT_FALSE(captureConfig.excludeList.empty());
+    captureConfig.blacklist = std::vector<NodeId>{0};
+    ASSERT_FALSE(captureConfig.blacklist.empty());
     RSSurfaceCaptureBlurParam blurParam;
     blurParam.isNeedBlur = true;
     blurParam.blurRadius = 10;

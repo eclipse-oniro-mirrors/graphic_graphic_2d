@@ -241,7 +241,7 @@ struct RSSurfaceCaptureConfig {
     SurfaceCaptureType captureType = SurfaceCaptureType::DEFAULT_CAPTURE;
     bool isSync = false;
     Drawing::Rect mainScreenRect = {};
-    std::vector<NodeId> excludeList = {};
+    std::vector<NodeId> blacklist = {};
     bool operator==(const RSSurfaceCaptureConfig& config) const
     {
         return mainScreenRect == config.mainScreenRect;
