@@ -455,7 +455,8 @@ void RSSurfaceRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
             name_.c_str(), surfaceParams->GetId());
         return;
     }
-    if (CheckIfSurfaceSkipInMirror(*surfaceParams)) {
+    if (CheckIfSurfaceSkipInMirrorOrScreenshot(*surfaceParams)) {
+        // Whitelist not checked
         SetDrawSkipType(DrawSkipType::SURFACE_SKIP_IN_MIRROR);
         RS_TRACE_NAME_FMT("RSSurfaceRenderNodeDrawable::OnDraw surface skipped in mirror name:[%s] id:%" PRIu64,
             name_.c_str(), surfaceParams->GetId());
@@ -753,7 +754,7 @@ void RSSurfaceRenderNodeDrawable::OnCapture(Drawing::Canvas& canvas)
     auto whiteList = RSUniRenderThread::Instance().GetWhiteList();
     SetVirtualScreenWhiteListRootId(whiteList, surfaceParams->GetLeashPersistentId());
 
-    if (CheckIfSurfaceSkipInMirror(*surfaceParams)) {
+    if (CheckIfSurfaceSkipInMirrorOrScreenshot(*surfaceParams)) {
         SetDrawSkipType(DrawSkipType::SURFACE_SKIP_IN_MIRROR);
         RS_TRACE_NAME_FMT("RSSurfaceRenderNodeDrawable::OnCapture surface skipped in mirror name:[%s] id:%" PRIu64,
             name_.c_str(), surfaceParams->GetId());
@@ -797,22 +798,24 @@ void RSSurfaceRenderNodeDrawable::OnCapture(Drawing::Canvas& canvas)
     ResetVirtualScreenWhiteListRootId(surfaceParams->GetLeashPersistentId());
 }
 
-bool RSSurfaceRenderNodeDrawable::CheckIfSurfaceSkipInMirror(const RSSurfaceRenderParams& surfaceParams)
+bool RSSurfaceRenderNodeDrawable::CheckIfSurfaceSkipInMirrorOrScreenshot(const RSSurfaceRenderParams& surfaceParams)
 {
     const auto& uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
     const auto& captureParam = RSUniRenderThread::GetCaptureParam();
-    if (uniParam && !uniParam->IsMirrorScreen() && (!captureParam.isSnapshot_ || captureParam.isSingleSurface_)) {
+    bool isScreenshot = captureParam.isSnapshot_ && !captureParam.isSingleSurface_;
+    if (uniParam && !uniParam->IsMirrorScreen() && !isScreenshot) {
+        // No need to check if not in mirror or screenshot.
         return false;
     }
     // Check black list.
     const auto& blackList = RSUniRenderThread::Instance().GetBlackList();
     if (surfaceParams.IsLeashWindow() && blackList.find(surfaceParams.GetLeashPersistentId()) != blackList.end()) {
-        RS_LOGD("RSSurfaceRenderNodeDrawable::CheckIfSurfaceSkipInMirror: \
+        RS_LOGD("RSSurfaceRenderNodeDrawable::CheckIfSurfaceSkipInMirrorOrScreenshot: \
             (LeashPersistentId:[%{public}" PRIu64 "]) is in black list", surfaceParams.GetLeashPersistentId());
         return true;
     }
     if (blackList.find(surfaceParams.GetId()) != blackList.end()) {
-        RS_LOGD("RSSurfaceRenderNodeDrawable::CheckIfSurfaceSkipInMirror: \
+        RS_LOGD("RSSurfaceRenderNodeDrawable::CheckIfSurfaceSkipInMirrorOrScreenshot: \
             (surfaceParamsId:[%{public}" PRIu64 "]) is in black list", surfaceParams.GetId());
         return true;
     }
@@ -820,14 +823,14 @@ bool RSSurfaceRenderNodeDrawable::CheckIfSurfaceSkipInMirror(const RSSurfaceRend
     const auto& typeBlackList = RSUniRenderThread::Instance().GetTypeBlackList();
     NodeType nodeType = static_cast<NodeType>(surfaceParams.GetSurfaceNodeType());
     if (typeBlackList.find(nodeType) != typeBlackList.end()) {
-        RS_LOGD("RSSurfaceRenderNodeDrawable::CheckIfSurfaceSkipInMirror: "
+        RS_LOGD("RSSurfaceRenderNodeDrawable::CheckIfSurfaceSkipInMirrorOrScreenshot: "
             "(surfaceNodeType:[%{public}u]) is in type black list", nodeType);
         return true;
     }
     // Check white list.
     const auto& whiteList = RSUniRenderThread::Instance().GetWhiteList();
     if (!whiteList.empty() && RSUniRenderThread::GetCaptureParam().rootIdInWhiteList_ == INVALID_NODEID) {
-        RS_LOGD("RSSurfaceRenderNodeDrawable::CheckIfSurfaceSkipInMirror: \
+        RS_LOGD("RSSurfaceRenderNodeDrawable::CheckIfSurfaceSkipInMirrorOrScreenshot: \
             (id:[%{public}" PRIu64 "]) isn't in white list", surfaceParams.GetId());
         return true;
     }
