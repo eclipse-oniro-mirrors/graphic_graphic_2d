@@ -1507,8 +1507,6 @@ void RSUniRenderVisitor::UpdateDrawingCacheInfoBeforeChildren(RSCanvasRenderNode
     node.UpdateDrawingCacheInfoBeforeChildren(isScreenRotationAnimating_);
     if (node.GetDrawingCacheType() == RSDrawingCacheType::FOREGROUND_FILTER_CACHE) {
         inForegroundFilter_ = true;
-    } else if (node.GetDrawingCacheType() != RSDrawingCacheType::DISABLED_CACHE) {
-        inForegroundFilter_ = false;
     }
 }
 
