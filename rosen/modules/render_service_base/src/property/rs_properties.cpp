@@ -2988,6 +2988,9 @@ std::shared_ptr<RSFilter> RSProperties::GenerateLightBlurFilter(float radius)
 {
     std::shared_ptr<RSDrawingFilter> originalFilter = nullptr;
     // Lightblur does not take effect when using grayscale
+    if (greyCoef_.has_value()) {
+        ROSEN_LOGD("RSProperties::GenerateLightBlurFilter: Lightblur does not take effect when using grayscale");
+    }
 
     std::shared_ptr<RSLightBlurShaderFilter> lightBlurShaderFilter = std::make_shared<RSLightBlurShaderFilter>(radius);
     if (originalFilter == nullptr) {
@@ -3006,7 +3009,9 @@ std::shared_ptr<RSFilter> RSProperties::GenerateMaterialLightBlurFilter(
 {
     std::shared_ptr<RSDrawingFilter> originalFilter = nullptr;
     // Lightblur does not take effect when using grayscale
-    
+    if (greyCoef_.has_value()) {
+        ROSEN_LOGD("RSProperties::GenerateMaterialLightBlurFilter: Lightblur does not take effect when using grayscale");
+    }
     auto colorImageFilter = Drawing::ImageFilter::CreateColorFilterImageFilter(*colorFilter, nullptr);
     if (originalFilter == nullptr) {
         originalFilter = std::make_shared<RSDrawingFilter>(colorImageFilter, hash);
