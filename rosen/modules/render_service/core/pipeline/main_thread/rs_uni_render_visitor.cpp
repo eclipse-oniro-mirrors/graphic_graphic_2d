@@ -53,6 +53,7 @@
 #include "pipeline/hardware_thread/rs_realtime_refresh_rate_manager.h"
 #include "pipeline/rs_root_render_node.h"
 #include "pipeline/rs_surface_render_node.h"
+#include "pipeline/hwc/rs_uni_hwc_visitor.h"
 #include "platform/common/rs_log.h"
 #include "platform/common/rs_system_properties.h"
 #include "property/rs_properties_painter.h"

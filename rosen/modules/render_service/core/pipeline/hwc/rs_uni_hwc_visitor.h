@@ -20,7 +20,6 @@
 namespace OHOS {
 namespace Rosen {
 class RSCanvasRenderNode;
-class RSUniRenderVisitor;
 class RSUniHwcVisitor {
 public:
     explicit RSUniHwcVisitor(RSUniRenderVisitor& visitor);
