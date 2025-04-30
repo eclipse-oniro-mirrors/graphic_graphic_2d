@@ -57,11 +57,10 @@ public:
     void UpdateChildHwcNodeEnableByHwcNodeBelow(std::vector<RectI>& hwcRects,
         std::shared_ptr<RSSurfaceRenderNode>& appNode);
     void UpdateTransparentHwcNodeEnable(const std::vector<std::weak_ptr<RSSurfaceRenderNode>>& hwcNodes);
-    bool IsBackFilterBehindSurface(std::shared_ptr<RSSurfaceRenderNode>& node, NodeId filterNodeId);
     void CalcHwcNodeEnableByFilterRect(std::shared_ptr<RSSurfaceRenderNode>& node,
-        const RectI& filterRect, NodeId filterNodeId, bool isReverseOrder = false, int32_t filterZorder = 0);
+        RSRenderNode& filterNode, bool isReverseOrder = false, int32_t filterZOrder = 0);
     void UpdateHwcNodeEnableByFilterRect(std::shared_ptr<RSSurfaceRenderNode>& node,
-        const RectI& filterRect, NodeId filterNodeId, bool isReverseOrder = false, int32_t filterZorder = 0);
+        RSRenderNode& filterNode, bool isReverseOrder = false, int32_t filterZOrder = 0);
     void UpdateHwcNodeEnableByGlobalFilter(std::shared_ptr<RSSurfaceRenderNode>& node);
     void UpdateHwcNodeEnableByGlobalCleanFilter(const std::vector<std::pair<NodeId, RectI>>& cleanFilter,
         RSSurfaceRenderNode& hwcNode);
@@ -76,7 +75,7 @@ public:
 
     void UpdateHwcNodeInfo(RSSurfaceRenderNode& node, const Drawing::Matrix& absMatrix,
         bool subTreeSkipped = false);
-        
+    void QuickPrepareChildrenOnlyOrder(RSRenderNode& node);
     void PrintHiperfCounterLog(const char* const counterContext, uint64_t counter);
     void PrintHiperfLog(RSSurfaceRenderNode* node, const char* const disabledContext);
     void PrintHiperfLog(std::shared_ptr<RSSurfaceRenderNode>& node, const char* const disabledContext);
@@ -102,7 +101,7 @@ private:
     // record nodes which has transparent dirty filter
     std::unordered_map<NodeId, std::vector<std::pair<NodeId, RectI>>> transparentHwcDirtyFilter_;
 
-    int32_t curZorderForCalcHwcNodeEnableByFilter_ = 0;
+    int32_t curZOrderForHwcEnableByFilter_ = 0;
 
     bool isOffscreen_ = false;
 

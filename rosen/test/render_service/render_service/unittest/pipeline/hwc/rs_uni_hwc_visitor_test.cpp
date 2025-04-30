@@ -930,7 +930,12 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateHwcNodeEnableByFilterRect001, TestSize.Level
     surfaceNode2->SetDstRect(rect);
     surfaceNode1->AddChildHardwareEnabledNode(surfaceNode2);
 
-    rsUniHwcVisitor->UpdateHwcNodeEnableByFilterRect(surfaceNode1, rect, 1, false, 0);
+    constexpr NodeId id = 1;
+    auto filterNode = std::make_shared<RSRenderNode>(id);
+    ASSERT_NE(filterNode, nullptr);
+    filterNode->SetOldDirtyInSurface(rect);
+
+    rsUniHwcVisitor->UpdateHwcNodeEnableByFilterRect(surfaceNode1, *filterNode, false, 0);
     ASSERT_TRUE(surfaceNode2->IsHardwareForcedDisabled());
 }
 
@@ -957,7 +962,13 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateHwcNodeEnableByFilterRect002, TestSize.Level
     uint32_t width = 0;
     uint32_t height = 0;
     RectI rect{left, top, width, height};
-    rsUniHwcVisitor->UpdateHwcNodeEnableByFilterRect(surfaceNode1, rect, 1, false, 0);
+
+    constexpr NodeId id = 1;
+    auto filterNode = std::make_shared<RSRenderNode>(id);
+    ASSERT_NE(filterNode, nullptr);
+    filterNode->SetOldDirtyInSurface(rect);
+
+    rsUniHwcVisitor->UpdateHwcNodeEnableByFilterRect(surfaceNode1, *filterNode, false, 0);
 }
 
 /**
@@ -983,7 +994,13 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateHwcNodeEnableByFilterRect003, TestSize.Level
     uint32_t width = 300;
     uint32_t height = 300;
     RectI rect{left, top, width, height};
-    rsUniHwcVisitor->UpdateHwcNodeEnableByFilterRect(surfaceNode, rect, 1, false, 0);
+
+    constexpr NodeId id = 1;
+    auto filterNode = std::make_shared<RSRenderNode>(id);
+    ASSERT_NE(filterNode, nullptr);
+    filterNode->SetOldDirtyInSurface(rect);
+
+    rsUniHwcVisitor->UpdateHwcNodeEnableByFilterRect(surfaceNode, *filterNode, false, 0);
 }
 
 /**
