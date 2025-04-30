@@ -243,7 +243,7 @@ bool RSSurfaceCaptureTaskParallel::Run(
         }
     } else if (displayNodeDrawable_) {
         RSUniRenderThread::SetCaptureParam(CaptureParam(true, false, false));
-        // Screenshot excludeList
+        // Screenshot excludeList/blackList
         std::unordered_set<NodeId> excludeList(captureConfig_.excludeList.begin(), captureConfig_.excludeList.end());
         RSUniRenderThread::Instance().SetBlackList(excludeList);
         displayNodeDrawable_->OnCapture(canvas);
