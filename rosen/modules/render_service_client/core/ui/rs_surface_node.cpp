@@ -43,7 +43,7 @@
 #endif
 
 #ifdef USE_VIDEO_PROCESSING_ENGINE
-#include "display_engine\rs_vpe_manager.h"
+#include "display_engine/rs_vpe_manager.h"
 #endif
 
 namespace OHOS {

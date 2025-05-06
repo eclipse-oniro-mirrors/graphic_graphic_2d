@@ -273,7 +273,6 @@ template("render_service_client_source_set") {
     } else {
       public_deps += [
         "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",
-        "$graphic_2d_root/rosen/modules/render_service_base:render_service_base_src",
         ]
       deps += [ "$rosen_root/modules/platform:eventhandler" ]
     }
