@@ -24,7 +24,7 @@ namespace OHOS {
 namespace Rosen {
 class RSB_EXPORT RSVpeManager {
 public:
-    RSB_EXPORT static RSVpemanager& GetInstance();
+    RSB_EXPORT static RSVpeManager& GetInstance();
 
     RSB_EXPORT sptr<Surface> CheckAndGetSurface(const sptr<Surface>& surface, const RSSurfaceRenderNodeConfig& config);
     RSB_EXPORT void ReleaseVpeVideo(uint64_t nodeId);
@@ -37,7 +37,7 @@ private:
 
     mutable std::mutex vpeVideoLock_{};
     // Guarded by vpeVideoLock_ begin
-    std::unorded_map<uint64_t, std::shared_ptr<OHOS::Media::VideoProcessingEngine::VpeVideo>> allVpeVideo_{};
+    std::unordered_map<uint64_t, std::shared_ptr<OHOS::Media::VideoProcessingEngine::VpeVideo>> allVpeVideo_{};
     // Guarded by vpeVideoLock_ end
 };
 } // namespace Rosen
