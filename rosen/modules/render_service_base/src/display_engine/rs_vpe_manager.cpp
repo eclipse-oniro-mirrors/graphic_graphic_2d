@@ -51,18 +51,18 @@ void RSVpeManager::ReleaseVpeVideo(uint64_t nodeId)
     if (vpeVideoImp != nullptr) {
         int32_t ret = vpeVideoImp->Stop();
         if (ret != 0) {
-            RS_LOGE("vpeVideo stop failed nodeId:%{public}lu, ret:%{public}lu", nodeId, ret);
+            RS_LOGE("vpeVideo stop failed nodeId:%{public}llu, ret:%{public}d", nodeId, ret);
         }
         ret = vpeVideoImp->Release();
         if (ret != 0) {
-            RS_LOGE("vpeVideo release failed nodeId:%{public}lu, ret:%{public}lu", nodeId, ret);
+            RS_LOGE("vpeVideo release failed nodeId:%{public}llu, ret:%{public}d", nodeId, ret);
         }
     }
     allVpeVideo_.erase(nodeId);
     return;
 }
 
-std::shared_ptr<:VpeVideo> RSVpeManager::GetVpeVideo(uint32_t type, const RSSurfaceRenderNodeConfig& config)
+std::shared_ptr<VpeVideo> RSVpeManager::GetVpeVideo(uint32_t type, const RSSurfaceRenderNodeConfig& config)
 {
     ReleaseVpeVideo(config.id);
     return VpeVideo::Creat(type);
