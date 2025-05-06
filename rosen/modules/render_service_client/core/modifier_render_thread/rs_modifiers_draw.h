@@ -91,6 +91,9 @@ private:
 
     static void DrawSnapshot(std::shared_ptr<Drawing::Canvas>& canvas, std::shared_ptr<Drawing::Image>& snapshot);
 
+    static void CheckBeforeConvert(SurfaceEntry& surfaceEntry,
+        const std::shared_ptr<Drawing::DrawCmdList>& cmdList, NodeId nodeId);
+
     static void AddPixelMapDrawOp(const std::shared_ptr<Drawing::DrawCmdList>& cmdList,
         const std::shared_ptr<Media::PixelMap>& pixelMap, int32_t width, int32_t height,
         bool isRenderWithForegroundColor);
