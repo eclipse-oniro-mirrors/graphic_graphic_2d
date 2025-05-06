@@ -218,7 +218,6 @@ const std::string PERF_FOR_BLUR_IF_NEEDED_TASK_NAME = "PerfForBlurIfNeeded";
 constexpr const char* CAPTURE_WINDOW_NAME = "CapsuleWindow";
 constexpr const char* HIDE_NOTCH_STATUS = "persist.sys.graphic.hideNotch.status";
 constexpr const char* DRAWING_CACHE_DFX = "rosen.drawingCache.enabledDfx";
-constexpr const char* DEFAULT_SURFACE_NODE_NAME = "DefaultSurfaceNodeName";
 constexpr const char* ENABLE_DEBUG_FMT_TRACE = "sys.graphic.openTestModeTrace";
 constexpr int64_t ONE_SECOND_TIMESTAMP = 1e9;
 
@@ -1584,11 +1583,6 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
             if (surfaceHandler->GetAvailableBufferCount() > 0) {
                 if (rsVSyncDistributor_ != nullptr) {
                     rsVSyncDistributor_->SetHasNativeBuffer();
-                }
-                auto name = surfaceNode->GetName().empty() ? DEFAULT_SURFACE_NODE_NAME : surfaceNode->GetName();
-                auto frameRateMgr = HgmCore::Instance().GetFrameRateMgr();
-                if (LIKELY(frameRateMgr != nullptr)) {
-                    frameRateMgr->UpdateSurfaceTime(name, ExtractPid(surfaceNode->GetId()), UIFWKType::FROM_SURFACE);
                 }
             }
             surfaceHandler->ResetCurrentFrameBufferConsumed();
