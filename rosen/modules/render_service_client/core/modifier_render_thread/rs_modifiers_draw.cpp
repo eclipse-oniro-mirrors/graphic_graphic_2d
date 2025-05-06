@@ -94,7 +94,7 @@ void RSModifiersDraw::ConvertCmdListForCanvas(const std::shared_ptr<Drawing::Dra
     return;
 }
 
-bool RSModifiersDraw::CheckBeforeConvert(SurfaceEntry& surfaceEntry,
+bool RSModifiersDraw::CheckAndDrawSnapshot(SurfaceEntry& surfaceEntry,
     const std::shared_ptr<Drawing::DrawCmdList>& cmdList, NodeId nodeId)
 {
     return false;

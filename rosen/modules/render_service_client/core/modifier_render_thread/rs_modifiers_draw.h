@@ -91,7 +91,7 @@ private:
 
     static void DrawSnapshot(std::shared_ptr<Drawing::Canvas>& canvas, std::shared_ptr<Drawing::Image>& snapshot);
 
-    static void CheckBeforeConvert(SurfaceEntry& surfaceEntry,
+    static void CheckAndDrawSnapshot(SurfaceEntry& surfaceEntry,
         const std::shared_ptr<Drawing::DrawCmdList>& cmdList, NodeId nodeId);
 
     static void AddPixelMapDrawOp(const std::shared_ptr<Drawing::DrawCmdList>& cmdList,
