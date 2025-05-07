@@ -360,9 +360,8 @@ bool EglWrapperLayer::DoLoadLayers(const std::vector<std::string>& layers)
             }
         } else {
             allLayerPaths = GetDebugLayerPaths();
-            WLOGD("LoadLayerFuncs layerLib=%{public}s", layerLib.c_str());
+            WLOGD("LoadLayerFuncs layerLib=%{private}s", layerLib.c_str());
             if (!LoadLayers(layerLib, allLayerPaths)) {
-                WLOGD("LoadLayerFuncs LoadLayers is failed!");
                 return false;
             } else {
                 WLOGD("LoadLayerFuncs is ok!");
