@@ -316,7 +316,7 @@ void RSUniHwcVisitor::ProcessSolidLayerDisabled(RSSurfaceRenderNode& node)
         if (!isSpecialNodeType || node.IsRosenWeb()) {
             auto parent = node.GetParent().lock();
             RS_OPTIONAL_TRACE_NAME_FMT("solidLayer: name:%s id:%" PRIu64 " parentId:%" PRIu64 " disabled by "
-                "background color alpha < 1", node.GetName().c_str(), node.GetId(), parent? parent->GetId() : -1);
+                "background color alpha < 1", node.GetName().c_str(), node.GetId(), parent ? parent->GetId() : -1);
             RS_LOGD("solidLayer: disabled by background color alpha < 1: %{public}s", node.GetName().c_str());
             PrintHiperfLog(&node, "background color alpha < 1");
             node.SetHardwareForcedDisabledState(true);
@@ -739,7 +739,7 @@ void RSUniHwcVisitor::CalcHwcNodeEnableByFilterRect(std::shared_ptr<RSSurfaceRen
         auto parent = node->GetParent().lock();
         RS_OPTIONAL_TRACE_NAME_FMT("hwcNode debug: name:%s id:%" PRIu64 " parentId:%" PRIu64 " disabled by "
             "filter rect, filterId:%" PRIu64, node->GetName().c_str(), node->GetId(),
-            parent? parent->GetId() : -1, filterNode.GetId());
+            parent ? parent->GetId() : -1, filterNode.GetId());
         PrintHiperfLog(node, "filter rect");
         node->SetIsHwcPendingDisabled(true);
         node->SetHardwareForcedDisabledState(true);
