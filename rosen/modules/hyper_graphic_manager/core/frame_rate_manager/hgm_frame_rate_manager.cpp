@@ -651,7 +651,7 @@ bool HgmFrameRateManager::CollectFrameRateChange(FrameRateRange finalRange,
     return frameRateChanged;
 }
 
-void HgmFrameRateManager::HandleFrameRateChangeForLTPO(uint64_t timestamp, bool followRs)
+void HgmFrameRateManager::HandleFrameRateChangeForLTPO(uint64_t timestamp, bool followRs, bool frameRateChange)
 {
     std::lock_guard<std::mutex> lock(pendingMutex_);
     auto& hgmCore = HgmCore::Instance();
@@ -680,7 +680,10 @@ void HgmFrameRateManager::HandleFrameRateChangeForLTPO(uint64_t timestamp, bool 
     }
 
     // Start of DVSync
-    int64_t delayTime = CreateVSyncGenerator()->SetCurrentRefreshRate(controllerRate_, lastRefreshRate);
+    int64_t delayTime = 0;
+    if (frameRateChange) {
+        delayTime = CreateVSyncGenerator()->SetCurrentRefreshRate(controllerRate_, lastRefreshRate);
+    }
     if (delayTime != 0) {
         DVSyncTaskProcessor(delayTime, targetTime);
     } else if (controller_) {
@@ -2010,7 +2013,8 @@ void HgmFrameRateManager::NotifyPageName(pid_t pid, const std::string &packageNa
 
 void HgmFrameRateManager::CheckNeedUpdateAppOffset(uint32_t refreshRate)
 {
-    if (refreshRate > OLED_60_HZ || isNeedUpdateAppOffset_) {
+    if (refreshRate > OLED_60_HZ || isNeedUpdateAppOffset_ ||
+        !HgmCore::Instance().CheckNeedUpdateAppOffsetRefreshRate(controllerRate_)) {
         return;
     }
     if (auto iter = voteRecord_.find("VOTER_THERMAL");
@@ -2024,11 +2028,15 @@ void HgmFrameRateManager::CheckNeedUpdateAppOffset(uint32_t refreshRate)
 void HgmFrameRateManager::CheckRefreshRateChange(
     bool followRs, bool frameRateChanged, uint32_t refreshRate, bool needChangeDssRefreshRate)
 {
-    // 当dvsync在连续延迟切帧阶段，使用dvsync内记录的刷新率判断是否变化
     CreateVSyncGenerator()->DVSyncRateChanged(controllerRate_, frameRateChanged);
-    CheckNeedUpdateAppOffset(refreshRate);
-    if (HgmCore::Instance().GetLtpoEnabled() && (frameRateChanged || isNeedUpdateAppOffset_)) {
-        HandleFrameRateChangeForLTPO(timestamp_.load(), followRs);
+    bool appOffsetChange = false;
+    if (controller_ != nullptr) {
+        CheckNeedUpdateAppOffset(refreshRate);
+        appOffsetChange = isNeedUpdateAppOffset_ && controller_->GetPulseNum() != 0;
+    }
+    if (HgmCore::Instance().GetLtpoEnabled() &&
+        (frameRateChanged || (appOffsetChange && !CreateVSyncGenerator()->IsUiDvsyncOn()))) {
+        HandleFrameRateChangeForLTPO(timestamp_.load(), followRs, frameRateChanged);
         if (needChangeDssRefreshRate && changeDssRefreshRateCb_ != nullptr) {
             changeDssRefreshRateCb_(curScreenId_.load(), refreshRate, true);
         }
@@ -2039,6 +2047,10 @@ void HgmFrameRateManager::CheckRefreshRateChange(
             changeDssRefreshRateCb_(curScreenId_.load(), refreshRate, true);
         }
     }
+    if (HgmCore::Instance().GetLtpoEnabled() && appOffsetChange && isNeedUpdateAppOffset_) {
+        HgmCore::Instance().SetHgmTaskFlag(true);
+    }
+    isNeedUpdateAppOffset_ = false;
 }
 
 void HgmFrameRateManager::FrameRateReportTask(uint32_t leftRetryTimes)
