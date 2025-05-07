@@ -38,11 +38,12 @@ struct RSHwcRecorder {
     int32_t GetZOrderForHwcEnableByFilter() const { return zOrderForHwcEnableByFilter_; }
 
     bool GetNeedForceUpdateHwcNodes() const { return needForceUpdateHwcNodes_; }
-    bool SetNeedForceUpdateHwcNodes(bool needForceUpdateHwcNodes)
+    void SetNeedForceUpdateHwcNodes(bool needForceUpdateHwcNodes)
     {
         needForceUpdateHwcNodes_ = needForceUpdateHwcNodes;
     }
     bool HasVisibleHwcNodes() const { return hasVisibleHwcNodes_; }
+    void SetHasVisibleHwcNodes(bool hasVisibleHwcNodes) { hasVisibleHwcNodes_ = hasVisibleHwcNodes; }
 
     bool needForceUpdateHwcNodes_ = false;
     bool hasVisibleHwcNodes_ = false;
