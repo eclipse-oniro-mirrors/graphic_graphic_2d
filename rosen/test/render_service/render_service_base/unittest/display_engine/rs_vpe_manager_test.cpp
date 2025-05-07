@@ -19,7 +19,7 @@
 #include "display_engine/rs_vpe_manager.h"
 
 #include "iconsumer_surface.h"
-#include "usrface_buffer_imp.h"
+#include "surface_buffer_impl.h"
 
 #define private public
 
