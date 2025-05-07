@@ -211,5 +211,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::Rosen::Drawing::NativeDrawingTextStyleDecorationTest(data, size);
     OHOS::Rosen::Drawing::OHDrawingTextTabTest(data, size);
     OHOS::Rosen::Drawing::OHDrawingCreateSharedFontCollectionTest(data, size);
+    OHOS::Rosen::Drawing::OHDrawingCreateFontCollectionGlobalInstanceTest(data, size);
     return 0;
 }
