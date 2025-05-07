@@ -107,7 +107,7 @@ void RSUniRenderProcessor::CreateLayer(const RSSurfaceRenderNode& node, RSSurfac
         dirtyRect.x, dirtyRect.y, dirtyRect.w, dirtyRect.h, buffer->GetSurfaceBufferWidth(),
         buffer->GetSurfaceBufferHeight(), layerInfo.alpha, layerInfo.layerType, layer->GetTransformType());
     RS_LOGD_IF(DEBUG_PIPELINE,
-        "CreateLayer name:%{public}s ScreenId:%{public}llu zorder:%{public}d layerRect:[%{public}d, %{public}d, "
+        "CreateLayer name:%{public}s ScreenId:%{public}" PRIu64 " zorder:%{public}d layerRect:[%{public}d, %{public}d, "
         "%{public}d, %{public}d] cropRect:[%{public}d, %{public}d, %{public}d, %{public}d] "
         "drity:[%{public}d, %{public}d, %{public}d, %{public}d] "
         "buffer:[%{public}d, %{public}d] alpha:[%{public}f] transform:[%{public}d]",
