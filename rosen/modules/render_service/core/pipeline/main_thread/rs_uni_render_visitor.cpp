@@ -32,6 +32,7 @@
 #include "feature/hdr/rs_hdr_util.h"
 #include "feature/hwc/rs_uni_hwc_compute_util.h"
 #include "feature/occlusion_culling/rs_occlusion_handler.h"
+#include "feature/opinc/rs_opinc_cache.h"
 #include "feature/uifirst/rs_sub_thread_manager.h"
 #include "feature/uifirst/rs_uifirst_manager.h"
 #include "monitor/self_drawing_node_monitor.h"
@@ -1018,14 +1019,14 @@ void RSUniRenderVisitor::QuickPrepareSurfaceRenderNode(RSSurfaceRenderNode& node
     if (!BeforeUpdateSurfaceDirtyCalc(node)) {
         RS_LOGE("RSUniRenderVisitor::QuickPrepareSurfaceRenderNode BeforeUpdateSurfaceDirtyCalc fail");
         RSUifirstManager::Instance().DisableUifirstNode(node);
-        node.OpincSetInAppStateEnd(unchangeMarkInApp_);
+        node.GetOpincCache().OpincSetInAppStateEnd(unchangeMarkInApp_);
         return;
     }
 
     if (curSurfaceDirtyManager_ == nullptr) {
         RS_LOGE("RSUniRenderVisitor::QuickPrepareSurfaceRenderNode %{public}s curSurfaceDirtyManager is nullptr",
             node.GetName().c_str());
-        node.OpincSetInAppStateEnd(unchangeMarkInApp_);
+        node.GetOpincCache().OpincSetInAppStateEnd(unchangeMarkInApp_);
         return;
     }
     curSurfaceDirtyManager_->SetAdvancedDirtyRegionType(advancedDirtyType_);
@@ -1055,7 +1056,7 @@ void RSUniRenderVisitor::QuickPrepareSurfaceRenderNode(RSSurfaceRenderNode& node
         *curSurfaceDirtyManager_, dirtyFlag_, prepareClipRect_, parentSurfaceNodeMatrix);
     auto& geoPtr = node.GetRenderProperties().GetBoundsGeometry();
     if (!geoPtr) {
-        node.OpincSetInAppStateEnd(unchangeMarkInApp_);
+        node.GetOpincCache().OpincSetInAppStateEnd(unchangeMarkInApp_);
         globalShouldPaint_ = preGlobalShouldPaint;
         return;
     }
@@ -1063,7 +1064,7 @@ void RSUniRenderVisitor::QuickPrepareSurfaceRenderNode(RSSurfaceRenderNode& node
     if (!AfterUpdateSurfaceDirtyCalc(node)) {
         RS_LOGE("RSUniRenderVisitor::QuickPrepareSurfaceRenderNode AfterUpdateSurfaceDirtyCalc fail");
         RSUifirstManager::Instance().DisableUifirstNode(node);
-        node.OpincSetInAppStateEnd(unchangeMarkInApp_);
+        node.GetOpincCache().OpincSetInAppStateEnd(unchangeMarkInApp_);
         globalShouldPaint_ = preGlobalShouldPaint;
         return;
     }
@@ -1086,7 +1087,7 @@ void RSUniRenderVisitor::QuickPrepareSurfaceRenderNode(RSSurfaceRenderNode& node
     if (curSurfaceDirtyManager_ == nullptr) {
         RS_LOGE("RSUniRenderVisitor::QuickPrepareSurfaceRenderNode %{public}s curSurfaceDirtyManager "
             "is set to nullptr by QuickPrepareChildren", node.GetName().c_str());
-        node.OpincSetInAppStateEnd(unchangeMarkInApp_);
+        node.GetOpincCache().OpincSetInAppStateEnd(unchangeMarkInApp_);
         globalShouldPaint_ = preGlobalShouldPaint;
         return;
     }
@@ -1119,7 +1120,7 @@ void RSUniRenderVisitor::QuickPrepareSurfaceRenderNode(RSSurfaceRenderNode& node
     PrepareForUIFirstNode(node);
     PrepareForCrossNode(node);
     node.UpdateInfoForClonedNode(clonedSourceNodeId_);
-    node.OpincSetInAppStateEnd(unchangeMarkInApp_);
+    node.GetOpincCache().OpincSetInAppStateEnd(unchangeMarkInApp_);
     ResetCurSurfaceInfoAsUpperSurfaceParent(node);
     curCornerRadius_ = curCornerRadius;
     parentSurfaceNodeMatrix_ = parentSurfaceNodeMatrix;
@@ -1537,8 +1538,11 @@ void RSUniRenderVisitor::QuickPrepareCanvasRenderNode(RSCanvasRenderNode& node)
     UpdateDrawingCacheInfoBeforeChildren(node);
     MarkFilterInForegroundFilterAndCheckNeedForceClearCache(node);
     node.SetIsAccessibilityConfigChanged(false);
-    node.OpincQuickMarkStableNode(unchangeMarkInApp_, unchangeMarkEnable_,
-        IsAccessibilityConfigChanged());
+    auto isSelfDirty = node.IsSubTreeDirty() || node.IsContentDirty() ||
+        node.GetNodeGroupType() > RSRenderNode::NodeGroupType::NONE ||
+        (node.GetOpincCache().OpincGetRootFlag() && IsAccessibilityConfigChanged());
+    node.OpincQuickMarkStableNode(unchangeMarkInApp_, unchangeMarkEnable_, isSelfDirty);
+    node.UpdateOpincParam();
     RectI prepareClipRect = prepareClipRect_;
     bool hasAccumulatedClip = hasAccumulatedClip_;
 
@@ -1556,8 +1560,13 @@ void RSUniRenderVisitor::QuickPrepareCanvasRenderNode(RSCanvasRenderNode& node)
 
     // 1. Recursively traverse child nodes if above curSurfaceNode and subnode need draw
     hasAccumulatedClip_ = node.SetAccumulatedClipFlag(hasAccumulatedClip_);
+    auto subTreeDirty = node.GetOpincCache().OpincForcePrepareSubTree(autoCacheEnable_,
+        node.IsSubTreeDirty() || node.IsContentDirty(), node.OpincGetNodeSupportFlag());
+    if (subTreeDirty) {
+        node.SetParentSubTreeDirty();
+    }
     bool isSubTreeNeedPrepare = !curSurfaceNode_ || node.IsSubTreeNeedPrepare(filterInGlobal_) ||
-        ForcePrepareSubTree() || node.OpincForcePrepareSubTree(autoCacheEnable_);
+        ForcePrepareSubTree() || subTreeDirty;
     isSubTreeNeedPrepare ? QuickPrepareChildren(node) :
         node.SubTreeSkipPrepare(*dirtyManager, curDirty_, dirtyFlag_, prepareClipRect_);
 
@@ -1567,7 +1576,8 @@ void RSUniRenderVisitor::QuickPrepareCanvasRenderNode(RSCanvasRenderNode& node)
     dirtyFlag_ = dirtyFlag;
     curAlpha_ = prevAlpha;
     curCornerRadius_ = curCornerRadius;
-    node.OpincUpdateRootFlag(unchangeMarkEnable_);
+    node.GetOpincCache().OpincUpdateRootFlag(unchangeMarkEnable_, node.OpincGetNodeSupportFlag());
+    node.UpdateOpincParam();
     globalShouldPaint_ = preGlobalShouldPaint;
     inForegroundFilter_ = preInForegroundFilter;
 
@@ -1812,7 +1822,7 @@ CM_INLINE bool RSUniRenderVisitor::BeforeUpdateSurfaceDirtyCalc(RSSurfaceRenderN
     needRecalculateOcclusion_ = needRecalculateOcclusion_ || node.IsDirty() ||
         node.CheckIfOcclusionReusable(preMainAndLeashWindowNodesIds_);
     if (autoCacheEnable_ && node.IsAppWindow()) {
-        node.OpincSetInAppStateStart(unchangeMarkInApp_);
+        node.GetOpincCache().OpincSetInAppStateStart(unchangeMarkInApp_);
     }
     // 3. check pixelFormat and update RelMatrix
     CheckPixelFormat(node);

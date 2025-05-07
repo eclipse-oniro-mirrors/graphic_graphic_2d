@@ -470,8 +470,8 @@ void RSSurfaceRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         RS_LOGE("RSSurfaceRenderNodeDrawable::OnDraw renderEngine is nullptr");
         return;
     }
-    if (autoCacheEnable_) {
-        nodeCacheType_ = NodeStrategyType::CACHE_NONE;
+    if (RSOpincDrawCache::IsAutoCacheEnable()) {
+        RSOpincDrawCache::SetNodeCacheType(NodeStrategyType::CACHE_NONE);
     }
     // syncDirtyManager_ is not null
     const RectI& currentFrameDirty = syncDirtyManager_->GetCurrentFrameDirtyRegion();
