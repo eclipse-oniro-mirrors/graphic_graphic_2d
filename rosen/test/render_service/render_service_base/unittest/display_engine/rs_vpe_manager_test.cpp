@@ -36,7 +36,7 @@ namespace VideoProcessingEngine {
 class MockVpeVideo : public VpeVideo {
 public:
     MOCK_METHOD(std::shared_ptr<VpeVideo>, Create, (uint32_t type));
-    MOCK_METHOD(VPEAlgoErrCode, RegisterCallback, (const std::shared_ptr<VpeVideoCallback>), (override));
+    MOCK_METHOD(VPEAlgoErrCode, RegisterCallback, (const std::shared_ptr<VpeVideoCallback>& callback), (override));
     MOCK_METHOD(sptr<OHOS::Surface>, GetInputSurface, (), (override));
     MOCK_METHOD(VPEAlgoErrCode, SetParameter, (const Format& parameter), (override));
     MOCK_METHOD(VPEAlgoErrCode, GetParameter, (Format& parameter), (override));
@@ -45,7 +45,7 @@ public:
     MOCK_METHOD(VPEAlgoErrCode, Release, (), (override));
     MOCK_METHOD(VPEAlgoErrCode, Enable, (), (override));
     MOCK_METHOD(VPEAlgoErrCode, NotifyEos, (), (override));
-    MOCK_METHOD(VPEAlgoErrCode, ReleaseOutPutBuffer, (uint32_t index, bool render), (override));
+    MOCK_METHOD(VPEAlgoErrCode, ReleaseOutputBuffer, (uint32_t index, bool render), (override));
     MOCK_METHOD(VPEAlgoErrCode, IsSupported, (uint32_t type, const Format& parameter));
 
     virtual ~MockVpeVideo()
@@ -157,7 +157,7 @@ HWTEST_F(RSVpeManagerTest, GetVpeVideoSurface002, TestSize.Level1)
 
     RSSurfaceRenderNodeConfig config;
     config.nodeType = Rosen::RSSurfaceNodeType::SELF_DRAWING_NODE;
-    OHOS::sptr<OHOS::Surface> result = manager.GetVpeVideoSurface(0, RSSurface, config);
+    sptr<Surface> result = manager.GetVpeVideoSurface(0, RSSurface, config);
     EXPECT_EQ(result, RSSurface);
 }
 
@@ -170,7 +170,7 @@ HWTEST_F(RSVpeManagerTest, GetVpeVideoSurface003, TestSize.Level1)
 
     RSSurfaceRenderNodeConfig config;
     config.nodeType = Rosen::RSSurfaceNodeType::SELF_DRAWING_NODE;
-    OHOS::sptr<OHOS::Surface> result = RSVpeManager::GetInstance().GetVpeVideoSurface(type, RSSurface, config);
+    sptr<Surface> result = RSVpeManager::GetInstance().GetVpeVideoSurface(type, RSSurface, config);
     EXPECT_NE(result, RSSurface);
 }
 
@@ -182,7 +182,7 @@ HWTEST_F(RSVpeManagerTest, CheckAndGetSurface001, TestSize.Level1)
     OHOS::sptr<OHOS::Surface> RSSurface = OHOS::Surface::CreateSurfaceAsProducer(producer);
     RSSurfaceRenderNodeConfig config;
     isSupportReset = false;
-    OHOS::sptr<OHOS::Surface> result = manager.CheckAndGetSurface(RSSurface, config);
+    sptr<Surface> result = manager.CheckAndGetSurface(RSSurface, config);
     EXPECT_EQ(result, RSSurface);
 }
 
@@ -191,7 +191,7 @@ HWTEST_F(RSVpeManagerTest, CheckAndGetSurface002, TestSize.Level1)
     RSVpeManager manager;
     OHOS::sptr<IConsumerSurface> consumer = IConsumerSurface::Create("DisplayNode");
     OHOS::sptr<IBufferProducer> producer = consumer->GetProducer();
-    OHOS::sptr<OHOS::Surface> originSurface = OHOS::Surface::CreateSurfaceAsProducer(producer);
+    OHOS::sptr<OHOS::Surface> originalSurface = OHOS::Surface::CreateSurfaceAsProducer(producer);
     RSSurfaceRenderNodeConfig config;
     isSupportReset = true;
 
@@ -199,7 +199,7 @@ HWTEST_F(RSVpeManagerTest, CheckAndGetSurface002, TestSize.Level1)
     OHOS::sptr<IBufferProducer> producer1 = consumer->GetProducer();
     OHOS::sptr<OHOS::Surface> newSurface = OHOS::Surface::CreateSurfaceAsProducer(producer);
 
-    OHOS::sptr<OHOS::Surface> result = manager.CheckAndGetSurface(originSurface, config);
+    sptr<Surface> result = manager.CheckAndGetSurface(originalSurface, config);
     EXPECT_NE(result, newSurface);
 }
 
@@ -207,14 +207,14 @@ HWTEST_F(RSVpeManagerTest, CheckAndGetSurface003, TestSize.Level1)
 {
     RSVpeManager manager;
     OHOS::sptr<IConsumerSurface> consumer1 = IConsumerSurface::Create("DisplayNode");
-    OHOS::sptr<IBufferProducer> producer1 = consumer->GetProducer();
+    OHOS::sptr<IBufferProducer> producer1 = consumer1->GetProducer();
     OHOS::sptr<OHOS::Surface> originalSurface = OHOS::Surface::CreateSurfaceAsProducer(producer1);
     RSSurfaceRenderNodeConfig config;
 
     isSupportReset = true;
 
     OHOS::sptr<IConsumerSurface> consumer = IConsumerSurface::Create("DisplayNode");
-    OHOS::sptr<IBufferProducer> producer = consumer->GetProducer();
+    OHOS::sptr<IBufferProducer> producer = consumer1->GetProducer();
     OHOS::sptr<OHOS::Surface> newSurface = OHOS::Surface::CreateSurfaceAsProducer(producer1);
 
     OHOS::sptr<OHOS::Surface> result = manager.CheckAndGetSurface(originalSurface, config);
