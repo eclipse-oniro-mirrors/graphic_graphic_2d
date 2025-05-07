@@ -55,7 +55,6 @@ namespace {
     constexpr uint32_t VOTER_LTPO_PRIORITY_BEFORE_PACKAGES = 2;
     constexpr uint64_t BUFFER_IDLE_TIME_OUT = 200000000; // 200ms
     constexpr long DRAG_SCENE_CHANGE_RATE_TIMEOUT = 100; // 100ms
-    constexpr const char* DEFAULT_SURFACE_NODE_NAME = "DefaultSurfaceNodeName";
     const static std::string UP_TIME_OUT_TASK_ID = "UP_TIME_OUT_TASK_ID";
     const static std::string S_UP_TIMEOUT_MS = "up_timeout_ms";
     const static std::string S_RS_IDLE_TIMEOUT_MS = "rs_idle_timeout_ms";
@@ -1942,16 +1941,6 @@ bool HgmFrameRateManager::HandleGameNode(const RSRenderNodeMap& nodeMap)
                 } else {
                     isOtherSelfNodeOnTree = true;
                 }
-            }
-            auto surfaceHandler = surfaceNode->GetMutableRSSurfaceHandler();
-            auto name = surfaceNode->GetName().empty() ? DEFAULT_SURFACE_NODE_NAME : surfaceNode->GetName();
-            auto frameRateMgr = HgmCore::Instance().GetFrameRateMgr();
-            const auto& consumer = surfaceHandler->GetConsumer();
-            if (frameRateMgr != nullptr && consumer != nullptr &&
-                consumer->GetSurfaceSourceType() != OHSurfaceSource::OH_SURFACE_SOURCE_GAME &&
-                consumer->GetSurfaceSourceType() != OHSurfaceSource::OH_SURFACE_SOURCE_CAMERA &&
-                consumer->GetSurfaceSourceType() != OHSurfaceSource::OH_SURFACE_SOURCE_VIDEO) {
-                frameRateMgr->UpdateSurfaceTime(name, ExtractPid(surfaceNode->GetId()), UIFWKType::FROM_SURFACE);
             }
         }
     );
