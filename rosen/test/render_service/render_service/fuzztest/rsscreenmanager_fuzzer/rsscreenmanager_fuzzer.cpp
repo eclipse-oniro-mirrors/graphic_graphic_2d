@@ -25,7 +25,7 @@
 #include "securec.h"
 
 #include "screen_manager/rs_screen_manager.h"
-
+using FunctionPtr = bool (*)();
 namespace OHOS {
 namespace Rosen {
 constexpr uint8_t SCREEN_POWER_STATUS_SIZE = 11;
@@ -65,8 +65,8 @@ constexpr uint8_t REMOVE_VIRTUAL_SCREENBLACKLIST = 22;
 constexpr uint8_t SET_VIRTUAL_SCREENSECURITYEXEMPTIONLIST = 23;
 constexpr uint8_t GET_VIRTUAL_SCREENSECURITYEXEMPTIONLIST = 24;
 constexpr uint8_t GET_SCREENSECURITYMASK = 25;
-constexpr uint8_t SET_MIRRORSCREENVIS_IBLERECT = 26;
-constexpr uint8_t GET_MIRRORSCREENVIS_IBLERECT = 27;
+constexpr uint8_t SET_MIRRORSCREENVISIBLERECT = 26;
+constexpr uint8_t GET_MIRRORSCREENVISIBLERECT = 27;
 constexpr uint8_t SET_CASTSCREENENABLESKIPWINDOW = 28;
 constexpr uint8_t GET_VIRTUAL_SCREENBLACKLIST = 29;
 constexpr uint8_t GET_VIRTUAL_SCREENTYPEBLACKLIST = 30;
@@ -301,8 +301,8 @@ bool SetVirtualScreenBlackList()
 {
     ScreenId screenId = GetData<Rosen::ScreenId>();
     NodeId nodeId = GetData<NodeId>();
-    std::vector<uint64_t> blackList = { nodeId };
-    CreateOrGetScreenManager()->SetVirtualScreenBlackList(screenId, blackList);
+    std::vector<uint64_t> blocklist = { nodeId };
+    CreateOrGetScreenManager()->SetVirtualScreenBlackList(screenId, blocklist);
     return true;
 }
 
@@ -319,8 +319,8 @@ bool AddVirtualScreenBlackList()
 {
     ScreenId screenId = GetData<Rosen::ScreenId>();
     uint64_t nodeId = GetData<uint64_t>();
-    std::vector<uint64_t> blackList = { nodeId };
-    CreateOrGetScreenManager()->AddVirtualScreenBlackList(screenId, blackList);
+    std::vector<uint64_t> blocklist = { nodeId };
+    CreateOrGetScreenManager()->AddVirtualScreenBlackList(screenId, blocklist);
     return true;
 }
 
@@ -328,8 +328,8 @@ bool RemoveVirtualScreenBlackList()
 {
     ScreenId screenId = GetData<Rosen::ScreenId>();
     uint64_t nodeId = GetData<uint64_t>();
-    std::vector<uint64_t> blackList = { nodeId };
-    CreateOrGetScreenManager()->RemoveVirtualScreenBlackList(screenId, blackList);
+    std::vector<uint64_t> blocklist = { nodeId };
+    CreateOrGetScreenManager()->RemoveVirtualScreenBlackList(screenId, blocklist);
     return true;
 }
 
@@ -810,260 +810,93 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     if (!OHOS::Rosen::Init(data, size)) {
         return 0;
     }
+    std::map<uint8_t, FunctionPtr> funcMap = {
+        { OHOS::Rosen::INIT_SCREENMANGER, OHOS::Rosen::InitScreenManger },
+        { OHOS::Rosen::GET_ACTIVESCREENID, OHOS::Rosen::GetActiveScreenId },
+        { OHOS::Rosen::SET_VIRTUAL_SCREENREFRESHRATE, OHOS::Rosen::SetVirtualScreenRefreshRate },
+        { OHOS::Rosen::IS_ALLSCREENSPOWEROFF, OHOS::Rosen::IsAllScreensPowerOff },
+        { OHOS::Rosen::POST_FORCE_REFRESHTASK, OHOS::Rosen::PostForceRefreshTask },
+        { OHOS::Rosen::REMOVE_FORCE_REFRESHTASK, OHOS::Rosen::RemoveForceRefreshTask },
+        { OHOS::Rosen::TRY_SIMPLEPROCESS_HOTPLUGEVENTS, OHOS::Rosen::TrySimpleProcessHotPlugEvents },
+        { OHOS::Rosen::PROCESS_SCREENHOTPLUGEVENTS, OHOS::Rosen::ProcessScreenHotPlugEvents },
+        { OHOS::Rosen::PROCESS_PENDINGCONNECTIONS, OHOS::Rosen::ProcessPendingConnections },
+        { OHOS::Rosen::SET_DEFAULTSCREENID, OHOS::Rosen::SetDefaultScreenId },
+        { OHOS::Rosen::GET_VIRTUAL_SCREENRESOLUTION, OHOS::Rosen::GetVirtualScreenResolution },
+        { OHOS::Rosen::GET_SCREENACTIVEMODE, OHOS::Rosen::GetScreenActiveMode },
+        { OHOS::Rosen::GET_SCREENSUPPORTEDMODES, OHOS::Rosen::GetScreenSupportedModes },
+        { OHOS::Rosen::GET_SCREENCAPABILITY, OHOS::Rosen::GetScreenCapability },
+        { OHOS::Rosen::GET_SCREENPOWERSTATUS, OHOS::Rosen::GetScreenPowerStatus },
+        { OHOS::Rosen::GET_SCREENCORRECTION, OHOS::Rosen::GetScreenCorrection },
+        { OHOS::Rosen::GET_DEFAULTSCREENID, OHOS::Rosen::GetDefaultScreenId },
+        { OHOS::Rosen::GET_ALLSCREENIDS, OHOS::Rosen::GetAllScreenIds },
+        { OHOS::Rosen::CREATE_VIRTUAL_SCREEN, OHOS::Rosen::CreateVirtualScreen },
+        { OHOS::Rosen::SET_VIRTUAL_SCREENBLACKLIST, OHOS::Rosen::SetVirtualScreenBlackList },
+        { OHOS::Rosen::SET_VIRTUAL_SCREENTYPEBLACKLIST, OHOS::Rosen::SetVirtualScreenTypeBlackList },
+        { OHOS::Rosen::ADD_VIRTUAL_SCREENBLACKLIST, OHOS::Rosen::AddVirtualScreenBlackList },
+        { OHOS::Rosen::REMOVE_VIRTUAL_SCREENBLACKLIST, OHOS::Rosen::RemoveVirtualScreenBlackList },
+        { OHOS::Rosen::SET_VIRTUAL_SCREENSECURITYEXEMPTIONLIST, OHOS::Rosen::SetVirtualScreenSecurityExemptionList },
+        { OHOS::Rosen::GET_VIRTUAL_SCREENSECURITYEXEMPTIONLIST, OHOS::Rosen::GetVirtualScreenSecurityExemptionList },
+        { OHOS::Rosen::GET_SCREENSECURITYMASK, OHOS::Rosen::GetScreenSecurityMask },
+        { OHOS::Rosen::SET_MIRRORSCREENVISIBLERECT, OHOS::Rosen::SetMirrorScreenVisibleRect },
+        { OHOS::Rosen::GET_MIRRORSCREENVISIBLERECT, OHOS::Rosen::GetMirrorScreenVisibleRect },
+        { OHOS::Rosen::SET_CASTSCREENENABLESKIPWINDOW, OHOS::Rosen::SetCastScreenEnableSkipWindow },
+        { OHOS::Rosen::GET_VIRTUAL_SCREENBLACKLIST, OHOS::Rosen::GetVirtualScreenBlackList },
+        { OHOS::Rosen::GET_VIRTUAL_SCREENTYPEBLACKLIST, OHOS::Rosen::GetVirtualScreenTypeBlackList },
+        { OHOS::Rosen::GET_ALLBLACKLIST, OHOS::Rosen::GetAllBlackList },
+        { OHOS::Rosen::GET_ALLWHITELIST, OHOS::Rosen::GetAllWhiteList },
+        { OHOS::Rosen::GET_ANDRESET_VIRTUAL_SURFACEUPDATEFLAG, OHOS::Rosen::GetAndResetVirtualSurfaceUpdateFlag },
+        { OHOS::Rosen::REMOVE_VIRTUAL_SCREEN, OHOS::Rosen::RemoveVirtualScreen },
+        { OHOS::Rosen::SET_SCREENACTIVEMODE, OHOS::Rosen::SetScreenActiveMode },
+        { OHOS::Rosen::SET_SCREENACTIVERECT, OHOS::Rosen::SetScreenActiveRect },
+        { OHOS::Rosen::SET_PHYSICALSCREENRESOLUTION, OHOS::Rosen::SetPhysicalScreenResolution },
+        { OHOS::Rosen::SET_VIRTUAL_SCREENRESOLUTION, OHOS::Rosen::SetVirtualScreenResolution },
+        { OHOS::Rosen::SET_ROGSCREENRESOLUTION, OHOS::Rosen::SetRogScreenResolution },
+        { OHOS::Rosen::SET_SCREENPOWERSTATUS, OHOS::Rosen::SetScreenPowerStatus },
+        { OHOS::Rosen::IS_SCREENPOWERINGOFF, OHOS::Rosen::IsScreenPoweringOff },
+        { OHOS::Rosen::SET_VIRTUAL_MIRRORSCREENCANVASROTATION, OHOS::Rosen::SetVirtualMirrorScreenCanvasRotation },
+        { OHOS::Rosen::SET_VIRTUAL_MIRRORSCREENSCALEMODE, OHOS::Rosen::SetVirtualMirrorScreenScaleMode },
+        { OHOS::Rosen::RELEASESCREENDMABUFFER, OHOS::Rosen::ReleaseScreenDmaBuffer },
+        { OHOS::Rosen::GET_SCREENDATA, OHOS::Rosen::GetScreenData },
+        { OHOS::Rosen::RESIZEVIRTUAL_SCREEN, OHOS::Rosen::ResizeVirtualScreen },
+        { OHOS::Rosen::GET_SCREENBACKLIGHT, OHOS::Rosen::GetScreenBacklight },
+        { OHOS::Rosen::SET_SCREENBACKLIGHT, OHOS::Rosen::SetScreenBacklight },
+        { OHOS::Rosen::QUERYSCREENINFO, OHOS::Rosen::QueryScreenInfo },
+        { OHOS::Rosen::GET_CANVASROTATION, OHOS::Rosen::GetCanvasRotation },
+        { OHOS::Rosen::GET_SCALEMODE, OHOS::Rosen::GetScaleMode },
+        { OHOS::Rosen::GET_PRODUCERSURFACE, OHOS::Rosen::GetProducerSurface },
+        { OHOS::Rosen::GET_OUTPUT, OHOS::Rosen::GetOutput }, { OHOS::Rosen::DIS_PLAY_DUMP, OHOS::Rosen::DisplayDump },
+        { OHOS::Rosen::SURFACE_DUMP, OHOS::Rosen::SurfaceDump }, { OHOS::Rosen::FPS_DUMP, OHOS::Rosen::FpsDump },
+        { OHOS::Rosen::CLEARFPS_DUMP, OHOS::Rosen::ClearFpsDump },
+        { OHOS::Rosen::HITCHS_DUMP, OHOS::Rosen::HitchsDump },
+        { OHOS::Rosen::SET_SCREENCONSTEXPRRAINT, OHOS::Rosen::SetScreenConstraint },
+        { OHOS::Rosen::GET_SCREENSUPPORTEDCOLORGAMUTS, OHOS::Rosen::GetScreenSupportedColorGamuts },
+        { OHOS::Rosen::GET_SCREENCOLORGAMUT, OHOS::Rosen::GetScreenColorGamut },
+        { OHOS::Rosen::SET_SCREENCOLORGAMUT, OHOS::Rosen::SetScreenColorGamut },
+        { OHOS::Rosen::SET_SCREENGAMUTMAP, OHOS::Rosen::SetScreenGamutMap },
+        { OHOS::Rosen::SET_SCREENCORRECTION, OHOS::Rosen::SetScreenCorrection },
+        { OHOS::Rosen::GET_SCREENGAMUTMAP, OHOS::Rosen::GetScreenGamutMap },
+        { OHOS::Rosen::GET_SCREENHDRCAPABILITY, OHOS::Rosen::GetScreenHDRCapability },
+        { OHOS::Rosen::GET_SCREENTYPE, OHOS::Rosen::GetScreenType },
+        { OHOS::Rosen::SET_SCREENSKIPFRAMEINTERVAL, OHOS::Rosen::SetScreenSkipFrameInterval },
+        { OHOS::Rosen::SET_EQUALVSYNCPERIOD, OHOS::Rosen::SetEqualVsyncPeriod },
+        { OHOS::Rosen::GET_DIS_PLAYIDENTIFICATIONDATA, OHOS::Rosen::GetDisplayIdentificationData },
+        { OHOS::Rosen::SET_PIXELFORMAT, OHOS::Rosen::SetPixelFormat },
+        { OHOS::Rosen::SET_SCREENHDRFORMAT, OHOS::Rosen::SetScreenHDRFormat },
+        { OHOS::Rosen::GET_SCREENHDRFORMAT, OHOS::Rosen::GetScreenHDRFormat },
+        { OHOS::Rosen::GET_SCREENSUPPORTEDHDRFORMATS, OHOS::Rosen::GetScreenSupportedHDRFormats },
+        { OHOS::Rosen::GET_SCREENCOLORSPACE, OHOS::Rosen::GetScreenColorSpace },
+        { OHOS::Rosen::SET_SCREENCOLORSPACE, OHOS::Rosen::SetScreenColorSpace },
+        { OHOS::Rosen::GET_SCREENSUPPORTEDCOLORSPACES, OHOS::Rosen::GetScreenSupportedColorSpaces },
+        { OHOS::Rosen::IS_SCREENPOWEROFF, OHOS::Rosen::IsScreenPowerOff },
+        { OHOS::Rosen::DIS_ABLEPOWEROFFRENDERCONTROL, OHOS::Rosen::DisablePowerOffRenderControl },
+        { OHOS::Rosen::GET_DIS_PLAYPROPERTYFORHARDCURSOR, OHOS::Rosen::GetDisplayPropertyForHardCursor },
+        { OHOS::Rosen::SET_SCREENHASPROTECTEDLAYER, OHOS::Rosen::SetScreenHasProtectedLayer },
+        { OHOS::Rosen::IS_VIS_IBLERECTSUPPORTROTATION, OHOS::Rosen::IsVisibleRectSupportRotation } 
+    };
     /* Run your code on data */
     uint8_t tarpos = OHOS::Rosen::GetData<uint8_t>() % OHOS::Rosen::TARGET_SIZE;
-    switch (tarpos) {
-        case OHOS::Rosen::INIT_SCREENMANGER:
-            OHOS::Rosen::InitScreenManger();
-            break;
-        case OHOS::Rosen::GET_ACTIVESCREENID:
-            OHOS::Rosen::GetActiveScreenId();
-            break;
-        case OHOS::Rosen::SET_VIRTUAL_SCREENREFRESHRATE:
-            OHOS::Rosen::SetVirtualScreenRefreshRate();
-            break;
-        case OHOS::Rosen::IS_ALLSCREENSPOWEROFF:
-            OHOS::Rosen::IsAllScreensPowerOff();
-            break;
-        case OHOS::Rosen::POST_FORCE_REFRESHTASK:
-            OHOS::Rosen::PostForceRefreshTask();
-            break;
-        case OHOS::Rosen::REMOVE_FORCE_REFRESHTASK:
-            OHOS::Rosen::RemoveForceRefreshTask();
-            break;
-        case OHOS::Rosen::TRY_SIMPLEPROCESS_HOTPLUGEVENTS:
-            OHOS::Rosen::TrySimpleProcessHotPlugEvents();
-            break;
-        case OHOS::Rosen::PROCESS_SCREENHOTPLUGEVENTS:
-            OHOS::Rosen::ProcessScreenHotPlugEvents();
-            break;
-        case OHOS::Rosen::PROCESS_PENDINGCONNECTIONS:
-            OHOS::Rosen::ProcessPendingConnections();
-            break;
-        case OHOS::Rosen::SET_DEFAULTSCREENID:
-            OHOS::Rosen::SetDefaultScreenId();
-            break;
-        case OHOS::Rosen::GET_VIRTUAL_SCREENRESOLUTION:
-            OHOS::Rosen::GetVirtualScreenResolution();
-            break;
-        case OHOS::Rosen::GET_SCREENACTIVEMODE:
-            OHOS::Rosen::GetScreenActiveMode();
-            break;
-        case OHOS::Rosen::GET_SCREENSUPPORTEDMODES:
-            OHOS::Rosen::GetScreenSupportedModes();
-            break;
-        case OHOS::Rosen::GET_SCREENCAPABILITY:
-            OHOS::Rosen::GetScreenCapability();
-            break;
-        case OHOS::Rosen::GET_SCREENPOWERSTATUS:
-            OHOS::Rosen::GetScreenPowerStatus();
-            break;
-        case OHOS::Rosen::GET_SCREENCORRECTION:
-            OHOS::Rosen::GetScreenCorrection();
-            break;
-        case OHOS::Rosen::GET_DEFAULTSCREENID:
-            OHOS::Rosen::GetDefaultScreenId();
-            break;
-        case OHOS::Rosen::GET_ALLSCREENIDS:
-            OHOS::Rosen::GetAllScreenIds();
-            break;
-        case OHOS::Rosen::CREATE_VIRTUAL_SCREEN:
-            OHOS::Rosen::CreateVirtualScreen();
-            break;
-        case OHOS::Rosen::SET_VIRTUAL_SCREENBLACKLIST:
-            OHOS::Rosen::SetVirtualScreenBlackList();
-            break;
-        case OHOS::Rosen::SET_VIRTUAL_SCREENTYPEBLACKLIST:
-            OHOS::Rosen::SetVirtualScreenTypeBlackList();
-            break;
-        case OHOS::Rosen::ADD_VIRTUAL_SCREENBLACKLIST:
-            OHOS::Rosen::AddVirtualScreenBlackList();
-            break;
-        case OHOS::Rosen::REMOVE_VIRTUAL_SCREENBLACKLIST:
-            OHOS::Rosen::RemoveVirtualScreenBlackList();
-            break;
-        case OHOS::Rosen::SET_VIRTUAL_SCREENSECURITYEXEMPTIONLIST:
-            OHOS::Rosen::SetVirtualScreenSecurityExemptionList();
-            break;
-        case OHOS::Rosen::GET_VIRTUAL_SCREENSECURITYEXEMPTIONLIST:
-            OHOS::Rosen::GetVirtualScreenSecurityExemptionList();
-            break;
-        case OHOS::Rosen::GET_SCREENSECURITYMASK:
-            OHOS::Rosen::GetScreenSecurityMask();
-            break;
-        case OHOS::Rosen::SET_MIRRORSCREENVISIBLERECT:
-            OHOS::Rosen::SetMirrorScreenVisibleRect();
-            break;
-        case OHOS::Rosen::GET_MIRRORSCREENVISIBLERECT:
-            OHOS::Rosen::GetMirrorScreenVisibleRect();
-            break;
-        case OHOS::Rosen::SET_CASTSCREENENABLESKIPWINDOW:
-            OHOS::Rosen::SetCastScreenEnableSkipWindow();
-            break;
-        case OHOS::Rosen::GET_VIRTUAL_SCREENBLACKLIST:
-            OHOS::Rosen::GetVirtualScreenBlackList();
-            break;
-        case OHOS::Rosen::GET_VIRTUAL_SCREENTYPEBLACKLIST:
-            OHOS::Rosen::GetVirtualScreenTypeBlackList();
-            break;
-        case OHOS::Rosen::GET_ALLBLACKLIST:
-            OHOS::Rosen::GetAllBlackList();
-            break;
-        case OHOS::Rosen::GET_ALLWHITELIST:
-            OHOS::Rosen::GetAllWhiteList();
-            break;
-        case OHOS::Rosen::GET_ANDRESET_VIRTUAL_SURFACEUPDATEFLAG:
-            OHOS::Rosen::GetAndResetVirtualSurfaceUpdateFlag();
-            break;
-        case OHOS::Rosen::REMOVE_VIRTUAL_SCREEN:
-            OHOS::Rosen::RemoveVirtualScreen();
-            break;
-        case OHOS::Rosen::SET_SCREENACTIVEMODE:
-            OHOS::Rosen::SetScreenActiveMode();
-            break;
-        case OHOS::Rosen::SET_SCREENACTIVERECT:
-            OHOS::Rosen::SetScreenActiveRect();
-            break;
-        case OHOS::Rosen::SET_PHYSICALSCREENRESOLUTION:
-            OHOS::Rosen::SetPhysicalScreenResolution();
-            break;
-        case OHOS::Rosen::SET_VIRTUAL_SCREENRESOLUTION:
-            OHOS::Rosen::SetVirtualScreenResolution();
-            break;
-        case OHOS::Rosen::SET_ROGSCREENRESOLUTION:
-            OHOS::Rosen::SetRogScreenResolution();
-            break;
-        case OHOS::Rosen::SET_SCREENPOWERSTATUS:
-            OHOS::Rosen::SetScreenPowerStatus();
-            break;
-        case OHOS::Rosen::IS_SCREENPOWERINGOFF:
-            OHOS::Rosen::IsScreenPoweringOff();
-            break;
-        case OHOS::Rosen::SET_VIRTUAL_MIRRORSCREENCANVASROTATION:
-            OHOS::Rosen::SetVirtualMirrorScreenCanvasRotation();
-            break;
-        case OHOS::Rosen::SET_VIRTUAL_MIRRORSCREENSCALEMODE:
-            OHOS::Rosen::SetVirtualMirrorScreenScaleMode();
-            break;
-        case OHOS::Rosen::RELEASESCREENDMABUFFER:
-            OHOS::Rosen::ReleaseScreenDmaBuffer();
-            break;
-        case OHOS::Rosen::GET_SCREENDATA:
-            OHOS::Rosen::GetScreenData();
-            break;
-        case OHOS::Rosen::RESIZEVIRTUAL_SCREEN:
-            OHOS::Rosen::ResizeVirtualScreen();
-            break;
-        case OHOS::Rosen::GET_SCREENBACKLIGHT:
-            OHOS::Rosen::GetScreenBacklight();
-            break;
-        case OHOS::Rosen::SET_SCREENBACKLIGHT:
-            OHOS::Rosen::SetScreenBacklight();
-            break;
-        case OHOS::Rosen::QUERYSCREENINFO:
-            OHOS::Rosen::QueryScreenInfo();
-            break;
-        case OHOS::Rosen::GET_CANVASROTATION:
-            OHOS::Rosen::GetCanvasRotation();
-            break;
-        case OHOS::Rosen::GET_SCALEMODE:
-            OHOS::Rosen::GetScaleMode();
-            break;
-        case OHOS::Rosen::GET_PRODUCERSURFACE:
-            OHOS::Rosen::GetProducerSurface();
-            break;
-        case OHOS::Rosen::GET_OUTPUT:
-            OHOS::Rosen::GetOutput();
-            break;
-        case OHOS::Rosen::DIS_PLAY_DUMP:
-            OHOS::Rosen::DisplayDump();
-            break;
-        case OHOS::Rosen::SURFACE_DUMP:
-            OHOS::Rosen::SurfaceDump();
-            break;
-        case OHOS::Rosen::FPS_DUMP:
-            OHOS::Rosen::FpsDump();
-            break;
-        case OHOS::Rosen::CLEARFPS_DUMP:
-            OHOS::Rosen::ClearFpsDump();
-            break;
-        case OHOS::Rosen::HITCHS_DUMP:
-            OHOS::Rosen::HitchsDump();
-            break;
-        case OHOS::Rosen::SET_SCREENCONSTEXPRRAINT:
-            OHOS::Rosen::SetScreenConstraint();
-            break;
-        case OHOS::Rosen::GET_SCREENSUPPORTEDCOLORGAMUTS:
-            OHOS::Rosen::GetScreenSupportedColorGamuts();
-            break;
-        case OHOS::Rosen::GET_SCREENCOLORGAMUT:
-            OHOS::Rosen::GetScreenColorGamut();
-            break;
-        case OHOS::Rosen::SET_SCREENCOLORGAMUT:
-            OHOS::Rosen::SetScreenColorGamut();
-            break;
-        case OHOS::Rosen::SET_SCREENGAMUTMAP:
-            OHOS::Rosen::SetScreenGamutMap();
-            break;
-        case OHOS::Rosen::SET_SCREENCORRECTION:
-            OHOS::Rosen::SetScreenCorrection();
-            break;
-        case OHOS::Rosen::GET_SCREENGAMUTMAP:
-            OHOS::Rosen::GetScreenGamutMap();
-            break;
-        case OHOS::Rosen::GET_SCREENHDRCAPABILITY:
-            OHOS::Rosen::GetScreenHDRCapability();
-            break;
-        case OHOS::Rosen::GET_SCREENTYPE:
-            OHOS::Rosen::GetScreenType();
-            break;
-        case OHOS::Rosen::SET_SCREENSKIPFRAMEINTERVAL:
-            OHOS::Rosen::SetScreenSkipFrameInterval();
-            break;
-        case OHOS::Rosen::SET_EQUALVSYNCPERIOD:
-            OHOS::Rosen::SetEqualVsyncPeriod();
-            break;
-        case OHOS::Rosen::GET_DIS_PLAYIDENTIFICATIONDATA:
-            OHOS::Rosen::GetDisplayIdentificationData();
-            break;
-        case OHOS::Rosen::SET_PIXELFORMAT:
-            OHOS::Rosen::SetPixelFormat();
-            break;
-        case OHOS::Rosen::SET_SCREENHDRFORMAT:
-            OHOS::Rosen::SetScreenHDRFormat();
-            break;
-        case OHOS::Rosen::GET_SCREENHDRFORMAT:
-            OHOS::Rosen::GetScreenHDRFormat();
-            break;
-        case OHOS::Rosen::GET_SCREENSUPPORTEDHDRFORMATS:
-            OHOS::Rosen::GetScreenSupportedHDRFormats();
-            break;
-        case OHOS::Rosen::GET_SCREENCOLORSPACE:
-            OHOS::Rosen::GetScreenColorSpace();
-            break;
-        case OHOS::Rosen::SET_SCREENCOLORSPACE:
-            OHOS::Rosen::SetScreenColorSpace();
-            break;
-        case OHOS::Rosen::GET_SCREENSUPPORTEDCOLORSPACES:
-            OHOS::Rosen::GetScreenSupportedColorSpaces();
-            break;
-        case OHOS::Rosen::IS_SCREENPOWEROFF:
-            OHOS::Rosen::IsScreenPowerOff();
-            break;
-        case OHOS::Rosen::DIS_ABLEPOWEROFFRENDERCONTROL:
-            OHOS::Rosen::DisablePowerOffRenderControl();
-            break;
-        case OHOS::Rosen::GET_DIS_PLAYPROPERTYFORHARDCURSOR:
-            OHOS::Rosen::GetDisplayPropertyForHardCursor();
-            break;
-        case OHOS::Rosen::SET_SCREENHASPROTECTEDLAYER:
-            OHOS::Rosen::SetScreenHasProtectedLayer();
-            break;
-        case OHOS::Rosen::IS_VIS_IBLERECTSUPPORTROTATION:
-            OHOS::Rosen::IsVisibleRectSupportRotation();
-            break;
-        default:
-            return 0;
+    if (funcMap.find(tarpos) != funcMap.end()) {
+        return funcMap[tarpos]();
     }
     return 0;
 }
