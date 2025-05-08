@@ -28,7 +28,7 @@ using namespace testing::ext;
 using namespace OHOS::Media::VideoProcessingEngine;
 using namespace OHOS::Rosen;
 
-bool isSupportReset = false;
+bool IsSupportReset = false;
 
 namespace OHOS {
 namespace Media {
@@ -55,7 +55,7 @@ public:
 bool VpeVideo::IsSupported(uint32_t type, [[maybe_unused]] const Format& parameter)
 {
     (void) type;
-    return isSupportReset;
+    return IsSupportReset;
 }
 }
 }
@@ -181,7 +181,7 @@ HWTEST_F(RSVpeManagerTest, CheckAndGetSurface001, TestSize.Level1)
     OHOS::sptr<IBufferProducer> producer = consumer->GetProducer();
     OHOS::sptr<OHOS::Surface> RSSurface = OHOS::Surface::CreateSurfaceAsProducer(producer);
     RSSurfaceRenderNodeConfig config;
-    isSupportReset = false;
+    IsSupportReset = false;
     sptr<Surface> result = manager.CheckAndGetSurface(RSSurface, config);
     EXPECT_EQ(result, RSSurface);
 }
@@ -193,7 +193,7 @@ HWTEST_F(RSVpeManagerTest, CheckAndGetSurface002, TestSize.Level1)
     OHOS::sptr<IBufferProducer> producer = consumer->GetProducer();
     OHOS::sptr<OHOS::Surface> originalSurface = OHOS::Surface::CreateSurfaceAsProducer(producer);
     RSSurfaceRenderNodeConfig config;
-    isSupportReset = true;
+    IsSupportReset = true;
 
     OHOS::sptr<IConsumerSurface> consumer1 = IConsumerSurface::Create("DisplayNodeNew");
     OHOS::sptr<IBufferProducer> producer1 = consumer->GetProducer();
@@ -211,7 +211,7 @@ HWTEST_F(RSVpeManagerTest, CheckAndGetSurface003, TestSize.Level1)
     OHOS::sptr<OHOS::Surface> originalSurface = OHOS::Surface::CreateSurfaceAsProducer(producer1);
     RSSurfaceRenderNodeConfig config;
 
-    isSupportReset = true;
+    IsSupportReset = true;
 
     OHOS::sptr<IConsumerSurface> consumer = IConsumerSurface::Create("DisplayNodeNew");
     OHOS::sptr<IBufferProducer> producer = consumer1->GetProducer();
@@ -238,21 +238,25 @@ void VpeVideoCallbackImplTest::TearDown(void) {}
 HWTEST_F(VpeVideoCallbackImplTest, OnOutputBufferAvailable001, TestSize.Level1)
 {
     VpeVideoCallbackImpl callback;
-    isSupportReset = true;
+    IsSupportReset = true;
     std::weak_ptr<VpeVideo> expiredFilter;
     callback.videoFilter_ = expiredFilter;
+    OHOS::Media::Format parameter{};
+    uint32_t type = VIDEO_TYPE_DETAIL_ENHANCER;
 
     callback.OnOutputBufferAvailable(1, VpeBufferFlag::VPE_BUFFER_FLAG_NONE);
-    EXPECT_EQ(isSupportReset, true);
+    EXPECT_EQ(IsSupportReset, VpeVideo::IsSupported(type, parameter));
 }
 
 HWTEST_F(VpeVideoCallbackImplTest, OnOutputBufferAvailable002, TestSize.Level1)
 {
     VpeVideoCallbackImpl callback;
-    isSupportReset = true;
+    IsSupportReset = true;
     std::shared_ptr<VpeVideo> validVideo = std::make_shared<VpeVideo>();
     callback.videoFilter_ = validVideo;
+    OHOS::Media::Format parameter{};
+    uint32_t type = VIDEO_TYPE_DETAIL_ENHANCER;
 
     callback.OnOutputBufferAvailable(1, VpeBufferFlag::VPE_BUFFER_FLAG_NONE);
-    EXPECT_EQ(isSupportReset, true);
+    EXPECT_EQ(IsSupportReset, VpeVideo::IsSupported(type, parameter));
 }

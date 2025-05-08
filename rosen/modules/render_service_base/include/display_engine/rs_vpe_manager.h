@@ -63,7 +63,7 @@ private:
     std::weak_ptr<VpeVideo> videoFilter_;
 };
 } // namespace VideoProcessingEngine
-} // namespace Media 
-} // namespace OHOS 
+} // namespace Media
+} // namespace OHOS
 
 #endif

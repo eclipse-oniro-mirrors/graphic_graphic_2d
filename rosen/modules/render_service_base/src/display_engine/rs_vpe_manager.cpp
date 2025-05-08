@@ -70,7 +70,7 @@ std::shared_ptr<VpeVideo> RSVpeManager::GetVpeVideo(uint32_t type, const RSSurfa
 }
 
 sptr<Surface> RSVpeManager::GetVpeVideoSurface(uint32_t type, const sptr<Surface>& RSSurface,
-        const RSSurfaceRenderNodeConfig& config)
+    const RSSurfaceRenderNodeConfig& config)
 {
     if (config.nodeType != OHOS::Rosen::RSSurfaceNodeType::SELF_DRAWING_NODE) {
         return RSSurface;
