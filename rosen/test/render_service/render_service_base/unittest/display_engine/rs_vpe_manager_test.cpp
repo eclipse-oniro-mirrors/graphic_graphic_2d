@@ -213,7 +213,7 @@ HWTEST_F(RSVpeManagerTest, CheckAndGetSurface003, TestSize.Level1)
 
     isSupportReset = true;
 
-    OHOS::sptr<IConsumerSurface> consumer = IConsumerSurface::Create("DisplayNode");
+    OHOS::sptr<IConsumerSurface> consumer = IConsumerSurface::Create("DisplayNodeNew");
     OHOS::sptr<IBufferProducer> producer = consumer1->GetProducer();
     OHOS::sptr<OHOS::Surface> newSurface = OHOS::Surface::CreateSurfaceAsProducer(producer1);
 

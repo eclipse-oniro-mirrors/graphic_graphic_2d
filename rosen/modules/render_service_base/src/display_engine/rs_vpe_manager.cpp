@@ -93,7 +93,7 @@ sptr<Surface> RSVpeManager::GetVpeVideoSurface(uint32_t type, const sptr<Surface
         Media::Format param{};
         param.PutIntValue(ParameterKey::DETAIL_ENHANCER_QUALITY_LEVEL, DETAIL_ENHANCER_LEVEL_HIGH);
         if (vpeVideo->SetParameter(param) != 0) {
-            RS_LOGE("SetParameter failed");
+            RS_LOGE("SetParameter failed!");
             return RSSurface;
         }
     }
@@ -138,6 +138,5 @@ sptr<Surface> RSVpeManager::CheckAndGetSurface(const sptr<Surface>& surface, con
     }
     return vpeSurface;
 }
-
-}
-}
+} // namespace Rosen
+} // namespace OHOS
