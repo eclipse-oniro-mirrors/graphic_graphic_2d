@@ -259,7 +259,9 @@ ohos_unittest("RSUifirstManagerTest") {
 ## Build RSOpincDrawCacheTest
 ohos_unittest("RSOpincDrawCacheTest") {
   module_out_path = module_output_path
-  sources = [ "opinc/rs_opinc_draw_cache_test.cpp" ]
+  sources = [
+    "opinc/rs_opinc_draw_cache_test.cpp",
+  ]
   deps = [ ":rs_test_common" ]
   external_deps = [
     "c_utils:utils",

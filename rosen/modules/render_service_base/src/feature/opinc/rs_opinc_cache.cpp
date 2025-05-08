@@ -130,7 +130,7 @@ void RSOpincCache::NodeCacheStateChange(NodeChangeType type)
             if (unchangeCount_ > unchangeCountUpper_) {
                 nodeCacheState_ = NodeCacheState::STATE_UNCHANGE;
             }
-            cacheChangeFlag = false;
+            cacheChangeFlag_ = false;
             break;
         case NodeChangeType::SELF_DIRTY:
             NodeCacheStateReset(NodeCacheState::STATE_CHANGE);
@@ -157,7 +157,7 @@ void RSOpincCache::NodeCacheStateReset(NodeCacheState nodeCacheState)
     if (OpincGetRootFlag()) {
         SetCacheStateByRetrytime();
     }
-    cacheChangeFlag = true;
+    cacheChangeFlag_ = true;
     isOpincRootFlag_ = false;
 }
 } // namespace Rosen

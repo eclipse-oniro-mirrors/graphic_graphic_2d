@@ -15,7 +15,7 @@
 #include "gtest/gtest.h"
 
 #include "feature/opinc/rs_opinc_draw_cache.h"
-#include "params/rs_render_param.h"
+#include "params/rs_render_params.h"
 
 using namespace testing;
 using namespace testing::ext;

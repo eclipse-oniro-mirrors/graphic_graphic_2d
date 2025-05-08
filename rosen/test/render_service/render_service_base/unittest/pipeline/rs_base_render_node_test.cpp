@@ -1472,7 +1472,7 @@ HWTEST_F(RSBaseRenderNodeTest, MarkSuggestOpincNode, TestSize.Level1)
  * @tc.type: FUNC
  * @tc.require: issueI9UX8W
  */
-HWTEST_F(RSOpincCacheTest, QuickGetNodeDebugInfo001, TestSize.Level1)
+HWTEST_F(RSBaseRenderNodeTest, QuickGetNodeDebugInfo001, TestSize.Level1)
 {
     auto node = std::make_shared<RSBaseRenderNode>(id, context);
     auto& opincCache = node->GetOpincCache();
