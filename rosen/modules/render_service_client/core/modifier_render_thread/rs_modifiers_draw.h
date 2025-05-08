@@ -87,7 +87,10 @@ private:
         int32_t width, int32_t height, sptr<SurfaceBuffer> surfaceBufferTmp);
 
     static bool Playback(const std::shared_ptr<Drawing::Surface>& surface,
-        const std::shared_ptr<Drawing::DrawCmdList>& cmdList, bool isCanvasType);
+        const std::shared_ptr<Drawing::DrawCmdList>& cmdList, bool isCanvasType, int32_t& fence);
+
+    static void FlushSurfaceWithFence(const std::shared_ptr<Drawing::Surface>& surface,
+        VkSemaphore& semaphore, int32_t& fence);
 
     static void DrawSnapshot(std::shared_ptr<Drawing::Canvas>& canvas, std::shared_ptr<Drawing::Image>& snapshot);
 
@@ -96,7 +99,7 @@ private:
 
     static void AddPixelMapDrawOp(const std::shared_ptr<Drawing::DrawCmdList>& cmdList,
         const std::shared_ptr<Media::PixelMap>& pixelMap, int32_t width, int32_t height,
-        bool isRenderWithForegroundColor);
+        bool isRenderWithForegroundColor, sptr<SyncFence> fence = SyncFence::INVALID_FENCE);
 
     static std::unique_ptr<Media::PixelMap> CreatePixelMap(int32_t width, int32_t height, bool useDMA = true);
 

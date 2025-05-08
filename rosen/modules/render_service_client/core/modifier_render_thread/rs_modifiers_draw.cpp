@@ -73,13 +73,20 @@ RSModifiersDraw::SurfaceEntry RSModifiersDraw::GetSurfaceEntryByNodeId(NodeId no
 }
 
 bool RSModifiersDraw::Playback(const std::shared_ptr<Drawing::Surface>& surface,
-    const std::shared_ptr<Drawing::DrawCmdList>& cmdList, bool isCanvasType)
+    const std::shared_ptr<Drawing::DrawCmdList>& cmdList, bool isCanvasType, int32_t& fence)
 {
     return false;
 }
 
+static void FlushSurfaceWithFence(const std::shared_ptr<Drawing::Surface>& surface,
+    VkSemaphore& semaphore, int32_t& fence)
+{
+    return;
+}
+
 void RSModifiersDraw::AddPixelMapDrawOp(const std::shared_ptr<Drawing::DrawCmdList>& cmdList,
-    const std::shared_ptr<Media::PixelMap>& pixelMap, int32_t width, int32_t height, bool isRenderWithForegroundColor)
+    const std::shared_ptr<Media::PixelMap>& pixelMap, int32_t width, int32_t height, bool isRenderWithForegroundColor,
+    sptr<SyncFence> fence)
 {
     return;
 }

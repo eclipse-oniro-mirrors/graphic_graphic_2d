@@ -209,6 +209,7 @@ public:
     DEFINE_FUNC(ImportSemaphoreFdKHR);
     DEFINE_FUNC(GetPhysicalDeviceFeatures2);
     DEFINE_FUNC(SetFreqAdjustEnable);
+    DEFINE_FUNC(GetSemaphoreFdKHR);
 #undef DEFINE_FUNC
 
     VkPhysicalDevice GetPhysicalDevice() const
