@@ -1774,6 +1774,10 @@ private:
     std::vector<std::shared_ptr<RSRenderNode>> filterNodes_;
     std::unordered_map<NodeId, std::weak_ptr<RSRenderNode>> drawingCacheNodes_;
     int32_t appWindowZOrder_ = 0;
+    
+    // Enable HWCompose
+    RSHwcSurfaceRecorder hwcSurfaceRecorder_;
+
     // previous self-Drawing Node Bound
 #ifdef ENABLE_FULL_SCREEN_RECONGNIZE
     float prevSelfDrawHeight_ = 0.0f;

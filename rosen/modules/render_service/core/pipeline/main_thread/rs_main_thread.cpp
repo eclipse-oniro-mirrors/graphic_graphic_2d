@@ -1395,9 +1395,7 @@ void RSMainThread::ProcessCommandForUniRender()
     if (transactionDataEffective != nullptr && !transactionDataEffective->empty()) {
         for (auto& rsTransactionElem : *transactionDataEffective) {
             for (auto& rsTransaction : rsTransactionElem.second) {
-                if (rsTransaction != nullptr) {
-                    RS_TRACE_NAME_FMT("[pid:%d, index:%d]", rsTransactionElem.first, rsTransaction->GetIndex());
-                }
+                RS_TRACE_NAME_FMT("[pid:%d, index:%d]", rsTransactionElem.first, rsTransaction->GetIndex());
                 // If this transaction is marked as requiring synchronization and the SyncId for synchronization is not
                 // 0, or if there have been previous transactions of this process considered as synchronous, then all
                 // subsequent transactions of this process will be synchronized.
