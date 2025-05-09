@@ -30,7 +30,7 @@ config("egl_config") {
   } else {
     defines += [ "USE_APS_IGAMESERVICE_FUNC=0" ]
   }
-  if (graphic_2d_feature_enable_opengl) {
+  if (graphic_2d_feature_enable_opengl_to_vulkan) {
     defines += [ "OPENGL_WRAPPER_ENABLE_GL4" ]
   }
   cflags = [
@@ -269,7 +269,7 @@ config("glv4_config") {
 
   defines = []
 
-  if (graphic_2d_feature_enable_opengl) {
+  if (graphic_2d_feature_enable_opengl_to_vulkan) {
     defines += [ "OPENGL_WRAPPER_ENABLE_GL4" ]
   }
 }
@@ -278,7 +278,7 @@ config("glv4_public_config") {
   include_dirs = [ "include" ]
 }
 
-if (current_os != "ohos" || !graphic_2d_feature_enable_opengl) {
+if (current_os != "ohos" || !graphic_2d_feature_enable_opengl_to_vulkan) {
   group("GLv4") {
     public_external_deps = [
       "egl:libEGL",
