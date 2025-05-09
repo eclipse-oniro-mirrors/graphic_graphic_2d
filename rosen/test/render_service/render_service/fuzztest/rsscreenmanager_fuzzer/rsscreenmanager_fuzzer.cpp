@@ -65,7 +65,7 @@ T GetData()
     return object;
 }
 
-void Init(const uint8_t* data, size_t size)
+boolean Init(const uint8_t* data, size_t size)
 {
     if (data == nullptr) {
         return false;
@@ -73,6 +73,7 @@ void Init(const uint8_t* data, size_t size)
     g_data = data;
     g_size = size;
     g_pos = 0;
+    return true;
 }
 
 void InitScreenManger()
@@ -725,6 +726,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     if (tarpos > funcVectorSize) {
         tarpos = tarpos % funcVectorSize;
     }
-    funcVector[tarops]();
+    funcVector[tarpos]();
     return 0;
 }
