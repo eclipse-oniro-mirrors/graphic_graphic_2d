@@ -37,17 +37,6 @@ struct RSHwcRecorder {
     }
     int32_t GetZOrderForHwcEnableByFilter() const { return zOrderForHwcEnableByFilter_; }
 
-    bool GetNeedForceUpdateHwcNodes() const { return needForceUpdateHwcNodes_; }
-    void SetNeedForceUpdateHwcNodes(bool needForceUpdateHwcNodes)
-    {
-        needForceUpdateHwcNodes_ = needForceUpdateHwcNodes;
-    }
-    bool HasVisibleHwcNodes() const { return hasVisibleHwcNodes_; }
-    void SetHasVisibleHwcNodes(bool hasVisibleHwcNodes) { hasVisibleHwcNodes_ = hasVisibleHwcNodes; }
-
-    bool needForceUpdateHwcNodes_ = false;
-    bool hasVisibleHwcNodes_ = false;
-
     bool isBlendWithBackground_ = false;
 
     int32_t zOrderForHwcEnableByFilter_ = 0;
@@ -67,12 +56,30 @@ struct RSHwcSurfaceRecorder {
         lastFrameHasVisibleRegion_ = lastFrameHasVisibleRegion;
     }
 
-    bool GetLastFrameHasVisibleRegion() const
-    {
-        return lastFrameHasVisibleRegion_;
-    }
+    bool GetLastFrameHasVisibleRegion() const { return lastFrameHasVisibleRegion_; }
 
     bool lastFrameHasVisibleRegion_ = true;
+};
+
+struct RSHwcDisplayRecorder {
+    RSHwcDisplayRecorder() = default;
+    ~RSHwcDisplayRecorder() = default;
+
+    RSHwcDisplayRecorder(const RSHwcDisplayRecorder&) = delete;
+    RSHwcDisplayRecorder(RSHwcDisplayRecorder&&) = delete;
+    RSHwcDisplayRecorder& operator=(const RSHwcDisplayRecorder&) = delete;
+    RSHwcDisplayRecorder& operator=(RSHwcDisplayRecorder&&) = delete;
+
+    bool GetNeedForceUpdateHwcNodes() const { return needForceUpdateHwcNodes_; }
+    void SetNeedForceUpdateHwcNodes(bool needForceUpdateHwcNodes)
+    {
+        needForceUpdateHwcNodes_ = needForceUpdateHwcNodes;
+    }
+    bool HasVisibleHwcNodes() const { return hasVisibleHwcNodes_; }
+    void SetHasVisibleHwcNodes(bool hasVisibleHwcNodes) { hasVisibleHwcNodes_ = hasVisibleHwcNodes; }
+
+    bool needForceUpdateHwcNodes_ = false;
+    bool hasVisibleHwcNodes_ = false;
 };
 
 } // namespace Rosen
