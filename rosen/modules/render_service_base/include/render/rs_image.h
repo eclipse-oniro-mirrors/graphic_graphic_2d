@@ -88,7 +88,7 @@ enum class ImageFit {
     MATRIX,
 };
 
-enum class OrientationFit {
+enum class OrientationFit : int {
     NONE,
     VERTICAL_FLIP,
     HORIZONTAL_FLIP,
