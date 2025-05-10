@@ -4134,7 +4134,7 @@ HWTEST_F(RSNodeTest, SetUICompositingFilter002, TestSize.Level1)
     para->SetTileMode(tileMode);
 
     filterObj->AddPara(para);
-    rsNode->SetUICompositingFilter(filterObj);
+    rsNode->SetUICompositingFilter(filterObj.get());
     auto iter = rsNode->propertyModifiers_.find(RSModifierType::PIXEL_STRETCH_PERCENT);
     auto property1 = std::static_pointer_cast<RSAnimatableProperty<Vector4f>>(iter->second->GetProperty());
     EXPECT_EQ(property1->Get(), tmpPercent);
@@ -4165,7 +4165,7 @@ HWTEST_F(RSNodeTest, SetUICompositingFilter003, TestSize.Level1)
     radiusGradientBlurPara->SetDirection(direction);
 
     filterObj->AddPara(radiusGradientBlurPara);
-    rsNode->SetUICompositingFilter(filterObj);
+    rsNode->SetUICompositingFilter(filterObj.get());
     auto iter = rsNode->propertyModifiers_.find(RSModifierType::LINEAR_GRADIENT_BLUR_PARA);
     auto property = std::static_pointer_cast<RSProperty<std::shared_ptr<RSLinearGradientBlurPara>>>
                         (iter->second->GetProperty());
@@ -4211,7 +4211,7 @@ HWTEST_F(RSNodeTest, SetUICompositingFilter004, TestSize.Level1)
     radiusGradientBlurPara->SetDirection(direction);
 
     filterObj->AddPara(radiusGradientBlurPara);
-    rsNode->SetUICompositingFilter(filterObj);
+    rsNode->SetUICompositingFilter(filterObj.get());
 
     EXPECT_NE(rsNode->propertyModifiers_.size(), 3);
 }
