@@ -158,7 +158,7 @@ ohos_static_library("font_asset") {
       "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog_${target_os}",
       "//third_party/bounds_checking_function:libsec_static",
       "//third_party/cJSON:cjson_static",
-      "//third_party/skia:skia_canvaskit_static",
+      "//third_party/skia:skia_$platform",
     ]
   } else {
     external_deps = [
