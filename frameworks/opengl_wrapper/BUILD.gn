@@ -312,7 +312,6 @@ if (current_os != "ohos" || !graphic_2d_feature_enable_opengl_to_vulkan) {
 
 ## Build libGLv4.so }}}
 
-
 ## Build opengl_wrapper_native_test {{{
 ohos_executable("opengl_wrapper_native_test") {
   install_enable = true
