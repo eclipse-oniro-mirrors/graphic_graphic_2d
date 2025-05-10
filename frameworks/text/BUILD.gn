@@ -31,6 +31,8 @@ if (is_arkui_x) {
 
     deps = [ "service:rosen_text_skia" ]
 
+    external_deps = [ "hilog:libhilog" ]
+
     part_name = "graphic_2d"
     subsystem_name = "graphic"
   }
