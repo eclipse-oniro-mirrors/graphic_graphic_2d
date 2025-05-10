@@ -236,8 +236,9 @@ HWTEST_F(EglWrapperLoaderTest, LoadGlFromMesa001, Level1)
     gWrapperHook.useMesa = false;
     EglWrapperDispatchTable table;
     std::string eglPath = std::string("libEGL_mesa.so");
-    EglWrapperLoader::GetInstance().LoadEgl(eglPath.c_str(), &table.egl);
-    auto result = EglWrapperLoader::LoadGlFromMesa(gGlApiNames4, &table.gl.table4);
+    auto loader = EglWrapperLoader::GetInstance();
+    loader.LoadEgl(eglPath.c_str(), &table.egl);
+    auto result = loader.LoadGlFromMesa(gGlApiNames3, (FunctionPointerType *)&table.gl.table3);
     ASSERT_FALSE(result);
 }
 } // OHOS::Rosen
