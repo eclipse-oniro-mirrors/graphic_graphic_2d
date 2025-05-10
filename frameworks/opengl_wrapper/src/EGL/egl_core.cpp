@@ -32,9 +32,10 @@ bool CheckIfWhiteAPP()
     std::string processName;
     constexpr int pnameLen = 512;
     char pname[pnameLen + 1] = {0};
-    bool res = OHOS::EglSystemLayersManager::GetProcessName(getpid(), pname, pnameLen);
-    if (!res) {
+    bool ret = OHOS::EglSystemLayersManager::GetProcessName(getpid(), pname, pnameLen);
+    if (!ret) {
         WLOGE("Failed to get the process name");
+        return false;
     } else {
         processName = pname;
     }
