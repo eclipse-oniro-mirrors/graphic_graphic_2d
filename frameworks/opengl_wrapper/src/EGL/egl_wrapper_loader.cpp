@@ -110,7 +110,6 @@ bool EglWrapperLoader::LoadEgl(const char* libName, EglHookTable* table)
 #ifdef OPENGL_WRAPPER_ENABLE_GL4
 bool EglWrapperLoader::LoadGlFromMesa(char const * const *glName, FunctionPointerType *entry)
 {
-    WLOGD("");
     if (!dlEglHandle_ || !gWrapperHook.useMesa || !glName || !entry) {
         return false;
     }
