@@ -977,6 +977,7 @@ bool RSUniRenderVisitor::CheckSkipAndPrepareForCrossNode(RSSurfaceRenderNode& no
     if (node.IsCloneCrossNode()) {
         isSwitchToSourceCrossNodePrepare_ = true;
         sourceNode->SetCurCloneNodeParent(node.GetParent().lock());
+        sourceNode->SetFirstLevelCrossNode(true);
         sourceNode->QuickPrepare(shared_from_this());
         sourceNode->SetCurCloneNodeParent(nullptr);
         isSwitchToSourceCrossNodePrepare_ = false;
