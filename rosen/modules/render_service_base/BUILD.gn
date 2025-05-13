@@ -445,6 +445,8 @@ ohos_source_set("render_service_base_src") {
           "-Wno-error=backend-plugin",
           "-Wno-profile-instr-out-of-date",
           "-Wno-profile-instr-unprofiled",
+          "-mllvm",
+          "-enable-partial-inlining",
         ]
       }
       if (graphic_2d_feature_product == "pc" && target_cpu == "arm64") {
@@ -662,7 +664,10 @@ config("render_service_base_link_config") {
     ]
 
     if (graphic_2d_feature_enable_pgo && enable_enhanced_opt) {
-      ldflags += [ "-Wl,--aarch64-inline-plt" ]
+      ldflags += [
+        "-Wl,--aarch64-inline-plt",
+        "-Wl,-mllvm,-enable-partial-inlining",
+      ]
       if (graphic_2d_feature_enable_codemerge) {
         ldflags += [
           "-Wl,-plugin-opt=-split-machine-functions",
