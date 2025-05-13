@@ -84,7 +84,7 @@ bool RSRoundCornerDisplayTest(const uint8_t* data, size_t size)
     }
 
     OHOS::Rosen::rs_rcd::RCDConfig::PrintParseRog(nullptr);
-    OHOS::Rosen::rs_rcd::ROGSetting ROG;
+    OHOS::Rosen::rs_rcd::ROGSetting rog;
     rog.width = GetData<int>();
     rog.height = GetData<int>();
     OHOS::Rosen::rs_rcd::RogPortrait rp;
