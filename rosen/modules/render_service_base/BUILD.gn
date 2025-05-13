@@ -312,6 +312,9 @@ ohos_source_set("render_service_base_src") {
     #monitor
     "src/monitor/aps_monitor_impl.cpp",
     "src/monitor/self_drawing_node_monitor.cpp",
+
+    #feature
+    "src/feature/capture/rs_ui_capture_helper.cpp",
   ]
 
   if (rs_enable_gpu) {
