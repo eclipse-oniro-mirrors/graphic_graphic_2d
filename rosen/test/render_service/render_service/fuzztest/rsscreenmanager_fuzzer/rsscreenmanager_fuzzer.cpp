@@ -42,7 +42,7 @@ constexpr uint8_t SCREEN_SCALE_MODE_SIZE = 3;
 constexpr uint8_t GRAPHIC_PIXEL_FORMAT_SIZE = 43;
 const uint8_t* g_data = nullptr;
 size_t g_size = 0;
-size_t g_pos;
+size_t g_pos= 0;
 } // namespace
 
 /*
@@ -307,6 +307,7 @@ void SetScreenActiveRect()
     GraphicIRect activeRect;
     CreateOrGetScreenManager()->SetScreenActiveRect(screenId, activeRect);
 }
+
 void SetPhysicalScreenResolution()
 {
     ScreenId screenId = GetData<Rosen::ScreenId>();
