@@ -803,8 +803,8 @@ void RSDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     curCanvas_->SetDisableFilterCache(params->GetZoomed());
 
 #ifdef DDGR_ENABLE_FEATURE_OPINC
-    if (autoCacheEnable_) {
-        screenRectInfo_ = {0, 0, screenInfo.width, screenInfo.height};
+    if (RSOpincDrawCache::IsAutoCacheEnable()) {
+        RSOpincDrawCache::SetScreenRectInfo({0, 0, screenInfo.width, screenInfo.height});
     }
 #endif
 

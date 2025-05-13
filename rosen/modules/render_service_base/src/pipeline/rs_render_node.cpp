@@ -53,6 +53,7 @@
 #include "visitor/rs_node_visitor.h"
 #include "rs_profiler.h"
 #include "sandbox_utils.h"
+#include "string_utils.h"
 
 #ifdef RS_ENABLE_VK
 #include "include/gpu/GrBackendSurface.h"
@@ -3602,6 +3603,42 @@ bool RSRenderNode::GetNodeIsSingleFrameComposer() const
     return isNodeSingleFrameComposer_;
 }
 
+// arkui mark
+void RSRenderNode::MarkSuggestOpincNode(bool isOpincNode, bool isNeedCalculate)
+{
+    RS_TRACE_NAME_FMT("mark opinc %llx, isopinc:%d. isCal:%d", GetId(), isOpincNode, isNeedCalculate);
+    opincCache_.MarkSuggestOpincNode(isOpincNode, isNeedCalculate);
+    SetDirty();
+}
+
+// mark support node
+void RSRenderNode::OpincUpdateNodeSupportFlag(bool supportFlag)
+{
+    // supportFlag is obtained from isOpincNodeSupportFlag_ of the child node.
+    // IsMarkedRenderGroup make sure current node is the bottom of the node marked by arkui.
+    isOpincNodeSupportFlag_ = isOpincNodeSupportFlag_ && supportFlag &&
+        (!opincCache_.IsMarkedRenderGroup(nodeGroupType_ > RSRenderNode::NodeGroupType::NONE));
+}
+
+std::string RSRenderNode::QuickGetNodeDebugInfo()
+{
+    std::string ret("");
+#ifdef DDGR_ENABLE_FEATURE_OPINC_DFX
+    AppendFormat(ret, "%llx, IsSTD:%d s:%d uc:%d suggest:%d support:%d rootF:%d",
+        GetId(), IsSubTreeDirty(), opincCache_.GetNodeCacheState(), opincCache_.GetUnchangeCount(),
+        opincCache_.IsSuggestOpincNode(), OpincGetNodeSupportFlag(), opincCache_.OpincGetRootFlag());
+#endif
+    return ret;
+}
+
+void RSRenderNode::UpdateOpincParam()
+{
+    if (stagingRenderParams_) {
+        stagingRenderParams_->OpincSetCacheChangeFlag(opincCache_.GetCacheChangeFlag(), lastFrameSynced_);
+        stagingRenderParams_->OpincUpdateRootFlag(opincCache_.OpincGetRootFlag());
+    }
+}
+
 void RSRenderNode::CheckDrawingCacheType()
 {
     if (nodeGroupType_ == NodeGroupType::NONE) {
@@ -4708,7 +4745,8 @@ void RSRenderNode::OnSkipSync()
 bool RSRenderNode::ShouldClearSurface()
 {
 #ifdef RS_ENABLE_GPU
-    bool renderGroupFlag = GetDrawingCacheType() != RSDrawingCacheType::DISABLED_CACHE || isOpincRootFlag_;
+    bool renderGroupFlag = GetDrawingCacheType() != RSDrawingCacheType::DISABLED_CACHE ||
+        opincCache_.OpincGetRootFlag();
     bool freezeFlag = stagingRenderParams_->GetRSFreezeFlag();
     return (renderGroupFlag || freezeFlag || nodeGroupType_ == static_cast<uint8_t>(NodeGroupType::NONE)) &&
         needClearSurface_;
