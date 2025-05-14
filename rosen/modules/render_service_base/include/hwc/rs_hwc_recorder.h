@@ -51,7 +51,8 @@ struct RSHwcSurfaceRecorder {
     RSHwcSurfaceRecorder& operator=(const RSHwcSurfaceRecorder&) = delete;
     RSHwcSurfaceRecorder& operator=(RSHwcSurfaceRecorder&&) = delete;
 
-    void SetLastFrameHasVisibleRegion(bool lastFrameHasVisibleRegion) {
+    void SetLastFrameHasVisibleRegion(bool lastFrameHasVisibleRegion)
+    {
         lastFrameHasVisibleRegion_ = lastFrameHasVisibleRegion;
     }
     bool GetLastFrameHasVisibleRegion() const { return lastFrameHasVisibleRegion_; }
@@ -69,7 +70,8 @@ struct RSHwcDisplayRecorder {
     RSHwcDisplayRecorder& operator=(RSHwcDisplayRecorder&&) = delete;
 
     bool GetNeedForceUpdateHwcNodes() const { return needForceUpdateHwcNodes_; }
-    void SetNeedForceUpdateHwcNodes(bool needForceUpdateHwcNodes) {
+    void SetNeedForceUpdateHwcNodes(bool needForceUpdateHwcNodes)
+    {
         needForceUpdateHwcNodes_ = needForceUpdateHwcNodes;
     }
     bool HasVisibleHwcNodes() const { return hasVisibleHwcNodes_; }
