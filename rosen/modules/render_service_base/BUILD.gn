@@ -150,6 +150,9 @@ ohos_source_set("render_service_base_src") {
     #delegate
     "src/delegate/rs_functional_delegate.cpp",
 
+    #feature
+    "src/feature/opinc/rs_opinc_cache.cpp",
+
     #ipc_callbacks
     "src/ipc_callbacks/buffer_available_callback_proxy.cpp",
     "src/ipc_callbacks/buffer_available_callback_stub.cpp",
@@ -209,7 +212,6 @@ ohos_source_set("render_service_base_src") {
     "src/pipeline/rs_render_frame_rate_linker.cpp",
     "src/pipeline/rs_render_frame_rate_linker_map.cpp",
     "src/pipeline/rs_render_node.cpp",
-    "src/pipeline/rs_render_node_autocache.cpp",
     "src/pipeline/rs_render_node_gc.cpp",
     "src/pipeline/rs_render_node_map.cpp",
     "src/pipeline/rs_root_render_node.cpp",
@@ -310,6 +312,9 @@ ohos_source_set("render_service_base_src") {
     #monitor
     "src/monitor/aps_monitor_impl.cpp",
     "src/monitor/self_drawing_node_monitor.cpp",
+
+    #feature
+    "src/feature/capture/rs_ui_capture_helper.cpp",
   ]
 
   if (rs_enable_gpu) {
@@ -443,6 +448,8 @@ ohos_source_set("render_service_base_src") {
           "-Wno-error=backend-plugin",
           "-Wno-profile-instr-out-of-date",
           "-Wno-profile-instr-unprofiled",
+          "-mllvm",
+          "-enable-partial-inlining",
         ]
       }
       if (graphic_2d_feature_product == "pc" && target_cpu == "arm64") {
@@ -660,7 +667,10 @@ config("render_service_base_link_config") {
     ]
 
     if (graphic_2d_feature_enable_pgo && enable_enhanced_opt) {
-      ldflags += [ "-Wl,--aarch64-inline-plt" ]
+      ldflags += [
+        "-Wl,--aarch64-inline-plt",
+        "-Wl,-mllvm,-enable-partial-inlining",
+      ]
       if (graphic_2d_feature_enable_codemerge) {
         ldflags += [
           "-Wl,-plugin-opt=-split-machine-functions",

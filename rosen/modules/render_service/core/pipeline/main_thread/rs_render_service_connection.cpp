@@ -1236,7 +1236,7 @@ void TakeSurfaceCaptureForUiParallel(
     };
     auto& context = RSMainThread::Instance()->GetContext();
     if (captureConfig.isSync) {
-        context.InsertUiCaptureCmdsExecutedFlag(id, false);
+        context.GetUiCaptureHelper().InsertUiCaptureCmdsExecutedFlag(id, false);
         RSMainThread::Instance()->AddUiCaptureTask(id, captureTask);
         return;
     }

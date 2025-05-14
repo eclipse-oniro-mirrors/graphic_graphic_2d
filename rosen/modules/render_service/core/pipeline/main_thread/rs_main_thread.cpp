@@ -191,6 +191,7 @@ constexpr uint64_t MAX_SYSTEM_SCENE_STATUS_TIME = 800000000;
 constexpr uint64_t PERF_PERIOD_MULTI_WINDOW = 80000000;
 constexpr uint32_t MULTI_WINDOW_PERF_START_NUM = 2;
 constexpr uint32_t MULTI_WINDOW_PERF_END_NUM = 4;
+constexpr uint32_t TIME_OF_CAPTURE_TASK_REMAIN = 500;
 constexpr uint32_t TIME_OF_EIGHT_FRAMES = 8000;
 constexpr uint32_t TIME_OF_THE_FRAMES = 1000;
 constexpr uint32_t WAIT_FOR_RELEASED_BUFFER_TIMEOUT = 3000;
@@ -593,6 +594,7 @@ void RSMainThread::Init()
 #endif
     }
 
+    RS_LOGI("thread init");
     runner_ = AppExecFwk::EventRunner::Create(false);
     handler_ = std::make_shared<AppExecFwk::EventHandler>(runner_);
     uint32_t timeForWatchDog = WATCHDOG_TIMEVAL;
@@ -604,6 +606,7 @@ void RSMainThread::Init()
     SubScribeSystemAbility();
 #endif
     InitRSEventDetector();
+    RS_LOGI("VSync init");
     sptr<VSyncIConnectionToken> token = new IRemoteStub<VSyncIConnectionToken>();
     sptr<VSyncConnection> conn = new VSyncConnection(rsVSyncDistributor_, "rs", token->AsObject());
     rsFrameRateLinker_ = std::make_shared<RSRenderFrameRateLinker>([this] (const RSRenderFrameRateLinker& linker) {
@@ -649,13 +652,16 @@ void RSMainThread::Init()
         }
     }
 #endif // RS_ENABLE_GL
+    RS_LOGI("OpenInnovationSo");
     RSInnovation::OpenInnovationSo();
 #if defined(RS_ENABLE_UNI_RENDER)
+    RS_LOGI("InitRenderContext");
     /* move to render thread ? */
     RSBackgroundThread::Instance().InitRenderContext(GetRenderEngine()->GetRenderContext().get());
 #endif
 #ifdef OHOS_BUILD_ENABLE_MAGICCURSOR
 #if defined (RS_ENABLE_VK)
+    RS_LOGI("RSMagicPointerRenderManager init");
     RSMagicPointerRenderManager::InitInstance(GetRenderEngine()->GetVkImageManager());
 #endif
 
@@ -673,6 +679,7 @@ void RSMainThread::Init()
 #endif
 
 #if defined(ACCESSIBILITY_ENABLE)
+    RS_LOGI("AccessibilityConfig init");
     accessibilityObserver_ = std::make_shared<AccessibilityObserver>();
     auto &config = OHOS::AccessibilityConfig::AccessibilityConfig::GetInstance();
     config.InitializeContext();
@@ -708,8 +715,10 @@ void RSMainThread::Init()
             RequestNextVSync("OverDrawUpdate");
         });
     });
+    RS_LOGI("RSOverdrawController init");
     RSOverdrawController::GetInstance().SetDelegate(delegate);
 
+    RS_LOGI("HgmTaskHandleThread init");
     HgmTaskHandleThread::Instance().PostSyncTask([this] () {
         auto frameRateMgr = OHOS::Rosen::HgmCore::Instance().GetFrameRateMgr();
         if (frameRateMgr == nullptr) {
@@ -728,8 +737,11 @@ void RSMainThread::Init()
     });
     SubscribeAppState();
     PrintCurrentStatus();
+    RS_LOGI("UpdateGpuContextCacheSize");
     UpdateGpuContextCacheSize();
+    RS_LOGI("RSLuminanceControl init");
     RSLuminanceControl::Get().Init();
+    RS_LOGI("RSColorTemperature init");
     RSColorTemperature::Get().Init();
     // used to force refresh screen when cct is updated
     std::function<void()> refreshFunc = []() {
@@ -1395,14 +1407,17 @@ void RSMainThread::ProcessCommandForUniRender()
     if (transactionDataEffective != nullptr && !transactionDataEffective->empty()) {
         for (auto& rsTransactionElem : *transactionDataEffective) {
             for (auto& rsTransaction : rsTransactionElem.second) {
+                if (!rsTransaction) {
+                    continue;
+                }
                 RS_TRACE_NAME_FMT("[pid:%d, index:%d]", rsTransactionElem.first, rsTransaction->GetIndex());
                 // If this transaction is marked as requiring synchronization and the SyncId for synchronization is not
                 // 0, or if there have been previous transactions of this process considered as synchronous, then all
                 // subsequent transactions of this process will be synchronized.
-                if (rsTransaction && ((rsTransaction->IsNeedSync() && rsTransaction->GetSyncId() > 0) ||
-                    syncTransactionData_.count(rsTransactionElem.first) > 0)) {
+                if ((rsTransaction->IsNeedSync() && rsTransaction->GetSyncId() > 0) ||
+                    syncTransactionData_.count(rsTransactionElem.first) > 0) {
                     ProcessSyncRSTransactionData(rsTransaction, rsTransactionElem.first);
-                } else if (rsTransaction) {
+                } else {
                     ProcessRSTransactionData(rsTransaction, rsTransactionElem.first);
                 }
             }
@@ -2238,12 +2253,17 @@ void RSMainThread::PrepareUiCaptureTasks(std::shared_ptr<RSUniRenderVisitor> uni
     const auto& nodeMap = context_->GetNodeMap();
     for (auto [id, captureTask]: pendingUiCaptureTasks_) {
         auto node = nodeMap.GetRenderNode(id);
-        bool flag = context_->GetUiCaptureCmdsExecutedFlag(id);
-        if (!flag) {
+        auto cmdFlag = context_->GetUiCaptureHelper().GetUiCaptureCmdsExecutedFlag(id);
+        uint64_t duration = context_->GetUiCaptureHelper().GetCurrentSteadyTimeMs() - cmdFlag.second;
+        if (!cmdFlag.first && duration < TIME_OF_CAPTURE_TASK_REMAIN) {
+            RS_TRACE_NAME_FMT("RSMainThread::PrepareUiCaptureTasks cmds not be processed, id: %" PRIu64
+                              ", duration: %" PRIu64 "ms", id, duration);
+            RS_LOGI("RSMainThread::PrepareUiCaptureTasks cmds not be processed, id: %{public}" PRIu64
+                    ", duration: %{public}" PRIu64 "ms", id, duration);
             remainUiCaptureTasks.emplace_back(id, captureTask);
             continue;
         }
-        context_->EraseUiCaptureCmdsExecutedFlag(id);
+        context_->GetUiCaptureHelper().EraseUiCaptureCmdsExecutedFlag(id);
         if (!node) {
             RS_LOGW("RSMainThread::PrepareUiCaptureTasks node is nullptr");
         } else if (!node->IsOnTheTree() || node->IsDirty() || node->IsSubTreeDirty()) {
@@ -2362,7 +2382,7 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
         RS_OPTIONAL_TRACE_NAME_FMT("rs debug: %s HardwareForcedDisabled is true", __func__);
     }
     // need draw skipped node at cur frame
-    doDirectComposition_ &= LIKELY(!RSUifirstManager::Instance().NeedNextDrawForSkippedNode());
+    doDirectComposition_ &= !RSUifirstManager::Instance().NeedNextDrawForSkippedNode();
     bool needTraverseNodeTree = true;
     needDrawFrame_ = true;
     bool pointerSkip = !RSPointerWindowManager::Instance().IsPointerCanSkipFrameCompareChange(false, true);
