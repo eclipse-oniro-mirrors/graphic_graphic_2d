@@ -734,6 +734,11 @@ void RSDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     bool isHdrOn = params->GetHDRPresent();
     // 0 means defalut hdrBrightnessRatio
     float hdrBrightnessRatio = RSLuminanceControl::Get().GetHdrBrightnessRatio(paramScreenId, 0);
+#ifdef RS_ENABLE_OVERLAY_DISPLAY
+    if (RSOverlayDisplayManager::Instance().IsOverlayDisplayEnableForCurrentVsync()) {
+        hdrBrightnessRatio = 1.0f;
+    }
+#endif
     if (!isHdrOn) {
         params->SetBrightnessRatio(hdrBrightnessRatio);
         hdrBrightnessRatio = 1.0f;
