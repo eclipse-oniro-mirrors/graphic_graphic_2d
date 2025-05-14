@@ -258,6 +258,7 @@ private:
 
     RSB_EXPORT static bool BaseSetPlaybackSpeed(double speed);
     RSB_EXPORT static double BaseGetPlaybackSpeed();
+    RSB_EXPORT static Media::PixelMap* UnmarshalPixelmapNstd(Parcel& parcel);
 
     // Beta record
     RSB_EXPORT static void EnableBetaRecord();
