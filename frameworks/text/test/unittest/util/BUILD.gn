@@ -30,7 +30,10 @@ ohos_unittest("string_convert_test") {
     "$rosen_text_root/interface/export/rosen_text",
   ]
 
-  deps = [ "$rosen_root/modules/2d_graphics:2d_graphics" ]
+  deps = [
+    "$rosen_root/modules/2d_graphics:2d_graphics",
+    "$rosen_text_root:rosen_text",
+  ]
 
   part_name = "graphic_2d"
   subsystem_name = "graphic"
