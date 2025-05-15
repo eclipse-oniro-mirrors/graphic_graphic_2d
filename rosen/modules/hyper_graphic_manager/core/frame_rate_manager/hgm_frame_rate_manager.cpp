@@ -284,11 +284,6 @@ void HgmFrameRateManager::RegisterUpTimeoutAndDownEvent()
 {
     static std::once_flag registerFlag;
     std::call_once(registerFlag, [this]() {
-        touchManager_.RegisterEventCallback(TouchEvent::UP_TIMEOUT_EVENT, [this] (TouchEvent event) {
-            SetSchedulerPreferredFps(OLED_60_HZ);
-            SetIsNeedUpdateAppOffset(true);
-            touchManager_.ChangeState(TouchState::IDLE_STATE);
-        });
         touchManager_.RegisterEventCallback(TouchEvent::DOWN_EVENT, [this] (TouchEvent event) {
             SetSchedulerPreferredFps(OLED_120_HZ);
             touchManager_.ChangeState(TouchState::DOWN_STATE);
