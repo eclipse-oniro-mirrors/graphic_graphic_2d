@@ -27,8 +27,7 @@ void RunFuzzTest(const uint8_t* data, size_t size)
     fontCollection->SetupDefaultFontManager();
     std::shared_ptr<SPText::ParagraphBuilder> paragraphBuilder =
         SPText::ParagraphBuilder::Create(paragraphStyle, fontCollection);
-    std::string text = fdp.ConsumeRandomLengthString();
-    paragraphBuilder->AddText(Str8ToStr16ByIcu(text));
+    paragraphBuilder->AddText(u"Str8ToStr16ByIcu(text)");
     auto paragraph = paragraphBuilder->Build();
     paragraph->Layout(1000.0f);
     auto textLineBases = paragraph->GetTextLines();
