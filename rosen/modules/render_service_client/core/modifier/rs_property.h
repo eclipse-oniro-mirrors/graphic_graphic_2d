@@ -401,7 +401,9 @@ public:
         if (node == nullptr) {
             return;
         }
-        auto implicitAnimator = RSImplicitAnimatorMap::Instance().GetAnimator(gettid());
+        auto rsUIContext = node->GetRSUIContext();
+        auto implicitAnimator = rsUIContext ? rsUIContext->GetRSImplicitAnimator() :
+            RSImplicitAnimatorMap::Instance().GetAnimator(gettid());
         if (implicitAnimator && implicitAnimator->NeedImplicitAnimation()) {
             implicitAnimator->CancelImplicitAnimation(node, RSProperty<T>::shared_from_this());
         }

@@ -26,6 +26,7 @@
 #include "animation/rs_animation.h"
 #include "animation/rs_animation_group.h"
 #include "animation/rs_animation_callback.h"
+#include "animation/rs_implicit_animation_param.h"
 #include "animation/rs_implicit_animator.h"
 #include "animation/rs_implicit_animator_map.h"
 #include "animation/rs_render_particle_animation.h"
@@ -264,7 +265,7 @@ bool RSNode::CloseImplicitCancelAnimation()
         return false;
     }
 
-    return implicitAnimator->CloseImplicitCancelAnimation();
+    return implicitAnimator->CloseImplicitCancelAnimation() == CancelAnimationStatus::SUCCESS ? true : false;
 }
 
 bool RSNode::CloseImplicitCancelAnimation(const std::shared_ptr<RSUIContext> rsUIContext)
@@ -274,6 +275,18 @@ bool RSNode::CloseImplicitCancelAnimation(const std::shared_ptr<RSUIContext> rsU
     if (implicitAnimator == nullptr) {
         ROSEN_LOGE("multi-instance Failed to close implicit animation for cancel, implicit animator is null!");
         return false;
+    }
+
+    return implicitAnimator->CloseImplicitCancelAnimation() == CancelAnimationStatus::SUCCESS ? true : false;
+}
+
+CancelAnimationStatus RSNode::CloseImplicitCancelAnimationReturnStatus(const std::shared_ptr<RSUIContext> rsUIContext)
+{
+    auto implicitAnimator =
+        rsUIContext ? rsUIContext->GetRSImplicitAnimator() : RSImplicitAnimatorMap::Instance().GetAnimator(gettid());
+    if (implicitAnimator == nullptr) {
+        ROSEN_LOGE("multi-instance Failed to close implicit animation for cancel, implicit animator is null!");
+        return CancelAnimationStatus::NULL_ANIMATOR;
     }
 
     return implicitAnimator->CloseImplicitCancelAnimation();
