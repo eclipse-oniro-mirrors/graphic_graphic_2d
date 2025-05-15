@@ -486,13 +486,19 @@ void RSSurfaceRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
             currentFrameDirty.left_, currentFrameDirty.top_, currentFrameDirty.width_, currentFrameDirty.height_);
         return;
     }
+
     auto specialLayerManager = surfaceParams->GetSpecialLayerMgr();
     hasSkipCacheLayer_ =
         (specialLayerManager.Find(SpecialLayerType::SECURITY) && !uniParam->GetSecExemption()) ||
             specialLayerManager.Find(SpecialLayerType::SKIP);
-    if (hasSkipCacheLayer_ && curDrawingCacheRoot_) {
-        curDrawingCacheRoot_->SetSkipCacheLayer(true);
+    if (curDrawingCacheRoot_) {
+        if (hasSkipCacheLayer_) {
+            curDrawingCacheRoot_->SetSkipCacheLayer(true);
+        } else if (surfaceParams->IsInBlackList()) {
+            curDrawingCacheRoot_->SetChildInBlackList(true);
+        }
     }
+    
     if (surfaceParams->GetHardCursorStatus()) {
         SetDrawSkipType(DrawSkipType::HARD_CURSOR_ENAbLED);
         RS_TRACE_NAME_FMT("RSSurfaceRenderNodeDrawable::OnDraw hardcursor skip SurfaceName:%s", name_.c_str());
@@ -693,6 +699,10 @@ void RSSurfaceRenderNodeDrawable::OnCapture(Drawing::Canvas& canvas)
 {
     RECORD_GPURESOURCE_CORETRACE_CALLER(Drawing::CoreFunction::
         RS_RSSURFACERENDERNODEDRAWABLE_ONCAPTURE);
+    if (RSUniRenderThread::GetCaptureParam().isSoloNodeUiCapture_) {
+        RSRenderNodeDrawable::OnDraw(canvas);
+        return;
+    }
     if (!ShouldPaint()) {
         return;
     }

@@ -277,6 +277,7 @@ ohos_source_set("render_service_base_src") {
     "src/render/rs_spherize_effect_filter.cpp",
     "src/render/rs_typeface_cache.cpp",
     "src/render/rs_water_ripple_shader_filter.cpp",
+    "src/render/rs_always_snapshot_shader_filter.cpp",
 
     #transaction
     "src/transaction/rs_hgm_config_data.cpp",
@@ -312,6 +313,9 @@ ohos_source_set("render_service_base_src") {
     #monitor
     "src/monitor/aps_monitor_impl.cpp",
     "src/monitor/self_drawing_node_monitor.cpp",
+
+    #feature
+    "src/feature/capture/rs_ui_capture_helper.cpp",
   ]
 
   if (rs_enable_gpu) {
@@ -445,6 +449,8 @@ ohos_source_set("render_service_base_src") {
           "-Wno-error=backend-plugin",
           "-Wno-profile-instr-out-of-date",
           "-Wno-profile-instr-unprofiled",
+          "-mllvm",
+          "-enable-partial-inlining",
         ]
       }
       if (graphic_2d_feature_product == "pc" && target_cpu == "arm64") {
@@ -662,7 +668,10 @@ config("render_service_base_link_config") {
     ]
 
     if (graphic_2d_feature_enable_pgo && enable_enhanced_opt) {
-      ldflags += [ "-Wl,--aarch64-inline-plt" ]
+      ldflags += [
+        "-Wl,--aarch64-inline-plt",
+        "-Wl,-mllvm,-enable-partial-inlining",
+      ]
       if (graphic_2d_feature_enable_codemerge) {
         ldflags += [
           "-Wl,-plugin-opt=-split-machine-functions",

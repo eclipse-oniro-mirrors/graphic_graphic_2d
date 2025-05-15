@@ -104,6 +104,10 @@ public:
     void MoveChild(SharedPtr child, int index);
     void RemoveChild(SharedPtr child, bool skipTransition = false);
     void ClearChildren();
+    void SetUIContextToken(uint64_t token)
+    {
+        uiContextToken_ = token;
+    }
     void RemoveFromTree(bool skipTransition = false);
 
     // Add/RemoveCrossParentChild only used as: the child is under multiple parents(e.g. a window cross multi-screens)
@@ -239,6 +243,7 @@ public:
     ChildrenListSharedPtr GetChildren() const;
     // return children and disappeared children, sorted by z-index
     virtual ChildrenListSharedPtr GetSortedChildren() const;
+    void CollectAllChildren(const std::shared_ptr<RSRenderNode>& node, std::vector<NodeId>& vec);
     uint32_t GetChildrenCount() const;
     std::shared_ptr<RSRenderNode> GetFirstChild() const;
     std::list<WeakPtr> GetChildrenList() const;
@@ -351,7 +356,8 @@ public:
         dirtyTypes_.set(static_cast<int>(type), true);
     }
 
-    std::tuple<bool, bool, bool> Animate(int64_t timestamp, int64_t period = 0, bool isDisplaySyncEnabled = false);
+    std::tuple<bool, bool, bool> Animate(
+        int64_t timestamp, int64_t& minLeftDelayTime, int64_t period = 0, bool isDisplaySyncEnabled = false);
 
     bool IsClipBound() const;
     // clipRect has value in UniRender when calling PrepareCanvasRenderNode, else it is nullopt
@@ -675,7 +681,7 @@ public:
     virtual void UpdateRenderParams();
     void SetCrossNodeOffScreenStatus(CrossNodeOffScreenRenderDebugType isCrossNodeOffscreenOn_);
     void UpdateDrawingCacheInfoBeforeChildren(bool isScreenRotation);
-    void UpdateDrawingCacheInfoAfterChildren();
+    void UpdateDrawingCacheInfoAfterChildren(bool isInBlackList = false);
 
     virtual RectI GetFilterRect() const;
     void CalVisibleFilterRect(const std::optional<RectI>& clipRect);
@@ -1096,6 +1102,7 @@ private:
     float boundsWidth_ = 0.0f;
     float boundsHeight_ = 0.0f;
     pid_t appPid_ = 0;
+    uint64_t uiContextToken_ = 0;
     NodeId id_;
     NodeId instanceRootNodeId_ = INVALID_NODEID;
     NodeId firstLevelNodeId_ = INVALID_NODEID;
@@ -1160,6 +1167,7 @@ private:
     std::vector<Drawing::RecordingCanvas::DrawFunc> stagingDrawCmdList_;
     std::vector<NodeId> visibleFilterChild_;
     std::unordered_set<NodeId> visibleEffectChild_;
+    static std::unordered_set<NodeId> pendingPurgeNodeIds_;
     Drawing::Matrix oldAbsMatrix_;
     RSDrawable::Vec drawableVec_;
     RSAnimationManager animationManager_;
