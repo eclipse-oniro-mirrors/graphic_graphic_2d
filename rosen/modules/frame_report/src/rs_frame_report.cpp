@@ -167,10 +167,11 @@ void RsFrameReport::SendCommandsStart()
     }
 }
 
-void RsFrameReport::RenderStart(uint64_t timestamp)
+void RsFrameReport::RenderStart(uint64_t timestamp, int skipFirstFrame)
 {
     std::unordered_map<std::string, std::string> payload = {};
     payload["vsyncTime"] = std::to_string(timestamp);
+    payload["skipFirstFrame"] = std::to_string(skipFirstFrame);
     ReportSchedEvent(FrameSchedEvent::RS_RENDER_START, payload);
 }
 

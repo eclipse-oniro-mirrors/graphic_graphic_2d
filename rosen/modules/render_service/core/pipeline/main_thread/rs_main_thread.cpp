@@ -223,6 +223,7 @@ constexpr const char* DRAWING_CACHE_DFX = "rosen.drawingCache.enabledDfx";
 constexpr const char* DEFAULT_SURFACE_NODE_NAME = "DefaultSurfaceNodeName";
 constexpr const char* ENABLE_DEBUG_FMT_TRACE = "sys.graphic.openTestModeTrace";
 constexpr int64_t ONE_SECOND_TIMESTAMP = 1e9;
+constexpr int SKIP_FIRST_FRAME_DRAWING_NUM = 1;
 
 #ifdef RS_ENABLE_GL
 constexpr size_t DEFAULT_SKIA_CACHE_SIZE        = 96 * (1 << 20);
@@ -3366,6 +3367,7 @@ void RSMainThread::OnVsync(uint64_t timestamp, uint64_t frameCount, void* data)
     RSJankStatsOnVsyncStart(onVsyncStartTime, onVsyncStartTimeSteady, onVsyncStartTimeSteadyFloat);
     timestamp_ = timestamp;
     dvsyncRsTimestamp_.store(timestamp_);
+    drawingRequestNextVsyncNum_.store(requestNextVsyncNum_);
     curTime_ = static_cast<uint64_t>(
         std::chrono::duration_cast<std::chrono::nanoseconds>(
             std::chrono::steady_clock::now().time_since_epoch()).count());
@@ -4613,7 +4615,9 @@ void RSMainThread::RenderFrameStart(uint64_t timestamp)
     int hardwareTid = RSHardwareThread::Instance().GetHardwareTid();
     RsFrameReport::GetInstance().ReportHardwareInfo(hardwareTid);
 #endif
-    RsFrameReport::GetInstance().RenderStart(timestamp);
+    int skipFirstFrame = (drawingRequestNextVsyncNum_.load() == SKIP_FIRST_FRAME_DRAWING_NUM) &&
+        forceUpdateUniRenderFlag_;
+    RsFrameReport::GetInstance().RenderStart(timestamp, skipFirstFrame);
     RenderFrameTrace::GetInstance().RenderStartFrameTrace(RS_INTERVAL_NAME);
 }
 
