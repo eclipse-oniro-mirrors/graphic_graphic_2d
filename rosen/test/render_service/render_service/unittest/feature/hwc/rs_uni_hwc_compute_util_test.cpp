@@ -325,7 +325,7 @@ HWTEST_F(RSUniHwcComputeUtilTest, DealWithNodeGravityOldVersionTest004, Function
     node.GetRSSurfaceHandler()->buffer_.buffer->SetSurfaceBufferHeight(1653);
     node.GetRSSurfaceHandler()->consumer_ = OHOS::IConsumerSurface::Create();
     node.renderContent_->renderProperties_.SetBoundsWidth(1080);
-    node.renderContent_->renderProperties_.SetBoundsWidth(1653);
+    node.renderContent_->renderProperties_.SetBoundsHeight(1653);
     node.renderContent_->renderProperties_.frameGravity_ = Gravity::CENTER;
     node.SetDstRect({0, 1106, 1080, 1135});
     node.SetSrcRect({0, 0, 1080, 1135});
@@ -595,8 +595,8 @@ HWTEST_F(RSUniHwcComputeUtilTest, DealWithNodeGravityTest009, Function | SmallTe
     RSUniHwcComputeUtil::DealWithNodeGravity(node2, totalMatrix);
     expectedDstRect = {0, 1106, 1080, 1080};
     expectedSrcRect = {0, 573, 1080, 1080};
-    EXPECT_TRUE(node1.GetDstRect() == expectedDstRect);
-    EXPECT_TRUE(node1.GetSrcRect() == expectedSrcRect);
+    EXPECT_TRUE(node2.GetDstRect() == expectedDstRect);
+    EXPECT_TRUE(node2.GetSrcRect() == expectedSrcRect);
 }
 
 /*
