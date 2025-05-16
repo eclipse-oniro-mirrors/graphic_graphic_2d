@@ -746,7 +746,7 @@ void RSUniHwcVisitor::UpdateHardwareStateByHwcNodeBackgroundAlpha(
             hwcNodePtr->SetHardwareForcedDisabledState(true);
             RS_OPTIONAL_TRACE_FMT("hwc debug: name:%s id:%" PRIu64 " disabled by uncovered above transparent hwc node",
                 hwcNodePtr->GetName().c_str(), hwcNodePtr->GetId());
-            continue;00
+            continue;
         }
 
         if (!hwcNodePtr->IsNodeHasBackgroundColorAlpha() && !hwcNodePtr->IsHardwareForcedDisabled()) {
