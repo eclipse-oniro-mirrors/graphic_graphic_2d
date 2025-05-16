@@ -343,8 +343,6 @@ void RSUniHwcVisitor::ProcessSolidLayerEnabled(RSSurfaceRenderNode& node)
     if (!GetSolidLayerEnabled()) {
         RS_LOGD("solidLayer: solidLayer enabling condition is met, but the switch is disabled! name: %{public}s",
             node.GetName().c_str());
-        RS_OPTIONAL_TRACE_NAME_FMT("solidLayer: name:%s id:%" PRIu64 " solidLayer enabling condition is met.",
-            node.GetName().c_str(), node.GetId());
         node.SetHardwareForcedDisabledState(true);
         return;
     }
