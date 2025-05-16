@@ -176,17 +176,13 @@ void RSImage::CanvasDrawImage(Drawing::Canvas& canvas, const Drawing::Rect& rect
         DrawImageRepeatRect(samplingOptions, canvas);
     } else {
         bool needCanvasRestore = HasRadius() || (pixelMap_ != nullptr && pixelMap_->IsAstc()) ||
-                                 isFitMatrixValid_ || isOrientationValid_;
+                                 isFitMatrixValid_ ;
         Drawing::AutoCanvasRestore acr(canvas, needCanvasRestore);
         if (pixelMap_ != nullptr && pixelMap_->IsAstc()) {
             RSPixelMapUtil::TransformDataSetForAstc(pixelMap_, src_, dst_, canvas);
         }
         if (isFitMatrixValid_) {
             canvas.ConcatMatrix(fitMatrix_.value());
-        }
-
-        if (isOrientationValid_) {
-            ApplyImageOrientation(canvas);
         }
 
         if (image_) {
@@ -224,32 +220,33 @@ void RSImage::ApplyImageOrientation(Drawing::Canvas& canvas)
 void RSImage::DrawImageRect(
     Drawing::Canvas& canvas, const Drawing::Rect& rect, const Drawing::SamplingOptions& samplingOptions)
 {
+    bool needCanvasRestore = (rotateDegree_ != 0) || isOrientationValid_;
+    Drawing::AutoCanvasRestore acr(canvas, needCanvasRestore);
     if (rotateDegree_ != 0) {
-        canvas.Save();
         canvas.Rotate(rotateDegree_);
         auto axis = CalculateByDegree(rect);
         canvas.Translate(axis.first, axis.second);
+    }
+
+    if (isOrientationValid_) {
+        ApplyImageOrientation(canvas);
     }
 
     auto imageShader = GenerateImageShaderForDrawRect(canvas, samplingOptions);
     pthread_t imageTid = pthread_self();
     if (imageShader != nullptr) {
         DrawImageShaderRectOnCanvas(canvas, imageShader, imageTid);
-    } else {
-        if (imageRepeat_ == ImageRepeat::NO_REPEAT && isFitMatrixValid_ &&
-            (fitMatrix_->Get(Drawing::Matrix::Index::SKEW_X) != 0 ||
-            fitMatrix_->Get(Drawing::Matrix::Index::SKEW_Y) != 0 ||
-            fitMatrix_->HasPerspective())) {
-            DrawImageWithFirMatrixRotateOnCanvas(samplingOptions, canvas);
-            return;
-        }
-        canvas.DrawImageRect(
-            *image_, src_, dst_, samplingOptions, Drawing::SrcRectConstraint::FAST_SRC_RECT_CONSTRAINT);
     }
 
-    if (rotateDegree_ != 0) {
-        canvas.Restore();
+    if (imageRepeat_ == ImageRepeat::NO_REPEAT && isFitMatrixValid_ &&
+        (fitMatrix_->Get(Drawing::Matrix::Index::SKEW_X) != 0 ||
+        fitMatrix_->Get(Drawing::Matrix::Index::SKEW_Y) != 0 ||
+        fitMatrix_->HasPerspective())) {
+        DrawImageWithFirMatrixRotateOnCanvas(samplingOptions, canvas);
+        return;
     }
+    canvas.DrawImageRect(
+        *image_, src_, dst_, samplingOptions, Drawing::SrcRectConstraint::FAST_SRC_RECT_CONSTRAINT);
 }
 
 struct ImageParameter {
