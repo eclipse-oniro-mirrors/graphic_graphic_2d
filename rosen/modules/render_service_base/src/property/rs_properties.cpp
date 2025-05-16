@@ -2400,6 +2400,11 @@ bool RSProperties::NeedFilter() const
     return needFilter_;
 }
 
+bool RSProperties::NeedHwcFilter() const
+{
+    return needHwcFilter_;
+}
+
 bool RSProperties::NeedClip() const
 {
     return clipToBounds_ || clipToFrame_;
@@ -4593,6 +4598,7 @@ void RSProperties::OnApplyModifiers()
         GenerateColorFilter();
         if (colorFilter_ != nullptr) {
             needFilter_ = true;
+            needHwcFilter_ = true;
         } else {
             // colorFilter generation failed, need to update needFilter
             filterNeedUpdate_ = true;
@@ -4641,7 +4647,12 @@ void RSProperties::UpdateFilter()
                   IsDynamicDimValid() || GetShadowColorStrategy() != SHADOW_COLOR_STRATEGY::COLOR_STRATEGY_NONE ||
                   foregroundFilter_ != nullptr || IsFgBrightnessValid() || IsBgBrightnessValid() ||
                   foregroundFilterCache_ != nullptr || IsWaterRippleValid() || needDrawBehindWindow_ ||
-                  mask_;
+                  mask_ || colorFilter_ != nullptr;
+
+    needHwcFilter_ = backgroundFilter_ != nullptr || filter_ != nullptr || IsLightUpEffectValid() ||
+                     IsDynamicLightUpValid() || linearGradientBlurPara_ != nullptr ||
+                     IsDynamicDimValid() || IsFgBrightnessValid() || IsBgBrightnessValid() || IsWaterRippleValid() ||
+                     needDrawBehindWindow_ || colorFilter_ != nullptr;
 }
 
 void RSProperties::UpdateForegroundFilter()

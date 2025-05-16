@@ -322,6 +322,7 @@ public:
     const std::shared_ptr<MotionBlurParam>& GetMotionBlurPara() const;
     const std::shared_ptr<RSMagnifierParams>& GetMagnifierPara() const;
     bool NeedFilter() const;
+    bool NeedHwcFilter() const;
     void SetGreyCoef(const std::optional<Vector2f>& greyCoef);
     const std::optional<Vector2f>& GetGreyCoef() const;
     const std::shared_ptr<RSFilter>& GetForegroundFilter() const;
@@ -655,6 +656,7 @@ private:
     bool isDrawn_ = false;
     bool foregroundEffectDirty_ = false;
     bool needFilter_ = false;
+    bool needHwcFilter_ = false;
     bool useEffect_ = false;
     bool needDrawBehindWindow_ = false;
     bool alphaOffscreen_ = false;
