@@ -1217,8 +1217,8 @@ VsyncError VSyncDistributor::SetQosVSyncRateByPid(uint32_t pid, int32_t rate, bo
         if (connection->highPriorityRate_ != rate) {
             connection->highPriorityRate_ = rate;
             connection->highPriorityState_ = true;
-            RS_TRACE_NAME_FMT("VSyncDistributor::SetQosVSyncRateByPid pid:%u, rate:%d, connName:%s",
-                pid, rate, connection->info_.name_.c_str());
+            RS_TRACE_NAME_FMT("VSyncDistributor::SetQosVSyncRateByPid pid:%u, rate:%d",
+                pid, rate);
             VLOGD("in, conn name:%{public}s, highPriorityRate:%{public}d", connection->info_.name_.c_str(),
                 connection->highPriorityRate_);
             isNeedNotify = true;
@@ -1338,8 +1338,7 @@ VsyncError VSyncDistributor::SetQosVSyncRateByConnId(uint64_t connId, int32_t ra
         if (connection != nullptr && connection->highPriorityRate_ != rate) {
             connection->highPriorityRate_ = rate;
             connection->highPriorityState_ = rate != 1;
-            RS_TRACE_NAME_FMT("VSyncDistributor::SetQosVSyncRateByConnId connId:%lu, rate:%d, connName:%s",
-                connId, rate, connection->info_.name_.c_str());
+            RS_TRACE_NAME_FMT("VSyncDistributor::SetQosVSyncRateByConnId connId:%lu, rate:%d", connId, rate);
             VLOGD("in, conn name:%{public}s, highPriorityRate:%{public}d", connection->info_.name_.c_str(),
                 connection->highPriorityRate_);
             isNeedNotify = true;
@@ -1371,8 +1370,8 @@ VsyncError VSyncDistributor::SetQosVSyncRate(uint64_t windowNodeId, int32_t rate
         if (connection != nullptr && connection->highPriorityRate_ != rate) {
             connection->highPriorityRate_ = rate;
             connection->highPriorityState_ = true;
-            RS_TRACE_NAME_FMT("VSyncDistributor::SetQosVSyncRateByWindowId windowNodeId:%lu, rate:%d, connName:%s",
-                windowNodeId, rate, connection->info_.name_.c_str());
+            RS_TRACE_NAME_FMT("VSyncDistributor::SetQosVSyncRateByWindowId windowNodeId:%lu, rate:%d",
+                windowNodeId, rate);
             VLOGD("in, conn name:%{public}s, highPriorityRate:%{public}d", connection->info_.name_.c_str(),
                 connection->highPriorityRate_);
             isNeedNotify = true;
