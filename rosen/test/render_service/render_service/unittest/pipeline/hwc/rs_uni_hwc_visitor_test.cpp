@@ -91,7 +91,7 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateSrcRect001, TestSize.Level2)
     node1.renderContent_->renderProperties_.frameGravity_ = Gravity::TOP_LEFT;
     node1.SetDstRect({0, 1000, 2440, 1080});
     node1.isFixRotationByUser_ = false;
-    Drawing::Matrix totalMatrix = Drawing::Matrix();
+    Drawing::Matrix totalMatrix;
     totalMatrix.SetMatrix(1, 0, 0, 0, 0, 0, 0, 0, 1);
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
     ASSERT_NE(rsUniRenderVisitor, nullptr);
@@ -126,7 +126,7 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateSrcRect002, TestSize.Level2)
     node1.renderContent_->renderProperties_.frameGravity_ = Gravity::TOP_LEFT;
     node1.SetDstRect({0, 1000, 1440, 880});
     node1.isFixRotationByUser_ = false;
-    Drawing::Matrix totalMatrix = Drawing::Matrix();
+    Drawing::Matrix totalMatrix;
     totalMatrix.SetMatrix(1, 0, 0, 0, 1, 800, 0, 0, 1);
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
     ASSERT_NE(rsUniRenderVisitor, nullptr);
@@ -161,7 +161,7 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateSrcRect003, TestSize.Level2)
     node1.renderContent_->renderProperties_.frameGravity_ = Gravity::RESIZE;
     node1.SetDstRect({0, 1000, 2440, 1080});
     node1.isFixRotationByUser_ = false;
-    Drawing::Matrix totalMatrix = Drawing::Matrix();
+    Drawing::Matrix totalMatrix;
     totalMatrix.SetMatrix(1, 0, 0, 0, 1, 1000, 0, 0, 1);
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
     ASSERT_NE(rsUniRenderVisitor, nullptr);
@@ -267,7 +267,7 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateHwcNodeByTransform_001, TestSize.Level2)
     node->surfaceHandler_->consumer_ = nullptr;
     ASSERT_EQ(node->GetRSSurfaceHandler()->GetConsumer(), nullptr);
 
-    Drawing::Matrix matrix = Drawing::Matrix();
+    Drawing::Matrix matrix;
     matrix.SetMatrix(1, 2, 3, 4, 5, 6, 7, 8, 9);
     rsUniHwcVisitor->UpdateHwcNodeByTransform(*node, matrix);
 }
@@ -295,7 +295,7 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateHwcNodeByTransform_002, TestSize.Level2)
     ASSERT_NE(node->GetRSSurfaceHandler()->GetConsumer(), nullptr);
 
     const auto& buffer = node->GetRSSurfaceHandler()->GetBuffer();
-    Drawing::Matrix matrix = Drawing::Matrix();
+    Drawing::Matrix matrix;
     matrix.SetMatrix(1, 2, 3, 4, 5, 6, 7, 8, 9);
     rsUniHwcVisitor->UpdateHwcNodeByTransform(*node, matrix);
     ASSERT_EQ(node->GetRSSurfaceHandler()->GetBuffer()->GetSurfaceBufferScalingMode(), SCALING_MODE_SCALE_TO_WINDOW);
@@ -332,7 +332,7 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateHwcNodeByTransform_003, TestSize.Level2)
     surface->consumer_ = nullptr;
     ASSERT_EQ(surface->GetScalingMode(buffer->GetSeqNum(), scalingMode), GSERROR_INVALID_ARGUMENTS);
 
-    Drawing::Matrix matrix = Drawing::Matrix();
+    Drawing::Matrix matrix;
     matrix.SetMatrix(1, 2, 3, 4, 5, 6, 7, 8, 9);
     rsUniHwcVisitor->UpdateHwcNodeByTransform(*node, matrix);
 }
@@ -368,7 +368,7 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateHwcNodeByTransform_004, TestSize.Level2)
     surface->consumer_ = nullptr;
     ASSERT_EQ(surface->GetScalingMode(buffer->GetSeqNum(), scalingMode), GSERROR_INVALID_ARGUMENTS);
 
-    Drawing::Matrix matrix = Drawing::Matrix();
+    Drawing::Matrix matrix;
     matrix.SetMatrix(1, 2, 3, 4, 5, 6, 7, 8, 9);
     rsUniHwcVisitor->UpdateHwcNodeByTransform(*node, matrix);
 }
@@ -682,7 +682,7 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateHwcNodeEnableByRotateAndAlpha001, TestSize.L
     RSSurfaceRenderNodeConfig config2 = { .id = id2, .nodeType = type };
     auto surfaceNode2 = std::make_shared<RSSurfaceRenderNode>(config2);
     ASSERT_NE(surfaceNode2, nullptr);
-    Drawing::Matrix matrix = Drawing::Matrix();
+    Drawing::Matrix matrix;
     rsUniHwcVisitor->UpdateHwcNodeEnableByRotateAndAlpha(surfaceNode2);
     ASSERT_FALSE(surfaceNode2->isHardwareForcedDisabled_);
 }
@@ -1200,7 +1200,7 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateHwcNodeEnableByGlobalCleanFilter_001, TestSi
     std::vector<std::pair<NodeId, RectI>> cleanFilter;
     auto& properties = surfaceNode->GetMutableRenderProperties();
     auto offset = std::nullopt;
-    auto matrix = Drawing::Matrix();
+    Drawing::Matrix matrix;
     properties.UpdateGeometryByParent(&matrix, offset);
     cleanFilter.emplace_back(NodeId(0), RectI(50, 50, 100, 100));
     ASSERT_TRUE(surfaceNode->GetRenderProperties().GetBoundsGeometry()->GetAbsRect()
@@ -1229,7 +1229,7 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateHwcNodeEnableByGlobalCleanFilter_002, TestSi
     std::vector<std::pair<NodeId, RectI>> cleanFilter;
     auto& properties = surfaceNode->GetMutableRenderProperties();
     auto offset = std::nullopt;
-    auto matrix = Drawing::Matrix();
+    Drawing::Matrix matrix;
     matrix.SetScale(100, 100);
     properties.UpdateGeometryByParent(&matrix, offset);
     cleanFilter.emplace_back(NodeId(0), RectI(50, 50, 100, 100));
@@ -1261,7 +1261,7 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateHwcNodeEnableByGlobalCleanFilter_003, TestSi
     std::vector<std::pair<NodeId, RectI>> cleanFilter;
     auto& properties = surfaceNode->GetMutableRenderProperties();
     auto offset = std::nullopt;
-    auto matrix = Drawing::Matrix();
+    Drawing::Matrix matrix;
     matrix.SetScale(100, 100);
     properties.UpdateGeometryByParent(&matrix, offset);
     cleanFilter.emplace_back(NodeId(1), RectI(50, 50, 100, 100));
@@ -1296,7 +1296,7 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateHwcNodeEnableByGlobalDirtyFilter_001, TestSi
     std::vector<std::pair<NodeId, RectI>> dirtyFilter;
     auto& properties = surfaceNode->GetMutableRenderProperties();
     auto offset = std::nullopt;
-    auto matrix = Drawing::Matrix();
+    Drawing::Matrix matrix;
     properties.UpdateGeometryByParent(&matrix, offset);
     dirtyFilter.emplace_back(NodeId(0), RectI(50, 50, 100, 100));
     auto geo = surfaceNode->GetRenderProperties().GetBoundsGeometry();
@@ -1325,7 +1325,7 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateHwcNodeEnableByGlobalDirtyFilter_002, TestSi
     std::vector<std::pair<NodeId, RectI>> dirtyFilter;
     auto& properties = surfaceNode->GetMutableRenderProperties();
     auto offset = std::nullopt;
-    auto matrix = Drawing::Matrix();
+    Drawing::Matrix matrix;
     matrix.SetScale(100, 100);
     properties.UpdateGeometryByParent(&matrix, offset);
     dirtyFilter.emplace_back(NodeId(0), RectI(50, 50, 100, 100));
@@ -2124,7 +2124,7 @@ HWTEST_F(RSUniHwcVisitorTest, FindRootAndUpdateMatrix001, TestSize.Level2)
     auto parentNode = std::make_shared<RSRenderNode>(nodeId);
     ASSERT_NE(parentNode, nullptr);
     RSRenderNode rootNode(nodeId);
-    auto matrix = Drawing::Matrix();
+    Drawing::Matrix matrix;
     bool result = rsUniHwcVisitor->FindRootAndUpdateMatrix(parentNode, matrix, rootNode);
     ASSERT_TRUE(result);
 }
@@ -2231,7 +2231,7 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateTopSurfaceSrcRect, TestSize.Level2)
     node1.renderContent_->renderProperties_.frameGravity_ = Gravity::TOP_LEFT;
     node1.SetDstRect({0, 1000, 2440, 1080});
     node1.isFixRotationByUser_ = false;
-    Drawing::Matrix absMatrix = Drawing::Matrix();
+    Drawing::Matrix absMatrix;
     absMatrix.SetMatrix(1, 0, 0, 0, 0, 0, 0, 0, 1);
 
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
@@ -2421,7 +2421,7 @@ HWTEST_F(RSUniHwcVisitorTest, FindRootAndUpdateMatrix_001, Function | SmallTest 
     rsUniRenderVisitor->curSurfaceNode_ = leashWindowNode;
     rsUniRenderVisitor->prepareClipRect_ = RectI(0, 0, 1000, 1000);
     auto rsUniHwcVisitor = std::make_shared<RSUniHwcVisitor>(*rsUniRenderVisitor);
-    Drawing::Matrix matrix = Drawing::Matrix();
+    Drawing::Matrix matrix;
     auto rsRenderNode = std::static_pointer_cast<RSRenderNode>(surfaceNode);
     auto result = rsUniHwcVisitor->FindRootAndUpdateMatrix(rsRenderNode, matrix, *rootNode);
     EXPECT_TRUE(result);
