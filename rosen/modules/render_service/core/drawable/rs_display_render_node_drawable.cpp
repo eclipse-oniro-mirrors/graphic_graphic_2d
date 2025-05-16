@@ -734,6 +734,17 @@ void RSDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     bool isHdrOn = params->GetHDRPresent();
     // 0 means defalut hdrBrightnessRatio
     float hdrBrightnessRatio = RSLuminanceControl::Get().GetHdrBrightnessRatio(paramScreenId, 0);
+#ifdef RS_ENABLE_OVERLAY_DISPLAY // only for TV
+    /*
+     * Force hdrBrightnessRatio to be set to 1.0 when overlay_display display enabled.
+     * Do not change pixel value; the pixel value is encoded when overlay display enabled.
+     * If hdrBrightnessRatio is not equal 1.0, DSS will change the pixel value, so the
+     * decoded pixels is wrong and display is abnormal.
+     */
+    if (RSOverlayDisplayManager::Instance().IsOverlayDisplayEnableForCurrentVsync()) {
+        hdrBrightnessRatio = 1.0f;
+    }
+#endif
     if (!isHdrOn) {
         params->SetBrightnessRatio(hdrBrightnessRatio);
         hdrBrightnessRatio = 1.0f;
@@ -807,7 +818,7 @@ void RSDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         RSOpincDrawCache::SetScreenRectInfo({0, 0, screenInfo.width, screenInfo.height});
     }
 #endif
-
+    UpdateSurfaceDrawRegion(curCanvas_, params);
     // canvas draw
     {
         {
@@ -2371,6 +2382,20 @@ void RSDisplayRenderNodeDrawable::FinishOffscreenRender(
         offscreenSurface_ = nullptr;
     }
     curCanvas_ = std::move(canvasBackup_);
+}
+
+void RSDisplayRenderNodeDrawable::UpdateSurfaceDrawRegion(std::shared_ptr<RSPaintFilterCanvas>& mainCanvas,
+    RSDisplayRenderParams* params)
+{
+    auto& curAllSurfaces = params->GetAllMainAndLeashSurfaceDrawables();
+
+    for (auto& renderNodeDrawable : curAllSurfaces) {
+        if (renderNodeDrawable != nullptr &&
+            renderNodeDrawable->GetNodeType() == RSRenderNodeType::SURFACE_NODE) {
+            auto* surfaceNodeDrawable = static_cast<DrawableV2::RSSurfaceRenderNodeDrawable*>(renderNodeDrawable.get());
+            surfaceNodeDrawable->UpdateSurfaceDirtyRegion(mainCanvas);
+        }
+    }
 }
 
 #ifndef ROSEN_CROSS_PLATFORM

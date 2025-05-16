@@ -3518,6 +3518,14 @@ size_t OH_Drawing_GetDrawingArraySize(OH_Drawing_Array* drawingArray)
     return array->num;
 }
 
+void OH_Drawing_SetTypographyTextTrailingSpaceOptimized(OH_Drawing_TypographyStyle* style, bool trailingSpaceOptimized)
+{
+    if (style == nullptr) {
+        return;
+    }
+    ConvertToOriginalText<TypographyStyle>(style)->isTrailingSpaceOptimized = trailingSpaceOptimized;
+}
+
 void OH_Drawing_SetTypographyTextAutoSpace(OH_Drawing_TypographyStyle* style, bool enableAutoSpace)
 {
     if (style == nullptr || ConvertToOriginalText<TypographyStyle>(style) == nullptr) {
