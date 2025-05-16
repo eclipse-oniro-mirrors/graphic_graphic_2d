@@ -995,6 +995,7 @@ void RSSurfaceNode::SetFrameGravityNewVersionEnabled(bool isEnabled)
     ROSEN_LOGI("RSSurfaceNode::SetFrameGravityNewVersionEnabled, surfaceNodeId:[%" PRIu64 "] isEnabled:%s",
         GetId(), isEnabled ? "true" : "false");
 }
+
 bool RSSurfaceNode::GetFrameGravityNewVersionEnabled() const
 {
     return isFrameGravityNewVersionEnabled_;
