@@ -70,6 +70,27 @@ do \
 
 namespace OHOS {
 namespace Rosen {
+namespace UIEffect {
+constexpr uint32_t NUM_0 = 0;
+constexpr uint32_t NUM_1 = 1;
+constexpr uint32_t NUM_2 = 2;
+constexpr uint32_t NUM_3 = 3;
+constexpr uint32_t NUM_4 = 4;
+constexpr uint32_t NUM_5 = 5;
+constexpr uint32_t NUM_6 = 6;
+constexpr uint32_t NUM_7 = 7;
+constexpr uint32_t NUM_8 = 8;
+constexpr uint32_t NUM_12 = 12;
+constexpr uint32_t NUM_1000 = 1000;
+constexpr int32_t ERR_NOT_SYSTEM_APP = 202;
+
+bool ConvertDoubleValueFromJsElement(napi_env env, napi_value jsObject, uint32_t idx, double& data);
+bool ParseJsDoubleValue(napi_env env, napi_value jsObject, double& data);
+bool ParseJsDoubleValue(napi_env env, napi_value jsObject, const std::string& name, double& data);
+bool ParseJsVector2f(napi_env env, napi_value jsObject, Vector2f& values);
+bool ConvertFromJsPoint(napi_env env, napi_value jsObject, double* point, size_t size);
+
+} // namespace UIEffect
 class UIEffectNapiUtils {
 public:
     static napi_valuetype GetType(napi_env env, napi_value root);
