@@ -26,7 +26,7 @@ config("export_config") {
 }
 
 if (enable_text_gine) {
-  defines = [ "USE_GRAPHIC_TEXT_GINE" ]
+  defines = []
 }
 
 template("drawing_ndk_source_set") {
@@ -123,7 +123,6 @@ template("drawing_ndk_source_set") {
     ]
 
     if (enable_text_gine) {
-      defines += [ "USE_GRAPHIC_TEXT_GINE" ]
       if (use_texgine) {
         defines += [ "USE_TEXGINE" ]
       }
@@ -162,12 +161,9 @@ template("drawing_ndk_source_set") {
 
       external_deps += [ "bounds_checking_function:libsec_static" ]
       defines += [ "MODULE_DRAWING" ]
-
-      defines += [ "USE_GRAPHIC_TEXT_GINE" ]
     }
     if (enable_text_gine) {
       deps = [ "$rosen_text_root:rosen_text" ]
-      defines += [ "USE_GRAPHIC_TEXT_GINE" ]
       if (use_skia_txt) {
         include_dirs += [ "$rosen_text_root/adapter/skia" ]
       }
