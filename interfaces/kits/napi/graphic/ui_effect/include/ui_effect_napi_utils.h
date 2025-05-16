@@ -16,6 +16,7 @@
 #ifndef OHOS_UIEFFECT_NAPI_UTILS_H
 #define OHOS_UIEFFECT_NAPI_UTILS_H
 
+#include "mask/include/radial_gradient_mask_para.h"
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
 
@@ -91,6 +92,7 @@ bool ParseJsVector2f(napi_env env, napi_value jsObject, Vector2f& values);
 bool ConvertFromJsPoint(napi_env env, napi_value jsObject, double* point, size_t size);
 
 } // namespace UIEffect
+
 class UIEffectNapiUtils {
 public:
     static napi_valuetype GetType(napi_env env, napi_value root);

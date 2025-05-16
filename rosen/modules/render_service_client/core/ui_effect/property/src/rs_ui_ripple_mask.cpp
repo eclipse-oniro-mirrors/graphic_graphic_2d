@@ -127,5 +127,3 @@ std::vector<std::shared_ptr<RSPropertyBase>> RSUIRippleMaskPara::GetLeafProperti
 }
 } // namespace Rosen
 } // namespace OHOS
-
- 

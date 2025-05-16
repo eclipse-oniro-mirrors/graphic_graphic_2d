@@ -45,6 +45,7 @@ public:
         DISTORT,
         RADIUS_GRADIENT_BLUR,
         COLOR_GRADIENT,
+        DISPLACEMENT_DISTORT,
     };
 
     FilterPara()  = default;

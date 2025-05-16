@@ -45,6 +45,7 @@ public:
         LIGHT_BLUR,
         ALWAYS_SNAPSHOT,
         COLOR_GRADIENT,
+        DISPLACEMENT_DISTORT,
     };
 
     ShaderFilterType GetShaderFilterType() const

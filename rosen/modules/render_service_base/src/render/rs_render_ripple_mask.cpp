@@ -13,79 +13,110 @@
  * limitations under the License.
  */
 
-#include "render/rs_shader_mask.h"
-#include "ge_ripple_shader_mask.h"
-#include "render/rs_render_ripple_mask.h"
 #include "platform/common/rs_log.h"
-
+#include "render/rs_render_ripple_mask.h"
 namespace OHOS {
 namespace Rosen {
-
-RSShaderMask::RSShaderMask(const std::shared_ptr<RSRenderMaskPara>& renderMask) : renderMask_(renderMask)
-{
-    CalHash();
-}
-
-std::shared_ptr<Drawing::GEShaderMask> RSShaderMask::GenerateGEShaderMask() const
-{
-    if (renderMask_ == nullptr) {
+    std::shared_ptr<RSRenderPropertyBase> RSRenderRippleMaskPara::CreateRenderPropert(RSUIFilterType type)
+    {
+        switch (type) {
+            case RSUIFilterType::RIPPLE_MASK_RADIUS : {
+                return std::make_shared<RSRenderAnimatableProperty<float>>(
+                    0.f, 0, RSRenderPropertyType::PROPERTY_FLOAT);
+            }
+            case RSUIFilterType::RIPPLE_MASK_WIDTH : {
+                return std::make_shared<RSRenderAnimatableProperty<float>>(
+                    0.f, 0, RSRenderPropertyType::PROPERTY_FLOAT);
+            }
+            case RSUIFilterType::RIPPLE_MASK_CENTER : {
+                Vector2f value = {0.f, 0.f};
+                return std::make_shared<RSRenderAnimatableProperty<Vector2f>>(
+                    value, 0, RSRenderPropertyType::PROPERTY_VECTOR2F);
+            }
+            case RSUIFilterType::RIPPLE_MASK_WIDTH_CENTER_OFFSET : {
+                return std::make_shared<RSRenderAnimatableProperty<float>>(
+                    0.f, 0, RSRenderPropertyType::PROPERTY_FLOAT);
+            }
+            default:
+                ROSEN_LOGE("RSRenderRippleMaskPara::CreateRenderPropert mask nullptr");
+                return nullptr;
+        }
         return nullptr;
     }
-    switch (renderMask_->GetType()) {
-        case RSUIFilterType::RIPPLE_MASK: {
-            auto rippleMask = std::static_pointer_cast<RSRenderRippleMaskPara>(renderMask_);
-            auto center = rippleMask->GetAnimatRenderProperty<Vector2f>(RSUIFilterType::RIPPLE_MASK_CENTER)->Get();
-            auto radius = rippleMask->GetAnimatRenderProperty<float>(RSUIFilterType::RIPPLE_MASK_RADIUS)->Get();
-            auto width  = rippleMask->GetAnimatRenderProperty<float>(RSUIFilterType::RIPPLE_MASK_WIDTH)->Get();
-            auto widthCenterOffset =
-                rippleMask->GetAnimatRenderProperty<float>(RSUIFilterType::RIPPLE_MASK_WIDTH_CENTER_OFFSET)->Get();
-            Drawing::GERippleShaderMaskParams maskParam { std::make_pair(center.x_, center.y_), radius, width,
-                widthCenterOffset };
-            return std::make_shared<Drawing::GERippleShaderMask>(maskParam);
-        }
-        default: {
-            return nullptr;
-        }
-    }
-}
 
-void RSShaderMask::CalHash()
-{
-    if (!renderMask_) {
-        return;
+    void RSRenderRippleMaskPara::GetDescription(std::string& out) const
+    {
+        out += "RSRenderRippleMaskPara";
     }
-#ifndef ENABLE_M133_SKIA
-    const auto hashFunc = SkOpts::hash;
-#else
-    const auto hashFunc = SkChecksum::Hash32;
-#endif
 
-    switch (renderMask_->GetType()) {
-        case RSUIFilterType::RIPPLE_MASK: {
-            auto rippleMask = std::static_pointer_cast<RSRenderRippleMaskPara>(renderMask_);
-            auto centerProp = rippleMask->GetAnimatRenderProperty<Vector2f>(RSUIFilterType::RIPPLE_MASK_CENTER);
-            auto radiusProp = rippleMask->GetAnimatRenderProperty<float>(RSUIFilterType::RIPPLE_MASK_RADIUS);
-            auto widthProp = rippleMask->GetAnimatRenderProperty<float>(RSUIFilterType::RIPPLE_MASK_WIDTH);
-            auto widthCenterOffsetProp =
-                rippleMask->GetAnimatRenderProperty<float>(RSUIFilterType::RIPPLE_MASK_WIDTH_CENTER_OFFSET);
-            if (centerProp && radiusProp && widthProp && widthCenterOffsetProp) {
-                auto center = centerProp->Get();
-                auto radius = radiusProp->Get();
-                auto width = widthProp->Get();
-                auto widthCenterOffset = widthCenterOffsetProp->Get();
-                hash_ = hashFunc(&center, sizeof(center), hash_);
-                hash_ = hashFunc(&radius, sizeof(radius), hash_);
-                hash_ = hashFunc(&width, sizeof(width), hash_);
-                hash_ = hashFunc(&widthCenterOffset, sizeof(widthCenterOffset), hash_);
+    bool RSRenderRippleMaskPara::WriteToParcel(Parcel& parcel)
+    {
+        if (!RSMarshallingHelper::Marshalling(parcel, id_) ||
+            !RSMarshallingHelper::Marshalling(parcel, static_cast<int16_t>(type_)) ||
+            !RSMarshallingHelper::Marshalling(parcel, static_cast<int16_t>(modifierType_))) {
+            ROSEN_LOGE("RSRenderRippleMaskPara::WriteToParcel type Error");
+            return false;
+        }
+        if (!parcel.WriteUint32(properties_.size())) {
+            ROSEN_LOGE("RSRenderRippleMaskPara::WriteToParcel size Error");
+            return false;
+        }
+        for (const auto& [key, value] : properties_) {
+            if (!RSMarshallingHelper::Marshalling(parcel, key) ||
+                !RSRenderPropertyBase::Marshalling(parcel, value)) {
+                return false;
             }
-            break;
+            ROSEN_LOGD("RSRenderRippleMaskPara::WriteToParcel type %{public}d", static_cast<int>(key));
         }
-        default: {
-            break;
-        }
+        return true;
     }
-    return;
-}
+
+    bool RSRenderRippleMaskPara::ReadFromParcel(Parcel& parcel)
+    {
+        int16_t type = 0;
+        int16_t modifierType = 0;
+        if (!RSMarshallingHelper::Unmarshalling(parcel, id_) ||
+            !RSMarshallingHelper::Unmarshalling(parcel, type) ||
+            !RSMarshallingHelper::Unmarshalling(parcel, modifierType)) {
+            ROSEN_LOGE("RSRenderRippleMaskPara::ReadFromParcel type Error");
+            return false;
+        }
+        type_ = static_cast<RSUIFilterType>(type);
+        modifierType_ = static_cast<RSModifierType>(modifierType);
+
+        uint32_t size = 0;
+        if (!RSMarshallingHelper::Unmarshalling(parcel, size)) {
+            ROSEN_LOGE("RSRenderRippleMaskPara::ReadFromParcel size Error");
+            return false;
+        }
+        if (size > static_cast<size_t>(RSMarshallingHelper::UNMARSHALLING_MAX_VECTOR_SIZE)) {
+            ROSEN_LOGE("RSRenderRippleMaskPara::ReadFromParcel size large Error");
+            return false;
+        }
+        properties_.clear();
+        for (uint32_t i = 0; i < size; ++i) {
+            RSUIFilterType key;
+            if (!RSMarshallingHelper::Unmarshalling(parcel, key)) {
+                ROSEN_LOGE("RSRenderRippleMaskPara::ReadFromParcel type %{public}d", static_cast<int>(key));
+                return false;
+            }
+            std::shared_ptr<RSRenderPropertyBase> value = CreateRenderPropert(key);
+            if (!RSRenderPropertyBase::Unmarshalling(parcel, value)) {
+                ROSEN_LOGE("RSRenderRippleMaskPara::ReadFromParcel value %{public}d", static_cast<int>(key));
+                return false;
+            }
+            Setter(key, value);
+        }
+        return true;
+    }
+
+    std::vector<std::shared_ptr<RSRenderPropertyBase>> RSRenderRippleMaskPara::GetLeafRenderProperties()
+    {
+        std::vector<std::shared_ptr<RSRenderPropertyBase>> out;
+        for (auto& [k, v] : properties_) {
+            out.emplace_back(v);
+        }
+        return out;
+    }
 } // namespace Rosen
 } // namespace OHOS
- 

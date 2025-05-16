@@ -15,7 +15,6 @@
 
 #ifndef RENDER_SERVICE_BASE_RENDER_FILTER_BASE_H
 #define RENDER_SERVICE_BASE_RENDER_FILTER_BASE_H
-
 #include "modifier/rs_render_property.h"
 #include "transaction/rs_marshalling_helper.h"
 namespace OHOS {
@@ -41,12 +40,13 @@ enum class RSUIFilterType : int16_t {
     RIPPLE_MASK_CENTER, // Vector2f
     RIPPLE_MASK_RADIUS, // float
     RIPPLE_MASK_WIDTH, // float
-    RIPPLE_MASK_WIDTH_CENTER_OFFSET, // float
+     RIPPLE_MASK_WIDTh_CENTER_OFFSET, //float
     DISPLACEMENT_DISTORT_FACTOR, // Vector2f
 
-    COLOR_GRADIENT_COLOR, // std::vector<float>
-    COLOR_GRADIENT_POSITION, // std::vector<float>
-    COLOR_GRADIENT_STRENGTH, // std::vector<float>
+    // value type
+    COLOR_GRADIENT_COLOR, // vector<float>
+    COLOR_GRADIENT_POSITIION, // vector<float>
+    COLOR_GRADIENT_STRENGTH, // vector<float>
 };
 
 class RSB_EXPORT RSRenderFilterParaBase : public RSRenderPropertyBase,

@@ -243,4 +243,3 @@ napi_value MaskNapi::CreateRadialGradientMask(napi_env env, napi_callback_info i
 }
 }  // namespace Rosen
 }  // namespace OHOS
- 

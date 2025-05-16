@@ -44,4 +44,3 @@ private:
 } // Rosen
 } // OHOS
 #endif // RENDER_SERVICE_BASE_RENDER_RS_DISPLACEMENT_DISTORT_FILTER_H
- 
