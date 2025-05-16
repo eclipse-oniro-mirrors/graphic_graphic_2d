@@ -2312,7 +2312,7 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateCroseInfoForProtectedHwcNode001, TestSize.Le
     ASSERT_NE(surfaceNode, nullptr);
 
     ASSERT_FALSE(surfaceNode->GetFirstLevelNode());
-    ASSERT_FALSE(surfaceNode->IsHwcDRMNode());
+    ASSERT_FALSE(surfaceNode->IsDRMCrossNode());
     ASSERT_FALSE(surfaceNode->GetHwcGlobalPositionEnabled());
     ASSERT_FALSE(surfaceNode->GetSpecialLayerMgr().Find(SpecialLayerType::PROTECTED));
 
@@ -2323,7 +2323,7 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateCroseInfoForProtectedHwcNode001, TestSize.Le
 
     ASSERT_TRUE(surfaceNode->GetSpecialLayerMgr().Find(SpecialLayerType::PROTECTED));
     ASSERT_FALSE(surfaceNode->GetHwcGlobalPositionEnabled());
-    ASSERT_FALSE(surfaceNode->IsHwcCrossNode());
+    ASSERT_FALSE(surfaceNode->IsDRMCrossNode());
 
 }
 }
