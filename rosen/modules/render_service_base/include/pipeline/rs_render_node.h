@@ -634,6 +634,11 @@ public:
         return isOpincNodeSupportFlag_;
     }
 
+    void OpincSetNodeSupportFlag(bool supportFlag)
+    {
+        isOpincNodeSupportFlag_ = supportFlag;
+    }
+
     // arkui mark
     void MarkSuggestOpincNode(bool isOpincNode, bool isNeedCalculate);
 

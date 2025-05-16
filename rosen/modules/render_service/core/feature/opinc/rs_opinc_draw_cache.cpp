@@ -18,6 +18,7 @@
 #include "string_utils.h"
 #endif
 #include "common/rs_optional_trace.h"
+#include "feature_cfg/feature_param/performance_feature/opinc_param.h"
 #include "params/rs_render_params.h"
 namespace OHOS::Rosen::DrawableV2 {
 
@@ -27,12 +28,31 @@ constexpr int32_t REALDRAW_WIDTH_EX = 200;
 constexpr int32_t OPINC_ROOT_TOTAL_MAX = 1;
 constexpr int32_t OPINC_CACHE_HEIGHT_THRESHOLD = 2720;
 constexpr int32_t OPINC_CACHE_WIDTH_MAX = 1460;
-constexpr int32_t OPINC_CACHE_SIZE_MAX = 1314000;
+constexpr int32_t PERCENT = 100;
 }
 
 bool RSOpincDrawCache::IsAutoCacheDebugEnable()
 {
     return RSSystemProperties::GetAutoCacheDebugEnabled() && autoCacheEnable_;
+}
+
+int32_t RSOpincDrawCache::GetOpincCacheMaxWidth()
+{
+    int32_t maxWidth = OPINC_CACHE_WIDTH_MAX;
+    if (screenRectInfo_.GetWidth() > 0) {
+        maxWidth = (int32_t)std::ceil((float)screenRectInfo_.GetWidth() *
+            OPIncParam::GetCacheWidthThresholdPercentValue() / PERCENT);
+    }
+    return maxWidth;
+}
+
+int32_t RSOpincDrawCache::GetOpincCacheMaxHeight()
+{
+    int32_t maxHeight = OPINC_CACHE_HEIGHT_THRESHOLD;
+    if (screenRectInfo_.GetHeight() > 0) {
+        maxHeight = screenRectInfo_.GetHeight();
+    }
+    return maxHeight;
 }
 
 void RSOpincDrawCache::OpincCalculateBefore(Drawing::Canvas& canvas,
@@ -53,7 +73,7 @@ void RSOpincDrawCache::OpincCalculateAfter(Drawing::Canvas& canvas, bool& isOpin
     if (isOpincCaculateStart_) {
         isOpincCaculateStart_ = false;
         auto localBound =
-            Drawing::Rect(0.f, 0.f, (float)(OPINC_CACHE_WIDTH_MAX), (float)OPINC_CACHE_HEIGHT_THRESHOLD);
+            Drawing::Rect(0.f, 0.f, (float)(GetOpincCacheMaxWidth()), (float)GetOpincCacheMaxHeight());
         auto drawAreaTemp = canvas.OpCalculateAfter(localBound);
         isDrawAreaEnable_ = DrawAreaEnableState::DRAW_AREA_DISABLE;
         opCanCache_ = false;
@@ -167,14 +187,13 @@ void RSOpincDrawCache::BeforeDrawCacheFindRootNode(Drawing::Canvas& canvas,
         return;
     }
     auto size = params.GetCacheSize();
-    if (size.x_ > OPINC_CACHE_WIDTH_MAX || size.y_ > OPINC_CACHE_HEIGHT_THRESHOLD) {
+    if (size.x_ > GetOpincCacheMaxWidth() || size.y_ > GetOpincCacheMaxHeight()) {
         RS_TRACE_NAME_FMT("opinc oversize: width:%d, height:%d", size.x_, size.y_);
         return;
     }
     auto isOffscreen = (canvas.GetCacheType() == RSPaintFilterCanvas::CacheType::OFFSCREEN);
     if (!isOffscreen &&
-        size.y_ > BITMAP_CACHE_SIZE_MIN && size.x_ > BITMAP_CACHE_SIZE_MIN &&
-        size.x_ * size.y_ < OPINC_CACHE_SIZE_MAX) {
+        size.y_ > BITMAP_CACHE_SIZE_MIN && size.x_ > BITMAP_CACHE_SIZE_MIN) {
         recordState_ = NodeRecordState::RECORD_CALCULATE;
         rootNodeStragyType_ = NodeStrategyType::OPINC_AUTOCACHE;
     }
@@ -222,7 +241,7 @@ bool RSOpincDrawCache::IsOpincNodeInScreenRect(RSRenderParams& params)
     RS_OPTIONAL_TRACE_NAME_FMT("opincNodeAbsRect{%d %d %d %d}, screenRect{%d %d %d %d}",
         nodeAbsRect.GetLeft(), nodeAbsRect.GetTop(), nodeAbsRect.GetRight(), nodeAbsRect.GetBottom(),
         screenRectInfo_.GetLeft(), screenRectInfo_.GetTop(), screenRectInfo_.GetRight(), screenRectInfo_.GetBottom());
-    if (!nodeAbsRect.IsEmpty() && nodeAbsRect.IsInsideOf(screenRectInfo_)) {
+    if (!nodeAbsRect.IsEmpty() && nodeAbsRect.Intersect(screenRectInfo_)) {
         return true;
     }
     return false;
