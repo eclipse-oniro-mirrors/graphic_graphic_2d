@@ -35,9 +35,7 @@ template("drawing_ndk_source_set") {
   ohos_source_set(target_name) {
     defines += invoker.defines
     cflags_cc += invoker.cflags_cc
-    if (use_texgine) {
-      defines += [ "USE_TEXGINE" ]
-    } else if (use_skia_txt) {
+    if (use_skia_txt) {
       defines += [ "USE_SKIA_TXT" ]
     }
 
@@ -123,9 +121,6 @@ template("drawing_ndk_source_set") {
     ]
 
     if (enable_text_gine) {
-      if (use_texgine) {
-        defines += [ "USE_TEXGINE" ]
-      }
       include_dirs += [
         "$rosen_text_root",
         "$rosen_text_root/service",

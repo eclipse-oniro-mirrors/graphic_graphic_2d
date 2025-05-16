@@ -36,7 +36,6 @@ declare_args() {
   graphic_2d_feature_enable_filter_cache = true
   graphic_2d_feature_parallel_upload_enable = true
   enable_text_gine = true
-  use_texgine = false
   use_skia_txt = true
   use_video_processing_engine = false
   logger_enable_scope = false
@@ -155,8 +154,6 @@ if (graphic_2d_feature_rs_enable_eglimage || current_os == "android") {
   gpu_defines += [ "RS_DISABLE_EGLIMAGE" ]
   rs_enable_eglimage = false
 }
-
-# use_texgine = graphic_2d_feature_use_texgine
 
 if (graphic_2d_feature_rs_enable_uni_render) {
   graphic_2d_feature_enable_dvsync = true
