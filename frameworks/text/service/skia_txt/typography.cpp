@@ -503,7 +503,7 @@ void Typography::UpdateColor(size_t from, size_t to, const Drawing::Color& color
 
 void Typography::ApplyTextStyleChanges(const std::vector<TextStyle>& textStyles) {
     std::unique_lock<std::shared_mutex> writeLock(mutex_);
-    if (!paragraph_) {
+    if (!paragraph_ && textStyles.empty()) {
         return;
     }
     std::vector<SPText::TextStyle> spTextStyles;
