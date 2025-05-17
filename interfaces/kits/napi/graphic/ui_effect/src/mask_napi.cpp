@@ -210,7 +210,7 @@ napi_value MaskNapi::CreateRippleMask(napi_env env, napi_callback_info info)
     napi_value thisVar = nullptr;
     napi_status status;
     UIEFFECT_JS_ARGS(env, info, status, realArgc, argv, thisVar);
-    UIEFFECT_NAPI_CHECK_RET_D(status == napi_ok && realArgc <= requireMaxArgc && realArgc >= requireMinArgc, nullptr,
+    UIEFFECT_NAPI_CHECK_RET_D(status == napi_ok && requireMinArgc <= realArgc && realArgc <= requireMaxArgc, nullptr,
         MASK_LOG_E("MaskNapi CreateRippleMask parsing input fail."));
     
     auto maskPara = std::make_shared<RippleMaskPara>();

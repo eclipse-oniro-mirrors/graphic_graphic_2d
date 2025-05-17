@@ -59,7 +59,7 @@ public:
 
     void SetWidth(float width)
     {
-        width_ = UIEffect::GetLimitedPara(radius, RIPPLE_MASK_WIDTH_LIMITS);
+        width_ = UIEffect::GetLimitedPara(width, RIPPLE_MASK_WIDTH_LIMITS);
     }
 
     const float& GetWidth() const
@@ -72,9 +72,9 @@ public:
         widthCenterOffset_ = UIEffect::GetLimitedPara(widthCenterOffset, RIPPLE_MASK_OFFSET_LIMITS);
     }
 
-    void GetWidthCenterOffset() const
+    const float& GetWidthCenterOffset() const
     {
-        return width_;
+        return widthCenterOffset_;
     }
 
 private:

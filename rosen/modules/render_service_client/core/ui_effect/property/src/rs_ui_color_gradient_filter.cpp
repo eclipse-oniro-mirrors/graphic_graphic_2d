@@ -152,7 +152,7 @@ void RSUIColorGradientFilterPara::SetMask(std::shared_ptr<RSUIMaskPara> mask)
 
 std::shared_ptr<RSRenderFilterParaBase> RSUIColorGradientFilterPara::CreateRSRenderFilter()
 {
-    auto frProperty = std::make_shared<RSRenderColorGradientFlterPara>(id_, maskType_);
+    auto frProperty = std::make_shared<RSRenderColorGradientFilterPara>(id_, maskType_);
 
     auto colors = std::static_pointer_cast<RSAnimatableProperty<std::vector<float>>>(
         GetRSProperty(RSUIFilterType::COLOR_GRADIENT_COLOR));

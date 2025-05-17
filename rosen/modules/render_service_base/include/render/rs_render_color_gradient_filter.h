@@ -16,6 +16,8 @@
 #ifndef RENDER_COLOR_GRADIENT_FILTER_RENDER_PROPERTY_H
 #define RENDER_COLOR_GRADIENT_FILTER_RENDER_PROPERTY_H
 
+#include <vector>
+
 #include "render/rs_render_filter_base.h"
 
 namespace OHOS {
@@ -25,7 +27,9 @@ class RSB_EXPORT RSRenderColorGradientFilterPara : public RSRenderFilterParaBase
 
 public:
     RSRenderColorGradientFilterPara(PropertyId id, RSUIFilterType maskType = RSUIFilterType::NONE) :
-        RSRenderFilterParaBase(RSUIFilterType::DISPLACEMENT_DISTORT), id_(id), maskType_(maskType) {}
+        RSRenderFilterParaBase(RSUIFilterType::COLOR_GRADIENT), maskType_(maskType) {
+        id_ = id;
+    }
 
     virtual ~RSRenderColorGradientFilterPara() = default;
 

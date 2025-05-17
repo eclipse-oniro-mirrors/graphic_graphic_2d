@@ -17,6 +17,7 @@
 #define RENDER_COLOR_GRADIENT_FILTER_H
 
 #include <memory>
+#include <vector>
 
 #include "modifier/rs_property.h"
 #include "ui_effect/filter/include/filter_color_gradient_para.h"

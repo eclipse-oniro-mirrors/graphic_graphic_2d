@@ -16,6 +16,8 @@
 #ifndef UIEFFECT_FILTER_COLOR_GRADIENT_PARA_H
 #define UIEFFECT_FILTER_COLOR_GRADIENT_PARA_H
 
+#include <vector>
+
 #include "filter_para.h"
 #include "ui_effect/mask/include/mask_para.h"
 

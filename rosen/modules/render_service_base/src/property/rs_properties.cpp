@@ -31,7 +31,7 @@
 #include "render/rs_aibar_shader_filter.h"
 #include "render/rs_always_snapshot_shader_filter.h"
 #include "render/rs_colorful_shadow_filter.h"
-#include "render/rs_color_Gradient_shader_filter.h"
+#include "render/rs_color_gradient_shader_filter.h"
 #include "render/rs_displacement_distort_filter.h"
 #include "render/rs_filter.h"
 #include "render/rs_foreground_effect_filter.h"
@@ -49,7 +49,7 @@
 #include "render/rs_fly_out_shader_filter.h"
 #include "render/rs_distortion_shader_filter.h"
 #include "drawable/rs_property_drawable_utils.h"
-#include "render/rs_render_color_Gradient_filter.h"
+#include "render/rs_render_color_gradient_filter.h"
 #include "render/rs_render_displacement_distort_filter.h"
 
 namespace OHOS {

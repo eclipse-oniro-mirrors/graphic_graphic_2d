@@ -17,6 +17,7 @@
 #define RENDER_SERVICE_BASE_RENDER_RS_COLOR_GRADIENT_SHADER_FILTER_H
 
 #include <memory>
+#include <vector>
 
 #include "render/rs_shader_filter.h"
 #include "render/rs_shader_mask.h"

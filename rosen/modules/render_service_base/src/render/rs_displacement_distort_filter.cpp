@@ -31,7 +31,7 @@ RSDisplacementDistortFilter::RSDisplacementDistortFilter(std::shared_ptr<RSShade
     hash_ = hashFunc(&factor_, sizeof(factor_), hash_);
     if (mask_) {
         auto maskHash = mask_->Hash();
-        hash_ = hashFunc(&factor_, sizeof(factor_), hash_);
+        hash_ = hashFunc(&maskHash, sizeof(maskHash), hash_);
     }
 }
 
@@ -41,7 +41,7 @@ void RSDisplacementDistortFilter::GenerateGEVisualEffect(
     auto distortFilter = std::make_shared<Drawing::GEVisualEffect>("DISPLACEMENT_DISTORT",
         Drawing::DrawingPaintType::BRUSH);
     distortFilter->SetParam(GE_FILTER_DISPLACEMENT_DISTORT_FACTOR, std::make_pair(factor_[0], factor_[1]));
-    distortFilter->SetParam(GE_FILTER_DISPLACEMENT_DISTORT_MASK, mask_.GenerateGEShaderMask());
+    distortFilter->SetParam(GE_FILTER_DISPLACEMENT_DISTORT_MASK, mask_->GenerateGEShaderMask());
     visualEffectContainer->AddToChainedFilter(distortFilter);
 }
 
