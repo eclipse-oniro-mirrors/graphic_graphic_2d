@@ -45,6 +45,7 @@ public:
         LIGHT_BLUR,
         ALWAYS_SNAPSHOT,
         DISPLACEMENT_DISTORT,
+        SOUND_WAVE,
     };
 
     ShaderFilterType GetShaderFilterType() const

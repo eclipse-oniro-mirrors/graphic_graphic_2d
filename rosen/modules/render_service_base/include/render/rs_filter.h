@@ -73,6 +73,7 @@ public:
         FLY_OUT,
         DISTORT,
         ALWAYS_SNAPSHOT,
+        SOUND_WAVE,
     };
     FilterType GetFilterType() const
     {

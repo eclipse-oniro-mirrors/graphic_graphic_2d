@@ -45,6 +45,7 @@ public:
         DISTORT,
         RADIUS_GRADIENT_BLUR,
         DISPLACEMENT_DISTORT,
+        SOUND_WAVE,
     };
 
     FilterPara()  = default;

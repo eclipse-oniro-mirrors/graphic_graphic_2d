@@ -630,6 +630,8 @@ private:
     void GenerateWaterRippleFilter();
     void GenerateLinearGradientBlurFilter();
     void GenerateMagnifierFilter();
+    void GenerateRenderFilter();
+    void GenerateSoundWaveFilter();
 
     bool NeedClip() const;
     bool NeedBlurFuzed();
