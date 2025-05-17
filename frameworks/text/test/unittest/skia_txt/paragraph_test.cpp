@@ -325,7 +325,7 @@ HWTEST_F(ParagraphTest, ParagraphTest014, TestSize.Level1)
 
 /*
  * @tc.name: ParagraphHyphenTest001
- * @tc.desc: test for text add hyphen 01
+ * @tc.desc: test for text break work with hyphen strategy in en-gb env.
  * @tc.type: FUNC
  */
 HWTEST_F(ParagraphTest, ParagraphHyphenTest001, TestSize.Level1)
@@ -364,7 +364,7 @@ HWTEST_F(ParagraphTest, ParagraphHyphenTest001, TestSize.Level1)
 
 /*
  * @tc.name: ParagraphHyphenTest002
- * @tc.desc: test for text add hyphen 02
+ * @tc.desc: test for text break work with hyphen strategy in en-gb env, and text word ends with special chars.
  * @tc.type: FUNC
  */
 HWTEST_F(ParagraphTest, ParagraphHyphenTest002, TestSize.Level1)
