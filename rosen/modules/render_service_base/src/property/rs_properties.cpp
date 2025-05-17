@@ -46,7 +46,6 @@
 #include "render/rs_water_ripple_shader_filter.h"
 #include "render/rs_fly_out_shader_filter.h"
 #include "render/rs_distortion_shader_filter.h"
-#include "render/rs_edge_light_shader_filter.h"
 #include "render/rs_sound_wave_filter.h"
 #include "drawable/rs_property_drawable_utils.h"
 
