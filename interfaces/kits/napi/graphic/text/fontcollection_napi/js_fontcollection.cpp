@@ -502,4 +502,76 @@ napi_value JsFontCollection::OnLoadFontAsync(napi_env env, napi_callback_info in
     };
     return NapiAsyncWork::Enqueue(env, context, "OnLoadFontAsync", executor, complete);
 }
+
+napi_value JsFontCollection::UnLoadFontAsync(napi_env env, napi_callback_info info)
+{
+    JsFontCollection* me = CheckParamsAndGetThis<JsFontCollection>(env, info);
+    return (me != nullptr) ? me->OnUnLoadFontAsync(env, info) : nullptr;
+}
+
+napi_value JsFontCollection::UnLoadFontSync(napi_env env, napi_callback_info info)
+{
+    JsFontCollection* me = CheckParamsAndGetThis<JsFontCollection>(env, info);
+    return (me != nullptr) ? me->OnUnLoadFont(env, info) : nullptr;
+}
+
+
+napi_value JsFontCollection::OnUnLoadFontAsync(napi_env env, napi_callback_info info)
+{
+
+    sptr<FontArgumentsConcreteContext> context = sptr<FontArgumentsConcreteContext>::MakeSptr();
+    NAPI_CHECK_AND_THROW_ERROR(context != nullptr, TextErrorCode::ERROR_NO_MEMORY, "Failed to make context");
+    auto inputParser = [env, context](size_t argc, napi_value* argv) {
+        TEXT_ERROR_CHECK(argv != nullptr, return, "Argv is null");
+        NAPI_CHECK_ARGS(context, context->status == napi_ok, napi_invalid_arg,
+            TextErrorCode::ERROR_INVALID_PARAM, return, "Status error, status=%d", static_cast<int>(context->status));
+        NAPI_CHECK_ARGS(context, argc >= ARGC_ONE, napi_invalid_arg, TextErrorCode::ERROR_INVALID_PARAM,
+            return, "Argc is invalid %zu", argc);
+        NAPI_CHECK_ARGS(context, ConvertFromJsValue(env, argv[0], context->familyName), napi_invalid_arg,
+            TextErrorCode::ERROR_INVALID_PARAM, return, "FamilyName is invalid %s", context->familyName.c_str());
+    };
+
+    context->GetCbInfo(env, info, inputParser);
+
+    auto executor = [context]() {
+        TEXT_ERROR_CHECK(context != nullptr, return, "Context is null");
+
+        auto* fontCollection = reinterpret_cast<JsFontCollection*>(context->native);
+        NAPI_CHECK_ARGS(context, fontCollection != nullptr, napi_generic_failure, TextErrorCode::ERROR_INVALID_PARAM,
+            return, "FontCollection is null");
+
+        NAPI_CHECK_ARGS(context, fontCollection->fontcollection_ != nullptr, napi_generic_failure,
+            TextErrorCode::ERROR_INVALID_PARAM, return, "Inner fontcollection is null");
+        fontCollection->fontcollection_->UnLoadFont(context->familyName);
+    };
+
+    auto complete = [env](napi_value& output) {
+        output = NapiGetUndefined(env);
+    };
+    return NapiAsyncWork::Enqueue(env, context, "OnUnLoadFontAsync", executor, complete);
+}
+
+napi_value JsFontCollection::OnUnLoadFont(napi_env env, napi_callback_info info)
+{
+    size_t argc = ARGC_ONE;
+    napi_value argv[ARGC_ONE] = { nullptr };
+    if (napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr) != napi_ok || argc < ARGC_ONE) {
+        TEXT_LOGE("Failed to get argument, argc %{public}zu", argc);
+        return nullptr;
+    }
+    if (argv[0] == nullptr) {
+        TEXT_LOGE("Null argv[0]");
+        return nullptr;
+    }
+    std::string familyName;
+    if (!ConvertFromJsValue(env, argv[0], familyName)) {
+        TEXT_LOGE("Failed to convert argv[0]");
+        return nullptr;
+    }
+
+    fontcollection_->UnLoadFont(familyName);
+
+    return NapiGetUndefined(env);
+}
+
 } // namespace OHOS::Rosen

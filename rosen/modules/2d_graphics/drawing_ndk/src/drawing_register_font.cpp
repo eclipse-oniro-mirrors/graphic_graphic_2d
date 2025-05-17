@@ -158,3 +158,14 @@ uint32_t OH_Drawing_RegisterFontBuffer(OH_Drawing_FontCollection* fontCollection
     const std::string familyName = fontFamily;
     return LoadFromFontCollection(fontCollection, familyName, fontBuffer, length);
 }
+
+uint32_t OH_Drawing_UnRegisterFont(OH_Drawing_FontCollection* fontCollection, const char* fontFamily)
+{
+    if (fontCollection == nullptr || fontFamily == nullptr) {
+        return ERROR_NULL_FONT_COLLECTION;
+    }
+
+    auto fc = ConvertToOriginalText<FontCollection>(fontCollection);
+    fc->UnLoadFont(fontFamily);
+    return 0;
+}

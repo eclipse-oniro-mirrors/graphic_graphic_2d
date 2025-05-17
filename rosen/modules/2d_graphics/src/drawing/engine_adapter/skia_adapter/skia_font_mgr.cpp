@@ -102,32 +102,6 @@ std::shared_ptr<FontMgrImpl> SkiaFontMgr::CreateDefaultFontMgr()
     return std::make_shared<SkiaFontMgr>(SkFontMgr::RefDefault());
 }
 
-bool SkiaFontMgr::CheckDynamicFontValid(const std::string &familyName, sk_sp<SkTypeface> typeface)
-{
-    if (typeface == nullptr) {
-        TEXT_LOGE("Failed to extract typeface");
-        return false;
-    }
-
-    std::string checkStr = familyName;
-    if (familyName.empty()) {
-        SkString name;
-        typeface->getFamilyName(&name);
-        checkStr.assign(name.c_str(), name.size());
-    }
-
-    std::string lowFamilyName(checkStr.length() + 1, 0);
-    std::transform(
-        checkStr.begin(), checkStr.end(), lowFamilyName.begin(), [](char c) { return (c & 0x80) ? c : ::tolower(c); });
-    if (lowFamilyName.find("ohosthemefont") == 0) {
-        TEXT_LOGE("Prohibited to use OhosThemeFont registered dynamic fonts: %{public}s %{public}zu",
-            lowFamilyName.c_str(), lowFamilyName.find("ohosthemefont"));
-        return false;
-    }
-
-    return true;
-}
-
 std::shared_ptr<FontMgrImpl> SkiaFontMgr::CreateDynamicFontMgr()
 {
     sk_sp<txt::DynamicFontManager> dynamicFontManager = sk_make_sp<txt::DynamicFontManager>();
@@ -150,6 +124,9 @@ Typeface* SkiaFontMgr::LoadDynamicFont(const std::string& familyName, const uint
         dynamicFontMgr->font_provider().RegisterTypeface(typeface);
     } else {
         dynamicFontMgr->font_provider().RegisterTypeface(typeface, familyName);
+    }
+    if (!typeface) {
+        return nullptr;
     }
     typeface->setIsCustomTypeface(true);
     std::shared_ptr<TypefaceImpl> typefaceImpl = std::make_shared<SkiaTypeface>(typeface);

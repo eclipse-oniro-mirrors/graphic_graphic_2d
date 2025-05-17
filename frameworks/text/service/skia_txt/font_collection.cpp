@@ -109,6 +109,9 @@ std::shared_ptr<Drawing::Typeface> FontCollection::LoadFont(
     const std::string& familyName, const uint8_t* data, size_t datalen)
 {
     TEXT_TRACE_FUNC();
+    if (SPText::DefaultFamilyNameMgr::IsThemeFontFamily(familyName)) {
+        return nullptr;
+    }
     std::shared_ptr<Drawing::Typeface> typeface(dfmanager_->LoadDynamicFont(familyName, data, datalen));
     TypefaceWithAlias ta(familyName, typeface);
     RegisterError err = RegisterTypeface(ta);
@@ -125,6 +128,9 @@ std::shared_ptr<Drawing::Typeface> FontCollection::LoadFont(
 LoadSymbolErrorCode FontCollection::LoadSymbolFont(const std::string& familyName, const uint8_t* data, size_t datalen)
 {
     TEXT_TRACE_FUNC();
+    if (SPText::DefaultFamilyNameMgr::IsThemeFontFamily(familyName)) {
+        return LoadSymbolErrorCode::LOAD_FAILED;
+    }
     std::shared_ptr<Drawing::Typeface> typeface(dfmanager_->LoadDynamicFont(familyName, data, datalen));
     if (typeface == nullptr) {
         return LoadSymbolErrorCode::LOAD_FAILED;
@@ -209,6 +215,28 @@ void FontCollection::ClearThemeFont()
 void FontCollection::ClearCaches()
 {
     fontCollection_->ClearFontFamilyCache();
+}
+
+void FontCollection::UnLoadFont(const std::string& familyName)
+{
+    dfmanager_->LoadDynamicFont(familyName, nullptr, 0);
+    fontCollection_->ClearFontFamilyCache();
+    if (Drawing::Typeface::GetTypefaceUnRegisterCallBack() == nullptr) {
+        return;
+    }
+
+    std::unique_lock<std::shared_mutex> lock(mutex_);
+    for (auto it = typefaceSet_.begin(); it != typefaceSet_.end();) {
+        if (it->GetAlias() == familyName) {
+            Drawing::Typeface::GetTypefaceUnRegisterCallBack()(it->GetTypeface());
+            FontDescriptorMgrInstance.DeleteDynamicTypefaceFromCache(familyName);
+            familyNames_.erase(it->GetHash());
+            typefaceSet_.erase(it++);
+        } else {
+            ++it;
+        }
+    }
+    return;
 }
 
 TypefaceWithAlias::TypefaceWithAlias(const std::string& alias, const std::shared_ptr<Drawing::Typeface>& typeface)
