@@ -1652,7 +1652,7 @@ bool HgmFrameRateManager::CheckAncoVoterStatus() const
         return false;
     }
     auto iter = voteRecord_.find("VOTER_ANCO");
-    if (iter->second.first.empty() || !iter->second.second) {
+    if (iter == voteRecord_.end() || iter->second.first.empty() || !iter->second.second) {
         return false;
     }
     return true;
