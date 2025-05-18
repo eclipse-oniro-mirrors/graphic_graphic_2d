@@ -80,6 +80,16 @@ public:
         return nodeType_ == RSSurfaceNodeType::APP_WINDOW_NODE;
     }
 
+    bool IsScbWindowType() const
+    {
+        return surfaceWindowType_ == SurfaceWindowType::SYSTEM_SCB_WINDOW ||
+               surfaceWindowType_ == SurfaceWindowType::SCB_DESKTOP ||
+               surfaceWindowType_ == SurfaceWindowType::SCB_WALLPAPER ||
+               surfaceWindowType_ == SurfaceWindowType::SCB_SCREEN_LOCK ||
+               surfaceWindowType_ == SurfaceWindowType::SCB_NEGATIVE_SCREEN ||
+               surfaceWindowType_ == SurfaceWindowType::SCB_DROPDOWN_PANEL;
+    }
+
     bool IsStartingWindow() const
     {
         return nodeType_ == RSSurfaceNodeType::STARTING_WINDOW_NODE;
@@ -1321,9 +1331,6 @@ public:
     void GetAllSubSurfaceNodes(std::vector<std::pair<NodeId, RSSurfaceRenderNode::WeakPtr>>& allSubSurfaceNodes) const;
     std::string SubSurfaceNodesDump() const;
 
-    void SetIsNodeToBeCaptured(bool isNodeToBeCaptured);
-    bool IsNodeToBeCaptured() const;
-
     void SetDoDirectComposition(bool flag)
     {
         doDirectComposition_ = flag;
@@ -1332,16 +1339,6 @@ public:
     bool GetDoDirectComposition() const
     {
         return doDirectComposition_;
-    }
-
-    void SetHardWareDisabledByReverse(bool isHardWareDisabledByReverse)
-    {
-        isHardWareDisabledByReverse_ = isHardWareDisabledByReverse;
-    }
-
-    bool GetHardWareDisabledByReverse() const
-    {
-        return isHardWareDisabledByReverse_;
     }
 
     void SetSkipDraw(bool skip);
@@ -1527,6 +1524,9 @@ public:
         return appWindowZOrder_;
     }
 
+    void SetFrameGravityNewVersionEnabled(bool isEnabled);
+    bool GetFrameGravityNewVersionEnabled() const;
+
 protected:
     void OnSync() override;
     void OnSkipSync() override;
@@ -1633,7 +1633,7 @@ private:
     bool isParentScaling_ = false;
     bool needDrawAnimateProperty_ = false;
     bool prevVisible_ = false;
-    bool isHardWareDisabledByReverse_ = false;
+
     // mark if this self-drawing node do not consume buffer when gpu -> hwc
     bool hwcDelayDirtyFlag_ = false;
     bool isForeground_ = false;
@@ -1654,7 +1654,6 @@ private:
     bool hasTransparentSurface_ = false;
     bool isGpuOverDrawBufferOptimizeNode_ = false;
     bool isSubSurfaceNode_ = false;
-    bool isNodeToBeCaptured_ = false;
     bool doDirectComposition_ = true;
     bool lastFrameHasVisibleRegion_ = true;
     bool isSkipDraw_ = false;
@@ -1859,6 +1858,8 @@ private:
 
     // used in uifirst for checking whether node and parents should paint or not
     bool selfAndParentShouldPaint_ = true;
+
+    bool isFrameGravityNewVersionEnabled_ = false;
 
     // UIExtension record, <UIExtension, hostAPP>
     inline static std::unordered_map<NodeId, NodeId> secUIExtensionNodes_ = {};

@@ -319,6 +319,10 @@ public:
 
     virtual void NotifyRefreshRateEvent(const EventInfo& eventInfo) = 0;
 
+    virtual void SetWindowExpectedRefreshRate(const std::unordered_map<uint64_t, EventInfo>& eventInfos) = 0;
+
+    virtual void SetWindowExpectedRefreshRate(const std::unordered_map<std::string, EventInfo>& eventInfos) = 0;
+
     virtual ErrCode NotifySoftVsyncEvent(uint32_t pid, uint32_t rateDiscount) = 0;
 
     virtual bool NotifySoftVsyncRateDiscountEvent(uint32_t pid, const std::string &name, uint32_t rateDiscount) = 0;
@@ -407,6 +411,10 @@ public:
     virtual ErrCode NotifyPageName(const std::string &packageName, const std::string &pageName, bool isEnter) = 0;
 
     virtual bool GetHighContrastTextState() = 0;
+
+    virtual ErrCode SetBehindWindowFilterEnabled(bool enabled) = 0;
+
+    virtual ErrCode GetBehindWindowFilterEnabled(bool& enabled) = 0;
 };
 } // namespace Rosen
 } // namespace OHOS

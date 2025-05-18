@@ -31,6 +31,8 @@
 #include "render/rs_aibar_shader_filter.h"
 #include "render/rs_always_snapshot_shader_filter.h"
 #include "render/rs_colorful_shadow_filter.h"
+#include "render/rs_color_gradient_shader_filter.h"
+#include "render/rs_displacement_distort_filter.h"
 #include "render/rs_filter.h"
 #include "render/rs_foreground_effect_filter.h"
 #include "render/rs_grey_shader_filter.h"
@@ -40,13 +42,17 @@
 #include "render/rs_linear_gradient_blur_shader_filter.h"
 #include "render/rs_magnifier_shader_filter.h"
 #include "render/rs_maskcolor_shader_filter.h"
+#include "render/rs_render_color_gradient_filter.h"
+#include "render/rs_render_displacement_distort_filter.h"
 #include "render/rs_spherize_effect_filter.h"
 #include "render/rs_attraction_effect_filter.h"
 #include "src/core/SkOpts.h"
 #include "render/rs_water_ripple_shader_filter.h"
 #include "render/rs_fly_out_shader_filter.h"
 #include "render/rs_distortion_shader_filter.h"
+#include "render/rs_sound_wave_filter.h"
 #include "drawable/rs_property_drawable_utils.h"
+
 
 namespace OHOS {
 namespace Rosen {
@@ -266,7 +272,11 @@ static const std::unordered_map<RSModifierType, ResetPropertyFunc> g_propertyRes
     { RSModifierType::ATTRACTION_DSTPOINT,                  [](RSProperties* prop) {
                                                                 prop->SetAttractionDstPoint({}); }},
     { RSModifierType::ALWAYS_SNAPSHOT,                      [](RSProperties* prop) {
-                                                                prop->SetAlwaysSnapshot(false); }},                                                            
+                                                                prop->SetAlwaysSnapshot(false); }},
+    { RSModifierType::COMPLEX_SHADER_PARAM,                 [](RSProperties* prop) {
+                                                                prop->SetComplexShaderParam({}); }},
+    { RSModifierType::BACKGROUND_UI_FILTER,                 [](RSProperties* prop) {
+                                                                prop->SetBackgroundUIFilter({}); }},
 };
 
 } // namespace
@@ -2398,6 +2408,11 @@ bool RSProperties::NeedFilter() const
     return needFilter_;
 }
 
+bool RSProperties::NeedHwcFilter() const
+{
+    return needHwcFilter_;
+}
+
 bool RSProperties::NeedClip() const
 {
     return clipToBounds_ || clipToFrame_;
@@ -2519,6 +2534,20 @@ void RSProperties::SetMask(const std::shared_ptr<RSMask>& mask)
 std::shared_ptr<RSMask> RSProperties::GetMask() const
 {
     return mask_;
+}
+
+void RSProperties::SetBackgroundUIFilter(const std::shared_ptr<RSRenderFilter>& filterProp)
+{
+    backgroundRenderFilter_ = filterProp;
+    isDrawn_ = true;
+    filterNeedUpdate_ = true;
+    SetDirty();
+    contentDirty_ = true;
+}
+
+std::shared_ptr<RSRenderFilter> RSProperties::GetBackgroundUIFilter() const
+{
+    return backgroundRenderFilter_;
 }
 
 void RSProperties::SetSpherize(float spherizeDegree)
@@ -2967,6 +2996,22 @@ bool RSProperties::GetAlwaysSnapshot() const
     return alwaysSnapshot_;
 }
 
+void RSProperties::SetComplexShaderParam(const std::vector<float> &param)
+{
+    complexShaderParam_ = param;
+    if (!param.empty()) {
+        isDrawn_ = true;
+    }
+    bgShaderNeedUpdate_ = true;
+    SetDirty();
+    contentDirty_ = true;
+}
+ 
+std::optional<std::vector<float>> RSProperties::GetComplexShaderParam() const
+{
+    return complexShaderParam_;
+}
+
 bool RSProperties::IsBackgroundMaterialFilterValid() const
 {
     return IsBackgroundBlurRadiusValid() || IsBackgroundBlurBrightnessValid() || IsBackgroundBlurSaturationValid();
@@ -3390,6 +3435,168 @@ void RSProperties::GenerateAlwaysSnapshotFilter()
     backgroundFilter_->SetFilterType(RSFilter::ALWAYS_SNAPSHOT);
 }
 
+void RSProperties::GenerateSoundWaveFilter()
+{
+    if (!backgroundRenderFilter_) {
+        ROSEN_LOGE("RSProperties::GenerateSoundWaveFilter get backgroundRenderFilter_ nullptr.");
+        return;
+    }
+    auto soundWaveFilterPara = backgroundRenderFilter_->GetRenderFilterPara(RSUIFilterType::SOUND_WAVE);
+    if (!soundWaveFilterPara) {
+        ROSEN_LOGE("RSProperties::GenerateSoundWaveFilter get soundWaveFilterPara nullptr.");
+        return;
+    }
+
+    auto waveColorA = std::static_pointer_cast<RSRenderProperty<Color>>(
+        soundWaveFilterPara->GetRenderPropert(RSUIFilterType::SOUND_WAVE_COLOR_A));
+    auto waveColorB = std::static_pointer_cast<RSRenderProperty<Color>>(
+        soundWaveFilterPara->GetRenderPropert(RSUIFilterType::SOUND_WAVE_COLOR_B));
+    auto waveColorC = std::static_pointer_cast<RSRenderProperty<Color>>(
+        soundWaveFilterPara->GetRenderPropert(RSUIFilterType::SOUND_WAVE_COLOR_C));
+    auto waveColorProgress = std::static_pointer_cast<RSRenderAnimatableProperty<float>>(
+        soundWaveFilterPara->GetRenderPropert(RSUIFilterType::SOUND_WAVE_COLOR_PROGRESS));
+    auto wavecenterBrightness = std::static_pointer_cast<RSRenderProperty<float>>(
+        soundWaveFilterPara->GetRenderPropert(RSUIFilterType::SOUND_WAVE_CENTER_BRIGHTNESS));
+    auto soundIntensity = std::static_pointer_cast<RSRenderAnimatableProperty<float>>(
+        soundWaveFilterPara->GetRenderPropert(RSUIFilterType::SOUND_INTENSITY));
+    auto shockWaveAlphaA = std::static_pointer_cast<RSRenderAnimatableProperty<float>>(
+        soundWaveFilterPara->GetRenderPropert(RSUIFilterType::SHOCK_WAVE_ALPHA_A));
+    auto shockWaveAlphaB = std::static_pointer_cast<RSRenderAnimatableProperty<float>>(
+        soundWaveFilterPara->GetRenderPropert(RSUIFilterType::SHOCK_WAVE_ALPHA_B));
+    auto shockWaveProgressA = std::static_pointer_cast<RSRenderAnimatableProperty<float>>(
+        soundWaveFilterPara->GetRenderPropert(RSUIFilterType::SHOCK_WAVE_PROGRESS_A));
+    auto shockWaveProgressB = std::static_pointer_cast<RSRenderAnimatableProperty<float>>(
+        soundWaveFilterPara->GetRenderPropert(RSUIFilterType::SHOCK_WAVE_PROGRESS_B));
+    if (!waveColorA || !waveColorB || !waveColorC || !waveColorProgress || !wavecenterBrightness || !soundIntensity ||
+        !shockWaveAlphaA || !shockWaveAlphaB || !shockWaveProgressA || !shockWaveProgressB) {
+        ROSEN_LOGE("RSProperties::GenerateSoundWaveFilter get soundWaveRenderProperty nullptr.");
+        return;
+    }
+    std::shared_ptr<RSSoundWaveFilter> soundWaveFilter =
+        std::make_shared<RSSoundWaveFilter>(waveColorA->Get(), waveColorB->Get(), waveColorC->Get(),
+                                            waveColorProgress->Get(), wavecenterBrightness->Get(),
+                                            soundIntensity->Get(), shockWaveAlphaA->Get(),
+                                            shockWaveAlphaB->Get(), shockWaveProgressA->Get(),
+                                            shockWaveProgressB->Get());
+    std::shared_ptr<RSDrawingFilter> originalFilter = std::make_shared<RSDrawingFilter>(soundWaveFilter);
+    if (!backgroundFilter_) {
+        backgroundFilter_ = originalFilter;
+        backgroundFilter_->SetFilterType(RSFilter::SOUND_WAVE);
+    } else {
+        auto backgroundDrawingFilter = std::static_pointer_cast<RSDrawingFilter>(backgroundFilter_);
+        backgroundDrawingFilter = backgroundDrawingFilter->Compose(soundWaveFilter);
+        backgroundDrawingFilter->SetFilterType(RSFilter::COMPOUND_EFFECT);
+        backgroundFilter_ = backgroundDrawingFilter;
+    }
+}
+
+void RSProperties::GenerateRenderFilterColorGradient()
+{
+    if (!backgroundRenderFilter_) {
+        ROSEN_LOGE("RSProperties::GenerateRenderFilterColorGradient get backgroundRenderFilter_ nullptr.");
+        return;
+    }
+
+    auto colorGradientFilterPara = backgroundRenderFilter_->GetRenderFilterPara(RSUIFilterType::COLOR_GRADIENT);
+    if (!colorGradientFilterPara) {
+        ROSEN_LOGE("RSProperties::GenerateRenderFilterColorGradient get colorGradientFilterPara nullptr.");
+        return;
+    }
+
+    auto colorProperty = std::static_pointer_cast<RSRenderProperty<std::vector<float>>>(
+        colorGradientFilterPara->GetRenderPropert(RSUIFilterType::COLOR_GRADIENT_COLOR));
+    auto positionProperty = std::static_pointer_cast<RSRenderProperty<std::vector<float>>>(
+        colorGradientFilterPara->GetRenderPropert(RSUIFilterType::COLOR_GRADIENT_POSITION));
+    auto strengthProperty = std::static_pointer_cast<RSRenderProperty<std::vector<float>>>(
+        colorGradientFilterPara->GetRenderPropert(RSUIFilterType::COLOR_GRADIENT_STRENGTH));
+    if (!colorProperty || !positionProperty || !strengthProperty) {
+        ROSEN_LOGE("RSProperties::GenerateRenderFilterColorGradient GetRenderPropert has some nullptr.");
+        return;
+    }
+
+    auto rsRenderColorGradientPara = std::static_pointer_cast<RSRenderColorGradientFilterPara>(colorGradientFilterPara);
+    auto colorGradientFilterMask = std::make_shared<RSShaderMask>(rsRenderColorGradientPara->GetRenderMask());
+    std::shared_ptr<RSColorGradientShaderFilter> colorGradientFilter = std::make_shared<RSColorGradientShaderFilter>(
+        colorProperty->Get(), positionProperty->Get(), strengthProperty->Get(), colorGradientFilterMask);
+
+    std::shared_ptr<RSDrawingFilter> originalFilter = std::make_shared<RSDrawingFilter>(colorGradientFilter);
+    if (!backgroundFilter_) {
+        backgroundFilter_ = originalFilter;
+        backgroundFilter_->SetFilterType(RSFilter::COLOR_GRADIENT);
+    } else {
+        auto backgroundDrawingFilter = std::static_pointer_cast<RSDrawingFilter>(backgroundFilter_);
+        backgroundDrawingFilter = backgroundDrawingFilter->Compose(colorGradientFilter);
+        backgroundDrawingFilter->SetFilterType(RSFilter::COMPOUND_EFFECT);
+        backgroundFilter_ = backgroundDrawingFilter;
+    }
+}
+
+void RSProperties::GenerateDisplacementDistortFilter()
+{
+    if (!backgroundRenderFilter_) {
+        ROSEN_LOGE("RSProperties::GenerateDisplacementDistortFilter get backgroundRenderFilter_ nullptr.");
+        return;
+    }
+    auto displacementDistortFilterPara =
+        backgroundRenderFilter_->GetRenderFilterPara(RSUIFilterType::DISPLACEMENT_DISTORT);
+    if (!displacementDistortFilterPara) {
+        ROSEN_LOGE("RSProperties::GenerateDisplacementDistortFilter get displacementDistortFilterPara nullptr.");
+        return;
+    }
+
+    auto displacementDistortFactor = std::static_pointer_cast<RSRenderAnimatableProperty<Vector2f>>(
+        displacementDistortFilterPara->GetRenderPropert(RSUIFilterType::DISPLACEMENT_DISTORT_FACTOR));
+    if (!displacementDistortFactor) {
+        ROSEN_LOGE("RSProperties::GenerateDisplacementDistortFilter GetRenderPropert has nullptr.");
+        return;
+    }
+    auto rsRenderDisplacementDistortPara =
+        std::static_pointer_cast<RSRenderDispDistortFilterPara>(displacementDistortFilterPara);
+    if (!rsRenderDisplacementDistortPara) {
+        ROSEN_LOGE("RSProperties::GenerateDisplacementDistortFilter get rsRenderDisplacementDistortPara nullptr.");
+        return;
+    }
+    auto displacementDistortShaderMask =
+        std::make_shared<RSShaderMask>(rsRenderDisplacementDistortPara->GetRenderMask());
+
+    std::shared_ptr<RSDisplacementDistortFilter> displacementDistortFilter =
+        std::make_shared<RSDisplacementDistortFilter>(displacementDistortShaderMask, displacementDistortFactor->Get());
+    std::shared_ptr<RSDrawingFilter> originalFilter = std::make_shared<RSDrawingFilter>(displacementDistortFilter);
+    if (!backgroundFilter_) {
+        backgroundFilter_ = originalFilter;
+        backgroundFilter_->SetFilterType(RSFilter::DISPLACEMENT_DISTORT);
+    } else {
+        auto backgroundDrawingFilter = std::static_pointer_cast<RSDrawingFilter>(backgroundFilter_);
+        backgroundDrawingFilter = backgroundDrawingFilter->Compose(displacementDistortFilter);
+        backgroundDrawingFilter->SetFilterType(RSFilter::COMPOUND_EFFECT);
+        backgroundFilter_ = backgroundDrawingFilter;
+    }
+}
+
+void RSProperties::GenerateRenderFilter()
+{
+    for (auto type : backgroundRenderFilter_->GetUIFilterTypes()) {
+        switch (type) {
+            case RSUIFilterType::DISPLACEMENT_DISTORT : {
+                GenerateDisplacementDistortFilter();
+                break;
+            }
+            case RSUIFilterType::COLOR_GRADIENT : {
+                GenerateRenderFilterColorGradient();
+                break;
+            }
+            case RSUIFilterType::SOUND_WAVE : {
+                GenerateSoundWaveFilter();
+                break;
+            }
+            default:
+                ROSEN_LOGE("RSProperties::GenerateRenderFilter NULL.");
+                break;
+        }
+        ROSEN_LOGD("RSProperties::GenerateRenderFilter type %{public}d finished.", static_cast<int>(type));
+    }
+}
+
 void RSProperties::GenerateBackgroundFilter()
 {
     if (aiInvert_.has_value() || systemBarEffect_) {
@@ -3406,6 +3613,11 @@ void RSProperties::GenerateBackgroundFilter()
     if (IsWaterRippleValid()) {
         GenerateWaterRippleFilter();
     }
+
+    if (backgroundRenderFilter_) {
+        GenerateRenderFilter();
+    }
+
     if (alwaysSnapshot_ && backgroundFilter_ == nullptr) {
         GenerateAlwaysSnapshotFilter();
     }
@@ -4575,6 +4787,7 @@ void RSProperties::OnApplyModifiers()
         GenerateColorFilter();
         if (colorFilter_ != nullptr) {
             needFilter_ = true;
+            needHwcFilter_ = true;
         } else {
             // colorFilter generation failed, need to update needFilter
             filterNeedUpdate_ = true;
@@ -4623,7 +4836,12 @@ void RSProperties::UpdateFilter()
                   IsDynamicDimValid() || GetShadowColorStrategy() != SHADOW_COLOR_STRATEGY::COLOR_STRATEGY_NONE ||
                   foregroundFilter_ != nullptr || IsFgBrightnessValid() || IsBgBrightnessValid() ||
                   foregroundFilterCache_ != nullptr || IsWaterRippleValid() || needDrawBehindWindow_ ||
-                  mask_;
+                  mask_ || colorFilter_ != nullptr;
+
+    needHwcFilter_ = backgroundFilter_ != nullptr || filter_ != nullptr || IsLightUpEffectValid() ||
+                     IsDynamicLightUpValid() || linearGradientBlurPara_ != nullptr ||
+                     IsDynamicDimValid() || IsFgBrightnessValid() || IsBgBrightnessValid() || IsWaterRippleValid() ||
+                     needDrawBehindWindow_ || colorFilter_ != nullptr;
 }
 
 void RSProperties::UpdateForegroundFilter()
@@ -4663,6 +4881,11 @@ void RSProperties::UpdateBackgroundShader()
     bgShaderNeedUpdate_ = false;
     const auto& bgShader = GetBackgroundShader();
     if (bgShader) {
+        const auto &param = GetComplexShaderParam();
+        if (param.has_value()) {
+            const auto & paramValue = param.value();
+            bgShader->MakeDrawingShader(GetBoundsRect(), paramValue);
+        }
         bgShader->MakeDrawingShader(GetBoundsRect(), GetBackgroundShaderProgress());
     }
 }

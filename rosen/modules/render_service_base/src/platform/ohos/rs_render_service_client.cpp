@@ -1787,6 +1787,22 @@ void RSRenderServiceClient::NotifyRefreshRateEvent(const EventInfo& eventInfo)
     }
 }
 
+void RSRenderServiceClient::SetWindowExpectedRefreshRate(const std::unordered_map<uint64_t, EventInfo>& eventInfos)
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService != nullptr) {
+        renderService->SetWindowExpectedRefreshRate(eventInfos);
+    }
+}
+
+void RSRenderServiceClient::SetWindowExpectedRefreshRate(const std::unordered_map<std::string, EventInfo>& eventInfos)
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService != nullptr) {
+        renderService->SetWindowExpectedRefreshRate(eventInfos);
+    }
+}
+
 bool RSRenderServiceClient::NotifySoftVsyncRateDiscountEvent(uint32_t pid,
     const std::string &name, uint32_t rateDiscount)
 {
@@ -2186,6 +2202,34 @@ bool RSRenderServiceClient::GetHighContrastTextState()
         return renderService->GetHighContrastTextState();
     }
     return false;
+}
+
+bool RSRenderServiceClient::SetBehindWindowFilterEnabled(bool enabled)
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (!renderService) {
+        return false;
+    }
+    auto ret = renderService->SetBehindWindowFilterEnabled(enabled);
+    if (ret != ERR_OK) {
+        ROSEN_LOGE("RSRenderServiceClient::SetBehindWindowFilterEnabled fail, ret[%{public}d]", ret);
+        return false;
+    }
+    return true;
+}
+
+bool RSRenderServiceClient::GetBehindWindowFilterEnabled(bool& enabled)
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (!renderService) {
+        return false;
+    }
+    auto ret = renderService->GetBehindWindowFilterEnabled(enabled);
+    if (ret != ERR_OK) {
+        ROSEN_LOGE("RSRenderServiceClient::GetBehindWindowFilterEnabled fail, ret[%{public}d]", ret);
+        return false;
+    }
+    return true;
 }
 } // namespace Rosen
 } // namespace OHOS
