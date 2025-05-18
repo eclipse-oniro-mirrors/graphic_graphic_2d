@@ -2305,8 +2305,7 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateCroseInfoForProtectedHwcNode001, TestSize.Le
 
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
     ASSERT_NE(rsUniRenderVisitor, nullptr);
-    auto rsUniHwcVisitor = std::make_shared<RSUniHwcVisitor>(*rsUniRenderVisitor);
-    ASSERT_NE(rsUniHwcVisitor, nullptr);
+    ASSERT_NE(rsUniRenderVisitor->hwcVisitor_, nullptr);
     NodeId surfaceNodeId = 1;
     auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(surfaceNodeId);
     ASSERT_NE(surfaceNode, nullptr);
@@ -2319,11 +2318,10 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateCroseInfoForProtectedHwcNode001, TestSize.Le
     surfaceNode->GetMultableSpecialLayerMgr().Set(SpecialLayerType::PROTECTED, true);
     surfaceNode->SetHwcGlobalPositionEnabled(true);
     surfaceNode->SetHwcCrossNode(true);
-    rsUniHwcVisitor->UpdateCrossInfoForProtectedHwcNode(surfaceNode);
+    rsUniRenderVisitor->hwcVisitor_->UpdateCrossInfoForProtectedHwcNode(surfaceNode);
 
     ASSERT_TRUE(surfaceNode->GetSpecialLayerMgr().Find(SpecialLayerType::PROTECTED));
     ASSERT_FALSE(surfaceNode->GetHwcGlobalPositionEnabled());
     ASSERT_FALSE(surfaceNode->IsDRMCrossNode());
-
 }
 }

@@ -742,7 +742,7 @@ void RSUniHwcVisitor::UpdateHardwareStateByHwcNodeBackgroundAlpha(
             ).IsEmpty();
         if (isHardwareEnableByBackgroundAlpha && !hwcNodePtr->IsHardwareForcedDisabled() && isIntersect) {
             hwcNodePtr->SetHardwareForcedDisabledState(true);
-            RS_OPTIONAL_TRACE_FMT("hwc debug: name:%s id:%" PRIu64 " disabled by uncovered above transparent hwc node",
+            RS_OPTIONAL_TRACE_FMT("hwc debug: name:%s id:%" PRIu64 " disabled by cannot cover above transparent hwc node",
                 hwcNodePtr->GetName().c_str(), hwcNodePtr->GetId());
             continue;
         }
@@ -1174,6 +1174,9 @@ void RSUniHwcVisitor::QuickPrepareChildrenOnlyOrder(RSRenderNode& node)
 
 void RSUniHwcVisitor::UpdateCrossInfoForProtectedHwcNode(const std::shared_ptr<RSSurfaceRenderNode>& hwcNode)
 {
+    if (!hwcNode) {
+        return;
+    }
     if (hwcNode->GetSpecialLayerMgr().Find(SpecialLayerType::PROTECTED)) {
         auto firstLevelNode =
             RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(hwcNode->GetFirstLevelNode());
