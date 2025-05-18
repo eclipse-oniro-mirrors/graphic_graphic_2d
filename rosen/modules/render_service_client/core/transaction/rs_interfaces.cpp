@@ -1024,6 +1024,13 @@ void RSInterfaces::SetFreeMultiWindowStatus(bool enable)
     renderServiceClient_->SetFreeMultiWindowStatus(enable);
 }
 
+bool RSInterfaces::RegisterTransactionDataCallback(pid_t pid, uint64_t timeStamp, std::function<void()> callback)
+{
+    RS_TRACE_NAME_FMT("789 test 2. interface call client, timeStamp: %" PRIu64 " pid: %d", timeStamp, pid);
+    RS_LOGD("789 test 2. interface call client, timeStamp: %{public}" PRIu64 " pid: %{public}d", timeStamp, pid);
+    return renderServiceClient_->RegisterTransactionDataCallback(pid, timeStamp, callback);
+}
+
 bool RSInterfaces::RegisterSurfaceBufferCallback(pid_t pid, uint64_t uid,
     std::shared_ptr<SurfaceBufferCallback> callback)
 {

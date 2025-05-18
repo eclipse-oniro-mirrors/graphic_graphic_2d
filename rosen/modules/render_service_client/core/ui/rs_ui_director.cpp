@@ -494,6 +494,27 @@ void RSUIDirector::SendMessages()
     }
 }
 
+void RSUIDirector::SendMessages(std::function<void()> callback)
+{
+    ROSEN_TRACE_BEGIN(HITRACE_TAG_GRAPHIC_AGP, "SendCommands");
+    auto transactionProxy = RSTransactionProxy::GetInstance();
+    if (transactionProxy != nullptr) {
+        if (callback != nullptr) {
+            ROSEN_LOGE("Enter Callback Pipeline %{public}s", __func__);
+            pid_t pid = getpid();
+            RS_TRACE_NAME_FMT("789 test 1. arkui call sendmessage, timeStamp: %" PRIu64 " pid: %d", timeStamp_, pid);
+            RS_LOGD("789 test 1. ackui call sendmessage, timeStamp: %{public}" PRIu64 " pid: %{public}d", timeStamp_, pid);
+            RSInterfaces::GetInstance().RegisterTransactionDataCallback(pid, timeStamp_, callback);
+        }
+        transactionProxy->FlushImplicitTransaction(timeStamp_, abilityName_);
+        index_ = transactionProxy->GetTransactionDataIndex();
+    } else {
+        RS_LOGE_LIMIT(__func__, __line__, "RSUIDirector::SendMessages failed, transactionProxy is nullptr");
+    }
+    ROSEN_TRACE_END(HITRACE_TAG_GRAPHIC_AGP);
+
+}
+
 uint32_t RSUIDirector::GetIndex() const
 {
     return index_;
