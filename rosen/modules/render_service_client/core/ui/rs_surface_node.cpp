@@ -83,6 +83,8 @@ RSSurfaceNode::SharedPtr RSSurfaceNode::Create(const RSSurfaceNodeConfig& surfac
     };
     config.nodeType = type;
 
+    RS_TRACE_NAME_FMT("RSSurfaceNode::Create name: %s type: %hhu, id: %lu, token:%lu", node->name_.c_str(),
+        config.nodeType, node->GetId(), rsUIContext ? rsUIContext->GetToken() : -1);
     RS_LOGD("RSSurfaceNode::Create name:%{public}s type: %{public}hhu "
         "isWindow %{public}d %{public}d ", config.name.c_str(),
         config.nodeType, isWindow, node->IsRenderServiceNode());
@@ -148,6 +150,7 @@ RSSurfaceNode::SharedPtr RSSurfaceNode::Create(const RSSurfaceNodeConfig& surfac
         node->SetFrameGravity(Gravity::RESIZE);
     }
     ROSEN_LOGD("RsDebug RSSurfaceNode::Create id:%{public}" PRIu64, node->GetId());
+    node->SetUIContextToken();
     return node;
 }
 
@@ -977,6 +980,25 @@ void RSSurfaceNode::DetachFromWindowContainer(ScreenId screenId)
     AddCommand(command, true);
     RS_LOGD("RSSurfaceNode::DetachFromWindowContainer: Node: %{public}" PRIu64 ", screenId: %{public}" PRIu64,
         GetId(), screenId);
+}
+
+void RSSurfaceNode::SetFrameGravityNewVersionEnabled(bool isEnabled)
+{
+    if (isFrameGravityNewVersionEnabled_ == isEnabled) {
+        return;
+    }
+
+    isFrameGravityNewVersionEnabled_ = isEnabled;
+    std::unique_ptr<RSCommand> command =
+        std::make_unique<RSSurfaceNodeSetFrameGravityNewVersionEnabled>(GetId(), isEnabled);
+    AddCommand(command, true);
+    ROSEN_LOGI("RSSurfaceNode::SetFrameGravityNewVersionEnabled, surfaceNodeId:[%" PRIu64 "] isEnabled:%s",
+        GetId(), isEnabled ? "true" : "false");
+}
+
+bool RSSurfaceNode::GetFrameGravityNewVersionEnabled() const
+{
+    return isFrameGravityNewVersionEnabled_;
 }
 } // namespace Rosen
 } // namespace OHOS

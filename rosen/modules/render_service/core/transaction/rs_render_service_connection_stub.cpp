@@ -145,6 +145,8 @@ static constexpr std::array descriptorCheckList = {
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_LIGHT_FACTOR_STATUS),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_PACKAGE_EVENT),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_REFRESH_RATE_EVENT),
+    static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_WINDOW_EXPECTED_BY_VSYNC_NAME),
+    static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_WINDOW_EXPECTED_BY_WINDOW_ID),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_SOFT_VSYNC_EVENT),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_SOFT_VSYNC_RATE_DISCOUNT_EVENT),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REPORT_EVENT_RESPONSE),
@@ -194,6 +196,8 @@ static constexpr std::array descriptorCheckList = {
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_OVERLAY_DISPLAY_MODE),
 #endif
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_PAGE_NAME),
+    static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_BEHIND_WINDOW_FILTER_ENABLED),
+    static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_BEHIND_WINDOW_FILTER_ENABLED),
 };
 
 void CopyFileDescriptor(MessageParcel& old, MessageParcel& copied)
@@ -268,7 +272,12 @@ std::shared_ptr<MessageParcel> CopyParcelIfNeed(MessageParcel& old, pid_t callin
         parcelCopied->InjectOffsets(old.GetObjectOffsets(), objectNum);
         CopyFileDescriptor(old, *parcelCopied);
     }
-    if (parcelCopied->ReadInt32() != 0) {
+    int32_t data{0};
+    if (!parcelCopied->ReadInt32(data)) {
+        RS_LOGE("RSRenderServiceConnectionStub::CopyParcelIfNeed parcel data Read failed");
+        return nullptr;
+    }
+    if (data != 0) {
         RS_LOGE("RSRenderServiceConnectionStub::CopyParcelIfNeed parcel data not match");
         return nullptr;
     }
@@ -285,7 +294,11 @@ bool CheckCreateNodeAndSurface(pid_t pid, RSSurfaceNodeType nodeType, SurfaceWin
         RS_LOGW("CREATE_NODE_AND_SURFACE invalid RSSurfaceNodeType");
         return false;
     }
-    if (windowType != SurfaceWindowType::DEFAULT_WINDOW && windowType != SurfaceWindowType::SYSTEM_SCB_WINDOW) {
+    constexpr int windowTypeMin = static_cast<int>(SurfaceWindowType::DEFAULT_WINDOW);
+    constexpr int windowTypeMax = static_cast<int>(SurfaceWindowType::NODE_MAX);
+
+    int windowTypeNum = static_cast<int>(windowType);
+    if (windowTypeNum < windowTypeMin || windowTypeNum > windowTypeMax) {
         RS_LOGW("CREATE_NODE_AND_SURFACE invalid SurfaceWindowType");
         return false;
     }
@@ -418,7 +431,12 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             std::shared_ptr<MessageParcel> parsedParcel;
             std::unique_ptr<AshmemFdWorker> ashmemFdWorker = nullptr;
             std::shared_ptr<AshmemFlowControlUnit> ashmemFlowControlUnit = nullptr;
-            if (data.ReadInt32() == 0) { // indicate normal parcel
+            int32_t readData{0};
+            if (!data.ReadInt32(readData)) {
+                RS_LOGE("RSRenderServiceConnectionStub::COMMIT_TRANSACTION read parcel failed");
+                return ERR_INVALID_DATA;
+            }
+            if (readData == 0) { // indicate normal parcel
                 if (isUniRender) {
                     // in uni render mode, if parcel size over threshold,
                     // Unmarshalling task will be post to RSUnmarshalThread,
@@ -2801,6 +2819,80 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             NotifyRefreshRateEvent(eventInfo);
             break;
         }
+        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_WINDOW_EXPECTED_BY_WINDOW_ID) : {
+            std::unordered_map<uint64_t, EventInfo> eventInfos;
+            
+            uint32_t mapSize{0};
+            if (!data.ReadUint32(mapSize)) {
+                RS_LOGE("RSRenderServiceConnectionStub::NOTIFY_WINDOW_EXPECTED_BY_WINDOW_ID Read mapSize failed!");
+                ret = ERR_INVALID_DATA;
+                break;
+            }
+            const uint32_t MAX_VOTER_SIZE = 100;
+            if (mapSize > MAX_VOTER_SIZE) {
+                ret = ERR_INVALID_STATE;
+                break;
+            }
+            bool shouldBreak = false;
+            for (uint32_t i = 0; i < mapSize; ++i) {
+                uint64_t windowId{0};
+                if (!data.ReadUint64(windowId)) {
+                    RS_LOGE("RSRenderServiceConnectionStub::NOTIFY_WINDOW_EXPECTED_BY_WINDOW_ID Read parcel failed!");
+                    ret = ERR_INVALID_DATA;
+                    shouldBreak = true;
+                    break;
+                }
+                EventInfo eventInfo;
+                if (!EventInfo::Deserialize(data, eventInfo)) {
+                    RS_LOGE("RSRenderServiceConnectionStub::NOTIFY_WINDOW_EXPECTED_BY_WINDOW_ID Read parcel failed!");
+                    ret = ERR_INVALID_DATA;
+                    shouldBreak = true;
+                    break;
+                }
+                eventInfos[windowId] = eventInfo;
+            }
+            if (!shouldBreak) {
+                SetWindowExpectedRefreshRate(eventInfos);
+            }
+            break;
+        }
+        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_WINDOW_EXPECTED_BY_VSYNC_NAME) : {
+            std::unordered_map<std::string, EventInfo> eventInfos;
+
+            uint32_t mapSize{0};
+            if (!data.ReadUint32(mapSize)) {
+                RS_LOGE("RSRenderServiceConnectionStub::NOTIFY_WINDOW_EXPECTED_BY_VSYNC_NAME Read mapSize failed!");
+                ret = ERR_INVALID_DATA;
+                break;
+            }
+            const uint32_t MAX_VOTER_SIZE = 100;
+            if (mapSize > MAX_VOTER_SIZE) {
+                ret = ERR_INVALID_STATE;
+                break;
+            }
+            bool shouldBreak = false;
+            for (uint32_t i = 0; i < mapSize; ++i) {
+                std::string vsyncName;
+                if (!data.ReadString(vsyncName)) {
+                    RS_LOGE("RSRenderServiceConnectionStub::NOTIFY_WINDOW_EXPECTED_BY_VSYNC_NAME Read parcel failed!");
+                    ret = ERR_INVALID_DATA;
+                    shouldBreak = true;
+                    break;
+                }
+                EventInfo eventInfo;
+                if (!EventInfo::Deserialize(data, eventInfo)) {
+                    RS_LOGE("RSRenderServiceConnectionStub::NOTIFY_WINDOW_EXPECTED_BY_VSYNC_NAME Read parcel failed!");
+                    ret = ERR_INVALID_DATA;
+                    shouldBreak = true;
+                    break;
+                }
+                eventInfos[vsyncName] = eventInfo;
+            }
+            if (!shouldBreak) {
+                SetWindowExpectedRefreshRate(eventInfos);
+            }
+            break;
+        }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_SOFT_VSYNC_EVENT) : {
             uint32_t pid{0};
             uint32_t rateDiscount{0};
@@ -3383,6 +3475,28 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_HIGH_CONTRAST_TEXT_STATE) : {
             bool highContrast = GetHighContrastTextState();
             if (!reply.WriteBool(highContrast)) {
+                ret = ERR_INVALID_REPLY;
+            }
+            break;
+        }
+        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_BEHIND_WINDOW_FILTER_ENABLED): {
+            bool enabled { false };
+            if (!data.ReadBool(enabled)) {
+                RS_LOGE("RSRenderServiceConnectionStub::SET_BEHIND_WINDOW_FILTER_ENABLED read enabled failed!");
+                ret = ERR_INVALID_DATA;
+                break;
+            }
+            auto err = SetBehindWindowFilterEnabled(enabled);
+            if (err != ERR_OK) {
+                RS_LOGE("RSRenderServiceConnectionStub::SET_BEHIND_WINDOW_FILTER_ENABLED Write status failed!");
+                ret = ERR_INVALID_REPLY;
+            }
+            break;
+        }
+        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_BEHIND_WINDOW_FILTER_ENABLED): {
+            bool enabled;
+            if (GetBehindWindowFilterEnabled(enabled) != ERR_OK || !reply.WriteBool(enabled)) {
+                RS_LOGE("RSRenderServiceConnectionStub::GET_BEHIND_WINDOW_FILTER_ENABLED write enabled failed!");
                 ret = ERR_INVALID_REPLY;
             }
             break;

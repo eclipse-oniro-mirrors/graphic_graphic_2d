@@ -15,22 +15,10 @@
 #include "filter_napi.h"
 #include "ui_effect_napi_utils.h"
 
-namespace {
-    constexpr uint32_t NUM_0 = 0;
-    constexpr uint32_t NUM_1 = 1;
-    constexpr uint32_t NUM_2 = 2;
-    constexpr uint32_t NUM_3 = 3;
-    constexpr uint32_t NUM_4 = 4;
-    constexpr uint32_t NUM_5 = 5;
-    constexpr uint32_t NUM_6 = 6;
-    constexpr uint32_t NUM_7 = 7;
-    constexpr uint32_t NUM_8 = 8;
-    constexpr uint32_t NUM_1000 = 1000;
-    constexpr int32_t ERR_NOT_SYSTEM_APP = 202;
-}
-
 namespace OHOS {
 namespace Rosen {
+
+using namespace UIEffect;
 
 std::map<int32_t, Drawing::TileMode> INDEX_TO_TILEMODE = {
     { NUM_0, Drawing::TileMode::CLAMP },
@@ -171,8 +159,10 @@ napi_value FilterNapi::CreateFilter(napi_env env, napi_callback_info info)
         DECLARE_NAPI_FUNCTION("pixelStretch", SetPixelStretch),
         DECLARE_NAPI_FUNCTION("waterRipple", SetWaterRipple),
         DECLARE_NAPI_FUNCTION("flyInFlyOutEffect", SetFlyOut),
+        DECLARE_NAPI_FUNCTION("colorGradient", SetColorGradient),
         DECLARE_NAPI_FUNCTION("distort", SetDistort),
         DECLARE_NAPI_FUNCTION("radiusGradientBlur", SetRadiusGradientBlurPara),
+        DECLARE_NAPI_FUNCTION("displacementDistort", SetDisplacementDistort),
     };
     status = napi_define_properties(env, object, sizeof(resultFuncs) / sizeof(resultFuncs[0]), resultFuncs);
     UIEFFECT_NAPI_CHECK_RET_DELETE_POINTER(status == napi_ok, nullptr, filterObj,
@@ -524,6 +514,110 @@ napi_value FilterNapi::SetFlyOut(napi_env env, napi_callback_info info)
     return thisVar;
 }
 
+bool FilterNapi::GetColorGradientArray(napi_env env, napi_value* argValue, std::shared_ptr<ColorGradientPara>& para,
+    uint32_t arraySize)
+{
+    std::vector<float> colorValue;
+    std::vector<float> posValue;
+    std::vector<float> strengthValue;
+
+    for (size_t i = 0; i < arraySize; i++) {
+        napi_value jsValueColor;
+        napi_value jsValuePos;
+        napi_value jsValueStrength;
+        if ((napi_get_element(env, argValue[NUM_0], i, &jsValueColor)) != napi_ok ||
+            (napi_get_element(env, argValue[NUM_1], i, &jsValuePos)) != napi_ok ||
+            (napi_get_element(env, argValue[NUM_2], i, &jsValueStrength)) != napi_ok) {
+            FILTER_LOG_E("GetColorGradientArray get args fail");
+            return false;
+        }
+
+        for (size_t j = 0; j < NUM_4; j++) {
+            napi_value jsValue;
+            if ((napi_get_element(env, jsValueColor, j, &jsValue)) != napi_ok) {
+                FILTER_LOG_E("GetColorGradientArray get args color fail");
+                return false;
+            }
+            colorValue.push_back(GetSpecialValue(env, jsValue));
+        }
+
+        for (size_t j = 0; j < NUM_2; j++) {
+            napi_value jsValue;
+            if ((napi_get_element(env, jsValuePos, j, &jsValue)) != napi_ok) {
+                FILTER_LOG_E("GetColorGradientArray get args pos fail");
+                return false;
+            }
+            posValue.push_back(GetSpecialValue(env, jsValue));
+        }
+
+        strengthValue.push_back(GetSpecialValue(env, jsValueStrength));
+    }
+
+    para->SetColors(colorValue);
+    para->SetPositions(posValue);
+    para->SetStrengths(strengthValue);
+
+    return true;
+}
+
+napi_value FilterNapi::SetColorGradient(napi_env env, napi_callback_info info)
+{
+    if (!UIEffectNapiUtils::IsSystemApp()) {
+        FILTER_LOG_E("SetColorGradient failed");
+        napi_throw_error(env, std::to_string(ERR_NOT_SYSTEM_APP).c_str(),
+            "FilterNapi colorGradient failed, is not system app");
+        return nullptr;
+    }
+
+    napi_status status;
+    napi_value thisVar = nullptr;
+
+    const size_t maxArgc = NUM_4;
+    const size_t minArgc = NUM_3;
+    size_t realArgc = NUM_4;
+    napi_value argValue[maxArgc] = {0};
+    UIEFFECT_JS_ARGS(env, info, status, realArgc, argValue, thisVar);
+    UIEFFECT_NAPI_CHECK_RET_D(status == napi_ok && realArgc <= maxArgc && realArgc >= minArgc, nullptr,
+        FILTER_LOG_E("FilterNapi SetColorGradient parsing input fail"));
+
+    uint32_t arraySizeColor = 0;
+    uint32_t arraySizePos = 0;
+    uint32_t arraySizeStrength = 0;
+    if (!IsArrayForNapiValue(env, argValue[NUM_0], arraySizeColor) ||
+        !IsArrayForNapiValue(env, argValue[NUM_1], arraySizePos) ||
+        !IsArrayForNapiValue(env, argValue[NUM_2], arraySizeStrength)) {
+        FILTER_LOG_E("SetColorGradient get args fail, not array");
+        return nullptr;
+    }
+    if (arraySizeColor != arraySizePos || arraySizeColor != arraySizeStrength ||
+        arraySizeStrength <= NUM_0 || arraySizeStrength > NUM_12) {
+        FILTER_LOG_E("SetColorGradient param Error");
+        return nullptr;
+    }
+
+    std::shared_ptr<ColorGradientPara> para = std::make_shared<ColorGradientPara>();
+    UIEFFECT_NAPI_CHECK_RET_D(para != nullptr, nullptr,
+        FILTER_LOG_E("FilterNapi SetColorGradient para is nullptr"));
+    UIEFFECT_NAPI_CHECK_RET_D(GetColorGradientArray(env, argValue, para, arraySizeColor), nullptr,
+        FILTER_LOG_E("FilterNapi SetColorGradient parsing array fail"));
+
+    if (realArgc == NUM_4) {
+        Mask* mask = nullptr;
+        status = napi_unwrap(env, argValue[NUM_3], reinterpret_cast<void**>(&mask));
+        UIEFFECT_NAPI_CHECK_RET_D(status == napi_ok && mask != nullptr, nullptr,
+            FILTER_LOG_E("FilterNapi SetColorGradient napi_unwrap mask fail"));
+        para->SetMask(mask->GetMaskPara());
+    }
+
+    Filter* filterObj = nullptr;
+    status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&filterObj));
+    UIEFFECT_NAPI_CHECK_RET_D(status == napi_ok && filterObj != nullptr, nullptr,
+        FILTER_LOG_E("FilterNapi SetColorGradient napi_unwrap fail"));
+    filterObj->AddPara(para);
+
+    return thisVar;
+}
+
 napi_value FilterNapi::SetDistort(napi_env env, napi_callback_info info)
 {
     if (!UIEffectNapiUtils::IsSystemApp()) {
@@ -556,6 +650,46 @@ napi_value FilterNapi::SetDistort(napi_env env, napi_callback_info info)
     std::shared_ptr<DistortPara> para = std::make_shared<DistortPara>();
     UIEFFECT_NAPI_CHECK_RET_D(para != nullptr, nullptr, FILTER_LOG_E("FilterNapi SetDistort para is nullptr"));
     para->SetDistortionK(distortionK);
+    filterObj->AddPara(para);
+    return thisVar;
+}
+
+napi_value FilterNapi::SetDisplacementDistort(napi_env env, napi_callback_info info)
+{
+    if (!UIEffectNapiUtils::IsSystemApp()) {
+        FILTER_LOG_E("SetDisplacementDistort failed");
+        napi_throw_error(env, std::to_string(ERR_NOT_SYSTEM_APP).c_str(),
+            "FilterNapi SetDisplacementDistort failed, is not system app");
+        return nullptr;
+    }
+    const size_t requireArgc = NUM_2;
+    const size_t minArgc = NUM_1;
+    size_t realArgc = NUM_2;
+    napi_status status;
+    napi_value argv[requireArgc] = {0};
+    napi_value thisVar = nullptr;
+    UIEFFECT_JS_ARGS(env, info, status, realArgc, argv, thisVar);
+    UIEFFECT_NAPI_CHECK_RET_D(status == napi_ok && realArgc <= requireArgc && realArgc >= minArgc, nullptr,
+        FILTER_LOG_E("FilterNapi SetDisplacementDistort parsing input fail"));
+
+    auto para = std::make_shared<DisplacementDistortPara>();
+    Mask* mask = nullptr;
+    status = napi_unwrap(env, argv[NUM_0], reinterpret_cast<void**>(&mask));
+    UIEFFECT_NAPI_CHECK_RET_D(status == napi_ok && mask != nullptr, nullptr,
+        FILTER_LOG_E("FilterNapi SetDisplacementDistort unwrap mask fail"));
+    para->SetMask(mask->GetMaskPara());
+
+    if (realArgc == NUM_2) {
+        Vector2f factor;
+        UIEFFECT_NAPI_CHECK_RET_D(ParseJsVector2f(env, argv[NUM_1], factor), nullptr,
+            FILTER_LOG_E("FilterNapi SetDisplacementDistort parse factor fail"));
+        para->SetFactor(factor);
+    }
+
+    Filter* filterObj = nullptr;
+    status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&filterObj));
+    UIEFFECT_NAPI_CHECK_RET_D(status == napi_ok && filterObj != nullptr, nullptr,
+        FILTER_LOG_E("FilterNapi SetDisplacementDistort unwrap filterObj fail"));
     filterObj->AddPara(para);
     return thisVar;
 }
