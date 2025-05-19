@@ -77,6 +77,7 @@ class RSModifier;
 class RSObjAbsGeometry;
 class RSUIContext;
 class RSUIFilter;
+enum class CancelAnimationStatus;
 
 class RSC_EXPORT RSNode : public std::enable_shared_from_this<RSNode> {
 public:
@@ -354,6 +355,8 @@ public:
     static std::vector<std::shared_ptr<RSAnimation>> CloseImplicitAnimation(
         const std::shared_ptr<RSUIContext> rsUIContext);
     static bool CloseImplicitCancelAnimation(const std::shared_ptr<RSUIContext> rsUIContext);
+    static CancelAnimationStatus CloseImplicitCancelAnimationReturnStatus(
+        const std::shared_ptr<RSUIContext> rsUIContext = nullptr);
     static bool IsImplicitAnimationOpen(const std::shared_ptr<RSUIContext> rsUIContext);
     static void AddKeyFrame(const std::shared_ptr<RSUIContext> rsUIContext, float fraction,
         const RSAnimationTimingCurve& timingCurve, const PropertyCallback& callback);
