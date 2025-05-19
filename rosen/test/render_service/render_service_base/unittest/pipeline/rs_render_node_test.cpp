@@ -169,7 +169,7 @@ HWTEST_F(RSRenderNodeTest, ProcessTransitionBeforeChildrenTest, TestSize.Level1)
 }
 
 /**
- * @tc.name: ProcessTransitionBeforeChildrenTest
+ * @tc.name: AddModifierTest
  * @tc.desc: test
  * @tc.type:FUNC
  * @tc.require:
@@ -180,6 +180,19 @@ HWTEST_F(RSRenderNodeTest, AddModifierTest, TestSize.Level1)
     RSRenderNode node(id, context);
     node.AddModifier(modifier);
     ASSERT_FALSE(node.IsDirty());
+}
+
+/**
+ * @tc.name: GetPropertyTest
+ * @tc.desc: test
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSRenderNodeTest, GetPropertyTest, TestSize.Level1)
+{
+    RSRenderNode node(id, context);
+    auto rsRenderPropertyBase = node.GetProperty(id);
+    EXPECT_EQ(rsRenderPropertyBase, nullptr);
 }
 
 /**
@@ -244,6 +257,33 @@ HWTEST_F(RSRenderNodeTest, SetDrawingCacheTypeTest, TestSize.Level2)
     ASSERT_EQ(node.GetDrawingCacheType(), RSDrawingCacheType::FORCED_CACHE);
     node.SetDrawingCacheType(RSDrawingCacheType::TARGETED_CACHE);
     ASSERT_EQ(node.GetDrawingCacheType(), RSDrawingCacheType::TARGETED_CACHE);
+}
+
+
+/**
+ * @tc.name: SetDrawNodeType
+ * @tc.desc: test results of SetDrawNodeType
+ * @tc.type: FUNC
+ * @tc.require: IC8BLE
+ */
+HWTEST_F(RSRenderNodeTest, SetDrawNodeType001, TestSize.Level1)
+{
+    RSRenderNode rsNode(id, context);
+    rsNode.SetDrawNodeType(DrawNodeType::PureContainerType);
+    ASSERT_EQ(rsNode.drawNodeType_, DrawNodeType::PureContainerType);
+}
+
+/**
+ * @tc.name: GetDrawNodeType
+ * @tc.desc: test results of GetDrawNodeType
+ * @tc.type: FUNC
+ * @tc.require: IC8BLE
+ */
+HWTEST_F(RSRenderNodeTest, SetDrawNodeType002, TestSize.Level1)
+{
+    RSRenderNode rsNode(id, context);
+    rsNode.SetDrawNodeType(DrawNodeType::GeometryPropertyType);
+    ASSERT_EQ(rsNode.GetDrawNodeType(), DrawNodeType::GeometryPropertyType);
 }
 
 /**

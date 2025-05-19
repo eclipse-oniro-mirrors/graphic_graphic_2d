@@ -26,7 +26,9 @@ ohos_unittest("RSAibarShaderFilterTest") {
     "rs_aibar_shader_filter_test.cpp",
     "rs_attraction_effect_filter_test.cpp",
     "rs_blur_filter_test.cpp",
+    "rs_color_gradient_shader_filter_test.cpp",
     "rs_filter_cache_manager_test.cpp",
+    "rs_render_color_gradient_filter_test.cpp",
   ]
 
   cflags = [
@@ -245,6 +247,7 @@ ohos_unittest("RSColorfulShadowFilterTest") {
     "rs_fly_out_shader_filter_test.cpp",
     "rs_foreground_effect_filter_test.cpp",
     "rs_image_base_test.cpp",
+    "rs_sound_wave_filter_test.cpp",
   ]
 
   cflags = [
@@ -713,6 +716,14 @@ ohos_unittest("RSMaterialFilterTest") {
     "rs_motion_blur_filter_test.cpp",
     "rs_path_test.cpp",
     "rs_pixel_map_shader_test.cpp",
+    "rs_render_blur_filter_test.cpp",
+    "rs_render_displacement_distort_filter_test.cpp",
+    "rs_render_edge_light_filter_test.cpp",
+    "rs_render_filter_test.cpp",
+    "rs_render_filter_base_test.cpp",
+    "rs_render_ripple_mask_test.cpp",
+    "rs_render_sound_wave_filter_test.cpp",
+    "rs_shader_mask_test.cpp",
   ]
 
   cflags = [
@@ -767,6 +778,7 @@ ohos_unittest("RSPixelMapUtilTest") {
   sources = [
     "rs_pixel_map_util_test.cpp",
     "rs_shader_test.cpp",
+    "rs_complex_shader_test.cpp",
     "rs_shadow_test.cpp",
     "rs_skia_filter_test.cpp",
     "rs_spherize_effect_filter_test.cpp",
