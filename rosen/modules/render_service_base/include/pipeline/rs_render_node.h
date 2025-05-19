@@ -411,6 +411,8 @@ public:
 
     bool IsDirtyRegionUpdated() const;
     void CleanDirtyRegionUpdated();
+    
+    std::shared_ptr<RSRenderPropertyBase> GetProperty(PropertyId id);
 
     void AddModifier(const std::shared_ptr<RSRenderModifier>& modifier, bool isSingleFrameComposer = false);
     void RemoveModifier(const PropertyId& id);
@@ -440,6 +442,8 @@ public:
     bool NeedInitCacheCompletedSurface();
     bool IsPureContainer() const;
     bool IsContentNode() const;
+    void SetDrawNodeType(DrawNodeType nodeType);
+    DrawNodeType GetDrawNodeType() const;
 
     inline const RSRenderContent::DrawCmdContainer& GetDrawCmdModifiers() const
     {
@@ -887,11 +891,6 @@ public:
     // Enable HWCompose
     RSHwcRecorder& GetHwcRecorder() { return hwcRecorder_; }
 
-    // Determines node opaque and occlusion culling participation for control-level occlusion
-    void GetOcclusionInfo(const std::unordered_set<RSModifierType>& opaqueModifiers,
-        const std::unordered_set<RSModifierType>& occluderModifiers,
-        bool& isOpaque, bool& isSubTreeIgnored) const;
-
     RSOpincCache& GetOpincCache()
     {
         return opincCache_;
@@ -925,6 +924,7 @@ protected:
 
     static void SendCommandFromRT(std::unique_ptr<RSCommand>& command, NodeId nodeId);
     void AddGeometryModifier(const std::shared_ptr<RSRenderModifier>& modifier);
+    void AddUIFilterModifier(const std::shared_ptr<RSRenderModifier>& modifier);
 
     virtual void InitRenderParams();
     virtual void OnSync();
@@ -1071,6 +1071,7 @@ private:
     bool childrenHasUIExtension_ = false;
     bool isAccessibilityConfigChanged_ = false;
     const bool isPurgeable_;
+    DrawNodeType drawNodeType_ = DrawNodeType::PureContainerType;
     std::atomic<bool> isTunnelHandleChange_ = false;
     std::atomic<bool> isCacheSurfaceNeedUpdate_ = false;
     std::atomic<bool> commandExecuted_ = false;
@@ -1162,6 +1163,8 @@ private:
     RSDrawable::Vec drawableVec_;
     RSAnimationManager animationManager_;
     RSOpincCache opincCache_;
+
+    std::map<PropertyId, std::shared_ptr<RSRenderPropertyBase>> properties_;
 
     std::list<WeakPtr> children_;
     std::set<NodeId> preFirstLevelNodeIdSet_ = {};

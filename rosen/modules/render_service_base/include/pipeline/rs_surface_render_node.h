@@ -1321,9 +1321,6 @@ public:
     void GetAllSubSurfaceNodes(std::vector<std::pair<NodeId, RSSurfaceRenderNode::WeakPtr>>& allSubSurfaceNodes) const;
     std::string SubSurfaceNodesDump() const;
 
-    void SetIsNodeToBeCaptured(bool isNodeToBeCaptured);
-    bool IsNodeToBeCaptured() const;
-
     void SetDoDirectComposition(bool flag)
     {
         doDirectComposition_ = flag;
@@ -1332,16 +1329,6 @@ public:
     bool GetDoDirectComposition() const
     {
         return doDirectComposition_;
-    }
-
-    void SetHardWareDisabledByReverse(bool isHardWareDisabledByReverse)
-    {
-        isHardWareDisabledByReverse_ = isHardWareDisabledByReverse;
-    }
-
-    bool GetHardWareDisabledByReverse() const
-    {
-        return isHardWareDisabledByReverse_;
     }
 
     void SetSkipDraw(bool skip);
@@ -1527,8 +1514,13 @@ public:
         return appWindowZOrder_;
     }
 
+<<<<<<< HEAD
     // Enable HWCompose
     RSHwcSurfaceRecorder& HwcSurfaceRecorder() { return hwcSurfaceRecorder_; }
+=======
+    void SetFrameGravityNewVersionEnabled(bool isEnabled);
+    bool GetFrameGravityNewVersionEnabled() const;
+>>>>>>> b9ff0f5d88498a61622666979d0a92ddcf92f0bc
 
 protected:
     void OnSync() override;
@@ -1636,7 +1628,7 @@ private:
     bool isParentScaling_ = false;
     bool needDrawAnimateProperty_ = false;
     bool prevVisible_ = false;
-    bool isHardWareDisabledByReverse_ = false;
+
     // mark if this self-drawing node do not consume buffer when gpu -> hwc
     bool hwcDelayDirtyFlag_ = false;
     bool isForeground_ = false;
@@ -1657,7 +1649,6 @@ private:
     bool hasTransparentSurface_ = false;
     bool isGpuOverDrawBufferOptimizeNode_ = false;
     bool isSubSurfaceNode_ = false;
-    bool isNodeToBeCaptured_ = false;
     bool doDirectComposition_ = true;
     bool isSkipDraw_ = false;
     bool needHidePrivacyContent_ = false;
@@ -1865,6 +1856,8 @@ private:
 
     // used in uifirst for checking whether node and parents should paint or not
     bool selfAndParentShouldPaint_ = true;
+
+    bool isFrameGravityNewVersionEnabled_ = false;
 
     // UIExtension record, <UIExtension, hostAPP>
     inline static std::unordered_map<NodeId, NodeId> secUIExtensionNodes_ = {};

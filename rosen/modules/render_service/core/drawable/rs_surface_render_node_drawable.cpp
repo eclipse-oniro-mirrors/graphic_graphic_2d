@@ -61,6 +61,9 @@
 #ifdef USE_VIDEO_PROCESSING_ENGINE
 #include "metadata_helper.h"
 #endif
+
+#include "rs_profiler.h"
+
 namespace {
 constexpr int32_t CORNER_SIZE = 4;
 constexpr float GAMMA2_2 = 2.2f;
@@ -554,6 +557,7 @@ void RSSurfaceRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     auto cacheState = RSUifirstManager::Instance().GetCacheSurfaceProcessedStatus(*surfaceParams);
     auto useNodeMatchOptimize = rscanvas->GetIsParallelCanvas() &&
         (cacheState == CacheProcessStatus::WAITING || cacheState == CacheProcessStatus::DOING);
+    RS_PROFILER_SURFACE_ON_DRAW_MATCH_OPTIMIZE(useNodeMatchOptimize);
     if (!RSUiFirstProcessStateCheckerHelper::CheckMatchAndWaitNotify(*surfaceParams, useNodeMatchOptimize)) {
         SetDrawSkipType(DrawSkipType::CHECK_MATCH_AND_WAIT_NOTIFY_FAIL);
         RS_LOGE("RSSurfaceRenderNodeDrawable::OnDraw CheckMatchAndWaitNotify failed");
@@ -841,6 +845,7 @@ void RSSurfaceRenderNodeDrawable::OnCapture(Drawing::Canvas& canvas)
 
     CaptureSurface(*rscanvas, *surfaceParams);
     ResetVirtualScreenWhiteListRootId(surfaceParams->GetLeashPersistentId());
+    RSRenderNodeDrawable::SnapshotProcessedNodeCountInc();
 }
 
 bool RSSurfaceRenderNodeDrawable::CheckIfSurfaceSkipInMirror(const RSSurfaceRenderParams& surfaceParams)
@@ -1008,10 +1013,9 @@ void RSSurfaceRenderNodeDrawable::CaptureSurface(RSPaintFilterCanvas& canvas, RS
     bool enableVisiableRect = RSUniRenderThread::Instance().GetEnableVisiableRect();
     if (!(specialLayerManager.Find(HAS_GENERAL_SPECIAL) || surfaceParams.GetHDRPresent() || hasHidePrivacyContent ||
         enableVisiableRect || !IsVisibleRegionEqualOnPhysicalAndVirtual(surfaceParams))) {
-        if (subThreadCache_.DealWithUIFirstCache(this, canvas, surfaceParams, *uniParams)) {
-            if (RSUniRenderThread::GetCaptureParam().isSingleSurface_) {
-                RS_LOGI("%{public}s DealWithUIFirstCache", __func__);
-            }
+        //Window screenshot does not enable uifirst.
+        if (!RSUniRenderThread::GetCaptureParam().isSingleSurface_ &&
+            subThreadCache_.DealWithUIFirstCache(this, canvas, surfaceParams, *uniParams)) {
             return;
         }
     }
