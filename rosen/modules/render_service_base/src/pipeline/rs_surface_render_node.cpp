@@ -3628,8 +3628,6 @@ void RSSurfaceRenderNode::SetFrameGravityNewVersionEnabled(bool isEnabled)
     AddToPendingSyncList();
 
     isFrameGravityNewVersionEnabled_ = isEnabled;
-    ROSEN_LOGI("RSSurfaceRenderNode::SetFrameGravityNewVersionEnabled id:%{public}" PRIu64 ", isEnabled:%{public}d",
-        GetId(), isEnabled);
 }
 
 bool RSSurfaceRenderNode::GetFrameGravityNewVersionEnabled() const
