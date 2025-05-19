@@ -157,6 +157,7 @@ enum class RSIRenderServiceConnectionInterfaceCode : CodeUnderlyingType {
 
     SHOW_WATERMARK = 0x009000,
     SET_WATERMARK = 0x009001,
+    REGISTER_TRANSACTION_DATA_CALLBACK = 0x009002,
 
     GET_MEMORY_GRAPHIC = 0x00A000,
     GET_MEMORY_GRAPHICS = 0x00A001,

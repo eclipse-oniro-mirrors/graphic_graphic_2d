@@ -182,6 +182,8 @@ ohos_source_set("render_service_base_src") {
     "src/ipc_callbacks/screen_change_callback_stub.cpp",
     "src/ipc_callbacks/surface_capture_callback_proxy.cpp",
     "src/ipc_callbacks/surface_capture_callback_stub.cpp",
+    "src/ipc_callbacks/rs_transaction_data_callback_proxy.cpp",
+    "src/ipc_callbacks/rs_transaction_data_callback_stub.cpp",
 
     #ipc_security
     "src/ipc_security/rs_ipc_interface_code_access_verifier_base.cpp",
@@ -222,6 +224,7 @@ ohos_source_set("render_service_base_src") {
     "src/pipeline/rs_task_dispatcher.cpp",
     "src/pipeline/rs_uni_render_judgement.cpp",
     "src/pipeline/sk_resource_manager.cpp",
+    "src/pipeline/rs_transaction_data_callback_manager.cpp",
 
     #property
     "src/property/rs_point_light_manager.cpp",
