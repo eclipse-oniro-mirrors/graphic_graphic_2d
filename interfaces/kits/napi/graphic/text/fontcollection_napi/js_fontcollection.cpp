@@ -85,6 +85,8 @@ napi_value JsFontCollection::Init(napi_env env, napi_value exportObj)
         DECLARE_NAPI_FUNCTION("loadFontSync", JsFontCollection::LoadFontSync),
         DECLARE_NAPI_FUNCTION("clearCaches", JsFontCollection::ClearCaches),
         DECLARE_NAPI_FUNCTION("loadFont", JsFontCollection::LoadFontAsync),
+        DECLARE_NAPI_FUNCTION("unLoadFont", JsFontCollection::UnLoadFontSync),
+        DECLARE_NAPI_FUNCTION("unLoadFontAsync", JsFontCollection::UnLoadFontAsync),
     };
 
     napi_value constructor = nullptr;
@@ -518,7 +520,6 @@ napi_value JsFontCollection::UnLoadFontSync(napi_env env, napi_callback_info inf
 
 napi_value JsFontCollection::OnUnLoadFontAsync(napi_env env, napi_callback_info info)
 {
-
     sptr<FontArgumentsConcreteContext> context = sptr<FontArgumentsConcreteContext>::MakeSptr();
     NAPI_CHECK_AND_THROW_ERROR(context != nullptr, TextErrorCode::ERROR_NO_MEMORY, "Failed to make context");
     auto inputParser = [env, context](size_t argc, napi_value* argv) {
