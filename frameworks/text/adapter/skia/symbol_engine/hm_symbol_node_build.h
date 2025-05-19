@@ -38,7 +38,7 @@ public:
     void AddWholeAnimation(const RSHMSymbolData &symbolData, const Vector4f &nodeBounds,
         std::shared_ptr<TextEngine::SymbolAnimationConfig> symbolAnimationConfig);
 
-    static void AddHierarchicalAnimation(RSHMSymbolData &symbolData, const Vector4f &nodeBounds,
+    void AddHierarchicalAnimation(RSHMSymbolData &symbolData, const Vector4f &nodeBounds,
         const std::vector<RSGroupSetting> &groupSettings,
         std::shared_ptr<TextEngine::SymbolAnimationConfig> symbolAnimationConfig);
 
@@ -105,6 +105,8 @@ private:
     double slope_ = 0.0;
     bool animationStart_ = false;
     bool currentAnimationHasPlayed_ = false;
+
+    void SetSymbolNodeColors(const TextEngine::SymbolNode& symbolNode, TextEngine::SymbolNode& outSymbolNode);
 };
 }
 }

@@ -77,7 +77,8 @@ private:
         const std::vector<Drawing::DrawingPiecewiseParameter>& parameters, int delay);
 
     // Create a node that is the same as the original node
-    void CreateSameNode(uint64_t symbolId, std::shared_ptr<RSNode>& rsNode);
+    void CreateSameNode(uint64_t symbolId, std::shared_ptr<RSNode>& rsNode,
+        const std::shared_ptr<RSNode>& rsNodeRoot);
     
     // to start animations for one path group
     void GroupAnimationStart(
@@ -150,11 +151,17 @@ private:
         std::shared_ptr<TextEngine::SymbolAnimationConfig>& disappearConfig);
 
     // Determine whether to create a node based on the existing canvasNodesListMap node
-    bool CreateSymbolNode(const std::shared_ptr<TextEngine::SymbolAnimationConfig>& symbolAnimationConfig,
-        const Vector4f& offsets, uint32_t index, std::shared_ptr<RSNode> rsNode = nullptr);
+    bool CreateSymbolReplaceNode(const std::shared_ptr<TextEngine::SymbolAnimationConfig>& symbolAnimationConfig,
+        const Vector4f& bounds, uint32_t index, const std::shared_ptr<RSNode>& rsNode,
+        std::shared_ptr<RSCanvasNode>& canvasNode);
+
+    bool CreateSymbolNode(const Vector4f& bounds, uint64_t symbolSpanId, uint32_t index,
+    const std::shared_ptr<RSNode>& rsNode, std::shared_ptr<RSCanvasNode>& canvasNode);
 
     // set Disable Animation
     bool SetDisableAnimation(const std::shared_ptr<TextEngine::SymbolAnimationConfig>& symbolAnimationConfig);
+    bool SetDisableAnimation(const std::shared_ptr<TextEngine::SymbolAnimationConfig>& symbolAnimationConfig,
+        std::vector<std::vector<Drawing::DrawingPiecewiseParameter>>& parameters);
 
     void SetDisableParameter(std::vector<Drawing::DrawingPiecewiseParameter>& parameter,
         const std::shared_ptr<TextEngine::SymbolAnimationConfig>& symbolAnimationConfig);
