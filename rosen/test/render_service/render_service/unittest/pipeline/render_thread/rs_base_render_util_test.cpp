@@ -376,10 +376,12 @@ HWTEST_F(RSBaseRenderUtilTest, ConsumeAndUpdateBuffer_004, TestSize.Level2)
 
     // acquire buffer
     if (RSUniRenderJudgement::IsUniRender() && RSSystemParameters::GetControlBufferConsumeEnabled()) {
+        std::shared_ptr<RSSurfaceRenderNode> surfaceNode;
+        ASSERT_EQ(producer, nullptr);
         auto& surfaceHandler = *(rsSurfaceRenderNode->GetRSSurfaceHandler());
         surfaceHandler.SetConsumer(surfaceConsumer);
         uint64_t presentWhen = 100; // let presentWhen smaller than INT64_MAX
-        RSBaseRenderUtil::ConsumeAndUpdateBuffer(surfaceHandler, presentWhen, true, rsSurfaceRenderNode);
+        RSBaseRenderUtil::ConsumeAndUpdateBuffer(surfaceHandler, presentWhen, true, surfaceNode);
         ASSERT_EQ(surfaceConsumer->GetAvailableBufferCount(), 0);
     }
 
