@@ -128,6 +128,7 @@ public:
     void UpdateColor(size_t from, size_t to, const RSColor& color,
         skia::textlayout::UtfEncodeType encodeType) override;
     Drawing::RectI GeneratePaintRegion(double x, double y) override;
+    void UpdateForegroundBrush(const TextStyle& spTextStyle);
 
     void Relayout(double width, const ParagraphStyle& paragraphStyle,
         const std::vector<OHOS::Rosen::SPText::TextStyle>& textStyles) override;
@@ -150,6 +151,8 @@ private:
     void GetExtraTextStyleAttributes(const skt::TextStyle& skStyle, TextStyle& txt);
 
     void ApplyParagraphStyleChanges(const ParagraphStyle& style);
+    void UpdateForegroundBrushWithValidData(SkTArray<skt::Block, true>& skiaTextStyles, std::optional<RSBrush> brush);
+    void UpdateForegroundBrushWithNullopt(SkTArray<skt::Block, true>& skiaTextStyles);
 
     void RecordDifferentPthreadCall(const char* caller) const;
 

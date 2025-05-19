@@ -29,6 +29,7 @@
 #include "text/font_metrics.h"
 #include "text_line_impl.h"
 #include "utils/text_log.h"
+#include "utils/text_trace.h"
 #include "modules/skparagraph/include/TextStyle.h"
 
 namespace OHOS {
@@ -431,6 +432,73 @@ void ParagraphImpl::UpdateColor(size_t from, size_t to, const RSColor& color,
         SkColorSetARGB(color.GetAlpha(), color.GetRed(), color.GetGreen(), color.GetBlue()), encodeType);
     for (auto paintID : unresolvedPaintID) {
         paints_[paintID].SetColor(color);
+    }
+}
+
+void ParagraphImpl::UpdateForegroundBrushWithValidData(SkTArray<skt::Block, true>& skiaTextStyles,
+    std::optional<RSBrush> brush)
+{
+    TEXT_TRACE_FUNC();
+    PaintID newId = static_cast<int>(paints_.size());
+    bool needAddNewBrush = true;
+
+    for (size_t i = 0; i < skiaTextStyles.size(); i++) {
+        skt::Block& skiaBlock = skiaTextStyles[i];
+        if (skiaBlock.fStyle.hasForeground()) {
+            PaintID foregroundId = std::get<PaintID>(skiaBlock.fStyle.getForegroundPaintOrID());
+            if ((0 <= foregroundId) && (foregroundId < static_cast<int>(paints_.size()))) {
+                if (paints_[foregroundId].isSymbolGlyph) {
+                    continue;
+                }
+                paints_[foregroundId].brush = brush;
+            }
+        } else {
+            skiaBlock.fStyle.setForegroundPaintID(newId);
+            if (needAddNewBrush) {
+                PaintRecord pr(brush, std::nullopt);
+                paints_.push_back(pr);
+                needAddNewBrush = false;
+            }
+        }
+    }
+}
+
+void ParagraphImpl::UpdateForegroundBrushWithNullopt(SkTArray<skt::Block, true>& skiaTextStyles)
+{
+    TEXT_TRACE_FUNC();
+    for (size_t i = 0; i < skiaTextStyles.size(); i++) {
+        skt::Block& skiaBlock = skiaTextStyles[i];
+        if (skiaBlock.fStyle.hasForeground()) {
+            PaintID foregroundId = std::get<PaintID>(skiaBlock.fStyle.getForegroundPaintOrID());
+            if ((0 <= foregroundId) && (foregroundId < static_cast<int>(paints_.size()))) {
+                if (paints_[foregroundId].isSymbolGlyph) {
+                    continue;
+                }
+                // if pen has value, only modify the value of brush,
+                // otherwise clear entire foreground object.
+                if (paints_[foregroundId].pen.has_value()) {
+                    paints_[foregroundId].brush = std::nullopt;
+                    continue;
+                }
+                skiaBlock.fStyle.clearForegroundColor();
+            }
+        }
+    }
+}
+
+void ParagraphImpl::UpdateForegroundBrush(const TextStyle& spTextStyle)
+{
+    RecordDifferentPthreadCall(__FUNCTION__);
+    if (paragraph_ == nullptr) {
+        return;
+    }
+
+    SkTArray<skt::Block, true>& skiaTextStyles = paragraph_->exportTextStyles();
+
+    if (spTextStyle.foreground.has_value() && spTextStyle.foreground.value().brush.has_value()) {
+        UpdateForegroundBrushWithValidData(skiaTextStyles, spTextStyle.foreground.value().brush);
+    } else {
+        UpdateForegroundBrushWithNullopt(skiaTextStyles);
     }
 }
 
