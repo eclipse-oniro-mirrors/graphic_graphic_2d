@@ -1024,8 +1024,8 @@ CM_INLINE bool RSBaseRenderUtil::ConsumeAndUpdateBuffer(RSSurfaceHandler& surfac
                 auto parentNode = surfaceNode->GetParent().lock();
                 parentNodeId = parentNode ? parentNode->GetId() : 0;
             }
-            RS_TRACE_NAME_FMT("RsDebug surfaceHandler(id: %" PRIu64 ") AcquireBuffer success, parentNodeId = "
-                "%" PRIu64 ", acquireTimeStamp = %" PRIu64 ", buffer timestamp = %" PRId64 ", parentId = %" PRIu64 ","
+            RS_TRACE_NAME_FMT("RsDebug surfaceHandler(id: %" PRIu64 ") AcquireBuffer success, parentNodeId = %"
+                PRIu64 ", acquireTimeStamp = %" PRIu64 ", buffer timestamp = %" PRId64 ", parentId = %" PRIu64 ","
                 "seq = %" PRIu32 ".",parentNodeId, surfaceHandler.GetNodeId(), acquireTimeStamp, surfaceBuffer->timestamp,
                 surfaceBuffer->buffer->GetSeqNum());
         }
