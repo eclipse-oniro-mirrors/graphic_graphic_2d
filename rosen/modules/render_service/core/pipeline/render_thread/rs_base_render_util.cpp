@@ -967,7 +967,8 @@ void RSBaseRenderUtil::MergeBufferDamages(Rect& surfaceDamage, const std::vector
 }
 
 CM_INLINE bool RSBaseRenderUtil::ConsumeAndUpdateBuffer(RSSurfaceHandler& surfaceHandler,
-    uint64_t presentWhen, bool dropFrameByPidEnable, bool adaptiveDVSyncEnable, bool needConsume)
+    uint64_t presentWhen, bool dropFrameByPidEnable, bool adaptiveDVSyncEnable, bool needConsume,
+    std::shared_ptr<RSSurfaceRenderNode> surfaceNode)
 {
     if (surfaceHandler.GetAvailableBufferCount() <= 0) {
         return true;
@@ -1018,9 +1019,14 @@ CM_INLINE bool RSBaseRenderUtil::ConsumeAndUpdateBuffer(RSSurfaceHandler& surfac
             "%{public}" PRIu64 ", buffer timestamp = %{public}" PRId64 ", seq = %{public}" PRIu32 ".",
             surfaceHandler.GetNodeId(), acquireTimeStamp, surfaceBuffer->timestamp, surfaceBuffer->buffer->GetSeqNum());
         if (IsTagEnabled(HITRACE_TAG_GRAPHIC_AGP)) {
-            RS_TRACE_NAME_FMT("RsDebug surfaceHandler(id: %" PRIu64 ") AcquireBuffer success, acquireTimeStamp = "
-                              "%" PRIu64 ", buffer timestamp = %" PRId64 ", seq = %" PRIu32 ".",
-                surfaceHandler.GetNodeId(), acquireTimeStamp, surfaceBuffer->timestamp,
+            uint64_t parentNodeId = 0;
+            if (surfaceNode) {
+                auto parentNode = surfaceNode->GetParent().lock();
+                parentNodeId = parentNode ? parentNode->GetId() : 0;
+            }
+            RS_TRACE_NAME_FMT("RsDebug surfaceHandler(id: %" PRIu64 ") AcquireBuffer success, parentNodeId = %"
+                PRIu64 ", acquireTimeStamp = %" PRIu64 ", buffer timestamp = %" PRId64 ", seq = %" PRIu32 ".",
+                surfaceHandler.GetNodeId(), parentNodeId, acquireTimeStamp, surfaceBuffer->timestamp,
                 surfaceBuffer->buffer->GetSeqNum());
         }
         // The damages of buffer will be merged here, only single damage is supported so far
