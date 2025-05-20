@@ -1942,10 +1942,7 @@ void RSUniRenderVisitor::UpdateHwcNodeInfoForAppNode(RSSurfaceRenderNode& node)
             curSurfaceNode_->AddChildHardwareEnabledNode(node.ReinterpretCastTo<RSSurfaceRenderNode>());
         }
         auto& geo = node.GetRenderProperties().GetBoundsGeometry();
-        if (geo == nullptr) {
-            return;
-        }
-        hwcVisitor_->UpdateHwcNodeInfo(node, geo->GetAbsMatrix());
+        hwcVisitor_->UpdateHwcNodeInfo(node, geo->GetAbsMatrix(), geo->GetAbsRect());
     }
 }
 
