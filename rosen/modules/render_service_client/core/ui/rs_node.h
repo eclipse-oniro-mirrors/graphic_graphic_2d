@@ -1689,6 +1689,12 @@ public:
     {
         return isOnTheTree_;
     }
+
+    float GetTotalAlpha() const
+    {
+        return totalAlpha_;
+    }
+
 protected:
     explicit RSNode(
         bool isRenderServiceNode, bool isTextureExportNode = false, std::shared_ptr<RSUIContext> rsUIContext = nullptr,
@@ -1845,6 +1851,7 @@ private:
     void MarkAllExtendModifierDirty();
     void ResetExtendModifierDirty();
     void SetParticleDrawRegion(std::vector<ParticleParams>& particleParams);
+    void AccumulateAlpha(float &alpha);
 
     /**
      * @brief Clears all modifiers associated with this node.
@@ -1860,6 +1867,9 @@ private:
 
     float globalPositionX_ = 0.f;
     float globalPositionY_ = 0.f;
+    float alpha_ = 1.f;
+    float totalAlpha_ = 1.f;
+    bool visitedForTotalAlpha_ = false;
 
     bool extendModifierIsDirty_ { false };
 

@@ -2006,6 +2006,7 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateHwcNodeEnableByBackgroundAlpha004, TestSize.
 HWTEST_F(RSUniHwcVisitorTest, UpdateHwcNodeInfo_001, TestSize.Level2)
 {
     Drawing::Matrix absMatrix;
+    RectI absRect;
     RectI rect = {0, 80, 1000, 1000};
 
     auto rsSurfaceRenderNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
@@ -2027,23 +2028,23 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateHwcNodeInfo_001, TestSize.Level2)
 
     rsSurfaceRenderNode->isFixRotationByUser_ = false;
     rsUniHwcVisitor->isHardwareForcedDisabled_ = true;
-    rsUniHwcVisitor->UpdateHwcNodeInfo(*rsSurfaceRenderNode, absMatrix);
+    rsUniHwcVisitor->UpdateHwcNodeInfo(*rsSurfaceRenderNode, absMatrix, absRect);
 
     rsUniHwcVisitor->isHardwareForcedDisabled_ = false;
     rsSurfaceRenderNode->dynamicHardwareEnable_ = false;
-    rsUniHwcVisitor->UpdateHwcNodeInfo(*rsSurfaceRenderNode, absMatrix);
+    rsUniHwcVisitor->UpdateHwcNodeInfo(*rsSurfaceRenderNode, absMatrix, absRect);
 
     rsSurfaceRenderNode->dynamicHardwareEnable_ = true;
     surfaceNode->visibleRegion_.Reset();
-    rsUniHwcVisitor->UpdateHwcNodeInfo(*rsSurfaceRenderNode, absMatrix);
+    rsUniHwcVisitor->UpdateHwcNodeInfo(*rsSurfaceRenderNode, absMatrix, absRect);
 
     surfaceNode->visibleRegion_.rects_.push_back(rect);
     surfaceNode->visibleRegion_.bound_ = rect;
     rsSurfaceRenderNode->isFixRotationByUser_ = true;
-    rsUniHwcVisitor->UpdateHwcNodeInfo(*rsSurfaceRenderNode, absMatrix);
+    rsUniHwcVisitor->UpdateHwcNodeInfo(*rsSurfaceRenderNode, absMatrix, absRect);
 
     rsSurfaceRenderNode->isFixRotationByUser_ = false;
-    rsUniHwcVisitor->UpdateHwcNodeInfo(*rsSurfaceRenderNode, absMatrix, true);
+    rsUniHwcVisitor->UpdateHwcNodeInfo(*rsSurfaceRenderNode, absMatrix, absRect, true);
 }
 
 /**
@@ -2290,6 +2291,36 @@ HWTEST_F(RSUniHwcVisitorTest, IsDisableHwcOnExpandScreen, TestSize.Level2)
     rsUniRenderVisitor->curDisplayNode_ = displayNode;
     bool result2 = rsUniHwcVisitor->IsDisableHwcOnExpandScreen();
     EXPECT_FALSE(result2);
+}
+
+/**
+ * @tc.name: UpdateCroseInfoForProtectedHwcNode001
+ * @tc.desc: Test UpdateCroseInfoForProtectedHwcNode
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSUniHwcVisitorTest, UpdateCroseInfoForProtectedHwcNode001, TestSize.Level2)
+{
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    ASSERT_NE(rsUniRenderVisitor, nullptr);
+    ASSERT_NE(rsUniRenderVisitor->hwcVisitor_, nullptr);
+    NodeId surfaceNodeId = 1;
+    auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(surfaceNodeId);
+    ASSERT_NE(surfaceNode, nullptr);
+
+    ASSERT_FALSE(surfaceNode->GetFirstLevelNode());
+    ASSERT_FALSE(surfaceNode->IsDRMCrossNode());
+    ASSERT_FALSE(surfaceNode->GetHwcGlobalPositionEnabled());
+    ASSERT_FALSE(surfaceNode->GetSpecialLayerMgr().Find(SpecialLayerType::PROTECTED));
+
+    surfaceNode->GetMultableSpecialLayerMgr().Set(SpecialLayerType::PROTECTED, true);
+    surfaceNode->SetHwcGlobalPositionEnabled(true);
+    surfaceNode->SetHwcCrossNode(true);
+    rsUniRenderVisitor->hwcVisitor_->UpdateCrossInfoForProtectedHwcNode(*surfaceNode);
+
+    ASSERT_TRUE(surfaceNode->GetSpecialLayerMgr().Find(SpecialLayerType::PROTECTED));
+    ASSERT_FALSE(surfaceNode->GetHwcGlobalPositionEnabled());
+    ASSERT_FALSE(surfaceNode->IsDRMCrossNode());
 }
 
 /*
