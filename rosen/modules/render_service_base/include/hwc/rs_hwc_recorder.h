@@ -31,12 +31,9 @@ struct RSHwcRecorder {
     void SetBlendWithBackground(bool isBlendWithBackground) { isBlendWithBackground_ = isBlendWithBackground; }
     bool IsBlendWithBackground() const { return isBlendWithBackground_; }
 
-    bool GetZorderChanged() const
-    {
-        return zOrderChanged_;
-    }
+    bool GetZorderChanged() const { return zOrderChanged_; }
 
-    void UpdatePositionZ(const float& positionZ)
+    void UpdatePositionZ(float positionZ)
     {
         zOrderChanged_ = !ROSEN_EQ(positionZ, positionZ_);
         positionZ_ = positionZ;
