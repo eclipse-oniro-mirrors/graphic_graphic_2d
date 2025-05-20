@@ -355,13 +355,13 @@ void RSUniHwcVisitor::ProcessSolidLayerEnabled(RSSurfaceRenderNode& node)
     RS_OPTIONAL_TRACE_NAME_FMT("solidLayer: name:%s id:%" PRIu64 " solidLayer enabling condition is met.",
         node.GetName().c_str(), node.GetId());
     RS_LOGD("solidLayer: solidLayer enabling condition is met, name: %{public}s", node.GetName().c_str());
+    auto parentNode = node.GetParent().lock();
     const auto& renderProperties = node.GetRenderProperties();
     Color appBackgroundColor = renderProperties.GetBackgroundColor();
-    auto parentNode = node.GetParent().lock();
     if (static_cast<uint8_t>(appBackgroundColor.GetAlpha()) == 0) {
         appBackgroundColor = FindAppBackgroundColor(node);
         RS_OPTIONAL_TRACE_FMT("solidLayer: background color found upwards in a transparent situation, name:%s "
-            "id:%" PRIu64 "parentId:%" PRIu64 " color:%08x", node.GetName().c_str(), node.GetId(),
+            "id:%" PRIu64 " parentId:%" PRIu64 " color:%08x", node.GetName().c_str(), node.GetId(),
             parentNode ? parentNode->GetId() : 0, appBackgroundColor.AsArgbInt());
         RS_LOGD("solidLayer: isPureTransparentEnabled color:%{public}08x", appBackgroundColor.AsArgbInt());
         if (appBackgroundColor == RgbPalette::Black()) {
@@ -372,8 +372,8 @@ void RSUniHwcVisitor::ProcessSolidLayerEnabled(RSSurfaceRenderNode& node)
     }
     // No background color available
     if (static_cast<uint8_t>(appBackgroundColor.GetAlpha()) < MAX_ALPHA) {
-        RS_OPTIONAL_TRACE_FMT("solidLayer: name:%s id:%" PRIu64 "parentId:%" PRIu64 " disabled by background"
-            " color not found", node.GetName().c_str(), node.GetId(), parentNode ? parentNode->GetId() : 0);
+        RS_OPTIONAL_TRACE_FMT("solidLayer: name:%s id:%" PRIu64 "parentId:%" PRIu64 " disabled by background "
+            "color not found", node.GetName().c_str(), node.GetId(), parentNode ? parentNode->GetId() : 0);
         RS_LOGD("solidLayer: disabled by background color not found: %{public}s", node.GetName().c_str());
         PrintHiperfLog(&node, "background color not found");
         node.SetHardwareForcedDisabledState(true);
