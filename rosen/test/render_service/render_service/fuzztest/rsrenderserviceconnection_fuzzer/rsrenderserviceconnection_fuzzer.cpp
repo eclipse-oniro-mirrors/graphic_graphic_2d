@@ -814,6 +814,38 @@ bool DoSetVirtualScreenBlackList()
     return true;
 }
 
+bool DoAddVirtualScreenBlackList()
+{
+    if (rsConn_ == nullptr) {
+        return false;
+    }
+    uint64_t id = GetData<uint64_t>();
+    std::vector<NodeId> blackListVector;
+    uint8_t listSize = GetData<uint8_t>();
+    for (uint8_t i = 0; i < listSize; ++i) {
+        NodeId nodeId = GetData<NodeId>();
+        blackListVector.push_back(nodeId);
+    }
+    rsConn_->AddVirtualScreenBlackList(id, blackListVector);
+    return true;
+}
+
+bool DoRemoveVirtualScreenBlackList()
+{
+    if (rsConn_ == nullptr) {
+        return false;
+    }
+    uint64_t id = GetData<uint64_t>();
+    std::vector<NodeId> blackListVector;
+    uint8_t listSize = GetData<uint8_t>();
+    for (uint8_t i = 0; i < listSize; ++i) {
+        NodeId nodeId = GetData<NodeId>();
+        blackListVector.push_back(nodeId);
+    }
+    rsConn_->RemoveVirtualScreenBlackList(id, blackListVector);
+    return true;
+}
+
 bool DoSetVirtualScreenSecurityExemptionList()
 {
     if (rsConn_ == nullptr) {
@@ -1465,6 +1497,8 @@ void DoFuzzerTest2()
     DoGetMemoryGraphics();
     DoGetTotalAppMemSize();
     DoSetVirtualScreenBlackList();
+    DoAddVirtualScreenBlackList();
+    DoRemoveVirtualScreenBlackList();
     DoSetVirtualScreenSecurityExemptionList();
     DoSetCastScreenEnableSkipWindow();
     DoSyncFrameRateRange();
