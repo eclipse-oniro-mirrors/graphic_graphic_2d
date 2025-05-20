@@ -236,6 +236,7 @@ void RSImage::DrawImageRect(
     pthread_t imageTid = pthread_self();
     if (imageShader != nullptr) {
         DrawImageShaderRectOnCanvas(canvas, imageShader, imageTid);
+        return;
     }
 
     if (imageRepeat_ == ImageRepeat::NO_REPEAT && isFitMatrixValid_ &&
