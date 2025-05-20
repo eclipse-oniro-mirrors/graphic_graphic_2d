@@ -31,6 +31,17 @@ struct RSHwcRecorder {
     void SetBlendWithBackground(bool isBlendWithBackground) { isBlendWithBackground_ = isBlendWithBackground; }
     bool IsBlendWithBackground() const { return isBlendWithBackground_; }
 
+    bool GetZorderChanged() const
+    {
+        return zOrderChanged_;
+    }
+
+    void UpdatePositionZ(const float& positionZ)
+    {
+        zOrderChanged_ = !ROSEN_EQ(positionZ, positionZ_);
+        positionZ_ = positionZ;
+    }
+
     void SetZOrderForHwcEnableByFilter(int32_t zOrderForHwcEnableByFilter)
     {
         zOrderForHwcEnableByFilter_ = zOrderForHwcEnableByFilter;
@@ -40,6 +51,10 @@ struct RSHwcRecorder {
     bool isBlendWithBackground_ = false;
 
     int32_t zOrderForHwcEnableByFilter_ = 0;
+
+private:
+    float positionZ_ = 0.0f;
+    bool zOrderChanged_ = false;
 };
 
 struct RSHwcSurfaceRecorder {
