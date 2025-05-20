@@ -67,6 +67,7 @@ public:
         const Drawing::SamplingOptions& samplingOption, Drawing::SrcRectConstraint constraint);
     void DrawAutoCacheDfx(RSPaintFilterCanvas& canvas,
         std::vector<std::pair<RectI, std::string>>& autoCacheRenderNodeInfos);
+    void DrawOpincDisabledDfx(Drawing::Canvas& canvas, RSRenderParams& params);
     void DrawableCacheStateReset(RSRenderParams& params);
     bool PreDrawableCacheState(RSRenderParams& params, bool& isOpincDropNodeExt);
     void OpincCanvasUnionTranslate(RSPaintFilterCanvas& canvas);

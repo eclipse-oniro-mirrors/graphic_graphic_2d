@@ -344,4 +344,44 @@ void RSOpincDrawCache::DrawAutoCacheDfx(RSPaintFilterCanvas& canvas,
     autoCacheRenderNodeInfos.push_back({dfxRect, extra});
 #endif
 }
+
+void RSOpincDrawCache::DrawOpincDisabledDfx(Drawing::Canvas& canvas, RSRenderParams& params)
+{
+    if (!IsAutoCacheDebugEnable()) {
+        return;
+    }
+
+    if (!params.OpincIsSuggest()) {
+        return;
+    }
+
+    if (opCanCache_) {
+        return;
+    }
+
+    auto size = params.GetCacheSize();
+    Drawing::Pen rectPen;
+    rectPen.SetColor(Drawing::Color::COLOR_RED);
+    rectPen.SetAntiAlias(true);
+    rectPen.SetAlphaF(0.2f);
+    rectPen.SetWidth(6);
+    rectPen.SetJoinStyle(Drawing::Pen::JoinStyle::ROUND_JOIN);
+    canvas.AttachPen(rectPen);
+    canvas.DrawRect(Drawing::Rect(20, 20, size.x_ - 20, size.y_ - 20));
+    canvas.DetachPen();
+
+    std::string info = "support: " + std::to_string(params.OpincGetSupportFlag());
+    info += " rootF: " + std::to_string(params.OpincGetRootFlag());
+    info += " rootStrategy: " + std::to_string(rootNodeStragyType_);
+    info += " recordState: " + std::to_string(recordState_);
+
+    Drawing::Font font;
+    font.SetSize(30.f);
+    std::shared_ptr<Drawing::TextBlob> textBlob = Drawing::TextBlob::MakeFromString(info.c_str(), font);
+    Drawing::Brush brush;
+    brush.SetColor(Drawing::Color::COLOR_RED);
+    canvas.AttachBrush(brush);
+    canvas.DrawTextBlob(textBlob.get(), 10.f, 20.f);
+    canvas.DetachBrush();
+}
 } // namespace OHOS::Rosen::DrawableV2
