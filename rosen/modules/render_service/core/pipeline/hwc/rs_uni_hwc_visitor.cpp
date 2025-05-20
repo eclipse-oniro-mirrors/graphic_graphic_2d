@@ -373,7 +373,7 @@ void RSUniHwcVisitor::ProcessSolidLayerEnabled(RSSurfaceRenderNode& node)
     // No background color available
     if (static_cast<uint8_t>(appBackgroundColor.GetAlpha()) < MAX_ALPHA) {
         RS_OPTIONAL_TRACE_FMT("solidLayer: name:%s id:%" PRIu64 "parentId:%" PRIu64 " disabled by background"
-        " color not found", node.GetName().c_str(), node.GetId(), parentNode ? parentNode->GetId() : 0);
+            " color not found", node.GetName().c_str(), node.GetId(), parentNode ? parentNode->GetId() : 0);
         RS_LOGD("solidLayer: disabled by background color not found: %{public}s", node.GetName().c_str());
         PrintHiperfLog(&node, "background color not found");
         node.SetHardwareForcedDisabledState(true);
