@@ -356,6 +356,47 @@ bool DoSetOverlayDisplayModeFuzzTest(const uint8_t* data, size_t size)
 }
 #endif
 
+bool DoTakeSurfaceCapture(const uint8_t* data, size_t size)
+{
+    if (data == nullptr) {
+        return false;
+    }
+
+    // initialize
+    g_data = data;
+    g_size = size;
+    g_pos = 0;
+
+    // get data
+    uint64_t nodeId = GetData<uint64_t>();
+    std::shared_ptr<SurfaceCaptureCallback> callback;
+    RSSurfaceCaptureConfig captureConfig;
+    captureConfig.scaleX = GetData<float>();
+    captureConfig.scaleY = GetData<float>();
+    captureConfig.useDma = GetData<bool>();
+    captureConfig.useCurWindow = GetData<bool>();
+    uint8_t type = GetData<uint8_t>();
+    captureConfig.captureType = (SurfaceCaptureType)type;
+    captureConfig.isSync = GetData<bool>();
+    uint8_t listSize = GetData<uint8_t>();
+    for (uint8_t i = 0; i < listSize; ++i) {
+        uint64_t nodeid = GetData<uint64_t>();
+        captureConfig.blackList.push_back(nodeid);
+    }
+    captureConfig.mainScreenRect.left_ = GetData<float>();
+    captureConfig.mainScreenRect.top_ = GetData<float>();
+    captureConfig.mainScreenRect.right_ = GetData<float>();
+    captureConfig.mainScreenRect.bottom_ = GetData<float>();
+    RSSurfaceCaptureBlurParam blurParam;
+
+    // test
+    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    auto remoteObject = samgr->GetSystemAbility(RENDER_SERVICE);
+    RSRenderServiceConnectionProxy rsRenderServiceConnectionProxy(remoteObject);
+    rsRenderServiceConnectionProxy.TakeSurfaceCapture(nodeId, callback, captureConfig, blurParam);
+    return true;
+}
+
 bool DoBehindWindowFilterEnabled(const uint8_t* data, size_t size)
 {
     if (data == nullptr) {
@@ -393,6 +434,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 #ifdef RS_ENABLE_OVERLAY_DISPLAY
     OHOS::Rosen::DoSetOverlayDisplayModeFuzzTest(data, size);
 #endif
+    OHOS::Rosen::DoTakeSurfaceCapture(data, size);
     OHOS::Rosen::DoBehindWindowFilterEnabled(data, size);
     return 0;
 }
