@@ -356,7 +356,7 @@ bool DoCreateVirtualScreen(const uint8_t* data, size_t size)
     uint32_t height = GetData<uint32_t>();
     auto csurface = IConsumerSurface::Create();
     auto producer = csurface->GetProducer();
-    auto psurface = Surface::CreateSurfaceAsConsumer(producer);
+    auto psurface = Surface::CreateSurfaceAsProducer(producer);
     ScreenId mirrorId = GetData<ScreenId>();
     int flags = GetData<int>();
     std::vector<NodeId> whiteList;

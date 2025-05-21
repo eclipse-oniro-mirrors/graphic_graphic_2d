@@ -497,7 +497,7 @@ HWTEST_F(RSClientTest, RemoveVirtualScreenBlackListTest, TestSize.Level1)
  * @tc.type:FUNC
  * @tc.require: issues#IC98BX
  */
-HWTEST_F(RSClientTest, ResizeVirtualScreen001, TestSize.Level1)
+HWTEST_F(RSClientTest, ResizeVirtualScreenTest, TestSize.Level1)
 {
     ASSERT_NE(rsClient, nullptr);
     ScreenId screenId = 100;
