@@ -53,8 +53,8 @@ public:
 
     // opinc switch
     bool IsAutoCacheDebugEnable();
-    int32_t GetOpincCacheMaxWidth();
-    int32_t GetOpincCacheMaxHeight();
+    int32_t GetOpincCacheMaxWidth() const;
+    int32_t GetOpincCacheMaxHeight() const;
 
     void OpincCalculateBefore(Drawing::Canvas& canvas,
         const RSRenderParams& params, bool& isOpincDropNodeExt);

@@ -20,15 +20,18 @@
 #include "common/rs_optional_trace.h"
 #include "feature_cfg/feature_param/performance_feature/opinc_param.h"
 #include "params/rs_render_params.h"
+#include "string_utils.h"
 namespace OHOS::Rosen::DrawableV2 {
 
 namespace {
 constexpr int32_t BITMAP_CACHE_SIZE_MIN = 50;
 constexpr int32_t REALDRAW_WIDTH_EX = 200;
 constexpr int32_t OPINC_ROOT_TOTAL_MAX = 1;
-constexpr int32_t PERCENT = 100;
+constexpr float PERCENT = 100.f;
 constexpr int32_t BORDER_WIDTH = 6;
 constexpr int32_t MARGIN = 20;
+constexpr float RECT_PEN_ALPHA = 0.2f;
+constexpr float DFX_FONT_SIZE = 30.f;
 }
 
 bool RSOpincDrawCache::IsAutoCacheDebugEnable()
@@ -36,13 +39,13 @@ bool RSOpincDrawCache::IsAutoCacheDebugEnable()
     return RSSystemProperties::GetAutoCacheDebugEnabled() && autoCacheEnable_;
 }
 
-int32_t RSOpincDrawCache::GetOpincCacheMaxWidth()
+int32_t RSOpincDrawCache::GetOpincCacheMaxWidth() const
 {
-    return (int32_t)std::ceil((float)screenRectInfo_.GetWidth() *
-        OPIncParam::GetCacheWidthThresholdPercentValue() / PERCENT);
+    return static_cast<int32_t>(std::ceil(static_cast<float>(screenRectInfo_.GetWidth()) *
+        OPIncParam::GetCacheWidthThresholdPercentValue() / PERCENT));
 }
 
-int32_t RSOpincDrawCache::GetOpincCacheMaxHeight()
+int32_t RSOpincDrawCache::GetOpincCacheMaxHeight() const
 {
     return screenRectInfo_.GetHeight();
 }
@@ -64,8 +67,8 @@ void RSOpincDrawCache::OpincCalculateAfter(Drawing::Canvas& canvas, bool& isOpin
 {
     if (isOpincCaculateStart_) {
         isOpincCaculateStart_ = false;
-        auto localBound =
-            Drawing::Rect(0.f, 0.f, (float)(GetOpincCacheMaxWidth()), (float)GetOpincCacheMaxHeight());
+        auto localBound = Drawing::Rect(0.f, 0.f, static_cast<float>(GetOpincCacheMaxWidth()),
+            static_cast<float>(GetOpincCacheMaxHeight()));
         auto drawAreaTemp = canvas.OpCalculateAfter(localBound);
         isDrawAreaEnable_ = DrawAreaEnableState::DRAW_AREA_DISABLE;
         opCanCache_ = false;
@@ -339,15 +342,7 @@ void RSOpincDrawCache::DrawAutoCacheDfx(RSPaintFilterCanvas& canvas,
 
 void RSOpincDrawCache::DrawOpincDisabledDfx(Drawing::Canvas& canvas, RSRenderParams& params)
 {
-    if (!IsAutoCacheDebugEnable()) {
-        return;
-    }
-
-    if (!params.OpincIsSuggest()) {
-        return;
-    }
-
-    if (opCanCache_) {
+    if (!IsAutoCacheDebugEnable() || !params.OpincIsSuggest() || opCanCache_) {
         return;
     }
 
@@ -355,20 +350,19 @@ void RSOpincDrawCache::DrawOpincDisabledDfx(Drawing::Canvas& canvas, RSRenderPar
     Drawing::Pen rectPen;
     rectPen.SetColor(Drawing::Color::COLOR_RED);
     rectPen.SetAntiAlias(true);
-    rectPen.SetAlphaF(0.2f);
+    rectPen.SetAlphaF(RECT_PEN_ALPHA);
     rectPen.SetWidth(BORDER_WIDTH);
     rectPen.SetJoinStyle(Drawing::Pen::JoinStyle::ROUND_JOIN);
     canvas.AttachPen(rectPen);
     canvas.DrawRect(Drawing::Rect(MARGIN, MARGIN, size.x_ - MARGIN, size.y_ - MARGIN));
     canvas.DetachPen();
 
-    std::string info = "support: " + std::to_string(params.OpincGetSupportFlag());
-    info += " rootF: " + std::to_string(params.OpincGetRootFlag());
-    info += " rootStrategy: " + std::to_string(rootNodeStragyType_);
-    info += " recordState: " + std::to_string(recordState_);
+    std::string info = "";
+    AppendFormat(info, "support:%d rootF:%d rootStrategy:%d recordState:%d", params.OpincGetSupportFlag(),
+        params.OpincGetRootFlag(), rootNodeStragyType_, recordState_);
 
     Drawing::Font font;
-    font.SetSize(30.f);
+    font.SetSize(DFX_FONT_SIZE);
     std::shared_ptr<Drawing::TextBlob> textBlob = Drawing::TextBlob::MakeFromString(info.c_str(), font);
     Drawing::Brush brush;
     brush.SetColor(Drawing::Color::COLOR_RED);
