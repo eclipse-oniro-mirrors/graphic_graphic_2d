@@ -326,6 +326,7 @@ private:
     void PowerStatusDump(std::string& dumpString);
     void CapabilityTypeDump(GraphicInterfaceType capabilityType, std::string& dumpString);
     void ScreenTypeDump(std::string& dumpString);
+    void ScreenCorrectionDump(std::string& dumpString);
 
     // ScreenId for this screen.
     ScreenId id_ = INVALID_SCREEN_ID;
@@ -419,6 +420,8 @@ private:
     std::atomic<bool> hasProtectedLayer_ = false;
 
     std::vector<float> linearMatrix_ = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f};
+
+    std::atomic<bool> hasLogBackLightAfterPowerStatusChanged_ = false;
 };
 } // namespace impl
 } // namespace Rosen
