@@ -4077,8 +4077,17 @@ HWTEST_F(RSUniRenderVisitorTest, QuickPrepareCanvasRenderNode001, TestSize.Level
     ASSERT_NE(rsUniRenderVisitor, nullptr);
     rsUniRenderVisitor->QuickPrepareCanvasRenderNode(*rsCanvasRenderNode);
 
+    rsCanvasRenderNode->GetOpincCache().isReseted_ = true;
+    rsCanvasRenderNode->isOpincNodeSupportFlag_ = false;
     rsUniRenderVisitor->isDrawingCacheEnabled_ = true;
     rsUniRenderVisitor->QuickPrepareCanvasRenderNode(*rsCanvasRenderNode);
+    ASSERT_TRUE(rsCanvasRenderNode->isOpincNodeSupportFlag_);
+
+    rsCanvasRenderNode->GetOpincCache().isReseted_ = false;
+    rsCanvasRenderNode->isOpincNodeSupportFlag_ = false;
+    rsUniRenderVisitor->isDrawingCacheEnabled_ = true;
+    rsUniRenderVisitor->QuickPrepareCanvasRenderNode(*rsCanvasRenderNode);
+    ASSERT_FALSE(rsCanvasRenderNode->isOpincNodeSupportFlag_);
 }
 
 /**

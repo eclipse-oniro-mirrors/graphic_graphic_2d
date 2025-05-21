@@ -26,9 +26,9 @@ namespace {
 constexpr int32_t BITMAP_CACHE_SIZE_MIN = 50;
 constexpr int32_t REALDRAW_WIDTH_EX = 200;
 constexpr int32_t OPINC_ROOT_TOTAL_MAX = 1;
-constexpr int32_t OPINC_CACHE_HEIGHT_THRESHOLD = 2720;
-constexpr int32_t OPINC_CACHE_WIDTH_MAX = 1460;
 constexpr int32_t PERCENT = 100;
+constexpr int32_t BORDER_WIDTH = 6;
+constexpr int32_t MARGIN = 20;
 }
 
 bool RSOpincDrawCache::IsAutoCacheDebugEnable()
@@ -38,21 +38,13 @@ bool RSOpincDrawCache::IsAutoCacheDebugEnable()
 
 int32_t RSOpincDrawCache::GetOpincCacheMaxWidth()
 {
-    int32_t maxWidth = OPINC_CACHE_WIDTH_MAX;
-    if (screenRectInfo_.GetWidth() > 0) {
-        maxWidth = (int32_t)std::ceil((float)screenRectInfo_.GetWidth() *
-            OPIncParam::GetCacheWidthThresholdPercentValue() / PERCENT);
-    }
-    return maxWidth;
+    return (int32_t)std::ceil((float)screenRectInfo_.GetWidth() *
+        OPIncParam::GetCacheWidthThresholdPercentValue() / PERCENT);
 }
 
 int32_t RSOpincDrawCache::GetOpincCacheMaxHeight()
 {
-    int32_t maxHeight = OPINC_CACHE_HEIGHT_THRESHOLD;
-    if (screenRectInfo_.GetHeight() > 0) {
-        maxHeight = screenRectInfo_.GetHeight();
-    }
-    return maxHeight;
+    return screenRectInfo_.GetHeight();
 }
 
 void RSOpincDrawCache::OpincCalculateBefore(Drawing::Canvas& canvas,
@@ -364,10 +356,10 @@ void RSOpincDrawCache::DrawOpincDisabledDfx(Drawing::Canvas& canvas, RSRenderPar
     rectPen.SetColor(Drawing::Color::COLOR_RED);
     rectPen.SetAntiAlias(true);
     rectPen.SetAlphaF(0.2f);
-    rectPen.SetWidth(6);
+    rectPen.SetWidth(BORDER_WIDTH);
     rectPen.SetJoinStyle(Drawing::Pen::JoinStyle::ROUND_JOIN);
     canvas.AttachPen(rectPen);
-    canvas.DrawRect(Drawing::Rect(20, 20, size.x_ - 20, size.y_ - 20));
+    canvas.DrawRect(Drawing::Rect(MARGIN, MARGIN, size.x_ - MARGIN, size.y_ - MARGIN));
     canvas.DetachPen();
 
     std::string info = "support: " + std::to_string(params.OpincGetSupportFlag());
