@@ -719,8 +719,7 @@ void RSUniHwcVisitor::UpdateHardwareStateByBoundNEDstRectInApps(
                 [&boundRect](const RectI& abovedBound) { return !abovedBound.IntersectRect(boundRect).IsEmpty(); });
             if (intersectWithAbovedRect) {
                 hwcNodePtr->SetHardwareForcedDisabledState(true);
-                RS_OPTIONAL_TRACE_FMT("hwc debug: name:%s id:%" PRIu64
-                    "disabled by aboved BoundNEDstRect hwcNode",
+                RS_OPTIONAL_TRACE_FMT("hwc debug: name:%s id:%" PRIu64 " disabled by aboved BoundNEDstRect hwcNode",
                     hwcNodePtr->GetName().c_str(), hwcNodePtr->GetId());
                 continue;
             }
