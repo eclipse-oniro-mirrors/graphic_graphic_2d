@@ -14,7 +14,6 @@
  */
 #include <filesystem>
 
-#include "image_source.h"
 #include "rs_graphic_test.h"
 #include "rs_graphic_test_director.h"
 #include "rs_graphic_test_utils.h"

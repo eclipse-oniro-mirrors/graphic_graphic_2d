@@ -2420,7 +2420,7 @@ HWTEST_F(RSInterfacesTest, SetScreenSecurityMask_003, Function | SmallTest | Lev
  * @tc.name: TakeSurfaceCaptureTest
  * @tc.desc: Test TakeSurfaceCapture.
  * @tc.type: FUNC
- * @tc.require: issue
+ * @tc.require: issue#IC4P5O
  */
 HWTEST_F(RSInterfacesTest, TakeSurfaceCaptureTest, Function | SmallTest | Level2)
 {
