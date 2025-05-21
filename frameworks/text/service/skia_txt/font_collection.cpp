@@ -109,9 +109,6 @@ std::shared_ptr<Drawing::Typeface> FontCollection::LoadFont(
     const std::string& familyName, const uint8_t* data, size_t datalen)
 {
     TEXT_TRACE_FUNC();
-    if (SPText::DefaultFamilyNameMgr::IsThemeFontFamily(familyName)) {
-        return nullptr;
-    }
     std::shared_ptr<Drawing::Typeface> typeface(dfmanager_->LoadDynamicFont(familyName, data, datalen));
     TypefaceWithAlias ta(familyName, typeface);
     RegisterError err = RegisterTypeface(ta);
@@ -128,9 +125,6 @@ std::shared_ptr<Drawing::Typeface> FontCollection::LoadFont(
 LoadSymbolErrorCode FontCollection::LoadSymbolFont(const std::string& familyName, const uint8_t* data, size_t datalen)
 {
     TEXT_TRACE_FUNC();
-    if (SPText::DefaultFamilyNameMgr::IsThemeFontFamily(familyName)) {
-        return LoadSymbolErrorCode::LOAD_FAILED;
-    }
     std::shared_ptr<Drawing::Typeface> typeface(dfmanager_->LoadDynamicFont(familyName, data, datalen));
     if (typeface == nullptr) {
         return LoadSymbolErrorCode::LOAD_FAILED;

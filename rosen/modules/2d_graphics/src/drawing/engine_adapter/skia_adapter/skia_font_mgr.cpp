@@ -102,6 +102,28 @@ std::shared_ptr<FontMgrImpl> SkiaFontMgr::CreateDefaultFontMgr()
     return std::make_shared<SkiaFontMgr>(SkFontMgr::RefDefault());
 }
 
+bool SkiaFontMgr::CheckDynamicFontValid(const std::string &familyName, sk_sp<SkTypeface> typeface)
+{
+    if (typeface == nullptr) {
+        TEXT_LOGE("Failed to extract typeface");
+        return true;
+    }
+
+    std::string checkStr = familyName;
+    if (familyName.empty()) {
+        SkString name;
+        typeface->getFamilyName(&name);
+        checkStr.assign(name.c_str(), name.size());
+    }
+
+    if (SPText::DefaultFamilyNameMgr::IsThemeFontFamily(checkStr)) {
+        TEXT_LOGE("Prohibited to use OhosThemeFont registered dynamic fonts");
+        return false;
+    }
+
+    return true;
+}
+
 std::shared_ptr<FontMgrImpl> SkiaFontMgr::CreateDynamicFontMgr()
 {
     sk_sp<txt::DynamicFontManager> dynamicFontManager = sk_make_sp<txt::DynamicFontManager>();

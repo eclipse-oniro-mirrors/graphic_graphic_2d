@@ -50,7 +50,7 @@ public:
     std::vector<std::string> GetThemeFontFamilies() const;
     void ModifyThemeFontFamilies(size_t index);
     static std::string GenerateThemeFamilyName(size_t index);
-    static bool IsThemeFontFamily(const std::string& familyName);
+    static bool IsThemeFontFamily(std::string familyName);
 
 private:
     DefaultFamilyNameMgr();

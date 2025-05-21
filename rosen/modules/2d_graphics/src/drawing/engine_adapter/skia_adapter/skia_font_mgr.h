@@ -56,6 +56,8 @@ public:
     int GetFontFullName(int fontFd, std::vector<FontByteArray>& fullnameVec) override;
     int ParseInstallFontConfig(const std::string& configPath, std::vector<std::string>& fontPathVec) override;
 private:
+    bool CheckDynamicFontValid(const std::string &familyName, sk_sp<SkTypeface> typeface);
+
     sk_sp<SkFontMgr> skFontMgr_;
 };
 } // namespace Drawing

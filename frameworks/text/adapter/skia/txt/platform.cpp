@@ -73,8 +73,9 @@ std::shared_ptr<Drawing::FontMgr> GetDefaultFontManager()
     return Drawing::FontMgr::CreateDefaultFontMgr();
 }
 
-bool DefaultFamilyNameMgr::IsThemeFontFamily(const std::string& familyName)
+bool DefaultFamilyNameMgr::IsThemeFontFamily(std::string familyName)
 {
+    std::transform(familyName.begin(), familyName.end(), familyName.begin(), ::tolower);
     return familyName.find(OHOS_THEME_FONT) == 0;
 }
 } // namespace SPText
