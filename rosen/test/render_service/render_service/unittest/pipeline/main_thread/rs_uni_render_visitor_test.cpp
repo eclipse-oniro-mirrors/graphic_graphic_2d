@@ -4127,6 +4127,63 @@ HWTEST_F(RSUniRenderVisitorTest, CalculateOpaqueAndTransparentRegion005, TestSiz
 }
 
 /**
+ * @tc.name: CalculateOpaqueAndTransparentRegion006
+ * @tc.desc: Test CalculateOpaqueAndTransparentRegion, filter rect should be accumulated.
+ * @tc.type: FUNC
+ * @tc.require: issueIBCR0E
+ */
+HWTEST_F(RSUniRenderVisitorTest, CalculateOpaqueAndTransparentRegion006, TestSize.Level2)
+{
+    auto rsContext = std::make_shared<RSContext>();
+    ASSERT_NE(rsContext, nullptr);
+    RSSurfaceRenderNodeConfig config;
+    auto rsSurfaceRenderNode = std::make_shared<RSSurfaceRenderNode>(config, rsContext->weak_from_this());
+    ASSERT_NE(rsSurfaceRenderNode, nullptr);
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    ASSERT_NE(rsUniRenderVisitor, nullptr);
+
+    auto regionFilter = Occlusion::Region(Occlusion::Rect(DEFAULT_RECT));
+    rsUniRenderVisitor->accumulatedTransparentRegion_ = regionFilter;
+
+    rsUniRenderVisitor->ancestorNodeHasAnimation_ = false;
+    rSUniRenderVisitor->isAllSurfaceVisibleDebugEnabled_ = false;
+    EXPECT_CALL(*rsSurfaceRenderNode, CheckParticipateInOcclusion()).WillRepeatedly(testing::Return(true));
+    EXPECT_CALL(*rsSurfaceRenderNode, NeedDrawBehindWindow()).WillRepeatedly(testing::Return(true));
+    EXPECT_CALL(*rsSurfaceRenderNode, GetFilterRect()).WillRepeatedly(testing::Return(DEFAULT_FILTER_RECT));
+
+    rsUniRenderVisitor->CalculateOpaqueAndTransparentRegion(*rsSurfaceRenderNode);
+    ASSERT_FALSE(rsUniRenderVisitor->accumulatedTransparentRegion_.Sub(regionFilter).IsEmpty());
+}
+
+/**
+ * @tc.name: CalculateOpaqueAndTransparentRegion007
+ * @tc.desc: Test CalculateOpaqueAndTransparentRegion when node.NeedDrawBehindWindow() return false.
+ * @tc.type: FUNC
+ * @tc.require: issueIBCR0E
+ */
+HWTEST_F(RSUniRenderVisitorTest, CalculateOpaqueAndTransparentRegion007, TestSize.Level2)
+{
+    auto rsContext = std::make_shared<RSContext>();
+    ASSERT_NE(rsContext, nullptr);
+    RSSurfaceRenderNodeConfig config;
+    auto rsSurfaceRenderNode = std::make_shared<RSSurfaceRenderNode>(config, rsContext->weak_from_this());
+    ASSERT_NE(rsSurfaceRenderNode, nullptr);
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    ASSERT_NE(rsUniRenderVisitor, nullptr);
+
+    auto regionFilter = Occlusion::Region(Occlusion::Rect(DEFAULT_RECT));
+    rsUniRenderVisitor->accumulatedTransparentRegion_ = regionFilter;
+
+    rsUniRenderVisitor->ancestorNodeHasAnimation_ = false;
+    rSUniRenderVisitor->isAllSurfaceVisibleDebugEnabled_ = false;
+    EXPECT_CALL(*rsSurfaceRenderNode, CheckParticipateInOcclusion()).WillRepeatedly(testing::Return(true));
+    EXPECT_CALL(*rsSurfaceRenderNode, NeedDrawBehindWindow()).WillRepeatedly(testing::Return(false));
+
+    rsUniRenderVisitor->CalculateOpaqueAndTransparentRegion(*rsSurfaceRenderNode);
+    ASSERT_TRUE(rsUniRenderVisitor->accumulatedTransparentRegion_.Sub(regionFilter).IsEmpty());
+}
+
+/**
  * @tc.name: QuickPrepareCanvasRenderNode001
  * @tc.desc: Test QuickPrepareCanvasRenderNode with multi-params
  * @tc.type: FUNC

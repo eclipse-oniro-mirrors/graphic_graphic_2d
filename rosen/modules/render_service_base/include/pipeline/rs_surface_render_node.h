@@ -741,6 +741,11 @@ public:
         return visibleRegion_;
     }
 
+    const Occlusion::Region& GetVisibleRegionIncludeTransparentOcclusion() const
+    {
+        return visibleRegionIncludeTransparentOcclusion_;
+    }
+
     const Occlusion::Region& GetVisibleRegionInVirtual() const
     {
         return visibleRegionInVirtual_;
@@ -894,6 +899,11 @@ public:
     void SetVisibleRegion(const Occlusion::Region& region)
     {
         visibleRegion_ = region;
+    }
+
+    void SetVisibleRegionIncludeTransparentOcclusion(const Occlusion::Region& region)
+    {
+        visibleRegionIncludeTransparentOcclusion_ = region;
     }
 
     void SetVisibleRegionInVirtual(const Occlusion::Region& region)
@@ -1739,6 +1749,7 @@ private:
     different under filter cache surfacenode layer.
     */
     Occlusion::Region visibleRegion_;
+    Occlusion::Region visibleRegionIncludeTransparentOcclusion_;
     Occlusion::Region extendVisibleRegion_;
     Occlusion::Region visibleRegionInVirtual_;
     Occlusion::Region visibleRegionForCallBack_;
