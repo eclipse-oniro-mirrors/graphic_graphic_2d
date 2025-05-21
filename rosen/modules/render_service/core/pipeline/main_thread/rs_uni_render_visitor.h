@@ -29,7 +29,6 @@
 #include "feature/window_keyframe/rs_window_keyframe_node_info.h"
 #include "common/rs_special_layer_manager.h"
 #include "params/rs_render_thread_params.h"
-#include "pipeline/hwc/rs_uni_hwc_visitor.h"
 #include "pipeline/rs_dirty_region_manager.h"
 #include "pipeline/main_thread/rs_main_thread.h"
 #include "pipeline/rs_pointer_window_manager.h"
@@ -137,6 +136,10 @@ public:
     void UpdateCurFrameInfoDetail(RSRenderNode& node, bool subTreeSkipped = false, bool isPostPrepare = false);
 
     void ResetCrossNodesVisitedStatus();
+
+    void MarkFilterInForegroundFilterAndCheckNeedForceClearCache(RSRenderNode& node);
+
+    void UpdateDrawingCacheInfoBeforeChildren(RSCanvasRenderNode& node);
 
 private:
     /* Prepare relevant calculation */
@@ -468,6 +471,9 @@ private:
 
     // Used for control-level occlusion culling.
     std::shared_ptr<RSOcclusionHandler> curOcclusionHandler_;
+
+    // in foregroundFilter subtree
+    bool inForegroundFilter_ = false;
 };
 } // namespace Rosen
 } // namespace OHOS

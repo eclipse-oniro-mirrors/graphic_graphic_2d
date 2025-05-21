@@ -20,7 +20,6 @@
 namespace OHOS {
 namespace Rosen {
 class RSCanvasRenderNode;
-class RSUniRenderVisitor;
 class RSUniHwcVisitor {
 public:
     explicit RSUniHwcVisitor(RSUniRenderVisitor& visitor);
@@ -35,6 +34,8 @@ public:
 
     bool UpdateIsOffscreen(RSCanvasRenderNode& node);
     void RestoreIsOffscreen(bool isOffscreen) { isOffscreen_ = isOffscreen; }
+
+    void UpdateForegroundColorValid(RSCanvasRenderNode& node);
 
     Color FindAppBackgroundColor(RSSurfaceRenderNode& node);
     bool CheckNodeOcclusion(const std::shared_ptr<RSRenderNode>& node,
@@ -51,17 +52,18 @@ public:
     void UpdateHwcNodeEnableByNodeBelow();
     void UpdateHwcNodeEnableByHwcNodeBelowSelf(std::vector<RectI>& hwcRects,
         std::shared_ptr<RSSurfaceRenderNode>& hwcNode, bool isIntersectWithRoundCorner);
+    void UpdateHardwareStateByBoundNEDstRectInApps(const std::vector<std::weak_ptr<RSSurfaceRenderNode>>& hwcNodes,
+        std::vector<RectI>& abovedBounds);
     // Use in updating hwcnode hardware state with background alpha
     void UpdateHardwareStateByHwcNodeBackgroundAlpha(const std::vector<std::weak_ptr<RSSurfaceRenderNode>>& hwcNodes,
         RectI& backgroundAlphaRect, bool& isHardwareEnableByBackgroundAlpha);
     void UpdateChildHwcNodeEnableByHwcNodeBelow(std::vector<RectI>& hwcRects,
         std::shared_ptr<RSSurfaceRenderNode>& appNode);
     void UpdateTransparentHwcNodeEnable(const std::vector<std::weak_ptr<RSSurfaceRenderNode>>& hwcNodes);
-    bool IsBackFilterBehindSurface(std::shared_ptr<RSSurfaceRenderNode>& node, NodeId filterNodeId);
     void CalcHwcNodeEnableByFilterRect(std::shared_ptr<RSSurfaceRenderNode>& node,
-        const RectI& filterRect, NodeId filterNodeId, bool isReverseOrder = false, int32_t filterZorder = 0);
+        RSRenderNode& filterNode, int32_t filterZOrder = 0);
     void UpdateHwcNodeEnableByFilterRect(std::shared_ptr<RSSurfaceRenderNode>& node,
-        const RectI& filterRect, NodeId filterNodeId, bool isReverseOrder = false, int32_t filterZorder = 0);
+        RSRenderNode& filterNode, int32_t filterZOrder = 0);
     void UpdateHwcNodeEnableByGlobalFilter(std::shared_ptr<RSSurfaceRenderNode>& node);
     void UpdateHwcNodeEnableByGlobalCleanFilter(const std::vector<std::pair<NodeId, RectI>>& cleanFilter,
         RSSurfaceRenderNode& hwcNode);
@@ -74,8 +76,15 @@ public:
 
     bool IsDisableHwcOnExpandScreen() const;
 
-    void UpdateHwcNodeInfo(RSSurfaceRenderNode& node, const Drawing::Matrix& absMatrix,
+    void UpdateHwcNodeInfo(RSSurfaceRenderNode& node, const Drawing::Matrix& absMatrix, const RectI& absRect,
         bool subTreeSkipped = false);
+    void QuickPrepareChildrenOnlyOrder(RSRenderNode& node);
+    void PrintHiperfCounterLog(const char* const counterContext, uint64_t counter);
+    void PrintHiperfLog(RSSurfaceRenderNode* node, const char* const disabledContext);
+    void PrintHiperfLog(std::shared_ptr<RSSurfaceRenderNode>& node, const char* const disabledContext);
+
+    // DRM
+    void UpdateCrossInfoForProtectedHwcNode(RSSurfaceRenderNode& hwcNode);
 
     // DFX
     HwcDisabledReasonCollection& Statistics() { return hwcDisabledReasonCollection_; }
@@ -87,8 +96,8 @@ private:
     // Functions
     bool FindRootAndUpdateMatrix(std::shared_ptr<RSRenderNode>& parent, Drawing::Matrix& matrix,
         const RSRenderNode& rootNode);
-    void UpdateHWCNodeClipRect(std::shared_ptr<RSSurfaceRenderNode>& hwcNodePtr, RectI& clipRect,
-        const RSRenderNode& rootNode);
+    void UpdateHwcNodeClipRect(const std::shared_ptr<RSSurfaceRenderNode>& hwcNodePtr,
+        const RSRenderNode& rootNode, RectI& clipRect);
 
     // indicates if hardware composer is totally disabled
     bool isHardwareForcedDisabled_ = false;
@@ -98,7 +107,7 @@ private:
     // record nodes which has transparent dirty filter
     std::unordered_map<NodeId, std::vector<std::pair<NodeId, RectI>>> transparentHwcDirtyFilter_;
 
-    int32_t curZorderForCalcHwcNodeEnableByFilter_ = 0;
+    int32_t curZOrderForHwcEnableByFilter_ = 0;
 
     bool isOffscreen_ = false;
 

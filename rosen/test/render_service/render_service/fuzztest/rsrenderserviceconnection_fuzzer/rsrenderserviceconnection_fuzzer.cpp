@@ -1214,6 +1214,17 @@ bool DONotifyHgmConfigEvent()
     return true;
 }
 
+bool DONotifyXComponentExpectedFrameRate()
+{
+    if (rsConn_ == nullptr) {
+        return false;
+    }
+    std::string id = GetData<std::string>();
+    int32_t expectedFrameRate = GetData<int32_t>();
+    rsConn_->NotifyXComponentExpectedFrameRate(id, expectedFrameRate);
+    return true;
+}
+
 bool DOSetCacheEnabledForRotation()
 {
     if (rsConn_ == nullptr) {
@@ -1356,6 +1367,26 @@ bool DoSetOverlayDisplayMode()
 }
 #endif
 
+bool DoSetBehindWindowFilterEnabled()
+{
+    if (rsConn_ == nullptr) {
+        return false;
+    }
+    bool enabled = GetData<bool>();
+    rsConn_->SetBehindWindowFilterEnabled(enabled);
+    return true;
+}
+
+bool DoGetBehindWindowFilterEnabled()
+{
+    if (rsConn_ == nullptr) {
+        return false;
+    }
+    bool res = true;
+    rsConn_->GetBehindWindowFilterEnabled(res);
+    return true;
+}
+
 class CustomFirstFrameCommitCallback : public RSFirstFrameCommitCallbackStub {
 public:
     explicit CustomFirstFrameCommitCallback(const FirstFrameCommitCallback& callback) : cb_(callback) {}
@@ -1489,11 +1520,15 @@ void DoFuzzerTest3()
 {
     DoNotifySoftVsyncEvent();
     DONotifyHgmConfigEvent();
+    DONotifyXComponentExpectedFrameRate();
     DoCreatePixelMapFromSurface();
 #ifdef RS_ENABLE_OVERLAY_DISPLAY
     DoSetOverlayDisplayMode();
 #endif
     DoRegisterFirstFrameCommitCallback();
+    DoNotifySoftVsyncRateDiscountEvent();
+    DoSetBehindWindowFilterEnabled();
+    DoGetBehindWindowFilterEnabled();
 }
 } // namespace Rosen
 } // namespace OHOS

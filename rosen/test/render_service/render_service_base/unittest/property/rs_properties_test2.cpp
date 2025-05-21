@@ -223,12 +223,12 @@ HWTEST_F(PropertiesTest, UpdateFilterTest, TestSize.Level1)
     properties.foregroundEffectRadius_ = -0.1f;
     properties.isSpherizeValid_ = true;
     properties.UpdateFilter();
-    EXPECT_FALSE(properties.foregroundFilter_);
+    EXPECT_TRUE(properties.foregroundFilter_);
 
     properties.isSpherizeValid_ = false;
     properties.shadow_->imageMask_ = true;
     properties.UpdateFilter();
-    EXPECT_FALSE(properties.foregroundFilter_);
+    EXPECT_TRUE(properties.foregroundFilter_);
 
     properties.foregroundEffectRadius_ = -0.1f;
     properties.isAttractionValid_ = true;
@@ -989,6 +989,48 @@ HWTEST_F(PropertiesTest, TransformFactor, TestSize.Level1)
 
     properties.SetPerspW(3.0);
     EXPECT_EQ(properties.GetPerspW(), 3.0);
+}
+
+/**
+ * @tc.name: GenerateRenderFilter_001
+ * @tc.desc: test GenerateRenderFilter
+ * @tc.type: FUNC
+ */
+HWTEST_F(PropertiesTest, GenerateRenderFilter_001, TestSize.Level1)
+{
+    RSProperties properties;
+    auto renderFilter = std::make_shared<RSRenderFilter>();
+    auto renderFilterBase = RSRenderFilter::CreateRenderFilterPara(RSUIFilterType::BLUR);
+    renderFilter->Insert(RSUIFilterType::BLUR, renderFilterBase);
+    properties.backgroundRenderFilter_ = renderFilter;
+    properties.GenerateRenderFilter();
+    EXPECT_EQ(properties.backgroundFilter_, nullptr);
+
+    auto renderFilter1 = std::make_shared<RSRenderFilter>();
+    auto renderFilterBase1 = RSRenderFilter::CreateRenderFilterPara(RSUIFilterType::COLOR_GRADIENT);
+    renderFilter1->Insert(RSUIFilterType::COLOR_GRADIENT, renderFilterBase1);
+    properties.backgroundRenderFilter_ = renderFilter1;
+    properties.GenerateRenderFilter();
+    EXPECT_EQ(properties.backgroundFilter_, nullptr);
+}
+
+/**
+ * @tc.name: GenerateRenderFilterColorGradient_001
+ * @tc.desc: test GenerateRenderFilterColorGradient
+ * @tc.type: FUNC
+ */
+HWTEST_F(PropertiesTest, GenerateRenderFilterColorGradient_001, TestSize.Level1)
+{
+    RSProperties properties;
+    properties.GenerateRenderFilterColorGradient();
+    EXPECT_EQ(properties.backgroundFilter_, nullptr);
+
+    auto renderFilter1 = std::make_shared<RSRenderFilter>();
+    auto renderFilterBase1 = RSRenderFilter::CreateRenderFilterPara(RSUIFilterType::COLOR_GRADIENT);
+    renderFilter1->Insert(RSUIFilterType::COLOR_GRADIENT, renderFilterBase1);
+    properties.backgroundRenderFilter_ = renderFilter1;
+    properties.GenerateRenderFilterColorGradient();
+    EXPECT_EQ(properties.backgroundFilter_, nullptr);
 }
 } // namespace Rosen
 } // namespace OHOS

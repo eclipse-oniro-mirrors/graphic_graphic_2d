@@ -33,6 +33,7 @@ namespace OHOS {
 namespace Rosen {
 
 namespace {
+constexpr size_t STR_LEN = 10;
 const uint8_t* g_data = nullptr;
 size_t g_size = 0;
 size_t g_pos;
@@ -231,6 +232,25 @@ bool DoCreateRSSurface(const uint8_t* data, size_t size)
     client->CreateRSSurface(surface);
     return true;
 }
+
+#ifdef ACE_ENABLE_GL
+bool DoCreateRSSurface02(const uint8_t* data, size_t size)
+{
+    if (data == nullptr) {
+        return false;
+    }
+
+    // initialize
+    g_data = data;
+    g_size = size;
+    g_pos = 0;
+
+    std::shared_ptr<RSRenderServiceClient> client = std::make_shared<RSRenderServiceClient>();
+    sptr<Surface> surfaceOpengl;
+    client->CreateRSSurface(surfaceOpengl);
+    return true;
+}
+#endif
 
 bool DoCreateVSyncReceiver(const uint8_t* data, size_t size)
 {
@@ -1665,6 +1685,25 @@ bool DoNotifyRefreshRateEvent(const uint8_t* data, size_t size)
     return true;
 }
 
+bool DoNotifySoftVsyncRateDiscountEvent(const uint8_t* data, size_t size)
+{
+    if (data == nullptr) {
+        return false;
+    }
+
+    // initialize
+    g_data = data;
+    g_size = size;
+    g_pos = 0;
+
+    std::shared_ptr<RSRenderServiceClient> client = std::make_shared<RSRenderServiceClient>();
+    uint32_t pid = GetData<uint32_t>();
+    std::string name = "fuzztest";
+    uint32_t rateDiscount = GetData<uint32_t>();
+    client->NotifySoftVsyncRateDiscountEvent(pid, name, rateDiscount);
+    return true;
+}
+
 bool DoNotifyTouchEvent(const uint8_t* data, size_t size)
 {
     if (data == nullptr) {
@@ -1700,6 +1739,24 @@ bool DoNotifyHgmConfigEvent(const uint8_t* data, size_t size)
     std::string eventName = "eventName";
     bool state = GetData<bool>();
     client->NotifyHgmConfigEvent(eventName, state);
+    return true;
+}
+
+bool DoNotifyXComponentExpectedFrameRate(const uint8_t* data, size_t size)
+{
+    if (data == nullptr) {
+        return false;
+    }
+
+    // initialize
+    g_data = data;
+    g_size = size;
+    g_pos = 0;
+
+    std::shared_ptr<RSRenderServiceClient> client = std::make_shared<RSRenderServiceClient>();
+    std::string id = GetStringFromData(STR_LEN);
+    int32_t expectedFrameRate = GetData<int32_t>();
+    client->NotifyXComponentExpectedFrameRate(id, expectedFrameRate);
     return true;
 }
 
@@ -2448,6 +2505,42 @@ bool DoSetHidePrivacyContent002(const uint8_t *data, size_t size)
     client->SetAncoForceDoDirect(direct);
     return true;
 }
+
+bool DoSetBehindWindowFilterEnabled(const uint8_t *data, size_t size)
+{
+    if (data == nullptr) {
+        return false;
+    }
+
+    // initialize
+    g_data = data;
+    g_size = size;
+    g_pos = 0;
+
+    std::shared_ptr<RSRenderServiceClient> client = std::make_shared<RSRenderServiceClient>();
+    RSRenderServiceConnectHub::GetInstance()->Destroy();
+    bool enabled = GetData<bool>();
+    client->SetBehindWindowFilterEnabled(enabled);
+    return true;
+}
+
+bool DoGetBehindWindowFilterEnabled(const uint8_t *data, size_t size)
+{
+    if (data == nullptr) {
+        return false;
+    }
+
+    // initialize
+    g_data = data;
+    g_size = size;
+    g_pos = 0;
+
+    std::shared_ptr<RSRenderServiceClient> client = std::make_shared<RSRenderServiceClient>();
+    RSRenderServiceConnectHub::GetInstance()->Destroy();
+    bool enabled = GetData<bool>();
+    client->GetBehindWindowFilterEnabled(enabled);
+    return true;
+}
 } // namespace Rosen
 } // namespace OHOS
 
@@ -2530,9 +2623,11 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::Rosen::DoNotifyPackageEvent(data, size);
     OHOS::Rosen::DONotifyAppStrategyConfigChangeEvent(data, size);
     OHOS::Rosen::DoNotifyRefreshRateEvent(data, size);
+    OHOS::Rosen::DoNotifySoftVsyncRateDiscountEvent(data, size);
     OHOS::Rosen::DoNotifyTouchEvent(data, size);
     OHOS::Rosen::DoSetCacheEnabledForRotation(data, size);
     OHOS::Rosen::DoNotifyHgmConfigEvent(data, size);
+    OHOS::Rosen::DoNotifyXComponentExpectedFrameRate(data, size);
     OHOS::Rosen::DoSetOnRemoteDiedCallback(data, size);
     OHOS::Rosen::DoGetActiveDirtyRegionInfo(data, size);
     OHOS::Rosen::DoSetVmaCacheStatus(data, size);
@@ -2560,5 +2655,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::Rosen::DoRegisterOcclusionChangeCallback002(data, size);
     OHOS::Rosen::DoSetAppWindowNum(data, size);
     OHOS::Rosen::DoSetHidePrivacyContent002(data, size);
+    OHOS::Rosen::DoSetBehindWindowFilterEnabled(data, size);
+    OHOS::Rosen::DoGetBehindWindowFilterEnabled(data, size);
     return 0;
 }

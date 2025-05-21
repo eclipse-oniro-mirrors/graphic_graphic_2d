@@ -101,6 +101,7 @@ config("rs_test_common_public_config") {
     "$graphic_2d_root/rosen/modules/hyper_graphic_manager/core/config",
     "$graphic_2d_root/rosen/modules/hyper_graphic_manager/core/frame_rate_manager",
     "$graphic_2d_root/rosen/modules/hyper_graphic_manager/core/hgm_screen_manager",
+    "$graphic_2d_root/rosen/modules/hyper_graphic_manager/core/soft_vsync_manager",
     "$graphic_2d_root/rosen/modules/hyper_graphic_manager/core/utils",
     "$graphic_2d_root/rosen/modules/render_service/core",
     "$graphic_2d_root/rosen/modules/render_service/core/feature_cfg",
@@ -139,7 +140,7 @@ ohos_static_library("rs_test_common") {
     "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
   ]
 
-  public_deps += [ "../../../../../modules/2d_graphics:2d_graphics" ]
+  public_deps += [ "$graphic_2d_root/rosen/modules/2d_graphics:2d_graphics" ]
 
   public_external_deps = [
     "c_utils:utils",

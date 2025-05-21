@@ -80,6 +80,16 @@ public:
         return nodeType_ == RSSurfaceNodeType::APP_WINDOW_NODE;
     }
 
+    bool IsScbWindowType() const
+    {
+        return surfaceWindowType_ == SurfaceWindowType::SYSTEM_SCB_WINDOW ||
+               surfaceWindowType_ == SurfaceWindowType::SCB_DESKTOP ||
+               surfaceWindowType_ == SurfaceWindowType::SCB_WALLPAPER ||
+               surfaceWindowType_ == SurfaceWindowType::SCB_SCREEN_LOCK ||
+               surfaceWindowType_ == SurfaceWindowType::SCB_NEGATIVE_SCREEN ||
+               surfaceWindowType_ == SurfaceWindowType::SCB_DROPDOWN_PANEL;
+    }
+
     bool IsStartingWindow() const
     {
         return nodeType_ == RSSurfaceNodeType::STARTING_WINDOW_NODE;
@@ -349,26 +359,19 @@ public:
         return isHardwareForcedDisabled_;
     }
 
-    void SetLastFrameHasVisibleRegion(bool lastFrameHasVisibleRegion)
-    {
-        lastFrameHasVisibleRegion_ = lastFrameHasVisibleRegion;
-    }
-
-    bool GetLastFrameHasVisibleRegion() const
-    {
-        return lastFrameHasVisibleRegion_;
-    }
-
     bool IsLeashOrMainWindow() const
     {
-        return nodeType_ <= RSSurfaceNodeType::LEASH_WINDOW_NODE || nodeType_ == RSSurfaceNodeType::CURSOR_NODE;
+        return nodeType_ <= RSSurfaceNodeType::LEASH_WINDOW_NODE || nodeType_ == RSSurfaceNodeType::CURSOR_NODE ||
+               nodeType_ == RSSurfaceNodeType::ABILITY_MAGNIFICATION_NODE;
     }
 
     bool IsMainWindowType() const
     {
         // a mainWindowType surfacenode will not mounted under another mainWindowType surfacenode
         // including app main window, starting window, and selfdrawing window
-        return nodeType_ <= RSSurfaceNodeType::SELF_DRAWING_WINDOW_NODE || nodeType_ == RSSurfaceNodeType::CURSOR_NODE;
+        return nodeType_ <= RSSurfaceNodeType::SELF_DRAWING_WINDOW_NODE ||
+               nodeType_ == RSSurfaceNodeType::CURSOR_NODE ||
+               nodeType_ == RSSurfaceNodeType::ABILITY_MAGNIFICATION_NODE;
     }
 
     bool GetIsLastFrameHwcEnabled() const
@@ -668,6 +671,11 @@ public:
     void SetDstRectWithoutRenderFit(const RectI& rect)
     {
         dstRectWithoutRenderFit_ = Drawing::Rect(rect.left_, rect.top_, rect.GetRight(), rect.GetBottom());
+    }
+
+    void SetRegionToBeMagnified(Vector4f regionToBeMagnified)
+    {
+        regionToBeMagnified_ = regionToBeMagnified;
     }
 
     Drawing::Rect GetDstRectWithoutRenderFit() const
@@ -1321,9 +1329,6 @@ public:
     void GetAllSubSurfaceNodes(std::vector<std::pair<NodeId, RSSurfaceRenderNode::WeakPtr>>& allSubSurfaceNodes) const;
     std::string SubSurfaceNodesDump() const;
 
-    void SetIsNodeToBeCaptured(bool isNodeToBeCaptured);
-    bool IsNodeToBeCaptured() const;
-
     void SetDoDirectComposition(bool flag)
     {
         doDirectComposition_ = flag;
@@ -1332,16 +1337,6 @@ public:
     bool GetDoDirectComposition() const
     {
         return doDirectComposition_;
-    }
-
-    void SetHardWareDisabledByReverse(bool isHardWareDisabledByReverse)
-    {
-        isHardWareDisabledByReverse_ = isHardWareDisabledByReverse;
-    }
-
-    bool GetHardWareDisabledByReverse() const
-    {
-        return isHardWareDisabledByReverse_;
     }
 
     void SetSkipDraw(bool skip);
@@ -1527,6 +1522,12 @@ public:
         return appWindowZOrder_;
     }
 
+    // Enable HWCompose
+    RSHwcSurfaceRecorder& HwcSurfaceRecorder() { return hwcSurfaceRecorder_; }
+
+    void SetFrameGravityNewVersionEnabled(bool isEnabled);
+    bool GetFrameGravityNewVersionEnabled() const;
+
 protected:
     void OnSync() override;
     void OnSkipSync() override;
@@ -1557,6 +1558,9 @@ private:
 #ifdef ENABLE_FULL_SCREEN_RECONGNIZE
     void SendSurfaceNodeTreeStatus(bool onTree);
     void SendSurfaceNodeBoundChange();
+#endif
+#ifndef ROSEN_CROSS_PLATFORM
+    void UpdatePropertyFromConsumer();
 #endif
 
     RSSpecialLayerManager specialLayerManager_;
@@ -1630,7 +1634,7 @@ private:
     bool isParentScaling_ = false;
     bool needDrawAnimateProperty_ = false;
     bool prevVisible_ = false;
-    bool isHardWareDisabledByReverse_ = false;
+
     // mark if this self-drawing node do not consume buffer when gpu -> hwc
     bool hwcDelayDirtyFlag_ = false;
     bool isForeground_ = false;
@@ -1651,9 +1655,7 @@ private:
     bool hasTransparentSurface_ = false;
     bool isGpuOverDrawBufferOptimizeNode_ = false;
     bool isSubSurfaceNode_ = false;
-    bool isNodeToBeCaptured_ = false;
     bool doDirectComposition_ = true;
-    bool lastFrameHasVisibleRegion_ = true;
     bool isSkipDraw_ = false;
     bool needHidePrivacyContent_ = false;
     bool isHardwareForcedByBackgroundAlpha_ = false;
@@ -1723,6 +1725,7 @@ private:
     RectI srcRect_;
     RectI originalDstRect_;
     RectI originalSrcRect_;
+    Vector4f regionToBeMagnified_;
     Drawing::Rect dstRectWithoutRenderFit_;
     RectI historyUnSubmittedOccludedDirtyRegion_;
     Vector4f overDrawBufferNodeCornerRadius_;
@@ -1782,6 +1785,10 @@ private:
     std::vector<std::shared_ptr<RSRenderNode>> filterNodes_;
     std::unordered_map<NodeId, std::weak_ptr<RSRenderNode>> drawingCacheNodes_;
     int32_t appWindowZOrder_ = 0;
+
+    // Enable HWCompose
+    RSHwcSurfaceRecorder hwcSurfaceRecorder_;
+
     // previous self-Drawing Node Bound
 #ifdef ENABLE_FULL_SCREEN_RECONGNIZE
     float prevSelfDrawHeight_ = 0.0f;
@@ -1857,6 +1864,8 @@ private:
     // used in uifirst for checking whether node and parents should paint or not
     bool selfAndParentShouldPaint_ = true;
 
+    bool isFrameGravityNewVersionEnabled_ = false;
+
     // UIExtension record, <UIExtension, hostAPP>
     inline static std::unordered_map<NodeId, NodeId> secUIExtensionNodes_ = {};
     friend class SurfaceNodeCommandHelper;
@@ -1864,6 +1873,7 @@ private:
     friend class RSUniRenderVisitor;
     friend class RSRenderNode;
     friend class RSRenderService;
+    friend class RSHdrUtil;
 #ifdef RS_PROFILER_ENABLED
     friend class RSProfiler;
 #endif

@@ -41,6 +41,7 @@ RsFrameReport& RsFrameReport::GetInstance()
 
 RsFrameReport::RsFrameReport()
 {
+    LOGI("RsFrameReport:[Init] LoadLibrary");
     int ret = LoadLibrary();
     if (!ret) {
         LOGE("RsFrameReport:[Init] dlopen libframe_ui_intf.so failed!");
@@ -50,6 +51,7 @@ RsFrameReport::RsFrameReport()
     initFunc_ = (InitFunc)LoadSymbol("Init");
     if (initFunc_ != nullptr) {
         initFunc_();
+        LOGI("RsFrameReport:[Init] Init success");
     }
 }
 
@@ -57,6 +59,7 @@ RsFrameReport::~RsFrameReport() {}
 
 void RsFrameReport::Init()
 {
+    LOGI("RsFrameReport init");
     ReportSchedEvent(FrameSchedEvent::INIT, {});
 }
 
@@ -164,10 +167,11 @@ void RsFrameReport::SendCommandsStart()
     }
 }
 
-void RsFrameReport::RenderStart(uint64_t timestamp)
+void RsFrameReport::RenderStart(uint64_t timestamp, int skipFirstFrame)
 {
     std::unordered_map<std::string, std::string> payload = {};
     payload["vsyncTime"] = std::to_string(timestamp);
+    payload["skipFirstFrame"] = std::to_string(skipFirstFrame);
     ReportSchedEvent(FrameSchedEvent::RS_RENDER_START, payload);
 }
 
@@ -228,16 +232,27 @@ void RsFrameReport::ReportHardwareInfo(int tid)
     ReportSchedEvent(FrameSchedEvent::RS_HARDWARE_INFO, payload);
 }
 
-void RsFrameReport::ReportFrameDeadline(int deadline)
+void RsFrameReport::ReportFrameDeadline(int deadline, uint32_t currentRate)
 {
     std::unordered_map<std::string, std::string> payload = {};
     payload["rsFrameDeadline"] = std::to_string(deadline);
+    payload["currentRate"] = std::to_string(currentRate);
     ReportSchedEvent(FrameSchedEvent::RS_FRAME_DEADLINE, payload);
 }
 
 void RsFrameReport::ReportDDGRTaskInfo()
 {
     ReportSchedEvent(FrameSchedEvent::RS_DDGR_TASK, {});
+}
+
+void RsFrameReport::ReportScbSceneInfo(std::string description, bool eventStatus)
+{
+    std::unordered_map<std::string, std::string> payload = {};
+    payload["description"] = description;
+    payload["eventStatus"] = eventStatus ? "1" : "0"; // true:enter false:exit
+    LOGI("RsFrameReport:[ReportScbSceneInfo]description %{public}s, eventStatus %{public}s",
+        description.c_str(), payload["eventStatus"].c_str());
+    ReportSchedEvent(FrameSchedEvent::GPU_SCB_SCENE_INFO, payload);
 }
 } // namespace Rosen
 } // namespace OHOS

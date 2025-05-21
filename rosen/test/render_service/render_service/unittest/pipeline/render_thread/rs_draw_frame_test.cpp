@@ -106,6 +106,8 @@ HWTEST_F(RSDrawFrameTest, CheckCanvasSkipSyncTest, TestSize.Level1)
 HWTEST_F(RSDrawFrameTest, SyncTest, TestSize.Level1)
 {
     RSDrawFrame drawFrame_;
+    auto node = std::make_shared<RSCanvasDrawingRenderNode>(200);
+    drawFrame_.stagingSyncCanvasDrawingNodes_.emplace(node->GetId(), node);
     drawFrame_.Sync();
     ASSERT_EQ(drawFrame_.stagingSyncCanvasDrawingNodes_.size(), 0);
     ASSERT_EQ(RSMainThread::Instance()->GetContext().pendingSyncNodes_.size(), 0);
@@ -122,41 +124,6 @@ HWTEST_F(RSDrawFrameTest, UnlockMainThreadTest, TestSize.Level1)
     RSDrawFrame drawFrame_;
     drawFrame_.UnblockMainThread();
     ASSERT_TRUE(drawFrame_.canUnblockMainThread);
-}
-
-/**
- * @tc.name: IsUniRenderAndOnVsyncTest
- * @tc.desc: test IsUniRenderAndOnVsync
- * @tc.type: FUNC
- * @tc.require: issueI6QM6E
- */
-HWTEST_F(RSDrawFrameTest, IsUniRenderAndOnVsyncTest, TestSize.Level1)
-{
-    RSDrawFrame drawFrame_;
-    ASSERT_FALSE(drawFrame_.IsUniRenderAndOnVsync());
-    auto renderThreadParams = std::make_unique<RSRenderThreadParams>();
-    RSRenderThreadParamsManager::Instance().SetRSRenderThreadParams(move(renderThreadParams));
-    ASSERT_FALSE(drawFrame_.IsUniRenderAndOnVsync());
-    RSRenderThreadParamsManager::Instance().SetRSRenderThreadParams(nullptr);
-}
-
-/**
- * @tc.name: JankStatsRenderFrameEndTest
- * @tc.desc: test JankStatsRenderFrameEnd
- * @tc.type: FUNC
- * @tc.require: issueI6QM6E
- */
-HWTEST_F(RSDrawFrameTest, JankStatsRenderFrameEndTest, TestSize.Level1)
-{
-    RSDrawFrame drawFrame_;
-    drawFrame_.JankStatsRenderFrameEnd(false);
-    ASSERT_FALSE(drawFrame_.unirenderInstance_.discardJankFrames_);
-
-    auto renderThreadParams = std::make_unique<RSRenderThreadParams>();
-    RSRenderThreadParamsManager::Instance().SetRSRenderThreadParams(move(renderThreadParams));
-    ASSERT_NE(drawFrame_.unirenderInstance_.GetRSRenderThreadParams(), nullptr);
-    drawFrame_.JankStatsRenderFrameEnd(true);
-    ASSERT_FALSE(drawFrame_.unirenderInstance_.discardJankFrames_);
 }
 
 /**

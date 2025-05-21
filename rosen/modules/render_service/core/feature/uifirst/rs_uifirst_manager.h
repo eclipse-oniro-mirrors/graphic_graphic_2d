@@ -139,8 +139,6 @@ public:
         return isSplitScreenScene_.load();
     }
 
-    void AddCapturedNodes(NodeId id);
-
     void AddCardNodes(NodeId id, MultiThreadCacheType currentFrameCacheType)
     {
         if (currentFrameCacheType != MultiThreadCacheType::ARKTS_CARD) {
@@ -243,6 +241,8 @@ private:
     bool IsToSubByAppAnimation() const;
     bool QuerySubAssignable(RSSurfaceRenderNode& node, bool isRotation);
     bool GetSubNodeIsTransparent(RSSurfaceRenderNode& node, std::string& dfxMsg);
+    bool CheckHasTransAndFilter(RSSurfaceRenderNode& node);
+    bool HasBgNodeBelowRootNode(RSSurfaceRenderNode& appNode) const;
 
     // starting
     void ProcessFirstFrameCache(RSSurfaceRenderNode& node, MultiThreadCacheType cacheType);
@@ -328,7 +328,6 @@ private:
         { "ecoengine" },
     };
 
-    std::vector<NodeId> capturedNodes_;
     std::vector<NodeId> currentFrameDeletedCardNodes_;
 };
 class RSB_EXPORT RSUiFirstProcessStateCheckerHelper {

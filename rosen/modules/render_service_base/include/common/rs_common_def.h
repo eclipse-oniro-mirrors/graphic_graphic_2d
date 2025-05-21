@@ -242,6 +242,7 @@ struct RSSurfaceCaptureConfig {
     bool isSync = false;
     Drawing::Rect mainScreenRect = {};
     std::vector<NodeId> blackList = {}; // exclude surfacenode in screenshot
+    bool isSoloNodeUiCapture = false;
     bool operator==(const RSSurfaceCaptureConfig& config) const
     {
         return mainScreenRect == config.mainScreenRect;
@@ -334,6 +335,7 @@ enum class RSSurfaceNodeType : uint8_t {
     UI_EXTENSION_COMMON_NODE, // uiextension node
     UI_EXTENSION_SECURE_NODE, // uiextension node that requires info callback
     CURSOR_NODE,              // cursor node created by MMI
+    ABILITY_MAGNIFICATION_NODE, // local magnification
     NODE_MAX,
 };
 
@@ -377,6 +379,12 @@ enum class SelfDrawingNodeType : uint8_t {
 enum class SurfaceWindowType : uint8_t {
     DEFAULT_WINDOW = 0,
     SYSTEM_SCB_WINDOW = 1,
+    SCB_DESKTOP = 2,
+    SCB_WALLPAPER = 3,
+    SCB_SCREEN_LOCK = 4,
+    SCB_NEGATIVE_SCREEN = 5,
+    SCB_DROPDOWN_PANEL = 6,
+    NODE_MAX,
 };
 
 enum class SurfaceHwcNodeType : uint8_t {
@@ -586,6 +594,14 @@ struct VSyncConnParam {
     NodeId windowNodeId = 0;
     bool fromXcomponent = false;
 };
+
+enum DrawNodeType : uint32_t {
+    PureContainerType = 0,
+    MergeableType,
+    DrawPropertyType,
+    GeometryPropertyType
+};
+
 } // namespace Rosen
 } // namespace OHOS
 #endif // RENDER_SERVICE_CLIENT_CORE_COMMON_RS_COMMON_DEF_H
