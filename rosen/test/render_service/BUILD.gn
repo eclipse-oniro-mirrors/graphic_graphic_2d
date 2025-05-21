@@ -180,6 +180,7 @@ group("test") {
 
   if (graphic_2d_feature_enable_vulkan) {
     deps += [
+      "render_service/fuzztest/rsvkimagemanager_fuzzer:fuzztest",
       "render_service_base/fuzztest/nativebufferutils_fuzzer:fuzztest",
       "render_service_base/fuzztest/rssurfaceohosvulkan_fuzzer:fuzztest",
       "render_service_base/fuzztest/rsvulkancontext_fuzzer:fuzztest",
