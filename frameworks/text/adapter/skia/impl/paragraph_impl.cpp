@@ -474,13 +474,7 @@ void ParagraphImpl::UpdateForegroundBrushWithNullopt(SkTArray<skt::Block, true>&
                 if (paints_[foregroundId].isSymbolGlyph) {
                     continue;
                 }
-                // if pen has value, only modify the value of brush,
-                // otherwise clear entire foreground object.
-                if (paints_[foregroundId].pen.has_value()) {
-                    paints_[foregroundId].brush = std::nullopt;
-                    continue;
-                }
-                skiaBlock.fStyle.clearForegroundColor();
+                paints_[foregroundId].brush = std::nullopt;
             }
         }
     }
