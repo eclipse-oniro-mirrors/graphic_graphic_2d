@@ -66,6 +66,9 @@ public:
 
     void OnTreeStateChanged() override;
 
+    void SetHDRUIBrightness(float hdrUIBrightness);
+    float GetHDRUIBrightness() const;
+    bool GetHDRUIPresent() const;
     void SetHDRPresent(bool hasHdrPresent);
     bool GetHDRPresent() const;
 
@@ -94,6 +97,7 @@ private:
     friend class RSColorfulShadowDrawable;
     friend class RSRenderTransition;
     friend class RSPropertiesPainter;
+    float hdrUIBrightness_ = 1.0f;
     bool hasHdrPresent_ = false;
     bool isWideColorGamut_ = false;
 

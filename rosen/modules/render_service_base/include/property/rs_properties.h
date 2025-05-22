@@ -488,6 +488,11 @@ public:
     bool IsSpherizeValid() const;
     void CreateSphereEffectFilter();
 
+    void SetHDRUIBrightness(float hdrUIBrightness);
+    float GetHDRUIBrightness() const;
+    bool IsHDRUIBrightnessValid() const;
+    void CreateHDRUIBrightnessFilter();
+
     bool IsAttractionValid() const;
     void SetAttractionFraction(float fraction);
     void SetAttractionDstPoint(Vector2f dstPoint);
@@ -692,6 +697,7 @@ private:
     float foregroundEffectRadius_ = 0.f;
     float attractFraction_ = 0.f;
     float spherizeDegree_ = 0.f;
+    float hdrUIBrightness_ = 1.0f;
     float lightUpEffectDegree_ = 1.0f;
     // filter property
     float backgroundBlurRadius_ = 0.f;

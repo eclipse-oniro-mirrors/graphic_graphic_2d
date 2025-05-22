@@ -2005,15 +2005,26 @@ void RSNode::SetUIForegroundFilter(const OHOS::Rosen::Filter* foregroundFilter)
     }
 }
 
+void RSNode::SetHDRUIBrightness(float hdrUIBrightness)
+{
+    SetProperty<RSHDRUIBrightnessModifier, RSAnimatableProperty<float>>(
+        RSModifierType::HDR_UI_BRIGHTNESS, hdrUIBrightness);
+}
+
 void RSNode::SetVisualEffect(const VisualEffect* visualEffect)
 {
     if (visualEffect == nullptr) {
         ROSEN_LOGE("Failed to set visualEffect, visualEffect is null!");
         return;
     }
-    // To do: generate composed visual effect here. Now we just set background brightness in v1.0.
+    // To do: generate composed visual effect here. Now we just set background and HDR UI brightness in v1.0.
     auto visualEffectParas = visualEffect->GetAllPara();
     for (const auto& visualEffectPara : visualEffectParas) {
+        if (visualEffectPara->GetParaType() == VisualEffectPara::HDR_UI_BRIGHTNESS) {
+            auto hdrUIBrightnessPara = std::static_pointer_cast<HDRUIBrightnessPara>(visualEffectPara);
+            SetHDRUIBrightness(hdrUIBrightnessPara->GetHDRUIBrightness());
+            continue;
+        }
         if (visualEffectPara->GetParaType() != VisualEffectPara::BACKGROUND_COLOR_EFFECT) {
             continue;
         }

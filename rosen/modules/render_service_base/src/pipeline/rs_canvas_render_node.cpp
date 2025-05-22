@@ -282,13 +282,38 @@ void RSCanvasRenderNode::InternalDrawContent(RSPaintFilterCanvas& canvas, bool n
     }
 }
 
+void RSCanvasRenderNode::SetHDRUIBrightness(float hdrUIBrightness)
+{
+    if (ROSEN_EQ(hdrUIBrightness_, hdrUIBrightness)) {
+        return;
+    }
+    // hdrUIBrightness > 1.0 HDR UI count increase, otherwise HDR UI count decrease.
+    // Current status and new status are different then need update status
+    bool oldHDRUIStatus = GetHDRUIPresent();
+    bool newHDRUIStatus = ROSEN_GNE(hdrUIBrightness, 1.0f);
+    hdrUIBrightness_ = hdrUIBrightness;
+    if (oldHDRUIStatus != newHDRUIStatus && IsOnTheTree()) {
+        SetHdrNum(newHDRUIStatus, GetInstanceRootNodeId(), HDRType::UICOMPONENT);
+    }
+}
+
+float RSCanvasRenderNode::GetHDRUIBrightness() const
+{
+    return hdrUIBrightness_;
+}
+
+bool RSCanvasRenderNode::GetHDRUIPresent() const
+{
+    return ROSEN_GNE(hdrUIBrightness_, 1.0f);
+}
+
 void RSCanvasRenderNode::SetHDRPresent(bool hasHdrPresent)
 {
     if (hasHdrPresent_ == hasHdrPresent) {
         return;
     }
     if (IsOnTheTree()) {
-        SetHdrNum(hasHdrPresent, GetInstanceRootNodeId());
+        SetHdrNum(hasHdrPresent, GetInstanceRootNodeId(), HDRType::IMAGE);
     }
     hasHdrPresent_ = hasHdrPresent;
 }
