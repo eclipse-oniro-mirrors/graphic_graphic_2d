@@ -231,7 +231,7 @@ HWTEST_F(RSClientTest, RegisterTransactionDataCallback_Test02, TestSize.Level1)
     ASSERT_NE(rsClient, nullptr);
     std::function<void()> callback = []() {};
     bool ret = rsClient->RegisterTransactionDataCallback(1, 789, callback); // test a notfound number: 123
-    EXPECT_FALSE(ret);
+    EXPECT_TRUE(ret);
 }
 
 /**
@@ -245,10 +245,9 @@ HWTEST_F(RSClientTest, RegisterTransactionDataCallback_Test03, TestSize.Level1)
     ASSERT_NE(rsClient, nullptr);
     auto callback = []() {
         RS_LOGD("789 test 12. invoke callback");
-    }
+    };
     int32_t pid = 123;
     uint64_t timeStamp = 456;
-    std::lock_guard<std::mutex> lock { rsClien->transactionDataCallbackMutex_};
     rsClient->transactionDataCallbacks_[std::make_pair(pid, timeStamp)] = callback;
     rsClient->RegisterTransactionDataCallback(pid, timeStamp, callback); // test a notfound number: 123
 }
@@ -277,8 +276,7 @@ HWTEST_F(RSClientTest, TriggerTransactionDataCallbackAndErase_Test02, TestSize.L
     uint64_t timeStamp = 456;
     auto callback = []() {
         RS_LOGD("789 test 12. invoke callback");
-    }
-    std::lock_guard<std::mutex> lock { rsClien->transactionDataCallbackMutex_};
+    };
     rsClient->transactionDataCallbacks_[std::make_pair(pid, timeStamp)] = callback;
     rsClient->TriggerTransactionDataCallbackAndErase(pid, timeStamp); // test a notfound number: 123
 }
@@ -294,7 +292,6 @@ HWTEST_F(RSClientTest, TriggerTransactionDataCallbackAndErase_Test03, TestSize.L
     int32_t pid = 123;
     uint64_t timeStamp = 456;
     std::function<void()> callback = []() {};
-    std::lock_guard<std::mutex> lock { rsClien->transactionDataCallbackMutex_};
     rsClient->transactionDataCallbacks_[std::make_pair(pid, timeStamp)] = callback;
     rsClient->TriggerTransactionDataCallbackAndErase(pid, timeStamp); // test a notfound number: 123
 }

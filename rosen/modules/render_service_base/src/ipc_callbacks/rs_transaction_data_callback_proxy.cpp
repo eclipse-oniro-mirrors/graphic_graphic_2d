@@ -44,7 +44,7 @@ void RSTransactionDataCallbackProxy::OnAfterProcess(int32_t pid, uint64_t timeSt
         return;
     }
     option.SetFlags(MessageOption::TF_ASYNC);
-    uint32_t code = static_cast<uint32_t>(RSITRansactionDataCallbackInterfaceCode::ON_AFTER_PROCESS);
+    uint32_t code = static_cast<uint32_t>(RSITransactionDataCallbackInterfaceCode::ON_AFTER_PROCESS);
     RS_TRACE_NAME_FMT("789 test 9. manager to send data, timeStamp: %"
         PRIu64 " pid: %d", timeStamp, pid);
     RS_LOGD("789 test 9. manager to send data, timeStamp: %{public}"

@@ -502,6 +502,7 @@ void RSUIDirector::SendMessages(std::function<void()> callback)
         if (callback != nullptr) {
             ROSEN_LOGE("Enter Callback Pipeline %{public}s", __func__);
             pid_t pid = getpid();
+            static const int32_t pid = static_cast<uint32>(getpid());
             RS_TRACE_NAME_FMT("789 test 1. arkui call sendmessage, timeStamp: %"
                 PRIu64 " pid: %d", timeStamp_, pid);
             RS_LOGD("789 test 1. arkui call sendmessage, timeStamp: %{public}"

@@ -194,9 +194,9 @@ int main()
         std::unique_lock<std::mutex> m_lock { m_mutex };
         auto status = m_cv.wait_for(m_lock, 2s);
         if (status == std::cv_status::timeout) {
-            std::cout << ">>>N\n";
+            std::cout << ">>>N \n";
         } else {
-            std::cout << ">>>Y\n";
+            std::cout << ">>>Y \n";
         }
     }
     sleep(10);
