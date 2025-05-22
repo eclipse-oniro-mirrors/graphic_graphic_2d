@@ -342,16 +342,6 @@ public:
 
     bool IsRequestedNextVSync();
 
-    bool GetNextDVsyncAnimateFlag() const
-    {
-        return needRequestNextVsyncAnimate_;
-    }
-
-    bool IsFirstFrameOfPartialRender() const
-    {
-        return isFirstFrameOfPartialRender_;
-    }
-
     bool IsOcclusionNodesNeedSync(NodeId id, bool useCurWindow);
 
     void CallbackDrawContextStatusToWMS(bool isUniRender = false);
@@ -627,9 +617,6 @@ private:
 #endif
     bool isCurtainScreenOn_ = false;
     // partial render
-    bool isFirstFrameOfPartialRender_ = false;
-    bool isPartialRenderEnabledOfLastFrame_ = false;
-    bool isRegionDebugEnabledOfLastFrame_ = false;
     bool isForceRefresh_ = false;
     // record multidisplay status change
     bool isMultiDisplayPre_ = false;
