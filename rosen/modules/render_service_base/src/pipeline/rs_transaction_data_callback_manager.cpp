@@ -25,7 +25,7 @@ RSTransactionDataCallbackManager& RSTransactionDataCallbackManager::Instance()
     return mgr;
 }
 
-void RSTransactionDataCallbackManager::RegisterTransactionDataCallback(pid_t pid,
+void RSTransactionDataCallbackManager::RegisterTransactionDataCallback(int32_t pid,
     uint64_t timeStamp, sptr<RSITransactionDataCallback> callback)
 {
     RS_TRACE_NAME_FMT("789 test 7. manager save data, timeStamp: %"
@@ -37,7 +37,7 @@ void RSTransactionDataCallbackManager::RegisterTransactionDataCallback(pid_t pid
     }
 }
 
-void RSTransactionDataCallbackManager::TriggerTransactionDataCallback(pid_t pid, uint64_t timeStamp)
+void RSTransactionDataCallbackManager::TriggerTransactionDataCallback(int32_t pid, uint64_t timeStamp)
 {
     if (auto callback = PopTransactionDataCallback(pid, timeStamp)) {
         RS_TRACE_NAME_FMT("789 test 8. manager trigger data, timeStamp: %"
@@ -50,7 +50,7 @@ void RSTransactionDataCallbackManager::TriggerTransactionDataCallback(pid_t pid,
     }
 }
 
-bool RSTransactionDataCallbackManager::PushTransactionDataCallback(pid_t pid,
+bool RSTransactionDataCallbackManager::PushTransactionDataCallback(int32_t pid,
     uint64_t timeStamp, sptr<RSITransactionDataCallback> callback)
 {
     std::lock_guard<std::mutex> lock { transactionDataCbMutex_ };
@@ -65,14 +65,16 @@ bool RSTransactionDataCallbackManager::PushTransactionDataCallback(pid_t pid,
     return false;
 }
 
-sptr<RSITransactionDataCallback> RSTransactionDataCallbackManager::PopTransactionDataCallback(pid_t pid,
+sptr<RSITransactionDataCallback> RSTransactionDataCallbackManager::PopTransactionDataCallback(int32_t pid,
     uint64_t timeStamp)
 {
-    std::lock_guard<std::mutex> lock { transactionDataCbMutes_ };
+    std::lock_guard<std::mutex> lock { transactionDataCbMutex_ };
     auto iter = transactionDataCallbacks_.find(std::make_pair(pid, timeStamp));
     if (iter != std::end(transactionDataCallbacks_)) {
-        RS_TRACE_NAME_FMT("789 test 8x. manager trigger data, timeStamp: %" PRIu64 " pid: %d", timeStamp, pid);
-        RS_LOGD("789 test 8x. manager trigger data, timeStamp: %{public}" PRIu64 " pid: %{public}d", timeStamp, pid);
+        RS_TRACE_NAME_FMT("789 test 8x. manager trigger data, timeStamp: %"
+            PRIu64 " pid: %d", timeStamp, pid);
+        RS_LOGD("789 test 8x. manager trigger data, timeStamp: %{public}"
+            PRIu64 " pid: %{public}d", timeStamp, pid);
         auto callback = iter->second;
         transactionDataCallbacks_.erase(iter);
         return callback;

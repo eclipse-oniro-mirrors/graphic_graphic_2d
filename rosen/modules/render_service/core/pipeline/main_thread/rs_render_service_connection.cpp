@@ -3105,11 +3105,11 @@ ErrCode RSRenderServiceConnection::SetLayerTop(const std::string &nodeIdStr, boo
     return ERR_OK;
 }
 
-void RSRenderServiceConnection::RegisterTransactionDataCallback(pid_t pid,
+void RSRenderServiceConnection::RegisterTransactionDataCallback(int32_t pid,
     uint64_t timeStamp, sptr<RSITransactionDataCallback> callback)
 {
-    RS_TRACE_NAME_FMT("789 test 6. call manager, timeStamp: %" PRIu64 "
-        pid: %d", timeStamp, pid);
+    RS_TRACE_NAME_FMT("789 test 6. call manager, timeStamp: %"
+        PRIu64 " pid: %d", timeStamp, pid);
     RS_LOGD("789 test 6. call manager, timeStamp: %{public}"
         PRIu64 " pid: %{public}d", timeStamp, pid);
     RSTransactionDataCallbackManager::Instance().RegisterTransactionDataCallback(pid, timeStamp, callback);

@@ -4901,7 +4901,7 @@ void RSRenderServiceConnectionProxy::SetFreeMultiWindowStatus(bool enable)
         ROSEN_LOGE("RSRenderServiceConnectionProxy::SetFreeMultiWindowStatus: Send Request err.");
     }
 }
-void RSRenderServiceConnectionProxy::RegisterTransactionDataCallback(pid_t pid,
+void RSRenderServiceConnectionProxy::RegisterTransactionDataCallback(int32_t pid,
     uint64_t timeStamp, sptr<RSITransactionDataCallback> callback)
 {
     MessageParcel data;
@@ -4926,10 +4926,12 @@ void RSRenderServiceConnectionProxy::RegisterTransactionDataCallback(pid_t pid,
         return;
     }
     uint32_t code = static_cast<uint32_t>(
-        RSIRenderServiceConnectionInterfaceCode::REGISTER_TRACSACTION_DATA_CALLBACK);
-    RS_TRACE_NAME_FMT("789 test 4. send data and unicode, timeStamp: %" PRIu64 " pid: %d", timeStamp, pid);
-    RS_LOGD("789 test 4. send data and unicode, timeStamp: %{public}" PRIu64 " pid: %{public}d", timeStamp, pid);
-    int32_t err = SendRequest(code, data, reply, option);
+        RSIRenderServiceConnectionInterfaceCode::REGISTER_TRANSACTION_DATA_CALLBACK);
+    RS_TRACE_NAME_FMT("789 test 4. send data and unicode, timeStamp: %"
+        PRIu64 " pid: %d", timeStamp, pid);
+    RS_LOGD("789 test 4. send data and unicode, timeStamp: %{public}"
+        PRIu64 " pid: %{public}d", timeStamp, pid);
+    int32_t err = Remote()->SendRequest(code, data, reply, option);
     if (err != NO_ERROR) {
         ROSEN_LOGE("RSRenderServiceConnectionProxy::RegisterTransactionDataCallback: Send Request err.");
         return;

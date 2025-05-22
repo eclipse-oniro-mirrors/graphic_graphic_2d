@@ -26,21 +26,21 @@ RSTransactionDataCallbackProxy::RSTransactionDataCallbackProxy(const sptr<IRemot
 {
 }
 
-void RSTransactionDataCallbackProxy::OnAfterProcess(pid_t pid, uint64_t timeStamp)
+void RSTransactionDataCallbackProxy::OnAfterProcess(int32_t pid, uint64_t timeStamp)
 {
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
     if (!data.WriteInterfaceToken(RSITransactionDataCallback::GetDescriptor())) {
-        ROSEN_LOGE("RSTransactionDataCallbackProxy::data.WriteInterfaceToken error.");
+        ROSEN_LOGE("RSTransactionDataCallbackProxy::data.WriteInterfaceToken error");
         return;
     }
     if (!data.WriteInt32(pid)) {
-        ROSEN_LOGE("RSTransactionDataCallbackProxy::OnAfterProcess write pid error.");
+        ROSEN_LOGE("RSTransactionDataCallbackProxy::OnAfterProcess write pid error");
         return;
     }
     if (!data.WriteUint64(timeStamp)) {
-        ROSEN_LOGE("RSTransactionDataCallbackProxy::OnAfterProcess write timeStamp error.");
+        ROSEN_LOGE("RSTransactionDataCallbackProxy::OnAfterProcess write timeStamp error");
         return;
     }
     option.SetFlags(MessageOption::TF_ASYNC);

@@ -195,7 +195,8 @@ void RSTransactionData::Process(RSContext& context)
             command->Process(context);
         }
     }
-    RS_TRACE_NAME_FMT("789 test trace. Process trigger, timeStamp: %" PRIu64 " pid: %d", timestamp_, pid_);
+    RS_TRACE_NAME_FMT("789 test trace. Process trigger, timeStamp: %"
+        PRIu64 " pid: %d", timestamp_, pid_);
     RSTransactionDataCallbackManager::Instance().TriggerTransactionDataCallback(pid_, timestamp_);
 }
 

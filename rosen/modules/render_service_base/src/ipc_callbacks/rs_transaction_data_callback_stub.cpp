@@ -30,7 +30,7 @@ int RSTransactionDataCallbackStub::OnRemoteRequest(
     int ret = ERR_NONE;
     switch (code) {
         case static_cast<uint32_t>(RSITransactionDataCallbackInterfaceCode::ON_AFTER_PROCESS): {
-            pid_t pid = {};
+            int32_t pid = {};
             uint64_t timeStamp = {};
             auto readRet = data.ReadInt32(pid) && data.ReadUint64(timeStamp);
             if (!readRet) {

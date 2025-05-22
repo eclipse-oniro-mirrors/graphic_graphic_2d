@@ -33,9 +33,9 @@ class RSITransactionDataCallback;
 
 class RSB_EXPORT RSTransactionDataCallbackManager {
 public:
-    void RegisterTransactionDataCallback(pid_t pid, uint64_t timeStamp,
+    void RegisterTransactionDataCallback(int32_t pid, uint64_t timeStamp,
         sptr<RSITransactionDataCallback> callback);
-    void TriggerTransactionDataCallback(pid_t pid, uint64_t timeStamp);
+    void TriggerTransactionDataCallback(int32_t pid, uint64_t timeStamp);
 
     static RSTransactionDataCallbackManager& Instance();
 private:
@@ -47,11 +47,11 @@ private:
     RSTransactionDataCallbackManager& operator=(const RSTransactionDataCallbackManager&) = delete;
     RSTransactionDataCallbackManager& operator=(RSTransactionDataCallbackManager&&) = delete;
 
-    sptr<RSITransactionDataCallback> PopTransactionDataCallback(pid_t pid, uint64_t timeStamp);
-    bool PushTransactionDataCallback(pid_t pid, uint64_t timeStamp,
+    sptr<RSITransactionDataCallback> PopTransactionDataCallback(int32_t pid, uint64_t timeStamp);
+    bool PushTransactionDataCallback(int32_t pid, uint64_t timeStamp,
         sptr<RSITransactionDataCallback> callback);
 
-    std::map<std::pair<pid_t, uint64_t>, sptr<RSITransactionDataCallback>> transactionDataCallbacks_;
+    std::map<std::pair<int32_t, uint64_t>, sptr<RSITransactionDataCallback>> transactionDataCallbacks_;
     std::mutex transactionDataCbMutex_;
 };
 } // namespace Rosen

@@ -21,7 +21,7 @@
 namespace OHOS {
 namespace Rosen {
 enum class RSITRansactionDataCallbackInterfaceCode : CodeUnderlyingType {
-    ON_AFTER_PROCESS
+    ON_AFTER_PROCESS,
 };
 }// namespace Rosen
 }// namespace OHOS

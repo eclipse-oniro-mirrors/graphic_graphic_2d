@@ -768,7 +768,7 @@ void RSRenderServiceClient::SetLayerTop(const std::string &nodeIdStr, bool isTop
 {
 }
 
-bool RSRenderServiceClient::RegisterTransactionDataCallback(pid_t pid, uint64_t timeStamp, std::function<void()> callback)
+bool RSRenderServiceClient::RegisterTransactionDataCallback(int32_t pid, uint64_t timeStamp, std::function<void()> callback)
 {
     return false;
 }

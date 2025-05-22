@@ -403,7 +403,7 @@ public:
 
     virtual ErrCode UnregisterSurfaceBufferCallback(pid_t pid, uint64_t uid) = 0;
 
-    virtual void RegisterTransactionDataCallback(pid_t pid, uint64_t timeStamp, sptr<RSITransactionDataCallback> callback) = 0;
+    virtual void RegisterTransactionDataCallback(int32_t pid, uint64_t timeStamp, sptr<RSITransactionDataCallback> callback) = 0;
 
     virtual ErrCode NotifyScreenSwitched() = 0;
 

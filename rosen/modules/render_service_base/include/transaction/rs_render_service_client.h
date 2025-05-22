@@ -465,7 +465,7 @@ public:
 
     bool GetHighContrastTextState();
 
-    bool RegisterTransactionDataCallback(pid_t pid, uint64_t timeStamp, std::function<void()> callback);
+    bool RegisterTransactionDataCallback(int32_t pid, uint64_t timeStamp, std::function<void()> callback);
 
     bool SetBehindWindowFilterEnabled(bool enabled);
 
@@ -475,7 +475,7 @@ private:
         std::shared_ptr<Media::PixelMap> pixelmap);
     void TriggerOnFinish(const FinishCallbackRet& ret) const;
     void TriggerOnAfterAcquireBuffer(const AfterAcquireBufferRet& ret) const;
-    void TriggerTransactionDataCallbackAndErase(pid_t pid, uint64_t timeStamp);
+    void TriggerTransactionDataCallbackAndErase(int32_t pid, uint64_t timeStamp);
     struct RectHash {
         std::size_t operator()(const Drawing::Rect& rect) const {
             std::size_t h1 = std::hash<Drawing::scalar>()(rect.left_);
@@ -507,13 +507,13 @@ private:
     std::map<uint64_t, std::shared_ptr<SurfaceBufferCallback>> surfaceBufferCallbacks_;
     mutable std::shared_mutex surfaceBufferCallbackMutex_;
 
-    sptr<RSITRansactionCallback> transactionDataCbDirector_;
-    std::map<std::pair<pid_t, uint64_t>, std::function<void()>> transactionDataCallbacks_;
+    sptr<RSITransactionDataCallback> transactionDataCbDirector_;
+    std::map<std::pair<int32_t, uint64_t>, std::function<void()>> transactionDataCallbacks_;
     std::mutex transactionDataCallbackMutex_;
 
     friend class SurfaceCaptureCallbackDirector;
     friend class SurfaceBufferCallbackDirector;
-    friend class TransactionDataCallbackCbDirector;
+    friend class TransactionDataCallbackDirector;
 };
 } // namespace Rosen
 } // namespace OHOS
