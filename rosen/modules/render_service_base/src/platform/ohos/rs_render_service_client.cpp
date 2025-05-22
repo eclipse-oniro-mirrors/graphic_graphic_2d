@@ -675,6 +675,7 @@ int32_t RSRenderServiceClient::SetScreenChangeCallback(const ScreenChangeCallbac
 {
     auto renderService = RSRenderServiceConnectHub::GetRenderService();
     if (renderService == nullptr) {
+        ROSEN_LOGE("RSRenderServiceClient::%{public}s renderService is null", __func__);
         return RENDER_SERVICE_NULL;
     }
 
@@ -906,6 +907,7 @@ void RSRenderServiceClient::SetScreenPowerStatus(ScreenId id, ScreenPowerStatus 
 {
     auto renderService = RSRenderServiceConnectHub::GetRenderService();
     if (renderService == nullptr) {
+        ROSEN_LOGE("RSRenderServiceClient::%{public}s renderService is nullptr", __func__);
         return;
     }
 
@@ -969,6 +971,7 @@ int32_t RSRenderServiceClient::GetScreenBacklight(ScreenId id)
 {
     auto renderService = RSRenderServiceConnectHub::GetRenderService();
     if (renderService == nullptr) {
+        ROSEN_LOGE("RSRenderServiceClient::%{public}s renderService is nullptr", __func__);
         return INVALID_BACKLIGHT_VALUE;
     }
     int32_t backLightLevel = INVALID_BACKLIGHT_VALUE;
@@ -980,6 +983,7 @@ void RSRenderServiceClient::SetScreenBacklight(ScreenId id, uint32_t level)
 {
     auto renderService = RSRenderServiceConnectHub::GetRenderService();
     if (renderService == nullptr) {
+        ROSEN_LOGE("RSRenderServiceClient::%{public}s renderService is nullptr", __func__);
         return;
     }
 
@@ -2137,9 +2141,11 @@ void RSRenderServiceClient::SetColorFollow(const std::string &nodeIdStr, bool is
 void RSRenderServiceClient::NotifyScreenSwitched()
 {
     auto renderService = RSRenderServiceConnectHub::GetRenderService();
-    if (renderService != nullptr) {
-        renderService->NotifyScreenSwitched();
+    if (renderService == nullptr) {
+        ROSEN_LOGE("RSRenderServiceClient::%{public}s renderService is nullptr", __func__);
+        return;
     }
+    renderService->NotifyScreenSwitched();
 }
 
 void RSRenderServiceClient::SetWindowContainer(NodeId nodeId, bool value)

@@ -241,6 +241,7 @@ struct RSSurfaceCaptureConfig {
     SurfaceCaptureType captureType = SurfaceCaptureType::DEFAULT_CAPTURE;
     bool isSync = false;
     Drawing::Rect mainScreenRect = {};
+    std::vector<NodeId> blackList = {}; // exclude surfacenode in screenshot
     bool isSoloNodeUiCapture = false;
     bool operator==(const RSSurfaceCaptureConfig& config) const
     {
@@ -281,6 +282,11 @@ struct RSSurfaceCapturePermissions {
             return value;                        \
         }                                        \
     } while (0)
+
+#define IS_SCB_WINDOW_TYPE(windowType)                                                                        \
+    (windowType == SurfaceWindowType::SYSTEM_SCB_WINDOW || windowType == SurfaceWindowType::SCB_DESKTOP ||    \
+    windowType == SurfaceWindowType::SCB_WALLPAPER || windowType == SurfaceWindowType::SCB_SCREEN_LOCK ||     \
+    windowType == SurfaceWindowType::SCB_NEGATIVE_SCREEN || windowType == SurfaceWindowType::SCB_DROPDOWN_PANEL)
 
 enum class DeviceType : uint8_t {
     PHONE,
@@ -383,7 +389,6 @@ enum class SurfaceWindowType : uint8_t {
     SCB_SCREEN_LOCK = 4,
     SCB_NEGATIVE_SCREEN = 5,
     SCB_DROPDOWN_PANEL = 6,
-    NODE_MAX,
 };
 
 enum class SurfaceHwcNodeType : uint8_t {

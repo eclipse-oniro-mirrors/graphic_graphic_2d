@@ -223,6 +223,16 @@ public:
         return filterRegion_;
     }
 
+    inline bool IsRepaintBoundary() const
+    {
+        return isRepaintBoundary_;
+    }
+
+    inline void MarkRepaintBoundary(bool isRepaintBoundary)
+    {
+        isRepaintBoundary_ = isRepaintBoundary;
+    }
+
     inline bool IsWaitSync() const
     {
         return waitSync_;
@@ -634,6 +644,11 @@ public:
     virtual bool OpincGetNodeSupportFlag()
     {
         return isOpincNodeSupportFlag_;
+    }
+
+    void OpincSetNodeSupportFlag(bool supportFlag)
+    {
+        isOpincNodeSupportFlag_ = supportFlag;
     }
 
     // arkui mark
@@ -1190,6 +1205,7 @@ private:
     static std::unordered_map<pid_t, size_t> blurEffectCounter_;
     // The angle at which the node rotates about the Z-axis
     float absRotation_ = 0.f;
+    bool isRepaintBoundary_ = false;
     void UpdateBlurEffectCounter(int deltaCount);
     int GetBlurEffectDrawbleCount();
 
