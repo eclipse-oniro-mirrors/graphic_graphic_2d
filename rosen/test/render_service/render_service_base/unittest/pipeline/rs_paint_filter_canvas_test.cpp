@@ -1791,7 +1791,7 @@ HWTEST_F(RSPaintFilterCanvasTest, CacheBehindWindowDataTest, TestSize.Level1)
  * @tc.name: SetParallelRender
  * @tc.desc: Test SetParallelRender
  * @tc.type:FUNC
- * @tc.require:
+ * @tc.require: IC8TIV
  */
 HWTEST_F(RSPaintFilterCanvasTest, SetParallelRender, TestSize.Level1)
 {
