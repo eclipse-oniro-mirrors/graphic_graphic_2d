@@ -82,7 +82,7 @@ class MockRSSurfaceRenderNode: public RSSurfaceRenderNode{
 public:
     explicit MockRSSurfaceRenderNode(NodeId id, 
         const std::weak_ptr<RSContext>& context = {}, bool isTextureExportNode = false)
-        ：RSSurfaceRenderNode(id, context, isTextureExportNode) {}
+        : RSSurfaceRenderNode(id, context, isTextureExportNode) {}
     ~MockRSSurfaceRenderNode() override {}
     MOCK_CONST_METHOD0(CheckParticipateInOcclusion, bool());
     MOCK_CONST_METHOD0(NeedDrawBehindWindow, bool());
