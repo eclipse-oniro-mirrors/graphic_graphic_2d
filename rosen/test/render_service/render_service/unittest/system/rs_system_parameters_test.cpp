@@ -144,7 +144,7 @@ HWTEST_F(RSSystemParametersTest, GetAnimationOcclusionEnabled, TestSize.Level2)
  * @tc.name: GetDumpCanvasDrawingNodeEnabledTest
  * @tc.desc: Test GetDumpCanvasDrawingNodeEnabled
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require: IC9VB0
  */
 HWTEST_F(RSSystemParametersTest, GetDumpCanvasDrawingNodeEnabledTest, TestSize.Level2)
 {

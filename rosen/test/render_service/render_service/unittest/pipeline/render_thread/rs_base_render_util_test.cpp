@@ -1320,7 +1320,7 @@ HWTEST_F(RSBaseRenderUtilTest, GetAccumulatedBufferCount_001, TestSize.Level2)
  * @tc.name: WriteCacheImageRenderNodeToPngTest
  * @tc.desc: Test WriteCacheImageRenderNodeToPng
  * @tc.type: FUNC
- * @tc.require:
+ * @tc.require: IC9VB0
  */
 HWTEST_F(RSBaseRenderUtilTest, WriteCacheImageRenderNodeToPngTest, TestSize.Level2)
 {
