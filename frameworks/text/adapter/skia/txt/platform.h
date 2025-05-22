@@ -43,6 +43,7 @@ namespace OHOS {
 namespace Rosen {
 namespace SPText {
 constexpr const char* OHOS_THEME_FONT = "OhosThemeFont";
+constexpr const char* OHOS_THEME_FONT_LOW = "ohosthemefont";
 class TEXTING_API DefaultFamilyNameMgr {
 public:
     static DefaultFamilyNameMgr& GetInstance();

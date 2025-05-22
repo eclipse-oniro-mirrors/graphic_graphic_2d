@@ -113,11 +113,11 @@ std::shared_ptr<Drawing::Typeface> FontCollection::LoadFont(
     TypefaceWithAlias ta(familyName, typeface);
     RegisterError err = RegisterTypeface(ta);
     if (err != RegisterError::SUCCESS && err != RegisterError::ALREADY_EXIST) {
-        TEXT_LOGE("Failed to register typeface %{public}s", familyName.c_str());
+        TEXT_LOGE("Failed to register typeface %{public}s", ta.GetAlias().c_str());
         return nullptr;
     }
-    FontDescriptorMgrInstance.CacheDynamicTypeface(typeface, familyName);
-    familyNames_.emplace(ta.GetHash(), familyName);
+    FontDescriptorMgrInstance.CacheDynamicTypeface(typeface, ta.GetAlias());
+    familyNames_.emplace(ta.GetHash(), ta.GetAlias());
     fontCollection_->ClearFontFamilyCache();
     return typeface;
 }
@@ -238,7 +238,11 @@ bool FontCollection::UnloadFont(const std::string& familyName)
 
 TypefaceWithAlias::TypefaceWithAlias(const std::string& alias, const std::shared_ptr<Drawing::Typeface>& typeface)
     : alias_(alias), typeface_(typeface)
-{}
+{
+    if (alias.empty() && typeface != nullptr) {
+        alias_ = typeface->GetFamilyName();
+    }
+}
 
 uint32_t TypefaceWithAlias::GetHash() const
 {

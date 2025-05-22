@@ -76,7 +76,7 @@ std::shared_ptr<Drawing::FontMgr> GetDefaultFontManager()
 bool DefaultFamilyNameMgr::IsThemeFontFamily(std::string familyName)
 {
     std::transform(familyName.begin(), familyName.end(), familyName.begin(), ::tolower);
-    return familyName.find(OHOS_THEME_FONT) == 0;
+    return familyName.find(OHOS_THEME_FONT_LOW) == 0;
 }
 } // namespace SPText
 } // namespace Rosen
