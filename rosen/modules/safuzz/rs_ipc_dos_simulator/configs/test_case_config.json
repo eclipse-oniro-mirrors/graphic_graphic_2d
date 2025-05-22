@@ -2294,5 +2294,12 @@
     "inputParams": "",
     "writeInterfaceToken": true,
     "messageOption": "TF_ASYNC"
+  },
+  {
+    "testCaseDesc": "REGISTER_TRANSACTION_DATA_CALLBACK_TEST_001",
+    "interfaceName": "REGISTER_TRANSACTION_DATA_CALLBACK",
+    "inputParams": "Writeint32;WriteUint64",
+    "writeInterfaceToken": true,
+    "messageOption": "TF_ASYNC"
   }
 ]

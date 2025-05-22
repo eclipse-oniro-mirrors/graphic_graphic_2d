@@ -184,7 +184,21 @@ int main()
     cout << "rs pixelmap demo stage 5: mask" << endl;
     auto mask = RSMask::CreatePixelMapMask(maskPixelmap);
     surfaceNode->SetMask(mask);
-    rsUiDirector->SendMessages();
+    std::condition_variable m_cv;
+    std::mutex m_mutex;
+    rsUiDirector->SendMessages([&m_cv]() {
+        m_cv.notify_all();
+    });
+    {
+        using namespace std::chrono_literals;
+        std::unique_lock<std::mutex> m_lock { m_mutex };
+        auto status = m_cv.wait_for(m_lock, 2s);
+        if (status == std::cv_status::timeout) {
+            std::cout << ">>>N\n";
+        } else {
+            std::cout << ">>>Y\n";
+        }
+    }
     sleep(10);
 
     cout << "rs pixelmap demo end!" << endl;

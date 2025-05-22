@@ -2118,7 +2118,7 @@ void RSRenderServiceClient::SetLayerTop(const std::string &nodeIdStr, bool isTop
 
 class TransactionDataCallbackDirector : public RSTRansactionDataCallbackStub {
 public:
-    explicit TransactionDataCallbackDirector (RSRenderServiceClient* client) : client_(client) {}
+    explicit TransactionDataCallbackDirector (std::shared_ptr<RSRenderServiceClient> client) : client_(client) {}
     ~TransactionDataCallbackDirector() noexcept override = default;
     void OnAfterProcess(int32_t pid, uint64_t timeStamp) override
     {
@@ -2126,11 +2126,16 @@ public:
             PRIu64 " pid: %d", timeStamp, pid);
         RS_LOGD("789 test 11. client trigger callback&erase, timeStamp: %{public}"
             PRIu64 " pid: %{public}d", timeStamp, pid);
-        client->TriggerTransactionDataCallbackAndErase(pid, timeStamp);
+        if (auto shared_client = client_.lock()) {
+            shared_client->TriggerTransactionDataCallbackAndErase(pid, timeStamp);
+        } else {
+            RS_TRACE_NAME_FMT("789 test 11x. client trigger callback&erase, timeStamp: %"
+                PRIu64 " pid: %d", timeStamp, pid);
+        }
     }
 
 private:
-    RSRenderServiceClient* client_;
+    std::weak_ptr <RSRenderServiceClient> client_;
 };
 
 bool RSRenderServiceClient::RegisterTransactionDataCallback(int32_t pid, uint64_t timeStamp, std::function<void()> callback)
@@ -2154,7 +2159,8 @@ bool RSRenderServiceClient::RegisterTransactionDataCallback(int32_t pid, uint64_
             return false;
         }
         if (transactionDataCbDirector_ == nullptr) {
-            transactionDataCbDirector_ = new TransactionDataCallbackDirector(this);
+            transactionDataCbDirector_ = new
+                (std::static_pointer_cast<RSRenderServiceClient>(RSIRenderClient::client_));
         }
     }
     RS_TRACE_NAME_FMT("789 test 3. write data and unicode, timeStamp: %"

@@ -530,6 +530,34 @@ HWTEST_F(RSRenderServiceConnectionProxyTest, RegisterApplicationAgent, TestSize.
 }
 
 /**
+ * @tc.name: RegisterApplicationAgent Test
+ * @tc.desc: RegisterApplicationAgent Test
+ * @tc.type:FUNC
+ * @tc.require: issueI9KXXE
+ */
+HWTEST_F(RSRenderServiceConnectionProxyTest, RegisterTransactionDataCallback01, TestSize.Level1)
+{
+    sptr<RSITransactionDataCallback> callback;
+    proxy->RegisterTransactionDataCallback(1, 456, callback);
+}
+
+/**
+ * @tc.name: RegisterApplicationAgent Test
+ * @tc.desc: RegisterApplicationAgent Test
+ * @tc.type:FUNC
+ * @tc.require: issueI9KXXE
+ */
+HWTEST_F(RSRenderServiceConnectionProxyTest, RegisterTransactionDataCallback02, TestSize.Level1)
+{
+    
+    proxy->RegisterTransactionDataCallback(1, 456, callback);
+    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    ASSERT_NE(samgr, nullptr);
+    sptr<RSITransactionDataCallback> callback = iface_cast<RSITransactionDataCallback>(remoteObject);
+    proxy->RegisterTransactionDataCallback(pid, app);
+}
+
+/**
  * @tc.name: TakeSurfaceCapture Test
  * @tc.desc: TakeSurfaceCapture Test
  * @tc.type:FUNC
