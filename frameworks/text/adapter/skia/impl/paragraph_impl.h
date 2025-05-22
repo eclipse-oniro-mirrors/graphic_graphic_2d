@@ -128,7 +128,7 @@ public:
     void UpdateColor(size_t from, size_t to, const RSColor& color,
         skia::textlayout::UtfEncodeType encodeType) override;
     Drawing::RectI GeneratePaintRegion(double x, double y) override;
-    void UpdateForegroundBrush(const TextStyle& spTextStyle);
+    void UpdateForegroundBrush(const TextStyle& spTextStyle) override;
 
     void Relayout(double width, const ParagraphStyle& paragraphStyle,
         const std::vector<OHOS::Rosen::SPText::TextStyle>& textStyles) override;
