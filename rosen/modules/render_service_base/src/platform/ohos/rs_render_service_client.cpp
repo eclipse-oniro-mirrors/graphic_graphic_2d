@@ -2159,8 +2159,8 @@ bool RSRenderServiceClient::RegisterTransactionDataCallback(int32_t pid, uint64_
             return false;
         }
         if (transactionDataCbDirector_ == nullptr) {
-            transactionDataCbDirector_ = new
-                TransactionDataCallbackDirector(std::static_pointer_cast<RSRenderServiceClient>(RSIRenderClient::client_));
+            transactionDataCbDirector_ = new TransactionDataCallbackDirector(
+                std::static_pointer_cast<RSRenderServiceClient>(RSIRenderClient::client_));
         }
     }
     RS_TRACE_NAME_FMT("789 test 3. write data and unicode, timeStamp: %"
