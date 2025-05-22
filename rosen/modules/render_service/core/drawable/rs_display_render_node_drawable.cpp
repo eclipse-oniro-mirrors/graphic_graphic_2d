@@ -1751,13 +1751,19 @@ void RSDisplayRenderNodeDrawable::OnCapture(Drawing::Canvas& canvas)
     }
 
     specialLayerType_ = GetSpecialLayerType(*params);
+    // Screenshot blacklist, exclude surfacenode in blacklist while capturing displaynode
+    auto currentBlackList = RSUniRenderThread::Instance().GetBlackList();
     if (specialLayerType_ != NO_SPECIAL_LAYER || UNLIKELY(noBuffer) || params->GetScreenInfo().isSamplingOn ||
-        UNLIKELY(RSUniRenderThread::GetCaptureParam().isMirror_) || isRenderSkipIfScreenOff_) {
+        UNLIKELY(RSUniRenderThread::GetCaptureParam().isMirror_) || isRenderSkipIfScreenOff_ ||
+        !currentBlackList.empty()) {
         RS_LOGD("RSDisplayRenderNodeDrawable::OnCapture: \
             process RSDisplayRenderNode(id:[%{public}" PRIu64 "]) Not using UniRender buffer.",
             params->GetId());
-        RS_TRACE_NAME("Process RSDisplayRenderNodeDrawable[" +
-            std::to_string(params->GetScreenId()) + "] Not using UniRender buffer.");
+        RS_TRACE_NAME_FMT("RSDisplayRenderNodeDrawable::%s screenId: [%" PRIu64 "]"
+            " Not using UniRender buffer. specialLayer: %d, noBuffer: %d, "
+            "isSamplingOn: %d, isRenderSkipIfScreenOff: %d, blackList: %lu", __func__, params->GetScreenId(),
+            specialLayerType_ != NO_SPECIAL_LAYER, noBuffer, params->GetScreenInfo().isSamplingOn,
+            isRenderSkipIfScreenOff_, currentBlackList.size());
 
         // Adding matrix affine transformation logic
         if (!UNLIKELY(RSUniRenderThread::GetCaptureParam().isMirror_)) {
