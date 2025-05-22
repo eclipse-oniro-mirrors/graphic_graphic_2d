@@ -293,7 +293,7 @@ void RSCanvasRenderNode::SetHDRUIBrightness(float hdrUIBrightness)
     bool newHDRUIStatus = ROSEN_GNE(hdrUIBrightness, 1.0f);
     hdrUIBrightness_ = hdrUIBrightness;
     if (oldHDRUIStatus != newHDRUIStatus && IsOnTheTree()) {
-        SetHdrNum(newHDRUIStatus, GetInstanceRootNodeId(), HDRType::UICOMPONENT);
+        SetHdrNum(newHDRUIStatus, GetInstanceRootNodeId(), HDRComponentType::UICOMPONENT);
     }
 }
 
@@ -313,7 +313,7 @@ void RSCanvasRenderNode::SetHDRPresent(bool hasHdrPresent)
         return;
     }
     if (IsOnTheTree()) {
-        SetHdrNum(hasHdrPresent, GetInstanceRootNodeId(), HDRType::IMAGE);
+        SetHdrNum(hasHdrPresent, GetInstanceRootNodeId(), HDRComponentType::IMAGE);
     }
     hasHdrPresent_ = hasHdrPresent;
 }

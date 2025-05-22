@@ -2142,14 +2142,14 @@ HWTEST_F(RSSurfaceRenderNodeTest, HDRPresentTest002, TestSize.Level1)
     parentNode->SetIsOnTheTree(true);
     childNode->SetIsOnTheTree(true);
 
-    childNode->IncreaseHDRNum(HDRType::IMAGE);
+    childNode->IncreaseHDRNum(HDRComponentType::IMAGE);
     EXPECT_TRUE(childNode->GetHDRPresent());
-    childNode->ReduceHDRNum(HDRType::IMAGE);
+    childNode->ReduceHDRNum(HDRComponentType::IMAGE);
     EXPECT_FALSE(childNode->GetHDRPresent());
 
-    childNode->IncreaseHDRNum(HDRType::UICOMPONENT);
+    childNode->IncreaseHDRNum(HDRComponentType::UICOMPONENT);
     EXPECT_TRUE(childNode->GetHDRPresent());
-    childNode->ReduceHDRNum(HDRType::UICOMPONENT);
+    childNode->ReduceHDRNum(HDRComponentType::UICOMPONENT);
     EXPECT_FALSE(childNode->GetHDRPresent());
 }
 

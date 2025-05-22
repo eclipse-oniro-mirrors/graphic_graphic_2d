@@ -30,7 +30,7 @@ enum CLOSEHDR_SCENEID : uint32_t {
     CLOSEHDR_SCENEID_MAX
 };
 
-enum HDRType : uint32_t {
+enum HDRComponentType : uint32_t {
     IMAGE = 0,
     UICOMPONENT,
 };

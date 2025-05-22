@@ -2017,7 +2017,7 @@ void RSNode::SetVisualEffect(const VisualEffect* visualEffect)
         ROSEN_LOGE("Failed to set visualEffect, visualEffect is null!");
         return;
     }
-    // To do: generate composed visual effect here. Now we just set background and HDR UI brightness in v1.0.
+    // To do: generate composed visual effect here. Now we just set background and HDR UI brightness in v2.0.
     auto visualEffectParas = visualEffect->GetAllPara();
     for (const auto& visualEffectPara : visualEffectParas) {
         if (visualEffectPara->GetParaType() == VisualEffectPara::HDR_UI_BRIGHTNESS) {

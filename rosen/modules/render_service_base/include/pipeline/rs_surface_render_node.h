@@ -620,8 +620,8 @@ public:
     void SetHDRPresent(bool hasHdrPresent);
     bool GetHDRPresent() const;
 
-    void IncreaseHDRNum(HDRType hdrType);
-    void ReduceHDRNum(HDRType hdrType);
+    void IncreaseHDRNum(HDRComponentType hdrType);
+    void ReduceHDRNum(HDRComponentType hdrType);
 
     bool GetIsWideColorGamut() const;
 

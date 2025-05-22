@@ -848,7 +848,7 @@ public:
     {
         isFirstLevelCrossNode_ = isFirstLevelCrossNode;
     }
-    void SetHdrNum(bool flag, NodeId instanceRootNodeId, HDRType hdrType);
+    void SetHdrNum(bool flag, NodeId instanceRootNodeId, HDRComponentType hdrType);
 
     void SetIsAccessibilityConfigChanged(bool isAccessibilityConfigChanged)
     {

@@ -714,7 +714,7 @@ bool DoGetSpherizeDegree(const uint8_t* data, size_t size)
     return true;
 }
 
-bool DoGetSpherizeDegree(const uint8_t* data, size_t size)
+bool DoGetHDRUIBrightness(const uint8_t* data, size_t size)
 {
     if (data == nullptr) {
         return false;

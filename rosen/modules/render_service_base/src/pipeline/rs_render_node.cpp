@@ -358,7 +358,7 @@ void RSRenderNode::SetHasUnobscuredUEC()
     stagingRenderParams_->SetHasUnobscuredUEC(hasUnobscuredUEC);
 }
 
-void RSRenderNode::SetHdrNum(bool flag, NodeId instanceRootNodeId, HDRType hdrType)
+void RSRenderNode::SetHdrNum(bool flag, NodeId instanceRootNodeId, HDRComponentType hdrType)
 {
     auto context = GetContext().lock();
     if (!context) {
@@ -401,10 +401,10 @@ void RSRenderNode::SetIsOnTheTree(bool flag, NodeId instanceRootNodeId, NodeId f
                 " parent'S id:%{public}" PRIu64 " ", canvasNode->GetId(), canvasNode->GetNodeName().c_str(),
                 parentNodeId);
             if (canvasNode->GetHDRPresent()) {
-                SetHdrNum(flag, parentNodeId, HDRType::IMAGE);
+                SetHdrNum(flag, parentNodeId, HDRComponentType::IMAGE);
             }
             if (canvasNode->GetHDRUIPresent()) {
-                SetHdrNum(flag, parentNodeId, HDRType::UICOMPONENT);
+                SetHdrNum(flag, parentNodeId, HDRComponentType::UICOMPONENT);
             }
         }
     }

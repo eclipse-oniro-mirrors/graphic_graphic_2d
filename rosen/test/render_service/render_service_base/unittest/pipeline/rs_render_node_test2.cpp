@@ -1421,9 +1421,9 @@ HWTEST_F(RSRenderNodeTest2, SetHdrNum, TestSize.Level1)
     auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(1);
     EXPECT_NE(surfaceNode, nullptr);
     rsContext->nodeMap.renderNodeMap_[ExtractPid(1)][1] = surfaceNode;
-    node->SetHdrNum(true, 1, HDRType::IMAGE);
+    node->SetHdrNum(true, 1, HDRComponentType::IMAGE);
     EXPECT_EQ(surfaceNode->hdrPhotoNum_, 1);
-    node->SetHdrNum(true, 1, HDRType::UICOMPONENT);
+    node->SetHdrNum(true, 1, HDRComponentType::UICOMPONENT);
     EXPECT_EQ(surfaceNode->hdrUIComponentNum_, 1);
 }
 
