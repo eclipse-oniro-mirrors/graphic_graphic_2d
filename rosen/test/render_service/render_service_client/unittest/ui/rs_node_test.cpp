@@ -7338,7 +7338,7 @@ HWTEST_F(RSNodeTest, MarkRepaintBoundary, TestSize.Level1)
 
     auto rsNode = RSCanvasNode::Create(true, false);
     rsNode->MarkRepaintBoundary("IsolatedComponent");
-    EXPECT_TRUE(!rsNode->isRepaintBoundary_);
+    EXPECT_FALSE(rsNode->isRepaintBoundary_);
 
     rsNode->MarkRepaintBoundary("FlowItem");
     EXPECT_TRUE(rsNode->isRepaintBoundary_);
