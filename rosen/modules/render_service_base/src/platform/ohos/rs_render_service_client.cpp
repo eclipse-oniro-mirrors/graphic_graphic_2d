@@ -2116,7 +2116,7 @@ void RSRenderServiceClient::SetLayerTop(const std::string &nodeIdStr, bool isTop
     }
 }
 
-class TransactionDataCallbackDirector : public RSTRansactionDataCallbackStub {
+class TransactionDataCallbackDirector : public RSTransactionDataCallbackStub {
 public:
     explicit TransactionDataCallbackDirector (std::shared_ptr<RSRenderServiceClient> client) : client_(client) {}
     ~TransactionDataCallbackDirector() noexcept override = default;
@@ -2160,7 +2160,7 @@ bool RSRenderServiceClient::RegisterTransactionDataCallback(int32_t pid, uint64_
         }
         if (transactionDataCbDirector_ == nullptr) {
             transactionDataCbDirector_ = new
-                (std::static_pointer_cast<RSRenderServiceClient>(RSIRenderClient::client_));
+                TransactionDataCallbackDirector(std::static_pointer_cast<RSRenderServiceClient>(RSIRenderClient::client_));
         }
     }
     RS_TRACE_NAME_FMT("789 test 3. write data and unicode, timeStamp: %"
