@@ -250,6 +250,47 @@ HWTEST_F(RSRenderServiceConnectionProxyTest, SetVirtualScreenSurface, TestSize.L
 }
 
 /**
+ * @tc.name: SetVirtualScreenBlackList Test
+ * @tc.desc: SetVirtualScreenBlackList Test
+ * @tc.type:FUNC
+ * @tc.require: issue#IC98BX
+ */
+HWTEST_F(RSRenderServiceConnectionProxyTest, SetVirtualScreenBlackList, TestSize.Level1)
+{
+    ScreenId id = 100;
+    std::vector<NodeId> blackListVector({1, 2, 3});
+    EXPECT_EQ(proxy->SetVirtualScreenBlackList(id, blackListVector), 0);
+}
+
+/**
+ * @tc.name: AddVirtualScreenBlackList Test
+ * @tc.desc: AddVirtualScreenBlackList Test
+ * @tc.type:FUNC
+ * @tc.require: issue#IC98BX
+ */
+HWTEST_F(RSRenderServiceConnectionProxyTest, AddVirtualScreenBlackList, TestSize.Level1)
+{
+    ScreenId id = 100;
+    std::vector<NodeId> blackListVector({1, 2, 3});
+    int32_t repCode = 0;
+    EXPECT_EQ(proxy->AddVirtualScreenBlackList(id, blackListVector, repCode), 0);
+}
+
+/**
+ * @tc.name: RemoveVirtualScreenBlackList Test
+ * @tc.desc: RemoveVirtualScreenBlackList Test
+ * @tc.type:FUNC
+ * @tc.require: issue#IC98BX
+ */
+HWTEST_F(RSRenderServiceConnectionProxyTest, RemoveVirtualScreenBlackList, TestSize.Level1)
+{
+    ScreenId id = 100;
+    std::vector<NodeId> blackListVector({1, 2, 3});
+    int32_t repCode = 0;
+    EXPECT_EQ(proxy->RemoveVirtualScreenBlackList(id, blackListVector, repCode), 0);
+}
+
+/**
  * @tc.name: RemoveVirtualScreen Test
  * @tc.desc: RemoveVirtualScreen Test
  * @tc.type:FUNC
