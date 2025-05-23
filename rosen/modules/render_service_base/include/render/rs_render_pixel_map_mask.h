@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef RENDER_PIXEL_MAP_MASK_RENDER_PROPERTY_H
-#define RENDER_PIXEL_MAP_MASK_RENDER_PROPERTY_H
+#ifndef RENDER_RS_RENDER_PIXEL_MAP_MASK_H
+#define RENDER_RS_RENDER_PIXEL_MAP_MASK_H
 
 #include <memory>
 #include "common/rs_vector4.h"
@@ -48,7 +48,7 @@ public:
 
     virtual std::vector<std::shared_ptr<RSRenderPropertyBase>> GetLeafRenderProperties() override;
 
-    std::shared_ptr<Drawing::Image> GetImage() const;
+    const std::shared_ptr<Drawing::Image> GetImage() const;
 
 private:
     std::shared_ptr<Drawing::Image> cacheImage_ = nullptr;
@@ -56,4 +56,4 @@ private:
 } // namespace Rosen
 } // namespace OHOS
 
-#endif // RENDER_PIXEL_MAP_MASK_RENDER_PROPERTY_H
+#endif // RENDER_RS_RENDER_PIXEL_MAP_MASK_H

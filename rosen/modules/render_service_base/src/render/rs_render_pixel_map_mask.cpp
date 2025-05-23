@@ -96,6 +96,7 @@ bool RSRenderPixelMapMaskPara::WriteToParcel(Parcel& parcel)
 
 bool RSRenderPixelMapMaskPara::ReadFromParcel(Parcel& parcel)
 {
+    cacheImage_ = nullptr;
     if (!RSMarshallingHelper::Unmarshalling(parcel, id_) ||
         !RSMarshallingHelper::Unmarshalling(parcel, type_) ||
         !RSMarshallingHelper::Unmarshalling(parcel, modifierType_)) {
@@ -162,7 +163,7 @@ std::vector<std::shared_ptr<RSRenderPropertyBase>> RSRenderPixelMapMaskPara::Get
     return out;
 }
 
-std::shared_ptr<Drawing::Image> RSRenderPixelMapMaskPara::GetImage() const
+const std::shared_ptr<Drawing::Image> RSRenderPixelMapMaskPara::GetImage() const
 {
     return cacheImage_;
 }
