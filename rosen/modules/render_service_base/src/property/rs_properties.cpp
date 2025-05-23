@@ -2562,10 +2562,14 @@ std::shared_ptr<RSRenderFilter> RSProperties::GetBackgroundUIFilter() const
 
 void RSProperties::SetHDRUIBrightness(float hdrUIBrightness)
 {
-    hdrUIBrightness_ = hdrUIBrightness;
     if (auto node = RSBaseRenderNode::ReinterpretCast<RSCanvasRenderNode>(backref_.lock())) {
-        node->SetHDRUIBrightness(hdrUIBrightness);
+        bool oldHDRUIStatus = IsHDRUIBrightnessValid();
+        bool newHDRUIStatus = ROSEN_GNE(hdrUIBrightness, 1.0f);
+        if ((oldHDRUIStatus != newHDRUIStatus) && node->IsOnTheTree()) {
+            node->SetHdrNum(newHDRUIStatus, node->GetInstanceRootNodeId(), HDRComponentType::UICOMPONENT);
+        }
     }
+    hdrUIBrightness_ = hdrUIBrightness;
     if (IsHDRUIBrightnessValid()) {
         isDrawn_ = true;
     }

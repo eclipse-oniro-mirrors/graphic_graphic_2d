@@ -18,6 +18,7 @@
 #include "common/rs_optional_trace.h"
 #include "display_engine/rs_luminance_control.h"
 #include "pipeline/rs_paint_filter_canvas.h"
+#include "platform/common/rs_log.h"
 #include "src/core/SkOpts.h"
 
 namespace OHOS {
@@ -51,6 +52,10 @@ float RSHDRUIBrightnessFilter::GetHDRUIBrightness() const
 void RSHDRUIBrightnessFilter::DrawImageRect(Drawing::Canvas& canvas, const std::shared_ptr<Drawing::Image>& image,
     const Drawing::Rect& src, const Drawing::Rect& dst) const
 {
+    if (!image) {
+        ROSEN_LOGE("RSHDRUIBrightnessFilter::DrawImageRect image is nullptr");
+        return;
+    }
     Drawing::Brush brush;
     brush.SetAntiAlias(true);
     Drawing::Filter filter;

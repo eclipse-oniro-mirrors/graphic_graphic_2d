@@ -369,6 +369,10 @@ napi_value EffectNapi::SetHDRUIBrightness(napi_env env, napi_callback_info info)
         UIEFFECT_LOG_E("EffectNapi SetHDRUIBrightness effectObj is nullptr");
         return nullptr;
     }
+    if (std::isnan(brightnessRatio)) {
+        UIEFFECT_LOG_E("EffectNapi SetHDRUIBrightness brightnessRatio is nan");
+        brightnessRatio = 1.0f;
+    }
     std::shared_ptr<HDRUIBrightnessPara> para = std::make_shared<HDRUIBrightnessPara>();
     para->SetHDRUIBrightness(static_cast<float>(brightnessRatio));
     effectObj->AddPara(para);

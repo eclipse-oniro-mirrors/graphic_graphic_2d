@@ -395,7 +395,8 @@ void RSRenderNode::SetIsOnTheTree(bool flag, NodeId instanceRootNodeId, NodeId f
     // Need to count upeer or lower trees of HDR nodes
     if (GetType() == RSRenderNodeType::CANVAS_NODE) {
         auto canvasNode = RSBaseRenderNode::ReinterpretCast<RSCanvasRenderNode>(shared_from_this());
-        if (canvasNode != nullptr && (canvasNode->GetHDRPresent() || canvasNode->GetHDRUIPresent())) {
+        if (canvasNode != nullptr && (canvasNode->GetHDRPresent() ||
+            canvasNode->GetRenderProperties().IsHDRUIBrightnessValid())) {
             NodeId parentNodeId = flag ? instanceRootNodeId : instanceRootNodeId_;
             ROSEN_LOGD("RSRenderNode::SetIsOnTheTree HDRClient canvasNode[id:%{public}" PRIu64 " name:%{public}s]"
                 " parent'S id:%{public}" PRIu64 " ", canvasNode->GetId(), canvasNode->GetNodeName().c_str(),
@@ -403,7 +404,7 @@ void RSRenderNode::SetIsOnTheTree(bool flag, NodeId instanceRootNodeId, NodeId f
             if (canvasNode->GetHDRPresent()) {
                 SetHdrNum(flag, parentNodeId, HDRComponentType::IMAGE);
             }
-            if (canvasNode->GetHDRUIPresent()) {
+            if (canvasNode->GetRenderProperties().IsHDRUIBrightnessValid()) {
                 SetHdrNum(flag, parentNodeId, HDRComponentType::UICOMPONENT);
             }
         }
