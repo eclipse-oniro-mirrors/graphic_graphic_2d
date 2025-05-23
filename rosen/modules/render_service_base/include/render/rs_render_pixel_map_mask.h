@@ -26,7 +26,8 @@ namespace Rosen {
 class RSB_EXPORT RSRenderPixelMapMaskPara : public RSRenderMaskPara {
 public:
     RSRenderPixelMapMaskPara(PropertyId id) :
-        RSRenderMaskPara(RSUIFilterType::PIXEL_MAP_MASK) {
+        RSRenderMaskPara(RSUIFilterType::PIXEL_MAP_MASK)
+    {
         id_ = id;
     }
     virtual ~RSRenderPixelMapMaskPara() = default;
@@ -36,11 +37,7 @@ public:
     template<class T>
     std::shared_ptr<RSRenderAnimatableProperty<T>> GetRenderAnimatableProperty(const RSUIFilterType type)
     {
-        auto property = GetRenderPropert(type);
-        if (property == nullptr) {
-            return nullptr;
-        }
-        return std::static_pointer_cast<RSRenderAnimatableProperty<T>>(property);
+        return std::static_pointer_cast<RSRenderAnimatableProperty<T>>(GetRenderPropert(type));
     }
 
     void GetDescription(std::string& out) const override;
