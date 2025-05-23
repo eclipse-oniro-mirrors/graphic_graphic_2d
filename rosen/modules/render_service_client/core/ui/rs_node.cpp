@@ -2915,7 +2915,8 @@ void RSNode::RegisterTransitionPair(const std::shared_ptr<RSUIContext> rsUIConte
     const bool isInSameWindow)
 {
     if (rsUIContext == nullptr) {
-        ROSEN_LOGE("RSNode::RegisterTransitionPair, rsUIContext is nullptr");
+        ROSEN_LOGD("RSNode::RegisterTransitionPair, rsUIContext is nullptr");
+        RegisterTransitionPair(inNodeId, outNodeId, isInSameWindow);
         return;
     }
     std::unique_ptr<RSCommand> command = std::make_unique<RSRegisterGeometryTransitionNodePair>(inNodeId, outNodeId,
@@ -2929,7 +2930,8 @@ void RSNode::RegisterTransitionPair(const std::shared_ptr<RSUIContext> rsUIConte
 void RSNode::UnregisterTransitionPair(const std::shared_ptr<RSUIContext> rsUIContext, NodeId inNodeId, NodeId outNodeId)
 {
     if (rsUIContext == nullptr) {
-        ROSEN_LOGE("RSNode::UnregisterTransitionPair, rsUIContext is nullptr");
+        ROSEN_LOGD("RSNode::UnregisterTransitionPair, rsUIContext is nullptr");
+        UnregisterTransitionPair(inNodeId, outNodeId);
         return;
     }
     std::unique_ptr<RSCommand> command = std::make_unique<RSUnregisterGeometryTransitionNodePair>(inNodeId, outNodeId);
