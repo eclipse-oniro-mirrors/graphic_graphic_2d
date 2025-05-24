@@ -73,6 +73,7 @@
 #include "platform/ohos/rs_jank_stats_helper.h"
 #include "render/rs_typeface_cache.h"
 #include "transaction/rs_unmarshal_thread.h"
+#include "transaction/rs_transaction_data_callback_manager.h"
 #include "utils/graphic_coretrace.h"
 
 #ifdef TP_FEATURE_ENABLE
@@ -3125,6 +3126,12 @@ ErrCode RSRenderServiceConnection::SetLayerTop(const std::string &nodeIdStr, boo
     };
     mainThread_->PostTask(task);
     return ERR_OK;
+}
+
+void RSRenderServiceConnection::RegisterTransactionDataCallback(int32_t pid,
+    uint64_t timeStamp, sptr<RSITransactionDataCallback> callback)
+{
+    RSTransactionDataCallbackManager::Instance().RegisterTransactionDataCallback(pid, timeStamp, callback);
 }
 
 void RSRenderServiceConnection::SetColorFollow(const std::string &nodeIdStr, bool isColorFollow)

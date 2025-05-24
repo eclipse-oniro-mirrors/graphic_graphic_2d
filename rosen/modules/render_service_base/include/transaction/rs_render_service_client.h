@@ -25,6 +25,7 @@
 #include <surface_type.h>
 #ifndef ROSEN_CROSS_PLATFORM
 #include <surface.h>
+#include <utility>
 #endif
 
 #include "ipc_callbacks/buffer_available_callback.h"
@@ -35,6 +36,7 @@
 #include "ipc_callbacks/rs_surface_buffer_callback.h"
 #include "ipc_callbacks/screen_change_callback.h"
 #include "ipc_callbacks/surface_capture_callback.h"
+#include "ipc_callbacks/rs_transaction_data_callback.h"
 #include "memory/rs_memory_graphic.h"
 #include "platform/drawing/rs_surface.h"
 #include "rs_irender_client.h"
@@ -468,6 +470,8 @@ public:
 
     bool GetHighContrastTextState();
 
+    bool RegisterTransactionDataCallback(int32_t pid, uint64_t timeStamp, std::function<void()> callback);
+
     bool SetBehindWindowFilterEnabled(bool enabled);
 
     bool GetBehindWindowFilterEnabled(bool& enabled);
@@ -476,6 +480,7 @@ private:
         std::shared_ptr<Media::PixelMap> pixelmap);
     void TriggerOnFinish(const FinishCallbackRet& ret) const;
     void TriggerOnAfterAcquireBuffer(const AfterAcquireBufferRet& ret) const;
+    void TriggerTransactionDataCallbackAndErase(int32_t pid, uint64_t timeStamp);
     struct RectHash {
         std::size_t operator()(const Drawing::Rect& rect) const {
             std::size_t h1 = std::hash<Drawing::scalar>()(rect.left_);
@@ -508,8 +513,13 @@ private:
     std::map<uint64_t, std::shared_ptr<SurfaceBufferCallback>> surfaceBufferCallbacks_;
     mutable std::shared_mutex surfaceBufferCallbackMutex_;
 
+    sptr<RSITransactionDataCallback> transactionDataCbDirector_;
+    std::map<std::pair<int32_t, uint64_t>, std::function<void()>> transactionDataCallbacks_;
+    std::mutex transactionDataCallbackMutex_;
+
     friend class SurfaceCaptureCallbackDirector;
     friend class SurfaceBufferCallbackDirector;
+    friend class TransactionDataCallbackDirector;
 };
 } // namespace Rosen
 } // namespace OHOS

@@ -384,6 +384,9 @@ private:
 
     ErrCode SetLayerTop(const std::string &nodeIdStr, bool isTop) override;
 
+    void RegisterTransactionDataCallback(int32_t pid,
+        uint64_t timeStamp, sptr<RSITransactionDataCallback> callback) override;
+
     void SetColorFollow(const std::string &nodeIdStr, bool isColorFollow) override;
 
     ErrCode RegisterSurfaceBufferCallback(pid_t pid, uint64_t uid,

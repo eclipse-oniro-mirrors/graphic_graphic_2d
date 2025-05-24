@@ -535,6 +535,10 @@ bool RSIRenderServiceConnectionInterfaceCodeAccessVerifier::IsExclusiveVerificat
             hasPermission = IsSystemCalling(codeEnumTypeName_ + "::GET_BEHIND_WINDOW_FILTER_ENABLED");
             break;
         }
+        case static_cast<CodeUnderlyingType>(CodeEnumType::REGISTER_TRANSACTION_DATA_CALLBACK): {
+            hasPermission = IsSystemCalling(codeEnumTypeName_ + "::REGISTER_TRANSACTION_DATA_CALLBACK");
+            break;
+        }
         default: {
             break;
         }
