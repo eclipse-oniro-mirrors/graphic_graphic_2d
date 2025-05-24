@@ -5529,11 +5529,9 @@ HWTEST_F(RSNodeTest, ExecuteWithoutAnimation, TestSize.Level1)
     std::shared_ptr<RSImplicitAnimator> implicitAnimator = nullptr;
     std::shared_ptr<RSUIContext> rsUIContext = nullptr;
     rsNode->ExecuteWithoutAnimation(callback, rsUIContext, implicitAnimator);
-    EXPECT_EQ(callback, nullptr);
 
     callback = []() {};
     rsNode->ExecuteWithoutAnimation(callback, rsUIContext, implicitAnimator);
-    EXPECT_EQ(implicitAnimator, nullptr);
 
     rsUIContext = std::make_shared<RSUIContext>();
     rsNode->ExecuteWithoutAnimation(callback, rsUIContext, implicitAnimator);
@@ -5589,7 +5587,7 @@ HWTEST_F(RSNodeTest, AddAnimationInner, TestSize.Level1)
     auto rsNode = RSCanvasNode::Create();
     std::shared_ptr<RSAnimation> animation = std::make_shared<RSAnimation>();
     rsNode->AddAnimationInner(animation);
-    EXPECT_NE(animation, nullptr);
+    EXPECT_NE(rsNode->GenerateId(), 1);
 }
 
 /**
@@ -5858,7 +5856,7 @@ HWTEST_F(RSNodeTest, SetPivotZ, TestSize.Level1)
     auto rsNode = RSCanvasNode::Create();
     float pivotZ = 1.f; // for test
     rsNode->SetPivotZ(pivotZ);
-    EXPECT_EQ(pivotZ, 1.f);
+    EXPECT_NE(rsNode->GenerateId(), 1);
 }
 
 /**
@@ -5886,7 +5884,7 @@ HWTEST_F(RSNodeTest, SetCameraDistance, TestSize.Level1)
     auto rsNode = RSCanvasNode::Create();
     float cameraDistance = 1.f; // for test
     rsNode->SetCameraDistance(cameraDistance);
-    EXPECT_EQ(cameraDistance, 1.f);
+    EXPECT_NE(rsNode->GenerateId(), 1);
 }
 
 /**
@@ -5900,7 +5898,7 @@ HWTEST_F(RSNodeTest, SetHDRBrightness, TestSize.Level1)
     auto rsNode = RSCanvasNode::Create();
     float hdrBrightness = 0.5f; // for test
     rsNode->SetHDRBrightness(hdrBrightness);
-    EXPECT_EQ(hdrBrightness, 0.5f);
+    EXPECT_NE(rsNode->GenerateId(), 1);
 }
 
 /**
@@ -5928,7 +5926,7 @@ HWTEST_F(RSNodeTest, SetEnvForegroundColorStrategy, TestSize.Level1)
     auto rsNode = RSCanvasNode::Create();
     ForegroundColorStrategyType strategyType = ForegroundColorStrategyType::INVERT_BACKGROUNDCOLOR;
     rsNode->SetEnvForegroundColorStrategy(strategyType);
-    EXPECT_EQ(strategyType, ForegroundColorStrategyType::INVERT_BACKGROUNDCOLOR);
+    EXPECT_NE(rsNode->GenerateId(), 1);
 }
 
 /**
@@ -6422,7 +6420,7 @@ HWTEST_F(RSNodeTest, SetShadowMask, TestSize.Level1)
     auto rsNode = RSCanvasNode::Create();
     bool shadowMask = true;
     rsNode->SetShadowMask(shadowMask);
-    EXPECT_EQ(shadowMask, true);
+    EXPECT_NE(rsNode->GenerateId(), 1);
 }
 
 /**
@@ -6436,7 +6434,7 @@ HWTEST_F(RSNodeTest, SetShadowIsFilled, TestSize.Level1)
     auto rsNode = RSCanvasNode::Create();
     bool shadowIsFilled = true;
     rsNode->SetShadowIsFilled(shadowIsFilled);
-    EXPECT_EQ(shadowIsFilled, true);
+    EXPECT_NE(rsNode->GenerateId(), 1);
 }
 
 /**
@@ -6493,7 +6491,7 @@ HWTEST_F(RSNodeTest, SetUseEffect, TestSize.Level1)
     auto rsNode = RSCanvasNode::Create();
     bool useEffect = true;
     rsNode->SetUseEffect(useEffect);
-    EXPECT_EQ(useEffect, true);
+    EXPECT_NE(rsNode->GenerateId(), 1);
 }
 
 /**
@@ -6521,7 +6519,7 @@ HWTEST_F(RSNodeTest, SetUseShadowBatching, TestSize.Level1)
     auto rsNode = RSCanvasNode::Create();
     bool useShadowBatching = true;
     rsNode->SetUseShadowBatching(useShadowBatching);
-    EXPECT_EQ(useShadowBatching, true);
+    EXPECT_NE(rsNode->GenerateId(), 1);
 }
 
 /**
@@ -6775,7 +6773,6 @@ HWTEST_F(RSNodeTest, OnAddChildren, TestSize.Level1)
 
     rsNode->transitionEffect_ = nullptr;
     rsNode->OnRemoveChildren();
-    EXPECT_EQ(rsNode->transitionEffect_, nullptr);
 }
 
 /**
@@ -6793,7 +6790,6 @@ HWTEST_F(RSNodeTest, OnRemoveChildren, TestSize.Level1)
 
     rsNode->transitionEffect_ = nullptr;
     rsNode->OnRemoveChildren();
-    EXPECT_EQ(rsNode->transitionEffect_, nullptr);
 }
 
 /**
@@ -7041,7 +7037,6 @@ HWTEST_F(RSNodeTest, ClearAllModifiers, TestSize.Level1)
     modifier = nullptr;
     rsNode->modifiers_[id] = modifier;
     rsNode->ClearAllModifiers();
-    EXPECT_EQ(modifier, nullptr);
     EXPECT_TRUE(rsNode->properties_.empty());
 }
 
