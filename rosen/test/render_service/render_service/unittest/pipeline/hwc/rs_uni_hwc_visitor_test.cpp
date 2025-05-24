@@ -1608,10 +1608,7 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateHwcNodeRectInSkippedSubTree_002, TestSize.Le
     ASSERT_NE(parentNode, nullptr);
 
     {
-        NodeId childNodeId = 2;
-        auto childNode = std::make_shared<RSSurfaceRenderNode>(childNodeId);
-        childNode = nullptr;
-        ASSERT_EQ(childNode, nullptr);
+        std::shared_ptr<RSSurfaceRenderNode> childNode = nullptr;
         surfaceNode->ResetChildHardwareEnabledNodes();
         surfaceNode->AddChildHardwareEnabledNode(childNode);
         rsUniHwcVisitor->uniRenderVisitor_.curSurfaceNode_ = surfaceNode;
