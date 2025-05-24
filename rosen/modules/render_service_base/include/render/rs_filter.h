@@ -78,6 +78,7 @@ public:
         SOUND_WAVE,
         EDGE_LIGHT,
         HDR_UI_BRIGHTNESS,
+        BEZIER_WARP,
     };
     FilterType GetFilterType() const
     {
