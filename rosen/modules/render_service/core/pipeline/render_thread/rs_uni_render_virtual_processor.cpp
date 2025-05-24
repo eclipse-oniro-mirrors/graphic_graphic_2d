@@ -473,10 +473,10 @@ void RSUniRenderVirtualProcessor::UniScale(RSPaintFilterCanvas& canvas,
     mirrorScaleY_ = mirrorHeight / mainHeight;
     if (mirrorScaleY_ < mirrorScaleX_) {
         mirrorScaleX_ = mirrorScaleY_;
-        startX = (mirrorWidth / mirrorScaleX_ - mainWidth) / 2;
+        startX = (mirrorWidth / mirrorScaleX_ - mainWidth) / 2; // 2 for calc X
     } else {
         mirrorScaleY_ = mirrorScaleX_;
-        startY = (mirrorHeight / mirrorScaleY_ - mainHeight) / 2;
+        startY = (mirrorHeight / mirrorScaleY_ - mainHeight) / 2; // 2 for calc Y
     }
 
     if (EnableSlrScale()) {
