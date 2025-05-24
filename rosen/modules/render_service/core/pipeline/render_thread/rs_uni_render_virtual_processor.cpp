@@ -367,7 +367,7 @@ void RSUniRenderVirtualProcessor::ScaleMirrorIfNeed(const ScreenRotation angle, 
 
     RS_TRACE_NAME_FMT("RSUniRenderVirtualProcessor::ScaleMirrorIfNeed:(%f, %f, %f, %f), "
         "screenCorrection:%d, oriRotation:%d, scaleMode_: %d",
-        mirroredScreenWidth_, mirroredScreenHeight_, virtualScreenWidth_, virtualScreenHeight_,
+        mirroredScreenWidth, mirroredScreenHeight, virtualScreenWidth_, virtualScreenHeight_,
         static_cast<int>(screenCorrection_), static_cast<int>(angle), static_cast<int>(scaleMode_));
 
     if (!EnableVisibleRect() &&
@@ -496,8 +496,7 @@ void RSUniRenderVirtualProcessor::UniScale(RSPaintFilterCanvas& canvas,
         if (EnableVisibleRect() && !drawMirrorCopy_) {
             canvas.Translate(-visibleRect_.GetLeft(), -visibleRect_.GetTop());
             RS_LOGD("RSUniRenderVirtualProcessor::UniScale: Scale With VisibleRect, "
-                "mirrorScaleX_: %{public}f, mirrorScaleY_: %{public}f, "
-                "startX: %{public}f, startY: %{public}f",
+                "mirrorScaleX_: %{public}f, mirrorScaleY_: %{public}f, startX: %{public}f, startY: %{public}f",
                 mirrorScaleX_, mirrorScaleY_, startX, startY);
         }
         canvas.Translate(startX, startY);
@@ -564,7 +563,6 @@ void RSUniRenderVirtualProcessor::CanvasClipRegionForUniscaleMode(const Drawing:
     canvas_->ClipRegion(clipRegion);
     RS_LOGD("RSUniRenderVirtualProcessor::CanvasClipRegionForUniscaleMode, clipRect: %{public}s",
         rectI.ToString().c_str());
-    
 }
 
 void RSUniRenderVirtualProcessor::ProcessRcdSurface(RSRcdSurfaceRenderNode& node)
