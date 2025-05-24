@@ -1172,7 +1172,6 @@ HWTEST_F(RSScreenTest, SetScreenBacklight_003, testing::ext::TestSize.Level1)
     ScreenId id = 0;
     auto rsScreen = std::make_shared<impl::RSScreen>(id, true, nullptr, nullptr);
     ASSERT_NE(nullptr, rsScreen);
-
     rsScreen->SetScreenBacklight(1);
 }
 
@@ -1185,7 +1184,7 @@ HWTEST_F(RSScreenTest, SetScreenBacklight_003, testing::ext::TestSize.Level1)
 HWTEST_F(RSScreenTest, SetScreenBacklight_004, testing::ext::TestSize.Level1)
 {
     ScreenId id = 0;
-    auto rsScreen = std::make_shared<impl::RSScreen>(id, true, nullptr, nullptr);
+    auto rsScreen = std::make_shared<impl::RSScreen>(id, false, nullptr, nullptr);
     ASSERT_NE(nullptr, rsScreen);
     rsScreen->hdiScreen_->device_ = hdiDeviceMock_;
     EXPECT_CALL(*hdiDeviceMock_, SetScreenBacklight(_, _)).Times(2).WillOnce(testing::Return(1));

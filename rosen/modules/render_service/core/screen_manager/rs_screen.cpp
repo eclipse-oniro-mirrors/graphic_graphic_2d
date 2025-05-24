@@ -770,7 +770,7 @@ void RSScreen::DisplayDump(int32_t screenIndex, std::string& dumpString)
         AppendFormat(dumpString,
                      "isSamplingOn=%d, samplingScale=%.2f, samplingTranslateX=%.2f, samplingTranslateY=%.2f\n",
                      isSamplingOn_, samplingScale_, samplingTranslateX_, samplingTranslateY_);
-        AppendFormat(dumpString, "enableVisibleRect=%d, mainScreenVisibleRect_=[%d,%d,%d,%d]",
+        AppendFormat(dumpString, "enableVisibleRect=%d, mainScreenVisibleRect_=[%d,%d,%d,%d]\n",
                      enableVisibleRect_.load(), mainScreenVisibleRect_.x, mainScreenVisibleRect_.y,
                      mainScreenVisibleRect_.w, mainScreenVisibleRect_.h);
     }
