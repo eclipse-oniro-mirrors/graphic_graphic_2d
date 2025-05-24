@@ -174,7 +174,7 @@ ohos_static_library("rs_test_common") {
     "hilog:libhilog",
     "hitrace:hitrace_meter",
     "init:libbegetutil",
-    "ipc:ipc_core",    
+    "ipc:ipc_core",
   ]
 
   if (use_memmgr_plugin || use_memmgr) {
