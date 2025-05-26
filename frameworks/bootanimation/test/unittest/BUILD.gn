@@ -63,7 +63,7 @@ ohos_unittest("bootanimation_test") {
     "hitrace:hitrace_meter",
     "init:libbegetutil",
     "samgr:samgr_proxy",
-    "zlib:libz",
+    "zlib:libz",    
     "googletest:gtest_main",
   ]
 
