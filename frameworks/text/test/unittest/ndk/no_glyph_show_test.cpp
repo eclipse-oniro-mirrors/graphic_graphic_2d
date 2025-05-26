@@ -27,7 +27,7 @@ using namespace testing::ext;
 
 namespace OHOS {
 namespace Rosen {
-class NdkNoGlyphShowTest : public testing::Test {
+class NdkUndefinedGlyphDisplayTest : public testing::Test {
 public:
     OH_Drawing_Typography* PrepareCreateTextLine(const std::string& text);
 
@@ -43,7 +43,7 @@ private:
     static constexpr float onlyDefaultResult_[][4] = { { 0, 0, 0, 0 } };
 };
 
-OH_Drawing_Typography* NdkNoGlyphShowTest::PrepareCreateTextLine(const std::string& text)
+OH_Drawing_Typography* NdkUndefinedGlyphDisplayTest::PrepareCreateTextLine(const std::string& text)
 {
     double maxWidth = 500.0;
     OH_Drawing_TypographyStyle* typoStyle = OH_Drawing_CreateTypographyStyle();
@@ -90,54 +90,54 @@ OH_Drawing_Typography* NdkNoGlyphShowTest::PrepareCreateTextLine(const std::stri
     } while (0)
 
 /**
- * @tc.name: NdkNoGlyphShowTest001
- * @tc.desc: Test no glyph show use tofu
+ * @tc.name: NdkUndefinedGlyphDisplayTest001
+ * @tc.desc: Test undefined glyph display use tofu
  * @tc.type: FUNC
  */
-HWTEST_F(NdkNoGlyphShowTest, NdkNoGlyphShowTest001, TestSize.Level1)
+HWTEST_F(NdkUndefinedGlyphDisplayTest, NdkUndefinedGlyphDisplayTest001, TestSize.Level1)
 {
-    OH_Drawing_SetTextNoGlyphShow(TEXT_NO_GLYPH_USE_TOFU);
+    OH_Drawing_SetTextUndefinedGlyphDisplay(TEXT_NO_GLYPH_USE_TOFU);
     BoundsResult(tofuResult_, 3, text_);
 }
 
 /**
- * @tc.name: NdkNoGlyphShowTest002
- * @tc.desc: Test no glyph show use default
+ * @tc.name: NdkUndefinedGlyphDisplayTest002
+ * @tc.desc: Test undefined glyph display use default
  * @tc.type: FUNC
  */
-HWTEST_F(NdkNoGlyphShowTest, NdkNoGlyphShowTest002, TestSize.Level1)
+HWTEST_F(NdkUndefinedGlyphDisplayTest, NdkUndefinedGlyphDisplayTest002, TestSize.Level1)
 {
-    OH_Drawing_SetTextNoGlyphShow(TEXT_NO_GLYPH_USE_DEFAULT);
+    OH_Drawing_SetTextUndefinedGlyphDisplay(TEXT_NO_GLYPH_USE_DEFAULT);
     BoundsResult(defaultResult_, 3, text_);
 }
 
 /**
- * @tc.name: NdkNoGlyphShowTest003
- * @tc.desc: Test no glyph show use invalid input
+ * @tc.name: NdkUndefinedGlyphDisplayTest003
+ * @tc.desc: Test undefined glyph display use invalid input
  * @tc.type: FUNC
  */
-HWTEST_F(NdkNoGlyphShowTest, NdkNoGlyphShowTest003, TestSize.Level1)
+HWTEST_F(NdkUndefinedGlyphDisplayTest, NdkUndefinedGlyphDisplayTest003, TestSize.Level1)
 {
-    OH_Drawing_SetTextNoGlyphShow(TEXT_NO_GLYPH_USE_DEFAULT);
-    OH_Drawing_SetTextNoGlyphShow(static_cast<OH_Drawing_TextNoGlyphShow>(100));
+    OH_Drawing_SetTextUndefinedGlyphDisplay(TEXT_NO_GLYPH_USE_DEFAULT);
+    OH_Drawing_SetTextUndefinedGlyphDisplay(static_cast<OH_Drawing_TextUndefinedGlyphDisplay>(100));
     BoundsResult(defaultResult_, 3, text_);
-    OH_Drawing_SetTextNoGlyphShow(TEXT_NO_GLYPH_USE_TOFU);
-    OH_Drawing_SetTextNoGlyphShow(static_cast<OH_Drawing_TextNoGlyphShow>(100));
+    OH_Drawing_SetTextUndefinedGlyphDisplay(TEXT_NO_GLYPH_USE_TOFU);
+    OH_Drawing_SetTextUndefinedGlyphDisplay(static_cast<OH_Drawing_TextUndefinedGlyphDisplay>(100));
     BoundsResult(tofuResult_, 3, text_);
 }
 
 /**
- * @tc.name: NdkNoGlyphShowTest004
- * @tc.desc: Test no glyph show use only no glyph
+ * @tc.name: NdkUndefinedGlyphDisplayTest004
+ * @tc.desc: Test undefined glyph display use only no glyph
  * @tc.type: FUNC
  */
-HWTEST_F(NdkNoGlyphShowTest, NdkNoGlyphShowTest004, TestSize.Level1)
+HWTEST_F(NdkUndefinedGlyphDisplayTest, NdkUndefinedGlyphDisplayTest004, TestSize.Level1)
 {
-    OH_Drawing_SetTextNoGlyphShow(TEXT_NO_GLYPH_USE_DEFAULT);
-    OH_Drawing_SetTextNoGlyphShow(static_cast<OH_Drawing_TextNoGlyphShow>(100));
+    OH_Drawing_SetTextUndefinedGlyphDisplay(TEXT_NO_GLYPH_USE_DEFAULT);
+    OH_Drawing_SetTextUndefinedGlyphDisplay(static_cast<OH_Drawing_TextUndefinedGlyphDisplay>(100));
     BoundsResult(onlyDefaultResult_, 1, onlyNoGlyph_);
-    OH_Drawing_SetTextNoGlyphShow(TEXT_NO_GLYPH_USE_TOFU);
-    OH_Drawing_SetTextNoGlyphShow(static_cast<OH_Drawing_TextNoGlyphShow>(100));
+    OH_Drawing_SetTextUndefinedGlyphDisplay(TEXT_NO_GLYPH_USE_TOFU);
+    OH_Drawing_SetTextUndefinedGlyphDisplay(static_cast<OH_Drawing_TextUndefinedGlyphDisplay>(100));
     BoundsResult(onlyTofuResult_, 1, onlyNoGlyph_);
 }
 } // namespace Rosen

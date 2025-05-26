@@ -64,17 +64,17 @@ HWTEST_F(TextGlobalConfigTest, TextHighContrastTest02, TestSize.Level1)
 
 
 /*
-* @tc.name: TextNoGlyphShowTest01
+* @tc.name: TextUndefinedGlyphDisplayTest01
 * @tc.desc: test for text high contrast mode（Invalid）
 * @tc.type: FUNC
 */
-HWTEST_F(TextGlobalConfigTest, TextNoGlyphShowTest01, TestSize.Level1)
+HWTEST_F(TextGlobalConfigTest, TextUndefinedGlyphDisplayTest01, TestSize.Level1)
 {
-    uint32_t result = TextGlobalConfig::SetTextNoGlyphShow(NO_GLYPH_USE_DEFAULT);
+    uint32_t result = TextGlobalConfig::SetTextUndefinedGlyphDisplay(NO_GLYPH_USE_DEFAULT);
     EXPECT_EQ(result, 0);
-    result = TextGlobalConfig::SetTextNoGlyphShow(NO_GLYPH_USE_TOFU);
+    result = TextGlobalConfig::SetTextUndefinedGlyphDisplay(NO_GLYPH_USE_TOFU);
     EXPECT_EQ(result, 0);
-    result = TextGlobalConfig::SetTextNoGlyphShow(3);
+    result = TextGlobalConfig::SetTextUndefinedGlyphDisplay(3);
     EXPECT_EQ(result, TEXT_ERR_PARA_INVALID);
 }
 

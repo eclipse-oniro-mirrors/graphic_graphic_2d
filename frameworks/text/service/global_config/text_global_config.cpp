@@ -34,12 +34,12 @@ uint32_t TextGlobalConfig::SetTextHighContrast(uint32_t textHighContrast)
     return TEXT_SUCCESS;
 }
 
-uint32_t TextGlobalConfig::SetTextNoGlyphShow(uint32_t textNoGlyphShow)
+uint32_t TextGlobalConfig::SetTextUndefinedGlyphDisplay(uint32_t textUndefinedGlyphDisplay)
 {
-    if (textNoGlyphShow >= NO_GLYPH_BUTT) {
+    if (textUndefinedGlyphDisplay >= NO_GLYPH_BUTT) {
         return TEXT_ERR_PARA_INVALID;
     }
-    skia::textlayout::TextGlobalConfig::SetNoGlyphShow(textNoGlyphShow);
+    skia::textlayout::TextGlobalConfig::SetUndefinedGlyphDisplay(textUndefinedGlyphDisplay);
     return TEXT_SUCCESS;
 }
 } // namespace OHOS::Rosen::SrvText

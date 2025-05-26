@@ -24,7 +24,7 @@ napi_value JsTextGlobal::Init(napi_env env, napi_value exportObj)
 {
     napi_property_descriptor properties[] = {
         DECLARE_NAPI_STATIC_FUNCTION("setTextHighContrast", JsTextGlobal::SetTextHighContrast),
-        DECLARE_NAPI_STATIC_FUNCTION("setTextNoGlyphShow", JsTextGlobal::SetTextNoGlyphShow),
+        DECLARE_NAPI_STATIC_FUNCTION("setTextUndefinedGlyphDisplay", JsTextGlobal::SetTextUndefinedGlyphDisplay),
     };
     napi_status status = napi_define_properties(env, exportObj, sizeof(properties) / sizeof(properties[0]), properties);
     if (status != napi_ok) {
@@ -54,7 +54,7 @@ napi_value JsTextGlobal::SetTextHighContrast(napi_env env, napi_callback_info in
     return NapiGetUndefined(env);
 }
 
-napi_value JsTextGlobal::SetTextNoGlyphShow(napi_env env, napi_callback_info info)
+napi_value JsTextGlobal::SetTextUndefinedGlyphDisplay(napi_env env, napi_callback_info info)
 {
     size_t argc = ARGC_ONE;
     napi_value argv[ARGC_ONE] = {nullptr};
@@ -62,14 +62,14 @@ napi_value JsTextGlobal::SetTextNoGlyphShow(napi_env env, napi_callback_info inf
     if ((status != napi_ok) || (argc < ARGC_ONE)) {
         return NapiThrowError(env, TextErrorCode::ERROR_INVALID_PARAM, "Argc is invalid");
     }
-    uint32_t textNoGlyphShow = 0;
-    if (!ConvertFromJsValue(env, argv[0], textNoGlyphShow)) {
+    uint32_t textUndefinedGlyphDisplay = 0;
+    if (!ConvertFromJsValue(env, argv[0], textUndefinedGlyphDisplay)) {
         return NapiThrowError(env, TextErrorCode::ERROR_INVALID_PARAM, "Argv convert failed");
     }
 
-    auto result = TextGlobalConfig::SetTextNoGlyphShow(textNoGlyphShow);
+    auto result = TextGlobalConfig::SetTextUndefinedGlyphDisplay(textUndefinedGlyphDisplay);
     if (result != TEXT_SUCCESS) {
-        TEXT_LOGE("Failed to set text no glyph show, no glyph value: %{public}u", textNoGlyphShow);
+        TEXT_LOGE("Failed to set text undefined glyph display, undefined glyph display: %{public}u", textUndefinedGlyphDisplay);
     }
     return NapiGetUndefined(env);
 }

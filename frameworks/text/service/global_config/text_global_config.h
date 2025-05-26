@@ -37,7 +37,7 @@ enum TextError {
     TEXT_ERR_BUTT
 };
 
-enum TextNoGlyphShow {
+enum TextUndefinedGlyphDisplay {
     NO_GLYPH_USE_DEFAULT,
     NO_GLYPH_USE_TOFU,
     NO_GLYPH_BUTT,
@@ -48,7 +48,7 @@ public:
     ~TextGlobalConfig() = default;
 
     static uint32_t SetTextHighContrast(uint32_t textHighContrast);
-    static uint32_t SetTextNoGlyphShow(uint32_t textNoGlyphShow);
+    static uint32_t SetTextUndefinedGlyphDisplay(uint32_t textUndefinedGlyphDisplay);
 private:
     TextGlobalConfig() = default;
 };

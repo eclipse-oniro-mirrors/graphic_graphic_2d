@@ -168,9 +168,9 @@ static const std::vector<struct JsEnumInt> TEXT_BADGE_TYPE = {
     { "TEXT_SUBSCRIPT", static_cast<uint32_t>(TextBadgeType::SUBSCRIPT) },
 };
 
-static const std::vector<struct JsEnumInt> g_textNoGlyphShow = {
-    { "USE_DEFAULT", static_cast<size_t>(SrvText::TextNoGlyphShow::NO_GLYPH_USE_DEFAULT) },
-    { "USE_TOFU", static_cast<size_t>(SrvText::TextNoGlyphShow::NO_GLYPH_USE_TOFU) },
+static const std::vector<struct JsEnumInt> g_textUndefinedGlyphDisplay = {
+    { "USE_DEFAULT", static_cast<size_t>(SrvText::TextUndefinedGlyphDisplay::NO_GLYPH_USE_DEFAULT) },
+    { "USE_TOFU", static_cast<size_t>(SrvText::TextUndefinedGlyphDisplay::NO_GLYPH_USE_TOFU) },
 };
 
 const std::map<std::string_view, const std::vector<struct JsEnumInt>&> INT_ENUM_CLASS_MAP = {
@@ -193,7 +193,7 @@ const std::map<std::string_view, const std::vector<struct JsEnumInt>&> INT_ENUM_
     { "SystemFontType", g_systemFontType },
     { "TextHighContrast", g_textHighContrast},
     { "TextBadgeType", TEXT_BADGE_TYPE},
-    { "TextNoGlyphShow", g_textNoGlyphShow }
+    { "TextUndefinedGlyphDisplay", g_textUndefinedGlyphDisplay }
 };
 
 napi_value JsEnum::JsEnumIntInit(napi_env env, napi_value exports)
