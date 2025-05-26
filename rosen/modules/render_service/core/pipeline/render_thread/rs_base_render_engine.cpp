@@ -45,6 +45,9 @@
 #ifdef RS_ENABLE_GPU
 #include "drawable/rs_display_render_node_drawable.h"
 #endif
+#ifdef RS_ENABLE_TV_PQ_METADATA
+#include "feature/tv_metadata/rs_tv_metadata_manager.h"
+#endif
 #include "utils/graphic_coretrace.h"
 
 namespace OHOS {
@@ -763,6 +766,15 @@ void RSBaseRenderEngine::DrawImage(RSPaintFilterCanvas& canvas, BufferDrawParam&
     if (image == nullptr) {
         return;
     }
+
+    // add for tv metadata
+#ifdef RS_ENABLE_TV_PQ_METADATA
+    TvPQMetadata info;
+    if (MetadataHelper::GetVideoTVMetadata(params.buffer, info) == GSERROR_OK) {
+        RSTvMetadataManager::Instance().RecordAndCombineMetadata(info);
+        RS_LOGD("RSBaseRenderEngine::DrawImage record metadata: buffer seq:%{public}d", params.buffer->GetSeqNum());
+    }
+#endif
     Drawing::SamplingOptions samplingOptions;
     if (!RSSystemProperties::GetUniRenderEnabled()) {
         samplingOptions = Drawing::SamplingOptions();
