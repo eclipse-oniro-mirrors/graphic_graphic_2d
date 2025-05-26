@@ -182,7 +182,7 @@ void HgmSoftVSyncManager::CalcAppFrameRate(
         isChanged = true;
     }
     if (!isChanged && appVoteData_.count(linker.first)) {
-        expectedRange.preferred_ = appVoteData_[linker.first];
+        expectedRange.preferred_ = static_cast<int32_t>(appVoteData_[linker.first]);
     }
     auto appFrameRate = isPerformanceFirst_ && expectedRange.type_ != SOFT_NATIVE_VSYNC_FRAME_RATE_TYPE ?
                         OLED_NULL_HZ : HgmSoftVSyncManager::GetDrawingFrameRate(currRefreshRate, expectedRange);
