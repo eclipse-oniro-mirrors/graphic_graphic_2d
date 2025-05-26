@@ -1228,11 +1228,25 @@ bool RSSurfaceRenderNode::GetAncoForceDoDirect() const
 void RSSurfaceRenderNode::SetAncoFlags(uint32_t flags)
 {
     ancoFlags_.store(flags);
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
+    if (surfaceParams == nullptr) {
+        return;
+    }
+    surfaceParams->SetAncoFlags(flags);
 }
 
 uint32_t RSSurfaceRenderNode::GetAncoFlags() const
 {
     return ancoFlags_.load();
+}
+
+void RSSurfaceRenderNode::SetAncoSrcCrop(const Rect& srcCrop)
+{
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
+    if (surfaceParams == nullptr) {
+        return;
+    }
+    surfaceParams->SetAncoSrcCrop(srcCrop);
 }
 
 void RSSurfaceRenderNode::RegisterTreeStateChangeCallback(TreeStateChangeCallback callback)
@@ -1771,6 +1785,7 @@ void RSSurfaceRenderNode::UpdateHwcNodeLayerInfo(GraphicTransformType transform,
     auto surfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
     auto layer = surfaceParams->GetLayerInfo();
     layer.srcRect = {srcRect_.left_, srcRect_.top_, srcRect_.width_, srcRect_.height_};
+    UpdateLayerSrcRectForAnco(layer, surfaceParams);
     layer.dstRect = {dstRect_.left_, dstRect_.top_, dstRect_.width_, dstRect_.height_};
     const auto& properties = GetRenderProperties();
     layer.boundRect = {0, 0,
@@ -3628,6 +3643,24 @@ void RSSurfaceRenderNode::SetFrameGravityNewVersionEnabled(bool isEnabled)
 bool RSSurfaceRenderNode::GetFrameGravityNewVersionEnabled() const
 {
     return isFrameGravityNewVersionEnabled_;
+}
+
+void RSSurfaceRenderNode::UpdateLayerSrcRectForAnco(RSLayerInfo& layer, RSSurfaceRenderParams* surfaceParams)
+{
+    if (surfaceParams && surfaceParams->IsAncoSfv()) {
+        const Rect& cropRect = surfaceParams->GetAncoSrcCrop();
+        layer.ancoFlags = surfaceParams->GetAncoFlags();
+        int left = std::max(layer.srcRect.x, cropRect.x);
+        int top = std::max(layer.srcRect.y, cropRect.y);
+        int right = std::min(layer.srcRect.x + layer.srcRect.w, cropRect.x + cropRect.w);
+        int bottom = std::min(layer.srcRect.y + layer.srcRect.h, cropRect.y + cropRect.h);
+        int width = right - left;
+        int height = bottom - top;
+        if (width <= 0 || height <= 0) {
+            return;
+        }
+        layer.srcRect = GraphicIRect { left, top, width, height };
+    }
 }
 } // namespace Rosen
 } // namespace OHOS

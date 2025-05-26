@@ -41,6 +41,7 @@
 #include "property/rs_properties_painter.h"
 #include "screen_manager/screen_types.h"
 #include "transaction/rs_occlusion_data.h"
+#include "params/rs_surface_render_params.h"
 
 #ifndef ROSEN_CROSS_PLATFORM
 #include "surface_buffer.h"
@@ -611,11 +612,20 @@ public:
     void SetForceUIFirstChanged(bool forceUIFirstChanged);
     bool GetForceUIFirstChanged();
 
+    // Unified DSS synthesis switch for Anco nodes
     static void SetAncoForceDoDirect(bool direct);
+    // Obtain whether the Anco node is using the DSS synthesis flag
     static bool GetOriAncoForceDoDirect();
+    // Whether to use DSS synthesis to obtain anco nodes. only anco node can be true.
     bool GetAncoForceDoDirect() const;
+    // Used to distinguish whether this node is an Anco node
     void SetAncoFlags(uint32_t flags);
+    // Determine whether it is an Anco node
     uint32_t GetAncoFlags() const;
+    // Set the buffer srcRect of the anco node. Only used on anco nodes.
+    void SetAncoSrcCrop(const Rect& srcCrop);
+    // When updating the hwcLayer information of anco node, SrcCrop takes effect.
+    void UpdateLayerSrcRectForAnco(RSLayerInfo& layer, RSSurfaceRenderParams* surfaceParams);
 
     void SetHDRPresent(bool hasHdrPresent);
     bool GetHDRPresent() const;
