@@ -43,7 +43,7 @@ public:
         startAnimationStatus_ = status;
     }
 
-    bool JudgeStopAnimation()
+    bool JudgeStopAnimation() const
     {
         return stopAnimationStatus_;
     }
@@ -53,7 +53,7 @@ public:
         stopAnimationStatus_ = status;
     }
 
-    bool JudgeMultTaskAnimation()
+    bool JudgeMultTaskAnimation() const
     {
         return multTaskAnimationStatus_;
     }
