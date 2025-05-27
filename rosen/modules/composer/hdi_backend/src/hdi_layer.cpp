@@ -841,7 +841,7 @@ int32_t HdiLayer::SetPerFrameParameters()
         }
     }
 
-    if (layerInfo_->GetTunnelLayerId() || layerInfo_->GetTunnelLayerProperty()) {
+    if (layerInfo_->GetTunnelLayerId() && layerInfo_->GetTunnelLayerProperty()) {
         ret = SetTunnelLayerId();
         CheckRet(ret, "SetTunnelLayerId");
         ret = SetTunnelLayerProperty();
