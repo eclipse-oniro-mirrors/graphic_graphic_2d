@@ -590,7 +590,6 @@ void RSUifirstManager::DoPurgePendingPostNodes(std::unordered_map<NodeId,
         } else if (SubThreadControlFrameRate(subThreadControlFrameRateEnable, hasAvailableTexture, isLeashWindow,
             id, drawable, node)) {
             RS_OPTIONAL_TRACE_NAME_FMT("Purge frame drop node name %s", surfaceParams->GetName().c_str());
-            waitForAnimationEndNode_ = std::make_pair(id, node);
             it = pendingNode.erase(it);
         } else {
             ++it;
@@ -1689,13 +1688,6 @@ void RSUifirstManager::UpdateUifirstNodes(RSSurfaceRenderNode& node, bool ancest
     }
     if (RSUifirstManager::IsArkTsCardCache(node, ancestorNodeHasAnimation)) {
         ProcessFirstFrameCache(node, MultiThreadCacheType::ARKTS_CARD);
-        return;
-    }
-    if (RSSystemProperties::GetSubThreadControlFrameRate() && !RSUifirstFrameRateControl::Instance().JudgeStartAnimation() &&
-        !RSUifirstFrameRateControl::Instance().JudgeStopAnimation() && !RSUifirstFrameRateControl::Instance().JudgeMultTaskAnimation() &&
-        waitForAnimationEndNode_.second != nullptr) {
-        UifirstStateChange(*(waitForAnimationEndNode_.second), MultiThreadCacheType::LEASH_WINDOW);
-        waitForAnimationEndNode_.second = nullptr;
         return;
     }
     UifirstStateChange(node, MultiThreadCacheType::NONE);
