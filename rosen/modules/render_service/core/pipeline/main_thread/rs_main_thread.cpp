@@ -5343,7 +5343,7 @@ void RSMainThread::HandleTunnelLayerId(const std::shared_ptr<RSSurfaceHandler>& 
     }
 
     surfaceNode->SetTunnelLayerId(newTunnelLayerId);
-    RS_LOGI("%{public}s lpp surfaceid:%{public}lu", __func__, newTunnelLayerId);
+    RS_LOGI("%{public}s lpp surfaceid:%{public}llu", __func__, newTunnelLayerId);
     RS_TRACE_NAME_FMT("%s: lpp surfaceid=%" PRIu64 "", __func__, newTunnelLayerId);
 }
 } // namespace Rosen

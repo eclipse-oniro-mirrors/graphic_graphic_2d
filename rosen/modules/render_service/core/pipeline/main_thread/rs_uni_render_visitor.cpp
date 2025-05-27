@@ -3605,7 +3605,7 @@ void RSUniRenderVisitor::HandleTunnelLayerId(RSSurfaceRenderNode& node)
         return;
     }
     nodeParams->SetTunnelLayerId(tunnelLayerId);
-    RS_LOGI("%{public}s lpp surfaceid:%{public}lu, nodeid:%{public}lu", __func__, tunnelLayerId, node.GetId());
+    RS_LOGI("%{public}s lpp surfaceid:%{public}llu, nodeid:%{public}llu", __func__, tunnelLayerId, node.GetId());
     RS_TRACE_NAME_FMT("%s lpp surfaceid:%llu, nodeid:%llu", __func__, tunnelLayerId, node.GetId());
 }
 } // namespace Rosen
