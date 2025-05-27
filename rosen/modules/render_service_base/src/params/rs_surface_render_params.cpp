@@ -233,7 +233,11 @@ int32_t RSSurfaceRenderParams::GetLayerSourceTuning() const
 
 void RSSurfaceRenderParams::SetTunnelLayerId(uint64_t tunnelLayerId)
 {
+    if (tunnelLayerId_ == tunnelLayerId) {
+        return;
+    }
     tunnelLayerId_ = tunnelLayerId;
+    needSync_ = true;
 }
 
 uint64_t RSSurfaceRenderParams::GetTunnelLayerId() const

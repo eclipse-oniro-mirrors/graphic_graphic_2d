@@ -3596,15 +3596,17 @@ void RSUniRenderVisitor::UpdateAncoPrepareClip(RSSurfaceRenderNode& node)
 
 void RSUniRenderVisitor::HandleTunnelLayerId(RSSurfaceRenderNode& node)
 {
-    if (!node.GetTunnelLayerId()) {
+    auto tunnelLayerId = node.GetTunnelLayerId();
+    if (!tunnelLayerId) {
         return;
     }
     const auto nodeParams = static_cast<RSSurfaceRenderParams*>(node.GetStagingRenderParams().get());
     if (nodeParams == nullptr) {
         return;
     }
-    nodeParams->SetTunnelLayerId(node.GetTunnelLayerId());
-    RS_TRACE_NAME_FMT("%s lpp surfaceid:%llu, nodeid:%llu", __func__, node.GetTunnelLayerId(), node.GetId());
+    nodeParams->SetTunnelLayerId(tunnelLayerId);
+    RS_LOGI("%{public}s lpp surfaceid:%{public}lu, nodeid:%{public}lu", __func__, tunnelLayerId, node.GetId());
+    RS_TRACE_NAME_FMT("%s lpp surfaceid:%llu, nodeid:%llu", __func__, tunnelLayerId, node.GetId());
 }
 } // namespace Rosen
 } // namespace OHOS
