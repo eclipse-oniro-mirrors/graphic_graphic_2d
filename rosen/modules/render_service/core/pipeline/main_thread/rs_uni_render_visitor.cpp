@@ -1356,7 +1356,7 @@ void RSUniRenderVisitor::UpdateNodeVisibleRegion(RSSurfaceRenderNode& node)
     }
     Occlusion::Rect selfDrawRect = node.GetSurfaceOcclusionRect(true);
     Occlusion::Region selfDrawRegion { selfDrawRect };
-    needRecalculateOcclusion_ = needRecalculateOcclusion_ || node.CheckIfOcclusionChanged();
+    needRecalculateOcclusion_ = needRecalculateOcclusion_ || node.CheckIfOcclusionChanged() || node.IsNavigationBarTransparentRegionChanged();
     if (needRecalculateOcclusion_) {
         Occlusion::Region subResult = selfDrawRegion.Sub(accumulatedOcclusionRegion_);
         node.SetVisibleRegion(subResult);
@@ -1365,10 +1365,10 @@ void RSUniRenderVisitor::UpdateNodeVisibleRegion(RSSurfaceRenderNode& node)
         node.SetVisibleRegionInVirtual(subResultWithoutSkipLayer);
     }
     RS_OPTIONAL_TRACE_NAME_FMT_LEVEL(TRACE_LEVEL_THREE,
-                                     "RSUniRenderVisitor::UpdateNodeVisibleRegion name[%s] visibleRegion[%s] "
-                                     "visibleRegionIncludeTransparentOcclusion[%s]",
-                                     node.GetName().c_str(), node.GetVisibleRegion().GetRegionInfo().c_str(),
-                                     node.GetVisibleRegionIncludeTransparentOcclusion().GetRegionInfo().c_str());
+        "RSUniRenderVisitor::UpdateNodeVisibleRegion name[%s] visibleRegion[%s] "
+        "visibleRegionIncludeTransparentOcclusion[%s]",
+        node.GetName().c_str(), node.GetVisibleRegion().GetRegionInfo().c_str(),
+        node.GetVisibleRegionIncludeTransparentOcclusion().GetRegionInfo().c_str());
 }
 
 CM_INLINE void RSUniRenderVisitor::CalculateOpaqueAndTransparentRegion(RSSurfaceRenderNode& node)
@@ -1402,8 +1402,9 @@ CM_INLINE void RSUniRenderVisitor::CalculateOpaqueAndTransparentRegion(RSSurface
         RS_OPTIONAL_TRACE_NAME_FMT("Occlusion: surface node[%s] participate in occlusion with opaque region: [%s]",
             node.GetName().c_str(), node.GetOpaqueRegion().GetRegionInfo().c_str());
         accumulatedOcclusionRegion_.OrSelf(node.GetOpaqueRegion());
-        accumulatedTransparentRegion_.OrSelf(Occlusion::Region(Occlusion::Rect(
-            node.NeedDrawBehindWindow() ? node.GetFilterRect() : RectI())));
+        if (node.NeedDrawBehindWindow()) {
+            accumulatedTransparentRegion_.OrSelf(Occlusion::Region(Occlusion::Rect(node.GetFilterRect())));
+        }
         if (IsValidInVirtualScreen(node)) {
             occlusionRegionWithoutSkipLayer_.OrSelf(node.GetOpaqueRegion());
         }
