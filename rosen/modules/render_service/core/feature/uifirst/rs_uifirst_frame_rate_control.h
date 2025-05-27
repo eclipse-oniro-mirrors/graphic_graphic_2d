@@ -64,7 +64,7 @@ public:
     }
 private:
     RSUifirstFrameRateControl() {}
-    int callCount = 0;
+    int callCount_ = 0;
     bool startAnimationStatus_ = false;
     bool stopAnimationStatus_ = false;
     bool multTaskAnimationStatus_ = false;
