@@ -5322,15 +5322,14 @@ void RSMainThread::HandleTunnelLayerId(const std::shared_ptr<RSSurfaceHandler>& 
 {
     if (surfaceHandler == nullptr || surfaceNode == nullptr ||
         surfaceHandler->GetSourceType() !=
-        static_cast<uint32_t>(OHSurfaceSource::OH_SURFACE_SOURCE_LOWPOWERVIDEO))
-    {
+        static_cast<uint32_t>(OHSurfaceSource::OH_SURFACE_SOURCE_LOWPOWERVIDEO)) {
         RS_LOGI("%{public}s not support lpp, clear lpp id", __func__);
         surfaceNode->SetTunnelLayerId(0);
         return;
     }
     auto consumer = surfaceHandler->GetConsumer();
     if (consumer == nullptr) {
-        RS_LOGI("%s consumer is null", __func__);
+        RS_LOGI("%{public}s consumer is null", __func__);
         return;
     }
 
@@ -5338,7 +5337,7 @@ void RSMainThread::HandleTunnelLayerId(const std::shared_ptr<RSSurfaceHandler>& 
     uint64_t newTunnelLayerId = consumer->GetUniqueId();
 
     if (currentTunnelLayerId == newTunnelLayerId) {
-        RS_LOGI("%s: lpp id not change", __func__);
+        RS_LOGI("%{public}s: lpp id not change", __func__);
         return;
     }
 
