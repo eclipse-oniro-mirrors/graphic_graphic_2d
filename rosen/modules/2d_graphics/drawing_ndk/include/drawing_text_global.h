@@ -66,9 +66,9 @@ typedef enum {
  */
 typedef enum {
     /** Uses the glyph defined in the font file, which could be an empty box, blank space, or custom symbol etc. */
-    TEXT_NO_GLYPH_USE_DEFAULT = 0,
+    TEXT_UNDEFINED_GLYPH_USE_DEFAULT = 0,
     /** Always render tofu blocks for missing glyphs. */
-    TEXT_NO_GLYPH_USE_TOFU
+    TEXT_UNDEFINED_GLYPH_USE_TOFU
 } OH_Drawing_TextUndefinedGlyphDisplay;
 
 /**
