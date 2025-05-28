@@ -4054,6 +4054,23 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateNodeVisibleRegion001, TestSize.Level2)
 
 /**
  * @tc.name: UpdateNodeVisibleRegion002
+ * @tc.desc: Test UpdateNodeVisibleRegion when needRecalculateOcclusion_ is false
+ * @tc.type: FUNC
+ * @tc.require: issueIC9HNQ
+ */
+HWTEST_F(RSUniRenderVisitorTest, UpdateNodeVisibleRegion002, TestSize.Level2)
+{
+    RSSurfaceRenderNodeConfig config;
+    auto rsSurfaceRenderNode = std::make_shared<RSSurfaceRenderNode>(config);
+    ASSERT_NE(rsSurfaceRenderNode, nullptr);
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    ASSERT_NE(rsUniRenderVisitor, nullptr);
+    rsUniRenderVisitor->needRecalculateOcclusion_ = false;
+    rsUniRenderVisitor->PrepareForUIFirstNode(*rsSurfaceRenderNode);
+}
+
+/**
+ * @tc.name: UpdateNodeVisibleRegion002
  * @tc.desc: Visible region of app window out of screen depends on whether it's cross-screen. If so, its all-visible.
  * @tc.type: FUNC
  * @tc.require: issueIC84ZR
