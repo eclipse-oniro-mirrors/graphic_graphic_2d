@@ -57,7 +57,8 @@ struct RSLayerInfo {
             (zOrder == layerInfo.zOrder) && (blendType == layerInfo.blendType) &&
             (transformType == layerInfo.transformType) && (ROSEN_EQ(alpha, layerInfo.alpha)) &&
             (layerSource == layerInfo.layerSource) && (layerType == layerInfo.layerType) &&
-            (arsrTag == layerInfo.arsrTag) && (copybitTag == layerInfo.copybitTag);
+            (arsrTag == layerInfo.arsrTag) && (copybitTag == layerInfo.copybitTag) &&
+            (ancoFlags == layerInfo.ancoFlags);
     }
 #endif
 };
