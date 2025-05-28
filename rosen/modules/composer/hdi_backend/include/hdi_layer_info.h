@@ -652,12 +652,10 @@ public:
     }
 
     void SetAncoFlags(const uint32_t ancoFlags) { ancoFlags_ = ancoFlags; }
-
     uint32_t GetAncoFlags() const { return ancoFlags_; }
-
     bool IsAncoSfv() const
     {
-        const uint32_t ANCO_SFV_NODE_FLAG = 0x0011;
+        constexpr uint32_t ANCO_SFV_NODE_FLAG = 0x0011;
         return (ancoFlags_ & ANCO_SFV_NODE_FLAG) == ANCO_SFV_NODE_FLAG;
     }
     /* hdiLayer get layer info end */
