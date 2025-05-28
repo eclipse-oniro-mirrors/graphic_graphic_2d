@@ -700,7 +700,7 @@ BufferDrawParam RSUniRenderUtil::CreateBufferDrawParam(
     } else if (scalingMode == ScalingMode::SCALING_MODE_SCALE_FIT) {
         SrcRectScaleFit(params, buffer, consumer, localBounds);
     }
-    SetSrcRectForAnco(surfaceNodeParams, params);
+    SetSrcRectForAnco(*surfaceNodeParams, params);
     RS_LOGD_IF(DEBUG_COMPOSER, "RSUniRenderUtil::CreateBufferDrawParam(DrawableV2::RSSurfaceRenderNodeDrawable):"
         " Parameters creation completed");
     return params;
@@ -1404,16 +1404,16 @@ void RSUniRenderUtil::GetSampledDamageAndDrawnRegion(const ScreenInfo& screenInf
 void RSUniRenderUtil::SetSrcRectForAnco(const LayerInfoPtr& layer, BufferDrawParam& params)
 {
     if (layer != nullptr && layer->IsAncoSfv()) {
-        const auto srcCrop = layer->GetCropRect();
+        const auto& srcCrop = layer->GetCropRect();
         if (srcCrop.w > 0 && srcCrop.h > 0) {
             params.srcRect = Drawing::Rect(srcCrop.x, srcCrop.y, srcCrop.w + srcCrop.x, srcCrop.h + srcCrop.y);
         }
     }
 }
 
-void RSUniRenderUtil::SetSrcRectForAnco(const RSSurfaceRenderParams* surfaceParams, BufferDrawParam& params)
+void RSUniRenderUtil::SetSrcRectForAnco(const RSSurfaceRenderParams& surfaceParams, BufferDrawParam& params)
 {
-    if (surfaceParams && surfaceParams->IsAncoSfv()) {
+    if (surfaceParams->IsAncoSfv()) {
         const Rect& cropRect = surfaceParams->GetAncoSrcCrop();
         Drawing::Rect srcRect{cropRect.x, cropRect.y, cropRect.w + cropRect.x, cropRect.h + cropRect.y};
         float left = std::max(params.srcRect.left_, srcRect.left_);
