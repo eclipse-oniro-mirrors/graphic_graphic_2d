@@ -215,8 +215,8 @@ HWTEST_F(OH_Drawing_FontCollectionTest, OH_Drawing_FontCollectionTest006, TestSi
     EXPECT_GE(mathData.size(), minSize);
     fontCollection_->ClearThemeFont();
     auto typefaces = fontCollection_->LoadThemeFont(
-        "familyname", { { sansData.data(), sansData.size() }, { cjkData.data(), cjkData.size() },
-                          { mathData.data(), mathData.size() } });
+        "familyname", { { sansData.data(), sansData.size() }, 
+        { cjkData.data(), cjkData.size() }, { mathData.data(), mathData.size() } });
     // 3 is the theme families' size
     ASSERT_EQ(typefaces.size(), 3);
     auto themeFamilies = SPText::DefaultFamilyNameMgr::GetInstance().GetThemeFontFamilies();
