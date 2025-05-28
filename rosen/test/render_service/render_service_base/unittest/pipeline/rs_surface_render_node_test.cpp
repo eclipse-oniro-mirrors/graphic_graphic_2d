@@ -2623,40 +2623,37 @@ HWTEST_F(RSSurfaceRenderNodeTest, GetSourceDisplayRenderNodeId, TestSize.Level1)
  */
 HWTEST_F(RSSurfaceRenderNodeTest, UpdateLayerSrcRectForAnco, TestSize.Level1)
 {
-    int ID = 0;
-    std::shared_ptr<RSSurfaceRenderNode> node = std::make_shared<RSSurfaceRenderNode>(ID);
+    std::shared_ptr<RSSurfaceRenderNode> node = std::make_shared<RSSurfaceRenderNode>(0);
     ASSERT_NE(node, nullptr);
     ASSERT_EQ(node->stagingRenderParams_, nullptr);
-    RSLayerInfo layerInfo;
-    node->UpdateLayerSrcRectForAnco(layerInfo, nullptr);
     node->SetAncoFlags(static_cast<uint32_t>(AncoFlags::ANCO_SFV_NODE));
     node->SetAncoSrcCrop({0, 0, 0, 0});
-    node->stagingRenderParams_ = std::make_unique<RSSurfaceRenderParams>(ID + 1);
+    node->stagingRenderParams_ = std::make_unique<RSSurfaceRenderParams>(1);
     auto surfaceParams = static_cast<RSSurfaceRenderParams*>(node->stagingRenderParams_.get());
     ASSERT_NE(surfaceParams, nullptr);
-    node->UpdateLayerSrcRectForAnco(layerInfo, surfaceParams);
+    node->UpdateLayerSrcRectForAnco(layerInfo, *surfaceParams);
     node->SetAncoFlags(static_cast<uint32_t>(AncoFlags::ANCO_SFV_NODE));
     node->SetAncoSrcCrop({0, 0, 0, 0});
     GraphicIRect rect{0, 0, 100, 100};
     layerInfo.srcRect = rect;
     surfaceParams->SetLayerInfo(layerInfo);
-    node->UpdateLayerSrcRectForAnco(layerInfo, surfaceParams);
+    node->UpdateLayerSrcRectForAnco(layerInfo, *surfaceParams);
     auto layer = node->stagingRenderParams_->GetLayerInfo();
     ASSERT_TRUE(layer.srcRect == rect);
 
     node->SetAncoSrcCrop({0, 0, 50, 0});
-    node->UpdateLayerSrcRectForAnco(layerInfo, surfaceParams);
+    node->UpdateLayerSrcRectForAnco(layerInfo, *surfaceParams);
     layer = node->stagingRenderParams_->GetLayerInfo();
     ASSERT_TRUE(layer.srcRect == rect);
 
     node->SetAncoSrcCrop({0, 0, 0, 50});
-    node->UpdateLayerSrcRectForAnco(layerInfo, surfaceParams);
+    node->UpdateLayerSrcRectForAnco(layerInfo, *surfaceParams);
     layer = node->stagingRenderParams_->GetLayerInfo();
     ASSERT_TRUE(layer.srcRect == rect);
 
     node->SetAncoSrcCrop({0, 0, 50, 50});
     rect = GraphicIRect {0, 0, 50, 50};
-    node->UpdateLayerSrcRectForAnco(layerInfo, surfaceParams);
+    node->UpdateLayerSrcRectForAnco(layerInfo, *surfaceParams);
     layer = node->stagingRenderParams_->GetLayerInfo();
     ASSERT_TRUE(layer.srcRect == rect);
     GraphicTransformType transform{};
