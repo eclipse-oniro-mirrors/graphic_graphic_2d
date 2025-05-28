@@ -3741,17 +3741,17 @@ bool RSSurfaceRenderNode::GetFrameGravityNewVersionEnabled() const
     return isFrameGravityNewVersionEnabled_;
 }
 
-void RSSurfaceRenderNode::UpdateLayerSrcRectForAnco(RSLayerInfo& layer, RSSurfaceRenderParams* surfaceParams)
+void RSSurfaceRenderNode::UpdateLayerSrcRectForAnco(RSLayerInfo& layer, const RSSurfaceRenderParams& surfaceParams)
 {
-    if (surfaceParams && surfaceParams->IsAncoSfv()) {
+    if (surfaceParams->IsAncoSfv()) {
         const Rect& cropRect = surfaceParams->GetAncoSrcCrop();
         layer.ancoFlags = surfaceParams->GetAncoFlags();
-        int left = std::max(layer.srcRect.x, cropRect.x);
-        int top = std::max(layer.srcRect.y, cropRect.y);
-        int right = std::min(layer.srcRect.x + layer.srcRect.w, cropRect.x + cropRect.w);
-        int bottom = std::min(layer.srcRect.y + layer.srcRect.h, cropRect.y + cropRect.h);
-        int width = right - left;
-        int height = bottom - top;
+        int32_t left = std::max(layer.srcRect.x, cropRect.x);
+        int32_t top = std::max(layer.srcRect.y, cropRect.y);
+        int32_t right = std::min(layer.srcRect.x + layer.srcRect.w, cropRect.x + cropRect.w);
+        int32_t bottom = std::min(layer.srcRect.y + layer.srcRect.h, cropRect.y + cropRect.h);
+        int32_t width = right - left;
+        int32_t height = bottom - top;
         if (width <= 0 || height <= 0) {
             return;
         }
