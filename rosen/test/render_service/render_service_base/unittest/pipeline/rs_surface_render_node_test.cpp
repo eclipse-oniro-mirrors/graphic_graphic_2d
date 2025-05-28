@@ -2662,6 +2662,5 @@ HWTEST_F(RSSurfaceRenderNodeTest, UpdateLayerSrcRectForAnco, TestSize.Level1)
     GraphicTransformType transform{};
     node->UpdateHwcNodeLayerInfo(transform);
 }
-
 } // namespace Rosen
 } // namespace OHOS
