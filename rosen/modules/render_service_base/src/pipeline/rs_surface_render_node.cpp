@@ -3743,6 +3743,7 @@ bool RSSurfaceRenderNode::GetFrameGravityNewVersionEnabled() const
 
 void RSSurfaceRenderNode::UpdateLayerSrcRectForAnco(RSLayerInfo& layer, const RSSurfaceRenderParams& surfaceParams)
 {
+#ifndef ROSEN_CROSS_PLATFORM
     if (surfaceParams.IsAncoSfv()) {
         const Rect& cropRect = surfaceParams.GetAncoSrcCrop();
         layer.ancoFlags = surfaceParams.GetAncoFlags();
@@ -3757,6 +3758,7 @@ void RSSurfaceRenderNode::UpdateLayerSrcRectForAnco(RSLayerInfo& layer, const RS
         }
         layer.srcRect = GraphicIRect { left, top, width, height };
     }
+#endif
 }
 } // namespace Rosen
 } // namespace OHOS
