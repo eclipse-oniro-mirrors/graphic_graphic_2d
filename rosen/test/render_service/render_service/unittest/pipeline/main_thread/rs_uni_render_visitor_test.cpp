@@ -78,9 +78,9 @@ public:
     static inline Mock::MatrixMock* matrixMock_;
 };
 
-class MockRSSurfaceRenderNode: public RSSurfaceRenderNode{
+class MockRSSurfaceRenderNode : public RSSurfaceRenderNode {
 public:
-    explicit MockRSSurfaceRenderNode(NodeId id, 
+    explicit MockRSSurfaceRenderNode(NodeId id,
         const std::weak_ptr<RSContext>& context = {}, bool isTextureExportNode = false)
         : RSSurfaceRenderNode(id, context, isTextureExportNode) {}
     ~MockRSSurfaceRenderNode() override {}
@@ -4054,23 +4054,6 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateNodeVisibleRegion001, TestSize.Level2)
 
 /**
  * @tc.name: UpdateNodeVisibleRegion002
- * @tc.desc: Test UpdateNodeVisibleRegion when needRecalculateOcclusion_ is false
- * @tc.type: FUNC
- * @tc.require: issueIC9HNQ
- */
-HWTEST_F(RSUniRenderVisitorTest, UpdateNodeVisibleRegion002, TestSize.Level2)
-{
-    RSSurfaceRenderNodeConfig config;
-    auto rsSurfaceRenderNode = std::make_shared<RSSurfaceRenderNode>(config);
-    ASSERT_NE(rsSurfaceRenderNode, nullptr);
-    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
-    ASSERT_NE(rsUniRenderVisitor, nullptr);
-    rsUniRenderVisitor->needRecalculateOcclusion_ = false;
-    rsUniRenderVisitor->PrepareForUIFirstNode(*rsSurfaceRenderNode);
-}
-
-/**
- * @tc.name: UpdateNodeVisibleRegion002
  * @tc.desc: Visible region of app window out of screen depends on whether it's cross-screen. If so, its all-visible.
  * @tc.type: FUNC
  * @tc.require: issueIC84ZR
@@ -4096,6 +4079,23 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateNodeVisibleRegion002, TestSize.Level2)
     rsUniRenderVisitor->UpdateNodeVisibleRegion(*rsSurfaceRenderNode);
     ASSERT_FALSE(rsSurfaceRenderNode->GetVisibleRegion().IsEmpty());
     ASSERT_TRUE(rsSurfaceRenderNode->GetVisibleRegion().GetBound() == Occlusion::Rect(DEFAULT_RECT));
+}
+
+/**
+ * @tc.name: UpdateNodeVisibleRegion003
+ * @tc.desc: Test UpdateNodeVisibleRegion when needRecalculateOcclusion_ is false
+ * @tc.type: FUNC
+ * @tc.require: issueIC9HNQ
+ */
+HWTEST_F(RSUniRenderVisitorTest, UpdateNodeVisibleRegion003, TestSize.Level2)
+{
+    RSSurfaceRenderNodeConfig config;
+    auto rsSurfaceRenderNode = std::make_shared<RSSurfaceRenderNode>(config);
+    ASSERT_NE(rsSurfaceRenderNode, nullptr);
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    ASSERT_NE(rsUniRenderVisitor, nullptr);
+    rsUniRenderVisitor->needRecalculateOcclusion_ = false;
+    rsUniRenderVisitor->PrepareForUIFirstNode(*rsSurfaceRenderNode);
 }
 
 /**
