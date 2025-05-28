@@ -34,6 +34,7 @@ static const std::unordered_map<std::string, uint32_t> UI_RATE_TYPE_NAME_MAP = {
     {"display_sync", DISPLAY_SYNC_FRAME_RATE_TYPE },
     {"ace_component", ACE_COMPONENT_FRAME_RATE_TYPE },
     {"display_soloist", DISPLAY_SOLOIST_FRAME_RATE_TYPE },
+    {"drag_scene", DRAG_SCENE_FRAME_RATE_TYPE },
 };
 constexpr int DEFAULT_ENERGY_ASSURANCE_IDLE_FPS = 60;
 constexpr int DEFAULT_ANIMATION_IDLE_DURATION = 2000;
