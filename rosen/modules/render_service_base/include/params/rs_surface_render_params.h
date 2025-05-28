@@ -288,7 +288,6 @@ public:
     {
         return childrenDirtyRect_;
     }
-
     const RectI& GetDstRect() const
     {
         return dstRect_;
