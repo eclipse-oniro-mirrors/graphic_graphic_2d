@@ -19,6 +19,7 @@
 #include "drawing_rect.h"
 #include "drawing_text_line.h"
 #include "drawing_text_run.h"
+#include "drawing_types.h"
 #include "drawing_text_typography.h"
 #include "gtest/gtest.h"
 #include "string"
@@ -47,6 +48,7 @@ public:
     void SetUp() override {};
     void TearDown() override;
     void PrepareCreateTextLine();
+    void PrepareCreateTextLineForGlyphDrawing();
 
     OH_Drawing_TypographyStyle* typeStyle_ = nullptr;
     OH_Drawing_TextStyle* txtStyle_ = nullptr;
@@ -55,6 +57,8 @@ public:
     OH_Drawing_Typography* typography_ = nullptr;
     OH_Drawing_Bitmap* cBitmap_ = nullptr;
     OH_Drawing_Canvas* canvas_ = nullptr;
+    OH_Drawing_Array* runs_ = nullptr;
+    OH_Drawing_Array* textLines_ = nullptr;
     std::string text_;
 };
 
@@ -97,6 +101,36 @@ void NativeDrawingRunTest::PrepareCreateTextLine()
     OH_Drawing_TypographyPaint(typography_, canvas_, position[0], position[1]);
 }
 
+void NativeDrawingRunTest::PrepareCreateTextLineForGlyphDrawing()
+{
+    double maxWidth = 1200.0;
+    typeStyle_ = OH_Drawing_CreateTypographyStyle();
+    EXPECT_TRUE(typeStyle_ != nullptr);
+    txtStyle_ = OH_Drawing_CreateTextStyle();
+    EXPECT_TRUE(txtStyle_ != nullptr);
+    fontCollection_ = OH_Drawing_CreateFontCollection();
+    EXPECT_TRUE(fontCollection_ != nullptr);
+    handler_ = OH_Drawing_CreateTypographyHandler(typeStyle_, fontCollection_);
+    EXPECT_TRUE(handler_ != nullptr);
+    double fontSize = 100;
+    OH_Drawing_SetTextStyleFontSize(txtStyle_, fontSize);
+    OH_Drawing_TypographyHandlerPushTextStyle(handler_, txtStyle_);
+    OH_Drawing_TypographyHandlerAddText(handler_, text_.c_str());
+    typography_ = OH_Drawing_CreateTypography(handler_);
+    EXPECT_TRUE(typography_ != nullptr);
+    OH_Drawing_TypographyLayout(typography_, maxWidth);
+    textLines_ = OH_Drawing_TypographyGetTextLines(typography_);
+    EXPECT_TRUE(textLines_ != nullptr);
+    size_t size = OH_Drawing_GetDrawingArraySize(textLines_);
+    EXPECT_TRUE(size != 0);
+    OH_Drawing_TextLine* textLine = OH_Drawing_GetTextLineByIndex(textLines_, 0);
+    EXPECT_TRUE(textLine != nullptr);
+    runs_ = OH_Drawing_TextLineGetGlyphRuns(textLine);
+    EXPECT_TRUE(runs_ != nullptr);
+    size_t runsSize = OH_Drawing_GetDrawingArraySize(runs_);
+    EXPECT_TRUE(runsSize != 0);
+}
+
 void NativeDrawingRunTest::TearDown()
 {
     OH_Drawing_CanvasDestroy(canvas_);
@@ -114,6 +148,12 @@ void NativeDrawingRunTest::TearDown()
     OH_Drawing_DestroyTypographyStyle(typeStyle_);
     typeStyle_ = nullptr;
     text_ = "";
+    if (textLines_ != nullptr) {
+        OH_Drawing_DestroyTextLines(textLines_);
+    }
+    if (runs_ != nullptr) {
+        OH_Drawing_DestroyRuns(runs_);
+    }
 }
 
 /*
@@ -509,5 +549,324 @@ HWTEST_F(NativeDrawingRunTest, OH_Drawing_RunTest010, TestSize.Level1)
     EXPECT_EQ(descent, 0.0);
     EXPECT_EQ(leading, 0.0);
     EXPECT_EQ(width, 0.0);
+}
+
+
+/*
+ * @tc.name: OH_Drawing_GlyDrawingTest001
+ * @tc.desc: Test for the glyph drawing of nullptr testing.
+ * @tc.type: FUNC
+ */
+HWTEST_F(NativeDrawingRunTest, OH_Drawing_GlyDrawingTest001, TestSize.Level1)
+{
+    OH_Drawing_Font* font = OH_Drawing_GetRunFont(nullptr);
+    EXPECT_TRUE(font == nullptr);
+
+    OH_Drawing_TextDirection direction = OH_Drawing_GetRunTextDirection(nullptr);
+    EXPECT_EQ(direction, TEXT_DIRECTION_LTR);
+
+    OH_Drawing_Array* advances = OH_Drawing_GetRunGlyphAdvances(nullptr, 0, 0);
+    EXPECT_TRUE(advances == nullptr);
+
+    OH_Drawing_Point* advance = OH_Drawing_GetRunGlyphAdvanceByIndex(advances, 0);
+    EXPECT_TRUE(advance == nullptr);
+
+    OH_Drawing_DestroyRunGlyphAdvances(advances);
+}
+
+/*
+ * @tc.name: OH_Drawing_GlyDrawingTest002
+ * @tc.desc: Test for the glyph drawing of the English text.
+ * @tc.type: FUNC
+ */
+HWTEST_F(NativeDrawingRunTest, OH_Drawing_GlyDrawingTest002, TestSize.Level1)
+{
+    text_ = "Hello你好";
+    PrepareCreateTextLineForGlyphDrawing();
+    OH_Drawing_Run* run = OH_Drawing_GetRunByIndex(runs, 0);
+    EXPECT_TRUE(run != nullptr);
+
+    OH_Drawing_Font* font = OH_Drawing_GetRunFont(run);
+    EXPECT_TRUE(font != nullptr);
+    OH_Drawing_Font_Metrics fontMetrics;
+    OH_Drawing_FontGetMetrics(font, &fontMetrics);
+    EXPECT_EQ(fontMetrics.flags, 31);
+    EXPECT_NEAR(fontMetrics.top, -69.900002, FLOAT_DATA_EPSILON);
+    EXPECT_NEAR(fontMetrics.ascent, -58.950001, FLOAT_DATA_EPSILON);
+    EXPECT_NEAR(fontMetrics.descent, 16.150002, FLOAT_DATA_EPSILON);
+    EXPECT_NEAR(fontMetrics.bottom, 19.650000, FLOAT_DATA_EPSILON);
+    EXPECT_NEAR(fontMetrics.leading, 0.0, FLOAT_DATA_EPSILON);
+    EXPECT_NEAR(fontMetrics.avgCharWidth, 35.150002, FLOAT_DATA_EPSILON);
+    EXPECT_NEAR(fontMetrics.maxCharWidth, 80.450005, FLOAT_DATA_EPSILON);
+
+    OH_Drawing_TextDirection direction = OH_Drawing_GetRunTextDirection(run);
+    EXPECT_EQ(direction, TEXT_DIRECTION_LTR);
+
+    OH_Drawing_Array* advances = OH_Drawing_GetRunGlyphAdvances(run, 0, 0);
+    EXPECT_TRUE(advances != nullptr);
+    size_t advancesSize = OH_Drawing_GetDrawingArraySize(advances);
+    EXPECT_TRUE(advancesSize != 0);
+    EXPECT_NEAR(OH_Drawing_GetRunGlyphAdvanceByIndex(advances, 0), 111.750076, FLOAT_DATA_EPSILON);
+    EXPECT_NEAR(OH_Drawing_GetRunGlyphAdvanceByIndex(advances, 1), 82.050049, FLOAT_DATA_EPSILON);
+    EXPECT_NEAR(OH_Drawing_GetRunGlyphAdvanceByIndex(advances, 2), 35.850021, FLOAT_DATA_EPSILON);
+    EXPECT_NEAR(OH_Drawing_GetRunGlyphAdvanceByIndex(advances, 3), 35.850021, FLOAT_DATA_EPSILON);
+    EXPECT_NEAR(OH_Drawing_GetRunGlyphAdvanceByIndex(advances, 4), 88.650055, FLOAT_DATA_EPSILON);
+    OH_Drawing_DestroyRunGlyphAdvances(advances);
+    OH_Drawing_FontDestroy(font);
+}
+
+/*
+ * @tc.name: OH_Drawing_GlyDrawingTest003
+ * @tc.desc: Test for the glyph drawing of the emoji text.
+ * @tc.type: FUNC
+ */
+HWTEST_F(NativeDrawingRunTest, OH_Drawing_GlyDrawingTest003, TestSize.Level1)
+{
+    text_ = "⌚😀😁🤣👨‍🔬👩‍👩‍👧‍👦👭";
+    PrepareCreateTextLineForGlyphDrawing();
+    OH_Drawing_Run* run = OH_Drawing_GetRunByIndex(runs, 0);
+    EXPECT_TRUE(run != nullptr);
+
+    OH_Drawing_Font* font = OH_Drawing_GetRunFont(run);
+    EXPECT_TRUE(font != nullptr);
+    OH_Drawing_Font_Metrics fontMetrics;
+    OH_Drawing_FontGetMetrics(font, &fontMetrics);
+    EXPECT_EQ(fontMetrics.flags, 31);
+    EXPECT_NEAR(fontMetrics.top, -69.900002, FLOAT_DATA_EPSILON);
+    EXPECT_NEAR(fontMetrics.ascent, -58.950001, FLOAT_DATA_EPSILON);
+    EXPECT_NEAR(fontMetrics.descent, 16.150002, FLOAT_DATA_EPSILON);
+    EXPECT_NEAR(fontMetrics.bottom, 19.650000, FLOAT_DATA_EPSILON);
+    EXPECT_NEAR(fontMetrics.leading, 0.0, FLOAT_DATA_EPSILON);
+    EXPECT_NEAR(fontMetrics.avgCharWidth, 35.150002, FLOAT_DATA_EPSILON);
+    EXPECT_NEAR(fontMetrics.maxCharWidth, 80.450005, FLOAT_DATA_EPSILON);
+
+    OH_Drawing_TextDirection direction = OH_Drawing_GetRunTextDirection(run);
+    EXPECT_EQ(direction, TEXT_DIRECTION_LTR);
+
+    OH_Drawing_Array* advances = OH_Drawing_GetRunGlyphAdvances(run, 1, 2);
+    EXPECT_TRUE(advances != nullptr);
+    size_t advancesSize = OH_Drawing_GetDrawingArraySize(advances);
+    EXPECT_EQ(advancesSize, 2);
+    EXPECT_NEAR(OH_Drawing_GetRunGlyphAdvanceByIndex(advances, 0), 187.15620, FLOAT_DATA_EPSILON);
+    EXPECT_NEAR(OH_Drawing_GetRunGlyphAdvanceByIndex(advances, 1), 187.15620, FLOAT_DATA_EPSILON);
+    OH_Drawing_DestroyRunGlyphAdvances(advances);
+    OH_Drawing_FontDestroy(font);
+}
+
+/*
+ * @tc.name: OH_Drawing_GlyDrawingTest004
+ * @tc.desc: Test for the glyph drawing of the RTL text.
+ * @tc.type: FUNC
+ */
+HWTEST_F(NativeDrawingRunTest, OH_Drawing_GlyDrawingTest004, TestSize.Level1)
+{
+    text_ = "مرحبا";
+    PrepareCreateTextLineForGlyphDrawing();
+    OH_Drawing_Run* run = OH_Drawing_GetRunByIndex(runs, 0);
+    EXPECT_TRUE(run != nullptr);
+
+    OH_Drawing_Font* font = OH_Drawing_GetRunFont(run);
+    EXPECT_TRUE(font != nullptr);
+    OH_Drawing_Font_Metrics fontMetrics;
+    OH_Drawing_FontGetMetrics(font, &fontMetrics);
+    EXPECT_EQ(fontMetrics.flags, 31);
+    EXPECT_NEAR(fontMetrics.top, -69.900002, FLOAT_DATA_EPSILON);
+    EXPECT_NEAR(fontMetrics.ascent, -58.950001, FLOAT_DATA_EPSILON);
+    EXPECT_NEAR(fontMetrics.descent, 16.150002, FLOAT_DATA_EPSILON);
+    EXPECT_NEAR(fontMetrics.bottom, 19.650000, FLOAT_DATA_EPSILON);
+    EXPECT_NEAR(fontMetrics.leading, 0.0, FLOAT_DATA_EPSILON);
+    EXPECT_NEAR(fontMetrics.avgCharWidth, 35.150002, FLOAT_DATA_EPSILON);
+    EXPECT_NEAR(fontMetrics.maxCharWidth, 80.450005, FLOAT_DATA_EPSILON);
+
+    OH_Drawing_TextDirection direction = OH_Drawing_GetRunTextDirection(run);
+    EXPECT_EQ(direction, TEXT_DIRECTION_RTL);
+
+    OH_Drawing_Array* advances = OH_Drawing_GetRunGlyphAdvances(run, 1, 2);
+    EXPECT_TRUE(advances != nullptr);
+    size_t advancesSize = OH_Drawing_GetDrawingArraySize(advances);
+    EXPECT_EQ(advancesSize, 2);
+    EXPECT_NEAR(OH_Drawing_GetRunGlyphAdvanceByIndex(advances, 0), 16.149979, FLOAT_DATA_EPSILON);
+    EXPECT_NEAR(OH_Drawing_GetRunGlyphAdvanceByIndex(advances, 1), 19.339979, FLOAT_DATA_EPSILON);
+    OH_Drawing_DestroyRunGlyphAdvances(advances);
+    OH_Drawing_FontDestroy(font);
+}
+
+/*
+ * @tc.name: OH_Drawing_GlyDrawingTest005
+ * @tc.desc: Test for the glyph drawing of the Arabic and Latin ligature text.
+ * @tc.type: FUNC
+ */
+HWTEST_F(NativeDrawingRunTest, OH_Drawing_GlyDrawingTest005, TestSize.Level1)
+{
+    text_ = "\u0644\u0627Hello你好连字测试\u0066\u0069";
+    PrepareCreateTextLineForGlyphDrawing();
+    OH_Drawing_Run* run = OH_Drawing_GetRunByIndex(runs, 0);
+    EXPECT_TRUE(run != nullptr);
+
+    OH_Drawing_Font* font = OH_Drawing_GetRunFont(run);
+    EXPECT_TRUE(font != nullptr);
+    OH_Drawing_Font_Metrics fontMetrics;
+    OH_Drawing_FontGetMetrics(font, &fontMetrics);
+    EXPECT_EQ(fontMetrics.flags, 31);
+    EXPECT_NEAR(fontMetrics.top, -69.900002, FLOAT_DATA_EPSILON);
+    EXPECT_NEAR(fontMetrics.ascent, -58.950001, FLOAT_DATA_EPSILON);
+    EXPECT_NEAR(fontMetrics.descent, 16.150002, FLOAT_DATA_EPSILON);
+    EXPECT_NEAR(fontMetrics.bottom, 19.650000, FLOAT_DATA_EPSILON);
+    EXPECT_NEAR(fontMetrics.leading, 0.0, FLOAT_DATA_EPSILON);
+    EXPECT_NEAR(fontMetrics.avgCharWidth, 35.150002, FLOAT_DATA_EPSILON);
+    EXPECT_NEAR(fontMetrics.maxCharWidth, 80.450005, FLOAT_DATA_EPSILON);
+
+    OH_Drawing_TextDirection direction = OH_Drawing_GetRunTextDirection(run);
+    EXPECT_EQ(direction, TEXT_DIRECTION_LTR);
+
+    OH_Drawing_Array* advances = OH_Drawing_GetRunGlyphAdvances(run, 0, 1);
+    EXPECT_TRUE(advances != nullptr);
+    size_t advancesSize = OH_Drawing_GetDrawingArraySize(advances);
+    EXPECT_EQ(advancesSize, 1);
+    EXPECT_NEAR(OH_Drawing_GetRunGlyphAdvanceByIndex(advances, 0), 24.499969, FLOAT_DATA_EPSILON);
+
+    run = OH_Drawing_GetRunByIndex(runs, 3);
+    advances = OH_Drawing_GetRunGlyphAdvances(run, 0, 2);
+    EXPECT_TRUE(advances != nullptr);
+    size_t advancesSize = OH_Drawing_GetDrawingArraySize(advances);
+    EXPECT_EQ(advancesSize, 1);
+    EXPECT_NEAR(OH_Drawing_GetRunGlyphAdvanceByIndex(advances, 0), 57.399948, FLOAT_DATA_EPSILON);
+
+    OH_Drawing_DestroyRunGlyphAdvances(advances);
+    OH_Drawing_FontDestroy(font);
+}
+
+/*
+ * @tc.name: OH_Drawing_GlyDrawingTest006
+ * @tc.desc: Test for the glyph drawing of the Sanskrit combination text.
+ * @tc.type: FUNC
+ */
+HWTEST_F(NativeDrawingRunTest, OH_Drawing_GlyDrawingTest006, TestSize.Level1)
+{
+    text_ = "क्Hello你好天成文测试का";
+    PrepareCreateTextLineForGlyphDrawing();
+    OH_Drawing_Run* run = OH_Drawing_GetRunByIndex(runs, 0);
+    EXPECT_TRUE(run != nullptr);
+
+    OH_Drawing_Font* font = OH_Drawing_GetRunFont(run);
+    EXPECT_TRUE(font != nullptr);
+    OH_Drawing_Font_Metrics fontMetrics;
+    OH_Drawing_FontGetMetrics(font, &fontMetrics);
+    EXPECT_EQ(fontMetrics.flags, 31);
+    EXPECT_NEAR(fontMetrics.top, -134.699997, FLOAT_DATA_EPSILON);
+    EXPECT_NEAR(fontMetrics.ascent, -89.600006, FLOAT_DATA_EPSILON);
+    EXPECT_NEAR(fontMetrics.descent, 40.799999, FLOAT_DATA_EPSILON);
+    EXPECT_NEAR(fontMetrics.bottom, 39.399998, FLOAT_DATA_EPSILON);
+    EXPECT_NEAR(fontMetrics.leading, 0.0, FLOAT_DATA_EPSILON);
+    EXPECT_NEAR(fontMetrics.avgCharWidth, 55.500000, FLOAT_DATA_EPSILON);
+    EXPECT_NEAR(fontMetrics.maxCharWidth, 201.300003, FLOAT_DATA_EPSILON);
+
+    OH_Drawing_TextDirection direction = OH_Drawing_GetRunTextDirection(run);
+    EXPECT_EQ(direction, TEXT_DIRECTION_LTR);
+
+    OH_Drawing_Array* advances = OH_Drawing_GetRunGlyphAdvances(run, 0, 2);
+    EXPECT_TRUE(advances != nullptr);
+    size_t advancesSize = OH_Drawing_GetDrawingArraySize(advances);
+    EXPECT_EQ(advancesSize, 2);
+    EXPECT_NEAR(OH_Drawing_GetRunGlyphAdvanceByIndex(advances, 0), 76.199921, FLOAT_DATA_EPSILON);
+    EXPECT_NEAR(OH_Drawing_GetRunGlyphAdvanceByIndex(advances, 1), 0.000000, FLOAT_DATA_EPSILON);
+
+    run = OH_Drawing_GetRunByIndex(runs, 3);
+    advances = OH_Drawing_GetRunGlyphAdvances(run, 0, 2);
+    EXPECT_TRUE(advances != nullptr);
+    size_t advancesSize = OH_Drawing_GetDrawingArraySize(advances);
+    EXPECT_EQ(advancesSize, 2);
+    EXPECT_NEAR(OH_Drawing_GetRunGlyphAdvanceByIndex(advances, 0), 76.199921, FLOAT_DATA_EPSILON);
+    EXPECT_NEAR(OH_Drawing_GetRunGlyphAdvanceByIndex(advances, 1), 25.899979, FLOAT_DATA_EPSILON);
+
+    OH_Drawing_DestroyRunGlyphAdvances(advances);
+    OH_Drawing_FontDestroy(font);
+}
+
+/*
+ * @tc.name: OH_Drawing_GlyDrawingTest007
+ * @tc.desc: Test for the glyph drawing of the Sanskrit combination text.
+ * @tc.type: FUNC
+ */
+HWTEST_F(NativeDrawingRunTest, OH_Drawing_GlyDrawingTest007, TestSize.Level1)
+{
+    text_ = "གྷHello你好藏文测试སྒྲ";
+    PrepareCreateTextLineForGlyphDrawing();
+    OH_Drawing_Run* run = OH_Drawing_GetRunByIndex(runs, 0);
+    EXPECT_TRUE(run != nullptr);
+
+    OH_Drawing_Font* font = OH_Drawing_GetRunFont(run);
+    EXPECT_TRUE(font != nullptr);
+    OH_Drawing_Font_Metrics fontMetrics;
+    OH_Drawing_FontGetMetrics(font, &fontMetrics);
+    EXPECT_EQ(fontMetrics.flags, 31);
+    EXPECT_NEAR(fontMetrics.top, -110.679001, FLOAT_DATA_EPSILON);
+    EXPECT_NEAR(fontMetrics.ascent, -115.813995, FLOAT_DATA_EPSILON);
+    EXPECT_NEAR(fontMetrics.descent, 106.570999, FLOAT_DATA_EPSILON);
+    EXPECT_NEAR(fontMetrics.bottom, 78.605003, FLOAT_DATA_EPSILON);
+    EXPECT_NEAR(fontMetrics.leading, 0.0, FLOAT_DATA_EPSILON);
+    EXPECT_NEAR(fontMetrics.avgCharWidth, 49.848999, FLOAT_DATA_EPSILON);
+    EXPECT_NEAR(fontMetrics.maxCharWidth, 206.347992, FLOAT_DATA_EPSILON);
+
+    OH_Drawing_TextDirection direction = OH_Drawing_GetRunTextDirection(run);
+    EXPECT_EQ(direction, TEXT_DIRECTION_LTR);
+
+    OH_Drawing_Array* advances = OH_Drawing_GetRunGlyphAdvances(run, 0, 1);
+    EXPECT_TRUE(advances != nullptr);
+    size_t advancesSize = OH_Drawing_GetDrawingArraySize(advances);
+    EXPECT_EQ(advancesSize, 1);
+    EXPECT_NEAR(OH_Drawing_GetRunGlyphAdvanceByIndex(advances, 0), 56.405991, FLOAT_DATA_EPSILON);
+
+    run = OH_Drawing_GetRunByIndex(runs, 3);
+    advances = OH_Drawing_GetRunGlyphAdvances(run, 0, 1);
+    EXPECT_TRUE(advances != nullptr);
+    size_t advancesSize = OH_Drawing_GetDrawingArraySize(advances);
+    EXPECT_EQ(advancesSize, 1);
+    EXPECT_NEAR(OH_Drawing_GetRunGlyphAdvanceByIndex(advances, 0), 53.324997, FLOAT_DATA_EPSILON);
+
+    OH_Drawing_DestroyRunGlyphAdvances(advances);
+    OH_Drawing_FontDestroy(font);
+}
+
+/*
+ * @tc.name: OH_Drawing_GlyDrawingTest008
+ * @tc.desc: Test for the glyph drawing of the Thai text.
+ * @tc.type: FUNC
+ */
+HWTEST_F(NativeDrawingRunTest, OH_Drawing_GlyDrawingTest008, TestSize.Level1)
+{
+    text_ = "\u0E01\u0E33\u0E41\u0E01Hello你好泰文测试";
+    PrepareCreateTextLineForGlyphDrawing();
+    OH_Drawing_Run* run = OH_Drawing_GetRunByIndex(runs, 0);
+    EXPECT_TRUE(run != nullptr);
+
+    OH_Drawing_Font* font = OH_Drawing_GetRunFont(run);
+    EXPECT_TRUE(font != nullptr);
+    OH_Drawing_Font_Metrics fontMetrics;
+    OH_Drawing_FontGetMetrics(font, &fontMetrics);
+    EXPECT_EQ(fontMetrics.flags, 31);
+    EXPECT_NEAR(fontMetrics.top, -100.899994, FLOAT_DATA_EPSILON);
+    EXPECT_NEAR(fontMetrics.ascent, -106.099998, FLOAT_DATA_EPSILON);
+    EXPECT_NEAR(fontMetrics.descent, 45.000000, FLOAT_DATA_EPSILON);
+    EXPECT_NEAR(fontMetrics.bottom, 43.299999, FLOAT_DATA_EPSILON);
+    EXPECT_NEAR(fontMetrics.leading, 0.0, FLOAT_DATA_EPSILON);
+    EXPECT_NEAR(fontMetrics.avgCharWidth, 55.800003, FLOAT_DATA_EPSILON);
+    EXPECT_NEAR(fontMetrics.maxCharWidth, 165.100006, FLOAT_DATA_EPSILON);
+
+    OH_Drawing_TextDirection direction = OH_Drawing_GetRunTextDirection(run);
+    EXPECT_EQ(direction, TEXT_DIRECTION_LTR);
+
+    OH_Drawing_Array* advances = OH_Drawing_GetRunGlyphAdvances(run, 0, 5);
+    EXPECT_TRUE(advances != nullptr);
+    size_t advancesSize = OH_Drawing_GetDrawingArraySize(advances);
+    EXPECT_EQ(advancesSize, 5);
+    EXPECT_NEAR(OH_Drawing_GetRunGlyphAdvanceByIndex(advances, 0), 59.999939, FLOAT_DATA_EPSILON);
+    EXPECT_NEAR(OH_Drawing_GetRunGlyphAdvanceByIndex(advances, 1), 0.000000, FLOAT_DATA_EPSILON);
+    EXPECT_NEAR(OH_Drawing_GetRunGlyphAdvanceByIndex(advances, 2), 40.599960, FLOAT_DATA_EPSILON);
+    EXPECT_NEAR(OH_Drawing_GetRunGlyphAdvanceByIndex(advances, 3), 56.799942, FLOAT_DATA_EPSILON);
+    EXPECT_NEAR(OH_Drawing_GetRunGlyphAdvanceByIndex(advances, 4), 59.999939, FLOAT_DATA_EPSILON);
+
+    OH_Drawing_DestroyRunGlyphAdvances(advances);
+    OH_Drawing_FontDestroy(font);
 }
 }  // namespace OHOS

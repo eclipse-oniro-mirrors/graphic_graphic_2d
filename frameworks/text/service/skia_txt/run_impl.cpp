@@ -17,6 +17,7 @@
 
 #include "convert.h"
 #include "impl/run_impl.h"
+#include "typography_types.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -87,6 +88,37 @@ std::vector<Drawing::Point> RunImpl::GetPositions(int64_t start, int64_t length)
         return {};
     }
     return run_->GetPositions(start, length);
+}
+
+std::vector<Drawing::Point> RunImpl::GetAdvances(uint32_t start, uint32_t length) const
+{
+    if (run_ == nullptr || start < 0 || length < 0) {
+        return {};
+    }
+    return run_->GetAdvances(start, length);
+}
+
+TextDirection RunImpl::getTextDirection() const
+{
+    if (run_ == nullptr) {
+        return TextDirection::LTR;
+    }
+    TextDirection textDirection;
+    switch (run_->GetTextDirection()) {
+        case SPText::TextDirection::RTL: {
+            textDirection = TextDirection::RTL;
+            break;
+        }
+        case SPText::TextDirection::LTR: {
+            textDirection = TextDirection::LTR;
+            break;
+        }
+        default: {
+            textDirection = TextDirection::LTR;
+            break;
+        }
+    }
+    return textDirection;
 }
 
 void RunImpl::GetStringRange(uint64_t* location, uint64_t* length) const

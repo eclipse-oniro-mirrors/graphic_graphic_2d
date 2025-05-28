@@ -30,6 +30,7 @@ class OHDrawingRunTest : public testing::Test {
 protected:
     void SetUp() override;
     void TearDown() override;
+    void PrepareCreateRunForGlyphDrawing();
 
 private:
     // 50 is the width of the layout, just for test
@@ -39,6 +40,7 @@ private:
 
     std::vector<std::unique_ptr<OHOS::Rosen::Run>> runs_;
     std::unique_ptr<Typography> typography_;
+    std::u16string text_ = u"RunTest";
 };
 
 void OHDrawingRunTest::SetUp()
@@ -61,6 +63,24 @@ void OHDrawingRunTest::TearDown()
 {
     typography_.reset();
     runs_.clear();
+}
+
+void OHDrawingRunTest::PrepareCreateRunForGlyphDrawing()
+{
+    layoutwidth_ = 1200;
+    TypographyStyle ts;
+    ts.fontSize = 100;
+    std::shared_ptr<FontCollection> fc = FontCollection::From(std::make_shared<txt::FontCollection>());
+    ASSERT_NE(fc, nullptr);
+    auto tc = OHOS::Rosen::TypographyCreate::Create(ts, fc);
+    ASSERT_NE(tc, nullptr);
+    tc->AppendText(text_);
+    typography_ = tc->CreateTypography();
+    ASSERT_NE(typography_, nullptr);
+    typography_->Layout(layoutWidth_);
+    std::vector<std::unique_ptr<TextLineBase>> textLines = typography_->GetTextLines();
+    ASSERT_EQ(textLines.size(), 1);
+    runs_ = textLines.at(0)->GetGlyphRuns();
 }
 
 /*
@@ -203,6 +223,56 @@ HWTEST_F(OHDrawingRunTest, RunTest009, TestSize.Level1)
 
     EXPECT_EQ(runs_[0]->GetStringIndices(-1, 10), std::vector<uint64_t>());
     EXPECT_EQ(runs_[0]->GetStringIndices(0, -1), std::vector<uint64_t>());
+}
+
+/*
+ * @tc.name: RunGlyphDrawingTest001
+ * @tc.desc: Test for the glyph drawing of the English text.
+ * @tc.type: FUNC
+ */
+HWTEST_F(OHDrawingRunTest, RunGlyphDrawingTest001, TestSize.Level1)
+{
+    text_ = u"Hello你好";
+    PrepareCreateRunForGlyphDrawing();
+    EXPECT_EQ(runs_[0]->GetTextDirection(), OHOS::Rosen::TextDirection::LTR);
+    EXPECT_EQ(runs_[0]->GetAdvances(-1, 10), std::vector<Drawing::Point>());
+    EXPECT_EQ(runs_[0]->GetAdvances(0, -1), std::vector<Drawing::Point>());
+    std::vector<Drawing::Point> pointVector = {
+        {111.750076, 0}, {82.050049, 0}, {35.850021, 0}, {35.850021, 0}, {88.650055, 0}};
+    EXPECT_EQ(runs_[0]->GetAdvances(0, 0), pointVector);
+    pointVector = {{111.750076, 0}};
+    EXPECT_EQ(runs_[0]->GetAdvances(0, 1), pointVector);
+}
+
+/*
+ * @tc.name: RunGlyphDrawingTest002
+ * @tc.desc: Test for the glyph drawing of the RTL text.
+ * @tc.type: FUNC
+ */
+HWTEST_F(OHDrawingRunTest, RunGlyphDrawingTest002, TestSize.Level1)
+{
+    text_ = u"مرحبا";
+    PrepareCreateRunForGlyphDrawing();
+    EXPECT_EQ(runs_[0]->GetTextDirection(), OHOS::Rosen::TextDirection::LTR);
+    EXPECT_EQ(runs_[0]->GetAdvances(-1, 10), std::vector<Drawing::Point>());
+    EXPECT_EQ(runs_[0]->GetAdvances(0, -1), std::vector<Drawing::Point>());
+    std::vector<Drawing::Point> pointVector = {
+        {111.750076, 0}, {82.050049, 0}, {35.850021, 0}, {35.850021, 0}, {88.650055, 0}};
+    EXPECT_EQ(runs_[0]->GetAdvances(0, 0), pointVector);
+    pointVector = {{111.750076, 0}};
+    EXPECT_EQ(runs_[0]->GetAdvances(0, 1), pointVector);
+}
+
+/*
+ * @tc.name: RunGlyphDrawingTest003
+ * @tc.desc: test for nullptr, only for the branch coverage
+ * @tc.type: FUNC
+ */
+HWTEST_F(OHDrawingRunTest, RunGlyphDrawingTest003, TestSize.Level1)
+{
+    std::unique_ptr<AdapterTxt::RunImpl> runNull = std::make_unique<AdapterTxt::RunImpl>(nullptr);
+    EXPECT_EQ(runNull->GetTextDirection(), OHOS::Rosen::TextDirection::LTR);
+    EXPECT_EQ(runNull->GetAdvances(0, 0), std::vector<Drawing::Point>());
 }
 } // namespace Rosen
 } // namespace OHOS
