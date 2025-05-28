@@ -196,6 +196,12 @@ public:
     {
         return specialLayerManager_;
     }
+
+    bool HasBlackListByScreenId(ScreenId screenId)
+    {
+        return blackListIds_[screenId].size() != 0;
+    }
+
     bool HasPrivacyContentLayer()
     {
         return privacyContentLayerIds_.size() != 0;
@@ -366,6 +372,8 @@ public:
     // source crop tuning
     void SetLayerSourceTuning(int32_t needSourceTuning);
     int32_t GetLayerSourceTuning() const;
+    void SetTunnelLayerId(const uint64_t& tunnelLayerId);
+    uint64_t GetTunnelLayerId() const;
 
     void SetGpuOverDrawBufferOptimizeNode(bool overDrawNode);
     bool IsGpuOverDrawBufferOptimizeNode() const;
@@ -652,6 +660,31 @@ public:
         return apiCompatibleVersion_;
     }
 
+    bool IsOcclusionCullingOn() const
+    {
+        return isOcclusionCullingOn_;
+    }
+
+    std::unordered_set<NodeId> TakeCulledNodes()
+    {
+        return std::move(culledNodes_);
+    }
+
+    const std::unordered_set<NodeId>& GetCulledNodes() const
+    {
+        return culledNodes_;
+    }
+
+    std::unordered_set<NodeId> TakeCulledEntireSubtree()
+    {
+        return std::move(culledEntireSubtree_);
+    }
+
+    const std::unordered_set<NodeId>& GetCulledEntireSubtree() const
+    {
+        return culledEntireSubtree_;
+    }
+
     // [Attention] The function only used for unlocking screen for PC currently
     bool ClonedSourceNode() const
     {
@@ -789,6 +822,7 @@ private:
     bool isGlobalPositionEnabled_ = false;
     Gravity uiFirstFrameGravity_ = Gravity::TOP_LEFT;
     RSSpecialLayerManager specialLayerManager_;
+    std::unordered_map<ScreenId, std::unordered_set<NodeId>> blackListIds_ = {};
     std::set<NodeId> privacyContentLayerIds_ = {};
     std::set<int32_t> bufferCacheSet_ = {};
     std::string name_= "";
@@ -801,6 +835,7 @@ private:
     bool needOffscreen_ = false;
     bool layerCreated_ = false;
     int32_t layerSource_ = 0;
+    uint64_t tunnelLayerId_ = 0;
     int64_t stencilVal_ = -1;
     std::unordered_map<std::string, bool> watermarkHandles_ = {};
     std::vector<float> drmCornerRadiusInfo_;
@@ -832,6 +867,10 @@ private:
     std::unordered_map<NodeId, Drawing::Matrix> crossNodeSkipDisplayConversionMatrices_ = {};
 
     uint32_t apiCompatibleVersion_ = 0;
+
+    bool isOcclusionCullingOn_ = false;
+    std::unordered_set<NodeId> culledNodes_;
+    std::unordered_set<NodeId> culledEntireSubtree_;
 
     friend class RSSurfaceRenderNode;
     friend class RSUniRenderProcessor;
