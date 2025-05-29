@@ -116,7 +116,7 @@ void HgmEnergyConsumptionPolicy::SetUiEnergyConsumptionConfig(
         }
         int idleFps = 60;
         ConverStrToInt(idleFps, config.second, DEFAULT_ENERGY_ASSURANCE_IDLE_FPS);
-        for (auto type : it->second) {
+        for (const auto& type : it->second) {
             uiEnergyAssuranceMap_[type] = std::make_pair(true, idleFps);
         }
     }
