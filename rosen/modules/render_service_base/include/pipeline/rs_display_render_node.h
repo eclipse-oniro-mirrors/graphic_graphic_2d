@@ -561,7 +561,7 @@ public:
         hdrNodeList_.insert(id);
     }
 
-    void DeleteHDRNode(NodeId id)
+    void RemoveHDRNode(NodeId id)
     {
         hdrNodeList_.erase(id);
     }

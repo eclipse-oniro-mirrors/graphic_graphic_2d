@@ -2388,6 +2388,13 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
     }
     // need draw skipped node at cur frame
     doDirectComposition_ &= !RSUifirstManager::Instance().NeedNextDrawForSkippedNode();
+
+    // if screen is power-off, DirectComposition should be disabled.
+    if (RSUniRenderUtil::CheckRenderSkipIfScreenOff()) {
+        RS_OPTIONAL_TRACE_NAME_FMT("rs debug: %s PowerOff disable doDirectComposition", __func__);
+        doDirectComposition_ = false;
+    }
+
     bool needTraverseNodeTree = true;
     needDrawFrame_ = true;
     bool pointerSkip = !RSPointerWindowManager::Instance().IsPointerCanSkipFrameCompareChange(false, true);
@@ -3234,6 +3241,15 @@ void RSMainThread::NotifyHardwareThreadCanExecuteTask()
     RS_TRACE_NAME("RSMainThread::NotifyHardwareThreadCanExecuteTask");
     std::lock_guard<std::mutex> lock(hardwareThreadTaskMutex_);
     hardwareThreadTaskCond_.notify_one();
+}
+
+uint32_t RSMainThread::GetVsyncRefreshRate()
+{
+    if (vsyncGenerator_ == nullptr) {
+        RS_LOGE("RSMainThread::GetVsyncRefreshRate vsyncGenerator is nullptr");
+        return 0;
+    }
+    return vsyncGenerator_->GetVsyncRefreshRate();
 }
 
 void RSMainThread::RequestNextVSync(const std::string& fromWhom, int64_t lastVSyncTS, const int64_t& requestVsyncTime)

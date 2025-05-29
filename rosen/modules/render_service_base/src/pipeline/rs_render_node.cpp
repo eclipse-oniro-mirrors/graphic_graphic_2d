@@ -2260,21 +2260,21 @@ void RSRenderNode::CheckBlurFilterCacheNeedForceClearOrSave(bool rotationChanged
 #endif
 }
 
-void RSRenderNode::MarkFilterInForegroundFilterAndCheckNeedForceClearCache(bool inForegroundFilter)
+void RSRenderNode::MarkFilterInForegroundFilterAndCheckNeedForceClearCache(NodeId offscreenCanvasNodeId)
 {
 #ifdef RS_ENABLE_GPU
     const auto& properties = GetRenderProperties();
     if (properties.GetBackgroundFilter()) {
         auto filterDrawable = GetFilterDrawable(false);
         if (filterDrawable != nullptr) {
-            filterDrawable->MarkInForegroundFilterAndCheckNeedForceClearCache(inForegroundFilter);
+            filterDrawable->MarkInForegroundFilterAndCheckNeedForceClearCache(offscreenCanvasNodeId);
         }
     }
 
     if (properties.GetFilter()) {
         auto filterDrawable = GetFilterDrawable(true);
         if (filterDrawable != nullptr) {
-            filterDrawable->MarkInForegroundFilterAndCheckNeedForceClearCache(inForegroundFilter);
+            filterDrawable->MarkInForegroundFilterAndCheckNeedForceClearCache(offscreenCanvasNodeId);
         }
     }
 #endif
@@ -2613,6 +2613,7 @@ void RSRenderNode::AddUIFilterModifier(const std::shared_ptr<RSRenderModifier>& 
         std::static_pointer_cast<RSRenderProperty<std::shared_ptr<RSRenderFilter>>>(modifier->GetProperty());
     if (!renderProperty) {
         ROSEN_LOGW("RSRenderNode::AddUIFilterModifier: null renderProperty.");
+        return;
     }
     auto& renderFilter = renderProperty->GetRef();
     for (auto& type : renderFilter->GetUIFilterTypes()) {
@@ -4208,6 +4209,10 @@ RectI RSRenderNode::GetOldClipRect() const
 void RSRenderNode::SetOldDirtyInSurface(RectI oldDirtyInSurface)
 {
     oldDirtyInSurface_ = oldDirtyInSurface;
+}
+bool RSRenderNode::IsForegroundFilterEnable()
+{
+    return drawableVec_[static_cast<uint32_t>(RSDrawableSlot::FOREGROUND_FILTER)] != nullptr;
 }
 bool RSRenderNode::IsDirtyRegionUpdated() const
 {

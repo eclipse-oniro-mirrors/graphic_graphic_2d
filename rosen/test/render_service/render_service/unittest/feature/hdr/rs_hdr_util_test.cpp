@@ -152,7 +152,7 @@ HWTEST_F(RSHdrUtilTest, UpdateSurfaceNodeNitTest001, TestSize.Level1)
     auto node = RSTestUtil::CreateSurfaceNodeWithBuffer();
     ASSERT_NE(node, nullptr);
     node->SetVideoHdrStatus(HdrStatus::HDR_VIDEO);
-    EXPECT_EQ(renderNode->GetVideoStatus(), HdrStatus::HDR_VIDEO);
+    EXPECT_EQ(node->GetVideoHdrStatus(), HdrStatus::HDR_VIDEO);
     RSHdrUtil::UpdateSurfaceNodeNit(*node, 0);
 }
 
@@ -169,7 +169,7 @@ HWTEST_F(RSHdrUtilTest, UpdateSurfaceNodeNitTest002, TestSize.Level1)
     std::shared_ptr<RSContext> context = std::make_shared<RSContext>();
     node->OnRegister(context);
     node->SetVideoHdrStatus(HdrStatus::HDR_VIDEO);
-    EXPECT_EQ(node->GetVideoStatus(), HdrStatus::HDR_VIDEO);
+    EXPECT_EQ(node->GetVideoHdrStatus(), HdrStatus::HDR_VIDEO);
     RSHdrUtil::UpdateSurfaceNodeNit(*node, 0);
 
     auto& nodeMap = context->GetMutableNodeMap();
@@ -180,7 +180,7 @@ HWTEST_F(RSHdrUtilTest, UpdateSurfaceNodeNitTest002, TestSize.Level1)
     ASSERT_EQ(res, true);
     RSHdrUtil::UpdateSurfaceNodeNit(*node, 0); // displayNode is nullptr
     node->displayNodeId_ = displayRenderNodeId;
-    auto displayNode = context->GetNodeMap().GetRenderNode<RSDisplayRenderNode>(renderNode->GetDisplayNodeId());
+    auto displayNode = context->GetNodeMap().GetRenderNode<RSDisplayRenderNode>(node->GetDisplayNodeId());
     ASSERT_NE(displayNode, nullptr);
     RSHdrUtil::UpdateSurfaceNodeNit(*node, 0); // displayNode is nullptr
 }

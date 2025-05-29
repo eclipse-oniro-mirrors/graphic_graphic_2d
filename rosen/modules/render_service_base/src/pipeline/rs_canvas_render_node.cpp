@@ -301,7 +301,7 @@ void RSCanvasRenderNode::UpdateDisplayHDRNodeList(bool flag, NodeId displayNodeI
     if (flag) {
         displayNode->InsertHDRNode(GetId());
     } else {
-        displayNode->DeleteHDRNode(GetId());
+        displayNode->RemoveHDRNode(GetId());
     }
 }
 
@@ -312,7 +312,7 @@ void RSCanvasRenderNode::SetHDRPresent(bool hasHdrPresent)
     }
     if (IsOnTheTree()) {
         SetHdrNum(hasHdrPresent, GetInstanceRootNodeId(), HDRComponentType::IMAGE);
-        UpdateDisplayHDRNodeList();
+        UpdateDisplayHDRNodeList(hasHdrPresent, GetDisplayNodeId());
     }
     hasHdrPresent_ = hasHdrPresent;
 }

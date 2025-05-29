@@ -26,8 +26,8 @@
 #include "common/rs_obj_abs_geometry.h"
 #include "common/rs_vector4.h"
 #include "pipeline/rs_context.h"
-#include "pipeline/rs_display_render_node.h"
 #include "pipeline/rs_canvas_render_node.h"
+#include "pipeline/rs_display_render_node.h"
 #include "pipeline/rs_uni_render_judgement.h"
 #include "platform/common/rs_log.h"
 #include "platform/common/rs_system_properties.h"
@@ -2738,25 +2738,25 @@ void RSProperties::SetHDRBrightnessFactor(float factor)
         return;
     }
     hdrBrightnessFactor_ = factor;
-    if (auto node = RSBaseRenderNode::ReinterpretCast<RSDisplayRenderNode>(backref_.lock())) {
-        auto& hdrNodeList = node->GetHDRNodeList();
-        auto context = node->GetContext().lock();
-        if (!context) {
-            ROSEN_LOGE("RSProperties::SetHDRBrightnessFactor Invalid context");
-            return;
-        }
-        for (auto it = hdrNodeList.begin(); it != hdrNodeList.end();) {
-            auto node = context->GetNodeMap().GetRenderNode(*it);
-            if (!node) {
-                it = hdrNodeList.erase(it);
-                ROSEN_LOGE("RSProperties::SetHDRBrightnessFactor The node is not in NodeMap");
-                continue;
-            }
-            node->SetContentDirty();
-            node->GetMutableRenderProperties().SetCanvasNodeHDRBrightnessFactor(factor);
-            ++it;
-        }
+    auto node = RSBaseRenderNode::ReinterpretCast<RSDisplayRenderNode>(backref_.lock());
+    if (node == nullptr) {
+        return;
     }
+    auto& hdrNodeList = node->GetHDRNodeList();
+    auto context = node->GetContext().lock();
+    if (!context) {
+        ROSEN_LOGE("RSProperties::SetHDRBrightnessFactor Invalid context");
+        return;
+    }
+    EraseIf(hdrNodeList, [context, factor](const auto& nodeId) -> bool {
+        auto canvasNode = context->GetNodeMap().GetRenderNode(nodeId);
+        if (!canvasNode) {
+            return true;
+        }
+        canvasNode->SetContentDirty();
+        canvasNode->GetMutableRenderProperties().SetCanvasNodeHDRBrightnessFactor(factor);
+        return false;
+    });
 }
 
 float RSProperties::GetHDRBrightnessFactor() const

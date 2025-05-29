@@ -22,7 +22,7 @@
 #include <sys/prctl.h>
 #include "include/core/SkGraphics.h"
 #include "rs_trace.h"
-#include "third_party/cJSON/cJSON.h"
+#include "cJSON.h"
 
 #include "memory/rs_dfx_string.h"
 #include "skia_adapter/rs_skia_memory_tracer.h"
@@ -769,6 +769,10 @@ static void KillProcessByPid(const pid_t pid, const std::string& processName, co
 
 void MemoryManager::MemoryOverflow(pid_t pid, size_t overflowMemory, bool isGpu)
 {
+    if (pid == 0) {
+        RS_LOGD("MemoryManager::MemoryOverflow pid = 0");
+        return;
+    }
     MemorySnapshotInfo info;
     MemorySnapshot::Instance().GetMemorySnapshotInfoByPid(pid, info);
     if (isGpu) {
