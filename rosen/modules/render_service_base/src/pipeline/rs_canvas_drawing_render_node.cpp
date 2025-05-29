@@ -565,6 +565,7 @@ void RSCanvasDrawingRenderNode::AddDirtyType(RSModifierType modifierType)
     }
 
     size_t originCmdListSize = drawCmdLists_[modifierType].size();
+    ReportOpCount(drawCmdLists_[modifierType]);
     for (const auto& modifier : itr->second) {
         if (modifier == nullptr) {
             continue;
@@ -580,6 +581,7 @@ void RSCanvasDrawingRenderNode::AddDirtyType(RSModifierType modifierType)
 
         cmd->SetCanvasDrawingOpLimitEnable(true);
         drawCmdLists_[modifierType].emplace_back(cmd);
+        ReportOpCount(drawCmdLists_[modifierType]);
         ++cmdCount_;
         SetNeedProcess(true);
     }
