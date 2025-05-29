@@ -1703,6 +1703,7 @@ HWTEST_F(RSMainThreadTest, UniRender003, TestSize.Level1)
         screenManagerImpl.screenPowerStatus_[screenId] = ScreenPowerStatus::POWER_STATUS_OFF;
     }
     mainThread->UniRender(rootNode);
+    ASSERT_FALSE(mainThread->doDirectComposition_);
 }
 
 /**
