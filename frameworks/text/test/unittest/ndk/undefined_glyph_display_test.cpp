@@ -31,6 +31,7 @@ class NdkUndefinedGlyphDisplayTest : public testing::Test {
 public:
     OH_Drawing_Typography* PrepareCreateTypography(
         const std::string& text, const char** fontFamilies = nullptr, int fontCount = 0);
+    void BoundsResult(OH_Drawing_Typography* typography, const float rectResult[][4], size_t size);
 
 private:
     static constexpr const char* text_ = "Hello 测 World \uffff\n!@#$%^&*~(){\uffff\uffff}[]90 - = ,.\n\uffff"
@@ -75,23 +76,24 @@ OH_Drawing_Typography* NdkUndefinedGlyphDisplayTest::PrepareCreateTypography(
     return typography;
 }
 
-#define BoundsResult(typography, rectResult, size)                                           \
-    do {                                                                                     \
-        OH_Drawing_Array* textLines = OH_Drawing_TypographyGetTextLines(typography);         \
-        size_t arraySize = OH_Drawing_GetDrawingArraySize(textLines);                        \
-        EXPECT_EQ(size, arraySize);                                                          \
-        for (size_t index = 0; index < arraySize; index++) {                                 \
-            OH_Drawing_TextLine* textLine = OH_Drawing_GetTextLineByIndex(textLines, index); \
-            OH_Drawing_Rect* rect = OH_Drawing_TextLineGetImageBounds(textLine);             \
-            EXPECT_FLOAT_EQ(rectResult[index][0], OH_Drawing_RectGetLeft(rect));             \
-            EXPECT_FLOAT_EQ(rectResult[index][1], OH_Drawing_RectGetTop(rect));              \
-            EXPECT_FLOAT_EQ(rectResult[index][2], OH_Drawing_RectGetRight(rect));            \
-            EXPECT_FLOAT_EQ(rectResult[index][3], OH_Drawing_RectGetBottom(rect));           \
-            OH_Drawing_RectDestroy(rect);                                                    \
-            OH_Drawing_DestroyTextLine(textLine);                                            \
-        }                                                                                    \
-        OH_Drawing_DestroyTextLines(textLines);                                              \
-    } while (0)
+void NdkUndefinedGlyphDisplayTest::BoundsResult(
+    OH_Drawing_Typography* typography, const float rectResult[][4], size_t size)
+{
+    OH_Drawing_Array* textLines = OH_Drawing_TypographyGetTextLines(typography);
+    size_t arraySize = OH_Drawing_GetDrawingArraySize(textLines);
+    EXPECT_EQ(size, arraySize);
+    for (size_t index = 0; index < arraySize; index++) {
+        OH_Drawing_TextLine* textLine = OH_Drawing_GetTextLineByIndex(textLines, index);
+        OH_Drawing_Rect* rect = OH_Drawing_TextLineGetImageBounds(textLine);
+        EXPECT_FLOAT_EQ(rectResult[index][0], OH_Drawing_RectGetLeft(rect));
+        EXPECT_FLOAT_EQ(rectResult[index][1], OH_Drawing_RectGetTop(rect));
+        EXPECT_FLOAT_EQ(rectResult[index][2], OH_Drawing_RectGetRight(rect));
+        EXPECT_FLOAT_EQ(rectResult[index][3], OH_Drawing_RectGetBottom(rect));
+        OH_Drawing_RectDestroy(rect);
+        OH_Drawing_DestroyTextLine(textLine);
+    }
+    OH_Drawing_DestroyTextLines(textLines);
+}
 
 /**
  * @tc.name: NdkUndefinedGlyphDisplayTest001
