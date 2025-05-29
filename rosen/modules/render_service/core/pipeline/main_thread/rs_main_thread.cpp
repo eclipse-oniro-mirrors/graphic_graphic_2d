@@ -2388,6 +2388,13 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
     }
     // need draw skipped node at cur frame
     doDirectComposition_ &= !RSUifirstManager::Instance().NeedNextDrawForSkippedNode();
+
+    // if screen is power-off, DirectComposition should be disabled.
+    if (RSUniRenderUtil::CheckRenderSkipIfScreenOff()) {
+        RS_OPTIONAL_TRACE_NAME_FMT("rs debug: %s PowerOff disable doDirectComposition", __func__);
+        doDirectComposition_ = false;
+    }
+
     bool needTraverseNodeTree = true;
     needDrawFrame_ = true;
     bool pointerSkip = !RSPointerWindowManager::Instance().IsPointerCanSkipFrameCompareChange(false, true);
