@@ -15,7 +15,6 @@
 
 #include "rsperfmonitorreporter_fuzzer.h"
 #include "gfx/performance/rs_perfmonitor_reporter.h"
-#include "params/rs_render_thread_params.h"
 
 #include <cstddef>
 #include <cstdint>
