@@ -40,6 +40,7 @@
 #include "feature/capture/rs_ui_capture_task_parallel.h"
 #include "feature/capture/rs_ui_capture_solo_task_parallel.h"
 #include "feature/capture/rs_surface_capture_task_parallel.h"
+#include "feature/uifirst/rs_uifirst_frame_rate_control.h"
 #include "gfx/fps_info/rs_surface_fps_manager.h"
 #include "gfx/first_frame_notifier/rs_first_frame_notifier.h"
 #ifdef RS_ENABLE_OVERLAY_DISPLAY
@@ -73,6 +74,7 @@
 #include "platform/ohos/rs_jank_stats_helper.h"
 #include "render/rs_typeface_cache.h"
 #include "transaction/rs_unmarshal_thread.h"
+#include "transaction/rs_transaction_data_callback_manager.h"
 #include "utils/graphic_coretrace.h"
 
 #ifdef TP_FEATURE_ENABLE
@@ -701,6 +703,7 @@ ScreenId RSRenderServiceConnection::CreateVirtualScreen(
     if (surface != nullptr) {
         EventInfo event = { "VOTER_VIRTUALDISPLAY", ADD_VOTE, OLED_60_HZ, OLED_60_HZ, name };
         NotifyRefreshRateEvent(event);
+        ROSEN_LOGI("RSRenderServiceConnection::%{public}s vote 60hz", __func__);
     }
     return newVirtualScreenId;
 }
@@ -860,18 +863,22 @@ void RSRenderServiceConnection::RemoveVirtualScreen(ScreenId id)
 int32_t RSRenderServiceConnection::SetScreenChangeCallback(sptr<RSIScreenChangeCallback> callback)
 {
     if (!callback) {
+        RS_LOGE("RSRenderServiceConnection::%{public}s: callback is nullptr", __func__);
         return INVALID_ARGUMENTS;
     }
     std::unique_lock<std::mutex> lock(mutex_);
     if (screenChangeCallback_ == callback) {
+        RS_LOGE("RSRenderServiceConnection::%{public}s: the callback has been set", __func__);
         return INVALID_ARGUMENTS;
     }
     if (screenManager_ == nullptr) {
+        RS_LOGE("RSRenderServiceConnection::%{public}s: screenManager_ is nullptr", __func__);
         return SCREEN_NOT_FOUND;
     }
 
     if (screenChangeCallback_ != nullptr) {
         // remove the old callback
+        RS_LOGW("RSRenderServiceConnection::%{public}s: last screenChangeCallback_ should be removed", __func__);
         screenManager_->RemoveScreenChangeCallback(screenChangeCallback_);
     }
 
@@ -1472,6 +1479,12 @@ ErrCode RSRenderServiceConnection::SetWindowFreezeImmediately(NodeId id, bool is
     return ERR_OK;
 }
 
+void RSRenderServiceConnection::TakeUICaptureInRange(
+    NodeId id, sptr<RSISurfaceCaptureCallback> callback, const RSSurfaceCaptureConfig& captureConfig)
+{
+    TakeSurfaceCaptureForUiParallel(id, callback, captureConfig, {});
+}
+
 ErrCode RSRenderServiceConnection::SetHwcNodeBounds(int64_t rsNodeId, float positionX, float positionY,
     float positionZ, float positionW)
 {
@@ -1726,6 +1739,7 @@ ErrCode RSRenderServiceConnection::GetScreenBacklight(uint64_t id, int32_t& leve
 void RSRenderServiceConnection::SetScreenBacklight(ScreenId id, uint32_t level)
 {
     if (!screenManager_) {
+        RS_LOGE("RSRenderServiceConnection::%{public}s screenManager_ is nullptr.", __func__);
         return;
     }
     RSLuminanceControl::Get().SetSdrLuminance(id, level);
@@ -2379,6 +2393,7 @@ ErrCode RSRenderServiceConnection::SetScreenActiveRect(ScreenId id, const Rect& 
         if (!screenManager) {
             return;
         }
+        HgmCore::Instance().SetScreenSwitchDssEnable(id, false);
         screenManager->SetScreenActiveRect(id, dstActiveRect);
     };
     mainThread_->ScheduleTask(task).wait();
@@ -2640,6 +2655,8 @@ void RSRenderServiceConnection::NotifyRefreshRateEvent(const EventInfo& eventInf
             frameRateMgr->HandleRefreshRateEvent(pid, eventInfo);
         }
     });
+
+    RSUifirstFrameRateControl::Instance().SetAnimationInfo(eventInfo);
 }
 
 void RSRenderServiceConnection::SetWindowExpectedRefreshRate(
@@ -3113,6 +3130,12 @@ ErrCode RSRenderServiceConnection::SetLayerTop(const std::string &nodeIdStr, boo
     };
     mainThread_->PostTask(task);
     return ERR_OK;
+}
+
+void RSRenderServiceConnection::RegisterTransactionDataCallback(int32_t pid,
+    uint64_t timeStamp, sptr<RSITransactionDataCallback> callback)
+{
+    RSTransactionDataCallbackManager::Instance().RegisterTransactionDataCallback(pid, timeStamp, callback);
 }
 
 void RSRenderServiceConnection::SetColorFollow(const std::string &nodeIdStr, bool isColorFollow)
