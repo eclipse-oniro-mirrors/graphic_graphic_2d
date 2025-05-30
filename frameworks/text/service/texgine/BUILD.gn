@@ -102,6 +102,7 @@ ohos_source_set("libtexgine_source") {
       "hilog:libhilog",
       "hitrace:hitrace_meter",
       "icu:shared_icuuc",
+      "init:libbegetutil",
     ]
   }
 
