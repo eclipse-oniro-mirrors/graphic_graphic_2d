@@ -68,7 +68,7 @@ HWTEST_F(RotateOffScreenParamTest, SetRotateOffScreenSurfaceNodeEnable, Function
  * @tc.name: SetRotateOffScreenDowngradeEnabled
  * @tc.desc: Verify the SetRotateOffScreenDowngradeEnabled function
  * @tc.type: FUNC
- * @tc.require: #
+ * @tc.require: #ICBPLT
  */
 HWTEST_F(RotateOffScreenParamTest, SetRotateOffScreenSurfaceNodeEnable, Function | SmallTest | Level1)
 {

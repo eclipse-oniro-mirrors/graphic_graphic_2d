@@ -36,7 +36,7 @@ protected:
 private:
     inline static bool isRotateOffScreenDisplayNodeEnable_ = false;
     inline static bool isRotateOffScreenSurfaceNodeEnable_ = true;
-    inline static bool isRotateOffScreenDowngradeEnabled_ = false;
+    inline static bool isRotateOffScreenDowngradeEnable_ = false;
 
     friend class RotateOffScreenParamParse;
 };

@@ -350,14 +350,14 @@ Drawing::Region RSSurfaceRenderNodeDrawable::CalculateVisibleDirtyRegion(
 
 void RSSurfaceRenderNodeDrawable::RotateOffScreenDowngradeMaxRenderSize(int& maxRenderSize)
 {
-    if (OcclusionCullingParam::GetRotateOffScreenDowngradeEnabled) {
+    if (RotateOffScreenParam::GetRotateOffScreenDowngradeEnabled) {
         maxRenderSize /= ROTATE_OFF_SCREEN_BUFFER_SIZE_RATIO;
     }
 }
 
 void RSSurfaceRenderNodeDrawable::RotateOffScreenDowngradeZoomRatio()
 {
-    if (OcclusionCullingParam::GetRotateOffScreenDowngradeEnabled) {
+    if (RotateOffScreenParam::GetRotateOffScreenDowngradeEnabled) {
         curCanvas_->Scale(OFF_SCREEN_CANVAS_SCALE, OFF_SCREEN_CANVAS_SCALE);
     }
 }
@@ -387,7 +387,7 @@ bool RSSurfaceRenderNodeDrawable::PrepareOffscreenRender()
     }
 
     int maxRenderSize = std::max(offscreenWidth, offscreenHeight);
-    PrepareOffscreenDowngradeMaxRenderSize(maxRenderSize);
+    RotateOffScreenDowngradeMaxRenderSize(maxRenderSize);
     // create offscreen surface and canvas
     if (offscreenSurface_ == nullptr || maxRenderSize_ != maxRenderSize) {
         RS_LOGD("PrepareOffscreenRender create offscreen surface offscreenSurface_,\
@@ -441,7 +441,7 @@ void RSSurfaceRenderNodeDrawable::FinishOffscreenRender(const Drawing::SamplingO
     Drawing::Brush paint;
     paint.SetAntiAlias(true);
     canvasBackup_->AttachBrush(paint);
-    if (OcclusionCullingParam::GetRotateOffScreenDowngradeEnabled) {
+    if (RotateOffScreenParam::GetRotateOffScreenDowngradeEnabled) {
         canvasBackup_->Save();
         canvasBackup_->Scale(BACK_MAIN_SCREEN_CANVAS_SCALE, BACK_MAIN_SCREEN_CANVAS_SCALE);
         canvasBackup_->DrawImage(*image, 0, 0, sampling);

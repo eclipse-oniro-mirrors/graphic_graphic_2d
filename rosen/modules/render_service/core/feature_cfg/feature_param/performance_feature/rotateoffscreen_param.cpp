@@ -39,13 +39,13 @@ void RotateOffScreenParam::SetRotateOffScreenSurfaceNodeEnable(bool enable)
     isRotateOffScreenSurfaceNodeEnable_ = enable;
 }
 
-bool OcclusionCullingParam::GetRotateOffScreenDowngradeEnabled()
+bool RotateOffScreenParam::GetRotateOffScreenDowngradeEnabled()
 {
-    return isRotateOffScreenDowngradeEnabled_;
+    return isRotateOffScreenDowngradeEnable_;
 }
 
-void OcclusionCullingParam::SetRotateOffScreenDowngradeEnabled(bool isEnable)
+void RotateOffScreenParam::SetRotateOffScreenDowngradeEnabled(bool enable)
 {
-    isRotateOffScreenDowngradeEnabled_ = isEnable;
+    isRotateOffScreenDowngradeEnable_ = enable;
 }
 } // namespace OHOS::Rosen
