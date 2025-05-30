@@ -587,7 +587,7 @@ void RSCanvasDrawingRenderNode::AddDirtyType(RSModifierType modifierType)
     CheckDrawCmdListSize(modifierType, originCmdListSize);
 }
 
-void RSCanvasDrawingRenderNode::ReportOpCount(const std::list<Drawing::DrawCmdListPtr>& cmdLists)  const
+void RSCanvasDrawingRenderNode::ReportOpCount(const std::list<Drawing::DrawCmdListPtr>& cmdLists) const
 {
     size_t totalOpCount = 0;
     for (const auto& cmdList : cmdLists) {
