@@ -13,6 +13,9 @@
  * limitations under the License.
  */
 #include "gtest/gtest.h"
+
+#include "ge_visual_effect.h"
+#include "ge_visual_effect_container.h"
 #include "render/rs_render_edge_light_filter.h"
 
 using namespace testing;
@@ -83,4 +86,42 @@ HWTEST_F(RSRenderEdgeLightFilterTest, GetLeafRenderProperties001, TestSize.Level
     EXPECT_TRUE(rsRenderPropertyBaseVec.empty());
 }
 
+/**
+ * @tc.name: GenerateGEVisualEffect001
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSRenderEdgeLightFilterTest, GenerateGEVisualEffect001, TestSize.Level1)
+{
+    auto rsEdgeLightFilter = std::make_shared<RSRenderEdgeLightFilterPara>(0);
+
+    auto visualEffectContainer = std::make_shared<Drawing::GEVisualEffectContainer>();
+    rsEdgeLightFilter->GenerateGEVisualEffect(visualEffectContainer);
+    EXPECT_FALSE(visualEffectContainer->filterVec_.empty());
+}
+
+/**
+ * @tc.name: ParseFilterValuesTest001
+ * @tc.desc: Verify function ParseFilterValues
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSRenderEdgeLightFilterTest, ParseFilterValuesTest001, TestSize.Level1)
+{
+    auto filter = std::make_shared<RSRenderEdgeLightFilterPara>(0, RSUIFilterType::RIPPLE_MASK);
+    EXPECT_FALSE(filter->ParseFilterValues());
+
+    auto alphaRenderProperty =
+        std::make_shared<RSRenderAnimatableProperty<float>>(1.0f, 0, RSRenderPropertyType::PROPERTY_FLOAT);
+    filter->Setter(RSUIFilterType::EDGE_LIGHT_ALPHA, alphaRenderProperty);
+    EXPECT_FALSE(filter->ParseFilterValues());
+
+    auto colorRenderProperty = std::make_shared<RSRenderAnimatableProperty<Vector4f>>(
+        Vector4f(0.5f, 0.5f, 0.5f, 0.0f), 0, RSRenderPropertyType::PROPERTY_VECTOR4F);
+    filter->Setter(RSUIFilterType::EDGE_LIGHT_COLOR, colorRenderProperty);
+    EXPECT_FALSE(filter->ParseFilterValues());
+
+    auto maskRenderProperty = std::make_shared<RSRenderRippleMaskPara>(0);
+    filter->Setter(RSUIFilterType::RIPPLE_MASK, maskRenderProperty);
+    EXPECT_TRUE(filter->ParseFilterValues());
+}
 } // namespace OHOS::Rosen

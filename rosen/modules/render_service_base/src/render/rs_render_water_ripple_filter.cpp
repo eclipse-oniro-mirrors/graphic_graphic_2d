@@ -12,23 +12,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "render/rs_water_ripple_shader_filter.h"
- 
-#include "platform/common/rs_log.h"
+#include "render/rs_render_water_ripple_filter.h"
+
+#include "ge_visual_effect.h"
+#include "ge_visual_effect_container.h"
+#include "include/gpu/GrDirectContext.h"
+#include "src/core/SkOpts.h"
+
 #include "effect/color_matrix.h"
 #include "effect/runtime_shader_builder.h"
-#include "include/gpu/GrDirectContext.h"
+#include "platform/common/rs_log.h"
 #include "platform/common/rs_system_properties.h"
-#include "src/core/SkOpts.h"
 #include "property/rs_properties.h"
- 
+
 namespace OHOS {
 namespace Rosen {
-RSWaterRippleShaderFilter::RSWaterRippleShaderFilter(
-    const float progress, const uint32_t waveCount, const float rippleCenterX, const float rippleCenterY,
-    const uint32_t rippleMode)
+RSWaterRippleShaderFilter::RSWaterRippleShaderFilter(const float progress, const uint32_t waveCount,
+    const float rippleCenterX, const float rippleCenterY, const uint32_t rippleMode)
+    : RSRenderFilterParaBase(RSUIFilterType::WATER_RIPPLE)
 {
-    type_ = ShaderFilterType::WATER_RIPPLE;
     progress_ = progress;
     waveCount_ = waveCount;
     rippleCenterX_ = rippleCenterX;
@@ -40,15 +42,13 @@ RSWaterRippleShaderFilter::RSWaterRippleShaderFilter(
     hash_ = SkOpts::hash(&rippleCenterY_, sizeof(rippleCenterY_), hash_);
     hash_ = SkOpts::hash(&rippleMode_, sizeof(rippleMode_), hash_);
 }
- 
-RSWaterRippleShaderFilter::~RSWaterRippleShaderFilter() = default;
- 
+
 float RSWaterRippleShaderFilter::GetProgress() const
 {
     return progress_;
 }
  
-uint32_t RSWaterRippleShaderFilter::GetwaveCount() const
+uint32_t RSWaterRippleShaderFilter::GetWaveCount() const
 {
     return waveCount_;
 }
@@ -67,7 +67,7 @@ uint32_t RSWaterRippleShaderFilter::GetRippleMode() const
 {
     return rippleMode_;
 }
- 
+
 void RSWaterRippleShaderFilter::GenerateGEVisualEffect(
     std::shared_ptr<Drawing::GEVisualEffectContainer> visualEffectContainer)
 {
