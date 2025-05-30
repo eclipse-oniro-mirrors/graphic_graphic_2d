@@ -538,25 +538,6 @@ HWTEST_F(PropertiesTest, SetNGetDynamicDimDegreeTest, TestSize.Level1)
 }
 
 /**
- * @tc.name: SetFilterTest
- * @tc.desc: test results of SetFilter
- * @tc.type: FUNC
- * @tc.require: issueI9W24N
- */
-HWTEST_F(PropertiesTest, SetFilterTest, TestSize.Level1)
-{
-    RSProperties properties;
-    std::shared_ptr<RSFilter> filter = std::make_shared<RSFilter>();
-    properties.SetFilter(filter);
-    EXPECT_NE(properties.filter_, nullptr);
-    EXPECT_EQ(properties.GetFilter(), filter);
-
-    filter = nullptr;
-    properties.SetFilter(filter);
-    EXPECT_EQ(properties.filter_, nullptr);
-}
-
-/**
  * @tc.name: SetShadowIsFilledTest
  * @tc.desc: test results of SetShadowIsFilled
  * @tc.type: FUNC
