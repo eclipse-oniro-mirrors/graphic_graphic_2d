@@ -315,61 +315,50 @@ HWTEST_F(HgmFrameVoterTest, TestProcessVoteIter, Function | SmallTest | Level1)
     auto voterIter = std::find(hgmFrameVoter.voters_.begin(), hgmFrameVoter.voters_.end(), "VOTER_PACKAGES");
     VoteRange range {OLED_NULL_HZ, OLED_MAX_HZ};
     VoteInfo info;
-    auto result = hgmFrameVoter.ProcessVoteIter(voterIter, info, range, voterGamesEffective);
-    EXPECT_EQ(result, false);
+    EXPECT_EQ(hgmFrameVoter.ProcessVoteIter(voterIter, info, range, voterGamesEffective), false);
 
     voterIter = std::find(hgmFrameVoter.voters_.begin(), hgmFrameVoter.voters_.end(), "VOTER_LTPO");
-    result = hgmFrameVoter.ProcessVoteIter(voterIter, info, range, voterGamesEffective);
-    EXPECT_EQ(result, false);
+    EXPECT_EQ(hgmFrameVoter.ProcessVoteIter(voterIter, info, range, voterGamesEffective), false);
 
     VoteRange voteRange0 = { OLED_60_HZ, OLED_120_HZ };
     hgmFrameVoter.DeliverVote({"VOTER_SCENE", OLED_60_HZ, OLED_120_HZ, 7}, true);
     voterIter = std::find(hgmFrameVoter.voters_.begin(), hgmFrameVoter.voters_.end(), "VOTER_LTPO");
-    result = hgmFrameVoter.ProcessVoteIter(voterIter, info, voteRange0, voterGamesEffective);
-    EXPECT_EQ(result, false);
+    EXPECT_EQ(hgmFrameVoter.ProcessVoteIter(voterIter, info, voteRange0, voterGamesEffective), false);
     
     voteRange0 = { OLED_90_HZ, OLED_90_HZ };
     voterIter = std::find(hgmFrameVoter.voters_.begin(), hgmFrameVoter.voters_.end(), "VOTER_LTPO");
-    result = hgmFrameVoter.ProcessVoteIter(voterIter, info, voteRange0, voterGamesEffective);
-    EXPECT_EQ(result, true);
+    EXPECT_EQ(hgmFrameVoter.ProcessVoteIter(voterIter, info, voteRange0, voterGamesEffective), true);
 
     hgmFrameVoter.DeliverVote({"VOTER_ANCO", OLED_60_HZ, OLED_120_HZ, 1}, true);
     hgmFrameVoter.multiAppStrategy_.backgroundPid_.Put(1);
     voterIter = std::find(hgmFrameVoter.voters_.begin(), hgmFrameVoter.voters_.end(), "VOTER_ANCO");
-    result = hgmFrameVoter.ProcessVoteIter(voterIter, info, range, voterGamesEffective);
-    EXPECT_EQ(result, false);
+    EXPECT_EQ(hgmFrameVoter.ProcessVoteIter(voterIter, info, range, voterGamesEffective), false);
     
     voteRange0 = { OLED_60_HZ, OLED_120_HZ };
     hgmFrameVoter.DeliverVote({"VOTER_ANCO", OLED_60_HZ, OLED_120_HZ, 2}, true);
     voterIter = std::find(hgmFrameVoter.voters_.begin(), hgmFrameVoter.voters_.end(), "VOTER_ANCO");
-    result = hgmFrameVoter.ProcessVoteIter(voterIter, info, voteRange0, voterGamesEffective);
-    EXPECT_EQ(result, false);
+    EXPECT_EQ(hgmFrameVoter.ProcessVoteIter(voterIter, info, voteRange0, voterGamesEffective), false);
 
     voteRange0 = { OLED_90_HZ, OLED_90_HZ };
     voterIter = std::find(hgmFrameVoter.voters_.begin(), hgmFrameVoter.voters_.end(), "VOTER_ANCO");
-    result = hgmFrameVoter.ProcessVoteIter(voterIter, info, voteRange0, voterGamesEffective);
-    EXPECT_EQ(result, true);
+    EXPECT_EQ(hgmFrameVoter.ProcessVoteIter(voterIter, info, voteRange0, voterGamesEffective), true);
 
     hgmFrameVoter.DeliverVote({"VOTER_GAMES", OLED_60_HZ, OLED_120_HZ, 3}, true);
     voterIter = std::find(hgmFrameVoter.voters_.begin(), hgmFrameVoter.voters_.end(), "VOTER_GAMES");
-    result = hgmFrameVoter.ProcessVoteIter(voterIter, info, voteRange0, voterGamesEffective);
-    EXPECT_EQ(result, false);
+    EXPECT_EQ(hgmFrameVoter.ProcessVoteIter(voterIter, info, voteRange0, voterGamesEffective), false);
 
     hgmFrameVoter.multiAppStrategy_.foregroundPidAppMap_[3] = { 1, "testGame" };
     voterIter = std::find(hgmFrameVoter.voters_.begin(), hgmFrameVoter.voters_.end(), "VOTER_GAMES");
-    result = hgmFrameVoter.ProcessVoteIter(voterIter, info, voteRange0, voterGamesEffective);
-    EXPECT_EQ(result, true);
+    EXPECT_EQ(hgmFrameVoter.ProcessVoteIter(voterIter, info, voteRange0, voterGamesEffective), true);
     EXPECT_EQ(voterGamesEffective, true);
 
     hgmFrameVoter.gameScenes_.insert("sceneName");
     voterIter = std::find(hgmFrameVoter.voters_.begin(), hgmFrameVoter.voters_.end(), "VOTER_GAMES");
-    result = hgmFrameVoter.ProcessVoteIter(voterIter, info, voteRange0, voterGamesEffective);
-    EXPECT_EQ(result, false);
+    EXPECT_EQ(hgmFrameVoter.ProcessVoteIter(voterIter, info, voteRange0, voterGamesEffective), false);
 
     hgmFrameVoter.voters_.insert(hgmFrameVoter.voters_.begin(), "NULL");
     voterIter = std::find(hgmFrameVoter.voters_.begin(), hgmFrameVoter.voters_.end(), "NULL");
-    result = hgmFrameVoter.ProcessVoteIter(voterIter, info, voteRange0, voterGamesEffective);
-    EXPECT_EQ(result, false);
+    EXPECT_EQ(hgmFrameVoter.ProcessVoteIter(voterIter, info, voteRange0, voterGamesEffective), false);
 }
 
 /**
