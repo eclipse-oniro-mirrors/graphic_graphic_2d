@@ -215,6 +215,15 @@
       *HgmVSyncGeneratorController::HgmVSyncGeneratorController*;
       *HgmVSyncGeneratorController::~HgmVSyncGeneratorController*;
 
+      *HgmFrameVoter::ProcessVoteLog*;
+      *HgmFrameVoter::MergeLtpo2IdleVote*;
+      *HgmFrameVoter::CheckAncoVoter*;
+      *HgmFrameVoter::ProcessVoteIter*;
+      *HgmFrameVoter::ChangePriority*;
+      *HgmFrameVoter::UpdateVoteRule*;
+
+      *HgmVoter::MergeRangeByPriority*;
+
       *RSFrameRateVote::CancelVoteRate*;
       *RSFrameRateVote::NotifyRefreshRateEvent*;
       *RSFrameRateVote::RSFrameRateVote*;
