@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+#include "text_flip_effect.h"
+
 #include <algorithm>
 #include <tuple>
 
@@ -36,7 +38,7 @@ bool TextFlipEffect::CheckInputParams(const std::unordered_map<TextEffectAttribu
 {
     for (const auto& [key, value] : config) {
         auto iter = std::find_if(supportAttributes_.begin(), supportAttributes_.end(),
-            [&key](const FlipAttributeFunction& func) { return func.attribute == key; });
+            [key = key](const FlipAttributeFunction& func) { return func.attribute == key; });
         if (iter == supportAttributes_.end()) {
             continue;
         }
@@ -83,7 +85,7 @@ int TextFlipEffect::UpdateEffectConfig(const std::unordered_map<TextEffectAttrib
 
     for (const auto& [key, value] : config) {
         auto iter = std::find_if(supportAttributes_.begin(), supportAttributes_.end(),
-            [&key](const FlipAttributeFunction& func) { return func.attribute == key; });
+            [key = key](const FlipAttributeFunction& func) { return func.attribute == key; });
         if (iter == supportAttributes_.end()) {
             continue;
         }
@@ -103,11 +105,11 @@ int TextFlipEffect::AppendTypography(const std::vector<TypographyConfig>& typogr
     }
     
     typographyConfig_ = typographyConfigs[0];
+    typographyConfig_.typography->SetTextEffectAssociation(true);
     return TEXT_EFFECT_SUCCESS;
 }
 
-int TextFlipEffect::UpdateTypography(std::shared_ptr<TypographyConfig> target,
-    const std::vector<TypographyConfig>& typographyConfigs)
+int TextFlipEffect::UpdateTypography(TypographyConfig target, const std::vector<TypographyConfig>& typographyConfigs) 
 {
     if (typographyConfig_.typography != target.typography || typographyConfigs.empty()) {
         return TEXT_EFFECT_INVALID_INPUT;
@@ -123,6 +125,7 @@ void TextFlipEffect::RemoveTypography(const std::vector<TypographyConfig>& typog
     }
     typographyConfig_.typography = nullptr; 
     typographyConfig_.rawTextRange = {0, 0};
+    typographyConfig_.typography->SetTextEffectAssociation(false);
 }
 
 void TextFlipEffect::StartEffect(Drawing::Canvas* canvas, double x, double y)
@@ -130,6 +133,7 @@ void TextFlipEffect::StartEffect(Drawing::Canvas* canvas, double x, double y)
     if (typographyConfig_.typography == nullptr) {
         return;
     }
+    typographyConfig_.typography->SetTextEffectState(true);
     typographyConfig_.typography->Paint(canvas, x, y);
     std::vector<TextBlobRecordInfo> textBlobRecordInfos = typographyConfig_.typography->GetTextBlobRecordInfo();
     lastTextBlobRecordInfos_.swap(textBlobRecordInfos);
@@ -140,7 +144,9 @@ void TextFlipEffect::StopEffect(Drawing::Canvas* canvas, double x, double y)
     if (typographyConfig_.typography == nullptr) {
         return;
     }
+    typographyConfig_.typography->SetTextEffectState(false);
     typographyConfig_.typography->Paint(canvas, x, y);
+    lastTextBlobRecordInfos_.swap({});
 }
 
 REGISTER_TEXT_EFFECT_FACTORY_IMPL(Flip, TextEffectStrategy::FLIP);

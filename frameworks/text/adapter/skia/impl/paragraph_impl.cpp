@@ -501,15 +501,18 @@ std::vector<TextBlobRecordInfo> ParagraphImpl::GetTextBlobRecordInfo() const
 {
     RecordDifferentPthreadCall(__FUNCTION__);
     if (paragraph_ == nullptr) {
-        return;
+        return {};
     }
     std::vector<TextBlobRecordInfo> textBlobRecordInfos; 
     std::vector<skt::TextBlobRecordInfo> infos = paragraph_->getTextBlobRecordInfo();
     for (auto& info : infos) {
         TextBlobRecordInfo recordInfo;
-        recordInfo.fBlob = info.fBlob;
-        recordInfo.fOffset = info.fOffset;
-        recordInfo.fPaint = info.fPaint;
+        recordInfo.blob = info.fBlob;
+        recordInfo.offset = info.fOffset;
+        int index = std::get<int>(info.fPaint);
+        if (index>0 && index < static_cast<int>(paints_.size())) {
+            recordInfo.color = paints_[index].color;
+        }
         textBlobRecordInfos.emplace_back(recordInfo);
     }
     return textBlobRecordInfos;

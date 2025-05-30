@@ -28,17 +28,11 @@ struct TextFlipEffectCharConfig {
     std::vector<std::pair<float, int>> scales;
     std::vector<std::pair<float, int>> opacity;
     std::vector<std::pair<int, int>> blur;
-}
+};
 
 enum class TextEffectFlipDirection {
     UP,
     DOWN,
-};
-
-struct FlipAttributeFunction {
-    TextEffectAttribute attribute{TextEffectAttribute::FLIP_DIRECTION};
-    std::function<bool(TextFlipEffect*, const std::string&)> checkFunc{nullptr};
-    std::function<void(TextFlipEffect*, const std::string&)> setFunc{nullptr};
 };
 
 class TextFlipEffect : public TextEffect {
@@ -49,8 +43,7 @@ public:
     int UpdateEffectConfig(const std::unordered_map<TextEffectAttribute, std::string>& config) override;
     int AppendTypography(const std::vector<TypographyConfig>& typographyConfigs) override;
     void RemoveTypography(const std::vector<TypographyConfig>& typographyConfigs) override;
-    int UpdateTypography(std::shared_ptr<TypographyConfig> target,
-        const std::vector<TypographyConfig>& typographyConfigs) override;
+    int UpdateTypography(TypographyConfig target, const std::vector<TypographyConfig>& typographyConfigs) override;
     void StartEffect(Drawing::Canvas* canvas, double x, double y) override;
     void StopEffect(Drawing::Canvas* canvas, double x, double y) override;
 
@@ -67,11 +60,16 @@ private:
     bool blurEnable_{false};
     TextFlipEffectCharConfig inChar_;
     TextFlipEffectCharConfig outChar_;
-    std::vector<TextBlobRecordInfo> lastBlobRecordInfos_;
+    std::vector<TextBlobRecordInfo> lastTextBlobRecordInfos_;
 
+    struct FlipAttributeFunction {
+        TextEffectAttribute attribute{TextEffectAttribute::FLIP_DIRECTION};
+        std::function<bool(TextFlipEffect*, const std::string&)> checkFunc{nullptr};
+        std::function<void(TextFlipEffect*, const std::string&)> setFunc{nullptr};
+    };
     const std::vector<FlipAttributeFunction> supportAttributes_ = { 
-        TextEffectAttribute::FLIP_DIRECTION, CheckDirection, SetDirection,
-        TextEffectAttribute::BLUR_ENABLE, SetBlurEnable, SetBlurEnable,
+        {TextEffectAttribute::FLIP_DIRECTION, &TextFlipEffect::CheckDirection, &TextFlipEffect::SetDirection},
+        {TextEffectAttribute::BLUR_ENABLE, &TextFlipEffect::SetBlurEnable, &TextFlipEffect::SetBlurEnable},
     };
 };
 } // namespace OHOS::Rosen

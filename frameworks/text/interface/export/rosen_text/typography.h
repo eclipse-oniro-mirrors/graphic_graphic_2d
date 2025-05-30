@@ -23,13 +23,13 @@
 #include "common/rs_macros.h"
 #include "draw/canvas.h"
 #include "include/core/SkCanvas.h" // SKIA
+#include "symbol_animation_config.h"
 #include "text/font_metrics.h"
-
+#include "text/text_blob.h"
 #include "text_style.h"
 #include "text_line_base.h"
 #include "typography_style.h"
 #include "typography_types.h"
-#include "symbol_animation_config.h"
 #include "utils/rect.h"
 
 namespace OHOS {
@@ -114,9 +114,9 @@ struct LineMetrics {
 };
 
 struct TextBlobRecordInfo {
-    std::shared_ptr<RSTextBlob> blob{nullptr};
+    std::shared_ptr<Drawing::TextBlob> blob{nullptr};
     SkPoint offset{0.0f, 0.0f};
-    ParagraphPainter::SkPaintOrID paintId{0};
+    Drawing::Color color{Drawing::Color::COLOR_BLACK};
 };
 
 class Typography {
@@ -177,8 +177,8 @@ public:
     virtual void UpdateAllTextStyles(const TextStyle& textStyleTemplate) = 0;
     virtual void SetTextEffectState(bool state) = 0;
     virtual bool HasEnabledTextEffect() const = 0;
-    virtual void SetTextEffectStrategy(TextEffectStrategy strategy) = 0;
-    virtual TextEffectStrategy GetTextEffectStrategy() const = 0;
+    virtual void SetTextEffectAssociation(bool association) = 0;
+    virtual bool GetTextEffectAssociation() const = 0;
     virtual std::vector<TextBlobRecordInfo> GetTextBlobRecordInfo() const = 0;
 };
 } // namespace Rosen

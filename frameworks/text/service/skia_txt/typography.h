@@ -19,7 +19,6 @@
 #include <bitset>
 #include <shared_mutex>
 #include "rosen_text/typography.h"
-#include "text_effect.h"
 #include "txt/paragraph.h"
 #include "rosen_text/typography_style.h"
 
@@ -86,13 +85,13 @@ public:
     void SetTextEffectState(bool state) override;
     bool HasEnabledTextEffect() const override;
     std::vector<TextBlobRecordInfo> GetTextBlobRecordInfo() const override;
-    void SetTextEffectStrategy(TextEffectStrategy strategy) override { textEffectStrategy_ = strategy; }
-    TextEffectStrategy GetTextEffectStrategy() const override { return textEffectStrategy_; }
+    void SetTextEffectAssociation(bool association) override { textEffectAssociation_ = association; }
+    bool GetTextEffectAssociation() const override { return textEffectAssociation_; }
 private:
     std::unique_ptr<SPText::Paragraph> paragraph_ = nullptr;
     std::vector<TextStyle> lineMetricsStyles_;
     std::optional<std::vector<LineMetrics>> lineMetrics_;
-    TextEffectStrategy textEffectStrategy_{TextEffectStrategy::STRATEGY_BUTT};
+    bool textEffectAssociation_{false};
     mutable std::shared_mutex mutex_;
 };
 } // namespace AdapterTxt

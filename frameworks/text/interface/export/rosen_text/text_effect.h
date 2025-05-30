@@ -56,8 +56,7 @@ public:
     virtual int UpdateEffectConfig(const std::unordered_map<TextEffectAttribute, std::string>& config) = 0;
     virtual int AppendTypography(const std::vector<TypographyConfig>& typographyConfigs) = 0;
     virtual void RemoveTypography(const std::vector<TypographyConfig>& typographyConfigs) = 0;
-    virtual int UpdateTypography(std::shared_ptr<TypographyConfig> typography,
-        const std::vector<TypographyConfig>& typographyConfigs) = 0;
+    virtual int UpdateTypography(TypographyConfig target, const std::vector<TypographyConfig>& typographyConfigs) = 0;
     virtual void StartEffect(Drawing::Canvas* canvas, double x, double y) = 0;
     virtual void StopEffect(Drawing::Canvas* canvas, double x, double y) = 0;
 
