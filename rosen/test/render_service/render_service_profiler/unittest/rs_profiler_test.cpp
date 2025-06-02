@@ -30,6 +30,7 @@ using namespace testing::ext;
 namespace OHOS::Rosen {
 class RSProfilerTest : public testing::Test {
 public:
+public:
     static void SetUpTestCase() {};
     static void TearDownTestCase() {};
     void SetUp() override
@@ -242,7 +243,11 @@ HWTEST_F(RSProfilerTest, RSTreeTest, testing::ext::TestSize.Level1)
 HWTEST_F(RSProfilerTest, SecureScreen, testing::ext::TestSize.Level1)
 {
     RSProfiler::testing_ = true;
+
+    sptr<RSRenderService> renderService = GetAndInitRenderService();
+
     EXPECT_NO_THROW({
+        RSProfiler::Init(renderService);
         EXPECT_FALSE(RSProfiler::IsSecureScreen());
     });
 }

@@ -275,7 +275,7 @@ void TestTreeBuilder::CreateNode06(RSContext& context, std::vector<std::shared_p
 
     auto drawCmds =
         std::make_shared<Drawing::DrawCmdList>(width13, height13, Drawing::DrawCmdList::UnmarshalMode::DEFERRED);
-    drawCmds->AddDrawOp(drawImageRectOpItem);
+    // drawCmds->AddDrawOp(drawImageRectOpItem);
     RSCanvasNodeCommandHelper::UpdateRecording(
         context, currentId, drawCmds, static_cast<uint16_t>(RSModifierType::CONTENT_STYLE));
 
@@ -313,15 +313,15 @@ void TestTreeBuilder::CreateNode07(RSContext& context, std::vector<std::shared_p
     auto image = GenerateRandomImage(width13, height13);
 
     auto drawCmds =
-        std::make_shared<Drawing::DrawCmdList>(width13, height13, Drawing::DrawCmdList::UnmarshalMode::IMMEDIATE);
+        std::make_shared<Drawing::DrawCmdList>(width13, height13, Drawing::DrawCmdList::UnmarshalMode::DEFERRED);
     auto imageHandle = Drawing::CmdListHelper::AddImageToCmdList(*drawCmds, image);
     auto paintHandle = Drawing::PaintHandle {
         .style = Drawing::Paint::PaintStyle::PAINT_FILL,
         .color = { Drawing::Color::COLOR_WHITE },
     };
 
-    drawCmds->AddDrawOp<Drawing::DrawImageRectOpItem::ConstructorHandle>(
-        imageHandle, src, dst, samplingOptions, constraint, paintHandle, isForeground);
+    // drawCmds->AddDrawOp<Drawing::DrawImageRectOpItem::ConstructorHandle>(
+    //     imageHandle, src, dst, samplingOptions, constraint, paintHandle, isForeground);
     RSCanvasNodeCommandHelper::UpdateRecording(
         context, currentId, drawCmds, static_cast<uint16_t>(RSModifierType::BACKGROUND_STYLE));
     BaseNodeCommandHelper::AddChild(context, currentId - four, currentId, zero);
@@ -367,17 +367,18 @@ void TestTreeBuilder::CreateNode08(RSContext& context, std::vector<std::shared_p
 
     auto drawCmds =
         std::make_shared<Drawing::DrawCmdList>(width13, height13, Drawing::DrawCmdList::UnmarshalMode::DEFERRED);
+    const float r = 0.5f;
     std::vector<Drawing::Point> radius = {
-        { 0.f, 0.f },
-        { 0.f, 0.f },
-        { 0.f, 0.f },
-        { 0.f, 0.f },
+        { r, r },
+        { r, r },
+        { r, r },
+        { r, r },
     };
     auto clipAdaptiveRoundRectOpItem = Drawing::ClipAdaptiveRoundRectOpItem(radius);
     auto clipAdaptiveRoundRectOpItemPtr =
         std::make_shared<Drawing::ClipAdaptiveRoundRectOpItem>(clipAdaptiveRoundRectOpItem);
     drawCmds->AddDrawOp(clipAdaptiveRoundRectOpItemPtr);
-    drawCmds->AddDrawOp(drawImageRectOpItem);
+    // drawCmds->AddDrawOp(drawImageRectOpItem);
     RSCanvasNodeCommandHelper::UpdateRecording(
         context, currentId, drawCmds, static_cast<uint16_t>(RSModifierType::CONTENT_STYLE));
 
