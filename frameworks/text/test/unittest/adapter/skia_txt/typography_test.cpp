@@ -236,6 +236,18 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyTest006, TestSize.Level
     vectorTextRect = typography->GetTextRectsOfPlaceholders();
     // 1.0, 2.0 for unit test
     typography->GetGlyphIndexByCoordinate(1.0, 2.0);
+
+    std::unique_ptr<SPText::Paragraph> paragraphTemp = nullptr;
+    typography->paragraph_.swap(paragraphTemp);
+    EXPECT_EQ(typography->GetTextBlobRecordInfo().size(), 0);
+    typography->SetTextEffectState(true);
+    EXPECT_FALSE(typography->HasEnabledTextEffect());
+    typography->paragraph_.swap(paragraphTemp);
+    EXPECT_NE(typography->GetTextBlobRecordInfo().size(), 0);
+    typography->SetTextEffectState(true);
+    EXPECT_TRUE(typography->HasEnabledTextEffect());
+    typography->SetTextEffectAssociation(true);
+    EXPECT_TRUE(typography->GetTextEffectAssociation());
 }
 
 /*

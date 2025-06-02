@@ -80,4 +80,7 @@ HWTEST_F(TextEffectFactoryCreatorTest, TextEffectFactoryCreatorTest002, TestSize
     REGISTER_TEXT_EFFECT_FACTORY_IMPL(Test, TextEffectStrategy::STRATEGY_BUTT);
     effect = creator.CreateTextEffect(TextEffectStrategy::STRATEGY_BUTT);
     EXPECT_NE(effect, nullptr);
+    creator.UnregisterFactory(TextEffectStrategy::STRATEGY_BUTT);
+    effect = creator.CreateTextEffect(TextEffectStrategy::STRATEGY_BUTT);
+    EXPECT_EQ(effect, nullptr);
 }

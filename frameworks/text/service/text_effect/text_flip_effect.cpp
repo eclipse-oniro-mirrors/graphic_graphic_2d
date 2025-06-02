@@ -119,7 +119,7 @@ int TextFlipEffect::UpdateTypography(std::vector<std::pair<TypographyConfig, Typ
 
 void TextFlipEffect::RemoveTypography(const std::vector<TypographyConfig>& typographyConfigs)
 {
-    if (typographyConfig_.typography != typographyConfigs[0].typography) {
+    if (typographyConfigs.empty() || typographyConfig_.typography != typographyConfigs[0].typography) {
         return;
     }
     typographyConfig_.typography = nullptr; 
