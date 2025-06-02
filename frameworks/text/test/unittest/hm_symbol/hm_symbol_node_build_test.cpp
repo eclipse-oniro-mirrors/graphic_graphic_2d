@@ -507,10 +507,11 @@ HWTEST_F(OHHmSymbolNodeBuildTest, SetCommonSubType002, TestSize.Level1)
  */
 HWTEST_F(OHHmSymbolNodeBuildTest, AddHierarchicalAnimation001, TestSize.Level1)
 {
-    std::pair<float, float> offset = {100, 100}; // 100, 100 is the offset
+    std::pair<float, float> offset = {100.0f, 100.0f}; // 100.0f, 100.0f is the offset
     RSPath path;
-    path.AddCircle(100, 100, 50); // 100 x, 100 y, 50 radius
-    path.AddCircle(100, 100, 30, Drawing::PathDirection::CCW_DIRECTION); // 100 x, 100 y, 30 radius
+    path.AddCircle(100.0f, 100.0f, 50.0f); // 100.0f x, 100.0f y, 50.0f radius
+    // 100.0f x, 100.0f y, 30.0f radius
+    path.AddCircle(100.0f, 100.0f, 30.0f, Drawing::PathDirection::CCW_DIRECTION);
     RSHMSymbolData symbol;
     symbol.path_ = path;
     symbol.symbolInfo_.layers = layers_;
@@ -540,12 +541,12 @@ HWTEST_F(OHHmSymbolNodeBuildTest, AddHierarchicalAnimation001, TestSize.Level1)
  */
 HWTEST_F(OHHmSymbolNodeBuildTest, SetSymbolNodeColors001, TestSize.Level1)
 {
-    std::pair<float, float> offset = {100, 100}; // 100, 100 is the offset
+    std::pair<float, float> offset = {100.0f, 100.0f}; // 100.0f, 100.0f is the offset
     RSHMSymbolData symbol;
     RSEffectStrategy effectMode = RSEffectStrategy::DISABLE;
     SymbolNodeBuild symbolNodeBuild = SymbolNodeBuild(animationSettingOneMask_, symbol, effectMode, offset);
     RSPath path;
-    path.AddCircle(100, 100, 50); // 100 x, 100 y, 50 radius
+    path.AddCircle(100.0f, 100.0f, 50.0f); // 100.0f x, 100.0f y, 50.0f radius
     TextEngine::NodeLayerInfo layerInfo;
     layerInfo.path = path;
     TextEngine::SymbolNode symbolNode;

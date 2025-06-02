@@ -205,9 +205,9 @@ void SymbolNodeBuild::AddWholeAnimation(const RSHMSymbolData &symbolData, const 
 void SymbolNodeBuild::SetSymbolNodeColors(const TextEngine::SymbolNode& symbolNode,
     TextEngine::SymbolNode& outSymbolNode)
 {
-    bool isNotNeede = symbolNode.pathsInfo.empty() || outSymbolNode.pathsInfo.empty() ||
-        ROSEN_GNE(outSymbolNode.pathsInfo[0].color.a, 0.0f);
-    if (isNotNeede) {
+    bool isNoNeed = symbolNode.pathsInfo.empty() || outSymbolNode.pathsInfo.empty() ||
+        ROSEN_GNE(outSymbolNode.pathsInfo[0].color.a, 0.0f); // If color.a > 0.0 is no need to set
+    if (isNoNeed) {
         return;
     }
 

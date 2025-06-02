@@ -38,7 +38,7 @@ void RSSymbolAnimationTest::InitSymbolConfigData()
     symbolAnimationConfig_->effectStrategy = Drawing::DrawingEffectStrategy::DISABLE;
     symbolAnimationConfig_->slope = -1; // -1: the Angle of the slash
     Drawing::Path path;
-    path.AddCircle(100, 100, 40); // 100 x, 100 y, 40 radius
+    path.AddCircle(100.0f, 100.0f, 40.0f); // 100.0f x, 100.0f y, 40.0f radius
     TextEngine::NodeLayerInfo info;
     info.path = path;
     Vector4f boundary = {0.0f, 0.0f, 40.0f, 40.0f}; // 0.0f 0.0f: offset, 40.0f width 40.0f height
@@ -1725,7 +1725,8 @@ HWTEST_F(RSSymbolAnimationTest, SetDisableAnimation002, TestSize.Level1) {
     result = symbolAnimation.SetDisableAnimation(symbolAnimationConfig_, parameters);
     EXPECT_TRUE(result);
 
-    uint32_t n = symbolAnimationConfig_->symbolNodes.size() - 1;
+    ASSERT_TRUE(symbolAnimationConfig_->symbolNodes.size() > 1);
+    size_t n = symbolAnimationConfig_->symbolNodes.size() - 1;
     symbolAnimationConfig_->symbolNodes[n].animationIndex = 1; // 1: second layer effect
     result = symbolAnimation.SetDisableAnimation(symbolAnimationConfig_, parameters);
     EXPECT_FALSE(result);
