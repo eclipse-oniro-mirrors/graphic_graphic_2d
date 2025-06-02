@@ -374,6 +374,45 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateHwcNodeByTransform_004, TestSize.Level2)
 }
 
 /**
+ * @tc.name: UpdateHwcNodeByTransform_005
+ * @tc.desc: UpdateHwcNodeByTransform Test, buffer of RSSurfaceHandler is not nullptr, and
+ * consumer_ of of RSSurfaceHandler is not nullptr, and GetScalingMode is GSERROR_INVALID_ARGUMENTS
+ * scalingMode == ScalingMode::SCALING_MODE_SCALE_FIT, expect LayerScaleFit
+ * Because the solidLayer solution takes effect, API 18 is used for calculation.
+ * @tc.type:FUNC
+ * @tc.require: issuesIBT79X
+ */
+HWTEST_F(RSUniHwcVisitorTest, UpdateHwcNodeByTransform_005, TestSize.Level2)
+{
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    ASSERT_NE(rsUniRenderVisitor, nullptr);
+    ASSERT_NE(rsUniRenderVisitor->hwcVisitor_, nullptr);
+
+    auto node = RSTestUtil::CreateSurfaceNodeWithBuffer();
+    ASSERT_NE(node, nullptr);
+    ASSERT_FALSE(!node->GetRSSurfaceHandler() || !node->GetRSSurfaceHandler()->GetBuffer());
+    ASSERT_NE(node->GetRSSurfaceHandler()->GetConsumer(), nullptr);
+
+    auto nodeParams = static_cast<RSSurfaceRenderParams*>(node->GetStagingRenderParams().get());
+    ASSERT_NE(nodeParams, nullptr);
+
+    ScalingMode scalingMode = ScalingMode::SCALING_MODE_SCALE_FIT;
+    auto& buffer = node->surfaceHandler_->buffer_.buffer;
+    auto surface = static_cast<ConsumerSurface*>(node->surfaceHandler_->consumer_.refs_);
+    ASSERT_NE(surface, nullptr);
+
+    surface->consumer_ = nullptr;
+    ASSERT_EQ(surface->GetScalingMode(buffer->GetSeqNum(), scalingMode), GSERROR_INVALID_ARGUMENTS);
+
+    auto stagingSurfaceParams = static_cast<RSSurfaceRenderParams *>(node->GetStagingRenderParams().get());
+    ASSERT_NE(stagingSurfaceParams, nullptr);
+    stagingSurfaceParams->SetIsHwcEnabledBySolidLayer(true);
+    Drawing::Matrix matrix;
+    matrix.SetMatrix(1, 2, 3, 4, 5, 6, 7, 8, 9);
+    rsUniRenderVisitor->hwcVisitor_->UpdateHwcNodeByTransform(*node, matrix);
+}
+
+/**
  * @tc.name: UpdateHwcNodeEnableByBufferSize
  * @tc.desc: Test UpdateHwcNodeEnableByBufferSize with rosen-web node / non-rosen-web node.
  * @tc.type: FUNC
@@ -764,6 +803,8 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateHardwareStateByBoundNEDstRectInApps002, Test
     auto surfaceNode2 = std::make_shared<RSSurfaceRenderNode>(surfaceConfig);
     ASSERT_NE(surfaceNode2, nullptr);
     surfaceNode2->GetRenderProperties().GetBoundsGeometry()->absRect_ = {0, 0, 200, 200};
+    surfaceNode2->SetAncoFlags(false);
+    surfaceNode2->SetAncoForceDoDirect(false);
     // reverse push
     hwcNodes.push_back(std::weak_ptr<RSSurfaceRenderNode>(surfaceNode2));
     hwcNodes.push_back(std::weak_ptr<RSSurfaceRenderNode>(surfaceNode));
@@ -801,6 +842,7 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateHardwareStateByBoundNEDstRectInApps003, Test
 
     // test Anco node
     surfaceNode->SetAncoFlags(true);
+    surfaceNode->SetAncoForceDoDirect(true);
     hwcNodes.push_back(std::weak_ptr<RSSurfaceRenderNode>(surfaceNode));
     rsUniRenderVisitor->hwcVisitor_->UpdateHardwareStateByBoundNEDstRectInApps(hwcNodes, aboveBounds);
     ASSERT_TRUE(aboveBounds.empty());
