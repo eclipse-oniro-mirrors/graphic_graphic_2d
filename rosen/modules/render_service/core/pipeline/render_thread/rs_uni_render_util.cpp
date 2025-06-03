@@ -81,7 +81,6 @@ constexpr uint32_t PERF_LEVEL_2 = 2;
 constexpr int32_t PERF_LEVEL_1_REQUESTED_CODE = 10013;
 constexpr int32_t PERF_LEVEL_2_REQUESTED_CODE = 10014;
 constexpr int32_t PERF_LEVEL_3_REQUESTED_CODE = 10015;
-constexpr int MAX_DIRTY_ALIGNMENT_SIZE = 128;
 void PerfRequest(int32_t perfRequestCode, bool onOffTag)
 {
 #ifdef SOC_PERF_ENABLE
