@@ -30,7 +30,6 @@ using namespace testing::ext;
 namespace OHOS::Rosen {
 class RSProfilerTest : public testing::Test {
 public:
-public:
     static void SetUpTestCase() {};
     static void TearDownTestCase() {};
     void SetUp() override
