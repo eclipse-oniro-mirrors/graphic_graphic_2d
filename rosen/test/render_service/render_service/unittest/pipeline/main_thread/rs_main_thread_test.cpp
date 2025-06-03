@@ -1143,20 +1143,6 @@ HWTEST_F(RSMainThreadTest, DoParallelComposition, TestSize.Level1)
 }
 
 /**
- * @tc.name: SetIdleTimerExpiredFlag
- * @tc.desc: SetIdleTimerExpiredFlag test
- * @tc.type: FUNC
- * @tc.require: issueI7HDVG
- */
-HWTEST_F(RSMainThreadTest, SetIdleTimerExpiredFlag, TestSize.Level1)
-{
-    auto mainThread = RSMainThread::Instance();
-    ASSERT_NE(mainThread, nullptr);
-    mainThread->SetIdleTimerExpiredFlag(true);
-    ASSERT_TRUE(mainThread->idleTimerExpiredFlag_);
-}
-
-/**
  * @tc.name: SetFocusLeashWindowId
  * @tc.desc: Test RSMainThreadTest.SetFocusLeashWindowId
  * @tc.type: FUNC
@@ -4852,7 +4838,7 @@ HWTEST_F(RSMainThreadTest, ProcessHgmFrameRate, TestSize.Level2)
 
     uint64_t timestamp = 0;
     FrameRateLinkerId id = 0;
-    mainThread->rsFrameRateLinker_ = std::make_shared<RSRenderFrameRateLinker>(id);
+    mainThread->hgmContext_.rsFrameRateLinker_ = std::make_shared<RSRenderFrameRateLinker>(id);
     mainThread->ProcessHgmFrameRate(timestamp);
 
     auto vsyncGenerator = CreateVSyncGenerator();

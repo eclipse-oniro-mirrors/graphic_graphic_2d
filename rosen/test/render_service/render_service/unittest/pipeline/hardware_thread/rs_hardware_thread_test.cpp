@@ -392,10 +392,10 @@ HWTEST_F(RSHardwareThreadTest, ExecuteSwitchRefreshRate, TestSize.Level1)
     auto frameRateMgr = hgmCore.GetFrameRateMgr();
     ASSERT_NE(frameRateMgr, nullptr);
     hgmCore.hgmFrameRateMgr_ = nullptr;
-    hardwareThread.ExecuteSwitchRefreshRate(output, 0);
+    hardwareThread.hgmContext_.ExecuteSwitchRefreshRate(output, 0);
 
     hgmCore.hgmFrameRateMgr_ = frameRateMgr;
-    hardwareThread.ExecuteSwitchRefreshRate(output, 0);
+    hardwareThread.hgmContext_.ExecuteSwitchRefreshRate(output, 0);
 
     //  设置屏幕尺寸为1080p，物理屏尺寸包含1080p即可
     ScreenSize sSize = {720, 1080, 685, 1218};
@@ -403,7 +403,7 @@ HWTEST_F(RSHardwareThreadTest, ExecuteSwitchRefreshRate, TestSize.Level1)
     auto screen = hgmCore.GetScreen(screenId_);
     screen->SetSelfOwnedScreenFlag(true);
     hgmCore.SetScreenRefreshRateImme(1);
-    hardwareThread.ExecuteSwitchRefreshRate(output, 0);
+    hardwareThread.hgmContext_.ExecuteSwitchRefreshRate(output, 0);
 
     int32_t status = hgmCore.SetScreenRefreshRate(0, screenId_, 0);
     ASSERT_TRUE(status < EXEC_SUCCESS);
@@ -424,30 +424,30 @@ HWTEST_F(RSHardwareThreadTest, PerformSetActiveMode, TestSize.Level1)
     auto screenManager = CreateOrGetScreenManager();
     ASSERT_NE(screenManager, nullptr);
     OHOS::Rosen::impl::RSScreenManager::instance_ = nullptr;
-    hardwareThread.PerformSetActiveMode(output, 0, 0);
+    hardwareThread.hgmContext_.PerformSetActiveMode(output, 0, 0);
 
     OHOS::Rosen::impl::RSScreenManager::instance_ = screenManager;
-    hardwareThread.hgmRefreshRates_ = HgmRefreshRates::SET_RATE_120;
-    hardwareThread.PerformSetActiveMode(output, 0, 0);
+    hardwareThread.hgmContext_.hgmRefreshRates_ = HgmRefreshRates::SET_RATE_120;
+    hardwareThread.hgmContext_.PerformSetActiveMode(output, 0, 0);
 
     auto &hgmCore = HgmCore::Instance();
     hgmCore.modeListToApply_ = std::make_unique<std::unordered_map<ScreenId, int32_t>>();
     int32_t rate = 3;
     hgmCore.modeListToApply_->insert({screenId_, rate});
-    hardwareThread.PerformSetActiveMode(output, 0, 0);
+    hardwareThread.hgmContext_.PerformSetActiveMode(output, 0, 0);
 
     uint64_t timestamp = 0;
     auto supportedModes = screenManager->GetScreenSupportedModes(screenId_);
     ASSERT_EQ(supportedModes.size(), 0);
     HgmCore::Instance().hgmFrameRateMgr_->isAdaptive_ = true;
     HgmCore::Instance().hgmFrameRateMgr_->isGameNodeOnTree_ = true;
-    hardwareThread.PerformSetActiveMode(output, 0, 0);
+    hardwareThread.hgmContext_.PerformSetActiveMode(output, 0, 0);
     HgmCore::Instance().hgmFrameRateMgr_ = nullptr;
-    hardwareThread.PerformSetActiveMode(output, 0, 0);
+    hardwareThread.hgmContext_.PerformSetActiveMode(output, 0, 0);
     HgmCore::Instance().vBlankIdleCorrectSwitch_.store(true);
-    hardwareThread.vblankIdleCorrector_.isVBlankIdle_ = true;
+    hardwareThread.hgmContext_.vblankIdleCorrector_.isVBlankIdle_ = true;
     hardwareThread.OnScreenVBlankIdleCallback(screenId_, timestamp);
-    hardwareThread.PerformSetActiveMode(output, 0, 0);
+    hardwareThread.hgmContext_.PerformSetActiveMode(output, 0, 0);
 }
 
 /**
@@ -734,10 +734,10 @@ HWTEST_F(RSHardwareThreadTest, ChangeDssRefreshRate001, TestSize.Level1)
     ASSERT_NE(hardwareThread.hdiBackend_, nullptr);
     bool followPipline = true;
     uint32_t refreshRate = 100;
-    hardwareThread.ChangeDssRefreshRate(screenId_, refreshRate, followPipline);
+    hardwareThread.hgmContext_.ChangeDssRefreshRate(screenId_, refreshRate, followPipline);
 
     followPipline = false;
-    hardwareThread.ChangeDssRefreshRate(screenId_, refreshRate, followPipline);
+    hardwareThread.hgmContext_.ChangeDssRefreshRate(screenId_, refreshRate, followPipline);
 }
 
 /*
