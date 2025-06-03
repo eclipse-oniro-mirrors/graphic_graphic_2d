@@ -450,8 +450,8 @@ HWTEST_F(OH_Drawing_FontCollectionTest, OH_Drawing_FontCollectionTest012, TestSi
 HWTEST_F(OH_Drawing_FontCollectionTest, OH_Drawing_FontCollectionTest013, TestSize.Level1)
 {
     EXPECT_FALSE(fontCollection_->UnloadFont(""));
-    EXPECT_FALSE(fontCollection_->UnloadFont("Noto Sans"));
-    EXPECT_FALSE(fontCollection_->UnloadFont("Noto Sans Mono"));
+    EXPECT_TRUE(fontCollection_->UnloadFont("Noto Sans"));
+    EXPECT_TRUE(fontCollection_->UnloadFont("Noto Sans Mono"));
 }
 } // namespace Rosen
 } // namespace OHOS

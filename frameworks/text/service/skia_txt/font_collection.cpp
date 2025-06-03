@@ -221,13 +221,13 @@ void FontCollection::ClearCaches()
 bool FontCollection::UnloadFont(const std::string& familyName)
 {
     if (Drawing::Typeface::GetTypefaceUnRegisterCallBack() == nullptr ||
-        SPText::DefaultFamilyNameMgr::IsThemeFontFamily(familyName)) {
+        SPText::DefaultFamilyNameMgr::IsThemeFontFamily(familyName) || familyName.empty()) {
         return false;
     }
 
     if (std::none_of(typefaceSet_.begin(), typefaceSet_.begin(),
             [&familyName](const auto& ta) { return ta.GetAlias() == familyName; })) {
-        return false;
+        return true;
     }
 
     LoadFontCallback cb(this, familyName, unloadFontStartCallback_, unloadFontFinishCallback_);
