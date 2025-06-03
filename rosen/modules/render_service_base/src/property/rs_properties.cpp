@@ -3563,7 +3563,6 @@ void RSProperties::GenerateSoundWaveFilter()
         ROSEN_LOGE("RSProperties::GenerateSoundWaveFilter get soundWaveFilter nullptr.");
         return;
     }
-
     if (!soundWaveFilter->ParseFilterValues()) {
         return;
     }
@@ -3661,8 +3660,7 @@ void RSProperties::GenerateRenderFilterDispersion()
         ROSEN_LOGE("RSProperties::GenerateRenderFilterDispersion backgroundRenderFilter_ nullptr.");
         return;
     }
-    auto dispersionFilter = std::static_pointer_cast<RSRenderDispersionFilterPara>(
-        backgroundRenderFilter_->GetRenderFilterPara(RSUIFilterType::DISPERSION));
+    auto dispersionFilter = backgroundRenderFilter_->GetRenderFilterPara(RSUIFilterType::DISPERSION);
     if (!dispersionFilter) {
         ROSEN_LOGE("RSProperties::GenerateRenderFilterDispersion dispersionFilter not found.");
         return;
