@@ -157,9 +157,10 @@ private:
     void ClipHoleForSelfDrawingNode(RSPaintFilterCanvas& canvas, RSSurfaceRenderParams& surfaceParams);
     void DrawBufferForRotationFixed(RSPaintFilterCanvas& canvas, RSSurfaceRenderParams& surfaceParams);
 
+    void GetMaxRenderSizeForRotationOffscreen(int& offscreenWidth, int& offscreenHeight);
+
     /* Rotate OffScreen Downgrade */
-    void RotateOffScreenDowngradeMaxRenderSize(int& maxRenderSize);
-    void RotateOffScreenDowngradeZoomRatio();
+    void ApplyCanvasScalingIfDownscaleEnabled();
 
     std::string name_;
     RSSurfaceNodeType surfaceNodeType_ = RSSurfaceNodeType::DEFAULT;
