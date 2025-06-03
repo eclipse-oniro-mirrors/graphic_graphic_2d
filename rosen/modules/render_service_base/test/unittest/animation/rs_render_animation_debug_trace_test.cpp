@@ -140,9 +140,6 @@ HWTEST_F(RSRenderAnimationDebugTraceTest, ParseRenderPropertyVaule001, TestSize.
         Quaternion(1.0f, 2.0f, 3.0f, 4.0f));
     EXPECT_NE(RSAnimationTraceUtils::GetInstance().ParseRenderPropertyVaule(quaternionProperty,
         RSPropertyType::QUATERNION), "None");
-    auto filterProperty = std::make_shared<RSRenderAnimatableProperty<std::shared_ptr<RSFilter>>>(nullptr);
-    EXPECT_EQ(RSAnimationTraceUtils::GetInstance().ParseRenderPropertyVaule(filterProperty,
-        RSPropertyType::FILTER), "FILTER");
     auto vector2fProperty = std::make_shared<RSRenderAnimatableProperty<Vector2f>>(Vector2f(1.0f, 2.0f));
     EXPECT_NE(RSAnimationTraceUtils::GetInstance().ParseRenderPropertyVaule(vector2fProperty,
         RSPropertyType::VECTOR2F), "None");

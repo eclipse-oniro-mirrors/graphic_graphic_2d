@@ -121,9 +121,6 @@ namespace OHOS {
         Quaternion(GetData<float>(), GetData<float>(), GetData<float>(), GetData<float>()));
     RSAnimationTraceUtils::GetInstance().ParseRenderPropertyVaule(quaternionProperty,
         RSPropertyType::QUATERNION);
-    auto filterProperty = std::make_shared<RSRenderAnimatableProperty<std::shared_ptr<RSFilter>>>(nullptr);
-    RSAnimationTraceUtils::GetInstance().ParseRenderPropertyVaule(filterProperty,
-        RSPropertyType::FILTER);
     auto vector2fProperty = std::make_shared<RSRenderAnimatableProperty<Vector2f>>(
         Vector2f(GetData<float>(), GetData<float>()));
     RSAnimationTraceUtils::GetInstance().ParseRenderPropertyVaule(vector2fProperty,

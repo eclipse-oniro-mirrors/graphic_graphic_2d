@@ -15,7 +15,6 @@
 
 #include "customized/random_animation.h"
 
-#include "customized/random_rs_filter.h"
 #include "customized/random_rs_path.h"
 #include "customized/random_rs_render_particle.h"
 #include "random/random_data.h"
@@ -65,10 +64,6 @@ std::shared_ptr<RSRenderPropertyBase> GetAnimatableProperty()
         case RSPropertyType::QUATERNION: {
             Quaternion value = RandomData::GetRandomQuaternion();
             return std::make_shared<RSRenderAnimatableProperty<Quaternion>>(value);
-        }
-        case RSPropertyType::FILTER: {
-            std::shared_ptr<RSFilter> value = RandomRSFilter::GetRandomRSFilter();
-            return std::make_shared<RSRenderAnimatableProperty<std::shared_ptr<RSFilter>>>(value);
         }
         case RSPropertyType::VECTOR2F: {
             Vector2f value = RandomData::GetRandomVector2f();
