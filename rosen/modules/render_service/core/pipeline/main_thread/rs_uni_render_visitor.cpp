@@ -3612,9 +3612,9 @@ void RSUniRenderVisitor::HandleTunnelLayerId(RSSurfaceRenderNode& node)
         return;
     }
     nodeParams->SetTunnelLayerId(tunnelLayerId);
-    RS_LOGI("%{public}s lpp surfaceid:%{public}" PRIu64 ", nodeid:%{public}" PRIu64 "",
+    RS_LOGI("%{public}s lpp surfaceid:%{public}" PRIu64 ", nodeid:%{public}" PRIu64,
         __func__, tunnelLayerId, node.GetId());
-    RS_TRACE_NAME_FMT("%s lpp surfaceid:%" PRIu64 ", nodeid:%" PRIu64 "", __func__, tunnelLayerId, node.GetId());
+    RS_TRACE_NAME_FMT("%s lpp surfaceid:%" PRIu64 ", nodeid:%" PRIu64, __func__, tunnelLayerId, node.GetId());
 }
 } // namespace Rosen
 } // namespace OHOS
