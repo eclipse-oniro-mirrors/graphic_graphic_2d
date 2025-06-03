@@ -238,11 +238,12 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyTest006, TestSize.Level
     typography->GetGlyphIndexByCoordinate(1.0, 2.0);
 
     std::unique_ptr<SPText::Paragraph> paragraphTemp = nullptr;
-    typography->paragraph_.swap(paragraphTemp);
+    AdapterTxt::Typography* typographyImpl = static_cast<AdapterTxt::Typography*>(typography.get());
+    typographyImpl->paragraph_.swap(paragraphTemp);
     EXPECT_EQ(typography->GetTextBlobRecordInfo().size(), 0);
     typography->SetTextEffectState(true);
     EXPECT_FALSE(typography->HasEnabledTextEffect());
-    typography->paragraph_.swap(paragraphTemp);
+    typographyImpl->paragraph_.swap(paragraphTemp);
     EXPECT_NE(typography->GetTextBlobRecordInfo().size(), 0);
     typography->SetTextEffectState(true);
     EXPECT_TRUE(typography->HasEnabledTextEffect());

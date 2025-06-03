@@ -16,32 +16,26 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "drawing/canvas.h"
+#include "draw/canvas.h"
 #include "text_flip_effect.h"
+#include "typography_mock.h"
 
-using namespace OHOS::Rosen;
 using namespace testing;
+using namespace testing::ext;
 using namespace OHOS::Rosen;
 
 class MockCanvas : public Drawing::Canvas {
 public:
-    MOCK_METHOD(void, DrawTextBlob, (const Drawing::TextBlob&, double, double, const Drawing::Brush&), (override));
-};
-
-class MockTypography : public Typography {
-public:
-    MOCK_METHOD(void, SetTextEffectAssociation, (bool), (override));
-    MOCK_METHOD(void, SetTextEffectState, (bool), (override));
-    MOCK_METHOD(void, Paint, (Drawing::Canvas*, double, double), (override));
-    MOCK_METHOD(std::vector<TextBlobRecordInfo>, GetTextBlobRecordInfo, (), (const, override));
+    MOCK_METHOD(void, DrawTextBlob, (const Drawing::TextBlob* blob, const float x, const float y), (override));
 };
 
 class TextFlipEffectTest : public testing::Test {
 public:
     void SetUp() override {
-        effect_ = TextEffectFactoryCreator::GetInstance().CreateTextEffect(TextEffectStrategy::FLIP);
-        ASSERT_NE(effect, nullptr);
-        EXPECT_EQ(effect->strategy_, TextEffectStrategy::FLIP);
+        auto textEffect = TextEffectFactoryCreator::GetInstance().CreateTextEffect(TextEffectStrategy::FLIP);
+        effect_ = std::static_pointer_cast<TextFlipEffect>(textEffect);
+        ASSERT_NE(effect_, nullptr);
+        EXPECT_EQ(effect_->strategy_, TextEffectStrategy::FLIP);
         mockTypography_ = std::make_shared<MockTypography>();
         mockCanvas_ = std::make_unique<MockCanvas>();
     }
@@ -53,7 +47,7 @@ public:
     }
 
 protected:
-    std::unique_ptr<TextFlipEffect> effect_{nullptr};
+    std::shared_ptr<TextFlipEffect> effect_{nullptr};
     std::shared_ptr<MockTypography> mockTypography_{nullptr};
     std::unique_ptr<MockCanvas> mockCanvas_{nullptr};
 
@@ -72,7 +66,7 @@ HWTEST_F(TextFlipEffectTest, TextFlipEffectTest001, TestSize.Level1)
     std::unordered_map<TextEffectAttribute, std::string> config = {
         {TextEffectAttribute::FLIP_DIRECTION, "up"},
         {TextEffectAttribute::FLIP_DIRECTION, "down"},
-        {TextEffectAttribute::BLUR_ENABLE, "false"}
+        {TextEffectAttribute::BLUR_ENABLE, "false"},
         {TextEffectAttribute::BLUR_ENABLE, "true"}
     };
 
@@ -125,8 +119,8 @@ HWTEST_F(TextFlipEffectTest, TextFlipEffectTest003, TestSize.Level1)
     };
     
     EXPECT_EQ(effect_->UpdateTypography(update), TEXT_EFFECT_SUCCESS);
-    EXPECT_EQ(effect_->typographyConfig_.rawTextRange.start, 5);
-    EXPECT_EQ(effect_->typographyConfig_.rawTextRange.end, 15);
+    EXPECT_EQ(effect_->typographyConfig_.rawTextRange.first, 5);
+    EXPECT_EQ(effect_->typographyConfig_.rawTextRange.second, 15);
 
     std::vector<std::pair<TypographyConfig, TypographyConfig>> emptyUpdate;
     EXPECT_EQ(effect_->UpdateTypography(emptyUpdate), TEXT_EFFECT_INVALID_INPUT);
@@ -153,8 +147,8 @@ HWTEST_F(TextFlipEffectTest, TextFlipEffectTest004, TestSize.Level1)
     effect_->RemoveTypography({config});
     
     EXPECT_EQ(effect_->typographyConfig_.typography, nullptr);
-    EXPECT_EQ(effect_->typographyConfig_.rawTextRange.start, 0);
-    EXPECT_EQ(effect_->typographyConfig_.rawTextRange.end, 0);
+    EXPECT_EQ(effect_->typographyConfig_.rawTextRange.first, 0);
+    EXPECT_EQ(effect_->typographyConfig_.rawTextRange.second, 0);
 
     effect_->AppendTypography({CreateConfig()});
     auto anotherTypography = std::make_shared<MockTypography>();
@@ -177,7 +171,7 @@ HWTEST_F(TextFlipEffectTest, TextFlipEffectTest005, TestSize.Level1)
 
     effect_->AppendTypography({CreateConfig()});
     EXPECT_CALL(*mockTypography_, SetTextEffectState(true));
-    EXPECT_CALL(*mockTypography_, Paint(_, 100.0, 200.0));
+    EXPECT_CALL(*mockTypography_, Paint(mockCanvas_.get(), 100.0, 200.0));
     std::vector<TextBlobRecordInfo> records = { TextBlobRecordInfo() };
     EXPECT_CALL(*mockTypography_, GetTextBlobRecordInfo()).WillOnce(Return(records));
 
@@ -185,7 +179,7 @@ HWTEST_F(TextFlipEffectTest, TextFlipEffectTest005, TestSize.Level1)
     EXPECT_FALSE(effect_->lastTextBlobRecordInfos_.empty());
 
     EXPECT_CALL(*mockTypography_, SetTextEffectState(false));
-    EXPECT_CALL(*mockTypography_, Paint(_, 100.0, 200.0));
+    EXPECT_CALL(*mockTypography_, Paint(mockCanvas_.get(), 100.0, 200.0));
     
     effect_->StopEffect(mockCanvas_.get(), 100.0, 200.0);
     EXPECT_TRUE(effect_->lastTextBlobRecordInfos_.empty());
