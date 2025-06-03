@@ -222,11 +222,13 @@ bool FontCollection::UnloadFont(const std::string& familyName)
 {
     if (Drawing::Typeface::GetTypefaceUnRegisterCallBack() == nullptr ||
         SPText::DefaultFamilyNameMgr::IsThemeFontFamily(familyName) || familyName.empty()) {
+        TEXT_LOGE("Failed to unload font: %{public}s", familyName.c_str());
         return false;
     }
 
-    if (std::none_of(typefaceSet_.begin(), typefaceSet_.begin(),
-            [&familyName](const auto& ta) { return ta.GetAlias() == familyName; })) {
+    if (std::none_of(typefaceSet_.begin(), typefaceSet_.end(),
+        [&familyName](const auto& ta) { return ta.GetAlias() == familyName; })) {
+        TEXT_LOGE("Unload a font which is not loaded: %{public}s", familyName.c_str());
         return true;
     }
 
@@ -239,7 +241,9 @@ bool FontCollection::UnloadFont(const std::string& familyName)
             ClearCaches();
             familyNames_.erase(it->GetHash());
             typefaceSet_.erase(it++);
-            Drawing::Typeface::GetTypefaceUnRegisterCallBack()(it->GetTypeface());
+            if (!Drawing::Typeface::GetTypefaceUnRegisterCallBack()(it->GetTypeface())) {
+                TEXT_LOGE("Failed to unload font in rs: %{public}s", familyName.c_str());
+            }
         } else {
             ++it;
         }
