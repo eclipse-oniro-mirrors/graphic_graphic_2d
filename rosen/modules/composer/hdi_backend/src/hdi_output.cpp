@@ -989,10 +989,10 @@ void HdiOutput::ANCOTransactionOnComplete(const LayerInfoPtr& layerInfo, const s
     if (layerInfo == nullptr) {
         return;
     }
-    if (layerInfo->IsAncoNDK()) {
+    if (layerInfo->IsAncoNdk()) {
         auto consumer = layerInfo->GetSurface();
         auto curBuffer = layerInfo->GetBuffer();
-        if (consumer == nummptr || curBuffer == nullptr) {
+        if (consumer == nullptr || curBuffer == nullptr) {
             return;
         }
         consumer->ReleaseBuffer(curBuffer, previousReleaseFence);
