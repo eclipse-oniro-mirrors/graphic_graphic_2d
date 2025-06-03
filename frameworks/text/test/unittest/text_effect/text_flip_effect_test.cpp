@@ -31,7 +31,8 @@ public:
 
 class TextFlipEffectTest : public testing::Test {
 public:
-    void SetUp() override {
+    void SetUp() override
+    {
         auto textEffect = TextEffectFactoryCreator::GetInstance().CreateTextEffect(TextEffectStrategy::FLIP);
         effect_ = std::static_pointer_cast<TextFlipEffect>(textEffect);
         ASSERT_NE(effect_, nullptr);
@@ -40,7 +41,8 @@ public:
         mockCanvas_ = std::make_unique<MockCanvas>();
     }
 
-    void TearDown() override {
+    void TearDown() override
+    {
         effect_.reset();
         mockTypography_.reset();
         mockCanvas_.reset();
@@ -51,7 +53,8 @@ protected:
     std::shared_ptr<MockTypography> mockTypography_{nullptr};
     std::unique_ptr<MockCanvas> mockCanvas_{nullptr};
 
-    TypographyConfig CreateConfig() {
+    TypographyConfig CreateConfig()
+    {
         return { mockTypography_, {0, 10} };
     }
 };
@@ -103,7 +106,7 @@ HWTEST_F(TextFlipEffectTest, TextFlipEffectTest002, TestSize.Level1)
     EXPECT_EQ(effect_->typographyConfig_.typography, mockTypography_);
 
     auto anotherTypography = std::make_shared<MockTypography>();
-    TypographyConfig anotherConfig = { anotherTypography, {5, 15} }; 
+    TypographyConfig anotherConfig = { anotherTypography, {5, 15} };
     EXPECT_EQ(effect_->AppendTypography({anotherConfig}), TEXT_EFFECT_UNKNOWN);
 
     EXPECT_EQ(effect_->AppendTypography({}), TEXT_EFFECT_INVALID_INPUT);

@@ -44,9 +44,9 @@ public:
     MOCK_METHOD(void, Layout, (double width), (override));
     MOCK_METHOD(void, Paint, (SkCanvas* canvas, double x, double y), (override));
     MOCK_METHOD(void, Paint, (Drawing::Canvas* canvas, double x, double y), (override));
-    MOCK_METHOD(void, Paint, 
+    MOCK_METHOD(void, Paint,
         (Drawing::Canvas* canvas, Drawing::Path* path, double hOffset, double vOffset), (override));
-    MOCK_METHOD(std::vector<TextRect>, GetTextRectsByBoundary, 
+    MOCK_METHOD(std::vector<TextRect>, GetTextRectsByBoundary,
         (size_t left, size_t right, TextRectHeightStyle heightStyle, TextRectWidthStyle widthStyle), (override));
     MOCK_METHOD(std::vector<TextRect>, GetTextRectsOfPlaceholders, (), (override));
     MOCK_METHOD(IndexAndAffinity, GetGlyphIndexByCoordinate, (double x, double y), (override));
@@ -55,16 +55,16 @@ public:
     MOCK_METHOD(Boundary, GetEllipsisTextRange, (), (override));
     MOCK_METHOD(double, GetLineHeight, (int lineNumber), (override));
     MOCK_METHOD(double, GetLineWidth, (int lineNumber), (override));
-    MOCK_METHOD(void, SetAnimation, 
+    MOCK_METHOD(void, SetAnimation,
         (std::function<bool(const std::shared_ptr<TextEngine::SymbolAnimationConfig>&)>& animationFunc), (override));
     MOCK_METHOD(void, SetParagraghId, (uint32_t id), (override));
     MOCK_METHOD(Drawing::FontMetrics, MeasureText, (), (override));
-    MOCK_METHOD(bool, GetLineInfo, 
+    MOCK_METHOD(bool, GetLineInfo,
         (int lineNumber, bool oneLine, bool includeWhitespace, LineMetrics* lineMetrics), (override));
     MOCK_METHOD(std::vector<LineMetrics>, GetLineMetrics, (), (override));
     MOCK_METHOD(bool, GetLineMetricsAt, (int lineNumber, LineMetrics* lineMetrics), (override));
     MOCK_METHOD(Drawing::FontMetrics, GetFontMetrics, (const OHOS::Rosen::TextStyle& textStyle), (override));
-    MOCK_METHOD(bool, GetLineFontMetrics, 
+    MOCK_METHOD(bool, GetLineFontMetrics,
         (size_t lineNumber, size_t& charNumber, std::vector<Drawing::FontMetrics>& fontMetrics), (override));
     MOCK_METHOD(std::vector<std::unique_ptr<TextLineBase>>, GetTextLines, (), (const, override));
     MOCK_METHOD(std::unique_ptr<Typography>, CloneSelf, (), (override));
@@ -72,7 +72,7 @@ public:
     MOCK_METHOD(void, UpdateColor, (size_t from, size_t to, const Drawing::Color& color), (override));
     MOCK_METHOD(void*, GetParagraph, (), (override));
     MOCK_METHOD(Drawing::RectI, GeneratePaintRegion, (double x, double y), (const, override));
-    MOCK_METHOD(void, Relayout, 
+    MOCK_METHOD(void, Relayout,
         (double width, const TypographyStyle& typograhyStyle, const std::vector<TextStyle>& textStyles), (override));
     MOCK_METHOD(void, UpdateAllTextStyles, (const TextStyle& textStyleTemplate), (override));
     MOCK_METHOD(void, SetTextEffectState, (bool state), (override));

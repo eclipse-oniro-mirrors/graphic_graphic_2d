@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
- #ifndef OHOS_ROSEN_TEXT_TEXT_FLIP_EFFECT_H
- #define OHOS_ROSEN_TEXT_TEXT_FLIP_EFFECT_H 
+#ifndef OHOS_ROSEN_TEXT_TEXT_FLIP_EFFECT_H
+#define OHOS_ROSEN_TEXT_TEXT_FLIP_EFFECT_H
 
 #include <functional>
 #include <vector>
@@ -66,16 +66,16 @@ private:
         FlipAttributeFunction(TextEffectAttribute inputAttribute,
             std::function<bool(TextFlipEffect*, const std::string&)> inputCheck,
             std::function<void(TextFlipEffect*, const std::string&)> inputSet)
-                : attribute(inputAttribute), checkFunc(inputCheck), setFunc(inputSet) {}
+            : attribute(inputAttribute), checkFunc(inputCheck), setFunc(inputSet) {}
 
         TextEffectAttribute attribute{TextEffectAttribute::FLIP_DIRECTION};
         std::function<bool(TextFlipEffect*, const std::string&)> checkFunc{nullptr};
         std::function<void(TextFlipEffect*, const std::string&)> setFunc{nullptr};
     };
-    const std::vector<FlipAttributeFunction> supportAttributes_ = { 
+    const std::vector<FlipAttributeFunction> supportAttributes_ = {
         {TextEffectAttribute::FLIP_DIRECTION, &TextFlipEffect::CheckDirection, &TextFlipEffect::SetDirection},
         {TextEffectAttribute::BLUR_ENABLE, &TextFlipEffect::CheckBlurEnable, &TextFlipEffect::SetBlurEnable},
     };
 };
 } // namespace OHOS::Rosen
- #endif // OHOS_ROSEN_TEXT_TEXT_FLIP_EFFECT_H
+#endif // OHOS_ROSEN_TEXT_TEXT_FLIP_EFFECT_H

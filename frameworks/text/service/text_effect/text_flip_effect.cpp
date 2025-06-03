@@ -18,7 +18,7 @@
 #include <algorithm>
 
 #include "text_effect.h"
-#include "text_effect_marco.h"
+#include "text_effect_macro.h"
 
 namespace OHOS::Rosen {
 
@@ -125,7 +125,7 @@ void TextFlipEffect::RemoveTypography(const std::vector<TypographyConfig>& typog
         return;
     }
     typographyConfig_.typography->SetTextEffectAssociation(false);
-    typographyConfig_.typography = nullptr; 
+    typographyConfig_.typography = nullptr;
     typographyConfig_.rawTextRange = {0, 0};
 }
 

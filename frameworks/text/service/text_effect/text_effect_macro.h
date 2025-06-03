@@ -19,25 +19,25 @@
 #include "text_effect.h"
 
 namespace OHOS::Rosen {
-#define REGISTER_TEXT_EFFECT_FACTORY_IMPL(EFFECT_TYPE, STRATEGY)                                    \
-    class Text##EFFECT_TYPE##EffectFactory : public TextEffectFactory {                             \
+#define REGISTER_TEXT_EFFECT_FACTORY_IMPL(EFFECT_NAME, EFFECT_STRATEGY)                             \
+    class Text##EFFECT_NAME##EffectFactory : public TextEffectFactory {                             \
     public:                                                                                         \
         std::shared_ptr<TextEffect> CreateTextEffect() override {                                   \
-            return std::make_shared<Text##EFFECT_TYPE##Effect>();                                   \
+            return std::make_shared<Text##EFFECT_NAME##Effect>();                                   \
         }                                                                                           \
     };                                                                                              \
-    class Text##EFFECT_TYPE##EffectInit final {                                                     \
+    class Text##EFFECT_NAME##EffectInit final {                                                     \
     public:                                                                                         \
-        Text##EFFECT_TYPE##EffectInit()                                                             \
+        Text##EFFECT_NAME##EffectInit()                                                             \
         {                                                                                           \
-            auto factory = std::make_shared<Text##EFFECT_TYPE##EffectFactory>();                    \
-            TextEffectFactoryCreator::GetInstance().RegisterFactory(STRATEGY, factory);             \
+            auto factory = std::make_shared<Text##EFFECT_NAME##EffectFactory>();                    \
+            TextEffectFactoryCreator::GetInstance().RegisterFactory(EFFECT_STRATEGY, factory);      \
         }                                                                                           \
-        ~Text##EFFECT_TYPE##EffectInit()                                                            \
+        ~Text##EFFECT_NAME##EffectInit()                                                            \
         {                                                                                           \
-            TextEffectFactoryCreator::GetInstance().UnregisterFactory(STRATEGY);                    \
+            TextEffectFactoryCreator::GetInstance().UnregisterFactory(EFFECT_STRATEGY);             \
         }                                                                                           \
     };                                                                                              \
-    Text##EFFECT_TYPE##EffectInit g_text##EFFECT_TYPE##EffectInit
+    Text##EFFECT_NAME##EffectInit g_text##EFFECT_NAME##EffectInit
 } // namespace OHOS::Rosen
 #endif // OHOS_ROSEN_TEXT_TEXT_EFFECT_MACRO_H

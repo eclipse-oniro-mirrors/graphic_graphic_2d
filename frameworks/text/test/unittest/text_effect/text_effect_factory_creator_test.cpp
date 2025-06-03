@@ -16,7 +16,7 @@
 #include <gtest/gtest.h>
 
 #include "text_effect.h"
-#include "text_effect_marco.h"
+#include "text_effect_macro.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -57,7 +57,7 @@ HWTEST_F(TextEffectFactoryCreatorTest, TextEffectFactoryCreatorTest001, TestSize
 {
     REGISTER_TEXT_EFFECT_FACTORY_IMPL(Test, TextEffectStrategy::STRATEGY_BUTT);
     TextEffectFactoryCreator& creator = TextEffectFactoryCreator::GetInstance();
-    std::shared_ptr<TextEffect> factory = creator.factoryTable_[TextEffectStrategy::STRATEGY_BUTT];
+    std::shared_ptr<TextEffectFactory> factory = creator.factoryTable_[TextEffectStrategy::STRATEGY_BUTT];
     bool result = creator.RegisterFactory(TextEffectStrategy::STRATEGY_BUTT, nullptr);
     EXPECT_FALSE(result);
     creator.factoryTable_.erase(TextEffectStrategy::STRATEGY_BUTT);
