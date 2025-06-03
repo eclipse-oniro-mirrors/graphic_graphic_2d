@@ -2748,7 +2748,7 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<RSRender
             ROSEN_LOGE("RSMarshallingHelper::Unmarshalling TEMPLATE<T> Read typeId failed");                          \
             return false;                                                                                             \
         }                                                                                                             \
-        RSPropertyType type = static_cast<RSPropertyType>(typeId);                                        \
+        RSPropertyType type = static_cast<RSPropertyType>(typeId);                                                    \
         if (!parcel.ReadUint64(id)) {                                                                                 \
             ROSEN_LOGE("RSMarshallingHelper::Unmarshalling TEMPLATE<T> Read id failed");                              \
             return false;                                                                                             \
