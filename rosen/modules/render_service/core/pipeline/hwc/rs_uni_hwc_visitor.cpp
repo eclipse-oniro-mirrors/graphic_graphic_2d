@@ -509,7 +509,7 @@ void RSUniHwcVisitor::UpdateHwcNodeEnableByAlpha(const std::shared_ptr<RSSurface
     auto parentNode = hwcNode->GetParent().lock();
     if (const auto alpha = hwcNode->GetGlobalAlpha(); ROSEN_LNE(alpha, 1.0f)) {
         RS_OPTIONAL_TRACE_FMT("hwc debug: name:%s id:%" PRIu64 " parentId:%" PRIu64 " disabled by "
-            "accumulated alpha:%f",hwcNode->GetName().c_str(), hwcNode->GetId(),
+            "accumulated alpha:%f", hwcNode->GetName().c_str(), hwcNode->GetId(),
             parentNode ? parentNode->GetId() : 0, alpha);
         PrintHiperfLog(hwcNode, "accumulated alpha");
         hwcNode->SetHardwareForcedDisabledState(true);
