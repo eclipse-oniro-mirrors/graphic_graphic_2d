@@ -207,7 +207,7 @@ std::shared_ptr<RSRenderFilterParaBase> RSUISoundWaveFilterPara::CreateRSRenderF
         GetRSProperty(RSUIFilterType::SHOCK_WAVE_TOTAL_ALPHA));
     auto shockWaveTotalProperty =
         std::make_shared<RSRenderProperty<float>>(shockWaveTotalAlphaAnimation->Get(),
-        shockWaveTotalAlphaAnimation->GetId(), RSRenderPropertyType::PROPERTY_FLOAT);
+        shockWaveTotalAlphaAnimation->GetId(), RSPropertyType::FLOAT);
     frProperty->Setter(RSUIFilterType::SHOCK_WAVE_TOTAL_ALPHA, shockWaveTotalProperty);
 
     return frProperty;

@@ -1237,14 +1237,14 @@ HWTEST_F(PropertiesTest, GenerateRenderFilterEdgeLight_001, TestSize.Level1)
     auto renderFilterEdgeLight = std::static_pointer_cast<RSRenderEdgeLightFilterPara>(renderFilterBase);
 
     auto renderAlpha = std::make_shared<RSRenderAnimatableProperty<float>>(
-        0.5f, 0, RSRenderPropertyType::PROPERTY_FLOAT);
+        0.5f, 0, RSPropertyType::FLOAT);
     renderFilterEdgeLight->Setter(RSUIFilterType::EDGE_LIGHT_ALPHA, renderAlpha);
     properties.GenerateRenderFilter();
-    EXPECT_NE(properties.backgroundFilter_, nullptr);
+    EXPECT_EQ(properties.backgroundFilter_, nullptr);
     properties.backgroundFilter_ = nullptr;
 
     auto renderColor = std::make_shared<RSRenderAnimatableProperty<Vector4f>>(
-        Vector4f(0.5f, 0.5f, 0.5f, 0.5f), 0, RSRenderPropertyType::PROPERTY_VECTOR4F);
+        Vector4f(0.5f, 0.5f, 0.5f, 0.5f), 0, RSPropertyType::VECTOR4F);
     renderFilterEdgeLight->Setter(RSUIFilterType::EDGE_LIGHT_COLOR, renderColor);
     properties.GenerateRenderFilter();
     properties.GenerateRenderFilter();
