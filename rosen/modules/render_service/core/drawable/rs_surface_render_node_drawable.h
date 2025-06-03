@@ -158,8 +158,6 @@ private:
     void DrawBufferForRotationFixed(RSPaintFilterCanvas& canvas, RSSurfaceRenderParams& surfaceParams);
 
     int GetMaxRenderSizeForRotationOffscreen(int& offscreenWidth, int& offscreenHeight);
-
-    /* Rotate OffScreen Downgrade */
     void ApplyCanvasScalingIfDownscaleEnabled();
 
     std::string name_;
