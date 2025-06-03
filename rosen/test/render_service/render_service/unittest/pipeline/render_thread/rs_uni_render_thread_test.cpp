@@ -795,6 +795,14 @@ HWTEST_F(RSUniRenderThreadTest, GetFastComposeTimeStampDiff, TestSize.Level1)
 HWTEST_F(RSUniRenderThreadTest, IsTaskQueueEmpty, TestSize.Level1)
 {
     auto& instance = RSUniRenderThread::Instance();
+    constexpr auto LOOPS = 5;
+    constexpr auto SLEEP_TIME = 100;
+    for (int i = 0; i < LOOPS; ++i) {
+         std::this_thread::sleep_for(std::chrono::milliseconds(SLEEP_TIME));
+        if (instance.IsTaskQueueEmpty()) {
+            break;
+        }
+    }
     EXPECT_TRUE(instance.IsTaskQueueEmpty());
 }
 }
