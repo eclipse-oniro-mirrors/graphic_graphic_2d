@@ -772,7 +772,7 @@ void RSUniHwcVisitor::UpdateHardwareStateByHwcNodeBackgroundAlpha(
                 "cannot cover above transparent hwc node", hwcNodePtr->GetName().c_str(),
                 hwcNodePtr->GetId(), parentNode ? parentNode->GetId() : 0);
             Statistics().UpdateHwcDisabledReasonForDFX(node->GetId(),
-                HwcDisabledReasons::DISABLED_BY_NO_COVER_HWC_NODE, node->GetName());
+                HwcDisabledReasons::DISABLED_BY_HWC_NODE_ABOVE, node->GetName());
             continue;
         }
 
@@ -790,7 +790,7 @@ void RSUniHwcVisitor::UpdateHardwareStateByHwcNodeBackgroundAlpha(
                 "hwc node backgound alpha", hwcNodePtr->GetName().c_str(), hwcNodePtr->GetId(),
                 parentNode ? parentNode->GetId() : 0);
             Statistics().UpdateHwcDisabledReasonForDFX(node->GetId(),
-                HwcDisabledReasons::DISABLED_BY_NODE_BACKGROUND_ALPHA, node->GetName());
+                HwcDisabledReasons::DISABLED_BY_BACKGROUND_ALPHA, node->GetName());
         }
     }
 }
