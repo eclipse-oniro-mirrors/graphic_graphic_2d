@@ -38,11 +38,14 @@ public:
     void AddWholeAnimation(const RSHMSymbolData &symbolData, const Vector4f &nodeBounds,
         std::shared_ptr<TextEngine::SymbolAnimationConfig> symbolAnimationConfig);
 
-    void AddHierarchicalAnimation(RSHMSymbolData &symbolData, const Vector4f &nodeBounds,
+    void AddHierarchicalAnimation(const RSHMSymbolData &symbolData, const Vector4f &nodeBounds,
         const std::vector<RSGroupSetting> &groupSettings,
         std::shared_ptr<TextEngine::SymbolAnimationConfig> symbolAnimationConfig);
 
     static void MergeDrawingPath(RSPath& multPath, const RSRenderGroup& group, std::vector<RSPath>& pathLayers);
+
+    static std::shared_ptr<SymbolGradient> CreateGradient(
+        const std::shared_ptr<SymbolGradient>& gradient);
 
     ~SymbolNodeBuild() {}
     bool DecomposeSymbolAndDraw();
@@ -89,6 +92,16 @@ public:
         slope_ = slope;
     }
 
+    void SetGradients(const std::vector<std::shared_ptr<SymbolGradient>>& gradients)
+    {
+        gradients_ = gradients;
+    }
+
+    void SetRenderMode(RSSymbolRenderingStrategy renderMode)
+    {
+        renderMode_ = renderMode;
+    }
+
 private:
     RSAnimationSetting animationSetting_;
     RSHMSymbolData symbolData_;
@@ -106,7 +119,13 @@ private:
     bool animationStart_ = false;
     bool currentAnimationHasPlayed_ = false;
 
+    RSSymbolRenderingStrategy renderMode_ = RSSymbolRenderingStrategy::SINGLE;
+    std::vector<std::shared_ptr<SymbolGradient>> gradients_;
+
     void SetSymbolNodeColors(const TextEngine::SymbolNode& symbolNode, TextEngine::SymbolNode& outSymbolNode);
+
+    void UpdataGradient(const std::vector<RSRenderGroup>& groups,
+        std::vector<RSPath>& pathLayers, const RSPath& path);
 };
 }
 }

@@ -733,7 +733,9 @@ void RSSymbolAnimation::SetDisableParameter(std::vector<Drawing::DrawingPiecewis
     float distance = std::sqrt(w * w + h * h);
     float angle = std::atan(slope);
     float x = std::cos(angle) * distance;
-    float y = std::sin(angle) * distance * -1; // -1: The direction of the Y-axis needs to be reversed
+    float y = std::sin(angle) * distance;
+    x = slope > 0 ? x * -1 : x; // -1: The direction of the x-axis needs to be reversed
+    y = slope < 0 ? y * -1 : y; // -1: The direction of the Y-axis needs to be reversed
 
     for (auto& param: parameter) {
         std::vector<float> ratio;
@@ -936,13 +938,28 @@ void RSSymbolAnimation::DrawPathOnCanvas(
     Drawing::Pen pen;
     brush.SetAntiAlias(true);
     pen.SetAntiAlias(true);
+    Drawing::Point offset = Drawing::Point(offsets[2], offsets[3]); // index 2 offsetX 3 offsetY
     if (symbolNode.isMask) {
         brush.SetBlendMode(Drawing::BlendMode::CLEAR);
         pen.SetBlendMode(Drawing::BlendMode::CLEAR);
+        recordingCanvas->AttachBrush(brush);
+        recordingCanvas->AttachPen(pen);
+        for (auto pathInfo: symbolNode.pathsInfo) {
+            pathInfo.path.Offset(offset.GetX(), offset.GetY());
+            recordingCanvas->DrawPath(pathInfo.path);
+        }
+        recordingCanvas->DetachBrush();
+        recordingCanvas->DetachPen();
+        return;
     }
-    for (auto& pathInfo: symbolNode.pathsInfo) {
-        SetIconProperty(brush, pen, pathInfo.color);
-        pathInfo.path.Offset(offsets[2], offsets[3]); // index 2 offsetX 3 offsetY
+
+    for (auto pathInfo: symbolNode.pathsInfo) {
+        if (pathInfo.color == nullptr) {
+            continue;
+        }
+        brush = pathInfo.color->CreateGradientBrush(offset);
+        pen = pathInfo.color->CreateGradientPen(offset);
+        pathInfo.path.Offset(offset.GetX(), offset.GetY());
         recordingCanvas->AttachBrush(brush);
         recordingCanvas->AttachPen(pen);
         recordingCanvas->DrawPath(pathInfo.path);

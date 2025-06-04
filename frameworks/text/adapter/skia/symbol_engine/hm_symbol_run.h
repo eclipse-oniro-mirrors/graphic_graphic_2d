@@ -84,12 +84,20 @@ public:
         return symbolTxt_;
     }
 
+    void SetGradients(const std::vector<std::shared_ptr<SymbolGradient>>& gradients);
+
 private:
     void OnDrawSymbol(RSCanvas* canvas, const RSHMSymbolData& symbolData, RSPoint locate);
+
+    void DrawPaths(RSCanvas* canvas, const std::vector<RSPath>& multPaths, const RSPath& path);
 
     bool GetAnimationGroups(const RSEffectStrategy effectStrategy, RSAnimationSetting& animationOut);
 
     RSSymbolLayers GetSymbolLayers(uint16_t glyphId, const HMSymbolTxt& symbolText);
+
+    void SetRenderColor(const RSSymbolRenderingStrategy& renderMode, RSSymbolLayers& symbolInfo);
+
+    void SetGradientColor(const RSSymbolRenderingStrategy& renderMode, const RSSymbolLayers& symbolInfo);
 
     void UpdateSymbolLayersGroups(uint16_t glyphId);
 
@@ -99,6 +107,7 @@ private:
 
     RSSymbolLayersGroups symbolLayersGroups_;
     HMSymbolTxt symbolTxt_;
+    std::vector<std::shared_ptr<SymbolGradient>> gradients_;
     std::function<bool(const std::shared_ptr<OHOS::Rosen::TextEngine::SymbolAnimationConfig>&)>
         animationFunc_ = nullptr;
     std::shared_ptr<RSTextBlob> textBlob_ = nullptr;
