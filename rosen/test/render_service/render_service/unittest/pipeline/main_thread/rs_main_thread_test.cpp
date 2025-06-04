@@ -115,11 +115,11 @@ std::shared_ptr<RSDisplayRenderNode> RSMainThreadTest::GetAndInitDisplayRenderNo
     ScreenId screenId = 0xFFFF;
     auto hdiOutput = HdiOutput::CreateHdiOutput(screenId);
     if (hdiOutput == nullptr) {
-        return nullptr;
+        return displayNode;
     }
     auto rsScreen = std::make_shared<impl::RSScreen>(screenId, false, hdiOutput, nullptr);
     if (rsScreen == nullptr) {
-        return nullptr;
+        return displayNode;
     }
 
     rsScreen->phyWidth_ = SCREEN_PHYSICAL_WIDTH;
