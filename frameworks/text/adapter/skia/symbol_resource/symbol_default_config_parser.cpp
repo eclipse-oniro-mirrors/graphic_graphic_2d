@@ -59,6 +59,7 @@ const char ANIMATION_INDEX[] = "animation_index";
 const char COMMON_SUB_TYPE[] = "common_sub_type";
 const char ANIMATION_SETTINGS[] = "animation_settings";
 const char PROPERTIES[] = "properties";
+const char SLOPE[] = "slope";
 
 const int NO_ERROR = 0;                          // no error
 const int ERROR_CONFIG_NOT_FOUND = 1;            // the configuration document is not found
@@ -88,17 +89,23 @@ private:
 SymbolAutoRegister g_symbolAutoRegister;
 
 static const std::map<std::string, RSDrawing::DrawingAnimationType> ANIMATIONS_TYPES = {
-    {"scale", RSDrawing::DrawingAnimationType::SCALE_TYPE}, {"appear", RSDrawing::DrawingAnimationType::APPEAR_TYPE},
+    {"scale", RSDrawing::DrawingAnimationType::SCALE_TYPE},
+    {"appear", RSDrawing::DrawingAnimationType::APPEAR_TYPE},
     {"disappear", RSDrawing::DrawingAnimationType::DISAPPEAR_TYPE},
     {"bounce", RSDrawing::DrawingAnimationType::BOUNCE_TYPE},
     {"variable_color", RSDrawing::DrawingAnimationType::VARIABLE_COLOR_TYPE},
     {"pulse", RSDrawing::DrawingAnimationType::PULSE_TYPE},
     {"replace_appear", RSDrawing::DrawingAnimationType::REPLACE_APPEAR_TYPE},
-    {"replace_disappear", RSDrawing::DrawingAnimationType::REPLACE_DISAPPEAR_TYPE}};
+    {"replace_disappear", RSDrawing::DrawingAnimationType::REPLACE_DISAPPEAR_TYPE},
+    {"disable", RSDrawing::DrawingAnimationType::DISABLE_TYPE}
+};
 
 static const std::map<std::string, RSDrawing::DrawingCurveType> CURVE_TYPES = {
-    {"spring", RSDrawing::DrawingCurveType::SPRING}, {"linear", RSDrawing::DrawingCurveType::LINEAR},
-    {"friction", RSDrawing::DrawingCurveType::FRICTION}, {"sharp", RSDrawing::DrawingCurveType::SHARP}};
+    {"spring", RSDrawing::DrawingCurveType::SPRING},
+    {"linear", RSDrawing::DrawingCurveType::LINEAR},
+    {"friction", RSDrawing::DrawingCurveType::FRICTION},
+    {"sharp", RSDrawing::DrawingCurveType::SHARP}
+};
 
 /* To get the display text of an error
  * \param err the id of an error
@@ -821,6 +828,15 @@ void SymbolDefaultConfigParser::ParseAnimationSetting(
 
     if (root.isMember(GROUP_SETTINGS) && root[GROUP_SETTINGS].isArray()) {
         ParseGroupSettings(root[GROUP_SETTINGS], animationSetting.groupSettings);
+    }
+
+    if (root.isMember(COMMON_SUB_TYPE) && root[COMMON_SUB_TYPE].isString()) {
+        const std::string subTypeStr = root[COMMON_SUB_TYPE].asString();
+        ParseSymbolCommonSubType(subTypeStr, animationSetting.commonSubType);
+    }
+
+    if (root.isMember(SLOPE) && root[SLOPE].isDouble()) {
+        animationSetting.slope = root[SLOPE].asDouble();
     }
 }
 
