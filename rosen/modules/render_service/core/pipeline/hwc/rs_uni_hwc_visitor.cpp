@@ -985,13 +985,11 @@ void RSUniHwcVisitor::UpdateHwcNodeRectInSkippedSubTree(const RSRenderNode& root
         }
         const auto& property = hwcNodePtr->GetRenderProperties();
         auto geoPtr = property.GetBoundsGeometry();
-        if (geoPtr == nullptr) {   
+        if (geoPtr == nullptr) {
+            return;
+        }  
         auto originalMatrix = geoPtr->GetMatrix();
         auto matrix = Drawing::Matrix();
-        auto parent = hwcNodePtr->GetCurCloneNodeParent().lock();
-        if (parent == nullptr) {
-            parent = hwcNodePtr->GetParent().lock();
-        }
         if (!FindRootAndUpdateMatrix(parent, matrix, rootNode)) {
             continue;
         }
@@ -1021,6 +1019,7 @@ void RSUniHwcVisitor::UpdateHwcNodeRectInSkippedSubTree(const RSRenderNode& root
         UpdateHwcNodeInfo(*hwcNodePtr, matrix, rect, true);
         hwcNodePtr->SetTotalMatrix(matrix);
         hwcNodePtr->SetOldDirtyInSurface(geoPtr->MapRect(hwcNodePtr->GetSelfDrawRect(), matrix));
+    }
 }
 
 bool RSUniHwcVisitor::FindRootAndUpdateMatrix(std::shared_ptr<RSRenderNode>& parent, Drawing::Matrix& matrix,
