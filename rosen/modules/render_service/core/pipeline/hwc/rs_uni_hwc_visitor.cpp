@@ -987,7 +987,7 @@ void RSUniHwcVisitor::UpdateHwcNodeRectInSkippedSubTree(const RSRenderNode& root
         auto geoPtr = property.GetBoundsGeometry();
         if (geoPtr == nullptr) {
             return;
-        }  
+        }
         auto originalMatrix = geoPtr->GetMatrix();
         auto matrix = Drawing::Matrix();
         if (!FindRootAndUpdateMatrix(parent, matrix, rootNode)) {
