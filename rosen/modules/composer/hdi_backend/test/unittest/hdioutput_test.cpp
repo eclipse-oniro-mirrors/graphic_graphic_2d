@@ -737,14 +737,16 @@ HWTEST_F(HdiOutputTest, ANCOTransactionOnComplete001, Function | MediumTest | Le
     std::shared_ptr<HdiOutput> output = HdiOutput::CreateHdiOutput(0);
     ASSERT_NE(output, nullptr);
     LayerInfoPtr layerInfo = nullptr;
+    output->ANCOTransactionOnComplete(layerInfo, nullptr);
     layerInfo = std::make_shared<HdiLayerInfo>();
     output->ANCOTransactionOnComplete(layerInfo, nullptr);
     layerInfo->SetAncoFlags(static_cast<uint32_t>(0x0111));
     output->ANCOTransactionOnComplete(layerInfo, nullptr);
-    sptr<SyncFence> previousReleaseFence = new syncFence(-1);
+    sptr<SyncFence> previousReleaseFence = new SyncFence(-1);
     auto consumer = IConsumerSurface::Create("xcomponentIdSurface");
-    auto buffer = new SurfaceBufferImpl();
     layerInfo->SetSurface(consumer);
+    output->ANCOTransactionOnComplete(layerInfo, previousReleaseFence);
+    auto buffer = new SurfaceBufferImpl();
     layerInfo->SetBuffer(buffer, nullptr);
     output->ANCOTransactionOnComplete(layerInfo, previousReleaseFence);
 }
