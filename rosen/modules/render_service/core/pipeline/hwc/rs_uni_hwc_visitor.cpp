@@ -304,7 +304,6 @@ void RSUniHwcVisitor::ProcessSolidLayerDisabled(RSSurfaceRenderNode& node)
         node.GetName().c_str(), node.GetId());
     RS_LOGD("solidLayer: solidLayer enabling condition is not met, name: %{public}s", node.GetName().c_str());
     const auto& renderProperties = node.GetRenderProperties();
-    auto parentNode = node.GetParent().lock();
     Color appBackgroundColor = renderProperties.GetBackgroundColor();
     // Non-xcom or pure black nodes are not processed and are allowed to pass.
     if (static_cast<uint8_t>(appBackgroundColor.GetAlpha()) == MAX_ALPHA &&
@@ -318,6 +317,7 @@ void RSUniHwcVisitor::ProcessSolidLayerDisabled(RSSurfaceRenderNode& node)
         RS_LOGD("solidLayer: solid color surface node: %{public}s, go hwc directly", node.GetName().c_str());
         return;
     }
+    auto parentNode = node.GetParent().lock();
     if (static_cast<uint8_t>(appBackgroundColor.GetAlpha()) < MAX_ALPHA) {
         bool isSpecialNodeType = RsCommonHook::Instance().GetHardwareEnabledByBackgroundAlphaFlag() ||
             node.IsHardwareEnableHint();
@@ -337,7 +337,7 @@ void RSUniHwcVisitor::ProcessSolidLayerDisabled(RSSurfaceRenderNode& node)
         RS_OPTIONAL_TRACE_FMT("hwcdebug: name:%s id:%" PRIu64 " parentId:%" PRIu64 " disabled by background "
             "solidColor && HDR", node.GetName().c_str(), node.GetId(), parentNode ? parentNode->GetId() : 0);
         RS_LOGD("solidLayer: disabled by background solidColor && HDR: %{public}s", node.GetName().c_str());
-            PrintHiperfLog(&node, "background solidColor && HDR");
+        PrintHiperfLog(&node, "background solidColor && HDR");
         node.SetHardwareForcedDisabledState(true);
         Statistics().UpdateHwcDisabledReasonForDFX(
             node.GetId(), HwcDisabledReasons::DISABLED_BY_SOLID_BACKGROUND_ALPHA, node.GetName());
@@ -1171,10 +1171,10 @@ void RSUniHwcVisitor::UpdateHwcNodeInfo(RSSurfaceRenderNode& node,
     node.HwcSurfaceRecorder().SetIntersectWithPreviousFilter(false);
     node.SetInFixedRotation(uniRenderVisitor_.displayNodeRotationChanged_ ||
                             uniRenderVisitor_.isScreenRotationAnimating_);
-    auto parentNode = node.GetParent().lock();
     if (!uniRenderVisitor_.IsHardwareComposerEnabled() || !node.IsDynamicHardwareEnable() ||
         IsDisableHwcOnExpandScreen() || uniRenderVisitor_.curSurfaceNode_->GetVisibleRegion().IsEmpty() ||
         !node.GetRSSurfaceHandler() || !node.GetRSSurfaceHandler()->GetBuffer()) {
+        auto parentNode = node.GetParent().lock();
         RS_OPTIONAL_TRACE_FMT("hwcdebug: name:%s id:%" PRIu64 " parentId:%" PRIu64 " disabled by "
             "param/invisible/no buffer, IsHardwareComposerEnabled[%d], IsDynamicHardwareEnable[%d], "
             "IsDisableHwcOnExpandScreen[%d], IsVisibleRegionEmpty[%d], HasBuffer[%d]", node.GetName().c_str(),
