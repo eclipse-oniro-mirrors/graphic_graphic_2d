@@ -798,7 +798,7 @@ HWTEST_F(RSUniRenderThreadTest, IsTaskQueueEmpty, TestSize.Level1)
     constexpr auto LOOPS = 5;
     constexpr auto SLEEP_TIME = 100;
     for (int i = 0; i < LOOPS; ++i) {
-         std::this_thread::sleep_for(std::chrono::milliseconds(SLEEP_TIME));
+        std::this_thread::sleep_for(std::chrono::milliseconds(SLEEP_TIME));
         if (instance.IsTaskQueueEmpty()) {
             break;
         }
