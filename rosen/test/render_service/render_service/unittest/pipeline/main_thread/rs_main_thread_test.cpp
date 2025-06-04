@@ -5198,7 +5198,6 @@ HWTEST_F(RSMainThreadTest, DoDirectComposition003, TestSize.Level1)
     ASSERT_NE(displayDrawable, nullptr);
     ASSERT_NE(displayDrawable->surfaceHandler_, nullptr);
     displayDrawable->surfaceHandler_->buffer_.buffer = SurfaceBuffer::Create();
-    auto buffer = displayDrawable->surfaceHandler_->GetBuffer();
     auto handle = new BufferHandle();
     handle->usage = BUFFER_USAGE_CPU_READ;
     displayDrawable->surfaceHandler_->buffer_.buffer->SetBufferHandle(handle);
