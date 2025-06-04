@@ -983,42 +983,44 @@ void RSUniHwcVisitor::UpdateHwcNodeRectInSkippedSubTree(const RSRenderNode& root
                 HwcDisabledReasons::DISABLED_BY_INVALID_PARAM, hwcNodePtr->GetName());
             continue;
         }
-    const auto& property = hwcNodePtr->GetRenderProperties();
-    auto geoPtr = property.GetBoundsGeometry();
-    if (geoPtr == nullptr) {
-            return;
-    }
-    auto originalMatrix = geoPtr->GetMatrix();
-    auto matrix = Drawing::Matrix();
-    if (!FindRootAndUpdateMatrix(parent, matrix, rootNode)) {
-        return;
-    }
-    if (parent) {
-        const auto& parentGeoPtr = parent->GetRenderProperties().GetBoundsGeometry();
-        if (parentGeoPtr) {
-            matrix.PostConcat(parentGeoPtr->GetMatrix());
+        const auto& property = hwcNodePtr->GetRenderProperties();
+        auto geoPtr = property.GetBoundsGeometry();
+        if (geoPtr == nullptr) {   
+        auto originalMatrix = geoPtr->GetMatrix();
+        auto matrix = Drawing::Matrix();
+        auto parent = hwcNodePtr->GetCurCloneNodeParent().lock();
+        if (parent == nullptr) {
+            parent = hwcNodePtr->GetParent().lock();
         }
-    }
-    RectI clipRect;
-    UpdateHwcNodeClipRect(hwcNodePtr, rootNode, clipRect);
-    auto surfaceHandler = hwcNodePtr->GetMutableRSSurfaceHandler();
-    auto& properties = hwcNodePtr->GetMutableRenderProperties();
-    auto offset = std::nullopt;
-    properties.UpdateGeometryByParent(&matrix, offset);
-    matrix.PreConcat(originalMatrix);
-    Drawing::Rect bounds = Drawing::Rect(0, 0, properties.GetBoundsWidth(), properties.GetBoundsHeight());
-    Drawing::Rect absRect;
-    matrix.MapRect(absRect, bounds);
-    RectI rect;
-    rect.left_ = static_cast<int>(std::floor(absRect.GetLeft()));
-    rect.top_ = static_cast<int>(std::floor(absRect.GetTop()));
-    rect.width_ = static_cast<int>(std::ceil(absRect.GetRight() - rect.left_));
-    rect.height_ = static_cast<int>(std::ceil(absRect.GetBottom() - rect.top_));
-    UpdateCrossInfoForProtectedHwcNode(*hwcNodePtr);
-    UpdateDstRect(*hwcNodePtr, rect, clipRect);
-    UpdateHwcNodeInfo(*hwcNodePtr, matrix, rect, true);
-    hwcNodePtr->SetTotalMatrix(matrix);
-    hwcNodePtr->SetOldDirtyInSurface(geoPtr->MapRect(hwcNodePtr->GetSelfDrawRect(), matrix));
+        if (!FindRootAndUpdateMatrix(parent, matrix, rootNode)) {
+            continue;
+        }
+        if (parent) {
+            const auto& parentGeoPtr = parent->GetRenderProperties().GetBoundsGeometry();
+            if (parentGeoPtr) {
+                matrix.PostConcat(parentGeoPtr->GetMatrix());
+            }
+        }
+        RectI clipRect;
+        UpdateHwcNodeClipRect(hwcNodePtr, rootNode, clipRect);
+        auto surfaceHandler = hwcNodePtr->GetMutableRSSurfaceHandler();
+        auto& properties = hwcNodePtr->GetMutableRenderProperties();
+        auto offset = std::nullopt;
+        properties.UpdateGeometryByParent(&matrix, offset);
+        matrix.PreConcat(originalMatrix);
+        Drawing::Rect bounds = Drawing::Rect(0, 0, properties.GetBoundsWidth(), properties.GetBoundsHeight());
+        Drawing::Rect absRect;
+        matrix.MapRect(absRect, bounds);
+        RectI rect;
+        rect.left_ = static_cast<int>(std::floor(absRect.GetLeft()));
+        rect.top_ = static_cast<int>(std::floor(absRect.GetTop()));
+        rect.width_ = static_cast<int>(std::ceil(absRect.GetRight() - rect.left_));
+        rect.height_ = static_cast<int>(std::ceil(absRect.GetBottom() - rect.top_));
+        UpdateCrossInfoForProtectedHwcNode(*hwcNodePtr);
+        UpdateDstRect(*hwcNodePtr, rect, clipRect);
+        UpdateHwcNodeInfo(*hwcNodePtr, matrix, rect, true);
+        hwcNodePtr->SetTotalMatrix(matrix);
+        hwcNodePtr->SetOldDirtyInSurface(geoPtr->MapRect(hwcNodePtr->GetSelfDrawRect(), matrix));
 }
 
 bool RSUniHwcVisitor::FindRootAndUpdateMatrix(std::shared_ptr<RSRenderNode>& parent, Drawing::Matrix& matrix,
