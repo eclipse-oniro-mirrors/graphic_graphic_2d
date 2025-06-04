@@ -587,6 +587,14 @@ static void MarshalRenderModifier(const RSRenderModifier& modifier, std::strings
 {
     Parcel parcel;
     parcel.SetMaxCapacity(GetParcelMaxCapacity());
+
+    // Parcel Code - can be any, in our case I selected -1 to support already captured subtrees
+    parcel.WriteInt32(-1);
+    // MARSHAL PARCEL VERSION
+    if (!RSMarshallingHelper::MarshallingTransactionVer(parcel)) {
+        return;
+    }
+
     const_cast<RSRenderModifier&>(modifier).Marshalling(parcel);
 
     const size_t dataSize = parcel.GetDataSize();
@@ -875,6 +883,13 @@ static RSRenderModifier* UnmarshalRenderModifier(std::stringstream& data, std::s
     auto* parcel = new (parcelMemory + 1) Parcel;
     parcel->SetMaxCapacity(GetParcelMaxCapacity());
     parcel->WriteBuffer(buffer.data(), buffer.size());
+
+    int32_t versionPrefix = parcel->ReadInt32();
+    if (versionPrefix == -1) {
+        RSMarshallingHelper::UnmarshallingTransactionVer(*parcel);
+    } else {
+        parcel->RewindRead(0);
+    }
 
     auto ptr = RSRenderModifier::Unmarshalling(*parcel);
     if (!ptr) {
@@ -1521,7 +1536,7 @@ void RSProfiler::SetTextureRecordType(TextureRecordType type)
     g_textureRecordType = type;
 }
 
-bool RSProfiler::IfNeedToSkipDuringReplay(Parcel& parcel)
+bool RSProfiler::IfNeedToSkipDuringReplay(Parcel& parcel, uint32_t skipBytes)
 {
     if (!IsEnabled()) {
         return false;
@@ -1530,7 +1545,6 @@ bool RSProfiler::IfNeedToSkipDuringReplay(Parcel& parcel)
         return false;
     }
     if (IsReadEmulationMode() || IsReadMode()) {
-        constexpr size_t skipBytes = 388;
         parcel.SkipBytes(skipBytes);
         return true;
     }
