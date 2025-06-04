@@ -113,8 +113,8 @@ std::shared_ptr<RSDisplayRenderNode> RSMainThreadTest::GetAndInitDisplayRenderNo
     auto hdiOutput = HdiOutput::CreateHdiOutput(screenId);
     auto rsScreen = std::make_shared<impl::RSScreen>(screenId, false, hdiOutput, nullptr);
     rsScreen->hdiScreen_->device_ = hdiDeviceMock_;
-    rsScreen->phyWidth_ = 10;
-    rsScreen->phyHeight_ = 10;
+    rsScreen->phyWidth_ = 1;
+    rsScreen->phyHeight_ = 1;
     screenManager->MockHdiScreenConnected(rsScreen);
     displayNode->SetScreenId(screenId);
 
@@ -5161,7 +5161,7 @@ HWTEST_F(RSMainThreadTest, HandleTunnelLayerId004, TestSize.Level1)
  * @tc.name: DoDirectComposition003
  * @tc.desc: Test DoDirectComposition
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require: icc3sm
  */
 HWTEST_F(RSMainThreadTest, DoDirectComposition003, TestSize.Level1)
 {
@@ -5185,14 +5185,14 @@ HWTEST_F(RSMainThreadTest, DoDirectComposition003, TestSize.Level1)
     ASSERT_FALSE(mainThread->DoDirectComposition(rootNode, false));
 
     std::vector<std::shared_ptr<RSSurfaceRenderNode>> hardwareEnabledNodes = mainThread->hardwareEnabledNodes_;
-    for(auto& surfaceNode : hardwareEnabledNodes) {
+    for (auto& surfaceNode : hardwareEnabledNodes) {
         if (surfaceNode == nullptr) {
             continue;
         }
         if (surfaceNode->GetRSSurfaceHandler() == nullptr) {
             continue;
         }
-        if( surfaceNode->GetRSSurfaceHandler()->IsCurrentFrameBufferConsumed() && 
+        if ( surfaceNode->GetRSSurfaceHandler()->IsCurrentFrameBufferConsumed() && 
             surfaceNode->HwcSurfaceRecorder().GetLastFrameHasVisibleRegion()) {
             surfaceNode->GetRSSurfaceHandler()->ResetcurrentFrameBufferConsumed();
             surfaceNode->HwcSurfaceRecorder().SetLastFrameHasVisibleRegion(false);
