@@ -43,16 +43,20 @@ using namespace testing;
 using namespace testing::ext;
 
 namespace OHOS::Rosen {
-constexpr uint64_t REFRESH_PERIOD = 16666667;
-constexpr uint64_t SKIP_COMMAND_FREQ_LIMIT = 30;
-constexpr uint32_t MULTI_WINDOW_PERF_START_NUM = 2;
-constexpr uint32_t MULTI_WINDOW_PERF_END_NUM = 4;
-constexpr int32_t SIMI_VISIBLE_RATE = 2;
-constexpr int32_t SYSTEM_ANIMATED_SCENES_RATE = 2;
-constexpr int32_t INVISBLE_WINDOW_RATE = 10;
 constexpr int32_t DEFAULT_RATE = 1;
 constexpr int32_t INVALID_VALUE = -1;
+constexpr int32_t INVISBLE_WINDOW_RATE = 10;
+constexpr int32_t SCREEN_PHYSICAL_HEIGHT = 10;
+constexpr int32_t SCREEN_PHYSICAL_WIDTH = 10;
+constexpr int32_t SIMI_VISIBLE_RATE = 2;
+constexpr int32_t SIMI_VISIBLE_RATE = 2;
+constexpr int32_t SYSTEM_ANIMATED_SCENES_RATE = 2;
 constexpr ScreenId DEFAULT_DISPLAY_SCREEN_ID = 0;
+constexpr uint32_t MULTI_WINDOW_PERF_END_NUM = 4;
+constexpr uint32_t MULTI_WINDOW_PERF_START_NUM = 2;
+constexpr uint64_t REFRESH_PERIOD = 16666667;
+constexpr uint64_t SKIP_COMMAND_FREQ_LIMIT = 30;
+
 class RSMainThreadTest : public testing::Test {
 public:
     static void SetUpTestCase();
@@ -113,8 +117,8 @@ std::shared_ptr<RSDisplayRenderNode> RSMainThreadTest::GetAndInitDisplayRenderNo
     auto hdiOutput = HdiOutput::CreateHdiOutput(screenId);
     auto rsScreen = std::make_shared<impl::RSScreen>(screenId, false, hdiOutput, nullptr);
     rsScreen->hdiScreen_->device_ = hdiDeviceMock_;
-    rsScreen->phyWidth_ = 1;
-    rsScreen->phyHeight_ = 1;
+    rsScreen->phyWidth_ = SCREEN_PHYSICAL_WIDTH;
+    rsScreen->phyHeight_ = SCREEN_PHYSICAL_HEIGHT;
     screenManager->MockHdiScreenConnected(rsScreen);
     displayNode->SetScreenId(screenId);
 
