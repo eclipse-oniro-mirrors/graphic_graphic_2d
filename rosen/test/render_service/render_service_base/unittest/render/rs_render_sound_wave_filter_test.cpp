@@ -150,9 +150,6 @@ HWTEST_F(RSRenderSoundWaveFilterTest, GetLeafRenderProperties001, TestSize.Level
  */
 HWTEST_F(RSRenderSoundWaveFilterTest, RSRenderSoundWaveFilter001, TestSize.Level1)
 {
-    Vector4f colorA = { 1.0f, 1.0f, 1.0f, 1.0f };
-    Vector4f colorB = { 1.0f, 1.0f, 1.0f, 1.0f };
-    Vector4f colorC = { 1.0f, 1.0f, 1.0f, 1.0f };
     float colorProgress = 1.0f;
     float soundIntensity = 1.5f;
     float shockWaveAlphaA = 0.6f;
@@ -162,6 +159,13 @@ HWTEST_F(RSRenderSoundWaveFilterTest, RSRenderSoundWaveFilter001, TestSize.Level
     float shockWaveTotalAlpha = 1.0f;
     auto filter = std::make_shared<RSRenderSoundWaveFilterPara>(0);
     EXPECT_NE(filter, nullptr);
+    filter->colorProgress_ = colorProgress;
+    filter->soundIntensity_ = soundIntensity;
+    filter->shockWaveAlphaA_ = shockWaveAlphaA;
+    filter->shockWaveAlphaB_ = shockWaveAlphaB;
+    filter->shockWaveProgressA_ = shockWaveProgressA;
+    filter->shockWaveProgressB_ = shockWaveProgressB;
+    filter->shockWaveTotalAlpha_ = shockWaveTotalAlpha;
     EXPECT_TRUE(ROSEN_EQ<float>(filter->GetColorProgress(), colorProgress));
     EXPECT_TRUE(ROSEN_EQ<float>(filter->GetSoundIntensity(), soundIntensity));
     EXPECT_TRUE(ROSEN_EQ<float>(filter->GetShockWaveAlphaA(), shockWaveAlphaA));
