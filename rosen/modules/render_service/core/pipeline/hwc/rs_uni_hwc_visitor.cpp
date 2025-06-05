@@ -987,7 +987,7 @@ void RSUniHwcVisitor::UpdateHwcNodeRectInSkippedSubTree(const RSRenderNode& root
     }
 }
 
-bool RSUniHwcVisitor::IsFindRoot(const std::shared_ptr<RSRenderNode>& parent, const RSRenderNode& rootNode)
+bool RSUniHwcVisitor::IsFindRoot(std::shared_ptr<RSRenderNode>& parent, const RSRenderNode& rootNode)
 {
     bool isFindInRootSubTree = parent ? parent->GetId() == rootNode.GetId() : false;
     while (parent && parent->GetType() != RSRenderNodeType::DISPLAY_NODE && !isFindInRootSubTree) {
