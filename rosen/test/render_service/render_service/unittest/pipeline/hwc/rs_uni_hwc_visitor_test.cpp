@@ -2330,7 +2330,7 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateHwcNodeClipRect_002, TestSize.Level2)
     EXPECT_EQ(clipRect, expectedClipRect);
 }
 
-/*
+/**
  * @tc.name: UpdateHwcNodeClipRect_003
  * @tc.desc: Test UpdateHwcNodeClipRect
  * @tc.type: FUNC
@@ -2370,7 +2370,7 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateHwcNodeMatrix_001, TestSize.Level2)
     EXPECT_EQ(matrix, expectedMatrix);
 }
 
-/*
+/**
  * @tc.name: UpdateHwcNodeClipRectAndMatrix_001
  * @tc.desc: Test UpdateHwcNodeClipRectAndMatrix
  * @tc.type: FUNC
