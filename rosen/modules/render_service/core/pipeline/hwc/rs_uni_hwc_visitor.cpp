@@ -33,6 +33,7 @@ namespace {
 constexpr int32_t MAX_ALPHA = 255;
 constexpr uint32_t API18 = 18;
 constexpr uint32_t INVALID_API_COMPATIBLE_VERSION = 0;
+constexpr size_t MAX_NUM_SOLID_LAYER = 1;
 
 bool GetSolidLayerEnabled()
 {
@@ -347,8 +348,12 @@ void RSUniHwcVisitor::ProcessSolidLayerDisabled(RSSurfaceRenderNode& node)
 
 void RSUniHwcVisitor::ProcessSolidLayerEnabled(RSSurfaceRenderNode& node)
 {
-    if (!GetSolidLayerEnabled()) {
-        RS_LOGD("solidLayer: solidLayer enabling condition is met, but the switch is disabled! name: %{public}s",
+    if (!GetSolidLayerEnabled() || (GetSolidLayerHwcEnableCount() >= MAX_NUM_SOLID_LAYER)) {
+        RS_LOGD("solidLayer: solidLayer enabling condition is met, but the switch is not turned on or exceeds the "
+            "upper limit! solidLayer num: %{public}zu, name: %{public}s", GetSolidLayerHwcEnableCount(),
+            node.GetName().c_str());
+        RS_OPTIONAL_TRACE_NAME_FMT("solidLayer: solidLayer enabling condition is met, but the switch is not turned "
+            "on or exceeds the upper limit! solidLayer num: %zu, name: %s", GetSolidLayerHwcEnableCount(),
             node.GetName().c_str());
         node.SetHardwareForcedDisabledState(true);
         return;
@@ -392,10 +397,13 @@ void RSUniHwcVisitor::ProcessSolidLayerEnabled(RSSurfaceRenderNode& node)
     }
     stagingSurfaceParams->SetIsHwcEnabledBySolidLayer(true);
     stagingSurfaceParams->SetSolidLayerColor(appBackgroundColor);
+    IncreaseSolidLayerHwcEnableCount();
 }
 
 void RSUniHwcVisitor::UpdateHwcNodeEnableByBackgroundAlpha(RSSurfaceRenderNode& node)
 {
+    auto stagingSurfaceParams = static_cast<RSSurfaceRenderParams *>(node.GetStagingRenderParams().get());
+    stagingSurfaceParams->SetIsHwcEnabledBySolidLayer(false);
     if (node.GetAncoForceDoDirect()) {
         return;
     }
@@ -403,10 +411,9 @@ void RSUniHwcVisitor::UpdateHwcNodeEnableByBackgroundAlpha(RSSurfaceRenderNode& 
         __func__, node.GetName().c_str(), node.GetId());
     const auto& renderProperties = node.GetRenderProperties();
     Color appBackgroundColor = renderProperties.GetBackgroundColor();
-    auto stagingSurfaceParams = static_cast<RSSurfaceRenderParams *>(node.GetStagingRenderParams().get());
     // Enabling conditions: target type, overall a==1, pure color non-black/pure transparent,
     // no bullet screen
-    bool isTargetNodeType = stagingSurfaceParams->GetSelfDrawingNodeType() == SelfDrawingNodeType::XCOM ||
+    bool isTargetNodeType = node.GetSelfDrawingNodeType() == SelfDrawingNodeType::XCOM ||
         (node.IsRosenWeb() && static_cast<uint8_t>(appBackgroundColor.GetAlpha()) == 0);
     bool isTargetColor = (static_cast<uint8_t>(appBackgroundColor.GetAlpha()) == MAX_ALPHA &&
                           appBackgroundColor != RgbPalette::Black()) ||
@@ -732,7 +739,7 @@ void RSUniHwcVisitor::UpdateHardwareStateByBoundNEDstRectInApps(
         }
 
         // Anco nodes do not collect
-        if ((hwcNodePtr->GetAncoFlags() & static_cast<uint32_t>(AncoFlags::IS_ANCO_NODE)) != 0) {
+        if (hwcNodePtr->GetAncoForceDoDirect()) {
             continue;
         }
 
