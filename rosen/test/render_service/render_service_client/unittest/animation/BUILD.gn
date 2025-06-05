@@ -55,6 +55,7 @@ ohos_unittest("RSRenderServiceClientAnimationTest") {
     "hisysevent:libhisysevent",
     "image_framework:image_native",
     "opengles:libGLES",
+    "hilog:libhilog",
   ]
 }
 
