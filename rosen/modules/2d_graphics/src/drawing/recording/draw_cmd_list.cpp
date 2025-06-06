@@ -200,7 +200,12 @@ void DrawCmdList::Dump(std::string& out)
 {
     bool found = false;
     std::lock_guard<std::recursive_mutex> lock(mutex_);
-    for (auto& item : drawOpItems_) {
+    std::vector<std::shared_ptr<DrawOpItem>> dumpDrawOpItems = drawOpItems_;
+    if (!IsEmpty() && dumpDrawOpItems.empty()) {
+        dumpDrawOpItems = UnmarshallingDrawOpsSimpleForDump();
+    }
+    
+    for (auto& item : dumpDrawOpItems) {
         if (item == nullptr) {
             continue;
         }
