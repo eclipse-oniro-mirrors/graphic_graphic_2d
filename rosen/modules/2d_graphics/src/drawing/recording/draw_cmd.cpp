@@ -380,7 +380,8 @@ std::pair<UnmarshallingHelper::UnmarshallingFunc, size_t> UnmarshallingHelper::G
 
 UnmarshallingPlayer::UnmarshallingPlayer(const DrawCmdList& cmdList) : cmdList_(cmdList) {}
 
-std::shared_ptr<DrawOpItem> UnmarshallingPlayer::Unmarshalling(uint32_t type, void* handle, size_t avaliableSize, bool isReplayMode)
+std::shared_ptr<DrawOpItem> UnmarshallingPlayer::Unmarshalling(uint32_t type, void* handle, size_t avaliableSize,
+                                                               bool isReplayMode)
 {
     if (type == DrawOpItem::OPITEM_HEAD) {
         return nullptr;
