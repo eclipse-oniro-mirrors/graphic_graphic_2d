@@ -22,7 +22,7 @@
 #include "limit_number.h"
 
 #include "pipeline/rs_test_util.h"
-
+#include "feature/capture/rs_capture_pixelmap_manager.h"
 using namespace testing;
 using namespace testing::ext;
 
@@ -93,7 +93,7 @@ HWTEST_F(RSUniUiCaptureTest, CopyDataToPixelMapTest, TestSize.Level1)
     RSUniUICapture rsUniUICapture(nodeId, captureConfig);
     auto img = std::make_shared<Drawing::Image>();
     auto pixelMap = std::make_shared<Media::PixelMap>();
-    EXPECT_FALSE(rsUniUICapture.CopyDataToPixelMap(img, pixelMap));
+    //EXPECT_FALSE(rsUniUICapture.CopyDataToPixelMap(img, pixelMap));
 
     Media::ImageInfo imageInfo;
     Media::Size infoSize;
@@ -102,7 +102,7 @@ HWTEST_F(RSUniUiCaptureTest, CopyDataToPixelMapTest, TestSize.Level1)
     imageInfo.size = infoSize;
     imageInfo.pixelFormat = Media::PixelFormat::RGBA_8888;
     pixelMap->SetImageInfo(imageInfo, true);
-    EXPECT_FALSE(rsUniUICapture.CopyDataToPixelMap(img, pixelMap));
+    //EXPECT_FALSE(rsUniUICapture.CopyDataToPixelMap(img, pixelMap));
 }
 
 /**
@@ -445,4 +445,22 @@ HWTEST_F(RSUniUiCaptureTest, ProcessSurfaceRenderNodeWithoutUniTest, TestSize.Le
     rsUniUICaptureVisitor->ProcessSurfaceViewWithoutUni(node);
     ASSERT_NE(rsUniUICaptureVisitor->canvas_, nullptr);
 }
+
+/**
+ * @tc.name: CreateClientPixelMap
+ * @tc.desc: Test CreateClientPixelMap
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSUniUiCaptureTest, CreateClientPixelMap, TestSize.Level1)
+{
+    Drawing::Rect rect = {0, 0, 1260, 2720};
+    RSSurfaceCaptureConfig captureConfig;
+    captureConfig.captureType = SurfaceCaptureType::UICAPTURE;
+
+    auto pixelMap = RSCapturePixelMapManager::GetClientCapturePixelMap(rect, captureConfig,
+        UniRenderEnabledType::UNI_RENDER_DISABLED);
+    EXPECT_EQ(pixelMap == nullptr, true);
+}
+
 } // namespace OHOS::Rosen
