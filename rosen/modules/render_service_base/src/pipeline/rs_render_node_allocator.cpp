@@ -15,8 +15,9 @@
 
 #include "pipeline/rs_render_node_allocator.h"
 
+#include "common/rs_optional_trace.h"
 #include "pipeline/rs_render_node_gc.h"
-#include "rs_trace.h"
+#include "platform/common/rs_log.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -32,17 +33,18 @@ RSRenderNodeAllocator& RSRenderNodeAllocator::Instance()
 
 bool RSRenderNodeAllocator::AddNodeToAllocator(RSRenderNode* ptr)
 {
-    if (ptr->GetType() != RSRenderNodeType::CANVAS_NODE) {
+    if (ptr == nullptr || ptr->GetType() != RSRenderNodeType::CANVAS_NODE) {
         return false;
     }
 
     nodeAllocatorSpinlock_.lock();
     if (nodeAllocator_.size() >= NODE_ALLOCATOR_LIMIT) {
-        RS_TRACE_NAME("AddNodeToAllocator nodeAllocator is full.");
+        RS_OPTIONAL_TRACE_NAME("AddNodeToAllocator nodeAllocator is full.");
         return false;
     }
     ptr->~RSRenderNode();
     nodeAllocator_.push(ptr);
+    RS_LOGD("AddNodeToAllocator, pool size:%{public}zu", nodeAllocator_.size());
     nodeAllocatorSpinlock_.unlock();
     return true;
 }
@@ -53,13 +55,15 @@ std::shared_ptr<RSCanvasRenderNode> RSRenderNodeAllocator::CreateRSCanvasRenderN
     nodeAllocatorSpinlock_.lock();
     if (nodeAllocator_.empty()) {
         nodeAllocatorSpinlock_.unlock();
-        RS_TRACE_NAME("CreateRSCanvasRenderNode nodeAllocator is empty.");
+        RS_OPTIONAL_TRACE_NAME("CreateRSCanvasRenderNode nodeAllocator is empty.");
         return std::shared_ptr<RSCanvasRenderNode>(new RSCanvasRenderNode(id,
             context, isTextureExportNode), RSRenderNodeGC::NodeDestructor);
     }
     auto front = nodeAllocator_.front();
     nodeAllocator_.pop();
     nodeAllocatorSpinlock_.unlock();
+    RS_LOGD("CreateRSCanvasRenderNode in pool, pool size:%{public}zu, id:%{public}" PRIu64 "",
+        nodeAllocator_.size(), id);
     return std::shared_ptr<RSCanvasRenderNode>(new (front)RSCanvasRenderNode(id,
         context, isTextureExportNode), RSRenderNodeGC::NodeDestructor);
 }
