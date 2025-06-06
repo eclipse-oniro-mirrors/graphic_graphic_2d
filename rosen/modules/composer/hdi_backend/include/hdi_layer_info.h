@@ -73,8 +73,8 @@ static const std::map<GraphicBlendType, std::string> BlendTypeStrs = {
     {GRAPHIC_BLEND_BUTT,                     "16 <Uninitialized>"},
 };
 
-// ANCO node ancoFlags
-enum class AncoFlags : uint32_t {
+// ANCO node HdiAncoFlags
+enum class HdiAncoFlags : uint32_t {
     IS_ANCO_NODE = 0x0001,
     ANCO_SFV_NODE = 0x0011,
     ANCO_NATIVE_NODE = 0x0111,
@@ -663,12 +663,12 @@ public:
     uint32_t GetAncoFlags() const { return ancoFlags_; }
     bool IsAncoSfv() const
     {
-        constexpr uint32_t ANCO_SFV_NODE_FLAG = static_cast<uint32_t>(AncoFlags::ANCO_SFV_NODE);
+        constexpr uint32_t ANCO_SFV_NODE_FLAG = static_cast<uint32_t>(HdiAncoFlags::ANCO_SFV_NODE);
         return (ancoFlags_ & ANCO_SFV_NODE_FLAG) == ANCO_SFV_NODE_FLAG;
     }
     bool IsAncoNative() const
     {
-        constexpr uint32_t ANCO_NATIVE_NODE_FLAG = static_cast<uint32_t>(AncoFlags::ANCO_NATIVE_NODE);
+        constexpr uint32_t ANCO_NATIVE_NODE_FLAG = static_cast<uint32_t>(HdiAncoFlags::ANCO_NATIVE_NODE);
         return (ancoFlags_ & ANCO_NATIVE_NODE_FLAG) == ANCO_NATIVE_NODE_FLAG;
     }
     /* hdiLayer get layer info end */
