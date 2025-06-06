@@ -501,7 +501,8 @@ HWTEST_F(RSUiCaptureTaskParallelTest, CreateResources002, Function | SmallTest |
         true);
     nodeMap.RegisterRenderNode(surfaceRenderNode);
     auto rsCapturePixelMap = std::make_shared<RSCapturePixelMap>();
-    auto surfaceRenderNodeHandle = std::make_shared<RSUiCaptureTaskParallel>(surfaceRenderNodeId, config1, rsCapturePixelMap);
+    auto surfaceRenderNodeHandle = std::make_shared<RSUiCaptureTaskParallel>(surfaceRenderNodeId,
+        config1, rsCapturePixelMap);
     Drawing::Rect surfaceRect(0.f, 0.f, 0.f, 0.f);
     ASSERT_EQ(surfaceRenderNodeHandle->CreateResources(surfaceRect), false);
 
@@ -641,7 +642,8 @@ HWTEST_F(RSUiCaptureTaskParallelTest, RSUiCaptureTaskParallel_IsRectValid003, Fu
         true);
     nodeMap.RegisterRenderNode(surfaceRenderNode);
     auto rsCapturePixelMap = std::make_shared<RSCapturePixelMap>();
-    auto surfaceRenderNodeHandle = std::make_shared<RSUiCaptureTaskParallel>(surfaceRenderNodeId, config, rsCapturePixelMap);
+    auto surfaceRenderNodeHandle = std::make_shared<RSUiCaptureTaskParallel>(surfaceRenderNodeId,
+        config, rsCapturePixelMap);
     surfaceRenderNode->renderContent_->renderProperties_.SetBoundsWidth(HALF_BOUNDS_WIDTH);
     surfaceRenderNode->renderContent_->renderProperties_.SetBoundsHeight(HALF_BOUNDS_HEIGHT);
     Drawing::Rect specifiedAreaRect(0.f, 0.f, DEFAULT_BOUNDS_WIDTH, DEFAULT_BOUNDS_HEIGHT);
@@ -803,7 +805,7 @@ HWTEST_F(RSUiCaptureTaskParallelTest, CreateClientPixelMap, Function | SmallTest
     // TEST3: vaild specifiedAreadRect
     {
         Drawing::Rect rect = {0, 0, 1260, 2720};
-        Drawing::Rect specifiAreaRect = {0, 0 ,1259, 2710};
+        Drawing::Rect specifiAreaRect = {0, 0, 1259, 2710};
         RSSurfaceCaptureConfig captureConfig;
         captureConfig.captureType = SurfaceCaptureType::UICAPTURE;
         auto pixelMap = RSCapturePixelMapManager::GetClientCapturePixelMap(rect, captureConfig,

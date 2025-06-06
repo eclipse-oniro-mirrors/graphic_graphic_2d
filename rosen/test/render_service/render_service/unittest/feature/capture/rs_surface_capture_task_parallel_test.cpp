@@ -39,7 +39,7 @@ namespace Rosen {
 constexpr uint32_t MAX_TIME_WAITING_FOR_CALLBACK = 200;
 constexpr uint32_t SLEEP_TIME_IN_US = 10000; // 10ms
 constexpr uint32_t SLEEP_TIME_FOR_PROXY = 100000; // 100ms
-constexpr uint32_t DEFAULT_WEIGHT= 1260;
+constexpr uint32_t DEFAULT_WEIGHT = 1260;
 constexpr uint32_t DEFAULT_HIGHT = 2720;
 
 class CustomizedSurfaceCapture : public SurfaceCaptureCallback {
@@ -134,7 +134,6 @@ void RSSurfaceCaptureTaskParallelTest::SetUpTestCase()
         return;
     }
 
-
     surfaceNode_ = CreateSurface("SurfaceCaptureTestNode");
     if (surfaceNode_ == nullptr) {
         return;
@@ -155,7 +154,8 @@ void RSSurfaceCaptureTaskParallelTest::SetUpTestCase()
     }
 }
 
-void RSSurfaceCaptureTaskParallelTest::TearDownTestCase() {
+void RSSurfaceCaptureTaskParallelTest::TearDownTestCase() 
+{
     surfaceCaptureCb_->Reset();
     surfaceCaptureCb_ = nullptr;
     rsInterfaces_ = nullptr;
@@ -474,7 +474,7 @@ HWTEST_F(RSSurfaceCaptureTaskParallelTest, CreateClientPixelMap, TestSize.Level2
 
     // TEST1:: Vail Caputre size and use DMA
     {
-        Drawing::Rect rect = {0, 0 ,1260, 2720};
+        Drawing::Rect rect = {0, 0, 1260, 2720};
         RSSurfaceCaptureConfig captureConfig;
         captureConfig.useDma = true;
         auto pixelMap = RSCapturePixelMapManager::GetClientCapturePixelMap(rect, captureConfig,
@@ -626,7 +626,6 @@ HWTEST_F(RSSurfaceCaptureTaskParallelTest, TestSurfaceCaputreIt, TestSize.Level2
     EXPECT_EQ(surfaceCaptureCb_->IsTestSuccess(), true);
     // No DMA Canvas Node
     surfaceCaptureCb_->Reset();
-    captureConfig.useDma = false;
     ret = rsInterfaces_->TakeSurfaceCaptureForUI(surfaceNode_, surfaceCaptureCb_, 0.5, 0.5);
     EXPECT_EQ(ret, true);
     EXPECT_EQ(CheckSurfaceCaptureCallback(), true);
@@ -749,7 +748,7 @@ HWTEST_F(RSSurfaceCaptureTaskParallelTest, TestGetCaptureSurfaceNode, TestSize.L
         EXPECT_EQ(backNode->GetId(), nodeId);
     }
 
-    // shouldPaint =false;
+    // shouldPaint is false;
     {
         parent1->nodeType_ = RSSurfaceNodeType::LEASH_WINDOW_NODE;
         parent1->shouldPaint_ = false;
@@ -757,7 +756,6 @@ HWTEST_F(RSSurfaceCaptureTaskParallelTest, TestGetCaptureSurfaceNode, TestSize.L
         EXPECT_EQ(backNode->GetId(), nodeId);
         parent1->shouldPaint_ = true;
     }
-    
 }
 
 /*
@@ -782,9 +780,6 @@ HWTEST_F(RSSurfaceCaptureTaskParallelTest, TestGetCaptureDisplayNode, TestSize.L
 
     auto rsCapturePixelMap = std::make_shared<RSCapturePixelMap>();
     RSSurfaceCaptureTaskParallel task(nodeId, captureConfig, rsCapturePixelMap);
-    bool ret = task.CreateResources();
-    ret = true;
-    EXPECT_EQ(ret, true);
     EXPECT_EQ(task.CreateResourcesForClientPixelMap(renderNode), false);
 }
 }

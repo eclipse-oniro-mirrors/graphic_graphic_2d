@@ -591,7 +591,7 @@ void RSSurfaceCaptureTaskParallel::AddBlur(
             tmpImg->BuildFromTexture(*grContext, backendTexture.GetTextureInfo(),
                 textureOrigin, bitmapFormat, colorSpace);
             if (!CopyDataToPixelMap(tmpImg, pixelmap, captureConfig,
-                UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL, colorSpace )) {
+                UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL, colorSpace)) {
                 RS_LOGE("RSSurfaceCaptureTaskParallel: CopyDataToPixelMap failed");
                 callback->OnSurfaceCapture(id, captureConfig, nullptr);
                 RSUniRenderUtil::ClearNodeCacheSurface(

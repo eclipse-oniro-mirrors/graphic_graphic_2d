@@ -26,7 +26,7 @@ using CapturePixelMapMemFunHandle = std::unordered_map<int,
 using CapturePixelMapCheckFunHandle = std::unordered_map<int,
      std::unordered_map<int, std::function<bool(const Drawing::Rect&, const RSSurfaceCaptureConfig&)>>>;
 
-class RSB_EXPORT RSCapturePixelMapManager{
+class RSB_EXPORT RSCapturePixelMapManager {
 public:
     RSCapturePixelMapManager(){};
     ~RSCapturePixelMapManager(){};

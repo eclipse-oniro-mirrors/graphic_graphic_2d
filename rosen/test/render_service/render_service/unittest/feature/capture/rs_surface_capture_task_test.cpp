@@ -938,7 +938,7 @@ HWTEST_F(RSSurfaceCaptureTaskTest, TakeSurfaceCaptureWithBlurTest, Function | Sm
     blurRadius = 1000;
     ret = rsInterfaces_->TakeSurfaceCaptureWithBlur(surfaceNode_, surfaceCaptureCb_, captureConfig, blurRadius);
     // code
-    EXPECT_EQ(ret , true);
+    EXPECT_EQ(ret, true);
 }
 
 /*

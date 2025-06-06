@@ -13,17 +13,17 @@
  * limitations under the License.
  */
 
- #include "feature/capture/rs_capture_pixelmap_manager.h"
- #include "draw/color.h"
- #include "image/bitmap.h"
- #include "platform/common/rs_log.h"
- #include <memory>
- #include <mutex>
- #include "rs_trace.h"
- #ifdef ROSEN_OHOS
- #include <sys/mman.h>
- #include "parameters.h"
- #endif
+#include "feature/capture/rs_capture_pixelmap_manager.h"
+#include "draw/color.h"
+#include "image/bitmap.h"
+#include "platform/common/rs_log.h"
+#include <memory>
+#include <mutex>
+#include "rs_trace.h"
+#ifdef ROSEN_OHOS
+#include <sys/mman.h>
+#include "parameters.h"
+#endif
 
 #if defined (RS_ENABLE_UNI_RENDER) && defined (ROSEN_OHOS) && defined(RS_ENABLE_VK)
 #include "draw/surface.h"
@@ -68,7 +68,7 @@ void RSCapturePixelMapManager::LoadCheckFunc()
         int32_t width = ceil(areaRect.GetWidth() * captureConfig.scaleX);
         int32_t height = ceil(areaRect.GetHeight() * captureConfig.scaleY);
         if (width > 0 && static_cast<int32_t>(OHOS::Rosen::NativeBufferUtils::VKIMAGE_LIMIT_SIZE) / width < height) {
-            RS_LOGE("RSUiCaptureTaskParallel::CreateResources: image is too large, width:%{public}d, height::%{public}d",
+            RS_LOGE("RSUiCaptureTaskParallel::CreateResources:image is too large, width:%{public}d,height::%{public}d",
                 width, height);
             return false;
         }
@@ -87,14 +87,15 @@ void RSCapturePixelMapManager::LoadSetMemFunc()
 }
 
 bool RSCapturePixelMapManager::SetCapturePixelMapMem(const std::unique_ptr<Media::PixelMap>& pixelmap,
-        const RSSurfaceCaptureConfig& captureConfig, const UniRenderEnabledType &uniRenderEnabledType)
+    const RSSurfaceCaptureConfig& captureConfig, const UniRenderEnabledType &uniRenderEnabledType)
 {
     if (pixelmap == nullptr) {
         return false;
     }
     // Init Policy Function
     static std::once_flag LoadSetMemFunFlag;
-    std::call_once(LoadSetMemFunFlag,[](){
+    std::call_once(LoadSetMemFunFlag, []()
+    {
         RSCapturePixelMapManager::LoadSetMemFunc();
     });
 

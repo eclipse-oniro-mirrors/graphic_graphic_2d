@@ -93,7 +93,7 @@ HWTEST_F(RSUniUiCaptureTest, CopyDataToPixelMapTest, TestSize.Level1)
     RSUniUICapture rsUniUICapture(nodeId, captureConfig);
     auto img = std::make_shared<Drawing::Image>();
     auto pixelMap = std::make_shared<Media::PixelMap>();
-    //EXPECT_FALSE(rsUniUICapture.CopyDataToPixelMap(img, pixelMap));
+    EXPECT_FALSE(rsUniUICapture.CopyDataToPixelMap(img, pixelMap));
 
     Media::ImageInfo imageInfo;
     Media::Size infoSize;
@@ -102,7 +102,7 @@ HWTEST_F(RSUniUiCaptureTest, CopyDataToPixelMapTest, TestSize.Level1)
     imageInfo.size = infoSize;
     imageInfo.pixelFormat = Media::PixelFormat::RGBA_8888;
     pixelMap->SetImageInfo(imageInfo, true);
-    //EXPECT_FALSE(rsUniUICapture.CopyDataToPixelMap(img, pixelMap));
+    EXPECT_FALSE(rsUniUICapture.CopyDataToPixelMap(img, pixelMap));
 }
 
 /**
