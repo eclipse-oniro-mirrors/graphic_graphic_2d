@@ -196,6 +196,8 @@ std::unique_ptr<RSRenderFrame> RSDisplayRenderNodeDrawable::RequestFrame(
         params.GetNewColorSpace(), params.GetNewPixelFormat());
     RS_LOGD("RequestFrame colorspace is %{public}d, pixelformat is %{public}d", params.GetNewColorSpace(),
         params.GetNewPixelFormat());
+    RS_OPTIONAL_TRACE_NAME_FMT("RSDisplayRenderNodeDrawable::RequestFrame colorSpace is %d, pixelformat is %d",
+        params.GetNewColorSpace(), params.GetNewPixelFormat());
 
     bool isHebc = true;
     if (RSAncoManager::Instance()->GetAncoHebcStatus() == AncoHebcStatus::NOT_USE_HEBC) {
@@ -2202,6 +2204,8 @@ void RSDisplayRenderNodeDrawable::ClearTransparentBeforeSaveLayer()
 
 void RSDisplayRenderNodeDrawable::PrepareHdrDraw(int32_t offscreenWidth, int32_t offscreenHeight)
 {
+    RS_OPTIONAL_TRACE_NAME_FMT("HDR PrepareHdrDraw make offscreen surface width: %d, height: %d",
+        offscreenWidth, offscreenHeight);
     offscreenSurface_ = curCanvas_->GetSurface()->MakeSurface(offscreenWidth, offscreenHeight);
 }
 

@@ -1081,6 +1081,8 @@ void RSRenderNode::DumpSubClassNode(std::string& out) const
         out += ", SpecialLayer: " + std::to_string(specialLayerManager.Get());
         out += ", surfaceType: " + std::to_string((int)surfaceNode->GetSurfaceNodeType());
         out += ", ContainerConfig: " + surfaceNode->GetContainerConfigDump();
+        out += ", colorSpace: " + std::to_string(surfaceNode->GetColorSpace());
+        out += ", uifirstColorGamut: " + std::to_string(surfaceNode->GetFirstLevelNodeColorGamut());
     } else if (GetType() == RSRenderNodeType::ROOT_NODE) {
         auto rootNode = static_cast<const RSRootRenderNode*>(this);
         out += ", Visible: " + std::to_string(rootNode->GetRenderProperties().GetVisible());
@@ -1092,6 +1094,7 @@ void RSRenderNode::DumpSubClassNode(std::string& out) const
         out += ", skipLayer: " + std::to_string(displayNode->GetSecurityDisplay());
         out += ", securityExemption: " + std::to_string(displayNode->GetSecurityExemption());
         out += ", virtualScreenMuteStatus: " + std::to_string(displayNode->GetVirtualScreenMuteStatus());
+        out += ", colorSpace: " + std::to_string(displayNode->GetColorSpace());
     } else if (GetType() == RSRenderNodeType::CANVAS_NODE) {
         auto canvasNode = static_cast<const RSCanvasRenderNode*>(this);
         NodeId linkedRootNodeId = canvasNode->GetLinkedRootNodeId();

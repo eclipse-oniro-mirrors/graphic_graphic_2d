@@ -344,6 +344,8 @@ void RsSubThreadCache::InitCacheSurface(Drawing::GPUContext* gpuContext,
             colorSpace =
                 Drawing::ColorSpace::CreateRGB(Drawing::CMSTransferFuncType::SRGB, Drawing::CMSMatrixType::DCIP3);
         }
+        RS_OPTIONAL_TRACE_NAME_FMT("RsSubThreadCache::InitCacheSurface sub thread cache's targetColorGamut: %d,"
+            " isNeedFP16: %d", targetColorGamut_, isNeedFP16);
         cacheBackendTexture_ = NativeBufferUtils::MakeBackendTexture(
             width, height, ExtractPid(nodeDrawable->nodeId_), format);
         auto vkTextureInfo = cacheBackendTexture_.GetTextureInfo().GetVKTextureInfo();
