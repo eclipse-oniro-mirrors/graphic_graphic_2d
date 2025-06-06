@@ -174,7 +174,7 @@ int OH_NativeVSync_DVSyncSwitch(OH_NativeVSync* ohNativeVSync, bool enable)
     return nativeVSync->receiver_->SetNativeDVSyncSwitch(enable);
 }
 
-namespace{
+namespace {
 bool IsInputRateRangeValid(OH_NativeVSync_ExpectedRateRange* range)
 {
     if (range == nullptr) {
