@@ -20,7 +20,7 @@
 #include <mutex>
 
 #include "event_handler.h"
-#include "feature/hyper_graphic_manager/hgm_context.h"
+#include "feature/hyper_graphic_manager/hgm_hardware_utils.h"
 #include "hdi_backend.h"
 #include "hgm_core.h"
 #include "pipeline/main_thread/rs_main_thread.h"
@@ -34,8 +34,6 @@ using UniFallbackCallback = std::function<void(const sptr<Surface>& surface, con
 using OutputPtr = std::shared_ptr<HdiOutput>;
 using LayerPtr = std::shared_ptr<HdiLayer>;
 class ScheduledTask;
-constexpr int64_t NS_MS_UNIT_CONVERSION = 1000000;
-constexpr uint32_t DELAY_TIME_OFFSET = 100; // 5ms
 class RSHardwareThread {
 public:
     static RSHardwareThread& Instance();
@@ -129,7 +127,7 @@ private:
     std::mutex frameBufferSurfaceOhosMapMutex_;
     std::mutex surfaceMutex_;
 
-    HgmContext hgmContext_;
+    HgmHardwareUtils hgmHardwareUtils_;
 
     friend class RSUniRenderThread;
     friend class RSUifirstManager;

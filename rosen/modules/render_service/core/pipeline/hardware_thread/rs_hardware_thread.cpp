@@ -86,6 +86,7 @@ constexpr int64_t REPORT_LOAD_WARNING_INTERVAL_TIME = 5000000; // 5s == 5000000u
 constexpr int64_t RESERVE_TIME = 1000000; // we reserve 1ms more for the composition
 constexpr int64_t COMMIT_DELTA_TIME = 2; // 2ms
 constexpr int64_t MAX_DELAY_TIME = 100; // 100ms
+constexpr int64_t NS_MS_UNIT_CONVERSION = 1000000;
 constexpr int64_t UNI_RENDER_VSYNC_OFFSET_DELAY_MODE = 3300000; // 3.3ms
 constexpr uint32_t MAX_TOTAL_SURFACE_NAME_LENGTH = 320;
 constexpr uint32_t MAX_SINGLE_SURFACE_NAME_LENGTH = 20;
@@ -155,7 +156,7 @@ void RSHardwareThread::Start()
     if (hdiBackend_ != nullptr) {
         hdiBackend_->RegPrepareComplete(onPrepareCompleteFunc, this);
     }
-    hgmContext_.RegisterChangeDssRefreshRateCb();
+    hgmHardwareUtils_.RegisterChangeDssRefreshRateCb();
 }
 
 int RSHardwareThread::GetHardwareTid() const
@@ -245,8 +246,8 @@ void RSHardwareThread::CommitAndReleaseLayers(OutputPtr output, const std::vecto
     delayTime_ = 0;
     RSTimer timer("Hardware", HARDWARE_TIMEOUT);
     LayerComposeCollection::GetInstance().UpdateUniformOrOfflineComposeFrameNumberForDFX(layers.size());
-    hgmContext_.InitRefreshRateParam();
-    RefreshRateParam param = hgmContext_.GetRefreshRateParam();
+    hgmHardwareUtils_.UpdateRefreshRateParam();
+    RefreshRateParam param = hgmHardwareUtils_.GetRefreshRateParam();
     auto& hgmCore = OHOS::Rosen::HgmCore::Instance();
     ScreenId curScreenId = hgmCore.GetActiveScreenId();
     uint32_t currentRate = hgmCore.GetScreenCurrentRefreshRate(curScreenId);
@@ -292,8 +293,8 @@ void RSHardwareThread::CommitAndReleaseLayers(OutputPtr output, const std::vecto
         }
 
         if (!isScreenPoweringOff) {
-            hgmContext_.ExecuteSwitchRefreshRate(output, param.rate);
-            hgmContext_.PerformSetActiveMode(
+            hgmHardwareUtils_.ExecuteSwitchRefreshRate(output, param.rate);
+            hgmHardwareUtils_.PerformSetActiveMode(
                 output, param.frameTimestamp, param.constraintRelativeTime);
             AddRefreshRateCount(output);
         }
@@ -715,7 +716,7 @@ void RSHardwareThread::OnScreenVBlankIdleCallback(ScreenId screenId, uint64_t ti
 {
     RS_TRACE_NAME_FMT("RSHardwareThread::OnScreenVBlankIdleCallback screenId: %" PRIu64" now: %" PRIu64"",
         screenId, timestamp);
-    hgmContext_.SetScreenVBlankIdle(screenId);
+    hgmHardwareUtils_.SetScreenVBlankIdle(screenId);
 }
 
 bool RSHardwareThread::IsDropDirtyFrame(OutputPtr output)
