@@ -1058,7 +1058,9 @@ void RSUniHwcVisitor::UpdateHwcNodeClipRectAndMatrix(const std::shared_ptr<RSSur
     while (hwcNodeParent && hwcNodeParent->GetType() != RSRenderNodeType::DISPLAY_NODE &&
            hwcNodeParent->GetId() != rootNode.GetId()) {
         UpdateHwcNodeClipRect(hwcNodeParent, childRectMapped);
-        UpdateHwcNodeMatrix(hwcNodeParent, accumulatedMatrix);
+        if (hwcNodePtr.GetId() != hwcNodeParent.GetId()) {
+            UpdateHwcNodeMatrix(hwcNodeParent, accumulatedMatrix);
+        }
         hwcNodeParent = hwcNodeParent->GetParent().lock();
     }
     Drawing::Matrix rootNodeAbsMatrix = rootNode.GetRenderProperties().GetBoundsGeometry()->GetAbsMatrix();
