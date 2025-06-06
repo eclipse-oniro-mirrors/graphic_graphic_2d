@@ -2088,6 +2088,8 @@ void RSDisplayRenderNodeDrawable::AdjustZOrderAndDrawSurfaceNode(
             float samplingScale = params.GetScreenInfo().samplingScale;
             if (dstRect.Intersect(visibleRect) && ROSEN_NE(samplingScale, 0.f)) {
                 matrix.PostTranslate(-visibleRect.GetLeft() / samplingScale, -visibleRect.GetTop() / samplingScale);
+            } else {
+                continue;
             }
         }
         canvas.ConcatMatrix(matrix);
