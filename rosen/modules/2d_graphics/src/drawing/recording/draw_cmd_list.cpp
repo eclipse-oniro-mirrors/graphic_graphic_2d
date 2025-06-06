@@ -202,7 +202,7 @@ void DrawCmdList::Dump(std::string& out)
     std::lock_guard<std::recursive_mutex> lock(mutex_);
     std::vector<std::shared_ptr<DrawOpItem>> dumpDrawOpItems;
     size_t lastOpGenSize = lastOpGenSize_;
-    if (dumpDrawOpItems.empty() && !IsEmpty()) {
+    if (drawOpItems_.empty() && !IsEmpty()) {
         UnmarshallingDrawOpsSimple(dumpDrawOpItems, lastOpGenSize);
     } else {
         dumpDrawOpItems = drawOpItems_;
