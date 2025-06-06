@@ -8439,13 +8439,13 @@ HWTEST_F(RSNodeTest, Dump002Test, TestSize.Level1)
     std::string out1;
     rsNode->Dump(out1);
     auto pos = out1.find("modifiers[]");
-    EXPECT_TRUE(pos != std::npos);
+    EXPECT_TRUE(pos != string::npos);
 
     rsNode->modifiers_[0] = nullptr;
     std::string out2;
     rsNode->Dump(out2);
-    auto pos = out2.find("modifiers[]");
-    EXPECT_TRUE(pos != std::npos);
+    pos = out2.find("modifiers[]");
+    EXPECT_TRUE(pos != string::npos);
 
     auto value = Vector4f(100.f);
     auto prop = std::make_shared<RSAnimatableProperty<Vector4f>>(value);
@@ -8459,8 +8459,8 @@ HWTEST_F(RSNodeTest, Dump002Test, TestSize.Level1)
 
     std::string out3;
     rsNode->Dump(out3);
-    auto pos = out3.find("modifiers[ Bounds:[x:100.0 y:100.0 width:100.0 height:100.0]"
+    pos = out3.find("modifiers[ Bounds:[x:100.0 y:100.0 width:100.0 height:100.0]"
         " Alpha:[1.0] BackgroundShader:]");
-    EXPECT_TRUE(pos != std::npos);
+    EXPECT_TRUE(pos != string::npos);
 }
 } // namespace OHOS::Rosen
