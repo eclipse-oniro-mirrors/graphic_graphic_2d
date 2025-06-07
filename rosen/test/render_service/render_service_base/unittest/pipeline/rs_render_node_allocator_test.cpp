@@ -76,7 +76,5 @@ HWTEST_F(RSRenderNodeAllocatorTest, AddNodeToAllocatorTest, TestSize.Level1)
     EXPECT_FALSE(nodeAllocator.AddNodeToAllocator(newCanvasNodePtr.get()));
 }
 
-
-
 } // namespace Rosen
 } // namespace OHOS
