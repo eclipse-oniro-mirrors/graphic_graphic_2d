@@ -1725,7 +1725,7 @@ HWTEST_F(RSRenderNodeTest, RSSurfaceRenderNodeDumpTest, TestSize.Level1)
     renderNode->DumpSubClassNode(outTest);
     EXPECT_EQ(outTest, ", Parent [null], Name [SurfaceNode], hasConsumer: 0, Alpha: 1.000000, Visible: 1, "
 	    "VisibleRegion [Empty], OpaqueRegion [Empty], OcclusionBg: 0, SpecialLayer: 0, surfaceType: 0, "
-        "ContainerConfig: [outR: 0 inR: 0 x: 0 y: 0 w: 0 h: 0]");
+        "ContainerConfig: [outR: 0 inR: 0 x: 0 y: 0 w: 0 h: 0], colorSpace: 4, uifirstColorGamut: 4");
 }
 
 /**
@@ -1740,7 +1740,7 @@ HWTEST_F(RSRenderNodeTest, RSDisplayRenderNodeDumpTest, TestSize.Level1)
     RSDisplayNodeConfig config;
     auto renderNode = std::make_shared<RSDisplayRenderNode>(0, config);
     renderNode->DumpSubClassNode(outTest);
-    EXPECT_EQ(outTest, ", skipLayer: 0, securityExemption: 0, virtualScreenMuteStatus: 0");
+    EXPECT_EQ(outTest, ", skipLayer: 0, securityExemption: 0, virtualScreenMuteStatus: 0, colorSpace: 4");
 }
 
 /**

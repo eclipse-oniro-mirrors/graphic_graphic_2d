@@ -167,7 +167,8 @@ RSRenderNodeDrawable::Ptr RSDisplayRenderNodeDrawable::OnGenerate(std::shared_pt
 std::unique_ptr<RSRenderFrame> RSDisplayRenderNodeDrawable::RequestFrame(
     RSDisplayRenderParams& params, std::shared_ptr<RSProcessor> processor)
 {
-    RS_TRACE_NAME("RSDisplayRenderNodeDrawable:RequestFrame");
+    RS_TRACE_NAME_FMT("RSDisplayRenderNodeDrawable:RequestFrame with colorSpace: %d, pixelformat: %d",
+        params.GetNewColorSpace(), params.GetNewPixelFormat());
     auto renderEngine = RSUniRenderThread::Instance().GetRenderEngine();
     if (UNLIKELY(!renderEngine)) {
         RS_LOGE("RSDisplayRenderNodeDrawable::RequestFrame RenderEngine is null!");
@@ -2224,6 +2225,8 @@ void RSDisplayRenderNodeDrawable::ClearTransparentBeforeSaveLayer()
 
 void RSDisplayRenderNodeDrawable::PrepareHdrDraw(int32_t offscreenWidth, int32_t offscreenHeight)
 {
+    RS_OPTIONAL_TRACE_NAME_FMT("HDR PrepareHdrDraw make offscreen surface width: %d, height: %d",
+        offscreenWidth, offscreenHeight);
     offscreenSurface_ = curCanvas_->GetSurface()->MakeSurface(offscreenWidth, offscreenHeight);
 }
 
