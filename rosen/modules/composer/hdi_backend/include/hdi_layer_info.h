@@ -230,11 +230,6 @@ public:
         isUniRender_ = isUniRender;
     }
 
-    void SetDisplayNodeFlag(bool isDisplayNode)
-    {
-        isDisplayNode_ = isDisplayNode;
-    }
-
     void SetTunnelHandleChange(bool change)
     {
         tunnelHandleChange_ = change;
@@ -363,11 +358,6 @@ public:
     bool GetUniRenderFlag() const
     {
         return isUniRender_;
-    }
-
-    bool GetDisplayNodeFlag() const
-    {
-        return isDisplayNode_;
     }
 
     bool IsPreMulti() const
@@ -684,7 +674,6 @@ private:
     GraphicMatrix matrix_; // matrix used for uni render redraw
     int32_t gravity_; // used for uni render redraw
     bool isUniRender_ = false; // true for uni render layer (DisplayNode)
-    bool isDisplayNode_ = false; // true for Displaynode layer
     GraphicLayerAlpha layerAlpha_;
     GraphicTransformType transformType_ = GraphicTransformType::GRAPHIC_ROTATE_BUTT;
     GraphicCompositionType compositionType_;

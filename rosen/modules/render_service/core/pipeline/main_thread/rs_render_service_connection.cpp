@@ -2407,7 +2407,6 @@ ErrCode RSRenderServiceConnection::SetScreenActiveRect(ScreenId id, const Rect& 
         if (!screenManager) {
             return;
         }
-        HgmCore::Instance().SetScreenSwitchDssEnable(id, false);
         screenManager->SetScreenActiveRect(id, dstActiveRect);
     };
     mainThread_->ScheduleTask(task).wait();
