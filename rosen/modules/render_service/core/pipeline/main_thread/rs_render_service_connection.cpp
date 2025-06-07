@@ -598,7 +598,7 @@ ErrCode RSRenderServiceConnection::GetPixelMapByProcessId(
             OHOS::Media::Rect rect = {0, 0, surfaceBuffer->GetWidth(), surfaceBuffer->GetHeight()};
             std::shared_ptr<Media::PixelMap> pixelmap = nullptr;
             RSBackgroundThread::Instance().PostSyncTask([&surfaceBuffer, rect, &pixelmap]() {
-                pixelmap = CreatePixelMapFromSurfaceBuffer(surfaceBuffer, rect);
+                pixelmap = Rosen::CreatePixelMapFromSurfaceBuffer(surfaceBuffer, rect);
             });
             PixelMapInfo info;
             info.pixelMap = pixelmap;
@@ -624,7 +624,7 @@ ErrCode RSRenderServiceConnection::CreatePixelMapFromSurface(sptr<Surface> surfa
         .height = srcRect.h,
     };
     RSBackgroundThread::Instance().PostSyncTask([surface, rect, &pixelMap]() {
-        pixelMap = CreatePixelMapFromSurface(surface, rect);
+        pixelMap = Rosen::CreatePixelMapFromSurface(surface, rect);
     });
     return ERR_OK;
 }
