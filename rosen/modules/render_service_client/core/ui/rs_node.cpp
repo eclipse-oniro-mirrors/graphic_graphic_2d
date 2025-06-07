@@ -3857,7 +3857,7 @@ void RSNode::Dump(std::string& out) const
             continue;
         }
         out += " " + modifier->GetModifierTypeString();
-        out += " :";
+        out += ":";
         renderModifier->Dump(out);
     }
     out += "]";
