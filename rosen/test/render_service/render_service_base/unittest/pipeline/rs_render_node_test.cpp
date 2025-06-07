@@ -748,7 +748,7 @@ HWTEST_F(RSRenderNodeTest, OnTreeStateChangedTest, TestSize.Level1)
 {
     RSRenderNode node(id, context); // isOnTheTree_ false
     std::shared_ptr<RSFilter> filter = RSFilter::CreateBlurFilter(floatData[0], floatData[1]);
-    node.renderContent_->renderProperties_.SetFilter(filter);
+    node.renderContent_->renderProperties_.filter_ = filter;
     node.OnTreeStateChanged();
     EXPECT_FALSE(node.isOnTheTree_);
     EXPECT_TRUE(node.HasBlurFilter());
@@ -1681,6 +1681,35 @@ HWTEST_F(RSRenderNodeTest, RSRenderNodeDumpTest002, TestSize.Level1)
 }
 
 /**
+ * @tc.name: RSRenderNodeDumpTest003
+ * @tc.desc: DumpNodeType DumpTree and DumpSubClassNode test
+ * @tc.type: FUNC
+ * @tc.require: issueICCYNK
+ */
+HWTEST_F(RSRenderNodeTest, RSRenderNodeDumpTest003, TestSize.Level1)
+{
+    std::string outTest = "";
+    auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(0);
+    auto consumerSurfacePtr = IConsumerSurface::Create();
+    auto buffer = SurfaceBuffer::Create();
+    ASSERT_TRUE(surfaceNode->GetRSSurfaceHandler() != nullptr);
+    surfaceNode->GetRSSurfaceHandler()->buffer_.buffer = buffer;
+    ASSERT_TRUE(surfaceNode->GetRSSurfaceHandler()->GetBuffer() != nullptr);
+    ASSERT_FALSE(surfaceNode->GetRSSurfaceHandler()->GetConsumer() != nullptr);
+    surfaceNode->DumpTree(0, outTest);
+    ASSERT_TRUE(outTest.find("ScalingMode") != string::npos);
+    ASSERT_FALSE(outTest.find("TransformType") != string::npos);
+
+    outTest = "";
+    surfaceNode->GetRSSurfaceHandler()->SetConsumer(consumerSurfacePtr);
+    ASSERT_TRUE(surfaceNode->GetRSSurfaceHandler()->GetBuffer() != nullptr);
+    ASSERT_TRUE(surfaceNode->GetRSSurfaceHandler()->GetConsumer() != nullptr);
+    surfaceNode->DumpTree(0, outTest);
+    ASSERT_TRUE(outTest.find("ScalingMode") != string::npos);
+    ASSERT_TRUE(outTest.find("TransformType") != string::npos);
+}
+
+/**
  * @tc.name: RSSurfaceRenderNodeDumpTest
  * @tc.desc: DumpNodeType DumpTree and DumpSubClassNode test
  * @tc.type: FUNC
@@ -2164,22 +2193,22 @@ HWTEST_F(RSRenderNodeTest, ProcessTest014, TestSize.Level1)
 }
 
 /**
- * @tc.name: AccmulateDirtyInOcclusionTest015
- * @tc.desc: AccmulateDirtyInOcclusion
+ * @tc.name: AccumulateDirtyInOcclusionTest015
+ * @tc.desc: AccumulateDirtyInOcclusion
  * @tc.type: FUNC
  * @tc.require: issueI9US6V
  */
-HWTEST_F(RSRenderNodeTest, AccmulateDirtyInOcclusionTest015, TestSize.Level1)
+HWTEST_F(RSRenderNodeTest, AccumulateDirtyInOcclusionTest015, TestSize.Level1)
 {
-    // AccmulateDirtyInOcclusion AccmulateDirtyTypes AccmulateDirtyStatus GetMutableRenderProperties
-    // ResetAccmulateDirtyTypes ResetAccmulateDirtyStatus RecordCurDirtyTypes test
+    // AccumulateDirtyInOcclusion AccumulateDirtyTypes AccumulateDirtyStatus GetMutableRenderProperties
+    // ResetAccumulateDirtyTypes ResetAccumulateDirtyStatus RecordCurDirtyTypes test
     std::shared_ptr<RSRenderNode> nodeTest = std::make_shared<RSRenderNode>(0);
     EXPECT_NE(nodeTest, nullptr);
     nodeTest->curDirtyTypes_.set(static_cast<size_t>(RSModifierType::PIVOT_Z), true);
     nodeTest->curDirtyTypes_.set(static_cast<size_t>(RSModifierType::PERSP), true);
 
-    nodeTest->AccmulateDirtyInOcclusion(true);
-    nodeTest->AccmulateDirtyInOcclusion(false);
+    nodeTest->AccumulateDirtyInOcclusion(true);
+    nodeTest->AccumulateDirtyInOcclusion(false);
 
     nodeTest->dirtyTypes_.set(static_cast<size_t>(RSModifierType::PIVOT_Z), true);
     nodeTest->dirtyTypes_.set(static_cast<size_t>(RSModifierType::PERSP), true);
@@ -2782,6 +2811,56 @@ HWTEST_F(RSRenderNodeTest, CheckFilterCacheAndUpdateDirtySlots, TestSize.Level1)
 }
 
 /**
+ * @tc.name: GetOldAbsMatrix001
+ * @tc.desc: test GetOldAbsMatrix
+ * @tc.type: FUNC
+ * @tc.require: issueICAJPW
+ */
+HWTEST_F(RSRenderNodeTest, GetOldAbsMatrix001, TestSize.Level1)
+{
+    Drawing::Matrix testMatrix;
+    constexpr float translateX{2.f};
+    constexpr float translateY{3.f};
+    testMatrix.Translate(translateX, translateY);
+
+    RSRenderNode node(id, context);
+    node.oldAbsMatrix_ = testMatrix;
+    EXPECT_EQ(node.GetOldAbsMatrix(), testMatrix);
+}
+
+/**
+ * @tc.name: UpdateAbsDirtyRegion001
+ * @tc.desc: test UpdateAbsDirtyRegion
+ * @tc.type: FUNC
+ * @tc.require: issueICAJPW
+ */
+HWTEST_F(RSRenderNodeTest, UpdateAbsDirtyRegion001, TestSize.Level1)
+{
+    constexpr int surfaceWidth{1000};
+    constexpr int surfaceHeight{2000};
+    constexpr int defaultLeft{10};
+    constexpr int defaultTop{20};
+    constexpr int defaultWidth{500};
+    constexpr int defaultHeight{600};
+
+    std::shared_ptr<RSDirtyRegionManager> rsDirtyManager = std::make_shared<RSDirtyRegionManager>();
+    rsDirtyManager->SetSurfaceSize(surfaceWidth, surfaceHeight);
+    RSRenderNode node(id, context);
+    node.GetMutableRenderProperties().subTreeAllDirty_ = true;
+    node.oldChildrenRect_ = RectI(defaultLeft, defaultTop, defaultWidth, defaultHeight);
+    node.oldClipRect_ = RectI(0, 0, defaultWidth, defaultHeight);
+
+    RectI clipRect(0, 0, surfaceWidth, surfaceHeight);
+    node.UpdateAbsDirtyRegion(*rsDirtyManager, clipRect);
+    EXPECT_EQ(rsDirtyManager->GetCurrentFrameDirtyRegion(), node.oldChildrenRect_.IntersectRect(node.oldClipRect_));
+
+    rsDirtyManager->Clear();
+    node.isFirstLevelCrossNode_ = true;
+    node.UpdateAbsDirtyRegion(*rsDirtyManager, clipRect);
+    EXPECT_EQ(rsDirtyManager->GetCurrentFrameDirtyRegion(), node.oldChildrenRect_);
+}
+
+/**
  * @tc.name: MarkForceClearFilterCacheWithInvisible
  * @tc.desc: test
  * @tc.type: FUNC
@@ -3039,6 +3118,21 @@ HWTEST_F(RSRenderNodeTest, GetIsFullChildrenListValid, TestSize.Level1)
     ASSERT_TRUE(renderNode->GetIsFullChildrenListValid());
     renderNode->isFullChildrenListValid_ = false;
     ASSERT_FALSE(renderNode->GetIsFullChildrenListValid());
+}
+
+/**
+ * @tc.name: SetUIContextTokenTest001
+ * @tc.desc: test
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSRenderNodeTest, SetUIContextTokenTest001, TestSize.Level1)
+{
+    auto renderNode = std::make_shared<RSRenderNode>(1);
+    ASSERT_NE(renderNode, nullptr);
+    uint64_t token = 1001;
+    renderNode->SetUIContextToken(token);
+    ASSERT_EQ(renderNode->uiContextToken_, token);
 }
 
 /**

@@ -102,6 +102,28 @@ bool RSRenderNode::IsPureContainer() const
     return (drawCmdModifiers_.empty() && !GetRenderProperties().isDrawn_ && !GetRenderProperties().alphaNeedApply_);
 }
 
+bool RSRenderNode::IsPureBackgroundColor() const
+{
+    static const std::unordered_set<RSDrawableSlot> pureBackgroundColorSlots = {
+        RSDrawableSlot::BG_SAVE_BOUNDS,
+        RSDrawableSlot::CLIP_TO_BOUNDS,
+        RSDrawableSlot::BACKGROUND_COLOR,
+        RSDrawableSlot::BG_RESTORE_BOUNDS,
+        RSDrawableSlot::SAVE_FRAME,
+        RSDrawableSlot::FRAME_OFFSET,
+        RSDrawableSlot::CLIP_TO_FRAME,
+        RSDrawableSlot::CHILDREN,
+        RSDrawableSlot::RESTORE_FRAME
+    };
+    for (int8_t i = 0; i < static_cast<int8_t>(RSDrawableSlot::MAX); ++i) {
+        if (drawableVec_[i] &&
+            !pureBackgroundColorSlots.count(static_cast<RSDrawableSlot>(i))) {
+            return false;
+        }
+    }
+    return true;
+}
+
 void RSRenderNode::SetDrawNodeType(DrawNodeType nodeType)
 {
     drawNodeType_ = nodeType;
@@ -814,7 +836,14 @@ void RSRenderNode::DumpTree(int32_t depth, std::string& out) const
         if (surfaceNode->GetRSSurfaceHandler() && surfaceNode->GetRSSurfaceHandler()->GetBuffer()) {
             out += ", ScalingMode: " + std::to_string(
                 surfaceNode->GetRSSurfaceHandler()->GetBuffer()->GetSurfaceBufferScalingMode());
+            if (surfaceNode->GetRSSurfaceHandler()->GetConsumer()) {
+                auto transformType = GraphicTransformType::GRAPHIC_ROTATE_NONE;
+                surfaceNode->GetRSSurfaceHandler()->GetConsumer()->GetSurfaceBufferTransformType(
+                    surfaceNode->GetRSSurfaceHandler()->GetBuffer(), &transformType);
+                out += ", TransformType: " + std::to_string(transformType);
+            }
         }
+        out += ", AbsRotation: " + std::to_string(surfaceNode->GetAbsRotation());
 #endif
     }
     if (sharedTransitionParam_) {
@@ -1650,6 +1679,14 @@ bool RSRenderNode::CheckAndUpdateGeoTrans(std::shared_ptr<RSObjAbsGeometry>& geo
 
 void RSRenderNode::UpdateAbsDirtyRegion(RSDirtyRegionManager& dirtyManager, const RectI& clipRect)
 {
+    // merge old children draw rect if node's sub tree is all dirty
+    const auto& renderProperties = GetRenderProperties();
+    if (renderProperties.IsSubTreeAllDirty()) {
+        auto oldChildrenDirtyRect = renderProperties.GetBoundsGeometry()->MapRect(
+            oldChildrenRect_.ConvertTo<float>(), oldAbsMatrix_);
+        dirtyManager.MergeDirtyRect(IsFirstLevelCrossNode() ? oldChildrenDirtyRect :
+            oldChildrenDirtyRect.IntersectRect(oldClipRect_));
+    }
     // it is necessary to ensure that last frame dirty rect is merged
     auto oldDirtyRect = oldDirty_;
     if (absDrawRect_ != oldAbsDrawRect_) {
@@ -1702,6 +1739,8 @@ bool RSRenderNode::UpdateDrawRectAndDirtyRegion(RSDirtyRegionManager& dirtyManag
         accumGeoDirty = true;
         // Set geometry update delay flag recursively to update node's old dirty in subTree
         SetGeoUpdateDelay(true);
+        oldAbsMatrix_ = parent->oldAbsMatrix_;
+        oldAbsMatrix_.PostConcat(oldMatrix_);
     }
     if (accumGeoDirty || properties.NeedClip() || properties.geoDirty_ || (dirtyStatus_ != NodeDirty::CLEAN)) {
         UpdateDrawRect(accumGeoDirty, clipRect, parentSurfaceMatrix);
@@ -1722,24 +1761,19 @@ bool RSRenderNode::UpdateDrawRectAndDirtyRegion(RSDirtyRegionManager& dirtyManag
         }
     }
     // 3. update dirtyRegion if needed
-    if (properties.GetBackgroundFilter()) {
-        UpdateFilterCacheWithBelowDirty(dirtyManager);
-    }
     ValidateLightResources();
     isDirtyRegionUpdated_ = false; // todo make sure why windowDirty use it
     // Only when satisfy following conditions, absDirtyRegion should update:
     // 1.The node is dirty; 2.The clip absDrawRect change; 3.Parent clip property change or has GeoUpdateDelay dirty;
+    // When the subtree is all dirty and the node should not paint, it also needs to add dirty region
     if ((IsDirty() || srcOrClipedAbsDrawRectChangeFlag_ || (parent && (parent->GetAccumulatedClipFlagChange() ||
-        parent->GetGeoUpdateDelay()))) && (shouldPaint_ || isLastVisible_)) {
+        parent->GetGeoUpdateDelay()))) && (shouldPaint_ || isLastVisible_ || properties.IsSubTreeAllDirty())) {
         // update ForegroundFilterCache
         UpdateAbsDirtyRegion(dirtyManager, clipRect);
         UpdateDirtyRegionInfoForDFX(dirtyManager);
     }
     // 4. reset dirty status
-    RecordCurDirtyStatus();
-    SetClean();
-    properties.ResetDirty();
-    isLastVisible_ = shouldPaint_;
+    ResetDirtyStatus();
     return accumGeoDirty;
 }
 
@@ -1857,7 +1891,7 @@ bool RSRenderNode::Update(RSDirtyRegionManager& dirtyManager, const std::shared_
     // region of all the nodes drawn before this node, this node, and the children of this node'
     // 2. Filter must be valid when filter cache manager is valid, we make sure that in RSRenderNode::ApplyModifiers().
     if (GetRenderProperties().GetBackgroundFilter()) {
-        UpdateFilterCacheWithBelowDirty(dirtyManager);
+        UpdateFilterCacheWithBelowDirty(Occlusion::Rect(dirtyManager.GetCurrentFrameDirtyRegion()));
     }
     UpdateDirtyRegion(dirtyManager, dirty, clipRect);
     return dirty;
@@ -2339,24 +2373,26 @@ void RSRenderNode::UpdateFilterCacheWithBackgroundDirty()
 #endif
 }
 
-void RSRenderNode::UpdateFilterCacheWithBelowDirty(RSDirtyRegionManager& dirtyManager, bool isForeground)
+bool RSRenderNode::UpdateFilterCacheWithBelowDirty(const Occlusion::Region& belowDirty, bool isForeground)
 {
 #if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
     if (!RSProperties::filterCacheEnabled_) {
         ROSEN_LOGE("RSRenderNode::UpdateFilterCacheWithBelowDirty filter cache is disabled.");
-        return;
+        return false;
     }
     auto filterDrawable = GetFilterDrawable(isForeground);
     if (filterDrawable == nullptr || IsForceClearOrUseFilterCache(filterDrawable)) {
-        return;
+        return false;
     }
-    auto dirtyRegion = dirtyManager.GetCurrentFrameDirtyRegion();
     RS_OPTIONAL_TRACE_NAME_FMT("UpdateFilterCacheWithBelowDirty:node[%llu] foreground:%d, lastRect:%s, dirtyRegion:%s",
-        GetId(), isForeground, lastFilterRegion_.ToString().c_str(), dirtyRegion.ToString().c_str());
-    if (!dirtyRegion.Intersect(lastFilterRegion_)) {
-        return;
+        GetId(), isForeground, lastFilterRegion_.ToString().c_str(), belowDirty.GetRegionInfo().c_str());
+    if (!belowDirty.IsIntersectWith(lastFilterRegion_)) {
+        return false;
     }
     MarkFilterStatusChanged(isForeground, false);
+    return true;
+#else
+    return false;
 #endif
 }
 
@@ -2694,19 +2730,19 @@ void RSRenderNode::DumpNodeInfo(DfxString& log)
     // Drawing is not supported
 }
 
-void RSRenderNode::AccmulateDirtyInOcclusion(bool isOccluded)
+void RSRenderNode::AccumulateDirtyInOcclusion(bool isOccluded)
 {
     if (isOccluded) {
-        // accmulate dirtytypes for modifiers
-        AccmulateDirtyTypes();
-        // accmulate dirtystatus in rendernode
-        AccmulateDirtyStatus();
-        // accmulate dirtystatus in render properties(isDirty, geoDirty, contentDirty)
-        GetMutableRenderProperties().AccmulateDirtyStatus();
+        // accumulate dirtytypes for modifiers
+        AccumulateDirtyTypes();
+        // accumulate dirtystatus in rendernode
+        AccumulateDirtyStatus();
+        // accumulate dirtystatus in render properties(isDirty, geoDirty, contentDirty)
+        GetMutableRenderProperties().AccumulateDirtyStatus();
         return;
     }
-    ResetAccmulateDirtyTypes();
-    ResetAccmulateDirtyStatus();
+    ResetAccumulateDirtyTypes();
+    ResetAccumulateDirtyStatus();
 }
 
 void RSRenderNode::RecordCurDirtyStatus()
@@ -2715,16 +2751,16 @@ void RSRenderNode::RecordCurDirtyStatus()
     GetMutableRenderProperties().RecordCurDirtyStatus();
 }
 
-void RSRenderNode::AccmulateDirtyStatus()
+void RSRenderNode::AccumulateDirtyStatus()
 {
-    GetMutableRenderProperties().AccmulateDirtyStatus();
+    GetMutableRenderProperties().AccumulateDirtyStatus();
     if (curDirtyStatus_ == NodeDirty::CLEAN) {
         return;
     }
     SetDirty();
 }
 
-void RSRenderNode::ResetAccmulateDirtyStatus()
+void RSRenderNode::ResetAccumulateDirtyStatus()
 {
     dirtyStatus_ = NodeDirty::CLEAN;
     GetMutableRenderProperties().ResetDirty();
@@ -2740,7 +2776,7 @@ void RSRenderNode::RecordCurDirtyTypes()
     }
 }
 
-void RSRenderNode::AccmulateDirtyTypes()
+void RSRenderNode::AccumulateDirtyTypes()
 {
     for (int i = 0; i < (int)RSModifierType::MAX_RS_MODIFIER_TYPE; i++) {
         if (curDirtyTypes_.test(static_cast<size_t>(i))) {
@@ -2750,7 +2786,7 @@ void RSRenderNode::AccmulateDirtyTypes()
     }
 }
 
-void RSRenderNode::ResetAccmulateDirtyTypes()
+void RSRenderNode::ResetAccumulateDirtyTypes()
 {
     dirtyTypes_.reset();
 }
@@ -4173,6 +4209,17 @@ const std::shared_ptr<RSRenderNode> RSRenderNode::GetUifirstRootNode() const
         return nullptr;
     }
     return context->GetNodeMap().GetRenderNode(uifirstRootNodeId_);
+}
+
+void RSRenderNode::ResetDirtyStatus()
+{
+    RecordCurDirtyStatus();
+    SetClean();
+    auto& properties = GetMutableRenderProperties();
+    properties.ResetDirty();
+    isLastVisible_ = shouldPaint_;
+    // The return of GetBoundsGeometry function must not be nullptr
+    oldMatrix_ = properties.GetBoundsGeometry()->GetMatrix();
 }
 
 NodeId RSRenderNode::GenerateId()

@@ -1382,15 +1382,15 @@ void RSNode::SetRSUIContext(std::shared_ptr<RSUIContext> rsUIContext)
     if (rsUIContext == nullptr) {
         return;
     }
-    auto rsContext = rsUIContext_.lock();
-    if ((rsContext != nullptr) && (rsContext == rsUIContext)) {
+    auto preUIContext = rsUIContext_.lock();
+    if ((preUIContext != nullptr) && (preUIContext == rsUIContext)) {
         return;
     }
 
     // if have old rsContext, should remove nodeId from old nodeMap and travel child
-    if (rsContext != nullptr) {
+    if (preUIContext != nullptr) {
         // step1 remove node from old context
-        rsContext->GetMutableNodeMap().UnregisterNode(id_);
+        preUIContext->GetMutableNodeMap().UnregisterNode(id_);
         // sync child
         for (uint32_t index = 0; index < children_.size(); index++) {
             if (auto childPtr = children_[index].lock()) {
@@ -1406,8 +1406,15 @@ void RSNode::SetRSUIContext(std::shared_ptr<RSUIContext> rsUIContext)
 
     // step2 sign
     rsUIContext_ = rsUIContext;
-    // step3 register node to new nodeMap
+    // step3 register node to new nodeMap and move the command to the new RSUIContext
     RegisterNodeMap();
+    if (preUIContext != nullptr) {
+        auto preTransaction = preUIContext->GetRSTransaction();
+        auto curTransaction = rsUIContext->GetRSTransaction();
+        if (preTransaction && curTransaction) {
+            preTransaction->MoveCommandByNodeId(curTransaction, id_);
+        }
+    }
     SetUIContextToken();
 }
 
@@ -3779,7 +3786,6 @@ void RSNode::AccumulateAlpha(float& alpha)
 {
     // avoid loop
     if (visitedForTotalAlpha_) {
-        RS_LOGE("RSNode::AccumulateAlpha: %{public}" PRIu64 "has loop tree", GetId());
         return;
     }
     visitedForTotalAlpha_ = true;
@@ -3818,7 +3824,7 @@ void RSNode::Dump(std::string& out) const
     out += "[" + std::to_string(id_);
     out += "], parent[" + std::to_string(parent_.lock() ? parent_.lock()->GetId() : -1);
     out += "], instanceId[" + std::to_string(instanceId_);
-    out += "], UIContext[" + std::to_string(rsUIContext_.lock() ? rsUIContext_.lock()->GetToken() : -1);
+    out += "], UIContext[" + (rsUIContext_.lock() ? std::to_string(rsUIContext_.lock()->GetToken()) : "null");
     if (auto node = ReinterpretCastTo<RSSurfaceNode>()) {
         out += "], name[" + node->GetName();
     } else if (!nodeName_.empty()) {
@@ -3861,6 +3867,21 @@ void RSNode::Dump(std::string& out) const
     if (!animations_.empty()) {
         out.pop_back();
     }
+    
+    out += "], modifiers[";
+    for (const auto& [id, modifier] : modifiers_) {
+        if (modifier == nullptr) {
+            continue;
+        }
+
+        auto renderModifier = modifier->CreateRenderModifier();
+        if (renderModifier == nullptr) {
+            continue;
+        }
+        out += " " + modifier->GetModifierTypeString();
+        out += " :";
+        renderModifier->Dump(out);
+    }
     out += "]";
 }
 
@@ -3885,7 +3906,7 @@ std::string RSNode::DumpNode(int depth) const
             ss << " animationInfo:" << animation->DumpAnimation();
         }
     }
-    ss << " token:" << std::to_string((rsUIContext_.lock() != nullptr) ? rsUIContext_.lock()->GetToken() : -1);
+    ss << " token:" << (rsUIContext_.lock() ? std::to_string(rsUIContext_.lock()->GetToken()) : "null");
     ss << " " << GetStagingProperties().Dump();
     return ss.str();
 }

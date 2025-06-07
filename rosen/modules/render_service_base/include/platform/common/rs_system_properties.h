@@ -192,6 +192,7 @@ public:
     static bool GetVirtualDirtyDebugEnabled();
     static bool GetVirtualDirtyEnabled();
     static bool GetExpandScreenDirtyEnabled();
+    static bool GetVirtualExpandScreenSkipEnabled();
     static bool GetOcclusionEnabled();
     static std::string GetRSEventProperty(const std::string &paraName);
     static bool GetHighContrastStatus();
@@ -350,6 +351,7 @@ public:
     static bool GetNodeGroupGroupedByUIEnabled();
     static bool GetTimeVsyncDisabled();
     static void SetDebugFmtTraceEnabled(bool flag);
+    static bool GetTextureExportDFXEnabled();
     static bool GetDebugFmtTraceEnabled();
 
     static bool GetHybridRenderEnabled();
