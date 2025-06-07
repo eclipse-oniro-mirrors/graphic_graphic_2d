@@ -330,7 +330,7 @@ HWTEST_F(RSEffectRenderNodeTest, SetDarkColorMode001, TestSize.Level1)
  * @tc.name: NotForceClearBackgroundFilterCacheWhenDirty
  * @tc.desc: Test function CheckBlurFilterCacheNeedForceClearOrSave
  * @tc.type: FUNC
- * @tc.require:
+ * @tc.require: issueICD8D6
  */
 HWTEST_F(RSEffectRenderNodeTest, ForceClearForegroundFilterCacheWhenDirty, TestSize.Level1)
 {
@@ -345,6 +345,6 @@ HWTEST_F(RSEffectRenderNodeTest, ForceClearForegroundFilterCacheWhenDirty, TestS
     renderNode->CheckBlurFilterCacheNeedForceClearOrSave(true);
 
     EXPECT_NE(backgroundFilterDrawable->stagingCacheManager_, nullptr);
-    ASSERT_EQ(backgroundFilterDrawable->stagingCacheManager_->stagingForceClearCache_, false);
+    EXPECT_EQ(backgroundFilterDrawable->stagingCacheManager_->stagingForceClearCache_, false);
 }
 } // namespace OHOS::Rosen

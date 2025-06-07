@@ -3138,12 +3138,12 @@ HWTEST_F(RSRenderNodeTest, RepaintBoundary, TestSize.Level1)
 }
 
 /**
- * @tc.name: UpdateFilterCacheForceClearWithBackgroundDirtyTest
+ * @tc.name: UpdateFilterCacheForceClearWithBackgroundAndAlphaDirtyTest
  * @tc.desc: Test function UpdateFilterCacheWithBackgroundDirty
  * @tc.type: FUNC
- * @tc.require: issuesIC50OX
+ * @tc.require: issueICD8D6
  */
-HWTEST_F(RSRenderNodeTest, UpdateFilterCacheForceClearWithBackgroundDirtyTest, TestSize.Level1)
+HWTEST_F(RSRenderNodeTest, UpdateFilterCacheForceClearWithBackgroundAndAlphaDirtyTest, TestSize.Level1)
 {
     auto renderNode = std::make_shared<RSRenderNode>(1);
     ASSERT_NE(renderNode, nullptr);
@@ -3160,14 +3160,14 @@ HWTEST_F(RSRenderNodeTest, UpdateFilterCacheForceClearWithBackgroundDirtyTest, T
     renderNode->UpdateFilterCacheWithBackgroundDirty();
 
     EXPECT_NE(backgroundFilterDrawable->stagingCacheManager_, nullptr);
-    ASSERT_EQ(backgroundFilterDrawable->stagingCacheManager_->stagingForceClearCache_, true);
+    EXPECT_EQ(backgroundFilterDrawable->stagingCacheManager_->stagingForceClearCache_, true);
 }
 
 /**
  * @tc.name: NotForceClearFilterCacheWithoutBackgroundDirtyTest
  * @tc.desc: Test function UpdateFilterCacheWithBackgroundDirty
  * @tc.type: FUNC
- * @tc.require: issuesIC50OX
+ * @tc.require: issueICD8D6
  */
 HWTEST_F(RSRenderNodeTest, NotForceClearFilterCacheWithoutBackgroundDirtyTest, TestSize.Level1)
 {
@@ -3182,14 +3182,14 @@ HWTEST_F(RSRenderNodeTest, NotForceClearFilterCacheWithoutBackgroundDirtyTest, T
     renderNode->UpdateFilterCacheWithBackgroundDirty();
 
     EXPECT_NE(backgroundFilterDrawable->stagingCacheManager_, nullptr);
-    ASSERT_EQ(backgroundFilterDrawable->stagingCacheManager_->stagingForceClearCache_, false);
+    EXPECT_EQ(backgroundFilterDrawable->stagingCacheManager_->stagingForceClearCache_, false);
 }
 
 /**
  * @tc.name: NotForceClearFilterCacheWithoutAlphaDirtyTest
  * @tc.desc: Test function UpdateFilterCacheWithBackgroundDirty
  * @tc.type: FUNC
- * @tc.require: issuesIC50OX
+ * @tc.require: issueICD8D6
  */
 HWTEST_F(RSRenderNodeTest, NotForceClearFilterCacheWithoutAlphaDirtyTest, TestSize.Level1)
 {
@@ -3207,14 +3207,14 @@ HWTEST_F(RSRenderNodeTest, NotForceClearFilterCacheWithoutAlphaDirtyTest, TestSi
     renderNode->UpdateFilterCacheWithBackgroundDirty();
 
     EXPECT_NE(backgroundFilterDrawable->stagingCacheManager_, nullptr);
-    ASSERT_EQ(backgroundFilterDrawable->stagingCacheManager_->stagingForceClearCache_, false);
+    EXPECT_EQ(backgroundFilterDrawable->stagingCacheManager_->stagingForceClearCache_, false);
 }
 
 /**
  * @tc.name: ForceClearFilterCacheWhenBackgroundDirty
  * @tc.desc: Test function UpdateFilterCacheWithBackgroundDirty
  * @tc.type: FUNC
- * @tc.require: issuesIC50OX
+ * @tc.require: issueICD8D6
  */
 HWTEST_F(RSRenderNodeTest, ForceClearFilterCacheWhenBackgroundDirty, TestSize.Level1)
 {
@@ -3230,14 +3230,14 @@ HWTEST_F(RSRenderNodeTest, ForceClearFilterCacheWhenBackgroundDirty, TestSize.Le
     renderNode->CheckBlurFilterCacheNeedForceClearOrSave();
 
     EXPECT_NE(backgroundFilterDrawable->stagingCacheManager_, nullptr);
-    ASSERT_EQ(backgroundFilterDrawable->stagingCacheManager_->stagingForceClearCache_, true);
+    EXPECT_EQ(backgroundFilterDrawable->stagingCacheManager_->stagingForceClearCache_, true);
 }
 
 /**
  * @tc.name: ForceClearForegroundFilterCacheWhenDirty
  * @tc.desc: Test function CheckBlurFilterCacheNeedForceClearOrSave
  * @tc.type: FUNC
- * @tc.require: issuesIC50OX
+ * @tc.require: issueICD8D6
  */
 HWTEST_F(RSRenderNodeTest, ForceClearForegroundFilterCacheWhenDirty, TestSize.Level1)
 {
@@ -3253,7 +3253,7 @@ HWTEST_F(RSRenderNodeTest, ForceClearForegroundFilterCacheWhenDirty, TestSize.Le
     renderNode->CheckBlurFilterCacheNeedForceClearOrSave();
 
     EXPECT_NE(compositingFilterDrawable->stagingCacheManager_, nullptr);
-    ASSERT_EQ(compositingFilterDrawable->stagingCacheManager_->stagingForceClearCache_, true);
+    EXPECT_EQ(compositingFilterDrawable->stagingCacheManager_->stagingForceClearCache_, true);
 }
 } // namespace Rosen
 } // namespace OHOS

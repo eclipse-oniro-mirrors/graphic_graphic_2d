@@ -36,12 +36,7 @@ class RSFilterCacheManagerTest : public testing::Test {
 public:
     static void SetUpTestCase();
     static void TearDownTestCase();
-    void SetUp() override;
-    void TearDown() override;
-    std::shared_ptr<RSDrawingFilter> cannotSkipFrameFilter = nullptr;
-    std::shared_ptr<RSDrawingFilter> canSkipFrameFilter1 = nullptr;
-    std::shared_ptr<RSDrawingFilter> canSkipFrameFilter2 = nullptr;
-    std::shared_ptr<RSDrawingFilter> aibarFilter = nullptr;
+
     static void BuildCache(std::shared_ptr<RSFilterCacheManager> manager)
     {
         if (manager == nullptr) {
@@ -52,6 +47,7 @@ public:
         manager->cachedSnapshot_ = std::make_shared<RSPaintFilterCanvas::CachedEffectData>();
         manager->cachedFilteredSnapshot_ = nullptr;
     }
+
     static void BuildFilteredCache(std::shared_ptr<RSFilterCacheManager> manager)
     {
         if (manager == nullptr) {
@@ -62,38 +58,50 @@ public:
         manager->cachedSnapshot_ = nullptr;
         manager->cachedFilteredSnapshot_ = std::make_shared<RSPaintFilterCanvas::CachedEffectData>();
     }
+
+    void SetUp() override;
+    void TearDown() override;
+
     static const uint32_t NUM_10 = 10;
     static const uint32_t NUM_20 = 20;
     static const uint32_t NUM_40 = 40;
     static const uint32_t NUM_50 = 50;
+
+    std::shared_ptr<RSDrawingFilter> cannotSkipFrameFilter_ = nullptr;
+    std::shared_ptr<RSDrawingFilter> canSkipFrameFilter1_ = nullptr;
+    std::shared_ptr<RSDrawingFilter> canSkipFrameFilter2_ = nullptr;
+    std::shared_ptr<RSDrawingFilter> aibarFilter_ = nullptr;
 };
 
 void RSFilterCacheManagerTest::SetUpTestCase() {}
+
 void RSFilterCacheManagerTest::TearDownTestCase() {}
+
 void RSFilterCacheManagerTest::SetUp()
 {
-    cannotSkipFrameFilter = std::make_shared<RSDrawingFilter>(std::make_shared<RSRenderFilterParaBase>());
-    cannotSkipFrameFilter->SetSkipFrame(false);
-    cannotSkipFrameFilter->hash_ = NUM_10;
+    cannotSkipFrameFilter_ = std::make_shared<RSDrawingFilter>(std::make_shared<RSRenderFilterParaBase>());
+    cannotSkipFrameFilter_->SetSkipFrame(false);
+    cannotSkipFrameFilter_->hash_ = NUM_10;
 
-    canSkipFrameFilter1 = std::make_shared<RSDrawingFilter>(std::make_shared<RSRenderFilterParaBase>());
-    canSkipFrameFilter1->SetSkipFrame(true);
-    canSkipFrameFilter1->hash_ = NUM_20;
+    canSkipFrameFilter1_ = std::make_shared<RSDrawingFilter>(std::make_shared<RSRenderFilterParaBase>());
+    canSkipFrameFilter1_->SetSkipFrame(true);
+    canSkipFrameFilter1_->hash_ = NUM_20;
 
-    canSkipFrameFilter2 = std::make_shared<RSDrawingFilter>(std::make_shared<RSRenderFilterParaBase>());
-    canSkipFrameFilter2->SetSkipFrame(true);
-    canSkipFrameFilter2->hash_ = NUM_40;
+    canSkipFrameFilter2_ = std::make_shared<RSDrawingFilter>(std::make_shared<RSRenderFilterParaBase>());
+    canSkipFrameFilter2_->SetSkipFrame(true);
+    canSkipFrameFilter2_->hash_ = NUM_40;
 
-    aibarFilter = std::make_shared<RSDrawingFilter>(std::make_shared<RSAIBarShaderFilter>());
-    cannotSkipFrameFilter->SetSkipFrame(false);
-    aibarFilter->hash_ = NUM_50;
+    aibarFilter_ = std::make_shared<RSDrawingFilter>(std::make_shared<RSAIBarShaderFilter>());
+    cannotSkipFrameFilter_->SetSkipFrame(false);
+    aibarFilter_->hash_ = NUM_50;
 }
+
 void RSFilterCacheManagerTest::TearDown()
 {
-    cannotSkipFrameFilter.reset();
-    canSkipFrameFilter1.reset();
-    canSkipFrameFilter2.reset();
-    aibarFilter.reset();
+    cannotSkipFrameFilter_.reset();
+    canSkipFrameFilter1_.reset();
+    canSkipFrameFilter2_.reset();
+    aibarFilter_.reset();
 }
 
 /**
@@ -974,22 +982,22 @@ HWTEST_F(RSFilterCacheManagerTest, MarkNeedClearFilterCacheTest, TestSize.Level1
  * @tc.name: MarkNeedClearFilterCacheForSkipFrameWithBelowDirty
  * @tc.desc: test results of MarkNeedClearFilterCache
  * @tc.type: FUNC
- * @tc.require:
+ * @tc.require: issueICD8D6
  */
 HWTEST_F(RSFilterCacheManagerTest, MarkNeedClearFilterCacheForSkipFrameWithBelowDirty, TestSize.Level1)
 {
-    NodeId nodeId = 0;
     auto rsFilterCacheManager = std::make_shared<RSFilterCacheManager>();
     EXPECT_NE(rsFilterCacheManager, nullptr);
     BuildFilteredCache(rsFilterCacheManager);
 
-    rsFilterCacheManager->RecordFilterInfos(canSkipFrameFilter1);
+    rsFilterCacheManager->RecordFilterInfos(canSkipFrameFilter1_);
     rsFilterCacheManager->stagingFilterHashChanged_ = false;
     rsFilterCacheManager->MarkFilterRegionIsLargeArea();
     rsFilterCacheManager->cacheUpdateInterval_ = 1;
 
     rsFilterCacheManager->MarkFilterRegionInteractWithDirty();
 
+    NodeId nodeId = 0;
     rsFilterCacheManager->MarkNeedClearFilterCache(nodeId);
 
     EXPECT_EQ(rsFilterCacheManager->stagingClearType_, FilterCacheType::NONE);
@@ -1000,20 +1008,20 @@ HWTEST_F(RSFilterCacheManagerTest, MarkNeedClearFilterCacheForSkipFrameWithBelow
  * @tc.name: MarkNeedClearFilterCacheForSkipFrameWithHashChangeAndFilteredCache
  * @tc.desc: test results of MarkNeedClearFilterCache
  * @tc.type: FUNC
- * @tc.require:
+ * @tc.require: issueICD8D6
  */
 HWTEST_F(RSFilterCacheManagerTest, MarkNeedClearFilterCacheForSkipFrameWithHashChangeAndFilteredCache, TestSize.Level1)
 {
-    NodeId nodeId = 0;
     auto rsFilterCacheManager = std::make_shared<RSFilterCacheManager>();
     EXPECT_NE(rsFilterCacheManager, nullptr);
     BuildFilteredCache(rsFilterCacheManager);
 
-    rsFilterCacheManager->RecordFilterInfos(canSkipFrameFilter1);
-    rsFilterCacheManager->RecordFilterInfos(canSkipFrameFilter2);
+    rsFilterCacheManager->RecordFilterInfos(canSkipFrameFilter1_);
+    rsFilterCacheManager->RecordFilterInfos(canSkipFrameFilter2_);
     rsFilterCacheManager->MarkFilterRegionIsLargeArea();
     rsFilterCacheManager->cacheUpdateInterval_ = 1;
 
+    NodeId nodeId = 0;
     rsFilterCacheManager->MarkNeedClearFilterCache(nodeId);
 
     EXPECT_EQ(rsFilterCacheManager->stagingClearType_, FilterCacheType::FILTERED_SNAPSHOT);
@@ -1023,22 +1031,22 @@ HWTEST_F(RSFilterCacheManagerTest, MarkNeedClearFilterCacheForSkipFrameWithHashC
  * @tc.name: MarkNeedClearFilterCacheForSkipFrameWithPrimaryAndOffscreen
  * @tc.desc: test results of MarkNeedClearFilterCache
  * @tc.type: FUNC
- * @tc.require:
+ * @tc.require: issueICD8D6
  */
 HWTEST_F(RSFilterCacheManagerTest, MarkNeedClearFilterCacheForSkipFrameWithPrimaryAndOffscreen, TestSize.Level1)
 {
-    NodeId nodeId = 0;
     auto rsFilterCacheManager = std::make_shared<RSFilterCacheManager>();
     EXPECT_NE(rsFilterCacheManager, nullptr);
     BuildFilteredCache(rsFilterCacheManager);
     rsFilterCacheManager->lastCacheType_ = FilterCacheType::FILTERED_SNAPSHOT;
 
-    rsFilterCacheManager->RecordFilterInfos(canSkipFrameFilter1);
+    rsFilterCacheManager->RecordFilterInfos(canSkipFrameFilter1_);
     rsFilterCacheManager->MarkFilterRegionIsLargeArea();
     rsFilterCacheManager->cacheUpdateInterval_ = 1;
     rsFilterCacheManager->lastInForegroundFilter_ = 1000;
     rsFilterCacheManager->MarkInForegroundFilterAndCheckNeedForceClearCache(INVALID_NODEID);
 
+    NodeId nodeId = 0;
     rsFilterCacheManager->MarkNeedClearFilterCache(nodeId);
 
     EXPECT_EQ(rsFilterCacheManager->stagingClearType_, FilterCacheType::BOTH);
@@ -1048,21 +1056,21 @@ HWTEST_F(RSFilterCacheManagerTest, MarkNeedClearFilterCacheForSkipFrameWithPrima
  * @tc.name: MarkNeedClearFilterCacheForSkipFrameWithFilterRegionChange
  * @tc.desc: test results of MarkNeedClearFilterCache
  * @tc.type: FUNC
- * @tc.require:
+ * @tc.require: issueICD8D6
  */
 HWTEST_F(RSFilterCacheManagerTest, MarkNeedClearFilterCacheForSkipFrameWithFilterRegionChange, TestSize.Level1)
 {
-    NodeId nodeId = 0;
     auto rsFilterCacheManager = std::make_shared<RSFilterCacheManager>();
     EXPECT_NE(rsFilterCacheManager, nullptr);
     BuildFilteredCache(rsFilterCacheManager);
 
-    rsFilterCacheManager->RecordFilterInfos(canSkipFrameFilter1);
+    rsFilterCacheManager->RecordFilterInfos(canSkipFrameFilter1_);
     rsFilterCacheManager->MarkFilterRegionIsLargeArea();
     rsFilterCacheManager->cacheUpdateInterval_ = 1;
 
     rsFilterCacheManager->MarkFilterRegionChanged();
 
+    NodeId nodeId = 0;
     rsFilterCacheManager->MarkNeedClearFilterCache(nodeId);
 
     EXPECT_EQ(rsFilterCacheManager->stagingClearType_, FilterCacheType::BOTH);
@@ -1072,21 +1080,21 @@ HWTEST_F(RSFilterCacheManagerTest, MarkNeedClearFilterCacheForSkipFrameWithFilte
  * @tc.name: MarkNeedClearFilterCacheForRotationChange
  * @tc.desc: test results of MarkNeedClearFilterCache
  * @tc.type: FUNC
- * @tc.require:
+ * @tc.require: issueICD8D6
  */
 HWTEST_F(RSFilterCacheManagerTest, MarkNeedClearFilterCacheForRotationChange, TestSize.Level1)
 {
-    NodeId nodeId = 0;
     auto rsFilterCacheManager = std::make_shared<RSFilterCacheManager>();
     EXPECT_NE(rsFilterCacheManager, nullptr);
     BuildFilteredCache(rsFilterCacheManager);
 
-    rsFilterCacheManager->RecordFilterInfos(canSkipFrameFilter1);
+    rsFilterCacheManager->RecordFilterInfos(canSkipFrameFilter1_);
     rsFilterCacheManager->MarkFilterRegionIsLargeArea();
     rsFilterCacheManager->cacheUpdateInterval_ = 0;
 
     rsFilterCacheManager->MarkRotationChanged();
 
+    NodeId nodeId = 0;
     rsFilterCacheManager->MarkNeedClearFilterCache(nodeId);
 
     EXPECT_EQ(rsFilterCacheManager->stagingClearType_, FilterCacheType::BOTH);
@@ -1096,18 +1104,18 @@ HWTEST_F(RSFilterCacheManagerTest, MarkNeedClearFilterCacheForRotationChange, Te
  * @tc.name: MarkNeedClearFilterCacheForBelowDirty
  * @tc.desc: test results of MarkNeedClearFilterCache
  * @tc.type: FUNC
- * @tc.require:
+ * @tc.require: issueICD8D6
  */
 HWTEST_F(RSFilterCacheManagerTest, MarkNeedClearFilterCacheForBelowDirty, TestSize.Level1)
 {
-    NodeId nodeId = 0;
     auto rsFilterCacheManager = std::make_shared<RSFilterCacheManager>();
     EXPECT_NE(rsFilterCacheManager, nullptr);
     BuildFilteredCache(rsFilterCacheManager);
 
-    rsFilterCacheManager->RecordFilterInfos(cannotSkipFrameFilter);
+    rsFilterCacheManager->RecordFilterInfos(cannotSkipFrameFilter_);
     rsFilterCacheManager->MarkFilterRegionInteractWithDirty();
 
+    NodeId nodeId = 0;
     rsFilterCacheManager->MarkNeedClearFilterCache(nodeId);
 
     EXPECT_EQ(rsFilterCacheManager->stagingClearType_, FilterCacheType::BOTH);
@@ -1117,17 +1125,17 @@ HWTEST_F(RSFilterCacheManagerTest, MarkNeedClearFilterCacheForBelowDirty, TestSi
  * @tc.name: MarkNeedClearFilterCacheForFilterRegionChange
  * @tc.desc: test results of MarkNeedClearFilterCache
  * @tc.type: FUNC
- * @tc.require:
+ * @tc.require: issueICD8D6
  */
 HWTEST_F(RSFilterCacheManagerTest, MarkNeedClearFilterCacheForFilterRegionChange, TestSize.Level1)
 {
-    NodeId nodeId = 0;
     auto rsFilterCacheManager = std::make_shared<RSFilterCacheManager>();
     EXPECT_NE(rsFilterCacheManager, nullptr);
     BuildFilteredCache(rsFilterCacheManager);
 
     rsFilterCacheManager->MarkFilterRegionChanged();
 
+    NodeId nodeId = 0;
     rsFilterCacheManager->MarkNeedClearFilterCache(nodeId);
 
     EXPECT_EQ(rsFilterCacheManager->stagingClearType_, FilterCacheType::BOTH);
@@ -1137,17 +1145,17 @@ HWTEST_F(RSFilterCacheManagerTest, MarkNeedClearFilterCacheForFilterRegionChange
  * @tc.name: MarkNeedClearFilterCacheForHashChangeWithFilteredCache
  * @tc.desc: test results of MarkNeedClearFilterCache
  * @tc.type: FUNC
- * @tc.require:
+ * @tc.require: issueICD8D6
  */
 HWTEST_F(RSFilterCacheManagerTest, MarkNeedClearFilterCacheForHashChangeWithFilteredCache, TestSize.Level1)
 {
-    NodeId nodeId = 0;
     auto rsFilterCacheManager = std::make_shared<RSFilterCacheManager>();
     EXPECT_NE(rsFilterCacheManager, nullptr);
     BuildFilteredCache(rsFilterCacheManager);
-    rsFilterCacheManager->RecordFilterInfos(canSkipFrameFilter1);
-    rsFilterCacheManager->RecordFilterInfos(canSkipFrameFilter2);
+    rsFilterCacheManager->RecordFilterInfos(canSkipFrameFilter1_);
+    rsFilterCacheManager->RecordFilterInfos(canSkipFrameFilter2_);
 
+    NodeId nodeId = 0;
     rsFilterCacheManager->MarkNeedClearFilterCache(nodeId);
 
     EXPECT_EQ(rsFilterCacheManager->stagingClearType_, FilterCacheType::FILTERED_SNAPSHOT);
@@ -1157,17 +1165,17 @@ HWTEST_F(RSFilterCacheManagerTest, MarkNeedClearFilterCacheForHashChangeWithFilt
  * @tc.name: MarkNeedClearFilterCacheForHashChangeWithSnapshotCache
  * @tc.desc: test results of MarkNeedClearFilterCache
  * @tc.type: FUNC
- * @tc.require:
+ * @tc.require: issueICD8D6
  */
 HWTEST_F(RSFilterCacheManagerTest, MarkNeedClearFilterCacheForHashChangeWithSnapshotCache, TestSize.Level1)
 {
-    NodeId nodeId = 0;
     auto rsFilterCacheManager = std::make_shared<RSFilterCacheManager>();
     EXPECT_NE(rsFilterCacheManager, nullptr);
     BuildCache(rsFilterCacheManager);
-    rsFilterCacheManager->RecordFilterInfos(canSkipFrameFilter1);
-    rsFilterCacheManager->RecordFilterInfos(canSkipFrameFilter2);
+    rsFilterCacheManager->RecordFilterInfos(canSkipFrameFilter1_);
+    rsFilterCacheManager->RecordFilterInfos(canSkipFrameFilter2_);
 
+    NodeId nodeId = 0;
     rsFilterCacheManager->MarkNeedClearFilterCache(nodeId);
 
     EXPECT_EQ(rsFilterCacheManager->stagingClearType_, FilterCacheType::FILTERED_SNAPSHOT);
@@ -1177,16 +1185,16 @@ HWTEST_F(RSFilterCacheManagerTest, MarkNeedClearFilterCacheForHashChangeWithSnap
  * @tc.name: ClearFilterCacheForPendingPurgeWithoutDirty
  * @tc.desc: test results of MarkNeedClearFilterCache
  * @tc.type: FUNC
- * @tc.require:
+ * @tc.require: issueICD8D6
  */
 HWTEST_F(RSFilterCacheManagerTest, ClearFilterCacheForPendingPurgeWithoutDirty, TestSize.Level1)
 {
-    NodeId nodeId = 0;
     auto rsFilterCacheManager = std::make_shared<RSFilterCacheManager>();
     EXPECT_NE(rsFilterCacheManager, nullptr);
     BuildCache(rsFilterCacheManager);
     rsFilterCacheManager->pendingPurge_ = true;
 
+    NodeId nodeId = 0;
     rsFilterCacheManager->MarkNeedClearFilterCache(nodeId);
 
     EXPECT_EQ(rsFilterCacheManager->stagingClearType_, FilterCacheType::BOTH);
