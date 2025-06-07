@@ -91,6 +91,12 @@ void RSBaseRenderEngine::Init()
 #if (defined(RS_ENABLE_EGLIMAGE) && defined(RS_ENABLE_GPU))
     eglImageManager_ = std::make_shared<RSEglImageManager>(renderContext_->GetEGLDisplay());
 #endif // RS_ENABLE_EGLIMAGE
+#ifdef RS_ENABLE_VK
+    if (RSSystemProperties::IsUseVulkan()) {
+        skContext_ = RsVulkanContext::GetSingleton().CreateDrawingContext();
+        vkImageManager_ = std::make_shared<RSVkImageManager>();
+    }
+#endif
 #ifdef USE_VIDEO_PROCESSING_ENGINE
     colorSpaceConverterDisplay_ = Media::VideoProcessingEngine::ColorSpaceConverterDisplay::Create();
 #endif
