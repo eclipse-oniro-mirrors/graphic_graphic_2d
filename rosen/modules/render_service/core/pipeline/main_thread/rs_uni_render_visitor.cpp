@@ -2619,6 +2619,9 @@ void RSUniRenderVisitor::CheckMergeSurfaceDirtysForDisplay(std::shared_ptr<RSSur
 void RSUniRenderVisitor::CheckMergeDisplayDirtyByCrossDisplayWindow(RSSurfaceRenderNode& surfaceNode) const
 {
     auto geoPtr = surfaceNode.GetRenderProperties().GetBoundsGeometry();
+    if (!geoPtr) {
+        return;
+    }
     // transfer from the display coordinate system during quickprepare into current display coordinate system.
     auto dirtyRect = geoPtr->MapRect(surfaceNode.GetDirtyManager()->GetCurrentFrameDirtyRegion().ConvertTo<float>(),
         surfaceNode.GetCrossNodeSkipDisplayConversionMatrix(curDisplayNode_->GetId()));
@@ -2697,7 +2700,7 @@ void RSUniRenderVisitor::AccumulateSurfaceDirtyRegion(
     std::shared_ptr<RSSurfaceRenderNode>& surfaceNode, Occlusion::Region& accumulatedDirtyRegion) const
 {
     auto geoPtr = surfaceNode->GetRenderProperties().GetBoundsGeometry();
-    if (!surfaceNode->GetDirtyManager()) {
+    if (!surfaceNode->GetDirtyManager() || !geoPtr) {
         return;
     }
     auto surfaceDirtyRect = surfaceNode->GetDirtyManager()->GetCurrentFrameDirtyRegion();
@@ -3090,7 +3093,10 @@ void RSUniRenderVisitor::UpdateSurfaceRenderNodeScale(RSSurfaceRenderNode& node)
         return;
     }
     auto& property = node.GetMutableRenderProperties();
-    auto& geoPtr = property.GetBoundsGeometry();
+    auto& geoPtr = (property.GetBoundsGeometry());
+    if (geoPtr == nullptr) {
+        return;
+    }
     auto absMatrix = geoPtr->GetAbsMatrix();
     bool isScale = false;
     if (RSUifirstManager::Instance().GetUiFirstType() == UiFirstCcmType::MULTI) {
