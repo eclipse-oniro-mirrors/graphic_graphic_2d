@@ -221,6 +221,7 @@ ohos_source_set("render_service_base_src") {
     "src/pipeline/rs_render_frame_rate_linker.cpp",
     "src/pipeline/rs_render_frame_rate_linker_map.cpp",
     "src/pipeline/rs_render_node.cpp",
+    "src/pipeline/rs_render_node_allocator.cpp",
     "src/pipeline/rs_render_node_gc.cpp",
     "src/pipeline/rs_render_node_map.cpp",
     "src/pipeline/rs_root_render_node.cpp",
@@ -346,6 +347,7 @@ ohos_source_set("render_service_base_src") {
 
     #feature
     "src/feature/capture/rs_ui_capture_helper.cpp",
+    "src/feature/capture/rs_capture_pixelmap_manager.cpp",
 
     #dirty_region
     "src/dirty_region/rs_filter_dirty_collector.cpp",
@@ -562,6 +564,7 @@ ohos_source_set("render_service_base_src") {
       "hisysevent:libhisysevent",
       "image_framework:image_native",
       "lz4:liblz4_shared",
+      "init:libbegetutil",
     ]
   }
 
