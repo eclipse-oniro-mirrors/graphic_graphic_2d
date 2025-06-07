@@ -125,7 +125,6 @@ public:
 
     static std::unique_ptr<RSTransactionData>& ConvertTransaction(std::unique_ptr<RSTransactionData>& transactionData);
 
-private:
     // [Attention] Do not call constructor of this class directly. The constructor and destructor are
     // only used for InstancePtr() function with unique_ptr.
     RSModifiersDrawThread();
