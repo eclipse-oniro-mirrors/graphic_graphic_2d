@@ -628,6 +628,17 @@ void RSDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         }
     }
     screenManager->RemoveForceRefreshTask();
+
+    bool isVirtualExpandComposite =
+        params->GetCompositeType() == RSDisplayRenderNode::CompositeType::UNI_RENDER_EXPAND_COMPOSITE;
+    if (isVirtualExpandComposite) {
+        RSUniDirtyComputeUtil::UpdateVirtualExpandDisplayAccumulatedParams(*params, *this);
+        if (RSUniDirtyComputeUtil::CheckVirtualExpandDisplaySkip(*params, *this)) {
+            RS_TRACE_NAME("VirtualExpandDisplayNode skip");
+            return;
+        }
+    }
+
     if (SkipFrame(vsyncRefreshRate, curScreenInfo)) {
         SetDrawSkipType(DrawSkipType::SKIP_FRAME);
         RS_TRACE_NAME_FMT("SkipFrame, screenId:%lu, strategy:%d, interval:%u, refreshrate:%u", paramScreenId,
@@ -723,6 +734,7 @@ void RSDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
             }
             rsDirtyRectsDfx.SetVirtualDirtyRects(damageRegionRects, screenInfo);
             DrawExpandScreen(*params, *expandProcessor);
+            params->ResetVirtualExpandAccumulatedParams();
             if (curCanvas_) {
                 rsDirtyRectsDfx.OnDrawVirtual(*curCanvas_);
             }
@@ -1062,7 +1074,7 @@ void RSDisplayRenderNodeDrawable::DrawMirrorScreen(
     }
 
     auto hardwareDrawables = uniParam->GetHardwareEnabledTypeDrawables();
-    //if specialLayer is visible and no CacheImg
+    // if specialLayer is visible and no CacheImg
     if ((mirroredParams->GetSecurityDisplay() != params.GetSecurityDisplay() &&
         specialLayerType_ == HAS_SPECIAL_LAYER) || !mirroredDrawable->GetCacheImgForCapture() ||
         params.GetVirtualScreenMuteStatus()) {
@@ -1367,11 +1379,11 @@ void RSDisplayRenderNodeDrawable::DrawExpandScreen(
     curCanvas_->SetOnMultipleScreen(true);
     auto targetSurfaceRenderNodeDrawable =
         std::static_pointer_cast<RSSurfaceRenderNodeDrawable>(params.GetTargetSurfaceRenderNodeDrawable().lock());
-    if (targetSurfaceRenderNodeDrawable && curCanvas_->GetSurface()) {
-        RS_TRACE_NAME("DrawExpandScreen cacheImgForMultiScreenView");
-        cacheImgForMultiScreenView_ = curCanvas_->GetSurface()->GetImageSnapshot();
+    if ((targetSurfaceRenderNodeDrawable || params.HasMirrorDisplay()) && curCanvas_->GetSurface()) {
+        RS_TRACE_NAME("DrawExpandScreen cache image");
+        cacheImgForCapture_ = curCanvas_->GetSurface()->GetImageSnapshot();
     } else {
-        cacheImgForMultiScreenView_ = nullptr;
+        cacheImgForCapture_ = nullptr;
     }
     // Restore the initial state of the canvas to avoid state accumulation
     curCanvas_->RestoreToCount(0);
@@ -2081,11 +2093,16 @@ void RSDisplayRenderNodeDrawable::AdjustZOrderAndDrawSurfaceNode(
         // SelfDrawingNodes need to use LayerMatrix(totalMatrix) when doing capturing
         auto matrix = surfaceParams->GetLayerInfo().matrix;
         // Use for mirror screen visible rect projection
-        auto rect = surfaceParams->GetLayerInfo().dstRect;
-        auto dstRect = Drawing::RectI(rect.x, rect.y, rect.x + rect.w, rect.y + rect.h);
-        const auto &visibleRect = RSUniRenderThread::Instance().GetVisibleRect();
-        if (dstRect.Intersect(visibleRect)) {
-            matrix.PostTranslate(-visibleRect.GetLeft(), -visibleRect.GetTop());
+        if (RSUniRenderThread::Instance().GetEnableVisiableRect()) {
+            auto rect = surfaceParams->GetLayerInfo().dstRect;
+            auto dstRect = Drawing::RectI(rect.x, rect.y, rect.x + rect.w, rect.y + rect.h);
+            const auto& visibleRect = RSUniRenderThread::Instance().GetVisibleRect();
+            float samplingScale = params.GetScreenInfo().samplingScale;
+            if (dstRect.Intersect(visibleRect) && ROSEN_NE(samplingScale, 0.f)) {
+                matrix.PostTranslate(-visibleRect.GetLeft() / samplingScale, -visibleRect.GetTop() / samplingScale);
+            } else {
+                continue;
+            }
         }
         canvas.ConcatMatrix(matrix);
         auto surfaceNodeDrawable = std::static_pointer_cast<RSSurfaceRenderNodeDrawable>(drawable);
