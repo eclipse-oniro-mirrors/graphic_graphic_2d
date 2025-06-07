@@ -705,7 +705,6 @@ HWTEST_F(RSRenderNodeTest2, MapAndUpdateChildrenRect002, TestSize.Level1)
 {
     RSRenderNode node(id, context);
     node.shouldPaint_ = false;
-    auto& properties = node.GetMutableRenderProperties();
     node.selfDrawRect_ = {0, 0, 1000, 1000};
     node.MapAndUpdateChildrenRect();
     ASSERT_TRUE(true);
