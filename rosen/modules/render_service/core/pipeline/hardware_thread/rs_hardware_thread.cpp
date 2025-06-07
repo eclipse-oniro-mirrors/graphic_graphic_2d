@@ -147,7 +147,7 @@ void RSHardwareThread::Start()
                 if (RSSystemProperties::IsUseVulkan()) {
                     ContextRegisterPostTask();
                 }
-#endif 
+#endif
                 hardwareTid_ = gettid();
             }).wait();
     }
