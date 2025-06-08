@@ -660,36 +660,36 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateHwcNodeEnableByHwcNodeBelowSelfInApp001, Tes
 {
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
     ASSERT_NE(rsUniRenderVisitor, nullptr);
-    ASSERT_NE(rsUnirenderVisitor->hwcVisitor_, nullptr);
+    ASSERT_NE(rsUniRenderVisitor->hwcVisitor_, nullptr);
 
     auto surfaceNode = RSTestUtil::CreateSurfaceNode();
     ASSERT_NE(surfaceNode, nullptr);
 
     std::vector<RectI> hwcRects;
     hwcRects.emplace_back(0, 0, 0, 0);
-    rsUniRenderVisitor->hwcVisitor_->UpdateHwcNodeEnableByHwcNodeBelowSelfInApp(hwcRects, node);
+    rsUniRenderVisitor->hwcVisitor_->UpdateHwcNodeEnableByHwcNodeBelowSelfInApp(hwcRects, surfaceNode);
     ASSERT_FALSE(node->isHardwareForcedDisabled_);
 
     hwcRects.clear();
     hwcRects.emplace_back(0, 100, 100, 200);
     surfaceNode->SetDstRect(RectI(0, 199, 100, 300));
-    rsUniRenderVisitor->hwcVisitor_->UpdateHwcNodeEnableByHwcNodeBelowSelfInApp(hwcRects, node);
+    rsUniRenderVisitor->hwcVisitor_->UpdateHwcNodeEnableByHwcNodeBelowSelfInApp(hwcRects, surfaceNode);
 
     hwcRects.clear();
     hwcRects.emplace_back(0, 199, 100, 200);
     surfaceNode->SetDstRect(RectI(0, 100, 100, 200));
-    rsUniRenderVisitor->hwcVisitor_->UpdateHwcNodeEnableByHwcNodeBelowSelfInApp(hwcRects, node);
+    rsUniRenderVisitor->hwcVisitor_->UpdateHwcNodeEnableByHwcNodeBelowSelfInApp(hwcRects, surfaceNode);
 
     hwcRects.clear();
     surfaceNode->SetHardwareForcedDisabledState(true);
-    rsUniRenderVisitor->hwcVisitor_->UpdateHwcNodeEnableByHwcNodeBelowSelfInApp(hwcRects, node);
+    rsUniRenderVisitor->hwcVisitor_->UpdateHwcNodeEnableByHwcNodeBelowSelfInApp(hwcRects, surfaceNode);
 
     hwcRects.clear();
     hwcRects.emplace_back(0, 100, 100, 200);
     surfaceNode->SetDstRect(RectI(0, 150, 100, 200));
     surfaceNode->SetHardwareForcedDisabledState(false);
     RsCommonHook::Instance().SetIsWhiteListForEnableHwcNodeBelowSelfInAppFlag(false);
-    rsUniRenderVisitor->hwcVisitor_->UpdateHwcNodeEnableByHwcNodeBelowSelfInApp(hwcRects, node);
+    rsUniRenderVisitor->hwcVisitor_->UpdateHwcNodeEnableByHwcNodeBelowSelfInApp(hwcRects, surfaceNode);
 }
 
 /*
@@ -777,7 +777,7 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateHwcNodeEnableByHwcNodeBelowSelfInApp005, Tes
 {
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
     ASSERT_NE(rsUniRenderVisitor, nullptr);
-    ASSERT_NE(rsUnirenderVisitor->hwcVisitor_, nullptr);
+    ASSERT_NE(rsUniRenderVisitor->hwcVisitor_, nullptr);
     auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
     ASSERT_NE(surfaceNode, nullptr);
 
