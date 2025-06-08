@@ -125,10 +125,6 @@ public:
 
     static std::unique_ptr<RSTransactionData>& ConvertTransaction(std::unique_ptr<RSTransactionData>& transactionData);
 
-    uint32_t GetMaxPixelMapWidth() const;
-
-    uint32_t GetMaxPixelMapHeight() const;
-
     // [Attention] Do not call constructor of this class directly. The constructor and destructor are
     // only used for InstancePtr() function with unique_ptr.
     RSModifiersDrawThread();
@@ -146,7 +142,6 @@ private:
 
     static bool TargetCommand(
         Drawing::DrawCmdList::HybridRenderType hybridRenderType, uint16_t type, uint16_t subType, bool cmdListEmpty);
-    bool CheckTotalAlpha(NodeId id, Drawing::DrawCmdList::HybridRenderType hybridRenderType);
 #ifdef ACCESSIBILITY_ENABLE
     void SubscribeHighContrastChange();
     void UnsubscribeHighContrastChange();
@@ -163,10 +158,6 @@ private:
 #endif
 
     void Start();
-    void InitMaxPixelMapSize();
-    uint32_t maxPixelMapWidth_ = 0;
-    uint32_t maxPixelMapHeight_ = 0;
-    bool isFirst_ = true;
 };
 } // namespace Rosen
 } // namespace OHOS
