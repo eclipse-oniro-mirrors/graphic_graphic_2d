@@ -1370,6 +1370,9 @@ VoteInfo HgmFrameRateManager::ProcessRefreshRateVote()
 
     auto sampler = CreateVSyncSampler();
     sampler->SetAdaptive(isAdaptive_.load() == SupportASStatus::SUPPORT_AS);
+    if (controller_ != nullptr) {
+        controller_->ChangeAdaptiveStatus(isAdaptive_.load() == SupportASStatus::SUPPORT_AS);
+    }
     return resultVoteInfo;
 }
 
