@@ -253,7 +253,7 @@ void RSCanvasDrawingRenderNode::ContentStyleSlotUpdate()
         return;
     }
 
-    RS_LOGI("RSCanvasDrawingRenderNode::ContentStyleSlotUpdate NodeId[%{public}" PRIu64 "]", GetId());
+    RS_LOGD("RSCanvasDrawingRenderNode::ContentStyleSlotUpdate NodeId[%{public}" PRIu64 "]", GetId());
     RS_OPTIONAL_TRACE_NAME_FMT("canvas drawing node[%llu] ContentStyleSlotUpdate", GetId());
 
     // clear content_style drawcmdlist
