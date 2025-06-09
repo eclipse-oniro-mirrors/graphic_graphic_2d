@@ -244,6 +244,10 @@ private:
         const uint32_t threadIndex = UNI_MAIN_THREAD_INDEX,
         const std::shared_ptr<Drawing::ColorSpace>& drawingColorSpace = nullptr);
 
+    std::shared_ptr<Drawing::Image> CreateVkImageFromBuffer(RSPaintFilterCanvas& canvas,
+        const sptr<SurfaceBuffer>& buffer, const sptr<SyncFence>& acquireFence, const uint32_t threadIndex,
+        const std::shared_ptr<Drawing::ColorSpace>& drawingColorSpace);
+
     static void DrawImageRect(RSPaintFilterCanvas& canvas, std::shared_ptr<Drawing::Image> image,
         BufferDrawParam& params, Drawing::SamplingOptions& samplingOptions);
 

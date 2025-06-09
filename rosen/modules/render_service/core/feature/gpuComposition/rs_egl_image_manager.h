@@ -30,16 +30,11 @@ namespace OHOS {
 namespace Rosen {
 class EglImageResource : public ImageResource {
 public:
-    static std::shared_ptr<ImageResource> Create(
-        EGLDisplay eglDisplay,
-        EGLContext eglContext,
+    static std::shared_ptr<ImageResource> Create(EGLDisplay eglDisplay, EGLContext eglContext,
         const sptr<OHOS::SurfaceBuffer>& buffer);
+
     EglImageResource(EGLDisplay eglDisplay, EGLImageKHR eglImage, EGLClientBuffer eglClientBuffer)
-    {
-        eglDisplay_ = eglDisplay;
-        eglImage_ = eglImage;
-        eglClientBuffer_ = eglClientBuffer;
-    }
+        : eglDisplay_(eglDisplay), eglImage_(eglImage), eglClientBuffer_(eglClientBuffer) {}
     ~EglImageResource() noexcept override;
 
     GLuint GetTextureId() const override
@@ -54,6 +49,11 @@ public:
 private:
     // generate a texture and bind eglImage to it.
     bool BindToTexture() override;
+
+    EGLDisplay eglDisplay_ = EGL_NO_DISPLAY;
+    EGLImageKHR eglImage_ = EGL_NO_IMAGE_KHR;
+    EGLClientBuffer eglClientBuffer_ = nullptr;
+    GLuint textureId_ = 0;
 
     friend class RSImageManager;
 };
@@ -79,6 +79,8 @@ private:
 
     static constexpr size_t MAX_CACHE_SIZE = 16;
     EGLDisplay eglDisplay_ = EGL_NO_DISPLAY;
+    std::queue<int32_t> cacheQueue_; // fifo, size restricted by MAX_CACHE_SIZE
+
     friend class RSImageManager;
 };
 } // namespace Rosen

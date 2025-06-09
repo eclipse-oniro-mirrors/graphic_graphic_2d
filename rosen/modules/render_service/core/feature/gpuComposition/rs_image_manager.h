@@ -63,7 +63,11 @@ public:
     // Vulkan virtual functions
     virtual void SetBufferDeleteFromCacheFlag(const bool &flag) { return;}
     virtual bool GetBufferDeleteFromCacheFlag() const { return false; }
-    virtual const Drawing::BackendTexture& GetBackendTexture() const { return mBackendTexture_; }
+    virtual const Drawing::BackendTexture& GetBackendTexture() const
+    {
+        static Drawing::BackendTexture invalidBackendTexture;
+        return invalidBackendTexture;
+    }
     virtual NativeBufferUtils::VulkanCleanupHelper* RefCleanupHelper() { return nullptr; }
 #endif // RS_ENABLE_VK
 
@@ -75,20 +79,6 @@ public:
     pid_t threadIndex_;
 protected:
     ImageResource() = default;
-
-#ifdef RS_ENABLE_VK
-    // Vulkan specific members
-    NativeWindowBuffer* mNativeWindowBuffer;
-    Drawing::BackendTexture mBackendTexture_;
-    NativeBufferUtils::VulkanCleanupHelper* mVulkanCleanupHelper;
-    bool isBufferDeleteFromCache = false;
-#endif // RS_ENABLE_VK
-
-    // EGL specific members
-    EGLDisplay eglDisplay_ = EGL_NO_DISPLAY;
-    EGLImageKHR eglImage_ = EGL_NO_IMAGE_KHR;
-    EGLClientBuffer eglClientBuffer_ = nullptr;
-    GLuint textureId_ = 0;
 };
 
 class RSImageManager {
@@ -114,13 +104,11 @@ public:
         const sptr<SyncFence>& acquireFence, pid_t threadIndex) { return 0; }
     virtual void UnMapEglImageFromSurfaceBufferForUniRedraw(int32_t seqNum) { return; }
     virtual void ShrinkCachesIfNeeded(bool isForUniRedraw = false) { return; }
+
 protected:
     RSImageManager() = default;
     mutable std::mutex opMutex_;
     std::unordered_map<int32_t, std::shared_ptr<ImageResource>> imageCacheSeqs_;
-
-    // Egl specific members
-    std::queue<int32_t> cacheQueue_; // fifo, size restricted by MAX_CACHE_SIZE
 };
 } // namespace Rosen
 } // namespace OHOS

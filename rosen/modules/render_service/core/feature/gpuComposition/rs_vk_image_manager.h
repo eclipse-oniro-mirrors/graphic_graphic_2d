@@ -32,13 +32,12 @@ namespace Rosen {
 
 class VkImageResource : public ImageResource {
 public:
+    static std::shared_ptr<ImageResource> Create(sptr<OHOS::SurfaceBuffer> buffer);
+
     VkImageResource(NativeWindowBuffer* nativeWindowBuffer, Drawing::BackendTexture backendTexture,
         NativeBufferUtils::VulkanCleanupHelper* vulkanCleanupHelper)
-    {
-        mNativeWindowBuffer = nativeWindowBuffer;
-        mBackendTexture_ = backendTexture;
-        mVulkanCleanupHelper = vulkanCleanupHelper;
-    }
+        : mNativeWindowBuffer(nativeWindowBuffer), mBackendTexture_(backendTexture),
+          mVulkanCleanupHelper(vulkanCleanupHelper) {}
     ~VkImageResource() override;
 
     const Drawing::BackendTexture& GetBackendTexture() const override
@@ -51,7 +50,6 @@ public:
         return mVulkanCleanupHelper->Ref();
     }
 
-    static std::shared_ptr<ImageResource> Create(sptr<OHOS::SurfaceBuffer> buffer);
     void SetBufferDeleteFromCacheFlag(const bool& flag) override
     {
         isBufferDeleteFromCache = flag;
@@ -63,6 +61,11 @@ public:
     }
 
 private:
+    NativeWindowBuffer* mNativeWindowBuffer;
+    Drawing::BackendTexture mBackendTexture_;
+    NativeBufferUtils::VulkanCleanupHelper* mVulkanCleanupHelper;
+    bool isBufferDeleteFromCache = false;
+
     friend class ImageResource;
 };
 
