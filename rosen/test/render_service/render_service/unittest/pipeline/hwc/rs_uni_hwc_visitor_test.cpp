@@ -667,29 +667,29 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateHwcNodeEnableByHwcNodeBelowSelfInApp001, Tes
 
     std::vector<RectI> hwcRects;
     hwcRects.emplace_back(0, 0, 0, 0);
-    rsUniRenderVisitor->hwcVisitor_->UpdateHwcNodeEnableByHwcNodeBelowSelfInApp(hwcRects, surfaceNode);
+    rsUniRenderVisitor->hwcVisitor_->UpdateHwcNodeEnableByHwcNodeBelowSelfInApp(surfaceNode, hwcRects);
     ASSERT_FALSE(surfaceNode->isHardwareForcedDisabled_);
 
     hwcRects.clear();
     hwcRects.emplace_back(0, 100, 100, 200);
     surfaceNode->SetDstRect(RectI(0, 199, 100, 300));
-    rsUniRenderVisitor->hwcVisitor_->UpdateHwcNodeEnableByHwcNodeBelowSelfInApp(hwcRects, surfaceNode);
+    rsUniRenderVisitor->hwcVisitor_->UpdateHwcNodeEnableByHwcNodeBelowSelfInApp(surfaceNode, hwcRects);
 
     hwcRects.clear();
     hwcRects.emplace_back(0, 199, 100, 200);
     surfaceNode->SetDstRect(RectI(0, 100, 100, 200));
-    rsUniRenderVisitor->hwcVisitor_->UpdateHwcNodeEnableByHwcNodeBelowSelfInApp(hwcRects, surfaceNode);
+    rsUniRenderVisitor->hwcVisitor_->UpdateHwcNodeEnableByHwcNodeBelowSelfInApp(surfaceNode, hwcRects);
 
     hwcRects.clear();
     surfaceNode->SetHardwareForcedDisabledState(true);
-    rsUniRenderVisitor->hwcVisitor_->UpdateHwcNodeEnableByHwcNodeBelowSelfInApp(hwcRects, surfaceNode);
+    rsUniRenderVisitor->hwcVisitor_->UpdateHwcNodeEnableByHwcNodeBelowSelfInApp(surfaceNode, hwcRects);
 
     hwcRects.clear();
     hwcRects.emplace_back(0, 100, 100, 200);
     surfaceNode->SetDstRect(RectI(0, 150, 100, 200));
     surfaceNode->SetHardwareForcedDisabledState(false);
     RsCommonHook::Instance().SetIsWhiteListForEnableHwcNodeBelowSelfInApp(false);
-    rsUniRenderVisitor->hwcVisitor_->UpdateHwcNodeEnableByHwcNodeBelowSelfInApp(hwcRects, surfaceNode);
+    rsUniRenderVisitor->hwcVisitor_->UpdateHwcNodeEnableByHwcNodeBelowSelfInApp(surfaceNode, hwcRects);
 }
 
 /**
@@ -708,7 +708,7 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateHwcNodeEnableByHwcNodeBelowSelfInApp002, Tes
     ASSERT_TRUE(surfaceNode->IsHardwareForcedDisabled());
 
     std::vector<RectI> hwcRects;
-    rsUniRenderVisitor->hwcVisitor_->UpdateHwcNodeEnableByHwcNodeBelowSelfInApp(hwcRects, surfaceNode);
+    rsUniRenderVisitor->hwcVisitor_->UpdateHwcNodeEnableByHwcNodeBelowSelfInApp(surfaceNode, hwcRects);
     EXPECT_EQ(hwcRects.size(), 0);
 }
 
@@ -734,7 +734,7 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateHwcNodeEnableByHwcNodeBelowSelfInApp003, Tes
     ASSERT_TRUE(surfaceNode->GetAncoForceDoDirect());
     
     std::vector<RectI> hwcRects;
-    rsUniRenderVisitor->hwcVisitor_->UpdateHwcNodeEnableByHwcNodeBelowSelfInApp(hwcRects, surfaceNode);
+    rsUniRenderVisitor->hwcVisitor_->UpdateHwcNodeEnableByHwcNodeBelowSelfInApp(surfaceNode, hwcRects);
     EXPECT_EQ(hwcRects.size(), 1);
 }
 
@@ -763,7 +763,7 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateHwcNodeEnableByHwcNodeBelowSelfInApp004, Tes
     hwcRects.emplace_back(50, 50, 100, 100);
     ASSERT_TRUE(surfaceNode->GetDstRect().Intersect(RectI(50, 50, 100, 100)));
 
-    rsUniRenderVisitor->hwcVisitor_->UpdateHwcNodeEnableByHwcNodeBelowSelfInApp(hwcRects, surfaceNode);
+    rsUniRenderVisitor->hwcVisitor_->UpdateHwcNodeEnableByHwcNodeBelowSelfInApp(surfaceNode, hwcRects);
     EXPECT_EQ(hwcRects.size(), 1);
 }
 
@@ -792,7 +792,7 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateHwcNodeEnableByHwcNodeBelowSelfInApp005, Tes
     hwcRects.emplace_back(50, 50, 100, 100);
     ASSERT_FALSE(surfaceNode->GetDstRect().Intersect(RectI(50, 50, 100, 100)));
 
-    rsUniRenderVisitor->hwcVisitor_->UpdateHwcNodeEnableByHwcNodeBelowSelfInApp(hwcRects, surfaceNode);
+    rsUniRenderVisitor->hwcVisitor_->UpdateHwcNodeEnableByHwcNodeBelowSelfInApp(surfaceNode, hwcRects);
     EXPECT_EQ(hwcRects.size(), 2);
 }
 
