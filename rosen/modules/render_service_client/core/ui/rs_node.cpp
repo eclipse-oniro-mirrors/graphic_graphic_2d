@@ -118,9 +118,8 @@ RSNode::RSNode(bool isRenderServiceNode, NodeId id, bool isTextureExportNode, st
       showingPropertiesFreezer_(id, rsUIContext), isOnTheTree_(isOnTheTree)
 {
     InitUniRenderEnabled();
-
-    if (rsUIContext_.lock() != nullptr) {
-        auto transaction = rsUIContext_.lock()->GetRSTransaction();
+    if (auto rsUIContextPtr = rsUIContext_.lock()) {
+        auto transaction = rsUIContextPtr->GetRSTransaction();
         if (transaction != nullptr && g_isUniRenderEnabled && isTextureExportNode) {
             std::call_once(flag_, [transaction]() {
                 auto renderThreadClient = RSIRenderClient::CreateRenderThreadClient();
@@ -898,7 +897,6 @@ void RSNode::SetProperty(RSModifierType modifierType, T value)
 // alpha
 void RSNode::SetAlpha(float alpha)
 {
-    alpha_ = alpha;
     SetProperty<RSAlphaModifier, RSAnimatableProperty<float>>(RSModifierType::ALPHA, alpha);
     if (alpha < 1) {
         SetDrawNode();
@@ -3444,7 +3442,6 @@ void RSNode::SetIsOnTheTree(bool flag)
         if (childPtr == nullptr) {
             continue;
         }
-        childPtr->totalAlpha_ = childPtr->alpha_ * totalAlpha_;
         childPtr->SetIsOnTheTree(flag);
     }
 }
@@ -3497,10 +3494,6 @@ void RSNode::AddChild(SharedPtr child, int index)
             id_, childId, surfaceNode->GetName().c_str());
         RS_TRACE_NAME_FMT("RSNode::AddChild, Id: %" PRIu64 ", SurfaceNode:[Id: %" PRIu64 ", name: %s]",
             id_, childId, surfaceNode->GetName().c_str());
-    }
-    totalAlpha_ = alpha_;
-    if (isOnTheTree_) {
-        AccumulateAlpha(totalAlpha_);
     }
     child->SetIsOnTheTree(isOnTheTree_);
 }
@@ -3782,20 +3775,6 @@ void RSNode::SetParent(WeakPtr parent)
     parent_ = parent;
 }
 
-void RSNode::AccumulateAlpha(float& alpha)
-{
-    // avoid loop
-    if (visitedForTotalAlpha_) {
-        return;
-    }
-    visitedForTotalAlpha_ = true;
-    alpha *= alpha_;
-    if (auto parent = GetParent()) {
-        parent->AccumulateAlpha(totalAlpha_);
-    }
-    visitedForTotalAlpha_ = false;
-}
-
 RSNode::SharedPtr RSNode::GetParent()
 {
     return parent_.lock();
@@ -3820,18 +3799,17 @@ void RSNode::DumpTree(int depth, std::string& out) const
 void RSNode::Dump(std::string& out) const
 {
     auto iter = RSUINodeTypeStrs.find(GetType());
+    auto rsUIContextPtr = rsUIContext_.lock();
     out += (iter != RSUINodeTypeStrs.end() ? iter->second : "RSNode");
     out += "[" + std::to_string(id_);
     out += "], parent[" + std::to_string(parent_.lock() ? parent_.lock()->GetId() : -1);
     out += "], instanceId[" + std::to_string(instanceId_);
-    out += "], UIContext[" + (rsUIContext_.lock() ? std::to_string(rsUIContext_.lock()->GetToken()) : "null");
+    out += "], UIContext[" + (rsUIContextPtr ? std::to_string(rsUIContextPtr->GetToken()) : "null");
     if (auto node = ReinterpretCastTo<RSSurfaceNode>()) {
         out += "], name[" + node->GetName();
     } else if (!nodeName_.empty()) {
         out += "], nodeName[" + nodeName_;
     }
-    out += "], alpha[" + std::to_string(alpha_);
-    out += "], totalAlpha[" + std::to_string(totalAlpha_);
     out += "], frameNodeId[" + std::to_string(frameNodeId_);
     out += "], frameNodeTag[" + frameNodeTag_;
     out += "], extendModifierIsDirty[";
@@ -3879,7 +3857,7 @@ void RSNode::Dump(std::string& out) const
             continue;
         }
         out += " " + modifier->GetModifierTypeString();
-        out += " :";
+        out += ":";
         renderModifier->Dump(out);
     }
     out += "]";
@@ -3906,7 +3884,8 @@ std::string RSNode::DumpNode(int depth) const
             ss << " animationInfo:" << animation->DumpAnimation();
         }
     }
-    ss << " token:" << (rsUIContext_.lock() ? std::to_string(rsUIContext_.lock()->GetToken()) : "null");
+    auto rsUIContextPtr = rsUIContext_.lock();
+    ss << " token:" << (rsUIContextPtr ? std::to_string(rsUIContextPtr->GetToken()) : "null");
     ss << " " << GetStagingProperties().Dump();
     return ss.str();
 }

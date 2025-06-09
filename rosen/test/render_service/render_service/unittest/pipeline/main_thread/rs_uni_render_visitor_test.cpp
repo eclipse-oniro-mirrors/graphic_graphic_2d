@@ -73,10 +73,7 @@ class RSChildrenDrawableAdapter : public RSDrawable {
 public:
     RSChildrenDrawableAdapter() = default;
     ~RSChildrenDrawableAdapter() override = default;
-    bool OnUpdate(const RSRenderNode& content) override
-    {
-        return true;
-    }
+    bool OnUpdate(const RSRenderNode& content) override { return true; }
     void OnSync() override {}
     Drawing::RecordingCanvas::DrawFunc CreateDrawFunc() const override
     {
@@ -85,10 +82,7 @@ public:
     }
 
 private:
-    bool OnSharedTransition(const std::shared_ptr<RSRenderNode>& node)
-    {
-        return true;
-    }
+    bool OnSharedTransition(const std::shared_ptr<RSRenderNode>& node) { return true; }
     friend class RSRenderNode;
 };
 
@@ -2154,15 +2148,10 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateCornerRadiusInfoForDRM, TestSize.Level2)
 
     instanceRootNode->absDrawRect_ = {-10, -10, 100, 100};
     instanceRootNode->SetGlobalCornerRadius({-10, -10, 100, 100});
-    auto surfaceBoundsGeo = surfaceNode->GetRenderProperties().GetBoundsGeometry();
-    surfaceNode->renderContent_->renderProperties_.boundsGeo_ = nullptr;
-    rsUniRenderVisitor->UpdateCornerRadiusInfoForDRM(surfaceNode, hwcRects);
-
-    surfaceNode->renderContent_->renderProperties_.boundsGeo_ = surfaceBoundsGeo;
     rsUniRenderVisitor->UpdateCornerRadiusInfoForDRM(surfaceNode, hwcRects);
 
     surfaceNode->GetInstanceRootNode()->renderContent_->renderProperties_.SetBounds({0, 0, 1, 1});
-    Drawing::Matrix matrix = Drawing::Matrix();
+    Drawing::Matrix matrix;
     matrix.SetMatrix(1, 2, 3, 4, 5, 6, 7, 8, 9);
     surfaceNode->SetTotalMatrix(matrix);
     surfaceNode->selfDrawRect_ = {0, 0, 1, 1};
@@ -4081,7 +4070,6 @@ HWTEST_F(RSUniRenderVisitorTest, QuickPrepareDisplayRenderNode001, TestSize.Leve
     ASSERT_NE(rsDisplayRenderNode, nullptr);
     rsDisplayRenderNode->dirtyManager_ = std::make_shared<RSDirtyRegionManager>();
     ASSERT_NE(rsDisplayRenderNode->dirtyManager_, nullptr);
-    rsDisplayRenderNode->GetMutableRenderProperties().boundsGeo_ = std::make_shared<RSObjAbsGeometry>();
 
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
     ASSERT_NE(rsUniRenderVisitor, nullptr);
@@ -4112,7 +4100,6 @@ HWTEST_F(RSUniRenderVisitorTest, QuickPrepareDisplayRenderNode002, TestSize.Leve
     ASSERT_NE(rsDisplayRenderNode, nullptr);
     rsDisplayRenderNode->dirtyManager_ = std::make_shared<RSDirtyRegionManager>();
     ASSERT_NE(rsDisplayRenderNode->dirtyManager_, nullptr);
-    rsDisplayRenderNode->GetMutableRenderProperties().boundsGeo_ = std::make_shared<RSObjAbsGeometry>();
 
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
     ASSERT_NE(rsUniRenderVisitor, nullptr);
@@ -4475,8 +4462,6 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateSubSurfaceNodeRectInSkippedSubTree, TestS
 
     rsUniRenderVisitor->curSurfaceNode_ = RSTestUtil::CreateSurfaceNode();
     ASSERT_NE(node->renderContent_, nullptr);
-    auto& property = node->renderContent_->renderProperties_;
-    property.boundsGeo_ = std::make_shared<RSObjAbsGeometry>();
     ASSERT_NE(node->GetRenderProperties().GetBoundsGeometry(), nullptr);
     rsUniRenderVisitor->UpdateSubSurfaceNodeRectInSkippedSubTree(*node);
     rsUniRenderVisitor->curSurfaceDirtyManager_ = rsUniRenderVisitor->curSurfaceNode_->GetDirtyManager();
@@ -4592,7 +4577,6 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeInfoForAppNode002, TestSize.Level2
 
     rsSurfaceRenderNode->dynamicHardwareEnable_ = true;
     ASSERT_NE(rsSurfaceRenderNode->renderContent_, nullptr);
-    rsSurfaceRenderNode->renderContent_->renderProperties_.boundsGeo_ = nullptr;
     rsUniRenderVisitor->UpdateHwcNodeInfoForAppNode(*rsSurfaceRenderNode);
 }
 
@@ -5278,8 +5262,8 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateOffscreenCanvasNodeId001, TestSize.Level2
     EXPECT_EQ(rsUniRenderVisitor->offscreenCanvasNodeId_, INVALID_NODEID);
 
     auto rsChildrenDrawable = std::make_shared<RSChildrenDrawableAdapter>();
-    rsCanvasRenderNode->drawableVec_[static_cast<uint32_t>(RSDrawableSlot::FOREGROUND_FILTER)]
-        = std::move(rsChildrenDrawable);
+    rsCanvasRenderNode->drawableVec_[static_cast<uint32_t>(RSDrawableSlot::FOREGROUND_FILTER)] =
+        std::move(rsChildrenDrawable);
     rsUniRenderVisitor->UpdateOffscreenCanvasNodeId(*rsCanvasRenderNode);
     EXPECT_EQ(rsUniRenderVisitor->offscreenCanvasNodeId_, nodeId);
 }
