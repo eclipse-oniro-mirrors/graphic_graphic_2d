@@ -416,7 +416,6 @@ HWTEST_F(HdiOutputTest, DeletePrevLayersLocked001, Function | MediumTest | Level
     maskLayer_->SetLayerStatus(false);
     hdiOutput->SetMaskLayer(maskLayer_);
 
-
     hdiOutput->DeletePrevLayersLocked();
     EXPECT_EQ(surfaceIdMap.count(id), 1);
     EXPECT_EQ(layerIdMap.count(id), 1);
