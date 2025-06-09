@@ -2410,10 +2410,6 @@ void RSUniRenderVisitor::UpdateCornerRadiusInfoForDRM(std::shared_ptr<RSSurfaceR
         return;
     }
     auto hwcGeo = hwcNode->GetRenderProperties().GetBoundsGeometry();
-    if (!hwcGeo) {
-        hwcNode->SetCornerRadiusInfoForDRM({});
-        return;
-    }
     auto hwcAbsRect = hwcGeo->MapRect(hwcNode->GetSelfDrawRect(), hwcNode->GetTotalMatrix());
     hwcAbsRect = hwcAbsRect.IntersectRect(instanceAbsRect);
     if (hwcAbsRect.IsEmpty()) {
@@ -2636,7 +2632,7 @@ void RSUniRenderVisitor::CollectFilterInCrossDisplayWindow(
     std::shared_ptr<RSSurfaceRenderNode>& surfaceNode, Occlusion::Region& accumulatedDirtyRegion)
 {
     auto geoPtr = surfaceNode->GetRenderProperties().GetBoundsGeometry();
-    if (!surfaceNode->IsFirstLevelCrossNode() || curDisplayNode_->IsFirstVisitCrossNodeDisplay() || !geoPtr) {
+    if (!surfaceNode->IsFirstLevelCrossNode() || curDisplayNode_->IsFirstVisitCrossNodeDisplay()) {
         return;
     }
     const auto& nodeMap = RSMainThread::Instance()->GetContext().GetNodeMap();
@@ -3012,10 +3008,6 @@ void RSUniRenderVisitor::UpdateSubSurfaceNodeRectInSkippedSubTree(const RSRender
         return;
     }
     auto rootGeo = rootNode.GetRenderProperties().GetBoundsGeometry();
-    if (!rootGeo) {
-        return;
-    }
-
     std::vector<std::pair<NodeId, std::weak_ptr<RSSurfaceRenderNode>>> allSubSurfaceNodes;
     curSurfaceNode_->GetAllSubSurfaceNodes(allSubSurfaceNodes);
     for (auto& [_, subSurfaceNode] : allSubSurfaceNodes) {

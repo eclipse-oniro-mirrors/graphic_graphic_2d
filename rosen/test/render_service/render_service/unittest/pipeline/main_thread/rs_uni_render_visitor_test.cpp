@@ -2170,15 +2170,10 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateCornerRadiusInfoForDRM, TestSize.Level2)
 
     instanceRootNode->absDrawRect_ = {-10, -10, 100, 100};
     instanceRootNode->SetGlobalCornerRadius({-10, -10, 100, 100});
-    auto surfaceBoundsGeo = surfaceNode->GetRenderProperties().GetBoundsGeometry();
-    surfaceNode->renderContent_->renderProperties_.boundsGeo_ = nullptr;
-    rsUniRenderVisitor->UpdateCornerRadiusInfoForDRM(surfaceNode, hwcRects);
-
-    surfaceNode->renderContent_->renderProperties_.boundsGeo_ = surfaceBoundsGeo;
     rsUniRenderVisitor->UpdateCornerRadiusInfoForDRM(surfaceNode, hwcRects);
 
     surfaceNode->GetInstanceRootNode()->renderContent_->renderProperties_.SetBounds({0, 0, 1, 1});
-    Drawing::Matrix matrix = Drawing::Matrix();
+    Drawing::Matrix matrix;
     matrix.SetMatrix(1, 2, 3, 4, 5, 6, 7, 8, 9);
     surfaceNode->SetTotalMatrix(matrix);
     surfaceNode->selfDrawRect_ = {0, 0, 1, 1};
@@ -4604,7 +4599,6 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeInfoForAppNode002, TestSize.Level2
 
     rsSurfaceRenderNode->dynamicHardwareEnable_ = true;
     ASSERT_NE(rsSurfaceRenderNode->renderContent_, nullptr);
-    rsSurfaceRenderNode->renderContent_->renderProperties_.boundsGeo_ = nullptr;
     rsUniRenderVisitor->UpdateHwcNodeInfoForAppNode(*rsSurfaceRenderNode);
 }
 
