@@ -1259,6 +1259,8 @@ HWTEST_F(PropertiesTest, GenerateRenderFilterEdgeLight_001, TestSize.Level1)
 
     auto renderAlpha = std::make_shared<RSRenderAnimatableProperty<float>>(0.5f, 0);
     renderFilterEdgeLight->Setter(RSUIFilterType::EDGE_LIGHT_ALPHA, renderAlpha);
+    auto renderBloom = std::make_shared<RSRenderProperty<bool>>(true, 0);
+    renderFilterEdgeLight->Setter(RSUIFilterType::EDGE_LIGHT_BLOOM, renderBloom);
     properties.GenerateRenderFilter();
     EXPECT_EQ(properties.backgroundFilter_, nullptr);
     properties.backgroundFilter_ = nullptr;

@@ -56,6 +56,7 @@ enum class RSPropertyType : int16_t {
     RRECT,
     SHADER_PARAM,
     UI_FILTER,
+    BOOL,
 };
 
 enum class RSPropertyUnit : int16_t {

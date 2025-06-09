@@ -45,6 +45,8 @@ public:
 
     void SetAlpha(float alpha);
 
+    void SetBloom(bool bloom);
+
     void SetColor(const Vector4f& color);
 
     void SetMask(const std::shared_ptr<RSUIMaskPara>& mask);
@@ -68,6 +70,7 @@ private:
     }
 
     bool CreateRSRenderFilterAlpha(const std::shared_ptr<RSRenderEdgeLightFilterPara>& frProperty);
+    bool CreateRSRenderFilterBloom(const std::shared_ptr<RSRenderEdgeLightFilterPara>& frProperty);
     bool CreateRSRenderFilterColor(const std::shared_ptr<RSRenderEdgeLightFilterPara>& frProperty);
     bool CreateRSRenderFilterMask(const std::shared_ptr<RSRenderEdgeLightFilterPara>& frProperty);
 };

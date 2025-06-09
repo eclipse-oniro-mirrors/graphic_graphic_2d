@@ -30,6 +30,7 @@ namespace OHOS {
 namespace Rosen {
 static const std::vector<RSUIFilterType> FILTER_TYPE_WITHOUT_MASK = {
     RSUIFilterType::EDGE_LIGHT_ALPHA,
+    RSUIFilterType::EDGE_LIGHT_BLOOM,
     RSUIFilterType::EDGE_LIGHT_COLOR,
 };
 
@@ -44,6 +45,10 @@ std::shared_ptr<RSRenderPropertyBase> RSRenderEdgeLightFilterPara::CreateRenderP
         case RSUIFilterType::EDGE_LIGHT_ALPHA : {
             return std::make_shared<RSRenderAnimatableProperty<float>>(
                 0.f, 0, RSPropertyType::FLOAT);
+        }
+        case RSUIFilterType::EDGE_LIGHT_BLOOM : {
+            return std::make_shared<RSRenderProperty<bool>>(
+                true, 0, RSPropertyType::BOOL);
         }
         case RSUIFilterType::EDGE_LIGHT_COLOR : {
             return std::make_shared<RSRenderAnimatableProperty<Vector4f>>(
@@ -205,6 +210,15 @@ bool RSRenderEdgeLightFilterPara::ParseFilterValues()
         return false;
     }
     alpha_ = edgeLightAlpha->Get();
+
+    // bloom
+    auto edgeLightBloom = std::static_pointer_cast<RSRenderProperty<bool>>(
+        GetRenderPropert(RSUIFilterType::EDGE_LIGHT_BLOOM));
+    if (edgeLightBloom == nullptr) {
+        return false;
+    }
+    bloom_ = edgeLightBloom->Get();
+
     // color
     auto edgeLightColor = std::static_pointer_cast<RSRenderAnimatableProperty<Vector4f>>(
         GetRenderPropert(RSUIFilterType::EDGE_LIGHT_COLOR));
@@ -229,6 +243,7 @@ bool RSRenderEdgeLightFilterPara::ParseFilterValues()
     const auto hashFunc = SkOpts::hash;
 #endif
     hash_ = hashFunc(&alpha_, sizeof(alpha_), hash_);
+    hash_ = hashFunc(&bloom_, sizeof(bloom_), hash_);
     hash_ = hashFunc(&color_, sizeof(color_), hash_);
     if (mask_) {
         auto maskHash = mask_->Hash();
@@ -252,6 +267,7 @@ void RSRenderEdgeLightFilterPara::GenerateGEVisualEffect(
     auto edgeLightShaderFilter = std::make_shared<Drawing::GEVisualEffect>(
         Drawing::GE_FILTER_EDGE_LIGHT, Drawing::DrawingPaintType::BRUSH);
     edgeLightShaderFilter->SetParam(Drawing::GE_FILTER_EDGE_LIGHT_ALPHA, alpha_);
+    edgeLightShaderFilter->SetParam(Drawing::GE_FILTER_EDGE_LIGHT_BLOOM, bloom_);
     edgeLightShaderFilter->SetParam(Drawing::GE_FILTER_EDGE_LIGHT_EDGE_COLOR_R, color.x_);
     edgeLightShaderFilter->SetParam(Drawing::GE_FILTER_EDGE_LIGHT_EDGE_COLOR_G, color.y_);
     edgeLightShaderFilter->SetParam(Drawing::GE_FILTER_EDGE_LIGHT_EDGE_COLOR_B, color.z_);
