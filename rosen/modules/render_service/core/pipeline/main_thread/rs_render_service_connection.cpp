@@ -79,7 +79,6 @@
 #include "render/rs_typeface_cache.h"
 #include "transaction/rs_unmarshal_thread.h"
 #include "transaction/rs_transaction_data_callback_manager.h"
-#include "utils/graphic_coretrace.h"
 
 #ifdef TP_FEATURE_ENABLE
 #include "screen_manager/touch_screen.h"
@@ -618,8 +617,6 @@ ErrCode RSRenderServiceConnection::GetPixelMapByProcessId(
 ErrCode RSRenderServiceConnection::CreatePixelMapFromSurface(sptr<Surface> surface,
     const Rect &srcRect, std::shared_ptr<Media::PixelMap> &pixelMap)
 {
-    RECORD_GPURESOURCE_CORETRACE_CALLER(Drawing::CoreFunction::
-        RS_RSRENDERSERVICECONNECTION_CREATEPIXELMAPFROMSURFACE);
     OHOS::Media::Rect rect = {
         .left = srcRect.x,
         .top = srcRect.y,
@@ -1264,13 +1261,13 @@ void RSRenderServiceConnection::SetScreenPowerStatus(ScreenId id, ScreenPowerSta
 namespace {
 void TakeSurfaceCaptureForUiParallel(
     NodeId id, sptr<RSISurfaceCaptureCallback> callback, const RSSurfaceCaptureConfig& captureConfig,
-    const Drawing::Rect& specifiedAreaRect)
+    const Drawing::Rect& specifiedAreaRect, std::shared_ptr<RSCapturePixelMap> rsCapturePixelMap)
 {
 #ifdef RS_ENABLE_GPU
     RS_LOGI("TakeSurfaceCaptureForUiParallel nodeId:[%{public}" PRIu64 "], issync:%{public}s", id,
         captureConfig.isSync ? "true" : "false");
-    std::function<void()> captureTask = [id, callback, captureConfig, specifiedAreaRect]() {
-        RSUiCaptureTaskParallel::Capture(id, callback, captureConfig, specifiedAreaRect);
+    std::function<void()> captureTask = [id, callback, captureConfig, specifiedAreaRect, rsCapturePixelMap]() {
+        RSUiCaptureTaskParallel::Capture(id, callback, captureConfig, specifiedAreaRect, rsCapturePixelMap);
     };
     auto& context = RSMainThread::Instance()->GetContext();
     if (captureConfig.isSync) {
@@ -1324,15 +1321,22 @@ void TakeSurfaceCaptureForUIWithUni(NodeId id, sptr<RSISurfaceCaptureCallback> c
 
 void RSRenderServiceConnection::TakeSurfaceCapture(NodeId id, sptr<RSISurfaceCaptureCallback> callback,
     const RSSurfaceCaptureConfig& captureConfig, const RSSurfaceCaptureBlurParam& blurParam,
-    const Drawing::Rect& specifiedAreaRect, RSSurfaceCapturePermissions permissions)
+    const Drawing::Rect& specifiedAreaRect, std::unique_ptr<Media::PixelMap> clientPixelMap,
+    RSSurfaceCapturePermissions permissions)
 {
     if (!mainThread_) {
         RS_LOGE("%{public}s mainThread_ is nullptr", __func__);
         return;
     }
+
+    auto rsCapturePixelMap = std::make_shared<RSCapturePixelMap>();
+    if (captureConfig.isClientPixelMap && rsCapturePixelMap != nullptr) {
+        rsCapturePixelMap->SetCapturePixelMap(std::move(clientPixelMap));
+    }
     std::function<void()> captureTask = [id, callback, captureConfig, blurParam, specifiedAreaRect,
         screenCapturePermission = permissions.screenCapturePermission,
         isSystemCalling = permissions.isSystemCalling,
+        rsCapturePixelMap,
         selfCapture = permissions.selfCapture]() -> void {
         RS_TRACE_NAME_FMT("RSRenderServiceConnection::TakeSurfaceCapture captureTask nodeId:[%" PRIu64 "]", id);
         RS_LOGI("TakeSurfaceCapture captureTask begin nodeId:[%{public}" PRIu64 "]", id);
@@ -1349,7 +1353,7 @@ void RSRenderServiceConnection::TakeSurfaceCapture(NodeId id, sptr<RSISurfaceCap
                 return;
             }
             if (RSUniRenderJudgement::IsUniRender()) {
-                TakeSurfaceCaptureForUiParallel(id, callback, captureConfig, specifiedAreaRect);
+                TakeSurfaceCaptureForUiParallel(id, callback, captureConfig, specifiedAreaRect, rsCapturePixelMap);
             } else {
                 TakeSurfaceCaptureForUIWithUni(id, callback, captureConfig);
             }
@@ -1387,7 +1391,7 @@ void RSRenderServiceConnection::TakeSurfaceCapture(NodeId id, sptr<RSISurfaceCap
             captureParam.isSystemCalling = isSystemCalling;
             captureParam.blurParam = blurParam;
             RSSurfaceCaptureTaskParallel::CheckModifiers(id, captureConfig.useCurWindow);
-            RSSurfaceCaptureTaskParallel::Capture(callback, captureParam);
+            RSSurfaceCaptureTaskParallel::Capture(callback, captureParam, rsCapturePixelMap);
 #endif
         }
     };
@@ -1442,8 +1446,9 @@ void RSRenderServiceConnection::TakeSelfSurfaceCapture(
         captureParam.config = captureConfig;
         captureParam.isSystemCalling = isSystemCalling;
         captureParam.isSelfCapture = true;
+        auto rsCapturePixelMap = std::make_shared<RSCapturePixelMap>();
         RSSurfaceCaptureTaskParallel::CheckModifiers(id, captureConfig.useCurWindow);
-        RSSurfaceCaptureTaskParallel::Capture(callback, captureParam);
+        RSSurfaceCaptureTaskParallel::Capture(callback, captureParam, rsCapturePixelMap);
     };
     mainThread_->PostTask(selfCaptureTask);
 }
@@ -1476,8 +1481,9 @@ ErrCode RSRenderServiceConnection::SetWindowFreezeImmediately(NodeId id, bool is
             captureParam.isSystemCalling = isSystemCalling;
             captureParam.isFreeze = isFreeze;
             captureParam.blurParam = blurParam;
+            auto rsCapturePixelMap = std::make_shared<RSCapturePixelMap>();
             RSSurfaceCaptureTaskParallel::CheckModifiers(id, captureConfig.useCurWindow);
-            RSSurfaceCaptureTaskParallel::Capture(callback, captureParam);
+            RSSurfaceCaptureTaskParallel::Capture(callback, captureParam, rsCapturePixelMap);
         } else {
             RSSurfaceCaptureTaskParallel::ClearCacheImageByFreeze(id);
         }
@@ -1489,7 +1495,8 @@ ErrCode RSRenderServiceConnection::SetWindowFreezeImmediately(NodeId id, bool is
 void RSRenderServiceConnection::TakeUICaptureInRange(
     NodeId id, sptr<RSISurfaceCaptureCallback> callback, const RSSurfaceCaptureConfig& captureConfig)
 {
-    TakeSurfaceCaptureForUiParallel(id, callback, captureConfig, {});
+    auto rsCapturePixelMap = std::make_shared<RSCapturePixelMap>();
+    TakeSurfaceCaptureForUiParallel(id, callback, captureConfig, {}, rsCapturePixelMap);
 }
 
 ErrCode RSRenderServiceConnection::SetHwcNodeBounds(int64_t rsNodeId, float positionX, float positionY,
@@ -2662,8 +2669,6 @@ void RSRenderServiceConnection::NotifyRefreshRateEvent(const EventInfo& eventInf
             frameRateMgr->HandleRefreshRateEvent(pid, eventInfo);
         }
     });
-
-    RSUifirstFrameRateControl::Instance().SetAnimationInfo(eventInfo);
 }
 
 void RSRenderServiceConnection::SetWindowExpectedRefreshRate(
@@ -2802,6 +2807,7 @@ ErrCode RSRenderServiceConnection::ReportEventResponse(DataBaseRs info)
     renderThread_.PostTask(task);
     RSUifirstManager::Instance().OnProcessEventResponse(info);
 #endif
+    RSUifirstFrameRateControl::Instance().SetAnimationStartInfo(info);
     return ERR_OK;
 }
 
@@ -2826,6 +2832,7 @@ ErrCode RSRenderServiceConnection::ReportEventJankFrame(DataBaseRs info)
     };
     renderThread_.PostTask(task);
 #endif
+    RSUifirstFrameRateControl::Instance().SetAnimationEndInfo(info);
     return ERR_OK;
 }
 

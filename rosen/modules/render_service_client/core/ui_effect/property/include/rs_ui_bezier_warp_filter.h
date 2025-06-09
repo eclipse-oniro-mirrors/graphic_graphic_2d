@@ -24,7 +24,7 @@
 
 namespace OHOS {
 namespace Rosen {
-class RSUIBezierWarpFilterPara : public RSUIFilterParaBase {
+class RSC_EXPORT RSUIBezierWarpFilterPara : public RSUIFilterParaBase {
 public:
     RSUIBezierWarpFilterPara() : RSUIFilterParaBase(RSUIFilterType::BEZIER_WARP) {}
     virtual ~RSUIBezierWarpFilterPara() = default;
