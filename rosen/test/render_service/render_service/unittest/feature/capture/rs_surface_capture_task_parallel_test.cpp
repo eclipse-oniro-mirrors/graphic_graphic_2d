@@ -723,8 +723,8 @@ HWTEST_F(RSSurfaceCaptureTaskParallelTest, TestGetCaptureSurfaceNode, TestSize.L
     captureConfig.useCurWindow = false;
 
     auto renderNode = std::make_shared<RSSurfaceRenderNode>(nodeId, std::make_shared<RSContext>(), true);
-    renderNode->renderContent_->renderProperties_.SetBoundsWidth(1024.0f);
-    renderNode->renderContent_->renderProperties_.SetBoundsHeight(1024.0f);
+    renderNode->renderProperties_.SetBoundsWidth(1024.0f);
+    renderNode->renderProperties_.SetBoundsHeight(1024.0f);
     nodeMap.RegisterRenderNode(renderNode);
 
     auto parent1 = std::make_shared<RSSurfaceRenderNode>(nodeId, std::make_shared<RSContext>(), true);
@@ -774,8 +774,8 @@ HWTEST_F(RSSurfaceCaptureTaskParallelTest, TestGetCaptureDisplayNode, TestSize.L
     captureConfig.useCurWindow = false;
 
     auto renderNode = std::make_shared<RSDisplayRenderNode>(nodeId, disPlayConfig);
-    renderNode->renderContent_->renderProperties_.SetBoundsWidth(1024.0f);
-    renderNode->renderContent_->renderProperties_.SetBoundsHeight(1024.0f);
+    renderNode->renderProperties_.SetBoundsWidth(1024.0f);
+    renderNode->renderProperties_.SetBoundsHeight(1024.0f);
     nodeMap.RegisterRenderNode(renderNode);
 
     auto rsCapturePixelMap = std::make_shared<RSCapturePixelMap>();

@@ -41,6 +41,7 @@
 #include "pipeline/rs_root_render_node.h"
 #include "pipeline/rs_surface_render_node.h"
 #include "pipeline/rs_canvas_drawing_render_node.h"
+#include "pipeline/rs_recording_canvas.h"
 #include "pipeline/rs_render_node_gc.h"
 #include "pipeline/sk_resource_manager.h"
 #include "platform/common/rs_log.h"
@@ -90,15 +91,13 @@ void RSRenderNode::UpdateBlurEffectCounter(int deltaCount)
 void RSRenderNode::OnRegister(const std::weak_ptr<RSContext>& context)
 {
     context_ = context;
-    renderContent_->type_ = GetType();
-    renderContent_->renderProperties_.backref_ = weak_from_this();
+    renderProperties_.backref_ = weak_from_this();
     SetDirty(true);
     InitRenderParams();
 }
 
 bool RSRenderNode::IsPureContainer() const
 {
-    auto& drawCmdModifiers_ = renderContent_->drawCmdModifiers_;
     return (drawCmdModifiers_.empty() && !GetRenderProperties().isDrawn_ && !GetRenderProperties().alphaNeedApply_);
 }
 
@@ -148,7 +147,6 @@ std::string DrawNodeTypeToString(DrawNodeType nodeType)
 
 bool RSRenderNode::IsContentNode() const
 {
-    auto& drawCmdModifiers_ = renderContent_->drawCmdModifiers_;
     return ((drawCmdModifiers_.size() == 1 &&
         (drawCmdModifiers_.find(RSModifierType::CONTENT_STYLE) != drawCmdModifiers_.end())) ||
         drawCmdModifiers_.empty()) &&
@@ -1106,12 +1104,12 @@ void RSRenderNode::DumpSubClassNode(std::string& out) const
 
 void RSRenderNode::DumpDrawCmdModifiers(std::string& out) const
 {
-    if (renderContent_->drawCmdModifiers_.empty()) {
+    if (drawCmdModifiers_.empty()) {
         return;
     }
     std::string splitStr = ", ";
     std::string modifierDesc = ", DrawCmdModifiers:[";
-    for (auto& [type, modifiers] : renderContent_->drawCmdModifiers_) {
+    for (auto& [type, modifiers] : drawCmdModifiers_) {
         auto modifierTypeString = std::make_shared<RSModifierTypeString>();
         std::string typeName = modifierTypeString->GetModifierTypeString(type);
         modifierDesc += typeName + ":[";
@@ -1536,10 +1534,6 @@ bool RSRenderNode::SetAccumulatedClipFlag(bool clipChange)
     return isAccumulatedClipFlagChanged_;
 }
 
-const std::shared_ptr<RSRenderContent> RSRenderNode::GetRenderContent() const
-{
-    return renderContent_;
-}
 #ifdef RS_ENABLE_GPU
 std::unique_ptr<RSRenderParams>& RSRenderNode::GetStagingRenderParams()
 {
@@ -1671,12 +1665,11 @@ const RectI& RSRenderNode::GetAbsDrawRect() const
 
 bool RSRenderNode::CheckAndUpdateGeoTrans(std::shared_ptr<RSObjAbsGeometry>& geoPtr)
 {
-    if (renderContent_->drawCmdModifiers_.find(RSModifierType::GEOMETRYTRANS) ==
-        renderContent_->drawCmdModifiers_.end()) {
+    if (drawCmdModifiers_.find(RSModifierType::GEOMETRYTRANS) == drawCmdModifiers_.end()) {
         return false;
     }
     RSModifierContext context = { GetMutableRenderProperties() };
-    for (auto& modifier : renderContent_->drawCmdModifiers_[RSModifierType::GEOMETRYTRANS]) {
+    for (auto& modifier : drawCmdModifiers_[RSModifierType::GEOMETRYTRANS]) {
         // todo Concat matrix directly
         modifier->Apply(context);
     }
@@ -1879,11 +1872,9 @@ bool RSRenderNode::Update(RSDirtyRegionManager& dirtyManager, const std::shared_
     parentDirty = parentDirty || (dirtyStatus_ != NodeDirty::CLEAN);
     auto parentProperties = parent ? &parent->GetRenderProperties() : nullptr;
     bool dirty = GetMutableRenderProperties().UpdateGeometry(parentProperties, parentDirty, offset);
-    if ((IsDirty() || dirty) &&
-        (renderContent_->drawCmdModifiers_.find(RSModifierType::GEOMETRYTRANS) !=
-        renderContent_->drawCmdModifiers_.end())) {
+    if ((IsDirty() || dirty) && (drawCmdModifiers_.find(RSModifierType::GEOMETRYTRANS) != drawCmdModifiers_.end())) {
         RSModifierContext context = { GetMutableRenderProperties() };
-        for (auto& modifier : renderContent_->drawCmdModifiers_[RSModifierType::GEOMETRYTRANS]) {
+        for (auto& modifier : drawCmdModifiers_[RSModifierType::GEOMETRYTRANS]) {
             modifier->Apply(context);
         }
     }
@@ -1901,11 +1892,6 @@ bool RSRenderNode::Update(RSDirtyRegionManager& dirtyManager, const std::shared_
     }
     UpdateDirtyRegion(dirtyManager, dirty, clipRect);
     return dirty;
-}
-
-RSProperties& RSRenderNode::GetMutableRenderProperties()
-{
-    return renderContent_->GetMutableRenderProperties();
 }
 
 bool RSRenderNode::UpdateBufferDirtyRegion(RectI& dirtyRect, const RectI& drawRegion)
@@ -2571,19 +2557,81 @@ void RSRenderNode::RenderTraceDebug() const
     }
 }
 
-void RSRenderNode::ApplyBoundsGeometry(RSPaintFilterCanvas& canvas)
+void RSRenderNode::DrawPropertyDrawable(RSDrawableSlot slot, RSPaintFilterCanvas& canvas)
 {
-    DrawPropertyDrawableRange(RSPropertyDrawableSlot::SAVE_ALL, RSPropertyDrawableSlot::BOUNDS_MATRIX, canvas);
+    auto& drawablePtr = drawableVec_[static_cast<size_t>(slot)];
+    if (!drawablePtr) {
+        return;
+    }
+
+    auto recordingCanvas = canvas.GetRecordingCanvas();
+    if (recordingCanvas == nullptr || !canvas.GetRecordDrawable()) {
+        // non-recording canvas, draw directly
+        Drawing::Rect rect = { 0, 0, GetRenderProperties().GetFrameWidth(), GetRenderProperties().GetFrameHeight() };
+        drawablePtr->OnSync();
+        drawablePtr->CreateDrawFunc()(&canvas, &rect);
+        return;
+    }
+
+    auto castRecordingCanvas = static_cast<ExtendRecordingCanvas*>(canvas.GetRecordingCanvas());
+    auto drawFunc = [sharedPtr = shared_from_this(), slot](Drawing::Canvas* canvas, const Drawing::Rect* rect) -> void {
+        if (auto canvasPtr = static_cast<RSPaintFilterCanvas*>(canvas)) {
+            sharedPtr->DrawPropertyDrawable(slot, *canvasPtr);
+        }
+    };
+    // recording canvas, record lambda that draws the drawable
+    castRecordingCanvas->DrawDrawFunc(std::move(drawFunc));
 }
 
-void RSRenderNode::ApplyAlpha(RSPaintFilterCanvas& canvas)
+void RSRenderNode::DrawPropertyDrawableRange(RSDrawableSlot begin, RSDrawableSlot end, RSPaintFilterCanvas& canvas)
 {
-    DrawPropertyDrawable(RSPropertyDrawableSlot::ALPHA, canvas);
+    auto recordingCanvas = canvas.GetRecordingCanvas();
+    if (recordingCanvas == nullptr || !canvas.GetRecordDrawable()) {
+        // non-recording canvas, draw directly
+        Drawing::Rect rect = { 0, 0, GetRenderProperties().GetFrameWidth(), GetRenderProperties().GetFrameHeight() };
+        std::for_each(drawableVec_.begin() + static_cast<size_t>(begin),
+            drawableVec_.begin() + static_cast<size_t>(end) + 1, // +1 since we need to include end
+            [&](auto& drawablePtr) {
+                if (drawablePtr) {
+                    drawablePtr->OnSync();
+                    drawablePtr->CreateDrawFunc()(&canvas, &rect);
+                }
+            });
+        return;
+    }
+
+    auto castRecordingCanvas = static_cast<ExtendRecordingCanvas*>(canvas.GetRecordingCanvas());
+    auto drawFunc = [sharedPtr = shared_from_this(), begin, end](
+                        Drawing::Canvas* canvas, const Drawing::Rect* rect) -> void {
+        if (auto canvasPtr = static_cast<RSPaintFilterCanvas*>(canvas)) {
+            sharedPtr->DrawPropertyDrawableRange(begin, end, *canvasPtr);
+        }
+    };
+    // recording canvas, record lambda that draws the drawable
+    castRecordingCanvas->DrawDrawFunc(std::move(drawFunc));
+}
+
+void RSRenderNode::ApplyAlphaAndBoundsGeometry(RSPaintFilterCanvas& canvas)
+{
+    canvas.ConcatMatrix(GetRenderProperties().GetBoundsGeometry()->GetMatrix());
+    auto alpha = GetRenderProperties().GetAlpha();
+    if (alpha == 1) {
+        return;
+    }
+    if (GetRenderProperties().GetAlphaOffscreen()) {
+        auto rect = RSPropertiesPainter::Rect2DrawingRect(GetRenderProperties().GetBoundsRect());
+        Drawing::Brush brush;
+        brush.SetAlpha(std::clamp(alpha, 0.f, 1.f) * UINT8_MAX);
+        Drawing::SaveLayerOps slr(&rect, &brush);
+        canvas.SaveLayer(slr);
+        return;
+    }
+    canvas.MultiplyAlpha(alpha);
 }
 
 void RSRenderNode::ProcessTransitionBeforeChildren(RSPaintFilterCanvas& canvas)
 {
-    DrawPropertyDrawableRange(RSPropertyDrawableSlot::SAVE_ALL, RSPropertyDrawableSlot::MASK, canvas);
+    DrawPropertyDrawableRange(RSDrawableSlot::SAVE_ALL, RSDrawableSlot::MASK, canvas);
 }
 
 void RSRenderNode::ProcessRenderBeforeChildren(RSPaintFilterCanvas& canvas)
@@ -2593,12 +2641,12 @@ void RSRenderNode::ProcessRenderBeforeChildren(RSPaintFilterCanvas& canvas)
 
 void RSRenderNode::ProcessTransitionAfterChildren(RSPaintFilterCanvas& canvas)
 {
-    DrawPropertyDrawable(RSPropertyDrawableSlot::RESTORE_ALL, canvas);
+    DrawPropertyDrawable(RSDrawableSlot::RESTORE_ALL, canvas);
 }
 
 void RSRenderNode::ProcessRenderAfterChildren(RSPaintFilterCanvas& canvas)
 {
-    DrawPropertyDrawable(RSPropertyDrawableSlot::RESTORE_ALL, canvas);
+    DrawPropertyDrawable(RSDrawableSlot::RESTORE_ALL, canvas);
 }
 
 void RSRenderNode::SetUifirstSyncFlag(bool needSync)
@@ -2647,7 +2695,7 @@ void RSRenderNode::AddModifier(const std::shared_ptr<RSRenderModifier>& modifier
         }
     } else {
         modifier->SetSingleFrameModifier(false);
-        renderContent_->drawCmdModifiers_[modifierType].emplace_back(modifier);
+        drawCmdModifiers_[modifier->GetType()].emplace_back(modifier);
     }
     modifier->GetProperty()->Attach(shared_from_this());
     ROSEN_LOGI_IF(DEBUG_MODIFIER, "RSRenderNode:add modifier, node id: %{public}" PRIu64 ", type: %{public}s",
@@ -2721,7 +2769,7 @@ void RSRenderNode::RemoveModifier(const PropertyId& id)
         }
         return;
     }
-    for (auto& [type, modifiers] : renderContent_->drawCmdModifiers_) {
+    for (auto& [type, modifiers] : drawCmdModifiers_) {
         bool found = EraseIf(modifiers,
             [id](const auto& modifier) -> bool { return modifier == nullptr || modifier->GetPropertyId() == id; });
         if (found) {
@@ -2734,7 +2782,7 @@ void RSRenderNode::RemoveAllModifiers()
 {
     modifiers_.clear();
     properties_.clear();
-    renderContent_->drawCmdModifiers_.clear();
+    drawCmdModifiers_.clear();
 }
 
 void RSRenderNode::DumpNodeInfo(DfxString& log)
@@ -2934,15 +2982,11 @@ CM_INLINE void RSRenderNode::ApplyModifiers()
     }
 
     // Temporary code, copy matrix into render params
-    if (LIKELY(RSUniRenderJudgement::IsUniRender() && !isTextureExportNode_)) {
-        if (GetType() == RSRenderNodeType::CANVAS_DRAWING_NODE) {
-            auto canvasdrawingnode = ReinterpretCastTo<RSCanvasDrawingRenderNode>();
-            canvasdrawingnode->CheckCanvasDrawingPostPlaybacked();
-        }
-        UpdateDrawableVecV2();
-    } else {
-        UpdateDrawableVec();
+    if (GetType() == RSRenderNodeType::CANVAS_DRAWING_NODE) {
+        auto canvasdrawingnode = ReinterpretCastTo<RSCanvasDrawingRenderNode>();
+        canvasdrawingnode->CheckCanvasDrawingPostPlaybacked();
     }
+    UpdateDrawableVecV2();
 
     UpdateFilterCacheWithBackgroundDirty();
 
@@ -2967,21 +3011,6 @@ void RSRenderNode::MarkParentNeedRegenerateChildren() const
         return;
     }
     parent->isChildrenSorted_ = false;
-}
-
-void RSRenderNode::UpdateDrawableVec()
-{
-    // Collect dirty slots
-    auto dirtySlots = RSPropertyDrawable::GenerateDirtySlots(GetRenderProperties(), dirtyTypes_);
-    if (!GetIsUsedBySubThread()) {
-        UpdateDrawableVecInternal(dirtySlots);
-    } else if (auto context = context_.lock()) {
-        context->PostTask([weakPtr = weak_from_this(), dirtySlots]() {
-            if (auto node = weakPtr.lock()) {
-                node->UpdateDrawableVecInternal(dirtySlots);
-            }
-        });
-    }
 }
 
 int RSRenderNode::GetBlurEffectDrawbleCount()
@@ -3036,22 +3065,6 @@ void RSRenderNode::UpdateDrawableVecV2()
 
     waitSync_ = true;
 #endif
-}
-
-void RSRenderNode::UpdateDrawableVecInternal(std::unordered_set<RSPropertyDrawableSlot> dirtySlots)
-{
-     // initialize necessary save/clip/restore
-    if (drawableVecStatusV1_ == 0) {
-        RSPropertyDrawable::InitializeSaveRestore(*renderContent_, renderContent_->propertyDrawablesVec_);
-    }
-    // Update or regenerate drawable
-    bool drawableChanged =
-        RSPropertyDrawable::UpdateDrawableVec(*renderContent_, renderContent_->propertyDrawablesVec_, dirtySlots);
-    // if 1. first initialized or 2. any drawables changed, update save/clip/restore
-    if (drawableChanged || drawableVecStatusV1_ == 0) {
-        RSPropertyDrawable::UpdateSaveRestore(
-            *renderContent_, renderContent_->propertyDrawablesVec_, drawableVecStatusV1_);
-    }
 }
 
 void RSRenderNode::UpdateShadowRect()
@@ -3182,7 +3195,7 @@ std::shared_ptr<RSRenderModifier> RSRenderNode::GetModifier(const PropertyId& id
     if (modifiers_.count(id)) {
         return modifiers_[id];
     }
-    for (const auto& [type, modifiers] : renderContent_->drawCmdModifiers_) {
+    for (const auto& [type, modifiers] : drawCmdModifiers_) {
         auto it = std::find_if(modifiers.begin(), modifiers.end(),
             [id](const auto& modifier) -> bool { return modifier->GetPropertyId() == id; });
         if (it != modifiers.end()) {
@@ -3198,7 +3211,7 @@ void RSRenderNode::FilterModifiersByPid(pid_t pid)
     EraseIf(modifiers_, [pid](const auto& pair) -> bool { return ExtractPid(pair.first) == pid; });
 
     // remove all modifiers added by given pid (by matching higher 32 bits of node id)
-    for (auto& [type, modifiers] : renderContent_->drawCmdModifiers_) {
+    for (auto& [type, modifiers] : drawCmdModifiers_) {
         modifiers.remove_if([pid](const auto& it) -> bool { return ExtractPid(it->GetPropertyId()) == pid; });
     }
 }
@@ -4082,9 +4095,8 @@ std::list<RSRenderNode::WeakPtr> RSRenderNode::GetChildrenList() const
 
 float RSRenderNode::GetHDRBrightness() const
 {
-    const auto& drawCmdModifiers = renderContent_->drawCmdModifiers_;
-    auto itr = drawCmdModifiers.find(RSModifierType::HDR_BRIGHTNESS);
-    if (itr == drawCmdModifiers.end() || itr->second.empty()) {
+    auto itr = drawCmdModifiers_.find(RSModifierType::HDR_BRIGHTNESS);
+    if (itr == drawCmdModifiers_.end() || itr->second.empty()) {
         RS_LOGD("RSRenderNode::GetHDRBrightness drawCmdModifiers find failed");
         return 1.0f; // 1.0f make sure HDR video is still HDR state if RSNode::SetHDRBrightness not called
     }
@@ -5197,7 +5209,7 @@ size_t RSRenderNode::GetAllModifierSize()
         }
     }
 
-    for (auto& [type, modifiers] : renderContent_->drawCmdModifiers_) {
+    for (auto& [type, modifiers] : drawCmdModifiers_) {
         for (auto& modifier : modifiers) {
             if (modifier != nullptr) {
                 totalSize += modifier->GetSize();
