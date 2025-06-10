@@ -133,6 +133,7 @@ bool RSSymbolAnimation::SetSymbolAnimation(
     if (!symbolAnimationConfig->currentAnimationHasPlayed) {
         switch (symbolAnimationConfig->effectStrategy) {
             case Drawing::DrawingEffectStrategy::REPLACE_APPEAR:
+            case Drawing::DrawingEffectStrategy::QUICK_REPLACE_APPEAR:
                 PopNodeFromReplaceList(symbolAnimationConfig->symbolSpanId);
                 break;
             case Drawing::DrawingEffectStrategy::TEXT_FLIP:
@@ -148,6 +149,7 @@ bool RSSymbolAnimation::SetSymbolAnimation(
 
     switch (symbolAnimationConfig->effectStrategy) {
         case Drawing::DrawingEffectStrategy::REPLACE_APPEAR:
+        case Drawing::DrawingEffectStrategy::QUICK_REPLACE_APPEAR:
             return SetReplaceAnimation(symbolAnimationConfig);
         case Drawing::DrawingEffectStrategy::TEXT_FLIP:
             return SetTextFlipAnimation(symbolAnimationConfig);
@@ -252,7 +254,15 @@ bool RSSymbolAnimation::SetReplaceDisappear(
 
     auto& disappearNodes = rsNode_->replaceNodesSwapArr_[APPEAR_STATUS];
     std::vector<std::vector<Drawing::DrawingPiecewiseParameter>> parameters;
-    Drawing::DrawingEffectStrategy effectStrategy = Drawing::DrawingEffectStrategy::REPLACE_DISAPPEAR;
+    Drawing::DrawingEffectStrategy effectStrategy;
+    if (symbolAnimationConfig->effectStrategy == Drawing::DrawingEffectStrategy::REPLACE_APPEAR) {
+        effectStrategy = Drawing::DrawingEffectStrategy::REPLACE_DISAPPEAR;
+    } else if (symbolAnimationConfig->effectStrategy == Drawing::DrawingEffectStrategy::QUICK_REPLACE_APPEAR) {
+        effectStrategy = Drawing::DrawingEffectStrategy::QUICK_REPLACE_DISAPPEAR;
+    } else {
+        return false;
+    }
+
     bool res = GetAnimationGroupParameters(symbolAnimationConfig, parameters, effectStrategy);
     for (const auto& config : disappearNodes) {
         if (!res || (config.symbolNode.animationIndex < 0)) {
@@ -286,9 +296,7 @@ bool RSSymbolAnimation::SetReplaceAppear(
     Vector4f offsets = CalculateOffset(symbolFirstNode.symbolData.path_,
         symbolFirstNode.nodeBoundary[0], symbolFirstNode.nodeBoundary[1]); // index 0 offsetX and 1 offsetY of layout
     std::vector<std::vector<Drawing::DrawingPiecewiseParameter>> parameters;
-    Drawing::DrawingEffectStrategy effectStrategy = Drawing::DrawingEffectStrategy::REPLACE_APPEAR;
-    bool res = GetAnimationGroupParameters(symbolAnimationConfig, parameters,
-        effectStrategy);
+    bool res = GetAnimationGroupParameters(symbolAnimationConfig, parameters, symbolAnimationConfig->effectStrategy);
     uint32_t nodeNum = symbolAnimationConfig->numNodes;
     rsNode_->replaceNodesSwapArr_[APPEAR_STATUS].resize(nodeNum);
     for (uint32_t n = 0; n < nodeNum; n++) {
@@ -733,7 +741,9 @@ void RSSymbolAnimation::SetDisableParameter(std::vector<Drawing::DrawingPiecewis
     float distance = std::sqrt(w * w + h * h);
     float angle = std::atan(slope);
     float x = std::cos(angle) * distance;
-    float y = std::sin(angle) * distance * -1; // -1: The direction of the Y-axis needs to be reversed
+    float y = std::sin(angle) * distance;
+    x = slope > 0 ? x * -1 : x; // -1: The direction of the x-axis needs to be reversed
+    y = slope < 0 ? y * -1 : y; // -1: The direction of the Y-axis needs to be reversed
 
     for (auto& param: parameter) {
         std::vector<float> ratio;
@@ -821,11 +831,10 @@ bool RSSymbolAnimation::SetClipAnimation(const std::shared_ptr<RSNode>& rsNode,
         std::vector<std::shared_ptr<RSAnimation>> groupAnimation = {};
         std::shared_ptr<RSAnimatableProperty<Vector2f>> translateRatioProperty = nullptr;
         TranslateAnimationBase(canvasNode, translateRatioProperty, parameters[0], groupAnimation);
+        // 1: the second section of parameters
+        TranslateAnimationBase(canvasNode, translateRatioProperty, parameters[1], groupAnimation);
 
         std::vector<std::shared_ptr<RSAnimation>> groupAnimation1 = {};
-        std::shared_ptr<RSAnimatableProperty<float>> alphaProperty = nullptr;
-        // 1: the second section of parameters
-        AlphaAnimationBase(canvasNodeLine, alphaProperty, parameters[1], groupAnimation1);
         std::shared_ptr<RSAnimatableProperty<Vector2f>> clipProperty = nullptr;
         // 2: the third section of parameters
         TranslateAnimationBase(canvasNodeLine, clipProperty, parameters[2], groupAnimation1);
@@ -936,13 +945,28 @@ void RSSymbolAnimation::DrawPathOnCanvas(
     Drawing::Pen pen;
     brush.SetAntiAlias(true);
     pen.SetAntiAlias(true);
+    Drawing::Point offset = Drawing::Point(offsets[2], offsets[3]); // index 2 offsetX 3 offsetY
     if (symbolNode.isMask) {
         brush.SetBlendMode(Drawing::BlendMode::CLEAR);
         pen.SetBlendMode(Drawing::BlendMode::CLEAR);
+        recordingCanvas->AttachBrush(brush);
+        recordingCanvas->AttachPen(pen);
+        for (auto pathInfo: symbolNode.pathsInfo) {
+            pathInfo.path.Offset(offset.GetX(), offset.GetY());
+            recordingCanvas->DrawPath(pathInfo.path);
+        }
+        recordingCanvas->DetachBrush();
+        recordingCanvas->DetachPen();
+        return;
     }
-    for (auto& pathInfo: symbolNode.pathsInfo) {
-        SetIconProperty(brush, pen, pathInfo.color);
-        pathInfo.path.Offset(offsets[2], offsets[3]); // index 2 offsetX 3 offsetY
+
+    for (auto pathInfo: symbolNode.pathsInfo) {
+        if (pathInfo.color == nullptr) {
+            continue;
+        }
+        brush = pathInfo.color->CreateGradientBrush(offset);
+        pen = pathInfo.color->CreateGradientPen(offset);
+        pathInfo.path.Offset(offset.GetX(), offset.GetY());
         recordingCanvas->AttachBrush(brush);
         recordingCanvas->AttachPen(pen);
         recordingCanvas->DrawPath(pathInfo.path);

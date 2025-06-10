@@ -15,6 +15,7 @@
 
 #include <gtest/gtest.h>
 
+#include "common/rs_common_def.h"
 #include "common/rs_obj_abs_geometry.h"
 #include "drawable/rs_property_drawable.h"
 #include "drawable/rs_property_drawable_background.h"
@@ -31,10 +32,10 @@
 #include "render/rs_filter.h"
 #include "skia_adapter/skia_canvas.h"
 #include "parameters.h"
-#ifdef NEW_SKIA
-#include "include/gpu/GrDirectContext.h"
+#ifdef USE_M133_SKIA
+#include "include/ganesh/gpu/GrDirectContext.h"
 #else
-#include "third_party/flutter/skia/include/gpu/GrContext.h"
+#include "include/gpu/GrDirectContext.h"
 #endif
 
 using namespace testing;
@@ -86,18 +87,6 @@ public:
     static inline std::weak_ptr<RSContext> context = {};
     static inline RSPaintFilterCanvas* canvas_;
     static inline Drawing::Canvas drawingCanvas_;
-};
-
-class PropertyDrawableTest : public RSPropertyDrawable {
-public:
-    void Draw(const RSRenderContent& content, RSPaintFilterCanvas& canvas) const override
-    {
-        return;
-    }
-    bool Update(const RSRenderContent& content) override
-    {
-        return false;
-    };
 };
 
 class DrawableTest : public RSDrawable {
@@ -207,7 +196,6 @@ HWTEST_F(RSRenderNodeTest, GetPropertyTest, TestSize.Level1)
 HWTEST_F(RSRenderNodeTest, InitCacheSurfaceTest, TestSize.Level1)
 {
     RSRenderNode node(id, context);
-    ASSERT_NE(node.GetRenderContent(), nullptr);
     CacheType type = CacheType::ANIMATE_PROPERTY;
     node.SetCacheType(type);
     node.InitCacheSurface(canvas_->GetGPUContext().get());
@@ -528,7 +516,6 @@ HWTEST_F(RSRenderNodeTest, UpdateDirtyRegionTest03, TestSize.Level1)
     node.shouldPaint_ = true;
     RectI absRect = RectI{0, 0, 100, 100};
     auto& properties = node.GetMutableRenderProperties();
-    properties.boundsGeo_ = std::make_shared<RSObjAbsGeometry>();
     properties.boundsGeo_->absRect_ = absRect;
     properties.clipToBounds_ = true;
     bool geoDirty = true;
@@ -553,7 +540,6 @@ HWTEST_F(RSRenderNodeTest, UpdateDirtyRegionTest04, TestSize.Level1)
     node.shouldPaint_ = true;
     RectI absRect = RectI{0, 0, 100, 100};
     auto& properties = node.GetMutableRenderProperties();
-    properties.boundsGeo_ = std::make_shared<RSObjAbsGeometry>();
     properties.boundsGeo_->absRect_ = absRect;
     properties.clipToBounds_ = true;
     properties.SetShadowOffsetX(10.0f);
@@ -580,7 +566,6 @@ HWTEST_F(RSRenderNodeTest, UpdateDirtyRegionTest05, TestSize.Level1)
     node.shouldPaint_ = true;
     RectI absRect = RectI{0, 0, 100, 100};
     auto& properties = node.GetMutableRenderProperties();
-    properties.boundsGeo_ = std::make_shared<RSObjAbsGeometry>();
     properties.boundsGeo_->absRect_ = absRect;
     properties.clipToBounds_ = true;
     properties.SetOutlineWidth(10.0f);
@@ -611,7 +596,6 @@ HWTEST_F(RSRenderNodeTest, UpdateDirtyRegionTest06, TestSize.Level1)
     node.shouldPaint_ = true;
     RectI absRect = RectI{0, 0, 50, 50};
     auto& properties = node.GetMutableRenderProperties();
-    properties.boundsGeo_ = std::make_shared<RSObjAbsGeometry>();
     properties.boundsGeo_->absRect_ = absRect;
     properties.clipToBounds_ = true;
     //set border width 5
@@ -644,7 +628,6 @@ HWTEST_F(RSRenderNodeTest, UpdateDirtyRegionTest07, TestSize.Level1)
     canvasNode->shouldPaint_ = true;
     RectI absRect = RectI{0, 0, 100, 100};
     auto& properties = canvasNode->GetMutableRenderProperties();
-    properties.boundsGeo_ = std::make_shared<RSObjAbsGeometry>();
     properties.boundsGeo_->absRect_ = absRect;
     properties.clipToBounds_ = true;
     //set border width 8
@@ -676,7 +659,6 @@ HWTEST_F(RSRenderNodeTest, UpdateDirtyRegionTest08, TestSize.Level1)
     surfaceNode->shouldPaint_ = true;
     RectI absRect = RectI{0, 0, 100, 100};
     auto& properties = surfaceNode->GetMutableRenderProperties();
-    properties.boundsGeo_ = std::make_shared<RSObjAbsGeometry>();
     properties.boundsGeo_->absRect_ = absRect;
     properties.clipToBounds_ = true;
     //set border width 10
@@ -718,11 +700,11 @@ HWTEST_F(RSRenderNodeTest, GetFilterRectTest, TestSize.Level1)
     EXPECT_TRUE(rect.ToString().compare("[0, 0, 0, 0]") == 0);
 
     std::shared_ptr<RSPath> rsPath = std::make_shared<RSPath>();
-    node.renderContent_->renderProperties_.SetClipBounds(rsPath);
+    node.renderProperties_.SetClipBounds(rsPath);
     auto rect1 = node.GetFilterRect();
     EXPECT_TRUE(rect1.ToString().compare("[0, 0, 0, 0]") == 0);
 
-    node.renderContent_->renderProperties_.boundsGeo_ = nullptr;
+    node.renderProperties_.boundsGeo_ = nullptr;
     auto rect2 = node.GetFilterRect();
     EXPECT_TRUE(rect2.ToString().compare("[0, 0, 0, 0]") == 0);
 }
@@ -751,7 +733,7 @@ HWTEST_F(RSRenderNodeTest, OnTreeStateChangedTest, TestSize.Level1)
 {
     RSRenderNode node(id, context); // isOnTheTree_ false
     std::shared_ptr<RSFilter> filter = RSFilter::CreateBlurFilter(floatData[0], floatData[1]);
-    node.renderContent_->renderProperties_.filter_ = filter;
+    node.renderProperties_.filter_ = filter;
     node.OnTreeStateChanged();
     EXPECT_FALSE(node.isOnTheTree_);
     EXPECT_TRUE(node.HasBlurFilter());
@@ -860,7 +842,7 @@ HWTEST_F(RSRenderNodeTest, HasChildrenOutOfRectTest, TestSize.Level1)
     auto node = std::make_shared<RSRenderNode>(id, context);
     node->hasChildrenOutOfRect_ = true;
     EXPECT_TRUE(node->HasChildrenOutOfRect());
-    node->renderContent_->renderProperties_.clipToBounds_ = true;
+    node->renderProperties_.clipToBounds_ = true;
     EXPECT_TRUE(node->GetRenderProperties().GetClipToBounds());
     EXPECT_FALSE(node->HasChildrenOutOfRect());
 }
@@ -1630,7 +1612,7 @@ HWTEST_F(RSRenderNodeTest, RSRenderNodeDirtyTest001, TestSize.Level1)
     std::shared_ptr<RSContext> contextTest3 = std::make_shared<RSContext>();
     EXPECT_NE(contextTest3, nullptr);
     nodeTest2->OnRegister(contextTest3);
-    EXPECT_EQ(nodeTest2->renderContent_->type_, nodeTest2->GetType());
+    EXPECT_EQ(nodeTest2->dirtyStatus_, RSRenderNode::NodeDirty::DIRTY);
 }
 
 /**
@@ -1668,11 +1650,11 @@ HWTEST_F(RSRenderNodeTest, RSRenderNodeDumpTest002, TestSize.Level1)
     nodeTest->SetBootAnimation(true);
     nodeTest->SetContainBootAnimation(true);
     nodeTest->dirtyStatus_ = RSRenderNode::NodeDirty::DIRTY;
-    nodeTest->renderContent_->renderProperties_.isDirty_ = true;
+    nodeTest->renderProperties_.isDirty_ = true;
     nodeTest->isSubTreeDirty_ = true;
-    nodeTest->renderContent_->renderProperties_.isDrawn_ = false;
-    nodeTest->renderContent_->renderProperties_.alphaNeedApply_ = false;
-    nodeTest->renderContent_->drawCmdModifiers_.clear();
+    nodeTest->renderProperties_.isDrawn_ = false;
+    nodeTest->renderProperties_.alphaNeedApply_ = false;
+    nodeTest->drawCmdModifiers_.clear();
     nodeTest->isFullChildrenListValid_ = false;
     nodeTest->disappearingChildren_.emplace_back(std::make_shared<RSRenderNode>(0), 0);
     nodeTest->DumpTree(0, outTest2);
@@ -1767,12 +1749,12 @@ HWTEST_F(RSRenderNodeTest, IsContentNodeTest003, TestSize.Level1)
 {
     std::shared_ptr<RSRenderNode> nodeTest = std::make_shared<RSRenderNode>(0);
     EXPECT_NE(nodeTest, nullptr);
-    nodeTest->renderContent_->drawCmdModifiers_.clear();
-    nodeTest->renderContent_->renderProperties_.isDrawn_ = false;
+    nodeTest->drawCmdModifiers_.clear();
+    nodeTest->renderProperties_.isDrawn_ = false;
     EXPECT_TRUE(nodeTest->IsContentNode());
     std::shared_ptr<RSRenderProperty<Drawing::DrawCmdListPtr>> property =
         std::make_shared<RSRenderProperty<Drawing::DrawCmdListPtr>>();
-    nodeTest->renderContent_->drawCmdModifiers_[RSModifierType::CONTENT_STYLE].emplace_back(
+    nodeTest->drawCmdModifiers_[RSModifierType::CONTENT_STYLE].emplace_back(
         std::make_shared<RSDrawCmdListRenderModifier>(property));
     EXPECT_TRUE(nodeTest->IsContentNode());
 }
@@ -2294,7 +2276,7 @@ HWTEST_F(RSRenderNodeTest, ApplyModifiersTest017, TestSize.Level1)
     nodeTest->dirtyTypes_.set(static_cast<size_t>(RSModifierType::SANDBOX), true);
     nodeTest->modifiers_.emplace(0, modifier1);
     nodeTest->isFullChildrenListValid_ = false;
-    nodeTest->renderContent_->renderProperties_.alpha_ = 0.0f;
+    nodeTest->renderProperties_.alpha_ = 0.0f;
     RSRenderNode::SharedPtr inNode = std::make_shared<RSRenderNode>(0);
     RSRenderNode::SharedPtr outNode = std::make_shared<RSRenderNode>(0);
     std::shared_ptr<SharedTransitionParam> sharedTransitionParam =
@@ -2319,7 +2301,7 @@ HWTEST_F(RSRenderNodeTest, ApplyModifiersTest017, TestSize.Level1)
 
 /**
  * @tc.name: InvalidateHierarchyTest018
- * @tc.desc: MarkParentNeedRegenerateChildren and UpdateDrawableVec UpdateDrawableVecInternal test
+ * @tc.desc: MarkParentNeedRegenerateChildren test
  * @tc.type: FUNC
  * @tc.require: issueI9US6V
  */
@@ -2336,21 +2318,6 @@ HWTEST_F(RSRenderNodeTest, InvalidateHierarchyTest018, TestSize.Level1)
     nodeTest1->parent_ = parentTest2;
     nodeTest1->MarkParentNeedRegenerateChildren();
     EXPECT_FALSE(parentTest2->isChildrenSorted_);
-
-    nodeTest1->SetIsUsedBySubThread(false);
-    nodeTest1->renderContent_->renderProperties_.pixelStretch_ = 1.0f;
-    nodeTest1->dirtyTypes_.set(static_cast<size_t>(RSModifierType::BOUNDS), true);
-    nodeTest1->dirtyTypes_.set(static_cast<size_t>(RSModifierType::SCALE), true);
-    std::unique_ptr<PropertyDrawableTest> property = std::make_unique<PropertyDrawableTest>();
-    nodeTest1->renderContent_->propertyDrawablesVec_.at(0) = std::move(property);
-    nodeTest1->UpdateDrawableVec();
-
-    std::shared_ptr<RSRenderNode> nodeTest2 = std::make_shared<RSRenderNode>(0);
-    EXPECT_NE(nodeTest2, nullptr);
-    nodeTest2->SetIsUsedBySubThread(true);
-    std::shared_ptr<RSContext> contextTest = std::make_shared<RSContext>();
-    nodeTest2->context_ = contextTest;
-    nodeTest2->UpdateDrawableVec();
 }
 
 /**
@@ -2383,9 +2350,9 @@ HWTEST_F(RSRenderNodeTest, UpdateDrawableVecV2Test019, TestSize.Level1)
     RSShadow rsShadow;
     std::optional<RSShadow> shadow(rsShadow);
     shadow->colorStrategy_ = SHADOW_COLOR_STRATEGY::COLOR_STRATEGY_AVERAGE;
-    nodeTest->renderContent_->renderProperties_.shadow_ = shadow;
+    nodeTest->renderProperties_.shadow_ = shadow;
     RRect rrect;
-    nodeTest->renderContent_->renderProperties_.rrect_ = rrect;
+    nodeTest->renderProperties_.rrect_ = rrect;
     nodeTest->UpdateDrawableVecV2();
     EXPECT_NE(nodeTest->dirtySlots_.size(), sum);
 }
@@ -2438,9 +2405,7 @@ HWTEST_F(RSRenderNodeTest, UpdateRenderingTest021, TestSize.Level1)
     Drawing::RectI rectI;
     region = rectI;
     nodeTest->UpdateEffectRegion(region, false);
-    nodeTest->renderContent_->renderProperties_.useEffect_ = true;
-    std::shared_ptr<RSObjAbsGeometry> boundsGeo = std::make_shared<RSObjAbsGeometry>();
-    nodeTest->renderContent_->renderProperties_.boundsGeo_ = boundsGeo;
+    nodeTest->renderProperties_.useEffect_ = true;
     nodeTest->UpdateEffectRegion(region, true);
 
     // GetModifier test
@@ -2455,16 +2420,16 @@ HWTEST_F(RSRenderNodeTest, UpdateRenderingTest021, TestSize.Level1)
         std::make_shared<RSDrawCmdListRenderModifier>(propertyTest);
     EXPECT_NE(drawCmdModifiersTest, nullptr);
     drawCmdModifiersTest->property_->id_ = 1;
-    nodeTest->renderContent_->drawCmdModifiers_[RSModifierType::BOUNDS].emplace_back(drawCmdModifiersTest);
+    nodeTest->drawCmdModifiers_[RSModifierType::BOUNDS].emplace_back(drawCmdModifiersTest);
     EXPECT_NE(nodeTest->GetModifier(1), nullptr);
 
     // FilterModifiersByPid test
     nodeTest->FilterModifiersByPid(1);
 
     // UpdateShouldPaint test
-    nodeTest->renderContent_->renderProperties_.alpha_ = -1.0f;
+    nodeTest->renderProperties_.alpha_ = -1.0f;
     std::shared_ptr<RSFilter> filter = RSFilter::CreateBlurFilter(0.0f, 0.1f);
-    nodeTest->renderContent_->renderProperties_.filter_ = filter;
+    nodeTest->renderProperties_.filter_ = filter;
     nodeTest->sharedTransitionParam_ = nullptr;
     nodeTest->UpdateShouldPaint();
 
@@ -2504,10 +2469,10 @@ HWTEST_F(RSRenderNodeTest, ManageRenderingResourcesTest022, TestSize.Level1)
     nodeTest->SetCacheType(CacheType::ANIMATE_PROPERTY);
     RSShadow rsShadow;
     std::optional<RSShadow> shadow(rsShadow);
-    nodeTest->renderContent_->renderProperties_.shadow_ = shadow;
-    nodeTest->renderContent_->renderProperties_.shadow_->radius_ = 1.0f;
-    nodeTest->renderContent_->renderProperties_.isSpherizeValid_ = true;
-    nodeTest->renderContent_->renderProperties_.isAttractionValid_ = true;
+    nodeTest->renderProperties_.shadow_ = shadow;
+    nodeTest->renderProperties_.shadow_->radius_ = 1.0f;
+    nodeTest->renderProperties_.isSpherizeValid_ = true;
+    nodeTest->renderProperties_.isAttractionValid_ = true;
     nodeTest->cacheSurface_ = nullptr;
     EXPECT_TRUE(nodeTest->NeedInitCacheSurface());
 
@@ -2578,10 +2543,10 @@ HWTEST_F(RSRenderNodeTest, InitCacheSurfaceTest024, TestSize.Level1)
     nodeTest->cacheType_ = CacheType::ANIMATE_PROPERTY;
     RSShadow rsShadow;
     std::optional<RSShadow> shadow(rsShadow);
-    nodeTest->renderContent_->renderProperties_.shadow_ = shadow;
-    nodeTest->renderContent_->renderProperties_.shadow_->radius_ = 1.0f;
-    nodeTest->renderContent_->renderProperties_.isSpherizeValid_ = false;
-    nodeTest->renderContent_->renderProperties_.isAttractionValid_ = false;
+    nodeTest->renderProperties_.shadow_ = shadow;
+    nodeTest->renderProperties_.shadow_->radius_ = 1.0f;
+    nodeTest->renderProperties_.isSpherizeValid_ = false;
+    nodeTest->renderProperties_.isAttractionValid_ = false;
     nodeTest->cacheSurface_ = nullptr;
     nodeTest->InitCacheSurface(&gpuContextTest1, funcTest1, 1);
     EXPECT_EQ(nodeTest->cacheSurface_, nullptr);
@@ -2910,29 +2875,20 @@ HWTEST_F(RSRenderNodeTest, RenderTraceDebug, TestSize.Level1)
 }
 
 /**
- * @tc.name: ApplyBoundsGeometry
+ * @tc.name: ApplyAlphaAndBoundsGeometry
  * @tc.desc: test
  * @tc.type: FUNC
- * @tc.require: issueI9T3XY
+ * @tc.require:
  */
-HWTEST_F(RSRenderNodeTest, ApplyBoundsGeometry, TestSize.Level1)
+HWTEST_F(RSRenderNodeTest, ApplyAlphaAndBoundsGeometry, TestSize.Level1)
 {
     RSRenderNode node(id, context);
-    node.ApplyBoundsGeometry(*canvas_);
-    ASSERT_TRUE(true);
-}
-
-/**
- * @tc.name: ApplyAlpha
- * @tc.desc: test
- * @tc.type: FUNC
- * @tc.require: issueI9T3XY
- */
-HWTEST_F(RSRenderNodeTest, ApplyAlpha, TestSize.Level1)
-{
-    RSRenderNode node(id, context);
-    node.ApplyAlpha(*canvas_);
-    ASSERT_TRUE(true);
+    canvas_->SetAlpha(1);
+    float newAlpha = 0.8;
+    node.renderProperties_.SetAlpha(newAlpha);
+    node.renderProperties_.SetAlphaOffscreen(false);
+    node.ApplyAlphaAndBoundsGeometry(*canvas_);
+    ASSERT_TRUE(ROSEN_EQ(canvas_->GetAlpha(), newAlpha));
 }
 
 /**

@@ -230,11 +230,6 @@ public:
         isUniRender_ = isUniRender;
     }
 
-    void SetDisplayNodeFlag(bool isDisplayNode)
-    {
-        isDisplayNode_ = isDisplayNode;
-    }
-
     void SetTunnelHandleChange(bool change)
     {
         tunnelHandleChange_ = change;
@@ -363,11 +358,6 @@ public:
     bool GetUniRenderFlag() const
     {
         return isUniRender_;
-    }
-
-    bool GetDisplayNodeFlag() const
-    {
-        return isDisplayNode_;
     }
 
     bool IsPreMulti() const
@@ -531,6 +521,16 @@ public:
         return needBilinearInterpolation_;
     }
 
+    void SetIsMaskLayer(bool isMaskLayer)
+    {
+        isMaskLayer_ = isMaskLayer;
+    }
+
+    bool IsMaskLayer() const
+    {
+        return isMaskLayer_;
+    }
+
     void CopyLayerInfo(const std::shared_ptr<HdiLayerInfo> &layerInfo)
     {
         std::lock_guard<std::mutex> lock(mutex_);
@@ -684,7 +684,6 @@ private:
     GraphicMatrix matrix_; // matrix used for uni render redraw
     int32_t gravity_; // used for uni render redraw
     bool isUniRender_ = false; // true for uni render layer (DisplayNode)
-    bool isDisplayNode_ = false; // true for Displaynode layer
     GraphicLayerAlpha layerAlpha_;
     GraphicTransformType transformType_ = GraphicTransformType::GRAPHIC_ROTATE_BUTT;
     GraphicCompositionType compositionType_;
@@ -723,6 +722,7 @@ private:
     bool copybitTag_ = false;
     std::vector<float> drmCornerRadiusInfo_;
     uint32_t ancoFlags_ = 0;
+    bool isMaskLayer_ = false;
 };
 } // namespace Rosen
 } // namespace OHOS

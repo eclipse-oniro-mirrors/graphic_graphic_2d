@@ -50,6 +50,7 @@ public:
     void GenerateGEVisualEffect(std::shared_ptr<Drawing::GEVisualEffectContainer> visualEffectContainer) override;
 private:
     float alpha_{ 0.f };
+    bool bloom_{ true };
     std::optional<Vector4f> color_{ std::nullopt };
     std::shared_ptr<RSShaderMask> mask_{ nullptr };
     static std::shared_ptr<RSRenderPropertyBase> CreateRenderProperty(RSUIFilterType type);

@@ -23,10 +23,8 @@ namespace Rosen {
 
 class RSB_EXPORT RSRenderRadialGradientMaskPara : public RSRenderMaskPara {
 public:
-    RSRenderRadialGradientMaskPara(PropertyId id) :
-        RSRenderMaskPara(RSUIFilterType::RADIAL_GRADIENT_MASK) {
-        id_ = id;
-    }
+    RSRenderRadialGradientMaskPara(PropertyId id) : RSRenderMaskPara(RSUIFilterType::RADIAL_GRADIENT_MASK), id_(id) {}
+
     virtual ~RSRenderRadialGradientMaskPara() = default;
 
     static std::shared_ptr<RSRenderPropertyBase> CreateRenderProperty(RSUIFilterType type);
@@ -43,11 +41,11 @@ public:
 
     void GetDescription(std::string& out) const override;
 
-    virtual bool WriteToParcel(Parcel& parcel) override;
+    bool WriteToParcel(Parcel& parcel) override;
 
-    virtual bool ReadFromParcel(Parcel& parcel) override;
+    bool ReadFromParcel(Parcel& parcel) override;
 
-    virtual std::vector<std::shared_ptr<RSRenderPropertyBase>> GetLeafRenderProperties() override;
+    std::vector<std::shared_ptr<RSRenderPropertyBase>> GetLeafRenderProperties() override;
 };
 } // namespace Rosen
 } // namespace OHOS

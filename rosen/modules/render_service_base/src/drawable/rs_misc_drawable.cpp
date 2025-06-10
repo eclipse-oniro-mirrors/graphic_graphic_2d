@@ -419,7 +419,7 @@ RSDrawable::Ptr RSEnvFGColorDrawable::OnGenerate(const RSRenderNode& node)
 
 bool RSEnvFGColorDrawable::OnUpdate(const RSRenderNode& node)
 {
-    auto& drawCmdModifiers = const_cast<RSRenderContent::DrawCmdContainer&>(node.GetDrawCmdModifiers());
+    auto& drawCmdModifiers = const_cast<RSRenderNode::DrawCmdContainer&>(node.GetDrawCmdModifiers());
     auto itr = drawCmdModifiers.find(RSModifierType::ENV_FOREGROUND_COLOR);
     if (itr == drawCmdModifiers.end() || itr->second.empty()) {
         return false;
@@ -462,7 +462,7 @@ RSDrawable::Ptr RSEnvFGColorStrategyDrawable::OnGenerate(const RSRenderNode& nod
 
 bool RSEnvFGColorStrategyDrawable::OnUpdate(const RSRenderNode& node)
 {
-    auto& drawCmdModifiers = const_cast<RSRenderContent::DrawCmdContainer&>(node.GetDrawCmdModifiers());
+    auto& drawCmdModifiers = const_cast<RSRenderNode::DrawCmdContainer&>(node.GetDrawCmdModifiers());
     auto itr = drawCmdModifiers.find(RSModifierType::ENV_FOREGROUND_COLOR_STRATEGY);
     if (itr == drawCmdModifiers.end() || itr->second.empty()) {
         return false;
@@ -520,7 +520,7 @@ RSDrawable::Ptr RSCustomClipToFrameDrawable::OnGenerate(const RSRenderNode& node
 
 bool RSCustomClipToFrameDrawable::OnUpdate(const RSRenderNode& node)
 {
-    auto& drawCmdModifiers = const_cast<RSRenderContent::DrawCmdContainer&>(node.GetDrawCmdModifiers());
+    auto& drawCmdModifiers = const_cast<RSRenderNode::DrawCmdContainer&>(node.GetDrawCmdModifiers());
     auto itr = drawCmdModifiers.find(RSModifierType::CUSTOM_CLIP_TO_FRAME);
     if (itr == drawCmdModifiers.end() || itr->second.empty()) {
         return false;

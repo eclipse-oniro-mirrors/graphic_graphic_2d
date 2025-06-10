@@ -113,6 +113,9 @@ enum class RSUIFilterType : int16_t {
     DISPERSION_GREEN_OFFSET, // Vector2f
     DISPERSION_BLUE_OFFSET, // Vector2f
 
+    // edge light bloom value type
+    EDGE_LIGHT_BLOOM, // bool
+
     // radial gradient mask value type
     RADIAL_GRADIENT_MASK_CENTER, // Vector2f
     RADIAL_GRADIENT_MASK_RADIUSX, // float

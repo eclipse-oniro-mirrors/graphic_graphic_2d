@@ -13,9 +13,10 @@
  * limitations under the License.
  */
 
+#include "ui_effect/property/include/rs_ui_radial_gradient_mask.h"
+
 #include "platform/common/rs_log.h"
 #include "render/rs_render_radial_gradient_mask.h"
-#include "ui_effect/property/include/rs_ui_radial_gradient_mask.h"
 #include "ui_effect/mask/include/radial_gradient_mask_para.h"
 
 namespace OHOS {
@@ -67,7 +68,7 @@ void RSUIRadialGradientMaskPara::SetProperty(const std::shared_ptr<RSUIFilterPar
 
 void RSUIRadialGradientMaskPara::SetPara(const std::shared_ptr<MaskPara>& para)
 {
-    if (para->GetMaskParaType() != MaskPara::Type::RADIAL_GRADIENT_MASK) {
+    if (para == nullptr || para->GetMaskParaType() != MaskPara::Type::RADIAL_GRADIENT_MASK) {
         return;
     }
 

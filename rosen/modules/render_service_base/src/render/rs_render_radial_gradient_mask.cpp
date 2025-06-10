@@ -20,25 +20,25 @@ namespace Rosen {
 std::shared_ptr<RSRenderPropertyBase> RSRenderRadialGradientMaskPara::CreateRenderProperty(RSUIFilterType type)
 {
     switch (type) {
-        case RSUIFilterType::RADIAL_GRADIENT_MASK_RADIUSX : {
+        case RSUIFilterType::RADIAL_GRADIENT_MASK_RADIUSX: {
             return std::make_shared<RSRenderAnimatableProperty<float>>(
                 0.f, 0, RSPropertyType::FLOAT);
         }
-        case RSUIFilterType::RADIAL_GRADIENT_MASK_RADIUSY : {
+        case RSUIFilterType::RADIAL_GRADIENT_MASK_RADIUSY: {
             return std::make_shared<RSRenderAnimatableProperty<float>>(
                 0.f, 0, RSPropertyType::FLOAT);
         }
-        case RSUIFilterType::RADIAL_GRADIENT_MASK_CENTER : {
+        case RSUIFilterType::RADIAL_GRADIENT_MASK_CENTER: {
             Vector2f value = {0.f, 0.f};
             return std::make_shared<RSRenderAnimatableProperty<Vector2f>>(
                 value, 0, RSPropertyType::VECTOR2F);
         }
-        case RSUIFilterType::RADIAL_GRADIENT_MASK_COLORS : {
+        case RSUIFilterType::RADIAL_GRADIENT_MASK_COLORS: {
             std::vector<float> value = {};
             return std::make_shared<RSRenderAnimatableProperty<std::vector<float>>>(
                 value, 0, RSPropertyType::SHADER_PARAM);
         }
-        case RSUIFilterType::RADIAL_GRADIENT_MASK_POSITIONS : {
+        case RSUIFilterType::RADIAL_GRADIENT_MASK_POSITIONS: {
             std::vector<float> value = {};
             return std::make_shared<RSRenderAnimatableProperty<std::vector<float>>>(
                 value, 0, RSPropertyType::SHADER_PARAM);
