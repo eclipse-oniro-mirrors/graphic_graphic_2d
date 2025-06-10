@@ -13,18 +13,16 @@
  * limitations under the License.
  */
 
-#include <cstddef>
 #include "gtest/gtest.h"
-#include "skia_adapter/skia_hm_symbol_config_ohos.h"
-#include "src/ports/skia_ohos/HmSymbolConfig_ohos.h"
+#include "symbol_resource/symbol_default_config_parser.h"
 
 using namespace testing;
 using namespace testing::ext;
 
 namespace OHOS {
 namespace Rosen {
-namespace Drawing {
-class SkiaHmSymbolConfigOhosTest : public testing::Test {
+namespace Symbol {
+class SymbolDefaultConfigParserTest : public testing::Test {
 public:
     static void SetUpTestCase();
     static void TearDownTestCase();
@@ -32,10 +30,21 @@ public:
     void TearDown() override;
 };
 
-void SkiaHmSymbolConfigOhosTest::SetUpTestCase() {}
-void SkiaHmSymbolConfigOhosTest::TearDownTestCase() {}
-void SkiaHmSymbolConfigOhosTest::SetUp() {}
-void SkiaHmSymbolConfigOhosTest::TearDown() {}
+void SymbolDefaultConfigParserTest::SetUpTestCase()
+{
+}
+void SymbolDefaultConfigParserTest::TearDownTestCase()
+{
+}
+void SymbolDefaultConfigParserTest::SetUp()
+{
+    SymbolDefaultConfigParser::GetInstance()->ParseConfigOfHmSymbol("/system/fonts/hm_symbol_config_next.json");
+    auto groups = SymbolDefaultConfigParser::GetInstance()->GetSymbolLayersGroups(3); // 3 is an existing GlyphID
+    ASSERT_TRUE(groups.symbolGlyphId != 0);
+}
+void SymbolDefaultConfigParserTest::TearDown()
+{
+}
 
 /**
  * @tc.name: GetSymbolLayersGroups001
@@ -43,11 +52,10 @@ void SkiaHmSymbolConfigOhosTest::TearDown() {}
  * @tc.type: FUNC
  * @tc.require: I91EQ7
  */
-HWTEST_F(SkiaHmSymbolConfigOhosTest, GetSymbolLayersGroups001, TestSize.Level1)
+HWTEST_F(SymbolDefaultConfigParserTest, GetSymbolLayersGroups001, TestSize.Level1)
 {
-    HmSymbolConfig_OHOS::GetInstance()->ParseConfigOfHmSymbol("hm_symbol_config_next.json",
-        SkString("/system/fonts/"));
-    auto groups = SkiaHmSymbolConfigOhos::GetSymbolLayersGroups(3); // 3 is an existing GlyphID
+    SymbolDefaultConfigParser::GetInstance()->ParseConfigOfHmSymbol("/system/fonts/hm_symbol_config_next.json");
+    auto groups = SymbolDefaultConfigParser::GetInstance()->GetSymbolLayersGroups(3); // 3 is an existing GlyphID
     ASSERT_TRUE(groups.symbolGlyphId != 0);
 }
 
@@ -57,9 +65,10 @@ HWTEST_F(SkiaHmSymbolConfigOhosTest, GetSymbolLayersGroups001, TestSize.Level1)
  * @tc.type: FUNC
  * @tc.require: I91EQ7
  */
-HWTEST_F(SkiaHmSymbolConfigOhosTest, GetGroupParameters001, TestSize.Level1)
+HWTEST_F(SymbolDefaultConfigParserTest, GetGroupParameters001, TestSize.Level1)
 {
-    auto parameters = SkiaHmSymbolConfigOhos::GetGroupParameters(DrawingAnimationType::SCALE_TYPE, 1, 1);
+    auto parameters =
+        SymbolDefaultConfigParser::GetInstance()->GetGroupParameters(RSDrawing::DrawingAnimationType::SCALE_TYPE, 1, 1);
     if (!parameters.empty()) {
         EXPECT_EQ(parameters.size(), 1);
     } else {
@@ -67,13 +76,15 @@ HWTEST_F(SkiaHmSymbolConfigOhosTest, GetGroupParameters001, TestSize.Level1)
     }
 
     uint16_t groups = 3; // the 3 is layers of effect
-    auto parameters1 = SkiaHmSymbolConfigOhos::GetGroupParameters(DrawingAnimationType::SCALE_TYPE, groups, 0);
+    auto parameters1 = SymbolDefaultConfigParser::GetInstance()->GetGroupParameters(
+        RSDrawing::DrawingAnimationType::SCALE_TYPE, groups, 0);
     if (!parameters1.empty()) {
         EXPECT_EQ(parameters1.size(), groups);
     }
 
     groups = 2; // the 2 is layers of effect
-    auto parameters2 = SkiaHmSymbolConfigOhos::GetGroupParameters(DrawingAnimationType::SCALE_TYPE, groups, 0);
+    auto parameters2 = SymbolDefaultConfigParser::GetInstance()->GetGroupParameters(
+        RSDrawing::DrawingAnimationType::SCALE_TYPE, groups, 0);
     if (!parameters2.empty()) {
         EXPECT_EQ(parameters2.size(), groups);
     }
@@ -85,17 +96,17 @@ HWTEST_F(SkiaHmSymbolConfigOhosTest, GetGroupParameters001, TestSize.Level1)
  * @tc.type: FUNC
  * @tc.require: I91EQ7
  */
-HWTEST_F(SkiaHmSymbolConfigOhosTest, GetGroupParameters002, TestSize.Level1)
+HWTEST_F(SymbolDefaultConfigParserTest, GetGroupParameters002, TestSize.Level1)
 {
     uint16_t groups = 1; // the 1 is layers of effect
-    auto parameters1 = SkiaHmSymbolConfigOhos::GetGroupParameters(DrawingAnimationType::SCALE_TYPE, groups, 1,
-        DrawingCommonSubType::UP);
+    auto parameters1 = SymbolDefaultConfigParser::GetInstance()->GetGroupParameters(
+        RSDrawing::DrawingAnimationType::SCALE_TYPE, groups, 1, RSDrawing::DrawingCommonSubType::UP);
     if (!parameters1.empty()) {
         EXPECT_EQ(parameters1.size(), groups);
     }
 
-    auto parameters2 = SkiaHmSymbolConfigOhos::GetGroupParameters(DrawingAnimationType::SCALE_TYPE, groups, 1,
-    DrawingCommonSubType::DOWN);
+    auto parameters2 = SymbolDefaultConfigParser::GetInstance()->GetGroupParameters(
+        RSDrawing::DrawingAnimationType::SCALE_TYPE, groups, 1, RSDrawing::DrawingCommonSubType::DOWN);
     if (!parameters2.empty()) {
         EXPECT_EQ(parameters2.size(), groups);
     }
@@ -107,10 +118,11 @@ HWTEST_F(SkiaHmSymbolConfigOhosTest, GetGroupParameters002, TestSize.Level1)
  * @tc.type: FUNC
  * @tc.require: I91EQ7
  */
-HWTEST_F(SkiaHmSymbolConfigOhosTest, GetGroupParameters003, TestSize.Level1)
+HWTEST_F(SymbolDefaultConfigParserTest, GetGroupParameters003, TestSize.Level1)
 {
     uint16_t groups = 300; // the 300 is Out of layers Scope
-    auto parameters = SkiaHmSymbolConfigOhos::GetGroupParameters(DrawingAnimationType::SCALE_TYPE, groups, 0);
+    auto parameters = SymbolDefaultConfigParser::GetInstance()->GetGroupParameters(
+        RSDrawing::DrawingAnimationType::SCALE_TYPE, groups, 0);
     EXPECT_EQ(parameters.empty(), true);
 }
 
@@ -120,21 +132,21 @@ HWTEST_F(SkiaHmSymbolConfigOhosTest, GetGroupParameters003, TestSize.Level1)
  * @tc.type: FUNC
  * @tc.require: I91EQ7
  */
-HWTEST_F(SkiaHmSymbolConfigOhosTest, GetGroupParameters004, TestSize.Level1)
+HWTEST_F(SymbolDefaultConfigParserTest, GetGroupParameters004, TestSize.Level1)
 {
     uint16_t groups = 3; // the 1 is layers of effect
-    auto parameters1 = SkiaHmSymbolConfigOhos::GetGroupParameters(DrawingAnimationType::VARIABLE_COLOR_TYPE, groups, 1,
-        DrawingCommonSubType::UP);
+    auto parameters1 = SymbolDefaultConfigParser::GetInstance()->GetGroupParameters(
+        RSDrawing::DrawingAnimationType::VARIABLE_COLOR_TYPE, groups, 1, RSDrawing::DrawingCommonSubType::UP);
     if (!parameters1.empty()) {
         EXPECT_EQ(parameters1.size(), groups);
     }
 
-    auto parameters2 = SkiaHmSymbolConfigOhos::GetGroupParameters(DrawingAnimationType::VARIABLE_COLOR_TYPE, groups, 0,
-    DrawingCommonSubType::DOWN);
+    auto parameters2 = SymbolDefaultConfigParser::GetInstance()->GetGroupParameters(
+        RSDrawing::DrawingAnimationType::VARIABLE_COLOR_TYPE, groups, 0, RSDrawing::DrawingCommonSubType::DOWN);
     if (!parameters2.empty()) {
         EXPECT_EQ(parameters2.size(), groups);
     }
 }
-} // namespace Drawing
+} // namespace Symbol
 } // namespace Rosen
 } // namespace OHOS
