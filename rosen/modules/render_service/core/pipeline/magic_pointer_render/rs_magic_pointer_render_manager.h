@@ -76,11 +76,8 @@ private:
 private:
     RectI rect_;
     LayerInfoPtr target_;
-#if defined (RS_ENABLE_VK)
-    std::shared_ptr<RSVkImageManager> vkImageManager_ = nullptr;
-#endif
-#if defined (RS_ENABLE_GL) && defined (RS_ENABLE_EGLIMAGE)
-    std::shared_ptr<RSEglImageManager> eglImageManager_ = nullptr;
+#if defined (RS_ENABLE_GL) && defined (RS_ENABLE_EGLIMAGE) || defined (RS_ENABLE_VK)
+    std::shared_ptr<RSImageManager> imageManager_ = nullptr;
 #endif
     int16_t luminance_ = 0;
     bool forceCPU_ = false;

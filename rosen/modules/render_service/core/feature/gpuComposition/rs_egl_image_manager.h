@@ -23,8 +23,12 @@
 
 #include "rs_image_manager.h"
 
+#include "EGL/egl.h"
+#include "EGL/eglext.h"
+#include "GLES/gl.h"
 #include "GLES/glext.h"
 #include "GLES3/gl32.h"
+#include "sync_fence.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -60,17 +64,20 @@ public:
     std::shared_ptr<Drawing::Image> CreateImageFromBuffer(
         RSPaintFilterCanvas& canvas, const sptr<SurfaceBuffer>& buffer, const sptr<SyncFence>& acquireFence,
         const uint32_t threadIndex, const std::shared_ptr<Drawing::ColorSpace>& drawingColorSpace) override;
+    std::shared_ptr<Drawing::Image> GetIntersectImage(Drawing::RectI& imgCutRect,
+        const std::shared_ptr<Drawing::GPUContext>& context, const sptr<OHOS::SurfaceBuffer>& buffer,
+        const sptr<SyncFence>& acquireFence, pid_t threadIndex = 0) override;
 
     GLuint MapEglImageFromSurfaceBuffer(const sptr<OHOS::SurfaceBuffer>& buffer,
         const sptr<SyncFence>& acquireFence, pid_t threadIndex);
     void UnMapEglImageFromSurfaceBufferForUniRedraw(int32_t seqNum);
     void ShrinkCachesIfNeeded(bool isForUniRedraw = false) override; // only used for divided_render
-    std::unique_ptr<ImageResource> CreateImageCacheFromBuffer(const sptr<OHOS::SurfaceBuffer>& buffer,
-        const sptr<SyncFence>& acquireFence) override;
+    // std::unique_ptr<ImageResource> CreateImageCacheFromBuffer(const sptr<OHOS::SurfaceBuffer>& buffer,
+    //     const sptr<SyncFence>& acquireFence) override;
 
 private:
     void WaitAcquireFence(const sptr<SyncFence>& acquireFence);
-    GLuint CreateImageCacheFromBuffer(
+    GLuint CreateEglImageCacheFromBuffer(
         const sptr<OHOS::SurfaceBuffer>& buffer, const pid_t threadIndex);
 
     static constexpr size_t MAX_CACHE_SIZE = 16;

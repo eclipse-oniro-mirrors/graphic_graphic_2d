@@ -23,6 +23,11 @@
 
 #include "rs_image_manager.h"
 
+#include "common/rs_common_def.h"
+#include "draw/surface.h"
+#include "native_window.h"
+#include "platform/ohos/backend/native_buffer_utils.h"
+#include "platform/ohos/backend/rs_vulkan_context.h"
 #include "surface.h"
 #include "sync_fence.h"
 #include "vulkan/vulkan_core.h"
@@ -76,6 +81,9 @@ public:
     std::shared_ptr<Drawing::Image> CreateImageFromBuffer(
         RSPaintFilterCanvas& canvas, const sptr<SurfaceBuffer>& buffer, const sptr<SyncFence>& acquireFence,
         const uint32_t threadIndex, const std::shared_ptr<Drawing::ColorSpace>& drawingColorSpace) override;
+    std::shared_ptr<Drawing::Image> GetIntersectImage(Drawing::RectI& imgCutRect,
+        const std::shared_ptr<Drawing::GPUContext>& context, const sptr<OHOS::SurfaceBuffer>& buffer,
+        const sptr<SyncFence>& acquireFence, pid_t threadIndex = 0) override;
 
     std::shared_ptr<ImageResource> MapVkImageFromSurfaceBuffer(
         const sptr<OHOS::SurfaceBuffer>& buffer, const sptr<SyncFence>& acquireFence,

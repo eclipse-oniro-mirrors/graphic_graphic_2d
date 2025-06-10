@@ -241,13 +241,13 @@ void RSEglImageManager::WaitAcquireFence(const sptr<SyncFence>& acquireFence)
     acquireFence->Wait(3000); // 3000ms
 }
 
-GLuint RSEglImageManager::CreateImageCacheFromBuffer(const sptr<OHOS::SurfaceBuffer>& buffer,
+GLuint RSEglImageManager::CreateEglImageCacheFromBuffer(const sptr<OHOS::SurfaceBuffer>& buffer,
     const pid_t threadIndex)
 {
     auto bufferId = buffer->GetSeqNum();
     auto imageCache = EglImageResource::Create(eglDisplay_, EGL_NO_CONTEXT, buffer);
     if (imageCache == nullptr) {
-        RS_LOGE("RSEglImageManager::CreateImageCacheFromBuffer: failed to create ImageCache for buffer id %{public}d.",
+        RS_LOGE("RSEglImageManager::CreateEglImageCacheFromBuffer: failed to create ImageCache for buffer id %{public}d.",
             bufferId);
         return 0; // return texture id 0.
     }
@@ -259,20 +259,6 @@ GLuint RSEglImageManager::CreateImageCacheFromBuffer(const sptr<OHOS::SurfaceBuf
     }
     cacheQueue_.push(bufferId);
     return textureId;
-}
-
-std::unique_ptr<ImageResource> RSEglImageManager::CreateImageCacheFromBuffer(const sptr<OHOS::SurfaceBuffer>& buffer,
-    const sptr<SyncFence>& acquireFence)
-{
-    WaitAcquireFence(acquireFence);
-    auto bufferId = buffer->GetSeqNum();
-    auto imageCache = EglImageResource::Create(eglDisplay_, EGL_NO_CONTEXT, buffer);
-    if (imageCache == nullptr) {
-        RS_LOGE("RSEglImageManager::CreateImageCacheFromBuffer: failed to create ImageCache for buffer id %{public}d.",
-            bufferId);
-        return nullptr;
-    }
-    return imageCache;
 }
 
 GLuint RSEglImageManager::MapEglImageFromSurfaceBuffer(const sptr<OHOS::SurfaceBuffer>& buffer,
@@ -292,7 +278,7 @@ GLuint RSEglImageManager::MapEglImageFromSurfaceBuffer(const sptr<OHOS::SurfaceB
         }
     }
     // cache not found, create it.
-    return CreateImageCacheFromBuffer(buffer, threadIndex);
+    return CreateEglImageCacheFromBuffer(buffer, threadIndex);
 }
 
 void RSEglImageManager::ShrinkCachesIfNeeded(bool isForUniRedraw)
@@ -395,6 +381,55 @@ std::shared_ptr<Drawing::Image> RSEglImageManager::CreateImageFromBuffer(
 #else
     return nullptr;
 #endif // RS_ENABLE_EGLIMAGE
+}
+
+std::shared_ptr<Drawing::Image> RSEglImageManager::GetIntersectImage(Drawing::RectI& imgCutRect,
+    const std::shared_ptr<Drawing::GPUContext>& context, const sptr<OHOS::SurfaceBuffer>& buffer,
+    const sptr<SyncFence>& acquireFence, pid_t threadIndex)
+{
+    auto eglTextureId = MapEglImageFromSurfaceBuffer(buffer, acquireFence, threadIndex);
+    if (eglTextureId == 0) {
+        RS_LOGE("RSMagicPointerRenderManager::GetIntersectImageFromGL invalid texture ID");
+        return nullptr;
+    }
+
+    Drawing::BitmapFormat bitmapFormat = RSBaseRenderUtil::GenerateDrawingBitmapFormat(buffer);
+    Drawing::TextureInfo externalTextureInfo;
+    externalTextureInfo.SetWidth(buffer->GetSurfaceBufferWidth());
+    externalTextureInfo.SetHeight(buffer->GetSurfaceBufferHeight());
+    externalTextureInfo.SetIsMipMapped(false);
+    externalTextureInfo.SetTarget(GL_TEXTURE_EXTERNAL_OES);
+    externalTextureInfo.SetID(eglTextureId);
+    auto glType = GR_GL_RGBA8;
+    auto pixelFmt = buffer->GetFormat();
+    if (pixelFmt == GRAPHIC_PIXEL_FMT_BGRA_8888) {
+        glType = GR_GL_BGRA8;
+    } else if (pixelFmt == GRAPHIC_PIXEL_FMT_YCBCR_P010 || pixelFmt == GRAPHIC_PIXEL_FMT_YCRCB_P010) {
+        glType = GL_RGB10_A2;
+    }
+    externalTextureInfo.SetFormat(glType);
+
+    std::shared_ptr<Drawing::Image> layerImage = std::make_shared<Drawing::Image>();
+    if (!layerImage->BuildFromTexture(*context, externalTextureInfo,
+        Drawing::TextureOrigin::TOP_LEFT, bitmapFormat, nullptr)) {
+        RS_LOGE("RSMagicPointerRenderManager::GetIntersectImageFromGL image BuildFromTexture failed");
+        return nullptr;
+    }
+
+    std::shared_ptr<Drawing::Image> cutDownImage = std::make_shared<Drawing::Image>();
+    cutDownImage->BuildSubset(layerImage, imgCutRect, *context);
+    Drawing::ImageInfo info = Drawing::ImageInfo(imgCutRect.GetWidth(), imgCutRect.GetHeight(),
+        Drawing::COLORTYPE_RGBA_8888, Drawing::ALPHATYPE_PREMUL);
+
+    std::shared_ptr<Drawing::Surface> surface = Drawing::Surface::MakeRenderTarget(context.get(), false, info);
+    if (surface == nullptr) {
+        RS_LOGE("RSMagicPointerRenderManager::GetIntersectImageFromGL MakeRenderTarget failed.");
+        return nullptr;
+    }
+    auto drawCanvas = std::make_shared<RSPaintFilterCanvas>(surface.get());
+    drawCanvas->DrawImage(*cutDownImage, 0.f, 0.f, Drawing::SamplingOptions());
+    surface->FlushAndSubmit(true);
+    return surface.get()->GetImageSnapshot();
 }
 } // namespace Rosen
 } // namespace OHOS

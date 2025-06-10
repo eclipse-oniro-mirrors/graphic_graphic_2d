@@ -23,19 +23,6 @@
 #include <unordered_map>
 #include <surface.h>
 
-#ifdef RS_ENABLE_VK
-#include "native_window.h"
-#include "platform/ohos/backend/rs_vulkan_context.h"
-#include "common/rs_common_def.h"
-#include "draw/surface.h"
-#include "platform/ohos/backend/native_buffer_utils.h"
-#endif // RS_ENABLE_VK
-
-#include "EGL/egl.h"
-#include "EGL/eglext.h"
-#include "GLES/gl.h"
-#include "sync_fence.h"
-
 #include "render_context/render_context.h"
 #include "pipeline/rs_paint_filter_canvas.h"
 
@@ -83,18 +70,17 @@ public:
     virtual std::shared_ptr<Drawing::Image> CreateImageFromBuffer(
         RSPaintFilterCanvas& canvas, const sptr<SurfaceBuffer>& buffer, const sptr<SyncFence>& acquireFence,
         const uint32_t threadIndex, const std::shared_ptr<Drawing::ColorSpace>& drawingColorSpace) = 0;
+    virtual std::shared_ptr<Drawing::Image> GetIntersectImage(Drawing::RectI& imgCutRect,
+        const std::shared_ptr<Drawing::GPUContext>& context, const sptr<OHOS::SurfaceBuffer>& buffer,
+        const sptr<SyncFence>& acquireFence, pid_t threadIndex = 0) = 0;
 
     // Vulkan specific functions
-#ifdef RS_ENABLE_VK
     virtual void DumpVkImageInfo(std::string &dumpString) { return; }
     virtual std::shared_ptr<ImageResource> CreateImageCacheFromBuffer(const sptr<OHOS::SurfaceBuffer> buffer,
         const sptr<SyncFence>& acquireFence) { return nullptr; }
-#endif // RS_ENABLE_VK
 
     // EGL specific functions
     virtual void ShrinkCachesIfNeeded(bool isForUniRedraw = false) { return; }
-    virtual std::unique_ptr<ImageResource> CreateImageCacheFromBuffer(const sptr<OHOS::SurfaceBuffer>& buffer,
-        const sptr<SyncFence>& acquireFence) { return nullptr; }
 protected:
     RSImageManager() = default;
     mutable std::mutex opMutex_;

@@ -289,5 +289,30 @@ std::shared_ptr<Drawing::Image> RSVkImageManager::CreateImageFromBuffer(
     return nullptr;
 #endif // RS_ENABLE_VK
 }
+
+std::shared_ptr<Drawing::Image> RSVkImageManager::GetIntersectImage(Drawing::RectI& imgCutRect,
+    const std::shared_ptr<Drawing::GPUContext>& context, const sptr<OHOS::SurfaceBuffer>& buffer,
+    const sptr<SyncFence>& acquireFence, pid_t threadIndex = 0)
+{
+    auto imageCache = CreateImageCacheFromBuffer(buffer, acquireFence);
+    if (imageCache == nullptr) {
+        ROSEN_LOGE("RSMagicPointerRenderManager::GetIntersectImageFromVK imageCache == nullptr!");
+        return nullptr;
+    }
+    auto& backendTexture = imageCache->GetBackendTexture();
+    Drawing::BitmapFormat bitmapFormat = RSBaseRenderUtil::GenerateDrawingBitmapFormat(buffer);
+
+    std::shared_ptr<Drawing::Image> layerImage = std::make_shared<Drawing::Image>();
+    if (!layerImage->BuildFromTexture(*context, backendTexture.GetTextureInfo(),
+        Drawing::TextureOrigin::TOP_LEFT, bitmapFormat, nullptr,
+        NativeBufferUtils::DeleteVkImage, imageCache->RefCleanupHelper())) {
+        ROSEN_LOGE("RSMagicPointerRenderManager::GetIntersectImageFromVK image BuildFromTexture failed.");
+        return nullptr;
+    }
+
+    std::shared_ptr<Drawing::Image> cutDownImage = std::make_shared<Drawing::Image>();
+    cutDownImage->BuildSubset(layerImage, imgCutRect, *context);
+    return cutDownImage;
+}
 } // namespace Rosen
 } // namespace OHOS
