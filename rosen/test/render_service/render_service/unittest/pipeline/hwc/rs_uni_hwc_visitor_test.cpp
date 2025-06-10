@@ -2244,12 +2244,12 @@ HWTEST_F(RSUniHwcVisitorTest, IsDisableHwcOnExpandScreen, TestSize.Level2)
 }
 
 /**
- * @tc.name: IsFindRoot_001
- * @tc.desc: Test IsFindRoot Function
+ * @tc.name: IsFindRootSuccess_001
+ * @tc.desc: Test IsFindRootSuccess Function
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSUniHwcVisitorTest, IsFindRoot_001, TestSize.Level2)
+HWTEST_F(RSUniHwcVisitorTest, IsFindRootSuccess_001, TestSize.Level2)
 {
     NodeId id = 0;
     auto leashWindowNode = std::make_shared<RSSurfaceRenderNode>(id);
@@ -2276,7 +2276,7 @@ HWTEST_F(RSUniHwcVisitorTest, IsFindRoot_001, TestSize.Level2)
     rsUniRenderVisitor->curSurfaceNode_ = leashWindowNode;
     rsUniRenderVisitor->prepareClipRect_ = RectI(0, 0, 1000, 1000);
     auto rsRenderNode = std::static_pointer_cast<RSRenderNode>(surfaceNode);
-    auto result = rsUniRenderVisitor->hwcVisitor_->IsFindRoot(rsRenderNode, *rootNode);
+    auto result = rsUniRenderVisitor->hwcVisitor_->IsFindRootSuccess(rsRenderNode, *rootNode);
     EXPECT_TRUE(result);
 }
 
