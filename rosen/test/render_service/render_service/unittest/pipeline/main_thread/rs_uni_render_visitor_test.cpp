@@ -181,7 +181,7 @@ HWTEST_F(RSUniRenderVisitorTest, ProcessFilterNodeObscured, TestSize.Level1)
     RSDisplayNodeConfig config;
     rsUniRenderVisitor->curDisplayNode_ = std::make_shared<RSDisplayRenderNode>(id, config);
     ASSERT_NE(rsUniRenderVisitor->curDisplayNode_, nullptr);
-    surfaceNode->renderContent_->renderProperties_.backgroundFilter_ = filter;
+    surfaceNode->renderProperties_.backgroundFilter_ = filter;
     Occlusion::Region extendRegion;
     Occlusion::Region region{ Occlusion::Rect{ 0, 0, 100, 100 } };
     surfaceNode->SetVisibleRegion(region);
@@ -203,9 +203,9 @@ HWTEST_F(RSUniRenderVisitorTest, ProcessFilterNodeObscured, TestSize.Level1)
     nodeMap.RegisterRenderNode(filterNode1);
     nodeMap.RegisterRenderNode(filterNode3);
     nodeMap.RegisterRenderNode(filterNode4);
-    filterNode1->renderContent_->renderProperties_.backgroundFilter_ = filter;
-    filterNode3->renderContent_->renderProperties_.backgroundFilter_ = filter;
-    filterNode4->renderContent_->renderProperties_.backgroundFilter_ = filter;
+    filterNode1->renderProperties_.backgroundFilter_ = filter;
+    filterNode3->renderProperties_.backgroundFilter_ = filter;
+    filterNode4->renderProperties_.backgroundFilter_ = filter;
     surfaceNode->visibleFilterChild_.push_back(filterNode1->GetId());
     surfaceNode->visibleFilterChild_.push_back(filterNode2->GetId());
     surfaceNode->visibleFilterChild_.push_back(filterNode3->GetId());
@@ -246,7 +246,6 @@ HWTEST_F(RSUniRenderVisitorTest, AfterUpdateSurfaceDirtyCalc_001, TestSize.Level
     rsUniRenderVisitor->curSurfaceNode_ = surfaceNode;
     rsUniRenderVisitor->curDisplayNode_ = displayNode;
 
-    ASSERT_NE(node->renderContent_, nullptr);
     ASSERT_NE(node->GetRenderProperties().GetBoundsGeometry(), nullptr);
 
     node->isHardwareEnabledNode_ = true;
@@ -291,7 +290,6 @@ HWTEST_F(RSUniRenderVisitorTest, AfterUpdateSurfaceDirtyCalc_002, TestSize.Level
     rsUniRenderVisitor->curSurfaceNode_ = surfaceNode;
     rsUniRenderVisitor->curDisplayNode_ = displayNode;
 
-    ASSERT_NE(node->renderContent_, nullptr);
     ASSERT_NE(node->GetRenderProperties().GetBoundsGeometry(), nullptr);
 
     node->isHardwareEnabledNode_ = true;
@@ -2150,7 +2148,7 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateCornerRadiusInfoForDRM, TestSize.Level2)
     instanceRootNode->SetGlobalCornerRadius({-10, -10, 100, 100});
     rsUniRenderVisitor->UpdateCornerRadiusInfoForDRM(surfaceNode, hwcRects);
 
-    surfaceNode->GetInstanceRootNode()->renderContent_->renderProperties_.SetBounds({0, 0, 1, 1});
+    surfaceNode->GetInstanceRootNode()->renderProperties_.SetBounds({0, 0, 1, 1});
     Drawing::Matrix matrix;
     matrix.SetMatrix(1, 2, 3, 4, 5, 6, 7, 8, 9);
     surfaceNode->SetTotalMatrix(matrix);
@@ -2183,7 +2181,7 @@ HWTEST_F(RSUniRenderVisitorTest, CheckIfRoundCornerIntersectDRM, TestSize.Level2
     hwcNode->instanceRootNodeId_ = instanceRootNode->GetId();
     instanceRootNode->absDrawRect_ = {-10, -10, 1000, 1000};
     instanceRootNode->SetGlobalCornerRadius({-10, -10, 1000, 1000});
-    hwcNode->GetInstanceRootNode()->renderContent_->renderProperties_.SetBounds({0, 0, 1, 1});
+    hwcNode->GetInstanceRootNode()->renderProperties_.SetBounds({0, 0, 1, 1});
     Drawing::Matrix matrix = Drawing::Matrix();
     matrix.SetMatrix(1, 2, 3, 4, 5, 6, 7, 8, 9);
     hwcNode->SetTotalMatrix(matrix);
@@ -3098,8 +3096,7 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateOccludedStatusWithFilterNode002, TestSize
     auto surfaceNode1 = std::make_shared<RSSurfaceRenderNode>(surfaceConfig);
     ASSERT_NE(surfaceNode1, nullptr);
     std::shared_ptr<RSFilter> filter = RSFilter::CreateBlurFilter(1.0f, 1.0f);
-    ASSERT_NE(surfaceNode1->renderContent_, nullptr);
-    surfaceNode1->renderContent_->renderProperties_.backgroundFilter_ = filter;
+    surfaceNode1->renderProperties_.backgroundFilter_ = filter;
     surfaceNode1->isOccludedByFilterCache_ = true;
     auto& nodeMap = RSMainThread::Instance()->GetContext().GetMutableNodeMap();
     NodeId id1 = 2;
@@ -3111,8 +3108,7 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateOccludedStatusWithFilterNode002, TestSize
     pid_t pid2 = ExtractPid(id2);
     auto filterNode2 = std::make_shared<RSRenderNode>(id2);
     ASSERT_NE(filterNode2, nullptr);
-    ASSERT_NE(filterNode2->renderContent_, nullptr);
-    filterNode2->renderContent_->renderProperties_.backgroundFilter_ = filter;
+    filterNode2->renderProperties_.backgroundFilter_ = filter;
     nodeMap.renderNodeMap_[pid2][id2] = filterNode2;
     surfaceNode1->visibleFilterChild_.emplace_back(filterNode1->GetId());
     surfaceNode1->visibleFilterChild_.emplace_back(filterNode2->GetId());
@@ -3794,7 +3790,7 @@ HWTEST_F(RSUniRenderVisitorTest, CollectFilterInfoAndUpdateDirty004, TestSize.Le
     ASSERT_NE(rsUniRenderVisitor, nullptr);
     NodeId surfaceNodeId = 1;
     auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(surfaceNodeId);
-    surfaceNode->renderContent_->renderProperties_.needDrawBehindWindow_ = true;
+    surfaceNode->renderProperties_.needDrawBehindWindow_ = true;
     rsUniRenderVisitor->curSurfaceNode_ = surfaceNode;
 
     auto dirtyManager = surfaceNode->GetDirtyManager();
@@ -4131,8 +4127,7 @@ HWTEST_F(RSUniRenderVisitorTest, CheckFilterCacheNeedForceClearOrSave001, TestSi
     rsUniRenderVisitor->CheckFilterCacheNeedForceClearOrSave(*node);
 
     std::shared_ptr<RSFilter> filter = RSFilter::CreateBlurFilter(1.0f, 1.0f);
-    node->renderContent_->renderProperties_.backgroundFilter_ = filter;
-    ASSERT_NE(node->renderContent_, nullptr);
+    node->renderProperties_.backgroundFilter_ = filter;
     rsUniRenderVisitor->CheckFilterCacheNeedForceClearOrSave(*node);
 }
 
@@ -4461,7 +4456,6 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateSubSurfaceNodeRectInSkippedSubTree, TestS
     rsUniRenderVisitor->UpdateSubSurfaceNodeRectInSkippedSubTree(*node);
 
     rsUniRenderVisitor->curSurfaceNode_ = RSTestUtil::CreateSurfaceNode();
-    ASSERT_NE(node->renderContent_, nullptr);
     ASSERT_NE(node->GetRenderProperties().GetBoundsGeometry(), nullptr);
     rsUniRenderVisitor->UpdateSubSurfaceNodeRectInSkippedSubTree(*node);
     rsUniRenderVisitor->curSurfaceDirtyManager_ = rsUniRenderVisitor->curSurfaceNode_->GetDirtyManager();
@@ -4576,7 +4570,6 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeInfoForAppNode002, TestSize.Level2
     rsUniRenderVisitor->UpdateHwcNodeInfoForAppNode(*rsSurfaceRenderNode);
 
     rsSurfaceRenderNode->dynamicHardwareEnable_ = true;
-    ASSERT_NE(rsSurfaceRenderNode->renderContent_, nullptr);
     rsUniRenderVisitor->UpdateHwcNodeInfoForAppNode(*rsSurfaceRenderNode);
 }
 
