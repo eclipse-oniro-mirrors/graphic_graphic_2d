@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -32,18 +32,28 @@
 
 namespace OHOS {
 namespace Rosen {
-class EglImageResource : public ImageResource {
+class EglImageResource {
 public:
-    static std::unique_ptr<ImageResource> Create(EGLDisplay eglDisplay, EGLContext eglContext,
+    static std::unique_ptr<EglImageResource> Create(EGLDisplay eglDisplay, EGLContext eglContext,
         const sptr<OHOS::SurfaceBuffer>& buffer);
 
     EglImageResource(EGLDisplay eglDisplay, EGLImageKHR eglImage, EGLClientBuffer eglClientBuffer)
         : eglDisplay_(eglDisplay), eglImage_(eglImage), eglClientBuffer_(eglClientBuffer) {}
-    ~EglImageResource() noexcept override;
+    ~EglImageResource() noexcept;
 
-    GLuint GetTextureId() const override
+    GLuint GetTextureId() const
     {
         return textureId_;
+    }
+
+    pid_t GetThreadIndex() const
+    {
+        return threadIndex_;
+    }
+
+    void SetThreadIndex(const pid_t threadIndex)
+    {
+        threadIndex_ = threadIndex;
     }
 private:
     // generate a texture and bind eglImage to it.
@@ -53,6 +63,7 @@ private:
     EGLImageKHR eglImage_ = EGL_NO_IMAGE_KHR;
     EGLClientBuffer eglClientBuffer_ = nullptr;
     GLuint textureId_ = 0;
+    pid_t threadIndex_ = 0;
 };
 
 class RSEglImageManager : public RSImageManager {
@@ -72,8 +83,6 @@ public:
         const sptr<SyncFence>& acquireFence, pid_t threadIndex);
     void UnMapEglImageFromSurfaceBufferForUniRedraw(int32_t seqNum);
     void ShrinkCachesIfNeeded(bool isForUniRedraw = false) override; // only used for divided_render
-    // std::unique_ptr<ImageResource> CreateImageCacheFromBuffer(const sptr<OHOS::SurfaceBuffer>& buffer,
-    //     const sptr<SyncFence>& acquireFence) override;
 
 private:
     void WaitAcquireFence(const sptr<SyncFence>& acquireFence);
@@ -83,7 +92,7 @@ private:
     static constexpr size_t MAX_CACHE_SIZE = 16;
     EGLDisplay eglDisplay_ = EGL_NO_DISPLAY;
     std::queue<int32_t> cacheQueue_; // fifo, size restricted by MAX_CACHE_SIZE
-    std::unordered_map<int32_t, std::unique_ptr<ImageResource>> imageCacheSeqs_; // guarded by opMutex_
+    std::unordered_map<int32_t, std::unique_ptr<EglImageResource>> imageCacheSeqs_; // guarded by opMutex_
 };
 } // namespace Rosen
 } // namespace OHOS

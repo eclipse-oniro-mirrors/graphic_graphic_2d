@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -67,7 +67,7 @@ VkImageResource::~VkImageResource()
     DestroyNativeWindowBuffer(mNativeWindowBuffer);
 }
 
-std::shared_ptr<ImageResource> VkImageResource::Create(sptr<OHOS::SurfaceBuffer> buffer)
+std::shared_ptr<VkImageResource> VkImageResource::Create(sptr<OHOS::SurfaceBuffer> buffer)
 {
     if (buffer == nullptr) {
         ROSEN_LOGE("VkImageResource::Create buffer is nullptr");
@@ -83,7 +83,7 @@ std::shared_ptr<ImageResource> VkImageResource::Create(sptr<OHOS::SurfaceBuffer>
         DestroyNativeWindowBuffer(nativeWindowBuffer);
         return nullptr;
     }
-    return std::unique_ptr<VkImageResource>(
+    return std::make_unique<VkImageResource>(
         nativeWindowBuffer,
         backendTexture,
         new NativeBufferUtils::VulkanCleanupHelper(RsVulkanContext::GetSingleton(),
@@ -128,7 +128,7 @@ bool RSVkImageManager::WaitVKSemaphore(Drawing::Surface *drawingSurface, const s
     return true;
 }
 
-std::shared_ptr<ImageResource> RSVkImageManager::MapVkImageFromSurfaceBuffer(
+std::shared_ptr<VkImageResource> RSVkImageManager::MapVkImageFromSurfaceBuffer(
     const sptr<OHOS::SurfaceBuffer>& buffer,
     const sptr<SyncFence>& acquireFence,
     pid_t threadIndex, Drawing::Surface *drawingSurface)
@@ -153,7 +153,7 @@ std::shared_ptr<ImageResource> RSVkImageManager::MapVkImageFromSurfaceBuffer(
     }
 }
 
-std::shared_ptr<ImageResource> RSVkImageManager::CreateImageCacheFromBuffer(const sptr<OHOS::SurfaceBuffer> buffer,
+std::shared_ptr<VkImageResource> RSVkImageManager::CreateImageCacheFromBuffer(const sptr<OHOS::SurfaceBuffer> buffer,
     const sptr<SyncFence>& acquireFence)
 {
     WaitAcquireFence(acquireFence);
@@ -168,7 +168,7 @@ std::shared_ptr<ImageResource> RSVkImageManager::CreateImageCacheFromBuffer(cons
     return imageCache;
 }
 
-std::shared_ptr<ImageResource> RSVkImageManager::NewImageCacheFromBuffer(
+std::shared_ptr<VkImageResource> RSVkImageManager::NewImageCacheFromBuffer(
     const sptr<OHOS::SurfaceBuffer>& buffer, pid_t threadIndex, bool isProtectedCondition)
 {
     auto bufferId = buffer->GetSeqNum();
@@ -292,7 +292,7 @@ std::shared_ptr<Drawing::Image> RSVkImageManager::CreateImageFromBuffer(
 
 std::shared_ptr<Drawing::Image> RSVkImageManager::GetIntersectImage(Drawing::RectI& imgCutRect,
     const std::shared_ptr<Drawing::GPUContext>& context, const sptr<OHOS::SurfaceBuffer>& buffer,
-    const sptr<SyncFence>& acquireFence, pid_t threadIndex = 0)
+    const sptr<SyncFence>& acquireFence, pid_t threadIndex)
 {
     auto imageCache = CreateImageCacheFromBuffer(buffer, acquireFence);
     if (imageCache == nullptr) {

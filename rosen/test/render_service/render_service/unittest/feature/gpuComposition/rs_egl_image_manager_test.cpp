@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -103,19 +103,8 @@ HWTEST_F(RSEglImageManagerTest, CreateAndShrinkImageCacheFromBuffer001, TestSize
     ASSERT_NE(node, nullptr);
     if (auto displayNode = node->ReinterpretCastTo<RSDisplayRenderNode>()) {
         sptr<OHOS::SurfaceBuffer> buffer = surfaceHandler->GetBuffer();
-        // create image with null fence
-        auto invalidFenceCache = eglImageManager_->CreateImageCacheFromBuffer(buffer, nullptr);
-        ASSERT_NE(invalidFenceCache, nullptr);
-        invalidFenceCache.reset();
-        // create image with valid fence
-        sptr<SyncFence> acquireFence;
-        auto validCache = eglImageManager_->CreateImageCacheFromBuffer(buffer, acquireFence);
-        ASSERT_NE(validCache, nullptr);
-        validCache.reset();
-        eglImageManager_->ShrinkCachesIfNeeded(true);
-
         // create cache from buffer directly
-        auto ret = eglImageManager_->CreateImageCacheFromBuffer(buffer, 0);
+        auto ret = eglImageManager_->CreateEglImageCacheFromBuffer(buffer, 0);
         ASSERT_NE(ret, 0);
         eglImageManager_->ShrinkCachesIfNeeded(false);
     }
@@ -234,7 +223,7 @@ HWTEST_F(RSEglImageManagerTest, ImageCacheSeqBindToTexture001, TestSize.Level1)
         renderContext_->GetEGLDisplay(), EGL_NO_CONTEXT, node->GetRSSurfaceHandler()->GetBuffer());
     ASSERT_NE(imageCache, nullptr);
     ASSERT_EQ(imageCache->BindToTexture(), true);
-    std::static_pointer_cast<EglImageResource>(imageCache)->eglImage_ = EGL_NO_IMAGE_KHR;
+    imageCache->eglImage_ = EGL_NO_IMAGE_KHR;
     ASSERT_EQ(imageCache->BindToTexture(), false);
 }
 
@@ -247,7 +236,7 @@ HWTEST_F(RSEglImageManagerTest, ImageCacheSeqBindToTexture001, TestSize.Level1)
 HWTEST_F(RSEglImageManagerTest, CreateTest, TestSize.Level1)
 {
     std::shared_ptr<RSImageManager> imageManager;
-    std::shared_ptr<RenderContext> renderContext = std::make_shared<RenderContext>;
+    std::shared_ptr<RenderContext> renderContext = std::make_shared<RenderContext>();
 #ifdef RS_ENABLE_VK
     imageManager = RSImageManager::Create(renderContext);
     ASSERT_NE(imageManager, nullptr);

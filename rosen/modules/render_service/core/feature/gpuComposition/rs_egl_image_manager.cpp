@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -208,7 +208,7 @@ bool EglImageResource::BindToTexture()
     return true;
 }
 
-std::unique_ptr<ImageResource> EglImageResource::Create(
+std::unique_ptr<EglImageResource> EglImageResource::Create(
     EGLDisplay eglDisplay,
     EGLContext eglContext,
     const sptr<OHOS::SurfaceBuffer>& buffer)
@@ -247,7 +247,7 @@ GLuint RSEglImageManager::CreateEglImageCacheFromBuffer(const sptr<OHOS::Surface
     auto bufferId = buffer->GetSeqNum();
     auto imageCache = EglImageResource::Create(eglDisplay_, EGL_NO_CONTEXT, buffer);
     if (imageCache == nullptr) {
-        RS_LOGE("RSEglImageManager::CreateEglImageCacheFromBuffer: failed to create ImageCache for buffer id %{public}d.",
+        RS_LOGE("RSEglImageManager::CreateEglImageCacheFromBuffer:failed to create for buffer id %{public}d.",
             bufferId);
         return 0; // return texture id 0.
     }
@@ -307,7 +307,7 @@ void RSEglImageManager::UnMapImageFromSurfaceBuffer(int32_t seqNum)
         }
     }
     auto func = [this, seqNum]() {
-        std::unique_ptr<ImageResource> imageCacheSeq;
+        std::unique_ptr<EglImageResource> imageCacheSeq;
         {
             std::lock_guard<std::mutex> lock(opMutex_);
             if (imageCacheSeqs_.count(seqNum) == 0) {

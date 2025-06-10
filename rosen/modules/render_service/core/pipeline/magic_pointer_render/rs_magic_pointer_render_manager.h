@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,6 +16,7 @@
 #ifndef RS_MAGIC_POINTER_RENDER_MANAGER_H
 #define RS_MAGIC_POINTER_RENDER_MANAGER_H
 
+#include "feature/gpuComposition/rs_image_manager.h"
 #include "ipc_callbacks/pointer_render/pointer_luminance_change_callback.h"
 #include "pipeline/rs_display_render_node.h"
 #include "pipeline/rs_processor.h"
@@ -30,12 +31,8 @@ public:
     RSMagicPointerRenderManager() = default;
     ~RSMagicPointerRenderManager() = default;
 
-#if defined (RS_ENABLE_VK)
-    static void InitInstance(const std::shared_ptr<RSVkImageManager>& vkImageManager);
-#endif
-
-#if defined (RS_ENABLE_GL) && defined (RS_ENABLE_EGLIMAGE)
-    static void InitInstance(const std::shared_ptr<RSEglImageManager>& eglImageManager);
+#if (defined (RS_ENABLE_GL) && defined (RS_ENABLE_EGLIMAGE)) || defined (RS_ENABLE_VK)
+    static void InitInstance(const std::shared_ptr<RSImageManager>& imageManager);
 #endif
 
     static RSMagicPointerRenderManager& GetInstance();

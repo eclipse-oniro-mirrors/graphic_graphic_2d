@@ -28,38 +28,6 @@
 
 namespace OHOS {
 namespace Rosen {
-class ImageResource {
-public:
-    virtual ~ImageResource() = default;
-
-    pid_t GetThreadIndex() const
-    {
-        return threadIndex_;
-    }
-
-    void SetThreadIndex(const pid_t threadIndex)
-    {
-        threadIndex_ = threadIndex;
-    }
-
-#ifdef RS_ENABLE_VK
-    // Vulkan virtual functions
-    virtual const Drawing::BackendTexture& GetBackendTexture() const
-    {
-        static Drawing::BackendTexture invalidBackendTexture;
-        return invalidBackendTexture;
-    }
-    virtual NativeBufferUtils::VulkanCleanupHelper* RefCleanupHelper() { return nullptr; }
-#endif // RS_ENABLE_VK
-
-    // EGL virtual functions
-    virtual GLuint GetTextureId() const { return 0; }
-
-protected:
-    ImageResource() = default;
-    pid_t threadIndex_;
-};
-
 class RSImageManager {
 public:
     static std::shared_ptr<RSImageManager> Create(std::shared_ptr<RenderContext>& renderContext);
@@ -76,8 +44,6 @@ public:
 
     // Vulkan specific functions
     virtual void DumpVkImageInfo(std::string &dumpString) { return; }
-    virtual std::shared_ptr<ImageResource> CreateImageCacheFromBuffer(const sptr<OHOS::SurfaceBuffer> buffer,
-        const sptr<SyncFence>& acquireFence) { return nullptr; }
 
     // EGL specific functions
     virtual void ShrinkCachesIfNeeded(bool isForUniRedraw = false) { return; }

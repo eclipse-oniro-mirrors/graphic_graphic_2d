@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -19,6 +19,9 @@
 #include "v2_1/cm_color_space.h"
 #include "foundation/graphic/graphic_2d/rosen/test/render_service/render_service/unittest/pipeline/rs_test_util.h"
 #include "recording/recording_canvas.h"
+#ifdef RS_ENABLE_VK
+#include "feature/gpuComposition/rs_vk_image_manager.h"
+#endif
 
 using namespace testing;
 using namespace testing::ext;
@@ -217,8 +220,8 @@ HWTEST_F(RSBaseRenderEngineUnitTest, CreateEglImageFromBuffer001, TestSize.Level
     std::unique_ptr<Drawing::Canvas> drawingCanvas = std::make_unique<Drawing::Canvas>(10, 10);
     std::shared_ptr<RSPaintFilterCanvas> canvas = std::make_shared<RSPaintFilterCanvas>(drawingCanvas.get());
     EGLDisplay display = EGL_NO_DISPLAY;
-    renderEngine->eglImageManager_ = std::make_shared<RSEglImageManager>(display);
-    auto img = renderEngine->CreateEglImageFromBuffer(*canvas, node->GetRSSurfaceHandler()->GetBuffer(), nullptr);
+    renderEngine->imageManager_ = std::make_shared<RSEglImageManager>(display);
+    auto img = renderEngine->imageManager_->CreateImageFromBuffer(*canvas, node->GetRSSurfaceHandler()->GetBuffer(), nullptr);
     ASSERT_EQ(nullptr, img);
 }
 
@@ -357,7 +360,7 @@ HWTEST_F(RSBaseRenderEngineUnitTest, CreateImageFromBuffer002, TestSize.Level1)
     }
     auto renderEngine = std::make_shared<RSRenderEngine>();
     renderEngine->Init();
-    EXPECT_NE(renderEngine->vkImageManager_, nullptr);
+    EXPECT_NE(renderEngine->imageManager_, nullptr);
 
     auto drawingRecordingCanvas = std::make_unique<Drawing::RecordingCanvas>(100, 100);
     drawingRecordingCanvas->SetGrRecordingContext(renderEngine->GetRenderContext()->GetSharedDrGPUContext());
@@ -368,17 +371,18 @@ HWTEST_F(RSBaseRenderEngineUnitTest, CreateImageFromBuffer002, TestSize.Level1)
     VideoInfo videoInfo;
     params.buffer = CreateBuffer();
     EXPECT_NE(params.buffer, nullptr);
-    if (params.buffer && renderEngine->vkImageManager_ && recordingCanvas) {
+    if (params.buffer && renderEngine->imageManager_ && recordingCanvas) {
         unmappedCache.insert(params.buffer->GetSeqNum());
         params.buffer->SetBufferDeleteFromCacheFlag(false);
         EXPECT_NE(renderEngine->CreateImageFromBuffer(*recordingCanvas, params, videoInfo), nullptr);
-        EXPECT_EQ(renderEngine->vkImageManager_->imageCacheSeqs_.size(), 1);
+        auto vkImageManager = std::static_pointer_cast<RSVkImageManager>(renderEngine->imageManager_);
+        EXPECT_EQ(vkImageManager->imageCacheSeqs_.size(), 1);
         renderEngine->ClearCacheSet(unmappedCache);
-        EXPECT_EQ(renderEngine->vkImageManager_->imageCacheSeqs_.size(), 0);
+        EXPECT_EQ(vkImageManager->imageCacheSeqs_.size(), 0);
 
         params.buffer->SetBufferDeleteFromCacheFlag(true);
         EXPECT_NE(renderEngine->CreateImageFromBuffer(*recordingCanvas, params, videoInfo), nullptr);
-        EXPECT_EQ(renderEngine->vkImageManager_->imageCacheSeqs_.size(), 0);
+        EXPECT_EQ(vkImageManager->imageCacheSeqs_.size(), 0);
     }
 #endif
 }
@@ -481,9 +485,9 @@ HWTEST_F(RSBaseRenderEngineUnitTest, ShrinkCachesIfNeededTest, TestSize.Level1)
 {
     auto renderEngine = std::make_shared<RSRenderEngine>();
 #ifdef RS_ENABLE_VK
-    renderEngine->vkImageManager_ = std::make_shared<RSVkImageManager>();
+    renderEngine->imageManager_ = std::make_shared<RSVkImageManager>();
     renderEngine->ShrinkCachesIfNeeded();
-    ASSERT_EQ(renderEngine->vkImageManager_->cacheQueue_.size(), 0);
+    ASSERT_EQ(renderEngine->imageManager_->cacheQueue_.size(), 0);
 #endif
 }
 
