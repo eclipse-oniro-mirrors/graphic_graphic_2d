@@ -30,6 +30,93 @@ class OH_Drawing_TypographyTest : public testing::Test {
 };
 
 /*
+ * @tc.name: OH_Drawing_TypographyInnerBadgeTypeTest001
+ * @tc.desc: Test for badge text
+ * @tc.type: FUNC
+ */
+HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyInnerBadgeTypeTest001, TestSize.Level1)
+{
+    OHOS::Rosen::TypographyStyle typographyStyle;
+    OHOS::Rosen::TextStyle superscriptTextStyle;
+    superscriptTextStyle.fontSize = 50;
+    superscriptTextStyle.badgeType = TextBadgeType::SUPERSCRIPT;
+    OHOS::Rosen::TextStyle subscriptTextStyle;
+    subscriptTextStyle.fontSize = 50;
+    subscriptTextStyle.badgeType = TextBadgeType::SUBSCRIPT;
+    OHOS::Rosen::TextStyle textStyle;
+    textStyle.fontSize = 50;
+    std::shared_ptr<OHOS::Rosen::FontCollection> fontCollection =
+        OHOS::Rosen::FontCollection::From(std::make_shared<txt::FontCollection>());
+    std::unique_ptr<OHOS::Rosen::TypographyCreate> typographyCreate =
+        OHOS::Rosen::TypographyCreate::Create(typographyStyle, fontCollection);
+    std::unique_ptr<OHOS::Rosen::TypographyCreate> superTypographyCreate =
+        OHOS::Rosen::TypographyCreate::Create(typographyStyle, fontCollection);
+    std::unique_ptr<OHOS::Rosen::TypographyCreate> subTypographyCreate =
+        OHOS::Rosen::TypographyCreate::Create(typographyStyle, fontCollection);
+
+    std::u16string text = u"你好测试 textstyle hello";
+    superTypographyCreate->PushStyle(superscriptTextStyle);
+    superTypographyCreate->AppendText(text);
+    std::unique_ptr<OHOS::Rosen::Typography> superscriptTypography = superTypographyCreate->CreateTypography();
+    double maxWidth = 10000.0;
+    superscriptTypography->Layout(maxWidth);
+
+    subTypographyCreate->PushStyle(subscriptTextStyle);
+    subTypographyCreate->AppendText(text);
+    std::unique_ptr<OHOS::Rosen::Typography> subscriptTypography = subTypographyCreate->CreateTypography();
+    subscriptTypography->Layout(maxWidth);
+
+    typographyCreate->PushStyle(textStyle);
+    typographyCreate->AppendText(text);
+    std::unique_ptr<OHOS::Rosen::Typography> typography  = typographyCreate->CreateTypography();
+    typography->Layout(maxWidth);
+
+    EXPECT_NE(superscriptTypography->GetHeight(), typography->GetHeight());
+    EXPECT_NE(superscriptTypography->GetLongestLineWithIndent(), typography->GetLongestLineWithIndent());
+    EXPECT_TRUE(skia::textlayout::nearlyEqual(superscriptTypography->GetHeight(), subscriptTypography->GetHeight()));
+    EXPECT_TRUE(skia::textlayout::nearlyEqual(superscriptTypography->GetLongestLineWithIndent(),
+        subscriptTypography->GetLongestLineWithIndent()));
+}
+
+/*
+ * @tc.name: OH_Drawing_TypographyInnerBadgeTypeTest002
+ * @tc.desc: Test the conflict between the text badge and fontFeature
+ * @tc.type: FUNC
+ */
+HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyInnerBadgeTypeTest002, TestSize.Level1)
+{
+    OHOS::Rosen::TypographyStyle typographyStyle;
+    OHOS::Rosen::TextStyle superscriptTextStyle;
+    superscriptTextStyle.fontSize = 50;
+    superscriptTextStyle.badgeType = TextBadgeType::SUPERSCRIPT;
+    superscriptTextStyle.fontFeatures.SetFeature("sups", 1);
+    OHOS::Rosen::TextStyle textStyle;
+    textStyle.fontSize = 50;
+    std::shared_ptr<OHOS::Rosen::FontCollection> fontCollection =
+        OHOS::Rosen::FontCollection::From(std::make_shared<txt::FontCollection>());
+    std::unique_ptr<OHOS::Rosen::TypographyCreate> typographyCreate =
+        OHOS::Rosen::TypographyCreate::Create(typographyStyle, fontCollection);
+    std::unique_ptr<OHOS::Rosen::TypographyCreate> superTypographyCreate =
+        OHOS::Rosen::TypographyCreate::Create(typographyStyle, fontCollection);
+
+    std::u16string text = u"你好测试 textstyle hello";
+    superTypographyCreate->PushStyle(superscriptTextStyle);
+    superTypographyCreate->AppendText(text);
+    std::unique_ptr<OHOS::Rosen::Typography> superscriptTypography = superTypographyCreate->CreateTypography();
+    double maxWidth = 10000.0;
+    superscriptTypography->Layout(maxWidth);
+
+    typographyCreate->PushStyle(textStyle);
+    typographyCreate->AppendText(text);
+    std::unique_ptr<OHOS::Rosen::Typography> typography  = typographyCreate->CreateTypography();
+    typography->Layout(maxWidth);
+
+    EXPECT_TRUE(skia::textlayout::nearlyEqual(superscriptTypography->GetHeight(), typography->GetHeight()));
+    EXPECT_TRUE(skia::textlayout::nearlyEqual(superscriptTypography->GetLongestLineWithIndent(),
+        typography->GetLongestLineWithIndent()));
+}
+
+/*
  * @tc.name: OH_Drawing_TypographyTest001
  * @tc.desc: test for get max width for Typography
  * @tc.type: FUNC
@@ -869,6 +956,43 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyTest023, TestSize.Level
     EXPECT_NEAR(typography0->GetLineWidth(0) + style.fontSize / 8 * 2, typography1->GetLineWidth(0), 1e-6f);
     EXPECT_NEAR(typography0->GetLongestLineWithIndent() + style.fontSize / 8 * 2,
         typography1->GetLongestLineWithIndent(), 1e-6f);
+}
+
+/*
+ * @tc.name: OH_Drawing_TypographyTest024
+ * @tc.desc: test for text effect
+ * @tc.type: FUNC
+ */
+HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyTest024, TestSize.Level1)
+{
+    OHOS::Rosen::TypographyStyle typographyStyle;
+    std::shared_ptr<OHOS::Rosen::FontCollection> fontCollection =
+        OHOS::Rosen::FontCollection::From(std::make_shared<txt::FontCollection>());
+    std::unique_ptr<OHOS::Rosen::TypographyCreate> typographyCreate =
+        OHOS::Rosen::TypographyCreate::Create(typographyStyle, fontCollection);
+    ASSERT_NE(typographyCreate, nullptr);
+    std::u16string text = u"test effect.";
+    typographyCreate->AppendText(text);
+    std::unique_ptr<OHOS::Rosen::Typography> typography = typographyCreate->CreateTypography();
+    ASSERT_NE(typography, nullptr);
+    double maxWidth = 100;
+    typography->Layout(maxWidth);
+    OHOS::Rosen::Drawing::Canvas canvas;
+    typography->Paint(&canvas, 0, 0);
+
+    std::unique_ptr<SPText::Paragraph> paragraphTemp = nullptr;
+    AdapterTxt::Typography* typographyImpl = static_cast<AdapterTxt::Typography*>(typography.get());
+    typographyImpl->paragraph_.swap(paragraphTemp);
+    EXPECT_EQ(typography->GetTextBlobRecordInfo().size(), 0);
+    typography->SetTextEffectState(true);
+    EXPECT_FALSE(typography->HasEnabledTextEffect());
+
+    typographyImpl->paragraph_.swap(paragraphTemp);
+    EXPECT_NE(typography->GetTextBlobRecordInfo().size(), 0);
+    typography->SetTextEffectState(true);
+    EXPECT_TRUE(typography->HasEnabledTextEffect());
+    typography->SetTextEffectAssociation(true);
+    EXPECT_TRUE(typography->GetTextEffectAssociation());
 }
 } // namespace Rosen
 } // namespace OHOS

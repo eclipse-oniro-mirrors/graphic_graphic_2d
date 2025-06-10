@@ -64,6 +64,7 @@ public:
     struct SurfaceParam {
         int width = 0;
         int height = 0;
+        GraphicColorGamut colorSpace = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
     };
 
     void SetDirtyType(RSRenderParamsDirtyType dirtyType);
@@ -168,14 +169,14 @@ public:
         return globalAlpha_;
     }
 
-    inline bool IsInBlackList() const
+    inline bool NodeGroupHasChildInBlackList() const
     {
-        return isInBlackList_;
+        return isNodeGroupHasChildInBlackList_;
     }
 
-    inline void SetInBlackList(bool isInBlackList)
+    inline void SetNodeGroupHasChildInBlackList(bool isInBlackList)
     {
-        isInBlackList_ = isInBlackList;
+        isNodeGroupHasChildInBlackList_ = isInBlackList;
     }
     
     inline bool IsSnapshotSkipLayer() const
@@ -213,6 +214,10 @@ public:
     void SetDrawingCacheType(RSDrawingCacheType cacheType);
     RSDrawingCacheType GetDrawingCacheType() const;
 
+    void OpincSetIsSuggest(bool isSuggest);
+    bool OpincIsSuggest() const;
+    void OpincUpdateSupportFlag(bool supportFlag);
+    bool OpincGetSupportFlag() const;
     void OpincUpdateRootFlag(bool suggestFlag);
     bool OpincGetRootFlag() const;
     void OpincSetCacheChangeFlag(bool state, bool lastFrameSynced);
@@ -231,7 +236,8 @@ public:
     bool GetCanvasDrawingSurfaceChanged() const;
     void SetCanvasDrawingSurfaceChanged(bool changeFlag);
     SurfaceParam GetCanvasDrawingSurfaceParams();
-    void SetCanvasDrawingSurfaceParams(int width, int height);
+    void SetCanvasDrawingSurfaceParams(int width, int height,
+        GraphicColorGamut colorSpace = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB);
 
     void SetStartingWindowFlag(bool b)
     {
@@ -246,6 +252,9 @@ public:
     {
         return startingWindowFlag_;
     }
+
+    bool IsRepaintBoundary() const;
+    void MarkRepaintBoundary(bool isRepaintBoundary);
 
     bool SetFirstLevelNode(NodeId firstLevelNodeId);
     NodeId GetFirstLevelNodeId() const;
@@ -379,6 +388,9 @@ public:
     void SetCacheNodeFrameRect(const Drawing::RectF& cacheNodeFrameRect);
     const Drawing::RectF& GetCacheNodeFrameRect() const;
 
+    void SetIsOnTheTree(bool isOnTheTree);
+    bool GetIsOnTheTree() const;
+
 protected:
     bool needSync_ = false;
     std::bitset<RSRenderParamsDirtyType::MAX_DIRTY_TYPE> dirtyType_;
@@ -406,7 +418,7 @@ private:
     bool isDrawingCacheChanged_ = false;
     std::atomic_bool isNeedUpdateCache_ = false;
     bool drawingCacheIncludeProperty_ = false;
-    bool isInBlackList_ = false;
+    bool isNodeGroupHasChildInBlackList_ = false;
     bool isSnapshotSkipLayer_ = false;
     bool shouldPaint_ = false;
     bool contentEmpty_  = false;
@@ -416,6 +428,8 @@ private:
     RSDrawingCacheType drawingCacheType_ = RSDrawingCacheType::DISABLED_CACHE;
     DirtyRegionInfoForDFX dirtyRegionInfoForDFX_;
     std::shared_ptr<RSFilter> foregroundFilterCache_ = nullptr;
+    bool isOpincSuggestFlag_ = false;
+    bool isOpincSupportFlag_ = false;
     bool isOpincRootFlag_ = false;
     bool isOpincStateChanged_ = false;
     bool startingWindowFlag_ = false;
@@ -438,6 +452,10 @@ private:
     bool windowKeyframeEnabled_ = false;
     bool needSwapBuffer_ = false;
     Drawing::RectF cacheNodeFrameRect_;
+    bool isRepaintBoundary_ = false;
+
+    // used for DFX
+    bool isOnTheTree_ = false;
 };
 } // namespace OHOS::Rosen
 #endif // RENDER_SERVICE_BASE_PARAMS_RS_RENDER_PARAMS_H

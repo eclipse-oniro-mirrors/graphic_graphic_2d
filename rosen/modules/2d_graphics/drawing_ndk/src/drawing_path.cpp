@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -84,6 +84,37 @@ void OH_Drawing_PathDestroy(OH_Drawing_Path* cPath)
         return;
     }
     delete CastToPath(cPath);
+}
+
+OH_Drawing_ErrorCode OH_Drawing_PathSetPath(OH_Drawing_Path* cPath, OH_Drawing_Path* cOther)
+{
+    if (cPath == nullptr || cOther == nullptr) {
+        return OH_DRAWING_ERROR_INVALID_PARAMETER;
+    }
+    Path* path = CastToPath(cPath);
+    Path* other = CastToPath(cOther);
+    path->SetPath(*other);
+    return OH_DRAWING_SUCCESS;
+}
+
+OH_Drawing_ErrorCode OH_Drawing_PathIsEmpty(OH_Drawing_Path* cPath, bool* isEmpty)
+{
+    if (cPath == nullptr || isEmpty == nullptr) {
+        return OH_DRAWING_ERROR_INVALID_PARAMETER;
+    }
+    *isEmpty = CastToPath(cPath)->IsEmpty();
+    return OH_DRAWING_SUCCESS;
+}
+
+OH_Drawing_ErrorCode OH_Drawing_PathIsRect(OH_Drawing_Path* cPath, OH_Drawing_Rect* cRect, bool* isRect)
+{
+    if (cPath == nullptr || isRect == nullptr) {
+        return OH_DRAWING_ERROR_INVALID_PARAMETER;
+    }
+    Path* path = CastToPath(cPath);
+    Rect* rect = CastToRect(cRect);
+    *isRect = path->IsRect(rect);
+    return OH_DRAWING_SUCCESS;
 }
 
 void OH_Drawing_PathMoveTo(OH_Drawing_Path* cPath, float x, float y)
@@ -493,6 +524,17 @@ void OH_Drawing_PathSetFillType(OH_Drawing_Path* cPath, OH_Drawing_PathFillType 
     path->SetFillStyle(static_cast<PathFillType>(fillstyle));
 }
 
+OH_Drawing_ErrorCode OH_Drawing_PathGetFillType(OH_Drawing_Path* cPath, OH_Drawing_PathFillType* pathFillType)
+{
+    if (cPath == nullptr || pathFillType == nullptr) {
+        return OH_DRAWING_ERROR_INVALID_PARAMETER;
+    }
+    Path* path = CastToPath(cPath);
+    PathFillType* type = reinterpret_cast<PathFillType*>(pathFillType);
+    *type = path->GetFillStyle();
+    return OH_DRAWING_SUCCESS;
+}
+
 void OH_Drawing_PathClose(OH_Drawing_Path* cPath)
 {
     Path* path = CastToPath(cPath);
@@ -609,6 +651,56 @@ bool OH_Drawing_PathGetMatrix(OH_Drawing_Path* cPath, bool forceClosed,
         return false;
     }
     return path->GetMatrix(forceClosed, distance, matrix, static_cast<PathMeasureMatrixFlags>(flag));
+}
+
+OH_Drawing_ErrorCode OH_Drawing_PathApproximate(OH_Drawing_Path* cPath, float acceptableError,
+    float* vals, uint32_t* count)
+{
+    Path* path = CastToPath(cPath);
+    if (path == nullptr || count == nullptr) {
+        return OH_DRAWING_ERROR_INVALID_PARAMETER;
+    }
+    if (acceptableError < 0.0f) {
+        return OH_DRAWING_ERROR_PARAMETER_OUT_OF_RANGE;
+    }
+    std::vector<scalar> approximation;
+    path->Approximate(acceptableError, approximation);
+    uint32_t requiredSize = static_cast<uint32_t>(approximation.size());
+    *count = requiredSize;
+    if (vals == nullptr) {
+        return OH_DRAWING_SUCCESS;
+    }
+    for (uint32_t i = 0; i < requiredSize; i++) {
+        vals[i] = static_cast<float>(approximation[i]);
+    }
+    return OH_DRAWING_SUCCESS;
+}
+
+OH_Drawing_ErrorCode OH_Drawing_PathInterpolate(OH_Drawing_Path* cPath, OH_Drawing_Path* cOther, float weight,
+    bool* success, OH_Drawing_Path* cInterpolatedPath)
+{
+    Path* path = CastToPath(cPath);
+    Path* other = CastToPath(cOther);
+    Path* interpolatedPath = CastToPath(cInterpolatedPath);
+    if (path == nullptr || other == nullptr || interpolatedPath == nullptr || success == nullptr) {
+        return OH_DRAWING_ERROR_INVALID_PARAMETER;
+    }
+    if (weight < 0 || weight > 1) {
+        return OH_DRAWING_ERROR_PARAMETER_OUT_OF_RANGE;
+    }
+    *success = path->Interpolate(*other, weight, *interpolatedPath);
+    return OH_DRAWING_SUCCESS;
+}
+
+OH_Drawing_ErrorCode OH_Drawing_PathIsInterpolate(OH_Drawing_Path* cPath, OH_Drawing_Path* other, bool* result)
+{
+    Path* path = CastToPath(cPath);
+    Path* otherPath = CastToPath(other);
+    if (path == nullptr || otherPath == nullptr || result == nullptr) {
+        return OH_DRAWING_ERROR_INVALID_PARAMETER;
+    }
+    *result = path->IsInterpolate(*otherPath);
+    return OH_DRAWING_SUCCESS;
 }
 
 void OH_Drawing_PathGetBounds(OH_Drawing_Path* cPath, OH_Drawing_Rect* cRect)

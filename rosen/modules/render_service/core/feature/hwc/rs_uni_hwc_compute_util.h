@@ -22,6 +22,13 @@
 namespace OHOS {
 namespace Rosen {
 class RSUniHwcComputeUtil {
+struct HwcPropertyContext {
+    float alpha = 0.f;
+    bool isNodeRenderByDrawingCache = false;
+    bool isNodeRenderByChildNode = false;
+    Drawing::Matrix totalMatrix;
+};
+
 public:
     static void CalcSrcRectByBufferFlip(RSSurfaceRenderNode& node, const ScreenInfo& screenInfo);
     static Drawing::Rect CalcSrcRectByBufferRotation(const SurfaceBuffer& buffer,
@@ -40,19 +47,20 @@ public:
         const Drawing::Matrix& gravityMatrix, const Drawing::Matrix& scalingModeMatrix);
     static void UpdateRealSrcRect(RSSurfaceRenderNode& node, const RectI& absRect);
     static GraphicTransformType GetConsumerTransform(const RSSurfaceRenderNode& node,
-        const sptr<SurfaceBuffer> buffer, const sptr<IConsumerSurface> consumer);
+        const sptr<SurfaceBuffer>& buffer, const sptr<IConsumerSurface>& consumer);
     static GraphicTransformType GetRotateTransformForRotationFixed(RSSurfaceRenderNode& node,
         sptr<IConsumerSurface> consumer);
-    static void UpdateHwcNodeProperty(std::shared_ptr<RSSurfaceRenderNode> hwcNode);
+    static void UpdateHwcNodeProperty(const std::shared_ptr<RSSurfaceRenderNode>& hwcNode);
     static bool HasNonZRotationTransform(const Drawing::Matrix& matrix);
     static GraphicTransformType GetLayerTransform(RSSurfaceRenderNode& node, const ScreenInfo& screenInfo);
     static std::optional<Drawing::Matrix> GetMatrix(const std::shared_ptr<RSRenderNode>& hwcNode);
-    static void IntersectRect(Drawing::Rect& rect1, const Drawing::Rect& rect2);
+    static bool IntersectRect(Drawing::Rect& result, const Drawing::Rect& other);
     static bool IsBlendNeedFilter(RSRenderNode& node);
     static bool IsBlendNeedBackground(RSRenderNode& node);
     static bool IsBlendNeedChildNode(RSRenderNode& node);
     static bool IsDangerousBlendMode(int32_t blendMode, int32_t blendApplyType);
     static bool IsForegroundColorStrategyValid(RSRenderNode& node);
+    static float GetFloatRotationDegreeFromMatrix(const Drawing::Matrix& matrix);
 
 private:
     template <typename T>
@@ -89,6 +97,11 @@ private:
             }
         }
     }
+    static inline void UpdateHwcNodeDrawingCache(const std::shared_ptr<RSRenderNode>& parent, HwcPropertyContext& ctx);
+    static inline void UpdateHwcNodeBlendNeedChildNode(const std::shared_ptr<RSRenderNode>& parent,
+        HwcPropertyContext& ctx);
+    static inline void UpdateHwcNodeAlpha(const std::shared_ptr<RSRenderNode>& parent, HwcPropertyContext& ctx);
+    static inline void UpdateHwcNodeTotalMatrix(const std::shared_ptr<RSRenderNode>& parent, HwcPropertyContext& ctx);
     template<typename T>
     static std::shared_ptr<RSRenderProperty<T>> GetPropertyFromModifier(const RSRenderNode& node, RSModifierType type);
     static void CheckForceHardwareAndUpdateDstRect(RSSurfaceRenderNode& node);

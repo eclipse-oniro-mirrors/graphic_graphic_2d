@@ -134,8 +134,8 @@ std::shared_ptr<Media::PixelMap> RSRenderServiceClient::CreatePixelMapFromSurfac
 }
 
 bool RSRenderServiceClient::TakeSurfaceCapture(NodeId id, std::shared_ptr<SurfaceCaptureCallback> callback,
-    const RSSurfaceCaptureConfig& captureConfig, const RSSurfaceCaptureBlurParam& blurParam,
-    const Drawing::Rect& specifiedAreaRect)
+    const RSSurfaceCaptureConfig& captureConfig, std::unique_ptr<Media::PixelMap> clientCapturePixelMap,
+    const RSSurfaceCaptureBlurParam& blurParam, const Drawing::Rect& specifiedAreaRect)
 {
     return false;
 }
@@ -156,6 +156,12 @@ bool RSRenderServiceClient::TakeSelfSurfaceCapture(NodeId id, std::shared_ptr<Su
 bool RSRenderServiceClient::SetWindowFreezeImmediately(NodeId id, bool isFreeze,
     std::shared_ptr<SurfaceCaptureCallback> callback, const RSSurfaceCaptureConfig& captureConfig,
     const RSSurfaceCaptureBlurParam& blurParam)
+{
+    return false;
+}
+
+bool RSRenderServiceClient::TakeUICaptureInRange(
+    NodeId id, std::shared_ptr<SurfaceCaptureCallback> callback, const RSSurfaceCaptureConfig& captureConfig)
 {
     return false;
 }
@@ -770,6 +776,11 @@ bool RSRenderServiceClient::UnregisterSurfaceBufferCallback(pid_t pid, uint64_t 
 
 void RSRenderServiceClient::SetLayerTop(const std::string &nodeIdStr, bool isTop)
 {
+}
+
+bool RSRenderServiceClient::RegisterTransactionDataCallback(int32_t pid, uint64_t timeStamp, std::function<void()> callback)
+{
+    return false;
 }
 
 void RSRenderServiceClient::SetColorFollow(const std::string &nodeIdStr, bool isColorFollow)

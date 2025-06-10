@@ -36,9 +36,27 @@
 
 namespace OHOS {
 namespace Rosen {
+/**
+ * @class RSNode
+ *
+ * @brief The class for RSNode(render service node).
+ */
 class RSNode;
+
+/**
+ * @class RSUIContext
+ *
+ * @brief The class for RSUIContext.
+ */
 class RSUIContext;
 
+/**
+ * @class RSShowingPropertiesFreezer
+ *
+ * @brief The class for freezing properties of a node.
+ *
+ * Used to cancel the animation and get the value of the property.
+ */
 class RSC_EXPORT RSShowingPropertiesFreezer {
 public:
     /**
@@ -244,20 +262,6 @@ public:
     std::optional<Vector4f> GetBorderWidth() const;
 
     /**
-     * @brief Gets the background filter.
-     *
-     * @return The pointer to background filter.
-     */
-    std::optional<std::shared_ptr<RSFilter>> GetBackgroundFilter() const;
-
-    /**
-     * @brief Gets the filter.
-     *
-     * @return The pointer to filter.
-     */
-    std::optional<std::shared_ptr<RSFilter>> GetFilter() const;
-
-    /**
      * @brief Gets the color of shadow.
      *
      * @return The color of shadow.
@@ -307,6 +311,13 @@ public:
     std::optional<float> GetSpherizeDegree() const;
 
     /**
+     * @brief Gets the brightness ratio of HDR UI component.
+     *
+     * @return The HDR UI component brightness ratio.
+     */
+    std::optional<float> GetHDRUIBrightness() const;
+
+    /**
      * @brief Gets the degree of light up effect.
      *
      * @return The light up effect degree.
@@ -320,7 +331,18 @@ public:
      */
     std::optional<float> GetDynamicDimDegree() const;
 
+    /**
+     * @brief Gets the transformation progress of the meteor animation effect.
+     *
+     * @return The transformation progress of the meteor animation effect.
+     */
     std::optional<float> GetAttractionFractionValue() const;
+
+    /**
+     * @brief Gets the destination point of the meteor animation effect.
+     *
+     * @return The destination point of the meteor animation effect.
+     */
     std::optional<Vector2f> GetAttractionDstPointValue() const;
 
 private:

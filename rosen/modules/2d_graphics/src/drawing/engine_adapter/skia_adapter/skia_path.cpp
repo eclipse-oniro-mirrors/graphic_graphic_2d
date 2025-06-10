@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -53,7 +53,11 @@ bool SkiaPath::InitWithSVGString(const std::string& str)
 std::string SkiaPath::ConvertToSVGString() const
 {
     SkString skString;
+#ifdef USE_M133_SKIA
+    skString = SkParsePath::ToSVGString(path_);
+#else
     SkParsePath::ToSVGString(path_, &skString);
+#endif
 
     return skString.c_str();
 }
@@ -124,7 +128,7 @@ void SkiaPath::RArcTo(scalar rx, scalar ry, scalar angle, PathDirection directio
 {
     SkPathDirection pathDir = static_cast<SkPathDirection>(direction);
     SkPath::ArcSize arcLarge = SkPath::ArcSize::kSmall_ArcSize;
-    path_.arcTo(rx, ry, angle, arcLarge, pathDir, dx, dy);
+    path_.rArcTo(rx, ry, angle, arcLarge, pathDir, dx, dy);
     isChanged_ = true;
 }
 
@@ -301,6 +305,27 @@ bool SkiaPath::Interpolate(const Path& ending, scalar weight, Path& out)
     return isSuccess;
 }
 
+int SkiaPath::CountVerbs() const
+{
+    return path_.countVerbs();
+}
+
+Point SkiaPath::GetPoint(int index) const
+{
+    SkPoint point = path_.getPoint(index);
+    return Point(point.x(), point.y());
+}
+
+bool SkiaPath::IsInterpolate(const Path& other)
+{
+    bool isSuccess = false;
+    auto skPathImpl = other.GetImpl<SkiaPath>();
+    if (skPathImpl != nullptr) {
+        isSuccess = path_.isInterpolatable(skPathImpl->GetPath());
+    }
+    return isSuccess;
+}
+
 bool SkiaPath::InitWithInterpolate(const Path& srcPath, const Path& endingPath, scalar weight)
 {
     const SkPath& srcSkPath = srcPath.GetImpl<SkiaPath>()->GetPath();
@@ -389,6 +414,16 @@ void SkiaPath::Reset()
     isChanged_ = true;
 }
 
+void SkiaPath::SetLastPoint(scalar x, scalar y)
+{
+    path_.setLastPt(x, y);
+}
+
+void SkiaPath::ReWind()
+{
+    path_.rewind();
+}
+
 void SkiaPath::Close()
 {
     path_.close();
@@ -399,6 +434,16 @@ void SkiaPath::SetPath(const SkPath& path)
 {
     path_ = path;
     isChanged_ = true;
+}
+
+void SkiaPath::SetPath(const Path& path)
+{
+    auto skiaPathImpl = path.GetImpl<SkiaPath>();
+    if (skiaPathImpl == nullptr) {
+        return;
+    }
+    auto skPath = skiaPathImpl->GetPath();
+    path_ = skPath;
 }
 
 const SkPath& SkiaPath::GetPath() const
@@ -470,6 +515,18 @@ bool SkiaPath::IsClosed(bool forceClosed)
     return pathMeasure_->isClosed();
 }
 
+bool SkiaPath::IsEmpty()
+{
+    return path_.isEmpty();
+}
+
+bool SkiaPath::IsRect(Rect* rect, bool* isClosed, PathDirection* direction)
+{
+    SkPathDirection* skDirection = reinterpret_cast<SkPathDirection*>(direction);
+    SkRect* skRect = reinterpret_cast<SkRect*>(rect);
+    return path_.isRect(skRect, isClosed, skDirection);
+}
+
 bool SkiaPath::GetMatrix(bool forceClosed, float distance, Matrix* matrix, PathMeasureMatrixFlags flag)
 {
     if (matrix == nullptr) {
@@ -491,7 +548,11 @@ std::shared_ptr<Data> SkiaPath::Serialize() const
     if (path_.isEmpty()) {
         LOGE("SkiaPath::Serialize, path is empty!");
     }
+#ifdef USE_M133_SKIA
+    SkBinaryWriteBuffer writer({});
+#else
     SkBinaryWriteBuffer writer;
+#endif
     writer.writePath(path_);
     size_t length = writer.bytesWritten();
     std::shared_ptr<Data> data = std::make_shared<Data>();

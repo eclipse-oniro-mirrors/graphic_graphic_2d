@@ -180,15 +180,6 @@
     "commandListRepeat": 1
   },
   {
-    "testCaseDesc": "COMMIT_TRANSACTION_TEST_021",
-    "interfaceName": "COMMIT_TRANSACTION",
-    "inputParams": "WriteRSTransactionData",
-    "writeInterfaceToken": false,
-    "messageOption": "TF_ASYNC",
-    "commandList": "RSUpdatePropertyFilter*100",
-    "commandListRepeat": 1
-  },
-  {
     "testCaseDesc": "COMMIT_TRANSACTION_TEST_022",
     "interfaceName": "COMMIT_TRANSACTION",
     "inputParams": "WriteRSTransactionData",
@@ -2299,6 +2290,13 @@
     "testCaseDesc": "NOTIFY_SCREEN_SWITCHED_TEST_001",
     "interfaceName": "NOTIFY_SCREEN_SWITCHED",
     "inputParams": "",
+    "writeInterfaceToken": true,
+    "messageOption": "TF_ASYNC"
+  },
+  {
+    "testCaseDesc": "REGISTER_TRANSACTION_DATA_CALLBACK_TEST_001",
+    "interfaceName": "REGISTER_TRANSACTION_DATA_CALLBACK",
+    "inputParams": "WriteInt32;WriteUint64;WriteTransactionDataCallbackSptr",
     "writeInterfaceToken": true,
     "messageOption": "TF_ASYNC"
   }

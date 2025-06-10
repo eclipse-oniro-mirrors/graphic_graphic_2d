@@ -121,6 +121,29 @@ HWTEST_F(RSCanvasDrawingRenderNodeDrawableTest, OnDrawTest, TestSize.Level1)
 }
 
 /**
+ * @tc.name: OnDrawWithoutChildren
+ * @tc.desc: OnDrawWithoutChildren
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSCanvasDrawingRenderNodeDrawableTest, OnDrawWithoutChildren, TestSize.Level1)
+{
+    auto drawable = RSCanvasDrawingRenderNodeDrawableTest::CreateDrawable();
+
+    Drawing::Canvas canvas;
+    drawable->renderParams_->shouldPaint_ = true;
+    drawable->renderParams_->contentEmpty_ = false;
+    RSUniRenderThread::GetCaptureParam().endNodeId_ = drawable->renderParams_->GetId();
+    canvas.SetUICapture(true);
+    drawable->OnDraw(canvas);
+    ASSERT_FALSE(drawable->renderParams_->GetCanvasDrawingSurfaceChanged());
+    RSUniRenderThread::GetCaptureParam().endNodeId_ = INVALID_NODEID;
+    drawable->renderParams_->canvasDrawingNodeSurfaceChanged_ = true;
+    drawable->OnDraw(canvas);
+    ASSERT_TRUE(drawable->renderParams_->GetCanvasDrawingSurfaceChanged());
+}
+
+/**
  * @tc.name: DrawRenderContent
  * @tc.desc: Test If DrawRenderContent Can Run
  * @tc.type: FUNC
@@ -347,7 +370,6 @@ HWTEST_F(RSCanvasDrawingRenderNodeDrawableTest, FlushTest, TestSize.Level1)
     drawable->recordingCanvas_ = nullptr;
     drawable->canvas_ = nullptr;
     drawable->Flush(width, height, context, id, canvas);
-    EXPECT_EQ(drawable->canvas_, nullptr);
 }
 
 /**
@@ -529,6 +551,31 @@ HWTEST_F(RSCanvasDrawingRenderNodeDrawableTest, ResetSurfaceTest002, TestSize.Le
     result = drawable->ResetSurfaceForGL(width, height, canvas);
     EXPECT_EQ(result, true);
     resultVK = drawable->ResetSurfaceForVK(width, height, canvas);
+    EXPECT_EQ(resultVK, true);
+}
+
+/**
+ * @tc.name: ResetSurface
+ * @tc.desc: Test If ResetSurface Can Run
+ * @tc.type: FUNC
+ * @tc.require: #ICDBD1
+ */
+HWTEST_F(RSCanvasDrawingRenderNodeDrawableTest, ResetSurfaceTest003, TestSize.Level1)
+{
+    auto node = std::make_shared<RSRenderNode>(0);
+    auto drawable = std::make_shared<RSCanvasDrawingRenderNodeDrawable>(std::move(node));
+    Drawing::Canvas drawingCanvas;
+    RSPaintFilterCanvas canvas(&drawingCanvas);
+    int width = 1;
+    int height = 1;
+    canvas.recordingState_ = true;
+    auto result = drawable->ResetSurfaceForGL(width, height, canvas);
+    EXPECT_EQ(result, true);
+
+    drawable->renderParams_ = std::make_unique<RSRenderParams>(0);
+    drawable->renderParams_->surfaceParams_.colorSpace = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3;
+    ASSERT_TRUE(drawable->GetRenderParams());
+    auto resultVK = drawable->ResetSurfaceForVK(width, height, canvas);
     EXPECT_EQ(resultVK, true);
 }
 

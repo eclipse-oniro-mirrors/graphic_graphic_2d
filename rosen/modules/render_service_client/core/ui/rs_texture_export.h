@@ -35,6 +35,11 @@
 namespace OHOS {
 namespace Rosen {
 
+/**
+ * @class RSTextureExport
+ *
+ * @brief The class for exporting textures from a render service node.
+ */
 class RSC_EXPORT RSTextureExport {
 public:
     /**

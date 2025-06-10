@@ -22,6 +22,7 @@
 
 namespace OHOS {
 namespace Rosen {
+class RSShaderMask;
 
 class RSB_EXPORT RSRenderColorGradientFilterPara : public RSRenderFilterParaBase {
 
@@ -39,13 +40,25 @@ public:
 
     virtual bool ReadFromParcel(Parcel& parcel) override;
 
-    static std::shared_ptr<RSRenderMaskPara> CreateRenderProperty(RSUIFilterType type);
+    static std::shared_ptr<RSRenderMaskPara> CreateMaskRenderProperty(RSUIFilterType type);
 
     virtual std::vector<std::shared_ptr<RSRenderPropertyBase>> GetLeafRenderProperties() override;
 
     std::shared_ptr<RSRenderMaskPara> GetRenderMask();
 
+    bool ParseFilterValues() override;
+    void GenerateGEVisualEffect(std::shared_ptr<Drawing::GEVisualEffectContainer> visualEffectContainer) override;
+
+    const std::vector<float> GetColors() const;
+    const std::vector<float> GetPositions() const;
+    const std::vector<float> GetStrengths() const;
+    const std::shared_ptr<RSShaderMask>& GetMask() const;
+
 private:
+    std::vector<float> colors_;
+    std::vector<float> positions_;
+    std::vector<float> strengths_;
+    std::shared_ptr<RSShaderMask> mask_ = nullptr;
     RSUIFilterType maskType_ = RSUIFilterType::NONE;
 };
 } // namespace Rosen

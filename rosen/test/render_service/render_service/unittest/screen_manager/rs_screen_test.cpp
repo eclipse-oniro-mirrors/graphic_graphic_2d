@@ -1162,6 +1162,40 @@ HWTEST_F(RSScreenTest, SetScreenBacklight_002, testing::ext::TestSize.Level1)
 }
 
 /*
+ * @tc.name: SetScreenBacklight_003
+ * @tc.desc: SetScreenBacklight Test, trigger branch -- IsVirtual()
+ * @tc.type: FUNC
+ * @tc.require: issueIC9IVH
+ */
+HWTEST_F(RSScreenTest, SetScreenBacklight_003, testing::ext::TestSize.Level1)
+{
+    ScreenId id = 0;
+    auto rsScreen = std::make_shared<impl::RSScreen>(id, true, nullptr, nullptr);
+    ASSERT_NE(nullptr, rsScreen);
+    rsScreen->SetScreenBacklight(1);
+}
+
+/*
+ * @tc.name: SetScreenBacklight_004
+ * @tc.desc: SetScreenBacklight Test, trigger branch hasLogBackLightAfterPowerStatusChanged_ is true
+ * @tc.type: FUNC
+ * @tc.require: issueIC9IVH
+ */
+HWTEST_F(RSScreenTest, SetScreenBacklight_004, testing::ext::TestSize.Level1)
+{
+    ScreenId id = 0;
+    auto rsScreen = std::make_shared<impl::RSScreen>(id, false, nullptr, nullptr);
+    ASSERT_NE(nullptr, rsScreen);
+    rsScreen->hdiScreen_->device_ = hdiDeviceMock_;
+    EXPECT_CALL(*hdiDeviceMock_, SetScreenBacklight(_, _)).Times(2).WillOnce(testing::Return(1));
+    rsScreen->hasLogBackLightAfterPowerStatusChanged_ = false;
+    rsScreen->SetScreenBacklight(1);
+    EXPECT_EQ(true, rsScreen->hasLogBackLightAfterPowerStatusChanged_);
+    rsScreen->SetScreenBacklight(1);
+    EXPECT_EQ(true, rsScreen->hasLogBackLightAfterPowerStatusChanged_);
+}
+
+/*
  * @tc.name: GetScreenBacklight_001
  * @tc.desc: GetScreenBacklight Test, hdiScreen_->GetScreenBacklight(level) < 0
  * @tc.type: FUNC
@@ -2063,6 +2097,32 @@ HWTEST_F(RSScreenTest, GetSecurityMask001, testing::ext::TestSize.Level1)
     rsScreen->SetSecurityMask(nullptr);
     auto SecurityMaskGet = rsScreen->GetSecurityMask();
     ASSERT_EQ(SecurityMaskGet, nullptr);
+}
+
+/*
+ * @tc.name: GetVirtualSecLayerOption001
+ * @tc.desc: GetVirtualSecLayerOption Test
+ * @tc.type: FUNC
+ * @tc.require: issueICCRA8
+ */
+HWTEST_F(RSScreenTest, GetVirtualSecLayerOption001, testing::ext::TestSize.Level1)
+{
+    auto csurface = IConsumerSurface::Create();
+    ASSERT_NE(csurface, nullptr);
+    auto producer = csurface->GetProducer();
+    auto psurface = Surface::CreateSurfaceAsProducer(producer);
+    ASSERT_NE(psurface, nullptr);
+    VirtualScreenConfigs configs;
+    configs.id = 1;
+    configs.mirrorId = 0;
+    configs.name = "virtualScreen02";
+    configs.width = 480;
+    configs.height = 320;
+    configs.surface = psurface;
+    configs.flags = 1;
+    auto rsScreen = std::make_shared<impl::RSScreen>(configs);
+    ASSERT_NE(nullptr, rsScreen);
+    ASSERT_EQ(rsScreen->GetVirtualSecLayerOption(), 1);
 }
 
 //yangning

@@ -18,11 +18,11 @@
 #include "rs_trace.h"
 
 #include "common/rs_optional_trace.h"
+#include "feature/uifirst/rs_uifirst_manager.h"
 #include "pipeline/render_thread/rs_uni_render_thread.h"
 #include "pipeline/rs_canvas_render_node.h"
 #include "pipeline/rs_paint_filter_canvas.h"
 #include "platform/common/rs_log.h"
-#include "utils/graphic_coretrace.h"
 #include "utils/rect.h"
 #include "utils/region.h"
 #include "include/gpu/vk/GrVulkanTrackerInterface.h"
@@ -45,8 +45,6 @@ RSRenderNodeDrawable::Ptr RSCanvasRenderNodeDrawable::OnGenerate(std::shared_ptr
  */
 void RSCanvasRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
 {
-    RECORD_GPURESOURCE_CORETRACE_CALLER_WITHNODEID(Drawing::CoreFunction::
-        RS_RSCANVASRENDERNODEDRAWABLE_ONDRAW, GetId());
 #ifdef RS_ENABLE_GPU
     SetDrawSkipType(DrawSkipType::NONE);
     if (!ShouldPaint()) {
@@ -75,9 +73,9 @@ void RSCanvasRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     float hdrBrightness = paintFilterCanvas->GetHDRBrightness();
     paintFilterCanvas->SetHDRBrightness(params->GetHDRBrightness());
     auto& uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
-    if ((UNLIKELY(!uniParam) || uniParam->IsOpDropped()) && GetOpDropped() &&
-        QuickReject(canvas, params->GetLocalDrawRect()) && isOpincDraw && !params->HasUnobscuredUEC() &&
-        LIKELY(linkedDrawable == nullptr)) {
+    SetOcclusionCullingEnabled((!uniParam || uniParam->IsOpDropped()) && GetOpDropped() &&
+        isOpincDraw && !params->HasUnobscuredUEC() && LIKELY(linkedDrawable == nullptr));
+    if (IsOcclusionCullingEnabled() && QuickReject(canvas, params->GetLocalDrawRect())) {
         SetDrawSkipType(DrawSkipType::OCCLUSION_SKIP);
         return;
     }
@@ -106,6 +104,7 @@ void RSCanvasRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         }
         CheckCacheTypeAndDraw(canvas, *params);
         GetOpincDrawCache().AfterDrawCache(canvas, *params, isOpincDropNodeExt_, opincRootTotalCount_);
+        GetOpincDrawCache().DrawOpincDisabledDfx(canvas, *params);
     } else {
         RSRenderNodeDrawable::OnDraw(canvas);
     }
@@ -119,8 +118,6 @@ void RSCanvasRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
  */
 void RSCanvasRenderNodeDrawable::OnCapture(Drawing::Canvas& canvas)
 {
-    RECORD_GPURESOURCE_CORETRACE_CALLER(Drawing::CoreFunction::
-        RS_RSCANVASRENDERNODEDRAWABLE_ONCAPTURE);
 #ifdef RS_ENABLE_GPU
     if (!ShouldPaint()) {
         return;
@@ -129,8 +126,9 @@ void RSCanvasRenderNodeDrawable::OnCapture(Drawing::Canvas& canvas)
     auto paintFilterCanvas = static_cast<RSPaintFilterCanvas*>(&canvas);
     RSAutoCanvasRestore acr(paintFilterCanvas, RSPaintFilterCanvas::SaveType::kCanvasAndAlpha);
     params->ApplyAlphaAndMatrixToCanvas(*paintFilterCanvas);
-    if (RSUniRenderThread::GetCaptureParam().isSoloNodeUiCapture_) {
-        RSRenderNodeDrawable::OnDraw(canvas);
+    if (!RSUiFirstProcessStateCheckerHelper::CheckMatchAndWaitNotify(*params, false)) {
+        SetDrawSkipType(DrawSkipType::CHECK_MATCH_AND_WAIT_NOTIFY_FAIL);
+        RS_LOGE("RSCanvasRenderNodeDrawable::OnCapture CheckMatchAndWaitNotify failed");
         return;
     }
     RSRenderNodeSingleDrawableLocker singleLocker(this);
@@ -140,6 +138,14 @@ void RSCanvasRenderNodeDrawable::OnCapture(Drawing::Canvas& canvas)
         if (RSSystemProperties::GetSingleDrawableLockerEnabled()) {
             return;
         }
+    }
+    auto& captureParam = RSUniRenderThread::GetCaptureParam();
+    bool stopDrawForRangeCapture = (canvas.GetUICapture() &&
+        captureParam.endNodeId_ == GetId() &&
+        captureParam.endNodeId_ != INVALID_NODEID);
+    if (captureParam.isSoloNodeUiCapture_ || stopDrawForRangeCapture) {
+        RSRenderNodeDrawable::OnDraw(canvas);
+        return;
     }
     if (LIKELY(isDrawingCacheEnabled_)) {
         if (canvas.GetUICapture() && !drawBlurForCache_) {

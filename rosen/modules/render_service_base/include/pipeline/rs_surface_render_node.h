@@ -45,6 +45,7 @@
 #ifndef ROSEN_CROSS_PLATFORM
 #include "surface_buffer.h"
 #include "sync_fence.h"
+#include "params/rs_surface_render_params.h"
 #endif
 #include "ipc_security/rs_ipc_interface_code_access_verifier_base.h"
 #ifdef ENABLE_FULL_SCREEN_RECONGNIZE
@@ -53,9 +54,63 @@
 
 namespace OHOS {
 namespace Rosen {
+class OcclusionNode;
 class RSCommand;
 class RSDirtyRegionManager;
+class RSOcclusionHandler;
 class RSSurfaceHandler;
+
+// Used for control-level occlusion culling scene info and culled nodes transmission.
+// Maintained by the Dirty Regions feature team.
+class RSB_EXPORT OcclusionParams {
+public:
+    // Enables/Disables control-level occlusion culling for the node's subtree
+    void UpdateOcclusionCullingStatus(bool enable, NodeId keyOcclusionNodeId);
+
+    bool IsOcclusionCullingOn()
+    {
+        return !keyOcclusionNodeIds_.empty();
+    }
+
+    void SetOcclusionHandler(std::shared_ptr<RSOcclusionHandler> occlusionHandler)
+    {
+        occlusionHandler_ = occlusionHandler;
+    }
+
+    std::shared_ptr<RSOcclusionHandler> GetOcclusionHandler() const
+    {
+        return occlusionHandler_;
+    }
+
+    std::unordered_set<NodeId> TakeCulledNodes()
+    {
+        return std::move(culledNodes_);
+    }
+
+    void SetCulledNodes(std::unordered_set<NodeId>&& culledNodes)
+    {
+        culledNodes_ = std::move(culledNodes);
+    }
+
+    std::unordered_set<NodeId> TakeCulledEntireSubtree()
+    {
+        return std::move(culledEntireSubtree_);
+    }
+
+    void SetCulledEntireSubtree(std::unordered_set<NodeId>&& culledEntireSubtree)
+    {
+        culledEntireSubtree_ = std::move(culledEntireSubtree);
+    }
+
+    void CheckKeyOcclusionNodeValidity(
+        const std::unordered_map<NodeId, std::shared_ptr<OcclusionNode>>& occlusionNodes);
+private:
+    std::unordered_multiset<NodeId> keyOcclusionNodeIds_;
+    std::shared_ptr<RSOcclusionHandler> occlusionHandler_;
+    std::unordered_set<NodeId> culledNodes_;
+    std::unordered_set<NodeId> culledEntireSubtree_;
+};
+
 class RSB_EXPORT RSSurfaceRenderNode : public RSRenderNode {
 public:
     using WeakPtr = std::weak_ptr<RSSurfaceRenderNode>;
@@ -78,16 +133,6 @@ public:
     bool IsAppWindow() const
     {
         return nodeType_ == RSSurfaceNodeType::APP_WINDOW_NODE;
-    }
-
-    bool IsScbWindowType() const
-    {
-        return surfaceWindowType_ == SurfaceWindowType::SYSTEM_SCB_WINDOW ||
-               surfaceWindowType_ == SurfaceWindowType::SCB_DESKTOP ||
-               surfaceWindowType_ == SurfaceWindowType::SCB_WALLPAPER ||
-               surfaceWindowType_ == SurfaceWindowType::SCB_SCREEN_LOCK ||
-               surfaceWindowType_ == SurfaceWindowType::SCB_NEGATIVE_SCREEN ||
-               surfaceWindowType_ == SurfaceWindowType::SCB_DROPDOWN_PANEL;
     }
 
     bool IsStartingWindow() const
@@ -350,6 +395,9 @@ public:
 
     bool IsHardwareForcedDisabled() const
     {
+        if (GetTunnelLayerId()) {
+            return false;
+        }
         // a protected node not on the tree need to release buffer when producer produce buffers
         // release buffer in ReleaseSelfDrawingNodeBuffer function
         if ((specialLayerManager_.Find(SpecialLayerType::PROTECTED) || isHardwareEnableHint_) && IsOnTheTree()) {
@@ -565,6 +613,7 @@ public:
     void SetSnapshotSkipLayer(bool isSnapshotSkipLayer);
     void SetProtectedLayer(bool isProtectedLayer);
     void SetIsOutOfScreen(bool isOutOfScreen);
+    void UpdateBlackListStatus(ScreenId virtualScreenId, bool isBlackList);
 
     // get whether it is a security/skip layer itself
     LeashPersistentId GetLeashPersistentId() const;
@@ -588,6 +637,7 @@ public:
 
     void UpdateSpecialLayerInfoByTypeChange(uint32_t type, bool isSpecialLayer);
     void UpdateSpecialLayerInfoByOnTreeStateChange();
+    void SyncBlackListInfoToFirstLevelNode();
     void SyncPrivacyContentInfoToFirstLevelNode();
     void SyncColorGamutInfoToFirstLevelNode();
 
@@ -621,17 +671,28 @@ public:
     void SetForceUIFirstChanged(bool forceUIFirstChanged);
     bool GetForceUIFirstChanged();
 
+    // Unified DSS synthesis switch for Anco nodes
     static void SetAncoForceDoDirect(bool direct);
+    // Obtain whether the Anco node is using the DSS synthesis flag
     static bool GetOriAncoForceDoDirect();
+    // Whether to use DSS synthesis to obtain anco nodes. only anco node can be true.
     bool GetAncoForceDoDirect() const;
+    // Used to distinguish whether this node is an Anco node
     void SetAncoFlags(uint32_t flags);
+    // Determine whether it is an Anco node
     uint32_t GetAncoFlags() const;
+    // Set the buffer srcRect of the anco node. Only used on anco nodes.
+    void SetAncoSrcCrop(const Rect& srcCrop);
+#ifndef ROSEN_CROSS_PLATFORM
+    // When updating the hwcLayer information of anco node, SrcCrop takes effect.
+    void UpdateLayerSrcRectForAnco(RSLayerInfo& layer, const RSSurfaceRenderParams& surfaceParams);
+#endif
 
     void SetHDRPresent(bool hasHdrPresent);
     bool GetHDRPresent() const;
 
-    void IncreaseHDRNum();
-    void ReduceHDRNum();
+    void IncreaseHDRNum(HDRComponentType hdrType);
+    void ReduceHDRNum(HDRComponentType hdrType);
 
     bool GetIsWideColorGamut() const;
 
@@ -749,6 +810,11 @@ public:
     const Occlusion::Region& GetVisibleRegion() const
     {
         return visibleRegion_;
+    }
+
+    const Occlusion::Region& GetVisibleRegionBehindWindow() const
+    {
+        return visibleRegionBehindWindow_;
     }
 
     const Occlusion::Region& GetVisibleRegionInVirtual() const
@@ -906,6 +972,11 @@ public:
         visibleRegion_ = region;
     }
 
+    void SetVisibleRegionBehindWindow(const Occlusion::Region& region)
+    {
+        visibleRegionBehindWindow_ = region;
+    }
+
     void SetVisibleRegionInVirtual(const Occlusion::Region& region)
     {
         visibleRegionInVirtual_ = region;
@@ -988,6 +1059,11 @@ public:
     void CleanOpaqueRegionChanged()
     {
         opaqueRegionChanged_ = false;
+    }
+
+    bool IsBehindWindowOcclusionChanged() const
+    {
+        return behindWindowOcclusionChanged_;
     }
 
     // [planning] Remove this after skia is upgraded, the clipRegion is supported
@@ -1235,6 +1311,16 @@ public:
         return surfaceId_;
     }
 
+    void SetTunnelLayerId(SurfaceId tunnelLayerId)
+    {
+        tunnelLayerId_ = tunnelLayerId;
+    }
+
+    SurfaceId GetTunnelLayerId() const
+    {
+        return tunnelLayerId_;
+    }
+
     bool GetIsForeground() const
     {
         return isForeground_;
@@ -1473,16 +1559,6 @@ public:
         return apiCompatibleVersion_;
     }
 
-    bool GetIsHwcPendingDisabled() const
-    {
-        return isHwcPendingDisabled_;
-    }
-
-    void SetIsHwcPendingDisabled(bool isHwcPendingDisabled)
-    {
-        isHwcPendingDisabled_ = isHwcPendingDisabled;
-    }
-
     void ResetIsBufferFlushed();
 
     void ResetSurfaceNodeStates();
@@ -1528,6 +1604,15 @@ public:
     void SetFrameGravityNewVersionEnabled(bool isEnabled);
     bool GetFrameGravityNewVersionEnabled() const;
 
+    // Used for control-level occlusion culling scene info and culled nodes transmission.
+    std::shared_ptr<OcclusionParams> GetOcclusionParams()
+    {
+        if (occlusionParams_ == nullptr) {
+            occlusionParams_ = std::make_shared<OcclusionParams>();
+        }
+        return occlusionParams_;
+    }
+
 protected:
     void OnSync() override;
     void OnSkipSync() override;
@@ -1565,6 +1650,7 @@ private:
 
     RSSpecialLayerManager specialLayerManager_;
     bool specialLayerChanged_ = false;
+    std::unordered_map<ScreenId, std::unordered_set<NodeId>> blackListIds_ = {};
     bool isGlobalPositionEnabled_ = false;
     bool isHwcGlobalPositionEnabled_ = false;
     bool isHwcCrossNode_ = false;
@@ -1592,10 +1678,9 @@ private:
     uint8_t abilityBgAlpha_ = 0;
     bool alphaChanged_ = false;
     bool isUIHidden_ = false;
-    // is hwc node disabled by filter rect
-    bool isHwcPendingDisabled_ = false;
     bool extraDirtyRegionAfterAlignmentIsEmpty_ = true;
     bool opaqueRegionChanged_ = false;
+    bool behindWindowOcclusionChanged_ = false;
     bool isFilterCacheFullyCovered_ = false;
     bool isFilterCacheValidForOcclusion_ = false;
     bool isOccludedByFilterCache_ = false;
@@ -1675,8 +1760,10 @@ private:
     std::atomic<bool> hasUnSubmittedOccludedDirtyRegion_ = false;
     static inline std::atomic<bool> ancoForceDoDirect_ = false;
     float contextAlpha_ = 1.0f;
-    // Count the number of hdr pictures. If hdrNum_ > 0, it means there are hdr pictures
-    int hdrNum_ = 0;
+    // Count the number of hdr pictures. If hdrPhotoNum_ > 0, it means there are hdr pictures
+    int hdrPhotoNum_ = 0;
+    // Count the number of hdr UI components. If hdrUIComponentNum_ > 0, it means there are hdr UI components
+    int hdrUIComponentNum_ = 0;
     int wideColorGamutNum_ = 0;
     int32_t offsetX_ = 0;
     int32_t offsetY_ = 0;
@@ -1703,6 +1790,7 @@ private:
     Drawing::GPUContext* grContext_ = nullptr;
     ScreenId screenId_ = INVALID_SCREEN_ID;
     SurfaceId surfaceId_ = 0;
+    SurfaceId tunnelLayerId_ = 0;
     uint64_t leashPersistentId_ = INVALID_LEASH_PERSISTENTID;
     size_t dirtyContentNodeNum_ = 0;
     size_t dirtyGeoNodeNum_ = 0;
@@ -1740,10 +1828,6 @@ private:
     std::optional<Drawing::Matrix> contextMatrix_;
     std::optional<Drawing::Rect> contextClipRect_;
 
-    std::set<NodeId> skipLayerIds_= {};
-    std::set<NodeId> snapshotSkipLayerIds_= {};
-    std::set<NodeId> securityLayerIds_= {};
-    std::set<NodeId> protectedLayerIds_= {};
     std::set<NodeId> privacyContentLayerIds_ = {};
     Drawing::Matrix totalMatrix_;
     std::vector<RectI> intersectedRoundCornerAABBs_;
@@ -1761,6 +1845,7 @@ private:
     different under filter cache surfacenode layer.
     */
     Occlusion::Region visibleRegion_;
+    Occlusion::Region visibleRegionBehindWindow_;
     Occlusion::Region extendVisibleRegion_;
     Occlusion::Region visibleRegionInVirtual_;
     Occlusion::Region visibleRegionForCallBack_;
@@ -1778,6 +1863,7 @@ private:
     std::vector<std::shared_ptr<RSRenderNode>> childrenFilterNodes_;
     // transparent region of the surface, floating window's container window is always treated as transparent
     Occlusion::Region transparentRegion_;
+    Occlusion::Region occlusionRegionBehindWindow_;
 
     Occlusion::Region containerRegion_;
     std::unordered_set<NodeId> abilityNodeIds_;
@@ -1865,6 +1951,9 @@ private:
     bool selfAndParentShouldPaint_ = true;
 
     bool isFrameGravityNewVersionEnabled_ = false;
+
+    // Used for control-level occlusion culling scene info and culled nodes transmission.
+    std::shared_ptr<OcclusionParams> occlusionParams_ = nullptr;
 
     // UIExtension record, <UIExtension, hostAPP>
     inline static std::unordered_map<NodeId, NodeId> secUIExtensionNodes_ = {};

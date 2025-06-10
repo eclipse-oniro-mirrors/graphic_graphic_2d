@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -86,6 +86,9 @@ public:
     PathFillType GetFillStyle() const override;
 
     bool Interpolate(const Path& ending, scalar weight, Path& out) override;
+    int CountVerbs() const override;
+    Point GetPoint(int index) const override;
+    bool IsInterpolate(const Path& other) override;
     void Transform(const Matrix& matrix) override;
     void TransformWithPerspectiveClip(const Matrix& matrix, Path* dst, bool applyPerspectiveClip) override;
     void Offset(scalar dx, scalar dy) override;
@@ -94,6 +97,8 @@ public:
 
     bool IsValid() const override;
     void Reset() override;
+    void ReWind() override;
+    void SetLastPoint(scalar x, scalar y) override;
 
     void Close() override;
 
@@ -108,6 +113,9 @@ public:
     bool GetPositionAndTangent(scalar distance, Point& position, Point& tangent, bool forceClosed) override;
     bool GetSegment(scalar start, scalar stop, Path* dst, bool startWithMoveTo, bool forceClosed) override;
     bool IsClosed(bool forceClosed) override;
+    bool IsEmpty() override;
+    bool IsRect(Rect* rect, bool* isClosed, PathDirection* direction) override;
+    void SetPath(const Path& path) override;
     bool GetMatrix(bool forceClosed, float distance, Matrix* matrix, PathMeasureMatrixFlags flag) override;
 
     std::shared_ptr<Data> Serialize() const override;

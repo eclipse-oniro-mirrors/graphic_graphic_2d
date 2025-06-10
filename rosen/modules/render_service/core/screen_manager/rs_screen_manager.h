@@ -193,6 +193,7 @@ public:
     virtual const std::unordered_set<uint8_t> GetVirtualScreenTypeBlackList(ScreenId id) const = 0;
     virtual std::unordered_set<uint64_t> GetAllBlackList() const = 0;
     virtual std::unordered_set<uint64_t> GetAllWhiteList() const = 0;
+    virtual std::unordered_set<uint64_t> GetBlackListVirtualScreenByNode(uint64_t nodeId) = 0;
 
     virtual int32_t SetVirtualScreenSecurityExemptionList(
         ScreenId id, const std::vector<uint64_t>& securityExemptionList) = 0;
@@ -205,6 +206,7 @@ public:
         ScreenId id, const Rect& mainScreenRect, bool supportRotation = false) = 0;
     virtual Rect GetMirrorScreenVisibleRect(ScreenId id) const = 0;
     virtual bool IsVisibleRectSupportRotation(ScreenId id) = 0;
+    virtual int32_t GetVirtualScreenSecLayerOption(ScreenId id) const = 0;
 
     virtual int32_t SetVirtualScreenRefreshRate(ScreenId id, uint32_t maxRefreshRate, uint32_t& actualRefreshRate) = 0;
 
@@ -364,6 +366,7 @@ public:
     const std::unordered_set<uint8_t> GetVirtualScreenTypeBlackList(ScreenId id) const override;
     std::unordered_set<uint64_t> GetAllBlackList() const override;
     std::unordered_set<uint64_t> GetAllWhiteList() const override;
+    std::unordered_set<uint64_t> GetBlackListVirtualScreenByNode(uint64_t nodeId) override;
 
     int32_t SetVirtualScreenSecurityExemptionList(
         ScreenId id, const std::vector<uint64_t>& securityExemptionList) override;
@@ -375,6 +378,7 @@ public:
     int32_t SetMirrorScreenVisibleRect(ScreenId id, const Rect& mainScreenRect, bool supportRotation = false) override;
     Rect GetMirrorScreenVisibleRect(ScreenId id) const override;
     bool IsVisibleRectSupportRotation(ScreenId id) override;
+    int32_t GetVirtualScreenSecLayerOption(ScreenId id) const override;
 
     int32_t SetVirtualScreenRefreshRate(ScreenId id, uint32_t maxRefreshRate, uint32_t& actualRefreshRate) override;
 
@@ -414,6 +418,7 @@ private:
     void UpdateFoldScreenConnectStatusLocked(ScreenId screenId, bool connected);
     uint64_t JudgeVSyncEnabledScreenWhileHotPlug(ScreenId screenId, bool connected);
     uint64_t JudgeVSyncEnabledScreenWhilePowerStatusChanged(ScreenId screenId, ScreenPowerStatus status);
+    void ProcessVSyncScreenIdWhilePowerStatusChanged(ScreenId id, ScreenPowerStatus status);
 
     void AddScreenToHgm(std::shared_ptr<HdiOutput>& output);
     void RemoveScreenFromHgm(std::shared_ptr<HdiOutput>& output);
@@ -469,6 +474,10 @@ private:
 
     mutable std::mutex blackListMutex_;
     std::unordered_set<uint64_t> castScreenBlackList_ = {};
+
+    // a blacklist node may exist in multiple virtual screens
+    mutable std::mutex blackListScreenMutex_;
+    std::unordered_map<uint64_t, std::unordered_set<ScreenId>> blackListInVirtualScreen_ = {};
 
     mutable std::mutex typeBlackListMutex_;
     std::unordered_set<uint8_t> castScreenTypeBlackList_ = {};

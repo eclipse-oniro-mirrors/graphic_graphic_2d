@@ -170,6 +170,9 @@ enum class RSModifierType : int16_t {
     ALWAYS_SNAPSHOT = 134,
     COMPLEX_SHADER_PARAM = 135,
     BACKGROUND_UI_FILTER = 136,
+    HDR_UI_BRIGHTNESS = 137,
+    FOREGROUND_UI_FILTER = 138,
+    HDR_BRIGHTNESS_FACTOR = 139,
 
     CUSTOM = 200,
     EXTENDED = 201,
@@ -190,7 +193,7 @@ enum class RSModifierType : int16_t {
     BEHIND_WINDOW_FILTER_MASK_COLOR = 216,
 
     CHILDREN = 240, // PLACEHOLDER, no such modifier, but we need a dirty flag
-    
+
     MAX_RS_MODIFIER_TYPE = 255,
 };
 
@@ -205,31 +208,6 @@ enum class RSPropertyModifierType : uint8_t {
 };
 
 using ModifierDirtyTypes = std::bitset<static_cast<int>(RSModifierType::MAX_RS_MODIFIER_TYPE)>;
-
-enum class RSRenderPropertyType : int16_t {
-    INVALID = 0,
-    PROPERTY_FLOAT,
-    PROPERTY_COLOR,
-    PROPERTY_MATRIX3F,
-    PROPERTY_QUATERNION,
-    PROPERTY_FILTER,
-    PROPERTY_VECTOR2F,
-    PROPERTY_VECTOR3F,
-    PROPERTY_VECTOR4F,
-    PROPERTY_VECTOR4_COLOR,
-    PROPERTY_SKMATRIX,
-    PROPERTY_RRECT,
-    PROPERTY_SHADER_PARAM,
-    PROPERTY_UI_FILTER,
-};
-
-enum class RSPropertyUnit : int16_t {
-    UNKNOWN = 0,
-    PIXEL_POSITION,
-    PIXEL_SIZE,
-    RATIO_SCALE,
-    ANGLE_ROTATION,
-};
 
 class RSModifierTypeString {
 public:
@@ -366,6 +344,9 @@ public:
             case RSModifierType::ALWAYS_SNAPSHOT: return "AlwaysSnapshot";
             case RSModifierType::COMPLEX_SHADER_PARAM: return "ComplexShaderParam";
             case RSModifierType::BACKGROUND_UI_FILTER: return "BackgroundUIFilter";
+            case RSModifierType::HDR_UI_BRIGHTNESS: return "HDRUIBrightness";
+            case RSModifierType::FOREGROUND_UI_FILTER: return "ForegroundUIFilter";
+            case RSModifierType::HDR_BRIGHTNESS_FACTOR: return "HDRBrightnessFactor";
             case RSModifierType::CUSTOM: return "Custom";
             case RSModifierType::EXTENDED: return "Extended";
             case RSModifierType::TRANSITION: return "Transition";

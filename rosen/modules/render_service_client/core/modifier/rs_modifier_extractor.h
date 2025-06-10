@@ -39,6 +39,11 @@ namespace Rosen {
 class RSNode;
 class RSUIContext;
 
+/**
+ * @class RSModifierExtractor
+ *
+ * @brief The class for extracting properties from a modifier.
+ */
 class RSC_EXPORT RSModifierExtractor {
 public:
     /**
@@ -336,20 +341,6 @@ public:
     float GetForegroundEffectRadius() const;
 
     /**
-     * @brief Gets the background filter.
-     *
-     * @return The pointer to background filter.
-     */
-    std::shared_ptr<RSFilter> GetBackgroundFilter() const;
-
-    /**
-     * @brief Gets the filter.
-     *
-     * @return The pointer to filter.
-     */
-    std::shared_ptr<RSFilter> GetFilter() const;
-
-    /**
      * @brief Gets the color of shadow.
      *
      * @return The color of shadow.
@@ -464,6 +455,20 @@ public:
     float GetSpherizeDegree() const;
 
     /**
+     * @brief Gets the brightness ratio of HDR UI component.
+     *
+     * @return The HDR UI component brightness ratio.
+     */
+    float GetHDRUIBrightness() const;
+
+    /**
+     * @brief Gets the HDR brightness factor of displayNode.
+     *
+     * @return The HDR brightness factor of displayNode.
+     */
+    float GetHDRBrightnessFactor() const;
+
+    /**
      * @brief Gets the degree of light up effect.
      *
      * @return The light up effect degree.
@@ -477,8 +482,18 @@ public:
      */
     float GetDynamicDimDegree() const;
 
+    /**
+     * @brief Gets the transformation progress of the meteor animation effect.
+     *
+     * @return The transformation progress of the meteor animation effect.
+     */
     float GetAttractionFractionValue() const;
 
+    /**
+     * @brief Gets the destination point of the meteor animation effect.
+     *
+     * @return The destination point of the meteor animation effect.
+     */
     Vector2f GetAttractionDstPointValue() const;
 
     /**

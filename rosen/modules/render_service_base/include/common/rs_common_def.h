@@ -25,6 +25,7 @@
 #include <unordered_set>
 #include <unistd.h>
 #include <utils/rect.h>
+#include <vector>
 
 #include "common/rs_macros.h"
 
@@ -49,6 +50,7 @@ constexpr uint64_t INVALID_LEASH_PERSISTENTID = 0;
 constexpr uint8_t TOP_OCCLUSION_SURFACES_NUM = 3;
 constexpr uint8_t OCCLUSION_ENABLE_SCENE_NUM = 2;
 constexpr int16_t DEFAULT_OCCLUSION_SURFACE_ORDER = -1;
+constexpr int MAX_DIRTY_ALIGNMENT_SIZE = 128;
 
 // types in the same layer should be 0/1/2/4/8
 // types for UINode
@@ -233,6 +235,11 @@ struct FocusAppInfo {
     uint64_t focusNodeId = 0;
 };
 
+struct RSUICaptureInRangeParam {
+    NodeId endNodeId = INVALID_NODEID;
+    bool useBeginNodeSize = true;
+};
+
 struct RSSurfaceCaptureConfig {
     float scaleX = 1.0f;
     float scaleY = 1.0f;
@@ -240,11 +247,16 @@ struct RSSurfaceCaptureConfig {
     bool useCurWindow = true;
     SurfaceCaptureType captureType = SurfaceCaptureType::DEFAULT_CAPTURE;
     bool isSync = false;
+    bool isClientPixelMap = false; // Create pixelMap in client
     Drawing::Rect mainScreenRect = {};
+    std::vector<NodeId> blackList = {}; // exclude surfacenode in screenshot
     bool isSoloNodeUiCapture = false;
+    RSUICaptureInRangeParam uiCaptureInRangeParam = {};
     bool operator==(const RSSurfaceCaptureConfig& config) const
     {
-        return mainScreenRect == config.mainScreenRect;
+        return mainScreenRect == config.mainScreenRect &&
+            uiCaptureInRangeParam.endNodeId == config.uiCaptureInRangeParam.endNodeId &&
+            uiCaptureInRangeParam.useBeginNodeSize == config.uiCaptureInRangeParam.useBeginNodeSize;
     }
 };
 
@@ -281,6 +293,11 @@ struct RSSurfaceCapturePermissions {
             return value;                        \
         }                                        \
     } while (0)
+
+#define IS_SCB_WINDOW_TYPE(windowType)                                                                        \
+    (windowType == SurfaceWindowType::SYSTEM_SCB_WINDOW || windowType == SurfaceWindowType::SCB_DESKTOP ||    \
+    windowType == SurfaceWindowType::SCB_WALLPAPER || windowType == SurfaceWindowType::SCB_SCREEN_LOCK ||     \
+    windowType == SurfaceWindowType::SCB_NEGATIVE_SCREEN || windowType == SurfaceWindowType::SCB_DROPDOWN_PANEL)
 
 enum class DeviceType : uint8_t {
     PHONE,
@@ -383,7 +400,6 @@ enum class SurfaceWindowType : uint8_t {
     SCB_SCREEN_LOCK = 4,
     SCB_NEGATIVE_SCREEN = 5,
     SCB_DROPDOWN_PANEL = 6,
-    NODE_MAX,
 };
 
 enum class SurfaceHwcNodeType : uint8_t {
@@ -569,7 +585,8 @@ inline typename Container::size_type EraseIf(Container& container, Predicate pre
 enum class AncoFlags : uint32_t {
     IS_ANCO_NODE = 0x0001,
     ANCO_SFV_NODE = 0x0011,
-    FORCE_REFRESH = 0x0100
+    ANCO_NATIVE_NODE = 0x0111,
+    FORCE_REFRESH = 0x1000
 };
 
 enum class AncoHebcStatus : int32_t {

@@ -117,6 +117,19 @@ HWTEST_F(VSyncDistributorTest, RemoveConnection003, Function | MediumTest| Level
 }
 
 /*
+ * @tc.name: CheckVsyncTsAndReceived
+ * @tc.desc: Test For CheckVsyncTsAndReceived
+ * @tc.type: FUNC
+ * @tc.require: issueIC989U
+ */
+HWTEST_F(VSyncDistributorTest, CheckVsyncTsAndReceived001, Function | MediumTest| Level3)
+{
+    uint64_t timestamp = 10;
+    auto res = VSyncDistributorTest::vsyncDistributor->CheckVsyncTsAndReceived(timestamp);
+    ASSERT_EQ(res, timestamp);
+}
+
+/*
 * Function: RequestNextVSync001
 * Type: Function
 * Rank: Important(2)
@@ -862,7 +875,9 @@ HWTEST_F(VSyncDistributorTest, ConnectionsPostEventTest001, Function | MediumTes
     int64_t vsyncCount = 1;
     bool isDvsyncController = false;
     vsyncDistributor->ConnectionsPostEvent(conns, now, period, generatorRefreshRate, vsyncCount, isDvsyncController);
-    ASSERT_EQ(isDvsyncController, false);
+    int64_t receiveData[3];
+    int32_t length = conn->socketPair_->ReceiveData(receiveData, sizeof(receiveData));
+    ASSERT_GT(length, 0);
 }
 
 /*
@@ -894,7 +909,11 @@ HWTEST_F(VSyncDistributorTest, OnDVSyncEventTest001, Function | MediumTest| Leve
     VSyncMode vsyncMode = VSYNC_MODE_LTPO;
     uint32_t vsyncMaxRefreshRate = 120;
     vsyncDistributor->OnDVSyncEvent(now, period, refreshRate, vsyncMode, vsyncMaxRefreshRate);
-    ASSERT_EQ(period, 16666666);
+#if defined(RS_ENABLE_DVSYNC_2)
+    ASSERT_EQ(vsyncDistributor->vsyncMode_, VSYNC_MODE_LTPO);
+#else
+    ASSERT_EQ(vsyncDistributor->vsyncMode_, VSYNC_MODE_LTPS);
+#endif
 }
 
 /*
@@ -925,23 +944,6 @@ HWTEST_F(VSyncDistributorTest, DVSyncAddConnectionDVSyncDisableVSyncTest001, Fun
     vsyncDistributor->DVSyncAddConnection(conn);
     vsyncDistributor->DVSyncDisableVSync();
     ASSERT_EQ(vsyncDistributor->isRs_, false);
-}
-
-/*
-* Function: DVSyncRecordVSyncTest001
-* Type: Function
-* Rank: Important(2)
-* EnvConditions: N/A
-* CaseDescription: 1. test DVSyncRecordVSync
- */
-HWTEST_F(VSyncDistributorTest, DVSyncRecordVSyncTest001, Function | MediumTest| Level3)
-{
-    int64_t now = 10000000;
-    int64_t period = 16666666;
-    uint32_t refreshRate = 60;
-    bool isDvsyncController = false;
-    vsyncDistributor->DVSyncRecordVSync(now, period, refreshRate, isDvsyncController);
-    ASSERT_EQ(isDvsyncController, false);
 }
 
 /*
@@ -1039,17 +1041,17 @@ HWTEST_F(VSyncDistributorTest, NotifyPackageEventTest001, Function | MediumTest|
 }
 
 /*
-* Function: NotifyTouchEventTest001
+* Function: HandleTouchEvent001
 * Type: Function
 * Rank: Important(2)
 * EnvConditions: N/A
-* CaseDescription: 1. test NotifyTouchEvent
+* CaseDescription: 1. test HandleTouchEvent
  */
-HWTEST_F(VSyncDistributorTest, NotifyTouchEventTest001, Function | MediumTest| Level3)
+HWTEST_F(VSyncDistributorTest, HandleTouchEvent001, Function | MediumTest| Level3)
 {
     int32_t touchStatus = 0;
     int32_t touchCnt = 0;
-    vsyncDistributor->NotifyTouchEvent(touchStatus, touchCnt);
+    vsyncDistributor->HandleTouchEvent(touchStatus, touchCnt);
     ASSERT_EQ(touchStatus, 0);
 }
 

@@ -685,4 +685,160 @@ HWTEST_F(ParagraphTest, ParagraphTestMiddleEllipsis014, TestSize.Level1)
     EXPECT_EQ(range.start, std::numeric_limits<size_t>::max());
     EXPECT_EQ(range.end, std::numeric_limits<size_t>::max());
 }
+
+/*
+ * @tc.name: ParagraphTestMiddleEllipsis015
+ * @tc.desc: test for Middle Ellipsis 015, get glyph position
+ * @tc.type: FUNC
+ */
+HWTEST_F(ParagraphTest, ParagraphTestMiddleEllipsis015, TestSize.Level1)
+{
+    size_t maxLines = 1;
+    PrepareMiddleEllipsis(maxLines, u"...", u"你好世界 Hello World");
+    paragraphMiddleEllipsis_->Layout(280);
+    EXPECT_EQ(paragraphMiddleEllipsis_->GetGlyphPositionAtCoordinate(50, 0.0).position, 2.0);
+    EXPECT_EQ(paragraphMiddleEllipsis_->GetGlyphPositionAtCoordinate(150, 0.0).position, 7.0);
+    EXPECT_EQ(paragraphMiddleEllipsis_->GetGlyphPositionAtCoordinate(270, 0.0).position, 16.0);
+}
+
+OHOS::Rosen::SPText::ParagraphImpl* ProcessRelayout(std::shared_ptr<Paragraph> paragraph, std::optional<RSBrush> brush)
+{
+    std::vector<OHOS::Rosen::SPText::TextStyle> textStyles;
+    ParagraphStyle paragraphStyle;
+    OHOS::Rosen::SPText::TextStyle changeTextStyle;
+    changeTextStyle.foreground = SPText::PaintRecord(brush, Drawing::Pen());
+    changeTextStyle.relayoutChangeBitmap.set(static_cast<size_t>(RelayoutTextStyleAttribute::FOREGROUND_BRUSH));
+    textStyles.push_back(changeTextStyle);
+    paragraph->Relayout(200, paragraphStyle, textStyles);
+    return ParagraphTest::GetParagraphImpl(paragraph);
+}
+
+/*
+ * @tc.name: ParagraphTestRelayoutBrush001
+ * @tc.desc: test for relayout foreground brush with multiple textstyle
+ * @tc.type: FUNC
+ */
+HWTEST_F(ParagraphTest, ParagraphTestRelayoutBrush001, TestSize.Level1)
+{
+    ParagraphStyle paragraphStyle;
+    auto fontCollection = std::make_shared<FontCollection>();
+    ASSERT_NE(fontCollection, nullptr);
+    fontCollection->SetupDefaultFontManager();
+    std::unique_ptr<ParagraphBuilder> paragraphBuilder = ParagraphBuilder::Create(paragraphStyle, fontCollection);
+    ASSERT_NE(paragraphBuilder, nullptr);
+
+    OHOS::Rosen::SPText::TextStyle style;
+    style.foreground = SPText::PaintRecord(Drawing::Brush(Drawing::Color::COLOR_DKGRAY), Drawing::Pen());
+    paragraphBuilder->PushStyle(style);
+    paragraphBuilder->AddText(text_);
+    OHOS::Rosen::SPText::TextStyle style1;
+    paragraphBuilder->PushStyle(style1);
+    paragraphBuilder->AddText(text_);
+    std::shared_ptr<Paragraph> paragraph = paragraphBuilder->Build();
+    ASSERT_NE(paragraph, nullptr);
+    paragraph->Layout(200);
+
+    Drawing::Brush brush(Drawing::Color::COLOR_MAGENTA);
+    OHOS::Rosen::SPText::ParagraphImpl* paragraphImpl = ProcessRelayout(paragraph, brush);
+    EXPECT_EQ(paragraphImpl->paints_.size(), 3);
+    EXPECT_EQ(paragraphImpl->paints_[1].brush.value().GetColor(), Drawing::Color::COLOR_MAGENTA);
+    EXPECT_EQ(paragraphImpl->paints_[2].brush.value().GetColor(), Drawing::Color::COLOR_MAGENTA);
+    EXPECT_EQ(paragraphImpl->paints_[2].pen.has_value(), false);
+
+    auto skiaTextStyles = paragraphImpl->paragraph_->exportTextStyles();
+    EXPECT_EQ(skiaTextStyles.size(), 2);
+    EXPECT_EQ(skiaTextStyles[0].fStyle.hasForeground(), true);
+    EXPECT_EQ(skiaTextStyles[1].fStyle.hasForeground(), true);
+    EXPECT_EQ(std::get<int>(skiaTextStyles[1].fStyle.getForegroundPaintOrID()), 2);
+}
+
+/*
+ * @tc.name: ParagraphTestRelayoutBrush002
+ * @tc.desc: test for relayout foreground brush with symbol textstyle
+ * @tc.type: FUNC
+ */
+HWTEST_F(ParagraphTest, ParagraphTestRelayoutBrush002, TestSize.Level1)
+{
+    ParagraphStyle paragraphStyle;
+    auto fontCollection = std::make_shared<FontCollection>();
+    ASSERT_NE(fontCollection, nullptr);
+    fontCollection->SetupDefaultFontManager();
+    std::unique_ptr<ParagraphBuilder> paragraphBuilder = ParagraphBuilder::Create(paragraphStyle, fontCollection);
+    ASSERT_NE(paragraphBuilder, nullptr);
+
+    OHOS::Rosen::SPText::TextStyle style;
+    style.foreground = SPText::PaintRecord(Drawing::Brush(Drawing::Color::COLOR_DKGRAY), Drawing::Pen());
+    paragraphBuilder->PushStyle(style);
+    paragraphBuilder->AddText(text_);
+    OHOS::Rosen::SPText::TextStyle style1;
+    style1.isSymbolGlyph = true;
+    RSSColor symbolColor = {1.0, 0, 0, 0};
+    style1.symbol.SetRenderColor(symbolColor);
+    paragraphBuilder->PushStyle(style1);
+    paragraphBuilder->AddText(text_);
+    std::shared_ptr<Paragraph> paragraph = paragraphBuilder->Build();
+    ASSERT_NE(paragraph, nullptr);
+    paragraph->Layout(200);
+
+    Drawing::Brush brush(Drawing::Color::COLOR_MAGENTA);
+    OHOS::Rosen::SPText::ParagraphImpl* paragraphImpl = ProcessRelayout(paragraph, brush);
+    EXPECT_EQ(paragraphImpl->paints_.size(), 3);
+    EXPECT_EQ(paragraphImpl->paints_[1].brush.value().GetColor(), Drawing::Color::COLOR_MAGENTA);
+    EXPECT_EQ(paragraphImpl->paints_[2].brush.has_value(), false);
+}
+
+/*
+ * @tc.name: ParagraphTestRelayoutBrush003
+ * @tc.desc: test for relayout foreground with nullopt
+ * @tc.type: FUNC
+ */
+HWTEST_F(ParagraphTest, ParagraphTestRelayoutBrush003, TestSize.Level1)
+{
+    ParagraphStyle paragraphStyle;
+    auto fontCollection = std::make_shared<FontCollection>();
+    ASSERT_NE(fontCollection, nullptr);
+    fontCollection->SetupDefaultFontManager();
+    std::unique_ptr<ParagraphBuilder> paragraphBuilder = ParagraphBuilder::Create(paragraphStyle, fontCollection);
+    ASSERT_NE(paragraphBuilder, nullptr);
+
+    OHOS::Rosen::SPText::TextStyle style;
+    style.foreground = SPText::PaintRecord(Drawing::Brush(Drawing::Color::COLOR_DKGRAY), Drawing::Pen());
+    paragraphBuilder->PushStyle(style);
+    paragraphBuilder->AddText(text_);
+    OHOS::Rosen::SPText::TextStyle style1;
+    paragraphBuilder->PushStyle(style1);
+    paragraphBuilder->AddText(text_);
+    std::shared_ptr<Paragraph> paragraph = paragraphBuilder->Build();
+    ASSERT_NE(paragraph, nullptr);
+    paragraph->Layout(200);
+
+    OHOS::Rosen::SPText::ParagraphImpl* paragraphImpl = ProcessRelayout(paragraph, std::nullopt);
+
+    EXPECT_EQ(paragraphImpl->paints_.size(), 3);
+    EXPECT_EQ(paragraphImpl->paints_[0].brush.has_value(), false);
+    EXPECT_EQ(paragraphImpl->paints_[1].brush.has_value(), false);
+}
+
+/*
+ * @tc.name: ParagraphTestTextEffect001
+ * @tc.desc: test for text effect state
+ * @tc.type: FUNC
+ */
+HWTEST_F(ParagraphTest, ParagraphTestTextEffect001, TestSize.Level1)
+{
+    Canvas canvas;
+    paragraph_->Paint(&canvas, 0.0, 0.0);
+    OHOS::Rosen::SPText::ParagraphImpl* paragraphImpl = GetParagraphImpl(paragraph_);
+    ASSERT_NE(paragraphImpl, nullptr);
+    std::unique_ptr<skt::Paragraph> temp = nullptr;
+    paragraphImpl->paragraph_.swap(temp);
+    EXPECT_EQ(paragraphImpl->GetTextBlobRecordInfo().size(), 0);
+    paragraphImpl->SetTextEffectState(true);
+    EXPECT_FALSE(paragraphImpl->HasEnabledTextEffect());
+
+    paragraphImpl->paragraph_.swap(temp);
+    EXPECT_NE(paragraphImpl->GetTextBlobRecordInfo().size(), 0);
+    paragraphImpl->SetTextEffectState(true);
+    EXPECT_TRUE(paragraphImpl->HasEnabledTextEffect());
+}
 } // namespace txt

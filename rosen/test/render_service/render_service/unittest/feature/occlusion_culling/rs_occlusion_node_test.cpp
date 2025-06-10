@@ -317,7 +317,7 @@ HWTEST_F(RSOcclusionNodeTest, CollectNodeProperties_003, TestSize.Level1)
     boundsProperty->modifierType_ = RSModifierType::BOUNDS;
     auto boundsModifier = std::make_shared<RSBoundsRenderModifier>(boundsProperty);
     renderNode->modifiers_.emplace(boundsModifier->GetPropertyId(), boundsModifier);
-    renderNode->renderContent_->renderProperties_.clipToBounds_ = true;
+    renderNode->renderProperties_.clipToBounds_ = true;
     rootNode->CollectNodeProperties(*renderNode);
     EXPECT_TRUE(rootNode->isSubTreeIgnored_);
 }
@@ -341,17 +341,17 @@ HWTEST_F(RSOcclusionNodeTest, CollectNodeProperties_004, TestSize.Level1)
     auto boundsModifier = std::make_shared<RSBoundsRenderModifier>(boundsProperty);
     renderNode->modifiers_.emplace(boundsModifier->GetPropertyId(), boundsModifier);
     Vector4f cornerRadius(0.f, 0.f, 0.f, 0.f);
-    renderNode->renderContent_->renderProperties_.cornerRadius_ = cornerRadius;
-    renderNode->renderContent_->renderProperties_.boundsGeo_->x_ = 0;
-    renderNode->renderContent_->renderProperties_.boundsGeo_->y_ = 0;
-    renderNode->renderContent_->renderProperties_.boundsGeo_->width_ = 120.f;
-    renderNode->renderContent_->renderProperties_.boundsGeo_->height_ = 120.f;
+    renderNode->renderProperties_.cornerRadius_ = cornerRadius;
+    renderNode->renderProperties_.boundsGeo_->x_ = 0;
+    renderNode->renderProperties_.boundsGeo_->y_ = 0;
+    renderNode->renderProperties_.boundsGeo_->width_ = 120.f;
+    renderNode->renderProperties_.boundsGeo_->height_ = 120.f;
     rootNode->CollectNodeProperties(*renderNode);
     EXPECT_FALSE(rootNode->isSubTreeIgnored_);
-    EXPECT_FLOAT_EQ(rootNode->drawRect_.left_, renderNode->renderContent_->renderProperties_.boundsGeo_->x_);
-    EXPECT_FLOAT_EQ(rootNode->drawRect_.top_, renderNode->renderContent_->renderProperties_.boundsGeo_->y_);
-    EXPECT_FLOAT_EQ(rootNode->drawRect_.width_, renderNode->renderContent_->renderProperties_.boundsGeo_->width_);
-    EXPECT_FLOAT_EQ(rootNode->drawRect_.height_, renderNode->renderContent_->renderProperties_.boundsGeo_->height_);
+    EXPECT_FLOAT_EQ(rootNode->drawRect_.left_, renderNode->renderProperties_.boundsGeo_->x_);
+    EXPECT_FLOAT_EQ(rootNode->drawRect_.top_, renderNode->renderProperties_.boundsGeo_->y_);
+    EXPECT_FLOAT_EQ(rootNode->drawRect_.width_, renderNode->renderProperties_.boundsGeo_->width_);
+    EXPECT_FLOAT_EQ(rootNode->drawRect_.height_, renderNode->renderProperties_.boundsGeo_->height_);
 }
 
 /*
@@ -422,19 +422,19 @@ HWTEST_F(RSOcclusionNodeTest, UpdateClipRect_001, TestSize.Level1)
     std::shared_ptr<OcclusionNode> rootNode =
         std::make_shared<OcclusionNode>(nodeId, RSRenderNodeType::CANVAS_NODE);
     std::shared_ptr<RSRenderNode> renderNode = std::make_shared<RSRenderNode>(nodeId);
-    renderNode->renderContent_->renderProperties_.boundsGeo_->width_ = 100.0f;
-    renderNode->renderContent_->renderProperties_.boundsGeo_->height_ = 200.0f;
+    renderNode->renderProperties_.boundsGeo_->width_ = 100.0f;
+    renderNode->renderProperties_.boundsGeo_->height_ = 200.0f;
     rootNode->UpdateClipRect(*renderNode);
     int initLeft = 0 ;
     int initTop = 0;
     EXPECT_EQ(rootNode->clipOuterRect_.left_, initLeft);
     EXPECT_EQ(rootNode->clipOuterRect_.top_, initTop);
-    EXPECT_EQ(rootNode->clipOuterRect_.width_, renderNode->renderContent_->renderProperties_.boundsGeo_->width_);
-    EXPECT_EQ(rootNode->clipOuterRect_.height_, renderNode->renderContent_->renderProperties_.boundsGeo_->height_);
+    EXPECT_EQ(rootNode->clipOuterRect_.width_, renderNode->renderProperties_.boundsGeo_->width_);
+    EXPECT_EQ(rootNode->clipOuterRect_.height_, renderNode->renderProperties_.boundsGeo_->height_);
     EXPECT_EQ(rootNode->clipInnerRect_.left_, initLeft);
     EXPECT_EQ(rootNode->clipInnerRect_.top_, initTop);
-    EXPECT_EQ(rootNode->clipInnerRect_.width_, renderNode->renderContent_->renderProperties_.boundsGeo_->width_);
-    EXPECT_EQ(rootNode->clipInnerRect_.height_, renderNode->renderContent_->renderProperties_.boundsGeo_->height_);
+    EXPECT_EQ(rootNode->clipInnerRect_.width_, renderNode->renderProperties_.boundsGeo_->width_);
+    EXPECT_EQ(rootNode->clipInnerRect_.height_, renderNode->renderProperties_.boundsGeo_->height_);
 }
 
 /*
@@ -507,7 +507,8 @@ HWTEST_F(RSOcclusionNodeTest, DetectOcclusion_001, TestSize.Level1)
     thirdChild->leftSibling_ = secondChild;
     std::unordered_set<NodeId> culledNodes;
     std::unordered_set<NodeId> offTreeNodes;
-    rootNode->DetectOcclusion(culledNodes, offTreeNodes);
+    std::unordered_set<NodeId> culledEntireSubtree;
+    rootNode->DetectOcclusion(culledNodes, culledEntireSubtree, offTreeNodes);
     // the first node with isValidInCurrentFrame_ is false of the subtree will be collected into offTreeNodes
     int expectSize = 1;
     EXPECT_EQ(offTreeNodes.size(), expectSize);
@@ -543,7 +544,8 @@ HWTEST_F(RSOcclusionNodeTest, DetectOcclusion_002, TestSize.Level1)
     thirdChild->leftSibling_ = secondChild;
     std::unordered_set<NodeId> culledNodes;
     std::unordered_set<NodeId> offTreeNodes;
-    rootNode->DetectOcclusion(culledNodes, offTreeNodes);
+    std::unordered_set<NodeId> culledEntireSubtree;
+    rootNode->DetectOcclusion(culledNodes, culledEntireSubtree, offTreeNodes);
     int expectSize = 3;
     // node width isOutOfRootRect_ is true will be occluded
     EXPECT_EQ(culledNodes.size(), expectSize);
@@ -579,7 +581,8 @@ HWTEST_F(RSOcclusionNodeTest, DetectOcclusion_003, TestSize.Level1)
     thirdChild->leftSibling_ = secondChild;
     std::unordered_set<NodeId> culledNodes;
     std::unordered_set<NodeId> offTreeNodes;
-    rootNode->DetectOcclusion(culledNodes, offTreeNodes);
+    std::unordered_set<NodeId> culledEntireSubtree;
+    rootNode->DetectOcclusion(culledNodes, culledEntireSubtree, offTreeNodes);
     // only CANVAS_NODE can be occluded
     int expectSize = 2;
     EXPECT_EQ(culledNodes.size(), expectSize);
@@ -616,7 +619,8 @@ HWTEST_F(RSOcclusionNodeTest, DetectOcclusion_004, TestSize.Level1)
     thirdChild->leftSibling_ = secondChild;
     std::unordered_set<NodeId> culledNodes;
     std::unordered_set<NodeId> offTreeNodes;
-    rootNode->DetectOcclusion(culledNodes, offTreeNodes);
+    std::unordered_set<NodeId> culledEntireSubtree;
+    rootNode->DetectOcclusion(culledNodes, culledEntireSubtree, offTreeNodes);
     // node with isOutOfRootRect_ is true and isNeedClip_ is false will be occluded directly
     int expectSize = 2;
     EXPECT_EQ(culledNodes.size(), expectSize);
@@ -664,7 +668,8 @@ HWTEST_F(RSOcclusionNodeTest, DetectOcclusion_005, TestSize.Level1)
     thirdChild->outerRect_ = { 10, 400, 640, 390 };
     std::unordered_set<NodeId> culledNodes;
     std::unordered_set<NodeId> offTreeNodes;
-    rootNode->DetectOcclusion(culledNodes, offTreeNodes);
+    std::unordered_set<NodeId> culledEntireSubtree;
+    rootNode->DetectOcclusion(culledNodes, culledEntireSubtree, offTreeNodes);
     // nodes two and three combined can occlude the first node.
     // but we do not consider multiple nodes occluding one node
     int expectSize = 0;
@@ -714,7 +719,8 @@ HWTEST_F(RSOcclusionNodeTest, DetectOcclusion_006, TestSize.Level1)
     thirdChild->outerRect_ = { 11, 10, 880, 1360 };
     std::unordered_set<NodeId> culledNodes;
     std::unordered_set<NodeId> offTreeNodes;
-    rootNode->DetectOcclusion(culledNodes, offTreeNodes);
+    std::unordered_set<NodeId> culledEntireSubtree;
+    rootNode->DetectOcclusion(culledNodes, culledEntireSubtree, offTreeNodes);
     int expectSize = 0;
     EXPECT_EQ(culledNodes.size(), expectSize);
 }
@@ -761,9 +767,10 @@ HWTEST_F(RSOcclusionNodeTest, DetectOcclusion_007, TestSize.Level1)
     thirdChild->outerRect_ = { 10, 400, 640, 390 };
     std::unordered_set<NodeId> culledNodes;
     std::unordered_set<NodeId> offTreeNodes;
+    std::unordered_set<NodeId> culledEntireSubtree;
     // occlude others using inner rect
     // be occluded by others using outer rect
-    rootNode->DetectOcclusion(culledNodes, offTreeNodes);
+    rootNode->DetectOcclusion(culledNodes, culledEntireSubtree, offTreeNodes);
     int expectSize = 0;
     EXPECT_EQ(culledNodes.size(), expectSize);
 }
@@ -781,9 +788,11 @@ HWTEST_F(RSOcclusionNodeTest, DetectOcclusion_008, TestSize.Level1)
     NodeId firstChildId(1);
     std::shared_ptr<OcclusionNode> firstChild =
         std::make_shared<OcclusionNode>(firstChildId, RSRenderNodeType::CANVAS_NODE);
+    firstChild->UpdateChildrenOutOfRectInfo(false);
     NodeId secondChildId(2);
     std::shared_ptr<OcclusionNode> secondChild =
         std::make_shared<OcclusionNode>(secondChildId, RSRenderNodeType::CANVAS_NODE);
+    secondChild->UpdateChildrenOutOfRectInfo(false);
     NodeId thirdChildId(3);
     std::shared_ptr<OcclusionNode> thirdChild =
         std::make_shared<OcclusionNode>(thirdChildId, RSRenderNodeType::CANVAS_NODE);
@@ -813,10 +822,13 @@ HWTEST_F(RSOcclusionNodeTest, DetectOcclusion_008, TestSize.Level1)
     thirdChild->outerRect_ = { 9, 9, 641, 781 };
     std::unordered_set<NodeId> culledNodes;
     std::unordered_set<NodeId> offTreeNodes;
-    // first and second will be occludered by third
-    rootNode->DetectOcclusion(culledNodes, offTreeNodes);
-    int expectSize = 2;
+    std::unordered_set<NodeId> culledEntireSubtree;
+    // first node will be occludered by third node
+    // second node will be entire subtree occludered by third node
+    rootNode->DetectOcclusion(culledNodes, culledEntireSubtree, offTreeNodes);
+    int expectSize = 1;
     EXPECT_EQ(culledNodes.size(), expectSize);
+    EXPECT_EQ(culledEntireSubtree.size(), expectSize);
 }
 
 } // namespace OHOS::Rosen

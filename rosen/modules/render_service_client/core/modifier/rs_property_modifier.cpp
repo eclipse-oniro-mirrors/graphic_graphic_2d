@@ -163,12 +163,12 @@ RSComplexShaderParamModifier::RSComplexShaderParamModifier(
     const std::shared_ptr<RSPropertyBase>& property) : RSBackgroundModifier(property,
     RSModifierType::COMPLEX_SHADER_PARAM)
 {}
- 
+
 RSModifierType RSComplexShaderParamModifier::GetModifierType() const
 {
     return RSModifierType::COMPLEX_SHADER_PARAM;
 }
- 
+
 std::shared_ptr<RSRenderModifier> RSComplexShaderParamModifier::CreateRenderModifier() const
 {
     auto renderProperty = GetRenderProperty();
@@ -268,44 +268,164 @@ void RSBackgroundUIFilterModifier::OnDetachFromNode()
     }
 }
 
+RSForegroundUIFilterModifier::RSForegroundUIFilterModifier(const std::shared_ptr<RSPropertyBase>& property)
+    : RSForegroundModifier(property, RSModifierType::FOREGROUND_UI_FILTER)
+{}
+
+std::shared_ptr<RSRenderModifier> RSForegroundUIFilterModifier::CreateRenderModifier() const
+{
+    auto stagingProperty = std::static_pointer_cast<RSProperty<std::shared_ptr<RSUIFilter>>>(property_);
+    if (!stagingProperty) {
+        return nullptr;
+    }
+    auto stagingValue = stagingProperty->Get();
+    if (!stagingValue) {
+        return nullptr;
+    }
+    auto id = stagingProperty->GetId();
+    auto renderProperty = stagingValue->CreateRenderProperty(id);
+    if (!renderProperty) {
+        return nullptr;
+    }
+    auto renderModifier = std::make_shared<RSForegroundUIFilterRenderModifier>(renderProperty);
+    return renderModifier;
+}
+
+RSModifierType RSForegroundUIFilterModifier::GetModifierType() const
+{
+    return RSModifierType::FOREGROUND_UI_FILTER;
+}
+
+void RSForegroundUIFilterModifier::OnAttachToNode(const std::weak_ptr<RSNode>& target)
+{
+    auto property = std::static_pointer_cast<RSProperty<std::shared_ptr<RSUIFilter>>>(GetProperty());
+    if (!property) {
+        ROSEN_LOGW("RSForegroundUIFilterModifier::OnAttachToNode, null property.");
+        return;
+    }
+    auto uiFilter = property->Get();
+    if (!uiFilter) {
+        ROSEN_LOGW("RSForegroundUIFilterModifier::OnAttachToNode, null uiFilter.");
+        return;
+    }
+    auto node = target.lock();
+    if (!node) {
+        ROSEN_LOGW("RSForegroundUIFilterModifier::OnAttachToNode, null target.");
+        return;
+    }
+    for (auto type : uiFilter->GetUIFilterTypes()) {
+        auto paraGroup = uiFilter->GetUIFilterPara(type);
+        if (!paraGroup) {
+            continue;
+        }
+        for (auto& prop : paraGroup->GetLeafProperties()) {
+            if (!prop) {
+                continue;
+            }
+            prop->target_ = target;
+            node->RegisterProperty(prop);
+        }
+    }
+}
+
+void RSForegroundUIFilterModifier::OnDetachFromNode()
+{
+    auto property = std::static_pointer_cast<RSProperty<std::shared_ptr<RSUIFilter>>>(GetProperty());
+    if (!property) {
+        ROSEN_LOGW("RSForegroundUIFilterModifier::OnDetachFromNode, null property.");
+        return;
+    }
+    auto uiFilter = property->Get();
+    if (!uiFilter) {
+        ROSEN_LOGW("RSForegroundUIFilterModifier::OnDetachFromNode, null uiFilter.");
+        return;
+    }
+    auto node = GetTarget().lock();
+    if (!node) {
+        ROSEN_LOGW("RSForegroundUIFilterModifier::OnDetachFromNode, null target.");
+        return;
+    }
+    for (auto type : uiFilter->GetUIFilterTypes()) {
+        auto paraGroup = uiFilter->GetUIFilterPara(type);
+        if (!paraGroup) {
+            continue;
+        }
+        for (auto& prop : paraGroup->GetLeafProperties()) {
+            if (!prop) {
+                continue;
+            }
+            prop->target_.reset();
+            node->UnRegisterProperty(prop->GetId());
+        }
+    }
+}
+
 void RSBoundsModifier::Apply(const std::shared_ptr<RSObjAbsGeometry>& geometry)
 {
+    if (geometry == nullptr) {
+        ROSEN_LOGE("RSBoundsModifier::Apply geometry is null");
+        return;
+    }
     auto value = std::static_pointer_cast<RSProperty<Vector4f>>(property_)->Get();
     geometry->SetRect(value.x_, value.y_, value.z_, value.w_);
 }
 
 void RSBoundsSizeModifier::Apply(const std::shared_ptr<RSObjAbsGeometry>& geometry)
 {
+    if (geometry == nullptr) {
+        ROSEN_LOGE("RSBoundsSizeModifier::Apply geometry is null");
+        return;
+    }
     auto value = std::static_pointer_cast<RSProperty<Vector2f>>(property_)->Get();
     geometry->SetSize(value.x_, value.y_);
 }
 
 void RSBoundsPositionModifier::Apply(const std::shared_ptr<RSObjAbsGeometry>& geometry)
 {
+    if (geometry == nullptr) {
+        ROSEN_LOGE("RSBoundsPositionModifier::Apply geometry is null");
+        return;
+    }
     auto value = std::static_pointer_cast<RSProperty<Vector2f>>(property_)->Get();
     geometry->SetPosition(value.x_, value.y_);
 }
 
 void RSPivotModifier::Apply(const std::shared_ptr<RSObjAbsGeometry>& geometry)
 {
+    if (geometry == nullptr) {
+        ROSEN_LOGE("RSPivotModifier::Apply geometry is null");
+        return;
+    }
     auto value = std::static_pointer_cast<RSProperty<Vector2f>>(property_)->Get();
     geometry->SetPivot(value.x_, value.y_);
 }
 
 void RSPivotZModifier::Apply(const std::shared_ptr<RSObjAbsGeometry>& geometry)
 {
+    if (geometry == nullptr) {
+        ROSEN_LOGE("RSPivotZModifier::Apply geometry is null");
+        return;
+    }
     auto value = std::static_pointer_cast<RSProperty<float>>(property_)->Get();
     geometry->SetPivotZ(value);
 }
 
 void RSQuaternionModifier::Apply(const std::shared_ptr<RSObjAbsGeometry>& geometry)
 {
+    if (geometry == nullptr) {
+        ROSEN_LOGE("RSQuaternionModifier::Apply geometry is null");
+        return;
+    }
     auto value = std::static_pointer_cast<RSProperty<Quaternion>>(property_)->Get();
     geometry->SetQuaternion(value);
 }
 
 void RSRotationModifier::Apply(const std::shared_ptr<RSObjAbsGeometry>& geometry)
 {
+    if (geometry == nullptr) {
+        ROSEN_LOGE("RSRotationModifier::Apply geometry is null");
+        return;
+    }
     auto value = std::static_pointer_cast<RSProperty<float>>(property_)->Get();
     value += geometry->GetRotation();
     geometry->SetRotation(value);
@@ -313,6 +433,10 @@ void RSRotationModifier::Apply(const std::shared_ptr<RSObjAbsGeometry>& geometry
 
 void RSRotationXModifier::Apply(const std::shared_ptr<RSObjAbsGeometry>& geometry)
 {
+    if (geometry == nullptr) {
+        ROSEN_LOGE("RSRotationXModifier::Apply geometry is null");
+        return;
+    }
     auto value = std::static_pointer_cast<RSProperty<float>>(property_)->Get();
     value += geometry->GetRotationX();
     geometry->SetRotationX(value);
@@ -320,6 +444,10 @@ void RSRotationXModifier::Apply(const std::shared_ptr<RSObjAbsGeometry>& geometr
 
 void RSRotationYModifier::Apply(const std::shared_ptr<RSObjAbsGeometry>& geometry)
 {
+    if (geometry == nullptr) {
+        ROSEN_LOGE("RSRotationYModifier::Apply geometry is null");
+        return;
+    }
     auto value = std::static_pointer_cast<RSProperty<float>>(property_)->Get();
     value += geometry->GetRotationY();
     geometry->SetRotationY(value);
@@ -327,12 +455,20 @@ void RSRotationYModifier::Apply(const std::shared_ptr<RSObjAbsGeometry>& geometr
 
 void RSCameraDistanceModifier::Apply(const std::shared_ptr<RSObjAbsGeometry>& geometry)
 {
+    if (geometry == nullptr) {
+        ROSEN_LOGE("RSCameraDistanceModifier::Apply geometry is null");
+        return;
+    }
     auto value = std::static_pointer_cast<RSProperty<float>>(property_)->Get();
     geometry->SetCameraDistance(value);
 }
 
 void RSScaleModifier::Apply(const std::shared_ptr<RSObjAbsGeometry>& geometry)
 {
+    if (geometry == nullptr) {
+        ROSEN_LOGE("RSScaleModifier::Apply geometry is null");
+        return;
+    }
     auto value = std::static_pointer_cast<RSProperty<Vector2f>>(property_)->Get();
     value *= Vector2f(geometry->GetScaleX(), geometry->GetScaleY());
     geometry->SetScale(value.x_, value.y_);
@@ -340,6 +476,10 @@ void RSScaleModifier::Apply(const std::shared_ptr<RSObjAbsGeometry>& geometry)
 
 void RSScaleZModifier::Apply(const std::shared_ptr<RSObjAbsGeometry>& geometry)
 {
+    if (geometry == nullptr) {
+        ROSEN_LOGE("RSScaleZModifier::Apply geometry is null");
+        return;
+    }
     auto value = std::static_pointer_cast<RSProperty<float>>(property_)->Get();
     value *= geometry->GetScaleZ();
     geometry->SetScaleZ(value);
@@ -347,6 +487,10 @@ void RSScaleZModifier::Apply(const std::shared_ptr<RSObjAbsGeometry>& geometry)
 
 void RSSkewModifier::Apply(const std::shared_ptr<RSObjAbsGeometry>& geometry)
 {
+    if (geometry == nullptr) {
+        ROSEN_LOGE("RSSkewModifier::Apply geometry is null");
+        return;
+    }
     auto value = std::static_pointer_cast<RSProperty<Vector3f>>(property_)->Get();
     value += Vector3f(geometry->GetSkewX(), geometry->GetSkewY(), geometry->GetSkewZ());
     geometry->SetSkew(value.x_, value.y_, value.z_);
@@ -354,13 +498,20 @@ void RSSkewModifier::Apply(const std::shared_ptr<RSObjAbsGeometry>& geometry)
 
 void RSPerspModifier::Apply(const std::shared_ptr<RSObjAbsGeometry>& geometry)
 {
+    if (geometry == nullptr) {
+        ROSEN_LOGE("RSPerspModifier::Apply geometry is null");
+        return;
+    }
     auto value = std::static_pointer_cast<RSProperty<Vector4f>>(property_)->Get();
-    value = Vector4f(geometry->GetPerspX(), geometry->GetPerspY(), geometry->GetPerspZ(), geometry->GetPerspW());
     geometry->SetPersp(value.x_, value.y_, value.z_, value.w_);
 }
 
 void RSTranslateModifier::Apply(const std::shared_ptr<RSObjAbsGeometry>& geometry)
 {
+    if (geometry == nullptr) {
+        ROSEN_LOGE("RSTranslateModifier::Apply geometry is null");
+        return;
+    }
     auto value = std::static_pointer_cast<RSProperty<Vector2f>>(property_)->Get();
     value += Vector2f(geometry->GetTranslateX(), geometry->GetTranslateY());
     geometry->SetTranslateX(value.x_);
@@ -369,6 +520,10 @@ void RSTranslateModifier::Apply(const std::shared_ptr<RSObjAbsGeometry>& geometr
 
 void RSTranslateZModifier::Apply(const std::shared_ptr<RSObjAbsGeometry>& geometry)
 {
+    if (geometry == nullptr) {
+        ROSEN_LOGE("RSTranslateZModifier::Apply geometry is null");
+        return;
+    }
     auto value = std::static_pointer_cast<RSProperty<float>>(property_)->Get();
     value += geometry->GetTranslateZ();
     geometry->SetTranslateZ(value);

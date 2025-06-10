@@ -376,12 +376,11 @@ HWTEST_F(RSBaseRenderUtilTest, ConsumeAndUpdateBuffer_004, TestSize.Level2)
 
     // acquire buffer
     if (RSUniRenderJudgement::IsUniRender() && RSSystemParameters::GetControlBufferConsumeEnabled()) {
-        std::shared_ptr<RSSurfaceRenderNode> surfaceNode;
-        ASSERT_EQ(producer, nullptr);
         auto& surfaceHandler = *(rsSurfaceRenderNode->GetRSSurfaceHandler());
         surfaceHandler.SetConsumer(surfaceConsumer);
         uint64_t presentWhen = 100; // let presentWhen smaller than INT64_MAX
-        RSBaseRenderUtil::ConsumeAndUpdateBuffer(surfaceHandler, presentWhen, true, false, false, surfaceNode);
+        uint64_t parentNodeId = 0;
+        RSBaseRenderUtil::ConsumeAndUpdateBuffer(surfaceHandler, presentWhen, true, false, false, parentNodeId);
         ASSERT_EQ(surfaceConsumer->GetAvailableBufferCount(), 0);
     }
 
@@ -930,7 +929,7 @@ HWTEST_F(RSBaseRenderUtilTest, IsNeedClient_009, Function | SmallTest | Level2)
 {
     ComposeInfo info;
     std::shared_ptr<RSFilter> bgFilter = RSFilter::CreateBlurFilter(5.0f, 5.0f);
-    node_->GetMutableRenderProperties().SetBackgroundFilter(bgFilter);
+    node_->GetMutableRenderProperties().backgroundFilter_ = bgFilter;
     bool needClient = RSBaseRenderUtil::IsNeedClient(*node_, info);
     ASSERT_EQ(needClient, true);
 }
@@ -945,7 +944,7 @@ HWTEST_F(RSBaseRenderUtilTest, IsNeedClient_010, Function | SmallTest | Level2)
 {
     ComposeInfo info;
     std::shared_ptr<RSFilter> filter = RSFilter::CreateBlurFilter(5.0f, 5.0f);
-    node_->GetMutableRenderProperties().SetFilter(filter);
+    node_->GetMutableRenderProperties().filter_ = filter;
     bool needClient = RSBaseRenderUtil::IsNeedClient(*node_, info);
     ASSERT_EQ(needClient, true);
 }
@@ -1315,6 +1314,26 @@ HWTEST_F(RSBaseRenderUtilTest, GetAccumulatedBufferCount_001, TestSize.Level2)
     RSBaseRenderUtil::DecAcquiredBufferCount();
     RSBaseRenderUtil::DecAcquiredBufferCount();
     ASSERT_EQ(0, RSBaseRenderUtil::GetAccumulatedBufferCount());
+}
+
+/*
+ * @tc.name: WriteCacheImageRenderNodeToPngTest
+ * @tc.desc: Test WriteCacheImageRenderNodeToPng
+ * @tc.type: FUNC
+ * @tc.require: IC9VB0
+ */
+HWTEST_F(RSBaseRenderUtilTest, WriteCacheImageRenderNodeToPngTest, TestSize.Level2)
+{
+    std::shared_ptr<Drawing::Bitmap> bitmap = nullptr;
+    std::string debugInfo = "";
+    bool result = RSBaseRenderUtil::WriteCacheImageRenderNodeToPng(bitmap, debugInfo);
+    ASSERT_EQ(false, result);
+
+    auto bitmap2 = std::make_shared<Drawing::Bitmap>();
+    Drawing::BitmapFormat bitmapFormat { Drawing::COLORTYPE_RGBA_8888, Drawing::ALPHATYPE_OPAQUE };
+    bitmap2->Build(10, 10, bitmapFormat);
+    bool result2 = RSBaseRenderUtil::WriteCacheImageRenderNodeToPng(bitmap2, debugInfo);
+    ASSERT_EQ(true, result2);
 }
 
 } // namespace OHOS::Rosen

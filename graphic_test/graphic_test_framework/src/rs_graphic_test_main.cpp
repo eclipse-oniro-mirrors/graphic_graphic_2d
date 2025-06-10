@@ -149,10 +149,36 @@ static int RunAllTest(int argc, char **argv)
 
 static int RunNodeTreeProfilerTest(int argc, char **argv)
 {
+    if (argc != ARGS_THREE && argc != ARGS_FOUR) {
+        cout << "nodetree failed : wrong param number" << endl;
+        return 0;
+    }
     RSGraphicTestDirector::Instance().Run();
     std::string path = argv[ARGS_TWO];
+    bool useBufferDump = false;
+    if (argc == ARGS_FOUR) {
+        useBufferDump = (string(argv[ARGS_THREE]) == "-dumpbuffer");
+    }
     RSGraphicTestProfiler engine;
+    engine.SetUseBufferDump(useBufferDump);
     return engine.RunNodeTreeTest(path);
+}
+
+static int RunPlaybackProfilerTest(int argc, char **argv)
+{
+    if (argc != ARGS_THREE && argc != ARGS_FOUR) {
+        cout << "nodetree failed : wrong param number" << endl;
+        return 0;
+    }
+    RSGraphicTestDirector::Instance().Run();
+    std::string path = argv[ARGS_TWO];
+    bool useBufferDump = false;
+    if (argc == ARGS_FOUR) {
+        useBufferDump = (string(argv[ARGS_THREE]) == "-dumpbuffer");
+    }
+    RSGraphicTestProfiler engine;
+    engine.SetUseBufferDump(useBufferDump);
+    return engine.RunPlaybackTest(path);
 }
 
 int main(int argc, char **argv)
@@ -161,7 +187,8 @@ int main(int argc, char **argv)
         { "-list", DisplayAllCaseInfo },
         { "-unit", FilterTestUnit },
         { "-all", RunAllTest },
-        { "-nodetree", RunNodeTreeProfilerTest }
+        { "-nodetree", RunNodeTreeProfilerTest },
+        { "-playback", RunPlaybackProfilerTest }
     };
 
     if (argc >= ARGS_TWO) {

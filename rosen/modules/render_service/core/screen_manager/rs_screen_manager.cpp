@@ -327,6 +327,8 @@ void RSScreenManager::OnHotPlugEvent(std::shared_ptr<HdiOutput>& output, bool co
             RS_LOGE("%{public}s: screen %{public}" PRIu64 "is covered.", __func__, id);
         }
         pendingHotPlugEvents_[id] = ScreenHotPlugEvent{output, connected};
+        RS_LOGI("%{public}s: screen %{public}" PRIu64 "is %{public}s, event has been saved", __func__, id,
+                connected ? "connected" : "disconnected");
     }
 
     // This func would be called in main thread first time immediately after calling composer_->RegScreenHotplug,
@@ -340,6 +342,7 @@ void RSScreenManager::OnHotPlugEvent(std::shared_ptr<HdiOutput>& output, bool co
         RS_LOGE("%{public}s: mainThread is nullptr.", __func__);
         return;
     }
+    RS_LOGI("%{public}s: mainThread->RequestNextVSync()", __func__);
     mainThread->RequestNextVSync();
 }
 
@@ -484,6 +487,9 @@ bool RSScreenManager::TrySimpleProcessHotPlugEvents()
         mipiCheckInFirstHotPlugEvent_ = true;
         return true;
     }
+    RS_LOGI("%{public}s: isHwcDead_:%{public}d, pendingHotPlugEventsSize:%{public}zu, "
+            "pendingConnectedIdsSize:%{public}zu",
+            __func__, isHwcDead_.load(), pendingHotPlugEvents_.size(), pendingConnectedIds_.size());
     return false;
 }
 
@@ -639,6 +645,9 @@ void RSScreenManager::ProcessScreenConnected(std::shared_ptr<HdiOutput>& output)
             defaultScreenId = id;
         }
     } else if (defaultScreenId == INVALID_SCREEN_ID) {
+        RS_LOGI("%{public}s The screen id %{public}" PRIu64
+                " is set to defaultScreenId. last defaultScreenId is %{public}" PRIu64 ".",
+                __func__, id, defaultScreenId);
         defaultScreenId = id;
     }
     defaultScreenId_ = defaultScreenId;
@@ -651,6 +660,7 @@ void RSScreenManager::ProcessScreenConnected(std::shared_ptr<HdiOutput>& output)
 
 #ifdef RS_SUBSCRIBE_SENSOR_ENABLE
     if (isFoldScreenFlag_ && id != 0) {
+        RS_LOGI("%{public}s The externalScreenId_ is set %{public}" PRIu64 ".", __func__, id);
         externalScreenId_ = id;
     }
 #endif
@@ -721,18 +731,18 @@ void RSScreenManager::RegSetScreenVsyncEnabledCallbackForMainThread(ScreenId vsy
         return;
     }
     vsyncSampler->SetVsyncEnabledScreenId(vsyncEnabledScreenId);
-    vsyncSampler->RegSetScreenVsyncEnabledCallback([this, vsyncEnabledScreenId](bool enabled) {
+    vsyncSampler->RegSetScreenVsyncEnabledCallback([this](uint64_t screenId, bool enabled) {
         auto mainThread = RSMainThread::Instance();
         if (mainThread == nullptr) {
             RS_LOGE("%{public}s screenVsyncEnabled:%{public}d set failed, "
                 "get RSMainThread failed", __func__, enabled);
             return;
         }
-        mainThread->PostTask([this, vsyncEnabledScreenId, enabled]() {
-            auto screen = GetScreen(vsyncEnabledScreenId);
+        mainThread->PostTask([this, screenId, enabled]() {
+            auto screen = GetScreen(screenId);
             if (screen == nullptr) {
                 RS_LOGE("SetScreenVsyncEnabled:%{public}d failed, screen %{public}" PRIu64 " not found",
-                    enabled, vsyncEnabledScreenId);
+                    enabled, screenId);
                 return;
             }
             screen->SetScreenVsyncEnabled(enabled);
@@ -749,12 +759,12 @@ void RSScreenManager::RegSetScreenVsyncEnabledCallbackForHardwareThread(ScreenId
     }
     vsyncSampler->SetVsyncEnabledScreenId(vsyncEnabledScreenId);
 #ifdef RS_ENABLE_GPU
-    vsyncSampler->RegSetScreenVsyncEnabledCallback([this, vsyncEnabledScreenId](bool enabled) {
-        RSHardwareThread::Instance().PostTask([this, vsyncEnabledScreenId, enabled]() {
-            auto screen = GetScreen(vsyncEnabledScreenId);
+    vsyncSampler->RegSetScreenVsyncEnabledCallback([this](uint64_t screenId, bool enabled) {
+        RSHardwareThread::Instance().PostTask([this, screenId, enabled]() {
+            auto screen = GetScreen(screenId);
             if (screen == nullptr) {
                 RS_LOGE("SetScreenVsyncEnabled:%{public}d failed, screen %{public}" PRIu64 " not found",
-                    enabled, vsyncEnabledScreenId);
+                    enabled, screenId);
                 return;
             }
             screen->SetScreenVsyncEnabled(enabled);
@@ -1075,9 +1085,30 @@ ScreenId RSScreenManager::CreateVirtualScreen(
     return newId;
 }
 
+std::unordered_set<uint64_t> RSScreenManager::GetBlackListVirtualScreenByNode(uint64_t nodeId)
+{
+    std::unordered_set<uint64_t> virtualScreens = {};
+    std::lock_guard<std::mutex> lock(blackListScreenMutex_);
+    if (blackListInVirtualScreen_.find(nodeId) != blackListInVirtualScreen_.end()) {
+        virtualScreens = blackListInVirtualScreen_[nodeId];
+    }
+    return virtualScreens;
+}
+
 int32_t RSScreenManager::SetVirtualScreenBlackList(ScreenId id, const std::vector<uint64_t>& blackList)
 {
     std::unordered_set<NodeId> screenBlackList(blackList.begin(), blackList.end());
+    {
+        std::lock_guard<std::mutex> lock(blackListScreenMutex_);
+        for (const auto& [nodeId, screenIdSet] : blackListInVirtualScreen_) {
+            if (screenIdSet.size() > 0 && screenIdSet.find(id) != screenIdSet.end()) {
+                blackListInVirtualScreen_[nodeId].erase(id);
+            }
+        }
+        for (const auto& nodeId : screenBlackList) {
+            blackListInVirtualScreen_[nodeId].insert(id);
+        }
+    }
     if (id == INVALID_SCREEN_ID) {
         RS_LOGI("%{public}s: Cast screen blacklists for id %{public}" PRIu64, __func__, id);
         std::lock_guard<std::mutex> lock(blackListMutex_);
@@ -1125,6 +1156,12 @@ int32_t RSScreenManager::SetVirtualScreenTypeBlackList(ScreenId id, const std::v
 
 int32_t RSScreenManager::AddVirtualScreenBlackList(ScreenId id, const std::vector<uint64_t>& blackList)
 {
+    {
+        std::lock_guard<std::mutex> lock(blackListScreenMutex_);
+        for (const auto& nodeId : blackList) {
+            blackListInVirtualScreen_[nodeId].insert(id);
+        }
+    }
     if (id == INVALID_SCREEN_ID) {
         RS_LOGI("%{public}s: Cast screen blacklists", __func__);
         std::lock_guard<std::mutex> lock(blackListMutex_);
@@ -1153,6 +1190,12 @@ int32_t RSScreenManager::AddVirtualScreenBlackList(ScreenId id, const std::vecto
 
 int32_t RSScreenManager::RemoveVirtualScreenBlackList(ScreenId id, const std::vector<uint64_t>& blackList)
 {
+    {
+        std::lock_guard<std::mutex> lock(blackListScreenMutex_);
+        for (const auto& nodeId : blackList) {
+            blackListInVirtualScreen_[nodeId].erase(id);
+        }
+    }
     if (id == INVALID_SCREEN_ID) {
         RS_LOGI("%{public}s: Cast screen blacklists", __func__);
         std::lock_guard<std::mutex> lock(blackListMutex_);
@@ -1243,6 +1286,20 @@ std::shared_ptr<Media::PixelMap> RSScreenManager::GetScreenSecurityMask(ScreenId
     return screen->GetSecurityMask();
 }
 
+int32_t RSScreenManager::GetVirtualScreenSecLayerOption(ScreenId id) const
+{
+    if (id == INVALID_SCREEN_ID) {
+        RS_LOGW("%{public}s: INVALID_SCREEN_ID.", __func__);
+        return INVALID_ARGUMENTS;
+    }
+    auto virtualScreen = GetScreen(id);
+    if (virtualScreen == nullptr || !virtualScreen->IsVirtual()) {
+        RS_LOGW("%{public}s: There is no virtual screen for id %{public}" PRIu64, __func__, id);
+        return SCREEN_NOT_FOUND;
+    }
+    return virtualScreen->GetVirtualSecLayerOption();
+}
+
 int32_t RSScreenManager::SetMirrorScreenVisibleRect(ScreenId id, const Rect& mainScreenRect, bool supportRotation)
 {
     if (id == INVALID_SCREEN_ID) {
@@ -1296,13 +1353,15 @@ const std::unordered_set<NodeId> RSScreenManager::GetVirtualScreenBlackList(Scre
         RS_LOGW("%{public}s: There is no screen for id %{public}" PRIu64, __func__, id);
         return {};
     }
+    std::unordered_set<uint64_t> virtualScreenBlackList = virtualScreen->GetBlackList();
+    // if the skipWindow flag is enabled, the global blacklist takes effect in addition
     if (virtualScreen->GetCastScreenEnableSkipWindow()) {
-        RS_LOGW("%{public}s: Cast screen blacklists for id %{public}" PRIu64, __func__, id);
+        RS_LOGD("%{public}s: Cast screen blacklists for id %{public}" PRIu64, __func__, id);
         std::lock_guard<std::mutex> lock(blackListMutex_);
-        return castScreenBlackList_;
+        virtualScreenBlackList.insert(castScreenBlackList_.begin(), castScreenBlackList_.end());
     }
     RS_LOGD("%{public}s: Record screen blacklists for id %{public}" PRIu64, __func__, id);
-    return virtualScreen->GetBlackList();
+    return virtualScreenBlackList;
 }
 
 const std::unordered_set<NodeType> RSScreenManager::GetVirtualScreenTypeBlackList(ScreenId id) const
@@ -1313,7 +1372,7 @@ const std::unordered_set<NodeType> RSScreenManager::GetVirtualScreenTypeBlackLis
         return {};
     }
     if (virtualScreen->GetCastScreenEnableSkipWindow()) {
-        RS_LOGW("%{public}s: Cast screen typeblacklists for id %{public}" PRIu64, __func__, id);
+        RS_LOGD("%{public}s: Cast screen typeblacklists for id %{public}" PRIu64, __func__, id);
         std::lock_guard<std::mutex> lock(typeBlackListMutex_);
         return castScreenTypeBlackList_;
     }
@@ -1516,6 +1575,31 @@ int32_t RSScreenManager::SetRogScreenResolution(ScreenId id, uint32_t width, uin
     return SUCCESS;
 }
 
+void RSScreenManager::ProcessVSyncScreenIdWhilePowerStatusChanged(ScreenId id, ScreenPowerStatus status)
+{
+    auto vsyncSampler = CreateVSyncSampler();
+    if (vsyncSampler == nullptr) {
+        RS_LOGE("%{public}s failed, vsyncSampler is null.", __func__);
+        return;
+    }
+    RS_TRACE_NAME_FMT("%s, id:%lu, status:%d, isPowerOff:%d, isSuspend:%d", __func__, id, status,
+        (status == ScreenPowerStatus::POWER_STATUS_OFF), (status == ScreenPowerStatus::POWER_STATUS_SUSPEND));
+    if (status == ScreenPowerStatus::POWER_STATUS_OFF || status == ScreenPowerStatus::POWER_STATUS_SUSPEND) {
+        vsyncSampler->SetScreenVsyncEnabledInRSMainThread(id, false);
+    }
+    if (isFoldScreenFlag_) {
+        uint64_t vsyncEnabledScreenId = JudgeVSyncEnabledScreenWhilePowerStatusChanged(id, status);
+        uint64_t lastVsyncEnabledScreenId = vsyncSampler->GetVsyncEnabledScreenId();
+        if (vsyncEnabledScreenId != lastVsyncEnabledScreenId) {
+            RS_TRACE_NAME_FMT("vsyncEnabledScreenId has changed, need disable lastVsyncEnabledScreenId vsync, "
+                "vsyncEnabledScreenId:%lu, lastVsyncEnabledScreenId:%lu",
+                vsyncEnabledScreenId, lastVsyncEnabledScreenId);
+            vsyncSampler->SetScreenVsyncEnabledInRSMainThread(lastVsyncEnabledScreenId, false);
+        }
+        UpdateVsyncEnabledScreenId(vsyncEnabledScreenId);
+    }
+}
+
 void RSScreenManager::UpdateScreenPowerStatus(ScreenId id, ScreenPowerStatus status)
 {
     auto screen = GetScreen(id);
@@ -1533,10 +1617,7 @@ void RSScreenManager::UpdateScreenPowerStatus(ScreenId id, ScreenPowerStatus sta
         return;
     }
 
-    if (isFoldScreenFlag_) {
-        uint64_t vsyncEnabledScreenId = JudgeVSyncEnabledScreenWhilePowerStatusChanged(id, status);
-        UpdateVsyncEnabledScreenId(vsyncEnabledScreenId);
-    }
+    ProcessVSyncScreenIdWhilePowerStatusChanged(id, status);
 
     /*
      * If app adds the first frame when power on the screen, delete the code
@@ -1728,7 +1809,7 @@ int32_t RSScreenManager::GetScreenBacklight(ScreenId id) const
 {
     auto screen = GetScreen(id);
     if (screen == nullptr) {
-        RS_LOGW("%{public}s: There is no screen for id %{public}" PRIu64, __func__, id);
+        RS_LOGE("%{public}s: There is no screen for id %{public}" PRIu64, __func__, id);
         return INVALID_BACKLIGHT_VALUE;
     }
     return screen->GetScreenBacklight();
@@ -1876,10 +1957,12 @@ void RSScreenManager::RemoveScreenChangeCallback(const sptr<RSIScreenChangeCallb
 {
     std::lock_guard<std::shared_mutex> lock(screenChangeCallbackMutex_);
     auto iter = std::find(screenChangeCallbacks_.cbegin(), screenChangeCallbacks_.cend(), callback);
-    if (iter != screenChangeCallbacks_.cend()) {
-        screenChangeCallbacks_.erase(iter);
-        RS_LOGI("%{public}s: remove a remote callback succeed.", __func__);
+    if (iter == screenChangeCallbacks_.cend()) {
+        RS_LOGW("%{public}s: The remote callback is not in screenChangeCallbacks_", __func__);
+        return;
     }
+    screenChangeCallbacks_.erase(iter);
+    RS_LOGI("%{public}s: remove a remote callback succeed.", __func__);
 }
 
 void RSScreenManager::DisplayDump(std::string& dumpString)
@@ -2375,6 +2458,7 @@ void RSScreenManager::SetScreenHasProtectedLayer(ScreenId id, bool hasProtectedL
 
 void RSScreenManager::SetScreenSwitchStatus(bool flag)
 {
+    RS_LOGI("%{public}s: set isScreenSwitching_ = %{public}d", __func__, flag);
     isScreenSwitching_ = flag;
 }
 
@@ -2418,6 +2502,9 @@ bool RSScreenManager::AnyScreenFits(std::function<bool(const ScreenNode&)> func)
 void RSScreenManager::TriggerCallbacks(ScreenId id, ScreenEvent event, ScreenChangeReason reason) const
 {
     std::shared_lock<std::shared_mutex> lock(screenChangeCallbackMutex_);
+    RS_LOGI("%{public}s: id %{public}" PRIu64
+            "event %{public}u reason %{public}u screenChangeCallbacks_.size() %{public}zu",
+            __func__, id, static_cast<uint8_t>(event), static_cast<uint8_t>(reason), screenChangeCallbacks_.size());
     for (const auto& cb : screenChangeCallbacks_) {
         cb->OnScreenChanged(id, event, reason);
     }

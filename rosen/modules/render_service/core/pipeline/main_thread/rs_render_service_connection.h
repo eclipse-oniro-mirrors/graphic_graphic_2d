@@ -176,6 +176,7 @@ private:
     void TakeSurfaceCapture(NodeId id, sptr<RSISurfaceCaptureCallback> callback,
         const RSSurfaceCaptureConfig& captureConfig, const RSSurfaceCaptureBlurParam& blurParam,
         const Drawing::Rect& specifiedAreaRect = Drawing::Rect(0.f, 0.f, 0.f, 0.f),
+        std::unique_ptr<Media::PixelMap> clientPixelMap = nullptr,
         RSSurfaceCapturePermissions permissions = RSSurfaceCapturePermissions()) override;
 
     std::vector<std::pair<NodeId, std::shared_ptr<Media::PixelMap>>> TakeSurfaceCaptureSoloNode(
@@ -187,6 +188,9 @@ private:
 
     ErrCode SetWindowFreezeImmediately(NodeId id, bool isFreeze, sptr<RSISurfaceCaptureCallback> callback,
         const RSSurfaceCaptureConfig& captureConfig, const RSSurfaceCaptureBlurParam& blurParam) override;
+
+    void TakeUICaptureInRange(
+        NodeId id, sptr<RSISurfaceCaptureCallback> callback, const RSSurfaceCaptureConfig& captureConfig) override;
 
     ErrCode SetHwcNodeBounds(int64_t rsNodeId, float positionX, float positionY,
         float positionZ, float positionW) override;
@@ -381,6 +385,9 @@ private:
 
     ErrCode SetLayerTop(const std::string &nodeIdStr, bool isTop) override;
 
+    void RegisterTransactionDataCallback(int32_t pid,
+        uint64_t timeStamp, sptr<RSITransactionDataCallback> callback) override;
+
     void SetColorFollow(const std::string &nodeIdStr, bool isColorFollow) override;
 
     ErrCode RegisterSurfaceBufferCallback(pid_t pid, uint64_t uid,
@@ -443,7 +450,8 @@ private:
     mutable std::mutex mutex_;
     bool cleanDone_ = false;
     const std::string VOTER_SCENE_BLUR = "VOTER_SCENE_BLUR";
-
+    const std::string VOTER_SCENE_GPU = "VOTER_SCENE_GPU";
+    
     // save all virtual screenIds created by this connection.
     std::unordered_set<ScreenId> virtualScreenIds_;
     sptr<RSIScreenChangeCallback> screenChangeCallback_;

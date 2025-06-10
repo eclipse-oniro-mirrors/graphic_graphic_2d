@@ -23,15 +23,23 @@
 
 namespace OHOS {
 namespace Rosen {
-RSRenderPropertyAnimation::RSRenderPropertyAnimation(AnimationId id, const PropertyId& propertyId,
-    const std::shared_ptr<RSRenderPropertyBase>& originValue) : RSRenderAnimation(id), propertyId_(propertyId),
-    originValue_(originValue->Clone()), lastValue_(originValue->Clone())
-{}
+RSRenderPropertyAnimation::RSRenderPropertyAnimation(
+    AnimationId id, const PropertyId& propertyId, const std::shared_ptr<RSRenderPropertyBase>& originValue)
+    : RSRenderAnimation(id), propertyId_(propertyId)
+{
+    if (originValue) {
+        originValue_ = originValue->Clone();
+        lastValue_ = originValue->Clone();
+    } else {
+        originValue_ = std::make_shared<RSRenderPropertyBase>();
+        lastValue_ = std::make_shared<RSRenderPropertyBase>();
+    }
+}
 
 void RSRenderPropertyAnimation::DumpAnimationInfo(std::string& out) const
 {
     out += "Type:RSRenderPropertyAnimation";
-    RSRenderPropertyType type = RSRenderPropertyType::INVALID;
+    RSPropertyType type = RSPropertyType::INVALID;
     if (property_ != nullptr) {
         type = property_->GetPropertyType();
         out += ", ModifierType: " + std::to_string(static_cast<int16_t>(property_->GetModifierType()));
@@ -218,7 +226,7 @@ void RSRenderPropertyAnimation::ProcessAnimateVelocityUnderAngleRotation(float f
 
 void RSRenderPropertyAnimation::DumpFraction(float fraction, int64_t time)
 {
-    RSAnimationTraceUtils::GetInstance().addAnimationFrameTrace(GetTargetId(), GetTargetName(), GetAnimationId(),
+    RSAnimationTraceUtils::GetInstance().AddAnimationFrameTrace(GetTarget(), GetAnimationId(),
         GetPropertyId(), fraction, GetPropertyValue(), time, GetDuration(), GetRepeatCount());
 }
 } // namespace Rosen

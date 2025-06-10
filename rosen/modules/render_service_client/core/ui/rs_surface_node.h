@@ -73,6 +73,11 @@ struct RSSurfaceNodeConfig {
     std::shared_ptr<RSUIContext> rsUIContext = nullptr;
 };
 
+/**
+ * @class RSSurfaceNode
+ *
+ * @brief Represents a surface node in the rendering service.
+ */
 class RSC_EXPORT RSSurfaceNode : public RSNode {
 public:
     static constexpr float POINTER_WINDOW_POSITION_Z = 9999;
@@ -210,7 +215,17 @@ public:
     void SetTextureExport(bool isTextureExportNode) override;
     void SetGlobalPositionEnabled(bool isEnabled);
     bool GetGlobalPositionEnabled() const;
+    /**
+     * @brief Set whether to enable the new version of frame gravity.
+     *
+     * @param bool enable the new version of frame gravity or not.
+     */
     void SetFrameGravityNewVersionEnabled(bool isEnabled);
+    /**
+     * @brief Get the enable status of new version of frame gravity.
+     *
+     * @return true if the new version of frame gravity enabled; false otherwise.
+     */
     bool GetFrameGravityNewVersionEnabled() const;
 
 #ifndef ROSEN_CROSS_PLATFORM
@@ -242,7 +257,17 @@ public:
      */
     void SetWindowId(uint32_t windowId);
 
+    /**
+     * @brief Controls surface content freezing for window snapshot or resource release
+     *
+     * Only works in Unified Render mode (UniRender)
+     *
+     * @param isFreeze Freeze control flag:
+     *                - true: Freeze current frame into static texture
+     *                - false: Resume normal buffer updates
+     */
     void SetFreeze(bool isFreeze) override;
+    
     // codes for arkui-x
 #ifdef USE_SURFACE_TEXTURE
     void SetSurfaceTexture(const RSSurfaceExtConfig& config);

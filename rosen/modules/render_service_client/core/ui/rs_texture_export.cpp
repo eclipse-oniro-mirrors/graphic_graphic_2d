@@ -21,7 +21,6 @@
 
 namespace OHOS {
 namespace Rosen {
-
 RSTextureExport::RSTextureExport(std::shared_ptr<RSNode> rootNode, SurfaceId surfaceId)
 {
     if (rootNode == nullptr) {
@@ -84,6 +83,5 @@ void RSTextureExport::StopTextureExport()
     rsUiDirector_->Destroy(true);
     rootNode_->RemoveFromTree();
 }
-
 } // namespace Rosen
 } // namespace OHOS

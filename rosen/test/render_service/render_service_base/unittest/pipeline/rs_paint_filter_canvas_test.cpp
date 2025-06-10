@@ -16,6 +16,7 @@
 #include "gtest/gtest.h"
 
 #include "pipeline/rs_paint_filter_canvas.h"
+#include "render/rs_filter.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -1785,6 +1786,50 @@ HWTEST_F(RSPaintFilterCanvasTest, CacheBehindWindowDataTest, TestSize.Level1)
     ASSERT_NE(paintFilterCanvas_->cacheBehindWindowData_, nullptr);
     ASSERT_NE(paintFilterCanvas_->GetCacheBehindWindowData(), nullptr);
     paintFilterCanvas_->cacheBehindWindowData_ = nullptr;
+}
+
+/**
+ * @tc.name: SetParallelRender
+ * @tc.desc: Test SetParallelRender
+ * @tc.type:FUNC
+ * @tc.require: IC8TIV
+ */
+HWTEST_F(RSPaintFilterCanvasTest, SetParallelRender, TestSize.Level1)
+{
+    Drawing::Canvas canvas;
+    std::shared_ptr<RSPaintFilterCanvas> paintFilterCanvasBase = std::make_shared<RSPaintFilterCanvas>(&canvas);
+    EXPECT_NE(paintFilterCanvasBase, nullptr);
+    paintFilterCanvasBase->SetParallelRender(true);
+}
+
+/**
+ * @tc.name: isEffectIntersectWithDRMTest
+ * @tc.desc: SetEffectIntersectWithDRM/GetIntersectWithDRM
+ * @tc.type:FUNC
+ * @tc.require:issuesIC0HM8
+ */
+HWTEST_F(RSPaintFilterCanvasTest, IsEffectIntersectWithDRMTest, TestSize.Level1)
+{
+    ASSERT_NE(paintFilterCanvas_, nullptr);
+    paintFilterCanvas_->SetEffectIntersectWithDRM(false);
+    EXPECT_EQ(paintFilterCanvas_->isIntersectWithDRM_, false);
+    paintFilterCanvas_->SetEffectIntersectWithDRM(true);
+    EXPECT_EQ(paintFilterCanvas_->isIntersectWithDRM_, true);
+}
+
+/**
+ * @tc.name: IsDarkColorModeTest
+ * @tc.desc: SetDarkColorMode/GetDarkColorMode
+ * @tc.type:FUNC
+ * @tc.require:issuesIC0HM8
+ */
+HWTEST_F(RSPaintFilterCanvasTest, IsDarkColorModeTestTest, TestSize.Level1)
+{
+    ASSERT_NE(paintFilterCanvas_, nullptr);
+    paintFilterCanvas_->SetDarkColorMode(false);
+    EXPECT_EQ(paintFilterCanvas_->isDarkColorMode_, false);
+    paintFilterCanvas_->SetDarkColorMode(true);
+    EXPECT_EQ(paintFilterCanvas_->isDarkColorMode_, true);
 }
 } // namespace Rosen
 } // namespace OHOS

@@ -47,6 +47,7 @@ Canvas* CanvasUtils::CreateLockCanvas(OHNativeWindow* nativeWindow)
     bool result = bitmap.InstallPixels(imageInfo, buffer->sfbuffer->GetVirAddr(), buffer->sfbuffer->GetStride());
     if (!result) {
         LOGE("CreateLockCanvas Create bitmap failed");
+        NativeWindowCancelBuffer(nativeWindow, buffer);
         return nullptr;
     }
 
@@ -63,14 +64,14 @@ Canvas* CanvasUtils::CreateLockCanvas(OHNativeWindow* nativeWindow)
 bool CanvasUtils::UnlockCanvas(Canvas* canvas, OHNativeWindow* nativeWindow)
 {
 #ifdef ROSEN_OHOS
+    std::unordered_map<Canvas*, OHNativeWindow*>::iterator iter;
     {
         std::lock_guard<std::mutex> lock(canvasWindowMutex_);
-        auto iter = canvasWindow_.find(canvas);
+        iter = canvasWindow_.find(canvas);
         if (iter == canvasWindow_.end() || iter->second != nativeWindow) {
             LOGE("UnlockCanvas canvas is invalid");
             return false;
         }
-        canvasWindow_.erase(iter);
     }
 
     int32_t ret = NativeWindowUnlockAndFlushBuffer(nativeWindow);
@@ -78,6 +79,12 @@ bool CanvasUtils::UnlockCanvas(Canvas* canvas, OHNativeWindow* nativeWindow)
         LOGE("UnlockCanvas NativeWindowUnlockAndFlushBuffer failed");
         return false;
     }
+
+    {
+        std::lock_guard<std::mutex> lock(canvasWindowMutex_);
+        canvasWindow_.erase(iter);
+    }
+    delete canvas;
 
     return true;
 #else

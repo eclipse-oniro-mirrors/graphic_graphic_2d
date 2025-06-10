@@ -19,6 +19,7 @@
 #include <memory>
 
 #include "parcel.h"
+#include "recording/draw_cmd_list.h"
 #include "rs_modifier_type.h"
 
 #include "common/rs_color.h"
@@ -26,8 +27,6 @@
 #include "common/rs_rect.h"
 #include "modifier/rs_modifier_type.h"
 #include "modifier/rs_render_property.h"
-
-#include "recording/draw_cmd_list.h"
 #include "utils/matrix.h"
 
 namespace OHOS {
@@ -98,7 +97,7 @@ public:
     virtual void SetPropertyDrawCmdList(std::shared_ptr<Drawing::DrawCmdList> ptr) const
     {
     }
-    
+
     virtual uint64_t GetDrawCmdListId() const
     {
         return 0;
@@ -185,7 +184,7 @@ public:
     {
         return property_->Set(ptr);
     }
-    
+
     uint64_t GetDrawCmdListId() const override
     {
         Drawing::DrawCmdListPtr drawCmd = property_->Get();
@@ -453,6 +452,23 @@ public:
     RSModifierType GetType() override
     {
         return RSModifierType::BACKGROUND_UI_FILTER;
+    }
+};
+
+class RSB_EXPORT RSForegroundUIFilterRenderModifier : public RSForegroundRenderModifier {
+public:
+    RSForegroundUIFilterRenderModifier(const std::shared_ptr<RSRenderPropertyBase>& property)
+        : RSForegroundRenderModifier(property)
+    {
+        property->SetModifierType(RSModifierType::FOREGROUND_UI_FILTER);
+    }
+    ~RSForegroundUIFilterRenderModifier() override = default;
+    void Apply(RSModifierContext& context) const override;
+    void Update(const std::shared_ptr<RSRenderPropertyBase>& prop, bool isDelta) override;
+    bool Marshalling(Parcel& parcel) override;
+    RSModifierType GetType() override
+    {
+        return RSModifierType::FOREGROUND_UI_FILTER;
     }
 };
 

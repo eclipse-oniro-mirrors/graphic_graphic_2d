@@ -15,6 +15,7 @@
 
 #include "gtest/gtest.h"
 
+#include "graphic_feature_param_manager.h"
 #include "params/rs_surface_render_params.h"
 #include "pipeline/hardware_thread/rs_hardware_thread.h"
 #include "pipeline/render_thread/rs_base_render_engine.h"
@@ -496,6 +497,23 @@ HWTEST_F(RSUniRenderThreadTest, WaitUntilDisplayNodeBufferReleased001, TestSize.
 }
 
 /**
+ * @tc.name: PerfForBlurIfNeededTest
+ * @tc.desc: Test PerfForBlurIfNeeded
+ * @tc.type: FUNC
+ * @tc.require: issueIAE59W
+ */
+HWTEST_F(RSUniRenderThreadTest, PerfForBlurIfNeededTest, TestSize.Level1)
+{
+    auto& managerInstance = GraphicFeatureParamManager::GetInstance();
+    managerInstance.Init();
+    ASSERT_NE(managerInstance.featureParamMap_.size(), 0);
+    RSUniRenderThread& instance = RSUniRenderThread::Instance();
+    auto renderThreadParams = std::make_unique<RSRenderThreadParams>();
+    instance.Sync(move(renderThreadParams));
+    instance.PerfForBlurIfNeeded();
+}
+
+/**
  * @tc.name: GetRefreshRate001
  * @tc.desc: Test GetRefreshRate
  * @tc.type: FUNC
@@ -543,8 +561,16 @@ HWTEST_F(RSUniRenderThreadTest, ReleaseSelfDrawingNodeBuffer001, TestSize.Level1
     instance.ReleaseSelfDrawingNodeBuffer();
     ASSERT_EQ(params->GetPreBuffer(), nullptr);
 
+    params->isOnTheTree_ = true;
+    params->isHardwareEnabled_ = false;
     params->isLastFrameHardwareEnabled_ = true;
+    params->preBuffer_ = SurfaceBuffer::Create();
     instance.ReleaseSelfDrawingNodeBuffer();
+    ASSERT_EQ(params->GetPreBuffer(), nullptr);
+
+    params->isOnTheTree_ = false;
+    params->isHardwareEnabled_ = true;
+    params->isLastFrameHardwareEnabled_ = true;
     params->preBuffer_ = SurfaceBuffer::Create();
     instance.ReleaseSelfDrawingNodeBuffer();
     ASSERT_EQ(params->GetPreBuffer(), nullptr);
@@ -769,6 +795,14 @@ HWTEST_F(RSUniRenderThreadTest, GetFastComposeTimeStampDiff, TestSize.Level1)
 HWTEST_F(RSUniRenderThreadTest, IsTaskQueueEmpty, TestSize.Level1)
 {
     auto& instance = RSUniRenderThread::Instance();
+    constexpr auto loops = 5;
+    constexpr auto sleepTime = 100;
+    for (int i = 0; i < loops; ++i) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(sleepTime));
+        if (instance.IsTaskQueueEmpty()) {
+            break;
+        }
+    }
     EXPECT_TRUE(instance.IsTaskQueueEmpty());
 }
 }

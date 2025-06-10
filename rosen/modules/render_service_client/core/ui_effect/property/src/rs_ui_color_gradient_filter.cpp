@@ -38,6 +38,21 @@ bool RSUIColorGradientFilterPara::Equals(const std::shared_ptr<RSUIFilterParaBas
     if ((oldMask == nullptr) != (mask == nullptr)) {
         return false;
     }
+
+    auto colorGradientProperty = std::static_pointer_cast<RSUIColorGradientFilterPara>(other);
+    if (colorGradientProperty == nullptr) { return false; }
+    auto strengths = colorGradientProperty->GetRSProperty(RSUIFilterType::COLOR_GRADIENT_STRENGTH);
+    if (strengths == nullptr) { return false; }
+    auto strengthProperty = std::static_pointer_cast<RSAnimatableProperty<std::vector<float>>>(strengths);
+    if (strengthProperty == nullptr) { return false; }
+
+    auto oldStrengthsProperty = std::static_pointer_cast<RSAnimatableProperty<std::vector<float>>>(
+        GetRSProperty(RSUIFilterType::COLOR_GRADIENT_STRENGTH));
+    if (oldStrengthsProperty == nullptr) { return false; }
+    if (strengthProperty->Get().size() != oldStrengthsProperty->Get().size()) {
+        return false;
+    }
+
     return true;
 }
 
@@ -45,12 +60,11 @@ void RSUIColorGradientFilterPara::Dump(std::string& out) const
 {
     out += "RSUIColorGradientFilterPara: [";
     char buffer[UINT8_MAX] = { 0 };
-    auto iter = properties_.find(RSUIFilterType::COLOR_GRADIENT_COLOR);
+    auto iter = properties_.find(RSUIFilterType::COLOR_GRADIENT_STRENGTH);
     if (iter != properties_.end()) {
-        auto color = std::static_pointer_cast<RSProperty<std::vector<float>>>(iter->second);
-        if (color) {
-            sprintf_s(buffer, UINT8_MAX, "[color: %f %f %f %f]", color->Get()[0], color->Get()[1],
-                color->Get()[2], color->Get()[3]); // 2 3 element of vector
+        auto strength = std::static_pointer_cast<RSProperty<std::vector<float>>>(iter->second);
+        if (strength) {
+            sprintf_s(buffer, UINT8_MAX, "[strength: %f]", strength->Get()[0]);
             out.append(buffer);
         } else {
             out += "nullptr";
@@ -170,7 +184,7 @@ std::shared_ptr<RSRenderFilterParaBase> RSUIColorGradientFilterPara::CreateRSRen
         return nullptr;
     }
     auto colorsProperty = std::make_shared<RSRenderAnimatableProperty<std::vector<float>>>(
-        colors->Get(), colors->GetId(), RSRenderPropertyType::PROPERTY_SHADER_PARAM);
+        colors->Get(), colors->GetId(), RSPropertyType::SHADER_PARAM);
     frProperty->Setter(RSUIFilterType::COLOR_GRADIENT_COLOR, colorsProperty);
 
     auto positions = std::static_pointer_cast<RSAnimatableProperty<std::vector<float>>>(
@@ -180,7 +194,7 @@ std::shared_ptr<RSRenderFilterParaBase> RSUIColorGradientFilterPara::CreateRSRen
         return nullptr;
     }
     auto positionsProperty = std::make_shared<RSRenderAnimatableProperty<std::vector<float>>>(
-        positions->Get(), positions->GetId(), RSRenderPropertyType::PROPERTY_SHADER_PARAM);
+        positions->Get(), positions->GetId(), RSPropertyType::SHADER_PARAM);
     frProperty->Setter(RSUIFilterType::COLOR_GRADIENT_POSITION, positionsProperty);
 
     auto strengths = std::static_pointer_cast<RSAnimatableProperty<std::vector<float>>>(
@@ -190,7 +204,7 @@ std::shared_ptr<RSRenderFilterParaBase> RSUIColorGradientFilterPara::CreateRSRen
         return nullptr;
     }
     auto strengthsProperty = std::make_shared<RSRenderAnimatableProperty<std::vector<float>>>(
-        strengths->Get(), strengths->GetId(), RSRenderPropertyType::PROPERTY_SHADER_PARAM);
+        strengths->Get(), strengths->GetId(), RSPropertyType::SHADER_PARAM);
     frProperty->Setter(RSUIFilterType::COLOR_GRADIENT_STRENGTH, strengthsProperty);
 
     if (maskType_ != RSUIFilterType::NONE) {
@@ -242,7 +256,7 @@ std::vector<std::shared_ptr<RSPropertyBase>> RSUIColorGradientFilterPara::GetLea
     if (maskType_ != RSUIFilterType::NONE) {
         auto mask = std::static_pointer_cast<RSUIMaskPara>(GetRSProperty(maskType_));
         if (mask == nullptr) {
-            ROSEN_LOGE("RSUIColorGradientFilterPara::CreateRSRenderFilter not found mask");
+            ROSEN_LOGE("RSUIColorGradientFilterPara::GetLeafProperties not found mask");
             return {};
         }
         std::vector<std::shared_ptr<RSPropertyBase>> maskProperty = mask->GetLeafProperties();

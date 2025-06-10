@@ -49,7 +49,7 @@ public:
     static RSRenderNodeDrawable::Ptr OnGenerate(std::shared_ptr<const RSRenderNode> node);
     void OnDraw(Drawing::Canvas& canvas) override;
     void OnCapture(Drawing::Canvas& canvas) override;
-    bool CheckIfSurfaceSkipInMirror(const RSSurfaceRenderParams& surfaceParams);
+    bool CheckIfSurfaceSkipInMirrorOrScreenshot(const RSSurfaceRenderParams& surfaceParams);
     void SetVirtualScreenWhiteListRootId(const std::unordered_set<NodeId>& whiteList, NodeId id);
     void ResetVirtualScreenWhiteListRootId(NodeId id);
 
@@ -99,16 +99,6 @@ public:
     bool PrepareOffscreenRender();
     void FinishOffscreenRender(const Drawing::SamplingOptions& sampling);
     bool IsHardwareEnabled();
-
-    bool IsScbWindowType() const
-    {
-        return surfaceWindowType_ == SurfaceWindowType::SYSTEM_SCB_WINDOW ||
-               surfaceWindowType_ == SurfaceWindowType::SCB_DESKTOP ||
-               surfaceWindowType_ == SurfaceWindowType::SCB_WALLPAPER ||
-               surfaceWindowType_ == SurfaceWindowType::SCB_SCREEN_LOCK ||
-               surfaceWindowType_ == SurfaceWindowType::SCB_NEGATIVE_SCREEN ||
-               surfaceWindowType_ == SurfaceWindowType::SCB_DROPDOWN_PANEL;
-    }
 
 #ifndef ROSEN_CROSS_PLATFORM
     sptr<IConsumerSurface> GetConsumerOnDraw() const
@@ -167,9 +157,11 @@ private:
     void ClipHoleForSelfDrawingNode(RSPaintFilterCanvas& canvas, RSSurfaceRenderParams& surfaceParams);
     void DrawBufferForRotationFixed(RSPaintFilterCanvas& canvas, RSSurfaceRenderParams& surfaceParams);
 
+    int GetMaxRenderSizeForRotationOffscreen(int& offscreenWidth, int& offscreenHeight);
+    void ApplyCanvasScalingIfDownscaleEnabled();
+
     std::string name_;
     RSSurfaceNodeType surfaceNodeType_ = RSSurfaceNodeType::DEFAULT;
-    SurfaceWindowType surfaceWindowType_ = SurfaceWindowType::DEFAULT_WINDOW;
 #ifndef ROSEN_CROSS_PLATFORM
     sptr<IBufferConsumerListener> consumerListener_ = nullptr;
 #endif

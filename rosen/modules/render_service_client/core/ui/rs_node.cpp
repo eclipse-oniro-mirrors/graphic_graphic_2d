@@ -19,6 +19,7 @@
 #include <memory>
 #include <sstream>
 #include <string>
+#include <vector>
 
 #include "rs_trace.h"
 #include "sandbox_utils.h"
@@ -57,11 +58,14 @@
 #include "ui/rs_surface_node.h"
 #include "ui/rs_ui_context.h"
 #include "ui/rs_ui_director.h"
+#include "ui/rs_ui_patten_vec.h"
 #include "ui_effect/property/include/rs_ui_color_gradient_filter.h"
 #include "ui_effect/mask/include/ripple_mask_para.h"
 #include "ui_effect/property/include/rs_ui_filter.h"
+#include "ui_effect/property/include/rs_ui_bezier_warp_filter.h"
 #include "ui_effect/property/include/rs_ui_displacement_distort_filter.h"
 #include "ui_effect/property/include/rs_ui_edge_light_filter.h"
+#include "ui_effect/property/include/rs_ui_dispersion_filter.h"
 
 #ifdef RS_ENABLE_VK
 #include "modifier_render_thread/rs_modifiers_draw.h"
@@ -114,9 +118,8 @@ RSNode::RSNode(bool isRenderServiceNode, NodeId id, bool isTextureExportNode, st
       showingPropertiesFreezer_(id, rsUIContext), isOnTheTree_(isOnTheTree)
 {
     InitUniRenderEnabled();
-
-    if (rsUIContext_.lock() != nullptr) {
-        auto transaction = rsUIContext_.lock()->GetRSTransaction();
+    if (auto rsUIContextPtr = rsUIContext_.lock()) {
+        auto transaction = rsUIContextPtr->GetRSTransaction();
         if (transaction != nullptr && g_isUniRenderEnabled && isTextureExportNode) {
             std::call_once(flag_, [transaction]() {
                 auto renderThreadClient = RSIRenderClient::CreateRenderThreadClient();
@@ -305,6 +308,7 @@ void RSNode::SetFrameNodeInfo(int32_t id, std::string tag)
 {
     frameNodeId_ = id;
     frameNodeTag_ = tag;
+    MarkRepaintBoundary(tag);
 }
 
 int32_t RSNode::GetFrameNodeId()
@@ -893,7 +897,6 @@ void RSNode::SetProperty(RSModifierType modifierType, T value)
 // alpha
 void RSNode::SetAlpha(float alpha)
 {
-    alpha_ = alpha;
     SetProperty<RSAlphaModifier, RSAnimatableProperty<float>>(RSModifierType::ALPHA, alpha);
     if (alpha < 1) {
         SetDrawNode();
@@ -1377,15 +1380,15 @@ void RSNode::SetRSUIContext(std::shared_ptr<RSUIContext> rsUIContext)
     if (rsUIContext == nullptr) {
         return;
     }
-    auto rsContext = rsUIContext_.lock();
-    if ((rsContext != nullptr) && (rsContext == rsUIContext)) {
+    auto preUIContext = rsUIContext_.lock();
+    if ((preUIContext != nullptr) && (preUIContext == rsUIContext)) {
         return;
     }
 
     // if have old rsContext, should remove nodeId from old nodeMap and travel child
-    if (rsContext != nullptr) {
+    if (preUIContext != nullptr) {
         // step1 remove node from old context
-        rsContext->GetMutableNodeMap().UnregisterNode(id_);
+        preUIContext->GetMutableNodeMap().UnregisterNode(id_);
         // sync child
         for (uint32_t index = 0; index < children_.size(); index++) {
             if (auto childPtr = children_[index].lock()) {
@@ -1401,8 +1404,15 @@ void RSNode::SetRSUIContext(std::shared_ptr<RSUIContext> rsUIContext)
 
     // step2 sign
     rsUIContext_ = rsUIContext;
-    // step3 register node to new nodeMap
+    // step3 register node to new nodeMap and move the command to the new RSUIContext
     RegisterNodeMap();
+    if (preUIContext != nullptr) {
+        auto preTransaction = preUIContext->GetRSTransaction();
+        auto curTransaction = rsUIContext->GetRSTransaction();
+        if (preTransaction && curTransaction) {
+            preTransaction->MoveCommandByNodeId(curTransaction, id_);
+        }
+    }
     SetUIContextToken();
 }
 
@@ -1646,6 +1656,11 @@ void RSNode::SetForegroundColor(uint32_t colorValue)
 void RSNode::SetBackgroundColor(uint32_t colorValue)
 {
     auto color = Color::FromArgbInt(colorValue);
+    SetBackgroundColor(color);
+}
+
+void RSNode::SetBackgroundColor(RSColor& color)
+{
     SetProperty<RSBackgroundColorModifier, RSAnimatableProperty<Color>>(RSModifierType::BACKGROUND_COLOR, color);
     if (color.GetAlpha() > 0) {
         SetDrawNode();
@@ -1901,6 +1916,13 @@ void RSNode::SetUIBackgroundFilter(const OHOS::Rosen::Filter* backgroundFilter)
                 uiFilter->Insert(edgeLightProperty);
                 break;
             }
+            case FilterPara::DISPERSION: {
+                auto dispersionProperty = std::make_shared<RSUIDispersionFilterPara>();
+                auto filterDispersionPara = std::static_pointer_cast<DispersionPara>(filterPara);
+                dispersionProperty->SetDispersion(filterDispersionPara);
+                uiFilter->Insert(dispersionProperty);
+                break;
+            }
             default:
                 break;
         }
@@ -1980,8 +2002,9 @@ void RSNode::SetUIForegroundFilter(const OHOS::Rosen::Filter* foregroundFilter)
         ROSEN_LOGE("Failed to set foregroundFilter, foregroundFilter is null!");
         return;
     }
-    // To do: generate composed filter here. Now we just set pixel stretch in v1.0.
-    auto filterParas = foregroundFilter->GetAllPara();
+    // To do: generate composed filter here. Now we just set foreground blur in v1.0.
+    std::shared_ptr<RSUIFilter> uiFilter = std::make_shared<RSUIFilter>();
+    auto& filterParas = foregroundFilter->GetAllPara();
     for (const auto& filterPara : filterParas) {
         if (filterPara->GetParaType() == FilterPara::BLUR) {
             auto filterBlurPara = std::static_pointer_cast<FilterBlurPara>(filterPara);
@@ -2002,7 +2025,58 @@ void RSNode::SetUIForegroundFilter(const OHOS::Rosen::Filter* foregroundFilter)
             auto distortionK = distortPara->GetDistortionK();
             SetDistortionK(distortionK);
         }
+        if (filterPara->GetParaType() == FilterPara::BEZIER_WARP) {
+            auto bezierWarpProperty = std::make_shared<RSUIBezierWarpFilterPara>();
+            auto bezierWarpPara = std::static_pointer_cast<BezierWarpPara>(filterPara);
+            bezierWarpProperty->SetBezierWarp(bezierWarpPara);
+            uiFilter->Insert(bezierWarpProperty);
+        }
+        if (filterPara->GetParaType() == FilterPara::HDR_BRIGHTNESS_RATIO) {
+            auto hdrBrightnessRatioPara = std::static_pointer_cast<HDRBrightnessRatioPara>(filterPara);
+            auto brightnessRatio = hdrBrightnessRatioPara->GetBrightnessRatio();
+            SetHDRUIBrightness(brightnessRatio);
+        }
     }
+    if (!uiFilter->GetAllTypes().empty()) {
+        SetForegroundUIFilter(uiFilter);
+    }
+}
+
+void RSNode::SetForegroundUIFilter(const std::shared_ptr<RSUIFilter> foregroundFilter)
+{
+    if (foregroundFilter == nullptr) {
+        ROSEN_LOGE("RSNode::SetForegroundUIFilter foregroundFilter is nullptr");
+        return;
+    }
+
+    bool shouldAdd = true;
+    std::shared_ptr<RSUIFilter> oldProperty = nullptr;
+    auto iter = propertyModifiers_.find(RSModifierType::FOREGROUND_UI_FILTER);
+    if (iter != propertyModifiers_.end() && iter->second != nullptr) {
+        auto oldRsPro = std::static_pointer_cast<RSProperty<std::shared_ptr<RSUIFilter>>>(
+            iter->second->GetProperty());
+        if (oldRsPro) {
+            oldProperty = oldRsPro->Get();
+        }
+        if (oldProperty && foregroundFilter->IsStructureSame(oldProperty)) {
+            shouldAdd = false;
+            oldProperty->SetValue(foregroundFilter);
+            return;
+        }
+    }
+
+    if (shouldAdd) {
+        auto rsProperty = std::make_shared<RSProperty<std::shared_ptr<RSUIFilter>>>(foregroundFilter);
+        auto propertyModifier = std::make_shared<RSForegroundUIFilterModifier>(rsProperty);
+        propertyModifiers_.emplace(RSModifierType::FOREGROUND_UI_FILTER, propertyModifier);
+        AddModifier(propertyModifier);
+    }
+}
+
+void RSNode::SetHDRUIBrightness(float hdrUIBrightness)
+{
+    SetProperty<RSHDRUIBrightnessModifier, RSAnimatableProperty<float>>(
+        RSModifierType::HDR_UI_BRIGHTNESS, hdrUIBrightness);
 }
 
 void RSNode::SetVisualEffect(const VisualEffect* visualEffect)
@@ -2014,6 +2088,9 @@ void RSNode::SetVisualEffect(const VisualEffect* visualEffect)
     // To do: generate composed visual effect here. Now we just set background brightness in v1.0.
     auto visualEffectParas = visualEffect->GetAllPara();
     for (const auto& visualEffectPara : visualEffectParas) {
+        if (visualEffectPara == nullptr) {
+            continue;
+        }
         if (visualEffectPara->GetParaType() != VisualEffectPara::BACKGROUND_COLOR_EFFECT) {
             continue;
         }
@@ -2349,6 +2426,16 @@ void RSNode::SetHDRBrightness(const float& hdrBrightness)
 {
     SetProperty<RSHDRBrightnessModifier, RSAnimatableProperty<float>>(
         RSModifierType::HDR_BRIGHTNESS, hdrBrightness);
+}
+
+void RSNode::SetHDRBrightnessFactor(float factor)
+{
+    if (!IsInstanceOf<RSDisplayNode>()) {
+        ROSEN_LOGE("SetHDRBrightnessFactor only can be used by RSDisplayNode");
+        return;
+    }
+    SetProperty<RSHDRBrightnessFactorModifier, RSAnimatableProperty<float>>(
+        RSModifierType::HDR_BRIGHTNESS_FACTOR, factor);
 }
 
 void RSNode::SetVisible(bool visible)
@@ -2887,6 +2974,16 @@ void RSNode::SetSkipCheckInMultiInstance(bool isSkipCheckInMultiInstance)
     isSkipCheckInMultiInstance_ = isSkipCheckInMultiInstance;
 }
 
+void RSNode::UpdateOcclusionCullingStatus(bool enable, NodeId keyOcclusionNodeId)
+{
+    std::unique_ptr<RSCommand> command =
+        std::make_unique<RSUpdateOcclusionCullingStatus>(GetId(), enable, keyOcclusionNodeId);
+    auto transactionProxy = RSTransactionProxy::GetInstance();
+    if (transactionProxy != nullptr) {
+        transactionProxy->AddCommand(command, IsRenderServiceNode());
+    }
+}
+
 std::vector<PropertyId> RSNode::GetModifierIds() const
 {
     std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
@@ -2985,7 +3082,8 @@ void RSNode::RegisterTransitionPair(const std::shared_ptr<RSUIContext> rsUIConte
     const bool isInSameWindow)
 {
     if (rsUIContext == nullptr) {
-        ROSEN_LOGE("RSNode::RegisterTransitionPair, rsUIContext is nullptr");
+        ROSEN_LOGD("RSNode::RegisterTransitionPair, rsUIContext is nullptr");
+        RegisterTransitionPair(inNodeId, outNodeId, isInSameWindow);
         return;
     }
     std::unique_ptr<RSCommand> command = std::make_unique<RSRegisterGeometryTransitionNodePair>(inNodeId, outNodeId,
@@ -2999,7 +3097,8 @@ void RSNode::RegisterTransitionPair(const std::shared_ptr<RSUIContext> rsUIConte
 void RSNode::UnregisterTransitionPair(const std::shared_ptr<RSUIContext> rsUIContext, NodeId inNodeId, NodeId outNodeId)
 {
     if (rsUIContext == nullptr) {
-        ROSEN_LOGE("RSNode::UnregisterTransitionPair, rsUIContext is nullptr");
+        ROSEN_LOGD("RSNode::UnregisterTransitionPair, rsUIContext is nullptr");
+        UnregisterTransitionPair(inNodeId, outNodeId);
         return;
     }
     std::unique_ptr<RSCommand> command = std::make_unique<RSUnregisterGeometryTransitionNodePair>(inNodeId, outNodeId);
@@ -3038,6 +3137,20 @@ void RSNode::MarkNodeSingleFrameComposer(bool isNodeSingleFrameComposer)
         std::unique_ptr<RSCommand> command =
             std::make_unique<RSMarkNodeSingleFrameComposer>(GetId(), isNodeSingleFrameComposer, GetRealPid());
         AddCommand(command, IsRenderServiceNode());
+    }
+}
+
+void RSNode::MarkRepaintBoundary(const std::string& tag)
+{
+    bool isRepaintBoundary = CheckRbPatten(tag);
+    if (isRepaintBoundary_ == isRepaintBoundary) {
+        return;
+    }
+    isRepaintBoundary_ = isRepaintBoundary;
+    std::unique_ptr<RSCommand> command = std::make_unique<RSMarkRepaintBoundary>(id_, isRepaintBoundary_);
+    auto transactionProxy = RSTransactionProxy::GetInstance();
+    if (transactionProxy != nullptr) {
+        transactionProxy->AddCommand(command, IsRenderServiceNode());
     }
 }
 
@@ -3101,11 +3214,11 @@ bool RSNode::GetIsDrawn()
 
 /**
  * @brief Sets the drawing type of RSnode
- * 
+ *
  * This function is used to set the corresponding draw type when
  * adding draw properties to RSnode, so that it is easy to identify
  * which draw nodes are really needed.
- * 
+ *
  * @param nodeType The type of node that needs to be set.
  *
 */
@@ -3329,7 +3442,6 @@ void RSNode::SetIsOnTheTree(bool flag)
         if (childPtr == nullptr) {
             continue;
         }
-        childPtr->totalAlpha_ = childPtr->alpha_ * totalAlpha_;
         childPtr->SetIsOnTheTree(flag);
     }
 }
@@ -3382,10 +3494,6 @@ void RSNode::AddChild(SharedPtr child, int index)
             id_, childId, surfaceNode->GetName().c_str());
         RS_TRACE_NAME_FMT("RSNode::AddChild, Id: %" PRIu64 ", SurfaceNode:[Id: %" PRIu64 ", name: %s]",
             id_, childId, surfaceNode->GetName().c_str());
-    }
-    totalAlpha_ = alpha_;
-    if (isOnTheTree_) {
-        AccumulateAlpha(totalAlpha_);
     }
     child->SetIsOnTheTree(isOnTheTree_);
 }
@@ -3667,21 +3775,6 @@ void RSNode::SetParent(WeakPtr parent)
     parent_ = parent;
 }
 
-void RSNode::AccumulateAlpha(float& alpha)
-{
-    // avoid loop
-    if (visitedForTotalAlpha_) {
-        RS_LOGE("RSNode::AccumulateAlpha: %{public}" PRIu64 "has loop tree", GetId());
-        return;
-    }
-    visitedForTotalAlpha_ = true;
-    alpha *= alpha_;
-    if (auto parent = GetParent()) {
-        parent->AccumulateAlpha(totalAlpha_);
-    }
-    visitedForTotalAlpha_ = false;
-}
-
 RSNode::SharedPtr RSNode::GetParent()
 {
     return parent_.lock();
@@ -3706,18 +3799,17 @@ void RSNode::DumpTree(int depth, std::string& out) const
 void RSNode::Dump(std::string& out) const
 {
     auto iter = RSUINodeTypeStrs.find(GetType());
+    auto rsUIContextPtr = rsUIContext_.lock();
     out += (iter != RSUINodeTypeStrs.end() ? iter->second : "RSNode");
     out += "[" + std::to_string(id_);
     out += "], parent[" + std::to_string(parent_.lock() ? parent_.lock()->GetId() : -1);
     out += "], instanceId[" + std::to_string(instanceId_);
-    out += "], UIContext[" + std::to_string(rsUIContext_.lock() ? rsUIContext_.lock()->GetToken() : -1);
+    out += "], UIContext[" + (rsUIContextPtr ? std::to_string(rsUIContextPtr->GetToken()) : "null");
     if (auto node = ReinterpretCastTo<RSSurfaceNode>()) {
         out += "], name[" + node->GetName();
     } else if (!nodeName_.empty()) {
         out += "], nodeName[" + nodeName_;
     }
-    out += "], alpha[" + std::to_string(alpha_);
-    out += "], totalAlpha[" + std::to_string(totalAlpha_);
     out += "], frameNodeId[" + std::to_string(frameNodeId_);
     out += "], frameNodeTag[" + frameNodeTag_;
     out += "], extendModifierIsDirty[";
@@ -3753,6 +3845,21 @@ void RSNode::Dump(std::string& out) const
     if (!animations_.empty()) {
         out.pop_back();
     }
+    
+    out += "], modifiers[";
+    for (const auto& [id, modifier] : modifiers_) {
+        if (modifier == nullptr) {
+            continue;
+        }
+
+        auto renderModifier = modifier->CreateRenderModifier();
+        if (renderModifier == nullptr) {
+            continue;
+        }
+        out += " " + modifier->GetModifierTypeString();
+        out += ":";
+        renderModifier->Dump(out);
+    }
     out += "]";
 }
 
@@ -3777,7 +3884,8 @@ std::string RSNode::DumpNode(int depth) const
             ss << " animationInfo:" << animation->DumpAnimation();
         }
     }
-    ss << " token:" << std::to_string((rsUIContext_.lock() != nullptr) ? rsUIContext_.lock()->GetToken() : -1);
+    auto rsUIContextPtr = rsUIContext_.lock();
+    ss << " token:" << (rsUIContextPtr ? std::to_string(rsUIContextPtr->GetToken()) : "null");
     ss << " " << GetStagingProperties().Dump();
     return ss.str();
 }

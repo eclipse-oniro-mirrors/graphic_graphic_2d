@@ -15,10 +15,11 @@
 
 #include "gtest/gtest.h"
 
-#include "render/rs_shader_mask.h"
 #include "ge_ripple_shader_mask.h"
-#include "render/rs_render_ripple_mask.h"
 #include "platform/common/rs_log.h"
+#include "render/rs_shader_mask.h"
+#include "render/rs_render_pixel_map_mask.h"
+#include "render/rs_render_ripple_mask.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -48,6 +49,57 @@ HWTEST_F(RSShaderMaskTest, CalHashTest001, TestSize.Level1)
     auto rsShaderMask = std::make_shared<RSShaderMask>(rsRenderMaskPara);
     rsShaderMask->CalHash();
     EXPECT_EQ(rsShaderMask->hash_, 0);
+}
+
+/**
+* @tc.name: PixelMapMaskTest001
+* @tc.desc: Verify pixel map mask
+* @tc.type: FUNC
+*/
+HWTEST_F(RSShaderMaskTest, PixelMapMaskTest001, TestSize.Level1)
+{
+    auto rsRenderPixelMapMaskPara = std::make_shared<RSRenderPixelMapMaskPara>(0);
+    auto rsShaderMask = std::make_shared<RSShaderMask>(rsRenderPixelMapMaskPara);
+    EXPECT_EQ(rsShaderMask->hash_, 0);
+    EXPECT_EQ(rsShaderMask->GenerateGEShaderMask(), nullptr);
+
+    // pixel map
+    auto renderProperty = RSRenderPixelMapMaskPara::CreateRenderProperty(RSUIFilterType::PIXEL_MAP_MASK_PIXEL_MAP);
+    ASSERT_NE(renderProperty, nullptr);
+    rsRenderPixelMapMaskPara->properties_[RSUIFilterType::PIXEL_MAP_MASK_PIXEL_MAP] = renderProperty;
+    rsRenderPixelMapMaskPara->cacheImage_ = std::make_shared<Drawing::Image>();
+    rsShaderMask->CalHash();
+    EXPECT_EQ(rsShaderMask->hash_, 0);
+    EXPECT_EQ(rsShaderMask->GenerateGEShaderMask(), nullptr);
+
+    // src
+    renderProperty = RSRenderPixelMapMaskPara::CreateRenderProperty(RSUIFilterType::PIXEL_MAP_MASK_SRC);
+    ASSERT_NE(renderProperty, nullptr);
+    auto prop = std::static_pointer_cast<RSRenderAnimatableProperty<Vector4f>>(renderProperty);
+    prop->Set(Vector4f(0.5, 0.1, 0.3, 0.5));
+    rsRenderPixelMapMaskPara->properties_[RSUIFilterType::PIXEL_MAP_MASK_SRC] = renderProperty;
+    rsShaderMask->CalHash();
+    EXPECT_EQ(rsShaderMask->hash_, 0);
+    EXPECT_EQ(rsShaderMask->GenerateGEShaderMask(), nullptr);
+
+    // dst
+    renderProperty = RSRenderPixelMapMaskPara::CreateRenderProperty(RSUIFilterType::PIXEL_MAP_MASK_DST);
+    ASSERT_NE(renderProperty, nullptr);
+    rsRenderPixelMapMaskPara->properties_[RSUIFilterType::PIXEL_MAP_MASK_DST] = renderProperty;
+    rsShaderMask->CalHash();
+    EXPECT_EQ(rsShaderMask->hash_, 0);
+    EXPECT_EQ(rsShaderMask->GenerateGEShaderMask(), nullptr);
+
+    // fill color
+    renderProperty = RSRenderPixelMapMaskPara::CreateRenderProperty(RSUIFilterType::PIXEL_MAP_MASK_FILL_COLOR);
+    ASSERT_NE(renderProperty, nullptr);
+    prop = std::static_pointer_cast<RSRenderAnimatableProperty<Vector4f>>(renderProperty);
+    prop->Set(Vector4f(0.1, 0.3, 0.7, 0.5));
+    rsRenderPixelMapMaskPara->properties_[RSUIFilterType::PIXEL_MAP_MASK_FILL_COLOR] = renderProperty;
+
+    rsShaderMask->CalHash();
+    EXPECT_NE(rsShaderMask->hash_, 0);
+    EXPECT_NE(rsShaderMask->GenerateGEShaderMask(), nullptr);
 }
 
 

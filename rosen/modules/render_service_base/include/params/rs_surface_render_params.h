@@ -49,6 +49,7 @@ struct RSLayerInfo {
     int32_t layerSource;
     bool arsrTag = true;
     bool copybitTag = false;
+    uint32_t ancoFlags = 0;
     bool operator==(const RSLayerInfo& layerInfo) const
     {
         return (srcRect == layerInfo.srcRect) && (dstRect == layerInfo.dstRect) &&
@@ -56,7 +57,8 @@ struct RSLayerInfo {
             (zOrder == layerInfo.zOrder) && (blendType == layerInfo.blendType) &&
             (transformType == layerInfo.transformType) && (ROSEN_EQ(alpha, layerInfo.alpha)) &&
             (layerSource == layerInfo.layerSource) && (layerType == layerInfo.layerType) &&
-            (arsrTag == layerInfo.arsrTag) && (copybitTag == layerInfo.copybitTag);
+            (arsrTag == layerInfo.arsrTag) && (copybitTag == layerInfo.copybitTag) &&
+            (ancoFlags == layerInfo.ancoFlags);
     }
 #endif
 };
@@ -196,6 +198,15 @@ public:
     {
         return specialLayerManager_;
     }
+
+    bool HasBlackListByScreenId(ScreenId screenId)
+    {
+        if (blackListIds_.find(screenId) != blackListIds_.end()) {
+            return blackListIds_[screenId].size() != 0;
+        }
+        return false;
+    }
+
     bool HasPrivacyContentLayer()
     {
         return privacyContentLayerIds_.size() != 0;
@@ -285,6 +296,17 @@ public:
     {
         return dstRect_;
     }
+
+    void SetAncoSrcCrop(const Rect& srcCrop) { ancoSrcCrop_ = srcCrop; }
+    const Rect& GetAncoSrcCrop() const { return ancoSrcCrop_; }
+    void SetAncoFlags(const uint32_t ancoFlags) { ancoFlags_ = ancoFlags; }
+    uint32_t GetAncoFlags() const { return ancoFlags_; }
+    bool IsAncoSfv() const
+    {
+        return (ancoFlags_ & static_cast<uint32_t>(AncoFlags::ANCO_SFV_NODE)) ==
+                static_cast<uint32_t>(AncoFlags::ANCO_SFV_NODE);
+    }
+
     void SetSurfaceCacheContentStatic(bool contentStatic, bool lastFrameSynced);
     bool GetSurfaceCacheContentStatic() const;
     bool GetPreSurfaceCacheContentStatic() const;
@@ -366,6 +388,8 @@ public:
     // source crop tuning
     void SetLayerSourceTuning(int32_t needSourceTuning);
     int32_t GetLayerSourceTuning() const;
+    void SetTunnelLayerId(const uint64_t& tunnelLayerId);
+    uint64_t GetTunnelLayerId() const;
 
     void SetGpuOverDrawBufferOptimizeNode(bool overDrawNode);
     bool IsGpuOverDrawBufferOptimizeNode() const;
@@ -652,6 +676,31 @@ public:
         return apiCompatibleVersion_;
     }
 
+    bool IsOcclusionCullingOn() const
+    {
+        return isOcclusionCullingOn_;
+    }
+
+    std::unordered_set<NodeId> TakeCulledNodes()
+    {
+        return std::move(culledNodes_);
+    }
+
+    const std::unordered_set<NodeId>& GetCulledNodes() const
+    {
+        return culledNodes_;
+    }
+
+    std::unordered_set<NodeId> TakeCulledEntireSubtree()
+    {
+        return std::move(culledEntireSubtree_);
+    }
+
+    const std::unordered_set<NodeId>& GetCulledEntireSubtree() const
+    {
+        return culledEntireSubtree_;
+    }
+
     // [Attention] The function only used for unlocking screen for PC currently
     bool ClonedSourceNode() const
     {
@@ -744,6 +793,8 @@ private:
     RectI childrenDirtyRect_;
     RectI absDrawRect_;
     RRect rrect_;
+    Rect ancoSrcCrop_{};
+    uint32_t ancoFlags_ = 0;
     Vector4f regionToBeMagnified_;
     NodeId uifirstUseStarting_ = INVALID_NODEID;
     Occlusion::Region transparentRegion_;
@@ -789,6 +840,7 @@ private:
     bool isGlobalPositionEnabled_ = false;
     Gravity uiFirstFrameGravity_ = Gravity::TOP_LEFT;
     RSSpecialLayerManager specialLayerManager_;
+    std::unordered_map<ScreenId, std::unordered_set<NodeId>> blackListIds_ = {};
     std::set<NodeId> privacyContentLayerIds_ = {};
     std::set<int32_t> bufferCacheSet_ = {};
     std::string name_= "";
@@ -801,6 +853,7 @@ private:
     bool needOffscreen_ = false;
     bool layerCreated_ = false;
     int32_t layerSource_ = 0;
+    uint64_t tunnelLayerId_ = 0;
     int64_t stencilVal_ = -1;
     std::unordered_map<std::string, bool> watermarkHandles_ = {};
     std::vector<float> drmCornerRadiusInfo_;
@@ -832,6 +885,10 @@ private:
     std::unordered_map<NodeId, Drawing::Matrix> crossNodeSkipDisplayConversionMatrices_ = {};
 
     uint32_t apiCompatibleVersion_ = 0;
+
+    bool isOcclusionCullingOn_ = false;
+    std::unordered_set<NodeId> culledNodes_;
+    std::unordered_set<NodeId> culledEntireSubtree_;
 
     friend class RSSurfaceRenderNode;
     friend class RSUniRenderProcessor;

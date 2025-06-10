@@ -32,8 +32,9 @@ RSShowingPropertiesFreezer::RSShowingPropertiesFreezer(NodeId id, std::shared_pt
 template<typename T, RSModifierType Type>
 std::optional<T> RSShowingPropertiesFreezer::GetPropertyImpl() const
 {
-    auto node = rsUIContext_.lock() ? rsUIContext_.lock()->GetNodeMap().GetNode<RSNode>(id_)
-            : RSNodeMap::Instance().GetNode<RSNode>(id_);
+    auto rsUIContextPtr = rsUIContext_.lock();
+    auto node = rsUIContextPtr ? rsUIContextPtr->GetNodeMap().GetNode<RSNode>(id_)
+                               : RSNodeMap::Instance().GetNode<RSNode>(id_);
     if (node == nullptr) {
         return std::nullopt;
     }
@@ -196,16 +197,6 @@ std::optional<Vector4f> RSShowingPropertiesFreezer::GetBorderWidth() const
     return GetPropertyImpl<Vector4f, RSModifierType::BORDER_WIDTH>();
 }
 
-std::optional<std::shared_ptr<RSFilter>> RSShowingPropertiesFreezer::GetBackgroundFilter() const
-{
-    return GetPropertyImpl<std::shared_ptr<RSFilter>, RSModifierType::BACKGROUND_FILTER>();
-}
-
-std::optional<std::shared_ptr<RSFilter>> RSShowingPropertiesFreezer::GetFilter() const
-{
-    return GetPropertyImpl<std::shared_ptr<RSFilter>, RSModifierType::FILTER>();
-}
-
 std::optional<Color> RSShowingPropertiesFreezer::GetShadowColor() const
 {
     return GetPropertyImpl<Color, RSModifierType::SHADOW_COLOR>();
@@ -239,6 +230,11 @@ std::optional<float> RSShowingPropertiesFreezer::GetShadowRadius() const
 std::optional<float> RSShowingPropertiesFreezer::GetSpherizeDegree() const
 {
     return GetPropertyImpl<float, RSModifierType::SPHERIZE>();
+}
+
+std::optional<float> RSShowingPropertiesFreezer::GetHDRUIBrightness() const
+{
+    return GetPropertyImpl<float, RSModifierType::HDR_UI_BRIGHTNESS>();
 }
 
 std::optional<float> RSShowingPropertiesFreezer::GetAttractionFractionValue() const

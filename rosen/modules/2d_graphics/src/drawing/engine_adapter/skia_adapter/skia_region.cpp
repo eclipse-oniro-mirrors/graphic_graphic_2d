@@ -36,10 +36,34 @@ bool SkiaRegion::Contains(int32_t x, int32_t y) const
     return skRegion_->contains(x, y);
 }
 
+bool SkiaRegion::Equals(const Region& other) const
+{
+    auto skRegion = other.GetImpl<SkiaRegion>()->GetSkRegion();
+    if (skRegion_ == nullptr || skRegion == nullptr) {
+        return false;
+    }
+    return *skRegion_ == *skRegion;
+}
+
+void SkiaRegion::SetEmpty()
+{
+    skRegion_->setEmpty();
+}
+
 bool SkiaRegion::SetRect(const RectI& rectI)
 {
     auto skIRect = SkIRect::MakeLTRB(rectI.GetLeft(), rectI.GetTop(), rectI.GetRight(), rectI.GetBottom());
     return skRegion_->setRect(skIRect);
+}
+
+bool SkiaRegion::SetRegion(const Region& region)
+{
+    auto skRegion = region.GetImpl<SkiaRegion>()->GetSkRegion();
+    if (skRegion == nullptr) {
+        LOGD("SkiaRegion::SetRegion, skRegion is nullptr");
+        return false;
+    }
+    return skRegion_->setRegion(*skRegion);
 }
 
 bool SkiaRegion::SetPath(const Path& path, const Region& clip)
@@ -68,6 +92,17 @@ bool SkiaRegion::GetBoundaryPath(Path* path) const
     bool res = skRegion_->getBoundaryPath(&skPath);
     skiaPath->SetPath(skPath);
     return res;
+}
+
+RectI SkiaRegion::GetBounds() const
+{
+    auto iRect = skRegion_->getBounds();
+    return RectI(iRect.fLeft, iRect.fTop, iRect.fRight, iRect.fBottom);
+}
+
+bool SkiaRegion::IsComplex() const
+{
+    return skRegion_->isComplex();
 }
 
 bool SkiaRegion::IsIntersects(const Region& other) const
@@ -118,6 +153,21 @@ bool SkiaRegion::QuickReject(const RectI& rectI) const
     return skRegion_->quickReject(skIRect);
 }
 
+bool SkiaRegion::QuickReject(const Region& region) const
+{
+    auto skRegion = region.GetImpl<SkiaRegion>()->GetSkRegion();
+    if (skRegion == nullptr) {
+        LOGD("SkiaRegion::QuickReject, skRegion is nullptr");
+        return false;
+    }
+    return skRegion_->quickReject(*skRegion);
+}
+
+void SkiaRegion::Translate(int32_t x, int32_t y)
+{
+    skRegion_->translate(x, y);
+}
+
 void SkiaRegion::Clone(const Region& other)
 {
     auto skRegion = other.GetImpl<SkiaRegion>()->GetSkRegion();
@@ -130,7 +180,11 @@ void SkiaRegion::Clone(const Region& other)
 
 std::shared_ptr<Data> SkiaRegion::Serialize() const
 {
+#ifdef USE_M133_SKIA
+    SkBinaryWriteBuffer writer({});
+#else
     SkBinaryWriteBuffer writer;
+#endif
     writer.writeRegion(*skRegion_);
     size_t length = writer.bytesWritten();
     std::shared_ptr<Data> data = std::make_shared<Data>();
