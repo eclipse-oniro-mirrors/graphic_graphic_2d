@@ -33,6 +33,7 @@
 #include "params/rs_surface_render_params.h"
 #include "feature/round_corner_display/rs_rcd_surface_render_node.h"
 #include "feature/round_corner_display/rs_rcd_surface_render_node_drawable.h"
+#include "feature/anco_manager/rs_anco_manager.h"
 #include "platform/common/rs_log.h"
 
 namespace OHOS {
