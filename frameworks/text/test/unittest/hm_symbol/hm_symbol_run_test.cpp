@@ -659,7 +659,8 @@ HWTEST_F(OHHmSymbolRunTest, SetSymbolEffect009, TestSize.Level1)
     hmSymbolRun.SetSymbolEffect(Drawing::DrawingEffectStrategy::QUICK_REPLACE_APPEAR);
     EXPECT_EQ(hmSymbolRun.symbolTxt_.GetEffectStrategy(), Drawing::DrawingEffectStrategy::QUICK_REPLACE_APPEAR);
     EXPECT_FALSE(hmSymbolRun.currentAnimationHasPlayed_);
-    hmSymbolRun.DrawSymbol(rsCanvas.get(), paint_);
+    hmSymbolRun.DrawSymbol(rsCanvas.get(), paint_); // Draw once for Apper
+    hmSymbolRun.DrawSymbol(rsCanvas.get(), paint_); // Draw twice for DisApper
 }
 
 /*
