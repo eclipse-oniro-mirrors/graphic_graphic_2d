@@ -31,6 +31,12 @@
 #include "common/rs_optional_trace.h"
 #include "params/rs_surface_render_params.h"
 
+#ifdef USE_M133_SKIA
+#include "src/gpu/ganesh/gl/GrGLDefines.h"
+#else
+#include "src/gpu/gl/GrGLDefines.h"
+#endif
+
 namespace OHOS {
 namespace Rosen {
 namespace {
@@ -234,5 +240,54 @@ void RSVkImageManager::DumpVkImageInfo(std::string &dumpString)
     dumpString.append("\n---------RSVkImageManager-DumpVkImageInfo-End----------\n");
 }
 
+std::shared_ptr<Drawing::Image> RSVkImageManager::CreateImageFromBuffer(
+    RSPaintFilterCanvas& canvas, const sptr<SurfaceBuffer>& buffer, const sptr<SyncFence>& acquireFence,
+    const uint32_t threadIndex, const std::shared_ptr<Drawing::ColorSpace>& drawingColorSpace)
+{
+#ifdef RS_ENABLE_VK
+    auto image = std::make_shared<Drawing::Image>();
+    auto imageCache = MapVkImageFromSurfaceBuffer(buffer,
+        acquireFence, threadIndex, canvas.GetSurface());
+    if (imageCache == nullptr) {
+        RS_LOGE("RSBaseRenderEngine::MapImageFromSurfaceBuffer failed!");
+        return nullptr;
+    }
+    if (buffer != nullptr && buffer->GetBufferDeleteFromCacheFlag()) {
+        RS_LOGD_IF(DEBUG_COMPOSER, "  - Buffer %{public}u marked for deletion from cache, unmapping",
+            buffer->GetSeqNum());
+        UnMapImageFromSurfaceBuffer(buffer->GetSeqNum());
+    }
+    auto bitmapFormat = RSBaseRenderUtil::GenerateDrawingBitmapFormat(buffer);
+    auto screenColorSpace = GetCanvasColorSpace(canvas);
+    if (screenColorSpace && drawingColorSpace &&
+        drawingColorSpace->IsSRGB() != screenColorSpace->IsSRGB()) {
+        bitmapFormat.alphaType = Drawing::AlphaType::ALPHATYPE_OPAQUE;
+    }
+    RS_LOGD_IF(DEBUG_COMPOSER, "  - Generated bitmap format: colorType = %{public}d, alphaType = %{public}d",
+        bitmapFormat.colorType, bitmapFormat.alphaType);
+#ifndef ROSEN_EMULATOR
+    auto surfaceOrigin = Drawing::TextureOrigin::TOP_LEFT;
+#else
+    auto surfaceOrigin = Drawing::TextureOrigin::BOTTOM_LEFT;
+#endif
+    RS_LOGD_IF(DEBUG_COMPOSER, "  - Texture origin: %{public}d", static_cast<int>(surfaceOrigin));
+    auto contextDrawingVk = canvas.GetGPUContext();
+    if (contextDrawingVk == nullptr || image == nullptr || imageCache == nullptr) {
+        RS_LOGE("contextDrawingVk or image or imageCache is nullptr.");
+        return nullptr;
+    }
+    auto& backendTexture = imageCache->GetBackendTexture();
+    if (!image->BuildFromTexture(*contextDrawingVk, backendTexture.GetTextureInfo(),
+        surfaceOrigin, bitmapFormat, drawingColorSpace,
+        NativeBufferUtils::DeleteVkImage, imageCache->RefCleanupHelper())) {
+        RS_LOGE("RSBaseRenderEngine::CreateImageFromBuffer: backendTexture is not valid!!!");
+        return nullptr;
+    }
+    return image;
+#else
+    RS_LOGE("RSBaseRenderEngine::CreateVkImageFromBuffer: Vulkan is not enabled!");
+    return nullptr;
+#endif // RS_ENABLE_VK
+}
 } // namespace Rosen
 } // namespace OHOS

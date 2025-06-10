@@ -29,6 +29,12 @@
 #include <cassert>
 #endif
 
+#ifdef USE_M133_SKIA
+#include "src/gpu/ganesh/gl/GrGLDefines.h"
+#else
+#include "src/gpu/gl/GrGLDefines.h"
+#endif
+
 namespace OHOS {
 namespace Rosen {
 namespace Detail {
@@ -340,6 +346,60 @@ void RSEglImageManager::UnMapEglImageFromSurfaceBufferForUniRedraw(int32_t seqNu
         (void)imageCacheSeqs_.erase(seqNum);
         RS_LOGD("RSEglImageManager::UnMapEglImageFromSurfaceBufferForRedraw");
     });
+}
+
+std::shared_ptr<Drawing::Image> RSEglImageManager::CreateImageFromBuffer(
+    RSPaintFilterCanvas& canvas, const sptr<SurfaceBuffer>& buffer, const sptr<SyncFence>& acquireFence,
+    const uint32_t threadIndex, const std::shared_ptr<Drawing::ColorSpace>& drawingColorSpace)
+{
+#if (defined(RS_ENABLE_EGLIMAGE) && defined(RS_ENABLE_GPU))
+#if defined(RS_ENABLE_GL)
+    if (!RSSystemProperties::IsUseVulkan() && canvas.GetGPUContext() == nullptr) {
+        RS_LOGE("RSBaseRenderEngine::CreateEglImageFromBuffer GrContext is null!");
+        return nullptr;
+    }
+#endif // RS_ENABLE_GL
+    auto eglTextureId = MapEglImageFromSurfaceBuffer(buffer, acquireFence, threadIndex);
+    if (eglTextureId == 0) {
+        RS_LOGE("RSBaseRenderEngine::CreateEglImageFromBuffer MapEglImageFromSurfaceBuffer return invalid texture ID");
+        return nullptr;
+    }
+    auto pixelFmt = buffer->GetFormat();
+    auto bitmapFormat = RSBaseRenderUtil::GenerateDrawingBitmapFormat(buffer);
+
+    auto image = std::make_shared<Drawing::Image>();
+    Drawing::TextureInfo externalTextureInfo;
+    externalTextureInfo.SetWidth(buffer->GetSurfaceBufferWidth());
+    externalTextureInfo.SetHeight(buffer->GetSurfaceBufferHeight());
+
+#ifndef ROSEN_EMULATOR
+    auto surfaceOrigin = Drawing::TextureOrigin::TOP_LEFT;
+#else
+    auto surfaceOrigin = Drawing::TextureOrigin::BOTTOM_LEFT;
+#endif
+
+#if defined(RS_ENABLE_GL)
+    externalTextureInfo.SetIsMipMapped(false);
+    externalTextureInfo.SetTarget(GL_TEXTURE_EXTERNAL_OES);
+    externalTextureInfo.SetID(eglTextureId);
+    auto glType = GR_GL_RGBA8;
+    if (pixelFmt == GRAPHIC_PIXEL_FMT_BGRA_8888) {
+        glType = GR_GL_BGRA8;
+    } else if (pixelFmt == GRAPHIC_PIXEL_FMT_YCBCR_P010 || pixelFmt == GRAPHIC_PIXEL_FMT_YCRCB_P010 ||
+        pixelFmt == GRAPHIC_PIXEL_FMT_RGBA_1010102) {
+        glType = GR_GL_RGB10_A2;
+    }
+    externalTextureInfo.SetFormat(glType);
+    if (!image->BuildFromTexture(*canvas.GetGPUContext(), externalTextureInfo,
+        surfaceOrigin, bitmapFormat, drawingColorSpace)) {
+        RS_LOGE("RSBaseRenderEngine::CreateEglImageFromBuffer image BuildFromTexture failed");
+        return nullptr;
+    }
+#endif
+    return image;
+#else
+    return nullptr;
+#endif // RS_ENABLE_EGLIMAGE
 }
 } // namespace Rosen
 } // namespace OHOS

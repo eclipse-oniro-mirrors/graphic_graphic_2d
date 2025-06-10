@@ -41,14 +41,9 @@ public:
     {
         return textureId_;
     }
-
-    void SetTextureId(GLuint textureId) override
-    {
-        textureId_ = textureId;
-    }
 private:
     // generate a texture and bind eglImage to it.
-    bool BindToTexture() override;
+    bool BindToTexture();
 
     EGLDisplay eglDisplay_ = EGL_NO_DISPLAY;
     EGLImageKHR eglImage_ = EGL_NO_IMAGE_KHR;
@@ -63,13 +58,16 @@ public:
     explicit RSEglImageManager(EGLDisplay display) : eglDisplay_(display) {};
     ~RSEglImageManager() noexcept override = default;
 
-    GLuint MapEglImageFromSurfaceBuffer(const sptr<OHOS::SurfaceBuffer>& buffer,
-        const sptr<SyncFence>& acquireFence, pid_t threadIndex) override;
     void UnMapImageFromSurfaceBuffer(int32_t seqNum) override;
     std::shared_ptr<ImageResource> CreateImageCacheFromBuffer(const sptr<OHOS::SurfaceBuffer>& buffer,
         const sptr<SyncFence>& acquireFence) override;
+    std::shared_ptr<Drawing::Image> CreateImageFromBuffer(
+        RSPaintFilterCanvas& canvas, const sptr<SurfaceBuffer>& buffer, const sptr<SyncFence>& acquireFence,
+        const uint32_t threadIndex, const std::shared_ptr<Drawing::ColorSpace>& drawingColorSpace) override;
 
-    void UnMapEglImageFromSurfaceBufferForUniRedraw(int32_t seqNum) override;
+    GLuint MapEglImageFromSurfaceBuffer(const sptr<OHOS::SurfaceBuffer>& buffer,
+        const sptr<SyncFence>& acquireFence, pid_t threadIndex);
+    void UnMapEglImageFromSurfaceBufferForUniRedraw(int32_t seqNum);
     void ShrinkCachesIfNeeded(bool isForUniRedraw = false) override; // only used for divided_render
 
 private:
@@ -80,8 +78,6 @@ private:
     static constexpr size_t MAX_CACHE_SIZE = 16;
     EGLDisplay eglDisplay_ = EGL_NO_DISPLAY;
     std::queue<int32_t> cacheQueue_; // fifo, size restricted by MAX_CACHE_SIZE
-
-    friend class RSImageManager;
 };
 } // namespace Rosen
 } // namespace OHOS

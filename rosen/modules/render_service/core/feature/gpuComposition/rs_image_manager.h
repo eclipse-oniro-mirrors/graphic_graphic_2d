@@ -36,17 +36,13 @@
 #include "GLES/gl.h"
 #include "sync_fence.h"
 
+#include "render_context/render_context.h"
+#include "pipeline/rs_paint_filter_canvas.h"
+
 namespace OHOS {
 namespace Rosen {
 class ImageResource {
 public:
-    static std::shared_ptr<ImageResource> EglCreate(
-        EGLDisplay eglDisplay, EGLImageKHR eglImage, EGLClientBuffer eglClientBuffer);
-#ifdef RS_ENABLE_VK
-    static std::shared_ptr<ImageResource> VkCreate(
-        NativeWindowBuffer* nativeWindowBuffer, Drawing::BackendTexture backendTexture,
-        NativeBufferUtils::VulkanCleanupHelper* vulkanCleanupHelper);
-#endif // RS_ENABLE_VK
     virtual ~ImageResource() = default;
 
     pid_t GetThreadIndex() const
@@ -61,8 +57,6 @@ public:
 
 #ifdef RS_ENABLE_VK
     // Vulkan virtual functions
-    virtual void SetBufferDeleteFromCacheFlag(const bool &flag) { return;}
-    virtual bool GetBufferDeleteFromCacheFlag() const { return false; }
     virtual const Drawing::BackendTexture& GetBackendTexture() const
     {
         static Drawing::BackendTexture invalidBackendTexture;
@@ -73,8 +67,6 @@ public:
 
     // EGL virtual functions
     virtual GLuint GetTextureId() const { return 0; }
-    virtual void SetTextureId(GLuint textureId) { return; }
-    virtual bool BindToTexture() { return false; }
 
     pid_t threadIndex_;
 protected:
@@ -83,28 +75,26 @@ protected:
 
 class RSImageManager {
 public:
-    static std::shared_ptr<RSImageManager> Create();
+    static std::shared_ptr<RSImageManager> Create(std::shared_ptr<RenderContext>& renderContext);
 
     virtual ~RSImageManager() = default;
 
     virtual void UnMapImageFromSurfaceBuffer(int32_t seqNum) = 0;
     virtual std::shared_ptr<ImageResource> CreateImageCacheFromBuffer(const sptr<OHOS::SurfaceBuffer>& buffer,
         const sptr<SyncFence>& acquireFence) = 0;
+    virtual std::shared_ptr<Drawing::Image> CreateImageFromBuffer(
+        RSPaintFilterCanvas& canvas, const sptr<SurfaceBuffer>& buffer, const sptr<SyncFence>& acquireFence,
+        const uint32_t threadIndex, const std::shared_ptr<Drawing::ColorSpace>& drawingColorSpace) = 0;
 
     // Vulkan specific functions
 #ifdef RS_ENABLE_VK
-    virtual std::shared_ptr<ImageResource> MapVkImageFromSurfaceBuffer(
-        const sptr<OHOS::SurfaceBuffer>& buffer, const sptr<SyncFence>& acquireFence,
-        pid_t threadIndex, Drawing::Surface *drawingSurface = nullptr) { return nullptr; }
     virtual void DumpVkImageInfo(std::string &dumpString) { return; }
 #endif // RS_ENABLE_VK
 
     // EGL specific functions
-    virtual GLuint MapEglImageFromSurfaceBuffer(const sptr<OHOS::SurfaceBuffer>& buffer,
-        const sptr<SyncFence>& acquireFence, pid_t threadIndex) { return 0; }
-    virtual void UnMapEglImageFromSurfaceBufferForUniRedraw(int32_t seqNum) { return; }
     virtual void ShrinkCachesIfNeeded(bool isForUniRedraw = false) { return; }
 
+    bool isUseVulkan = false;
 protected:
     RSImageManager() = default;
     mutable std::mutex opMutex_;

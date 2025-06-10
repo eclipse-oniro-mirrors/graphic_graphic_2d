@@ -50,12 +50,12 @@ public:
         return mVulkanCleanupHelper->Ref();
     }
 
-    void SetBufferDeleteFromCacheFlag(const bool& flag) override
+    void SetBufferDeleteFromCacheFlag(const bool& flag)
     {
         isBufferDeleteFromCache = flag;
     }
 
-    bool GetBufferDeleteFromCacheFlag() const override
+    bool GetBufferDeleteFromCacheFlag() const
     {
         return isBufferDeleteFromCache;
     }
@@ -77,17 +77,18 @@ public:
     void UnMapImageFromSurfaceBuffer(int32_t seqNum) override;
     std::shared_ptr<ImageResource> CreateImageCacheFromBuffer(const sptr<OHOS::SurfaceBuffer>& buffer,
         const sptr<SyncFence>& acquireFence) override;
+    std::shared_ptr<Drawing::Image> CreateImageFromBuffer(
+        RSPaintFilterCanvas& canvas, const sptr<SurfaceBuffer>& buffer, const sptr<SyncFence>& acquireFence,
+        const uint32_t threadIndex, const std::shared_ptr<Drawing::ColorSpace>& drawingColorSpace) override;
 
     std::shared_ptr<ImageResource> MapVkImageFromSurfaceBuffer(
         const sptr<OHOS::SurfaceBuffer>& buffer, const sptr<SyncFence>& acquireFence,
-        pid_t threadIndex, Drawing::Surface *drawingSurface = nullptr) override;
+        pid_t threadIndex, Drawing::Surface *drawingSurface = nullptr);
     void DumpVkImageInfo(std::string &dumpString) override;
 private:
     std::shared_ptr<ImageResource> NewImageCacheFromBuffer(
         const sptr<OHOS::SurfaceBuffer>& buffer, pid_t threadIndex, bool isProtectedCondition);
     bool WaitVKSemaphore(Drawing::Surface *drawingSurface, const sptr<SyncFence>& acquireFence);
-
-    friend class RSImageManager;
 };
 
 } // namespace Rosen
