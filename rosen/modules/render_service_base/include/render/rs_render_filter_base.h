@@ -112,6 +112,9 @@ enum class RSUIFilterType : int16_t {
     DISPERSION_RED_OFFSET, // Vector2f
     DISPERSION_GREEN_OFFSET, // Vector2f
     DISPERSION_BLUE_OFFSET, // Vector2f
+
+    // edge light bloom value type
+    EDGE_LIGHT_BLOOM, // bool
 };
 
 namespace Drawing {

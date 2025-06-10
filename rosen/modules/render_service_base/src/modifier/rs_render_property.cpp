@@ -211,6 +211,18 @@ bool RSRenderPropertyBase::Marshalling(Parcel& parcel, const std::shared_ptr<RSR
             }
             return flag;
         }
+        case RSPropertyType::BOOL: {
+            auto property = std::static_pointer_cast<RSRenderProperty<bool>>(val);
+            if (property == nullptr) {
+                return false;
+            }
+            bool flag = parcel.WriteUint64(
+                property->GetId()) && RSMarshallingHelper::Marshalling(parcel, property->Get());
+            if (!flag) {
+                ROSEN_LOGE("RSRenderPropertyBase::Marshalling PROPERTY_BOOL failed");
+            }
+            return flag;
+        }
         default: {
             ROSEN_LOGE("RSRenderPropertyBase::Marshalling unknown type failed");
             return false;
@@ -341,6 +353,14 @@ bool RSRenderPropertyBase::Unmarshalling(Parcel& parcel, std::shared_ptr<RSRende
                 return false;
             }
             val = std::make_shared<RSRenderProperty<std::shared_ptr<RSRenderFilter>>>(value, id, type);
+            break;
+        }
+        case RSPropertyType::BOOL: {
+            bool value;
+            if (!RSMarshallingHelper::Unmarshalling(parcel, value)) {
+                return false;
+            }
+            val = std::make_shared<RSRenderProperty<bool>>(value, id, type);
             break;
         }
         default: {
