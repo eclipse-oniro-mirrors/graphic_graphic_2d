@@ -515,9 +515,6 @@ std::vector<TextBlobRecordInfo> ParagraphImpl::GetTextBlobRecordInfo() const
         return {};
     }
     std::vector<TextBlobRecordInfo> textBlobRecordInfos;
-#ifdef TODO_M133_SKIA
-    return {};
-#else
     std::vector<skt::TextBlobRecordInfo> infos = paragraph_->getTextBlobRecordInfo();
     for (auto& info : infos) {
         TextBlobRecordInfo recordInfo;
@@ -530,7 +527,6 @@ std::vector<TextBlobRecordInfo> ParagraphImpl::GetTextBlobRecordInfo() const
         textBlobRecordInfos.emplace_back(recordInfo);
     }
     return textBlobRecordInfos;
-#endif
 }
 
 bool ParagraphImpl::HasEnabledTextEffect() const
@@ -539,11 +535,7 @@ bool ParagraphImpl::HasEnabledTextEffect() const
     if (paragraph_ == nullptr) {
         return false;
     }
-#ifdef TODO_M133_SKIA
-    return false;
-#else
     return paragraph_->hasEnabledTextEffect();
-#endif
 }
 
 void ParagraphImpl::SetTextEffectState(bool state)
@@ -552,11 +544,7 @@ void ParagraphImpl::SetTextEffectState(bool state)
     if (paragraph_ == nullptr) {
         return;
     }
-#ifdef TODO_M133_SKIA
-    (void)state;
-#else
     paragraph_->setTextEffectState(state);
-#endif
 }
 
 void ParagraphImpl::RecordDifferentPthreadCall(const char* caller) const
