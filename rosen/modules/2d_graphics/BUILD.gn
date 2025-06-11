@@ -111,7 +111,6 @@ template("graphics2d_source_set") {
       "$drawing_core_src_dir/engine_adapter/skia_adapter/skia_graphics.cpp",
       "$drawing_core_src_dir/engine_adapter/skia_adapter/skia_helper.cpp",
       "$drawing_core_src_dir/engine_adapter/skia_adapter/skia_hm_symbol.cpp",
-      "$drawing_core_src_dir/engine_adapter/skia_adapter/skia_hm_symbol_config_ohos.cpp",
       "$drawing_core_src_dir/engine_adapter/skia_adapter/skia_image.cpp",
       "$drawing_core_src_dir/engine_adapter/skia_adapter/skia_image_filter.cpp",
       "$drawing_core_src_dir/engine_adapter/skia_adapter/skia_impl_factory.cpp",
@@ -412,11 +411,12 @@ if (!is_arkui_x) {
     }
     deps = [ ":2d_graphics_source_$platform" ]
 
-    external_deps = [
-      "bounds_checking_function:libsec_static",
+    external_deps = [ "bounds_checking_function:libsec_static" ]
+    public_external_deps = [
       "hilog:libhilog",
+      "skia:skia_canvaskit",
     ]
-    public_external_deps = [ "skia:skia_canvaskit" ]
+
     public_configs = [ ":export_config" ]
 
     if (platform == "ohos") {

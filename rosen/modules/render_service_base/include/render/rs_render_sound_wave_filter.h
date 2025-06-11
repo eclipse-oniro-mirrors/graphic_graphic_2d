@@ -28,8 +28,6 @@ public:
         id_ = id;
     }
 
-    RSRenderSoundWaveFilterPara(const std::shared_ptr<RSRenderSoundWaveFilterPara>& other);
-
     virtual ~RSRenderSoundWaveFilterPara() = default;
 
     std::shared_ptr<RSRenderFilterParaBase> DeepCopy() const override;

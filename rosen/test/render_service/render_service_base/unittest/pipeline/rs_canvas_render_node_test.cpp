@@ -439,7 +439,7 @@ HWTEST_F(RSCanvasRenderNodeTest, ApplyDrawCmdModifier, TestSize.Level1)
     RSModifierContext modifierContext(property);
     RSModifierType type = RSModifierType::INVALID;
     rsCanvasRenderNode.ApplyDrawCmdModifier(modifierContext, type);
-    EXPECT_TRUE(rsCanvasRenderNode.renderContent_->drawCmdModifiers_.empty());
+    EXPECT_TRUE(rsCanvasRenderNode.drawCmdModifiers_.empty());
 
     std::shared_ptr<Drawing::DrawCmdList> drawCmdList = std::make_shared<Drawing::DrawCmdList>();
     drawCmdList->SetWidth(2024);
@@ -449,7 +449,7 @@ HWTEST_F(RSCanvasRenderNodeTest, ApplyDrawCmdModifier, TestSize.Level1)
     std::list<std::shared_ptr<RSRenderModifier>> listModifier { std::make_shared<RSDrawCmdListRenderModifier>(
         propertyTwo) };
     type = RSModifierType::FOREGROUND_STYLE;
-    rsCanvasRenderNode.renderContent_->drawCmdModifiers_.emplace(type, listModifier);
+    rsCanvasRenderNode.drawCmdModifiers_.emplace(type, listModifier);
     EXPECT_FALSE(RSSystemProperties::GetSingleFrameComposerEnabled());
     rsCanvasRenderNode.ApplyDrawCmdModifier(modifierContext, type);
 }

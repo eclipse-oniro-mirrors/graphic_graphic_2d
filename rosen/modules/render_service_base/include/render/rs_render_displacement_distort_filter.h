@@ -30,8 +30,6 @@ public:
         id_ = id;
     }
 
-    RSRenderDispDistortFilterPara(const std::shared_ptr<RSRenderDispDistortFilterPara>& other);
-
     virtual ~RSRenderDispDistortFilterPara() = default;
 
     std::shared_ptr<RSRenderFilterParaBase> DeepCopy() const override;
@@ -42,7 +40,7 @@ public:
 
     virtual bool ReadFromParcel(Parcel& parcel) override;
 
-    static std::shared_ptr<RSRenderMaskPara> CreateRenderPropert(RSUIFilterType type);
+    static std::shared_ptr<RSRenderMaskPara> CreateRenderProperty(RSUIFilterType type);
 
     virtual std::vector<std::shared_ptr<RSRenderPropertyBase>> GetLeafRenderProperties() override;
 
@@ -55,6 +53,8 @@ public:
     const std::shared_ptr<RSShaderMask>& GetMask() const;
 
 private:
+    void CalculateHash();
+
     static constexpr char GE_FILTER_DISPLACEMENT_DISTORT_FACTOR[] = "DISTORT_FACTOR";
     static constexpr char GE_FILTER_DISPLACEMENT_DISTORT_MASK[] = "DISTORT_MASK";
     std::shared_ptr<RSShaderMask> mask_ = nullptr;

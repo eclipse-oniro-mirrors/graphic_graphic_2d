@@ -75,6 +75,7 @@ private:
 
     static float GetSpecialValue(napi_env env, napi_value argValue);
     static uint32_t GetSpecialIntValue(napi_env env, napi_value argValue);
+    static bool GetSpecialBoolValue(napi_env env, napi_value argValue, bool defaultValue);
     static bool GetColorGradientArray(napi_env env, napi_value* argValue, std::shared_ptr<ColorGradientPara>& para,
         uint32_t arraySize);
 

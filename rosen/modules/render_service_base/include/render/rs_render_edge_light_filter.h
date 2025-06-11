@@ -32,8 +32,6 @@ public:
         id_ = id;
     }
 
-    RSRenderEdgeLightFilterPara(const std::shared_ptr<RSRenderEdgeLightFilterPara>& other);
-
     virtual ~RSRenderEdgeLightFilterPara() = default;
 
     std::shared_ptr<RSRenderFilterParaBase> DeepCopy() const override;
@@ -54,9 +52,11 @@ public:
     void GenerateGEVisualEffect(std::shared_ptr<Drawing::GEVisualEffectContainer> visualEffectContainer) override;
 private:
     float alpha_{ 0.f };
+    bool bloom_{ true };
     std::optional<Vector4f> color_{ std::nullopt };
     std::shared_ptr<RSShaderMask> mask_{ nullptr };
     static std::shared_ptr<RSRenderPropertyBase> CreateRenderProperty(RSUIFilterType type);
+    void CalculateHash();
 
     RSUIFilterType maskType_ = RSUIFilterType::NONE;
 };

@@ -241,13 +241,9 @@ void RSProfiler::DumpNodeOptionalFlags(const RSRenderNode& node, JsonWriter& out
 
 void RSProfiler::DumpNodeDrawCmdModifiers(const RSRenderNode& node, JsonWriter& out)
 {
-    if (!node.renderContent_) {
-        return;
-    }
-
     auto& modifiersJson = out["DrawCmdModifiers"];
     modifiersJson.PushArray();
-    for (auto& [type, modifiers] : node.renderContent_->drawCmdModifiers_) {
+    for (auto& [type, modifiers] : node.drawCmdModifiers_) {
         modifiersJson.PushObject();
         modifiersJson["type"] = static_cast<int>(type);
         auto& modifierDesc = modifiersJson["modifiers"];
