@@ -573,7 +573,7 @@ public:
     void SetHwcChildrenDisabledState();
 
     void SetContextBounds(const Vector4f bounds);
-    bool CheckParticipateInOcclusion();
+    virtual bool CheckParticipateInOcclusion();
 
     void OnApplyModifiers() override;
 
