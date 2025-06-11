@@ -15,17 +15,28 @@
 
 #include "modifier/rs_property.h"
 
+#include "sandbox_utils.h"
+#include "ui_effect/property/include/rs_ui_filter.h"
+
 #include "command/rs_node_command.h"
 #include "modifier/rs_modifier.h"
 #include "modifier/rs_modifier_manager_map.h"
-#include "sandbox_utils.h"
 #include "platform/common/rs_log.h"
-#include "ui_effect/property/include/rs_ui_filter.h"
 
 namespace OHOS {
 namespace Rosen {
 namespace {
 constexpr int PID_SHIFT = 32;
+
+namespace {
+constexpr float DEFAULT_NEAR_ZERO_THRESHOLD = 1.0f / 256.0f;
+constexpr float FLOAT_NEAR_ZERO_COARSE_THRESHOLD = 1.0f / 256.0f;
+constexpr float FLOAT_NEAR_ZERO_MEDIUM_THRESHOLD = 1.0f / 1000.0f;
+constexpr float FLOAT_NEAR_ZERO_FINE_THRESHOLD = 1.0f / 3072.0f;
+constexpr float COLOR_NEAR_ZERO_THRESHOLD = 0.0f;
+constexpr float LAYOUT_NEAR_ZERO_THRESHOLD = 0.5f;
+constexpr float ZERO = 0.0f;
+} // namespace
 
 PropertyId GeneratePropertyId()
 {
@@ -252,12 +263,6 @@ void RSProperty<Quaternion>::UpdateToRender(const Quaternion& value, PropertyUpd
     UPDATE_TO_RENDER(RSUpdatePropertyQuaternion, value, type);
 }
 template<>
-void RSProperty<std::shared_ptr<RSFilter>>::UpdateToRender(
-    const std::shared_ptr<RSFilter>& value, PropertyUpdateType type) const
-{
-    UPDATE_TO_RENDER(RSUpdatePropertyFilter, value, type);
-}
-template<>
 void RSProperty<std::shared_ptr<RSImage>>::UpdateToRender(
     const std::shared_ptr<RSImage>& value, PropertyUpdateType type) const
 {
@@ -387,60 +392,15 @@ bool RSProperty<Vector4f>::IsValid(const Vector4f& value)
     return !value.IsInfinite();
 }
 
-template<>
-RSRenderPropertyType RSAnimatableProperty<float>::GetPropertyType() const
-{
-    return RSRenderPropertyType::PROPERTY_FLOAT;
-}
-template<>
-RSRenderPropertyType RSAnimatableProperty<Color>::GetPropertyType() const
-{
-    return RSRenderPropertyType::PROPERTY_COLOR;
-}
-template<>
-RSRenderPropertyType RSAnimatableProperty<Matrix3f>::GetPropertyType() const
-{
-    return RSRenderPropertyType::PROPERTY_MATRIX3F;
-}
-template<>
-RSRenderPropertyType RSAnimatableProperty<Vector2f>::GetPropertyType() const
-{
-    return RSRenderPropertyType::PROPERTY_VECTOR2F;
-}
-template<>
-RSRenderPropertyType RSAnimatableProperty<Vector3f>::GetPropertyType() const
-{
-    return RSRenderPropertyType::PROPERTY_VECTOR3F;
-}
-template<>
-RSRenderPropertyType RSAnimatableProperty<Vector4f>::GetPropertyType() const
-{
-    return RSRenderPropertyType::PROPERTY_VECTOR4F;
-}
-template<>
-RSRenderPropertyType RSAnimatableProperty<Quaternion>::GetPropertyType() const
-{
-    return RSRenderPropertyType::PROPERTY_QUATERNION;
-}
-template<>
-RSRenderPropertyType RSAnimatableProperty<std::shared_ptr<RSFilter>>::GetPropertyType() const
-{
-    return RSRenderPropertyType::PROPERTY_FILTER;
-}
-template<>
-RSRenderPropertyType RSAnimatableProperty<Vector4<Color>>::GetPropertyType() const
-{
-    return RSRenderPropertyType::PROPERTY_VECTOR4_COLOR;
-}
-template<>
-RSRenderPropertyType RSAnimatableProperty<RRect>::GetPropertyType() const
-{
-    return RSRenderPropertyType::PROPERTY_RRECT;
-}
-template<>
-RSRenderPropertyType RSAnimatableProperty<std::vector<float>>::GetPropertyType() const
-{
-    return RSRenderPropertyType::PROPERTY_SHADER_PARAM;
-}
+#define DECLARE_PROPERTY(T, TYPE_ENUM) template class RSProperty<T>
+#define DECLARE_ANIMATABLE_PROPERTY(T, TYPE_ENUM) \
+    template class RSAnimatableProperty<T>;       \
+    template class RSProperty<T>
+
+#include "modifier/rs_property_def.in"
+
+#undef DECLARE_PROPERTY
+#undef DECLARE_ANIMATABLE_PROPERTY
+
 } // namespace Rosen
 } // namespace OHOS

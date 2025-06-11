@@ -152,6 +152,11 @@ bool RSSystemProperties::GetExpandScreenDirtyEnabled()
     return false;
 }
 
+bool RSSystemProperties::GetVirtualExpandScreenSkipEnabled()
+{
+    return false;
+}
+
 bool RSSystemProperties::GetOcclusionEnabled()
 {
     return {};
@@ -171,13 +176,6 @@ bool RSSystemProperties::GetHighContrastStatus()
 {
     return {};
 }
-
-#ifndef NEW_SKIA
-bool RSSystemProperties::GetReleaseResourceEnabled()
-{
-    return {};
-}
-#endif
 
 uint32_t RSSystemProperties::GetCorrectionMode()
 {
@@ -635,6 +633,11 @@ bool RSSystemProperties::GetNodeGroupGroupedByUIEnabled()
 }
 
 bool RSSystemProperties::GetTimeVsyncDisabled()
+{
+    return false;
+}
+
+bool RSSystemProperties::GetTextureExportDFXEnabled()
 {
     return false;
 }

@@ -14,23 +14,28 @@
  */
 
 #include <memory>
+
 #include "gtest/gtest.h"
+#include "ui_effect/effect/include/brightness_blender.h"
+#include "ui_effect/property/include/rs_ui_filter.h"
+
 #include "animation/rs_animation.h"
+#include "animation/rs_animation_callback.h"
+#include "animation/rs_implicit_animation_param.h"
+#include "animation/rs_implicit_animator.h"
+#include "animation/rs_implicit_animator_map.h"
 #include "animation/rs_transition.h"
+#include "common/rs_vector4.h"
+#include "modifier/rs_modifier.h"
 #include "modifier/rs_property_modifier.h"
+#include "modifier/rs_extended_modifier.h"
 #include "render/rs_filter.h"
 #include "render/rs_material_filter.h"
+#include "ui/rs_node.h"
 #include "ui/rs_canvas_node.h"
-#include "ui/rs_surface_node.h"
 #include "ui/rs_display_node.h"
-#include "ui_effect/property/include/rs_ui_filter.h"
-#include "ui_effect/effect/include/brightness_blender.h"
-#include "animation/rs_animation_callback.h"
-#include "animation/rs_implicit_animator_map.h"
-#include "animation/rs_implicit_animator.h"
-#include "animation/rs_implicit_animation_param.h"
-#include "modifier/rs_modifier.h"
-#include "common/rs_vector4.h"
+#include "ui/rs_surface_node.h"
+#include "ui/rs_ui_director.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -85,6 +90,14 @@ public:
         auto borderOutlineGap = rsNode->GetStagingProperties().GetOutlineDashGap();
         EXPECT_TRUE(borderOutlineWidth.IsNearEqual(params));
         EXPECT_TRUE(borderOutlineGap.IsNearEqual(params));
+    }
+};
+
+class ContentStyleModifierTest : public RSContentStyleModifier {
+public:
+    void Draw(RSDrawingContext& context) const override
+    {
+        return;
     }
 };
 
@@ -2592,6 +2605,26 @@ HWTEST_F(RSNodeTest, SetandGetPivotY005, TestSize.Level1)
 }
 
 /**
+ * @tc.name: SetHDRBrightnessFactor
+ * @tc.desc: test results of SetHDRBrightnessFactor
+ * @tc.type: FUNC
+ * @tc.require: issueI9KAZH
+ */
+HWTEST_F(RSNodeTest, SetHDRBrightnessFactor, TestSize.Level1)
+{
+    auto rsNode = RSCanvasNode::Create();
+    float factor = 0.5f; // for test
+    rsNode->SetHDRBrightnessFactor(factor);
+    EXPECT_EQ(rsNode->GetStagingProperties().GetHDRBrightnessFactor(), 1.0f);
+
+    RSDisplayNodeConfig config  = {0, false, 0};
+    RSDisplayNode::SharedPtr displayNode = RSDisplayNode::Create(config);
+    ASSERT_TRUE(displayNode != nullptr);
+    displayNode->SetHDRBrightnessFactor(factor);
+    EXPECT_EQ(displayNode->GetStagingProperties().GetHDRBrightnessFactor(), factor);
+}
+
+/**
  * @tc.name: SetandGetShadowOffset001
  * @tc.desc:
  * @tc.type:FUNC
@@ -3334,7 +3367,7 @@ HWTEST_F(RSNodeTest, SetBoundsWidth, TestSize.Level1)
     rsNode->SetBoundsWidth(1.f);
     EXPECT_TRUE(!rsNode->propertyModifiers_.empty());
 
-    std::shared_ptr<RSPropertyBase> property = std::make_shared<RSPropertyBase>();
+    std::shared_ptr<RSPropertyBase> property = std::make_shared<RSProperty<float>>();
     RSModifierType modifierType = RSModifierType::BOUNDS;
     std::shared_ptr<RSModifier> modifier = std::make_shared<RSBackgroundShaderModifier>(property);
     modifier->property_ = nullptr;
@@ -3355,7 +3388,7 @@ HWTEST_F(RSNodeTest, SetBoundsHeight, TestSize.Level1)
     rsNode->SetBoundsHeight(1.f);
     EXPECT_TRUE(!rsNode->propertyModifiers_.empty());
 
-    std::shared_ptr<RSPropertyBase> property = std::make_shared<RSPropertyBase>();
+    std::shared_ptr<RSPropertyBase> property = std::make_shared<RSProperty<float>>();
     RSModifierType modifierType = RSModifierType::BOUNDS;
     std::shared_ptr<RSModifier> modifier = std::make_shared<RSBackgroundShaderModifier>(property);
     modifier->property_ = nullptr;
@@ -3376,7 +3409,7 @@ HWTEST_F(RSNodeTest, SetFramePositionX, TestSize.Level1)
     rsNode->SetFramePositionX(1.f);
     EXPECT_TRUE(!rsNode->propertyModifiers_.empty());
 
-    std::shared_ptr<RSPropertyBase> property = std::make_shared<RSPropertyBase>();
+    std::shared_ptr<RSPropertyBase> property = std::make_shared<RSProperty<float>>();
     RSModifierType modifierType = RSModifierType::FRAME;
     std::shared_ptr<RSModifier> modifier = std::make_shared<RSBackgroundShaderModifier>(property);
     modifier->property_ = nullptr;
@@ -3397,7 +3430,7 @@ HWTEST_F(RSNodeTest, SetFramePositionY, TestSize.Level1)
     rsNode->SetFramePositionY(1.f);
     EXPECT_TRUE(!rsNode->propertyModifiers_.empty());
 
-    std::shared_ptr<RSPropertyBase> property = std::make_shared<RSPropertyBase>();
+    std::shared_ptr<RSPropertyBase> property = std::make_shared<RSProperty<float>>();
     RSModifierType modifierType = RSModifierType::FRAME;
     std::shared_ptr<RSModifier> modifier = std::make_shared<RSBackgroundShaderModifier>(property);
     modifier->property_ = nullptr;
@@ -3418,7 +3451,7 @@ HWTEST_F(RSNodeTest, SetPivotX, TestSize.Level1)
     rsNode->SetPivotX(1.f);
     EXPECT_TRUE(!rsNode->propertyModifiers_.empty());
 
-    std::shared_ptr<RSPropertyBase> property = std::make_shared<RSPropertyBase>();
+    std::shared_ptr<RSPropertyBase> property = std::make_shared<RSProperty<float>>();
     RSModifierType modifierType = RSModifierType::PIVOT;
     std::shared_ptr<RSModifier> modifier = std::make_shared<RSBackgroundShaderModifier>(property);
     modifier->property_ = nullptr;
@@ -3439,7 +3472,7 @@ HWTEST_F(RSNodeTest, SetPivotY, TestSize.Level1)
     rsNode->SetPivotY(1.f);
     EXPECT_TRUE(!rsNode->propertyModifiers_.empty());
 
-    std::shared_ptr<RSPropertyBase> property = std::make_shared<RSPropertyBase>();
+    std::shared_ptr<RSPropertyBase> property = std::make_shared<RSProperty<float>>();
     RSModifierType modifierType = RSModifierType::PIVOT;
     std::shared_ptr<RSModifier> modifier = std::make_shared<RSBackgroundShaderModifier>(property);
     modifier->property_ = nullptr;
@@ -3460,7 +3493,7 @@ HWTEST_F(RSNodeTest, SetTranslateX, TestSize.Level1)
     rsNode->SetTranslateX(1.f);
     EXPECT_TRUE(!rsNode->propertyModifiers_.empty());
 
-    std::shared_ptr<RSPropertyBase> property = std::make_shared<RSPropertyBase>();
+    std::shared_ptr<RSPropertyBase> property = std::make_shared<RSProperty<float>>();
     RSModifierType modifierType = RSModifierType::TRANSLATE;
     std::shared_ptr<RSModifier> modifier = std::make_shared<RSBackgroundShaderModifier>(property);
     modifier->property_ = nullptr;
@@ -3481,7 +3514,7 @@ HWTEST_F(RSNodeTest, SetTranslateY, TestSize.Level1)
     rsNode->SetTranslateY(1.f);
     EXPECT_TRUE(!rsNode->propertyModifiers_.empty());
 
-    std::shared_ptr<RSPropertyBase> property = std::make_shared<RSPropertyBase>();
+    std::shared_ptr<RSPropertyBase> property = std::make_shared<RSProperty<float>>();
     RSModifierType modifierType = RSModifierType::TRANSLATE;
     std::shared_ptr<RSModifier> modifier = std::make_shared<RSBackgroundShaderModifier>(property);
     modifier->property_ = nullptr;
@@ -3502,7 +3535,7 @@ HWTEST_F(RSNodeTest, SetScaleX, TestSize.Level1)
     rsNode->SetScaleX(1.f);
     EXPECT_TRUE(!rsNode->propertyModifiers_.empty());
 
-    std::shared_ptr<RSPropertyBase> property = std::make_shared<RSPropertyBase>();
+    std::shared_ptr<RSPropertyBase> property = std::make_shared<RSProperty<float>>();
     RSModifierType modifierType = RSModifierType::SCALE;
     std::shared_ptr<RSModifier> modifier = std::make_shared<RSBackgroundShaderModifier>(property);
     modifier->property_ = nullptr;
@@ -3523,7 +3556,7 @@ HWTEST_F(RSNodeTest, SetScaleY, TestSize.Level1)
     rsNode->SetScaleY(1.f);
     EXPECT_TRUE(!rsNode->propertyModifiers_.empty());
 
-    std::shared_ptr<RSPropertyBase> property = std::make_shared<RSPropertyBase>();
+    std::shared_ptr<RSPropertyBase> property = std::make_shared<RSProperty<float>>();
     RSModifierType modifierType = RSModifierType::SCALE;
     std::shared_ptr<RSModifier> modifier = std::make_shared<RSBackgroundShaderModifier>(property);
     modifier->property_ = nullptr;
@@ -3544,7 +3577,7 @@ HWTEST_F(RSNodeTest, SetSkewX, TestSize.Level1)
     rsNode->SetSkewX(1.f);
     EXPECT_TRUE(!rsNode->propertyModifiers_.empty());
 
-    std::shared_ptr<RSPropertyBase> property = std::make_shared<RSPropertyBase>();
+    std::shared_ptr<RSPropertyBase> property = std::make_shared<RSProperty<float>>();
     RSModifierType modifierType = RSModifierType::SKEW;
     std::shared_ptr<RSModifier> modifier = std::make_shared<RSBackgroundShaderModifier>(property);
     modifier->property_ = nullptr;
@@ -3565,7 +3598,7 @@ HWTEST_F(RSNodeTest, SetSkewY, TestSize.Level1)
     rsNode->SetSkewY(1.f);
     EXPECT_TRUE(!rsNode->propertyModifiers_.empty());
 
-    std::shared_ptr<RSPropertyBase> property = std::make_shared<RSPropertyBase>();
+    std::shared_ptr<RSPropertyBase> property = std::make_shared<RSProperty<float>>();
     RSModifierType modifierType = RSModifierType::SKEW;
     std::shared_ptr<RSModifier> modifier = std::make_shared<RSBackgroundShaderModifier>(property);
     modifier->property_ = nullptr;
@@ -3586,7 +3619,7 @@ HWTEST_F(RSNodeTest, SetPerspX, TestSize.Level1)
     rsNode->SetPerspX(1.f);
     EXPECT_TRUE(!rsNode->propertyModifiers_.empty());
 
-    std::shared_ptr<RSPropertyBase> property = std::make_shared<RSPropertyBase>();
+    std::shared_ptr<RSPropertyBase> property = std::make_shared<RSProperty<float>>();
     RSModifierType modifierType = RSModifierType::PERSP;
     std::shared_ptr<RSModifier> modifier = std::make_shared<RSBackgroundShaderModifier>(property);
     modifier->property_ = nullptr;
@@ -3607,7 +3640,7 @@ HWTEST_F(RSNodeTest, SetPerspY, TestSize.Level1)
     rsNode->SetPerspY(1.f);
     EXPECT_TRUE(!rsNode->propertyModifiers_.empty());
 
-    std::shared_ptr<RSPropertyBase> property = std::make_shared<RSPropertyBase>();
+    std::shared_ptr<RSPropertyBase> property = std::make_shared<RSProperty<float>>();
     RSModifierType modifierType = RSModifierType::PERSP;
     std::shared_ptr<RSModifier> modifier = std::make_shared<RSBackgroundShaderModifier>(property);
     modifier->property_ = nullptr;
@@ -4136,7 +4169,7 @@ HWTEST_F(RSNodeTest, SetBackgroundUIFilter, TestSize.Level1)
 HWTEST_F(RSNodeTest, GetProperty, TestSize.Level1)
 {
     auto rsNode = RSCanvasNode::Create();
-    auto rsPropertyBase = std::make_shared<RSPropertyBase>();
+    auto rsPropertyBase = std::make_shared<RSProperty<float>>();
     rsNode->properties_.emplace(rsPropertyBase->GetId(), rsPropertyBase);
     auto tempRSPropertyBase = rsNode->GetProperty(rsPropertyBase->GetId());
     EXPECT_NE(tempRSPropertyBase, nullptr);
@@ -4151,7 +4184,7 @@ HWTEST_F(RSNodeTest, GetProperty, TestSize.Level1)
 HWTEST_F(RSNodeTest, RegisterProperty, TestSize.Level1)
 {
     auto rsNode = RSCanvasNode::Create();
-    auto rsPropertyBase = std::make_shared<RSPropertyBase>();
+    auto rsPropertyBase = std::make_shared<RSProperty<float>>();
     rsNode->RegisterProperty(rsPropertyBase);
     EXPECT_FALSE(rsNode->properties_.empty());
 }
@@ -4165,7 +4198,7 @@ HWTEST_F(RSNodeTest, RegisterProperty, TestSize.Level1)
 HWTEST_F(RSNodeTest, UnRegisterProperty, TestSize.Level1)
 {
     auto rsNode = RSCanvasNode::Create();
-    auto rsPropertyBase = std::make_shared<RSPropertyBase>();
+    auto rsPropertyBase = std::make_shared<RSProperty<float>>();
     PropertyId propertyId = rsPropertyBase->GetId();
     rsNode->properties_.emplace(propertyId, rsPropertyBase);
     EXPECT_FALSE(rsNode->properties_.empty());
@@ -4182,7 +4215,7 @@ HWTEST_F(RSNodeTest, UnRegisterProperty, TestSize.Level1)
 HWTEST_F(RSNodeTest, ResetPropertyMap, TestSize.Level1)
 {
     auto rsNode = RSCanvasNode::Create();
-    auto rsPropertyBase = std::make_shared<RSPropertyBase>();
+    auto rsPropertyBase = std::make_shared<RSProperty<float>>();
     PropertyId propertyId = rsPropertyBase->GetId();
     rsNode->properties_.emplace(propertyId, rsPropertyBase);
     EXPECT_FALSE(rsNode->properties_.empty());
@@ -4324,6 +4357,28 @@ HWTEST_F(RSNodeTest, SetUIForegroundFilter, TestSize.Level1)
     filterObj->AddPara(para);
     rsNode->SetUIForegroundFilter(filterObj);
     EXPECT_TRUE(rsNode->GetStagingProperties().GetForegroundEffectRadius() == floatData[1]);
+    if (filterObj != nullptr) {
+        delete filterObj;
+        filterObj = nullptr;
+    }
+}
+
+/**
+ * @tc.name: SetUIForegroundFilter002
+ * @tc.desc: test results of SetUIForegroundFilter
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeTest, SetUIForegroundFilter002, TestSize.Level1)
+{
+    auto rsNode = RSCanvasNode::Create();
+    Filter* filterObj = new(std::nothrow) Filter();
+    std::shared_ptr<HDRBrightnessRatioPara> para = std::make_shared<HDRBrightnessRatioPara>();
+    float hdrBrightness = 2.0f; // hdr brightness
+    para->SetBrightnessRatio(hdrBrightness);
+    filterObj->AddPara(para);
+    rsNode->SetUIForegroundFilter(filterObj);
+    EXPECT_EQ(rsNode->GetStagingProperties().GetHDRUIBrightness(), hdrBrightness);
+
     if (filterObj != nullptr) {
         delete filterObj;
         filterObj = nullptr;
@@ -5819,7 +5874,7 @@ HWTEST_F(RSNodeTest, SetProperty, TestSize.Level1)
     auto rsNode = RSCanvasNode::Create();
     rsNode->SetProperty<RSAlphaModifier, RSAnimatableProperty<float>>(RSModifierType::ALPHA, 1.f);
 
-    std::shared_ptr<RSPropertyBase> property = std::make_shared<RSPropertyBase>();
+    std::shared_ptr<RSPropertyBase> property = std::make_shared<RSProperty<float>>();
     RSModifierType modifierType = RSModifierType::ALPHA;
     std::shared_ptr<RSModifier> modifier = std::make_shared<RSBackgroundShaderModifier>(property);
     modifier->property_ = nullptr;
@@ -5899,6 +5954,24 @@ HWTEST_F(RSNodeTest, SetHDRBrightness, TestSize.Level1)
     float hdrBrightness = 0.5f; // for test
     rsNode->SetHDRBrightness(hdrBrightness);
     EXPECT_NE(rsNode->GenerateId(), 1);
+}
+
+/**
+ * @tc.name: SetHDRUIBrightnessTest
+ * @tc.desc: test results of SetHDRUIBrightness
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeTest, SetHDRUIBrightnessTest, TestSize.Level1)
+{
+    auto rsNode = RSCanvasNode::Create();
+    ASSERT_NE(rsNode, nullptr);
+
+    // Default value is 1.0f
+    EXPECT_EQ(rsNode->GetStagingProperties().GetHDRUIBrightness(), 1.0f);
+
+    float hdrBrightness = 2.0f; // hdr brightness
+    rsNode->SetHDRUIBrightness(hdrBrightness);
+    EXPECT_EQ(rsNode->GetStagingProperties().GetHDRUIBrightness(), hdrBrightness);
 }
 
 /**
@@ -7679,12 +7752,12 @@ HWTEST_F(RSNodeTest, IsRenderServiceNode, TestSize.Level1)
 }
 
 /**
- * @tc.name: AddChild
+ * @tc.name: AddChildTest001
  * @tc.desc: test results of AddChild
  * @tc.type: FUNC
  * @tc.require: issueI9RLG7
  */
-HWTEST_F(RSNodeTest, AddChild, TestSize.Level1)
+HWTEST_F(RSNodeTest, AddChildTest001, TestSize.Level1)
 {
     auto rsNode = RSCanvasNode::Create();
     std::shared_ptr<RSNode> child = nullptr;
@@ -7730,6 +7803,39 @@ HWTEST_F(RSNodeTest, AddChild, TestSize.Level1)
     delete RSTransactionProxy::instance_;
     RSTransactionProxy::instance_ = nullptr;
     rsNode->AddChild(child, 1);
+    EXPECT_EQ(RSTransactionProxy::GetInstance(), nullptr);
+    RSTransactionProxy::instance_ = new RSTransactionProxy();
+}
+
+/**
+ * @tc.name: AddChildTest002
+ * @tc.desc: test results of AddChild
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSNodeTest, AddChildTest002, TestSize.Level1)
+{
+    auto uiDirector1 = RSUIDirector::Create();
+    uiDirector1->Init(true, true);
+    auto uiDirector2 = RSUIDirector::Create();
+    uiDirector2->Init(true, true);
+    auto rsNode = RSCanvasNode::Create(false, false, uiDirector1->GetRSUIContext());
+    auto childNode = RSCanvasNode::Create(false, false, uiDirector2->GetRSUIContext());
+    rsNode->AddChild(childNode, -1);
+    auto uiContext1 = uiDirector1->GetRSUIContext();
+    auto uiContext2 = uiDirector2->GetRSUIContext();
+    ASSERT_NE(uiContext1, nullptr);
+    ASSERT_NE(uiContext2, nullptr);
+    auto transactionHandler1 = uiContext1->GetRSTransaction();
+    auto transactionHandler2 = uiContext2->GetRSTransaction();
+    ASSERT_NE(transactionHandler1, nullptr);
+    ASSERT_NE(transactionHandler2, nullptr);
+    ASSERT_FALSE(transactionHandler1->IsEmpty());
+    ASSERT_FALSE(transactionHandler2->IsEmpty());
+
+    delete RSTransactionProxy::instance_;
+    RSTransactionProxy::instance_ = nullptr;
+    rsNode->AddChild(childNode, -1);
     EXPECT_EQ(RSTransactionProxy::GetInstance(), nullptr);
     RSTransactionProxy::instance_ = new RSTransactionProxy();
 }
@@ -8348,6 +8454,29 @@ HWTEST_F(RSNodeTest, SetAlwaysSnapshot, TestSize.Level1)
 }
 
 /**
+ * @tc.name: SetUIContextToken
+ * @tc.desc: test results of SetUIContextToken
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSNodeTest, SetUIContextToken, TestSize.Level1)
+{
+    auto rsNode = RSCanvasNode::Create();
+    ASSERT_NE(rsNode, nullptr);
+    rsNode->SetUIContextToken();
+    rsNode = nullptr;
+    auto uiDirector = RSUIDirector::Create();
+    uiDirector->Init(true, true);
+    auto uiContext = uiDirector->GetRSUIContext();
+    rsNode = RSCanvasNode::Create(false, false, uiContext);
+    rsNode->SetUIContextToken();
+    ASSERT_NE(uiContext, nullptr);
+    auto transaction = uiContext->GetRSTransaction();
+    ASSERT_NE(transaction, nullptr);
+    ASSERT_FALSE(transaction->IsEmpty());
+}
+
+/**
  * @tc.name: UpdateOcclusionCullingStatus001
  * @tc.desc: test UpdateOcclusionCullingStatus
  * @tc.type: FUNC
@@ -8362,5 +8491,48 @@ HWTEST_F(RSNodeTest, UpdateOcclusionCullingStatus001, TestSize.Level1)
     rsNode->UpdateOcclusionCullingStatus(true, id);
     rsNode->UpdateOcclusionCullingStatus(false, id);
     EXPECT_EQ(id, rsNode->GetId());
+}
+
+/**
+ * @tc.name: Dump002
+ * @tc.desc: Test Dump
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeTest, Dump002Test, TestSize.Level1)
+{
+    auto rsNode = RSCanvasNode::Create();
+    rsNode->modifiers_.clear();
+    ASSERT_TRUE(rsNode->modifiers_.empty());
+
+    std::string out1;
+    rsNode->Dump(out1);
+    auto pos = out1.find("modifiers[]");
+    EXPECT_TRUE(pos != std::string::npos);
+
+    rsNode->modifiers_[0] = nullptr;
+    std::string out2;
+    rsNode->Dump(out2);
+    pos = out2.find("modifiers[]");
+    EXPECT_TRUE(pos != std::string::npos);
+
+    auto value = Vector4f(100.f);
+    auto prop = std::make_shared<RSAnimatableProperty<Vector4f>>(value);
+    auto modifier1 = std::make_shared<RSBoundsModifier>(prop);
+    rsNode->AddModifier(modifier1);
+
+    rsNode->SetProperty<RSAlphaModifier, RSAnimatableProperty<float>>(RSModifierType::ALPHA, 1.f);
+    std::shared_ptr<RSPropertyBase> property = std::make_shared<RSProperty<bool>>();
+    std::shared_ptr<RSModifier> modifier2 = std::make_shared<RSBackgroundShaderModifier>(property);
+    rsNode->AddModifier(modifier2);
+
+    auto contentStyleModifier = std::make_shared<ContentStyleModifierTest>();
+    contentStyleModifier->property_->target_.lock() = nullptr;
+    rsNode->AddModifier(contentStyleModifier);
+
+    std::string out3;
+    rsNode->Dump(out3);
+    pos = out3.find("modifiers[ Bounds:[x:100.0 y:100.0 width:100.0 height:100.0]"
+        " Alpha:[1.0] BackgroundShader: ContentStyle:drawCmdList[]]");
+    EXPECT_TRUE(pos != std::string::npos);
 }
 } // namespace OHOS::Rosen

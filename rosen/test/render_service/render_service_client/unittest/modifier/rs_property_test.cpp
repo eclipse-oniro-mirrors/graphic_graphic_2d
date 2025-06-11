@@ -26,6 +26,17 @@ using namespace testing;
 using namespace testing::ext;
 
 namespace OHOS::Rosen {
+
+namespace {
+constexpr float DEFAULT_NEAR_ZERO_THRESHOLD = 1.0f / 256.0f;
+constexpr float FLOAT_NEAR_ZERO_COARSE_THRESHOLD = 1.0f / 256.0f;
+constexpr float FLOAT_NEAR_ZERO_MEDIUM_THRESHOLD = 1.0f / 1000.0f;
+constexpr float FLOAT_NEAR_ZERO_FINE_THRESHOLD = 1.0f / 3072.0f;
+constexpr float COLOR_NEAR_ZERO_THRESHOLD = 0.0f;
+constexpr float LAYOUT_NEAR_ZERO_THRESHOLD = 0.5f;
+constexpr float ZERO = 0.0f;
+} // namespace
+
 class RSPropertyTest : public testing::Test {
 public:
     constexpr static float floatData[] = {
@@ -50,7 +61,7 @@ void RSPropertyTest::TearDown() {}
  */
 HWTEST_F(RSPropertyTest, LifeCycle001, TestSize.Level1)
 {
-    auto prop = std::make_shared<RSProperty<float>>();
+    std::shared_ptr<RSPropertyBase> prop = std::make_shared<RSProperty<float>>();
     ASSERT_TRUE(prop != nullptr);
     ASSERT_TRUE(prop->GetId() != 0);
 }
@@ -164,8 +175,8 @@ HWTEST_F(RSPropertyTest, PropertyOp001, TestSize.Level1)
  */
 HWTEST_F(RSPropertyTest, operator001, TestSize.Level1)
 {
-    auto prop1 = std::make_shared<RSPropertyBase>();
-    auto prop2 = std::make_shared<RSPropertyBase>();
+    std::shared_ptr<RSPropertyBase> prop1 = std::make_shared<RSProperty<float>>();
+    std::shared_ptr<RSPropertyBase> prop2 = std::make_shared<RSProperty<float>>();
     prop1 = nullptr;
     ASSERT_TRUE(prop2 != nullptr);
     prop1 += prop2;
@@ -178,8 +189,8 @@ HWTEST_F(RSPropertyTest, operator001, TestSize.Level1)
  */
 HWTEST_F(RSPropertyTest, operator002, TestSize.Level1)
 {
-    auto prop1 = std::make_shared<RSPropertyBase>();
-    auto prop2 = std::make_shared<RSPropertyBase>();
+    std::shared_ptr<RSPropertyBase> prop1 = std::make_shared<RSProperty<float>>();
+    std::shared_ptr<RSPropertyBase> prop2 = std::make_shared<RSProperty<float>>();
     ASSERT_TRUE(prop1 != nullptr);
     prop1 += prop2;
 }
@@ -191,8 +202,8 @@ HWTEST_F(RSPropertyTest, operator002, TestSize.Level1)
  */
 HWTEST_F(RSPropertyTest, operator003, TestSize.Level1)
 {
-    auto prop1 = std::make_shared<RSPropertyBase>();
-    auto prop2 = std::make_shared<RSPropertyBase>();
+    std::shared_ptr<RSPropertyBase> prop1 = std::make_shared<RSProperty<float>>();
+    std::shared_ptr<RSPropertyBase> prop2 = std::make_shared<RSProperty<float>>();
     prop1 = nullptr;
     ASSERT_TRUE(prop2 != nullptr);
     prop1 -= prop2;
@@ -205,8 +216,8 @@ HWTEST_F(RSPropertyTest, operator003, TestSize.Level1)
  */
 HWTEST_F(RSPropertyTest, operator004, TestSize.Level1)
 {
-    auto prop1 = std::make_shared<RSPropertyBase>();
-    auto prop2 = std::make_shared<RSPropertyBase>();
+    std::shared_ptr<RSPropertyBase> prop1 = std::make_shared<RSProperty<float>>();
+    std::shared_ptr<RSPropertyBase> prop2 = std::make_shared<RSProperty<float>>();
     ASSERT_TRUE(prop1 != nullptr);
     prop1 -= prop2;
 }
@@ -218,7 +229,7 @@ HWTEST_F(RSPropertyTest, operator004, TestSize.Level1)
  */
 HWTEST_F(RSPropertyTest, operator005, TestSize.Level1)
 {
-    auto prop1 = std::make_shared<RSPropertyBase>();
+    std::shared_ptr<RSPropertyBase> prop1 = std::make_shared<RSProperty<float>>();
     float scale = 2;
     ASSERT_TRUE(prop1 != nullptr);
     prop1 = nullptr;
@@ -232,7 +243,7 @@ HWTEST_F(RSPropertyTest, operator005, TestSize.Level1)
  */
 HWTEST_F(RSPropertyTest, operator006, TestSize.Level1)
 {
-    auto prop1 = std::make_shared<RSPropertyBase>();
+    std::shared_ptr<RSPropertyBase> prop1 = std::make_shared<RSProperty<float>>();
     float scale = 2;
     ASSERT_TRUE(prop1 != nullptr);
     prop1 *= scale;
@@ -245,8 +256,8 @@ HWTEST_F(RSPropertyTest, operator006, TestSize.Level1)
  */
 HWTEST_F(RSPropertyTest, operator007, TestSize.Level1)
 {
-    auto prop1 = std::make_shared<RSPropertyBase>();
-    auto prop2 = std::make_shared<RSPropertyBase>();
+    std::shared_ptr<RSPropertyBase> prop1 = std::make_shared<RSProperty<float>>();
+    std::shared_ptr<RSPropertyBase> prop2 = std::make_shared<RSProperty<float>>();
     prop1 = nullptr;
     ASSERT_TRUE(prop2 != nullptr);
     prop1 = prop1 + prop2;
@@ -259,8 +270,8 @@ HWTEST_F(RSPropertyTest, operator007, TestSize.Level1)
  */
 HWTEST_F(RSPropertyTest, operator008, TestSize.Level1)
 {
-    auto prop1 = std::make_shared<RSPropertyBase>();
-    auto prop2 = std::make_shared<RSPropertyBase>();
+    std::shared_ptr<RSPropertyBase> prop1 = std::make_shared<RSProperty<float>>();
+    std::shared_ptr<RSPropertyBase> prop2 = std::make_shared<RSProperty<float>>();
     ASSERT_TRUE(prop1 != nullptr);
     prop1 = prop1 + prop2;
 }
@@ -272,8 +283,8 @@ HWTEST_F(RSPropertyTest, operator008, TestSize.Level1)
  */
 HWTEST_F(RSPropertyTest, operator009, TestSize.Level1)
 {
-    auto prop1 = std::make_shared<RSPropertyBase>();
-    auto prop2 = std::make_shared<RSPropertyBase>();
+    std::shared_ptr<RSPropertyBase> prop1 = std::make_shared<RSProperty<float>>();
+    std::shared_ptr<RSPropertyBase> prop2 = std::make_shared<RSProperty<float>>();
     prop1 = nullptr;
     ASSERT_TRUE(prop2 != nullptr);
     prop1 = prop1 - prop2;
@@ -286,8 +297,8 @@ HWTEST_F(RSPropertyTest, operator009, TestSize.Level1)
  */
 HWTEST_F(RSPropertyTest, operator010, TestSize.Level1)
 {
-    auto prop1 = std::make_shared<RSPropertyBase>();
-    auto prop2 = std::make_shared<RSPropertyBase>();
+    std::shared_ptr<RSPropertyBase> prop1 = std::make_shared<RSProperty<float>>();
+    std::shared_ptr<RSPropertyBase> prop2 = std::make_shared<RSProperty<float>>();
     ASSERT_TRUE(prop1 != nullptr);
     prop1 = prop1 - prop2;
 }
@@ -299,7 +310,7 @@ HWTEST_F(RSPropertyTest, operator010, TestSize.Level1)
  */
 HWTEST_F(RSPropertyTest, operator011, TestSize.Level1)
 {
-    auto prop1 = std::make_shared<RSPropertyBase>();
+    std::shared_ptr<RSPropertyBase> prop1 = std::make_shared<RSProperty<float>>();
     float scale = 2;
     ASSERT_TRUE(prop1 != nullptr);
     prop1 = nullptr;
@@ -313,7 +324,7 @@ HWTEST_F(RSPropertyTest, operator011, TestSize.Level1)
  */
 HWTEST_F(RSPropertyTest, operator012, TestSize.Level1)
 {
-    auto prop1 = std::make_shared<RSPropertyBase>();
+    std::shared_ptr<RSPropertyBase> prop1 = std::make_shared<RSProperty<float>>();
     float scale = 2;
     ASSERT_TRUE(prop1 != nullptr);
     prop1 = prop1 * scale;
@@ -326,8 +337,8 @@ HWTEST_F(RSPropertyTest, operator012, TestSize.Level1)
  */
 HWTEST_F(RSPropertyTest, operator013, TestSize.Level1)
 {
-    auto prop1 = std::make_shared<RSPropertyBase>();
-    auto prop2 = std::make_shared<RSPropertyBase>();
+    std::shared_ptr<RSPropertyBase> prop1 = std::make_shared<RSProperty<float>>();
+    std::shared_ptr<RSPropertyBase> prop2 = std::make_shared<RSProperty<float>>();
     prop1 = nullptr;
     ASSERT_TRUE(prop2 != nullptr);
     ASSERT_TRUE(prop1 != prop2);
@@ -340,8 +351,8 @@ HWTEST_F(RSPropertyTest, operator013, TestSize.Level1)
  */
 HWTEST_F(RSPropertyTest, operator014, TestSize.Level1)
 {
-    auto prop1 = std::make_shared<RSPropertyBase>();
-    auto prop2 = std::make_shared<RSPropertyBase>();
+    std::shared_ptr<RSPropertyBase> prop1 = std::make_shared<RSProperty<float>>();
+    std::shared_ptr<RSPropertyBase> prop2 = std::make_shared<RSProperty<float>>();
     ASSERT_TRUE(prop1 != nullptr);
     ASSERT_TRUE(prop1 != prop2);
 }
@@ -353,8 +364,8 @@ HWTEST_F(RSPropertyTest, operator014, TestSize.Level1)
  */
 HWTEST_F(RSPropertyTest, operator015, TestSize.Level1)
 {
-    auto prop1 = std::make_shared<RSPropertyBase>();
-    auto prop2 = std::make_shared<RSPropertyBase>();
+    std::shared_ptr<RSPropertyBase> prop1 = std::make_shared<RSProperty<float>>();
+    std::shared_ptr<RSPropertyBase> prop2 = std::make_shared<RSProperty<float>>();
     prop1 = nullptr;
     ASSERT_TRUE(prop2 != nullptr);
     ASSERT_TRUE(prop1 != prop2);
@@ -367,8 +378,8 @@ HWTEST_F(RSPropertyTest, operator015, TestSize.Level1)
  */
 HWTEST_F(RSPropertyTest, operator016, TestSize.Level1)
 {
-    auto prop1 = std::make_shared<RSPropertyBase>();
-    auto prop2 = std::make_shared<RSPropertyBase>();
+    std::shared_ptr<RSPropertyBase> prop1 = std::make_shared<RSProperty<float>>();
+    std::shared_ptr<RSPropertyBase> prop2 = std::make_shared<RSProperty<float>>();
     ASSERT_TRUE(prop1 != nullptr);
     ASSERT_TRUE(prop1 != prop2);
 }
@@ -381,7 +392,7 @@ HWTEST_F(RSPropertyTest, operator016, TestSize.Level1)
  */
 HWTEST_F(RSPropertyTest, GetThresholdByThresholdType001, TestSize.Level1)
 {
-    auto prop = std::make_shared<RSPropertyBase>();
+    std::shared_ptr<RSPropertyBase> prop = std::make_shared<RSProperty<float>>();
     float res = prop->GetThresholdByThresholdType(ThresholdType::LAYOUT);
     EXPECT_TRUE(res == LAYOUT_NEAR_ZERO_THRESHOLD);
     
@@ -413,10 +424,10 @@ HWTEST_F(RSPropertyTest, GetThresholdByThresholdType001, TestSize.Level1)
 HWTEST_F(RSPropertyTest, Equality001, TestSize.Level1)
 {
     std::shared_ptr<const RSPropertyBase> propOne = nullptr;
-    auto propTwo = std::make_shared<RSPropertyBase>();
+    std::shared_ptr<RSPropertyBase> propTwo = std::make_shared<RSProperty<float>>();
     EXPECT_FALSE(propOne == propTwo);
 
-    propOne = std::make_shared<RSPropertyBase>();
+    propOne = std::make_shared<RSProperty<float>>();
     EXPECT_FALSE(propOne == propTwo);
 }
 
@@ -429,10 +440,10 @@ HWTEST_F(RSPropertyTest, Equality001, TestSize.Level1)
 HWTEST_F(RSPropertyTest, Unlikeness001, TestSize.Level1)
 {
     std::shared_ptr<const RSPropertyBase> propOne = nullptr;
-    auto propTwo = std::make_shared<RSPropertyBase>();
+    std::shared_ptr<RSPropertyBase> propTwo = std::make_shared<RSProperty<float>>();
     EXPECT_FALSE(propOne == propTwo);
 
-    propOne = std::make_shared<RSPropertyBase>();
+    propOne = std::make_shared<RSProperty<float>>();
     EXPECT_TRUE(propOne != propTwo);
 }
 
@@ -445,7 +456,7 @@ HWTEST_F(RSPropertyTest, Unlikeness001, TestSize.Level1)
 HWTEST_F(RSPropertyTest, GetPropertyType001, TestSize.Level1)
 {
     auto rsAnimatableProperty = std::make_shared<RSAnimatableProperty<Vector3f>>(Vector3f(1.0f, 2.0f, 3.0f));
-    EXPECT_TRUE(rsAnimatableProperty->GetPropertyType() == RSRenderPropertyType::PROPERTY_VECTOR3F);
+    EXPECT_TRUE(rsAnimatableProperty->GetPropertyType() == RSPropertyType::VECTOR3F);
     rsAnimatableProperty->Set(Vector3f(4.0f, 5.0f, 6.0f));
     EXPECT_EQ(rsAnimatableProperty->Get(), Vector3f(4.0f, 5.0f, 6.0f));
 }
@@ -460,7 +471,7 @@ HWTEST_F(RSPropertyTest, GetPropertyType002, TestSize.Level1)
 {
     std::vector<float> tempVec = {1.0f, 2.0f, 3.0f};
     auto rsAnimatableProperty = std::make_shared<RSAnimatableProperty<std::vector<float>>>(tempVec);
-    EXPECT_TRUE(rsAnimatableProperty->GetPropertyType() == RSRenderPropertyType::PROPERTY_SHADER_PARAM);
+    EXPECT_TRUE(rsAnimatableProperty->GetPropertyType() == RSPropertyType::SHADER_PARAM);
     std::vector<float> tempVec2 = {4.0f, 5.0f, 6.0f};
     rsAnimatableProperty->Set(tempVec2);
     EXPECT_EQ(rsAnimatableProperty->Get(), tempVec2);
@@ -646,31 +657,6 @@ HWTEST_F(RSPropertyTest, GetRenderProperty008, TestSize.Level1)
     RSAnimatableProperty<Quaternion> property(Quaternion(0.f, 0.1f, 0.2f, 0.3f));
     property.isCustom_ = true;
     property.renderProperty_ = std::make_shared<RSRenderAnimatableProperty<Quaternion>>();
-    auto rsRenderProperty1 = property.GetRenderProperty();
-    EXPECT_NE(rsRenderProperty1, nullptr);
-
-    property.renderProperty_ = nullptr;
-    auto rsRenderProperty2 = property.GetRenderProperty();
-    EXPECT_NE(rsRenderProperty2, nullptr);
-
-    property.isCustom_ = false;
-    property.renderProperty_ = nullptr;
-    auto rsRenderProperty3 = property.GetRenderProperty();
-    EXPECT_NE(rsRenderProperty3, nullptr);
-}
-
-/**
- * @tc.name: GetRenderProperty009
- * @tc.desc: test template value is RSFilter
- * @tc.type: FUNC
- * @tc.require: issueICAZAW
- */
-HWTEST_F(RSPropertyTest, GetRenderProperty009, TestSize.Level1)
-{
-    auto rsFilter = std::make_shared<RSFilter>();
-    RSAnimatableProperty<std::shared_ptr<RSFilter>> property(rsFilter);
-    property.isCustom_ = true;
-    property.renderProperty_ = std::make_shared<RSRenderAnimatableProperty<std::shared_ptr<RSFilter>>>();
     auto rsRenderProperty1 = property.GetRenderProperty();
     EXPECT_NE(rsRenderProperty1, nullptr);
 

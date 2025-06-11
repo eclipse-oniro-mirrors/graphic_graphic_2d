@@ -12,9 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "platform/common/rs_log.h"
 #include "render/rs_render_displacement_distort_filter.h"
+
+#include "ge_visual_effect.h"
+#include "ge_visual_effect_container.h"
+
+#include "platform/common/rs_log.h"
 #include "render/rs_render_pixel_map_mask.h"
+#include "render/rs_shader_mask.h"
+
 
 namespace OHOS {
 namespace Rosen {
@@ -33,17 +39,17 @@ namespace Rosen {
             ROSEN_LOGE("RSRenderDispDistortFilterPara::WriteToParcel type Error");
             return false;
         }
-        auto factProperty = GetRenderPropert(RSUIFilterType::DISPLACEMENT_DISTORT_FACTOR);
+        auto factProperty = GetRenderProperty(RSUIFilterType::DISPLACEMENT_DISTORT_FACTOR);
         if (factProperty == nullptr) {
             ROSEN_LOGE("RSRenderDispDistortFilterPara::WriteToParcel empty factor");
             return false;
         }
         if (!RSMarshallingHelper::Marshalling(parcel, RSUIFilterType::DISPLACEMENT_DISTORT_FACTOR) ||
-            !RSRenderPropertyBase::Marshalling(parcel, factProperty)) {
+            !RSMarshallingHelper::Marshalling(parcel, factProperty)) {
             ROSEN_LOGE("RSRenderDispDistortFilterPara::WriteToParcel factor error");
             return false;
         }
-        auto maskProperty = GetRenderPropert(maskType_);
+        auto maskProperty = GetRenderProperty(maskType_);
         if (maskProperty == nullptr) {
             ROSEN_LOGE("RSRenderDispDistortFilterPara::WriteToParcel empty mask");
             return false;
@@ -73,7 +79,7 @@ namespace Rosen {
         }
         std::shared_ptr<RSRenderPropertyBase> factProperty = std::make_shared<RSRenderAnimatableProperty<Vector2f>>();
         if (RSUIFilterType::DISPLACEMENT_DISTORT_FACTOR != factType ||
-            !RSRenderPropertyBase::Unmarshalling(parcel, factProperty)) {
+            !RSMarshallingHelper::Unmarshalling(parcel, factProperty)) {
             ROSEN_LOGE("RSRenderDispDistortFilterPara::ReadFromParcel factor error");
             return false;
         }
@@ -82,7 +88,7 @@ namespace Rosen {
             ROSEN_LOGE("RSRenderDispDistortFilterPara::ReadFromParcel maskType error");
             return false;
         }
-        std::shared_ptr<RSRenderFilterParaBase> maskProperty = CreateRenderPropert(maskType_);
+        std::shared_ptr<RSRenderFilterParaBase> maskProperty = CreateRenderProperty(maskType_);
         if (maskProperty == nullptr || !maskProperty->ReadFromParcel(parcel)) {
             ROSEN_LOGE("RSRenderDispDistortFilterPara::ReadFromParcel mask error");
             return false;
@@ -91,7 +97,7 @@ namespace Rosen {
         return true;
     }
 
-    std::shared_ptr<RSRenderMaskPara> RSRenderDispDistortFilterPara::CreateRenderPropert(RSUIFilterType type)
+    std::shared_ptr<RSRenderMaskPara> RSRenderDispDistortFilterPara::CreateRenderProperty(RSUIFilterType type)
     {
         switch (type) {
             case RSUIFilterType::RIPPLE_MASK : {
@@ -101,7 +107,7 @@ namespace Rosen {
                 return std::make_shared<RSRenderPixelMapMaskPara>(0);
             }
             default: {
-                ROSEN_LOGD("RSRenderDispDistortFilterPara::CreateRenderPropert mask nullptr");
+                ROSEN_LOGD("RSRenderDispDistortFilterPara::CreateRenderProperty mask nullptr");
                 return nullptr;
             }
         }
@@ -110,12 +116,12 @@ namespace Rosen {
 
     std::vector<std::shared_ptr<RSRenderPropertyBase>> RSRenderDispDistortFilterPara::GetLeafRenderProperties()
     {
-        auto factProperty = GetRenderPropert(RSUIFilterType::DISPLACEMENT_DISTORT_FACTOR);
+        auto factProperty = GetRenderProperty(RSUIFilterType::DISPLACEMENT_DISTORT_FACTOR);
         if (factProperty == nullptr) {
             ROSEN_LOGE("RSRenderDispDistortFilterPara::GetLeafRenderProperties empty factor");
             return {};
         }
-        auto maskProperty = GetRenderPropert(maskType_);
+        auto maskProperty = GetRenderProperty(maskType_);
         if (maskProperty == nullptr) {
             ROSEN_LOGE("RSRenderDispDistortFilterPara::GetLeafRenderProperties empty mask");
             return {};
@@ -132,11 +138,56 @@ namespace Rosen {
 
     std::shared_ptr<RSRenderMaskPara> RSRenderDispDistortFilterPara::GetRenderMask()
     {
-        auto property = GetRenderPropert(maskType_);
+        auto property = GetRenderProperty(maskType_);
         if (property == nullptr) {
             return nullptr;
         }
         return std::static_pointer_cast<RSRenderMaskPara>(property);
+    }
+
+    bool RSRenderDispDistortFilterPara::ParseFilterValues()
+    {
+        auto displacementDistortFactor = std::static_pointer_cast<RSRenderAnimatableProperty<Vector2f>>(
+            GetRenderProperty(RSUIFilterType::DISPLACEMENT_DISTORT_FACTOR));
+        auto maskProperty = std::static_pointer_cast<RSRenderMaskPara>(GetRenderProperty(maskType_));
+        if (!displacementDistortFactor || !maskProperty) {
+            ROSEN_LOGE("RSRenderDispDistortFilterPara::ParseFilterValues GetRenderProperty has nullptr.");
+            return false;
+        }
+        factor_ = displacementDistortFactor->Get();
+        mask_ = std::make_shared<RSShaderMask>(maskProperty);
+#ifdef USE_M133_SKIA
+        const auto hashFunc = SkChecksum::Hash32;
+#else
+        const auto hashFunc = SkOpts::hash;
+#endif
+        hash_ = hashFunc(&factor_, sizeof(factor_), hash_);
+        auto maskHash = mask_->Hash();
+        hash_ = hashFunc(&maskHash, sizeof(maskHash), hash_);
+        return true;
+    }
+
+    void RSRenderDispDistortFilterPara::GenerateGEVisualEffect(
+        std::shared_ptr<Drawing::GEVisualEffectContainer> visualEffectContainer)
+    {
+        if (!mask_) {
+            return;
+        }
+        auto distortFilter =
+            std::make_shared<Drawing::GEVisualEffect>("DISPLACEMENT_DISTORT", Drawing::DrawingPaintType::BRUSH);
+        distortFilter->SetParam(GE_FILTER_DISPLACEMENT_DISTORT_FACTOR, std::make_pair(factor_[0], factor_[1]));
+        distortFilter->SetParam(GE_FILTER_DISPLACEMENT_DISTORT_MASK, mask_->GenerateGEShaderMask());
+        visualEffectContainer->AddToChainedFilter(distortFilter);
+    }
+
+    const Vector2f& RSRenderDispDistortFilterPara::GetFactor() const
+    {
+        return factor_;
+    }
+
+    const std::shared_ptr<RSShaderMask>& RSRenderDispDistortFilterPara::GetMask() const
+    {
+        return mask_;
     }
 } // namespace Rosen
 } // namespace OHOS

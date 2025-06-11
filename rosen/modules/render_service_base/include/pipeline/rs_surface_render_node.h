@@ -45,6 +45,7 @@
 #ifndef ROSEN_CROSS_PLATFORM
 #include "surface_buffer.h"
 #include "sync_fence.h"
+#include "params/rs_surface_render_params.h"
 #endif
 #include "ipc_security/rs_ipc_interface_code_access_verifier_base.h"
 #ifdef ENABLE_FULL_SCREEN_RECONGNIZE
@@ -670,11 +671,22 @@ public:
     void SetForceUIFirstChanged(bool forceUIFirstChanged);
     bool GetForceUIFirstChanged();
 
+    // Unified DSS synthesis switch for Anco nodes
     static void SetAncoForceDoDirect(bool direct);
+    // Obtain whether the Anco node is using the DSS synthesis flag
     static bool GetOriAncoForceDoDirect();
+    // Whether to use DSS synthesis to obtain anco nodes. only anco node can be true.
     bool GetAncoForceDoDirect() const;
+    // Used to distinguish whether this node is an Anco node
     void SetAncoFlags(uint32_t flags);
+    // Determine whether it is an Anco node
     uint32_t GetAncoFlags() const;
+    // Set the buffer srcRect of the anco node. Only used on anco nodes.
+    void SetAncoSrcCrop(const Rect& srcCrop);
+#ifndef ROSEN_CROSS_PLATFORM
+    // When updating the hwcLayer information of anco node, SrcCrop takes effect.
+    void UpdateLayerSrcRectForAnco(RSLayerInfo& layer, const RSSurfaceRenderParams& surfaceParams);
+#endif
 
     void SetHDRPresent(bool hasHdrPresent);
     bool GetHDRPresent() const;
@@ -798,6 +810,11 @@ public:
     const Occlusion::Region& GetVisibleRegion() const
     {
         return visibleRegion_;
+    }
+
+    const Occlusion::Region& GetVisibleRegionBehindWindow() const
+    {
+        return visibleRegionBehindWindow_;
     }
 
     const Occlusion::Region& GetVisibleRegionInVirtual() const
@@ -955,6 +972,11 @@ public:
         visibleRegion_ = region;
     }
 
+    void SetVisibleRegionBehindWindow(const Occlusion::Region& region)
+    {
+        visibleRegionBehindWindow_ = region;
+    }
+
     void SetVisibleRegionInVirtual(const Occlusion::Region& region)
     {
         visibleRegionInVirtual_ = region;
@@ -1037,6 +1059,11 @@ public:
     void CleanOpaqueRegionChanged()
     {
         opaqueRegionChanged_ = false;
+    }
+
+    bool IsBehindWindowOcclusionChanged() const
+    {
+        return behindWindowOcclusionChanged_;
     }
 
     // [planning] Remove this after skia is upgraded, the clipRegion is supported
@@ -1653,6 +1680,7 @@ private:
     bool isUIHidden_ = false;
     bool extraDirtyRegionAfterAlignmentIsEmpty_ = true;
     bool opaqueRegionChanged_ = false;
+    bool behindWindowOcclusionChanged_ = false;
     bool isFilterCacheFullyCovered_ = false;
     bool isFilterCacheValidForOcclusion_ = false;
     bool isOccludedByFilterCache_ = false;
@@ -1817,6 +1845,7 @@ private:
     different under filter cache surfacenode layer.
     */
     Occlusion::Region visibleRegion_;
+    Occlusion::Region visibleRegionBehindWindow_;
     Occlusion::Region extendVisibleRegion_;
     Occlusion::Region visibleRegionInVirtual_;
     Occlusion::Region visibleRegionForCallBack_;
@@ -1834,6 +1863,7 @@ private:
     std::vector<std::shared_ptr<RSRenderNode>> childrenFilterNodes_;
     // transparent region of the surface, floating window's container window is always treated as transparent
     Occlusion::Region transparentRegion_;
+    Occlusion::Region occlusionRegionBehindWindow_;
 
     Occlusion::Region containerRegion_;
     std::unordered_set<NodeId> abilityNodeIds_;

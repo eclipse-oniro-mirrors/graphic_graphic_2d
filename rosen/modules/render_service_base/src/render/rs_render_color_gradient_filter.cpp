@@ -15,8 +15,12 @@
 
 #include "render/rs_render_color_gradient_filter.h"
 
+#include "ge_visual_effect.h"
+#include "ge_visual_effect_container.h"
+
 #include "platform/common/rs_log.h"
 #include "render/rs_render_ripple_mask.h"
+#include "render/rs_shader_mask.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -38,28 +42,28 @@ bool RSRenderColorGradientFilterPara::WriteToParcel(Parcel& parcel)
         return false;
     }
 
-    auto colorsProperty = GetRenderPropert(RSUIFilterType::COLOR_GRADIENT_COLOR);
-    auto positionsProperty = GetRenderPropert(RSUIFilterType::COLOR_GRADIENT_POSITION);
-    auto strengthProperty = GetRenderPropert(RSUIFilterType::COLOR_GRADIENT_STRENGTH);
+    auto colorsProperty = GetRenderProperty(RSUIFilterType::COLOR_GRADIENT_COLOR);
+    auto positionsProperty = GetRenderProperty(RSUIFilterType::COLOR_GRADIENT_POSITION);
+    auto strengthProperty = GetRenderProperty(RSUIFilterType::COLOR_GRADIENT_STRENGTH);
     if (colorsProperty == nullptr || positionsProperty == nullptr || strengthProperty == nullptr) {
         ROSEN_LOGE("RSRenderColorGradientFilterPara::WriteToParcel empty");
         return false;
     }
 
     if (!RSMarshallingHelper::Marshalling(parcel, RSUIFilterType::COLOR_GRADIENT_COLOR) ||
-        !RSRenderPropertyBase::Marshalling(parcel, colorsProperty)) {
+        !RSMarshallingHelper::Marshalling(parcel, colorsProperty)) {
         ROSEN_LOGE("RSRenderColorGradientFilterPara::WriteToParcel color error");
         return false;
     }
 
     if (!RSMarshallingHelper::Marshalling(parcel, RSUIFilterType::COLOR_GRADIENT_POSITION) ||
-        !RSRenderPropertyBase::Marshalling(parcel, positionsProperty)) {
+        !RSMarshallingHelper::Marshalling(parcel, positionsProperty)) {
         ROSEN_LOGE("RSRenderColorGradientFilterPara::WriteToParcel positions error");
         return false;
     }
 
     if (!RSMarshallingHelper::Marshalling(parcel, RSUIFilterType::COLOR_GRADIENT_STRENGTH) ||
-        !RSRenderPropertyBase::Marshalling(parcel, strengthProperty)) {
+        !RSMarshallingHelper::Marshalling(parcel, strengthProperty)) {
         ROSEN_LOGE("RSRenderColorGradientFilterPara::WriteToParcel strength error");
         return false;
     }
@@ -69,7 +73,7 @@ bool RSRenderColorGradientFilterPara::WriteToParcel(Parcel& parcel)
         return false;
     }
     if (maskType_ != RSUIFilterType::NONE) {
-        auto maskProperty = GetRenderPropert(maskType_);
+        auto maskProperty = GetRenderProperty(maskType_);
         if (maskProperty == nullptr) {
             ROSEN_LOGE("RSRenderColorGradientFilterPara::WriteToParcel empty mask");
             return false;
@@ -98,7 +102,7 @@ bool RSRenderColorGradientFilterPara::ReadFromParcel(Parcel& parcel)
     if (!RSMarshallingHelper::Unmarshalling(parcel, colorsType)) { return false; }
     std::shared_ptr<RSRenderPropertyBase> color = std::make_shared<RSRenderAnimatableProperty<std::vector<float>>>();
     if (colorsType != RSUIFilterType::COLOR_GRADIENT_COLOR ||
-        !RSRenderPropertyBase::Unmarshalling(parcel, color)) {
+        !RSMarshallingHelper::Unmarshalling(parcel, color)) {
         ROSEN_LOGE("RSRenderColorGradientFilterPara::ReadFromParcel colors error");
         return false;
     }
@@ -108,7 +112,7 @@ bool RSRenderColorGradientFilterPara::ReadFromParcel(Parcel& parcel)
     if (!RSMarshallingHelper::Unmarshalling(parcel, positionsType)) { return false; }
     std::shared_ptr<RSRenderPropertyBase> position = std::make_shared<RSRenderAnimatableProperty<std::vector<float>>>();
     if (positionsType != RSUIFilterType::COLOR_GRADIENT_POSITION ||
-        !RSRenderPropertyBase::Unmarshalling(parcel, position)) {
+        !RSMarshallingHelper::Unmarshalling(parcel, position)) {
         ROSEN_LOGE("RSRenderColorGradientFilterPara::ReadFromParcel positions error");
         return false;
     }
@@ -118,7 +122,7 @@ bool RSRenderColorGradientFilterPara::ReadFromParcel(Parcel& parcel)
     if (!RSMarshallingHelper::Unmarshalling(parcel, strengthType)) { return false; }
     std::shared_ptr<RSRenderPropertyBase> strength = std::make_shared<RSRenderAnimatableProperty<std::vector<float>>>();
     if (strengthType != RSUIFilterType::COLOR_GRADIENT_STRENGTH ||
-        !RSRenderPropertyBase::Unmarshalling(parcel, strength)) {
+        !RSMarshallingHelper::Unmarshalling(parcel, strength)) {
         ROSEN_LOGE("RSRenderColorGradientFilterPara::ReadFromParcel strength error");
         return false;
     }
@@ -156,19 +160,19 @@ std::shared_ptr<RSRenderMaskPara> RSRenderColorGradientFilterPara::CreateMaskRen
 
 std::vector<std::shared_ptr<RSRenderPropertyBase>> RSRenderColorGradientFilterPara::GetLeafRenderProperties()
 {
-    auto colorsProperty = GetRenderPropert(RSUIFilterType::COLOR_GRADIENT_COLOR);
+    auto colorsProperty = GetRenderProperty(RSUIFilterType::COLOR_GRADIENT_COLOR);
     if (colorsProperty == nullptr) {
         ROSEN_LOGE("RSRenderColorGradientFilterPara::GetLeafRenderProperties empty colors");
         return {};
     }
 
-    auto positionsProperty = GetRenderPropert(RSUIFilterType::COLOR_GRADIENT_POSITION);
+    auto positionsProperty = GetRenderProperty(RSUIFilterType::COLOR_GRADIENT_POSITION);
     if (positionsProperty == nullptr) {
         ROSEN_LOGE("RSRenderColorGradientFilterPara::GetLeafRenderProperties empty positions");
         return {};
     }
 
-    auto strengthProperty = GetRenderPropert(RSUIFilterType::COLOR_GRADIENT_STRENGTH);
+    auto strengthProperty = GetRenderProperty(RSUIFilterType::COLOR_GRADIENT_STRENGTH);
     if (strengthProperty == nullptr) {
         ROSEN_LOGE("RSRenderColorGradientFilterPara::GetLeafRenderProperties empty strength");
         return {};
@@ -180,7 +184,7 @@ std::vector<std::shared_ptr<RSRenderPropertyBase>> RSRenderColorGradientFilterPa
     out.push_back(strengthProperty);
 
     if (maskType_ != RSUIFilterType::NONE) {
-        auto maskProperty = GetRenderPropert(maskType_);
+        auto maskProperty = GetRenderProperty(maskType_);
         if (maskProperty == nullptr) {
             ROSEN_LOGE("RSRenderColorGradientFilterPara::GetLeafRenderProperties empty mask");
             return {};
@@ -200,11 +204,81 @@ std::vector<std::shared_ptr<RSRenderPropertyBase>> RSRenderColorGradientFilterPa
 
 std::shared_ptr<RSRenderMaskPara> RSRenderColorGradientFilterPara::GetRenderMask()
 {
-    auto property = GetRenderPropert(maskType_);
+    auto property = GetRenderProperty(maskType_);
     if (property == nullptr) {
         return nullptr;
     }
     return std::static_pointer_cast<RSRenderMaskPara>(property);
+}
+
+bool RSRenderColorGradientFilterPara::ParseFilterValues()
+{
+    auto colorProperty = std::static_pointer_cast<RSRenderProperty<std::vector<float>>>(
+        GetRenderProperty(RSUIFilterType::COLOR_GRADIENT_COLOR));
+    auto positionProperty = std::static_pointer_cast<RSRenderProperty<std::vector<float>>>(
+        GetRenderProperty(RSUIFilterType::COLOR_GRADIENT_POSITION));
+    auto strengthProperty = std::static_pointer_cast<RSRenderProperty<std::vector<float>>>(
+        GetRenderProperty(RSUIFilterType::COLOR_GRADIENT_STRENGTH));
+    auto maskProperty = std::static_pointer_cast<RSRenderMaskPara>(GetRenderProperty(maskType_));
+    if (!colorProperty || !positionProperty || !strengthProperty) {
+        ROSEN_LOGE("RSRenderColorGradientFilterPara::ParseFilterValues GetRenderProperty has some nullptr.");
+        return false;
+    }
+    colors_ = colorProperty->Get();
+    positions_ = positionProperty->Get();
+    strengths_ = strengthProperty->Get();
+    mask_ = maskProperty ? std::make_shared<RSShaderMask>(maskProperty) : nullptr;
+#ifdef USE_M133_SKIA
+    const auto hashFunc = SkChecksum::Hash32;
+#else
+    const auto hashFunc = SkOpts::hash;
+#endif
+    hash_ = hashFunc(colors_.data(), colors_.size() * sizeof(float), hash_);
+    hash_ = hashFunc(positions_.data(), positions_.size() * sizeof(float), hash_);
+    hash_ = hashFunc(strengths_.data(), strengths_.size() * sizeof(float), hash_);
+    if (mask_) {
+        auto maskHash = mask_->Hash();
+        hash_ = hashFunc(&maskHash, sizeof(maskHash), hash_);
+    }
+    return true;
+}
+
+void RSRenderColorGradientFilterPara::GenerateGEVisualEffect(
+    std::shared_ptr<Drawing::GEVisualEffectContainer> visualEffectContainer)
+{
+    if (visualEffectContainer == nullptr) {
+        return;
+    }
+    auto colorGradientFilter = std::make_shared<Drawing::GEVisualEffect>("COLOR_GRADIENT",
+        Drawing::DrawingPaintType::BRUSH);
+    colorGradientFilter->SetParam("COLOR", colors_);
+    colorGradientFilter->SetParam("POSITION", positions_);
+    colorGradientFilter->SetParam("STRENGTH", strengths_);
+    if (mask_) {
+        colorGradientFilter->SetParam("MASK", mask_->GenerateGEShaderMask());
+    }
+
+    visualEffectContainer->AddToChainedFilter(colorGradientFilter);
+}
+
+const std::vector<float> RSRenderColorGradientFilterPara::GetColors() const
+{
+    return colors_;
+}
+
+const std::vector<float> RSRenderColorGradientFilterPara::GetPositions() const
+{
+    return positions_;
+}
+
+const std::vector<float> RSRenderColorGradientFilterPara::GetStrengths() const
+{
+    return strengths_;
+}
+
+const std::shared_ptr<RSShaderMask>& RSRenderColorGradientFilterPara::GetMask() const
+{
+    return mask_;
 }
 
 } // namespace Rosen

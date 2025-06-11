@@ -21,6 +21,7 @@ group("unittest") {
   deps = [
     ":RSAncoManagerTest",
     ":RSDrawWindowCacheTest",
+    ":RSDrmUtilTest",
     ":RSHdrUtilTest",
     ":RSOcclusionHandlerTest",
     ":RSOcclusionNodeTest",
@@ -37,6 +38,7 @@ group("unittest") {
     ":RSUniUiCaptureTest",
     ":RSVBlankIdleCorrectorTest",
     ":RSWindowKeyFrameTest",
+    ":RSWindowCaptureTaskTest",
   ]
   if (graphic_2d_feature_enable_rspipeline) {
     deps += [ ":RSUifirstManagerTest" ]
@@ -56,6 +58,9 @@ group("unittest") {
   }
   if (graphic_2d_feature_enable_vulkan) {
     deps += [ ":RSVKImageManagerTest" ]
+  }
+  if (graphic_2d_feature_tv_metadata_enable) {
+    deps += [ ":TvMetadataTest" ]
   }
 }
 
@@ -107,6 +112,7 @@ ohos_unittest("RSSurfaceCaptureParallelTaskTest") {
   module_out_path = module_output_path
   sources = [
     "$graphic_2d_root/rosen/modules/render_service_base/src/pipeline/rs_canvas_render_node.cpp",
+    "$graphic_2d_root/rosen/modules/render_service_base/src/feature/capture/rs_capture_pixelmap_manager.cpp",
     "capture/rs_surface_capture_task_parallel_test.cpp",
   ]
   deps = [
@@ -166,6 +172,37 @@ ohos_unittest("RSSurfaceCaptureTaskTest") {
     defines += [ "USE_ROSEN_DRAWING" ]
   }
   if (defined(use_video_processing_engine) && use_video_processing_engine) {
+    defines += [ "USE_VIDEO_PROCESSING_ENGINE" ]
+    external_deps += [
+      "drivers_interface_display:libdisplay_commontype_proxy_1.0",
+      "video_processing_engine:videoprocessingengine",
+    ]
+  }
+}
+
+## Build RSDrmUtilTest
+ohos_unittest("RSDrmUtilTest") {
+  module_out_path = module_output_path
+  sources = [ "drm/rs_drm_util_test.cpp" ]
+  deps = [
+    ":rs_test_common",
+    "$graphic_2d_root/rosen/modules/composer/vsync:libvsync",
+  ]
+  external_deps = [
+    "c_utils:utils",
+    "hilog:libhilog",
+    "samgr:samgr_proxy",
+  ]
+  if (defined(global_parts_info) && defined(global_parts_info.sensors_sensor)) {
+    external_deps += [ "sensor:sensor_interface_native" ]
+  }
+  defines = []
+  defines += gpu_defines
+  if (defined(use_rosen_drawing) && use_rosen_drawing) {
+    defines += [ "USE_ROSEN_DRAWING" ]
+  }
+  if (defined(use_video_processing_engine) && use_video_processing_engine) {
+    include_dirs = []
     defines += [ "USE_VIDEO_PROCESSING_ENGINE" ]
     external_deps += [
       "drivers_interface_display:libdisplay_commontype_proxy_1.0",
@@ -713,7 +750,10 @@ ohos_unittest("RSWindowKeyFrameTest") {
 ## Build OverlayDisplayTest
 ohos_unittest("OverlayDisplayTest") {
   module_out_path = module_output_path
-  sources = [ "overlay_display/overlay_display_test.cpp" ]
+  sources = []
+  if (graphic_2d_feature_overlay_display_enable) {
+    sources += [ "overlay_display/overlay_display_test.cpp" ]
+  }
   deps = [
     ":rs_test_common",
     "$graphic_2d_root/rosen/modules/render_service_base/src/platform:platform",
@@ -742,6 +782,44 @@ ohos_unittest("OverlayDisplayTest") {
       "drivers_interface_display:libdisplay_commontype_proxy_1.0",
       "video_processing_engine:videoprocessingengine",
     ]
+  }
+  if (defined(graphic_2d_feature_tv_metadata_enable) && graphic_2d_feature_tv_metadata_enable) {
+    defines += [ "RS_ENABLE_TV_PQ_METADATA" ]
+  }
+}
+
+## Build TvMetadataTest
+ohos_unittest("TvMetadataTest") {
+  module_out_path = module_output_path
+  sources = []
+  deps = [
+    ":rs_test_common",
+    "../../../../../modules/render_service_base/src/platform:platform",
+  ]
+  external_deps = [
+    "c_utils:utils",
+    "hilog:libhilog",
+    "init:libbegetutil",
+  ]
+  if (defined(global_parts_info) && defined(global_parts_info.sensors_sensor)) {
+    external_deps += [ "sensor:sensor_interface_native" ]
+  }
+  defines = []
+  defines += gpu_defines
+  if (defined(use_rosen_drawing) && use_rosen_drawing) {
+    defines += [ "USE_ROSEN_DRAWING" ]
+  }
+  if (defined(use_video_processing_engine) && use_video_processing_engine) {
+    include_dirs = []
+    defines += [ "USE_VIDEO_PROCESSING_ENGINE" ]
+    external_deps += [
+      "drivers_interface_display:libdisplay_commontype_proxy_1.0",
+      "video_processing_engine:videoprocessingengine",
+    ]
+  }
+  if (defined(graphic_2d_feature_tv_metadata_enable) && graphic_2d_feature_tv_metadata_enable) {
+    sources += [ "tv_metadata/tv_metadata_test.cpp" ]
+    defines += [ "RS_ENABLE_TV_PQ_METADATA" ]
   }
 }
 
@@ -812,6 +890,38 @@ ohos_unittest("RSUniDirtyComputeUtilTest") {
   }
 }
 
+## Build RSWindowCaptureTaskTest
+ohos_unittest("RSWindowCaptureTaskTest") {
+  module_out_path = module_output_path
+  sources = [
+    "$graphic_2d_root/rosen/modules/render_service_base/src/pipeline/rs_canvas_render_node.cpp",
+    "capture/rs_window_capture_task_test.cpp",
+  ]
+  deps = [ ":rs_test_common" ]
+  include_dirs = [ "$graphic_2d_root/rosen/modules/render_service_base/include" ]
+  external_deps = [
+    "c_utils:utils",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "samgr:samgr_proxy",
+  ]
+  if (defined(global_parts_info) && defined(global_parts_info.sensors_sensor)) {
+    external_deps += [ "sensor:sensor_interface_native" ]
+  }
+  defines = []
+  defines += gpu_defines
+  if (defined(use_rosen_drawing) && use_rosen_drawing) {
+    defines += [ "USE_ROSEN_DRAWING" ]
+  }
+  if (defined(use_video_processing_engine) && use_video_processing_engine) {
+    defines += [ "USE_VIDEO_PROCESSING_ENGINE" ]
+    external_deps += [
+      "drivers_interface_display:libdisplay_commontype_proxy_1.0",
+      "video_processing_engine:videoprocessingengine",
+    ]
+  }
+}
+
 ## Build rs_test_common.a {{{
 config("rs_test_common_public_config") {
   include_dirs = [
@@ -854,6 +964,7 @@ ohos_static_library("rs_test_common") {
 
   public_deps = [
     "$graphic_2d_root/rosen/modules/composer:libcomposer",
+    "$graphic_2d_root/rosen/modules/composer/vsync:libvsync",
     "$graphic_2d_root/rosen/modules/render_service:librender_service",
     "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",
     "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
@@ -874,9 +985,11 @@ ohos_static_library("rs_test_common") {
   public_external_deps = [
     "accessibility:accessibilityconfig",
     "c_utils:utils",
+    "eventhandler:libeventhandler",
     "googletest:gmock_main",
     "googletest:gtest_main",
     "hilog:libhilog",
+    "hisysevent:libhisysevent",
     "hitrace:hitrace_meter",
     "init:libbegetutil",
     "ipc:ipc_core",

@@ -31,15 +31,15 @@ RSRenderPropertyAnimation::RSRenderPropertyAnimation(
         originValue_ = originValue->Clone();
         lastValue_ = originValue->Clone();
     } else {
-        originValue_ = std::make_shared<RSRenderPropertyBase>();
-        lastValue_ = std::make_shared<RSRenderPropertyBase>();
+        originValue_ = std::make_shared<RSRenderAnimatableProperty<float>>();
+        lastValue_ = std::make_shared<RSRenderAnimatableProperty<float>>();
     }
 }
 
 void RSRenderPropertyAnimation::DumpAnimationInfo(std::string& out) const
 {
     out += "Type:RSRenderPropertyAnimation";
-    RSRenderPropertyType type = RSRenderPropertyType::INVALID;
+    RSPropertyType type = RSPropertyType::INVALID;
     if (property_ != nullptr) {
         type = property_->GetPropertyType();
         out += ", ModifierType: " + std::to_string(static_cast<int16_t>(property_->GetModifierType()));
@@ -75,9 +75,6 @@ void RSRenderPropertyAnimation::AttachRenderProperty(const std::shared_ptr<RSRen
         return;
     }
     InitValueEstimator();
-    if (originValue_ != nullptr) {
-        property_->SetPropertyType(originValue_->GetPropertyType());
-    }
 }
 
 void RSRenderPropertyAnimation::SetPropertyValue(const std::shared_ptr<RSRenderPropertyBase>& value)
@@ -226,7 +223,7 @@ void RSRenderPropertyAnimation::ProcessAnimateVelocityUnderAngleRotation(float f
 
 void RSRenderPropertyAnimation::DumpFraction(float fraction, int64_t time)
 {
-    RSAnimationTraceUtils::GetInstance().addAnimationFrameTrace(GetTargetId(), GetTargetName(), GetAnimationId(),
+    RSAnimationTraceUtils::GetInstance().AddAnimationFrameTrace(GetTarget(), GetAnimationId(),
         GetPropertyId(), fraction, GetPropertyValue(), time, GetDuration(), GetRepeatCount());
 }
 } // namespace Rosen

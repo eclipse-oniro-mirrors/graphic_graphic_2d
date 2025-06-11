@@ -416,7 +416,7 @@ void RSProfiler::FilterMockNode(RSContext& context)
     });
 
     for (auto pid : pidSet) {
-        nodeMap.FilterNodeByPid(pid);
+        nodeMap.FilterNodeByPid(pid, true);
     }
 
     if (auto fallbackNode = nodeMap.GetAnimationFallbackNode()) {
@@ -623,7 +623,7 @@ static void MarshalRenderModifier(const RSRenderModifier& modifier, std::strings
 }
 
 static void MarshalDrawCmdModifiers(
-    const RSRenderContent::DrawCmdContainer& container, std::stringstream& data, uint32_t fileVersion)
+    const RSRenderNode::DrawCmdContainer& container, std::stringstream& data, uint32_t fileVersion)
 {
     const uint32_t drawModifierCount = container.size();
     data.write(reinterpret_cast<const char*>(&drawModifierCount), sizeof(drawModifierCount));
@@ -651,7 +651,7 @@ static void MarshalDrawCmdModifiers(
     }
 }
 
-static RSRenderContent::DrawCmdContainer GetDrawCmdModifiers(const RSCanvasDrawingRenderNode& node)
+static RSRenderNode::DrawCmdContainer GetDrawCmdModifiers(const RSCanvasDrawingRenderNode& node)
 {
     const auto drawable = node.GetRenderDrawable();
     auto image = drawable ? drawable->Snapshot() : nullptr;
@@ -674,7 +674,7 @@ static RSRenderContent::DrawCmdContainer GetDrawCmdModifiers(const RSCanvasDrawi
     auto modifier = std::make_shared<RSDrawCmdListRenderModifier>(property);
     modifier->SetType(RSModifierType::CONTENT_STYLE);
 
-    RSRenderContent::DrawCmdContainer container = node.GetDrawCmdModifiers();
+    RSRenderNode::DrawCmdContainer container = node.GetDrawCmdModifiers();
     container[modifier->GetType()].emplace_back(modifier);
     return container;
 }
@@ -851,7 +851,6 @@ std::string RSProfiler::UnmarshalNode(RSContext& context, std::stringstream& dat
         node->GetMutableRenderProperties().SetPositionZ(positionZ);
         node->GetMutableRenderProperties().SetPivotZ(pivotZ);
         node->SetPriority(priority);
-        node->RSRenderNode::SetIsOnTheTree(isOnTree);
         node->nodeGroupType_ = nodeGroupType;
         node->MarkRepaintBoundary(isRepaintBoundary);
         return UnmarshalNodeModifiers(*node, data, fileVersion);
@@ -998,22 +997,15 @@ std::string RSProfiler::UnmarshalTree(RSContext& context, std::stringstream& dat
 
 std::string RSProfiler::DumpRenderProperties(const RSRenderNode& node)
 {
-    if (node.renderContent_) {
-        return node.renderContent_->renderProperties_.Dump();
-    }
-    return "";
+    return node.renderProperties_.Dump();
 }
 
 std::string RSProfiler::DumpModifiers(const RSRenderNode& node)
 {
-    if (!node.renderContent_) {
-        return "";
-    }
-
     std::string out;
     out += "<";
 
-    for (auto& [type, modifiers] : node.renderContent_->drawCmdModifiers_) {
+    for (auto& [type, modifiers] : node.drawCmdModifiers_) {
         out += "(";
         out += std::to_string(static_cast<int32_t>(type));
         out += ", ";
@@ -1182,12 +1174,8 @@ uint32_t RSProfiler::PerfTreeFlatten(const std::shared_ptr<RSRenderNode> node,
 
 uint32_t RSProfiler::CalcNodeCmdListCount(RSRenderNode& node)
 {
-    if (!node.renderContent_) {
-        return 0;
-    }
-
     uint32_t nodeCmdListCount = 0;
-    for (auto& [type, modifiers] : node.renderContent_->drawCmdModifiers_) {
+    for (auto& [type, modifiers] : node.drawCmdModifiers_) {
         if (type >= RSModifierType::ENV_FOREGROUND_COLOR) {
             continue;
         }
