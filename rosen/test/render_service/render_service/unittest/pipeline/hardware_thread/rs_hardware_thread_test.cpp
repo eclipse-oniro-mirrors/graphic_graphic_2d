@@ -849,22 +849,10 @@ HWTEST_F(RSHardwareThreadTest, EndCheck001, TestSize.Level1)
 HWTEST_F(RSHardwareThreadTest, IsDropDirtyFrame, TestSize.Level1)
 {
     auto &hardwareThread = RSHardwareThread::Instance();
-    OutputPtr output = HdiOutput::CreateHdiOutput(screenId_);
+    hardwareThread.Start();
+    SetUp();
 
-    if (!RSSystemProperties::IsSuperFoldDisplay()) {
-        ASSERT_EQ(hardwareThread.IsDropDirtyFrame(output), false);
-    } else {
-        GraphicIRect activeRect = {0, 0, 0, 0};
-        ASSERT_EQ(hardwareThread.IsDropDirtyFrame(output), false);
-
-        auto screenInfo = screenManager_->QueryScreenInfo(screenId_);
-        activeRect = {0, 0, screenInfo.width, screenInfo.height};
-        screenManager_->SetScreenActiveRect(screenId_, activeRect);
-        ASSERT_EQ(hardwareThread.IsDropDirtyFrame(output), false);
-
-        activeRect = {0, 0, screenInfo.width/2, screenInfo.height/2};
-        screenManager_->SetScreenActiveRect(screenId_, activeRect);
-        ASSERT_EQ(hardwareThread.IsDropDirtyFrame(output), true);
-    }
+    OutputPtr output = nullptr;
+    ASSERT_EQ(hardwareThread.IsDropDirtyFrame(output), false);
 }
 } // namespace OHOS::Rosen

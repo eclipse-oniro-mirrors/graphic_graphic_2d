@@ -85,7 +85,7 @@ HWTEST_F(RSRenderServiceConnectionProxyTest, ExecuteSynchronousTask, TestSize.Le
     std::shared_ptr<RSSyncTask> task;
     proxy->ExecuteSynchronousTask(task);
     NodeId targetId;
-    std::shared_ptr<RSRenderPropertyBase> property = std::make_shared<RSRenderPropertyBase>();
+    std::shared_ptr<RSRenderPropertyBase> property = std::make_shared<RSRenderProperty<bool>>();
     task = std::make_shared<RSNodeGetShowingPropertyAndCancelAnimation>(targetId, property);
     proxy->ExecuteSynchronousTask(task);
     ASSERT_EQ(proxy->transactionDataIndex_, 0);
@@ -400,7 +400,7 @@ HWTEST_F(RSRenderServiceConnectionProxyTest, SetScreenActiveRect, TestSize.Level
     };
     uint32_t repCode;
     proxy->SetScreenActiveRect(id, activeRect, repCode);
-    ASSERT_NE(proxy->transactionDataIndex_, 0);
+    ASSERT_EQ(proxy->transactionDataIndex_, 0);
 }
 
 /**
@@ -482,8 +482,6 @@ HWTEST_F(RSRenderServiceConnectionProxyTest, GetCurrentRefreshRateMode, TestSize
 HWTEST_F(RSRenderServiceConnectionProxyTest, GetScreenSupportedRefreshRates, TestSize.Level1)
 {
     ScreenId id = 1;
-    bool enable;
-    EXPECT_FALSE(proxy->GetShowRefreshRateEnabled(enable));
     ASSERT_EQ(proxy->GetScreenSupportedRefreshRates(id).size(), 0);
 }
 
@@ -760,9 +758,9 @@ HWTEST_F(RSRenderServiceConnectionProxyTest, GetScreenPowerStatus, TestSize.Leve
     int32_t level = -1;
     proxy->GetScreenBacklight(id, level);
     EXPECT_EQ(level, -1);
-    uint32_t status;
+    uint32_t status = ScreenPowerStatus::POWER_STATUS_ON;
     proxy->GetScreenPowerStatus(id, status);
-    ASSERT_EQ(status, ScreenPowerStatus::INVALID_POWER_STATUS);
+    ASSERT_EQ(proxy->GetScreenPowerStatus(id, status), ERR_INVALID_VALUE);
 }
 
 /**

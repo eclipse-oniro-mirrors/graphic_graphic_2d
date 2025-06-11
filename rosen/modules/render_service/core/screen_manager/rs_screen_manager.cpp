@@ -1531,6 +1531,7 @@ uint32_t RSScreenManager::SetScreenActiveRect(ScreenId id, const GraphicIRect& a
                 output->SetActiveRectSwitchStatus(true);
             }
         }
+        HgmCore::Instance().SetScreenSwitchDssEnable(id, false);
     }).wait();
     return StatusCode::SUCCESS;
 }

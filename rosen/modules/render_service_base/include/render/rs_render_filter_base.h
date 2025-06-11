@@ -112,6 +112,9 @@ enum class RSUIFilterType : int16_t {
     DISPERSION_RED_OFFSET, // Vector2f
     DISPERSION_GREEN_OFFSET, // Vector2f
     DISPERSION_BLUE_OFFSET, // Vector2f
+
+    // edge light bloom value type
+    EDGE_LIGHT_BLOOM, // bool
 };
 
 namespace Drawing {
@@ -146,7 +149,7 @@ public:
 
     virtual bool ReadFromParcel(Parcel& parcel);
 
-    std::shared_ptr<RSRenderPropertyBase> GetRenderPropert(RSUIFilterType type) const;
+    std::shared_ptr<RSRenderPropertyBase> GetRenderProperty(RSUIFilterType type) const;
 
     virtual std::vector<std::shared_ptr<RSRenderPropertyBase>> GetLeafRenderProperties();
 
@@ -169,6 +172,10 @@ public:
     {
         return hash_;
     }
+    RSPropertyType GetPropertyType() const override {return RSPropertyType::INVALID;}
+    size_t GetSize() const override {return sizeof(*this);}
+    bool Marshalling(Parcel& parcel) override {return false;}
+
 protected:
     RSUIFilterType type_;
     std::map<RSUIFilterType, std::shared_ptr<RSRenderPropertyBase>> properties_;

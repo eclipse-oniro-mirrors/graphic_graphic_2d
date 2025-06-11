@@ -890,7 +890,7 @@ void RSInterfaces::SetAppWindowNum(uint32_t num)
  * @brief Display safe Watermark
  * @param watermarkImg, The image width and height are less than twice the screen size
  * @param isShow, flag indicating whether to display the watermark identifier(true) or hide it(false)
-*/
+ */
 void RSInterfaces::ShowWatermark(const std::shared_ptr<Media::PixelMap> &watermarkImg, bool isShow)
 {
     if (watermarkImg == nullptr) {
@@ -1187,6 +1187,13 @@ void RSInterfaces::NotifyPageName(const std::string &packageName, const std::str
             packageName.c_str(), pageName.c_str(), isEnter);
         renderServiceClient_->NotifyPageName(packageName, pageName, isEnter);
     }
+}
+
+int32_t RSInterfaces::GetPidGpuMemoryInMB(pid_t pid, float &gpuMemInMB)
+{
+    auto ret = renderServiceClient_->GetPidGpuMemoryInMB(pid, gpuMemInMB);
+    ROSEN_LOGD("RSInterfaces::GetpidGpuMemoryInMB called!");
+    return ret;
 }
 
 bool RSInterfaces::GetHighContrastTextState()

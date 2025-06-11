@@ -31,6 +31,8 @@
 
 #ifdef USE_M133_SKIA
 #include "include/private/base/SkTArray.h"
+#else
+#include "include/private/SkTArray.h"
 #endif
 
 namespace OHOS {
@@ -148,6 +150,8 @@ public:
     bool HasEnabledTextEffect() const override;
 
     void SetTextEffectState(bool state) override;
+
+    bool isRunCombinated() { return paragraph_->isRunCombinated(); }
 
 private:
     void ParagraphStyleUpdater(skt::Paragraph& skiaParagraph, const ParagraphStyle& spParagraphStyle,
