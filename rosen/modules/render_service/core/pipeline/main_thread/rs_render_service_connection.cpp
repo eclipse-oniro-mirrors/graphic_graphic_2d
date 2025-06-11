@@ -3311,8 +3311,7 @@ int32_t RSRenderServiceConnection::GetPidGpuMemoryInMB(pid_t pid, float &gpuMemI
         return ERR_INVALID_VALUE;
     }
     gpuMemInMB = memorySnapshotInfo.gpuMemory / MEM_BYTE_TO_MB;
-    RS_LOGD("RSRenderServiceConnection::GetPidGpuMemoryInMB, pid: %{public}u, gpuMemInMB: %{public}f",
-        pid, gpuMemInMB);
+    RS_LOGD("RSRenderServiceConnection::GetPidGpuMemoryInMB called succ");
     return ERR_OK;
 }
 } // namespace Rosen
