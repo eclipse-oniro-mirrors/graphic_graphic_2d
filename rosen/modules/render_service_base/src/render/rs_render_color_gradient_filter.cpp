@@ -24,6 +24,22 @@
 
 namespace OHOS {
 namespace Rosen {
+
+RSRenderColorGradientFilterPara::RSRenderColorGradientFilterPara(const RSRenderColorGradientFilterPara& other)
+{
+    type_ = other.type_;
+    hash_ = other.hash_;
+    colors_ = other.colors_;
+    positions_ = other.positions_;
+    strengths_ = other.strengths_;
+    mask_ = other.mask_;
+}
+
+std::shared_ptr<RSRenderFilterParaBase> RSRenderColorGradientFilterPara::DeepCopy() const
+{
+    return std::make_shared<RSRenderColorGradientFilterPara>(*this);
+}
+
 void RSRenderColorGradientFilterPara::GetDescription(std::string& out) const
 {
     out += "RSRenderColorGradientFilterPara";

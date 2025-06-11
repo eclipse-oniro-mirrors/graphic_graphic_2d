@@ -32,7 +32,11 @@ public:
         id_ = id;
     }
 
+    RSRenderColorGradientFilterPara(const std::shared_ptr<RSRenderColorGradientFilterPara>& other);
+
     virtual ~RSRenderColorGradientFilterPara() = default;
+
+    std::shared_ptr<RSRenderFilterParaBase> DeepCopy() const override;
 
     void GetDescription(std::string& out) const override;
 

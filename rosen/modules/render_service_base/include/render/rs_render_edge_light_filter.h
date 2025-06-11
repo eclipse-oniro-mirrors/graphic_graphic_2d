@@ -32,7 +32,11 @@ public:
         id_ = id;
     }
 
+    RSRenderEdgeLightFilterPara(const std::shared_ptr<RSRenderEdgeLightFilterPara>& other);
+
     virtual ~RSRenderEdgeLightFilterPara() = default;
+
+    std::shared_ptr<RSRenderFilterParaBase> DeepCopy() const override;
 
     void GetDescription(std::string& out) const override;
 

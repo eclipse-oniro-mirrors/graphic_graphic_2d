@@ -22,7 +22,28 @@
 #include "platform/common/rs_log.h"
 
 namespace OHOS {
-namespace Rosen {
+    namespace Rosen {
+    RSRenderSoundWaveFilterPara::RSRenderSoundWaveFilterPara(const RSRenderSoundWaveFilterPara& other)
+    {
+        type_ = other.type_;
+        hash_ = other.hash_;
+        colorA_ = other.colorA;
+        colorB_ = other.colorB_;
+        colorC_ = other.colorC_;
+        colorProgress_ = other.colorProgress_;
+        soundIntensity_ = other.soundIntensity_;
+        shockWaveAlphaA_ = other.shockWaveAlphaA_;
+        shockWaveAlphaB_ = other.shockWaveAlphaB_;
+        shockWaveProgressA_ = other.shockWaveProgressA_;
+        shockWaveProgressB_ = other.shockWaveProgressB_;
+        shockWaveTotalAlpha_ = other.shockWaveTotalAlpha_;
+    }
+
+    std::shared_ptr<RSRenderFilterParaBase> RSRenderSoundWaveFilterPara::DeepCopy() const
+    {
+        return std::make_shared<RSRenderSoundWaveFilterPara>(*this);
+    }
+
     void RSRenderSoundWaveFilterPara::GetDescription(std::string& out) const
     {
         out += "RSRenderSoundWaveFilterPara";

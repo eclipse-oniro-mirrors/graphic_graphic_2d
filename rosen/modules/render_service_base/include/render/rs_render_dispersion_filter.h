@@ -33,7 +33,11 @@ public:
         id_ = id;
     }
 
+    RSRenderDispersionFilterPara(const std::shared_ptr<RSRenderDispersionFilterPara>& other);
+
     virtual ~RSRenderDispersionFilterPara() = default;
+
+    std::shared_ptr<RSRenderFilterParaBase> DeepCopy() const override;
 
     void GetDescription(std::string& out) const override;
 

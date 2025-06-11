@@ -33,6 +33,20 @@ static const std::vector<RSUIFilterType> FILTER_TYPE_WITHOUT_MASK = {
     RSUIFilterType::EDGE_LIGHT_COLOR,
 };
 
+RSRenderEdgeLightFilterPara::RSRenderEdgeLightFilterPara(const RSRenderEdgeLightFilterPara& other)
+{
+    type_ = other.type_;
+    hash_ = other.hash_;
+    alpha_ = other.alpha_;
+    color_ = other.color_;
+    mask_ = other.mask_;
+}
+
+std::shared_ptr<RSRenderFilterParaBase> RSRenderEdgeLightFilterPara::DeepCopy() const
+{
+    return std::make_shared<RSRenderEdgeLightFilterPara>(*this);
+}
+
 void RSRenderEdgeLightFilterPara::GetDescription(std::string& out) const
 {
     out += "RSRenderEdgeLightFilterPara::[maskType_:" + std::to_string(static_cast<int>(maskType_)) + "]";

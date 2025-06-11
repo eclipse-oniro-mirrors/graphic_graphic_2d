@@ -23,7 +23,20 @@
 
 
 namespace OHOS {
-namespace Rosen {
+    namespace Rosen {
+    RSRenderDispDistortFilterPara::RSRenderDispDistortFilterPara(const RSRenderDispDistortFilterPara& other)
+    {
+        type_ = other.type_;
+        hash_ = other.hash_;
+        factor_ = other.factor_;
+        mask_ = other.mask_;
+    }
+
+    std::shared_ptr<RSRenderFilterParaBase> RSRenderDispDistortFilterPara::DeepCopy() const
+    {
+        return std::make_shared<RSRenderDispDistortFilterPara>(*this);
+    }
+
     void RSRenderDispDistortFilterPara::GetDescription(std::string& out) const
     {
         out += "RSRenderDispDistortFilterPara";

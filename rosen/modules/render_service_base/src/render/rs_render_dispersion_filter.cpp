@@ -37,6 +37,25 @@ constexpr RSUIFilterType DISPERSION_FILTER_TYPE[] = {
     RSUIFilterType::DISPERSION_BLUE_OFFSET,
 };
 
+RSRenderDispersionFilterPara::RSRenderDispersionFilterPara(const RSRenderDispersionFilterPara& other)
+{
+    type_ = other.type_;
+    hash_ = other.hash_;
+    opacity_ = other.opacity_;
+    redOffsetX_ = other.redOffsetX_;
+    redOffsetY_ = other.redOffsetY_;
+    greenOffsetX_ = other.greenOffsetX_;
+    greenOffsetY_ = other.greenOffsetY_;
+    blueOffsetX_ = other.blueOffsetX_;
+    blueOffsetY_ = other.blueOffsetY_;
+    mask_ = other.mask_;
+}
+
+std::shared_ptr<RSRenderFilterParaBase> RSRenderDispersionFilterPara::DeepCopy() const
+{
+    return std::make_shared<RSRenderDispersionFilterPara>(*this);
+}
+
 void RSRenderDispersionFilterPara::GetDescription(std::string& out) const
 {
     out += "RSRenderDispersionFilterPara::[maskType_:" + std::to_string(static_cast<int>(maskType_)) + "]";

@@ -26,7 +26,11 @@ public:
         id_ = id;
     }
 
+    RSRenderBezierWarpFilterPara(const std::shared_ptr<RSRenderBezierWarpFilterPara>& other);
+
     virtual ~RSRenderBezierWarpFilterPara() = default;
+
+    std::shared_ptr<RSRenderFilterParaBase> DeepCopy() const override;
 
     void GetDescription(std::string& out) const override;
 

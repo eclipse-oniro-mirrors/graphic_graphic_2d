@@ -26,6 +26,18 @@
 
 namespace OHOS {
 namespace Rosen {
+RSRenderBezierWarpFilterPara::RSRenderBezierWarpFilterPara(const RSRenderBezierWarpFilterPara& other)
+{
+    type_ = other.type_;
+    hash_ = other.hash_;
+    destinationPatch_ = other.destinationPatch_;
+}
+
+std::shared_ptr<RSRenderFilterParaBase> RSRenderBezierWarpFilterPara::DeepCopy() const
+{
+    return std::make_shared<RSRenderBezierWarpFilterPara>(*this);
+}
+
 void RSRenderBezierWarpFilterPara::GetDescription(std::string& out) const
 {
     out += "RSRenderBezierWarpFilterPara";
