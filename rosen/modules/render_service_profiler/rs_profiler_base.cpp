@@ -169,6 +169,12 @@ bool RSProfiler::IsParcelMock(const Parcel& parcel)
     return ((address & 1u) != 0);
 }
 
+bool RSProfiler::IsPlaybackParcel(const Parcel& parcel)
+{
+    return (IsReadMode() || IsReadEmulationMode())
+        && IsParcelMock(parcel);
+}
+
 std::shared_ptr<MessageParcel> RSProfiler::CopyParcel(const MessageParcel& parcel)
 {
     if (!IsEnabled()) {
