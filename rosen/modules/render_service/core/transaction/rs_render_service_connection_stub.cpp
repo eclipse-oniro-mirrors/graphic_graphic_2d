@@ -3598,7 +3598,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 ret = ERR_INVALID_REPLY;
             }
             RS_LOGD("RenderServiceConnectionStub::GET_PID_GPU_MEMORY_IN_MB, ret: %{public}d, gpuMemInMB: %{public}f",
-                ret, gpuMemInMB); 
+                ret, gpuMemInMB);
             break;
         }
         default: {
