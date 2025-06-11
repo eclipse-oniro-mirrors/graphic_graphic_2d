@@ -14,6 +14,7 @@
  */
 
 #include "ui_effect/property/include/rs_ui_edge_light_filter.h"
+#include "ui_effect/property/include/rs_ui_radial_gradient_mask.h"
 #include "ui_effect/property/include/rs_ui_pixel_map_mask.h"
 #include "platform/common/rs_log.h"
 
@@ -296,6 +297,9 @@ std::shared_ptr<RSUIMaskPara> RSUIEdgeLightFilterPara::CreateMask(RSUIFilterType
         }
         case RSUIFilterType::PIXEL_MAP_MASK: {
             return std::make_shared<RSUIPixelMapMaskPara>();
+        }
+        case RSUIFilterType::RADIAL_GRADIENT_MASK: {
+            return std::make_shared<RSUIRadialGradientMaskPara>();
         }
         default:
             return nullptr;

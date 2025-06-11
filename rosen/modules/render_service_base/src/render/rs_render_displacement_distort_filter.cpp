@@ -19,6 +19,7 @@
 
 #include "platform/common/rs_log.h"
 #include "render/rs_render_pixel_map_mask.h"
+#include "render/rs_render_radial_gradient_mask.h"
 #include "render/rs_shader_mask.h"
 
 
@@ -105,6 +106,9 @@ namespace Rosen {
             }
             case RSUIFilterType::PIXEL_MAP_MASK : {
                 return std::make_shared<RSRenderPixelMapMaskPara>(0);
+            }
+            case RSUIFilterType::RADIAL_GRADIENT_MASK : {
+                return std::make_shared<RSRenderRadialGradientMaskPara>(0);
             }
             default: {
                 ROSEN_LOGD("RSRenderDispDistortFilterPara::CreateRenderProperty mask nullptr");

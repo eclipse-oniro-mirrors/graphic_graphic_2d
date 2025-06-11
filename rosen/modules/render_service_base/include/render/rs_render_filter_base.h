@@ -100,7 +100,7 @@ enum class RSUIFilterType : int16_t {
     BEZIER_CONTROL_POINT9, // Vector2f
     BEZIER_CONTROL_POINT10, // Vector2f
     BEZIER_CONTROL_POINT11, // Vector2f
-    
+
     // pixel map mask value type
     PIXEL_MAP_MASK_PIXEL_MAP, // Media::PixelMap
     PIXEL_MAP_MASK_SRC, // Vector4f
@@ -115,6 +115,13 @@ enum class RSUIFilterType : int16_t {
 
     // edge light bloom value type
     EDGE_LIGHT_BLOOM, // bool
+
+    // radial gradient mask value type
+    RADIAL_GRADIENT_MASK_CENTER, // Vector2f
+    RADIAL_GRADIENT_MASK_RADIUSX, // float
+    RADIAL_GRADIENT_MASK_RADIUSY, // float
+    RADIAL_GRADIENT_MASK_COLORS, // vector<float>
+    RADIAL_GRADIENT_MASK_POSITIONS, // vector<float>
 };
 
 namespace Drawing {

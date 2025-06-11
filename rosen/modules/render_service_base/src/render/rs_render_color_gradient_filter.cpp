@@ -19,6 +19,7 @@
 #include "ge_visual_effect_container.h"
 
 #include "platform/common/rs_log.h"
+#include "render/rs_render_radial_gradient_mask.h"
 #include "render/rs_render_ripple_mask.h"
 #include "render/rs_shader_mask.h"
 
@@ -149,6 +150,9 @@ std::shared_ptr<RSRenderMaskPara> RSRenderColorGradientFilterPara::CreateMaskRen
     switch (type) {
         case RSUIFilterType::RIPPLE_MASK : {
             return std::make_shared<RSRenderRippleMaskPara>(0);
+        }
+        case RSUIFilterType::RADIAL_GRADIENT_MASK : {
+            return std::make_shared<RSRenderRadialGradientMaskPara>(0);
         }
         default: {
             ROSEN_LOGD("RSRenderColorGradientFilterPara::CreateMaskRenderProperty RSUIFilterType nullptr");

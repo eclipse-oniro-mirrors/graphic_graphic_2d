@@ -16,6 +16,7 @@
 #include "render/rs_render_color_gradient_filter.h"
 #include "platform/common/rs_log.h"
 #include "ui_effect/property/include/rs_ui_color_gradient_filter.h"
+#include "ui_effect/property/include/rs_ui_radial_gradient_mask.h"
 #include "ui_effect/property/include/rs_ui_ripple_mask.h"
 
 namespace OHOS {
@@ -271,6 +272,9 @@ std::shared_ptr<RSUIMaskPara> RSUIColorGradientFilterPara::CreateMask(RSUIFilter
     switch (type) {
         case RSUIFilterType::RIPPLE_MASK: {
             return std::make_shared<RSUIRippleMaskPara>();
+        }
+        case RSUIFilterType::RADIAL_GRADIENT_MASK: {
+            return std::make_shared<RSUIRadialGradientMaskPara>();
         }
         default:
             return nullptr;
