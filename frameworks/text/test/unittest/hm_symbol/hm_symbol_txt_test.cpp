@@ -558,7 +558,7 @@ HWTEST_F(OHHmSymbolTxtTest, HMSymbolTxtOperator002, TestSize.Level1)
     color1->SetColors({0XFFFF0000}); // 0XFFFF0000 is ARGB
     auto color2 = std::make_shared<SymbolGradient>();
     color2->SetColors({0XFF0000FF}); // 0XFF0000FF is ARGB
-    SPText::SymbolColor symbolColor = {SymbolColorType::COLOR_TYPE, {color1, color2}};
+    OHOS::Rosen::SymbolColor symbolColor = {SymbolColorType::COLOR_TYPE, {color1, color2}};
 
     SPText::HMSymbolTxt symbolTxt;
     symbolTxt.SetSymbolColor(symbolColor);
@@ -617,7 +617,7 @@ HWTEST_F(OHHmSymbolTxtTest, GetRenderColor001, TestSize.Level1)
     auto color1 = std::make_shared<SymbolGradient>();
     color1->SetColors({0XFFFF0000}); // 0XFFFF0000 is ARGB
     auto color2 = nullptr;
-    SPText::SymbolColor symbolColor = {SymbolColorType::COLOR_TYPE, {color1, color2}};
+    OHOS::Rosen::SymbolColor symbolColor = {SymbolColorType::COLOR_TYPE, {color1, color2}};
     symbolTxt.SetSymbolColor(symbolColor);
     auto colors = symbolTxt.GetRenderColor();
     EXPECT_FALSE(colors.empty());
