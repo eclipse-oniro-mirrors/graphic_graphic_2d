@@ -981,6 +981,7 @@ HWTEST_F(TypographyRelayoutTest, OHDrawingTypographyRelayoutTest024, TestSize.Le
     symbolStyleBitset.set(static_cast<size_t>(RelayoutSymbolStyleAttribute::COMMONSUB_TYPE));
     symbolStyleBitset.set(static_cast<size_t>(RelayoutSymbolStyleAttribute::COLOR_LIST));
     symbolStyleBitset.set(static_cast<size_t>(RelayoutSymbolStyleAttribute::RENDER_MODE));
+    symbolStyleBitset.set(static_cast<size_t>(RelayoutSymbolStyleAttribute::GRADIENT_COLOR));
     textStyle.symbol.SetSymbolBitmap(symbolStyleBitset);
     std::vector<OHOS::Rosen::TextStyle> relayoutTextStyles;
     relayoutTextStyles.push_back(textStyle);
