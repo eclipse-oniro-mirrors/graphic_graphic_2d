@@ -3457,6 +3457,18 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             SetLayerTop(nodeIdStr, isTop);
             break;
         }
+        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_FORCE_REFRESH) : {
+            std::string nodeIdStr;
+            bool isForceRefresh{false};
+            if (!data.ReadString(nodeIdStr) ||
+                !data.ReadBool(isForceRefresh)) {
+                RS_LOGE("RSRenderServiceConnectionStub::SET_FORCE_REFRESH Read parcel failed!");
+                ret = ERR_INVALID_DATA;
+                break;
+            }
+            SetForceRefresh(nodeIdStr, isForceRefresh);
+            break;
+        }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_COLOR_FOLLOW) : {
             std::string nodeIdStr;
             bool isColorFollow{false};

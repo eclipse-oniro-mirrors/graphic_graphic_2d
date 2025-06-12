@@ -243,6 +243,9 @@ void DoUnregisterSurfaceBufferCallback()
 void DoSetLayerTop()
 {}
 
+void DoSetForceRefresh()
+{}
+
 void DoSetScreenActiveRect()
 {}
 
@@ -400,6 +403,9 @@ if (!OHOS::Rosen::Init(data, size)) {
             break;
         case OHOS::Rosen::DO_SET_LAYER_TOP:
             OHOS::Rosen::DoSetLayerTop();
+            break;
+        case OHOS::Rosen::DO_SET_FORCE_REFRESH:
+            OHOS::Rosen::DoSetForceRefresh();
             break;
         case OHOS::Rosen::DO_SET_SCREEN_ACTIVE_RECT:
             OHOS::Rosen::DoSetScreenActiveRect();
