@@ -622,5 +622,22 @@ HWTEST_F(OHHmSymbolTxtTest, GetRenderColor001, TestSize.Level1)
     auto colors = symbolTxt.GetRenderColor();
     EXPECT_FALSE(colors.empty());
 }
+
+/*
+ * @tc.name: GradientColorTest001
+ * @tc.desc: test for gradient colors
+ * @tc.type: FUNC
+ */
+HWTEST_F(OHHmSymbolTxtTest, GradientColorTest001, TestSize.Level1)
+{
+    OHOS::Rosen::HMSymbolTxt symbolTxt;
+    auto gradient1 = std::make_shared<SymbolGradient>();
+    gradient1->SetColors({0XFFFF0000}); // 0XFFFF0000 is ARGB
+    auto gradient2 = nullptr;
+    symbolTxt.SetGradients({gradient1, gradient2});
+    auto gradientColors = symbolTxt.GetGradients();
+    EXPECT_FALSE(gradientColors.empty());
+    EXPECT_EQ(gradientColors.size(), 2); // 2 is colors size
+}
 } // namespace Rosen
 } // namespace OHOS

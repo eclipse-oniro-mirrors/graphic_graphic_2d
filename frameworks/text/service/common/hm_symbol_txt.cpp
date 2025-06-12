@@ -254,7 +254,7 @@ std::vector<std::shared_ptr<SymbolGradient>> HMSymbolTxt::GetGradients() const
     return symbolColor_.gradients;
 }
 
-void HMSymbolTxt::GetGradients(const std::vector<std::shared_ptr<SymbolGradient>> gradients)
+void HMSymbolTxt::SetGradients(const std::vector<std::shared_ptr<SymbolGradient>>& gradients)
 {
     symbolColor_.colorType = SymbolColorType::GRADIENT_TYPE;
     symbolColor_.gradients.clear();

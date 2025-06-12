@@ -27,6 +27,7 @@
 #include "symbol_gradient.h"
 #include "text/hm_symbol.h"
 
+
 namespace OHOS {
 namespace Rosen {
 enum class RelayoutSymbolStyleAttribute {
@@ -117,7 +118,7 @@ public:
 
     std::vector<std::shared_ptr<SymbolGradient>> GetGradients() const;
 
-    void GetGradients(const std::vector<std::shared_ptr<SymbolGradient>> gradients);
+    void SetGradients(const std::vector<std::shared_ptr<SymbolGradient>>& gradients);
 
 private:
     SymbolColor symbolColor_;
