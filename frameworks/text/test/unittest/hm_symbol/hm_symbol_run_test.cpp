@@ -659,7 +659,8 @@ HWTEST_F(OHHmSymbolRunTest, SetSymbolEffect009, TestSize.Level1)
     hmSymbolRun.SetSymbolEffect(Drawing::DrawingEffectStrategy::QUICK_REPLACE_APPEAR);
     EXPECT_EQ(hmSymbolRun.symbolTxt_.GetEffectStrategy(), Drawing::DrawingEffectStrategy::QUICK_REPLACE_APPEAR);
     EXPECT_FALSE(hmSymbolRun.currentAnimationHasPlayed_);
-    hmSymbolRun.DrawSymbol(rsCanvas.get(), paint_);
+    hmSymbolRun.DrawSymbol(rsCanvas.get(), paint_); // Draw once for Appear
+    hmSymbolRun.DrawSymbol(rsCanvas.get(), paint_); // Draw twice for DisAppear
 }
 
 /*
@@ -1169,12 +1170,12 @@ HWTEST_F(OHHmSymbolRunTest, SymbolAnimationTest001, TestSize.Level1)
     // test SymbolAnimation by DISABLE
     bool result = hmSymbolRun.SymbolAnimation(symbol, offsetXY);
     EXPECT_FALSE(result);
-
     std::vector<std::shared_ptr<SymbolGradient>> gradients;
     gradients.push_back(std::make_shared<SymbolGradient>());
     hmSymbolRun.gradients_ = gradients;
     gradients.push_back(std::make_shared<SymbolGradient>());
-    hmSymbolRun.SetGradients(gradients);
+    SymbolColor symbolColor = {SymbolColorType::GRADIENT_TYPE, gradients};
+    hmSymbolRun.SetSymbolColor(symbolColor);
     hmSymbolRun.SetRenderMode(RSSymbolRenderingStrategy::MULTIPLE_COLOR);
     result = hmSymbolRun.SymbolAnimation(symbol, offsetXY);
     EXPECT_FALSE(result);
@@ -1201,7 +1202,9 @@ HWTEST_F(OHHmSymbolRunTest, SetGradients001, TestSize.Level1)
     auto symbolLayer = hmSymbolRun.GetSymbolLayers(glyphId, symbolTxt);
 
     std::vector<std::shared_ptr<SymbolGradient>> gradients = {};
-    hmSymbolRun.SetGradients(gradients);
+    symbolColor.colorType = SymbolColorType::GRADIENT_TYPE;
+    symbolColor.gradients = gradients;
+    hmSymbolRun.SetSymbolColor(symbolColor);
     symbolLayer = hmSymbolRun.GetSymbolLayers(glyphId, symbolTxt);
     EXPECT_EQ(symbolLayer.symbolGlyphId, glyphId);
 }
@@ -1224,7 +1227,8 @@ HWTEST_F(OHHmSymbolRunTest, SetGradientColor001, TestSize.Level1)
     std::vector<std::shared_ptr<SymbolGradient>> gradients;
     gradients.push_back(std::make_shared<SymbolGradient>());
     gradients.push_back(std::make_shared<SymbolGradient>());
-    hmSymbolRun.SetGradients(gradients);
+    SymbolColor symbolColor = {SymbolColorType::GRADIENT_TYPE, gradients};
+    hmSymbolRun.SetSymbolColor(symbolColor);
     hmSymbolRun.SetGradientColor(renderMode, symbolInfo);
     EXPECT_TRUE(hmSymbolRun.gradients_.size() == 1);
 
@@ -1233,13 +1237,15 @@ HWTEST_F(OHHmSymbolRunTest, SetGradientColor001, TestSize.Level1)
     symbolInfo.renderGroups.push_back({});
     symbolInfo.renderGroups.push_back({});
     gradients[0] = nullptr;
-    hmSymbolRun.SetGradients(gradients);
+    symbolColor.gradients = gradients;
+    hmSymbolRun.SetSymbolColor(symbolColor);
     hmSymbolRun.SetGradientColor(renderMode, symbolInfo);
     EXPECT_FALSE(hmSymbolRun.gradients_.empty());
 
     gradients = {};
     gradients.push_back(std::make_shared<SymbolLineGradient>(50.0f)); // 50.0f is angle of lineGradient
-    hmSymbolRun.SetGradients(gradients);
+    symbolColor.gradients = gradients;
+    hmSymbolRun.SetSymbolColor(symbolColor);
     hmSymbolRun.SetGradientColor(renderMode, symbolInfo);
     EXPECT_FALSE(hmSymbolRun.gradients_.empty());
 }
@@ -1267,7 +1273,8 @@ HWTEST_F(OHHmSymbolRunTest, SetDrawPath001, TestSize.Level1)
     std::vector<std::shared_ptr<SymbolGradient>> gradients;
     gradients.push_back(std::make_shared<SymbolGradient>());
     gradients.push_back(std::make_shared<SymbolGradient>());
-    hmSymbolRun.SetGradients(gradients);
+    SymbolColor symbolColor = {SymbolColorType::GRADIENT_TYPE, gradients};
+    hmSymbolRun.SetSymbolColor(symbolColor);
     hmSymbolRun.DrawPaths(rsCanvas.get(), multPaths, path);
     EXPECT_EQ(hmSymbolRun.symbolTxt_.GetRenderMode(), RSSymbolRenderingStrategy::SINGLE);
     

@@ -19,11 +19,14 @@
 #include <bitset>
 #include <cstdint>
 #include <iostream>
+#include <memory>
 #include <vector>
 
 #include "draw/color.h"
-#include "text/hm_symbol.h"
 #include "symbol_constants.h"
+#include "symbol_gradient.h"
+#include "text/hm_symbol.h"
+
 
 namespace OHOS {
 namespace Rosen {
@@ -34,6 +37,7 @@ enum class RelayoutSymbolStyleAttribute {
     COMMONSUB_TYPE = 3,
     COLOR_LIST = 4,
     RENDER_MODE = 5,
+    GRADIENT_COLOR = 6,
 
     SYMBOL_ATTRIBUTE_BUTT,
 };
@@ -45,6 +49,11 @@ enum VisualMode {
 };
 
 using SymbolBitmapType = std::bitset<static_cast<size_t>(RelayoutSymbolStyleAttribute::SYMBOL_ATTRIBUTE_BUTT)>;
+
+struct SymbolColor {
+    SymbolColorType colorType = SymbolColorType::COLOR_TYPE;
+    std::vector<std::shared_ptr<SymbolGradient>> gradients;
+};
 
 class RS_EXPORT HMSymbolTxt {
 public:
@@ -103,8 +112,11 @@ public:
 
     const SymbolBitmapType& GetSymbolBitmap() const;
 
+    SymbolColor GetSymbolColor() const;
+
+    void SetSymbolColor(const SymbolColor& symbolColor);
 private:
-    std::vector<Drawing::DrawingSColor> colorList_;
+    SymbolColor symbolColor_;
     Drawing::DrawingSymbolRenderingStrategy renderMode_ = Drawing::DrawingSymbolRenderingStrategy::SINGLE;
     Drawing::DrawingEffectStrategy effectStrategy_ = Drawing::DrawingEffectStrategy::NONE;
 

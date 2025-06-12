@@ -441,6 +441,131 @@ HWTEST_F(RSSymbolAnimationTest, SetReplaceAnimation002, TestSize.Level1)
 }
 
 /**
+ * @tc.name: SetReplaceAnimation003
+ * @tc.desc: SetReplaceAnimation of RSSymbolAnimationTest
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSymbolAnimationTest, SetReplaceAnimation003, TestSize.Level1)
+{
+    GTEST_LOG_(INFO) << "RSSymbolAnimationTest SetReplaceAnimation003 start";
+    /**
+     * @tc.steps: step1. init data
+     */
+    auto symbolAnimation = RSSymbolAnimation();
+    symbolAnimation.SetNode(rootNode);
+    auto symbolAnimationConfig = std::make_shared<TextEngine::SymbolAnimationConfig>();
+    symbolAnimationConfig->symbolSpanId = 96; // 96 is the unique ID of a symbol
+    symbolAnimationConfig->effectStrategy = Drawing::DrawingEffectStrategy::QUICK_REPLACE_APPEAR;
+    symbolAnimationConfig->animationMode = 1; // 1 is wholesymbol
+    symbolAnimationConfig->animationStart = true;
+    // init symbolNode
+    Drawing::Path path;
+    path.AddCircle(100, 100, 50); // 100 x, 100 y, 50 radius
+    Drawing::DrawingHMSymbolData symbol;
+    symbol.path_ = path;
+    TextEngine::SymbolNode symbolNode1;
+    symbolNode1.symbolData = symbol;
+    symbolNode1.nodeBoundary = {100, 100, 50, 50}; // 100 x, 100 y, 50 width, 50 height
+    symbolAnimationConfig->symbolNodes.push_back(symbolNode1);
+    symbolAnimationConfig->numNodes = symbolAnimationConfig->symbolNodes.size();
+    /**
+     * @tc.steps: step2.1 start test
+     */
+    bool flag1 = symbolAnimation.SetReplaceAnimation(symbolAnimationConfig);
+    EXPECT_TRUE(flag1 == true);
+    /**
+     * @tc.steps: step2.2 start test replace two node
+     */
+    bool flag2 = symbolAnimation.SetReplaceAnimation(symbolAnimationConfig);
+    EXPECT_TRUE(flag2 == true);
+    GTEST_LOG_(INFO) << "RSSymbolAnimationTest SetReplaceAnimation003 end";
+}
+
+/**
+ * @tc.name: SetReplaceAnimation004
+ * @tc.desc: SetReplaceAnimation of RSSymbolAnimationTest
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSymbolAnimationTest, SetReplaceAnimation004, TestSize.Level1)
+{
+    GTEST_LOG_(INFO) << "RSSymbolAnimationTest SetReplaceAnimation004 start";
+    /**
+     * @tc.steps: step1. init data
+     */
+    auto symbolAnimation = RSSymbolAnimation();
+    symbolAnimation.SetNode(rootNode);
+    auto symbolAnimationConfig = std::make_shared<TextEngine::SymbolAnimationConfig>();
+    symbolAnimationConfig->symbolSpanId = 96; // 96 is the unique ID of a symbol
+    symbolAnimationConfig->effectStrategy = Drawing::DrawingEffectStrategy::QUICK_REPLACE_APPEAR;
+    symbolAnimationConfig->animationMode = 0; // 1 is byLayer
+    symbolAnimationConfig->animationStart = true;
+    // init symbolNodes
+    TextEngine::SymbolNode symbolNode;
+    symbolNode.nodeBoundary = {100, 100, 50, 50}; // 100 x, 100 y, 50 width, 50 height
+    symbolNode.animationIndex = -1; // the layer is no animation
+    symbolAnimationConfig->symbolNodes.push_back(symbolNode); // the first node
+
+    symbolNode.animationIndex = 0; // the layer is a animation whith animationIndex 0
+    symbolAnimationConfig->symbolNodes.push_back(symbolNode); // the second node
+
+    symbolNode.animationIndex = 1; // the layer is not animation whith animationIndex 0
+    symbolAnimationConfig->symbolNodes.push_back(symbolNode); // the third node
+    symbolAnimationConfig->numNodes = symbolAnimationConfig->symbolNodes.size();
+    /**
+     * @tc.steps: step2.1 start test
+     */
+    bool flag1 = symbolAnimation.SetReplaceAnimation(symbolAnimationConfig);
+    EXPECT_TRUE(flag1 == true);
+    /**
+     * @tc.steps: step2.2 start test replace two node
+     */
+    bool flag2 = symbolAnimation.SetReplaceAnimation(symbolAnimationConfig);
+    EXPECT_TRUE(flag2 == true);
+    GTEST_LOG_(INFO) << "RSSymbolAnimationTest SetReplaceAnimation004 end";
+}
+
+/**
+ * @tc.name: SetReplaceAnimation005
+ * @tc.desc: SetReplaceAnimation of RSSymbolAnimationTest
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSymbolAnimationTest, SetReplaceAnimation005, TestSize.Level1)
+{
+    GTEST_LOG_(INFO) << "RSSymbolAnimationTest SetReplaceAnimation005 start";
+    /**
+     * @tc.steps: step1. init data
+     */
+    auto symbolAnimation = RSSymbolAnimation();
+    symbolAnimation.SetNode(rootNode);
+    auto symbolAnimationConfig = std::make_shared<TextEngine::SymbolAnimationConfig>();
+    symbolAnimationConfig->symbolSpanId = 96; // 96 is the unique ID of a symbol
+    symbolAnimationConfig->effectStrategy = Drawing::DrawingEffectStrategy::NONE;
+    symbolAnimationConfig->animationMode = 1; // 1 is wholesymbol
+    symbolAnimationConfig->animationStart = true;
+    // init symbolNode
+    Drawing::Path path;
+    path.AddCircle(100, 100, 50); // 100 x, 100 y, 50 radius
+    Drawing::DrawingHMSymbolData symbol;
+    symbol.path_ = path;
+    TextEngine::SymbolNode symbolNode1;
+    symbolNode1.symbolData = symbol;
+    symbolNode1.nodeBoundary = {100, 100, 50, 50}; // 100 x, 100 y, 50 width, 50 height
+    symbolAnimationConfig->symbolNodes.push_back(symbolNode1);
+    symbolAnimationConfig->numNodes = symbolAnimationConfig->symbolNodes.size();
+    /**
+     * @tc.steps: step2.1 start test
+     */
+    bool flag1 = symbolAnimation.SetReplaceAnimation(symbolAnimationConfig);
+    EXPECT_TRUE(flag1 == true);
+    /**
+     * @tc.steps: step2.2 start test replace two node
+     */
+    bool flag2 = symbolAnimation.SetReplaceAnimation(symbolAnimationConfig);
+    EXPECT_TRUE(flag2 == true);
+    GTEST_LOG_(INFO) << "RSSymbolAnimationTest SetReplaceAnimation005 end";
+}
+
+/**
  * @tc.name: ChooseAnimation001
  * @tc.desc: ChooseAnimation of RSSymbolAnimationTest
  * @tc.type: FUNC
