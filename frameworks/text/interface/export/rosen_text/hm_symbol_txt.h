@@ -115,11 +115,6 @@ public:
     SymbolColor GetSymbolColor() const;
 
     void SetSymbolColor(const SymbolColor& symbolColor);
-
-    std::vector<std::shared_ptr<SymbolGradient>> GetGradients() const;
-
-    void SetGradients(const std::vector<std::shared_ptr<SymbolGradient>>& gradients);
-
 private:
     SymbolColor symbolColor_;
     Drawing::DrawingSymbolRenderingStrategy renderMode_ = Drawing::DrawingSymbolRenderingStrategy::SINGLE;

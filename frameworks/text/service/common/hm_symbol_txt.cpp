@@ -248,17 +248,5 @@ void HMSymbolTxt::SetSymbolColor(const SymbolColor& symbolColor)
 {
     symbolColor_ = symbolColor;
 }
-
-std::vector<std::shared_ptr<SymbolGradient>> HMSymbolTxt::GetGradients() const
-{
-    return symbolColor_.gradients;
-}
-
-void HMSymbolTxt::SetGradients(const std::vector<std::shared_ptr<SymbolGradient>>& gradients)
-{
-    symbolColor_.colorType = SymbolColorType::GRADIENT_TYPE;
-    symbolColor_.gradients.clear();
-    symbolColor_.gradients = gradients;
-}
 } // namespace Rosen
 } // namespace OHOS

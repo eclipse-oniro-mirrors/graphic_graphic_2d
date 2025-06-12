@@ -634,10 +634,12 @@ HWTEST_F(OHHmSymbolTxtTest, GradientColorTest001, TestSize.Level1)
     auto gradient1 = std::make_shared<SymbolGradient>();
     gradient1->SetColors({0XFFFF0000}); // 0XFFFF0000 is ARGB
     auto gradient2 = nullptr;
-    symbolTxt.SetGradients({gradient1, gradient2});
-    auto gradientColors = symbolTxt.GetGradients();
-    EXPECT_FALSE(gradientColors.empty());
-    EXPECT_EQ(gradientColors.size(), 2); // 2 is colors size
+    OHOS::Rosen::SymbolColor symbolColor = {SymbolColorType::GRADIENT_TYPE, {gradient1, gradient2}};
+    symbolTxt.SetSymbolColor(symbolColor);
+    auto localSymbolColor = symbolTxt.GetSymbolColor();
+    EXPECT_FALSE(localSymbolColor.gradients.empty());
+    EXPECT_EQ(localSymbolColor.colorType, SymbolColorType::GRADIENT_TYPE); // 2 is colors size
+    EXPECT_EQ(localSymbolColor.gradients.size(), 2); // 2 is colors size
 }
 } // namespace Rosen
 } // namespace OHOS
