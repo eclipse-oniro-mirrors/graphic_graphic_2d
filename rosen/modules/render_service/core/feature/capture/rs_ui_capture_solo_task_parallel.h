@@ -24,7 +24,6 @@
 #include "system/rs_system_parameters.h"
 #include "draw/surface.h"
 #include "draw/color.h"
-#include "pipeline/rs_display_render_node.h"
 #include "pipeline/rs_effect_render_node.h"
 #include "common/rs_common_def.h"
 #include "system/rs_system_parameters.h"

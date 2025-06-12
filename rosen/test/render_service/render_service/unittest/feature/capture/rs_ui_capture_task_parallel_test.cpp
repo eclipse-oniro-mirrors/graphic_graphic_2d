@@ -773,7 +773,7 @@ HWTEST_F(RSUiCaptureTaskParallelTest, RSUiCaptureTaskParallel_CreateSurfaceSyncC
     ASSERT_NE(surface, nullptr);
 #ifdef RS_ENABLE_UNI_RENDER
     auto copytask =
-        RSUiCaptureTaskParallel::CreateSurfaceSyncCopyTask(surface, std::move(rsCapturePixelMap->pixelmap_),
+        RSUiCaptureTaskParallel::CreateSurfaceSyncCopyTask(surface, std::move(rsCapturePixelMap->pixelMap_),
             node->GetId(), captureConfig, mockCallback);
 
     ASSERT_FALSE(copytask);
