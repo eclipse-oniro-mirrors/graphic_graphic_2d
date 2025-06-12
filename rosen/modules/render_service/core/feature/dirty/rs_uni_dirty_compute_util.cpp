@@ -277,12 +277,16 @@ FilterDirtyRegionInfo RSUniFilterDirtyComputeUtil::GenerateFilterDirtyRegionInfo
         filterRegion = Occlusion::Region(Occlusion::Rect(filterNode.GetFilterRect()));
         dirtyRegion = filterRegion;
     }
+    // Subtree dirty region doesn't need to be considered for background filter.
+    auto& filterProperties = filterNode.GetRenderProperties();
+    bool isBackgroundFilterClean = (filterProperties.GetBackgroundFilter() ||
+        filterProperties.GetNeedDrawBehindWindow()) && !filterNode.IsBackgroundInAppOrNodeSelfDirty();
     FilterDirtyRegionInfo filterInfo = {
         .id_ = filterNode.GetId(),
         .intersectRegion_ = filterRegion,
         .filterDirty_ = dirtyRegion,
         .alignedFilterDirty_ = dirtyRegion.GetAlignedRegion(MAX_DIRTY_ALIGNMENT_SIZE),
-        .belowDirty_ = preDirty.value_or(Occlusion::Region())
+        .belowDirty_ = !isBackgroundFilterClean && preDirty.has_value() ? preDirty.value() : Occlusion::Region()
     };
     return filterInfo;
 }
