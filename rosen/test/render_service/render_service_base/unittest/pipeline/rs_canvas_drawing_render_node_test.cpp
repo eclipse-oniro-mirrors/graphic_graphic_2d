@@ -702,7 +702,7 @@ HWTEST_F(RSCanvasDrawingRenderNodeTest, ContentStyleSlotUpdateTest, TestSize.Lev
  * @tc.name: GetDrawCmdListsTest
  * @tc.desc: Test GetDrawCmdLists
  * @tc.type: FUNC
- * @tc.require:
+ * @tc.require: ICETEZ
  */
 HWTEST_F(RSCanvasDrawingRenderNodeTest, GetDrawCmdListsTest, TestSize.Level1)
 {
