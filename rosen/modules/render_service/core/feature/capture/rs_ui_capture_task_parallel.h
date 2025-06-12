@@ -57,7 +57,6 @@ private:
     std::shared_ptr<Drawing::Surface> CreateSurface(const std::unique_ptr<Media::PixelMap>& pixelmap) const;
     std::unique_ptr<Media::PixelMap> CreatePixelMapByNode(std::shared_ptr<RSRenderNode> node) const;
     std::unique_ptr<Media::PixelMap> CreatePixelMapByRect(const Drawing::Rect& specifiedAreaRect) const;
-    std::unique_ptr<Media::PixelMap> pixelMap_ = nullptr;
     std::shared_ptr<DrawableV2::RSRenderNodeDrawable> nodeDrawable_ = nullptr;
     NodeId nodeId_ = INVALID_NODEID;
     RSSurfaceCaptureConfig captureConfig_ = {};

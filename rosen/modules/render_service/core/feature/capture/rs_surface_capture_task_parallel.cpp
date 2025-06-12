@@ -113,8 +113,8 @@ void RSSurfaceCaptureTaskParallel::Capture(sptr<RSISurfaceCaptureCallback> callb
     }
 
     if (rsCapturePixelMap == nullptr) {
-            RS_LOGE(
-            "RSSurfaceCaptureTaskParallel::Capture nodeId:[%{public}" PRIu64 "], callback is nullptr", captureParam.id);
+        RS_LOGE(
+        "RSSurfaceCaptureTaskParallel::Capture nodeId:[%{public}" PRIu64 "], callback is nullptr", captureParam.id);
         return;
     }
     std::shared_ptr<RSSurfaceCaptureTaskParallel> captureHandle =
@@ -311,7 +311,7 @@ bool RSSurfaceCaptureTaskParallel::Run(
             RS_LOGE("RSSurfaceCaptureTaskParallel::Run: img is nullptr");
             return false;
         }
-        if (!CopyDataToPixelMap(img, pixelMap_, colorSpace_)) {
+        if (!CopyDataToPixelMap(img, pixelMap, colorSpace_)) {
             RS_LOGE("RSSurfaceCaptureTaskParallel::Run: CopyDataToPixelMap failed");
             return false;
         }
@@ -584,6 +584,9 @@ void RSSurfaceCaptureTaskParallel::AddBlur(
             }
             auto tmpImg = std::make_shared<Drawing::Image>();
             DrawCapturedImg(*tmpImg, *surface, backendTexture, textureOrigin, bitmapFormat);
+            RS_LOGI("RSSurfaceCaptureTaskParallel::Capture DMA capture success nodeId:[%{public}]" PRIu64
+                "], pixelMap width: %{public}d, height: %{public}d",
+                id, pixelmap->GetWidth(), pixelmap->GetHeight());
         } else {
 #else
         {
@@ -610,6 +613,9 @@ void RSSurfaceCaptureTaskParallel::AddBlur(
         RSBaseRenderUtil::WritePixelMapToPng(*pixelmap);
         pixelmap->SetMemoryName("RSSurfaceCaptureForClient");
         callback->OnSurfaceCapture(id, captureConfig, pixelmap.get());
+        RS_LOGI("RSSurfaceCaptureTaskParallel::Capture capture success nodeId:[%{public}]" PRIu64
+            "], pixelMap width: %{public}d, height: %{public}d",
+            id, pixelmap->GetWidth(), pixelmap->GetHeight());
         RSBackgroundThread::Instance().CleanGrResource();
         RSUniRenderUtil::ClearNodeCacheSurface(
             std::move(std::get<0>(*wrapperSf)), nullptr, UNI_MAIN_THREAD_INDEX, 0);
@@ -683,7 +689,7 @@ static inline void DeleteVkImage(void *context)
 }
 
 sptr<SurfaceBuffer> DmaMem::GetSurfaceBuffer(Drawing::ImageInfo& dstInfo,
-    const std::unique_ptr<Media::PixelMap>& pixelMap, const RSSurfaceCaptureConfig& captureConfig);
+    const std::unique_ptr<Media::PixelMap>& pixelMap, const RSSurfaceCaptureConfig& captureConfig)
 {
     if (captureConfig.isClientPixelMap) {
         void* nativeBuffer = pixelMap->GetFd();
@@ -691,11 +697,11 @@ sptr<SurfaceBuffer> DmaMem::GetSurfaceBuffer(Drawing::ImageInfo& dstInfo,
             RS_LOGE("DmaMem::GetSurfaceBuffer nativeBuffer is nullptr");
             return nullptr;
         }
-        SurfaceBuffer* sbBuffer = static_cast<SurfaceBuffer*>(nativeBuffer);
-        Sptr<SurfaceBuffer> surfaceBuffer(sbBuffer);
+        SurfaceBuffer* surfaceBufferRawptr = static_cast<SurfaceBuffer*>(nativeBuffer);
+        Sptr<SurfaceBuffer> surfaceBuffer(surfaceBufferRawptr);
         return surfaceBuffer;
     }
-    return DmaMemAlloc(info, pixelMap);
+    return DmaMemAlloc(dstInfo, pixelMap);
 }
 
 std::shared_ptr<Drawing::Surface> DmaMem::GetSurfaceFromSurfaceBuffer(

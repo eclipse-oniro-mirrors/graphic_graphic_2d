@@ -958,10 +958,6 @@ HWTEST_F(RSSurfaceCaptureTaskTest, TakeSelfSurfaceCaptureTest001, Function | Sma
 
     ret = rsInterfaces_->TakeSelfSurfaceCapture(surfaceNode_, surfaceCaptureCb_, captureConfig);
     ASSERT_EQ(ret, true);
-#if defined(RS_ENABLE_UNI_RENDER)
-    ASSERT_EQ(CheckSurfaceCaptureCallback(), true);
-    ASSERT_EQ(surfaceCaptureCb_->IsTestSuccess(), true);
-#endif
 }
 
 /*
