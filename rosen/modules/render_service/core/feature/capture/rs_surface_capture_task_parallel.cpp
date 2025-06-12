@@ -65,6 +65,21 @@ inline void DrawCapturedImg(Drawing::Image& image,
     surface.FlushAndSubmit(true);
 }
 #endif
+
+uint32_t PixelMapSamplingDump(std::unique_ptr<Media::PixelMap>& pixelmap, int32_t x, int32_t y)
+{
+    if (pixelmap == nullptr) {
+        RS_LOGE("PixelMapSamplingDump fail, pixelmap is nullptr");
+        return 0;
+    }
+    if (x < 0 || x >= pixelmap->GetWidth() || y < 0 || y >= pixelmap->GetHeight()) {
+        RS_LOGE("PixelMapSamplingDump fail, x or y is invalid");
+        return 0;
+    }
+    uint32_t pixel = 0;
+    pixelmap->ReadPixel({x, y}, pixel);
+    return pixel;
+}
 }
 
 void RSSurfaceCaptureTaskParallel::CheckModifiers(NodeId id, bool useCurWindow)
@@ -607,6 +622,14 @@ void RSSurfaceCaptureTaskParallel::AddBlur(
         RSUniRenderUtil::FlushDmaSurfaceBuffer(pixelmap.get());
         // To get dump image
         // execute "param set rosen.dumpsurfacetype.enabled 3 && setenforce 0"
+        RS_LOGI("RSSurfaceCaptureTaskParallel: CopyDataToPixelMap PixelMapSamplingDump TopCenter: ARGB-0x%{public}x, "
+                "LeftCenter: ARGB-0x%{public}x, Center: ARGB-0x%{public}x, RightCenter: ARGB-0x%{public}x, "
+                "BottomCenter: ARGB-0x%{public}x",
+                PixelMapSamplingDump(pixelmap, pixelmap->GetWidth() / 2, 0),
+                PixelMapSamplingDump(pixelmap, 0, pixelmap->GetHeight() / 2),
+                PixelMapSamplingDump(pixelmap, pixelmap->GetWidth() / 2, pixelmap->GetHeight() / 2),
+                PixelMapSamplingDump(pixelmap, pixelmap->GetWidth() - 1, pixelmap->GetHeight() / 2),
+                PixelMapSamplingDump(pixelmap, pixelmap->GetWidth() / 2, pixelmap->GetHeight() - 1));
         RSBaseRenderUtil::WritePixelMapToPng(*pixelmap);
         pixelmap->SetMemoryName("RSSurfaceCaptureForClient");
         callback->OnSurfaceCapture(id, captureConfig, pixelmap.get());
