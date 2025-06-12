@@ -2369,7 +2369,8 @@ void RSNode::SetShadowPath(const std::shared_ptr<RSPath>& shadowPath)
 
 void RSNode::SetShadowMask(bool shadowMask)
 {
-    SetProperty<RSShadowMaskModifier, RSProperty<bool>>(RSModifierType::SHADOW_MASK, shadowMask);
+    int shadowMaskColor = shadowMask ? SHADOW_MASK_STRATEGY::MASK_BLUR : SHADOW_MASK_STRATEGY::MASK_NONE;
+    SetProperty<RSShadowMaskModifier, RSProperty<int>>(RSModifierType::SHADOW_MASK, shadowMaskColor);
 }
 
 void RSNode::SetShadowIsFilled(bool shadowIsFilled)

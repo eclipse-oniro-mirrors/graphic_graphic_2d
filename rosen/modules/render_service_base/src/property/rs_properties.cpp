@@ -177,7 +177,9 @@ static const std::unordered_map<RSModifierType, ResetPropertyFunc> g_propertyRes
     { RSModifierType::SHADOW_ELEVATION,                     [](RSProperties* prop) { prop->SetShadowElevation(0.f); }},
     { RSModifierType::SHADOW_RADIUS,                        [](RSProperties* prop) { prop->SetShadowRadius(0.f); }},
     { RSModifierType::SHADOW_PATH,                          [](RSProperties* prop) { prop->SetShadowPath({}); }},
-    { RSModifierType::SHADOW_MASK,                          [](RSProperties* prop) { prop->SetShadowMask(false); }},
+    { RSModifierType::SHADOW_MASK,                          [](RSProperties* prop) {
+                                                                prop->SetShadowMask(
+                                                                    SHADOW_MASK_STRATEGY::MASK_NONE); }},
     { RSModifierType::SHADOW_COLOR_STRATEGY,                [](RSProperties* prop) {
                                                                 prop->SetShadowColorStrategy(
                                                                     SHADOW_COLOR_STRATEGY::COLOR_STRATEGY_NONE); }},
@@ -350,7 +352,7 @@ void RSProperties::SetBounds(Vector4f bounds)
     hasBounds_ = true;
     geoDirty_ = true;
     SetDirty();
-    if (GetShadowMask()) {
+    if (IsShadowMaskValid()) {
         filterNeedUpdate_ = true;
     }
 }
@@ -728,7 +730,7 @@ void RSProperties::SetCornerRadius(const Vector4f& cornerRadius)
 {
     cornerRadius_ = cornerRadius;
     SetDirty();
-    if (GetShadowMask()) {
+    if (IsShadowMaskValid()) {
         filterNeedUpdate_ = true;
     }
     contentDirty_ = true;
@@ -2121,7 +2123,7 @@ void RSProperties::SetShadowPath(std::shared_ptr<RSPath> shadowPath)
     }
     shadow_->SetPath(shadowPath);
     SetDirty();
-    if (GetShadowMask()) {
+    if (IsShadowMaskValid()) {
         filterNeedUpdate_ = true;
     }
     // [planning] if shadow stores as texture and out of node
@@ -2129,7 +2131,7 @@ void RSProperties::SetShadowPath(std::shared_ptr<RSPath> shadowPath)
     contentDirty_ = true;
 }
 
-void RSProperties::SetShadowMask(bool shadowMask)
+void RSProperties::SetShadowMask(int shadowMask)
 {
     if (!shadow_.has_value()) {
         shadow_ = std::make_optional<RSShadow>();
@@ -2149,7 +2151,7 @@ void RSProperties::SetShadowIsFilled(bool shadowIsFilled)
     }
     shadow_->SetIsFilled(shadowIsFilled);
     SetDirty();
-    if (GetShadowMask()) {
+    if (IsShadowMaskValid()) {
         filterNeedUpdate_ = true;
     }
     // [planning] if shadow stores as texture and out of node
@@ -2207,9 +2209,18 @@ std::shared_ptr<RSPath> RSProperties::GetShadowPath() const
     return shadow_ ? shadow_->GetPath() : nullptr;
 }
 
-bool RSProperties::GetShadowMask() const
+int RSProperties::GetShadowMask() const
 {
-    return shadow_ ? shadow_->GetMask() : false;
+    return shadow_ ? shadow_->GetMask() : SHADOW_MASK_STRATEGY::MASK_NONE;
+}
+
+bool RSProperties::IsShadowMaskValid() const
+{
+    if (!shadow_.has_value()) {
+        return false;
+    }
+    return (shadow_->GetMask() > SHADOW_MASK_STRATEGY::MASK_NONE) && (
+        shadow_->GetMask() <= SHADOW_MASK_STRATEGY::MASK_COLOR_BLUR);
 }
 
 bool RSProperties::GetShadowIsFilled() const
@@ -2674,6 +2685,9 @@ void RSProperties::CreateColorfulShadowFilter()
     Drawing::Path path = RSPropertyDrawableUtils::CreateShadowPath(GetShadowPath(), GetClipBounds(), GetRRect());
     auto colorfulShadowFilter = std::make_shared<RSColorfulShadowFilter>(
         blurRadius, GetShadowOffsetX(), GetShadowOffsetY(), path, GetShadowIsFilled());
+    if (GetShadowMask() == SHADOW_MASK_STRATEGY::MASK_COLOR_BLUR) {
+        colorfulShadowFilter->SetShadowColorMask(GetShadowColor());
+    }
     if (IS_UNI_RENDER) {
         foregroundFilterCache_ = colorfulShadowFilter;
     } else {
@@ -5050,7 +5064,7 @@ void RSProperties::UpdateForegroundFilter()
         CreateFlyOutShaderFilter();
     } else if (IsAttractionValid()) {
         CreateAttractionEffectFilter();
-    } else if (GetShadowMask()) {
+    } else if (IsShadowMaskValid()) {
         CreateColorfulShadowFilter();
     } else if (IsDistortionKValid()) {
         foregroundFilter_ = std::make_shared<RSDistortionFilter>(*distortionK_);
