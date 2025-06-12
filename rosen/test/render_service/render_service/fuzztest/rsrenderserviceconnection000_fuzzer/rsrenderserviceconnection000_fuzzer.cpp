@@ -284,6 +284,9 @@ void DoUnregisterSurfaceBufferCallback()
 void DoSetLayerTop()
 {}
 
+void DoSetForceRefresh()
+{}
+
 void DoSetScreenActiveRect()
 {}
 
@@ -458,6 +461,9 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
             break;
         case OHOS::Rosen::DO_SET_LAYER_TOP:
             OHOS::Rosen::DoSetLayerTop();
+            break;
+        case OHOS::Rosen::DO_SET_FORCE_REFRESH:
+            OHOS::Rosen::DoSetForceRefresh();
             break;
         case OHOS::Rosen::DO_SET_SCREEN_ACTIVE_RECT:
             OHOS::Rosen::DoSetScreenActiveRect();

@@ -194,6 +194,13 @@ public:
         return isLayerTop_;
     }
 
+    void SetForceRefresh(bool isForceRefresh);
+
+    bool IsForceRefresh() const
+    {
+        return isForceRefresh_;
+    }
+
     void SetHardwareEnableHint(bool enable)
     {
         if (isHardwareEnableHint_ == enable) {
@@ -1661,6 +1668,7 @@ private:
     RSSurfaceNodeAbilityState abilityState_ = RSSurfaceNodeAbilityState::FOREGROUND;
     RSSurfaceNodeType nodeType_ = RSSurfaceNodeType::DEFAULT;
     bool isLayerTop_ = false;
+    bool isForceRefresh_ = false;
     // Specifying hardware enable is only a 'hint' to RS that
     // the self-drawing node use hardware composer in some condition,
     // such as transparent background.
