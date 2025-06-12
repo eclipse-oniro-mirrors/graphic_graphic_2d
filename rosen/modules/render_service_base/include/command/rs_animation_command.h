@@ -37,9 +37,7 @@ enum RSAnimationCommandType : uint16_t {
     // curve animation
     ANIMATION_CREATE_CURVE = 0x0100,
     // particle animation
-    ANIMATION_CREATE_PARTICLE,
-    // particle animation NG
-    ANIMATION_CREATE_PARTICLE_NG,
+    ANIMATION_CREATE_PARTICLE = 0x0101,
     // keyframe animation
     ANIMATION_CREATE_KEYFRAME = 0x0102,
     // path animation
@@ -50,6 +48,8 @@ enum RSAnimationCommandType : uint16_t {
     ANIMATION_CREATE_SPRING = 0x0105,
     // interpolating spring animation
     ANIMATION_CREATE_INTERPOLATING_SPRING = 0x0106,
+    // particle animation NG
+    ANIMATION_CREATE_PARTICLE_NG = 0x0107,
 
     // operations
     ANIMATION_START = 0x0200,
@@ -107,8 +107,8 @@ public:
         RSContext& context, NodeId targetId, const std::shared_ptr<RSRenderAnimation>& animation);
     static void CreateParticleAnimation(RSContext& context, NodeId targetId,
         const std::shared_ptr<RSRenderParticleAnimation>& animation);
-    static void CreateParticleAnimationNG(
-        RSContext& context, NodeId targetId, const std::shared_ptr<RSRenderParticleAnimation>& animation);
+    static void CreateParticleAnimationNG(RSContext& context, NodeId targetId, ModifierId modifierId,
+        const std::shared_ptr<RSRenderParticleAnimation>& animation);
 
     using AnimationCallbackProcessor = void (*)(NodeId, AnimationId, uint64_t, AnimationCallbackEvent);
     static void AnimationCallback(RSContext& context,
@@ -174,10 +174,10 @@ ADD_COMMAND(RSAnimationCreateParticle,
     ARG(PERMISSION_APP, ANIMATION, ANIMATION_CREATE_PARTICLE, AnimationCommandHelper::CreateParticleAnimation, NodeId,
         std::shared_ptr<RSRenderParticleAnimation>))
 
-// create particle animation in ModifierNG
+// create particle animation NG
 ADD_COMMAND(RSAnimationCreateParticleNG,
     ARG(PERMISSION_APP, ANIMATION, ANIMATION_CREATE_PARTICLE_NG, AnimationCommandHelper::CreateParticleAnimationNG,
-        NodeId, std::shared_ptr<RSRenderParticleAnimation>))
+        NodeId, ModifierId, std::shared_ptr<RSRenderParticleAnimation>))
 
 // create keyframe animation
 ADD_COMMAND(RSAnimationCreateKeyframe,

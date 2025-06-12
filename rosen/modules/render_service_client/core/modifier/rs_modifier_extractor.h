@@ -220,13 +220,14 @@ public:
      */
     std::shared_ptr<RSShader> GetBackgroundShader() const;
 
-
     /**
      * @brief Gets the background image.
      *
      * @return A shared pointer to the RSImage representing the background image.
      */
     std::shared_ptr<RSImage> GetBgImage() const;
+
+    Vector4f GetBgImageDstRect() const;
 
     /**
      * @brief Gets the background image width.

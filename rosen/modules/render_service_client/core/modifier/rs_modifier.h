@@ -60,7 +60,7 @@ public:
      * @param property A shared pointer to an RSPropertyBase object.
      */
     explicit RSModifier(const std::shared_ptr<RSPropertyBase>& property)
-        : property_(property ? property : std::make_shared<RSProperty<int>>())
+        : property_(property ? property : std::make_shared<RSProperty<bool>>())
     {}
 
     /**
@@ -90,7 +90,7 @@ public:
 
 protected:
     RSModifier(const std::shared_ptr<RSPropertyBase>& property, const RSModifierType type)
-        : property_(property ? property : std::make_shared<RSProperty<int>>())
+        : property_(property ? property : std::make_shared<RSProperty<bool>>())
     {
         property_->type_ = type;
     }
@@ -147,7 +147,9 @@ protected:
 
     virtual void OnAttachToNode(const std::weak_ptr<RSNode>& target) {}
 
-    void SetDirty(bool isDirty);
+    virtual void OnDetachFromNode() {}
+
+    void SetDirty(const bool isDirty, const std::shared_ptr<RSModifierManager>& modifierManager = nullptr);
 
     virtual void MarkNodeDirty() {}
 

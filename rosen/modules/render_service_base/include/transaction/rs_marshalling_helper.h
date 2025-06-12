@@ -90,6 +90,7 @@ template<typename T>
 class RectT;
 template<typename T>
 class RRectT;
+struct PixelMapInfo;
 namespace ModifierNG {
 class RSRenderModifier;
 }
@@ -98,8 +99,6 @@ class RSB_EXPORT RSMarshallingHelper {
 public:
     static constexpr size_t UNMARSHALLING_MAX_VECTOR_SIZE = 65535;
     // default marshalling and unmarshalling method for POD types
-    // [PLANNING]: implement marshalling & unmarshalling methods for other types (e.g. RSImage, drawCMDList)
-
     template<typename T>
     struct is_shared_ptr : std::false_type {};
 
@@ -114,8 +113,7 @@ public:
     {
         return parcel.WriteUnpadBuffer(&val, sizeof(T));
     }
-
-    template<typename T>
+    template<typename T, typename = is_not_pointer_or_shared_ptr<T>>
     static bool Unmarshalling(Parcel& parcel, T& val)
     {
         if (const uint8_t* buff = parcel.ReadUnpadBuffer(sizeof(T))) {

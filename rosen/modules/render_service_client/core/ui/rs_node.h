@@ -32,6 +32,18 @@
 #include <optional>
 #include <unordered_map>
 
+#include "recording/recording_canvas.h"
+#include "ui_effect/effect/include/background_color_effect_para.h"
+#include "ui_effect/effect/include/visual_effect.h"
+#include "ui_effect/filter/include/filter.h"
+#include "ui_effect/filter/include/filter_blur_para.h"
+#include "ui_effect/filter/include/filter_distort_para.h"
+#include "ui_effect/filter/include/filter_fly_out_para.h"
+#include "ui_effect/filter/include/filter_hdr_para.h"
+#include "ui_effect/filter/include/filter_pixel_stretch_para.h"
+#include "ui_effect/filter/include/filter_radius_gradient_blur_para.h"
+#include "ui_effect/filter/include/filter_water_ripple_para.h"
+
 #include "animation/rs_animation_timing_curve.h"
 #include "animation/rs_animation_timing_protocol.h"
 #include "animation/rs_motion_path_option.h"
@@ -49,20 +61,8 @@
 #include "property/rs_properties.h"
 #include "render/rs_mask.h"
 #include "render/rs_path.h"
-#include "ui_effect/effect/include/background_color_effect_para.h"
-#include "ui_effect/effect/include/visual_effect.h"
-#include "ui_effect/filter/include/filter.h"
-#include "ui_effect/filter/include/filter_pixel_stretch_para.h"
-#include "ui_effect/filter/include/filter_blur_para.h"
-#include "ui_effect/filter/include/filter_hdr_para.h"
-#include "ui_effect/filter/include/filter_water_ripple_para.h"
-#include "ui_effect/filter/include/filter_fly_out_para.h"
-#include "ui_effect/filter/include/filter_distort_para.h"
-#include "modifier_ng/rs_node_modifier_data.h"
-
-#include "transaction/rs_transaction_handler.h"
 #include "transaction/rs_sync_transaction_handler.h"
-#include "recording/recording_canvas.h"
+#include "transaction/rs_transaction_handler.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -83,7 +83,8 @@ class RSNGFilterBase;
 enum class CancelAnimationStatus;
 namespace ModifierNG {
 class RSModifier;
-enum class RSModifierType : uint8_t;
+class RSCustomModifier;
+enum class RSModifierType : uint16_t;
 }
 
 /**
@@ -390,6 +391,9 @@ public:
      */
     const std::shared_ptr<RSMotionPathOption> GetMotionPathOption() const;
 
+    void SetMotionPathOptionToProperty(
+        const ModifierNG::RSModifierType& modifierType, const ModifierNG::RSPropertyType& propertyType);
+
     /**
      * @brief Draws on the node using the specified modifier type and drawing function.
      *
@@ -406,6 +410,7 @@ public:
      * @return A constant reference to the RSModifierExtractor holding the staging properties.
      */
     const RSModifierExtractor& GetStagingProperties() const;
+
     const RSShowingPropertiesFreezer& GetShowingProperties() const;
 
     /**
@@ -420,9 +425,16 @@ public:
     template<typename ModifierName, typename PropertyName, typename T>
     void SetProperty(RSModifierType modifierType, T value);
 
-    template<typename ModifierType, auto Setter, typename T>
+    template<typename ModifierName, auto Setter, typename T>
     void SetPropertyNG(T value);
 
+    /**
+     * @brief Sets the bounds of the node.
+     *
+     * The bounds typically define the position and size of the node within its parent.
+     *
+     * @param bounds A Vector4f representing the new bounds (X, Y, width, height).
+     */
     virtual void SetBounds(const Vector4f& bounds);
 
     /**
@@ -689,6 +701,12 @@ public:
      * @param scaleY The scaling factor to apply on the Y-axis.
      */
     void SetScaleY(float scaleY);
+
+    /**
+     * @brief Sets the scaling factor for the node along the Z-axis.
+     *
+     * @param scaleZ The scaling factor to apply on the Z-axis.
+     */
     void SetScaleZ(float scaleZ);
 
     /**
@@ -1453,6 +1471,19 @@ public:
      * @param spherizeDegree The degree of spherization to apply.
      */
     void SetSpherizeDegree(float spherizeDegree);
+
+    /**
+     * @brief Sets the brightness ratio of HDR UI component.
+     *
+     * @param hdrUIBrightness The HDR UI component brightness ratio.
+     */
+    void SetHDRUIBrightness(float hdrUIBrightness);
+
+    /**
+     * @brief Sets the degree of light up effect.
+     *
+     * @param lightUpEffectDegree The degree of the light up effect to apply.
+     */
     void SetLightUpEffectDegree(float lightUpEffectDegree);
 
     void SetAttractionEffect(float fraction, const Vector2f& destinationPoint);
@@ -1517,7 +1548,13 @@ public:
 
     void AddModifier(const std::shared_ptr<ModifierNG::RSModifier> modifier);
     void RemoveModifier(const std::shared_ptr<ModifierNG::RSModifier> modifier);
+    const std::shared_ptr<ModifierNG::RSModifier> GetModifierByType(const ModifierNG::RSModifierType& type);
 
+    /**
+     * @brief Sets whether the node is a custom text type.
+     *
+     * @param isCustomTextType true if the text type is custom; false otherwise.
+     */
     void SetIsCustomTextType(bool isCustomTextType);
 
     /**
@@ -1703,6 +1740,10 @@ public:
      */
     void SetSkipCheckInMultiInstance(bool isSkipCheckInMultiInstance);
 
+    const std::shared_ptr<RSPropertyBase> GetPropertyById(const PropertyId& propertyId);
+    const std::shared_ptr<RSPropertyBase> GetPropertyByType(
+        const ModifierNG::RSModifierType& modifierType, const ModifierNG::RSPropertyType& propertyType);
+
 #ifdef RS_ENABLE_VK
     /**
      * @brief Gets whether the canvas enables hybrid rendering.
@@ -1841,6 +1882,8 @@ protected:
      */
     void SetIsOnTheTree(bool flag);
 
+    std::array<std::shared_ptr<ModifierNG::RSModifier>, ModifierNG::MODIFIER_TYPE_COUNT> modifiersNGCreatedBySetter_;
+
 private:
     static NodeId GenerateId();
     static void InitUniRenderEnabled();
@@ -1905,6 +1948,11 @@ private:
     void ResetExtendModifierDirty();
     void SetParticleDrawRegion(std::vector<ParticleParams>& particleParams);
 
+    void AttachProperty(std::shared_ptr<RSPropertyBase> property);
+    void DettachProperty(PropertyId id);
+    void AttachModifierProperties(const std::shared_ptr<ModifierNG::RSModifier>& modifier);
+    void DetachModifierProperties(const std::shared_ptr<ModifierNG::RSModifier>& modifier);
+
     /**
      * @brief Clears all modifiers associated with this node.
      *
@@ -1947,10 +1995,7 @@ private:
     std::map<PropertyId, std::shared_ptr<RSPropertyBase>> properties_;
     std::map<uint16_t, std::shared_ptr<RSModifier>> modifiersTypeMap_;
     std::map<RSModifierType, std::shared_ptr<RSModifier>> propertyModifiers_;
-
     std::map<ModifierId, std::shared_ptr<ModifierNG::RSModifier>> modifiersNG_;
-    std::array<std::shared_ptr<ModifierNG::RSModifier>, ModifierNG::MODIFIER_TYPE_COUNT> modifiersNGCreatedBySetter_;
-    ModifierNG::RSNodeModifierData modifierDataNG_;
 
     std::shared_ptr<RectF> drawRegion_;
     OutOfParentType outOfParent_ = OutOfParentType::UNKNOWN;
@@ -1976,6 +2021,9 @@ private:
     friend class RSModifierExtractor;
     friend class RSModifier;
     friend class ModifierNG::RSModifier;
+    friend class ModifierNG::RSCustomModifier;
+    friend class RSBackgroundUIFilterModifier;
+    friend class RSForegroundUIFilterModifier;
     friend class RSKeyframeAnimation;
     friend class RSInterpolatingSpringAnimation;
     friend class RSImplicitCancelAnimationParam;

@@ -16,16 +16,16 @@
 #ifndef RENDER_SERVICE_CLIENT_CORE_ANIMATION_RS_RENDER_PROP_H
 #define RENDER_SERVICE_CLIENT_CORE_ANIMATION_RS_RENDER_PROP_H
 
-#include "recording/draw_cmd_list.h"
-
 #include "animation/rs_render_particle.h"
 #include "animation/rs_value_estimator.h"
 #include "common/rs_common_def.h"
 #include "common/rs_macros.h"
 #include "common/rs_rect.h"
+#include "feature/capture/rs_ui_capture.h"
 #include "modifier/rs_animatable_arithmetic.h"
 #include "modifier/rs_modifier_type.h"
 #include "property/rs_properties_def.h"
+#include "recording/draw_cmd_list.h"
 #include "transaction/rs_marshalling_helper.h"
 #ifdef USE_M133_SKIA
 #include "include/core/SkMatrix.h"
@@ -41,6 +41,8 @@ enum class Gravity;
 namespace ModifierNG {
 class RSRenderModifier;
 }
+
+constexpr int ANIMATABLE_SHIFT = 8;
 
 template<class...>
 struct make_void { using type = void; };
@@ -70,7 +72,7 @@ enum PropertyUpdateType : uint8_t {
     UPDATE_TYPE_FORCE_OVERWRITE, // overwrite and cancel all previous animations
 };
 
-enum class RSPropertyType : uint8_t {
+enum class RSPropertyType : uint16_t {
     INVALID = 0,
     BOOL,
     INT,
@@ -148,7 +150,6 @@ public:
     {
         return modifierType_;
     }
-    // deprecated
     void SetModifierType(RSModifierType type)
     {
         modifierType_ = type;
@@ -156,11 +157,13 @@ public:
         OnSetModifierType();
     }
 
+    std::weak_ptr<ModifierNG::RSRenderModifier> GetModifierNG() const
+    {
+        return modifier_;
+    }
+
     virtual void Dump(std::string& out) const = 0;
     virtual size_t GetSize() const = 0;
-
-    virtual bool RSB_EXPORT Marshalling(Parcel& parcel) = 0;
-    [[nodiscard]] static bool Unmarshalling(Parcel& parcel, std::shared_ptr<RSRenderPropertyBase>& val);
 
 protected:
     virtual bool Marshalling(Parcel& parcel) = 0;
@@ -173,6 +176,8 @@ protected:
     virtual void OnSetModifierType() {}
 
     void UpdatePropertyUnit(RSModifierType type);
+
+    void UpdatePropertyUnitNG(ModifierNG::RSPropertyType propertyType);
 
     virtual const std::shared_ptr<RSRenderPropertyBase> Clone() const
     {
@@ -226,7 +231,7 @@ protected:
         RSPropertyUnmarshallingFuncRegister(bool isAnimatable, RSPropertyType type, UnmarshallingFunc func)
         {
             if (type != RSPropertyType::INVALID) {
-                uint16_t key = static_cast<uint16_t>(isAnimatable) << 8 | static_cast<uint16_t>(type);
+                uint16_t key = static_cast<uint16_t>(isAnimatable) << ANIMATABLE_SHIFT | static_cast<uint16_t>(type);
                 UnmarshallingFuncs_[key] = func;
             }
         }
@@ -282,6 +287,7 @@ private:
     friend class RSSpringModel;
     friend class RSTransitionCustom;
     friend class RSAnimationTraceUtils;
+    friend class ModifierNG::RSRenderModifier;
 };
 
 template<typename T>
@@ -331,36 +337,22 @@ public:
         updateUIPropertyFunc_ = updateUIPropertyFunc;
     }
 
+protected:
+    T stagingValue_{};
+    inline static const RSPropertyType type_ = RSPropertyType::INVALID;
+    std::function<void(const std::shared_ptr<RSRenderPropertyBase>&)> updateUIPropertyFunc_;
+
     RSPropertyType GetPropertyType() const override
     {
         return type_;
     }
 
-protected:
-    T stagingValue_;
-    inline static const RSPropertyType type_ = RSPropertyType::INVALID;
-
-    std::function<void(const std::shared_ptr<RSRenderPropertyBase>&)> updateUIPropertyFunc_;
-
-    bool RSB_EXPORT Marshalling(Parcel& parcel) override
+    bool Marshalling(Parcel& parcel) override
     {
-        if (this->type_ == RSPropertyType::INVALID) {
+        // Planning: use static_assert to limit the types that can be used with RSRenderProperty.
+        if constexpr (RSRenderProperty<T>::type_ == RSPropertyType::INVALID) {
             return false;
         }
-        if (!RSMarshallingHelper::Marshalling(parcel, false)) {
-            return false;
-        }
-        if (!RSMarshallingHelper::Marshalling(parcel, type_)) {
-            return false;
-        }
-        if (!RSMarshallingHelper::Marshalling(parcel, GetId())) {
-            return false;
-        }
-        if (!RSMarshallingHelper::Marshalling(parcel, stagingValue_)) {
-            return false;
-        }
-        return true;
-    }
 
     void SetUpdateUIPropertyFunc(
         const std::function<void(const std::shared_ptr<RSRenderPropertyBase>&)>& updateUIPropertyFunc)
@@ -400,9 +392,6 @@ public:
     RSRenderAnimatableProperty() : RSRenderProperty<T>() {}
     RSRenderAnimatableProperty(const T& value) : RSRenderProperty<T>(value, 0) {}
     RSRenderAnimatableProperty(const T& value, const PropertyId& id) : RSRenderProperty<T>(value, id) {}
-    RSRenderAnimatableProperty(const T& value, const PropertyId& id, const RSPropertyType type)
-        : RSRenderProperty<T>(value, id)
-    {}
     RSRenderAnimatableProperty(const T& value, const PropertyId& id, const RSPropertyUnit unit)
         : RSRenderProperty<T>(value, id), unit_(unit)
     {}
@@ -493,30 +482,20 @@ protected:
         return std::make_shared<RSSpringValueEstimator<T>>();
     }
 
-    bool RSB_EXPORT Marshalling(Parcel& parcel) override
+    bool Marshalling(Parcel& parcel) override
     {
-        if (this->type_ == RSPropertyType::INVALID) {
-            return false;
-        }
-        if (!RSMarshallingHelper::Marshalling(parcel, true)) {
-            return false;
-        }
-        if (!RSMarshallingHelper::Marshalling(parcel, this->type_)) {
-            return false;
-        }
-        if (!RSMarshallingHelper::Marshalling(parcel, this->GetId())) {
-            return false;
-        }
-        if (!RSMarshallingHelper::Marshalling(parcel, this->stagingValue_)) {
+        // Planning: use static_assert to limit the types that can be used with RSRenderAnimatableProperty.
+        if constexpr (RSRenderProperty<T>::type_ == RSPropertyType::INVALID) {
             return false;
         }
 
-        if (!RSMarshallingHelper::Marshalling(parcel, GetPropertyUnit())) {
-            return false;
-        }
-        return true;
+        auto result = RSMarshallingHelper::Marshalling(parcel, RSRenderProperty<T>::type_) &&
+                      RSMarshallingHelper::Marshalling(parcel, true) && // for animatable properties
+                      RSMarshallingHelper::Marshalling(parcel, RSRenderProperty<T>::GetId()) &&
+                      RSMarshallingHelper::Marshalling(parcel, RSRenderProperty<T>::stagingValue_) &&
+                      RSMarshallingHelper::Marshalling(parcel, unit_);
+        return result;
     }
-
     static bool OnUnmarshalling(Parcel& parcel, std::shared_ptr<RSRenderPropertyBase>& val);
 
 private:
@@ -566,6 +545,8 @@ template<>
 RSB_EXPORT float RSRenderAnimatableProperty<float>::ToFloat() const;
 template<>
 RSB_EXPORT float RSRenderAnimatableProperty<Vector2f>::ToFloat() const;
+template<>
+RSB_EXPORT float RSRenderAnimatableProperty<Vector3f>::ToFloat() const;
 template<>
 RSB_EXPORT float RSRenderAnimatableProperty<Vector4f>::ToFloat() const;
 template<>
@@ -663,45 +644,15 @@ template<>
 RSB_EXPORT void RSRenderProperty<std::shared_ptr<RSNGRenderFilterBase>>::OnSetModifierType();
 
 #if defined(_WIN32)
-extern template class RSRenderProperty<bool>;
-extern template class RSRenderProperty<int>;
-extern template class RSRenderProperty<float>;
-extern template class RSRenderProperty<Vector4<uint32_t>>;
-extern template class RSRenderProperty<Vector4f>;
-extern template class RSRenderProperty<Quaternion>;
-extern template class RSRenderProperty<Vector2f>;
-extern template class RSRenderProperty<Vector3f>;
-extern template class RSRenderProperty<Matrix3f>;
-extern template class RSRenderProperty<Color>;
-extern template class RSRenderProperty<Vector4<Color>>;
-extern template class RSRenderProperty<RRect>;
-extern template class RSRenderProperty<Drawing::DrawCmdListPtr>;
-extern template class RSRenderProperty<ForegroundColorStrategyType>;
-extern template class RSRenderProperty<SkMatrix>;
-extern template class RSRenderProperty<std::shared_ptr<RSShader>>;
-extern template class RSRenderProperty<std::shared_ptr<RSImage>>;
-extern template class RSRenderProperty<std::shared_ptr<RSPath>>;
-extern template class RSRenderProperty<Gravity>;
-extern template class RSRenderProperty<Drawing::Matrix>;
-extern template class RSRenderProperty<std::shared_ptr<RSLinearGradientBlurPara>>;
-extern template class RSRenderProperty<std::shared_ptr<MotionBlurParam>>;
-extern template class RSRenderProperty<std::shared_ptr<RSMagnifierParams>>;
-extern template class RSRenderProperty<std::vector<std::shared_ptr<EmitterUpdater>>>;
-extern template class RSRenderProperty<std::shared_ptr<ParticleNoiseFields>>;
-extern template class RSRenderProperty<std::shared_ptr<RSMask>>;
-extern template class RSRenderProperty<std::shared_ptr<RSRenderFilter>>;
-extern template class RSRenderProperty<std::shared_ptr<RSRenderMaskPara>>;
-
-extern template class RSRenderAnimatableProperty<Color>;
-extern template class RSRenderAnimatableProperty<float>;
-extern template class RSRenderAnimatableProperty<Matrix3f>;
-extern template class RSRenderAnimatableProperty<Quaternion>;
-extern template class RSRenderAnimatableProperty<RRect>;
-extern template class RSRenderAnimatableProperty<Vector2f>;
-extern template class RSRenderAnimatableProperty<Vector3f>;
-extern template class RSRenderAnimatableProperty<Vector4f>;
-extern template class RSRenderAnimatableProperty<Vector4<Color>>;
-extern template class RSRenderAnimatableProperty<std::vector<float>>;
+#define DECLARE_PROPERTY(T, TYPE_ENUM) extern template class RSRenderProperty<T>
+#define DECLARE_ANIMATABLE_PROPERTY(T, TYPE_ENUM)        \
+    extern template class RSRenderAnimatableProperty<T>; \
+    extern template class RSRenderProperty<T>
+#else
+#define DECLARE_PROPERTY(T, TYPE_ENUM) \
+    template<>                         \
+    inline const RSPropertyType RSRenderProperty<T>::type_ = RSPropertyType::TYPE_ENUM
+#define DECLARE_ANIMATABLE_PROPERTY(T, TYPE_ENUM) DECLARE_PROPERTY(T, TYPE_ENUM)
 #endif
 
 #include "modifier/rs_property_def.in"

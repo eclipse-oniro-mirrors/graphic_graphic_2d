@@ -16,12 +16,11 @@
 #include "modifier_ng/appearance/rs_alpha_modifier.h"
 
 namespace OHOS::Rosen::ModifierNG {
-// =============================================
-// RSAlphaModifier
 void RSAlphaModifier::SetAlpha(float alpha)
 {
     Setter(RSPropertyType::ALPHA, alpha);
 }
+
 float RSAlphaModifier::GetAlpha() const
 {
     return Getter(RSPropertyType::ALPHA, 1.f);
@@ -31,6 +30,7 @@ void RSAlphaModifier::SetAlphaOffscreen(bool alphaOffscreen)
 {
     Setter<RSProperty>(RSPropertyType::ALPHA_OFFSCREEN, alphaOffscreen);
 }
+
 bool RSAlphaModifier::GetAlphaOffscreen() const
 {
     return Getter(RSPropertyType::ALPHA_OFFSCREEN, false);

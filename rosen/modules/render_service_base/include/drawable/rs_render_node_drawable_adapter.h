@@ -28,7 +28,6 @@
 #include "common/rs_rect.h"
 #include "drawable/rs_property_drawable.h"
 #include "pipeline/rs_paint_filter_canvas.h"
-#include "modifier_ng/background/rs_useeffect_render_modifier.h"
 #include "recording/recording_canvas.h"
 #include "utils/rect.h"
 

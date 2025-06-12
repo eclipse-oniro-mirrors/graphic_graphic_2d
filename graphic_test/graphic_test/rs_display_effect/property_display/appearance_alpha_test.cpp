@@ -405,11 +405,19 @@ GRAPHIC_TEST(AppearanceTest, CONTENT_DISPLAY_TEST, Appearance_Alpha_Test_2)
         auto testNodeImg = RSCanvasNode::Create();
         testNodeImg->SetBounds({ x, y, nodeWidth, nodeHeight });
         testNodeImg->SetAlpha(alphaList[i]);
-        auto imageModifier = std::make_shared<ImageCustomModifier>();
-        imageModifier->SetWidth(nodeWidth);
-        imageModifier->SetHeight(nodeHeight);
-        imageModifier->SetPixelMapPath(imgPath);
-        testNodeImg->AddModifier(imageModifier);
+#ifdef MODIFIER_NG
+            auto imageModifier = std::make_shared<ImageCustomModifierNG>();
+            imageModifier->SetWidth(nodeWidth);
+            imageModifier->SetHeight(nodeHeight);
+            imageModifier->SetPixelMapPath(imgPath);
+            testNodeImg->AddModifier(imageModifier);
+#else
+            auto imageModifier = std::make_shared<ImageCustomModifier>();
+            imageModifier->SetWidth(nodeWidth);
+            imageModifier->SetHeight(nodeHeight);
+            imageModifier->SetPixelMapPath(imgPath);
+            testNodeImg->AddModifier(imageModifier);
+#endif
         GetRootNode()->AddChild(testNodeImg);
         RegisterNode(testNodeImg);
     }
@@ -425,10 +433,17 @@ GRAPHIC_TEST(AppearanceTest, CONTENT_DISPLAY_TEST, Appearance_Alpha_Test_2)
         testNodeImg->SetBounds({ x, y, nodeWidth, nodeHeight });
         testNodeImg->SetTranslate(0, translateY, 0);
         testNodeImg->SetAlpha(alphaList[i]);
-        auto textModifier = std::make_shared<TextCustomModifier>();
-        textModifier->SetFontSize(fontSize);
-        textModifier->SetText(testText);
-        testNodeImg->AddModifier(textModifier);
+#ifdef MODIFIER_NG
+            auto textModifier = std::make_shared<TextCustomModifierNG>();
+            textModifier->SetFontSize(fontSize);
+            textModifier->SetText(testText);
+            testNodeImg->AddModifier(textModifier);
+#else
+            auto textModifier = std::make_shared<TextCustomModifier>();
+            textModifier->SetFontSize(fontSize);
+            textModifier->SetText(testText);
+            testNodeImg->AddModifier(textModifier);
+#endif
         GetRootNode()->AddChild(testNodeImg);
         RegisterNode(testNodeImg);
     }

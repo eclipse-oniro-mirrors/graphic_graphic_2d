@@ -148,5 +148,61 @@ void ImageCustomModifier::Draw(RSDrawingContext& context) const
     image->CanvasDrawImage(*context.canvas, Drawing::Rect(0, 0, width, height), Drawing::SamplingOptions());
     return;
 }
+
+void ImageCustomModifierNG::SetWidth(int32_t width)
+{
+    if (width_ == nullptr) {
+        width_ = std::make_shared<RSProperty<int32_t>>(width);
+        AttachProperty(width_);
+    } else {
+        width_->Set(width);
+    }
+}
+
+void ImageCustomModifierNG::SetHeight(int32_t height)
+{
+    if (height_ == nullptr) {
+        height_ = std::make_shared<RSProperty<int32_t>>(height);
+        AttachProperty(height_);
+    } else {
+        height_->Set(height);
+    }
+}
+
+void ImageCustomModifierNG::SetPixelMapPath(std::string pathName)
+{
+    if (pathName_ == nullptr) {
+        pathName_ = std::make_shared<RSProperty<std::string>>(pathName);
+        AttachProperty(pathName_);
+    } else {
+        pathName_->Set(pathName);
+    }
+}
+
+void ImageCustomModifierNG::Draw(ModifierNG::RSDrawingContext& context) const
+{
+    if (!width_ || !height_ || !pathName_) {
+        std::cout << "Has nullptr, Draw none\n";
+        Drawing::Rect rect;
+        Drawing::Brush brush;
+        context.canvas->AttachBrush(brush);
+        context.canvas->DrawRect(rect);
+        context.canvas->DetachBrush();
+        return;
+    }
+    int32_t width = width_->Get();
+    int32_t height = height_->Get();
+    std::string pathName = pathName_->Get();
+    auto pixelmap_ = DecodePixelMap(pathName, Media::AllocatorType::SHARE_MEM_ALLOC);
+    if (pixelmap_ == nullptr) {
+        std::cout << "***Test*** : pixelmap_ == nullptr\n";
+        return;
+    }
+    auto image = std::make_shared<Rosen::RSImage>();
+    image->SetPixelMap(pixelmap_);
+    image->SetImageFit((int)ImageFit::FILL);
+    image->CanvasDrawImage(*context.canvas, Drawing::Rect(0, 0, width, height), Drawing::SamplingOptions());
+    return;
+}
 } // namespace Rosen
 } // namespace OHOS

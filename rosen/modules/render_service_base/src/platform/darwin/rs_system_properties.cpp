@@ -746,5 +746,6 @@ int RSSystemProperties::GetSubThreadDropFrameInterval()
 {
     return 0;
 }
+
 } // namespace Rosen
 } // namespace OHOS

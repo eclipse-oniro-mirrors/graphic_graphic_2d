@@ -21,6 +21,8 @@
 
 #include "modifier_ng/rs_render_modifier_ng.h"
 #include "pipeline/rs_render_node.h"
+#include "platform/common/rs_log.h"
+#include "render/rs_render_filter.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -46,10 +48,8 @@ void RSRenderPropertyBase::Detach(std::weak_ptr<RSRenderNode> node)
 void RSRenderPropertyBase::OnChange() const
 {
     if (auto modifier = modifier_.lock()) {
-        // modifier NG set dirty
         modifier->SetDirty();
     } else if (auto node = node_.lock()) {
-        // legacy modifier set dirty
         node->SetDirty();
         node->AddDirtyType(modifierType_);
         if (modifierType_ < RSModifierType::BOUNDS || modifierType_ > RSModifierType::TRANSLATE_Z ||
@@ -86,22 +86,49 @@ void RSRenderPropertyBase::UpdatePropertyUnit(RSModifierType type)
     }
 }
 
+void RSRenderPropertyBase::UpdatePropertyUnitNG(ModifierNG::RSPropertyType propertyType)
+{
+    switch (propertyType) {
+        case ModifierNG::RSPropertyType::FRAME:
+        case ModifierNG::RSPropertyType::TRANSLATE:
+            SetPropertyUnit(RSPropertyUnit::PIXEL_POSITION);
+            break;
+        case ModifierNG::RSPropertyType::SCALE:
+            SetPropertyUnit(RSPropertyUnit::RATIO_SCALE);
+            break;
+        case ModifierNG::RSPropertyType::ROTATION_X:
+        case ModifierNG::RSPropertyType::ROTATION_Y:
+        case ModifierNG::RSPropertyType::ROTATION:
+            SetPropertyUnit(RSPropertyUnit::ANGLE_ROTATION);
+            break;
+        default:
+            SetPropertyUnit(RSPropertyUnit::UNKNOWN);
+            break;
+    }
+}
+
 bool RSRenderPropertyBase::Unmarshalling(Parcel& parcel, std::shared_ptr<RSRenderPropertyBase>& val)
 {
-    bool isAnimatable = false;
-    if (!RSMarshallingHelper::Unmarshalling(parcel, isAnimatable)) {
-        return false;
-    }
+    val.reset();
     RSPropertyType type = RSPropertyType::INVALID;
     if (!RSMarshallingHelper::Unmarshalling(parcel, type)) {
+        ROSEN_LOGE("RSRenderPropertyBase::Unmarshalling: unmarshalling type failed");
         return false;
     }
+    // If the type is RSPropertyType::INVALID, the property will be unmarshalled as a null pointer.
     if (type == RSPropertyType::INVALID) {
+        return true;
+    }
+    bool isAnimatable = false;
+    if (!RSMarshallingHelper::Unmarshalling(parcel, isAnimatable)) {
+        ROSEN_LOGE("RSRenderPropertyBase::Unmarshalling: unmarshalling isAnimatable failed");
         return false;
     }
     uint16_t key = static_cast<uint16_t>(isAnimatable) << 8 | static_cast<uint16_t>(type);
     auto it = UnmarshallingFuncs_.find(key);
     if (it == UnmarshallingFuncs_.end()) {
+        ROSEN_LOGE("RSRenderPropertyBase::Unmarshalling: no unmarshalling function for type %d, isAnimatable %d",
+            static_cast<int>(type), isAnimatable);
         return false;
     }
     return (it->second)(parcel, val);
@@ -234,12 +261,12 @@ bool RSRenderProperty<T>::OnUnmarshalling(Parcel& parcel, std::shared_ptr<RSRend
 {
     auto ret = new RSRenderProperty<T>();
     if (ret == nullptr) {
-        ROSEN_LOGE("%s Creating property failed", __PRETTY_FUNCTION__);
+        ROSEN_LOGE("%{public}s Creating property failed", __PRETTY_FUNCTION__);
         return false;
     }
     if (!RSMarshallingHelper::Unmarshalling(parcel, ret->id_) ||
         !RSMarshallingHelper::Unmarshalling(parcel, ret->stagingValue_)) {
-        ROSEN_LOGE("%s Unmarshalling failed", __PRETTY_FUNCTION__);
+        ROSEN_LOGE("%{public}s Unmarshalling failed", __PRETTY_FUNCTION__);
         delete ret;
         return false;
     }
@@ -252,13 +279,13 @@ bool RSRenderAnimatableProperty<T>::OnUnmarshalling(Parcel& parcel, std::shared_
 {
     auto ret = new RSRenderAnimatableProperty<T>();
     if (ret == nullptr) {
-        ROSEN_LOGE("%s Creating property failed", __PRETTY_FUNCTION__);
+        ROSEN_LOGE("%{public}s Creating property failed", __PRETTY_FUNCTION__);
         return false;
     }
     if (!RSMarshallingHelper::Unmarshalling(parcel, ret->id_) ||
         !RSMarshallingHelper::Unmarshalling(parcel, ret->stagingValue_) ||
         !RSMarshallingHelper::Unmarshalling(parcel, ret->unit_)) {
-        ROSEN_LOGE("%s Unmarshalling failed", __PRETTY_FUNCTION__);
+        ROSEN_LOGE("%{public}s Unmarshalling failed", __PRETTY_FUNCTION__);
         delete ret;
         return false;
     }
@@ -370,10 +397,6 @@ void RSRenderProperty<Vector3f>::Dump(std::string& out) const
     ss << std::fixed << std::setprecision(1) << "[x:" << v3f.x_ << " y:" << v3f.y_ << " z:" << v3f.z_ << "]";
     out += ss.str();
 }
-
-template<>
-void RSRenderProperty<Matrix3f>::Dump(std::string& out) const
-{}
 
 template<>
 void RSRenderProperty<Color>::Dump(std::string& out) const
@@ -544,7 +567,7 @@ void RSRenderProperty<std::shared_ptr<RSImage>>::Dump(std::string& out) const
         return;
     }
     std::string info;
-    Get()->dump(info, 0);
+    Get()->Dump(info, 0);
     info.erase(std::remove_if(info.begin(), info.end(), [](auto c) { return c == '\t' || c == '\n'; }), info.end());
     out += "[\"" + info + "\"]";
 }
@@ -582,7 +605,7 @@ void RSRenderProperty<Drawing::Matrix>::Dump(std::string& out) const
     out += "[";
     Drawing::Matrix::Buffer buffer;
     Get().GetAll(buffer);
-    for (auto v : buffer) {
+    for (const auto& v : buffer) {
         out += std::to_string(v) + " ";
     }
     out.pop_back();
@@ -704,35 +727,15 @@ bool RSRenderAnimatableProperty<RRect>::IsNearEqual(
     return true;
 }
 
-template class RSRenderProperty<bool>;
-template class RSRenderProperty<int>;
-template class RSRenderProperty<Vector4<uint32_t>>;
-template class RSRenderProperty<Drawing::DrawCmdListPtr>;
-template class RSRenderProperty<ForegroundColorStrategyType>;
-template class RSRenderProperty<SkMatrix>;
-template class RSRenderProperty<std::shared_ptr<RSShader>>;
-template class RSRenderProperty<std::shared_ptr<RSImage>>;
-template class RSRenderProperty<std::shared_ptr<RSPath>>;
-template class RSRenderProperty<Gravity>;
-template class RSRenderProperty<Drawing::Matrix>;
-template class RSRenderProperty<std::shared_ptr<RSLinearGradientBlurPara>>;
-template class RSRenderProperty<std::shared_ptr<MotionBlurParam>>;
-template class RSRenderProperty<std::shared_ptr<RSMagnifierParams>>;
-template class RSRenderProperty<std::vector<std::shared_ptr<EmitterUpdater>>>;
-template class RSRenderProperty<std::shared_ptr<ParticleNoiseFields>>;
-template class RSRenderProperty<std::shared_ptr<RSMask>>;
-template class RSRenderProperty<RSWaterRipplePara>;
-template class RSRenderProperty<RSFlyOutPara>;
-template class RSRenderProperty<RSRenderParticleVector>;
+#define DECLARE_PROPERTY(T, TYPE_ENUM) template class RSRenderProperty<T>
+#define DECLARE_ANIMATABLE_PROPERTY(T, TYPE_ENUM) \
+    template class RSRenderAnimatableProperty<T>; \
+    template class RSRenderProperty<T>
 
-template class RSRenderAnimatableProperty<float>;
-template class RSRenderAnimatableProperty<Quaternion>;
-template class RSRenderAnimatableProperty<Vector2f>;
-template class RSRenderAnimatableProperty<Vector3f>;
-template class RSRenderAnimatableProperty<Vector4f>;
-template class RSRenderAnimatableProperty<Matrix3f>;
-template class RSRenderAnimatableProperty<Color>;
-template class RSRenderAnimatableProperty<Vector4<Color>>;
-template class RSRenderAnimatableProperty<RRect>;
+#include "modifier/rs_property_def.in"
+
+#undef DECLARE_PROPERTY
+#undef DECLARE_ANIMATABLE_PROPERTY
+
 } // namespace Rosen
 } // namespace OHOS

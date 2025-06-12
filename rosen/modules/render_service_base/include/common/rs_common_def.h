@@ -35,6 +35,7 @@ class Surface;
 
 namespace Rosen {
 using AnimationId = uint64_t;
+using NodeType = uint8_t;
 using FrameRateLinkerId = uint64_t;
 using InteractiveImplictAnimatorId = uint64_t;
 using LeashPersistentId = uint64_t;

@@ -5288,5 +5288,16 @@ void RSProperties::SetHaveEffectRegion(bool haveEffectRegion)
 #endif
     haveEffectRegion_ = haveEffectRegion;
 }
+
+void RSProperties::ResetBorder(bool isOutline)
+{
+    if (isOutline) {
+        outline_ = nullptr;
+    } else {
+        border_ = nullptr;
+    }
+    SetDirty();
+    contentDirty_ = true;
+}
 } // namespace Rosen
 } // namespace OHOS

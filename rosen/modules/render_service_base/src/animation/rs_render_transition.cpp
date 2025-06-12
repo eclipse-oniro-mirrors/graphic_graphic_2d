@@ -17,6 +17,7 @@
 
 #include "pipeline/rs_render_node.h"
 #include "platform/common/rs_log.h"
+#include "platform/common/rs_system_properties.h"
 #include "transaction/rs_marshalling_helper.h"
 
 namespace OHOS {
@@ -50,14 +51,25 @@ void RSRenderTransition::OnAttach()
         return;
     }
     // create "transition" modifier and add it to target
-    for (auto& effect : effects_) {
-        const auto& modifier = effect->GetModifier();
-        if (modifier == nullptr) {
-            // custom effect may not have modifier
-            continue;
+    #ifdef MODIFIER_NG
+        for (auto& effect : effects_) {
+            const auto& modifier = effect->GetModifierNG();
+            if (modifier == nullptr) {
+                // custom effect may not have modifier
+                continue;
+            }
+            target->AddModifier(modifier);
         }
-        target->AddModifier(modifier);
-    }
+    #else
+        for (auto& effect : effects_) {
+            const auto& modifier = effect->GetModifier();
+            if (modifier == nullptr) {
+                // custom effect may not have modifier
+                continue;
+            }
+            target->AddModifier(modifier);
+        }
+    #endif
     // update number of disappearing transition animation
     if (!isTransitionIn_) {
         target->disappearingTransitionCount_++;
@@ -74,9 +86,15 @@ void RSRenderTransition::OnDetach()
         return;
     }
     // remove "transition" modifier from target
-    for (auto& effect : effects_) {
-        target->RemoveModifier(effect->GetModifier()->GetPropertyId());
-    }
+    #ifdef MODIFIER_NG
+        for (auto& effect : effects_) {
+            target->RemoveModifierNG(effect->GetModifierNG()->GetId());
+        }
+    #else
+        for (auto& effect : effects_) {
+            target->RemoveModifier(effect->GetModifier()->GetPropertyId());
+        }
+    #endif
     // update number of disappearing transition animation
     if (!isTransitionIn_) {
         target->disappearingTransitionCount_--;

@@ -22,6 +22,7 @@
 
 #include "modifier/rs_extended_modifier.h"
 #include "modifier/rs_modifier.h"
+#include "modifier_ng/custom/rs_content_style_modifier.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -37,6 +38,21 @@ public:
     ~ImageCustomModifier() = default;
 
     void Draw(OHOS::Rosen::RSDrawingContext& context) const;
+    void SetWidth(int32_t width);
+    void SetHeight(int32_t height);
+    void SetPixelMapPath(std::string pathName);
+
+private:
+    std::shared_ptr<OHOS::Rosen::RSProperty<int32_t>> width_;
+    std::shared_ptr<OHOS::Rosen::RSProperty<int32_t>> height_;
+    std::shared_ptr<OHOS::Rosen::RSProperty<std::string>> pathName_;
+};
+
+class ImageCustomModifierNG : public ModifierNG::RSContentStyleModifier {
+public:
+    ~ImageCustomModifierNG() = default;
+
+    void Draw(ModifierNG::RSDrawingContext& context) const;
     void SetWidth(int32_t width);
     void SetHeight(int32_t height);
     void SetPixelMapPath(std::string pathName);

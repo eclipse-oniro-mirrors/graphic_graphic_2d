@@ -20,6 +20,7 @@ void RSVisibilityModifier::SetVisible(bool visible)
 {
     Setter<RSProperty>(RSPropertyType::VISIBLE, visible);
 }
+
 bool RSVisibilityModifier::GetVisible() const
 {
     return Getter(RSPropertyType::VISIBLE, true);

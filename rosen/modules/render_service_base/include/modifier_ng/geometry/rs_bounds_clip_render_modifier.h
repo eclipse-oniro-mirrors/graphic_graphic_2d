@@ -24,18 +24,13 @@ public:
     RSBoundsClipRenderModifier() = default;
     ~RSBoundsClipRenderModifier() override = default;
 
-    void SetClipBounds(const std::shared_ptr<RSPath>& clipToBounds);
-    RectF GetBoundsRect(RSModifierContext& context) const;
-
-    static inline constexpr auto Type = ModifierNG::RSModifierType::CLIP_TO_BOUNDS;
-    ModifierNG::RSModifierType GetType() const override
+    static inline constexpr auto Type = RSModifierType::CLIP_TO_BOUNDS;
+    RSModifierType GetType() const override
     {
         return Type;
     };
 
-    void ResetProperties(RSProperties& properties) override;
-
-protected:
+    static void ResetProperties(RSProperties& properties);
 
 private:
     static const LegacyPropertyApplierMap LegacyPropertyApplierMap_;
@@ -43,12 +38,6 @@ private:
     {
         return LegacyPropertyApplierMap_;
     }
-
-    bool OnApply(RSModifierContext& context) override;
-
-    bool GetClipToRRect();
-
-    std::shared_ptr<RRect> clipRRect_;
 };
 } // namespace OHOS::Rosen::ModifierNG
 #endif // RENDER_SERVICE_BASE_MODIFIER_NG_GEOMETRY_RS_BOUNDS_CLIP_RENDER_MODIFIER_H

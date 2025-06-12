@@ -21,6 +21,8 @@
 #include "modifier/rs_extended_modifier.h"
 #include "modifier/rs_modifier.h"
 
+#include "modifier_ng/custom/rs_content_style_modifier.h"
+
 namespace OHOS {
 namespace Rosen {
 class TextCustomModifier : public OHOS::Rosen::RSContentStyleModifier {
@@ -40,6 +42,22 @@ private:
     std::shared_ptr<OHOS::Rosen::RSProperty<std::string>> text_;
 };
 
+class TextCustomModifierNG : public ModifierNG::RSContentStyleModifier {
+public:
+    ~TextCustomModifierNG() = default;
+
+    void Draw(ModifierNG::RSDrawingContext& context) const;
+    void SetPosition(OHOS::Rosen::Vector2f position);
+    void SetBrushColor(uint32_t color);
+    void SetFontSize(float size);
+    void SetText(std::string text);
+
+private:
+    std::shared_ptr<OHOS::Rosen::RSProperty<OHOS::Rosen::Vector2f>> position_;
+    std::shared_ptr<OHOS::Rosen::RSProperty<uint32_t>> color_;
+    std::shared_ptr<OHOS::Rosen::RSProperty<float>> size_;
+    std::shared_ptr<OHOS::Rosen::RSProperty<std::string>> text_;
+};
 } // namespace Rosen
 } // namespace OHOS
 #endif

@@ -45,11 +45,19 @@ GRAPHIC_TEST(AppearanceTest, CONTENT_DISPLAY_TEST, Appearance_Spherize_Test_1)
         int y = (i / TWO_) * FIVE_HUNDRED_TEN_;
         auto testNodeSpherize = RSCanvasNode::Create();
         testNodeSpherize->SetBounds({ x, y, FIVE_HUNDRED_, FIVE_HUNDRED_ });
-        auto imageModifier = std::make_shared<ImageCustomModifier>();
-        imageModifier->SetWidth(FIVE_HUNDRED_);
-        imageModifier->SetHeight(FIVE_HUNDRED_);
-        imageModifier->SetPixelMapPath("/data/local/tmp/appearance_test.jpg");
-        testNodeSpherize->AddModifier(imageModifier);
+        #ifdef MODIFIER_NG
+            auto imageModifier = std::make_shared<ImageCustomModifierNG>();
+            imageModifier->SetWidth(FIVE_HUNDRED_);
+            imageModifier->SetHeight(FIVE_HUNDRED_);
+            imageModifier->SetPixelMapPath("/data/local/tmp/appearance_test.jpg");
+            testNodeSpherize->AddModifier(imageModifier);
+        #else
+            auto imageModifier = std::make_shared<ImageCustomModifier>();
+            imageModifier->SetWidth(FIVE_HUNDRED_);
+            imageModifier->SetHeight(FIVE_HUNDRED_);
+            imageModifier->SetPixelMapPath("/data/local/tmp/appearance_test.jpg");
+            testNodeSpherize->AddModifier(imageModifier);
+        #endif
         testNodeSpherize->SetSpherizeDegree(spherizeList[i]);
         GetRootNode()->AddChild(testNodeSpherize);
         RegisterNode(testNodeSpherize);
@@ -61,11 +69,19 @@ GRAPHIC_TEST(AppearanceTest, CONTENT_DISPLAY_TEST, Appearance_Spherize_Test_2)
 {
     auto testNodeSpherizeBlur = RSCanvasNode::Create();
     testNodeSpherizeBlur->SetBounds({ 0, 0, FIVE_HUNDRED_, FIVE_HUNDRED_ });
-    auto imageModifier2 = std::make_shared<ImageCustomModifier>();
-    imageModifier2->SetWidth(FIVE_HUNDRED_);
-    imageModifier2->SetHeight(FIVE_HUNDRED_);
-    imageModifier2->SetPixelMapPath("/data/local/tmp/appearance_test.jpg");
-    testNodeSpherizeBlur->AddModifier(imageModifier2);
+    #ifdef MODIFIER_NG
+        auto imageModifier2 = std::make_shared<ImageCustomModifierNG>();
+        imageModifier2->SetWidth(FIVE_HUNDRED_);
+        imageModifier2->SetHeight(FIVE_HUNDRED_);
+        imageModifier2->SetPixelMapPath("/data/local/tmp/appearance_test.jpg");
+        testNodeSpherizeBlur->AddModifier(imageModifier2);
+    #else
+        auto imageModifier2 = std::make_shared<ImageCustomModifier>();
+        imageModifier2->SetWidth(FIVE_HUNDRED_);
+        imageModifier2->SetHeight(FIVE_HUNDRED_);
+        imageModifier2->SetPixelMapPath("/data/local/tmp/appearance_test.jpg");
+        testNodeSpherizeBlur->AddModifier(imageModifier2);
+    #endif
     testNodeSpherizeBlur->SetForegroundEffectRadius(TEN_);
     testNodeSpherizeBlur->SetSpherizeDegree(1);
     GetRootNode()->AddChild(testNodeSpherizeBlur);

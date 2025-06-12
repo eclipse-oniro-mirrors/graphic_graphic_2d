@@ -32,7 +32,7 @@ void RSModifier::AttachProperty(const std::shared_ptr<RSPropertyBase>& property)
     }
 }
 
-void RSModifier::SetDirty(bool isDirty)
+void RSModifier::SetDirty(const bool isDirty, const std::shared_ptr<RSModifierManager>& modifierManager)
 {
     if (!isDirty) {
         isDirty_ = isDirty;

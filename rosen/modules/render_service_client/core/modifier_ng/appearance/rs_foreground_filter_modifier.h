@@ -24,27 +24,34 @@ public:
     RSForegroundFilterModifier() = default;
     ~RSForegroundFilterModifier() override = default;
 
-    static inline constexpr auto Type = ModifierNG::RSModifierType::FOREGROUND_FILTER;
-    ModifierNG::RSModifierType GetType() const override
+    static inline constexpr auto Type = RSModifierType::FOREGROUND_FILTER;
+    RSModifierType GetType() const override
     {
         return Type;
     };
 
+    void MarkNodeDirty() override
+    {
+        if (auto node = node_.lock()) {
+            node->MarkDirty(NodeDirtyType::APPEARANCE, true);
+        }
+    }
+
     void SetSpherize(float spherize);
     void SetForegroundEffectRadius(float blurRadius);
     void SetMotionBlurParam(std::shared_ptr<MotionBlurParam> param);
-    void SetFlyOutParams(const RSFlyOutPara& params);
+    void SetFlyOutParams(const std::optional<RSFlyOutPara>& params);
     void SetFlyOutDegree(float degree);
-    void SetDistortionK(float distortionK);
+    void SetDistortionK(const std::optional<float> distortionK);
     void SetAttractionFraction(float fraction);
     void SetAttractionDstPoint(const Vector2f& dstPoint);
 
     float GetSpherize() const;
     float GetForegroundEffectRadius() const;
     std::shared_ptr<MotionBlurParam> GetMotionBlurParam() const;
-    RSFlyOutPara GetFlyOutParams() const;
+    std::optional<RSFlyOutPara> GetFlyOutParams() const;
     float GetFlyOutDegree() const;
-    float GetDistortionK() const;
+    std::optional<float> GetDistortionK() const;
     float GetAttractionFraction() const;
     Vector2f GetAttractionDstPoint() const;
 };

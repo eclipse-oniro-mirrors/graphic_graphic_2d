@@ -24,18 +24,23 @@ public:
     RSFrameClipRenderModifier() = default;
     ~RSFrameClipRenderModifier() override = default;
 
-    static inline constexpr auto Type = ModifierNG::RSModifierType::CLIP_TO_FRAME;
-    ModifierNG::RSModifierType GetType() const override
+    static inline constexpr auto Type = RSModifierType::CLIP_TO_FRAME;
+    RSModifierType GetType() const override
     {
         return Type;
     };
 
-    void Draw(RSPaintFilterCanvas& canvas, Drawing::Rect& rect) override;
+    static void ResetProperties(RSProperties& properties);
 
-    void ResetProperties(RSProperties& properties) override;
-
-protected:
-    void OnSync() override;
+    void Apply(RSPaintFilterCanvas* canvas, RSProperties& properties) override
+    {
+        if (HasProperty(RSPropertyType::CUSTOM_CLIP_TO_FRAME) && canvas) {
+            auto customClipToFrame = Getter<Vector4f>(RSPropertyType::CUSTOM_CLIP_TO_FRAME);
+            auto customClipRect =
+                Drawing::Rect(customClipToFrame.x_, customClipToFrame.y_, customClipToFrame.z_, customClipToFrame.w_);
+            canvas->ClipRect(customClipRect);
+        }
+    }
 
 private:
     static const LegacyPropertyApplierMap LegacyPropertyApplierMap_;
@@ -44,14 +49,7 @@ private:
         return LegacyPropertyApplierMap_;
     }
 
-    bool isFrameClipValid();
-    bool OnApply(RSModifierContext& context) override;
-
-    Drawing::Rect stagingClipRect_;
-    Drawing::Rect renderClipRect_;
-    bool clipToFrame = false;
-
-    Vector4f renderCustomClipToFrame;
+    void OnSetDirty() override;
 };
 } // namespace OHOS::Rosen::ModifierNG
 #endif // RENDER_SERVICE_BASE_MODIFIER_NG_GEOMETRY_RS_FRAME_CLIP_RENDER_MODIFIER_H

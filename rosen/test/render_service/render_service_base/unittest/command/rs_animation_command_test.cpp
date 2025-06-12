@@ -30,7 +30,7 @@ public:
 protected:
     static inline NodeId nodeId_;
     static inline AnimationId animationId_;
-    static inline uint64_t token_;
+    static inline Token token_;
 };
 
 void RSAnimationCommandTest::SetUpTestCase() {}
@@ -55,7 +55,7 @@ HWTEST_F(RSAnimationCommandTest, TestRSAnimationCommand001, TestSize.Level1)
     RSContext context;
     NodeId targetId = static_cast<NodeId>(-1);
     AnimationId animId = static_cast<AnimationId>(1);
-    uint64_t token = 1;
+    Token token = 1;
     AnimationCallbackEvent event = static_cast<AnimationCallbackEvent>(1);
     AnimationCommandHelper::SetAnimationCallbackProcessor(TestProcessor);
     AnimationCommandHelper::AnimationCallback(context, targetId, animId, token, event);
@@ -100,12 +100,12 @@ HWTEST_F(RSAnimationCommandTest, CreateParticleAnimation001, TestSize.Level1)
 HWTEST_F(RSAnimationCommandTest, AnimationCallback001, TestSize.Level1)
 {
     AnimationCommandHelper::AnimationCallbackProcessor processor = [](
-        NodeId nodeId, AnimationId animId, uint64_t token, AnimationCallbackEvent event) {};
+        NodeId nodeId, AnimationId animId, Token token, AnimationCallbackEvent event) {};
     AnimationCommandHelper::SetAnimationCallbackProcessor(processor);
     RSContext context;
     NodeId targetId = static_cast<NodeId>(-1);
     AnimationId animId = static_cast<AnimationId>(1);
-    uint64_t token = 1;
+    Token token = 1;
     AnimationCallbackEvent event = static_cast<AnimationCallbackEvent>(1);
     AnimationCommandHelper::AnimationCallback(context, targetId, animId, token, event);
     EXPECT_TRUE(targetId == -1);

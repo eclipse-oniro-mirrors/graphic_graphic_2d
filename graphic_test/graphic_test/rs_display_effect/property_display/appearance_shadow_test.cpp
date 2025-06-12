@@ -313,11 +313,21 @@ GRAPHIC_TEST(AppearanceTest, CONTENT_DISPLAY_TEST, Appearance_Shadow_Strategy_Te
         int y = (i / TWO_) * FIVE_HUNDRED_TEN_;
         auto testNodeParent = RSCanvasNode::Create();
         testNodeParent->SetBounds({ x, y, FIVE_HUNDRED_, FIVE_HUNDRED_ });
-        auto imageModifier = std::make_shared<ImageCustomModifier>();
-        imageModifier->SetWidth(FIVE_HUNDRED_);
-        imageModifier->SetHeight(FIVE_HUNDRED_);
-        imageModifier->SetPixelMapPath("/data/local/tmp/appearance_test.jpg");
-        testNodeParent->AddModifier(imageModifier);
+
+        #ifdef MODIFIER_NG
+            auto imageModifier = std::make_shared<ImageCustomModifierNG>();
+            imageModifier->SetWidth(FIVE_HUNDRED_);
+            imageModifier->SetHeight(FIVE_HUNDRED_);
+            imageModifier->SetPixelMapPath("/data/local/tmp/appearance_test.jpg");
+            testNodeParent->AddModifier(imageModifier);
+        #else
+            auto imageModifier = std::make_shared<ImageCustomModifier>();
+            imageModifier->SetWidth(FIVE_HUNDRED_);
+            imageModifier->SetHeight(FIVE_HUNDRED_);
+            imageModifier->SetPixelMapPath("/data/local/tmp/appearance_test.jpg");
+            testNodeParent->AddModifier(imageModifier);
+        #endif
+
         GetRootNode()->AddChild(testNodeParent);
         RegisterNode(testNodeParent);
 
@@ -357,11 +367,19 @@ GRAPHIC_TEST(AppearanceTest, CONTENT_DISPLAY_TEST, Appearance_Shadow_Filled_Test
         auto testNodeFilled = RSCanvasNode::Create();
         testNodeFilled->SetBounds({ x, y, nodeSize, nodeSize });
         testNodeFilled->SetTranslate(nodeOffset, nodeOffset, 0);
-        auto imageModifier = std::make_shared<ImageCustomModifier>();
-        imageModifier->SetWidth(nodeSize);
-        imageModifier->SetHeight(nodeSize);
-        imageModifier->SetPixelMapPath("/data/local/tmp/appearance_test.jpg");
-        testNodeFilled->AddModifier(imageModifier);
+        #ifdef MODIFIER_NG
+            auto imageModifier = std::make_shared<ImageCustomModifierNG>();
+            imageModifier->SetWidth(nodeSize);
+            imageModifier->SetHeight(nodeSize);
+            imageModifier->SetPixelMapPath("/data/local/tmp/appearance_test.jpg");
+            testNodeFilled->AddModifier(imageModifier);
+        #else
+            auto imageModifier = std::make_shared<ImageCustomModifier>();
+            imageModifier->SetWidth(nodeSize);
+            imageModifier->SetHeight(nodeSize);
+            imageModifier->SetPixelMapPath("/data/local/tmp/appearance_test.jpg");
+            testNodeFilled->AddModifier(imageModifier);
+        #endif
         testNodeFilled->SetAlpha(0.5);
         testNodeFilled->SetShadowColor(0xff00ff00);
         testNodeFilled->SetShadowOffset(FIFTY_, FIFTY_);

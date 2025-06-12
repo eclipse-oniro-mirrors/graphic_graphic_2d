@@ -56,7 +56,6 @@ public:
     void SetDynamicDimDegree(std::optional<float> dimDegree);
     std::optional<float> GetDynamicDimDegree() const;
 
-    std::shared_ptr<RSFilter> GetFilter() const;
     void SetLinearGradientBlurPara(const std::shared_ptr<RSLinearGradientBlurPara>& para);
     std::shared_ptr<RSLinearGradientBlurPara> GetLinearGradientBlurPara() const;
     void SetForegroundBlurRadius(float radius);

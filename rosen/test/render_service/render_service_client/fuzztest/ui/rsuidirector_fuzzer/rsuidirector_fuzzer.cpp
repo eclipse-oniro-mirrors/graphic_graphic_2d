@@ -307,7 +307,7 @@ void DoAnimationCallbackProcessor(const uint8_t* data, size_t size)
     std::shared_ptr<RSUIDirector> director = RSUIDirector::Create();
     NodeId nodeId = GetData<NodeId>();
     AnimationId animId = GetData<AnimationId>();
-    uint64_t token = GetData<uint64_t>();
+    Token token = GetData<uint64_t>();
     AnimationCallbackEvent event = GetData<AnimationCallbackEvent>();
     director->AnimationCallbackProcessor(nodeId, animId, token, event);
 }

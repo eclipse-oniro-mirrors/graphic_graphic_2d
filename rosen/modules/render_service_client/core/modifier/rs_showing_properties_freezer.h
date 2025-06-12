@@ -32,6 +32,7 @@
 #define RENDER_SERVICE_CLIENT_CORE_MODIFIER_RS_SHOWING_PROPERTIES_FREEZER_H
 
 #include "common/rs_common_def.h"
+#include "modifier_ng/rs_modifier_ng_type.h"
 #include "property/rs_properties.h"
 
 namespace OHOS {
@@ -261,6 +262,11 @@ public:
      */
     std::optional<Vector4f> GetBorderWidth() const;
 
+    /**
+     * @brief Gets the color of shadow.
+     *
+     * @return The color of shadow.
+     */
     std::optional<Color> GetShadowColor() const;
 
     /**
@@ -345,6 +351,8 @@ private:
     std::weak_ptr<RSUIContext> rsUIContext_;
     template<typename T, RSModifierType Type>
     std::optional<T> GetPropertyImpl() const;
+    template<typename T, ModifierNG::RSModifierType ModifierType, ModifierNG::RSPropertyType PropertyType>
+    std::optional<T> GetPropertyImplNG() const;
 };
 } // namespace Rosen
 } // namespace OHOS

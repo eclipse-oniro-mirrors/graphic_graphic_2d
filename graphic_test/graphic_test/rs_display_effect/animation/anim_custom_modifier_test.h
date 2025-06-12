@@ -18,6 +18,7 @@
 
 #include "modifier/rs_extended_modifier.h"
 #include "modifier/rs_modifier.h"
+#include "modifier_ng/custom/rs_content_style_modifier.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -35,6 +36,20 @@ private:
     float timeInterval_ = 1.0f;
     mutable std::vector<float> positionVec_ = {};
     Drawing::Color pointColor_ = Drawing::Color::COLOR_BLACK;
+};
+
+class AnimationCustomModifierNG : public ModifierNG::RSContentStyleModifier {
+public:
+    ~AnimationCustomModifierNG() = default;
+
+    void Draw(ModifierNG::RSDrawingContext& context) const;
+    void SetPosition(float position);
+    // Set the horizontal pixel unit of an animation graph
+    void SetTimeInterval(float timeInterval);
+private:
+    std::shared_ptr<OHOS::Rosen::RSAnimatableProperty<float>> position_;
+    float timeInterval_ = 1.0f;
+    mutable std::vector<float> positionVec_ = {};
 };
 } // namespace Rosen
 } // namespace OHOS

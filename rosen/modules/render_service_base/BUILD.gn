@@ -16,6 +16,7 @@ import("//foundation/graphic/graphic_2d/graphic_config.gni")
 import("//foundation/graphic/graphic_2d/rosen/modules/platform/config.gni")
 import(
     "//foundation/graphic/graphic_2d/rosen/modules/render_service_base/config.gni")
+import("//foundation/graphic/graphic_2d/rosen/modules/render_service_base/modifierng.gni")
 
 enable_compiler_rust = !ohos_indep_compiler_enable &&
                        ((!is_mingw && !is_mac && !is_cross_platform &&
@@ -79,6 +80,10 @@ ohos_source_set("render_service_base_src") {
   defines += gpu_defines
   defines += [ "MODULE_RSB" ]
 
+  if(graphic_2d_modifier_ng_enabled) {
+    defines += [ "MODIFIER_NG" ]
+  }
+
   sources = [
     #animation
     "src/animation/rs_animation_fraction.cpp",
@@ -120,33 +125,33 @@ ohos_source_set("render_service_base_src") {
 
     # modifier_ng
     "src/modifier_ng/appearance/rs_alpha_render_modifier.cpp",
+    "src/modifier_ng/appearance/rs_background_filter_render_modifier.cpp",
+    "src/modifier_ng/appearance/rs_behind_window_filter_render_modifier.cpp",
     "src/modifier_ng/appearance/rs_blend_render_modifier.cpp",
-    "src/modifier_ng/appearance/rs_env_foreground_color_render_modifier.cpp",
+    "src/modifier_ng/appearance/rs_border_render_modifier.cpp",
+    "src/modifier_ng/appearance/rs_compositing_filter_render_modifier.cpp",
+    "src/modifier_ng/appearance/rs_dynamic_light_up_render_modifier.cpp",
     "src/modifier_ng/appearance/rs_foreground_filter_render_modifier.cpp",
+    "src/modifier_ng/appearance/rs_hdr_brightness_render_modifier.cpp",
+    "src/modifier_ng/appearance/rs_mask_render_modifier.cpp",
+    "src/modifier_ng/appearance/rs_outline_render_modifier.cpp",
+    "src/modifier_ng/appearance/rs_particle_effect_render_modifier.cpp",
+    "src/modifier_ng/appearance/rs_pixel_stretch_render_modifier.cpp",
+    "src/modifier_ng/appearance/rs_point_light_render_modifier.cpp",
+    "src/modifier_ng/appearance/rs_shadow_render_modifier.cpp",
+    "src/modifier_ng/appearance/rs_use_effect_render_modifier.cpp",
     "src/modifier_ng/appearance/rs_visibility_render_modifier.cpp",
     "src/modifier_ng/background/rs_background_color_render_modifier.cpp",
     "src/modifier_ng/background/rs_background_image_render_modifier.cpp",
     "src/modifier_ng/background/rs_background_shader_render_modifier.cpp",
-    "src/modifier_ng/background/rs_dynamic_light_up_render_modifier.cpp",
-    "src/modifier_ng/background/rs_mask_render_modifier.cpp",
-    "src/modifier_ng/background/rs_outline_render_modifier.cpp",
-    "src/modifier_ng/background/rs_shadow_render_modifier.cpp",
-    "src/modifier_ng/background/rs_useeffect_render_modifier.cpp",
+    "src/modifier_ng/foreground/rs_env_foreground_color_render_modifier.cpp",
     "src/modifier_ng/foreground/rs_foreground_color_render_modifier.cpp",
-    "src/modifier_ng/geometry/rs_frame_clip_render_modifier.cpp",
-    "src/modifier_ng/geometry/rs_frame_render_modifier.cpp",
     "src/modifier_ng/geometry/rs_bounds_clip_render_modifier.cpp",
     "src/modifier_ng/geometry/rs_bounds_render_modifier.cpp",
-    "src/modifier_ng/overlay/rs_border_render_modifier.cpp",
-    "src/modifier_ng/overlay/rs_point_light_render_modifier.cpp",
-    "src/modifier_ng/rs_appearance_render_modifier.cpp",
-    "src/modifier_ng/rs_background_render_modifier.cpp",
-    "src/modifier_ng/rs_content_render_modifier.cpp",
-    "src/modifier_ng/rs_foreground_render_modifier.cpp",
-    "src/modifier_ng/rs_overlay_render_modifier.cpp",
+    "src/modifier_ng/geometry/rs_frame_clip_render_modifier.cpp",
+    "src/modifier_ng/geometry/rs_frame_render_modifier.cpp",
+    "src/modifier_ng/geometry/rs_transform_render_modifier.cpp",
     "src/modifier_ng/rs_render_modifier_ng.cpp",
-    "src/modifier_ng/rs_render_modifier_utils.cpp",
-    "src/modifier_ng/rs_transition_render_modifier.cpp",
 
     #command
     "src/command/rs_animation_command.cpp",

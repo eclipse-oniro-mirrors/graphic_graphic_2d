@@ -20,15 +20,12 @@
 namespace OHOS::Rosen::ModifierNG {
 const RSHDRBrightnessRenderModifier::LegacyPropertyApplierMap
     RSHDRBrightnessRenderModifier::LegacyPropertyApplierMap_ = {
-        { RSPropertyType::HDR_UI_BRIGHTNESS,
-            RSRenderModifier::PropertyApplyHelper<float, &RSProperties::SetHDRUIBrightness> },
         { RSPropertyType::HDR_BRIGHTNESS_FACTOR,
             RSRenderModifier::PropertyApplyHelper<float, &RSProperties::SetHDRBrightnessFactor> },
     };
 
 void RSHDRBrightnessRenderModifier::ResetProperties(RSProperties& properties)
 {
-    properties.SetHDRUIBrightness(1.0f);
     properties.SetHDRBrightnessFactor(1.0f);
 }
 

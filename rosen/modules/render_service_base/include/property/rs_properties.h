@@ -621,6 +621,8 @@ public:
 
     void OnApplyModifiers();
 
+    void ResetBorder(bool isOutline);
+
     static void SetFilterCacheEnabledByCCM(bool isCCMFilterCacheEnable);
     static void SetBlurAdaptiveAdjustEnabledByCCM(bool isCCMBlurAdaptiveAdjustEnabled);
 

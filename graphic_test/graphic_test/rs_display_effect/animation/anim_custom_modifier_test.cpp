@@ -71,5 +71,52 @@ void AnimationCustomModifier::Draw(RSDrawingContext& context) const
     }
     context.canvas->DetachBrush();
 }
+
+void AnimationCustomModifierNG::SetPosition(float position)
+{
+    if (position_ == nullptr) {
+        position_ = std::make_shared<RSAnimatableProperty<float>>(position);
+        AttachProperty(position_);
+    } else {
+        position_->Set(position);
+    }
+}
+
+void AnimationCustomModifierNG::SetTimeInterval(float timeInterval)
+{
+    timeInterval_ = timeInterval;
+}
+
+void AnimationCustomModifierNG::Draw(ModifierNG::RSDrawingContext& context) const
+{
+    if (!position_) {
+        std::cout << "AnimationCustomModifier position_ is nullptr, Draw none\n";
+        Drawing::Rect rect;
+        Drawing::Brush brush;
+        context.canvas->AttachBrush(brush);
+        context.canvas->DrawRect(rect);
+        context.canvas->DetachBrush();
+        return;
+    }
+    auto position = position_->Get();
+    positionVec_.push_back(position);
+    auto brushColor = OHOS::Rosen::Drawing::Color(0xff000000);
+    Drawing::Brush brush;
+    brush.SetColor(brushColor);
+    brush.SetAntiAlias(true);
+    context.canvas->AttachBrush(brush);
+    auto lastPoint = OHOS::Rosen::Drawing::Point(0, positionVec_[0]);
+    if (positionVec_.size() == 1) {
+        std::cout << "AnimationCustomModifier positionVec_ size is 1\n";
+        context.canvas->DrawPoint(lastPoint);
+    } else {
+        for (int i = 1; i < positionVec_.size(); i++) {
+            auto currentPoint = OHOS::Rosen::Drawing::Point(timeInterval_ * i, positionVec_[i]);
+            context.canvas->DrawLine(lastPoint, currentPoint);
+            lastPoint = currentPoint;
+        }
+    }
+    context.canvas->DetachBrush();
+}
 } // namespace Rosen
 } // namespace OHOS

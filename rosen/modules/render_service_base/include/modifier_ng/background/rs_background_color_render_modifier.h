@@ -17,7 +17,6 @@
 #define RENDER_SERVICE_BASE_MODIFIER_NG_BACKGROUND_RS_BACKGROUND_COLOR_RENDER_MODIFIER_H
 
 #include "modifier_ng/rs_render_modifier_ng.h"
-#include "property/rs_properties_def.h"
 
 namespace OHOS::Rosen::ModifierNG {
 class RSB_EXPORT RSBackgroundColorRenderModifier : public RSDisplayListRenderModifier {
@@ -25,13 +24,13 @@ public:
     RSBackgroundColorRenderModifier() = default;
     ~RSBackgroundColorRenderModifier() override = default;
 
-    static inline constexpr auto Type = ModifierNG::RSModifierType::BACKGROUND_COLOR;
-    ModifierNG::RSModifierType GetType() const override
+    static inline constexpr auto Type = RSModifierType::BACKGROUND_COLOR;
+    RSModifierType GetType() const override
     {
         return Type;
     }
 
-    void ResetProperties(RSProperties& properties) override;
+    static void ResetProperties(RSProperties& properties);
 
 private:
     static const LegacyPropertyApplierMap LegacyPropertyApplierMap_;
@@ -39,11 +38,6 @@ private:
     {
         return LegacyPropertyApplierMap_;
     }
-
-    bool OnApply(RSModifierContext& context) override;
-
-    bool IsBgBrightnessValid();
-    std::string GetBgBrightnessDescription(const RSDynamicBrightnessPara& params);
 };
 } // namespace OHOS::Rosen::ModifierNG
 #endif // RENDER_SERVICE_BASE_MODIFIER_NG_BACKGROUND_RS_BACKGROUND_COLOR_RENDER_MODIFIER_H

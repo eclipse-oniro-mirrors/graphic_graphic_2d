@@ -18,7 +18,8 @@
 
 #include <bitset>
 #include <cstdint>
-#include <map>
+
+#include "modifier_ng/rs_modifier_ng_type.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -29,10 +30,10 @@ namespace Rosen {
 // 2. Property modifier(i.e. to be applied to RSProperties) MUST be added before CUSTOM enum, elsewise it will not work
 // 3. Each command HAVE TO have UNIQUE ID in ALL HISTORY
 //    If a command is not used and you want to delete it, just COMMENT it
-// 4. MAX_RS_MODIFIER_TYPE always MUST be equla (GREATEST_ID_VALUE_IN_ENUM + 1)
-//    Example: If you added new enum value which id equal 400 and it greatest value in enum,
+// 4. MAX_RS_MODIFIER_TYPE always MUST be equal (GREATEST_ID_VALUE_IN_ENUM + 1)
+//    Example: If you added new enum value which id equals 400 and is the greatest value in enum,
 //    you HAVE TO change MAX_RS_MODIFIER_TYPE id to 401
-enum class RSModifierType : int16_t {
+enum class RSModifierType : uint16_t {
     INVALID = 0,
     BOUNDS = 1,
     FRAME = 2,
@@ -186,7 +187,7 @@ enum class RSModifierType : int16_t {
     NODE_MODIFIER = 207,
     ENV_FOREGROUND_COLOR = 208,
     ENV_FOREGROUND_COLOR_STRATEGY = 209,
-    GEOMETRYTRANS = 210,
+    GEOMETRYTRANS = 210, // Unused
     CUSTOM_CLIP_TO_FRAME = 211,
     HDR_BRIGHTNESS = 212,
     BEHIND_WINDOW_FILTER_RADIUS = 213,
@@ -377,7 +378,29 @@ public:
     }
 };
 
+class ModifierTypeConvertor {
+public:
+    static ModifierNG::RSModifierType ToModifierNGType(RSModifierType modifierType)
+    {
+        auto it = modifierTypeMap_.find(modifierType);
+        if (it != modifierTypeMap_.end()) {
+            return it->second;
+        }
+        return ModifierNG::RSModifierType::INVALID;
+    }
+
+private:
+    static inline std::unordered_map<RSModifierType, ModifierNG::RSModifierType> modifierTypeMap_ = {
+        { RSModifierType::TRANSITION, ModifierNG::RSModifierType::TRANSITION_STYLE },
+        { RSModifierType::BACKGROUND_STYLE, ModifierNG::RSModifierType::BACKGROUND_STYLE },
+        { RSModifierType::CONTENT_STYLE, ModifierNG::RSModifierType::CONTENT_STYLE },
+        { RSModifierType::FOREGROUND_STYLE, ModifierNG::RSModifierType::FOREGROUND_STYLE },
+        { RSModifierType::OVERLAY_STYLE, ModifierNG::RSModifierType::OVERLAY_STYLE },
+        { RSModifierType::ENV_FOREGROUND_COLOR, ModifierNG::RSModifierType::ENV_FOREGROUND_COLOR },
+        { RSModifierType::ENV_FOREGROUND_COLOR_STRATEGY, ModifierNG::RSModifierType::ENV_FOREGROUND_COLOR },
+        { RSModifierType::CUSTOM_CLIP_TO_FRAME, ModifierNG::RSModifierType::CLIP_TO_FRAME },
+    };
+};
 } // namespace Rosen
 } // namespace OHOS
-
 #endif // RENDER_SERVICE_CLIENT_CORE_ANIMATION_RS_MODIFIER_TYPE_H

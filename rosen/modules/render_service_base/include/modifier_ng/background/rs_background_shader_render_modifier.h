@@ -24,13 +24,13 @@ public:
     RSBackgroundShaderRenderModifier() = default;
     ~RSBackgroundShaderRenderModifier() override = default;
 
-    static inline constexpr auto Type = ModifierNG::RSModifierType::BACKGROUND_SHADER;
-    ModifierNG::RSModifierType GetType() const override
+    static inline constexpr auto Type = RSModifierType::BACKGROUND_SHADER;
+    RSModifierType GetType() const override
     {
         return Type;
     }
 
-    void ResetProperties(RSProperties& properties) override;
+    static void ResetProperties(RSProperties& properties);
 
 private:
     static const LegacyPropertyApplierMap LegacyPropertyApplierMap_;
@@ -38,8 +38,6 @@ private:
     {
         return LegacyPropertyApplierMap_;
     }
-
-    bool OnApply(RSModifierContext& context) override;
 };
 } // namespace OHOS::Rosen::ModifierNG
 #endif // RENDER_SERVICE_BASE_MODIFIER_NG_BACKGROUND_RS_BACKGROUND_SHADER_RENDER_MODIFIER_H

@@ -15,8 +15,6 @@
 
 #include "modifier_ng/geometry/rs_transform_modifier.h"
 
-#include "platform/common/rs_log.h"
-
 namespace OHOS::Rosen::ModifierNG {
 void RSTransformModifier::SetSandBox(std::optional<Vector2f> parentPosition)
 {
@@ -180,10 +178,6 @@ Vector4f RSTransformModifier::GetPersp() const
 
 void RSTransformModifier::ApplyGeometry(const std::shared_ptr<RSObjAbsGeometry>& geometry)
 {
-    if (geometry == nullptr) {
-        RS_LOGE("RSTransformModifier::ApplyGeometry, geometry null");
-        return;
-    }
     if (auto pivotPtr = GetProperty(RSPropertyType::PIVOT)) {
         auto pivot = GetterWithoutCheck<Vector2f>(pivotPtr);
         geometry->SetPivot(pivot.x_, pivot.y_);

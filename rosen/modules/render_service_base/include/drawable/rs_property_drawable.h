@@ -167,8 +167,6 @@ protected:
 
     NodeId stagingNodeId_ = INVALID_NODEID;
     NodeId renderNodeId_ = INVALID_NODEID;
-    std::string stagingNodeName_ = "invalid0";
-    std::string renderNodeName_ = "invalid0";
 
     std::shared_ptr<RSFilter> filter_;
     std::shared_ptr<RSFilter> stagingFilter_;
@@ -176,6 +174,8 @@ protected:
     std::unique_ptr<RSFilterCacheManager> cacheManager_;
     RectI drawBehindWindowRegion_;
     RectI stagingDrawBehindWindowRegion_;
+    std::string stagingNodeName_ = "invalid0";
+    std::string renderNodeName_ = "invalid0";
 };
 } // namespace DrawableV2
 } // namespace OHOS::Rosen
