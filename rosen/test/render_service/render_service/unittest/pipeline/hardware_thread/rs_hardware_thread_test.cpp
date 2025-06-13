@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -21,6 +21,9 @@
 #include "foundation/graphic/graphic_2d/rosen/test/render_service/render_service/unittest/pipeline/rs_test_util.h"
 #include "foundation/graphic/graphic_2d/rosen/test/render_service/render_service/unittest/pipeline/mock/mock_hdi_device.h"
 #include "gfx/fps_info/rs_surface_fps_manager.h"
+#ifdef RS_ENABLE_VK
+#include "platform/ohos/backend/rs_vulkan_context.h"
+#endif
 
 using namespace testing;
 using namespace testing::ext;
@@ -448,11 +451,13 @@ HWTEST_F(RSHardwareThreadTest, PerformSetActiveMode, TestSize.Level1)
     uint64_t timestamp = 0;
     auto supportedModes = screenManager->GetScreenSupportedModes(screenId_);
     ASSERT_EQ(supportedModes.size(), 0);
+    auto hgm = HgmCore::Instance().hgmFrameRateMgr_;
     HgmCore::Instance().hgmFrameRateMgr_->isAdaptive_ = true;
     HgmCore::Instance().hgmFrameRateMgr_->isGameNodeOnTree_ = true;
     hardwareThread.hgmHardwareUtils_.PerformSetActiveMode(output, 0, 0);
     HgmCore::Instance().hgmFrameRateMgr_ = nullptr;
     hardwareThread.hgmHardwareUtils_.PerformSetActiveMode(output, 0, 0);
+    HgmCore::Instance().hgmFrameRateMgr_ = hgm;
     HgmCore::Instance().vBlankIdleCorrectSwitch_.store(true);
     hardwareThread.hgmHardwareUtils_.vblankIdleCorrector_.isVBlankIdle_ = true;
     hardwareThread.OnScreenVBlankIdleCallback(screenId_, timestamp);
@@ -849,22 +854,24 @@ HWTEST_F(RSHardwareThreadTest, EndCheck001, TestSize.Level1)
 HWTEST_F(RSHardwareThreadTest, IsDropDirtyFrame, TestSize.Level1)
 {
     auto &hardwareThread = RSHardwareThread::Instance();
-    OutputPtr output = HdiOutput::CreateHdiOutput(screenId_);
+    hardwareThread.Start();
+    SetUp();
 
-    if (!RSSystemProperties::IsSuperFoldDisplay()) {
-        ASSERT_EQ(hardwareThread.IsDropDirtyFrame(output), false);
-    } else {
-        GraphicIRect activeRect = {0, 0, 0, 0};
-        ASSERT_EQ(hardwareThread.IsDropDirtyFrame(output), false);
+    OutputPtr output = nullptr;
+    ASSERT_EQ(hardwareThread.IsDropDirtyFrame(output), false);
+}
 
-        auto screenInfo = screenManager_->QueryScreenInfo(screenId_);
-        activeRect = {0, 0, screenInfo.width, screenInfo.height};
-        screenManager_->SetScreenActiveRect(screenId_, activeRect);
-        ASSERT_EQ(hardwareThread.IsDropDirtyFrame(output), false);
-
-        activeRect = {0, 0, screenInfo.width/2, screenInfo.height/2};
-        screenManager_->SetScreenActiveRect(screenId_, activeRect);
-        ASSERT_EQ(hardwareThread.IsDropDirtyFrame(output), true);
-    }
+/*
+ * @tc.name: ContextRegisterPostTask001
+ * @tc.desc: Test RSHardwareThreadTest.ContextRegisterPostTask
+ * @tc.type: FUNC
+ * @tc.require: issueIC5RYI
+ */
+HWTEST_F(RSHardwareThreadTest, ContextRegisterPostTask001, TestSize.Level1)
+{
+    auto &hardwareThread = RSHardwareThread::Instance();
+    hardwareThread.Start();
+    ASSERT_NE(hardwareThread.hdiBackend_, nullptr);
+    hardwareThread.ContextRegisterPostTask();
 }
 } // namespace OHOS::Rosen

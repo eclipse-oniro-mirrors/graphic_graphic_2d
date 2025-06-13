@@ -162,6 +162,7 @@ template("render_service_client_source_set") {
       "core/ui_effect/property/src/rs_ui_filter.cpp",
       "core/ui_effect/property/src/rs_ui_mask_para.cpp",
       "core/ui_effect/property/src/rs_ui_pixel_map_mask.cpp",
+      "core/ui_effect/property/src/rs_ui_radial_gradient_mask.cpp",
       "core/ui_effect/property/src/rs_ui_ripple_mask.cpp",
       "core/ui_effect/property/src/rs_ui_sound_wave_filter.cpp",
     ]
@@ -369,11 +370,18 @@ ohos_shared_library("librender_service_client") {
     "../2d_graphics:export_config",
   ]
   deps = [ ":render_service_client_src" ]
-  external_deps = [ "hilog:libhilog" ]
 
   if (enhanced_opt) {
     configs = [ ":render_service_client_link_config" ]
   }
+
+  # for platform
+  public_configs += [
+    "$rosen_root/modules/platform:eventhandler_config",
+    "$rosen_root/modules/platform:utils_config",
+    "$rosen_root/modules/platform:ipc_core_config",
+    "$rosen_root/modules/platform:image_native_config",
+  ]
 
   public_external_deps = [
     "egl:libEGL",
@@ -382,24 +390,16 @@ ohos_shared_library("librender_service_client") {
   if (rosen_is_ohos) {
     public_external_deps += [
       "c_utils:utils",
-      "graphic_surface:surface",
       "eventhandler:libeventhandler",
+      "graphic_surface:surface",
       "image_framework:image_native",
     ]
   } else if (rosen_preview) {
     public_external_deps += [ "graphic_surface:surface_headers" ]
   }
 
-  # build sdk
   if (rosen_is_win || current_os == "linux" || rosen_is_mac) {
     public_external_deps += [ "skia:skia_canvaskit" ]
-    public_configs += [
-      "$rosen_root/modules/composer:composer_public_config",
-      "$rosen_root/modules/platform:eventhandler_config",
-      "$rosen_root/modules/platform:utils_config",
-      "$rosen_root/modules/platform:ipc_core_config",
-      "$rosen_root/modules/platform:image_native_config",
-    ]
   }
   part_name = "graphic_2d"
   subsystem_name = "graphic"

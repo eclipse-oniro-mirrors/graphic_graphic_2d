@@ -488,6 +488,16 @@ uint32_t FilterNapi::GetSpecialIntValue(napi_env env, napi_value argValue)
     return tmp;
 }
 
+bool FilterNapi::GetSpecialBoolValue(napi_env env, napi_value argValue, bool defaultValue)
+{
+    bool tmp = defaultValue;
+    if (UIEffectNapiUtils::GetType(env, argValue) == napi_boolean &&
+        napi_get_value_bool(env, argValue, &tmp) == napi_ok) {
+            return tmp;
+    }
+    return tmp;
+}
+
 napi_value FilterNapi::SetWaterRipple(napi_env env, napi_callback_info info)
 {
     if (!UIEffectNapiUtils::IsSystemApp()) {
@@ -765,7 +775,7 @@ napi_value FilterNapi::SetEdgeLight(napi_env env, napi_callback_info info)
             "FilterNapi SetEdgeLight failed, is not system app");
         return nullptr;
     }
-    static const size_t maxArgc = NUM_3;
+    static const size_t maxArgc = NUM_4;
     static const size_t minArgc = NUM_1;
     size_t realArgc = maxArgc;
     napi_value result = nullptr;
@@ -790,6 +800,11 @@ napi_value FilterNapi::SetEdgeLight(napi_env env, napi_callback_info info)
     if (realArgc >= NUM_3 &&
         napi_unwrap(env, argv[NUM_2], reinterpret_cast<void**>(&mask)) == napi_ok) {
         para->SetMask(mask->GetMaskPara());
+    }
+
+    if (realArgc >= NUM_4) {
+        bool bloom = GetSpecialBoolValue(env, argv[NUM_3], true);
+        para->SetBloom(bloom);
     }
 
     Filter* filterObj = nullptr;

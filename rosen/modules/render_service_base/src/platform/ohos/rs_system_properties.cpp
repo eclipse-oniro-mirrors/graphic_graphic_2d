@@ -1437,7 +1437,7 @@ bool RSSystemProperties::GetHybridRenderEnabled()
 
 int32_t RSSystemProperties::GetHybridRenderCcmEnabled()
 {
-    static int32_t hybridRenderCcmEnabled =
+    static int32_t hybridRenderCcmEnabled = Drawing::SystemProperties::IsUseVulkan() &&
         std::atoi((system::GetParameter("const.graphics.hybridrenderenable", "0")).c_str());
     return hybridRenderCcmEnabled;
 }

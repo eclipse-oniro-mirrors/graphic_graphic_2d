@@ -201,6 +201,7 @@ static constexpr std::array descriptorCheckList = {
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_PAGE_NAME),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_BEHIND_WINDOW_FILTER_ENABLED),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_BEHIND_WINDOW_FILTER_ENABLED),
+    static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_PID_GPU_MEMORY_IN_MB),
 };
 
 void CopyFileDescriptor(MessageParcel& old, MessageParcel& copied)
@@ -558,13 +559,14 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 ret = ERR_INVALID_DATA;
                 break;
             }
+            bool needGetBundleName = (type == static_cast<uint8_t>(RSSurfaceNodeType::SELF_DRAWING_NODE));
             RSSurfaceRenderNodeConfig config = { .id = nodeId,
                 .name = surfaceName,
                 .nodeType = static_cast<RSSurfaceNodeType>(type),
                 .isTextureExportNode = isTextureExportNode,
                 .isSync = isSync,
                 .surfaceWindowType = static_cast<SurfaceWindowType>(surfaceWindowType),
-                .bundleName = surfaceName == "RosenWeb" ? GetBundleName(ExtractPid(nodeId)) : "" };
+                .bundleName = needGetBundleName ? GetBundleName(ExtractPid(nodeId)) : "" };
             sptr<Surface> surface = nullptr;
             ErrCode err = CreateNodeAndSurface(config, surface, unobscured);
             if ((err != ERR_OK) || (surface == nullptr)) {
@@ -1328,9 +1330,9 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             permissions.selfCapture = ExtractPid(id) == callingPid;
             std::vector<std::pair<NodeId, std::shared_ptr<Media::PixelMap>>> pixelMapIdPairVector;
             pixelMapIdPairVector = TakeSurfaceCaptureSoloNode(id, captureConfig, permissions);
-            if (!RSMarshallingHelper::MarshallingVec(reply, pixelMapIdPairVector)) {
+            if (!RSMarshallingHelper::Marshalling(reply, pixelMapIdPairVector)) {
                 ret = ERR_INVALID_REPLY;
-                RS_LOGE("RSRenderServiceConnectionStub::TAKE_SURFACE_CAPTURE_SOLO MarshallingVec failed");
+                RS_LOGE("RSRenderServiceConnectionStub::TAKE_SURFACE_CAPTURE_SOLO Marshalling failed");
                 break;
             }
             break;
@@ -1956,7 +1958,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 ret = ERR_INVALID_REPLY;
                 break;
             }
-            if (!RSMarshallingHelper::MarshallingVec(reply, pixelMapInfoVector)) {
+            if (!RSMarshallingHelper::Marshalling(reply, pixelMapInfoVector)) {
                 ret = ERR_INVALID_REPLY;
                 break;
             }
@@ -3576,6 +3578,28 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 RS_LOGE("RSRenderServiceConnectionStub::GET_BEHIND_WINDOW_FILTER_ENABLED write enabled failed!");
                 ret = ERR_INVALID_REPLY;
             }
+            break;
+        }
+        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_PID_GPU_MEMORY_IN_MB): {
+            int32_t pid{0};
+            float gpuMemInMB{0.0};
+            if (!data.ReadInt32(pid)) {
+                RS_LOGE("RenderServiceConnectionStub::GET_PID_GPU_MEMORY_IN_MB : read data err!");
+                ret = ERR_INVALID_DATA;
+                break;
+            }
+            ret = GetPidGpuMemoryInMB(pid, gpuMemInMB);
+            if (ret != 0) {
+                RS_LOGE("RenderServiceConnectionStub::GET_PID_GPU_MEMORY_IN_MB : read ret err!");
+                ret = ERR_INVALID_DATA;
+                break;
+            }
+            if (!reply.WriteFloat(gpuMemInMB)) {
+                RS_LOGE("RenderServiceConnectionStub::GET_PID_GPU_MEMORY_IN_MB write gpuMemInMB err!");
+                ret = ERR_INVALID_REPLY;
+            }
+            RS_LOGD("RenderServiceConnectionStub::GET_PID_GPU_MEMORY_IN_MB, ret: %{public}d, gpuMemInMB: %{public}f",
+                ret, gpuMemInMB);
             break;
         }
         default: {

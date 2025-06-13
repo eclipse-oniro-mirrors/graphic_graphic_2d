@@ -130,7 +130,7 @@ public:
     RSModifiersDrawThread();
     ~RSModifiersDrawThread();
 
-    static std::mutex transactionDataMutex_;
+    static std::recursive_mutex transactionDataMutex_;
 private:
     static std::unique_ptr<RSModifiersDrawThread>& InstancePtr();
     static void Destroy();
@@ -139,6 +139,7 @@ private:
     RSModifiersDrawThread& operator=(const RSModifiersDrawThread&) = delete;
     RSModifiersDrawThread& operator=(const RSModifiersDrawThread&&) = delete;
     void ClearEventResource();
+    static bool LimitEnableHybridOpCnt(std::unique_ptr<RSTransactionData>& transactionData);
 
     static bool TargetCommand(
         Drawing::DrawCmdList::HybridRenderType hybridRenderType, uint16_t type, uint16_t subType, bool cmdListEmpty);

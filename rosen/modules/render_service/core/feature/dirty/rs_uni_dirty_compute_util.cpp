@@ -228,7 +228,7 @@ bool RSUniFilterDirtyComputeUtil::CheckMergeFilterDirty(Occlusion::Region& damag
             return false;
         }
         // case - 3. Add this filter into both damage region (for GPU) and draw region (for RS).
-        RS_TRACE_NAME_FMT("Filter [%" PRIu64 "], intersected with draw region: %s, add %s to damage.",
+        RS_OPTIONAL_TRACE_NAME_FMT("Filter [%" PRIu64 "], intersected with draw region: %s, add %s to damage.",
             info.id_, drawRegion.GetRegionInfo().c_str(), info.filterDirty_.GetRegionInfo().c_str());
         Occlusion::Region dirtyRegion = matrix.has_value() ?
             RSObjAbsGeometry::MapRegion(info.filterDirty_, matrix.value()) : info.filterDirty_;
@@ -265,7 +265,7 @@ void RSUniFilterDirtyComputeUtil::ResetFilterInfoStatus(DrawableV2::RSDisplayRen
 }
 
 FilterDirtyRegionInfo RSUniFilterDirtyComputeUtil::GenerateFilterDirtyRegionInfo(
-    RSRenderNode& filterNode, const std::optional<Occlusion::Region>& preDirty)
+    RSRenderNode& filterNode, const std::optional<Occlusion::Region>& preDirty, bool isSurface)
 {
     bool effectNodeExpandDirty =
         filterNode.IsInstanceOf<RSEffectRenderNode>() && !filterNode.FirstFrameHasEffectChildren();
@@ -279,7 +279,7 @@ FilterDirtyRegionInfo RSUniFilterDirtyComputeUtil::GenerateFilterDirtyRegionInfo
     }
     FilterDirtyRegionInfo filterInfo = {
         .id_ = filterNode.GetId(),
-        .intersectRegion_ = filterRegion,
+        .intersectRegion_ = isSurface ? filterRegion : dirtyRegion,
         .filterDirty_ = dirtyRegion,
         .alignedFilterDirty_ = dirtyRegion.GetAlignedRegion(MAX_DIRTY_ALIGNMENT_SIZE),
         .belowDirty_ = preDirty.value_or(Occlusion::Region())

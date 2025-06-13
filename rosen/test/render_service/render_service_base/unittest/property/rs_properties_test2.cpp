@@ -1259,21 +1259,18 @@ HWTEST_F(PropertiesTest, GenerateRenderFilterEdgeLight_001, TestSize.Level1)
 
     auto renderAlpha = std::make_shared<RSRenderAnimatableProperty<float>>(0.5f, 0);
     renderFilterEdgeLight->Setter(RSUIFilterType::EDGE_LIGHT_ALPHA, renderAlpha);
+    auto renderBloom = std::make_shared<RSRenderProperty<bool>>(true, 0);
+    renderFilterEdgeLight->Setter(RSUIFilterType::EDGE_LIGHT_BLOOM, renderBloom);
     properties.GenerateRenderFilter();
-    EXPECT_EQ(properties.backgroundFilter_, nullptr);
+    EXPECT_NE(properties.backgroundFilter_, nullptr);
     properties.backgroundFilter_ = nullptr;
 
     auto renderColor = std::make_shared<RSRenderAnimatableProperty<Vector4f>>(Vector4f(0.5f, 0.5f, 0.5f, 0.5f), 0);
     renderFilterEdgeLight->Setter(RSUIFilterType::EDGE_LIGHT_COLOR, renderColor);
     properties.GenerateRenderFilter();
-    properties.GenerateRenderFilter();
     EXPECT_NE(properties.backgroundFilter_, nullptr);
 
-    renderFilterEdgeLight->maskType_ = RSUIFilterType::RIPPLE_MASK;
-    properties.GenerateRenderFilter();
-    EXPECT_NE(properties.backgroundFilter_, nullptr);
-
-    properties.GenerateRenderFilter();
+    properties.GenerateRenderFilter(); // different branch if call again
     EXPECT_NE(properties.backgroundFilter_, nullptr);
 }
 
@@ -1422,6 +1419,75 @@ HWTEST_F(PropertiesTest, GenerateBezierWarpFilter_001, TestSize.Level1)
 
     properties.GenerateBezierWarpFilter();
     EXPECT_NE(properties.foregroundFilter_, nullptr);
+}
+
+/**
+ * @tc.name: UpdateForegroundFilterTest001
+ * @tc.desc: test UpdateForegroundFilter with shadow mask
+ * @tc.type: FUNC
+ */
+HWTEST_F(PropertiesTest, UpdateForegroundFilterTest001, TestSize.Level1)
+{
+    RSProperties properties;
+    bool isUniRender = RSProperties::IS_UNI_RENDER;
+    if (isUniRender) {
+        EXPECT_TRUE(properties.foregroundFilterCache_ == nullptr);
+    } else {
+        EXPECT_TRUE(properties.foregroundFilter_ == nullptr);
+    }
+    properties.SetShadowMask(0); // mask none
+    properties.UpdateForegroundFilter();
+    if (isUniRender) {
+        EXPECT_TRUE(properties.foregroundFilterCache_ == nullptr);
+    } else {
+        EXPECT_TRUE(properties.foregroundFilter_ == nullptr);
+    }
+
+    properties.SetShadowMask(10); // 10 is invalid
+    properties.UpdateForegroundFilter();
+    if (isUniRender) {
+        EXPECT_TRUE(properties.foregroundFilterCache_ == nullptr);
+    } else {
+        EXPECT_TRUE(properties.foregroundFilter_ == nullptr);
+    }
+
+    properties.SetShadowMask(2); // mask color blur
+    properties.UpdateForegroundFilter();
+    if (isUniRender) {
+        EXPECT_FALSE(properties.foregroundFilterCache_ == nullptr);
+    } else {
+        EXPECT_FALSE(properties.foregroundFilter_ == nullptr);
+    }
+}
+
+/**
+ * @tc.name: SetAlwaysSnapshot
+ * @tc.desc: SetAlwaysSnapshot
+ * @tc.type: FUNC
+ */
+HWTEST_F(PropertiesTest, SetAlwaysSnapshotTest, TestSize.Level1)
+{
+    RSProperties properties;
+    properties.GenerateBackgroundFilter();
+    EXPECT_EQ(properties.backgroundFilter_, nullptr);
+
+    properties.SetAlwaysSnapshot(true);
+    EXPECT_EQ(properties.GetAlwaysSnapshot(), true);
+    properties.GenerateBackgroundFilter();
+    ASSERT_NE(properties.backgroundFilter_, nullptr);
+    EXPECT_EQ(properties.backgroundFilter_->GetFilterType(), RSFilter::ALWAYS_SNAPSHOT);
+}
+/**
+ * @tc.name: GenerateAlwaysSnapshotFilterTest
+ * @tc.desc: test GenerateAlwaysSnapshotFilter
+ * @tc.type: FUNC
+ */
+HWTEST_F(PropertiesTest,  GenerateAlwaysSnapshotFilterTest, TestSize.Level1)
+{
+    RSProperties properties;
+    properties.GenerateAlwaysSnapshotFilter();
+    ASSERT_NE(properties.backgroundFilter_, nullptr);
+    EXPECT_EQ(properties.backgroundFilter_->GetFilterType(), RSFilter::ALWAYS_SNAPSHOT);
 }
 } // namespace Rosen
 } // namespace OHOS

@@ -100,7 +100,7 @@ enum class RSUIFilterType : int16_t {
     BEZIER_CONTROL_POINT9, // Vector2f
     BEZIER_CONTROL_POINT10, // Vector2f
     BEZIER_CONTROL_POINT11, // Vector2f
-    
+
     // pixel map mask value type
     PIXEL_MAP_MASK_PIXEL_MAP, // Media::PixelMap
     PIXEL_MAP_MASK_SRC, // Vector4f
@@ -112,6 +112,16 @@ enum class RSUIFilterType : int16_t {
     DISPERSION_RED_OFFSET, // Vector2f
     DISPERSION_GREEN_OFFSET, // Vector2f
     DISPERSION_BLUE_OFFSET, // Vector2f
+
+    // edge light bloom value type
+    EDGE_LIGHT_BLOOM, // bool
+
+    // radial gradient mask value type
+    RADIAL_GRADIENT_MASK_CENTER, // Vector2f
+    RADIAL_GRADIENT_MASK_RADIUSX, // float
+    RADIAL_GRADIENT_MASK_RADIUSY, // float
+    RADIAL_GRADIENT_MASK_COLORS, // vector<float>
+    RADIAL_GRADIENT_MASK_POSITIONS, // vector<float>
 };
 
 namespace Drawing {
@@ -125,6 +135,11 @@ public:
     RSRenderFilterParaBase() = default;
     RSRenderFilterParaBase(RSUIFilterType type) : type_(type) {}
     virtual ~RSRenderFilterParaBase() = default;
+
+    virtual std::shared_ptr<RSRenderFilterParaBase> DeepCopy() const
+    {
+        return nullptr;
+    }
 
     RSUIFilterType GetType() const;
 
@@ -146,7 +161,7 @@ public:
 
     virtual bool ReadFromParcel(Parcel& parcel);
 
-    std::shared_ptr<RSRenderPropertyBase> GetRenderPropert(RSUIFilterType type) const;
+    std::shared_ptr<RSRenderPropertyBase> GetRenderProperty(RSUIFilterType type) const;
 
     virtual std::vector<std::shared_ptr<RSRenderPropertyBase>> GetLeafRenderProperties();
 
@@ -169,6 +184,10 @@ public:
     {
         return hash_;
     }
+    RSPropertyType GetPropertyType() const override {return RSPropertyType::INVALID;}
+    size_t GetSize() const override {return sizeof(*this);}
+    bool Marshalling(Parcel& parcel) override {return false;}
+
 protected:
     RSUIFilterType type_;
     std::map<RSUIFilterType, std::shared_ptr<RSRenderPropertyBase>> properties_;

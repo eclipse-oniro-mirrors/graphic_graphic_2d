@@ -16,6 +16,7 @@
 #include "render/rs_render_color_gradient_filter.h"
 #include "platform/common/rs_log.h"
 #include "ui_effect/property/include/rs_ui_color_gradient_filter.h"
+#include "ui_effect/property/include/rs_ui_radial_gradient_mask.h"
 #include "ui_effect/property/include/rs_ui_ripple_mask.h"
 
 namespace OHOS {
@@ -184,7 +185,7 @@ std::shared_ptr<RSRenderFilterParaBase> RSUIColorGradientFilterPara::CreateRSRen
         return nullptr;
     }
     auto colorsProperty = std::make_shared<RSRenderAnimatableProperty<std::vector<float>>>(
-        colors->Get(), colors->GetId(), RSPropertyType::SHADER_PARAM);
+        colors->Get(), colors->GetId());
     frProperty->Setter(RSUIFilterType::COLOR_GRADIENT_COLOR, colorsProperty);
 
     auto positions = std::static_pointer_cast<RSAnimatableProperty<std::vector<float>>>(
@@ -194,7 +195,7 @@ std::shared_ptr<RSRenderFilterParaBase> RSUIColorGradientFilterPara::CreateRSRen
         return nullptr;
     }
     auto positionsProperty = std::make_shared<RSRenderAnimatableProperty<std::vector<float>>>(
-        positions->Get(), positions->GetId(), RSPropertyType::SHADER_PARAM);
+        positions->Get(), positions->GetId());
     frProperty->Setter(RSUIFilterType::COLOR_GRADIENT_POSITION, positionsProperty);
 
     auto strengths = std::static_pointer_cast<RSAnimatableProperty<std::vector<float>>>(
@@ -204,7 +205,7 @@ std::shared_ptr<RSRenderFilterParaBase> RSUIColorGradientFilterPara::CreateRSRen
         return nullptr;
     }
     auto strengthsProperty = std::make_shared<RSRenderAnimatableProperty<std::vector<float>>>(
-        strengths->Get(), strengths->GetId(), RSPropertyType::SHADER_PARAM);
+        strengths->Get(), strengths->GetId());
     frProperty->Setter(RSUIFilterType::COLOR_GRADIENT_STRENGTH, strengthsProperty);
 
     if (maskType_ != RSUIFilterType::NONE) {
@@ -271,6 +272,9 @@ std::shared_ptr<RSUIMaskPara> RSUIColorGradientFilterPara::CreateMask(RSUIFilter
     switch (type) {
         case RSUIFilterType::RIPPLE_MASK: {
             return std::make_shared<RSUIRippleMaskPara>();
+        }
+        case RSUIFilterType::RADIAL_GRADIENT_MASK: {
+            return std::make_shared<RSUIRadialGradientMaskPara>();
         }
         default:
             return nullptr;

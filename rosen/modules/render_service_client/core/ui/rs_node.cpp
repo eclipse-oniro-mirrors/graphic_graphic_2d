@@ -36,6 +36,7 @@
 #include "common/rs_color.h"
 #include "common/rs_common_def.h"
 #include "common/rs_obj_abs_geometry.h"
+#include "common/rs_optional_trace.h"
 #include "common/rs_vector4.h"
 #include "feature/hyper_graphic_manager/rs_frame_rate_policy.h"
 #include "modifier/rs_modifier.h"
@@ -169,6 +170,8 @@ RSNode::~RSNode()
         rsUIContext->GetMutableNodeMap().UnregisterNode(id_);
         auto transaction = rsUIContext->GetRSTransaction();
         if (transaction == nullptr || skipDestroyCommandInDestructor_) {
+            RS_LOGD("RSNode::~RSNode stop destroy proxy:%{public}d, skip: %{public}d", transaction == nullptr,
+                skipDestroyCommandInDestructor_);
             return;
         }
         std::unique_ptr<RSCommand> command = std::make_unique<RSBaseNodeDestroy>(id_);
@@ -183,6 +186,8 @@ RSNode::~RSNode()
         // tell RT/RS to destroy related render node
         auto transactionProxy = RSTransactionProxy::GetInstance();
         if (transactionProxy == nullptr || skipDestroyCommandInDestructor_) {
+            RS_LOGD("RSNode::~RSNode stop destroy proxy:%{public}d, skip: %{public}d", transactionProxy == nullptr,
+                skipDestroyCommandInDestructor_);
             return;
         }
         std::unique_ptr<RSCommand> command = std::make_unique<RSBaseNodeDestroy>(id_);
@@ -1561,7 +1566,7 @@ void RSNode::SetParticleParams(std::vector<ParticleParams>& particleParams, cons
     }
 
     SetParticleDrawRegion(particleParams);
-    auto property = std::make_shared<RSPropertyBase>();
+    auto property = std::make_shared<RSProperty<int>>();
     auto propertyId = property->GetId();
     auto uiAnimation = std::make_shared<RSAnimationGroup>();
     auto animationId = uiAnimation->GetId();
@@ -1777,9 +1782,8 @@ void RSNode::SetBorderStyle(uint32_t styleValue)
 // set inner border style
 void RSNode::SetBorderStyle(uint32_t left, uint32_t top, uint32_t right, uint32_t bottom)
 {
-    Vector4<BorderStyle> style(static_cast<BorderStyle>(left), static_cast<BorderStyle>(top),
-                               static_cast<BorderStyle>(right), static_cast<BorderStyle>(bottom));
-    SetBorderStyle(style);
+    Vector4<uint32_t> style(left, top, right, bottom);
+    SetProperty<RSBorderStyleModifier, RSProperty<Vector4<uint32_t>>>(RSModifierType::BORDER_STYLE, style);
 }
 
 // set inner border style
@@ -2370,7 +2374,8 @@ void RSNode::SetShadowPath(const std::shared_ptr<RSPath>& shadowPath)
 
 void RSNode::SetShadowMask(bool shadowMask)
 {
-    SetProperty<RSShadowMaskModifier, RSProperty<bool>>(RSModifierType::SHADOW_MASK, shadowMask);
+    int shadowMaskColor = shadowMask ? SHADOW_MASK_STRATEGY::MASK_BLUR : SHADOW_MASK_STRATEGY::MASK_NONE;
+    SetProperty<RSShadowMaskModifier, RSProperty<int>>(RSModifierType::SHADOW_MASK, shadowMaskColor);
 }
 
 void RSNode::SetShadowIsFilled(bool shadowIsFilled)
@@ -3675,6 +3680,7 @@ void RSNode::RemoveCrossScreenChild(SharedPtr child)
 void RSNode::RemoveChildByNode(SharedPtr child)
 {
     CHECK_FALSE_RETURN(CheckMultiThreadAccess(__func__));
+    RS_OPTIONAL_TRACE_NAME_FMT("RSNode::RemoveChildByNode id:%" PRIu64 "", child->GetId());
     auto itr = std::find_if(
         children_.begin(), children_.end(), [&](WeakPtr &ptr) -> bool {return ROSEN_EQ<RSNode>(ptr, child);});
     if (itr != children_.end()) {
@@ -3685,6 +3691,7 @@ void RSNode::RemoveChildByNode(SharedPtr child)
 void RSNode::RemoveFromTree()
 {
     CHECK_FALSE_RETURN(CheckMultiThreadAccess(__func__));
+    RS_OPTIONAL_TRACE_NAME_FMT("RSNode::RemoveFromTree id:%" PRIu64 "", GetId());
     MarkDirty(NodeDirtyType::APPEARANCE, true);
     auto parentPtr = parent_.lock();
     if (parentPtr) {
@@ -3702,6 +3709,7 @@ void RSNode::RemoveFromTree()
 
 void RSNode::ClearChildren()
 {
+    RS_OPTIONAL_TRACE_NAME_FMT("RSNode::ClearChildren id:%" PRIu64 "", GetId());
     for (auto child : children_) {
         auto childPtr = child.lock();
         if (childPtr) {

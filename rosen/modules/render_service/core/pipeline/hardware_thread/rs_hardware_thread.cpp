@@ -141,12 +141,8 @@ void RSHardwareThread::Start()
 #endif
                 uniRenderEngine_ = std::make_shared<RSUniRenderEngine>();
                 uniRenderEngine_->Init();
-#ifdef RS_ENABLE_VK
                 // posttask for multithread safely release surface and image
-                if (RSSystemProperties::IsUseVulkan()) {
-                    ContextRegisterPostTask();
-                }
-#endif
+                ContextRegisterPostTask();
                 hardwareTid_ = gettid();
             }).wait();
     }
@@ -292,7 +288,8 @@ void RSHardwareThread::CommitAndReleaseLayers(OutputPtr output, const std::vecto
                 screenManager->IsScreenPoweringOff(output->GetScreenId());
         }
 
-        if (!isScreenPoweringOff) {
+        bool shouldDropFrame = isScreenPoweringOff || IsDropDirtyFrame(output);
+        if (!shouldDropFrame) {
             hgmHardwareUtils_.ExecuteSwitchRefreshRate(output, param.rate);
             hgmHardwareUtils_.PerformSetActiveMode(
                 output, param.frameTimestamp, param.constraintRelativeTime);
@@ -306,7 +303,7 @@ void RSHardwareThread::CommitAndReleaseLayers(OutputPtr output, const std::vecto
         } else {
             output->SetLayerInfo(layers);
         }
-        bool doRepaint = output->IsDeviceValid() && !isScreenPoweringOff && !IsDropDirtyFrame(output);
+        bool doRepaint = output->IsDeviceValid() && !shouldDropFrame;
         if (doRepaint) {
             hdiBackend_->Repaint(output);
             RecordTimestamp(layers);
@@ -749,8 +746,11 @@ bool RSHardwareThread::IsDropDirtyFrame(OutputPtr output)
         return false;
     }
     for (const auto& info : layerInfos) {
+        if (info == nullptr) {
+            continue;
+        }
         auto layerSize = info->GetLayerSize();
-        if (info->GetDisplayNodeFlag() && !(activeRect == layerSize)) {
+        if (info->GetUniRenderFlag() && !(activeRect == layerSize)) {
             RS_LOGI("%{publkic}s: Drop dirty frame cause activeRect:[%{public}d, %{public}d, %{public}d, %{public}d]" \
                 "layerSize:[%{public}d, %{public}d, %{public}d, %{public}d]", __func__, activeRect.x, activeRect.y,
                 activeRect.w, activeRect.h, layerSize.x, layerSize.y, layerSize.w, layerSize.h);
@@ -1110,20 +1110,22 @@ bool RSHardwareThread::ConvertColorGamutToSpaceType(const GraphicColorGamut& col
 }
 #endif
 
-#ifdef RS_ENABLE_VK
 void RSHardwareThread::ContextRegisterPostTask()
 {
-    RsVulkanContext::GetSingleton().SetIsProtected(true);
-    auto context = RsVulkanContext::GetSingleton().GetDrawingContext();
-    if (context) {
-        context->RegisterPostFunc([this](const std::function<void()>& task) { PostTask(task); });
+#if defined(RS_ENABLE_VK) && defined(IS_ENABLE_DRM)
+    if (RSSystemProperties::IsUseVulkan()) {
+        RsVulkanContext::GetSingleton().SetIsProtected(true);
+        auto context = RsVulkanContext::GetSingleton().GetDrawingContext();
+        if (context) {
+            context->RegisterPostFunc([this](const std::function<void()>& task) { PostTask(task); });
+        }
+        RsVulkanContext::GetSingleton().SetIsProtected(false);
+        if (context) {
+            context->RegisterPostFunc([this](const std::function<void()>& task) { PostTask(task); });
+        }
     }
-    RsVulkanContext::GetSingleton().SetIsProtected(false);
-    if (context) {
-        context->RegisterPostFunc([this](const std::function<void()>& task) { PostTask(task); });
-    }
-}
 #endif
+}
 }
 
 namespace OHOS {
