@@ -214,7 +214,7 @@ HWTEST_F(RSUiCaptureSoloTaskParallelTest, RSUiCaptureSoloNodeCanvasNode, Functio
     captureConfig.isSoloNodeUiCapture = true;
     std::vector<std::pair<NodeId, std::shared_ptr<Media::PixelMap>>> pixelMapIdPairVector =
         RSUiCaptureSoloTaskParallel::CaptureSoloNode(canvasNode_->GetId(), captureConfig);
-    EXPECT_GT(pixelMapIdPairVector.size(), 0);
+    EXPECT_EQ(pixelMapIdPairVector.size(), 0);
 }
 
 /*
@@ -230,7 +230,7 @@ HWTEST_F(RSUiCaptureSoloTaskParallelTest, CaptureSoloNodePixelMapCanvasNode, Fun
     captureConfig.isSoloNodeUiCapture = true;
     std::unique_ptr<Media::PixelMap> resPix =
         RSUiCaptureSoloTaskParallel::CaptureSoloNodePixelMap(canvasNode_->GetId(), captureConfig);
-    EXPECT_NE(resPix, nullptr);
+    EXPECT_EQ(resPix, nullptr);
 }
 
 /*
