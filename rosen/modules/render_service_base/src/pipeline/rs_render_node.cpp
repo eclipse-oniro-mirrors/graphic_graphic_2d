@@ -1761,6 +1761,9 @@ bool RSRenderNode::UpdateDrawRectAndDirtyRegion(RSDirtyRegionManager& dirtyManag
         }
     }
     // 3. update dirtyRegion if needed
+    if (properties.GetBackgroundFilter()) {
+        UpdateFilterCacheWithBelowDirty(Occlusion::Rect(dirtyManager.GetCurrentFrameDirtyRegion()));
+    }
     ValidateLightResources();
     isDirtyRegionUpdated_ = false; // todo make sure why windowDirty use it
     // Only when satisfy following conditions, absDirtyRegion should update:
