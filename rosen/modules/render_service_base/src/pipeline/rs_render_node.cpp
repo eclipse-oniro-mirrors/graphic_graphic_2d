@@ -2659,6 +2659,16 @@ std::shared_ptr<RSRenderPropertyBase> RSRenderNode::GetProperty(PropertyId id)
     return it->second;
 }
 
+void RSRenderNode::AddProperty(std::shared_ptr<RSRenderPropertyBase> property)
+{
+    properties_.emplace(property->GetId(), property);
+}
+
+void RSRenderNode::RemoveProperty(std::shared_ptr<RSRenderPropertyBase> property)
+{
+    properties_.erase(property->GetId());
+}
+
 void RSRenderNode::AddModifier(const std::shared_ptr<RSRenderModifier>& modifier, bool isSingleFrameComposer)
 {
     if (!modifier) {
@@ -2680,15 +2690,8 @@ void RSRenderNode::AddModifier(const std::shared_ptr<RSRenderModifier>& modifier
     auto modifierType = modifier->GetType();
     if (modifierType == RSModifierType::BOUNDS || modifierType == RSModifierType::FRAME) {
         AddGeometryModifier(modifier);
-    } else if (modifierType == RSModifierType::BACKGROUND_UI_FILTER ||
-        modifierType == RSModifierType::FOREGROUND_UI_FILTER) {
-        AddUIFilterModifier(modifier);
     } else if (modifierType < RSModifierType::CUSTOM) {
         modifiers_.emplace(modifier->GetPropertyId(), modifier);
-        if (modifierType == RSModifierType::COMPLEX_SHADER_PARAM) {
-            auto property = modifier->GetProperty();
-            properties_.emplace(modifier->GetPropertyId(), property);
-        }
     } else {
         modifier->SetSingleFrameModifier(false);
         drawCmdModifiers_[modifier->GetType()].emplace_back(modifier);
@@ -2696,34 +2699,6 @@ void RSRenderNode::AddModifier(const std::shared_ptr<RSRenderModifier>& modifier
     modifier->GetProperty()->Attach(shared_from_this());
     ROSEN_LOGI_IF(DEBUG_MODIFIER, "RSRenderNode:add modifier, node id: %{public}" PRIu64 ", type: %{public}s",
         GetId(), modifier->GetModifierTypeString().c_str());
-}
-
-void RSRenderNode::AddUIFilterModifier(const std::shared_ptr<RSRenderModifier>& modifier)
-{
-    if (!modifier) {
-        ROSEN_LOGW("RSRenderNode::AddUIFilterModifier: null modifier add failed.");
-        return;
-    }
-    modifiers_.emplace(modifier->GetPropertyId(), modifier);
-    auto renderProperty =
-        std::static_pointer_cast<RSRenderProperty<std::shared_ptr<RSRenderFilter>>>(modifier->GetProperty());
-    if (!renderProperty) {
-        ROSEN_LOGW("RSRenderNode::AddUIFilterModifier: null renderProperty.");
-        return;
-    }
-    auto& renderFilter = renderProperty->GetRef();
-    for (auto& type : renderFilter->GetUIFilterTypes()) {
-        auto propGroup = renderFilter->GetRenderFilterPara(type);
-        if (!propGroup) {
-            continue;
-        }
-        for (auto& prop : propGroup->GetLeafRenderProperties()) {
-            if (prop) {
-                prop->Attach(shared_from_this());
-                properties_.emplace(prop->GetId(), prop);
-            }
-        }
-    }
 }
 
 void RSRenderNode::AddGeometryModifier(const std::shared_ptr<RSRenderModifier>& modifier)
@@ -2758,11 +2733,8 @@ void RSRenderNode::RemoveModifier(const PropertyId& id)
         }
         ROSEN_LOGI_IF(DEBUG_MODIFIER, "RSRenderNode::remove modifier, node id: %{public}" PRIu64 ", type: %{public}s",
             GetId(), (it->second) ? it->second->GetModifierTypeString().c_str() : "UNKNOWN");
+        it->second->GetProperty()->Detach(shared_from_this());
         modifiers_.erase(it);
-        auto propertyIt = properties_.find(id);
-        if (propertyIt != properties_.end()) {
-            properties_.erase(propertyIt);
-        }
         return;
     }
     for (auto& [type, modifiers] : drawCmdModifiers_) {

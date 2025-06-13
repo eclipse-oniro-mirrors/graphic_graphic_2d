@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef ROSEN_ENGINE_CORE_RENDER_UI_FILTER_BASE_H
-#define ROSEN_ENGINE_CORE_RENDER_UI_FILTER_BASE_H
+#ifndef ROSEN_ENGINE_CORE_RENDER_UI_FILTER_PARA_BASE_H
+#define ROSEN_ENGINE_CORE_RENDER_UI_FILTER_PARA_BASE_H
 
 #include "modifier/rs_property.h"
 #include "render/rs_render_filter_base.h"
@@ -22,10 +22,11 @@
 namespace OHOS {
 namespace Rosen {
 
+// =======================================================
 class RSC_EXPORT RSUIFilterParaBase : public RSPropertyBase, public std::enable_shared_from_this<RSUIFilterParaBase> {
 public:
     RSUIFilterParaBase(RSUIFilterType type) : type_(type) {}
-    virtual ~RSUIFilterParaBase() = default;
+    ~RSUIFilterParaBase() override = default;
 
     RSUIFilterType GetType() const;
 
@@ -41,7 +42,6 @@ public:
 
     virtual void SetProperty(const std::shared_ptr<RSUIFilterParaBase>& other) = 0;
 
-    void OnAttach(RSNode& node);
     // temporary fix
     RSPropertyType GetPropertyType() const override { return RSPropertyType::UI_FILTER; }
     void SetIsCustom(bool isCustom) override {}
@@ -95,4 +95,4 @@ protected:
 };
 } // namespace Rosen
 } // namespace OHOS
-#endif // ROSEN_ENGINE_CORE_RENDER_UI_FILTER_BASE_H
+#endif // ROSEN_ENGINE_CORE_RENDER_UI_FILTER_PARA_BASE_H

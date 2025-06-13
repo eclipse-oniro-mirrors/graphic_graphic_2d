@@ -119,17 +119,15 @@ protected:
 
     void AttachToNode(const std::shared_ptr<RSNode> target)
     {
-        property_->target_ = std::weak_ptr<RSNode>(target);
-        property_->AttachModifier(shared_from_this());
+        property_->Attach(target);
         MarkNodeDirty();
         OnAttachToNode(target);
     }
 
     void DetachFromNode()
     {
-        OnDetachFromNode();
         MarkNodeDirty();
-        property_->target_.reset();
+        property_->Detach();
     }
 
     void SetMotionPathOption(const std::shared_ptr<RSMotionPathOption>& motionPathOption)
@@ -147,8 +145,6 @@ protected:
     virtual void UpdateToRender() {}
 
     virtual void OnAttachToNode(const std::weak_ptr<RSNode>& target) {}
-
-    virtual void OnDetachFromNode() {}
 
     void SetDirty(const bool isDirty, const std::shared_ptr<RSModifierManager>& modifierManager = nullptr);
 

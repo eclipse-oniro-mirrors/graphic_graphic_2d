@@ -33,6 +33,7 @@
 
 namespace OHOS {
 namespace Rosen {
+class RSNGRenderFilterBase;
 class RSRenderMaskPara;
 class RSRenderNode;
 enum class ForegroundColorStrategyType;
@@ -128,11 +129,8 @@ public:
         return id_;
     }
 
-    void Attach(std::weak_ptr<RSRenderNode> node)
-    {
-        node_ = node;
-        OnChange();
-    }
+    void Attach(std::weak_ptr<RSRenderNode> node);
+    void Detach(std::weak_ptr<RSRenderNode> node);
 
     RSModifierType GetModifierType() const
     {
@@ -142,6 +140,7 @@ public:
     {
         modifierType_ = type;
         UpdatePropertyUnit(type);
+        OnSetModifierType();
     }
 
     virtual void Dump(std::string& out) const = 0;
@@ -152,6 +151,10 @@ protected:
     [[nodiscard]] static bool Unmarshalling(Parcel& parcel, std::shared_ptr<RSRenderPropertyBase>& val);
 
     void OnChange() const;
+
+    virtual void OnAttach() {}
+    virtual void OnDetach() {}
+    virtual void OnSetModifierType() {}
 
     void UpdatePropertyUnit(RSModifierType type);
 
@@ -268,6 +271,8 @@ public:
     RSRenderProperty(const T& value, const PropertyId& id) : RSRenderPropertyBase(id), stagingValue_(value) {}
     ~RSRenderProperty() override = default;
 
+    using ValueType = T;
+
     virtual void Set(const T& value, PropertyUpdateType type = UPDATE_TYPE_OVERWRITE)
     {
         if (value == stagingValue_) {
@@ -307,6 +312,10 @@ protected:
     T stagingValue_{};
     inline static const RSPropertyType type_ = RSPropertyType::INVALID;
     std::function<void(const std::shared_ptr<RSRenderPropertyBase>&)> updateUIPropertyFunc_;
+
+    void OnAttach() override {}
+    void OnDetach() override {}
+    void OnSetModifierType() override {}
 
     RSPropertyType GetPropertyType() const override
     {
@@ -348,6 +357,8 @@ public:
         : RSRenderProperty<T>(value, id), unit_(unit)
     {}
     virtual ~RSRenderAnimatableProperty() = default;
+
+    using ValueType = T;
 
     void Set(const T& value, PropertyUpdateType type = UPDATE_TYPE_OVERWRITE) override
     {
@@ -537,6 +548,8 @@ template<>
 RSB_EXPORT void RSRenderProperty<std::shared_ptr<ParticleNoiseFields>>::Dump(std::string& out) const;
 template<>
 RSB_EXPORT void RSRenderProperty<std::shared_ptr<RSMask>>::Dump(std::string& out) const;
+template<>
+RSB_EXPORT void RSRenderProperty<std::shared_ptr<RSNGRenderFilterBase>>::Dump(std::string& out) const;
 
 template<>
 RSB_EXPORT bool RSRenderAnimatableProperty<float>::IsNearEqual(

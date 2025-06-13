@@ -296,6 +296,10 @@ static const std::unordered_map<RSModifierType, ResetPropertyFunc> g_propertyRes
                                                                 prop->SetForegroundUIFilter({}); }},
     { RSModifierType::HDR_BRIGHTNESS_FACTOR,                [](RSProperties* prop) {
                                                                 prop->SetHDRBrightnessFactor(1.0f); }},
+    { RSModifierType::FOREGROUND_NG_FILTER,                 [](RSProperties* prop) {
+                                                                prop->SetForegroundNGFilter({}); }},
+    { RSModifierType::BACKGROUND_NG_FILTER,                 [](RSProperties* prop) {
+                                                                prop->SetBackgroundNGFilter({}); }},
 };
 
 } // namespace
@@ -2588,6 +2592,34 @@ std::shared_ptr<RSRenderFilter> RSProperties::GetForegroundUIFilter() const
     return foregroundRenderFilter_;
 }
 
+void RSProperties::SetBackgroundNGFilter(const std::shared_ptr<RSNGRenderFilterBase>& filterProp)
+{
+    bgNGRenderFilter_ = filterProp;
+    isDrawn_ = true;
+    filterNeedUpdate_ = true;
+    SetDirty();
+    contentDirty_ = true;
+}
+
+std::shared_ptr<RSNGRenderFilterBase> RSProperties::GetBackgroundNGFilter() const
+{
+    return bgNGRenderFilter_;
+}
+
+void RSProperties::SetForegroundNGFilter(const std::shared_ptr<RSNGRenderFilterBase>& filterProp)
+{
+    fgNGRenderFilter_ = filterProp;
+    isDrawn_ = true;
+    filterNeedUpdate_ = true;
+    SetDirty();
+    contentDirty_ = true;
+}
+
+std::shared_ptr<RSNGRenderFilterBase> RSProperties::GetForegroundNGFilter() const
+{
+    return fgNGRenderFilter_;
+}
+
 void RSProperties::SetHDRUIBrightness(float hdrUIBrightness)
 {
     if (auto node = RSBaseRenderNode::ReinterpretCast<RSCanvasRenderNode>(backref_.lock())) {
@@ -3786,13 +3818,13 @@ void RSProperties::GenerateBezierWarpFilter()
     if (!bezierWarpFilter->ParseFilterValues()) {
         return;
     }
-    auto bezierWarpFilterCopy = bezierWarpFilter->DeepCopy();
+    foregroundFilter_.reset();
     if (!foregroundFilter_) {
-        foregroundFilter_ = std::make_shared<RSDrawingFilter>(bezierWarpFilterCopy);
+        foregroundFilter_ = std::make_shared<RSDrawingFilter>(bezierWarpFilter);
         foregroundFilter_->SetFilterType(RSFilter::BEZIER_WARP);
     } else {
         auto foregroundDrawingFilter = std::static_pointer_cast<RSDrawingFilter>(foregroundFilter_);
-        foregroundDrawingFilter = foregroundDrawingFilter->Compose(bezierWarpFilterCopy);
+        foregroundDrawingFilter = foregroundDrawingFilter->Compose(bezierWarpFilter);
         foregroundDrawingFilter->SetFilterType(RSFilter::BEZIER_WARP);
         foregroundFilter_ = foregroundDrawingFilter;
     }

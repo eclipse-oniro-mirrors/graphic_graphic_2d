@@ -40,6 +40,7 @@
 #include "render/rs_particles_drawable.h"
 #include "render/rs_path.h"
 #include "render/rs_render_filter.h"
+#include "render/rs_render_filter_base.h"
 #include "render/rs_shader.h"
 #include "render/rs_shadow.h"
 #include "render/rs_attraction_effect_filter.h"
@@ -281,6 +282,12 @@ public:
     std::shared_ptr<RSRenderFilter> GetBackgroundUIFilter() const;
     void SetForegroundUIFilter(const std::shared_ptr<RSRenderFilter>& renderFilter);
     std::shared_ptr<RSRenderFilter> GetForegroundUIFilter() const;
+
+    void SetBackgroundNGFilter(const std::shared_ptr<RSNGRenderFilterBase>& renderFilter);
+    std::shared_ptr<RSNGRenderFilterBase> GetBackgroundNGFilter() const;
+
+    void SetForegroundNGFilter(const std::shared_ptr<RSNGRenderFilterBase>& renderFilter);
+    std::shared_ptr<RSNGRenderFilterBase> GetForegroundNGFilter() const;
 
     void SetFgBrightnessRates(const Vector4f& rates);
     Vector4f GetFgBrightnessRates() const;
@@ -733,7 +740,9 @@ private:
     std::shared_ptr<RSObjAbsGeometry> boundsGeo_;
     std::shared_ptr<RSFilter> foregroundFilter_ = nullptr; // view content filter
     std::shared_ptr<RSFilter> foregroundFilterCache_ = nullptr; // view content filter via cache
-    std::shared_ptr<RSRenderFilter> foregroundRenderFilter_ = nullptr;
+std::shared_ptr<RSRenderFilter> foregroundRenderFilter_ = nullptr;
+    std::shared_ptr<RSNGRenderFilterBase> bgNGRenderFilter_ = nullptr;
+    std::shared_ptr<RSNGRenderFilterBase> fgNGRenderFilter_ = nullptr;
     std::shared_ptr<RSFilter> backgroundFilter_ = nullptr;
     std::shared_ptr<RSRenderFilter> backgroundRenderFilter_ = nullptr;
     std::shared_ptr<RSFilter> filter_ = nullptr;

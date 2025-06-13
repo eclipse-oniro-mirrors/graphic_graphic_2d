@@ -430,6 +430,8 @@ public:
     void CleanDirtyRegionUpdated();
     
     std::shared_ptr<RSRenderPropertyBase> GetProperty(PropertyId id);
+    void AddProperty(std::shared_ptr<RSRenderPropertyBase> property);
+    void RemoveProperty(std::shared_ptr<RSRenderPropertyBase> property);
 
     void AddModifier(const std::shared_ptr<RSRenderModifier>& modifier, bool isSingleFrameComposer = false);
     void RemoveModifier(const PropertyId& id);
@@ -947,7 +949,6 @@ protected:
 
     static void SendCommandFromRT(std::unique_ptr<RSCommand>& command, NodeId nodeId);
     void AddGeometryModifier(const std::shared_ptr<RSRenderModifier>& modifier);
-    void AddUIFilterModifier(const std::shared_ptr<RSRenderModifier>& modifier);
 
     virtual void InitRenderParams();
     virtual void OnSync();

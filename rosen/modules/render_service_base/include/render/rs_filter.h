@@ -117,6 +117,8 @@ public:
         return hash_;
     }
 
+    virtual void OnSync() {}
+
     bool NeedSnapshotOutset() const
     {
         return needSnapshotOutset_;

@@ -476,6 +476,40 @@ public:
     }
 };
 
+class RSB_EXPORT RSForegroundNGFilterRenderModifier : public RSForegroundRenderModifier {
+public:
+    RSForegroundNGFilterRenderModifier(const std::shared_ptr<RSRenderPropertyBase>& property)
+        : RSForegroundRenderModifier(property)
+    {
+        property->SetModifierType(RSModifierType::FOREGROUND_NG_FILTER);
+    }
+    ~RSForegroundNGFilterRenderModifier() override = default;
+    void Apply(RSModifierContext& context) const override;
+    void Update(const std::shared_ptr<RSRenderPropertyBase>& prop, bool isDelta) override;
+    bool Marshalling(Parcel& parcel) override;
+    RSModifierType GetType() override
+    {
+        return RSModifierType::FOREGROUND_NG_FILTER;
+    }
+};
+
+class RSB_EXPORT RSBackgroundNGFilterRenderModifier : public RSBackgroundRenderModifier {
+public:
+    RSBackgroundNGFilterRenderModifier(const std::shared_ptr<RSRenderPropertyBase>& property)
+        : RSBackgroundRenderModifier(property)
+    {
+        property->SetModifierType(RSModifierType::BACKGROUND_NG_FILTER);
+    }
+    ~RSBackgroundNGFilterRenderModifier() override = default;
+    void Apply(RSModifierContext& context) const override;
+    void Update(const std::shared_ptr<RSRenderPropertyBase>& prop, bool isDelta) override;
+    bool Marshalling(Parcel& parcel) override;
+    RSModifierType GetType() override
+    {
+        return RSModifierType::BACKGROUND_NG_FILTER;
+    }
+};
+
 // declare RenderModifiers like RSBoundsRenderModifier
 #define DECLARE_ANIMATABLE_MODIFIER(MODIFIER_NAME, TYPE, MODIFIER_TYPE, DELTA_OP, MODIFIER_TIER, THRESHOLD_TYPE) \
     class RSB_EXPORT RS##MODIFIER_NAME##RenderModifier : public RS##MODIFIER_TIER##RenderModifier {              \
