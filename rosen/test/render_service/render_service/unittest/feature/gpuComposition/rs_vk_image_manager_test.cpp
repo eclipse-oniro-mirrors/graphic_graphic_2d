@@ -300,7 +300,7 @@ HWTEST_F(RSVKImageManagerTest, CreateTest, TestSize.Level1)
  * @tc.type: FUNC
  * @tc.require: issueI6QHNP
  */
-HWTEST_F(RSEglImageManagerTest, CreateImageFromBufferTest, TestSize.Level1)
+HWTEST_F(RSVKImageManagerTest, CreateImageFromBufferTest, TestSize.Level1)
 {
     int canvasHeight = 10;
     int canvasWidth = 10;
@@ -310,10 +310,7 @@ HWTEST_F(RSEglImageManagerTest, CreateImageFromBufferTest, TestSize.Level1)
     sptr<SyncFence> acquireFence = nullptr;
     uint32_t threadIndex = 0;
     std::shared_ptr<Drawing::ColorSpace> drawingColorSpace = nullptr;
-    std::shared_ptr<RenderContext> renderContext = std::make_shared<RenderContext>();
-    renderContext->InitializeEglContext();
-    renderContext->SetUpGpuContext();
-    std::shared_ptr<RSImageManager> imageManager = std::make_shared<RSEglImageManager>(renderContext->GetEGLDisplay());
+    std::shared_ptr<RSImageManager> imageManager = std::make_shared<RSVkImageManager>();
     auto res = imageManager->CreateImageFromBuffer(*canvas, buffer, acquireFence, threadIndex, drawingColorSpace);
     EXPECT_EQ(res, nullptr);
 
@@ -328,12 +325,9 @@ HWTEST_F(RSEglImageManagerTest, CreateImageFromBufferTest, TestSize.Level1)
  * @tc.type: FUNC
  * @tc.require: issueI6QHNP
  */
-HWTEST_F(RSEglImageManagerTest, GetIntersectImageTest, TestSize.Level1)
+HWTEST_F(RSVKImageManagerTest, GetIntersectImageTest, TestSize.Level1)
 {
-    std::shared_ptr<RenderContext> renderContext = std::make_shared<RenderContext>();
-    renderContext->InitializeEglContext();
-    renderContext->SetUpGpuContext();
-    std::shared_ptr<RSImageManager> imageManager = std::make_shared<RSEglImageManager>(renderContext->GetEGLDisplay());
+    std::shared_ptr<RSImageManager> imageManager = std::make_shared<RSVkImageManager>();
     Drawing::RectI imgCutRect = Drawing::RectI{0, 0, 10, 10};
     std::shared_ptr<Drawing::GPUContext> context = std::make_shared<Drawing::GPUContext>();
     sptr<OHOS::SurfaceBuffer> buffer = nullptr;
@@ -342,5 +336,27 @@ HWTEST_F(RSEglImageManagerTest, GetIntersectImageTest, TestSize.Level1)
     buffer = SurfaceBuffer::Create();
     auto res = imageManager->GetIntersectImage(imgCutRect, context, buffer, acquireFence, threadIndex);
     EXPECT_EQ(res, nullptr);
+}
+
+/**
+ * @tc.name: NewImageCacheFromBufferTest
+ * @tc.desc: NewImageCacheFromBuffer
+ * @tc.type: FUNC
+ * @tc.require: issueI6QHNP
+ */
+HWTEST_F(RSVkImageManagerTest, NewImageCacheFromBufferTest, TestSize.Level1)
+{
+    std::shared_ptr<RSImageManager> imageManager = std::make_shared<RSVkImageManager>();
+    sptr<OHOS::SurfaceBuffer> buffer = nullptr;
+    pid_t threadIndex = 0;
+    bool isProtectedCondition = true;
+    auto res = imageManager->newImageCacheFromBuffer(buffer, threadIndex, isProtectedCondition);
+    EXPECT_EQ(res, nullptr);
+    buffer = SurfaceBuffer::Create();
+    res = imageManager->newImageCacheFromBuffer(buffer, threadIndex, isProtectedCondition);
+    EXPECT_NE(res, nullptr);
+    isProtectedCondition = false;
+    res = imageManager->newImageCacheFromBuffer(buffer, threadIndex, isProtectedCondition);
+    EXPECT_NE(res, nullptr);
 }
 } // namespace OHOS::Rosen

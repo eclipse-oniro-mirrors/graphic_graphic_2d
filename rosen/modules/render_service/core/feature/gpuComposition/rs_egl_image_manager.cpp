@@ -342,18 +342,18 @@ std::shared_ptr<Drawing::Image> RSEglImageManager::CreateImageFromBuffer(
     RSPaintFilterCanvas& canvas, const sptr<SurfaceBuffer>& buffer, const sptr<SyncFence>& acquireFence,
     const pid_t threadIndex, const std::shared_ptr<Drawing::ColorSpace>& drawingColorSpace)
 {
-#if defined(RS_ENABLE_EGLIMAGE) && defined(RS_ENABLE_GPU) && defined(RS_ENABLE_GL)
+#if defined(RS_ENABLE_EGLIMAGE) && defined(RS_ENABLE_GL)
     if (canvas.GetGPUContext() == nullptr) {
-        RS_LOGE("RSBaseRenderEngine::CreateEglImageFromBuffer GrContext is null!");
+        RS_LOGE("RSEglImageManager::CreateEglImageFromBuffer GrContext is null!");
         return nullptr;
     }
     if (buffer == nullptr) {
-        RS_LOGE("RSBaseRenderEngine::CreateEglImageFromBuffer buffer is null!");
+        RS_LOGE("RSEglImageManager::CreateEglImageFromBuffer buffer is null!");
         return nullptr;
     }
     auto eglTextureId = MapEglImageFromSurfaceBuffer(buffer, acquireFence, threadIndex);
     if (eglTextureId == 0) {
-        RS_LOGE("RSBaseRenderEngine::CreateEglImageFromBuffer MapEglImageFromSurfaceBuffer return invalid texture ID");
+        RS_LOGE("RSEglImageManager::CreateEglImageFromBuffer MapEglImageFromSurfaceBuffer return invalid texture ID");
         return nullptr;
     }
     auto pixelFmt = buffer->GetFormat();
@@ -382,7 +382,7 @@ std::shared_ptr<Drawing::Image> RSEglImageManager::CreateImageFromBuffer(
     externalTextureInfo.SetFormat(glType);
     if (!image->BuildFromTexture(*canvas.GetGPUContext(), externalTextureInfo,
         surfaceOrigin, bitmapFormat, drawingColorSpace)) {
-        RS_LOGE("RSBaseRenderEngine::CreateEglImageFromBuffer image BuildFromTexture failed");
+        RS_LOGE("RSEglImageManager::CreateEglImageFromBuffer image BuildFromTexture failed");
         return nullptr;
     }
     return image;
@@ -395,13 +395,9 @@ std::shared_ptr<Drawing::Image> RSEglImageManager::GetIntersectImage(Drawing::Re
     const std::shared_ptr<Drawing::GPUContext>& context, const sptr<OHOS::SurfaceBuffer>& buffer,
     const sptr<SyncFence>& acquireFence, pid_t threadIndex)
 {
-    if (buffer == nullptr || context == nullptr) {
-        RS_LOGE("RSMagicPointerRenderManager::GetIntersectImageFromGL buffer or context is null");
-        return nullptr;
-    }
     auto eglTextureId = MapEglImageFromSurfaceBuffer(buffer, acquireFence, threadIndex);
     if (eglTextureId == 0) {
-        RS_LOGE("RSMagicPointerRenderManager::GetIntersectImageFromGL invalid texture ID");
+        RS_LOGE("RSEglImageManager::GetIntersectImageFromGL invalid texture ID");
         return nullptr;
     }
 
@@ -424,14 +420,14 @@ std::shared_ptr<Drawing::Image> RSEglImageManager::GetIntersectImage(Drawing::Re
     std::shared_ptr<Drawing::Image> layerImage = std::make_shared<Drawing::Image>();
     if (!layerImage->BuildFromTexture(*context, externalTextureInfo,
         Drawing::TextureOrigin::TOP_LEFT, bitmapFormat, nullptr)) {
-        RS_LOGE("RSMagicPointerRenderManager::GetIntersectImageFromGL image BuildFromTexture failed");
+        RS_LOGE("RSEglImageManager::GetIntersectImageFromGL image BuildFromTexture failed");
         return nullptr;
     }
 
     std::shared_ptr<Drawing::Image> cutDownImage = std::make_shared<Drawing::Image>();
     bool res = cutDownImage->BuildSubset(layerImage, imgCutRect, *context);
     if (!res) {
-        ROSEN_LOGE("RSMagicPointerRenderManager::GetIntersectImageFromVK cutDownImage BuildSubset failed.");
+        ROSEN_LOGE("RSEglImageManager::GetIntersectImageFromVK cutDownImage BuildSubset failed.");
         return nullptr;
     }
     Drawing::ImageInfo info = Drawing::ImageInfo(imgCutRect.GetWidth(), imgCutRect.GetHeight(),
@@ -439,7 +435,7 @@ std::shared_ptr<Drawing::Image> RSEglImageManager::GetIntersectImage(Drawing::Re
 
     std::shared_ptr<Drawing::Surface> surface = Drawing::Surface::MakeRenderTarget(context.get(), false, info);
     if (surface == nullptr) {
-        RS_LOGE("RSMagicPointerRenderManager::GetIntersectImageFromGL MakeRenderTarget failed.");
+        RS_LOGE("RSEglImageManager::GetIntersectImageFromGL MakeRenderTarget failed.");
         return nullptr;
     }
     auto drawCanvas = std::make_shared<RSPaintFilterCanvas>(surface.get());

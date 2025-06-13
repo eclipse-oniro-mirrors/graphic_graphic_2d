@@ -142,6 +142,8 @@ HWTEST_F(RSEglImageManagerTest, MapImageFromSurfaceBuffer001, TestSize.Level1)
         sptr<SyncFence> acquireFence;
         auto ret = eglImageManager_->MapEglImageFromSurfaceBuffer(buffer, acquireFence, 0);
         ASSERT_NE(ret, 0);
+        ret = eglImageManager_->MapEglImageFromSurfaceBuffer(nullptr, acquireFence, 0);
+        ASSERT_EQ(ret, 0);
     }
 }
 
@@ -246,7 +248,7 @@ HWTEST_F(RSEglImageManagerTest, CreateTest, TestSize.Level1)
     ASSERT_NE(imageManager, nullptr);
     std::shared_ptr<RenderContext> renderContextNull = nullptr;
     auto imageManagerNull = std::make_shared<RSEglImageManager>(renderContext->GetEGLDisplay());
-    EXPECT_EQ(imageManagerNull, nullptr); 
+    EXPECT_EQ(imageManagerNull, nullptr);
 #endif // RS_ENABLE_GL
 }
 
