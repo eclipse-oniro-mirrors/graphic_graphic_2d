@@ -1285,6 +1285,78 @@ HWTEST_F(OHHmSymbolRunTest, SetDrawPath001, TestSize.Level0)
     hmSymbolRun.DrawPaths(rsCanvas.get(), multPaths, path);
     EXPECT_EQ(hmSymbolRun.symbolTxt_.GetRenderMode(), RSSymbolRenderingStrategy::MULTIPLE_COLOR);
 }
+
+/*
+ * @tc.name: SetSymbolShadow001
+ * @tc.desc: test SetSymbolShadow
+ * @tc.type: FUNC
+ */
+HWTEST_F(OHHmSymbolRunTest, SetSymbolShadow001, TestSize.Level1)
+{
+    HMSymbolRun hmSymbolRun = HMSymbolRun();
+    // {10.0F, 10.0f} is offsetXY, 10.0f is radius
+    SymbolShadow shadow = {Drawing::Color::COLOR_BLACK, {10.0F, 10.0f}, 10.0f};
+    std::optional<SymbolShadow> symbolShadow = shadow;
+    hmSymbolRun.SetSymbolShadow(symbolShadow);
+    hmSymbolRun.SetSymbolShadow(symbolShadow);
+    EXPECT_TRUE(hmSymbolRun.symbolTxt_.GetSymbolShadow().has_value());
+}
+
+/*
+ * @tc.name: OnDrawSymbol001
+ * @tc.desc: test OnDrawSymbol
+ * @tc.type: FUNC
+ */
+HWTEST_F(OHHmSymbolRunTest, OnDrawSymbol001, TestSize.Level1)
+{
+    std::shared_ptr<RSCanvas> rsCanvas = std::make_shared<RSCanvas>();
+    RSPoint offset = {100.0f, 100.0f}; // 100.0f, 100.0f is the offset
+    RSPath path;
+    path.AddCircle(100.0f, 100.0f, 40.0f); // 100.0f x, 100.0f, 40.0f radius
+    RSHMSymbolData symbol;
+    symbol.path_ = path;
+    symbol.symbolInfo_.layers = {{0}}; // this one layers;
+    symbol.symbolInfo_.renderGroups = {{{{{0}}}}}; // the {0} is layerIndexes of one group
+
+    HMSymbolRun hmSymbolRun = HMSymbolRun();
+    // {10.0F, 10.0f} is offsetXY, 10.0f is radius
+    SymbolShadow shadow = {Drawing::Color::COLOR_BLACK, {10.0F, 10.0f}, 10.0f};
+    std::optional<SymbolShadow> symbolShadow = shadow;
+    hmSymbolRun.SetSymbolShadow(symbolShadow);
+    hmSymbolRun.OnDrawSymbol(rsCanvas.get(), symbol, offset);
+    EXPECT_TRUE(hmSymbolRun.symbolTxt_.GetSymbolShadow().has_value());
+}
+
+/*
+ * @tc.name: DrawSymbolShadow001
+ * @tc.desc: test DrawSymbolShadow
+ * @tc.type: FUNC
+ */
+HWTEST_F(OHHmSymbolRunTest, DrawSymbolShadow001, TestSize.Level1)
+{
+    std::shared_ptr<RSCanvas> rsCanvas = std::make_shared<RSCanvas>();
+    RSPoint offset = {100.0f, 100.0f}; // 100.0f, 100.0f is the offset
+    RSPath path1;
+    path1.AddCircle(100.0f, 100.0f, 40.0f); // 100.0f x, 100.0f y, 40.0f radius
+    RSPath path2;
+    path2.AddCircle(100.0f, 50.0f, 40.0f); // 100.0f x, 50.0f y, 40.0f radius
+    std::vector<RSPath> paths = {path1, path2};
+    HMSymbolRun hmSymbolRun = HMSymbolRun();
+    // {10.0F, 10.0f} is offsetXY, 10.0f is radius
+    SymbolShadow shadow = {Drawing::Color::COLOR_BLACK, {10.0F, 10.0f}, 10.0f};
+    std::optional<SymbolShadow> symbolShadow = shadow;
+    hmSymbolRun.SetSymbolShadow(symbolShadow);
+    hmSymbolRun.DrawSymbolShadow(rsCanvas.get(), paths);
+    EXPECT_TRUE(hmSymbolRun.symbolTxt_.GetSymbolShadow().has_value());
+
+    auto color1 = std::make_shared<SymbolGradient>();
+    color1->SetColors({0XFFFF0000}); // 0XFFFF0000 is ARGB
+    auto color2 = std::make_shared<SymbolGradient>();
+    color2->SetColors({0XFF0000FF}); // 0XFF0000FF is ARGB
+    hmSymbolRun.gradients_ = {color1, color2};
+    hmSymbolRun.DrawSymbolShadow(rsCanvas.get(), paths);
+    EXPECT_TRUE(hmSymbolRun.symbolTxt_.GetSymbolShadow().has_value());
+}
 } // namespace SPText
 } // namespace Rosen
 } // namespace OHOS
