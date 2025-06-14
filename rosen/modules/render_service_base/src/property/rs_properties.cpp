@@ -296,6 +296,10 @@ static const std::unordered_map<RSModifierType, ResetPropertyFunc> g_propertyRes
                                                                 prop->SetForegroundUIFilter({}); }},
     { RSModifierType::HDR_BRIGHTNESS_FACTOR,                [](RSProperties* prop) {
                                                                 prop->SetHDRBrightnessFactor(1.0f); }},
+    { RSModifierType::FOREGROUND_NG_FILTER,                 [](RSProperties* prop) {
+                                                                prop->SetForegroundNGFilter({}); }},
+    { RSModifierType::BACKGROUND_NG_FILTER,                 [](RSProperties* prop) {
+                                                                prop->SetBackgroundNGFilter({}); }},
 };
 
 } // namespace
@@ -2586,6 +2590,34 @@ void RSProperties::SetForegroundUIFilter(const std::shared_ptr<RSRenderFilter>& 
 std::shared_ptr<RSRenderFilter> RSProperties::GetForegroundUIFilter() const
 {
     return foregroundRenderFilter_;
+}
+
+void RSProperties::SetBackgroundNGFilter(const std::shared_ptr<RSNGRenderFilterBase>& filterProp)
+{
+    bgNGRenderFilter_ = filterProp;
+    isDrawn_ = true;
+    filterNeedUpdate_ = true;
+    SetDirty();
+    contentDirty_ = true;
+}
+
+std::shared_ptr<RSNGRenderFilterBase> RSProperties::GetBackgroundNGFilter() const
+{
+    return bgNGRenderFilter_;
+}
+
+void RSProperties::SetForegroundNGFilter(const std::shared_ptr<RSNGRenderFilterBase>& filterProp)
+{
+    fgNGRenderFilter_ = filterProp;
+    isDrawn_ = true;
+    filterNeedUpdate_ = true;
+    SetDirty();
+    contentDirty_ = true;
+}
+
+std::shared_ptr<RSNGRenderFilterBase> RSProperties::GetForegroundNGFilter() const
+{
+    return fgNGRenderFilter_;
 }
 
 void RSProperties::SetHDRUIBrightness(float hdrUIBrightness)

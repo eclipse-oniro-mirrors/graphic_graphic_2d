@@ -651,6 +651,25 @@ HWTEST_F(RSRenderModifierTest, RSForegroundUIFilterRenderModifier001, TestSize.L
 }
 
 /**
+ * @tc.name: RSForegroundNGFilterRenderModifier001
+ * @tc.desc: RSForegroundNGFilterRenderModifier001
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSRenderModifierTest, RSForegroundNGFilterRenderModifier001, TestSize.Level1)
+{
+    auto prop1 = std::make_shared<RSRenderProperty<std::shared_ptr<RSNGRenderBlurFilter>>>();
+    auto modifier = std::make_shared<RSForegroundNGFilterRenderModifier>(prop1);
+    EXPECT_EQ(modifier->GetProperty(), prop1);
+
+    auto prop2 = std::make_shared<RSRenderProperty<std::shared_ptr<RSNGRenderEdgeLightFilter>>>();
+    modifier->Update(prop2, false);
+
+    Parcel parcel;
+    EXPECT_TRUE(modifier->Marshalling(parcel));
+}
+
+/**
  * @tc.name: RSBackgroundUIFilterRenderModifier001
  * @tc.desc: RSBackgroundUIFilterRenderModifier001
  * @tc.type: FUNC
