@@ -572,7 +572,7 @@ bool RSProperties::UpdateGeometryByParent(const Drawing::Matrix* parentMatrix,
     }
     auto dirtyFlag = (rect != lastRect_.value()) || !(prevAbsMatrix == prevAbsMatrix_);
     lastRect_ = rect;
-    if (foregroundRenderFilter_ && foregroundRenderFilter_->GetUIFilterTypes() == RSUIFilterType::CONTENT_LIGHT) {
+    if (foregroundRenderFilter_) {
         GenerateContentLightFilter();
     }
     return dirtyFlag;
