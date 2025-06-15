@@ -229,14 +229,13 @@ napi_value EffectNapi::CreateBorderLight(napi_env env, napi_callback_info info)
     UIEFFECT_NAPI_CHECK_RET_D(status == napi_ok, nullptr,
         UIEFFECT_LOG_E("EffectNapi CreateBorderLight parsing input fail"));
 
-    std::shared_ptr<BorderLightEffectPara> para = std::make_shared<BorderLightEffectPara>();
-    UIEFFECT_NAPI_CHECK_RET_D(para != nullptr, nullptr,
-        UIEFFECT_LOG_E("EffectNapi CreateBorderLight para is nullptr"));
-
     if (argCount != NUM_4) {
         UIEFFECT_LOG_E("Args number less than 4");
         return thisVar;
     }
+    std::shared_ptr<BorderLightEffectPara> para = std::make_shared<BorderLightEffectPara>();
+    UIEFFECT_NAPI_CHECK_RET_D(para != nullptr, nullptr,
+        UIEFFECT_LOG_E("EffectNapi CreateBorderLight para is nullptr"));
 
     UIEFFECT_NAPI_CHECK_RET_D(GetBorderLight(env, argValue, para), nullptr,
         UIEFFECT_LOG_E("EffectNapi GetBorderLight fail"));
