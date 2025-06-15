@@ -66,7 +66,6 @@ enum class RSNGEffectType : int16_t {
     EDGE_LIGHT,
     BEZIER_WARP,
     DISPERSION,
-    CONTENT_LIGHT,
 
     AIBAR,
     GREY,
