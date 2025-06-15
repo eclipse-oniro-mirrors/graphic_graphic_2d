@@ -3260,7 +3260,6 @@ HWTEST_F(RSPropertiesTest, GenerateRenderFilterDispersion001, TestSize.Level1)
  * @tc.name: GenerateForegroundRenderFilter001
  * @tc.desc: test results of GenerateForegroundRenderFilter
  * @tc.type:FUNC
- * @tc.require:
  */
 HWTEST_F(RSPropertiesTest, GenerateForegroundRenderFilter001, TestSize.Level1)
 {

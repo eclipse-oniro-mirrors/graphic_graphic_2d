@@ -104,7 +104,7 @@ std::shared_ptr<RSRenderPropertyBase> RSRenderContentLightFilterPara::CreateRend
             return std::make_shared<RSRenderAnimatableProperty<float>>(0.f, 0);
         }
         default: {
-            ROSEN_LOGD("RSRenderContentLightFilterPara::CreateRenderProperty is nullptr");
+            ROSEN_LOGD("RSRenderContentLightFilterPara::CreateRenderProperty unsupported type");
             return std::shared_ptr<RSRenderPropertyBase>();
         }
     }
@@ -122,8 +122,7 @@ std::vector<std::shared_ptr<RSRenderPropertyBase>> RSRenderContentLightFilterPar
 
 bool RSRenderContentLightFilterPara::ParseFilterValues()
 {
-    std::shared_ptr<RSRenderAnimatableProperty<Vector3f>> lightPositionProperty =
-        std::static_pointer_cast<RSRenderAnimatableProperty<Vector3f>>(
+    auto lightPositionProperty = std::static_pointer_cast<RSRenderAnimatableProperty<Vector3f>>(
             GetRenderProperty(RSUIFilterType::LIGHT_POSITION));
     if (lightPositionProperty == nullptr) {
         ROSEN_LOGE("RSRenderContentLightFilterPara::ParseFilterValues lightPositionProperty nullptr");
@@ -131,7 +130,7 @@ bool RSRenderContentLightFilterPara::ParseFilterValues()
     }
     lightPosition_ = lightPositionProperty->Get();
 
-    std::shared_ptr<RSRenderAnimatableProperty<Vector4f>> lightColorProperty =
+    auto lightColorProperty =
         std::static_pointer_cast<RSRenderAnimatableProperty<Vector4f>>(GetRenderProperty(RSUIFilterType::LIGHT_COLOR));
     if (lightColorProperty == nullptr) {
         ROSEN_LOGE("RSRenderContentLightFilterPara::ParseFilterValues lightColorProperty nullptr");
@@ -139,7 +138,7 @@ bool RSRenderContentLightFilterPara::ParseFilterValues()
     }
     lightColor_ = lightColorProperty->Get();
 
-    std::shared_ptr<RSRenderAnimatableProperty<float>> lightIntensityProperty =
+    auto lightIntensityProperty =
         std::static_pointer_cast<RSRenderAnimatableProperty<float>>(GetRenderProperty(RSUIFilterType::LIGHT_INTENSITY));
     if (lightIntensityProperty == nullptr) {
         ROSEN_LOGE("RSRenderContentLightFilterPara::ParseFilterValues lightIntensityProperty nullptr");
