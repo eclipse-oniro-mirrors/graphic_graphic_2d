@@ -214,7 +214,6 @@ napi_value EffectNapi::CreateBrightnessBlender(napi_env env, napi_callback_info 
 napi_value EffectNapi::CreateBorderLight(napi_env env, napi_callback_info info)
 {
     if (!UIEffectNapiUtils::IsSystemApp()) {
-        UIEFFECT_LOG_E("CreateBorderLight failed");
         napi_throw_error(env, std::to_string(ERR_NOT_SYSTEM_APP).c_str(),
             "EffectNapi CreateBorderLight failed, is not system app");
         return nullptr;
