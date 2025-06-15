@@ -60,7 +60,7 @@ private:
     Vector3f lightPosition_;
     Vector4f lightColor_;
     float lightIntensity_ = 0.0f;
-    Vector3f rotationAngle_ = 0.0f;
+    Vector3f rotationAngle_;
 };
 } // namespace Rosen
 } // namespace OHOS
