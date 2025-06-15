@@ -50,16 +50,17 @@ const std::shared_ptr<Drawing::ShaderEffect>& RSBorderLightShader::GetDrawingSha
 void RSBorderLightShader::SetRSBorderLightParams(const RSBorderLightParams& borderLightParam)
 {
     borderLightParam_ = borderLightParam;
-    if (geShader_) {
-        BorderLightParams borderLightParams = {
-            borderLightParam_.lightPosition_,
-            borderLightParam_.lightColor_,
-            borderLightParam_.lightIntensity_,
-            borderLightParam_.lightWidth_,
-            borderLightParam_.rotationAngle_
-        };
-        geShader_->SetBorderLightParams(borderLightParams);
+    if (geShader_ == nullptr) {
+        return;
     }
+    BorderLightParams borderLightParams = {
+        borderLightParam_.lightPosition_,
+        borderLightParam_.lightColor_,
+        borderLightParam_.lightIntensity_,
+        borderLightParam_.lightWidth_,
+        borderLightParam_.rotationAngle_
+    };
+    geShader_->SetBorderLightParams(borderLightParams);
 }
 
 void RSBorderLightShader::SetRotationAngle(const Vector3f& rotationAngle)
