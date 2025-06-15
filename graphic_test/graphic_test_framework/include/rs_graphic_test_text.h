@@ -38,7 +38,7 @@ class TextCustomModifier : public ContentStyleModifier {
 public:
     ~TextCustomModifier() = default;
 
-    void Draw(ContentStyleModifier& context) const;
+    void Draw(DrawingContext& context) const;
     void SetPosition(OHOS::Rosen::Vector2f position);
     void SetBrushColor(uint32_t color);
     void SetFontSize(float size);
