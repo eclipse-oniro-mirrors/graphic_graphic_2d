@@ -365,11 +365,13 @@ static bool GetContentLight(napi_env env, napi_value* param, std::shared_ptr<Con
 
     if (!ParseJsVector3f(env, param[NUM_0], lightPosition)) {
         FILTER_LOG_E("FilterNapi GetContentLight parse lightPosition fail");
+        return false;
     }
     para->SetLightPosition(lightPosition);
 
     if (!ParseJsRGBAColor(env, param[NUM_1], lightColor)) {
         FILTER_LOG_E("FilterNapi GetContentColor parse lightColor fail");
+        return false;
     }
     para->SetLightColor(lightColor);
     return true;
