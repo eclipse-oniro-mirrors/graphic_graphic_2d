@@ -3825,8 +3825,8 @@ void RSProperties::GenerateContentLightFilter()
         return;
     }
     auto derivedLight = std::static_pointer_cast<RSRenderContentLightFilterPara>(contentLight);
-    Vector3f rotationAngel(boundsGeo_->GetRotationX(), boundsGeo_->GetRotationY(), boundsGeo_->GetRotation());
-    derivedLight->SetRotationAngle(rotationAngel);
+    Vector3f rotationAngle(boundsGeo_->GetRotationX(), boundsGeo_->GetRotationY(), boundsGeo_->GetRotation());
+    derivedLight->SetRotationAngle(rotationAngle);
     if (!contentLight->ParseFilterValues()) {
         ROSEN_LOGE("RSProperties::GenerateContentLightFilter ParseFilterValues faile.");
         return;
