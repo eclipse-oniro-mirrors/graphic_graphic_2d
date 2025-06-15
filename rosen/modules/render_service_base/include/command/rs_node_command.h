@@ -55,8 +55,8 @@ enum RSNodeCommandType : uint16_t {
     UPDATE_MODIFIER_DRAWING_MATRIX = 0x0117,
     UPDATE_MODIFIER_COMPLEX_SHADER_PARAM = 0X0118,
     UPDATE_MODIFIER_UI_FILTER_PTR = 0X0119,
-    UPDATE_MODIFIER_DRAW_CMD_LIST_NG = 0x0120,
-    UPDATE_MODIFIER_NG_FILTER_BASE_PTR = 0X0121,
+    UPDATE_MODIFIER_NG_FILTER_BASE_PTR = 0X0120,
+    UPDATE_MODIFIER_DRAW_CMD_LIST_NG = 0x0121,
 
     SET_FREEZE = 0x0200,
     SET_DRAW_REGION = 0x0201,
@@ -91,12 +91,13 @@ enum RSNodeCommandType : uint16_t {
 
     UPDATE_OCCLUSION_CULLING_STATUS = 0x0a00,
 
-    MARK_REPAINT_BOUNDARY = 0x1000,
     ADD_MODIFIER_NG = 0x0b00,
     REMOVE_MODIFIER_NG = 0x0b01,
     MODIFIER_NG_ATTACH_PROPERTY = 0x0b02,
     MODIFIER_NG_DETACH_PROPERTY = 0x0b03,
     REMOVE_ALL_MODIFIERS_NG = 0x0b04,
+
+    MARK_REPAINT_BOUNDARY = 0x1000,
 };
 
 class RSB_EXPORT RSNodeCommandHelper {
@@ -135,11 +136,11 @@ public:
         if (!node) {
             return;
         }
-        if (auto modifier = node->GetModifier(id)) {
-            modifier->Update(prop, isDelta);
-        } else {
+        auto modifier = node->GetModifier(id);
+        if (!modifier) {
             return;
         }
+        modifier->Update(prop, isDelta);
         if (value) {
             value->UpdateNodeIdToPicture(nodeId);
         }
@@ -224,6 +225,10 @@ ADD_COMMAND(RSUpdatePropertyUIFilter,
     ARG(PERMISSION_APP, RS_NODE, UPDATE_MODIFIER_UI_FILTER_PTR,
         RSNodeCommandHelper::UpdateProperty<std::shared_ptr<RSRenderFilter>>,
         NodeId, std::shared_ptr<RSRenderFilter>, PropertyId, PropertyUpdateType))
+ADD_COMMAND(RSUpdatePropertyNGFilterBase,
+    ARG(PERMISSION_APP, RS_NODE, UPDATE_MODIFIER_NG_FILTER_BASE_PTR,
+        RSNodeCommandHelper::UpdateProperty<std::shared_ptr<RSNGRenderFilterBase>>,
+        NodeId, std::shared_ptr<RSNGRenderFilterBase>, PropertyId, PropertyUpdateType))
 ADD_COMMAND(RSUpdatePropertyImage,
     ARG(PERMISSION_APP, RS_NODE, UPDATE_MODIFIER_IMAGE_PTR,
         RSNodeCommandHelper::UpdateProperty<std::shared_ptr<RSImage>>,

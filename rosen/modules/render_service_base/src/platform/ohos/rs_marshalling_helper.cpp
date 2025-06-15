@@ -384,7 +384,7 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, Drawing::Bitmap& val)
         ROSEN_LOGE("failed RSMarshallingHelper::Unmarshalling Drawing::Bitmap");
         return false;
     }
-
+    
     if (!val.Deserialize(data)) {
         ROSEN_LOGE("failed RSMarshallingHelper::Unmarshalling Drawing::Bitmap Deserialize");
         return false;
@@ -890,7 +890,7 @@ bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<RSMa
     success &= Marshalling(parcel, val->shadowOffsetY_);
     success &= Marshalling(parcel, val->shadowSize_);
     success &= Marshalling(parcel, val->shadowStrength_);
-
+ 
     success &= Marshalling(parcel, val->gradientMaskColor1_);
     success &= Marshalling(parcel, val->gradientMaskColor2_);
     success &= Marshalling(parcel, val->outerContourColor1_);
@@ -898,7 +898,7 @@ bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<RSMa
 
     return success;
 }
-
+ 
 bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<RSMagnifierParams>& val)
 {
     float factor = 0.f;
@@ -1539,7 +1539,7 @@ bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<RSPa
         }
         return flag;
     }
-
+    
     std::shared_ptr<Drawing::Data> data = val->GetDrawingPath().Serialize();
     if (!data) {
         ROSEN_LOGD("unirender: RSMarshallingHelper::Marshalling Path is nullptr");
@@ -1810,7 +1810,7 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<Media::P
         } else {
             ROSEN_LOGE("RSMarshallingHelper::Unmarshalling RewindRead failed");
         }
-
+        
         return false;
     }
     if (RSSystemProperties::GetClosePixelMapFdEnabled()) {
@@ -3060,11 +3060,7 @@ bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<RSRe
 
 bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<RSRenderPropertyBase>& val)
 {
-    bool hasProperty = false;
-    if (parcel.ReadBool(hasProperty)) {
-        return !hasProperty || RSRenderPropertyBase::Unmarshalling(parcel, val);
-    }
-    return false;
+    return RSRenderPropertyBase::Unmarshalling(parcel, val);
 }
 
 bool RSMarshallingHelper::MarshallingTransactionVer(Parcel& parcel)

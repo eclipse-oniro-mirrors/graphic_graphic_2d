@@ -172,7 +172,6 @@ static const std::unordered_map<RSPropertyType, ThresholdType> g_propertyTypeToT
     { RSPropertyType::ENV_FOREGROUND_COLOR_STRATEGY, ThresholdType::DEFAULT },
     { RSPropertyType::CUSTOM_CLIP_TO_FRAME, ThresholdType::DEFAULT },
     { RSPropertyType::HDR_BRIGHTNESS, ThresholdType::DEFAULT },
-    { RSPropertyType::HDR_UI_BRIGHTNESS, ThresholdType::DEFAULT },
     { RSPropertyType::HDR_BRIGHTNESS_FACTOR, ThresholdType::COARSE },
     { RSPropertyType::BEHIND_WINDOW_FILTER_RADIUS, ThresholdType::COARSE },
     { RSPropertyType::BEHIND_WINDOW_FILTER_SATURATION, ThresholdType::COARSE },
@@ -304,7 +303,7 @@ void RSModifier::SetDirty(bool isDirty, const std::shared_ptr<RSModifierManager>
 
 std::shared_ptr<RSRenderModifier> RSModifier::CreateRenderModifier()
 {
-    const auto& constructor = RSRenderModifier::ConstructorLUT_[static_cast<uint8_t>(GetType())];
+    const auto& constructor = RSRenderModifier::ConstructorLUT_[static_cast<uint16_t>(GetType())];
     if (constructor == nullptr) {
         return nullptr;
     }

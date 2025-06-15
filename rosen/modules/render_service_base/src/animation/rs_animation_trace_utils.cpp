@@ -222,14 +222,13 @@ void RSAnimationTraceUtils::AddAnimationCallFinishTrace(
     if (!isDebugEnabled_ && !OHOS::Rosen::RSSystemProperties::GetDebugFmtTraceEnabled()) {
         return;
     }
-
-    auto propertyTypeStr = ModifierNG::RSModifierTypeString::GetPropertyTypeString(propertyType);
+    auto propertyTypeStr = ModifierNG::RSModifierTypeString::GetPropertyTypeString(propertyType).c_str();
     RS_TRACE_NAME_FMT("Animation Call FinishCallback node[%llu] animate[%llu] propertyType[%s]", nodeId, animationId,
-        propertyTypeStr.c_str());
+        propertyTypeStr);
     if (isAddLogInfo) {
         ROSEN_LOGI("Animation Call FinishCallback node[%{public}" PRIu64 "] animate[%{public}" PRIu64 "]"
                    "propertyType[%{public}s]",
-            nodeId, animationId, propertyTypeStr.c_str());
+            nodeId, animationId, propertyTypeStr);
     }
 }
 

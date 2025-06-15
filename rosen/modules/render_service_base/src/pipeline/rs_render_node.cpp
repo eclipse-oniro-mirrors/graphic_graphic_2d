@@ -22,9 +22,10 @@
 #include <set>
 #include <utility>
 
-#include "offscreen_render/rs_offscreen_render_thread.h"
 #include "rs_profiler.h"
 #include "rs_trace.h"
+#include "sandbox_utils.h"
+#include "string_utils.h"
 
 #include "animation/rs_render_animation.h"
 #include "common/rs_common_def.h"
@@ -42,12 +43,10 @@
 #include "pipeline/rs_display_render_node.h"
 #include "pipeline/rs_effect_render_node.h"
 #include "pipeline/rs_paint_filter_canvas.h"
+#include "pipeline/rs_recording_canvas.h"
 #include "pipeline/rs_render_node_gc.h"
 #include "pipeline/rs_root_render_node.h"
 #include "pipeline/rs_surface_render_node.h"
-#include "pipeline/rs_canvas_drawing_render_node.h"
-#include "pipeline/rs_recording_canvas.h"
-#include "pipeline/rs_render_node_gc.h"
 #include "pipeline/sk_resource_manager.h"
 #include "platform/common/rs_log.h"
 #include "platform/common/rs_system_properties.h"
@@ -58,9 +57,6 @@
 #include "render/rs_render_filter.h"
 #include "transaction/rs_transaction_proxy.h"
 #include "visitor/rs_node_visitor.h"
-#include "rs_profiler.h"
-#include "sandbox_utils.h"
-#include "string_utils.h"
 
 #ifdef RS_ENABLE_VK
 #ifdef USE_M133_SKIA
@@ -102,8 +98,8 @@ void RSRenderNode::OnRegister(const std::weak_ptr<RSContext>& context)
 
 bool RSRenderNode::IsPureContainer() const
 {
-    return (!GetRenderProperties().isDrawn_ && !GetRenderProperties().alphaNeedApply_ &&
-            drawCmdModifiers_.empty() && !HasDrawCmdModifiers());
+    return (!GetRenderProperties().isDrawn_ && !GetRenderProperties().alphaNeedApply_ && drawCmdModifiers_.empty() &&
+            !HasDrawCmdModifiers());
 }
 
 bool RSRenderNode::IsPureBackgroundColor() const
@@ -152,16 +148,16 @@ std::string DrawNodeTypeToString(DrawNodeType nodeType)
 
 bool RSRenderNode::IsContentNode() const
 {
-    #ifdef MODIFIER_NG
-        return !GetRenderProperties().isDrawn_ &&
-               ((HasContentStyleModifierOnly() && !GetModifiersNG(ModifierNG::RSModifierType::CONTENT_STYLE).empty()) ||
-                   !HasDrawCmdModifiers());
-    #endif
-
+#if defined(MODIFIER_NG)
+    return !GetRenderProperties().isDrawn_ &&
+           ((HasContentStyleModifierOnly() && !GetModifiersNG(ModifierNG::RSModifierType::CONTENT_STYLE).empty()) ||
+               !HasDrawCmdModifiers());
+#else
     return ((drawCmdModifiers_.size() == 1 &&
-        (drawCmdModifiers_.find(RSModifierType::CONTENT_STYLE) != drawCmdModifiers_.end())) ||
-        drawCmdModifiers_.empty()) &&
-        !GetRenderProperties().isDrawn_;
+                (drawCmdModifiers_.find(RSModifierType::CONTENT_STYLE) != drawCmdModifiers_.end())) ||
+               drawCmdModifiers_.empty()) &&
+           !GetRenderProperties().isDrawn_;
+#endif
 }
 
 namespace {
@@ -1208,9 +1204,11 @@ void RSRenderNode::ForceMergeSubTreeDirtyRegion(RSDirtyRegionManager& dirtyManag
 {
     // prepare skip -> quick prepare, old dirty do not update
     if (geoUpdateDelay_) {
-        auto absChildrenRect = RSObjAbsGeometry::MapRect(oldChildrenRect_.ConvertTo<float>(), oldAbsMatrix_);
-        subTreeDirtyRegion_ = absChildrenRect.IntersectRect(oldClipRect_);
-        dirtyManager.MergeDirtyRect(subTreeDirtyRegion_);
+        if (auto& geoPtr = GetRenderProperties().GetBoundsGeometry()) {
+            auto absChildrenRect = geoPtr->MapRect(oldChildrenRect_.ConvertTo<float>(), oldAbsMatrix_);
+            subTreeDirtyRegion_ = absChildrenRect.IntersectRect(oldClipRect_);
+            dirtyManager.MergeDirtyRect(subTreeDirtyRegion_);
+        }
     }
     lastFrameSubTreeSkipped_ = false;
 }
@@ -1280,7 +1278,7 @@ void RSRenderNode::CollectSelfDrawingChild(const std::shared_ptr<RSRenderNode>& 
     if (node == nullptr) {
         return;
     }
-
+    
     for (auto& child : *node->GetSortedChildren()) {
         child->CollectSelfDrawingChild(child, vec);
     }
@@ -1317,7 +1315,7 @@ bool RSRenderNode::IsSubTreeNeedPrepare(bool filterInGlobal, bool isOccluded)
     // stop visit invisible or clean without filter subtree
     // Exception: If cross-display node is fully invisible under current visited display, its subtree can't be skipped,
     // since it may be visible on other displays, and it is only prepared once.
-    if (!shouldPaint_) {
+    if (!shouldPaint_ || (isOccluded && !IsFirstLevelCrossNode())) {
         // when subTreeOccluded, need to applyModifiers to node's children
         RS_OPTIONAL_TRACE_NAME_FMT("IsSubTreeNeedPrepare node[%llu] skip subtree ShouldPaint [%d], isOccluded [%d], "
             "CrossDisplay: %d", GetId(), shouldPaint_, isOccluded, IsFirstLevelCrossNode());
@@ -2882,14 +2880,14 @@ void RSRenderNode::ResetAccumulateDirtyStatus()
 
 void RSRenderNode::RecordCurDirtyTypes()
 {
-    curDirtyTypes_ |= dirtyTypes_;
-    curDirtyTypesNG_ |= dirtyTypesNG_;
+    curDirtyTypes_ |= ~dirtyTypes_;
+    curDirtyTypesNG_ |= ~dirtyTypesNG_;
 }
 
 void RSRenderNode::AccumulateDirtyTypes()
 {
-    dirtyTypes_ |= curDirtyTypes_;
-    dirtyTypesNG_ |= curDirtyTypesNG_;
+    dirtyTypes_ |= ~curDirtyTypes_;
+    dirtyTypesNG_ |= ~curDirtyTypesNG_;
 }
 
 void RSRenderNode::ResetAccumulateDirtyTypes()
@@ -2900,36 +2898,36 @@ void RSRenderNode::ResetAccumulateDirtyTypes()
 
 void RSRenderNode::ApplyPositionZModifier()
 {
-    #ifdef MODIFIER_NG
-        constexpr auto transformModifierTypeNG = static_cast<uint8_t>(ModifierNG::RSModifierType::TRANSFORM);
-        if (!dirtyTypesNG_.test(transformModifierTypeNG)) {
-            return;
-        }
-        auto& transformModifiers = modifiersNG_[transformModifierTypeNG];
-        if (transformModifiers.empty()) {
-            return;
-        }
-        ModifierNG::RSTransformRenderModifier::ResetProperties(GetMutableRenderProperties());
-        for (auto& modifier : transformModifiers) {
-            modifier->ApplyLegacyProperty(GetMutableRenderProperties());
-        }
-        dirtyTypesNG_.reset(transformModifierTypeNG);
-    #else
-        constexpr auto positionZModifierType = static_cast<size_t>(RSModifierType::POSITION_Z);
-        if (!dirtyTypes_.test(positionZModifierType)) {
-            return;
-        }
+#if defined(MODIFIER_NG)
+    constexpr auto transformModifierTypeNG = static_cast<uint16_t>(ModifierNG::RSModifierType::TRANSFORM);
+    if (!dirtyTypesNG_.test(transformModifierTypeNG)) {
+        return;
+    }
+    auto& transformModifiers = modifiersNG_[transformModifierTypeNG];
+    if (transformModifiers.empty()) {
+        return;
+    }
+    ModifierNG::RSTransformRenderModifier::ResetProperties(GetMutableRenderProperties());
+    for (auto& modifier : transformModifiers) {
+        modifier->ApplyLegacyProperty(GetMutableRenderProperties());
+    }
+    dirtyTypesNG_.reset(transformModifierTypeNG);
+#else
+    constexpr auto positionZModifierType = static_cast<size_t>(RSModifierType::POSITION_Z);
+    if (!dirtyTypes_.test(positionZModifierType)) {
+        return;
+    }
 
-        GetMutableRenderProperties().SetPositionZ(0.0f);
-        RSModifierContext context = { GetMutableRenderProperties() };
-        for (auto& [id, modifier] : modifiers_) {
-            if (modifier->GetType() == RSModifierType::POSITION_Z) {
-                modifier->Apply(context);
-            }
+    GetMutableRenderProperties().SetPositionZ(0.0f);
+    RSModifierContext context = { GetMutableRenderProperties() };
+    for (auto& [id, modifier] : modifiers_) {
+        if (modifier->GetType() == RSModifierType::POSITION_Z) {
+            modifier->Apply(context);
         }
+    }
 
-        dirtyTypes_.reset(positionZModifierType);
-    #endif
+    dirtyTypes_.reset(positionZModifierType);
+#endif
 }
 
 void RSRenderNode::SetChildHasSharedTransition(bool val)
@@ -2965,40 +2963,40 @@ void RSRenderNode::ResetAndApplyModifiers()
 {
     auto displayNode = RSBaseRenderNode::ReinterpretCast<RSDisplayRenderNode>(shared_from_this());
     int32_t currentScbPid = displayNode == nullptr ? -1 : displayNode->GetCurrentScbPid();
-    #ifdef MODIFIER_NG
-        for (const auto& [modifierType, resetFunc] : ModifierNG::RSRenderModifier::GetResetFuncMap()) {
-            if (dirtyTypesNG_.test(static_cast<size_t>(modifierType))) {
-                resetFunc(GetMutableRenderProperties());
+#if defined(MODIFIER_NG)
+    for (const auto& [modifierType, resetFunc] : ModifierNG::RSRenderModifier::GetResetFuncMap()) {
+        if (dirtyTypesNG_.test(static_cast<size_t>(modifierType))) {
+            resetFunc(GetMutableRenderProperties());
+        }
+    }
+    for (uint16_t type = 0; type < ModifierNG::MODIFIER_TYPE_COUNT; type++) {
+        auto& slot = modifiersNG_[type];
+        if (slot.empty() || !dirtyTypesNG_.test(type)) {
+            continue;
+        }
+        for (auto modifier : slot) {
+            if (currentScbPid == -1 || ExtractPid(modifier->GetId()) == currentScbPid) {
+                modifier->ApplyLegacyProperty(GetMutableRenderProperties());
             }
         }
-        for (uint8_t type = 0; type < ModifierNG::MODIFIER_TYPE_COUNT; type++) {
-            auto& slot = modifiersNG_[type];
-            if (slot.empty() || !dirtyTypesNG_.test(type)) {
-                continue;
-            }
-            for (auto modifier : slot) {
-                if (currentScbPid == -1 || ExtractPid(modifier->GetId()) == currentScbPid) {
-                    modifier->ApplyLegacyProperty(GetMutableRenderProperties());
-                }
-            }
-        }
-    #else
-        RSModifierContext context = { GetMutableRenderProperties() };
-        GetMutableRenderProperties().ResetProperty(dirtyTypes_);
-        if (currentScbPid != -1) {
-            RS_LOGD("RSRenderNode::apply modifiers displayNode's currentScbPid:%{public}d", currentScbPid);
-            for (auto& [id, modifier] : modifiers_) {
-                if (ExtractPid(id) == currentScbPid) {
-                    ApplyModifier(context, modifier);
-                }
-            }
-        } else {
-            RS_LOGD("RSRenderNode::apply modifiers displayNode is nullptr or displayNode's currentScbPid is -1");
-            for (auto& [id, modifier] : modifiers_) {
+    }
+#else
+    RSModifierContext context = { GetMutableRenderProperties() };
+    GetMutableRenderProperties().ResetProperty(dirtyTypes_);
+    if (currentScbPid != -1) {
+        RS_LOGD("RSRenderNode::apply modifiers displayNode's currentScbPid:%{public}d", currentScbPid);
+        for (auto& [id, modifier] : modifiers_) {
+            if (ExtractPid(id) == currentScbPid) {
                 ApplyModifier(context, modifier);
             }
         }
-    #endif
+    } else {
+        RS_LOGD("RSRenderNode::apply modifiers displayNode is nullptr or displayNode's currentScbPid is -1");
+        for (auto& [id, modifier] : modifiers_) {
+            ApplyModifier(context, modifier);
+        }
+    }
+#endif
     // execute hooks
     GetMutableRenderProperties().OnApplyModifiers();
     OnApplyModifiers();
@@ -3296,14 +3294,7 @@ std::shared_ptr<RSRenderModifier> RSRenderNode::GetModifier(const PropertyId& id
 
 void RSRenderNode::FilterModifiersByPid(pid_t pid)
 {
-    // remove all modifiers added by given pid (by matching higher 32 bits of node id)
-    EraseIf(modifiers_, [pid](const auto& pair) -> bool { return ExtractPid(pair.first) == pid; });
-
-    // remove all modifiers added by given pid (by matching higher 32 bits of node id)
-    for (auto& [type, modifiers] : drawCmdModifiers_) {
-        modifiers.remove_if([pid](const auto& it) -> bool { return ExtractPid(it->GetPropertyId()) == pid; });
-    }
-
+#if defined(MODIFIER_NG)
     for (auto& slot : modifiersNG_) {
         auto it = std::find_if(slot.begin(), slot.end(),
             [pid](const auto& modifier) -> bool { return ExtractPid(modifier->GetId()) == pid; });
@@ -3312,6 +3303,14 @@ void RSRenderNode::FilterModifiersByPid(pid_t pid)
             return;
         }
     }
+#else
+    // remove all modifiers added by given pid (by matching higher 32 bits of node id)
+    EraseIf(modifiers_, [pid](const auto& pair) -> bool { return ExtractPid(pair.first) == pid; });
+    // remove all modifiers added by given pid (by matching higher 32 bits of node id)
+    for (auto& [type, modifiers] : drawCmdModifiers_) {
+        modifiers.remove_if([pid](const auto& it) -> bool { return ExtractPid(it->GetPropertyId()) == pid; });
+    }
+#endif
 }
 
 void RSRenderNode::UpdateShouldPaint()
@@ -3540,25 +3539,24 @@ bool RSRenderNode::IsCacheCompletedSurfaceValid() const
 
 Vector2f RSRenderNode::GetOptionalBufferSize() const
 {
-    #ifdef MODIFIER_NG
-        if (boundsModifierNG_ != nullptr) {
-            auto bounds = boundsModifierNG_->Getter<Vector4f>(ModifierNG::RSPropertyType::BOUNDS);
-            return { bounds.z_, bounds.w_ };
-        }
-        if (frameModifierNG_ != nullptr) {
-            auto frame = frameModifierNG_->Getter<Vector4f>(ModifierNG::RSPropertyType::FRAME);
-            return { frame.z_, frame.w_ };
-        }
-    #else
-        const auto& modifier = boundsModifier_ ? boundsModifier_ : frameModifier_;
-        if (modifier != nullptr) {
-            auto renderProperty =
-                std::static_pointer_cast<RSRenderAnimatableProperty<Vector4f>>(modifier->GetProperty());
-            auto vector4f = renderProperty->Get();
-            // bounds vector4f: x y z w -> left top width height
-            return { vector4f.z_, vector4f.w_ };
-        }
-    #endif
+#if defined(MODIFIER_NG)
+    if (boundsModifierNG_ != nullptr) {
+        auto bounds = boundsModifierNG_->Getter<Vector4f>(ModifierNG::RSPropertyType::BOUNDS);
+        return { bounds.z_, bounds.w_ };
+    }
+    if (frameModifierNG_ != nullptr) {
+        auto frame = frameModifierNG_->Getter<Vector4f>(ModifierNG::RSPropertyType::FRAME);
+        return { frame.z_, frame.w_ };
+    }
+#else
+    const auto& modifier = boundsModifier_ ? boundsModifier_ : frameModifier_;
+    if (modifier != nullptr) {
+        auto renderProperty = std::static_pointer_cast<RSRenderAnimatableProperty<Vector4f>>(modifier->GetProperty());
+        auto vector4f = renderProperty->Get();
+        // bounds vector4f: x y z w -> left top width height
+        return { vector4f.z_, vector4f.w_ };
+    }
+#endif
     return { 0.f, 0.f };
 }
 
@@ -4207,25 +4205,24 @@ std::list<RSRenderNode::WeakPtr> RSRenderNode::GetChildrenList() const
 
 float RSRenderNode::GetHDRBrightness() const
 {
-    #ifdef MODIFIER_NG
-        if (modifiersNG_[static_cast<uint8_t>(ModifierNG::RSModifierType::HDR_BRIGHTNESS)].empty()) {
-            RS_LOGD("RSRenderNode::GetHDRBrightness drawCmdModifiers find failed");
-            return 1.0f; // 1.0f make sure HDR video is still HDR state if RSNode::SetHDRBrightness not called
-        }
-        auto modifier = modifiersNG_[static_cast<uint8_t>(ModifierNG::RSModifierType::HDR_BRIGHTNESS)].back();
-        return modifier->Getter<float>(ModifierNG::RSPropertyType::HDR_BRIGHTNESS, 1.f); // 1.f defaule value
-    #else
-        const auto& drawCmdModifiers = drawCmdModifiers_;
-        auto itr = drawCmdModifiers.find(RSModifierType::HDR_BRIGHTNESS);
-        if (itr == drawCmdModifiers.end() || itr->second.empty()) {
-            RS_LOGD("RSRenderNode::GetHDRBrightness drawCmdModifiers find failed");
-            return 1.0f; // 1.0f make sure HDR video is still HDR state if RSNode::SetHDRBrightness not called
-        }
-        const auto& modifier = itr->second.back();
-        auto renderProperty = std::static_pointer_cast<RSRenderAnimatableProperty<float>>(modifier->GetProperty());
-        float hdrBrightness = renderProperty->Get();
-        return hdrBrightness;
-    #endif
+#if defined(MODIFIER_NG)
+    if (modifiersNG_[static_cast<uint16_t>(ModifierNG::RSModifierType::HDR_BRIGHTNESS)].empty()) {
+        RS_LOGD("RSRenderNode::GetHDRBrightness drawCmdModifiers find failed");
+        return 1.0f; // 1.0f make sure HDR video is still HDR state if RSNode::SetHDRBrightness not called
+    }
+    auto modifier = modifiersNG_[static_cast<uint16_t>(ModifierNG::RSModifierType::HDR_BRIGHTNESS)].back();
+    return modifier->Getter<float>(ModifierNG::RSPropertyType::HDR_BRIGHTNESS, 1.f); // 1.f defaule value
+#else
+    auto itr = drawCmdModifiers_.find(RSModifierType::HDR_BRIGHTNESS);
+    if (itr == drawCmdModifiers_.end() || itr->second.empty()) {
+        RS_LOGD("RSRenderNode::GetHDRBrightness drawCmdModifiers find failed");
+        return 1.0f; // 1.0f make sure HDR video is still HDR state if RSNode::SetHDRBrightness not called
+    }
+    const auto& modifier = itr->second.back();
+    auto renderProperty = std::static_pointer_cast<RSRenderAnimatableProperty<float>>(modifier->GetProperty());
+    float hdrBrightness = renderProperty->Get();
+    return hdrBrightness;
+#endif
 }
 
 void RSRenderNode::SetTunnelHandleChange(bool change)
@@ -5393,6 +5390,7 @@ void RSRenderNode::AddModifier(
     const std::shared_ptr<ModifierNG::RSRenderModifier>& modifier, bool isSingleFrameComposer)
 {
     if (modifier == nullptr) {
+        ROSEN_LOGW("RSRenderNode::AddModifier: null modifier, add failed.");
         return;
     }
     if (RSSystemProperties::GetSingleFrameComposerEnabled() &&
@@ -5420,13 +5418,13 @@ void RSRenderNode::AddModifier(
     if (modifier->IsCustom()) {
         modifier->SetSingleFrameModifier(false);
     }
-    modifiersNG_[static_cast<uint8_t>(modifier->GetType())].emplace_back(modifier);
+    modifiersNG_[static_cast<uint16_t>(modifier->GetType())].emplace_back(modifier);
     modifier->OnAttachModifier(*this);
 }
 
 void RSRenderNode::RemoveModifier(ModifierNG::RSModifierType type, ModifierId id)
 {
-    auto& slot = modifiersNG_[static_cast<uint8_t>(type)];
+    auto& slot = modifiersNG_[static_cast<uint16_t>(type)];
     auto it =
         std::find_if(slot.begin(), slot.end(), [id](const auto& modifier) -> bool { return modifier->GetId() == id; });
     if (it == slot.end()) {
@@ -5464,7 +5462,7 @@ void RSRenderNode::RemoveAllModifiersNG()
 std::shared_ptr<ModifierNG::RSRenderModifier> RSRenderNode::GetModifierNG(
     ModifierNG::RSModifierType type, ModifierId id) const
 {
-    auto& slot = modifiersNG_[static_cast<uint8_t>(type)];
+    auto& slot = modifiersNG_[static_cast<uint16_t>(type)];
     if (id == 0) {
         return slot.empty() ? nullptr : slot.back();
     }
@@ -5478,7 +5476,7 @@ std::shared_ptr<ModifierNG::RSRenderModifier> RSRenderNode::GetModifierNG(
 
 const RSRenderNode::ModifierNGContainer& RSRenderNode::GetModifiersNG(ModifierNG::RSModifierType type) const
 {
-    return modifiersNG_[static_cast<uint8_t>(type)];
+    return modifiersNG_[static_cast<uint16_t>(type)];
 }
 
 bool RSRenderNode::HasDrawCmdModifiers() const

@@ -237,7 +237,7 @@ RSRenderModifier* RSRenderModifier::Unmarshalling(Parcel& parcel)
     if (!RSMarshallingHelper::Unmarshalling(parcel, type)) {
         return nullptr;
     }
-    auto constructor = ConstructorLUT_[static_cast<uint8_t>(type)];
+    auto constructor = ConstructorLUT_[static_cast<uint16_t>(type)];
     if (constructor == nullptr) {
         return nullptr;
     }

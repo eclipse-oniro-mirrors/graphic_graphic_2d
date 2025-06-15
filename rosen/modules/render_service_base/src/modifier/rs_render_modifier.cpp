@@ -610,7 +610,7 @@ bool RSBackgroundUIFilterRenderModifier::Marshalling(Parcel& parcel)
     std::shared_ptr<RSRenderPropertyBase> renderFilter =
         std::make_shared<RSRenderProperty<std::shared_ptr<RSRenderFilter>>>(prop->Get(), prop->GetId());
     bool flag = parcel.WriteInt16(static_cast<int16_t>(RSModifierType::BACKGROUND_UI_FILTER)) &&
-        RSMarshallingHelper::Marshalling(parcel, renderFilter);
+                RSMarshallingHelper::Marshalling(parcel, renderFilter);
     if (!flag) {
         ROSEN_LOGE("RSBackgroundUIFilterRenderModifier::Marshalling failed");
     }
@@ -638,7 +638,7 @@ bool RSForegroundUIFilterRenderModifier::Marshalling(Parcel& parcel)
     std::shared_ptr<RSRenderPropertyBase> renderFilter =
         std::make_shared<RSRenderProperty<std::shared_ptr<RSRenderFilter>>>(prop->Get(), prop->GetId());
     bool flag = parcel.WriteInt16(static_cast<int16_t>(RSModifierType::FOREGROUND_UI_FILTER)) &&
-        RSMarshallingHelper::Marshalling(parcel, renderFilter);
+                RSMarshallingHelper::Marshalling(parcel, renderFilter);
     if (!flag) {
         ROSEN_LOGE("RSForegroundUIFilterRenderModifier::Marshalling failed");
     }

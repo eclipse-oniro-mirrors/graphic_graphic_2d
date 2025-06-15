@@ -49,6 +49,9 @@ class Image;
 class Bitmap;
 class Typeface;
 }
+namespace ModifierNG {
+class RSRenderModifier;
+}
 class RSFilter;
 class RSRenderFilter;
 class RSNGRenderFilterBase;
@@ -91,9 +94,6 @@ class RectT;
 template<typename T>
 class RRectT;
 struct PixelMapInfo;
-namespace ModifierNG {
-class RSRenderModifier;
-}
 
 class RSB_EXPORT RSMarshallingHelper {
 public:
@@ -350,7 +350,6 @@ public:
         }
         return true;
     }
-
     template<typename T>
     static bool Unmarshalling(Parcel& parcel, std::vector<T>& val, size_t maxSize = UNMARSHALLING_MAX_VECTOR_SIZE)
     {

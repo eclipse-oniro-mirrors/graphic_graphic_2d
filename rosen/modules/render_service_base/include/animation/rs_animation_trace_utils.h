@@ -35,6 +35,7 @@ public:
     void AddAnimationNameTrace(const std::string& str) const;
     void AddAnimationFinishTrace(
         const std::string info, const uint64_t nodeId, const uint64_t animationId, bool isAddLogInfo) const;
+
     void AddAnimationCallFinishTrace(
         const uint64_t nodeId, const uint64_t animationId, RSModifierType type, bool isAddLogInfo) const;
     void AddAnimationCallFinishTrace(const uint64_t nodeId, const uint64_t animationId,
@@ -47,10 +48,10 @@ public:
         const int32_t frameNodeId, const std::string& frameNodeTag, RSUINodeType nodeType) const;
     void AddAnimationCreateTrace(const uint64_t nodeId, const std::string& nodeName, const uint64_t propertyId,
         const uint64_t animationId, const ImplicitAnimationParamType animationType,
-        const ModifierNG::RSPropertyType propertyType,
-        const std::shared_ptr<RSRenderPropertyBase>& startValue, const std::shared_ptr<RSRenderPropertyBase>& endValue,
-        const int animationDelay, const int animationDur, const int repeat, const std::string& interfaceName,
-        const int32_t frameNodeId, const std::string& frameNodeTag, RSUINodeType nodeType) const;
+        const ModifierNG::RSPropertyType propertyType, const std::shared_ptr<RSRenderPropertyBase>& startValue,
+        const std::shared_ptr<RSRenderPropertyBase>& endValue, const int animationDelay, const int animationDur,
+        const int repeat, const std::string& interfaceName, const int32_t frameNodeId, const std::string& frameNodeTag,
+        RSUINodeType nodeType) const;
 
     void AddAnimationFrameTrace(const RSRenderNode* target, const uint64_t animationId, const uint64_t propertyId,
         const float fraction, const std::shared_ptr<RSRenderPropertyBase>& value, const int64_t time, const int dur,

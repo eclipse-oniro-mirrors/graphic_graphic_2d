@@ -438,17 +438,6 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<Drawing:
     return {};
 }
 
-// PixelMapInfo
-bool RSMarshallingHelper::Marshalling(Parcel& parcel, const PixelMapInfo& val)
-{
-    return {};
-}
-
-bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, PixelMapInfo& val)
-{
-    return {};
-}
-
 #define MARSHALLING_AND_UNMARSHALLING(TYPE)                                                 \
     bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<TYPE>& val) \
     {                                                                                       \
@@ -484,6 +473,7 @@ bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<RSRe
 {
     return {};
 }
+
 bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<RSRenderModifier>& val)
 {
     return {};
@@ -614,11 +604,8 @@ bool RSMarshallingHelper::SkipFromParcel(Parcel& parcel, size_t size)
 {
     return {};
 }
-
 void RSMarshallingHelper::BeginNoSharedMem(std::thread::id tid) {}
-
 void RSMarshallingHelper::EndNoSharedMem() {}
-
 bool RSMarshallingHelper::GetUseSharedMem(std::thread::id tid)
 {
     return true;
@@ -628,12 +615,10 @@ bool RSMarshallingHelper::CheckReadPosition(Parcel& parcel)
     return true;
 }
 void RSMarshallingHelper::SetCallingPid(pid_t callingPid) {}
-
 bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<RSRenderPropertyBase>& val)
 {
     return true;
 }
-
 bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<RSRenderPropertyBase>& val)
 {
     return true;

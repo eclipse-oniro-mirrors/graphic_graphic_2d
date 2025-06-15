@@ -252,19 +252,8 @@ PropertyId RSPathAnimation::GetRotationPropertyId(const std::shared_ptr<RSNode>&
         return 0;
     }
     std::unique_lock<std::recursive_mutex> lock(node->GetPropertyMutex());
-
-    auto iter = node->propertyModifiers_.find(RSModifierType::ROTATION);
-    if (iter != node->propertyModifiers_.end()) {
-        return iter->second->GetPropertyId();
-    }
-    for (const auto& [id, modifier] : node->modifiers_) {
-        if (modifier->GetModifierType() == RSModifierType::ROTATION) {
-            return modifier->GetPropertyId();
-        }
-    }
-
-    auto& modifier = node->modifiersNGCreatedBySetter_[static_cast<uint8_t>(
-        ModifierNG::RSModifierType::TRANSFORM)];
+#if defined(MODIFIER_NG)
+    auto& modifier = node->modifiersNGCreatedBySetter_[static_cast<uint16_t>(ModifierNG::RSModifierType::TRANSFORM)];
     if (modifier) {
         if (const auto& property = modifier->GetProperty(ModifierNG::RSPropertyType::ROTATION)) {
             return property->GetId();
@@ -275,44 +264,53 @@ PropertyId RSPathAnimation::GetRotationPropertyId(const std::shared_ptr<RSNode>&
             return id;
         }
     }
+#else
+    auto iter = node->propertyModifiers_.find(RSModifierType::ROTATION);
+    if (iter != node->propertyModifiers_.end()) {
+        return iter->second->GetPropertyId();
+    }
 
+    for (const auto& [id, modifier] : node->modifiers_) {
+        if (modifier->GetModifierType() == RSModifierType::ROTATION) {
+            return modifier->GetPropertyId();
+        }
+    }
+#endif
     return 0;
 }
 
 void RSPathAnimation::SetRotation(const std::shared_ptr<RSNode>& node, const float rotation)
 {
     std::unique_lock<std::recursive_mutex> lock(node->GetPropertyMutex());
-
-#ifdef MODIFIER_NG
-        auto& property = node->GetPropertyById(rotationId_);
-        if (property) {
-            std::static_pointer_cast<RSProperty<float>>(property)->stagingValue_ = rotation;
-            return;
-        }
-        auto& modifier = node->modifiersNGCreatedBySetter_[static_cast<uint8_t>(
-            ModifierNG::RSModifierType::TRANSFORM)];
-        if (modifier) {
-            return;
-        }
-        auto propertyRotation = modifier->GetProperty(ModifierNG::RSPropertyType::ROTATION);
-        if (propertyRotation && propertyRotation->GetId() == rotationId_) {
-            std::static_pointer_cast<RSProperty<float>>(property)->stagingValue_ = rotation;
-        }
+#if defined(MODIFIER_NG)
+    auto& property = node->GetPropertyById(rotationId_);
+    if (property) {
+        std::static_pointer_cast<RSProperty<float>>(property)->stagingValue_ = rotation;
+        return;
+    }
+    auto& modifier = node->modifiersNGCreatedBySetter_[static_cast<uint16_t>(ModifierNG::RSModifierType::TRANSFORM)];
+    if (modifier) {
+        return;
+    }
+    auto propertyRotation = modifier->GetProperty(ModifierNG::RSPropertyType::ROTATION);
+    if (propertyRotation && propertyRotation->GetId() == rotationId_) {
+        std::static_pointer_cast<RSProperty<float>>(property)->stagingValue_ = rotation;
+    }
 #else
-        auto iter = node->modifiers_.find(rotationId_);
-        if (iter != node->modifiers_.end()) {
-            auto modifier = iter->second;
-            if (modifier != nullptr) {
-                std::static_pointer_cast<RSProperty<float>>(modifier->GetProperty())->stagingValue_ = rotation;
-            }
-            return;
+    auto iter = node->modifiers_.find(rotationId_);
+    if (iter != node->modifiers_.end()) {
+        auto modifier = iter->second;
+        if (modifier != nullptr) {
+            std::static_pointer_cast<RSProperty<float>>(modifier->GetProperty())->stagingValue_ = rotation;
         }
-        for (const auto& [type, modifier] : node->propertyModifiers_) {
-            if (modifier != nullptr && modifier->GetPropertyId() == rotationId_) {
-                std::static_pointer_cast<RSProperty<float>>(modifier->GetProperty())->stagingValue_ = rotation;
-            }
-            return;
+        return;
+    }
+    for (const auto& [type, modifier] : node->propertyModifiers_) {
+        if (modifier != nullptr && modifier->GetPropertyId() == rotationId_) {
+            std::static_pointer_cast<RSProperty<float>>(modifier->GetProperty())->stagingValue_ = rotation;
         }
+        return;
+    }
 #endif
 }
 

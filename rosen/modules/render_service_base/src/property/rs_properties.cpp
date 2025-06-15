@@ -86,7 +86,7 @@ const Vector4f Vector4fZero { 0.f, 0.f, 0.f, 0.f };
 const auto EMPTY_RECT = RectF();
 constexpr float SPHERIZE_VALID_EPSILON = 0.001f; // used to judge if spherize valid
 constexpr float ATTRACTION_VALID_EPSILON = 0.001f; // used to judge if attraction valid
-constexpr uint8_t BORDER_TYPE_NONE = (uint32_t)BorderStyle::NONE;
+constexpr uint8_t BORDER_TYPE_NONE = static_cast<uint8_t>(BorderStyle::NONE);
 
 using ResetPropertyFunc = void (*)(RSProperties* prop);
 // Every modifier before RSModifierType::CUSTOM is property modifier, and it should have a ResetPropertyFunc
@@ -131,7 +131,6 @@ static const std::unordered_map<RSModifierType, ResetPropertyFunc> g_propertyRes
     { RSModifierType::BG_IMAGE_HEIGHT,                      [](RSProperties* prop) { prop->SetBgImageHeight(0.f); }},
     { RSModifierType::BG_IMAGE_POSITION_X,                  [](RSProperties* prop) { prop->SetBgImagePositionX(0.f); }},
     { RSModifierType::BG_IMAGE_POSITION_Y,                  [](RSProperties* prop) { prop->SetBgImagePositionY(0.f); }},
-    { RSModifierType::SURFACE_BG_COLOR,                     nullptr},
     { RSModifierType::BORDER_COLOR,                         [](RSProperties* prop) {
                                                                 prop->SetBorderColor(RSColor()); }},
     { RSModifierType::BORDER_WIDTH,                         [](RSProperties* prop) { prop->SetBorderWidth(0.f); }},

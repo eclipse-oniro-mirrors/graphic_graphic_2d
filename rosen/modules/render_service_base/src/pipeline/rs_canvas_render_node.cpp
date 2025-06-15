@@ -88,11 +88,11 @@ void RSCanvasRenderNode::UpdateRecordingNG(
 
 void RSCanvasRenderNode::ClearRecording()
 {
-    #ifdef MODIFIER_NG
-        RemoveModifierNG(ANONYMOUS_MODIFIER_NG_ID);
-    #else
-        RemoveModifier(ANONYMOUS_MODIFIER_ID);
-    #endif
+#if defined(MODIFIER_NG)
+    RemoveModifierNG(ANONYMOUS_MODIFIER_NG_ID);
+#else
+    RemoveModifier(ANONYMOUS_MODIFIER_ID);
+#endif
 }
 
 void RSCanvasRenderNode::QuickPrepare(const std::shared_ptr<RSNodeVisitor>& visitor)
@@ -172,13 +172,13 @@ void RSCanvasRenderNode::ProcessShadowBatching(RSPaintFilterCanvas& canvas)
 
 void RSCanvasRenderNode::DrawShadow(RSModifierContext& context, RSPaintFilterCanvas& canvas)
 {
-    #ifdef MODIFIER_NG
-        ApplyDrawCmdModifier(context, ModifierNG::RSModifierType::TRANSITION_STYLE);
-        ApplyDrawCmdModifier(context, ModifierNG::RSModifierType::ENV_FOREGROUND_COLOR);
-    #else
-        ApplyDrawCmdModifier(context, RSModifierType::TRANSITION);
-        ApplyDrawCmdModifier(context, RSModifierType::ENV_FOREGROUND_COLOR);
-    #endif
+#if defined(MODIFIER_NG)
+    ApplyDrawCmdModifier(context, ModifierNG::RSModifierType::TRANSITION_STYLE);
+    ApplyDrawCmdModifier(context, ModifierNG::RSModifierType::ENV_FOREGROUND_COLOR);
+#else
+    ApplyDrawCmdModifier(context, RSModifierType::TRANSITION);
+    ApplyDrawCmdModifier(context, RSModifierType::ENV_FOREGROUND_COLOR);
+#endif
     auto parent = GetParent().lock();
     if (!(parent && parent->GetRenderProperties().GetUseShadowBatching())) {
         RSPropertiesPainter::DrawShadow(GetRenderProperties(), canvas);

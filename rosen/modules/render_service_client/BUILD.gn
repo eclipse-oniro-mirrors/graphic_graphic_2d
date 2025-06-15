@@ -15,7 +15,6 @@ import("//build/ohos.gni")
 import("//foundation/graphic/graphic_2d/graphic_config.gni")
 import("//foundation/graphic/graphic_2d/rosen/modules/platform/config.gni")
 import("render_service_client.gni")
-import("//foundation/graphic/graphic_2d/rosen/modules/render_service_base/modifierng.gni")
 
 config("render_service_client_config") {
   include_dirs = [
@@ -251,10 +250,6 @@ template("render_service_client_source_set") {
     public_deps = []
     if (enable_export_macro) {
       defines += [ "ENABLE_EXPORT_MACRO" ]
-    }
-
-    if(graphic_2d_modifier_ng_enabled) {
-      defines += [ "MODIFIER_NG" ]
     }
 
     if (defined(use_rosen_drawing) && use_rosen_drawing) {

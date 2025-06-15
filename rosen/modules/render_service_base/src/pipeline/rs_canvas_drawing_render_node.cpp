@@ -51,7 +51,6 @@ namespace Rosen {
 static std::mutex drawingMutex_;
 namespace {
 constexpr uint32_t DRAWCMDLIST_COUNT_LIMIT = 300;
-constexpr uint32_t DRAWCMDLIST_OPSIZE_COUNT_LIMIT = 50000;
 constexpr uint32_t DRAWCMDLIST_OPSIZE_TOTAL_COUNT_LIMIT = 10000;
 }
 RSCanvasDrawingRenderNode::RSCanvasDrawingRenderNode(
@@ -160,11 +159,11 @@ void RSCanvasDrawingRenderNode::ProcessRenderContents(RSPaintFilterCanvas& canva
     }
 
     RSModifierContext context = { GetMutableRenderProperties(), canvas_.get() };
-    #ifdef MODIFIER_NG
-        ApplyDrawCmdModifierNG(context, ModifierNG::RSModifierType::CONTENT_STYLE);
-    #else
-        ApplyDrawCmdModifier(context, RSModifierType::CONTENT_STYLE);
-    #endif
+#if defined(MODIFIER_NG)
+    ApplyDrawCmdModifierNG(context, ModifierNG::RSModifierType::CONTENT_STYLE);
+#else
+    ApplyDrawCmdModifier(context, RSModifierType::CONTENT_STYLE);
+#endif
     isNeedProcess_ = false;
 
     Rosen::Drawing::Matrix mat;
@@ -219,19 +218,27 @@ void RSCanvasDrawingRenderNode::ContentStyleSlotUpdate()
     // update content_style when node not on tree, need check (waitSync_ false, not on tree, never on tree
     // not texture exportnode, unirender mode)
     // if canvas drawing node never on tree, should not update, it will lost renderParams->localDrawRect_
+#ifdef RS_ENABLE_GPU
     if (IsWaitSync() || IsOnTheTree() || isNeverOnTree_ || !stagingRenderParams_ ||
         !RSUniRenderJudgement::IsUniRender() || GetIsTextureExportNode()) {
         return;
     }
-    #ifdef MODIFIER_NG
-        if (!dirtyTypesNG_.test(static_cast<size_t>(ModifierNG::RSModifierType::CONTENT_STYLE))) {
-            return;
-        }
-    #else
-        if (!dirtyTypes_.test(static_cast<size_t>(RSModifierType::CONTENT_STYLE))) {
-            return;
-        }
-    #endif
+#else
+    if (IsWaitSync() || IsOnTheTree() || isNeverOnTree_ || !stagingRenderParams_ ||
+        !RSUniRenderJudgement::IsUniRender() || GetIsTextureExportNode()) {
+        return;
+    }
+#endif
+
+#if defined(MODIFIER_NG)
+    if (!dirtyTypesNG_.test(static_cast<size_t>(ModifierNG::RSModifierType::CONTENT_STYLE))) {
+        return;
+    }
+#else
+    if (!dirtyTypes_.test(static_cast<size_t>(RSModifierType::CONTENT_STYLE))) {
+        return;
+    }
+#endif
 #ifdef RS_ENABLE_GPU
     auto surfaceParams = GetStagingRenderParams()->GetCanvasDrawingSurfaceParams();
     if (surfaceParams.width == 0 || surfaceParams.height == 0) {
@@ -240,17 +247,18 @@ void RSCanvasDrawingRenderNode::ContentStyleSlotUpdate()
         return;
     }
 #endif
-    //only update content_style dirtyType
-    #ifdef MODIFIER_NG
-    auto saveDirtyTypesNG = dirtyTypesNG_;
-        dirtyTypesNG_.reset();
-        dirtyTypesNG_.set(static_cast<int>(ModifierNG::RSModifierType::CONTENT_STYLE), true);
-    #else
-    auto savedirtyTypes = dirtyTypes_;
-        dirtyTypes_.reset();
-        dirtyTypes_.set(static_cast<int>(RSModifierType::CONTENT_STYLE), true);
-    #endif
 
+#if defined(MODIFIER_NG)
+    // only update content_style dirtyType
+    auto saveDirtyTypesNG = dirtyTypesNG_;
+    dirtyTypesNG_.reset();
+    dirtyTypesNG_.set(static_cast<int>(ModifierNG::RSModifierType::CONTENT_STYLE), true);
+#else
+    // only update content_style dirtyType
+    auto savedirtyTypes = dirtyTypes_;
+    dirtyTypes_.reset();
+    dirtyTypes_.set(static_cast<int>(RSModifierType::CONTENT_STYLE), true);
+#endif
     isPostPlaybacked_ = true;
 
     UpdateDrawableVecV2();
@@ -266,22 +274,21 @@ void RSCanvasDrawingRenderNode::ContentStyleSlotUpdate()
 
     // clear content_style drawcmdlist
     std::lock_guard<std::mutex> lock(drawCmdListsMutex_);
-    #ifdef MODIFIER_NG
-        auto contentCmdList = drawCmdListsNG_.find(ModifierNG::RSModifierType::CONTENT_STYLE);
-        if (contentCmdList != drawCmdListsNG_.end()) {
-            contentCmdList->second.clear();
-        }
-        saveDirtyTypesNG.set(static_cast<int>(ModifierNG::RSModifierType::CONTENT_STYLE), false);
-        dirtyTypesNG_ = saveDirtyTypesNG;
-    #else
-        auto contentCmdList = drawCmdLists_.find(RSModifierType::CONTENT_STYLE);
-        if (contentCmdList != drawCmdLists_.end()) {
-            contentCmdList->second.clear();
-        }
-        savedirtyTypes.set(static_cast<int>(RSModifierType::CONTENT_STYLE), false);
-        dirtyTypes_ = savedirtyTypes;
-    #endif
-
+#if defined(MODIFIER_NG)
+    auto contentCmdList = drawCmdListsNG_.find(ModifierNG::RSModifierType::CONTENT_STYLE);
+    if (contentCmdList != drawCmdListsNG_.end()) {
+        contentCmdList->second.clear();
+    }
+    saveDirtyTypesNG.set(static_cast<int>(ModifierNG::RSModifierType::CONTENT_STYLE), false);
+    dirtyTypesNG_ = saveDirtyTypesNG;
+#else
+    auto contentCmdList = drawCmdLists_.find(RSModifierType::CONTENT_STYLE);
+    if (contentCmdList != drawCmdLists_.end()) {
+        contentCmdList->second.clear();
+    }
+    savedirtyTypes.set(static_cast<int>(RSModifierType::CONTENT_STYLE), false);
+    dirtyTypes_ = savedirtyTypes;
+#endif
     AddToPendingSyncList();
 }
 
@@ -312,11 +319,11 @@ void RSCanvasDrawingRenderNode::PlaybackInCorrespondThread()
             return;
         }
         RSModifierContext context = { GetMutableRenderProperties(), canvas_.get() };
-        #ifdef MODIFIER_NG
-            ApplyDrawCmdModifierNG(context, ModifierNG::RSModifierType::CONTENT_STYLE);
-        #else
-            ApplyDrawCmdModifier(context, RSModifierType::CONTENT_STYLE);
-        #endif
+#if defined(MODIFIER_NG)
+        ApplyDrawCmdModifierNG(context, ModifierNG::RSModifierType::CONTENT_STYLE);
+#else
+        ApplyDrawCmdModifier(context, RSModifierType::CONTENT_STYLE);
+#endif
         isNeedProcess_ = false;
     };
     RSTaskDispatcher::GetInstance().PostTask(threadId_, task, false);
@@ -524,32 +531,26 @@ bool RSCanvasDrawingRenderNode::GetPixelmap(std::shared_ptr<Media::PixelMap> pix
 
 bool RSCanvasDrawingRenderNode::GetSizeFromDrawCmdModifiers(int& width, int& height)
 {
-    #ifdef MODIFIER_NG
-        const auto& contentModifiers = GetModifiersNG(ModifierNG::RSModifierType::CONTENT_STYLE);
-        if (contentModifiers.empty()) {
-            return false;
+#if defined(MODIFIER_NG)
+    const auto& contentModifiers = GetModifiersNG(ModifierNG::RSModifierType::CONTENT_STYLE);
+    if (contentModifiers.empty()) {
+        return false;
+    }
+    for (const auto& modifier : contentModifiers) {
+        if (auto cmd = modifier->Getter<Drawing::DrawCmdListPtr>(ModifierNG::RSPropertyType::CONTENT_STYLE, nullptr)) {
+#else
+    auto it = GetDrawCmdModifiers().find(RSModifierType::CONTENT_STYLE);
+    if (it == GetDrawCmdModifiers().end() || it->second.empty()) {
+        return false;
+    }
+    for (const auto& modifier : it->second) {
+        auto prop = modifier->GetProperty();
+        if (auto cmd = std::static_pointer_cast<RSRenderProperty<Drawing::DrawCmdListPtr>>(prop)->Get()) {
+#endif
+            width = std::max(width, cmd->GetWidth());
+            height = std::max(height, cmd->GetHeight());
         }
-        for (const auto& modifier : contentModifiers) {
-            auto cmd =
-                modifier->Getter<Drawing::DrawCmdListPtr>(ModifierNG::RSPropertyType::CONTENT_STYLE, nullptr);
-            if (cmd) {
-                width = std::max(width, cmd->GetWidth());
-                height = std::max(height, cmd->GetHeight());
-            }
-        }
-    #else
-        auto it = GetDrawCmdModifiers().find(RSModifierType::CONTENT_STYLE);
-        if (it == GetDrawCmdModifiers().end() || it->second.empty()) {
-            return false;
-        }
-        for (const auto& modifier : it->second) {
-            auto prop = modifier->GetProperty();
-            if (auto cmd = std::static_pointer_cast<RSRenderProperty<Drawing::DrawCmdListPtr>>(prop)->Get()) {
-                width = std::max(width, cmd->GetWidth());
-                height = std::max(height, cmd->GetHeight());
-            }
-        }
-    #endif
+    }
 
     if (width <= 0 || height <= 0) {
         RS_LOGE("RSCanvasDrawingRenderNode::GetSizeFromDrawCmdModifiers: The width or height of the canvas is less "
@@ -655,12 +656,7 @@ void RSCanvasDrawingRenderNode::AddDirtyType(ModifierNG::RSModifierType modifier
         if (cmd == nullptr) {
             continue;
         }
-        if (cmd->GetOpItemSize() > DRAWCMDLIST_OPSIZE_COUNT_LIMIT) {
-            RS_LOGE("CanvasDrawingNode AddDirtyType NG NodeId[%{public}" PRIu64 "] Cmd oversize"
-                    " Add DrawOpSize [%{public}zu]",
-                GetId(), cmd->GetOpItemSize());
-            continue;
-        }
+        cmd->SetCanvasDrawingOpLimitEnable(true);
         drawCmdListsNG_[modifierType].emplace_back(cmd);
         ++cmdCount_;
         SetNeedProcess(true);
@@ -695,12 +691,7 @@ void RSCanvasDrawingRenderNode::AddDirtyType(RSModifierType modifierType)
             continue;
         }
 
-        if (cmd->GetOpItemSize() > DRAWCMDLIST_OPSIZE_COUNT_LIMIT) {
-            RS_LOGE("CanvasDrawingNode AddDirtyType NodeId[%{public}" PRIu64 "] Cmd oversize"
-                    " Add DrawOpSize [%{public}zu]",
-                GetId(), cmd->GetOpItemSize());
-            continue;
-        }
+        cmd->SetCanvasDrawingOpLimitEnable(true);
         drawCmdLists_[modifierType].emplace_back(cmd);
         ++cmdCount_;
         SetNeedProcess(true);
@@ -782,21 +773,18 @@ void RSCanvasDrawingRenderNode::CheckCanvasDrawingPostPlaybacked()
     }
     RS_OPTIONAL_TRACE_NAME_FMT("canvas drawing node [%" PRIu64 "] CheckCanvasDrawingPostPlaybacked", GetId());
     // add empty drawop, only used in unirender mode
-    #ifdef MODIFIER_NG
-        dirtyTypesNG_.set(static_cast<int>(ModifierNG::RSModifierType::CONTENT_STYLE), true);
-        auto contentCmdList = drawCmdListsNG_.find(ModifierNG::RSModifierType::CONTENT_STYLE);
-        if (contentCmdList != drawCmdListsNG_.end()) {
-            auto cmd = std::make_shared<Drawing::DrawCmdList>();
-            contentCmdList->second.emplace_back(cmd);
-        }
-    #else
-        dirtyTypes_.set(static_cast<int>(RSModifierType::CONTENT_STYLE), true);
-        auto contentCmdList = drawCmdLists_.find(RSModifierType::CONTENT_STYLE);
-        if (contentCmdList != drawCmdLists_.end()) {
-            auto cmd = std::make_shared<Drawing::DrawCmdList>();
-            contentCmdList->second.emplace_back(cmd);
-        }
-    #endif
+#if defined(MODIFIER_NG)
+    dirtyTypesNG_.set(static_cast<int>(ModifierNG::RSModifierType::CONTENT_STYLE), true);
+    auto contentCmdList = drawCmdListsNG_.find(ModifierNG::RSModifierType::CONTENT_STYLE);
+    if (contentCmdList != drawCmdListsNG_.end()) {
+#else
+    dirtyTypes_.set(static_cast<int>(RSModifierType::CONTENT_STYLE), true);
+    auto contentCmdList = drawCmdLists_.find(RSModifierType::CONTENT_STYLE);
+    if (contentCmdList != drawCmdLists_.end()) {
+#endif
+        auto cmd = std::make_shared<Drawing::DrawCmdList>();
+        contentCmdList->second.emplace_back(cmd);
+    }
     isPostPlaybacked_ = false;
 }
 

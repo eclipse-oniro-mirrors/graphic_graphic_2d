@@ -81,12 +81,12 @@ class RSUIContext;
 class RSUIFilter;
 class RSNGFilterBase;
 enum class CancelAnimationStatus;
+
 namespace ModifierNG {
 class RSModifier;
 class RSCustomModifier;
 enum class RSModifierType : uint16_t;
 }
-
 /**
  * @class RSNode
  *
@@ -412,21 +412,6 @@ public:
     const RSModifierExtractor& GetStagingProperties() const;
 
     const RSShowingPropertiesFreezer& GetShowingProperties() const;
-
-    /**
-     * @brief Sets a property value for a specific modifier.
-     *
-     * If property already exists, it will be updated.
-     * If property does not exist, it will be created.
-     *
-     * @param modifierType The type of the modifier to which the property belongs.
-     * @param value The value to assign to the property.
-     */
-    template<typename ModifierName, typename PropertyName, typename T>
-    void SetProperty(RSModifierType modifierType, T value);
-
-    template<typename ModifierName, auto Setter, typename T>
-    void SetPropertyNG(T value);
 
     /**
      * @brief Sets the bounds of the node.
@@ -1376,8 +1361,9 @@ public:
      * @brief Sets whether a shadow mask should be applied to this node.
      *
      * @param shadowMask Indicates whether to enable (true) or disable (false) the shadow mask.
+     * @param strategy Indicates the strategy of the shadow mask, default MASK_NONE.
      */
-    void SetShadowMask(bool shadowMask);
+    void SetShadowMask(bool shadowMask, SHADOW_MASK_STRATEGY strategy = SHADOW_MASK_STRATEGY::MASK_NONE);
 
     /**
      * @brief Sets whether the shadow should be filled.
@@ -1488,7 +1474,7 @@ public:
 
     void SetAttractionEffect(float fraction, const Vector2f& destinationPoint);
     void SetAttractionEffectFraction(float fraction);
-    void SetAttractionEffectDstPoint(Vector2f destinationPoint);
+    void SetAttractionEffectDstPoint(const Vector2f& destinationPoint);
 
     void SetPixelStretch(const Vector4f& stretchSize, Drawing::TileMode stretchTileMode = Drawing::TileMode::CLAMP);
     void SetPixelStretchPercent(const Vector4f& stretchPercent,
@@ -1715,6 +1701,10 @@ public:
     DrawNodeType GetDrawNodeType() const;
     void SyncDrawNodeType(DrawNodeType nodeType);
 
+    const std::shared_ptr<RSPropertyBase> GetPropertyById(const PropertyId& propertyId);
+    const std::shared_ptr<RSPropertyBase> GetPropertyByType(
+        const ModifierNG::RSModifierType& modifierType, const ModifierNG::RSPropertyType& propertyType);
+
     /**
      * @brief Gets the context for the RSUI.
      *
@@ -1739,10 +1729,6 @@ public:
      * @param isSkipCheckInMultiInstance true to skip check; false otherwise.
      */
     void SetSkipCheckInMultiInstance(bool isSkipCheckInMultiInstance);
-
-    const std::shared_ptr<RSPropertyBase> GetPropertyById(const PropertyId& propertyId);
-    const std::shared_ptr<RSPropertyBase> GetPropertyByType(
-        const ModifierNG::RSModifierType& modifierType, const ModifierNG::RSPropertyType& propertyType);
 
 #ifdef RS_ENABLE_VK
     /**
@@ -1897,6 +1883,31 @@ private:
     void SetParent(WeakPtr parent);
     void RemoveChildByNode(SharedPtr child);
     virtual void CreateRenderNodeForTextureExportSwitch() {};
+
+#if defined(MODIFIER_NG)
+    /**
+     * @brief Sets a property value for a specific modifier.
+     *
+     * If property already exists, it will be updated.
+     * If property does not exist, it will be created.
+     *
+     * @param value The value to assign to the property.
+     */
+    template<typename ModifierType, auto Setter, typename T>
+    void SetPropertyNG(T value);
+#else
+    /**
+     * @brief Sets a property value for a specific modifier.
+     *
+     * If property already exists, it will be updated.
+     * If property does not exist, it will be created.
+     *
+     * @param modifierType The type of the modifier to which the property belongs.
+     * @param value The value to assign to the property.
+     */
+    template<typename ModifierName, typename PropertyName, typename T>
+    void SetProperty(RSModifierType modifierType, T value);
+#endif
 
     void SetBackgroundBlurRadius(float radius);
     void SetBackgroundBlurSaturation(float saturation);

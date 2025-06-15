@@ -52,27 +52,15 @@ GRAPHIC_TEST(GeometryTest, CONTENT_DISPLAY_TEST, Geometry_ClipFlame_Test_1)
             auto testFaNode = RSCanvasNode::Create();
             testFaNode->SetBounds({ i * 410.0, j * 500.0, 400.0, 400.0 });
             testFaNode->SetFrame({ i * 410.0, j * 500.0, 400.0, 400.0 });
-            #ifdef MODIFIER_NG
-                auto imageModifier = std::make_shared<ImageCustomModifierNG>();
-                imageModifier->SetWidth(400);
-                imageModifier->SetHeight(400);
-                imageModifier->SetPixelMapPath("/data/local/tmp/fg_test.jpg");
-                testFaNode->AddModifier(imageModifier);
-                auto textModifier = std::make_shared<TextCustomModifierNG>();
-                textModifier->SetText("TestText");
-                textModifier->SetFontSize(50.0);
-                testFaNode->AddModifier(textModifier);
-            #else
-                auto imageModifier = std::make_shared<ImageCustomModifier>();
-                imageModifier->SetWidth(400);
-                imageModifier->SetHeight(400);
-                imageModifier->SetPixelMapPath("/data/local/tmp/fg_test.jpg");
-                testFaNode->AddModifier(imageModifier);
-                auto textModifier = std::make_shared<TextCustomModifier>();
-                textModifier->SetText("TestText");
-                textModifier->SetFontSize(50.0);
-                testFaNode->AddModifier(textModifier);
-            #endif
+            auto imageModifier = std::make_shared<ImageCustomModifier>();
+            imageModifier->SetWidth(400);
+            imageModifier->SetHeight(400);
+            imageModifier->SetPixelMapPath("/data/local/tmp/fg_test.jpg");
+            testFaNode->AddModifier(imageModifier);
+            auto textModifier = std::make_shared<TextCustomModifier>();
+            textModifier->SetText("TestText");
+            textModifier->SetFontSize(50.0);
+            testFaNode->AddModifier(textModifier);
             testFaNode->SetClipToFrame(true);
             auto testNode = RSCanvasNode::Create();
             testNode->SetFrame({ 0.0, 50.0, 400.0, 400.0 });
@@ -102,19 +90,11 @@ GRAPHIC_TEST(GeometryTest, CONTENT_DISPLAY_TEST, Geometry_ClipFlame_Test_2)
         for (int j = 0; j < 3; j++) {
             auto testFaNode = RSCanvasNode::Create();
             testFaNode->SetFrame(i * 410.0, j * 500.0, 400.0, 400.0);
-            #ifdef MODIFIER_NG
-                auto imageModifier = std::make_shared<ImageCustomModifierNG>();
-                imageModifier->SetWidth(400);
-                imageModifier->SetHeight(400);
-                imageModifier->SetPixelMapPath("/data/local/tmp/fg_test.jpg");
-                testFaNode->AddModifier(imageModifier);
-            #else
-                auto imageModifier = std::make_shared<ImageCustomModifier>();
-                imageModifier->SetWidth(400);
-                imageModifier->SetHeight(400);
-                imageModifier->SetPixelMapPath("/data/local/tmp/fg_test.jpg");
-                testFaNode->AddModifier(imageModifier);
-            #endif
+            auto imageModifier = std::make_shared<ImageCustomModifier>();
+            imageModifier->SetWidth(400);
+            imageModifier->SetHeight(400);
+            imageModifier->SetPixelMapPath("/data/local/tmp/fg_test.jpg");
+            testFaNode->AddModifier(imageModifier);
             testFaNode->SetClipToFrame(false);
             auto testNode = RSCanvasNode::Create();
 
@@ -132,4 +112,94 @@ GRAPHIC_TEST(GeometryTest, CONTENT_DISPLAY_TEST, Geometry_ClipFlame_Test_2)
     }
 }
 
+static void ClipRect(
+    std::shared_ptr<RSCanvasNode>& testFaNode, const Vector4f& clipRect, const Vector4f& clipRadius, bool frame = true)
+{
+    testFaNode->SetBounds({ 0, 0, 500, 500 });
+    testFaNode->SetBackgroundColor(0x000ff000);
+    testFaNode->SetFrame({ 0, 0, 400, 400 });
+    auto imageModifier = std::make_shared<ImageCustomModifier>();
+    imageModifier->SetWidth(400);
+    imageModifier->SetHeight(400);
+    imageModifier->SetPixelMapPath("/data/local/tmp/fg_test.jpg");
+    testFaNode->AddModifier(imageModifier);
+    auto textModifier = std::make_shared<TextCustomModifier>();
+    textModifier->SetText("ClipRRect");
+    textModifier->SetFontSize(50.0);
+    testFaNode->AddModifier(textModifier);
+    testFaNode->SetClipToFrame(frame);
+    testFaNode->SetClipRRect(clipRect, clipRadius);
+}
+
+GRAPHIC_TEST(GeometryTest, CONTENT_DISPLAY_TEST, ClipRRect_Test_001)
+{
+    auto testFaNode = RSCanvasNode::Create();
+    ClipRect(testFaNode, { -50, 0, 200, 200 }, { 20, 0, 20, 20 });
+    GetRootNode()->AddChild(testFaNode);
+    RegisterNode(testFaNode);
+}
+
+GRAPHIC_TEST(GeometryTest, CONTENT_DISPLAY_TEST, ClipRRect_Test_002)
+{
+    auto testFaNode = RSCanvasNode::Create();
+    ClipRect(testFaNode, { 0, -50, 200, 200 }, { 0, 20, 20, 20 });
+    GetRootNode()->AddChild(testFaNode);
+    RegisterNode(testFaNode);
+}
+
+GRAPHIC_TEST(GeometryTest, CONTENT_DISPLAY_TEST, ClipRRect_Test_003)
+{
+    auto testFaNode = RSCanvasNode::Create();
+    ClipRect(testFaNode, { 0, 0, -200, 200 }, { 20, 20, 0, 20 });
+    GetRootNode()->AddChild(testFaNode);
+    RegisterNode(testFaNode);
+}
+
+GRAPHIC_TEST(GeometryTest, CONTENT_DISPLAY_TEST, ClipRRect_Test_004)
+{
+    auto testFaNode = RSCanvasNode::Create();
+    ClipRect(testFaNode, { 0, 0, 200, -200 }, { 20, 20, 20, 0 });
+    GetRootNode()->AddChild(testFaNode);
+    RegisterNode(testFaNode);
+}
+
+GRAPHIC_TEST(GeometryTest, CONTENT_DISPLAY_TEST, ClipRRect_Test_005)
+{
+    auto testFaNode = RSCanvasNode::Create();
+    ClipRect(testFaNode, { 0, 0, 200, 200 }, { 50, 50, 20, 20 });
+    GetRootNode()->AddChild(testFaNode);
+    RegisterNode(testFaNode);
+}
+
+GRAPHIC_TEST(GeometryTest, CONTENT_DISPLAY_TEST, ClipRRect_Test_006)
+{
+    auto testFaNode = RSCanvasNode::Create();
+    ClipRect(testFaNode, { 0, 0, 200, 200 }, { 20, 20, 20, 20 }, false);
+    GetRootNode()->AddChild(testFaNode);
+    RegisterNode(testFaNode);
+}
+
+GRAPHIC_TEST(GeometryTest, CONTENT_DISPLAY_TEST, ClipRRect_Test_007)
+{
+    auto testFaNode = RSCanvasNode::Create();
+    ClipRect(testFaNode, { -50, -50, 200, 200 }, { 0, 0, 0, 0 });
+    GetRootNode()->AddChild(testFaNode);
+    RegisterNode(testFaNode);
+}
+
+GRAPHIC_TEST(GeometryTest, CONTENT_DISPLAY_TEST, ClipRRect_Test_008)
+{
+    auto testFaNode = RSCanvasNode::Create();
+    ClipRect(testFaNode, { 50, 50, 200, 200 }, { 20, 20, 20, 20 });
+    GetRootNode()->AddChild(testFaNode);
+    RegisterNode(testFaNode);
+}
+
+GRAPHIC_TEST(GeometryTest, CONTENT_DISPLAY_TEST, ClipRRect_Test_009)
+{
+    auto testFaNode = RSCanvasNode::Create();
+    ClipRect(testFaNode, { 50, 50, -200, -200 }, { 20, 20, 20, 20 });
+    GetRootNode()->AddChild(testFaNode);
+    RegisterNode(testFaNode);
+}
 } // namespace OHOS::Rosen

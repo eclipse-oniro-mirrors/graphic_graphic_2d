@@ -40,7 +40,7 @@ void RSModifierManager::AddModifier(const std::shared_ptr<ModifierNG::RSModifier
 
 void RSModifierManager::Draw()
 {
-#ifdef MODIFIER_NG
+#if defined(MODIFIER_NG)
     if (!modifiersNG_.empty()) {
         RS_TRACE_NAME("RSModifierManager Draw num:[" + std::to_string(modifiersNG_.size()) + "]");
         for (auto& modifier : modifiersNG_) {
@@ -51,8 +51,9 @@ void RSModifierManager::Draw()
             customModifier->ResetRSNodeExtendModifierDirty();
         }
         modifiersNG_.clear();
+    }
 #else
-    if (!modifierNGEnabled && !modifiers_.empty()) {
+    if (!modifiers_.empty()) {
         RS_TRACE_NAME("RSModifierManager Draw num:[" + std::to_string(modifiers_.size()) + "]");
         for (auto& modifier : modifiers_) {
             RS_TRACE_NAME("RSModifier::Draw");
@@ -61,8 +62,8 @@ void RSModifierManager::Draw()
             modifier->ResetRSNodeExtendModifierDirty();
         }
         modifiers_.clear();
-#endif
     }
+#endif
 }
 
 void RSModifierManager::AddAnimation(const std::shared_ptr<RSRenderAnimation>& animation)
@@ -71,7 +72,7 @@ void RSModifierManager::AddAnimation(const std::shared_ptr<RSRenderAnimation>& a
         ROSEN_LOGE("RSModifierManager::AddAnimation animation is nullptr");
         return;
     }
-
+    
     AnimationId key = animation->GetAnimationId();
     if (animations_.find(key) != animations_.end()) {
         ROSEN_LOGE("RSModifierManager::AddAnimation, The animation already exists when is added");

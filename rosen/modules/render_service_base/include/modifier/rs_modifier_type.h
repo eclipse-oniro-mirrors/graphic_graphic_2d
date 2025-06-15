@@ -30,8 +30,8 @@ namespace Rosen {
 // 2. Property modifier(i.e. to be applied to RSProperties) MUST be added before CUSTOM enum, elsewise it will not work
 // 3. Each command HAVE TO have UNIQUE ID in ALL HISTORY
 //    If a command is not used and you want to delete it, just COMMENT it
-// 4. MAX_RS_MODIFIER_TYPE always MUST be equal (GREATEST_ID_VALUE_IN_ENUM + 1)
-//    Example: If you added new enum value which id equals 400 and is the greatest value in enum,
+// 4. MAX_RS_MODIFIER_TYPE always MUST be equla (GREATEST_ID_VALUE_IN_ENUM + 1)
+//    Example: If you added new enum value which id equal 400 and it greatest value in enum,
 //    you HAVE TO change MAX_RS_MODIFIER_TYPE id to 401
 enum class RSModifierType : uint16_t {
     INVALID = 0,
@@ -66,7 +66,6 @@ enum class RSModifierType : uint16_t {
     BG_IMAGE_HEIGHT = 29,
     BG_IMAGE_POSITION_X = 30,
     BG_IMAGE_POSITION_Y = 31,
-    SURFACE_BG_COLOR = 32,
     BORDER_COLOR = 33,
     BORDER_WIDTH = 34,
     BORDER_STYLE = 35,
@@ -187,7 +186,7 @@ enum class RSModifierType : uint16_t {
     NODE_MODIFIER = 207,
     ENV_FOREGROUND_COLOR = 208,
     ENV_FOREGROUND_COLOR_STRATEGY = 209,
-    GEOMETRYTRANS = 210, // Unused
+    GEOMETRYTRANS = 210,
     CUSTOM_CLIP_TO_FRAME = 211,
     HDR_BRIGHTNESS = 212,
     BEHIND_WINDOW_FILTER_RADIUS = 213,
@@ -249,7 +248,6 @@ public:
             case RSModifierType::BG_IMAGE_HEIGHT: return "BgImageHeight";
             case RSModifierType::BG_IMAGE_POSITION_X: return "BgImagePositionX";
             case RSModifierType::BG_IMAGE_POSITION_Y: return "BgImagePositionY";
-            case RSModifierType::SURFACE_BG_COLOR: return "SurfaceBgColor";
             case RSModifierType::BORDER_COLOR: return "BorderColor";
             case RSModifierType::BORDER_WIDTH: return "BorderWidth";
             case RSModifierType::BORDER_STYLE: return "BorderStyle";

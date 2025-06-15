@@ -37,8 +37,7 @@ void RSAnimationCommandTest::SetUpTestCase() {}
 void RSAnimationCommandTest::TearDownTestCase() {}
 void RSAnimationCommandTest::SetUp() {}
 void RSAnimationCommandTest::TearDown() {}
-void RSAnimationCommandTest::TestProcessor(
-    NodeId nodeId, AnimationId animId, uint64_t token, AnimationCallbackEvent event)
+void RSAnimationCommandTest::TestProcessor(NodeId nodeId, AnimationId animId, Token token, AnimationCallbackEvent event)
 {
     nodeId_ = nodeId;
     animationId_ = animId;

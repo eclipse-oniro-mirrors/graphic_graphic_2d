@@ -71,7 +71,6 @@ namespace Rosen {
 namespace ModifierNG {
 class RSModifier;
 }
-
 class RSFilter;
 class RSImage;
 class RSMask;
@@ -179,7 +178,6 @@ protected:
     float GetThresholdByModifierType() const;
 
     virtual void UpdateOnAllAnimationFinish() {}
-
     virtual void UpdateCustomAnimation() {}
     virtual void AddPathAnimation() {}
     virtual void RemovePathAnimation() {}
@@ -189,11 +187,6 @@ protected:
     void AttachModifier(const std::shared_ptr<RSModifier>& modifier)
     {
         modifier_ = modifier;
-    }
-
-    void AttachModifier(const std::shared_ptr<ModifierNG::RSModifier>& modifier)
-    {
-        modifierNG_ = modifier;
     }
 
     void Attach(const std::shared_ptr<RSNode>& node)
@@ -217,6 +210,11 @@ protected:
     }
 
     virtual void OnDetach(const std::shared_ptr<RSNode>& node) {}
+
+    void AttachModifier(const std::shared_ptr<ModifierNG::RSModifier>& modifier)
+    {
+        modifierNG_ = modifier;
+    }
 
     void MarkModifierDirty();
 
@@ -280,6 +278,7 @@ private:
     friend class RSPropertyAnimation;
     friend class RSPathAnimation;
     friend class RSModifier;
+    friend class ModifierNG::RSModifier;
     friend class RSNode;
     friend class RSBackgroundUIFilterModifier;
     friend class RSForegroundUIFilterModifier;
@@ -296,7 +295,6 @@ private:
     friend class RSExtendedModifier;
     friend class RSCustomTransitionEffect;
     friend class RSCurveAnimation;
-    friend class ModifierNG::RSModifier;
     friend class RSUIFilterParaBase;
     template<typename T>
     friend class RSAnimatableProperty;
@@ -312,8 +310,7 @@ private:
  */
 template<typename T>
 class RSProperty : public RSPropertyBase {
-    static_assert(
-        std::is_base_of_v<RSArithmetic<T>, T> || supports_arithmetic<T>::value || std::is_same_v<PixelMapInfo, T>);
+    static_assert(std::is_base_of_v<RSArithmetic<T>, T> || supports_arithmetic<T>::value);
 
 public:
     /**
@@ -383,8 +380,6 @@ public:
 
 protected:
     RSPropertyType GetPropertyType() const override { return type_; }
-    inline static const RSPropertyType type_ = RSPropertyType::INVALID;
-    ModifierNG::RSPropertyType typeNG_ = ModifierNG::RSPropertyType::INVALID;
 
     void UpdateToRender(const T& value, PropertyUpdateType type) const
     {}
@@ -425,6 +420,9 @@ protected:
     {
         return std::make_shared<RSRenderProperty<T>>(stagingValue_, id_);
     }
+
+    inline static const RSPropertyType type_ = RSPropertyType::INVALID;
+    ModifierNG::RSPropertyType typeNG_ = ModifierNG::RSPropertyType::INVALID;
 
     T stagingValue_ {};
     bool isCustom_ { false };
@@ -966,5 +964,6 @@ inline const RSPropertyType RSProperty<T>::type_ = RSPropertyType::TYPE_ENUM
 
 } // namespace Rosen
 } // namespace OHOS
+
 /** @} */
 #endif // RENDER_SERVICE_CLIENT_CORE_MODIFIER_RS_PROPERTY_H

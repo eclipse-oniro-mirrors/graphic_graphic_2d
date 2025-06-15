@@ -214,13 +214,6 @@ public:
     std::optional<Color> GetBackgroundColor() const;
 
     /**
-     * @brief Gets the background color of surface.
-     *
-     * @return The background color of the surface.
-     */
-    std::optional<Color> GetSurfaceBgColor() const;
-
-    /**
      * @brief Gets the background image width.
      *
      * @return The width of the background image.

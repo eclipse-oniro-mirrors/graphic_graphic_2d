@@ -16,16 +16,17 @@
 #ifndef RENDER_SERVICE_CLIENT_CORE_ANIMATION_RS_RENDER_PROP_H
 #define RENDER_SERVICE_CLIENT_CORE_ANIMATION_RS_RENDER_PROP_H
 
+#include "feature/capture/rs_ui_capture.h"
+#include "recording/draw_cmd_list.h"
+
 #include "animation/rs_render_particle.h"
 #include "animation/rs_value_estimator.h"
 #include "common/rs_common_def.h"
 #include "common/rs_macros.h"
 #include "common/rs_rect.h"
-#include "feature/capture/rs_ui_capture.h"
 #include "modifier/rs_animatable_arithmetic.h"
 #include "modifier/rs_modifier_type.h"
 #include "property/rs_properties_def.h"
-#include "recording/draw_cmd_list.h"
 #include "transaction/rs_marshalling_helper.h"
 #ifdef USE_M133_SKIA
 #include "include/core/SkMatrix.h"
@@ -41,8 +42,6 @@ enum class Gravity;
 namespace ModifierNG {
 class RSRenderModifier;
 }
-
-constexpr int ANIMATABLE_SHIFT = 8;
 
 template<class...>
 struct make_void { using type = void; };
@@ -72,7 +71,7 @@ enum PropertyUpdateType : uint8_t {
     UPDATE_TYPE_FORCE_OVERWRITE, // overwrite and cancel all previous animations
 };
 
-enum class RSPropertyType : uint16_t {
+enum class RSPropertyType : uint8_t {
     INVALID = 0,
     BOOL,
     INT,
@@ -136,20 +135,23 @@ public:
         return id_;
     }
 
+    // deprecated
     void Attach(std::weak_ptr<RSRenderNode> node);
-
-    void Detach(std::weak_ptr<RSRenderNode> node);
 
     void Attach(std::weak_ptr<ModifierNG::RSRenderModifier> modifier)
     {
         modifier_ = modifier;
     }
 
+    void Detach(std::weak_ptr<RSRenderNode> node);
+
     // deprecated
     RSModifierType GetModifierType() const
     {
         return modifierType_;
     }
+
+    // deprecated
     void SetModifierType(RSModifierType type)
     {
         modifierType_ = type;
@@ -231,7 +233,7 @@ protected:
         RSPropertyUnmarshallingFuncRegister(bool isAnimatable, RSPropertyType type, UnmarshallingFunc func)
         {
             if (type != RSPropertyType::INVALID) {
-                uint16_t key = static_cast<uint16_t>(isAnimatable) << ANIMATABLE_SHIFT | static_cast<uint16_t>(type);
+                uint16_t key = static_cast<uint16_t>(isAnimatable) << 8 | static_cast<uint16_t>(type);
                 UnmarshallingFuncs_[key] = func;
             }
         }
@@ -295,9 +297,6 @@ class RSB_EXPORT_TMP RSRenderProperty : public RSRenderPropertyBase {
 public:
     RSRenderProperty() : RSRenderPropertyBase(0) {}
     RSRenderProperty(const T& value, const PropertyId& id) : RSRenderPropertyBase(id), stagingValue_(value) {}
-    RSRenderProperty(const T& value, const PropertyId& id, const RSPropertyType type)
-        : RSRenderPropertyBase(id), stagingValue_(value)
-    {}
     ~RSRenderProperty() override = default;
 
     using ValueType = T;
@@ -331,28 +330,19 @@ public:
 
     void Dump(std::string& out) const override {}
 
-    void SetUpdateUIPropertyFunc(
-        const std::function<void(const std::shared_ptr<RSRenderPropertyBase>&)>& updateUIPropertyFunc)
-    {
-        updateUIPropertyFunc_ = updateUIPropertyFunc;
-    }
-
-protected:
-    T stagingValue_{};
-    inline static const RSPropertyType type_ = RSPropertyType::INVALID;
-    std::function<void(const std::shared_ptr<RSRenderPropertyBase>&)> updateUIPropertyFunc_;
-
-    RSPropertyType GetPropertyType() const override
-    {
-        return type_;
-    }
-
     bool Marshalling(Parcel& parcel) override
     {
         // Planning: use static_assert to limit the types that can be used with RSRenderProperty.
         if constexpr (RSRenderProperty<T>::type_ == RSPropertyType::INVALID) {
             return false;
         }
+
+        auto result = RSMarshallingHelper::Marshalling(parcel, type_) &&
+                      RSMarshallingHelper::Marshalling(parcel, false) && // for non-animatable properties
+                      RSMarshallingHelper::Marshalling(parcel, GetId()) &&
+                      RSMarshallingHelper::Marshalling(parcel, stagingValue_);
+        return result;
+    }
 
     void SetUpdateUIPropertyFunc(
         const std::function<void(const std::shared_ptr<RSRenderPropertyBase>&)>& updateUIPropertyFunc)
@@ -374,8 +364,8 @@ protected:
         return type_;
     }
 
-    static bool onUnmarshalling(Parcel& parcel, std::shared_ptr<RSRenderPropertyBase>& val);
-    inline static RSPropertyUnmarshallingFuncRegister unmarshallingFuncRegister_ { false, type_, onUnmarshalling };
+    static bool OnUnmarshalling(Parcel& parcel, std::shared_ptr<RSRenderPropertyBase>& val);
+    inline static RSPropertyUnmarshallingFuncRegister unmarshallingFuncRegister_ { false, type_, OnUnmarshalling };
 
     friend class RSMarshallingHelper;
 };
@@ -482,20 +472,6 @@ protected:
         return std::make_shared<RSSpringValueEstimator<T>>();
     }
 
-    bool Marshalling(Parcel& parcel) override
-    {
-        // Planning: use static_assert to limit the types that can be used with RSRenderAnimatableProperty.
-        if constexpr (RSRenderProperty<T>::type_ == RSPropertyType::INVALID) {
-            return false;
-        }
-
-        auto result = RSMarshallingHelper::Marshalling(parcel, RSRenderProperty<T>::type_) &&
-                      RSMarshallingHelper::Marshalling(parcel, true) && // for animatable properties
-                      RSMarshallingHelper::Marshalling(parcel, RSRenderProperty<T>::GetId()) &&
-                      RSMarshallingHelper::Marshalling(parcel, RSRenderProperty<T>::stagingValue_) &&
-                      RSMarshallingHelper::Marshalling(parcel, unit_);
-        return result;
-    }
     static bool OnUnmarshalling(Parcel& parcel, std::shared_ptr<RSRenderPropertyBase>& val);
 
 private:
@@ -546,9 +522,9 @@ RSB_EXPORT float RSRenderAnimatableProperty<float>::ToFloat() const;
 template<>
 RSB_EXPORT float RSRenderAnimatableProperty<Vector2f>::ToFloat() const;
 template<>
-RSB_EXPORT float RSRenderAnimatableProperty<Vector3f>::ToFloat() const;
-template<>
 RSB_EXPORT float RSRenderAnimatableProperty<Vector4f>::ToFloat() const;
+template<>
+RSB_EXPORT float RSRenderAnimatableProperty<Vector3f>::ToFloat() const;
 template<>
 RSB_EXPORT float RSRenderAnimatableProperty<Quaternion>::ToFloat() const;
 
@@ -663,4 +639,5 @@ RSB_EXPORT void RSRenderProperty<std::shared_ptr<RSNGRenderFilterBase>>::OnSetMo
 
 } // namespace Rosen
 } // namespace OHOS
+
 #endif // RENDER_SERVICE_CLIENT_CORE_ANIMATION_RS_RENDER_PROP_H

@@ -29,6 +29,8 @@ namespace OHOS {
 namespace Rosen {
 namespace {
 constexpr int PID_SHIFT = 32;
+
+namespace {
 constexpr float DEFAULT_NEAR_ZERO_THRESHOLD = 1.0f / 256.0f;
 constexpr float FLOAT_NEAR_ZERO_COARSE_THRESHOLD = 1.0f / 256.0f;
 constexpr float FLOAT_NEAR_ZERO_MEDIUM_THRESHOLD = 1.0f / 1000.0f;
@@ -36,6 +38,7 @@ constexpr float FLOAT_NEAR_ZERO_FINE_THRESHOLD = 1.0f / 3072.0f;
 constexpr float COLOR_NEAR_ZERO_THRESHOLD = 0.0f;
 constexpr float LAYOUT_NEAR_ZERO_THRESHOLD = 0.5f;
 constexpr float ZERO = 0.0f;
+} // namespace
 
 PropertyId GeneratePropertyId()
 {
@@ -346,6 +349,12 @@ void RSProperty<std::shared_ptr<RSPath>>::UpdateToRender(
     const std::shared_ptr<RSPath>& value, PropertyUpdateType type) const
 {
     UPDATE_TO_RENDER(RSUpdatePropertyPath, value, type);
+}
+template<>
+void RSProperty<RSDynamicBrightnessPara>::UpdateToRender(
+    const RSDynamicBrightnessPara& value, PropertyUpdateType type) const
+{
+    UPDATE_TO_RENDER(RSUpdatePropertyDynamicBrightness, value, type);
 }
 template<>
 void RSProperty<std::shared_ptr<RSLinearGradientBlurPara>>::UpdateToRender(

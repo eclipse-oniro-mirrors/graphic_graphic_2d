@@ -13,9 +13,10 @@
  * limitations under the License.
  */
 #include "feature/single_frame_composer/rs_single_frame_composer.h"
-#include "modifier_ng/rs_render_modifier_ng.h"
-#include "platform/common/rs_system_properties.h"
+
 #include "rs_trace.h"
+
+#include "platform/common/rs_system_properties.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -82,13 +83,13 @@ void RSSingleFrameComposer::SingleFrameModifierAddNG(
     std::vector<std::shared_ptr<ModifierNG::RSRenderModifier>>& modifierList)
 {
     for (auto iter = singleFrameModifierList.begin(); iter != singleFrameModifierList.end(); ++iter) {
-        RS_TRACE_NAME("Add SingleFrame DrawCmdModifier ID " + std::to_string((*iter)->GetId()));
+        RS_TRACE_NAME("Add SingleFrame DrawCmdModifier, modifierId: " + std::to_string((*iter)->GetId()));
         modifierList.emplace_back(*iter);
     }
 }
 
-bool RSSingleFrameComposer::SingleFrameModifierAddToList(RSModifierType type,
-    std::list<std::shared_ptr<RSRenderModifier>>& modifierList)
+bool RSSingleFrameComposer::SingleFrameModifierAddToList(
+    RSModifierType type, std::list<std::shared_ptr<RSRenderModifier>>& modifierList)
 {
     bool needSkip = false;
     EraseSingleFrameModifier(modifierList);
@@ -107,8 +108,8 @@ bool RSSingleFrameComposer::SingleFrameModifierAddToList(RSModifierType type,
     return needSkip;
 }
 
-bool RSSingleFrameComposer::SingleFrameModifierAddToListNG(ModifierNG::RSModifierType type,
-    std::vector<std::shared_ptr<ModifierNG::RSRenderModifier>>& modifierList)
+bool RSSingleFrameComposer::SingleFrameModifierAddToListNG(
+    ModifierNG::RSModifierType type, std::vector<std::shared_ptr<ModifierNG::RSRenderModifier>>& modifierList)
 {
     bool needSkip = false;
     EraseSingleFrameModifierNG(modifierList);
@@ -180,7 +181,7 @@ void RSSingleFrameComposer::SingleFrameAddModifierNG(const std::shared_ptr<Modif
 {
     if (modifier->IsCustom()) {
         modifier->SetSingleFrameModifier(true);
-        RS_TRACE_NAME("Add modifier DrawCmdListId " + std::to_string(modifier->GetId()));
+        RS_TRACE_NAME("Add modifier, modifierId: " + std::to_string(modifier->GetId()));
         {
             std::lock_guard<std::mutex> lock(singleFrameDrawMutex_);
             singleFrameDrawCmdModifiersNG_.clear();
@@ -208,5 +209,5 @@ bool RSSingleFrameComposer::IsShouldProcessByIpcThread(pid_t pid)
     }
     return false;
 }
-}
-}
+} // namespace Rosen
+} // namespace OHOS

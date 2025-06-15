@@ -444,17 +444,6 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<Drawing:
     return {};
 }
 
-// PixelMapInfo
-bool RSMarshallingHelper::Marshalling(Parcel& parcel, const PixelMapInfo& val)
-{
-    return {};
-}
-
-bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, PixelMapInfo& val)
-{
-    return {};
-}
-
 #define MARSHALLING_AND_UNMARSHALLING(TYPE)                                                 \
     bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<TYPE>& val) \
     {                                                                                       \
@@ -569,7 +558,6 @@ MARSHALLING_AND_UNMARSHALLING(RSRenderAnimatableProperty)
     EXPLICIT_INSTANTIATION(TEMPLATE, std::vector<float>)                           \
     EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<Drawing::DrawCmdList>)        \
     EXPLICIT_INSTANTIATION(TEMPLATE, Drawing::Matrix)
-
 BATCH_EXPLICIT_INSTANTIATION(RSRenderProperty)
 
 #undef EXPLICIT_INSTANTIATION
@@ -617,18 +605,13 @@ bool RSMarshallingHelper::SkipFromParcel(Parcel& parcel, size_t size)
 {
     return {};
 }
-
 void RSMarshallingHelper::BeginNoSharedMem(std::thread::id tid) {}
-
 void RSMarshallingHelper::EndNoSharedMem() {}
-
 bool RSMarshallingHelper::GetUseSharedMem(std::thread::id tid)
 {
     return true;
 }
-
 void RSMarshallingHelper::SetCallingPid(pid_t callingPid) {}
-
 bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<RSRenderPropertyBase>& val)
 {
     return true;

@@ -552,24 +552,19 @@ std::shared_ptr<RSFilter> RSBackgroundFilterDrawable::GetBehindWindowFilter(cons
     float saturation = 1.f;
     float brightness = 1.f;
     RSColor maskColor = {};
-    #ifdef MODIFIER_NG
-        if (GetBehindWindowFilterProperty(node, ModifierNG::RSPropertyType::BEHIND_WINDOW_FILTER_RADIUS, radius) &&
-            GetBehindWindowFilterProperty(
-                node, ModifierNG::RSPropertyType::BEHIND_WINDOW_FILTER_SATURATION, saturation) &&
-            GetBehindWindowFilterProperty(
-                node, ModifierNG::RSPropertyType::BEHIND_WINDOW_FILTER_BRIGHTNESS, brightness) &&
-            GetBehindWindowFilterProperty(
-                node, ModifierNG::RSPropertyType::BEHIND_WINDOW_FILTER_MASK_COLOR, maskColor)) {
-            return RSPropertyDrawableUtils::GenerateBehindWindowFilter(radius, saturation, brightness, maskColor);
-        }
-    #else
-        if (GetModifierProperty(node, RSModifierType::BEHIND_WINDOW_FILTER_RADIUS, radius) &&
-            GetModifierProperty(node, RSModifierType::BEHIND_WINDOW_FILTER_SATURATION, saturation) &&
-            GetModifierProperty(node, RSModifierType::BEHIND_WINDOW_FILTER_BRIGHTNESS, brightness) &&
-            GetModifierProperty(node, RSModifierType::BEHIND_WINDOW_FILTER_MASK_COLOR, maskColor)) {
-            return RSPropertyDrawableUtils::GenerateBehindWindowFilter(radius, saturation, brightness, maskColor);
-        }
-    #endif
+#if defined(MODIFIER_NG)
+    if (GetBehindWindowFilterProperty(node, ModifierNG::RSPropertyType::BEHIND_WINDOW_FILTER_RADIUS, radius) &&
+        GetBehindWindowFilterProperty(node, ModifierNG::RSPropertyType::BEHIND_WINDOW_FILTER_SATURATION, saturation) &&
+        GetBehindWindowFilterProperty(node, ModifierNG::RSPropertyType::BEHIND_WINDOW_FILTER_BRIGHTNESS, brightness) &&
+        GetBehindWindowFilterProperty(node, ModifierNG::RSPropertyType::BEHIND_WINDOW_FILTER_MASK_COLOR, maskColor)) {
+#else
+    if (GetModifierProperty(node, RSModifierType::BEHIND_WINDOW_FILTER_RADIUS, radius) &&
+        GetModifierProperty(node, RSModifierType::BEHIND_WINDOW_FILTER_SATURATION, saturation) &&
+        GetModifierProperty(node, RSModifierType::BEHIND_WINDOW_FILTER_BRIGHTNESS, brightness) &&
+        GetModifierProperty(node, RSModifierType::BEHIND_WINDOW_FILTER_MASK_COLOR, maskColor)) {
+#endif
+        return RSPropertyDrawableUtils::GenerateBehindWindowFilter(radius, saturation, brightness, maskColor);
+    }
     return nullptr;
 }
 

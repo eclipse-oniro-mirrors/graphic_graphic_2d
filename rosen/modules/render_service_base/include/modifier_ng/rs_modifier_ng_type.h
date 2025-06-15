@@ -93,6 +93,7 @@ private:
         { RSModifierType::CONTENT_STYLE, RSPropertyType::CONTENT_STYLE },
         { RSModifierType::FOREGROUND_STYLE, RSPropertyType::FOREGROUND_STYLE },
         { RSModifierType::OVERLAY_STYLE, RSPropertyType::OVERLAY_STYLE },
+        { RSModifierType::NODE_MODIFIER, RSPropertyType::NODE_MODIFIER },
     };
 };
 
@@ -246,7 +247,7 @@ public:
             case RSPropertyType::ENV_FOREGROUND_COLOR_STRATEGY: return "EnvForegroundColorStrategy";
             case RSPropertyType::CUSTOM_CLIP_TO_FRAME: return "CustomClipToFrame";
             case RSPropertyType::HDR_BRIGHTNESS: return "HdrBrightness";
-            case RSPropertyType::HDR_UI_BRIGHTNESS: return "HdrUIBrightness";
+            case RSPropertyType::HDR_UI_BRIGHTNESS: return "HDRUIBrightness";
             case RSPropertyType::HDR_BRIGHTNESS_FACTOR: return "HdrBrightnessFactor";
             case RSPropertyType::BEHIND_WINDOW_FILTER_RADIUS: return "BehindWindowFilterRadius";
             case RSPropertyType::BEHIND_WINDOW_FILTER_SATURATION: return "BehindWindowFilterSaturation";
@@ -259,7 +260,7 @@ public:
     }
 };
 
-static constexpr uint8_t MODIFIER_TYPE_COUNT = static_cast<uint8_t>(RSModifierType::MAX);
+static constexpr uint16_t MODIFIER_TYPE_COUNT = static_cast<uint16_t>(RSModifierType::MAX);
 using ModifierDirtyTypes = std::bitset<static_cast<int>(MODIFIER_TYPE_COUNT)>;
 } // namespace OHOS::Rosen::ModifierNG
 #endif // RENDER_SERVICE_BASE_MODIFIER_NG_RS_MODIFIER_NG_TYPE_H

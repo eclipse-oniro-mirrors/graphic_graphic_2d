@@ -342,7 +342,7 @@ protected:
     // if the node needs to avoid drawing cache because of some layers, such as the security layer...
     bool hasSkipCacheLayer_ = false;
     bool hasChildInBlackList_ = false;
-
+    
     ClearSurfaceTask clearSurfaceTask_ = nullptr;
 private:
     static void InitRenderParams(const std::shared_ptr<const RSRenderNode>& node,

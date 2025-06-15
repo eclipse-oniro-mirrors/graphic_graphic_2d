@@ -27,28 +27,29 @@
 #include <variant>
 #include <vector>
 
+#include "display_engine/rs_luminance_control.h"
+#include "feature/opinc/rs_opinc_cache.h"
+#include "feature/single_frame_composer/rs_single_frame_composer.h"
+#include "hwc/rs_hwc_recorder.h"
+
 #include "animation/rs_animation_manager.h"
 #include "animation/rs_frame_rate_range.h"
 #include "common/rs_common_def.h"
 #include "common/rs_macros.h"
 #include "common/rs_rect.h"
-#include "display_engine/rs_luminance_control.h"
 #include "draw/surface.h"
 #include "drawable/rs_drawable.h"
 #include "drawable/rs_property_drawable.h"
-#include "feature/opinc/rs_opinc_cache.h"
-#include "feature/single_frame_composer/rs_single_frame_composer.h"
-#include "hwc/rs_hwc_recorder.h"
+#include "drawable/rs_render_node_drawable_adapter.h"
 #include "image/gpu_context.h"
 #include "memory/rs_dfx_string.h"
 #include "memory/rs_memory_snapshot.h"
 #include "modifier/rs_render_modifier.h"
 #include "modifier_ng/rs_modifier_ng_type.h"
 #include "pipeline/rs_dirty_region_manager.h"
-#include "pipeline/rs_render_display_sync.h"
 #include "pipeline/rs_paint_filter_canvas.h"
+#include "pipeline/rs_render_display_sync.h"
 #include "property/rs_properties.h"
-#include "drawable/rs_render_node_drawable_adapter.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -65,8 +66,8 @@ namespace NativeBufferUtils {
 class VulkanCleanupHelper;
 }
 namespace ModifierNG {
-    class RSRenderModifier;
-    enum class RSModifierType : uint16_t;
+class RSRenderModifier;
+enum class RSModifierType : uint16_t;
 }
 struct SharedTransitionParam;
 
@@ -439,7 +440,7 @@ public:
 
     bool IsDirtyRegionUpdated() const;
     void CleanDirtyRegionUpdated();
-
+    
     std::shared_ptr<RSRenderPropertyBase> GetProperty(PropertyId id);
     void AddProperty(std::shared_ptr<RSRenderPropertyBase> property);
     void RemoveProperty(std::shared_ptr<RSRenderPropertyBase> property);
@@ -506,7 +507,7 @@ public:
         return cacheSurface_;
     }
 
-// use for uni render visitor
+    // use for uni render visitor
     std::shared_ptr<Drawing::Surface> GetCacheSurface(uint32_t threadIndex, bool needCheckThread,
         bool releaseAfterGet = false);
 

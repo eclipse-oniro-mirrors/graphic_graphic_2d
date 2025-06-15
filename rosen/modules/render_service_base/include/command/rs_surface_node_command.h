@@ -260,12 +260,12 @@ ADD_COMMAND(RSSurfaceNodeAttachToWindowContainer,
 ADD_COMMAND(RSSurfaceNodeDetachFromWindowContainer,
     ARG(PERMISSION_APP, SURFACE_NODE, SURFACE_NODE_DETACH_FROM_WINDOW_CONTAINER,
         SurfaceNodeCommandHelper::DetachFromWindowContainer, NodeId, ScreenId))
-ADD_COMMAND(RSSurfaceNodeSetRegionToBeMagnified,
-    ARG(PERMISSION_APP, SURFACE_NODE, SURFACE_NODE_SET_REGION_TO_BE_MAGNIFIED,
-        SurfaceNodeCommandHelper::SetRegionToBeMagnified, NodeId, Vector4f))
 ADD_COMMAND(RSSurfaceNodeSetSourceVirtualDisplayId,
     ARG(PERMISSION_APP, SURFACE_NODE, SURFACE_NODE_SET_SOURCE_VIRTUAL_DISPLAY_ID,
         SurfaceNodeCommandHelper::SetSourceVirtualDisplayId, NodeId, ScreenId))
+ADD_COMMAND(RSSurfaceNodeSetRegionToBeMagnified,
+    ARG(PERMISSION_APP, SURFACE_NODE, SURFACE_NODE_SET_REGION_TO_BE_MAGNIFIED,
+        SurfaceNodeCommandHelper::SetRegionToBeMagnified, NodeId, Vector4f))
 ADD_COMMAND(RSSurfaceNodeSetFrameGravityNewVersionEnabled,
     ARG(PERMISSION_APP, SURFACE_NODE, SURFACE_NODE_SET_FRAME_GRAVITY_NEW_VERSION_ENABLED,
         SurfaceNodeCommandHelper::SetFrameGravityNewVersionEnabled, NodeId, bool))

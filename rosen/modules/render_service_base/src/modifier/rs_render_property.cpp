@@ -22,7 +22,6 @@
 #include "modifier_ng/rs_render_modifier_ng.h"
 #include "pipeline/rs_render_node.h"
 #include "platform/common/rs_log.h"
-#include "render/rs_render_filter.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -261,12 +260,12 @@ bool RSRenderProperty<T>::OnUnmarshalling(Parcel& parcel, std::shared_ptr<RSRend
 {
     auto ret = new RSRenderProperty<T>();
     if (ret == nullptr) {
-        ROSEN_LOGE("%{public}s Creating property failed", __PRETTY_FUNCTION__);
+        ROSEN_LOGE("%s Creating property failed", __PRETTY_FUNCTION__);
         return false;
     }
     if (!RSMarshallingHelper::Unmarshalling(parcel, ret->id_) ||
         !RSMarshallingHelper::Unmarshalling(parcel, ret->stagingValue_)) {
-        ROSEN_LOGE("%{public}s Unmarshalling failed", __PRETTY_FUNCTION__);
+        ROSEN_LOGE("%s Unmarshalling failed", __PRETTY_FUNCTION__);
         delete ret;
         return false;
     }
@@ -279,13 +278,13 @@ bool RSRenderAnimatableProperty<T>::OnUnmarshalling(Parcel& parcel, std::shared_
 {
     auto ret = new RSRenderAnimatableProperty<T>();
     if (ret == nullptr) {
-        ROSEN_LOGE("%{public}s Creating property failed", __PRETTY_FUNCTION__);
+        ROSEN_LOGE("%s Creating property failed", __PRETTY_FUNCTION__);
         return false;
     }
     if (!RSMarshallingHelper::Unmarshalling(parcel, ret->id_) ||
         !RSMarshallingHelper::Unmarshalling(parcel, ret->stagingValue_) ||
         !RSMarshallingHelper::Unmarshalling(parcel, ret->unit_)) {
-        ROSEN_LOGE("%{public}s Unmarshalling failed", __PRETTY_FUNCTION__);
+        ROSEN_LOGE("%s Unmarshalling failed", __PRETTY_FUNCTION__);
         delete ret;
         return false;
     }
@@ -725,6 +724,36 @@ bool RSRenderAnimatableProperty<RRect>::IsNearEqual(
     }
     ROSEN_LOGE("RSRenderAnimatableProperty<RRect>::IsNearEqual: the value of the comparison is a null pointer!");
     return true;
+}
+
+template<>
+void RSRenderProperty<std::shared_ptr<RSNGRenderFilterBase>>::OnAttach()
+{
+    auto node = node_.lock();
+    if (!node) {
+        return;
+    }
+    if (stagingValue_) {
+        stagingValue_->Attach(node);
+    }
+}
+
+template<>
+void RSRenderProperty<std::shared_ptr<RSNGRenderFilterBase>>::OnDetach()
+{
+    auto node = node_.lock();
+    if (!node) {
+        return;
+    }
+    if (stagingValue_) {
+        stagingValue_->Detach(node);
+    }
+}
+
+template<>
+void RSRenderProperty<std::shared_ptr<RSNGRenderFilterBase>>::OnSetModifierType()
+{
+    stagingValue_->SetModifierType(modifierType_);
 }
 
 #define DECLARE_PROPERTY(T, TYPE_ENUM) template class RSRenderProperty<T>

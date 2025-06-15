@@ -103,6 +103,15 @@ public:
         return id_;
     }
 
+    std::shared_ptr<RSRenderPropertyBase> GetProperty(RSPropertyType type)
+    {
+        auto it = properties_.find(type);
+        if (it == properties_.end()) {
+            return nullptr;
+        }
+        return it->second;
+    }
+
     bool Marshalling(Parcel& parcel) const;
     [[nodiscard]] static RSRenderModifier* Unmarshalling(Parcel& parcel);
 
@@ -127,7 +136,7 @@ public:
         const std::shared_ptr<RSRenderProperty<T>>& property, ModifierId id = 0,
         RSPropertyType propertyType = RSPropertyType::INVALID)
     {
-        const auto& constructor = RSRenderModifier::ConstructorLUT_[static_cast<uint8_t>(modifierType)];
+        const auto& constructor = RSRenderModifier::ConstructorLUT_[static_cast<uint16_t>(modifierType)];
         if (constructor == nullptr) {
             return nullptr;
         }

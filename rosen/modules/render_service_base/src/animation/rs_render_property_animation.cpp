@@ -17,7 +17,6 @@
 
 #include "animation/rs_animation_trace_utils.h"
 #include "modifier/rs_render_property.h"
-#include "modifier_ng/rs_render_modifier_ng.h"
 #include "platform/common/rs_log.h"
 #include "transaction/rs_marshalling_helper.h"
 #include "rs_profiler.h"
@@ -46,16 +45,15 @@ void RSRenderPropertyAnimation::DumpAnimationInfo(std::string& out) const
 void RSRenderPropertyAnimation::DumpProperty(std::string& out) const
 {
     if (property_ != nullptr) {
-        #ifdef MODIFIER_NG
-            if (auto modifierNG = property_->GetModifierNG().lock()) {
-                out += ", ModifierType: " +
-                    std::to_string(static_cast<int16_t>(modifierNG->FindPropertyType(property_)));
-            } else {
-                out += ", ModifierType: INVALID";
-            }
-        #else
-            out += ", ModifierType: " + std::to_string(static_cast<int16_t>(property_->GetModifierType()));
-        #endif
+#if defined(MODIFIER_NG)
+        if (auto modifierNG = property_->GetModifierNG().lock()) {
+            out += ", ModifierType: " + std::to_string(static_cast<int16_t>(modifierNG->FindPropertyType(property_)));
+        } else {
+            out += ", ModifierType: INVALID";
+        }
+#else
+        out += ", ModifierType: " + std::to_string(static_cast<int16_t>(property_->GetModifierType()));
+#endif
     } else {
         out += ", ModifierType: INVALID";
     }

@@ -1568,6 +1568,5 @@ int RSSystemProperties::GetSubThreadDropFrameInterval()
         system::GetIntParameter("const.graphic.subthread.dropframe.interval", 1);
     return dropFrameInterval;
 }
-
 } // namespace Rosen
 } // namespace OHOS
