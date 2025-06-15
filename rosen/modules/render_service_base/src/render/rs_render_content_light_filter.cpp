@@ -167,9 +167,9 @@ float RSRenderContentLightFilterPara::GetLightIntensity() const
     return lightIntensity_;
 }
 
-const Vector3f& RSRenderContentLightFilterPara::GetRotationAngel() const
+const Vector3f& RSRenderContentLightFilterPara::GetRotationAngle() const
 {
-    return rotationAngel_;
+    return rotationAngle_;
 }
 
 void RSRenderContentLightFilterPara::GenerateGEVisualEffect(
@@ -181,7 +181,7 @@ void RSRenderContentLightFilterPara::GenerateGEVisualEffect(
     contentLightFilter->SetParam("CONTENT_LIGHT_POSITION", lightPosition_);
     contentLightFilter->SetParam("CONTENT_LIGHT_COLOR", lightColor_);
     contentLightFilter->SetParam("CONTENT_LIGHT_INTENSITY", lightIntensity_);
-    contentLightFilter->SetParam("CONTENT_LIGHT_ROTATION_ANGLE", rotationAngel_);
+    contentLightFilter->SetParam("CONTENT_LIGHT_ROTATION_ANGLE", rotationAngle_);
     visualEffectContainer->AddToChainedFilter(contentLightFilter);
 }
 
