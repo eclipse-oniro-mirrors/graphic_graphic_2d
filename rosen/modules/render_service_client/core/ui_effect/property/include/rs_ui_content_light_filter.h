@@ -38,7 +38,7 @@ public:
 
     virtual std::shared_ptr<RSRenderFilterParaBase> CreateRSRenderFilter() override;
 
-    virtual std::vector<std::shared_ptr<RSPropertyBase>> GetLeafProperties() override;
+    std::vector<std::shared_ptr<RSPropertyBase>> GetLeafProperties() override;
 
 private:
     bool CreateRenderFilterLightPosition(const std::shared_ptr<RSRenderContentLightFilterPara>& frProperty,
