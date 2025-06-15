@@ -112,8 +112,6 @@ HWTEST_F(RSBorderLightShaderTest, RSBorderLightShaderTest006, TestSize.Level1)
     EXPECT_FALSE(shader.Unmarshalling(empty, needReset));
 }
 
-
-
 /**
  * @tc.name: RSBorderLightShaderTest009
  * @tc.type: FUNC
