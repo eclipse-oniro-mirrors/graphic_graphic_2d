@@ -49,7 +49,7 @@ public:
 
     float GetLightIntensity() const;
 
-    const Vector3f& GetRotationAngel() const;
+    const Vector3f& GetRotationAngle() const;
 
     void SetRotationAngle(const Vector3f& rotationAngel)
     {
