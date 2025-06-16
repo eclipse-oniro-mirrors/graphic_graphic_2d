@@ -155,7 +155,7 @@ HWTEST_F(RSOpincCacheTest, OpincQuickMarkStableNode002, TestSize.Level1)
     EXPECT_TRUE(renderNode.isSubTreeDirty_);
 
     opincCache.OpincQuickMarkStableNode(unchangeMarkInApp, unchangeMarkEnable, true);
-    EXPECT_TRUE(opincCache.isReseted_);
+    EXPECT_TRUE(opincCache.isOpincSupportFlag_);
 }
 
 /**

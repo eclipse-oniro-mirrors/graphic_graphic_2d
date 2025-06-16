@@ -646,15 +646,10 @@ public:
     std::string QuickGetNodeDebugInfo();
 
     // mark support node
-    void OpincUpdateNodeSupportFlag(bool supportFlag, bool rootFlag);
+    void OpincUpdateNodeSupportFlag(bool supportFlag, bool isOpincRootNode);
     virtual bool OpincGetNodeSupportFlag()
     {
-        return isOpincNodeSupportFlag_;
-    }
-
-    void OpincSetNodeSupportFlag(bool supportFlag)
-    {
-        isOpincNodeSupportFlag_ = supportFlag;
+        return false;
     }
 
     // arkui mark
@@ -1052,7 +1047,6 @@ private:
     bool isLastVisible_ = false;
     bool isAccumulatedClipFlagChanged_ = false;
     bool hasAccumulatedClipFlag_ = false;
-    bool isOpincNodeSupportFlag_ = true;
     // since preparation optimization would skip child's dirtyFlag(geoDirty) update
     // it should be recorded and update if marked dirty again
     bool geoUpdateDelay_ = false;

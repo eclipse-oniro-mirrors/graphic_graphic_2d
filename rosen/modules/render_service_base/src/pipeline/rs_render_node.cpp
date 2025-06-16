@@ -3701,17 +3701,16 @@ void RSRenderNode::MarkSuggestOpincNode(bool isOpincNode, bool isNeedCalculate)
 {
     RS_TRACE_NAME_FMT("mark opinc %llx, isopinc:%d. isCal:%d", GetId(), isOpincNode, isNeedCalculate);
     opincCache_.MarkSuggestOpincNode(isOpincNode, isNeedCalculate);
-    OpincSetNodeSupportFlag(true);
     SetDirty();
 }
 
 // mark support node
-void RSRenderNode::OpincUpdateNodeSupportFlag(bool supportFlag, bool rootFlag)
+void RSRenderNode::OpincUpdateNodeSupportFlag(bool supportFlag, bool isOpincRootNode)
 {
-    // supportFlag is obtained from isOpincNodeSupportFlag_ of the child node.
+    // supportFlag is obtained from the child node.
     // make sure current node is the bottom of the node marked by arkui.
-    isOpincNodeSupportFlag_ = isOpincNodeSupportFlag_ && supportFlag &&
-        nodeGroupType_ == RSRenderNode::NodeGroupType::NONE && !rootFlag;
+    opincCache_.OpincSetSupportFlag(opincCache_.OpincGetSupportFlag() && supportFlag &&
+        nodeGroupType_ == RSRenderNode::NodeGroupType::NONE && !isOpincRootNode);
 }
 
 std::string RSRenderNode::QuickGetNodeDebugInfo()
@@ -3731,7 +3730,7 @@ void RSRenderNode::UpdateOpincParam()
         stagingRenderParams_->OpincSetCacheChangeFlag(opincCache_.GetCacheChangeFlag(), lastFrameSynced_);
         stagingRenderParams_->OpincUpdateRootFlag(opincCache_.OpincGetRootFlag());
         stagingRenderParams_->OpincSetIsSuggest(opincCache_.IsSuggestOpincNode());
-        stagingRenderParams_->OpincUpdateSupportFlag(isOpincNodeSupportFlag_);
+        stagingRenderParams_->OpincUpdateSupportFlag(OpincGetNodeSupportFlag());
     }
 }
 
