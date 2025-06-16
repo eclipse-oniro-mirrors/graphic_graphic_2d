@@ -82,6 +82,7 @@
 #include "pipeline/rs_node_map.h"
 #include "platform/common/rs_log.h"
 #include "render/rs_blur_filter.h"
+#include "render/rs_border_light_shader.h"
 #include "render/rs_filter.h"
 #include "render/rs_material_filter.h"
 #include "render/rs_path.h"
@@ -2572,6 +2573,9 @@ void RSNode::SetVisualEffect(const VisualEffect* visualEffect)
         if (visualEffectPara == nullptr) {
             continue;
         }
+        if (visualEffectPara->GetParaType() == VisualEffectPara::BORDER_LIGHT_EFFECT) {
+            SetBorderLightShader(visualEffectPara);
+        }
         if (visualEffectPara->GetParaType() != VisualEffectPara::BACKGROUND_COLOR_EFFECT) {
             continue;
         }
@@ -2590,6 +2594,26 @@ void RSNode::SetVisualEffect(const VisualEffect* visualEffect)
             { brightnessBlender->GetNegativeCoeff().data_[0], brightnessBlender->GetNegativeCoeff().data_[1],
                 brightnessBlender->GetNegativeCoeff().data_[2] } });
     }
+}
+
+void RSNode::SetBorderLightShader(std::shared_ptr<VisualEffectPara> visualEffectPara)
+{
+    if (visualEffectPara == nullptr) {
+        ROSEN_LOGE("RSNode::SetBorderLightShader: visualEffectPara is null!");
+        return;
+    }
+    auto borderLightEffectPara = std::static_pointer_cast<BorderLightEffectPara>(visualEffectPara);
+    Vector3f rotationAngle;
+    RSBorderLightParams borderLightParam = {
+        borderLightEffectPara->GetLightPosition(),
+        borderLightEffectPara->GetLightColor(),
+        borderLightEffectPara->GetLightIntensity(),
+        borderLightEffectPara->GetLightWidth(),
+        rotationAngle
+    };
+    auto borderLightShader = std::make_shared<RSBorderLightShader>();
+    borderLightShader->SetRSBorderLightParams(borderLightParam);
+    SetBackgroundShader(borderLightShader);
 }
 
 void RSNode::SetBlender(const Blender* blender)

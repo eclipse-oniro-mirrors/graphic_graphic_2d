@@ -36,6 +36,7 @@
 #include "property/rs_point_light_manager.h"
 #include "property/rs_properties_def.h"
 #include "render/rs_attraction_effect_filter.h"
+#include "render/rs_border_light_shader.h"
 #include "render/rs_colorful_shadow_filter.h"
 #include "render/rs_distortion_shader_filter.h"
 #include "render/rs_filter.h"
@@ -571,6 +572,7 @@ bool RSProperties::UpdateGeometryByParent(const Drawing::Matrix* parentMatrix,
     }
     auto dirtyFlag = (rect != lastRect_.value()) || !(prevAbsMatrix == prevAbsMatrix_);
     lastRect_ = rect;
+    bgShaderNeedUpdate_ = true;
     if (foregroundRenderFilter_) {
         GenerateContentLightFilter();
     }
@@ -5192,6 +5194,11 @@ void RSProperties::UpdateBackgroundShader()
             bgShader->MakeDrawingShader(GetBoundsRect(), paramValue);
         }
         bgShader->MakeDrawingShader(GetBoundsRect(), GetBackgroundShaderProgress());
+        if (bgShader->GetShaderType() == RSShader::ShaderType::BORDER_LIGHT) {
+            Vector3f rotationAngle(boundsGeo_->GetRotationX(), boundsGeo_->GetRotationY(), boundsGeo_->GetRotation());
+            auto RSBLShader = std::static_pointer_cast<RSBorderLightShader>(bgShader);
+            RSBLShader->SetRotationAngle(rotationAngle);
+        }
     }
 }
 

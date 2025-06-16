@@ -90,8 +90,6 @@ public:
     RSBackgroundColorDrawable() = default;
     static RSDrawable::Ptr OnGenerate(const RSRenderNode& node);
     bool OnUpdate(const RSRenderNode& node) override;
-
-private:
 };
 
 class RSBackgroundShaderDrawable : public RSPropertyDrawable {
