@@ -156,7 +156,8 @@ HWTEST_F(OHDrawingStyleCopyTest, OH_Drawing_CopyParagraphStyle001, TestSize.Leve
     myTab.alignment = TextAlign::CENTER;
     typographyStyle.tab = myTab;
 
-    OHOS::Rosen::TypographyStyle typographyStyleCopy = typographyStyle;
+    OHOS::Rosen::TypographyStyle typographyStyleCopy;
+    typographyStyleCopy = typographyStyle;
     EXPECT_EQ(typographyStyleCopy.fontWidth, FontWidth::EXTRA_CONDENSED);
     EXPECT_EQ(typographyStyleCopy.lineStyleFontWidth, FontWidth::SEMI_CONDENSED);
     EXPECT_TRUE(typographyStyleCopy.lineStyleHeightOnly);

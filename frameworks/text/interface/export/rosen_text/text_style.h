@@ -119,7 +119,7 @@ struct RS_EXPORT RectStyle {
     bool operator !=(const RectStyle& rhs) const;
 };
 
-struct TextStyle {
+struct RS_EXPORT TextStyle {
     Drawing::Color color = Drawing::Color::COLOR_WHITE;
     TextDecoration decoration = TextDecoration::NONE;
     Drawing::Color decorationColor = Drawing::Color::COLOR_TRANSPARENT;

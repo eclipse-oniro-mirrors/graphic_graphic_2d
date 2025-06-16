@@ -153,7 +153,7 @@ HWTEST_F(NDKTextStyleCopyTest, CopyTextStyle002, TestSize.Level0)
     EXPECT_EQ(OH_Drawing_TextStyleGetFontStyleStruct(txtStyleCopy_).weight, FONT_WEIGHT_600);
     EXPECT_EQ(OH_Drawing_TextStyleGetFontStyleStruct(txtStyleCopy_).slant, FONT_STYLE_ITALIC);
     EXPECT_EQ(OH_Drawing_TextStyleGetFontStyleStruct(txtStyleCopy_).width, FONT_WIDTH_EXTRA_EXPANDED);
-    EXPECT_EQ(OH_Drawing_TextStyleGetFontFeatureSize(txtStyleCopy_), INT_TEST_SIZE_NOT_DEFAULT);
+    EXPECT_EQ(OH_Drawing_TextStyleGetFontFeatureSize(txtStyleCopy_), 2); // Set 2 font features
 }
 
 /*
@@ -216,6 +216,7 @@ HWTEST_F(NDKTextStyleCopyTest, CopyTextStyle004, TestSize.Level0)
     OH_Drawing_SetTextStyleBackgroundPen(txtStyle_, backgroundPen);
     OH_Drawing_SetTextStyleForegroundPen(txtStyle_, foregroundPen);
 
+    OH_Drawing_CopyTextStyle(nullptr);
     txtStyleCopy_ = OH_Drawing_CopyTextStyle(txtStyle_);
     ASSERT_NE(txtStyleCopy_, nullptr);
 
@@ -252,6 +253,7 @@ HWTEST_F(NDKTextStyleCopyTest, CopyTextShadow001, TestSize.Level0)
     double blurRadius = DOUBLE_TEST_SIZE_NOT_DEFAULT;
     OH_Drawing_SetTextShadow(shadow, OH_Drawing_ColorSetArgb(0xFF, 0xFF, 0x00, 0x00), offset, blurRadius);
     OH_Drawing_TextShadow* shadowCopy = OH_Drawing_CopyTextShadow(shadow);
+    OH_Drawing_CopyTextShadow(nullptr);
     txtStyle_ = OH_Drawing_CreateTextStyle();
     ASSERT_NE(txtStyle_, nullptr);
     OH_Drawing_TextStyleAddShadow(txtStyle_, shadow);
@@ -280,10 +282,10 @@ HWTEST_F(NDKTextStyleCopyTest, CopyTypographStyle001, TestSize.Level0)
     OH_Drawing_SetTypographyTextFontHeight(typoStyle_, DOUBLE_TEST_SIZE_NOT_DEFAULT);
     OH_Drawing_SetTypographyTextUseLineStyle(typoStyle_, true);
     OH_Drawing_SetTypographyTextLineStyleFontWeight(typoStyle_, FONT_WEIGHT_600);
-    OH_Drawing_SetTypographyTextLineStyleFontStyle(typoStyle_, 1);
+    OH_Drawing_SetTypographyTextLineStyleFontStyle(typoStyle_, FONT_STYLE_ITALIC);
     const char* fontFamilies[] = { "Text1", "Text2" };
-    int FontFamiliesNumBefore = 2;
-    OH_Drawing_SetTypographyTextLineStyleFontFamilies(typoStyle_, FontFamiliesNumBefore, fontFamilies);
+    int fontFamiliesNumBefore = 2;
+    OH_Drawing_SetTypographyTextLineStyleFontFamilies(typoStyle_, fontFamiliesNumBefore, fontFamilies);
     OH_Drawing_SetTypographyTextLineStyleFontSize(typoStyle_, DOUBLE_TEST_SIZE_NOT_DEFAULT);
     OH_Drawing_SetTypographyTextLineStyleFontHeight(typoStyle_, DOUBLE_TEST_SIZE_NOT_DEFAULT);
     OH_Drawing_SetTypographyTextLineStyleHalfLeading(typoStyle_, true);
@@ -304,7 +306,7 @@ HWTEST_F(NDKTextStyleCopyTest, CopyTypographStyle001, TestSize.Level0)
     EXPECT_EQ(OH_Drawing_TypographyTextlineStyleGetFontStyle(typoStyleCopy_), FONT_STYLE_ITALIC);
     size_t num;
     char** fontFamiliesList = OH_Drawing_TypographyTextlineStyleGetFontFamilies(typoStyleCopy_, &num);
-    EXPECT_EQ(num, FontFamiliesNumBefore);
+    EXPECT_EQ(num, fontFamiliesNumBefore);
     EXPECT_EQ(OH_Drawing_TypographyTextlineStyleGetFontSize(typoStyleCopy_), DOUBLE_TEST_SIZE_NOT_DEFAULT);
     EXPECT_TRUE(OH_Drawing_TypographyTextlineStyleGetHeightOnly(typoStyleCopy_));
     EXPECT_NEAR(OH_Drawing_TypographyTextlineStyleGetHeightScale(typoStyleCopy_), DOUBLE_TEST_SIZE_NOT_DEFAULT,
@@ -337,6 +339,7 @@ HWTEST_F(NDKTextStyleCopyTest, CopyTypographStyle002, TestSize.Level0)
     OH_Drawing_SetTypographyTextFontSize(typoStyle_, DOUBLE_TEST_SIZE_NOT_DEFAULT);
     OH_Drawing_SetTypographyTextFontHeight(typoStyle_, DOUBLE_TEST_SIZE_NOT_DEFAULT);
 
+    OH_Drawing_CopyTypographyStyle(nullptr);
     typoStyleCopy_ = OH_Drawing_CopyTypographyStyle(typoStyle_);
     ASSERT_NE(typoStyleCopy_, nullptr);
 
@@ -349,7 +352,7 @@ HWTEST_F(NDKTextStyleCopyTest, CopyTypographStyle002, TestSize.Level0)
     EXPECT_EQ(fontFamiliesNumAfter, 1);
     EXPECT_NEAR(OH_Drawing_TextStyleGetFontSize(txtStyleCopy_), DOUBLE_TEST_SIZE_NOT_DEFAULT, FLOAT_DATA_EPSILON);
     EXPECT_NEAR(OH_Drawing_TextStyleGetFontHeight(txtStyleCopy_), DOUBLE_TEST_SIZE_NOT_DEFAULT, FLOAT_DATA_EPSILON);
-    OH_Drawing_TextStyleDestroyFontFamilies(fontFamiliesList, 1);
+    OH_Drawing_TextStyleDestroyFontFamilies(fontFamiliesList, fontFamiliesNumAfter);
 }
 
 /*

@@ -72,7 +72,7 @@ struct TextTab {
     TextAlign alignment = TextAlign::LEFT;
     float location = -1.0f;
 };
-struct TypographyStyle {
+struct RS_EXPORT TypographyStyle {
     const static inline std::u16string ELLIPSIS = u"\u2026";
 
     FontWeight fontWeight = FontWeight::W400;
