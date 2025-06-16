@@ -145,7 +145,7 @@ bool RSCanvasRenderNode::OpincGetNodeSupportFlag()
         (IsSelfDrawingNode() && GetOpincCache().OpincGetRootFlag())) {
         return false;
     }
-    return true && RSRenderNode::OpincGetNodeSupportFlag();
+    return true && GetOpincCache().OpincGetSupportFlag();
 }
 
 void RSCanvasRenderNode::Process(const std::shared_ptr<RSNodeVisitor>& visitor)

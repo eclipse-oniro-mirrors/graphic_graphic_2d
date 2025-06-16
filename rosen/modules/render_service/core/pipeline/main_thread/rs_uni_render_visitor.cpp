@@ -1536,9 +1536,6 @@ void RSUniRenderVisitor::QuickPrepareCanvasRenderNode(RSCanvasRenderNode& node)
         node.GetNodeGroupType() > RSRenderNode::NodeGroupType::NONE ||
         (node.GetOpincCache().OpincGetRootFlag() && IsAccessibilityConfigChanged());
     node.GetOpincCache().OpincQuickMarkStableNode(unchangeMarkInApp_, unchangeMarkEnable_, isSelfDirty);
-    if (node.GetOpincCache().IsReseted()) {
-        node.OpincSetNodeSupportFlag(true);
-    }
     node.UpdateOpincParam();
     RectI prepareClipRect = prepareClipRect_;
     bool hasAccumulatedClip = hasAccumulatedClip_;
@@ -2858,7 +2855,7 @@ CM_INLINE void RSUniRenderVisitor::PostPrepare(RSRenderNode& node, bool subTreeS
     }
     if (auto nodeParent = node.GetParent().lock()) {
         nodeParent->UpdateChildUifirstSupportFlag(node.GetUifirstSupportFlag());
-        nodeParent->OpincUpdateNodeSupportFlag(node.OpincGetNodeSupportFlag());
+        nodeParent->OpincUpdateNodeSupportFlag(node.OpincGetNodeSupportFlag(), node.GetOpincCache().OpincGetRootFlag());
     }
     auto& stagingRenderParams = node.GetStagingRenderParams();
     if (stagingRenderParams != nullptr) {
