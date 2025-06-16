@@ -228,6 +228,7 @@ HWTEST_F(RSVulkanContextTest, GetRecyclableSingleton001, TestSize.Level2)
 
     // reset recyclable singleton
     RsVulkanContext::ReleaseRecyclableSingleton();
+    RsVulkanContext::SetRecyclable(false);
 }
 
 /**
@@ -244,6 +245,7 @@ HWTEST_F(RSVulkanContextTest, GetRecyclableSingletonPtr001, TestSize.Level2)
 
     // reset recyclable singleton
     RsVulkanContext::ReleaseRecyclableSingleton();
+    RsVulkanContext::SetRecyclable(false);
 }
 
 /**
@@ -263,6 +265,7 @@ HWTEST_F(RSVulkanContextTest, GetRecyclableSingletonPtr002, TestSize.Level2)
 
     // reset recyclable singleton
     RsVulkanContext::ReleaseRecyclableSingleton();
+    RsVulkanContext::SetRecyclable(false);
 }
 
 /**
@@ -560,6 +563,133 @@ HWTEST_F(RSVulkanContextTest, RSVulkanContextDestruction, TestSize.Level2)
 
     // restore
     RsVulkanContext::SetRecyclable(false);
+}
+
+/**
+ * @tc.name: GetDrawingContext001
+ * @tc.desc: test results of GetDrawingContext while drawingContextMap_ is empty
+ * @tc.type:FUNC
+ * @tc.require: issueICDVVY
+ */
+HWTEST_F(RSVulkanContextTest, GetDrawingContext001, TestSize.Level2)
+{
+    RsVulkanContext::GetSingleton().InitVulkanContextForUniRender("");
+
+    RsVulkanContext::ReleaseDrawingContextMap();
+    ASSERT_NE(RsVulkanContext::GetSingleton().GetDrawingContext(), nullptr);
+
+    // restore
+    RsVulkanContext::ReleaseDrawingContextMap();
+}
+
+/**
+ * @tc.name: GetDrawingContext002
+ * @tc.desc: test results of GetDrawingContext while protectedDrawingContextMap_ is empty
+ * @tc.type:FUNC
+ * @tc.require: issueICDVVY
+ */
+HWTEST_F(RSVulkanContextTest, GetDrawingContext002, TestSize.Level2)
+{
+    RsVulkanContext::GetSingleton().InitVulkanContextForUniRender("");
+    RsVulkanContext::GetSingleton().SetIsProtected(true);
+
+    RsVulkanContext::ReleaseDrawingContextMap();
+    ASSERT_NE(RsVulkanContext::GetSingleton().GetDrawingContext(), nullptr);
+
+    // restore
+    RsVulkanContext::ReleaseDrawingContextMap();
+}
+
+/**
+ * @tc.name: GetDrawingContext003
+ * @tc.desc: test results of GetDrawingContext while protectedDrawingContext is nullptr
+ * @tc.type:FUNC
+ * @tc.require: issueICDVVY
+ */
+HWTEST_F(RSVulkanContextTest, GetDrawingContext003, TestSize.Level2)
+{
+    RsVulkanContext::GetSingleton().InitVulkanContextForUniRender("");
+    RsVulkanContext::GetSingleton().SetIsProtected(true);
+    
+    RsVulkanContext::SaveNewDrawingContext(gettid(), nullptr);
+    ASSERT_NE(RsVulkanContext::GetSingleton().GetDrawingContext(), nullptr);
+
+    // restore
+    RsVulkanContext::ReleaseDrawingContextMap();
+}
+
+/**
+ * @tc.name: GetDrawingContext004
+ * @tc.desc: test results of GetDrawingContext while protectedDrawingContext isn't nullptr
+ * @tc.type:FUNC
+ * @tc.require: issueICDVVY
+ */
+HWTEST_F(RSVulkanContextTest, GetDrawingContext004, TestSize.Level2)
+{
+    RsVulkanContext::GetSingleton().InitVulkanContextForUniRender("");
+    RsVulkanContext::GetSingleton().SetIsProtected(true);
+    
+    auto protectedDrawingContext = std::make_shared<Drawing::GPUContext>();
+    RsVulkanContext::SaveNewDrawingContext(gettid(), protectedDrawingContext);
+    ASSERT_NE(RsVulkanContext::GetSingleton().GetDrawingContext(), nullptr);
+
+    // restore
+    RsVulkanContext::ReleaseDrawingContextMap();
+}
+
+/**
+ * @tc.name: CreateDrawingContext002
+ * @tc.desc: test results of CreateDrawingContext while protectedDrawingContextMap_ is empty
+ * @tc.type:FUNC
+ * @tc.require: issueICDVVY
+ */
+HWTEST_F(RSVulkanContextTest, CreateDrawingContext002, TestSize.Level2)
+{
+    RsVulkanContext::GetSingleton().InitVulkanContextForUniRender("");
+    RsVulkanContext::GetSingleton().SetIsProtected(true);
+
+    RsVulkanContext::ReleaseDrawingContextMap();
+    ASSERT_NE(RsVulkanContext::GetSingleton().CreateDrawingContext(), nullptr);
+
+    // restore
+    RsVulkanContext::ReleaseDrawingContextMap();
+}
+
+/**
+ * @tc.name: CreateDrawingContext003
+ * @tc.desc: test results of CreateDrawingContext while protectedDrawingContext is nullptr
+ * @tc.type:FUNC
+ * @tc.require: issueICDVVY
+ */
+HWTEST_F(RSVulkanContextTest, CreateDrawingContext003, TestSize.Level2)
+{
+    RsVulkanContext::GetSingleton().InitVulkanContextForUniRender("");
+    RsVulkanContext::GetSingleton().SetIsProtected(true);
+    
+    RsVulkanContext::SaveNewDrawingContext(gettid(), nullptr);
+    ASSERT_NE(RsVulkanContext::GetSingleton().CreateDrawingContext(), nullptr);
+
+    // restore
+    RsVulkanContext::ReleaseDrawingContextMap();
+}
+
+/**
+ * @tc.name: CreateDrawingContext004
+ * @tc.desc: test results of CreateDrawingContext while protectedDrawingContext isn't nullptr
+ * @tc.type:FUNC
+ * @tc.require: issueICDVVY
+ */
+HWTEST_F(RSVulkanContextTest, CreateDrawingContext004, TestSize.Level2)
+{
+    RsVulkanContext::GetSingleton().InitVulkanContextForUniRender("");
+    RsVulkanContext::GetSingleton().SetIsProtected(true);
+    
+    auto protectedDrawingContext = std::make_shared<Drawing::GPUContext>();
+    RsVulkanContext::SaveNewDrawingContext(gettid(), protectedDrawingContext);
+    ASSERT_NE(RsVulkanContext::GetSingleton().CreateDrawingContext(), nullptr);
+
+    // restore
+    RsVulkanContext::ReleaseDrawingContextMap();
 }
 } // namespace Rosen
 } // namespace OHOS
