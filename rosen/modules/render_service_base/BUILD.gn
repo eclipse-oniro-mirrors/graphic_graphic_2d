@@ -579,6 +579,7 @@ ohos_source_set("render_service_base_src") {
 
   external_deps = [
     "graphic_surface:surface_headers",
+    "graphic_surface:sync_fence",
     "graphics_effect:graphics_effect_core",
     "hilog:libhilog",
   ]
