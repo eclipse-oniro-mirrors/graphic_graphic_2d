@@ -210,6 +210,9 @@ ohos_source_set("render_service_base_src") {
     "src/ipc_callbacks/rs_surface_buffer_callback_stub.cpp",
     "src/ipc_callbacks/rs_surface_occlusion_change_callback_proxy.cpp",
     "src/ipc_callbacks/rs_surface_occlusion_change_callback_stub.cpp",
+    "src/ipc_callbacks/rs_transaction_callback.cpp",
+    "src/ipc_callbacks/rs_transaction_callback_proxy.cpp",
+    "src/ipc_callbacks/rs_transaction_callback_stub.cpp",
     "src/ipc_callbacks/rs_transaction_data_callback_proxy.cpp",
     "src/ipc_callbacks/rs_transaction_data_callback_stub.cpp",
     "src/ipc_callbacks/rs_uiextension_callback_proxy.cpp",
@@ -343,6 +346,7 @@ ohos_source_set("render_service_base_src") {
     "src/transaction/rs_transaction_metric_collector.cpp",
     "src/transaction/rs_transaction_proxy.cpp",
     "src/transaction/rs_uiextension_data.cpp",
+    "src/transaction/transaction.cpp",
 
     #gfx
     "src/gfx/dump/rs_dump_manager.cpp",
@@ -577,6 +581,7 @@ ohos_source_set("render_service_base_src") {
     "graphic_surface:surface_headers",
     "graphics_effect:graphics_effect_core",
     "hilog:libhilog",
+    "init:libbegetutil",
   ]
 
   if (use_memmgr_plugin || use_memmgr) {
