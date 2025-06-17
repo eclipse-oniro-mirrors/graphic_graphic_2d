@@ -270,7 +270,6 @@ sptr<RSTransactionManager> RSTransactionManager::Create(
         uniqueId, std::move(name), maxQueueSize, transactionCallback, transactionListener);
 }
 
-// 私有构造函数
 RSTransactionManager::RSTransactionManager(uint64_t uniqueId, std::string name, uint32_t maxQueueSize,
     sptr<RSITransactionCallback> transactionCallback, sptr<IBufferConsumerListener> transactionListener)
     : mutex_(), uniqueId_(uniqueId), name_(std::move(name)), maxQueueSize_(maxQueueSize),
@@ -752,7 +751,7 @@ void RSTransactionManager::DumpCurrentFrameLayer() const
             DumpToFileAsync(GetRealPid(), name_, buffer);
         }
     }
-    RS_LOGD("RSTransactionManager::DumpCurrentFrameLayer dump %{public}d buffer",
+    RS_LOGD("RSTransactionManager::DumpCurrentFrameLayer dump %{public}u buffer",
         static_cast<uint32_t>(pendingTransactionQueue_.size()));
 }
 
