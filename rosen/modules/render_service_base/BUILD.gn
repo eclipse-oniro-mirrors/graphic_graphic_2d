@@ -802,7 +802,9 @@ ohos_shared_library("librender_service_base") {
   ]
 
   # for header file
-  external_deps = []
+  external_deps = [
+    "graphic_surface:sync_fence",
+  ]
   public_external_deps = [
     "egl:libEGL",
     "opengles:libGLES",
@@ -812,7 +814,6 @@ ohos_shared_library("librender_service_base") {
     external_deps += [ "hisysevent:libhisysevent" ]
     public_external_deps += [
       "c_utils:utils",
-      "graphic_surface:sync_fence",
       "image_framework:image_native",
       "skia:skia_canvaskit",
     ]
