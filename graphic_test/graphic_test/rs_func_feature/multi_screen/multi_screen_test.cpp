@@ -33,6 +33,31 @@ namespace {
 constexpr uint32_t MAX_TIME_WAITING_FOR_CALLBACK = 200;
 constexpr uint32_t SLEEP_TIME_IN_US = 10000;      // 10 ms
 constexpr uint32_t SLEEP_TIME_FOR_PROXY = 100000; // 100ms
+static void SavePixelToFile(std::shared_ptr<Media::PixelMap> pixelMap)
+{
+    const ::testing::TestInfo* const testInfo = ::testing::UnitTest::GetInstance()->current_test_info();
+    std::string fileName = "/data/local/graphic_test/multi_screen/";
+    namespace fs = std::filesystem;
+    if (!fs::exists(fileName)) {
+        if (!fs::create_directories(fileName)) {
+            LOGE("CustomizedSurfaceCapture::OnSurfaceCapture create dir failed");
+        }
+    } else {
+        if (!fs::is_directory(fileName)) {
+            LOGE("CustomizedSurfaceCapture::OnSurfaceCapture path is not dir");
+            return;
+        }
+    }
+    fileName += testInfo->test_case_name() + std::string("_");
+    fileName += testInfo->name() + std::string(".png");
+    if (std::filesystem::exists(fileName)) {
+        LOGW("CustomizedSurfaceCapture::OnSurfaceCapture file exists %{public}s", fileName.c_str());
+    }
+    if (!WriteToPngWithPixelMap(fileName, *pixelMap)) {
+        LOGE("CustomizedSurfaceCapture::OnSurfaceCapture write image failed %{public}s-%{public}s",
+            testInfo->test_case_name(), testInfo->name());
+    }
+}
 class CustomizedSurfaceCapture : public SurfaceCaptureCallback {
 public:
     void OnSurfaceCapture(std::shared_ptr<Media::PixelMap> pixelMap) override
@@ -42,28 +67,7 @@ public:
             return;
         }
         isCallbackCalled_ = true;
-        const ::testing::TestInfo* const testInfo = ::testing::UnitTest::GetInstance()->current_test_info();
-        std::string fileName = "/data/local/graphic_test/multi_screen/";
-        namespace fs = std::filesystem;
-        if (!fs::exists(fileName)) {
-            if (!fs::create_directories(fileName)) {
-                LOGE("CustomizedSurfaceCapture::OnSurfaceCapture create dir failed");
-            }
-        } else {
-            if (!fs::is_directory(fileName)) {
-                LOGE("CustomizedSurfaceCapture::OnSurfaceCapture path is not dir");
-                return;
-            }
-        }
-        fileName += testInfo->test_case_name() + std::string("_");
-        fileName += testInfo->name() + std::string(".png");
-        if (std::filesystem::exists(fileName)) {
-            LOGW("CustomizedSurfaceCapture::OnSurfaceCapture file exists %{public}s", fileName.c_str());
-        }
-        if (!WriteToPngWithPixelMap(fileName, *pixelMap)) {
-            LOGE("CustomizedSurfaceCapture::OnSurfaceCapture write image failed %{public}s-%{public}s",
-                testInfo->test_case_name(), testInfo->name());
-        }
+        SavePixelToFile(pixelMap);
     }
     bool isCallbackCalled_ = false;
 };
@@ -103,28 +107,7 @@ public:
             LOGE("ReleaseBuffer failed");
         }
 
-        const ::testing::TestInfo* const testInfo = ::testing::UnitTest::GetInstance()->current_test_info();
-        std::string fileName = "/data/local/graphic_test/multi_screen/";
-        namespace fs = std::filesystem;
-        if (!fs::exists(fileName)) {
-            if (!fs::create_directories(fileName)) {
-                LOGE("CustomizedSurfaceCapture::OnSurfaceCapture create dir failed");
-            }
-        } else {
-            if (!fs::is_directory(fileName)) {
-                LOGE("CustomizedSurfaceCapture::OnSurfaceCapture path is not dir");
-                return;
-            }
-        }
-        fileName += testInfo->test_case_name() + std::string("_");
-        fileName += testInfo->name() + std::string(".png");
-        if (std::filesystem::exists(fileName)) {
-            LOGW("CustomizedSurfaceCapture::OnSurfaceCapture file exists %{public}s", fileName.c_str());
-        }
-        if (!WriteToPngWithPixelMap(fileName, *pixelMap)) {
-            LOGE("CustomizedSurfaceCapture::OnSurfaceCapture write image failed %{public}s-%{public}s",
-                testInfo->test_case_name(), testInfo->name());
-        }
+        SavePixelToFile(pixelMap);
     }
 
 private:
@@ -191,11 +174,7 @@ GRAPHIC_N_TEST(RSMultiScreenTest, CONTENT_DISPLAY_TEST, MULTI_SCREEN_TEST_001)
     uint32_t height = 1000;
     ScreenId screenId = RSInterfaces::GetInstance().CreateVirtualScreen(
         "MULTI_SCREEN_TEST_001", width, height, nullptr, INVALID_SCREEN_ID, -1, {});
-    if (screenId == INVALID_SCREEN_ID) {
-        LOGE("CreateVirtualScreen failed");
-        return;
-    }
-
+    EXPECT_NE(screenId, INVALID_SCREEN_ID);
     RSDisplayNodeConfig displayNodeConfig = { screenId, false, 0, true };
     auto displayNode = RSDisplayNode::Create(displayNodeConfig);
     if (!displayNode) {
@@ -430,11 +409,7 @@ GRAPHIC_N_TEST(RSMultiScreenTest, CONTENT_DISPLAY_TEST, MULTI_SCREEN_TEST_005)
     uint32_t height = 1000;
     ScreenId screenId = RSInterfaces::GetInstance().CreateVirtualScreen(
         "MULTI_SCREEN_TEST_005", width, height, nullptr, INVALID_SCREEN_ID, -1, {});
-    if (screenId == INVALID_SCREEN_ID) {
-        LOGE("CreateVirtualScreen failed");
-        return;
-    }
-
+    EXPECT_NE(screenId, INVALID_SCREEN_ID);
     auto csurface = Surface::CreateSurfaceAsConsumer();
     csurface->SetDefaultUsage(
         BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA | BUFFER_USAGE_MEM_FB);
@@ -481,11 +456,7 @@ GRAPHIC_N_TEST(RSMultiScreenTest, CONTENT_DISPLAY_TEST, MULTI_SCREEN_TEST_006)
     uint32_t height = 640;
     ScreenId screenId = RSInterfaces::GetInstance().CreateVirtualScreen(
         "MULTI_SCREEN_TEST_006", width, height, nullptr, INVALID_SCREEN_ID, -1, {});
-    if (screenId == INVALID_SCREEN_ID) {
-        LOGE("CreateVirtualScreen failed");
-        return;
-    }
-
+    EXPECT_NE(screenId, INVALID_SCREEN_ID);
     auto csurface = Surface::CreateSurfaceAsConsumer();
     csurface->SetDefaultUsage(
         BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA | BUFFER_USAGE_MEM_FB);
@@ -531,11 +502,7 @@ GRAPHIC_N_TEST(RSMultiScreenTest, CONTENT_DISPLAY_TEST, MULTI_SCREEN_TEST_007)
     uint32_t height = 640;
     ScreenId screenId = RSInterfaces::GetInstance().CreateVirtualScreen(
         "MULTI_SCREEN_TEST_007", width, height, nullptr, INVALID_SCREEN_ID, -1, {});
-    if (screenId == INVALID_SCREEN_ID) {
-        LOGE("CreateVirtualScreen failed");
-        return;
-    }
-
+    EXPECT_NE(screenId, INVALID_SCREEN_ID);
     RSDisplayNodeConfig displayNodeConfig = { screenId, false, 0, true };
     auto displayNode = RSDisplayNode::Create(displayNodeConfig);
     if (!displayNode) {
@@ -569,11 +536,7 @@ GRAPHIC_N_TEST(RSMultiScreenTest, CONTENT_DISPLAY_TEST, MULTI_SCREEN_TEST_008)
     uint32_t height = 640;
     ScreenId screenId = RSInterfaces::GetInstance().CreateVirtualScreen(
         "MULTI_SCREEN_TEST_008", width, height, nullptr, INVALID_SCREEN_ID, -1, {});
-    if (screenId == INVALID_SCREEN_ID) {
-        LOGE("CreateVirtualScreen failed");
-        return;
-    }
-
+    EXPECT_NE(screenId, INVALID_SCREEN_ID);
     RSDisplayNodeConfig displayNodeConfig = { screenId, false, 0, true };
     auto displayNode = RSDisplayNode::Create(displayNodeConfig);
     if (!displayNode) {
@@ -1102,11 +1065,7 @@ GRAPHIC_N_TEST(RSMultiScreenTest, CONTENT_DISPLAY_TEST, MULTI_SCREEN_TEST_015)
     auto psurface = Surface::CreateSurfaceAsProducer(producer);
     ScreenId screenId = RSInterfaces::GetInstance().CreateVirtualScreen(
         "MULTI_SCREEN_TEST_015", width, height, psurface, INVALID_SCREEN_ID, 0, {});
-    if (screenId == INVALID_SCREEN_ID) {
-        LOGE("CreateVirtualScreen failed");
-        return;
-    }
-
+    EXPECT_NE(screenId, INVALID_SCREEN_ID);
     RSDisplayNodeConfig displayNodeConfig1 = { screenId, false, 0, true };
     auto displayNode = RSDisplayNode::Create(displayNodeConfig1);
     if (!displayNode) {
@@ -1162,11 +1121,7 @@ GRAPHIC_N_TEST(RSMultiScreenTest, CONTENT_DISPLAY_TEST, MULTI_SCREEN_TEST_016)
     auto psurface = Surface::CreateSurfaceAsProducer(producer);
     ScreenId screenId = RSInterfaces::GetInstance().CreateVirtualScreen(
         "MULTI_SCREEN_TEST_016", width, height, psurface, INVALID_SCREEN_ID, 0, {});
-    if (screenId == INVALID_SCREEN_ID) {
-        LOGE("CreateVirtualScreen failed");
-        return;
-    }
-
+    EXPECT_NE(screenId, INVALID_SCREEN_ID);
     RSDisplayNodeConfig displayNodeConfig1 = { screenId, false, 0, true };
     auto displayNode = RSDisplayNode::Create(displayNodeConfig1);
     if (!displayNode) {
@@ -1222,11 +1177,7 @@ GRAPHIC_N_TEST(RSMultiScreenTest, CONTENT_DISPLAY_TEST, MULTI_SCREEN_TEST_017)
     auto psurface = Surface::CreateSurfaceAsProducer(producer);
     ScreenId screenId = RSInterfaces::GetInstance().CreateVirtualScreen(
         "MULTI_SCREEN_TEST_017", width, height, psurface, INVALID_SCREEN_ID, 0, {});
-    if (screenId == INVALID_SCREEN_ID) {
-        LOGE("CreateVirtualScreen failed");
-        return;
-    }
-
+    EXPECT_NE(screenId, INVALID_SCREEN_ID);
     RSDisplayNodeConfig displayNodeConfig1 = { screenId, false, 0, true };
     auto displayNode = RSDisplayNode::Create(displayNodeConfig1);
     if (!displayNode) {
@@ -1293,9 +1244,6 @@ GRAPHIC_N_TEST(RSMultiScreenTest, CONTENT_DISPLAY_TEST, MULTI_SCREEN_TEST_018)
         LOGE("displayNode is nullptr");
         return;
     }
-    LOGI("MULTI_SCREEN_TEST_018 screenId1:%{public}" PRIu64 ", nodeId1:%{public}" PRIu64, screenId1,
-        displayNode1->GetId());
-
     RSSurfaceNodeConfig surfaceNodeConfig;
     surfaceNodeConfig.isSync = true;
     surfaceNodeConfig.SurfaceNodeName = "TestsurfaceNode0";
