@@ -151,8 +151,8 @@ struct RS_EXPORT TextStyle {
     int styleId{0};
     size_t textStyleUid{0};
     TextStyle() = default;
-    TextStyle(const TextStyle& other);
-    TextStyle& operator=(const TextStyle& other);
+    TextStyle(const TextStyle& other) = default;
+    TextStyle& operator=(const TextStyle& other) = default;
     bool operator ==(const TextStyle &rhs) const;
     bool EqualByFonts(const TextStyle &rhs) const;
     bool MatchOneAttribute(StyleType styleType, const TextStyle &rhs) const;

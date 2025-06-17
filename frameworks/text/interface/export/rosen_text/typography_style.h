@@ -114,8 +114,8 @@ struct RS_EXPORT TypographyStyle {
     TextVerticalAlign verticalAlignment{TextVerticalAlign::BASELINE};
 
     TypographyStyle() = default;
-    TypographyStyle(const TypographyStyle& other);
-    TypographyStyle& operator=(const TypographyStyle&);
+    TypographyStyle(const TypographyStyle& other) = default;
+    TypographyStyle& operator=(const TypographyStyle&) = default;
     bool operator==(const TypographyStyle &rhs) const
     {
         return
