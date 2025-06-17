@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef RENDER_SERVICE_CLIENT_CORE_RENDER_DRAWING_RS_DRAWING_FILTER_H
-#define RENDER_SERVICE_CLIENT_CORE_RENDER_DRAWING_RS_DRAWING_FILTER_H
+#ifndef RENDER_SERVICE_BASE_RENDER_RENDER_DRAWING_RS_DRAWING_FILTER_H
+#define RENDER_SERVICE_BASE_RENDER_RENDER_DRAWING_RS_DRAWING_FILTER_H
 
 #include "common/rs_color.h"
 #include "draw/brush.h"
@@ -130,4 +130,4 @@ private:
 } // namespace Rosen
 } // namespace OHOS
 
-#endif // RENDER_SERVICE_CLIENT_CORE_RENDER_DRAWING_RS_DRAWING_FILTER_H
+#endif // RENDER_SERVICE_BASE_RENDER_RENDER_DRAWING_RS_DRAWING_FILTER_H

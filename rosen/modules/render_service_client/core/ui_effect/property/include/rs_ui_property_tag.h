@@ -13,11 +13,11 @@
  * limitations under the License.
  */
 
-#ifndef ROSEN_ENGINE_CORE_RENDER_UI_PROPERTY_TAG_H
-#define ROSEN_ENGINE_CORE_RENDER_UI_PROPERTY_TAG_H
+#ifndef ROSEN_RENDER_SERVICE_CLIENT_CORE_UI_EFFECT_UI_PROPERTY_TAG_H
+#define ROSEN_RENDER_SERVICE_CLIENT_CORE_UI_EFFECT_UI_PROPERTY_TAG_H
 
 #include "modifier/rs_property.h"
-#include "render/rs_render_property_tag.h"
+#include "effect/rs_render_property_tag.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -64,22 +64,22 @@ using RSPropertyTag = PropertyTagBase<Name, RSProperty<T>>;
 template<typename T, const char* Name>
 using RSAnimatablePropertyTag  = PropertyTagBase<Name, RSAnimatableProperty<T>>;
 
-#define DECLARE_ANIM_PROPERTY_TAG(EffectName, PropName, Type) \
+#define DECLARE_ANIMATABLE_PROPERTY_TAG(EffectName, PropName, Type) \
     using EffectName##PropName##Tag = RSAnimatablePropertyTag<Type, EffectName##PropName##Name>
 
-#define DECLARE_NOANIM_PROPERTY_TAG(EffectName, PropName, Type) \
+#define DECLARE_NONANIMATABLE_PROPERTY_TAG(EffectName, PropName, Type) \
     using EffectName##PropName##Tag = RSPropertyTag<Type, EffectName##PropName##Name>
 
 class RSNGMaskBase;
 #define MASK_PTR std::shared_ptr<RSNGMaskBase>
 
-#include "render/rs_render_property_tag_def.in"
+#include "effect/rs_render_property_tag_def.in"
 
 #undef MASK_PTR
-#undef DECLARE_ANIM_PROPERTY_TAG
-#undef DECLARE_NOANIM_PROPERTY_TAG
+#undef DECLARE_ANIMATABLE_PROPERTY_TAG
+#undef DECLARE_NONANIMATABLE_PROPERTY_TAG
 
 } // namespace Rosen
 } // namespace OHOS
 
-#endif // ROSEN_ENGINE_CORE_RENDER_UI_PROPERTY_TAG_H
+#endif // ROSEN_RENDER_SERVICE_CLIENT_CORE_UI_EFFECT_UI_PROPERTY_TAG_H

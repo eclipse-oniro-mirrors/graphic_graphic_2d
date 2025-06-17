@@ -13,18 +13,18 @@
  * limitations under the License.
  */
 
-#ifndef RENDER_COLOR_GRADIENT_FILTER_H
-#define RENDER_COLOR_GRADIENT_FILTER_H
+#ifndef ROSEN_RENDER_SERVICE_CLIENT_CORE_UI_EFFECT_COLOR_GRADIENT_FILTER_H
+#define ROSEN_RENDER_SERVICE_CLIENT_CORE_UI_EFFECT_COLOR_GRADIENT_FILTER_H
 
 #include <memory>
 #include <vector>
 
-#include "ui_effect/property/include/rs_ui_filter_base.h"
-
-#include "modifier/rs_property.h"
 #include "ui_effect/filter/include/filter_color_gradient_para.h"
+#include "ui_effect/property/include/rs_ui_filter_base.h"
 #include "ui_effect/property/include/rs_ui_filter_para_base.h"
 #include "ui_effect/property/include/rs_ui_mask_para.h"
+
+#include "modifier/rs_property.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -82,4 +82,4 @@ private:
 } // namespace Rosen
 } // namespace OHOS
 
-#endif // RENDER_COLOR_GRADIENT_FILTER_H
+#endif // ROSEN_RENDER_SERVICE_CLIENT_CORE_UI_EFFECT_COLOR_GRADIENT_FILTER_H

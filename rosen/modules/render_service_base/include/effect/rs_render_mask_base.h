@@ -13,11 +13,11 @@
  * limitations under the License.
  */
 
-#ifndef RENDER_SERVICE_BASE_RENDER_MASK_BASE_H
-#define RENDER_SERVICE_BASE_RENDER_MASK_BASE_H
+#ifndef RENDER_SERVICE_BASE_EFFECT_RS_RENDER_MASK_BASE_H
+#define RENDER_SERVICE_BASE_EFFECT_RS_RENDER_MASK_BASE_H
 
-#include "render/rs_render_property_tag.h"
-#include "render/rs_render_effect_template.h"
+#include "effect/rs_render_effect_template.h"
+#include "effect/rs_render_property_tag.h"
 #include "transaction/rs_marshalling_helper.h"
 
 namespace OHOS {
@@ -62,4 +62,4 @@ DECLARE_MASK(PixelMapMask, PIXEL_MAP_MASK,
 } // namespace Rosen
 } // namespace OHOS
 
-#endif // RENDER_SERVICE_BASE_RENDER_MASK_BASE_H
+#endif // RENDER_SERVICE_BASE_EFFECT_RS_RENDER_MASK_BASE_H

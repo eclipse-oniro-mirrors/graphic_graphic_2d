@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef RENDER_SERVICE_CLIENT_CORE_ANIMATION_RS_RENDER_PROP_H
-#define RENDER_SERVICE_CLIENT_CORE_ANIMATION_RS_RENDER_PROP_H
+#ifndef RENDER_SERVICE_BASE_MODIFIER_RS_RENDER_PROPERTY_H
+#define RENDER_SERVICE_BASE_MODIFIER_RS_RENDER_PROPERTY_H
 
 #include "feature/capture/rs_ui_capture.h"
 #include "recording/draw_cmd_list.h"
@@ -640,4 +640,4 @@ RSB_EXPORT void RSRenderProperty<std::shared_ptr<RSNGRenderFilterBase>>::OnSetMo
 } // namespace Rosen
 } // namespace OHOS
 
-#endif // RENDER_SERVICE_CLIENT_CORE_ANIMATION_RS_RENDER_PROP_H
+#endif // RENDER_SERVICE_BASE_MODIFIER_RS_RENDER_PROPERTY_H

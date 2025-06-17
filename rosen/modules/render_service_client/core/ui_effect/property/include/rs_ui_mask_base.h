@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef ROSEN_ENGINE_CORE_RENDER_UI_MASK_BASE_H
-#define ROSEN_ENGINE_CORE_RENDER_UI_MASK_BASE_H
+#ifndef ROSEN_RENDER_SERVICE_CLIENT_CORE_UI_EFFECT_UI_MASK_BASE_H
+#define ROSEN_RENDER_SERVICE_CLIENT_CORE_UI_EFFECT_UI_MASK_BASE_H
 
 #include "render/rs_render_mask_base.h"
 #include "ui_effect/property/include/rs_ui_property_tag.h"
@@ -50,4 +50,4 @@ DECLARE_MASK(PixelMapMask, PIXEL_MAP_MASK,
 } // namespace Rosen
 } // namespace OHOS
 
-#endif // ROSEN_ENGINE_CORE_RENDER_UI_MASK_BASE_H
+#endif // ROSEN_RENDER_SERVICE_CLIENT_CORE_UI_EFFECT_UI_MASK_BASE_H

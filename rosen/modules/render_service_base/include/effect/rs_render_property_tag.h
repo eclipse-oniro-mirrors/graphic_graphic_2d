@@ -33,22 +33,22 @@ using RSRenderPropertyTag = RenderPropertyTagBase<Name, RSRenderProperty<T>>;
 template<typename T, const char* Name>
 using RSRenderAnimatablePropertyTag  = RenderPropertyTagBase<Name, RSRenderAnimatableProperty<T>>;
 
-#define DECLARE_ANIM_PROPERTY_TAG(EffectName, PropName, Type) \
+#define DECLARE_ANIMATABLE_PROPERTY_TAG(EffectName, PropName, Type) \
     inline static constexpr char EffectName##PropName##Name[] = #EffectName "_" #PropName; \
     using EffectName##PropName##RenderTag = RSRenderAnimatablePropertyTag<Type, EffectName##PropName##Name>
 
-#define DECLARE_NOANIM_PROPERTY_TAG(EffectName, PropName, Type) \
+#define DECLARE_NONANIMATABLE_PROPERTY_TAG(EffectName, PropName, Type) \
     inline static constexpr char EffectName##PropName##Name[] = #EffectName "_" #PropName; \
     using EffectName##PropName##RenderTag = RSRenderPropertyTag<Type, EffectName##PropName##Name>
 
 class RSNGRenderMaskBase; // forward declaration, impl in rs_render_mask_base.h
 #define MASK_PTR std::shared_ptr<RSNGRenderMaskBase>
 
-#include "render/rs_render_property_tag_def.in"
+#include "effect/rs_render_property_tag_def.in"
 
 #undef MASK_PTR
-#undef DECLARE_ANIM_PROPERTY_TAG
-#undef DECLARE_NOANIM_PROPERTY_TAG
+#undef DECLARE_ANIMATABLE_PROPERTY_TAG
+#undef DECLARE_NONANIMATABLE_PROPERTY_TAG
 
 enum class RSNGEffectType : int16_t {
     INVALID = -1,

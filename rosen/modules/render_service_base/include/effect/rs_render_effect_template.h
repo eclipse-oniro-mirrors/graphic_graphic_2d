@@ -12,12 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef RENDER_SERVICE_BASE_RENDER_TEMPLATE_H
-#define RENDER_SERVICE_BASE_RENDER_TEMPLATE_H
+#ifndef RENDER_SERVICE_BASE_EFFECT_RS_RENDER_EFFECT_TEMPLATE_H
+#define RENDER_SERVICE_BASE_EFFECT_RS_RENDER_EFFECT_TEMPLATE_H
 #include <tuple>
 #include <type_traits>
 
-#include "render/rs_render_property_tag.h"
+#include "effect/rs_render_property_tag.h"
 #include "transaction/rs_marshalling_helper.h"
 
 namespace OHOS {
@@ -253,4 +253,4 @@ protected:
 } // namespace OHOS
 } // namespace Rosen
 
-#endif // RENDER_SERVICE_BASE_RENDER_TEMPLATE_H
+#endif // RENDER_SERVICE_BASE_EFFECT_RS_RENDER_EFFECT_TEMPLATE_H

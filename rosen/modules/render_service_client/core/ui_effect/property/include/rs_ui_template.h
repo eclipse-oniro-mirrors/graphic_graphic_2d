@@ -13,15 +13,16 @@
  * limitations under the License.
  */
 
-#ifndef ROSEN_ENGINE_CORE_RENDER_UI_TEMPLATE_H
-#define ROSEN_ENGINE_CORE_RENDER_UI_TEMPLATE_H
+#ifndef ROSEN_RENDER_SERVICE_CLIENT_CORE_UI_EFFECT_UI_TEMPLATE_H
+#define ROSEN_RENDER_SERVICE_CLIENT_CORE_UI_EFFECT_UI_TEMPLATE_H
 #include <tuple>
 #include <type_traits>
 
+#include "ui_effect/property/include/rs_ui_property_tag.h"
+
+#include "effect/rs_render_effect_template.h"
 #include "modifier/rs_property.h"
 #include "platform/common/rs_log.h"
-#include "render/rs_render_effect_template.h"
-#include "ui_effect/property/include/rs_ui_property_tag.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -233,5 +234,5 @@ private:
 } // namespace Rosen
 } // namespace OHOS
 
-#endif // ROSEN_ENGINE_CORE_RENDER_UI_TEMPLATE_H
+#endif // ROSEN_RENDER_SERVICE_CLIENT_CORE_UI_EFFECT_UI_TEMPLATE_H
 

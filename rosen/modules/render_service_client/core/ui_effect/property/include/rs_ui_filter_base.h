@@ -13,14 +13,16 @@
  * limitations under the License.
  */
 
-#ifndef ROSEN_ENGINE_CORE_RENDER_UI_FILTER_BASE_H
-#define ROSEN_ENGINE_CORE_RENDER_UI_FILTER_BASE_H
+#ifndef ROSEN_RENDER_SERVICE_CLIENT_CORE_UI_EFFECT_UI_FILTER_BASE_H
+#define ROSEN_RENDER_SERVICE_CLIENT_CORE_UI_EFFECT_UI_FILTER_BASE_H
 
-#include "modifier/rs_property.h"
-#include "render/rs_render_filter_base.h"
 #include "ui_effect/filter/include/filter_para.h"
 #include "ui_effect/property/include/rs_ui_property_tag.h"
 #include "ui_effect/property/include/rs_ui_template.h"
+
+#include "effect/rs_render_filter_base.h"
+#include "modifier/rs_property.h"
+#include "render/rs_render_filter_base.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -96,4 +98,4 @@ DECLARE_FILTER(BezierWarp, BEZIER_WARP,
 
 } // namespace Rosen
 } // namespace OHOS
-#endif // ROSEN_ENGINE_CORE_RENDER_UI_FILTER_BASE_H
+#endif // ROSEN_RENDER_SERVICE_CLIENT_CORE_UI_EFFECT_UI_FILTER_BASE_H
