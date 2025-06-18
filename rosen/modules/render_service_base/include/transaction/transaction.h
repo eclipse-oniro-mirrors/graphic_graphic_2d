@@ -168,7 +168,7 @@ public:
         std::shared_lock<std::shared_mutex> lock(mutex_);
         return lastAcquireTime_;
     }
-    GSError WriteToMessageParcel(MessageParcel& parcel);
+    GSError WriteToMessageParcel(MessageParcel& parcel, bool hasBuffer);
     static sptr<Transaction> ReadFromMessageParcel(MessageParcel& parcel);
     GSError ReadFromTransactionInfo(const TransactionInfo& info);
     static GSError ReadTransactionInfoFromMessageParcel(MessageParcel& parcel, TransactionInfo& info);
