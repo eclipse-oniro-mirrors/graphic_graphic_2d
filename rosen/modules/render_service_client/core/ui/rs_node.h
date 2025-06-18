@@ -86,6 +86,8 @@ enum class CancelAnimationStatus;
 namespace ModifierNG {
 class RSModifier;
 class RSCustomModifier;
+class RSForegroundFilterModifier;
+class RSBackgroundFilterModifier;
 enum class RSModifierType : uint16_t;
 }
 /**
@@ -1901,6 +1903,17 @@ private:
      */
     template<typename ModifierType, auto Setter, typename T>
     void SetPropertyNG(T value);
+
+    /**
+     * @brief Sets a UIFilter property value for a specific modifier.
+     *
+     * If property already exists, it will be updated.
+     * If property does not exist, it will be created.
+     *
+     * @param value The value to assign to the property.
+     */
+    template<typename ModifierType, auto Setter, typename T>
+    void SetUIFilterPropertyNG(T value);
 #else
     /**
      * @brief Sets a property value for a specific modifier.
@@ -1969,6 +1982,7 @@ private:
     void DettachProperty(PropertyId id);
     void AttachModifierProperties(const std::shared_ptr<ModifierNG::RSModifier>& modifier);
     void DetachModifierProperties(const std::shared_ptr<ModifierNG::RSModifier>& modifier);
+    void DetachUIFilterProperties(const std::shared_ptr<ModifierNG::RSModifier>& modifier);
 
     /**
      * @brief Clears all modifiers associated with this node.
@@ -2049,6 +2063,8 @@ private:
     friend class RSExtendedModifier;
     friend class RSCurveAnimation;
     friend class RSAnimation;
+    friend class ModifierNG::RSForegroundFilterModifier;
+    friend class ModifierNG::RSBackgroundFilterModifier;
     template<typename T>
     friend class RSProperty;
     template<typename T>

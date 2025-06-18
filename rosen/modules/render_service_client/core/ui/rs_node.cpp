@@ -952,6 +952,22 @@ void RSNode::SetPropertyNG(T value)
         (*std::static_pointer_cast<ModifierType>(modifier).*Setter)(value);
     }
 }
+
+template<typename ModifierType, auto Setter, typename T>
+void RSNode::SetUIFilterPropertyNG(T value)
+{
+    std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
+    auto type = static_cast<uint16_t>(ModifierType::Type);
+    auto& modifier = modifiersNGCreatedBySetter_[type];
+    // Create corresponding modifier if not exist
+    if (modifier == nullptr) {
+        modifier = std::make_shared<ModifierType>();
+        modifiersNGCreatedBySetter_[type] = modifier;
+        AddModifier(modifier);
+    }
+    (*std::static_pointer_cast<ModifierType>(modifier).*Setter)(value);
+}
+
 #else
 template<typename ModifierName, typename PropertyName, typename T>
 void RSNode::SetProperty(RSModifierType modifierType, T value)
@@ -2408,6 +2424,11 @@ void RSNode::SetBackgroundUIFilter(const std::shared_ptr<RSUIFilter> backgroundF
         return;
     }
 
+#if defined(MODIFIER_NG)
+    SetEnableHDREffect(backgroundFilter->GetHdrEffectEnable());
+    SetUIFilterPropertyNG<ModifierNG::RSBackgroundFilterModifier,
+        &ModifierNG::RSBackgroundFilterModifier::SetUIFilter>(backgroundFilter);
+#else
     bool shouldAdd = true;
     std::shared_ptr<RSUIFilter> oldProperty = nullptr;
     CHECK_FALSE_RETURN(CheckMultiThreadAccess(__func__));
@@ -2432,6 +2453,7 @@ void RSNode::SetBackgroundUIFilter(const std::shared_ptr<RSUIFilter> backgroundF
     } else {
         oldProperty->SetValue(backgroundFilter);
     }
+#endif
 }
 
 void RSNode::SetUICompositingFilter(const OHOS::Rosen::Filter* compositingFilter)
@@ -2526,6 +2548,10 @@ void RSNode::SetForegroundUIFilter(const std::shared_ptr<RSUIFilter> foregroundF
         return;
     }
 
+#if defined(MODIFIER_NG)
+    SetUIFilterPropertyNG<ModifierNG::RSForegroundFilterModifier,
+        &ModifierNG::RSForegroundFilterModifier::SetUIFilter>(foregroundFilter);
+#else
     bool shouldAdd = true;
     std::shared_ptr<RSUIFilter> oldProperty = nullptr;
     auto iter = propertyModifiers_.find(RSModifierType::FOREGROUND_UI_FILTER);
@@ -2548,6 +2574,7 @@ void RSNode::SetForegroundUIFilter(const std::shared_ptr<RSUIFilter> foregroundF
         propertyModifiers_.emplace(RSModifierType::FOREGROUND_UI_FILTER, propertyModifier);
         AddModifier(propertyModifier);
     }
+#endif
 }
 
 void RSNode::SetHDRUIBrightness(float hdrUIBrightness)
@@ -4920,6 +4947,7 @@ void RSNode::RemoveModifier(const std::shared_ptr<ModifierNG::RSModifier> modifi
     }
     modifier->OnDetach();
     modifiersNG_.erase(modifier->GetId());
+    DetachUIFilterProperties(modifier);
     DetachModifierProperties(modifier);
     std::unique_ptr<RSCommand> command =
         std::make_unique<RSRemoveModifierNG>(GetId(), modifier->GetType(), modifier->GetId());
@@ -5038,6 +5066,38 @@ void RSNode::DetachModifierProperties(const std::shared_ptr<ModifierNG::RSModifi
     if (modifier && !modifier->properties_.empty()) {
         for (const auto &[_, property] : modifier->properties_) {
             DettachProperty(property->GetId());
+        }
+    }
+}
+
+void RSNode::DetachUIFilterProperties(const std::shared_ptr<ModifierNG::RSModifier>& modifier)
+{
+    std::shared_ptr<RSProperty<std::shared_ptr<RSUIFilter>>> property = nullptr;
+    if (modifier->GetType() == ModifierNG::RSModifierType::FOREGROUND_FILTER) {
+        property = std::static_pointer_cast<RSProperty<std::shared_ptr<RSUIFilter>>>(
+            modifier->GetProperty(ModifierNG::RSPropertyType::FOREGROUND_UI_FILTER));
+    } else if (modifier->GetType() == ModifierNG::RSModifierType::BACKGROUND_FILTER) {
+        property = std::static_pointer_cast<RSProperty<std::shared_ptr<RSUIFilter>>>(
+            modifier->GetProperty(ModifierNG::RSPropertyType::BACKGROUND_UI_FILTER));
+    }
+    if (!property) {
+        return;
+    }
+    auto uiFilter = property->Get();
+    if (!uiFilter) {
+        return;
+    }
+    for (auto type : uiFilter->GetUIFilterTypes()) {
+        auto paraGroup = uiFilter->GetUIFilterPara(type);
+        if (!paraGroup) {
+            continue;
+        }
+        for (auto& prop : paraGroup->GetLeafProperties()) {
+            if (!prop) {
+                continue;
+            }
+            prop->target_.reset();
+            UnRegisterProperty(prop->GetId());
         }
     }
 }
