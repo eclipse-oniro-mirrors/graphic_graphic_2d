@@ -179,7 +179,7 @@ public:
         }
     }
 
-    int16_t GetIndex()
+    int16_t GetIndex() const
     {
         return index_;
     }

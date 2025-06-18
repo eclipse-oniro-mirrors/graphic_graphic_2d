@@ -70,6 +70,8 @@ namespace OHOS {
 namespace Rosen {
 namespace ModifierNG {
 class RSModifier;
+class RSForegroundFilterModifier;
+class RSBackgroundFilterModifier;
 }
 class RSFilter;
 class RSImage;
@@ -296,6 +298,8 @@ private:
     friend class RSCustomTransitionEffect;
     friend class RSCurveAnimation;
     friend class RSUIFilterParaBase;
+    friend class ModifierNG::RSForegroundFilterModifier;
+    friend class ModifierNG::RSBackgroundFilterModifier;
     template<typename T>
     friend class RSAnimatableProperty;
     template<uint16_t commandType, uint16_t commandSubType>

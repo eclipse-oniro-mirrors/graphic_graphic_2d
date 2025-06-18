@@ -238,6 +238,7 @@ public:
             case RSPropertyType::ATTRACTION_FRACTION: return "AttractionFraction";
             case RSPropertyType::ATTRACTION_DSTPOINT: return "AttractionDstpoint";
             case RSPropertyType::CUSTOM: return "Custom";
+            case RSPropertyType::CUSTOM_INDEX: return "CustomIndex";
             case RSPropertyType::TRANSITION_STYLE: return "TransitionStyle";
             case RSPropertyType::BACKGROUND_STYLE: return "BackgroundStyle";
             case RSPropertyType::CONTENT_STYLE: return "ContentStyle";
@@ -250,6 +251,8 @@ public:
             case RSPropertyType::HDR_BRIGHTNESS: return "HdrBrightness";
             case RSPropertyType::HDR_UI_BRIGHTNESS: return "HDRUIBrightness";
             case RSPropertyType::HDR_BRIGHTNESS_FACTOR: return "HdrBrightnessFactor";
+            case RSPropertyType::BACKGROUND_UI_FILTER: return "BackgroundUIFilter";
+            case RSPropertyType::FOREGROUND_UI_FILTER: return "ForegroundUIFilter";
             case RSPropertyType::BEHIND_WINDOW_FILTER_RADIUS: return "BehindWindowFilterRadius";
             case RSPropertyType::BEHIND_WINDOW_FILTER_SATURATION: return "BehindWindowFilterSaturation";
             case RSPropertyType::BEHIND_WINDOW_FILTER_BRIGHTNESS: return "BehindWindowFilterBrightness";

@@ -67,6 +67,8 @@ class VulkanCleanupHelper;
 }
 namespace ModifierNG {
 class RSRenderModifier;
+class RSForegroundFilterRenderModifier;
+class RSBackgroundFilterRenderModifier;
 enum class RSModifierType : uint16_t;
 }
 struct SharedTransitionParam;
@@ -1303,6 +1305,8 @@ private:
     friend class DrawableV2::RSChildrenDrawable;
     friend class DrawableV2::RSRenderNodeShadowDrawable;
     friend class ModifierNG::RSRenderModifier;
+    friend class ModifierNG::RSForegroundFilterRenderModifier;
+    friend class ModifierNG::RSBackgroundFilterRenderModifier;
 #ifdef RS_PROFILER_ENABLED
     friend class RSProfiler;
 #endif
