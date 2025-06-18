@@ -177,6 +177,9 @@ void RSBackgroundFilterModifier::SetUIFilter(std::shared_ptr<RSUIFilter> backgro
 
 void RSBackgroundFilterModifier::AttachUIFilterProperty(std::shared_ptr<RSUIFilter> uiFilter)
 {
+    if (!uiFilter) {
+        return;
+    }
     auto property = std::make_shared<RSProperty<std::shared_ptr<RSUIFilter>>>(uiFilter);
     auto node = node_.lock();
     if (!node) {
