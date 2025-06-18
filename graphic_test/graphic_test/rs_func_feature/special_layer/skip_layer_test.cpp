@@ -30,12 +30,15 @@ Vector4f DEFAULT_RECT2 = {400, 400, 100, 100};
 Vector4f DEFAULT_RECT3 = {0, 0, 200, 200};
 
 class SkipLayerTest : public RSGraphicTest  {
+private:
+    const int screenWidth = 1200;
+    const int screenHeight = 2000;
+
 public:
     // called before each tests
     void BeforeEach() override
     {
-        auto size = GetScreenSize();
-        SetSurfaceBounds({0, 0, size.x_, size.y_});
+        SetScreenSize(screenWidth, screenHeight);
         SetSurfaceColor(RSColor(COLOR_RED));
     }
 

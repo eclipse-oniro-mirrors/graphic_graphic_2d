@@ -27,12 +27,15 @@ Vector4f DEFAULT_RECT1 = {100, 100, 500, 400};
 Vector4f DEFAULT_RECT2 = {150, 150, 500, 400};
 
 class SecurityLayerTest : public RSGraphicTest  {
+private:
+    const int screenWidth = 1200;
+    const int screenHeight = 2000;
+
 public:
     // called before each tests
     void BeforeEach() override
     {
-        auto size = GetScreenSize();
-        SetSurfaceBounds({0, 0, size.x_, size.y_});
+        SetScreenSize(screenWidth, screenHeight);
         SetSurfaceColor(RSColor(COLOR_YELLOW));
     }
 };
@@ -94,7 +97,7 @@ GRAPHIC_TEST(SecurityLayerTest, CONTENT_DISPLAY_TEST, Set_Security_Layer_Test03)
     RegisterNode(securitySurfaceNode);
 
     RSSurfaceNodeConfig skipConfig;
-    skipConfig.SurfaceNodeName = "TestSecuritySurface01";
+    skipConfig.SurfaceNodeName = "TestSkipSurface01";
     std::shared_ptr<OHOS::Rosen::RSSurfaceNode> skipSurfaceNode = RSSurfaceNode::Create(skipConfig);
     skipSurfaceNode->SetBounds(DEFAULT_RECT2);
     skipSurfaceNode->SetBackgroundColor(COLOR_RED);
@@ -121,7 +124,7 @@ GRAPHIC_TEST(SecurityLayerTest, CONTENT_DISPLAY_TEST, Set_Security_Layer_Test04)
     RegisterNode(securitySurfaceNode);
 
     RSSurfaceNodeConfig skipConfig;
-    skipConfig.SurfaceNodeName = "TestSecuritySurface01";
+    skipConfig.SurfaceNodeName = "TestSkipSurface01";
     std::shared_ptr<OHOS::Rosen::RSSurfaceNode> skipSurfaceNode = RSSurfaceNode::Create(skipConfig);
     skipSurfaceNode->SetBounds(DEFAULT_RECT2);
     skipSurfaceNode->SetBackgroundColor(COLOR_RED);
