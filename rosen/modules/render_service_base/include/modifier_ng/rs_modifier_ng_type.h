@@ -238,6 +238,7 @@ public:
             case RSPropertyType::ATTRACTION_FRACTION: return "AttractionFraction";
             case RSPropertyType::ATTRACTION_DSTPOINT: return "AttractionDstpoint";
             case RSPropertyType::CUSTOM: return "Custom";
+            case RSPropertyType::CUSTOM_INDEX: return "CustomIndex";
             case RSPropertyType::TRANSITION_STYLE: return "TransitionStyle";
             case RSPropertyType::BACKGROUND_STYLE: return "BackgroundStyle";
             case RSPropertyType::CONTENT_STYLE: return "ContentStyle";

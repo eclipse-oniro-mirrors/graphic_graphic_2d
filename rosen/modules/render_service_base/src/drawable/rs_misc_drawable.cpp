@@ -167,10 +167,15 @@ RSDrawable::Ptr RSCustomModifierDrawable::OnGenerate(const RSRenderNode& node, R
 #if defined(MODIFIER_NG)
 bool RSCustomModifierDrawable::OnUpdate(const RSRenderNode& node)
 {
-    const auto& customModifiers = node.GetModifiersNG(modifierTypeNG_);
+    auto customModifiers = node.GetModifiersNG(modifierTypeNG_);
     if (customModifiers.empty()) {
         return false;
     }
+    std::stable_sort(
+        customModifiers.begin(), customModifiers.end(), [](const auto& modifierA, const auto& modifierB) -> bool {
+            return modifierA->template Getter<int16_t>(ModifierNG::RSPropertyType::CUSTOM_INDEX, 0) <
+                   modifierB->template Getter<int16_t>(ModifierNG::RSPropertyType::CUSTOM_INDEX, 0);
+        });
 
     stagingGravity_ = node.GetRenderProperties().GetFrameGravity();
     stagingIsCanvasNode_ = node.IsInstanceOf<RSCanvasRenderNode>() && !node.IsInstanceOf<RSCanvasDrawingRenderNode>();

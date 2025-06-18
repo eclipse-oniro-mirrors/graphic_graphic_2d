@@ -53,6 +53,16 @@ public:
         return true;
     }
 
+    int16_t GetIndex() const
+    {
+        return Getter(RSPropertyType::CUSTOM_INDEX, 0);
+    }
+
+    void SetIndex(int16_t index)
+    {
+        Setter<RSProperty>(RSPropertyType::CUSTOM_INDEX, index);
+    }
+
 protected:
     std::shared_ptr<RSRenderModifier> CreateRenderModifier() override
     {

@@ -143,7 +143,7 @@ public:
         index_ = index;
     }
 
-    int16_t GetIndex()
+    int16_t GetIndex() const
     {
         return index_;
     }
