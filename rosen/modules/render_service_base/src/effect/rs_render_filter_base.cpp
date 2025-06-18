@@ -27,30 +27,30 @@ namespace OHOS {
 namespace Rosen {
 using FilterCreator = std::function<std::shared_ptr<RSNGRenderFilterBase>()>;
 
-static std::unordered_map<RSUIFilterType, FilterCreator> creatorLUT = {
-    {RSUIFilterType::BLUR, [] {
+static std::unordered_map<RSNGEffectType, FilterCreator> creatorLUT = {
+    {RSNGEffectType::BLUR, [] {
             return std::make_shared<RSNGRenderBlurFilter>();
         }
     },
-    {RSUIFilterType::DISPLACEMENT_DISTORT, [] {
+    {RSNGEffectType::DISPLACEMENT_DISTORT, [] {
             return std::make_shared<RSNGRenderDispDistortFilter>();
         }
     },
-    {RSUIFilterType::SOUND_WAVE, [] {
+    {RSNGEffectType::SOUND_WAVE, [] {
             return std::make_shared<RSNGRenderSoundWaveFilter>();
         }
     },
-    {RSUIFilterType::DISPERSION, [] {
+    {RSNGEffectType::DISPERSION, [] {
             return std::make_shared<RSNGRenderDispersionFilter>();
         }
     },
-    {RSUIFilterType::EDGE_LIGHT, [] {
+    {RSNGEffectType::EDGE_LIGHT, [] {
             return std::make_shared<RSNGRenderEdgeLightFilter>();
         }
     },
 };
 
-std::shared_ptr<RSNGRenderFilterBase> RSNGRenderFilterBase::Create(RSUIFilterType type)
+std::shared_ptr<RSNGRenderFilterBase> RSNGRenderFilterBase::Create(RSNGEffectType type)
 {
     auto it = creatorLUT.find(type);
     return it != creatorLUT.end() ? it->second() : nullptr;
@@ -61,7 +61,7 @@ std::shared_ptr<RSNGRenderFilterBase> RSNGRenderFilterBase::Create(RSUIFilterTyp
     std::shared_ptr<RSNGRenderFilterBase> head = nullptr;
     auto current = head;
     for (size_t filterCount = 0; filterCount <= EFFECT_COUNT_LIMIT; ++filterCount) {
-        RSUIFilterTypeUnderlying type = 0;
+        RSNGEffectTypeUnderlying type = 0;
         if (!RSMarshallingHelper::Unmarshalling(parcel, type)) {
             ROSEN_LOGE("RSNGRenderFilterBase: Unmarshalling type failed");
             return false;
@@ -72,7 +72,7 @@ std::shared_ptr<RSNGRenderFilterBase> RSNGRenderFilterBase::Create(RSUIFilterTyp
             return true;
         }
 
-        auto filter = Create(static_cast<RSUIFilterType>(type));
+        auto filter = Create(static_cast<RSNGEffectType>(type));
         if (filter && !filter->OnUnmarshalling(parcel)) {
             ROSEN_LOGE("RSNGRenderFilterBase: Unmarshalling filter failed with type %{public}d", type);
             return false;
@@ -128,7 +128,7 @@ void RSNGRenderFilterHelper::UpdateVisualEffectParamImpl(std::shared_ptr<Drawing
     geFilter->SetParam(desc, value->GenerateGEShaderMask());
 }
 
-std::shared_ptr<Drawing::GEVisualEffect> RSNGRenderFilterHelper::CreateGEFilter(RSUIFilterType type)
+std::shared_ptr<Drawing::GEVisualEffect> RSNGRenderFilterHelper::CreateGEFilter(RSNGEffectType type)
 {
     return std::make_shared<Drawing::GEVisualEffect>(GetFilterTypeString(type), Drawing::DrawingPaintType::BRUSH);
 }

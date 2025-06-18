@@ -35,13 +35,13 @@ public:
     }
 };
 
-template<RSUIFilterType Type, typename... PropertyTags>
+template<RSNGEffectType Type, typename... PropertyTags>
 using RSNGRenderMaskTemplate = RSNGRenderEffectTemplate<RSNGRenderMaskBase, Type, PropertyTags...>;
 
 #define ADD_PROPERTY_TAG(Effect, Prop) Effect##Prop##RenderTag
 
 #define DECLARE_MASK(MaskName, MaskType, ...) \
-    using RSNGRender##MaskName = RSNGRenderMaskTemplate<RSUIFilterType::MaskType, __VA_ARGS__>
+    using RSNGRender##MaskName = RSNGRenderMaskTemplate<RSNGEffectType::MaskType, __VA_ARGS__>
 
 DECLARE_MASK(RippleMask, RIPPLE_MASK,
     ADD_PROPERTY_TAG(RippleMask, Center),

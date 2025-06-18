@@ -43,24 +43,24 @@ public:
         UpdateVisualEffectParamImpl(geFilter, Tag::NAME, propTag.value_->Get());
     }
 
-    static std::string GetFilterTypeString(RSUIFilterType type)
+    static std::string GetFilterTypeString(RSNGEffectType type)
     {
         switch (type) {
-            case RSUIFilterType::INVALID: return "Invalid";
-            case RSUIFilterType::NONE: return "None";
-            case RSUIFilterType::BLUR: return "Blur";
-            case RSUIFilterType::DISPLACEMENT_DISTORT: return "DisplacementDistort";
-            case RSUIFilterType::SOUND_WAVE: return "SoundWave";
-            case RSUIFilterType::EDGE_LIGHT: return "EdgeLight";
-            case RSUIFilterType::DISPERSION: return "Dispersion";
-            case RSUIFilterType::BEZIER_WARP: return "BezierWarp";
-            case RSUIFilterType::COLOR_GRADIENT: return "ColorGradient";
+            case RSNGEffectType::INVALID: return "Invalid";
+            case RSNGEffectType::NONE: return "None";
+            case RSNGEffectType::BLUR: return "Blur";
+            case RSNGEffectType::DISPLACEMENT_DISTORT: return "DisplacementDistort";
+            case RSNGEffectType::SOUND_WAVE: return "SoundWave";
+            case RSNGEffectType::EDGE_LIGHT: return "EdgeLight";
+            case RSNGEffectType::DISPERSION: return "Dispersion";
+            case RSNGEffectType::BEZIER_WARP: return "BezierWarp";
+            case RSNGEffectType::COLOR_GRADIENT: return "ColorGradient";
             default:
                 return "UNKNOWN";
         }
     }
 
-    static std::shared_ptr<Drawing::GEVisualEffect> CreateGEFilter(RSUIFilterType type);
+    static std::shared_ptr<Drawing::GEVisualEffect> CreateGEFilter(RSNGEffectType type);
 
 private:
     static void UpdateVisualEffectParamImpl(std::shared_ptr<Drawing::GEVisualEffect> geFilter,
@@ -85,7 +85,7 @@ private:
  */
 class RSB_EXPORT RSNGRenderFilterBase : public RSNGRenderEffectBase<RSNGRenderFilterBase> {
 public:
-    static std::shared_ptr<RSNGRenderFilterBase> Create(RSUIFilterType type);
+    static std::shared_ptr<RSNGRenderFilterBase> Create(RSNGEffectType type);
 
     [[nodiscard]] static bool Unmarshalling(Parcel& parcel, std::shared_ptr<RSNGRenderFilterBase>& val);
 
@@ -106,7 +106,7 @@ private:
     friend class RSUIFilterHelper;
 };
 
-template<RSUIFilterType Type, typename... PropertyTags>
+template<RSNGEffectType Type, typename... PropertyTags>
 class RSNGRenderFilterTemplate : public RSNGRenderEffectTemplate<RSNGRenderFilterBase, Type, PropertyTags...> {
 public:
     using EffectTemplateBase = RSNGRenderEffectTemplate<RSNGRenderFilterBase, Type, PropertyTags...>;
@@ -137,7 +137,7 @@ protected:
 
 class RSB_EXPORT RSUIFilterHelper {
 public:
-    template<RSUIFilterType Type, typename... PropertyTags>
+    template<RSNGEffectType Type, typename... PropertyTags>
     static std::shared_ptr<RSNGRenderFilterTemplate<Type, PropertyTags...>> CreateRenderFilterByTuple(
         const std::tuple<PropertyTags...>& properties)
     {
@@ -151,7 +151,7 @@ public:
 #define ADD_PROPERTY_TAG(Effect, Prop) Effect##Prop##RenderTag
 
 #define DECLARE_FILTER(FilterName, FilterType, ...) \
-    using RSNGRender##FilterName##Filter = RSNGRenderFilterTemplate<RSUIFilterType::FilterType, __VA_ARGS__>
+    using RSNGRender##FilterName##Filter = RSNGRenderFilterTemplate<RSNGEffectType::FilterType, __VA_ARGS__>
 
 DECLARE_FILTER(Blur, BLUR,
     ADD_PROPERTY_TAG(Blur, RadiusX),

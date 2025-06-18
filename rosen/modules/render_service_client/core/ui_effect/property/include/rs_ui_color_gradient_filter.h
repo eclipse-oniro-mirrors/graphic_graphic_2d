@@ -29,11 +29,11 @@
 namespace OHOS {
 namespace Rosen {
 
-class RSB_EXPORT RSNGColorGradientFilter : public RSNGFilterTemplate<RSUIFilterType::COLOR_GRADIENT> {
+class RSB_EXPORT RSNGColorGradientFilter : public RSNGFilterTemplate<RSNGEffectType::COLOR_GRADIENT> {
 public:
     RSNGColorGradientFilter() = default;
     ~RSNGColorGradientFilter() = default;
-    using Base = RSNGFilterTemplate<RSUIFilterType::COLOR_GRADIENT>;
+    using Base = RSNGFilterTemplate<RSNGEffectType::COLOR_GRADIENT>;
 
     std::shared_ptr<RSNGRenderFilterBase> GetRenderEffect() override;
 

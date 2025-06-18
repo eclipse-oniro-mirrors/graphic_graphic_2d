@@ -23,19 +23,13 @@
 namespace OHOS {
 namespace Rosen {
 
-template <typename Derived, typename RenderEffect>
-class RSNGEffectBase;
-
-template <typename Base, RSUIFilterType Type, typename... PropertyTags>
-class RSNGEffectTemplate;
-
 template <typename Derived, size_t EffectCountLimit = 1000>
 class RSNGRenderEffectBase : public std::enable_shared_from_this<Derived> {
 public:
     static constexpr size_t EFFECT_COUNT_LIMIT = EffectCountLimit;
 
     virtual ~RSNGRenderEffectBase() = default;
-    virtual RSUIFilterType GetType() const = 0;
+    virtual RSNGEffectType GetType() const = 0;
     virtual bool Marshalling(Parcel& parcel) const = 0;
     virtual void Attach(const std::shared_ptr<RSRenderNode>& node) = 0;
     virtual void Detach(const std::shared_ptr<RSRenderNode>& node) = 0;
@@ -72,7 +66,7 @@ protected:
     template <typename U, typename R>
     friend class RSNGEffectBase;
 
-    template <typename U, RSUIFilterType T, typename... Tags>
+    template <typename U, RSNGEffectType T, typename... Tags>
     friend class RSNGEffectTemplate;
 };
 
@@ -85,21 +79,19 @@ struct is_render_property_tag<RenderPropertyTagBase<Name, PropertyType>> : std::
 template <typename T>
 inline constexpr bool is_render_property_tag_v = is_render_property_tag<T>::value;
 
-template <typename Base, RSUIFilterType Type, typename... PropertyTags>
+template <typename Base, RSNGEffectType Type, typename... PropertyTags>
 class RSNGRenderEffectTemplate : public Base {
     static_assert(std::is_base_of_v<RSNGRenderEffectBase<Base>, Base>,
         "RSNGRenderEffectTemplate: Base must be a subclass of RSNGRenderEffectBase<Base>");
-    static_assert(Type != RSUIFilterType::INVALID,
-        "RSNGRenderEffectTemplate: Type cannot be INVALID");
+    static_assert(Type != RSNGEffectType::INVALID, "RSNGRenderEffectTemplate: Type cannot be INVALID");
     static_assert((is_render_property_tag_v<PropertyTags> && ...),
         "RSNGRenderEffectTemplate: All properties must be render property tags");
 
 public:
     RSNGRenderEffectTemplate() = default;
-    virtual ~RSNGRenderEffectTemplate() override = default;
-    RSNGRenderEffectTemplate(std::tuple<PropertyTags...> properties) noexcept
-        : properties_(std::move(properties)) {}
-    RSUIFilterType GetType() const override
+    ~RSNGRenderEffectTemplate() override = default;
+    RSNGRenderEffectTemplate(std::tuple<PropertyTags...> properties) noexcept : properties_(std::move(properties)) {}
+    RSNGEffectType GetType() const override
     {
         return Type;
     }
@@ -146,7 +138,7 @@ public:
             return false;
         }
 
-        if (!RSMarshallingHelper::Marshalling(parcel, static_cast<RSUIFilterTypeUnderlying>(Type))) {
+        if (!RSMarshallingHelper::Marshalling(parcel, static_cast<RSNGEffectTypeUnderlying>(Type))) {
             return false;
         }
 
@@ -227,7 +219,7 @@ protected:
     template <typename U, typename R>
     friend class RSNGEffectBase;
 
-    template <typename U, RSUIFilterType T, typename... Tags>
+    template <typename U, RSNGEffectType T, typename... Tags>
     friend class RSNGEffectTemplate;
 };
 

@@ -33,7 +33,7 @@ public:
     using RenderEffectBase = RenderEffect;
 
     virtual ~RSNGEffectBase() = default;
-    virtual RSUIFilterType GetType() const = 0;
+    virtual RSNGEffectType GetType() const = 0;
     virtual std::shared_ptr<RenderEffectBase> GetRenderEffect() = 0;
     virtual bool SetValue(const std::shared_ptr<Derived>& other, std::shared_ptr<RSNode> node) = 0;
     virtual void Attach(const std::shared_ptr<RSNode>& node) = 0;
@@ -132,14 +132,12 @@ struct is_property_tag<PropertyTagBase<Name, PropertyType>> : std::true_type {};
 template <typename T>
 inline constexpr bool is_property_tag_v = is_property_tag<T>::value;
 
-template <typename Base, RSUIFilterType Type, typename... PropertyTags>
+template <typename Base, RSNGEffectType Type, typename... PropertyTags>
 class RSNGEffectTemplate : public Base {
     static_assert(std::is_base_of_v<RSNGEffectBase<Base, typename Base::RenderEffectBase>, Base>,
         "RSNGEffectTemplate: Base must be a subclass of RSNGEffectBase<Base>");
-    static_assert(Type != RSUIFilterType::INVALID,
-        "RSNGEffectTemplate: Type cannot be INVALID");
-    static_assert((is_property_tag_v<PropertyTags> && ...),
-        "RSNGEffectTemplate: All properties must be PropertyTags");
+    static_assert(Type != RSNGEffectType::INVALID, "RSNGEffectTemplate: Type cannot be INVALID");
+    static_assert((is_property_tag_v<PropertyTags> && ...), "RSNGEffectTemplate: All properties must be PropertyTags");
 
 public:
     using RenderEffectTemplate = RSNGRenderEffectTemplate<typename Base::RenderEffectBase,
@@ -148,7 +146,7 @@ public:
     RSNGEffectTemplate() = default;
     virtual ~RSNGEffectTemplate() override = default;
 
-    RSUIFilterType GetType() const override
+    RSNGEffectType GetType() const override
     {
         return Type;
     }

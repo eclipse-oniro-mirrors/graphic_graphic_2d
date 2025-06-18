@@ -29,24 +29,24 @@ namespace Rosen {
 using FilterCreator = std::function<std::shared_ptr<RSNGFilterBase>()>;
 using FilterConvertor = std::function<std::shared_ptr<RSNGFilterBase>(std::shared_ptr<FilterPara>)>;
 
-static std::unordered_map<RSUIFilterType, FilterCreator> creatorLUT = {
-    {RSUIFilterType::BLUR, [] {
+static std::unordered_map<RSNGEffectType, FilterCreator> creatorLUT = {
+    {RSNGEffectType::BLUR, [] {
             return std::make_shared<RSNGBlurFilter>();
         }
     },
-    {RSUIFilterType::DISPLACEMENT_DISTORT, [] {
+    {RSNGEffectType::DISPLACEMENT_DISTORT, [] {
             return std::make_shared<RSNGDispDistortFilter>();
         }
     },
-    {RSUIFilterType::SOUND_WAVE, [] {
+    {RSNGEffectType::SOUND_WAVE, [] {
             return std::make_shared<RSNGSoundWaveFilter>();
         }
     },
-    {RSUIFilterType::DISPERSION, [] {
+    {RSNGEffectType::DISPERSION, [] {
             return std::make_shared<RSNGDispersionFilter>();
         }
     },
-    {RSUIFilterType::EDGE_LIGHT, [] {
+    {RSNGEffectType::EDGE_LIGHT, [] {
             return std::make_shared<RSNGEdgeLightFilter>();
         }
     },
@@ -55,7 +55,7 @@ static std::unordered_map<RSUIFilterType, FilterCreator> creatorLUT = {
 namespace {
 std::shared_ptr<RSNGFilterBase> ConvertDisplacementDistortFilterPara(std::shared_ptr<FilterPara> filterPara)
 {
-    auto filter = RSNGFilterBase::Create(RSUIFilterType::DISPLACEMENT_DISTORT);
+    auto filter = RSNGFilterBase::Create(RSNGEffectType::DISPLACEMENT_DISTORT);
     if (filter == nullptr || filterPara == nullptr) {
         return nullptr;
     }
@@ -67,7 +67,7 @@ std::shared_ptr<RSNGFilterBase> ConvertDisplacementDistortFilterPara(std::shared
 
 std::shared_ptr<RSNGFilterBase> ConvertEdgeLightFilterPara(std::shared_ptr<FilterPara> filterPara)
 {
-    auto filter = RSNGFilterBase::Create(RSUIFilterType::EDGE_LIGHT);
+    auto filter = RSNGFilterBase::Create(RSNGEffectType::EDGE_LIGHT);
     if (filter == nullptr || filterPara == nullptr) {
         return nullptr;
     }
@@ -84,7 +84,7 @@ static std::unordered_map<FilterPara::ParaType, FilterConvertor> convertorLUT = 
     { FilterPara::ParaType::EDGE_LIGHT, ConvertEdgeLightFilterPara },
 };
 
-std::shared_ptr<RSNGFilterBase> RSNGFilterBase::Create(RSUIFilterType type)
+std::shared_ptr<RSNGFilterBase> RSNGFilterBase::Create(RSNGEffectType type)
 {
     auto it = creatorLUT.find(type);
     return it != creatorLUT.end() ? it->second() : nullptr;

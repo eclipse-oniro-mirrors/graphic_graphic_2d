@@ -26,13 +26,13 @@ namespace Rosen {
 class RSNGMaskBase : public RSNGEffectBase<RSNGMaskBase, RSNGRenderMaskBase> {
 };
 
-template<RSUIFilterType Type, typename... PropertyTags>
+template<RSNGEffectType Type, typename... PropertyTags>
 using RSNGMaskTemplate = RSNGEffectTemplate<RSNGMaskBase, Type, PropertyTags...>;
 
 #define ADD_PROPERTY_TAG(Effect, Prop) Effect##Prop##Tag
 
 #define DECLARE_MASK(MaskName, MaskType, ...) \
-    using RSNG##MaskName = RSNGMaskTemplate<RSUIFilterType::MaskType, __VA_ARGS__>
+    using RSNG##MaskName = RSNGMaskTemplate<RSNGEffectType::MaskType, __VA_ARGS__>
 
 DECLARE_MASK(RippleMask, RIPPLE_MASK,
     ADD_PROPERTY_TAG(RippleMask, Center),

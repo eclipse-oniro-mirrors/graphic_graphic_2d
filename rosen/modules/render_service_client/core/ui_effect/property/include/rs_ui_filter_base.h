@@ -31,18 +31,18 @@ class RSNGFilterBase : public RSNGEffectBase<RSNGFilterBase, RSNGRenderFilterBas
 public:
     virtual ~RSNGFilterBase() = default;
 
-    static std::shared_ptr<RSNGFilterBase> Create(RSUIFilterType type);
+    static std::shared_ptr<RSNGFilterBase> Create(RSNGEffectType type);
 
     static std::shared_ptr<RSNGFilterBase> Create(std::shared_ptr<FilterPara> filterPara);
 };
 
-template<RSUIFilterType Type, typename... PropertyTags>
+template<RSNGEffectType Type, typename... PropertyTags>
 using RSNGFilterTemplate = RSNGEffectTemplate<RSNGFilterBase, Type, PropertyTags...>;
 
 #define ADD_PROPERTY_TAG(Effect, Prop) Effect##Prop##Tag
 
 #define DECLARE_FILTER(FilterName, FilterType, ...) \
-    using RSNG##FilterName##Filter = RSNGFilterTemplate<RSUIFilterType::FilterType, __VA_ARGS__>
+    using RSNG##FilterName##Filter = RSNGFilterTemplate<RSNGEffectType::FilterType, __VA_ARGS__>
 
 DECLARE_FILTER(Blur, BLUR,
     ADD_PROPERTY_TAG(Blur, RadiusX),
