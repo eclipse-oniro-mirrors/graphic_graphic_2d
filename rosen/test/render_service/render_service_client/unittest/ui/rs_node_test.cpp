@@ -18,6 +18,7 @@
 #include "gtest/gtest.h"
 #include "ui_effect/effect/include/brightness_blender.h"
 #include "ui_effect/property/include/rs_ui_bezier_warp_filter.h"
+#include "ui_effect/property/include/rs_ui_blur_filter.h"
 #include "ui_effect/property/include/rs_ui_content_light_filter.h"
 #include "ui_effect/property/include/rs_ui_dispersion_filter.h"
 #include "ui_effect/property/include/rs_ui_displacement_distort_filter.h"
@@ -35,6 +36,8 @@
 #include "modifier/rs_modifier.h"
 #include "modifier/rs_property_modifier.h"
 #include "modifier/rs_extended_modifier.h"
+#include "modifier_ng/appearance/rs_background_filter_modifier.h"
+#include "modifier_ng/appearance/rs_foreground_filter_modifier.h"
 #include "render/rs_filter.h"
 #include "render/rs_material_filter.h"
 #include "ui/rs_node.h"
@@ -7945,7 +7948,7 @@ HWTEST_F(RSNodeTest, SetEnableHDREffect, TestSize.Level1)
 }
 #if defined(MODIFIER_NG)
 
-HWTEST_F(RSNodeTest, SetandGetBgImageSize001, TestSize.Level1)
+HWTEST_F(RSNodeTest, DetachUIFilterPropertiesTest, TestSize.Level1)
 {
     auto rsNode = RSCanvasNode::Create();
     ASSERT_NE(rsNode, nullptr);
@@ -7971,7 +7974,7 @@ HWTEST_F(RSNodeTest, SetandGetBgImageSize001, TestSize.Level1)
         rsNode->modifiersNGCreatedBySetter_[static_cast<uint16_t>(ModifierNG::RSModifierType::BACKGROUND_FILTER)];
     rsNode->DetachUIFilterProperties(modifier01);
 
-    std::shared_ptr<ModifierNG::RSForegroundFilterModifier> modifier02 =
+    std::shared_ptr<ModifierNG::RSModifier> modifier02 =
         std::make_shared<ModifierNG::RSForegroundFilterModifier>();
     std::shared_ptr<RSProperty<std::shared_ptr<RSUIFilter>>> property = nullptr;
     modifier02->properties_[ ModifierNG::RSPropertyType::FOREGROUND_UI_FILTER] = property;
@@ -7983,7 +7986,7 @@ HWTEST_F(RSNodeTest, SetandGetBgImageSize001, TestSize.Level1)
 
     std::shared_ptr<ModifierNG::RSBackgroundFilterModifier> modifier03 =
         std::make_shared<ModifierNG::RSBackgroundFilterModifier>();
-    std::shared_ptr<RSProperty<std::shared_ptr<RSUIFilter>>> property = nullptr;
+    property = nullptr;
     modifier03->properties_[ ModifierNG::RSPropertyType::BACKGROUND_UI_FILTER] = property;
     rsNode->DetachUIFilterProperties(modifier03);
     
