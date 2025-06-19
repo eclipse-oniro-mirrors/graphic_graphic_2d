@@ -1679,9 +1679,9 @@ HWTEST_F(RSInterfacesTest, SetVirtualScreenAutoRotationTest, Function | SmallTes
     ASSERT_EQ(ret, 0);
 
     ret = rsInterfaces->SetVirtualScreenAutoRotation(INVALID_SCREEN_ID, true);
-    ASSERT_EQ(ret, 0);
+    ASSERT_NE(ret, 0);
 
-    ret = rsInterfaces->SetVirtualScreenAutoRotation(0, false);
+    ret = rsInterfaces->SetVirtualScreenAutoRotation(0, true);
     ASSERT_NE(ret, 0);
 
     rsInterfaces->RemoveVirtualScreen(virtualScreenId);

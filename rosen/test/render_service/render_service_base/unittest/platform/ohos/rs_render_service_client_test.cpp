@@ -1100,7 +1100,7 @@ HWTEST_F(RSClientTest, SetVirtualScreenAutoRotationTest, TestSize.Level1)
     EXPECT_EQ(rsClient->SetVirtualScreenAutoRotation(virtualScreenId, false), StatusCode::SUCCESS);
 
     RSRenderServiceConnectHub::Destroy();
-    EXPECT_EQ(rsClient->SetVirtualScreenAutoRotation(virtualScreenId, true), StatusCode::RS_CONNECTION_ERROR);
+    EXPECT_EQ(rsClient->SetVirtualScreenAutoRotation(virtualScreenId, true), StatusCode::RENDER_SERVICE_NULL);
     RSRenderServiceConnectHub::Init();
     EXPECT_EQ(rsClient->SetVirtualScreenAutoRotation(virtualScreenId, true), StatusCode::SUCCESS);
 }
