@@ -118,6 +118,20 @@ HWTEST_F(RSRenderServiceConnectionProxyTest, FillParcelWithTransactionData, Test
 }
 
 /**
+ * @tc.name: FillParcelWithTransactionData Test
+ * @tc.desc: FillParcelWithTransactionData Test
+ * @tc.type:FUNC
+ * @tc.require: issueICGEDM
+ */
+HWTEST_F(RSRenderServiceConnectionProxyTest, FillParcelWithTransactionData002, TestSize.Level1)
+{
+    std::shared_ptr<MessageParcel> parcel = std::make_shared<MessageParcel>();
+    parcel->SetDataSize(102401);
+    auto transactionData = std::make_unique<RSTransactionData>();
+    ASSERT_TRUE(proxy->FillParcelWithTransactionData(transactionData, parcel));
+}
+
+/**
  * @tc.name: CreateNodeAndSurface Test
  * @tc.desc: CreateNodeAndSurface Test
  * @tc.type:FUNC

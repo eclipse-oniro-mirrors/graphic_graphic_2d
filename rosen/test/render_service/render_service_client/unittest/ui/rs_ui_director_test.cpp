@@ -226,6 +226,26 @@ HWTEST_F(RSUIDirectorTest, DirectorSendMessages001, TestSize.Level1)
 }
 
 /**
+ * @tc.name: DirectorSendMessages002
+ * @tc.desc: test results of SendMessages
+ * @tc.type: FUNC
+ * @tc.require: issueICGEDM
+ */
+HWTEST_F(RSUIDirectorTest, DirectorSendMessages002, TestSize.Level1)
+{
+    std::shared_ptr<RSUIDirector> director = RSUIDirector::Create();
+    ASSERT_NE(director, nullptr);
+    bool result = false;
+    FlushEmptyCallback callback = [&result](const uint64_t timestamp) -> bool {
+        result = true;
+        return true;
+    };
+    director->SetFlushEmptyCallback(callback);
+    director->SendMessages();
+    EXPECT_TRUE(result);
+}
+
+/**
  * @tc.name: UIDirectorSetRoot001
  * @tc.desc:
  * @tc.type:FUNC
