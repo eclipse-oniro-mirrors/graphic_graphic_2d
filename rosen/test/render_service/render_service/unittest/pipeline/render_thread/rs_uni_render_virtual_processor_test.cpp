@@ -383,6 +383,41 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, CanvasInit_002, TestSize.Level2)
 }
 
 /**
+ * @tc.name: CanvasInit_003
+ * @tc.desc: CanvasInit Test, autoBufferRotation conditions
+ * @tc.type:FUNC
+ * @tc.require:issueICGA54
+ */
+HWTEST_F(RSUniRenderVirtualProcessorTest, CanvasInit_003, TestSize.Level2)
+{
+    ASSERT_NE(displayDrawable_, nullptr);
+    ASSERT_NE(virtualProcessor_, nullptr);
+    displayDrawable_->isFirstTimeToProcessor_ = false;
+    virtualProcessor_->canvasRotation_ = false;
+    virtualProcessor_->CanvasInit(*displayDrawable_);
+
+    virtualProcessor_->autoBufferRotation_ = true;
+    virtualProcessor_->CanvasInit(*displayDrawable_);
+    ASSERT_EQ(virtualProcessor_->screenRotation_, displayDrawable_->originScreenRotation_);
+}
+
+/**
+ * @tc.name: CheckIfBufferRotationNeedChangeTest
+ * @tc.desc: CheckIfBufferRotationNeedChange Test
+ * @tc.type:FUNC
+ * @tc.require:issueICGA54
+ */
+HWTEST_F(RSUniRenderVirtualProcessorTest, CheckIfBufferRotationNeedChangeTest, TestSize.Level2)
+{
+    ASSERT_NE(displayDrawable_, nullptr);
+    ASSERT_NE(virtualProcessor_, nullptr);
+    EXPECT_TRUE(virtualProcessor_->CheckIfBufferRotationNeedChange(
+        ScreenRotation::ROTATION_0, ScreenRotation::ROTATION_90));
+    EXPECT_FALSE(virtualProcessor_->CheckIfBufferRotationNeedChange(
+        ScreenRotation::ROTATION_0, ScreenRotation::ROTATION_0));
+}
+
+/**
  * @tc.name: GetBufferAge_001
  * @tc.desc: GetBufferAge Test, renderFrame_ not null, expect 0 when targetSurface_ and surfaceFrame_ are both null
  * @tc.type:FUNC
