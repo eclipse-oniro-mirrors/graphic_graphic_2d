@@ -98,7 +98,7 @@ public:
 private:
     void SetVirtualScreenSize(DrawableV2::RSDisplayRenderNodeDrawable& displayDrawable,
         const sptr<RSScreenManager>& screenManager);
-    bool CheckIfBufferSizeNeedChange(ScreenRotation firstBufferRotation, ScreenRotation curBufferRotation);
+    bool CheckIfBufferRotationNeedChange(ScreenRotation firstBufferRotation, ScreenRotation curBufferRotation);
     void CanvasInit(DrawableV2::RSDisplayRenderNodeDrawable& displayDrawable);
     void OriginScreenRotation(ScreenRotation screenRotation, float width, float height);
     bool EnableVisibleRect();
