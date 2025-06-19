@@ -582,7 +582,7 @@ bool RSUniRenderVirtualProcessor::CheckIfBufferSizeNeedChange(
     ScreenRotation firstBufferRotation, ScreenRotation curBufferRotation)
 {
     auto rotationDiff = static_cast<int>(firstBufferRotation) - static_cast<int>(curBufferRotation);
-    return rotationDiff % 2;    // If the difference is odd, buffer's width and height need a swap.
+    return rotationDiff % 2;    // %2, If the difference is odd, buffer's width and height need a swap.
 }
 
 void RSUniRenderVirtualProcessor::SetVirtualScreenSize(
