@@ -578,7 +578,7 @@ bool RSUniRenderVirtualProcessor::EnableVisibleRect()
     return screenManager->QueryScreenInfo(virtualScreenId_).enableVisibleRect;
 }
 
-bool RSUniRenderVirtualProcessor::CheckIfBufferRotationNeedChange(
+bool RSUniRenderVirtualProcessor::CheckIfBufferSizeNeedChange(
     ScreenRotation firstBufferRotation, ScreenRotation curBufferRotation)
 {
     auto rotationDiff = static_cast<int>(firstBufferRotation) - static_cast<int>(curBufferRotation);
@@ -600,7 +600,7 @@ void RSUniRenderVirtualProcessor::SetVirtualScreenSize(
             RS_LOGI("RSUniRenderVirtualProcessor::%{public}s, set firstBufferRotation: %{public}d,"
                 "width: %{public}" PRIu32 ", height: %{public}" PRIu32, __func__, static_cast<int>(curBufferRotation),
                 renderFrameConfig_.width, renderFrameConfig_.height);
-        } else if (CheckIfBufferRotationNeedChange(firstBufferRotation, curBufferRotation)) {
+        } else if (CheckIfBufferSizeNeedChange(firstBufferRotation, curBufferRotation)) {
             std::swap(renderFrameConfig_.width, renderFrameConfig_.height);
             std::swap(virtualScreenInfo.width, virtualScreenInfo.height);
             RS_LOGI("RSUniRenderVirtualProcessor::%{public}s, swap buffer width and height, width: %{public}" PRIu32

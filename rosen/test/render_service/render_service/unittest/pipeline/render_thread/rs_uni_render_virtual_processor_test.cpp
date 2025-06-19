@@ -463,18 +463,18 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, CanvasInit_003, TestSize.Level2)
 }
 
 /**
- * @tc.name: CheckIfBufferRotationNeedChangeTest
- * @tc.desc: CheckIfBufferRotationNeedChange Test
+ * @tc.name: CheckIfBufferSizeNeedChangeTest
+ * @tc.desc: CheckIfBufferSizeNeedChange Test
  * @tc.type:FUNC
  * @tc.require:issueICGA54
  */
-HWTEST_F(RSUniRenderVirtualProcessorTest, CheckIfBufferRotationNeedChangeTest, TestSize.Level2)
+HWTEST_F(RSUniRenderVirtualProcessorTest, CheckIfBufferSizeNeedChangeTest, TestSize.Level2)
 {
     ASSERT_NE(displayDrawable_, nullptr);
     ASSERT_NE(virtualProcessor_, nullptr);
-    EXPECT_TRUE(virtualProcessor_->CheckIfBufferRotationNeedChange(
+    EXPECT_TRUE(virtualProcessor_->CheckIfBufferSizeNeedChange(
         ScreenRotation::ROTATION_0, ScreenRotation::ROTATION_90));
-    EXPECT_FALSE(virtualProcessor_->CheckIfBufferRotationNeedChange(
+    EXPECT_FALSE(virtualProcessor_->CheckIfBufferSizeNeedChange(
         ScreenRotation::ROTATION_0, ScreenRotation::ROTATION_0));
 }
 
