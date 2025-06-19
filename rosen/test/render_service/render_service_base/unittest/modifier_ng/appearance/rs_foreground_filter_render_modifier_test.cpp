@@ -23,10 +23,10 @@
 #include "message_parcel.h"
 
 #include "common/rs_vector4.h"
-#include "modifier_ng/rs_modifier_ng_type.h"
-#include "pipeline/rs_canvas_drawing_render_node.h"
-#include "property/rs_properties.h"
 #include "modifier_ng/appearance/rs_foreground_filter_render_modifier.h"
+#include "modifier_ng/rs_modifier_ng_type.h"
+#include "pipeline/rs_canvas_render_node.h"
+#include "property/rs_properties.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -80,7 +80,7 @@ HWTEST_F(RSForegroundFilterRenderModifierNGTest, AttachRenderFilterPropertyTest,
     modifier.AttachRenderFilterProperty(nullptr, ModifierNG::RSPropertyType::FOREGROUND_UI_FILTER);
     modifier.AttachRenderFilterProperty(property, ModifierNG::RSPropertyType::FOREGROUND_UI_FILTER);
 
-    RSRenderNode node;
+    RSCanvasRenderNode node(0);
     modifier.target_ = node.weak_from_this();
     modifier.AttachRenderFilterProperty(property, ModifierNG::RSPropertyType::FOREGROUND_UI_FILTER);
 
@@ -109,7 +109,7 @@ HWTEST_F(RSForegroundFilterRenderModifierNGTest, DetachRenderFilterPropertyTest,
     modifier.DetachRenderFilterProperty(nullptr, ModifierNG::RSPropertyType::FOREGROUND_UI_FILTER);
     modifier.DetachRenderFilterProperty(property, ModifierNG::RSPropertyType::FOREGROUND_UI_FILTER);
 
-    RSRenderNode node;
+    RSCanvasRenderNode node(0);
     modifier.target_ = node.weak_from_this();
     modifier.DetachRenderFilterProperty(property, ModifierNG::RSPropertyType::FOREGROUND_UI_FILTER);
 
