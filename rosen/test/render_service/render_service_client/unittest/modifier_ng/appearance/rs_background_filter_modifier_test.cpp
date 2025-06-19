@@ -20,9 +20,10 @@
 
 #include "gtest/gtest.h"
 #include "gtest/hwext/gtest-tag.h"
+#include "ui_effect/property/include/rs_ui_blur_filter.h"
 
 #include "modifier_ng/appearance/rs_background_filter_modifier.h"
-#include "ui/rs_node.h"
+#include "ui/rs_canvas_node.h"
 
 using namespace testing::ext;
 using namespace OHOS::Rosen::ModifierNG;

@@ -21,9 +21,11 @@
 #include "gtest/gtest.h"
 #include "gtest/hwext/gtest-tag.h"
 #include "message_parcel.h"
+#include "ui_effect/property/include/rs_ui_blur_filter.h"
 
 #include "common/rs_vector4.h"
 #include "modifier_ng/appearance/rs_foreground_filter_modifier.h"
+#include "ui/rs_canvas_node.h"
 
 using namespace testing;
 using namespace testing::ext;

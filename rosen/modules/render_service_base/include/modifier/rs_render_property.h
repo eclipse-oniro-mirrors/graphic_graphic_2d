@@ -75,6 +75,7 @@ enum class RSPropertyType : uint8_t {
     INVALID = 0,
     BOOL,
     INT,
+    SHORT,
     FLOAT,
     VECTOR4_UINT32,
     RS_COLOR,
