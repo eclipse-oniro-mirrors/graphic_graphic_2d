@@ -748,9 +748,9 @@ GRAPHIC_N_TEST(RSMultiScreenTest, CONTENT_DISPLAY_TEST, MULTI_SCREEN_TEST_012)
 
     std::vector<uint64_t> screenBlackList = { surfaceNode1->GetId() };
     LOGI("MULTI_SCREEN_TEST_012 surfaceId1:[%{public}" PRIu64 "]", surfaceNode1->GetId());
-    // 加黑名单到公共黑名单
+    // Add blocklist to public blocklist
     RSInterfaces::GetInstance().SetVirtualScreenBlackList(INVALID_SCREEN_ID, screenBlackList);
-    // 屏幕黑名单无数据，两个都展示
+    // Screen blocklist has no data, both are displayed
     RSDisplayNodeConfig displayNodeConfig2 = { screenId2, true, displayNode1->GetId(), true };
     auto displayNode2 = RSDisplayNode::Create(displayNodeConfig2);
     EXPECT_NE(displayNode2, nullptr);
@@ -826,9 +826,9 @@ GRAPHIC_N_TEST(RSMultiScreenTest, CONTENT_DISPLAY_TEST, MULTI_SCREEN_TEST_013)
     std::vector<uint64_t> screenBlackList = { surfaceNode1->GetId() };
     LOGI("MULTI_SCREEN_TEST_013 surfaceId:[%{public}" PRIu64 "]", surfaceNode1->GetId());
 
-    // 加黑名单到公共黑名单
+    // Add blocklist to public blocklist
     RSInterfaces::GetInstance().SetVirtualScreenBlackList(INVALID_SCREEN_ID, screenBlackList);
-    // 公共黑名单打开，读取公共黑名单开关打开，只显示id1黄色
+    // Open the public blacklist, turn on the switch to read the public blacklist, and only display ID1 in yellow
     RSInterfaces::GetInstance().SetCastScreenEnableSkipWindow(screenId2, true);
 
     RSDisplayNodeConfig displayNodeConfig2 = { screenId2, true, displayNode1->GetId(), true };
@@ -906,9 +906,9 @@ GRAPHIC_N_TEST(RSMultiScreenTest, CONTENT_DISPLAY_TEST, MULTI_SCREEN_TEST_014)
     EXPECT_NE(screenId2, INVALID_SCREEN_ID);
     std::vector<uint64_t> screenBlackList = { surfaceNode1->GetId() };
     LOGI("MULTI_SCREEN_TEST_014 surfaceId:[%{public}" PRIu64 "]", surfaceNode1->GetId());
-    // 加黑名单到公共黑名单
+    // Add blocklist to public blocklist
     RSInterfaces::GetInstance().SetVirtualScreenBlackList(INVALID_SCREEN_ID, screenBlackList);
-    // 公共黑名单不打开，显示全部
+    // The public blocklist is not open, displaying all
     RSInterfaces::GetInstance().SetCastScreenEnableSkipWindow(screenId2, false);
     RSDisplayNodeConfig displayNodeConfig2 = { screenId2, true, displayNode1->GetId(), true };
     auto displayNode2 = RSDisplayNode::Create(displayNodeConfig2);
@@ -1148,7 +1148,7 @@ GRAPHIC_N_TEST(RSMultiScreenTest, CONTENT_DISPLAY_TEST, MULTI_SCREEN_TEST_018)
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
 
-    // 避免node1已经旋转完成了，才开始渲染node2 写在这里就是为了延迟旋转
+    // To avoid rendering node2 only after node1 has already rotated, it is written here to delay the rotation
     displayNode1->SetScreenRotation(static_cast<uint32_t>(ScreenRotation::ROTATION_90));
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
