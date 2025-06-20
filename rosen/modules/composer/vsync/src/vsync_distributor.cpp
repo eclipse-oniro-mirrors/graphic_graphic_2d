@@ -1881,5 +1881,12 @@ void VSyncDistributor::FirstRequestVsync()
     std::unique_lock<std::mutex> locker(mutex_);
     isFirstRequest_ = true;
 }
+
+void VSyncDistributor::SetTaskEndWithTime(uint64_t time)
+{
+#if defined(RS_ENABLE_DVSYNC_2)
+    DVSync::Instance().SetTaskEndWithTime(time);
+#endif
+}
 }
 }

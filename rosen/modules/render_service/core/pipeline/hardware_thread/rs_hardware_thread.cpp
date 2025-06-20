@@ -324,6 +324,8 @@ void RSHardwareThread::CommitAndReleaseLayers(OutputPtr output, const std::vecto
         if (unExecuteTaskNum_ <= HARDWARE_THREAD_TASK_NUM) {
             RSMainThread::Instance()->NotifyHardwareThreadCanExecuteTask();
         }
+        RSMainThread::Instance()->SetTaskEndWithTime(SystemTime() - lastActualTime_);
+        lastActualTime_ = param.actualTimestamp;
         int64_t endTime = GetCurTimeCount();
         uint64_t frameTime = endTime - startTime;
         uint32_t missedFrames = frameTime / REFRESH_PERIOD;

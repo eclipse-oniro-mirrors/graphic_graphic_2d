@@ -5210,6 +5210,11 @@ void RSMainThread::SetBufferInfo(uint64_t id, const std::string &name, uint32_t 
     rsVSyncDistributor_->SetBufferInfo(id, name, queueSize, bufferCount, lastConsumeTime, isUrgent);
 }
 
+void RSMainThread::SetTaskEndWithTime(int64_t time)
+{
+    rsVSyncDistributor_->SetTaskEndWithTime(time);
+}
+
 void RSMainThread::OnFmtTraceSwitchCallback(const char *key, const char *value, void *context)
 {
     if (strcmp(key, ENABLE_DEBUG_FMT_TRACE) != 0) {
