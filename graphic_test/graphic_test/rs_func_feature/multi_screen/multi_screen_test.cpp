@@ -459,7 +459,7 @@ GRAPHIC_N_TEST(RSMultiScreenTest, CONTENT_DISPLAY_TEST, MULTI_SCREEN_TEST_007)
     auto displayNode = RSDisplayNode::Create(displayNodeConfig);
     EXPECT_NE(displayNode, nullptr);
     LOGI("MULTI_SCREEN_TEST_007 screenId:%{public}" PRIu64 ", nodeId:%{public}" PRIu64, screenId, displayNode->GetId());
-    7 displayNode->SetBounds({ 0, 0, 1000, 1000 });
+    displayNode->SetBounds({ 0, 0, 1000, 1000 });
     displayNode->SetFrame({ 0, 0, 1000, 1000 });
     displayNode->SetBackgroundColor(SK_ColorBLUE);
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
