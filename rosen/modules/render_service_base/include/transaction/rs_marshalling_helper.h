@@ -26,7 +26,6 @@
 #include "common/rs_macros.h"
 
 #include "image/image.h"
-#include "text/hm_symbol.h"
 
 #define RSPARCELVER_ALWAYS 0x100
 #define RSPARCELVER_ADD_ANIMTOKEN 0

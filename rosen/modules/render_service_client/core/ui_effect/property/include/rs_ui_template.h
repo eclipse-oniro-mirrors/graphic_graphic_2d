@@ -13,15 +13,16 @@
  * limitations under the License.
  */
 
-#ifndef ROSEN_ENGINE_CORE_RENDER_UI_TEMPLATE_H
-#define ROSEN_ENGINE_CORE_RENDER_UI_TEMPLATE_H
+#ifndef ROSEN_RENDER_SERVICE_CLIENT_CORE_UI_EFFECT_UI_TEMPLATE_H
+#define ROSEN_RENDER_SERVICE_CLIENT_CORE_UI_EFFECT_UI_TEMPLATE_H
 #include <tuple>
 #include <type_traits>
 
+#include "ui_effect/property/include/rs_ui_property_tag.h"
+
+#include "effect/rs_render_effect_template.h"
 #include "modifier/rs_property.h"
 #include "platform/common/rs_log.h"
-#include "render/rs_render_effect_template.h"
-#include "ui_effect/property/include/rs_ui_property_tag.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -32,7 +33,7 @@ public:
     using RenderEffectBase = RenderEffect;
 
     virtual ~RSNGEffectBase() = default;
-    virtual RSUIFilterType GetType() const = 0;
+    virtual RSNGEffectType GetType() const = 0;
     virtual std::shared_ptr<RenderEffectBase> GetRenderEffect() = 0;
     virtual bool SetValue(const std::shared_ptr<Derived>& other, std::shared_ptr<RSNode> node) = 0;
     virtual void Attach(const std::shared_ptr<RSNode>& node) = 0;
@@ -131,14 +132,12 @@ struct is_property_tag<PropertyTagBase<Name, PropertyType>> : std::true_type {};
 template <typename T>
 inline constexpr bool is_property_tag_v = is_property_tag<T>::value;
 
-template <typename Base, RSUIFilterType Type, typename... PropertyTags>
+template <typename Base, RSNGEffectType Type, typename... PropertyTags>
 class RSNGEffectTemplate : public Base {
     static_assert(std::is_base_of_v<RSNGEffectBase<Base, typename Base::RenderEffectBase>, Base>,
         "RSNGEffectTemplate: Base must be a subclass of RSNGEffectBase<Base>");
-    static_assert(Type != RSUIFilterType::INVALID,
-        "RSNGEffectTemplate: Type cannot be INVALID");
-    static_assert((is_property_tag_v<PropertyTags> && ...),
-        "RSNGEffectTemplate: All properties must be PropertyTags");
+    static_assert(Type != RSNGEffectType::INVALID, "RSNGEffectTemplate: Type cannot be INVALID");
+    static_assert((is_property_tag_v<PropertyTags> && ...), "RSNGEffectTemplate: All properties must be PropertyTags");
 
 public:
     using RenderEffectTemplate = RSNGRenderEffectTemplate<typename Base::RenderEffectBase,
@@ -147,7 +146,7 @@ public:
     RSNGEffectTemplate() = default;
     virtual ~RSNGEffectTemplate() override = default;
 
-    RSUIFilterType GetType() const override
+    RSNGEffectType GetType() const override
     {
         return Type;
     }
@@ -233,5 +232,5 @@ private:
 } // namespace Rosen
 } // namespace OHOS
 
-#endif // ROSEN_ENGINE_CORE_RENDER_UI_TEMPLATE_H
+#endif // ROSEN_RENDER_SERVICE_CLIENT_CORE_UI_EFFECT_UI_TEMPLATE_H
 

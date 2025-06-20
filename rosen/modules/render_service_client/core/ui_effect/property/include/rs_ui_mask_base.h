@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef ROSEN_ENGINE_CORE_RENDER_UI_MASK_BASE_H
-#define ROSEN_ENGINE_CORE_RENDER_UI_MASK_BASE_H
+#ifndef ROSEN_RENDER_SERVICE_CLIENT_CORE_UI_EFFECT_UI_MASK_BASE_H
+#define ROSEN_RENDER_SERVICE_CLIENT_CORE_UI_EFFECT_UI_MASK_BASE_H
 
 #include "render/rs_render_mask_base.h"
 #include "ui_effect/property/include/rs_ui_property_tag.h"
@@ -26,13 +26,13 @@ namespace Rosen {
 class RSNGMaskBase : public RSNGEffectBase<RSNGMaskBase, RSNGRenderMaskBase> {
 };
 
-template<RSUIFilterType Type, typename... PropertyTags>
+template<RSNGEffectType Type, typename... PropertyTags>
 using RSNGMaskTemplate = RSNGEffectTemplate<RSNGMaskBase, Type, PropertyTags...>;
 
 #define ADD_PROPERTY_TAG(Effect, Prop) Effect##Prop##Tag
 
 #define DECLARE_MASK(MaskName, MaskType, ...) \
-    using RSNG##MaskName = RSNGMaskTemplate<RSUIFilterType::MaskType, __VA_ARGS__>
+    using RSNG##MaskName = RSNGMaskTemplate<RSNGEffectType::MaskType, __VA_ARGS__>
 
 DECLARE_MASK(RippleMask, RIPPLE_MASK,
     ADD_PROPERTY_TAG(RippleMask, Center),
@@ -50,4 +50,4 @@ DECLARE_MASK(PixelMapMask, PIXEL_MAP_MASK,
 } // namespace Rosen
 } // namespace OHOS
 
-#endif // ROSEN_ENGINE_CORE_RENDER_UI_MASK_BASE_H
+#endif // ROSEN_RENDER_SERVICE_CLIENT_CORE_UI_EFFECT_UI_MASK_BASE_H

@@ -13,11 +13,11 @@
  * limitations under the License.
  */
 
-#ifndef RENDER_SERVICE_BASE_RENDER_MASK_BASE_H
-#define RENDER_SERVICE_BASE_RENDER_MASK_BASE_H
+#ifndef RENDER_SERVICE_BASE_EFFECT_RS_RENDER_MASK_BASE_H
+#define RENDER_SERVICE_BASE_EFFECT_RS_RENDER_MASK_BASE_H
 
-#include "render/rs_render_property_tag.h"
-#include "render/rs_render_effect_template.h"
+#include "effect/rs_render_effect_template.h"
+#include "effect/rs_render_property_tag.h"
 #include "transaction/rs_marshalling_helper.h"
 
 namespace OHOS {
@@ -35,13 +35,13 @@ public:
     }
 };
 
-template<RSUIFilterType Type, typename... PropertyTags>
+template<RSNGEffectType Type, typename... PropertyTags>
 using RSNGRenderMaskTemplate = RSNGRenderEffectTemplate<RSNGRenderMaskBase, Type, PropertyTags...>;
 
 #define ADD_PROPERTY_TAG(Effect, Prop) Effect##Prop##RenderTag
 
 #define DECLARE_MASK(MaskName, MaskType, ...) \
-    using RSNGRender##MaskName = RSNGRenderMaskTemplate<RSUIFilterType::MaskType, __VA_ARGS__>
+    using RSNGRender##MaskName = RSNGRenderMaskTemplate<RSNGEffectType::MaskType, __VA_ARGS__>
 
 DECLARE_MASK(RippleMask, RIPPLE_MASK,
     ADD_PROPERTY_TAG(RippleMask, Center),
@@ -62,4 +62,4 @@ DECLARE_MASK(PixelMapMask, PIXEL_MAP_MASK,
 } // namespace Rosen
 } // namespace OHOS
 
-#endif // RENDER_SERVICE_BASE_RENDER_MASK_BASE_H
+#endif // RENDER_SERVICE_BASE_EFFECT_RS_RENDER_MASK_BASE_H

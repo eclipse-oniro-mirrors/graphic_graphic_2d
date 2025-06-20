@@ -19,6 +19,7 @@
 
 #include "rs_profiler.h"
 
+#include "effect/rs_render_filter_base.h"
 #include "modifier_ng/rs_render_modifier_ng.h"
 #include "pipeline/rs_render_node.h"
 #include "platform/common/rs_log.h"

@@ -12,22 +12,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef RENDER_SERVICE_BASE_RENDER_TEMPLATE_H
-#define RENDER_SERVICE_BASE_RENDER_TEMPLATE_H
+#ifndef RENDER_SERVICE_BASE_EFFECT_RS_RENDER_EFFECT_TEMPLATE_H
+#define RENDER_SERVICE_BASE_EFFECT_RS_RENDER_EFFECT_TEMPLATE_H
 #include <tuple>
 #include <type_traits>
 
-#include "render/rs_render_property_tag.h"
+#include "effect/rs_render_property_tag.h"
 #include "transaction/rs_marshalling_helper.h"
 
 namespace OHOS {
 namespace Rosen {
-
-template <typename Derived, typename RenderEffect>
-class RSNGEffectBase;
-
-template <typename Base, RSUIFilterType Type, typename... PropertyTags>
-class RSNGEffectTemplate;
 
 template <typename Derived, size_t EffectCountLimit = 1000>
 class RSNGRenderEffectBase : public std::enable_shared_from_this<Derived> {
@@ -35,50 +29,16 @@ public:
     static constexpr size_t EFFECT_COUNT_LIMIT = EffectCountLimit;
 
     virtual ~RSNGRenderEffectBase() = default;
-    virtual RSUIFilterType GetType() const = 0;
+    virtual RSNGEffectType GetType() const = 0;
     virtual bool Marshalling(Parcel& parcel) const = 0;
     virtual void Attach(const std::shared_ptr<RSRenderNode>& node) = 0;
     virtual void Detach(const std::shared_ptr<RSRenderNode>& node) = 0;
     virtual void SetModifierType(RSModifierType inType) = 0;
 
 protected:
-    [[nodiscard]] virtual bool OnMarshalling(Parcel& parcel) const
-    {
-        auto count = GetEffectCount();
-        if (count > EFFECT_COUNT_LIMIT) {
-            return false;
-        }
-
-        if (nextEffect_) {
-            return nextEffect_->Marshalling(parcel);
-        }
-    
-        return RSMarshallingHelper::Marshalling(parcel, END_OF_CHAIN);
-    }
-    
-    [[nodiscard]] virtual bool OnUnmarshalling(Parcel& parcel) { return true; }
+    [[nodiscard]] virtual bool OnUnmarshalling(Parcel& parcel) = 0;
     
     virtual void DumpProperty(std::string& out) const {}
-
-    virtual void OnAttach(const std::shared_ptr<RSRenderNode>& node)
-    {
-        if (nextEffect_) {
-            nextEffect_->Attach(node);
-        }
-    }
-    virtual void OnDetach(const std::shared_ptr<RSRenderNode>& node)
-    {
-        if (nextEffect_) {
-            nextEffect_->Detach(node);
-        }
-    }
-
-    virtual void OnSetModifierType(RSModifierType inType)
-    {
-        if (nextEffect_) {
-            nextEffect_->SetModifierType(inType);
-        }
-    }
 
     inline const std::shared_ptr<Derived>& GetNextEffect() const
     {
@@ -106,7 +66,7 @@ protected:
     template <typename U, typename R>
     friend class RSNGEffectBase;
 
-    template <typename U, RSUIFilterType T, typename... Tags>
+    template <typename U, RSNGEffectType T, typename... Tags>
     friend class RSNGEffectTemplate;
 };
 
@@ -119,21 +79,19 @@ struct is_render_property_tag<RenderPropertyTagBase<Name, PropertyType>> : std::
 template <typename T>
 inline constexpr bool is_render_property_tag_v = is_render_property_tag<T>::value;
 
-template <typename Base, RSUIFilterType Type, typename... PropertyTags>
+template <typename Base, RSNGEffectType Type, typename... PropertyTags>
 class RSNGRenderEffectTemplate : public Base {
     static_assert(std::is_base_of_v<RSNGRenderEffectBase<Base>, Base>,
         "RSNGRenderEffectTemplate: Base must be a subclass of RSNGRenderEffectBase<Base>");
-    static_assert(Type != RSUIFilterType::INVALID,
-        "RSNGRenderEffectTemplate: Type cannot be INVALID");
+    static_assert(Type != RSNGEffectType::INVALID, "RSNGRenderEffectTemplate: Type cannot be INVALID");
     static_assert((is_render_property_tag_v<PropertyTags> && ...),
         "RSNGRenderEffectTemplate: All properties must be render property tags");
 
 public:
     RSNGRenderEffectTemplate() = default;
-    virtual ~RSNGRenderEffectTemplate() override = default;
-    RSNGRenderEffectTemplate(std::tuple<PropertyTags...> properties) noexcept
-        : properties_(std::move(properties)) {}
-    RSUIFilterType GetType() const override
+    ~RSNGRenderEffectTemplate() override = default;
+    RSNGRenderEffectTemplate(std::tuple<PropertyTags...> properties) noexcept : properties_(std::move(properties)) {}
+    RSNGEffectType GetType() const override
     {
         return Type;
     }
@@ -175,7 +133,12 @@ public:
 
     bool Marshalling(Parcel& parcel) const override
     {
-        if (!RSMarshallingHelper::Marshalling(parcel, static_cast<RSUIFilterTypeUnderlying>(Type))) {
+        auto count = Base::GetEffectCount();
+        if (count > Base::EFFECT_COUNT_LIMIT) {
+            return false;
+        }
+
+        if (!RSMarshallingHelper::Marshalling(parcel, static_cast<RSNGEffectTypeUnderlying>(Type))) {
             return false;
         }
 
@@ -187,7 +150,11 @@ public:
             return false;
         }
 
-        return Base::OnMarshalling(parcel);
+        if (Base::nextEffect_) {
+            return Base::nextEffect_->Marshalling(parcel);
+        }
+    
+        return RSMarshallingHelper::Marshalling(parcel, END_OF_CHAIN);
     }
 
     [[nodiscard]] bool OnUnmarshalling(Parcel& parcel) override
@@ -225,20 +192,26 @@ public:
     void Attach(const std::shared_ptr<RSRenderNode>& node) override
     {
         std::apply([&node](const auto&... props) { (props.value_->Attach(node), ...); }, properties_);
-        Base::OnAttach(node);
+        if (Base::nextEffect_) {
+            Base::nextEffect_->Attach(node);
+        }
     }
 
     void Detach(const std::shared_ptr<RSRenderNode>& node) override
     {
         std::apply([&node](const auto&... props) { (props.value_->Detach(node), ...); }, properties_);
-        Base::OnDetach(node);
+        if (Base::nextEffect_) {
+            Base::nextEffect_->Detach(node);
+        }
     }
 
     void SetModifierType(RSModifierType inType) override
     {
         std::apply(
             [&inType](const auto&... props) { (props.value_->SetModifierType(inType), ...); }, properties_);
-        Base::OnSetModifierType(inType);
+        if (Base::nextEffect_) {
+            Base::nextEffect_->SetModifierType(inType);
+        }
     }
 protected:
     std::tuple<PropertyTags...> properties_;
@@ -246,11 +219,11 @@ protected:
     template <typename U, typename R>
     friend class RSNGEffectBase;
 
-    template <typename U, RSUIFilterType T, typename... Tags>
+    template <typename U, RSNGEffectType T, typename... Tags>
     friend class RSNGEffectTemplate;
 };
 
 } // namespace OHOS
 } // namespace Rosen
 
-#endif // RENDER_SERVICE_BASE_RENDER_TEMPLATE_H
+#endif // RENDER_SERVICE_BASE_EFFECT_RS_RENDER_EFFECT_TEMPLATE_H
