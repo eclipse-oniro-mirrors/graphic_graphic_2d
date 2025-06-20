@@ -1490,11 +1490,7 @@ GRAPHIC_N_TEST(RSMultiScreenTest, CONTENT_DISPLAY_TEST, MULTI_SCREEN_TEST_023)
     EXPECT_NE(screenId, INVALID_SCREEN_ID);
     RSDisplayNodeConfig displayNodeConfig = { screenId, false, 0, true };
     auto displayNode = RSDisplayNode::Create(displayNodeConfig);
-    if (!displayNode) {
-        LOGE("displayNode is nullptr");
-        return;
-    }
-
+    EXPECT_NE(displayNode, nullptr);
     displayNode->SetBounds({ 0, 0, 1000, 1000 });
     displayNode->SetFrame({ 0, 0, 1000, 1000 });
     displayNode->RSNode::AddChild(surfaceNode1);
@@ -1567,11 +1563,7 @@ GRAPHIC_N_TEST(RSMultiScreenTest, CONTENT_DISPLAY_TEST, MULTI_SCREEN_TEST_024)
     EXPECT_NE(screenId, INVALID_SCREEN_ID);
     RSDisplayNodeConfig displayNodeConfig = { screenId, false, 0, true };
     auto displayNode = RSDisplayNode::Create(displayNodeConfig);
-    if (!displayNode) {
-        LOGE("displayNode is nullptr");
-        return;
-    }
-
+    EXPECT_NE(displayNode, nullptr);
     displayNode->SetBounds({ 0, 0, 1000, 1000 });
     displayNode->SetFrame({ 0, 0, 1000, 1000 });
     displayNode->RSNode::AddChild(surfaceNode1);
@@ -1632,14 +1624,9 @@ GRAPHIC_N_TEST(RSMultiScreenTest, CONTENT_DISPLAY_TEST, MULTI_SCREEN_TEST_025)
     ScreenId screenId = RSInterfaces::GetInstance().CreateVirtualScreen(
         "MULTI_SCREEN_TEST_025", width, height, psurface, INVALID_SCREEN_ID, -1, {});
     EXPECT_NE(screenId, INVALID_SCREEN_ID);
-    secondScreenId
     RSDisplayNodeConfig displayNodeConfig = { screenId, false, 0, true };
     auto displayNode = RSDisplayNode::Create(displayNodeConfig);
-    if (!displayNode) {
-        LOGE("displayNode is nullptr");
-        return;
-    }
-
+    EXPECT_NE(displayNode, nullptr);
     displayNode->SetBounds({ 0, 0, 1000, 1000 });
     displayNode->SetFrame({ 0, 0, 1000, 1000 });
     displayNode->RSNode::AddChild(surfaceNode1);
@@ -1712,11 +1699,7 @@ GRAPHIC_N_TEST(RSMultiScreenTest, CONTENT_DISPLAY_TEST, MULTI_SCREEN_TEST_026)
     EXPECT_NE(screenId, INVALID_SCREEN_ID);
     RSDisplayNodeConfig displayNodeConfig = { screenId, false, 0, true };
     auto displayNode = RSDisplayNode::Create(displayNodeConfig);
-    if (!displayNode) {
-        LOGE("displayNode is nullptr");
-        return;
-    }
-
+    EXPECT_NE(displayNode, nullptr);
     displayNode->SetBounds({ 0, 0, 1000, 1000 });
     displayNode->SetFrame({ 0, 0, 1000, 1000 });
     displayNode->RSNode::AddChild(surfaceNode1);
@@ -1789,11 +1772,7 @@ GRAPHIC_N_TEST(RSMultiScreenTest, CONTENT_DISPLAY_TEST, MULTI_SCREEN_TEST_027)
     EXPECT_NE(screenId, INVALID_SCREEN_ID);
     RSDisplayNodeConfig displayNodeConfig = { screenId, false, 0, true };
     auto displayNode = RSDisplayNode::Create(displayNodeConfig);
-    if (!displayNode) {
-        LOGE("displayNode is nullptr");
-        return;
-    }
-
+    EXPECT_NE(displayNode, nullptr);
     displayNode->SetBounds({ 0, 0, 1000, 1000 });
     displayNode->SetFrame({ 0, 0, 1000, 1000 });
     displayNode->RSNode::AddChild(surfaceNode1);
@@ -1866,11 +1845,7 @@ GRAPHIC_N_TEST(RSMultiScreenTest, CONTENT_DISPLAY_TEST, MULTI_SCREEN_TEST_028)
     EXPECT_NE(screenId, INVALID_SCREEN_ID);
     RSDisplayNodeConfig displayNodeConfig = { screenId, false, 0, true };
     auto displayNode = RSDisplayNode::Create(displayNodeConfig);
-    if (!displayNode) {
-        LOGE("displayNode is nullptr");
-        return;
-    }
-
+    EXPECT_NE(displayNode, nullptr);
     displayNode->SetBounds({ 0, 0, 1000, 1000 });
     displayNode->SetFrame({ 0, 0, 1000, 1000 });
     displayNode->RSNode::AddChild(surfaceNode1);
