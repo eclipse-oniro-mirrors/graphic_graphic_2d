@@ -660,7 +660,6 @@ std::unique_ptr<RsVulkanContext>& RsVulkanContext::GetRecyclableSingletonPtr(con
     static std::string cacheDirInit = cacheDir;
     static std::unique_ptr<RsVulkanContext> recyclableSingleton = std::make_unique<RsVulkanContext>(cacheDirInit);
     if (recyclableSingleton == nullptr) {
-        static std::string cacheDirInit = cacheDir;
         recyclableSingleton = std::make_unique<RsVulkanContext>(cacheDirInit);
     }
     return recyclableSingleton;
