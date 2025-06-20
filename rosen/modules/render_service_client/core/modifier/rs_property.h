@@ -223,6 +223,7 @@ protected:
     void MarkNodeDirty();
 
     void UpdateExtendModifierForGeometry(const std::shared_ptr<RSNode>& node);
+    bool NeedUpdateExtendModifierForGeometry(const Vector4f& oldValue, const Vector4f& newValue);
 
     virtual std::shared_ptr<RSRenderPropertyBase> GetRenderProperty() = 0;
 
@@ -489,7 +490,19 @@ public:
         }
 
         RSProperty<T>::MarkNodeDirty();
-        RSProperty<T>::UpdateExtendModifierForGeometry(node);
+#if defined(NODIFIER_NG)
+        if (RSProperty<T>::GetPropertyTypeNG() == ModifierNG::RSPropertyType::BOUNDS ||
+            RSProperty<T>::GetPropertyTypeNG() == ModifierNG::RSPropertyType::FRAME) {
+#else
+        if (RSProperty<T>::GetPropertyType() == RSPropertyType::BOUNDS ||
+            RSProperty<T>::GetPropertyType() == RSPropertyType::FRAME) {
+#endif
+            if constexpr (std::is_same_v<Vector4f, T>) {
+                if (RSProperty<T>::NeedUpdateExtendModifierForGeometry(RSProperty<T>::stagingValue_, value)) {
+                    node->MarkAllExtendModifierDirty();
+                }
+            }
+        }
         auto rsUIContext = node->GetRSUIContext();
         auto implicitAnimator = rsUIContext ? rsUIContext->GetRSImplicitAnimator() :
             RSImplicitAnimatorMap::Instance().GetAnimator(gettid());
