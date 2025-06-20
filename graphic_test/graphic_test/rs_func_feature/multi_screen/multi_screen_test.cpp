@@ -1498,8 +1498,8 @@ GRAPHIC_N_TEST(RSMultiScreenTest, CONTENT_DISPLAY_TEST, MULTI_SCREEN_TEST_023)
     RSVirtualScreenResolution rsVirtualScreenResolution =
         RSInterfaces::GetInstance().GetVirtualScreenResolution(secondScreenId);
 
-    RSInterfaces::GetInstance().SetVirtualScreenResolution(
-        screenId, rsVirtualScreenResolution.GetVirtualScreenWidth(), rsVirtualScreenResolution.GetVirtualScreenHeight());
+    RSInterfaces::GetInstance().SetVirtualScreenResolution(screenId, rsVirtualScreenResolution.GetVirtualScreenWidth(),
+        rsVirtualScreenResolution.GetVirtualScreenHeight());
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
     RSInterfaces::GetInstance().TakeSurfaceCapture(displayNode, callback, captureConfig);
@@ -1634,8 +1634,8 @@ GRAPHIC_N_TEST(RSMultiScreenTest, CONTENT_DISPLAY_TEST, MULTI_SCREEN_TEST_025)
     RSVirtualScreenResolution rsVirtualScreenResolution =
         RSInterfaces::GetInstance().GetVirtualScreenResolution(secondScreenId);
 
-    RSInterfaces::GetInstance().SetVirtualScreenResolution(
-        screenId, rsVirtualScreenResolution.GetVirtualScreenWidth(), rsVirtualScreenResolution.GetVirtualScreenHeight());
+    RSInterfaces::GetInstance().SetVirtualScreenResolution(screenId, rsVirtualScreenResolution.GetVirtualScreenWidth(),
+        rsVirtualScreenResolution.GetVirtualScreenHeight());
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
     RSInterfaces::GetInstance().TakeSurfaceCapture(displayNode, callback, captureConfig);
@@ -1707,8 +1707,8 @@ GRAPHIC_N_TEST(RSMultiScreenTest, CONTENT_DISPLAY_TEST, MULTI_SCREEN_TEST_026)
     RSVirtualScreenResolution rsVirtualScreenResolution =
         RSInterfaces::GetInstance().GetVirtualScreenResolution(secondScreenId);
 
-    RSInterfaces::GetInstance().ResizeVirtualScreen(
-        screenId, rsVirtualScreenResolution.GetVirtualScreenWidth(), rsVirtualScreenResolution.GetVirtualScreenHeight());
+    RSInterfaces::GetInstance().ResizeVirtualScreen(screenId, rsVirtualScreenResolution.GetVirtualScreenWidth(),
+        rsVirtualScreenResolution.GetVirtualScreenHeight());
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
     RSInterfaces::GetInstance().TakeSurfaceCapture(displayNode, callback, captureConfig);
@@ -1780,8 +1780,8 @@ GRAPHIC_N_TEST(RSMultiScreenTest, CONTENT_DISPLAY_TEST, MULTI_SCREEN_TEST_027)
     RSVirtualScreenResolution rsVirtualScreenResolution =
         RSInterfaces::GetInstance().GetVirtualScreenResolution(secondScreenId);
 
-    RSInterfaces::GetInstance().ResizeVirtualScreen(
-        screenId, rsVirtualScreenResolution.GetVirtualScreenWidth(), rsVirtualScreenResolution.GetVirtualScreenHeight());
+    RSInterfaces::GetInstance().ResizeVirtualScreen(screenId, rsVirtualScreenResolution.GetVirtualScreenWidth(),
+        rsVirtualScreenResolution.GetVirtualScreenHeight());
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
     RSInterfaces::GetInstance().TakeSurfaceCapture(displayNode, callback, captureConfig);
