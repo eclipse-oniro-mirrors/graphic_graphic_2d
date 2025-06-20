@@ -23,8 +23,11 @@ namespace OHOS {
 namespace Rosen {
 
 constexpr int64_t MIN_REUSECOUNT = 10;
-constexpr int64_t MAX_REUSECOUNT = 60;
+constexpr int64_t MAX_REUSECOUNT = 20;
 constexpr int32_t MAX_TRY_TIMES = 3;
+constexpr int32_t MIN_UNCHANGE_COUNT = 3;
+constexpr int32_t MAX_UNCHANGE_COUNT = 100;
+constexpr int32_t INIT_WAIT_COUNT = 60;
 
 // mark stable node
 void RSOpincCache::OpincSetInAppStateStart(bool& unchangeMarkInApp)
@@ -61,6 +64,12 @@ void RSOpincCache::OpincQuickMarkStableNode(bool& unchangeMarkInApp, bool& uncha
         NodeCacheStateChange(NodeChangeType::SELF_DIRTY);
     } else if (nodeCacheState_ != NodeCacheState::STATE_UNCHANGE) {
         NodeCacheStateChange(NodeChangeType::KEEP_UNCHANGE);
+    } else {
+        if (waitCount_ > 0) {
+            waitCount_--;
+        } else {
+            unchangeCountUpper_ = MIN_UNCHANGE_COUNT;
+        }
     }
 }
 
@@ -112,6 +121,7 @@ void RSOpincCache::MarkSuggestOpincNode(bool isOpincNode, bool isNeedCalculate)
 {
     isSuggestOpincNode_ = isOpincNode;
     isNeedCalculate_ = isNeedCalculate;
+    NodeCacheStateReset(NodeCacheState::STATE_CHANGE);
 }
 
 bool RSOpincCache::IsSuggestOpincNode() const
@@ -142,6 +152,9 @@ void RSOpincCache::NodeCacheStateChange(NodeChangeType type)
 void RSOpincCache::SetCacheStateByRetrytime()
 {
     tryCacheTimes_++;
+    if (unchangeCountUpper_ > MAX_UNCHANGE_COUNT) {
+        return;
+    }
     if (tryCacheTimes_ < MAX_TRY_TIMES) {
         unchangeCountUpper_ = unchangeCountUpper_ + MIN_REUSECOUNT;
         return;
@@ -151,6 +164,9 @@ void RSOpincCache::SetCacheStateByRetrytime()
 
 void RSOpincCache::NodeCacheStateReset(NodeCacheState nodeCacheState)
 {
+    if (nodeCacheState_ == NodeCacheState::STATE_UNCHANGE) {
+        waitCount_ = INIT_WAIT_COUNT;
+    }
     nodeCacheState_ = nodeCacheState;
     unchangeCount_ = 0;
     isUnchangeMarkInApp_ = false;
@@ -160,6 +176,7 @@ void RSOpincCache::NodeCacheStateReset(NodeCacheState nodeCacheState)
     }
     cacheChangeFlag_ = true;
     isOpincRootFlag_ = false;
+    isOpincSupportFlag_ = true;
 }
 } // namespace Rosen
 } // namespace OHOS

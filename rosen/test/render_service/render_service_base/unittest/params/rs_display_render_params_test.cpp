@@ -287,6 +287,25 @@ HWTEST_F(RSDisplayRenderParamsTest, HasSecLayerInVisibleRectChanged002, TestSize
 }
 
 /**
+ * @tc.name: ResetVirtualExpandAccumulatedParams
+ * @tc.desc: test ResetVirtualExpandAccumulatedParams can set target params to false
+ * @tc.type: FUNC
+ * @tc.require: issueICCV9N
+ */
+HWTEST_F(RSDisplayRenderParamsTest, ResetVirtualExpandAccumulatedParams, TestSize.Level1)
+{
+    constexpr NodeId id = TestSrc::limitNumber::Uint64[0];
+    RSDisplayRenderParams params(id);
+    params.SetAccumulatedDirty(true);
+    ASSERT_TRUE(params.GetAccumulatedDirty());
+    params.SetAccumulatedHdrStatusChanged(true);
+    ASSERT_TRUE(params.GetAccumulatedHdrStatusChanged());
+    params.ResetVirtualExpandAccumulatedParams();
+    ASSERT_FALSE(params.GetAccumulatedDirty());
+    ASSERT_FALSE(params.GetAccumulatedHdrStatusChanged());
+}
+
+/**
  * @tc.name: GetTargetSurfaceRenderNodeDrawable
  * @tc.desc: test result of Set/GetTargetSurfaceRenderNodeDrawable with invalid params
  * @tc.type: FUNC
@@ -324,7 +343,7 @@ HWTEST_F(RSDisplayRenderParamsTest, SetNeedForceUpdateHwcNodes, TestSize.Level1)
 {
     constexpr NodeId id = TestSrc::limitNumber::Uint64[0];
     RSDisplayRenderParams params(id);
-    params.needForceUpdateHwcNodes_ = true;
+    params.needForceUpdateHwcNodes_ = false;
     params.SetNeedForceUpdateHwcNodes(true);
     ASSERT_TRUE(params.needForceUpdateHwcNodes_);
     params.SetNeedForceUpdateHwcNodes(false);

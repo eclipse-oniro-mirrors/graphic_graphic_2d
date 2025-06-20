@@ -51,6 +51,8 @@ public:
     static std::shared_ptr<Typeface> MakeFromFile(const char path[], int index);
     static std::shared_ptr<Typeface> MakeFromFile(const char path[], const FontArguments& fontArguments);
     static std::shared_ptr<Typeface> MakeFromStream(std::unique_ptr<MemoryStream> memoryStream, int32_t index);
+    static std::shared_ptr<Typeface> MakeFromStream(std::unique_ptr<MemoryStream> memoryStream,
+        const FontArguments& fontArguments);
     static std::shared_ptr<Typeface> MakeFromName(const char familyName[], FontStyle fontStyle);
     static std::vector<std::shared_ptr<Typeface>> GetSystemFonts();
 #ifdef RS_ENABLE_GPU
@@ -87,14 +89,8 @@ public:
     static void GetDrawingGlyphIDforTextBlob(const TextBlob* blob, std::vector<uint16_t>& glyphIds);
     static Path GetDrawingPathforTextBlob(uint16_t glyphId, const TextBlob* blob);
     static void GetDrawingPointsForTextBlob(const TextBlob* blob, std::vector<Point>& points);
-    static DrawingSymbolLayersGroups GetSymbolLayersGroups(uint16_t glyphId);
-    static std::vector<std::vector<DrawingPiecewiseParameter>> GetGroupParameters(
-        DrawingAnimationType type, uint16_t groupSum, uint16_t animationMode = 0,
-        DrawingCommonSubType commonSubType = DrawingCommonSubType::DOWN);
     static std::shared_ptr<Blender> CreateWithBlendMode(BlendMode mode);
     static void SetVmaCacheStatus(bool flag);
-    static void RecordCoreTrace(int functionType);
-    static void RecordCoreTrace(int functionType, uint64_t nodeId);
     static void ResetStatsData();
     static void ResetPerfEventData();
     static std::map<std::string, std::vector<uint16_t>> GetBlurStatsData();

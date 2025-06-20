@@ -28,7 +28,7 @@
 #include "ui/rs_proxy_node.h"
 #include "platform/common/rs_log.h"
 #include "render/rs_typeface_cache.h"
-
+#include "feature/capture/rs_capture_pixelmap_manager.h"
 namespace OHOS {
 namespace Rosen {
 #ifdef ROSEN_OHOS
@@ -207,6 +207,7 @@ int32_t RSInterfaces::UnRegisterPointerLuminanceChangeCallback()
 
 int32_t RSInterfaces::SetScreenChangeCallback(const ScreenChangeCallback &callback)
 {
+    ROSEN_LOGI("RSInterfaces::%{public}s", __func__);
     return renderServiceClient_->SetScreenChangeCallback(callback);
 }
 
@@ -222,7 +223,15 @@ bool RSInterfaces::TakeSurfaceCapture(std::shared_ptr<RSSurfaceNode> node,
         ROSEN_LOGE("%{public}s node is nullptr", __func__);
         return false;
     }
-    return renderServiceClient_->TakeSurfaceCapture(node->GetId(), callback, captureConfig);
+    auto bounds = node->GetStagingProperties().GetBounds();
+    Drawing::Rect nodeRect = {0, 0, bounds.z_, bounds.w_};
+    auto clientCapturePixelMap = RSCapturePixelMapManager::GetClientCapturePixelMap(nodeRect,
+        captureConfig, RSUniRenderJudgement::GetUniRenderEnabledType());
+    if (clientCapturePixelMap != nullptr) {
+        captureConfig.isClientPixelMap = true;
+    }
+    return renderServiceClient_->TakeSurfaceCapture(node->GetId(),
+        callback, captureConfig, std::move(clientCapturePixelMap));
 }
 
 bool RSInterfaces::TakeSurfaceCaptureWithBlur(std::shared_ptr<RSSurfaceNode> node,
@@ -239,7 +248,17 @@ bool RSInterfaces::TakeSurfaceCaptureWithBlur(std::shared_ptr<RSSurfaceNode> nod
     RSSurfaceCaptureBlurParam blurParam;
     blurParam.isNeedBlur = true;
     blurParam.blurRadius = blurRadius;
-    return renderServiceClient_->TakeSurfaceCapture(node->GetId(), callback, captureConfig, blurParam);
+
+    auto bounds = node->GetStagingProperties().GetBounds();
+    Drawing::Rect nodeRect = {0, 0, bounds.z_, bounds.w_};
+    auto clientCapturePixelMap = RSCapturePixelMapManager::GetClientCapturePixelMap(nodeRect,
+        captureConfig, RSUniRenderJudgement::GetUniRenderEnabledType());
+    if (clientCapturePixelMap != nullptr) {
+        captureConfig.isClientPixelMap = true;
+    }
+
+    return renderServiceClient_->TakeSurfaceCapture(node->GetId(), callback,
+        captureConfig, std::move(clientCapturePixelMap), blurParam);
 }
 
 bool RSInterfaces::TakeSelfSurfaceCapture(std::shared_ptr<RSSurfaceNode> node,
@@ -383,7 +402,16 @@ bool RSInterfaces::TakeSurfaceCaptureForUI(std::shared_ptr<RSNode> node,
         if (isSync) {
             node->SetTakeSurfaceForUIFlag();
         }
-        return renderServiceClient_->TakeSurfaceCapture(node->GetId(), callback, captureConfig, {}, specifiedAreaRect);
+        auto bounds = node->GetStagingProperties().GetBounds();
+        RSSurfaceCaptureBlurParam blurParam = {};
+        Drawing::Rect nodeRect = {0, 0, bounds.z_, bounds.w_};
+        auto clientCapturePixelMap = RSCapturePixelMapManager::GetClientCapturePixelMap(nodeRect,
+            captureConfig, RSUniRenderJudgement::GetUniRenderEnabledType(), specifiedAreaRect);
+        if (clientCapturePixelMap != nullptr) {
+            captureConfig.isClientPixelMap = true;
+        }
+        return renderServiceClient_->TakeSurfaceCapture(node->GetId(), callback, captureConfig,
+            std::move(clientCapturePixelMap), blurParam, specifiedAreaRect);
     } else {
         return TakeSurfaceCaptureForUIWithoutUni(node->GetId(), callback, scaleX, scaleY);
     }
@@ -415,7 +443,9 @@ bool RSInterfaces::TakeSurfaceCaptureForUIWithConfig(std::shared_ptr<RSNode> nod
         if (captureConfig.isSync) {
             node->SetTakeSurfaceForUIFlag();
         }
-        return renderServiceClient_->TakeSurfaceCapture(node->GetId(), callback, captureConfig, {}, specifiedAreaRect);
+        RSSurfaceCaptureBlurParam blurParam = {};
+        return renderServiceClient_->TakeSurfaceCapture(node->GetId(), callback, captureConfig,
+            nullptr, blurParam, specifiedAreaRect);
     } else {
         return TakeSurfaceCaptureForUIWithoutUni(node->GetId(), callback, captureConfig.scaleX, captureConfig.scaleY);
     }
@@ -444,6 +474,46 @@ std::vector<std::pair<NodeId, std::shared_ptr<Media::PixelMap>>>
     } else {
         ROSEN_LOGE("RSInterfaces::TakeSurfaceCaptureSoloNodeList UniRender is not enabled return");
         return pixelMapIdPairVector;
+    }
+}
+
+bool RSInterfaces::TakeUICaptureInRange(std::shared_ptr<RSNode> beginNode, std::shared_ptr<RSNode> endNode,
+    bool useBeginNodeSize, std::shared_ptr<SurfaceCaptureCallback> callback, float scaleX, float scaleY, bool isSync)
+{
+    if (!beginNode) {
+        ROSEN_LOGW("RSInterfaces::TakeUICaptureInRange beginNode is nullpter return");
+        return false;
+    }
+    if (!endNode) {
+        return TakeSurfaceCaptureForUI(beginNode, callback, scaleX, scaleY, isSync);
+    }
+    // textureExportNode process cmds in renderThread of application, isSync is unnecessary.
+    if (beginNode->IsTextureExportNode()) {
+        ROSEN_LOGD("RSInterfaces::TakeUICaptureInRange beginNode [%{public}" PRIu64
+            "] is textureExportNode, set isSync false", beginNode->GetId());
+        isSync = false;
+    }
+    if (!((beginNode->GetType() == RSUINodeType::ROOT_NODE) ||
+          (beginNode->GetType() == RSUINodeType::CANVAS_NODE) ||
+          (beginNode->GetType() == RSUINodeType::CANVAS_DRAWING_NODE) ||
+          (beginNode->GetType() == RSUINodeType::SURFACE_NODE))) {
+        ROSEN_LOGE("RSInterfaces::TakeUICaptureInRange unsupported node type return");
+        return false;
+    }
+    RSSurfaceCaptureConfig captureConfig;
+    captureConfig.scaleX = scaleX;
+    captureConfig.scaleY = scaleY;
+    captureConfig.captureType = SurfaceCaptureType::UICAPTURE;
+    captureConfig.isSync = isSync;
+    captureConfig.uiCaptureInRangeParam.endNodeId = endNode->GetId();
+    captureConfig.uiCaptureInRangeParam.useBeginNodeSize = useBeginNodeSize;
+    if (RSSystemProperties::GetUniRenderEnabled()) {
+        if (isSync) {
+            beginNode->SetTakeSurfaceForUIFlag();
+        }
+        return renderServiceClient_->TakeUICaptureInRange(beginNode->GetId(), callback, captureConfig);
+    } else {
+        return TakeSurfaceCaptureForUIWithoutUni(beginNode->GetId(), callback, scaleX, scaleY);
     }
 }
 
@@ -506,6 +576,8 @@ bool RSInterfaces::SetGlobalDarkColorMode(bool isDark)
 #ifndef ROSEN_ARKUI_X
 int32_t RSInterfaces::SetPhysicalScreenResolution(ScreenId id, uint32_t width, uint32_t height)
 {
+    RS_LOGI("RSInterfaces:%{public}s, screenId:%{public}" PRIu64 ", width:%{public}u, height:%{public}u", __func__, id,
+            width, height);
     return renderServiceClient_->SetPhysicalScreenResolution(id, width, height);
 }
 
@@ -518,6 +590,11 @@ int32_t RSInterfaces::SetVirtualScreenResolution(ScreenId id, uint32_t width, ui
 bool RSInterfaces::SetVirtualMirrorScreenCanvasRotation(ScreenId id, bool canvasRotation)
 {
     return renderServiceClient_->SetVirtualMirrorScreenCanvasRotation(id, canvasRotation);
+}
+
+int32_t RSInterfaces::SetVirtualScreenAutoRotation(ScreenId id, bool isAutoRotation)
+{
+    return renderServiceClient_->SetVirtualScreenAutoRotation(id, isAutoRotation);
 }
 
 bool RSInterfaces::SetVirtualMirrorScreenScaleMode(ScreenId id, ScreenScaleMode scaleMode)
@@ -814,8 +891,16 @@ void RSInterfaces::SetAppWindowNum(uint32_t num)
     renderServiceClient_->SetAppWindowNum(num);
 }
 
+/**
+ * @brief Display safe Watermark
+ * @param watermarkImg, The image width and height are less than twice the screen size
+ * @param isShow, flag indicating whether to display the watermark identifier(true) or hide it(false)
+ */
 void RSInterfaces::ShowWatermark(const std::shared_ptr<Media::PixelMap> &watermarkImg, bool isShow)
 {
+    if (watermarkImg == nullptr) {
+        ROSEN_LOGE("RSInterfaces::ShowWatermark watermarkImg is nullptr");
+    }
     renderServiceClient_->ShowWatermark(watermarkImg, isShow);
 }
 
@@ -901,6 +986,16 @@ void RSInterfaces::NotifyRefreshRateEvent(const EventInfo& eventInfo)
     renderServiceClient_->NotifyRefreshRateEvent(eventInfo);
 }
 
+void RSInterfaces::SetWindowExpectedRefreshRate(const std::unordered_map<uint64_t, EventInfo>& eventInfos)
+{
+    renderServiceClient_->SetWindowExpectedRefreshRate(eventInfos);
+}
+
+void RSInterfaces::SetWindowExpectedRefreshRate(const std::unordered_map<std::string, EventInfo>& eventInfos)
+{
+    renderServiceClient_->SetWindowExpectedRefreshRate(eventInfos);
+}
+
 bool RSInterfaces::NotifySoftVsyncRateDiscountEvent(uint32_t pid, const std::string &name, uint32_t rateDiscount)
 {
     return renderServiceClient_->NotifySoftVsyncRateDiscountEvent(pid, name, rateDiscount);
@@ -922,6 +1017,11 @@ void RSInterfaces::NotifyDynamicModeEvent(bool enableDynamicMode)
 void RSInterfaces::NotifyHgmConfigEvent(const std::string &eventName, bool state)
 {
     renderServiceClient_->NotifyHgmConfigEvent(eventName, state);
+}
+
+void RSInterfaces::NotifyXComponentExpectedFrameRate(const std::string& id, int32_t expectedFrameRate)
+{
+    renderServiceClient_->NotifyXComponentExpectedFrameRate(id, expectedFrameRate);
 }
 
 void RSInterfaces::DisableCacheForRotation()
@@ -1014,6 +1114,13 @@ void RSInterfaces::SetFreeMultiWindowStatus(bool enable)
     renderServiceClient_->SetFreeMultiWindowStatus(enable);
 }
 
+bool RSInterfaces::RegisterTransactionDataCallback(int32_t pid, uint64_t timeStamp, std::function<void()> callback)
+{
+    RS_LOGD("interface::RegisterTransactionDataCallback, timeStamp: %{public}"
+        PRIu64 " pid: %{public}d", timeStamp, pid);
+    return renderServiceClient_->RegisterTransactionDataCallback(pid, timeStamp, callback);
+}
+
 bool RSInterfaces::RegisterSurfaceBufferCallback(pid_t pid, uint64_t uid,
     std::shared_ptr<SurfaceBufferCallback> callback)
 {
@@ -1045,6 +1152,11 @@ void RSInterfaces::SetLayerTop(const std::string &nodeIdStr, bool isTop)
     renderServiceClient_->SetLayerTop(nodeIdStr, isTop);
 }
 
+void RSInterfaces::SetForceRefresh(const std::string &nodeIdStr, bool isForceRefresh)
+{
+    renderServiceClient_->SetForceRefresh(nodeIdStr, isForceRefresh);
+}
+
 void RSInterfaces::SetColorFollow(const std::string &nodeIdStr, bool isColorFollow)
 {
     renderServiceClient_->SetColorFollow(nodeIdStr, isColorFollow);
@@ -1052,6 +1164,8 @@ void RSInterfaces::SetColorFollow(const std::string &nodeIdStr, bool isColorFoll
 
 void RSInterfaces::NotifyScreenSwitched()
 {
+    RS_TRACE_NAME("NotifyScreenSwitched");
+    ROSEN_LOGI("RSInterfaces::%{public}s", __func__);
     renderServiceClient_->NotifyScreenSwitched();
 }
 
@@ -1085,9 +1199,26 @@ void RSInterfaces::NotifyPageName(const std::string &packageName, const std::str
     }
 }
 
+int32_t RSInterfaces::GetPidGpuMemoryInMB(pid_t pid, float &gpuMemInMB)
+{
+    auto ret = renderServiceClient_->GetPidGpuMemoryInMB(pid, gpuMemInMB);
+    ROSEN_LOGD("RSInterfaces::GetpidGpuMemoryInMB called!");
+    return ret;
+}
+
 bool RSInterfaces::GetHighContrastTextState()
 {
     return renderServiceClient_->GetHighContrastTextState();
+}
+
+bool RSInterfaces::SetBehindWindowFilterEnabled(bool enabled)
+{
+    return renderServiceClient_->SetBehindWindowFilterEnabled(enabled);
+}
+
+bool RSInterfaces::GetBehindWindowFilterEnabled(bool& enabled)
+{
+    return renderServiceClient_->GetBehindWindowFilterEnabled(enabled);
 }
 } // namespace Rosen
 } // namespace OHOS

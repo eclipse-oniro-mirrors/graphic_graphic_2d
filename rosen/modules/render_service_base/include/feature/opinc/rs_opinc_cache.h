@@ -59,10 +59,21 @@ public:
         return unchangeCount_;
     }
 
+    bool OpincGetSupportFlag() const
+    {
+        return isOpincSupportFlag_;
+    }
+
+    void OpincSetSupportFlag(bool supportFlag)
+    {
+        isOpincSupportFlag_ = supportFlag;
+    }
+
 private:
     // opinc state
     NodeCacheState nodeCacheState_ = NodeCacheState::STATE_INIT;
     bool isSuggestOpincNode_ = false;
+    bool isOpincSupportFlag_ = true;
     bool isOpincRootFlag_ = false;
     bool isUnchangeMarkEnable_ = false;
     bool isNeedCalculate_ = false;
@@ -72,6 +83,7 @@ private:
     int unchangeCount_ = 0;
     int unchangeCountUpper_ = 3; // 3 time is the default to cache
     bool cacheChangeFlag_ = false;
+    int waitCount_ = 0;
     // opinc state func
     void NodeCacheStateChange(NodeChangeType type);
     void SetCacheStateByRetrytime();

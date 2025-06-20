@@ -26,14 +26,12 @@
 #include "params/rs_canvas_drawing_render_params.h"
 #include "params/rs_display_render_params.h"
 #include "params/rs_effect_render_params.h"
-#include "params/rs_root_render_params.h"
 #include "params/rs_surface_render_params.h"
 #include "params/rs_rcd_render_params.h"
 #include "pipeline/rs_context.h"
 #include "pipeline/rs_render_node.h"
 #include "pipeline/rs_render_node_gc.h"
 #include "platform/common/rs_log.h"
-#include "utils/graphic_coretrace.h"
 
 #ifdef ROSEN_OHOS
 #include "hisysevent.h"
@@ -150,10 +148,6 @@ void RSRenderNodeDrawableAdapter::InitRenderParams(const std::shared_ptr<const R
             sharedPtr->renderParams_ = std::make_unique<RSCanvasDrawingRenderParams>(sharedPtr->nodeId_);
             sharedPtr->uifirstRenderParams_ = std::make_unique<RSCanvasDrawingRenderParams>(sharedPtr->nodeId_);
             break;
-        case RSRenderNodeType::ROOT_NODE:
-            sharedPtr->renderParams_ = std::make_unique<RSRootRenderParams>(sharedPtr->nodeId_);
-            sharedPtr->uifirstRenderParams_ = std::make_unique<RSRootRenderParams>(sharedPtr->nodeId_);
-            break;
         default:
             sharedPtr->renderParams_ = std::make_unique<RSRenderParams>(sharedPtr->nodeId_);
             sharedPtr->uifirstRenderParams_ = std::make_unique<RSRenderParams>(sharedPtr->nodeId_);
@@ -260,8 +254,6 @@ void RSRenderNodeDrawableAdapter::DrawImpl(Drawing::Canvas& canvas, const Drawin
 
 void RSRenderNodeDrawableAdapter::DrawBackground(Drawing::Canvas& canvas, const Drawing::Rect& rect) const
 {
-    RECORD_GPURESOURCE_CORETRACE_CALLER(Drawing::CoreFunction::
-        RS_RSRENDERNODEDRAWABLEADAPTER_DRAWBACKGROUND);
     DrawRangeImpl(canvas, rect, 0, drawCmdIndex_.backgroundEndIndex_);
 }
 
@@ -281,8 +273,6 @@ void RSRenderNodeDrawableAdapter::DrawLeashWindowBackground(Drawing::Canvas& can
 
 void RSRenderNodeDrawableAdapter::DrawContent(Drawing::Canvas& canvas, const Drawing::Rect& rect) const
 {
-    RECORD_GPURESOURCE_CORETRACE_CALLER(Drawing::CoreFunction::
-        RS_RSRENDERNODEDRAWABLEADAPTER_DRAWCONTENT);
     if (drawCmdList_.empty()) {
         return;
     }
@@ -296,8 +286,6 @@ void RSRenderNodeDrawableAdapter::DrawContent(Drawing::Canvas& canvas, const Dra
 
 void RSRenderNodeDrawableAdapter::DrawChildren(Drawing::Canvas& canvas, const Drawing::Rect& rect) const
 {
-    RECORD_GPURESOURCE_CORETRACE_CALLER(Drawing::CoreFunction::
-        RS_RSRENDERNODEDRAWABLEADAPTER_DRAWCHILDREN);
     if (drawCmdList_.empty()) {
         return;
     }
@@ -311,8 +299,6 @@ void RSRenderNodeDrawableAdapter::DrawChildren(Drawing::Canvas& canvas, const Dr
 
 void RSRenderNodeDrawableAdapter::DrawUifirstContentChildren(Drawing::Canvas& canvas, const Drawing::Rect& rect)
 {
-    RECORD_GPURESOURCE_CORETRACE_CALLER(Drawing::CoreFunction::
-        RS_RSRENDERNODEDRAWABLEADAPTER_DRAWUIFIRSTCONTENTCHILDREN);
     RSRenderNodeSingleDrawableLocker singleLocker(this);
     if (UNLIKELY(!singleLocker.IsLocked())) {
         singleLocker.DrawableOnDrawMultiAccessEventReport(__func__);
@@ -344,8 +330,6 @@ void RSRenderNodeDrawableAdapter::DrawForeground(Drawing::Canvas& canvas, const 
 
 void RSRenderNodeDrawableAdapter::DrawAll(Drawing::Canvas& canvas, const Drawing::Rect& rect) const
 {
-    RECORD_GPURESOURCE_CORETRACE_CALLER(Drawing::CoreFunction::
-        RS_RSRENDERNODEDRAWABLEADAPTER_DRAWALL);
     DrawRangeImpl(canvas, rect, 0, drawCmdIndex_.endIndex_);
 }
 
@@ -508,7 +492,6 @@ void RSRenderNodeDrawableAdapter::DrawBackgroundWithoutFilterAndEffect(
             RS_OPTIONAL_TRACE_NAME_FMT(
                 "ClipHoleForBlur filterRect:[%.2f, %.2f]", bounds.GetWidth(), bounds.GetHeight());
             Drawing::AutoCanvasRestore arc(*curCanvas, true);
-            curCanvas->ResetClip();
             curCanvas->ClipRect(bounds, Drawing::ClipOp::INTERSECT, false);
             curCanvas->Clear(Drawing::Color::COLOR_TRANSPARENT);
             UpdateFilterInfoForNodeGroup(curCanvas);
@@ -651,6 +634,11 @@ const RectI RSRenderNodeDrawableAdapter::GetFilterCachedRegion() const
 void RSRenderNodeDrawableAdapter::SetSkipCacheLayer(bool hasSkipCacheLayer)
 {
     hasSkipCacheLayer_ = hasSkipCacheLayer;
+}
+
+void RSRenderNodeDrawableAdapter::SetChildInBlackList(bool hasChildInBlackList)
+{
+    hasChildInBlackList_ = hasChildInBlackList;
 }
 
 void RSRenderNodeDrawableAdapter::ApplyForegroundColorIfNeed(Drawing::Canvas& canvas, const Drawing::Rect& rect) const

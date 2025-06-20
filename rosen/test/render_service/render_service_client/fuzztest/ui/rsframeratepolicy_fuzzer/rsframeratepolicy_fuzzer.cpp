@@ -21,7 +21,7 @@
 
 #include "feature/hyper_graphic_manager/rs_frame_rate_policy.h"
 #include "transaction/rs_hgm_config_data.h"
-#include "modifier/rs_modifier_type.h"
+#include "modifier/rs_render_property.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -52,7 +52,7 @@ T GetData()
     return object;
 }
 
-std::string GetStringFromData(int strlen)
+std::string GetStringFromData(size_t strlen)
 {
     if (strlen <= 0) {
         return "fuzz";
@@ -139,7 +139,8 @@ bool DoGetExpectedFrameRate(const uint8_t* data, size_t size)
     };
 
     for (const auto& unit : units) {
-        instance->GetExpectedFrameRate(unit, 1.f);
+        float velocity = GetData<float>();
+        instance->GetExpectedFrameRate(unit, velocity);
     }
 
     return true;

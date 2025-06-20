@@ -50,7 +50,7 @@ void Init(shared_ptr<RSUIDirector> rsUiDirector, int width, int height)
     rootNode->SetFrame(0, 0, width, height);
     rootNode->SetBackgroundColor(Drawing::Color::COLOR_GREEN);
 
-    rsUiDirector->SetRoot(rootNode->GetId());
+    rsUiDirector->SetRSRootNode(rootNode->ReinterpretCastTo<RSRootNode>());
     canvasNode = RSCanvasNode::Create();
     canvasNode->SetBounds(50, 50, width - 100, height - 100);
     canvasNode->SetFrame(50, 50, width - 100, height - 100);
@@ -155,9 +155,6 @@ int main()
     auto allocatorType = Media::AllocatorType::SHARE_MEM_ALLOC;
     shared_ptr<Media::PixelMap> bgpixelmap = DecodePixelMap("/data/local/tmp/test_bg.jpg", allocatorType);
     shared_ptr<Media::PixelMap> maskPixelmap = DecodePixelMap("/data/local/tmp/mask.jpg", allocatorType);
-    if (bgpixelmap == nullptr) {
-        return -1;
-    }
 
     cout << "rs pixelmap demo stage 3: bgImage" << endl;
     canvasNode->SetBgImageWidth(500);
@@ -184,7 +181,21 @@ int main()
     cout << "rs pixelmap demo stage 5: mask" << endl;
     auto mask = RSMask::CreatePixelMapMask(maskPixelmap);
     surfaceNode->SetMask(mask);
-    rsUiDirector->SendMessages();
+    std::condition_variable m_cv;
+    std::mutex m_mutex;
+    rsUiDirector->SendMessages([&m_cv]() {
+        m_cv.notify_all();
+    });
+    {
+        using namespace std::chrono_literals;
+        std::unique_lock<std::mutex> m_lock { m_mutex };
+        auto status = m_cv.wait_for(m_lock, 2s);
+        if (status == std::cv_status::timeout) {
+            std::cout << ">>>N \n";
+        } else {
+            std::cout << ">>>Y \n";
+        }
+    }
     sleep(10);
 
     cout << "rs pixelmap demo end!" << endl;

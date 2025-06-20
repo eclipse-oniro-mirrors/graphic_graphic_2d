@@ -33,10 +33,12 @@
 #include "params/rs_surface_render_params.h"
 #include "feature/round_corner_display/rs_rcd_surface_render_node.h"
 #include "feature/round_corner_display/rs_rcd_surface_render_node_drawable.h"
+#include "feature/anco_manager/rs_anco_manager.h"
 #include "platform/common/rs_log.h"
 
 namespace OHOS {
 namespace Rosen {
+constexpr uint32_t HIGHEST_Z_ORDER = 999;
 RSUniRenderProcessor::RSUniRenderProcessor()
     : uniComposerAdapter_(std::make_unique<RSUniRenderComposerAdapter>())
 {
@@ -234,6 +236,10 @@ LayerInfoPtr RSUniRenderProcessor::GetLayerInfo(RSSurfaceRenderParams& params, s
     layer->SetPreBuffer(preBuffer);
     params.SetPreBuffer(nullptr);
     layer->SetZorder(layerInfo.zOrder);
+    if (params.GetTunnelLayerId()) {
+        RS_TRACE_NAME_FMT("%s lpp set tunnel layer type", __func__);
+        layerInfo.layerType = GraphicLayerType::GRAPHIC_LAYER_TYPE_TUNNEL;
+    }
     layer->SetType(layerInfo.layerType);
     layer->SetRotationFixed(params.GetFixRotationByUser());
 
@@ -292,11 +298,15 @@ LayerInfoPtr RSUniRenderProcessor::GetLayerInfo(RSSurfaceRenderParams& params, s
     layer->SetDirtyRegions(dirtyRegions);
 
     layer->SetBlendType(layerInfo.blendType);
+    layer->SetAncoFlags(layerInfo.ancoFlags);
+    RSAncoManager::UpdateLayerSrcRectForAnco(layerInfo.ancoFlags, layerInfo.ancoCropRect, layerInfo.srcRect);
     layer->SetCropRect(layerInfo.srcRect);
     layer->SetGravity(layerInfo.gravity);
     layer->SetTransform(layerInfo.transformType);
     if (layerInfo.layerType == GraphicLayerType::GRAPHIC_LAYER_TYPE_CURSOR) {
         layer->SetTransform(GraphicTransformType::GRAPHIC_ROTATE_NONE);
+        // Set the highest z-order for hardCursor
+        layer->SetZorder(HIGHEST_Z_ORDER);
     }
     auto matrix = GraphicMatrix {layerInfo.matrix.Get(Drawing::Matrix::Index::SCALE_X),
         layerInfo.matrix.Get(Drawing::Matrix::Index::SKEW_X),
@@ -309,6 +319,7 @@ LayerInfoPtr RSUniRenderProcessor::GetLayerInfo(RSSurfaceRenderParams& params, s
     layer->SetLayerSourceTuning(params.GetLayerSourceTuning());
     layer->SetLayerArsr(layerInfo.arsrTag);
     layer->SetLayerCopybit(layerInfo.copybitTag);
+    HandleTunnelLayerParameters(params, layer);
     return layer;
 }
 
@@ -400,6 +411,16 @@ void RSUniRenderProcessor::ProcessRcdSurfaceForRenderThread(DrawableV2::RSRcdSur
         return;
     }
     layers_.emplace_back(layer);
+}
+
+void RSUniRenderProcessor::HandleTunnelLayerParameters(RSSurfaceRenderParams& params, LayerInfoPtr& layer)
+{
+    if (!layer || !params.GetTunnelLayerId()) {
+        return;
+    }
+    layer->SetTunnelLayerId(params.GetTunnelLayerId());
+    layer->SetTunnelLayerProperty(TunnelLayerProperty::TUNNEL_PROP_BUFFER_ADDR |
+        TunnelLayerProperty::TUNNEL_PROP_DEVICE_COMMIT);
 }
 
 #ifdef OHOS_BUILD_ENABLE_MAGICCURSOR

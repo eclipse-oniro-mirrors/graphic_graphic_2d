@@ -16,11 +16,13 @@
 #ifndef HGM_COMMAND_H
 #define HGM_COMMAND_H
 
-#include <inttypes.h>
+#include <cinttypes>
+#include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
+#include "hgm_update_callback.h"
 #include "screen_manager/screen_types.h"
 #include "animation/rs_frame_rate_range.h"
 
@@ -202,10 +204,6 @@ public:
     // <"VIRTUAL_AXX", "4">
     std::unordered_map<std::string, std::string> virtualDisplayConfigs_;
     bool virtualDisplaySwitch_;
-    // <"p3NodeCount", "0">
-    bool p3NodeCountSwitch_ = false;
-    // <"isCoveredSurfaceCloseP3", "0">
-    bool isCoveredSurfaceCloseP3_ = false;
     // <"screen0_LTPO", "LTPO-DEFAULT">
     std::unordered_map<std::string, std::string> screenStrategyConfigs_;
     std::unordered_map<std::string, std::string> sourceTuningConfig_;
@@ -260,6 +258,69 @@ public:
         }
         return 0;
     }
+};
+
+class PolicyConfigVisitor : public HgmUpdateCallback {
+public:
+    PolicyConfigVisitor() = default;
+    ~PolicyConfigVisitor() override = default;
+
+    virtual const PolicyConfigData& GetXmlData() const = 0;
+    virtual void SetSettingModeId(int32_t settingModeId) = 0;
+    virtual void SetXmlModeId(const std::string& xmlModeId) = 0;
+    virtual void ChangeScreen(const std::string& screenConfigType) = 0;
+
+    virtual HgmErrCode GetStrategyConfig(const std::string& strategyName,
+                                         PolicyConfigData::StrategyConfig& strategyRes) const = 0;
+
+    virtual const PolicyConfigData::ScreenSetting& GetScreenSetting() const = 0;
+    virtual const PolicyConfigData::DynamicSettingMap& GetAceSceneDynamicSettingMap() const = 0;
+
+    virtual HgmErrCode GetAppStrategyConfig(const std::string& pkgName,
+                                            int32_t appType,
+                                            PolicyConfigData::StrategyConfig& strategyRes) const = 0;
+
+    virtual HgmErrCode GetDynamicAppStrategyConfig(const std::string& pkgName,
+                                                   PolicyConfigData::StrategyConfig& strategyRes) const = 0;
+
+    virtual std::string GetGameNodeName(const std::string& pkgName) const = 0;
+};
+
+class PolicyConfigVisitorImpl : public PolicyConfigVisitor {
+public:
+    explicit PolicyConfigVisitorImpl(const PolicyConfigData& configData);
+    ~PolicyConfigVisitorImpl() override = default;
+
+    const PolicyConfigData& GetXmlData() const override;
+    void SetSettingModeId(int32_t settingModeId) override;
+    void SetXmlModeId(const std::string& xmlModeId) override;
+    void ChangeScreen(const std::string& screenConfigType) override;
+
+    HgmErrCode GetStrategyConfig(const std::string& strategyName,
+                                 PolicyConfigData::StrategyConfig& strategyRes) const override;
+
+    const PolicyConfigData::ScreenSetting& GetScreenSetting() const override;
+    const PolicyConfigData::DynamicSettingMap& GetAceSceneDynamicSettingMap() const override;
+
+    HgmErrCode GetAppStrategyConfig(const std::string& pkgName,
+                                    int32_t appType,
+                                    PolicyConfigData::StrategyConfig& strategyRes) const override;
+
+    HgmErrCode GetDynamicAppStrategyConfig(const std::string& pkgName,
+                                           PolicyConfigData::StrategyConfig& strategyRes) const override;
+
+    std::string GetGameNodeName(const std::string& pkgName) const override;
+
+protected:
+    std::string SettingModeId2XmlModeId(int32_t settingModeId) const;
+    int32_t XmlModeId2SettingModeId(const std::string& xmlModeId) const;
+    int32_t GetRefreshRateModeName(int32_t refreshRateModeId) const;
+    std::string GetAppStrategyConfigName(const std::string& pkgName, int32_t appType) const;
+
+    const PolicyConfigData configData_;
+    int32_t settingModeId_{ 0 };
+    std::string xmlModeId_{ "-1" }; // auto mode
+    std::string screenConfigType_{ "LTPO-DEFAULT" };
 };
 } // namespace OHOS
 #endif // HGM_COMMAND_H

@@ -73,6 +73,7 @@ HWTEST_F(RSAnimationGroupTest, AddAnimationTest001, TestSize.Level1)
     GTEST_LOG_(INFO) << "RSAnimationGroupTest AddAnimationTest001 end";
 }
 
+#ifndef MODIFIER_NG
 /**
  * @tc.name: AnimationGroupTest002
  * @tc.desc: Verify the AddAnimation of AnimationGroup
@@ -211,6 +212,7 @@ HWTEST_F(RSAnimationGroupTest, AnimationGroupTest004, TestSize.Level1)
     NotifyStartAnimation();
     GTEST_LOG_(INFO) << "RSAnimationGroupTest AnimationGroupTest004 end";
 }
+#endif
 
 /**
  * @tc.name: RemoveAnimationTest001
@@ -253,6 +255,7 @@ HWTEST_F(RSAnimationGroupTest, RemoveAnimationTest001, TestSize.Level1)
     GTEST_LOG_(INFO) << "RSAnimationGroupTest RemoveAnimationTest001 end";
 }
 
+#ifndef MODIFIER_NG
 /**
  * @tc.name: RemoveAnimationTest002
  * @tc.desc: Verify the RemoveAnimation of AnimationGroup
@@ -425,10 +428,7 @@ HWTEST_F(RSAnimationGroupTest, RSNodeAnimateTest001, TestSize.Level1)
     /**
      * @tc.steps: step2. start RSAnimate test
      */
-    EXPECT_TRUE(animations.size() == CORRECT_GROUP_SIZE);
-    if (animations.size() != CORRECT_GROUP_SIZE) {
-        return;
-    }
+    ASSERT_TRUE(animations.size() == CORRECT_GROUP_SIZE);
     EXPECT_FALSE(animations[FIRST_ANIMATION] == nullptr);
     EXPECT_TRUE(animations[FIRST_ANIMATION]->IsRunning());
     EXPECT_FALSE(animations[SECOND_ANIMATION] == nullptr);
@@ -436,6 +436,7 @@ HWTEST_F(RSAnimationGroupTest, RSNodeAnimateTest001, TestSize.Level1)
     NotifyStartAnimation();
     GTEST_LOG_(INFO) << "RSAnimationGroupTest RSNodeAnimateTest001 end";
 }
+#endif
 
 /**
  * @tc.name: RSAnimationGroupStatusTest001
@@ -466,6 +467,7 @@ HWTEST_F(RSAnimationGroupTest, RSAnimationGroupStatusTest001, TestSize.Level1)
     GTEST_LOG_(INFO) << "RSAnimationGroupTest RSAnimationGroupStatusTest001 end";
 }
 
+#ifndef MODIFIER_NG
 /**
  * @tc.name: RSAnimationGroupStatusTest002
  * @tc.desc: Verify the RSAnimationGroupStatus of AnimationGroup
@@ -517,5 +519,6 @@ HWTEST_F(RSAnimationGroupTest, RSAnimationGroupStatusTest002, TestSize.Level1)
     EXPECT_TRUE(animationGroup->IsFinished());
     GTEST_LOG_(INFO) << "RSAnimationGroupTest RSAnimationGroupStatusTest002 end";
 }
+#endif
 } // namespace Rosen
 } // namespace OHOS

@@ -23,6 +23,7 @@
 #include "animation/rs_transition.h"
 #include "animation/rs_implicit_animation_param.h"
 #include "animation/rs_animation_callback.h"
+#include "modifier/rs_property_modifier.h"
 #include "render/rs_path.h"
 
 using namespace testing;
@@ -158,6 +159,7 @@ HWTEST_F(RSNodeAnimateTest, RSNodeAnimateSupplementTest004, TestSize.Level1)
     GTEST_LOG_(INFO) << "RSNodeAnimateTest RSNodeAnimateSupplementTest004 end";
 }
 
+#ifndef MODIFIER_NG
 /**
  * @tc.name: RSNodeAnimateSupplementTest005
  * @tc.desc: Verify the SetMotionPathOption
@@ -269,6 +271,7 @@ HWTEST_F(RSNodeAnimateTest, RSNodeAnimateSupplementTest008, TestSize.Level1)
     node->SetPivotY(10.0f);
     GTEST_LOG_(INFO) << "RSNodeAnimateTest RSNodeAnimateSupplementTest008 end";
 }
+#endif
 
 /**
  * @tc.name: RSNodeAnimateSupplementTest009
@@ -319,6 +322,7 @@ HWTEST_F(RSNodeAnimateTest, RSNodeAnimateSupplementTest010, TestSize.Level1)
     GTEST_LOG_(INFO) << "RSNodeAnimateTest RSNodeAnimateSupplementTest010 end";
 }
 
+#ifndef MODIFIER_NG
 /**
  * @tc.name: RSNodeAnimateSupplementTest011
  * @tc.desc: Verify the AddModifier
@@ -377,6 +381,7 @@ HWTEST_F(RSNodeAnimateTest, RSNodeAnimateSupplementTest012, TestSize.Level1)
 
     GTEST_LOG_(INFO) << "RSNodeAnimateTest RSNodeAnimateSupplementTest012 end";
 }
+#endif
 
 /**
  * @tc.name: RSNodeAnimateSupplementTest013
@@ -486,6 +491,7 @@ HWTEST_F(RSNodeAnimateTest, RSNodeAnimateSupplementTest016, TestSize.Level1)
     GTEST_LOG_(INFO) << "RSAnimationTest RSNodeAnimateSupplementTest016 end";
 }
 
+#ifndef MODIFIER_NG
 /**
  * @tc.name: RSNodeAnimateSupplementTest017
  * @tc.desc: Verify the setcallback of Animation
@@ -537,6 +543,7 @@ HWTEST_F(RSNodeAnimateTest, RSNodeAnimateSupplementTest018, TestSize.Level1)
     node->SetFramePositionY(6.f);
     GTEST_LOG_(INFO) << "RSAnimationTest RSNodeAnimateSupplementTest018 end";
 }
+#endif
 
 /**
  * @tc.name: RSNodeAnimateSupplementTest019
@@ -560,6 +567,7 @@ HWTEST_F(RSNodeAnimateTest, RSNodeAnimateSupplementTest019, TestSize.Level1)
     GTEST_LOG_(INFO) << "RSAnimationTest RSNodeAnimateSupplementTest019 end";
 }
 
+#ifndef MODIFIER_NG
 /**
  * @tc.name: RSNodeAnimateSupplementTest020
  * @tc.desc: Verify the setcallback of Animation
@@ -605,6 +613,7 @@ HWTEST_F(RSNodeAnimateTest, RSNodeAnimateSupplementTest021, TestSize.Level1)
     node->DumpNode(10);
     GTEST_LOG_(INFO) << "RSAnimationTest RSNodeAnimateSupplementTest021 end";
 }
+#endif
 
 /**
  * @tc.name: RSNodeAnimateSupplementTest022
@@ -664,6 +673,99 @@ HWTEST_F(RSNodeAnimateTest, RSNodeAnimateSupplementTest023, TestSize.Level1)
     };
     RSNode::Animate(protocol, RSAnimationTimingCurve::LINEAR, callback2);
     GTEST_LOG_(INFO) << "RSAnimationTest RSNodeAnimateSupplementTest023 end";
+}
+
+/**
+ * @tc.name: RSNodeAnimateSupplementTest024
+ * @tc.desc: Verify CloseImplicitCancelAnimationReturnStatus
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeAnimateTest, RSNodeAnimateSupplementTest024, TestSize.Level1)
+{
+    GTEST_LOG_(INFO) << "RSNodeAnimateTest RSNodeAnimateSupplementTest024 start";
+    auto rsUIContext = std::make_shared<RSUIContext>();
+    auto ret = RSNode::CloseImplicitCancelAnimationReturnStatus(rsUIContext);
+    EXPECT_EQ(ret, CancelAnimationStatus::NO_OPEN_CLOSURE);
+    GTEST_LOG_(INFO) << "RSNodeAnimateTest RSNodeAnimateSupplementTest024 end";
+}
+
+/**
+ * @tc.name: RSNodeAnimateSupplementTest025
+ * @tc.desc: Verify CloseImplicitCancelAnimationReturnStatus
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeAnimateTest, RSNodeAnimateSupplementTest025, TestSize.Level1)
+{
+    GTEST_LOG_(INFO) << "RSNodeAnimateTest RSNodeAnimateSupplementTest025 start";
+    RSAnimationTimingProtocol protocol;
+    RSAnimationTimingCurve curve;
+    RSNode::OpenImplicitAnimation(protocol, curve);
+    auto ret = RSNode::CloseImplicitCancelAnimationReturnStatus();
+    EXPECT_EQ(ret, CancelAnimationStatus::INCORRECT_PARAM_TYPE);
+    GTEST_LOG_(INFO) << "RSNodeAnimateTest RSNodeAnimateSupplementTest025 end";
+}
+
+/**
+ * @tc.name: RSNodeAnimateSupplementTest025
+ * @tc.desc: Verify CloseImplicitCancelAnimationReturnStatus
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeAnimateTest, RSNodeAnimateSupplementTest026, TestSize.Level1)
+{
+    GTEST_LOG_(INFO) << "RSNodeAnimateTest RSNodeAnimateSupplementTest026 start";
+    RSAnimationTimingProtocol protocol;
+    RSAnimationTimingCurve curve;
+    protocol.SetDuration(0);
+    RSNode::OpenImplicitAnimation(protocol, curve);
+    auto ret = RSNode::CloseImplicitCancelAnimationReturnStatus();
+    EXPECT_EQ(ret, CancelAnimationStatus::EMPTY_PENDING_SYNC_LIST);
+    GTEST_LOG_(INFO) << "RSNodeAnimateTest RSNodeAnimateSupplementTest026 end";
+}
+
+#ifndef MODIFIER_NG
+/**
+ * @tc.name: RSNodeAnimateSupplementTest026
+ * @tc.desc: Verify CloseImplicitCancelAnimationReturnStatus
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeAnimateTest, RSNodeAnimateSupplementTest027, TestSize.Level1)
+{
+    GTEST_LOG_(INFO) << "RSNodeAnimateTest RSNodeAnimateSupplementTest027 start";
+    auto node = std::make_shared<RSNodeMock>(false);
+    EXPECT_TRUE(node != nullptr);
+    auto alphaProperty = std::make_shared<RSAnimatableProperty<float>>(0.1f);
+    auto alphaModifier = std::make_shared<RSAlphaModifier>(alphaProperty);
+    node->AddModifier(alphaModifier);
+
+    RSAnimationTimingProtocol protocol;
+    RSAnimationTimingCurve curve;
+    RSNode::Animate(protocol, curve, [&]() {
+        alphaProperty->Set(1.f);
+    });
+    protocol.SetDuration(0);
+    RSNode::OpenImplicitAnimation(protocol, curve);
+    alphaProperty->RequestCancelAnimation();
+    auto ret = RSNode::CloseImplicitCancelAnimationReturnStatus();
+    EXPECT_EQ(ret, CancelAnimationStatus::SUCCESS);
+    GTEST_LOG_(INFO) << "RSNodeAnimateTest RSNodeAnimateSupplementTest027 end";
+}
+#endif
+
+/**
+ * @tc.name: RSNodeAnimateSupplementTest028
+ * @tc.desc: Verify the RSNode::CloseImplicitCancelAnimation with multi-instance
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeAnimateTest, RSNodeAnimateSupplementTest028, TestSize.Level1)
+{
+    GTEST_LOG_(INFO) << "RSNodeAnimateTest RSNodeAnimateSupplementTest028 start";
+    RSAnimationTimingProtocol protocol;
+    RSAnimationTimingCurve curve;
+    auto rsUIContext = std::make_shared<RSUIContext>();
+    RSNode::OpenImplicitAnimation(rsUIContext, protocol, curve);
+    auto ret = RSNode::CloseImplicitCancelAnimation(rsUIContext);
+    EXPECT_FALSE(ret);
+    GTEST_LOG_(INFO) << "RSNodeAnimateTest RSNodeAnimateSupplementTest028 end";
 }
 } // namespace Rosen
 } // namespace OHOS

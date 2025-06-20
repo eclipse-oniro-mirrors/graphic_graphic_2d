@@ -20,6 +20,11 @@
 #include "include/core/SkBitmap.h"
 #include "include/core/SkCanvas.h"
 #include "include/core/HMSymbol.h"
+#ifdef USE_M133_SKIA
+#include "include/gpu/ganesh/GrDirectContext.h"
+#else
+#include "include/gpu/GrDirectContext.h"
+#endif
 #include "include/core/SkImage.h"
 #include "include/core/SkMatrix.h"
 #include "include/core/SkPaint.h"
@@ -62,6 +67,7 @@ public:
     void Bind(const Bitmap& bitmap) override;
 
     void InheriteState(Canvas* canvas) override;
+    void SetParallelRender(bool parallelEnable) override;
 
     Matrix GetTotalMatrix() const override;
     Rect GetLocalClipBounds() const override;

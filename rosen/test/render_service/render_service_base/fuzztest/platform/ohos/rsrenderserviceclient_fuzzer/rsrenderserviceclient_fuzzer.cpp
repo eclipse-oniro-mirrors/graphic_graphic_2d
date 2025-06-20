@@ -33,6 +33,7 @@ namespace OHOS {
 namespace Rosen {
 
 namespace {
+constexpr size_t STR_LEN = 10;
 const uint8_t* g_data = nullptr;
 size_t g_size = 0;
 size_t g_pos;
@@ -353,6 +354,15 @@ bool DoTakeSurfaceCapture(const uint8_t* data, size_t size)
     uint8_t type = GetData<uint8_t>();
     captureConfig.captureType = (SurfaceCaptureType)type;
     captureConfig.isSync = GetData<bool>();
+    uint8_t listSize = GetData<uint8_t>();
+    for (uint8_t i = 0; i < listSize; ++i) {
+        uint64_t listNodeId = GetData<uint64_t>();
+        captureConfig.blackList.push_back(listNodeId);
+    }
+    captureConfig.mainScreenRect.left_ = GetData<float>();
+    captureConfig.mainScreenRect.top_ = GetData<float>();
+    captureConfig.mainScreenRect.right_ = GetData<float>();
+    captureConfig.mainScreenRect.bottom_ = GetData<float>();
 
     client->TakeSurfaceCapture(nodeId, callback, captureConfig);
     return true;
@@ -455,6 +465,24 @@ bool DoCreateVirtualScreen(const uint8_t* data, size_t size)
     int32_t flags = GetData<int32_t>();
     std::vector<NodeId> whiteList;
     client->CreateVirtualScreen(name, width, height, pSurface, mirrorId, flags, whiteList);
+    return true;
+}
+
+bool DoSetVirtualScreenAutoRotation(const uint8_t* data, size_t size)
+{
+    if (data == nullptr) {
+        return false;
+    }
+
+    // initialize
+    g_data = data;
+    g_size = size;
+    g_pos = 0;
+
+    std::shared_ptr<RSRenderServiceClient> client = std::make_shared<RSRenderServiceClient>();
+    ScreenId screenId = GetData<ScreenId>();
+    bool isAutoRotation = GetData<bool>();
+    client->SetVirtualScreenAutoRotation(screenId, isAutoRotation);
     return true;
 }
 
@@ -1732,6 +1760,24 @@ bool DoNotifyHgmConfigEvent(const uint8_t* data, size_t size)
     return true;
 }
 
+bool DoNotifyXComponentExpectedFrameRate(const uint8_t* data, size_t size)
+{
+    if (data == nullptr) {
+        return false;
+    }
+
+    // initialize
+    g_data = data;
+    g_size = size;
+    g_pos = 0;
+
+    std::shared_ptr<RSRenderServiceClient> client = std::make_shared<RSRenderServiceClient>();
+    std::string id = GetStringFromData(STR_LEN);
+    int32_t expectedFrameRate = GetData<int32_t>();
+    client->NotifyXComponentExpectedFrameRate(id, expectedFrameRate);
+    return true;
+}
+
 bool DoSetCacheEnabledForRotation(const uint8_t* data, size_t size)
 {
     if (data == nullptr) {
@@ -1911,6 +1957,23 @@ bool DoSetLayerTop(const uint8_t* data, size_t size)
     std::string nodeIdStr = "nodeIdStr";
     bool isTop = GetData<bool>();
     client->SetLayerTop(nodeIdStr, isTop);
+    return true;
+}
+
+bool DoSetForceRefresh(const uint8_t* data, size_t size)
+{
+    if (data == nullptr) {
+        return false;
+    }
+
+    // initialize
+    g_data = data;
+    g_size = size;
+    g_pos = 0;
+    std::shared_ptr<RSRenderServiceClient> client = std::make_shared<RSRenderServiceClient>();
+    std::string nodeIdStr = "nodeIdStr";
+    bool isForceRefresh = GetData<bool>();
+    client->SetForceRefresh(nodeIdStr, isForceRefresh);
     return true;
 }
 
@@ -2477,6 +2540,42 @@ bool DoSetHidePrivacyContent002(const uint8_t *data, size_t size)
     client->SetAncoForceDoDirect(direct);
     return true;
 }
+
+bool DoSetBehindWindowFilterEnabled(const uint8_t *data, size_t size)
+{
+    if (data == nullptr) {
+        return false;
+    }
+
+    // initialize
+    g_data = data;
+    g_size = size;
+    g_pos = 0;
+
+    std::shared_ptr<RSRenderServiceClient> client = std::make_shared<RSRenderServiceClient>();
+    RSRenderServiceConnectHub::GetInstance()->Destroy();
+    bool enabled = GetData<bool>();
+    client->SetBehindWindowFilterEnabled(enabled);
+    return true;
+}
+
+bool DoGetBehindWindowFilterEnabled(const uint8_t *data, size_t size)
+{
+    if (data == nullptr) {
+        return false;
+    }
+
+    // initialize
+    g_data = data;
+    g_size = size;
+    g_pos = 0;
+
+    std::shared_ptr<RSRenderServiceClient> client = std::make_shared<RSRenderServiceClient>();
+    RSRenderServiceConnectHub::GetInstance()->Destroy();
+    bool enabled = GetData<bool>();
+    client->GetBehindWindowFilterEnabled(enabled);
+    return true;
+}
 } // namespace Rosen
 } // namespace OHOS
 
@@ -2500,6 +2599,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::Rosen::DoGetActiveScreenId(data, size);
     OHOS::Rosen::DoGetAllScreenIds(data, size);
     OHOS::Rosen::DoCreateVirtualScreen(data, size);
+    OHOS::Rosen::DoSetVirtualScreenAutoRotation(data, size);
     OHOS::Rosen::DoSetVirtualScreenBlackList(data, size);
     OHOS::Rosen::DoDropFrameByPid(data, size);
     OHOS::Rosen::DoSetWatermark(data, size);
@@ -2563,6 +2663,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::Rosen::DoNotifyTouchEvent(data, size);
     OHOS::Rosen::DoSetCacheEnabledForRotation(data, size);
     OHOS::Rosen::DoNotifyHgmConfigEvent(data, size);
+    OHOS::Rosen::DoNotifyXComponentExpectedFrameRate(data, size);
     OHOS::Rosen::DoSetOnRemoteDiedCallback(data, size);
     OHOS::Rosen::DoGetActiveDirtyRegionInfo(data, size);
     OHOS::Rosen::DoSetVmaCacheStatus(data, size);
@@ -2572,6 +2673,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::Rosen::DoRegisterSurfaceBufferCallback(data, size);
     OHOS::Rosen::DoTriggerSurfaceBufferCallback(data, size);
     OHOS::Rosen::DoSetLayerTop(data, size);
+    OHOS::Rosen::DoSetForceRefresh(data, size);
     OHOS::Rosen::DoExecuteSynchronousTask002(data, size);
     OHOS::Rosen::DoGetUniRenderEnabled(data, size);
     OHOS::Rosen::DoCreateNode002(data, size);
@@ -2590,5 +2692,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::Rosen::DoRegisterOcclusionChangeCallback002(data, size);
     OHOS::Rosen::DoSetAppWindowNum(data, size);
     OHOS::Rosen::DoSetHidePrivacyContent002(data, size);
+    OHOS::Rosen::DoSetBehindWindowFilterEnabled(data, size);
+    OHOS::Rosen::DoGetBehindWindowFilterEnabled(data, size);
     return 0;
 }

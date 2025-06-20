@@ -40,6 +40,8 @@ public:
 
     void UpdateRecording(std::shared_ptr<Drawing::DrawCmdList> drawCmds,
         RSModifierType type, bool isSingleFrameComposer = false);
+    void UpdateRecordingNG(std::shared_ptr<Drawing::DrawCmdList> drawCmds,
+        ModifierNG::RSModifierType type, bool isSingleFrameComposer = false);
     void ClearRecording();
 
     void ProcessTransitionBeforeChildren(RSPaintFilterCanvas& canvas) override;
@@ -77,12 +79,15 @@ public:
     void SetLinkedRootNodeId(NodeId rootNodeId);
     RSB_EXPORT NodeId GetLinkedRootNodeId() const;
 
+    void UpdateDisplayHDRNodeList(bool flag, NodeId displayNodeId) const;
+
 protected:
     explicit RSCanvasRenderNode(NodeId id,
         const std::weak_ptr<RSContext>& context = {}, bool isTextureExportNode = false);
 
 private:
     void ApplyDrawCmdModifier(RSModifierContext& context, RSModifierType type);
+    void ApplyDrawCmdModifier(RSModifierContext& context, ModifierNG::RSModifierType type);
     void InternalDrawContent(RSPaintFilterCanvas& canvas, bool needApplyMatrix);
 
     void PropertyDrawableRender(RSPaintFilterCanvas& canvas, bool includeProperty);
@@ -92,6 +97,7 @@ private:
 
     friend class RSCanvasNodeCommandHelper;
     friend class RSColorfulShadowDrawable;
+    friend class RSRenderNodeAllocator;
     friend class RSRenderTransition;
     friend class RSPropertiesPainter;
     bool hasHdrPresent_ = false;

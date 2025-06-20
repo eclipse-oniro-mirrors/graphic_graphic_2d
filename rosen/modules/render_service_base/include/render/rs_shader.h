@@ -29,6 +29,8 @@ public:
         DRAWING = 0,
         DOT_MATRIX,
         FLOW_LIGHT_SWEEP,
+        COMPLEX,
+        BORDER_LIGHT,
     };
 
     RSShader() = default;
@@ -39,6 +41,7 @@ public:
 
     void SetDrawingShader(const std::shared_ptr<Drawing::ShaderEffect>& drShader);
     virtual void MakeDrawingShader(const RectF& rect, float progress) {};
+    virtual void MakeDrawingShader(const RectF& rect, std::vector<float> params) {};
     virtual const std::shared_ptr<Drawing::ShaderEffect>& GetDrawingShader() const;
 
     virtual bool Marshalling(Parcel& parcel);

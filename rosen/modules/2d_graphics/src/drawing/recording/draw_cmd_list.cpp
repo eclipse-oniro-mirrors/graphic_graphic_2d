@@ -17,10 +17,10 @@
 
 #include <cstddef>
 #include <memory>
+#include <unordered_set>
 
 #include "recording/draw_cmd.h"
 #include "recording/recording_canvas.h"
-#include "utils/graphic_coretrace.h"
 #include "utils/log.h"
 #include "utils/performanceCaculate.h"
 
@@ -28,7 +28,33 @@ namespace OHOS {
 namespace Rosen {
 namespace Drawing {
 namespace {
-    constexpr uint32_t DRAWCMDLIST_OPSIZE_COUNT_LIMIT = 50000;
+// WhiteList for hybridRender DrawOpItemTypes
+const std::unordered_set<uint32_t> HYBRID_RENDER_DRAW_OPITEM_TYPES = {
+    DrawOpItem::OPITEM_HEAD,
+    DrawOpItem::PATH_OPITEM,
+    DrawOpItem::TEXT_BLOB_OPITEM,
+    DrawOpItem::SYMBOL_OPITEM,
+    DrawOpItem::CLIP_RECT_OPITEM,
+    DrawOpItem::CLIP_IRECT_OPITEM,
+    DrawOpItem::CLIP_ROUND_RECT_OPITEM,
+    DrawOpItem::CLIP_PATH_OPITEM,
+    DrawOpItem::CLIP_REGION_OPITEM,
+    DrawOpItem::SET_MATRIX_OPITEM,
+    DrawOpItem::CONCAT_MATRIX_OPITEM,
+    DrawOpItem::TRANSLATE_OPITEM,
+    DrawOpItem::SCALE_OPITEM,
+    DrawOpItem::ROTATE_OPITEM,
+    DrawOpItem::SHEAR_OPITEM,
+    DrawOpItem::FLUSH_OPITEM,
+    DrawOpItem::CLEAR_OPITEM,
+    DrawOpItem::SAVE_OPITEM,
+    DrawOpItem::SAVE_LAYER_OPITEM,
+    DrawOpItem::RESTORE_OPITEM,
+    DrawOpItem::DISCARD_OPITEM,
+    DrawOpItem::CLIP_ADAPTIVE_ROUND_RECT_OPITEM,
+    DrawOpItem::HYBRID_RENDER_PIXELMAP_SIZE_OPITEM,
+};
+constexpr uint32_t DRAWCMDLIST_OPSIZE_COUNT_LIMIT = 50000;
 }
 
 std::shared_ptr<DrawCmdList> DrawCmdList::CreateFromData(const CmdListData& data, bool isCopy)
@@ -174,7 +200,15 @@ void DrawCmdList::Dump(std::string& out)
 {
     bool found = false;
     std::lock_guard<std::recursive_mutex> lock(mutex_);
-    for (auto& item : drawOpItems_) {
+    std::vector<std::shared_ptr<DrawOpItem>> dumpDrawOpItems;
+    size_t lastOpGenSize = lastOpGenSize_;
+    if (drawOpItems_.empty() && !IsEmpty()) {
+        UnmarshallingDrawOpsSimple(dumpDrawOpItems, lastOpGenSize);
+    } else {
+        dumpDrawOpItems = drawOpItems_;
+    }
+    
+    for (auto& item : dumpDrawOpItems) {
         if (item == nullptr) {
             continue;
         }
@@ -187,19 +221,16 @@ void DrawCmdList::Dump(std::string& out)
     }
 }
 
-void DrawCmdList::MarshallingDrawOps(Drawing::DrawCmdList *cmdlist)
+void DrawCmdList::MarshallingDrawOps()
 {
     if (mode_ == DrawCmdList::UnmarshalMode::IMMEDIATE) {
         return;
-    }
-    if (!cmdlist) {
-        cmdlist = this;
     }
     std::lock_guard<std::recursive_mutex> lock(mutex_);
     if (replacedOpListForVector_.empty()) {
         for (auto& op : drawOpItems_) {
             if (op) {
-                op->Marshalling(*cmdlist);
+                op->Marshalling(*this);
             }
         }
         return;
@@ -211,7 +242,7 @@ void DrawCmdList::MarshallingDrawOps(Drawing::DrawCmdList *cmdlist)
     uint32_t opReplaceIndex = 0;
     for (auto index = 0u; index < drawOpItems_.size(); ++index) {
         if (drawOpItems_[index]) {
-            drawOpItems_[index]->Marshalling(*cmdlist);
+            drawOpItems_[index]->Marshalling(*this);
         }
         if (index == static_cast<size_t>(replacedOpListForVector_[opReplaceIndex].first)) {
             opIndexForCache[opReplaceIndex] = lastOpItemOffset_.value();
@@ -220,9 +251,36 @@ void DrawCmdList::MarshallingDrawOps(Drawing::DrawCmdList *cmdlist)
     }
     for (auto index = 0u; index < replacedOpListForVector_.size(); ++index) {
         if (replacedOpListForVector_[index].second) {
-            replacedOpListForVector_[index].second->Marshalling(*cmdlist);
+            replacedOpListForVector_[index].second->Marshalling(*this);
         }
         replacedOpListForBuffer_.emplace_back(opIndexForCache[index], lastOpItemOffset_.value());
+    }
+}
+
+void DrawCmdList::ProfilerMarshallingDrawOps(Drawing::DrawCmdList *cmdlist)
+{
+    if (mode_ == DrawCmdList::UnmarshalMode::IMMEDIATE) {
+        return;
+    }
+    if (!cmdlist) {
+        return;
+    }
+
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+    for (auto& op : drawOpItems_) {
+        if (!op) {
+            continue;
+        }
+        if (op->GetType() == DrawOpItem::IMAGE_WITH_PARM_OPITEM) {
+            continue;
+        }
+        if (op->GetType() == DrawOpItem::IMAGE_OPITEM) {
+            continue;
+        }
+        if (op->GetType() == DrawOpItem::IMAGE_RECT_OPITEM) {
+            continue;
+        }
+        op->Marshalling(*cmdlist);
     }
 }
 
@@ -278,6 +336,7 @@ void DrawCmdList::UnmarshallingDrawOps(uint32_t* opItemCount)
     do {
         count++;
         if (opItemCount && ++(*opItemCount) > MAX_OPITEMSIZE) {
+            LOGE("DrawCmdList::UnmarshallingOps failed, opItem count exceed limit");
             break;
         }
         void* itemPtr = opAllocator_.OffsetToAddr(offset, sizeof(OpItem));
@@ -287,7 +346,7 @@ void DrawCmdList::UnmarshallingDrawOps(uint32_t* opItemCount)
             break;
         }
         uint32_t type = curOpItemPtr->GetType();
-        auto op = player.Unmarshalling(type, itemPtr, opAllocator_.GetSize() - offset);
+        auto op = player.Unmarshalling(type, itemPtr, opAllocator_.GetSize() - offset, isReplayMode);
         if (!op) {
             if (curOpItemPtr->GetNextOpItemOffset() < offset + sizeof(OpItem)) {
                 break;
@@ -305,7 +364,7 @@ void DrawCmdList::UnmarshallingDrawOps(uint32_t* opItemCount)
             }
             auto* replaceOpItemPtr = static_cast<OpItem*>(replacePtr);
             size_t avaliableSize = opAllocator_.GetSize() - replacedOpListForBuffer_[opReplaceIndex].second;
-            auto replaceOp = player.Unmarshalling(replaceOpItemPtr->GetType(), replacePtr, avaliableSize);
+            auto replaceOp = player.Unmarshalling(replaceOpItemPtr->GetType(), replacePtr, avaliableSize, isReplayMode);
             if (replaceOp) {
                 drawOpItems_.emplace_back(replaceOp);
                 replacedOpListForVector_.emplace_back((drawOpItems_.size() - 1), op);
@@ -340,8 +399,6 @@ void DrawCmdList::UnmarshallingDrawOps(uint32_t* opItemCount)
 
 void DrawCmdList::Playback(Canvas& canvas, const Rect* rect)
 {
-    RECORD_GPURESOURCE_CORETRACE_CALLER(Drawing::CoreFunction::
-        GRAPHIC2D_DRAWCMDLIST_PLAYBACK);
     if (canvas.GetUICapture() && noNeedUICaptured_) {
         return;
     }
@@ -596,16 +653,17 @@ void DrawCmdList::PlaybackByVector(Canvas& canvas, const Rect* rect)
     canvas.DetachPaint();
 }
 
-bool DrawCmdList::UnmarshallingDrawOpsSimple()
+bool DrawCmdList::UnmarshallingDrawOpsSimple(
+    std::vector<std::shared_ptr<DrawOpItem>>& drawOpItems, size_t& lastOpGenSize)
 {
     if (opAllocator_.GetSize() <= offset_) {
         return false;
     }
     size_t offset = offset_;
-    if (lastOpGenSize_ != opAllocator_.GetSize()) {
+    if (lastOpGenSize != opAllocator_.GetSize()) {
         uint32_t count = 0;
         UnmarshallingPlayer player = { *this };
-        drawOpItems_.clear();
+        drawOpItems.clear();
         do {
             count++;
             void* itemPtr = opAllocator_.OffsetToAddr(offset, sizeof(OpItem));
@@ -614,7 +672,7 @@ bool DrawCmdList::UnmarshallingDrawOpsSimple()
                 break;
             }
             uint32_t type = curOpItemPtr->GetType();
-            if (auto op = player.Unmarshalling(type, itemPtr, opAllocator_.GetSize() - offset)) {
+            if (auto op = player.Unmarshalling(type, itemPtr, opAllocator_.GetSize() - offset, isReplayMode)) {
                 drawOpItems_.emplace_back(op);
             }
             if (curOpItemPtr->GetNextOpItemOffset() < offset + sizeof(OpItem)) {
@@ -622,14 +680,14 @@ bool DrawCmdList::UnmarshallingDrawOpsSimple()
             }
             offset = curOpItemPtr->GetNextOpItemOffset();
         } while (offset != 0 && count <= MAX_OPITEMSIZE);
-        lastOpGenSize_ = opAllocator_.GetSize();
+        lastOpGenSize = opAllocator_.GetSize();
     }
     return true;
 }
 
 void DrawCmdList::PlaybackByBuffer(Canvas& canvas, const Rect* rect)
 {
-    if (!UnmarshallingDrawOpsSimple()) {
+    if (!UnmarshallingDrawOpsSimple(drawOpItems_, lastOpGenSize_)) {
         return;
     }
     uint32_t opCount = 0;
@@ -646,18 +704,54 @@ void DrawCmdList::PlaybackByBuffer(Canvas& canvas, const Rect* rect)
     canvas.DetachPaint();
 }
 
-bool DrawCmdList::GetBounds(Rect& rect)
+void DrawCmdList::GetBounds(Rect& rect)
 {
     std::lock_guard<std::recursive_mutex> lock(mutex_);
-    if (!UnmarshallingDrawOpsSimple()) {
-        return false;
-    }
-    for (auto op : drawOpItems_) {
-        if (op == nullptr || op->GetType() != DrawOpItem::HYBRID_RENDER_PIXELMAP_SIZE_OPITEM) {
+    for (const auto& op : drawOpItems_) {
+        if (op == nullptr) {
             continue;
         }
-        HybridRenderPixelMapSizeOpItem* sizeOp = static_cast<HybridRenderPixelMapSizeOpItem*>(op.get());
-        rect = RectF(0.0f, 0.0f, sizeOp->GetWidth(), sizeOp->GetHeight());
+        switch (op->GetType()) {
+            case DrawOpItem::HYBRID_RENDER_PIXELMAP_SIZE_OPITEM: {
+                HybridRenderPixelMapSizeOpItem *sizeOp = static_cast<HybridRenderPixelMapSizeOpItem*>(op.get());
+                rect.Join(Rect(0, 0, sizeOp->GetWidth(), sizeOp->GetHeight()));
+                break;
+            }
+            default:
+                break;
+        }
+    }
+}
+
+bool DrawCmdList::IsHybridRenderEnabled(uint32_t maxPixelMapWidth, uint32_t maxPixelMapHeight)
+{
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+    // canvasdrawingnode does not support switching from enable to disable
+    if (hybridRenderType_ == HybridRenderType::CANVAS) {
+        return true;
+    }
+    if (!UnmarshallingDrawOpsSimple(drawOpItems_, lastOpGenSize_)) {
+        return false;
+    }
+    // check whiteList
+    for (const auto& op : drawOpItems_) {
+        if (op == nullptr) {
+            continue;
+        }
+        if (HYBRID_RENDER_DRAW_OPITEM_TYPES.find(op->GetType()) == HYBRID_RENDER_DRAW_OPITEM_TYPES.end()) {
+            return false;
+        }
+    }
+    // check size
+    Drawing::Rect bounds;
+    int32_t width = GetWidth();
+    int32_t height = GetHeight();
+    GetBounds(bounds);
+    width = std::max(width, DrawingFloatSaturate2Int(ceilf(bounds.GetWidth())));
+    height = std::max(height, DrawingFloatSaturate2Int(ceilf(bounds.GetHeight())));
+    if (width < 0 || height < 0 ||
+        static_cast<uint32_t>(width) > maxPixelMapWidth || static_cast<uint32_t>(height) > maxPixelMapHeight) {
+        return false;
     }
     return true;
 }
@@ -750,6 +844,12 @@ size_t DrawCmdList::GetSize()
 void DrawCmdList::SetCanvasDrawingOpLimitEnable(bool isEnable)
 {
     isCanvasDrawingOpLimitEnabled_ = isEnable;
+}
+
+const std::vector<std::shared_ptr<DrawOpItem>> DrawCmdList::GetDrawOpItems() const
+{
+    std::vector<std::shared_ptr<DrawOpItem>> drawOpItems(drawOpItems_);
+    return drawOpItems;
 }
 } // namespace Drawing
 } // namespace Rosen

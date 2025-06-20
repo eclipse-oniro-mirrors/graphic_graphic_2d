@@ -32,11 +32,19 @@ std::unordered_map<NodeId, std::unordered_set<NodeId>> RSModifiersDraw::offTreeN
 std::mutex RSModifiersDraw::nodeStatusMutex_;
 std::unordered_set<NodeId> RSModifiersDraw::foregroundRootSet_;
 std::mutex RSModifiersDraw::foregroundRootSetMutex_;
+std::vector<DestroySemaphoreInfo*> RSModifiersDraw::semaphoreInfoVec_;
+std::mutex RSModifiersDraw::semaphoreInfoMutex_;
+std::unordered_set<uint32_t> RSModifiersDraw::typesToSave_;
 
 sptr<SurfaceBuffer> RSModifiersDraw::DmaMemAlloc(
     int32_t width, int32_t height, const std::unique_ptr<Media::PixelMap>& pixelMap)
 {
     return nullptr;
+}
+
+void RSModifiersDraw::PurgeContextResource()
+{
+    return;
 }
 
 sptr<SurfaceBuffer> RSModifiersDraw::CreateSurfaceBuffer(
@@ -54,6 +62,16 @@ std::shared_ptr<Drawing::Surface> RSModifiersDraw::CreateSurfaceFromCpuContext(
     const std::unique_ptr<Media::PixelMap>& pixelMap)
 {
     return nullptr;
+}
+
+void RSModifiersDraw::ClearCanvasDrawingNodeMemory()
+{
+    return;
+}
+
+void RSModifiersDraw::ClearDrawingContextMemory()
+{
+    return;
 }
 
 std::shared_ptr<Drawing::Surface> RSModifiersDraw::CreateSurface(std::unique_ptr<Media::PixelMap>& pixelMap,
@@ -143,13 +161,23 @@ std::unique_ptr<Media::PixelMap> RSModifiersDraw::GetPixelMapByNodeId(NodeId nod
     return nullptr;
 }
 
+void RSModifiersDraw::AddDrawRegions(NodeId nodeId, std::shared_ptr<RectF> rect)
+{
+    return;
+}
+
+void RSModifiersDraw::EraseDrawRegions(NodeId nodeId)
+{
+    return;
+}
+
 void RSModifiersDraw::RemoveSurfaceByNodeId(NodeId nodeId, bool postTask)
 {
     return;
 }
 
 bool RSModifiersDraw::ResetSurfaceByNodeId(
-    int32_t width, int32_t height, NodeId nodeId, bool needResetMatrix, bool postTask)
+    int32_t width, int32_t height, NodeId nodeId, bool needResetOpItems, bool postTask)
 {
     return false;
 }
@@ -162,6 +190,11 @@ bool RSModifiersDraw::CheckNodeIsOffTree(NodeId nodeId)
 void RSModifiersDraw::CreateNextFrameSurface()
 {
     return;
+}
+
+bool RSModifiersDraw::CheckIfModifiersDrawThreadInited()
+{
+    return false;
 }
 
 void RSModifiersDraw::InsertForegroundRoot(NodeId nodeId)
@@ -180,6 +213,11 @@ bool RSModifiersDraw::IsBackground()
 }
 
 void RSModifiersDraw::ClearBackGroundMemory()
+{
+    return;
+}
+
+void RSModifiersDraw::DestroySemaphore()
 {
     return;
 }

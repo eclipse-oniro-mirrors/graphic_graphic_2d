@@ -106,7 +106,47 @@ void NativeDrawingTypefaceTest002(const uint8_t* data, size_t size)
     OH_Drawing_TypefaceDestroy(typeface);
 }
 
+void NativeDrawingTypefaceTest003(const uint8_t* data, size_t size)
+{
+    if (data == nullptr) {
+        return;
+    }
+    // initialize
+    g_data = data;
+    g_size = size;
+    g_pos = 0;
 
+    uint32_t str_size = GetObject<uint32_t>() % MAX_ARRAY_SIZE;
+    char* axis = new char[str_size + 1];
+    for (size_t i = 0; i < str_size; i++) {
+        axis[i] = GetObject<char>();
+    }
+    axis[str_size] = 0;
+    float value = GetObject<float>();
+    OH_Drawing_FontArguments* fontArguments = OH_Drawing_FontArgumentsCreate();
+    OH_Drawing_FontArgumentsAddVariation(fontArguments, axis, value);
+
+    str_size = GetObject<uint32_t>() % MAX_ARRAY_SIZE;
+    char* path = new char[str_size + 1];
+    for (size_t i = 0; i < str_size; i++) {
+        path[i] = GetObject<char>();
+    }
+    path[str_size] = 0;
+    OH_Drawing_Typeface* typeFace = OH_Drawing_TypefaceCreateFromFileWithArguments(path, fontArguments);
+    OH_Drawing_Typeface* typeFace2 = OH_Drawing_TypefaceCreateFromCurrent(typeFace, fontArguments);
+
+    if (axis != nullptr) {
+        delete [] axis;
+        axis = nullptr;
+    }
+    if (path != nullptr) {
+        delete [] path;
+        path = nullptr;
+    }
+    OH_Drawing_FontArgumentsDestroy(fontArguments);
+    OH_Drawing_TypefaceDestroy(typeFace);
+    OH_Drawing_TypefaceDestroy(typeFace2);
+}
 } // namespace Drawing
 } // namespace Rosen
 } // namespace OHOS
@@ -117,5 +157,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     /* Run your code on data */
     OHOS::Rosen::Drawing::NativeDrawingTypefaceTest001(data, size);
     OHOS::Rosen::Drawing::NativeDrawingTypefaceTest002(data, size);
+    OHOS::Rosen::Drawing::NativeDrawingTypefaceTest003(data, size);
     return 0;
 }

@@ -24,7 +24,9 @@
 #include "pipeline/main_thread/rs_main_thread.h"
 #include "pipeline/rs_task_dispatcher.h"
 #include "memory/rs_memory_manager.h"
-#include "utils/graphic_coretrace.h"
+
+#undef LOG_TAG
+#define LOG_TAG "RSSubThreadManager"
 
 namespace OHOS::Rosen {
 static constexpr uint32_t SUB_THREAD_NUM = 3;
@@ -262,22 +264,20 @@ std::unordered_map<uint32_t, pid_t> RSSubThreadManager::GetReThreadIndexMap() co
 void RSSubThreadManager::ScheduleRenderNodeDrawable(
     std::shared_ptr<DrawableV2::RSSurfaceRenderNodeDrawable> nodeDrawable)
 {
-    RECORD_GPURESOURCE_CORETRACE_CALLER(Drawing::CoreFunction::
-        RS_RSSUBTHREADMANAGER_SCHEDULERENDERNODEDRAWABLE);
     if (UNLIKELY(!nodeDrawable)) {
-        RS_LOGE("RSSubThreadManager::ScheduleRenderNodeDrawable nodeDrawable nullptr");
+        RS_LOGE("ScheduleRenderNodeDrawable nodeDrawable nullptr");
         return;
     }
     const auto& param = nodeDrawable->GetRenderParams();
     if (UNLIKELY(!param)) {
-        RS_LOGE("RSSubThreadManager::ScheduleRenderNodeDrawable param nullptr");
+        RS_LOGE("ScheduleRenderNodeDrawable param nullptr");
         return;
     }
 
     const auto& rtUniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
     // rtUniParam will not be updated before UnblockMainThread
     if (UNLIKELY(!rtUniParam)) {
-        RS_LOGE("RSSubThreadManager::ScheduleRenderNodeDrawable renderThread param nullptr");
+        RS_LOGE("ScheduleRenderNodeDrawable renderThread param nullptr");
         return;
     }
 
@@ -315,7 +315,7 @@ void RSSubThreadManager::ScheduleRenderNodeDrawable(
     subThread->PostTask([subThread, nodeDrawable, tid, submittedFrameCount,
                             uniParam = new RSRenderThreadParams(*rtUniParam)]() mutable {
         if (UNLIKELY(!uniParam)) {
-            RS_LOGE("RSSubThreadManager::ScheduleRenderNodeDrawable subThread param is nullptr");
+            RS_LOGE("ScheduleRenderNodeDrawable subThread param is nullptr");
             return;
         }
 
@@ -344,12 +344,31 @@ void RSSubThreadManager::ScheduleReleaseCacheSurfaceOnly(
     }
     auto bindThreadIdx = nodeDrawable->GetRsSubThreadCache().GetLastFrameUsedThreadIndex();
     if (!threadIndexMap_.count(bindThreadIdx)) {
-        RS_LOGE("RSSubThreadManager::ScheduleReleaseCacheSurface invalid thread idx");
+        RS_LOGE("ScheduleReleaseCacheSurface invalid thread idx");
         return;
     }
     auto nowIdx = threadIndexMap_[bindThreadIdx];
 
     auto subThread = threadList_[nowIdx];
     subThread->PostTask([subThread, nodeDrawable]() { subThread->ReleaseCacheSurfaceOnly(nodeDrawable); });
+}
+
+void RSSubThreadManager::GetGpuMemoryForReport(std::unordered_map<pid_t, size_t>& gpuMemoryOfPid)
+{
+    if (OHOS::Rosen::RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) {
+        return;
+    }
+    for (auto& subThread : threadList_) {
+        if (!subThread) {
+            continue;
+        }
+        std::unordered_map<pid_t, size_t> gpuMemOfPid = subThread->GetGpuMemoryOfPid();
+        for (auto& [pid, memSize] : gpuMemOfPid) {
+            gpuMemoryOfPid[pid] += memSize;
+            if (memSize == 0) {
+                subThread->ErasePidOfGpuMemory(pid);
+            }
+        }
+    }
 }
 } // namespace OHOS::Rosen

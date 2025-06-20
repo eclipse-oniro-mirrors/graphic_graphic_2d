@@ -21,7 +21,6 @@
 
 namespace OHOS {
 namespace Rosen {
-
 RSTextureExport::RSTextureExport(std::shared_ptr<RSNode> rootNode, SurfaceId surfaceId)
 {
     if (rootNode == nullptr) {
@@ -36,7 +35,7 @@ RSTextureExport::RSTextureExport(std::shared_ptr<RSNode> rootNode, SurfaceId sur
         .isTextureExportNode = true,
         .surfaceId = surfaceId_
     };
-    virtualSurfaceNode_ = RSSurfaceNode::Create(config, false, rsUiDirector_->GetRSUIContext());
+    virtualSurfaceNode_ = RSSurfaceNode::Create(config, false, rootNode_->GetRSUIContext());
     rootNode_->SyncTextureExport(true);
 }
 
@@ -47,13 +46,12 @@ RSTextureExport::~RSTextureExport()
 
 bool RSTextureExport::DoTextureExport()
 {
-    auto rsUIContext = rsUiDirector_->GetRSUIContext();
     if (!rootNode_->IsTextureExportNode()) {
         rootNode_->SyncTextureExport(true);
     }
     rsUiDirector_->StartTextureExport();
     if (rootNode_->GetType() != RSUINodeType::ROOT_NODE) {
-        virtualRootNode_ = RSRootNode::Create(false, true, rsUIContext);
+        virtualRootNode_ = RSRootNode::Create(false, true, rootNode_->GetRSUIContext());
         auto bounds = rootNode_->GetStagingProperties().GetBounds();
         virtualRootNode_->SetBounds({-bounds.x_, -bounds.y_, bounds.z_, bounds.w_});
         auto frame = rootNode_->GetStagingProperties().GetFrame();
@@ -64,9 +62,9 @@ bool RSTextureExport::DoTextureExport()
         return false;
     }
     if (rootNode_->GetType() == RSUINodeType::ROOT_NODE) {
-        rsUiDirector_->SetRoot(rootNode_->GetId());
+        rsUiDirector_->SetRSRootNode(RSBaseNode::ReinterpretCast<RSRootNode>(rootNode_));
     } else {
-        rsUiDirector_->SetRoot(virtualRootNode_->GetId());
+        rsUiDirector_->SetRSRootNode(RSBaseNode::ReinterpretCast<RSRootNode>(virtualRootNode_));
         virtualRootNode_->AddChild(rootNode_);
     }
     rsUiDirector_->SetRSSurfaceNode(virtualSurfaceNode_);
@@ -85,6 +83,5 @@ void RSTextureExport::StopTextureExport()
     rsUiDirector_->Destroy(true);
     rootNode_->RemoveFromTree();
 }
-
 } // namespace Rosen
 } // namespace OHOS

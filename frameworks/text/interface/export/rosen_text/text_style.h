@@ -34,6 +34,12 @@
 
 namespace OHOS {
 namespace Rosen {
+enum class TextBadgeType {
+    BADGE_NONE,
+    SUPERSCRIPT,
+    SUBSCRIPT,
+};
+
 enum class RelayoutTextStyleAttribute {
     FONT_SIZE = 0,
     FONT_WEIGHT = 1,
@@ -56,6 +62,7 @@ enum class RelayoutTextStyleAttribute {
     FONT_COLOR = 18,
     SHADOWS = 19,
     HALF_LEADING = 20,
+    FOREGROUND_BRUSH = 21,
 
     TEXT_STYLE_ATTRIBUTE_BUTT,
 };
@@ -65,6 +72,9 @@ public:
     void SetFeature(std::string tag, int value);
     std::string GetFeatureSettings() const;
     const std::vector<std::pair<std::string, int>> &GetFontFeatures() const;
+    FontFeatures() = default;
+    FontFeatures(const FontFeatures& other) = default;
+    FontFeatures& operator=(const FontFeatures& other) = default;
     bool operator ==(const FontFeatures& rhs) const;
     void Clear();
 
@@ -76,6 +86,9 @@ class RS_EXPORT FontVariations {
 public:
     void SetAxisValue(const std::string& tag, float value);
     const std::map<std::string, float>& GetAxisValues() const;
+    FontVariations() = default;
+    FontVariations(const FontVariations& other) = default;
+    FontVariations& operator=(const FontVariations& other) = default;
     bool operator ==(const FontVariations& rhs) const;
     void Clear();
 private:
@@ -89,6 +102,8 @@ struct RS_EXPORT TextShadow {
 
     TextShadow();
     TextShadow(Drawing::Color shadowColor, Drawing::Point shadowOffset, double shadowBlurRadius);
+    TextShadow(const TextShadow& other) = default;
+    TextShadow& operator=(const TextShadow& other) = default;
     bool operator ==(const TextShadow& rhs) const;
     bool operator !=(const TextShadow& rhs) const;
     bool HasShadow() const;
@@ -104,7 +119,7 @@ struct RS_EXPORT RectStyle {
     bool operator !=(const RectStyle& rhs) const;
 };
 
-struct TextStyle {
+struct RS_EXPORT TextStyle {
     Drawing::Color color = Drawing::Color::COLOR_WHITE;
     TextDecoration decoration = TextDecoration::NONE;
     Drawing::Color decorationColor = Drawing::Color::COLOR_TRANSPARENT;
@@ -132,18 +147,22 @@ struct TextStyle {
     std::vector<TextShadow> shadows;
     FontFeatures fontFeatures;
     FontVariations fontVariations;
-    RectStyle backgroundRect { 0, 0.0, 0.0, 0.0, 0.0 };
-    int styleId { 0 };
-    size_t textStyleUid { 0 };
+    RectStyle backgroundRect{0, 0.0, 0.0, 0.0, 0.0};
+    int styleId{0};
+    size_t textStyleUid{0};
+    TextStyle() = default;
+    TextStyle(const TextStyle& other) = default;
+    TextStyle& operator=(const TextStyle& other) = default;
     bool operator ==(const TextStyle &rhs) const;
     bool EqualByFonts(const TextStyle &rhs) const;
     bool MatchOneAttribute(StyleType styleType, const TextStyle &rhs) const;
     // symbol glyph
-    bool isSymbolGlyph { false };
+    bool isSymbolGlyph{false};
     HMSymbolTxt symbol;
-    double baseLineShift { 0.0 };
-    bool isPlaceholder { false };
+    double baseLineShift{0.0f};
+    bool isPlaceholder{false};
     std::bitset<static_cast<size_t>(RelayoutTextStyleAttribute::TEXT_STYLE_ATTRIBUTE_BUTT)> relayoutChangeBitmap;
+    TextBadgeType badgeType{TextBadgeType::BADGE_NONE};
 };
 } // namespace Rosen
 } // namespace OHOS

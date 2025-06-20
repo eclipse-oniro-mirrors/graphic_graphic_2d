@@ -15,10 +15,15 @@
 
 #include "image/gpu_context.h"
 
+#include "config/DrawingConfig.h"
 #include "impl_factory.h"
 #include "static_factory.h"
 #ifdef RS_ENABLE_VK
+#ifdef USE_M133_SKIA
+#include "include/gpu/vk/VulkanBackendContext.h"
+#else
 #include "include/gpu/vk/GrVkBackendContext.h"
+#endif
 #endif
 #include "utils/system_properties.h"
 
@@ -43,7 +48,11 @@ bool GPUContext::BuildFromGL(const GPUContextOptions& options)
 }
 
 #ifdef RS_ENABLE_VK
+#ifdef USE_M133_SKIA
+bool GPUContext::BuildFromVK(const skgpu::VulkanBackendContext& context)
+#else
 bool GPUContext::BuildFromVK(const GrVkBackendContext& context)
+#endif
 {
     if (!SystemProperties::IsUseVulkan()) {
         return false;
@@ -51,7 +60,11 @@ bool GPUContext::BuildFromVK(const GrVkBackendContext& context)
     return impl_->BuildFromVK(context);
 }
 
+#ifdef USE_M133_SKIA
+bool GPUContext::BuildFromVK(const skgpu::VulkanBackendContext& context, const GPUContextOptions& options)
+#else
 bool GPUContext::BuildFromVK(const GrVkBackendContext& context, const GPUContextOptions& options)
+#endif
 {
     if (!SystemProperties::IsUseVulkan()) {
         return false;
@@ -87,6 +100,9 @@ void GPUContext::Flush()
 void GPUContext::FlushAndSubmit(bool syncCpu)
 {
     impl_->FlushAndSubmit(syncCpu);
+#ifdef DRAWING_DISABLE_API
+    DrawingConfig::UpdateDrawingProperties();
+#endif
 }
 
 void GPUContext::Submit()
@@ -136,11 +152,6 @@ void GPUContext::DumpAllResource(std::stringstream& dump) const
         impl_->DumpAllResource(dump);
     }
 #endif
-}
-
-void GPUContext::DumpAllCoreTrace(std::stringstream& dump) const
-{
-    impl_->DumpAllCoreTrace(dump);
 }
 
 void GPUContext::DumpGpuStats(std::string& out) const

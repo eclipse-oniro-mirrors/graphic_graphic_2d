@@ -27,6 +27,11 @@
 #include <variant>
 #include <vector>
 
+#include "display_engine/rs_luminance_control.h"
+#include "feature/opinc/rs_opinc_cache.h"
+#include "feature/single_frame_composer/rs_single_frame_composer.h"
+#include "hwc/rs_hwc_recorder.h"
+
 #include "animation/rs_animation_manager.h"
 #include "animation/rs_frame_rate_range.h"
 #include "common/rs_common_def.h"
@@ -35,19 +40,16 @@
 #include "draw/surface.h"
 #include "drawable/rs_drawable.h"
 #include "drawable/rs_property_drawable.h"
-#include "feature/opinc/rs_opinc_cache.h"
-#include "hwc/rs_hwc_recorder.h"
+#include "drawable/rs_render_node_drawable_adapter.h"
 #include "image/gpu_context.h"
 #include "memory/rs_dfx_string.h"
 #include "memory/rs_memory_snapshot.h"
 #include "modifier/rs_render_modifier.h"
+#include "modifier_ng/rs_modifier_ng_type.h"
 #include "pipeline/rs_dirty_region_manager.h"
-#include "pipeline/rs_render_display_sync.h"
 #include "pipeline/rs_paint_filter_canvas.h"
-#include "pipeline/rs_render_content.h"
-#include "pipeline/rs_single_frame_composer.h"
+#include "pipeline/rs_render_display_sync.h"
 #include "property/rs_properties.h"
-#include "drawable/rs_render_node_drawable_adapter.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -63,6 +65,12 @@ class RSCommand;
 namespace NativeBufferUtils {
 class VulkanCleanupHelper;
 }
+namespace ModifierNG {
+class RSRenderModifier;
+class RSForegroundFilterRenderModifier;
+class RSBackgroundFilterRenderModifier;
+enum class RSModifierType : uint16_t;
+}
 struct SharedTransitionParam;
 
 struct CurFrameInfoDetail {
@@ -73,10 +81,11 @@ struct CurFrameInfoDetail {
     bool curFrameReverseChildren = false;
 };
 
-class RSB_EXPORT RSRenderNode : public std::enable_shared_from_this<RSRenderNode>  {
+class RSB_EXPORT RSRenderNode : public std::enable_shared_from_this<RSRenderNode> {
 public:
     using WeakPtr = std::weak_ptr<RSRenderNode>;
     using SharedPtr = std::shared_ptr<RSRenderNode>;
+    using ModifierNGContainer = std::vector<std::shared_ptr<ModifierNG::RSRenderModifier>>;
     static inline constexpr RSRenderNodeType Type = RSRenderNodeType::RS_NODE;
     std::atomic<int32_t> cacheCnt_ = -1;
     virtual RSRenderNodeType GetType() const
@@ -104,6 +113,10 @@ public:
     void MoveChild(SharedPtr child, int index);
     void RemoveChild(SharedPtr child, bool skipTransition = false);
     void ClearChildren();
+    void SetUIContextToken(uint64_t token)
+    {
+        uiContextToken_ = token;
+    }
     void RemoveFromTree(bool skipTransition = false);
 
     // Add/RemoveCrossParentChild only used as: the child is under multiple parents(e.g. a window cross multi-screens)
@@ -217,6 +230,16 @@ public:
     inline RectI GetFilterRegion() const
     {
         return filterRegion_;
+    }
+
+    inline bool IsRepaintBoundary() const
+    {
+        return isRepaintBoundary_;
+    }
+
+    inline void MarkRepaintBoundary(bool isRepaintBoundary)
+    {
+        isRepaintBoundary_ = isRepaintBoundary;
     }
 
     inline bool IsWaitSync() const
@@ -342,6 +365,11 @@ public:
         dirtyTypes_.set(static_cast<int>(type), true);
     }
 
+    virtual void AddDirtyType(ModifierNG::RSModifierType type)
+    {
+        dirtyTypesNG_.set(static_cast<int>(type), true);
+    }
+
     std::tuple<bool, bool, bool> Animate(
         int64_t timestamp, int64_t& minLeftDelayTime, int64_t period = 0, bool isDisplaySyncEnabled = false);
 
@@ -364,10 +392,13 @@ public:
         std::optional<RectI> clipRect = std::nullopt);
     virtual std::optional<Drawing::Rect> GetContextClipRegion() const { return std::nullopt; }
 
-    RSProperties& GetMutableRenderProperties();
+    inline RSProperties& GetMutableRenderProperties()
+    {
+        return renderProperties_;
+    }
     inline const RSProperties& GetRenderProperties() const
     {
-        return renderContent_->GetRenderProperties();
+        return renderProperties_;
     }
     void UpdateRenderStatus(RectI& dirtyRegion, bool isPartialRenderEnabled);
     bool IsRenderUpdateIgnored() const;
@@ -375,8 +406,7 @@ public:
     // used for animation test
     RSAnimationManager& GetAnimationManager();
 
-    void ApplyBoundsGeometry(RSPaintFilterCanvas& canvas);
-    void ApplyAlpha(RSPaintFilterCanvas& canvas);
+    void ApplyAlphaAndBoundsGeometry(RSPaintFilterCanvas& canvas);
     virtual void ProcessTransitionBeforeChildren(RSPaintFilterCanvas& canvas);
     virtual void ProcessAnimatePropertyBeforeChildren(RSPaintFilterCanvas& canvas, bool includeProperty = true) {}
     virtual void ProcessRenderBeforeChildren(RSPaintFilterCanvas& canvas);
@@ -405,13 +435,32 @@ public:
     // clip rect of last frame before post prepare, current frame after post prepare
     RectI GetOldClipRect() const;
 
+    const Drawing::Matrix& GetOldAbsMatrix() const
+    {
+        return oldAbsMatrix_;
+    }
+
     bool IsDirtyRegionUpdated() const;
     void CleanDirtyRegionUpdated();
+    
+    std::shared_ptr<RSRenderPropertyBase> GetProperty(PropertyId id);
+    void AddProperty(std::shared_ptr<RSRenderPropertyBase> property);
+    void RemoveProperty(std::shared_ptr<RSRenderPropertyBase> property);
 
     void AddModifier(const std::shared_ptr<RSRenderModifier>& modifier, bool isSingleFrameComposer = false);
     void RemoveModifier(const PropertyId& id);
     void RemoveAllModifiers();
     std::shared_ptr<RSRenderModifier> GetModifier(const PropertyId& id);
+
+    void AddModifier(const std::shared_ptr<ModifierNG::RSRenderModifier>& modifier, bool isSingleFrameComposer = false);
+    void RemoveModifier(ModifierNG::RSModifierType type, ModifierId id);
+    void RemoveModifierNG(ModifierId id);
+    void RemoveAllModifiersNG();
+    std::shared_ptr<ModifierNG::RSRenderModifier> GetModifierNG(
+        ModifierNG::RSModifierType type, ModifierId id = 0) const;
+    const ModifierNGContainer& GetModifiersNG(ModifierNG::RSModifierType type) const;
+    bool HasDrawCmdModifiers() const;
+    bool HasContentStyleModifierOnly() const;
 
     size_t GetAllModifierSize();
 
@@ -436,10 +485,14 @@ public:
     bool NeedInitCacheCompletedSurface();
     bool IsPureContainer() const;
     bool IsContentNode() const;
+    bool IsPureBackgroundColor() const;
+    void SetDrawNodeType(DrawNodeType nodeType);
+    DrawNodeType GetDrawNodeType() const;
 
-    inline const RSRenderContent::DrawCmdContainer& GetDrawCmdModifiers() const
+    using DrawCmdContainer = std::map<RSModifierType, std::list<std::shared_ptr<RSRenderModifier>>>;
+    inline const DrawCmdContainer& GetDrawCmdModifiers() const
     {
-        return renderContent_->drawCmdModifiers_;
+        return drawCmdModifiers_;
     }
 
     using ClearCacheSurfaceFunc =
@@ -456,7 +509,7 @@ public:
         return cacheSurface_;
     }
 
-// use for uni render visitor
+    // use for uni render visitor
     std::shared_ptr<Drawing::Surface> GetCacheSurface(uint32_t threadIndex, bool needCheckThread,
         bool releaseAfterGet = false);
 
@@ -472,9 +525,6 @@ public:
 #if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
     void UpdateBackendTexture();
 #endif
-
-    void DrawCacheSurface(RSPaintFilterCanvas& canvas, uint32_t threadIndex = UNI_MAIN_THREAD_INDEX,
-        bool isUIFirst = false);
 
     void SetCacheType(CacheType cacheType);
     CacheType GetCacheType() const;
@@ -581,7 +631,7 @@ public:
         const RSRenderNode& subTreeRoot, RectI& filterRect, const RectI& clipRect);
     void MarkFilterStatusChanged(bool isForeground, bool isFilterRegionChanged);
     void UpdateFilterCacheWithBackgroundDirty();
-    virtual void UpdateFilterCacheWithBelowDirty(RSDirtyRegionManager& dirtyManager, bool isForeground = false);
+    virtual bool UpdateFilterCacheWithBelowDirty(const Occlusion::Region& belowDirty, bool isForeground = false);
     virtual void UpdateFilterCacheWithSelfDirty();
     bool IsBackgroundInAppOrNodeSelfDirty() const;
     void PostPrepareForBlurFilterNode(RSDirtyRegionManager& dirtyManager, bool needRequestNextVsync);
@@ -593,7 +643,7 @@ public:
     bool IsAIBarFilter() const;
     bool IsAIBarFilterCacheValid() const;
     void MarkForceClearFilterCacheWithInvisible();
-    void MarkFilterInForegroundFilterAndCheckNeedForceClearCache(bool inForegroundFilter);
+    void MarkFilterInForegroundFilterAndCheckNeedForceClearCache(NodeId offscreenCanvasNodeId);
 
     void CheckGroupableAnimation(const PropertyId& id, bool isAnimAdd);
     bool IsForcedDrawInGroup() const;
@@ -622,10 +672,10 @@ public:
     std::string QuickGetNodeDebugInfo();
 
     // mark support node
-    void OpincUpdateNodeSupportFlag(bool supportFlag);
+    void OpincUpdateNodeSupportFlag(bool supportFlag, bool isOpincRootNode);
     virtual bool OpincGetNodeSupportFlag()
     {
-        return isOpincNodeSupportFlag_;
+        return false;
     }
 
     // arkui mark
@@ -667,7 +717,7 @@ public:
     virtual void UpdateRenderParams();
     void SetCrossNodeOffScreenStatus(CrossNodeOffScreenRenderDebugType isCrossNodeOffscreenOn_);
     void UpdateDrawingCacheInfoBeforeChildren(bool isScreenRotation);
-    void UpdateDrawingCacheInfoAfterChildren();
+    void UpdateDrawingCacheInfoAfterChildren(bool isInBlackList = false);
 
     virtual RectI GetFilterRect() const;
     void CalVisibleFilterRect(const std::optional<RectI>& clipRect);
@@ -692,8 +742,6 @@ public:
 #define MAX_COLD_DOWN_NUM 20
     int32_t coldDownCounter_ = 0;
 #endif
-
-    const std::shared_ptr<RSRenderContent> GetRenderContent() const;
 
     void MarkParentNeedRegenerateChildren() const;
 
@@ -721,13 +769,13 @@ public:
     const std::unique_ptr<RSRenderParams>& GetRenderParams() const;
 #endif
     void UpdatePointLightDirtySlot();
-    void AccmulateDirtyInOcclusion(bool isOccluded);
+    void AccumulateDirtyInOcclusion(bool isOccluded);
     void RecordCurDirtyStatus();
-    void AccmulateDirtyStatus();
-    void ResetAccmulateDirtyStatus();
+    void AccumulateDirtyStatus();
+    void ResetAccumulateDirtyStatus();
     void RecordCurDirtyTypes();
-    void AccmulateDirtyTypes();
-    void ResetAccmulateDirtyTypes();
+    void AccumulateDirtyTypes();
+    void ResetAccumulateDirtyTypes();
     void SetUifirstSyncFlag(bool needSync);
     void SetUifirstSkipPartialSync(bool skip)
     {
@@ -834,7 +882,9 @@ public:
     {
         isFirstLevelCrossNode_ = isFirstLevelCrossNode;
     }
-    void SetHdrNum(bool flag, NodeId instanceRootNodeId);
+    void SetHdrNum(bool flag, NodeId instanceRootNodeId, HDRComponentType hdrType);
+
+    void SetEnableHdrEffect(bool enableHdrEffect);
 
     void SetIsAccessibilityConfigChanged(bool isAccessibilityConfigChanged)
     {
@@ -883,17 +933,16 @@ public:
     // Enable HWCompose
     RSHwcRecorder& GetHwcRecorder() { return hwcRecorder_; }
 
-    // Determines node opaque and occlusion culling participation for control-level occlusion
-    void GetOcclusionInfo(const std::unordered_set<RSModifierType>& opaqueModifiers,
-        const std::unordered_set<RSModifierType>& occluderModifiers,
-        bool& isOpaque, bool& isSubTreeIgnored) const;
-
     RSOpincCache& GetOpincCache()
     {
         return opincCache_;
     }
 
+    bool IsForegroundFilterEnable();
+
 protected:
+    void ResetDirtyStatus();
+
     // only be called in node's constructor if it's generated by render service
     static NodeId GenerateId();
 
@@ -921,6 +970,7 @@ protected:
 
     static void SendCommandFromRT(std::unique_ptr<RSCommand>& command, NodeId nodeId);
     void AddGeometryModifier(const std::shared_ptr<RSRenderModifier>& modifier);
+    void AddUIFilterModifier(const std::shared_ptr<RSRenderModifier>& modifier);
 
     virtual void InitRenderParams();
     virtual void OnSync();
@@ -936,15 +986,9 @@ protected:
     void UpdateDrawableVecV2();
     void ClearDrawableVec2();
 
-    inline void DrawPropertyDrawable(RSPropertyDrawableSlot slot, RSPaintFilterCanvas& canvas)
-    {
-        renderContent_->DrawPropertyDrawable(slot, canvas);
-    }
-    inline void DrawPropertyDrawableRange(
-        RSPropertyDrawableSlot begin, RSPropertyDrawableSlot end, RSPaintFilterCanvas& canvas)
-    {
-        renderContent_->DrawPropertyDrawableRange(begin, end, canvas);
-    }
+    void DrawPropertyDrawable(RSDrawableSlot slot, RSPaintFilterCanvas& canvas);
+    void DrawPropertyDrawableRange(RSDrawableSlot begin, RSDrawableSlot end, RSPaintFilterCanvas& canvas);
+
 #ifdef RS_ENABLE_GPU
     std::shared_ptr<DrawableV2::RSFilterDrawable> GetFilterDrawable(bool isForeground) const;
     virtual void MarkFilterCacheFlags(std::shared_ptr<DrawableV2::RSFilterDrawable>& filterDrawable,
@@ -986,6 +1030,9 @@ protected:
     RectI filterRegion_;
     ModifierDirtyTypes dirtyTypes_;
     ModifierDirtyTypes curDirtyTypes_;
+
+    ModifierNG::ModifierDirtyTypes dirtyTypesNG_;
+    ModifierNG::ModifierDirtyTypes curDirtyTypesNG_;
 
     CurFrameInfoDetail curFrameInfoDetail_;
 
@@ -1031,7 +1078,6 @@ private:
     bool isLastVisible_ = false;
     bool isAccumulatedClipFlagChanged_ = false;
     bool hasAccumulatedClipFlag_ = false;
-    bool isOpincNodeSupportFlag_ = true;
     // since preparation optimization would skip child's dirtyFlag(geoDirty) update
     // it should be recorded and update if marked dirty again
     bool geoUpdateDelay_ = false;
@@ -1067,6 +1113,7 @@ private:
     bool childrenHasUIExtension_ = false;
     bool isAccessibilityConfigChanged_ = false;
     const bool isPurgeable_;
+    DrawNodeType drawNodeType_ = DrawNodeType::PureContainerType;
     std::atomic<bool> isTunnelHandleChange_ = false;
     std::atomic<bool> isCacheSurfaceNeedUpdate_ = false;
     std::atomic<bool> commandExecuted_ = false;
@@ -1088,16 +1135,20 @@ private:
     float boundsWidth_ = 0.0f;
     float boundsHeight_ = 0.0f;
     pid_t appPid_ = 0;
+    uint64_t uiContextToken_ = 0;
     NodeId id_;
     NodeId instanceRootNodeId_ = INVALID_NODEID;
     NodeId firstLevelNodeId_ = INVALID_NODEID;
     NodeId uifirstRootNodeId_ = INVALID_NODEID;
     NodeId displayNodeId_ = INVALID_NODEID;
-    const std::shared_ptr<RSRenderContent> renderContent_ = std::make_shared<RSRenderContent>();
     std::shared_ptr<SharedTransitionParam> sharedTransitionParam_;
     // bounds and frame modifiers must be unique
     std::shared_ptr<RSRenderModifier> boundsModifier_;
     std::shared_ptr<RSRenderModifier> frameModifier_;
+
+    std::shared_ptr<ModifierNG::RSRenderModifier> boundsModifierNG_;
+    std::shared_ptr<ModifierNG::RSRenderModifier> frameModifierNG_;
+
     // Note: Make sure that fullChildrenList_ is never nullptr. Otherwise, the caller using
     // `for (auto child : *GetSortedChildren()) { ... }` will crash.
     // When an empty list is needed, use EmptyChildrenList instead.
@@ -1147,11 +1198,17 @@ private:
     std::vector<SharedPtr> cloneCrossNodeVec_;
     bool hasVisitedCrossNode_ = false;
     std::map<PropertyId, std::shared_ptr<RSRenderModifier>> modifiers_;
+
+    std::array<std::vector<std::shared_ptr<ModifierNG::RSRenderModifier>>, ModifierNG::MODIFIER_TYPE_COUNT>
+        modifiersNG_;
+    std::map<PropertyId, std::shared_ptr<RSRenderPropertyBase>> properties_;
+
     std::unordered_set<RSDrawableSlot> dirtySlots_;
     DrawCmdIndex stagingDrawCmdIndex_;
     std::vector<Drawing::RecordingCanvas::DrawFunc> stagingDrawCmdList_;
     std::vector<NodeId> visibleFilterChild_;
     std::unordered_set<NodeId> visibleEffectChild_;
+    Drawing::Matrix oldMatrix_;
     Drawing::Matrix oldAbsMatrix_;
     RSDrawable::Vec drawableVec_;
     RSAnimationManager animationManager_;
@@ -1177,12 +1234,18 @@ private:
     mutable std::recursive_mutex surfaceMutex_;
     ClearCacheSurfaceFunc clearCacheSurfaceFunc_ = nullptr;
 
+    RSProperties renderProperties_;
+    DrawCmdContainer drawCmdModifiers_;
+
     // for blur effct count
     static std::unordered_map<pid_t, size_t> blurEffectCounter_;
     // The angle at which the node rotates about the Z-axis
     float absRotation_ = 0.f;
+    bool isRepaintBoundary_ = false;
     void UpdateBlurEffectCounter(int deltaCount);
     int GetBlurEffectDrawbleCount();
+
+    bool enableHdrEffect_ = false;
 
     void SetParent(WeakPtr parent);
     void ResetParent();
@@ -1218,8 +1281,6 @@ private:
     std::shared_ptr<Drawing::Image> GetCompletedImage(
         RSPaintFilterCanvas& canvas, uint32_t threadIndex, bool isUIFirst);
 
-    void UpdateDrawableVec();
-    void UpdateDrawableVecInternal(std::unordered_set<RSPropertyDrawableSlot> dirtySlots);
     void UpdateDisplayList();
     void UpdateShadowRect();
 
@@ -1229,8 +1290,9 @@ private:
 
     void ChildrenListDump(std::string& out) const;
 
+    void ResetAndApplyModifiers();
+
     friend class DrawFuncOpItem;
-    friend class RSAliasDrawable;
     friend class RSContext;
     friend class RSMainThread;
     friend class RSPointerWindowManager;
@@ -1242,6 +1304,9 @@ private:
     friend class DrawableV2::RSRenderNodeDrawableAdapter;
     friend class DrawableV2::RSChildrenDrawable;
     friend class DrawableV2::RSRenderNodeShadowDrawable;
+    friend class ModifierNG::RSRenderModifier;
+    friend class ModifierNG::RSForegroundFilterRenderModifier;
+    friend class ModifierNG::RSBackgroundFilterRenderModifier;
 #ifdef RS_PROFILER_ENABLED
     friend class RSProfiler;
 #endif

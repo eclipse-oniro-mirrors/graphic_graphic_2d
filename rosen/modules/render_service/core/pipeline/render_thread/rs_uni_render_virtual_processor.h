@@ -76,21 +76,29 @@ public:
     {
         return canvasMatrix_;
     }
-    void SetDirtyInfo(std::vector<RectI>& damageRegion);
+    void SetDirtyInfo(const std::vector<RectI>& damageRegion);
     int32_t GetBufferAge() const;
     // when virtual screen partial refresh closed, use this function to reset RoiRegion in buffer
-    GSError SetRoiRegionToCodec(std::vector<RectI>& damageRegion);
+    GSError SetRoiRegionToCodec(const std::vector<RectI>& damageRegion);
     bool RequestVirtualFrame(DrawableV2::RSDisplayRenderNodeDrawable& displayDrawable);
     void CalculateTransform(DrawableV2::RSDisplayRenderNodeDrawable& displayDrawable);
     void ScaleMirrorIfNeed(const ScreenRotation angle, RSPaintFilterCanvas& canvas);
     void ProcessVirtualDisplaySurface(DrawableV2::RSDisplayRenderNodeDrawable& displayDrawable);
-    void CanvasClipRegionForUniscaleMode();
+    void CanvasClipRegionForUniscaleMode(const Drawing::Matrix& visibleClipRectMatrix = Drawing::Matrix(),
+        const ScreenInfo& mainScreenInfo = ScreenInfo());
     void ProcessCacheImage(Drawing::Image& cacheImage);
     void SetDrawVirtualMirrorCopy(bool drawMirrorCopy)
     {
         drawMirrorCopy_ = drawMirrorCopy;
     }
+    bool GetDrawVirtualMirrorCopy() const
+    {
+        return drawMirrorCopy_;
+    }
 private:
+    void SetVirtualScreenSize(DrawableV2::RSDisplayRenderNodeDrawable& displayDrawable,
+        const sptr<RSScreenManager>& screenManager);
+    bool CheckIfBufferSizeNeedChange(ScreenRotation firstBufferRotation, ScreenRotation curBufferRotation);
     void CanvasInit(DrawableV2::RSDisplayRenderNodeDrawable& displayDrawable);
     void OriginScreenRotation(ScreenRotation screenRotation, float width, float height);
     bool EnableVisibleRect();
@@ -119,6 +127,7 @@ private:
     float mirroredScreenHeight_ = 0.f;
     bool updateFlag_ = false;
     bool canvasRotation_ = false;
+    bool autoBufferRotation_ = false; // whether buffer rotation is automatically adjusted based on the screen rotation
     ScreenScaleMode scaleMode_ = ScreenScaleMode::INVALID_MODE;
     ScreenRotation screenRotation_ = ScreenRotation::ROTATION_0;
     ScreenRotation screenCorrection_ = ScreenRotation::ROTATION_0;

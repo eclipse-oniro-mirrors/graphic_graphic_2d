@@ -25,6 +25,7 @@
 #include <surface_type.h>
 #ifndef ROSEN_CROSS_PLATFORM
 #include <surface.h>
+#include <utility>
 #endif
 
 #include "ipc_callbacks/buffer_available_callback.h"
@@ -35,6 +36,7 @@
 #include "ipc_callbacks/rs_surface_buffer_callback.h"
 #include "ipc_callbacks/screen_change_callback.h"
 #include "ipc_callbacks/surface_capture_callback.h"
+#include "ipc_callbacks/rs_transaction_data_callback.h"
 #include "memory/rs_memory_graphic.h"
 #include "platform/drawing/rs_surface.h"
 #include "rs_irender_client.h"
@@ -154,7 +156,9 @@ public:
     std::shared_ptr<Media::PixelMap> CreatePixelMapFromSurfaceId(uint64_t surfaceid, const Rect &srcRect);
 
     bool TakeSurfaceCapture(NodeId id, std::shared_ptr<SurfaceCaptureCallback> callback,
-        const RSSurfaceCaptureConfig& captureConfig, const RSSurfaceCaptureBlurParam& blurParam = {},
+        const RSSurfaceCaptureConfig& captureConfig,
+        std::unique_ptr<Media::PixelMap> clientCapturePixelMap = nullptr,
+        const RSSurfaceCaptureBlurParam& blurParam = {},
         const Drawing::Rect& specifiedAreaRect = Drawing::Rect(0.f, 0.f, 0.f, 0.f));
 
     std::vector<std::pair<NodeId, std::shared_ptr<Media::PixelMap>>> TakeSurfaceCaptureSoloNode(
@@ -165,6 +169,9 @@ public:
 
     bool SetWindowFreezeImmediately(NodeId id, bool isFreeze, std::shared_ptr<SurfaceCaptureCallback> callback,
         const RSSurfaceCaptureConfig& captureConfig, const RSSurfaceCaptureBlurParam& blurParam = {});
+
+    bool TakeUICaptureInRange(
+        NodeId id, std::shared_ptr<SurfaceCaptureCallback> callback, const RSSurfaceCaptureConfig& captureConfig);
 
     bool SetHwcNodeBounds(int64_t rsNodeId, float positionX, float positionY,
         float positionZ, float positionW);
@@ -300,6 +307,8 @@ public:
 
     bool SetVirtualMirrorScreenCanvasRotation(ScreenId id, bool canvasRotation);
 
+    int32_t SetVirtualScreenAutoRotation(ScreenId id, bool isAutoRotation);
+
     bool SetVirtualMirrorScreenScaleMode(ScreenId id, ScreenScaleMode scaleMode);
 
     bool SetGlobalDarkColorMode(bool isDark);
@@ -377,6 +386,10 @@ public:
 
     void NotifyRefreshRateEvent(const EventInfo& eventInfo);
 
+    void SetWindowExpectedRefreshRate(const std::unordered_map<uint64_t, EventInfo>& eventInfos);
+
+    void SetWindowExpectedRefreshRate(const std::unordered_map<std::string, EventInfo>& eventInfos);
+
     bool NotifySoftVsyncRateDiscountEvent(uint32_t pid, const std::string &name, uint32_t rateDiscount);
 
     void NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt);
@@ -384,6 +397,8 @@ public:
     void NotifyDynamicModeEvent(bool enableDynamicMode);
 
     void NotifyHgmConfigEvent(const std::string &eventName, bool state);
+
+    void NotifyXComponentExpectedFrameRate(const std::string& id, int32_t expectedFrameRate);
 
     void ReportEventResponse(DataBaseRs info);
 
@@ -423,6 +438,8 @@ public:
 
     void SetLayerTop(const std::string &nodeIdStr, bool isTop);
 
+    void SetForceRefresh(const std::string &nodeIdStr, bool isForceRefresh);
+
     void SetColorFollow(const std::string &nodeIdStr, bool isColorFollow);
 
 #ifdef RS_ENABLE_OVERLAY_DISPLAY
@@ -459,11 +476,19 @@ public:
 
     bool GetHighContrastTextState();
 
+    bool RegisterTransactionDataCallback(int32_t pid, uint64_t timeStamp, std::function<void()> callback);
+
+    bool SetBehindWindowFilterEnabled(bool enabled);
+
+    bool GetBehindWindowFilterEnabled(bool& enabled);
+
+    int32_t GetPidGpuMemoryInMB(pid_t pid, float &gpuMemInMB);
 private:
     void TriggerSurfaceCaptureCallback(NodeId id, const RSSurfaceCaptureConfig& captureConfig,
         std::shared_ptr<Media::PixelMap> pixelmap);
     void TriggerOnFinish(const FinishCallbackRet& ret) const;
     void TriggerOnAfterAcquireBuffer(const AfterAcquireBufferRet& ret) const;
+    void TriggerTransactionDataCallbackAndErase(int32_t pid, uint64_t timeStamp);
     struct RectHash {
         std::size_t operator()(const Drawing::Rect& rect) const {
             std::size_t h1 = std::hash<Drawing::scalar>()(rect.left_);
@@ -474,15 +499,26 @@ private:
         }
     };
 
-    struct PairHash {
-        std::size_t operator()(const std::pair<NodeId, RSSurfaceCaptureConfig>& p) const {
-            std::size_t h1 = std::hash<NodeId>()(p.first);
-            std::size_t h2 = RectHash()(p.second.mainScreenRect);
+    // Hash for solo node capture
+    struct UICaptureParamHash {
+        std::size_t operator()(const RSUICaptureInRangeParam& param) const {
+            std::size_t h1 = std::hash<NodeId>()(param.endNodeId);
+            std::size_t h2 = std::hash<bool>()(param.useBeginNodeSize);
             return h1 ^ (h2 << 1);
         }
     };
 
+    struct PairHash {
+        std::size_t operator()(const std::pair<NodeId, RSSurfaceCaptureConfig>& p) const {
+            std::size_t h1 = std::hash<NodeId>()(p.first);
+            std::size_t h2 = RectHash()(p.second.mainScreenRect);
+            std::size_t h3 = UICaptureParamHash()(p.second.uiCaptureInRangeParam);
+            return h1 ^ (h2 << 1) ^ (h3 << 2);
+        }
+    };
+
     std::mutex mutex_;
+    std::mutex surfaceCaptureCbDirectorMutex_;
     std::map<NodeId, sptr<RSIBufferAvailableCallback>> bufferAvailableCbRTMap_;
     std::mutex mapMutex_;
     std::map<NodeId, sptr<RSIBufferAvailableCallback>> bufferAvailableCbUIMap_;
@@ -495,8 +531,13 @@ private:
     std::map<uint64_t, std::shared_ptr<SurfaceBufferCallback>> surfaceBufferCallbacks_;
     mutable std::shared_mutex surfaceBufferCallbackMutex_;
 
+    sptr<RSITransactionDataCallback> transactionDataCbDirector_;
+    std::map<std::pair<int32_t, uint64_t>, std::function<void()>> transactionDataCallbacks_;
+    std::mutex transactionDataCallbackMutex_;
+
     friend class SurfaceCaptureCallbackDirector;
     friend class SurfaceBufferCallbackDirector;
+    friend class TransactionDataCallbackDirector;
 };
 } // namespace Rosen
 } // namespace OHOS

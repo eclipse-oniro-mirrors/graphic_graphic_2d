@@ -154,6 +154,7 @@ public:
     void TakeSurfaceCapture(NodeId id, sptr<RSISurfaceCaptureCallback> callback,
         const RSSurfaceCaptureConfig& captureConfig, const RSSurfaceCaptureBlurParam& blurParam,
         const Drawing::Rect& specifiedAreaRect = Drawing::Rect(0.f, 0.f, 0.f, 0.f),
+        std::unique_ptr<Media::PixelMap> pixelMap = nullptr,
         RSSurfaceCapturePermissions permissions = RSSurfaceCapturePermissions()) override;
 
     std::vector<std::pair<NodeId, std::shared_ptr<Media::PixelMap>>>
@@ -166,12 +167,18 @@ public:
     ErrCode SetWindowFreezeImmediately(NodeId id, bool isFreeze, sptr<RSISurfaceCaptureCallback> callback,
         const RSSurfaceCaptureConfig& captureConfig, const RSSurfaceCaptureBlurParam& blurParam) override;
 
+    void TakeUICaptureInRange(
+        NodeId id, sptr<RSISurfaceCaptureCallback> callback, const RSSurfaceCaptureConfig& captureConfig) override;
+
     bool WriteSurfaceCaptureConfig(const RSSurfaceCaptureConfig& captureConfig, MessageParcel& data);
 
     bool WriteSurfaceCaptureBlurParam(const RSSurfaceCaptureBlurParam& blurParam, MessageParcel& data);
 
     bool WriteSurfaceCaptureAreaRect(const Drawing::Rect& specifiedAreaRect, MessageParcel& data);
 
+    bool WriteClientSurfacePixelMap(const std::unique_ptr<Media::PixelMap>& pixelMap,
+        bool isUsedClientPixelMap, MessageParcel& data);
+        
     ErrCode SetHwcNodeBounds(int64_t rsNodeId, float positionX, float positionY,
         float positionZ, float positionW) override;
 
@@ -210,6 +217,8 @@ public:
     int32_t SetScreenCorrection(ScreenId id, ScreenRotation screenRotation) override;
 
     bool SetVirtualMirrorScreenCanvasRotation(ScreenId id, bool canvasRotation) override;
+
+    int32_t SetVirtualScreenAutoRotation(ScreenId id, bool isAutoRotation) override;
 
     bool SetVirtualMirrorScreenScaleMode(ScreenId id, ScreenScaleMode scaleMode) override;
 
@@ -269,6 +278,10 @@ public:
 
     int32_t RegisterFirstFrameCommitCallback(sptr<RSIFirstFrameCommitCallback> callback) override;
 
+    ErrCode AvcodecVideoStart(uint64_t uniqueId, std::string& surfaceName, uint32_t fps, uint64_t reportTime) override;
+
+    ErrCode AvcodecVideoStop(uint64_t uniqueId, std::string& surfaceName, uint32_t fps) override;
+
     int32_t RegisterFrameRateLinkerExpectedFpsUpdateCallback(int32_t dstPid,
         sptr<RSIFrameRateLinkerExpectedFpsUpdateCallback> callback) override;
 
@@ -292,6 +305,10 @@ public:
 
     void NotifyRefreshRateEvent(const EventInfo& eventInfo) override;
 
+    void SetWindowExpectedRefreshRate(const std::unordered_map<uint64_t, EventInfo>& eventInfos) override;
+
+    void SetWindowExpectedRefreshRate(const std::unordered_map<std::string, EventInfo>& eventInfos) override;
+
     ErrCode NotifySoftVsyncEvent(uint32_t pid, uint32_t rateDiscount) override;
 
     bool NotifySoftVsyncRateDiscountEvent(uint32_t pid, const std::string &name, uint32_t rateDiscount) override;
@@ -301,6 +318,8 @@ public:
     void NotifyDynamicModeEvent(bool enableDynamicMode) override;
 
     ErrCode NotifyHgmConfigEvent(const std::string &eventName, bool state) override;
+
+    ErrCode NotifyXComponentExpectedFrameRate(const std::string& id, int32_t expectedFrameRate) override;
 
     ErrCode ReportEventResponse(DataBaseRs info) override;
 
@@ -358,6 +377,9 @@ public:
 
     ErrCode UnregisterSurfaceBufferCallback(pid_t pid, uint64_t uid) override;
 
+    void RegisterTransactionDataCallback(int32_t pid,
+        uint64_t timeStamp, sptr<RSITransactionDataCallback> callback) override;
+
     ErrCode NotifyScreenSwitched() override;
 
     ErrCode SetWindowContainer(NodeId nodeId, bool value) override;
@@ -368,6 +390,11 @@ public:
 
     bool GetHighContrastTextState() override;
 
+    ErrCode SetBehindWindowFilterEnabled(bool enabled) override;
+
+    ErrCode GetBehindWindowFilterEnabled(bool& enabled) override;
+
+    int32_t GetPidGpuMemoryInMB(pid_t pid, float &gpuMemInMB) override;
 private:
     bool FillParcelWithTransactionData(
         std::unique_ptr<RSTransactionData>& transactionData, std::shared_ptr<MessageParcel>& data);
@@ -383,6 +410,8 @@ private:
     ErrCode SetAncoForceDoDirect(bool direct, bool& res) override;
 
     ErrCode SetLayerTop(const std::string &nodeIdStr, bool isTop) override;
+
+    ErrCode SetForceRefresh(const std::string &nodeIdStr, bool isForceRefresh) override;
 
     void SetColorFollow(const std::string &nodeIdStr, bool isColorFollow) override;
 

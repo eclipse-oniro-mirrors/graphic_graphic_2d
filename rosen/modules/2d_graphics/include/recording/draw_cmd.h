@@ -155,7 +155,7 @@ public:
     UnmarshallingPlayer(const DrawCmdList& cmdList);
     ~UnmarshallingPlayer() = default;
 
-    std::shared_ptr<DrawOpItem> Unmarshalling(uint32_t type, void* handle, size_t avaliableSize);
+    std::shared_ptr<DrawOpItem> Unmarshalling(uint32_t type, void* handle, size_t avaliableSize, bool isReplayMode);
 private:
     const DrawCmdList& cmdList_;
 };
@@ -907,7 +907,7 @@ public:
     DrawTextBlobOpItem(const DrawCmdList& cmdList, ConstructorHandle* handle);
     DrawTextBlobOpItem(const TextBlob* blob, const scalar x, const scalar y, const Paint& paint)
         : DrawWithPaintOpItem(paint, DrawOpItem::TEXT_BLOB_OPITEM), x_(x), y_(y),
-          textBlob_(std::make_shared<TextBlob>(*blob)) {}
+          textBlob_(std::make_shared<TextBlob>(*blob)), globalUniqueId_(0) {}
     ~DrawTextBlobOpItem() override = default;
 
     static std::shared_ptr<DrawOpItem> Unmarshalling(const DrawCmdList& cmdList, void* handle);
@@ -927,7 +927,7 @@ private:
     scalar y_;
     std::shared_ptr<TextBlob> textBlob_;
     uint64_t globalUniqueId_;
-    TextContrast textContrast_;
+    TextContrast textContrast_ = TextContrast::FOLLOW_SYSTEM;
     bool IsHighContrastEnable(Canvas* canvas, TextContrast value) const;
 };
 

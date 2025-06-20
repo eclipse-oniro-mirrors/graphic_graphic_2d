@@ -85,6 +85,26 @@ public:
 };
 
 /**
+ * @tc.name: RSSurfaceRenderNodeCreate001
+ * @tc.desc: Test RSSurfaceRenderNode
+ * @tc.type: FUNC
+ * @tc.require: issueIAI1VN
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, RSSurfaceRenderNodeCreate001, TestSize.Level1)
+{
+    NodeId id = 1;
+    RSSurfaceNodeType type = RSSurfaceNodeType::ABILITY_MAGNIFICATION_NODE;
+    RSSurfaceRenderNodeConfig config = { .id = id, .nodeType = type };
+    auto node = std::make_shared<RSSurfaceRenderNode>(config);
+    EXPECT_NE(node, nullptr);
+    if (node != nullptr) {
+        auto& properties = node->GetMutableRenderProperties();
+        EXPECT_EQ(properties.localMagnificationCap_, true);
+        EXPECT_EQ(properties.filterNeedUpdate_, true);
+    }
+}
+
+/**
  * @tc.name: SetContextMatrix001
  * @tc.desc: test
  * @tc.type:FUNC
@@ -185,6 +205,42 @@ HWTEST_F(RSSurfaceRenderNodeTest, SetSurfaceNodeType003, TestSize.Level1)
     node->SetSurfaceNodeType(RSSurfaceNodeType::DEFAULT);
     bool isSameType = (node->GetSurfaceNodeType() == RSSurfaceNodeType::UI_EXTENSION_COMMON_NODE);
     EXPECT_TRUE(isSameType);
+}
+
+/**
+ * @tc.name: CheckContainerDirtyStatusAndUpdateDirty001
+ * @tc.desc: Test CheckContainerDirtyStatusAndUpdateDirty
+ * @tc.type: FUNC
+ * @tc.require: issueICFZGG
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, CheckContainerDirtyStatusAndUpdateDirty001, TestSize.Level1)
+{
+    RSSurfaceRenderNodeConfig config;
+    auto node = std::make_shared<RSSurfaceRenderNode>(config);
+
+    node->nodeType_ = RSSurfaceNodeType::UI_EXTENSION_SECURE_NODE;
+    bool containerDirty = false;
+    node->CheckContainerDirtyStatusAndUpdateDirty(containerDirty);
+    EXPECT_EQ(containerDirty, false);
+    containerDirty = true;
+    node->CheckContainerDirtyStatusAndUpdateDirty(containerDirty);
+    EXPECT_EQ(containerDirty, true);
+
+    node->nodeType_ = RSSurfaceNodeType::LEASH_WINDOW_NODE;
+    containerDirty = false;
+    node->CheckContainerDirtyStatusAndUpdateDirty(containerDirty);
+    EXPECT_EQ(containerDirty, false);
+    containerDirty = true;
+    node->CheckContainerDirtyStatusAndUpdateDirty(containerDirty);
+    EXPECT_EQ(containerDirty, false);
+
+    node->nodeType_ = RSSurfaceNodeType::APP_WINDOW_NODE;
+    containerDirty = false;
+    node->CheckContainerDirtyStatusAndUpdateDirty(containerDirty);
+    EXPECT_EQ(containerDirty, false);
+    containerDirty = true;
+    node->CheckContainerDirtyStatusAndUpdateDirty(containerDirty);
+    EXPECT_EQ(containerDirty, false);
 }
 
 /**
@@ -386,6 +442,89 @@ HWTEST_F(RSSurfaceRenderNodeTest, ResetSurfaceOpaqueRegion07, TestSize.Level1)
         screenRect, absRect, ScreenRotation::ROTATION_270, false, dstCornerRadius);
     surfaceRenderNode.ResetSurfaceOpaqueRegion(
         screenRect, absRect, ScreenRotation::ROTATION_270, true, dstCornerRadius);
+}
+
+/**
+ * @tc.name: ResetSurfaceOpaqueRegion08
+ * @tc.desc: function test when NeedDrawBehindWindow() return true
+ * @tc.type:FUNC
+ * @tc.require: issueIC9HNQ
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, ResetSurfaceOpaqueRegion08, TestSize.Level1)
+{
+    auto surfaceRenderNode = std::make_shared<MockRSSurfaceRenderNode>(id);
+    ASSERT_NE(surfaceRenderNode, nullptr);
+    RectI screenRect {0, 0, 2560, 1600};
+    RectI absRect {0, 100, 400, 500};
+    surfaceRenderNode->SetAbilityBGAlpha(0);
+    Vector4f cornerRadius;
+    Vector4f::Max(
+        surfaceRenderNode->GetWindowCornerRadius(), surfaceRenderNode->GetGlobalCornerRadius(), cornerRadius);
+    Vector4<int> dstCornerRadius(static_cast<int>(std::ceil(cornerRadius.x_)),
+                                 static_cast<int>(std::ceil(cornerRadius.y_)),
+                                 static_cast<int>(std::ceil(cornerRadius.z_)),
+                                 static_cast<int>(std::ceil(cornerRadius.w_)));
+    surfaceRenderNode->occlusionRegionBehindWindow_ = Occlusion::Region(Occlusion::Rect(defaultLargeRect));
+    EXPECT_CALL(*surfaceRenderNode, NeedDrawBehindWindow()).WillRepeatedly(testing::Return(true));
+    EXPECT_CALL(*surfaceRenderNode, GetFilterRect()).WillRepeatedly(testing::Return(defaultSmallRect));
+    surfaceRenderNode->ResetSurfaceOpaqueRegion(
+        screenRect, absRect, ScreenRotation::ROTATION_0, false, dstCornerRadius);
+    ASSERT_TRUE(surfaceRenderNode->IsBehindWindowOcclusionChanged());
+}
+
+/**
+ * @tc.name: ResetSurfaceOpaqueRegion09
+ * @tc.desc: function test when NeedDrawBehindWindow() return false
+ * @tc.type:FUNC
+ * @tc.require: issueIC9HNQ
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, ResetSurfaceOpaqueRegion09, TestSize.Level1)
+{
+    auto surfaceRenderNode = std::make_shared<MockRSSurfaceRenderNode>(id);
+    ASSERT_NE(surfaceRenderNode, nullptr);
+    RectI screenRect {0, 0, 2560, 1600};
+    RectI absRect {0, 100, 400, 500};
+    surfaceRenderNode->SetAbilityBGAlpha(0);
+    Vector4f cornerRadius;
+    Vector4f::Max(
+        surfaceRenderNode->GetWindowCornerRadius(), surfaceRenderNode->GetGlobalCornerRadius(), cornerRadius);
+    Vector4<int> dstCornerRadius(static_cast<int>(std::ceil(cornerRadius.x_)),
+                                 static_cast<int>(std::ceil(cornerRadius.y_)),
+                                 static_cast<int>(std::ceil(cornerRadius.z_)),
+                                 static_cast<int>(std::ceil(cornerRadius.w_)));
+    surfaceRenderNode->occlusionRegionBehindWindow_ = Occlusion::Region(Occlusion::Rect(defaultLargeRect));
+    EXPECT_CALL(*surfaceRenderNode, NeedDrawBehindWindow()).WillRepeatedly(testing::Return(false));
+    surfaceRenderNode->ResetSurfaceOpaqueRegion(
+        screenRect, absRect, ScreenRotation::ROTATION_0, false, dstCornerRadius);
+    ASSERT_TRUE(surfaceRenderNode->IsBehindWindowOcclusionChanged());
+}
+
+/**
+ * @tc.name: ResetSurfaceOpaqueRegion10
+ * @tc.desc: function test when NeedDrawBehindWindow() return true and occlusionRegionBehindWindow has not changed
+ * @tc.type:FUNC
+ * @tc.require: issueIC9HNQ
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, ResetSurfaceOpaqueRegion10, TestSize.Level1)
+{
+    auto surfaceRenderNode = std::make_shared<MockRSSurfaceRenderNode>(id);
+    ASSERT_NE(surfaceRenderNode, nullptr);
+    RectI screenRect {0, 0, 2560, 1600};
+    RectI absRect {0, 100, 400, 500};
+    surfaceRenderNode->SetAbilityBGAlpha(0);
+    Vector4f cornerRadius;
+    Vector4f::Max(
+        surfaceRenderNode->GetWindowCornerRadius(), surfaceRenderNode->GetGlobalCornerRadius(), cornerRadius);
+    Vector4<int> dstCornerRadius(static_cast<int>(std::ceil(cornerRadius.x_)),
+                                 static_cast<int>(std::ceil(cornerRadius.y_)),
+                                 static_cast<int>(std::ceil(cornerRadius.z_)),
+                                 static_cast<int>(std::ceil(cornerRadius.w_)));
+    surfaceRenderNode->occlusionRegionBehindWindow_ = Occlusion::Region(Occlusion::Rect(defaultLargeRect));
+    EXPECT_CALL(*surfaceRenderNode, NeedDrawBehindWindow()).WillRepeatedly(testing::Return(true));
+    EXPECT_CALL(*surfaceRenderNode, GetFilterRect()).WillRepeatedly(testing::Return(defaultLargeRect));
+    surfaceRenderNode->ResetSurfaceOpaqueRegion(
+        screenRect, absRect, ScreenRotation::ROTATION_0, false, dstCornerRadius);
+    ASSERT_FALSE(surfaceRenderNode->IsBehindWindowOcclusionChanged());
 }
 
 /**
@@ -706,9 +845,8 @@ HWTEST_F(RSSurfaceRenderNodeTest, UpdateSurfaceCacheContentStatic, TestSize.Leve
 {
     auto node = std::make_shared<RSSurfaceRenderNode>(id, context);
     auto subNode = std::make_shared<RSRenderNode>(id + 1, context);
-    if (node == nullptr || subNode == nullptr) {
-        return;
-    }
+    ASSERT_NE(node, nullptr);
+    ASSERT_NE(subNode, nullptr);
     std::unordered_map<NodeId, std::weak_ptr<RSRenderNode>> activeNodeIds;
     node->UpdateSurfaceCacheContentStatic(activeNodeIds);
     std::shared_ptr<RSRenderNode> nullNode = nullptr;
@@ -732,9 +870,8 @@ HWTEST_F(RSSurfaceRenderNodeTest, IsContentDirtyNodeLimited, TestSize.Level1)
 {
     auto node = std::make_shared<RSSurfaceRenderNode>(id, context);
     auto subnode = std::make_shared<RSRenderNode>(id + 1, context);
-    if (node == nullptr || subnode == nullptr) {
-        return;
-    }
+    ASSERT_NE(node, nullptr);
+    ASSERT_NE(subnode, nullptr);
     node->AddChild(subnode, 0);
     subnode->isContentDirty_ = true;
     subnode->isNewOnTree_ = true;
@@ -758,6 +895,69 @@ HWTEST_F(RSSurfaceRenderNodeTest, SetSkipLayer001, TestSize.Level2)
 
     node->SetSkipLayer(true);
     ASSERT_TRUE(node->GetSpecialLayerMgr().Find(SpecialLayerType::SKIP));
+}
+
+/**
+ * @tc.name: UpdateBlackListStatus001
+ * @tc.desc: Test UpdateBlackListStatus
+ * @tc.type: FUNC
+ * @tc.require: issueIC9I11
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, UpdateBlackListStatus001, TestSize.Level1)
+{
+    auto rsContext = std::make_shared<RSContext>();
+    ASSERT_NE(rsContext, nullptr);
+    auto node = std::make_shared<RSSurfaceRenderNode>(id, rsContext);
+    ASSERT_NE(node, nullptr);
+    node->InitRenderParams();
+    node->addedToPendingSyncList_ = true;
+    auto params = static_cast<RSSurfaceRenderParams*>(node->stagingRenderParams_.get());
+    EXPECT_NE(params, nullptr);
+    node->nodeType_ = RSSurfaceNodeType::LEASH_WINDOW_NODE;
+
+    auto virtualScreenId = 1;
+    node->UpdateBlackListStatus(virtualScreenId, true);
+    node->UpdateBlackListStatus(virtualScreenId, true);
+    node->UpdateRenderParams();
+    EXPECT_TRUE(params->HasBlackListByScreenId(virtualScreenId));
+    node->UpdateBlackListStatus(virtualScreenId, false);
+    node->UpdateRenderParams();
+    EXPECT_FALSE(params->HasBlackListByScreenId(virtualScreenId));
+}
+
+/**
+ * @tc.name: SyncBlackListInfoToFirstLevelNode001
+ * @tc.desc: Test SyncBlackListInfoToFirstLevelNode
+ * @tc.type: FUNC
+ * @tc.require: issueIC9I11
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, SyncBlackListInfoToFirstLevelNode001, TestSize.Level1)
+{
+    auto rsContext = std::make_shared<RSContext>();
+    ASSERT_NE(rsContext, nullptr);
+    auto parentNode = std::make_shared<RSSurfaceRenderNode>(id, rsContext);
+    auto childNode = std::make_shared<RSSurfaceRenderNode>(id + 1, rsContext);
+    ASSERT_NE(parentNode, nullptr);
+    ASSERT_NE(childNode, nullptr);
+
+    NodeId parentNodeId = parentNode->GetId();
+    pid_t parentNodePid = ExtractPid(parentNodeId);
+    NodeId childNodeId = childNode->GetId();
+    pid_t childNodePid = ExtractPid(childNodeId);
+    rsContext->GetMutableNodeMap().renderNodeMap_[parentNodePid][parentNodeId] = parentNode;
+    rsContext->GetMutableNodeMap().renderNodeMap_[childNodePid][childNodeId] = childNode;
+    childNode->firstLevelNodeId_ = parentNodeId;
+    parentNode->nodeType_ = RSSurfaceNodeType::LEASH_WINDOW_NODE;
+    parentNode->AddChild(childNode);
+
+    auto virtualScreenId = 1;
+    childNode->UpdateBlackListStatus(virtualScreenId, true);
+    parentNode->SetIsOnTheTree(true);
+    parentNode->SyncBlackListInfoToFirstLevelNode();
+    childNode->SetIsOnTheTree(true);
+    childNode->SyncBlackListInfoToFirstLevelNode();
+    childNode->SetIsOnTheTree(false);
+    childNode->SyncBlackListInfoToFirstLevelNode();
 }
 
 /**
@@ -1925,12 +2125,12 @@ HWTEST_F(RSSurfaceRenderNodeTest, UpdateFilterCacheStatusIfNodeStatic, TestSize.
     node->filterNodes_.emplace_back(mockNode2);
     auto mockNode3 = std::make_shared<RSRenderNode>(id + 3);
     mockNode3->isOnTheTree_ = true;
-    mockNode3->GetMutableRenderProperties().SetBackgroundFilter(std::make_shared<RSFilter>());
+    mockNode3->GetMutableRenderProperties().backgroundFilter_ = std::make_shared<RSFilter>();
     node->filterNodes_.emplace_back(mockNode3);
     auto mockNode4 = std::make_shared<RSRenderNode>(id + 4);
     mockNode4->isOnTheTree_ = true;
     mockNode4->GetMutableRenderProperties().needFilter_ = true;
-    mockNode4->GetMutableRenderProperties().SetFilter(std::make_shared<RSFilter>());
+    mockNode4->GetMutableRenderProperties().filter_ = std::make_shared<RSFilter>();
     node->filterNodes_.emplace_back(mockNode4);
     std::shared_ptr<RSRenderNode> mockNode5 = nullptr;
     node->filterNodes_.emplace_back(mockNode5);
@@ -1939,7 +2139,7 @@ HWTEST_F(RSSurfaceRenderNodeTest, UpdateFilterCacheStatusIfNodeStatic, TestSize.
     std::shared_ptr<RSRenderNode> mockNode6 = std::make_shared<RSEffectRenderNode>(id + 6);
     mockNode6->isOnTheTree_ = true;
     mockNode6->GetMutableRenderProperties().needFilter_ = true;
-    mockNode6->GetMutableRenderProperties().SetBackgroundFilter(std::make_shared<RSFilter>());
+    mockNode6->GetMutableRenderProperties().backgroundFilter_ = std::make_shared<RSFilter>();
     node->filterNodes_.emplace_back(mockNode6);
     node->UpdateFilterCacheStatusIfNodeStatic(RectI(0, 0, 100, 100), false);
     ASSERT_NE(node->filterNodes_.size(), 0);
@@ -2142,10 +2342,15 @@ HWTEST_F(RSSurfaceRenderNodeTest, HDRPresentTest002, TestSize.Level1)
     parentNode->SetIsOnTheTree(true);
     childNode->SetIsOnTheTree(true);
 
-    childNode->IncreaseHDRNum();
-    ASSERT_TRUE(childNode->GetHDRPresent());
-    childNode->ReduceHDRNum();
-    ASSERT_FALSE(childNode->GetHDRPresent());
+    childNode->IncreaseHDRNum(HDRComponentType::IMAGE);
+    EXPECT_TRUE(childNode->GetHDRPresent());
+    childNode->ReduceHDRNum(HDRComponentType::IMAGE);
+    EXPECT_FALSE(childNode->GetHDRPresent());
+
+    childNode->IncreaseHDRNum(HDRComponentType::UICOMPONENT);
+    EXPECT_TRUE(childNode->GetHDRPresent());
+    childNode->ReduceHDRNum(HDRComponentType::UICOMPONENT);
+    EXPECT_FALSE(childNode->GetHDRPresent());
 }
 
 /**
@@ -2258,6 +2463,38 @@ HWTEST_F(RSSurfaceRenderNodeTest, GetOriAncoForceDoDirect, TestSize.Level1)
 {
     RSSurfaceRenderNode::SetAncoForceDoDirect(false);
     EXPECT_FALSE(RSSurfaceRenderNode::GetOriAncoForceDoDirect());
+}
+
+/**
+ * @tc.name: SetTunnelLayerId
+ * @tc.desc: test results of SetTunnelLayerId
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, SetTunnelLayerId, TestSize.Level1)
+{
+    auto testNode = std::make_shared<RSSurfaceRenderNode>(id, context);
+    ASSERT_NE(testNode, nullptr);
+    ASSERT_EQ(testNode->GetTunnelLayerId(), 0);
+    testNode->SetTunnelLayerId(1);
+    ASSERT_EQ(testNode->GetTunnelLayerId(), 1);
+}
+ 
+/**
+ * @tc.name: IsHardwareForcedDisabled001
+ * @tc.desc: test results of IsHardwareForcedDisabled001
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, IsHardwareForcedDisabled001, TestSize.Level1)
+{
+    auto testNode = std::make_shared<RSSurfaceRenderNode>(id, context);
+    ASSERT_NE(testNode, nullptr);
+    ASSERT_EQ(testNode->GetTunnelLayerId(), 0);
+ 
+    testNode->SetTunnelLayerId(1);
+    ASSERT_EQ(testNode->GetTunnelLayerId(), 1);
+    ASSERT_EQ(testNode->IsHardwareForcedDisabled(), false);
 }
 
 /**

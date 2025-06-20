@@ -17,8 +17,11 @@
 #define ROSEN_TEXT_SYMBOL_ANIMATION_CONFIG_H
 
 #include "draw/path.h"
+#include "draw/color.h"
 #include "text/hm_symbol.h"
 #include "common/rs_vector4.h"
+#include "symbol_constants.h"
+#include "symbol_gradient.h"
 
 
 namespace OHOS {
@@ -27,7 +30,7 @@ namespace TextEngine {
 
 struct NodeLayerInfo {
     Drawing::Path path;
-    Drawing::DrawingSColor color;
+    std::shared_ptr<SymbolGradient> color = nullptr;
 };
 
 struct SymbolNode {
@@ -37,8 +40,22 @@ struct SymbolNode {
     int animationIndex = 0;
     bool isMask = false;
 };
+
+struct TextEffectElement {
+    Drawing::Path path;
+    Drawing::Point offset;
+    uint64_t uniqueId = 0;
+    float width = 0.0;
+    float height = 0.0;
+    int delay = 0;
+};
+
 struct SymbolAnimationConfig {
     std::vector<SymbolNode> symbolNodes;
+    std::vector<std::vector<Drawing::DrawingPiecewiseParameter>> parameters;
+    TextEffectElement effectElement;
+    Drawing::Color color;
+    std::optional<SymbolShadow> symbolShadow;
     uint32_t numNodes = 0;
     Drawing::DrawingEffectStrategy effectStrategy = Drawing::DrawingEffectStrategy::NONE;
     uint64_t symbolSpanId = 0;
@@ -46,6 +63,7 @@ struct SymbolAnimationConfig {
     int repeatCount = 1;
     bool animationStart = false;
     Drawing::DrawingCommonSubType commonSubType = Drawing::DrawingCommonSubType::DOWN;
+    double slope = 0.0;
     bool currentAnimationHasPlayed = false;
 };
 }

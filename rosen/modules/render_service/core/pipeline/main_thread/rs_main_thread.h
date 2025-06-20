@@ -45,6 +45,7 @@
 #include "pipeline/rs_context.h"
 #include "pipeline/rs_uni_render_judgement.h"
 #include "pipeline/hwc/rs_direct_composition_helper.h"
+#include "feature/hyper_graphic_manager/hgm_context.h"
 #include "feature/vrate/rs_vsync_rate_reduce_manager.h"
 #include "platform/common/rs_event_manager.h"
 #include "platform/drawing/rs_vsync_client.h"
@@ -233,10 +234,6 @@ public:
     {
         forceUpdateUniRenderFlag_ = flag;
     }
-    void SetIdleTimerExpiredFlag(bool flag)
-    {
-        idleTimerExpiredFlag_ = flag;
-    }
     std::shared_ptr<Drawing::Image> GetWatermarkImg();
     bool GetWatermarkFlag();
 
@@ -342,16 +339,6 @@ public:
 
     bool IsRequestedNextVSync();
 
-    bool GetNextDVsyncAnimateFlag() const
-    {
-        return needRequestNextVsyncAnimate_;
-    }
-
-    bool IsFirstFrameOfPartialRender() const
-    {
-        return isFirstFrameOfPartialRender_;
-    }
-
     bool IsOcclusionNodesNeedSync(NodeId id, bool useCurWindow);
 
     void CallbackDrawContextStatusToWMS(bool isUniRender = false);
@@ -433,9 +420,9 @@ public:
     void InitVulkanErrorCallback(Drawing::GPUContext* gpuContext);
     void NotifyUnmarshalTask(int64_t uiTimestamp);
     void NotifyPackageEvent(const std::vector<std::string>& packageList);
-    void NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt);
+    void HandleTouchEvent(int32_t touchStatus, int32_t touchCnt);
     void SetBufferInfo(uint64_t id, const std::string &name, uint32_t queueSize,
-        int32_t bufferCount, int64_t lastConsumeTime);
+        int32_t bufferCount, int64_t lastConsumeTime, bool isUrgent);
     void GetFrontBufferDesiredPresentTimeStamp(
         const sptr<IConsumerSurface>& consumer, int64_t& desiredPresentTimeStamp);
 
@@ -443,6 +430,8 @@ public:
     bool IsHardwareEnabledNodesNeedSync();
     bool WaitHardwareThreadTaskExecute();
     void NotifyHardwareThreadCanExecuteTask();
+
+    uint32_t GetVsyncRefreshRate();
 
 private:
     using TransactionDataIndexMap = std::unordered_map<pid_t,
@@ -580,6 +569,8 @@ private:
     bool DoDirectComposition(std::shared_ptr<RSBaseRenderNode> rootNode, bool waitForRT);
     bool ExistBufferIsVisibleAndUpdate();
     void UpdateDirectCompositionByAnimate(bool animateNeedRequestNextVsync);
+    void HandleTunnelLayerId(const std::shared_ptr<RSSurfaceHandler>& surfaceHandler,
+        const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode);
 
     bool isUniRender_ = RSUniRenderJudgement::IsUniRender();
     bool needWaitUnmarshalFinished_ = true;
@@ -611,12 +602,10 @@ private:
     bool isCachedSurfaceUpdated_ = false;
     // used for informing hgm the bundle name of SurfaceRenderNodes
     bool forceUpdateUniRenderFlag_ = false;
-    bool idleTimerExpiredFlag_ = false;
     // for drawing cache dfx
     bool isDrawingCacheDfxEnabledOfCurFrame_ = false;
     bool isDrawingCacheDfxEnabledOfLastFrame_ = false;
     // for dvsync (animate requestNextVSync after mark rsnotrendering)
-    bool needRequestNextVsyncAnimate_ = false;
     bool forceUIFirstChanged_ = false;
     bool lastFrameUIExtensionDataEmpty_ = false;
     // overDraw
@@ -627,9 +616,6 @@ private:
 #endif
     bool isCurtainScreenOn_ = false;
     // partial render
-    bool isFirstFrameOfPartialRender_ = false;
-    bool isPartialRenderEnabledOfLastFrame_ = false;
-    bool isRegionDebugEnabledOfLastFrame_ = false;
     bool isForceRefresh_ = false;
     // record multidisplay status change
     bool isMultiDisplayPre_ = false;
@@ -660,6 +646,7 @@ private:
     std::atomic<int32_t> focusAppPid_ = -1;
     std::atomic<int32_t> focusAppUid_ = -1;
     std::atomic<uint32_t> requestNextVsyncNum_ = 0;
+    std::atomic<uint32_t> drawingRequestNextVsyncNum_ = 0;
     uint64_t curTime_ = 0;
     uint64_t timestamp_ = 0;
     uint64_t vsyncId_ = 0;
@@ -682,8 +669,7 @@ private:
     sptr<VSyncDistributor> appVSyncDistributor_ = nullptr;
     std::shared_ptr<RSBaseRenderEngine> renderEngine_;
     std::shared_ptr<RSBaseEventDetector> rsCompositionTimeoutDetector_;
-    std::shared_ptr<Drawing::Image> watermarkImg_ = nullptr;
-    std::shared_ptr<RSRenderFrameRateLinker> rsFrameRateLinker_ = nullptr; // modify by HgmThread
+    std::shared_ptr<Drawing::Image> watermarkImg_ = nullptr; // display safterWatermask(true) or hide it(false)
     std::shared_ptr<RSAppStateListener> rsAppStateListener_;
     std::unique_ptr<RSVsyncClient> vsyncClient_ = nullptr;
     RSTaskMessage::RSTask mainLoop_;
@@ -788,8 +774,6 @@ private:
 
     std::unordered_map<std::string, std::shared_ptr<Media::PixelMap>> surfaceNodeWatermarks_;
 
-    FrameRateRange rsCurrRange_;
-
     // UIFirst
     std::list<std::shared_ptr<RSSurfaceRenderNode>> subThreadNodes_;
     std::unordered_map<NodeId, bool> cacheCmdSkippedNodes_;
@@ -851,6 +835,7 @@ private:
 #endif
 
     std::function<void(const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode)> consumeAndUpdateNode_;
+    HgmContext hgmContext_;
 };
 } // namespace OHOS::Rosen
 #endif // RS_MAIN_THREAD

@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import("//build/ohos_var.gni")
 import("//build/test.gni")
 import("//foundation/graphic/graphic_2d/frameworks/text/config.gni")
 import("//foundation/graphic/graphic_2d/graphic_config.gni")
@@ -23,6 +24,7 @@ ohos_unittest("rosen_text_adapt_test") {
     "convert_test.cpp",
     "font_collection_test.cpp",
     "run_test.cpp",
+    "style_copy_test.cpp",
     "text_line_base_test.cpp",
     "typography_create_test.cpp",
     "typography_relayout_test.cpp",
@@ -45,7 +47,7 @@ ohos_unittest("rosen_text_adapt_test") {
   ]
 
   if (platform_is_ohos) {
-    defines = [ "OHOS_TEXT_ENABLE" ]
+    defines = [ "ENABLE_OHOS_ENHANCE" ]
   }
 
   deps = [
@@ -58,8 +60,17 @@ ohos_unittest("rosen_text_adapt_test") {
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
     "hilog:libhilog",
-    "skia:skia_paragraph_ohos",
   ]
+
+  if (use_new_skia) {
+    external_deps += [
+      "skia:skia_paragraph_ohos_new",
+    ]
+  } else {
+    external_deps += [
+      "skia:skia_paragraph_ohos",
+    ]
+  }
 
   part_name = "graphic_2d"
   subsystem_name = "graphic"

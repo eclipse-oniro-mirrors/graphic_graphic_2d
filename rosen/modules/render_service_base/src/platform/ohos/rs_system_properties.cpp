@@ -111,6 +111,13 @@ int RSSystemProperties::GetSceneJankFrameThreshold()
     return sceneJankFrameThreshold;
 }
 
+bool RSSystemProperties::GetProfilerPixelCheckMode()
+{
+    static CachedHandle handle = CachedParameterCreate("persist.graphic.profiler.pixelcheck", "0");
+    int32_t changed = 0;
+    return ConvertToInt(CachedParameterGetChanged(handle, &changed), 0) != 0;
+}
+
 int RSSystemProperties::GetRecordingEnabled()
 {
     static CachedHandle g_Handle = CachedParameterCreate("debug.graphic.recording.enabled", "0");
@@ -118,7 +125,6 @@ int RSSystemProperties::GetRecordingEnabled()
     const char *num = CachedParameterGetChanged(g_Handle, &changed);
     return ConvertToInt(num, 0);
 }
-
 
 void RSSystemProperties::SetRecordingDisenabled()
 {
@@ -343,6 +349,14 @@ bool RSSystemProperties::GetExpandScreenDirtyEnabled()
     int changed = 0;
     const char *enable = CachedParameterGetChanged(g_Handle, &changed);
     return ConvertToInt(enable, 0) != 0;
+}
+
+bool RSSystemProperties::GetVirtualExpandScreenSkipEnabled()
+{
+    static CachedHandle g_Handle = CachedParameterCreate("rosen.uni.virtualexpandscreenskip.enabled", "1");
+    int changed = 0;
+    const char *enable = CachedParameterGetChanged(g_Handle, &changed);
+    return ConvertToInt(enable, 1) != 0;
 }
 
 bool RSSystemProperties::GetReleaseResourceEnabled()
@@ -1392,6 +1406,13 @@ bool RSSystemProperties::GetTimeVsyncDisabled()
     return timeVsyncDisabled;
 }
 
+bool RSSystemProperties::GetTextureExportDFXEnabled()
+{
+    static bool textureexportDFXEnabled =
+        std::atoi((system::GetParameter("persist.rosen.textureexportdfx.enabled", "0")).c_str()) != 0;
+    return textureexportDFXEnabled;
+}
+
 bool RSSystemProperties::GetHybridRenderEnabled()
 {
     return GetHybridRenderSystemEnabled() || GetHybridRenderCcmEnabled();
@@ -1399,7 +1420,7 @@ bool RSSystemProperties::GetHybridRenderEnabled()
 
 int32_t RSSystemProperties::GetHybridRenderCcmEnabled()
 {
-    static int32_t hybridRenderCcmEnabled =
+    static int32_t hybridRenderCcmEnabled = Drawing::SystemProperties::IsUseVulkan() &&
         std::atoi((system::GetParameter("const.graphics.hybridrenderenable", "0")).c_str());
     return hybridRenderCcmEnabled;
 }
@@ -1408,27 +1429,34 @@ int32_t RSSystemProperties::GetHybridRenderCcmEnabled()
 bool RSSystemProperties::GetHybridRenderSystemEnabled()
 {
     static bool hybridRenderSystemEnabled = Drawing::SystemProperties::IsUseVulkan() &&
-        system::GetBoolParameter("persist.sys.graphic.hybrid_render", true);
+        system::GetBoolParameter("persist.sys.graphic.hybrid_render", false);
     return hybridRenderSystemEnabled;
 }
 
 bool RSSystemProperties::GetHybridRenderDfxEnabled()
 {
-    static bool hybridRenderDfxEnabled = GetHybridRenderSystemEnabled() &&
+    static bool hybridRenderDfxEnabled = GetHybridRenderEnabled() &&
         system::GetBoolParameter("persist.sys.graphic.hybrid_render_dfx_enabled", false);
     return hybridRenderDfxEnabled;
 }
 
 uint32_t RSSystemProperties::GetHybridRenderTextBlobLenCount()
 {
-    static uint32_t textBlobLenCount =
-        system::GetIntParameter("persist.sys.graphic.hybrid_render_text_blob_len_count", DEFAULT_TEXTBLOB_LINE_COUNT);
+    static uint32_t textBlobLenCount = static_cast<uint32_t>(
+        system::GetIntParameter("persist.sys.graphic.hybrid_render_text_blob_len_count", DEFAULT_TEXTBLOB_LINE_COUNT));
     return textBlobLenCount;
+}
+
+bool RSSystemProperties::ViewDrawNodeType()
+{
+    static CachedHandle handle = CachedParameterCreate("persist.graphic.ViewDrawNodeType", "0");
+    int32_t changed = 0;
+    return ConvertToInt(CachedParameterGetChanged(handle, &changed), 0) != 0;
 }
 
 bool RSSystemProperties::GetHybridRenderParallelConvertEnabled()
 {
-    static bool paraConvertEnabled = GetHybridRenderSystemEnabled() &&
+    static bool paraConvertEnabled = GetHybridRenderEnabled() &&
         system::GetBoolParameter("persist.sys.graphic.hybrid_render_parallelconvert_enabled", true);
     return paraConvertEnabled;
 }
@@ -1436,14 +1464,14 @@ bool RSSystemProperties::GetHybridRenderParallelConvertEnabled()
 // The switch are for scheme debugging. After the scheme is stabilizated, the switch will be removed.
 bool RSSystemProperties::GetHybridRenderCanvasEnabled()
 {
-    static bool canvasEnabled = GetHybridRenderSystemEnabled() &&
+    static bool canvasEnabled = GetHybridRenderEnabled() &&
         system::GetBoolParameter("persist.sys.graphic.hybrid_render_canvas_drawing_node_enabled", false);
     return canvasEnabled;
 }
 
 bool RSSystemProperties::GetHybridRenderMemeoryReleaseEnabled()
 {
-    static bool memoryReleaseEnabled = GetHybridRenderSystemEnabled() &&
+    static bool memoryReleaseEnabled = GetHybridRenderEnabled() &&
         system::GetBoolParameter("persist.sys.graphic.hybrid_render_memory_release_enabled", true);
     return memoryReleaseEnabled;
 }
@@ -1451,24 +1479,24 @@ bool RSSystemProperties::GetHybridRenderMemeoryReleaseEnabled()
 // The switch are for scheme debugging. After the scheme is stabilizated, the switch will be removed.
 bool RSSystemProperties::GetHybridRenderTextBlobEnabled()
 {
-    static bool textblobEnabled = GetHybridRenderSystemEnabled() &&
-        system::GetBoolParameter("persist.sys.graphic.hybrid_render_textblob_enabled", true);
+    static bool textblobEnabled = GetHybridRenderEnabled() &&
+        system::GetBoolParameter("persist.sys.graphic.hybrid_render_textblob_enabled", false);
     return textblobEnabled;
 }
 
 // The switch are for scheme debugging. After the scheme is stabilizated, the switch will be removed.
 bool RSSystemProperties::GetHybridRenderSvgEnabled()
 {
-    static bool svgEnabled = GetHybridRenderSystemEnabled() &&
-        system::GetBoolParameter("persist.sys.graphic.hybrid_render_svg_enabled", true);
+    static bool svgEnabled = GetHybridRenderEnabled() &&
+        system::GetBoolParameter("persist.sys.graphic.hybrid_render_svg_enabled", false);
     return svgEnabled;
 }
 
 // The switch are for scheme debugging. After the scheme is stabilizated, the switch will be removed.
 bool RSSystemProperties::GetHybridRenderHmsymbolEnabled()
 {
-    static bool hmsymbolEnabled = GetHybridRenderSystemEnabled() &&
-        system::GetBoolParameter("persist.sys.graphic.hybrid_render_hmsymbol_enabled", true);
+    static bool hmsymbolEnabled = GetHybridRenderEnabled() &&
+        system::GetBoolParameter("persist.sys.graphic.hybrid_render_hmsymbol_enabled", false);
     return hmsymbolEnabled;
 }
 
@@ -1479,20 +1507,24 @@ int32_t RSSystemProperties::GetHybridRenderSwitch(ComponentEnableSwitch bitSeq)
         ROSEN_LOGD("GetHybridRenderSwitch access to [%{public}s] is denied", VULKAN_CONFIG_FILE_PATH);
         return 0;
     }
-    static int32_t hybridRenderFeatureSwitch =
-        std::stol((system::GetParameter("const.graphics.hybridrenderfeatureswitch", "0x00")).c_str(), nullptr, 16);
+    static uint32_t hybridRenderFeatureSwitch =
+        std::stoul((system::GetParameter("const.graphics.hybridrenderfeatureswitch", "0x00")).c_str(), nullptr, 16);
     static std::vector<int> hybridRenderSystemProperty(std::size(ComponentSwitchTable));
 
+    if (bitSeq >= ComponentEnableSwitch::SWITCH_MAX) {
+        return 0;
+    }
     if (!GetHybridRenderEnabled()) {
         return 0;
     }
 
-    hybridRenderSystemProperty[static_cast<int>(bitSeq)] =
-        ComponentSwitchTable[static_cast<int>(bitSeq)].ComponentHybridSwitch();
+    hybridRenderSystemProperty[static_cast<uint32_t>(bitSeq)] =
+        ComponentSwitchTable[static_cast<uint32_t>(bitSeq)].ComponentHybridSwitch();
 
-    return (GetHybridRenderCcmEnabled() && (!hybridRenderFeatureSwitch ?
-        1 : (1 << static_cast<int>(bitSeq)) & hybridRenderFeatureSwitch)) ||
-        hybridRenderSystemProperty[static_cast<int>(bitSeq)];
+    uint32_t hybridRenderFeatureSwitchValue = hybridRenderFeatureSwitch == 0 ? 0 :
+        (1 << static_cast<uint32_t>(bitSeq)) & hybridRenderFeatureSwitch;
+    return (GetHybridRenderCcmEnabled() && hybridRenderFeatureSwitchValue != 0) ||
+           hybridRenderSystemProperty[static_cast<uint32_t>(bitSeq)];
 }
 
 bool RSSystemProperties::GetVKImageUseEnabled()
@@ -1513,5 +1545,28 @@ bool RSSystemProperties::GetDebugFmtTraceEnabled()
     return GetDebugTraceEnabled() || debugFmtTraceEnable_;
 }
 
+void RSSystemProperties::SetBehindWindowFilterEnabled(bool enabled)
+{
+    isBehindWindowFilterEnabled_ = enabled;
+}
+
+bool RSSystemProperties::GetBehindWindowFilterEnabled()
+{
+    return isBehindWindowFilterEnabled_;
+}
+
+bool RSSystemProperties::GetSubThreadControlFrameRate()
+{
+    static bool subThreadControlFrameRateEnable =
+        system::GetBoolParameter("const.graphic.subthread.control.framerate", false);
+    return subThreadControlFrameRateEnable;
+}
+
+int RSSystemProperties::GetSubThreadDropFrameInterval()
+{
+    static bool dropFrameInterval =
+        system::GetIntParameter("const.graphic.subthread.dropframe.interval", 1);
+    return dropFrameInterval;
+}
 } // namespace Rosen
 } // namespace OHOS

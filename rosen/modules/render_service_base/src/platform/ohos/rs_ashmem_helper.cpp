@@ -107,6 +107,10 @@ bool AshmemAllocator::WriteToAshmem(const void *data, size_t size)
     if (data == nullptr || size_ < size) {
         return false;
     }
+    if (!data_) {
+        ROSEN_LOGE("AshmemAllocator::WriteToAshmem data_ is nullptr");
+        return false;
+    }
     errno_t err = memcpy_s(data_, size, data, size);
     if (err != EOK) {
         ROSEN_LOGE("AshmemAllocator::WriteToAshmem memcpy_s failed, err:%{public}d", err);
@@ -123,12 +127,15 @@ void* AshmemAllocator::CopyFromAshmem(size_t size)
     if (size > LARGE_MALLOC) {
         ROSEN_LOGW("AshmemAllocator::CopyFromAshmem this time malloc large memory, size:%{public}zu", size);
     }
+    if (!data_) {
+        ROSEN_LOGE("AshmemAllocator::CopyFromAshmem data_ is nullptr");
+        return nullptr;
+    }
     void* base = malloc(size);
     if (base == nullptr) {
         ROSEN_LOGE("AshmemAllocator::CopyFromAshmem malloc failed, size:%{public}zu", size);
         return nullptr;
     }
-
     errno_t err = memcpy_s(base, size, data_, size);
     if (err != EOK) {
         free(base);
@@ -429,7 +436,15 @@ std::shared_ptr<MessageParcel> RSAshmemHelper::ParseFromAshmemParcel(MessageParc
     std::unique_ptr<AshmemFdWorker>& ashmemFdWorker,
     std::shared_ptr<AshmemFlowControlUnit> &ashmemFlowControlUnit, pid_t callingPid)
 {
-    uint32_t dataSize = ashmemParcel->ReadUint32();
+    if (!ashmemParcel) {
+        ROSEN_LOGE("ParseFromAshmemParcel ashmemParcel is nullptr");
+        return nullptr;
+    }
+    uint32_t dataSize{0};
+    if (!ashmemParcel->ReadUint32(dataSize)) {
+        ROSEN_LOGE("ParseFromAshmemParcel Read dataSize is failed");
+        return nullptr;
+    }
     RS_TRACE_NAME("ParseFromAshmemParcel data size:" + std::to_string(dataSize));
     // ashmem parcel flow control begins
     ashmemFlowControlUnit = AshmemFlowControlUnit::CheckOverflowAndCreateInstance(callingPid, dataSize);

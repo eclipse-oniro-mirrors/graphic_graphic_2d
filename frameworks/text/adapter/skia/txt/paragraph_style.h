@@ -20,8 +20,9 @@
 #include <climits>
 #include <string>
 
-#include "text_style.h"
 #include "rosen_text/typography_style.h"
+#include "text_style.h"
+#include "typography_types.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -94,12 +95,15 @@ public:
     bool hintingIsOn = false;
     BreakStrategy breakStrategy = BreakStrategy::GREEDY;
     TextTab tab;
-    float paragraphSpacing { 0.0f };
-    bool isEndAddParagraphSpacing { false };
+    float paragraphSpacing{0.0f};
+    bool isEndAddParagraphSpacing{false};
+    bool isTrailingSpaceOptimized{false};
     std::bitset<static_cast<size_t>(RelayoutParagraphStyleAttribute::PARAGRAPH_STYLE_ATTRIBUTE_BUTT)>
         relayoutChangeBitmap;
     size_t defaultTextStyleUid { 0 };
     bool halfLeading { false };
+    bool enableAutoSpace{false};
+    TextVerticalAlign verticalAlignment{TextVerticalAlign::BASELINE};
 };
 } // namespace SPText
 } // namespace Rosen

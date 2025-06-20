@@ -125,6 +125,7 @@ void RSRenderAnimation::Detach(bool forceDetach)
         }
     }
     target_ = nullptr;
+    targetId_ = 0;
 }
 
 NodeId RSRenderAnimation::GetTargetId() const
@@ -294,11 +295,13 @@ bool RSRenderAnimation::Animate(int64_t time, int64_t& minLeftDelayTime)
     // set start time and return
     if (needUpdateStartTime_) {
         SetStartTime(time);
+        minLeftDelayTime = 0;
         return state_ == AnimationState::FINISHED;
     }
 
     // if time not changed since last frame, return
     if (time == animationFraction_.GetLastFrameTime()) {
+        minLeftDelayTime = 0;
         return state_ == AnimationState::FINISHED;
     }
 

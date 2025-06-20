@@ -176,6 +176,7 @@ private:
     void TakeSurfaceCapture(NodeId id, sptr<RSISurfaceCaptureCallback> callback,
         const RSSurfaceCaptureConfig& captureConfig, const RSSurfaceCaptureBlurParam& blurParam,
         const Drawing::Rect& specifiedAreaRect = Drawing::Rect(0.f, 0.f, 0.f, 0.f),
+        std::unique_ptr<Media::PixelMap> clientPixelMap = nullptr,
         RSSurfaceCapturePermissions permissions = RSSurfaceCapturePermissions()) override;
 
     std::vector<std::pair<NodeId, std::shared_ptr<Media::PixelMap>>> TakeSurfaceCaptureSoloNode(
@@ -187,6 +188,9 @@ private:
 
     ErrCode SetWindowFreezeImmediately(NodeId id, bool isFreeze, sptr<RSISurfaceCaptureCallback> callback,
         const RSSurfaceCaptureConfig& captureConfig, const RSSurfaceCaptureBlurParam& blurParam) override;
+
+    void TakeUICaptureInRange(
+        NodeId id, sptr<RSISurfaceCaptureCallback> callback, const RSSurfaceCaptureConfig& captureConfig) override;
 
     ErrCode SetHwcNodeBounds(int64_t rsNodeId, float positionX, float positionY,
         float positionZ, float positionW) override;
@@ -230,6 +234,8 @@ private:
     int32_t SetScreenCorrection(ScreenId id, ScreenRotation screenRotation) override;
 
     bool SetVirtualMirrorScreenCanvasRotation(ScreenId id, bool canvasRotation) override;
+
+    int32_t SetVirtualScreenAutoRotation(ScreenId id, bool isAutoRotation) override;
 
     bool SetVirtualMirrorScreenScaleMode(ScreenId id, ScreenScaleMode scaleMode) override;
 
@@ -331,6 +337,10 @@ private:
 
     void NotifyRefreshRateEvent(const EventInfo& eventInfo) override;
 
+    void SetWindowExpectedRefreshRate(const std::unordered_map<uint64_t, EventInfo>& eventInfos) override;
+
+    void SetWindowExpectedRefreshRate(const std::unordered_map<std::string, EventInfo>& eventInfos) override;
+
     ErrCode NotifySoftVsyncEvent(uint32_t pid, uint32_t rateDiscount) override;
 
     bool NotifySoftVsyncRateDiscountEvent(uint32_t pid, const std::string &name, uint32_t rateDiscount) override;
@@ -340,6 +350,8 @@ private:
     void NotifyDynamicModeEvent(bool enableDynamicModeEvent) override;
 
     ErrCode NotifyHgmConfigEvent(const std::string &eventName, bool state) override;
+
+    ErrCode NotifyXComponentExpectedFrameRate(const std::string& id, int32_t expectedFrameRate) override;
 
     ErrCode SetCacheEnabledForRotation(bool isEnabled) override;
 
@@ -375,6 +387,11 @@ private:
 
     ErrCode SetLayerTop(const std::string &nodeIdStr, bool isTop) override;
 
+    ErrCode SetForceRefresh(const std::string &nodeIdStr, bool isForceRefresh) override;
+
+    void RegisterTransactionDataCallback(int32_t pid,
+        uint64_t timeStamp, sptr<RSITransactionDataCallback> callback) override;
+
     void SetColorFollow(const std::string &nodeIdStr, bool isColorFollow) override;
 
     ErrCode RegisterSurfaceBufferCallback(pid_t pid, uint64_t uid,
@@ -394,6 +411,16 @@ private:
     ErrCode NotifyPageName(const std::string &packageName, const std::string &pageName, bool isEnter) override;
 
     bool GetHighContrastTextState() override;
+
+    ErrCode SetBehindWindowFilterEnabled(bool enabled) override;
+
+    ErrCode GetBehindWindowFilterEnabled(bool& enabled) override;
+
+    ErrCode AvcodecVideoStart(uint64_t uniqueId, std::string& surfaceName, uint32_t fps, uint64_t reportTime) override;
+
+    ErrCode AvcodecVideoStop(uint64_t uniqueId, std::string& surfaceName, uint32_t fps) override;
+
+    int32_t GetPidGpuMemoryInMB(pid_t pid, float &gpuMemInMB) override;
 
     pid_t remotePid_;
     wptr<RSRenderService> renderService_;
@@ -433,7 +460,8 @@ private:
     mutable std::mutex mutex_;
     bool cleanDone_ = false;
     const std::string VOTER_SCENE_BLUR = "VOTER_SCENE_BLUR";
-
+    const std::string VOTER_SCENE_GPU = "VOTER_SCENE_GPU";
+    
     // save all virtual screenIds created by this connection.
     std::unordered_set<ScreenId> virtualScreenIds_;
     sptr<RSIScreenChangeCallback> screenChangeCallback_;

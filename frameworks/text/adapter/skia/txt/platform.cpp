@@ -22,10 +22,10 @@ namespace Rosen {
 namespace SPText {
 DefaultFamilyNameMgr::DefaultFamilyNameMgr()
 {
-#ifdef OHOS_STANDARD_SYSTEM
+#ifdef TEXT_SYSTEM_OHOS
     defaultFamilies_ = { "HarmonyOS-Sans" };
 #else
-    defaultFamilies_ = { "sans-serif" };
+    defaultFamilies_ = { "sans-serif", "PingFang SC" };
 #endif
 }
 
@@ -71,6 +71,12 @@ std::string DefaultFamilyNameMgr::GenerateThemeFamilyName(size_t index)
 std::shared_ptr<Drawing::FontMgr> GetDefaultFontManager()
 {
     return Drawing::FontMgr::CreateDefaultFontMgr();
+}
+
+bool DefaultFamilyNameMgr::IsThemeFontFamily(std::string familyName)
+{
+    std::transform(familyName.begin(), familyName.end(), familyName.begin(), ::tolower);
+    return familyName.find(OHOS_THEME_FONT_LOW) == 0;
 }
 } // namespace SPText
 } // namespace Rosen

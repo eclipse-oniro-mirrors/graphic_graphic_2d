@@ -17,6 +17,7 @@
 #include "common/rs_common_def.h"
 #include "display_engine/rs_vpe_manager.h"
 #include "platform/common/rs_log.h"
+#include "rs_trace.h"
 
 using namespace OHOS::Media::VideoProcessingEngine;
 
@@ -52,11 +53,11 @@ void RSVpeManager::ReleaseVpeVideo(uint64_t nodeId)
     if (vpeVideoImp != nullptr) {
         int32_t ret = vpeVideoImp->Stop();
         if (ret != 0) {
-            RS_LOGE("vpeVideo stop failed nodeId:%{public}llu, ret:%{public}d", nodeId, ret);
+            RS_LOGE("vpeVideo stop failed nodeId:%{public}" PRIu64 ", ret:%{public}d", nodeId, ret);
         }
         ret = vpeVideoImp->Release();
         if (ret != 0) {
-            RS_LOGE("vpeVideo release failed nodeId:%{public}llu, ret:%{public}d", nodeId, ret);
+            RS_LOGE("vpeVideo release failed nodeId:%{public}" PRIu64 ", ret:%{public}d", nodeId, ret);
         }
     }
     allVpeVideo_.erase(nodeId);
@@ -69,13 +70,29 @@ std::shared_ptr<VpeVideo> RSVpeManager::GetVpeVideo(uint32_t type, const RSSurfa
     return VpeVideo::Create(type);
 }
 
+bool RSVpeManager::SetVpeVideoParameter(std::shared_ptr<VpeVideo> vpeVideo,
+    uint32_t type, const RSSurfaceRenderNodeConfig& config)
+{
+    Media::Format param{};
+    if (type == VIDEO_TYPE_DETAIL_ENHANCER) {
+        param.PutIntValue(ParameterKey::DETAIL_ENHANCER_QUALITY_LEVEL, DETAIL_ENHANCER_LEVEL_HIGH);
+        if (vpeVideo->SetParameter(param) != 0) {
+            RS_LOGE("SetParameter level failed!");
+            return false;
+        }
+    }
+    param = Media::Format{};
+    param.PutLongValue(ParameterKey::DETAIL_ENHANCER_NODE_ID, config.id);
+    if (vpeVideo->SetParameter(param) != 0) {
+        RS_LOGE("SetParameter nodeId falied");
+        return false;
+    }
+    return true;
+}
+
 sptr<Surface> RSVpeManager::GetVpeVideoSurface(uint32_t type, const sptr<Surface>& RSSurface,
     const RSSurfaceRenderNodeConfig& config)
 {
-    if (config.nodeType != OHOS::Rosen::RSSurfaceNodeType::SELF_DRAWING_NODE) {
-        return RSSurface;
-    }
-
     std::shared_ptr<VpeVideo> vpeVideo = GetVpeVideo(type, config);
     if (vpeVideo == nullptr) {
         RS_LOGE("GetVpeVideo failed");
@@ -89,13 +106,8 @@ sptr<Surface> RSVpeManager::GetVpeVideoSurface(uint32_t type, const sptr<Surface
         return RSSurface;
     }
 
-    if (type == VIDEO_TYPE_DETAIL_ENHANCER) {
-        Media::Format param{};
-        param.PutIntValue(ParameterKey::DETAIL_ENHANCER_QUALITY_LEVEL, DETAIL_ENHANCER_LEVEL_HIGH);
-        if (vpeVideo->SetParameter(param) != 0) {
-            RS_LOGE("SetParameter failed!");
-            return RSSurface;
-        }
+    if (!SetVpeVideoParameter(vpeVideo, type, config)) {
+        return RSSurface;
     }
 
     ret = vpeVideo->SetOutputSurface(RSSurface);
@@ -121,13 +133,23 @@ sptr<Surface> RSVpeManager::GetVpeVideoSurface(uint32_t type, const sptr<Surface
         allVpeVideo_[config.id] = vpeVideo;
         mapSize = allVpeVideo_.size();
     }
-    RS_LOGD("type:%{public}u vepSF:%{public}llu RSSF:%{public}llu nodeId:%{public}llu mapSize:%{public}u",
+    RS_LOGD("type:%{public}u vepSF:%{public}" PRIu64 " RSSF:%{public}" PRIu64
+        " nodeId:%{public}" PRIu64 " mapSize:%{public}u",
         type, vpeSurface->GetUniqueId(), RSSurface->GetUniqueId(), config.id, mapSize);
     return vpeSurface;
 }
 
 sptr<Surface> RSVpeManager::CheckAndGetSurface(const sptr<Surface>& surface, const RSSurfaceRenderNodeConfig& config)
 {
+    RS_TRACE_NAME_FMT("RSVpeManager::Creat name %{public}s nodeId:%{public}" PRIu64, config.name.c_str(), config.id);
+
+    if (config.nodeType != OHOS::Rosen::RSSurfaceNodeType::SELF_DRAWING_NODE) {
+        return surface;
+    }
+    if (!VpeVideo::IsSupported()) {
+        return surface;
+    }
+
     Media::Format parameter{};
     sptr<Surface> vpeSurface = surface;
     std::vector<uint32_t> supportTypes = { VIDEO_TYPE_DETAIL_ENHANCER, VIDEO_TYPE_AIHDR_ENHANCER };

@@ -25,8 +25,10 @@
 #include <unordered_set>
 #include <unistd.h>
 #include <utils/rect.h>
+#include <vector>
 
 #include "common/rs_macros.h"
+#include "common/rs_anco_type.h"
 
 namespace OHOS {
 class Surface;
@@ -34,12 +36,14 @@ class Surface;
 namespace Rosen {
 using AnimationId = uint64_t;
 using NodeType = uint8_t;
-using NodeId = uint64_t;
-using PropertyId = uint64_t;
 using FrameRateLinkerId = uint64_t;
-using SurfaceId = uint64_t;
 using InteractiveImplictAnimatorId = uint64_t;
 using LeashPersistentId = uint64_t;
+using ModifierId = uint64_t;
+using NodeId = uint64_t;
+using PropertyId = uint64_t;
+using SurfaceId = uint64_t;
+
 constexpr uint32_t UNI_MAIN_THREAD_INDEX = UINT32_MAX;
 constexpr uint32_t UNI_RENDER_THREAD_INDEX = UNI_MAIN_THREAD_INDEX - 1;
 constexpr uint64_t INVALID_NODEID = 0;
@@ -49,6 +53,7 @@ constexpr uint64_t INVALID_LEASH_PERSISTENTID = 0;
 constexpr uint8_t TOP_OCCLUSION_SURFACES_NUM = 3;
 constexpr uint8_t OCCLUSION_ENABLE_SCENE_NUM = 2;
 constexpr int16_t DEFAULT_OCCLUSION_SURFACE_ORDER = -1;
+constexpr int MAX_DIRTY_ALIGNMENT_SIZE = 128;
 
 // types in the same layer should be 0/1/2/4/8
 // types for UINode
@@ -225,12 +230,29 @@ enum class TpFeatureConfigType : uint8_t {
 };
 #endif
 
+// types for RenderNodeDrawable
+enum class RSRenderNodeDrawableType : uint32_t {
+    UNKNOW = 0,
+    RS_NODE_DRAWABLE,
+    DISPLAY_NODE_DRAWABLE,
+    SURFACE_NODE_DRAWABLE,
+    CANVAS_NODE_DRAWABLE,
+    EFFECT_NODE_DRAWABLE,
+    ROOT_NODE_DRAWABLE,
+    CANVAS_DRAWING_NODE_DRAWABLE,
+};
+
 struct FocusAppInfo {
     int32_t pid = -1;
     int32_t uid = -1;
     std::string bundleName = "";
     std::string abilityName = "";
     uint64_t focusNodeId = 0;
+};
+
+struct RSUICaptureInRangeParam {
+    NodeId endNodeId = INVALID_NODEID;
+    bool useBeginNodeSize = true;
 };
 
 struct RSSurfaceCaptureConfig {
@@ -240,11 +262,16 @@ struct RSSurfaceCaptureConfig {
     bool useCurWindow = true;
     SurfaceCaptureType captureType = SurfaceCaptureType::DEFAULT_CAPTURE;
     bool isSync = false;
+    bool isClientPixelMap = false; // Create pixelMap in client
     Drawing::Rect mainScreenRect = {};
+    std::vector<NodeId> blackList = {}; // exclude surfacenode in screenshot
     bool isSoloNodeUiCapture = false;
+    RSUICaptureInRangeParam uiCaptureInRangeParam = {};
     bool operator==(const RSSurfaceCaptureConfig& config) const
     {
-        return mainScreenRect == config.mainScreenRect;
+        return mainScreenRect == config.mainScreenRect &&
+            uiCaptureInRangeParam.endNodeId == config.uiCaptureInRangeParam.endNodeId &&
+            uiCaptureInRangeParam.useBeginNodeSize == config.uiCaptureInRangeParam.useBeginNodeSize;
     }
 };
 
@@ -281,6 +308,11 @@ struct RSSurfaceCapturePermissions {
             return value;                        \
         }                                        \
     } while (0)
+
+#define IS_SCB_WINDOW_TYPE(windowType)                                                                        \
+    (windowType == SurfaceWindowType::SYSTEM_SCB_WINDOW || windowType == SurfaceWindowType::SCB_DESKTOP ||    \
+    windowType == SurfaceWindowType::SCB_WALLPAPER || windowType == SurfaceWindowType::SCB_SCREEN_LOCK ||     \
+    windowType == SurfaceWindowType::SCB_NEGATIVE_SCREEN || windowType == SurfaceWindowType::SCB_DROPDOWN_PANEL)
 
 enum class DeviceType : uint8_t {
     PHONE,
@@ -334,6 +366,7 @@ enum class RSSurfaceNodeType : uint8_t {
     UI_EXTENSION_COMMON_NODE, // uiextension node
     UI_EXTENSION_SECURE_NODE, // uiextension node that requires info callback
     CURSOR_NODE,              // cursor node created by MMI
+    ABILITY_MAGNIFICATION_NODE, // local magnification
     NODE_MAX,
 };
 
@@ -377,6 +410,11 @@ enum class SelfDrawingNodeType : uint8_t {
 enum class SurfaceWindowType : uint8_t {
     DEFAULT_WINDOW = 0,
     SYSTEM_SCB_WINDOW = 1,
+    SCB_DESKTOP = 2,
+    SCB_WALLPAPER = 3,
+    SCB_SCREEN_LOCK = 4,
+    SCB_NEGATIVE_SCREEN = 5,
+    SCB_DROPDOWN_PANEL = 6,
 };
 
 enum class SurfaceHwcNodeType : uint8_t {
@@ -559,18 +597,6 @@ inline typename Container::size_type EraseIf(Container& container, Predicate pre
     return oldSize - container.size();
 }
 
-enum class AncoFlags : uint32_t {
-    IS_ANCO_NODE = 0x0001,
-    ANCO_SFV_NODE = 0x0011,
-    FORCE_REFRESH = 0x0100
-};
-
-enum class AncoHebcStatus : int32_t {
-    INITIAL,
-    NOT_USE_HEBC,
-    USE_HEBC
-};
-
 enum class RSInterfaceErrorCode : uint32_t {
 #undef NO_ERROR
     NO_ERROR = 0,
@@ -586,6 +612,14 @@ struct VSyncConnParam {
     NodeId windowNodeId = 0;
     bool fromXcomponent = false;
 };
+
+enum DrawNodeType : uint32_t {
+    PureContainerType = 0,
+    MergeableType,
+    DrawPropertyType,
+    GeometryPropertyType
+};
+
 } // namespace Rosen
 } // namespace OHOS
 #endif // RENDER_SERVICE_CLIENT_CORE_COMMON_RS_COMMON_DEF_H

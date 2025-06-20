@@ -20,7 +20,7 @@
 #include "effect/shader_effect.h"
 #include "random/random_data.h"
 #include "random/random_engine.h"
-#include "render/rs_aibar_shader_filter.h"
+#include "render/rs_render_aibar_filter.h"
 #include "render/rs_attraction_effect_filter.h"
 #include "render/rs_blur_filter.h"
 #include "render/rs_colorful_shadow_filter.h"
@@ -29,14 +29,15 @@
 #include "render/rs_fly_out_shader_filter.h"
 #include "render/rs_foreground_effect_filter.h"
 #include "render/rs_gradient_blur_para.h"
-#include "render/rs_kawase_blur_shader_filter.h"
-#include "render/rs_linear_gradient_blur_shader_filter.h"
-#include "render/rs_magnifier_shader_filter.h"
+#include "render/rs_hdr_ui_brightness_filter.h"
+#include "render/rs_render_kawase_blur_filter.h"
+#include "render/rs_render_linear_gradient_blur_filter.h"
+#include "render/rs_render_magnifier_filter.h"
 #include "render/rs_material_filter.h"
 #include "render/rs_motion_blur_filter.h"
 #include "render/rs_skia_filter.h"
 #include "render/rs_spherize_effect_filter.h"
-#include "render/rs_water_ripple_shader_filter.h"
+#include "render/rs_render_water_ripple_filter.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -66,6 +67,7 @@ std::shared_ptr<RSFilter> RandomRSFilter::GetRandomRSFilter()
         RandomRSFilter::GetRandomForegroundEffectFilter,
         RandomRSFilter::GetRandomMotionBlurFilter,
         RandomRSFilter::GetRandomSpherizeEffectFilter,
+        RandomRSFilter::GetRandomHDRUIBrightnessFilter,
         RandomRSFilter::GetRandomColorfulShadowFilter,
         RandomRSFilter::GetRandomAttractionEffectFilter,
         RandomRSFilter::GetRandomMagnifierShaderFilter,
@@ -122,10 +124,14 @@ std::shared_ptr<RSFilter> RandomRSFilter::GetRandomAIBarFilter()
     if (RandomData::GetRandomBool()) {
         std::shared_ptr<RSKawaseBlurShaderFilter> kawaseBlurFilter =
             std::make_shared<RSKawaseBlurShaderFilter>(aiBarRadius);
-        filter = filter->Compose(std::static_pointer_cast<RSShaderFilter>(kawaseBlurFilter));
+        filter = filter->Compose(std::static_pointer_cast<RSRenderFilterParaBase>(kawaseBlurFilter));
     } else {
         auto blurFilter = Drawing::ImageFilter::CreateBlurImageFilter(aiBarRadius, aiBarRadius, tileMode, nullptr);
+#ifdef USE_M133_SKIA
+        uint32_t hash = SkChechsum::Hash32(&aiBarRadius, sizeof(aiBarRadius), 0);
+#else
         uint32_t hash = SkOpts::hash(&aiBarRadius, sizeof(aiBarRadius), 0);
+#endif
         filter = filter->Compose(blurFilter, hash);
     }
     filter->SetFilterType(RSFilter::AIBAR);
@@ -161,6 +167,12 @@ std::shared_ptr<RSFilter> RandomRSFilter::GetRandomSpherizeEffectFilter()
 {
     float spherizeDegree = RandomData::GetRandomFloat();
     return std::make_shared<RSSpherizeEffectFilter>(spherizeDegree);
+}
+
+std::shared_ptr<RSFilter> RandomRSFilter::GetRandomHDRUIBrightnessFilter()
+{
+    float hdrUIBrightness = RandomData::GetRandomFloat();
+    return std::make_shared<RSHDRUIBrightnessFilter>(hdrUIBrightness);
 }
 
 std::shared_ptr<RSFilter> RandomRSFilter::GetRandomColorfulShadowFilter()

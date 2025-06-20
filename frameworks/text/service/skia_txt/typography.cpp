@@ -326,6 +326,15 @@ void Typography::SetAnimation(
     }
 }
 
+std::function<bool(const std::shared_ptr<TextEngine::SymbolAnimationConfig>&)> Typography::GetAnimation()
+{
+    std::shared_lock<std::shared_mutex> readLock(mutex_);
+    if (paragraph_ == nullptr) {
+        return nullptr;
+    }
+    return paragraph_->GetAnimation();
+}
+
 void Typography::SetParagraghId(uint32_t id)
 {
     std::unique_lock<std::shared_mutex> writeLock(mutex_);
@@ -501,6 +510,17 @@ void Typography::UpdateColor(size_t from, size_t to, const Drawing::Color& color
     paragraph_->UpdateColor(from, to, color);
 }
 
+void Typography::UpdateAllTextStyles(const TextStyle& textStyleTemplate)
+{
+    std::unique_lock<std::shared_mutex> writeLock(mutex_);
+    if (!paragraph_) {
+        return;
+    }
+    std::vector<SPText::TextStyle> spTextStyles;
+    spTextStyles.push_back(Convert(textStyleTemplate));
+    paragraph_->ApplyTextStyleChanges(spTextStyles);
+}
+
 Drawing::RectI Typography::GeneratePaintRegion(double x, double y) const
 {
     std::unique_lock<std::shared_mutex> writeLock(mutex_);
@@ -512,6 +532,34 @@ Drawing::RectI Typography::GeneratePaintRegion(double x, double y) const
 
     return paragraph_->GeneratePaintRegion(x, y);
 }
+
+std::vector<TextBlobRecordInfo> Typography::GetTextBlobRecordInfo() const
+{
+    std::shared_lock<std::shared_mutex> readLock(mutex_);
+    if (paragraph_ == nullptr) {
+        return {};
+    }
+    return paragraph_->GetTextBlobRecordInfo();
+}
+
+bool Typography::HasSkipTextBlobDrawing() const
+{
+    std::shared_lock<std::shared_mutex> readLock(mutex_);
+    if (paragraph_ == nullptr) {
+        return false;
+    }
+    return paragraph_->HasSkipTextBlobDrawing();
+}
+
+void Typography::SetSkipTextBlobDrawing(bool state)
+{
+    std::unique_lock<std::shared_mutex> writeLock(mutex_);
+    if (paragraph_ == nullptr) {
+        return;
+    }
+    paragraph_->SetSkipTextBlobDrawing(state);
+}
+
 } // namespace AdapterTxt
 } // namespace Rosen
 } // namespace OHOS

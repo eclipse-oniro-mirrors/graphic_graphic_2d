@@ -49,6 +49,8 @@ struct RSLayerInfo {
     int32_t layerSource;
     bool arsrTag = true;
     bool copybitTag = false;
+    uint32_t ancoFlags = 0;
+    GraphicIRect ancoCropRect{};
     bool operator==(const RSLayerInfo& layerInfo) const
     {
         return (srcRect == layerInfo.srcRect) && (dstRect == layerInfo.dstRect) &&
@@ -56,7 +58,8 @@ struct RSLayerInfo {
             (zOrder == layerInfo.zOrder) && (blendType == layerInfo.blendType) &&
             (transformType == layerInfo.transformType) && (ROSEN_EQ(alpha, layerInfo.alpha)) &&
             (layerSource == layerInfo.layerSource) && (layerType == layerInfo.layerType) &&
-            (arsrTag == layerInfo.arsrTag) && (copybitTag == layerInfo.copybitTag);
+            (arsrTag == layerInfo.arsrTag) && (copybitTag == layerInfo.copybitTag) &&
+            (ancoCropRect == layerInfo.ancoCropRect) && (ancoFlags == layerInfo.ancoFlags);
     }
 #endif
 };
@@ -196,6 +199,15 @@ public:
     {
         return specialLayerManager_;
     }
+
+    bool HasBlackListByScreenId(ScreenId screenId)
+    {
+        if (blackListIds_.find(screenId) != blackListIds_.end()) {
+            return blackListIds_[screenId].size() != 0;
+        }
+        return false;
+    }
+
     bool HasPrivacyContentLayer()
     {
         return privacyContentLayerIds_.size() != 0;
@@ -218,20 +230,6 @@ public:
 
     // [Attention] The function only used for unlocking screen for PC currently
     DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr GetClonedNodeRenderDrawable();
-
-    void SetLeashWindowVisibleRegionEmptyParam(bool isLeashWindowVisibleRegionEmpty)
-    {
-        if (isLeashWindowVisibleRegionEmpty_ == isLeashWindowVisibleRegionEmpty) {
-            return;
-        }
-        isLeashWindowVisibleRegionEmpty_ = isLeashWindowVisibleRegionEmpty;
-        needSync_ = true;
-    }
-
-    bool GetLeashWindowVisibleRegionEmptyParam() const
-    {
-        return isLeashWindowVisibleRegionEmpty_;
-    }
 
     bool SetUifirstNodeEnableParam(MultiThreadCacheType isUifirst)
     {
@@ -285,6 +283,12 @@ public:
     {
         return dstRect_;
     }
+
+    void SetAncoSrcCrop(const Rect& srcCrop) { ancoSrcCrop_ = srcCrop; }
+    const Rect& GetAncoSrcCrop() const { return ancoSrcCrop_; }
+    void SetAncoFlags(const uint32_t ancoFlags) { ancoFlags_ = ancoFlags; }
+    uint32_t GetAncoFlags() const { return ancoFlags_; }
+
     void SetSurfaceCacheContentStatic(bool contentStatic, bool lastFrameSynced);
     bool GetSurfaceCacheContentStatic() const;
     bool GetPreSurfaceCacheContentStatic() const;
@@ -366,6 +370,8 @@ public:
     // source crop tuning
     void SetLayerSourceTuning(int32_t needSourceTuning);
     int32_t GetLayerSourceTuning() const;
+    void SetTunnelLayerId(const uint64_t& tunnelLayerId);
+    uint64_t GetTunnelLayerId() const;
 
     void SetGpuOverDrawBufferOptimizeNode(bool overDrawNode);
     bool IsGpuOverDrawBufferOptimizeNode() const;
@@ -384,9 +390,6 @@ public:
     void SetHwcCrossNode(bool isCrossNode);
     bool IsDRMCrossNode() const;
 
-    void SetIsNodeToBeCaptured(bool isNodeToBeCaptured);
-    bool IsNodeToBeCaptured() const;
-
     void SetSkipDraw(bool skip);
     bool GetSkipDraw() const;
 
@@ -395,6 +398,9 @@ public:
 
     void SetLayerTop(bool isTop);
     bool IsLayerTop() const;
+
+    void SetForceRefresh(bool isForceRefresh);
+    bool IsForceRefresh() const;
 
     bool IsVisibleDirtyRegionEmpty(const Drawing::Region curSurfaceDrawRegion) const;
     
@@ -655,6 +661,31 @@ public:
         return apiCompatibleVersion_;
     }
 
+    bool IsOcclusionCullingOn() const
+    {
+        return isOcclusionCullingOn_;
+    }
+
+    std::unordered_set<NodeId> TakeCulledNodes()
+    {
+        return std::move(culledNodes_);
+    }
+
+    const std::unordered_set<NodeId>& GetCulledNodes() const
+    {
+        return culledNodes_;
+    }
+
+    std::unordered_set<NodeId> TakeCulledEntireSubtree()
+    {
+        return std::move(culledEntireSubtree_);
+    }
+
+    const std::unordered_set<NodeId>& GetCulledEntireSubtree() const
+    {
+        return culledEntireSubtree_;
+    }
+
     // [Attention] The function only used for unlocking screen for PC currently
     bool ClonedSourceNode() const
     {
@@ -700,6 +731,19 @@ public:
         return sourceDisplayRenderNodeDrawable_;
     }
 
+    bool IsAbilityMagnificationNode()
+    {
+        return rsSurfaceNodeType_ == RSSurfaceNodeType::ABILITY_MAGNIFICATION_NODE;
+    }
+
+    const Vector4f& GetRegionToBeMagnified() const
+    {
+        return regionToBeMagnified_;
+    }
+
+    void SetFrameGravityNewVersionEnabled(bool isEnabled);
+    bool GetFrameGravityNewVersionEnabled() const;
+
 private:
     bool isMainWindowType_ = false;
     bool isLeashWindow_ = false;
@@ -734,6 +778,9 @@ private:
     RectI childrenDirtyRect_;
     RectI absDrawRect_;
     RRect rrect_;
+    Rect ancoSrcCrop_{};
+    uint32_t ancoFlags_ = 0;
+    Vector4f regionToBeMagnified_;
     NodeId uifirstUseStarting_ = INVALID_NODEID;
     Occlusion::Region transparentRegion_;
     Occlusion::Region roundedCornerRegion_;
@@ -748,7 +795,6 @@ private:
     bool isSubTreeDirty_ = false;
     float positionZ_ = 0.0f;
     bool occlusionVisible_ = false;
-    bool isLeashWindowVisibleRegionEmpty_ = false;
     Occlusion::Region visibleRegion_;
     Occlusion::Region visibleRegionInVirtual_;
     bool isOccludedByFilterCache_ = false;
@@ -777,8 +823,8 @@ private:
     bool isSubSurfaceNode_ = false;
     bool isGlobalPositionEnabled_ = false;
     Gravity uiFirstFrameGravity_ = Gravity::TOP_LEFT;
-    bool isNodeToBeCaptured_ = false;
     RSSpecialLayerManager specialLayerManager_;
+    std::unordered_map<ScreenId, std::unordered_set<NodeId>> blackListIds_ = {};
     std::set<NodeId> privacyContentLayerIds_ = {};
     std::set<int32_t> bufferCacheSet_ = {};
     std::string name_= "";
@@ -787,10 +833,12 @@ private:
     bool isGpuOverDrawBufferOptimizeNode_ = false;
     bool isSkipDraw_ = false;
     bool isLayerTop_ = false;
+    bool isForceRefresh_ = false;
     bool needHidePrivacyContent_ = false;
     bool needOffscreen_ = false;
     bool layerCreated_ = false;
     int32_t layerSource_ = 0;
+    uint64_t tunnelLayerId_ = 0;
     int64_t stencilVal_ = -1;
     std::unordered_map<std::string, bool> watermarkHandles_ = {};
     std::vector<float> drmCornerRadiusInfo_;
@@ -823,11 +871,16 @@ private:
 
     uint32_t apiCompatibleVersion_ = 0;
 
+    bool isOcclusionCullingOn_ = false;
+    std::unordered_set<NodeId> culledNodes_;
+    std::unordered_set<NodeId> culledEntireSubtree_;
+
     friend class RSSurfaceRenderNode;
     friend class RSUniRenderProcessor;
     friend class RSUniRenderThread;
 
     bool isBufferFlushed_ = false;
+    bool isFrameGravityNewVersionEnabled_ = false;
 };
 } // namespace OHOS::Rosen
 #endif // RENDER_SERVICE_BASE_PARAMS_RS_SURFACE_RENDER_PARAMS_H

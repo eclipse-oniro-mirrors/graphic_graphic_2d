@@ -17,6 +17,7 @@
 
 #include "animation/rs_animation.h"
 #include "animation/rs_animation_callback.h"
+#include "animation/rs_animation_common.h"
 #include "animation/rs_animation_trace_utils.h"
 #include "animation/rs_implicit_animation_param.h"
 #include "animation/rs_path_animation.h"
@@ -111,7 +112,7 @@ void RSImplicitAnimator::ProcessEmptyAnimations(const std::shared_ptr<AnimationF
     if (finishCallback.use_count() != 1) {
         return;
     }
-    RSAnimationTraceUtils::GetInstance().addAnimationNameTrace("ProcessEmptyAnimations");
+    RS_TRACE_FUNC();
     auto protocol = std::get<RSAnimationTimingProtocol>(globalImplicitParams_.top());
     // we are the only one who holds the finish callback, if the callback is NOT timing sensitive, we need to
     // execute it asynchronously, in order to avoid timing issues.
@@ -253,18 +254,18 @@ void RSImplicitAnimator::ProcessAnimationFinishCallbackGuaranteeTask()
     RSUIDirector::PostDelayTask(callbackSafetyNetLambda, estimateDuration);
 }
 
-bool RSImplicitAnimator::CloseImplicitCancelAnimation()
+CancelAnimationStatus RSImplicitAnimator::CloseImplicitCancelAnimation()
 {
     if (globalImplicitParams_.empty() || implicitAnimations_.empty() || keyframeAnimations_.empty()) {
         ROSEN_LOGD("Failed to close cancel implicit animation, need to open implicit animation firstly!");
-        return false;
+        return CancelAnimationStatus::NO_OPEN_CLOSURE;
     }
     if (implicitAnimationParams_.top()->GetType() != ImplicitAnimationParamType::CANCEL) {
         ROSEN_LOGE("Failed to close cancel implicit animation, need to use the right fun 'CloseImplicitAnimation'!");
-        return false;
+        return CancelAnimationStatus::INCORRECT_PARAM_TYPE;
     }
 
-    bool ret =
+    auto ret =
         std::static_pointer_cast<RSImplicitCancelAnimationParam>(implicitAnimationParams_.top())->
         SyncProperties(rsUIContext_.lock());
     const auto& finishCallback = std::get<const std::shared_ptr<AnimationFinishCallback>>(globalImplicitParams_.top());
@@ -662,7 +663,7 @@ void RSImplicitAnimator::CreateImplicitAnimation(const std::shared_ptr<RSNode>& 
                 animation = curveImplicitParam->CreateEmptyAnimation(property, startValue, endValue);
                 break;
             }
-
+            RSAnimationTraceUtils::GetInstance().AddAnimationCancelTrace(target->GetId(), property->GetId());
             // Create animation with CANCEL type will cancel all running animations of the given property and target.
             // Note: We are currently in the process of refactoring and accidentally changed the order of animation
             // callbacks. Originally, the order was OnChange before OnFinish, but we mistakenly changed it to OnFinish
@@ -695,11 +696,18 @@ void RSImplicitAnimator::CreateImplicitAnimation(const std::shared_ptr<RSNode>& 
         repeatCallback.reset();
     }
 
-    RSAnimationTraceUtils::GetInstance().addAnimationCreateTrace(
-        target->GetId(), target->GetNodeName(), property->GetId(),
-        animation->GetId(), static_cast<int>(params->GetType()), static_cast<int>(property->type_),
+#if defined(MODIFIER_NG)
+    RSAnimationTraceUtils::GetInstance().AddAnimationCreateTrace(target->GetId(), target->GetNodeName(),
+        property->GetId(), animation->GetId(), params->GetType(), property->GetPropertyTypeNG(),
         startValue->GetRenderProperty(), endValue->GetRenderProperty(), animation->GetStartDelay(),
-        animation->GetDuration(), protocol.GetRepeatCount());
+        animation->GetDuration(), protocol.GetRepeatCount(), protocol.GetInterfaceName(), target->GetFrameNodeId(),
+        target->GetFrameNodeTag(), target->GetType());
+#else
+    RSAnimationTraceUtils::GetInstance().AddAnimationCreateTrace(target->GetId(), target->GetNodeName(),
+        property->GetId(), animation->GetId(), params->GetType(), property->type_, startValue->GetRenderProperty(),
+        endValue->GetRenderProperty(), animation->GetStartDelay(), animation->GetDuration(), protocol.GetRepeatCount(),
+        protocol.GetInterfaceName(), target->GetFrameNodeId(), target->GetFrameNodeTag(), target->GetType());
+#endif
 
     if (params->GetType() == ImplicitAnimationParamType::TRANSITION ||
         params->GetType() == ImplicitAnimationParamType::KEYFRAME) {
@@ -775,12 +783,18 @@ void RSImplicitAnimator::CreateImplicitAnimationWithInitialVelocity(const std::s
     }
 
     auto protocol = std::get<RSAnimationTimingProtocol>(globalImplicitParams_.top());
-    RSAnimationTraceUtils::GetInstance().addAnimationCreateTrace(
-        target->GetId(), target->GetNodeName(), property->GetId(),
-        animation->GetId(), static_cast<int>(params->GetType()), static_cast<int>(property->type_),
+#if defined(MODIFIER_NG)
+    RSAnimationTraceUtils::GetInstance().AddAnimationCreateTrace(target->GetId(), target->GetNodeName(),
+        property->GetId(), animation->GetId(), params->GetType(), property->GetPropertyTypeNG(),
         startValue->GetRenderProperty(), endValue->GetRenderProperty(), animation->GetStartDelay(),
-        animation->GetDuration(), protocol.GetRepeatCount());
-
+        animation->GetDuration(), protocol.GetRepeatCount(), protocol.GetInterfaceName(), target->GetFrameNodeId(),
+        target->GetFrameNodeTag(), target->GetType());
+#else
+    RSAnimationTraceUtils::GetInstance().AddAnimationCreateTrace(target->GetId(), target->GetNodeName(),
+        property->GetId(), animation->GetId(), params->GetType(), property->type_, startValue->GetRenderProperty(),
+        endValue->GetRenderProperty(), animation->GetStartDelay(), animation->GetDuration(), protocol.GetRepeatCount(),
+        protocol.GetInterfaceName(), target->GetFrameNodeId(), target->GetFrameNodeTag(), target->GetType());
+#endif
     target->AddAnimation(animation);
     implicitAnimations_.top().emplace_back(animation, target->GetId());
 }

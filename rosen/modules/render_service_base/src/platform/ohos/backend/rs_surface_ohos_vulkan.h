@@ -63,6 +63,7 @@ public:
         }
         mSurfaceMap.clear();
     }
+
     int DupReservedFlushFd();
 
     int32_t RequestNativeWindowBuffer(NativeWindowBuffer** nativeWindowBuffer, int32_t width, int32_t height,

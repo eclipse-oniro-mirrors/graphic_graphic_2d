@@ -44,9 +44,9 @@ public:
 
     /**
      * @brief   there are two mode for DrawCmdList to add new op
-     * @param   IMMEDIATE   add op to continouns buffer immediately, overload will benefit from this
+     * @param   IMMEDIATE   add op to continuous buffer immediately, overload will benefit from this
      * @param   DEFERRED    add op to vector and then add to contiguous buffer if needed
-     * @detail  playback can get all op from continouns buffer in IMMEDIATE mode or vector int DEFERRED mode
+     * @detail  playback can get all op from continuous buffer in IMMEDIATE mode or vector int DEFERRED mode
      */
     enum class UnmarshalMode {
         IMMEDIATE,
@@ -142,7 +142,12 @@ public:
     /**
      * @brief   Marshalling Draw Ops Param from vector to contiguous buffers.
      */
-    void MarshallingDrawOps(Drawing::DrawCmdList *cmdlist = nullptr);
+    void MarshallingDrawOps();
+
+    /**
+     * @brief   Marshalling Draw Ops Param from vector to contiguous buffers. For Profiler Only.
+     */
+     void ProfilerMarshallingDrawOps(Drawing::DrawCmdList *cmdlist);
 
     /**
      * @brief   Unmarshalling Draw Ops from contiguous buffers to vector
@@ -234,7 +239,22 @@ public:
 
     void SetCanvasDrawingOpLimitEnable(bool isEnable);
 
-    bool GetBounds(Rect& rect);
+    /**
+     * @brief Gets the pixelmap rect for hybrid render.
+     */
+    void GetBounds(Rect& rect);
+
+    void SetIsReplayMode(bool mode)
+    {
+        isReplayMode = mode;
+    }
+
+    /**
+     * @brief Check whether enable hybrid render.
+     */
+    bool IsHybridRenderEnabled(uint32_t maxPixelMapWidth, uint32_t maxPixelMapHeight);
+
+    const std::vector<std::shared_ptr<DrawOpItem>> GetDrawOpItems() const;
 
 private:
     void ClearCache();
@@ -243,7 +263,7 @@ private:
 
     void PlaybackToDrawCmdList(std::shared_ptr<DrawCmdList> drawCmdList);
     void PlaybackByVector(Canvas& canvas, const Rect* rect = nullptr);
-    bool UnmarshallingDrawOpsSimple();
+    bool UnmarshallingDrawOpsSimple(std::vector<std::shared_ptr<DrawOpItem>>& drawOpItems, size_t& lastOpGenSize);
     void PlaybackByBuffer(Canvas& canvas, const Rect* rect = nullptr);
     void CaculatePerformanceOpType();
 
@@ -263,6 +283,7 @@ private:
     uint32_t performanceCaculateOpType_ = 0;
     bool isNeedUnmarshalOnDestruct_ = false;
     bool noNeedUICaptured_ = false;
+    bool isReplayMode = false;
     bool isCanvasDrawingOpLimitEnabled_ = false;
 
     DrawCmdList::HybridRenderType hybridRenderType_ = DrawCmdList::HybridRenderType::NONE;

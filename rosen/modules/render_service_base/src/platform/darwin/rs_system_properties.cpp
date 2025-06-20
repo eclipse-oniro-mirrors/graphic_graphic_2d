@@ -158,6 +158,11 @@ bool RSSystemProperties::GetExpandScreenDirtyEnabled()
     return false;
 }
 
+bool RSSystemProperties::GetVirtualExpandScreenSkipEnabled()
+{
+    return false;
+}
+
 bool RSSystemProperties::GetOcclusionEnabled()
 {
     return {};
@@ -205,13 +210,6 @@ bool RSSystemProperties::GetCacheEnabledForRotation()
 {
     return {};
 }
-
-#ifndef NEW_SKIA
-bool RSSystemProperties::GetReleaseResourceEnabled()
-{
-    return {};
-}
-#endif
 
 ParallelRenderingType RSSystemProperties::GetPrepareParallelRenderingEnabled()
 {
@@ -640,6 +638,11 @@ bool RSSystemProperties::GetTimeVsyncDisabled()
     return false;
 }
 
+bool RSSystemProperties::GetTextureExportDFXEnabled()
+{
+    return false;
+}
+
 bool RSSystemProperties::GetHybridRenderEnabled()
 {
     return false;
@@ -705,6 +708,11 @@ int32_t RSSystemProperties::GetHybridRenderSwitch(ComponentEnableSwitch bitSeq)
     return 0;
 }
 
+bool RSSystemProperties::ViewDrawNodeType()
+{
+    return false;
+}
+
 bool RSSystemProperties::GetVKImageUseEnabled()
 {
     return false;
@@ -720,5 +728,23 @@ bool RSSystemProperties::GetDebugFmtTraceEnabled()
     return GetDebugTraceEnabled();
 }
 
+void RSSystemProperties::SetBehindWindowFilterEnabled(bool enabled)
+{
+}
+
+bool RSSystemProperties::GetBehindWindowFilterEnabled()
+{
+    return false;
+}
+
+bool RSSystemProperties::GetSubThreadControlFrameRate()
+{
+    return false;
+}
+
+int RSSystemProperties::GetSubThreadDropFrameInterval()
+{
+    return 0;
+}
 } // namespace Rosen
 } // namespace OHOS

@@ -23,13 +23,14 @@
 #include "text_font_utils.h"
 #include "include/core/SkMatrix.h"
 #include "modules/skparagraph/include/Paragraph.h"
+#include "modules/skparagraph/include/TextStyle.h"
 #include "paragraph_builder_impl.h"
 #include "skia_adapter/skia_convert_utils.h"
 #include "symbol_engine/hm_symbol_run.h"
 #include "text/font_metrics.h"
 #include "text_line_impl.h"
 #include "utils/text_log.h"
-#include "modules/skparagraph/include/TextStyle.h"
+#include "utils/text_trace.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -432,6 +433,118 @@ void ParagraphImpl::UpdateColor(size_t from, size_t to, const RSColor& color,
     for (auto paintID : unresolvedPaintID) {
         paints_[paintID].SetColor(color);
     }
+}
+
+void ParagraphImpl::UpdatePaintsBySkiaBlock(skt::Block& skiaBlock, const std::optional<RSBrush>& brush)
+{
+    PaintID foregroundId = std::get<PaintID>(skiaBlock.fStyle.getForegroundPaintOrID());
+    if ((foregroundId < 0) || (foregroundId >= static_cast<int>(paints_.size()))) {
+        return;
+    }
+    if (paints_[foregroundId].isSymbolGlyph) {
+        return;
+    }
+    paints_[foregroundId].brush = brush;
+}
+#ifdef USE_M133_SKIA
+void ParagraphImpl::UpdateForegroundBrushWithValidData(skia_private::TArray<skt::Block, true>& skiaTextStyles,
+    const std::optional<RSBrush>& brush)
+#else
+void ParagraphImpl::UpdateForegroundBrushWithValidData(SkTArray<skt::Block, true>& skiaTextStyles,
+    const std::optional<RSBrush>& brush)
+#endif
+{
+    TEXT_TRACE_FUNC();
+    PaintID newId = static_cast<int>(paints_.size());
+    bool needAddNewBrush = true;
+
+    for (size_t i = 0; i < skiaTextStyles.size(); i++) {
+        skt::Block& skiaBlock = skiaTextStyles[i];
+        if (skiaBlock.fStyle.hasForeground()) {
+            UpdatePaintsBySkiaBlock(skiaBlock, brush);
+        } else {
+            skiaBlock.fStyle.setForegroundPaintID(newId);
+            if (needAddNewBrush) {
+                PaintRecord pr(brush, std::nullopt);
+                paints_.push_back(pr);
+                needAddNewBrush = false;
+            }
+        }
+    }
+}
+#ifdef USE_M133_SKIA
+void ParagraphImpl::UpdateForegroundBrushWithNullopt(skia_private::TArray<skt::Block, true>& skiaTextStyles)
+#else
+void ParagraphImpl::UpdateForegroundBrushWithNullopt(SkTArray<skt::Block, true>& skiaTextStyles)
+#endif
+{
+    TEXT_TRACE_FUNC();
+    for (size_t i = 0; i < skiaTextStyles.size(); i++) {
+        skt::Block& skiaBlock = skiaTextStyles[i];
+        if (!skiaBlock.fStyle.hasForeground()) {
+            continue;
+        }
+        UpdatePaintsBySkiaBlock(skiaBlock, std::nullopt);
+    }
+}
+
+void ParagraphImpl::UpdateForegroundBrush(const TextStyle& spTextStyle)
+{
+    RecordDifferentPthreadCall(__FUNCTION__);
+    if (paragraph_ == nullptr) {
+        return;
+    }
+
+#ifdef USE_M133_SKIA
+    skia_private::TArray<skt::Block, true>& skiaTextStyles = paragraph_->exportTextStyles();
+#else
+    SkTArray<skt::Block, true>& skiaTextStyles = paragraph_->exportTextStyles();
+#endif
+
+    if (spTextStyle.foreground.has_value() && spTextStyle.foreground.value().brush.has_value()) {
+        UpdateForegroundBrushWithValidData(skiaTextStyles, spTextStyle.foreground.value().brush);
+    } else {
+        UpdateForegroundBrushWithNullopt(skiaTextStyles);
+    }
+}
+
+std::vector<TextBlobRecordInfo> ParagraphImpl::GetTextBlobRecordInfo() const
+{
+    RecordDifferentPthreadCall(__FUNCTION__);
+    if (paragraph_ == nullptr) {
+        return {};
+    }
+    std::vector<TextBlobRecordInfo> textBlobRecordInfos;
+    std::vector<skt::TextBlobRecordInfo> infos = paragraph_->getTextBlobRecordInfo();
+    for (auto& info : infos) {
+        TextBlobRecordInfo recordInfo;
+        recordInfo.blob = info.fBlob;
+        recordInfo.offset = info.fOffset;
+        int index = std::get<int>(info.fPaint);
+        if (index >= 0 && index < static_cast<int>(paints_.size())) {
+            recordInfo.color = paints_[index].color;
+        }
+        textBlobRecordInfos.emplace_back(recordInfo);
+    }
+    return textBlobRecordInfos;
+}
+
+bool ParagraphImpl::HasSkipTextBlobDrawing() const
+{
+    RecordDifferentPthreadCall(__FUNCTION__);
+    if (paragraph_ == nullptr) {
+        return false;
+    }
+    return paragraph_->hasSkipTextBlobDrawing();
+}
+
+void ParagraphImpl::SetSkipTextBlobDrawing(bool state)
+{
+    RecordDifferentPthreadCall(__FUNCTION__);
+    if (paragraph_ == nullptr) {
+        return;
+    }
+    paragraph_->setSkipTextBlobDrawing(state);
 }
 
 void ParagraphImpl::RecordDifferentPthreadCall(const char* caller) const

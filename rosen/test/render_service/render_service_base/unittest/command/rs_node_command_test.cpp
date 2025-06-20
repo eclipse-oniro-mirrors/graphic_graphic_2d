@@ -58,9 +58,9 @@ HWTEST_F(RSNodeCommandTest, TestRSBaseNodeCommand002, TestSize.Level1)
 {
     RSContext context;
     NodeId nodeId = static_cast<NodeId>(-1);
-    EXPECT_NE(nodeId, -5);
     std::shared_ptr<RSRenderModifier> modifier = nullptr;
     RSNodeCommandHelper::AddModifier(context, nodeId, modifier);
+    EXPECT_EQ(context.GetNodeMap().GetRenderNode<RSRenderNode>(nodeId), nullptr);
 }
 
 /**
@@ -126,6 +126,21 @@ HWTEST_F(RSNodeCommandTest, SetDrawRegionTest, TestSize.Level1)
     NodeId nodeId = static_cast<NodeId>(1);
     std::shared_ptr<RectF> rect = nullptr;
     RSNodeCommandHelper::SetDrawRegion(context, nodeId, rect);
+    EXPECT_TRUE(context.GetNodeMap().GetRenderNode<RSRenderNode>(nodeId) == nullptr);
+}
+
+/**
+ * @tc.name: SetDrawNodeType
+ * @tc.desc: SetDrawNodeType test.
+ * @tc.type: FUNC
+ * @tc.require: IC8BLE
+ */
+HWTEST_F(RSNodeCommandTest, SetDrawNodeType, TestSize.Level1)
+{
+    RSContext context;
+    NodeId nodeId = static_cast<NodeId>(1);
+    std::shared_ptr<RectF> rect = nullptr;
+    RSNodeCommandHelper::SetDrawNodeType(context, nodeId, DrawNodeType::PureContainerType);
     EXPECT_TRUE(context.GetNodeMap().GetRenderNode<RSRenderNode>(nodeId) == nullptr);
 }
 
@@ -221,6 +236,23 @@ HWTEST_F(RSNodeCommandTest, SetNodeName001, TestSize.Level1)
     nodeId = 0;
     RSNodeCommandHelper::SetNodeName(context, nodeId, nodeName);
     EXPECT_NE(context.GetNodeMap().GetRenderNode<RSRenderNode>(nodeId), nullptr);
+}
+
+/**
+ * @tc.name: MarkRepaintBoundary
+ * @tc.desc: test results of MarkRepaintBoundary
+ * @tc.type: FUNC
+ * @tc.require: issuesIC50OX
+ */
+HWTEST_F(RSNodeCommandTest, MarkRepaintBoundary, TestSize.Level1)
+{
+    RSContext context;
+    NodeId nodeId = 0;
+    RSNodeCommandHelper::MarkRepaintBoundary(context, nodeId, true);
+    ASSERT_EQ(context.GetNodeMap().GetRenderNode<RSRenderNode>(nodeId)->isRepaintBoundary_, true);
+
+    RSNodeCommandHelper::MarkRepaintBoundary(context, nodeId, false);
+    ASSERT_EQ(context.GetNodeMap().GetRenderNode<RSRenderNode>(nodeId)->isRepaintBoundary_, false);
 }
 
 /**
@@ -403,5 +435,44 @@ HWTEST_F(RSNodeCommandTest, DumpClientNodeTree001, TestSize.Level1)
     ASSERT_FALSE(flag);
 
     SUCCEED();
+}
+
+/**
+ * @tc.name: SetUITokenTest001
+ * @tc.desc: test results of SetUIToken
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSNodeCommandTest, SetUITokenTest001, TestSize.Level1)
+{
+    RSContext context;
+    NodeId nodeId = static_cast<NodeId>(-1);
+    uint64_t token = 1001;
+    RSNodeCommandHelper::SetUIToken(context, nodeId, token);
+    ASSERT_EQ(context.GetNodeMap().GetRenderNode<RSRenderNode>(nodeId), nullptr);
+
+    nodeId = 1;
+    RSCanvasNodeCommandHelper::Create(context, nodeId, false);
+    auto canvasNode = context.GetNodeMap().GetRenderNode<RSRenderNode>(nodeId);
+    RSNodeCommandHelper::SetUIToken(context, nodeId, token);
+    ASSERT_NE(canvasNode, nullptr);
+    ASSERT_EQ(canvasNode->uiContextToken_, token);
+}
+
+/**
+ * @tc.name: SetEnableHDREffectTest
+ * @tc.desc: SetEnableHDREffect test
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeCommandTest, SetEnableHDREffectTest, TestSize.Level1)
+{
+    RSContext context;
+    NodeId nodeId = static_cast<NodeId>(1);
+    RSNodeCommandHelper::SetEnableHDREffect(context, nodeId, true);
+    EXPECT_TRUE(context.GetNodeMap().GetRenderNode<RSRenderNode>(nodeId) == nullptr);
+    auto node = std::make_shared<RSRenderNode>(nodeId);
+    context.nodeMap.renderNodeMap_[ExtractPid(nodeId)][nodeId] = node;
+    RSNodeCommandHelper::SetEnableHDREffect(context, nodeId, true);
+    EXPECT_TRUE(context.GetNodeMap().GetRenderNode<RSRenderNode>(nodeId)->enableHdrEffect_);
 }
 } // namespace OHOS::Rosen

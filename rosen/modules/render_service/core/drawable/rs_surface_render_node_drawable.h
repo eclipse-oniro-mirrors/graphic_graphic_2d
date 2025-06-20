@@ -21,6 +21,7 @@
 #include <iconsumer_surface.h>
 #include <surface.h>
 #endif
+#include <mutex>
 #include "platform/drawing/rs_surface.h"
 
 #include "common/rs_common_def.h"
@@ -48,7 +49,7 @@ public:
     static RSRenderNodeDrawable::Ptr OnGenerate(std::shared_ptr<const RSRenderNode> node);
     void OnDraw(Drawing::Canvas& canvas) override;
     void OnCapture(Drawing::Canvas& canvas) override;
-    bool CheckIfSurfaceSkipInMirror(const RSSurfaceRenderParams& surfaceParams);
+    bool CheckIfSurfaceSkipInMirrorOrScreenshot(const RSSurfaceRenderParams& surfaceParams);
     void SetVirtualScreenWhiteListRootId(const std::unordered_set<NodeId>& whiteList, NodeId id);
     void ResetVirtualScreenWhiteListRootId(NodeId id);
 
@@ -108,6 +109,13 @@ public:
 #endif
 
     bool IsHardwareEnabledTopSurface() const;
+    void UpdateSurfaceDirtyRegion(std::shared_ptr<RSPaintFilterCanvas>& canvas);
+
+    RSRenderNodeDrawableType GetDrawableType() const override
+    {
+        return RSRenderNodeDrawableType::SURFACE_NODE_DRAWABLE;
+    }
+
 private:
     explicit RSSurfaceRenderNodeDrawable(std::shared_ptr<const RSRenderNode>&& node);
     void OnGeneralProcess(RSPaintFilterCanvas& canvas, RSSurfaceRenderParams& surfaceParams,
@@ -115,8 +123,10 @@ private:
     bool IsVisibleRegionEqualOnPhysicalAndVirtual(RSSurfaceRenderParams& surfaceParams);
     void CaptureSurface(RSPaintFilterCanvas& canvas, RSSurfaceRenderParams& surfaceParams);
 
-    Drawing::Region CalculateVisibleDirtyRegion(RSRenderThreadParams& uniParam, RSSurfaceRenderParams& surfaceParams,
+    Drawing::Region CalculateVisibleDirtyRegion(RSSurfaceRenderParams& surfaceParams,
         RSSurfaceRenderNodeDrawable& surfaceDrawable, bool isOffscreen) const;
+    Drawing::Region GetSurfaceDrawRegion() const;
+    void SetSurfaceDrawRegion(const Drawing::Region& region);
     void CrossDisplaySurfaceDirtyRegionConversion(
         const RSRenderThreadParams& uniParam, const RSSurfaceRenderParams& surfaceParam, RectI& surfaceDirtyRect) const;
     bool HasCornerRadius(const RSSurfaceRenderParams& surfaceParams) const;
@@ -142,12 +152,18 @@ private:
     // Watermark
     void DrawWatermark(RSPaintFilterCanvas& canvas, const RSSurfaceRenderParams& surfaceParams);
 
+    /* draw local magnification region */
+    void DrawMagnificationRegion(RSPaintFilterCanvas& canvas, const RSSurfaceRenderParams& surfaceParams);
+
     bool RecordTimestamp(NodeId id, uint32_t seqNum);
 
     bool DrawCacheImageForMultiScreenView(RSPaintFilterCanvas& canvas, const RSSurfaceRenderParams& surfaceParams);
 
     void ClipHoleForSelfDrawingNode(RSPaintFilterCanvas& canvas, RSSurfaceRenderParams& surfaceParams);
     void DrawBufferForRotationFixed(RSPaintFilterCanvas& canvas, RSSurfaceRenderParams& surfaceParams);
+
+    int GetMaxRenderSizeForRotationOffscreen(int& offscreenWidth, int& offscreenHeight);
+    void ApplyCanvasScalingIfDownscaleEnabled();
 
     std::string name_;
     RSSurfaceNodeType surfaceNodeType_ = RSSurfaceNodeType::DEFAULT;
@@ -189,6 +205,9 @@ private:
     bool lastGlobalPositionEnabled_ = false;
     RsSubThreadCache subThreadCache_;
     friend class RsSubThreadCache;
+
+    Drawing::Region curSurfaceDrawRegion_ {};
+    mutable std::mutex drawRegionMutex_;
 };
 } // namespace DrawableV2
 } // namespace OHOS::Rosen

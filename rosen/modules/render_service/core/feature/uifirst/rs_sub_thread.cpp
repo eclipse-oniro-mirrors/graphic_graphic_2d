@@ -35,11 +35,13 @@
 #include "pipeline/rs_surface_render_node.h"
 #include "pipeline/main_thread/rs_uni_render_visitor.h"
 #include "rs_trace.h"
-#include "utils/graphic_coretrace.h"
 
 #ifdef RES_SCHED_ENABLE
 #include "qos.h"
 #endif
+
+#undef LOG_TAG
+#define LOG_TAG "RSSubThread"
 
 namespace OHOS::Rosen {
 RSSubThread::~RSSubThread()
@@ -160,7 +162,6 @@ void RSSubThread::DestroyShareEglContext()
 
 void RSSubThread::DrawableCache(std::shared_ptr<DrawableV2::RSSurfaceRenderNodeDrawable> nodeDrawable)
 {
-    RECORD_GPURESOURCE_CORETRACE_CALLER(Drawing::CoreFunction::RS_RSSUBTHREAD_DRAWABLECACHE);
     if (grContext_ == nullptr) {
         grContext_ = CreateShareGrContext();
         if (grContext_ == nullptr) {
@@ -219,6 +220,7 @@ void RSSubThread::DrawableCache(std::shared_ptr<DrawableV2::RSSurfaceRenderNodeD
     // mark nodedrawable can release
     RSUifirstManager::Instance().AddProcessDoneNode(nodeId);
     doingCacheProcessNum_--;
+    UpdateGpuMemoryStatistics();
 }
 
 std::shared_ptr<Drawing::GPUContext> RSSubThread::CreateShareGrContext()
@@ -263,8 +265,6 @@ std::shared_ptr<Drawing::GPUContext> RSSubThread::CreateShareGrContext()
 
 void RSSubThread::DrawableCacheWithSkImage(std::shared_ptr<DrawableV2::RSSurfaceRenderNodeDrawable> nodeDrawable)
 {
-    RECORD_GPURESOURCE_CORETRACE_CALLER(Drawing::CoreFunction::
-        RS_RSSUBTHREAD_DRAWABLECACHEWITHSKIMAGE);
     if (!nodeDrawable) {
         RS_LOGE("RSSubThread::DrawableCacheWithSkImage nodeDrawable is nullptr");
         return;
@@ -329,6 +329,7 @@ void RSSubThread::ResetGrContext()
     }
     grContext_->FlushAndSubmit(true);
     grContext_->FreeGpuResources();
+    UpdateGpuMemoryStatistics();
 }
 
 void RSSubThread::ThreadSafetyReleaseTexture()
@@ -337,6 +338,7 @@ void RSSubThread::ThreadSafetyReleaseTexture()
         return;
     }
     grContext_->FreeGpuResources();
+    UpdateGpuMemoryStatistics();
 }
 
 void RSSubThread::ReleaseSurface()
@@ -347,6 +349,7 @@ void RSSubThread::ReleaseSurface()
         tmpSurfaces_.pop();
         tmp = nullptr;
     }
+    UpdateGpuMemoryStatistics();
 }
 
 void RSSubThread::AddToReleaseQueue(std::shared_ptr<Drawing::Surface>&& surface)
@@ -377,6 +380,7 @@ void RSSubThread::ReleaseCacheSurfaceOnly(std::shared_ptr<DrawableV2::RSSurfaceR
     RS_TRACE_NAME_FMT("ReleaseCacheSurfaceOnly id:" PRIu64, nodeId);
     RS_LOGI("ReleaseCacheSurfaceOnly id:%{public}" PRIu64, nodeId);
     nodeDrawable->GetRsSubThreadCache().ClearCacheSurfaceOnly();
+    UpdateGpuMemoryStatistics();
 }
 
 void RSSubThread::SetHighContrastIfEnabled(RSPaintFilterCanvas& canvas)
@@ -384,6 +388,22 @@ void RSSubThread::SetHighContrastIfEnabled(RSPaintFilterCanvas& canvas)
     auto renderEngine = RSUniRenderThread::Instance().GetRenderEngine();
     if (renderEngine) {
         canvas.SetHighContrast(renderEngine->IsHighContrastEnabled());
+    }
+}
+
+void RSSubThread::UpdateGpuMemoryStatistics()
+{
+    if (OHOS::Rosen::RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) {
+        return;
+    }
+    if (grContext_ == nullptr) {
+        return;
+    }
+    std::unordered_map<pid_t, size_t> gpuMemOfPid;
+    grContext_->GetUpdatedMemoryMap(gpuMemOfPid);
+    std::lock_guard<std::mutex> lock(memMutex_);
+    for (auto& [pid, size] : gpuMemOfPid) {
+        gpuMemoryOfPid_[pid] = size;
     }
 }
 }

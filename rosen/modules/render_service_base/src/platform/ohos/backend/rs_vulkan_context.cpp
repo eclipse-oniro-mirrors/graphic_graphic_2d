@@ -16,13 +16,18 @@
 #include "platform/ohos/backend/rs_vulkan_context.h"
 #include <memory>
 #include <mutex>
-#include <set>
+#include <unordered_set>
+#include <string_view>
 #include <dlfcn.h>
 #include <vector>
 #include "common/rs_optional_trace.h"
 #include "platform/common/rs_log.h"
 #include "render_context/memory_handler.h"
+#ifdef USE_M133_SKIA
+#include "include/gpu/vk/VulkanExtensions.h"
+#else
 #include "include/gpu/vk/GrVkExtensions.h"
+#endif
 #include "unistd.h"
 #include "vulkan/vulkan_core.h"
 #include "vulkan/vulkan_ohos.h"
@@ -37,14 +42,13 @@ namespace OHOS {
 namespace Rosen {
 thread_local bool RsVulkanContext::isProtected_ = false;
 thread_local VulkanInterfaceType RsVulkanContext::vulkanInterfaceType_ = VulkanInterfaceType::BASIC_RENDER;
-thread_local std::weak_ptr<Drawing::GPUContext> RsVulkanContext::drawingContext_;
-thread_local std::weak_ptr<Drawing::GPUContext> RsVulkanContext::protectedDrawingContext_;
-std::map<int, std::shared_ptr<Drawing::GPUContext>> RsVulkanContext::drawingContextMap_;
-std::map<int, std::shared_ptr<Drawing::GPUContext>> RsVulkanContext::protectedDrawingContextMap_;
+std::map<int, std::pair<std::shared_ptr<Drawing::GPUContext>, bool>> RsVulkanContext::drawingContextMap_;
+std::map<int, std::pair<std::shared_ptr<Drawing::GPUContext>, bool>> RsVulkanContext::protectedDrawingContextMap_;
 std::mutex RsVulkanContext::drawingContextMutex_;
-std::unique_ptr<RsVulkanContext> RsVulkanContext::recyclableSingleton_ = nullptr;
-std::mutex RsVulkanContext::recyclableSingletonMutex_;
+std::recursive_mutex RsVulkanContext::recyclableSingletonMutex_;
 bool RsVulkanContext::isRecyclable_ = true;
+std::atomic<bool> RsVulkanContext::isRecyclableSingletonValid_ = false;
+std::atomic<bool> RsVulkanContext::isInited_ = false;
 void* RsVulkanInterface::handle_ = nullptr;
 VkInstance RsVulkanInterface::instance_ = VK_NULL_HANDLE;
 
@@ -52,7 +56,7 @@ static std::vector<const char*> gInstanceExtensions = {
     VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
 };
 
-static std::vector<const char*> gDeviceExtensions = {
+static std::vector<const char*> gMandatoryDeviceExtensions = {
     VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME,
     VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME,
     VK_KHR_MAINTENANCE1_EXTENSION_NAME,
@@ -62,6 +66,10 @@ static std::vector<const char*> gDeviceExtensions = {
     VK_KHR_BIND_MEMORY_2_EXTENSION_NAME,
     VK_OHOS_NATIVE_BUFFER_EXTENSION_NAME,
     VK_OHOS_EXTERNAL_MEMORY_EXTENSION_NAME,
+};
+
+static std::vector<const char*> gOptionalDeviceExtensions = {
+    VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME,
 };
 
 static const int GR_CHUNK_SIZE = 1048576;
@@ -169,6 +177,7 @@ bool RsVulkanInterface::CreateInstance()
     ACQUIRE_PROC(CreateDevice, instance_);
     ACQUIRE_PROC(DestroyDevice, instance_);
     ACQUIRE_PROC(DestroyInstance, instance_);
+    ACQUIRE_PROC(EnumerateDeviceExtensionProperties, instance_);
     ACQUIRE_PROC(EnumerateDeviceLayerProperties, instance_);
     ACQUIRE_PROC(EnumeratePhysicalDevices, instance_);
     ACQUIRE_PROC(GetPhysicalDeviceFeatures, instance_);
@@ -215,6 +224,59 @@ bool RsVulkanInterface::SelectPhysicalDevice(bool isProtected)
     return true;
 }
 
+void RsVulkanInterface::ConfigureFeatures(bool isProtected)
+{
+    ycbcrFeature_.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_YCBCR_CONVERSION_FEATURES,
+    ycbcrFeature_.pNext = nullptr;
+    sync2Feature_.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES;
+    sync2Feature_.pNext = &ycbcrFeature_;
+    bindlessFeature_.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
+    bindlessFeature_.pNext = &sync2Feature_;
+    timelineFeature_.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES;
+    timelineFeature_.pNext = &bindlessFeature_;
+    physicalDeviceFeatures2_.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+    physicalDeviceFeatures2_.pNext = &timelineFeature_;
+    void** tailPnext = &ycbcrFeature_.pNext;
+    protectedMemoryFeatures_ = new VkPhysicalDeviceProtectedMemoryFeatures;
+    if (isProtected) {
+        protectedMemoryFeatures_->sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROTECTED_MEMORY_FEATURES;
+        protectedMemoryFeatures_->pNext = nullptr;
+        *tailPnext = protectedMemoryFeatures_;
+        tailPnext = &protectedMemoryFeatures_->pNext;
+    }
+}
+
+void RsVulkanInterface::ConfigureExtensions()
+{
+    deviceExtensions_ = gMandatoryDeviceExtensions;
+    uint32_t count = 0;
+    std::vector<VkExtensionProperties> supportedExtensions;
+    if (vkEnumerateDeviceExtensionProperties(physicalDevice_, nullptr, &count, nullptr) != VK_SUCCESS) {
+        ROSEN_LOGE("Failed to get device extension count, try to create device with mandatory extensions only!");
+        return;
+    }
+    supportedExtensions.resize(count);
+    if (vkEnumerateDeviceExtensionProperties(physicalDevice_, nullptr, &count,
+        supportedExtensions.data()) != VK_SUCCESS) {
+        ROSEN_LOGE("Failed to get device extensions, try to create device with mandatory extensions only!");
+        return;
+    }
+    std::unordered_set<std::string_view> extensionNames;
+    for (auto& prop: supportedExtensions) {
+        extensionNames.emplace(prop.extensionName);
+    }
+    for (auto& ext: gOptionalDeviceExtensions) {
+        if (extensionNames.find(ext) != extensionNames.end()) {
+            deviceExtensions_.emplace_back(ext);
+        }
+    }
+    for (auto& ext: gMandatoryDeviceExtensions) {
+        if (extensionNames.find(ext) == extensionNames.end()) {
+            ROSEN_LOGE("Mandatory device extension %{public}s not found! Try to enable it anyway.", ext);
+        }
+    }
+}
+
 bool RsVulkanInterface::CreateDevice(bool isProtected)
 {
     if (!physicalDevice_) {
@@ -246,21 +308,8 @@ bool RsVulkanInterface::CreateDevice(bool isProtected)
         .flags = deviceQueueCreateFlags, .queueFamilyIndex = graphicsQueueFamilyIndex_, .queueCount = 1,
         .pQueuePriorities = priorities,
     }};
-    ycbcrFeature_.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_YCBCR_CONVERSION_FEATURES,
-    ycbcrFeature_.pNext = nullptr;
-    deviceMemoryExclusiveThreshold_.sType = VK_STRUCTURE_TYPE_DEVICE_MEMORY_EXCLUSIVE_THRESHOLD_INFO;
-    deviceMemoryExclusiveThreshold_.pNext = &ycbcrFeature_;
-    deviceMemoryExclusiveThreshold_.threshold = GR_CHUNK_SIZE;
-    physicalDeviceFeatures2_.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-    physicalDeviceFeatures2_.pNext = &deviceMemoryExclusiveThreshold_;
-    void** tailPnext = &ycbcrFeature_.pNext;
-    protectedMemoryFeatures_ = new VkPhysicalDeviceProtectedMemoryFeatures;
-    if (isProtected) {
-        protectedMemoryFeatures_->sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROTECTED_MEMORY_FEATURES;
-        protectedMemoryFeatures_->pNext = nullptr;
-        *tailPnext = protectedMemoryFeatures_;
-        tailPnext = &protectedMemoryFeatures_->pNext;
-    }
+    ConfigureExtensions();
+    ConfigureFeatures(isProtected);
 
     vkGetPhysicalDeviceFeatures2(physicalDevice_, &physicalDeviceFeatures2_);
 
@@ -268,8 +317,8 @@ bool RsVulkanInterface::CreateDevice(bool isProtected)
         .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO, .pNext = &physicalDeviceFeatures2_,
         .flags = 0, .queueCreateInfoCount = queueCreate.size(), .pQueueCreateInfos = queueCreate.data(),
         .enabledLayerCount = 0, .ppEnabledLayerNames = nullptr,
-        .enabledExtensionCount = static_cast<uint32_t>(gDeviceExtensions.size()),
-        .ppEnabledExtensionNames = gDeviceExtensions.data(), .pEnabledFeatures = nullptr,
+        .enabledExtensionCount = static_cast<uint32_t>(deviceExtensions_.size()),
+        .ppEnabledExtensionNames = deviceExtensions_.data(), .pEnabledFeatures = nullptr,
     };
     if (vkCreateDevice(physicalDevice_, &createInfo, nullptr, &device_) != VK_SUCCESS) {
         ROSEN_LOGE("vkCreateDevice failed");
@@ -285,14 +334,18 @@ bool RsVulkanInterface::CreateDevice(bool isProtected)
     return true;
 }
 
+#ifdef USE_M133_SKIA
+bool RsVulkanInterface::CreateSkiaBackendContext(skgpu::VulkanBackendContext* context, bool isProtected)
+#else
 bool RsVulkanInterface::CreateSkiaBackendContext(GrVkBackendContext* context, bool isProtected)
+#endif
 {
     auto getProc = CreateSkiaGetProc();
     if (getProc == nullptr) {
         ROSEN_LOGE("CreateSkiaBackendContext getProc is null");
         return false;
     }
-
+#ifndef USE_M133_SKIA
     VkPhysicalDeviceFeatures features;
     vkGetPhysicalDeviceFeatures(physicalDevice_, &features);
 
@@ -306,29 +359,40 @@ bool RsVulkanInterface::CreateSkiaBackendContext(GrVkBackendContext* context, bo
     if (features.sampleRateShading) {
         fFeatures |= kSampleRateShading_GrVkFeatureFlag;
     }
+#endif
 
     context->fInstance = instance_;
     context->fPhysicalDevice = physicalDevice_;
     context->fDevice = device_;
     context->fQueue = queue_;
     context->fGraphicsQueueIndex = graphicsQueueFamilyIndex_;
+#ifndef USE_M133_SKIA
     context->fMinAPIVersion = VK_API_VERSION_1_2;
 
     uint32_t extensionFlags = kKHR_surface_GrVkExtensionFlag;
     extensionFlags |= kKHR_ohos_surface_GrVkExtensionFlag;
 
     context->fExtensions = extensionFlags;
+#else
+    context->fMaxAPIVersion = VK_API_VERSION_1_2;
+#endif
 
     skVkExtensions_.init(getProc, instance_, physicalDevice_,
         gInstanceExtensions.size(), gInstanceExtensions.data(),
-        gDeviceExtensions.size(), gDeviceExtensions.data());
+        deviceExtensions_.size(), deviceExtensions_.data());
 
     context->fVkExtensions = &skVkExtensions_;
     context->fDeviceFeatures2 = &physicalDeviceFeatures2_;
+#ifndef USE_M133_SKIA
     context->fFeatures = fFeatures;
+#endif
     context->fGetProc = std::move(getProc);
+#ifdef USE_M133_SKIA
+    context->fProtectedContext = isProtected ? skgpu::Protected::kYes : skgpu::Protected::kNo;
+#else
     context->fOwnsInstanceAndDevice = false;
     context->fProtectedContext = isProtected ? GrProtected::kYes : GrProtected::kNo;
+#endif
 
     return true;
 }
@@ -420,7 +484,11 @@ PFN_vkVoidFunction RsVulkanInterface::AcquireProc(
     return vkGetDeviceProcAddr(device, procName);
 }
 
+#ifdef USE_M133_SKIA
+skgpu::VulkanGetProc RsVulkanInterface::CreateSkiaGetProc() const
+#else
 GrVkGetProc RsVulkanInterface::CreateSkiaGetProc() const
+#endif
 {
     if (!IsValid()) {
         return nullptr;
@@ -441,7 +509,7 @@ GrVkGetProc RsVulkanInterface::CreateSkiaGetProc() const
     };
 }
 
-std::shared_ptr<Drawing::GPUContext> RsVulkanInterface::CreateDrawingContext(std::string.cacheDir)
+std::shared_ptr<Drawing::GPUContext> RsVulkanInterface::CreateDrawingContext(std::string cacheDir)
 {
     std::unique_lock<std::mutex> lock(vkMutex_);
 
@@ -541,6 +609,16 @@ RsVulkanContext::RsVulkanContext(std::string cacheDir)
     } else {
         InitVulkanContextForUniRender(cacheDir);
     }
+    RsVulkanContext::isInited_ = true;
+    RsVulkanContext::isRecyclableSingletonValid_ = true;
+}
+
+RsVulkanContext::~RsVulkanContext()
+{
+    std::lock_guard<std::mutex> lock(drawingContextMutex_);
+    drawingContextMap_.clear();
+    protectedDrawingContextMap_.clear();
+    RsVulkanContext::isRecyclableSingletonValid_ = false;
 }
 
 void RsVulkanContext::InitVulkanContextForHybridRender(const std::string& cacheDir)
@@ -548,7 +626,7 @@ void RsVulkanContext::InitVulkanContextForHybridRender(const std::string& cacheD
     auto vulkanInterface = std::make_shared<RsVulkanInterface>();
     vulkanInterface->Init(VulkanInterfaceType::BASIC_RENDER, false);
     // init drawing context for RT thread bind to backendContext.
-    drawingContext_ = vulkanInterface->CreateDrawingContext(cacheDir);
+    vulkanInterface->CreateDrawingContext(cacheDir);
 
     vulkanInterfaceVec_[size_t(VulkanInterfaceType::BASIC_RENDER)] = std::move(vulkanInterface);
 }
@@ -559,7 +637,7 @@ void RsVulkanContext::InitVulkanContextForUniRender(const std::string& cacheDir)
     auto uniRenderVulkanInterface = std::make_shared<RsVulkanInterface>();
     uniRenderVulkanInterface->Init(VulkanInterfaceType::BASIC_RENDER, false);
     // init drawing context for RT thread bind to backendContext.
-    drawingContext_ = uniRenderVulkanInterface->CreateDrawingContext(cacheDir);
+    uniRenderVulkanInterface->CreateDrawingContext(cacheDir);
     // create vulkan interface for hardware thread (unprotected).
     auto unprotectedReDrawVulkanInterface = std::make_shared<RsVulkanInterface>();
     unprotectedReDrawVulkanInterface->Init(VulkanInterfaceType::UNPROTECTED_REDRAW, false);
@@ -570,20 +648,27 @@ void RsVulkanContext::InitVulkanContextForUniRender(const std::string& cacheDir)
     auto protectedReDrawVulkanInterface = std::make_shared<RsVulkanInterface>();
     protectedReDrawVulkanInterface->Init(VulkanInterfaceType::PROTECTED_REDRAW, true);
     // DRM needs to adapt vkQueue in the future.
-    protectedDrawingContext_ = protectedReDrawVulkanInterface->CreateDrawingContext(cacheDir);
+    protectedReDrawVulkanInterface->CreateDrawingContext(cacheDir);
     vulkanInterfaceVec_[size_t(VulkanInterfaceType::PROTECTED_REDRAW)] = std::move(protectedReDrawVulkanInterface);
     isProtected_ = false;
 #endif
 }
 
+std::unique_ptr<RsVulkanContext>& RsVulkanContext::GetRecyclableSingletonPtr(const std::string& cacheDir)
+{
+    std::lock_guard<std::recursive_mutex> lock(recyclableSingletonMutex_);
+    static std::string cacheDirInit = cacheDir;
+    static std::unique_ptr<RsVulkanContext> recyclableSingleton = std::make_unique<RsVulkanContext>(cacheDirInit);
+    if (recyclableSingleton == nullptr) {
+        static std::string cacheDirInit = cacheDir;
+        recyclableSingleton = std::make_unique<RsVulkanContext>(cacheDirInit);
+    }
+    return recyclableSingleton;
+}
+
 RsVulkanContext& RsVulkanContext::GetRecyclableSingleton(const std::string& cacheDir)
 {
-    std::lock_guard<std::mutex> lock(recyclableSingletonMutex_);
-    if (recyclableSingleton_ == nullptr) {
-        static std::string cacheDirInit = cacheDir;
-        recyclableSingleton_ = std::make_unique<RsVulkanContext>(cacheDirInit);
-    }
-    return *recyclableSingleton_;
+    return *RsVulkanContext::GetRecyclableSingletonPtr(cacheDir);
 }
 
 RsVulkanContext& RsVulkanContext::GetSingleton(const std::string& cacheDir)
@@ -600,36 +685,96 @@ void RsVulkanContext::ReleaseRecyclableSingleton()
     if (!isRecyclable_) {
         return;
     }
+    ReleaseDrawingContextMap();
     {
-        std::lock_guard<std::mutex> lock(drawingContextMutex_);
-        drawingContextMap_.clear();
-        protectedDrawingContextMap_.clear();
+        std::lock_guard<std::recursive_mutex> lock(recyclableSingletonMutex_);
+        auto& recyclableSingleton = GetRecyclableSingletonPtr();
+        recyclableSingleton.reset();
     }
-    {
-        std::lock_guard<std::mutex> lock(recyclableSingletonMutex_);
-        recyclableSingleton_ = nullptr;
+}
+
+std::shared_ptr<Drawing::GPUContext> RsVulkanContext::GetRecyclableDrawingContext()
+{
+    // 1. get or create drawing context and save it in the map
+    auto drawingContext = RsVulkanContext::GetDrawingContext();
+
+    // 2. set recyclable tag for drawingContext when it's valid (i.e it's in the map)
+    static thread_local int tidForRecyclable = gettid();
+    auto& drawingContextMap = isProtected_ ?
+        RsVulkanContext::protectedDrawingContextMap_ : RsVulkanContext::drawingContextMap_;
+    std::lock_guard<std::mutex> lock(drawingContextMutex_);
+    auto iter = drawingContextMap.find(tidForRecyclable);
+    if (iter != drawingContextMap.end()) {
+        iter->second.second = true;
     }
+    return drawingContext;
+}
+
+void RsVulkanContext::ReleaseDrawingContextMap()
+{
+    std::lock_guard<std::mutex> lock(drawingContextMutex_);
+    for (auto& iter : drawingContextMap_) {
+        auto context = iter.second.first;
+        if (context == nullptr) {
+            continue;
+        }
+        context->FlushAndSubmit(true);
+    }
+    drawingContextMap_.clear();
+
+    for (auto& protectedIter : protectedDrawingContextMap_) {
+        auto protectedContext = protectedIter.second.first;
+        if (protectedContext == nullptr) {
+            continue;
+        }
+        protectedContext->FlushAndSubmit(true);
+    }
+    protectedDrawingContextMap_.clear();
+}
+
+void RsVulkanContext::ReleaseRecyclableDrawingContext()
+{
+    auto& drawingContextMap = isProtected_ ?
+        RsVulkanContext::protectedDrawingContextMap_ : RsVulkanContext::drawingContextMap_;
+    std::lock_guard<std::mutex> lock(drawingContextMutex_);
+    for (auto iter = drawingContextMap.begin(); iter != drawingContextMap.end();) {
+        if (iter->second.second) {
+            iter = drawingContextMap.erase(iter);
+        } else {
+            ++iter;
+        }
+    }
+}
+
+void RsVulkanContext::ReleaseDrawingContextForThread(int tid)
+{
+    std::lock_guard<std::mutex> lock(drawingContextMutex_);
+    drawingContextMap_.erase(tid);
+    protectedDrawingContextMap_.erase(tid);
 }
 
 void RsVulkanContext::SaveNewDrawingContext(int tid, std::shared_ptr<Drawing::GPUContext> drawingContext)
 {
     std::lock_guard<std::mutex> lock(drawingContextMutex_);
     static thread_local auto func = [tid]() {
-        RsVulkanContext::CleanUpRecyclableDrawingContext(tid);
+        RsVulkanContext::ReleaseDrawingContextForThread(tid);
     };
     static thread_local auto drawContextHolder = std::make_shared<DrawContextHolder>(func);
     if (isProtected_) {
-        protectedDrawingContextMap_[tid] = drawingContext;
+        protectedDrawingContextMap_[tid] = std::make_pair(drawingContext, false);
     } else {
-        drawingContextMap_[tid] = drawingContext;
+        drawingContextMap_[tid] = std::make_pair(drawingContext, false);
     }
 }
 
-void RsVulkanContext::CleanUpRecyclableDrawingContext(int tid)
+bool RsVulkanContext::GetIsInited()
 {
-    std::lock_guard<std::mutex> lock(drawingContextMutex_);
-    drawingContextMap_.erase(tid);
-    protectedDrawingContextMap_.erase(tid);
+    return isInited_.load();
+}
+
+bool RsVulkanContext::IsRecyclableSingletonValid()
+{
+    return isRecyclableSingletonValid_.load();
 }
 
 RsVulkanInterface& RsVulkanContext::GetRsVulkanInterface()
@@ -691,36 +836,53 @@ VKAPI_ATTR VkResult RsVulkanContext::HookedVkQueueSignalReleaseImageOHOS(VkQueue
 
 std::shared_ptr<Drawing::GPUContext> RsVulkanContext::CreateDrawingContext()
 {
-    switch (vulkanInterfaceType_) {
-        case VulkanInterfaceType::PROTECTED_REDRAW: {
-            if (auto protectedDrawingContext = protectedDrawingContext_.lock()) {
-                return protectedDrawingContext;
+    static thread_local int tidForRecyclable = gettid();
+    {
+        std::lock_guard<std::mutex> lock(drawingContextMutex_);
+        switch (vulkanInterfaceType_) {
+            case VulkanInterfaceType::PROTECTED_REDRAW: {
+                // protectedDrawingContextMap_ : <tid, <drawingContext, isRecyclable>>
+                auto protectedIter = protectedDrawingContextMap_.find(tidForRecyclable);
+                if (protectedIter != protectedDrawingContextMap_.end() && protectedIter->second.first != nullptr) {
+                    return protectedIter->second.first;
+                }
+                break;
             }
-            auto protectedDrawingContext = GetRsVulkanInterface().CreateDrawingContext();
-            protectedDrawingContext_ = protectedDrawingContext;
-            return protectedDrawingContext;
-        }
-        case VulkanInterfaceType::BASIC_RENDER:
-        case VulkanInterfaceType::UNPROTECTED_REDRAW:
-        default: {
-            if (auto drawingContext = drawingContext_.lock()) {
-                return drawingContext;
+            case VulkanInterfaceType::BASIC_RENDER:
+            case VulkanInterfaceType::UNPROTECTED_REDRAW:
+            default: {
+                // drawingContextMap_ : <tid, <drawingContext, isRecyclable>>
+                auto iter = drawingContextMap_.find(tidForRecyclable);
+                if (iter != drawingContextMap_.end() && iter->second.first != nullptr) {
+                    return iter->second.first;
+                }
+                break;
             }
-            auto drawingContext = GetRsVulkanInterface().CreateDrawingContext();
-            drawingContext_ = drawingContext;
-            return drawingContext;
         }
     }
+    return GetRsVulkanInterface().CreateDrawingContext();
 }
 
 std::shared_ptr<Drawing::GPUContext> RsVulkanContext::GetDrawingContext()
 {
-    auto& drawingContext = isProtected_ ? protectedDrawingContext_ : drawingContext_;
-    if (auto drawingContextShared = drawingContext.lock()) {
-        return drawingContextShared;
+    static thread_local int tidForRecyclable = gettid();
+    {
+        std::lock_guard<std::mutex> lock(drawingContextMutex_);
+        if (isProtected_) {
+            // protectedDrawingContextMap_ : <tid, <drawingContext, isRecyclable>>
+            auto protectedIter = protectedDrawingContextMap_.find(tidForRecyclable);
+            if (protectedIter != protectedDrawingContextMap_.end() && protectedIter->second.first != nullptr) {
+                return protectedIter->second.first;
+            }
+        } else {
+            // drawingContextMap_ : <tid, <drawingContext, isRecyclable>>
+            auto iter = drawingContextMap_.find(tidForRecyclable);
+            if (iter != drawingContextMap_.end() && iter->second.first != nullptr) {
+                return iter->second.first;
+            }
+        }
     }
-    drawingContext = GetRsVulkanInterface().CreateDrawingContext();
-    return drawingContext.lock();
+    return GetRsVulkanInterface().CreateDrawingContext();
 }
 
 bool RsVulkanContext::GetIsProtected() const

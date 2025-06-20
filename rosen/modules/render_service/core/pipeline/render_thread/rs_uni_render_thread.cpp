@@ -29,8 +29,11 @@
 #include "graphic_common_c.h"
 #include "hgm_core.h"
 #include "include/core/SkGraphics.h"
+#ifdef USE_M133_SKIA
+#include "include/gpu/ganesh/GrDirectContext.h"
+#else
 #include "include/gpu/GrDirectContext.h"
-#include "utils/graphic_coretrace.h"
+#endif
 #include "memory/rs_memory_manager.h"
 #include "mem_param.h"
 #include "params/rs_display_render_params.h"
@@ -342,8 +345,6 @@ void RSUniRenderThread::Sync(std::unique_ptr<RSRenderThreadParams>&& stagingRend
 
 void RSUniRenderThread::Render()
 {
-    RECORD_GPURESOURCE_CORETRACE_CALLER(Drawing::CoreFunction::
-        RS_RSUNIRENDERTHREAD_RENDER);
     if (!rootNodeDrawable_) {
         RS_LOGE("rootNodeDrawable is nullptr");
         return;
@@ -389,8 +390,8 @@ void RSUniRenderThread::CollectReleaseTasks(std::vector<std::function<void()>>& 
         if (needRelease && lastHardWareEnabled) {
             surfaceParams->releaseInHardwareThreadTaskNum_ = RELEASE_IN_HARDWARE_THREAD_TASK_NUM;
         }
-        if (curHardWareEnabled != lastHardWareEnabled) {
-            RS_LOGI("name:%{public}s id:%{public}" PRIu64" hwcEnabled changed to:%{public}d needRelease:%{public}d",
+        if (curHardWareEnabled != lastHardWareEnabled && params->GetIsOnTheTree()) {
+            RS_LOGI("name:%{public}s id:%{public}" PRIu64 " hwcEnabled changed to:%{public}d needRelease:%{public}d",
                 surfaceDrawable->GetName().c_str(), surfaceDrawable->GetId(), curHardWareEnabled, needRelease);
         }
         if (needRelease) {
@@ -699,23 +700,15 @@ static void TrimMemEmptyType(Drawing::GPUContext* gpuContext)
     SkGraphics::PurgeAllCaches();
     gpuContext->FreeGpuResources();
     gpuContext->PurgeUnlockedResources(true);
-#ifdef NEW_RENDER_CONTEXT
-    MemoryHandler::ClearShader();
-#else
     std::shared_ptr<RenderContext> rendercontext = std::make_shared<RenderContext>();
     rendercontext->CleanAllShaderCache();
-#endif
     gpuContext->FlushAndSubmit(true);
 }
 
 static void TrimMemShaderType()
 {
-#ifdef NEW_RENDER_CONTEXT
-    MemoryHandler::ClearShader();
-#else
     std::shared_ptr<RenderContext> rendercontext = std::make_shared<RenderContext>();
     rendercontext->CleanAllShaderCache();
-#endif
 }
 
 static void TrimMemGpuLimitType(Drawing::GPUContext* gpuContext, std::string& dumpString,
@@ -745,6 +738,7 @@ void RSUniRenderThread::TrimMem(std::string& dumpString, std::string& type)
 {
     auto task = [this, &dumpString, &type] {
         std::string typeGpuLimit = "setgpulimit";
+        std::string avcodecVideo = "avcodecVideo";
         if (!uniRenderEngine_) {
             return;
         }
@@ -781,6 +775,8 @@ void RSUniRenderThread::TrimMem(std::string& dumpString, std::string& type)
             dumpString.append("flushcache " + std::to_string(ret) + "\n");
         } else if (type.substr(0, typeGpuLimit.length()) == typeGpuLimit) {
             TrimMemGpuLimitType(gpuContext, dumpString, type, typeGpuLimit);
+        } else if (type.substr(0, avcodecVideo.length()) == avcodecVideo) {
+            RSJankStats::GetInstance().AvcodecVideoDump(dumpString, type, avcodecVideo);
         } else {
             uint32_t pid = static_cast<uint32_t>(std::atoi(type.c_str()));
             Drawing::GPUResourceTag tag(pid, 0, 0, 0, "TrimMem");

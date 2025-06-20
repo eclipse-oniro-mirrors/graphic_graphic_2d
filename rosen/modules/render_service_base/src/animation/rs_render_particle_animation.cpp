@@ -41,11 +41,18 @@ void RSRenderParticleAnimation::DumpAnimationInfo(std::string& out) const
 bool RSRenderParticleAnimation::Animate(int64_t time, int64_t& minLeftDelayTime)
 {
     RS_OPTIONAL_TRACE_NAME("RSRenderParticleAnimation::Animate");
+    minLeftDelayTime = 0;
     auto target = GetTarget();
     if (!target) {
         return true;
     } else if (!target->GetRenderProperties().GetVisible()) {
+#if defined(MODIFIER_NG)
+        if (auto modifierNG = property_->GetModifierNG().lock()) {
+            target->RemoveModifierNG(modifierNG->GetId());
+        }
+#else
         target->RemoveModifier(property_->GetId());
+#endif
         return true;
     }
 
@@ -62,9 +69,16 @@ bool RSRenderParticleAnimation::Animate(int64_t time, int64_t& minLeftDelayTime)
     }
 
     if (particleSystem_ == nullptr || particleSystem_->IsFinish(renderParticleVector_.renderParticleVector_)) {
-        if (target) {
-            target->RemoveModifier(property_->GetId());
+        if (!target) {
+            return true;
         }
+#if defined(MODIFIER_NG)
+        if (auto modifierNG = property_->GetModifierNG().lock()) {
+            target->RemoveModifierNG(modifierNG->GetId());
+        }
+#else
+        target->RemoveModifier(property_->GetId());
+#endif
         return true;
     }
     return false;
@@ -96,6 +110,7 @@ void RSRenderParticleAnimation::UpdateEmitter(const std::vector<std::shared_ptr<
                 emitterUpdater->emitRate_.value() != particlesRenderParams_[index]->emitterConfig_.emitRate_) {
                 particlesRenderParams_[index]->emitterConfig_.emitRate_ = emitterUpdater->emitRate_.value();
             }
+            UpdateParamsIfChanged(emitterUpdater->shape_, particlesRenderParams_[index]->emitterConfig_.shape_);
         }
     }
     if (particleSystem_) {
@@ -128,7 +143,14 @@ void RSRenderParticleAnimation::OnAttach()
     auto particleAnimations = target->GetAnimationManager().GetParticleAnimations();
     if (!particleAnimations.empty()) {
         for (const auto& pair : particleAnimations) {
+#if defined(MODIFIER_NG)
+            auto property = target->GetProperty(pair.first);
+            if (auto modifierNG = property->GetModifierNG().lock()) {
+                target->RemoveModifierNG(modifierNG->GetId());
+            }
+#else
             target->RemoveModifier(pair.first);
+#endif
             target->GetAnimationManager().RemoveAnimation(pair.second);
             target->GetAnimationManager().UnregisterParticleAnimation(pair.first, pair.second);
         }

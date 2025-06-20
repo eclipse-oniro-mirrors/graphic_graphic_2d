@@ -113,6 +113,39 @@ HWTEST_F(RSInterfacesTest, TakeSurfaceCaptureForUI003, TestSize.Level1)
 }
 
 /**
+ * @tc.name: RegisterTransactionDataCallback001
+ * @tc.desc: RegisterTransactionDataCallback Test callback does not exist
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSInterfacesTest, RegisterTransactionDataCallback001, TestSize.Level1)
+{
+    int32_t pid = 123;
+    uint64_t timeStamp = 456;
+    RSInterfaces& instance = RSInterfaces::GetInstance();
+    instance.renderServiceClient_ = std::make_unique<RSRenderServiceClient>();
+    bool res = instance.RegisterTransactionDataCallback(pid, timeStamp, nullptr);
+    EXPECT_TRUE(res == false);
+}
+
+/**
+ * @tc.name: RegisterTransactionDataCallback002
+ * @tc.desc: RegisterTransactionDataCallback Test callback exist
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSInterfacesTest, RegisterTransactionDataCallback002, TestSize.Level1)
+{
+    int32_t pid = 123;
+    uint64_t timeStamp = 456;
+    RSInterfaces& instance = RSInterfaces::GetInstance();
+    instance.renderServiceClient_ = std::make_unique<RSRenderServiceClient>();
+    std::function<void()> callback = []() {};
+    bool res = instance.RegisterTransactionDataCallback(pid, timeStamp, callback);
+    EXPECT_TRUE(res == true);
+}
+
+/**
  * @tc.name: TakeSurfaceCaptureForUIWithConfig001
  * @tc.desc: test results of TakeSurfaceCaptureForUIWithConfig
  * @tc.type: FUNC
@@ -176,7 +209,6 @@ HWTEST_F(RSInterfacesTest, TakeSurfaceCaptureForUIWithConfig002, TestSize.Level1
 
     node = std::make_shared<RSCanvasNode>(true);
     res = instance.TakeSurfaceCaptureForUIWithConfig(node, callback, captureConfig);
-    EXPECT_FALSE(res);
 }
 
 /**
@@ -726,5 +758,32 @@ HWTEST_F(RSInterfacesTest, GetHighContrastTextState001, TestSize.Level1)
     RSInterfaces& instance = RSInterfaces::GetInstance();
     instance.renderServiceClient_ = std::make_unique<RSRenderServiceClient>();
     EXPECT_EQ(instance.GetHighContrastTextState(), false);
+}
+
+/**
+ * @tc.name: SetBehindWindowFilterEnabledTest
+ * @tc.desc: test results of SetBehindWindowFilterEnabledTest
+ * @tc.type: FUNC
+ * @tc.require: issuesIC5OEB
+ */
+HWTEST_F(RSInterfacesTest, SetBehindWindowFilterEnabledTest, TestSize.Level1)
+{
+    RSInterfaces& instance = RSInterfaces::GetInstance();
+    auto res = instance.SetBehindWindowFilterEnabled(true);
+    EXPECT_EQ(res, true);
+}
+
+/**
+ * @tc.name: GetBehindWindowFilterEnabledTest
+ * @tc.desc: test results of GetBehindWindowFilterEnabledTest
+ * @tc.type: FUNC
+ * @tc.require: issuesIC5OEB
+ */
+HWTEST_F(RSInterfacesTest, GetBehindWindowFilterEnabledTest, TestSize.Level1)
+{
+    RSInterfaces& instance = RSInterfaces::GetInstance();
+    bool enabled = false;
+    auto res = instance.GetBehindWindowFilterEnabled(enabled);
+    EXPECT_EQ(res, true);
 }
 } // namespace OHOS::Rosen

@@ -43,6 +43,14 @@ public:
         WATER_RIPPLE,
         MAGNIFIER,
         LIGHT_BLUR,
+        ALWAYS_SNAPSHOT,
+        DISPLACEMENT_DISTORT,
+        COLOR_GRADIENT,
+        SOUND_WAVE,
+        EDGE_LIGHT,
+        BEZIER_WARP,
+        DISPERSION,
+        CONTENT_LIGHT,
     };
 
     ShaderFilterType GetShaderFilterType() const

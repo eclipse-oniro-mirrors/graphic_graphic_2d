@@ -331,7 +331,11 @@ HWTEST_F(SkiaSurfaceTest, Height001, TestSize.Level1)
  */
 HWTEST_F(SkiaSurfaceTest, GetCanvas001, TestSize.Level1)
 {
+#ifdef USE_M133_SKIA
+    sk_sp<SkSurface> skSurface = SkSurfaces::Raster(SkImageInfo::MakeN32Premul(100, 100));
+#else
     sk_sp<SkSurface> skSurface = SkSurface::MakeRasterN32Premul(100, 100);
+#endif
     SkiaSurface skiaSurface;
     skiaSurface.SetSkSurface(skSurface);
     auto canvas = skiaSurface.GetCanvas();
@@ -346,7 +350,11 @@ HWTEST_F(SkiaSurfaceTest, GetCanvas001, TestSize.Level1)
  */
 HWTEST_F(SkiaSurfaceTest, GetImageSnapshot001, TestSize.Level1)
 {
+#ifdef USE_M133_SKIA
+    sk_sp<SkSurface> skSurface = SkSurfaces::Raster(SkImageInfo::MakeN32Premul(100, 100));
+#else
     sk_sp<SkSurface> skSurface = SkSurface::MakeRasterN32Premul(100, 100);
+#endif
     SkiaSurface skiaSurface;
     skiaSurface.SetSkSurface(skSurface);
     auto snapshot = skiaSurface.GetImageSnapshot();
@@ -361,7 +369,11 @@ HWTEST_F(SkiaSurfaceTest, GetImageSnapshot001, TestSize.Level1)
  */
 HWTEST_F(SkiaSurfaceTest, GetImageSnapshot002, TestSize.Level1)
 {
+#ifdef USE_M133_SKIA
+    sk_sp<SkSurface> skSurface = SkSurfaces::Raster(SkImageInfo::MakeN32Premul(100, 100));
+#else
     sk_sp<SkSurface> skSurface = SkSurface::MakeRasterN32Premul(100, 100);
+#endif
     SkiaSurface skiaSurface;
     ImageInfo imageInfo;
     imageInfo.SetWidth(100);
@@ -374,19 +386,6 @@ HWTEST_F(SkiaSurfaceTest, GetImageSnapshot002, TestSize.Level1)
 }
 
 /**
- * @tc.name: SetParallelRender
- * @tc.desc: Test SetParallelRender
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(SkiaSurfaceTest, SetParallelRender, TestSize.Level1)
-{
-    auto surface = std::make_unique<SkiaSurface>();
-    ASSERT_TRUE(surface != nullptr);
-    surface->SetParallelRender(true);
-}
-
-/**
  * @tc.name: SetSkSurface001
  * @tc.desc: Test SetSkSurface
  * @tc.type: FUNC
@@ -394,7 +393,11 @@ HWTEST_F(SkiaSurfaceTest, SetParallelRender, TestSize.Level1)
  */
 HWTEST_F(SkiaSurfaceTest, SetSkSurface001, TestSize.Level1)
 {
+#ifdef USE_M133_SKIA
+    sk_sp<SkSurface> skSurface = SkSurfaces::Raster(SkImageInfo::MakeN32Premul(100, 100));
+#else
     sk_sp<SkSurface> skSurface = SkSurface::MakeRasterN32Premul(100, 100);
+#endif
     SkiaSurface skiaSurface;
     skiaSurface.SetSkSurface(skSurface);
     ASSERT_TRUE(skSurface == skiaSurface.GetSkSurface());

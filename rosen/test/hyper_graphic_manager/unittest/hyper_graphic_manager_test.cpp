@@ -209,7 +209,7 @@ HWTEST_F(HyperGraphicManagerTest, AddScreen, Function | MediumTest | Level2)
 
         STEP("5. mark screenIds Size") {
             sizeScreenIds  = instance.GetScreenIds().size();
-            STEP_ASSERT_EQ(sizeScreenIds + 1, sizeListAfter);
+            STEP_ASSERT_EQ(sizeScreenIds, sizeListAfter);
         }
     }
 }
@@ -709,7 +709,6 @@ HWTEST_F(HyperGraphicManagerTest, TestAbnormalCase, Function | SmallTest | Level
 
     auto mgr = hgm.GetFrameRateMgr();
     std::string savedScreenStrategyId = mgr->curScreenStrategyId_;
-    EXPECT_EQ(savedScreenStrategyId, "LTPO-DEFAULT");
     std::string invalidScreenStrategyId = "DEFAULT-INVALID";
     mgr->curScreenStrategyId_ = invalidScreenStrategyId;
     hgm.CheckCustomFrameRateModeValid();

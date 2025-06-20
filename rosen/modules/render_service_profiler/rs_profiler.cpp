@@ -476,6 +476,15 @@ void RSProfiler::OnProcessCommand()
     }
 }
 
+bool RSProfiler::IsSecureScreen()
+{
+    std::shared_ptr<RSDisplayRenderNode> displayNode = GetDisplayNode(*context_);
+    if (displayNode) {
+        return (displayNode->GetMultableSpecialLayerMgr().Find(SpecialLayerType::HAS_SECURITY)) ? true : false;
+    }
+    return false;
+}
+
 void RSProfiler::OnRenderBegin()
 {
     if (!IsEnabled()) {
@@ -593,7 +602,7 @@ void RSProfiler::ProcessPauseMessage()
         if (deltaTime > g_replayLastPauseTimeReported) {
             int64_t vsyncId = g_playbackFile.ConvertTime2VsyncId(deltaTime);
             if (vsyncId) {
-                SendMessage("Replay timer paused vsyncId=%lld", vsyncId); // DO NOT TOUCH!
+                SendMessage("Replay timer paused vsyncId=%" PRId64, vsyncId); // DO NOT TOUCH!
             }
             g_replayLastPauseTimeReported = deltaTime;
         }
@@ -622,7 +631,7 @@ void RSProfiler::OnFrameEnd()
     g_renderServiceCpuId = Utils::GetCpuId();
 
     std::string value;
-    constexpr int maxMsgPerFrame = 32;
+    constexpr int maxMsgPerFrame = 1024;
     value = SendMessageBase();
     for (int i = 0; value != "" && i < maxMsgPerFrame; value = SendMessageBase(), i++) {
         if (!value.length()) {
@@ -1357,7 +1366,7 @@ void RSProfiler::KillPid(const ArgList& args)
         const std::string out =
             "parentPid=" + std::to_string(GetPid(parent)) + " parentNode=" + std::to_string(GetNodeId(parent));
 
-        context_->GetMutableNodeMap().FilterNodeByPid(pid);
+        context_->GetMutableNodeMap().FilterNodeByPid(pid, true);
         AwakeRenderServiceThread();
         Respond(out);
     }
@@ -1716,6 +1725,10 @@ void RSProfiler::RecordStop(const ArgList& args)
     }
 
     SetMode(Mode::SAVING);
+    if (args.String() == "REMOVELAST") {
+        g_recordFile.UnwriteRSData(); // remove last commands they may start animation with password depiction
+        g_recordFile.UnwriteRSData();
+    }
 
     bool isBetaRecordingStarted = IsBetaRecordStarted();
     std::thread thread([isBetaRecordingStarted]() {
@@ -1734,7 +1747,7 @@ void RSProfiler::RecordStop(const ArgList& args)
         ImageCache::Reset();
 
         SendMessage("Record: Stopped");
-        SendMessage("Network: record_vsync_range %llu %llu", g_recordMinVsync, g_recordMaxVsync); // DO NOT TOUCH!
+        SendMessage("Network: record_vsync_range %" PRIu64 "%" PRIu64, g_recordMinVsync, g_recordMaxVsync); // DO NOT TOUCH!
 
         SetMode(Mode::NONE);
     });
@@ -1987,7 +2000,7 @@ void RSProfiler::PlaybackPause(const ArgList& args)
 
     int64_t vsyncId = g_playbackFile.ConvertTime2VsyncId(recordPlayTime);
     if (vsyncId) {
-        SendMessage("Replay timer paused vsyncId=%lld", vsyncId); // DO NOT TOUCH!
+        SendMessage("Replay timer paused vsyncId=%" PRId64, vsyncId); // DO NOT TOUCH!
     }
     g_replayLastPauseTimeReported = recordPlayTime;
 }
@@ -2019,7 +2032,7 @@ void RSProfiler::PlaybackPauseAt(const ArgList& args)
 
     TimePauseAt(currentTimeNano, pauseAfterTimeNano, g_playbackImmediate);
     ResetAnimationStamp();
-    Respond("OK");
+    Respond("PlaybackPauseAt OK");
 }
 
 
@@ -2143,13 +2156,25 @@ void RSProfiler::TestSaveSubTree(const ArgList& args)
     }
 
     std::stringstream stream;
-    MarshalSubTree(*context_, stream, *node, RSFILE_VERSION_LATEST);
+
+    // Save RSFILE_VERSION
+    uint32_t fileVersion = RSFILE_VERSION_LATEST;
+    stream.write(reinterpret_cast<const char*>(&fileVersion), sizeof(fileVersion));
+
+    MarshalSubTree(*context_, stream, *node, fileVersion);
     std::string testDataSubTree = stream.str();
 
     Respond("Save SubTree Size: " + std::to_string(testDataSubTree.size()));
 
     // save file need setenforce 0
-    const std::string filePath = "/data/rssbtree_test_" + std::to_string(nodeId);
+    std::string rootPath = "/data";
+    char realRootPath[PATH_MAX] = {0};
+    if (!realpath(rootPath.c_str(), realRootPath)) {
+        Respond("Error: data path is invalid");
+        return;
+    }
+    std::string filePath = realRootPath;
+    filePath = filePath + "/rssbtree_test_" + std::to_string(nodeId);
     std::ofstream file(filePath);
     if (file.is_open()) {
         file << testDataSubTree;
@@ -2175,7 +2200,13 @@ void RSProfiler::TestLoadSubTree(const ArgList& args)
         return;
     }
 
-    std::ifstream file(filePath);
+    char realPath[PATH_MAX] = {0};
+    if (!realpath(filePath.c_str(), realPath)) {
+        Respond("Error: Path is invalid");
+        return;
+    }
+
+    std::ifstream file(realPath);
     if (!file.is_open()) {
         std::error_code ec(errno, std::system_category());
         RS_LOGE("RSProfiler::TestLoadSubTree read file failed: %{public}s", ec.message().c_str());
@@ -2185,7 +2216,12 @@ void RSProfiler::TestLoadSubTree(const ArgList& args)
     std::stringstream stream;
     stream << file.rdbuf();
     file.close();
-    std::string errorReason = UnmarshalSubTree(*context_, stream, *node, RSFILE_VERSION_LATEST);
+
+    // Load RSFILE_VERSION
+    uint32_t fileVersion = 0u;
+    stream.read(reinterpret_cast<char*>(&fileVersion), sizeof(fileVersion));
+
+    std::string errorReason = UnmarshalSubTree(*context_, stream, *node, fileVersion);
     if (errorReason.size()) {
         RS_LOGE("RSProfiler::TestLoadSubTree failed: %{public}s", errorReason.c_str());
         Respond("RSProfiler::TestLoadSubTree failed: " + errorReason);

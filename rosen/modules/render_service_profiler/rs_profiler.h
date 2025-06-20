@@ -42,6 +42,7 @@
     RSProfiler::OnRemoteRequest(connection, code, data, reply, option)
 #define RS_PROFILER_ON_PARCEL_RECEIVE(parcel, data) RSProfiler::OnRecvParcel(parcel, data)
 #define RS_PROFILER_COPY_PARCEL(parcel) RSProfiler::CopyParcel(parcel)
+#define RS_PROFILER_IS_PARCEL_MOCK(parcel) RSProfiler::IsPlaybackParcel(parcel)
 #define RS_PROFILER_PATCH_NODE_ID(parcel, id) id = RSProfiler::PatchNodeId(parcel, id)
 #define RS_PROFILER_PATCH_TYPEFACE_GLOBALID(parcel, id) id = RSProfiler::PatchNodeId(parcel, id)
 #define RS_PROFILER_PATCH_PID(parcel, pid) pid = RSProfiler::PatchPid(parcel, pid)
@@ -70,7 +71,10 @@
 #define RS_PROFILER_DRAWING_NODE_ADD_CLEAROP(drawCmdList) RSProfiler::DrawingNodeAddClearOp(drawCmdList)
 #define RS_PROFILER_KEEP_DRAW_CMD(drawCmdListNeedSync) RSProfiler::KeepDrawCmd(drawCmdListNeedSync)
 #define RS_PROFILER_PROCESS_ADD_CHILD(parent, child, index) RSProfiler::ProcessAddChild(parent, child, index)
-#define RS_PROFILER_IF_NEED_TO_SKIP_DRAWCMD_SURFACE(parcel) RSProfiler::IfNeedToSkipDuringReplay(parcel)
+#define RS_PROFILER_IF_NEED_TO_SKIP_DRAWCMD_SURFACE(parcel, skipBytes) \
+    RSProfiler::IfNeedToSkipDuringReplay(parcel, skipBytes)
+#define RS_PROFILER_SURFACE_ON_DRAW_MATCH_OPTIMIZE(useNodeMatchOptimize) \
+    RSProfiler::SurfaceOnDrawMatchOptimize(useNodeMatchOptimize)
 #else
 #define RS_PROFILER_INIT(renderSevice)
 #define RS_PROFILER_ON_FRAME_BEGIN(syncTime)
@@ -82,6 +86,7 @@
 #define RS_PROFILER_ON_REMOTE_REQUEST(connection, code, data, reply, option) 0
 #define RS_PROFILER_ON_PARCEL_RECEIVE(parcel, data)
 #define RS_PROFILER_COPY_PARCEL(parcel) std::make_shared<MessageParcel>()
+#define RS_PROFILER_IS_PARCEL_MOCK(parcel) false
 #define RS_PROFILER_PATCH_NODE_ID(parcel, id)
 #define RS_PROFILER_PATCH_TYPEFACE_GLOBALID(parcel, id)
 #define RS_PROFILER_PATCH_PID(parcel, pid)
@@ -109,7 +114,8 @@
 #define RS_PROFILER_DRAWING_NODE_ADD_CLEAROP(drawCmdList) (drawCmdList)->ClearOp()
 #define RS_PROFILER_KEEP_DRAW_CMD(drawCmdListNeedSync) drawCmdListNeedSync = true
 #define RS_PROFILER_PROCESS_ADD_CHILD(parent, child, index) false
-#define RS_PROFILER_IF_NEED_TO_SKIP_DRAWCMD_SURFACE(parcel) false
+#define RS_PROFILER_IF_NEED_TO_SKIP_DRAWCMD_SURFACE(parcel, skipBytes) false
+#define RS_PROFILER_SURFACE_ON_DRAW_MATCH_OPTIMIZE(useNodeMatchOptimize)
 #endif
 
 #ifdef RS_PROFILER_ENABLED
@@ -229,6 +235,7 @@ public:
     RSB_EXPORT static std::vector<RSRenderNode::WeakPtr>& GetChildOfDisplayNodesPostponed();
 public:
     RSB_EXPORT static bool IsParcelMock(const Parcel& parcel);
+    RSB_EXPORT static bool IsPlaybackParcel(const Parcel& parcel);
     RSB_EXPORT static bool IsSharedMemoryEnabled();
     RSB_EXPORT static bool IsBetaRecordEnabled();
     RSB_EXPORT static bool IsBetaRecordEnabledWithMetrics();
@@ -248,7 +255,8 @@ public:
     RSB_EXPORT static void SetDrawingCanvasNodeRedraw(bool enable);
     RSB_EXPORT static void KeepDrawCmd(bool& drawCmdListNeedSync);
     RSB_EXPORT static void SetRenderNodeKeepDrawCmd(bool enable);
-    RSB_EXPORT static bool IfNeedToSkipDuringReplay(Parcel& parcel);
+    RSB_EXPORT static bool IfNeedToSkipDuringReplay(Parcel& parcel, uint32_t skipBytes);
+    RSB_EXPORT static void SurfaceOnDrawMatchOptimize(bool& useNodeMatchOptimize);
 
 private:
     static const char* GetProcessNameByPid(int pid);
@@ -258,6 +266,8 @@ private:
 
     RSB_EXPORT static bool BaseSetPlaybackSpeed(double speed);
     RSB_EXPORT static double BaseGetPlaybackSpeed();
+    RSB_EXPORT static Media::PixelMap* UnmarshalPixelMapNstd(Parcel& parcel,
+        std::function<int(Parcel& parcel, std::function<int(Parcel&)> readFdDefaultFunc)> readSafeFdFunc);
 
     // Beta record
     RSB_EXPORT static void EnableBetaRecord();
@@ -299,6 +309,8 @@ private:
     RSB_EXPORT static void TimePauseResume(uint64_t curTime);
     RSB_EXPORT static void TimePauseClear();
     RSB_EXPORT static uint64_t TimePauseGet();
+
+    RSB_EXPORT static bool IsSecureScreen();
 
     RSB_EXPORT static std::shared_ptr<RSDisplayRenderNode> GetDisplayNode(const RSContext& context);
     RSB_EXPORT static Vector4f GetScreenRect(const RSContext& context);
@@ -356,8 +368,13 @@ private:
     RSB_EXPORT static void DumpNodeSubClassNode(const RSRenderNode& node, JsonWriter& out);
     RSB_EXPORT static void DumpNodeOptionalFlags(const RSRenderNode& node, JsonWriter& out);
     RSB_EXPORT static void DumpNodeDrawCmdModifiers(const RSRenderNode& node, JsonWriter& out);
+#if defined(MODIFIER_NG)
+    RSB_EXPORT static void DumpNodeDrawCmdModifier(
+        const RSRenderNode& node, JsonWriter& out, std::shared_ptr<ModifierNG::RSRenderModifier> modifier);
+#else
     RSB_EXPORT static void DumpNodeDrawCmdModifier(
         const RSRenderNode& node, JsonWriter& out, int type, RSRenderModifier& modifier);
+#endif
     RSB_EXPORT static void DumpNodeProperties(const RSProperties& properties, JsonWriter& out);
     RSB_EXPORT static void DumpNodePropertiesClip(const RSProperties& properties, JsonWriter& out);
     RSB_EXPORT static void DumpNodePropertiesTransform(const RSProperties& properties, JsonWriter& out);

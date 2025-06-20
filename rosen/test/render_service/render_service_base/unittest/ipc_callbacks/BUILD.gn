@@ -41,12 +41,17 @@ ohos_unittest("RSRenderServiceBaseIpcCallBacksTest") {
     "rs_surface_buffer_callback_test.cpp",
     "rs_surface_occlusion_change_callback_proxy_test.cpp",
     "rs_surface_occlusion_change_callback_stub_test.cpp",
+    "rs_transaction_data_callback_proxy_test.cpp",
+    "rs_transaction_data_callback_stub_test.cpp",
     "rs_uiextension_callback_proxy_test.cpp",
     "rs_uiextension_callback_stub_test.cpp",
     "screen_change_callback_proxy_test.cpp",
     "screen_change_callback_stub_test.cpp",
     "surface_capture_callback_proxy_test.cpp",
     "surface_capture_callback_stub_test.cpp",
+    "rs_transaction_callback_test.cpp",
+    "rs_transaction_callback_proxy_test.cpp",
+    "rs_transaction_callback_stub_test.cpp",
   ]
 
   cflags = [
@@ -70,14 +75,16 @@ ohos_unittest("RSRenderServiceBaseIpcCallBacksTest") {
   ]
 
   deps = [
+    "$graphic_2d_root/rosen/modules/render_service_base:render_service_base_src",
     "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
     "$graphic_2d_root/rosen/modules/render_service_client:render_service_client_src",
-    "$graphic_2d_root/rosen/modules/render_service_base:render_service_base_src",
   ]
 
   external_deps = [
     "c_utils:utils",
+    "eventhandler:libeventhandler",
     "graphics_effect:graphics_effect_core",
+    "hilog:libhilog",
     "hitrace:hitrace_meter",
     "init:libbegetutil",
   ]

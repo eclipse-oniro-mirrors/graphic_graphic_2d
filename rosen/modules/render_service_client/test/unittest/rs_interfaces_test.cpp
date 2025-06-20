@@ -1455,6 +1455,51 @@ HWTEST_F(RSInterfacesTest, NotifySoftVsyncRateDiscountEvent001, Function | Small
 }
 
 /*
+ * @tc.name: SetWindowExpectedRefreshRate001
+ * @tc.desc: Set window expected soft refresh rate by windowId
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSInterfacesTest, SetWindowExpectedRefreshRate001, Function | SmallTest | Level2)
+{
+    constexpr int32_t maxFps = 1000;
+    constexpr int32_t minFps = 1;
+    constexpr uint64_t windowId = 1;
+    ASSERT_NE(rsInterfaces, nullptr);
+    EventInfo addVote = { "VOTER_VRATE", true, minFps, maxFps };
+    EventInfo delVote = { "VOTER_VRATE", false };
+    std::unordered_map<uint64_t, EventInfo> addVotes;
+    addVotes.insert({ windowId, addVote });
+    std::unordered_map<uint64_t, EventInfo> delVotes;
+    delVotes.insert({ windowId, delVote });
+    rsInterfaces->SetWindowExpectedRefreshRate(addVotes);
+    rsInterfaces->SetWindowExpectedRefreshRate(delVotes);
+    ASSERT_NE(rsInterfaces, nullptr);
+}
+
+/*
+ * @tc.name: SetWindowExpectedRefreshRate002
+ * @tc.desc: Set window expected soft refresh rate by vsyncName
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSInterfacesTest, SetWindowExpectedRefreshRate002, Function | SmallTest | Level2)
+{
+    constexpr int32_t maxFps = 1000;
+    constexpr int32_t minFps = 1;
+    ASSERT_NE(rsInterfaces, nullptr);
+    EventInfo addVote = { "VOTER_VRATE", true, minFps, maxFps };
+    EventInfo delVote = { "VOTER_VRATE", false };
+    std::unordered_map<std::string, EventInfo> addVotes;
+    addVotes.insert({ "vsync1", addVote });
+    std::unordered_map<std::string, EventInfo> delVotes;
+    delVotes.insert({ "vsync1", delVote });
+    rsInterfaces->SetWindowExpectedRefreshRate(addVotes);
+    rsInterfaces->SetWindowExpectedRefreshRate(delVotes);
+    ASSERT_NE(rsInterfaces, nullptr);
+}
+
+/*
  * @tc.name: NotifyTouchEvent001
  * @tc.desc: Notify touch event to hgm
  * @tc.type: FUNC
@@ -1495,6 +1540,21 @@ HWTEST_F(RSInterfacesTest, NotifyHgmConfigEvent001, Function | SmallTest | Level
     std::string eventName = "HGMCONFIG_HIGH_TEMP";
     bool state = false;
     rsInterfaces->NotifyHgmConfigEvent(eventName, state);
+    ASSERT_NE(rsInterfaces, nullptr);
+}
+
+/*
+ * @tc.name: NotifyXComponentExpectedFrameRate
+ * @tc.desc: Notify hgm config event to hgm
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSInterfacesTest, NotifyXComponentExpectedFrameRate, Function | SmallTest | Level2)
+{
+    ASSERT_NE(rsInterfaces, nullptr);
+    std::string id = "xcomponent";
+    int32_t expectedFrameRate = 5;
+    rsInterfaces->NotifyXComponentExpectedFrameRate(id, expectedFrameRate);
     ASSERT_NE(rsInterfaces, nullptr);
 }
 
@@ -1599,6 +1659,30 @@ HWTEST_F(RSInterfacesTest, ResizeVirtualScreen001, Function | SmallTest | Level2
 
     int32_t ret = rsInterfaces->ResizeVirtualScreen(virtualScreenId, newWidth, newHeight);
     ASSERT_EQ(ret, 0);
+
+    rsInterfaces->RemoveVirtualScreen(virtualScreenId);
+}
+
+/**
+ * @tc.name: SetVirtualScreenAutoRotationTest
+ * @tc.desc: SetVirtualScreenAutoRotation test.
+ * @tc.type: FUNC
+ * @tc.require: issueICGA54
+ */
+HWTEST_F(RSInterfacesTest, SetVirtualScreenAutoRotationTest, Function | SmallTest | Level2)
+{
+    ScreenId virtualScreenId = rsInterfaces->CreateVirtualScreen(
+        "virtualScreen0", 500, 500, nullptr, INVALID_SCREEN_ID, -1);
+    EXPECT_NE(virtualScreenId, INVALID_SCREEN_ID);
+
+    int32_t ret = rsInterfaces->SetVirtualScreenAutoRotation(virtualScreenId, true);
+    ASSERT_EQ(ret, 0);
+
+    ret = rsInterfaces->SetVirtualScreenAutoRotation(INVALID_SCREEN_ID, true);
+    ASSERT_NE(ret, 0);
+
+    ret = rsInterfaces->SetVirtualScreenAutoRotation(0, true);
+    ASSERT_NE(ret, 0);
 
     rsInterfaces->RemoveVirtualScreen(virtualScreenId);
 }
@@ -2263,6 +2347,32 @@ HWTEST_F(RSInterfacesTest, SetLayerTop_002, Function | SmallTest | Level2)
 }
 
 /*
+ * @tc.name: SetForceRefresh_001
+ * @tc.desc: Test SetForceRefresh with false.
+ * @tc.type: FUNC
+ * @tc.require: issueIAT8HK
+ */
+HWTEST_F(RSInterfacesTest, SetForceRefresh_001, Function | SmallTest | Level2)
+{
+    ASSERT_NE(rsInterfaces, nullptr);
+    std::string nodeIdStr = "123456";
+    rsInterfaces->SetForceRefresh(nodeIdStr, false);
+}
+
+/*
+ * @tc.name: SetForceRefresh_002
+ * @tc.desc: Test SetForceRefresh with true.
+ * @tc.type: FUNC
+ * @tc.require: issueIAT8HK
+ */
+HWTEST_F(RSInterfacesTest, SetForceRefresh_002, Function | SmallTest | Level2)
+{
+    ASSERT_NE(rsInterfaces, nullptr);
+    std::string nodeIdStr = "123456";
+    rsInterfaces->SetForceRefresh(nodeIdStr, true);
+}
+
+/*
  * @tc.name: SetScreenSecurityMask_001
  * @tc.desc: Test SetScreenSecurityMask with normal params, securityMask is nullptr.
  * @tc.type: FUNC
@@ -2354,6 +2464,23 @@ HWTEST_F(RSInterfacesTest, SetScreenSecurityMask_003, Function | SmallTest | Lev
         int32_t ret = rsInterfaces->SetScreenSecurityMask(virtualScreenId, std::move(pixelMap));
         EXPECT_EQ(ret, RS_CONNECTION_ERROR);
     }
+}
+
+/*
+ * @tc.name: TakeSurfaceCaptureTest
+ * @tc.desc: Test TakeSurfaceCapture.
+ * @tc.type: FUNC
+ * @tc.require: issue#IC4P5O
+ */
+HWTEST_F(RSInterfacesTest, TakeSurfaceCaptureTest, Function | SmallTest | Level2)
+{
+    ASSERT_NE(rsInterfaces, nullptr);
+    std::shared_ptr<RSDisplayNode> displayNode;
+    std::shared_ptr<SurfaceCaptureCallback> callback;
+    RSSurfaceCaptureConfig captureConfig;
+
+    bool ret = rsInterfaces->TakeSurfaceCapture(displayNode, callback, captureConfig);
+    EXPECT_EQ(ret, false);
 }
 
 /*

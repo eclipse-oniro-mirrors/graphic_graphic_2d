@@ -41,6 +41,7 @@ enum class CompressedType {
     ASTC_RGBA8_4x4,
     ASTC_RGBA8_6x6,
     ASTC_RGBA8_8x8,
+    ASTC_RGBA10_4x4,
 };
 
 enum class TextureOrigin {
@@ -242,7 +243,6 @@ public:
     Image() noexcept;
     // constructor adopt a raw image ptr, using for ArkUI, should remove after enable multi-media image decode.
     explicit Image(void* rawImg) noexcept;
-    explicit Image(std::shared_ptr<ImageImpl> imageImpl);
     virtual ~Image() {};
     bool BuildFromBitmap(const Bitmap& bitmap);
 

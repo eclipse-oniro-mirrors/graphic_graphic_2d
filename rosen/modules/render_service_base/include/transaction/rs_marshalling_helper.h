@@ -28,6 +28,8 @@
 #include "image/image.h"
 #include "text/hm_symbol.h"
 
+#define RSPARCELVER_ALWAYS 0x100
+#define RSPARCELVER_ADD_ANIMTOKEN 0
 
 namespace OHOS {
 namespace Media {
@@ -47,7 +49,13 @@ class Image;
 class Bitmap;
 class Typeface;
 }
+namespace ModifierNG {
+class RSRenderModifier;
+}
 class RSFilter;
+class RSRenderFilter;
+class RSNGRenderFilterBase;
+class RSNGRenderMaskBase;
 class RSImage;
 class RSImageBase;
 class RSMask;
@@ -60,6 +68,8 @@ class ParticleNoiseField;
 class ParticleNoiseFields;
 template<typename T>
 class RenderParticleParaType;
+class AnnulusRegion;
+class Shape;
 class EmitterConfig;
 class ParticleVelocity;
 class RenderParticleColorParaType;
@@ -87,15 +97,23 @@ struct PixelMapInfo;
 
 class RSB_EXPORT RSMarshallingHelper {
 public:
-    static constexpr int UNMARSHALLING_MAX_VECTOR_SIZE = 65535;
+    static constexpr size_t UNMARSHALLING_MAX_VECTOR_SIZE = 65535;
     // default marshalling and unmarshalling method for POD types
-    // [PLANNING]: implement marshalling & unmarshalling methods for other types (e.g. RSImage, drawCMDList)
     template<typename T>
+    struct is_shared_ptr : std::false_type {};
+
+    template<typename T>
+    struct is_shared_ptr<std::shared_ptr<T>> : std::true_type {};
+
+    template<typename T>
+    using is_not_pointer_or_shared_ptr = std::enable_if_t<!std::is_pointer<T>::value && !is_shared_ptr<T>::value, bool>;
+
+    template<typename T, typename = is_not_pointer_or_shared_ptr<T>>
     static bool Marshalling(Parcel& parcel, const T& val)
     {
         return parcel.WriteUnpadBuffer(&val, sizeof(T));
     }
-    template<typename T>
+    template<typename T, typename = is_not_pointer_or_shared_ptr<T>>
     static bool Unmarshalling(Parcel& parcel, T& val)
     {
         if (const uint8_t* buff = parcel.ReadUnpadBuffer(sizeof(T))) {
@@ -108,6 +126,14 @@ public:
         return false;
     }
 
+    static bool Marshalling(Parcel& parcel)
+    {
+        return true;
+    }
+    static bool Unmarshalling(Parcel& parcel)
+    {
+        return true;
+    }
     static bool Marshalling(Parcel& parcel, const std::string& val)
     {
         if (!parcel.WriteString(val)) {
@@ -115,6 +141,7 @@ public:
         }
         return true;
     }
+
     static bool Unmarshalling(Parcel& parcel, std::string& val)
     {
         if (!parcel.ReadString(val)) {
@@ -131,6 +158,7 @@ public:
         }
         return parcel.WriteUnpadBuffer(val, count * sizeof(T));
     }
+
     template<typename T>
     static bool UnmarshallingArray(Parcel& parcel, T*& val, int count)
     {
@@ -147,78 +175,13 @@ public:
         return false;
     }
 
-    template<typename T>
-    static bool MarshallingVec(Parcel& parcel, const std::vector<T>& val)
-    {
-        size_t size = val.size();
-        Marshalling(parcel, size);
-        for (size_t i = 0; i < size; i++) {
-            if (!Marshalling(parcel, val[i])) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    template<typename T>
-    static bool UnmarshallingVec(Parcel& parcel, std::vector<T>& val, int maxSize = UNMARSHALLING_MAX_VECTOR_SIZE)
-    {
-        if (maxSize < 0) {
-            return false;
-        }
-        size_t size = 0;
-        Unmarshalling(parcel, size);
-        if (size > static_cast<size_t>(maxSize)) {
-            return false;
-        }
-        val.clear();
-        val.reserve(size);
-        for (size_t i = 0; i < size; i++) {
-            T tmp;
-            if (!Unmarshalling(parcel, tmp)) {
-                return false;
-            }
-            val.push_back(tmp);
-        }
-        return true;
-    }
-
-    template<typename T>
-    static bool MarshallingVec2(Parcel& parcel, const std::vector<std::vector<T>>& val)
-    {
-        size_t size = val.size();
-        Marshalling(parcel, size);
-        for (size_t i = 0; i < size; i++) {
-            if (!MarshallingVec(parcel, val[i])) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    template<typename T>
-    static bool UnmarshallingVec2(Parcel& parcel, std::vector<std::vector<T>>& val)
-    {
-        size_t size = 0;
-        Unmarshalling(parcel, size);
-        val.clear();
-        for (size_t i = 0; i < size; i++) {
-            std::vector<T> tmp;
-            if (!UnmarshallingVec(parcel, tmp)) {
-                return false;
-            }
-            val.push_back(tmp);
-        }
-        return true;
-    }
-
     static RSB_EXPORT bool Marshalling(Parcel& parcel, const std::shared_ptr<Drawing::DrawCmdList>& val,
-        bool isRecordCmd = false);
-    static RSB_EXPORT bool Unmarshalling(Parcel& parcel, std::shared_ptr<Drawing::DrawCmdList>& val,
-        uint32_t* opItemCount = nullptr);
-    static RSB_EXPORT bool Marshalling(Parcel& parcel, const std::shared_ptr<Drawing::RecordCmd>& val);
+        int32_t recordCmdDepth = 0);
+    static RSB_EXPORT bool Unmarshalling(Parcel& parcel, std::shared_ptr<Drawing::DrawCmdList>& val);
+    static RSB_EXPORT bool Marshalling(Parcel& parcel, const std::shared_ptr<Drawing::RecordCmd>& val,
+        int32_t recordCmdDepth = 0);
     static RSB_EXPORT bool Unmarshalling(Parcel& parcel, std::shared_ptr<Drawing::RecordCmd>& val,
-        uint32_t* opItemCount = nullptr);
+        uint32_t* opItemCount = nullptr, uint32_t* recordCmdCount = nullptr, int32_t recordCmdDepth = 0);
     static RSB_EXPORT bool Marshalling(Parcel& parcel, std::shared_ptr<Drawing::Typeface>& val);
     static RSB_EXPORT bool Unmarshalling(Parcel& parcel, std::shared_ptr<Drawing::Typeface>& val);
     static RSB_EXPORT bool Marshalling(Parcel& parcel, const std::shared_ptr<Drawing::Image>& val);
@@ -229,6 +192,27 @@ public:
     static RSB_EXPORT bool ReadColorSpaceFromParcel(Parcel& parcel, std::shared_ptr<Drawing::ColorSpace>& colorSpace);
 
     // reloaded marshalling & unmarshalling function for types
+#define DECLARE_FUNCTION_OVERLOAD(TYPE)                                                                   \
+    static RSB_EXPORT bool CompatibleMarshalling(Parcel& parcel, const TYPE& val, uint16_t paramVersion); \
+    static RSB_EXPORT bool CompatibleUnmarshalling(Parcel& parcel, TYPE& val, TYPE defaultValue, uint16_t paramVersion);
+
+    // basic types
+    DECLARE_FUNCTION_OVERLOAD(bool)
+    DECLARE_FUNCTION_OVERLOAD(int8_t)
+    DECLARE_FUNCTION_OVERLOAD(uint8_t)
+    DECLARE_FUNCTION_OVERLOAD(int16_t)
+    DECLARE_FUNCTION_OVERLOAD(uint16_t)
+    DECLARE_FUNCTION_OVERLOAD(int32_t)
+    DECLARE_FUNCTION_OVERLOAD(uint32_t)
+    DECLARE_FUNCTION_OVERLOAD(int64_t)
+    DECLARE_FUNCTION_OVERLOAD(uint64_t)
+    DECLARE_FUNCTION_OVERLOAD(float)
+    DECLARE_FUNCTION_OVERLOAD(double)
+#undef DECLARE_FUNCTION_OVERLOAD
+
+    static RSB_EXPORT void CompatibleUnmarshallingObsolete(Parcel& parcel, size_t typeSize, uint16_t paramVersion);
+
+// reloaded marshalling & unmarshalling function for types
 #define DECLARE_FUNCTION_OVERLOAD(TYPE)                                  \
     static RSB_EXPORT bool Marshalling(Parcel& parcel, const TYPE& val); \
     static RSB_EXPORT bool Unmarshalling(Parcel& parcel, TYPE& val);
@@ -248,8 +232,6 @@ public:
     // skia types
     DECLARE_FUNCTION_OVERLOAD(Drawing::Matrix)
     DECLARE_FUNCTION_OVERLOAD(Drawing::Bitmap)
-    static bool SkipData(Parcel& parcel);
-    static bool SkipImage(Parcel& parcel);
     // RS types
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSShader>)
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSPath>)
@@ -260,10 +242,14 @@ public:
     DECLARE_FUNCTION_OVERLOAD(std::vector<std::shared_ptr<EmitterUpdater>>)
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<ParticleNoiseField>)
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<ParticleNoiseFields>)
-    DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSFilter>)
+    DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSRenderFilter>)
+    DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSNGRenderFilterBase>)
+    DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSNGRenderMaskBase>)
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSMask>)
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSImage>)
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSImageBase>)
+    DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<AnnulusRegion>)
+    DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<Shape>)
     DECLARE_FUNCTION_OVERLOAD(EmitterConfig)
     DECLARE_FUNCTION_OVERLOAD(ParticleVelocity)
     DECLARE_FUNCTION_OVERLOAD(RenderParticleParaType<float>)
@@ -279,12 +265,12 @@ public:
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<Media::PixelMap>)
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RectT<float>>)
     DECLARE_FUNCTION_OVERLOAD(RRectT<float>)
-    static bool SkipPixelMap(Parcel& parcel);
     // animation
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSRenderTransition>)
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSRenderTransitionEffect>)
 
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSRenderModifier>)
+    DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<ModifierNG::RSRenderModifier>)
 #undef DECLARE_FUNCTION_OVERLOAD
 
     // reloaded marshalling & unmarshalling function for animation
@@ -324,6 +310,7 @@ public:
         }
         return true;
     }
+
     template<typename T, typename P>
     static bool Unmarshalling(Parcel& parcel, std::map<T, P>& val)
     {
@@ -348,29 +335,40 @@ public:
 
     // reloaded marshalling & unmarshalling function for std::vector
     template<typename T>
-    static bool Marshalling(Parcel& parcel, const std::vector<T>& val)
+    static bool Marshalling(Parcel& parcel, const std::vector<T>& val, size_t maxSize = UNMARSHALLING_MAX_VECTOR_SIZE)
     {
-        bool success = parcel.WriteUint32(val.size());
-        for (const auto& item : val) {
-            success = success && Marshalling(parcel, item);
+        if (val.size() > maxSize) {
+            return false;
         }
-        return success;
+        if (!Marshalling(parcel, val.size())) {
+            return false;
+        }
+        for (const auto& item : val) {
+            if (!Marshalling(parcel, item)) {
+                return false;
+            }
+        }
+        return true;
     }
     template<typename T>
-    static bool Unmarshalling(Parcel& parcel, std::vector<T>& val)
+    static bool Unmarshalling(Parcel& parcel, std::vector<T>& val, size_t maxSize = UNMARSHALLING_MAX_VECTOR_SIZE)
     {
-        uint32_t size = 0;
+        size_t size = 0;
         if (!Unmarshalling(parcel, size)) {
             return false;
         }
+        if (size > maxSize) {
+            return false;
+        }
         val.clear();
+        val.reserve(size);
         for (uint32_t i = 0; i < size; ++i) {
             // in-place unmarshalling
             T tmp;
             if (!Unmarshalling(parcel, tmp)) {
                 return false;
             }
-            val.emplace_back(tmp);
+            val.push_back(std::move(tmp));
         }
         return true;
     }
@@ -390,6 +388,7 @@ public:
         }
         return Marshalling(parcel, val.value());
     }
+
     template<typename T>
     static bool Unmarshalling(Parcel& parcel, std::optional<T>& val)
     {
@@ -410,6 +409,7 @@ public:
     {
         return Marshalling(parcel, val.first) && Marshalling(parcel, val.second);
     }
+
     template<class T1, class T2>
     static bool Unmarshalling(Parcel& parcel, std::pair<T1, T2>& val)
     {
@@ -421,6 +421,7 @@ public:
     {
         return Marshalling(parcel, first) && Marshalling(parcel, args...);
     }
+
     template<typename T, typename... Args>
     static bool Unmarshalling(Parcel& parcel, T& first, Args&... args)
     {
@@ -438,11 +439,21 @@ public:
 
     static void SetCallingPid(pid_t callingPid);
 
+    static bool MarshallingTransactionVer(Parcel& parcel);
+    static bool UnmarshallingTransactionVer(Parcel& parcel);
+    static bool TransactionVersionCheck(Parcel& parcel, uint8_t supportedFlag);
+
+    static bool SkipData(Parcel& parcel);
+    static bool SkipImage(Parcel& parcel);
+    static bool SkipPixelMap(Parcel& parcel);
+
 private:
     static bool WriteToParcel(Parcel& parcel, const void* data, size_t size);
     static const void* ReadFromParcel(Parcel& parcel, size_t size, bool& isMalloc);
     static bool SkipFromParcel(Parcel& parcel, size_t size);
     static const void* ReadFromAshmem(Parcel& parcel, size_t size, bool& isMalloc);
+    static bool SafeUnmarshallingDrawCmdList(Parcel& parcel, std::shared_ptr<Drawing::DrawCmdList>& val,
+        uint32_t* opItemCount, uint32_t* recordCmdCount, int32_t recordCmdDepth);
 
     static constexpr size_t MAX_DATA_SIZE = 128 * 1024 * 1024; // 128M
     static constexpr size_t MIN_DATA_SIZE = 8 * 1024;          // 8k
@@ -451,7 +462,6 @@ private:
     friend class RSProfiler;
 #endif
 };
-
 } // namespace Rosen
 } // namespace OHOS
 

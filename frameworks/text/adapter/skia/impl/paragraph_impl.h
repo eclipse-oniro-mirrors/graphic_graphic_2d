@@ -29,6 +29,12 @@
 #include "txt/paragraph_style.h"
 #include "txt/text_style.h"
 
+#ifdef USE_M133_SKIA
+#include "include/private/base/SkTArray.h"
+#else
+#include "include/private/SkTArray.h"
+#endif
+
 namespace OHOS {
 namespace Rosen {
 namespace SPText {
@@ -110,6 +116,10 @@ public:
             animationFunc_ = animationFunc;
         }
     }
+    std::function<bool(const std::shared_ptr<TextEngine::SymbolAnimationConfig>&)> GetAnimation() override
+    {
+        return animationFunc_;
+    }
 
     void SetParagraghId(uint32_t id) override
     {
@@ -128,6 +138,7 @@ public:
     void UpdateColor(size_t from, size_t to, const RSColor& color,
         skia::textlayout::UtfEncodeType encodeType) override;
     Drawing::RectI GeneratePaintRegion(double x, double y) override;
+    void UpdateForegroundBrush(const TextStyle& spTextStyle) override;
 
     void Relayout(double width, const ParagraphStyle& paragraphStyle,
         const std::vector<OHOS::Rosen::SPText::TextStyle>& textStyles) override;
@@ -135,6 +146,17 @@ public:
     bool IsLayoutDone() override;
 
     void SetLayoutState(size_t state) override;
+
+    void ApplyTextStyleChanges(const std::vector<OHOS::Rosen::SPText::TextStyle>& textStyles) override;
+
+    std::vector<TextBlobRecordInfo> GetTextBlobRecordInfo() const override;
+
+    bool HasSkipTextBlobDrawing() const override;
+
+    void SetSkipTextBlobDrawing(bool state) override;
+
+    bool isRunCombinated() { return paragraph_->isRunCombinated(); }
+
 private:
     void ParagraphStyleUpdater(skt::Paragraph& skiaParagraph, const ParagraphStyle& spParagraphStyle,
         skt::InternalState& state);
@@ -147,8 +169,16 @@ private:
     void GetExtraTextStyleAttributes(const skt::TextStyle& skStyle, TextStyle& txt);
 
     void ApplyParagraphStyleChanges(const ParagraphStyle& style);
-
-    void ApplyTextStyleChanges(const std::vector<OHOS::Rosen::SPText::TextStyle>& textStyles);
+#ifdef USE_M133_SKIA
+    void UpdateForegroundBrushWithValidData(skia_private::TArray<skt::Block, true>& skiaTextStyles,
+        const std::optional<RSBrush>& brush);
+    void UpdateForegroundBrushWithNullopt(skia_private::TArray<skt::Block, true>& skiaTextStyles);
+#else
+    void UpdateForegroundBrushWithValidData(SkTArray<skt::Block, true>& skiaTextStyles,
+        const std::optional<RSBrush>& brush);
+    void UpdateForegroundBrushWithNullopt(SkTArray<skt::Block, true>& skiaTextStyles);
+#endif
+    void UpdatePaintsBySkiaBlock(skt::Block& skiaBlock, const std::optional<RSBrush>& brush);
 
     void RecordDifferentPthreadCall(const char* caller) const;
 

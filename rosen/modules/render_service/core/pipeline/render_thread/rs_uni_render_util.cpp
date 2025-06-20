@@ -30,6 +30,7 @@
 #include "drawable/dfx/rs_dirty_rects_dfx.h"
 #include "drawable/rs_display_render_node_drawable.h"
 #include "drawable/rs_surface_render_node_drawable.h"
+#include "feature/anco_manager/rs_anco_manager.h"
 #include "feature/dirty/rs_uni_dirty_compute_util.h"
 #include "feature/uifirst/rs_sub_thread_manager.h"
 #ifdef RS_ENABLE_OVERLAY_DISPLAY
@@ -45,13 +46,17 @@
 #include "platform/common/rs_log.h"
 #include "property/rs_properties.h"
 #include "render/rs_drawing_filter.h"
-#include "render/rs_maskcolor_shader_filter.h"
+#include "render/rs_render_maskcolor_filter.h"
 #include "render/rs_material_filter.h"
 #include "render/rs_path.h"
-#include "utils/graphic_coretrace.h"
 
 #ifdef RS_ENABLE_VK
+#ifdef USE_M133_SKIA
+#include "include/gpu/ganesh/vk/GrVkBackendSurface.h"
+#include "include/gpu/ganesh/vk/GrVkBackendSemaphore.h"
+#else
 #include "include/gpu/GrBackendSurface.h"
+#endif
 #include "platform/ohos/backend/native_buffer_utils.h"
 #include "platform/ohos/backend/rs_surface_ohos_vulkan.h"
 #include "platform/ohos/backend/rs_vulkan_context.h"
@@ -76,7 +81,6 @@ constexpr uint32_t PERF_LEVEL_2 = 2;
 constexpr int32_t PERF_LEVEL_1_REQUESTED_CODE = 10013;
 constexpr int32_t PERF_LEVEL_2_REQUESTED_CODE = 10014;
 constexpr int32_t PERF_LEVEL_3_REQUESTED_CODE = 10015;
-constexpr int MAX_DIRTY_ALIGNMENT_SIZE = 128;
 void PerfRequest(int32_t perfRequestCode, bool onOffTag)
 {
 #ifdef SOC_PERF_ENABLE
@@ -112,16 +116,14 @@ std::vector<RectI> RSUniRenderUtil::MergeDirtyHistory(DrawableV2::RSDisplayRende
         curAllSurfaceDrawables, RSUniRenderThread::Instance().GetDrawStatusVec());
 
     RectI screenRectI(0, 0, static_cast<int32_t>(screenInfo.phyWidth), static_cast<int32_t>(screenInfo.phyHeight));
-#ifdef RS_ENABLE_OVERLAY_DISPLAY
-    // overlay display expand dirty region
-    RSOverlayDisplayManager::Instance().ExpandDirtyRegion(*dirtyManager, screenInfo, dirtyRegion);
-#endif
+
     Occlusion::Region globalDirtyRegion;
     for (const auto& rect : dirtyManager->GetAdvancedDirtyRegion()) {
         Occlusion::Region region = Occlusion::Region(Occlusion::Rect(rect));
         globalDirtyRegion.OrSelf(region);
         GpuDirtyRegionCollection::GetInstance().UpdateGlobalDirtyInfoForDFX(rect.IntersectRect(screenRectI));
     }
+    rsDirtyRectsDfx.SetDirtyRegion(dirtyRegion);
     Occlusion::Region damageRegion;
     RS_TRACE_NAME_FMT("AdvancedDirtyRegionType is [%d]", static_cast<int>(uniParam->GetAdvancedDirtyType()));
     switch (uniParam->GetAdvancedDirtyType()) {
@@ -152,8 +154,15 @@ std::vector<RectI> RSUniRenderUtil::MergeDirtyHistory(DrawableV2::RSDisplayRende
         drawnRegion = uniParam->IsDirtyAlignEnabled() ?
             damageRegion.GetAlignedRegion(MAX_DIRTY_ALIGNMENT_SIZE) : damageRegion;
     }
+    // [Attention]: filter dirty process must be the last step.
+    RSUniFilterDirtyComputeUtil::DealWithFilterDirtyRegion(
+        damageRegion, drawnRegion, displayDrawable, std::nullopt, uniParam->IsDirtyAlignEnabled());
+#ifdef RS_ENABLE_OVERLAY_DISPLAY
+    // overlay display expand dirty region
+    RSOverlayDisplayManager::Instance().ExpandDirtyRegion(*dirtyManager, screenInfo, drawnRegion, damageRegion);
+#endif
     RSUniRenderUtil::SetDrawRegionForQuickReject(curAllSurfaceDrawables, drawnRegion);
-    rsDirtyRectsDfx.SetDirtyRegion(drawnRegion);
+    rsDirtyRectsDfx.SetMergedDirtyRegion(drawnRegion);
     auto damageRegionRects = RSUniDirtyComputeUtil::ScreenIntersectDirtyRects(damageRegion, screenInfo);
     if (damageRegionRects.empty()) {
         // When damageRegionRects is empty, SetDamageRegion function will not take effect and buffer will
@@ -360,7 +369,7 @@ void RSUniRenderUtil::SetDrawRegionForQuickReject(
             continue;
         }
         auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceNodeDrawable->GetRenderParams().get());
-        if (!surfaceParams || !surfaceParams->IsMainWindowType()) {
+        if (!surfaceParams || (!surfaceParams->IsMainWindowType() && !surfaceParams->IsLeashWindow())) {
             continue;
         }
         auto surfaceDirtyManager = surfaceNodeDrawable->GetSyncDirtyManager();
@@ -693,6 +702,8 @@ BufferDrawParam RSUniRenderUtil::CreateBufferDrawParam(
     auto gravity = nodeParams->GetFrameGravity();
     RSBaseRenderUtil::DealWithSurfaceRotationAndGravity(transform, gravity, localBounds, params, surfaceNodeParams);
     RSBaseRenderUtil::FlipMatrix(transform, params);
+    RSAncoManager::UpdateCropRectForAnco(surfaceNodeParams->GetAncoFlags(),
+                                         surfaceNodeParams->GetAncoSrcCrop(), params.srcRect);
     ScalingMode scalingMode = buffer->GetSurfaceBufferScalingMode();
     if (scalingMode == ScalingMode::SCALING_MODE_SCALE_CROP) {
         SrcRectScaleDown(params, buffer, consumer, localBounds);
@@ -888,14 +899,13 @@ BufferDrawParam RSUniRenderUtil::CreateLayerBufferDrawParam(const LayerInfoPtr& 
         RS_LOGE("buffer or surface is nullptr");
         return params;
     }
-
+    RSAncoManager::UpdateCropRectForAnco(layer->GetAncoFlags(), layer->GetCropRect(), params.srcRect);
     ScalingMode scalingMode = buffer->GetSurfaceBufferScalingMode();
     if (scalingMode == ScalingMode::SCALING_MODE_SCALE_CROP) {
         SrcRectScaleDown(params, buffer, surface, localBounds);
     } else if (scalingMode == ScalingMode::SCALING_MODE_SCALE_FIT) {
         SrcRectScaleFit(params, buffer, surface, localBounds);
     }
-
     RS_LOGD_IF(DEBUG_COMPOSER,
         "RSUniRenderUtil::CreateLayerBufferDrawParam(LayerInfoPtr): Parameters creation completed");
     return params;
@@ -946,14 +956,6 @@ int RSUniRenderUtil::GetRotationDegreeFromMatrix(Drawing::Matrix matrix)
     matrix.GetAll(value);
     return static_cast<int>(-round(atan2(value[Drawing::Matrix::Index::SKEW_X],
         value[Drawing::Matrix::Index::SCALE_X]) * (RS_ROTATION_180 / PI)));
-}
-
-float RSUniRenderUtil::GetFloatRotationDegreeFromMatrix(Drawing::Matrix matrix)
-{
-    Drawing::Matrix::Buffer value;
-    matrix.GetAll(value);
-    return atan2(value[Drawing::Matrix::Index::SKEW_X], value[Drawing::Matrix::Index::SCALE_X]) *
-        (RS_ROTATION_180 / PI);
 }
 
 void RSUniRenderUtil::ClearNodeCacheSurface(std::shared_ptr<Drawing::Surface>&& cacheSurface,
@@ -1027,8 +1029,6 @@ void RSUniRenderUtil::DrawRectForDfx(RSPaintFilterCanvas& canvas, const RectI& r
 void RSUniRenderUtil::OptimizedFlushAndSubmit(std::shared_ptr<Drawing::Surface>& surface,
     Drawing::GPUContext* const grContext, bool optFenceWait)
 {
-    RECORD_GPURESOURCE_CORETRACE_CALLER(Drawing::CoreFunction::
-        RS_RSUNIRENDERUTIL_OPTIMIZEDFLUSHANDSUBMIT);
     if (!surface || !grContext) {
         RS_LOGE("RSUniRenderUtil::OptimizedFlushAndSubmit cacheSurface or grContext are nullptr");
         return;
@@ -1052,8 +1052,12 @@ void RSUniRenderUtil::OptimizedFlushAndSubmit(std::shared_ptr<Drawing::Surface>&
         semaphoreInfo.flags = 0;
         VkSemaphore semaphore;
         vkContext.vkCreateSemaphore(vkContext.GetDevice(), &semaphoreInfo, nullptr, &semaphore);
+#ifdef USE_M133_SKIA
+        GrBackendSemaphore backendSemaphore = GrBackendSemaphores::MakeVk(semaphore);
+#else
         GrBackendSemaphore backendSemaphore;
         backendSemaphore.initVulkan(semaphore);
+#endif
 
         DestroySemaphoreInfo* destroyInfo =
             new DestroySemaphoreInfo(vkContext.vkDestroySemaphore, vkContext.GetDevice(), semaphore);

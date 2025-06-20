@@ -17,7 +17,7 @@
 
 #include "rs_trace.h"
 #ifdef ROSEN_OHOS
-#include "base/hiviewdfx/hisysevent/interfaces/native/innerkits/hisysevent/include/hisysevent.h"
+#include "hisysevent.h"
 #include "sandbox_utils.h"
 #endif
 #include "command/rs_display_node_command.h"
@@ -62,6 +62,7 @@ RSDisplayNode::SharedPtr RSDisplayNode::Create(
         ", isMirrored=%{public}d, mirrorNodeId=%{public}" PRIu64 ", isSync=%{public}d]",
         node->GetId(), displayNodeConfig.screenId, displayNodeConfig.isMirrored,
         displayNodeConfig.mirrorNodeId, displayNodeConfig.isSync);
+    node->SetUIContextToken();
     return node;
 }
 
@@ -136,8 +137,7 @@ void RSDisplayNode::ClearChildren()
 {
     auto children = GetChildren();
     for (auto child : children) {
-        if (auto childPtr = (GetRSUIContext() ? GetRSUIContext()->GetNodeMap().GetNode(child)
-                                              : RSNodeMap::Instance().GetNode(child))) {
+        if (auto childPtr = child.lock()) {
             RemoveChild(childPtr);
         }
     }

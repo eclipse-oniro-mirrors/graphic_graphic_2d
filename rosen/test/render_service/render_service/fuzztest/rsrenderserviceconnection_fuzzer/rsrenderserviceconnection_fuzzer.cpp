@@ -608,6 +608,16 @@ bool DoTakeSurfaceCapture()
     uint8_t type = GetData<uint8_t>();
     captureConfig.captureType = (SurfaceCaptureType)type;
     captureConfig.isSync = GetData<bool>();
+    uint8_t listSize = GetData<uint8_t>();
+    for (uint8_t i = 0; i < listSize; ++i) {
+        uint64_t listNodeId = GetData<uint64_t>();
+        captureConfig.blackList.push_back(listNodeId);
+    }
+    captureConfig.mainScreenRect.left_ = GetData<float>();
+    captureConfig.mainScreenRect.top_ = GetData<float>();
+    captureConfig.mainScreenRect.right_ = GetData<float>();
+    captureConfig.mainScreenRect.bottom_ = GetData<float>();
+    
     rsConn_->TakeSurfaceCapture(nodeId, callback, captureConfig);
     return true;
 }
@@ -801,6 +811,17 @@ bool DoGetTotalAppMemSize()
     return true;
 }
 
+bool DoSetVirtualScreenAutoRotation()
+{
+    if (rsConn_ == nullptr) {
+        return false;
+    }
+    ScreenId screenId = GetData<ScreenId>();
+    bool isAutoRotation = GetData<bool>();
+    rsConn_->SetVirtualScreenAutoRotation(screenId, isAutoRotation);
+    return true;
+}
+
 bool DoSetVirtualScreenBlackList()
 {
     if (rsConn_ == nullptr) {
@@ -811,6 +832,40 @@ bool DoSetVirtualScreenBlackList()
     std::vector<uint64_t> blackListVector;
     blackListVector.push_back(nodeId);
     rsConn_->SetVirtualScreenBlackList(id, blackListVector);
+    return true;
+}
+
+bool DoAddVirtualScreenBlackList()
+{
+    if (rsConn_ == nullptr) {
+        return false;
+    }
+    uint64_t id = GetData<uint64_t>();
+    std::vector<NodeId> blackListVector;
+    uint8_t listSize = GetData<uint8_t>();
+    for (uint8_t i = 0; i < listSize; ++i) {
+        NodeId nodeId = GetData<NodeId>();
+        blackListVector.push_back(nodeId);
+    }
+    int32_t repCode = 0;
+    rsConn_->AddVirtualScreenBlackList(id, blackListVector, repCode);
+    return true;
+}
+
+bool DoRemoveVirtualScreenBlackList()
+{
+    if (rsConn_ == nullptr) {
+        return false;
+    }
+    uint64_t id = GetData<uint64_t>();
+    std::vector<NodeId> blackListVector;
+    uint8_t listSize = GetData<uint8_t>();
+    for (uint8_t i = 0; i < listSize; ++i) {
+        NodeId nodeId = GetData<NodeId>();
+        blackListVector.push_back(nodeId);
+    }
+    int32_t repCode = 0;
+    rsConn_->RemoveVirtualScreenBlackList(id, blackListVector, repCode);
     return true;
 }
 
@@ -1204,6 +1259,17 @@ bool DONotifyHgmConfigEvent()
     return true;
 }
 
+bool DONotifyXComponentExpectedFrameRate()
+{
+    if (rsConn_ == nullptr) {
+        return false;
+    }
+    std::string id = GetData<std::string>();
+    int32_t expectedFrameRate = GetData<int32_t>();
+    rsConn_->NotifyXComponentExpectedFrameRate(id, expectedFrameRate);
+    return true;
+}
+
 bool DOSetCacheEnabledForRotation()
 {
     if (rsConn_ == nullptr) {
@@ -1291,6 +1357,17 @@ bool DOSetLayerTop()
     return true;
 }
 
+bool DoSetForceRefresh()
+{
+    if (rsConn_ == nullptr) {
+        return false;
+    }
+    std::string nodeIdStr = GetData<std::string>();
+    bool isForceRefresh = GetData<bool>();
+    rsConn_->SetForceRefresh(nodeIdStr, isForceRefresh);
+    return true;
+}
+
 bool DOSetFreeMultiWindowStatus()
 {
     if (rsConn_ == nullptr) {
@@ -1345,6 +1422,26 @@ bool DoSetOverlayDisplayMode()
     return true;
 }
 #endif
+
+bool DoSetBehindWindowFilterEnabled()
+{
+    if (rsConn_ == nullptr) {
+        return false;
+    }
+    bool enabled = GetData<bool>();
+    rsConn_->SetBehindWindowFilterEnabled(enabled);
+    return true;
+}
+
+bool DoGetBehindWindowFilterEnabled()
+{
+    if (rsConn_ == nullptr) {
+        return false;
+    }
+    bool res = true;
+    rsConn_->GetBehindWindowFilterEnabled(res);
+    return true;
+}
 
 class CustomFirstFrameCommitCallback : public RSFirstFrameCommitCallbackStub {
 public:
@@ -1434,6 +1531,8 @@ void DoFuzzerTest2()
     DoGetMemoryGraphics();
     DoGetTotalAppMemSize();
     DoSetVirtualScreenBlackList();
+    DoAddVirtualScreenBlackList();
+    DoRemoveVirtualScreenBlackList();
     DoSetVirtualScreenSecurityExemptionList();
     DoSetCastScreenEnableSkipWindow();
     DoSyncFrameRateRange();
@@ -1472,6 +1571,7 @@ void DoFuzzerTest2()
     DOSetCurtainScreenUsingStatus();
     DOSetVirtualScreenStatus();
     DOSetLayerTop();
+    DoSetForceRefresh();
     DOSetFreeMultiWindowStatus();
 }
 
@@ -1479,12 +1579,16 @@ void DoFuzzerTest3()
 {
     DoNotifySoftVsyncEvent();
     DONotifyHgmConfigEvent();
+    DONotifyXComponentExpectedFrameRate();
     DoCreatePixelMapFromSurface();
 #ifdef RS_ENABLE_OVERLAY_DISPLAY
     DoSetOverlayDisplayMode();
 #endif
     DoRegisterFirstFrameCommitCallback();
     DoNotifySoftVsyncRateDiscountEvent();
+    DoSetBehindWindowFilterEnabled();
+    DoGetBehindWindowFilterEnabled();
+    DoSetVirtualScreenAutoRotation();
 }
 } // namespace Rosen
 } // namespace OHOS

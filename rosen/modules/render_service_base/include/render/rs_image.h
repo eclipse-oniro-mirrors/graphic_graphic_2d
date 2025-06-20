@@ -16,8 +16,6 @@
 #ifndef RENDER_SERVICE_CLIENT_CORE_RENDER_RS_IMAGE_H
 #define RENDER_SERVICE_CLIENT_CORE_RENDER_RS_IMAGE_H
 
-#include <pthread.h>
-
 #include "draw/canvas.h"
 #include "effect/color_filter.h"
 #include "image/image.h"
@@ -99,6 +97,8 @@ public:
     RSImage() = default;
     ~RSImage();
 
+    using RSImageBase::SetCompressData;
+
     bool IsEqual(const RSImage& other) const;
     void CanvasDrawImage(Drawing::Canvas& canvas, const Drawing::Rect& rect,
         const Drawing::SamplingOptions& samplingOptions, bool isBackground = false);
@@ -110,7 +110,6 @@ public:
     void SetInnerRect(const std::optional<Drawing::RectI>& innerRect) { innerRect_ = innerRect;}
 
     void SetCompressData(const std::shared_ptr<Drawing::Data> data, uint32_t id, int width, int height);
-    void SetCompressData(const std::shared_ptr<Drawing::Data> compressData);
 
     bool HDRConvert(const Drawing::SamplingOptions& sampling, Drawing::Canvas& canvas);
     void SetPaint(Drawing::Paint paint);
@@ -132,28 +131,33 @@ public:
     bool Marshalling(Parcel& parcel) const override;
     [[nodiscard]] static RSImage* Unmarshalling(Parcel& parcel);
 #endif
-    void dump(std::string &desc, int depth) const
+    std::string PixelSamplingDump() const;
+    void Dump(std::string &desc, uint8_t depth) const
     {
         std::string split(depth, '\t');
-        desc += split + "RSImage:{";
-        desc += split + "\timageFit_: " + std::to_string(static_cast<int>(imageFit_)) + "\n";
-        desc += split + "\timageRepeat_: " + std::to_string(static_cast<int>(imageRepeat_)) + "\n";
+        desc += split + "RSImage:{ ";
+        desc += split + "\timageFit_: " + std::to_string(static_cast<int>(imageFit_)) + " \n";
+        desc += split + "\timageRepeat_: " + std::to_string(static_cast<int>(imageRepeat_)) + " \n";
+        desc += split + "\torientationFit_: " + std::to_string(static_cast<int>(orientationFit_)) + " \n";
+
         int radiusSize = 4;
         for (int i = 0; i < radiusSize; i++) {
             desc += split + "\tPointF:{ \n";
-            desc += split + "\t\t x_: " + std::to_string(radius_[i].GetX()) + "\n";
-            desc += split + "\t\t y_: " + std::to_string(radius_[i].GetY()) + "\n";
-            desc += split + "\t}\n";
+            desc += split + "\t\t x_: " + std::to_string(radius_[i].GetX()) + " \n";
+            desc += split + "\t\t y_: " + std::to_string(radius_[i].GetY()) + " \n";
+            desc += split + "\t} \n";
         }
         desc += split + frameRect_.ToString();
-        desc += split + "\tscale_: " + std::to_string(scale_) + "\n";
-        desc += split + "}\n";
+        desc += split + "\tscale_: " + std::to_string(scale_) + " \n";
+        desc += split + "\tsrc_: " + src_.ToString() + " \n";
+        desc += split + "\tdst_: " + dst_.ToString() + " \n";
+        desc += split + "\tpixel sampling: " + PixelSamplingDump() + " \n";
+        desc += split + "} \n";
     }
 
 private:
     bool HasRadius() const;
     void ApplyCanvasClip(Drawing::Canvas& canvas);
-    void UploadGpu(Drawing::Canvas& canvas);
     std::pair<float, float> CalculateByDegree(const Drawing::Rect& rect);
     void DrawImageRect(
             Drawing::Canvas& canvas, const Drawing::Rect& rect, const Drawing::SamplingOptions& samplingOptions);
@@ -165,7 +169,7 @@ private:
     std::shared_ptr<Drawing::ShaderEffect> GenerateImageShaderForDrawRect(
         const Drawing::Canvas& canvas, const Drawing::SamplingOptions& sampling) const;
     void DrawImageShaderRectOnCanvas(
-        Drawing::Canvas& canvas, const std::shared_ptr<Drawing::ShaderEffect>& imageShader, pthread_t imageTid) const;
+        Drawing::Canvas& canvas, const std::shared_ptr<Drawing::ShaderEffect>& imageShader) const;
     void DrawImageWithFirMatrixRotateOnCanvas(
         const Drawing::SamplingOptions& samplingOptions, Drawing::Canvas& canvas) const;
     void ApplyImageOrientation(Drawing::Canvas& canvas);
@@ -178,7 +182,6 @@ private:
     static void ProcessImageAfterCreation(RSImage* rsImage, const uint64_t uniqueId, const bool useSkImage,
         const std::shared_ptr<Media::PixelMap>& pixelMap);
 #endif
-    std::shared_ptr<Drawing::Data> compressData_;
     ImageFit imageFit_ = ImageFit::COVER;
     ImageRepeat imageRepeat_ = ImageRepeat::NO_REPEAT;
     std::vector<Drawing::Point> radius_ = std::vector<Drawing::Point>(4);
@@ -194,6 +197,7 @@ private:
     bool isFitMatrixValid_ = false;
     OrientationFit orientationFit_ = OrientationFit::NONE;
     bool isOrientationValid_ = false;
+    Drawing::Rect rectForDrawShader_;
 };
 
 template<>

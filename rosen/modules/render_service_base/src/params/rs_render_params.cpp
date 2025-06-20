@@ -297,6 +297,34 @@ bool RSRenderParams::GetRSFreezeFlag() const
     return freezeFlag_;
 }
 
+void RSRenderParams::OpincSetIsSuggest(bool isSuggest)
+{
+    if (isOpincSuggestFlag_ == isSuggest) {
+        return;
+    }
+    isOpincSuggestFlag_ = isSuggest;
+    needSync_ = true;
+}
+
+bool RSRenderParams::OpincIsSuggest() const
+{
+    return isOpincSuggestFlag_;
+}
+
+void RSRenderParams::OpincUpdateSupportFlag(bool supportFlag)
+{
+    if (isOpincSupportFlag_ == supportFlag) {
+        return;
+    }
+    isOpincSupportFlag_ = supportFlag;
+    needSync_ = true;
+}
+
+bool RSRenderParams::OpincGetSupportFlag() const
+{
+    return isOpincSupportFlag_;
+}
+
 void RSRenderParams::OpincUpdateRootFlag(bool suggestFlag)
 {
     if (isOpincRootFlag_ == suggestFlag) {
@@ -433,6 +461,7 @@ void RSRenderParams::OnCanvasDrawingSurfaceChange(const std::unique_ptr<RSRender
     target->canvasDrawingNodeSurfaceChanged_ = true;
     target->surfaceParams_.width = surfaceParams_.width;
     target->surfaceParams_.height = surfaceParams_.height;
+    target->surfaceParams_.colorSpace = surfaceParams_.colorSpace;
     if (GetParamsType() == RSRenderParamsType::RS_PARAM_OWNED_BY_DRAWABLE) {
         return;
     }
@@ -450,6 +479,16 @@ void RSRenderParams::SetCanvasDrawingSurfaceChanged(bool changeFlag)
         needSync_ = true;
     }
     canvasDrawingNodeSurfaceChanged_ = changeFlag;
+}
+
+bool RSRenderParams::IsRepaintBoundary() const
+{
+    return isRepaintBoundary_;
+}
+
+void RSRenderParams::MarkRepaintBoundary(bool isRepaintBoundary)
+{
+    isRepaintBoundary_ = isRepaintBoundary;
 }
 
 const std::shared_ptr<RSFilter>& RSRenderParams::GetForegroundFilterCache() const
@@ -471,10 +510,11 @@ RSRenderParams::SurfaceParam RSRenderParams::GetCanvasDrawingSurfaceParams()
     return surfaceParams_;
 }
 
-void RSRenderParams::SetCanvasDrawingSurfaceParams(int width, int height)
+void RSRenderParams::SetCanvasDrawingSurfaceParams(int width, int height, GraphicColorGamut colorSpace)
 {
     surfaceParams_.width = width;
     surfaceParams_.height = height;
+    surfaceParams_.colorSpace = colorSpace;
 }
 
 void RSRenderParams::OnSync(const std::unique_ptr<RSRenderParams>& target)
@@ -504,7 +544,9 @@ void RSRenderParams::OnSync(const std::unique_ptr<RSRenderParams>& target)
     target->isDrawingCacheChanged_ = target->isDrawingCacheChanged_ || isDrawingCacheChanged_;
     target->shadowRect_ = shadowRect_;
     target->drawingCacheIncludeProperty_ = drawingCacheIncludeProperty_;
+    target->isNodeGroupHasChildInBlackList_ = isNodeGroupHasChildInBlackList_;
     target->dirtyRegionInfoForDFX_ = dirtyRegionInfoForDFX_;
+    target->isRepaintBoundary_ = isRepaintBoundary_;
     target->alphaOffScreen_ = alphaOffScreen_;
     target->hdrBrightness_ = hdrBrightness_;
     target->needFilter_ = needFilter_;
@@ -515,6 +557,8 @@ void RSRenderParams::OnSync(const std::unique_ptr<RSRenderParams>& target)
     target->hasBlurFilter_ = hasBlurFilter_;
     target->foregroundFilterCache_ = foregroundFilterCache_;
     OnCanvasDrawingSurfaceChange(target);
+    target->isOpincSuggestFlag_ = isOpincSuggestFlag_;
+    target->isOpincSupportFlag_ = isOpincSupportFlag_;
     target->isOpincRootFlag_ = isOpincRootFlag_;
     target->isOpincStateChanged_ = target->isOpincStateChanged_ || isOpincStateChanged_;
     target->startingWindowFlag_ = startingWindowFlag_;
@@ -533,6 +577,9 @@ void RSRenderParams::OnSync(const std::unique_ptr<RSRenderParams>& target)
     target->linkedRootNodeDrawable_ = linkedRootNodeDrawable_;
     target->needSwapBuffer_ = needSwapBuffer_;
     target->cacheNodeFrameRect_ = cacheNodeFrameRect_;
+
+    // used for DFX
+    target->isOnTheTree_ = isOnTheTree_;
 
     needSync_ = false;
 }
@@ -691,5 +738,16 @@ void RSRenderParams::SetCacheNodeFrameRect(const Drawing::RectF& cacheNodeFrameR
 const Drawing::RectF& RSRenderParams::GetCacheNodeFrameRect() const
 {
     return cacheNodeFrameRect_;
+}
+
+// used for DFX
+void RSRenderParams::SetIsOnTheTree(bool isOnTheTree)
+{
+    isOnTheTree_ = isOnTheTree;
+}
+
+bool RSRenderParams::GetIsOnTheTree() const
+{
+    return isOnTheTree_;
 }
 } // namespace OHOS::Rosen

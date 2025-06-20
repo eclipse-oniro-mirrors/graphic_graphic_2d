@@ -91,6 +91,7 @@ std::shared_ptr<RSNode> RSRootNode::Create(
         std::unique_ptr<RSCommand> command = std::make_unique<RSRootNodeCreate>(node->GetId(), isTextureExportNode);
         transactionProxy->AddCommand(command, node->IsRenderServiceNode());
     }
+    node->SetUIContextToken();
     return node;
 }
 
@@ -152,16 +153,6 @@ void RSRootNode::OnBoundsSizeChanged() const
     std::unique_ptr<RSCommand> command =
         std::make_unique<RSRootNodeUpdateSuggestedBufferSize>(GetId(), bounds.z_, bounds.w_);
     AddCommand(command, false);
-}
-
-void RSRootNode::UpdateOcclusionCullingStatus(bool enable, NodeId keyOcclusionNodeId)
-{
-    std::unique_ptr<RSCommand> command =
-        std::make_unique<RSUpdateOcclusionCullingStatus>(GetId(), enable, keyOcclusionNodeId);
-    auto transactionProxy = RSTransactionProxy::GetInstance();
-    if (transactionProxy != nullptr) {
-        transactionProxy->AddCommand(command, IsRenderServiceNode());
-    }
 }
 } // namespace Rosen
 } // namespace OHOS

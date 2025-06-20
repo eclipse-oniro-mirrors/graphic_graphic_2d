@@ -146,6 +146,9 @@ public:
     virtual bool SetVirtualMirrorScreenCanvasRotation(bool canvasRotation) = 0;
     virtual bool GetCanvasRotation() const = 0;
 
+    virtual int32_t SetVirtualScreenAutoRotation(bool isAutoRotation) = 0;
+    virtual bool GetVirtualScreenAutoRotation() const = 0;
+
     virtual bool SetVirtualMirrorScreenScaleMode(ScreenScaleMode scaleMode) = 0;
     virtual ScreenScaleMode GetScaleMode() const = 0;
 
@@ -174,6 +177,7 @@ public:
     virtual Rect GetMainScreenVisibleRect() const = 0;
     virtual bool GetVisibleRectSupportRotation() const = 0;
     virtual void SetVisibleRectSupportRotation(bool supportRotation) = 0;
+    virtual int32_t GetVirtualSecLayerOption() const = 0;
 };
 
 namespace impl {
@@ -283,6 +287,9 @@ public:
     bool SetVirtualMirrorScreenCanvasRotation(bool canvasRotation) override;
     bool GetCanvasRotation() const override;
 
+    int32_t SetVirtualScreenAutoRotation(bool isAutoRotation) override;
+    bool GetVirtualScreenAutoRotation() const override;
+
     bool SetVirtualMirrorScreenScaleMode(ScreenScaleMode scaleMode) override;
     ScreenScaleMode GetScaleMode() const override;
 
@@ -311,6 +318,7 @@ public:
     Rect GetMainScreenVisibleRect() const override;
     bool GetVisibleRectSupportRotation() const override;
     void SetVisibleRectSupportRotation(bool supportRotation) override;
+    int32_t GetVirtualSecLayerOption() const override;
 
 private:
     // create hdiScreen and get some information from drivers.
@@ -352,6 +360,7 @@ private:
 
     bool isVirtual_ = true;
     std::atomic<bool> isVirtualSurfaceUpdateFlag_ = false;
+    int32_t virtualSecLayerOption_ = 0;
     std::shared_ptr<HdiOutput> hdiOutput_ = nullptr; // has value if the screen is physical
     std::unique_ptr<HdiScreen> hdiScreen_ = nullptr; // has value if the screen is physical
     std::vector<GraphicDisplayModeInfo> supportedModes_;
@@ -387,6 +396,7 @@ private:
 
     std::atomic<ScreenRotation> screenRotation_ = ScreenRotation::ROTATION_0;
     std::atomic<bool> canvasRotation_ = false; // just for virtual screen to use
+    std::atomic<bool> autoBufferRotation_ = false; // whether automatically adjust buffer rotation, virtual screen only
     std::atomic<ScreenScaleMode> scaleMode_ = ScreenScaleMode::UNISCALE_MODE; // just for virtual screen to use
     static std::map<GraphicColorGamut, GraphicCM_ColorSpaceType> RS_TO_COMMON_COLOR_SPACE_TYPE_MAP;
     static std::map<GraphicCM_ColorSpaceType, GraphicColorGamut> COMMON_COLOR_SPACE_TYPE_TO_RS_MAP;
@@ -419,6 +429,8 @@ private:
     std::atomic<bool> hasProtectedLayer_ = false;
 
     std::vector<float> linearMatrix_ = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f};
+
+    std::atomic<bool> hasLogBackLightAfterPowerStatusChanged_ = false;
 };
 } // namespace impl
 } // namespace Rosen

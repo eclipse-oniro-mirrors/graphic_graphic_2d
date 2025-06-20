@@ -20,6 +20,9 @@
 #include "pipeline/render_thread/rs_uni_render_thread.h"
 #include "rs_trace.h"
 
+#undef LOG_TAG
+#define LOG_TAG "RSDrawWindowCache"
+
 namespace OHOS {
 namespace Rosen {
 
@@ -36,24 +39,24 @@ void RSDrawWindowCache::DrawAndCacheWindowContent(DrawableV2::RSSurfaceRenderNod
     RSPaintFilterCanvas& canvas, const Drawing::Rect& bounds)
 {
     if (surfaceDrawable == nullptr) {
-        RS_LOGE("RSDrawWindowCache::DrawAndCacheWindowContent drawable nullptr.");
+        RS_LOGE("DrawAndCacheWindowContent drawable nullptr.");
         return;
     }
 
     // prepare offscreen canvas
     auto mainSurface = canvas.GetSurface();
     if (mainSurface == nullptr) {
-        RS_LOGE("RSDrawWindowCache::DrawAndCacheWindowContent main surface nullptr.");
+        RS_LOGE("DrawAndCacheWindowContent main surface nullptr.");
         return;
     }
     auto windowSurface = mainSurface->MakeSurface(bounds.GetWidth(), bounds.GetHeight());
     if (windowSurface == nullptr) {
-        RS_LOGE("RSDrawWindowCache::DrawAndCacheWindowContent surface nullptr.");
+        RS_LOGE("DrawAndCacheWindowContent surface nullptr.");
         return;
     }
     auto windowCanvas = std::make_shared<RSPaintFilterCanvas>(windowSurface.get());
     if (windowCanvas == nullptr) {
-        RS_LOGE("RSDrawWindowCache::DrawAndCacheWindowContent canvas nullptr.");
+        RS_LOGE("DrawAndCacheWindowContent canvas nullptr.");
         windowSurface = nullptr;
         return;
     }
@@ -82,7 +85,7 @@ void RSDrawWindowCache::DrawAndCacheWindowContent(DrawableV2::RSSurfaceRenderNod
     // cache and draw snapshot of offscreen canvas onto target canvas
     image_ = windowSurface->GetImageSnapshot();
     if (image_ == nullptr) {
-        RS_LOGE("RSDrawWindowCache::DrawAndCacheWindowContent snapshot nullptr.");
+        RS_LOGE("DrawAndCacheWindowContent snapshot nullptr.");
         return;
     }
     surfaceDrawable->GetRsSubThreadCache().SetCacheCompletedBehindWindowData(windowCanvas->GetCacheBehindWindowData());
@@ -116,7 +119,7 @@ bool RSDrawWindowCache::DealWithCachedWindow(DrawableV2::RSSurfaceRenderNodeDraw
         return false;
     }
     if (ROSEN_EQ(image_->GetWidth(), 0) || ROSEN_EQ(image_->GetHeight(), 0)) {
-        RS_LOGE("RSDrawWindowCache::DealWithCachedWindow buffer size is zero.");
+        RS_LOGE("DealWithCachedWindow buffer size is zero.");
         return false;
     }
     RS_TRACE_NAME_FMT("DealWithCachedWindow node[%lld] %s",
@@ -128,8 +131,14 @@ bool RSDrawWindowCache::DealWithCachedWindow(DrawableV2::RSSurfaceRenderNodeDraw
         canvas.ConcatMatrix(surfaceParams.GetMatrix());
     }
     if (surfaceParams.GetGlobalPositionEnabled()) {
-        auto matrix = surfaceParams.GetTotalMatrix();
-        matrix.Translate(-surfaceDrawable->offsetX_, -surfaceDrawable->offsetY_);
+        auto matrix = surfaceParams.GetMatrix();
+        Drawing::Matrix inverseMatrix;
+        if (!matrix.Invert(inverseMatrix)) {
+            RS_LOGW("%{public}s name: %{public}s matrix invert inverseMatrix Failed", __func__,
+                    surfaceParams.GetName().c_str());
+        }
+        canvas.ConcatMatrix(inverseMatrix);
+        canvas.Translate(-surfaceDrawable->offsetX_, -surfaceDrawable->offsetY_);
         canvas.ConcatMatrix(matrix);
     }
     auto boundSize = surfaceParams.GetBounds();
@@ -145,7 +154,7 @@ bool RSDrawWindowCache::DealWithCachedWindow(DrawableV2::RSSurfaceRenderNodeDraw
     }
     if (RSSystemProperties::GetRecordingEnabled()) {
         if (image_->IsTextureBacked()) {
-            RS_LOGI("RSDrawWindowCache::DealWithCachedWindow convert image from texture to raster image.");
+            RS_LOGI("DealWithCachedWindow convert image from texture to raster image.");
             image_ = image_->MakeRasterImage();
         }
     }

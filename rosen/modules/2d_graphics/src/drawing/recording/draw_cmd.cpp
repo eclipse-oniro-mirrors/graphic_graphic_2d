@@ -37,6 +37,7 @@
 #include "utils/scalar.h"
 #include "utils/system_properties.h"
 #include "sandbox_utils.h"
+#include "securec.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -379,7 +380,8 @@ std::pair<UnmarshallingHelper::UnmarshallingFunc, size_t> UnmarshallingHelper::G
 
 UnmarshallingPlayer::UnmarshallingPlayer(const DrawCmdList& cmdList) : cmdList_(cmdList) {}
 
-std::shared_ptr<DrawOpItem> UnmarshallingPlayer::Unmarshalling(uint32_t type, void* handle, size_t avaliableSize)
+std::shared_ptr<DrawOpItem> UnmarshallingPlayer::Unmarshalling(uint32_t type, void* handle, size_t avaliableSize,
+                                                               bool isReplayMode)
 {
     if (type == DrawOpItem::OPITEM_HEAD) {
         return nullptr;
@@ -387,7 +389,31 @@ std::shared_ptr<DrawOpItem> UnmarshallingPlayer::Unmarshalling(uint32_t type, vo
 
     const auto unmarshallingPair = UnmarshallingHelper::Instance().GetFuncAndSize(type);
     /* if unmarshalling func is null or avaliable size < desirable unmarshalling size, then return nullptr*/
-    if (unmarshallingPair.first == nullptr || unmarshallingPair.second > avaliableSize) {
+    if (unmarshallingPair.first == nullptr) {
+        return nullptr;
+    }
+    if (unmarshallingPair.second > avaliableSize) {
+        if (isReplayMode) {
+            auto data = malloc(unmarshallingPair.second);
+            if (!data) {
+                return nullptr;
+            }
+            auto ret = memset_s(data, sizeof(data), 0, unmarshallingPair.second);
+            if (ret != EOK) {
+                free(data);
+                return nullptr;
+            }
+            ret = memmove_s(data, sizeof(data), handle, avaliableSize);
+            if (ret != EOK) {
+                free(data);
+                return nullptr;
+            }
+
+            auto result = (*unmarshallingPair.first)(this->cmdList_, data);
+            free(data);
+
+            return result;
+        }
         return nullptr;
     }
     return (*unmarshallingPair.first)(this->cmdList_, handle);
@@ -1572,7 +1598,9 @@ DrawTextBlobOpItem::DrawTextBlobOpItem(const DrawCmdList& cmdList, DrawTextBlobO
     globalUniqueId_ = handle->globalUniqueId;
     textContrast_ = handle->textContrast;
     textBlob_ = CmdListHelper::GetTextBlobFromCmdList(cmdList, handle->textBlob, handle->globalUniqueId);
-    textBlob_->SetTextContrast(textContrast_);
+    if (textBlob_) {
+        textBlob_->SetTextContrast(textContrast_);
+    }
 }
 
 std::shared_ptr<DrawOpItem> DrawTextBlobOpItem::Unmarshalling(const DrawCmdList& cmdList, void* handle)
@@ -1593,8 +1621,10 @@ void DrawTextBlobOpItem::Marshalling(DrawCmdList& cmdList)
         globalUniqueId = (shiftedPid | typefaceId);
     }
 
-    cmdList.AddOp<ConstructorHandle>(textBlobHandle,
-        globalUniqueId, textBlob_->GetTextContrast(), x_, y_, paintHandle);
+    if (textBlob_) {
+        cmdList.AddOp<ConstructorHandle>(textBlobHandle,
+            globalUniqueId, textBlob_->GetTextContrast(), x_, y_, paintHandle);
+    }
 }
 
 uint64_t DrawTextBlobOpItem::GetTypefaceId()

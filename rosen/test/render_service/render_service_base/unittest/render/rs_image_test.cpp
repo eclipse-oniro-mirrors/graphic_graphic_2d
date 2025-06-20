@@ -613,7 +613,7 @@ HWTEST_F(RSImageTest, dumpTest, TestSize.Level1)
     auto innerRect = std::make_optional<Drawing::RectI>();
     ASSERT_NE(rsImage, nullptr);
     std::string desc = "dump ";
-    rsImage->dump(desc, 0);
+    rsImage->Dump(desc, 0);
     EXPECT_NE(desc, "dump ");
 }
 
@@ -1168,5 +1168,46 @@ HWTEST_F(RSImageTest, ApplyImageOrientationTest, TestSize.Level1)
     rsImage->ApplyImageOrientation(drawingCanvas);
     EXPECT_EQ(drawingCanvas.GetTotalMatrix(), mat3);
     drawingCanvas.Restore();
+}
+
+/**
+ * @tc.name: PixelSamplingDumpTest
+ * @tc.desc: Verify function PixelSamplingDump
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSImageTest, PixelSamplingDumpTest, TestSize.Level1)
+{
+    auto rsImage = std::make_shared<RSImage>();
+    
+    EXPECT_EQ(rsImage->PixelSamplingDump(), " pixelMap_ is nullptr");
+
+    int width = 200;
+    int height = 300;
+    std::shared_ptr<Media::PixelMap> pixelmap = CreatePixelMap(width, height);
+    rsImage->SetPixelMap(pixelmap);
+    EXPECT_EQ(rsImage->PixelSamplingDump(),
+        "[ Width:200 Height:300 pixels: ARGB-0xFFFFFF00 ARGB-0xFFFFFF00"
+        " ARGB-0xFFFFFF00 ARGB-0xFFFFFF00 ARGB-0xFFFFFF00 ARGB-0xFFFFFF00"
+        " ARGB-0xFFFFFF00 ARGB-0xFFFFFF00 ARGB-0xFFFFFF00]");
+}
+
+/**
+ * @tc.name: SetImageRotateDegreeTest
+ * @tc.desc: Verify function SetImageRotateDegree
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSImageTest, SetImageRotateDegreeTest, TestSize.Level1)
+{
+    auto rsImage = std::make_shared<RSImage>();
+    EXPECT_EQ(rsImage->rotateDegree_, 0);
+
+    rsImage->SetImageRotateDegree(90);
+    EXPECT_EQ(rsImage->rotateDegree_, 90);
+
+    rsImage->SetImageRotateDegree(-90);
+    EXPECT_EQ(rsImage->rotateDegree_, -90);
+
+    rsImage->SetImageRotateDegree(180);
+    EXPECT_EQ(rsImage->rotateDegree_, 180);
 }
 } // namespace OHOS::Rosen
