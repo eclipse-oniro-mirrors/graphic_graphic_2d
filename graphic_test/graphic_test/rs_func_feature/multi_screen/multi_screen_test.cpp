@@ -1562,7 +1562,7 @@ GRAPHIC_N_TEST(RSMultiScreenTest, CONTENT_DISPLAY_TEST, MULTI_SCREEN_TEST_024)
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
 
-    RSInterfaces::GetInstance().SetVirtualScreenResolution(screenId, 3 * width ,3 * height);
+    RSInterfaces::GetInstance().SetVirtualScreenResolution(screenId, 3 * width, 3 * height);
 
     auto callback = std::make_shared<CustomizedSurfaceCapture>();
     RSInterfaces::GetInstance().TakeSurfaceCapture(displayNode, callback);
