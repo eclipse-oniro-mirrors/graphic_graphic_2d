@@ -1191,11 +1191,11 @@ GRAPHIC_N_TEST(RSMultiScreenTest, CONTENT_DISPLAY_TEST, MULTI_SCREEN_TEST_019)
     surfaceNode1->SetFrame({ 0, 0, 400, 400 });
     surfaceNode1->SetBackgroundColor(SK_ColorBLUE);
 
-    displayNode->SetBounds({ 0, 0, 1000, 1000 });
-    displayNode->SetFrame({ 0, 0, 1000, 1000 });
-    displayNode->RSNode::AddChild(surfaceNode1);
-    displayNode->RSNode::AddChild(surfaceNode0);
-    displayNode->SetBackgroundColor(SK_ColorBLACK);
+    displayNode1->SetBounds({ 0, 0, 1000, 1000 });
+    displayNode1->SetFrame({ 0, 0, 1000, 1000 });
+    displayNode1->RSNode::AddChild(surfaceNode1);
+    displayNode1->RSNode::AddChild(surfaceNode0);
+    displayNode1->SetBackgroundColor(SK_ColorBLACK);
 
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
