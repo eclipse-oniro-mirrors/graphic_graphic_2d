@@ -490,12 +490,12 @@ public:
         }
 
         RSProperty<T>::MarkNodeDirty();
-#if defined(NODIFIER_NG)
+#if defined(MODIFIER_NG)
         if (RSProperty<T>::GetPropertyTypeNG() == ModifierNG::RSPropertyType::BOUNDS ||
             RSProperty<T>::GetPropertyTypeNG() == ModifierNG::RSPropertyType::FRAME) {
 #else
-        if (RSProperty<T>::GetPropertyType() == RSPropertyType::BOUNDS ||
-            RSProperty<T>::GetPropertyType() == RSPropertyType::FRAME) {
+        if (RSProperty<T>::GetPropertyType() == RSModifierType::BOUNDS ||
+            RSProperty<T>::GetPropertyType() == RSModifierType::FRAME) {
 #endif
             if constexpr (std::is_same_v<Vector4f, T>) {
                 if (RSProperty<T>::NeedUpdateExtendModifierForGeometry(RSProperty<T>::stagingValue_, value)) {
