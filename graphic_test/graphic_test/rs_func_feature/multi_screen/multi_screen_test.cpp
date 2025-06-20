@@ -1239,17 +1239,6 @@ GRAPHIC_N_TEST(RSMultiScreenTest, CONTENT_DISPLAY_TEST, MULTI_SCREEN_TEST_019)
  */
 GRAPHIC_N_TEST(RSMultiScreenTest, CONTENT_DISPLAY_TEST, MULTI_SCREEN_TEST_020)
 {
-    uint32_t colorWidth = 640;
-    uint32_t colorHeight = 640;
-    uint32_t colorLength = colorWidth * colorHeight;
-    std::vector<uint32_t> colorVec(colorLength, 0xffff0000);
-    uint32_t* color = colorVec.data();
-    Media::InitializationOptions opts;
-    opts.size.width = colorWidth;
-    opts.size.height = colorHeight;
-    opts.pixelFormat = Media::PixelFormat::RGBA_8888;
-    opts.alphaType = Media::AlphaType::IMAGE_ALPHA_TYPE_PREMUL;
-    std::shared_ptr<Media::PixelMap> pixelMap = Media::PixelMap::Create(color, colorLength, opts);
     uint32_t width = 640 * 2;
     uint32_t height = 640 * 2;
     auto csurface1 = IConsumerSurface::Create();
@@ -1321,17 +1310,6 @@ GRAPHIC_N_TEST(RSMultiScreenTest, CONTENT_DISPLAY_TEST, MULTI_SCREEN_TEST_020)
  */
 GRAPHIC_N_TEST(RSMultiScreenTest, CONTENT_DISPLAY_TEST, MULTI_SCREEN_TEST_021)
 {
-    uint32_t colorWidth = 640;
-    uint32_t colorHeight = 640;
-    uint32_t colorLength = colorWidth * colorHeight;
-    std::vector<uint32_t> colorVec(colorLength, 0xffff0000);
-    uint32_t* color = colorVec.data();
-    Media::InitializationOptions opts;
-    opts.size.width = colorWidth;
-    opts.size.height = colorHeight;
-    opts.pixelFormat = Media::PixelFormat::RGBA_8888;
-    opts.alphaType = Media::AlphaType::IMAGE_ALPHA_TYPE_PREMUL;
-    std::shared_ptr<Media::PixelMap> pixelMap = Media::PixelMap::Create(color, colorLength, opts);
     uint32_t width = 640 * 2;
     uint32_t height = 640 * 2;
     auto csurface1 = IConsumerSurface::Create();
@@ -1374,6 +1352,18 @@ GRAPHIC_N_TEST(RSMultiScreenTest, CONTENT_DISPLAY_TEST, MULTI_SCREEN_TEST_021)
     ScreenId screenId2 = RSInterfaces::GetInstance().CreateVirtualScreen(
         "MULTI_SCREEN_TEST_021_2", width, height, psurface2, screenId1, 0, {});
     EXPECT_NE(screenId2, INVALID_SCREEN_ID);
+    // init pixelMap
+    uint32_t colorWidth = 640;
+    uint32_t colorHeight = 640;
+    uint32_t colorLength = colorWidth * colorHeight;
+    std::vector<uint32_t> colorVec(colorLength, 0xffff0000);
+    uint32_t* color = colorVec.data();
+    Media::InitializationOptions opts;
+    opts.size.width = colorWidth;
+    opts.size.height = colorHeight;
+    opts.pixelFormat = Media::PixelFormat::RGBA_8888;
+    opts.alphaType = Media::AlphaType::IMAGE_ALPHA_TYPE_PREMUL;
+    std::shared_ptr<Media::PixelMap> pixelMap = Media::PixelMap::Create(color, colorLength, opts);
     // only foundation can call Manual block stub permission check
     RSInterfaces::GetInstance().SetScreenSecurityMask(screenId2, pixelMap);
     usleep(SLEEP_TIME_FOR_PROXY);
