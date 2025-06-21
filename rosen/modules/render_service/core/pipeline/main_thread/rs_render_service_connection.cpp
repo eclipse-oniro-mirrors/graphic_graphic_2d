@@ -1951,6 +1951,14 @@ bool RSRenderServiceConnection::SetVirtualMirrorScreenCanvasRotation(ScreenId id
     return screenManager_->SetVirtualMirrorScreenCanvasRotation(id, canvasRotation);
 }
 
+int32_t RSRenderServiceConnection::SetVirtualScreenAutoRotation(ScreenId id, bool isAutoRotation)
+{
+    if (!screenManager_) {
+        return StatusCode::SCREEN_MANAGER_NULL;
+    }
+    return screenManager_->SetVirtualScreenAutoRotation(id, isAutoRotation);
+}
+
 ErrCode RSRenderServiceConnection::SetGlobalDarkColorMode(bool isDark)
 {
     std::lock_guard<std::mutex> lock(mutex_);
@@ -3133,6 +3141,30 @@ ErrCode RSRenderServiceConnection::SetLayerTop(const std::string &nodeIdStr, boo
         // It can be displayed immediately after layer-top changed.
         connection->mainThread_->SetDirtyFlag();
         connection->mainThread_->RequestNextVSync();
+    };
+    mainThread_->PostTask(task);
+    return ERR_OK;
+}
+
+ErrCode RSRenderServiceConnection::SetForceRefresh(const std::string &nodeIdStr, bool isForceRefresh)
+{
+    if (mainThread_ == nullptr) {
+        return ERR_INVALID_VALUE;
+    }
+    auto task = [weakThis = wptr<RSRenderServiceConnection>(this), nodeIdStr, isForceRefresh]() -> void {
+        sptr<RSRenderServiceConnection> connection = weakThis.promote();
+        if (connection == nullptr || connection->mainThread_ == nullptr) {
+            return;
+        }
+        auto& context = connection->mainThread_->GetContext();
+        context.GetNodeMap().TraverseSurfaceNodes(
+            [&nodeIdStr, &isForceRefresh](const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode) mutable {
+            if ((surfaceNode != nullptr) && (surfaceNode->GetName() == nodeIdStr) &&
+                (surfaceNode->GetSurfaceNodeType() == RSSurfaceNodeType::SELF_DRAWING_NODE)) {
+                surfaceNode->SetForceRefresh(isForceRefresh);
+                return;
+            }
+        });
     };
     mainThread_->PostTask(task);
     return ERR_OK;

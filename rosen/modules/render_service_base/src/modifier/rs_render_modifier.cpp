@@ -253,11 +253,37 @@ static std::unordered_map<RSModifierType, ModifierUnmarshallingFunc> funcLUT = {
                 ROSEN_LOGE("RSModifierType::FOREGROUND_UI_FILTER Unmarshalling failed");
                 return nullptr;
             }
+            auto modifier = new RSForegroundUIFilterRenderModifier(prop);
+            return modifier;
+        },
+    },
+    { RSModifierType::FOREGROUND_NG_FILTER, [](Parcel& parcel) -> RSRenderModifier* {
+            std::shared_ptr<RSRenderPropertyBase> prop =
+                std::make_shared<RSRenderProperty<std::shared_ptr<RSNGRenderFilterBase>>>();
+            if (!RSMarshallingHelper::Unmarshalling(parcel, prop) || !prop) {
+                ROSEN_LOGE("RSModifierType::FOREGROUND_NG_FILTER Unmarshalling failed");
+                return nullptr;
+            }
             if (!prop) {
                 ROSEN_LOGE("RSModifierType::FOREGROUND_UI_FILTER prop is nullptr");
                 return nullptr;
             }
-            auto modifier = new RSForegroundUIFilterRenderModifier(prop);
+            auto modifier = new RSForegroundNGFilterRenderModifier(prop);
+            return modifier;
+        },
+    },
+    { RSModifierType::BACKGROUND_NG_FILTER, [](Parcel& parcel) -> RSRenderModifier* {
+            std::shared_ptr<RSRenderPropertyBase> prop =
+                std::make_shared<RSRenderProperty<std::shared_ptr<RSNGRenderFilterBase>>>();
+            if (!RSMarshallingHelper::Unmarshalling(parcel, prop) || !prop) {
+                ROSEN_LOGE("RSModifierType::BACKGROUND_NG_FILTER Unmarshalling failed");
+                return nullptr;
+            }
+            if (!prop) {
+                ROSEN_LOGE("RSModifierType::BACKGROUND_NG_FILTER prop is nullptr");
+                return nullptr;
+            }
+            auto modifier = new RSBackgroundNGFilterRenderModifier(prop);
             return modifier;
         },
     },
@@ -328,7 +354,6 @@ bool RSEnvForegroundColorStrategyRenderModifier::Marshalling(Parcel& parcel)
     }
     return flag;
 }
-
 
 void RSEnvForegroundColorStrategyRenderModifier::Apply(RSModifierContext& context) const
 {
@@ -616,6 +641,58 @@ bool RSForegroundUIFilterRenderModifier::Marshalling(Parcel& parcel)
                 RSMarshallingHelper::Marshalling(parcel, renderFilter);
     if (!flag) {
         ROSEN_LOGE("RSForegroundUIFilterRenderModifier::Marshalling failed");
+    }
+    return flag;
+}
+
+void RSForegroundNGFilterRenderModifier::Apply(RSModifierContext& context) const
+{
+    auto renderProperty =
+        std::static_pointer_cast<RSRenderProperty<std::shared_ptr<RSNGRenderFilterBase>>>(property_);
+    context.properties_.SetForegroundNGFilter(renderProperty->GetRef());
+}
+
+void RSForegroundNGFilterRenderModifier::Update(const std::shared_ptr<RSRenderPropertyBase>& prop, bool isDelta)
+{
+    if (auto property = std::static_pointer_cast<RSRenderProperty<std::shared_ptr<RSNGRenderFilterBase>>>(prop)) {
+        auto renderProperty =
+            std::static_pointer_cast<RSRenderProperty<std::shared_ptr<RSNGRenderFilterBase>>>(property_);
+        renderProperty->Set(property->Get());
+    }
+}
+
+bool RSForegroundNGFilterRenderModifier::Marshalling(Parcel& parcel)
+{
+    bool flag = parcel.WriteInt16(static_cast<int16_t>(RSModifierType::FOREGROUND_NG_FILTER)) &&
+        RSMarshallingHelper::Marshalling(parcel, property_);
+    if (!flag) {
+        ROSEN_LOGE("RSForegroundNGFilterRenderModifier::Marshalling failed");
+    }
+    return flag;
+}
+
+void RSBackgroundNGFilterRenderModifier::Apply(RSModifierContext& context) const
+{
+    auto renderProperty =
+        std::static_pointer_cast<RSRenderProperty<std::shared_ptr<RSNGRenderFilterBase>>>(property_);
+    context.properties_.SetBackgroundNGFilter(renderProperty->Get());
+}
+
+void RSBackgroundNGFilterRenderModifier::Update(const std::shared_ptr<RSRenderPropertyBase>& prop, bool isDelta)
+{
+    if (auto property = std::static_pointer_cast<RSRenderProperty<std::shared_ptr<RSNGRenderFilterBase>>>(prop)) {
+        auto renderProperty =
+            std::static_pointer_cast<RSRenderProperty<std::shared_ptr<RSNGRenderFilterBase>>>(property_);
+        renderProperty->Set(property->Get());
+    }
+}
+
+bool RSBackgroundNGFilterRenderModifier::Marshalling(Parcel& parcel)
+{
+    bool flag = parcel.WriteInt16(static_cast<int16_t>(RSModifierType::BACKGROUND_NG_FILTER)) &&
+        RSMarshallingHelper::Marshalling(parcel, property_);
+    if (!flag) {
+        ROSEN_LOGE("RSBackgroundNGFilterRenderModifier::Marshalling failed");
     }
     return flag;
 }

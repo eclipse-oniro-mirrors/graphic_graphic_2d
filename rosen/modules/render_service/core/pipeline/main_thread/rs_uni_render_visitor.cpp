@@ -416,10 +416,15 @@ void RSUniRenderVisitor::CheckPixelFormat(RSSurfaceRenderNode& node)
         RS_LOGD("CheckPixelFormat curDisplayNode forceclosehdr.");
         return;
     }
-    if (node.GetHDRPresent()) {
+    if (node.GetHDRPresent() || node.IsHdrEffectColorGamut()) {
         RS_LOGD("CheckPixelFormat HDRService SetHDRPresent true, surfaceNode: %{public}" PRIu64, node.GetId());
         curDisplayNode_->SetHasUniRenderHdrSurface(true);
-        curDisplayNode_->CollectHdrStatus(HdrStatus::HDR_PHOTO);
+        if (node.GetHDRPresent()) {
+            curDisplayNode_->CollectHdrStatus(HdrStatus::HDR_PHOTO);
+        }
+        if (node.IsHdrEffectColorGamut()) {
+            curDisplayNode_->CollectHdrStatus(HdrStatus::HDR_EFFECT);
+        }
         RSHdrUtil::SetHDRParam(node, true);
         if (curDisplayNode_->GetIsLuminanceStatusChange()) {
             node.SetContentDirty();
@@ -1069,8 +1074,6 @@ void RSUniRenderVisitor::QuickPrepareSurfaceRenderNode(RSSurfaceRenderNode& node
         dirtyRect.GetHeight());
 
     RSUifirstManager::Instance().RecordDirtyRegionMatrix(node, geoPtr->GetAbsMatrix());
-    // Update whether leash window's visible region is empty after prepare children
-    UpdateLeashWindowVisibleRegionEmpty(node);
 
     if (node.IsLeashWindow() && RSSystemProperties::GetGpuOverDrawBufferOptimizeEnabled()) {
         CheckIsGpuOverDrawBufferOptimizeNode(node);
@@ -1531,9 +1534,6 @@ void RSUniRenderVisitor::QuickPrepareCanvasRenderNode(RSCanvasRenderNode& node)
         node.GetNodeGroupType() > RSRenderNode::NodeGroupType::NONE ||
         (node.GetOpincCache().OpincGetRootFlag() && IsAccessibilityConfigChanged());
     node.GetOpincCache().OpincQuickMarkStableNode(unchangeMarkInApp_, unchangeMarkEnable_, isSelfDirty);
-    if (node.GetOpincCache().IsReseted()) {
-        node.OpincSetNodeSupportFlag(true);
-    }
     node.UpdateOpincParam();
     RectI prepareClipRect = prepareClipRect_;
     bool hasAccumulatedClip = hasAccumulatedClip_;
@@ -1800,7 +1800,6 @@ CM_INLINE bool RSUniRenderVisitor::BeforeUpdateSurfaceDirtyCalc(RSSurfaceRenderN
         RSMainThread::Instance()->CheckAndUpdateInstanceContentStaticStatus(curSurfaceNode_);
         curSurfaceNode_->UpdateSurfaceCacheContentStaticFlag(IsAccessibilityConfigChanged());
         curSurfaceNode_->UpdateSurfaceSubTreeDirtyFlag();
-        curSurfaceNode_->SetLeashWindowVisibleRegionEmpty(false);
     } else if (node.IsAbilityComponent()) {
         if (auto nodePtr = node.ReinterpretCastTo<RSSurfaceRenderNode>()) {
             RSMainThread::Instance()->CheckAndUpdateInstanceContentStaticStatus(nodePtr);
@@ -1854,7 +1853,7 @@ CM_INLINE bool RSUniRenderVisitor::AfterUpdateSurfaceDirtyCalc(RSSurfaceRenderNo
         curDisplayNode_->AddSurfaceNodePosByDescZOrder(node.GetId(), node.GetOldDirtyInSurface());
     }
     // 2. Update Occlusion info before children preparation
-    if (node.IsMainWindowType()) {
+    if (node.IsLeashOrMainWindow()) {
         UpdateNodeVisibleRegion(node);
     }
     // 3. Update HwcNode Info for appNode
@@ -1869,40 +1868,6 @@ CM_INLINE bool RSUniRenderVisitor::AfterUpdateSurfaceDirtyCalc(RSSurfaceRenderNo
         CheckColorSpace(node);
     }
     return true;
-}
-
-void RSUniRenderVisitor::UpdateLeashWindowVisibleRegionEmpty(RSSurfaceRenderNode& node)
-{
-    if (!node.IsLeashWindow() || !RSSystemParameters::GetUIFirstOcclusionEnabled()) {
-        return;
-    }
-
-    auto dirtyManager = node.GetDirtyManager();
-    if (dirtyManager && dirtyManager->IsCurrentFrameDirty()) {
-        RS_LOGD("UpdateLeashWindowVisibleRegionEmpty[false] : %{public}s is current frame dirty.",
-            node.GetName().c_str());
-        node.SetLeashWindowVisibleRegionEmpty(false);
-        return;
-    }
-
-    auto sortedChildren = node.GetSortedChildren();
-    if (sortedChildren == nullptr || sortedChildren->empty()) {
-        RS_TRACE_NAME_FMT("%s don't have children", node.GetName().c_str());
-        node.SetLeashWindowVisibleRegionEmpty(true);
-        return;
-    }
-
-    // leash window's visible region is empty when all child are app windows with empty visible region
-    for (const auto& child : *sortedChildren) {
-        const auto childSurfaceNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(child);
-        if (!childSurfaceNode || !childSurfaceNode->IsAppWindow() ||
-            !childSurfaceNode->GetVisibleRegion().IsEmpty()) {
-            node.SetLeashWindowVisibleRegionEmpty(false);
-            return;
-        }
-    }
-    RS_TRACE_NAME_FMT("visible region of %s's children is empty", node.GetName().c_str());
-    node.SetLeashWindowVisibleRegionEmpty(true);
 }
 
 void RSUniRenderVisitor::UpdateHwcNodeInfoForAppNode(RSSurfaceRenderNode& node)
@@ -2853,7 +2818,7 @@ CM_INLINE void RSUniRenderVisitor::PostPrepare(RSRenderNode& node, bool subTreeS
     }
     if (auto nodeParent = node.GetParent().lock()) {
         nodeParent->UpdateChildUifirstSupportFlag(node.GetUifirstSupportFlag());
-        nodeParent->OpincUpdateNodeSupportFlag(node.OpincGetNodeSupportFlag());
+        nodeParent->OpincUpdateNodeSupportFlag(node.OpincGetNodeSupportFlag(), node.GetOpincCache().OpincGetRootFlag());
     }
     auto& stagingRenderParams = node.GetStagingRenderParams();
     if (stagingRenderParams != nullptr) {
@@ -3245,6 +3210,7 @@ void RSUniRenderVisitor::ProcessUnpairedSharedTransitionNode()
             return;
         }
         parent->AddDirtyType(RSModifierType::CHILDREN);
+        parent->AddDirtyType(ModifierNG::RSModifierType::CHILDREN);
         parent->ApplyModifiers();
         // avoid changing the paired status or unpairedShareTransitions_
         auto param = sptr->GetSharedTransitionParam();
