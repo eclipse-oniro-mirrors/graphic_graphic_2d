@@ -124,13 +124,11 @@ public:
 GRAPHIC_N_TEST(RSScreenCaptureTest, CONTENT_DISPLAY_TEST, DISPLAY_NODE_CAPTURE_TEST_001)
 {
     auto canvasNode0 = RSCanvasNode::Create();
-    RegisterNode(canvasNode0);
     canvasNode0->SetBounds({0, 0, 100, 100});
     canvasNode0->SetFrame({0, 0, 100, 100});
     canvasNode0->SetBackgroundColor(SK_ColorYELLOW);
 
     auto canvasNode1 = RSCanvasNode::Create();
-    RegisterNode(canvasNode1);
     canvasNode1->SetBounds({0, 0, 200, 200});
     canvasNode1->SetFrame({0, 0, 200, 200});
     canvasNode1->SetBackgroundColor(SK_ColorBLUE);
@@ -139,13 +137,11 @@ GRAPHIC_N_TEST(RSScreenCaptureTest, CONTENT_DISPLAY_TEST, DISPLAY_NODE_CAPTURE_T
     surfaceNodeConfig.isSync = true;
     surfaceNodeConfig.SurfaceNodeName = "TestSurfaceNode0";
     auto surfaceNode0 = RSSurfaceNode::Create(surfaceNodeConfig);
-    RegisterNode(surfaceNode0);
     surfaceNode0->SetBounds({0, 0, 100, 100});
     surfaceNode0->SetFrame({0, 0, 100, 100});
 
     surfaceNodeConfig.SurfaceNodeName = "TestSurfaceNode1";
     auto surfaceNode1 = RSSurfaceNode::Create(surfaceNodeConfig);
-    RegisterNode(surfaceNode1);
     surfaceNode1->SetBounds({0, 0, 200, 200});
     surfaceNode1->SetFrame({0, 0, 200, 200});
 
@@ -170,7 +166,6 @@ GRAPHIC_N_TEST(RSScreenCaptureTest, CONTENT_DISPLAY_TEST, DISPLAY_NODE_CAPTURE_T
         LOGE("displayNode is nullptr");
         return;
     }
-    RegisterNode(displayNode);
     displayNode->SetBounds({0, 0, 1000, 1000});
     displayNode->SetFrame({0, 0, 1000, 1000});
     displayNode->RSNode::AddChild(surfaceNode1);
@@ -196,13 +191,11 @@ GRAPHIC_N_TEST(RSScreenCaptureTest, CONTENT_DISPLAY_TEST, DISPLAY_NODE_CAPTURE_T
 GRAPHIC_N_TEST(RSScreenCaptureTest, CONTENT_DISPLAY_TEST, DISPLAY_NODE_CAPTURE_TEST_002)
 {
     auto canvasNode0 = RSCanvasNode::Create();
-    RegisterNode(canvasNode0);
     canvasNode0->SetBounds({0, 0, 100, 100});
     canvasNode0->SetFrame({0, 0, 100, 100});
     canvasNode0->SetBackgroundColor(SK_ColorYELLOW);
 
     auto canvasNode1 = RSCanvasNode::Create();
-    RegisterNode(canvasNode1);
     canvasNode1->SetBounds({0, 0, 200, 200});
     canvasNode1->SetFrame({0, 0, 200, 200});
     canvasNode1->SetBackgroundColor(SK_ColorBLUE);
@@ -211,13 +204,11 @@ GRAPHIC_N_TEST(RSScreenCaptureTest, CONTENT_DISPLAY_TEST, DISPLAY_NODE_CAPTURE_T
     surfaceNodeConfig.isSync = true;
     surfaceNodeConfig.SurfaceNodeName = "TestSurfaceNode0";
     auto surfaceNode0 = RSSurfaceNode::Create(surfaceNodeConfig);
-    RegisterNode(surfaceNode0);
     surfaceNode0->SetBounds({0, 0, 100, 100});
     surfaceNode0->SetFrame({0, 0, 100, 100});
 
     surfaceNodeConfig.SurfaceNodeName = "TestSurfaceNode1";
     auto surfaceNode1 = RSSurfaceNode::Create(surfaceNodeConfig);
-    RegisterNode(surfaceNode1);
     surfaceNode1->SetBounds({0, 0, 200, 200});
     surfaceNode1->SetFrame({0, 0, 200, 200});
 
@@ -242,7 +233,6 @@ GRAPHIC_N_TEST(RSScreenCaptureTest, CONTENT_DISPLAY_TEST, DISPLAY_NODE_CAPTURE_T
         LOGE("displayNode is nullptr");
         return;
     }
-    RegisterNode(displayNode);
     displayNode->SetBounds({0, 0, 1000, 1000});
     displayNode->SetFrame({0, 0, 1000, 1000});
     displayNode->RSNode::AddChild(surfaceNode1);
