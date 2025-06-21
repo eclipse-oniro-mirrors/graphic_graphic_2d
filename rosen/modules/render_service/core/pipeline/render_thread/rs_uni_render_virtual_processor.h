@@ -76,6 +76,9 @@ public:
     {
         return canvasMatrix_;
     }
+#ifdef USE_VIDEO_PROCESSING_ENGINE
+    GSError SetMetadata(const Media::VideoProcessingEngine::CM_ColorSpaceInfo& colorspaceInfo);
+#endif
     void SetDirtyInfo(const std::vector<RectI>& damageRegion);
     int32_t GetBufferAge() const;
     // when virtual screen partial refresh closed, use this function to reset RoiRegion in buffer
@@ -103,6 +106,7 @@ private:
     void OriginScreenRotation(ScreenRotation screenRotation, float width, float height);
     bool EnableVisibleRect();
     bool EnableSlrScale();
+    bool IsHDRCast(RSDisplayRenderParams* displayParams);
     GSError SetColorSpaceForMetadata(GraphicColorGamut colorSpace);
 
     static inline const std::map<GraphicColorGamut,

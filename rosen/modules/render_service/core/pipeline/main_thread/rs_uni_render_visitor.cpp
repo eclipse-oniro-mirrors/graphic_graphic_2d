@@ -467,6 +467,8 @@ void RSUniRenderVisitor::HandlePixelFormat(RSDisplayRenderNode& node, const sptr
         return;
     }
 
+    RSHdrUtil::HandleVirtualScreenHDRStatus(node, screenManager);
+
     if (screenType == VIRTUAL_TYPE_SCREEN) {
         auto pixelFormat = node.GetPixelFormat();
         if (screenManager->GetPixelFormat(node.GetScreenId(), pixelFormat) != SUCCESS) {

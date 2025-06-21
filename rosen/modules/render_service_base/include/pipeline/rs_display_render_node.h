@@ -427,6 +427,26 @@ public:
         return pixelFormat_;
     }
 
+    void SetEnabledHDRCast(bool isEnabledHDRCast)
+    {
+        isEnabledHDRCast_ = isEnabledHDRCast;
+    }
+
+    bool GetEnabledHDRCast() const
+    {
+        return isEnabledHDRCast_;
+    }
+
+    bool IsFirstFrameOfInit() const
+    {
+        return isFirstFrameOfInit_;
+    }
+
+    void SetFirstFrameOfInit(bool isFirstFrameOfInit)
+    {
+        isFirstFrameOfInit_ = isFirstFrameOfInit;
+    }
+
     void SetColorSpace(const GraphicColorGamut& newColorSpace);
     GraphicColorGamut GetColorSpace() const;
 
@@ -640,6 +660,8 @@ private:
     bool hasMirroredDisplayChanged_ = false;
     bool isSecurityDisplay_ = false;
     bool isForceCloseHdr_ = false;
+    bool isFirstFrameOfInit_ = true;
+    bool isEnabledHDRCast_ = false;
     bool hasUniRenderHdrSurface_ = false;
     bool isLuminanceStatusChange_ = false;
     bool preRotationStatus_ = false;

@@ -31,6 +31,23 @@
 
 namespace OHOS {
 namespace Rosen {
+namespace {
+#ifdef USE_VIDEO_PROCESSING_ENGINE
+constexpr OHOS::Media::VideoProcessingEngine::CM_ColorSpaceInfo COLORSPACE_INFO_HDR_BT2020_HLG = {
+    OHOS::Media::VideoProcessingEngine::COLORPRIMARIES_BT2020,
+    OHOS::Media::VideoProcessingEngine::TRANSFUNC_HLG,
+    OHOS::Media::VideoProcessingEngine::MATRIX_BT2020,
+    OHOS::Media::VideoProcessingEngine::RANGE_FULL
+};
+
+const std::vector<uint8_t> HDR_VIVID_METADATA = {
+    1, 0, 23, 93, 111, 186, 221, 240, 26, 189, 83, 29, 128, 0, 82, 142, 25, 156, 3,
+    198, 204, 179, 47, 236, 32, 190, 143, 163, 252, 16, 93, 185, 106, 159, 0, 10,
+    81, 199, 178, 80, 255, 217, 150, 101, 201, 144, 114, 73, 65, 127, 160, 0, 0
+};
+#endif
+}
+
 bool RSUniRenderVirtualProcessor::InitForRenderThread(DrawableV2::RSDisplayRenderNodeDrawable& displayDrawable,
     ScreenId mirroredId, std::shared_ptr<RSBaseRenderEngine> renderEngine)
 {
@@ -64,6 +81,8 @@ bool RSUniRenderVirtualProcessor::InitForRenderThread(DrawableV2::RSDisplayRende
         // not support rotation for MirrorScreen visibleRect
         canvasRotation_ = screenManager->IsVisibleRectSupportRotation(virtualScreenId_);
     }
+    bool mirrorScreenHDR = false;
+    bool expandScreenHDR = false;
 
     renderFrameConfig_.colorGamut = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
     auto mirroredDisplayDrawable =
@@ -84,10 +103,14 @@ bool RSUniRenderVirtualProcessor::InitForRenderThread(DrawableV2::RSDisplayRende
             renderFrameConfig_.colorGamut = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3;
             RS_LOGD("RSUniRenderVirtualProcessor::Init Set virtual screen buffer colorGamut to P3.");
         }
+        mirrorScreenHDR = IsHDRCast(params);
+        RS_LOGD("RSUniRenderVirtualProcessor::Init HDRCast mirrorScreenHDR: %{public}d", mirrorScreenHDR);
     } else if (isExpand_) {
         if (params->GetNewColorSpace() != GRAPHIC_COLOR_GAMUT_SRGB) {
             renderFrameConfig_.colorGamut = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3;
         }
+        expandScreenHDR = IsHDRCast(params);
+        RS_LOGD("RSUniRenderVirtualProcessor::Init HDRCast expandScreenHDR: %{public}d", expandScreenHDR);
     }
 
     SetVirtualScreenSize(displayDrawable, screenManager);
@@ -138,6 +161,13 @@ bool RSUniRenderVirtualProcessor::InitForRenderThread(DrawableV2::RSDisplayRende
     if (rsSurface != nullptr && SetColorSpaceForMetadata(rsSurface->GetColorSpace()) != GSERROR_OK) {
         RS_LOGD("RSUniRenderVirtualProcessor::SetColorSpaceForMetadata failed.");
     }
+#ifdef USE_VIDEO_PROCESSING_ENGINE
+    if (mirrorScreenHDR || expandScreenHDR) {
+        if (SetMetadata(COLORSPACE_INFO_HDR_BT2020_HLG) != GSERROR_OK) {
+            RS_LOGD("RSUniRenderVirtualProcessor::Init SetMetadata failed");
+        }
+    }
+#endif
     canvas_ = renderFrame_->GetCanvas();
     if (canvas_ == nullptr) {
         RS_LOGE("RSUniRenderVirtualProcessor::Init for Screen(id %{public}" PRIu64 "): Canvas is null!",
@@ -149,6 +179,66 @@ bool RSUniRenderVirtualProcessor::InitForRenderThread(DrawableV2::RSDisplayRende
 
     return true;
 }
+
+bool RSUniRenderVirtualProcessor::IsHDRCast(RSDisplayRenderParams* displayParams)
+{
+    if (!displayParams) {
+        RS_LOGD("RSUniRenderVirtualProcessor::IsHDRCast displayParams is nullptr");
+        return false;
+    }
+    // current version fix 1010102 format although is not hdr on
+    if (displayParams->GetNewColorSpace() == GRAPHIC_COLOR_GAMUT_BT2100_HLG) {
+        renderFrameConfig_.format = GRAPHIC_PIXEL_FMT_RGBA_1010102;
+        RS_LOGD("RSUniRenderVirtualProcessor::IsHDRCast set 1010102 buffer");
+        if (displayParams->GetHDRPresent()) {
+            renderFrameConfig_.colorGamut = GRAPHIC_COLOR_GAMUT_BT2100_HLG;
+            return true;
+        }
+    }
+    return false;
+}
+
+#ifdef USE_VIDEO_PROCESSING_ENGINE
+GSError RSUniRenderVirtualProcessor::SetMetadata(const Media::VideoProcessingEngine::CM_ColorSpaceInfo& colorspaceInfo)
+{
+    if (renderFrame_ == nullptr) {
+        RS_LOGD("RSUniRenderVirtualProcessor::SetMetadata renderFrame is null.");
+        return GSERROR_INVALID_ARGUMENTS;
+    }
+    auto rsSurface = renderFrame_->GetSurface();
+    if (rsSurface == nullptr) {
+        RS_LOGD("RSUniRenderVirtualProcessor::SetMetadata surface is null.");
+        return GSERROR_INVALID_ARGUMENTS;
+    }
+    auto buffer = rsSurface->GetCurrentBuffer();
+    if (buffer == nullptr) {
+        RS_LOGD("RSUniRenderVirtualProcessor::SetMetadata buffer is null.");
+        return GSERROR_NO_BUFFER;
+    }
+    Media::VideoProcessingEngine::HdrStaticMetadata staticMetadata;
+    staticMetadata.cta861.maxContentLightLevel = RSLuminanceConst::DEFAULT_CAST_HDR_NITS;
+    auto ret = MetadataHelper::SetHDRStaticMetadata(buffer, staticMetadata);
+    if (ret != GSERROR_OK) {
+        RS_LOGD("RSUniRenderVirtualProcessor::SetMetadata SetHDRStaticMetadata failed %{public}d", ret);
+        return ret;
+    }
+    ret = MetadataHelper::SetHDRDynamicMetadata(buffer, HDR_VIVID_METADATA);
+    if (ret != GSERROR_OK) {
+        RS_LOGD("RSUniRenderVirtualProcessor::SetMetadata SetHDRDynamicMetadata failed %{public}d", ret);
+        return ret;
+    }
+    std::vector<uint8_t> metadata;
+    metadata.resize(sizeof(colorspaceInfo));
+    errno_t errRet = memcpy_s(metadata.data(), metadata.size(), &colorspaceInfo, sizeof(colorspaceInfo));
+    if (errRet != EOK) {
+        RS_LOGD("RSUniRenderVirtualProcessor::SetMetadata colorspace failed %{public}d", errRet);
+        return GSERROR_OUT_OF_RANGE;
+    }
+    RS_LOGD("RSUniRenderVirtualProcessor::SetMetadata SetMetadata end");
+    // Metadata will overwrite the metadata in SetColorSpaceForMetadata, BT2020 is wider than P3
+    return buffer->SetMetadata(Media::VideoProcessingEngine::ATTRKEY_COLORSPACE_INFO, metadata);
+}
+#endif
 
 bool RSUniRenderVirtualProcessor::RequestVirtualFrame(DrawableV2::RSDisplayRenderNodeDrawable& displayDrawable)
 {
