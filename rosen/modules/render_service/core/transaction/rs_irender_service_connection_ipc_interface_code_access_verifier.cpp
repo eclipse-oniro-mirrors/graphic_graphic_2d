@@ -205,6 +205,10 @@ bool RSIRenderServiceConnectionInterfaceCodeAccessVerifier::IsExclusiveVerificat
             hasPermission = IsSystemCalling(codeEnumTypeName_ + "::SET_VIRTUAL_MIRROR_SCREEN_CANVAS_ROTATION");
             break;
         }
+        case static_cast<CodeUnderlyingType>(CodeEnumType::SET_VIRTUAL_SCREEN_AUTO_ROTATION): {
+            hasPermission = IsSystemCalling(codeEnumTypeName_ + "::SET_VIRTUAL_SCREEN_AUTO_ROTATION");
+            break;
+        }
         case static_cast<CodeUnderlyingType>(CodeEnumType::SET_VIRTUAL_MIRROR_SCREEN_SCALE_MODE): {
             hasPermission = IsSystemCalling(codeEnumTypeName_ + "::SET_VIRTUAL_MIRROR_SCREEN_SCALE_MODE");
             break;
@@ -491,6 +495,10 @@ bool RSIRenderServiceConnectionInterfaceCodeAccessVerifier::IsExclusiveVerificat
         }
         case static_cast<CodeUnderlyingType>(CodeEnumType::SET_LAYER_TOP): {
             hasPermission = IsStylusServiceCalling(codeEnumTypeName_ + "::SET_LAYER_TOP");
+            break;
+        }
+        case static_cast<CodeUnderlyingType>(CodeEnumType::SET_FORCE_REFRESH): {
+            hasPermission = IsStylusServiceCalling(codeEnumTypeName_ + "::SET_FORCE_REFRESH");
             break;
         }
         case static_cast<CodeUnderlyingType>(CodeEnumType::SET_COLOR_FOLLOW): {

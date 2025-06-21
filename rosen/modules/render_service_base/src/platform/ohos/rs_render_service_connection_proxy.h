@@ -218,6 +218,8 @@ public:
 
     bool SetVirtualMirrorScreenCanvasRotation(ScreenId id, bool canvasRotation) override;
 
+    int32_t SetVirtualScreenAutoRotation(ScreenId id, bool isAutoRotation) override;
+
     bool SetVirtualMirrorScreenScaleMode(ScreenId id, ScreenScaleMode scaleMode) override;
 
     ErrCode SetGlobalDarkColorMode(bool isDark) override;
@@ -408,6 +410,8 @@ private:
     ErrCode SetAncoForceDoDirect(bool direct, bool& res) override;
 
     ErrCode SetLayerTop(const std::string &nodeIdStr, bool isTop) override;
+
+    ErrCode SetForceRefresh(const std::string &nodeIdStr, bool isForceRefresh) override;
 
     void SetColorFollow(const std::string &nodeIdStr, bool isColorFollow) override;
 

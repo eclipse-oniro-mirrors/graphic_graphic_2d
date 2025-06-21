@@ -28,7 +28,7 @@
 #include "platform/ohos/backend/rs_vulkan_context.h"
 #include "qos.h"
 #include "render_context/shader_cache.h"
-#include "rs_frame_report.h"
+#include "concurrent_task_client.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -71,8 +71,6 @@ void RSModifiersDrawThread::Destroy()
         RSModifiersDrawThread::Instance().ClearEventResource();
     };
     RSModifiersDrawThread::Instance().PostSyncTask(task);
-    auto& instancePtr = RSModifiersDrawThread::InstancePtr();
-    instancePtr.reset();
 }
 
 void RSModifiersDrawThread::ClearEventResource()
@@ -91,12 +89,6 @@ RSModifiersDrawThread& RSModifiersDrawThread::Instance()
 {
     static RSModifiersDrawThread instance;
     return instance;
-}
-
-std::unique_ptr<RSModifiersDrawThread>& RSModifiersDrawThread::InstancePtr()
-{
-    static std::unique_ptr<RSModifiersDrawThread> instancePtr = std::make_unique<RSModifiersDrawThread>();
-    return instancePtr;
 }
 
 void RSModifiersDrawThread::SetCacheDir(const std::string& path)
@@ -168,7 +160,10 @@ void RSModifiersDrawThread::Start()
 #endif
     RSModifiersDrawThread::isStarted_ = true;
     PostTask([] {
-        RsFrameReport::GetInstance().ModifierReportSchedEvent(FrameSchedEvent::RS_MODIFIER_INFO, {});
+        OHOS::ConcurrentTask::IntervalReply reply;
+        reply.tid = gettid();
+        OHOS::ConcurrentTask::ConcurrentTaskClient::GetInstance().QueryInterval(
+            OHOS::ConcurrentTask::QUERY_MODIFIER_DRAW, reply);
         SetThreadQos(QOS::QosLevel::QOS_USER_INTERACTIVE);
         // Init shader cache
         std::string vkVersion = std::to_string(VK_API_VERSION_1_2);
