@@ -612,10 +612,7 @@ void RSHardwareThread::PreAllocateProtectedBuffer(sptr<SurfaceBuffer> buffer, ui
         }
     }
     auto screenManager = CreateOrGetScreenManager();
-    if (screenManager == nullptr) {
-        RS_LOGE("screenManager is NULL");
-        return;
-    }
+    auto screenInfo = screenManager->QueryScreenInfo(screenId);
     auto output = screenManager->GetOutput(ToScreenPhysicalId(screenId));
     if (output == nullptr) {
         RS_LOGE("output is NULL");
@@ -652,7 +649,6 @@ void RSHardwareThread::PreAllocateProtectedBuffer(sptr<SurfaceBuffer> buffer, ui
     auto usage = BUFFER_USAGE_CPU_READ | BUFFER_USAGE_MEM_DMA | BUFFER_USAGE_MEM_FB | BUFFER_USAGE_PROTECTED |
         BUFFER_USAGE_DRM_REDRAW;
     rsSurface->SetSurfaceBufferUsage(usage);
-    auto screenInfo = screenManager->QueryScreenInfo(screenId);
     auto ret = rsSurface->PreAllocateProtectedBuffer(screenInfo.phyWidth, screenInfo.phyHeight);
     output->SetProtectedFrameBufferState(ret);
 #endif
