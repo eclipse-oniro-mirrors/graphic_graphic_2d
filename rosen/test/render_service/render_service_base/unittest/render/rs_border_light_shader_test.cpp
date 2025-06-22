@@ -132,5 +132,6 @@ HWTEST_F(RSBorderLightShaderTest, RSBorderLightShaderTest009, TestSize.Level1)
     shader.SetRSBorderLightParams(params);
     shader.SetRotationAngle(Vector3f { 1, 1, 1 });
 }
+
 } // namespace Rosen
 } // namespace OHOS
