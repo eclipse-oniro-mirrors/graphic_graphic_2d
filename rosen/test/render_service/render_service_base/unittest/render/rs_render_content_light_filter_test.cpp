@@ -176,7 +176,7 @@ HWTEST_F(RSRenderContentLightFilterTest, ParseFilterValuesTest001, TestSize.Leve
     auto lightColorProperty = std::make_shared<RSRenderAnimatableProperty<Vector4f>>(lightColor);
     filterPara->Setter(RSUIFilterType::LIGHT_COLOR, lightColorProperty);
     ret = filterPara->ParseFilterValues();
-    EXPECT_FLASE(ret);
+    EXPECT_FALSE(ret);
 
     auto lightIntensityProperty = std::make_shared<RSRenderAnimatableProperty<float>>(0.5f);
     filterPara->Setter(RSUIFilterType::LIGHT_INTENSITY, lightIntensityProperty);
