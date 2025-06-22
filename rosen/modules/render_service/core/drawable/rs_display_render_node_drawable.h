@@ -189,6 +189,10 @@ private:
         bool isSamplingOn = false, float hdrBrightnessRatio = 1.0f);
     void PrepareHdrDraw(int32_t offscreenWidth, int32_t offscreenHeight);
     void FinishHdrDraw(Drawing::Brush& paint, float hdrBrightnessRatio);
+    bool HDRCastProcess(std::shared_ptr<Drawing::Image>& image, Drawing::Brush& paint,
+        const Drawing::SamplingOptions& sampling) const;
+    bool SetHDRCastShader(std::shared_ptr<Drawing::Image>& image, Drawing::Brush& paint,
+        const Drawing::SamplingOptions& sampling) const;
     void SetDisplayNodeSkipFlag(RSRenderThreadParams& uniParam, bool flag);
     void UpdateDisplayDirtyManager(int32_t bufferage, bool useAlignedDirtyRegion = false);
     static void CheckFilterCacheFullyCovered(RSSurfaceRenderParams& surfaceParams, RectI screenRect);

@@ -490,8 +490,9 @@ bool RSBaseRenderEngine::SetColorSpaceConverterDisplayParameter(
     return true;
 }
 
-void RSBaseRenderEngine::ColorSpaceConvertor(std::shared_ptr<Drawing::ShaderEffect> &inputShader,
-    BufferDrawParam& params, Media::VideoProcessingEngine::ColorSpaceConverterDisplayParameter& parameter)
+void RSBaseRenderEngine::ColorSpaceConvertor(std::shared_ptr<Drawing::ShaderEffect>& inputShader,
+    BufferDrawParam& params, Media::VideoProcessingEngine::ColorSpaceConverterDisplayParameter& parameter,
+    const RSPaintFilterCanvas::HDRProperties& hdrProperties)
 {
     RS_OPTIONAL_TRACE_BEGIN("RSBaseRenderEngine::ColorSpaceConvertor");
 
@@ -511,6 +512,11 @@ void RSBaseRenderEngine::ColorSpaceConvertor(std::shared_ptr<Drawing::ShaderEffe
         parameter.sdrNits = DEFAULT_DISPLAY_NIT;
         parameter.tmoNits = DEFAULT_DISPLAY_NIT;
         parameter.currentDisplayNits = DEFAULT_DISPLAY_NIT;
+        parameter.layerLinearMatrix = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f};
+    } else if (hdrProperties.isHDREnabledVirtualScreen) {
+        parameter.sdrNits = RSLuminanceConst::DEFAULT_CAST_SDR_NITS;
+        parameter.currentDisplayNits = RSLuminanceConst::DEFAULT_CAST_HDR_NITS;
+        parameter.tmoNits = RSLuminanceConst::DEFAULT_CAST_HDR_NITS;
         parameter.layerLinearMatrix = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f};
     }
 
@@ -766,7 +772,7 @@ void RSBaseRenderEngine::DrawImage(RSPaintFilterCanvas& canvas, BufferDrawParam&
         RS_LOGW("RSBaseRenderEngine::DrawImage imageShader is nullptr.");
     } else {
         params.paint.SetShaderEffect(imageShader);
-        ColorSpaceConvertor(imageShader, params, videoInfo.parameter_);
+        ColorSpaceConvertor(imageShader, params, videoInfo.parameter_, canvas.GetHDRProperties());
     }
     canvas.AttachBrush(params.paint);
     canvas.DrawRect(params.dstRect);

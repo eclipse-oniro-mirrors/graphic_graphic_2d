@@ -81,13 +81,14 @@ RSColorSpaceConvert& RSColorSpaceConvert::Instance()
 
 bool RSColorSpaceConvert::ColorSpaceConvertor(std::shared_ptr<Drawing::ShaderEffect> inputShader,
     const sptr<SurfaceBuffer>& surfaceBuffer, Drawing::Paint& paint, GraphicColorGamut targetColorSpace,
-    ScreenId screenId, uint32_t dynamicRangeMode, float hdrBrightness)
+    ScreenId screenId, uint32_t dynamicRangeMode, const RSPaintFilterCanvas::HDRProperties& hdrProperties)
 {
     RS_LOGD("RSColorSpaceConvertor HDRDraw targetColorSpace: %{public}d, screenId: %{public}" PRIu64 ""
         ", dynamicRangeMode: %{public}u, hdrBrightness: %{public}f",
-        targetColorSpace, screenId, dynamicRangeMode, hdrBrightness);
+        targetColorSpace, screenId, dynamicRangeMode, hdrProperties.hdrBrightness);
     RS_TRACE_NAME_FMT("RSColorSpaceConvertor HDRDraw targetColorSpace: %d, screenId: %" PRIu64 ""
-        ", dynamicRangeMode: %u, hdrBrightness: %f", targetColorSpace, screenId, dynamicRangeMode, hdrBrightness);
+        ", dynamicRangeMode: %u, hdrBrightness: %f", targetColorSpace, screenId, dynamicRangeMode,
+        hdrProperties.hdrBrightness);
     VPEParameter parameter;
 
     if (inputShader == nullptr) {
@@ -96,7 +97,7 @@ bool RSColorSpaceConvert::ColorSpaceConvertor(std::shared_ptr<Drawing::ShaderEff
     }
 
     if (!SetColorSpaceConverterDisplayParameter(surfaceBuffer, parameter, targetColorSpace, screenId,
-        dynamicRangeMode, hdrBrightness)) {
+        dynamicRangeMode, hdrProperties)) {
         return false;
     }
 
@@ -165,7 +166,7 @@ void RSColorSpaceConvert::GetVideoDynamicMetadata(const sptr<SurfaceBuffer>& sur
 
 bool RSColorSpaceConvert::SetColorSpaceConverterDisplayParameter(const sptr<SurfaceBuffer>& surfaceBuffer,
     VPEParameter& parameter, GraphicColorGamut targetColorSpace, ScreenId screenId, uint32_t dynamicRangeMode,
-    float hdrBrightness)
+    const RSPaintFilterCanvas::HDRProperties& hdrProperties)
 {
     using namespace HDIV;
 
@@ -193,11 +194,11 @@ bool RSColorSpaceConvert::SetColorSpaceConverterDisplayParameter(const sptr<Surf
     auto& rsLuminance = RSLuminanceControl::Get();
     if (parameter.staticMetadata.size() != sizeof(HdrStaticMetadata)) {
         RS_LOGD("bhdr parameter.staticMetadata size is invalid");
-        scaler = hdrBrightness * (scaler - 1.0f) + 1.0f;
+        scaler = hdrProperties.hdrBrightness * (scaler - 1.0f) + 1.0f;
     } else {
         const auto& data = *reinterpret_cast<HdrStaticMetadata*>(parameter.staticMetadata.data());
         scaler = rsLuminance.CalScaler(data.cta861.maxContentLightLevel,
-            ret == GSERROR_OK ? parameter.dynamicMetadata : std::vector<uint8_t>{}, hdrBrightness);
+            ret == GSERROR_OK ? parameter.dynamicMetadata : std::vector<uint8_t>{}, hdrProperties.hdrBrightness);
     }
 
     if (!rsLuminance.IsHdrPictureOn() || dynamicRangeMode == DynamicRangeMode::STANDARD) {
@@ -206,9 +207,11 @@ bool RSColorSpaceConvert::SetColorSpaceConverterDisplayParameter(const sptr<Surf
 
     float sdrNits = rsLuminance.GetSdrDisplayNits(screenId);
     float displayNits = rsLuminance.GetDisplayNits(screenId);
-    parameter.tmoNits = std::clamp(sdrNits * scaler, sdrNits, displayNits);
-    parameter.currentDisplayNits = displayNits;
-    parameter.sdrNits = sdrNits;
+    parameter.tmoNits = hdrProperties.isHDREnabledVirtualScreen ? RSLuminanceConst::DEFAULT_CAST_HDR_NITS :
+        std::clamp(sdrNits * scaler, sdrNits, displayNits);
+    parameter.currentDisplayNits = hdrProperties.isHDREnabledVirtualScreen ?
+        RSLuminanceConst::DEFAULT_CAST_HDR_NITS : displayNits;
+    parameter.sdrNits = hdrProperties.isHDREnabledVirtualScreen ? RSLuminanceConst::DEFAULT_CAST_SDR_NITS : sdrNits;
     // color temperature
     parameter.layerLinearMatrix = RSColorTemperature::Get().GetLayerLinearCct(screenId, (ret == GSERROR_OK &&
         dynamicRangeMode != DynamicRangeMode::STANDARD) ? parameter.dynamicMetadata : std::vector<uint8_t>(),
@@ -220,7 +223,7 @@ bool RSColorSpaceConvert::SetColorSpaceConverterDisplayParameter(const sptr<Surf
     }
     RS_LOGD("bhdr TmoNits:%{public}.2f. DisplayNits:%{public}.2f. SdrNits:%{public}.2f. DynamicRangeMode:%{public}u "
         "hdrBrightness:%{public}f", parameter.tmoNits, parameter.currentDisplayNits, parameter.sdrNits,
-        dynamicRangeMode, hdrBrightness);
+        dynamicRangeMode, hdrProperties.hdrBrightness);
     return true;
 }
 
