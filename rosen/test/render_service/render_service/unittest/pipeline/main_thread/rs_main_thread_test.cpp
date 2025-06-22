@@ -5298,4 +5298,18 @@ HWTEST_F(RSMainThreadTest, DoDirectComposition003, TestSize.Level1)
     system::SetParameter("persist.sys.graphic.anco.disableHebc", type);
     delete handle;
 }
+
+/**
+ * @tc.name: SetTaskEndWithTime001
+ * @tc.desc: Test SetTaskEndWithTime
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSMainThreadTest, SetTaskEndWithTime001, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    auto rsVSyncDistributor = mainThread->rsVSyncDistributor_;
+    mainThread->SetTaskEndWithTime(0);
+}
 } // namespace OHOS::Rosen

@@ -175,6 +175,7 @@ public:
     // used by V Rate
     std::vector<uint64_t> GetSurfaceNodeLinkerIds(uint64_t windowNodeId);
     std::vector<uint64_t> GetVsyncNameLinkerIds(uint32_t pid, const std::string &name);
+    void SetTaskEndWithTime(uint64_t time);
 
 private:
 
