@@ -811,6 +811,17 @@ bool DoGetTotalAppMemSize()
     return true;
 }
 
+bool DoSetVirtualScreenAutoRotation()
+{
+    if (rsConn_ == nullptr) {
+        return false;
+    }
+    ScreenId screenId = GetData<ScreenId>();
+    bool isAutoRotation = GetData<bool>();
+    rsConn_->SetVirtualScreenAutoRotation(screenId, isAutoRotation);
+    return true;
+}
+
 bool DoSetVirtualScreenBlackList()
 {
     if (rsConn_ == nullptr) {
@@ -1346,6 +1357,17 @@ bool DOSetLayerTop()
     return true;
 }
 
+bool DoSetForceRefresh()
+{
+    if (rsConn_ == nullptr) {
+        return false;
+    }
+    std::string nodeIdStr = GetData<std::string>();
+    bool isForceRefresh = GetData<bool>();
+    rsConn_->SetForceRefresh(nodeIdStr, isForceRefresh);
+    return true;
+}
+
 bool DOSetFreeMultiWindowStatus()
 {
     if (rsConn_ == nullptr) {
@@ -1549,6 +1571,7 @@ void DoFuzzerTest2()
     DOSetCurtainScreenUsingStatus();
     DOSetVirtualScreenStatus();
     DOSetLayerTop();
+    DoSetForceRefresh();
     DOSetFreeMultiWindowStatus();
 }
 
@@ -1565,6 +1588,7 @@ void DoFuzzerTest3()
     DoNotifySoftVsyncRateDiscountEvent();
     DoSetBehindWindowFilterEnabled();
     DoGetBehindWindowFilterEnabled();
+    DoSetVirtualScreenAutoRotation();
 }
 } // namespace Rosen
 } // namespace OHOS

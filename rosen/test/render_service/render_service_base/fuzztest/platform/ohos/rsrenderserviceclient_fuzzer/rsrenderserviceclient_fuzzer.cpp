@@ -468,6 +468,24 @@ bool DoCreateVirtualScreen(const uint8_t* data, size_t size)
     return true;
 }
 
+bool DoSetVirtualScreenAutoRotation(const uint8_t* data, size_t size)
+{
+    if (data == nullptr) {
+        return false;
+    }
+
+    // initialize
+    g_data = data;
+    g_size = size;
+    g_pos = 0;
+
+    std::shared_ptr<RSRenderServiceClient> client = std::make_shared<RSRenderServiceClient>();
+    ScreenId screenId = GetData<ScreenId>();
+    bool isAutoRotation = GetData<bool>();
+    client->SetVirtualScreenAutoRotation(screenId, isAutoRotation);
+    return true;
+}
+
 bool DoSetVirtualScreenBlackList(const uint8_t* data, size_t size)
 {
     if (data == nullptr) {
@@ -1942,6 +1960,23 @@ bool DoSetLayerTop(const uint8_t* data, size_t size)
     return true;
 }
 
+bool DoSetForceRefresh(const uint8_t* data, size_t size)
+{
+    if (data == nullptr) {
+        return false;
+    }
+
+    // initialize
+    g_data = data;
+    g_size = size;
+    g_pos = 0;
+    std::shared_ptr<RSRenderServiceClient> client = std::make_shared<RSRenderServiceClient>();
+    std::string nodeIdStr = "nodeIdStr";
+    bool isForceRefresh = GetData<bool>();
+    client->SetForceRefresh(nodeIdStr, isForceRefresh);
+    return true;
+}
+
 bool DoExecuteSynchronousTask002(const uint8_t *data, size_t size)
 {
     if (data == nullptr) {
@@ -2564,6 +2599,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::Rosen::DoGetActiveScreenId(data, size);
     OHOS::Rosen::DoGetAllScreenIds(data, size);
     OHOS::Rosen::DoCreateVirtualScreen(data, size);
+    OHOS::Rosen::DoSetVirtualScreenAutoRotation(data, size);
     OHOS::Rosen::DoSetVirtualScreenBlackList(data, size);
     OHOS::Rosen::DoDropFrameByPid(data, size);
     OHOS::Rosen::DoSetWatermark(data, size);
@@ -2637,6 +2673,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::Rosen::DoRegisterSurfaceBufferCallback(data, size);
     OHOS::Rosen::DoTriggerSurfaceBufferCallback(data, size);
     OHOS::Rosen::DoSetLayerTop(data, size);
+    OHOS::Rosen::DoSetForceRefresh(data, size);
     OHOS::Rosen::DoExecuteSynchronousTask002(data, size);
     OHOS::Rosen::DoGetUniRenderEnabled(data, size);
     OHOS::Rosen::DoCreateNode002(data, size);

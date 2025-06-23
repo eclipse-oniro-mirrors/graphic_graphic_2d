@@ -194,6 +194,13 @@ public:
         return isLayerTop_;
     }
 
+    void SetForceRefresh(bool isForceRefresh);
+
+    bool IsForceRefresh() const
+    {
+        return isForceRefresh_;
+    }
+
     void SetHardwareEnableHint(bool enable)
     {
         if (isHardwareEnableHint_ == enable) {
@@ -690,10 +697,10 @@ public:
     void IncreaseHDRNum(HDRComponentType hdrType);
     void ReduceHDRNum(HDRComponentType hdrType);
 
-    bool GetIsWideColorGamut() const;
+    void IncreaseCanvasGamutNum(GraphicColorGamut gamut);
+    void ReduceCanvasGamutNum(GraphicColorGamut gamut);
 
-    void IncreaseWideColorGamutNum();
-    void ReduceWideColorGamutNum();
+    bool IsHdrEffectColorGamut() const;
 
     const std::shared_ptr<RSDirtyRegionManager>& GetDirtyManager() const;
     std::shared_ptr<RSDirtyRegionManager> GetCacheSurfaceDirtyManager() const;
@@ -852,22 +859,6 @@ public:
         RSVisibleLevel visibleLevel = RSVisibleLevel::RS_UNKNOW_VISIBLE_LEVEL,
         bool isSystemAnimatedScenes = false);
 
-    void SetLeashWindowVisibleRegionEmpty(bool isLeashWindowVisibleRegionEmpty)
-    {
-        if (!IsLeashWindow()) {
-            return;
-        }
-        isLeashWindowVisibleRegionEmpty_ = isLeashWindowVisibleRegionEmpty;
-        SetLeashWindowVisibleRegionEmptyParam();
-    }
-
-    bool GetLeashWindowVisibleRegionEmpty() const
-    {
-        return isLeashWindowVisibleRegionEmpty_;
-    }
-
-    void SetLeashWindowVisibleRegionEmptyParam();
-
     void SetExtraDirtyRegionAfterAlignment(const Occlusion::Region& region)
     {
         extraDirtyRegionAfterAlignment_ = region;
@@ -901,8 +892,8 @@ public:
     GraphicColorGamut GetColorSpace() const;
     // Only call this if the node is first level node.
     GraphicColorGamut GetFirstLevelNodeColorGamut() const;
-    void SetFirstLevelNodeColorGamutByResource(bool changeToP3);
-    void SetFirstLevelNodeColorGamutByWindow(bool changeToP3);
+    void SetFirstLevelNodeColorGamutByResource(bool isOnTree, GraphicColorGamut gamut);
+    void SetFirstLevelNodeColorGamutByWindow(bool isOnTree, GraphicColorGamut gamut);
 
     // Only call this if the node is self-drawing surface node.
     void UpdateColorSpaceWithMetadata();
@@ -1472,12 +1463,13 @@ public:
         return surfaceHandler_;
     }
 
-    void CheckContainerDirtyStatusAndUpdateDirty(bool containerDirty)
+    void CheckContainerDirtyStatusAndUpdateDirty(bool& containerDirty)
     {
-        if (!IsLeashOrMainWindow()) {
+        if (!containerDirty || !IsLeashOrMainWindow()) {
             return;
         }
-        dirtyStatus_ = containerDirty ? NodeDirty::DIRTY : dirtyStatus_;
+        dirtyStatus_ = NodeDirty::DIRTY;
+        containerDirty = false;
     }
 
     void SetWatermarkEnabled(const std::string& name, bool isEnabled);
@@ -1594,6 +1586,13 @@ public:
         return appWindowZOrder_;
     }
 
+    void SetTopLayerZOrder(uint32_t zOrder);
+
+    uint32_t GetTopLayerZOrder() const
+    {
+        return topLayerZOrder_;
+    }
+
     // Enable HWCompose
     RSHwcSurfaceRecorder& HwcSurfaceRecorder() { return hwcSurfaceRecorder_; }
 
@@ -1660,7 +1659,9 @@ private:
     bool qosPidCal_ = false;
     RSSurfaceNodeAbilityState abilityState_ = RSSurfaceNodeAbilityState::FOREGROUND;
     RSSurfaceNodeType nodeType_ = RSSurfaceNodeType::DEFAULT;
+    uint32_t topLayerZOrder_ = 0;
     bool isLayerTop_ = false;
+    bool isForceRefresh_ = false; // the self-drawing node need force refresh
     // Specifying hardware enable is only a 'hint' to RS that
     // the self-drawing node use hardware composer in some condition,
     // such as transparent background.
@@ -1669,7 +1670,6 @@ private:
     const enum SurfaceWindowType surfaceWindowType_ = SurfaceWindowType::DEFAULT_WINDOW;
     bool isNotifyRTBufferAvailablePre_ = false;
     bool isRefresh_ = false;
-    bool isLeashWindowVisibleRegionEmpty_ = false;
     bool isOcclusionVisible_ = true;
     bool isOcclusionVisibleWithoutFilter_ = true;
     bool isOcclusionInSpecificScenes_ = false;
@@ -1763,6 +1763,13 @@ private:
     int hdrPhotoNum_ = 0;
     // Count the number of hdr UI components. If hdrUIComponentNum_ > 0, it means there are hdr UI components
     int hdrUIComponentNum_ = 0;
+    int hdrEffectNum_ = 0;
+    int bt2020Num_ = 0;
+    int p3Num_ = 0;
+    int firstLevelNodeBt2020WindowNum_ = 0;
+    int firstLevelNodeP3WindowNum_ = 0;
+    int firstLevelNodeBt2020ResourceNum_ = 0;
+    int firstLevelNodeP3ResourceNum_ = 0;
     int wideColorGamutNum_ = 0;
     int32_t offsetX_ = 0;
     int32_t offsetY_ = 0;

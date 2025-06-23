@@ -235,6 +235,8 @@ private:
 
     bool SetVirtualMirrorScreenCanvasRotation(ScreenId id, bool canvasRotation) override;
 
+    int32_t SetVirtualScreenAutoRotation(ScreenId id, bool isAutoRotation) override;
+
     bool SetVirtualMirrorScreenScaleMode(ScreenId id, ScreenScaleMode scaleMode) override;
 
     ErrCode SetGlobalDarkColorMode(bool isDark) override;
@@ -383,7 +385,11 @@ private:
 
     void SetFreeMultiWindowStatus(bool enable) override;
 
+    ErrCode SetLayerTopForHWC(const std::string &nodeIdStr, bool isTop, uint32_t zOrder) override;
+
     ErrCode SetLayerTop(const std::string &nodeIdStr, bool isTop) override;
+
+    ErrCode SetForceRefresh(const std::string &nodeIdStr, bool isForceRefresh) override;
 
     void RegisterTransactionDataCallback(int32_t pid,
         uint64_t timeStamp, sptr<RSITransactionDataCallback> callback) override;

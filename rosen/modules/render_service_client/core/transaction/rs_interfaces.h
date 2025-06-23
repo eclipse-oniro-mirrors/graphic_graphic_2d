@@ -415,6 +415,14 @@ public:
     bool SetVirtualMirrorScreenCanvasRotation(ScreenId id, bool canvasRotation);
 
     /**
+     * @brief Set if resize buffer and keep content horizontal while source is rotated.
+     * @param id Virtual screen id.
+     * @param isAutoRotation True means enable, false means disable.
+     * @return 0 means success, others failed.
+     */
+    int32_t SetVirtualScreenAutoRotation(ScreenId id, bool isAutoRotation);
+
+    /**
      * @brief Set scale mode for virtual mirror screen.
      * @param id Virtual screen id.
      * @param scaleMode Scale mode, see ScreenScaleMode.
@@ -1118,6 +1126,8 @@ public:
      */
     bool UnregisterSurfaceBufferCallback(pid_t pid, uint64_t uid);
 
+    void SetLayerTopForHWC(const std::string &nodeIdStr, bool isTop, uint32_t zOrder);
+
     // Make this node(nodeIdStr) should do DSS composition and set the layer to top. otherwise do GPU composition.
     /**
      * @brief Set selfdrawing component of stylus engine force use DSS.
@@ -1125,6 +1135,14 @@ public:
      * @param isTop is function switch.
      */
     void SetLayerTop(const std::string &nodeIdStr, bool isTop);
+
+    // Make this node(nodeIdStr) should do DSS composition and set the surface force refresh.
+    /**
+     * @brief Set selfdrawing component of stylus engine force refresh.
+     * @param nodeIdStr surfaceNode name.
+     * @param isForceRefresh is function switch.
+     */
+    void SetForceRefresh(const std::string &nodeIdStr, bool isForceRefresh);
 
     /**
      * @brief Configures the stylus engine's self-drawing component to skip gamut conversion during redering.

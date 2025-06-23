@@ -208,6 +208,42 @@ HWTEST_F(RSSurfaceRenderNodeTest, SetSurfaceNodeType003, TestSize.Level1)
 }
 
 /**
+ * @tc.name: CheckContainerDirtyStatusAndUpdateDirty001
+ * @tc.desc: Test CheckContainerDirtyStatusAndUpdateDirty
+ * @tc.type: FUNC
+ * @tc.require: issueICFZGG
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, CheckContainerDirtyStatusAndUpdateDirty001, TestSize.Level1)
+{
+    RSSurfaceRenderNodeConfig config;
+    auto node = std::make_shared<RSSurfaceRenderNode>(config);
+
+    node->nodeType_ = RSSurfaceNodeType::UI_EXTENSION_SECURE_NODE;
+    bool containerDirty = false;
+    node->CheckContainerDirtyStatusAndUpdateDirty(containerDirty);
+    EXPECT_EQ(containerDirty, false);
+    containerDirty = true;
+    node->CheckContainerDirtyStatusAndUpdateDirty(containerDirty);
+    EXPECT_EQ(containerDirty, true);
+
+    node->nodeType_ = RSSurfaceNodeType::LEASH_WINDOW_NODE;
+    containerDirty = false;
+    node->CheckContainerDirtyStatusAndUpdateDirty(containerDirty);
+    EXPECT_EQ(containerDirty, false);
+    containerDirty = true;
+    node->CheckContainerDirtyStatusAndUpdateDirty(containerDirty);
+    EXPECT_EQ(containerDirty, false);
+
+    node->nodeType_ = RSSurfaceNodeType::APP_WINDOW_NODE;
+    containerDirty = false;
+    node->CheckContainerDirtyStatusAndUpdateDirty(containerDirty);
+    EXPECT_EQ(containerDirty, false);
+    containerDirty = true;
+    node->CheckContainerDirtyStatusAndUpdateDirty(containerDirty);
+    EXPECT_EQ(containerDirty, false);
+}
+
+/**
  * @tc.name: SetSurfaceNodeType004
  * @tc.desc: Test SetSurfaceNodeType
  * @tc.type: FUNC
@@ -2315,43 +2351,6 @@ HWTEST_F(RSSurfaceRenderNodeTest, HDRPresentTest002, TestSize.Level1)
     EXPECT_TRUE(childNode->GetHDRPresent());
     childNode->ReduceHDRNum(HDRComponentType::UICOMPONENT);
     EXPECT_FALSE(childNode->GetHDRPresent());
-}
-
-/**
- * @tc.name: GetIsWideColorGamut001
- * @tc.desc: GetIsWideColorGamut test
- * @tc.type: FUNC
- * @tc.require: issueIB6Y6O
- */
-HWTEST_F(RSSurfaceRenderNodeTest, GetIsWideColorGamut001, TestSize.Level1)
-{
-    auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(id);
-    ASSERT_NE(surfaceNode, nullptr);
-
-    surfaceNode->wideColorGamutNum_ = 0;
-    ASSERT_FALSE(surfaceNode->GetIsWideColorGamut());
-    surfaceNode->wideColorGamutNum_++;
-    ASSERT_TRUE(surfaceNode->GetIsWideColorGamut());
-}
-
-/**
- * @tc.name: IncreaseWideColorGamutNum001
- * @tc.desc: IncreaseWideColorGamutNum and ReduceWideColorGamutNum test
- * @tc.type: FUNC
- * @tc.require: issueIB6Y6O
- */
-HWTEST_F(RSSurfaceRenderNodeTest, IncreaseWideColorGamutNum001, TestSize.Level1)
-{
-    auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(id);
-    ASSERT_NE(surfaceNode, nullptr);
-    surfaceNode->wideColorGamutNum_ = 0;
-    EXPECT_TRUE(surfaceNode->GetContext().lock() == nullptr);
-
-    surfaceNode->firstLevelNodeId_ = id + 1;
-    surfaceNode->IncreaseWideColorGamutNum();
-    ASSERT_TRUE(surfaceNode->GetIsWideColorGamut());
-    surfaceNode->ReduceWideColorGamutNum();
-    ASSERT_FALSE(surfaceNode->GetIsWideColorGamut());
 }
 
 /**
