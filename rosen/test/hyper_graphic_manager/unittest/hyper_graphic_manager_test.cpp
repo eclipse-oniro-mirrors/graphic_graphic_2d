@@ -399,21 +399,21 @@ HWTEST_F(HyperGraphicManagerTest, SetScreenRefreshRate_002, Function | MediumTes
 
     PART("CaseDescription") {
         STEP("1. add a new screen") {
-            auto addScreen = instance8.AddScreen(screenId, 0, screenSize);
+            auto addScreen = instance.AddScreen(screenId, 0, screenSize);
             STEP_ASSERT_EQ(addScreen, 0);
-            auto addScreenProfile = instance8.AddScreenInfo(screenId, width, height, rate, mode);
+            auto addScreenProfile = instance.AddScreenInfo(screenId, width, height, rate, mode);
             STEP_ASSERT_EQ(addScreenProfile, 0);
-            auto addScreenProfile0 = instance8.AddScreenInfo(screenId, width0, height0, rate0, mode0);
+            auto addScreenProfile0 = instance.AddScreenInfo(screenId, width0, height0, rate0, mode0);
             STEP_ASSERT_EQ(addScreenProfile0, 0);
             bool shouldSendCallback = false;
-            auto setRate120 = instance8.SetScreenRefreshRate(screenId, 0, 120, shouldSendCallback);
+            auto setRate120 = instance.SetScreenRefreshRate(screenId, 0, 120, shouldSendCallback);
             if (setRate120 == -1) {
                 return;
             }
             STEP_ASSERT_NE(setRate120, -1);
-            screen = instance8.GetScreen(screenId);
+            screen = instance.GetScreen(screenId);
             STEP_ASSERT_EQ(screen->GetActiveRefreshRate(), 120);
-            auto modeListToApply = instance8.GetModesToApply();
+            auto modeListToApply = instance.GetModesToApply();
             STEP_ASSERT_NE(modeListToApply->size(), 0);
         }
     }

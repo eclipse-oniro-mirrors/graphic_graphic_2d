@@ -18,13 +18,18 @@
 namespace OHOS {
 namespace Rosen {
 namespace Mock {
+std::once_flag RSScreenManagerMock::createFlag_;
+sptr<OHOS::Rosen::Mock::RSScreenManagerMock> RSScreenManagerMock::instance_ = nullptr;
+
 RSScreenManagerMock::RSScreenManagerMock() = default;
 RSScreenManagerMock::~RSScreenManagerMock() = default;
 
-RSScreenManagerMock* RSScreenManagerMock::GetInstance()
+sptr<RSScreenManagerMock> RSScreenManagerMock::GetInstance()
 {
-    static RSScreenManagerMock instance;
-    return &instance;
+    std::call_once(createFlag_ []() {
+        instance_ = new RSScreenManagerMock();
+    })
+    return instance_;
 }
 
 } // namespace Mock

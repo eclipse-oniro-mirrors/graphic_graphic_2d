@@ -82,7 +82,7 @@ void HgmHardwareUtils::ExecuteSwitchRefreshRate(
         hgmCore.GetFrameRateMgr()->SetLastCurScreenId(curScreenId);
         bool shouldSendCallback = (refreshRate != hgmCore.GetScreenCurrentRefreshRate(id) ||
             lastCurScreenId != curScreenId);
-        int32_t status = hgmCore.SetScreenRefreshRate(id, sceneId, refreshRate);
+        int32_t status = hgmCore.SetScreenRefreshRate(id, sceneId, refreshRate, shouldSendCallback);
         if (retryIter != setRateRetryMap_.end()) {
             retryIter->second.first = false;
         }

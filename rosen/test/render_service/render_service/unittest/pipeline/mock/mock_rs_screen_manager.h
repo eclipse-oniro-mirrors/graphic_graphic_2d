@@ -24,7 +24,7 @@ namespace Rosen {
 namespace Mock {
 class RSScreenManagerMock : public OHOS::Rosen::impl::RSScreenManager {
 public:
-    static RSScreenManagerMock* GetInstance();
+    static sptr<RSScreenManagerMock> GetInstance();
 
     MOCK_METHOD2(SetScreenActiveMode, uint32_t(ScreenId, uint32_t));
 private:
@@ -32,6 +32,9 @@ private:
     ~RSScreenManagerMock() override;
     RSScreenManagerMock(const RSScreenManagerMock&) = delete;
     RSScreenManagerMock& operator=(const RSScreenManagerMock&) = delete;
+
+    static std::once_flag createFlag_;
+    static sptr<OHOS::Rosen::Mock::RSScreenManagerMock> instance_;
 };
 } // namespace Mock
 } // namespace Rosen
