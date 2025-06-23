@@ -70,7 +70,7 @@ public:
     {
         return;//TODO
     }
-    void CheckInTargetSurface(std::string& name)
+    void CheckInTargetSurface(const std::string& name)
     {
         return; //todo
     }
