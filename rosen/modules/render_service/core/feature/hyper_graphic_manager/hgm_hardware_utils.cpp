@@ -24,7 +24,7 @@ namespace {
 constexpr int64_t NS_MS_UNIT_CONVERSION = 1000000;
 constexpr uint32_t DELAY_TIME_OFFSET = 100;
 constexpr int32_t MAX_SETRATE_RETRY_COUNT = 20;
-constexpr int32_t MAX_HWC_DISPLAY_ID = 20;
+constexpr int32_t MAX_HAL_DISPLAY_ID = 20;
 }
 void HgmHardwareUtils::RegisterChangeDssRefreshRateCb()
 {
@@ -80,6 +80,8 @@ void HgmHardwareUtils::ExecuteSwitchRefreshRate(
             needRetrySetRate %{public}d", static_cast<int>(id), refreshRate, needRetrySetRate);
         int32_t sceneId = (lastCurScreenId != curScreenId || needRetrySetRate) ? SWITCH_SCREEN_SCENE : 0;
         hgmCore.GetFrameRateMgr()->SetLastCurScreenId(curScreenId);
+        bool shouldSendCallback = (refreshRate != hgmCore.GetScreenCurrentRefreshRate(id) ||
+            lastCurScreenId != curScreenId);
         int32_t status = hgmCore.SetScreenRefreshRate(id, sceneId, refreshRate);
         if (retryIter != setRateRetryMap_.end()) {
             retryIter->second.first = false;
@@ -100,7 +102,7 @@ void HgmHardwareUtils::UpdateRetrySetRateStatus(ScreenId id, int32_t modeId, uin
             setRateRetryCount = 0;
         } else if (setRateRetryCount < MAX_SETRATE_RETRY_COUNT) {
             setRateRetryCount++;
-        }else {
+        } else {
             RS_LOGW("skip retrying for ScreenId:%{public}" PRIu64 ", set rate failed more than %{public}" PRId32,
                 id, MAX_SETRATE_RETRY_COUNT);
             needRetrySetRate = false;
@@ -144,7 +146,7 @@ void HgmHardwareUtils::PerformSetActiveMode(
         }
 
         uint32_t ret = screenManager->SetScreenActiveMode(id, modeId);
-        if (id < MAX_HWC_DISPLAY_ID) {
+        if (id <= MAX_HAL_DISPLAY_ID) {
             setRateRetryMap_.try_emplace(id, std::make_pair(false, 0));
             UpdateRetrySetRateStatus(id, modeId, ret);
         } else {

@@ -26,10 +26,12 @@ class RSScreenManagerMock : public OHOS::Rosen::impl::RSScreenManager {
 public:
     static RSScreenManagerMock* GetInstance();
 
-    MOCK_METHOD2(SetScreenActiveMode, uint32_t(ScreendId, uint32_t));
+    MOCK_METHOD2(SetScreenActiveMode, uint32_t(ScreenId, uint32_t));
 private:
     RSScreenManagerMock();
     ~RSScreenManagerMock() override;
+    RSScreenManagerMock(const RSScreenManagerMock&) = delete;
+    RSScreenManagerMock& operator=(const RSScreenManagerMock&) = delete;
 };
 } // namespace Mock
 } // namespace Rosen
