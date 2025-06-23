@@ -378,4 +378,37 @@ HWTEST_F(RSRectTest, Inset001, TestSize.Level1)
     EXPECT_EQ(rrect1.rect_.GetWidth(), 8.f); // 8.f is width_ - (width.x_ + width.y_)
     EXPECT_NE(rrect1.radius_[0], rrect.radius_[0]);
 }
+
+/**
+ * @tc.name: IsNaN
+ * @tc.desc: test results of IsNaN
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRectTest, IsNaN, TestSize.Level1)
+{
+    float nanNum = 0.0 / 0.0;
+    RectF rect1(nanNum, nanNum, nanNum, nanNum);
+    EXPECT_TRUE(rect1.IsNaN());
+    float normalNum = 1.0;
+    RectF rect2(normalNum, normalNum, normalNum, normalNum);
+    EXPECT_FALSE(rect2.IsNaN());
+}
+
+/**
+ * @tc.name: IsValid
+ * @tc.desc: test results of IsValid
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRectTest, IsValid, TestSize.Level1)
+{
+    float infiniteNum = 1.0 / 0.0;
+    RectF rect1(infiniteNum, infiniteNum, infiniteNum, infiniteNum);
+    EXPECT_FALSE(rect1.IsValid());
+    float nanNum = 0.0 / 0.0;
+    RectF rect2(nanNum, nanNum, nanNum, nanNum);
+    EXPECT_FALSE(rect2.IsValid());
+    float normalNum = 1.0;
+    RectF rect3(normalNum, normalNum, normalNum, normalNum);
+    EXPECT_TRUE(rect3.IsValid());
+}
 } // namespace OHOS::Rosen
