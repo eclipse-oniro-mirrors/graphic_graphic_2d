@@ -5351,5 +5351,19 @@ void RSProperties::ResetBorder(bool isOutline)
     SetDirty();
     contentDirty_ = true;
 }
+
+void RSProperties::SetBackgroundNGShader(const std::shared_ptr<RSNGRenderShaderBase>& shaderProp)
+{
+    bgNGRenderShader_ = shaderProp;
+    isDrawn_ = true;
+    SetDirty();
+    contentDirty_ = true;
+}
+
+std::shared_ptr<RSNGRenderShaderBase> RSProperties::GetBackgroundNGShader() const
+{
+    return bgNGRenderShader_;
+}
+
 } // namespace Rosen
 } // namespace OHOS

@@ -33,6 +33,7 @@
 #include "ui_effect/property/include/rs_ui_edge_light_filter.h"
 #include "ui_effect/property/include/rs_ui_filter.h"
 #include "ui_effect/property/include/rs_ui_filter_base.h"
+#include "ui_effect/property/include/rs_ui_shader_base.h"
 
 #include "animation/rs_animation.h"
 #include "animation/rs_animation_callback.h"
@@ -2766,6 +2767,26 @@ void RSNode::SetForegroundNGFilter(const std::shared_ptr<RSNGFilterBase>& foregr
     }
     SetProperty<RSForegroundNGFilterModifier, RSProperty<std::shared_ptr<RSNGFilterBase>>>(
         RSModifierType::FOREGROUND_NG_FILTER, foregroundFilter);
+#endif
+}
+
+void RSNode::SetBackgroundNGShader(const std::shared_ptr<RSNGShaderBase>& backgroundShader)
+{
+#if defined(MODIFIER_NG)
+    if (!backgroundShader) {
+        std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
+        CHECK_FALSE_RETURN(CheckMultiThreadAccess(__func__));
+        auto& modifier = modifiersNGCreatedBySetter_[static_cast<uint16_t>(ModifierNG::RSModifierType::BACKGROUND_NG_SHADER)];
+        if (modifier == nullptr || !modifier->HasProperty(ModifierNG::RSPropertyType::BACKGROUND_NG_SHADER)) {
+            return;
+        }
+        modifier->DetachProperty(ModifierNG::RSPropertyType::BACKGROUND_NG_SHADER);
+        return;
+    }   
+    SetPropertyNG<ModifierNG::RSBackgroundNGShaderModifier,
+        &ModifierNG::RSBackgroundNGShaderModifier::SetBackgroundNGShader>(backgroundShader);
+#else
+    // origin
 #endif
 }
 
