@@ -307,6 +307,8 @@ public:
 
     bool SetVirtualMirrorScreenCanvasRotation(ScreenId id, bool canvasRotation);
 
+    int32_t SetVirtualScreenAutoRotation(ScreenId id, bool isAutoRotation);
+
     bool SetVirtualMirrorScreenScaleMode(ScreenId id, ScreenScaleMode scaleMode);
 
     bool SetGlobalDarkColorMode(bool isDark);
@@ -436,6 +438,8 @@ public:
 
     void SetLayerTop(const std::string &nodeIdStr, bool isTop);
 
+    void SetForceRefresh(const std::string &nodeIdStr, bool isForceRefresh);
+
     void SetColorFollow(const std::string &nodeIdStr, bool isColorFollow);
 
 #ifdef RS_ENABLE_OVERLAY_DISPLAY
@@ -477,6 +481,8 @@ public:
     bool SetBehindWindowFilterEnabled(bool enabled);
 
     bool GetBehindWindowFilterEnabled(bool& enabled);
+
+    int32_t GetPidGpuMemoryInMB(pid_t pid, float &gpuMemInMB);
 private:
     void TriggerSurfaceCaptureCallback(NodeId id, const RSSurfaceCaptureConfig& captureConfig,
         std::shared_ptr<Media::PixelMap> pixelmap);
@@ -493,11 +499,21 @@ private:
         }
     };
 
+    // Hash for solo node capture
+    struct UICaptureParamHash {
+        std::size_t operator()(const RSUICaptureInRangeParam& param) const {
+            std::size_t h1 = std::hash<NodeId>()(param.endNodeId);
+            std::size_t h2 = std::hash<bool>()(param.useBeginNodeSize);
+            return h1 ^ (h2 << 1);
+        }
+    };
+
     struct PairHash {
         std::size_t operator()(const std::pair<NodeId, RSSurfaceCaptureConfig>& p) const {
             std::size_t h1 = std::hash<NodeId>()(p.first);
             std::size_t h2 = RectHash()(p.second.mainScreenRect);
-            return h1 ^ (h2 << 1);
+            std::size_t h3 = UICaptureParamHash()(p.second.uiCaptureInRangeParam);
+            return h1 ^ (h2 << 1) ^ (h3 << 2);
         }
     };
 

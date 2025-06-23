@@ -592,6 +592,11 @@ bool RSInterfaces::SetVirtualMirrorScreenCanvasRotation(ScreenId id, bool canvas
     return renderServiceClient_->SetVirtualMirrorScreenCanvasRotation(id, canvasRotation);
 }
 
+int32_t RSInterfaces::SetVirtualScreenAutoRotation(ScreenId id, bool isAutoRotation)
+{
+    return renderServiceClient_->SetVirtualScreenAutoRotation(id, isAutoRotation);
+}
+
 bool RSInterfaces::SetVirtualMirrorScreenScaleMode(ScreenId id, ScreenScaleMode scaleMode)
 {
     return renderServiceClient_->SetVirtualMirrorScreenScaleMode(id, scaleMode);
@@ -1147,6 +1152,11 @@ void RSInterfaces::SetLayerTop(const std::string &nodeIdStr, bool isTop)
     renderServiceClient_->SetLayerTop(nodeIdStr, isTop);
 }
 
+void RSInterfaces::SetForceRefresh(const std::string &nodeIdStr, bool isForceRefresh)
+{
+    renderServiceClient_->SetForceRefresh(nodeIdStr, isForceRefresh);
+}
+
 void RSInterfaces::SetColorFollow(const std::string &nodeIdStr, bool isColorFollow)
 {
     renderServiceClient_->SetColorFollow(nodeIdStr, isColorFollow);
@@ -1187,6 +1197,13 @@ void RSInterfaces::NotifyPageName(const std::string &packageName, const std::str
             packageName.c_str(), pageName.c_str(), isEnter);
         renderServiceClient_->NotifyPageName(packageName, pageName, isEnter);
     }
+}
+
+int32_t RSInterfaces::GetPidGpuMemoryInMB(pid_t pid, float &gpuMemInMB)
+{
+    auto ret = renderServiceClient_->GetPidGpuMemoryInMB(pid, gpuMemInMB);
+    ROSEN_LOGD("RSInterfaces::GetpidGpuMemoryInMB called!");
+    return ret;
 }
 
 bool RSInterfaces::GetHighContrastTextState()
