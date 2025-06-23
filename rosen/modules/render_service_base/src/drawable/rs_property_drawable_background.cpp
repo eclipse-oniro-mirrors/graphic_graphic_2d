@@ -334,7 +334,7 @@ Drawing::RecordingCanvas::DrawFunc RSBackgroundNGShaderDrawable::CreateDrawFunc(
         // canvas.AttachBrush(brush);
         // canvas.DrawRect(rect);
         // canvas.DetachBrush();
-    }
+    };
 }
 
 RSBackgroundImageDrawable::~RSBackgroundImageDrawable()

@@ -15,7 +15,6 @@
 
 #include "gtest/gtest.h"
 
-#include "effect/rs_render_filter_base.h"
 #include "pipeline/rs_paint_filter_canvas.h"
 #include "render/rs_drawing_filter.h"
 #include "render/rs_render_kawase_blur_filter.h"

@@ -16,8 +16,6 @@
 #include <memory>
 #include "gtest/gtest.h"
 #include "gtest/hwext/gtest-tag.h"
-
-#include "effect/rs_render_filter_base.h"
 #include "include/modifier/rs_render_modifier.h"
 #include "message_parcel.h"
 #include "common/rs_vector4.h"
