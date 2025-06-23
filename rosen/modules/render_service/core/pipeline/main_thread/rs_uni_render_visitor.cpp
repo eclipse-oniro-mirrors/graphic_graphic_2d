@@ -1645,7 +1645,7 @@ void RSUniRenderVisitor::QuickPrepareChildren(RSRenderNode& node)
     if (node.IsInstanceOf<RSSurfaceRenderNode>()) {
         auto surfaceNode = static_cast<RSSurfaceRenderNode*>(&node);
         if (surfaceNode) {
-            RSHpaeManager::GetInstance().CheclInTargetSurface(surfaceNode->GetName());
+            RSHpaeManager::GetInstance().CheckInTargetSurface(surfaceNode->GetName());
         }
     }
 
