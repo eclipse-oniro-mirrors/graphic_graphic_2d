@@ -36,7 +36,7 @@ void BuildShaderMatrix(Drawing::Matrix &shaderMatrix, const Drawing::Rect &src, 
 
     Drawing::Matrix translateMatrix;
     translateMatrix.Translate(
-        stretchOffsetX[0] * greyScaleRatio * src.GetWidth(), stretchOffset[1] * greyScaleRatio * src.GetHeight());
+        stretchOffset[0] * greyScaleRatio * src.GetWidth(), stretchOffset[1] * greyScaleRatio * src.GetHeight());
     shaderMatrix.PostConcat(translateMatrix);
 }
 
@@ -98,7 +98,7 @@ std::shared_ptr<Drawing::ShaderEffect> MakeGreyShader(
 {
     // parameter check: near zero
     constexpr static float EPS = 1e-5f;
-    if (ROSEN_EQ(greyLow, 0.f, )EPS && ROSEN_EQ(greyHigh, 0.f, EPS)) {
+    if (ROSEN_EQ(greyLow, 0.f, EPS)EPS && ROSEN_EQ(greyHeigh, 0.f, EPS)) {
         HPAE_LOGI("MakeGreyShader: grey value is zero!");
         return imageShader;
     }
@@ -117,13 +117,13 @@ std::shared_ptr<Drawing::ShaderEffect> MakeGreyShader(
     return builder->MakeShader(nullptr, false);
 }
 
-HaePixel RSHpaeFunsionOperator::GetHpaePixel(const std::shared_ptr<RSDrawingFilter> &filter)
+HaePixel RSHpaeFusionOperator::GetHpaePixel(const std::shared_ptr<RSDrawingFilter> &filter)
 {
     HaePixel haePixel;
     if (filter) {
         auto maskColorShaderFilter = std::static_pointer_cast<RSMaskColorShaderFilter>(
-            filter->GetShaderFilterWithType(RSSUFilterType::MASK_COLOR));
-        if (maskColorShadeFilter) {
+            filter->GetShaderFilterWithType(RSUIFilterType::MASK_COLOR));
+        if (maskColorShaderFilter) {
             RSColor maskColors = maskColorShaderFilter->GetMaskColor();
             haePixel.a = static_cast<uint16_t>(maskColors.GetAlpha()) * 4;
             haePixel.r = static_cast<uint16_t>(maskColors.GetRed()) * 4;
@@ -158,10 +158,10 @@ int RSHpaeFusionOperator::ProcessGreyAndStretch(const Drawing::RectI& clipBounds
     BuildShaderMatrix(shaderMatrix, src, greyScaleRatio, stretchOffset);
 
     auto tileMode = static_cast<Drawing::TileMode>(RSHpaeBaseData::GetInstance().GetTileMode());
-    HPAE_TRACE_NAME_FMT("ProcessGreyAndStretch. offset:[%f, %f, %f, %f],
+    /*HPAE_TRACE_NAME_FMT("ProcessGreyAndStretch. offset:[%f, %f, %f, %f],
         tileMode:%d, image:[%dx%d]",
         pixelStretch.x_, pixelStretch.y_, pixelStretch.z_, pixelStretch.w_, tileMode,
-        image->GetWidth(), image->GetHeight());
+        image->GetWidth(), image->GetHeight());*/
     auto imageShader = Drawing::ShaderEffect::CreateImageShader(
         *image, tileMode, tileMode, Drawing::SamplingOptions(Drawing::FilterMode::LINEAR), shaderMatrix);
     auto greyCoef = RSHpaeBaseData::GetInstance().GetGreyCoef();
