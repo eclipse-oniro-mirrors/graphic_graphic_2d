@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+#if defined(ROSEN_OHOS)
 #include "hpae_base/rs_hpae_filter_cache_manager.h"
 #include "hpae_base/rs_hpae_hianimation.h"
 #include "render/rs_kawase_blur_shader_filter.h"
@@ -22,6 +22,7 @@
 #include "hpae_base/rs_hpae_log.h"
 #include "hpae_base/rs_hpae_scheduler.h"
 #include "hpae_base/rs_hpae_fusion_operator.h"
+#endif
 
 #if defined(ASYNC_BUILD_TASK)&& defined(ROSEN_OHOS)
 #include "cpp/ffrt_dynamic_graph.h"
