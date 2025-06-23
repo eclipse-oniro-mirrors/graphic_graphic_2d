@@ -542,7 +542,7 @@ HWTEST_F(Vector4Test, IsValid, TestSize.Level1)
     float nanNum = std::numeric_limits<float>::quiet_NaN();
     Vector4 vec2(nanNum);
     EXPECT_FALSE(vec2.IsValid());
-    float normalNum = 1.0;
+    float normalNum = 1.0f;
     Vector4 vec3(normalNum);
     EXPECT_TRUE(vec3.IsValid());
 }
