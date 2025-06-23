@@ -980,7 +980,7 @@ ohos_unittest("RSHpaeManagerTest") {
 
 ##Build RSHpaeBufferTest
 ohos_unittest("RSHpaeBufferTest") {
-  module_out_path = module_out_path
+  module_out_path = module_output_path
   sources = [ "hpae/rs_hpae_buffer_test.cpp" ]
   deps = [ ":rs_test_common" ]
   external_deps = [
