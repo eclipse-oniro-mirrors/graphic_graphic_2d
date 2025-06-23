@@ -4974,8 +4974,6 @@ void RSNode::AddModifier(const std::shared_ptr<ModifierNG::RSModifier> modifier)
         return;
     }
     if (modifiersNG_.count(modifier->GetId())) {
-        RS_LOGD("RSNode::AddModifier: modifier exist, nodeId=%{public}" PRIu64 ", modifierId=%{public}" PRIu64
-            ", modifierType=%{public}du", GetId(), modifier->GetId(), modifier->GetType());
         return;
     }
     modifiersNG_.emplace(modifier->GetId(), modifier);
