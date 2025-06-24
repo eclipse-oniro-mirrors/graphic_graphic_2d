@@ -117,7 +117,7 @@ bool RSHpaeFfrtPatternManager::MHCDlOpen()
     g_GPTaskSubmit = reinterpret_cast<GPGPTaskSubmitFunc>(dlsym(g_mhcHandle, "mhc_gp_task_submit"));
     if (!g_getGPInstance || !g_GPInit || !g_GPDestroy\
         || !g_GPRequestEGraph || !g_GPReleaseEGraph ||
-        || !g_GPVulkanTaskSubmit || !g_GPWait\
+        || !g_GPTaskSubmit || !g_GPWait\
         || !g_GPGetVulkanWaitEvent || !g_GPGetVulkanNotifyEvent || !g_GPTaskSubmit) {
         HPAE_LOGE("mhc_so dlsym error\n");
         dlclose(g_mhcHandle);
@@ -267,8 +267,8 @@ bool RSHpaeFfrtPatternManager::MHCSubmitTask(uint64_t frameId, MHC_PatternTaskNa
     MHC_TaskInfo mhcTaskInfo = {
         .taskName = taskName,
         .c_prefunc = c_preFunc,
-        .c_taskHandles = c_taskHandleVec,
-        .numTasks = numTasks,
+        .c_taskHandles = taskHandleVec,
+        .numTasks = numTask,
         .c_afterFunc = c_afterFunc,
     };
     g_GPTaskSubmit(g_instance, frameId, &mhcTaskInfo);
