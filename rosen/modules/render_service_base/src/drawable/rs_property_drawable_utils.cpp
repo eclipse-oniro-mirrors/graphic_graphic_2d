@@ -30,8 +30,6 @@
 #include "render/rs_render_magnifier_filter.h"
 #include "render/rs_render_maskcolor_filter.h"
 #include "render/rs_render_mesa_blur_filter.h"
-#include "hpae_base/rs_hpae_filter_cache_manager.h"
-#include "hpae_base/rs_hpae_base_data.h"
 #ifdef USE_M133_SKIA
 #include "src/core/SkChecksum.h"
 #else
@@ -297,8 +295,6 @@ void RSPropertyDrawableUtils::DrawFilter(Drawing::Canvas* canvas,
     RS_OPTIONAL_TRACE_NAME("DrawFilter " + rsFilter->GetDescription());
     RS_OPTIONAL_TRACE_NAME_FMT_LEVEL(TRACE_LEVEL_TWO, "DrawFilter, filterType: %d, %s, bounds: %s",
         isForegroundFilter, rsFilter->GetDetailedDescription().c_str(), clipIBounds.ToString().c_str());
-    ROSEN_LOGD("RSPropertyDrawableUtils::DrawFilter filterType: %{public}d, %{public}s, bounds: %{public}s",
-        isForegroundFilter, rsFilter->GetDetailedDescription().c_str(), clipIBounds.ToString().c_str());
     g_blurCnt++;
 
     auto surface = canvas->GetSurface();
@@ -329,29 +325,11 @@ void RSPropertyDrawableUtils::DrawFilter(Drawing::Canvas* canvas,
         imageClipIBounds.Offset(tmpFilter->GetMagnifierOffsetX(), tmpFilter->GetMagnifierOffsetY());
     }
 
-    bool hasHpaeBlur = false;
-    if (nodeId == RSHpaeBaseData::GetInstance().GetBlurNodeId()) {
-        hasHpaeBlur = RSHpaeBaseData::GetInstance().GetHasHpaeBlurNode() && hpaeCacheManager;
-    }
 #if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
     // Optional use cacheManager to draw filter
     if (!paintFilterCanvas->GetDisableFilterCache() && cacheManager != nullptr && RSProperties::filterCacheEnabled_) {
         if (cacheManager->GetCachedType() == FilterCacheType::FILTERED_SNAPSHOT) {
             g_blurCnt--;
-        }
-
-        if (hasHpaeBlur) {
-            hpaeCacheManager->ResetFilterCache(cacheManager->GetCachedSnapshot(),
-                cachemanager->GetCachedFilteredSnapshot(), cacheManager->GetSnapshotRegion());
-            if (0 == hapeCacheManager->DrawFilter(*paintFilterCanvas, filter, cacheManager->ClearCacheAfterDrawing())) {
-                cacheManager->ResetFilterCache(hpaeCacheManager->GetCachedSnapshot(),
-                    hpaeCacheManager->GetCachedFilteredSnapshot(), hpaeCacheManager->GetSnapshotRegion(), true);
-                cacheManager->CompactFilterCache(); // falg for clear witch cache after drawing
-                RSHpaeBaseData::GetInstance().SetBlurContentChanged(hpaeCacheManager->BlurContentChanged());
-                return;
-            } else {
-                hpaeCacheManager->InvalidateFilterCache(FilterCacheType::BOTH);
-            }
         }
 
         auto rsShaderFilter = filter->GetShaderFilterWithType(RSUIFilterType::LINEAR_GRADIENT_BLUR);
@@ -444,7 +422,8 @@ void RSPropertyDrawableUtils::DrawForegroundFilter(RSPaintFilterCanvas& canvas,
         return;
     }
 
-    if (rsdrawingFilter != nullptr && (rsFilter->GetFilterType() == RSFilter::CONTENT_LIGHT)) {
+    bool isContentLightFilter = rsdrawingFilter != nullptr && (rsFilter->GetFilterType() == RSFilter::CONTENT_LIGHT));
+    if (isContentLightFilter) {
         rsdrawingFilter->DrawImageRect(canvas, imageSnapshot, Drawing::Rect(0, 0, imageSnapshot->GetWidth(),
             imageSnapshot->GetHeight()), Drawing::Rect(0, 0, imageSnapshot->GetWidth(), imageSnapshot->GetHeight()));
         return;
@@ -493,8 +472,6 @@ void RSPropertyDrawableUtils::DrawBackgroundEffect(
     auto filter = std::static_pointer_cast<RSDrawingFilter>(rsFilter);
     RS_OPTIONAL_TRACE_NAME("RSPropertyDrawableUtils::DrawBackgroundEffect " + rsFilter->GetDescription());
     RS_OPTIONAL_TRACE_NAME_FMT_LEVEL(TRACE_LEVEL_TWO, "EffectComponent, %s, bounds: %s",
-        rsFilter->GetDetailedDescription().c_str(), clipIBounds.ToString().c_str());
-    ROSEN_LOGD("RSPropertyDrawableUtils::DrawBackgroundEffect EffectComponent, %{public}s, bounds: %{public}s",
         rsFilter->GetDetailedDescription().c_str(), clipIBounds.ToString().c_str());
 #if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
     // Optional use cacheManager to draw filter
@@ -915,9 +892,7 @@ void RSPropertyDrawableUtils::DrawPixelStretch(Drawing::Canvas* canvas,
     auto tmpBounds = canvas->GetDeviceClipBounds();
     RS_OPTIONAL_TRACE_NAME_FMT_LEVEL(TRACE_LEVEL_TWO,
         "RSPropertyDrawableUtils::DrawPixelStretch, tmpBounds: %s", tmpBounds.ToString().c_str());
-    if (nodeId == RSHpaeBaseData::GetInstance().GetBlurNodeId()) {
-        return;
-    }
+
     canvas->Restore();
     Drawing::Rect clipBounds(
         tmpBounds.GetLeft(), tmpBounds.GetTop(), tmpBounds.GetRight() - 1, tmpBounds.GetBottom() - 1);
@@ -1102,9 +1077,6 @@ void RSPropertyDrawableUtils::DrawUseEffect(RSPaintFilterCanvas* canvas, UseEffe
         static_cast<float>(effectData->cachedRect_.GetTop()), Drawing::SamplingOptions());
     RS_OPTIONAL_TRACE_NAME_FMT("RSPropertyDrawableUtils::DrawUseEffect cachedRect_:%s, DeviceClipBounds:%s, "
         "IdentityMatrix: %d", effectData->cachedRect_.ToString().c_str(),
-        canvas->GetDeviceClipBounds().ToString().c_str(), effectData->cachedMatrix_.IsIdentity());
-    ROSEN_LOGD("RSPropertyDrawableUtils::DrawUseEffect cachedRect_:%{public}s, DeviceClipBounds:%{public}s, "
-        "IdentityMatrix: %{public}d", effectData->cachedRect_.ToString().c_str(),
         canvas->GetDeviceClipBounds().ToString().c_str(), effectData->cachedMatrix_.IsIdentity());
     canvas->DetachBrush();
 }
