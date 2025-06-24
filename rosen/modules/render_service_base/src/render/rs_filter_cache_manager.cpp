@@ -186,7 +186,7 @@ bool RSFilterCacheManager::DrawFilterUsingHpae(RSPaintFilterCanvas& paintFilterC
     if (0 == hpaeCacheManager->DrawFilter(paintFilterCanvas, filter,ClearCacheAfterDrawing())) {
         ResetFilterCache(hpaeCacheManager->GetCachedSnapshot(),
             hpaeCacheManager->GetCachedFilteredSnapshot(), hpaeCacheManager->GetSnapshotRegion(),true);
-            RSHpaeBaseData::GetInstance().SetBlurContentChanged(hpaeCacheManager->GetBlurContentChanged()));
+            RSHpaeBaseData::GetInstance().SetBlurContentChanged(hpaeCacheManager->BlurContentChanged());
             return true;
     } else {
             hpaeCacheManager->InvalidateFilterCache(FilterCacheType::BOTH);
