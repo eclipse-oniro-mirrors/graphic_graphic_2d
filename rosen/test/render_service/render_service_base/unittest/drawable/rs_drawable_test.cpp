@@ -285,17 +285,17 @@ HWTEST_F(RSDrawableTest, CanFusePixelStretchTest002, TestSize.Level1)
     RSRenderNode node(id);
     RSDrawable::Vec drawableVec;
 
-    std::shared_ptr<RSDrawable> drawable = std::shared_ptr<DrawableV2::RSBackgroundFilterDrawbale>();
+    std::shared_ptr<RSDrawable> drawable = std::make_shared<DrawableV2::RSBackgroundFilterDrawable>();
     ASSERT_NE(drawable, nullptr);
-    drawableVec[static_cast<size_t>(RSDrawableSlot::PIXEL_STRETCH)] = drawable;
+    drawableVec[static_cast<size_t>(RSDrawableSlot::BACKGROUND_FILTER)] = drawable;
 
-    std::shared_ptr<RSDrawable> drawable2 = std::shared_ptr<DrawableV2::RSBackgroundFilterDrawbale>();
+    std::shared_ptr<RSDrawable> drawable2 = std::make_shared<DrawableV2::RSBackgroundFilterDrawable>();
     ASSERT_NE(drawable2, nullptr);
     drawableVec[static_cast<size_t>(RSDrawableSlot::PIXEL_STRETCH)] = drawable2;
 
-    std::shared_ptr<RSDrawable> drawable3 = std::shared_ptr<DrawableV2::RSBackgroundFilterDrawbale>();
+    std::shared_ptr<RSDrawable> drawable3 = std::make_shared<DrawableV2::RSBackgroundFilterDrawable>();
     ASSERT_NE(drawable3, nullptr);
-    drawableVec[static_cast<size_t>(RSDrawableSlot::PIXEL_STRETCH)] = drawable3;
+    drawableVec[static_cast<size_t>(RSDrawableSlot::BACKGROUND_STYLE)] = drawable3;
     ASSERT_FALSE(RSDrawable::CanFusePixelStretch(drawableVec));
 }
 } // namespace OHOS::Rosen
