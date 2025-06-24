@@ -108,6 +108,27 @@ bool DoStopTextureExport(const uint8_t* data, size_t size)
     text.StopTextureExport();
     return true;
 }
+
+bool UpdateBufferInfo(const uint8_t* data, size_t size)
+{
+    if (data == nullptr) {
+        return false;
+    }
+
+    // initialize
+    g_data = data;
+    g_size = size;
+    g_pos = 0;
+
+    // test
+    float x = 0.0f;
+    float y = 0.0f;
+    float width = 1.0f;
+    float height = 1.0f;
+    RSTextureExport text(node, surfaceId);
+    text.UpdateBufferInfo(x, y, width, height);
+    return true;
+}
 } // namespace Rosen
 } // namespace OHOS
 
@@ -118,6 +139,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::Rosen::DoRSTextureExport(data, size);
     OHOS::Rosen::DoDoTextureExport(data, size);
     OHOS::Rosen::DoStopTextureExport(data, size);
+    OHOS::Rosen::UpdateBufferInfo(data, size);
     return 0;
 }
 
