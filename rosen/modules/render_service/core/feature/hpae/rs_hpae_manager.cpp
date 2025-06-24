@@ -259,7 +259,8 @@ void RSHpaeManager::RegisterHpaeCallback(RSRenderNode& node, uint32_t phyWidth, 
     }
 }
 
-bool RSHpaeManager::IsFirstFrame() {
+bool RSHpaeManager::IsFirstFrame()
+{
     return hpaeFrameState_ == HpaeFrameState::ACTIVE ||
         hpaeFrameState_ == HpaeFrameState::SWITCH_BLUR ||
         hpaeFrameState_ == HpaeFrameState::CHANGE_CONFIG;
