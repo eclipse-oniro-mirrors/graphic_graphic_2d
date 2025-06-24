@@ -35,7 +35,8 @@ public:
     static inline std::string hpaeAaeSwitch;
 };
 
-void RSHpaePerfThreadTest::SetUpTestCase() {
+void RSHpaePerfThreadTest::SetUpTestCase()
+{
     hpaeSwitch = OHOS::system::GetParameter("debug.graphic.hpae.blur.enabled", "0");
     hpaeAaeSwitch = OHOS::system::GetParameter("rosen.graphic.hpae.blur.aae.enabled", "0");
     OHOS::system::SetParameter("debug.graphic.hpae.blur.enabled", "1");
@@ -45,8 +46,6 @@ void RSHpaePerfThreadTest::TearDownTestCase()
 {
     OHOS::system::SetParameter("debug.graphic.hpae.blur.enabled", hpaeSwitch);
     OHOS::system::SetParameter("rosen.graphic.hpae.blur.aae.enabled", hpaeAaeSwitch);
-}
-
 }
 void RSHpaePerfThreadTest::SetUp() {}
 void RSHpaePerfThreadTest::TearDown() {}
