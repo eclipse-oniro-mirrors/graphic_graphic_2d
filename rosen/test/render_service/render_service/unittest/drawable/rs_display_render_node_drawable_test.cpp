@@ -2365,22 +2365,22 @@ HWTEST_F(RSDisplayRenderNodeDrawableTest, DrawWatermarkIfNeed001, TestSize.Level
     // Test0 ScreenCorrection = INVALID_SCREEN_ROTATION && ScreenRotation = ROTATION_0
     params->screenRotation_ = ScreenRotation::ROTATION_0;
     screenRawPtr->screenRotation_ = ScreenRotation::INVALID_SCREEN_ROTATION;
-    displayDrawable_->DrawWatermarkIfNeed(*param, canvas);
+    displayDrawable_->DrawWatermarkIfNeed(*params, canvas);
 
     // Test1 ScreenCorrection = ROTATION_0 && ScreenRotation = ROTATION_180
     params->screenRotation_ = ScreenRotation::ROTATION_180;
     screenRawPtr->screenRotation_ = ScreenRotation::ROTATION_0;
-    displayDrawable_->DrawWatermarkIfNeed(*param, canvas);
+    displayDrawable_->DrawWatermarkIfNeed(*params, canvas);
 
     // Test2 ScreenCorrection = ROTATION_0 && ScreenRotation = ROTATION_90
     params->screenRotation_ = ScreenRotation::ROTATION_90;
     screenRawPtr->screenRotation_ = ScreenRotation::ROTATION_0;
-    displayDrawable_->DrawWatermarkIfNeed(*param, canvas);
+    displayDrawable_->DrawWatermarkIfNeed(*params, canvas);
 
     // Test3 ScreenCorrection = ROTATION_270 && ScreenRotation = ROTATION_180
     params->screenRotation_ = ScreenRotation::ROTATION_180;
     screenRawPtr->screenRotation_ = ScreenRotation::ROTATION_270;
-    displayDrawable_->DrawWatermarkIfNeed(*param, canvas);
+    displayDrawable_->DrawWatermarkIfNeed(*params, canvas);
 
     // Reset
     rsRenderThreadParams = std::make_unique<RSRenderThreadParams>();
