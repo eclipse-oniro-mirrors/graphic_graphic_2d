@@ -90,7 +90,6 @@ public:
     std::atomic<int32_t> cacheCnt_ = -1;
     virtual RSRenderNodeType GetType() const
     {
-        std::map<PropertyId, std::shared_ptr<RSRenderPropertyBase>> properties_;
         return Type;
     }
     explicit RSRenderNode(NodeId id, const std::weak_ptr<RSContext>& context = {}, bool isTextureExportNode = false);
