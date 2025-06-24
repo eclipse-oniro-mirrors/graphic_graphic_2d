@@ -775,7 +775,7 @@ HWTEST_F(RSDisplayRenderNodeDrawableTest, OnDrawTest004, TestSize.Level1)
     HardCursorInfo hardInfo;
     hardInfo.id = 1;
     auto renderNode = std::make_shared<RSRenderNode>(hardInfo.id);
-    hardInfo.drawablePtr = RSRenderNodeDrawableAdapter::OnGenerate(renderNdoe);
+    hardInfo.drawablePtr = RSRenderNodeDrawableAdapter::OnGenerate(renderNode);
     auto params = static_cast<RSDisplayRenderParams*>(displayDrawable_->renderParams_.get());
     params->SetHDRPresent(true);
     RSHpaeManager::GetInstance().hpaeStatus_.gotHpaeBlurNode = true;
@@ -787,7 +787,7 @@ HWTEST_F(RSDisplayRenderNodeDrawableTest, OnDrawTest004, TestSize.Level1)
 
     params->SetHDRPresent(false);
     RSHpaeManager::GetInstance().hpaeStatus_.gotHpaeBlurNode = true;
-    RSAncoManager::Instance()->SetAncHebcStatus(AncoHebcStatus::NOT_USE_HEBC);
+    RSAncoManager::Instance()->SetAncoHebcStatus(AncoHebcStatus::NOT_USE_HEBC);
     displayDrawable_->OnDraw(canvas);
 
     params->SetHDRPresent(false);
