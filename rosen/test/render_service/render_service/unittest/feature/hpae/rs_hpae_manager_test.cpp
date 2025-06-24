@@ -16,7 +16,7 @@
 #include "common/rs_common_def.h"
 #include "gtest/gtest.h"
 #include "feature/hpae/rs_hpae_manager.h"
-#include "render/rs_drawing_fliter.h"
+#include "render/rs_drawing_filter.h"
 #include "render/rs_filter.h"
 #include "render/rs_render_filter_base.h"
 #include "drawable/rs_property_drawable.h"
