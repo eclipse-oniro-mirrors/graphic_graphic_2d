@@ -1541,6 +1541,16 @@ public:
         hdrVideoSurface_ = hasHdrVideoSurface;
     }
 
+    float GetHDRBrightnessFactor() const
+    {
+        return hdrBrightnessFactor_;
+    }
+
+    void SetHDRBrightnessFactor(float hdrBrightnessFactor)
+    {
+        hdrBrightnessFactor_ = hdrBrightnessFactor;
+    }
+
     void SetApiCompatibleVersion(uint32_t apiCompatibleVersion);
     uint32_t GetApiCompatibleVersion()
     {
@@ -1785,6 +1795,7 @@ private:
     // hdr
     int32_t displayNit_ = 500; // default sdr luminance
     float brightnessRatio_ = 1.0f; // no ratio by default
+    float hdrBrightnessFactor_ = 1.0f; // no discount by default
     float localZOrder_ = 0.0f;
     uint32_t processZOrder_ = -1;
     int32_t nodeCost_ = 0;

@@ -1545,6 +1545,23 @@ HWTEST_F(RSSurfaceRenderNodeTest, SetContextAlphaTest, TestSize.Level1)
 }
 
 /**
+ * @tc.name: HDRBrightnessFactorTest
+ * @tc.desc: test results of SetHDRBrightnessFactor, GetHDRBrightnessFactor
+ * @tc.type: FUNC
+ * @tc.require: issueI9JAFQ
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, HDRBrightnessFactorTest, TestSize.Level1)
+{
+    std::shared_ptr<RSSurfaceRenderNode> testNode = std::make_shared<RSSurfaceRenderNode>(id, context);
+    testNode->SetHDRBrightnessFactor(1.0f);
+    EXPECT_EQ(testNode->GetHDRBrightnessFactor(), 1.0f);
+    testNode->SetHDRBrightnessFactor(0.5f);
+    EXPECT_EQ(testNode->GetHDRBrightnessFactor(), 0.5f);
+    testNode->SetHDRBrightnessFactor(0.0f);
+    EXPECT_EQ(testNode->GetHDRBrightnessFactor(), 0.0f);
+}
+
+/**
  * @tc.name: HdrVideoTest
  * @tc.desc: test results of SetVideoHdrStatus, GetVideoHdrStatus
  * @tc.type: FUNC
