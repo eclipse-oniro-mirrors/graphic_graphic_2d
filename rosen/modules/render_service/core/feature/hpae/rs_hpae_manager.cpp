@@ -94,13 +94,15 @@ void RSHpaeManager::UpdateHpaeState()
             curBlurNodeId != INVALID_BLUR_NODE_ID &&
             preBlurNodeId != INVALID_BLUR_NODE_ID) {
             hpaeFrameState_ = HpaeFrameState::SWITCH_BLUR;
-        } else if (prevBufferConfig_.width != hpaeBufferWidth_ ||
+        } else if (prevBufferConfig_.width != (int32_t)hpaeBufferWidth_ ||
             prevBufferConfig_.height != hpaeBufferHeight_) {
             hpaeFrameState_ = HpaeFrameState::CHANGE_CONFIG;
         }
     }
 }
-
+#if defined(ROSEN_OHOS)
+constexpr int HPAE_USE_HPAE_QOS_LEVEL = 5;
+#endif
 void RSHpaeManager::HandleHpaeStateChange()
 {
     UpdateHpaeState();
@@ -129,7 +131,7 @@ void RSHpaeManager::HandleHpaeStateChange()
                 HianimationManager::GetInstance().HianimationAlgoDeInit();
                 this->releaseAllDone_ = true;
                 this->releaseAllCv_.notify_all();
-                }, {}, {}, ffrt::task_attr().qos(HPAE_USE_HPAE_QOS));
+                }, {}, {}, ffrt::task_attr().qos(HPAE_USE_HPAE_QOS_LEVEL));
 #else
             RSHpaeFfrtPatternManager::Instance().MHCReleaseAll();
             HianimationManager::GetInstance().HianimationAlgoDeInit();
@@ -259,7 +261,8 @@ void RSHpaeManager::RegisterHpaeCallback(RSRenderNode& node, uint32_t phyWidth, 
     }
 }
 
-bool RSHpaeManager::IsFirstFrame() {
+bool RSHpaeManager::IsFirstFrame()
+{
     return hpaeFrameState_ == HpaeFrameState::ACTIVE ||
         hpaeFrameState_ == HpaeFrameState::SWITCH_BLUR ||
         hpaeFrameState_ == HpaeFrameState::CHANGE_CONFIG;
