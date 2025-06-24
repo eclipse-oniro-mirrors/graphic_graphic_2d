@@ -1419,6 +1419,11 @@ void RSRenderNode::UpdateDrawingCacheInfoBeforeChildren(bool isScreenRotation)
 #endif
 }
 
+bool RSRenderNode::HasHpaeBackgroundFilter() const
+{
+    return hasHpae_;
+}
+
 void RSRenderNode::UpdateDrawingCacheInfoAfterChildren(bool isInBlackList)
 {
     RS_LOGI_IF(DEBUG_NODE, "RSRenderNode::UpdateDrawingCacheInfoAC uifirstArkTsCardNode:%{public}d"
