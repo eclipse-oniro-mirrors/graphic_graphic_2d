@@ -526,6 +526,16 @@ void RSRenderNode::ResetChildRelevantFlags()
     hasChildrenOutOfRect_ = false;
 }
 
+void RSRenderNode::ResetPixelStretchSlot()
+{
+    RSDrawable::ResetPixelStretchSlot(*this, drawableVec_);
+}
+
+bool RSRenderNode::CanFuzePixelStretch()
+{
+    return RSDrawable::CanFuzePixelStretch(drawableVec_);
+}
+
 void RSRenderNode::UpdateChildrenRect(const RectI& subRect)
 {
     if (!subRect.IsEmpty()) {
@@ -4264,11 +4274,6 @@ RectI RSRenderNode::GetChildrenRect() const
 RectI RSRenderNode::GetRemovedChildrenRect() const
 {
     return removedChildrenRect_;
-}
-bool RSRenderNode::HasHpaeBackgroundFilter() const
-{
-    auto& drawable = drawableVec_[static_cast<uint32_t>(RSDrawableSlot::BACKGROUND_FILTER)];
-    return drawable != nullptr;
 }
 bool RSRenderNode::ChildHasVisibleFilter() const
 {
