@@ -30,7 +30,9 @@ using namespace std::chrono_literals;
 using GetHianimationDeviceFunc = hianimation_algo_device_t* (*)();
 constexpr int MAX_INIT_TIMES = 3;
 constexpr int HPAE_BLUR_DELAY = 2;
+#if defined(ASYNC_BUILD_TASK) && defined(ROSEN_OHOS)
 constexpr int HPAE_USE_FFRT_QOS = 5;
+#endif
 
 HianimationManager& HianimationManager::GetInstance()
 {
