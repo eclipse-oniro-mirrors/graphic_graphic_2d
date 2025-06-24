@@ -127,7 +127,7 @@ public:
 
     size_t GetPropertySize()
     {
-        auto size = 0;
+        size_t size = 0;
         for (auto& [type, property] : properties_) {
             if (property != nullptr) {
                 size += property->GetSize();
