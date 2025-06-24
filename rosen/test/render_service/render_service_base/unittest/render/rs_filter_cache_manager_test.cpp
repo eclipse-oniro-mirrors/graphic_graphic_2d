@@ -1265,7 +1265,7 @@ HWTEST_F(RSFilterCacheManagerTest, ResetFilterCacheTest, TestSize.Level1)
     ASSERT_NE(cachedSnapshot, nullptr);
     rsFilterCacheManager->ResetFilterCache(cachedSnapshot, nullptr, region, true);
 
-    cachedSnapshot->cachedImage_ = std::make_shared<Drawing::ImageFilter>();
+    cachedSnapshot->cachedImage_ = std::make_shared<Drawing::Image>();
     ASSERT_NE(cachedSnapshot->cachedImage_, nullptr);
     rsFilterCacheManager->ResetFilterCache(cachedSnapshot, nullptr, region, true);
 
