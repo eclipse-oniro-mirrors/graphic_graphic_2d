@@ -93,7 +93,6 @@ public:
         std::map<PropertyId, std::shared_ptr<RSRenderPropertyBase>> properties_;
         return Type;
     }
-    std::map<PropertyId, std::shared_ptr<RSRenderPropertyBase>> properties_;
     explicit RSRenderNode(NodeId id, const std::weak_ptr<RSContext>& context = {}, bool isTextureExportNode = false);
     explicit RSRenderNode(NodeId id, bool isOnTheTree, const std::weak_ptr<RSContext>& context = {},
         bool isTextureExportNode = false);
