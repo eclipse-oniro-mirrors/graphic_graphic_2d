@@ -228,7 +228,7 @@ HWTEST_F(RSPropertyDrawableUtilsTest, DrawFilterTest002, testing::ext::TestSize.
 
     auto manager = std::make_shared<RSHpaeFilterCacheManager>();
     EXPECT_NE(manager, nullptr);
-    RSHpaeBaseData::GetInstance().hpaeStatus_.blurNodeId_ = id;
+    RSHpaeBaseData::GetInstance().hpaeStatus_.blurNodeId = id;
     RSHpaeBaseData::GetInstance().hpaeStatus_.gotHpaeBlurNode = true;
     rsPropertyDrawableUtils->DrawFilter(&paintFilterCanvasTest1, rsFilter, cacheManager, id, false);
 }
