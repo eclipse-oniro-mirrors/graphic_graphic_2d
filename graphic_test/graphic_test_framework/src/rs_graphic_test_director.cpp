@@ -146,8 +146,10 @@ void RSGraphicTestDirector::Run()
     vsyncWaiter_ = std::make_shared<VSyncWaiter>(handler_);
     runner_->Run();
 
-    profilerThread_ = std::make_shared<RSGraphicTestProfilerThread>();
-    profilerThread_->Start();
+    if (isProfilerTest_) {
+        profilerThread_ = std::make_shared<RSGraphicTestProfilerThread>();
+        profilerThread_->Start();
+    }
 
     screenId_ = RSInterfaces::GetInstance().GetDefaultScreenId();
 
@@ -232,6 +234,11 @@ void RSGraphicTestDirector::SetSingleTest(bool isSingleTest)
 bool RSGraphicTestDirector::IsSingleTest()
 {
     return isSingleTest_;
+}
+
+void RSGraphicTestDirector::SetProfilerTest(bool isProfilerTest)
+{
+    isProfilerTest_ = isProfilerTest;
 }
 
 void RSGraphicTestDirector::SetSurfaceBounds(const Vector4f& bounds)
