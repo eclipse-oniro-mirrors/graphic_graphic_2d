@@ -307,6 +307,7 @@ HWTEST_F(RSSurfaceOhosVulkanTest, FlushFrame001, TestSize.Level1)
     }
 }
 
+#ifdef ENABLE_HPAE_BLUR
 /**
  * @tc.name: SubmitHpaeTaskTest
  * @tc.desc: test
@@ -380,7 +381,7 @@ HWTEST_F(RSSurfaceOhosVulkanTest, SubmitGpuAndHpaeTaskTest, TestSize.Level1)
     uint64_t curFrameId = 0;
     rsSurface.SubmitGpuSemaphore(submitWithFFTS, preFrameId, curFrameId, vec, sur);
 }
-
+#endif
 
 } // namespace Rosen
 } // namespace OHOS
