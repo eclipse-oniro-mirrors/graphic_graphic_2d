@@ -22,6 +22,7 @@
 #include <unordered_set>
 #include <vector>
 
+#include "font_config.h"
 #include "font_parser.h"
 
 namespace OHOS::Rosen {
@@ -44,7 +45,7 @@ public:
 private:
     void FontDescriptorScatter(FontDescSharedPtr desc);
     bool ParserInstallFontsPathList(std::vector<std::string>& fontPathList);
-    bool ParserInstallFontsPathList(std::unordered_map<std::string, std::string>& fontPathList);
+    bool ParserInstallFontsPathList(TextEngine::FullNameToPath& fontPathList);
     bool ProcessSystemFontType(int32_t systemFontType, int32_t& fontType);
     bool ParseInstallFontDescSharedPtrByName(const std::string& fullName, FontDescSharedPtr& result);
     std::unordered_set<std::string> GetInstallFontList();
