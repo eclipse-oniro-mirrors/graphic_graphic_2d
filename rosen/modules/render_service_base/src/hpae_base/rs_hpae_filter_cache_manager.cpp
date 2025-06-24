@@ -102,7 +102,7 @@ bool RSHpaeFilterCacheManager::CheckIfUsingGpu()
     }
 
     // wait here, before using previous blur result
-    if (usingGpu == false && !HianimatiionManager::GetInstance().WaitPreviousTask()) {
+    if (usingGpu == false && !HianimationManager::GetInstance().WaitPreviousTask()) {
         HPAE_LOGW("Hianimation resource not enough");
         usingGpu = true;
     }
