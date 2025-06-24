@@ -1183,18 +1183,18 @@ HWTEST_F(RSFilterCacheManagerTest, DrawCachedFilteredSnapShotTest002, TestSize.L
     std::shared_ptr<Drawing::ImageFilter> imageFilter = std::make_shared<Drawing::ImageFilter>();
     manager->isHpaeCachedFilteredSnapshot_ = true;
     Drawing::RectI detRect;
-    manager->DrawCachedFilteredSnapShot(canvas, detRect, filter);
-    EXPECT_TRUE(manager->cachedFilteredSnapShot_ != nullptr);
-    EXPECT_TRUE(manager->cachedFilteredSnapShot_->cachedImage_ != nullptr);
+    manager->DrawCachedFilteredSnapshot(canvas, detRect, filter);
+    EXPECT_TRUE(manager->cachedFilteredSnapshot_ != nullptr);
+    EXPECT_TRUE(manager->cachedFilteredSnapshot_->cachedImage_ != nullptr);
 
     canvas.visibleRect_.right_ = 10;
     canvas.visibleRect_.bottom_ = 10;
-    manager->DrawCachedFilteredSnapShot(canvas, detRect, filter);
-    EXPECT_TRUE(manager->cachedFilteredSnapShot_->cachedImage_ != nullptr);
+    manager->DrawCachedFilteredSnapshot(canvas, detRect, filter);
+    EXPECT_TRUE(manager->cachedFilteredSnapshot_->cachedImage_ != nullptr);
 
     manager->isHpaeCachedFilteredSnapshot_ = false;
-    manager->DrawCachedFilteredSnapShot(canvas, detRect, filter);
-    EXPECT_TRUE(manager->cachedFilteredSnapShot_->cachedImage_ != nullptr);
+    manager->DrawCachedFilteredSnapshot(canvas, detRect, filter);
+    EXPECT_TRUE(manager->cachedFilteredSnapshot_->cachedImage_ != nullptr);
 }
 
 /**
@@ -1205,7 +1205,7 @@ HWTEST_F(RSFilterCacheManagerTest, DrawCachedFilteredSnapShotTest002, TestSize.L
  */
 HWTEST_F(RSFilterCacheManagerTest, ForceUpdateCacheByHpaeTest, TestSize.Level1)
 {
-    auto rsFilterCacheManager = std::make_shared<RsFilterCacheManager>();
+    auto rsFilterCacheManager = std::make_shared<RSFilterCacheManager>();
     EXPECT_NE(rsFilterCacheManager, nullptr);
     rsFilterCacheManager->belowDirty_ = false;
     rsFilterCacheManager->forceUseCache_ = true;
@@ -1235,12 +1235,12 @@ HWTEST_F(RSFilterCacheManagerTest, ForceUpdateCacheByHpaeTest, TestSize.Level1)
  */
 HWTEST_F(RSFilterCacheManagerTest, CompactFilterCacheTest002, TestSize.Level1)
 {
-    auto rsFilterCacheManager = std::make_shared<RsFilterCacheManager>();
+    auto rsFilterCacheManager = std::make_shared<RSFilterCacheManager>();
     EXPECT_NE(rsFilterCacheManager, nullptr);
     rsFilterCacheManager->belowDirty_ = true;
     rsFilterCacheManager->CompactFilterCache();
 
-    RSHpaeBaseData::GetInstancce().SetBlurContentChanged(true);
+    RSHpaeBaseData::GetInstance().SetBlurContentChanged(true);
     rsFilterCacheManager->belowDirty_ = false;
     rsFilterCacheManager->forceUseCache_ = false;
     rsFilterCacheManager->filterType_ = RSFilter::AIBAR;
@@ -1255,26 +1255,25 @@ HWTEST_F(RSFilterCacheManagerTest, CompactFilterCacheTest002, TestSize.Level1)
  */
 HWTEST_F(RSFilterCacheManagerTest, ResetFilterCacheTest, TestSize.Level1)
 {
-    auto rsFilterCacheManager = std::make_shared<RsFilterCacheManager>();
+    auto rsFilterCacheManager = std::make_shared<RSFilterCacheManager>();
     EXPECT_NE(rsFilterCacheManager, nullptr);
     auto region = rsFilterCacheManager->GetSnapshotRegion();
     rsFilterCacheManager->ResetFilterCache(nullptr, nullptr, region, true);
 
     auto cachedSnapshot =
-        std::shared_ptr<RSPaintFilterCanvas::CacheeEffectData>(new RSPaintFilterCanvas::CacheeEffectData());
+        std::make_shared<RSPaintFilterCanvas::CachedEffectData>();
     ASSERT_NE(cachedSnapshot, nullptr);
     rsFilterCacheManager->ResetFilterCache(cachedSnapshot, nullptr, region, true);
 
-    cachedSnapshot->cachedImage_ = std::shared_ptr<Drawing::ImageFilter>(new Drawing::Image());
+    cachedSnapshot->cachedImage_ = std::make_shared<Drawing::ImageFilter>();
     ASSERT_NE(cachedSnapshot->cachedImage_, nullptr);
     rsFilterCacheManager->ResetFilterCache(cachedSnapshot, nullptr, region, true);
 
-    auto cachedFilteredSnapshot = std::shared_ptr<RSPaintFilterCanvas::CacheeEffectData>(
-        new RSPaintFilterCanvas::CacheeEffectData());
+    auto cachedFilteredSnapshot = std::make_shared<RSPaintFilterCanvas::CachedEffectData>();
     ASSERT_NE(cachedFilteredSnapshot, nullptr);
     rsFilterCacheManager->ResetFilterCache(cachedSnapshot, cachedFilteredSnapshot, region, true);
 
-    cachedFilteredSnapshot->cachedImage_ = std::shared_ptr<Drawing::ImageFilter>(new Drawing::Image());
+    cachedFilteredSnapshot->cachedImage_ = std::shared_ptr<Drawing::Image>();
     ASSERT_NE(cachedFilteredSnapshot->cachedImage_, nullptr);
     rsFilterCacheManager->ResetFilterCache(cachedSnapshot, cachedFilteredSnapshot, region, true);
 }
@@ -1287,7 +1286,7 @@ HWTEST_F(RSFilterCacheManagerTest, ResetFilterCacheTest, TestSize.Level1)
  */
 HWTEST_F(RSFilterCacheManagerTest, DrawFilterUsingHpaeTest, TestSize.Level1)
 {
-    auto rsFilterCacheManager = std::make_shared<RsFilterCacheManager>();
+    auto rsFilterCacheManager = std::make_shared<RSFilterCacheManager>();
     EXPECT_NE(rsFilterCacheManager, nullptr);
     Drawing::Canvas canvas;
     RSPaintFilterCanvas filterCanvas(&canvas);
@@ -1298,13 +1297,13 @@ HWTEST_F(RSFilterCacheManagerTest, DrawFilterUsingHpaeTest, TestSize.Level1)
 
     hpaeCacheManager.reset(new RSHpaeFilterCacheManager());
     ASSERT_FALSE(rsFilterCacheManager->DrawFilterUsingHpae(filterCanvas, filter, hpaeCacheManager,
-                                                           RSHpaebaseData::GetInstance().GetBlurNodeId() + 1));
+                                                           RSHpaeBaseData::GetInstance().GetBlurNodeId() + 1));
     hpaeCacheManager.reset(new RSHpaeFilterCacheManager());
     ASSERT_FALSE(rsFilterCacheManager->DrawFilterUsingHpae(filterCanvas, filter, hpaeCacheManager,
-                                                           RSHpaebaseData::GetInstance().GetBlurNodeId()));
+                                                           RSHpaeBaseData::GetInstance().GetBlurNodeId()));
 
     ASSERT_FALSE(rsFilterCacheManager->DrawFilterUsingHpae(filterCanvas, filter, nullptr,
-                  RSHpaebaseData::GetInstance().GetBlurNodeId()));
+                  RSHpaeBaseData::GetInstance().GetBlurNodeId()));
 }
 
 /**
