@@ -113,7 +113,8 @@ public:
         }
     }
     // some frame maynot need to call FlushFrame
-    void Reset() {
+    void Reset()
+    {
         targetSurface_ = nullptr;
         surfaceFrame_ = nullptr;
     }
