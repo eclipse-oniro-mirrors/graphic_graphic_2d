@@ -81,7 +81,7 @@ void RSRenderNode::UpdateBlurEffectCounter(int deltaCount)
     auto pid = ExtractPid(GetId());
     // Try to insert pid with value 0 and we got an iterator to the inserted element or to the existing element.
     auto it = blurEffectCounter_.emplace(std::make_pair(pid, 0)).first;
-    if (deltaCount > 0 || (it->second > -deltaCount)) {
+    if (deltaCount > 0 || (static_cast<int>(it->second) > -deltaCount)) {
         it->second += deltaCount;
     } else {
         blurEffectCounter_.erase(it);
