@@ -4534,7 +4534,7 @@ HWTEST_F(NdkTypographyTest, TypographyGetLineTextRangeTest002, TestSize.Level0)
 
 /*
  * @tc.name: ParagraphTestGlyphPositionAtCoordinate001
- * @tc.desc: test for GlyphPositionAtCoordinate with dash 
+ * @tc.desc: test for GlyphPositionAtCoordinate with dash
  * @tc.type: FUNC
  */
 HWTEST_F(NdkTypographyTest, ParagraphTestGlyphPositionAtCoordinateWithCluster001, TestSize.Level0)
@@ -4542,51 +4542,36 @@ HWTEST_F(NdkTypographyTest, ParagraphTestGlyphPositionAtCoordinateWithCluster001
     std::string text3 = "————————";
 
     double maxWidth3 = 1000.0;
-    OH_Drawing_TypographyStyle *typoStyle = OH_Drawing_CreateTypographyStyle();
-    OH_Drawing_TextStyle *txtStyle = OH_Drawing_CreateTextStyle();
-    OH_Drawing_FontCollection *fontCollection = OH_Drawing_GetFontCollectionGlobalInstance();
+    OH_Drawing_TypographyStyle* typoStyle = OH_Drawing_CreateTypographyStyle();
+    OH_Drawing_TextStyle* txtStyle = OH_Drawing_CreateTextStyle();
+    OH_Drawing_FontCollection* fontCollection = OH_Drawing_GetFontCollectionGlobalInstance();
 
     OH_Drawing_SetTextStyleFontSize(txtStyle, 30);
     OH_Drawing_SetTextStyleColor(txtStyle, OH_Drawing_ColorSetArgb(0xFF, 0x00, 0x00, 0x00));
-    OH_Drawing_TypographyCreate *handler = OH_Drawing_CreateTypographyHandler(typoStyle, fontCollection);
+    OH_Drawing_TypographyCreate* handler = OH_Drawing_CreateTypographyHandler(typoStyle, fontCollection);
     OH_Drawing_TypographyHandlerPushTextStyle(handler, txtStyle);
 
     OH_Drawing_TypographyHandlerAddText(handler, text3.c_str());
-    OH_Drawing_Typography *typography = OH_Drawing_CreateTypography(handler);
+    OH_Drawing_Typography* typography = OH_Drawing_CreateTypography(handler);
     OH_Drawing_TypographyLayout(typography, maxWidth3);
-    OH_Drawing_PositionAndAffinity* a0 = OH_Drawing_TypographyGetGlyphPositionAtCoordinateWithCluster(typography, 0, 0);
-    OH_Drawing_PositionAndAffinity* a1 = OH_Drawing_TypographyGetGlyphPositionAtCoordinateWithCluster(typography, 20, 0);
-    OH_Drawing_PositionAndAffinity* a2 = OH_Drawing_TypographyGetGlyphPositionAtCoordinateWithCluster(typography, 30, 0);
-    OH_Drawing_PositionAndAffinity* a3 = OH_Drawing_TypographyGetGlyphPositionAtCoordinateWithCluster(typography, 45, 0);
-    OH_Drawing_PositionAndAffinity* a4 = OH_Drawing_TypographyGetGlyphPositionAtCoordinateWithCluster(typography, 60, 0);
-    OH_Drawing_PositionAndAffinity* a5 = OH_Drawing_TypographyGetGlyphPositionAtCoordinateWithCluster(typography, 75, 0);
-    OH_Drawing_PositionAndAffinity* a6 = OH_Drawing_TypographyGetGlyphPositionAtCoordinateWithCluster(typography, 100, 0);
-    EXPECT_EQ(OH_Drawing_GetPositionFromPositionAndAffinity(a0), 0);
-    EXPECT_EQ(OH_Drawing_GetAffinityFromPositionAndAffinity(a0), 1);
-    EXPECT_EQ(OH_Drawing_GetPositionFromPositionAndAffinity(a1), 1);
-    EXPECT_EQ(OH_Drawing_GetAffinityFromPositionAndAffinity(a1), 0);
-    EXPECT_EQ(OH_Drawing_GetPositionFromPositionAndAffinity(a2), 1);
-    EXPECT_EQ(OH_Drawing_GetAffinityFromPositionAndAffinity(a2), 1);
-    EXPECT_EQ(OH_Drawing_GetPositionFromPositionAndAffinity(a3), 2);
-    EXPECT_EQ(OH_Drawing_GetAffinityFromPositionAndAffinity(a3), 0);
-    EXPECT_EQ(OH_Drawing_GetPositionFromPositionAndAffinity(a4), 2);
-    EXPECT_EQ(OH_Drawing_GetAffinityFromPositionAndAffinity(a4), 1);
-    EXPECT_EQ(OH_Drawing_GetPositionFromPositionAndAffinity(a5), 3);
-    EXPECT_EQ(OH_Drawing_GetAffinityFromPositionAndAffinity(a5), 0);
-    EXPECT_EQ(OH_Drawing_GetPositionFromPositionAndAffinity(a6), 3);
-    EXPECT_EQ(OH_Drawing_GetAffinityFromPositionAndAffinity(a6), 1);
+
+    float x_coords[] = { 0, 20, 30, 45, 60, 75, 100 };
+    int expected_positions[] = { 0, 1, 1, 2, 2, 3, 3 };
+    int expected_affinities[] = { 1, 0, 1, 0, 1, 0, 1 };
+    OH_Drawing_PositionAndAffinity* results[7];
+    for (int i = 0; i < 7; i++) {
+        results[i] = OH_Drawing_TypographyGetGlyphPositionAtCoordinateWithCluster(typography, x_coords[i], 0);
+        EXPECT_EQ(OH_Drawing_GetPositionFromPositionAndAffinity(results[i]), expected_positions[i]);
+        EXPECT_EQ(OH_Drawing_GetAffinityFromPositionAndAffinity(results[i]), expected_affinities[i]);
+    }
 
     OH_Drawing_DestroyTypography(typography);
     OH_Drawing_DestroyTypographyStyle(typoStyle);
     OH_Drawing_DestroyTypographyHandler(handler);
     OH_Drawing_DestroyTextStyle(txtStyle);
-    free(a0);
-    free(a1);
-    free(a2);
-    free(a3);
-    free(a4);
-    free(a5);
-    free(a6);
+    for (int i = 0; i < 7; i++) {
+        free(results[i]);
+    }
 }
 
 /*
