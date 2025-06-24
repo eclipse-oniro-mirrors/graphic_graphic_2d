@@ -847,7 +847,8 @@ std::tuple<Drawing::RectI, Drawing::RectI> RSFilterCacheManager::ValidateParams(
 
 void RSFilterCacheManager::ResetFilterCache(std::shared_ptr<RSPaintFilterCanvas::CachedEffectData> cachedSnapshot,
     std::shared_ptr<RSPaintFilterCanvas::CachedEffectData> cachedFilteredSnapshot, RectI snapshotRegion,
-    bool isHpaeCachedFilteredSnapshot) {
+    bool isHpaeCachedFilteredSnapshot)
+{
         RS_TRACE_NAME_FMT("ResetFilterCache:[%p,%p]", cachedSnapshot.get(), cachedFilteredSnapshot.get());
         if (cachedSnapshot && cachedSnapshot->cachedImage_) {
             cachedSnapshot_ = std::make_shared<RSPaintFilterCanvas::CachedEffectData>(cachedSnapshot->cachedImage_,
