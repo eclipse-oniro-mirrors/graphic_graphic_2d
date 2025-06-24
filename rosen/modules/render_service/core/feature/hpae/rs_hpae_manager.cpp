@@ -129,7 +129,7 @@ void RSHpaeManager::HandleHpaeStateChange()
                 HianimationManager::GetInstance().HianimationAlgoDeInit();
                 this->releaseAllDone_ = true;
                 this->releaseAllCv_.notify_all();
-                }, {}, {}, ffrt::task_attr().qos(5));
+                }, {}, {}, ffrt::task_attr().qos(HPAE_USE_HPAE_QOS));
 #else
             RSHpaeFfrtPatternManager::Instance().MHCReleaseAll();
             HianimationManager::GetInstance().HianimationAlgoDeInit();
@@ -259,8 +259,7 @@ void RSHpaeManager::RegisterHpaeCallback(RSRenderNode& node, uint32_t phyWidth, 
     }
 }
 
-bool RSHpaeManager::IsFirstFrame()
-{
+bool RSHpaeManager::IsFirstFrame() {
     return hpaeFrameState_ == HpaeFrameState::ACTIVE ||
         hpaeFrameState_ == HpaeFrameState::SWITCH_BLUR ||
         hpaeFrameState_ == HpaeFrameState::CHANGE_CONFIG;
