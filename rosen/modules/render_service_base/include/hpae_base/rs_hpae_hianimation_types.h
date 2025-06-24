@@ -26,19 +26,21 @@ struct HaeRect {
     int r;
     int b;
 
-    HaeRect(int left, int top, int right, int bottom) {
-        l = left;
-        t = top;
-        r = right;
-        b = bottom;
-    };
+HaeRect(int left, int top, int right, int bottom)
+{
+    l = left;
+    t = top;
+    r = right;
+    b = bottom;
+};
 
-    HaeRect() {
-        l = 0;
-        t = 0;
-        r = 0;
-        b = 0;
-    };
+HaeRect()
+{
+    l = 0;
+    t = 0;
+    r = 0;
+    b = 0;
+};
 };
 
 struct HaeImage {
