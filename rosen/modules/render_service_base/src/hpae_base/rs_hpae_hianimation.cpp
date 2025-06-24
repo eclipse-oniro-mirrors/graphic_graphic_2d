@@ -13,14 +13,13 @@
  * limitations under the License.
  */
 
+#include "hpae_base/rs_hpae_hianimation.h"
 #if defined(ROSEN_OHOS)
 #include <dlfcn.h>
-#endif
-#include "hpae_base/rs_hpae_hianimation.h"
-#include "hpae_base/rs_hpae_log.h"
-#if defined(ROSEN_OHOS)
 #include "cpp/ffrt_dynamic_graph.h"
 #endif
+
+#include "hpae_base/rs_hpae_log.h"
 #include "hpae_base/rs_hpae_perf_thread.h"
 
 namespace OHOS::Rosen {
@@ -149,7 +148,7 @@ void HianimationManager::OpenDevice()
         dlclose(libHandle_);
     }
 
-    libHandle_ = dlopen("libanimiation.z.so", RTLD_LAZY);
+    libHandle_ = dlopen("libanimation.z.so", RTLD_LAZY);
     if (libHandle_ == nullptr) {
         HPAE_LOGW("[%{public}s_%{public}d]:load library failed, reason: %{public}s", __func__, __LINE__, dlerror());
         openFailNum_++;
@@ -313,7 +312,7 @@ int32_t HianimationManager::HianimationDestroyTask(uint32_t taskId)
         return -1;
     }
 
-    HPAE_TRACE_FMT("Hianimation: HianimationDestroyTask: %d", taskId);
+    HPAE_TRACE_NAME_FMT("Hianimation: HianimationDestroyTask: %d", taskId);
     taskIdMap_.erase(taskId);
     return hianimationDevice_->hianimationDestroyTask(taskId);
 }
@@ -327,7 +326,7 @@ int32_t HianimationManager::HianimationDestroyTaskAndNotify(uint32_t taskId)
         return -1;
     }
 
-    HPAE_TRACE_FMT("Hianimation: HianimationDestroyTaskAndNotify: %d", taskId);
+    HPAE_TRACE_NAME_FMT("Hianimation: HianimationDestroyTaskAndNotify: %d", taskId);
     int32_t ret = hianimationDevice_->hianimationDestroyTask(taskId);
     taskIdMap_.erase(taskId);
     taskAvailableCv_.notify_all();
