@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "hpae_base/rs_hpae_hianimation.h"
 
 #if defined(ROSEN_OHOS)
 #include <dlfcn.h>
@@ -19,6 +20,9 @@
 #include "cpp/ffrt_dynamic_graph.h"
 #endif
 #endif
+
+#include "hpae_base/rs_hpae_log.h"
+#include "hpae_base/rs_hpae_perf_thread.h"
 
 namespace OHOS::Rosen {
 using namespace std::chrono_literals;
