@@ -33,7 +33,6 @@
 
 #include "rs_profiler.h"
 
-
 namespace OHOS {
 namespace Rosen {
 
