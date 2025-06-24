@@ -241,7 +241,7 @@ HWTEST_F(RSDrawableTest, ResetPixelStretchSlotTest, TestSize.Level1)
     RSRenderNode node(id);
     RSDrawable::Vec drawableVec;
     RSDrawable::ResetPixelStretchSlot(node, drawableVec);
-    std::shared_ptr<RSDrawable> drawable = std::shared_ptr<RSDrawable>(new DrawableV2::RSPixelStrectchDrawbale());
+    std::shared_ptr<RSDrawable> drawable = std::make_shared<DrawableV2::RSPixelStrectchDrawbale>();
     ASSERT_NE(drawable, nullptr);
     drawableVec[static_cast<size_t>(RSDrawableSlot::PIXEL_STRETCH)] = drawable;
     RSDrawable::ResetPixelStretchSlot(node, drawableVec);
@@ -261,12 +261,12 @@ HWTEST_F(RSDrawableTest, CanFusePixelStretchTest, TestSize.Level1)
     RSDrawable::Vec drawableVec;
     ASSERT_FALSE(RSDrawable::CanFusePixelStretch(drawableVec));
 
-    std::shared_ptr<RSDrawable> drawable = std::shared_ptr<RSDrawable>(new DrawableV2::RSBackgroundFilterDrawbale());
+    std::shared_ptr<RSDrawable> drawable = std::make_shared<RSDrawDrawableV2::RSBackgroundFilterDrawbaleable>();
     ASSERT_NE(drawable, nullptr);
     drawableVec[static_cast<size_t>(RSDrawableSlot::PIXEL_STRETCH)] = drawable;
     ASSERT_FALSE(RSDrawable::CanFusePixelStretch(drawableVec));
 
-    std::shared_ptr<RSDrawable> drawable2 = std::shared_ptr<RSDrawable>(new DrawableV2::RSBackgroundFilterDrawbale());
+    std::shared_ptr<RSDrawable> drawable2 = std::make_shared<DrawableV2::RSBackgroundFilterDrawbale>();
     ASSERT_NE(drawable2, nullptr);
     drawableVec[static_cast<size_t>(RSDrawableSlot::PIXEL_STRETCH)] = drawable2;
     ASSERT_FALSE(RSDrawable::CanFusePixelStretch(drawableVec));
@@ -285,15 +285,15 @@ HWTEST_F(RSDrawableTest, CanFusePixelStretchTest002, TestSize.Level1)
     RSRenderNode node(id);
     RSDrawable::Vec drawableVec;
 
-    std::shared_ptr<RSDrawable> drawable = std::shared_ptr<RSDrawable>(new DrawableV2::RSBackgroundFilterDrawbale());
+    std::shared_ptr<RSDrawable> drawable = std::shared_ptr<DrawableV2::RSBackgroundFilterDrawbale>();
     ASSERT_NE(drawable, nullptr);
     drawableVec[static_cast<size_t>(RSDrawableSlot::PIXEL_STRETCH)] = drawable;
 
-    std::shared_ptr<RSDrawable> drawable2 = std::shared_ptr<RSDrawable>(new DrawableV2::RSBackgroundFilterDrawbale());
+    std::shared_ptr<RSDrawable> drawable2 = std::shared_ptr<DrawableV2::RSBackgroundFilterDrawbale>();
     ASSERT_NE(drawable2, nullptr);
     drawableVec[static_cast<size_t>(RSDrawableSlot::PIXEL_STRETCH)] = drawable2;
 
-    std::shared_ptr<RSDrawable> drawable3 = std::shared_ptr<RSDrawable>(new DrawableV2::RSBackgroundFilterDrawbale());
+    std::shared_ptr<RSDrawable> drawable3 = std::shared_ptr<DrawableV2::RSBackgroundFilterDrawbale>();
     ASSERT_NE(drawable3, nullptr);
     drawableVec[static_cast<size_t>(RSDrawableSlot::PIXEL_STRETCH)] = drawable3;
     ASSERT_FALSE(RSDrawable::CanFusePixelStretch(drawableVec));
