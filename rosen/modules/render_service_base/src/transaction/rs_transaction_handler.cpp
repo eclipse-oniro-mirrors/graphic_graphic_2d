@@ -44,6 +44,7 @@ void RSTransactionHandler::SetRenderServiceClient(const std::shared_ptr<RSIRende
 void RSTransactionHandler::AddCommand(
     std::unique_ptr<RSCommand>& command, bool isRenderServiceCommand, FollowType followType, NodeId nodeId)
 {
+#ifndef SCREENLESS_DEVICE
     if ((renderServiceClient_ == nullptr && renderThreadClient_ == nullptr) || command == nullptr) {
         RS_LOGE("RSTransactionHandler::add command fail, (renderServiceClient_ and renderThreadClient_ is nullptr)"
                 " or command is nullptr");
@@ -67,6 +68,7 @@ void RSTransactionHandler::AddCommand(
     }
     ROSEN_LOGE("RSTransactionHandler::AddCommand failed, isRenderServiceCommand:%{public}d %{public}s",
         isRenderServiceCommand, command->PrintType().c_str());
+#endif
 }
 
 void RSTransactionHandler::AddCommandFromRT(std::unique_ptr<RSCommand>& command, NodeId nodeId, FollowType followType)
@@ -79,6 +81,23 @@ void RSTransactionHandler::AddCommandFromRT(std::unique_ptr<RSCommand>& command,
         std::unique_lock<std::mutex> cmdLock(mutexForRT_);
         implicitTransactionDataFromRT_->AddCommand(command, nodeId, followType);
     }
+}
+
+void RSTransactionHandler::MoveCommandByNodeId(std::shared_ptr<RSTransactionHandler> transactionHandler, NodeId nodeId)
+{
+    if (renderServiceClient_ == nullptr && renderThreadClient_ == nullptr) {
+        RS_LOGE("RSTransactionHandler::MoveCommandByNodeId GetCommand fail, (renderServiceClient_ and "
+                "renderThreadClient_ is nullptr)");
+        return;
+    }
+
+    std::unique_lock<std::mutex> cmdLock(mutex_);
+    if (renderServiceClient_ != nullptr && renderThreadClient_ == nullptr) {
+        MoveRemoteCommandByNodeId(transactionHandler, nodeId);
+        return;
+    }
+
+    MoveCommonCommandByNodeId(transactionHandler, nodeId);
 }
 
 void RSTransactionHandler::ExecuteSynchronousTask(const std::shared_ptr<RSSyncTask>& task, bool isRenderServiceTask)
@@ -324,6 +343,17 @@ void RSTransactionHandler::AddCommonCommand(std::unique_ptr<RSCommand>& command)
     implicitCommonTransactionData_->AddCommand(command, 0, FollowType::NONE);
 }
 
+void RSTransactionHandler::MoveCommonCommandByNodeId(
+    std::shared_ptr<RSTransactionHandler> transactionHandler, NodeId nodeId)
+{
+    if (!implicitCommonTransactionDataStack_.empty() &&
+        !transactionHandler->implicitCommonTransactionDataStack_.empty()) {
+        implicitCommonTransactionDataStack_.top()->MoveCommandByNodeId(
+            transactionHandler->implicitCommonTransactionDataStack_.top(), nodeId);
+    }
+    implicitCommonTransactionData_->MoveCommandByNodeId(transactionHandler->implicitCommonTransactionData_, nodeId);
+}
+
 void RSTransactionHandler::AddRemoteCommand(std::unique_ptr<RSCommand>& command, NodeId nodeId, FollowType followType)
 {
     if (!implicitRemoteTransactionDataStack_.empty()) {
@@ -333,5 +363,15 @@ void RSTransactionHandler::AddRemoteCommand(std::unique_ptr<RSCommand>& command,
     implicitRemoteTransactionData_->AddCommand(command, nodeId, followType);
 }
 
+void RSTransactionHandler::MoveRemoteCommandByNodeId(
+    std::shared_ptr<RSTransactionHandler> transactionHandler, NodeId nodeId)
+{
+    if (!implicitRemoteTransactionDataStack_.empty() &&
+        !transactionHandler->implicitRemoteTransactionDataStack_.empty()) {
+        implicitRemoteTransactionDataStack_.top()->MoveCommandByNodeId(
+            transactionHandler->implicitRemoteTransactionDataStack_.top(), nodeId);
+    }
+    implicitRemoteTransactionData_->MoveCommandByNodeId(transactionHandler->implicitRemoteTransactionData_, nodeId);
+}
 } // namespace Rosen
 } // namespace OHOS

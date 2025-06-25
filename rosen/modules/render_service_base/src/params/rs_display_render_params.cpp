@@ -61,6 +61,20 @@ bool RSDisplayRenderParams::GetMainAndLeashSurfaceDirty() const
     return isMainAndLeashSurfaceDirty_;
 }
 
+void RSDisplayRenderParams::SetNeedForceUpdateHwcNodes(bool needForceUpdateHwcNodes)
+{
+    if (needForceUpdateHwcNodes_ == needForceUpdateHwcNodes) {
+        return;
+    }
+    needForceUpdateHwcNodes_ = needForceUpdateHwcNodes;
+    needSync_ = true;
+}
+
+bool RSDisplayRenderParams::GetNeedForceUpdateHwcNodes() const
+{
+    return needForceUpdateHwcNodes_;
+}
+
 void RSDisplayRenderParams::SetRotationChanged(bool changed)
 {
     if (isRotationChanged_ == changed) {
@@ -112,6 +126,20 @@ void RSDisplayRenderParams::SetHDRPresent(bool hasHdrPresent)
 bool RSDisplayRenderParams::GetHDRPresent() const
 {
     return hasHdrPresent_;
+}
+
+void RSDisplayRenderParams::SetHDRStatusChanged(bool isHDRStatusChanged)
+{
+    if (isHDRStatusChanged_ == isHDRStatusChanged) {
+        return;
+    }
+    isHDRStatusChanged_ = isHDRStatusChanged;
+    needSync_ = true;
+}
+
+bool RSDisplayRenderParams::IsHDRStatusChanged() const
+{
+    return isHDRStatusChanged_;
 }
 
 void RSDisplayRenderParams::SetBrightnessRatio (float brightnessRatio)
@@ -168,6 +196,20 @@ void RSDisplayRenderParams::SetZoomed(bool isZoomed)
 bool RSDisplayRenderParams::GetZoomed() const
 {
     return isZoomed_;
+}
+
+void RSDisplayRenderParams::SetHasMirrorDisplay(bool hasMirrorDisplay)
+{
+    if (hasMirrorDisplay_ == hasMirrorDisplay) {
+        return;
+    }
+    needSync_ = true;
+    hasMirrorDisplay_ = hasMirrorDisplay;
+}
+
+bool RSDisplayRenderParams::HasMirrorDisplay() const
+{
+    return hasMirrorDisplay_;
 }
 
 void RSDisplayRenderParams::SetTargetSurfaceRenderNodeDrawable(
@@ -230,12 +272,15 @@ void RSDisplayRenderParams::OnSync(const std::unique_ptr<RSRenderParams>& target
     targetDisplayParams->newColorSpace_ = newColorSpace_;
     targetDisplayParams->newPixelFormat_ = newPixelFormat_;
     targetDisplayParams->hasHdrPresent_ = hasHdrPresent_;
+    targetDisplayParams->isHDRStatusChanged_ = isHDRStatusChanged_;
     targetDisplayParams->brightnessRatio_ = brightnessRatio_;
     targetDisplayParams->zOrder_ = zOrder_;
     targetDisplayParams->isZoomed_ = isZoomed_;
+    targetDisplayParams->hasMirrorDisplay_ = hasMirrorDisplay_;
     targetDisplayParams->targetSurfaceRenderNodeDrawable_ = targetSurfaceRenderNodeDrawable_;
     targetDisplayParams->roundCornerSurfaceDrawables_ = roundCornerSurfaceDrawables_;
     targetDisplayParams->virtualScreenMuteStatus_ = virtualScreenMuteStatus_;
+    targetDisplayParams->needForceUpdateHwcNodes_ = needForceUpdateHwcNodes_;
     RSRenderParams::OnSync(target);
 }
 

@@ -55,6 +55,8 @@ static inline skcms_TransferFunction ConvertToSkCMSTransferFunction(const CMSTra
             return SkNamedTransferFn::kLinear;
         case CMSTransferFuncType::REC2020:
             return SkNamedTransferFn::kRec2020;
+        case CMSTransferFuncType::HLG:
+            return SkNamedTransferFn::kHLG;
         default:
             return SkNamedTransferFn::kSRGB;
     }
@@ -91,7 +93,7 @@ void SkiaColorSpace::InitWithCustomRGB(const CMSTransferFunction& func, const CM
             skMatrix3x3.vals[i][j] = matrix.vals[i][j];
         }
     }
-    skcms_TransferFunction skTransferFunc = { func.g, func.a, func.b, func.d, func.e, func.f };
+    skcms_TransferFunction skTransferFunc = { func.g, func.a, func.b, func.c, func.d, func.e, func.f };
     colorSpace_ = SkColorSpace::MakeRGB(skTransferFunc, skMatrix3x3);
 }
 

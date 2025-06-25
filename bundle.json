@@ -17,6 +17,7 @@
         "SystemCapability.Graphic.Graphic2D.EGL",
         "SystemCapability.Graphic.Graphic2D.GLES2",
         "SystemCapability.Graphic.Graphic2D.GLES3",
+        "SystemCapability.Graphic.Graphic2D.GL4",
         "SystemCapability.Graphic.Graphic2D.HyperGraphicManager",
         "SystemCapability.Graphic.Graphic2D.NativeBuffer",
         "SystemCapability.Graphic.Graphic2D.NativeDrawing",
@@ -32,6 +33,7 @@
       "features": [
         "graphic_2d_feature_product",
         "graphic_2d_feature_enable_pgo",
+        "graphic_2d_feature_enable_codemerge",
         "graphic_2d_feature_pgo_path",
         "graphic_2d_feature_bootanimation_enable",
         "graphic_2d_feature_ace_enable_gpu",
@@ -46,7 +48,6 @@
         "graphic_2d_feature_tp_switch_enbale",
         "graphic_2d_feature_rs_enable_profiler",
         "graphic_2d_feature_enable_chipset_vsync",
-        "graphic_2d_feature_enable_flutter_vulkan",
         "graphic_2d_feature_enable_opengl",
         "graphic_2d_feature_enable_opinc",
         "graphic_2d_feature_enable_rspipeline",
@@ -56,7 +57,11 @@
         "graphic_2d_feature_use_igraphics_extend_hooks",
         "graphic_2d_feature_vkqueue_priority_enable",
         "graphic_2d_feature_bootanimation_ext_enable",
-        "graphic_2d_feature_overlay_display_enable"
+        "graphic_2d_feature_overlay_display_enable",
+        "graphic_2d_feature_enable_opengl_to_vulkan",
+        "graphic_2d_feature_screenless_enable",
+        "graphic_2d_feature_tv_metadata_enable",
+        "graphic_2d_feature_upgrade_skia"
       ],
       "rom": "10000KB",
       "ram": "10000KB",
@@ -114,8 +119,11 @@
           "skia",
           "lz4",
           "faultloggerd",
-          "glslang",
-          "freeytype"
+          "freetype",
+          "rust_cxx",
+          "media_foundation",
+          "selinux_adapter",
+          "runtime_core"
         ],
         "third_party": [
           "skia"
@@ -124,9 +132,9 @@
       "build": {
         "group_type": {
           "base_group": [
-            "//third_party/libpng:libpng",
             "//foundation/graphic/graphic_2d/interfaces/kits/napi:napi_packages",
             "//foundation/graphic/graphic_2d/interfaces/kits/cj:ffi_packages",
+            "//foundation/graphic/graphic_2d/interfaces/kits/ani:ani_packages",
             "//foundation/graphic/graphic_2d/rosen/modules/effect/effect_common:effect_common",
             "//foundation/graphic/graphic_2d/rosen/modules/composer:libcomposer",
             "//foundation/graphic/graphic_2d/rosen/modules/composer/native_vsync:libnative_vsync",
@@ -137,6 +145,7 @@
             "//foundation/graphic/graphic_2d/frameworks/opengl_wrapper:EGL",
             "//foundation/graphic/graphic_2d/frameworks/opengl_wrapper:GLESv2",
             "//foundation/graphic/graphic_2d/frameworks/opengl_wrapper:GLESv3",
+            "//foundation/graphic/graphic_2d/frameworks/opengl_wrapper:GLv4",
             "//foundation/graphic/graphic_2d/rosen/modules/effect/egl:libegl_effect",
             "//foundation/graphic/graphic_2d/frameworks/vulkan_layers:vulkan_swapchain_layer",
             "//foundation/graphic/graphic_2d/frameworks/vulkan_layers:vulkan_swapchain_layer_json",
@@ -168,6 +177,16 @@
           },
           {
             "type": "so",
+            "name": "//foundation/graphic/graphic_2d/interfaces/kits/napi/graphic/text:text_napi_impl",
+            "header": {
+              "header_files": [
+                "paragraph_napi/js_paragraph.h"
+              ],
+              "header_base": "//foundation/graphic/graphic_2d/interfaces/kits/napi/graphic/text"
+            }
+          },
+          {
+            "type": "so",
             "name": "//foundation/graphic/graphic_2d/frameworks/bootanimation/utils:libbootanimation_utils",
             "header": {
               "header_files": [
@@ -184,6 +203,16 @@
                 "vsync_receiver.h"
               ],
               "header_base": "//foundation/graphic/graphic_2d/interfaces/inner_api/composer"
+            }
+          },
+          {
+            "type": "so",
+            "name": "//foundation/graphic/graphic_2d/rosen/modules/glfw_render_context:libglfw_render_context",
+            "header": {
+              "header_files": [
+                "glfw_render_context.h"
+              ],
+              "header_base": "//foundation/graphic/graphic_2d/rosen/modules/glfw_render_context/export"
             }
           },
           {
@@ -209,6 +238,16 @@
           {
             "type": "so",
             "name": "//foundation/graphic/graphic_2d/frameworks/opengl_wrapper:GLESv3",
+            "header": {
+              "header_files": [
+              ],
+              "header_base": [
+              ]
+            }
+          },
+          {
+            "type": "so",
+            "name": "//foundation/graphic/graphic_2d/frameworks/opengl_wrapper:GLv4",
             "header": {
               "header_files": [
               ],
@@ -424,6 +463,14 @@
               "header_files": [],
               "header_base": "//foundation/graphic/graphic_2d/rosen/modules/2d_engine/ddgr"
             }
+          },
+          {
+            "type": "so",
+            "name": "//foundation/graphic/graphic_2d/frameworks/text:rosen_text",
+            "header": {
+              "header_files": [],
+              "header_base": "//foundation/graphic/graphic_2d/frameworks/text/interface/export"
+            }
           }
         ],
         "test": [
@@ -437,7 +484,7 @@
           "//foundation/graphic/graphic_2d/rosen/modules/safuzz:safuzztest",
           "//foundation/graphic/graphic_2d/rosen/test/2d_graphics/drawing:drawing_demo",
           "//foundation/graphic/graphic_2d/rosen/test/dtk:dtk",
-          "//foundation/graphic/graphic_2d/text/test:text_test"
+          "//foundation/graphic/graphic_2d/frameworks/text/test:text_test"
         ]
       }
     }

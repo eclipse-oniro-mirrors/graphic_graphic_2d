@@ -31,8 +31,8 @@ namespace Rosen {
 constexpr float DEFAULT_HDR_RATIO = 1.0f;
 constexpr float DEFAULT_SCALER = 1000.0f / 203.0f;
 constexpr float GAMMA2_2 = 2.2f;
-constexpr uint32_t DEFAULT_DYNAMIC_METADATA_SIZE = 50;
 constexpr size_t MATRIX_SIZE = 9;
+static const std::vector<float> DEFAULT_MATRIX = { 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f };
 
 HdrStatus RSHdrUtil::CheckIsHdrSurface(const RSSurfaceRenderNode& surfaceNode)
 {
@@ -85,6 +85,9 @@ bool RSHdrUtil::CheckIsSurfaceWithMetadata(const RSSurfaceRenderNode& surfaceNod
     if (!surfaceNode.GetRSSurfaceHandler()) {
         return false;
     }
+    if (!surfaceNode.IsYUVBufferFormat()) {
+        return false;
+    }
     return CheckIsSurfaceBufferWithMetadata(surfaceNode.GetRSSurfaceHandler()->GetBuffer());
 }
 
@@ -106,9 +109,9 @@ bool RSHdrUtil::CheckIsSurfaceBufferWithMetadata(const sptr<SurfaceBuffer> surfa
         return false;
     }
 #ifdef USE_VIDEO_PROCESSING_ENGINE
-    std::vector<uint8_t> dynamicMetadata{};
-    if (MetadataHelper::GetHDRDynamicMetadata(surfaceBuffer, dynamicMetadata) ==
-        GSERROR_OK && dynamicMetadata.size() > 0) {
+    std::vector<uint8_t> videoDynamicMetadata{};
+    if (MetadataHelper::GetVideoDynamicMetadata(surfaceBuffer, videoDynamicMetadata) ==
+        GSERROR_OK && videoDynamicMetadata.size() > 0) {
         return true;
     }
 #endif
@@ -131,6 +134,7 @@ void RSHdrUtil::UpdateSurfaceNodeNit(RSSurfaceRenderNode& surfaceNode, ScreenId 
         surfaceNode.SetDisplayNit(rsLuminance.GetSdrDisplayNits(screenId));
         surfaceNode.SetSdrNit(rsLuminance.GetSdrDisplayNits(screenId));
         surfaceNode.SetBrightnessRatio(rsLuminance.GetHdrBrightnessRatio(screenId, 0));
+        surfaceNode.SetLayerLinearMatrix(DEFAULT_MATRIX);
         // color temperature
         if (surfaceNode.GetSdrHasMetadata()) {
             UpdateSurfaceNodeLayerLinearMatrix(surfaceNode, screenId);
@@ -147,13 +151,31 @@ void RSHdrUtil::UpdateSurfaceNodeNit(RSSurfaceRenderNode& surfaceNode, ScreenId 
     RSColorSpaceConvert::Instance().GetHDRDynamicMetadata(surfaceBuffer, hdrDynamicMetadataVec, ret);
 #endif
     float scaler = DEFAULT_SCALER;
+    auto context = surfaceNode.GetContext().lock();
+    if (!context) {
+        RS_LOGE("RSHdrUtil::UpdateSurfaceNodeNit context is null");
+        return;
+    }
+    auto displayNode = context->GetNodeMap().GetRenderNode<RSDisplayRenderNode>(surfaceNode.GetDisplayNodeId());
+    if (!displayNode) {
+        RS_LOGE("RSHdrUtil::UpdateSurfaceNodeNit displayNode is null");
+        return;
+    }
+    float brightnessFactor = displayNode->GetRenderProperties().GetHDRBrightnessFactor();
+    if (ROSEN_NE(surfaceNode.GetHDRBrightnessFactor(), brightnessFactor)) {
+        RS_LOGD("RSHdrUtil::UpdateSurfaceNodeNit GetHDRBrightnessFactor: %{public}f, "
+            "displayNode brightnessFactor: %{public}f, nodeId: %{public}" PRIu64 "",
+            surfaceNode.GetHDRBrightnessFactor(), brightnessFactor, surfaceNode.GetId());
+        surfaceNode.SetHDRBrightnessFactor(brightnessFactor);
+        surfaceNode.SetContentDirty();
+    }
     if (hdrStaticMetadataVec.size() != sizeof(HdrStaticMetadata) || hdrStaticMetadataVec.data() == nullptr) {
         RS_LOGD("hdrStaticMetadataVec is invalid");
-        scaler = surfaceNode.GetHDRBrightness() * (scaler - 1.0f) + 1.0f;
+        scaler = surfaceNode.GetHDRBrightness() * brightnessFactor * (scaler - 1.0f) + 1.0f;
     } else {
         const auto& data = *reinterpret_cast<HdrStaticMetadata*>(hdrStaticMetadataVec.data());
         scaler = rsLuminance.CalScaler(data.cta861.maxContentLightLevel, ret == GSERROR_OK ?
-            hdrDynamicMetadataVec.size() : DEFAULT_DYNAMIC_METADATA_SIZE, surfaceNode.GetHDRBrightness());
+            hdrDynamicMetadataVec : std::vector<uint8_t>{}, surfaceNode.GetHDRBrightness() * brightnessFactor);
     }
 
     float sdrNits = rsLuminance.GetSdrDisplayNits(screenId);
@@ -170,8 +192,8 @@ void RSHdrUtil::UpdateSurfaceNodeNit(RSSurfaceRenderNode& surfaceNode, ScreenId 
     // color temperature
     UpdateSurfaceNodeLayerLinearMatrix(surfaceNode, screenId);
     RS_LOGD("RSHdrUtil::UpdateSurfaceNodeNit layerNits: %{public}.2f, displayNits: %{public}.2f,"
-        " sdrNits: %{public}.2f, scaler: %{public}.2f, HDRBrightness: %{public}f", layerNits, displayNits, sdrNits,
-        scaler, surfaceNode.GetHDRBrightness());
+        " sdrNits: %{public}.2f, scaler: %{public}.2f, HDRBrightness: %{public}f, brightnessFactor: %{public}f",
+        layerNits, displayNits, sdrNits, scaler, surfaceNode.GetHDRBrightness(), brightnessFactor);
 }
 
 void RSHdrUtil::UpdateSurfaceNodeLayerLinearMatrix(RSSurfaceRenderNode& surfaceNode, ScreenId screenId)
@@ -191,13 +213,17 @@ void RSHdrUtil::UpdateSurfaceNodeLayerLinearMatrix(RSSurfaceRenderNode& surfaceN
     if (MetadataHelper::GetColorSpaceInfo(surfaceBuffer, srcColorSpaceInfo) == GSERROR_OK) {
         srcColorMatrix = srcColorSpaceInfo.matrix;
     }
-    std::vector<uint8_t> hdrDynamicMetadataVec;
+    std::vector<uint8_t> dynamicMetadataVec;
     GSError ret = GSERROR_OK;
 #ifdef USE_VIDEO_PROCESSING_ENGINE
-    RSColorSpaceConvert::Instance().GetHDRDynamicMetadata(surfaceBuffer, hdrDynamicMetadataVec, ret);
+    if (srcColorMatrix == CM_Matrix::MATRIX_BT2020) {
+        RSColorSpaceConvert::Instance().GetHDRDynamicMetadata(surfaceBuffer, dynamicMetadataVec, ret);
+    } else {
+        RSColorSpaceConvert::Instance().GetVideoDynamicMetadata(surfaceBuffer, dynamicMetadataVec, ret);
+    }
 #endif
     std::vector<float> layerLinearMatrix = RSColorTemperature::Get().GetLayerLinearCct(screenId,
-        ret == GSERROR_OK ? hdrDynamicMetadataVec : std::vector<uint8_t>(), srcColorMatrix);
+        ret == GSERROR_OK ? dynamicMetadataVec : std::vector<uint8_t>(), srcColorMatrix);
     surfaceNode.SetLayerLinearMatrix(layerLinearMatrix);
     if (layerLinearMatrix.size() >= MATRIX_SIZE) {
         // main diagonal indices of a 3x3 matrix are 0, 4 and 8
@@ -242,6 +268,11 @@ void RSHdrUtil::CheckPixelFormatWithSelfDrawingNode(RSSurfaceRenderNode& surface
             surfaceNode.GetName().c_str());
         return;
     }
+    if (displayNode.GetForceCloseHdr()) {
+        RS_LOGD("RSHdrUtil::CheckPixelFormatWithSelfDrawingNode node(%{public}s) forceclosehdr.",
+            surfaceNode.GetName().c_str());
+        return;
+    }
     if (!surfaceNode.IsHardwareForcedDisabled()) {
         RS_LOGD("RSHdrUtil::CheckPixelFormatWithSelfDrawingNode node(%{public}s) is hardware-enabled",
             surfaceNode.GetName().c_str());
@@ -252,8 +283,8 @@ void RSHdrUtil::CheckPixelFormatWithSelfDrawingNode(RSSurfaceRenderNode& surface
         if (displayNode.GetIsLuminanceStatusChange()) {
             surfaceNode.SetContentDirty();
         }
-        displayNode.SetPixelFormat(GRAPHIC_PIXEL_FMT_RGBA_1010102);
-        RS_LOGD("RSHdrUtil::CheckPixelFormatWithSelfDrawingNode HDRService pixelformat is set to 1010102");
+        RS_LOGD("RSHdrUtil::CheckPixelFormatWithSelfDrawingNode HDRService surfaceNode %{public}s is HDR",
+            surfaceNode.GetName().c_str());
     }
 }
 
@@ -264,6 +295,50 @@ void RSHdrUtil::SetHDRParam(RSSurfaceRenderNode& node, bool flag)
         firstLevelNode->SetHDRPresent(flag);
     }
     node.SetHDRPresent(flag);
+}
+
+void RSHdrUtil::HandleVirtualScreenHDRStatus(RSDisplayRenderNode& node, const sptr<RSScreenManager>& screenManager)
+{
+    if (node.GetCompositeType() == RSDisplayRenderNode::CompositeType::UNI_RENDER_MIRROR_COMPOSITE) {
+        ScreenColorGamut screenColorGamut;
+        if (screenManager->GetScreenColorGamut(node.GetScreenId(), screenColorGamut) != SUCCESS) {
+            RS_LOGD("RSHdrUtil::HandleVirtualScreenHDRStatus get screen color gamut failed.");
+            return;
+        }
+        std::shared_ptr<RSDisplayRenderNode> mirrorNode = node.GetMirrorSource().lock();
+        if (!mirrorNode) {
+            RS_LOGE("RSHdrUtil::HandleVirtualScreenHDRStatus get mirror source failed.");
+            return;
+        }
+        bool mirrorNodeIsHdrOn = RSLuminanceControl::Get().IsHdrOn(mirrorNode->GetScreenId()) &&
+            mirrorNode->GetDisplayHdrStatus() != HdrStatus::NO_HDR;
+        bool isNeedHDRCast = (node.IsFirstFrameOfInit() || node.GetEnabledHDRCast()) && mirrorNodeIsHdrOn &&
+            static_cast<GraphicColorGamut>(screenColorGamut) == GRAPHIC_COLOR_GAMUT_BT2100_HLG;
+        RS_LOGD("RSHdrUtil::HandleVirtualScreenHDRStatus HDRCast mirrorNodeIsHdrOn: %{public}d, "
+            "ColorGamut: %{public}d, IsFirstFrameOfInit: %{public}d, GetEnabledHDRCast: %{public}d",
+            mirrorNodeIsHdrOn, screenColorGamut, node.IsFirstFrameOfInit(), node.GetEnabledHDRCast());
+        if (isNeedHDRCast) {
+            node.SetHDRPresent(true);
+            node.SetEnabledHDRCast(true);
+        }
+        node.SetFirstFrameOfInit(false);
+    } else if (node.GetCompositeType() == RSDisplayRenderNode::CompositeType::UNI_RENDER_EXPAND_COMPOSITE) {
+        ScreenColorGamut screenColorGamut;
+        if (screenManager->GetScreenColorGamut(node.GetScreenId(), screenColorGamut) != SUCCESS) {
+            RS_LOGD("RSHdrUtil::HandleVirtualScreenHDRStatus get screen color gamut failed.");
+            return;
+        }
+        bool isNeedHDRCast = (node.IsFirstFrameOfInit() || node.GetEnabledHDRCast()) &&
+            static_cast<GraphicColorGamut>(screenColorGamut) == GRAPHIC_COLOR_GAMUT_BT2100_HLG;
+        RS_LOGD("RSHdrUtil::HandleVirtualScreenHDRStatus HDRCast ColorGamut: %{public}d, "
+            "IsFirstFrameOfInit: %{public}d, GetEnabledHDRCast: %{public}d",
+            screenColorGamut, node.IsFirstFrameOfInit(), node.GetEnabledHDRCast());
+        if (isNeedHDRCast) {
+            node.SetHDRPresent(true);
+            node.SetEnabledHDRCast(true);
+        }
+        node.SetFirstFrameOfInit(false);
+    }
 }
 
 } // namespace Rosen

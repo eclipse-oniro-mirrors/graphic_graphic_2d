@@ -42,6 +42,8 @@ public:
     }
 };
 
+#if defined(MODIFIER_NG)
+#else
 /**
  * @tc.name: GetTimingCurveTest001
  * @tc.desc: Verify the GetTimingCurve of SpringAnimationTest
@@ -198,10 +200,7 @@ HWTEST_F(RSSpringAnimationTest, RSNodeAnimateTest001, TestSize.Level1)
     /**
      * @tc.steps: step2. start GetTimingCurve test
      */
-    EXPECT_TRUE(animations.size() == CORRECT_SIZE);
-    if (animations.size() != CORRECT_SIZE) {
-        return;
-    }
+    ASSERT_TRUE(animations.size() == CORRECT_SIZE);
     auto springAnimation = std::static_pointer_cast<RSSpringAnimation>(animations[FIRST_ANIMATION]);
     EXPECT_TRUE(springAnimation != nullptr);
     if (springAnimation != nullptr) {
@@ -548,5 +547,6 @@ HWTEST_F(RSSpringAnimationTest, TargetTest003, TestSize.Level1)
     NotifyStartAnimation();
     GTEST_LOG_(INFO) << "RSSpringAnimationTest TargetTest003 end";
 }
+#endif
 } // namespace Rosen
 } // namespace OHOS

@@ -16,13 +16,19 @@
 #include "skia_color_filter.h"
 #include "skia_helper.h"
 
+#include "include/effects/SkColorMatrixFilter.h"
 #include "include/effects/SkLumaColorFilter.h"
 #include "include/effects/SkOverdrawColorFilter.h"
+#ifdef USE_M133_SKIA
+#include "src/effects/colorfilters/SkColorFilterBase.h"
+#else
 #include "src/core/SkColorFilterBase.h"
+#endif
 
 #include "effect/color_filter.h"
 #include "utils/data.h"
 #include "utils/log.h"
+#include "utils/performanceCaculate.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -87,6 +93,11 @@ void SkiaColorFilter::InitWithCompose(const float f1[MATRIX_SIZE], const float f
 void SkiaColorFilter::InitWithOverDrawColor(const ColorQuad colors[OVER_DRAW_COLOR_NUM])
 {
     filter_ = SkOverdrawColorFilter::MakeWithSkColors(colors);
+}
+
+void SkiaColorFilter::InitWithLighting(ColorQuad mul, ColorQuad add)
+{
+    filter_ = SkColorMatrixFilter::MakeLightingFilter(static_cast<SkColor>(mul), static_cast<SkColor>(add));
 }
 
 void SkiaColorFilter::InitWithLuma()

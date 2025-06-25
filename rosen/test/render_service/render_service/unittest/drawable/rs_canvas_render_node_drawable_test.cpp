@@ -23,6 +23,7 @@ using namespace testing::ext;
 using namespace OHOS::Rosen::DrawableV2;
 
 namespace OHOS::Rosen {
+static constexpr uint64_t TEST_ID = 124;
 class RSCanvasRenderNodeDrawableTest : public testing::Test {
 public:
     static void SetUpTestCase();
@@ -75,7 +76,7 @@ HWTEST(RSCanvasRenderNodeDrawableTest, OnDrawTest, TestSize.Level1)
 
     drawable->isOpDropped_ = false;
     drawable->isDrawingCacheEnabled_ = true;
-    drawable->autoCacheEnable_ = false;
+    drawable->GetOpincDrawCache().autoCacheEnable_ = false;
     drawable->drawBlurForCache_ = false;
     drawable->OnDraw(canvas);
     ASSERT_TRUE(drawable->isDrawingCacheEnabled_);
@@ -128,6 +129,8 @@ HWTEST(RSCanvasRenderNodeDrawableTest, OnCaptureTest002, TestSize.Level1)
     Drawing::Canvas drawingCanvas;
     RSPaintFilterCanvas canvas(&drawingCanvas);
     RSUniRenderThread::GetCaptureParam().isMirror_ = true;
+    drawable->renderParams_ = nullptr;
+    drawable->OnCapture(canvas);
     drawable->isDrawingCacheEnabled_ = false;
     drawable->renderParams_ = std::make_unique<RSRenderParams>(nodeId);
     ASSERT_TRUE(drawable->GetRenderParams());
@@ -137,6 +140,26 @@ HWTEST(RSCanvasRenderNodeDrawableTest, OnCaptureTest002, TestSize.Level1)
     ASSERT_TRUE(drawable->GetRenderParams());
     drawable->OnCapture(canvas);
     ASSERT_TRUE(drawable->ShouldPaint());
+    nodeId = TEST_ID;
+    RSUniRenderThread::GetCaptureParam().endNodeId_ = TEST_ID;
+    canvas.SetUICapture(true);
+    drawable->OnCapture(canvas);
+    ASSERT_TRUE(drawable->ShouldPaint());
+    RSUniRenderThread::GetCaptureParam().endNodeId_ = INVALID_NODEID;
+    drawable->OnCapture(canvas);
+    ASSERT_TRUE(drawable->ShouldPaint());
+    
+    CaptureParam params;
+    params.isMirror_ = true;
+    std::unordered_set<NodeId> whiteList = {nodeId};
+    RSUniRenderThread::Instance().SetWhiteList(whiteList);
+    ScreenId screenid = 1;
+    params.virtualScreenId_ = screenid;
+    std::unordered_map<ScreenId, bool> info;
+    info[screenid] = true;
+    drawable->renderParams_->SetVirtualScreenWhiteListInfo(info);
+    RSUniRenderThread::SetCaptureParam(params);
+    drawable->OnCapture(canvas);
 }
 
 /**

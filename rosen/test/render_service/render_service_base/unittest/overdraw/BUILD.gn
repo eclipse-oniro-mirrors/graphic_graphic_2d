@@ -37,12 +37,12 @@ ohos_unittest("overdraw_test") {
   deps = [
     "//foundation/graphic/graphic_2d/rosen/modules/render_service_base:librender_service_base",
     "//foundation/graphic/graphic_2d/utils/test_header:test_header",
-    "//third_party/googletest:gmock",
   ]
   if (defined(use_rosen_drawing) && use_rosen_drawing) {
     public_deps = [ "$graphic_2d_root/rosen/modules/2d_graphics:2d_graphics" ]
   }
   external_deps = [
+    "googletest:gmock",
     "hilog:libhilog",
     "skia:skia_canvaskit",
   ]

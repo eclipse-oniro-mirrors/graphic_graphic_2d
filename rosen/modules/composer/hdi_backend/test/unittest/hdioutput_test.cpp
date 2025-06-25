@@ -319,8 +319,14 @@ HWTEST_F(HdiOutputTest, DumpHitchs, Function | MediumTest | Level1)
 {
     std::vector<LayerInfoPtr> layerInfos;
     for (size_t i = 0; i < 3; i++) {
-        layerInfos.emplace_back(std::make_shared<HdiLayerInfo>());
+        auto layerInfo_ = HdiLayerInfo::CreateHdiLayerInfo();
+        layerInfo_->SetIsMaskLayer(true);
+        layerInfos.emplace_back(layerInfo_);
     }
+    HdiOutputTest::hdiOutput_->SetLayerInfo(layerInfos);
+    LayerPtr maskLayer_ = HdiLayer::CreateHdiLayer(0);
+    maskLayer_->SetLayerStatus(false);
+    HdiOutputTest::hdiOutput_->SetMaskLayer(maskLayer_);
     HdiOutputTest::hdiOutput_->SetLayerInfo(layerInfos);
     std::string ret = "";
     HdiOutputTest::hdiOutput_->DumpHitchs(ret, "UniRender");
@@ -369,6 +375,25 @@ HWTEST_F(HdiOutputTest, DumpFps001, Function | MediumTest | Level1)
 }
 
 /*
+* Function: DumpCurrentFrameLayers001
+* Type: Function
+* Rank: Important(1)
+* EnvConditions: N/A
+* CaseDescription: 1.call DumpCurrentFrameLayers()
+*                  2.no crash
+*/
+HWTEST_F(HdiOutputTest, DumpCurrentFrameLayers001, Function | MediumTest | Level1)
+{
+    std::shared_ptr<HdiOutput> output = HdiOutput::CreateHdiOutput(0);
+    ASSERT_NE(output, nullptr);
+    for (size_t i = 0; i < 3; i++) {
+        output->surfaceIdMap_[i] = HdiLayer::CreateHdiLayer(i);
+        output->surfaceIdMap_[i]->UpdateLayerInfo(HdiLayerInfo::CreateHdiLayerInfo());
+    }
+    output->DumpCurrentFrameLayers();
+}
+
+/*
  * Function: DeletePrevLayersLocked001
  * Type: Function
  * Rank: Important(1)
@@ -386,6 +411,10 @@ HWTEST_F(HdiOutputTest, DeletePrevLayersLocked001, Function | MediumTest | Level
     layer->isInUsing_ = true;
     surfaceIdMap[id] = layer;
     layerIdMap[id] = layer;
+
+    LayerPtr maskLayer_ = HdiLayer::CreateHdiLayer(0);
+    maskLayer_->SetLayerStatus(false);
+    hdiOutput->SetMaskLayer(maskLayer_);
 
     hdiOutput->DeletePrevLayersLocked();
     EXPECT_EQ(surfaceIdMap.count(id), 1);
@@ -685,6 +714,51 @@ HWTEST_F(HdiOutputTest, CleanLayerBufferBySurfaceId_001, testing::ext::TestSize.
     }
     // clean the nonexistent surface ID.
     output->CleanLayerBufferBySurfaceId(4);
+}
+
+/*
+ * Function: InitLoadOptParams001
+ * Type: Function
+ * Rank: Important(1)
+ * EnvConditions: N/A
+ * CaseDescription: 1.call InitLoadOptParams
+ *                  2.check ret
+ */
+HWTEST_F(HdiOutputTest, InitLoadOptParams001, Function | MediumTest | Level1)
+{
+    auto hdiOutput = HdiOutputTest::hdiOutput_;
+    LoadOptParamsForHdiOutput params;
+    params.switchParams[IS_MERGE_FENCE_SKIPPED] = true;
+
+    hdiOutput->InitLoadOptParams(params);
+    EXPECT_TRUE(hdiOutput->isMergeFenceSkipped_);
+}
+
+/*
+ * Function: ANCOTransactionOnComplete001
+ * Type: Function
+ * Rank: Important(1)
+ * EnvConditions: N/A
+ * CaseDescription: 1.call ANCOTransactionOnComplete()
+ *                  2.no crash
+ */
+HWTEST_F(HdiOutputTest, ANCOTransactionOnComplete001, Function | MediumTest | Level3)
+{
+    std::shared_ptr<HdiOutput> output = HdiOutput::CreateHdiOutput(0);
+    ASSERT_NE(output, nullptr);
+    LayerInfoPtr layerInfo = nullptr;
+    output->ANCOTransactionOnComplete(layerInfo, nullptr);
+    layerInfo = std::make_shared<HdiLayerInfo>();
+    output->ANCOTransactionOnComplete(layerInfo, nullptr);
+    layerInfo->SetAncoFlags(static_cast<uint32_t>(AncoFlags::ANCO_NATIVE_NODE));
+    output->ANCOTransactionOnComplete(layerInfo, nullptr);
+    auto previousReleaseFence = sptr<SyncFence>::MakeSptr(-1);
+    auto consumer = IConsumerSurface::Create("xcomponentIdSurface");
+    layerInfo->SetSurface(consumer);
+    output->ANCOTransactionOnComplete(layerInfo, previousReleaseFence);
+    auto buffer = new SurfaceBufferImpl();
+    layerInfo->SetBuffer(buffer, nullptr);
+    output->ANCOTransactionOnComplete(layerInfo, previousReleaseFence);
 }
 } // namespace
 } // namespace Rosen

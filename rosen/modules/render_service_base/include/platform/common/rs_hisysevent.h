@@ -16,7 +16,7 @@
 #ifndef RENDER_SERVICE_BASE_COMMON_RS_HISYSEVENT_H
 #define RENDER_SERVICE_BASE_COMMON_RS_HISYSEVENT_H
 
-#include "base/hiviewdfx/hisysevent/interfaces/native/innerkits/hisysevent/include/hisysevent.h"
+#include "hisysevent.h"
 #include "platform/common/rs_log.h"
 #include <string>
 #include <unordered_map>
@@ -45,6 +45,7 @@ namespace RSEventName {
     const std::string RENDER_MEMORY_OVER_ERROR = "RENDER_MEMORY_OVER_ERROR";
     const std::string RS_HARDWARE_THREAD_LOAD_WARNING = "RS_HARDWARE_THREAD_LOAD_WARNING";
     const std::string RENDER_DRAWABLE_MULTI_ACCESS = "RENDER_DRAWABLE_MULTI_ACCESS";
+    const std::string RS_RENDER_EXCEPTION = "RS_RENDER_EXCEPTION";
 } // namespace RSEventName
 
 enum RSEventType {

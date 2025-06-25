@@ -17,8 +17,14 @@
 #include "platform/common/rs_log.h"
 #include "platform/common/rs_system_properties.h"
 #include "common/rs_optional_trace.h"
-#include "include/gpu/GrDirectContext.h"
 #include "effect/runtime_shader_builder.h"
+
+#ifdef USE_M133_SKIA
+#include "include/core/SkM44.h"
+#include "include/gpu/ganesh/GrDirectContext.h"
+#else
+#include "include/gpu/GrDirectContext.h"
+#endif
 
 namespace OHOS {
 namespace Rosen {
@@ -252,6 +258,9 @@ std::shared_ptr<Drawing::ShaderEffect> KawaseBlurFilter::ApplySimpleFilter(Drawi
 #else
     std::shared_ptr<Drawing::Image> tmpSimpleBlur(simpleBlurBuilder.MakeImage(nullptr, nullptr, scaledInfo, false));
 #endif
+    if (tmpSimpleBlur == nullptr) {
+        return nullptr;
+    }
     return Drawing::ShaderEffect::CreateImageShader(*tmpSimpleBlur, Drawing::TileMode::CLAMP, Drawing::TileMode::CLAMP,
         linear, Drawing::Matrix());
 }
@@ -337,6 +346,10 @@ std::shared_ptr<Drawing::Image> KawaseBlurFilter::ExecutePingPongBlur(Drawing::C
     // And now we'll build our chain of scaled blur stages
     for (auto i = 1; i < blur.numberOfPasses; i++) {
         const float stepScale = static_cast<float>(i) * blurScale_;
+        if (tmpBlur == nullptr) {
+            ROSEN_LOGE("KawaseBlurFilter::ExecutePingPongBlur tmpBlur is nullptr.");
+            return nullptr;
+        }
         blurBuilder.SetChild("imageInput", Drawing::ShaderEffect::CreateImageShader(*tmpBlur, Drawing::TileMode::CLAMP,
             Drawing::TileMode::CLAMP, linear, Drawing::Matrix()));
 

@@ -29,8 +29,11 @@
 #include "graphic_common_c.h"
 #include "hgm_core.h"
 #include "include/core/SkGraphics.h"
+#ifdef USE_M133_SKIA
+#include "include/gpu/ganesh/GrDirectContext.h"
+#else
 #include "include/gpu/GrDirectContext.h"
-#include "utils/graphic_coretrace.h"
+#endif
 #include "memory/rs_memory_manager.h"
 #include "mem_param.h"
 #include "params/rs_display_render_params.h"
@@ -342,10 +345,9 @@ void RSUniRenderThread::Sync(std::unique_ptr<RSRenderThreadParams>&& stagingRend
 
 void RSUniRenderThread::Render()
 {
-    RECORD_GPURESOURCE_CORETRACE_CALLER(Drawing::CoreFunction::
-        RS_RSUNIRENDERTHREAD_RENDER);
     if (!rootNodeDrawable_) {
         RS_LOGE("rootNodeDrawable is nullptr");
+        return;
     }
     if (vmaOptimizeFlag_) { // render this frame with vma cache on/off
         std::lock_guard<std::mutex> lock(vmaCacheCountMutex_);
@@ -363,13 +365,12 @@ void RSUniRenderThread::Render()
     PerfForBlurIfNeeded();
 }
 
-void RSUniRenderThread::ReleaseSelfDrawingNodeBuffer()
+void RSUniRenderThread::CollectReleaseTasks(std::vector<std::function<void()>>& releaseTasks)
 {
     auto& renderThreadParams = GetRSRenderThreadParams();
     if (!renderThreadParams) {
         return;
     }
-    std::vector<std::function<void()>> releaseTasks;
     for (const auto& drawable : renderThreadParams->GetSelfDrawables()) {
         if (UNLIKELY(!drawable)) {
             continue;
@@ -383,9 +384,15 @@ void RSUniRenderThread::ReleaseSelfDrawingNodeBuffer()
         if (UNLIKELY(!surfaceParams)) {
             continue;
         }
-        bool needRelease = !surfaceParams->GetHardwareEnabled() || !surfaceParams->GetLayerCreated();
-        if (needRelease && surfaceParams->GetLastFrameHardwareEnabled()) {
+        auto curHardWareEnabled = surfaceParams->GetHardwareEnabled();
+        auto lastHardWareEnabled = surfaceParams->GetLastFrameHardwareEnabled();
+        bool needRelease = !curHardWareEnabled || !surfaceParams->GetLayerCreated();
+        if (needRelease && lastHardWareEnabled) {
             surfaceParams->releaseInHardwareThreadTaskNum_ = RELEASE_IN_HARDWARE_THREAD_TASK_NUM;
+        }
+        if (curHardWareEnabled != lastHardWareEnabled && params->GetIsOnTheTree()) {
+            RS_LOGI("name:%{public}s id:%{public}" PRIu64 " hwcEnabled changed to:%{public}d needRelease:%{public}d",
+                surfaceDrawable->GetName().c_str(), surfaceDrawable->GetId(), curHardWareEnabled, needRelease);
         }
         if (needRelease) {
             auto preBuffer = params->GetPreBuffer();
@@ -396,7 +403,7 @@ void RSUniRenderThread::ReleaseSelfDrawingNodeBuffer()
                 continue;
             }
             auto releaseTask = [buffer = preBuffer, consumer = surfaceDrawable->GetConsumerOnDraw(),
-                                   useReleaseFence = surfaceParams->GetLastFrameHardwareEnabled(),
+                                   useReleaseFence = lastHardWareEnabled,
                                    acquireFence = acquireFence_]() mutable {
                 if (consumer == nullptr) {
                     RS_LOGE("ReleaseSelfDrawingNodeBuffer failed consumer nullptr");
@@ -417,6 +424,12 @@ void RSUniRenderThread::ReleaseSelfDrawingNodeBuffer()
             }
         }
     }
+}
+
+void RSUniRenderThread::ReleaseSelfDrawingNodeBuffer()
+{
+    std::vector<std::function<void()>> releaseTasks;
+    CollectReleaseTasks(releaseTasks);
     if (releaseTasks.empty()) {
         return;
     }
@@ -540,9 +553,7 @@ void RSUniRenderThread::NotifyDisplayNodeBufferReleased()
 
 void RSUniRenderThread::PerfForBlurIfNeeded()
 {
-    auto socPerfParam = std::static_pointer_cast<SOCPerfParam>(
-        GraphicFeatureParamManager::GetInstance().GetFeatureParam(FEATURE_CONFIGS[SOC_PERF]));
-    if (socPerfParam != nullptr && !socPerfParam->IsBlurSOCPerfEnable()) {
+    if (!SOCPerfParam::IsBlurSOCPerfEnable()) {
         return;
     }
 
@@ -689,23 +700,15 @@ static void TrimMemEmptyType(Drawing::GPUContext* gpuContext)
     SkGraphics::PurgeAllCaches();
     gpuContext->FreeGpuResources();
     gpuContext->PurgeUnlockedResources(true);
-#ifdef NEW_RENDER_CONTEXT
-    MemoryHandler::ClearShader();
-#else
     std::shared_ptr<RenderContext> rendercontext = std::make_shared<RenderContext>();
     rendercontext->CleanAllShaderCache();
-#endif
     gpuContext->FlushAndSubmit(true);
 }
 
 static void TrimMemShaderType()
 {
-#ifdef NEW_RENDER_CONTEXT
-    MemoryHandler::ClearShader();
-#else
     std::shared_ptr<RenderContext> rendercontext = std::make_shared<RenderContext>();
     rendercontext->CleanAllShaderCache();
-#endif
 }
 
 static void TrimMemGpuLimitType(Drawing::GPUContext* gpuContext, std::string& dumpString,
@@ -735,6 +738,7 @@ void RSUniRenderThread::TrimMem(std::string& dumpString, std::string& type)
 {
     auto task = [this, &dumpString, &type] {
         std::string typeGpuLimit = "setgpulimit";
+        std::string avcodecVideo = "avcodecVideo";
         if (!uniRenderEngine_) {
             return;
         }
@@ -771,6 +775,8 @@ void RSUniRenderThread::TrimMem(std::string& dumpString, std::string& type)
             dumpString.append("flushcache " + std::to_string(ret) + "\n");
         } else if (type.substr(0, typeGpuLimit.length()) == typeGpuLimit) {
             TrimMemGpuLimitType(gpuContext, dumpString, type, typeGpuLimit);
+        } else if (type.substr(0, avcodecVideo.length()) == avcodecVideo) {
+            RSJankStats::GetInstance().AvcodecVideoDump(dumpString, type, avcodecVideo);
         } else {
             uint32_t pid = static_cast<uint32_t>(std::atoi(type.c_str()));
             Drawing::GPUResourceTag tag(pid, 0, 0, 0, "TrimMem");
@@ -786,8 +792,9 @@ void RSUniRenderThread::DumpMem(DfxString& log)
     std::vector<std::pair<NodeId, std::string>> nodeTags;
     const auto& nodeMap = RSMainThread::Instance()->GetContext().GetNodeMap();
     nodeMap.TraverseSurfaceNodes([&nodeTags](const std::shared_ptr<RSSurfaceRenderNode> node) {
-        std::string name = node->GetName() + " " + std::to_string(node->GetId());
-        nodeTags.push_back({node->GetId(), name});
+        NodeId nodeId = node->GetId();
+        std::string name = node->GetName() + " " + std::to_string(ExtractPid(nodeId)) + " " + std::to_string(nodeId);
+        nodeTags.push_back({nodeId, name});
     });
     PostSyncTask([&log, &nodeTags, this]() {
         if (!uniRenderEngine_) {
@@ -828,13 +835,7 @@ void RSUniRenderThread::DefaultClearMemoryCache()
 
 void RSUniRenderThread::PostClearMemoryTask(ClearMemoryMoment moment, bool deeply, bool isDefaultClean)
 {
-    bool isDeeplyRelGpuResEnable = false;
-    auto relGpuResParam = std::static_pointer_cast<DeeplyRelGpuResParam>(
-        GraphicFeatureParamManager::GetInstance().GetFeatureParam(FEATURE_CONFIGS[DEEPLY_REL_GPU_RES]));
-    if (relGpuResParam != nullptr) {
-        isDeeplyRelGpuResEnable = relGpuResParam->IsDeeplyRelGpuResEnable();
-    }
-    auto task = [this, moment, deeply, isDefaultClean, isDeeplyRelGpuResEnable]() {
+    auto task = [this, moment, deeply, isDefaultClean]() {
         if (!uniRenderEngine_) {
             return;
         }
@@ -854,7 +855,7 @@ void RSUniRenderThread::PostClearMemoryTask(ClearMemoryMoment moment, bool deepl
         SkGraphics::PurgeAllCaches(); // clear cpu cache
         auto pid = *(this->exitedPidSet_.begin());
         if (this->exitedPidSet_.size() == 1 && pid == -1) { // no exited app, just clear scratch resource
-            if (deeply || isDeeplyRelGpuResEnable) {
+            if (deeply || MEMParam::IsDeeplyRelGpuResEnable()) {
                 MemoryManager::ReleaseUnlockAndSafeCacheGpuResource(grContext);
             } else {
                 MemoryManager::ReleaseUnlockGpuResource(grContext);
@@ -890,7 +891,7 @@ void RSUniRenderThread::PostClearMemoryTask(ClearMemoryMoment moment, bool deepl
             rate = defaultRefreshRate;
         }
         PostTask(task, CLEAR_GPU_CACHE,
-            (isDeeplyRelGpuResEnable ? TIME_OF_THE_FRAMES : TIME_OF_EIGHT_FRAMES) / rate);
+            (MEMParam::IsDeeplyRelGpuResEnable() ? TIME_OF_THE_FRAMES : TIME_OF_EIGHT_FRAMES) / rate);
     } else {
         PostTask(task, DEFAULT_CLEAR_GPU_CACHE, TIME_OF_DEFAULT_CLEAR_GPU_CACHE);
     }
@@ -925,7 +926,8 @@ void RSUniRenderThread::PostReclaimMemoryTask(ClearMemoryMoment moment, bool isR
         RS_LOGD("Clear memory cache %{public}d", moment);
         RS_TRACE_NAME_FMT("Reclaim Memory, cause the moment [%d] happen", moment);
         std::lock_guard<std::mutex> lock(clearMemoryMutex_);
-        if (isReclaim) {
+        // Ensure user don't enable the parameter. When we have an interrupt mechanism, remove it.
+        if (isReclaim && system::GetParameter("persist.ace.testmode.enabled", "0") == "1") {
 #ifdef OHOS_PLATFORM
             RSBackgroundThread::Instance().PostTask([]() {
                 RS_LOGI("RSUniRenderThread::PostReclaimMemoryTask Start Reclaim File");
@@ -940,9 +942,9 @@ void RSUniRenderThread::PostReclaimMemoryTask(ClearMemoryMoment moment, bool isR
                 }
             });
 #endif
-            this->isTimeToReclaim_.store(false);
-            this->SetClearMoment(ClearMemoryMoment::NO_CLEAR);
         }
+        this->isTimeToReclaim_.store(false);
+        this->SetClearMoment(ClearMemoryMoment::NO_CLEAR);
     };
 
     PostTask(task, RECLAIM_MEMORY, TIME_OF_RECLAIM_MEMORY);
@@ -1104,7 +1106,7 @@ void RSUniRenderThread::PurgeShaderCacheAfterAnimate()
                 hasPurgeShaderCacheTask_ = false;
             },
             PURGE_SHADER_CACHE_AFTER_ANIMATE,
-            (this->deviceType_ == DeviceType::PHONE ? TIME_OF_SIX_FRAMES : TIME_OF_THE_FRAMES) / GetRefreshRate(),
+            (MEMParam::IsDeeplyRelGpuResEnable() ? TIME_OF_THE_FRAMES : TIME_OF_SIX_FRAMES) / GetRefreshRate(),
             AppExecFwk::EventQueue::Priority::LOW);
     }
 #else

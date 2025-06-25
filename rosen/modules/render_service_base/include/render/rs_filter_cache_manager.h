@@ -17,7 +17,7 @@
 #define RENDER_SERVICE_BASE_PROPERTY_RS_FILTER_CACHE_MANAGER_H
 
 #include <atomic>
-#if defined(NEW_SKIA) && (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
+#if (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
 #include <condition_variable>
 
 #include "event_handler.h"
@@ -118,6 +118,7 @@ public:
     void SwapDataAndInitStagingFlags(std::unique_ptr<RSFilterCacheManager>& cacheManager);
     bool WouldDrawLargeAreaBlur();
     bool WouldDrawLargeAreaBlurPrecisely();
+    void MarkInForegroundFilterAndCheckNeedForceClearCache(NodeId offscreenCanvasNodeId);
     RSFilter::FilterType GetFilterType() const {
         return filterType_;
     }
@@ -171,6 +172,7 @@ private:
     bool stagingForceClearCacheForLastFrame_ = false;
     bool stagingIsAIBarInteractWithHWC_ = false;
     bool stagingIsEffectNode_ = false;
+    NodeId stagingInForegroundFilter_ = INVALID_NODEID;
 
     // clear one of snapshot cache and filtered cache after drawing
     // All renderXXX variables should be read & written by render_thread or OnSync() function
@@ -197,6 +199,9 @@ private:
     bool isFilterCacheValid_ = false; // catch status in current frame
     // Whether we need to purge the cache after this frame.
     bool pendingPurge_ = false;
+
+    // last stagingInForegroundFilter_ value
+    NodeId lastInForegroundFilter_ = INVALID_NODEID;
 
 public:
     static bool isCCMFilterCacheEnable_;

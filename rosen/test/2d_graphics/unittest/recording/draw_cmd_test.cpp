@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include <memory>
 #include "gtest/gtest.h"
 
 #include "draw/surface.h"
@@ -264,7 +265,7 @@ HWTEST_F(DrawCmdTest, GenerateCachedOpItem001, TestSize.Level1)
     uint64_t globalUniqueId = 0;
     PaintHandle paintHandle;
     DrawTextBlobOpItem::ConstructorHandle handle{opDataHandle,
-        globalUniqueId, 0, 0, paintHandle};
+        globalUniqueId, TextContrast::FOLLOW_SYSTEM, 0, 0, paintHandle};
     EXPECT_FALSE(player.GenerateCachedOpItem(DrawOpItem::TEXT_BLOB_OPITEM, &handle, 0));
     EXPECT_FALSE(player.GenerateCachedOpItem(DrawOpItem::PICTURE_OPITEM, &handle, 0));
 }
@@ -282,7 +283,8 @@ HWTEST_F(DrawCmdTest, PatchTypefaceIds001, TestSize.Level1)
     OpDataHandle opDataHandle;
     uint64_t globalUniqueId = 1;
     PaintHandle paintHandle;
-    DrawTextBlobOpItem::ConstructorHandle handle{opDataHandle, globalUniqueId, 0, 0, paintHandle};
+    DrawTextBlobOpItem::ConstructorHandle handle{opDataHandle, globalUniqueId,
+        TextContrast::FOLLOW_SYSTEM, 0, 0, paintHandle};
     GenerateCachedOpItemPlayer player{*drawCmdList, nullptr, nullptr};
     player.GenerateCachedOpItem(DrawOpItem::TEXT_BLOB_OPITEM, &handle, 0);
     drawCmdList->PatchTypefaceIds();
@@ -915,6 +917,9 @@ HWTEST_F(DrawCmdTest, DrawTextBlobOpItem001, TestSize.Level1)
     opItem.DrawHighContrast(&canvas);
     opItem.DrawHighContrastEnabled(&canvas);
 
+    textBlob->SetTextContrast(TextContrast::ENABLE_CONTRAST);
+    opItem.Playback(recordingCanvas2.get(), &rect);
+
     DrawTextBlobOpItem::ConstructorHandle::GenerateCachedOpItem(*drawCmdList, nullptr, 0, 0, paint);
     DrawTextBlobOpItem::ConstructorHandle::GenerateCachedOpItem(*drawCmdList, textBlob.get(), 0, 0, paint);
     TextBlob textBlob2{nullptr};
@@ -925,8 +930,34 @@ HWTEST_F(DrawCmdTest, DrawTextBlobOpItem001, TestSize.Level1)
     opDataHandle.size = 10;
     uint64_t globalUniqueId = 0;
     PaintHandle paintHandle;
-    DrawTextBlobOpItem::ConstructorHandle handler{opDataHandle, globalUniqueId, 10, 10, paintHandle}; // 10: x, y
+    DrawTextBlobOpItem::ConstructorHandle handler{opDataHandle, globalUniqueId,
+        TextContrast::FOLLOW_SYSTEM, 10, 10, paintHandle}; // 10: x, y
     handler.GenerateCachedOpItem(*drawCmdList, &canvas);
+}
+
+/**
+ * @tc.name: IsHighContrastEnableTest
+ * @tc.desc: Test functions for IsHighContrastEnableTest
+ * @tc.type: FUNC
+ * @tc.require: I9120P
+ */
+HWTEST_F(DrawCmdTest, IsHighContrastEnableTest, TestSize.Level1)
+{
+    Font font;
+    auto textBlob = TextBlob::MakeFromString("11", font, TextEncoding::UTF8);
+    Paint paint;
+    DrawTextBlobOpItem opItem{textBlob.get(), 0, 0, paint};
+
+    auto recordingCanvas = std::make_shared<RecordingCanvas>(1, 10);
+    TextContrast textContrast = TextContrast::FOLLOW_SYSTEM;
+    EXPECT_EQ(opItem.IsHighContrastEnable(recordingCanvas.get(), textContrast),
+        recordingCanvas.get()->isHighContrastEnabled());
+
+    textContrast = TextContrast::DISABLE_CONTRAST;
+    EXPECT_FALSE(opItem.IsHighContrastEnable(recordingCanvas.get(), textContrast));
+
+    textContrast = TextContrast::ENABLE_CONTRAST;
+    EXPECT_TRUE(opItem.IsHighContrastEnable(recordingCanvas.get(), textContrast));
 }
 
 /**
@@ -1128,6 +1159,81 @@ HWTEST_F(DrawCmdTest, UpdateNodeIdToPicture001, TestSize.Level1)
     EXPECT_TRUE(!drawCmdList->IsEmpty());
     drawCmdList->UpdateNodeIdToPicture(nodeId);
 }
+
+#ifdef RS_ENABLE_VK
+/**
+ * @tc.name: HybridRenderType001
+ * @tc.desc: Test SetHybridRenderType and GetHybridRenderType
+ * @tc.type: FUNC
+ * @tc.require: IBWDR2
+ */
+HWTEST_F(DrawCmdTest, HybridRenderType001, TestSize.Level1)
+{
+    auto drawCmdList = DrawCmdList::CreateFromData({ nullptr, 0 }, false);
+    auto hybridRenderTypeGet = drawCmdList->GetHybridRenderType();
+    EXPECT_EQ(hybridRenderTypeGet, DrawCmdList::HybridRenderType::NONE);
+}
+
+/**
+ * @tc.name: HybridRenderType002
+ * @tc.desc: Test SetHybridRenderType and GetHybridRenderType
+ * @tc.type: FUNC
+ * @tc.require: IBWDR2
+ */
+HWTEST_F(DrawCmdTest, HybridRenderType002, TestSize.Level1)
+{
+    auto drawCmdList = DrawCmdList::CreateFromData({ nullptr, 0 }, false);
+    auto hybridRenderTypeSet = DrawCmdList::HybridRenderType::TEXT;
+    drawCmdList->SetHybridRenderType(hybridRenderTypeSet);
+    auto hybridRenderTypeGet = drawCmdList->GetHybridRenderType();
+    EXPECT_EQ(hybridRenderTypeGet, hybridRenderTypeSet);
+}
+
+/**
+ * @tc.name: HybridRenderType003
+ * @tc.desc: Test SetHybridRenderType and GetHybridRenderType
+ * @tc.type: FUNC
+ * @tc.require: IBWDR2
+ */
+HWTEST_F(DrawCmdTest, HybridRenderType003, TestSize.Level1)
+{
+    auto drawCmdList = DrawCmdList::CreateFromData({ nullptr, 0 }, false);
+    auto hybridRenderTypeSet = DrawCmdList::HybridRenderType::SVG;
+    drawCmdList->SetHybridRenderType(hybridRenderTypeSet);
+    auto hybridRenderTypeGet = drawCmdList->GetHybridRenderType();
+    EXPECT_EQ(hybridRenderTypeGet, hybridRenderTypeSet);
+}
+
+/**
+ * @tc.name: HybridRenderType004
+ * @tc.desc: Test SetHybridRenderType and GetHybridRenderType
+ * @tc.type: FUNC
+ * @tc.require: IBWDR2
+ */
+HWTEST_F(DrawCmdTest, HybridRenderType004, TestSize.Level1)
+{
+    auto drawCmdList = DrawCmdList::CreateFromData({ nullptr, 0 }, false);
+    auto hybridRenderTypeSet = DrawCmdList::HybridRenderType::HMSYMBOL;
+    drawCmdList->SetHybridRenderType(hybridRenderTypeSet);
+    auto hybridRenderTypeGet = drawCmdList->GetHybridRenderType();
+    EXPECT_EQ(hybridRenderTypeGet, hybridRenderTypeSet);
+}
+
+/**
+ * @tc.name: HybridRenderType005
+ * @tc.desc: Test SetHybridRenderType and GetHybridRenderType
+ * @tc.type: FUNC
+ * @tc.require: IBWDR2
+ */
+HWTEST_F(DrawCmdTest, HybridRenderType005, TestSize.Level1)
+{
+    auto drawCmdList = DrawCmdList::CreateFromData({ nullptr, 0 }, false);
+    auto hybridRenderTypeSet = DrawCmdList::HybridRenderType::CANVAS;
+    drawCmdList->SetHybridRenderType(hybridRenderTypeSet);
+    auto hybridRenderTypeGet = drawCmdList->GetHybridRenderType();
+    EXPECT_EQ(hybridRenderTypeGet, hybridRenderTypeSet);
+}
+#endif
 
 /**
  * @tc.name: MaskCmdList001
@@ -1465,6 +1571,40 @@ HWTEST_F(DrawCmdTest, ClipRectOpItem_Marshalling001, TestSize.Level1)
     ASSERT_TRUE(drawCmdList != nullptr);
     opItem.Marshalling(*drawCmdList);
     EXPECT_EQ(drawCmdList->opCnt_, 1);
+}
+
+/**
+ * @tc.name: UnmarshallingPlayer
+ * @tc.desc: Test UnmarshallingPlayer
+ * @tc.require:
+ */
+HWTEST_F(DrawCmdTest, UnmarshallingPlayer, TestSize.Level1)
+{
+    {
+        auto drawCmdList = std::make_shared<DrawCmdList>(DrawCmdList::UnmarshalMode::DEFERRED);
+        auto player = UnmarshallingPlayer(*drawCmdList);
+        auto drawOpItem = player.Unmarshalling(0, nullptr, 0, false);
+        EXPECT_EQ(drawOpItem, nullptr);
+    }
+
+    {
+        auto drawCmdList = std::make_shared<DrawCmdList>(DrawCmdList::UnmarshalMode::DEFERRED);
+        auto type = DrawOpItem::RECT_OPITEM;
+        auto paintHandle = Drawing::PaintHandle {
+            .style = Drawing::Paint::PaintStyle::PAINT_FILL,
+            .color = { Drawing::Color::COLOR_WHITE },
+        };
+        auto rect = Drawing::Rect(0, 0, 0, 0);
+        auto roundRect = Drawing::RoundRect(rect, 0.f, 0.f);
+        auto handle = std::make_shared<DrawRoundRectOpItem::ConstructorHandle>(
+            roundRect, paintHandle
+        );
+        auto size = sizeof(DrawRectOpItem::ConstructorHandle);
+
+        auto player = UnmarshallingPlayer(*drawCmdList);
+        auto drawOpItem = player.Unmarshalling(type, static_cast<void*>(handle.get()), size, false);
+        EXPECT_EQ(drawOpItem->GetOpDesc(), "RECT_OPITEM");
+    }
 }
 } // namespace Drawing
 } // namespace Rosen

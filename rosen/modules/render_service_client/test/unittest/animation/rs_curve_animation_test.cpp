@@ -27,6 +27,7 @@ using namespace ANIMATIONTEST;
 class RSCurveAnimationTest : public RSAnimationBaseTest {
 };
 
+#ifndef MODIFIER_NG
 /**
  * @tc.name: GetTimingCurveTest001
  * @tc.desc: Verify the GetTimingCurve of CurveAnimationTest
@@ -288,10 +289,7 @@ HWTEST_F(RSCurveAnimationTest, RSNodeAnimateTest001, TestSize.Level1)
     /**
      * @tc.steps: step2. start GetTimingCurve test
      */
-    EXPECT_TRUE(animations.size() == CORRECT_SIZE);
-    if (animations.size() != CORRECT_SIZE) {
-        return;
-    }
+    ASSERT_TRUE(animations.size() == CORRECT_SIZE);
     auto springAnimation = std::static_pointer_cast<RSCurveAnimation>(animations[FIRST_ANIMATION]);
     EXPECT_TRUE(springAnimation != nullptr);
     if (springAnimation != nullptr) {
@@ -380,6 +378,7 @@ HWTEST_F(RSCurveAnimationTest, SetIsCustomTest002, TestSize.Level1)
     curveAnimation->IsSupportInteractiveAnimator();
     GTEST_LOG_(INFO) << "RSCurveAnimationTest SetIsCustomTest002 end" ;
 }
+#endif
 
 /**
  * @tc.name: IsSupportInteractiveAnimator001

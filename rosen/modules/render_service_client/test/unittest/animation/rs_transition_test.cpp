@@ -95,6 +95,7 @@ private:
     std::shared_ptr<RSAnimatableProperty<float>> alpha_;
 };
 
+#ifndef MODIFIER_NG
 /*
  * @tc.name: CustomTransitionEffectTest001
  * @tc.desc: Verify the custom transition effect of TransitionTest
@@ -460,6 +461,7 @@ HWTEST_F(RSTransitionTest, CombinedTransitionEffectTest003, TestSize.Level1)
 
     GTEST_LOG_(INFO) << "RSTransitionTest CombinedTransitionEffectTest003 end";
 }
+#endif
 
 /**
  * @tc.name: SetTransitionEffectTest001
@@ -632,10 +634,7 @@ HWTEST_F(RSTransitionTest, RSNodeAnimateTest001, TestSize.Level1)
     /**
      * @tc.steps: step2. start RSNodeAnimate test
      */
-    EXPECT_TRUE(animations.size() == CORRECT_SIZE);
-    if (animations.size() != CORRECT_SIZE) {
-        return;
-    }
+    ASSERT_TRUE(animations.size() == CORRECT_SIZE);
     EXPECT_FALSE(animations[FIRST_ANIMATION] == nullptr);
     EXPECT_TRUE(animations[FIRST_ANIMATION]->IsRunning());
     NotifyStartAnimation();
@@ -668,10 +667,7 @@ HWTEST_F(RSTransitionTest, RSNodeAnimateTest002, TestSize.Level1)
     /**
      * @tc.steps: step2. start RSNodeAnimate test
      */
-    EXPECT_TRUE(animations.size() == CORRECT_SIZE);
-    if (animations.size() != CORRECT_SIZE) {
-        return;
-    }
+    ASSERT_TRUE(animations.size() == CORRECT_SIZE);
     EXPECT_FALSE(animations[FIRST_ANIMATION] == nullptr);
     EXPECT_TRUE(animations[FIRST_ANIMATION]->IsRunning());
     NotifyStartAnimation();
@@ -702,10 +698,7 @@ HWTEST_F(RSTransitionTest, RSNodeAnimateTest003, TestSize.Level1)
     /**
      * @tc.steps: step2. start RSNodeAnimate test
      */
-    EXPECT_TRUE(animations.size() == CORRECT_SIZE);
-    if (animations.size() != CORRECT_SIZE) {
-        return;
-    }
+    ASSERT_TRUE(animations.size() == CORRECT_SIZE);
     EXPECT_FALSE(animations[FIRST_ANIMATION] == nullptr);
     EXPECT_TRUE(animations[FIRST_ANIMATION]->IsRunning());
     NotifyStartAnimation();

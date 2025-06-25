@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -22,6 +22,9 @@
 #include "pipeline/rs_uni_render_judgement.h"
 #include "recording/recording_canvas.h"
 #include "pipeline/main_thread/rs_main_thread.h"
+#ifdef RS_ENABLE_VK
+#include "platform/ohos/backend/rs_vulkan_context.h"
+#endif
 
 using namespace testing;
 using namespace testing::ext;
@@ -49,6 +52,9 @@ std::shared_ptr<Drawing::RecordingCanvas> drawingRecordingCanvas_ = nullptr;
 
 void RSRenderEngineTest::SetUpTestCase()
 {
+#ifdef RS_ENABLE_VK
+    RsVulkanContext::SetRecyclable(false);
+#endif
     RSTestUtil::InitRenderNodeGC();
     drawingCanvas_ = std::make_shared<Drawing::Canvas>(DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT);
     bool isUnirender = RSUniRenderJudgement::IsUniRender();
@@ -105,12 +111,10 @@ HWTEST_F(RSRenderEngineTest, DrawSurfaceNodeWithParams001, TestSize.Level1)
     } else {
         canvas = std::make_shared<RSPaintFilterCanvas>(drawingCanvas.get());
     }
-    if (!RSUniRenderJudgement::IsUniRender()) {
-        auto node = RSTestUtil::CreateSurfaceNodeWithBuffer();
-        auto param = RSDividedRenderUtil::CreateBufferDrawParam(*node);
-        param.useCPU = true;
-        renderEngine->DrawSurfaceNodeWithParams(*canvas, *node, param, nullptr, nullptr);
-    }
+    auto node = RSTestUtil::CreateSurfaceNodeWithBuffer();
+    auto param = RSDividedRenderUtil::CreateBufferDrawParam(*node);
+    param.useCPU = true;
+    renderEngine->DrawSurfaceNodeWithParams(*canvas, *node, param, nullptr, nullptr);
     ASSERT_NE(canvas, nullptr);
 }
 
@@ -135,12 +139,10 @@ HWTEST_F(RSRenderEngineTest, DrawSurfaceNodeWithParams002, TestSize.Level1)
     } else {
         canvas = std::make_shared<RSPaintFilterCanvas>(drawingCanvas.get());
     }
-    if (!RSUniRenderJudgement::IsUniRender()) {
-        auto node = RSTestUtil::CreateSurfaceNodeWithBuffer();
-        auto param = RSDividedRenderUtil::CreateBufferDrawParam(*node);
-        param.useCPU = true;
-        renderEngine->DrawSurfaceNodeWithParams(*canvas, *node, param, nullptr, nullptr);
-    }
+    auto node = RSTestUtil::CreateSurfaceNodeWithBuffer();
+    auto param = RSDividedRenderUtil::CreateBufferDrawParam(*node);
+    param.useCPU = true;
+    renderEngine->DrawSurfaceNodeWithParams(*canvas, *node, param, nullptr, nullptr);
     ASSERT_NE(canvas, nullptr);
 }
 
@@ -175,9 +177,14 @@ HWTEST_F(RSRenderEngineTest, DrawLayers001, TestSize.Level1)
     layers.emplace_back(layer2);
     LayerInfoPtr layer3 = HdiLayerInfo::CreateHdiLayerInfo();
     layer3->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_CLIENT);
+    auto surfaceNode = RSTestUtil::CreateSurfaceNode();
+    RSRenderNodeMap& nodeMap = RSMainThread::Instance()->GetContext().GetMutableNodeMap();
+    nodeMap.RegisterRenderNode(surfaceNode);
+    layer3->SetNodeId(surfaceNode->GetId());
     layers.emplace_back(layer3);
     renderEngine->DrawLayers(*canvas, layers, false);
     ASSERT_NE(canvas, nullptr);
+    nodeMap.UnregisterRenderNode(surfaceNode->GetId());
 }
 
 /**

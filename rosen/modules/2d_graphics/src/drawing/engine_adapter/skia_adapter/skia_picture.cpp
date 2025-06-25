@@ -15,6 +15,9 @@
 
 #include "skia_picture.h"
 
+#ifdef USE_M133_SKIA
+#include "include/core/SkTypeface.h"
+#endif
 #include "skia_data.h"
 #include "skia_serial_procs.h"
 #include "utils/data.h"
@@ -71,7 +74,11 @@ std::shared_ptr<Data> SkiaPicture::Serialize(SerialProcs* proc)
     if (proc == nullptr) {
         return nullptr;
     }
-    auto skProc = proc->GetImpl<SkiaSerialProcs>()->GetSkSerialProcs();
+    auto skiaSerialProcs = proc->GetImpl<SkiaSerialProcs>();
+    if (skiaSerialProcs == nullptr) {
+        return nullptr;
+    }
+    auto skProc = skiaSerialProcs->GetSkSerialProcs();
     if (proc->HasTypefaceProc()) {
         skProc->fTypefaceProc = [](SkTypeface* tf, void* ctx) {
             return tf->serialize(SkTypeface::SerializeBehavior::kDoIncludeData);
@@ -79,7 +86,11 @@ std::shared_ptr<Data> SkiaPicture::Serialize(SerialProcs* proc)
     }
     auto data = std::make_shared<Data>();
     auto skData = skiaPicture_->serialize(skProc);
-    data->GetImpl<SkiaData>()->SetSkData(skData);
+    auto skiaData = data->GetImpl<SkiaData>();
+    if (skiaData == nullptr) {
+        return nullptr;
+    }
+    skiaData->SetSkData(skData);
     return data;
 }
 } // namespace Drawing

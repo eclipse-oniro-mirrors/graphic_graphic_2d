@@ -25,7 +25,9 @@
 #include "effect/blender.h"
 #include "image/pixmap.h"
 #include "image/yuv_info.h"
+#ifndef USE_M133_SKIA
 #include "src/gpu/GrPerfMonitorReporter.h"
+#endif
 #include "text/font_style_set.h"
 #include "text/text_blob.h"
 #include "text/typeface.h"
@@ -52,6 +54,8 @@ public:
     static std::shared_ptr<Typeface> MakeFromFile(const char path[], int index);
     static std::shared_ptr<Typeface> MakeFromFile(const char path[], const FontArguments& fontArguments);
     static std::shared_ptr<Typeface> MakeFromStream(std::unique_ptr<MemoryStream> memoryStream, int32_t index);
+    static std::shared_ptr<Typeface> MakeFromStream(std::unique_ptr<MemoryStream> memoryStream,
+        const FontArguments& fontArguments);
     static std::shared_ptr<Typeface> MakeFromName(const char familyName[], FontStyle fontStyle);
     static std::vector<std::shared_ptr<Typeface>> GetSystemFonts();
 #ifdef RS_ENABLE_GPU
@@ -88,14 +92,8 @@ public:
     static void GetDrawingGlyphIDforTextBlob(const TextBlob* blob, std::vector<uint16_t>& glyphIds);
     static Path GetDrawingPathforTextBlob(uint16_t glyphId, const TextBlob* blob);
     static void GetDrawingPointsForTextBlob(const TextBlob* blob, std::vector<Point>& points);
-    static DrawingSymbolLayersGroups GetSymbolLayersGroups(uint16_t glyphId);
-    static std::vector<std::vector<DrawingPiecewiseParameter>> GetGroupParameters(
-        DrawingAnimationType type, uint16_t groupSum, uint16_t animationMode = 0,
-        DrawingCommonSubType commonSubType = DrawingCommonSubType::DOWN);
     static std::shared_ptr<Blender> CreateWithBlendMode(BlendMode mode);
     static void SetVmaCacheStatus(bool flag);
-    static void RecordCoreTrace(int functionType);
-    static void RecordCoreTrace(int functionType, uint64_t nodeId);
     static void ResetStatsData();
     static void ResetPerfEventData();
     static std::map<std::string, std::vector<uint16_t>> GetBlurStatsData();
@@ -105,10 +103,13 @@ public:
     static int16_t GetSplitRange(int64_t duration);
     static bool IsOpenPerf();
     static int64_t GetCurrentTime();
+    static void SetCurrentNodeId(uint64_t nodeId);
+#ifndef TODO_M133_SKIA
     static void GrTextureEventConvert2Rs(std::map<std::string, RsTextureEvent>& rsTextureEvent,
        const std::map<std::string, TextureEvent>& grTextureEvent);
     static void GrBlurEventConvert2Rs(std::map<std::string, RsBlurEvent>& rsBlurEvent,
         const std::map<std::string, BlurEvent>& grBlurEvent);
+#endif
 };
 } // namespace Drawing
 } // namespace Rosen

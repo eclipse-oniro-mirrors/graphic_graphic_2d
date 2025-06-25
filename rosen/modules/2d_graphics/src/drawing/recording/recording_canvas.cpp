@@ -243,6 +243,10 @@ void RecordingCanvas::DrawVertices(const Vertices& vertices, BlendMode mode)
 void RecordingCanvas::DrawImageNine(const Image* image, const RectI& center, const Rect& dst,
     FilterMode filterMode, const Brush* brush)
 {
+    if (image == nullptr) {
+        LOGE("RecordingCanvas::DrawImageNine, image is nullptr!");
+        return;
+    }
     if (!addDrawOpImmediate_) {
         cmdList_->AddDrawOp(std::make_shared<DrawImageNineOpItem>(image, center, dst, filterMode, brush));
         return;
@@ -263,6 +267,10 @@ void RecordingCanvas::DrawImageNine(const Image* image, const RectI& center, con
 void RecordingCanvas::DrawImageLattice(const Image* image, const Lattice& lattice, const Rect& dst,
     FilterMode filterMode)
 {
+    if (image == nullptr) {
+        LOGE("RecordingCanvas::DrawImageLattice failed, image is nullptr");
+        return;
+    }
     if (!addDrawOpImmediate_) {
         AddDrawOpDeferred<DrawImageLatticeOpItem>(image, lattice, dst, filterMode);
         return;
@@ -364,10 +372,7 @@ void RecordingCanvas::DrawRecordCmd(const std::shared_ptr<RecordCmd> recordCmd,
         LOGE("RecordingCanvas::DrawRecordCmd, recordCmd is nullptr!");
         return;
     }
-    if (isRecordCmd_) {
-        LOGE("RecordingCanvas::DrawRecordCmd, operation is unsupported!");
-        return;
-    }
+
     if (!addDrawOpImmediate_) {
         cmdList_->AddDrawOp(std::make_shared<DrawRecordCmdOpItem>(recordCmd, matrix, brush));
         return;
@@ -425,7 +430,8 @@ void RecordingCanvas::DrawTextBlob(const TextBlob* blob, const scalar x, const s
         uint32_t typefaceId = ctx.GetTypeface()->GetUniqueID();
         globalUniqueId = (shiftedPid | typefaceId);
     }
-    AddDrawOpImmediate<DrawTextBlobOpItem::ConstructorHandle>(textBlobHandle, globalUniqueId, x, y);
+    AddDrawOpImmediate<DrawTextBlobOpItem::ConstructorHandle>(textBlobHandle,
+        globalUniqueId, blob->GetTextContrast(), x, y);
 }
 
 void RecordingCanvas::DrawSymbol(const DrawingHMSymbolData& symbol, Point locate)
@@ -727,6 +733,18 @@ void RecordingCanvas::CheckForLazySave()
         }
         saveOpStateStack_.top() = RealSaveOp;
     }
+}
+
+void RecordingCanvas::ResetHybridRenderSize(float width, float height)
+{
+    if (cmdList_ == nullptr) {
+        return;
+    }
+    if (!addDrawOpImmediate_) {
+        cmdList_->AddDrawOp(std::make_shared<HybridRenderPixelMapSizeOpItem>(width, height));
+        return;
+    }
+    cmdList_->AddDrawOp<HybridRenderPixelMapSizeOpItem::ConstructorHandle>(width, height);
 }
 
 template<typename T, typename... Args>

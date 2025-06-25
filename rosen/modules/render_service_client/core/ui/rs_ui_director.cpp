@@ -38,6 +38,10 @@
 #include "ui/rs_surface_node.h"
 #include "ui/rs_ui_context.h"
 #include "ui/rs_ui_context_manager.h"
+#ifdef RS_ENABLE_VK
+#include "modifier_render_thread/rs_modifiers_draw_thread.h"
+#include "modifier_render_thread/rs_modifiers_draw.h"
+#endif
 
 #ifdef _WIN32
 #include <windows.h>
@@ -102,6 +106,9 @@ void RSUIDirector::Init(bool shouldCreateRenderThread, bool isMultiInstance)
     } else {
         // force fallback animaiions send to RS if no render thread
         RSNodeMap::Instance().GetAnimationFallbackNode()->isRenderServiceNode_ = true; // ToDo
+#ifdef RS_ENABLE_VK
+        InitHybridRender();
+#endif
     }
     if (!cacheDir_.empty()) {
         RSRenderThread::Instance().SetCacheDir(cacheDir_);
@@ -129,6 +136,72 @@ void RSUIDirector::SetFlushEmptyCallback(FlushEmptyCallback flushEmptyCallback)
     }
 }
 
+#ifdef RS_ENABLE_VK
+void RSUIDirector::InitHybridRender()
+{
+    if (RSSystemProperties::GetHybridRenderEnabled()) {
+        if (!cacheDir_.empty()) {
+            RSModifiersDrawThread::Instance().SetCacheDir(cacheDir_);
+        }
+        CommitTransactionCallback callback =
+            [] (std::shared_ptr<RSIRenderClient> &renderServiceClient,
+            std::unique_ptr<RSTransactionData>&& rsTransactionData, uint32_t& transactionDataIndex) {
+            auto task = [renderServiceClient, transactionData = std::move(rsTransactionData),
+                &transactionDataIndex]() mutable {
+                renderServiceClient->CommitTransaction(RSModifiersDrawThread::ConvertTransaction(transactionData));
+                transactionDataIndex = transactionData->GetIndex();
+                // destroy semaphore after commitTransaction for which syncFence was duped
+                RSModifiersDraw::DestroySemaphore();
+                std::shared_ptr<RSUIContext> rsUICtx;
+                {
+                    int32_t instanceId = INSTANCE_ID_UNDEFINED;
+                    for (auto& [id, _, cmd] : transactionData->GetPayload()) {
+                        if (cmd == nullptr) {
+                            continue;
+                        }
+                        uint64_t token = cmd->GetToken();
+                        rsUICtx = RSUIContextManager::Instance().GetRSUIContext(token);
+                        if (rsUICtx != nullptr) {
+                            break;
+                        }
+                        if (instanceId == INSTANCE_ID_UNDEFINED) {
+                            NodeId realId = id == 0 ? cmd->GetNodeId() : id;
+                            instanceId = RSNodeMap::Instance().GetNodeInstanceId(realId);
+                            instanceId = (instanceId == INSTANCE_ID_UNDEFINED ?
+                                RSNodeMap::Instance().GetInstanceIdForReleasedNode(realId) : instanceId);
+                        }
+                    }
+                    auto dataHolder = std::make_shared<TransactionDataHolder>(std::move(transactionData));
+                    std::unique_lock<std::recursive_mutex> lock(RSModifiersDrawThread::transactionDataMutex_);
+                    auto task = [dataHolder]() {
+                        std::unique_lock<std::recursive_mutex> lock(RSModifiersDrawThread::transactionDataMutex_);
+                        (void) dataHolder;
+                    };
+                    rsUICtx == nullptr ? RSUIDirector::PostTask(task, instanceId) : rsUICtx->PostTask(task);
+                }
+            };
+            RSModifiersDrawThread::Instance().ScheduleTask(task);
+        };
+        SetCommitTransactionCallback(callback);
+    }
+}
+
+void RSUIDirector::SetCommitTransactionCallback(CommitTransactionCallback commitTransactionCallback)
+{
+    if (rsUIContext_) {
+        auto transaction = rsUIContext_->GetRSTransaction();
+        if (transaction != nullptr) {
+            transaction->SetCommitTransactionCallback(commitTransactionCallback);
+        }
+    } else {
+        auto transactionProxy = RSTransactionProxy::GetInstance();
+        if (transactionProxy != nullptr) {
+            transactionProxy->SetCommitTransactionCallback(commitTransactionCallback);
+        }
+    }
+}
+#endif
+
 void RSUIDirector::StartTextureExport()
 {
     isUniRenderEnabled_ = RSSystemProperties::GetUniRenderEnabled();
@@ -154,13 +227,13 @@ void RSUIDirector::GoForeground(bool isTextureExport)
 {
     ROSEN_LOGD("RSUIDirector::GoForeground");
     if (!isActive_) {
+        auto nowTime = std::chrono::system_clock::now().time_since_epoch();
+        lastUiSkipTimestamp_ = std::chrono::duration_cast<std::chrono::milliseconds>(nowTime).count();
         if (!isUniRenderEnabled_ || isTextureExport) {
             RSRenderThread::Instance().UpdateWindowStatus(true);
         }
         isActive_ = true;
-        auto rsUIContext = rsUIContext_;
-        auto node = rsUIContext ? rsUIContext->GetNodeMap().GetNode<RSRootNode>(root_)
-                                 : RSNodeMap::Instance().GetNode<RSRootNode>(root_);
+        auto node = rootNode_.lock();
         if (node) {
             node->SetEnableRender(true);
         }
@@ -169,6 +242,19 @@ void RSUIDirector::GoForeground(bool isTextureExport)
             surfaceNode->MarkUIHidden(false);
             surfaceNode->SetAbilityState(RSSurfaceNodeAbilityState::FOREGROUND);
         }
+    }
+#ifdef RS_ENABLE_VK
+    RSModifiersDraw::InsertForegroundRoot(root_);
+#endif
+}
+
+void RSUIDirector::ReportUiSkipEvent(const std::string& abilityName)
+{
+    auto nowTime = std::chrono::system_clock::now().time_since_epoch();
+    int64_t nowMs = std::chrono::duration_cast<std::chrono::milliseconds>(nowTime).count();
+    auto transactionProxy = RSTransactionProxy::GetInstance();
+    if (transactionProxy != nullptr) {
+        transactionProxy->ReportUiSkipEvent(abilityName, nowMs, lastUiSkipTimestamp_);
     }
 }
 
@@ -180,9 +266,8 @@ void RSUIDirector::GoBackground(bool isTextureExport)
             RSRenderThread::Instance().UpdateWindowStatus(false);
         }
         isActive_ = false;
-        auto rsUIContext = rsUIContext_;
-        auto node = rsUIContext ? rsUIContext->GetNodeMap().GetNode<RSRootNode>(root_)
-                                 : RSNodeMap::Instance().GetNode<RSRootNode>(root_);
+        ReportUiSkipEvent(abilityName_);
+        auto node = rootNode_.lock();
         if (node) {
             node->SetEnableRender(false);
         }
@@ -192,6 +277,9 @@ void RSUIDirector::GoBackground(bool isTextureExport)
             surfaceNode->SetAbilityState(RSSurfaceNodeAbilityState::BACKGROUND);
         }
         if (isTextureExport || isUniRenderEnabled_) {
+#ifdef RS_ENABLE_VK
+            RSModifiersDraw::EraseForegroundRoot(root_);
+#endif
             return;
         }
         // clean bufferQueue cache
@@ -200,6 +288,9 @@ void RSUIDirector::GoBackground(bool isTextureExport)
                 std::shared_ptr<RSSurface> rsSurface = RSSurfaceExtractor::ExtractRSSurface(surfaceNode);
                 if (rsSurface == nullptr) {
                     ROSEN_LOGE("rsSurface is nullptr");
+#ifdef RS_ENABLE_VK
+                    RSModifiersDraw::EraseForegroundRoot(root_);
+#endif
                     return;
                 }
                 rsSurface->ClearBuffer();
@@ -216,20 +307,18 @@ void RSUIDirector::GoBackground(bool isTextureExport)
         });
 #endif
     }
+#ifdef RS_ENABLE_VK
+    RSModifiersDraw::EraseForegroundRoot(root_);
+#endif
 }
 
 void RSUIDirector::Destroy(bool isTextureExport)
 {
-    if (root_ != 0) {
+    if (auto node = rootNode_.lock()) {
         if (!isUniRenderEnabled_ || isTextureExport) {
-            auto rsUIContext = rsUIContext_;
-            auto node = rsUIContext ? rsUIContext->GetNodeMap().GetNode<RSRootNode>(root_)
-                                 : RSNodeMap::Instance().GetNode<RSRootNode>(root_);
-            if (node) {
-                node->RemoveFromTree();
-            }
+            node->RemoveFromTree();
         }
-        root_ = 0;
+        rootNode_.reset();
     }
     GoBackground(isTextureExport);
     if (rsUIContext_ != nullptr) {
@@ -244,6 +333,11 @@ void RSUIDirector::SetRSSurfaceNode(std::shared_ptr<RSSurfaceNode> surfaceNode)
 {
     surfaceNode_ = surfaceNode;
     AttachSurface();
+}
+
+std::shared_ptr<RSSurfaceNode> RSUIDirector::GetRSSurfaceNode() const
+{
+    return surfaceNode_.lock();
 }
 
 void RSUIDirector::SetAbilityBGAlpha(uint8_t alpha)
@@ -283,16 +377,23 @@ void RSUIDirector::SetRoot(NodeId root)
 
 void RSUIDirector::AttachSurface()
 {
-    auto rsUIContext = rsUIContext_;
-    auto node = rsUIContext ? rsUIContext->GetNodeMap().GetNode<RSRootNode>(root_)
-                                 : RSNodeMap::Instance().GetNode<RSRootNode>(root_);
     auto surfaceNode = surfaceNode_.lock();
+    auto node = rootNode_.lock();
     if (node != nullptr && surfaceNode != nullptr) {
         node->AttachRSSurfaceNode(surfaceNode);
         ROSEN_LOGD("RSUIDirector::AttachSurface [%{public}" PRIu64, surfaceNode->GetId());
     } else {
         ROSEN_LOGD("RSUIDirector::AttachSurface not ready");
     }
+}
+
+void RSUIDirector::SetRSRootNode(std::shared_ptr<RSRootNode> rootNode)
+{
+    if (rootNode_.lock() == rootNode) {
+        return;
+    }
+    rootNode_ = rootNode;
+    AttachSurface();
 }
 
 void RSUIDirector::SetAppFreeze(bool isAppFreeze)
@@ -360,9 +461,12 @@ void RSUIDirector::FlushAnimationStartTime(uint64_t timeStamp)
 
 void RSUIDirector::FlushModifier()
 {
-    auto rsUIContext = rsUIContext_;
-    auto modifierManager = rsUIContext ? rsUIContext->GetRSModifierManager()
-                                        : RSModifierManagerMap::Instance()->GetModifierManager(gettid());
+    std::shared_ptr<RSModifierManager> modifierManager = nullptr;
+    if (rsUIContext_ == nullptr) {
+        modifierManager = RSModifierManagerMap::Instance()->GetModifierManager(gettid());
+    } else {
+        modifierManager = rsUIContext_->GetRSModifierManager();
+    }
     if (modifierManager == nullptr) {
         return;
     }
@@ -408,8 +512,8 @@ void RSUIDirector::SetUITaskRunner(const TaskRunner& uiTaskRunner, int32_t insta
 
 void RSUIDirector::SendMessages()
 {
-    ROSEN_TRACE_BEGIN(HITRACE_TAG_GRAPHIC_AGP, "SendCommands");
     if (rsUIContext_) {
+        RS_TRACE_NAME_FMT("multi-intance SendCommands, rsUIContext_:%lu", rsUIContext_->GetToken());
         auto transaction = rsUIContext_->GetRSTransaction();
         if (transaction != nullptr) {
             transaction->FlushImplicitTransaction(timeStamp_, abilityName_);
@@ -418,6 +522,7 @@ void RSUIDirector::SendMessages()
             RS_LOGE_LIMIT(__func__, __line__, "RSUIDirector::SendMessages failed, transaction is nullptr");
         }
     } else {
+        ROSEN_TRACE_BEGIN(HITRACE_TAG_GRAPHIC_AGP, "SendCommands");
         auto transactionProxy = RSTransactionProxy::GetInstance();
         if (transactionProxy != nullptr) {
             transactionProxy->FlushImplicitTransaction(timeStamp_, abilityName_);
@@ -425,6 +530,25 @@ void RSUIDirector::SendMessages()
         } else {
             RS_LOGE_LIMIT(__func__, __line__, "RSUIDirector::SendMessages failed, transactionProxy is nullptr");
         }
+        ROSEN_TRACE_END(HITRACE_TAG_GRAPHIC_AGP);
+    }
+}
+
+void RSUIDirector::SendMessages(std::function<void()> callback)
+{
+    ROSEN_TRACE_BEGIN(HITRACE_TAG_GRAPHIC_AGP, "SendCommands With Callback");
+    auto transactionProxy = RSTransactionProxy::GetInstance();
+    if (transactionProxy != nullptr) {
+        if (callback != nullptr) {
+            static const int32_t pid = static_cast<int32_t>(getpid());
+            RS_LOGD("RSUIDirector::SendMessages with callback, timeStamp: %{public}"
+                PRIu64 " pid: %{public}d", timeStamp_, pid);
+            RSInterfaces::GetInstance().RegisterTransactionDataCallback(pid, timeStamp_, callback);
+        }
+        transactionProxy->FlushImplicitTransaction(timeStamp_, abilityName_);
+        index_ = transactionProxy->GetTransactionDataIndex();
+    } else {
+        RS_LOGE_LIMIT(__func__, __line__, "RSUIDirector::SendMessages failed, transactionProxy is nullptr");
     }
     ROSEN_TRACE_END(HITRACE_TAG_GRAPHIC_AGP);
 }
@@ -455,6 +579,7 @@ void RSUIDirector::RecvMessages()
 void RSUIDirector::RecvMessages(std::shared_ptr<RSTransactionData> cmds, bool useMultiInstance)
 {
     if (cmds == nullptr || cmds->IsEmpty()) {
+        ROSEN_LOGD("RSUIDirector::RecvMessages cmd empty");
         return;
     }
     ROSEN_LOGD("ProcessMessages begin");
@@ -529,7 +654,7 @@ void RSUIDirector::ProcessMessages(std::shared_ptr<RSTransactionData> cmds, bool
             return;
         }
         rsUICtx->PostTask([cmds = std::make_shared<std::vector<std::unique_ptr<RSCommand>>>(std::move(commands)),
-                              counter, msgId, tempToken = token, &rsUICtx] {
+                              counter, msgId, tempToken = token, rsUICtx] {
             RS_TRACE_NAME_FMT("RSUIDirector::ProcessMessages Process messageId:%lu", msgId);
             ROSEN_LOGI("Process messageId:%{public}d, cmdCount:%{public}lu, token:%{public}" PRIu64, msgId,
                 static_cast<unsigned long>(cmds->size()), tempToken);
@@ -542,7 +667,10 @@ void RSUIDirector::ProcessMessages(std::shared_ptr<RSTransactionData> cmds, bool
                 if (requestVsyncCallback_ != nullptr) {
                     requestVsyncCallback_();
                 } else {
-                    rsUICtx->GetRSTransaction()->FlushImplicitTransaction();
+                    auto rsTransaction = rsUICtx->GetRSTransaction();
+                    if (rsTransaction != nullptr) {
+                        rsTransaction->FlushImplicitTransaction();
+                    }
                 }
                 ROSEN_LOGD("ProcessMessages end");
             }
@@ -553,7 +681,7 @@ void RSUIDirector::ProcessMessages(std::shared_ptr<RSTransactionData> cmds, bool
 void RSUIDirector::AnimationCallbackProcessor(NodeId nodeId, AnimationId animId, uint64_t token,
     AnimationCallbackEvent event)
 {
-    RSAnimationTraceUtils::GetInstance().addAnimationFinishTrace(
+    RSAnimationTraceUtils::GetInstance().AddAnimationFinishTrace(
         "Animation FinishCallback Processor", nodeId, animId, false);
     auto rsUIContext = RSUIContextManager::Instance().GetRSUIContext(token);
     // try find the node by nodeId

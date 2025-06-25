@@ -19,7 +19,6 @@
 #include "info_collection/rs_layer_compose_collection.h"
 #include "rs_uni_render_engine.h"
 #include "rs_uni_render_util.h"
-#include "utils/graphic_coretrace.h"
 #ifdef RS_ENABLE_GPU
 #include "feature/round_corner_display/rs_round_corner_display_manager.h"
 #endif
@@ -47,8 +46,6 @@ void RSUniRenderEngine::DrawSurfaceNodeWithParams(RSPaintFilterCanvas& canvas,
     DrawableV2::RSSurfaceRenderNodeDrawable& surfaceDrawable, BufferDrawParam& params, PreProcessFunc preProcess,
     PostProcessFunc postProcess)
 {
-    RECORD_GPURESOURCE_CORETRACE_CALLER(Drawing::CoreFunction::
-        RS_RSUNIRENDERENGINE_DRAWSURFACENODEWITHPARAMS);
     canvas.Save();
     canvas.ConcatMatrix(params.matrix);
     if (!params.useCPU) {
@@ -126,6 +123,7 @@ void RSUniRenderEngine::DrawLayers(RSPaintFilterCanvas& canvas, const std::vecto
             params.isHdrRedraw = true;
         }
 #endif
+        RS_TRACE_NAME_FMT("DrawLayerWithParams, surface name: %s", layerSurface->GetName().c_str());
         DrawHdiLayerWithParams(canvas, layer, params);
         // Dfx for redraw region
         auto dstRect = layer->GetLayerSize();
@@ -200,7 +198,7 @@ void RSUniRenderEngine::DrawHdiLayerWithParams(RSPaintFilterCanvas& canvas, cons
         params.matrix.Get(Drawing::Matrix::PERSP_2));
     canvas.ConcatMatrix(params.matrix);
     if (!params.useCPU) {
-        RegisterDeleteBufferListener(layer->GetSurface(), true);
+        RegisterDeleteBufferListener(layer->GetSurface(), !RSSystemProperties::GetVKImageUseEnabled());
         DrawImage(canvas, params);
     } else {
         DrawBuffer(canvas, params);

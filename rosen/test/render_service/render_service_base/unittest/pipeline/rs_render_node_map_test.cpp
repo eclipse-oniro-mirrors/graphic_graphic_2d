@@ -53,8 +53,10 @@ HWTEST_F(RSRenderNodeMapTest, ObtainScreenLockWindowNodeIdTest, TestSize.Level1)
     surfaceNode = std::make_shared<RSSurfaceRenderNode>(id);
     rsRenderNodeMap.ObtainScreenLockWindowNodeId(surfaceNode);
     ASSERT_EQ(rsRenderNodeMap.screenLockWindowNodeId_, 0);
-    surfaceNode->name_ = "SCBScreenLock";
-    rsRenderNodeMap.ObtainScreenLockWindowNodeId(surfaceNode);
+
+    RSSurfaceRenderNodeConfig config = { .id = id, .surfaceWindowType = SurfaceWindowType::SCB_SCREEN_LOCK };
+    auto node = std::make_shared<RSSurfaceRenderNode>(config);
+    rsRenderNodeMap.ObtainScreenLockWindowNodeId(node);
     ASSERT_EQ(rsRenderNodeMap.screenLockWindowNodeId_, 1);
 }
 
@@ -72,13 +74,18 @@ HWTEST_F(RSRenderNodeMapTest, ObtainLauncherNodeId, TestSize.Level1)
     ASSERT_EQ(rsRenderNodeMap.GetEntryViewNodeId(), 0);
 
     NodeId id = 1;
-    surfaceNode = std::make_shared<RSSurfaceRenderNode>(id);
-    surfaceNode->name_ = "SCBDesktop";
-    rsRenderNodeMap.ObtainLauncherNodeId(surfaceNode);
-    surfaceNode->name_ = "SCBWallpaper";
-    rsRenderNodeMap.ObtainLauncherNodeId(surfaceNode);
-    surfaceNode->name_ = "SCBNegativeScreen";
-    rsRenderNodeMap.ObtainLauncherNodeId(surfaceNode);
+    RSSurfaceRenderNodeConfig config = { .id = id, .surfaceWindowType = SurfaceWindowType::SCB_DESKTOP };
+    auto node = std::make_shared<RSSurfaceRenderNode>(config);
+    rsRenderNodeMap.ObtainLauncherNodeId(node);
+    
+    config.surfaceWindowType = SurfaceWindowType::SCB_WALLPAPER;
+    node = std::make_shared<RSSurfaceRenderNode>(config);
+    rsRenderNodeMap.ObtainLauncherNodeId(node);
+
+    config.surfaceWindowType = SurfaceWindowType::SCB_NEGATIVE_SCREEN;
+    node = std::make_shared<RSSurfaceRenderNode>(config);
+    rsRenderNodeMap.ObtainLauncherNodeId(node);
+    
     ASSERT_EQ(rsRenderNodeMap.entryViewNodeId_, 1);
     ASSERT_EQ(rsRenderNodeMap.wallpaperViewNodeId_, 1);
     ASSERT_EQ(rsRenderNodeMap.negativeScreenNodeId_, 1);
@@ -198,6 +205,40 @@ HWTEST_F(RSRenderNodeMapTest, FilterNodeByPid, TestSize.Level1)
     rsRenderNodeMap.renderNodeMap_.clear();
     rsRenderNodeMap.FilterNodeByPid(1);
     EXPECT_TRUE(true);
+}
+
+/*
+ * @tc.name: FilterNodeByPid
+ * @tc.desc: Test FilterNodeByPid
+ * @tc.require:
+ */
+HWTEST_F(RSRenderNodeMapTest, FilterNodeByPidImmediate, Level1)
+{
+    auto renderNodeMap = RSRenderNodeMap();
+    auto displayId = 1;
+    RSDisplayNodeConfig config;
+    auto displayRenderNode = std::make_shared<RSDisplayRenderNode>(displayId, config);
+    renderNodeMap.RegisterDisplayRenderNode(displayRenderNode);
+
+    constexpr uint32_t bits = 32u;
+    constexpr uint64_t nodeId = 1;
+    constexpr uint64_t pid1 = 1;
+    constexpr uint64_t pid2 = 2;
+
+    auto registerNode = [&renderNodeMap](uint64_t pid, uint64_t nodeId) {
+        auto renderNodeId = NodeId((pid << bits) | nodeId);
+        auto renderNode = std::make_shared<RSRenderNode>(renderNodeId);
+        renderNodeMap.RegisterRenderNode(renderNode);
+    };
+
+    registerNode(pid1, nodeId);
+    registerNode(pid2, nodeId);
+
+    EXPECT_EQ(renderNodeMap.GetSize(), 4);
+    renderNodeMap.FilterNodeByPid(pid1, true);
+    EXPECT_EQ(renderNodeMap.GetSize(), 3);
+    renderNodeMap.FilterNodeByPid(pid2, true);
+    EXPECT_EQ(renderNodeMap.GetSize(), 2);
 }
 
 /**

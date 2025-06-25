@@ -16,39 +16,44 @@
 
 #include "modifier/rs_modifier_manager.h"
 
+#include "rs_trace.h"
+
 #include "animation/rs_animation_trace_utils.h"
 #include "animation/rs_render_animation.h"
 #include "command/rs_animation_command.h"
 #include "command/rs_message_processor.h"
 #include "modifier/rs_property_modifier.h"
+#include "modifier_ng/custom/rs_custom_modifier.h"
 #include "platform/common/rs_log.h"
-#include "rs_trace.h"
 
 namespace OHOS {
 namespace Rosen {
-void RSModifierManager::AddModifier(const std::shared_ptr<RSModifier>& modifier)
+void RSModifierManager::AddModifier(const std::shared_ptr<Modifier>& modifier)
 {
     modifiers_.insert(modifier);
 }
 
 void RSModifierManager::Draw()
 {
-    if (modifiers_.empty()) {
-        return;
+    if (!modifiers_.empty()) {
+        RS_TRACE_NAME("RSModifierManager Draw num:[" + std::to_string(modifiers_.size()) + "]");
+        for (auto& modifier : modifiers_) {
+            RS_TRACE_NAME("RSModifier::Draw");
+            modifier->UpdateToRender();
+            modifier->SetDirty(false);
+            modifier->ResetRSNodeExtendModifierDirty();
+        }
+        modifiers_.clear();
     }
-
-    RS_TRACE_NAME("RSModifierManager Draw num:[" + std::to_string(modifiers_.size()) + "]");
-    for (auto& modifier : modifiers_) {
-        RS_TRACE_NAME("RSModifier::Draw");
-        modifier->UpdateToRender();
-        modifier->SetDirty(false);
-        modifier->ResetRSNodeExtendModifierDirty();
-    }
-    modifiers_.clear();
 }
 
 void RSModifierManager::AddAnimation(const std::shared_ptr<RSRenderAnimation>& animation)
 {
+    if (animation == nullptr) {
+        ROSEN_LOGE("RSModifierManager::AddAnimation animation is nullptr");
+        return;
+    }
+    
     AnimationId key = animation->GetAnimationId();
     if (animations_.find(key) != animations_.end()) {
         ROSEN_LOGE("RSModifierManager::AddAnimation, The animation already exists when is added");
@@ -90,9 +95,11 @@ bool RSModifierManager::Animate(int64_t time, int64_t vsyncPeriod)
     // process animation
     bool hasRunningAnimation = false;
     rateDecider_.Reset();
+    // For now, there is no need to optimize the power consumption issue related to delayTime.
+    int64_t minLeftDelayTime = 0;
 
     // iterate and execute all animations, remove finished animations
-    EraseIf(animations_, [this, &hasRunningAnimation, time, vsyncPeriod](auto& iter) -> bool {
+    EraseIf(animations_, [this, &hasRunningAnimation, time, vsyncPeriod, &minLeftDelayTime](auto& iter) -> bool {
         auto animation = iter.second.lock();
         if (animation == nullptr) {
             displaySyncs_.erase(iter.first);
@@ -102,7 +109,7 @@ bool RSModifierManager::Animate(int64_t time, int64_t vsyncPeriod)
         bool isFinished = false;
         AnimationId animId = animation->GetAnimationId();
         if (!JudgeAnimateWhetherSkip(animId, time, vsyncPeriod)) {
-            isFinished = animation->Animate(time);
+            isFinished = animation->Animate(time, minLeftDelayTime);
         }
 
         if (isFinished) {
@@ -169,7 +176,7 @@ void RSModifierManager::OnAnimationFinished(const std::shared_ptr<RSRenderAnimat
     uint64_t token = animation->GetToken();
     displaySyncs_.erase(animationId);
 
-    RSAnimationTraceUtils::GetInstance().addAnimationFinishTrace(
+    RSAnimationTraceUtils::GetInstance().AddAnimationFinishTrace(
         "Animation Send Finish", targetId, animationId, false);
     std::unique_ptr<RSCommand> command = std::make_unique<RSAnimationCallback>(targetId, animationId, token, FINISHED);
     RSMessageProcessor::Instance().AddUIMessage(ExtractPid(animationId), command);

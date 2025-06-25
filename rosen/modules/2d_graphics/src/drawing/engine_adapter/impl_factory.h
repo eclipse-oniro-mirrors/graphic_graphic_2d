@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -75,6 +75,7 @@ public:
     static std::unique_ptr<ImageImpl> CreateImageImpl();
     static std::unique_ptr<ImageImpl> CreateImageImpl(void* rawImage);
     static std::unique_ptr<PathIteratorImpl> CreatePathIteratorImpl(const Path& path);
+    static std::unique_ptr<PathIterImpl> CreatePathIterImpl(const Path& path, bool forceClose);
     static std::unique_ptr<PathImpl> CreatePathImpl();
     static std::unique_ptr<ColorFilterImpl> CreateColorFilterImpl();
     static std::unique_ptr<MaskFilterImpl> CreateMaskFilterImpl();
@@ -104,9 +105,7 @@ public:
     static std::unique_ptr<FontImpl> CreateFontImpl(const Font& font);
     static std::unique_ptr<TextBlobBuilderImpl> CreateTextBlobBuilderImpl();
     static std::shared_ptr<FontMgrImpl> CreateDefaultFontMgrImpl();
-#ifndef USE_TEXGINE
     static std::shared_ptr<FontMgrImpl> CreateDynamicFontMgrImpl();
-#endif
     static std::unique_ptr<VerticesImpl> CreateVerticesImpl();
     static std::unique_ptr<VerticesImpl::BuilderImpl> CreateVerticesBuilderImpl();
     static std::shared_ptr<MemoryStreamImpl> CreateMemoryStreamImpl();

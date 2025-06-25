@@ -114,6 +114,17 @@ HWTEST_F(RSSystemPropertiesTest, GetProfilerEnabled, TestSize.Level1)
 }
 
 /**
+ * @tc.name: GetPixelCheckEnabled
+ * @tc.desc: GetPixelCheckEnabled Test
+ * @tc.type:FUNC
+ * @tc.require: issueIC7V62
+ */
+HWTEST_F(RSSystemPropertiesTest, GetPixelCheckEnabled, TestSize.Level1)
+{
+    ASSERT_EQ(RSSystemProperties::GetProfilerPixelCheckMode(), 0);
+}
+
+/**
  * @tc.name: SetInstantRecording
  * @tc.desc: SetInstantRecording Test
  * @tc.type:FUNC
@@ -210,7 +221,7 @@ HWTEST_F(RSSystemPropertiesTest, GetDirtyRegionDebugType, TestSize.Level1)
 /**
  * @tc.name: GetPartialRenderEnabled
  * @tc.desc: GetPartialRenderEnabled Test
- * @tc.type:FUNC
+ * @tc.type: FUNC
  * @tc.require: issueI9JZWC
  */
 HWTEST_F(RSSystemPropertiesTest, GetPartialRenderEnabled, TestSize.Level1)
@@ -221,13 +232,37 @@ HWTEST_F(RSSystemPropertiesTest, GetPartialRenderEnabled, TestSize.Level1)
 /**
  * @tc.name: GetUniPartialRenderEnabled
  * @tc.desc: GetUniPartialRenderEnabled Test
- * @tc.type:FUNC
+ * @tc.type: FUNC
  * @tc.require: issueI9JZWC
  */
 HWTEST_F(RSSystemPropertiesTest, GetUniPartialRenderEnabled, TestSize.Level1)
 {
     ASSERT_EQ(
         RSSystemProperties::GetUniPartialRenderEnabled(), PartialRenderType::SET_DAMAGE_AND_DROP_OP_NOT_VISIBLEDIRTY);
+}
+
+/**
+ * @tc.name: GetVirtualDirtyEnabled
+ * @tc.desc: GetVirtualDirtyEnabled Test
+ * @tc.type: FUNC
+ * @tc.require: issueICCV9N
+ */
+HWTEST_F(RSSystemPropertiesTest, GetVirtualDirtyEnabled, TestSize.Level1)
+{
+    auto type = system::GetParameter("rosen.uni.virtualdirty.enabled", "1");
+    ASSERT_EQ(std::to_string(RSSystemProperties::GetVirtualDirtyEnabled()), type);
+}
+
+/**
+ * @tc.name: GetVirtualExpandScreenSkipEnabled
+ * @tc.desc: GetVirtualExpandScreenSkipEnabled Test
+ * @tc.type: FUNC
+ * @tc.require: issueICCV9N
+ */
+HWTEST_F(RSSystemPropertiesTest, GetVirtualExpandScreenSkipEnabled, TestSize.Level1)
+{
+    auto type = system::GetParameter("rosen.uni.virtualexpandscreenskip.enabled", "1");
+    ASSERT_EQ(std::to_string(RSSystemProperties::GetVirtualExpandScreenSkipEnabled()), type);
 }
 
 /**
@@ -561,6 +596,17 @@ HWTEST_F(RSSystemPropertiesTest, GetAnimationScale, TestSize.Level1)
 }
 
 /**
+ * @tc.name: GetAnimationDelayOptimizeEnabled
+ * @tc.desc: GetAnimationDelayOptimizeEnabled Test
+ * @tc.type:FUNC
+ * @tc.require: issueI9JZWC
+ */
+HWTEST_F(RSSystemPropertiesTest, GetAnimationDelayOptimizeEnabled, TestSize.Level1)
+{
+    ASSERT_TRUE(RSSystemProperties::GetAnimationDelayOptimizeEnabled());
+}
+
+/**
  * @tc.name: GetHdrImageEnabled
  * @tc.desc: GetHdrImageEnabled Test
  * @tc.type:FUNC
@@ -829,6 +875,17 @@ HWTEST_F(RSSystemPropertiesTest, GetUIFirstDebugEnabled, TestSize.Level1)
 }
 
 /**
+ * @tc.name: GetUIFirstBehindWindowFilterEnabled
+ * @tc.desc: GetUIFirstBehindWindowFilterEnabled Test
+ * @tc.type:FUNC
+ * @tc.require: issuesIC0HM8
+ */
+HWTEST_F(RSSystemPropertiesTest, GetUIFirstBehindWindowFilterEnabled, TestSize.Level1)
+{
+    ASSERT_TRUE(RSSystemProperties::GetUIFirstBehindWindowFilterEnabled());
+}
+
+/**
  * @tc.name: GetDumpImgEnabled
  * @tc.desc: GetDumpImgEnabled Test
  * @tc.type:FUNC
@@ -938,7 +995,7 @@ HWTEST_F(RSSystemPropertiesTest, GetImageGpuResourceCacheEnable, TestSize.Level1
  */
 HWTEST_F(RSSystemPropertiesTest, GetBoolSystemProperty, TestSize.Level1)
 {
-    ASSERT_TRUE(RSSystemProperties::GetBoolSystemProperty(std::string("noName").c_str(), true));
+    EXPECT_FALSE(RSSystemProperties::GetBoolSystemProperty(std::string("noName").c_str(), false));
 }
 
 /**
@@ -963,17 +1020,6 @@ HWTEST_F(RSSystemPropertiesTest, WatchSystemProperty, TestSize.Level1)
 HWTEST_F(RSSystemPropertiesTest, IsPhoneType, TestSize.Level1)
 {
     ASSERT_FALSE(RSSystemProperties::IsPhoneType());
-}
-
-/**
- * @tc.name: IsPcType
- * @tc.desc: IsPcType Test
- * @tc.type:FUNC
- * @tc.require: issueI9JZWC
- */
-HWTEST_F(RSSystemPropertiesTest, IsPcType, TestSize.Level1)
-{
-    ASSERT_FALSE(RSSystemProperties::IsPcType());
 }
 
 /**
@@ -1058,6 +1104,31 @@ HWTEST_F(RSSystemPropertiesTest, GetOptimizeParentNodeRegionEnabled, TestSize.Le
 HWTEST_F(RSSystemPropertiesTest, GetOptimizeHwcComposeAreaEnabled, TestSize.Level1)
 {
     ASSERT_TRUE(RSSystemProperties::GetOptimizeHwcComposeAreaEnabled());
+}
+
+/**
+ * @tc.name: GetTimeVsyncDisabled
+ * @tc.desc: GetTimeVsyncDisabled Test
+ * @tc.type:FUNC
+ * @tc.require: issuesIBIA3V
+ */
+HWTEST_F(RSSystemPropertiesTest, GetTimeVsyncDisabled001, TestSize.Level1)
+{
+    ASSERT_FALSE(RSSystemProperties::GetTimeVsyncDisabled());
+}
+
+/**
+ * @tc.name: BehindWindowFilterEnabledTest
+ * @tc.desc: BehindWindowFilterEnabledTest
+ * @tc.type:FUNC
+ * @tc.require: issuesIC5OEB
+ */
+HWTEST_F(RSSystemPropertiesTest, BehindWindowFilterEnabledTest, TestSize.Level1)
+{
+    bool enabled = RSSystemProperties::GetBehindWindowFilterEnabled();
+    RSSystemProperties::SetBehindWindowFilterEnabled(!enabled);
+    EXPECT_EQ(RSSystemProperties::GetBehindWindowFilterEnabled(), !enabled);
+    RSSystemProperties::SetBehindWindowFilterEnabled(enabled);
 }
 } // namespace Rosen
 } // namespace OHOS

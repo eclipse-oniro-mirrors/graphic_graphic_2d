@@ -28,7 +28,6 @@
 #include "rs_trace.h"
 #include "sandbox_utils.h"
 #include "rs_profiler.h"
-#include "utils/graphic_coretrace.h"
 
 #ifdef USE_VIDEO_PROCESSING_ENGINE
 #include "render/rs_colorspace_convert.h"
@@ -74,10 +73,10 @@ std::shared_ptr<Drawing::ShaderEffect> RSImage::GenerateImageShaderForDrawRect(
     }
 
     Drawing::Matrix matrix;
-    auto sx = dstRect_.GetWidth() / src_.GetWidth();
-    auto sy = dstRect_.GetHeight() / src_.GetHeight();
-    auto tx = dstRect_.GetLeft() - src_.GetLeft() * sx;
-    auto ty = dstRect_.GetTop() - src_.GetTop() * sy;
+    auto sx = rectForDrawShader_.GetWidth() / src_.GetWidth();
+    auto sy = rectForDrawShader_.GetHeight() / src_.GetHeight();
+    auto tx = rectForDrawShader_.GetLeft() - src_.GetLeft() * sx;
+    auto ty = rectForDrawShader_.GetTop() - src_.GetTop() * sy;
     matrix.SetScaleTranslate(sx, sy, tx, ty);
 
     return Drawing::ShaderEffect::CreateImageShader(
@@ -122,11 +121,11 @@ bool RSImage::HDRConvert(const Drawing::SamplingOptions& sampling, Drawing::Canv
     RSPaintFilterCanvas& rscanvas = static_cast<RSPaintFilterCanvas&>(canvas);
     auto targetColorSpace = GRAPHIC_COLOR_GAMUT_SRGB;
     if (LIKELY(!rscanvas.IsOnMultipleScreen() && rscanvas.GetHdrOn() && RSSystemProperties::GetHdrImageEnabled())) {
-        RSColorSpaceConvert::Instance().ColorSpaceConvertor(imageShader, sfBuffer, paint_,
-            targetColorSpace, rscanvas.GetScreenId(), dynamicRangeMode_, rscanvas.GetHDRBrightness());
+        RSColorSpaceConvert::Instance().ColorSpaceConvertor(imageShader, sfBuffer, paint_, targetColorSpace,
+            rscanvas.GetScreenId(), dynamicRangeMode_, rscanvas.GetHDRProperties());
     } else {
-        RSColorSpaceConvert::Instance().ColorSpaceConvertor(imageShader, sfBuffer, paint_,
-            targetColorSpace, rscanvas.GetScreenId(), DynamicRangeMode::STANDARD, rscanvas.GetHDRBrightness());
+        RSColorSpaceConvert::Instance().ColorSpaceConvertor(imageShader, sfBuffer, paint_, targetColorSpace,
+            rscanvas.GetScreenId(), DynamicRangeMode::STANDARD, rscanvas.GetHDRProperties());
     }
     canvas.AttachPaint(paint_);
     // Avoid cross-thread destruction
@@ -140,13 +139,12 @@ bool RSImage::HDRConvert(const Drawing::SamplingOptions& sampling, Drawing::Canv
 void RSImage::CanvasDrawImage(Drawing::Canvas& canvas, const Drawing::Rect& rect,
     const Drawing::SamplingOptions& samplingOptions, bool isBackground)
 {
-    RECORD_GPURESOURCE_CORETRACE_CALLER(Drawing::CoreFunction::
-        RS_RSIMAGE_CANVASDRAWIMAGE);
     if (canvas.GetRecordingState() && RSSystemProperties::GetDumpUICaptureEnabled() && pixelMap_) {
         CommonTools::SavePixelmapToFile(pixelMap_, "/data/rsImage_");
     }
     isFitMatrixValid_ = !isBackground && imageFit_ == ImageFit::MATRIX &&
                                 fitMatrix_.has_value() && !fitMatrix_.value().IsIdentity();
+    isOrientationValid_ = orientationFit_ != OrientationFit::NONE;
 #ifdef ROSEN_OHOS
     auto pixelMapUseCountGuard = PixelMapUseCountGuard(pixelMap_, IsPurgeable());
     DePurge();
@@ -173,14 +171,16 @@ void RSImage::CanvasDrawImage(Drawing::Canvas& canvas, const Drawing::Rect& rect
         DrawImageRepeatRect(samplingOptions, canvas);
     } else {
         bool needCanvasRestore = HasRadius() || (pixelMap_ != nullptr && pixelMap_->IsAstc()) ||
-                                 isFitMatrixValid_;
+                                 isFitMatrixValid_ ;
         Drawing::AutoCanvasRestore acr(canvas, needCanvasRestore);
         if (pixelMap_ != nullptr && pixelMap_->IsAstc()) {
             RSPixelMapUtil::TransformDataSetForAstc(pixelMap_, src_, dst_, canvas);
         }
+        rectForDrawShader_ = dst_;
         if (isFitMatrixValid_) {
             canvas.ConcatMatrix(fitMatrix_.value());
         }
+
         if (image_) {
             if (!isBackground) {
                 ApplyCanvasClip(canvas);
@@ -197,34 +197,52 @@ void RSImage::CanvasDrawImage(Drawing::Canvas& canvas, const Drawing::Rect& rect
     lastRect_ = rect;
 }
 
+void RSImage::ApplyImageOrientation(Drawing::Canvas& canvas)
+{
+    switch (orientationFit_) {
+        case OrientationFit::VERTICAL_FLIP:
+            canvas.Scale(1, -1);
+            canvas.Translate(0, -(dst_.GetBottom() + dst_.GetTop()));
+            return;
+        case OrientationFit::HORIZONTAL_FLIP:
+            canvas.Scale(-1, 1);
+            canvas.Translate(-(dst_.GetRight() + dst_.GetLeft()), 0);
+            return;
+        default:
+            return;
+    }
+}
+
 void RSImage::DrawImageRect(
     Drawing::Canvas& canvas, const Drawing::Rect& rect, const Drawing::SamplingOptions& samplingOptions)
 {
+    bool needCanvasRestore = (rotateDegree_ != 0) || isOrientationValid_;
+    Drawing::AutoCanvasRestore acr(canvas, needCanvasRestore);
     if (rotateDegree_ != 0) {
-        canvas.Save();
         canvas.Rotate(rotateDegree_);
         auto axis = CalculateByDegree(rect);
         canvas.Translate(axis.first, axis.second);
     }
 
+    if (isOrientationValid_) {
+        ApplyImageOrientation(canvas);
+    }
+
     auto imageShader = GenerateImageShaderForDrawRect(canvas, samplingOptions);
     if (imageShader != nullptr) {
         DrawImageShaderRectOnCanvas(canvas, imageShader);
-    } else {
-        if (imageRepeat_ == ImageRepeat::NO_REPEAT && isFitMatrixValid_ &&
-            (fitMatrix_->Get(Drawing::Matrix::Index::SKEW_X) != 0 ||
-            fitMatrix_->Get(Drawing::Matrix::Index::SKEW_Y) != 0 ||
-            fitMatrix_->HasPerspective())) {
-            DrawImageWithFirMatrixRotateOnCanvas(samplingOptions, canvas);
-            return;
-        }
-        canvas.DrawImageRect(
-            *image_, src_, dst_, samplingOptions, Drawing::SrcRectConstraint::FAST_SRC_RECT_CONSTRAINT);
+        return;
     }
 
-    if (rotateDegree_ != 0) {
-        canvas.Restore();
+    if (imageRepeat_ == ImageRepeat::NO_REPEAT && isFitMatrixValid_ &&
+        (fitMatrix_->Get(Drawing::Matrix::Index::SKEW_X) != 0 ||
+        fitMatrix_->Get(Drawing::Matrix::Index::SKEW_Y) != 0 ||
+        fitMatrix_->HasPerspective())) {
+        DrawImageWithFirMatrixRotateOnCanvas(samplingOptions, canvas);
+        return;
     }
+    canvas.DrawImageRect(
+        *image_, src_, dst_, samplingOptions, Drawing::SrcRectConstraint::FAST_SRC_RECT_CONSTRAINT);
 }
 
 struct ImageParameter {
@@ -393,7 +411,8 @@ Drawing::AdaptiveImageInfo RSImage::GetAdaptiveImageInfoWithCustomizedFrameRect(
         .dynamicRangeMode = dynamicRangeMode_,
         .rotateDegree = rotateDegree_,
         .frameRect = frameRect,
-        .fitMatrix = fitMatrix_.has_value() ? fitMatrix_.value() : Drawing::Matrix()
+        .fitMatrix = fitMatrix_.has_value() ? fitMatrix_.value() : Drawing::Matrix(),
+        .orientationNum = static_cast<int32_t>(orientationFit_)
     };
     return imageInfo;
 }
@@ -406,6 +425,21 @@ void RSImage::SetFitMatrix(const Drawing::Matrix& matrix)
 Drawing::Matrix RSImage::GetFitMatrix() const
 {
     return fitMatrix_.value();
+}
+
+void RSImage::SetOrientationFit(int orientationFitNum)
+{
+    orientationFit_ = static_cast<OrientationFit>(orientationFitNum);
+}
+
+OrientationFit RSImage::GetOrientationFit() const
+{
+    return orientationFit_;
+}
+
+std::shared_ptr<Drawing::Image> RSImage::GetImage() const
+{
+    return image_;
 }
 
 RectF RSImage::GetDstRect()
@@ -437,82 +471,38 @@ void RSImage::ApplyCanvasClip(Drawing::Canvas& canvas)
     canvas.ClipRoundRect(rrect, Drawing::ClipOp::INTERSECT, true);
 }
 
-#if defined(ROSEN_OHOS) && (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
-static Drawing::CompressedType PixelFormatToCompressedType(Media::PixelFormat pixelFormat)
+std::string RSImage::PixelSamplingDump() const
 {
-    switch (pixelFormat) {
-        case Media::PixelFormat::ASTC_4x4: return Drawing::CompressedType::ASTC_RGBA8_4x4;
-        case Media::PixelFormat::ASTC_6x6: return Drawing::CompressedType::ASTC_RGBA8_6x6;
-        case Media::PixelFormat::ASTC_8x8: return Drawing::CompressedType::ASTC_RGBA8_8x8;
-        case Media::PixelFormat::UNKNOWN:
-        default: return Drawing::CompressedType::NoneType;
+    if (pixelMap_ == nullptr) {
+        return " pixelMap_ is nullptr";
     }
-}
+    std::stringstream oss;
+    int32_t w = pixelMap_->GetWidth();
+    int32_t h = pixelMap_->GetHeight();
+    oss << "[ Width:" << w << " Height:" << h;
+    oss << " pixels:" << std::hex << std::uppercase;
+#ifdef ROSEN_OHOS
+    Media::Position pos;
+    uint32_t pixel;
 
-static std::shared_ptr<Drawing::ColorSpace> ColorSpaceToDrawingColorSpace(ColorManager::ColorSpaceName
- colorSpaceName)
-{
-    switch (colorSpaceName) {
-        case ColorManager::ColorSpaceName::DISPLAY_P3:
-            return Drawing::ColorSpace::CreateRGB(
-                Drawing::CMSTransferFuncType::SRGB, Drawing::CMSMatrixType::DCIP3);
-        case ColorManager::ColorSpaceName::LINEAR_SRGB:
-            return Drawing::ColorSpace::CreateSRGBLinear();
-        case ColorManager::ColorSpaceName::SRGB:
-            return Drawing::ColorSpace::CreateSRGB();
-        default:
-            return Drawing::ColorSpace::CreateSRGB();
-    }
-}
-#endif
+    int32_t widthStep = std::max((w / 2) - 1, 1);
+    int32_t heightStep = std::max((h / 2) - 1, 1);
 
-void RSImage::UploadGpu(Drawing::Canvas& canvas)
-{
-    RECORD_GPURESOURCE_CORETRACE_CALLER(Drawing::CoreFunction::
-        RS_RSIMAGE_UPLOADGPU);
-#if defined(ROSEN_OHOS) && (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
-    if (compressData_) {
-        auto cache = RSImageCache::Instance().GetRenderDrawingImageCacheByPixelMapId(uniqueId_, gettid());
-        std::lock_guard<std::mutex> lock(mutex_);
-        if (cache) {
-            image_ = cache;
-        } else {
-            if (canvas.GetGPUContext() == nullptr) {
-                return;
-            }
-            RS_TRACE_NAME("make compress img");
-            Media::ImageInfo imageInfo;
-            pixelMap_->GetImageInfo(imageInfo);
-            Media::Size realSize;
-            pixelMap_->GetAstcRealSize(realSize);
-            auto image = std::make_shared<Drawing::Image>();
-            std::shared_ptr<Drawing::ColorSpace> colorSpace =
-                ColorSpaceToDrawingColorSpace(pixelMap_->InnerGetGrColorSpace().GetColorSpaceName());
-            bool result = image->BuildFromCompressed(*canvas.GetGPUContext(), compressData_,
-                static_cast<int>(realSize.width), static_cast<int>(realSize.height),
-                PixelFormatToCompressedType(imageInfo.pixelFormat), colorSpace);
-            if (result) {
-                image_ = image;
-                SKResourceManager::Instance().HoldResource(image);
-                RSImageCache::Instance().CacheRenderDrawingImageByPixelMapId(uniqueId_, image, gettid());
-            } else {
-                RS_LOGE("make astc image %{public}d (%{public}d, %{public}d) failed",
-                    (int)uniqueId_, (int)srcRect_.width_, (int)srcRect_.height_);
-            }
-            compressData_ = nullptr;
+    for (int32_t i = 1; i < w; i += widthStep) {
+        for (int32_t j = 1; j < h; j += heightStep) {
+            pos = {i, j};
+            pixelMap_->ReadPixel(pos, pixel);
+            oss << " ARGB-0x" << pixel;
         }
-        return;
-    }
-    if (isYUVImage_) {
-        ProcessYUVImage(canvas.GetGPUContext());
     }
 #endif
+    oss << ']';
+
+    return oss.str().c_str();
 }
 
 void RSImage::DrawImageRepeatRect(const Drawing::SamplingOptions& samplingOptions, Drawing::Canvas& canvas)
 {
-    RECORD_GPURESOURCE_CORETRACE_CALLER(Drawing::CoreFunction::
-        RS_RSIMAGE_DRAWIMAGEREPEATRECT);
     int minX = 0;
     int minY = 0;
     int maxX = 0;
@@ -530,15 +520,20 @@ void RSImage::DrawImageRepeatRect(const Drawing::SamplingOptions& samplingOption
         for (int j = minY; j <= maxY; ++j) {
             auto top = dstRect_.top_ + j * dstRect_.height_;
             dst_ = Drawing::Rect(left, top, right, top + dstRect_.height_);
+
+            bool needCanvasRestore = isAstc || isOrientationValid_;
+            Drawing::AutoCanvasRestore acr(canvas, needCanvasRestore);
+
             if (isAstc) {
-                canvas.Save();
                 RSPixelMapUtil::TransformDataSetForAstc(pixelMap_, src_, dst_, canvas);
             }
+            rectForDrawShader_ = dst_;
+            if (isOrientationValid_) {
+                ApplyImageOrientation(canvas);
+            }
+
             if (image_) {
                 DrawImageOnCanvas(samplingOptions, canvas, hdrImageDraw);
-            }
-            if (isAstc) {
-                canvas.Restore();
             }
         }
     }
@@ -666,15 +661,6 @@ void RSImage::SetCompressData(
 #endif
 }
 
-#if defined(ROSEN_OHOS) && (defined(RS_ENABLE_GL) || defined (RS_ENABLE_VK))
-void RSImage::SetCompressData(const std::shared_ptr<Drawing::Data> compressData)
-{
-    isDrawn_ = false;
-    compressData_ = compressData;
-    canPurgeShareMemFlag_ = CanPurgeFlag::DISABLED;
-}
-#endif
-
 void RSImage::SetImageFit(int fitNum)
 {
     imageFit_ = static_cast<ImageFit>(fitNum);
@@ -755,6 +741,7 @@ bool RSImage::Marshalling(Parcel& parcel) const
 {
     int imageFit = static_cast<int>(imageFit_);
     int imageRepeat = static_cast<int>(imageRepeat_);
+    int orientationFit = static_cast<int>(orientationFit_);
 
     std::lock_guard<std::mutex> lock(mutex_);
     auto image = image_;
@@ -780,6 +767,7 @@ bool RSImage::Marshalling(Parcel& parcel) const
                    RSMarshallingHelper::Marshalling(parcel, scale_) &&
                    RSMarshallingHelper::Marshalling(parcel, dynamicRangeMode_) &&
                    RSMarshallingHelper::Marshalling(parcel, rotateDegree_) &&
+                   RSMarshallingHelper::Marshalling(parcel, orientationFit) &&
                    parcel.WriteBool(fitMatrix_.has_value()) &&
                    fitMatrix_.has_value() ? RSMarshallingHelper::Marshalling(parcel, fitMatrix_.value()) : true;
     if (!success) {
@@ -817,8 +805,9 @@ RSImage* RSImage::Unmarshalling(Parcel& parcel)
     Drawing::Matrix fitMatrix;
     uint32_t dynamicRangeMode = 0;
     int32_t degree = 0;
+    int orientationFit;
     if (!UnmarshalImageProperties(parcel, fitNum, repeatNum, radius, scale,
-        hasFitMatrix, fitMatrix, dynamicRangeMode, degree)) {
+        hasFitMatrix, fitMatrix, dynamicRangeMode, degree, orientationFit)) {
         return nullptr;
     }
     RSImage* rsImage = new RSImage();
@@ -836,6 +825,7 @@ RSImage* RSImage::Unmarshalling(Parcel& parcel)
     if (hasFitMatrix && !fitMatrix.IsIdentity()) {
         rsImage->SetFitMatrix(fitMatrix);
     }
+    rsImage->SetOrientationFit(orientationFit);
     ProcessImageAfterCreation(rsImage, uniqueId, useSkImage, pixelMap);
     return rsImage;
 }
@@ -856,7 +846,8 @@ bool RSImage::UnmarshalIdSizeAndNodeId(Parcel& parcel, uint64_t& uniqueId, int& 
 
 bool RSImage::UnmarshalImageProperties(
     Parcel& parcel, int& fitNum, int& repeatNum, std::vector<Drawing::Point>& radius, double& scale,
-    bool& hasFitMatrix, Drawing::Matrix& fitMatrix, uint32_t& dynamicRangeMode, int32_t& degree)
+    bool& hasFitMatrix, Drawing::Matrix& fitMatrix, uint32_t& dynamicRangeMode, int32_t& degree,
+    int& orientationFitNum)
 {
     if (!RSMarshallingHelper::Unmarshalling(parcel, fitNum)) {
         RS_LOGE("RSImage::Unmarshalling fitNum fail");
@@ -883,13 +874,18 @@ bool RSImage::UnmarshalImageProperties(
         return false;
     }
 
-    if (!RSMarshallingHelper::Unmarshalling(parcel, hasFitMatrix)) {
-        RS_LOGE("RSImage::Unmarshalling hasFitMatrix fail");
+    if (!RSMarshallingHelper::Unmarshalling(parcel, degree)) {
+        RS_LOGE("RSImage::Unmarshalling rotateDegree fail");
         return false;
     }
 
-    if (!RSMarshallingHelper::Unmarshalling(parcel, degree)) {
-        RS_LOGE("RSImage::Unmarshalling rotateDegree fail");
+    if (!RSMarshallingHelper::Unmarshalling(parcel, orientationFitNum)) {
+        RS_LOGE("RSImage::Unmarshalling orientationFitNum fail");
+        return false;
+    }
+
+    if (!RSMarshallingHelper::Unmarshalling(parcel, hasFitMatrix)) {
+        RS_LOGE("RSImage::Unmarshalling hasFitMatrix fail");
         return false;
     }
 

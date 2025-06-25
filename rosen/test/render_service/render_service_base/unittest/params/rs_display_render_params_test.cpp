@@ -106,6 +106,23 @@ HWTEST_F(RSDisplayRenderParamsTest, SetHDRPresent, TestSize.Level1)
 }
 
 /**
+ * @tc.name: SetHDRStatusChanged
+ * @tc.desc:
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSDisplayRenderParamsTest, SetHDRStatusChanged, TestSize.Level1)
+{
+    constexpr NodeId id = TestSrc::limitNumber::Uint64[0];
+    RSDisplayRenderParams params(id);
+    params.SetHDRStatusChanged(params.IsHDRStatusChanged());
+    EXPECT_EQ(params.needSync_, false);
+
+    params.SetHDRStatusChanged(true);
+    EXPECT_EQ(params.needSync_, true);
+}
+
+/**
  * @tc.name: SetNewColorSpace
  * @tc.desc:
  * @tc.type:FUNC
@@ -270,6 +287,25 @@ HWTEST_F(RSDisplayRenderParamsTest, HasSecLayerInVisibleRectChanged002, TestSize
 }
 
 /**
+ * @tc.name: ResetVirtualExpandAccumulatedParams
+ * @tc.desc: test ResetVirtualExpandAccumulatedParams can set target params to false
+ * @tc.type: FUNC
+ * @tc.require: issueICCV9N
+ */
+HWTEST_F(RSDisplayRenderParamsTest, ResetVirtualExpandAccumulatedParams, TestSize.Level1)
+{
+    constexpr NodeId id = TestSrc::limitNumber::Uint64[0];
+    RSDisplayRenderParams params(id);
+    params.SetAccumulatedDirty(true);
+    ASSERT_TRUE(params.GetAccumulatedDirty());
+    params.SetAccumulatedHdrStatusChanged(true);
+    ASSERT_TRUE(params.GetAccumulatedHdrStatusChanged());
+    params.ResetVirtualExpandAccumulatedParams();
+    ASSERT_FALSE(params.GetAccumulatedDirty());
+    ASSERT_FALSE(params.GetAccumulatedHdrStatusChanged());
+}
+
+/**
  * @tc.name: GetTargetSurfaceRenderNodeDrawable
  * @tc.desc: test result of Set/GetTargetSurfaceRenderNodeDrawable with invalid params
  * @tc.type: FUNC
@@ -295,5 +331,22 @@ HWTEST_F(RSDisplayRenderParamsTest, GetVirtualScreenMuteStatus, TestSize.Level1)
     RSDisplayRenderParams params(id);
     params.virtualScreenMuteStatus_ = true;
     ASSERT_TRUE(params.GetVirtualScreenMuteStatus());
+}
+
+/**
+ * @tc.name: SetNeedForceUpdateHwcNodes
+ * @tc.desc: test result of SetNeedForceUpdateHwcNodes
+ * @tc.type: FUNC
+ * @tc.require: issueIC0AQO
+ */
+HWTEST_F(RSDisplayRenderParamsTest, SetNeedForceUpdateHwcNodes, TestSize.Level1)
+{
+    constexpr NodeId id = TestSrc::limitNumber::Uint64[0];
+    RSDisplayRenderParams params(id);
+    params.needForceUpdateHwcNodes_ = false;
+    params.SetNeedForceUpdateHwcNodes(true);
+    ASSERT_TRUE(params.needForceUpdateHwcNodes_);
+    params.SetNeedForceUpdateHwcNodes(false);
+    ASSERT_FALSE(params.needForceUpdateHwcNodes_);
 }
 } // namespace OHOS::Rosen

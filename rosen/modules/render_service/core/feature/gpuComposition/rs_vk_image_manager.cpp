@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -20,12 +20,22 @@
 #include "include/core/SkColorSpace.h"
 #include "native_buffer_inner.h"
 #include "platform/common/rs_log.h"
+#ifdef USE_M133_SKIA
+#include "include/gpu/ganesh/vk/GrVkBackendSurface.h"
+#else
 #include "include/gpu/GrBackendSurface.h"
+#endif
 #include "pipeline/hardware_thread/rs_hardware_thread.h"
 #include "pipeline/rs_task_dispatcher.h"
 #include "rs_trace.h"
 #include "common/rs_optional_trace.h"
 #include "params/rs_surface_render_params.h"
+
+#ifdef USE_M133_SKIA
+#include "src/gpu/ganesh/gl/GrGLDefines.h"
+#else
+#include "src/gpu/gl/GrGLDefines.h"
+#endif
 
 namespace OHOS {
 namespace Rosen {
@@ -39,8 +49,10 @@ void WaitAcquireFence(const sptr<SyncFence>& acquireFence)
 }
 
 constexpr size_t MAX_CACHE_SIZE = 16;
-constexpr size_t MAX_CACHE_SIZE_FOR_VIRTUAL_SCREEN = 40;
+constexpr size_t MAX_CACHE_SIZE_FOR_REUSE = 40;
 static const bool ENABLE_VKIMAGE_DFX = system::GetBoolParameter("persist.graphic.enable_vkimage_dfx", false);
+static const bool ENABLE_SEMAPHORE =
+    system::GetBoolParameter("persist.sys.graphic.rs_vkimgmgr_enable_semaphore", true);
 
 #define DFX_LOG(enableDfx, format, ...) \
     ((enableDfx) ? (void) HILOG_ERROR(LOG_CORE, format, ##__VA_ARGS__) : (void) 0)
@@ -49,16 +61,16 @@ static const bool ENABLE_VKIMAGE_DFX = system::GetBoolParameter("persist.graphic
                    (void) HILOG_DEBUG(LOG_CORE, format, ##__VA_ARGS__))
 }
 
-NativeVkImageRes::~NativeVkImageRes()
+VkImageResource::~VkImageResource()
 {
     NativeBufferUtils::DeleteVkImage(mVulkanCleanupHelper);
     DestroyNativeWindowBuffer(mNativeWindowBuffer);
 }
 
-std::shared_ptr<NativeVkImageRes> NativeVkImageRes::Create(sptr<OHOS::SurfaceBuffer> buffer)
+std::shared_ptr<VkImageResource> VkImageResource::Create(sptr<OHOS::SurfaceBuffer> buffer)
 {
     if (buffer == nullptr) {
-        ROSEN_LOGE("NativeVkImageRes::Create buffer is nullptr");
+        ROSEN_LOGE("VkImageResource::Create buffer is nullptr");
         return nullptr;
     }
     auto width = buffer->GetSurfaceBufferWidth();
@@ -71,7 +83,7 @@ std::shared_ptr<NativeVkImageRes> NativeVkImageRes::Create(sptr<OHOS::SurfaceBuf
         DestroyNativeWindowBuffer(nativeWindowBuffer);
         return nullptr;
     }
-    return std::make_unique<NativeVkImageRes>(
+    return std::make_unique<VkImageResource>(
         nativeWindowBuffer,
         backendTexture,
         new NativeBufferUtils::VulkanCleanupHelper(RsVulkanContext::GetSingleton(),
@@ -79,41 +91,78 @@ std::shared_ptr<NativeVkImageRes> NativeVkImageRes::Create(sptr<OHOS::SurfaceBuf
             backendTexture.GetTextureInfo().GetVKTextureInfo()->vkAlloc.memory));
 }
 
-std::shared_ptr<NativeVkImageRes> RSVkImageManager::MapVkImageFromSurfaceBuffer(
+bool RSVkImageManager::WaitVKSemaphore(Drawing::Surface *drawingSurface, const sptr<SyncFence>& acquireFence)
+{
+    if (drawingSurface == nullptr || acquireFence == nullptr) {
+        return false;
+    }
+
+    VkSemaphore semaphore = VK_NULL_HANDLE;
+    VkSemaphoreCreateInfo semaphoreInfo;
+    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+    semaphoreInfo.pNext = nullptr;
+    semaphoreInfo.flags = 0;
+    auto& vkInterface = RsVulkanContext::GetSingleton().GetRsVulkanInterface();
+    auto res = vkInterface.vkCreateSemaphore(vkInterface.GetDevice(), &semaphoreInfo, nullptr, &semaphore);
+    if (res != VK_SUCCESS) {
+        ROSEN_LOGE("RSVkImageManager: CreateVkSemaphore vkCreateSemaphore failed %{public}d", res);
+        return false;
+    }
+
+    VkImportSemaphoreFdInfoKHR importSemaphoreFdInfo;
+    importSemaphoreFdInfo.sType = VK_STRUCTURE_TYPE_IMPORT_SEMAPHORE_FD_INFO_KHR;
+    importSemaphoreFdInfo.pNext = nullptr;
+    importSemaphoreFdInfo.semaphore = semaphore;
+    importSemaphoreFdInfo.flags = VK_SEMAPHORE_IMPORT_TEMPORARY_BIT;
+    importSemaphoreFdInfo.handleType = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT;
+    importSemaphoreFdInfo.fd = acquireFence->Dup();
+    res = vkInterface.vkImportSemaphoreFdKHR(vkInterface.GetDevice(), &importSemaphoreFdInfo);
+    if (res != VK_SUCCESS) {
+        ROSEN_LOGE("RSVkImageManager: CreateVkSemaphore vkImportSemaphoreFdKHR failed %{public}d", res);
+        vkInterface.vkDestroySemaphore(vkInterface.GetDevice(), semaphore, nullptr);
+        close(importSemaphoreFdInfo.fd);
+        return false;
+    }
+
+    drawingSurface->Wait(1, semaphore); // 1 means only one VKSemaphore need to wait
+    return true;
+}
+
+std::shared_ptr<VkImageResource> RSVkImageManager::MapVkImageFromSurfaceBuffer(
     const sptr<OHOS::SurfaceBuffer>& buffer,
     const sptr<SyncFence>& acquireFence,
-    pid_t threadIndex, ScreenId screenId)
+    pid_t threadIndex, Drawing::Surface *drawingSurface)
 {
     if (buffer == nullptr) {
         ROSEN_LOGE("RSVkImageManager::MapVkImageFromSurfaceBuffer buffer is nullptr");
         return nullptr;
     }
-    WaitAcquireFence(acquireFence);
+    if (!ENABLE_SEMAPHORE || !WaitVKSemaphore(drawingSurface, acquireFence)) {
+        WaitAcquireFence(acquireFence);
+    }
     std::lock_guard<std::mutex> lock(opMutex_);
     bool isProtectedCondition = (buffer->GetUsage() & BUFFER_USAGE_PROTECTED) ||
         RsVulkanContext::GetSingleton().GetIsProtected();
     auto bufferId = buffer->GetSeqNum();
-    if (isVirtualScreen(screenId) && !isProtectedCondition && threadIndex == RSUniRenderThread::Instance().GetTid()) {
-        if (imageCacheVirtualScreenSeqs_.find(bufferId) == imageCacheVirtualScreenSeqs_.end()) {
-            return NewImageCacheFromBuffer(buffer, threadIndex, isProtectedCondition, true);
-        }
-        RS_TRACE_NAME_FMT("find cache vkImage for VirScreen, bufferId=%u", bufferId);
-        return imageCacheVirtualScreenSeqs_[bufferId];
-    }
-
     if (isProtectedCondition || imageCacheSeqs_.find(bufferId) == imageCacheSeqs_.end()) {
+        RS_TRACE_NAME_FMT("create vkImage, bufferId=%u", bufferId);
         return NewImageCacheFromBuffer(buffer, threadIndex, isProtectedCondition);
     } else {
+        RS_TRACE_NAME_FMT("find cache vkImage, bufferId=%u", bufferId);
         return imageCacheSeqs_[bufferId];
     }
 }
 
-std::shared_ptr<NativeVkImageRes> RSVkImageManager::CreateImageCacheFromBuffer(sptr<OHOS::SurfaceBuffer> buffer,
+std::shared_ptr<VkImageResource> RSVkImageManager::CreateImageCacheFromBuffer(const sptr<OHOS::SurfaceBuffer> buffer,
     const sptr<SyncFence>& acquireFence)
 {
     WaitAcquireFence(acquireFence);
+    if (buffer == nullptr) {
+        ROSEN_LOGE("RSVkImageManager::CreateImageCacheFromBuffer buffer is nullptr");
+        return nullptr;
+    }
     auto bufferId = buffer->GetSeqNum();
-    auto imageCache = NativeVkImageRes::Create(buffer);
+    auto imageCache = VkImageResource::Create(buffer);
     if (imageCache == nullptr) {
         ROSEN_LOGE(
             "RSVkImageManager::CreateImageCacheFromBuffer: failed to create ImageCache for buffer id %{public}d.",
@@ -123,120 +172,67 @@ std::shared_ptr<NativeVkImageRes> RSVkImageManager::CreateImageCacheFromBuffer(s
     return imageCache;
 }
 
-bool RSVkImageManager::isVirtualScreen(ScreenId screenId)
+std::shared_ptr<VkImageResource> RSVkImageManager::NewImageCacheFromBuffer(
+    const sptr<OHOS::SurfaceBuffer>& buffer, pid_t threadIndex, bool isProtectedCondition)
 {
-    if (screenId == INVALID_SCREEN_ID) {
-        return false;
+    if (buffer == nullptr) {
+        ROSEN_LOGE("RSVkImageManager::NewImageCacheFromBuffer buffer is nullptr");
+        return {};
     }
-
-    auto screenManager = CreateOrGetScreenManager();
-    if (!screenManager) {
-        return false;
-    }
-    RSScreenType type = UNKNOWN_TYPE_SCREEN;
-    if (screenManager->GetScreenType(screenId, type) != StatusCode::SUCCESS) {
-        return false;
-    }
-    return type == VIRTUAL_TYPE_SCREEN ? true : false;
-}
-
-std::shared_ptr<NativeVkImageRes> RSVkImageManager::NewImageCacheFromBuffer(
-    const sptr<OHOS::SurfaceBuffer>& buffer, pid_t threadIndex, bool isProtectedCondition, bool isMatchVirtualScreen)
-{
     auto bufferId = buffer->GetSeqNum();
     auto deleteFlag = buffer->GetBufferDeleteFromCacheFlag();
-    auto imageCache = NativeVkImageRes::Create(buffer);
+    auto imageCache = VkImageResource::Create(buffer);
     if (imageCache == nullptr) {
         ROSEN_LOGE("RSVkImageManager::NewImageCacheFromBuffer: failed to create ImageCache for buffer id %{public}d.",
             bufferId);
         return {};
     }
 
-    size_t imageCacheVirtualScreenSeqSize = imageCacheVirtualScreenSeqs_.size();
     size_t imageCacheSeqSize = imageCacheSeqs_.size();
     DFX_LOGD(ENABLE_VKIMAGE_DFX, "RSVkImageManagerDfx: create image, bufferId=%{public}u, threadIndex=%{public}d, "
-        "deleteFlag=%{public}d, isProtected=%{public}d, isVirtualScreen=%{public}d,cacheSeq=[%{public}lu, %{public}lu]",
-        bufferId, threadIndex, deleteFlag, isProtectedCondition, isMatchVirtualScreen,
-        imageCacheVirtualScreenSeqSize, imageCacheSeqSize);
+        "deleteFlag=%{public}d, isProtected=%{public}d,cacheSeq=%{public}lu",
+        bufferId, threadIndex, deleteFlag, isProtectedCondition, imageCacheSeqSize);
     RS_TRACE_NAME_FMT("RSVkImageManagerDfx: create image, bufferId=%u, "
-        "deleteFlag=%d, isProtected=%d, isVirtualScreen=%d,cacheSeq=[%lu, %lu]",
-        bufferId, deleteFlag, isProtectedCondition, isMatchVirtualScreen,
-        imageCacheVirtualScreenSeqSize, imageCacheSeqSize);
+        "deleteFlag=%d, isProtected=%d, cacheSeq=%lu",
+        bufferId, deleteFlag, isProtectedCondition, imageCacheSeqSize);
     imageCache->SetThreadIndex(threadIndex);
     imageCache->SetBufferDeleteFromCacheFlag(deleteFlag);
     if (isProtectedCondition) {
         return imageCache;
     }
 
-    if (isMatchVirtualScreen) {
-        if (imageCacheVirtualScreenSeqSize <= MAX_CACHE_SIZE_FOR_VIRTUAL_SCREEN) {
-            imageCacheVirtualScreenSeqs_.emplace(bufferId, imageCache);
-        }
-    } else {
+    if (imageCacheSeqSize <= MAX_CACHE_SIZE_FOR_REUSE) {
         imageCacheSeqs_.emplace(bufferId, imageCache);
-        cacheQueue_.push(bufferId);
     }
+
     return imageCache;
 }
 
-void RSVkImageManager::ShrinkCachesIfNeeded()
+void RSVkImageManager::UnMapImageFromSurfaceBuffer(int32_t seqNum)
 {
-    while (cacheQueue_.size() > MAX_CACHE_SIZE) {
-        const uint32_t id = cacheQueue_.front();
-        UnMapVkImageFromSurfaceBuffer(id);
-        cacheQueue_.pop();
-    }
-}
-
-void RSVkImageManager::UnMapVkImageFromSurfaceBuffer(uint32_t seqNum, bool isMatchVirtualScreen)
-{
-    DFX_LOG(ENABLE_VKIMAGE_DFX,
-        "RSVkImageManagerDfx: tryUnmapImage, bufferId=%{public}u, isMatchVirtualScreen=%{public}d",
-        seqNum, isMatchVirtualScreen);
+    DFX_LOG(ENABLE_VKIMAGE_DFX, "RSVkImageManagerDfx: tryUnmapImage, bufferId=%{public}u", seqNum);
     pid_t threadIndex = UNI_RENDER_THREAD_INDEX;
     {
         std::lock_guard<std::mutex> lock(opMutex_);
-        if (isMatchVirtualScreen) {
-            threadIndex = RSUniRenderThread::Instance().GetTid();
-        } else {
-            if (imageCacheSeqs_.count(seqNum) == 0) {
-                return;
-            }
-            threadIndex = imageCacheSeqs_[seqNum]->GetThreadIndex();
+        if (imageCacheSeqs_.count(seqNum) == 0) {
+            return;
         }
+        threadIndex = imageCacheSeqs_[seqNum]->GetThreadIndex();
     }
-    auto func = [this, seqNum, isMatchVirtualScreen]() {
-        {
-            std::lock_guard<std::mutex> lock(opMutex_);
-            if (isMatchVirtualScreen) {
-                auto iter = imageCacheVirtualScreenSeqs_.find(seqNum);
-                if (iter == imageCacheVirtualScreenSeqs_.end()) {
-                    return;
-                }
-                imageCacheVirtualScreenSeqs_.erase(iter);
-            } else {
-                auto iter = imageCacheSeqs_.find(seqNum);
-                if (iter == imageCacheSeqs_.end()) {
-                    return;
-                }
-                imageCacheSeqs_.erase(iter);
-            }
-            DFX_LOGD(ENABLE_VKIMAGE_DFX, "RSVkImageManagerDfx: UnmapImage, bufferId=%{public}u, "
-                "isMatchVirtualScreen=%{public}d, cacheSeq=[%{public}lu, %{public}lu]",
-                seqNum, isMatchVirtualScreen, imageCacheVirtualScreenSeqs_.size(), imageCacheSeqs_.size());
+    auto func = [this, seqNum]() {
+        std::lock_guard<std::mutex> lock(opMutex_);
+        auto iter = imageCacheSeqs_.find(seqNum);
+        if (iter == imageCacheSeqs_.end()) {
+            return;
         }
+        RS_TRACE_NAME_FMT("RSVkImageManagerDfx: unmap image, bufferId=%u", seqNum);
+        imageCacheSeqs_.erase(iter);
+        DFX_LOGD(ENABLE_VKIMAGE_DFX, "RSVkImageManagerDfx: UnmapImage, bufferId=%{public}u, "
+            "cacheSeq=[%{public}lu]",
+            seqNum, imageCacheSeqs_.size());
     };
     DFX_LOGD(ENABLE_VKIMAGE_DFX, "RSVkImageManagerDfx: findImageToUnmap, bufferId=%{public}u", seqNum);
     RSTaskDispatcher::GetInstance().PostTask(threadIndex, func);
-}
-
-void RSVkImageManager::UnMapAllVkImageVirtualScreenCache()
-{
-    auto func = [this]() {
-        std::lock_guard<std::mutex> lock(opMutex_);
-        (void)imageCacheVirtualScreenSeqs_.clear();
-    };
-    RSTaskDispatcher::GetInstance().PostTask(RSUniRenderThread::Instance().GetTid(), func);
 }
 
 void RSVkImageManager::DumpVkImageInfo(std::string &dumpString)
@@ -249,15 +245,89 @@ void RSVkImageManager::DumpVkImageInfo(std::string &dumpString)
             ", threadIndex=" + std::to_string(iter->second->GetThreadIndex()) +
             ", deleteFlag=" + std::to_string(iter->second->GetBufferDeleteFromCacheFlag()) + "\n");
     }
-    dumpString.append("imageCacheVirtualScreenSeqs size: " +
-        std::to_string(imageCacheVirtualScreenSeqs_.size()) + "\n");
-    for (auto iter = imageCacheVirtualScreenSeqs_.begin(); iter != imageCacheVirtualScreenSeqs_.end(); ++iter) {
-        dumpString.append("vkimageinfo: bufferId=" + std::to_string(iter->first) +
-            ", threadIndex=" + std::to_string(iter->second->GetThreadIndex()) +
-            ", deleteFlag=" + std::to_string(iter->second->GetBufferDeleteFromCacheFlag()) + "\n");
-    }
     dumpString.append("\n---------RSVkImageManager-DumpVkImageInfo-End----------\n");
 }
 
+std::shared_ptr<Drawing::Image> RSVkImageManager::CreateImageFromBuffer(
+    RSPaintFilterCanvas& canvas, const sptr<SurfaceBuffer>& buffer, const sptr<SyncFence>& acquireFence,
+    const pid_t threadIndex, const std::shared_ptr<Drawing::ColorSpace>& drawingColorSpace)
+{
+    auto image = std::make_shared<Drawing::Image>();
+    if (buffer == nullptr) {
+        RS_LOGE("RSVkImageManager::CreateImageFromBuffer: buffer is nullptr");
+        return nullptr;
+    }
+    auto imageCache = MapVkImageFromSurfaceBuffer(buffer,
+        acquireFence, threadIndex, canvas.GetSurface());
+    if (imageCache == nullptr) {
+        RS_LOGE("RSVkImageManager::MapImageFromSurfaceBuffer failed!");
+        return nullptr;
+    }
+    if (buffer != nullptr && buffer->GetBufferDeleteFromCacheFlag()) {
+        RS_LOGD_IF(DEBUG_COMPOSER, "  - Buffer %{public}u marked for deletion from cache, unmapping",
+            buffer->GetSeqNum());
+        UnMapImageFromSurfaceBuffer(buffer->GetSeqNum());
+    }
+    auto bitmapFormat = RSBaseRenderUtil::GenerateDrawingBitmapFormat(buffer);
+    auto screenColorSpace = GetCanvasColorSpace(canvas);
+    if (screenColorSpace && drawingColorSpace &&
+        drawingColorSpace->IsSRGB() != screenColorSpace->IsSRGB()) {
+        bitmapFormat.alphaType = Drawing::AlphaType::ALPHATYPE_OPAQUE;
+    }
+    RS_LOGD_IF(DEBUG_COMPOSER, "  - Generated bitmap format: colorType = %{public}d, alphaType = %{public}d",
+        bitmapFormat.colorType, bitmapFormat.alphaType);
+#ifndef ROSEN_EMULATOR
+    auto surfaceOrigin = Drawing::TextureOrigin::TOP_LEFT;
+#else
+    auto surfaceOrigin = Drawing::TextureOrigin::BOTTOM_LEFT;
+#endif
+    RS_LOGD_IF(DEBUG_COMPOSER, "  - Texture origin: %{public}d", static_cast<int>(surfaceOrigin));
+    auto contextDrawingVk = canvas.GetGPUContext();
+    if (contextDrawingVk == nullptr || image == nullptr) {
+        RS_LOGE("contextDrawingVk or image is nullptr.");
+        return nullptr;
+    }
+    auto& backendTexture = imageCache->GetBackendTexture();
+    if (!image->BuildFromTexture(*contextDrawingVk, backendTexture.GetTextureInfo(),
+        surfaceOrigin, bitmapFormat, drawingColorSpace,
+        NativeBufferUtils::DeleteVkImage, imageCache->RefCleanupHelper())) {
+        RS_LOGE("RSVkImageManager::CreateImageFromBuffer: backendTexture is not valid!!!");
+        return nullptr;
+    }
+    return image;
+}
+
+std::shared_ptr<Drawing::Image> RSVkImageManager::GetIntersectImage(Drawing::RectI& imgCutRect,
+    const std::shared_ptr<Drawing::GPUContext>& context, const sptr<OHOS::SurfaceBuffer>& buffer,
+    const sptr<SyncFence>& acquireFence, pid_t threadIndex)
+{
+    if (buffer == nullptr) {
+        ROSEN_LOGE("RSVkImageManager::GetIntersectImageFromVK context or buffer is nullptr!");
+        return nullptr;
+    }
+    auto imageCache = CreateImageCacheFromBuffer(buffer, acquireFence);
+    if (imageCache == nullptr) {
+        ROSEN_LOGE("RSVkImageManager::GetIntersectImageFromVK imageCache == nullptr!");
+        return nullptr;
+    }
+    auto& backendTexture = imageCache->GetBackendTexture();
+    Drawing::BitmapFormat bitmapFormat = RSBaseRenderUtil::GenerateDrawingBitmapFormat(buffer);
+
+    std::shared_ptr<Drawing::Image> layerImage = std::make_shared<Drawing::Image>();
+    if (!layerImage->BuildFromTexture(*context, backendTexture.GetTextureInfo(),
+        Drawing::TextureOrigin::TOP_LEFT, bitmapFormat, nullptr,
+        NativeBufferUtils::DeleteVkImage, imageCache->RefCleanupHelper())) {
+        ROSEN_LOGE("RSVkImageManager::GetIntersectImageFromVK image BuildFromTexture failed.");
+        return nullptr;
+    }
+
+    std::shared_ptr<Drawing::Image> cutDownImage = std::make_shared<Drawing::Image>();
+    bool res = cutDownImage->BuildSubset(layerImage, imgCutRect, *context);
+    if (!res) {
+        ROSEN_LOGE("RSVkImageManager::GetIntersectImageFromVK cutDownImage BuildSubset failed.");
+        return nullptr;
+    }
+    return cutDownImage;
+}
 } // namespace Rosen
 } // namespace OHOS

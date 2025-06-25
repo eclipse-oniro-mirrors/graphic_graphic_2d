@@ -343,6 +343,7 @@ public:
     void UpdatePartialRenderParams();
     void UpdateScreenRenderParams(ScreenRenderParams& screenRenderParams);
     void UpdateOffscreenRenderParams(bool needOffscreen);
+    Occlusion::Region GetTopSurfaceOpaqueRegion() const;
     void RecordTopSurfaceOpaqueRects(Occlusion::Rect rect);
     void RecordMainAndLeashSurfaces(RSBaseRenderNode::SharedPtr surface);
     std::vector<RSBaseRenderNode::SharedPtr>& GetAllMainAndLeashSurfaces() { return curMainAndLeashSurfaceNodes_;}
@@ -408,6 +409,10 @@ public:
 
     void SetMainAndLeashSurfaceDirty(bool isDirty);
 
+    void SetForceCloseHdr(bool isForceCloseHdr);
+
+    bool GetForceCloseHdr() const;
+
     void SetHDRPresent(bool hdrPresent);
 
     void SetBrightnessRatio(float brightnessRatio);
@@ -422,7 +427,29 @@ public:
         return pixelFormat_;
     }
 
+    void SetEnabledHDRCast(bool isEnabledHDRCast)
+    {
+        isEnabledHDRCast_ = isEnabledHDRCast;
+    }
+
+    bool GetEnabledHDRCast() const
+    {
+        return isEnabledHDRCast_;
+    }
+
+    bool IsFirstFrameOfInit() const
+    {
+        return isFirstFrameOfInit_;
+    }
+
+    void SetFirstFrameOfInit(bool isFirstFrameOfInit)
+    {
+        isFirstFrameOfInit_ = isFirstFrameOfInit;
+    }
+
     void SetColorSpace(const GraphicColorGamut& newColorSpace);
+    void UpdateColorSpace(const GraphicColorGamut& newColorSpace);
+    void SelectBestGamut(const std::vector<ScreenColorGamut>& mode);
     GraphicColorGamut GetColorSpace() const;
 
     std::map<NodeId, std::shared_ptr<RSSurfaceRenderNode>>& GetDirtySurfaceNodeMap()
@@ -551,6 +578,20 @@ public:
         return displayTotalHdrStatus_;
     }
 
+    void InsertHDRNode(NodeId id)
+    {
+        hdrNodeList_.insert(id);
+    }
+
+    void RemoveHDRNode(NodeId id)
+    {
+        hdrNodeList_.erase(id);
+    }
+
+    std::unordered_set<NodeId>& GetHDRNodeList()
+    {
+        return hdrNodeList_;
+    }
     using ScreenStatusNotifyTask = std::function<void(bool)>;
 
     static void SetScreenStatusNotifyTask(ScreenStatusNotifyTask task);
@@ -582,6 +623,8 @@ public:
     void SetWindowContainer(std::shared_ptr<RSBaseRenderNode> container);
     std::shared_ptr<RSBaseRenderNode> GetWindowContainer() const;
 
+    void SetNeedForceUpdateHwcNodes(bool needForceUpdate, bool hasVisibleHwcNodes);
+
     void SetTargetSurfaceRenderNodeId(NodeId nodeId)
     {
         targetSurfaceRenderNodeId_ = nodeId;
@@ -592,7 +635,17 @@ public:
         return targetSurfaceRenderNodeId_;
     }
 
+    bool HasMirrorDisplay() const
+    {
+        return hasMirrorDisplay_;
+    }
+
+    void SetHasMirrorDisplay(bool hasMirrorDisplay);
+
     void SetTargetSurfaceRenderNodeDrawable(DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr drawable);
+
+    // Enable HWCompose
+    RSHwcDisplayRecorder& HwcDisplayRecorder() { return hwcDisplayRecorder_; }
 
 protected:
     void OnSync() override;
@@ -608,6 +661,9 @@ private:
     bool isMirroredDisplay_ = false;
     bool hasMirroredDisplayChanged_ = false;
     bool isSecurityDisplay_ = false;
+    bool isForceCloseHdr_ = false;
+    bool isFirstFrameOfInit_ = true;
+    bool isEnabledHDRCast_ = false;
     bool hasUniRenderHdrSurface_ = false;
     bool isLuminanceStatusChange_ = false;
     bool preRotationStatus_ = false;
@@ -636,6 +692,8 @@ private:
     int32_t lastScbPid_ = -1;
     HdrStatus displayTotalHdrStatus_ = HdrStatus::NO_HDR;
     uint64_t screenId_ = 0;
+    // save children hdr canvasNode id
+    std::unordered_set<NodeId> hdrNodeList_;
     // Use in MultiLayersPerf
     size_t surfaceCountForMultiLayersPerf_ = 0;
     int64_t lastRefreshTime_ = 0;
@@ -681,6 +739,8 @@ private:
 
     std::vector<int32_t> oldScbPids_ {};
 
+    bool hasMirrorDisplay_ = false;
+
     // Use in round corner display
     // removed later due to rcd node will be handled by RS tree in OH 6.0 rcd refactoring
     RSBaseRenderNode::SharedPtr rcdSurfaceNodeTop_ = nullptr;
@@ -692,6 +752,9 @@ private:
 
     // Window Container
     std::shared_ptr<RSBaseRenderNode> windowContainer_;
+
+    // Enable HWCompose
+    RSHwcDisplayRecorder hwcDisplayRecorder_;
 };
 } // namespace Rosen
 } // namespace OHOS

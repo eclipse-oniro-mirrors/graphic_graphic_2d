@@ -23,6 +23,8 @@
 #include "path_napi/js_path.h"
 #include "recording/recording_canvas.h"
 #include "text_line_napi/js_text_line.h"
+#include "text_style.h"
+#include "typography_style.h"
 #include "utils/text_log.h"
 
 namespace OHOS::Rosen {
@@ -30,25 +32,33 @@ namespace {
 const std::string CLASS_NAME = "Paragraph";
 }
 
-std::unique_ptr<Typography> JsParagraph::g_Typography = nullptr;
+std::mutex JsParagraph::constructorMutex_;
 thread_local napi_ref JsParagraph::constructor_ = nullptr;
 
 napi_value JsParagraph::Constructor(napi_env env, napi_callback_info info)
 {
-    size_t argCount = 0;
     napi_value jsThis = nullptr;
-    napi_status status = napi_get_cb_info(env, info, &argCount, nullptr, &jsThis, nullptr);
+    size_t argc = ARGC_ONE;
+    napi_value argv[ARGC_ONE] = {nullptr};
+    napi_status status = napi_get_cb_info(env, info, &argc, argv, &jsThis, nullptr);
     if (status != napi_ok) {
         TEXT_LOGE("Failed to get parameter, ret %{public}d", status);
         return nullptr;
     }
 
-    if (!g_Typography) {
+    void* nativePointer = nullptr;
+    if (!(argv[0] != nullptr && napi_get_value_external(env, argv[0], &nativePointer) == napi_ok)) {
+        TEXT_LOGE("Failed to convert");
+        return nullptr;
+    }
+
+    std::shared_ptr<Typography> typography(static_cast<Typography*>(nativePointer));
+    if (typography == nullptr) {
         TEXT_LOGE("Null typography");
         return nullptr;
     }
 
-    JsParagraph *jsParagraph = new(std::nothrow) JsParagraph(std::move(g_Typography));
+    JsParagraph* jsParagraph = new (std::nothrow) JsParagraph(typography);
     if (jsParagraph == nullptr) {
         return nullptr;
     }
@@ -65,6 +75,31 @@ napi_value JsParagraph::Constructor(napi_env env, napi_callback_info info)
 
 napi_value JsParagraph::Init(napi_env env, napi_value exportObj)
 {
+    if (!CreateConstructor(env)) {
+        TEXT_LOGE("Failed to CreateConstructor");
+        return nullptr;
+    }
+    napi_value constructor = nullptr;
+    napi_status status = napi_get_reference_value(env, constructor_, &constructor);
+    if (status != napi_ok) {
+        TEXT_LOGE("Failed to get reference, ret %{public}d", status);
+        return nullptr;
+    }
+
+    status = napi_set_named_property(env, exportObj, CLASS_NAME.c_str(), constructor);
+    if (status != napi_ok) {
+        TEXT_LOGE("Failed to set named property, ret %{public}d", status);
+        return nullptr;
+    }
+    return exportObj;
+}
+
+bool JsParagraph::CreateConstructor(napi_env env)
+{
+    std::lock_guard<std::mutex> lock(constructorMutex_);
+    if (constructor_) {
+        return true;
+    }
     napi_property_descriptor properties[] = {
         DECLARE_NAPI_FUNCTION("layoutSync", JsParagraph::Layout),
         DECLARE_NAPI_FUNCTION("paint", JsParagraph::Paint),
@@ -92,29 +127,23 @@ napi_value JsParagraph::Init(napi_env env, napi_value exportObj)
         DECLARE_NAPI_FUNCTION("getLineFontMetrics", JsParagraph::GetLineFontMetrics),
         DECLARE_NAPI_FUNCTION("layout", JsParagraph::LayoutAsync),
         DECLARE_NAPI_FUNCTION("isStrutStyleEqual", JsParagraph::IsStrutStyleEqual),
+        DECLARE_NAPI_FUNCTION("updateColor", JsParagraph::UpdateColor),
+        DECLARE_NAPI_FUNCTION("updateDecoration", JsParagraph::UpdateDecoration),
     };
     napi_value constructor = nullptr;
     napi_status status = napi_define_class(env, CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Constructor, nullptr,
         sizeof(properties) / sizeof(properties[0]), properties, &constructor);
     if (status != napi_ok) {
         TEXT_LOGE("Failed to define paragraph class, ret %{public}d", status);
-        return nullptr;
+        return false;
     }
-
     status = napi_create_reference(env, constructor, 1, &constructor_);
     if (status != napi_ok) {
         TEXT_LOGE("Failed to create reference, ret %{public}d", status);
-        return nullptr;
+        return false;
     }
-
-    status = napi_set_named_property(env, exportObj, CLASS_NAME.c_str(), constructor);
-    if (status != napi_ok) {
-        TEXT_LOGE("Failed to set named property, ret %{public}d", status);
-        return nullptr;
-    }
-    return exportObj;
+    return true;
 }
-
 
 void JsParagraph::Destructor(napi_env env, void *nativeObject, void *finalize)
 {
@@ -761,12 +790,18 @@ std::shared_ptr<Typography> JsParagraph::GetParagraph()
 
 napi_value JsParagraph::CreateJsTypography(napi_env env, std::unique_ptr<Typography> typography)
 {
+    if (!CreateConstructor(env)) {
+        TEXT_LOGE("Failed to CreateConstructor");
+        return nullptr;
+    }
     napi_value constructor = nullptr;
     napi_value result = nullptr;
     napi_status status = napi_get_reference_value(env, constructor_, &constructor);
     if (status == napi_ok) {
-        g_Typography = std::move(typography);
-        status = napi_new_instance(env, constructor, 0, nullptr, &result);
+        napi_value argv;
+        napi_create_external(
+            env, typography.release(), [](napi_env env, void* finalizeData, void* finalizeHint) {}, nullptr, &argv);
+        status = napi_new_instance(env, constructor, ARGC_ONE, &argv, &result);
         if (status == napi_ok) {
             return result;
         } else {
@@ -862,6 +897,57 @@ napi_value JsParagraph::OnLayoutAsync(napi_env env, napi_callback_info info)
         output = NapiGetUndefined(env);
     };
     return NapiAsyncWork::Enqueue(env, context, "onLayoutAsync", executor, complete);
+}
+
+napi_value JsParagraph::UpdateColor(napi_env env, napi_callback_info info)
+{
+    JsParagraph* me = CheckParamsAndGetThis<JsParagraph>(env, info);
+    return (me != nullptr) ? me->OnUpdateColor(env, info) : nullptr;
+}
+
+napi_value JsParagraph::OnUpdateColor(napi_env env, napi_callback_info info)
+{
+    NAPI_CHECK_AND_THROW_ERROR(paragraph_ != nullptr, TextErrorCode::ERROR_INVALID_PARAM, "Paragraph is null");
+
+    size_t argc = ARGC_ONE;
+    napi_value argv[ARGC_ONE] = {nullptr};
+    napi_status status = napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+    if (status != napi_ok || argc < ARGC_ONE) {
+        TEXT_LOGE("Failed to get parameter, argc %{public}zu, ret %{public}d", argc, status);
+        return NapiThrowError(env, TextErrorCode::ERROR_INVALID_PARAM, "Invalid params.");
+    }
+    TextStyle textStyleTemplate;
+    if (!SetColorFromJS(env, argv[0], textStyleTemplate.color)) {
+        TEXT_LOGE("Invalid argv[0]");
+        return NapiThrowError(env, TextErrorCode::ERROR_INVALID_PARAM, "Invalid params");
+    }
+    textStyleTemplate.relayoutChangeBitmap.set(static_cast<size_t>(RelayoutTextStyleAttribute::FONT_COLOR));
+    paragraph_->UpdateAllTextStyles(textStyleTemplate);
+    return NapiGetUndefined(env);
+}
+
+napi_value JsParagraph::UpdateDecoration(napi_env env, napi_callback_info info)
+{
+    JsParagraph* me = CheckParamsAndGetThis<JsParagraph>(env, info);
+    return (me != nullptr) ? me->OnUpdateDecoration(env, info) : nullptr;
+}
+
+napi_value JsParagraph::OnUpdateDecoration(napi_env env, napi_callback_info info)
+{
+    NAPI_CHECK_AND_THROW_ERROR(paragraph_ != nullptr, TextErrorCode::ERROR_INVALID_PARAM, "Paragraph is null");
+
+    size_t argc = ARGC_ONE;
+    napi_value argv[ARGC_ONE] = {nullptr};
+    napi_status status = napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+    if (status != napi_ok || argc < ARGC_ONE) {
+        TEXT_LOGE("Failed to get parameter, argc %{public}zu, ret %{public}d", argc, status);
+        return NapiThrowError(env, TextErrorCode::ERROR_INVALID_PARAM, "Invalid params.");
+    }
+
+    TextStyle textStyleTemplate;
+    GetDecorationFromJSForUpdate(env, argv[0], textStyleTemplate);
+    paragraph_->UpdateAllTextStyles(textStyleTemplate);
+    return NapiGetUndefined(env);
 }
 
 napi_value JsParagraph::IsStrutStyleEqual(napi_env env, napi_callback_info info)

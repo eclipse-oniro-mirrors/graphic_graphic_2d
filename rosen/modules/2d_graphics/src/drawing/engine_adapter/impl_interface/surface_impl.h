@@ -22,7 +22,11 @@
 #include "image/image_info.h"
 #include "utils/rect.h"
 #ifdef RS_ENABLE_GL
+#ifdef USE_M133_SKIA
+#include "include/gpu/ganesh/gl/GrGLTypes.h"
+#else
 #include "include/gpu/gl/GrGLTypes.h"
+#endif
 #endif
 #ifdef RS_ENABLE_VK
 #include "vulkan/vulkan.h"
@@ -54,7 +58,6 @@ public:
     virtual std::shared_ptr<Canvas> GetCanvas() const = 0;
     virtual std::shared_ptr<Image> GetImageSnapshot() const = 0;
     virtual std::shared_ptr<Image> GetImageSnapshot(const RectI& bounds, bool allowRefCache = true) const = 0;
-    virtual void SetParallelRender(bool parallelEnable) = 0;
     virtual std::shared_ptr<Surface> MakeSurface(int width, int height) const = 0;
     virtual std::shared_ptr<Surface> MakeSurface(const ImageInfo& imageInfo) const = 0;
     virtual BackendTexture GetBackendTexture(BackendAccess access) const = 0;

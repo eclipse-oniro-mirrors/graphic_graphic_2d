@@ -67,6 +67,11 @@ bool RSSystemProperties::GetAnimationTraceEnabled()
     return false;
 }
 
+bool RSSystemProperties::GetAnimationDelayOptimizeEnabled()
+{
+    return false;
+}
+
 bool RSSystemProperties::GetRSClientMultiInstanceEnabled()
 {
     return false;
@@ -147,6 +152,11 @@ bool RSSystemProperties::GetExpandScreenDirtyEnabled()
     return false;
 }
 
+bool RSSystemProperties::GetVirtualExpandScreenSkipEnabled()
+{
+    return false;
+}
+
 bool RSSystemProperties::GetOcclusionEnabled()
 {
     return {};
@@ -166,13 +176,6 @@ bool RSSystemProperties::GetHighContrastStatus()
 {
     return {};
 }
-
-#ifndef NEW_SKIA
-bool RSSystemProperties::GetReleaseResourceEnabled()
-{
-    return {};
-}
-#endif
 
 uint32_t RSSystemProperties::GetCorrectionMode()
 {
@@ -322,6 +325,11 @@ bool RSSystemProperties::IsFoldScreenFlag()
     return false;
 }
 
+bool RSSystemProperties::IsSmallFoldDevice()
+{
+    return false;
+}
+
 int RSSystemProperties::GetFilterCacheSizeThreshold()
 {
     return 0;
@@ -425,16 +433,6 @@ bool RSSystemProperties::GetImageGpuResourceCacheEnable(int width, int height)
 }
 
 bool RSSystemProperties::IsPhoneType()
-{
-    return false;
-}
-
-bool RSSystemProperties::IsTabletType()
-{
-    return false;
-}
-
-bool RSSystemProperties::IsPcType()
 {
     return false;
 }
@@ -630,6 +628,125 @@ bool RSSystemProperties::GetWindowKeyFrameEnabled()
 }
 
 bool RSSystemProperties::GetNodeGroupGroupedByUIEnabled()
+{
+    return false;
+}
+
+bool RSSystemProperties::GetTimeVsyncDisabled()
+{
+    return false;
+}
+
+bool RSSystemProperties::GetTextureExportDFXEnabled()
+{
+    return false;
+}
+
+bool RSSystemProperties::GetHybridRenderEnabled()
+{
+    return false;
+}
+
+int32_t RSSystemProperties::GetHybridRenderCcmEnabled()
+{
+    return 0;
+}
+
+// The switch are for scheme debugging. After the scheme is stabilizated, the switch will be removed.
+bool RSSystemProperties::GetHybridRenderSystemEnabled()
+{
+    return false;
+}
+
+bool RSSystemProperties::GetHybridRenderDfxEnabled()
+{
+    return false;
+}
+
+uint32_t RSSystemProperties::GetHybridRenderTextBlobLenCount()
+{
+    return 0;
+}
+
+bool RSSystemProperties::ViewDrawNodeType()
+{
+    return false;
+}
+
+bool RSSystemProperties::GetHybridRenderParallelConvertEnabled()
+{
+    return false;
+}
+
+// The switch are for scheme debugging. After the scheme is stabilizated, the switch will be removed.
+bool RSSystemProperties::GetHybridRenderCanvasEnabled()
+{
+    return false;
+}
+
+bool RSSystemProperties::GetHybridRenderMemeoryReleaseEnabled()
+{
+    return false;
+}
+
+// The switch are for scheme debugging. After the scheme is stabilizated, the switch will be removed.
+bool RSSystemProperties::GetHybridRenderTextBlobEnabled()
+{
+    return false;
+}
+
+// The switch are for scheme debugging. After the scheme is stabilizated, the switch will be removed.
+bool RSSystemProperties::GetHybridRenderSvgEnabled()
+{
+    return false;
+}
+
+// The switch are for scheme debugging. After the scheme is stabilizated, the switch will be removed.
+bool RSSystemProperties::GetHybridRenderHmsymbolEnabled()
+{
+    return false;
+}
+
+int32_t RSSystemProperties::GetHybridRenderSwitch(ComponentEnableSwitch bitSeq)
+{
+    return 0;
+}
+
+bool RSSystemProperties::GetVKImageUseEnabled()
+{
+    return false;
+}
+
+void RSSystemProperties::SetDebugFmtTraceEnabled(bool flag)
+{
+    debugFmtTraceEnable_ = flag;
+}
+
+bool RSSystemProperties::GetDebugFmtTraceEnabled()
+{
+    return GetDebugTraceEnabled();
+}
+
+void RSSystemProperties::SetBehindWindowFilterEnabled(bool enabled)
+{
+}
+
+bool RSSystemProperties::GetBehindWindowFilterEnabled()
+{
+    return false;
+}
+
+bool RSSystemProperties::GetSubThreadControlFrameRate()
+{
+    return false;
+}
+
+int RSSystemProperties::GetSubThreadDropFrameInterval()
+{
+    return 0;
+}
+
+bool RSSystemProperties::GetCompositeLayerEnabled()
 {
     return false;
 }

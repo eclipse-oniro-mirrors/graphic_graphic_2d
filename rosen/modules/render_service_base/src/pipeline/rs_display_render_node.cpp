@@ -29,6 +29,23 @@ namespace OHOS {
 namespace Rosen {
 constexpr int64_t MAX_JITTER_NS = 2000000; // 2ms
 
+namespace {
+GraphicColorGamut SelectBigGamut(GraphicColorGamut oldGamut, GraphicColorGamut newGamut)
+{
+    if (oldGamut == GRAPHIC_COLOR_GAMUT_DISPLAY_BT2020) {
+        return oldGamut;
+    }
+    if (oldGamut == GRAPHIC_COLOR_GAMUT_DISPLAY_P3) {
+        if (newGamut == GRAPHIC_COLOR_GAMUT_DISPLAY_BT2020) {
+            return newGamut;
+        } else {
+            return oldGamut;
+        }
+    }
+    return newGamut;
+}
+}
+
 RSDisplayRenderNode::RSDisplayRenderNode(
     NodeId id, const RSDisplayNodeConfig& config, const std::weak_ptr<RSContext>& context)
     : RSRenderNode(id, context), isMirroredDisplay_(config.isMirrored), offsetX_(0), offsetY_(0),
@@ -130,11 +147,15 @@ void RSDisplayRenderNode::SetMirrorSource(SharedPtr node)
     if (!isMirroredDisplay_ || node == nullptr) {
         return;
     }
+    node->SetHasMirrorDisplay(true);
     mirrorSource_ = node;
 }
 
 void RSDisplayRenderNode::ResetMirrorSource()
 {
+    if (auto mirrorSource = mirrorSource_.lock()) {
+        mirrorSource->SetHasMirrorDisplay(false);
+    }
     mirrorSource_.reset();
 }
 
@@ -245,6 +266,15 @@ void RSDisplayRenderNode::HandleCurMainAndLeashSurfaceNodes()
 void RSDisplayRenderNode::RecordMainAndLeashSurfaces(RSBaseRenderNode::SharedPtr surface)
 {
     curMainAndLeashSurfaceNodes_.push_back(surface);
+}
+
+Occlusion::Region RSDisplayRenderNode::GetTopSurfaceOpaqueRegion() const
+{
+    Occlusion::Region topSurfaceOpaqueRegion;
+    for (const auto& rect : topSurfaceOpaqueRects_) {
+        topSurfaceOpaqueRegion.OrSelf(rect);
+    }
+    return topSurfaceOpaqueRegion;
 }
 
 void RSDisplayRenderNode::RecordTopSurfaceOpaqueRects(Occlusion::Rect rect)
@@ -452,6 +482,20 @@ void RSDisplayRenderNode::SetMainAndLeashSurfaceDirty(bool isDirty)
 #endif
 }
 
+void RSDisplayRenderNode::SetNeedForceUpdateHwcNodes(bool needForceUpdate, bool hasVisibleHwcNodes)
+{
+    auto displayParams = static_cast<RSDisplayRenderParams*>(stagingRenderParams_.get());
+    if (displayParams == nullptr) {
+        return;
+    }
+    HwcDisplayRecorder().SetNeedForceUpdateHwcNodes(needForceUpdate);
+    HwcDisplayRecorder().SetHasVisibleHwcNodes(hasVisibleHwcNodes);
+    displayParams->SetNeedForceUpdateHwcNodes(needForceUpdate);
+    if (stagingRenderParams_->NeedSync()) {
+        AddToPendingSyncList();
+    }
+}
+
 void RSDisplayRenderNode::SetFingerprint(bool hasFingerprint)
 {
 #ifdef RS_ENABLE_GPU
@@ -479,6 +523,7 @@ void RSDisplayRenderNode::SetHDRPresent(bool hdrPresent)
         RS_LOGE("%{public}s displayParams is nullptr", __func__);
         return;
     }
+    displayParams->SetHDRStatusChanged(displayParams->GetHDRPresent() != hdrPresent);
     displayParams->SetHDRPresent(hdrPresent);
     if (stagingRenderParams_->NeedSync()) {
         AddToPendingSyncList();
@@ -520,9 +565,70 @@ void RSDisplayRenderNode::SetColorSpace(const GraphicColorGamut& colorSpace)
 #endif
 }
 
+void RSDisplayRenderNode::UpdateColorSpace(const GraphicColorGamut& colorSpace)
+{
+    GraphicColorGamut newColorSpace = SelectBigGamut(colorSpace_, colorSpace);
+    if (colorSpace_ == newColorSpace) {
+        return;
+    }
+    auto displayParams = static_cast<RSDisplayRenderParams*>(stagingRenderParams_.get());
+    if (displayParams == nullptr) {
+        RS_LOGE("%{public}s displayParams is nullptr", __func__);
+        return;
+    }
+    displayParams->SetNewColorSpace(newColorSpace);
+    if (stagingRenderParams_->NeedSync()) {
+        AddToPendingSyncList();
+    }
+    colorSpace_ = newColorSpace;
+}
+
+void RSDisplayRenderNode::SelectBestGamut(const std::vector<ScreenColorGamut>& mode)
+{
+    if (mode.empty()) {
+        SetColorSpace(GRAPHIC_COLOR_GAMUT_SRGB);
+        return;
+    }
+    bool isSupportBt2020 = false;
+    bool isSupportP3 = false;
+    for (const auto& gamut : mode) {
+        auto temp = static_cast<GraphicColorGamut>(gamut);
+        if (colorSpace_ == temp) {
+            return;
+        }
+        if (temp == GRAPHIC_COLOR_GAMUT_DISPLAY_BT2020) {
+            isSupportBt2020 = true;
+            continue;
+        }
+        if (temp == GRAPHIC_COLOR_GAMUT_DISPLAY_P3) {
+            isSupportP3 = true;
+            continue;
+        }
+    }
+    GraphicColorGamut finalGamut;
+    if (colorSpace_ == GRAPHIC_COLOR_GAMUT_DISPLAY_BT2020) {
+        finalGamut = isSupportP3 ? GRAPHIC_COLOR_GAMUT_DISPLAY_P3 :
+            GRAPHIC_COLOR_GAMUT_SRGB;
+    } else {
+        finalGamut = isSupportBt2020 ? GRAPHIC_COLOR_GAMUT_DISPLAY_BT2020 :
+            GRAPHIC_COLOR_GAMUT_SRGB;
+    }
+    SetColorSpace(finalGamut);
+}
+
 GraphicColorGamut RSDisplayRenderNode::GetColorSpace() const
 {
     return colorSpace_;
+}
+
+void RSDisplayRenderNode::SetForceCloseHdr(bool isForceCloseHdr)
+{
+    isForceCloseHdr_ = isForceCloseHdr;
+}
+
+bool RSDisplayRenderNode::GetForceCloseHdr() const
+{
+    return ROSEN_EQ(GetRenderProperties().GetHDRBrightnessFactor(), 0.0f);
 }
 
 RSRenderNode::ChildrenListSharedPtr RSDisplayRenderNode::GetSortedChildren() const
@@ -622,6 +728,19 @@ void RSDisplayRenderNode::SetWindowContainer(std::shared_ptr<RSBaseRenderNode> c
 std::shared_ptr<RSBaseRenderNode> RSDisplayRenderNode::GetWindowContainer() const
 {
     return windowContainer_;
+}
+
+void RSDisplayRenderNode::SetHasMirrorDisplay(bool hasMirrorDisplay)
+{
+    auto displayParams = static_cast<RSDisplayRenderParams*>(stagingRenderParams_.get());
+    if (displayParams == nullptr) {
+        RS_LOGE("RSDisplayRenderNode::SetHasMirrorDisplay displayParams is null");
+        return;
+    }
+    displayParams->SetHasMirrorDisplay(hasMirrorDisplay);
+    if (stagingRenderParams_->NeedSync()) {
+        AddToPendingSyncList();
+    }
 }
 
 void RSDisplayRenderNode::SetTargetSurfaceRenderNodeDrawable(DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr drawable)

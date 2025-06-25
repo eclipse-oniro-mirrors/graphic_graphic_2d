@@ -17,6 +17,7 @@
 
 #include "common/rs_obj_abs_geometry.h"
 #include "display_engine/rs_luminance_control.h"
+#include "params/rs_display_render_params.h"
 #include "pipeline/rs_canvas_render_node.h"
 #include "pipeline/rs_display_render_node.h"
 #include "render_thread/rs_render_thread_visitor.h"
@@ -231,7 +232,49 @@ HWTEST_F(RSDisplayRenderNodeTest, SetMirrorSourceTest, TestSize.Level1)
 
     rsDisplayRenderNode = std::make_shared<RSDisplayRenderNode>(id + 1, config, context);
     node->SetMirrorSource(rsDisplayRenderNode);
-    ASSERT_NE(node->mirrorSource_.lock(), nullptr);
+    EXPECT_NE(node->mirrorSource_.lock(), nullptr);
+}
+
+/**
+ * @tc.name: ResetMirrorSourceTest
+ * @tc.desc: test results of ResetMirrorSourceTest
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSDisplayRenderNodeTest, ResetMirrorSourceTest, TestSize.Level1)
+{
+    auto node = std::make_shared<RSDisplayRenderNode>(id, config, context);
+    node->SetMirrorSource(nullptr);
+    EXPECT_EQ(node->mirrorSource_.lock(), nullptr);
+    node->ResetMirrorSource();
+    EXPECT_EQ(node->mirrorSource_.lock(), nullptr);
+
+    auto rsDisplayRenderNode = std::make_shared<RSDisplayRenderNode>(id + 1, config, context);
+    node->isMirroredDisplay_ = true;
+    node->SetMirrorSource(rsDisplayRenderNode);
+    EXPECT_NE(node->mirrorSource_.lock(), nullptr);
+    node->ResetMirrorSource();
+    EXPECT_EQ(node->mirrorSource_.lock(), nullptr);
+}
+
+/**
+ * @tc.name: SetHasMirrorDisplay
+ * @tc.desc: test results of SetHasMirrorDisplay
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSDisplayRenderNodeTest, SetHasMirrorDisplayTest, TestSize.Level1)
+{
+    auto node = std::make_shared<RSDisplayRenderNode>(id, config, context);
+    node->stagingRenderParams_ = std::make_unique<RSDisplayRenderParams>(node->GetId());
+    ASSERT_NE(node->stagingRenderParams_, nullptr);
+    auto displayParams = static_cast<RSDisplayRenderParams*>(node->stagingRenderParams_.get());
+    node->stagingRenderParams_->SetNeedSync(true);
+    node->SetHasMirrorDisplay(true);
+    EXPECT_TRUE(displayParams->HasMirrorDisplay());
+    node->stagingRenderParams_->SetNeedSync(false);
+    node->SetHasMirrorDisplay(false);
+    EXPECT_FALSE(displayParams->HasMirrorDisplay());
 }
 
 /**
@@ -601,6 +644,21 @@ HWTEST_F(RSDisplayRenderNodeTest, HandleCurMainAndLeashSurfaceNodes005, TestSize
 }
 
 /**
+ * @tc.name: ForceCloseHdr
+ * @tc.desc: test results of Get and Set ForceCloseHdr
+ * @tc.type:FUNC
+ * @tc.require: issuesIB6QKS
+ */
+HWTEST_F(RSDisplayRenderNodeTest, ForceCloseHdrTest, TestSize.Level1)
+{
+    auto node = std::make_shared<RSDisplayRenderNode>(id, config, context);
+    ASSERT_NE(node, nullptr);
+    node->InitRenderParams();
+    node->SetForceCloseHdr(false);
+    EXPECT_EQ(node->GetForceCloseHdr(), false);
+}
+
+/**
  * @tc.name: HasUniRenderHdrSurface
  * @tc.desc: test results of Get and Set HasUniRenderHdrSurface
  * @tc.type:FUNC
@@ -769,6 +827,32 @@ HWTEST_F(RSDisplayRenderNodeTest, SetColorSpaceTest, TestSize.Level1)
     node->SetColorSpace(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3);
     auto colorSpace = node->GetColorSpace();
     ASSERT_EQ(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3, colorSpace);
+}
+
+/**
+ * @tc.name: UpdateColorSpaceTest
+ * @tc.desc: test results of UpdateColorSpace
+ * @tc.type:FUNC
+ * @tc.require: issueICGKPE
+ */
+HWTEST_F(RSDisplayRenderNodeTest, UpdateColorSpaceTest, TestSize.Level1)
+{
+    auto node = std::make_shared<RSDisplayRenderNode>(id, config, context);
+    node->InitRenderParams();
+    node->UpdateColorSpace(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB);
+    ASSERT_EQ(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB, node->GetColorSpace());
+
+    node->UpdateColorSpace(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3);
+    ASSERT_EQ(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3, node->GetColorSpace());
+
+    node->UpdateColorSpace(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB);
+    ASSERT_EQ(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3, node->GetColorSpace());
+
+    node->UpdateColorSpace(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_BT2020);
+    ASSERT_EQ(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_BT2020, node->GetColorSpace());
+
+    node->UpdateColorSpace(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3);
+    ASSERT_EQ(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_BT2020, node->GetColorSpace());
 }
 
 /**

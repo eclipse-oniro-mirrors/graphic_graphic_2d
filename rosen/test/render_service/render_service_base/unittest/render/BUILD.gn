@@ -23,10 +23,13 @@ ohos_unittest("RSAibarShaderFilterTest") {
   module_out_path = module_output_path
 
   sources = [
-    "rs_aibar_shader_filter_test.cpp",
+    "rs_render_aibar_filter_test.cpp",
     "rs_attraction_effect_filter_test.cpp",
     "rs_blur_filter_test.cpp",
+    "rs_color_gradient_shader_filter_test.cpp",
     "rs_filter_cache_manager_test.cpp",
+    "rs_render_color_gradient_filter_test.cpp",
+    "rs_render_content_light_filter_test.cpp",
   ]
 
   cflags = [
@@ -51,11 +54,11 @@ ohos_unittest("RSAibarShaderFilterTest") {
   deps = [
     "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",
     "$graphic_2d_root/rosen/modules/render_service_base:render_service_base_src",
-    "//third_party/googletest:gmock",
-    "//third_party/googletest:gtest_main",
   ]
   external_deps = [
     "c_utils:utils",
+    "googletest:gmock",
+    "googletest:gtest_main",
     "graphic_surface:surface",
     "graphics_effect:graphics_effect_core",
     "hilog:libhilog",
@@ -68,7 +71,57 @@ ohos_unittest("RSAibarShaderFilterTest") {
     external_deps +=
         [ "drivers_interface_display:display_commontype_idl_headers" ]
     defines = [ "USE_VIDEO_PROCESSING_ENGINE" ]
-    include_dirs += [ "$video_processing_engine_root/interfaces/inner_api" ]
+    external_deps += [ "video_processing_engine:videoprocessingengine" ]
+  }
+
+  subsystem_name = "graphic"
+}
+
+##############################  RSRenderServiceBaseRenderTest  ##################################
+ohos_unittest("RSAlwaysSnapshotShaderFilterTest") {
+  module_out_path = module_output_path
+
+  sources = [ "rs_render_always_snapshot_filter_test.cpp" ]
+
+  cflags = [
+    "-Dprivate=public",
+    "-Dprotected=public",
+  ]
+
+  configs = [
+    ":render_test",
+    "$graphic_2d_root/rosen/modules/render_service_base:export_config",
+  ]
+
+  include_dirs = [
+    "$graphic_2d_root/rosen/modules/render_service_base/include",
+    "$graphic_2d_root/rosen/modules/2d_graphics/src/drawing/engine_adapter/skia_adapter/",
+    "$graphic_2d_root/rosen/include",
+    "$graphic_2d_root/rosen/test/include",
+    "$graphic_2d_root/rosen/modules/platform/eventhandler",
+    "$graphic_2d_root/utils/log",
+  ]
+
+  deps = [
+    "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",
+    "$graphic_2d_root/rosen/modules/render_service_base:render_service_base_src",
+  ]
+  external_deps = [
+    "c_utils:utils",
+    "googletest:gmock",
+    "googletest:gtest_main",
+    "graphic_surface:surface",
+    "graphics_effect:graphics_effect_core",
+    "hilog:libhilog",
+    "image_framework:image_native",
+    "init:libbegetutil",
+    "skia:skia_canvaskit",
+  ]
+
+  if (use_video_processing_engine) {
+    external_deps +=
+        [ "drivers_interface_display:display_commontype_idl_headers" ]
+    defines = [ "USE_VIDEO_PROCESSING_ENGINE" ]
     external_deps += [ "video_processing_engine:videoprocessingengine" ]
   }
 
@@ -79,7 +132,8 @@ ohos_unittest("RSAibarShaderFilterTest") {
 ohos_unittest("RSBorderTest") {
   module_out_path = module_output_path
 
-  sources = [ "rs_border_test.cpp" ]
+  sources = [ "rs_border_test.cpp",
+              "rs_border_light_shader_test.cpp", ]
 
   cflags = [
     "-Dprivate=public",
@@ -103,11 +157,11 @@ ohos_unittest("RSBorderTest") {
   deps = [
     "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",
     "$graphic_2d_root/rosen/modules/render_service_base:render_service_base_src",
-    "//third_party/googletest:gmock",
-    "//third_party/googletest:gtest_main",
   ]
   external_deps = [
     "c_utils:utils",
+    "googletest:gmock",
+    "googletest:gtest_main",
     "graphic_surface:surface",
     "graphics_effect:graphics_effect_core",
     "hilog:libhilog",
@@ -120,7 +174,6 @@ ohos_unittest("RSBorderTest") {
     external_deps +=
         [ "drivers_interface_display:display_commontype_idl_headers" ]
     defines = [ "USE_VIDEO_PROCESSING_ENGINE" ]
-    include_dirs += [ "$video_processing_engine_root/interfaces/inner_api" ]
     external_deps += [ "video_processing_engine:videoprocessingengine" ]
   }
 
@@ -158,11 +211,11 @@ ohos_unittest("RSColorExtractTest") {
   deps = [
     "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",
     "$graphic_2d_root/rosen/modules/render_service_base:render_service_base_src",
-    "//third_party/googletest:gmock",
-    "//third_party/googletest:gtest_main",
   ]
   external_deps = [
     "c_utils:utils",
+    "googletest:gmock",
+    "googletest:gtest_main",
     "graphic_surface:surface",
     "graphics_effect:graphics_effect_core",
     "hilog:libhilog",
@@ -175,7 +228,6 @@ ohos_unittest("RSColorExtractTest") {
     external_deps +=
         [ "drivers_interface_display:display_commontype_idl_headers" ]
     defines = [ "USE_VIDEO_PROCESSING_ENGINE" ]
-    include_dirs += [ "$video_processing_engine_root/interfaces/inner_api" ]
     external_deps += [ "video_processing_engine:videoprocessingengine" ]
   }
 
@@ -187,6 +239,7 @@ ohos_unittest("RSColorfulShadowFilterTest") {
   module_out_path = module_output_path
 
   sources = [
+    "rs_bezier_warp_filter_test.cpp",
     "rs_colorful_shadow_filter_test.cpp",
     "rs_distortion_shader_filter_test.cpp",
     "rs_dot_matrix_shader_test.cpp",
@@ -194,7 +247,9 @@ ohos_unittest("RSColorfulShadowFilterTest") {
     "rs_filter_test.cpp",
     "rs_fly_out_shader_filter_test.cpp",
     "rs_foreground_effect_filter_test.cpp",
+    "rs_hdr_ui_brightness_filter_test.cpp",
     "rs_image_base_test.cpp",
+    "rs_sound_wave_filter_test.cpp",
   ]
 
   cflags = [
@@ -209,6 +264,7 @@ ohos_unittest("RSColorfulShadowFilterTest") {
 
   include_dirs = [
     "$graphic_2d_root/rosen/modules/render_service_base/include",
+    "$graphic_2d_root/rosen/modules/render_service_base/src",
     "$graphic_2d_root/rosen/modules/2d_graphics/src/drawing/engine_adapter/skia_adapter/",
     "$graphic_2d_root/rosen/include",
     "$graphic_2d_root/rosen/test/include",
@@ -219,11 +275,11 @@ ohos_unittest("RSColorfulShadowFilterTest") {
   deps = [
     "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",
     "$graphic_2d_root/rosen/modules/render_service_base:render_service_base_src",
-    "//third_party/googletest:gmock",
-    "//third_party/googletest:gtest_main",
   ]
   external_deps = [
     "c_utils:utils",
+    "googletest:gmock",
+    "googletest:gtest_main",
     "graphic_surface:surface",
     "graphics_effect:graphics_effect_core",
     "hilog:libhilog",
@@ -236,7 +292,6 @@ ohos_unittest("RSColorfulShadowFilterTest") {
     external_deps +=
         [ "drivers_interface_display:display_commontype_idl_headers" ]
     defines = [ "USE_VIDEO_PROCESSING_ENGINE" ]
-    include_dirs += [ "$video_processing_engine_root/interfaces/inner_api" ]
     external_deps += [ "video_processing_engine:videoprocessingengine" ]
   }
 
@@ -274,11 +329,11 @@ ohos_unittest("RSImageCacheTest") {
   deps = [
     "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",
     "$graphic_2d_root/rosen/modules/render_service_base:render_service_base_src",
-    "//third_party/googletest:gmock",
-    "//third_party/googletest:gtest_main",
   ]
   external_deps = [
     "c_utils:utils",
+    "googletest:gmock",
+    "googletest:gtest_main",
     "graphic_surface:surface",
     "graphics_effect:graphics_effect_core",
     "hilog:libhilog",
@@ -291,7 +346,6 @@ ohos_unittest("RSImageCacheTest") {
     external_deps +=
         [ "drivers_interface_display:display_commontype_idl_headers" ]
     defines = [ "USE_VIDEO_PROCESSING_ENGINE" ]
-    include_dirs += [ "$video_processing_engine_root/interfaces/inner_api" ]
     external_deps += [ "video_processing_engine:videoprocessingengine" ]
   }
 
@@ -326,11 +380,11 @@ ohos_unittest("RSKawaseBlurShaderFilterTest") {
   deps = [
     "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",
     "$graphic_2d_root/rosen/modules/render_service_base:render_service_base_src",
-    "//third_party/googletest:gmock",
-    "//third_party/googletest:gtest_main",
   ]
   external_deps = [
     "c_utils:utils",
+    "googletest:gmock",
+    "googletest:gtest_main",
     "graphic_surface:surface",
     "graphics_effect:graphics_effect_core",
     "hilog:libhilog",
@@ -343,7 +397,6 @@ ohos_unittest("RSKawaseBlurShaderFilterTest") {
     external_deps +=
         [ "drivers_interface_display:display_commontype_idl_headers" ]
     defines = [ "USE_VIDEO_PROCESSING_ENGINE" ]
-    include_dirs += [ "$video_processing_engine_root/interfaces/inner_api" ]
     external_deps += [ "video_processing_engine:videoprocessingengine" ]
   }
 
@@ -378,11 +431,11 @@ ohos_unittest("RSHpsBlurTest") {
   deps = [
     "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",
     "$graphic_2d_root/rosen/modules/render_service_base:render_service_base_src",
-    "//third_party/googletest:gmock",
-    "//third_party/googletest:gtest_main",
   ]
   external_deps = [
     "c_utils:utils",
+    "googletest:gmock",
+    "googletest:gtest_main",
     "graphic_surface:surface",
     "graphics_effect:graphics_effect_core",
     "hilog:libhilog",
@@ -395,7 +448,6 @@ ohos_unittest("RSHpsBlurTest") {
     external_deps +=
         [ "drivers_interface_display:display_commontype_idl_headers" ]
     defines = [ "USE_VIDEO_PROCESSING_ENGINE" ]
-    include_dirs += [ "$video_processing_engine_root/interfaces/inner_api" ]
     external_deps += [ "video_processing_engine:videoprocessingengine" ]
   }
 
@@ -451,7 +503,7 @@ ohos_unittest("RSHveFilterTest") {
 ohos_unittest("RSMESABlurShaderFilterTest") {
   module_out_path = module_output_path
 
-  sources = [ "rs_mesa_blur_shader_filter_test.cpp" ]
+  sources = [ "rs_render_mesa_blur_filter_test.cpp" ]
 
   cflags = [
     "-Dprivate=public",
@@ -475,11 +527,11 @@ ohos_unittest("RSMESABlurShaderFilterTest") {
   deps = [
     "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",
     "$graphic_2d_root/rosen/modules/render_service_base:render_service_base_src",
-    "//third_party/googletest:gmock",
-    "//third_party/googletest:gtest_main",
   ]
   external_deps = [
     "c_utils:utils",
+    "googletest:gmock",
+    "googletest:gtest_main",
     "graphic_surface:surface",
     "graphics_effect:graphics_effect_core",
     "hilog:libhilog",
@@ -492,7 +544,6 @@ ohos_unittest("RSMESABlurShaderFilterTest") {
     external_deps +=
         [ "drivers_interface_display:display_commontype_idl_headers" ]
     defines = [ "USE_VIDEO_PROCESSING_ENGINE" ]
-    include_dirs += [ "$video_processing_engine_root/interfaces/inner_api" ]
     external_deps += [ "video_processing_engine:videoprocessingengine" ]
   }
 
@@ -503,7 +554,7 @@ ohos_unittest("RSMESABlurShaderFilterTest") {
 ohos_unittest("RSLightBlurShaderFilterTest") {
   module_out_path = module_output_path
 
-  sources = [ "rs_light_blur_shader_filter_test.cpp" ]
+  sources = [ "rs_render_light_blur_filter_test.cpp" ]
 
   cflags = [
     "-Dprivate=public",
@@ -545,7 +596,6 @@ ohos_unittest("RSLightBlurShaderFilterTest") {
     external_deps +=
         [ "drivers_interface_display:display_commontype_idl_headers" ]
     defines = [ "USE_VIDEO_PROCESSING_ENGINE" ]
-    include_dirs += [ "$video_processing_engine_root/interfaces/inner_api" ]
     external_deps += [ "video_processing_engine:videoprocessingengine" ]
   }
 
@@ -580,11 +630,11 @@ ohos_unittest("RSLightUpEffectFilterTest") {
   deps = [
     "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",
     "$graphic_2d_root/rosen/modules/render_service_base:render_service_base_src",
-    "//third_party/googletest:gmock",
-    "//third_party/googletest:gtest_main",
   ]
   external_deps = [
     "c_utils:utils",
+    "googletest:gmock",
+    "googletest:gtest_main",
     "graphic_surface:surface",
     "graphics_effect:graphics_effect_core",
     "hilog:libhilog",
@@ -597,7 +647,6 @@ ohos_unittest("RSLightUpEffectFilterTest") {
     external_deps +=
         [ "drivers_interface_display:display_commontype_idl_headers" ]
     defines = [ "USE_VIDEO_PROCESSING_ENGINE" ]
-    include_dirs += [ "$video_processing_engine_root/interfaces/inner_api" ]
     external_deps += [ "video_processing_engine:videoprocessingengine" ]
   }
 
@@ -610,9 +659,9 @@ ohos_unittest("RSMagnifierShaderFilterTest") {
 
   sources = [
     "rs_flow_light_sweep_shader_test.cpp",
-    "rs_magnifier_shader_filter_test.cpp",
+    "rs_render_magnifier_filter_test.cpp",
     "rs_mask_test.cpp",
-    "rs_maskcolor_shader_filter_test.cpp",
+    "rs_render_maskcolor_filter_test.cpp",
   ]
 
   cflags = [
@@ -637,11 +686,11 @@ ohos_unittest("RSMagnifierShaderFilterTest") {
   deps = [
     "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",
     "$graphic_2d_root/rosen/modules/render_service_base:render_service_base_src",
-    "//third_party/googletest:gmock",
-    "//third_party/googletest:gtest_main",
   ]
   external_deps = [
     "c_utils:utils",
+    "googletest:gmock",
+    "googletest:gtest_main",
     "graphic_surface:surface",
     "graphics_effect:graphics_effect_core",
     "hilog:libhilog",
@@ -654,7 +703,6 @@ ohos_unittest("RSMagnifierShaderFilterTest") {
     external_deps +=
         [ "drivers_interface_display:display_commontype_idl_headers" ]
     defines = [ "USE_VIDEO_PROCESSING_ENGINE" ]
-    include_dirs += [ "$video_processing_engine_root/interfaces/inner_api" ]
     external_deps += [ "video_processing_engine:videoprocessingengine" ]
   }
 
@@ -670,6 +718,17 @@ ohos_unittest("RSMaterialFilterTest") {
     "rs_motion_blur_filter_test.cpp",
     "rs_path_test.cpp",
     "rs_pixel_map_shader_test.cpp",
+    "rs_render_bezier_warp_filter_test.cpp",
+    "rs_render_blur_filter_test.cpp",
+    "rs_render_dispersion_filter_test.cpp",
+    "rs_render_displacement_distort_filter_test.cpp",
+    "rs_render_edge_light_filter_test.cpp",
+    "rs_render_filter_base_test.cpp",
+    "rs_render_filter_test.cpp",
+    "rs_render_pixel_map_mask_test.cpp",
+    "rs_render_ripple_mask_test.cpp",
+    "rs_render_sound_wave_filter_test.cpp",
+    "rs_shader_mask_test.cpp",
   ]
 
   cflags = [
@@ -694,14 +753,15 @@ ohos_unittest("RSMaterialFilterTest") {
   deps = [
     "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",
     "$graphic_2d_root/rosen/modules/render_service_base:render_service_base_src",
-    "//third_party/googletest:gmock",
-    "//third_party/googletest:gtest_main",
   ]
   external_deps = [
     "c_utils:utils",
+    "googletest:gmock",
+    "googletest:gtest_main",
     "graphic_surface:surface",
     "graphics_effect:graphics_effect_core",
     "hilog:libhilog",
+    "image_framework:image",
     "image_framework:image_native",
     "init:libbegetutil",
     "skia:skia_canvaskit",
@@ -711,7 +771,6 @@ ohos_unittest("RSMaterialFilterTest") {
     external_deps +=
         [ "drivers_interface_display:display_commontype_idl_headers" ]
     defines = [ "USE_VIDEO_PROCESSING_ENGINE" ]
-    include_dirs += [ "$video_processing_engine_root/interfaces/inner_api" ]
     external_deps += [ "video_processing_engine:videoprocessingengine" ]
   }
 
@@ -723,13 +782,15 @@ ohos_unittest("RSPixelMapUtilTest") {
   module_out_path = module_output_path
 
   sources = [
+    "rs_complex_shader_test.cpp",
+    "rs_dispersion_shader_filter_test.cpp",
     "rs_pixel_map_util_test.cpp",
     "rs_shader_test.cpp",
     "rs_shadow_test.cpp",
     "rs_skia_filter_test.cpp",
     "rs_spherize_effect_filter_test.cpp",
     "rs_typeface_cache_test.cpp",
-    "rs_water_ripple_shader_filter_test.cpp",
+    "rs_render_water_ripple_filter_test.cpp",
   ]
 
   cflags = [
@@ -756,11 +817,11 @@ ohos_unittest("RSPixelMapUtilTest") {
     "$graphic_2d_root/rosen/modules/render_service:librender_service",
     "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",
     "$graphic_2d_root/rosen/modules/render_service_base:render_service_base_src",
-    "//third_party/googletest:gmock",
-    "//third_party/googletest:gtest_main",
   ]
   external_deps = [
     "c_utils:utils",
+    "googletest:gmock",
+    "googletest:gtest_main",
     "graphic_surface:surface",
     "graphics_effect:graphics_effect_core",
     "hilog:libhilog",
@@ -773,7 +834,6 @@ ohos_unittest("RSPixelMapUtilTest") {
     external_deps +=
         [ "drivers_interface_display:display_commontype_idl_headers" ]
     defines = [ "USE_VIDEO_PROCESSING_ENGINE" ]
-    include_dirs += [ "$video_processing_engine_root/interfaces/inner_api" ]
     external_deps += [ "video_processing_engine:videoprocessingengine" ]
   }
 
@@ -810,11 +870,11 @@ ohos_unittest("RSColorspaceConvertTest") {
     "$graphic_2d_root/rosen/modules/render_service:librender_service",
     "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",
     "$graphic_2d_root/rosen/modules/render_service_base:render_service_base_src",
-    "//third_party/googletest:gmock",
-    "//third_party/googletest:gtest_main",
   ]
   external_deps = [
     "c_utils:utils",
+    "googletest:gmock",
+    "googletest:gtest_main",
     "graphic_surface:surface",
     "hilog:libhilog",
     "image_framework:image_native",
@@ -826,7 +886,6 @@ ohos_unittest("RSColorspaceConvertTest") {
     external_deps +=
         [ "drivers_interface_display:display_commontype_idl_headers" ]
     defines = [ "USE_VIDEO_PROCESSING_ENGINE" ]
-    include_dirs += [ "$video_processing_engine_root/interfaces/inner_api" ]
     external_deps += [ "video_processing_engine:videoprocessingengine" ]
     sources += [ "rs_colorspace_convert_test.cpp" ]
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -87,6 +87,9 @@ public:
     virtual PathFillType GetFillStyle() const = 0;
 
     virtual bool Interpolate(const Path& ending, scalar weight, Path& out) = 0;
+    virtual int CountVerbs() const = 0;
+    virtual Point GetPoint(int index) const = 0;
+    virtual bool IsInterpolate(const Path& other) = 0;
     virtual void Transform(const Matrix& matrix) = 0;
     virtual void TransformWithPerspectiveClip(const Matrix& matrix, Path* dst, bool applyPerspectiveClip) = 0;
     virtual void Offset(scalar dx, scalar dy) = 0;
@@ -95,13 +98,18 @@ public:
 
     virtual bool IsValid() const = 0;
     virtual void Reset() = 0;
+    virtual void ReWind() = 0;
 
+    virtual void SetLastPoint(scalar x, scalar y) = 0;
     virtual void Close() = 0;
 
     virtual scalar GetLength(bool forceClosed) = 0;
     virtual bool GetPositionAndTangent(scalar distance, Point& position, Point& tangent, bool forceClosed) = 0;
     virtual bool GetSegment(scalar start, scalar stop, Path* dst, bool startWithMoveTo, bool forceClosed) = 0;
     virtual bool IsClosed(bool forceClosed) = 0;
+    virtual bool IsEmpty() = 0;
+    virtual bool IsRect(Rect* rect, bool* isClosed, PathDirection* direction) = 0;
+    virtual void SetPath(const Path& path) = 0;
     virtual bool GetMatrix(bool forceClosed, float distance, Matrix* matrix, PathMeasureMatrixFlags flag) = 0;
     virtual std::shared_ptr<Data> Serialize() const = 0;
     virtual bool Deserialize(std::shared_ptr<Data> data) = 0;

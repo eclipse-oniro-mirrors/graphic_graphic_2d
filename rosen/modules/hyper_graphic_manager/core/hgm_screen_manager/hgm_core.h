@@ -28,6 +28,7 @@
 #include <event_handler.h>
 
 #include "hgm_frame_rate_manager.h"
+#include "hgm_hfbc_config.h"
 #include "hgm_screen.h"
 #include "hgm_task_handle_thread.h"
 #include "vsync_type.h"
@@ -63,6 +64,11 @@ public:
     const std::shared_ptr<PolicyConfigData>& GetPolicyConfigData() const
     {
         return mPolicyConfigData_;
+    }
+
+    std::shared_ptr<PolicyConfigVisitor> GetPolicyConfigVisitor() const
+    {
+        return mPolicyConfigVisitor_;
     }
 
     // called by RSMainThread
@@ -248,8 +254,6 @@ public:
         doDirectComposition_.store(doDirectComposition);
     }
 
-    // called by RSMainThread
-    void SetHfbcConfigMap(const std::unordered_map<std::string, std::string>& hfbcConfig);
     // set refresh rates
     int32_t SetScreenRefreshRate(ScreenId id, int32_t sceneId, int32_t rate);
     static int32_t SetRateAndResolution(ScreenId id, int32_t sceneId, int32_t rate, int32_t width, int32_t height);
@@ -330,6 +334,12 @@ public:
     {
         screenSwitchDssEnableMap_[screenId] = switchDssEnable;
     }
+
+    // called by RSMainThread
+    HgmHfbcConfig& GetHfbcConfig()
+    {
+        return hfbcConfig_;
+    }
 private:
     HgmCore();
     ~HgmCore() = default;
@@ -337,6 +347,7 @@ private:
     HgmCore(const HgmCore&&) = delete;
     HgmCore& operator=(const HgmCore&) = delete;
     HgmCore& operator=(const HgmCore&&) = delete;
+    friend class HgmUserDefineImpl;
 
     void Init();
     void CheckCustomFrameRateModeValid();
@@ -352,6 +363,7 @@ private:
     static constexpr char configFileProduct[] = "/sys_prod/etc/graphic/hgm_policy_config.xml";
     std::unique_ptr<XMLParser> mParser_ = nullptr;
     std::shared_ptr<PolicyConfigData> mPolicyConfigData_ = nullptr;
+    std::shared_ptr<PolicyConfigVisitor> mPolicyConfigVisitor_ = nullptr;
 
     int32_t customFrameRateMode_ = HGM_REFRESHRATE_MODE_AUTO;
     std::vector<ScreenId> screenIds_;
@@ -390,6 +402,7 @@ private:
     std::atomic<bool> multiSelfOwnedScreenEnable_{ false };
     std::atomic<bool> postHgmTaskFlag_{ true };
     std::unordered_map<ScreenId, bool> screenSwitchDssEnableMap_; // only called/used by RSHardwareThread
+    HgmHfbcConfig hfbcConfig_;
 
     friend class HWCParam;
 };

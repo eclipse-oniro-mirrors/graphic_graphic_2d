@@ -15,15 +15,10 @@
 #include "effect_napi.h"
 #include "ui_effect_napi_utils.h"
 
-namespace {
-    constexpr uint32_t NUM_1 = 1;
-    constexpr uint32_t NUM_3 = 3;
-    constexpr uint32_t NUM_8 = 8;
-    constexpr int32_t ERR_NOT_SYSTEM_APP = 202;
-}
-
 namespace OHOS {
 namespace Rosen {
+
+using namespace UIEffect;
 static const std::string CLASS_NAME = "VisualEffect";
  
 EffectNapi::EffectNapi()
@@ -120,6 +115,7 @@ napi_value EffectNapi::CreateEffect(napi_env env, napi_callback_info info)
         UIEFFECT_LOG_E("EffectNapi CreateEffect wrap fail"));
     napi_property_descriptor resultFuncs[] = {
         DECLARE_NAPI_FUNCTION("backgroundColorBlender", SetBackgroundColorBlender),
+        DECLARE_NAPI_FUNCTION("borderLight", CreateBorderLight),
     };
     status = napi_define_properties(env, object, sizeof(resultFuncs) / sizeof(resultFuncs[0]), resultFuncs);
     UIEFFECT_NAPI_CHECK_RET_DELETE_POINTER(status == napi_ok, nullptr, effectObj,
@@ -214,7 +210,82 @@ napi_value EffectNapi::CreateBrightnessBlender(napi_env env, napi_callback_info 
 
     return nativeObj;
 }
- 
+
+napi_value EffectNapi::CreateBorderLight(napi_env env, napi_callback_info info)
+{
+    if (!UIEffectNapiUtils::IsSystemApp()) {
+        napi_throw_error(env, std::to_string(ERR_NOT_SYSTEM_APP).c_str(),
+            "EffectNapi CreateBorderLight failed, is not system app");
+        return nullptr;
+    }
+
+    napi_value result = nullptr;
+    napi_get_undefined(env, &result);
+    napi_status status;
+    napi_value thisVar = nullptr;
+    napi_value argValue[NUM_4] = {0};
+    size_t argCount = NUM_4;
+    UIEFFECT_JS_ARGS(env, info, status, argCount, argValue, thisVar);
+    UIEFFECT_NAPI_CHECK_RET_D(status == napi_ok, nullptr,
+        UIEFFECT_LOG_E("EffectNapi CreateBorderLight parsing input fail"));
+
+    if (argCount != NUM_4) {
+        UIEFFECT_LOG_E("Args number less than 4");
+        return thisVar;
+    }
+    std::shared_ptr<BorderLightEffectPara> para = std::make_shared<BorderLightEffectPara>();
+    UIEFFECT_NAPI_CHECK_RET_D(para != nullptr, nullptr,
+        UIEFFECT_LOG_E("EffectNapi CreateBorderLight para is nullptr"));
+
+    UIEFFECT_NAPI_CHECK_RET_D(GetBorderLight(env, argValue, para), nullptr,
+        UIEFFECT_LOG_E("EffectNapi GetBorderLight fail"));
+
+    float lightIntensity = 0.f;
+    lightIntensity = GetSpecialValue(env, argValue[NUM_2]);
+    para->SetLightIntensity(lightIntensity);
+
+    float lightWidth = 0.f;
+    lightWidth = GetSpecialValue(env, argValue[NUM_3]);
+    para->SetLightWidth(lightWidth);
+
+    VisualEffect* visualEffectObj = nullptr;
+    status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&visualEffectObj));
+    UIEFFECT_NAPI_CHECK_RET_D(status == napi_ok && visualEffectObj != nullptr, nullptr,
+        UIEFFECT_LOG_E("EffectNapi CreateBorderLight napi_unwrap fail"));
+    visualEffectObj->AddPara(para);
+
+    return thisVar;
+}
+
+bool EffectNapi::GetBorderLight(napi_env env, napi_value *param, std::shared_ptr<BorderLightEffectPara>& para)
+{
+    Vector3f lightPosition = {0.0f, 0.0f, 0.0f};
+    Vector4f lightColor = {0.0f, 0.0f, 0.0f, 0.0f};
+
+    if (!ParseJsVector3f(env, param[0], lightPosition)) {
+        UIEFFECT_LOG_E("FilterNapi GetBorderLight parse lightPosition fail");
+        return false;
+    }
+    para->SetLightPosition(lightPosition);
+
+    if (!ParseJsRGBAColor(env, param[1], lightColor)) {
+        UIEFFECT_LOG_E("FilterNapi GetBorderLight parse lightColor fail");
+        return false;
+    }
+    para->SetLightColor(lightColor);
+    return true;
+}
+
+float EffectNapi::GetSpecialValue(napi_env env, napi_value argValue)
+{
+    double tmp = 0.0;
+    if (UIEffectNapiUtils::GetType(env, argValue) == napi_number &&
+        napi_get_value_double(env, argValue, &tmp) == napi_ok && tmp >= 0) {
+            return static_cast<float>(tmp);
+    }
+    return tmp;
+}
+
 static bool IsArrayForNapiValue(napi_env env, napi_value param, uint32_t &arraySize)
 {
     bool isArray = false;
@@ -228,28 +299,7 @@ static bool IsArrayForNapiValue(napi_env env, napi_value param, uint32_t &arrayS
     return true;
 }
  
-bool ParseJsDoubleValue(napi_value jsObject, napi_env env, const std::string& name, double& data)
-{
-    napi_value value = nullptr;
-    napi_get_named_property(env, jsObject, name.c_str(), &value);
-    if (value == nullptr) {
-        return false;
-    }
-    napi_valuetype valueType = napi_undefined;
-    napi_typeof(env, value, &valueType);
-    if (valueType != napi_undefined) {
-        if (napi_get_value_double(env, value, &data) != napi_ok) {
-            UIEFFECT_LOG_E("[NAPI]Failed to convert parameter to data: %{public}s", name.c_str());
-            return false;
-        }
-    } else {
-        UIEFFECT_LOG_E("[NAPI]no property with: %{public}s", name.c_str());
-        return false;
-    }
-    return true;
-}
- 
-bool ParseJsVec3Value(napi_value jsObject, napi_env env, const std::string& name, Vector3f& vecTmp)
+bool ParseJsVec3Value(napi_env env, napi_value jsObject, const std::string& name, Vector3f& vecTmp)
 {
     napi_value param = nullptr;
     napi_get_named_property(env, jsObject, name.c_str(), &param);
@@ -292,35 +342,35 @@ bool EffectNapi::ParseBrightnessBlender(napi_env env, napi_value jsObject, Brigh
     double val;
     Vector3f tmpVector3;
     int parseTimes = 0;
-    if (ParseJsDoubleValue(jsObject, env, "cubicRate", val)) {
+    if (ParseJsDoubleValue(env, jsObject, "cubicRate", val)) {
         blender->SetCubicRate(static_cast<float>(val));
         parseTimes++;
     }
-    if (ParseJsDoubleValue(jsObject, env, "quadraticRate", val)) {
+    if (ParseJsDoubleValue(env, jsObject, "quadraticRate", val)) {
         blender->SetQuadRate(static_cast<float>(val));
         parseTimes++;
     }
-    if (ParseJsDoubleValue(jsObject, env, "linearRate", val)) {
+    if (ParseJsDoubleValue(env, jsObject, "linearRate", val)) {
         blender->SetLinearRate(static_cast<float>(val));
         parseTimes++;
     }
-    if (ParseJsDoubleValue(jsObject, env, "degree", val)) {
+    if (ParseJsDoubleValue(env, jsObject, "degree", val)) {
         blender->SetDegree(static_cast<float>(val));
         parseTimes++;
     }
-    if (ParseJsDoubleValue(jsObject, env, "saturation", val)) {
+    if (ParseJsDoubleValue(env, jsObject, "saturation", val)) {
         blender->SetSaturation(static_cast<float>(val));
         parseTimes++;
     }
-    if (ParseJsDoubleValue(jsObject, env, "fraction", val)) {
+    if (ParseJsDoubleValue(env, jsObject, "fraction", val)) {
         blender->SetFraction(static_cast<float>(val));
         parseTimes++;
     }
-    if (ParseJsVec3Value(jsObject, env, "positiveCoefficient", tmpVector3)) {
+    if (ParseJsVec3Value(env, jsObject, "positiveCoefficient", tmpVector3)) {
         blender->SetPositiveCoeff(tmpVector3);
         parseTimes++;
     }
-    if (ParseJsVec3Value(jsObject, env, "negativeCoefficient", tmpVector3)) {
+    if (ParseJsVec3Value(env, jsObject, "negativeCoefficient", tmpVector3)) {
         blender->SetNegativeCoeff(tmpVector3);
         parseTimes++;
     }

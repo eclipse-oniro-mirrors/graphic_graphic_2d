@@ -27,8 +27,8 @@
 #include "common/rs_macros.h"
 #include "common/rs_rect.h"
 #include "drawable/rs_property_drawable.h"
+#include "pipeline/rs_paint_filter_canvas.h"
 #include "recording/recording_canvas.h"
-#include "pipeline/rs_render_content.h"
 #include "utils/rect.h"
 
 #ifndef ROSEN_CROSS_PLATFORM
@@ -46,6 +46,9 @@ class RSDirtyRegionManager;
 class RSDrawWindowCache;
 namespace Drawing {
 class Canvas;
+}
+namespace ModifierNG {
+class RSUseEffectRenderModifier;
 }
 
 struct DrawCmdIndex {
@@ -155,7 +158,6 @@ public:
     {
         return nullptr;
     }
-    virtual void UpdateUifirstDirtyManager() {}
 
     using ClearSurfaceTask = std::function<void()>;
     void RegisterClearSurfaceFunc(ClearSurfaceTask task);
@@ -178,6 +180,8 @@ public:
     const RectI GetFilterCachedRegion() const;
 
     void SetSkipCacheLayer(bool hasSkipCacheLayer);
+    void SetChildInBlackList(bool hasChildInBlackList);
+
     size_t GetFilterNodeSize() const
     {
         return filterNodeSize_;
@@ -259,6 +263,11 @@ public:
         return nullptr;
     }
 
+    virtual RSRenderNodeDrawableType GetDrawableType() const
+    {
+        return RSRenderNodeDrawableType::UNKNOW;
+    }
+
 protected:
     // Util functions
     std::string DumpDrawableVec(const std::shared_ptr<RSRenderNode>& renderNode) const;
@@ -332,6 +341,8 @@ protected:
 #endif
     // if the node needs to avoid drawing cache because of some layers, such as the security layer...
     bool hasSkipCacheLayer_ = false;
+    bool hasChildInBlackList_ = false;
+    
     ClearSurfaceTask clearSurfaceTask_ = nullptr;
 private:
     static void InitRenderParams(const std::shared_ptr<const RSRenderNode>& node,
@@ -354,6 +365,7 @@ private:
     friend class RSUseEffectDrawable;
     friend class RSRenderNodeDrawable;
     friend class OHOS::Rosen::RSDrawWindowCache;
+    friend class ModifierNG::RSUseEffectRenderModifier;
 };
 
 // RSRenderNodeSingleDrawableLocker: tool class that ensures drawable is exclusively used at the same time.

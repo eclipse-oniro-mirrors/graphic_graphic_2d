@@ -48,15 +48,17 @@ enum RSAnimationCommandType : uint16_t {
     ANIMATION_CREATE_SPRING = 0x0105,
     // interpolating spring animation
     ANIMATION_CREATE_INTERPOLATING_SPRING = 0x0106,
+    // particle animation NG
+    ANIMATION_CREATE_PARTICLE_NG = 0x0107,
 
     // operations
     ANIMATION_START = 0x0200,
     ANIMATION_PAUSE = 0x0201,
-    ANIMATION_RESUME = 0x0201,
-    ANIMATION_FINISH = 0x0201,
-    ANIMATION_REVERSE = 0x0201,
-    ANIMATION_SET_FRACTION = 0x0201,
-    ANIMATION_CANCEL = 0x0201,
+    ANIMATION_RESUME = 0x0202,
+    ANIMATION_FINISH = 0x0203,
+    ANIMATION_REVERSE = 0x0204,
+    ANIMATION_SET_FRACTION = 0x0205,
+    ANIMATION_CANCEL = 0x0206,
 
     // UI operation
     ANIMATION_CALLBACK = 0x0300,
@@ -68,7 +70,7 @@ enum RSAnimationCommandType : uint16_t {
     INTERACTIVE_ANIMATOR_CONTINUE = 0x0403,
     INTERACTIVE_ANIMATOR_FINISH = 0x0404,
     INTERACTIVE_ANIMATOR_REVERSE = 0x0405,
-    INTERACTIVE_ANIMATOR_SET_FRACTION = 0x040,
+    INTERACTIVE_ANIMATOR_SET_FRACTION = 0x0406,
 };
 
 enum AnimationCallbackEvent : uint16_t { REPEAT_FINISHED, FINISHED, LOGICALLY_FINISHED };
@@ -104,6 +106,8 @@ public:
     static void CreateAnimation(
         RSContext& context, NodeId targetId, const std::shared_ptr<RSRenderAnimation>& animation);
     static void CreateParticleAnimation(RSContext& context, NodeId targetId,
+        const std::shared_ptr<RSRenderParticleAnimation>& animation);
+    static void CreateParticleAnimationNG(RSContext& context, NodeId targetId, ModifierId modifierId,
         const std::shared_ptr<RSRenderParticleAnimation>& animation);
 
     using AnimationCallbackProcessor = void (*)(NodeId, AnimationId, uint64_t, AnimationCallbackEvent);
@@ -169,6 +173,11 @@ ADD_COMMAND(RSAnimationCreateCurve,
 ADD_COMMAND(RSAnimationCreateParticle,
     ARG(PERMISSION_APP, ANIMATION, ANIMATION_CREATE_PARTICLE, AnimationCommandHelper::CreateParticleAnimation, NodeId,
         std::shared_ptr<RSRenderParticleAnimation>))
+
+// create particle animation NG
+ADD_COMMAND(RSAnimationCreateParticleNG,
+    ARG(PERMISSION_APP, ANIMATION, ANIMATION_CREATE_PARTICLE_NG, AnimationCommandHelper::CreateParticleAnimationNG,
+        NodeId, ModifierId, std::shared_ptr<RSRenderParticleAnimation>))
 
 // create keyframe animation
 ADD_COMMAND(RSAnimationCreateKeyframe,

@@ -17,6 +17,7 @@
 
 #include <mutex>
 #include <unordered_map>
+#include <unordered_set>
 
 #include "common/rs_common_def.h"
 #include "common/rs_macros.h"
@@ -33,6 +34,9 @@ public:
     bool RegisterRenderNode(const std::shared_ptr<RSBaseRenderNode>& nodePtr);
     bool RegisterDisplayRenderNode(const std::shared_ptr<RSDisplayRenderNode>& nodePtr);
     void UnregisterRenderNode(NodeId id);
+
+    void RegisterUnTreeNode(NodeId id);
+    bool UnRegisterUnTreeNode(NodeId id);
 
     // Get RenderNode with type T, return nullptr if not found or type mismatch
     template<typename T = RSBaseRenderNode>
@@ -51,7 +55,7 @@ public:
     bool ContainPid(pid_t pid) const;
     // On remote died, the instance root node will be directly removed from the tree,
     // and the remaining subtree will be released in batches (this feature is enabled by default).
-    void FilterNodeByPid(pid_t pid);
+    void FilterNodeByPid(pid_t pid, bool immediate = false);
     void MoveRenderNodeMap(
         std::shared_ptr<std::unordered_map<NodeId, std::shared_ptr<RSBaseRenderNode>>> subRenderNodeMap, pid_t pid);
     void TraversalNodes(std::function<void (const std::shared_ptr<RSBaseRenderNode>&)> func) const;
@@ -100,6 +104,7 @@ private:
     std::unordered_map<NodeId, bool> purgeableNodeMap_;
     std::unordered_map<pid_t, std::unordered_map<NodeId, std::shared_ptr<RSSurfaceRenderNode>>>
         selfDrawingNodeInProcess_;
+    std::unordered_set<NodeId> unInTreeNodeSet_;
 
     void Initialize(const std::weak_ptr<RSContext>& context);
 

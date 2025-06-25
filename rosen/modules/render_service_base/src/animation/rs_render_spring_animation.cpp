@@ -45,15 +45,13 @@ RSRenderSpringAnimation::RSRenderSpringAnimation(AnimationId id, const PropertyI
 void RSRenderSpringAnimation::DumpAnimationInfo(std::string& out) const
 {
     out += "Type:RSRenderSpringAnimation";
-    RSRenderPropertyType type = RSRenderPropertyType::INVALID;
+    DumpProperty(out);
+    RSPropertyType type = RSPropertyType::INVALID;
     if (property_ != nullptr) {
         type = property_->GetPropertyType();
-        out += ", ModifierType: " + std::to_string(static_cast<int16_t>(property_->GetModifierType()));
-    } else {
-        out += ", ModifierType: INVALID";
     }
-    out += ", StartValue: " + RSAnimationTraceUtils::GetInstance().ParseRenderPropertyVaule(startValue_, type);
-    out += ", EndValue: " + RSAnimationTraceUtils::GetInstance().ParseRenderPropertyVaule(endValue_, type);
+    out += ", StartValue: " + RSAnimationTraceUtils::GetInstance().ParseRenderPropertyValue(startValue_);
+    out += ", EndValue: " + RSAnimationTraceUtils::GetInstance().ParseRenderPropertyValue(endValue_);
 }
 
 void RSRenderSpringAnimation::SetSpringParameters(
@@ -135,7 +133,8 @@ void RSRenderSpringAnimation::InheritSpringAnimation(const std::shared_ptr<RSRen
 {
     // return if no other spring animation(s) running, or the other animation is finished
     // meanwhile, align run time for both spring animations, prepare for status inheritance
-    if (prevAnimation == nullptr || prevAnimation->Animate(animationFraction_.GetLastFrameTime())) {
+    int64_t delayTime = 0;
+    if (prevAnimation == nullptr || prevAnimation->Animate(animationFraction_.GetLastFrameTime(), delayTime)) {
         blendDuration_ = 0;
         return;
     }
@@ -225,7 +224,7 @@ void RSRenderSpringAnimation::OnInitialize(int64_t time)
         initialVelocity_ = startValue_ * 0.f;
     }
 
-    RSAnimationTraceUtils::GetInstance().addSpringInitialVelocityTrace(
+    RSAnimationTraceUtils::GetInstance().AddSpringInitialVelocityTrace(
         GetPropertyId(), GetAnimationId(), initialVelocity_, GetPropertyValue());
     springValueEstimator_->SetInitialVelocity(initialVelocity_);
     springValueEstimator_->SetMinimumAmplitudeRatio(minimumAmplitudeRatio_);

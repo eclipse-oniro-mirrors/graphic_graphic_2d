@@ -22,14 +22,43 @@
 #include "sync_fence.h"
 #include "rs_vulkan_context.h"
 #include "native_window.h"
+#ifdef USE_M133_SKIA
+#include "include/gpu/ganesh/GrDirectContext.h"
+#include "include/gpu/ganesh/GrBackendSemaphore.h"
+#else
 #include "include/gpu/GrDirectContext.h"
 #include "include/gpu/GrBackendSemaphore.h"
+#endif
 #include "include/core/SkSurface.h"
 #include "draw/surface.h"
 #include "image/image.h"
 #include "drawing/engine_adapter/skia_adapater/skia_color_space.h"
 
 namespace OHOS::Rosen {
+struct DestroySemaphoreInfo {
+    PFN_vkDestroySemaphore mDestroyFunction;
+    VkDevice mDevice;
+    VkSemaphore mSemaphore;
+
+    std::atomic<int> mRefs = 2;
+    DestroySemaphoreInfo(PFN_vkDestroySemaphore destroyFunction, VkDevice device,
+                        VkSemaphore semaphore)
+        : mDestroyFunction(destroyFunction), mDevice(device), mSemaphore(semaphore) {}
+
+    static void DestroySemaphore(void *context)
+    {
+        if (context == nullptr) {
+            return;
+        }
+        DestroySemaphoreInfo* info = reinterpret_cast<DestroySemaphoreInfo*>(context);
+        --info->mRefs;
+        if (info->mRefs == 0) {
+            info->mDestroyFunction(info->mDevice, info->mSemaphore, nullptr);
+            delete info;
+        }
+    }
+};
+
 namespace NativeBufferUtils {
 constexpr uint32_t VKIMAGE_LIMIT_SIZE = 10000 * 10000; // Vk-Image Size need less than 10000*10000
 void DeleteVkImage(void* context);
@@ -113,6 +142,20 @@ Drawing::BackendTexture MakeBackendTextureFromNativeBuffer(NativeWindowBuffer* n
 
 std::shared_ptr<Drawing::Surface> CreateFromNativeWindowBuffer(Drawing::GPUContext* gpuContext,
     const Drawing::ImageInfo& imageInfo, NativeSurfaceInfo& nativeSurface);
+
+#ifdef RS_ENABLE_VK
+uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
+void SetVkImageInfo(std::shared_ptr<OHOS::Rosen::Drawing::VKTextureInfo> vkImageInfo,
+    const VkImageCreateInfo& imageInfo);
+Drawing::BackendTexture MakeBackendTexture(
+    uint32_t width, uint32_t height, pid_t pid, VkFormat format = VK_FORMAT_R8G8B8A8_UNORM);
+Drawing::BackendTexture SetBackendTexture(RsVulkanInterface& vkContext, VkDevice device, VkImage image,
+    uint32_t width, uint32_t height, VkDeviceMemory memory, VkImageCreateInfo imageInfo, pid_t pid);
+
+void CreateVkSemaphore(VkSemaphore& semaphore);
+
+void GetFenceFdFromSemaphore(VkSemaphore& semaphore, int32_t& syncFenceFd);
+#endif
 }
 } // OHOS::Rosen
 #endif

@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef RENDER_SERVICE_CLIENT_CORE_RENDER_RS_GRADIENT_BLUR_PARA_H
-#define RENDER_SERVICE_CLIENT_CORE_RENDER_RS_GRADIENT_BLUR_PARA_H
+#ifndef RENDER_SERVICE_BASE_RENDER_RENDER_RS_GRADIENT_BLUR_PARA_H
+#define RENDER_SERVICE_BASE_RENDER_RENDER_RS_GRADIENT_BLUR_PARA_H
 
 #include <array>
 #include "common/rs_macros.h"
@@ -44,20 +44,15 @@ public:
     std::vector<std::pair<float, float>> fractionStops_;
     GradientDirection direction_;
     std::shared_ptr<RSFilter> LinearGradientBlurFilter_;
-    bool useMaskAlgorithm_ = true;
-    float originalBase_ = 1000.0f;   // 1000.0f represents original radius_base
+    bool isRadiusGradient_ = false;
     explicit RSLinearGradientBlurPara(const float blurRadius,
                     const std::vector<std::pair<float, float>>fractionStops, const GradientDirection direction)
     {
-        if (blurRadius > originalBase_) {
-            useMaskAlgorithm_ = false;
-        } else {
-            useMaskAlgorithm_ = true;
-        }
         blurRadius_ = blurRadius;
         fractionStops_ = fractionStops;
         direction_ = direction;
-        if (RSSystemProperties::GetMaskLinearBlurEnabled() && useMaskAlgorithm_) {
+        isRadiusGradient_ = false;
+        if (RSSystemProperties::GetMaskLinearBlurEnabled()) {
             LinearGradientBlurFilter_ = RSFilter::CreateBlurFilter(blurRadius_ / 2, blurRadius_ / 2);
         }
     }
@@ -79,4 +74,4 @@ public:
 } // namespace Rosen
 } // namespace OHOS
 
-#endif // RENDER_SERVICE_CLIENT_CORE_RENDER_RS_GRADIENT_BLUR_PARA_H
+#endif // RENDER_SERVICE_BASE_RENDER_RENDER_RS_GRADIENT_BLUR_PARA_H

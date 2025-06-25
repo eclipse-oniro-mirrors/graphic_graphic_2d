@@ -155,6 +155,9 @@ public:
     void SetHDRPresent(bool hasHdrPresent);
     bool GetHDRPresent() const;
 
+    void SetHDRStatusChanged(bool isHDRStatusChanged);
+    bool IsHDRStatusChanged() const;
+
     void SetBrightnessRatio (float brightnessRatio);
     float GetBrightnessRatio() const;
 
@@ -165,6 +168,9 @@ public:
 
     void SetZoomed(bool isZoomed);
     bool GetZoomed() const;
+
+    bool HasMirrorDisplay() const;
+    void SetHasMirrorDisplay(bool hasMirrorDisplay);
 
     void SetTargetSurfaceRenderNodeDrawable(DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr drawable);
     DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr GetTargetSurfaceRenderNodeDrawable() const;
@@ -190,6 +196,33 @@ public:
         return hasSecLayerInVisibleRectChanged_;
     }
 
+    // Only used in virtual expand screen to record accumulate frame status
+    void SetAccumulatedDirty(bool isAccumulatedDirty)
+    {
+        isAccumulatedDirty_ = isAccumulatedDirty;
+    }
+
+    bool GetAccumulatedDirty() const
+    {
+        return isAccumulatedDirty_;
+    }
+
+    void SetAccumulatedHdrStatusChanged(bool isHdrStatusChanged)
+    {
+        isAccumulatedHdrStatusChanged_ = isHdrStatusChanged;
+    }
+
+    bool GetAccumulatedHdrStatusChanged() const
+    {
+        return isAccumulatedHdrStatusChanged_;
+    }
+
+    void ResetVirtualExpandAccumulatedParams()
+    {
+        isAccumulatedDirty_ = false;
+        isAccumulatedHdrStatusChanged_ = false;
+    }
+
     std::vector<DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr>& GetRoundCornerDrawables()
     {
         return roundCornerSurfaceDrawables_;
@@ -199,6 +232,8 @@ public:
     {
         return virtualScreenMuteStatus_;
     }
+    void SetNeedForceUpdateHwcNodes(bool needForceUpdateHwcNodes);
+    bool GetNeedForceUpdateHwcNodes() const;
 
     // dfx
     std::string ToString() const override;
@@ -231,14 +266,20 @@ private:
     bool isFirstVisitCrossNodeDisplay_ = false;
     bool hasChildCrossNode_ = false;
     bool isMainAndLeashSurfaceDirty_ = false;
+    bool needForceUpdateHwcNodes_ = false;
     bool needOffscreen_ = false;
     bool isRotationChanged_ = false;
     bool hasFingerprint_ = false;
     bool hasHdrPresent_ = false;
+    bool isHDRStatusChanged_ = false;
     bool virtualScreenMuteStatus_ = false;
+    // Only used in virtual expand screen to record accumulate frame status
+    bool isAccumulatedDirty_ = false;
+    bool isAccumulatedHdrStatusChanged_ = false;
     float brightnessRatio_ = 1.0f;
     float zOrder_ = 0.0f;
     bool isZoomed_ = false;
+    bool hasMirrorDisplay_ = false;
     // vector of rcd drawable, should be removed in OH 6.0 rcd refactoring
     std::vector<DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr> roundCornerSurfaceDrawables_;
     DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr targetSurfaceRenderNodeDrawable_;

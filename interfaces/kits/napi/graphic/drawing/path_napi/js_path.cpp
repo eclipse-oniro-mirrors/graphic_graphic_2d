@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -51,19 +51,28 @@ static const napi_property_descriptor g_properties[] = {
     DECLARE_NAPI_FUNCTION("addPath", JsPath::AddPath),
     DECLARE_NAPI_FUNCTION("transform", JsPath::Transform),
     DECLARE_NAPI_FUNCTION("contains", JsPath::Contains),
+    DECLARE_NAPI_FUNCTION("set", JsPath::Set),
     DECLARE_NAPI_FUNCTION("setFillType", JsPath::SetFillType),
+    DECLARE_NAPI_FUNCTION("setLastPoint", JsPath::SetLastPoint),
     DECLARE_NAPI_FUNCTION("getBounds", JsPath::GetBounds),
     DECLARE_NAPI_FUNCTION("close", JsPath::Close),
     DECLARE_NAPI_FUNCTION("offset", JsPath::Offset),
+    DECLARE_NAPI_FUNCTION("rewind", JsPath::ReWind),
     DECLARE_NAPI_FUNCTION("reset", JsPath::Reset),
     DECLARE_NAPI_FUNCTION("op", JsPath::Op),
     DECLARE_NAPI_FUNCTION("getLength", JsPath::GetLength),
     DECLARE_NAPI_FUNCTION("getPositionAndTangent", JsPath::GetPositionAndTangent),
+    DECLARE_NAPI_FUNCTION("getFillType", JsPath::GetFillType),
     DECLARE_NAPI_FUNCTION("getSegment", JsPath::GetSegment),
     DECLARE_NAPI_FUNCTION("getMatrix", JsPath::GetMatrix),
     DECLARE_NAPI_FUNCTION("buildFromSvgString", JsPath::BuildFromSvgString),
     DECLARE_NAPI_FUNCTION("isClosed", JsPath::IsClosed),
+    DECLARE_NAPI_FUNCTION("isEmpty", JsPath::IsEmpty),
+    DECLARE_NAPI_FUNCTION("isRect", JsPath::IsRect),
     DECLARE_NAPI_FUNCTION("getPathIterator", JsPath::GetPathIterator),
+    DECLARE_NAPI_FUNCTION("approximate", JsPath::Approximate),
+    DECLARE_NAPI_FUNCTION("interpolate", JsPath::Interpolate),
+    DECLARE_NAPI_FUNCTION("isInterpolate", JsPath::IsInterpolate),
 };
 
 napi_value JsPath::Init(napi_env env, napi_value exportObj)
@@ -338,6 +347,30 @@ napi_value JsPath::GetPositionAndTangent(napi_env env, napi_callback_info info)
     return (me != nullptr) ? me->OnGetPositionAndTangent(env, info) : nullptr;
 }
 
+napi_value JsPath::Set(napi_env env, napi_callback_info info)
+{
+    JsPath* me = CheckParamsAndGetThis<JsPath>(env, info);
+    return (me != nullptr) ? me->OnSet(env, info) : nullptr;
+}
+
+napi_value JsPath::SetLastPoint(napi_env env, napi_callback_info info)
+{
+    JsPath* me = CheckParamsAndGetThis<JsPath>(env, info);
+    return (me != nullptr) ? me->OnSetLastPoint(env, info) : nullptr;
+}
+
+napi_value JsPath::GetFillType(napi_env env, napi_callback_info info)
+{
+    JsPath* me = CheckParamsAndGetThis<JsPath>(env, info);
+    return (me != nullptr) ? me->OnGetFillType(env, info) : nullptr;
+}
+
+napi_value JsPath::ReWind(napi_env env, napi_callback_info info)
+{
+    JsPath* me = CheckParamsAndGetThis<JsPath>(env, info);
+    return (me != nullptr) ? me->OnReWind(env, info) : nullptr;
+}
+
 napi_value JsPath::GetSegment(napi_env env, napi_callback_info info)
 {
     JsPath* me = CheckParamsAndGetThis<JsPath>(env, info);
@@ -362,6 +395,18 @@ napi_value JsPath::IsClosed(napi_env env, napi_callback_info info)
     return (me != nullptr) ? me->OnIsClosed(env, info) : nullptr;
 }
 
+napi_value JsPath::IsEmpty(napi_env env, napi_callback_info info)
+{
+    JsPath* me = CheckParamsAndGetThis<JsPath>(env, info);
+    return (me != nullptr) ? me->OnIsEmpty(env, info) : nullptr;
+}
+
+napi_value JsPath::IsRect(napi_env env, napi_callback_info info)
+{
+    JsPath* me = CheckParamsAndGetThis<JsPath>(env, info);
+    return (me != nullptr) ? me->OnIsRect(env, info) : nullptr;
+}
+
 napi_value JsPath::Op(napi_env env, napi_callback_info info)
 {
     JsPath* me = CheckParamsAndGetThis<JsPath>(env, info);
@@ -373,6 +418,27 @@ napi_value JsPath::GetPathIterator(napi_env env, napi_callback_info info)
     DRAWING_PERFORMANCE_TEST_JS_RETURN(nullptr);
     JsPath* me = CheckParamsAndGetThis<JsPath>(env, info);
     return (me != nullptr) ? me->OnGetPathIterator(env, info) : nullptr;
+}
+
+napi_value JsPath::Approximate(napi_env env, napi_callback_info info)
+{
+    DRAWING_PERFORMANCE_TEST_JS_RETURN(nullptr);
+    JsPath* me = CheckParamsAndGetThis<JsPath>(env, info);
+    return (me != nullptr) ? me->OnApproximate(env, info) : nullptr;
+}
+
+napi_value JsPath::Interpolate(napi_env env, napi_callback_info info)
+{
+    DRAWING_PERFORMANCE_TEST_JS_RETURN(nullptr);
+    JsPath* me = CheckParamsAndGetThis<JsPath>(env, info);
+    return (me != nullptr) ? me->OnInterpolate(env, info) : nullptr;
+}
+
+napi_value JsPath::IsInterpolate(napi_env env, napi_callback_info info)
+{
+    DRAWING_PERFORMANCE_TEST_JS_RETURN(nullptr);
+    JsPath* me = CheckParamsAndGetThis<JsPath>(env, info);
+    return (me != nullptr) ? me->OnIsInterpolate(env, info) : nullptr;
 }
 
 napi_value JsPath::OnMoveTo(napi_env env, napi_callback_info info)
@@ -796,6 +862,60 @@ napi_value JsPath::OnGetPositionAndTangent(napi_env env, napi_callback_info info
     return CreateJsValue(env, result);
 }
 
+napi_value JsPath::OnSet(napi_env env, napi_callback_info info)
+{
+    if (m_path == nullptr) {
+        ROSEN_LOGE("JsPath::OnSet path is nullptr");
+        return NapiThrowError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid params.");
+    }
+    napi_value argv[ARGC_ONE] = {nullptr};
+    CHECK_PARAM_NUMBER_WITHOUT_OPTIONAL_PARAMS(argv, ARGC_ONE);
+
+    JsPath* path = nullptr;
+    GET_UNWRAP_PARAM(ARGC_ZERO, path);
+    if (path->GetPath() == nullptr) {
+        return nullptr;
+    }
+    JS_CALL_DRAWING_FUNC(m_path->SetPath(*path->GetPath()));
+    return nullptr;
+}
+
+napi_value JsPath::OnSetLastPoint(napi_env env, napi_callback_info info)
+{
+    if (m_path == nullptr) {
+        ROSEN_LOGE("JsPath::OnSetLastPoint path is nullptr");
+        return NapiThrowError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid params.");
+    }
+    napi_value argv[ARGC_TWO] = {nullptr};
+    CHECK_PARAM_NUMBER_WITHOUT_OPTIONAL_PARAMS(argv, ARGC_TWO);
+    double x = 0.0;
+    GET_DOUBLE_PARAM(ARGC_ZERO, x);
+    double y = 0.0;
+    GET_DOUBLE_PARAM(ARGC_ONE, y);
+    JS_CALL_DRAWING_FUNC(m_path->SetLastPoint(x, y));
+    return nullptr;
+}
+
+napi_value JsPath::OnGetFillType(napi_env env, napi_callback_info info)
+{
+    if (m_path == nullptr) {
+        ROSEN_LOGE("JsPath::OnGetFillType path is nullptr");
+        return NapiThrowError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid params.");
+    }
+
+    return CreateJsValue(env, m_path->GetFillStyle());
+}
+
+napi_value JsPath::OnReWind(napi_env env, napi_callback_info info)
+{
+    if (m_path == nullptr) {
+        ROSEN_LOGE("JsPath::OnRewind path is nullptr");
+        return NapiThrowError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid params.");
+    }
+    JS_CALL_DRAWING_FUNC(m_path->ReWind());
+    return nullptr;
+}
+
 napi_value JsPath::OnGetSegment(napi_env env, napi_callback_info info)
 {
     if (m_path == nullptr) {
@@ -833,6 +953,45 @@ napi_value JsPath::OnGetSegment(napi_env env, napi_callback_info info)
         return CreateJsValue(env, false);
     }
     return CreateJsValue(env, m_path->GetSegment(start, stop, dst, startWithMoveTo, forceClosed));
+}
+
+napi_value JsPath::OnIsEmpty(napi_env env, napi_callback_info info)
+{
+    if (m_path == nullptr) {
+        ROSEN_LOGE("JsPath::OnIsEmpty path is nullptr");
+        return NapiThrowError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid params.");
+    }
+
+    bool result = m_path->IsEmpty();
+    return CreateJsValue(env, result);
+}
+
+napi_value JsPath::OnIsRect(napi_env env, napi_callback_info info)
+{
+    if (m_path == nullptr) {
+        ROSEN_LOGE("JsPath::OnIsRect path is nullptr");
+        return NapiThrowError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid params.");
+    }
+    
+    napi_value argv[ARGC_ONE] = {nullptr};
+    CHECK_PARAM_NUMBER_WITHOUT_OPTIONAL_PARAMS(argv, ARGC_ONE);
+    napi_valuetype valueType = napi_undefined;
+    if (napi_typeof(env, argv[ARGC_ZERO], &valueType) != napi_ok ||
+        (valueType != napi_null && valueType != napi_object)) {
+        return NapiThrowError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Incorrect OnSaveLayer parameter0 type.");
+    }
+    if (valueType == napi_null) {
+        return CreateJsValue(env, m_path->IsRect(nullptr));
+    }
+    double ltrb[ARGC_FOUR] = {0};
+    if (!ConvertFromJsRect(env, argv[ARGC_ZERO], ltrb, ARGC_FOUR)) {
+        return NapiThrowError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
+            "Incorrect parameter0 type. The type of left, top, right and bottom must be number.");
+    }
+    Drawing::Rect rect = Drawing::Rect(ltrb[ARGC_ZERO], ltrb[ARGC_ONE], ltrb[ARGC_TWO], ltrb[ARGC_THREE]);
+    bool result = m_path->IsRect(&rect);
+    DrawingRectConvertToJsRect(env, argv[ARGC_ZERO], rect);
+    return CreateJsValue(env, result);
 }
 
 napi_value JsPath::OnGetMatrix(napi_env env, napi_callback_info info)
@@ -1132,11 +1291,7 @@ napi_value JsPath::OnGetBounds(napi_env env, napi_callback_info info)
         ROSEN_LOGE("JsPath::OnGetBounds path is nullptr");
         return NapiThrowError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid params.");
     }
-    auto bounds = m_path->GetBounds();
-    std::shared_ptr<Rect> rect = std::make_shared<Rect>(bounds.GetLeft(),
-                                                        bounds.GetTop(), bounds.GetRight(), bounds.GetBottom());
-
-    return GetRectAndConvertToJsValue(env, rect);
+    return GetRectAndConvertToJsValue(env, m_path->GetBounds());
 }
 
 napi_value JsPath::OnIsClosed(napi_env env, napi_callback_info info)
@@ -1162,6 +1317,88 @@ napi_value JsPath::OnGetPathIterator(napi_env env, napi_callback_info info)
     return JsPathIterator::CreateJsPathIterator(env, iter);
 }
 
+napi_value JsPath::OnApproximate(napi_env env, napi_callback_info info)
+{
+    if (m_path == nullptr) {
+        ROSEN_LOGE("JsPath::OnApproximate path is nullptr");
+        return NapiThrowError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid params.");
+    }
+    napi_value argv[ARGC_ONE] = { nullptr };
+    CHECK_PARAM_NUMBER_WITHOUT_OPTIONAL_PARAMS(argv, ARGC_ONE);
+    double acceptableError = 0.0;
+    GET_DOUBLE_PARAM(ARGC_ZERO, acceptableError);
+    if (acceptableError < 0.0) {
+        ROSEN_LOGE("JsPath::OnApproximate acceptableError is invalid");
+        return NapiThrowError(env, DrawingErrorCode::ERROR_PARAM_VERIFICATION_FAILED, "acceptableError is invalid.");
+    }
+    std::vector<scalar> points;
+    DRAWING_PERFORMANCE_TEST_NAP_RETURN(nullptr);
+    m_path->Approximate(static_cast<scalar>(acceptableError), points);
+
+    napi_value resultArray;
+    napi_status status = napi_create_array(env, &resultArray);
+    if (status != napi_ok) {
+        ROSEN_LOGE("JsPath::OnApproximate failed to create array");
+        return nullptr;
+    }
+    for (size_t i = 0; i < points.size(); i++) {
+        napi_value element = CreateJsValue(env, points[i]);
+        napi_set_element(env, resultArray, i, element);
+    }
+
+    return resultArray;
+}
+
+napi_value JsPath::OnInterpolate(napi_env env, napi_callback_info info)
+{
+    if (m_path == nullptr) {
+        ROSEN_LOGE("JsPath::OnInterpolate path is nullptr");
+        return NapiThrowError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid params.");
+    }
+    napi_value argv[ARGC_THREE] = { nullptr };
+    CHECK_PARAM_NUMBER_WITHOUT_OPTIONAL_PARAMS(argv, ARGC_THREE);
+
+    JsPath* other = nullptr;
+    GET_UNWRAP_PARAM(ARGC_ZERO, other);
+    if (other->GetPath() == nullptr) {
+        ROSEN_LOGE("JsPath::OnInterpolate other is nullptr");
+        return nullptr;
+    }
+    double weight = 0.0;
+    GET_DOUBLE_PARAM(ARGC_ONE, weight);
+    if (weight < 0.0 || weight > 1.0) {
+        ROSEN_LOGE("JsPath::OnInterpolate weight is invalid");
+        return NapiThrowError(env, DrawingErrorCode::ERROR_PARAM_VERIFICATION_FAILED, "weight is invalid.");
+    }
+    JsPath* interpolatedPath = nullptr;
+    GET_UNWRAP_PARAM(ARGC_TWO, interpolatedPath);
+    if (interpolatedPath->GetPath() == nullptr) {
+        ROSEN_LOGE("JsPath::OnInterpolate interpolatedPath is nullptr");
+        return nullptr;
+    }
+    DRAWING_PERFORMANCE_TEST_NAP_RETURN(nullptr);
+    bool result = m_path->Interpolate(*other->GetPath(), weight, *interpolatedPath->GetPath());
+    return CreateJsValue(env, result);
+}
+
+napi_value JsPath::OnIsInterpolate(napi_env env, napi_callback_info info)
+{
+    if (m_path == nullptr) {
+        ROSEN_LOGE("JsPath::OnIsInterpolate path is nullptr");
+        return NapiThrowError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid params.");
+    }
+    napi_value argv[ARGC_ONE] = {nullptr};
+    CHECK_PARAM_NUMBER_WITHOUT_OPTIONAL_PARAMS(argv, ARGC_ONE);
+    JsPath* other = nullptr;
+    GET_UNWRAP_PARAM(ARGC_ZERO, other);
+    if (other->GetPath() == nullptr) {
+        ROSEN_LOGE("JsPath::OnIsInterpolate other is nullptr");
+        return nullptr;
+    }
+    DRAWING_PERFORMANCE_TEST_NAP_RETURN(nullptr);
+    bool result = m_path->IsInterpolate(*other->GetPath());
+    return CreateJsValue(env, result);
+}
 Path* JsPath::GetPath()
 {
     return m_path;

@@ -27,6 +27,7 @@ using namespace ANIMATIONTEST;
 class RSKeyframeAnimationTest : public RSAnimationBaseTest {
 };
 
+#ifndef MODIFIER_NG
 /**
  * @tc.name: AddKeyFrameTest001
  * @tc.desc: Verify the AddKeyFrame of KeyframeAnimationTest
@@ -220,48 +221,6 @@ HWTEST_F(RSKeyframeAnimationTest, AddKeyFramesTest002, TestSize.Level1)
 }
 
 /**
- * @tc.name: AddKeyFramesTest003
- * @tc.desc: Verify the AddKeyFrames of KeyframeAnimation
- * @tc.type: FUNC
- */
-HWTEST_F(RSKeyframeAnimationTest, AddKeyFramesTest003, TestSize.Level1)
-{
-    GTEST_LOG_(INFO) << "RSKeyframeAnimationTest AddKeyFramesTest003 start";
-    /**
-     * @tc.steps: step1. init AddKeyFrames
-     */
-    auto startProperty =
-        std::make_shared<RSAnimatableProperty<std::shared_ptr<RSFilter>>>(RSFilter::CreateBlurFilter(10.f, 10.f));
-    auto endProperty =
-        std::make_shared<RSAnimatableProperty<std::shared_ptr<RSFilter>>>(RSFilter::CreateBlurFilter(25.f, 25.f));
-    auto secondProperty =
-        std::make_shared<RSAnimatableProperty<std::shared_ptr<RSFilter>>>(RSFilter::CreateBlurFilter(50.f, 50.f));
-    auto modifier = std::make_shared<RSBackgroundFilterModifier>(startProperty);
-    canvasNode->AddModifier(modifier);
-    rsUiDirector->SendMessages();
-    sleep(DELAY_TIME_ONE);
-
-    auto keyframeAnimation = std::make_shared<RSKeyframeAnimation>(startProperty);
-    keyframeAnimation->SetDuration(ANIMATION_DURATION_2);
-
-    std::vector<std::tuple<float, std::shared_ptr<RSPropertyBase>, RSAnimationTimingCurve>> keyframes;
-    keyframes.push_back(std::make_tuple(FRACTION_MIN - 0.1f, startProperty, RSAnimationTimingCurve::EASE_IN));
-    keyframes.push_back(std::make_tuple(FRACTION_MAX / 2, secondProperty, RSAnimationTimingCurve::EASE_IN));
-    keyframes.push_back(std::make_tuple(FRACTION_MAX + 0.1f, endProperty, RSAnimationTimingCurve::EASE_IN));
-    keyframeAnimation->AddKeyFrames(keyframes);
-    keyframeAnimation->Start(canvasNode);
-    keyframeAnimation->AddKeyFrames({});
-    /**
-     * @tc.steps: step2. start AddKeyFrames test
-     */
-    EXPECT_TRUE(keyframeAnimation != nullptr);
-    EXPECT_TRUE(keyframeAnimation->IsRunning());
-    NotifyStartAnimation();
-    GTEST_LOG_(INFO) << "RSKeyframeAnimationTest AddKeyFramesTest003 end";
-}
-
-
-/**
  * @tc.name: RSNodeAnimateTest001
  * @tc.desc: Verify the RSNodeAnimate of KeyframeAnimation
  * @tc.type: FUNC
@@ -301,7 +260,47 @@ HWTEST_F(RSKeyframeAnimationTest, RSNodeAnimateTest001, TestSize.Level1)
         EXPECT_TRUE(animation->IsRunning());
         NotifyStartAnimation();
     }
-    GTEST_LOG_(INFO) << "RSSpringAnimationTest RSNodeAnimateTest001 end";
+    GTEST_LOG_(INFO) << "RSKeyframeAnimationTest RSNodeAnimateTest001 end";
+}
+
+/**
+ * @tc.name: RSNodeAnimateTest002
+ * @tc.desc: Verify the RSNodeAnimate of KeyframeAnimation
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSKeyframeAnimationTest, RSNodeAnimateTest002, TestSize.Level1)
+{
+    GTEST_LOG_(INFO) << "RSKeyframeAnimationTest RSNodeAnimateTest002 start";
+    /**
+     * @tc.steps: step1. init RSNodeAnimate
+     */
+    auto property = std::make_shared<RSAnimatableProperty<Vector2f>>(ANIMATION_NORMAL_SCALE);
+    auto modifier = std::make_shared<RSScaleModifier>(property);
+    canvasNode->AddModifier(modifier);
+    rsUiDirector->SendMessages();
+    sleep(DELAY_TIME_ONE);
+
+    RSAnimationTimingProtocol protocol;
+    RSAnimationTimingCurve curve = RSAnimationTimingCurve::SPRING;
+    auto animations = RSNode::Animate(protocol, curve, [&property]() {
+        RSNode::AddKeyFrame(
+            nullptr, 0.1f, RSAnimationTimingCurve::EASE, [&property]() { property->Set(ANIMATION_TENTH_SCALE); });
+        RSNode::AddKeyFrame(
+            nullptr, 0.5f, RSAnimationTimingCurve::EASE, [&property]() { property->Set(ANIMATION_HALF_SCALE); });
+        RSNode::AddKeyFrame(
+            nullptr, 1.0f, RSAnimationTimingCurve::EASE, [&property]() { property->Set(ANIMATION_NORMAL_SCALE); });
+    });
+    /**
+     * @tc.steps: step2. start GetTimingCurve test
+     */
+    EXPECT_TRUE(animations.size() == CORRECT_SIZE);
+    if (animations.size() == CORRECT_SIZE) {
+        auto animation = std::static_pointer_cast<RSKeyframeAnimation>(animations[FIRST_ANIMATION]);
+        EXPECT_TRUE(animation != nullptr);
+        EXPECT_TRUE(animation->IsRunning());
+        NotifyStartAnimation();
+    }
+    GTEST_LOG_(INFO) << "RSKeyframeAnimationTest RSNodeAnimateTest002 end";
 }
 
 /**
@@ -423,5 +422,6 @@ HWTEST_F(RSKeyframeAnimationTest, KeyframeAnimationTest001, TestSize.Level1)
     EXPECT_TRUE(keyframeAnimation->isDurationKeyframe_);
     GTEST_LOG_(INFO) << "RSKeyframeAnimationTest KeyframeAnimationTest001 end";
 }
+#endif
 } // namespace Rosen
 } // namespace OHOS

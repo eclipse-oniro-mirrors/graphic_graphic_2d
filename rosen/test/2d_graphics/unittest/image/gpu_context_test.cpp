@@ -25,6 +25,10 @@
 #include "image/gpu_context.h"
 #include "utils/log.h"
 
+#ifdef RS_ENABLE_VK
+#include "platform/ohos/backend/rs_vulkan_context.h"
+#endif
+
 using namespace testing;
 using namespace testing::ext;
 
@@ -62,6 +66,9 @@ EGLContext GpuContextTest::eglContext_ = EGL_NO_CONTEXT;
 
 void GpuContextTest::SetUpTestCase()
 {
+#ifdef RS_ENABLE_VK
+    RsVulkanContext::SetRecyclable(false);
+#endif
     InitEGL();
 }
 
@@ -196,7 +203,11 @@ HWTEST_F(GpuContextTest, BuildFromVKTest001, TestSize.Level1)
 {
     std::unique_ptr<GPUContext> gpuContext = std::make_unique<GPUContext>();
     ASSERT_TRUE(gpuContext != nullptr);
+#ifdef USE_M133_SKIA
+    skgpu::VulkanBackendContext grVkBackendContext;
+#else
     GrVkBackendContext grVkBackendContext;
+#endif
     ASSERT_FALSE(gpuContext->BuildFromVK(grVkBackendContext));
 }
 
@@ -210,7 +221,11 @@ HWTEST_F(GpuContextTest, BuildFromVKTest002, TestSize.Level1)
 {
     std::unique_ptr<GPUContext> gpuContext = std::make_unique<GPUContext>();
     ASSERT_TRUE(gpuContext != nullptr);
+#ifdef USE_M133_SKIA
+    skgpu::VulkanBackendContext grVkBackendContext;
+#else
     GrVkBackendContext grVkBackendContext;
+#endif
     GPUContextOptions options;
     options.SetAllowPathMaskCaching(true);
     ASSERT_FALSE(gpuContext->BuildFromVK(grVkBackendContext, options));

@@ -16,27 +16,29 @@
 #ifndef RENDER_SERVICE_CLIENT_CORE_PIPELINE_RS_PAINT_FILTER_CANVAS_H
 #define RENDER_SERVICE_CLIENT_CORE_PIPELINE_RS_PAINT_FILTER_CANVAS_H
 
+#include <limits>
 #include <optional>
 #include <stack>
 #include <vector>
 
-#include "draw/canvas.h"
-#include "draw/surface.h"
-
 #include "common/rs_color.h"
 #include "common/rs_macros.h"
+#include "draw/canvas.h"
+#include "draw/surface.h"
 #include "screen_manager/screen_types.h"
 #include "surface_type.h"
 #include "utils/region.h"
 
 namespace OHOS {
 namespace Rosen {
+class RSFilter;
 
 class RSB_EXPORT RSPaintFilterCanvasBase : public Drawing::Canvas {
 public:
     RSPaintFilterCanvasBase(Drawing::Canvas* canvas);
     ~RSPaintFilterCanvasBase() override = default;
 
+    void SetParallelRender(bool parallelEnable) override;
     Drawing::Matrix GetTotalMatrix() const override;
 
     Drawing::Rect GetLocalClipBounds() const override;
@@ -153,7 +155,7 @@ class RSB_EXPORT RSPaintFilterCanvas : public RSPaintFilterCanvasBase {
 public:
     RSPaintFilterCanvas(Drawing::Canvas* canvas, float alpha = 1.0f);
     RSPaintFilterCanvas(Drawing::Surface* surface, float alpha = 1.0f);
-    ~RSPaintFilterCanvas() override = default;;
+    ~RSPaintFilterCanvas() override = default;
 
     void CopyConfigurationToOffscreenCanvas(const RSPaintFilterCanvas& other);
     void PushDirtyRegion(Drawing::Region& resultRegion);
@@ -190,6 +192,12 @@ public:
         int alphaSaveCount = -1;
         int envSaveCount = -1;
     };
+
+    struct HDRProperties {
+        bool isHDREnabledVirtualScreen = false;
+        float hdrBrightness = 1.0f; // Default 1.0f means max available headroom
+    };
+
     enum SaveType : uint8_t {
         kNone           = 0x0,
         kCanvas         = 0x1,
@@ -309,8 +317,51 @@ public:
     void CopyHDRConfiguration(const RSPaintFilterCanvas& other);
     bool GetHdrOn() const;
     void SetHdrOn(bool isHdrOn);
+    bool GetHDREnabledVirtualScreen() const;
+    void SetHDREnabledVirtualScreen(bool isHDREnabledVirtualScreen);
+    const HDRProperties& GetHDRProperties() const;
     bool GetIsWindowFreezeCapture() const;
     void SetIsWindowFreezeCapture(bool isWindowFreezeCapture);
+    bool GetIsDrawingCache() const;
+    void SetIsDrawingCache(bool isDrawingCache);
+    void SetEffectIntersectWithDRM(bool intersect);
+    bool GetEffectIntersectWithDRM() const;
+    void SetDarkColorMode(bool isDark);
+    bool GetDarkColorMode() const;
+
+    struct CacheBehindWindowData {
+        CacheBehindWindowData() = default;
+        CacheBehindWindowData(std::shared_ptr<RSFilter> filter, const Drawing::Rect rect);
+        ~CacheBehindWindowData() = default;
+        std::shared_ptr<RSFilter> filter_ = nullptr;
+        Drawing::Rect rect_ = {};
+    };
+    void SetCacheBehindWindowData(const std::shared_ptr<CacheBehindWindowData>& data);
+    const std::shared_ptr<CacheBehindWindowData>& GetCacheBehindWindowData() const;
+
+    // Set culled nodes for control-level occlusion culling
+    void SetCulledNodes(std::unordered_set<NodeId>&& culledNodes)
+    {
+        culledNodes_ = std::move(culledNodes);
+    }
+
+    // Get culled nodes for control-level occlusion culling
+    const std::unordered_set<NodeId>& GetCulledNodes() const
+    {
+        return culledNodes_;
+    }
+
+    // Set culled entire subtree for control-level occlusion culling
+    void SetCulledEntireSubtree(std::unordered_set<NodeId>&& culledEntireSubtree)
+    {
+        culledEntireSubtree_ = std::move(culledEntireSubtree);
+    }
+
+    // Get culled entire subtree for control-level occlusion culling
+    const std::unordered_set<NodeId>& GetCulledEntireSubtree() const
+    {
+        return culledEntireSubtree_;
+    }
 
 protected:
     using Env = struct {
@@ -355,16 +406,22 @@ private:
     bool multipleScreen_ = false;
     bool isHdrOn_ = false;
     bool isWindowFreezeCapture_ = false;
+    // Drawing window cache or uifirst cache
+    bool isDrawingCache_ = false;
+    bool isIntersectWithDRM_ = false;
+    bool isDarkColorMode_ = false;
     CacheType cacheType_ { RSPaintFilterCanvas::CacheType::UNDEFINED };
     std::atomic_bool isHighContrastEnabled_ { false };
     GraphicColorGamut targetColorGamut_ = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
     float brightnessRatio_ = 1.0f; // Default 1.0f means no discount
-    float hdrBrightness_ = 1.0f; // Default 1.0f means max available headroom
     ScreenId screenId_ = INVALID_SCREEN_ID;
     uint32_t threadIndex_ = UNI_RENDER_THREAD_INDEX; // default
+    HDRProperties hdrProperties;
     Drawing::Surface* surface_ = nullptr;
     Drawing::Canvas* storeMainCanvas_ = nullptr; // store main canvas
     Drawing::Rect visibleRect_ = Drawing::Rect();
+    std::unordered_set<NodeId> culledNodes_; // store culled nodes for control-level occlusion culling
+    std::unordered_set<NodeId> culledEntireSubtree_; // store culled entire subtree for control-level occlusion culling
 
     std::stack<float> alphaStack_;
     std::stack<Env> envStack_;
@@ -380,7 +437,35 @@ private:
     std::stack<OffscreenData> offscreenDataList_; // store offscreen canvas & surface
     std::stack<Drawing::Surface*> storeMainScreenSurface_; // store surface_
     std::stack<Drawing::Canvas*> storeMainScreenCanvas_; // store canvas_
+
+    std::shared_ptr<CacheBehindWindowData> cacheBehindWindowData_ = nullptr;
 };
+
+#ifdef RS_ENABLE_VK
+class RSHybridRenderPaintFilterCanvas : public RSPaintFilterCanvas {
+public:
+    RSHybridRenderPaintFilterCanvas(Drawing::Canvas* canvas, float alpha = 1.0f) : RSPaintFilterCanvas(canvas, alpha)
+    {}
+
+    RSHybridRenderPaintFilterCanvas(Drawing::Surface* surface, float alpha = 1.0f) : RSPaintFilterCanvas(surface, alpha)
+    {}
+
+    //Override the AttachPaint method
+    CoreCanvas& AttachPaint(const Drawing::Paint& paint) override;
+
+    bool IsRenderWithForegroundColor() const
+    {
+        return isRenderWithForegroundColor;
+    }
+
+    void SetRenderWithForegroundColor(bool renderFilterStatus)
+    {
+        isRenderWithForegroundColor = renderFilterStatus;
+    }
+private:
+    bool isRenderWithForegroundColor = false;
+};
+#endif
 
 // Helper class similar to SkAutoCanvasRestore, but also restores alpha and/or env
 class RSB_EXPORT RSAutoCanvasRestore {

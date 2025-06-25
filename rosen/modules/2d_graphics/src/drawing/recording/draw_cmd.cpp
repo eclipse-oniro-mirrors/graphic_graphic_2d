@@ -37,6 +37,7 @@
 #include "utils/scalar.h"
 #include "utils/system_properties.h"
 #include "sandbox_utils.h"
+#include "securec.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -98,6 +99,8 @@ std::unordered_map<uint32_t, std::string> typeOpDes = {
     { DrawOpItem::IMAGE_SNAPSHOT_OPITEM,    "IMAGE_SNAPSHOT_OPITEM" },
     { DrawOpItem::SURFACEBUFFER_OPITEM,     "SURFACEBUFFER_OPITEM"},
     { DrawOpItem::DRAW_FUNC_OPITEM,         "DRAW_FUNC_OPITEM"},
+    { DrawOpItem::HYBRID_RENDER_PIXELMAP_OPITEM, "HYBRID_RENDER_PIXELMAP_OPITEM"},
+    { DrawOpItem::HYBRID_RENDER_PIXELMAP_SIZE_OPITEM, "HYBRID_RENDER_PIXELMAP_SIZE_OPITEM"},
 };
 
 namespace {
@@ -377,7 +380,8 @@ std::pair<UnmarshallingHelper::UnmarshallingFunc, size_t> UnmarshallingHelper::G
 
 UnmarshallingPlayer::UnmarshallingPlayer(const DrawCmdList& cmdList) : cmdList_(cmdList) {}
 
-std::shared_ptr<DrawOpItem> UnmarshallingPlayer::Unmarshalling(uint32_t type, void* handle, size_t avaliableSize)
+std::shared_ptr<DrawOpItem> UnmarshallingPlayer::Unmarshalling(uint32_t type, void* handle, size_t avaliableSize,
+                                                               bool isReplayMode)
 {
     if (type == DrawOpItem::OPITEM_HEAD) {
         return nullptr;
@@ -385,7 +389,31 @@ std::shared_ptr<DrawOpItem> UnmarshallingPlayer::Unmarshalling(uint32_t type, vo
 
     const auto unmarshallingPair = UnmarshallingHelper::Instance().GetFuncAndSize(type);
     /* if unmarshalling func is null or avaliable size < desirable unmarshalling size, then return nullptr*/
-    if (unmarshallingPair.first == nullptr || unmarshallingPair.second > avaliableSize) {
+    if (unmarshallingPair.first == nullptr) {
+        return nullptr;
+    }
+    if (unmarshallingPair.second > avaliableSize) {
+        if (isReplayMode) {
+            auto data = malloc(unmarshallingPair.second);
+            if (!data) {
+                return nullptr;
+            }
+            auto ret = memset_s(data, sizeof(data), 0, unmarshallingPair.second);
+            if (ret != EOK) {
+                free(data);
+                return nullptr;
+            }
+            ret = memmove_s(data, sizeof(data), handle, avaliableSize);
+            if (ret != EOK) {
+                free(data);
+                return nullptr;
+            }
+
+            auto result = (*unmarshallingPair.first)(this->cmdList_, data);
+            free(data);
+
+            return result;
+        }
         return nullptr;
     }
     return (*unmarshallingPair.first)(this->cmdList_, handle);
@@ -1568,7 +1596,11 @@ DrawTextBlobOpItem::DrawTextBlobOpItem(const DrawCmdList& cmdList, DrawTextBlobO
     : DrawWithPaintOpItem(cmdList, handle->paintHandle, TEXT_BLOB_OPITEM), x_(handle->x), y_(handle->y)
 {
     globalUniqueId_ = handle->globalUniqueId;
+    textContrast_ = handle->textContrast;
     textBlob_ = CmdListHelper::GetTextBlobFromCmdList(cmdList, handle->textBlob, handle->globalUniqueId);
+    if (textBlob_) {
+        textBlob_->SetTextContrast(textContrast_);
+    }
 }
 
 std::shared_ptr<DrawOpItem> DrawTextBlobOpItem::Unmarshalling(const DrawCmdList& cmdList, void* handle)
@@ -1589,7 +1621,10 @@ void DrawTextBlobOpItem::Marshalling(DrawCmdList& cmdList)
         globalUniqueId = (shiftedPid | typefaceId);
     }
 
-    cmdList.AddOp<ConstructorHandle>(textBlobHandle, globalUniqueId, x_, y_, paintHandle);
+    if (textBlob_) {
+        cmdList.AddOp<ConstructorHandle>(textBlobHandle,
+            globalUniqueId, textBlob_->GetTextContrast(), x_, y_, paintHandle);
+    }
 }
 
 uint64_t DrawTextBlobOpItem::GetTypefaceId()
@@ -1616,7 +1651,8 @@ void DrawTextBlobOpItem::Playback(Canvas* canvas, const Rect* rect)
         }
         saveFlag = true;
     }
-    if (canvas->isHighContrastEnabled()) {
+    TextContrast customerEnableValue = textBlob_->GetTextContrast();
+    if (IsHighContrastEnable(canvas, customerEnableValue)) {
         LOGD("DrawTextBlobOpItem::Playback highContrastEnabled, %{public}s, %{public}d", __FUNCTION__, __LINE__);
         DrawHighContrastEnabled(canvas);
     } else {
@@ -1625,6 +1661,21 @@ void DrawTextBlobOpItem::Playback(Canvas* canvas, const Rect* rect)
     }
     if (saveFlag) {
         canvas->Restore();
+    }
+}
+
+bool DrawTextBlobOpItem::IsHighContrastEnable(Canvas* canvas, TextContrast value) const
+{
+    bool canvasHighContrastEnabled = canvas->isHighContrastEnabled();
+    switch (value) {
+        case TextContrast::FOLLOW_SYSTEM:
+            return canvasHighContrastEnabled;
+        case TextContrast::DISABLE_CONTRAST:
+            return false;
+        case TextContrast::ENABLE_CONTRAST:
+            return true;
+        default:
+            return canvasHighContrastEnabled;
     }
 }
 
@@ -1887,6 +1938,19 @@ void DrawTextBlobOpItem::DumpItems(std::string& out) const
             out += " " + std::to_string(glyphIds[index]);
         }
         out += "]";
+        switch (textBlob_ -> GetTextContrast()) {
+            case TextContrast::FOLLOW_SYSTEM:
+                out += " TextContrast: FOLLOW_SYSTEM";
+                break;
+            case TextContrast::DISABLE_CONTRAST:
+                out += " TextContrast: DISABLE_CONTRAST";
+                break;
+            case TextContrast::ENABLE_CONTRAST:
+                out += " TextContrast: ENABLE_CONTRAST";
+                break;
+            default:
+                break;
+        }
         auto bounds = textBlob_->Bounds();
         if (bounds != nullptr) {
             out += " Bounds";
@@ -2589,6 +2653,45 @@ void ClipAdaptiveRoundRectOpItem::Dump(std::string& out) const
         out += "]";
     });
     out += "]";
+}
+
+/* HybridRenderPixelMapSizeOpItem */
+UNMARSHALLING_REGISTER(ResetHybridRenderSize, DrawOpItem::HYBRID_RENDER_PIXELMAP_SIZE_OPITEM,
+    HybridRenderPixelMapSizeOpItem::Unmarshalling, sizeof(HybridRenderPixelMapSizeOpItem::ConstructorHandle));
+
+HybridRenderPixelMapSizeOpItem::HybridRenderPixelMapSizeOpItem(
+    HybridRenderPixelMapSizeOpItem::ConstructorHandle* handle)
+    : DrawOpItem(HYBRID_RENDER_PIXELMAP_SIZE_OPITEM), width_(handle->width), height_(handle->height) {}
+
+std::shared_ptr<DrawOpItem> HybridRenderPixelMapSizeOpItem::Unmarshalling(const DrawCmdList& cmdList, void* handle)
+{
+    return std::make_shared<HybridRenderPixelMapSizeOpItem>(
+        static_cast<HybridRenderPixelMapSizeOpItem::ConstructorHandle*>(handle));
+}
+
+void HybridRenderPixelMapSizeOpItem::Marshalling(DrawCmdList& cmdList)
+{
+    cmdList.AddOp<ConstructorHandle>(width_, height_);
+}
+
+void HybridRenderPixelMapSizeOpItem::Playback(Canvas* canvas, const Rect* rect)
+{
+    return;
+}
+
+void HybridRenderPixelMapSizeOpItem::Dump(std::string& out) const
+{
+    out += GetOpDesc();
+}
+
+float HybridRenderPixelMapSizeOpItem::GetWidth() const
+{
+    return width_;
+}
+
+float HybridRenderPixelMapSizeOpItem::GetHeight() const
+{
+    return height_;
 }
 } // namespace Drawing
 } // namespace Rosen

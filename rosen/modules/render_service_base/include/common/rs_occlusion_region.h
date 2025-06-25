@@ -22,7 +22,6 @@
 
 #include "rs_rect.h"
 #include "common/rs_macros.h"
-#include "platform/common/rs_log.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -30,7 +29,7 @@ namespace Occlusion {
 
 constexpr int MAX_REGION_VALUE = 1000000;       // normal region value should not exceed 1000000
 constexpr int MIN_REGION_VALUE = -1000000;      // normal region value should not less than -1000000
-class Rect {
+class RSB_EXPORT Rect {
 public:
     // assumption: left-top is [0,0]
     int left_ = 0;
@@ -39,31 +38,8 @@ public:
     int bottom_ = 0;
 
     Rect() : left_(0), top_(0), right_(0), bottom_(0) {}
-    Rect(int l, int t, int r, int b, bool checkValue = true)
-        : left_(l), top_(t), right_(r), bottom_(b)
-    {
-        if (checkValue) {
-            CheckAndCorrectValue();
-            if (left_ != l || top_ != t || right_ != r || bottom_ != b) {
-                RS_LOGE("Occlusion::Rect initialized with invalid value, ltrb[%{public}d, %{public}d, %{public}d, "
-                    "%{public}d], should in range [%{public}d, %{public}d]",
-                    l, t, t, b, MIN_REGION_VALUE, MAX_REGION_VALUE);
-            }
-        }
-    }
-
-    Rect(const RectI& r, bool checkValue = true)
-        : left_(r.left_), top_(r.top_), right_(r.GetRight()), bottom_(r.GetBottom())
-    {
-        if (checkValue) {
-            CheckAndCorrectValue();
-            if (left_ != r.left_ || top_ != r.top_ || right_ != r.GetRight() || bottom_ != r.GetBottom()) {
-                RS_LOGE("Occlusion::Rect initialized with invalid value, ltrb[%{public}d, %{public}d, %{public}d, "
-                    "%{public}d], should in range [%{public}d, %{public}d]",
-                    r.left_, r.top_, r.GetRight(), r.GetBottom(), MIN_REGION_VALUE, MAX_REGION_VALUE);
-            }
-        }
-    }
+    Rect(int l, int t, int r, int b, bool checkValue = true);
+    Rect(const RectI& r, bool checkValue = true);
 
     void SetEmpty()
     {
@@ -367,28 +343,28 @@ public:
     /* core Region logic operation function, the return region's rects is guaranteed no-intersection
         (rect in rects_ do not intersect with each other)
     */
-    void RegionOp(Region& r1, Region& r2, Region& res, Region::OP op);
+    void RegionOp(Region& r1, const Region& r2, Region& res, Region::OP op);
     void RegionOpLocal(Region& r1, Region& r2, Region& res, Region::OP op);
-    void RegionOpAccelate(Region& r1, Region& r2, Region& res, Region::OP op);
+    void RegionOpAccelate(Region& r1, const Region& r2, Region& res, Region::OP op);
 
-    Region& OperationSelf(Region& r, Region::OP op);
+    Region& OperationSelf(const Region& r, Region::OP op);
     // replace region with and result
-    Region& AndSelf(Region& r);
+    Region& AndSelf(const Region& r);
     // replace region with or result
-    Region& OrSelf(Region& r);
+    Region& OrSelf(const Region& r);
     // replace region with xor result
-    Region& XOrSelf(Region& r);
+    Region& XOrSelf(const Region& r);
     // replace region with sub result
-    Region& SubSelf(Region& r);
+    Region& SubSelf(const Region& r);
 
     // return intersection region
-    Region And(Region& r);
+    Region And(const Region& r);
     // return merge region
-    Region Or(Region& r);
+    Region Or(const Region& r);
     // return merge region subtract intersection region
-    Region Xor(Region& r);
+    Region Xor(const Region& r);
     // return region belongs to Region(lhs) but not Region(rhs)
-    Region Sub(Region& r);
+    Region Sub(const Region& r);
 
     // get current region's area, return the sum of the areas of all rectangles (as they are not intersect each other)
     int Area() const;

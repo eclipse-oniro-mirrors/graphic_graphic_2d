@@ -126,6 +126,11 @@ class RSRenderAnimationMock : public RSRenderAnimation {
 public:
     RSRenderAnimationMock(AnimationId id) : RSRenderAnimation(id) {}
     ~RSRenderAnimationMock() = default;
+
+    void DumpAnimation(std::string& out)
+    {
+        RSRenderAnimation::DumpAnimation(out);
+    }
 };
 
 class RSAnimationGroupMock : public RSAnimationGroup {
@@ -212,6 +217,7 @@ HWTEST_F(RSAnimationTest, AnimationSupplementTest001, TestSize.Level1)
     GTEST_LOG_(INFO) << "RSAnimationTest AnimationSupplementTest001 end";
 }
 
+#ifndef MODIFIER_NG
 /**
  * @tc.name: AnimationSupplementTest002
  * @tc.desc: Verify the setcallback of Animation
@@ -254,9 +260,11 @@ HWTEST_F(RSAnimationTest, AnimationSupplementTest002, TestSize.Level1)
     animation->OnFinish();
     animation->Reverse();
     animation->OnReverse();
+    EXPECT_EQ(animation->GetModifierType(), RSModifierType::INVALID);
     EXPECT_TRUE(animation != nullptr);
     GTEST_LOG_(INFO) << "RSAnimationTest AnimationSupplementTest002 end";
 }
+#endif
 
 /**
  * @tc.name: AnimationSupplementTest003
@@ -391,6 +399,7 @@ public:
     }
 };
 
+#ifndef MODIFIER_NG
 /**
  * @tc.name: AnimationSupplementTest005
  * @tc.desc: Verify the setcallback of Animation
@@ -502,6 +511,7 @@ HWTEST_F(RSAnimationTest, AnimationSupplementTest006, TestSize.Level1)
     modifierManager->RemoveAnimation(animation->GetId());
     GTEST_LOG_(INFO) << "RSAnimationTest AnimationSupplementTest006 end";
 }
+#endif
 
 /**
  * @tc.name: AnimationSupplementTest007
@@ -789,6 +799,7 @@ HWTEST_F(RSAnimationTest, AnimationSupplementTest015, TestSize.Level1)
     GTEST_LOG_(INFO) << "RSAnimationTest AnimationSupplementTest015 end";
 }
 
+#ifndef MODIFIER_NG
 /**
  * @tc.name: AnimationSupplementTest016
  * @tc.desc: Verify the setcallback of Animation
@@ -827,6 +838,7 @@ HWTEST_F(RSAnimationTest, AnimationSupplementTest016, TestSize.Level1)
     EXPECT_TRUE(animation->GetAutoReverse());
     GTEST_LOG_(INFO) << "RSAnimationTest AnimationSupplementTest016 end";
 }
+#endif
 
 /**
  * @tc.name: AnimationSupplementTest017
@@ -1021,12 +1033,6 @@ HWTEST_F(RSAnimationTest, AnimationSupplementTest020, TestSize.Level1)
     auto data2 = MyData();
     [[maybe_unused]] bool ret = data1 == data2;
 
-    RSFilter filter1;
-    filter1.IsNearEqual(nullptr, ANIMATION_DEFAULT_VALUE);
-    filter1.IsNearZero(ANIMATION_DEFAULT_VALUE);
-    filter1.IsEqual(nullptr);
-    filter1.IsEqualZero();
-
     RSImageBase imageBase;
     Parcel parcel;
     imageBase.Marshalling(parcel);
@@ -1053,12 +1059,6 @@ HWTEST_F(RSAnimationTest, AnimationSupplementTest020, TestSize.Level1)
     auto mask = RSMask::Unmarshalling(parcel);
     delete mask;
 
-    RSLightUpEffectFilter filter3(ANIMATION_DEFAULT_VALUE);
-    filter3.IsNearEqual(nullptr, ANIMATION_DEFAULT_VALUE);
-    filter3.IsNearZero(ANIMATION_DEFAULT_VALUE);
-    filter3.IsEqual(nullptr);
-    filter3.IsEqualZero();
-
     NodeId id = 1;
     RSModifierExtractor extractor(id);
     extractor.GetCameraDistance();
@@ -1078,7 +1078,7 @@ HWTEST_F(RSAnimationTest, AnimationSupplementTest021, TestSize.Level1)
     /**
      * @tc.steps: step1. init
      */
-    RSPropertyBase property;
+    RSProperty<float> property;
     [[maybe_unused]] auto tmp = property.GetThreshold();
     property.SetValueFromRender(nullptr);
 
@@ -1097,17 +1097,11 @@ HWTEST_F(RSAnimationTest, AnimationSupplementTest021, TestSize.Level1)
     option.SetPathNeedAddOrigin(true);
     option.GetPathNeedAddOrigin();
 
-    RSBlurFilter filter(0, 0);
-    filter.IsEqual(nullptr);
-    filter.IsEqualZero();
-
     float dipScale = 1.0;
     BLUR_COLOR_MODE mode = BLUR_COLOR_MODE::DEFAULT;
     MATERIAL_BLUR_STYLE style = static_cast<MATERIAL_BLUR_STYLE>(0);
     float ratio = 1.0;
     RSMaterialFilter rsMaterialFilter(style, dipScale, mode, ratio);
-    rsMaterialFilter.IsEqual(nullptr);
-    rsMaterialFilter.IsEqualZero();
     EXPECT_EQ(rsMaterialFilter.colorMode_, mode);
 
     GTEST_LOG_(INFO) << "RSAnimationTest AnimationSupplementTest021 end";
@@ -1132,7 +1126,7 @@ HWTEST_F(RSAnimationTest, AnimationSupplementTest022, TestSize.Level1)
     property->RequestCancelAnimation();
     auto propertyUnit_ { RSPropertyUnit::UNKNOWN };
     property->SetPropertyUnit(propertyUnit_);
-    auto base = std::make_shared<RSRenderPropertyBase>();
+    auto base = std::make_shared<RSRenderProperty<bool>>();
     base->SetModifierType(RSModifierType::BOUNDS);
     auto type = base->GetModifierType();
     EXPECT_TRUE(type == RSModifierType::BOUNDS);
@@ -1147,7 +1141,7 @@ HWTEST_F(RSAnimationTest, AnimationSupplementTest022, TestSize.Level1)
     std::shared_ptr<RSNode> node = RSCanvasNode::Create();
     node->SetShadowMask(true);
     node->IsImplicitAnimationOpen();
-    node->GetChildIdByIndex(1);
+    node->GetChildByIndex(1);
     std::string nodeName = "nodeName";
     node->SetNodeName(nodeName);
     PropertyCallback callback;
@@ -1269,22 +1263,124 @@ HWTEST_F(RSAnimationTest, AnimationSupplementTest025, TestSize.Level1)
     /**
      * @tc.steps: step1. init
      */
-    bool success = false;
     auto implicitAnimator = std::make_shared<RSImplicitAnimator>();
-    success = implicitAnimator->CloseImplicitCancelAnimation();
-    EXPECT_TRUE(!success);
+    auto ret = implicitAnimator->CloseImplicitCancelAnimation();
+    EXPECT_EQ(ret, CancelAnimationStatus::NO_OPEN_CLOSURE);
 
     RSAnimationTimingProtocol protocol;
     protocol.SetDuration(100);
     implicitAnimator->OpenImplicitAnimation(protocol, RSAnimationTimingCurve::LINEAR, nullptr);
-    success = implicitAnimator->CloseImplicitCancelAnimation();
-    EXPECT_TRUE(!success);
+    ret = implicitAnimator->CloseImplicitCancelAnimation();
+    EXPECT_EQ(ret, CancelAnimationStatus::INCORRECT_PARAM_TYPE);
 
     protocol.SetDuration(0);
     implicitAnimator->OpenImplicitAnimation(protocol, RSAnimationTimingCurve::LINEAR, nullptr);
-    success = implicitAnimator->CloseImplicitCancelAnimation();
-    EXPECT_TRUE(!success);
+    ret = implicitAnimator->CloseImplicitCancelAnimation();
+    EXPECT_EQ(ret, CancelAnimationStatus::EMPTY_PENDING_SYNC_LIST);
     GTEST_LOG_(INFO) << "RSAnimationTest AnimationSupplementTest025 end";
+}
+
+/**
+ * @tc.name: DumpAnimation01
+ * @tc.desc: Verify the DumpAnimation of Animation
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSAnimationTest, DumpAnimation01, TestSize.Level1)
+{
+    GTEST_LOG_(INFO) << "RSAnimationTest DumpAnimation01 start";
+    RSRenderAnimationMock animation(0);
+    animation.targetName_ = "TestNode";
+    std::string output;
+    animation.DumpAnimation(output);
+    EXPECT_NE(output.find("NodeName:TestNode"), std::string::npos);
+
+    animation.targetName_ = "";
+    output = "";
+    animation.DumpAnimation(output);
+    EXPECT_EQ(output.find("NodeName:"), std::string::npos);
+
+    animation.animationFraction_.SetStartDelay(5);
+    output = "";
+    animation.DumpAnimation(output);
+    EXPECT_NE(output.find("StartDelay:5"), std::string::npos);
+
+    animation.animationFraction_.SetStartDelay(0);
+    output = "";
+    animation.DumpAnimation(output);
+    EXPECT_EQ(output.find("StartDelay:"), std::string::npos);
+
+    animation.animationFraction_.SetSpeed(2.0f);
+    output = "";
+    animation.DumpAnimation(output);
+    EXPECT_NE(output.find("Speed:2"), std::string::npos);
+
+    animation.animationFraction_.SetSpeed(1.0f);
+    output = "";
+    animation.DumpAnimation(output);
+    EXPECT_EQ(output.find("Speed:"), std::string::npos);
+    GTEST_LOG_(INFO) << "RSAnimationTest DumpAnimation01 end";
+}
+
+/**
+ * @tc.name: DumpAnimation02
+ * @tc.desc: Verify the DumpAnimation of Animation
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSAnimationTest, DumpAnimation02, TestSize.Level1)
+{
+    GTEST_LOG_(INFO) << "RSAnimationTest DumpAnimation02 start";
+    RSRenderAnimationMock animation(0);
+    animation.animationFraction_.SetRepeatCount(2);
+    std::string output;
+    animation.DumpAnimation(output);
+    EXPECT_NE(output.find("RepeatCount:2"), std::string::npos);
+
+    animation.animationFraction_.SetRepeatCount(1);
+    output = "";
+    animation.DumpAnimation(output);
+    EXPECT_EQ(output.find("RepeatCount"), std::string::npos);
+
+    animation.animationFraction_.SetAutoReverse(true);
+    output = "";
+    animation.DumpAnimation(output);
+    EXPECT_NE(output.find("AutoReverse:1"), std::string::npos);
+
+    animation.animationFraction_.SetAutoReverse(false);
+    output = "";
+    animation.DumpAnimation(output);
+    EXPECT_EQ(output.find("AutoReverse:"), std::string::npos);
+
+    animation.animationFraction_.SetDirection(false);
+    output = "";
+    animation.DumpAnimation(output);
+    EXPECT_NE(output.find("Direction:0"), std::string::npos);
+
+    animation.animationFraction_.SetDirection(true);
+    output = "";
+    animation.DumpAnimation(output);
+    EXPECT_EQ(output.find("Direction:"), std::string::npos);
+
+    animation.animationFraction_.SetFillMode(FillMode::BACKWARDS);
+    output = "";
+    animation.DumpAnimation(output);
+    EXPECT_NE(output.find("FillMode:2"), std::string::npos);
+
+    animation.animationFraction_.SetFillMode(FillMode::FORWARDS);
+    output = "";
+    animation.DumpAnimation(output);
+    EXPECT_EQ(output.find("FillMode:"), std::string::npos);
+
+    animation.animationFraction_.SetRepeatCallbackEnable(true);
+    output = "";
+    animation.DumpAnimation(output);
+    EXPECT_NE(output.find("RepeatCallbackEnable:1"), std::string::npos);
+
+    animation.animationFraction_.SetRepeatCallbackEnable(false);
+    output = "";
+    animation.DumpAnimation(output);
+    EXPECT_EQ(output.find("RepeatCallbackEnable:"), std::string::npos);
+
+    GTEST_LOG_(INFO) << "RSAnimationTest DumpAnimation02 end";
 }
 } // namespace Rosen
 } // namespace OHOS

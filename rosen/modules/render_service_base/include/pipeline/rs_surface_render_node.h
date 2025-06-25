@@ -47,12 +47,69 @@
 #include "sync_fence.h"
 #endif
 #include "ipc_security/rs_ipc_interface_code_access_verifier_base.h"
+#ifdef ENABLE_FULL_SCREEN_RECONGNIZE
+#include "monitor/aps_monitor_impl.h"
+#endif
 
 namespace OHOS {
 namespace Rosen {
+class OcclusionNode;
 class RSCommand;
 class RSDirtyRegionManager;
+class RSOcclusionHandler;
 class RSSurfaceHandler;
+
+// Used for control-level occlusion culling scene info and culled nodes transmission.
+// Maintained by the Dirty Regions feature team.
+class RSB_EXPORT OcclusionParams {
+public:
+    // Enables/Disables control-level occlusion culling for the node's subtree
+    void UpdateOcclusionCullingStatus(bool enable, NodeId keyOcclusionNodeId);
+
+    bool IsOcclusionCullingOn()
+    {
+        return !keyOcclusionNodeIds_.empty();
+    }
+
+    void SetOcclusionHandler(std::shared_ptr<RSOcclusionHandler> occlusionHandler)
+    {
+        occlusionHandler_ = occlusionHandler;
+    }
+
+    std::shared_ptr<RSOcclusionHandler> GetOcclusionHandler() const
+    {
+        return occlusionHandler_;
+    }
+
+    std::unordered_set<NodeId> TakeCulledNodes()
+    {
+        return std::move(culledNodes_);
+    }
+
+    void SetCulledNodes(std::unordered_set<NodeId>&& culledNodes)
+    {
+        culledNodes_ = std::move(culledNodes);
+    }
+
+    std::unordered_set<NodeId> TakeCulledEntireSubtree()
+    {
+        return std::move(culledEntireSubtree_);
+    }
+
+    void SetCulledEntireSubtree(std::unordered_set<NodeId>&& culledEntireSubtree)
+    {
+        culledEntireSubtree_ = std::move(culledEntireSubtree);
+    }
+
+    void CheckKeyOcclusionNodeValidity(
+        const std::unordered_map<NodeId, std::shared_ptr<OcclusionNode>>& occlusionNodes);
+private:
+    std::unordered_multiset<NodeId> keyOcclusionNodeIds_;
+    std::shared_ptr<RSOcclusionHandler> occlusionHandler_;
+    std::unordered_set<NodeId> culledNodes_;
+    std::unordered_set<NodeId> culledEntireSubtree_;
+};
+
 class RSB_EXPORT RSSurfaceRenderNode : public RSRenderNode {
 public:
     using WeakPtr = std::weak_ptr<RSSurfaceRenderNode>;
@@ -135,6 +192,13 @@ public:
     bool IsLayerTop() const
     {
         return isLayerTop_;
+    }
+
+    void SetForceRefresh(bool isForceRefresh);
+
+    bool IsForceRefresh() const
+    {
+        return isForceRefresh_;
     }
 
     void SetHardwareEnableHint(bool enable)
@@ -291,11 +355,6 @@ public:
         return isHardwareForcedByBackgroundAlpha_;
     }
 
-    void SetHardwareDisabledByCache(bool disabledByCache)
-    {
-        isHardwareDisabledByCache_ = disabledByCache;
-    }
-
     void SetHardwareForcedDisabledStateByFilter(bool forcesDisabled)
     {
         isHardwareForcedDisabledByFilter_ = forcesDisabled;
@@ -342,9 +401,13 @@ public:
 
     bool IsHardwareForcedDisabled() const
     {
+        if (GetTunnelLayerId()) {
+            return false;
+        }
         // a protected node not on the tree need to release buffer when producer produce buffers
         // release buffer in ReleaseSelfDrawingNodeBuffer function
-        if ((specialLayerManager_.Find(SpecialLayerType::PROTECTED) || isHardwareEnableHint_) && IsOnTheTree()) {
+        // isForcedClipHole: for tv product, force clip hole in tvplayer
+        if ((specialLayerManager_.Find(SpecialLayerType::PROTECTED) || isForcedClipHole()) && IsOnTheTree()) {
             constexpr float DRM_MIN_ALPHA = 0.1f;
             return GetGlobalAlpha() < DRM_MIN_ALPHA; // if alpha less than 0.1, drm layer display black background.
         }
@@ -353,14 +416,17 @@ public:
 
     bool IsLeashOrMainWindow() const
     {
-        return nodeType_ <= RSSurfaceNodeType::LEASH_WINDOW_NODE;
+        return nodeType_ <= RSSurfaceNodeType::LEASH_WINDOW_NODE || nodeType_ == RSSurfaceNodeType::CURSOR_NODE ||
+               nodeType_ == RSSurfaceNodeType::ABILITY_MAGNIFICATION_NODE;
     }
 
     bool IsMainWindowType() const
     {
         // a mainWindowType surfacenode will not mounted under another mainWindowType surfacenode
         // including app main window, starting window, and selfdrawing window
-        return nodeType_ <= RSSurfaceNodeType::SELF_DRAWING_WINDOW_NODE;
+        return nodeType_ <= RSSurfaceNodeType::SELF_DRAWING_WINDOW_NODE ||
+               nodeType_ == RSSurfaceNodeType::CURSOR_NODE ||
+               nodeType_ == RSSurfaceNodeType::ABILITY_MAGNIFICATION_NODE;
     }
 
     bool GetIsLastFrameHwcEnabled() const
@@ -403,7 +469,8 @@ public:
         // self drawing surfacenode has its own buffer, and rendered in its own progress/thread
         // such as surfaceview (web/videos) and self draw windows (such as mouse pointer and boot animation)
         return nodeType_ == RSSurfaceNodeType::SELF_DRAWING_NODE ||
-               nodeType_ == RSSurfaceNodeType::SELF_DRAWING_WINDOW_NODE;
+                nodeType_ == RSSurfaceNodeType::SELF_DRAWING_WINDOW_NODE ||
+                nodeType_ == RSSurfaceNodeType::CURSOR_NODE;
     }
 
     bool IsUIFirstSelfDrawCheck();
@@ -434,6 +501,11 @@ public:
     const std::string& GetName() const
     {
         return name_;
+    }
+
+    const std::string& GetBundleName() const
+    {
+        return bundleName_;
     }
 
     void SetOffSetX(int32_t offset)
@@ -475,6 +547,16 @@ public:
     void SetArsrTag(bool arsrTag)
     {
         arsrTag_ = arsrTag;
+    }
+
+    bool GetCopybitTag() const
+    {
+        return copybitTag_;
+    }
+
+    void SetCopybitTag(bool copybitTag)
+    {
+        copybitTag_ = copybitTag;
     }
 
     void CollectSurface(const std::shared_ptr<RSBaseRenderNode>& node, std::vector<RSBaseRenderNode::SharedPtr>& vec,
@@ -526,10 +608,10 @@ public:
     void SetGlobalPositionEnabled(bool isEnabled);
     bool GetGlobalPositionEnabled() const override;
 
-    void SetDRMGlobalPositionEnabled(bool isEnabled);
-    bool GetDRMGlobalPositionEnabled() const;
+    void SetHwcGlobalPositionEnabled(bool isEnabled);
+    bool GetHwcGlobalPositionEnabled() const;
 
-    void SetDRMCrossNode(bool isCrossNode);
+    void SetHwcCrossNode(bool isCrossNode);
     bool IsDRMCrossNode() const;
 
     void SetSecurityLayer(bool isSecurityLayer);
@@ -538,6 +620,9 @@ public:
     void SetSnapshotSkipLayer(bool isSnapshotSkipLayer);
     void SetProtectedLayer(bool isProtectedLayer);
     void SetIsOutOfScreen(bool isOutOfScreen);
+    void UpdateBlackListStatus(ScreenId virtualScreenId, bool isBlackList);
+    void UpdateVirtualScreenWhiteListInfo(
+        const std::unordered_map<ScreenId, std::unordered_set<uint64_t>>& allWhiteListInfo);
 
     // get whether it is a security/skip layer itself
     LeashPersistentId GetLeashPersistentId() const;
@@ -561,6 +646,7 @@ public:
 
     void UpdateSpecialLayerInfoByTypeChange(uint32_t type, bool isSpecialLayer);
     void UpdateSpecialLayerInfoByOnTreeStateChange();
+    void SyncBlackListInfoToFirstLevelNode();
     void SyncPrivacyContentInfoToFirstLevelNode();
     void SyncColorGamutInfoToFirstLevelNode();
 
@@ -570,12 +656,15 @@ public:
     // [Attention] The function only used for unlocking screen for PC currently
     void SetClonedNodeRenderDrawable(DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr clonedNodeRenderDrawable);
     bool IsCloneNode() const;
-    void SetClonedNodeId(NodeId id);
+    void SetClonedNodeInfo(NodeId id, bool needOffscreen);
     void SetIsCloned(bool isCloned);
     void SetIsClonedNodeOnTheTree(bool isOnTheTree);
 
     void SetForceUIFirst(bool forceUIFirst);
     bool GetForceUIFirst() const;
+
+    bool GetForceDrawWithSkipped() const;
+    void SetForceDrawWithSkipped(bool GetForceDrawWithSkipped);
 
     void SetUIFirstIsPurge(bool IsPurge)
     {
@@ -591,22 +680,29 @@ public:
     void SetForceUIFirstChanged(bool forceUIFirstChanged);
     bool GetForceUIFirstChanged();
 
+    // Unified DSS synthesis switch for Anco nodes
     static void SetAncoForceDoDirect(bool direct);
+    // Obtain whether the Anco node is using the DSS synthesis flag
     static bool GetOriAncoForceDoDirect();
+    // Whether to use DSS synthesis to obtain anco nodes. only anco node can be true.
     bool GetAncoForceDoDirect() const;
+    // Used to distinguish whether this node is an Anco node
     void SetAncoFlags(uint32_t flags);
+    // Determine whether it is an Anco node
     uint32_t GetAncoFlags() const;
+    // Set the buffer srcRect of the anco node. Only used on anco nodes.
+    void SetAncoSrcCrop(const Rect& srcCrop);
 
     void SetHDRPresent(bool hasHdrPresent);
     bool GetHDRPresent() const;
 
-    void IncreaseHDRNum();
-    void ReduceHDRNum();
+    void IncreaseHDRNum(HDRComponentType hdrType);
+    void ReduceHDRNum(HDRComponentType hdrType);
 
-    bool GetIsWideColorGamut() const;
+    void IncreaseCanvasGamutNum(GraphicColorGamut gamut);
+    void ReduceCanvasGamutNum(GraphicColorGamut gamut);
 
-    void IncreaseWideColorGamutNum();
-    void ReduceWideColorGamutNum();
+    bool IsHdrEffectColorGamut() const;
 
     const std::shared_ptr<RSDirtyRegionManager>& GetDirtyManager() const;
     std::shared_ptr<RSDirtyRegionManager> GetCacheSurfaceDirtyManager() const;
@@ -641,6 +737,11 @@ public:
     void SetDstRectWithoutRenderFit(const RectI& rect)
     {
         dstRectWithoutRenderFit_ = Drawing::Rect(rect.left_, rect.top_, rect.GetRight(), rect.GetBottom());
+    }
+
+    void SetRegionToBeMagnified(Vector4f regionToBeMagnified)
+    {
+        regionToBeMagnified_ = regionToBeMagnified;
     }
 
     Drawing::Rect GetDstRectWithoutRenderFit() const
@@ -716,6 +817,11 @@ public:
         return visibleRegion_;
     }
 
+    const Occlusion::Region& GetVisibleRegionBehindWindow() const
+    {
+        return visibleRegionBehindWindow_;
+    }
+
     const Occlusion::Region& GetVisibleRegionInVirtual() const
     {
         return visibleRegionInVirtual_;
@@ -755,22 +861,6 @@ public:
         RSVisibleLevel visibleLevel = RSVisibleLevel::RS_UNKNOW_VISIBLE_LEVEL,
         bool isSystemAnimatedScenes = false);
 
-    void SetLeashWindowVisibleRegionEmpty(bool isLeashWindowVisibleRegionEmpty)
-    {
-        if (!IsLeashWindow()) {
-            return;
-        }
-        isLeashWindowVisibleRegionEmpty_ = isLeashWindowVisibleRegionEmpty;
-        SetLeashWindowVisibleRegionEmptyParam();
-    }
-
-    bool GetLeashWindowVisibleRegionEmpty() const
-    {
-        return isLeashWindowVisibleRegionEmpty_;
-    }
-
-    void SetLeashWindowVisibleRegionEmptyParam();
-
     void SetExtraDirtyRegionAfterAlignment(const Occlusion::Region& region)
     {
         extraDirtyRegionAfterAlignment_ = region;
@@ -804,8 +894,8 @@ public:
     GraphicColorGamut GetColorSpace() const;
     // Only call this if the node is first level node.
     GraphicColorGamut GetFirstLevelNodeColorGamut() const;
-    void SetFirstLevelNodeColorGamutByResource(bool changeToP3);
-    void SetFirstLevelNodeColorGamutByWindow(bool changeToP3);
+    void SetFirstLevelNodeColorGamutByResource(bool isOnTree, GraphicColorGamut gamut);
+    void SetFirstLevelNodeColorGamutByWindow(bool isOnTree, GraphicColorGamut gamut);
 
     // Only call this if the node is self-drawing surface node.
     void UpdateColorSpaceWithMetadata();
@@ -871,6 +961,11 @@ public:
         visibleRegion_ = region;
     }
 
+    void SetVisibleRegionBehindWindow(const Occlusion::Region& region)
+    {
+        visibleRegionBehindWindow_ = region;
+    }
+
     void SetVisibleRegionInVirtual(const Occlusion::Region& region)
     {
         visibleRegionInVirtual_ = region;
@@ -881,11 +976,18 @@ public:
         return IsAppWindow() && (GetChildrenCount() == 0 || HasOnlyOneRootNode());
     }
 
-    inline bool IsTransparent() const
+    // Due to the BehindWindowFilter enabling ui-first, the condition is excluded.
+    // This condition is now only used by ui-first
+    inline bool IsAlphaTransparent() const
     {
         const uint8_t opacity = 255;
         return !(GetAbilityBgAlpha() == opacity && ROSEN_EQ(GetGlobalAlpha(), 1.0f)) ||
-            (IsEmptyAppWindow() && RSUniRenderJudgement::IsUniRender()) || NeedDrawBehindWindow();
+            (IsEmptyAppWindow() && RSUniRenderJudgement::IsUniRender());
+    }
+
+    inline bool IsTransparent() const
+    {
+        return IsAlphaTransparent() || NeedDrawBehindWindow();
     }
 
     inline bool IsCurrentNodeInTransparentRegion(const Occlusion::Rect& nodeRect) const
@@ -948,6 +1050,11 @@ public:
         opaqueRegionChanged_ = false;
     }
 
+    bool IsBehindWindowOcclusionChanged() const
+    {
+        return behindWindowOcclusionChanged_;
+    }
+
     // [planning] Remove this after skia is upgraded, the clipRegion is supported
     void ResetChildrenFilterRects();
     void UpdateChildrenFilterRects(std::shared_ptr<RSRenderNode> filternode, const RectI& rect, bool cacheValid);
@@ -996,11 +1103,9 @@ public:
     bool UpdateDirtyIfFrameBufferConsumed();
 
     void UpdateSrcRect(const Drawing::Canvas& canvas, const Drawing::RectI& dstRect, bool hasRotation = false);
-    void UpdateHwcDisabledBySrcRect(bool hasRotation);
 
     // if a surfacenode's dstrect is empty, its subnodes' prepare stage can be skipped
     bool ShouldPrepareSubnodes();
-    void StoreMustRenewedInfo() override;
 
     void SetNodeCost(int32_t cost)
     {
@@ -1195,6 +1300,16 @@ public:
         return surfaceId_;
     }
 
+    void SetTunnelLayerId(SurfaceId tunnelLayerId)
+    {
+        tunnelLayerId_ = tunnelLayerId;
+    }
+
+    SurfaceId GetTunnelLayerId() const
+    {
+        return tunnelLayerId_;
+    }
+
     bool GetIsForeground() const
     {
         return isForeground_;
@@ -1289,9 +1404,6 @@ public:
     void GetAllSubSurfaceNodes(std::vector<std::pair<NodeId, RSSurfaceRenderNode::WeakPtr>>& allSubSurfaceNodes) const;
     std::string SubSurfaceNodesDump() const;
 
-    void SetIsNodeToBeCaptured(bool isNodeToBeCaptured);
-    bool IsNodeToBeCaptured() const;
-
     void SetDoDirectComposition(bool flag)
     {
         doDirectComposition_ = flag;
@@ -1300,16 +1412,6 @@ public:
     bool GetDoDirectComposition() const
     {
         return doDirectComposition_;
-    }
-
-    void SetHardWareDisabledByReverse(bool isHardWareDisabledByReverse)
-    {
-        isHardWareDisabledByReverse_ = isHardWareDisabledByReverse;
-    }
-
-    bool GetHardWareDisabledByReverse() const
-    {
-        return isHardWareDisabledByReverse_;
     }
 
     void SetSkipDraw(bool skip);
@@ -1363,12 +1465,13 @@ public:
         return surfaceHandler_;
     }
 
-    void CheckContainerDirtyStatusAndUpdateDirty(bool containerDirty)
+    void CheckContainerDirtyStatusAndUpdateDirty(bool& containerDirty)
     {
-        if (!IsLeashOrMainWindow()) {
+        if (!containerDirty || !IsLeashOrMainWindow()) {
             return;
         }
-        dirtyStatus_ = containerDirty ? NodeDirty::DIRTY : dirtyStatus_;
+        dirtyStatus_ = NodeDirty::DIRTY;
+        containerDirty = false;
     }
 
     void SetWatermarkEnabled(const std::string& name, bool isEnabled);
@@ -1440,23 +1543,25 @@ public:
         hdrVideoSurface_ = hasHdrVideoSurface;
     }
 
+    float GetHDRBrightnessFactor() const
+    {
+        return hdrBrightnessFactor_;
+    }
+
+    void SetHDRBrightnessFactor(float hdrBrightnessFactor)
+    {
+        hdrBrightnessFactor_ = hdrBrightnessFactor;
+    }
+
     void SetApiCompatibleVersion(uint32_t apiCompatibleVersion);
     uint32_t GetApiCompatibleVersion()
     {
         return apiCompatibleVersion_;
     }
 
-    bool GetIsHwcPendingDisabled() const
-    {
-        return isHwcPendingDisabled_;
-    }
-
-    void SetIsHwcPendingDisabled(bool isHwcPendingDisabled)
-    {
-        isHwcPendingDisabled_ = isHwcPendingDisabled;
-    }
-
     void ResetIsBufferFlushed();
+
+    void ResetSurfaceNodeStates();
 
     bool IsUIBufferAvailable();
 
@@ -1478,6 +1583,43 @@ public:
         return selfAndParentShouldPaint_;
     }
 
+    inline bool IsHardwareDisabledBySrcRect() const
+    {
+        return isHardwareForcedDisabledBySrcRect_;
+    }
+
+    void SetAppWindowZOrder(int32_t appWindowZOrder)
+    {
+        appWindowZOrder_ = appWindowZOrder;
+    }
+
+    int32_t GetAppWindowZOrder() const
+    {
+        return appWindowZOrder_;
+    }
+
+    void SetTopLayerZOrder(uint32_t zOrder);
+
+    uint32_t GetTopLayerZOrder() const
+    {
+        return topLayerZOrder_;
+    }
+
+    // Enable HWCompose
+    RSHwcSurfaceRecorder& HwcSurfaceRecorder() { return hwcSurfaceRecorder_; }
+
+    void SetFrameGravityNewVersionEnabled(bool isEnabled);
+    bool GetFrameGravityNewVersionEnabled() const;
+
+    // Used for control-level occlusion culling scene info and culled nodes transmission.
+    std::shared_ptr<OcclusionParams> GetOcclusionParams()
+    {
+        if (occlusionParams_ == nullptr) {
+            occlusionParams_ = std::make_shared<OcclusionParams>();
+        }
+        return occlusionParams_;
+    }
+
 protected:
     void OnSync() override;
     void OnSkipSync() override;
@@ -1497,10 +1639,6 @@ private:
     void ClearHistoryUnSubmittedDirtyInfo();
     void UpdateHistoryUnsubmittedDirtyInfo();
     void SetUIExtensionUnobscured(bool obscured);
-    inline bool IsHardwareDisabledBySrcRect() const
-    {
-        return isHardwareForcedDisabledBySrcRect_;
-    }
     void OnSubSurfaceChanged();
     void UpdateChildSubSurfaceNodes(RSSurfaceRenderNode::SharedPtr node, bool isOnTheTree);
     bool IsYUVBufferFormat() const;
@@ -1510,11 +1648,22 @@ private:
     std::unordered_set<NodeId> GetAllSubSurfaceNodeIds() const;
     bool IsCurFrameSwitchToPaint();
 
+    bool isForcedClipHole() const;
+
+#ifdef ENABLE_FULL_SCREEN_RECONGNIZE
+    void SendSurfaceNodeTreeStatus(bool onTree);
+    void SendSurfaceNodeBoundChange();
+#endif
+#ifndef ROSEN_CROSS_PLATFORM
+    void UpdatePropertyFromConsumer();
+#endif
+
     RSSpecialLayerManager specialLayerManager_;
     bool specialLayerChanged_ = false;
+    std::unordered_map<ScreenId, std::unordered_set<NodeId>> blackListIds_ = {};
     bool isGlobalPositionEnabled_ = false;
-    bool isDRMGlobalPositionEnabled_ = false;
-    bool isDRMCrossNode_ = false;
+    bool isHwcGlobalPositionEnabled_ = false;
+    bool isHwcCrossNode_ = false;
     bool hasFingerprint_ = false;
     // hdr video
     HdrStatus hdrVideoSurface_ = HdrStatus::NO_HDR;
@@ -1522,7 +1671,9 @@ private:
     bool qosPidCal_ = false;
     RSSurfaceNodeAbilityState abilityState_ = RSSurfaceNodeAbilityState::FOREGROUND;
     RSSurfaceNodeType nodeType_ = RSSurfaceNodeType::DEFAULT;
+    uint32_t topLayerZOrder_ = 0;
     bool isLayerTop_ = false;
+    bool isForceRefresh_ = false; // the self-drawing node need force refresh
     // Specifying hardware enable is only a 'hint' to RS that
     // the self-drawing node use hardware composer in some condition,
     // such as transparent background.
@@ -1531,7 +1682,6 @@ private:
     const enum SurfaceWindowType surfaceWindowType_ = SurfaceWindowType::DEFAULT_WINDOW;
     bool isNotifyRTBufferAvailablePre_ = false;
     bool isRefresh_ = false;
-    bool isLeashWindowVisibleRegionEmpty_ = false;
     bool isOcclusionVisible_ = true;
     bool isOcclusionVisibleWithoutFilter_ = true;
     bool isOcclusionInSpecificScenes_ = false;
@@ -1539,10 +1689,9 @@ private:
     uint8_t abilityBgAlpha_ = 0;
     bool alphaChanged_ = false;
     bool isUIHidden_ = false;
-    // is hwc node disabled by filter rect
-    bool isHwcPendingDisabled_ = false;
     bool extraDirtyRegionAfterAlignmentIsEmpty_ = true;
     bool opaqueRegionChanged_ = false;
+    bool behindWindowOcclusionChanged_ = false;
     bool isFilterCacheFullyCovered_ = false;
     bool isFilterCacheValidForOcclusion_ = false;
     bool isOccludedByFilterCache_ = false;
@@ -1574,7 +1723,6 @@ private:
     // For certain buffer format(YUV), dss restriction on src : srcRect % 2 == 0
     // To avoid switch between gpu and dss during sliding, we disable dss when srcHeight != bufferHeight
     bool isHardwareForcedDisabledBySrcRect_ = false;
-    bool isHardwareDisabledByCache_ = false;
     // Mark if the leash or main window node has transparent self-drawing node
     bool existTransparentHardwareEnabledNode_ = false;
     bool animateState_ = false;
@@ -1582,7 +1730,7 @@ private:
     bool isParentScaling_ = false;
     bool needDrawAnimateProperty_ = false;
     bool prevVisible_ = false;
-    bool isHardWareDisabledByReverse_ = false;
+
     // mark if this self-drawing node do not consume buffer when gpu -> hwc
     bool hwcDelayDirtyFlag_ = false;
     bool isForeground_ = false;
@@ -1599,15 +1747,16 @@ private:
     bool needDrawFocusChange_ = false;
     bool forceUIFirstChanged_ = false;
     bool forceUIFirst_ = false;
+    bool uifirstForceDrawWithSkipped_ = false;
     bool hasTransparentSurface_ = false;
     bool isGpuOverDrawBufferOptimizeNode_ = false;
     bool isSubSurfaceNode_ = false;
-    bool isNodeToBeCaptured_ = false;
     bool doDirectComposition_ = true;
     bool isSkipDraw_ = false;
     bool needHidePrivacyContent_ = false;
     bool isHardwareForcedByBackgroundAlpha_ = false;
     bool arsrTag_ = true;
+    bool copybitTag_ = false;
     bool subThreadAssignable_ = false;
     bool oldNeedDrawBehindWindow_ = false;
     RectI skipFrameDirtyRect_;
@@ -1622,8 +1771,17 @@ private:
     std::atomic<bool> hasUnSubmittedOccludedDirtyRegion_ = false;
     static inline std::atomic<bool> ancoForceDoDirect_ = false;
     float contextAlpha_ = 1.0f;
-    // Count the number of hdr pictures. If hdrNum_ > 0, it means there are hdr pictures
-    int hdrNum_ = 0;
+    // Count the number of hdr pictures. If hdrPhotoNum_ > 0, it means there are hdr pictures
+    int hdrPhotoNum_ = 0;
+    // Count the number of hdr UI components. If hdrUIComponentNum_ > 0, it means there are hdr UI components
+    int hdrUIComponentNum_ = 0;
+    int hdrEffectNum_ = 0;
+    int bt2020Num_ = 0;
+    int p3Num_ = 0;
+    int firstLevelNodeBt2020WindowNum_ = 0;
+    int firstLevelNodeP3WindowNum_ = 0;
+    int firstLevelNodeBt2020ResourceNum_ = 0;
+    int firstLevelNodeP3ResourceNum_ = 0;
     int wideColorGamutNum_ = 0;
     int32_t offsetX_ = 0;
     int32_t offsetY_ = 0;
@@ -1639,6 +1797,7 @@ private:
     // hdr
     int32_t displayNit_ = 500; // default sdr luminance
     float brightnessRatio_ = 1.0f; // no ratio by default
+    float hdrBrightnessFactor_ = 1.0f; // no discount by default
     float localZOrder_ = 0.0f;
     uint32_t processZOrder_ = -1;
     int32_t nodeCost_ = 0;
@@ -1650,6 +1809,7 @@ private:
     Drawing::GPUContext* grContext_ = nullptr;
     ScreenId screenId_ = INVALID_SCREEN_ID;
     SurfaceId surfaceId_ = 0;
+    SurfaceId tunnelLayerId_ = 0;
     uint64_t leashPersistentId_ = INVALID_LEASH_PERSISTENTID;
     size_t dirtyContentNodeNum_ = 0;
     size_t dirtyGeoNodeNum_ = 0;
@@ -1672,6 +1832,7 @@ private:
     RectI srcRect_;
     RectI originalDstRect_;
     RectI originalSrcRect_;
+    Vector4f regionToBeMagnified_;
     Drawing::Rect dstRectWithoutRenderFit_;
     RectI historyUnSubmittedOccludedDirtyRegion_;
     Vector4f overDrawBufferNodeCornerRadius_;
@@ -1686,16 +1847,13 @@ private:
     std::optional<Drawing::Matrix> contextMatrix_;
     std::optional<Drawing::Rect> contextClipRect_;
 
-    std::set<NodeId> skipLayerIds_= {};
-    std::set<NodeId> snapshotSkipLayerIds_= {};
-    std::set<NodeId> securityLayerIds_= {};
-    std::set<NodeId> protectedLayerIds_= {};
     std::set<NodeId> privacyContentLayerIds_ = {};
     Drawing::Matrix totalMatrix_;
     std::vector<RectI> intersectedRoundCornerAABBs_;
     std::vector<float> drmCornerRadiusInfo_;
 
     std::string name_;
+    std::string bundleName_;
     std::vector<NodeId> childSurfaceNodeIds_;
     friend class RSRenderThreadVisitor;
     /*
@@ -1706,6 +1864,7 @@ private:
     different under filter cache surfacenode layer.
     */
     Occlusion::Region visibleRegion_;
+    Occlusion::Region visibleRegionBehindWindow_;
     Occlusion::Region extendVisibleRegion_;
     Occlusion::Region visibleRegionInVirtual_;
     Occlusion::Region visibleRegionForCallBack_;
@@ -1723,12 +1882,23 @@ private:
     std::vector<std::shared_ptr<RSRenderNode>> childrenFilterNodes_;
     // transparent region of the surface, floating window's container window is always treated as transparent
     Occlusion::Region transparentRegion_;
+    Occlusion::Region occlusionRegionBehindWindow_;
 
     Occlusion::Region containerRegion_;
     std::unordered_set<NodeId> abilityNodeIds_;
     // valid filter nodes within, including itself
     std::vector<std::shared_ptr<RSRenderNode>> filterNodes_;
     std::unordered_map<NodeId, std::weak_ptr<RSRenderNode>> drawingCacheNodes_;
+    int32_t appWindowZOrder_ = 0;
+
+    // Enable HWCompose
+    RSHwcSurfaceRecorder hwcSurfaceRecorder_;
+
+    // previous self-Drawing Node Bound
+#ifdef ENABLE_FULL_SCREEN_RECONGNIZE
+    float prevSelfDrawHeight_ = 0.0f;
+    float prevSelfDrawWidth_ = 0.0f;
+#endif
 
     /*
         ContainerWindow configs acquired from arkui, including container window state, screen density, container border
@@ -1789,6 +1959,7 @@ private:
     bool isCloneNode_ = false;
     NodeId clonedSourceNodeId_ = INVALID_NODEID;
     bool isClonedNodeOnTheTree_ = false;
+    bool clonedSourceNodeNeedOffscreen_ = true;
 
     std::map<NodeId, RSSurfaceRenderNode::WeakPtr> childSubSurfaceNodes_;
     std::unordered_map<std::string, bool> watermarkHandles_ = {};
@@ -1798,6 +1969,11 @@ private:
     // used in uifirst for checking whether node and parents should paint or not
     bool selfAndParentShouldPaint_ = true;
 
+    bool isFrameGravityNewVersionEnabled_ = false;
+
+    // Used for control-level occlusion culling scene info and culled nodes transmission.
+    std::shared_ptr<OcclusionParams> occlusionParams_ = nullptr;
+
     // UIExtension record, <UIExtension, hostAPP>
     inline static std::unordered_map<NodeId, NodeId> secUIExtensionNodes_ = {};
     friend class SurfaceNodeCommandHelper;
@@ -1805,6 +1981,7 @@ private:
     friend class RSUniRenderVisitor;
     friend class RSRenderNode;
     friend class RSRenderService;
+    friend class RSHdrUtil;
 #ifdef RS_PROFILER_ENABLED
     friend class RSProfiler;
 #endif

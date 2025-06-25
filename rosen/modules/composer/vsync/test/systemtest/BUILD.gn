@@ -55,7 +55,6 @@ ohos_unittest("vsync_test_st") {
     "//foundation/graphic/graphic_2d/interfaces/inner_api/common",
     "//foundation/graphic/graphic_2d/rosen/modules/composer/vsync/include",
     "//foundation/graphic/graphic_2d/rosen/modules/composer/vsync/test",
-    "//utils/system/safwk/native/include",
   ]
 
   cflags = [
@@ -65,15 +64,18 @@ ohos_unittest("vsync_test_st") {
   ]
 
   deps = [
-    "//foundation/communication/ipc/interfaces/innerkits/ipc_core:ipc_core",
     "//foundation/graphic/graphic_2d/rosen/modules/composer/vsync:libvsync",
     "//foundation/graphic/graphic_2d/utils:socketpair",
-    "//foundation/systemabilitymgr/samgr/interfaces/innerkits/samgr_proxy:samgr_proxy",
-    "//third_party/googletest:gtest_main",
   ]
   external_deps = [
     "access_token:libaccesstoken_sdk",
+    "cJSON:cjson",
     "c_utils:utils",
+    "eventhandler:libeventhandler",
+    "googletest:gtest_main",
+    "ipc:ipc_core",
+    "samgr:samgr_proxy",
+    "selinux_adapter:librestorecon",
   ]
 
   defines = []
@@ -95,8 +97,8 @@ ohos_unittest("vsync_ltpo_test_st") {
   sources = [ "vsync_ltpo_test.cpp" ]
 
   include_dirs = [
-    "../../../../../../interfaces/inner_api/common",
-    "../../include",
+    "$graphic_2d_root/interfaces/inner_api/common",
+    "$graphic_2d_root/rosen/modules/composer/vsync/include",
   ]
 
   cflags = [
@@ -106,15 +108,18 @@ ohos_unittest("vsync_ltpo_test_st") {
   ]
 
   deps = [
-    "../../../../../../utils:socketpair",
-    "../../../vsync:libvsync",
-    "//third_party/googletest:gtest_main",
+    "$graphic_2d_root/rosen/modules/composer/vsync:libvsync",
+    "$graphic_2d_root/rosen/modules/platform:eventhandler",
+    "$graphic_2d_root/utils:socketpair",
   ]
   external_deps = [
     "access_token:libaccesstoken_sdk",
+    "cJSON:cjson",
     "c_utils:utils",
+    "googletest:gtest_main",
     "ipc:ipc_core",
     "samgr:samgr_proxy",
+    "selinux_adapter:librestorecon",
   ]
 
   defines = []
@@ -136,8 +141,8 @@ ohos_unittest("vsync_30to60_test_st") {
   sources = [ "vsync_30to60_test.cpp" ]
 
   include_dirs = [
-    "../../../../../../interfaces/inner_api/common",
-    "../../include",
+    "$graphic_2d_root/interfaces/inner_api/common",
+    "$graphic_2d_root/rosen/modules/composer/vsync/include",
   ]
 
   cflags = [
@@ -147,15 +152,18 @@ ohos_unittest("vsync_30to60_test_st") {
   ]
 
   deps = [
-    "../../../../../../utils:socketpair",
-    "../../../vsync:libvsync",
-    "//third_party/googletest:gtest_main",
+    "$graphic_2d_root/rosen/modules/composer/vsync:libvsync",
+    "$graphic_2d_root/rosen/modules/platform:eventhandler",
+    "$graphic_2d_root/utils:socketpair",
   ]
   external_deps = [
     "access_token:libaccesstoken_sdk",
+    "cJSON:cjson",
     "c_utils:utils",
+    "googletest:gtest_main",
     "ipc:ipc_core",
     "samgr:samgr_proxy",
+    "selinux_adapter:librestorecon",
   ]
 
   defines = []
@@ -177,8 +185,8 @@ ohos_unittest("vsync_30to90_test_st") {
   sources = [ "vsync_30to90_test.cpp" ]
 
   include_dirs = [
-    "../../../../../../interfaces/inner_api/common",
-    "../../include",
+    "$graphic_2d_root/interfaces/inner_api/common",
+    "$graphic_2d_root/rosen/modules/composer/vsync/include",
   ]
 
   cflags = [
@@ -188,15 +196,18 @@ ohos_unittest("vsync_30to90_test_st") {
   ]
 
   deps = [
-    "../../../../../../utils:socketpair",
-    "../../../vsync:libvsync",
-    "//third_party/googletest:gtest_main",
+    "$graphic_2d_root/rosen/modules/composer/vsync:libvsync",
+    "$graphic_2d_root/rosen/modules/platform:eventhandler",
+    "$graphic_2d_root/utils:socketpair",
   ]
   external_deps = [
     "access_token:libaccesstoken_sdk",
+    "cJSON:cjson",
     "c_utils:utils",
+    "googletest:gtest_main",
     "ipc:ipc_core",
     "samgr:samgr_proxy",
+    "selinux_adapter:librestorecon",
   ]
 
   defines = []
@@ -218,8 +229,8 @@ ohos_unittest("vsync_30to120_test_st") {
   sources = [ "vsync_30to120_test.cpp" ]
 
   include_dirs = [
-    "../../../../../../interfaces/inner_api/common",
-    "../../include",
+    "$graphic_2d_root/interfaces/inner_api/common",
+    "$graphic_2d_root/rosen/modules/composer/vsync/include",
   ]
 
   cflags = [
@@ -229,15 +240,18 @@ ohos_unittest("vsync_30to120_test_st") {
   ]
 
   deps = [
-    "../../../../../../utils:socketpair",
-    "../../../vsync:libvsync",
-    "//third_party/googletest:gtest_main",
+    "$graphic_2d_root/rosen/modules/composer/vsync:libvsync",
+    "$graphic_2d_root/rosen/modules/platform:eventhandler",
+    "$graphic_2d_root/utils:socketpair",
   ]
   external_deps = [
     "access_token:libaccesstoken_sdk",
+    "cJSON:cjson",
     "c_utils:utils",
+    "googletest:gtest_main",
     "ipc:ipc_core",
     "samgr:samgr_proxy",
+    "selinux_adapter:librestorecon",
   ]
 
   defines = []
@@ -259,8 +273,8 @@ ohos_unittest("vsync_60to30_test_st") {
   sources = [ "vsync_60to30_test.cpp" ]
 
   include_dirs = [
-    "../../../../../../interfaces/inner_api/common",
-    "../../include",
+    "$graphic_2d_root/interfaces/inner_api/common",
+    "$graphic_2d_root/rosen/modules/composer/vsync/include",
   ]
 
   cflags = [
@@ -270,15 +284,18 @@ ohos_unittest("vsync_60to30_test_st") {
   ]
 
   deps = [
-    "../../../../../../utils:socketpair",
-    "../../../vsync:libvsync",
-    "//third_party/googletest:gtest_main",
+    "$graphic_2d_root/rosen/modules/composer/vsync:libvsync",
+    "$graphic_2d_root/rosen/modules/platform:eventhandler",
+    "$graphic_2d_root/utils:socketpair",
   ]
   external_deps = [
     "access_token:libaccesstoken_sdk",
+    "cJSON:cjson",
     "c_utils:utils",
+    "googletest:gtest_main",
     "ipc:ipc_core",
     "samgr:samgr_proxy",
+    "selinux_adapter:librestorecon",
   ]
 
   defines = []
@@ -300,8 +317,8 @@ ohos_unittest("vsync_60to90_test_st") {
   sources = [ "vsync_60to90_test.cpp" ]
 
   include_dirs = [
-    "../../../../../../interfaces/inner_api/common",
-    "../../include",
+    "$graphic_2d_root/interfaces/inner_api/common",
+    "$graphic_2d_root/rosen/modules/composer/vsync/include",
   ]
 
   cflags = [
@@ -311,15 +328,18 @@ ohos_unittest("vsync_60to90_test_st") {
   ]
 
   deps = [
-    "../../../../../../utils:socketpair",
-    "../../../vsync:libvsync",
-    "//third_party/googletest:gtest_main",
+    "$graphic_2d_root/rosen/modules/composer/vsync:libvsync",
+    "$graphic_2d_root/rosen/modules/platform:eventhandler",
+    "$graphic_2d_root/utils:socketpair",
   ]
   external_deps = [
     "access_token:libaccesstoken_sdk",
+    "cJSON:cjson",
     "c_utils:utils",
+    "googletest:gtest_main",
     "ipc:ipc_core",
     "samgr:samgr_proxy",
+    "selinux_adapter:librestorecon",
   ]
 
   defines = []
@@ -341,8 +361,8 @@ ohos_unittest("vsync_60to120_test_st") {
   sources = [ "vsync_60to120_test.cpp" ]
 
   include_dirs = [
-    "../../../../../../interfaces/inner_api/common",
-    "../../include",
+    "$graphic_2d_root/interfaces/inner_api/common",
+    "$graphic_2d_root/rosen/modules/composer/vsync/include",
   ]
 
   cflags = [
@@ -352,15 +372,18 @@ ohos_unittest("vsync_60to120_test_st") {
   ]
 
   deps = [
-    "../../../../../../utils:socketpair",
-    "../../../vsync:libvsync",
-    "//third_party/googletest:gtest_main",
+    "$graphic_2d_root/rosen/modules/composer/vsync:libvsync",
+    "$graphic_2d_root/rosen/modules/platform:eventhandler",
+    "$graphic_2d_root/utils:socketpair",
   ]
   external_deps = [
     "access_token:libaccesstoken_sdk",
+    "cJSON:cjson",
     "c_utils:utils",
+    "googletest:gtest_main",
     "ipc:ipc_core",
     "samgr:samgr_proxy",
+    "selinux_adapter:librestorecon",
   ]
 
   defines = []
@@ -382,8 +405,8 @@ ohos_unittest("vsync_90to30_test_st") {
   sources = [ "vsync_90to30_test.cpp" ]
 
   include_dirs = [
-    "../../../../../../interfaces/inner_api/common",
-    "../../include",
+    "$graphic_2d_root/interfaces/inner_api/common",
+    "$graphic_2d_root/rosen/modules/composer/vsync/include",
   ]
 
   cflags = [
@@ -393,15 +416,18 @@ ohos_unittest("vsync_90to30_test_st") {
   ]
 
   deps = [
-    "../../../../../../utils:socketpair",
-    "../../../vsync:libvsync",
-    "//third_party/googletest:gtest_main",
+    "$graphic_2d_root/rosen/modules/composer/vsync:libvsync",
+    "$graphic_2d_root/rosen/modules/platform:eventhandler",
+    "$graphic_2d_root/utils:socketpair",
   ]
   external_deps = [
     "access_token:libaccesstoken_sdk",
+    "cJSON:cjson",
     "c_utils:utils",
+    "googletest:gtest_main",
     "ipc:ipc_core",
     "samgr:samgr_proxy",
+    "selinux_adapter:librestorecon",
   ]
 
   defines = []
@@ -423,8 +449,8 @@ ohos_unittest("vsync_90to60_test_st") {
   sources = [ "vsync_90to60_test.cpp" ]
 
   include_dirs = [
-    "../../../../../../interfaces/inner_api/common",
-    "../../include",
+    "$graphic_2d_root/interfaces/inner_api/common",
+    "$graphic_2d_root/rosen/modules/composer/vsync/include",
   ]
 
   cflags = [
@@ -434,15 +460,18 @@ ohos_unittest("vsync_90to60_test_st") {
   ]
 
   deps = [
-    "../../../../../../utils:socketpair",
-    "../../../vsync:libvsync",
-    "//third_party/googletest:gtest_main",
+    "$graphic_2d_root/rosen/modules/composer/vsync:libvsync",
+    "$graphic_2d_root/rosen/modules/platform:eventhandler",
+    "$graphic_2d_root/utils:socketpair",
   ]
   external_deps = [
     "access_token:libaccesstoken_sdk",
+    "cJSON:cjson",
     "c_utils:utils",
+    "googletest:gtest_main",
     "ipc:ipc_core",
     "samgr:samgr_proxy",
+    "selinux_adapter:librestorecon",
   ]
 
   defines = []
@@ -464,8 +493,8 @@ ohos_unittest("vsync_90to120_test_st") {
   sources = [ "vsync_90to120_test.cpp" ]
 
   include_dirs = [
-    "../../../../../../interfaces/inner_api/common",
-    "../../include",
+    "$graphic_2d_root/interfaces/inner_api/common",
+    "$graphic_2d_root/rosen/modules/composer/vsync/include",
   ]
 
   cflags = [
@@ -475,15 +504,18 @@ ohos_unittest("vsync_90to120_test_st") {
   ]
 
   deps = [
-    "../../../../../../utils:socketpair",
-    "../../../vsync:libvsync",
-    "//third_party/googletest:gtest_main",
+    "$graphic_2d_root/rosen/modules/composer/vsync:libvsync",
+    "$graphic_2d_root/rosen/modules/platform:eventhandler",
+    "$graphic_2d_root/utils:socketpair",
   ]
   external_deps = [
     "access_token:libaccesstoken_sdk",
+    "cJSON:cjson",
     "c_utils:utils",
+    "googletest:gtest_main",
     "ipc:ipc_core",
     "samgr:samgr_proxy",
+    "selinux_adapter:librestorecon",
   ]
 
   defines = []
@@ -505,8 +537,8 @@ ohos_unittest("vsync_120to30_test_st") {
   sources = [ "vsync_120to30_test.cpp" ]
 
   include_dirs = [
-    "../../../../../../interfaces/inner_api/common",
-    "../../include",
+    "$graphic_2d_root/interfaces/inner_api/common",
+    "$graphic_2d_root/rosen/modules/composer/vsync/include",
   ]
 
   cflags = [
@@ -516,15 +548,18 @@ ohos_unittest("vsync_120to30_test_st") {
   ]
 
   deps = [
-    "../../../../../../utils:socketpair",
-    "../../../vsync:libvsync",
-    "//third_party/googletest:gtest_main",
+    "$graphic_2d_root/rosen/modules/composer/vsync:libvsync",
+    "$graphic_2d_root/rosen/modules/platform:eventhandler",
+    "$graphic_2d_root/utils:socketpair",
   ]
   external_deps = [
     "access_token:libaccesstoken_sdk",
+    "cJSON:cjson",
     "c_utils:utils",
+    "googletest:gtest_main",
     "ipc:ipc_core",
     "samgr:samgr_proxy",
+    "selinux_adapter:librestorecon",
   ]
 
   defines = []
@@ -546,8 +581,8 @@ ohos_unittest("vsync_120to60_test_st") {
   sources = [ "vsync_120to60_test.cpp" ]
 
   include_dirs = [
-    "../../../../../../interfaces/inner_api/common",
-    "../../include",
+    "$graphic_2d_root/interfaces/inner_api/common",
+    "$graphic_2d_root/rosen/modules/composer/vsync/include",
   ]
 
   cflags = [
@@ -557,15 +592,18 @@ ohos_unittest("vsync_120to60_test_st") {
   ]
 
   deps = [
-    "../../../../../../utils:socketpair",
-    "../../../vsync:libvsync",
-    "//third_party/googletest:gtest_main",
+    "$graphic_2d_root/rosen/modules/composer/vsync:libvsync",
+    "$graphic_2d_root/rosen/modules/platform:eventhandler",
+    "$graphic_2d_root/utils:socketpair",
   ]
   external_deps = [
     "access_token:libaccesstoken_sdk",
+    "cJSON:cjson",
     "c_utils:utils",
+    "googletest:gtest_main",
     "ipc:ipc_core",
     "samgr:samgr_proxy",
+    "selinux_adapter:librestorecon",
   ]
 
   defines = []
@@ -587,8 +625,8 @@ ohos_unittest("vsync_120to90_test_st") {
   sources = [ "vsync_120to90_test.cpp" ]
 
   include_dirs = [
-    "../../../../../../interfaces/inner_api/common",
-    "../../include",
+    "$graphic_2d_root/interfaces/inner_api/common",
+    "$graphic_2d_root/rosen/modules/composer/vsync/include",
   ]
 
   cflags = [
@@ -598,15 +636,18 @@ ohos_unittest("vsync_120to90_test_st") {
   ]
 
   deps = [
-    "../../../../../../utils:socketpair",
-    "../../../vsync:libvsync",
-    "//third_party/googletest:gtest_main",
+    "$graphic_2d_root/rosen/modules/composer/vsync:libvsync",
+    "$graphic_2d_root/rosen/modules/platform:eventhandler",
+    "$graphic_2d_root/utils:socketpair",
   ]
   external_deps = [
     "access_token:libaccesstoken_sdk",
+    "cJSON:cjson",
     "c_utils:utils",
+    "googletest:gtest_main",
     "ipc:ipc_core",
     "samgr:samgr_proxy",
+    "selinux_adapter:librestorecon",
   ]
 
   defines = []
@@ -628,9 +669,9 @@ ohos_unittest("vsync_multicallback_test_st") {
   sources = [ "vsync_multicallback_test.cpp" ]
 
   include_dirs = [
-    "../../../../../../interfaces/inner_api/common",
-    "../../../../../../rosen/modules/composer/vsync/include",
-    "../../../../../../rosen/modules/composer/vsync/test",
+    "$graphic_2d_root/interfaces/inner_api/common",
+    "$graphic_2d_root/rosen/modules/composer/vsync/include",
+    "$graphic_2d_root/rosen/modules/composer/vsync/test",
   ]
 
   cflags = [
@@ -640,15 +681,18 @@ ohos_unittest("vsync_multicallback_test_st") {
   ]
 
   deps = [
+    "$graphic_2d_root/rosen/modules/platform:eventhandler",
+    "$graphic_2d_root/utils:socketpair",
     "../..:libvsync",
-    "../../../../../../utils:socketpair",
-    "//third_party/googletest:gtest_main",
   ]
   external_deps = [
     "access_token:libaccesstoken_sdk",
+    "cJSON:cjson",
     "c_utils:utils",
+    "googletest:gtest_main",
     "ipc:ipc_core",
     "samgr:samgr_proxy",
+    "selinux_adapter:librestorecon",
   ]
 
   defines = []
@@ -669,7 +713,7 @@ ohos_unittest("vsync_limit_test_st") {
 
   sources = [ "vsync_limit_test.cpp" ]
 
-  include_dirs = [ "../../../../../../interfaces/inner_api/composer" ]
+  include_dirs = [ "$graphic_2d_root/interfaces/inner_api/composer" ]
 
   cflags = [
     "-Wall",
@@ -677,10 +721,8 @@ ohos_unittest("vsync_limit_test_st") {
     "-g3",
   ]
 
-  deps = [
-    "../../../native_vsync:libnative_vsync",
-    "//third_party/googletest:gtest_main",
-  ]
+  deps =
+      [ "$graphic_2d_root/rosen/modules/composer/native_vsync:libnative_vsync" ]
 }
 
 ## SystemTest vsync_limit_test }}}
@@ -692,8 +734,8 @@ ohos_unittest("nativeVsync_getPeriod_test_st") {
   sources = [ "nativeVsync_getPeriod_test.cpp" ]
 
   include_dirs = [
-    "../../../../../../interfaces/inner_api/common",
-    "../../../../../../interfaces/inner_api/composer",
+    "$graphic_2d_root/interfaces/inner_api/common",
+    "$graphic_2d_root/interfaces/inner_api/composer",
   ]
 
   cflags = [
@@ -702,10 +744,8 @@ ohos_unittest("nativeVsync_getPeriod_test_st") {
     "-g3",
   ]
 
-  deps = [
-    "../../../native_vsync:libnative_vsync",
-    "//third_party/googletest:gtest_main",
-  ]
+  deps =
+      [ "$graphic_2d_root/rosen/modules/composer/native_vsync:libnative_vsync" ]
 }
 
 ## SystemTest nativeVsync_getPeriod_test }}}
@@ -716,7 +756,7 @@ ohos_unittest("nativeVsync_requestFrame_test_st") {
 
   sources = [ "nativeVsync_requestFrame_test.cpp" ]
 
-  include_dirs = [ "../../../../../../interfaces/inner_api/composer" ]
+  include_dirs = [ "$graphic_2d_root/interfaces/inner_api/composer" ]
 
   cflags = [
     "-Wall",
@@ -724,10 +764,8 @@ ohos_unittest("nativeVsync_requestFrame_test_st") {
     "-g3",
   ]
 
-  deps = [
-    "../../../native_vsync:libnative_vsync",
-    "//third_party/googletest:gtest_main",
-  ]
+  deps =
+      [ "$graphic_2d_root/rosen/modules/composer/native_vsync:libnative_vsync" ]
 }
 
 ## SystemTest nativeVsync_requestFrame_test }}}
@@ -738,7 +776,7 @@ ohos_unittest("nativeVsync_requestMultiCB_test_st") {
 
   sources = [ "nativeVsync_requestMultiCB_test.cpp" ]
 
-  include_dirs = [ "../../../../../../interfaces/inner_api/composer" ]
+  include_dirs = [ "$graphic_2d_root/interfaces/inner_api/composer" ]
 
   cflags = [
     "-Wall",
@@ -746,10 +784,8 @@ ohos_unittest("nativeVsync_requestMultiCB_test_st") {
     "-g3",
   ]
 
-  deps = [
-    "../../../native_vsync:libnative_vsync",
-    "//third_party/googletest:gtest_main",
-  ]
+  deps =
+      [ "$graphic_2d_root/rosen/modules/composer/native_vsync:libnative_vsync" ]
 }
 
 ## SystemTest nativeVsync_requestMultiCB_test }}}
@@ -761,9 +797,9 @@ ohos_unittest("vsync_setvsyncrate_test_st") {
   sources = [ "vsync_setvsyncrate_test.cpp" ]
 
   include_dirs = [
-    "../../../../../../interfaces/inner_api/common",
-    "../../../../../../rosen/modules/composer/vsync/include",
-    "../../../../../../rosen/modules/composer/vsync/test",
+    "$graphic_2d_root/interfaces/inner_api/common",
+    "$graphic_2d_root/rosen/modules/composer/vsync/include",
+    "$graphic_2d_root/rosen/modules/composer/vsync/test",
   ]
 
   cflags = [
@@ -773,15 +809,18 @@ ohos_unittest("vsync_setvsyncrate_test_st") {
   ]
 
   deps = [
+    "$graphic_2d_root/utils:socketpair",
     "../..:libvsync",
-    "../../../../../../utils:socketpair",
-    "//third_party/googletest:gtest_main",
   ]
   external_deps = [
     "access_token:libaccesstoken_sdk",
+    "cJSON:cjson",
     "c_utils:utils",
+    "eventhandler:libeventhandler",
+    "googletest:gtest_main",
     "ipc:ipc_core",
     "samgr:samgr_proxy",
+    "selinux_adapter:librestorecon",
   ]
 
   defines = []
@@ -803,9 +842,9 @@ ohos_unittest("vsync_callbackeveryframe_test_st") {
   sources = [ "vsync_callbackeveryframe_test.cpp" ]
 
   include_dirs = [
-    "../../../../../../interfaces/inner_api/common",
-    "../../../../../../rosen/modules/composer/vsync/include",
-    "../../../../../../rosen/modules/composer/vsync/test",
+    "$graphic_2d_root/interfaces/inner_api/common",
+    "$graphic_2d_root/rosen/modules/composer/vsync/include",
+    "$graphic_2d_root/rosen/modules/composer/vsync/test",
   ]
 
   cflags = [
@@ -815,15 +854,18 @@ ohos_unittest("vsync_callbackeveryframe_test_st") {
   ]
 
   deps = [
+    "$graphic_2d_root/rosen/modules/platform:eventhandler",
+    "$graphic_2d_root/utils:socketpair",
     "../..:libvsync",
-    "../../../../../../utils:socketpair",
-    "//third_party/googletest:gtest_main",
   ]
   external_deps = [
     "access_token:libaccesstoken_sdk",
+    "cJSON:cjson",
     "c_utils:utils",
+    "googletest:gtest_main",
     "ipc:ipc_core",
     "samgr:samgr_proxy",
+    "selinux_adapter:librestorecon",
   ]
 
   defines = []
@@ -845,9 +887,9 @@ ohos_unittest("vsync_sample_test_st") {
   sources = [ "vsync_sample_test.cpp" ]
 
   include_dirs = [
-    "../../../../../../interfaces/inner_api/common",
-    "../../../../../../rosen/modules/composer/vsync/include",
-    "../../../../../../rosen/modules/composer/vsync/test",
+    "$graphic_2d_root/interfaces/inner_api/common",
+    "$graphic_2d_root/rosen/modules/composer/vsync/include",
+    "$graphic_2d_root/rosen/modules/composer/vsync/test",
   ]
 
   cflags = [
@@ -857,15 +899,17 @@ ohos_unittest("vsync_sample_test_st") {
   ]
 
   deps = [
+    "$graphic_2d_root/utils:socketpair",
     "../..:libvsync",
-    "../../../../../../utils:socketpair",
-    "//third_party/googletest:gtest_main",
   ]
   external_deps = [
     "access_token:libaccesstoken_sdk",
+    "cJSON:cjson",
     "c_utils:utils",
+    "googletest:gtest_main",
     "ipc:ipc_core",
     "samgr:samgr_proxy",
+    "selinux_adapter:librestorecon",
   ]
 
   defines = []

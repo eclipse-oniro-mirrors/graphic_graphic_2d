@@ -32,6 +32,7 @@
 namespace OHOS {
 namespace Rosen {
 constexpr uint32_t STANDARD_REFRESH_RATE = 60;
+constexpr uint32_t MAX_REFRESH_RATE_TO_OPTIMIZE_JANK_LOAD = 90;
 constexpr int64_t TIMESTAMP_INITIAL = -1;
 constexpr int32_t TRACE_ID_INITIAL = -1;
 constexpr float TIMESTAMP_INITIAL_FLOAT = -1.f;
@@ -54,10 +55,9 @@ struct JankFrames {
     bool isAnimationInterrupted_ = false;
     int64_t setTimeSteady_ = TIMESTAMP_INITIAL;
     int64_t startTime_ = TIMESTAMP_INITIAL;
-    int64_t startTimeSteady_ = TIMESTAMP_INITIAL;
-    int64_t endTimeSteady_ = TIMESTAMP_INITIAL;
-    int64_t lastEndTimeSteady_ = TIMESTAMP_INITIAL;
+    int64_t traceCreateTime_ = TIMESTAMP_INITIAL;
     int64_t traceCreateTimeSteady_ = TIMESTAMP_INITIAL;
+    int64_t traceTerminateTime_ = TIMESTAMP_INITIAL;
     int64_t traceTerminateTimeSteady_ = TIMESTAMP_INITIAL;
     int64_t maxFrameOccurenceTimeSteady_ = TIMESTAMP_INITIAL;
     int64_t lastMaxFrameOccurenceTimeSteady_ = TIMESTAMP_INITIAL;
@@ -120,6 +120,18 @@ struct JankDurationParams {
     uint32_t refreshRate_ = 0;
     bool discardJankFrames_ = false;
     bool skipJankAnimatorFrame_ = false;
+    bool implicitAnimationEnd_ = false;
+};
+
+struct AvcodecVideoParam {
+    std::string surfaceName;
+    uint32_t fps;
+    uint64_t reportTime;
+    uint64_t startTime;
+    uint64_t decodeCount;
+    uint32_t previousSequence = 0;
+    uint64_t previousFrameTime = 0;
+    uint32_t continuousFrameLoss = 0;
 };
 
 class RSJankStats {
@@ -131,10 +143,9 @@ public:
     void SetEndTime(bool skipJankAnimatorFrame = false, bool discardJankFrames = false,
                     uint32_t dynamicRefreshRate = STANDARD_REFRESH_RATE,
                     bool doDirectComposition = false, bool isReportTaskDelayed = false);
-    void HandleDirectComposition(const JankDurationParams& rsParams, bool isReportTaskDelayed);
+    void HandleDirectComposition(const JankDurationParams& rsParams, bool isReportTaskDelayed,
+        std::function<void(const std::function<void()>&)> postTaskHandler = nullptr);
     void ReportJankStats();
-    void ReportSceneJankStats(const AppInfo& appInfo);
-    void ReportSceneJankFrame(uint32_t dynamicRefreshRate);
     void SetReportEventResponse(const DataBaseRs& info);
     void SetReportEventComplete(const DataBaseRs& info);
     void SetReportEventJankFrame(const DataBaseRs& info, bool isReportTaskDelayed);
@@ -144,12 +155,25 @@ public:
     void SetImplicitAnimationEnd(bool isImplicitAnimationEnd);
     void SetAccumulatedBufferCount(int accumulatedBufferCount);
     bool IsAnimationEmpty();
+    void AvcodecVideoDump(std::string& dumpString, std::string& type, const std::string& avcodecVideo);
+    void AvcodecVideoStart(
+        const uint64_t queueId, const std::string& surfaceName, const uint32_t fps, const uint64_t reportTime);
+    void AvcodecVideoStop(const uint64_t queueId, const std::string& surfaceName = "", const uint32_t fps = 0);
+    void AvcodecVideoCollectBegin();
+    void AvcodecVideoCollectFinish();
+    void AvcodecVideoCollect(const uint64_t queueId, const uint32_t sequence);
 
 private:
     RSJankStats() = default;
     ~RSJankStats() = default;
     DISALLOW_COPY_AND_MOVE(RSJankStats);
 
+    void SetStartTimeInner(bool doDirectComposition = false);
+    void SetEndTimeInner(bool skipJankAnimatorFrame = false, bool discardJankFrames = false,
+                         uint32_t dynamicRefreshRate = STANDARD_REFRESH_RATE,
+                         bool doDirectComposition = false, bool isReportTaskDelayed = false);
+    void SetImplicitAnimationEndInner(bool isImplicitAnimationEnd);
+    bool NeedPostTaskToUniRenderThread() const;
     void UpdateEndTime();
     void SetRSJankStats(bool skipJankStats, uint32_t dynamicRefreshRate);
     size_t GetJankRangeType(int64_t missedVsync) const;
@@ -167,6 +191,8 @@ private:
     void ReportEventHitchTimeRatioWithDelay(const JankFrames& jankFrames) const;
     void ReportEventFirstFrame();
     void ReportEventFirstFrameByPid(pid_t appPid) const;
+    void ReportSceneJankStats(const AppInfo& appInfo);
+    void ReportSceneJankFrame(uint32_t dynamicRefreshRate);
     void HandleImplicitAnimationEndInAdvance(JankFrames& jankFrames, bool isReportTaskDelayed);
     void RecordJankFrame(uint32_t dynamicRefreshRate);
     void RecordJankFrameSingle(int64_t missedFrames, JankFrameRecordStats& recordStats);
@@ -240,6 +266,8 @@ private:
     std::map<std::pair<int64_t, std::string>, JankFrames> animateJankFrames_;
     std::mutex mutex_;
     Rosen::AppInfo appInfo_;
+    bool avcodecVideoCollectOpen_ = false;
+    std::unordered_map<uint64_t, AvcodecVideoParam> avcodecVideoMap_;
 
     enum JankRangeType : size_t {
         JANK_FRAME_6_FREQ = 0,

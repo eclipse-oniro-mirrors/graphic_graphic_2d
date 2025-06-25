@@ -20,7 +20,6 @@
 #include "draw/canvas.h"
 
 #include "platform/common/rs_log.h"
-#include "utils/graphic_coretrace.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -33,6 +32,11 @@ RSPaintFilterCanvasBase::RSPaintFilterCanvasBase(Drawing::Canvas* canvas)
 #ifdef SKP_RECORDING_ENABLED
     this->AddCanvas(canvas);
 #endif
+}
+
+void RSPaintFilterCanvasBase::SetParallelRender(bool parallelEnable)
+{
+    canvas_->SetParallelRender(parallelEnable);
 }
 
 Drawing::Matrix RSPaintFilterCanvasBase::GetTotalMatrix() const
@@ -55,7 +59,7 @@ Drawing::RectI RSPaintFilterCanvasBase::GetRoundInDeviceClipBounds() const
     return canvas_->GetRoundInDeviceClipBounds();
 }
 
-uint32_t RSPaintFilterCanvasBase::GetSaveCount() const
+CM_INLINE uint32_t RSPaintFilterCanvasBase::GetSaveCount() const
 {
     return canvas_->GetSaveCount();
 }
@@ -234,8 +238,6 @@ void RSPaintFilterCanvasBase::DrawCircle(const Point& centerPt, scalar radius)
 
 void RSPaintFilterCanvasBase::DrawPath(const Path& path)
 {
-    RECORD_GPURESOURCE_CORETRACE_CALLER(Drawing::CoreFunction::
-        RS_RSPAINTFILTERCANVASBASE_DRAWPATH);
 #ifdef SKP_RECORDING_ENABLED
     for (auto iter = pCanvasList_.begin(); iter != pCanvasList_.end(); ++iter) {
         if ((*iter) != nullptr && OnFilter()) {
@@ -299,8 +301,6 @@ void RSPaintFilterCanvasBase::DrawShadow(const Path& path, const Point3& planePa
 void RSPaintFilterCanvasBase::DrawShadowStyle(const Path& path, const Point3& planeParams, const Point3& devLightPos,
     scalar lightRadius, Color ambientColor, Color spotColor, ShadowFlags flag, bool isLimitElevation)
 {
-    RECORD_GPURESOURCE_CORETRACE_CALLER(Drawing::CoreFunction::
-        RS_RSPAINTFILTERCANVASBASE_DRAWSHADOWSTYLE);
 #ifdef SKP_RECORDING_ENABLED
     for (auto iter = pCanvasList_.begin(); iter != pCanvasList_.end(); ++iter) {
         if ((*iter) != nullptr && OnFilter()) {
@@ -428,8 +428,6 @@ void RSPaintFilterCanvasBase::DrawBitmap(const Bitmap& bitmap, const scalar px, 
 void RSPaintFilterCanvasBase::DrawImageNine(const Drawing::Image* image, const Drawing::RectI& center,
     const Drawing::Rect& dst, Drawing::FilterMode filter, const Drawing::Brush* brush)
 {
-    RECORD_GPURESOURCE_CORETRACE_CALLER(Drawing::CoreFunction::
-        RS_RSPAINTFILTERCANVASBASE_DRAWIMAGENINE);
 #ifdef SKP_RECORDING_ENABLED
     for (auto iter = pCanvasList_.begin(); iter != pCanvasList_.end(); ++iter) {
         if ((*iter) != nullptr && OnFilter()) {
@@ -506,8 +504,6 @@ void RSPaintFilterCanvasBase::DrawImageWithStencil(const Drawing::Image& image, 
 void RSPaintFilterCanvasBase::DrawImageRect(const Image& image, const Rect& src, const Rect& dst,
     const SamplingOptions& sampling, SrcRectConstraint constraint)
 {
-    RECORD_GPURESOURCE_CORETRACE_CALLER(Drawing::CoreFunction::
-        RS_RSPAINTFILTERCANVASBASE_DRAWIMAGERECT);
 #ifdef SKP_RECORDING_ENABLED
     for (auto iter = pCanvasList_.begin(); iter != pCanvasList_.end(); ++iter) {
         if ((*iter) != nullptr && OnFilter()) {
@@ -795,8 +791,6 @@ void RSPaintFilterCanvasBase::Shear(scalar sx, scalar sy)
 
 void RSPaintFilterCanvasBase::Flush()
 {
-    RECORD_GPURESOURCE_CORETRACE_CALLER(Drawing::CoreFunction::
-        RS_RSPAINTFILTERCANVASBASE_FLUSH);
 #ifdef SKP_RECORDING_ENABLED
     for (auto iter = pCanvasList_.begin(); iter != pCanvasList_.end(); ++iter) {
         if ((*iter) != nullptr) {
@@ -1338,7 +1332,6 @@ void RSPaintFilterCanvas::PushDirtyRegion(Drawing::Region& resultRegion)
 void RSPaintFilterCanvas::PopDirtyRegion()
 {
     if (dirtyRegionStack_.empty()) {
-        RS_LOGW("PopDirtyRegion dirtyRegionStack_ is empty");
         return;
     }
     dirtyRegionStack_.pop();
@@ -1360,7 +1353,8 @@ void RSPaintFilterCanvas::CopyHDRConfiguration(const RSPaintFilterCanvas& other)
     screenId_ = other.screenId_;
     targetColorGamut_ = other.targetColorGamut_;
     isHdrOn_ = other.isHdrOn_;
-    hdrBrightness_ = other.hdrBrightness_;
+    hdrProperties.hdrBrightness = other.hdrProperties.hdrBrightness;
+    hdrProperties.isHDREnabledVirtualScreen = other.hdrProperties.isHDREnabledVirtualScreen;
 }
 
 void RSPaintFilterCanvas::CopyConfigurationToOffscreenCanvas(const RSPaintFilterCanvas& other)
@@ -1598,6 +1592,16 @@ void RSPaintFilterCanvas::SetScreenId(ScreenId screenId)
     screenId_ = screenId;
 }
 
+bool RSPaintFilterCanvas::GetHDREnabledVirtualScreen() const
+{
+    return hdrProperties.isHDREnabledVirtualScreen;
+}
+
+void RSPaintFilterCanvas::SetHDREnabledVirtualScreen(bool isHDREnabledVirtualScreen)
+{
+    hdrProperties.isHDREnabledVirtualScreen = isHDREnabledVirtualScreen;
+}
+
 bool RSPaintFilterCanvas::GetHdrOn() const
 {
     return isHdrOn_;
@@ -1610,12 +1614,17 @@ void RSPaintFilterCanvas::SetHdrOn(bool isHdrOn)
 
 float RSPaintFilterCanvas::GetHDRBrightness() const
 {
-    return hdrBrightness_;
+    return hdrProperties.hdrBrightness;
 }
 
 void RSPaintFilterCanvas::SetHDRBrightness(float hdrBrightness)
 {
-    hdrBrightness_ = hdrBrightness;
+    hdrProperties.hdrBrightness = hdrBrightness;
+}
+
+const RSPaintFilterCanvas::HDRProperties& RSPaintFilterCanvas::GetHDRProperties() const
+{
+    return hdrProperties;
 }
 
 GraphicColorGamut RSPaintFilterCanvas::GetTargetColorGamut() const
@@ -1646,6 +1655,60 @@ bool RSPaintFilterCanvas::GetIsWindowFreezeCapture() const
 void RSPaintFilterCanvas::SetIsWindowFreezeCapture(bool isWindowFreezeCapture)
 {
     isWindowFreezeCapture_ = isWindowFreezeCapture;
+}
+
+#ifdef RS_ENABLE_VK
+CoreCanvas& RSHybridRenderPaintFilterCanvas::AttachPaint(const Drawing::Paint& paint)
+{
+    if (paint.GetColor() == Color::COLOR_FOREGROUND) {
+        SetRenderWithForegroundColor(true);
+    }
+    return RSPaintFilterCanvas::AttachPaint(paint);
+}
+#endif
+bool RSPaintFilterCanvas::GetIsDrawingCache() const
+{
+    return isDrawingCache_;
+}
+
+void RSPaintFilterCanvas::SetIsDrawingCache(bool isDrawingCache)
+{
+    isDrawingCache_ = isDrawingCache;
+}
+
+RSPaintFilterCanvas::CacheBehindWindowData::CacheBehindWindowData(
+    std::shared_ptr<RSFilter> filter, const Drawing::Rect rect)
+    : filter_(filter), rect_(rect)
+{}
+
+void RSPaintFilterCanvas::SetCacheBehindWindowData(const std::shared_ptr<CacheBehindWindowData>& data)
+{
+    cacheBehindWindowData_ = data;
+}
+
+const std::shared_ptr<RSPaintFilterCanvas::CacheBehindWindowData>& RSPaintFilterCanvas::GetCacheBehindWindowData() const
+{
+    return cacheBehindWindowData_;
+}
+
+void RSPaintFilterCanvas::SetEffectIntersectWithDRM(bool intersect)
+{
+    isIntersectWithDRM_ = intersect;
+}
+
+bool RSPaintFilterCanvas::GetEffectIntersectWithDRM() const
+{
+    return isIntersectWithDRM_;
+}
+
+void RSPaintFilterCanvas::SetDarkColorMode(bool isDark)
+{
+    isDarkColorMode_ = isDark;
+}
+
+bool RSPaintFilterCanvas::GetDarkColorMode() const
+{
+    return isDarkColorMode_;
 }
 } // namespace Rosen
 } // namespace OHOS

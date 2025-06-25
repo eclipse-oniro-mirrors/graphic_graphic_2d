@@ -15,16 +15,30 @@
 
 #include "modifier/rs_property.h"
 
+#include "sandbox_utils.h"
+#include "ui_effect/property/include/rs_ui_filter.h"
+#include "ui_effect/property/include/rs_ui_filter_base.h"
+
 #include "command/rs_node_command.h"
 #include "modifier/rs_modifier.h"
 #include "modifier/rs_modifier_manager_map.h"
-#include "sandbox_utils.h"
+#include "modifier_ng/rs_modifier_ng.h"
 #include "platform/common/rs_log.h"
 
 namespace OHOS {
 namespace Rosen {
 namespace {
 constexpr int PID_SHIFT = 32;
+
+namespace {
+constexpr float DEFAULT_NEAR_ZERO_THRESHOLD = 1.0f / 256.0f;
+constexpr float FLOAT_NEAR_ZERO_COARSE_THRESHOLD = 1.0f / 256.0f;
+constexpr float FLOAT_NEAR_ZERO_MEDIUM_THRESHOLD = 1.0f / 1000.0f;
+constexpr float FLOAT_NEAR_ZERO_FINE_THRESHOLD = 1.0f / 3072.0f;
+constexpr float COLOR_NEAR_ZERO_THRESHOLD = 0.0f;
+constexpr float LAYOUT_NEAR_ZERO_THRESHOLD = 0.5f;
+constexpr float ZERO = 0.0f;
+} // namespace
 
 PropertyId GeneratePropertyId()
 {
@@ -46,8 +60,11 @@ RSPropertyBase::RSPropertyBase() : id_(GeneratePropertyId())
 
 void RSPropertyBase::MarkModifierDirty()
 {
-    auto modifier = modifier_.lock();
-    if (modifier != nullptr) {
+#if defined(MODIFIER_NG)
+    if (auto modifier = modifierNG_.lock()) {
+#else
+    if (auto modifier = modifier_.lock()) {
+#endif
         auto node = target_.lock();
         if (node && node->GetRSUIContext()) {
             modifier->SetDirty(true, node->GetRSUIContext()->GetRSModifierManager());
@@ -59,16 +76,31 @@ void RSPropertyBase::MarkModifierDirty()
 
 void RSPropertyBase::MarkNodeDirty()
 {
-    if (auto modifier = modifier_.lock()) {
+    if (auto modifier = modifierNG_.lock()) {
+        modifier->MarkNodeDirty();
+    } else if (auto modifier = modifier_.lock()) {
         modifier->MarkNodeDirty();
     }
 }
 
 void RSPropertyBase::UpdateExtendModifierForGeometry(const std::shared_ptr<RSNode>& node)
 {
+    if (auto modifier = modifierNG_.lock()) {
+        if (modifier->GetType() == ModifierNG::RSModifierType::BOUNDS ||
+            modifier->GetType() == ModifierNG::RSModifierType::FRAME) {
+            node->MarkAllExtendModifierDirty();
+            return;
+        }
+    }
+
     if (type_ == RSModifierType::BOUNDS || type_ == RSModifierType::FRAME) {
         node->MarkAllExtendModifierDirty();
     }
+}
+
+bool RSPropertyBase::NeedUpdateExtendModifierForGeometry(const Vector4f& oldValue, const Vector4f& newValue)
+{
+    return (oldValue.z_ != newValue.z_ || oldValue.w_ != newValue.w_);
 }
 
 float RSPropertyBase::GetThresholdByThresholdType(ThresholdType thresholdType) const
@@ -179,6 +211,54 @@ bool operator!=(const std::shared_ptr<const RSPropertyBase>& a, const std::share
     return !a->IsEqual(b);
 }
 
+template<>
+void RSProperty<std::shared_ptr<RSNGFilterBase>>::OnAttach(const std::shared_ptr<RSNode>& node)
+{
+    if (stagingValue_) {
+        stagingValue_->Attach(node);
+    }
+}
+
+template<>
+void RSProperty<std::shared_ptr<RSNGFilterBase>>::OnDetach(const std::shared_ptr<RSNode>& node)
+{
+    if (stagingValue_) {
+        stagingValue_->Detach();
+    }
+}
+
+template<>
+void RSProperty<std::shared_ptr<RSNGFilterBase>>::Set(const std::shared_ptr<RSNGFilterBase>& value)
+{
+    if (stagingValue_ && stagingValue_->SetValue(value, target_.lock())) {
+        return;
+    }
+
+    // failed to update all properties in filter, fall back to replace filter
+    if (stagingValue_) {
+        stagingValue_->Detach();
+    }
+
+    stagingValue_ = value;
+    auto node = target_.lock();
+    if (node == nullptr) {
+        return;
+    }
+    if (stagingValue_) {
+        stagingValue_->Attach(node);
+    }
+
+    MarkNodeDirty();
+    UpdateToRender(stagingValue_, UPDATE_TYPE_OVERWRITE);
+}
+
+template<>
+RSC_EXPORT std::shared_ptr<RSRenderPropertyBase> RSProperty<std::shared_ptr<RSNGFilterBase>>::GetRenderProperty()
+{
+    return std::make_shared<RSRenderProperty<std::shared_ptr<RSNGRenderFilterBase>>>(
+        stagingValue_->GetRenderEffect(), id_);
+}
+
 #define UPDATE_TO_RENDER(Command, value, type)                                                                       \
     auto node = target_.lock();                                                                                      \
     if (node != nullptr) {                                                                                           \
@@ -221,6 +301,11 @@ void RSProperty<float>::UpdateToRender(const float& value, PropertyUpdateType ty
     UPDATE_TO_RENDER(RSUpdatePropertyFloat, value, type);
 }
 template<>
+void RSProperty<std::vector<float>>::UpdateToRender(const std::vector<float>& value, PropertyUpdateType type) const
+{
+    UPDATE_TO_RENDER(RSUpdatePropertyComplexShaderParam, value, type);
+}
+template<>
 void RSProperty<int>::UpdateToRender(const int& value, PropertyUpdateType type) const
 {
     UPDATE_TO_RENDER(RSUpdatePropertyInt, value, type);
@@ -244,12 +329,6 @@ template<>
 void RSProperty<Quaternion>::UpdateToRender(const Quaternion& value, PropertyUpdateType type) const
 {
     UPDATE_TO_RENDER(RSUpdatePropertyQuaternion, value, type);
-}
-template<>
-void RSProperty<std::shared_ptr<RSFilter>>::UpdateToRender(
-    const std::shared_ptr<RSFilter>& value, PropertyUpdateType type) const
-{
-    UPDATE_TO_RENDER(RSUpdatePropertyFilter, value, type);
 }
 template<>
 void RSProperty<std::shared_ptr<RSImage>>::UpdateToRender(
@@ -358,6 +437,21 @@ void RSProperty<RRect>::UpdateToRender(const RRect& value, PropertyUpdateType ty
 }
 
 template<>
+void RSProperty<std::shared_ptr<RSUIFilter>>::UpdateToRender(
+    const std::shared_ptr<RSUIFilter>& value, PropertyUpdateType type) const
+{
+    auto rsRenderFilter = value->GetRSRenderFilter();
+    UPDATE_TO_RENDER(RSUpdatePropertyUIFilter, rsRenderFilter, type);
+}
+
+template<>
+void RSProperty<std::shared_ptr<RSNGFilterBase>>::UpdateToRender(
+    const std::shared_ptr<RSNGFilterBase>& value, PropertyUpdateType type) const
+{
+    UPDATE_TO_RENDER(RSUpdatePropertyNGFilterBase, value->GetRenderEffect(), type);
+}
+
+template<>
 bool RSProperty<float>::IsValid(const float& value)
 {
     return !isinf(value);
@@ -373,55 +467,13 @@ bool RSProperty<Vector4f>::IsValid(const Vector4f& value)
     return !value.IsInfinite();
 }
 
-template<>
-RSRenderPropertyType RSAnimatableProperty<float>::GetPropertyType() const
-{
-    return RSRenderPropertyType::PROPERTY_FLOAT;
-}
-template<>
-RSRenderPropertyType RSAnimatableProperty<Color>::GetPropertyType() const
-{
-    return RSRenderPropertyType::PROPERTY_COLOR;
-}
-template<>
-RSRenderPropertyType RSAnimatableProperty<Matrix3f>::GetPropertyType() const
-{
-    return RSRenderPropertyType::PROPERTY_MATRIX3F;
-}
-template<>
-RSRenderPropertyType RSAnimatableProperty<Vector2f>::GetPropertyType() const
-{
-    return RSRenderPropertyType::PROPERTY_VECTOR2F;
-}
-template<>
-RSRenderPropertyType RSAnimatableProperty<Vector3f>::GetPropertyType() const
-{
-    return RSRenderPropertyType::PROPERTY_VECTOR3F;
-}
-template<>
-RSRenderPropertyType RSAnimatableProperty<Vector4f>::GetPropertyType() const
-{
-    return RSRenderPropertyType::PROPERTY_VECTOR4F;
-}
-template<>
-RSRenderPropertyType RSAnimatableProperty<Quaternion>::GetPropertyType() const
-{
-    return RSRenderPropertyType::PROPERTY_QUATERNION;
-}
-template<>
-RSRenderPropertyType RSAnimatableProperty<std::shared_ptr<RSFilter>>::GetPropertyType() const
-{
-    return RSRenderPropertyType::PROPERTY_FILTER;
-}
-template<>
-RSRenderPropertyType RSAnimatableProperty<Vector4<Color>>::GetPropertyType() const
-{
-    return RSRenderPropertyType::PROPERTY_VECTOR4_COLOR;
-}
-template<>
-RSRenderPropertyType RSAnimatableProperty<RRect>::GetPropertyType() const
-{
-    return RSRenderPropertyType::PROPERTY_RRECT;
-}
+#define DECLARE_PROPERTY(T, TYPE_ENUM) template class RSProperty<T>
+#define DECLARE_ANIMATABLE_PROPERTY(T, TYPE_ENUM) \
+    template class RSAnimatableProperty<T>;       \
+    template class RSProperty<T>
+
+#include "modifier/rs_property_def.in"
+#undef DECLARE_PROPERTY
+#undef DECLARE_ANIMATABLE_PROPERTY
 } // namespace Rosen
 } // namespace OHOS

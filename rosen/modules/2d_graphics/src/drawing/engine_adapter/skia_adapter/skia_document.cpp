@@ -17,12 +17,19 @@
 
 #include "include/core/SkSerialProcs.h"
 #include "tools/SkSharingProc.h"
+#ifdef USE_M133_SKIA
+#include "include/docs/SkMultiPictureDocument.h"
+#else
 #include "src/utils/SkMultiPictureDocument.h"
+#endif
 
 #include "skia_document.h"
 #include "skia_file_w_stream.h"
 #include "skia_serial_procs.h"
 #include "skia_sharing_serial_context.h"
+#ifdef USE_M133_SKIA
+#include "include/core/SkTypeface.h"
+#endif
 
 #include "draw/canvas.h"
 #include "skia_canvas.h"
@@ -37,18 +44,36 @@ std::shared_ptr<Document> SkiaDocument::MakeMultiPictureDocument(
     FileWStream* fileStream, SerialProcs* procs, std::unique_ptr<Drawing::SharingSerialContext>& serialContext)
 {
     auto skiaSharingSerialContext = serialContext->GetImpl<SkiaSharingSerialContext>();
+    if (skiaSharingSerialContext == nullptr) {
+        return nullptr;
+    }
     std::unique_ptr<SkSharingSerialContext>& serialContext_ = skiaSharingSerialContext->GetSkSharingSerialContext();
-    auto skProc = procs->GetImpl<SkiaSerialProcs>()->GetSkSerialProcs();
+    auto skiaProc = procs->GetImpl<SkiaSerialProcs>();
+    if (skiaProc == nullptr) {
+        return nullptr;
+    }
+    auto skProc = skiaProc->GetSkSerialProcs();
     skProc->fImageProc = SkSharingSerialContext::serializeImage;
     skProc->fImageCtx = serialContext_.get();
     skProc->fTypefaceProc = [](SkTypeface* tf, void* ctx) {
         return tf->serialize(SkTypeface::SerializeBehavior::kDoIncludeData);
     };
-    SkFILEWStream* dst = fileStream->GetImpl<SkiaFileWStream>()->GetSkFileWStream();
+    auto skiaFileWStream = fileStream->GetImpl<SkiaFileWStream>();
+    if (skiaFileWStream == nullptr) {
+        return nullptr;
+    }
+    SkFILEWStream* dst = skiaFileWStream->GetSkFileWStream();
+#ifdef USE_M133_SKIA
+    auto skDocument = SkMultiPictureDocument::Make(dst, skProc, [sharingCtx = serialContext_.get()]
+    (const SkPicture* pic) {
+        SkSharingSerialContext::collectNonTextureImagesFromPicture(pic, sharingCtx);
+    });
+#else
     auto skDocument = SkMakeMultiPictureDocument(dst, skProc, [sharingCtx = serialContext_.get()]
         (const SkPicture* pic) {
         SkSharingSerialContext::collectNonTextureImagesFromPicture(pic, sharingCtx);
     });
+#endif
     std::shared_ptr<DocumentImpl> documentImpl = std::make_shared<SkiaDocument>(skDocument);
     return std::make_shared<Document>(documentImpl);
 }

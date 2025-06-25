@@ -50,10 +50,11 @@ ohos_unittest("RSBaseRenderNodeTest") {
     "$graphic_2d_root/rosen/modules/render_service_base:render_service_base_src",
     "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
     "$graphic_2d_root/rosen/modules/render_service_client:render_service_client_src",
-    "//third_party/googletest:gtest_main",
   ]
   external_deps = [
     "c_utils:utils",
+    "eventhandler:libeventhandler",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "hitrace:hitrace_meter",
     "init:libbegetutil",
@@ -96,10 +97,11 @@ ohos_unittest("RSCanvasDrawingRenderNodeTest") {
     "$graphic_2d_root/rosen/modules/render_service_base:render_service_base_src",
     "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
     "$graphic_2d_root/rosen/modules/render_service_client:render_service_client_src",
-    "//third_party/googletest:gtest_main",
   ]
   external_deps = [
     "c_utils:utils",
+    "eventhandler:libeventhandler",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "hitrace:hitrace_meter",
     "init:libbegetutil",
@@ -142,10 +144,11 @@ ohos_unittest("RSCanvasRenderNodeTest") {
     "$graphic_2d_root/rosen/modules/render_service_base:render_service_base_src",
     "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
     "$graphic_2d_root/rosen/modules/render_service_client:render_service_client_src",
-    "//third_party/googletest:gtest_main",
   ]
   external_deps = [
     "c_utils:utils",
+    "eventhandler:libeventhandler",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "hitrace:hitrace_meter",
     "init:libbegetutil",
@@ -188,10 +191,11 @@ ohos_unittest("RSContextTest") {
     "$graphic_2d_root/rosen/modules/render_service_base:render_service_base_src",
     "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
     "$graphic_2d_root/rosen/modules/render_service_client:render_service_client_src",
-    "//third_party/googletest:gtest_main",
   ]
   external_deps = [
     "c_utils:utils",
+    "eventhandler:libeventhandler",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "hitrace:hitrace_meter",
     "init:libbegetutil",
@@ -234,10 +238,11 @@ ohos_unittest("RSDirtyRegionManagerTest") {
     "$graphic_2d_root/rosen/modules/render_service_base:render_service_base_src",
     "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
     "$graphic_2d_root/rosen/modules/render_service_client:render_service_client_src",
-    "//third_party/googletest:gtest_main",
   ]
   external_deps = [
     "c_utils:utils",
+    "eventhandler:libeventhandler",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "hitrace:hitrace_meter",
     "init:libbegetutil",
@@ -280,10 +285,11 @@ ohos_unittest("RSDisplayRenderNodeTest") {
     "$graphic_2d_root/rosen/modules/render_service_base:render_service_base_src",
     "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
     "$graphic_2d_root/rosen/modules/render_service_client:render_service_client_src",
-    "//third_party/googletest:gtest_main",
   ]
   external_deps = [
     "c_utils:utils",
+    "eventhandler:libeventhandler",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "hitrace:hitrace_meter",
     "init:libbegetutil",
@@ -326,10 +332,10 @@ ohos_unittest("RSDrawCmdListTest") {
     "$graphic_2d_root/rosen/modules/render_service_base:render_service_base_src",
     "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
     "$graphic_2d_root/rosen/modules/render_service_client:render_service_client_src",
-    "//third_party/googletest:gtest_main",
   ]
   external_deps = [
     "c_utils:utils",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "hitrace:hitrace_meter",
     "init:libbegetutil",
@@ -372,10 +378,10 @@ ohos_unittest("RSDrawCmdTest") {
     "$graphic_2d_root/rosen/modules/render_service_base:render_service_base_src",
     "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
     "$graphic_2d_root/rosen/modules/render_service_client:render_service_client_src",
-    "//third_party/googletest:gtest_main",
   ]
   external_deps = [
     "c_utils:utils",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "hitrace:hitrace_meter",
     "init:libbegetutil",
@@ -418,10 +424,11 @@ ohos_unittest("RSEffectRenderNodeTest") {
     "$graphic_2d_root/rosen/modules/render_service_base:render_service_base_src",
     "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
     "$graphic_2d_root/rosen/modules/render_service_client:render_service_client_src",
-    "//third_party/googletest:gtest_main",
   ]
   external_deps = [
     "c_utils:utils",
+    "eventhandler:libeventhandler",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "hitrace:hitrace_meter",
     "init:libbegetutil",
@@ -464,10 +471,11 @@ ohos_unittest("RSOcclusionConfigTest") {
     "$graphic_2d_root/rosen/modules/render_service_base:render_service_base_src",
     "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
     "$graphic_2d_root/rosen/modules/render_service_client:render_service_client_src",
-    "//third_party/googletest:gtest_main",
   ]
   external_deps = [
     "c_utils:utils",
+    "eventhandler:libeventhandler",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "hitrace:hitrace_meter",
     "init:libbegetutil",
@@ -510,10 +518,11 @@ ohos_unittest("RSPaintFilterCanvasTest") {
     "$graphic_2d_root/rosen/modules/render_service_base:render_service_base_src",
     "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
     "$graphic_2d_root/rosen/modules/render_service_client:render_service_client_src",
-    "//third_party/googletest:gtest_main",
   ]
   external_deps = [
     "c_utils:utils",
+    "eventhandler:libeventhandler",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "hitrace:hitrace_meter",
     "init:libbegetutil",
@@ -556,10 +565,11 @@ ohos_unittest("RSProxyRenderNodeTest") {
     "$graphic_2d_root/rosen/modules/render_service_base:render_service_base_src",
     "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
     "$graphic_2d_root/rosen/modules/render_service_client:render_service_client_src",
-    "//third_party/googletest:gtest_main",
   ]
   external_deps = [
     "c_utils:utils",
+    "eventhandler:libeventhandler",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "hitrace:hitrace_meter",
     "init:libbegetutil",
@@ -602,56 +612,11 @@ ohos_unittest("RSExtendRecordingCanvasTest") {
     "$graphic_2d_root/rosen/modules/render_service_base:render_service_base_src",
     "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
     "$graphic_2d_root/rosen/modules/render_service_client:render_service_client_src",
-    "//third_party/googletest:gtest_main",
   ]
   external_deps = [
     "c_utils:utils",
-    "hilog:libhilog",
-    "hitrace:hitrace_meter",
-    "init:libbegetutil",
-    "skia:skia_canvaskit",
-  ]
-
-  subsystem_name = "graphic"
-}
-
-##############################  RSRenderContentTest  ##################################
-ohos_unittest("RSRenderContentTest") {
-  module_out_path = module_output_path
-  if (defined(use_rosen_drawing) && use_rosen_drawing) {
-    defines = [ "USE_ROSEN_DRAWING" ]
-  }
-
-  sources = [ "rs_render_content_test.cpp" ]
-
-  cflags = [
-    "-Wall",
-    "-Werror",
-    "-g3",
-    "-Dprivate=public",
-    "-Dprotected=public",
-  ]
-  configs = [
-    ":render_test",
-    "$graphic_2d_root/rosen/modules/render_service_base:export_config",
-  ]
-
-  include_dirs = [
-    "$graphic_2d_root/rosen/modules/render_service_base/include",
-    "$graphic_2d_root/rosen/modules/render_service_client/core",
-    "$graphic_2d_root/rosen/include",
-    "$graphic_2d_root/rosen/test/include",
-    "$graphic_2d_root/rosen/modules/render_service_base/src",
-  ]
-
-  deps = [
-    "$graphic_2d_root/rosen/modules/render_service_base:render_service_base_src",
-    "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
-    "$graphic_2d_root/rosen/modules/render_service_client:render_service_client_src",
-    "//third_party/googletest:gtest_main",
-  ]
-  external_deps = [
-    "c_utils:utils",
+    "eventhandler:libeventhandler",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "hitrace:hitrace_meter",
     "init:libbegetutil",
@@ -694,10 +659,11 @@ ohos_unittest("RSRenderDisplaySyncTest") {
     "$graphic_2d_root/rosen/modules/render_service_base:render_service_base_src",
     "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
     "$graphic_2d_root/rosen/modules/render_service_client:render_service_client_src",
-    "//third_party/googletest:gtest_main",
   ]
   external_deps = [
     "c_utils:utils",
+    "eventhandler:libeventhandler",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "hitrace:hitrace_meter",
     "init:libbegetutil",
@@ -740,10 +706,11 @@ ohos_unittest("RSRenderFrameRateLinkerMapTest") {
     "$graphic_2d_root/rosen/modules/render_service_base:render_service_base_src",
     "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
     "$graphic_2d_root/rosen/modules/render_service_client:render_service_client_src",
-    "//third_party/googletest:gtest_main",
   ]
   external_deps = [
     "c_utils:utils",
+    "eventhandler:libeventhandler",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "hitrace:hitrace_meter",
     "init:libbegetutil",
@@ -786,10 +753,11 @@ ohos_unittest("RSRenderFrameRateLinkerTest") {
     "$graphic_2d_root/rosen/modules/render_service_base:render_service_base_src",
     "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
     "$graphic_2d_root/rosen/modules/render_service_client:render_service_client_src",
-    "//third_party/googletest:gtest_main",
   ]
   external_deps = [
     "c_utils:utils",
+    "eventhandler:libeventhandler",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "hitrace:hitrace_meter",
     "init:libbegetutil",
@@ -799,14 +767,14 @@ ohos_unittest("RSRenderFrameRateLinkerTest") {
   subsystem_name = "graphic"
 }
 
-##############################  RSRenderNodeAutocacheTest  ##################################
-ohos_unittest("RSRenderNodeAutocacheTest") {
+##############################  RSRenderNodeAllocatorTest  ##################################
+ohos_unittest("RSRenderNodeAllocatorTest") {
   module_out_path = module_output_path
   if (defined(use_rosen_drawing) && use_rosen_drawing) {
     defines = [ "USE_ROSEN_DRAWING" ]
   }
 
-  sources = [ "rs_render_node_autocache_test.cpp" ]
+  sources = [ "rs_render_node_allocator_test.cpp" ]
 
   cflags = [
     "-Wall",
@@ -832,10 +800,11 @@ ohos_unittest("RSRenderNodeAutocacheTest") {
     "$graphic_2d_root/rosen/modules/render_service_base:render_service_base_src",
     "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
     "$graphic_2d_root/rosen/modules/render_service_client:render_service_client_src",
-    "//third_party/googletest:gtest_main",
   ]
   external_deps = [
     "c_utils:utils",
+    "eventhandler:libeventhandler",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "hitrace:hitrace_meter",
     "init:libbegetutil",
@@ -878,10 +847,11 @@ ohos_unittest("RSRenderNodeGCTest") {
     "$graphic_2d_root/rosen/modules/render_service_base:render_service_base_src",
     "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
     "$graphic_2d_root/rosen/modules/render_service_client:render_service_client_src",
-    "//third_party/googletest:gtest_main",
   ]
   external_deps = [
     "c_utils:utils",
+    "eventhandler:libeventhandler",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "hitrace:hitrace_meter",
     "init:libbegetutil",
@@ -924,10 +894,11 @@ ohos_unittest("RSRenderNodeMapTest") {
     "$graphic_2d_root/rosen/modules/render_service_base:render_service_base_src",
     "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
     "$graphic_2d_root/rosen/modules/render_service_client:render_service_client_src",
-    "//third_party/googletest:gtest_main",
   ]
   external_deps = [
     "c_utils:utils",
+    "eventhandler:libeventhandler",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "hitrace:hitrace_meter",
     "init:libbegetutil",
@@ -970,10 +941,11 @@ ohos_unittest("RSRenderNodeTest") {
     "$graphic_2d_root/rosen/modules/render_service_base:render_service_base_src",
     "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
     "$graphic_2d_root/rosen/modules/render_service_client:render_service_client_src",
-    "//third_party/googletest:gtest_main",
   ]
   external_deps = [
     "c_utils:utils",
+    "eventhandler:libeventhandler",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "hitrace:hitrace_meter",
     "init:libbegetutil",
@@ -1016,10 +988,11 @@ ohos_unittest("RSRenderNodeTest2") {
     "$graphic_2d_root/rosen/modules/render_service_base:render_service_base_src",
     "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
     "$graphic_2d_root/rosen/modules/render_service_client:render_service_client_src",
-    "//third_party/googletest:gtest_main",
   ]
   external_deps = [
     "c_utils:utils",
+    "eventhandler:libeventhandler",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "hitrace:hitrace_meter",
     "init:libbegetutil",
@@ -1062,56 +1035,11 @@ ohos_unittest("RSRootRenderNodeTest") {
     "$graphic_2d_root/rosen/modules/render_service_base:render_service_base_src",
     "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
     "$graphic_2d_root/rosen/modules/render_service_client:render_service_client_src",
-    "//third_party/googletest:gtest_main",
   ]
   external_deps = [
     "c_utils:utils",
-    "hilog:libhilog",
-    "hitrace:hitrace_meter",
-    "init:libbegetutil",
-    "skia:skia_canvaskit",
-  ]
-
-  subsystem_name = "graphic"
-}
-
-##############################  RSSingleFrameComposerTest  ##################################
-ohos_unittest("RSSingleFrameComposerTest") {
-  module_out_path = module_output_path
-  if (defined(use_rosen_drawing) && use_rosen_drawing) {
-    defines = [ "USE_ROSEN_DRAWING" ]
-  }
-
-  sources = [ "rs_single_frame_composer_test.cpp" ]
-
-  cflags = [
-    "-Wall",
-    "-Werror",
-    "-g3",
-    "-Dprivate=public",
-    "-Dprotected=public",
-  ]
-  configs = [
-    ":render_test",
-    "$graphic_2d_root/rosen/modules/render_service_base:export_config",
-  ]
-
-  include_dirs = [
-    "$graphic_2d_root/rosen/modules/render_service_base/include",
-    "$graphic_2d_root/rosen/modules/render_service_client/core",
-    "$graphic_2d_root/rosen/include",
-    "$graphic_2d_root/rosen/test/include",
-    "$graphic_2d_root/rosen/modules/render_service_base/src",
-  ]
-
-  deps = [
-    "$graphic_2d_root/rosen/modules/render_service_base:render_service_base_src",
-    "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
-    "$graphic_2d_root/rosen/modules/render_service_client:render_service_client_src",
-    "//third_party/googletest:gtest_main",
-  ]
-  external_deps = [
-    "c_utils:utils",
+    "eventhandler:libeventhandler",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "hitrace:hitrace_meter",
     "init:libbegetutil",
@@ -1154,10 +1082,11 @@ ohos_unittest("RSSurfaceHandlerTest") {
     "$graphic_2d_root/rosen/modules/render_service_base:render_service_base_src",
     "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
     "$graphic_2d_root/rosen/modules/render_service_client:render_service_client_src",
-    "//third_party/googletest:gtest_main",
   ]
   external_deps = [
     "c_utils:utils",
+    "eventhandler:libeventhandler",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "hitrace:hitrace_meter",
     "init:libbegetutil",
@@ -1200,14 +1129,16 @@ ohos_unittest("RSSurfaceRenderNodeTest") {
     "$graphic_2d_root/rosen/modules/render_service_base:render_service_base_src",
     "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
     "$graphic_2d_root/rosen/modules/render_service_client:render_service_client_src",
-    "//third_party/googletest:gtest_main",
   ]
   external_deps = [
     "c_utils:utils",
+    "eventhandler:libeventhandler",
     "googletest:gmock",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "hitrace:hitrace_meter",
     "init:libbegetutil",
+    "samgr:samgr_proxy",
     "skia:skia_canvaskit",
   ]
 
@@ -1247,10 +1178,11 @@ ohos_unittest("RSSurfaceRenderNodeTwoTest") {
     "$graphic_2d_root/rosen/modules/render_service_base:render_service_base_src",
     "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
     "$graphic_2d_root/rosen/modules/render_service_client:render_service_client_src",
-    "//third_party/googletest:gtest_main",
   ]
   external_deps = [
     "c_utils:utils",
+    "eventhandler:libeventhandler",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "hitrace:hitrace_meter",
     "init:libbegetutil",
@@ -1293,10 +1225,11 @@ ohos_unittest("RSSurfaceRenderNodeThreeTest") {
     "$graphic_2d_root/rosen/modules/render_service_base:render_service_base_src",
     "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
     "$graphic_2d_root/rosen/modules/render_service_client:render_service_client_src",
-    "//third_party/googletest:gtest_main",
   ]
   external_deps = [
     "c_utils:utils",
+    "eventhandler:libeventhandler",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "hitrace:hitrace_meter",
     "init:libbegetutil",
@@ -1339,10 +1272,11 @@ ohos_unittest("RSSurfaceRenderNodeFourTest") {
     "$graphic_2d_root/rosen/modules/render_service_base:render_service_base_src",
     "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
     "$graphic_2d_root/rosen/modules/render_service_client:render_service_client_src",
-    "//third_party/googletest:gtest_main",
   ]
   external_deps = [
     "c_utils:utils",
+    "eventhandler:libeventhandler",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "hitrace:hitrace_meter",
     "init:libbegetutil",
@@ -1385,10 +1319,11 @@ ohos_unittest("RSTaskDispatcherTest") {
     "$graphic_2d_root/rosen/modules/render_service_base:render_service_base_src",
     "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
     "$graphic_2d_root/rosen/modules/render_service_client:render_service_client_src",
-    "//third_party/googletest:gtest_main",
   ]
   external_deps = [
     "c_utils:utils",
+    "eventhandler:libeventhandler",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "hitrace:hitrace_meter",
     "init:libbegetutil",
@@ -1431,10 +1366,11 @@ ohos_unittest("RSUniRenderJudgementTest") {
     "$graphic_2d_root/rosen/modules/render_service_base:render_service_base_src",
     "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
     "$graphic_2d_root/rosen/modules/render_service_client:render_service_client_src",
-    "//third_party/googletest:gtest_main",
   ]
   external_deps = [
     "c_utils:utils",
+    "eventhandler:libeventhandler",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "hitrace:hitrace_meter",
     "init:libbegetutil",
@@ -1477,10 +1413,11 @@ ohos_unittest("SKResourceManagerTest") {
     "$graphic_2d_root/rosen/modules/render_service_base:render_service_base_src",
     "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
     "$graphic_2d_root/rosen/modules/render_service_client:render_service_client_src",
-    "//third_party/googletest:gtest_main",
   ]
   external_deps = [
     "c_utils:utils",
+    "eventhandler:libeventhandler",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "hitrace:hitrace_meter",
     "init:libbegetutil",
@@ -1516,17 +1453,15 @@ group("unittest") {
     ":RSOcclusionConfigTest",
     ":RSPaintFilterCanvasTest",
     ":RSProxyRenderNodeTest",
-    ":RSRenderContentTest",
     ":RSRenderDisplaySyncTest",
     ":RSRenderFrameRateLinkerMapTest",
     ":RSRenderFrameRateLinkerTest",
-    ":RSRenderNodeAutocacheTest",
+    ":RSRenderNodeAllocatorTest",
     ":RSRenderNodeGCTest",
     ":RSRenderNodeMapTest",
     ":RSRenderNodeTest",
     ":RSRenderNodeTest2",
     ":RSRootRenderNodeTest",
-    ":RSSingleFrameComposerTest",
     ":RSSurfaceHandlerTest",
     ":RSSurfaceRenderNodeFourTest",
     ":RSSurfaceRenderNodeTest",

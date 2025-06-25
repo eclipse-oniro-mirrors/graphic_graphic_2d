@@ -24,11 +24,12 @@
 
 #include "feature/capture/rs_ui_capture.h"
 #include "platform/ohos/rs_render_service_connection_proxy.h"
+#include "platform/ohos/rs_render_service_connect_hub.h"
 #include "command/rs_animation_command.h"
 #include "command/rs_node_showing_command.h"
 #include "iconsumer_surface.h"
 #include "pixel_map.h"
-
+#include "feature/capture/rs_capture_pixelmap_manager.h"
 using namespace testing;
 using namespace testing::ext;
 
@@ -84,7 +85,7 @@ HWTEST_F(RSRenderServiceConnectionProxyTest, ExecuteSynchronousTask, TestSize.Le
     std::shared_ptr<RSSyncTask> task;
     proxy->ExecuteSynchronousTask(task);
     NodeId targetId;
-    std::shared_ptr<RSRenderPropertyBase> property = std::make_shared<RSRenderPropertyBase>();
+    std::shared_ptr<RSRenderPropertyBase> property = std::make_shared<RSRenderProperty<bool>>();
     task = std::make_shared<RSNodeGetShowingPropertyAndCancelAnimation>(targetId, property);
     proxy->ExecuteSynchronousTask(task);
     ASSERT_EQ(proxy->transactionDataIndex_, 0);
@@ -112,6 +113,20 @@ HWTEST_F(RSRenderServiceConnectionProxyTest, GetUniRenderEnabled, TestSize.Level
 HWTEST_F(RSRenderServiceConnectionProxyTest, FillParcelWithTransactionData, TestSize.Level1)
 {
     std::shared_ptr<MessageParcel> parcel = std::make_shared<MessageParcel>();
+    auto transactionData = std::make_unique<RSTransactionData>();
+    ASSERT_TRUE(proxy->FillParcelWithTransactionData(transactionData, parcel));
+}
+
+/**
+ * @tc.name: FillParcelWithTransactionData Test
+ * @tc.desc: FillParcelWithTransactionData Test
+ * @tc.type:FUNC
+ * @tc.require: issueICGEDM
+ */
+HWTEST_F(RSRenderServiceConnectionProxyTest, FillParcelWithTransactionData002, TestSize.Level1)
+{
+    std::shared_ptr<MessageParcel> parcel = std::make_shared<MessageParcel>();
+    parcel->SetDataSize(102401);
     auto transactionData = std::make_unique<RSTransactionData>();
     ASSERT_TRUE(proxy->FillParcelWithTransactionData(transactionData, parcel));
 }
@@ -185,7 +200,15 @@ HWTEST_F(RSRenderServiceConnectionProxyTest, SetFocusAppInfo, TestSize.Level1)
     std::string bundleName("bundle");
     std::string abilityName("ability");
     uint64_t focusNodeId = 1;
-    ASSERT_EQ(proxy->SetFocusAppInfo(pid, uid, bundleName, abilityName, focusNodeId), 0);
+    FocusAppInfo info = {
+        .pid = pid,
+        .uid = uid,
+        .bundleName = bundleName,
+        .abilityName = abilityName,
+        .focusNodeId = focusNodeId};
+    int32_t repCode;
+    proxy->SetFocusAppInfo(info, repCode);
+    ASSERT_EQ(repCode, 0);
 }
 
 /**
@@ -196,8 +219,11 @@ HWTEST_F(RSRenderServiceConnectionProxyTest, SetFocusAppInfo, TestSize.Level1)
  */
 HWTEST_F(RSRenderServiceConnectionProxyTest, GetAllScreenIds, TestSize.Level1)
 {
-    EXPECT_EQ(proxy->GetDefaultScreenId(), INVALID_SCREEN_ID);
-    EXPECT_EQ(proxy->GetActiveScreenId(), INVALID_SCREEN_ID);
+    uint64_t screenId;
+    proxy->GetDefaultScreenId(screenId);
+    EXPECT_EQ(screenId, INVALID_SCREEN_ID);
+    proxy->GetActiveScreenId(screenId);
+    EXPECT_EQ(screenId, INVALID_SCREEN_ID);
     EXPECT_EQ(proxy->GetAllScreenIds().size(), 0);
 }
 
@@ -235,6 +261,47 @@ HWTEST_F(RSRenderServiceConnectionProxyTest, SetVirtualScreenSurface, TestSize.L
     sptr<IBufferProducer> producer = consumer->GetProducer();
     sptr<Surface> surface = Surface::CreateSurfaceAsProducer(producer);
     EXPECT_EQ(proxy->SetVirtualScreenSurface(id, surface), 0);
+}
+
+/**
+ * @tc.name: SetVirtualScreenBlackList Test
+ * @tc.desc: SetVirtualScreenBlackList Test
+ * @tc.type:FUNC
+ * @tc.require: issue#IC98BX
+ */
+HWTEST_F(RSRenderServiceConnectionProxyTest, SetVirtualScreenBlackList, TestSize.Level1)
+{
+    ScreenId id = 100;
+    std::vector<NodeId> blackListVector({1, 2, 3});
+    EXPECT_EQ(proxy->SetVirtualScreenBlackList(id, blackListVector), 0);
+}
+
+/**
+ * @tc.name: AddVirtualScreenBlackList Test
+ * @tc.desc: AddVirtualScreenBlackList Test
+ * @tc.type:FUNC
+ * @tc.require: issue#IC98BX
+ */
+HWTEST_F(RSRenderServiceConnectionProxyTest, AddVirtualScreenBlackList, TestSize.Level1)
+{
+    ScreenId id = 100;
+    std::vector<NodeId> blackListVector({1, 2, 3});
+    int32_t repCode = 0;
+    EXPECT_EQ(proxy->AddVirtualScreenBlackList(id, blackListVector, repCode), 0);
+}
+
+/**
+ * @tc.name: RemoveVirtualScreenBlackList Test
+ * @tc.desc: RemoveVirtualScreenBlackList Test
+ * @tc.type:FUNC
+ * @tc.require: issue#IC98BX
+ */
+HWTEST_F(RSRenderServiceConnectionProxyTest, RemoveVirtualScreenBlackList, TestSize.Level1)
+{
+    ScreenId id = 100;
+    std::vector<NodeId> blackListVector({1, 2, 3});
+    int32_t repCode = 0;
+    EXPECT_EQ(proxy->RemoveVirtualScreenBlackList(id, blackListVector, repCode), 0);
 }
 
 /**
@@ -345,8 +412,9 @@ HWTEST_F(RSRenderServiceConnectionProxyTest, SetScreenActiveRect, TestSize.Level
         .w = 0,
         .h = 0,
     };
-    proxy->SetScreenActiveRect(id, activeRect);
-    ASSERT_NE(proxy->transactionDataIndex_, 0);
+    uint32_t repCode;
+    proxy->SetScreenActiveRect(id, activeRect, repCode);
+    ASSERT_EQ(proxy->transactionDataIndex_, 0);
 }
 
 /**
@@ -388,6 +456,8 @@ HWTEST_F(RSRenderServiceConnectionProxyTest, SyncFrameRateRange, TestSize.Level1
     FrameRateLinkerId id = 1;
     FrameRateRange range;
     proxy->SyncFrameRateRange(id, range, 0);
+    range = {0, 120, 60, OHOS::Rosen::NATIVE_VSYNC_FRAME_RATE_TYPE};
+    proxy->SyncFrameRateRange(id, range, 0);
     ASSERT_EQ(proxy->transactionDataIndex_, 0);
 }
 
@@ -426,7 +496,6 @@ HWTEST_F(RSRenderServiceConnectionProxyTest, GetCurrentRefreshRateMode, TestSize
 HWTEST_F(RSRenderServiceConnectionProxyTest, GetScreenSupportedRefreshRates, TestSize.Level1)
 {
     ScreenId id = 1;
-    EXPECT_FALSE(proxy->GetShowRefreshRateEnabled());
     ASSERT_EQ(proxy->GetScreenSupportedRefreshRates(id).size(), 0);
 }
 
@@ -512,6 +581,21 @@ HWTEST_F(RSRenderServiceConnectionProxyTest, RegisterApplicationAgent, TestSize.
     proxy->RegisterApplicationAgent(pid, app);
     ASSERT_EQ(proxy->transactionDataIndex_, 0);
 }
+/**
+ * @tc.name: RegisterTransactionDataCallback01
+ * @tc.desc: RegisterTransactionDataCallback Test normal
+ * @tc.type:FUNC
+ * @tc.require: issueI9KXXE
+ */
+HWTEST_F(RSRenderServiceConnectionProxyTest, RegisterTransactionDataCallback01, TestSize.Level1)
+{
+    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    ASSERT_NE(samgr, nullptr);
+    auto remoteObject = samgr->GetSystemAbility(RENDER_SERVICE);
+    sptr<RSITransactionDataCallback> callback = iface_cast<RSITransactionDataCallback>(remoteObject);
+    proxy->RegisterTransactionDataCallback(1, 456, callback);
+    ASSERT_NE(proxy->transactionDataIndex_, 5);
+}
 
 /**
  * @tc.name: TakeSurfaceCapture Test
@@ -529,6 +613,8 @@ HWTEST_F(RSRenderServiceConnectionProxyTest, TakeSurfaceCapture, TestSize.Level1
     captureConfig.useDma = false;
     captureConfig.captureType = SurfaceCaptureType::UICAPTURE;
     captureConfig.isSync = true;
+    captureConfig.blackList = std::vector<NodeId>{0};
+    ASSERT_FALSE(captureConfig.blackList.empty());
     RSSurfaceCaptureBlurParam blurParam;
     blurParam.isNeedBlur = true;
     blurParam.blurRadius = 10;
@@ -541,6 +627,63 @@ HWTEST_F(RSRenderServiceConnectionProxyTest, TakeSurfaceCapture, TestSize.Level1
     callback = iface_cast<RSISurfaceCaptureCallback>(remoteObject);
     proxy->TakeSurfaceCapture(id, callback, captureConfig, blurParam, specifiedAreaRect);
     ASSERT_EQ(proxy->transactionDataIndex_, 0);
+
+    // Test isUsedClientPixelMap AbnorMal conditions
+    MessageParcel data;
+    bool isUsedClientPixelMap = true;
+    bool ret = proxy->WriteClientSurfacePixelMap(nullptr, isUsedClientPixelMap, data);
+    EXPECT_EQ(ret, false);
+
+    Drawing::Rect rect(0.f, 0.f, 0.f, 0.f);
+    auto pixelMap = RSCapturePixelMapManager::CreatePixelMap(rect, captureConfig);
+    ret = proxy->WriteClientSurfacePixelMap(pixelMap, isUsedClientPixelMap, data);
+    EXPECT_EQ(ret, false);
+}
+
+/**
+ * @tc.name: TakeUICaptureInRange Test
+ * @tc.desc: TakeUICaptureInRange Test
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSRenderServiceConnectionProxyTest, TakeUICaptureInRange, TestSize.Level1)
+{
+    NodeId id = 1;
+    sptr<RSISurfaceCaptureCallback> callback;
+    RSSurfaceCaptureConfig captureConfig;
+    captureConfig.scaleX = 1.0f;
+    captureConfig.scaleY = 1.0f;
+    captureConfig.useDma = false;
+    captureConfig.captureType = SurfaceCaptureType::UICAPTURE;
+    captureConfig.isSync = true;
+
+    proxy->TakeUICaptureInRange(id, callback, captureConfig);
+
+    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    ASSERT_NE(samgr, nullptr);
+    auto remoteObject = samgr->GetSystemAbility(RENDER_SERVICE);
+    callback = iface_cast<RSISurfaceCaptureCallback>(remoteObject);
+    proxy->TakeUICaptureInRange(id, callback, captureConfig);
+    ASSERT_NE(proxy->transactionDataIndex_, 5);
+}
+
+/**
+ * @tc.name: TakeSurfaceCaptureSoloNode Test
+ * @tc.desc: TakeSurfaceCaptureSoloNode Test
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSRenderServiceConnectionProxyTest, TakeSurfaceCaptureSoloNode, TestSize.Level1)
+{
+    NodeId id = 1;
+    RSSurfaceCaptureConfig captureConfig;
+    captureConfig.scaleX = 1.0f;
+    captureConfig.scaleY = 1.0f;
+    captureConfig.useDma = false;
+    captureConfig.captureType = SurfaceCaptureType::UICAPTURE;
+    captureConfig.isSync = false;
+    proxy->TakeSurfaceCaptureSoloNode(id, captureConfig);
+    EXPECT_NE(proxy->transactionDataIndex_, 5);
 }
 
 /**
@@ -577,7 +720,9 @@ HWTEST_F(RSRenderServiceConnectionProxyTest, GetVirtualScreenResolution, TestSiz
 HWTEST_F(RSRenderServiceConnectionProxyTest, GetScreenActiveMode, TestSize.Level1)
 {
     ScreenId id = 1;
-    ASSERT_EQ(proxy->GetScreenActiveMode(id).width_, -1);
+    RSScreenModeInfo info;
+    proxy->GetScreenActiveMode(id, info);
+    ASSERT_EQ(info.width_, -1);
 }
 
 /**
@@ -606,9 +751,7 @@ HWTEST_F(RSRenderServiceConnectionProxyTest, GetTotalAppMemSize, TestSize.Level1
 {
     float cpuMemSize = 1.0f;
     float gpuMemSize = 1.0f;
-    bool success;
-    ASSERT_EQ(proxy->GetTotalAppMemSize(cpuMemSize, gpuMemSize, success), ERR_INVALID_VALUE);
-    ASSERT_FALSE(success);
+    ASSERT_EQ(proxy->GetTotalAppMemSize(cpuMemSize, gpuMemSize), ERR_INVALID_VALUE);
 }
 
 /**
@@ -626,8 +769,12 @@ HWTEST_F(RSRenderServiceConnectionProxyTest, GetScreenPowerStatus, TestSize.Leve
     ScreenId id = 1;
     proxy->GetScreenCapability(id);
     EXPECT_EQ(proxy->GetScreenData(id).powerStatus_, INVALID_POWER_STATUS);
-    EXPECT_EQ(proxy->GetScreenBacklight(id), -1);
-    ASSERT_EQ(proxy->GetScreenPowerStatus(id), ScreenPowerStatus::INVALID_POWER_STATUS);
+    int32_t level = -1;
+    proxy->GetScreenBacklight(id, level);
+    EXPECT_EQ(level, -1);
+    uint32_t status = ScreenPowerStatus::POWER_STATUS_ON;
+    proxy->GetScreenPowerStatus(id, status);
+    ASSERT_EQ(proxy->GetScreenPowerStatus(id, status), ERR_INVALID_VALUE);
 }
 
 /**
@@ -839,9 +986,23 @@ HWTEST_F(RSRenderServiceConnectionProxyTest, GetBitmap, TestSize.Level1)
 HWTEST_F(RSRenderServiceConnectionProxyTest, SetVirtualMirrorScreenScaleMode, TestSize.Level1)
 {
     ScreenId id = 1;
-    EXPECT_EQ(proxy->SetScreenSkipFrameInterval(id, 1), 2);
+    int32_t resCode;
+    proxy->SetScreenSkipFrameInterval(id, 1, resCode);
+    EXPECT_EQ(resCode, 2);
     EXPECT_FALSE(proxy->SetVirtualMirrorScreenCanvasRotation(id, true));
     ASSERT_FALSE(proxy->SetVirtualMirrorScreenScaleMode(id, ScreenScaleMode::UNISCALE_MODE));
+}
+
+/**
+ * @tc.name: SetVirtualScreenAutoRotationTest
+ * @tc.desc: SetVirtualScreenAutoRotation Test
+ * @tc.type:FUNC
+ * @tc.require: issueICGA54
+ */
+HWTEST_F(RSRenderServiceConnectionProxyTest, SetVirtualScreenAutoRotationTest, TestSize.Level1)
+{
+    ScreenId id = 1;
+    EXPECT_NE(proxy->SetVirtualScreenAutoRotation(id, true), StatusCode::SUCCESS);
 }
 
 /**
@@ -852,7 +1013,7 @@ HWTEST_F(RSRenderServiceConnectionProxyTest, SetVirtualMirrorScreenScaleMode, Te
  */
 HWTEST_F(RSRenderServiceConnectionProxyTest, SetGlobalDarkColorMode, TestSize.Level1)
 {
-    ASSERT_TRUE(proxy->SetGlobalDarkColorMode(true));
+    ASSERT_TRUE(proxy->SetGlobalDarkColorMode(true) == ERR_OK);
 }
 
 /**
@@ -897,7 +1058,9 @@ HWTEST_F(RSRenderServiceConnectionProxyTest, RegisterSurfaceOcclusionChangeCallb
     ASSERT_NE(samgr, nullptr);
     auto remoteObject = samgr->GetSystemAbility(RENDER_SERVICE);
     sptr<RSIOcclusionChangeCallback> callback = iface_cast<RSIOcclusionChangeCallback>(remoteObject);
-    EXPECT_NE(proxy->RegisterOcclusionChangeCallback(callback), -1);
+    int32_t repCode;
+    proxy->RegisterOcclusionChangeCallback(callback, repCode);
+    EXPECT_NE(repCode, -1);
     NodeId id = 1;
     proxy->UnRegisterSurfaceOcclusionChangeCallback(id);
     sptr<RSISurfaceOcclusionChangeCallback> callbackTwo = iface_cast<RSISurfaceOcclusionChangeCallback>(remoteObject);
@@ -946,7 +1109,9 @@ HWTEST_F(RSRenderServiceConnectionProxyTest, RegisterFirstFrameCommitCallback, T
 HWTEST_F(RSRenderServiceConnectionProxyTest, SetSystemAnimatedScenes, TestSize.Level1)
 {
     proxy->SetAppWindowNum(1);
-    ASSERT_FALSE(proxy->SetSystemAnimatedScenes(SystemAnimatedScenes::ENTER_MISSION_CENTER, false));
+    bool success;
+    proxy->SetSystemAnimatedScenes(SystemAnimatedScenes::ENTER_MISSION_CENTER, false, success);
+    ASSERT_FALSE(success);
 }
 
 /**
@@ -1025,6 +1190,10 @@ HWTEST_F(RSRenderServiceConnectionProxyTest, SetCacheEnabledForRotation, TestSiz
     proxy->NotifyAppStrategyConfigChangeEvent("test", 1, newConfig);
     EventInfo eventInfo;
     proxy->NotifyRefreshRateEvent(eventInfo);
+    uint32_t pid = 1U;
+    std::string name = "test";
+    uint32_t rateDiscount = 1U;
+    proxy->NotifySoftVsyncRateDiscountEvent(pid, name, rateDiscount);
     int32_t touchStatus = 1;
     int32_t touchCnt = 0;
     proxy->NotifyTouchEvent(touchStatus, touchCnt);
@@ -1044,6 +1213,20 @@ HWTEST_F(RSRenderServiceConnectionProxyTest, NotifyHgmConfigEvent, TestSize.Leve
     std::string eventName = "HGMCONFIG_HIGH_TEMP";
     bool state = false;
     proxy->NotifyHgmConfigEvent(eventName, state);
+    ASSERT_TRUE(proxy);
+}
+
+/**
+ * @tc.name: NotifyXComponentExpectedFrameRate Test
+ * @tc.desc: NotifyXComponentExpectedFrameRate Test
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSRenderServiceConnectionProxyTest, NotifyXComponentExpectedFrameRate, TestSize.Level1)
+{
+    std::string id = "xcomponent";
+    int32_t expectedFrameRate = 5;
+    proxy->NotifyXComponentExpectedFrameRate(id, expectedFrameRate);
     ASSERT_TRUE(proxy);
 }
 
@@ -1163,6 +1346,20 @@ HWTEST_F(RSRenderServiceConnectionProxyTest, SetLayerTop, TestSize.Level1)
 }
 
 /**
+ * @tc.name: SetForceRefresh Test
+ * @tc.desc: SetForceRefresh Test
+ * @tc.type:FUNC
+ * @tc.require: issueIAOZFC
+ */
+HWTEST_F(RSRenderServiceConnectionProxyTest, SetForceRefresh, TestSize.Level1)
+{
+    const std::string nodeIdStr = "123456";
+    proxy->SetForceRefresh(nodeIdStr, true);
+    proxy->SetForceRefresh(nodeIdStr, false);
+    ASSERT_TRUE(proxy);
+}
+
+/**
  * @tc.name: SetFreeMultiWindowStatus Test
  * @tc.desc: SetFreeMultiWindowStatus Test
  * @tc.type:FUNC
@@ -1201,6 +1398,47 @@ HWTEST_F(RSRenderServiceConnectionProxyTest, GetPixelMapByProcessIdTest, TestSiz
     int32_t repCode;
     ASSERT_EQ(proxy->GetPixelMapByProcessId(pixelMapInfoVector, pid, repCode), ERR_INVALID_VALUE);
     ASSERT_EQ(repCode, RS_CONNECTION_ERROR);
+}
+
+/**
+ * @tc.name: SetBehindWindowFilterEnabledTest
+ * @tc.desc: SetBehindWindowFilterEnabledTest
+ * @tc.type: FUNC
+ * @tc.require: issuesIC5OEB
+ */
+HWTEST_F(RSRenderServiceConnectionProxyTest, SetBehindWindowFilterEnabledTest, TestSize.Level1)
+{
+    auto connectionProxy = RSRenderServiceConnectHub::GetRenderService();
+    auto res = connectionProxy->SetBehindWindowFilterEnabled(true);
+    EXPECT_EQ(res, ERR_OK);
+}
+
+/**
+ * @tc.name: GetBehindWindowFilterEnabledTest
+ * @tc.desc: GetBehindWindowFilterEnabledTest
+ * @tc.type: FUNC
+ * @tc.require: issuesIC5OEB
+ */
+HWTEST_F(RSRenderServiceConnectionProxyTest, GetBehindWindowFilterEnabledTest, TestSize.Level1)
+{
+    bool enabled = true;
+    auto connectionProxy = RSRenderServiceConnectHub::GetRenderService();
+    auto res = connectionProxy->GetBehindWindowFilterEnabled(enabled);
+    EXPECT_EQ(res, ERR_OK);
+}
+
+/**
+ * @tc.name: GetPidGpuMemoryInMBTest
+ * @tc.desc: test results of GetPidGpuMemoryInMB
+ * @tc.type: FUNC
+ * @tc.require: issuesICE0QR
+ */
+HWTEST_F(RSRenderServiceConnectionProxyTest, GetPidGpuMemoryInMBTest, TestSize.Level1)
+{
+    pid_t pid = 1001;
+    float gpuMemInMB = 0.0f;
+    int32_t res = proxy->GetPidGpuMemoryInMB(pid, gpuMemInMB);
+    EXPECT_NE(res, ERR_OK);
 }
 } // namespace Rosen
 } // namespace OHOS

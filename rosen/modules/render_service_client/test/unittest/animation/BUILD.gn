@@ -12,10 +12,11 @@
 # limitations under the License.
 
 import("//build/test.gni")
+import("//foundation/graphic/graphic_2d/frameworks/text/config.gni")
 import(
     "//foundation/graphic/graphic_2d/rosen/modules/render_service_client/render_service_client.gni")
 
-module_output_path = "graphic_2d/rosen/modules/render_service_client"
+module_output_path = "graphic_2d/graphic_2d/rosen/modules/render_service_client"
 
 ohos_unittest("RSAnimationTest") {
   module_out_path = module_output_path
@@ -32,16 +33,15 @@ ohos_unittest("RSAnimationTest") {
 
   configs = [ ":rs_animation_test_config" ]
 
-  deps = [
-    "$rosen_root/modules/render_service_client:librender_service_client",
-    "//third_party/googletest:gtest_main",
-  ]
+  deps =
+      [ "$rosen_root/modules/render_service_client:librender_service_client" ]
 
   public_deps =
       [ "$rosen_root/modules/render_service_client:render_service_client_src" ]
 
   external_deps = [
     "eventhandler:libeventhandler",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "window_manager:libwm",
   ]
@@ -66,8 +66,8 @@ ohos_unittest("RSAnimationTest1") {
   configs = [ ":rs_animation_test_config" ]
 
   deps = [
+    "$rosen_root/modules/2d_graphics:2d_graphics",
     "$rosen_root/modules/render_service_client:librender_service_client",
-    "//third_party/googletest:gtest_main",
   ]
 
   public_deps =
@@ -75,6 +75,7 @@ ohos_unittest("RSAnimationTest1") {
 
   external_deps = [
     "eventhandler:libeventhandler",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "window_manager:libwm",
   ]
@@ -97,16 +98,15 @@ ohos_unittest("RSAnimationTest2") {
 
   configs = [ ":rs_animation_test_config" ]
 
-  deps = [
-    "$rosen_root/modules/render_service_client:librender_service_client",
-    "//third_party/googletest:gtest_main",
-  ]
+  deps =
+      [ "$rosen_root/modules/render_service_client:librender_service_client" ]
 
   public_deps =
       [ "$rosen_root/modules/render_service_client:render_service_client_src" ]
 
   external_deps = [
     "eventhandler:libeventhandler",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "window_manager:libwm",
   ]
@@ -125,13 +125,14 @@ ohos_unittest("RSAnimationTest3") {
     "rs_symbol_animation_test.cpp",
     "rs_transition_effect_test.cpp",
     "rs_transition_test.cpp",
+    "rs_time_protocol_test.cpp",
   ]
 
   configs = [ ":rs_animation_test_config" ]
 
   deps = [
     "$rosen_root/modules/render_service_client:librender_service_client",
-    "//third_party/googletest:gtest_main",
+    "$rosen_text_root:rosen_text",
   ]
 
   public_deps =
@@ -139,6 +140,7 @@ ohos_unittest("RSAnimationTest3") {
 
   external_deps = [
     "eventhandler:libeventhandler",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "window_manager:libwm",
   ]

@@ -34,12 +34,19 @@
 #endif
 #include "transaction/rs_render_service_client.h"
 #include "transaction/rs_transaction_proxy.h"
+#include "feature/composite_layer/rs_composite_layer_utils.h"
 #include "ui/rs_proxy_node.h"
 #include "rs_trace.h"
+#include "common/rs_optional_trace.h"
 #include "rs_ui_context.h"
+#include "transaction/rs_interfaces.h"
 
 #ifndef ROSEN_CROSS_PLATFORM
 #include "surface_utils.h"
+#endif
+
+#ifdef USE_VIDEO_PROCESSING_ENGINE
+#include "display_engine/rs_vpe_manager.h"
 #endif
 
 namespace OHOS {
@@ -78,7 +85,10 @@ RSSurfaceNode::SharedPtr RSSurfaceNode::Create(const RSSurfaceNodeConfig& surfac
         .surfaceWindowType = surfaceNodeConfig.surfaceWindowType,
     };
     config.nodeType = type;
+    node->surfaceNodeType_ = config.nodeType;
 
+    RS_TRACE_NAME_FMT("RSSurfaceNode::Create name: %s type: %hhu, id: %lu, token:%lu", node->name_.c_str(),
+        config.nodeType, node->GetId(), rsUIContext ? rsUIContext->GetToken() : -1);
     RS_LOGD("RSSurfaceNode::Create name:%{public}s type: %{public}hhu "
         "isWindow %{public}d %{public}d ", config.name.c_str(),
         config.nodeType, isWindow, node->IsRenderServiceNode());
@@ -88,10 +98,12 @@ RSSurfaceNode::SharedPtr RSSurfaceNode::Create(const RSSurfaceNodeConfig& surfac
             config.id, config.name, static_cast<uint8_t>(config.nodeType), config.surfaceWindowType);
         node->AddCommand(command, isWindow);
     } else {
+#ifndef SCREENLESS_DEVICE
         if (!node->CreateNodeAndSurface(config, surfaceNodeConfig.surfaceId, unobscured)) {
             ROSEN_LOGE("RSSurfaceNode::Create, create node and surface failed");
             return nullptr;
         }
+#endif
     }
 
     node->SetClipToFrame(true);
@@ -114,7 +126,7 @@ RSSurfaceNode::SharedPtr RSSurfaceNode::Create(const RSSurfaceNodeConfig& surfac
         node->AddCommand(command, isWindow);
         node->SetFrameGravity(Gravity::RESIZE);
         // codes for arkui-x
-#if defined(USE_SURFACE_TEXTURE) && defined(ROSEN_ANDROID)
+#if defined(USE_SURFACE_TEXTURE) && defined(ROSEN_ANDROID) && !defined(SCREENLESS_DEVICE)
         if (type == RSSurfaceNodeType::SURFACE_TEXTURE_NODE) {
             RSSurfaceExtConfig config = {
                 .type = RSSurfaceExtType::SURFACE_TEXTURE,
@@ -124,7 +136,7 @@ RSSurfaceNode::SharedPtr RSSurfaceNode::Create(const RSSurfaceNodeConfig& surfac
         }
 #endif
         // codes for arkui-x
-#if defined(USE_SURFACE_TEXTURE) && defined(ROSEN_IOS)
+#if defined(USE_SURFACE_TEXTURE) && defined(ROSEN_IOS) && !defined(SCREENLESS_DEVICE)
         if ((type == RSSurfaceNodeType::SURFACE_TEXTURE_NODE) &&
             (surfaceNodeConfig.SurfaceNodeName == "PlatformViewSurface")) {
             RSSurfaceExtConfig config = {
@@ -144,6 +156,7 @@ RSSurfaceNode::SharedPtr RSSurfaceNode::Create(const RSSurfaceNodeConfig& surfac
         node->SetFrameGravity(Gravity::RESIZE);
     }
     ROSEN_LOGD("RsDebug RSSurfaceNode::Create id:%{public}" PRIu64, node->GetId());
+    node->SetUIContextToken();
     return node;
 }
 
@@ -597,6 +610,7 @@ void RSSurfaceNode::SetFreeze(bool isFreeze)
         ROSEN_LOGE("SetFreeze is not supported in separate render");
         return;
     }
+    RS_OPTIONAL_TRACE_NAME_FMT("RSSurfaceNode::SetFreeze id:%llu", GetId());
     std::unique_ptr<RSCommand> command = std::make_unique<RSSetFreeze>(GetId(), isFreeze);
     AddCommand(command, true);
 }
@@ -611,12 +625,12 @@ std::pair<std::string, std::string> RSSurfaceNode::SplitSurfaceNodeName(std::str
 
 RSSurfaceNode::RSSurfaceNode(
     const RSSurfaceNodeConfig& config, bool isRenderServiceNode, std::shared_ptr<RSUIContext> rsUIContext)
-    : RSNode(isRenderServiceNode, config.isTextureExportNode, rsUIContext), name_(config.SurfaceNodeName)
+    : RSNode(isRenderServiceNode, config.isTextureExportNode, rsUIContext, true), name_(config.SurfaceNodeName)
 {}
 
 RSSurfaceNode::RSSurfaceNode(
     const RSSurfaceNodeConfig& config, bool isRenderServiceNode, NodeId id, std::shared_ptr<RSUIContext> rsUIContext)
-    : RSNode(isRenderServiceNode, id, config.isTextureExportNode, rsUIContext), name_(config.SurfaceNodeName)
+    : RSNode(isRenderServiceNode, id, config.isTextureExportNode, rsUIContext, true), name_(config.SurfaceNodeName)
 {}
 
 RSSurfaceNode::~RSSurfaceNode()
@@ -627,6 +641,9 @@ RSSurfaceNode::~RSSurfaceNode()
         std::static_pointer_cast<RSRenderServiceClient>(RSIRenderClient::CreateRenderServiceClient());
     if (renderServiceClient != nullptr) {
         renderServiceClient->UnregisterBufferAvailableListener(GetId());
+#ifdef USE_VIDEO_PROCESSING_ENGINE
+        RSVpeManager::GetInstance().ReleaseVpeVideo(GetId());
+#endif
     }
 
     // For abilityComponent and remote window, we should destroy the corresponding render node in RenderThread
@@ -651,10 +668,8 @@ void RSSurfaceNode::AttachToDisplay(uint64_t screenId)
 {
     std::unique_ptr<RSCommand> command = std::make_unique<RSSurfaceNodeAttachToDisplay>(GetId(), screenId);
     if (AddCommand(command, IsRenderServiceNode())) {
-        if (strcmp(GetName().c_str(), "pointer window") != 0) {
-            RS_LOGI("RSSurfaceNode:attach to display, node:[name: %{public}s, id: %{public}" PRIu64 "], "
-                "screen id: %{public}" PRIu64, GetName().c_str(), GetId(), screenId);
-        }
+        RS_LOGI("RSSurfaceNode:attach to display, node:[name: %{public}s, id: %{public}" PRIu64 "], "
+            "screen id: %{public}" PRIu64, GetName().c_str(), GetId(), screenId);
         RS_TRACE_NAME_FMT("RSSurfaceNode:attach to display, node:[name: %s, id: %" PRIu64 "], "
             "screen id: %" PRIu64, GetName().c_str(), GetId(), screenId);
     }
@@ -713,7 +728,7 @@ void RSSurfaceNode::SetGlobalPositionEnabled(bool isEnabled)
     std::unique_ptr<RSCommand> command =
         std::make_unique<RSSurfaceNodeSetGlobalPositionEnabled>(GetId(), isEnabled);
     AddCommand(command, true);
-    ROSEN_LOGI("RSSurfaceNode::SetGlobalPositionEnabled, surfaceNodeId:[%" PRIu64 "] isEnabled:%s",
+    ROSEN_LOGI("RSSurfaceNode::SetGlobalPositionEnabled, surfaceNodeId:[%{public}" PRIu64 "] isEnabled:%{public}s",
         GetId(), isEnabled ? "true" : "false");
 }
 
@@ -836,10 +851,10 @@ void RSSurfaceNode::SetForeground(bool isForeground)
     AddCommand(commandRT, false);
 }
 
-void RSSurfaceNode::SetClonedNodeId(NodeId nodeId)
+void RSSurfaceNode::SetClonedNodeInfo(NodeId nodeId, bool needOffscreen)
 {
     std::unique_ptr<RSCommand> command =
-        std::make_unique<RSSurfaceNodeSetClonedNodeId>(GetId(), nodeId);
+        std::make_unique<RSSurfaceNodeSetClonedNodeId>(GetId(), nodeId, needOffscreen);
     AddCommand(command, true);
 }
 
@@ -972,6 +987,65 @@ void RSSurfaceNode::DetachFromWindowContainer(ScreenId screenId)
     AddCommand(command, true);
     RS_LOGD("RSSurfaceNode::DetachFromWindowContainer: Node: %{public}" PRIu64 ", screenId: %{public}" PRIu64,
         GetId(), screenId);
+}
+
+void RSSurfaceNode::SetRegionToBeMagnified(const Vector4f& regionToBeMagnified)
+{
+    std::unique_ptr<RSCommand> command =
+        std::make_unique<RSSurfaceNodeSetRegionToBeMagnified>(GetId(), regionToBeMagnified);
+    AddCommand(command, true);
+    RS_LOGI_LIMIT("RSSurfaceNode::SetRegionToBeMagnified, regionToBeMagnified left=%f, top=%f, width=%f, hight=%f",
+        regionToBeMagnified.x_, regionToBeMagnified.y_, regionToBeMagnified.z_, regionToBeMagnified.w_);
+}
+
+bool RSSurfaceNode::IsSelfDrawingNode() const
+{
+    if (surfaceNodeType_ == RSSurfaceNodeType::SELF_DRAWING_NODE) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool RSSurfaceNode::SetCompositeLayer(TopLayerZOrder zOrder)
+{
+    if (!RSSystemProperties::GetCompositeLayerEnabled()) {
+        return false;
+    }
+    RS_TRACE_NAME_FMT("RSSurfaceNode::SetCompositeLayer %llu zOrder: %u", GetId(), zOrder);
+    uint32_t topLayerZOrder = static_cast<uint32_t>(zOrder);
+
+    compositeLayerUtils_ = std::make_shared<RSCompositeLayerUtils>(shared_from_this(), topLayerZOrder);
+    if (zOrder == TopLayerZOrder::CHARGE_3D_MOTION && GetChildren().size() == 1) {
+        bool ret = compositeLayerUtils_->DealWithSelfDrawCompositeNode(GetChildren()[0].lock(), topLayerZOrder);
+        compositeLayerUtils_ = nullptr;
+        return ret;
+    }
+
+    name_ = "compositeLayer_" + std::to_string(GetId());
+    return compositeLayerUtils_->CreateCompositeLayer();
+}
+
+std::shared_ptr<RSCompositeLayerUtils> RSSurfaceNode::GetCompositeLayerUtils() const
+{
+    return compositeLayerUtils_;
+}
+
+void RSSurfaceNode::SetFrameGravityNewVersionEnabled(bool isEnabled)
+{
+    if (isFrameGravityNewVersionEnabled_ == isEnabled) {
+        return;
+    }
+
+    isFrameGravityNewVersionEnabled_ = isEnabled;
+    std::unique_ptr<RSCommand> command =
+        std::make_unique<RSSurfaceNodeSetFrameGravityNewVersionEnabled>(GetId(), isEnabled);
+    AddCommand(command, true);
+}
+
+bool RSSurfaceNode::GetFrameGravityNewVersionEnabled() const
+{
+    return isFrameGravityNewVersionEnabled_;
 }
 } // namespace Rosen
 } // namespace OHOS

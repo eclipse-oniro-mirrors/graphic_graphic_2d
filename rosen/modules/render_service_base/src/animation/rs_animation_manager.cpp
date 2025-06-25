@@ -141,8 +141,8 @@ pid_t RSAnimationManager::GetAnimationPid() const
     return 0;
 }
 
-std::tuple<bool, bool, bool> RSAnimationManager::Animate(int64_t time, bool nodeIsOnTheTree,
-    RSSurfaceNodeAbilityState abilityState)
+std::tuple<bool, bool, bool> RSAnimationManager::Animate(
+    int64_t time, int64_t& minLeftDelayTime, bool nodeIsOnTheTree, RSSurfaceNodeAbilityState abilityState)
 {
     // process animation
     bool hasRunningAnimation = false;
@@ -152,8 +152,8 @@ std::tuple<bool, bool, bool> RSAnimationManager::Animate(int64_t time, bool node
     rsRange_.Reset();
     rateDecider_.Reset();
     // iterate and execute all animations, remove finished animations
-    EraseIf(animations_, [this, &hasRunningAnimation, time,
-        &needRequestNextVsync, nodeIsOnTheTree, &isCalculateAnimationValue, abilityState](auto& iter) -> bool {
+    EraseIf(animations_, [this, &hasRunningAnimation, time, &needRequestNextVsync, nodeIsOnTheTree,
+        &isCalculateAnimationValue, abilityState, &minLeftDelayTime](auto& iter) -> bool {
         auto& animation = iter.second;
         // infinite iteration animation out of the tree or in the background does not request vsync
         if ((!nodeIsOnTheTree || abilityState == RSSurfaceNodeAbilityState::BACKGROUND) &&
@@ -163,9 +163,11 @@ std::tuple<bool, bool, bool> RSAnimationManager::Animate(int64_t time, bool node
         }
         // finite iteration animation in the background finished immediately
         if (abilityState == RSSurfaceNodeAbilityState::BACKGROUND) {
+            RSAnimationTraceUtils::GetInstance().AddAnimationFinishTrace(
+                "Animation finish background", animation->GetTargetId(), animation->GetAnimationId(), false);
             animation->Finish();
         }
-        bool isFinished = animation->Animate(time);
+        bool isFinished = animation->Animate(time, minLeftDelayTime);
         if (isFinished) {
             isCalculateAnimationValue = true;
             OnAnimationFinished(animation);
@@ -238,7 +240,7 @@ void RSAnimationManager::OnAnimationFinished(const std::shared_ptr<RSRenderAnima
     AnimationId animationId = animation->GetAnimationId();
     uint64_t token = animation->GetToken();
 
-    RSAnimationTraceUtils::GetInstance().addAnimationFinishTrace(
+    RSAnimationTraceUtils::GetInstance().AddAnimationFinishTrace(
         "Animation Send Finish", targetId, animationId, false);
     std::unique_ptr<RSCommand> command =
         std::make_unique<RSAnimationCallback>(targetId, animationId, token, FINISHED);

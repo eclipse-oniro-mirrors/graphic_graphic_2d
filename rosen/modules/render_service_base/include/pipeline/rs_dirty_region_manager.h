@@ -20,6 +20,7 @@
 
 #include "common/rs_macros.h"
 #include "common/rs_rect.h"
+#include "dirty_region/rs_filter_dirty_collector.h"
 #include "platform/common/rs_system_properties.h"
 
 namespace OHOS {
@@ -170,8 +171,14 @@ public:
         if (rect.IsEmpty()) {
             return false;
         }
+        lastSurfaceRect_ = surfaceRect_;
         surfaceRect_ = rect;
         return true;
+    }
+
+    bool IsSurfaceRectChanged() const
+    {
+        return lastSurfaceRect_ != surfaceRect_;
     }
 
     bool SetSurfaceSize(const int32_t width, const int32_t height)
@@ -252,6 +259,22 @@ public:
         advancedDirtyRegionType_ = advancedDirtyRegionType;
     }
 
+    RSFilterDirtyCollector& GetFilterCollector()
+    {
+        return filterCollector_;
+    }
+
+    void SetPartialRenderEnabled(bool isPartialRenderEnabled)
+    {
+        isEnabledChanged_ = (isPartialRenderEnabled_ != isPartialRenderEnabled);
+        isPartialRenderEnabled_ = isPartialRenderEnabled;
+    }
+    
+    bool GetEnabledChanged() const
+    {
+        return isEnabledChanged_;
+    }
+
 private:
     void UpdateMaxNumOfDirtyRectByState();
     void UpdateCurrentFrameAdvancedDirtyRegion(RectI rect);
@@ -267,6 +290,8 @@ private:
     bool isDirtyRegionAlignedEnable_ = false;
     bool isFilterCacheRectValid_ = true;
     bool isDisplayDirtyManager_ = false;
+    bool isPartialRenderEnabled_ = false;
+    bool isEnabledChanged_ = false;
     bool hasOffset_ = false;
     std::atomic<bool> isSync_ = false;
     int historyHead_ = -1;
@@ -287,6 +312,7 @@ private:
     int offsetY_ = 0;
     RectI lastActiveSurfaceRect_;   // active rect of the canvas surface in the last frame
     RectI activeSurfaceRect_;       // active rect of the canvas surface
+    RectI lastSurfaceRect_;         // rect of the canvas surface in the last frame
     RectI surfaceRect_;             // rect of the canvas surface
     RectI dirtyRegion_;             // dirtyregion after merge history
     RectI currentFrameDirtyRegion_; // dirtyRegion in current frame
@@ -308,6 +334,8 @@ private:
     std::vector<std::map<NodeId, RectI>> dirtySurfaceNodeInfo_;
     std::vector<bool> debugRegionEnabled_;
     std::vector<RectI> dirtyHistory_;
+
+    RSFilterDirtyCollector filterCollector_;
 };
 } // namespace Rosen
 } // namespace OHOS

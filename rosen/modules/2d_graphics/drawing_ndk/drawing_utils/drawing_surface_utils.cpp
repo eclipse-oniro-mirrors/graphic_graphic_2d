@@ -18,6 +18,9 @@
 #ifdef RS_ENABLE_VK
 #include "platform/ohos/backend/native_buffer_utils.h"
 #include "sync_fence.h"
+#ifdef USE_M133_SKIA
+#include "include/gpu/ganesh/vk/GrVkBackendSemaphore.h"
+#endif
 #endif
 
 #include "utils/log.h"
@@ -96,9 +99,14 @@ std::shared_ptr<Drawing::Surface> CreateVulkanWindowSurface(Drawing::GPUContext*
         return nullptr;
     }
 
-    NativeBufferUtils::NativeSurfaceInfo* nativeSurface = new NativeBufferUtils::NativeSurfaceInfo();
+    NativeBufferUtils::NativeSurfaceInfo* nativeSurface = new(std::nothrow) NativeBufferUtils::NativeSurfaceInfo();
     if (nativeSurface == nullptr) {
         LOGE("CreateVulkanWindowSurface: create nativeSurface failed!");
+        NativeWindowCancelBuffer(nativeWindow, nativeWindowBuffer);
+        if (fenceFd != -1) {
+            close(fenceFd);
+            fenceFd = -1;
+        }
         return nullptr;
     }
 
@@ -157,8 +165,12 @@ bool FlushVulkanSurface(Drawing::Surface* surface)
     auto& vkContext = RsVulkanContext::GetSingleton().GetRsVulkanInterface();
     VkSemaphore semaphore = vkContext.RequireSemaphore();
 
+#ifdef USE_M133_SKIA
+    GrBackendSemaphore backendSemaphore = GrBackendSemaphores::MakeVk(semaphore);
+#else
     GrBackendSemaphore backendSemaphore;
     backendSemaphore.initVulkan(semaphore);
+#endif
 
     auto* callbackInfo = new RsVulkanInterface::CallbackSemaphoreInfo(vkContext, semaphore, -1);
 

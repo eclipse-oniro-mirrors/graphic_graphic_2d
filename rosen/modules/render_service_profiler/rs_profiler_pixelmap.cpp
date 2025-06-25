@@ -20,6 +20,7 @@
 
 #include "media_errors.h"
 #include "pixel_map.h"
+#include "pixel_map_parcel.h"
 #include "rs_profiler.h"
 #include "rs_profiler_cache.h"
 #include "rs_profiler_utils.h"
@@ -38,8 +39,15 @@
 #define ALPHA_OFFSET 4
 #define SIZE_OF_PIXEL 4
 #define RGB_OFFSET 3
+#define PIXELMAP_FLAG_PROFILER (1 << 0)
+#define PIXELMAP_FLAG_PIXEL_CHECK (1 << 1)
 
 namespace OHOS::Rosen {
+
+ImageProperties::ImageProperties(const ImageInfo& info)
+    : format(info.pixelFormat), width(info.size.width), height(info.size.height),
+      stride(PixelMap::GetRGBxRowDataSize(info))
+{}
 
 ImageProperties::ImageProperties(PixelMap& map)
     : format(map.GetPixelFormat()), width(map.GetWidth()), height(map.GetHeight()),
@@ -92,6 +100,8 @@ bool PixelMapStorage::Push(uint64_t id, PixelMap& map)
         PushDmaMemory(id, map);
     } else if (IsSharedMemory(map)) {
         PushSharedMemory(id, map);
+    } else {
+        PushHeapMemory(id, map);
     }
     return true;
 }
@@ -99,12 +109,20 @@ bool PixelMapStorage::Push(uint64_t id, PixelMap& map)
 bool PixelMapStorage::Pull(uint64_t id, const ImageInfo& info, PixelMemInfo& memory, size_t& skipBytes)
 {
     skipBytes = 0u;
+    bool retCode = false;
     if (IsSharedMemory(memory)) {
-        return PullSharedMemory(id, info, memory, skipBytes);
+        retCode = PullSharedMemory(id, info, memory, skipBytes);
     } else if (IsDmaMemory(memory)) {
-        return PullDmaMemory(id, info, memory, skipBytes);
+        retCode = PullDmaMemory(id, info, memory, skipBytes);
+    } else {
+        retCode = PullHeapMemory(id, info, memory, skipBytes);
     }
-    return false;
+
+    if (!retCode) {
+        retCode = DefaultHeapMemory(id, info, memory, skipBytes);
+    }
+    
+    return retCode;
 }
 
 bool PixelMapStorage::Push(uint64_t id, const ImageInfo& info, const PixelMemInfo& memory, size_t skipBytes)
@@ -117,6 +135,8 @@ bool PixelMapStorage::Push(uint64_t id, const ImageInfo& info, const PixelMemInf
         PushSharedMemory(id, info, memory, skipBytes);
     } else if (IsDmaMemory(memory)) {
         PushDmaMemory(id, info, memory, skipBytes);
+    } else {
+        PushHeapMemory(id, info, memory, skipBytes);
     }
     return true;
 }
@@ -152,7 +172,7 @@ bool PixelMapStorage::PullSharedMemory(uint64_t id, const ImageInfo& info, Pixel
 
 void PixelMapStorage::PushSharedMemory(uint64_t id, const ImageInfo& info, const PixelMemInfo& memory, size_t skipBytes)
 {
-    PushImage(id, GenerateImageData(info, memory), skipBytes);
+    PushImage(AllocatorType::SHARE_MEM_ALLOC, id, GenerateImageData(info, memory), skipBytes);
 }
 
 void PixelMapStorage::PushSharedMemory(uint64_t id, PixelMap& map)
@@ -165,7 +185,8 @@ void PixelMapStorage::PushSharedMemory(uint64_t id, PixelMap& map)
     const auto size = static_cast<size_t>(const_cast<PixelMap&>(map).GetByteCount());
     const ImageProperties properties(map);
     if (auto image = MapImage(*reinterpret_cast<const int32_t*>(map.GetFd()), size, PROT_READ)) {
-        PushImage(id, GenerateImageData(image, size, map), skipBytes, nullptr, &properties);
+        PushImage(
+            AllocatorType::SHARE_MEM_ALLOC, id, GenerateImageData(image, size, map), skipBytes, nullptr, &properties);
         UnmapImage(image, size);
     }
 }
@@ -210,7 +231,7 @@ void PixelMapStorage::PushDmaMemory(uint64_t id, const ImageInfo& info, const Pi
     auto buffer = surfaceBuffer ? surfaceBuffer->GetBufferHandle() : nullptr;
     if (buffer) {
         const auto pixels = GenerateImageData(memory.base, buffer->size, memory.isAstc, GetBytesPerPixel(info));
-        PushImage(id, pixels, skipBytes, buffer);
+        PushImage(AllocatorType::DMA_ALLOC, id, pixels, skipBytes, buffer);
     }
 }
 
@@ -226,7 +247,57 @@ void PixelMapStorage::PushDmaMemory(uint64_t id, PixelMap& map)
         GenerateImageData(reinterpret_cast<const uint8_t*>(surfaceBuffer->GetVirAddr()), buffer->size, map);
     MessageParcel parcel;
     surfaceBuffer->WriteToMessageParcel(parcel);
-    PushImage(id, pixels, parcel.GetReadableBytes(), buffer, &properties);
+    PushImage(AllocatorType::DMA_ALLOC, id, pixels, parcel.GetReadableBytes(), buffer, &properties);
+}
+
+void PixelMapStorage::PushHeapMemory(uint64_t id, const ImageInfo& info, const PixelMemInfo& memory, size_t skipBytes)
+{
+    ImageProperties properties(info);
+    PushImage(AllocatorType::HEAP_ALLOC, id, GenerateImageData(info, memory), skipBytes, nullptr, &properties);
+}
+
+void PixelMapStorage::PushHeapMemory(uint64_t id, PixelMap& map)
+{
+    if (!map.GetFd()) {
+        return;
+    }
+
+    constexpr size_t skipBytes = 24u;
+    const auto baseSize = static_cast<size_t>(const_cast<PixelMap&>(map).GetByteCount());
+    const ImageProperties properties(map);
+    const uint8_t *base = map.GetPixels();
+    if (base && baseSize) {
+        const auto pixels = GenerateImageData(base, baseSize, map);
+        PushImage(AllocatorType::HEAP_ALLOC, id, pixels, skipBytes, nullptr, &properties);
+    }
+}
+
+bool PixelMapStorage::PullHeapMemory(uint64_t id, const ImageInfo& info, PixelMemInfo& memory, size_t& skipBytes)
+{
+    if (static_cast<size_t>(memory.bufferSize) <= PixelMap::MIN_IMAGEDATA_SIZE) {
+        return false;
+    }
+
+    auto retCode = PullSharedMemory(id, info, memory, skipBytes);
+    
+    constexpr size_t skipFdSize = 24u;
+    skipBytes = skipFdSize;
+
+    return retCode;
+}
+
+bool PixelMapStorage::DefaultHeapMemory(uint64_t id, const ImageInfo& info, PixelMemInfo& memory, size_t& skipBytes)
+{
+    memory.allocatorType = AllocatorType::HEAP_ALLOC;
+    memory.base = reinterpret_cast<uint8_t*>(malloc(memory.bufferSize));
+    if (memory.base) {
+        memset_s(memory.base, memory.bufferSize, 0, memory.bufferSize);
+    }
+    memory.context = nullptr;
+
+    constexpr size_t skipFdSize = 24u;
+    skipBytes = skipFdSize;
+    return true;
 }
 
 int32_t PixelMapStorage::EncodeSeqLZ4(const ImageData& source, ImageData& dst)
@@ -300,7 +371,7 @@ void PixelMapStorage::ExtractAlpha(const ImageData& image, ImageData& alpha, con
     }
 }
 
-void PixelMapStorage::PushImage(
+void PixelMapStorage::PushImage(AllocatorType allocType,
     uint64_t id, const ImageData& data, size_t skipBytes, BufferHandle* buffer, const ImageProperties* properties)
 {
     if (data.empty()) {
@@ -354,9 +425,9 @@ EncodedType PixelMapStorage::TryEncodeTexture(const ImageProperties* properties,
                 TextureHeader* header = reinterpret_cast<TextureHeader*>(image.data.data());
                 header->magicNumber = 'JPEG';
                 header->properties = *properties;
-                header->totalOriginalSize = data.size();
+                header->totalOriginalSize = static_cast<int32_t>(data.size());
                 header->rgbEncodedSize = rgbEncodedSize;
-                header->alphaOriginalSize = alpha.size();
+                header->alphaOriginalSize = static_cast<int32_t>(alpha.size());
                 header->alphaEncodedSize = alphaEncodedSize;
             }
         }
@@ -367,7 +438,7 @@ EncodedType PixelMapStorage::TryEncodeTexture(const ImageProperties* properties,
             encodedType = EncodedType::XLZ4;
             TextureHeader* header = reinterpret_cast<TextureHeader*>(image.data.data());
             header->magicNumber = 'XLZ4';
-            header->totalOriginalSize = data.size();
+            header->totalOriginalSize = static_cast<int32_t>(data.size());
         }
     }
     return encodedType;
@@ -494,8 +565,13 @@ int32_t PixelMapStorage::DecodeJpeg(
         return -1;
     }
     ImageData noPadding;
-    noPadding.reserve(properties.width * properties.height * SIZE_OF_PIXEL);
-    err = pmap->ReadPixels(pmap->GetByteCount(), noPadding.data());
+    auto reserveSize = pmap->GetByteCount();
+    if (reserveSize <= 0) {
+        HRPE("Error when reading pixels, GetByteCount is not positive");
+        return -1;
+    }
+    noPadding.reserve(reserveSize);
+    err = pmap->ReadPixels(reserveSize, noPadding.data());
     if (err != 0) {
         HRPE("Error when reading pixels, errcode %{public}u", err);
         return -1;
@@ -534,7 +610,7 @@ bool PixelMapStorage::CopyImageData(Image* image, uint8_t* dstImage, size_t dstS
                 header->totalOriginalSize);
         }
     } else if (header->magicNumber == 'XLZ4' && image->data.size() >= sizeof(TextureHeader)) {
-        int32_t sourceSize = image->data.size() - sizeof(TextureHeader);
+        int32_t sourceSize = static_cast<int32_t>(image->data.size() - sizeof(TextureHeader));
         int32_t decodedTotalBytes = DecodeSeqLZ4(srcStart, result, sourceSize, header->totalOriginalSize);
         if (decodedTotalBytes == header->totalOriginalSize) {
             image->data.clear();
@@ -634,8 +710,16 @@ bool RSProfiler::MarshalPixelMap(Parcel& parcel, const std::shared_ptr<Media::Pi
     }
 
     const bool profilerEnabled = RSSystemProperties::GetProfilerEnabled();
-    if (!parcel.WriteBool(profilerEnabled)) {
-        HRPE("MarshalPixelMap: Unable to write profilerEnabled");
+    const bool pixelCheckEnabled = RSSystemProperties::GetProfilerPixelCheckMode();
+    uint8_t flags = 0;
+    if (profilerEnabled) {
+        flags |= PIXELMAP_FLAG_PROFILER;
+        if (pixelCheckEnabled) {
+            flags |= PIXELMAP_FLAG_PIXEL_CHECK;
+        }
+    }
+    if (!parcel.WriteUint8(flags)) {
+        HRPE("MarshalPixelMap: Unable to write flags");
         return false;
     }
 
@@ -644,8 +728,18 @@ bool RSProfiler::MarshalPixelMap(Parcel& parcel, const std::shared_ptr<Media::Pi
     }
 
     const uint64_t id = ImageCache::New();
-    if (!parcel.WriteUint64(id) || !map->Marshalling(parcel)) {
+    if (!parcel.WriteUint64(id)) {
         HRPE("MarshalPixelMap: Unable to write id");
+        return false;
+    }
+
+    if (pixelCheckEnabled) {
+        if (!Media::PixelMapRecordParcel::MarshallingPixelMapForRecord(parcel, *(map.get()))) {
+            HRPE("MarshalPixelMap: Unable to marshal pixelmap for pixel check mode");
+            return false;
+        }
+    } else if (!map->Marshalling(parcel)) {
+        HRPE("MarshalPixelMap: Unable to marshal pixelmap");
         return false;
     }
 
@@ -661,17 +755,59 @@ bool RSProfiler::MarshalPixelMap(Parcel& parcel, const std::shared_ptr<Media::Pi
     return true;
 }
 
-Media::PixelMap* RSProfiler::UnmarshalPixelMap(Parcel& parcel,
+Media::PixelMap* RSProfiler::UnmarshalPixelMapNstd(Parcel& parcel,
     std::function<int(Parcel& parcel, std::function<int(Parcel&)> readFdDefaultFunc)> readSafeFdFunc)
 {
-    bool profilerEnabled = false;
-    if (!parcel.ReadBool(profilerEnabled)) {
-        HRPE("UnmarshalPixelMap: Unable to read profilerEnabled");
+    const uint64_t id = parcel.ReadUint64();
+
+    if (IsRecordAbortRequested()) {
+        return Media::PixelMapRecordParcel::UnmarshallingPixelMapForRecord(parcel, readSafeFdFunc);
+    }
+
+    ImageInfo info;
+    PixelMemInfo memory;
+    PIXEL_MAP_ERR error;
+    auto map = Media::PixelMapRecordParcel::StartUnmarshalling(parcel, info, memory, error);
+
+    if ((IsReadMode() || IsReadEmulationMode()) && IsParcelMock(parcel)) {
+        size_t skipBytes = 0u;
+        if (PixelMapStorage::Pull(id, info, memory, skipBytes)) {
+            parcel.SkipBytes(skipBytes);
+            return Media::PixelMapRecordParcel::FinishUnmarshalling(map, parcel, info, memory, error);
+        }
+    }
+
+    const auto parcelPosition = parcel.GetReadPosition();
+    if (map && !Media::PixelMapRecordParcel::ReadMemInfoFromParcel(parcel, memory, error, readSafeFdFunc)) {
+        delete map;
         return nullptr;
     }
 
+    if (IsWriteMode() || IsWriteEmulationMode()) {
+        if (!PixelMapStorage::Push(id, info, memory, parcel.GetReadPosition() - parcelPosition)) {
+            RequestRecordAbort();
+        }
+    }
+    return Media::PixelMapRecordParcel::FinishUnmarshalling(map, parcel, info, memory, error);
+}
+
+Media::PixelMap* RSProfiler::UnmarshalPixelMap(Parcel& parcel,
+    std::function<int(Parcel& parcel, std::function<int(Parcel&)> readFdDefaultFunc)> readSafeFdFunc)
+{
+    uint8_t flags;
+    if (!parcel.ReadUint8(flags)) {
+        HRPE("UnmarshalPixelMap: Unable to read flags");
+        return nullptr;
+    }
+
+    bool profilerEnabled = flags & PIXELMAP_FLAG_PROFILER;
     if (!profilerEnabled) {
         return PixelMap::Unmarshalling(parcel, readSafeFdFunc);
+    }
+
+    bool pixelCheckEnabled = flags & PIXELMAP_FLAG_PIXEL_CHECK;
+    if (pixelCheckEnabled) {
+        return UnmarshalPixelMapNstd(parcel, readSafeFdFunc);
     }
 
     const uint64_t id = parcel.ReadUint64();
@@ -685,7 +821,7 @@ Media::PixelMap* RSProfiler::UnmarshalPixelMap(Parcel& parcel,
     PIXEL_MAP_ERR error;
     auto map = PixelMap::StartUnmarshalling(parcel, info, memory, error);
 
-    if (IsReadMode() || IsReadEmulationMode()) {
+    if (IsPlaybackParcel(parcel)) {
         size_t skipBytes = 0u;
         if (PixelMapStorage::Pull(id, info, memory, skipBytes)) {
             parcel.SkipBytes(skipBytes);

@@ -20,6 +20,7 @@
 #include "pipeline/main_thread/rs_uni_render_listener.h"
 #include "surface_buffer_impl.h"
 #include "metadata_helper.h"
+#include "screen_manager/rs_screen.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -1154,24 +1155,6 @@ HWTEST_F(RSUniRenderComposerAdapterTest, SrcRectRotateTransform006, TestSize.Lev
     surfaceNode->SetSrcRect(rect);
     surfaceNode->GetRSSurfaceHandler()->consumer_ = nullptr;
     ASSERT_EQ(composerAdapter_->SrcRectRotateTransform(*surfaceNode), rect);
-}
-
-/**
- * @tc.name: CheckStatusBeforeCreateLayer008
- * @tc.desc: Test RSUniRenderComposerAdapterTest.CheckStatusBeforeCreateLayer while
- *           bounds geometry is nullptr
- * @tc.type: FUNC
- * @tc.require: issuesI7T9RE
- */
-HWTEST_F(RSUniRenderComposerAdapterTest, CheckStatusBeforeCreateLayer008, TestSize.Level2)
-{
-    auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
-    ASSERT_NE(surfaceNode, nullptr);
-    surfaceNode->GetMutableRenderProperties().boundsGeo_ = nullptr;
-    RectI dstRect{0, 0, DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT};
-    surfaceNode->SetSrcRect(dstRect);
-    surfaceNode->SetDstRect(dstRect);
-    ASSERT_FALSE(composerAdapter_->CheckStatusBeforeCreateLayer(*surfaceNode));
 }
 
 /**

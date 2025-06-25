@@ -49,10 +49,12 @@ public:
     };
 
     void AddProcessDoneNode(NodeId id);
+    void AddProcessSkippedNode(NodeId id);
     void AddPendingPostNode(NodeId id, std::shared_ptr<RSSurfaceRenderNode>& node,
         MultiThreadCacheType cacheType);
     void AddPendingResetNode(NodeId id, std::shared_ptr<RSSurfaceRenderNode>& node);
-    void AddReuseNode(NodeId id);
+
+    bool NeedNextDrawForSkippedNode();
 
     CacheProcessStatus GetNodeStatus(NodeId id);
     // judge if surfacenode satisfies async subthread rendering condtions for Uifirst
@@ -60,12 +62,15 @@ public:
     void UpdateUIFirstNodeUseDma(RSSurfaceRenderNode& node, const std::vector<RectI>& rects);
     void PostUifistSubTasks();
     void ProcessSubDoneNode();
+    // check whether the node should skip onsync process,
+    // if node is drawing in subthread, onsync may cause wrong result.
     bool CollectSkipSyncNode(const std::shared_ptr<RSRenderNode> &node);
     void ForceClearSubthreadRes();
     void ProcessForceUpdateNode();
+    // check if uifirst is force-enabled or force-disabled
     bool ForceUpdateUifirstNodes(RSSurfaceRenderNode& node);
 
-    // event process
+    // process animation events, such as LAUNCHER_SCROLL
     void OnProcessEventResponse(DataBaseRs& info);
     void OnProcessEventComplete(DataBaseRs& info);
     void PrepareCurrentFrameEvent();
@@ -73,6 +78,7 @@ public:
     // animate procss
     void OnProcessAnimateScene(SystemAnimatedScenes systemAnimatedScene);
 
+    // check if node is child of main screen or negative screen
     bool NodeIsInCardWhiteList(RSRenderNode& node);
     bool GetCurrentFrameSkipFirstWait() const
     {
@@ -137,8 +143,6 @@ public:
         return isSplitScreenScene_.load();
     }
 
-    void AddCapturedNodes(NodeId id);
-
     void AddCardNodes(NodeId id, MultiThreadCacheType currentFrameCacheType)
     {
         if (currentFrameCacheType != MultiThreadCacheType::ARKTS_CARD) {
@@ -182,6 +186,13 @@ public:
     void CheckHwcChildrenType(RSSurfaceRenderNode& node, SurfaceHwcNodeType& enabledType);
     void MarkSubHighPriorityType(RSSurfaceRenderNode& node);
     void MarkPostNodesPriority();
+    bool SubThreadControlFrameRate(NodeId id,
+    std::shared_ptr<DrawableV2::RSSurfaceRenderNodeDrawable>& drawable,
+    std::shared_ptr<RSSurfaceRenderNode>& node);
+    void RecordScreenRect(RSSurfaceRenderNode& node, RectI rect);
+    void RecordDirtyRegionMatrix(RSSurfaceRenderNode& node, const Drawing::Matrix& matrix);
+    // get cache state of uifirst root node
+    CacheProcessStatus GetCacheSurfaceProcessedStatus(const RSSurfaceRenderParams& surfaceParams);
 private:
     RSUifirstManager() = default;
     ~RSUifirstManager() = default;
@@ -199,26 +210,34 @@ private:
     bool IsInLeashWindowTree(RSSurfaceRenderNode& node, NodeId instanceRootId);
 
     void ProcessResetNode();
+    void ProcessSkippedNode();
     void ProcessDoneNode();
     void ProcessDoneNodeInner();
     void UpdateSkipSyncNode();
     void RestoreSkipSyncNode();
     void ClearSubthreadRes();
+    // reset node status and clear cache when exit uifirst
     void ResetUifirstNode(std::shared_ptr<RSSurfaceRenderNode>& nodePtr);
+    // clear main thread cache
     void ResetWindowCache(std::shared_ptr<RSSurfaceRenderNode>& nodePtr);
     bool CheckVisibleDirtyRegionIsEmpty(const std::shared_ptr<RSSurfaceRenderNode>& node);
     bool CurSurfaceHasVisibleDirtyRegion(const std::shared_ptr<RSSurfaceRenderNode>& node);
+    // filter out the nodes which need to draw in subthread
     void DoPurgePendingPostNodes(std::unordered_map<NodeId, std::shared_ptr<RSSurfaceRenderNode>>& pendingNode);
     void PurgePendingPostNodes();
     void SetNodePriorty(std::list<NodeId>& result,
         std::unordered_map<NodeId, std::shared_ptr<RSSurfaceRenderNode>>& pendingNode);
     void SortSubThreadNodesPriority();
+    // check if ArkTsCard enable uifirst
     static bool IsArkTsCardCache(RSSurfaceRenderNode& node, bool animation);
+    // check if leash window enable uifirst
     static bool IsLeashWindowCache(RSSurfaceRenderNode& node, bool animation);
     void SyncHDRDisplayParam(std::shared_ptr<DrawableV2::RSSurfaceRenderNodeDrawable> drawable,
         const GraphicColorGamut& colorGamut);
+    // check if non-focus window enable uifirst
     static bool IsNonFocusWindowCache(RSSurfaceRenderNode& node, bool animation);
 
+    // update node's uifirst state
     void UifirstStateChange(RSSurfaceRenderNode& node, MultiThreadCacheType currentFrameCacheType);
     NodeId LeashWindowContainMainWindowAndStarting(RSSurfaceRenderNode& node);
     void NotifyUIStartingWindow(NodeId id, bool wait);
@@ -237,6 +256,11 @@ private:
     bool IsToSubByAppAnimation() const;
     bool QuerySubAssignable(RSSurfaceRenderNode& node, bool isRotation);
     bool GetSubNodeIsTransparent(RSSurfaceRenderNode& node, std::string& dfxMsg);
+    bool CheckHasTransAndFilter(RSSurfaceRenderNode& node);
+    bool HasBgNodeBelowRootNode(RSSurfaceRenderNode& appNode) const;
+
+    // starting
+    void ProcessFirstFrameCache(RSSurfaceRenderNode& node, MultiThreadCacheType cacheType);
 
     bool rotationChanged_ = false;
     bool isUiFirstOn_ = false;
@@ -279,6 +303,8 @@ private:
     // use in RT & subThread
     std::mutex childernDrawableMutex_;
     std::vector<NodeId> subthreadProcessDoneNode_;
+    std::mutex skippedNodeMutex_;
+    std::unordered_set<NodeId> subthreadProcessSkippedNode_;
 
     // pending post node: collect in main, use&clear in RT
     std::unordered_map<NodeId, std::shared_ptr<RSSurfaceRenderNode>> pendingPostNodes_;
@@ -287,7 +313,6 @@ private:
     std::list<NodeId> sortedSubThreadNodeIds_;
     std::vector<std::shared_ptr<RSSurfaceRenderNode>> pendingResetWindowCachedNodes_;
 
-    std::set<NodeId> reuseNodes_;
     std::set<NodeId> collectedCardNodes_;
     // event list
     std::mutex globalFrameEventMutex_;
@@ -318,7 +343,6 @@ private:
         { "ecoengine" },
     };
 
-    std::vector<NodeId> capturedNodes_;
     std::vector<NodeId> currentFrameDeletedCardNodes_;
 };
 class RSB_EXPORT RSUiFirstProcessStateCheckerHelper {

@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef RENDER_SERVICE_CLIENT_CORE_RENDER_RS_SHADER_H
-#define RENDER_SERVICE_CLIENT_CORE_RENDER_RS_SHADER_H
+#ifndef RENDER_SERVICE_BASE_RENDER_RENDER_RS_SHADER_H
+#define RENDER_SERVICE_BASE_RENDER_RENDER_RS_SHADER_H
 
 #include "common/rs_macros.h"
 #include "common/rs_rect.h"
@@ -29,6 +29,8 @@ public:
         DRAWING = 0,
         DOT_MATRIX,
         FLOW_LIGHT_SWEEP,
+        COMPLEX,
+        BORDER_LIGHT,
     };
 
     RSShader() = default;
@@ -39,6 +41,7 @@ public:
 
     void SetDrawingShader(const std::shared_ptr<Drawing::ShaderEffect>& drShader);
     virtual void MakeDrawingShader(const RectF& rect, float progress) {};
+    virtual void MakeDrawingShader(const RectF& rect, std::vector<float> params) {};
     virtual const std::shared_ptr<Drawing::ShaderEffect>& GetDrawingShader() const;
 
     virtual bool Marshalling(Parcel& parcel);
@@ -59,4 +62,4 @@ protected:
 } // namespace Rosen
 } // namespace OHOS
 
-#endif // RENDER_SERVICE_CLIENT_CORE_RENDER_RS_SHADER_H
+#endif // RENDER_SERVICE_BASE_RENDER_RENDER_RS_SHADER_H

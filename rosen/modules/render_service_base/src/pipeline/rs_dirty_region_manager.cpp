@@ -215,6 +215,7 @@ void RSDirtyRegionManager::OnSync(std::shared_ptr<RSDirtyRegionManager> targetMa
     ptr->surfaceRect_ = surfaceRect_;
     ptr->dirtyRegion_ = dirtyRegion_;
     ptr->advancedDirtyRegion_ = advancedDirtyRegion_;
+    ptr->advancedDirtyRegionType_ = advancedDirtyRegionType_;
     ptr->hwcDirtyRegion_ = hwcDirtyRegion_;
     ptr->currentFrameDirtyRegion_ = currentFrameDirtyRegion_;
     ptr->uifirstFrameDirtyRegion_ = uifirstFrameDirtyRegion_;
@@ -222,6 +223,7 @@ void RSDirtyRegionManager::OnSync(std::shared_ptr<RSDirtyRegionManager> targetMa
     ptr->maxNumOfDirtyRects_ = maxNumOfDirtyRects_;
     ptr->dirtyRegionForQuickReject_ = {};
     ptr->debugRect_ = debugRect_;
+    filterCollector_.OnSync(ptr->filterCollector_);
     if (RSSystemProperties::GetDirtyRegionDebugType() != DirtyRegionDebugType::DISABLED) {
         ptr->dirtySurfaceNodeInfo_ = dirtySurfaceNodeInfo_;
         ptr->dirtyCanvasNodeInfo_ = dirtyCanvasNodeInfo_;
@@ -298,6 +300,7 @@ void RSDirtyRegionManager::Clear()
     dirtySurfaceNodeInfo_.resize(DirtyRegionType::TYPE_AMOUNT);
     isDfxTarget_ = false;
     isFilterCacheRectValid_ = true;
+    filterCollector_.Clear();
 }
 
 bool RSDirtyRegionManager::IsCurrentFrameDirty() const
@@ -469,8 +472,6 @@ RectI RSDirtyRegionManager::MergeHistory(unsigned int age, RectI rect) const
 void RSDirtyRegionManager::MergeAdvancedDirtyHistory(unsigned int age)
 {
     if (age == 0 || age > historySize_) {
-        RS_LOGW("RSDirtyRegionManager::MergeAdvancedDirtyHistory unvalid age : %{public}d"
-            "historySize : %{public}d", age, historySize_);
         advancedDirtyRegion_ = {surfaceRect_};
         return;
     }
@@ -497,7 +498,11 @@ void RSDirtyRegionManager::MergeAdvancedDirtyHistory(unsigned int age)
             tempRegion.OrSelf(region);
         }
     }
-    advancedDirtyRegion_ = tempRegion.GetRegionRectIs();
+    if (advancedDirtyRegionType_ == AdvancedDirtyRegionType::DISABLED) {
+        advancedDirtyRegion_ = {tempRegion.GetBound().ToRectI()};
+    } else {
+        advancedDirtyRegion_ = tempRegion.GetRegionRectIs();
+    }
 }
 
 void RSDirtyRegionManager::PushHistory(RectI rect)

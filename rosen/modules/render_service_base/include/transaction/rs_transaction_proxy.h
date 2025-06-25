@@ -34,6 +34,10 @@ namespace OHOS {
 namespace Rosen {
 class RSSyncTask;
 using FlushEmptyCallback = std::function<bool(const uint64_t)>;
+#ifdef RS_ENABLE_VK
+using CommitTransactionCallback =
+    std::function<void(std::shared_ptr<RSIRenderClient>&, std::unique_ptr<RSTransactionData>&&, uint32_t&)>;
+#endif
 class RSB_EXPORT RSTransactionProxy final {
 public:
     static RSB_EXPORT RSTransactionProxy* GetInstance();
@@ -63,6 +67,13 @@ public:
         flushEmptyCallback_ = flushEmptyCallback;
     }
 
+#ifdef RS_ENABLE_VK
+    void SetCommitTransactionCallback(CommitTransactionCallback commitTransactionCallback)
+    {
+        commitTransactionCallback_ = commitTransactionCallback;
+    }
+#endif
+
     void SetSyncId(const uint64_t syncId)
     {
         syncId_ = syncId;
@@ -70,6 +81,7 @@ public:
 
     void SetParentPid(const int32_t parentPid);
 
+    void ReportUiSkipEvent(const std::string& ability, int64_t nowMs, int64_t lastTimestamp);
     uint32_t GetTransactionDataIndex() const;
 
     bool IsEmpty() const;
@@ -110,6 +122,10 @@ private:
     bool needSync_ { false };
     uint64_t syncId_ { 0 };
     FlushEmptyCallback flushEmptyCallback_ = nullptr;
+#ifdef RS_ENABLE_VK
+    CommitTransactionCallback commitTransactionCallback_ = nullptr;
+#endif
+    std::atomic<uint32_t> uiSkipCount_ = 0;
     uint32_t transactionDataIndex_ = 0;
     std::queue<std::string> taskNames_ {};
 };

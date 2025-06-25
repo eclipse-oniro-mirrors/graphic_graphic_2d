@@ -102,6 +102,18 @@ public:
         return pid_;
     }
 
+#ifdef RS_ENABLE_VK
+    void SetSendingTid(pid_t tid)
+    {
+        tid_ = tid;
+    }
+
+    pid_t GetSendingTid() const
+    {
+        return tid_;
+    }
+#endif
+
     void SetIndex(uint64_t index)
     {
         index_ = index;
@@ -178,6 +190,7 @@ public:
 private:
     void AddCommand(std::unique_ptr<RSCommand>& command, NodeId nodeId, FollowType followType);
     void AddCommand(std::unique_ptr<RSCommand>&& command, NodeId nodeId, FollowType followType);
+    void MoveCommandByNodeId(std::unique_ptr<RSTransactionData>& transactionData, NodeId nodeId);
 
     bool UnmarshallingCommand(Parcel& parcel);
 
@@ -188,6 +201,10 @@ private:
     uint64_t timestamp_ = 0;
     std::string abilityName_;
     pid_t pid_ = 0;
+#ifdef RS_ENABLE_VK
+    // only use for hybrid render client, no need to marshalling
+    pid_t tid_ = 0;
+#endif
     uint64_t index_ = 0;
     mutable size_t marshallingIndex_ = 0;
     bool needSync_ { false };

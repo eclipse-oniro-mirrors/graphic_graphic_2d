@@ -19,6 +19,7 @@
 #include <map>
 #include <set>
 #include "platform/common/rs_innovation.h"
+#include "platform/common/rs_log.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -59,6 +60,34 @@ bool EventSortByY(const Event& e1, const Event& e2)
         return e1.type_ < e2.type_;
     }
     return e1.y_ < e2.y_;
+}
+
+Rect::Rect(int l, int t, int r, int b, bool checkValue)
+    : left_(l), top_(t), right_(r), bottom_(b)
+{
+    if (!checkValue) {
+        return;
+    }
+    CheckAndCorrectValue();
+    if (left_ != l || top_ != t || right_ != r || bottom_ != b) {
+        RS_LOGE("Occlusion::Rect initialized with invalid value, ltrb[%{public}d, %{public}d, %{public}d, "
+            "%{public}d], should in range [%{public}d, %{public}d]",
+            l, t, r, b, MIN_REGION_VALUE, MAX_REGION_VALUE);
+    }
+}
+
+Rect::Rect(const RectI& r, bool checkValue)
+    : left_(r.left_), top_(r.top_), right_(r.GetRight()), bottom_(r.GetBottom())
+{
+    if (!checkValue) {
+        return;
+    }
+    CheckAndCorrectValue();
+    if (left_ != r.left_ || top_ != r.top_ || right_ != r.GetRight() || bottom_ != r.GetBottom()) {
+        RS_LOGE("Occlusion::Rect initialized with invalid value, ltrb[%{public}d, %{public}d, %{public}d, "
+            "%{public}d], should in range [%{public}d, %{public}d]",
+            r.left_, r.top_, r.GetRight(), r.GetBottom(), MIN_REGION_VALUE, MAX_REGION_VALUE);
+    }
 }
 
 void Node::Update(int updateStart, int updateEnd, Event::Type type)
@@ -251,7 +280,7 @@ Region Region::GetAlignedRegion(int alignmentSize) const
     return alignedRegion;
 }
 
-void Region::RegionOp(Region& r1, Region& r2, Region& res, Region::OP op)
+void Region::RegionOp(Region& r1, const Region& r2, Region& res, Region::OP op)
 {
     if (r1.IsEmpty()) {
         if (op == Region::OP::AND || op == Region::OP::SUB) {
@@ -322,7 +351,7 @@ void Region::RegionOpLocal(Region& r1, Region& r2, Region& res, Region::OP op)
     res.MakeBound();
 }
 
-void Region::RegionOpAccelate(Region& r1, Region& r2, Region& res, Region::OP op)
+void Region::RegionOpAccelate(Region& r1, const Region& r2, Region& res, Region::OP op)
 {
     RectsPtr lhs(r1.CBegin(), r1.Size());
     RectsPtr rhs(r2.CBegin(), r2.Size());
@@ -350,55 +379,55 @@ void Region::RegionOpAccelate(Region& r1, Region& r2, Region& res, Region::OP op
     return;
 }
 
-Region& Region::OperationSelf(Region& r, Region::OP op)
+Region& Region::OperationSelf(const Region& r, Region::OP op)
 {
     Region r1(*this);
     RegionOp(r1, r, *this, op);
     return *this;
 }
 
-Region& Region::AndSelf(Region& r)
+Region& Region::AndSelf(const Region& r)
 {
     return OperationSelf(r, Region::OP::AND);
 }
 
-Region& Region::OrSelf(Region& r)
+Region& Region::OrSelf(const Region& r)
 {
     return OperationSelf(r, Region::OP::OR);
 }
 
-Region& Region::XOrSelf(Region& r)
+Region& Region::XOrSelf(const Region& r)
 {
     return OperationSelf(r, Region::OP::XOR);
 }
 
-Region& Region::SubSelf(Region& r)
+Region& Region::SubSelf(const Region& r)
 {
     return OperationSelf(r, Region::OP::SUB);
 }
 
-Region Region::And(Region& r)
+Region Region::And(const Region& r)
 {
     Region res;
     RegionOp(*this, r, res, Region::OP::AND);
     return res;
 }
 
-Region Region::Or(Region& r)
+Region Region::Or(const Region& r)
 {
     Region res;
     RegionOp(*this, r, res, Region::OP::OR);
     return res;
 }
 
-Region Region::Xor(Region& r)
+Region Region::Xor(const Region& r)
 {
     Region res;
     RegionOp(*this, r, res, Region::OP::XOR);
     return res;
 }
 
-Region Region::Sub(Region& r)
+Region Region::Sub(const Region& r)
 {
     Region res;
     RegionOp(*this, r, res, Region::OP::SUB);

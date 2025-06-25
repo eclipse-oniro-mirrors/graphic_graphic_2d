@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef RENDER_SERVICE_CLIENT_CORE_RENDER_RS_PARTICLE_DRAWABLE_H
-#define RENDER_SERVICE_CLIENT_CORE_RENDER_RS_PARTICLE_DRAWABLE_H
+#ifndef RENDER_SERVICE_BASE_RENDER_RENDER_RS_PARTICLE_DRAWABLE_H
+#define RENDER_SERVICE_BASE_RENDER_RENDER_RS_PARTICLE_DRAWABLE_H
 
 #include "animation/rs_render_particle.h"
 #include "draw/canvas.h"
@@ -42,6 +42,7 @@ private:
     void DrawParticles(Drawing::Canvas& canvas);
     void DrawCircle(Drawing::Canvas& canvas);
     void DrawImages(Drawing::Canvas& canvas);
+    bool CheckImageNull(std::shared_ptr<Drawing::Image>& image, const std::shared_ptr<Drawing::Image>& drawImage);
 
     std::vector<std::shared_ptr<RSRenderParticle>> particles_;
     std::shared_ptr<Drawing::Image> circleImage_;
@@ -61,4 +62,4 @@ private:
 
 } // namespace Rosen
 } // namespace OHOS
-#endif // RENDER_SERVICE_CLIENT_CORE_RENDER_RS_PARTICLE_DRAWABLE_H
+#endif // RENDER_SERVICE_BASE_RENDER_RENDER_RS_PARTICLE_DRAWABLE_H

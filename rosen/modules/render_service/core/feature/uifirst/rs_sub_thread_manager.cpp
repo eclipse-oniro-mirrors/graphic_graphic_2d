@@ -15,6 +15,7 @@
 
 #include "rs_sub_thread_manager.h"
 #include <chrono>
+#include "rs_sub_thread_cache.h"
 #include "rs_trace.h"
 
 #include "common/rs_singleton.h"
@@ -23,7 +24,9 @@
 #include "pipeline/main_thread/rs_main_thread.h"
 #include "pipeline/rs_task_dispatcher.h"
 #include "memory/rs_memory_manager.h"
-#include "utils/graphic_coretrace.h"
+
+#undef LOG_TAG
+#define LOG_TAG "RSSubThreadManager"
 
 namespace OHOS::Rosen {
 static constexpr uint32_t SUB_THREAD_NUM = 3;
@@ -114,7 +117,7 @@ float RSSubThreadManager::GetAppGpuMemoryInMB()
 
 void RSSubThreadManager::WaitNodeTask(uint64_t nodeId)
 {
-    RS_TRACE_NAME_FMT("SSubThreadManager::WaitNodeTask for node %d", nodeId);
+    RS_TRACE_NAME_FMT("RSSubThreadManager::WaitNodeTask for node %" PRIu64, nodeId);
     std::unique_lock<std::mutex> lock(parallelRenderMutex_);
     cvParallelRender_.wait_for(lock, std::chrono::milliseconds(WAIT_NODE_TASK_TIMEOUT), [&]() {
         return !nodeTaskState_[nodeId];
@@ -261,22 +264,20 @@ std::unordered_map<uint32_t, pid_t> RSSubThreadManager::GetReThreadIndexMap() co
 void RSSubThreadManager::ScheduleRenderNodeDrawable(
     std::shared_ptr<DrawableV2::RSSurfaceRenderNodeDrawable> nodeDrawable)
 {
-    RECORD_GPURESOURCE_CORETRACE_CALLER(Drawing::CoreFunction::
-        RS_RSSUBTHREADMANAGER_SCHEDULERENDERNODEDRAWABLE);
     if (UNLIKELY(!nodeDrawable)) {
-        RS_LOGE("RSSubThreadManager::ScheduleRenderNodeDrawable nodeDrawable nullptr");
+        RS_LOGE("ScheduleRenderNodeDrawable nodeDrawable nullptr");
         return;
     }
     const auto& param = nodeDrawable->GetRenderParams();
     if (UNLIKELY(!param)) {
-        RS_LOGE("RSSubThreadManager::ScheduleRenderNodeDrawable param nullptr");
+        RS_LOGE("ScheduleRenderNodeDrawable param nullptr");
         return;
     }
 
     const auto& rtUniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
     // rtUniParam will not be updated before UnblockMainThread
     if (UNLIKELY(!rtUniParam)) {
-        RS_LOGE("RSSubThreadManager::ScheduleRenderNodeDrawable renderThread param nullptr");
+        RS_LOGE("ScheduleRenderNodeDrawable renderThread param nullptr");
         return;
     }
 
@@ -292,8 +293,9 @@ void RSSubThreadManager::ScheduleRenderNodeDrawable(
         }
     }
     auto nowIdx = minLoadThreadIndex_;
-    if (threadIndexMap_.count(nodeDrawable->GetLastFrameUsedThreadIndex()) != 0) {
-        nowIdx = threadIndexMap_[nodeDrawable->GetLastFrameUsedThreadIndex()];
+    auto& rsSubThreadCache = nodeDrawable->GetRsSubThreadCache();
+    if (threadIndexMap_.count(rsSubThreadCache.GetLastFrameUsedThreadIndex()) != 0) {
+        nowIdx = threadIndexMap_[rsSubThreadCache.GetLastFrameUsedThreadIndex()];
     } else {
         defaultThreadIndex_++;
         if (defaultThreadIndex_ >= SUB_THREAD_NUM) {
@@ -309,11 +311,11 @@ void RSSubThreadManager::ScheduleRenderNodeDrawable(
     }
     auto submittedFrameCount = RSUniRenderThread::Instance().GetFrameCount();
     subThread->DoingCacheProcessNumInc();
-    nodeDrawable->SetCacheSurfaceProcessedStatus(CacheProcessStatus::WAITING);
+    rsSubThreadCache.SetCacheSurfaceProcessedStatus(CacheProcessStatus::WAITING);
     subThread->PostTask([subThread, nodeDrawable, tid, submittedFrameCount,
                             uniParam = new RSRenderThreadParams(*rtUniParam)]() mutable {
         if (UNLIKELY(!uniParam)) {
-            RS_LOGE("RSSubThreadManager::ScheduleRenderNodeDrawable subThread param is nullptr");
+            RS_LOGE("ScheduleRenderNodeDrawable subThread param is nullptr");
             return;
         }
 
@@ -322,8 +324,8 @@ void RSSubThreadManager::ScheduleRenderNodeDrawable(
         std::unique_ptr<RSRenderThreadParams> uniParamUnique(uniParam);
         /* Task run in SubThread, the uniParamUnique which is copyed from uniRenderThread will sync to SubTread */
         RSRenderThreadParamsManager::Instance().SetRSRenderThreadParams(std::move(uniParamUnique));
-        nodeDrawable->SetLastFrameUsedThreadIndex(tid);
-        nodeDrawable->SetTaskFrameCount(submittedFrameCount);
+        nodeDrawable->GetRsSubThreadCache().SetLastFrameUsedThreadIndex(tid);
+        nodeDrawable->GetRsSubThreadCache().SetTaskFrameCount(submittedFrameCount);
         subThread->DrawableCache(nodeDrawable);
         RSRenderThreadParamsManager::Instance().SetRSRenderThreadParams(nullptr);
     });
@@ -340,14 +342,33 @@ void RSSubThreadManager::ScheduleReleaseCacheSurfaceOnly(
     if (!param) {
         return;
     }
-    auto bindThreadIdx = nodeDrawable->GetLastFrameUsedThreadIndex();
+    auto bindThreadIdx = nodeDrawable->GetRsSubThreadCache().GetLastFrameUsedThreadIndex();
     if (!threadIndexMap_.count(bindThreadIdx)) {
-        RS_LOGE("RSSubThreadManager::ScheduleReleaseCacheSurface invalid thread idx");
+        RS_LOGE("ScheduleReleaseCacheSurface invalid thread idx");
         return;
     }
     auto nowIdx = threadIndexMap_[bindThreadIdx];
 
     auto subThread = threadList_[nowIdx];
     subThread->PostTask([subThread, nodeDrawable]() { subThread->ReleaseCacheSurfaceOnly(nodeDrawable); });
+}
+
+void RSSubThreadManager::GetGpuMemoryForReport(std::unordered_map<pid_t, size_t>& gpuMemoryOfPid)
+{
+    if (OHOS::Rosen::RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) {
+        return;
+    }
+    for (auto& subThread : threadList_) {
+        if (!subThread) {
+            continue;
+        }
+        std::unordered_map<pid_t, size_t> gpuMemOfPid = subThread->GetGpuMemoryOfPid();
+        for (auto& [pid, memSize] : gpuMemOfPid) {
+            gpuMemoryOfPid[pid] += memSize;
+            if (memSize == 0) {
+                subThread->ErasePidOfGpuMemory(pid);
+            }
+        }
+    }
 }
 } // namespace OHOS::Rosen

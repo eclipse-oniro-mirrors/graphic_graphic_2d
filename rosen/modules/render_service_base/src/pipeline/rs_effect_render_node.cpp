@@ -150,7 +150,7 @@ void RSEffectRenderNode::CheckBlurFilterCacheNeedForceClearOrSave(bool rotationC
 void RSEffectRenderNode::UpdateFilterCacheWithSelfDirty()
 {
 #ifdef RS_ENABLE_GPU
-#if defined(NEW_SKIA) && (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
+#if (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
     if (!RSProperties::filterCacheEnabled_) {
         ROSEN_LOGE("RSEffectRenderNode::UpdateFilterCacheManagerWithCacheRegion filter cache is disabled.");
         return;
@@ -199,10 +199,14 @@ bool RSEffectRenderNode::CheckFilterCacheNeedForceClear()
     RS_OPTIONAL_TRACE_NAME_FMT("RSEffectRenderNode[%llu]::CheckFilterCacheNeedForceClear foldStatusChanged_:%d,"
         " preRotationStatus_:%d, isRotationChanged_:%d, preStaticStatus_:%d, isStaticCached:%d",
         GetId(), foldStatusChanged_, preRotationStatus_, isRotationChanged_, preStaticStatus_, IsStaticCached());
-    RS_LOGD("RSEffectRenderNode[%{public}lld]::CheckFilterCacheNeedForceClear foldStatusChanged_:%{public}d,"
-        " preRotationStatus_:%{public}d, isRotationChanged_:%{public}d,"
-        " preStaticStatus_:%{public}d, isStaticCached:%{public}d", static_cast<long long>(GetId()),
-        foldStatusChanged_, preRotationStatus_, isRotationChanged_, preStaticStatus_, IsStaticCached());
+    if (preStaticStatus_ != isStaticCached_) {
+        RS_TRACE_NAME_FMT("RSEffectRenderNode[%llu]::CheckFilterCacheNeedForceClear"
+            " preStaticStatus_:%d, isStaticCached:%d", GetId(), preStaticStatus_, IsStaticCached());
+        RS_LOGI("RSEffectRenderNode[%{public}lld]::CheckFilterCacheNeedForceClear foldStatusChanged_:%{public}d,"
+            " preRotationStatus_:%{public}d, isRotationChanged_:%{public}d,"
+            " preStaticStatus_:%{public}d, isStaticCached:%{public}d", static_cast<long long>(GetId()),
+            foldStatusChanged_, preRotationStatus_, isRotationChanged_, preStaticStatus_, IsStaticCached());
+    }
     // case 3: the state of freeze changed to false, and the last cache maybe wrong.
     bool res = foldStatusChanged_ || (preRotationStatus_ != isRotationChanged_) ||
         (preStaticStatus_ != isStaticCached_ && isStaticCached_ == false);
@@ -259,7 +263,7 @@ void RSEffectRenderNode::MarkFilterHasEffectChildren()
         return;
     }
     effectParams->SetHasEffectChildren(ChildHasVisibleEffect());
-#if defined(NEW_SKIA) && (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
+#if (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
     if (!RSProperties::filterCacheEnabled_) {
         UpdateDirtySlotsAndPendingNodes(RSDrawableSlot::BACKGROUND_FILTER);
     }
@@ -315,6 +319,24 @@ void RSEffectRenderNode::MarkClearFilterCacheIfEffectChildrenChanged()
         filterDrawable->MarkFilterForceUseCache(false);
     }
 #endif
+}
+
+void RSEffectRenderNode::SetEffectIntersectWithDRM(bool intersect)
+{
+    auto effectParams = static_cast<RSEffectRenderParams*>(stagingRenderParams_.get());
+    if (effectParams == nullptr) {
+        return;
+    }
+    effectParams->SetEffectIntersectWithDRM(intersect);
+}
+
+void RSEffectRenderNode::SetDarkColorMode(bool isDark)
+{
+    auto effectParams = static_cast<RSEffectRenderParams*>(stagingRenderParams_.get());
+    if (effectParams == nullptr) {
+        return;
+    }
+    effectParams->SetDarkColorMode(isDark);
 }
 } // namespace Rosen
 } // namespace OHOS

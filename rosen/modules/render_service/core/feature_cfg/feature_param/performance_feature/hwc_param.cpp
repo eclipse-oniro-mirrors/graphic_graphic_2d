@@ -30,22 +30,32 @@ void HWCParam::SetSolidColorLayerForApp(std::string appName, std::string val)
     solidColorLayerMap_[std::move(appName)] = std::move(val);
 }
 
-void HWCParam::SetHwcExpandingScreenEnabled(bool isEnabled)
+void HWCParam::SetDisableHwcOnExpandScreen(bool isEnable)
 {
-    isHwcExpandingScreenEnabled_ = isEnabled;
+    isDisableHwcOnExpandScreen_ = isEnable;
 }
 
-bool HWCParam::IsHwcExpandingScreenEnabled() const
+bool HWCParam::IsDisableHwcOnExpandScreen()
 {
-    return isHwcExpandingScreenEnabled_;
+    return isDisableHwcOnExpandScreen_;
 }
 
 void HWCParam::MoveDataToHgmCore()
 {
     HgmCore& hgmCore = HgmCore::Instance();
-    if (!hgmCore.mPolicyConfigData_) {
+    if (hgmCore.mPolicyConfigData_ != nullptr) {
         hgmCore.mPolicyConfigData_->hwcSourceTuningConfig_ = std::move(sourceTuningMap_);
         hgmCore.mPolicyConfigData_->hwcSolidLayerConfig_ = std::move(solidColorLayerMap_);
     }
+}
+
+bool HWCParam::IsSolidLayerEnable()
+{
+    return isSolidLayerEnable_;
+}
+
+void HWCParam::SetSolidLayerEnable(bool isEnable)
+{
+    isSolidLayerEnable_ = isEnable;
 }
 } // namespace OHOS::Rosen

@@ -37,6 +37,7 @@ config("composer_public_config") {
     "$graphic_2d_root/interfaces/inner_api/common",
     "$graphic_2d_root/rosen/modules/composer/hdi_backend/include",
     "$graphic_2d_root/rosen/modules/composer/vsync/include",
+    "$graphic_2d_root/rosen/modules/render_service_base/include",
     "$graphic_2d_root/interfaces/inner_api/composer",
   ]
 }
@@ -85,8 +86,10 @@ ohos_shared_library("libcomposer") {
     "drivers_interface_display:libdisplay_buffer_proxy_1.0",
     "drivers_interface_display:libdisplay_commontype_proxy_1.0",
     "drivers_interface_display:libdisplay_composer_hdi_impl_1.2",
+    "drivers_interface_display:libdisplay_composer_proxy_1.0",
     "drivers_interface_display:libdisplay_composer_proxy_1.1",
     "drivers_interface_display:libdisplay_composer_proxy_1.2",
+    "eventhandler:libeventhandler",
     "graphic_surface:surface",
     "hilog:libhilog",
     "hitrace:hitrace_meter",

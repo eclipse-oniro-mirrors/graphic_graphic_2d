@@ -15,6 +15,7 @@
 
 #include "rs_graphic_test.h"
 #include "rs_graphic_test_director.h"
+#include "rs_graphic_test_profiler.h"
 #include "rs_parameter_parse.h"
 #include "rs_graphic_test_ext.h"
 
@@ -137,11 +138,57 @@ static int FilterTestUnit(int argc, char **argv)
     return RUN_ALL_TESTS();
 }
 
+static int RunAllTest(int argc, char **argv)
+{
+    int argcTemp = ARGS_ONE;
+    RSGraphicTestDirector::Instance().Run();
+    testing::GTEST_FLAG(output) = "xml:./";
+    testing::InitGoogleTest(&argcTemp, argv);
+    return RUN_ALL_TESTS();
+}
+
+static int RunNodeTreeProfilerTest(int argc, char **argv)
+{
+    if (argc != ARGS_THREE && argc != ARGS_FOUR) {
+        cout << "nodetree failed : wrong param number" << endl;
+        return 0;
+    }
+    RSGraphicTestDirector::Instance().Run();
+    std::string path = argv[ARGS_TWO];
+    bool useBufferDump = false;
+    if (argc == ARGS_FOUR) {
+        useBufferDump = (string(argv[ARGS_THREE]) == "-dumpbuffer");
+    }
+    RSGraphicTestProfiler engine;
+    engine.SetUseBufferDump(useBufferDump);
+    return engine.RunNodeTreeTest(path);
+}
+
+static int RunPlaybackProfilerTest(int argc, char **argv)
+{
+    if (argc != ARGS_THREE && argc != ARGS_FOUR) {
+        cout << "nodetree failed : wrong param number" << endl;
+        return 0;
+    }
+    RSGraphicTestDirector::Instance().Run();
+    std::string path = argv[ARGS_TWO];
+    bool useBufferDump = false;
+    if (argc == ARGS_FOUR) {
+        useBufferDump = (string(argv[ARGS_THREE]) == "-dumpbuffer");
+    }
+    RSGraphicTestProfiler engine;
+    engine.SetUseBufferDump(useBufferDump);
+    return engine.RunPlaybackTest(path);
+}
+
 int main(int argc, char **argv)
 {
     GraphicTestCommandTb funcTbl[] = {
         { "-list", DisplayAllCaseInfo },
-        { "-unit", FilterTestUnit }
+        { "-unit", FilterTestUnit },
+        { "-all", RunAllTest },
+        { "-nodetree", RunNodeTreeProfilerTest },
+        { "-playback", RunPlaybackProfilerTest }
     };
 
     if (argc >= ARGS_TWO) {
@@ -153,6 +200,7 @@ int main(int argc, char **argv)
         }
     }
 
+    RSParameterParse::Instance().SetSkipCapture(true);
     RSGraphicTestDirector::Instance().Run();
     testing::GTEST_FLAG(output) = "xml:./";
     testing::InitGoogleTest(&argc, argv);

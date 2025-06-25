@@ -17,8 +17,8 @@
 #include <limits>
 #include <test_header.h>
 
-#include "hgm_core.h"
 #include "hgm_frame_rate_manager.h"
+#include "hgm_test_base.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -27,10 +27,17 @@ namespace OHOS {
 namespace Rosen {
 namespace {
     constexpr int32_t waitTaskFinishNs = 100000;
+    constexpr pid_t appPid = 0;
+    constexpr uint32_t touchCount = 1;
+    constexpr uint32_t delay_60Ms = 60;
+    constexpr uint32_t delay_110Ms = 110;
 }
-class HgmPointerManagerTest : public testing::Test {
+class HgmPointerManagerTest : public HgmTestBase {
 public:
-    static void SetUpTestCase() {}
+    static void SetUpTestCase()
+    {
+        HgmTestBase::SetUpTestCase();
+    }
     static void TearDownTestCase() {}
     void SetUp() {}
     void TearDown() {}
@@ -150,5 +157,41 @@ HWTEST_F(HgmPointerManagerTest, HandleTimerResetEvent, Function | SmallTest | Le
         }
     }
 }
+
+/**
+ * @tc.name: HgmSetPointerActiveFPS
+ * @tc.desc: Verify the result of HgmSetPointerActiveFPS function
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(HgmPointerManagerTest, HgmSetPointerActiveFPS, Function | SmallTest | Level1)
+{
+    HgmFrameRateManager frameRateMgr;
+    constexpr uint32_t delay_1100Ms = 1100;
+    constexpr uint32_t delay_1300Ms = 1300;
+    frameRateMgr.Init(nullptr, nullptr, nullptr, nullptr);
+    frameRateMgr.HandleTouchEvent(appPid, TouchStatus::TOUCH_BUTTON_DOWN, touchCount);
+    std::this_thread::sleep_for(std::chrono::milliseconds(delay_110Ms));
+    ASSERT_EQ(frameRateMgr.pointerManager_.GetState(), PointerState::POINTER_ACTIVE_STATE);
+
+    frameRateMgr.HandleTouchEvent(appPid, TouchStatus::TOUCH_MOVE, touchCount);
+    std::this_thread::sleep_for(std::chrono::milliseconds(delay_110Ms));
+    ASSERT_EQ(frameRateMgr.pointerManager_.GetState(), PointerState::POINTER_ACTIVE_STATE);
+
+    frameRateMgr.HandleTouchEvent(appPid, TouchStatus::TOUCH_BUTTON_UP, touchCount);
+    std::this_thread::sleep_for(std::chrono::milliseconds(delay_110Ms));
+    ASSERT_EQ(frameRateMgr.pointerManager_.GetState(), PointerState::POINTER_ACTIVE_STATE);
+
+    frameRateMgr.HandleTouchEvent(appPid, TouchStatus::TOUCH_MOVE, touchCount);
+    std::this_thread::sleep_for(std::chrono::milliseconds(delay_1100Ms));
+    ASSERT_EQ(frameRateMgr.pointerManager_.GetState(), PointerState::POINTER_ACTIVE_STATE);
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(delay_1300Ms));
+    ASSERT_EQ(frameRateMgr.pointerManager_.GetState(), PointerState::POINTER_IDLE_STATE);
+
+    frameRateMgr.pointerManager_.ChangeState(PointerState::POINTER_IDLE_STATE);
+    sleep(1); // wait for handler task finished
+}
+
 } // namespace Rosen
 } // namespace OHOS

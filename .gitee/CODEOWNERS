@@ -7,11 +7,11 @@ bundle.json @lijj01
 rosen/modules/glfw_render_context/ @aslklw
 
 [drawing]
-rosen/modules/2d_graphics/BUILD.gn @ustc-tianyu
-rosen/modules/2d_graphics/include/ @ustc-tianyu
-rosen/modules/2d_graphics/src/drawing/ @ustc-tianyu
-rosen/modules/2d_graphics/drawing_ndk/ @ustc-tianyu
-interfaces/kits/napi/graphic/drawing/ @ustc-tianyu
+rosen/modules/2d_graphics/BUILD.gn @wanyanglan
+rosen/modules/2d_graphics/include/ @wanyanglan
+rosen/modules/2d_graphics/src/drawing/ @wanyanglan
+rosen/modules/2d_graphics/drawing_ndk/ @wanyanglan
+interfaces/kits/napi/graphic/drawing/ @wanyanglan
 
 [display-effect]
 rosen/modules/render_service_client/core/modifier/ @xiaojianfeng_jeffery
@@ -29,12 +29,13 @@ rosen/modules/render_service_base/include/render/ @lyt1024
 rosen/modules/render_service_base/src/render/ @lyt1024
 
 [IPC]
-rosen/modules/render_service/core/transaction/ @chuchengcheng
-rosen/modules/render_service/core/pipeline/rs_render_service_connection.h @chuchengcheng
-rosen/modules/render_service/core/pipeline/rs_render_service_connection.cpp @chuchengcheng
-rosen/modules/render_service_base/src/platform/ohos/rs_marshalling_helper.cpp @chuchengcheng
-rosen/modules/render_service_base/src/platform/ohos/rs_render_service_connection_proxy.h @chuchengcheng
-rosen/modules/render_service_base/src/platform/ohos/rs_render_service_connection_proxy.cpp @chuchengcheng
+rosen/modules/render_service/core/transaction/ @white-dragon-tiger
+rosen/modules/render_service/core/pipeline/rs_render_service_connection.h @white-dragon-tiger
+rosen/modules/render_service/core/pipeline/rs_render_service_connection.cpp @white-dragon-tiger
+rosen/modules/render_service_base/src/platform/ohos/rs_marshalling_helper.cpp @white-dragon-tiger
+rosen/modules/render_service_base/src/platform/ohos/rs_render_service_connection_proxy.h @white-dragon-tiger
+rosen/modules/render_service_base/src/platform/ohos/rs_render_service_connection_proxy.cpp @white-dragon-tiger
+etc/graphic.para.dac @white-dragon-tiger
 rosen/modules/safuzz/ @siyuan_zhou
 
 [animation]
@@ -47,6 +48,18 @@ rosen/modules/render_service_client/core/animation/ @comicchang
 [uifirst]
 rosen/modules/render_service/core/feature/uifirst/ @conan13234
 rosen/modules/render_service/core/drawable/rs_ui_first_surface_render_node_drawable.cpp @conan13234
+
+[opinc]
+rosen/modules/render_service_base/src/feature/opinc/ @conan13234
+rosen/modules/render_service/core/feature/opinc/ @conan13234
+
+[main_thread]
+rosen/modules/render_service/core/pipeline/main_thread/rs_main_thread.h @aslklw
+rosen/modules/render_service/core/pipeline/main_thread/rs_main_thread.cpp @aslklw
+rosen/modules/render_service/core/pipeline/main_thread/rs_render_service.h @aslklw
+rosen/modules/render_service/core/pipeline/main_thread/rs_render_service.cpp @aslklw
+rosen/modules/render_service/core/pipeline/main_thread/rs_render_service_connection.h @aslklw
+rosen/modules/render_service/core/pipeline/main_thread/rs_render_service_connection.cpp @aslklw
 
 [render_thread]
 rosen/modules/render_service/core/pipeline/render_thread/rs_base_render_engine.cpp @charlielou
@@ -69,3 +82,23 @@ rosen/modules/render_service/core/pipeline/render_thread/rs_uni_render_thread.cp
 rosen/modules/render_service/core/pipeline/render_thread/rs_uni_render_thread.h @charlielou
 rosen/modules/render_service/core/pipeline/render_thread/rs_uni_render_util.cpp @charlielou
 rosen/modules/render_service/core/pipeline/render_thread/rs_uni_render_util.h @charlielou
+
+[Render Profiler]
+rosen/modules/render_service_profiler/ @huang_kaixing
+rosen/test/render_service/render_service_profiler/unittest/ @huang_kaixing
+rosen/modules/render_service_base/include/command/ @huang_kaixing
+rosen/modules/render_service_base/include/common/rs_common_def.h @huang_kaixing
+rosen/modules/render_service_base/include/platform/ohos/rs_irender_service_connection_ipc_interface_code.h @huang_kaixing
+
+[HWC]
+rosen/modules/render_service/core/pipeline/hwc/ @whqwe
+rosen/modules/render_service/core/feature/hwc/ @whqwe
+rosen/modules/render_service_base/include/hwc/ @whqwe
+rosen/modules/render_service_base/src/hwc/ @whqwe
+
+[screen manager]
+rosen/modules/render_service/core/screen_manager/ @pengquan1
+rosen/modules/render_service_base/include/screen_manager/ @pengquan1
+rosen/modules/render_service_base/src/screen_manager/ @pengquan1
+rosen/modules/render_service/core/pipeline/render_thread/rs_uni_render_virtual_processor.h @pengquan1
+rosen/modules/render_service/core/pipeline/render_thread/rs_uni_render_virtual_processor.cpp @pengquan1

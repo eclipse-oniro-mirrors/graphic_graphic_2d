@@ -21,12 +21,55 @@ namespace OHOS {
 namespace Rosen {
 VSyncController::VSyncController(const sptr<VSyncGenerator> &geng, int64_t offset)
     : generator_(geng), callbackMutex_(), callback_(nullptr),
-    offsetMutex_(), phaseOffset_(offset), enabled_(false)
+    offsetMutex_(), phaseOffset_(offset), normalPhaseOffset_(offset), enabled_(false), isDirectly_(false)
 {
 }
 
 VSyncController::~VSyncController()
 {
+}
+
+void VSyncController::ChangeAdaptiveStatus(bool isAdaptive)
+{
+    if (!isAdaptive) {
+        ResetOffset();
+    }
+}
+ 
+void VSyncController::AdjustAdaptiveOffset(int64_t period, int64_t offset)
+{
+    if (period <= 0) {
+        VLOGE("VSyncController::AdjustAdaptiveOffset: period is illegal.");
+        return;
+    }
+    std::lock_guard<std::mutex> locker(offsetMutex_);
+    auto remainder = (phaseOffset_ + offset) % period;
+ 
+    phaseOffset_ = remainder;
+}
+ 
+void VSyncController::ResetOffset()
+{
+    std::lock_guard<std::mutex> locker(offsetMutex_);
+    phaseOffset_ = normalPhaseOffset_;
+}
+
+bool VSyncController::NeedPreexecuteAndUpdateTs(int64_t& timestamp, int64_t& period)
+{
+    if (generator_ == nullptr) {
+        return false;
+    }
+    const sptr<VSyncGenerator> generator = generator_.promote();
+    if (generator == nullptr) {
+        return false;
+    }
+    int64_t offset = 0;
+    bool flag = generator->NeedPreexecuteAndUpdateTs(timestamp, period, offset, lastVsyncTime_.load());
+    if (flag && offset > 0) {
+        AdjustAdaptiveOffset(period, offset);
+    }
+ 
+    return flag;
 }
 
 VsyncError VSyncController::SetEnable(bool enable, bool& isGeneratorEnable)
@@ -49,15 +92,22 @@ VsyncError VSyncController::SetEnable(bool enable, bool& isGeneratorEnable)
         // We need to tell the distributor to use the software vsync
         isGeneratorEnable = generator->IsEnable();
         if (isGeneratorEnable) {
-            ret = generator->AddListener(phaseOffset, this);
+            ret = generator->AddListener(phaseOffset, this, isRS_, isDirectly_);
+            if (ret != VSYNC_ERROR_OK) {
+                isGeneratorEnable = false;
+            }
         } else {
             ret = VSYNC_ERROR_API_FAILED;
         }
     } else {
         ret = generator->RemoveListener(this);
-        isGeneratorEnable = enable;
+        if (ret == VSYNC_ERROR_OK) {
+            isGeneratorEnable = false;
+        }
     }
 
+    isRS_ = false;
+    isDirectly_ = false;
     enabled_ = isGeneratorEnable;
     return ret;
 }
@@ -84,6 +134,7 @@ VsyncError VSyncController::SetPhaseOffset(int64_t offset)
     {
         std::lock_guard<std::mutex> locker(offsetMutex_);
         phaseOffset_ = offset;
+        normalPhaseOffset_ = offset;
     }
     return generator->ChangePhaseOffset(this, offset);
 }
@@ -97,6 +148,7 @@ void VSyncController::OnVSyncEvent(int64_t now, int64_t period,
         cb = callback_;
     }
     if (cb != nullptr) {
+        lastVsyncTime_ = now;
         cb->OnVSyncEvent(now, period, refreshRate, vsyncMode, vsyncMaxRefreshRate);
     }
 }
@@ -105,6 +157,7 @@ void VSyncController::OnPhaseOffsetChanged(int64_t phaseOffset)
 {
     std::lock_guard<std::mutex> locker(offsetMutex_);
     phaseOffset_ = phaseOffset;
+    normalPhaseOffset_ = phaseOffset;
 }
 
 /* std::pair<id, refresh rate> */

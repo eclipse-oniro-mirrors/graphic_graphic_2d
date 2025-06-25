@@ -22,8 +22,8 @@ if (!defined(graphic_2d_ext_feature_enable_ddgr) ||
     module_out_path = module_output_path
 
     sources = [
-      "../../../../modules/2d_graphics/src/drawing/engine_adapter/skia_adapter/skia_mask_filter.cpp",
-      "../../../../modules/2d_graphics/src/drawing/engine_adapter/skia_adapter/skia_picture.cpp",
+      "$graphic_2d_root/rosen/modules/2d_graphics/src/drawing/engine_adapter/skia_adapter/skia_mask_filter.cpp",
+      "$graphic_2d_root/rosen/modules/2d_graphics/src/drawing/engine_adapter/skia_adapter/skia_picture.cpp",
       "skia_bitmap_test.cpp",
       "skia_canvas_autocache_test.cpp",
       "skia_canvas_test.cpp",
@@ -35,7 +35,6 @@ if (!defined(graphic_2d_ext_feature_enable_ddgr) ||
       "skia_font_test.cpp",
       "skia_gpu_context_test.cpp",
       "skia_helper_test.cpp",
-      "skia_hm_symbol_config_ohos_test.cpp",
       "skia_hm_symbol_test.cpp",
       "skia_image_filter_test.cpp",
       "skia_image_info_test.cpp",
@@ -46,6 +45,7 @@ if (!defined(graphic_2d_ext_feature_enable_ddgr) ||
       "skia_memory_tracer_test.cpp",
       "skia_paint_test.cpp",
       "skia_path_effect_test.cpp",
+      "skia_path_iterator_test.cpp",
       "skia_path_test.cpp",
       "skia_picture_test.cpp",
       "skia_pixmap_test.cpp",
@@ -64,13 +64,12 @@ if (!defined(graphic_2d_ext_feature_enable_ddgr) ||
     ]
 
     include_dirs = [
-      "//third_party/googletest/googletest/include",
       "$graphic_2d_root/rosen/modules/2d_graphics/include",
       "$graphic_2d_root/rosen/modules/2d_graphics/src",
       "$graphic_2d_root/rosen/modules/2d_graphics/src/drawing/engine_adapter",
       "$graphic_2d_root/rosen/modules/2d_graphics/src/drawing",
     ]
-
+    defines = []
     deps = [ "$graphic_2d_root/rosen/modules/2d_graphics:2d_graphics" ]
 
     external_deps = [
@@ -80,16 +79,12 @@ if (!defined(graphic_2d_ext_feature_enable_ddgr) ||
       "jsoncpp:jsoncpp",
       "skia:skia_canvaskit",
     ]
-
-    include_dirs += [
-      "//third_party/skia",
-      "//third_party/skia/include/",
-      "//third_party/skia/include/core/",
-      "//third_party/skia/third_party/externals/swiftshader/third_party/SPIRV-Headers/tools/buildHeaders/jsoncpp/dist/",
-    ]
+    if (graphic_2d_feature_upgrade_skia) {
+      defines += [ "USE_M133_SKIA" ]
+    }
 
     if (rs_enable_gpu) {
-      defines = [ "RS_ENABLE_GPU" ]
+      defines += [ "RS_ENABLE_GPU" ]
     }
 
     cflags = [

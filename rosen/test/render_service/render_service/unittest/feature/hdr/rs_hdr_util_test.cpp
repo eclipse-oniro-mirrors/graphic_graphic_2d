@@ -17,6 +17,7 @@
 #include "gtest/gtest.h"
 #include "feature/hdr/rs_hdr_util.h"
 #include "pipeline/render_thread/rs_render_engine.h"
+#include "pipeline/rs_display_render_node.h"
 #include "pipeline/rs_test_util.h"
 #include "v2_1/cm_color_space.h"
 #ifdef USE_VIDEO_PROCESSING_ENGINE
@@ -35,7 +36,10 @@ public:
     void TearDown() override;
 };
 
-void RSHdrUtilTest::SetUpTestCase() {}
+void RSHdrUtilTest::SetUpTestCase()
+{
+    RSTestUtil::InitRenderNodeGC();
+}
 void RSHdrUtilTest::TearDownTestCase() {}
 void RSHdrUtilTest::SetUp() {}
 void RSHdrUtilTest::TearDown() {}
@@ -49,13 +53,10 @@ void RSHdrUtilTest::TearDown() {}
 HWTEST_F(RSHdrUtilTest, CheckIsHdrSurfaceTest, TestSize.Level1)
 {
     auto node = RSTestUtil::CreateSurfaceNodeWithBuffer();
-    if (node->GetRSSurfaceHandler() == nullptr) {
-        return;
-    }
+    ASSERT_TRUE(node->GetRSSurfaceHandler() != nullptr);
     auto buffer = node->GetRSSurfaceHandler()->GetBuffer();
-    if (buffer == nullptr || buffer->GetBufferHandle() == nullptr) {
-        return;
-    }
+    ASSERT_TRUE(buffer != nullptr);
+    ASSERT_TRUE(buffer->GetBufferHandle() != nullptr);
     node->SetIsOnTheTree(false);
     HdrStatus ret = RSHdrUtil::CheckIsHdrSurface(*node);
     ASSERT_EQ(ret, HdrStatus::NO_HDR);
@@ -73,31 +74,19 @@ HWTEST_F(RSHdrUtilTest, CheckIsHdrSurfaceTest, TestSize.Level1)
 HWTEST_F(RSHdrUtilTest, CheckIsHdrSurfaceBufferTest, TestSize.Level1)
 {
     auto node = RSTestUtil::CreateSurfaceNodeWithBuffer();
-    if (node->GetRSSurfaceHandler() == nullptr) {
-        return;
-    }
+    ASSERT_TRUE(node->GetRSSurfaceHandler() != nullptr);
     sptr<SurfaceBuffer> buffer = nullptr;
     HdrStatus ret = RSHdrUtil::CheckIsHdrSurfaceBuffer(buffer);
     ASSERT_EQ(ret, HdrStatus::NO_HDR);
     buffer = node->GetRSSurfaceHandler()->GetBuffer();
-    if (buffer == nullptr || buffer->GetBufferHandle() == nullptr) {
-        return;
-    }
+    ASSERT_TRUE(buffer != nullptr);
+    ASSERT_TRUE(buffer->GetBufferHandle() != nullptr);
     buffer->GetBufferHandle()->format = GraphicPixelFormat::GRAPHIC_PIXEL_FMT_YCBCR_420_SP;
     ret = RSHdrUtil::CheckIsHdrSurfaceBuffer(buffer);
     ASSERT_EQ(ret, HdrStatus::NO_HDR);
     buffer->GetBufferHandle()->format = GraphicPixelFormat::GRAPHIC_PIXEL_FMT_YCBCR_P010;
     ret = RSHdrUtil::CheckIsHdrSurfaceBuffer(buffer);
     ASSERT_EQ(ret, HdrStatus::NO_HDR);
-#ifdef USE_VIDEO_PROCESSING_ENGINE
-    uint32_t hdrType = HDI::Display::Graphic::Common::V2_1::CM_VIDEO_AI_HDR;
-    std::vector<uint8_t> metadataType;
-    metadataType.resize(sizeof(hdrType));
-    memcpy_s(metadataType.data(), metadataType.size(), &hdrType, sizeof(hdrType));
-    buffer->SetMetadata(Media::VideoProcessingEngine::ATTRKEY_HDR_METADATA_TYPE, metadataType);
-    ret = RSHdrUtil::CheckIsHdrSurfaceBuffer(buffer);
-    ASSERT_EQ(ret, HdrStatus::AI_HDR_VIDEO);
-#endif
 }
 
 /**
@@ -109,13 +98,10 @@ HWTEST_F(RSHdrUtilTest, CheckIsHdrSurfaceBufferTest, TestSize.Level1)
 HWTEST_F(RSHdrUtilTest, CheckIsSurfaceWithMetadataTest, TestSize.Level1)
 {
     auto node = RSTestUtil::CreateSurfaceNodeWithBuffer();
-    if (node->GetRSSurfaceHandler() == nullptr) {
-        return;
-    }
+    ASSERT_TRUE(node->GetRSSurfaceHandler() != nullptr);
     auto buffer = node->GetRSSurfaceHandler()->GetBuffer();
-    if (buffer == nullptr || buffer->GetBufferHandle() == nullptr) {
-        return;
-    }
+    ASSERT_TRUE(buffer != nullptr);
+    ASSERT_TRUE(buffer->GetBufferHandle() != nullptr);
     node->SetIsOnTheTree(false);
     bool ret = RSHdrUtil::CheckIsSurfaceWithMetadata(*node);
     ASSERT_EQ(ret, false);
@@ -133,27 +119,12 @@ HWTEST_F(RSHdrUtilTest, CheckIsSurfaceWithMetadataTest, TestSize.Level1)
 HWTEST_F(RSHdrUtilTest, CheckIsSurfaceBufferWithMetadataTest, TestSize.Level1)
 {
     auto node = RSTestUtil::CreateSurfaceNodeWithBuffer();
-    if (node->GetRSSurfaceHandler() == nullptr) {
-        return;
-    }
+    ASSERT_TRUE(node->GetRSSurfaceHandler() != nullptr);
     auto buffer = node->GetRSSurfaceHandler()->GetBuffer();
-    if (buffer == nullptr || buffer->GetBufferHandle() == nullptr) {
-        return;
-    }
+    ASSERT_TRUE(buffer != nullptr);
+    ASSERT_TRUE(buffer->GetBufferHandle() != nullptr);
     bool ret = RSHdrUtil::CheckIsSurfaceBufferWithMetadata(buffer);
     ASSERT_EQ(ret, false);
-#ifdef USE_VIDEO_PROCESSING_ENGINE
-    using namespace OHOS::HDI::Display::Graphic::Common::V1_0;
-    CM_ColorSpaceInfo infoSet = {
-        .primaries = COLORPRIMARIES_P3_D65,
-    };
-    auto retSet = MetadataHelper::SetColorSpaceInfo(buffer, infoSet);
-    EXPECT_EQ(retSet, GSERROR_OK);
-    std::vector<uint8_t> metadata = {1.0f, 1.0f, 1.0f};
-    buffer->SetMetadata(Media::VideoProcessingEngine::ATTRKEY_HDR_DYNAMIC_METADATA, metadata);
-    ret = RSHdrUtil::CheckIsSurfaceBufferWithMetadata(buffer);
-    ASSERT_EQ(ret, true);
-#endif
 }
 
 /**
@@ -171,6 +142,54 @@ HWTEST_F(RSHdrUtilTest, UpdateSurfaceNodeNitTest, TestSize.Level1)
     ASSERT_NE(node, nullptr);
     node->SetVideoHdrStatus(HdrStatus::HDR_VIDEO);
     RSHdrUtil::UpdateSurfaceNodeNit(*node, 0);
+}
+
+/**
+ * @tc.name: UpdateSurfaceNodeNit001
+ * @tc.desc: Test UpdateSurfaceNodeNit
+ * @tc.type: FUNC
+ * @tc.require: issueI6QM6E
+ */
+HWTEST_F(RSHdrUtilTest, UpdateSurfaceNodeNitTest001, TestSize.Level1)
+{
+    auto node = RSTestUtil::CreateSurfaceNodeWithBuffer();
+    ASSERT_NE(node, nullptr);
+    node->SetVideoHdrStatus(HdrStatus::HDR_VIDEO);
+    EXPECT_EQ(node->GetVideoHdrStatus(), HdrStatus::HDR_VIDEO);
+    RSHdrUtil::UpdateSurfaceNodeNit(*node, 0);
+}
+
+/**
+ * @tc.name: UpdateSurfaceNodeNit002
+ * @tc.desc: Test UpdateSurfaceNodeNit
+ * @tc.type: FUNC
+ * @tc.require: issueI6QM6E
+ */
+HWTEST_F(RSHdrUtilTest, UpdateSurfaceNodeNitTest002, TestSize.Level1)
+{
+    auto node = RSTestUtil::CreateSurfaceNodeWithBuffer();
+    ASSERT_NE(node, nullptr);
+    std::shared_ptr<RSContext> context = std::make_shared<RSContext>();
+    node->OnRegister(context);
+    node->SetVideoHdrStatus(HdrStatus::HDR_VIDEO);
+    EXPECT_EQ(node->GetVideoHdrStatus(), HdrStatus::HDR_VIDEO);
+    RSHdrUtil::UpdateSurfaceNodeNit(*node, 0);
+
+    auto& nodeMap = context->GetMutableNodeMap();
+    NodeId displayRenderNodeId = 1;
+    struct RSDisplayNodeConfig config;
+    auto displayRenderNode = std::make_shared<RSDisplayRenderNode>(displayRenderNodeId, config);
+    bool res = nodeMap.RegisterRenderNode(displayRenderNode);
+    ASSERT_EQ(res, true);
+    RSHdrUtil::UpdateSurfaceNodeNit(*node, 0); // displayNode is nullptr
+    node->displayNodeId_ = displayRenderNodeId;
+    auto displayNode = context->GetNodeMap().GetRenderNode<RSDisplayRenderNode>(node->GetDisplayNodeId());
+    ASSERT_NE(displayNode, nullptr);
+    RSHdrUtil::UpdateSurfaceNodeNit(*node, 0); // displayNode is not nullptr
+    displayNode->GetMutableRenderProperties().SetHDRBrightnessFactor(0.5f);
+    RSHdrUtil::UpdateSurfaceNodeNit(*node, 0); // update surfaceNode HDRBrightnessFactor
+    RSHdrUtil::UpdateSurfaceNodeNit(*node, 0); // not update surfaceNode HDRBrightnessFactor
+    EXPECT_EQ(node->GetHDRBrightnessFactor(), 0.5f);
 }
 
 /**

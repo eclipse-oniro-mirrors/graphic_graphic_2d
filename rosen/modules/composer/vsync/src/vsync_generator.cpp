@@ -58,7 +58,12 @@ constexpr int32_t MAX_REFRESHRATE_DEVIATION = 5; // ±5Hz
 constexpr int64_t PERIOD_CHECK_THRESHOLD = 1000000; // 1000000ns == 1.0ms
 constexpr int64_t DEFAULT_SOFT_VSYNC_PERIOD = 16000000; // 16000000ns == 16ms
 constexpr int64_t REMAINING_TIME_THRESHOLD = 100000; // 100000ns == 0.1ms
+constexpr int64_t REMAINING_TIME_THRESHOLD_FOR_LISTENER = 1000000; // 1000000ns == 1ms
+constexpr int64_t ONE_SECOND_FOR_CALCUTE_FREQUENCY = 1000000000; // 1000000000ns == 1s
 constexpr uint32_t MAX_LISTENERS_AMOUNT = 2;
+
+// minimum ratio of dvsync thread
+constexpr double DVSYNC_PERIOD_MIN_INTERVAL = 0.6;
 
 static void SetThreadHighPriority()
 {
@@ -192,7 +197,7 @@ void VSyncGenerator::ThreadLoop()
             occurTimestamp = SystemTime();
             nextTimeStamp = ComputeNextVSyncTimeStamp(occurTimestamp, occurReferenceTime);
             if (nextTimeStamp == INT64_MAX) {
-                ScopedBytrace func("VSyncGenerator: there has no listener");
+                ScopedBytrace func("VSyncGenerator: there has no request to be processed");
                 if (vsyncThreadRunning_ == true) {
                     con_.wait(locker);
                 }
@@ -231,7 +236,7 @@ void VSyncGenerator::WaitForTimeout(int64_t occurTimestamp, int64_t nextTimeStam
         if (err == std::cv_status::timeout) {
             isWakeup = true;
         } else {
-            ScopedBytrace func("VSyncGenerator::ThreadLoop::Continue");
+            ScopedBytrace func("VSyncGenerator::ThreadLoop : vsync generator was interrupted while waitting");
             return;
         }
     }
@@ -246,6 +251,18 @@ void VSyncGenerator::WaitForTimeoutConNotifyLocked()
     }
     int64_t remainingTime = nextTimeStamp_ - curTime;
     if (remainingTime > REMAINING_TIME_THRESHOLD) {
+        waitForTimeoutCon_.notify_all();
+    }
+}
+
+void VSyncGenerator::WaitForTimeoutConNotifyLockedForListener()
+{
+    int64_t curTime = SystemTime();
+    if (curTime <= 0 || nextTimeStamp_ <= 0) {
+        return;
+    }
+    int64_t remainingTime = nextTimeStamp_ - curTime;
+    if (remainingTime > REMAINING_TIME_THRESHOLD_FOR_LISTENER) {
         waitForTimeoutCon_.notify_all();
     }
 }
@@ -415,6 +432,12 @@ int64_t VSyncGenerator::ComputeDVSyncListenerNextVSyncTimeStamp(const Listener &
     int64_t numPeriod = now / period;
     int64_t nextTime = (numPeriod + 1) * period + phase;
     nextTime += referenceTime;
+    int64_t threshold = static_cast<int64_t>(DVSYNC_PERIOD_MIN_INTERVAL * static_cast<double>(period));
+    if (nextTime - listener.lastTime_ < threshold) {
+        RS_TRACE_NAME_FMT("VSyncGenerator::ComputeDVSyncListenerNextVSyncTimeStamp "
+            "add one more period:%ld, threshold:%ld", period, threshold);
+        nextTime += period;
+    }
     nextTime -= wakeupDelay_;
     return nextTime;
 }
@@ -436,6 +459,14 @@ VsyncError VSyncGenerator::AddDVSyncListener(int64_t phase, const sptr<OHOS::Ros
     return VSYNC_ERROR_OK;
 }
 
+bool VSyncGenerator::IsUiDvsyncOn()
+{
+    if (rsVSyncDistributor_ != nullptr) {
+        return rsVSyncDistributor_->IsUiDvsyncOn();
+    }
+    return false;
+}
+
 VsyncError VSyncGenerator::RemoveDVSyncListener(const sptr<OHOS::Rosen::VSyncGenerator::Callback>& cb)
 {
     ScopedBytrace func("RemoveDVSyncListener");
@@ -453,7 +484,7 @@ bool VSyncGenerator::CheckTimingCorrect(int64_t now, int64_t referenceTime, int6
     bool isTimingCorrect = false;
     for (uint32_t i = 0; i < listeners_.size(); i++) {
         int64_t t = ComputeListenerNextVSyncTimeStamp(listeners_[i], now, referenceTime);
-        if ((t - nextVSyncTime < ERROR_THRESHOLD) && (listeners_[i].phase_ == 0)) {
+        if ((t - nextVSyncTime < ERROR_THRESHOLD) && (listeners_[i].isRS_ || listeners_[i].phase_ == 0)) {
             isTimingCorrect = true;
         }
     }
@@ -676,7 +707,24 @@ VsyncError VSyncGenerator::UpdateMode(int64_t period, int64_t phase, int64_t ref
     return VSYNC_ERROR_OK;
 }
 
-VsyncError VSyncGenerator::AddListener(int64_t phase, const sptr<OHOS::Rosen::VSyncGenerator::Callback>& cb)
+bool VSyncGenerator::NeedPreexecuteAndUpdateTs(
+    int64_t& timestamp, int64_t& period, int64_t& offset, int64_t lastVsyncTime)
+{
+    std::lock_guard<std::mutex> locker(mutex_);
+    int64_t now = SystemTime();
+    offset = (now - lastVsyncTime) % period_;
+    if (period_ - offset > PERIOD_CHECK_THRESHOLD) {
+        timestamp = now;
+        period = period_;
+        RS_TRACE_NAME_FMT("NeedPreexecuteAndUpdateTs, new referenceTime:%ld, timestamp:%ld, period:%ld,",
+            referenceTime_, timestamp, period);
+        return true;
+    }
+    return false;
+}
+
+VsyncError VSyncGenerator::AddListener(int64_t phase,
+    const sptr<OHOS::Rosen::VSyncGenerator::Callback>& cb, bool isRS, bool isUrgent)
 {
     ScopedBytrace func("AddListener");
     std::lock_guard<std::mutex> locker(mutex_);
@@ -684,10 +732,17 @@ VsyncError VSyncGenerator::AddListener(int64_t phase, const sptr<OHOS::Rosen::VS
         VLOGE("AddListener failed, cb is null.");
         return VSYNC_ERROR_INVALID_ARGUMENTS;
     }
+    for (auto it = listeners_.begin(); it < listeners_.end(); ++it) {
+        if (it->callback_ == cb) {
+            VLOGI("this listener has been added.");
+            return VSYNC_ERROR_OK;
+        }
+    }
     Listener listener;
     listener.phase_ = phase;
     listener.callback_ = cb;
-    listener.lastTime_ = SystemTime() - period_ + phase_;
+    listener.lastTime_ = isUrgent ? SystemTime() : SystemTime() - period_ + phase_;
+    listener.isRS_ = isRS;
 
     listeners_.push_back(listener);
 
@@ -705,7 +760,7 @@ VsyncError VSyncGenerator::AddListener(int64_t phase, const sptr<OHOS::Rosen::VS
         listenersRecord_.push_back(listener);
     }
     con_.notify_all();
-    WaitForTimeoutConNotifyLocked();
+    WaitForTimeoutConNotifyLockedForListener();
     return VSYNC_ERROR_OK;
 }
 
@@ -866,6 +921,20 @@ VsyncError VSyncGenerator::SetVSyncPhaseByPulseNum(int32_t phaseByPulseNum)
     referenceTimeOffsetPulseNum_ = phaseByPulseNum;
     defaultReferenceTimeOffsetPulseNum_ = phaseByPulseNum;
     return VSYNC_ERROR_OK;
+}
+
+uint32_t VSyncGenerator::GetVsyncRefreshRate()
+{
+    std::lock_guard<std::mutex> locker(mutex_);
+    if (period_ == 0) {
+        return UINT32_MAX;
+    }
+    uint32_t refreshRate = CalculateRefreshRate(period_);
+    if (refreshRate == 0) {
+        refreshRate = std::round(static_cast<double>(ONE_SECOND_FOR_CALCUTE_FREQUENCY)
+            / static_cast<double>(period_));
+    }
+    return refreshRate;
 }
 
 uint32_t VSyncGenerator::GetVSyncMaxRefreshRate()
@@ -1035,7 +1104,6 @@ VsyncError VSyncGenerator::RemoveListener(const sptr<OHOS::Rosen::VSyncGenerator
     }
     if (!removeFlag) {
         VLOGE("RemoveListener, not found, size = %{public}zu", listeners_.size());
-        return VSYNC_ERROR_INVALID_ARGUMENTS;
     }
     return VSYNC_ERROR_OK;
 }
@@ -1100,6 +1168,12 @@ void VSyncGenerator::Dump(std::string &result)
     result += "\nreferenceTime:" + std::to_string(referenceTime_);
     result += "\nvsyncMode:" + std::to_string(vsyncMode_);
     result += "\nperiodCheckCounter_:" + std::to_string(periodCheckCounter_);
+}
+
+bool VSyncGenerator::CheckSampleIsAdaptive(int64_t hardwareVsyncInterval)
+{
+    std::unique_lock<std::mutex> lock(mutex_);
+    return hardwareVsyncInterval > period_ + PERIOD_CHECK_THRESHOLD;
 }
 
 void VSyncGenerator::PrintGeneratorStatus()
