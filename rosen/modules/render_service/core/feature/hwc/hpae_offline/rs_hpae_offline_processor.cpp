@@ -54,7 +54,7 @@ RSHpaeOfflineProcessor::RSHpaeOfflineProcessor()
     }
 }
 
-RSHpaeOfflineProcessor::~RSHpaeOfflineProcessor() noexcept
+RSHpaeOfflineProcessor::~RSHpaeOfflineProcessor()
 {
     if (preProcessHandle_) {
         dlclose(preProcessHandle_);
