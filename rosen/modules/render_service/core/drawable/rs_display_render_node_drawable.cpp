@@ -790,14 +790,8 @@ void RSDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         params->SetNewPixelFormat(GRAPHIC_PIXEL_FMT_RGBA_1010102);
     }
 
-#if defined(ROSEN_OHOS) && defined(ENABLE_HPAE_BLUR)
-    if (!isHdrOn && RSHpaeManager::GetInstance().HasHpaeBlurNode()) {
-        bool isHebc = (RSAncoManager::Instance()->GetAncoHebcStatus() != AncoHebcStatus::NOT_USE_HEBC);
-        GraphicPixelFormat pixelFormat = params->GetNewPixelFormat();
-        GraphicColorGamut colorSpace = params->GetNewColorSpace();
-        RSHpaeManager::GetInstance().SetUpHpaeSurface(pixelFormat, colorSpace, isHebc);
-    }
-#endif
+    CheckHpaeBlurRun(isHdrOn);
+
     RSUniRenderThread::Instance().WaitUntilDisplayNodeBufferReleased(*this);
     // displayNodeSp to get  rsSurface witch only used in renderThread
     auto renderFrame = RequestFrame(*params, processor);
