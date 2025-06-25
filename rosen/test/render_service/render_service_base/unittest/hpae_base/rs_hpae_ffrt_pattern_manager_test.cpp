@@ -54,7 +54,7 @@ void RSHpaeFfrtPatternManagerTest::TearDown() {}
  * @tc.name: UpdatedTest
  * @tc.desc: Verify function IsUpdated/SetUpdatedFlag/ResetUpdatedFlag/SetThreadId/IsThreadIdMatch
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require:
  */
 HWTEST_F(RSHpaeFfrtPatternManagerTest, UpdatedTest, TestSize.Level1)
 {
@@ -141,7 +141,7 @@ HWTEST_F(RSHpaeFfrtPatternManagerTest, MHCGetVulkanTaskNotifyEventTest, TestSize
  * @tc.name: MHCReleaseEGraphTest
  * @tc.desc: Verify function MHCReleaseEGraph
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require:
  */
 HWTEST_F(RSHpaeFfrtPatternManagerTest, MHCReleaseEGraphTest, TestSize.Level1)
 {
@@ -158,7 +158,7 @@ HWTEST_F(RSHpaeFfrtPatternManagerTest, MHCReleaseEGraphTest, TestSize.Level1)
  * @tc.name: MHCReleaseAllTest
  * @tc.desc: Verify function MHCReleaseAll
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require:
  */
 HWTEST_F(RSHpaeFfrtPatternManagerTest, MHCReleaseAllTest, TestSize.Level1)
 {
@@ -175,7 +175,7 @@ HWTEST_F(RSHpaeFfrtPatternManagerTest, MHCReleaseAllTest, TestSize.Level1)
  * @tc.name: MHCSubmitTaskTest
  * @tc.desc: Verify function MHCSubmitTask
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require:
  */
 HWTEST_F(RSHpaeFfrtPatternManagerTest, MHCSubmitTaskTest, TestSize.Level1)
 {
@@ -199,7 +199,7 @@ HWTEST_F(RSHpaeFfrtPatternManagerTest, MHCSubmitTaskTest, TestSize.Level1)
  * @tc.name: MHCDlOpenTest
  * @tc.desc: Verify function MHCDlOpen
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require:
  */
 HWTEST_F(RSHpaeFfrtPatternManagerTest, MHCDlOpenTest, TestSize.Level1)
 {
@@ -212,7 +212,7 @@ HWTEST_F(RSHpaeFfrtPatternManagerTest, MHCDlOpenTest, TestSize.Level1)
  * @tc.name: MHCCheckTest
  * @tc.desc: Verify function MHCCheck
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require:
  */
 HWTEST_F(RSHpaeFfrtPatternManagerTest, MHCCheckTest, TestSize.Level1)
 {
@@ -226,7 +226,7 @@ HWTEST_F(RSHpaeFfrtPatternManagerTest, MHCCheckTest, TestSize.Level1)
  * @tc.name: MHCGraphPatternInitTest
  * @tc.desc: Verify function MHCGraphPatternInit
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require:
  */
 HWTEST_F(RSHpaeFfrtPatternManagerTest, MHCGraphPatternInitTest, TestSize.Level1)
 {
