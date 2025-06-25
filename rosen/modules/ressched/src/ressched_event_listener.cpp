@@ -38,7 +38,7 @@ std::mutex ResschedEventListener::ffrtGetQueueMutex_;
 std::mutex ResschedEventListener::ffrtGetHighFrequenceQueueMutex_;
 constexpr uint64_t SAMPLE_TIME = 100000000;
 const std::string RS_RESSCHED_LISTENER_QUEUE = "res_ressched_event_listener_queue";
-const std::string RS_RESSCHED_LISTENER_QUEUE_HIGH_PRIOTITY= "res_ressched_event_listener_high_priotity_queue";
+const std::string RS_RESSCHED_LISTENER_QUEUE_HIGH_PRIOTITY = "res_ressched_event_listener_high_priotity_queue";
 
 sptr<ResschedEventListener> ResschedEventListener::GetInstance() noexcept
 {
