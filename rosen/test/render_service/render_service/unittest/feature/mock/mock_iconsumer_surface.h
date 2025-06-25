@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef GRAPHIC_I_CONSYMER_SURFACE_MOCK_H
-#define GRAPHIC_I_CONSYMER_SURFACE_MOCK_H
+#ifndef GRAPHIC_I_CONSUMER_SURFACE_MOCK_H
+#define GRAPHIC_I_CONSUMER_SURFACE_MOCK_H
 
 #include "iconsumer_surface.h"
 #include <gmock/gmock.h>
@@ -32,11 +32,11 @@ public:
     MOCK_METHOD1(RegisterConsumerListener, SurfaceError(sptr<IBufferConsumerListener>&));
     MOCK_METHOD3(AcquireBuffer, GSError(AcquireBufferReturnValue&, int64_t, bool));
     MOCK_METHOD2(ReleaseBuffer, GSError(sptr<SurfaceBuffer>&, const sptr<SyncFence>&));
-    MOCK_METHOD(GetName, std::string&());
+    MOCK_METHOD0(GetName, std::string&());
 };
 
 } // namespace Mock
 } // namespace Rosen
 } // namespace OHOS
 
-#endif // GRAPHIC_I_CONSYMER_SURFACE_MOCK_H
+#endif // GRAPHIC_I_CONSUMER_SURFACE_MOCK_H
