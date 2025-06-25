@@ -1419,11 +1419,6 @@ void RSRenderNode::UpdateDrawingCacheInfoBeforeChildren(bool isScreenRotation)
 #endif
 }
 
-bool RSRenderNode::HasHpaeBackgroundFilter() const
-{
-    return true;// to be fixed
-}
-
 void RSRenderNode::UpdateDrawingCacheInfoAfterChildren(bool isInBlackList)
 {
     RS_LOGI_IF(DEBUG_NODE, "RSRenderNode::UpdateDrawingCacheInfoAC uifirstArkTsCardNode:%{public}d"
@@ -4279,6 +4274,11 @@ RectI RSRenderNode::GetChildrenRect() const
 RectI RSRenderNode::GetRemovedChildrenRect() const
 {
     return removedChildrenRect_;
+}
+bool RSRenderNode::HasHpaeBackgroundFilter() const
+{
+    auto drawable = drawableVec_[static_cast<uint32_t>(RSDrawableSlot::BACKGROUND_FILTER)];
+    return drawable != nullptr;
 }
 bool RSRenderNode::ChildHasVisibleFilter() const
 {
