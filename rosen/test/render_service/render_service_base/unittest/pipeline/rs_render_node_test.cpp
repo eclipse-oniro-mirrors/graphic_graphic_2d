@@ -3283,7 +3283,6 @@ HWTEST_F(RSRenderNodeTest, UpdateVirtualScreenWhiteListInfo, TestSize.Level1)
     ScreenId screenId = 1;
     node->hasVirtualScreenWhiteList_[screenId] = false;
     node->UpdateVirtualScreenWhiteListInfo();
-
 }
 } // namespace Rosen
 } // namespace OHOS
