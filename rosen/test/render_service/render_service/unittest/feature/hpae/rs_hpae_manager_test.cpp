@@ -428,7 +428,7 @@ HWTEST_F(RSHpaeManagerTest, RegisterHpaeCallbackTest, TestSize.Level1)
 
     RSDrawableSlot slot5 = RSDrawableSlot::PIXEL_STRETCH;
     node4.drawableVec_[static_cast<uint32_t>(slot5)] = filterDrawable;
-    RSHpaeManager::GetInstance().stagingHpaeStatus_.gotHpaeBlurNode - false;
+    RSHpaeManager::GetInstance().stagingHpaeStatus_.gotHpaeBlurNode = false;
     RSHpaeManager::GetInstance().RegisterHpaeCallback(node4, 1000, 2000);
     ASSERT_EQ(RSHpaeManager::GetInstance().stagingHpaeStatus_.gotHpaeBlurNode, true);
 }
@@ -514,7 +514,7 @@ HWTEST_F(RSHpaeManagerTest, IsHpaeBlurNodeTest, TestSize.Level1)
     node5.renderProperties_.boundsGeo_->absRect_ = rect2;
     ASSERT_TRUE(RSHpaeManager::GetInstance().IsHpaeBlurNode(node5, 1000, 2000) == false);
     RectI rect3{0, 0, 1000, 1500};
-    node5.renderProperties_boundsGeo_->absRect_ = rect3;
+    node5.renderProperties_.boundsGeo_->absRect_ = rect3;
     ASSERT_TRUE(RSHpaeManager::GetInstance().IsHpaeBlurNode(node5, 1000, 2000) == false);
     RectI rect4{0, 0, 500, 1500};
     node5.renderProperties_.boundsGeo_->absRect_ = rect4;
