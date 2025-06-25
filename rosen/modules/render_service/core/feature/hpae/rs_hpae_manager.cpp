@@ -177,7 +177,7 @@ void RSHpaeManager::OnSync(bool isHdrOn)
     RSHpaeFfrtPatternManager::Instance().MHCSetCurFrameId(0);
 
     RSHpaeFfrtPatternManager::Instance().SetThreadId();
-    RSHpaeFfrtPatternManager::Instance().SetUpdatedFlag(); // 避免gpu投屏场景走进ffrt gp
+    RSHpaeFfrtPatternManager::Instance().SetUpdatedFlag();
 }
 
 bool RSHpaeManager::HasHpaeBlurNode() const
