@@ -162,7 +162,6 @@ HWTEST_F(RSRenderServiceConnectionStubTest, NotifySurfaceCaptureRemoteTest001, T
 
     MessageParcel data2;
     RSSurfaceCaptureConfig captureConfig2;
-    captureConfig2.isClientPixelMap = true;
     data2.WriteUint64(id);
     data2.WriteRemoteObject(callback->AsObject());
     g_WriteSurfaceCaptureConfigMock(captureConfig2, data2);
