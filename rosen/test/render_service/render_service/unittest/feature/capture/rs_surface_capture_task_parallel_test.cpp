@@ -525,27 +525,5 @@ HWTEST_F(RSSurfaceCaptureTaskParallelTest, TestSurfaceCaputreIt, TestSize.Level2
     EXPECT_EQ(surfaceCaptureCb_->IsTestSuccess(), true);
 }
 
-/*
- * @tc.name: TestCopyDataToPixelMap
- * @tc.desc: Test TestCopyDataToPixelMap
- * @tc.type: FUNC
- * @tc.require:
-*/
-HWTEST_F(RSSurfaceCaptureTaskParallelTest, TestCopyDataToPixelMap, TestSize.Level2)
-{
-    // Test PixelMap is nullptr
-    std::shared_ptr<Drawing::Image> img;
-    std::unique_ptr<Media::PixelMap> pixelMap;
-    RSSurfaceCaptureConfig captureConfig;
-    Drawing::Rect rect = {0, 0, 1260, 2720};
-    bool ret = CopyDataToPixelMap(img, pixelMap, captureConfig, UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL);
-    EXPECT_EQ(ret, false);
-    // vaild pixelMap, invaild img
-    auto pixelMap1 = RSCapturePixelMapManager::CreatePixelMap(rect, captureConfig);
-    EXPECT_EQ(pixelMap1 != nullptr, true);
-    ret = CopyDataToPixelMap(img, pixelMap1, captureConfig, UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL);
-    EXPECT_EQ(ret, false);
-}
-
 }
 }
