@@ -654,7 +654,7 @@ void RSUIDirector::ProcessMessages(std::shared_ptr<RSTransactionData> cmds, bool
             return;
         }
         rsUICtx->PostTask([cmds = std::make_shared<std::vector<std::unique_ptr<RSCommand>>>(std::move(commands)),
-                              counter, msgId, tempToken = token, &rsUICtx] {
+                              counter, msgId, tempToken = token, rsUICtx] {
             RS_TRACE_NAME_FMT("RSUIDirector::ProcessMessages Process messageId:%lu", msgId);
             ROSEN_LOGI("Process messageId:%{public}d, cmdCount:%{public}lu, token:%{public}" PRIu64, msgId,
                 static_cast<unsigned long>(cmds->size()), tempToken);
@@ -667,7 +667,10 @@ void RSUIDirector::ProcessMessages(std::shared_ptr<RSTransactionData> cmds, bool
                 if (requestVsyncCallback_ != nullptr) {
                     requestVsyncCallback_();
                 } else {
-                    rsUICtx->GetRSTransaction()->FlushImplicitTransaction();
+                    auto rsTransaction = rsUICtx->GetRSTransaction();
+                    if (rsTransaction != nullptr) {
+                        rsTransaction->FlushImplicitTransaction();
+                    }
                 }
                 ROSEN_LOGD("ProcessMessages end");
             }

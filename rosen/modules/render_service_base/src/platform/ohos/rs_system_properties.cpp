@@ -1515,8 +1515,9 @@ int32_t RSSystemProperties::GetHybridRenderSwitch(ComponentEnableSwitch bitSeq)
         ROSEN_LOGD("GetHybridRenderSwitch access to [%{public}s] is denied", VULKAN_CONFIG_FILE_PATH);
         return 0;
     }
+    char* endPtr = nullptr;
     static uint32_t hybridRenderFeatureSwitch =
-        std::stoul((system::GetParameter("const.graphics.hybridrenderfeatureswitch", "0x00")).c_str(), nullptr, 16);
+        std::strtoul(system::GetParameter("const.graphics.hybridrenderfeatureswitch", "0x00").c_str(), &endPtr, 16);
     static std::vector<int> hybridRenderSystemProperty(std::size(ComponentSwitchTable));
 
     if (bitSeq >= ComponentEnableSwitch::SWITCH_MAX) {
@@ -1575,6 +1576,13 @@ int RSSystemProperties::GetSubThreadDropFrameInterval()
     static bool dropFrameInterval =
         system::GetIntParameter("const.graphic.subthread.dropframe.interval", 1);
     return dropFrameInterval;
+}
+
+bool RSSystemProperties::GetCompositeLayerEnabled()
+{
+    static bool compositeLayerEnable =
+        system::GetBoolParameter("rosen.graphic.composite.layer", false);
+    return compositeLayerEnable;
 }
 } // namespace Rosen
 } // namespace OHOS

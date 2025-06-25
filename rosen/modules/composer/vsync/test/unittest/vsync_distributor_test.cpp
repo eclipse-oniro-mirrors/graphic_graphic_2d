@@ -430,8 +430,9 @@ HWTEST_F(VSyncDistributorTest, SetHardwareTaskNum001, Function | MediumTest| Lev
     uint32_t num = 0;
     sptr<VSyncConnection> conn = new VSyncConnection(vsyncDistributor, "VSyncDistributorTest");
     auto res = VSyncDistributorTest::vsyncDistributor->SetUiDvsyncSwitch(true, conn);
-    ASSERT_EQ(res, VSYNC_ERROR_OK);
     VSyncDistributorTest::vsyncDistributor->SetHardwareTaskNum(num);
+    VSyncDistributorTest::vsyncDistributor->SetTaskEndWithTime(0);
+    ASSERT_EQ(res, VSYNC_ERROR_OK);
 }
 
 /*

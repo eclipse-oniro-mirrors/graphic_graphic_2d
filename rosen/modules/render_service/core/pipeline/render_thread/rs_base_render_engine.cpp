@@ -47,9 +47,6 @@
 #include "src/gpu/gl/GrGLDefines.h"
 #endif
 #endif
-#ifdef RS_ENABLE_TV_PQ_METADATA
-#include "feature/tv_metadata/rs_tv_metadata_manager.h"
-#endif
 #include "v2_1/cm_color_space.h"
 
 namespace OHOS {
@@ -493,8 +490,9 @@ bool RSBaseRenderEngine::SetColorSpaceConverterDisplayParameter(
     return true;
 }
 
-void RSBaseRenderEngine::ColorSpaceConvertor(std::shared_ptr<Drawing::ShaderEffect> &inputShader,
-    BufferDrawParam& params, Media::VideoProcessingEngine::ColorSpaceConverterDisplayParameter& parameter)
+void RSBaseRenderEngine::ColorSpaceConvertor(std::shared_ptr<Drawing::ShaderEffect>& inputShader,
+    BufferDrawParam& params, Media::VideoProcessingEngine::ColorSpaceConverterDisplayParameter& parameter,
+    const RSPaintFilterCanvas::HDRProperties& hdrProperties)
 {
     RS_OPTIONAL_TRACE_BEGIN("RSBaseRenderEngine::ColorSpaceConvertor");
 
@@ -514,6 +512,11 @@ void RSBaseRenderEngine::ColorSpaceConvertor(std::shared_ptr<Drawing::ShaderEffe
         parameter.sdrNits = DEFAULT_DISPLAY_NIT;
         parameter.tmoNits = DEFAULT_DISPLAY_NIT;
         parameter.currentDisplayNits = DEFAULT_DISPLAY_NIT;
+        parameter.layerLinearMatrix = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f};
+    } else if (hdrProperties.isHDREnabledVirtualScreen) {
+        parameter.sdrNits = RSLuminanceConst::DEFAULT_CAST_SDR_NITS;
+        parameter.currentDisplayNits = RSLuminanceConst::DEFAULT_CAST_HDR_NITS;
+        parameter.tmoNits = RSLuminanceConst::DEFAULT_CAST_HDR_NITS;
         parameter.layerLinearMatrix = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f};
     }
 
@@ -659,13 +662,6 @@ void RSBaseRenderEngine::DrawImage(RSPaintFilterCanvas& canvas, BufferDrawParam&
     }
 
     // add for tv metadata
-#ifdef RS_ENABLE_TV_PQ_METADATA
-    TvPQMetadata info;
-    if (MetadataHelper::GetVideoTVMetadata(params.buffer, info) == GSERROR_OK) {
-        RSTvMetadataManager::Instance().RecordAndCombineMetadata(info);
-        RS_LOGD("RSBaseRenderEngine::DrawImage record metadata: buffer seq:%{public}d", params.buffer->GetSeqNum());
-    }
-#endif
     Drawing::SamplingOptions samplingOptions;
     if (!RSSystemProperties::GetUniRenderEnabled()) {
         samplingOptions = Drawing::SamplingOptions();
@@ -776,7 +772,7 @@ void RSBaseRenderEngine::DrawImage(RSPaintFilterCanvas& canvas, BufferDrawParam&
         RS_LOGW("RSBaseRenderEngine::DrawImage imageShader is nullptr.");
     } else {
         params.paint.SetShaderEffect(imageShader);
-        ColorSpaceConvertor(imageShader, params, videoInfo.parameter_);
+        ColorSpaceConvertor(imageShader, params, videoInfo.parameter_, canvas.GetHDRProperties());
     }
     canvas.AttachBrush(params.paint);
     canvas.DrawRect(params.dstRect);
