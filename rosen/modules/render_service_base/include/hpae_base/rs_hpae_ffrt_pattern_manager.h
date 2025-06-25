@@ -27,8 +27,8 @@
 namespace OHOS::Rosen {
 
 enum class PatternType_C {
-    HDR,  // 对应 PatternType::HDR
-    BLUR // 对应 PatternType::BLUR
+    HDR,
+    BLUR
 };
 
 enum class MHC_PatternTaskName {
@@ -51,9 +51,9 @@ struct MHC_TaskInfo {
 };
 
 struct FunctionHeader {
-    void (*execute)(void*);    // 执行函数指针
-    void (*destroy)(void*);    // 销毁函数指针
-    void* data;                // 用户数据（存储lambda）
+    void (*execute)(void*);
+    void (*destroy)(void*);
+    void* data;
 };
 
 template<typename F>
@@ -62,25 +62,21 @@ FunctionHeader* create_function_wrapper(F&& func)
     if (func == nullptr) {
         return nullptr;
     }
-    // 1. 复制/移动 lambda 到堆内存
+
     auto* func_copy = new std::decay_t<F>(std::forward<F>(func));
 
-    // 2. 创建 C 接口需要的头结构
     auto* header = new FunctionHeader;
 
-    // 3. 设置执行函数：调用 lambda
     header->execute = [](void* data) {
         auto* f = static_cast<std::decay_t<F>*>(data);
-        (*f)(); // 调用 operator()
+        (*f)();
     };
 
-    //4. 设置销毁函数：释放内存
     header->destroy = [](void* data) {
         auto* f = static_cast<std::decay_t<F>*>(data);
         delete f;
     };
 
-    // 5. 保存 lambda 指针
     header->data = func_copy;
     return header;
 }
@@ -159,7 +155,7 @@ public:
         return lastFrameId_;
     }
 
-    bool UseGraphicPattern() // 开关，控制是否使能ffrt GP
+    bool UseGraphicPattern()
     {
         return true;
     }
