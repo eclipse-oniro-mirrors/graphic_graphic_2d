@@ -40,11 +40,6 @@ enum class HpaeFrameState {
     CHANGE_CONFIG,
 };
 
-/*1.该类在prepare阶段收集模糊视效节点信息
-  2、根据流程优化的需要，及时启动如AAE硬件的初始化
-  3.启动和维护需要的线程
-  4、AAE 模糊需要的输入输出缓存
-  5.资源的释放*/
 class RSHpaeManager {
 public:
     static RSHpaeManager& GetInstance();
