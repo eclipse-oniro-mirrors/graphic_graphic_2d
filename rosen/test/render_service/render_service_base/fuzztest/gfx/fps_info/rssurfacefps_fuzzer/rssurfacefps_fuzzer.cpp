@@ -15,7 +15,6 @@
 
 #include "rssurfacefps_fuzzer.h"
 #include "gfx/fps_info/rs_surface_fps.h"
-#include "rsfirstframenotifier_fuzzer.h"
 #include "gfx/first_frame_notifier/rs_first_frame_notifier.h"
 
 #include <cstddef>
