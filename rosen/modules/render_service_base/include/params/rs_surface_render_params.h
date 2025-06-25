@@ -48,6 +48,7 @@ struct RSLayerInfo {
     GraphicLayerType layerType = GraphicLayerType::GRAPHIC_LAYER_TYPE_GRAPHIC;
     int32_t layerSource;
     bool arsrTag = true;
+    bool useDeviceOffline = false;
     bool copybitTag = false;
     uint32_t ancoFlags = 0;
     GraphicIRect ancoCropRect{};
@@ -59,7 +60,8 @@ struct RSLayerInfo {
             (transformType == layerInfo.transformType) && (ROSEN_EQ(alpha, layerInfo.alpha)) &&
             (layerSource == layerInfo.layerSource) && (layerType == layerInfo.layerType) &&
             (arsrTag == layerInfo.arsrTag) && (copybitTag == layerInfo.copybitTag) &&
-            (ancoCropRect == layerInfo.ancoCropRect) && (ancoFlags == layerInfo.ancoFlags);
+            (ancoCropRect == layerInfo.ancoCropRect) && (ancoFlags == layerInfo.ancoFlags) &&
+            (useDeviceOffline == layerInfo.useDeviceOffline);
     }
 #endif
 };
@@ -747,6 +749,13 @@ public:
 
     void SetFrameGravityNewVersionEnabled(bool isEnabled);
     bool GetFrameGravityNewVersionEnabled() const;
+
+    void SetUseDeviceOffline(bool useDeviceOffline)
+    {
+#ifndef ROSEN_CROSS_PLATFORM
+        layerInfo_.useDeviceOffline = useDeviceOffline;
+#endif
+    }
 
 private:
     bool isMainWindowType_ = false;

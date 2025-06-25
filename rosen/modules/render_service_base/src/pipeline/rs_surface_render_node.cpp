@@ -2037,6 +2037,7 @@ void RSSurfaceRenderNode::UpdateHwcNodeLayerInfo(GraphicTransformType transform,
     layer.matrix = totalMatrix_;
     layer.alpha = GetGlobalAlpha();
     layer.arsrTag = GetArsrTag();
+    layer.useDeviceOffline = GetOfflineDeviceEnable();
     layer.copybitTag = GetCopybitTag();
     layer.ancoFlags = surfaceParams->GetAncoFlags();
     const Rect& cropRect = surfaceParams->GetAncoSrcCrop();

@@ -391,7 +391,8 @@ void RSUniRenderThread::CollectReleaseTasks(std::vector<std::function<void()>>& 
         }
         auto curHardWareEnabled = surfaceParams->GetHardwareEnabled();
         auto lastHardWareEnabled = surfaceParams->GetLastFrameHardwareEnabled();
-        bool needRelease = !curHardWareEnabled || !surfaceParams->GetLayerCreated();
+        bool needRelease = !curHardWareEnabled || !surfaceParams->GetLayerCreated() ||
+            surfaceParams->GetLayerInfo().useDeviceOffline;
         if (needRelease && lastHardWareEnabled) {
             surfaceParams->releaseInHardwareThreadTaskNum_ = RELEASE_IN_HARDWARE_THREAD_TASK_NUM;
         }

@@ -161,6 +161,9 @@ private:
     bool SkipFrameByRefreshRate(uint32_t refreshRate, uint32_t expectedRefreshRate);
 
     void MirrorRedrawDFX(bool mirrorRedraw, ScreenId screenId);
+    void CheckAndPostAsyncProcessOfflineTask();
+    bool ProcessOfflineSurfaceDrawable(std::shared_ptr<RSProcessor> processor,
+        RSSurfaceRenderNodeDrawable &surfaceDrawable, bool async);
 
     void CheckHpaeBlurRun(bool isHdrOn);
 

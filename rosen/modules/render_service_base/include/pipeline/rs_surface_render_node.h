@@ -547,6 +547,16 @@ public:
         arsrTag_ = arsrTag;
     }
 
+    bool GetOfflineDeviceEnable() const
+    {
+        return offlineDeviceEnable_;
+    }
+
+    void SetOfflineDeviceEnable(bool enabled)
+    {
+        offlineDeviceEnable_ = enabled;
+    }
+
     bool GetCopybitTag() const
     {
         return copybitTag_;
@@ -1758,6 +1768,7 @@ private:
     bool needHidePrivacyContent_ = false;
     bool isHardwareForcedByBackgroundAlpha_ = false;
     bool arsrTag_ = true;
+    bool offlineDeviceEnable_ = false;
     bool copybitTag_ = false;
     bool subThreadAssignable_ = false;
     bool oldNeedDrawBehindWindow_ = false;

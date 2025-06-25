@@ -2520,6 +2520,10 @@ bool RSMainThread::DoDirectComposition(std::shared_ptr<RSBaseRenderNode> rootNod
                 params->SetOffsetY(0);
                 params->SetRogWidthRatio(1.0f);
             }
+            if (surfaceNode->GetOfflineDeviceEnable() && processor->ProcessOfflineLayer(*surfaceNode)) {
+                // go offline
+                continue;
+            }
             processor->CreateLayer(*surfaceNode, *params);
             // buffer is synced to directComposition
             params->SetBufferSynced(true);

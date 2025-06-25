@@ -66,6 +66,9 @@ public:
     virtual void ProcessRcdSurfaceForRenderThread(DrawableV2::RSRcdSurfaceRenderNodeDrawable& rcdDrawable) {}
 
     void SetSecurityDisplay(bool isSecurityDisplay);
+    virtual bool ProcessOfflineLayer(DrawableV2::RSSurfaceRenderNodeDrawable& surfaceDrawable,
+        bool async) { return false; }
+    virtual bool ProcessOfflineLayer(RSSurfaceRenderNode& node) { return false; }
     void SetDisplayHasSecSurface(bool displayHasSecSurface);
 
     const Drawing::Matrix& GetScreenTransformMatrix() const
