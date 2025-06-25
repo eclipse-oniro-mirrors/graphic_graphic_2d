@@ -125,7 +125,8 @@ DECLARE_FILTER(SoundWave, SOUND_WAVE,
 
 DECLARE_FILTER(EdgeLight, EDGE_LIGHT,
     ADD_PROPERTY_TAG(EdgeLight, Color),
-    ADD_PROPERTY_TAG(EdgeLight, Alpha)
+    ADD_PROPERTY_TAG(EdgeLight, Alpha),
+    ADD_PROPERTY_TAG(EdgeLight, Mask)
 );
 
 DECLARE_FILTER(Dispersion, DISPERSION,

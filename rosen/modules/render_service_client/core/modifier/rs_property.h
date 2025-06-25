@@ -317,6 +317,21 @@ private:
 };
 
 /**
+ * @struct RSRenderPropertyTraits
+ *
+ * @brief Helper for getting type of RSRenderProperty.
+ */
+template<typename T>
+struct RSRenderPropertyTraits {
+    using Type = RSRenderProperty<T>;
+};
+
+template<>
+struct RSRenderPropertyTraits<std::shared_ptr<RSNGMaskBase>> {
+    using Type = RSRenderProperty<std::shared_ptr<RSNGRenderMaskBase>>;
+};
+
+/**
  * @class RSProperty
  *
  * @brief The class for properties.
@@ -348,7 +363,7 @@ public:
 
     using ValueType = T;
 
-    using RenderPropertyType = RSRenderProperty<T>;
+    using RenderPropertyType = typename RSRenderPropertyTraits<T>::Type;
 
     virtual void Set(const T& value)
     {

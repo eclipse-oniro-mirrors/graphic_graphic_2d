@@ -29,6 +29,12 @@ namespace Drawing {
 
 class RSB_EXPORT RSNGRenderMaskBase : public RSNGRenderEffectBase<RSNGRenderMaskBase> {
 public:
+    virtual ~RSNGRenderMaskBase() = default;
+
+    static std::shared_ptr<RSNGRenderMaskBase> Create(RSNGEffectType type);
+
+    [[nodiscard]] static bool Unmarshalling(Parcel& parcel, std::shared_ptr<RSNGRenderMaskBase>& val);
+
     virtual std::shared_ptr<Drawing::GEShaderMask> GenerateGEShaderMask()
     {
         return nullptr;
@@ -47,7 +53,7 @@ DECLARE_MASK(RippleMask, RIPPLE_MASK,
     ADD_PROPERTY_TAG(RippleMask, Center),
     ADD_PROPERTY_TAG(RippleMask, Radius),
     ADD_PROPERTY_TAG(RippleMask, Width),
-    ADD_PROPERTY_TAG(RippleMask, WidthCenterOffset)
+    ADD_PROPERTY_TAG(RippleMask, Offset)
 );
 
 DECLARE_MASK(PixelMapMask, PIXEL_MAP_MASK,
