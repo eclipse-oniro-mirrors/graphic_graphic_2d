@@ -303,7 +303,7 @@ bool RSSurfaceCaptureTaskParallel::Run(
     // execute "param set rosen.dumpsurfacetype.enabled 3 && setenforce 0"
     RSBaseRenderUtil::WritePixelMapToPng(*pixelMap_);
     RS_LOGD("RSSurfaceCaptureTaskParallel::Run CaptureTask make a pixleMap with colorSpaceName: %{public}d",
-        pixelMap->InnerGetGrColorSpace().GetColorSpaceName());
+        pixelMap_->InnerGetGrColorSpace().GetColorSpaceName());
     callback->OnSurfaceCapture(nodeId_, captureConfig_, pixelMap_.get());
     return true;
 }
