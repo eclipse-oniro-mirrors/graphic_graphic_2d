@@ -135,13 +135,10 @@ HaePixel RSHpaeFusionOperator::GetHaePixel(const std::shared_ptr<RSDrawingFilter
     return haePixel;
 }
 
-// 对清晰背景image进行灰阶和边缘像素拓展处理
-// 结果写到aae blur的1/4输入buffer上
 int RSHpaeFusionOperator::ProcessGreyAndStretch(const Drawing::RectI& clipBounds,
     const std::shared_ptr<Drawing::Image> &image, const HpaeBufferInfo &targetBuffer,
     const std::shared_ptr<RSDrawingFilter> &filter, const Drawing::RectI &src)
 {
-    // 通过GPU将结果绘制到该canva上
     auto targetCanvas = targetBuffer.canvas;
     if (!image || !targetCanvas) {
         HPAE_LOGE("ProcessGreyAndStretch: input param is null: image: %p, canvas: %p", image.get(), targetCanvas.get());
