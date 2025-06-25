@@ -36,21 +36,21 @@ void RSHpaeRenderListenerTest::SetUp() {}
 void RSHpaeRenderListenerTest::TearDown() {}
 
 /**
- * @tc.name: OnBufferAvaliableTest
- * @tc.desc: Test OnBufferAvaliable
+ * @tc.name: OnBufferAvailableTest
+ * @tc.desc: Test OnBufferAvailable
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSHpaeRenderListenerTest, OnBufferAvaliableTest, TestSize.Level1)
+HWTEST_F(RSHpaeRenderListenerTest, OnBufferAvailableTest, TestSize.Level1)
 {
     std::shared_ptr<RSSurfaceHandler> surfaceHandler1;
     auto rSHpaeRenderListener1 = RSHpaeRenderListener(surfaceHandler1);
-    rSHpaeRenderListener1.OnBufferAvaliable();
+    rSHpaeRenderListener1.OnBufferAvailable();
 
     std::shared_ptr<RSSurfaceHandler> surfaceHandler2 = std::make_shared<RSSurfaceHandler>(0);
     auto rSHpaeRenderListener2 = RSHpaeRenderListener(surfaceHandler2);
-    rsHpaeRenderListener2.OnBufferAvaliable();
-    ASSERT_TRUE(surfaceHandler2->GetAvaliableBufferCount() == 1);
+    rSHpaeRenderListener2.OnBufferAvaliable();
+    ASSERT_TRUE(surfaceHandler2->GetAvailableBufferCount() == 1);
 }
 
 } // namesapce OHOS::Rosen
