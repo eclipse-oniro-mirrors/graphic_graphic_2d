@@ -338,7 +338,7 @@ bool RSUniRenderProcessor::ProcessOfflineLayer(
 {
     RS_OFFLINE_LOGD("ProcessOfflineLayer(drawable)");
     ProcessOfflineResult processOfflineResult;
-    uint64_t taskId = RsUniRenderThread::Instance().GetVsyncId();
+    uint64_t taskId = RSUniRenderThread::Instance().GetVsyncId();
     if (!async) {
         if (!RSHpaeOfflineProcessor::GetOfflineProcessor()->PostProcessOfflineTask(surfaceDrawable, taskId)) {
             RS_LOGW("RSUniRenderProcessor::ProcessOfflineLayer: post offline task failed, go redraw");
@@ -362,11 +362,11 @@ bool RSUniRenderProcessor::ProcessOfflineLayer(
     }
 }
 
-bool ProcessOfflineLayer(RSSurfaceRenderNode& node)
+bool RSUniRenderProcessor::ProcessOfflineLayer(RSSurfaceRenderNode& node)
 {
     RS_OFFLINE_LOGD("ProcessOfflineLayer(node)");
     ProcessOfflineResult processOfflineResult;
-    uint64_t taskId = RsUniRenderThread::Instance().GetVsyncId();
+    uint64_t taskId = RSUniRenderThread::Instance().GetVsyncId();
     if (!RSHpaeOfflineProcessor::GetOfflineProcessor()->PostProcessOfflineTask(node, taskId)) {
         RS_LOGW("RSUniRenderProcessor::ProcessOfflineLayer: post offline task failed, go redraw");
         return false;
