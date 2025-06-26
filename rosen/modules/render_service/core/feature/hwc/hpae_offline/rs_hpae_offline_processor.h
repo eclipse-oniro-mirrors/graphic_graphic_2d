@@ -19,7 +19,7 @@
 #include "feature/hwc/hpae_offline/rs_hpae_offline_thread_manager.h"
 #include "feature/hwc/hpae_offline/rs_hpae_offline_process_sync.h"
 #include "feature/hwc/hpae_offline/rs_hpae_offline_result.h"
-#include "feature/hwc/rs_uni_hwc_prevalidate_util.h"
+#include "feature/hwc/rs_uni_hwc_prevalidate_common.h"
 #include <cstdint>
 #include <atomic>
 #include <buffer_handle.h>
