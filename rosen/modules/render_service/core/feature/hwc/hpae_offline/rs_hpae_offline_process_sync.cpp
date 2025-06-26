@@ -68,7 +68,7 @@ std::shared_ptr<ProcessOfflineStatus> RSHpaeOfflineProcessSync::GetTaskStatus(ui
 bool RSHpaeOfflineProcessSync::WaitForTaskAndGetResult(uint64_t taskId,
     ProcessOfflineResult& processOfflineResult, std::chrono::milliseconds timeout)
 {
-    RS_TRACE_NAME_FMT("hpae_offline: Wait for offline task.", __func__);
+    RS_TRACE_NAME_FMT("Wait for offline task.", __func__);
     auto status = GetTaskStatus(taskId);
     if (!status) {
         RS_OFFLINE_LOGE("%{public}s, task is null.", __func__);
@@ -77,7 +77,7 @@ bool RSHpaeOfflineProcessSync::WaitForTaskAndGetResult(uint64_t taskId,
 
     std::unique_lock<std::mutex> lock(status->mtx);
     if (timeout == std::chrono::milliseconds::max()) {
-        status->cv.wait(lock, [status] { return status->done;});
+        status->cv.wait(lock, [status] { return status->done; });
     } else {
         if (!status->cv.wait_for(lock, timeout, [status] { return status->done; })) {
             status->timeout = true;
