@@ -98,9 +98,9 @@ private:
 
     // offline
     ComposeInfo BuildOfflineComposeInfo(DrawableV2::RSSurfaceRenderNodeDrawable& surfaceDrawable,
-        const ProcessOfflineResult &processOfflineResult) const;
+        const ProcessOfflineResult& processOfflineResult) const;
     ComposeInfo BuildOfflineComposeInfo(RSSurfaceRenderNode& node,
-        const ProcessOfflineResult &processOfflineResult) const;
+        const ProcessOfflineResult& processOfflineResult) const;
     void OfflineLayerRotate(const LayerInfoPtr& layer) const;
 
     std::shared_ptr<HdiOutput> output_;
