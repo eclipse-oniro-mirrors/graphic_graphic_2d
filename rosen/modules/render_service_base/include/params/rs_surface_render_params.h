@@ -48,10 +48,11 @@ struct RSLayerInfo {
     GraphicLayerType layerType = GraphicLayerType::GRAPHIC_LAYER_TYPE_GRAPHIC;
     int32_t layerSource;
     bool arsrTag = true;
-    bool useDeviceOffline = false;
     bool copybitTag = false;
     uint32_t ancoFlags = 0;
     GraphicIRect ancoCropRect{};
+    bool useDeviceOffline = false;
+    
     bool operator==(const RSLayerInfo& layerInfo) const
     {
         return (srcRect == layerInfo.srcRect) && (dstRect == layerInfo.dstRect) &&

@@ -138,7 +138,7 @@ bool RSUniHwcPrevalidateUtil::CreateSurfaceNodeLayerInfo(uint32_t zorder,
         node->SetArsrTag(true);
     }
     CheckIfDoCopybit(node, transform, info);
-    node->SetOfflineDeviceEnable(false);
+    node->SetDeviceOfflineEnable(false);
     RS_LOGD_IF(DEBUG_PREVALIDATE, "CreateSurfaceNodeLayerInfo %{public}s,"
         " %{public}" PRIu64 ", src: %{public}s, dst: %{public}s, z: %{public}" PRIu32 ","
         " bufferUsage: %{public}" PRIu64 ", layerUsage: %{public}" PRIu64 ","

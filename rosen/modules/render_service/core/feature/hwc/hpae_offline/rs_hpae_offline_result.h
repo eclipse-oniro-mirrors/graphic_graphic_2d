@@ -23,23 +23,23 @@
 
 namespace OHOS {
 namespace Rosen {
-typedef struct ProcessOfflineResult_ {
+struct ProcessOfflineResult {
     sptr<IConsumerSurface> consumer = nullptr;
     Rect damageRect = {0, 0, 0, 0};
     sptr<SurfaceBuffer> preBuffer = nullptr;
     sptr<SurfaceBuffer> buffer = nullptr;
     sptr<SyncFence> acquireFence = nullptr;
     GraphicIRect bufferRect = {0, 0, 0, 0};
-    bool flag = false;
-} ProcessOfflineResult;
+    bool taskSuccess = false;
+};
 
-typedef struct ProcessOfflineStatus_ {
+struct ProcessOfflineFuture {
     bool done = false;
     bool timeout = false;
     ProcessOfflineResult result;
     std::mutex mtx;
     std::condition_variable cv;
-} ProcessOfflineStatus;
+};
 }
 }
 #endif // RS_CORE_FEATURE_HPAE_OFFLINE_RESULT_H

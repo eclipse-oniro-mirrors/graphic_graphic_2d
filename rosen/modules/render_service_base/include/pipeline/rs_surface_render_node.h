@@ -546,16 +546,10 @@ public:
     {
         arsrTag_ = arsrTag;
     }
-
-    bool GetOfflineDeviceEnable() const
-    {
-        return offlineDeviceEnable_;
-    }
-
-    void SetOfflineDeviceEnable(bool enabled)
-    {
-        offlineDeviceEnable_ = enabled;
-    }
+    
+    // hpae offline
+    bool GetDeviceOfflineEnable() const { return deviceOfflineEnable_; }
+    void SetDeviceOfflineEnable(bool enabled) { deviceOfflineEnable_ = enabled; }
 
     bool GetCopybitTag() const
     {
@@ -1768,8 +1762,11 @@ private:
     bool needHidePrivacyContent_ = false;
     bool isHardwareForcedByBackgroundAlpha_ = false;
     bool arsrTag_ = true;
-    bool offlineDeviceEnable_ = false;
     bool copybitTag_ = false;
+    
+    // hpae offline
+    bool deviceOfflineEnable_ = false;
+    
     bool subThreadAssignable_ = false;
     bool oldNeedDrawBehindWindow_ = false;
     RectI skipFrameDirtyRect_;

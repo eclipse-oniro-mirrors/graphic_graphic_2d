@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,6 +21,7 @@
 #include "feature/hwc/hpae_offline/rs_hpae_offline_process_sync.h"
 #include "feature/hwc/hpae_offline/rs_hpae_offline_result.h"
 #include "feature/hwc/rs_uni_hwc_prevalidate_common.h"
+
 #include <cstdint>
 #include <atomic>
 #include <buffer_handle.h>
@@ -28,8 +30,8 @@ namespace OHOS {
 namespace Rosen {
 struct OfflineProcessInputInfo {
     uint64_t id;
-    BufferHandle *srcHandle = nullptr;
-    BufferHandle *dstHandle = nullptr;
+    BufferHandle* srcHandle = nullptr;
+    BufferHandle* dstHandle = nullptr;
     RequestRect srcRect;
     RequestRect dstRect;
     uint32_t transform = 0;
@@ -49,7 +51,7 @@ struct OfflineBufferConfig {
 };
 
 struct OfflineProcessOutputInfo {
-    OfflineBufferConfig bufConfig;
+    OfflineBufferConfig bufferConfig;
     RequestRect outRect;
 };
 
@@ -70,8 +72,8 @@ public:
     bool PostProcessOfflineTask(RSSurfaceRenderNode& node, uint64_t taskId);
     bool IsRSHpaeOfflineProcessorReady();
     void CheckAndPostClearOfflineResourceTask();
-    bool WaitForProcessOfflineResult(uint64_t taskId, ProcessOfflineResult& processOfflineResult,
-        std::chrono::milliseconds timeout = std::chrono::milliseconds(100));
+    bool WaitForProcessOfflineResult(uint64_t taskId, std::chrono::milliseconds timeout,
+        ProcessOfflineResult& processOfflineResult);
 
 private:
     RSHpaeOfflineProcessor();
@@ -85,14 +87,16 @@ private:
     bool GetOfflineProcessInput(RSSurfaceRenderParams& params, OfflineProcessInputInfo& inputInfo,
         sptr<SurfaceBuffer>& dstSurfaceBuffer, int32_t& releaseFence);
     void FlushAndReleaseOfflineLayer(sptr<SurfaceBuffer>& dstSurfaceBuffer);
+    void OfflineTaskFunc(RSRenderParams* paramsPtr, std::shared_ptr<ProcessOfflineFuture> &futurePtr);
     bool DoProcessOffline(RSSurfaceRenderParams& params, ProcessOfflineResult& processOfflineResult);
-    void CheckAndHandleTimeoutEvent(std::weak_ptr<ProcessOfflineStatus> statusWeakPtr);
+    void CheckAndHandleTimeoutEvent(std::shared_ptr<ProcessOfflineFuture> futurePtr);
+
     // so handler
     bool loadSuccess_ = false;
-    void *preProcessHandle_ = nullptr;
+    void* preProcessHandle_ = nullptr;
     ProcessOfflineFunc preProcessFunc_ = nullptr;
     GetOfflineConfigFunc getConfigFunc_ = nullptr;
-    RSHpaeOfflineProcessSync offlineResultSync_;
+    RSHpaeOfflineProcessSyncer offlineResultSync_;
     RSHpaeOfflineThreadManager offlineThreadManager_;
 
     // surface

@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -161,6 +162,10 @@ private:
     bool SkipFrameByRefreshRate(uint32_t refreshRate, uint32_t expectedRefreshRate);
 
     void MirrorRedrawDFX(bool mirrorRedraw, ScreenId screenId);
+
+    void CheckHpaeBlurRun(bool isHdrOn);
+    
+    // hpae offline
     void CheckAndPostAsyncProcessOfflineTask();
     bool ProcessOfflineSurfaceDrawable(std::shared_ptr<RSProcessor> processor,
         RSSurfaceRenderNodeDrawable &surfaceDrawable, bool async);

@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -2045,6 +2046,7 @@ void RSUniRenderVisitor::PrevalidateHwcNode()
     if (prevalidLayers.size() == 0) {
         RS_LOGI_IF(DEBUG_PREVALIDATE, "RSUniRenderVisitor::PrevalidateHwcNode no hardware layer");
         hwcVisitor_->PrintHiperfCounterLog("counter2", INPUT_HWC_LAYERS);
+        RSHpaeOfflineProcessor::GetOfflineProcessor().CheckAndPostClearOfflineResourceTask();
         return;
     }
     // add display layer
@@ -2076,7 +2078,7 @@ void RSUniRenderVisitor::PrevalidateHwcNode()
     }
     {
         auto iter = std::find_if(strategy.begin(), strategy.end(),
-        [](const auto& stgy) { return stgy.second == RequestCompositionType::OFFLINE_DEVICE; });
+            [](const auto& elem) { return elem.second == RequestCompositionType::OFFLINE_DEVICE; });
         if (iter == strategy.end()) {
             RSHpaeOfflineProcessor::GetOfflineProcessor()->CheckAndPostClearOfflineResourceTask();
         }

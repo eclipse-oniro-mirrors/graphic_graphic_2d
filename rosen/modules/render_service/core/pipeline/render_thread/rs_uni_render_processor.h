@@ -52,10 +52,11 @@ public:
     void ProcessSurfaceForRenderThread(DrawableV2::RSSurfaceRenderNodeDrawable& surfaceDrawable) override;
     void ProcessScreenSurfaceForRenderThread(DrawableV2::RSScreenRenderNodeDrawable& screenDrawable) override;
     void ProcessRcdSurfaceForRenderThread(DrawableV2::RSRcdSurfaceRenderNodeDrawable& rcdDrawable) override;
-
+    // hpae offline
     bool ProcessOfflineLayer(
         DrawableV2::RSSurfaceRenderNodeDrawable& surfaceDrawable, bool async) override;
     bool ProcessOfflineLayer(RSSurfaceRenderNode& node) override;
+
 private:
     bool GetForceClientForDRM(RSSurfaceRenderParams& params);
     LayerInfoPtr GetLayerInfo(RSSurfaceRenderParams& params, sptr<SurfaceBuffer>& buffer,

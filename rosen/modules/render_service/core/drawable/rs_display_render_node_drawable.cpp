@@ -85,6 +85,7 @@
 #include "c/ffrt_cpu_boost.h"
 // xml parser
 #include "graphic_feature_param_manager.h"
+// hpae offline
 #include "feature/hwc/hpae_offline/rs_hpae_offline_processor.h"
 #include "feature/hwc/hpae_offline/rs_hpae_offline_process_sync.h"
 namespace OHOS::Rosen::DrawableV2 {
@@ -414,7 +415,7 @@ bool RSDisplayRenderNodeDrawable::CheckDisplayNodeSkip(
                 surfaceParams->SetOffsetY(0);
                 surfaceParams->SetRogWidthRatio(1.0f);
             }
-
+            // hpae offline
             if (drawable->GetRenderParams()->GetLayerInfo().useDeviceOffline &&
                 ProcessOfflineSurfaceDrawable(processor, *surfaceDrawable, false)) {
                 continue;
@@ -796,6 +797,7 @@ void RSDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     if (isHdrOn) {
         params->SetNewPixelFormat(GRAPHIC_PIXEL_FMT_RGBA_1010102);
     }
+    // hpae offline: post offline task
     CheckAndPostAsyncProcessOfflineTask();
     RSUniRenderThread::Instance().WaitUntilDisplayNodeBufferReleased(*this);
     // displayNodeSp to get  rsSurface witch only used in renderThread
@@ -1012,6 +1014,7 @@ void RSDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
                 surfaceParams->SetOffsetY(0);
                 surfaceParams->SetRogWidthRatio(1.0f);
             }
+            // hpae offline: wait task and create layer
             if (drawable->GetRenderParams()->GetLayerInfo().useDeviceOffline &&
                 ProcessOfflineSurfaceDrawable(processor, *surfaceDrawable, true)) {
                 continue;
@@ -2679,7 +2682,8 @@ bool RSDisplayRenderNodeDrawable::SkipFrame(uint32_t refreshRate, ScreenInfo scr
 }
 
 bool RSDisplayRenderNodeDrawable::ProcessOfflineSurfaceDrawable(
-    std::shared_ptr<RSProcessor> processor, RSSurfaceRenderNodeDrawable& surfaceDrawable, bool async)
+    const std::shared_ptr<RSProcessor>& processor,
+    RSSurfaceRenderNodeDrawable& surfaceDrawable, bool async)
 {
     if (processor->ProcessOfflineLayer(surfaceDrawable, async)) {
         // use offline layer to display
@@ -2697,6 +2701,10 @@ void RSDisplayRenderNodeDrawable::CheckAndPostAsyncProcessOfflineTask()
         RSUniRenderThread::Instance().GetRSRenderThreadParams()->GetHardwareEnabledTypeDrawables();
     for (const auto& [displayNodeId, drawable] : hardwareDrawables) {
         if (UNLIKELY(!drawable || !drawable->GetRenderParams())) {
+            continue;
+        }
+        auto params = static_cast<RSDisplayRenderParams*>(renderParams_.get());
+        if (displayNodeId != params.GetId()) {
             continue;
         }
         auto surfaceDrawable = std::static_pointer_cast<RSSurfaceRenderNodeDrawable>(drawable);

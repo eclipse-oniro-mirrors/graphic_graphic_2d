@@ -24,10 +24,11 @@ public:
     RSHpaeOfflineThreadManager() { CreateThread(); }
     ~RSHpaeOfflineThreadManager() { DestroyThread(); }
     bool PostTask(const std::function<void()>& task);
-    void CreateThread();
-    void DestroyThread();
 
 private:
+    void CreateThread();
+    void DestroyThread();
+    
     std::shared_ptr<AppExecFwk::EventRunner> runner_ = nullptr;
     std::shared_ptr<AppExecFwk::EventHandler> handler_ = nullptr;
 };

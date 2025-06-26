@@ -1682,9 +1682,9 @@ void RSUniRenderComposerAdapter::LayerRotate(
 }
 
 ComposeInfo RSUniRenderComposerAdapter::BuildOfflineComposeInfo(RSSurfaceRenderNode& node,
-    const ProcessOfflineResult &processOfflineResult) const
+    const ProcessOfflineResult& processOfflineResult) const
 {
-    ComposeInfo info {};
+    ComposeInfo info;
     auto& params = node.GetStagingRenderParams();
     if (!params) {
         RS_OFFLINE_LOGE("BuildComposeInfo fail, node params is nullptr");
@@ -1738,9 +1738,9 @@ ComposeInfo RSUniRenderComposerAdapter::BuildOfflineComposeInfo(RSSurfaceRenderN
 }
 
 ComposeInfo RSUniRenderComposerAdapter::BuildOfflineComposeInfo(
-    DrawableV2::RSSurfaceRenderNodeDrawable& surfaceDrawable, const ProcessOfflineResult &processOfflineResult) const
+    DrawableV2::RSSurfaceRenderNodeDrawable& surfaceDrawable, const ProcessOfflineResult& processOfflineResult) const
 {
-    ComposeInfo info {};
+    ComposeInfo info;
     auto& params = surfaceDrawable.GetRenderParams();
     if (!params) {
         RS_OFFLINE_LOGD("RSUniRenderComposerAdapter::BuildCInfo params is nullptr");
@@ -1813,8 +1813,12 @@ void RSUniRenderComposerAdapter::OfflineLayerRotate(const LayerInfoPtr& layer) c
 }
 
 LayerInfoPtr RSUniRenderComposerAdapter::CreateOfflineLayer(DrawableV2::RSSurfaceRenderNodeDrawable& surfaceDrawable,
-    ProcessOfflineResult &processOfflineResult) const
+    ProcessOfflineResult& processOfflineResult) const
 {
+    if (!processOfflineResult.buffer) {
+        RS_OFFLINE_LOGE("offline buffer is nullptr");
+        return nullptr;
+    }
     auto& params = surfaceDrawable.GetRenderParams();
     if (!params) {
         RS_OFFLINE_LOGE("CreateOfflineLayer fail, params is nullptr");
@@ -1842,11 +1846,6 @@ LayerInfoPtr RSUniRenderComposerAdapter::CreateOfflineLayer(DrawableV2::RSSurfac
     OfflineLayerRotate(layer);
     LayerCrop(layer);
     const auto& buffer = layer->GetBuffer();
-    if (buffer == nullptr) {
-        RS_OFFLINE_LOGE("buffer is nullptr");
-        return layer;
-    }
-
     ScalingMode scalingMode = buffer->GetSurfaceBufferScalingMode();
     RS_OFFLINE_LOGD("CreateOfflineLayer scalingMode is %{public}d", scalingMode);
     if (scalingMode == ScalingMode::SCALING_MODE_SCALE_CROP) {
@@ -1864,8 +1863,12 @@ LayerInfoPtr RSUniRenderComposerAdapter::CreateOfflineLayer(DrawableV2::RSSurfac
 }
 
 LayerInfoPtr RSUniRenderComposerAdapter::CreateOfflineLayer(RSSurfaceRenderNode& node,
-    ProcessOfflineResult &processOfflineResult) const
+    ProcessOfflineResult& processOfflineResult) const
 {
+    if (!processOfflineResult.buffer) {
+        RS_OFFLINE_LOGE("offline buffer is nullptr");
+        return nullptr;
+    }
     ComposeInfo info = BuildOfflineComposeInfo(node, processOfflineResult);
     if (IsOutOfScreenRegion(info)) {
         RS_OFFLINE_LOGD("CreateOfflineLayer: node(%{public}" PRIu64
@@ -1892,10 +1895,6 @@ LayerInfoPtr RSUniRenderComposerAdapter::CreateOfflineLayer(RSSurfaceRenderNode&
     LayerCrop(layer);
     layer->SetNodeId(node.GetId());
     const auto& buffer = layer->GetBuffer();
-    if (buffer == nullptr) {
-        RS_OFFLINE_LOGE("buffer or surface is nullptr");
-        return layer;
-    }
     ScalingMode scalingMode = buffer->GetSurfaceBufferScalingMode();
     RS_OFFLINE_LOGD("RSUniRenderComposerAdapter::CreateOfflineLayer scalingMode is %{public}d", scalingMode);
     if (scalingMode == ScalingMode::SCALING_MODE_SCALE_CROP) {

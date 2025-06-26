@@ -21,6 +21,7 @@
 #include "pipeline/render_thread/rs_base_render_engine.h"
 #include "transaction/rs_render_service_client.h"
 #include "params/rs_display_render_params.h"
+
 #include <string>
 
 namespace OHOS::Rosen {
@@ -32,7 +33,6 @@ public:
     bool CreateSurface(sptr<IBufferConsumerListener>& listener);
     void FlushSurfaceBuffer(sptr<SurfaceBuffer>& buffer, int32_t acquireFence,
         BufferFlushConfig& flushConfig);
-
     bool PreAllocBuffers(const BufferRequestConfig& config);
     sptr<SurfaceBuffer> RequestSurfaceBuffer(BufferRequestConfig& config, int32_t& releaseFence);
     void CleanCache(bool cleanAll);
@@ -41,12 +41,13 @@ public:
     {
         return surfaceHandler_;
     }
+
 private:
     uint32_t bufferSize_ = 5;
+    sptr<Surface> surface_ = nullptr;
     std::shared_ptr<RSSurfaceHandler> surfaceHandler_;
     bool surfaceCreated_ = false;
     std::string layerName_;
-    sptr<Surface> surface_ = nullptr;
 };
 
 } // OHOS::Rosen

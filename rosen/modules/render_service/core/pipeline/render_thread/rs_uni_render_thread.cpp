@@ -391,6 +391,7 @@ void RSUniRenderThread::CollectReleaseTasks(std::vector<std::function<void()>>& 
         }
         auto curHardWareEnabled = surfaceParams->GetHardwareEnabled();
         auto lastHardWareEnabled = surfaceParams->GetLastFrameHardwareEnabled();
+        // while use offline, release original buffer
         bool needRelease = !curHardWareEnabled || !surfaceParams->GetLayerCreated() ||
             surfaceParams->GetLayerInfo().useDeviceOffline;
         if (needRelease && lastHardWareEnabled) {
