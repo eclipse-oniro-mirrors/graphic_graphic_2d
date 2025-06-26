@@ -45,7 +45,7 @@ RSHpaeOfflineLayer::~RSHpaeOfflineLayer()
 
 bool RSHpaeOfflineLayer::PreAllocBuffers(const BufferRequestConfig& config)
 {
-    RS_OPTIONAL_TRACE_NAME_FMT("hpae_offline: prealloc offline buffer.");
+    RS_OPTIONAL_TRACE_NAME_FMT("prealloc offline buffer.");
     if (!surfaceCreated_) {
         sptr<IBufferConsumerListener> listener = new RSUniRenderListener(surfaceHandler_);
         if (!CreateSurface(listener)) {
@@ -63,7 +63,7 @@ bool RSHpaeOfflineLayer::PreAllocBuffers(const BufferRequestConfig& config)
 }
 
 sptr<SurfaceBuffer> RSHpaeOfflineLayer::RequestSurfaceBuffer(
-    BufferRequestConfig& config, int32_t &releaseFence)
+    BufferRequestConfig& config, int32_t& releaseFence)
 {
     RS_OPTIONAL_TRACE_NAME_FMT("hpae_offline: request offline buffer.");
     if (!surfaceCreated_) {
@@ -78,7 +78,7 @@ sptr<SurfaceBuffer> RSHpaeOfflineLayer::RequestSurfaceBuffer(
 }
 
 // reference to RSDisplayRenderNodeDrawable::CreateSurface
-bool RSHpaeOfflineLayer::CreateSurface(sptr<IBufferConsumerListener> &listener)
+bool RSHpaeOfflineLayer::CreateSurface(sptr<IBufferConsumerListener>& listener)
 {
     RS_OPTIONAL_TRACE_NAME_FMT("hpae_offline: Create offline surface");
     auto consumer = surfaceHandler_->GetConsumer();
@@ -109,7 +109,7 @@ bool RSHpaeOfflineLayer::CreateSurface(sptr<IBufferConsumerListener> &listener)
 }
 
 void RSHpaeOfflineLayer::FlushSurfaceBuffer(
-    sptr<SurfaceBuffer> &buffer, int32_t acquireFence, BufferFlushConfig &flushConfig)
+    sptr<SurfaceBuffer>& buffer, int32_t acquireFence, BufferFlushConfig& flushConfig)
 {
     sptr<SyncFence> acquireFenceSp(new SyncFence(acquireFence));
     surface_->FlushBuffer(buffer, acquireFenceSp, flushConfig);
