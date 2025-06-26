@@ -55,9 +55,9 @@ public:
         const sptr<IConsumerSurface>& surface) const;
 
     // offline
-    LayerInfoPtr CreateOfflineLayer(RSSurfaceRenderNode& node, ProcessOfflineResult &processOfflineResult) const;
+    LayerInfoPtr CreateOfflineLayer(RSSurfaceRenderNode& node, ProcessOfflineResult& processOfflineResult) const;
     LayerInfoPtr CreateOfflineLayer(DrawableV2::RSSurfaceRenderNodeDrawable& surfaceDrawable,
-        ProcessOfflineResult &processOfflineResult) const;
+        ProcessOfflineResult& processOfflineResult) const;
 private:
     bool IsOutOfScreenRegion(const ComposeInfo& info) const;
     static RectI SrcRectRotateTransform(RSSurfaceRenderNode& node);
