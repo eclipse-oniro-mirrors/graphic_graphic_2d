@@ -37,7 +37,7 @@ void RotateOffScreenParamParseTest::TearDown() {}
  * @tc.name: ParseFeatureParamTest
  * @tc.desc: Test ParseFeatureParam
  * @tc.type: FUNC
- * @tc.require: #IBEL7U
+ * @tc.require: issue#IBZZ8D
  */
 HWTEST_F(RotateOffScreenParamParseTest, ParseFeatureParamTest, TestSize.Level1)
 {
