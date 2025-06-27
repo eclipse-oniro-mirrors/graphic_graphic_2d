@@ -2330,7 +2330,7 @@ void RSUniRenderVisitor::UpdateHwcNodesIfVisibleForApp(std::shared_ptr<RSSurface
         }
 
         auto regionRects = surfaceNode->GetVisibleRegion().GetRegionRects();
-        if (hwcNodePtr->GetHwcGlobalPositionEnabled() || hwcNodePtr->IsCrossNode()
+        if (hwcNodePtr->GetHwcGlobalPositionEnabled() || hwcNodePtr->IsHwcCrossNode()
             || surfaceNode->GetSpecialLayerMgr().Find(SpecialLayerType::PROTECTED)
             || surfaceNode->IsLayerTop()) {
                 hwcNodePtr->HwcSurfaceRecorder().SetLastFrameHasVisibleRegion(true); // visible Region
@@ -2348,9 +2348,6 @@ void RSUniRenderVisitor::UpdateHwcNodesIfVisibleForApp(std::shared_ptr<RSSurface
         if (newRect.IsIntersect(dstRect)) {
             hwcNodePtr->HwcSurfaceRecorder().SetLastFrameHasVisibleRegion(true); // visible Region
             hasVisibleHwcNodes = true;
-            if (hwcNodePtr->GetRSSurfaceHandler() == nullptr) {
-                continue;
-            }
             if (hwcNodePtr->GetRSSurfaceHandler()->IsCurrentFrameBufferConsumed()) {
                 needForceUpdateHwcNodes = true;
             }
