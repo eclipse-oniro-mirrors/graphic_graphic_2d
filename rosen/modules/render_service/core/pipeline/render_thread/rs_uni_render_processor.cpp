@@ -367,12 +367,12 @@ bool RSUniRenderProcessor::ProcessOfflineLayer(
 bool RSUniRenderProcessor::ProcessOfflineLayer(RSSurfaceRenderNode& node)
 {
     RS_OFFLINE_LOGD("ProcessOfflineLayer(node)");
-    ProcessOfflineResult processOfflineResult;
     uint64_t taskId = RSUniRenderThread::Instance().GetVsyncId();
     if (!RSHpaeOfflineProcessor::GetOfflineProcessor().PostProcessOfflineTask(node, taskId)) {
         RS_LOGW("RSUniRenderProcessor::ProcessOfflineLayer: post offline task failed, go redraw");
         return false;
     }
+    ProcessOfflineResult processOfflineResult;
     bool waitSuccess = RSHpaeOfflineProcessor::GetOfflineProcessor().WaitForProcessOfflineResult(
         taskId, HPAE_OFFLINE_TIMEOUT, processOfflineResult);
     if (waitSuccess && processOfflineResult.taskSuccess) {
