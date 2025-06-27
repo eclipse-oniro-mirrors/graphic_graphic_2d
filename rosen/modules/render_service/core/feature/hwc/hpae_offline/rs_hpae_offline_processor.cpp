@@ -347,7 +347,7 @@ bool RSHpaeOfflineProcessor::PostProcessOfflineTask(RSSurfaceRenderNode& node, u
         RS_OFFLINE_LOGE("register post task failed!");
         return false;
     }
-    auto renderParamSptr = node.GetStagingRenderParams();
+    auto &renderParamSptr = node.GetStagingRenderParams();
     offlineThreadManager_.PostTask([&renderParamSptr, &futurePtr, this]() mutable {
         RS_TRACE_NAME("hpae_offline: ProcessOffline");
         RS_OFFLINE_LOGD("start to proces offline surface (by node)");
@@ -369,7 +369,7 @@ bool RSHpaeOfflineProcessor::PostProcessOfflineTask(
         RS_OFFLINE_LOGE("register post task failed!");
         return false;
     }
-    auto renderParamSptr = surfaceDrawable.GetRenderParams();
+    auto &renderParamSptr = surfaceDrawable.GetRenderParams();
     offlineThreadManager_.PostTask([&renderParamSptr, &futurePtr, this]() mutable {
         RS_TRACE_NAME("hpae_offline: ProcessOffline");
         RS_OFFLINE_LOGD("start to proces offline surface (by drawable)");
