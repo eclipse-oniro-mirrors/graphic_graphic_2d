@@ -100,7 +100,7 @@ private:
     RSHpaeOfflineThreadManager offlineThreadManager_;
 
     // surface
-    RSHpaeOfflineLayer offlineLayer_ = RSHpaeOfflineLayer("DeviceOfflineLayer", INVALID_NODEID);
+    RSHpaeOfflineLayer offlineLayer_{"DeviceOfflineLayer", INVALID_NODEID};
     BufferFlushConfig flushConfig_;
     std::atomic<bool> preAllocBufferSucc_ = false;
     // offline config
