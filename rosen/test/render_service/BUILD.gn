@@ -18,6 +18,7 @@ group("test") {
   deps = [
     "render_service/fuzztest/rsirenderserviceipcinterfacecodeaccessverifier_fuzzer:fuzztest",
     "render_service/fuzztest/rsrenderserviceconnection_fuzzer:fuzztest",
+    "render_service/fuzztest/rsrenderserviceconnection000_fuzzer:fuzztest",
     "render_service/fuzztest/rsrenderserviceconnectionstub_fuzzer:fuzztest",
     "render_service/fuzztest/rsrenderservicesecurityutils_fuzzer:fuzztest",
     "render_service/fuzztest/rsrenderservicestub_fuzzer:fuzztest",
