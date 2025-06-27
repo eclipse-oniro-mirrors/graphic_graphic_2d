@@ -87,7 +87,7 @@
 #include "graphic_feature_param_manager.h"
 // hpae offline
 #include "feature/hwc/hpae_offline/rs_hpae_offline_processor.h"
-#include "feature/hwc/hpae_offline/rs_hpae_offline_process_sync.h"
+
 namespace OHOS::Rosen::DrawableV2 {
 namespace {
 constexpr const char* CLEAR_GPU_CACHE = "ClearGpuCache";
