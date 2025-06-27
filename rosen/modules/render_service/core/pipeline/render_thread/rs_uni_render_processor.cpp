@@ -336,7 +336,7 @@ LayerInfoPtr RSUniRenderProcessor::GetLayerInfo(RSSurfaceRenderParams& params, s
 }
 
 bool RSUniRenderProcessor::ProcessOfflineLayer(
-    DrawableV2::RSSurfaceRenderNodeDrawable& surfaceDrawable, bool async)
+    std::shared_ptr<DrawableV2::RSSurfaceRenderNodeDrawable& surfaceDrawable>, bool async)
 {
     RS_OFFLINE_LOGD("ProcessOfflineLayer(drawable)");
     uint64_t taskId = RSUniRenderThread::Instance().GetVsyncId();
@@ -350,7 +350,7 @@ bool RSUniRenderProcessor::ProcessOfflineLayer(
     bool waitSuccess = RSHpaeOfflineProcessor::GetOfflineProcessor().WaitForProcessOfflineResult(
         taskId, HPAE_OFFLINE_TIMEOUT, processOfflineResult);
     if (waitSuccess && processOfflineResult.taskSuccess) {
-        auto layer = uniComposerAdapter_->CreateOfflineLayer(surfaceDrawable, processOfflineResult);
+        auto layer = uniComposerAdapter_->CreateOfflineLayer(*surfaceDrawable, processOfflineResult);
         if (layer == nullptr) {
             RS_LOGE("RSUniRenderProcessor::ProcessOfflineLayer: failed to createLayer for node: %{public}" PRIu64 ")",
                 surfaceDrawable.GetId());
@@ -364,7 +364,7 @@ bool RSUniRenderProcessor::ProcessOfflineLayer(
     }
 }
 
-bool RSUniRenderProcessor::ProcessOfflineLayer(RSSurfaceRenderNode& node)
+bool RSUniRenderProcessor::ProcessOfflineLayer(std::shared_ptr<RSSurfaceRenderNode>& node)
 {
     RS_OFFLINE_LOGD("ProcessOfflineLayer(node)");
     uint64_t taskId = RSUniRenderThread::Instance().GetVsyncId();
@@ -376,7 +376,7 @@ bool RSUniRenderProcessor::ProcessOfflineLayer(RSSurfaceRenderNode& node)
     bool waitSuccess = RSHpaeOfflineProcessor::GetOfflineProcessor().WaitForProcessOfflineResult(
         taskId, HPAE_OFFLINE_TIMEOUT, processOfflineResult);
     if (waitSuccess && processOfflineResult.taskSuccess) {
-        auto layer = uniComposerAdapter_->CreateOfflineLayer(node, processOfflineResult);
+        auto layer = uniComposerAdapter_->CreateOfflineLayer(*node, processOfflineResult);
         if (layer == nullptr) {
             RS_LOGE("RSUniRenderProcessor::ProcessOfflineLayer: failed to createLayer for node: %{public}" PRIu64 ")",
                 node.GetId());
