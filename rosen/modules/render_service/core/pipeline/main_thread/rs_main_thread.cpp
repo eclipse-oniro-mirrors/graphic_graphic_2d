@@ -4325,9 +4325,9 @@ bool RSMainThread::IsFastComposeVsyncTimesync(uint64_t unsignedVsyncPeriod, bool
     if (!nextVsyncRequested && (unsignedNowTime - lastVsyncTime) % unsignedVsyncPeriod >
         unsignedVsyncPeriod - FASTCOMPOSE_OFFSET) {
         lastFastComposeTimeStampDiff_ = (unsignedNowTime + FASTCOMPOSE_OFFSET - lastVsyncTime) % unsignedVsyncPeriod;
-    } else [
+    } else {
         lastFastComposeTimeStampDiff_ = (unsignedNowTime - lastVsyncTime) % unsignedVsyncPeriod;
-    ]
+    }
     return true;
 }
 
