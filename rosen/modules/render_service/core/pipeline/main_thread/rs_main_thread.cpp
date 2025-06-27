@@ -4355,7 +4355,7 @@ void RSMainThread::CheckFastCompose(int64_t lastFlushedDesiredPresentTimeStamp)
     }
     if (!IsFastComposeVsyncTimesync(unsignedVsyncPeriod, nextVsyncRequested,
         unsignedNowTime, lastVsyncTime, static_cast<uint64_t>(vsyncTimeStamp))) {
-        RequestNextVsync();
+        RequestNextVSync();
         return;
     }
     if (ret != VSYNC_ERROR_OK || !context_ ||
