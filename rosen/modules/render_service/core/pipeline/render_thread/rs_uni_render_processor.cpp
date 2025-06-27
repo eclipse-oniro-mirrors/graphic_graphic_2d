@@ -336,7 +336,7 @@ LayerInfoPtr RSUniRenderProcessor::GetLayerInfo(RSSurfaceRenderParams& params, s
 }
 
 bool RSUniRenderProcessor::ProcessOfflineLayer(
-    std::shared_ptr<DrawableV2::RSSurfaceRenderNodeDrawable& surfaceDrawable>, bool async)
+    std::shared_ptr<DrawableV2::RSSurfaceRenderNodeDrawable>& surfaceDrawable, bool async)
 {
     RS_OFFLINE_LOGD("ProcessOfflineLayer(drawable)");
     uint64_t taskId = RSUniRenderThread::Instance().GetVsyncId();
