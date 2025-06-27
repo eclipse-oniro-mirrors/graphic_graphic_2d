@@ -1016,7 +1016,7 @@ void RSDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
             }
             // hpae offline: wait task and create layer
             if (drawable->GetRenderParams()->GetLayerInfo().useDeviceOffline &&
-                ProcessOfflineSurfaceDrawable(processor, *surfaceDrawable, true)) {
+                ProcessOfflineSurfaceDrawable(processor, surfaceDrawable, true)) {
                 continue;
             }
             processor->CreateLayerForRenderThread(*surfaceDrawable);
