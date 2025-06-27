@@ -246,7 +246,7 @@ void RSHpaeOfflineProcessor::FlushAndReleaseOfflineLayer(sptr<SurfaceBuffer>& ds
         surfaceHandler->GetNodeId());
 }
 
-void RSHpaeOfflineProcessor::CheckAndHandleTimeoutEvent(std::shared_ptr<ProcessOfflineFuture> futurePtr)
+void RSHpaeOfflineProcessor::CheckAndHandleTimeoutEvent(std::shared_ptr<ProcessOfflineFuture>& futurePtr)
 {
     std::lock_guard<std::mutex> lock(futurePtr->mtx);
     if (futurePtr->timeout) {
@@ -320,7 +320,7 @@ bool RSHpaeOfflineProcessor::DoProcessOffline(
 }
 
 void RSHpaeOfflineProcessor::OfflineTaskFunc(RSRenderParams* paramsPtr,
-    std::shared_ptr<ProcessOfflineFuture> &futurePtr)
+    std::shared_ptr<ProcessOfflineFuture>& futurePtr)
 {
     isBusy_ = true;
     ProcessOfflineResult processOfflineResult;
@@ -348,7 +348,7 @@ bool RSHpaeOfflineProcessor::PostProcessOfflineTask(RSSurfaceRenderNode& node, u
         return false;
     }
     auto renderParamSptr = node.GetStagingRenderParams();
-    offlineThreadManager_.PostTask([renderParamSptr, futurePtr, this]() mutable {
+    offlineThreadManager_.PostTask([&renderParamSptr, &futurePtr, this]() mutable {
         RS_TRACE_NAME("hpae_offline: ProcessOffline");
         RS_OFFLINE_LOGD("start to proces offline surface (by node)");
         OfflineTaskFunc(renderParamSptr.get(), futurePtr);
@@ -370,7 +370,7 @@ bool RSHpaeOfflineProcessor::PostProcessOfflineTask(
         return false;
     }
     auto renderParamSptr = surfaceDrawable.GetRenderParams();
-    offlineThreadManager_.PostTask([renderParamSptr, futurePtr, this]() mutable {
+    offlineThreadManager_.PostTask([&renderParamSptr, &futurePtr, this]() mutable {
         RS_TRACE_NAME("hpae_offline: ProcessOffline");
         RS_OFFLINE_LOGD("start to proces offline surface (by drawable)");
         OfflineTaskFunc(renderParamSptr.get(), futurePtr);
