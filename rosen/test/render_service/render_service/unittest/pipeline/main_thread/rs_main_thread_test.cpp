@@ -5036,6 +5036,43 @@ HWTEST_F(RSMainThreadTest, MultiDisplayChangeTest, TestSize.Level2)
 }
 
 /**
+ * @tc.name: IsFastComposeVsyncTimesync
+ * @tc.desc: test IsFastComposeVsyncTimesync
+ * @tc.type: FUNC
+ * @tc.require: issueICGGHY
+ */
+HWTEST_F(RSMainThreadTest, IsFastComposeVsyncTimesync001, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    uint64_t unsignedVsyncPeriod = 0;
+    bool nextVsyncRequested = false;
+    uint64_t unsignedNowTime = 1000;
+    uint64_t lastVsyncTime = 500;
+    uint64_t unsignedVsyncTimeStamp = 16666666;
+    uint64_t timestamp = mainThread->timestamp_;
+    bool result = mainThread->IsFastComposeVsyncTimesync(unsignedVsyncPeriod, nextVsyncRequested,
+        unsignedNowTime, lastVsyncTime, unsignedVsyncTimeStamp);
+    ASSERT_EQ(result, false);
+    unsignedVsyncPeriod = 16666666;
+    mainThread->timestamp_ = 1000;
+    result = mainThread->IsFastComposeVsyncTimesync(unsignedVsyncPeriod, nextVsyncRequested,
+        unsignedNowTime, lastVsyncTime, unsignedVsyncTimeStamp);
+    ASSERT_EQ(result, false);
+    mainThread->timestamp_ = 15666666;
+    result = mainThread->IsFastComposeVsyncTimesync(unsignedVsyncPeriod, nextVsyncRequested,
+        unsignedNowTime, lastVsyncTime, unsignedVsyncTimeStamp);
+    mainThread->timestamp_ = 17666666;
+    result = mainThread->IsFastComposeVsyncTimesync(unsignedVsyncPeriod, nextVsyncRequested,
+        unsignedNowTime, lastVsyncTime, unsignedVsyncTimeStamp);
+    ASSERT_EQ(result, true);
+    nextVsyncRequested = true;
+    result = mainThread->IsFastComposeVsyncTimesync(unsignedVsyncPeriod, nextVsyncRequested,
+        unsignedNowTime, lastVsyncTime, unsignedVsyncTimeStamp);
+    ASSERT_EQ(result, true);
+}
+
+/**
  * @tc.name: CheckFastCompose
  * @tc.desc: test CheckFastCompose
  * @tc.type: FUNC
@@ -5061,6 +5098,23 @@ HWTEST_F(RSMainThreadTest, CheckFastCompose001, TestSize.Level1)
     mainThread->CheckFastCompose(mainThread->timestamp_ - 1);
     ASSERT_NE(mainThread->requestNextVsyncNum_.load(), 0);
     mainThread->receiver_ = receiver;
+}
+
+/**
+ * @tc.name: CheckFastCompose
+ * @tc.desc: test CheckFastCompose
+ * @tc.type: FUNC
+ * @tc.require: issueICGGHY
+ */
+HWTEST_F(RSMainThreadTest, CheckFastCompose002, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    uint64_t timestamp = mainThread->timestamp_;
+    mainThread->timestamp_ = mainThread->timestamp_ - 16666666;
+    mainThread->CheckFastCompose(mainThread->timestamp_ - 1);
+    ASSERT_NE(mainThread->requestNextVsyncNum_.load(), 0);
+    mainThread->timestamp_ = timestamp;
 }
 
 /**

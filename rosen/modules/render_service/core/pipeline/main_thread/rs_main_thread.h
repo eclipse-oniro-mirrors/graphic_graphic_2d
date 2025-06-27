@@ -212,6 +212,8 @@ public:
     bool IsCurtainScreenUsingStatusChanged() const;
     bool IsFastComposeAllow(uint64_t unsignedVsyncPeriod, bool nextVsyncRequested,
         uint64_t unsignedNowTime, uint64_t lastVsyncTime);
+    bool IsFastComposeVsyncTimesync(uint64_t unsignedVsyncPeriod, bool nextVsyncRequested,
+        uint64_t unsignedNowTime, uint64_t lastVsyncTime, uint64_t unsignedVsyncTimeStamp);
     void CheckFastCompose(int64_t bufferTimeStamp);
     bool CheckAdaptiveCompose();
     void ForceRefreshForUni(bool needDelay = false);
