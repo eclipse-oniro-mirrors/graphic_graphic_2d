@@ -42,7 +42,7 @@
 namespace OHOS {
 namespace Rosen {
 constexpr uint32_t HIGHEST_Z_ORDER = 999;
-constexpr std::chrono::miliseconds HPAE_OFFLINE_TIMEOUT{100};
+constexpr std::chrono::milliseconds HPAE_OFFLINE_TIMEOUT{100};
 RSUniRenderProcessor::RSUniRenderProcessor()
     : uniComposerAdapter_(std::make_unique<RSUniRenderComposerAdapter>())
 {
