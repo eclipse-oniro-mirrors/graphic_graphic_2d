@@ -2683,14 +2683,14 @@ bool RSDisplayRenderNodeDrawable::SkipFrame(uint32_t refreshRate, ScreenInfo scr
 
 bool RSDisplayRenderNodeDrawable::ProcessOfflineSurfaceDrawable(
     const std::shared_ptr<RSProcessor>& processor,
-    RSSurfaceRenderNodeDrawable& surfaceDrawable, bool async)
+    std::shared_ptr<RSSurfaceRenderNodeDrawable>& surfaceDrawable, bool async)
 {
     if (processor->ProcessOfflineLayer(surfaceDrawable, async)) {
         // use offline layer to display
         return true;
     }
     // reset offline tag, use original layer to display
-    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable.GetRenderParams().get());
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable->GetRenderParams().get());
     surfaceParams->SetUseDeviceOffline(false);
     return false;
 }
