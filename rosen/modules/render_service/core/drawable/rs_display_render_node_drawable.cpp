@@ -2704,7 +2704,7 @@ void RSDisplayRenderNodeDrawable::CheckAndPostAsyncProcessOfflineTask()
             continue;
         }
         auto params = static_cast<RSDisplayRenderParams*>(renderParams_.get());
-        if (displayNodeId != params.GetId()) {
+        if (displayNodeId != params->GetId()) {
             continue;
         }
         auto surfaceDrawable = std::static_pointer_cast<RSSurfaceRenderNodeDrawable>(drawable);
