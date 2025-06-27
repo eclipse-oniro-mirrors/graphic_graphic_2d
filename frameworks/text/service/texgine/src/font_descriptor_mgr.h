@@ -20,6 +20,7 @@
 #include <nocopyable.h>
 #endif
 
+#include <mutex>
 #include <shared_mutex>
 
 #include "font_descriptor_cache.h"
