@@ -2711,7 +2711,7 @@ void RSDisplayRenderNodeDrawable::CheckAndPostAsyncProcessOfflineTask()
         if (surfaceDrawable->GetRenderParams()->GetHardwareEnabled() &&
             surfaceDrawable->GetRenderParams()->GetLayerInfo().useDeviceOffline) {
             if (!RSHpaeOfflineProcessor::GetOfflineProcessor().PostProcessOfflineTask(
-                *surfaceDrawable, RSUniRenderThread::Instance().GetVsyncId())) {
+                surfaceDrawable, RSUniRenderThread::Instance().GetVsyncId())) {
                 RS_LOGW("RSUniRenderProcessor::ProcessSurface: post offline task failed, go redraw");
             }
         }
