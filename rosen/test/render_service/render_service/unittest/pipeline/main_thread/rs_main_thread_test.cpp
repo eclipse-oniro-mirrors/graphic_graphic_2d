@@ -5036,12 +5036,12 @@ HWTEST_F(RSMainThreadTest, MultiDisplayChangeTest, TestSize.Level2)
 }
 
 /**
- * @tc.name: IsFastComposeVsyncTimesync
- * @tc.desc: test IsFastComposeVsyncTimesync
+ * @tc.name: IsFastComposeVsyncTimeSync
+ * @tc.desc: test IsFastComposeVsyncTimeSync
  * @tc.type: FUNC
  * @tc.require: issueICGGHY
  */
-HWTEST_F(RSMainThreadTest, IsFastComposeVsyncTimesync001, TestSize.Level1)
+HWTEST_F(RSMainThreadTest, IsFastComposeVsyncTimeSync001, TestSize.Level1)
 {
     auto mainThread = RSMainThread::Instance();
     ASSERT_NE(mainThread, nullptr);
@@ -5051,23 +5051,23 @@ HWTEST_F(RSMainThreadTest, IsFastComposeVsyncTimesync001, TestSize.Level1)
     uint64_t lastVsyncTime = 500;
     uint64_t unsignedVsyncTimeStamp = 16666666;
     uint64_t timestamp = mainThread->timestamp_;
-    bool result = mainThread->IsFastComposeVsyncTimesync(unsignedVsyncPeriod, nextVsyncRequested,
+    bool result = mainThread->IsFastComposeVsyncTimeSync(unsignedVsyncPeriod, nextVsyncRequested,
         unsignedNowTime, lastVsyncTime, unsignedVsyncTimeStamp);
     ASSERT_EQ(result, false);
     unsignedVsyncPeriod = 16666666;
     mainThread->timestamp_ = 1000;
-    result = mainThread->IsFastComposeVsyncTimesync(unsignedVsyncPeriod, nextVsyncRequested,
+    result = mainThread->IsFastComposeVsyncTimeSync(unsignedVsyncPeriod, nextVsyncRequested,
         unsignedNowTime, lastVsyncTime, unsignedVsyncTimeStamp);
     ASSERT_EQ(result, false);
     mainThread->timestamp_ = 15666666;
-    result = mainThread->IsFastComposeVsyncTimesync(unsignedVsyncPeriod, nextVsyncRequested,
+    result = mainThread->IsFastComposeVsyncTimeSync(unsignedVsyncPeriod, nextVsyncRequested,
         unsignedNowTime, lastVsyncTime, unsignedVsyncTimeStamp);
     mainThread->timestamp_ = 17666666;
-    result = mainThread->IsFastComposeVsyncTimesync(unsignedVsyncPeriod, nextVsyncRequested,
+    result = mainThread->IsFastComposeVsyncTimeSync(unsignedVsyncPeriod, nextVsyncRequested,
         unsignedNowTime, lastVsyncTime, unsignedVsyncTimeStamp);
     ASSERT_EQ(result, true);
     nextVsyncRequested = true;
-    result = mainThread->IsFastComposeVsyncTimesync(unsignedVsyncPeriod, nextVsyncRequested,
+    result = mainThread->IsFastComposeVsyncTimeSync(unsignedVsyncPeriod, nextVsyncRequested,
         unsignedNowTime, lastVsyncTime, unsignedVsyncTimeStamp);
     ASSERT_EQ(result, true);
 }

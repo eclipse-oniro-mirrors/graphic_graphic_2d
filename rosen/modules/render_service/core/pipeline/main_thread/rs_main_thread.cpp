@@ -4310,7 +4310,7 @@ bool RSMainThread::IsFastComposeAllow(uint64_t unsignedVsyncPeriod, bool nextVsy
     return true;
 }
 
-bool RSMainThread::IsFastComposeVsyncTimesync(uint64_t unsignedVsyncPeriod, bool nextVsyncRequested,
+bool RSMainThread::IsFastComposeVsyncTimeSync(uint64_t unsignedVsyncPeriod, bool nextVsyncRequested,
     uint64_t unsignedNowTime, uint64_t lastVsyncTime, uint64_t unsignedVsyncTimeStamp)
 {
     if (unsignedVsyncPeriod == 0) {
@@ -4353,7 +4353,7 @@ void RSMainThread::CheckFastCompose(int64_t lastFlushedDesiredPresentTimeStamp)
         lastVsyncTime = timestamp_;
         lastFastComposeTimeStampDiff_ = 0;
     }
-    if (!IsFastComposeVsyncTimesync(unsignedVsyncPeriod, nextVsyncRequested,
+    if (!IsFastComposeVsyncTimeSync(unsignedVsyncPeriod, nextVsyncRequested,
         unsignedNowTime, lastVsyncTime, static_cast<uint64_t>(vsyncTimeStamp))) {
         RequestNextVSync();
         return;
