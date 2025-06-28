@@ -54,7 +54,7 @@
 #include "drawable/rs_canvas_drawing_render_node_drawable.h"
 #include "feature/drm/rs_drm_util.h"
 #include "feature/hdr/rs_hdr_util.h"
-+#include "feature/lpp/lpp_video_handler.h"
+#include "feature/lpp/lpp_video_handler.h"
 #include "feature/anco_manager/rs_anco_manager.h"
 #include "feature/opinc/rs_opinc_manager.h"
 #include "feature/uifirst/rs_uifirst_manager.h"
