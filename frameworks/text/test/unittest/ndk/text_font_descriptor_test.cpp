@@ -22,6 +22,7 @@
 #include "drawing_text_font_descriptor.h"
 #include "font_descriptor_mgr.h"
 #include "gtest/gtest.h"
+#include "unicode/unistr.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -36,7 +37,7 @@ const std::string INSTALLED_FONT_CONFIG_FILE = "/data/service/el1/public/for-all
 const std::string INSTALLED_FONT_CONFIG_FILE_BAK =
     "/data/service/el1/public/for-all-app/fonts/install_fontconfig.json.bak";
 
-// "Noto Sans Mono CJK KR" exchange with "Noto Sans Mono CJK JP"
+// "Noto Sans Mono CJK KR" exchange with "Noto Sans Mono CJK JP", make "Noto Sans Mono CJK HK" invalid index
 const std::string INSTALL_CONFIG = R"(
 {
   "fontlist": [
@@ -52,6 +53,7 @@ const std::string INSTALL_CONFIG = R"(
         "Noto Sans Mono CJK JP",
         "Noto Sans Mono CJK SC",
         "Noto Sans Mono CJK TC",
+        "Unknown",
         "Noto Sans Mono CJK HK"
       ]
     },
@@ -68,21 +70,19 @@ bool ExistStylishFontConfigFile()
 
 class NdkFontDescriptorTest : public testing::Test {};
 
-void CreateFile(const std::string& file) 
+void CreateFile(const std::string& file)
 {
     fs::path filePath(file);
     fs::path dirPath = filePath.parent_path();
-
     if (!fs::exists(dirPath)) {
         fs::create_directories(dirPath);
     }
-
-    std::ofstream ofs(INSTALLED_FONT_CONFIG_FILE, std::ios::trunc);
+    std::ofstream ofs(file, std::ios::trunc);
     ofs << INSTALL_CONFIG;
 }
 
 void InitInstallConfig()
-{;
+{
     if (fs::exists(INSTALLED_FONT_CONFIG_FILE)) {
         fs::rename(INSTALLED_FONT_CONFIG_FILE, INSTALLED_FONT_CONFIG_FILE_BAK);
     }
@@ -98,6 +98,19 @@ void DestroyInstallConfig()
         fs::remove(INSTALLED_FONT_CONFIG_FILE);
     }
 }
+
+class InstallConfig {
+public:
+    InstallConfig()
+    {
+        InitInstallConfig();
+    }
+
+    ~InstallConfig()
+    {
+        DestroyInstallConfig();
+    }
+};
 
 /*
  * @tc.name: NdkFontDescriptorTest001
@@ -230,7 +243,7 @@ HWTEST_F(NdkFontDescriptorTest, NdkFontDescriptorTest006, TestSize.Level0)
  */
 HWTEST_F(NdkFontDescriptorTest, NdkFontDescriptorTest007, TestSize.Level0)
 {
-    InitInstallConfig();
+    InstallConfig installConfig;
     std::unordered_set<std::string> fullnames { "Noto Sans CJK JP", "Noto Sans CJK KR", "Noto Sans CJK SC",
         "Noto Sans CJK TC", "Noto Sans CJK HK", "Noto Sans Mono CJK JP", "Noto Sans Mono CJK KR",
         "Noto Sans Mono CJK SC", "Noto Sans Mono CJK TC", "Noto Sans Mono CJK HK", "Noto Sans Regular" };
@@ -238,15 +251,26 @@ HWTEST_F(NdkFontDescriptorTest, NdkFontDescriptorTest007, TestSize.Level0)
     OH_Drawing_Array* fontList = OH_Drawing_GetSystemFontFullNamesByType(fontType);
     EXPECT_NE(fontList, nullptr);
     size_t size = OH_Drawing_GetDrawingArraySize(fontList);
-    EXPECT_EQ(size, 11);
+    EXPECT_EQ(size, 12);
     for (size_t i = 0; i < size; i++) {
         const OH_Drawing_String* fullName = OH_Drawing_GetSystemFontFullNameByIndex(fontList, i);
+        ASSERT_NE(fullName, nullptr);
         OH_Drawing_FontDescriptor* fd = OH_Drawing_GetFontDescriptorByFullName(fullName, INSTALLED);
-        EXPECT_TRUE(fullnames.count(fd->fullName));
-        OH_Drawing_DestroyFontDescriptor(fd);
+        if (fd != nullptr) {
+            EXPECT_TRUE(fullnames.count(fd->fullName));
+            OH_Drawing_DestroyFontDescriptor(fd);
+        } else {
+            std::string s;
+            icu::UnicodeString ustr(reinterpret_cast<UChar*>(fullName->strData), fullName->strLen);
+            ustr.toUTF8String(s);
+            EXPECT_EQ(s, "Unknown");
+        }
     }
+    std::u16string fullName = u"not exist";
+    OH_Drawing_String fn { reinterpret_cast<uint8_t*>(fullName.data()), fullName.size() * sizeof(char16_t) };
+    OH_Drawing_FontDescriptor* fd = OH_Drawing_GetFontDescriptorByFullName(&fn, INSTALLED);
+    EXPECT_EQ(fd, nullptr);
     OH_Drawing_DestroySystemFontFullNames(fontList);
-    DestroyInstallConfig();
 }
 
 /*
