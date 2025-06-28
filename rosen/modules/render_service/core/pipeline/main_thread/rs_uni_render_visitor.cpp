@@ -2337,7 +2337,7 @@ void RSUniRenderVisitor::UpdateHwcNodesIfVisibleForApp(std::shared_ptr<RSSurface
                 hwcNodePtr->HwcSurfaceRecorder().SetLastFrameHasVisibleRegion(true); // visible Region
                 needForceUpdateHwcNodes = true;
                 continue;
-            }
+        }
         
         auto region = surfaceNode->GetVisibleRegion();
         region.MakeBound();
