@@ -531,21 +531,6 @@ void RSDisplayRenderNodeDrawable::CheckAndUpdateFilterCacheOcclusion(
     }
 }
 
-void RSDisplayRenderNodeDrawable::CheckAndUpdateFilterCacheOcclusionFast()
-{
-    auto params = static_cast<RSDisplayRenderParams*>(renderParams_.get());
-    ScreenId paramScreenId = params->GetScreenId();
-    sptr<RSScreenManager> screenManager = CreateOrGetScreenManager();
-    if (!screenManager) {
-        SetDrawSkipType(DrawSkipType::SCREEN_MANAGER_NULL);
-        RS_LOGE("RSDisplayRenderNodeDrawable::OnDraw ScreenManager is nullptr");
-        return;
-    }
-    ScreenInfo curScreenInfo = screenManager->QueryScreenInfo(paramScreenId);
-    CheckAndUpdateFilterCacheOcclusion(*params, curScreenInfo);
-    filterCacheOcclusionUpdated_ = true;
-}
-
 void RSDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
 {
     Drawing::GPUResourceTag::SetCurrentNodeId(GetId());
@@ -800,11 +785,7 @@ void RSDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     SetDisplayNodeSkipFlag(*uniParam, false);
     RSMainThread::Instance()->SetFrameIsRender(true);
 
-    if (filterCacheOcclusionUpdated_) {
-        filterCacheOcclusionUpdated_ = false;
-    } else {
-        CheckAndUpdateFilterCacheOcclusion(*params, curScreenInfo);
-    }
+    CheckAndUpdateFilterCacheOcclusion(*params, curScreenInfo);
     if (isHdrOn) {
         params->SetNewPixelFormat(GRAPHIC_PIXEL_FMT_RGBA_1010102);
     }

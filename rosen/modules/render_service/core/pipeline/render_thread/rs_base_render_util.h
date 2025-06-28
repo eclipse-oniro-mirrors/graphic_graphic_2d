@@ -100,7 +100,6 @@ struct BufferDrawParam {
     bool isTmoNitsFixed = false;
     bool hasMetadata = false; // SDR has metadata
 #endif
-    bool isHeterog = false;
     bool colorFollow = false;
     bool preRotation = false;
 };
@@ -153,7 +152,7 @@ public:
         bool adaptiveDVSyncEnable = false);
     static bool ConsumeAndUpdateBuffer(RSSurfaceHandler& surfaceHandler,
         uint64_t presentWhen = CONSUME_DIRECTLY, bool dropFrameByPidEnable = false, bool adaptiveDVSyncEnable = false,
-        bool needConsume = true, uint64_t parentNodeId = 0, bool deleteCacheDisable = false);
+        bool needConsume = true, uint64_t parentNodeId = 0);
     static bool ReleaseBuffer(RSSurfaceHandler& surfaceHandler);
 
     static std::unique_ptr<RSTransactionData> ParseTransactionData(MessageParcel& parcel, uint32_t parcelNumber);

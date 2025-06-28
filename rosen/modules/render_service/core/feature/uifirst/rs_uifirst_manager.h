@@ -159,7 +159,7 @@ public:
         collectedCardNodes_.erase(id);
     }
 
-    std::unordered_map<NodeId, std::shared_ptr<RSSurfaceRenderNode>> GetPendingPostNodes() const
+    std::unordered_map<NodeId, std::shared_ptr<RSSurfaceRenderNode>> GetPendingPostNodes()
     {
         return pendingPostNodes_;
     }

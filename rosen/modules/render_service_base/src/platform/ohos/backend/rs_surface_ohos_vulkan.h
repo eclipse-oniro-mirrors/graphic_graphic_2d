@@ -100,8 +100,6 @@ private:
     std::shared_ptr<Drawing::GPUContext> mSkContext = nullptr;
     void CreateVkSemaphore(VkSemaphore& semaphore,
         RsVulkanContext& vkContext, NativeBufferUtils::NativeSurfaceInfo& nativeSurface);
-    std::vector<GrBackendSemaphore> PrepareHdrSemaphoreVector(
-        GrBackendSemaphore& backendSemaphore, NativeBufferUtils::NativeSurfaceInfo& surface);
 };
 
 } // namespace Rosen

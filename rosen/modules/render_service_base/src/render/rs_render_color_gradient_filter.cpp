@@ -120,8 +120,7 @@ bool RSRenderColorGradientFilterPara::WriteToParcel(Parcel& parcel)
 
 bool RSRenderColorGradientFilterPara::ReadFromParcel(Parcel& parcel)
 {
-    if (!RSMarshallingHelper::UnmarshallingPidPlusId(parcel, id_) ||
-        !RSMarshallingHelper::Unmarshalling(parcel, type_) ||
+    if (!RSMarshallingHelper::Unmarshalling(parcel, id_) || !RSMarshallingHelper::Unmarshalling(parcel, type_) ||
         !RSMarshallingHelper::Unmarshalling(parcel, modifierType_)) {
         return false;
     }

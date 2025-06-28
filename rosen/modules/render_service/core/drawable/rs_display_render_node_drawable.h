@@ -137,8 +137,6 @@ public:
     bool SkipFrame(uint32_t refreshRate, ScreenInfo screenInfo);
     int32_t GetSpecialLayerType(RSDisplayRenderParams& params, bool isSecLayerInVisivleRect = true);
 
-    void CheckAndUpdateFilterCacheOcclusionFast();
-
     RSRenderNodeDrawableType GetDrawableType() const override
     {
         return RSRenderNodeDrawableType::DISPLAY_NODE_DRAWABLE;
@@ -271,8 +269,6 @@ private:
 
     // mirror screen drawing path dfx
     bool mirrorRedraw_ = false;
-
-    bool filterCacheOcclusionUpdated_ = false;
 };
 } // namespace DrawableV2
 } // namespace OHOS::Rosen
