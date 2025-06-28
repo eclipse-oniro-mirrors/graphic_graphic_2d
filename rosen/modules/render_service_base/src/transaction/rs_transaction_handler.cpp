@@ -145,11 +145,6 @@ void RSTransactionHandler::FlushImplicitTransaction(uint64_t timestamp, const st
         renderServiceClient_->CommitTransaction(implicitRemoteTransactionData_);
         transactionDataIndex_ = implicitRemoteTransactionData_->GetIndex();
         implicitRemoteTransactionData_ = std::make_unique<RSTransactionData>();
-    } else {
-        RS_LOGE_LIMIT(__func__, __line__,
-            "FlushImplicitTransaction return, [renderServiceClient_:%{public}d,"
-            " transactionData empty:%{public}d]",
-            renderServiceClient_ != nullptr, implicitRemoteTransactionData_->IsEmpty());
     }
 }
 
