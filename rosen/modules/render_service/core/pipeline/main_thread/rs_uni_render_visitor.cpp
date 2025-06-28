@@ -2331,8 +2331,8 @@ void RSUniRenderVisitor::UpdateHwcNodesIfVisibleForApp(std::shared_ptr<RSSurface
 
         auto regionRects = surfaceNode->GetVisibleRegion().GetRegionRects();
         if (hwcNodePtr->GetHwcGlobalPositionEnabled() || hwcNodePtr->IsDRMCrossNode()
-            || surfaceNode->GetSpecialLayerMgr().Find(SpecialLayerType::PROTECTED)
-            || surfaceNode->IsLayerTop()) {
+        || surfaceNode->IsLayerTop()
+        || surfaceNode->GetSpecialLayerMgr().Find(SpecialLayerType::PROTECTED)) {
                 hwcNodePtr->HwcSurfaceRecorder().SetLastFrameHasVisibleRegion(true); // visible Region
                 needForceUpdateHwcNodes = true;
                 continue;
@@ -2341,7 +2341,10 @@ void RSUniRenderVisitor::UpdateHwcNodesIfVisibleForApp(std::shared_ptr<RSSurface
         auto region = surfaceNode->GetVisibleRegion();
         region.MakeBound();
         auto rectI = region.GetBound().ToRectI();
-        hwcVisitor_->UpdateDstRectByScreenInfo(*hwcNodePtr, rectI, rectI);
+        rectI.left_ = static_cast<int>(std::round(rectI.left_ * screenInfo_.GetRogWidthRatio()));
+        rectI.top_ = static_cast<int>(std::round(rectI.top_ * screenInfo_.GetRogHeightRatio()));
+        rectI.width_ = static_cast<int>(std::round(rectI.width_ * screenInfo_.GetRogWidthRatio()));
+        rectI.height_ = static_cast<int>(std::round(rectI.height_ * screenInfo_.GetRogHeightRatio()));
         auto newRect = Occlusion::Rect(rectI, true);
         newRect.Expand(EXPEND_ONE_PIX, EXPEND_ONE_PIX, EXPEND_ONE_PIX, EXPEND_ONE_PIX);
         Occlusion::Rect dstRect(hwcNodePtr->GetDstRect());

@@ -4974,7 +4974,7 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodesIfVisibleForAppTest, TestSize.Lev
     EXPECT_FALSE(hasVisibleHwcNodes);
 }
 
-/*
+/**
  * @tc.name: UpdateHwcNodesIfVisibleForAppTest002
  * @tc.desc: Test UpdateHwcNodesIfVisibleForAppTest002;
  * @tc.type: FUNC
@@ -5019,7 +5019,7 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodesIfVisibleForAppTest002, TestSize.
     EXPECT_FALSE(hasVisibleHwcNodes);
 }
 
-/*
+/**
  * @tc.name: UpdateHwcNodesIfVisibleForAppTest003
  * @tc.desc: Test UpdateHwcNodesIfVisibleForAppTest003;
  * @tc.type: FUNC

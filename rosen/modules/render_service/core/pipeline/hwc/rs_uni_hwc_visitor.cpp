@@ -100,20 +100,6 @@ void RSUniHwcVisitor::UpdateDstRect(RSSurfaceRenderNode& node, const RectI& absR
         dstRect.left_ -= uniRenderVisitor_.curDisplayNode_->GetDisplayOffsetX();
         dstRect.top_ -= uniRenderVisitor_.curDisplayNode_->GetDisplayOffsetY();
     }
-    
-    UpdateDstRectByScreenInfo(node, dstRect, clipRect);
-
-    if (uniRenderVisitor_.curSurfaceNode_ && (node.GetId() != uniRenderVisitor_.curSurfaceNode_->GetId()) &&
-        !node.GetHwcGlobalPositionEnabled()) {
-        dstRect = dstRect.IntersectRect(uniRenderVisitor_.curSurfaceNode_->GetDstRect());
-    }
-    // Set the destination rectangle of the node
-    node.SetDstRect(dstRect);
-    node.SetDstRectWithoutRenderFit(dstRect);
-}
-
-void RSUniHwcVisitor::UpdateDstRectByScreenInfo(RSSurfaceRenderNode& node, RectI& dstRect, const RectI& clipRect)
-{
     if (!node.IsHardwareEnabledTopSurface() && !node.GetHwcGlobalPositionEnabled()) {
         // If the screen is expanded, intersect the destination rectangle with the screen rectangle
         dstRect = dstRect.IntersectRect(RectI(0, 0, uniRenderVisitor_.screenInfo_.width,
@@ -136,6 +122,14 @@ void RSUniHwcVisitor::UpdateDstRectByScreenInfo(RSSurfaceRenderNode& node, RectI
         uniRenderVisitor_.screenInfo_.GetRogWidthRatio()));
     dstRect.height_ = static_cast<int>(std::round(dstRect.height_ *
         uniRenderVisitor_.screenInfo_.GetRogHeightRatio()));
+
+    if (uniRenderVisitor_.curSurfaceNode_ && (node.GetId() != uniRenderVisitor_.curSurfaceNode_->GetId()) &&
+        !node.GetHwcGlobalPositionEnabled()) {
+        dstRect = dstRect.IntersectRect(uniRenderVisitor_.curSurfaceNode_->GetDstRect());
+    }
+    // Set the destination rectangle of the node
+    node.SetDstRect(dstRect);
+    node.SetDstRectWithoutRenderFit(dstRect);
 }
 
 void RSUniHwcVisitor::UpdateHwcNodeByTransform(RSSurfaceRenderNode& node, const Drawing::Matrix& totalMatrix)
