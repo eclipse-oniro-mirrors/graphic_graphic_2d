@@ -5055,7 +5055,7 @@ HWTEST_F(RSMainThreadTest, IsFastComposeVsyncTimeSync001, TestSize.Level1)
         unsignedNowTime, lastVsyncTime, vsyncTimeStamp);
     ASSERT_EQ(result, false);
     unsignedVsyncPeriod = 16666666;
-    bool result = mainThread->IsFastComposeVsyncTimeSync(unsignedVsyncPeriod, nextVsyncRequested,
+    result = mainThread->IsFastComposeVsyncTimeSync(unsignedVsyncPeriod, nextVsyncRequested,
         unsignedNowTime, lastVsyncTime, vsyncTimeStamp);
     ASSERT_EQ(result, false);
     vsyncTimeStamp = 16666666;
@@ -5098,7 +5098,7 @@ HWTEST_F(RSMainThreadTest, IsFastComposeVsyncTimeSync002, TestSize.Level1)
         unsignedNowTime, lastVsyncTime, vsyncTimeStamp);
     ASSERT_EQ(result, true);
     unsignedNowTime = 1000;
-    bool result = mainThread->IsFastComposeVsyncTimeSync(unsignedVsyncPeriod, nextVsyncRequested,
+    result = mainThread->IsFastComposeVsyncTimeSync(unsignedVsyncPeriod, nextVsyncRequested,
         unsignedNowTime, lastVsyncTime, vsyncTimeStamp);
     ASSERT_EQ(result, true);
     nextVsyncRequested = true;
