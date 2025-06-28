@@ -227,7 +227,7 @@ bool RSHDRPatternManager::MHCSubmitVulkanTask(uint64_t frameId, MHC_PatternTaskN
     std::shared_ptr<FunctionHeader> afterFuncHeader = create_function_wrapper(std::move(afterFunc));
     void* c_afterFunc = static_cast<void*>(afterFuncHeader.get());
 
-    mhcDevice_->graphPatternVulkanTaskSubmit(g_instance, frameId, taskName, c_preFunc, c_afterFunc);
+    g_graphPatternVulkanTaskSubmit(g_instance, frameId, taskName, c_preFunc, c_afterFunc);
     return true;
 }
 
