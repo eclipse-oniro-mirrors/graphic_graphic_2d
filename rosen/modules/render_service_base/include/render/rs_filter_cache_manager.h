@@ -139,7 +139,7 @@ public:
         return filterType_;
     }
 
-    void ClearEffectCacheWithDamageRegion(const RSPaintFilterCanvas& canvas, const Drawing::RectI& filterBound);
+    void ClearEffectCacheWithDrawnRegion(const RSPaintFilterCanvas& canvas, const Drawing::RectI& filterBound);
 
 private:
     void TakeSnapshot(RSPaintFilterCanvas& canvas, const std::shared_ptr<RSDrawingFilter>& filter,

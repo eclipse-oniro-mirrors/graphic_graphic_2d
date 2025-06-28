@@ -22,6 +22,7 @@
 
 #include "platform/common/rs_log.h"
 #include "utils/rect.h"
+#include "utils/region.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -1454,14 +1455,14 @@ void RSPaintFilterCanvas::SetEffectData(const std::shared_ptr<RSPaintFilterCanva
     envStack_.top().effectData_ = effectData;
 }
 
-void RSPaintFilterCanvas::SetDamageRegion(const std::vector<OHOS::Rosen::RectI>& damageRegion)
+void RSPaintFilterCanvas::SetDrawnRegion(const Occlusion::Region& region)
 {
-    damageRegion_ = damageRegion;
+    drawnRegion_ = region;
 }
 
-const std::vector<OHOS::Rosen::RectI>& RSPaintFilterCanvas::GetDamageRegion() const
+const Occlusion::Region& RSPaintFilterCanvas::GetDrawnRegion() const
 {
-    return damageRegion_;
+    return drawnRegion_;
 }
 
 const std::shared_ptr<RSPaintFilterCanvas::CachedEffectData>& RSPaintFilterCanvas::GetEffectData() const

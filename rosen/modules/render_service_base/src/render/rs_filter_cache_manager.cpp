@@ -16,6 +16,7 @@
 #include "render/rs_filter_cache_manager.h"
 #include "rs_trace.h"
 #include "common/rs_common_def.h"
+#include "common/rs_occlusion_region.h"
 #include "render/rs_filter.h"
 #include "utils/rect.h"
 
@@ -892,19 +893,20 @@ void RSFilterCacheManager::CompactFilterCache()
         FilterCacheType::FILTERED_SNAPSHOT : FilterCacheType::SNAPSHOT);
 }
 
-void RSFilterCacheManager::ClearEffectCacheWithDamageRegion(
+void RSFilterCacheManager::ClearEffectCacheWithDrawnRegion(
     const RSPaintFilterCanvas& canvas, const Drawing::RectI& filterBound)
 {
     if (!takeNewSnapshot_) {
         return;
     }
-    OHOS::Rosen::RectI bound(filterBound.left_, filterBound.top_, filterBound.GetWidth(), filterBound.GetHeight());
-    const auto& damageRegion = canvas.GetDamageRegion();
-    const bool isCacheInvalid = std::none_of(
-        damageRegion.begin(),
-        damageRegion.end(),
-        [&bound](const auto& rect) { return bound.IsInsideOf(rect); }
-    );
+    auto drawnRegion = canvas.GetDrawnRegion();
+    if (drawnRegion.IsEmpty()) {
+        return;
+    }
+    Occlusion::Region filterRegion(
+        Occlusion::Rect(filterBound.left_, filterBound.top_, filterBound.right_, filterBound.bottom_));
+    // if region belongs to filterRegion but not drawnRegion is not empty, the cache is invalid.
+    const bool isCacheInvalid = !filterRegion.Sub(drawnRegion).IsEmpty();
     if (isCacheInvalid) {
         InvalidateFilterCache(FilterCacheType::BOTH);
     }
