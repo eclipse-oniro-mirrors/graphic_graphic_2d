@@ -5049,26 +5049,61 @@ HWTEST_F(RSMainThreadTest, IsFastComposeVsyncTimeSync001, TestSize.Level1)
     bool nextVsyncRequested = false;
     uint64_t unsignedNowTime = 1000;
     uint64_t lastVsyncTime = 500;
-    uint64_t unsignedVsyncTimeStamp = 16666666;
+    int64_t vsyncTimeStamp = -100;
     uint64_t timestamp = mainThread->timestamp_;
     bool result = mainThread->IsFastComposeVsyncTimeSync(unsignedVsyncPeriod, nextVsyncRequested,
-        unsignedNowTime, lastVsyncTime, unsignedVsyncTimeStamp);
+        unsignedNowTime, lastVsyncTime, vsyncTimeStamp);
     ASSERT_EQ(result, false);
     unsignedVsyncPeriod = 16666666;
+    bool result = mainThread->IsFastComposeVsyncTimeSync(unsignedVsyncPeriod, nextVsyncRequested,
+        unsignedNowTime, lastVsyncTime, vsyncTimeStamp);
+    ASSERT_EQ(result, false);
+    vsyncTimeStamp = 16666666;
     mainThread->timestamp_ = 1000;
     result = mainThread->IsFastComposeVsyncTimeSync(unsignedVsyncPeriod, nextVsyncRequested,
-        unsignedNowTime, lastVsyncTime, unsignedVsyncTimeStamp);
+        unsignedNowTime, lastVsyncTime, vsyncTimeStamp);
     ASSERT_EQ(result, false);
     mainThread->timestamp_ = 15666666;
     result = mainThread->IsFastComposeVsyncTimeSync(unsignedVsyncPeriod, nextVsyncRequested,
-        unsignedNowTime, lastVsyncTime, unsignedVsyncTimeStamp);
+        unsignedNowTime, lastVsyncTime, vsyncTimeStamp);
     mainThread->timestamp_ = 17666666;
     result = mainThread->IsFastComposeVsyncTimeSync(unsignedVsyncPeriod, nextVsyncRequested,
-        unsignedNowTime, lastVsyncTime, unsignedVsyncTimeStamp);
+        unsignedNowTime, lastVsyncTime, vsyncTimeStamp);
     ASSERT_EQ(result, true);
     nextVsyncRequested = true;
     result = mainThread->IsFastComposeVsyncTimeSync(unsignedVsyncPeriod, nextVsyncRequested,
-        unsignedNowTime, lastVsyncTime, unsignedVsyncTimeStamp);
+        unsignedNowTime, lastVsyncTime, vsyncTimeStamp);
+    ASSERT_EQ(result, true);
+    mainThread->timestamp_ = timestamp;
+}
+
+/**
+ * @tc.name: IsFastComposeVsyncTimeSync
+ * @tc.desc: test IsFastComposeVsyncTimeSync
+ * @tc.type: FUNC
+ * @tc.require: issueICGGHY
+ */
+HWTEST_F(RSMainThreadTest, IsFastComposeVsyncTimeSync002, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    uint64_t unsignedVsyncPeriod = 0;
+    bool nextVsyncRequested = false;
+    uint64_t unsignedNowTime = 1000;
+    uint64_t lastVsyncTime = 500;
+    int64_t vsyncTimeStamp = 16666666;
+    uint64_t timestamp = mainThread->timestamp_;
+    mainThread->timestamp_ = 16666666;
+    bool result = mainThread->IsFastComposeVsyncTimeSync(unsignedVsyncPeriod, nextVsyncRequested,
+        unsignedNowTime, lastVsyncTime, vsyncTimeStamp);
+    ASSERT_EQ(result, true);
+    unsignedNowTime = 1000;
+    bool result = mainThread->IsFastComposeVsyncTimeSync(unsignedVsyncPeriod, nextVsyncRequested,
+        unsignedNowTime, lastVsyncTime, vsyncTimeStamp);
+    ASSERT_EQ(result, true);
+    nextVsyncRequested = true;
+    result = mainThread->IsFastComposeVsyncTimeSync(unsignedVsyncPeriod, nextVsyncRequested,
+        unsignedNowTime, lastVsyncTime, vsyncTimeStamp);
     ASSERT_EQ(result, true);
     mainThread->timestamp_ = timestamp;
 }
