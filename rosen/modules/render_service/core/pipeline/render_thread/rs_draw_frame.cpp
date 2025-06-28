@@ -21,17 +21,17 @@
 #include "rs_trace.h"
 
 #include "drawable/rs_canvas_drawing_render_node_drawable.h"
+#include "feature/hetero_hdr/rs_hdr_manager.h"
+#include "feature/hpae/rs_hpae_manager.h"
 #include "feature/uifirst/rs_uifirst_manager.h"
 #include "gfx/performance/rs_perfmonitor_reporter.h"
 #include "memory/rs_memory_manager.h"
 #include "pipeline/main_thread/rs_main_thread.h"
 #include "pipeline/rs_render_node_gc.h"
 #include "render/rs_filter_cache_manager.h"
-#include "feature/hpae/rs_hpae_manager.h"
 #include "render/rs_high_performance_visual_engine.h"
 #include "rs_frame_report.h"
 #include "rs_uni_render_thread.h"
-#include "feature/hetero_hdr/rs_hdr_manager.h"
 
 #include "rs_profiler.h"
 

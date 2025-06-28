@@ -222,6 +222,9 @@ private:
     RsSubThreadCache subThreadCache_;
     friend class RsSubThreadCache;
 
+    Drawing::Region curSurfaceDrawRegion_ {};
+    mutable std::mutex drawRegionMutex_;
+
     // HDR
     struct HDRHeterRenderContext {
         std::shared_ptr<RSHDRBUfferLayer> rsHdrBufferLayer_ {nullptr};

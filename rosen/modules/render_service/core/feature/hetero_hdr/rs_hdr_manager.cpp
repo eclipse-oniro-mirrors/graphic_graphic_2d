@@ -185,7 +185,7 @@ bool RSHdrManager::PrepareHapeTask(
     return true;
 }
 
-bool RSHdrManager::GetCurFrameHeterogHandleCanBeUesed()
+bool RSHdrManager::GetCurFrameHeterogHandleCanBeUsed()
 {
     return curFrameHeterogHandleCanBeUesed_;
 }
@@ -418,6 +418,7 @@ int32_t RSHdrManager::BuildHDRTask(
     MdcRectT HpaeDstRect = {dst_.GetLeft(), dst_.GetTop(), dst_.GetRight(), dst_.GetBottom()};
 
     sptr<SurfaceBuffer> srcBuffer = surfaceParams->GetBuffer();
+    constexpr float GAMMA2_2 = 2.2f;
 
     hapeTaskInfoT taskInfo;
     taskInfo.taskId = taskId;
@@ -428,7 +429,7 @@ int32_t RSHdrManager::BuildHDRTask(
     taskInfo.dstHandle = dstHandle;
     taskInfo.displaySDRNits = surfaceParams->GetSdrNit();
     taskInfo.displayHDRNits =
-        (surfaceParams->GetDisplayNit()) / std::pow(surfaceParams->GetBrightnessRatio(), 2.2);  // gamma 2.2;
+        (surfaceParams->GetDisplayNit()) / std::pow(surfaceParams->GetBrightnessRatio(), GAMMA2_2);
 
     return RSHeteroHdrUtil::GetInstance().BuildHpaeHdrTask(taskInfo);
 }
@@ -466,6 +467,5 @@ bool RSHdrManager::IsHDRSurfaceNodeSkipped(std::shared_ptr<DrawableV2::RSSurface
     }
     return true;
 }
-
 }  // namespace Rosen
 }  // namespace OHOS

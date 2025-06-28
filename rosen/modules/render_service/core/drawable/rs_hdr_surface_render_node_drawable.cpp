@@ -67,7 +67,7 @@ bool RSSurfaceRenderNodeDrawable::DrawHDRCacheWithDmaFFRT(
     RSPaintFilterCanvas &canvas, RSSurfaceRenderParams &surfaceParams)
 {
     g_HDRHeterRenderContext.curHeterogComputingHdr_ = false;
-    if (surfaceParams.GetHardwareEnabled() || !(RSHdrManager::Instance().GetCurFrameHeterogHandleCanBeUesed())) {
+    if (surfaceParams.GetHardwareEnabled() || !(RSHdrManager::Instance().GetCurFrameHeterogHandleCanBeUsed())) {
         return false;
     }
     if (RSHdrManager::Instance().IsHeterogComputingHdrOn() && GetVideoHdrStatus() == HdrStatus::HDR_VIDEO) {
@@ -90,11 +90,12 @@ bool RSSurfaceRenderNodeDrawable::DrawHDRCacheWithDmaFFRT(
         if (isSelfDrawingSurface) {
             SetSkip(surfaceParams.GetBuffer() != nullptr ? SkipType::SKIP_BACKGROUND_COLOR : SkipType::NONE);
             canvas.Save();
-        }
-        DrawHDRBufferWithGPU(canvas);
-        if (isSelfDrawingSurface) {
+            DrawHDRBufferWithGPU(canvas);
             canvas.Restore();
+        } else {
+            DrawHDRBufferWithGPU(canvas);
         }
+
         g_HDRHeterRenderContext.curHeterogComputingHdr_ = true;
         return true;
     }
@@ -148,20 +149,23 @@ BufferDrawParam RSSurfaceRenderNodeDrawable::InitBufferDrawParam(RSSurfaceRender
         param.matrix.SetScaleTranslate(sx, sy, tx, ty);
     }
 
+    const int ROTATION_90 = -90;
+    const int ROTATION_180 = -180;
+    const int ROTATION_270 = -270;
     switch (bufferTransform) {
         case GraphicTransformType::GRAPHIC_ROTATE_90: {
             param.matrix.PreTranslate(0, param.srcRect.GetHeight());
-            param.matrix.PreRotate(-90);  // rotate 90 degrees anti-clockwise at last.
+            param.matrix.PreRotate(ROTATION_90);  // rotate 90 degrees anti-clockwise at last.
             break;
         }
         case GraphicTransformType::GRAPHIC_ROTATE_180: {
             param.matrix.PreTranslate(param.srcRect.GetWidth(), param.srcRect.GetHeight());
-            param.matrix.PreRotate(-180);  // rotate 180 degrees anti-clockwise at last.
+            param.matrix.PreRotate(ROTATION_180);  // rotate 180 degrees anti-clockwise at last.
             break;
         }
         case GraphicTransformType::GRAPHIC_ROTATE_270: {
             param.matrix.PreTranslate(param.srcRect.GetWidth(), 0);
-            param.matrix.PreRotate(-270);  // rotate 270 degrees anti-clockwise at last.
+            param.matrix.PreRotate(ROTATION_270);  // rotate 270 degrees anti-clockwise at last.
             break;
         }
         default: break;

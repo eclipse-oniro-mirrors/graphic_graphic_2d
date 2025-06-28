@@ -42,7 +42,7 @@ public:
     static RSHdrManager &Instance();
     void UpdateHdrNodes(RSSurfaceRenderNode &node, bool isCurrentFrameBufferConsumed);
     void PostHdrSubTasks();
-    bool GetCurFrameHeterogHandleCanBeUesed();
+    bool GetCurFrameHeterogHandleCanBeUsed();
     bool IsHeterogComputingHdrOn()
     {
         return isHeterogComputingHdrOn_;
