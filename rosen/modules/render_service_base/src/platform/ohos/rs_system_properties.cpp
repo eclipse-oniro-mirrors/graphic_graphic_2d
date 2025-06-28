@@ -226,7 +226,7 @@ bool RSSystemProperties::GetAnimationTraceEnabled()
 
 bool RSSystemProperties::GetAnimationDelayOptimizeEnabled()
 {
-    constexpr int DEFAULT_OPTIMIZE_STATUS = 1; 
+    constexpr int DEFAULT_OPTIMIZE_STATUS = 1;
     constexpr int DISABLED_STATUS = 0;
 
     static CachedHandle g_Handle = CachedParameterCreate("rosen.animationdelay.optimize.enabled", "1");

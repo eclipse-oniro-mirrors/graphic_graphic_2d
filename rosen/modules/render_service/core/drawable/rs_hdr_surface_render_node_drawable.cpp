@@ -50,6 +50,9 @@
 #endif
 
 constexpr float GAMMA2_2 = 2.2f;
+const int ROTATION_90 = -90;
+const int ROTATION_180 = -180;
+const int ROTATION_270 = -270;
 
 namespace OHOS::Rosen::DrawableV2 {
 
@@ -149,9 +152,6 @@ BufferDrawParam RSSurfaceRenderNodeDrawable::InitBufferDrawParam(RSSurfaceRender
         param.matrix.SetScaleTranslate(sx, sy, tx, ty);
     }
 
-    const int ROTATION_90 = -90;
-    const int ROTATION_180 = -180;
-    const int ROTATION_270 = -270;
     switch (bufferTransform) {
         case GraphicTransformType::GRAPHIC_ROTATE_90: {
             param.matrix.PreTranslate(0, param.srcRect.GetHeight());

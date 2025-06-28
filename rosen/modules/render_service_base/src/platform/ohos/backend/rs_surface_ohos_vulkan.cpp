@@ -443,7 +443,7 @@ void RSSurfaceOhosVulkan::PrepareHdrSemaphoreVector(
     std::vector<uint64_t> &frameIdVec,
     std::vector<GrBackendSemaphore> &semphoreVec)
 {
-    VkSemaphore notifySemaphore; 
+    VkSemaphore notifySemaphore;
     for (auto frameId : frameIdVec) {
         if (RSHDRVulkanTask::GetHTSNotifySemaphore(notifySemaphore, frameId)) {
             GrBackendSemaphore htsSemaphore;
