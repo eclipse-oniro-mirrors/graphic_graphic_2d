@@ -178,7 +178,7 @@ HWTEST_F(RsFrameReportTest, ReportUnmarshalData001, TestSize.Level1)
     size_t dataSize = 20 * 1024;
     RsFrameReport& fr = RsFrameReport::GetInstance();
     fr.ReportUnmarshalData(unmarshalTid, dataSize);
-    int unmarshalTid = 0;
+    unmarshalTid = 0;
     fr.ReportUnmarshalData(unmarshalTid, dataSize);
     EXPECT_EQ(fr.hardwareTid_, 1);
 }
