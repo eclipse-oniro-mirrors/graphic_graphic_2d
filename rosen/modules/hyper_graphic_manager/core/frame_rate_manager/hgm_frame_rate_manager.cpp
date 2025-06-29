@@ -97,7 +97,7 @@ void HgmFrameRateManager::Init(sptr<VSyncController> rsController,
     InitConfig();
     RegisterCoreCallbacksAndInitController(rsController, appController, vsyncGenerator, appDistributor);
     multiAppStrategy_.RegisterStrategyChangeCallback([this](const PolicyConfigData::StrategyConfig& strategy) {
-        frameVoter_.SetTouchUpLTPOFirstDynamicMode(strategy.dynamicMode);
+        frameVoter_.SetTouchUpLTPOSkipTouchDynamicMode(strategy.dynamicMode);
         DeliverRefreshRateVote({"VOTER_PACKAGES", strategy.min, strategy.max}, ADD_VOTE);
         touchManager_.SetUpTimeout(strategy.upTimeOut);
         idleFps_ = strategy.idleFps;
@@ -243,9 +243,9 @@ void HgmFrameRateManager::InitTouchManager()
             });
         touchManager_.RegisterEnterStateCallback(TouchState::UP_STATE,
             [this, updateTouchToMultiAppStrategy](TouchState lastState, TouchState newState) {
-                frameVoter_.SetTouchUpLTPOFirst(true);
+                frameVoter_.SetTouchUpLTPOSkipTouchPeriod(true);
                 HgmTaskHandleThread::Instance().PostEvent(UP_TIME_OUT_TASK_ID, [this]() {
-                    frameVoter_.SetTouchUpLTPOFirst(false);
+                    frameVoter_.SetTouchUpLTPOSkipTouchPeriod(false);
                     startCheck_.store(true);
                     UpdateSoftVSync(false);
                 }, FIRST_FRAME_TIME_OUT);
@@ -253,7 +253,7 @@ void HgmFrameRateManager::InitTouchManager()
             });
         touchManager_.RegisterExitStateCallback(TouchState::UP_STATE,
             [this](TouchState lastState, TouchState newState) {
-                frameVoter_.SetTouchUpLTPOFirst(false);
+                frameVoter_.SetTouchUpLTPOSkipTouchPeriod(false);
                 HgmTaskHandleThread::Instance().RemoveEvent(UP_TIME_OUT_TASK_ID);
                 startCheck_.store(false);
             });

@@ -136,30 +136,6 @@ HWTEST_F(HgmFrameVoterTest, TestDragScene, Function | SmallTest | Level1)
 }
 
 /**
- * @tc.name: TestSetTouchUpLTPOFirst
- * @tc.desc: Verify the result of SetTouchUpLTPOFirst function
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(HgmFrameVoterTest, TestSetTouchUpLTPOFirst, Function | SmallTest | Level1)
-{
-    HgmFrameRateManager mgr;
-    HgmFrameVoter hgmFrameVoter(HgmFrameVoter(mgr.multiAppStrategy_));
-    hgmFrameVoter.SetTouchUpLTPOFirst(false);
-    EXPECT_EQ(hgmFrameVoter.isTouchUpLTPOFirst_, false);
-    hgmFrameVoter.SetTouchUpLTPOFirst(true);
-    EXPECT_EQ(hgmFrameVoter.isTouchUpLTPOFirst_, false);
-    hgmFrameVoter.multiAppStrategy_.voteRes_.first = HgmErrCode::EXEC_SUCCESS;
-    hgmFrameVoter.SetTouchUpLTPOFirst(true);
-    EXPECT_EQ(hgmFrameVoter.isTouchUpLTPOFirst_, false);
-    hgmFrameVoter.multiAppStrategy_.voteRes_.second.dynamicMode = DynamicModeType::TOUCH_EXT_ENABLED_LTPO_FIRST;
-    hgmFrameVoter.SetTouchUpLTPOFirst(true);
-    EXPECT_EQ(hgmFrameVoter.isTouchUpLTPOFirst_, true);
-    hgmFrameVoter.SetTouchUpLTPOFirst(true);
-    EXPECT_EQ(hgmFrameVoter.isTouchUpLTPOFirst_, true);
-}
-
-/**
  * @tc.name: TestCleanVote
  * @tc.desc: Verify the result of CleanVote function
  * @tc.type: FUNC
@@ -294,14 +270,14 @@ HWTEST_F(HgmFrameVoterTest, TestMergeLtpo2IdleVote, Function | SmallTest | Level
     hgmFrameVoter.DeliverVote({ "VOTER_TOUCH", OLED_90_HZ, OLED_90_HZ, 1 }, true);
     voterIter = std::find(hgmFrameVoter.voters_.begin(), hgmFrameVoter.voters_.end(), "VOTER_LTPO");
     mgr.touchManager_.ChangeState(TouchState::DOWN_STATE);
-    hgmFrameVoter.SetTouchUpLTPOFirstDynamicMode(DynamicModeType::TOUCH_EXT_ENABLED);
+    hgmFrameVoter.SetTouchUpLTPOSkipTouchDynamicMode(DynamicModeType::TOUCH_EXT_ENABLED);
     EXPECT_EQ(range.second, OLED_90_HZ);
 
     mgr.touchManager_.ChangeState(TouchState::UP_STATE);
     hgmFrameVoter.MergeLtpo2IdleVote(voterIter, info, range);
     EXPECT_EQ(range.second, OLED_90_HZ);
 
-    hgmFrameVoter.SetTouchUpLTPOFirstDynamicMode(DynamicModeType::TOUCH_EXT_ENABLED_LTPO_FIRST);
+    hgmFrameVoter.SetTouchUpLTPOSkipTouchDynamicMode(DynamicModeType::TOUCH_EXT_ENABLED_LTPO_FIRST);
     hgmFrameVoter.MergeLtpo2IdleVote(voterIter, info, range);
     EXPECT_EQ(range.second, OLED_120_HZ);
 
