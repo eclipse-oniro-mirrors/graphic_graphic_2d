@@ -1043,11 +1043,11 @@ HWTEST_F(VSyncDistributorTest, VSyncCheckPreexecuteAndUpdateTsTest001, Function 
     int64_t period = 8333333;
     int64_t vsyncCount = 1;
     sptr<VSyncConnection> conn = new VSyncConnection(vsyncDistributor, "test");
-    ASSERT_FALSE(vsyncDistributor->DVSyncCheckPreexecuteAndUpdateTs(conn, timestamp, period, vsyncCount));
+    ASSERT_FALSE(vsyncDistributor->VSyncCheckPreexecuteAndUpdateTs(conn, timestamp, period, vsyncCount));
     
     vsyncDistributor->vsyncEnabled_ = vsyncEnabeled;
     vsyncDistributor->controller_ = nullptr;
-    ASSERT_FALSE(vsyncDistributor->DVSyncCheckPreexecuteAndUpdateTs(conn, timestamp, period, vsyncCount));
+    ASSERT_FALSE(vsyncDistributor->VSyncCheckPreexecuteAndUpdateTs(conn, timestamp, period, vsyncCount));
     vsyncDistributor->vsyncEnabled_ = vsyncEnabeled;
     vsyncDistributor->controller_ = controller;
 }
