@@ -14,6 +14,7 @@
  */
 
 #include "modifier_ng/appearance/rs_background_filter_render_modifier.h"
+
 #include "pipeline/rs_render_node.h"
 
 namespace OHOS::Rosen::ModifierNG {
