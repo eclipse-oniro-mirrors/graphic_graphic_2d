@@ -2329,12 +2329,12 @@ void RSUniRenderVisitor::UpdateHwcNodesIfVisibleForApp(std::shared_ptr<RSSurface
             continue;
         }
 
-        // 1.hwcNode moving to extended screen 2.hwcNode is crossNode 
+        // 1.hwcNode moving to extended screen 2.hwcNode is crossNode
         // 3. sufaceNode is top layer 4. In drm Scene
-        if (hwcNodePtr->GetHwcGlobalPositionEnabled() || 
+        if (hwcNodePtr->GetHwcGlobalPositionEnabled() ||
             hwcNodePtr->IsDRMCrossNode() ||
             surfaceNode->IsLayerTop() ||
-            surfaceNode->GetSpecialLayerMgr().Find(SpecialLayerType::PROTECTED)) {x
+            surfaceNode->GetSpecialLayerMgr().Find(SpecialLayerType::PROTECTED)) {
             hwcNodePtr->HwcSurfaceRecorder().SetLastFrameHasVisibleRegion(true); // visible Region
             needForceUpdateHwcNodes = true;
             continue;
