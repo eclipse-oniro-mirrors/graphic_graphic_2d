@@ -107,7 +107,7 @@ bool DoFinishDrawing(const uint8_t* data, size_t size)
 
     // test
     Drawing::Font font = Drawing::Font();
-    font.SetSize(10);
+    font.SetSize(1);
     std::shared_ptr<Drawing::TextBlob> textBlob =
         Drawing::TextBlob::MakeFromString("hello", font, Drawing::TextEncoding::UTF8);
     auto recordingCanvas = new ExtendRecordingCanvas(1000, 3000);

@@ -114,7 +114,7 @@ bool RSFirstFrameNotifierTest(const uint8_t* data, size_t size)
     g_size = size;
     g_pos = 0;
     pid_t pid = GetData<pid_t>();
-    const sptr<RSIFirstFrameCommitCallback> callback;   
+    const sptr<RSIFirstFrameCommitCallback> callback;
     RSFirstFrameNotifier::GetInstance().RegisterFirstFrameCommitCallback(pid, callback);
 
     ScreenId screenId = GetData<ScreenId>();

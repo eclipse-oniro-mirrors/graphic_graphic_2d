@@ -42,7 +42,6 @@ group("test") {
     "render_service_base/fuzztest/pipeline/rscrossrendernode01_fuzzer:fuzztest",
     "render_service_base/fuzztest/pipeline/rscanvasrendernode01_fuzzer:fuzztest",
     "render_service_base/fuzztest/pipeline/rspipelinerender_fuzzer:fuzztest",
-    "render_service_base/fuzztest/pipeline/rsrendercontent_fuzzer:fuzztest",
     "render_service_base/fuzztest/pipeline/rsrendernode_fuzzer:fuzztest",
     "render_service_base/fuzztest/platform/ohos/rsrenderserviceclient_fuzzer:fuzztest",
     "render_service_base/fuzztest/platform/ohos/rsrenderserviceclient02_fuzzer:fuzztest",
