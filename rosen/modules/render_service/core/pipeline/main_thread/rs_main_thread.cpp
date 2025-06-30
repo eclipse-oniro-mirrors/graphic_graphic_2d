@@ -1523,7 +1523,7 @@ void RSMainThread::ProcessSyncRSTransactionData(std::unique_ptr<RSTransactionDat
     ProcessSyncTransactionCount(rsTransactionData);
     syncTransactionData_[pid].emplace_back(std::move(rsTransactionData));
     if (subSyncTransactionCounts_.empty()) {
-        ROSEN_LOGI("SyncTransaction success");
+        ROSEN_LOGI("SyncTxn suc");
         ProcessAllSyncTransactionData();
     }
 }
