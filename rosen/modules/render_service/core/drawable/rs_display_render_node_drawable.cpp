@@ -416,7 +416,7 @@ bool RSDisplayRenderNodeDrawable::CheckDisplayNodeSkip(
                 surfaceParams->SetRogWidthRatio(1.0f);
             }
             // hpae offline
-            if (drawable->GetRenderParams()->GetLayerInfo().useDeviceOffline &&
+            if (surfaceParams->GetLayerInfo().useDeviceOffline &&
                 ProcessOfflineSurfaceDrawable(processor, surfaceDrawable, false)) {
                 continue;
             }
@@ -1015,7 +1015,7 @@ void RSDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
                 surfaceParams->SetRogWidthRatio(1.0f);
             }
             // hpae offline: wait task and create layer
-            if (drawable->GetRenderParams()->GetLayerInfo().useDeviceOffline &&
+            if (surfaceParams->GetLayerInfo().useDeviceOffline &&
                 ProcessOfflineSurfaceDrawable(processor, surfaceDrawable, true)) {
                 continue;
             }
