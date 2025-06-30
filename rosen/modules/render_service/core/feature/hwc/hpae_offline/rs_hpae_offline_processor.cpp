@@ -15,13 +15,13 @@
 
 #include "feature/hwc/hpae_offline/rs_hpae_offline_processor.h"
 
-#include <vector>
 #include <cmath>
 #include <future>
+#include <vector>
 
+#include "display_engine/rs_luminance_control.h"
 #include "hdi_layer.h"
 #include "hdi_layer_info.h"
-#include "display_engine/rs_luminance_control.h"
 #include "rs_trace.h"
 #include "string_utils.h"
 #include "surface_type.h"
@@ -29,10 +29,9 @@
 #include "common/rs_optional_trace.h"
 #include "drawable/rs_display_render_node_drawable.h"
 #include "drawable/rs_surface_render_node_drawable.h"
-#include "params/rs_display_render_params.h"
 #include "feature/hwc/hpae_offline/rs_hpae_offline_util.h"
 #include "feature/uifirst/rs_sub_thread_manager.h"
-#include "feature/round_corner_display/rs_rcd_surface_render_node.h"
+#include "params/rs_display_render_params.h"
 #include "pipeline/render_thread/rs_uni_render_util.h"
 #include "platform/common/rs_log.h"
 #ifdef USE_VIDEO_PROCESSING_ENGINE
@@ -42,6 +41,7 @@ namespace OHOS {
 namespace Rosen {
 namespace {
 constexpr size_t MAX_NUM_INVALID_FRAME = 120;
+constexpr uint32_t WAIT_FENCE_TIMEOUT_MS = 500;
 }
 
 RSHpaeOfflineProcessor::RSHpaeOfflineProcessor()
@@ -165,6 +165,7 @@ void RSHpaeOfflineProcessor::CheckAndPostPreAllocBuffersTask()
         RS_OFFLINE_LOGD("Start to post Preallocbuffer task.");
         offlineThreadManager_.PostTask([this]() mutable {
             RS_TRACE_NAME_FMT("hpae_offline: PreAllocBuffer.");
+            std::lock_guard<std::mutex> localLock(offlineConfigMutex_);
             isBusy_ = true;
             bool ret = offlineLayer_.PreAllocBuffers(layerConfig_);
             preAllocBufferSucc_ = ret;
@@ -276,9 +277,9 @@ bool RSHpaeOfflineProcessor::DoProcessOffline(
     {
         RS_OPTIONAL_TRACE_NAME_FMT("hpae_offline: Wait Offline Acquire & Release Fence.");
         sptr<OHOS::SyncFence> releaseSyncFence = new OHOS::SyncFence(releaseFence);
-        releaseSyncFence->Wait(-1);
+        releaseSyncFence->Wait(WAIT_FENCE_TIMEOUT_MS);
         sptr<OHOS::SyncFence> acquireSyncFence = params.GetAcquireFence();
-        acquireSyncFence->Wait(-1);
+        acquireSyncFence->Wait(WAIT_FENCE_TIMEOUT_MS);
     }
 
     // hpae offline process
@@ -348,7 +349,7 @@ bool RSHpaeOfflineProcessor::PostProcessOfflineTask(
         RS_OFFLINE_LOGE("register post task failed!");
         return false;
     }
-    offlineThreadManager_.PostTask([&node, &futurePtr, this]() mutable {
+    offlineThreadManager_.PostTask([node, futurePtr, this]() mutable {
         RS_TRACE_NAME("hpae_offline: ProcessOffline");
         RS_OFFLINE_LOGD("start to proces offline surface (by node)");
         OfflineTaskFunc(node->GetStagingRenderParams().get(), futurePtr);
@@ -369,7 +370,7 @@ bool RSHpaeOfflineProcessor::PostProcessOfflineTask(
         RS_OFFLINE_LOGE("register post task failed!");
         return false;
     }
-    offlineThreadManager_.PostTask([&surfaceDrawable, &futurePtr, this]() mutable {
+    offlineThreadManager_.PostTask([surfaceDrawable, futurePtr, this]() mutable {
         RS_TRACE_NAME("hpae_offline: ProcessOffline");
         RS_OFFLINE_LOGD("start to proces offline surface (by drawable)");
         OfflineTaskFunc(surfaceDrawable->GetRenderParams().get(), futurePtr);
