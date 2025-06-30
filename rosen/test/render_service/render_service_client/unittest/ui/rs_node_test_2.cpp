@@ -512,6 +512,37 @@ HWTEST_F(RSNodeTest2, RemoveModifier, TestSize.Level1)
 }
 
 /**
+ * @tc.name: AttachProperty
+ * @tc.desc: test results of AttachProperty
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeTest2, AttachProperty, TestSize.Level1)
+{
+    auto rsNode = RSCanvasNode::Create();
+    auto property1 = std::make_shared<RSProperty<float>>(1.0f);
+    property1->SetPropertyTypeNG(ModifierNG::RSPropertyType::BOUNDS);
+    std::string  ANIMATION_PATH = "M0 0 L300 200 L300 500 Z";
+    rsNode->motionPathOption_ = std::make_shared<RSMotionPathOption>(ANIMATION_PATH);
+    rsNode->AttachProperty(property1);
+    EXPECT_EQ(property1->GetPropertyTypeNG(), ModifierNG::RSPropertyType::BOUNDS);
+
+    auto property2 = std::make_shared<RSProperty<float>>(1.0f);
+    property2->SetPropertyTypeNG(ModifierNG::RSPropertyType::FRAME);
+    rsNode->AttachProperty(property2);
+    EXPECT_EQ(property2->GetPropertyTypeNG(), ModifierNG::RSPropertyType::FRAME);
+
+    auto property3 = std::make_shared<RSProperty<float>>(1.0f);
+    property3->SetPropertyTypeNG(ModifierNG::RSPropertyType::TRANSLATE);
+    rsNode->AttachProperty(property3);
+    EXPECT_EQ(property3->GetPropertyTypeNG(), ModifierNG::RSPropertyType::TRANSLATE);
+
+    auto property4 = std::make_shared<RSProperty<float>>(1.0f);
+    property4->SetPropertyTypeNG(ModifierNG::RSPropertyType::INVALID);
+    rsNode->AttachProperty(property4);
+    EXPECT_EQ(property4->GetPropertyTypeNG(), ModifierNG::RSPropertyType::INVALID);
+}
+
+/**
  * @tc.name: DetachUIFilterProperties
  * @tc.desc: test results of DetachUIFilterProperties
  * @tc.type: FUNC
