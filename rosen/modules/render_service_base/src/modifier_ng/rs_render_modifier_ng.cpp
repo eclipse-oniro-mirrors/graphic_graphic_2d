@@ -18,6 +18,7 @@
 #include "recording/draw_cmd_list.h"
 #include "rs_trace.h"
 
+#include "modifier/rs_render_property.h"
 #include "modifier_ng/appearance/rs_alpha_render_modifier.h"
 #include "modifier_ng/appearance/rs_background_filter_render_modifier.h"
 #include "modifier_ng/appearance/rs_behind_window_filter_render_modifier.h"
@@ -48,7 +49,6 @@
 #include "pipeline/rs_render_node.h"
 #include "platform/common/rs_log.h"
 #include "property/rs_properties_painter.h"
-#include "modifier/rs_render_property.h"
 
 namespace OHOS::Rosen::ModifierNG {
 // RSRenderModifier ==========================================================================
