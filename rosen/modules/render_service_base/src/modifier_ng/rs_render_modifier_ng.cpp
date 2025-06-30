@@ -147,7 +147,9 @@ void RSRenderModifier::DetachProperty(RSPropertyType type)
     }
     if (auto node = target_.lock()) {
         DetachRenderFilterProperty(it->second, type);
-        it->second->Detach();
+        if (it->second) {
+            it->second->Detach();
+        }
         node->SetDirty();
         node->AddDirtyType(GetType());
     }
