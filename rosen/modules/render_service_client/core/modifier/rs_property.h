@@ -899,9 +899,10 @@ RSC_EXPORT void RSProperty<std::shared_ptr<RSNGFilterBase>>::Set(const std::shar
 template<>
 RSC_EXPORT std::shared_ptr<RSRenderPropertyBase> RSProperty<std::shared_ptr<RSNGFilterBase>>::GetRenderProperty();
 template<>
-RSC_EXPORT void RSProperty<std::shared_ptr<RSNGShaderBase>>::OnAttach(const std::shared_ptr<RSNode>& node);
+RSC_EXPORT void RSProperty<std::shared_ptr<RSNGShaderBase>>::OnAttach(RSNode& node,
+    std::weak_ptr<ModifierNG::RSModifier> modifier);
 template<>
-RSC_EXPORT void RSProperty<std::shared_ptr<RSNGShaderBase>>::OnDetach(const std::shared_ptr<RSNode>& node);
+RSC_EXPORT void RSProperty<std::shared_ptr<RSNGShaderBase>>::OnDetach();
 template<>
 RSC_EXPORT void RSProperty<std::shared_ptr<RSNGShaderBase>>::Set(const std::shared_ptr<RSNGShaderBase>& value);
 template<>

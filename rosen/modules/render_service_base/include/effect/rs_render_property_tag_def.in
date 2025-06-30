@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+ // The macro definition of the property tags is as follows
  // DECLARE_ANIMATABLE_PROPERTY_TAG(EffectName, PropName, Type)
  // DECLARE_NONANIMATABLE_PROPERTY_TAG(EffectName, PropName, Type)
 

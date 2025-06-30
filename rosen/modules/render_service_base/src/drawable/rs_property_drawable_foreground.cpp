@@ -18,6 +18,9 @@
 #include "common/rs_obj_abs_geometry.h"
 #include "drawable/rs_property_drawable_utils.h"
 #include "effect/rs_render_shader_base.h"
+#include "ge_render.h"
+#include "ge_visual_effect.h"
+#include "ge_visual_effect_container.h"
 #include "memory/rs_tag_tracker.h"
 #include "pipeline/rs_recording_canvas.h"
 #include "pipeline/rs_render_node.h"
@@ -241,8 +244,9 @@ bool RSForegroundShaderDrawable::OnUpdate(const RSRenderNode& node)
 
 void RSForegroundShaderDrawable::OnSync()
 {
-    if (needSync_) {
-        geShader_ = stagingShader_->GenerateGEShader();
+    if (needSync_ && stagingShader_) {
+        visualEffectContainer_ = std::make_shared<Drawing::GEVisualEffectContainer>();
+        stagingShader_->AppendToGEContainer(visualEffectContainer_);
         needSync_ = false;
     }
 }
@@ -250,7 +254,13 @@ void RSForegroundShaderDrawable::OnSync()
 Drawing::RecordingCanvas::DrawFunc RSForegroundShaderDrawable::CreateDrawFunc() const
 {
     auto ptr = std::static_pointer_cast<const RSForegroundShaderDrawable>(shared_from_this());
-    return [ptr](Drawing::Canvas* canvas, const Drawing::Rect* rect) {};
+    return [ptr](Drawing::Canvas* canvas, const Drawing::Rect* rect) {
+        auto geRender = std::make_shared<GraphicsEffectEngine::GERender>();
+        if (canvas == nullptr || ptr->visualEffectContainer_ == nullptr || rect == nullptr) {
+            return;
+        }
+        geRender->DrawShaderEffect(*canvas, *(ptr->visualEffectContainer_), *rect);
+    };
 }
 
 RSDrawable::Ptr RSCompositingFilterDrawable::OnGenerate(const RSRenderNode& node)

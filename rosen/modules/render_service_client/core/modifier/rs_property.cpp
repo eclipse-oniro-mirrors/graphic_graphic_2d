@@ -263,15 +263,16 @@ RSC_EXPORT std::shared_ptr<RSRenderPropertyBase> RSProperty<std::shared_ptr<RSNG
 }
 
 template<>
-void RSProperty<std::shared_ptr<RSNGShaderBase>>::OnAttach(const std::shared_ptr<RSNode>& node)
+void RSProperty<std::shared_ptr<RSNGShaderBase>>::OnAttach(RSNode& node,
+    std::weak_ptr<ModifierNG::RSModifier> modifier)
 {
     if (stagingValue_) {
-        stagingValue_->Attach(node);
+        stagingValue_->Attach(node, modifier);
     }
 }
 
 template<>
-void RSProperty<std::shared_ptr<RSNGShaderBase>>::OnDetach(const std::shared_ptr<RSNode>& node)
+void RSProperty<std::shared_ptr<RSNGShaderBase>>::OnDetach()
 {
     if (stagingValue_) {
         stagingValue_->Detach();
@@ -281,22 +282,24 @@ void RSProperty<std::shared_ptr<RSNGShaderBase>>::OnDetach(const std::shared_ptr
 template<>
 void RSProperty<std::shared_ptr<RSNGShaderBase>>::Set(const std::shared_ptr<RSNGShaderBase>& value)
 {
-    if (stagingValue_ && stagingValue_->SetValue(value, target_.lock())) {
+    auto node = target_.lock();
+    if (node == nullptr) {
+        stagingValue_ = value;
         return;
     }
 
-    // failed to update all properties in shader, fall back to replace shader
+    // Incremental update for filter properties, return if success
+    if (stagingValue_ && stagingValue_->SetValue(value, *node, modifierNG_)) {
+        return;
+    }
+
+    // failed to update filter properties, fallback to replace operation
     if (stagingValue_) {
         stagingValue_->Detach();
     }
-
     stagingValue_ = value;
-    auto node = target_.lock();
-    if (node == nullptr) {
-        return;
-    }
     if (stagingValue_) {
-        stagingValue_->Attach(node);
+        stagingValue_->Attach(*node, modifierNG_);
     }
 
     MarkNodeDirty();

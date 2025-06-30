@@ -5142,7 +5142,7 @@ void RSNode::AttachProperty(std::shared_ptr<RSPropertyBase> property)
     if (!property) {
         return;
     }
-    if (motionPathOption_ != nullptr && property->IsPathAnimatable()) {
+    if (motionPathOption_ != nullptr && IsPathAnimatableProperty(property->GetPropertyTypeNG())) {
         property->SetMotionPathOption(motionPathOption_);
     }
     property->Attach(*this);

@@ -23,18 +23,16 @@ namespace OHOS {
 namespace Rosen {
 
 namespace Drawing {
+    class GEVisualEffectContainer;
+    class GEVisualEffect;
     class GEShader;
 } // namespace Drawing
 
-class RSB_EXPORT RSNGRenderShaderBase : public RSNGRenderEffectBase<RSNGRenderShaderBase> {
+class RSB_EXPORT RSNGRenderShaderHelper {
 public:
-    static std::shared_ptr<RSNGRenderShaderBase> Create(RSNGEffectType type);
-
-    static std::shared_ptr<Drawing::GEShader> GenerateGEShader()
-    {
-        return nullptr;
-        // return std::make_shared<Drawing::GEShader>(GetShaderTypeString(type), Drawing::DrawingPaintType::BRUSH);
-    }
+    static std::shared_ptr<Drawing::GEVisualEffect> CreateGEFilter(RSNGEffectType type);
+    static void AppendToGEContainer(std::shared_ptr<Drawing::GEVisualEffectContainer>& ge,
+        std::shared_ptr<Drawing::GEVisualEffect> geShader);
 
     static std::string GetShaderTypeString(RSNGEffectType type)
     {
@@ -44,8 +42,44 @@ public:
             case RSNGEffectType::WAVY_RIPPLE_LIGHT: return "WavyRippleLight";
             case RSNGEffectType::AURORA_NOISE: return "AuroraNoise";
             default:
-                return "UNKNOWN";
+                return "UNKNOWN";	                return "UNKNOWN";
         }
+    }
+
+    template<typename Tag>
+    static void UpdateVisualEffectParam(std::shared_ptr<Drawing::GEVisualEffect> geFilter, const Tag& propTag)
+    {
+        if (!geFilter) {
+            return;
+        }
+        UpdateVisualEffectParamImpl(geFilter, Tag::NAME, propTag.value_->Get());
+    }
+
+private:
+    static void UpdateVisualEffectParamImpl(std::shared_ptr<Drawing::GEVisualEffect> geFilter,
+        const std::string& desc, float value);
+
+    static void UpdateVisualEffectParamImpl(std::shared_ptr<Drawing::GEVisualEffect> geFilter,
+        const std::string& desc, const Vector4f& value);
+
+    static void UpdateVisualEffectParamImpl(std::shared_ptr<Drawing::GEVisualEffect> geFilter,
+        const std::string& desc, const Vector2f& value);
+
+    static void UpdateVisualEffectParamImpl(std::shared_ptr<Drawing::GEVisualEffect> geFilter,
+        const std::string& desc, std::shared_ptr<RSPath> value);
+
+    static void UpdateVisualEffectParamImpl(std::shared_ptr<Drawing::GEVisualEffect> geFilter,
+        const std::string& desc, std::shared_ptr<RSNGRenderMaskBase> value);
+};
+
+class RSB_EXPORT RSNGRenderShaderBase : public RSNGRenderEffectBase<RSNGRenderShaderBase> {
+public:
+    static std::shared_ptr<RSNGRenderShaderBase> Create(RSNGEffectType type);
+
+    virtual void AppendToGEContainer(std::shared_ptr<Drawing::GEVisualEffectContainer>& ge) {};
+
+    virtual void OnSync()
+    {
     }
 
     [[nodiscard]] static bool Unmarshalling(Parcel& parcel, std::shared_ptr<RSNGRenderShaderBase>& val);
@@ -53,7 +87,37 @@ public:
 };
 
 template<RSNGEffectType Type, typename... PropertyTags>
-using RSNGRenderShaderTemplate = RSNGRenderEffectTemplate<RSNGRenderShaderBase, Type, PropertyTags...>;
+class RSNGRenderShaderTemplate : public RSNGRenderEffectTemplate<RSNGRenderShaderBase, Type, PropertyTags...> {
+public:
+    using EffectTemplateBase = RSNGRenderEffectTemplate<RSNGRenderShaderBase, Type, PropertyTags...>;
+
+    RSNGRenderShaderTemplate() : EffectTemplateBase() {}
+    ~RSNGRenderShaderTemplate() override = default;
+    RSNGRenderShaderTemplate(const std::tuple<PropertyTags...>& properties) noexcept
+        : EffectTemplateBase(properties) {}
+
+    void AppendToGEContainer(std::shared_ptr<Drawing::GEVisualEffectContainer>& ge) override
+    {
+        if (ge == nullptr) {
+            return;
+        }
+        auto geShader = RSNGRenderShaderHelper::CreateGEFilter(Type);
+        std::apply(
+            [&geShader](const auto&... propTag) {
+                (RSNGRenderShaderHelper::UpdateVisualEffectParam<std::decay_t<decltype(propTag)>>(
+                    geShader, propTag), ...);
+                },
+                EffectTemplateBase::properties_
+            );
+        RSNGRenderShaderHelper::AppendToGEContainer(ge, geShader);
+        if (EffectTemplateBase::nextEffect_) {
+            EffectTemplateBase::nextEffect_->AppendToGEContainer(ge);
+        }
+    }
+
+protected:
+    virtual void OnGenerateGEVisualEffect(std::shared_ptr<Drawing::GEVisualEffect>) {}
+};
 
 #define ADD_PROPERTY_TAG(Effect, Prop) Effect##Prop##RenderTag
 

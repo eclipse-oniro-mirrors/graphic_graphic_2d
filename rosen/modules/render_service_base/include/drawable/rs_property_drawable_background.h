@@ -35,6 +35,7 @@ class RSNGRenderShaderBase;
 namespace Drawing {
 class GEShader;
 class RuntimeEffect;
+class GEVisualEffectContainer;
 }
 #ifdef RS_ENABLE_VK
 namespace NativeBufferUtils {
@@ -117,7 +118,7 @@ public:
     Drawing::RecordingCanvas::DrawFunc CreateDrawFunc() const override;
 private:
     bool needSync_ = false;
-    std::shared_ptr<Drawing::GEShader> geShader_;
+    std::shared_ptr<Drawing::GEVisualEffectContainer> visualEffectContainer_;
     std::shared_ptr<RSNGRenderShaderBase> stagingShader_;
 };
 

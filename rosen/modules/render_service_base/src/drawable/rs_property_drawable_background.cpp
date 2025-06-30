@@ -40,7 +40,9 @@
 #include "platform/ohos/backend/native_buffer_utils.h"
 #include "platform/ohos/backend/rs_vulkan_context.h"
 #endif
-
+#include "ge_render.h"
+#include "ge_visual_effect.h"
+#include "ge_visual_effect_container.h"
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
 #ifdef USE_M133_SKIA
 #include "include/gpu/ganesh/vk/GrVkBackendSemaphore.h"
@@ -314,8 +316,9 @@ bool RSBackgroundNGShaderDrawable::OnUpdate(const RSRenderNode& node)
 
 void RSBackgroundNGShaderDrawable::OnSync()
 {
-    if (needSync_) {
-        geShader_ = stagingShader_->GenerateGEShader();
+    if (needSync_ && stagingShader_) {
+        visualEffectContainer_ = std::make_shared<Drawing::GEVisualEffectContainer>();
+        stagingShader_->AppendToGEContainer(visualEffectContainer_);
         needSync_ = false;
     }
 }
@@ -324,16 +327,11 @@ Drawing::RecordingCanvas::DrawFunc RSBackgroundNGShaderDrawable::CreateDrawFunc(
 {
     auto ptr = std::static_pointer_cast<const RSBackgroundNGShaderDrawable>(shared_from_this());
     return [ptr](Drawing::Canvas* canvas, const Drawing::Rect* rect) {
-        // Drawing::Brush brush;
-        // auto shaderEffect = geShader_->GetDrawingShader();
-        // // do not draw if shaderEffect is nullptr and keep RSShader behavior consistent
-        // if (shaderEffect == nullptr) {
-        //     return true;
-        // }
-        // brush.SetShaderEffect(shaderEffect);
-        // canvas.AttachBrush(brush);
-        // canvas.DrawRect(rect);
-        // canvas.DetachBrush();
+        auto geRender = std::make_shared<GraphicsEffectEngine::GERender>();
+        if (canvas == nullptr || ptr->visualEffectContainer_ == nullptr || rect == nullptr) {
+            return;
+        }
+        geRender->DrawShaderEffect(*canvas, *(ptr->visualEffectContainer_), *rect);
     };
 }
 

@@ -785,26 +785,19 @@ void RSRenderProperty<std::shared_ptr<RSNGRenderFilterBase>>::OnSetModifierType(
 }
 
 template<>
-void RSRenderProperty<std::shared_ptr<RSNGRenderShaderBase>>::OnAttach()
+void RSRenderProperty<std::shared_ptr<RSNGRenderShaderBase>>::OnAttach(RSRenderNode& node,
+    std::weak_ptr<ModifierNG::RSRenderModifier> modifier)
 {
-    auto node = node_.lock();
-    if (!node) {
-        return;
-    }
     if (stagingValue_) {
-        stagingValue_->Attach(node);
+        stagingValue_->Attach(node, modifier);
     }
 }
 
 template<>
 void RSRenderProperty<std::shared_ptr<RSNGRenderShaderBase>>::OnDetach()
 {
-    auto node = node_.lock();
-    if (!node) {
-        return;
-    }
     if (stagingValue_) {
-        stagingValue_->Detach(node);
+        stagingValue_->Detach();
     }
 }
 

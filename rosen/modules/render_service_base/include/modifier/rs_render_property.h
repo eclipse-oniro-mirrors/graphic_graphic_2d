@@ -628,7 +628,8 @@ RSB_EXPORT void RSRenderProperty<std::shared_ptr<RSNGRenderFilterBase>>::Set(
 template<>
 RSB_EXPORT void RSRenderProperty<std::shared_ptr<RSNGRenderFilterBase>>::OnSetModifierType();
 template<>
-RSB_EXPORT void RSRenderProperty<std::shared_ptr<RSNGRenderShaderBase>>::OnAttach();
+RSB_EXPORT void RSRenderProperty<std::shared_ptr<RSNGRenderShaderBase>>::OnAttach(RSRenderNode& node,
+    std::weak_ptr<ModifierNG::RSRenderModifier> modifier);
 template<>
 RSB_EXPORT void RSRenderProperty<std::shared_ptr<RSNGRenderShaderBase>>::OnDetach();
 template<>
