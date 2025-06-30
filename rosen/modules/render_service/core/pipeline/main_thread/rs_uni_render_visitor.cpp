@@ -2334,20 +2334,21 @@ void RSUniRenderVisitor::UpdateHwcNodesIfVisibleForApp(std::shared_ptr<RSSurface
         if (hwcNodePtr->GetHwcGlobalPositionEnabled() || 
             hwcNodePtr->IsDRMCrossNode() ||
             surfaceNode->IsLayerTop() ||
-            surfaceNode->GetSpecialLayerMgr().Find(SpecialLayerType::PROTECTED)) {
+            surfaceNode->GetSpecialLayerMgr().Find(SpecialLayerType::PROTECTED)) {x
             hwcNodePtr->HwcSurfaceRecorder().SetLastFrameHasVisibleRegion(true); // visible Region
             needForceUpdateHwcNodes = true;
             continue;
         }
         
-        auto region = surfaceNode->GetVisibleRegion();
-        region.MakeBound();
-        auto rectI = region.GetBound().ToRectI();
-        rectI.left_ = static_cast<int>(std::round(rectI.left_ * screenInfo_.GetRogWidthRatio()));
-        rectI.top_ = static_cast<int>(std::round(rectI.top_ * screenInfo_.GetRogHeightRatio()));
-        rectI.width_ = static_cast<int>(std::round(rectI.width_ * screenInfo_.GetRogWidthRatio()));
-        rectI.height_ = static_cast<int>(std::round(rectI.height_ * screenInfo_.GetRogHeightRatio()));
-        auto newRegionRect = Occlusion::Rect(rectI, true);
+        auto visibleRegion = surfaceNode->GetVisibleRegion();
+        visibleRegion.MakeBound();
+        auto visibleRectI = visibleRegion.GetBound().ToRectI();
+        visibleRectI.left_ = static_cast<int>(std::round(visibleRectI.left_ * screenInfo_.GetRogWidthRatio()));
+        visibleRectI.top_ = static_cast<int>(std::round(visibleRectI.top_ * screenInfo_.GetRogHeightRatio()));
+        visibleRectI.width_ = static_cast<int>(std::round(visibleRectI.width_ * screenInfo_.GetRogWidthRatio()));
+        visibleRectI.height_ =
+            static_cast<int>(std::round(visibleRectI.height_ * screenInfo_.GetRogHeightRatio()));
+        auto newRegionRect = Occlusion::Rect(visibleRectI, true);
         newRegionRect.Expand(EXPAND_ONE_PIX, EXPAND_ONE_PIX, EXPAND_ONE_PIX, EXPAND_ONE_PIX);
         Occlusion::Rect dstRect(hwcNodePtr->GetDstRect());
         if (newRegionRect.IsIntersect(dstRect)) {
