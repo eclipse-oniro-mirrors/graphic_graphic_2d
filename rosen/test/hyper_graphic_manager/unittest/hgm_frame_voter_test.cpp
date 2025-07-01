@@ -271,7 +271,7 @@ HWTEST_F(HgmFrameVoterTest, TestMergeLtpo2IdleVote, Function | SmallTest | Level
 }
 
 /**
- * @tc.name: TestMergeLtpo2IdleVote
+ * @tc.name: TestMergeLtpo2IdleVote02
  * @tc.desc: Verify the result of MergeLtpo2IdleVote function
  * @tc.type: FUNC
  * @tc.require:
