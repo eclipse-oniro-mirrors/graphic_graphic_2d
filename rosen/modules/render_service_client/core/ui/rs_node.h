@@ -1885,6 +1885,7 @@ protected:
     void SetIsOnTheTree(bool flag);
 
     std::array<std::shared_ptr<ModifierNG::RSModifier>, ModifierNG::MODIFIER_TYPE_COUNT> modifiersNGCreatedBySetter_;
+    static inline bool isMultiInstanceOpen_ = false;
 
 private:
     static NodeId GenerateId();
