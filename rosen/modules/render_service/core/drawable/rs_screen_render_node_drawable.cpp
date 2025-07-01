@@ -479,6 +479,7 @@ void RSScreenRenderNodeDrawable::CheckFilterCacheFullyCovered(RSSurfaceRenderPar
         }
     }
 }
+
 void RSScreenRenderNodeDrawable::CheckAndUpdateFilterCacheOcclusionFast()
 {
     auto params = static_cast<RSScreenRenderParams*>(renderParams_.get());
@@ -492,7 +493,6 @@ void RSScreenRenderNodeDrawable::CheckAndUpdateFilterCacheOcclusionFast()
     ScreenInfo curScreenInfo = screenManager->QueryScreenInfo(paramScreenId);
     CheckAndUpdateFilterCacheOcclusion(*params, curScreenInfo);
     filterCacheOcclusionUpdated_ = true;
-
 }
 
 void RSScreenRenderNodeDrawable::CheckAndUpdateFilterCacheOcclusion(
@@ -823,10 +823,9 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     SetScreenNodeSkipFlag(*uniParam, false);
     RSMainThread::Instance()->SetFrameIsRender(true);
 
-    if(filterCacheOcclusionUpdated_){
+    if(filterCacheOcclusionUpdated_) {
         filterCacheOcclusionUpdated_ = false;
-    }
-    else{
+    } else {
         CheckAndUpdateFilterCacheOcclusion(*params, curScreenInfo);
     }
     if (isHdrOn) {

@@ -484,7 +484,7 @@ bool RSSurfaceOhosVulkan::FlushFrame(std::unique_ptr<RSSurfaceFrame>& frame, uin
     std::vector<GrBackendSemaphore> semphoreVec = {backendSemaphore};
     std::vector<uint64_t> frameIdVec = RSHDRPatternManager::Instance().MHCGetFrameIdForGpuTask();
 
-    auto semphoreVec = PrepareHdrSemaphoreVector(backendSemaphore, surface, frameIdVec, semphoreVec);
+    PrepareHdrSemaphoreVector(backendSemaphore, surface, frameIdVec, semphoreVec);
    
 #if defined(ROSEN_OHOS) && defined(ENABLE_HPAE_BLUR)
     RSHpaeScheduler::GetInstance().WaitBuildTask();

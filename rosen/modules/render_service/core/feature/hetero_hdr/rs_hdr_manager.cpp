@@ -170,7 +170,8 @@ bool RSHdrManager::PrepareHapeTask(
         RSHDRPatternManager::Instance().MHCReleaseEGraph(curFrameId);
         return false;
     }
-    dstBuffer_ = (nodeDrawable->GetRsHdrBUfferLayer())->PrepareHDRDstBuffer(surfaceParams, GetScreenIDByDrawable(nodeDrawable));
+    dstBuffer_ = (nodeDrawable->GetRsHdrBUfferLayer())->PrepareHDRDstBuffer(surfaceParams,
+        GetScreenIDByDrawable(nodeDrawable));
     if (dstBuffer_ == nullptr) {
         RS_LOGE("dstBuffer is nullptr");
         RSHDRPatternManager::Instance().MHCReSetCurFrameId();
@@ -413,13 +414,13 @@ void RSHdrManager::ReverseParentNode(std::shared_ptr<RSRenderNode> node)
     if (surfaceNode && surfaceNode->IsLeashWindow()) {
         windowSceneNode_ = surfaceNode;
     }
-    auto displayNode = RSBaseRenderNode::ReinterpretCast<RSDisplayRenderNode>(node);
+    auto displayNode = RSBaseRenderNode::ReinterpretCast<RSScreenRenderNode>(node);
     if (displayNode) {
         auto drawable = displayNode->GetRenderDrawable();
         if (drawable == nullptr) {
             return;
         }
-        auto displayDrawable = std::static_pointer_cast<DrawableV2::RSDisplayRenderNodeDrawable>(drawable);
+        auto displayDrawable = std::static_pointer_cast<DrawableV2::RSScreenRenderNodeDrawable>(drawable);
         displayDrawable->CheckAndUpdateFilterCacheOcclusionFast();
         return;
     }
