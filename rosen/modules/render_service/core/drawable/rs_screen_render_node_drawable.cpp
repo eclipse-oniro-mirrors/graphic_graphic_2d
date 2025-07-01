@@ -1413,12 +1413,12 @@ void RSScreenRenderNodeDrawable::CheckAndPostAsyncProcessOfflineTask()
 {
     auto& hardwareDrawables =
         RSUniRenderThread::Instance().GetRSRenderThreadParams()->GetHardwareEnabledTypeDrawables();
-    for (const auto& [displayNodeId, drawable] : hardwareDrawables) {
+    for (const auto& [screenNodeId, _, drawable] : hardwareDrawables) {
         if (UNLIKELY(!drawable || !drawable->GetRenderParams())) {
             continue;
         }
         auto params = static_cast<RSDisplayRenderParams*>(renderParams_.get());
-        if (displayNodeId != params->GetId()) {
+        if (screenNodeId != params->GetId()) {
             continue;
         }
         auto surfaceDrawable = std::static_pointer_cast<RSSurfaceRenderNodeDrawable>(drawable);
