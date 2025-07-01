@@ -22,6 +22,9 @@
 #include "gtest/hwext/gtest-tag.h"
 #include "common/rs_vector4.h"
 #include "modifier_ng/rs_modifier_ng_type.h"
+#include "modifier_ng/rs_render_modifier_ng.h"
+#include "modifier_ng/appearance/rs_alpha_render_modifier.h"
+#include "pipeline/rs_canvas_drawing_render_node.h"
 
 #include "message_parcel.h"
 #include "property/rs_properties.h"
@@ -44,12 +47,90 @@ void RSRenderModifierNGTest::SetUp() {}
 void RSRenderModifierNGTest::TearDown() {}
 
 /**
- * @tc.name: GetPropertyTypeString
- * @tc.desc:
- * @tc.type:FUNC
+ * @tc.name: AttachProperty
+ * @tc.desc: test the function AttachProperty
+ * @tc.type: FUNC
  */
-HWTEST_F(RSRenderModifierNGTest, GetPropertyTypeString, TestSize.Level1)
+HWTEST_F(RSRenderModifierNGTest, AttachPropertyTest, TestSize.Level1)
 {
-    
+    std::shared_ptr<Drawing::DrawCmdList> drawCmdList = std::make_shared<Drawing::DrawCmdList>();
+    drawCmdList->SetWidth(1024);
+    drawCmdList->SetHeight(1090);
+    auto property = std::make_shared<RSRenderProperty<Drawing::DrawCmdListPtr>>();
+    property->GetRef() = drawCmdList;
+    auto modifier = std::make_shared<ModifierNG::RSCustomRenderModifier<ModifierNG::RSModifierType::CONTENT_STYLE>>();
+    NodeId nodeId = 1;
+    RSCanvasDrawingRenderNode node(nodeId);
+    modifier->OnAttachModifier(node);
+    modifier->AttachProperty(ModifierNG::RSPropertyType::CONTENT_STYLE, property);
+    EXPECT_NE(property, nullptr);
+}
+
+/**
+ * @tc.name: DetachPropertyTest
+ * @tc.desc: test the function DetachProperty
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderModifierNGTest, DetachPropertyTest, TestSize.Level1)
+{
+    auto modifier = std::make_shared<ModifierNG::RSCustomRenderModifier<ModifierNG::RSModifierType::CONTENT_STYLE>>();
+    modifier->DetachProperty(ModifierNG::RSPropertyType::CONTENT_STYLE);
+    EXPECT_NE(modifier, nullptr);
+
+    std::shared_ptr<Drawing::DrawCmdList> drawCmdList = std::make_shared<Drawing::DrawCmdList>();
+    drawCmdList->SetWidth(1024);
+    drawCmdList->SetHeight(1090);
+    auto property = std::make_shared<RSRenderProperty<Drawing::DrawCmdListPtr>>();
+    property->GetRef() = drawCmdList;
+    NodeId nodeId = 1;
+    RSCanvasDrawingRenderNode node(nodeId);
+    modifier->OnAttachModifier(node);
+    modifier->AttachProperty(ModifierNG::RSPropertyType::CONTENT_STYLE, property);
+    modifier->DetachProperty(ModifierNG::RSPropertyType::CONTENT_STYLE);
+    EXPECT_NE(property, nullptr);
+}
+
+/**
+ * @tc.name: GetResetFuncMapTest
+ * @tc.desc: test the function GetResetFuncMap
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderModifierNGTest, GetResetFuncMapTest, TestSize.Level1)
+{
+    auto resetFuncMap = ModifierNG::RSRenderModifier::GetResetFuncMap();
+    EXPECT_TRUE(resetFuncMap.count(ModifierNG::RSModifierType::TRANSFORM));
+}
+
+/**
+ * @tc.name: GetPropertySizeTest
+ * @tc.desc: test the function GetPropertySize
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderModifierNGTest, GetPropertySizeTest, TestSize.Level1)
+{
+    auto property = std::make_shared<RSRenderProperty<float>>();
+    auto modifier = std::make_shared<ModifierNG::RSAlphaRenderModifier>();
+    EXPECT_TRUE(modifier->GetPropertySize() == 0);
+    modifier->AttachProperty(ModifierNG::RSPropertyType::ALPHA, property);
+    EXPECT_TRUE(modifier->GetPropertySize() > 0);
+}
+
+/**
+ * @tc.name: SetDirtyTest
+ * @tc.desc: test the function SetDirty
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderModifierNGTest, SetDirtyTest, TestSize.Level1)
+{
+    auto modifier = std::make_shared<ModifierNG::RSAlphaRenderModifier>();
+    modifier->SetDirty();
+    EXPECT_EQ(modifier->target_.lock(), nullptr);
+
+    NodeId nodeId = 1;
+    std::shared_ptr<RSRenderNode> nodePtr = std::make_shared<RSCanvasDrawingRenderNode>(nodeId);
+    std::weak_ptr<RSRenderNode> weakPtr = nodePtr;
+    modifier->target_ = weakPtr;
+    modifier->SetDirty();
+    EXPECT_NE(modifier->target_.lock(), nullptr);
 }
 }

@@ -74,8 +74,10 @@ HWTEST_F(RSFrameClipRenderModifierNGTypeTest, OnSetDirtyTest, TestSize.Level1)
     modifier->OnSetDirty();
     EXPECT_TRUE(modifier->HasProperty(ModifierNG::RSPropertyType::CUSTOM_CLIP_TO_FRAME));
 
-    RSCanvasRenderNode node(id);
-    modifier->target_ = node.weak_from_this();
+    NodeId nodeId = 1;
+    std::shared_ptr<RSRenderNode> nodePtr = std::make_shared<RSCanvasRenderNode>(nodeId);
+    std::weak_ptr<RSRenderNode> weakPtr = nodePtr;
+    modifier->target_ = weakPtr;
     modifier->OnSetDirty();
     EXPECT_NE(modifier->target_.lock(), nullptr);
 }
