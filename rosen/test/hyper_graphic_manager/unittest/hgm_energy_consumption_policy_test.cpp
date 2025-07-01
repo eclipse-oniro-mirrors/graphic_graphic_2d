@@ -342,17 +342,21 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, GetDisplaySoloistIdleFpsTest1, TestSize
 }
 
 /**
- * @tc.name: SetAceComponentEnableTest
- * @tc.desc: test results of SetAceComponentEnableTest
+ * @tc.name: EnergyConsumptionAssureanceTest
+ * @tc.desc: test drag scene
  * @tc.type: FUNC
  * @tc.require: issuesICH496
  */
-HWTEST_F(HgmEnergyConsumptionPolicyTest, SetAceComponentEnableTest, TestSize.Level1)
+HWTEST_F(HgmEnergyConsumptionPolicyTest, EnergyConsumptionAssureanceTest, TestSize.Level1)
 {
     SetConfigEnable("true");
     FrameRateRange rsRange = { DEFAULT_MAX_FPS, DEFAULT_MAX_FPS, DEFAULT_MAX_FPS, DRAG_SCENE_FRAME_RATE_TYPE };
     EventInfo eventInfo = { .eventName = "ENERGY_CONSUMPTION_ASSURANCE", .eventStatus = false,
         .description = "DRAG_SCENE" };
+    HgmEnergyConsumptionPolicy::Instance().SetEnergyConsumptionAssuranceSceneInfo(eventInfo);
+    ASSERT_FALSE(HgmEnergyConsumptionPolicy::Instance().GetUiIdleFps(rsRange));
+    EventInfo eventInfo = { .eventName = "ENERGY_CONSUMPTION_ASSURANCE", .eventStatus = true,
+        .description = "TEST" };
     HgmEnergyConsumptionPolicy::Instance().SetEnergyConsumptionAssuranceSceneInfo(eventInfo);
     ASSERT_FALSE(HgmEnergyConsumptionPolicy::Instance().GetUiIdleFps(rsRange));
     eventInfo = { .eventName = "ENERGY_CONSUMPTION_ASSURANCE", .eventStatus = true,
