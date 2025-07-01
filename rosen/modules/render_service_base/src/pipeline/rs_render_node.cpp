@@ -3740,23 +3740,6 @@ std::shared_ptr<Drawing::Surface> RSRenderNode::GetCacheSurface(uint32_t threadI
     return nullptr;
 }
 
-#if defined(MODIFIER_NG)
-bool RSRenderNode::GroupableAnimationType(
-    const PropertyId& id, bool& isGroupAnimationType, bool& isCacheableAnimationType)
-{
-    if (auto property = GetProperty(id)) {
-        if (auto modifierNG = property->GetModifierNG().lock()) {
-            isGroupAnimationType = modifierNG->HasProperty(ModifierNG::RSPropertyType::ALPHA) ||
-                                   modifierNG->HasProperty(ModifierNG::RSPropertyType::ROTATION) ||
-                                   modifierNG->HasProperty(ModifierNG::RSPropertyType::SCALE);
-            isCacheableAnimationType = modifierNG->HasProperty(ModifierNG::RSPropertyType::BOUNDS) ||
-                                       modifierNG->HasProperty(ModifierNG::RSPropertyType::FRAME);
-            return true;
-        }
-    }
-    return false;
-}
-
 void RSRenderNode::CheckGroupableAnimation(const PropertyId& id, bool isAnimAdd)
 {
     if (id <= 0 || GetType() != RSRenderNodeType::CANVAS_NODE) {
