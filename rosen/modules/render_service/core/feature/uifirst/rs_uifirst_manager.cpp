@@ -599,10 +599,11 @@ bool RSUifirstManager::NeedPurgeByBehindWindow(const std::shared_ptr<RSSurfaceRe
 
 void RSUifirstManager::HandlePurgeBehindWindow(
     std::unordered_map<NodeId, std::shared_ptr<RSSurfaceRenderNode>>::iterator& it,
-    uint64_t currentTime, std::unordered_map<NodeId, std::shared_ptr<RSSurfaceRenderNode>>& pendingNode)
+    std::unordered_map<NodeId, std::shared_ptr<RSSurfaceRenderNode>>& pendingNode)
 {
     auto id = it->first;
     auto node = it->second;
+    uint64_t currentTime = GetMainThreadVsyncTime();
     uint64_t timeDiffInMilliseconds = GetTimeDiffBehindWindow(currentTime, id);
     // control the frequency of purge as the designed time
     if (timeDiffInMilliseconds >= PURGE_BEHIND_WINDOW_TIME) {
@@ -651,7 +652,6 @@ void RSUifirstManager::DoPurgePendingPostNodes(std::unordered_map<NodeId,
         RS_TRACE_NAME_FMT("Purge node name: %s, PurgeEnable:%d, HasCachedTexture:%d, staticContent: %d %" PRIu64,
             surfaceParams->GetName().c_str(), purgeEnable_,
             rsSubThreadCache.HasCachedTexture(), staticContent, drawable->GetId());
-        uint64_t currentTime = GetMainThreadVsyncTime();
         if (purgeEnable_ && rsSubThreadCache.HasCachedTexture() &&
             (staticContent || CheckVisibleDirtyRegionIsEmpty(node)) &&
             (subthreadProcessingNode_.find(id) == subthreadProcessingNode_.end()) &&
@@ -659,7 +659,7 @@ void RSUifirstManager::DoPurgePendingPostNodes(std::unordered_map<NodeId,
             RS_OPTIONAL_TRACE_NAME_FMT("Purge node name %s", surfaceParams->GetName().c_str());
             it = pendingNode.erase(it);
         } else if (NeedPurgeByBehindWindow(node, id)) {
-            HandlePurgeBehindWindow(it, currentTime, pendingNode);
+            HandlePurgeBehindWindow(it, pendingNode);
         } else if (SubThreadControlFrameRate(id, drawable, node)) {
             RS_OPTIONAL_TRACE_NAME_FMT("Purge frame drop node name %s", surfaceParams->GetName().c_str());
             it = pendingNode.erase(it);
@@ -1226,7 +1226,7 @@ void RSUifirstManager::AddPendingPostNode(NodeId id, std::shared_ptr<RSSurfaceRe
         if (temp_it == pendingNodeBehindWindow_.end()) {
             RS_OPTIONAL_TRACE_NAME_FMT("Add to pendingNodeBehindWindow id:%" PRIu64 " name:%s", node->GetId(),
                 node->GetName().c_str());
-            pendingNodeBehindWindow_[id] = NodeData{.curTime_ = GetMainThreadVsyncTime()};
+            pendingNodeBehindWindow_[id] = NodeDataBehindWindow{.curTime_ = GetMainThreadVsyncTime()};
         }
         RS_OPTIONAL_TRACE_NAME_FMT("Add pending id:%" PRIu64 " size:%d", node->GetId(), pendingPostNodes_.size());
     } else if (currentFrameCacheType == MultiThreadCacheType::ARKTS_CARD) {

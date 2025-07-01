@@ -622,7 +622,7 @@ HWTEST_F(RSUifirstManagerTest, UifirstStateChange005, TestSize.Level1)
     NodeId nodeId = 0;
     auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(nodeId);
     ASSERT_NE(surfaceNode, nullptr);
-    uifirstManager_.pendingNodeBehindWindow_[nodeId] = RSUifirstManager::NodeData{
+    uifirstManager_.pendingNodeBehindWindow_[nodeId] = RSUifirstManager::NodeDataBehindWindow{
         .curTime_ = uifirstManager_.GetMainThreadVsyncTime(),
         .isFirst = true
     };
@@ -1704,7 +1704,7 @@ HWTEST_F(RSUifirstManagerTest, DoPurgePendingPostNodes002, TestSize.Level1)
     surfaceRenderNode->AddChild(appWindow);
     surfaceRenderNode->GenerateFullChildrenList();
     surfaceRenderNode->UpdateChildSubSurfaceNodes(appWindow, true);
-    uifirstManager_.pendingNodeBehindWindow_[nodeId] = RSUifirstManager::NodeData{
+    uifirstManager_.pendingNodeBehindWindow_[nodeId] = RSUifirstManager::NodeDataBehindWindow{
         .curTime_ = -30,
         .isFirst = false
     };
@@ -1733,18 +1733,17 @@ HWTEST_F(RSUifirstManagerTest, HandlePurgeBehindWindow001, TestSize.Level1)
     std::unordered_map<NodeId, std::shared_ptr<RSSurfaceRenderNode>> pendingNode;
     pendingNode.insert(std::make_pair(nodeId, surfaceRenderNode));
     auto it = pendingNode.begin();
-    uifirstManager_.pendingNodeBehindWindow_[nodeId] = RSUifirstManager::NodeData{
+    uifirstManager_.pendingNodeBehindWindow_[nodeId] = RSUifirstManager::NodeDataBehindWindow{
         .curTime_ = -30,
         .isFirst = false
     };
-    uint64_t currentTime = 0;
 
-    uifirstManager_.HandlePurgeBehindWindow(it, currentTime, pendingNode);
+    uifirstManager_.HandlePurgeBehindWindow(it, pendingNode);
     EXPECT_FALSE(pendingNode.empty());
 
     it = pendingNode.begin();
     uifirstManager_.pendingNodeBehindWindow_[nodeId].curTime_ = -29;
-    uifirstManager_.HandlePurgeBehindWindow(it, currentTime, pendingNode);
+    uifirstManager_.HandlePurgeBehindWindow(it, pendingNode);
     EXPECT_TRUE(pendingNode.empty());
 }
 

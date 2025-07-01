@@ -16,11 +16,11 @@
 #ifndef RS_UIFIRST_MANAGER_H
 #define RS_UIFIRST_MANAGER_H
 
+#include <chrono>
 #include <condition_variable>
 #include <map>
 #include <set>
 #include <vector>
-#include <chrono>
 
 #include "drawable/rs_surface_render_node_drawable.h"
 #include "pipeline/rs_processor.h"
@@ -49,7 +49,7 @@ public:
         std::set<NodeId> disableNodes;
     };
 
-    struct NodeData {
+    struct NodeDataBehindWindow {
         uint64_t curTime_ = 0;
         bool isFirst = true;
     };
@@ -233,7 +233,7 @@ private:
     bool IsBehindWindowOcclusion(const std::shared_ptr<RSSurfaceRenderNode>& node);
     bool NeedPurgeByBehindWindow(const std::shared_ptr<RSSurfaceRenderNode>& node, NodeId id);
     void HandlePurgeBehindWindow(std::unordered_map<NodeId, std::shared_ptr<RSSurfaceRenderNode>>::iterator& it,
-        uint64_t currentTime, std::unordered_map<NodeId, std::shared_ptr<RSSurfaceRenderNode>>& pendingNode);
+        std::unordered_map<NodeId, std::shared_ptr<RSSurfaceRenderNode>>& pendingNode);
     // filter out the nodes which need to draw in subthread
     void DoPurgePendingPostNodes(std::unordered_map<NodeId, std::shared_ptr<RSSurfaceRenderNode>>& pendingNode);
     // use in behindwindow condition to calculate the node purge time interval
@@ -327,7 +327,7 @@ private:
     std::unordered_map<NodeId, std::shared_ptr<RSSurfaceRenderNode>> pendingPostCardNodes_;
     std::unordered_map<NodeId, std::shared_ptr<RSSurfaceRenderNode>> pendingResetNodes_;
     // record the release time of each pendingnode to control the release frequency
-    std::unordered_map<NodeId, NodeData> pendingNodeBehindWindow_;
+    std::unordered_map<NodeId, NodeDataBehindWindow> pendingNodeBehindWindow_;
     std::list<NodeId> sortedSubThreadNodeIds_;
     std::vector<std::shared_ptr<RSSurfaceRenderNode>> pendingResetWindowCachedNodes_;
 
