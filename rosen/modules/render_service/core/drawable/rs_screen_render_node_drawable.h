@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -169,8 +168,6 @@ private:
     void CheckAndPostAsyncProcessOfflineTask();
     bool ProcessOfflineSurfaceDrawable(const std::shared_ptr<RSProcessor>& processor,
         std::shared_ptr<RSSurfaceRenderNodeDrawable>& surfaceDrawable, bool async);
-
-    void CheckHpaeBlurRun(bool isHdrOn);
 
     using Registrar = RenderNodeDrawableRegistrar<RSRenderNodeType::SCREEN_NODE, OnGenerate>;
     static Registrar instance_;
