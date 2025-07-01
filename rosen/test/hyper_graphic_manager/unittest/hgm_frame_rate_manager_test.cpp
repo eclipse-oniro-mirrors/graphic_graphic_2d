@@ -1348,9 +1348,7 @@ HWTEST_F(HgmFrameRateMgrTest, TestHandleTouchEvent, Function | SmallTest | Level
     mgr.HandleTouchEvent(0, TOUCH_DOWN, 1);
     mgr.HandleTouchEvent(0, TOUCH_UP, 1);
     mgr.touchManager_.ChangeState(TouchState::IDLE_STATE);
-    sleep(1);
     EXPECT_EQ(mgr.touchManager_.pkgName_, "");
-    sleep(2);
 }
 
 /**
@@ -1377,7 +1375,6 @@ HWTEST_F(HgmFrameRateMgrTest, TestHandleTouchTask, Function | SmallTest | Level1
     mgr.HandleTouchTask(DEFAULT_PID, TOUCH_PULL_UP, 1);
 
     EXPECT_EQ(mgr.touchManager_.pkgName_, "");
-    sleep(3);
 }
 
 /**
@@ -1389,6 +1386,7 @@ HWTEST_F(HgmFrameRateMgrTest, TestHandleTouchTask, Function | SmallTest | Level1
 HWTEST_F(HgmFrameRateMgrTest, TestMarkVoteChange, Function | SmallTest | Level1)
 {
     HgmFrameRateManager mgr;
+    mgr.InitTouchManager();
     mgr.voterTouchEffective_ = true;
     mgr.MarkVoteChange();
     mgr.MarkVoteChange("NULL");
@@ -1405,7 +1403,11 @@ HWTEST_F(HgmFrameRateMgrTest, TestMarkVoteChange, Function | SmallTest | Level1)
     mgr.needForceUpdateUniRender_ = true;
     mgr.lastVoteInfo_.voterName = "VOTER_LTPO";
     mgr.MarkVoteChange("VOTER_POWER_MODE");
+    EXPECT_EQ(mgr.needForceUpdateUniRender_, true);
+    mgr.touchManager_.ChangeState(TouchState::DOWN_STATE);
     EXPECT_EQ(mgr.needForceUpdateUniRender_, false);
+    mgr.touchManager_.ChangeState(TouchState::UP_STATE);
+    mgr.touchManager_.ChangeState(TouchState::IDLE_STATE);
 }
 
 /**

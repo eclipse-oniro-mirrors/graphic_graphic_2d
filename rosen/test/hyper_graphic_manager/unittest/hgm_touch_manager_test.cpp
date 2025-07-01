@@ -206,21 +206,17 @@ HWTEST_F(HgmTouchManagerTest, TestInitTouchManager, Function | SmallTest | Level
     mgr.touchManager_.ChangeState(TouchState::DOWN_STATE);
     EXPECT_EQ(mgr.voterTouchEffective_.load(), true);
 
-    mgr.multiAppStrategy_.voteRes_.first = HgmErrCode::EXEC_SUCCESS;
-    mgr.multiAppStrategy_.voteRes_.second.dynamicMode = DynamicModeType::TOUCH_EXT_ENABLED_LTPO_FIRST;
     mgr.touchManager_.ChangeState(TouchState::UP_STATE);
-    EXPECT_EQ(mgr.frameVoter_.isTouchUpLTPOFirst_, true);
+    EXPECT_EQ(mgr.frameVoter_.isTouchUpLTPOFirstPeriod_, true);
 
     mgr.touchManager_.ChangeState(TouchState::DOWN_STATE);
-    EXPECT_EQ(mgr.frameVoter_.isTouchUpLTPOFirst_, false);
+    EXPECT_EQ(mgr.frameVoter_.isTouchUpLTPOFirstPeriod_, false);
 
-    mgr.multiAppStrategy_.voteRes_.first = HgmErrCode::EXEC_SUCCESS;
-    mgr.multiAppStrategy_.voteRes_.second.dynamicMode = DynamicModeType::TOUCH_EXT_ENABLED_LTPO_FIRST;
     mgr.touchManager_.ChangeState(TouchState::UP_STATE);
-    EXPECT_EQ(mgr.frameVoter_.isTouchUpLTPOFirst_, true);
+    EXPECT_EQ(mgr.frameVoter_.isTouchUpLTPOFirstPeriod_, true);
 
     usleep(upTimeUs);
-    EXPECT_EQ(mgr.frameVoter_.isTouchUpLTPOFirst_, false);
+    EXPECT_EQ(mgr.frameVoter_.isTouchUpLTPOFirstPeriod_, false);
 
     mgr.touchManager_.ChangeState(TouchState::IDLE_STATE);
     EXPECT_EQ(mgr.voterTouchEffective_, false);

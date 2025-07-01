@@ -138,7 +138,6 @@ public:
     void Init(sptr<VSyncController> rsController, sptr<VSyncController> appController,
         sptr<VSyncGenerator> vsyncGenerator, sptr<VSyncDistributor> appDistributor);
     void SetTimeoutParamsFromConfig(const std::shared_ptr<PolicyConfigData>& configData);
-    void InitTouchManager();
     // called by RSMainThread
     void ProcessPendingRefreshRate(uint64_t timestamp, int64_t vsyncId, uint32_t rsRate, bool isUiDvsyncOn);
     HgmMultiAppStrategy& GetMultiAppStrategy() { return multiAppStrategy_; }
@@ -182,6 +181,7 @@ public:
 private:
     friend class HgmUserDefineImpl;
 
+    void InitTouchManager();
     void InitConfig();
     void Reset();
     void UpdateAppSupportedState();
