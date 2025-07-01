@@ -670,7 +670,7 @@ void RSUifirstManager::DoPurgePendingPostNodes(std::unordered_map<NodeId,
     }
 }
 
-bool RSUifirstManager::IsBehindWindowOcclusion(const std::share_ptr<RSSurfaceRenderNode>& node)
+bool RSUifirstManager::IsBehindWindowOcclusion(const std::shared_ptr<RSSurfaceRenderNode>& node)
 {
     std::vector<std::pair<NodeId, std::weak_ptr<RSSurfaceRenderNode>>> allSubSurfaceNodes;
     
@@ -707,8 +707,9 @@ uint64_t RSUifirstManager::GetTimeDiffBehindWindow(uint64_t currentTime, NodeId 
     return timeDiff;
 }
 
-uint64_t RSUifirstManager::GetMainThreadVsyncTime() {
-    uint64_t mainThreadVsyncTime = RSMainThread::instance()->GetCurrentVsyncTime();
+uint64_t RSUifirstManager::GetMainThreadVsyncTime()
+{
+    uint64_t mainThreadVsyncTime = RSMainThread::Instance()->GetCurrentVsyncTime();
     uint64_t mainThreadVsyncTimeMS = static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::milliseconds>(
         std::chrono::nanoseconds(mainThreadVsyncTime)).count());
     return mainThreadVsyncTimeMS;
