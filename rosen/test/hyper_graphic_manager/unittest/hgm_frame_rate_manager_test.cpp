@@ -1398,7 +1398,7 @@ HWTEST_F(HgmFrameRateMgrTest, TestMarkVoteChange, Function | SmallTest | Level1)
     mgr.voterTouchEffective_ = true;
     mgr.needForceUpdateUniRender_ = true;
     mgr.DeliverRefreshRateVote({"VOTER_POWER_MODE", OLED_90_HZ, OLED_90_HZ, DEFAULT_PID}, true);
-     EXPECT_EQ(mgr.frameVoter_.voteRecord_["VOTER_POWER_MODE"].second, true);
+    EXPECT_EQ(mgr.frameVoter_.voteRecord_["VOTER_POWER_MODE"].second, true);
     mgr.forceUpdateCallback_ = [](bool idleTimerExpired, bool forceUpdate) {};
     mgr.needForceUpdateUniRender_ = true;
     mgr.lastVoteInfo_.voterName = "VOTER_LTPO";

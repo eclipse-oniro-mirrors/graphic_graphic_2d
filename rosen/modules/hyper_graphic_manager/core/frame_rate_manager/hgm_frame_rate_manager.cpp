@@ -1242,7 +1242,7 @@ void HgmFrameRateManager::MarkVoteChange(const std::string& voter)
         return;
     }
 
-    if (needForceUpdateUniRender_ && refreshRate != currRefreshRate_.load && forceUpdateCallback_) {
+    if (needForceUpdateUniRender_ && refreshRate != currRefreshRate_.load() && forceUpdateCallback_) {
         forceUpdateCallback_(false, true);
     }
 
