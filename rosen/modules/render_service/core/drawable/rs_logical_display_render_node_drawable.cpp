@@ -229,6 +229,7 @@ void RSLogicalDisplayRenderNodeDrawable::OnCapture(Drawing::Canvas& canvas)
         RSRenderNodeDrawable::OnCapture(canvas);
         DrawAdditionalContent(*paintFilterCanvas);
     } else {
+        canvas.Clear(Drawing::Color::COLOR_BLACK);
         DrawHardwareEnabledNodes(canvas, *params);
     }
 }
