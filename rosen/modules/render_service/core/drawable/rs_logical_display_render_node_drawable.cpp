@@ -149,6 +149,7 @@ void RSLogicalDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
 
     bool needOffScreen = params->GetNeedOffscreen() || screenInfo.isSamplingOn;
     if (needOffScreen) {
+        scaleManager_ = uniParam->GetSLRScaleManager();
         UpdateSlrScale(screenInfo, screenParams);
         ScaleCanvasIfNeeded(screenInfo);
         PrepareOffscreenRender(*this, !screenInfo.isSamplingOn);
@@ -243,6 +244,7 @@ void RSLogicalDisplayRenderNodeDrawable::OnCapture(Drawing::Canvas& canvas)
         RSRenderNodeDrawable::OnCapture(canvas);
         DrawAdditionalContent(*paintFilterCanvas);
     } else {
+        canvas.Clear(Drawing::Color::COLOR_BLACK);
         DrawHardwareEnabledNodes(canvas, *params);
     }
 }
@@ -386,13 +388,15 @@ std::vector<RectI> RSLogicalDisplayRenderNodeDrawable::CalculateVirtualDirty(
         RectI mappedRect = tmpGeo->MapRect(rect.ConvertTo<float>(), canvasMatrix);
         mappedDamageRegionRects.emplace_back(mappedRect);
     }
-    if (!(lastCanvasMatrix_ == canvasMatrix) || !(lastMirrorMatrix_ == mirrorParams->GetMatrix()) ||
+
+    bool needRefresh = !(lastCanvasMatrix_ == canvasMatrix) || !(lastMirrorMatrix_ == mirrorParams->GetMatrix()) ||
         uniParam->GetForceMirrorScreenDirty() || lastBlackList_ != currentBlackList_ ||
         lastTypeBlackList_ != currentTypeBlackList_ || params.IsSpecialLayerChanged() ||
-        lastSecExemption_ != curSecExemption_ || uniParam->GetVirtualDirtyRefresh() ||
-        (enableVisibleRect_ && (lastVisibleRect_ != curVisibleRect_ || params.HasSecLayerInVisibleRectChanged()))) {
+        lastSecExemption_ != curSecExemption_ || uniParam->GetVirtualDirtyRefresh() || virtualDirtyNeedRefresh_ ||
+        (enableVisibleRect_ && (lastVisibleRect_ != curVisibleRect_ || params.HasSecLayerInVisibleRectChanged()));
+    if (needRefresh) {
         curScreenDrawable.GetSyncDirtyManager()->ResetDirtyAsSurfaceSize();
-        uniParam->SetVirtualDirtyRefresh(false);
+        virtualDirtyNeedRefresh_ = false;
         lastCanvasMatrix_ = canvasMatrix;
         lastMirrorMatrix_ = mirrorParams->GetMatrix();
     }
@@ -464,11 +468,12 @@ std::vector<RectI> RSLogicalDisplayRenderNodeDrawable::CalculateVirtualDirtyForW
 
     auto syncDirtyManager = curScreenDrawable.GetSyncDirtyManager();
     // reset dirty rect as mirrored wired screen size when first time connection or matrix changed
-    if (!(lastCanvasMatrix_ == canvasMatrix) || !(lastMirrorMatrix_ == mirroredParams->GetMatrix()) ||
+    bool needRefresh = !(lastCanvasMatrix_ == canvasMatrix) || !(lastMirrorMatrix_ == mirroredParams->GetMatrix()) ||
         uniParam->GetForceMirrorScreenDirty() || (enableVisibleRect_ && lastVisibleRect_ != curVisibleRect_) ||
-        lastBlackList_ != currentBlackList_ || uniParam->GetVirtualDirtyRefresh()) {
+        lastBlackList_ != currentBlackList_ || uniParam->GetVirtualDirtyRefresh() || virtualDirtyNeedRefresh_;
+    if (needRefresh) {
         curScreenDrawable.GetSyncDirtyManager()->ResetDirtyAsSurfaceSize();
-        uniParam->SetVirtualDirtyRefresh(false);
+        virtualDirtyNeedRefresh_ = false;
         lastCanvasMatrix_ = canvasMatrix;
         lastMirrorMatrix_ = mirroredParams->GetMatrix();
     }
@@ -642,7 +647,7 @@ void RSLogicalDisplayRenderNodeDrawable::DrawWiredMirrorOnDraw(
         auto hasSecSurface = mirroredParams->GetSpecialLayerMgr().Find(SpecialLayerType::HAS_SECURITY);
         if (hasSecSurface) {
             curCanvas_->Clear(Drawing::Color::COLOR_BLACK);
-            uniParam->SetVirtualDirtyRefresh(true);
+            virtualDirtyNeedRefresh_ = true;
             RS_LOGI("RSLogicalDisplayRenderNodeDrawable::DrawWiredMirrorOnDraw, "
                 "set canvas to black because of security layer.");
             return;
@@ -892,8 +897,12 @@ void RSLogicalDisplayRenderNodeDrawable::DrawMirror(RSLogicalDisplayRenderParams
         RS_LOGE("RSLogicalDisplayRenderNodeDrawable::DrawMirror ScreenManager is nullptr");
         return;
     }
-    if ((((!enableVisibleRect_ && hasSecSurface) || (enableVisibleRect_ && params.HasSecLayerInVisibleRect())) &&
-        !uniParam.GetSecExemption()) || params.GetVirtualScreenMuteStatus()) {
+    int32_t virtualSecLayerOption = screenManager->GetVirtualScreenSecLayerOption(params.GetScreenId());
+    bool isSecurity = (!enableVisibleRect_ && hasSecSurface) ||
+                      (enableVisibleRect_ && params.HasSecLayerInVisibleRect());
+    bool securitySkip = (isSecurity && !uniParam.GetSecExemption() && !virtualSecLayerOption) ||
+        params.GetVirtualScreenMuteStatus();
+    if (securitySkip) {
 #ifdef RS_PROFILER_ENABLED
         if (auto canvas =
                 RSCaptureRecorder::GetInstance().TryInstantCapture(static_cast<float>(curCanvas_->GetWidth()),
@@ -911,7 +920,7 @@ void RSLogicalDisplayRenderNodeDrawable::DrawMirror(RSLogicalDisplayRenderParams
 #ifdef RS_PROFILER_ENABLED
         RSCaptureRecorder::GetInstance().EndInstantCapture(SkpCaptureType::ON_CAPTURE);
 #endif
-        uniParam.SetVirtualDirtyRefresh(true);
+        virtualDirtyNeedRefresh_ = true;
         curCanvas_->RestoreToCount(0);
         return;
     }
