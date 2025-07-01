@@ -544,7 +544,7 @@ void RSUniRenderVisitor::UpdateBlackListRecord(RSSurfaceRenderNode& node)
     }
     std::unordered_set<uint64_t> virtualScreens = screenManager_->GetBlackListVirtualScreenByNode(node.GetId());
     if (node.IsLeashWindow()) {
-        auto leashVirtualScreens = screenManager_->GetBlackListVirtualScreenByNode(node.GetLeashPersistentId());
+        const auto& leashVirtualScreens = screenManager_->GetBlackListVirtualScreenByNode(node.GetLeashPersistentId());
         virtualScreens.insert(leashVirtualScreens.begin(), leashVirtualScreens.end());
     }
     if (virtualScreens.empty()) {
