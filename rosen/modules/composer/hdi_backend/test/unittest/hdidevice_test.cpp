@@ -81,11 +81,11 @@ HWTEST_F(HdiDeviceTest, DeviceFuncs001, Function | MediumTest| Level3)
         GRAPHIC_DISPLAY_SUCCESS);
     GraphicDispPowerStatus dstatus = GRAPHIC_POWER_STATUS_ON;
     EXPECT_CALL(*hdiDeviceMock_,
-        SetScreenPowerStatus(_, _).WillRepeatedly(testing::Return(GRAPHIC_DISPLAY_SUCCESS)));
+        SetScreenPowerStatus(_, _)).WillRepeatedly(testing::Return(GRAPHIC_DISPLAY_SUCCESS));
     EXPECT_CALL(*hdiDeviceMock_,
-        GetScreenPowerStatus(_, _).WillRepeatedly(testing::Return(GRAPHIC_DISPLAY_SUCCESS)));
+        GetScreenPowerStatus(_, _)).WillRepeatedly(testing::Return(GRAPHIC_DISPLAY_SUCCESS));
     EXPECT_CALL(*hdiDeviceMock_,
-        GetScreenBacklight(_, _).WillRepeatedly(testing::Return(GRAPHIC_DISPLAY_SUCCESS)));
+        GetScreenBacklight(_, _)).WillRepeatedly(testing::Return(GRAPHIC_DISPLAY_SUCCESS));
     EXPECT_CALL(*hdiDeviceMock_,
         SetScreenBacklight(_, _)).WillRepeatedly(testing::Return(GRAPHIC_DISPLAY_SUCCESS));
     EXPECT_EQ(hdiDeviceMock_->SetScreenBacklight(screenId, screenLightLevel), GRAPHIC_DISPLAY_SUCCESS);
