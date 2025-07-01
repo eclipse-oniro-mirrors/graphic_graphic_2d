@@ -590,6 +590,30 @@ bool RSUifirstManager::SubThreadControlFrameRate(NodeId id,
         !drawable->GetRsSubThreadCache().IsSubThreadSkip();
 }
 
+bool RSUifirstManager::NeedPurgeByBehindWindow(const std::shared_ptr<RSSurfaceRenderNode>& node, NodeId id)
+{
+    bool isBehindWindowOcclusion = IsBehindWindowOcclusion(node);
+    return isBehindWindowOcclusion && (node->GetLastFrameUifirstFlag() == MultiThreadCacheType::NONFOCUS_WINDOW) &&
+        !pendingNodeBehindWindow_[id].isFirst;
+}
+
+void RSUifirstManager::HandlePurgeBehindWindow(
+    std::unordered_map<NodeId, std::shared_ptr<RSSurfaceRenderNode>>::iterator& it,
+    uint64_t currentTime, std::unordered_map<NodeId, std::shared_ptr<RSSurfaceRenderNode>>& pendingNode)
+{
+    auto id = it->first;
+    auto node = it->second;
+    uint64_t timeDiffInMilliseconds = GetTimeDiffBehindWindow(currentTime, id);
+    // control the frequency of purge as the designed time
+    if (timeDiffInMilliseconds >= PURGE_BEHIND_WINDOW_TIME) {
+        ++it;
+        pendingNodeBehindWindow_[id].curTime_ = currentTime;
+    } else {
+        it = pendingNode.erase(it);
+        RS_OPTIONAL_TRACE_NAME_FMT("Purge by behind window, node name %s", node->GetName().c_str());
+    }
+}
+
 void RSUifirstManager::DoPurgePendingPostNodes(std::unordered_map<NodeId,
     std::shared_ptr<RSSurfaceRenderNode>>& pendingNode)
 {
@@ -627,19 +651,67 @@ void RSUifirstManager::DoPurgePendingPostNodes(std::unordered_map<NodeId,
         RS_TRACE_NAME_FMT("Purge node name: %s, PurgeEnable:%d, HasCachedTexture:%d, staticContent: %d %" PRIu64,
             surfaceParams->GetName().c_str(), purgeEnable_,
             rsSubThreadCache.HasCachedTexture(), staticContent, drawable->GetId());
+        uint64_t currentTime = GetMainThreadVsyncTime();
         if (purgeEnable_ && rsSubThreadCache.HasCachedTexture() &&
             (staticContent || CheckVisibleDirtyRegionIsEmpty(node)) &&
             (subthreadProcessingNode_.find(id) == subthreadProcessingNode_.end()) &&
             !rsSubThreadCache.IsSubThreadSkip()) {
             RS_OPTIONAL_TRACE_NAME_FMT("Purge node name %s", surfaceParams->GetName().c_str());
             it = pendingNode.erase(it);
+        } else if (NeedPurgeByBehindWindow(node, id)) {
+            HandlePurgeBehindWindow(it, currentTime, pendingNode);
         } else if (SubThreadControlFrameRate(id, drawable, node)) {
             RS_OPTIONAL_TRACE_NAME_FMT("Purge frame drop node name %s", surfaceParams->GetName().c_str());
             it = pendingNode.erase(it);
         } else {
+            pendingNodeBehindWindow_[id].isFirst = false;
             ++it;
         }
     }
+}
+
+bool RSUifirstManager::IsBehindWindowOcclusion(const std::share_ptr<RSSurfaceRenderNode>& node)
+{
+    std::vector<std::pair<NodeId, std::weak_ptr<RSSurfaceRenderNode>>> allSubSurfaceNodes;
+    
+    node->GetAllSubSurfaceNodes(allSubSurfaceNodes);
+    const bool hasSurfaceVisibleDirtyRegion = CurSurfaceHasVisibleDirtyRegion(node);
+    auto nodeVisibleRegion = node->GetVisibleRegion();
+    auto nodeVisibleRegionBehindWindow = node->GetVisibleRegionBehindWindow();
+
+    for (const auto &[subId, subSurfaceNode] : allSubSurfaceNodes) {
+        if (hasSurfaceVisibleDirtyRegion) {
+            break;
+        }
+        const auto subNodePtr = subSurfaceNode.lock();
+        if (subNodePtr) {
+            auto visibleRegion = nodeVisibleRegion.OrSelf(subNodePtr->GetVisibleRegion());
+            auto visibleRegionBehindWindow =
+                nodeVisibleRegionBehindWindow.OrSelf(subNodePtr->GetVisibleRegionBehindWindow());
+            RS_OPTIONAL_TRACE_NAME_FMT("visibleRegion is [%s], visibleRegionBehindWindow is [%s]",
+                visibleRegion.GetRegionInfo().c_str(),
+                visibleRegionBehindWindow.GetRegionInfo().c_str());
+            
+            if (visibleRegionBehindWindow.IsEmpty() && !visibleRegion.IsEmpty()) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+uint64_t RSUifirstManager::GetTimeDiffBehindWindow(uint64_t currentTime, NodeId id)
+{
+    uint64_t timeDiff = currentTime - pendingNodeBehindWindow_[id].curTime_;
+    RS_OPTIONAL_TRACE_NAME_FMT("timeDiff is %lu", timeDiff);
+    return timeDiff;
+}
+
+uint64_t RSUifirstManager::GetMainThreadVsyncTime() {
+    uint64_t mainThreadVsyncTime = RSMainThread::instance()->GetCurrentVsyncTime();
+    uint64_t mainThreadVsyncTimeMS = static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::nanoseconds(mainThreadVsyncTime)).count());
+    return mainThreadVsyncTimeMS;
 }
 
 void RSUifirstManager::PurgePendingPostNodes()
@@ -1149,6 +1221,12 @@ void RSUifirstManager::AddPendingPostNode(NodeId id, std::shared_ptr<RSSurfaceRe
             }
         }
         pendingPostNodes_[id] = node;
+        auto temp_it = pendingNodeBehindWindow_.find(id);
+        if (temp_it == pendingNodeBehindWindow_.end()) {
+            RS_OPTIONAL_TRACE_NAME_FMT("Add to pendingNodeBehindWindow id:%" PRIu64 " name:%s", node->GetId(),
+                node->GetName().c_str());
+            pendingNodeBehindWindow_[id] = NodeData{.curTime_ = GetMainThreadVsyncTime()};
+        }
         RS_OPTIONAL_TRACE_NAME_FMT("Add pending id:%" PRIu64 " size:%d", node->GetId(), pendingPostNodes_.size());
     } else if (currentFrameCacheType == MultiThreadCacheType::ARKTS_CARD) {
         pendingPostCardNodes_[id] = node;
@@ -1807,6 +1885,13 @@ void RSUifirstManager::UifirstStateChange(RSSurfaceRenderNode& node, MultiThread
             RemoveCardNodes(node.GetId());
             node.SetSubThreadAssignable(false);
             node.SetNeedCacheSurface(false);
+
+            auto tempNodeToClear = pendingNodeBehindWindow_.find(node.GetId());
+            if (tempNodeToClear != pendingNodeBehindWindow_.end()) {
+                RS_OPTIONAL_TRACE_NAME_FMT("clear node in pendingNodeBehindWindow %{public}s id:%{public}" PRIu64,
+                    node.GetName().c_str(), node.GetId());
+                pendingNodeBehindWindow_.erase(tempNodeToClear);
+            }
         }
     }
     node.SetLastFrameUifirstFlag(currentFrameCacheType);

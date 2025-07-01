@@ -20,6 +20,7 @@
 #include <map>
 #include <set>
 #include <vector>
+#include <chrono>
 
 #include "drawable/rs_surface_render_node_drawable.h"
 #include "pipeline/rs_processor.h"
@@ -47,6 +48,12 @@ public:
         std::string sceneId;
         std::set<NodeId> disableNodes;
     };
+
+    struct NodeData {
+        uint64_t curTime_ = 0;
+        bool isFirst = true;
+    };
+    
 
     void AddProcessDoneNode(NodeId id);
     void AddProcessSkippedNode(NodeId id);
@@ -224,8 +231,15 @@ private:
     void ResetWindowCache(std::shared_ptr<RSSurfaceRenderNode>& nodePtr);
     bool CheckVisibleDirtyRegionIsEmpty(const std::shared_ptr<RSSurfaceRenderNode>& node);
     bool CurSurfaceHasVisibleDirtyRegion(const std::shared_ptr<RSSurfaceRenderNode>& node);
+    bool IsBehindWindowOcclusion(const std::shared_ptr<RSSurfaceRenderNode>& node);
+    bool NeedPurgeByBehindWindow(const std::shared_ptr<RSSurfaceRenderNode>& node, NodeId id);
+    void HandlePurgeBehindWindow(std::unordered_map<NodeId, std::shared_ptr<RSSurfaceRenderNode>>::iterator& it,
+        uint64_t currentTime, std::unordered_map<NodeId, std::shared_ptr<RSSurfaceRenderNode>>& pendingNode);
     // filter out the nodes which need to draw in subthread
     void DoPurgePendingPostNodes(std::unordered_map<NodeId, std::shared_ptr<RSSurfaceRenderNode>>& pendingNode);
+    // use in behindwindow condition to calculate the node purge time interval
+    uint64_t GetTimeDiffBehindWindow(uint64_t currentTime, NodeId id);
+    uint64_t GetMainThreadVsyncTime();
     void PurgePendingPostNodes();
     void SetNodePriorty(std::list<NodeId>& result,
         std::unordered_map<NodeId, std::shared_ptr<RSSurfaceRenderNode>>& pendingNode);
@@ -279,6 +293,7 @@ private:
     std::atomic<bool> isSplitScreenScene_ = false;
     std::atomic<bool> isCurrentFrameHasCardNodeReCreate_ = false;
     static constexpr int CLEAR_RES_THRESHOLD = 3; // 3 frames  to clear resource
+    static constexpr int PURGE_BEHIND_WINDOW_TIME = 30; // the max delivery time in behind window condition
     int32_t scbPid_ = 0;
     std::atomic<int> noUifirstNodeFrameCount_ = 0;
     NodeId entryViewNodeId_ = INVALID_NODEID; // desktop surfaceNode ID
@@ -312,6 +327,8 @@ private:
     std::unordered_map<NodeId, std::shared_ptr<RSSurfaceRenderNode>> pendingPostNodes_;
     std::unordered_map<NodeId, std::shared_ptr<RSSurfaceRenderNode>> pendingPostCardNodes_;
     std::unordered_map<NodeId, std::shared_ptr<RSSurfaceRenderNode>> pendingResetNodes_;
+    // record the release time of each pendingnode to control the release frequency
+    std::unordered_map<NodeId, NodeData> pendingNodeBehindWindow_;
     std::list<NodeId> sortedSubThreadNodeIds_;
     std::vector<std::shared_ptr<RSSurfaceRenderNode>> pendingResetWindowCachedNodes_;
 
