@@ -379,6 +379,7 @@ bool RSInterfaces::TakeSurfaceCaptureForUI(std::shared_ptr<RSNode> node,
     captureConfig.scaleY = scaleY;
     captureConfig.captureType = SurfaceCaptureType::UICAPTURE;
     captureConfig.isSync = isSync;
+    captureConfig.specifiedAreaRect = specifiedAreaRect;
     if (RSSystemProperties::GetUniRenderEnabled()) {
         if (isSync) {
             node->SetTakeSurfaceForUIFlag();
@@ -785,6 +786,16 @@ int32_t RSInterfaces::SetScreenSkipFrameInterval(ScreenId id, uint32_t skipFrame
 uint32_t RSInterfaces::SetScreenActiveRect(ScreenId id, const Rect& activeRect)
 {
     return renderServiceClient_->SetScreenActiveRect(id, activeRect);
+}
+
+void RSInterfaces::SetScreenOffset(ScreenId id, int32_t offSetX, int32_t offSetY)
+{
+    return renderServiceClient_->SetScreenOffset(id, offSetX, offSetY);
+}
+
+void RSInterfaces::SetScreenFrameGravity(ScreenId id, int32_t gravity)
+{
+    return renderServiceClient_->SetScreenFrameGravity(id, gravity);
 }
 
 int32_t RSInterfaces::SetVirtualScreenRefreshRate(ScreenId id, uint32_t maxRefreshRate, uint32_t& actualRefreshRate)
