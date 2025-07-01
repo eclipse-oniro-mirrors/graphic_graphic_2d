@@ -78,8 +78,8 @@ HWTEST_F(RSOpincManagerTest, OpincGetNodeSupportFlag, Function | SmallTest | Lev
  * @tc.type: FUNC
  * @tc.require: #IBQETW
  */
- HWTEST_F(RSOpincManagerTest, OpincGetCanvasNodeSupportFlag, Function | SmallTest | Level1)
- {
+HWTEST_F(RSOpincManagerTest, OpincGetCanvasNodeSupportFlag, Function | SmallTest | Level1)
+{
     NodeId id = 0;
     auto rsCanvasRenderNode = std::make_shared<RSCanvasRenderNode>(id);
     ASSERT_NE(rsCanvasRenderNode, nullptr);
@@ -122,14 +122,14 @@ HWTEST_F(RSOpincManagerTest, OpincGetNodeSupportFlag, Function | SmallTest | Lev
     property.SetColorBlend(colorBlendEmpty);
     ASSERT_TRUE(opincManager_.OpincGetCanvasNodeSupportFlag(*rsCanvasRenderNode));
 
-    rsCanvasRenderNode->ChildHasVisibleFilter = true;
+    rsCanvasRenderNode->childHasVisibleFilter_ = true;
     EXPECT_FALSE(opincManager_.OpincGetCanvasNodeSupportFlag(*rsCanvasRenderNode));
-    rsCanvasRenderNode->ChildHasVisibleFilter = false;
+    rsCanvasRenderNode->childHasVisibleFilter_ = false;
     ASSERT_TRUE(opincManager_.OpincGetCanvasNodeSupportFlag(*rsCanvasRenderNode));
 
-    rsCanvasRenderNode->ChildHasVisibleEffect = true;
+    rsCanvasRenderNode->childHasVisibleEffect_ = true;
     EXPECT_FALSE(opincManager_.OpincGetCanvasNodeSupportFlag(*rsCanvasRenderNode));
-    rsCanvasRenderNode->ChildHasVisibleEffect = false;
+    rsCanvasRenderNode->childHasVisibleEffect_ = false;
     ASSERT_TRUE(opincManager_.OpincGetCanvasNodeSupportFlag(*rsCanvasRenderNode));
 }
 
@@ -139,8 +139,8 @@ HWTEST_F(RSOpincManagerTest, OpincGetNodeSupportFlag, Function | SmallTest | Lev
  * @tc.type: FUNC
  * @tc.require: #IBQETW
  */
- HWTEST_F(RSOpincManagerTest, IsOpincSubTreeDirty, Function | SmallTest | Level1)
- {
+HWTEST_F(RSOpincManagerTest, IsOpincSubTreeDirty, Function | SmallTest | Level1)
+{
     NodeId id = 0;
     auto rsCanvasRenderNode = std::make_shared<RSCanvasRenderNode>(id);
     ASSERT_NE(rsCanvasRenderNode, nullptr);
@@ -149,5 +149,5 @@ HWTEST_F(RSOpincManagerTest, OpincGetNodeSupportFlag, Function | SmallTest | Lev
 
     rsCanvasRenderNode->GetOpincCache().isSuggestOpincNode_ = false;
     ASSERT_FALSE(opincManager_.IsOpincSubTreeDirty(*rsCanvasRenderNode, true));
- }
+}
 }

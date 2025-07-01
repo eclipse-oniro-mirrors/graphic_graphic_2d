@@ -51,7 +51,7 @@ bool RSOpincManager::OpincGetCanvasNodeSupportFlag(RSRenderNode& node)
         node.ChildHasVisibleEffect()) {
         return false;
     }
-    return node.GetOpincCache().OpincGetSupportFlag();
+    return node.GetOpincCache().GetSubTreeSupportFlag();
 }
 
 bool RSOpincManager::IsOpincSubTreeDirty(RSRenderNode& node, bool opincEnable)
