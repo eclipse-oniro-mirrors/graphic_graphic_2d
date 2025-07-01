@@ -37,6 +37,7 @@
 
 #include "feature/round_corner_display/rs_rcd_surface_render_node.h"
 #include "feature/round_corner_display/rs_rcd_surface_render_node_drawable.h"
+// hpae offline
 #include "feature/hwc/hpae_offline/rs_hpae_offline_processor.h"
 #include "feature/hwc/hpae_offline/rs_hpae_offline_util.h"
 
