@@ -205,11 +205,12 @@ public:
     // firstLevelNodeId: surfacenode for uiFirst to assign task; cacheNodeId: drawing cache rootnode attached to
     virtual void SetIsOnTheTree(bool flag, NodeId instanceRootNodeId = INVALID_NODEID,
         NodeId firstLevelNodeId = INVALID_NODEID, NodeId cacheNodeId = INVALID_NODEID,
-        NodeId uifirstRootNodeId = INVALID_NODEID, NodeId displayNodeId = INVALID_NODEID);
+        NodeId uifirstRootNodeId = INVALID_NODEID, NodeId screenNodeId = INVALID_NODEID,
+        NodeId logicalDisplayNodeId = INVALID_NODEID);
     void SetIsOntheTreeOnlyFlag(bool flag)
     {
         SetIsOnTheTree(flag, instanceRootNodeId_, firstLevelNodeId_, drawingCacheRootId_,
-            uifirstRootNodeId_, displayNodeId_);
+            uifirstRootNodeId_, screenNodeId_, logicalDisplayNodeId_);
     }
     inline bool IsOnTheTree() const
     {
@@ -898,13 +899,18 @@ public:
         return isAccessibilityConfigChanged_;
     }
 
-    NodeId GetDisplayNodeId() const
-    {
-        return displayNodeId_;
-    }
-
     // recursive update subSurfaceCnt
     void UpdateSubSurfaceCnt(int updateCnt);
+
+    NodeId GetScreenNodeId() const
+    {
+        return screenNodeId_;
+    }
+
+    NodeId GetLogicalDisplayNodeId() const
+    {
+        return logicalDisplayNodeId_;
+    }
 
     void ProcessBehindWindowOnTreeStateChanged();
     void ProcessBehindWindowAfterApplyModifiers();
@@ -1154,7 +1160,8 @@ private:
     NodeId instanceRootNodeId_ = INVALID_NODEID;
     NodeId firstLevelNodeId_ = INVALID_NODEID;
     NodeId uifirstRootNodeId_ = INVALID_NODEID;
-    NodeId displayNodeId_ = INVALID_NODEID;
+    NodeId screenNodeId_ = INVALID_NODEID;
+    NodeId logicalDisplayNodeId_ = INVALID_NODEID;
     std::shared_ptr<SharedTransitionParam> sharedTransitionParam_;
     // bounds and frame modifiers must be unique
     std::shared_ptr<RSRenderModifier> boundsModifier_;
@@ -1315,7 +1322,7 @@ private:
 
     void ResetAndApplyModifiers();
 
-    void CalaCmdlistDrawRegionFromOpItem(std::shared_ptr<ModifierNG::RSRenderModifier> modifier);
+    void CalcCmdlistDrawRegionFromOpItem(std::shared_ptr<ModifierNG::RSRenderModifier> modifier);
 
     friend class DrawFuncOpItem;
     friend class RSContext;

@@ -757,6 +757,11 @@ bool RSSystemProperties::GetCompositeLayerEnabled()
     return false;
 }
 
+bool RSSystemProperties::GetTypicalResidentProcess()
+{
+    return false;
+}
+
 void RSSystemProperties::SetTypicalResidentProcess(bool isTypicalResidentProcess)
 {
 }

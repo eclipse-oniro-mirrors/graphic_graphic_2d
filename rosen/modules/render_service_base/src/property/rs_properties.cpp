@@ -30,7 +30,7 @@
 #include "drawable/rs_property_drawable_utils.h"
 #include "pipeline/rs_canvas_render_node.h"
 #include "pipeline/rs_context.h"
-#include "pipeline/rs_display_render_node.h"
+#include "pipeline/rs_screen_render_node.h"
 #include "pipeline/rs_uni_render_judgement.h"
 #include "platform/common/rs_log.h"
 #include "platform/common/rs_system_properties.h"
@@ -2797,7 +2797,7 @@ void RSProperties::SetHDRBrightnessFactor(float factor)
         return;
     }
     hdrBrightnessFactor_ = factor;
-    auto node = RSBaseRenderNode::ReinterpretCast<RSDisplayRenderNode>(backref_.lock());
+    auto node = RSBaseRenderNode::ReinterpretCast<RSScreenRenderNode>(backref_.lock());
     if (node == nullptr) {
         return;
     }
@@ -5352,26 +5352,31 @@ void RSProperties::ResetBorder(bool isOutline)
     contentDirty_ = true;
 }
 
-void RSProperties::SetCmdlistDrawRegion(RectF cmdlistDrawRegion)
+void RSProperties::SetBackgroundNGShader(const std::shared_ptr<RSNGRenderShaderBase>& renderShader)
 {
-    cmdlistDrawRegion_ = cmdlistDrawRegion_.JoinRect(cmdlistDrawRegion);
+    bgNGRenderShader_ = renderShader;
+    isDrawn_ = true;
     SetDirty();
-    geoDirty_ = true; // Use cmdlist drawRegion when the canvas node needs to use cmdlist drawRegion
+    contentDirty_ = true;
 }
 
-RectF RSProperties::GetCmdlistDrawRegion()
+std::shared_ptr<RSNGRenderShaderBase> RSProperties::GetBackgroundNGShader() const
 {
-    return cmdlistDrawRegion_;
+    return bgNGRenderShader_;
 }
 
-void RSProperties::SetNeedUseCmdlistDrawRegion(bool needUseCmdlistDrawRegion)
+void RSProperties::SetForegroundShader(const std::shared_ptr<RSNGRenderShaderBase>& renderShader)
 {
-    needUseCmdlistDrawRegion_ = needUseCmdlistDrawRegion;
+    fgRenderShader_ = renderShader;
+    isDrawn_ = true;
+    SetDirty();
+    contentDirty_ = true;
 }
 
-bool RSProperties::GetNeedUseCmdlistDrawRegion()
+std::shared_ptr<RSNGRenderShaderBase> RSProperties::GetForegroundShader() const
 {
-    return needUseCmdlistDrawRegion_;
+    return fgRenderShader_;
 }
+
 } // namespace Rosen
 } // namespace OHOS

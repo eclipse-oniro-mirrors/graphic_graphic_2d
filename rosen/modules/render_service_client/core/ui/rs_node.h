@@ -81,6 +81,7 @@ class RSObjAbsGeometry;
 class RSUIContext;
 class RSUIFilter;
 class RSNGFilterBase;
+class RSNGShaderBase;
 enum class CancelAnimationStatus;
 
 namespace ModifierNG {
@@ -1168,6 +1169,20 @@ public:
     void SetForegroundNGFilter(const std::shared_ptr<RSNGFilterBase>& foregroundFilter);
 
     /**
+     * @brief Sets the background shader.
+     *
+     * @param backgroundShader Indicates the background shader to be applied.
+     */
+    void SetBackgroundNGShader(const std::shared_ptr<RSNGShaderBase>& backgroundShader);
+
+    /**
+     * @brief Sets the foreground shader.
+     *
+     * @param foregroundShader Indicates the foreground shader to be applied.
+     */
+    void SetForegroundShader(const std::shared_ptr<RSNGShaderBase>& foregroundShader);
+
+    /**
      * @brief Sets the filter.
      *
      * @param filter Indicates the filter to be applied.
@@ -1580,7 +1595,7 @@ public:
     /**
      * @brief Sets if need use the cmdlist drawing region for the node.
      *
-     * @param needUseCmdlistDrawRegion cmdlistDrawRegion Whether to need use the cmdlist drawing region for this node.
+     * @param needUseCmdlistDrawRegion Whether to need use the cmdlist drawing region for this node.
      */
     void SetNeedUseCmdlistDrawRegion(bool needUseCmdlistDrawRegion);
 

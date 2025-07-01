@@ -1517,6 +1517,11 @@ bool RSSystemProperties::GetHybridRenderHmsymbolEnabled()
     return hmsymbolEnabled;
 }
 
+bool RSSystemProperties::GetTypicalResidentProcess()
+{
+    return isTypicalResidentProcess_;
+}
+
 void RSSystemProperties::SetTypicalResidentProcess(bool isTypicalResidentProcess)
 {
     isTypicalResidentProcess_ = isTypicalResidentProcess;

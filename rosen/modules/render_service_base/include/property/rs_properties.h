@@ -291,6 +291,10 @@ public:
 
     void SetForegroundNGFilter(const std::shared_ptr<RSNGRenderFilterBase>& renderFilter);
     std::shared_ptr<RSNGRenderFilterBase> GetForegroundNGFilter() const;
+    void SetBackgroundNGShader(const std::shared_ptr<RSNGRenderShaderBase>& renderShader);
+    std::shared_ptr<RSNGRenderShaderBase> GetBackgroundNGShader() const;
+    void SetForegroundShader(const std::shared_ptr<RSNGRenderShaderBase>& renderShader);
+    std::shared_ptr<RSNGRenderShaderBase> GetForegroundShader() const;
 
     void SetFgBrightnessRates(const Vector4f& rates);
     Vector4f GetFgBrightnessRates() const;
@@ -626,11 +630,6 @@ public:
     static void SetFilterCacheEnabledByCCM(bool isCCMFilterCacheEnable);
     static void SetBlurAdaptiveAdjustEnabledByCCM(bool isCCMBlurAdaptiveAdjustEnabled);
 
-    void SetCmdlistDrawRegion(RectF cmdlistDrawRegion);
-    RectF GetCmdlistDrawRegion();
-    void SetNeedUseCmdlistDrawRegion(bool needUseCmdlistDrawRegion);
-    bool GetNeedUseCmdlistDrawRegion();
-
 private:
     inline float DecreasePrecision(float value)
     {
@@ -721,7 +720,6 @@ private:
     bool fgBlurDisableSystemAdaptation = true;
     bool alwaysSnapshot_ = false;
     bool localMagnificationCap_ = false;
-    bool needUseCmdlistDrawRegion_ = false;
     float hdrBrightnessFactor_ = 1.0f; // for displayNode
     float canvasNodeHDRBrightnessFactor_ = 1.0f; // for canvasNode
     float frameOffsetX_ = 0.f;
@@ -758,6 +756,8 @@ private:
     std::shared_ptr<RSRenderFilter> foregroundRenderFilter_ = nullptr;
     std::shared_ptr<RSNGRenderFilterBase> bgNGRenderFilter_ = nullptr;
     std::shared_ptr<RSNGRenderFilterBase> fgNGRenderFilter_ = nullptr;
+    std::shared_ptr<RSNGRenderShaderBase> bgNGRenderShader_ = nullptr;
+    std::shared_ptr<RSNGRenderShaderBase> fgRenderShader_ = nullptr;
     std::shared_ptr<RSFilter> backgroundFilter_ = nullptr;
     std::shared_ptr<RSRenderFilter> backgroundRenderFilter_ = nullptr;
     std::shared_ptr<RSFilter> filter_ = nullptr;
@@ -778,7 +778,6 @@ private:
     Vector2f attractDstPoint_ = {0.f, 0.f};
     RectI attractionEffectCurrentDirtyRegion_ = {0, 0, 0, 0};
     RRect rrect_ = RRect{};
-    RectF cmdlistDrawRegion_ = { 0.f, 0.f, 0.f, 0.f };
     RSObjGeometry frameGeo_;
     std::optional<Vector4f> pixelStretch_;
     std::optional<Vector4f> pixelStretchPercent_;

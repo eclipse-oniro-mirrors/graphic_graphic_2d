@@ -400,7 +400,7 @@ HWTEST_F(DrawCmdListTest, GetCmdlistDrawRegion002, TestSize.Level1)
 
     auto opItemPtr = std::make_shared<DrawPathOpItem>(opItem);
     drawCmdList->drawOpItems_.emplace_back(opItemPtr);
-    EXPECT_True(drawCmdList->GetCmdlistDrawRegion().IsEmpty());
+    EXPECT_TRUE(drawCmdList->GetCmdlistDrawRegion().IsEmpty());
 }
 } // namespace Drawing
 } // namespace Rosen
