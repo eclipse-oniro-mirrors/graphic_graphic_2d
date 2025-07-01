@@ -30,6 +30,9 @@
 #include "params/rs_screen_render_params.h"
 #include "pipeline/render_thread/rs_base_render_engine.h"
 #include "pipeline/rs_surface_render_node.h"
+#include "feature/hdr/rs_hdr_util.h"
+#include "feature/hetero_hdr/rs_hdr_buffer_layer.h"
+#include "feature/hetero_hdr/rs_hetero_hdr_util.h"
 #include "feature/uifirst/rs_draw_window_cache.h"
 #include "feature/uifirst/rs_sub_thread_cache.h"
 
@@ -72,6 +75,13 @@ public:
     {
         return subThreadCache_;
     }
+    // HDR
+    bool DrawHDRCacheWithDmaFFRT(RSPaintFilterCanvas& canvas, RSSurfaceRenderParams& surfaceParams);
+    bool GetCurHeterogComputingHdr() const;
+    void SetNodeDrawableNodeDstRect(bool isFixedDstBuffer, RectI boundSize);
+    void SetVideoHdrStatus(HdrStatus hasHdrVideoSurface);
+    void SetHpaeDstRect(RectI boundSize);
+    std::shared_ptr<RSHDRBUfferLayer> GetRsHdrBUfferLayer();
 
     Drawing::Matrix GetGravityMatrix(float imgWidth, float imgHeight);
 
@@ -163,6 +173,12 @@ private:
     void ClipHoleForSelfDrawingNode(RSPaintFilterCanvas& canvas, RSSurfaceRenderParams& surfaceParams);
     void DrawBufferForRotationFixed(RSPaintFilterCanvas& canvas, RSSurfaceRenderParams& surfaceParams);
 
+    void SetCurHeterogComputingHdr(bool curCondition);
+    void DrawHDRBufferWithGPU(RSPaintFilterCanvas &canvas);
+    BufferDrawParam InitBufferDrawParam(RSSurfaceRenderParams* surfaceParams);
+
+    HdrStatus GetVideoHdrStatus();
+
     int GetMaxRenderSizeForRotationOffscreen(int& offscreenWidth, int& offscreenHeight);
     void ApplyCanvasScalingIfDownscaleEnabled();
 
@@ -209,6 +225,21 @@ private:
 
     Drawing::Region curSurfaceDrawRegion_ {};
     mutable std::mutex drawRegionMutex_;
+
+    // HDR
+    struct HDRHeterRenderContext {
+        std::shared_ptr<RSHDRBUfferLayer> rsHdrBufferLayer_ {nullptr};
+        HdrStatus hdrSatus_ {HdrStatus::NO_HDR};
+        bool curHeterogComputingHdr_ {false};
+        bool isFixedDstBuffer_ {false};
+ 
+        MdcRectT aaeDstRect_;
+        RectI boundSize_;
+
+        Drawing::Region curSurfaceDrawRegion_ {};
+        mutable std::mutex drawRegionMutex_;
+    };
+    HDRHeterRenderContext g_HDRHeterRenderContext;
 };
 } // namespace DrawableV2
 } // namespace OHOS::Rosen

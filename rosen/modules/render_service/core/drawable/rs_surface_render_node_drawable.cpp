@@ -91,6 +91,7 @@ RSSurfaceRenderNodeDrawable::RSSurfaceRenderNodeDrawable(std::shared_ptr<const R
     consumerOnDraw_ = surfaceNode->GetRSSurfaceHandler()->GetConsumer();
 #endif
     subThreadCache_.SetNodeId(surfaceNode->GetId());
+    g_HDRHeterRenderContext.rsHdrBufferLayer_ = std::make_shared<RSHDRBUfferLayer>("HDRDstLayer", nodeId_);
 }
 
 RSRenderNodeDrawable::Ptr RSSurfaceRenderNodeDrawable::OnGenerate(std::shared_ptr<const RSRenderNode> node)
@@ -654,6 +655,7 @@ void RSSurfaceRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
 
     RSUiFirstProcessStateCheckerHelper stateCheckerHelper(
         surfaceParams->GetFirstLevelNodeId(), surfaceParams->GetUifirstRootNodeId(), nodeId_);
+    
     // Regional screen recording does not enable uifirst.
     bool enableVisiableRect = RSUniRenderThread::Instance().GetEnableVisibleRect();
     if (!enableVisiableRect) {
@@ -661,6 +663,10 @@ void RSSurfaceRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
             if (GetDrawSkipType() == DrawSkipType::NONE) {
                 SetDrawSkipType(DrawSkipType::UI_FIRST_CACHE_SKIP);
             }
+            return;
+        }
+        if (DrawHDRCacheWithDmaFFRT(*rscanvas, *surfaceParams)) {
+            SetDrawSkipType(DrawSkipType::HARDWARE_HDR_CACHE_SKIP);
             return;
         }
     }
@@ -845,14 +851,14 @@ void RSSurfaceRenderNodeDrawable::UpdateSurfaceDirtyRegion(std::shared_ptr<RSPai
 
 Drawing::Region RSSurfaceRenderNodeDrawable::GetSurfaceDrawRegion() const
 {
-    std::lock_guard<std::mutex> lock(drawRegionMutex_);
-    return curSurfaceDrawRegion_;
+    std::lock_guard<std::mutex> lock(g_HDRHeterRenderContext.drawRegionMutex_);
+    return g_HDRHeterRenderContext.curSurfaceDrawRegion_;
 }
 
 void RSSurfaceRenderNodeDrawable::SetSurfaceDrawRegion(const Drawing::Region& region)
 {
-    std::lock_guard<std::mutex> lock(drawRegionMutex_);
-    curSurfaceDrawRegion_.Clone(region);
+    std::lock_guard<std::mutex> lock(g_HDRHeterRenderContext.drawRegionMutex_);
+    g_HDRHeterRenderContext.curSurfaceDrawRegion_.Clone(region);
 }
 
 void RSSurfaceRenderNodeDrawable::OnCapture(Drawing::Canvas& canvas)

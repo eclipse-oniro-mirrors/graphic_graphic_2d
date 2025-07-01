@@ -123,6 +123,7 @@ public:
     {
         firstBufferRotation_ = bufferRotation;
     }
+    void CheckAndUpdateFilterCacheOcclusionFast();
 
 private:
     explicit RSScreenRenderNodeDrawable(std::shared_ptr<const RSRenderNode>&& node);
@@ -211,6 +212,8 @@ private:
     Drawing::RectI lastVisibleRect_;
 
     bool isRenderSkipIfScreenOff_ = false;
+
+    bool filterCacheOcclusionUpdated_ = false;
 
     bool hardCursorLastCommitSuccess_ = false;
 };

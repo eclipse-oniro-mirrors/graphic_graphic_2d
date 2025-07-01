@@ -226,10 +226,13 @@ bool RSSystemProperties::GetAnimationTraceEnabled()
 
 bool RSSystemProperties::GetAnimationDelayOptimizeEnabled()
 {
+    constexpr int DEFAULT_OPTIMIZE_STATUS = 1;
+    constexpr int DISABLED_STATUS = 0;
+
     static CachedHandle g_Handle = CachedParameterCreate("rosen.animationdelay.optimize.enabled", "1");
     int changed = 0;
     const char *enable = CachedParameterGetChanged(g_Handle, &changed);
-    return ConvertToInt(enable, 1) != 0;
+    return ConvertToInt(enable, DEFAULT_OPTIMIZE_STATUS) != DISABLED_STATUS;
 }
 
 bool RSSystemProperties::GetRSClientMultiInstanceEnabled()
@@ -885,6 +888,14 @@ bool RSSystemProperties::GetUIFirstDirtyDebugEnabled()
 bool RSSystemProperties::GetUIFirstBehindWindowFilterEnabled()
 {
     static CachedHandle g_Handle = CachedParameterCreate("rosen.ui.first.behindWindowFilter.enabled", "1");
+    int changed = 0;
+    const char *enable = CachedParameterGetChanged(g_Handle, &changed);
+    return ConvertToInt(enable, 1) != 0;
+}
+
+bool RSSystemProperties::GetHeterogComputingHDREnabled()
+{
+    static CachedHandle g_Handle = CachedParameterCreate("rosen.heterog.computing.hdr.enabled", "1");
     int changed = 0;
     const char *enable = CachedParameterGetChanged(g_Handle, &changed);
     return ConvertToInt(enable, 1) != 0;

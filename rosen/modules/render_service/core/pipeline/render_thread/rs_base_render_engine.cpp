@@ -40,6 +40,7 @@
 #include "render/rs_drawing_filter.h"
 #include "render/rs_skia_filter.h"
 #include "rs_base_render_engine.h"
+#include "feature/hdr/rs_hdr_util.h"
 #ifdef RS_ENABLE_EGLIMAGE
 #ifdef USE_M133_SKIA
 #include "src/gpu/ganesh/gl/GrGLDefines.h"
@@ -52,6 +53,7 @@
 namespace OHOS {
 namespace Rosen {
 constexpr float DEFAULT_DISPLAY_NIT = 500.0f;
+constexpr float DEGAMMA = 1.0f / 2.2f;
 
 std::vector<RectI> RSRenderFrame::CheckAndVerifyDamageRegion(
     const std::vector<RectI>& rects, const RectI& surfaceRect) const
@@ -699,6 +701,28 @@ void RSBaseRenderEngine::DrawImage(RSPaintFilterCanvas& canvas, BufferDrawParam&
         RS_LOGD_IF(DEBUG_COMPOSER, "RSBaseRenderEngine::DrawImage: SRGB color gamut drawing completed");
     } else {
 #ifdef USE_VIDEO_PROCESSING_ENGINE
+
+    if (params.isHeterog) {
+        RS_LOGD("hdr video comin heterog");
+        float hrRatio = std::pow((params.displayNits / params.sdrNits), DEGAMMA);
+        Drawing::Matrix scaleMat;
+        auto imageShader = Drawing::ShaderEffect::CreateImageShader(*image, Drawing::TileMode::CLAMP,
+            Drawing::TileMode::CLAMP, Drawing::SamplingOptions(Drawing::FilterMode::LINEAR), scaleMat);
+        
+        RSHdrUtil util;
+        auto shader = util.MakeHdrHeadroomShader(hrRatio, imageShader);
+        if (shader == nullptr) {
+            RS_LOGE("RSHdrUtil::MakeHdrHeadroomShader shader is null");
+            return;
+        }
+        params.paint.SetShaderEffect(shader);
+ 
+        canvas.AttachBrush(params.paint);
+        canvas.DrawRect(params.dstRect);
+        canvas.DetachBrush();
+        return;
+    }
+
     // For sdr brightness ratio
     if (ROSEN_LNE(params.brightnessRatio, DEFAULT_BRIGHTNESS_RATIO) && !params.isHdrRedraw) {
         RS_LOGD_IF(DEBUG_COMPOSER, "  - Applying brightness ratio: %{public}.2f", params.brightnessRatio);
