@@ -332,17 +332,11 @@ void RSCanvasNode::CheckThread()
 // [Attention] Only used in PC window resize scene now
 void RSCanvasNode::SetLinkedRootNodeId(NodeId rootNodeId)
 {
-    auto transactionProxy = RSTransactionProxy::GetInstance();
-    if (transactionProxy == nullptr) {
-        ROSEN_LOGE("RSCanvasNode::SetLinkedRootNodeId transactionProxy is nullptr");
-        return;
-    }
-
     ROSEN_LOGI("RSCanvasNode::SetLinkedRootNodeId nodeId: %{public}" PRIu64 ", rootNode: %{public}" PRIu64 "",
          GetId(), rootNodeId);
     std::unique_ptr<RSCommand> command =
         std::make_unique<RSCanvasNodeSetLinkedRootNodeId>(GetId(), rootNodeId);
-    transactionProxy->AddCommand(command, true);
+    AddCommand(command, true);
     linkedRootNodeId_ = rootNodeId;
 }
 

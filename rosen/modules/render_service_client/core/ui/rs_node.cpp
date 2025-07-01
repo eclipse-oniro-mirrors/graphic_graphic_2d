@@ -3891,10 +3891,7 @@ void RSNode::UpdateOcclusionCullingStatus(bool enable, NodeId keyOcclusionNodeId
 {
     std::unique_ptr<RSCommand> command =
         std::make_unique<RSUpdateOcclusionCullingStatus>(GetId(), enable, keyOcclusionNodeId);
-    auto transactionProxy = RSTransactionProxy::GetInstance();
-    if (transactionProxy != nullptr) {
-        transactionProxy->AddCommand(command, IsRenderServiceNode());
-    }
+    AddCommand(command, IsRenderServiceNode());
 }
 
 std::vector<PropertyId> RSNode::GetModifierIds() const
@@ -4068,10 +4065,7 @@ void RSNode::MarkRepaintBoundary(const std::string& tag)
     }
     isRepaintBoundary_ = isRepaintBoundary;
     std::unique_ptr<RSCommand> command = std::make_unique<RSMarkRepaintBoundary>(id_, isRepaintBoundary_);
-    auto transactionProxy = RSTransactionProxy::GetInstance();
-    if (transactionProxy != nullptr) {
-        transactionProxy->AddCommand(command, IsRenderServiceNode());
-    }
+    AddCommand(command, IsRenderServiceNode());
 }
 
 void RSNode::MarkSuggestOpincNode(bool isOpincNode, bool isNeedCalculate)
@@ -4418,6 +4412,7 @@ void RSNode::InitUniRenderEnabled()
     static bool inited = false;
     if (!inited) {
         inited = true;
+        isMultiInstanceOpen_ = RSSystemProperties::GetRSClientMultiInstanceEnabled();
         g_isUniRenderEnabled = RSSystemProperties::GetUniRenderEnabled();
         ROSEN_LOGD("RSNode::InitUniRenderEnabled:%{public}d", g_isUniRenderEnabled);
     }
