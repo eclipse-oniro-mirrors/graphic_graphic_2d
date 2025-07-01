@@ -1728,7 +1728,7 @@ HWTEST_F(RSUifirstManagerTest, DoPurgePendingPostNodes002, TestSize.Level1)
 HWTEST_F(RSUifirstManagerTest, HandlePurgeBehindWindow001, TestSize.Level1)
 {
     uifirstManager_.pendingNodeBehindWindow_.clear();
-    NodeID nodeId = 1;
+    NodeId nodeId = 1;
     auto surfaceRenderNode = std::make_shared<RSSurfaceRenderNode>(nodeId);
     std::unordered_map<NodeId, std::shared_ptr<RSSurfaceRenderNode>> pendingNode;
     pendingNode.insert(std::make_pair(nodeId, surfaceRenderNode));
