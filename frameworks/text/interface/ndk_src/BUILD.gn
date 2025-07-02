@@ -32,7 +32,7 @@ ohos_source_set("text_ndk") {
     "$rosen_text_root",
     "$rosen_text_root/adapter",
     "$rosen_text_root/interface/export",
-    "$rosen_text_root/interface/ndk/include",
+    "$rosen_text_root/interface/export/ndk_include",
     "$rosen_text_root/service",
     "$rosen_text_root/service/texgine/src",
   ]
@@ -41,16 +41,16 @@ ohos_source_set("text_ndk") {
     "$rosen_text_root:rosen_text",
   ]
   sources = [
-    "src/drawing_font_collection.cpp",
-    "src/drawing_font_mgr.cpp",
-    "src/drawing_register_font.cpp",
-    "src/drawing_text_font_descriptor.cpp",
-    "src/drawing_text_global.cpp",
-    "src/drawing_text_line.cpp",
-    "src/drawing_text_lineTypography.cpp",
-    "src/drawing_text_run.cpp",
-    "src/drawing_text_typography.cpp",
-    "src/font_utils.cpp",
+    "drawing_font_manager/drawing_font_collection.cpp",
+    "drawing_font_manager/drawing_font_mgr.cpp",
+    "drawing_font_manager/drawing_register_font.cpp",
+    "drawing_font_manager/drawing_text_font_descriptor.cpp",
+    "drawing_font_manager/font_utils.cpp",
+    "drawing_typography/drawing_text_global.cpp",
+    "drawing_typography/drawing_text_line.cpp",
+    "drawing_typography/drawing_text_lineTypography.cpp",
+    "drawing_typography/drawing_text_run.cpp",
+    "drawing_typography/drawing_text_typography.cpp",
   ]
 
   defines = []
@@ -72,18 +72,14 @@ ohos_source_set("text_ndk") {
       "icu:shared_icuuc",
     ]
   } else {
-    deps = []
     cflags = [ "-std=c++17" ]
-
-    if (!is_arkui_x) {
-      deps += [ "$rosen_root/modules/platform:hilog" ]
-      public_external_deps = [ "skia:skia_canvaskit" ]
-    }
-
-    external_deps += [ "bounds_checking_function:libsec_static" ]
+    deps += [ "$rosen_root/modules/platform:hilog" ]
     defines += [ "MODULE_DRAWING" ]
+    external_deps = [
+      "bounds_checking_function:libsec_static",
+      "skia:skia_canvaskit",
+    ]
   }
-
   part_name = "graphic_2d"
   subsystem_name = "graphic"
 }

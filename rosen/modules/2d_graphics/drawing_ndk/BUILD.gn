@@ -27,7 +27,7 @@ if (ohos_indep_compiler_enable) {
 config("export_config") {
   include_dirs = [
     "$drawing_ndk_include_dir",
-    "$rosen_text_root/interface/ndk/include",
+    "$rosen_text_root/interface/export/ndk_include",
   ]
 }
 
@@ -60,8 +60,8 @@ template("drawing_ndk_source_set") {
     public_deps = [
       "$drawing_root:2d_graphics",
       "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",
-      "$rosen_text_root/interface/ndk:text_ndk",
     ]
+    deps = [ "$rosen_text_root/interface/ndk_src:text_ndk" ]
     public_external_deps = [ "jsoncpp:jsoncpp" ]
     external_deps = [ "napi:ace_napi" ]
     configs = [ ":export_config" ]
@@ -153,7 +153,6 @@ template("drawing_ndk_source_set") {
 
       remove_configs = [ "//build/config/compiler:default_include_dirs" ]
     } else {
-      deps = []
       cflags = [ "-std=c++17" ]
 
       if (!is_arkui_x) {
@@ -164,7 +163,7 @@ template("drawing_ndk_source_set") {
       defines += [ "MODULE_DRAWING" ]
     }
     if (enable_text_gine) {
-      deps = [ "$rosen_text_root:rosen_text" ]
+      deps += [ "$rosen_text_root:rosen_text" ]
       if (use_skia_txt) {
         include_dirs += [ "$rosen_text_root/adapter/skia" ]
       }
