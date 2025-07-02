@@ -22,6 +22,7 @@
 
 namespace OHOS {
 namespace Rosen {
+namespace Symbol {
 
 CustomSymbolConfig* CustomSymbolConfig::GetInstance()
 {
@@ -51,7 +52,8 @@ LoadSymbolErrorCode CustomSymbolConfig::ParseConfig(const std::string &familyNam
     std::unique_lock<std::shared_mutex> lock(mutex_);
     std::unordered_map<uint16_t, RSSymbolLayersGroups> symbolConfigGroup;
     LoadSymbolErrorCode result = LoadSymbolErrorCode::JSON_ERROR;
-    if (SymbolConfigParser::ParseSymbolLayersGrouping(root, symbolConfigGroup)) {
+    if (root.isMember(SYMBOL_LAYERS_GROUPING)
+        && SymbolConfigParser::ParseSymbolLayersGrouping(root[SYMBOL_LAYERS_GROUPING], symbolConfigGroup)) {
         symbolConfig_.emplace(familyName, symbolConfigGroup);
         result = LoadSymbolErrorCode::SUCCESS;
     }
@@ -76,5 +78,6 @@ std::optional<RSSymbolLayersGroups> CustomSymbolConfig::GetSymbolLayersGroups(co
     return infoIter->second;
 }
 
+} // namespace Symbol
 } // namespace Rosen
 } // namespace OHOS

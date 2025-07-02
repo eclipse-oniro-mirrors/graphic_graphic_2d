@@ -41,7 +41,10 @@ ohos_fuzztest("HmSymbolConfigOhosFuzzTest") {
     "$graphic_2d_root/rosen/test/2d_graphics/fuzztest",
   ]
 
-  deps = [ "$graphic_2d_root/rosen/modules/2d_graphics:2d_graphics" ]
+  deps = [
+    "$rosen_text_root:rosen_text",
+    "$graphic_2d_root/rosen/modules/2d_graphics:2d_graphics",
+  ]
   external_deps = [ "bounds_checking_function:libsec_shared" ]
 
   part_name = "graphic_2d"
