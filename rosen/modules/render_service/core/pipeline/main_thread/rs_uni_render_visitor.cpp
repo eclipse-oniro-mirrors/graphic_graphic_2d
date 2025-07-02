@@ -2045,6 +2045,7 @@ void RSUniRenderVisitor::PrevalidateHwcNode()
     if (prevalidLayers.size() == 0) {
         RS_LOGI_IF(DEBUG_PREVALIDATE, "RSUniRenderVisitor::PrevalidateHwcNode no hardware layer");
         hwcVisitor_->PrintHiperfCounterLog("counter2", INPUT_HWC_LAYERS);
+        RSHpaeOfflineProcessor::GetOfflineProcessor().CheckAndPostClearOfflineResourceTask();
         return;
     }
     // add display layer
@@ -2074,6 +2075,13 @@ void RSUniRenderVisitor::PrevalidateHwcNode()
         RS_LOGI_IF(DEBUG_PREVALIDATE, "PrevalidateHwcNode prevalidate failed");
         return;
     }
+    {
+        auto iter = std::find_if(strategy.begin(), strategy.end(),
+            [](const auto& elem) { return elem.second == RequestCompositionType::OFFLINE_DEVICE; });
+        if (iter == strategy.end()) {
+            RSHpaeOfflineProcessor::GetOfflineProcessor().CheckAndPostClearOfflineResourceTask();
+        }
+    }
     const auto& nodeMap = RSMainThread::Instance()->GetContext().GetNodeMap();
     for (auto it : strategy) {
         RS_LOGD_IF(DEBUG_PREVALIDATE, "PrevalidateHwcNode id: %{public}" PRIu64 ","
@@ -2087,6 +2095,11 @@ void RSUniRenderVisitor::PrevalidateHwcNode()
         }
         if (it.second == RequestCompositionType::DEVICE_VSCF) {
             node->SetArsrTag(false);
+            continue;
+        }
+        if (it.second == RequestCompositionType::OFFLINE_DEVICE &&
+            RSHpaeOfflineProcessor::GetOfflineProcessor().IsRSHpaeOfflineProcessorReady()) {
+            node->SetDeviceOfflineEnable(true);
             continue;
         }
         if (node->IsInFixedRotation() || node->GetSpecialLayerMgr().Find(SpecialLayerType::PROTECTED)) {

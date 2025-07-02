@@ -72,6 +72,9 @@
 #include "c/ffrt_cpu_boost.h"
 // xml parser
 #include "graphic_feature_param_manager.h"
+// hpae offline
+#include "feature/hwc/hpae_offline/rs_hpae_offline_processor.h"
+
 namespace OHOS::Rosen::DrawableV2 {
 namespace {
 constexpr const char* CLEAR_GPU_CACHE = "ClearGpuCache";
@@ -398,6 +401,11 @@ bool RSScreenRenderNodeDrawable::CheckScreenNodeSkip(
                 surfaceParams->SetOffsetY(0);
                 surfaceParams->SetRogWidthRatio(1.0f);
             }
+            // hpae offline
+            if (surfaceParams->GetLayerInfo().useDeviceOffline &&
+                ProcessOfflineSurfaceDrawable(processor, surfaceDrawable, false)) {
+                continue;
+            }
             processor->CreateLayerForRenderThread(*surfaceDrawable);
         }
     }
@@ -487,7 +495,7 @@ void RSScreenRenderNodeDrawable::CheckAndUpdateFilterCacheOcclusionFast()
     sptr<RSScreenManager> screenManager = CreateOrGetScreenManager();
     if (!screenManager) {
         SetDrawSkipType(DrawSkipType::SCREEN_MANAGER_NULL);
-        RS_LOGE("RSDisplayRenderNodeDrawable::OnDraw ScreenManager is nullptr");
+        RS_LOGE("RSScreenRenderNodeDrawable::OnDraw ScreenManager is nullptr");
         return;
     }
     ScreenInfo curScreenInfo = screenManager->QueryScreenInfo(paramScreenId);
@@ -831,6 +839,8 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     if (isHdrOn) {
         params->SetNewPixelFormat(GRAPHIC_PIXEL_FMT_RGBA_1010102);
     }
+    // hpae offline: post offline task
+    CheckAndPostAsyncProcessOfflineTask();
     RSUniRenderThread::Instance().WaitUntilScreenNodeBufferReleased(*this);
     // displayNodeSp to get  rsSurface witch only used in renderThread
     auto renderFrame = RequestFrame(*params, processor);
@@ -1034,6 +1044,11 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
                 surfaceParams->SetOffsetX(0);
                 surfaceParams->SetOffsetY(0);
                 surfaceParams->SetRogWidthRatio(1.0f);
+            }
+            // hpae offline: wait task and create layer
+            if (surfaceParams->GetLayerInfo().useDeviceOffline &&
+                ProcessOfflineSurfaceDrawable(processor, surfaceDrawable, true)) {
+                continue;
             }
             processor->CreateLayerForRenderThread(*surfaceDrawable);
         }
@@ -1378,6 +1393,43 @@ bool RSScreenRenderNodeDrawable::SkipFrame(uint32_t refreshRate, ScreenInfo scre
             break;
     }
     return needSkip;
+}
+
+bool RSScreenRenderNodeDrawable::ProcessOfflineSurfaceDrawable(
+    const std::shared_ptr<RSProcessor>& processor,
+    std::shared_ptr<RSSurfaceRenderNodeDrawable>& surfaceDrawable, bool async)
+{
+    if (processor->ProcessOfflineLayer(surfaceDrawable, async)) {
+        // use offline layer to display
+        return true;
+    }
+    // reset offline tag, use original layer to display
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable->GetRenderParams().get());
+    surfaceParams->SetUseDeviceOffline(false);
+    return false;
+}
+
+void RSScreenRenderNodeDrawable::CheckAndPostAsyncProcessOfflineTask()
+{
+    auto& hardwareDrawables =
+        RSUniRenderThread::Instance().GetRSRenderThreadParams()->GetHardwareEnabledTypeDrawables();
+    for (const auto& [screenNodeId, _, drawable] : hardwareDrawables) {
+        if (UNLIKELY(!drawable || !drawable->GetRenderParams())) {
+            continue;
+        }
+        auto params = static_cast<RSScreenRenderParams*>(renderParams_.get());
+        if (screenNodeId != params->GetId()) {
+            continue;
+        }
+        auto surfaceDrawable = std::static_pointer_cast<RSSurfaceRenderNodeDrawable>(drawable);
+        if (surfaceDrawable->GetRenderParams()->GetHardwareEnabled() &&
+            surfaceDrawable->GetRenderParams()->GetLayerInfo().useDeviceOffline) {
+            if (!RSHpaeOfflineProcessor::GetOfflineProcessor().PostProcessOfflineTask(
+                surfaceDrawable, RSUniRenderThread::Instance().GetVsyncId())) {
+                RS_LOGW("RSUniRenderProcessor::ProcessSurface: post offline task failed, go redraw");
+            }
+        }
+    }
 }
 
 } // namespace OHOS::Rosen::DrawableV2
