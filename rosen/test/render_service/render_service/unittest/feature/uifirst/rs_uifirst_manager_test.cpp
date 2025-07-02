@@ -1733,19 +1733,19 @@ HWTEST_F(RSUifirstManagerTest, NeedPurgeByBehindWindow001, TestSize.Level1)
     auto surfaceNode = RSTestUtil::CreateSurfaceNode();
     ASSERT_NE(surfaceNode, nullptr);
 
-    surfaceRenderNode->SetGlobalAlpha(1.f);
-    surfaceRenderNode->uifirstContentDirty_ = false;
-    surfaceRenderNode->SetLastFrameUifirstFlag(MultiThreadCacheType::NONFOCUS_WINDOW);
-    surfaceRenderNode->SetVisibleRegion(emptyRegion);
-    surfaceRenderNode->SetVisibleRegionBehindWindow(emptyRegion);
+    surfaceNode->SetGlobalAlpha(1.f);
+    surfaceNode->uifirstContentDirty_ = false;
+    surfaceNode->SetLastFrameUifirstFlag(MultiThreadCacheType::NONFOCUS_WINDOW);
+    surfaceNode->SetVisibleRegion(emptyRegion);
+    surfaceNode->SetVisibleRegionBehindWindow(emptyRegion);
 
     auto appWindow = RSTestUtil::CreateSurfaceNode();
     ASSERT_NE(appWindow, nullptr);
     appWindow->SetVisibleRegion(visibleRegion);
     appWindow->SetVisibleRegionBehindWindow(emptyRegion);
-    surfaceRenderNode->AddChild(appWindow);
-    surfaceRenderNode->GenerateFullChildrenList();
-    surfaceRenderNode->UpdateChildSubSurfaceNodes(appWindow, true);
+    surfaceNode->AddChild(appWindow);
+    surfaceNode->GenerateFullChildrenList();
+    surfaceNode->UpdateChildSubSurfaceNodes(appWindow, true);
 
     uifirstManager_.SetUiFirstType((int)UiFirstCcmType::SINGLE);
     ASSERT_FALSE(uifirstManager_.NeedPurgeByBehindWindow(surfaceNode, id));
@@ -1784,6 +1784,7 @@ HWTEST_F(RSUifirstManagerTest, HandlePurgeBehindWindow001, TestSize.Level1)
 
     it = pendingNode.begin();
     uifirstManager_.pendingNodeBehindWindow_[nodeId].isFirst = true;
+    uifirstManager_.pendingNodeBehindWindow_[nodeId].curTime_ = -30;
     uifirstManager_.HandlePurgeBehindWindow(it, pendingNode);
     EXPECT_FALSE(pendingNode.empty());
 
