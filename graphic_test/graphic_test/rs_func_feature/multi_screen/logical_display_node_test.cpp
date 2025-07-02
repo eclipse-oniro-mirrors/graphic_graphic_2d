@@ -242,7 +242,7 @@ GRAPHIC_N_TEST(RSLogicalDisplayNodeTest, CONTENT_DISPLAY_TEST, LOGICAL_DISPLAY_N
  */
 GRAPHIC_N_TEST(RSLogicalDisplayNodeTest, CONTENT_DISPLAY_TEST, LOGICAL_DISPLAY_NODE_TEST_003)
 {
-    uint32_t width = 640;
+    uint32_t width = 2048;
     uint32_t height = 1000;
     auto csurface = Surface::CreateSurfaceAsConsumer();
     csurface->SetDefaultUsage(
@@ -282,7 +282,9 @@ GRAPHIC_N_TEST(RSLogicalDisplayNodeTest, CONTENT_DISPLAY_TEST, LOGICAL_DISPLAY_N
 {
     uint32_t width = 2048;
     uint32_t height = 1000;
-    auto csurface0 = IConsumerSurface::Create();
+    auto csurface0 = Surface::CreateSurfaceAsConsumer();
+    csurface0->SetDefaultUsage(
+        BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA | BUFFER_USAGE_MEM_FB);
     auto producer0 = csurface0->GetProducer();
     auto psurface0 = Surface::CreateSurfaceAsProducer(producer0);
     ScreenId screenId0 = RSInterfaces::GetInstance().CreateVirtualScreen(
@@ -400,7 +402,9 @@ GRAPHIC_N_TEST(RSLogicalDisplayNodeTest, CONTENT_DISPLAY_TEST, LOGICAL_DISPLAY_N
 {
     uint32_t width = 2048;
     uint32_t height = 1000;
-    auto csurface = IConsumerSurface::Create();
+    auto csurface = Surface::CreateSurfaceAsConsumer();
+    csurface->SetDefaultUsage(
+        BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA | BUFFER_USAGE_MEM_FB);
     auto producer = csurface->GetProducer();
     auto psurface = Surface::CreateSurfaceAsProducer(producer);
     sptr<IBufferConsumerListener> listener = sptr<CustomizedBufferConsumerListener>::MakeSptr(csurface, psurface);
@@ -444,7 +448,9 @@ GRAPHIC_N_TEST(RSLogicalDisplayNodeTest, CONTENT_DISPLAY_TEST, LOGICAL_DISPLAY_N
 {
     uint32_t width = 2048;
     uint32_t height = 1000;
-    auto csurface = IConsumerSurface::Create();
+    auto csurface = Surface::CreateSurfaceAsConsumer();
+    csurface->SetDefaultUsage(
+        BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA | BUFFER_USAGE_MEM_FB);
     auto producer = csurface->GetProducer();
     auto psurface = Surface::CreateSurfaceAsProducer(producer);
     sptr<IBufferConsumerListener> listener = sptr<CustomizedBufferConsumerListener>::MakeSptr(csurface, psurface);
@@ -489,7 +495,7 @@ GRAPHIC_N_TEST(RSLogicalDisplayNodeTest, CONTENT_DISPLAY_TEST, LOGICAL_DISPLAY_N
 {
     uint32_t width = 2048;
     uint32_t height = 1000;
-    auto csurface = IConsumerSurface::Create();
+    auto csurface = Surface::CreateSurfaceAsConsumer();
     auto producer = csurface->GetProducer();
     auto psurface = Surface::CreateSurfaceAsProducer(producer);
     ScreenId screenId = RSInterfaces::GetInstance().CreateVirtualScreen(
