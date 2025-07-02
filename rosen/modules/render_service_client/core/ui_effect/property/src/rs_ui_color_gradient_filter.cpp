@@ -26,6 +26,10 @@ namespace Rosen {
 #undef LOG_TAG
 #define LOG_TAG "RSNGColorGradientFilter"
 
+namespace {
+    constexpr uint32_t COLOR_PROPS_NUM = 4;
+}
+
 std::shared_ptr<RSNGRenderFilterBase> RSNGColorGradientFilter::GetRenderEffect()
 {
     return nullptr;
@@ -359,6 +363,27 @@ std::vector<std::shared_ptr<RSPropertyBase>> RSUIColorGradientFilterPara::GetLea
     }
 
     return out;
+}
+
+bool RSUIColorGradientFilterPara::CheckEnableHdrEffect()
+{
+    auto colors = std::static_pointer_cast<RSAnimatableProperty<std::vector<float>>>(
+        GetRSProperty(RSUIFilterType::COLOR_GRADIENT_COLOR));
+    if (colors == nullptr) {
+        return false;
+    }
+
+    auto c = colors->Get();
+    for (size_t i = 0; i < c.size(); i++) {
+        if ((i + 1) % COLOR_PROPS_NUM == 0) {
+            continue;
+        }
+        if (ROSEN_GNE(c[i], 1.0f)) {
+            enableHdrEffect_ = true;
+            break;
+        }
+    }
+    return enableHdrEffect_ || stagingEnableHdrEffect_;
 }
 
 std::shared_ptr<RSUIMaskPara> RSUIColorGradientFilterPara::CreateMask(RSUIFilterType type)
