@@ -1720,6 +1720,47 @@ HWTEST_F(RSUifirstManagerTest, DoPurgePendingPostNodes002, TestSize.Level1)
 }
 
 /**
+ * @tc.name: NeedPurgeByBehindWindow001
+ * @tc.desc: Test NeedPurgeByBehindWindow
+ * @tc.type: FUNC
+ * @tc.require: issueICIXW6
+ */
+HWTEST_F(RSUifirstManagerTest, NeedPurgeByBehindWindow001, TestSize.Level1)
+{
+    auto emptyRegion = Occlusion::Region();
+    auto visibleRegion = Occlusion::Region({50, 50, 100, 100});
+    NodeId id = 0;
+    auto surfaceNode = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(surfaceNode, nullptr);
+
+    surfaceRenderNode->SetGlobalAlpha(1.f);
+    surfaceRenderNode->uifirstContentDirty_ = false;
+    surfaceRenderNode->SetLastFrameUifirstFlag(MultiThreadCacheType::NONFOCUS_WINDOW);
+    surfaceRenderNode->SetVisibleRegion(emptyRegion);
+    surfaceRenderNode->SetVisibleRegionBehindWindow(emptyRegion);
+
+    auto appWindow = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(appWindow, nullptr);
+    appWindow->SetVisibleRegion(visibleRegion);
+    appWindow->SetVisibleRegionBehindWindow(emptyRegion);
+    surfaceRenderNode->AddChild(appWindow);
+    surfaceRenderNode->GenerateFullChildrenList();
+    surfaceRenderNode->UpdateChildSubSurfaceNodes(appWindow, true);
+
+    uifirstManager_.SetUiFirstType((int)UiFirstCcmType::SINGLE);
+    ASSERT_FALSE(uifirstManager_.NeedPurgeByBehindWindow(surfaceNode, id));
+
+    uifirstManager_.SetUiFirstType((int)UiFirstCcmType::MULTI);
+    system::SetParameter("rosen.ui.first.behindwindow.enabled", "0");
+    ASSERT_FALSE(uifirstManager_.NeedPurgeByBehindWindow(surfaceNode, id));
+
+    system::SetParameter("rosen.ui.first.behindwindow.enabled", "1");
+    ASSERT_TRUE(uifirstManager_.NeedPurgeByBehindWindow(surfaceNode, id));
+
+    uifirstManager_.SetUiFirstType((int)UiFirstCcmType::SINGLE);
+}
+
+/**
  * @tc.name: HandlePurgeBehindWindow001
  * @tc.desc: Test HandlePurgeBehindWindow
  * @tc.type: FUNC
@@ -1742,6 +1783,18 @@ HWTEST_F(RSUifirstManagerTest, HandlePurgeBehindWindow001, TestSize.Level1)
     EXPECT_FALSE(pendingNode.empty());
 
     it = pendingNode.begin();
+    uifirstManager_.pendingNodeBehindWindow_[nodeId].isFirst = true;
+    uifirstManager_.HandlePurgeBehindWindow(it, pendingNode);
+    EXPECT_FALSE(pendingNode.empty());
+
+    it = pendingNode.begin();
+    uifirstManager_.pendingNodeBehindWindow_[nodeId].isFirst = true;
+    uifirstManager_.pendingNodeBehindWindow_[nodeId].curTime_ = -29;
+    uifirstManager_.HandlePurgeBehindWindow(it, pendingNode);
+    EXPECT_FALSE(pendingNode.empty());
+
+    it = pendingNode.begin();
+    uifirstManager_.pendingNodeBehindWindow_[nodeId].isFirst = false;
     uifirstManager_.pendingNodeBehindWindow_[nodeId].curTime_ = -29;
     uifirstManager_.HandlePurgeBehindWindow(it, pendingNode);
     EXPECT_TRUE(pendingNode.empty());

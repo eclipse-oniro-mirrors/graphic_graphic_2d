@@ -592,9 +592,14 @@ bool RSUifirstManager::SubThreadControlFrameRate(NodeId id,
 
 bool RSUifirstManager::NeedPurgeByBehindWindow(const std::shared_ptr<RSSurfaceRenderNode>& node, NodeId id)
 {
+    if (GetUiFirstMode() != UiFirstModeType::MULTI_WINDOW_MODE) {
+        return false;
+    }
+    if (!RSSystemProPerties::GetUIFirstBehindWindowEnabled()) {
+        return false;
+    }
     bool isBehindWindowOcclusion = IsBehindWindowOcclusion(node);
-    return isBehindWindowOcclusion && (node->GetLastFrameUifirstFlag() == MultiThreadCacheType::NONFOCUS_WINDOW) &&
-        !pendingNodeBehindWindow_[id].isFirst;
+    return isBehindWindowOcclusion && (node->GetLastFrameUifirstFlag() == MultiThreadCacheType::NONFOCUS_WINDOW);
 }
 
 void RSUifirstManager::HandlePurgeBehindWindow(
@@ -606,10 +611,11 @@ void RSUifirstManager::HandlePurgeBehindWindow(
     uint64_t currentTime = GetMainThreadVsyncTime();
     uint64_t timeDiffInMilliseconds = GetTimeDiffBehindWindow(currentTime, id);
     // control the frequency of purge as the designed time
-    if (timeDiffInMilliseconds >= PURGE_BEHIND_WINDOW_TIME) {
+    if (timeDiffInMilliseconds >= PURGE_BEHIND_WINDOW_TIME || pendingNodeBehindWindow_[id].isFirst) {
         ++it;
         pendingNodeBehindWindow_[id].curTime_ = currentTime;
-        RS_OPTIONAL_TRACE_NAME_FMT("DO not Purge by behind window, node name %s", node->GetName().c_str());
+        pendingNodeBehindWindow_[id].isFirst = false;
+        RS_OPTIONAL_TRACE_NAME_FMT("Do not Purge by behind window, node name %s", node->GetName().c_str());
     } else {
         it = pendingNode.erase(it);
         RS_OPTIONAL_TRACE_NAME_FMT("Purge by behind window, node name %s", node->GetName().c_str());
@@ -659,14 +665,12 @@ void RSUifirstManager::DoPurgePendingPostNodes(std::unordered_map<NodeId,
             !rsSubThreadCache.IsSubThreadSkip()) {
             RS_OPTIONAL_TRACE_NAME_FMT("Purge node name %s", surfaceParams->GetName().c_str());
             it = pendingNode.erase(it);
+        } else if (NeedPurgeByBehindWindow(node, id)) {
+            HandlePurgeBehindWindow(it, pendingNode);
         } else if (SubThreadControlFrameRate(id, drawable, node)) {
             RS_OPTIONAL_TRACE_NAME_FMT("Purge frame drop node name %s", surfaceParams->GetName().c_str());
             it = pendingNode.erase(it);
-        } else if (NeedPurgeByBehindWindow(node, id)) {
-            RS_OPTIONAL_TRACE_NAME_FMT("Decide Whether to Purge node by behind window or not");
-            HandlePurgeBehindWindow(it, pendingNode);
         } else {
-            pendingNodeBehindWindow_[id].isFirst = false;
             ++it;
         }
     }

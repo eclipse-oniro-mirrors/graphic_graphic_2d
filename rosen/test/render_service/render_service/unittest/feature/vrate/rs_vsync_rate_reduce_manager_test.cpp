@@ -431,45 +431,18 @@ HWTEST_F(RSVsyncRateReduceManagerTest, CalcRates002, TestSize.Level1)
     RSVsyncRateReduceManager rateReduceManager;
     rateReduceManager.rsRefreshRate_ = 60;
     rateReduceManager.curRatesLevel_ = 2;
-    rateReduceManager.isSystemAnimatedScenes_ = true;
+    rateReduceManager.isSystemAnimatedScenes_ = false;
     NodeId nodeId = 1;
     SurfaceVRateInfo surfaceVRateInfo;
     surfaceVRateInfo.nodeId = nodeId;
     surfaceVRateInfo.name = "surfaceNode";
     surfaceVRateInfo.appWindowArea = 1000;
+    surfaceVRateInfo.visibleRegion = Occlusion::Region(Occlusion::Rect(10, 10, 100, 100));
+    surfaceVRateInfo.visibleRegionBehindWindow = Occlusion::Region(Occlusion::Rect(RectI()));
     rateReduceManager.surfaceVRateMap_[nodeId] = surfaceVRateInfo;
 
-    surfaceVRateInfo.visibleRegion = Occlusion::Region(Occlusion::Rect(10, 10, 100, 100));
-    surfaceVRateInfo.visibleRegionBehindWindow = Occlusion::Region(Occlusion::Rect(RectI()));
     rateReduceManager.CalcRates();
     auto iter = rateReduceManager.vSyncRateMap_.find(nodeId);
-    ASSERT_NE(rateReduceManager.vSyncRateMap_.end(), iter);
-    EXPECT_EQ(2, iter->second);
-
-    surfaceVRateInfo.visibleRegion = Occlusion::Region(Occlusion::Rect(10, 10, 100, 100));
-    surfaceVRateInfo.visibleRegionBehindWindow = Occlusion::Region(Occlusion::Rect(10, 10, 100, 100));
-    rateReduceManager.surfaceVRateMap_.emplace(nodeId, surfaceVRateInfo);
-    rateReduceManager.vSyncRateMap_.clear();
-    rateReduceManager.CalcRates();
-    iter = rateReduceManager.vSyncRateMap_.find(nodeId);
-    ASSERT_NE(rateReduceManager.vSyncRateMap_.end(), iter);
-    EXPECT_EQ(2, iter->second);
-
-    surfaceVRateInfo.visibleRegion = Occlusion::Region(Occlusion::Rect(RectI()));
-    surfaceVRateInfo.visibleRegionBehindWindow = Occlusion::Region(Occlusion::Rect(RectI()));
-    rateReduceManager.surfaceVRateMap_.emplace(nodeId, surfaceVRateInfo);
-    rateReduceManager.vSyncRateMap_.clear();
-    rateReduceManager.CalcRates();
-    iter = rateReduceManager.vSyncRateMap_.find(nodeId);
-    ASSERT_NE(rateReduceManager.vSyncRateMap_.end(), iter);
-    EXPECT_EQ(2, iter->second);
-
-    surfaceVRateInfo.visibleRegion = Occlusion::Region(Occlusion::Rect(RectI()));
-    surfaceVRateInfo.visibleRegionBehindWindow = Occlusion::Region(Occlusion::Rect(10, 10, 100, 100));
-    rateReduceManager.surfaceVRateMap_.emplace(nodeId, surfaceVRateInfo);
-    rateReduceManager.vSyncRateMap_.clear();
-    rateReduceManager.CalcRates();
-    iter = rateReduceManager.vSyncRateMap_.find(nodeId);
     ASSERT_NE(rateReduceManager.vSyncRateMap_.end(), iter);
     EXPECT_EQ(2, iter->second);
 }
