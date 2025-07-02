@@ -76,18 +76,6 @@ HWTEST_F(RSTransformModifierNGTypeTest, RSTransformModifierTest, TestSize.Level1
     modifier->SetQuaternion(quaternionValue);
     EXPECT_EQ(modifier->GetQuaternion(), quaternionValue);
 
-    float rotationValue = 1.0f;
-    modifier->SetRotation(rotationValue);
-    EXPECT_EQ(modifier->GetRotation(), rotationValue);
-
-    float rotationXValue = 1.0f;
-    modifier->SetRotationX(rotationXValue);
-    EXPECT_EQ(modifier->GetRotationX(), rotationXValue);
-
-    float rotationYValue = 1.0f;
-    modifier->SetRotationY(rotationYValue);
-    EXPECT_EQ(modifier->GetRotationY(), rotationYValue);
-
     float cameraDistanceValue = 1.0f;
     modifier->SetCameraDistance(cameraDistanceValue);
     EXPECT_EQ(modifier->GetCameraDistance(), cameraDistanceValue);
@@ -108,7 +96,6 @@ HWTEST_F(RSTransformModifierNGTypeTest, RSTransformModifierTest, TestSize.Level1
     modifier->SetScaleZ(scaleZValue);
     EXPECT_EQ(modifier->GetScaleZ(), scaleZValue);
 
-
     Vector3f skewValue(1.0f, 2.0f, 3.0f);
     modifier->SetSkew(skewValue);
     EXPECT_EQ(modifier->GetSkew(), skewValue);
@@ -116,6 +103,28 @@ HWTEST_F(RSTransformModifierNGTypeTest, RSTransformModifierTest, TestSize.Level1
     Vector4f perspValue(1.0f, 2.0f, 3.0f, 4.0f);
     modifier->SetPersp(perspValue);
     EXPECT_EQ(modifier->GetPersp(), perspValue);
+}
+
+/**
+ * @tc.name: GetRotationTest
+ * @tc.desc: test set and get functions of rotation properties
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSTransformModifierNGTypeTest, GetRotationTest, TestSize.Level1)
+{
+    std::shared_ptr<ModifierNG::RSTransformModifier> modifier = std::make_shared<ModifierNG::RSTransformModifier>();
+
+    float rotationValue = 1.0f;
+    modifier->SetRotation(rotationValue);
+    EXPECT_EQ(modifier->GetRotation(), rotationValue);
+
+    float rotationXValue = 1.0f;
+    modifier->SetRotationX(rotationXValue);
+    EXPECT_EQ(modifier->GetRotationX(), rotationXValue);
+
+    float rotationYValue = 1.0f;
+    modifier->SetRotationY(rotationYValue);
+    EXPECT_EQ(modifier->GetRotationY(), rotationYValue);
 }
 
 /**
