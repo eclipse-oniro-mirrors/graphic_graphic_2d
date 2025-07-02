@@ -1332,7 +1332,7 @@ HWTEST_F(HgmFrameRateMgrTest, TestCheckForceUpdateCallback, Function | SmallTest
     mgr.CheckForceUpdateCallback(OLED_60_HZ);
     EXPECT_EQ(mgr.needForceUpdateUniRender_, true);
 
-    mgr.forceUpdateCallback_ = [](bool idleTimerExpired, bool forceUpdate) { return; };
+    mgr.forceUpdateCallback_ = [](bool idleTimerExpired, bool forceUpdate) {};
     mgr.CheckForceUpdateCallback(OLED_60_HZ);
     mgr.CheckForceUpdateCallback(OLED_120_HZ);
 
