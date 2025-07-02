@@ -2032,7 +2032,6 @@ void RSUniRenderVisitor::PrevalidateHwcNode()
     if (!RSUniHwcPrevalidateUtil::GetInstance().IsPrevalidateEnable()) {
         RS_LOGD_IF(DEBUG_PREVALIDATE, "RSUniRenderVisitor::PrevalidateHwcNode prevalidate close");
         hwcVisitor_->PrintHiperfCounterLog("counter2", static_cast<uint64_t>(0));
-        RSHpaeOfflineProcessor::GetOfflineProcessor().CheckAndPostClearOfflineResourceTask();
         return;
     }
     auto& curMainAndLeashSurfaces = curScreenNode_->GetAllMainAndLeashSurfaces();
