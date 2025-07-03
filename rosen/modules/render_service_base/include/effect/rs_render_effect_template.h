@@ -256,6 +256,7 @@ public:
             case RSNGEffectType::CONTOUR_DIAGONAL_FLOW_LIGHT: return "ContourDiagonalFlowLight";
             case RSNGEffectType::WAVY_RIPPLE_LIGHT: return "WavyRippleLight";
             case RSNGEffectType::AURORA_NOISE: return "AuroraNoise";
+            case RSNGEffectType::PARTICLE_CIRCULAR_HALO: return "ParticleCircularHalo";
             default:
                 return "UNKNOWN";
         }
