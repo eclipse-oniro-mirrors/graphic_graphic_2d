@@ -266,7 +266,6 @@ GRAPHIC_N_TEST(RSLogicalDisplayNodeTest, CONTENT_DISPLAY_TEST, LOGICAL_DISPLAY_N
     displayNode1->SetBounds({ 1500, 0, 500, 500 });
     displayNode1->SetFrame({ 1500, 0, 500, 500 });
     displayNode1->SetBackgroundColor(SK_ColorRED);
-
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
 
