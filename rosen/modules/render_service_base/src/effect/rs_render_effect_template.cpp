@@ -79,7 +79,7 @@ std::shared_ptr<Drawing::GEVisualEffect> RSNGRenderEffectHelper::CreateGEVisualE
 }
 
 void RSNGRenderEffectHelper::AppendToGEContainer(std::shared_ptr<Drawing::GEVisualEffectContainer>& ge,
-        std::shared_ptr<Drawing::GEVisualEffect> geShader)
+    std::shared_ptr<Drawing::GEVisualEffect> geShader)
 {
     if (!ge) {
         return;
