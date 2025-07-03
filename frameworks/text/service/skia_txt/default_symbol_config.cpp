@@ -12,7 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+#ifdef _WIN32
+#include "cstdlib"
+#else
+#include <climits>
+#include <cstddef>
+#endif
 #include <fstream>
 
 #include "default_symbol_config.h"
@@ -60,7 +65,22 @@ const int ERROR_CONFIG_FORMAT_NOT_SUPPORTED = 2; // the formation of configurati
  */
 std::unique_ptr<char[]> GetDataFromFile(const char* fname, std::streamsize& size)
 {
-    std::ifstream file(fname, std::ios::binary);
+    char tmpPath[PATH_MAX] = {0};
+    if (strlen(fname) > PATH_MAX) {
+        TEXT_LOGE("File path is too long, file: %{public}s", fname);
+        return nullptr;
+    }
+#ifdef _WIN32
+    auto canonicalFilePath = _fullpath(tmpPath, fname, sizeof(tmpPath));
+#else
+    auto canonicalFilePath = realpath(fname, tmpPath);
+#endif
+    if (canonicalFilePath == nullptr) {
+        TEXT_LOGE("Invalid file path, file: %{public}s", fname);
+        return nullptr;
+    }
+
+    std::ifstream file(tmpPath, std::ios::binary);
     if (!file || !file.good()) {
         size = 0;
         return nullptr;
