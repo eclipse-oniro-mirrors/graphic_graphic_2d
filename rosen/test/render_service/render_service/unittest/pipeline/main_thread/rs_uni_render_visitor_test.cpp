@@ -4521,6 +4521,7 @@ HWTEST_F(RSUniRenderVisitorTest, MarkBlurIntersectWithDRM002, TestSize.Level2)
     RSSurfaceRenderNodeConfig surfaceConfig;
     surfaceConfig.id = 1;
     surfaceConfig.name = "SCBBannerNotification";
+    surfaceConfig.surfaceWindowType = SurfaceWindowType::SCB_BANNER_NOTIFICATION;
     auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(surfaceConfig);
     ASSERT_NE(surfaceNode, nullptr);
     surfaceNode->instanceRootNodeId_ = surfaceNode->GetId();
@@ -4814,6 +4815,7 @@ HWTEST_F(RSUniRenderVisitorTest, CheckMergeDebugRectforRefreshRate, TestSize.Lev
     RSSurfaceRenderNodeConfig surfaceConfig;
     surfaceConfig.id = 10;
     surfaceConfig.name = "SCBGestureBack";
+    surfaceConfig.surfaceWindowType = SurfaceWindowType::SCB_GESTURE_BACK;
     auto surfaceNode2 = std::make_shared<RSSurfaceRenderNode>(surfaceConfig);
     std::vector<RSBaseRenderNode::SharedPtr> surfaces2 = {surfaceNode2};
     rsUniRenderVisitor->CheckMergeDebugRectforRefreshRate(surfaces2);
