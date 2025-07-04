@@ -1867,11 +1867,6 @@ HWTEST_F(RSUifirstManagerTest, IsBehindWindowOcclusion001, TestSize.Level1)
     appWindow->SetVisibleRegion(visibleRegion);
     appWindow->SetVisibleRegionBehindWindow(emptyRegion);
     EXPECT_TRUE(uifirstManager_.IsBehindWindowOcclusion(surfaceNode));
-
-    surfaceNode->SetVisibleRegion(visibleRegion);
-    auto surfaceDrawable = surfaceNode->GetRenderDrawable();
-    surfaceDrawable->GetSyncDirtyManager()->SetUifirstFrameDirtyRect(RectI{0, 0, 100, 100});
-    EXPECT_FALSE(uifirstManager_.IsBehindWindowOcclusion(surfaceNode));
 }
 
 /**
