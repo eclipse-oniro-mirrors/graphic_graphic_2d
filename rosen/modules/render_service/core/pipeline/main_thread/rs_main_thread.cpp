@@ -2303,7 +2303,6 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
     // need draw skipped node at cur frame
     if (doDirectComposition_ && RSUifirstManager::Instance().NeedNextDrawForSkippedNode()) {
         RS_OPTIONAL_TRACE_NAME("hwc debug: disable directComposition by uifirst needNextDrawForSkippedNode");
-        doDirectComposition_ = false;
     }
     doDirectComposition_ &= !RSUifirstManager::Instance().NeedNextDrawForSkippedNode();
 
