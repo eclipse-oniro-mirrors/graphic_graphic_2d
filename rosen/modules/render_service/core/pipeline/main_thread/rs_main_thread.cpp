@@ -226,7 +226,7 @@ constexpr const char* HIDE_NOTCH_STATUS = "persist.sys.graphic.hideNotch.status"
 constexpr const char* DRAWING_CACHE_DFX = "rosen.drawingCache.enabledDfx";
 constexpr const char* DEFAULT_SURFACE_NODE_NAME = "DefaultSurfaceNodeName";
 constexpr const char* ENABLE_DEBUG_FMT_TRACE = "sys.graphic.openTestModeTrace";
-constexpr int64_t ONE_SECOND_TIMESTAMP = 1e9;
+constexpr uint64_t ONE_SECOND_TIMESTAMP = 1e9;
 constexpr int SKIP_FIRST_FRAME_DRAWING_NUM = 1;
 
 #ifdef RS_ENABLE_GL
@@ -744,27 +744,31 @@ void RSMainThread::GetFrontBufferDesiredPresentTimeStamp(
     const sptr<IConsumerSurface>& consumer, int64_t& desiredPresentTimeStamp)
 {
     if (consumer == nullptr) {
+        desiredPresentTimeStamp = 0;
         return;
     }
     bool isAutoTimeStamp = false;
     int64_t fronDesiredPresentTimeStamp = 0;
     if (consumer->GetFrontDesiredPresentTimeStamp(fronDesiredPresentTimeStamp, isAutoTimeStamp) !=
-            GSError::GSERROR_OK || fronDesiredPresentTimeStamp == 0) {
+        GSError::GSERROR_OK || fronDesiredPresentTimeStamp <= 0 || isAutoTimeStamp) {
         desiredPresentTimeStamp = 0;
         return;
     }
-    if (isAutoTimeStamp || fronDesiredPresentTimeStamp <= static_cast<int64_t>(timestamp_) ||
-        fronDesiredPresentTimeStamp - ONE_SECOND_TIMESTAMP > static_cast<int64_t>(timestamp_)) {
+
+    const uint64_t tmp = static_cast<uint64_t>(fronDesiredPresentTimeStamp);
+    if (tmp <= vsyncRsTimestamp_.load() ||
+        (tmp > ONE_SECOND_TIMESTAMP && tmp - ONE_SECOND_TIMESTAMP > vsyncRsTimestamp_.load())) {
         desiredPresentTimeStamp = 0;
         return;
     }
+    // vsyncRsTimestamp_ < fronDesiredPresentTimeStamp <= vsyncRsTimestamp_ + 1s
     desiredPresentTimeStamp = fronDesiredPresentTimeStamp;
 }
 
 void RSMainThread::NotifyUnmarshalTask(int64_t uiTimestamp)
 {
     if (isUniRender_ && rsVSyncDistributor_->IsUiDvsyncOn() && static_cast<uint64_t>(uiTimestamp) +
-        static_cast<uint64_t>(rsVSyncDistributor_->GetUiCommandDelayTime()) >= dvsyncRsTimestamp_.load()
+        static_cast<uint64_t>(rsVSyncDistributor_->GetUiCommandDelayTime()) >= vsyncRsTimestamp_.load()
         && waitForDVSyncFrame_.load()) {
         auto cachedTransactionData = RSUnmarshalThread::Instance().GetCachedTransactionData();
         MergeToEffectiveTransactionDataMap(cachedTransactionData);
@@ -3306,7 +3310,7 @@ void RSMainThread::OnVsync(uint64_t timestamp, uint64_t frameCount, void* data)
     const float onVsyncStartTimeSteadyFloat = GetCurrentSteadyTimeMsFloat();
     RSJankStatsOnVsyncStart(onVsyncStartTime, onVsyncStartTimeSteady, onVsyncStartTimeSteadyFloat);
     timestamp_ = timestamp;
-    dvsyncRsTimestamp_.store(timestamp_);
+    vsyncRsTimestamp_.store(timestamp_);
     drawingRequestNextVsyncNum_.store(requestNextVsyncNum_);
     curTime_ = static_cast<uint64_t>(
         std::chrono::duration_cast<std::chrono::nanoseconds>(
@@ -4450,7 +4454,7 @@ void RSMainThread::ForceRefreshForUni(bool needDelay)
                 std::chrono::steady_clock::now().time_since_epoch()).count();
             RS_PROFILER_PATCH_TIME(now);
             timestamp_ = timestamp_ + (now - curTime_);
-            dvsyncRsTimestamp_.store(timestamp_);
+            vsyncRsTimestamp_.store(timestamp_);
             int64_t vsyncPeriod = 0;
             VsyncError ret = VSYNC_ERROR_UNKOWN;
             if (receiver_) {
@@ -5187,8 +5191,11 @@ void RSMainThread::RequestNextVSyncInner(VSyncReceiver::FrameCallback callback, 
     if (Rosen::RSSystemProperties::GetTimeVsyncDisabled()) {
         receiver_->RequestNextVSync(callback, fromWhom, lastVSyncTS);
     } else {
-        receiver_->RequestNextVSync(callback, fromWhom, lastVSyncTS,
-            requestVsyncTime < static_cast<int64_t>(timestamp_) ? 0 : requestVsyncTime);
+        int64_t requestVsyncTimeTmp = 0;
+        if (requestVsyncTime > 0 && static_cast<uint64_t>(requestVsyncTime) > vsyncRsTimestamp_.load()) {
+            requestVsyncTimeTmp = requestVsyncTime;
+        }
+        receiver_->RequestNextVSync(callback, fromWhom, lastVSyncTS, requestVsyncTimeTmp);
     }
 }
 
