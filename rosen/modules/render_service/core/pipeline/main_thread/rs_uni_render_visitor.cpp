@@ -86,7 +86,6 @@ constexpr int MAX_ALPHA = 255;
 constexpr int TRACE_LEVEL_THREE = 3;
 constexpr float EPSILON_SCALE = 0.00001f;
 static const std::string CAPTURE_WINDOW_NAME = "CapsuleWindow";
-constexpr const char* RELIABLE_GESTURE_BACK_SURFACE_NAME = "SCBGestureBack";
 constexpr uint64_t INPUT_HWC_LAYERS = 3;
 constexpr uint32_t HIGHEST_Z_ORDER = 999;
 
@@ -2970,17 +2969,14 @@ void RSUniRenderVisitor::MarkBlurIntersectWithDRM(std::shared_ptr<RSRenderNode> 
     if (!RSSystemProperties::GetDrmMarkedFilterEnabled()) {
         return;
     }
-    static std::vector<std::string> drmKeyWins = { "SCBVolumePanel", "SCBBannerNotification" };
     auto appWindowNodeId = node->GetInstanceRootNodeId();
     const auto& nodeMap = RSMainThread::Instance()->GetContext().GetNodeMap();
     auto appWindowNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(nodeMap.GetRenderNode(appWindowNodeId));
     if (appWindowNode == nullptr) {
         return;
     }
-    for (const auto& win : drmKeyWins) {
-        if (appWindowNode->GetName().find(win) == std::string::npos) {
-            continue;
-        }
+    if (appWindowNode->GetSurfaceWindowType() == SurfaceWindowType::SCB_VOLUME_PANEL ||
+        appWindowNode->GetSurfaceWindowType() == SurfaceWindowType::SCB_BANNER_NOTIFICATION) {
         for (auto& drmNode : drmNodes_) {
             auto drmNodePtr = drmNode.lock();
             if (drmNodePtr == nullptr) {
@@ -3352,7 +3348,7 @@ void RSUniRenderVisitor::CheckMergeDebugRectforRefreshRate(std::vector<RSBaseRen
                 RS_LOGE("RSUniRenderVisitor::CheckMergeDebugRectforRefreshRate surfaceNode is nullptr");
                 continue;
             }
-            if (surfaceNode->GetName().find(RELIABLE_GESTURE_BACK_SURFACE_NAME) != std::string::npos) {
+            if (surfaceNode->GetSurfaceWindowType() == SurfaceWindowType::SCB_GESTURE_BACK) {
                 // refresh rate rect for mainwindow
                 auto& geoPtr = surfaceNode->GetRenderProperties().GetBoundsGeometry();
                 if (!geoPtr) {
