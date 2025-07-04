@@ -19,18 +19,6 @@
 #include "cj_ui_effect_log.h"
 #include "ffi_remote_data.h"
 #include "filter/include/filter.h"
-#include "filter/include/filter_blur_para.h"
-#include "filter/include/filter_color_gradient_para.h"
-#include "filter/include/filter_hdr_para.h"
-#include "filter/include/filter_pixel_stretch_para.h"
-#include "filter/include/filter_water_ripple_para.h"
-#include "filter/include/filter_fly_out_para.h"
-#include "filter/include/filter_displacement_distort_para.h"
-#include "filter/include/filter_distort_para.h"
-#include "filter/include/filter_radius_gradient_blur_para.h"
-#include "filter/include/filter_edge_light_para.h"
-#include "filter/include/filter_dispersion_para.h"
-#include "filter/include/filter_radius_gradient_blur_para.h"
 
 namespace OHOS {
 namespace Rosen {

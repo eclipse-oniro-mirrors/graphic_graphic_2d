@@ -21,10 +21,6 @@ using namespace UIEffect;
 CJVisualEffect::CJVisualEffect()
 {
     std::shared_ptr<VisualEffect> effectObj = std::make_shared<VisualEffect>();
-    if (effectObj == nullptr) {
-        UIEFFECT_LOG_E("CJVisualEffect CreateEffect effectObj is nullptr");
-        return;
-    }
     m_EffectObj = effectObj;
 }
 } // namespace Rosen

@@ -13,6 +13,12 @@
  * limitations under the License.
  */
 #include "cj_filter.h"
+#include "filter/include/filter_blur_para.h"
+#include "filter/include/filter_dispersion_para.h"
+#include "filter/include/filter_displacement_distort_para.h"
+#include "filter/include/filter_hdr_para.h"
+#include "filter/include/filter_pixel_stretch_para.h"
+#include "filter/include/filter_radius_gradient_blur_para.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -20,10 +26,6 @@ using namespace UIEffect;
 CJFilter::CJFilter()
 {
     std::shared_ptr<Filter> filterObj = std::make_shared<Filter>();
-    if (filterObj == nullptr) {
-        FILTER_LOG_E("CJFilter CreateFilter filterObj is nullptr");
-        return;
-    }
     m_FilterObj = filterObj;
 }
 
@@ -34,10 +36,6 @@ void CJFilter::SetBlur(float blur, int32_t* errCode)
         return;
     }
     std::shared_ptr<FilterBlurPara> para = std::make_shared<FilterBlurPara>();
-    if (para == nullptr) {
-        *errCode = CJ_ERR_NULL_PTR;
-        return;
-    }
     para->SetRadius(blur);
     m_FilterObj->AddPara(para);
 }
