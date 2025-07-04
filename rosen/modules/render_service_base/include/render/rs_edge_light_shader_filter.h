@@ -30,7 +30,7 @@ struct EdgeLightShaderFilterParams {
     float alpha{ 0.f };
     bool bloom{ true };
     Vector4f color;
-    bool useRawColor{ true };
+    bool useRawColor{ false };
     std::shared_ptr<RSShaderMask> mask{ nullptr };
 };
 
@@ -46,7 +46,7 @@ private:
     float alpha_{ 0.f };
     bool bloom_{ true };
     Vector4f color_;
-    bool useRawColor_ {true};
+    bool useRawColor_ { false };
     std::shared_ptr<RSShaderMask> mask_{ nullptr };
 };
 } // Rosen

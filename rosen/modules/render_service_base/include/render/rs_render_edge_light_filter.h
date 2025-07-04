@@ -54,7 +54,7 @@ private:
     float alpha_{ 0.f };
     bool bloom_{ true };
     Vector4f color_;
-    bool useRawColor_{true};
+    bool useRawColor_{ false };
     std::shared_ptr<RSShaderMask> mask_{ nullptr };
     static std::shared_ptr<RSRenderPropertyBase> CreateRenderProperty(RSUIFilterType type);
     void CalculateHash();

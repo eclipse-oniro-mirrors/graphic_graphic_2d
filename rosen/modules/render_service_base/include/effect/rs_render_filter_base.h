@@ -128,7 +128,7 @@ DECLARE_FILTER(EdgeLight, EDGE_LIGHT,
     ADD_PROPERTY_TAG(EdgeLight, Alpha),
     ADD_PROPERTY_TAG(EdgeLight, Mask),
     ADD_PROPERTY_TAG(EdgeLight, Bloom),
-    ADD_PROPERTY_TAG(EdgeLight, UseRawColor),
+    ADD_PROPERTY_TAG(EdgeLight, UseRawColor)
 );
 
 DECLARE_FILTER(Dispersion, DISPERSION,

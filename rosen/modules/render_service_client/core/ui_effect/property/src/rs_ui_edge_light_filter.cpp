@@ -119,7 +119,7 @@ void RSUIEdgeLightFilterPara::SetProperty(const std::shared_ptr<RSUIFilterParaBa
 
     auto useRawColor = edgeLightProperty->GetPropertyWithFilterType<RSProperty<bool>>(
         RSUIFilterType::EDGE_LIGHT_USE_RAW_COLOR);
-    if (useRawColor != nullptr) {
+    if (useRawColor == nullptr) {
         ROSEN_LOGW("RSUIEdgeLightFilterPara::useRawColor color is null NG!");
         return;
     }
@@ -150,11 +150,6 @@ void RSUIEdgeLightFilterPara::SetEdgeLight(const std::shared_ptr<EdgeLightPara>&
     SetBloom(edgeLight->GetBloom());
     SetColor(edgeLight->GetColor());
     SetUseRawColor(edgeLight->GetUseRawColor());
-
-    auto colorPara = edgeLight->GetColor();
-    if (colorPara.has_value()) {
-        SetColor(colorPara.value());
-    }
 
     auto maskPara = edgeLight->GetMask();
     if (maskPara == nullptr) {

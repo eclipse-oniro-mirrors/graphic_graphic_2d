@@ -49,7 +49,7 @@ public:
 
     void SetColor(const Vector4f& color);
 
-    void SetRawColor(bool useRawColor);
+    void SetUseRawColor(bool useRawColor);
 
     void SetMask(const std::shared_ptr<RSUIMaskPara>& mask);
 

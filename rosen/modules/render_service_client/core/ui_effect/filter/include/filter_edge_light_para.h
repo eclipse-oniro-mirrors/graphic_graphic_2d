@@ -83,7 +83,7 @@ private:
     Vector4f color_;
     float alpha_ = 0.f;
     bool bloom_ = true;
-    bool useRawColor_ = true;
+    bool useRawColor_ = false;
 };
 } // namespace Rosen
 } // namespace OHOS
