@@ -295,11 +295,11 @@ private:
     std::atomic<bool> isSplitScreenScene_ = false;
     std::atomic<bool> isCurrentFrameHasCardNodeReCreate_ = false;
     static constexpr int CLEAR_RES_THRESHOLD = 3; // 3 frames  to clear resource
-    static constexpr int THRESHOLD_PURGE_TIME_DIFF_BEHIND_WINDOW = 3;
+    static constexpr int BEHIND_WINDOW_TIME_THRESHOLD = 3;
     // Minimum frame drop time in behind window condition
-    static constexpr int BEHIND_WINDOW_MIN_TIME = 33;
+    static constexpr int BEHIND_WINDOW_RELEASE_TIME = 33;
     // the max Delivery time in behind window condition
-    static constexpr int PURGE_BEHIND_WINDOW_TIME = BEHIND_WINDOW_MIN_TIME - THRESHOLD_PURGE_TIME_DIFF_BEHIND_WINDOW;
+    static constexpr int PURGE_BEHIND_WINDOW_TIME = BEHIND_WINDOW_RELEASE_TIME - BEHIND_WINDOW_TIME_THRESHOLD;
     int32_t scbPid_ = 0;
     std::atomic<int> noUifirstNodeFrameCount_ = 0;
     NodeId entryViewNodeId_ = INVALID_NODEID; // desktop surfaceNode ID
