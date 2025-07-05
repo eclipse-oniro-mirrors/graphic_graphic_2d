@@ -15,8 +15,6 @@
 #ifndef CJ_FILTER_H
 #define CJ_FILTER_H
 
-#include "cj_common_ffi.h"
-#include "cj_ui_effect_log.h"
 #include "ffi_remote_data.h"
 #include "filter/include/filter.h"
 

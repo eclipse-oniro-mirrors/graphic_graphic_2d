@@ -15,11 +15,8 @@
 #ifndef CJ_VISUAL_EFFECT_H
 #define CJ_VISUAL_EFFECT_H
 
-#include "cj_common_ffi.h"
-#include "cj_ui_effect_log.h"
 #include "ffi_remote_data.h"
 #include "effect/include/visual_effect.h"
-#include "effect/include/visual_effect_para.h"
 
 namespace OHOS {
 namespace Rosen {
