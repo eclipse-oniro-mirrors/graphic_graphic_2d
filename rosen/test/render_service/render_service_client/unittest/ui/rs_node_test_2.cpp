@@ -501,17 +501,17 @@ HWTEST_F(RSNodeTest2, SetMagnifierParamsTest, TestSize.Level1)
 HWTEST_F(RSNodeTest2, AddModifier, TestSize.Level1)
 {
     auto node = RSCanvasNode::Create();
-    EXPECT_TRUE(node->modifierNG_.empty());
+    EXPECT_TRUE(node->modifiersNG_.empty());
     node->AddModifier(nullptr);
-    EXPECT_TRUE(node->modifierNG_.empty());
+    EXPECT_TRUE(node->modifiersNG_.empty());
     auto alphaModifier = std::make_shared<ModifierNG::RSAlphaModifier>();
     node->AddModifier(alphaModifier);
-    EXPECT_EQ(node->modifierNG_.size(), 1);
+    EXPECT_EQ(node->modifiersNG_.size(), 1);
     node->AddModifier(alphaModifier);
-    EXPECT_EQ(node->modifierNG_.size(), 1);
+    EXPECT_EQ(node->modifiersNG_.size(), 1);
     auto nodeModifier = std::make_shared<ModifierNG::RSNodeModifier>();
     node->AddModifier(nodeModifier);
-    EXPECT_EQ(node->modifierNG_.size(), 1);
+    EXPECT_EQ(node->modifiersNG_.size(), 1);
 }
 
 /**
@@ -523,21 +523,21 @@ HWTEST_F(RSNodeTest2, RemoveModifier, TestSize.Level1)
 {
     auto rsNode = RSCanvasNode::Create();
     std::shared_ptr<ModifierNG::RSModifier> modifierNull = nullptr;
-    EXPECT_TRUE(rsNode->modifierNG_.empty());
+    EXPECT_TRUE(rsNode->modifiersNG_.empty());
     rsNode->RemoveModifier(modifierNull);
-    EXPECT_TRUE(rsNode->modifierNG_.empty());
+    EXPECT_TRUE(rsNode->modifiersNG_.empty());
 
     auto para = std::make_shared<RSMagnifierParams>();
     rsNode->SetMagnifierParams(para);
-    EXPECT_FALSE(rsNode->modifierNG_.empty());
+    EXPECT_FALSE(rsNode->modifiersNG_.empty());
     auto modifier = rsNode->GetModifierByType(ModifierNG::RSBackgroundFilterModifier::Type);
     rsNode->RemoveModifier(modifier);
-    EXPECT_TRUE(rsNode->modifierNG_.empty());
+    EXPECT_TRUE(rsNode->modifiersNG_.empty());
 
     auto alphaModifier = std::make_shared<ModifierNG::RSAlphaModifier>();
-    EXPECT_TRUE(rsNode->modifierNG_.empty());
+    EXPECT_TRUE(rsNode->modifiersNG_.empty());
     rsNode->RemoveModifier(alphaModifier);
-    EXPECT_TRUE(rsNode->modifierNG_.empty());
+    EXPECT_TRUE(rsNode->modifiersNG_.empty());
 }
 
 /**
