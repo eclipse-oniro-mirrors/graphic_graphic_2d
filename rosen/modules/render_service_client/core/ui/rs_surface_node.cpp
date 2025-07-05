@@ -1027,7 +1027,7 @@ bool RSSurfaceNode::SetCompositeLayer(TopLayerZOrder zOrder)
             compositeLayerUtils_ = nullptr;
             return ret;
         }
-        return false; 
+        return false;
     }
     return compositeLayerUtils_->CreateCompositeLayer();
 }
