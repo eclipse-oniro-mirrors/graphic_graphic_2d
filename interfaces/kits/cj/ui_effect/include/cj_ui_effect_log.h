@@ -19,6 +19,7 @@
 
 namespace OHOS {
 namespace Rosen {
+const int32_t CJ_OK = 0;
 const int32_t CJ_ERR_ILLEGAL_INSTANCE = -1;
 const int32_t CJ_ERR_NULL_PTR = -2;
 

@@ -36,6 +36,7 @@ int32_t CJFilter::SetBlur(float blur)
     std::shared_ptr<FilterBlurPara> para = std::make_shared<FilterBlurPara>();
     para->SetRadius(blur);
     m_FilterObj->AddPara(para);
+    return CJ_OK;
 }
 } // namespace Rosen
 } // namespace OHOS
