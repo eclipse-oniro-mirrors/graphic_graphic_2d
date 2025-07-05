@@ -5068,10 +5068,12 @@ void RSNode::AddModifier(const std::shared_ptr<ModifierNG::RSModifier> modifier)
         RS_LOGE("RSNode::AddModifier: null modifier, nodeId=%{public}" PRIu64, GetId());
         return;
     }
-    if (modifiersNG_.count(modifier->GetId())) {
-        return;
+    {
+        std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
+        if (modifiersNG_.count(modifier->GetId())) {
+            return;
+        }
     }
-    modifiersNG_.emplace(modifier->GetId(), modifier);
     modifier->OnAttach(*this); // Attach properties of modifier here
     if (modifier->GetType() == ModifierNG::RSModifierType::NODE_MODIFIER) {
         return;
@@ -5087,6 +5089,10 @@ void RSNode::AddModifier(const std::shared_ptr<ModifierNG::RSModifier> modifier)
         }
     }
     NotifyPageNodeChanged();
+    {
+        std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
+        modifiersNG_.emplace(modifier->GetId(), modifier);
+    }
     std::unique_ptr<RSCommand> command = std::make_unique<RSAddModifierNG>(GetId(), modifier->CreateRenderModifier());
     AddCommand(command, IsRenderServiceNode(), GetFollowType(), GetId());
     if (NeedForcedSendToRemote()) {
@@ -5098,12 +5104,15 @@ void RSNode::AddModifier(const std::shared_ptr<ModifierNG::RSModifier> modifier)
 
 void RSNode::RemoveModifier(const std::shared_ptr<ModifierNG::RSModifier> modifier)
 {
-    if (modifier == nullptr || !modifiersNG_.count(modifier->GetId())) {
-        RS_LOGE("RSNode::RemoveModifier: null modifier or modifier not exist.");
-        return;
+    {
+        std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
+        if (modifier == nullptr || !modifiersNG_.count(modifier->GetId())) {
+            RS_LOGE("RSNode::RemoveModifier: null modifier or modifier not exist.");
+            return;
+        }
+        modifiersNG_.erase(modifier->GetId());
     }
     modifier->OnDetach(); // Detach properties of modifier here
-    modifiersNG_.erase(modifier->GetId());
     DetachUIFilterProperties(modifier);
     std::unique_ptr<RSCommand> command =
         std::make_unique<RSRemoveModifierNG>(GetId(), modifier->GetType(), modifier->GetId());
