@@ -16,6 +16,7 @@
 #ifndef RS_UIFIRST_MANAGER_H
 #define RS_UIFIRST_MANAGER_H
 
+#include <chrono>
 #include <condition_variable>
 #include <map>
 #include <set>
@@ -53,6 +54,8 @@ public:
     void AddPendingPostNode(NodeId id, std::shared_ptr<RSSurfaceRenderNode>& node,
         MultiThreadCacheType cacheType);
     void AddPendingResetNode(NodeId id, std::shared_ptr<RSSurfaceRenderNode>& node);
+    void AddPendingNodeBehindWindow(NodeId id, std::shared_ptr<RSSurfaceRenderNode>& node,
+        MultiThreadCacheType currentFrameCacheType);
 
     bool NeedNextDrawForSkippedNode();
 
@@ -197,6 +200,10 @@ public:
     // get cache state of uifirst root node
     CacheProcessStatus GetCacheSurfaceProcessedStatus(const RSSurfaceRenderParams& surfaceParams);
 private:
+    struct NodeDataBehindWindow {
+        uint64_t curTime = 0;
+        bool isFirst = true;
+    };
     RSUifirstManager() = default;
     ~RSUifirstManager() = default;
     RSUifirstManager(const RSUifirstManager&);
@@ -225,8 +232,17 @@ private:
     void ResetWindowCache(std::shared_ptr<RSSurfaceRenderNode>& nodePtr);
     bool CheckVisibleDirtyRegionIsEmpty(const std::shared_ptr<RSSurfaceRenderNode>& node);
     bool CurSurfaceHasVisibleDirtyRegion(const std::shared_ptr<RSSurfaceRenderNode>& node);
+    bool IsBehindWindowOcclusion(const std::shared_ptr<RSSurfaceRenderNode>& node);
+    bool NeedPurgeByBehindWindow(NodeId id, bool hasTexture,
+    const std::shared_ptr<RSSurfaceRenderNode>& node);
+    // filter out the nodes by behind window
+    void HandlePurgeBehindWindow(std::unordered_map<NodeId, std::shared_ptr<RSSurfaceRenderNode>>::iterator& it,
+        std::unordered_map<NodeId, std::shared_ptr<RSSurfaceRenderNode>>& pendingNode);
     // filter out the nodes which need to draw in subthread
     void DoPurgePendingPostNodes(std::unordered_map<NodeId, std::shared_ptr<RSSurfaceRenderNode>>& pendingNode);
+    // use in behindwindow condition to calculate the node purge time interval
+    uint64_t GetTimeDiffBehindWindow(uint64_t currentTime, NodeId id);
+    uint64_t GetMainThreadVsyncTime();
     void PurgePendingPostNodes();
     void SetNodePriorty(std::list<NodeId>& result,
         std::unordered_map<NodeId, std::shared_ptr<RSSurfaceRenderNode>>& pendingNode);
@@ -287,6 +303,11 @@ private:
     std::atomic<bool> isSplitScreenScene_ = false;
     std::atomic<bool> isCurrentFrameHasCardNodeReCreate_ = false;
     static constexpr int CLEAR_RES_THRESHOLD = 3; // 3 frames  to clear resource
+    static constexpr int BEHIND_WINDOW_TIME_THRESHOLD = 3;
+    // Minimum frame drop time in behind window condition
+    static constexpr int BEHIND_WINDOW_RELEASE_TIME = 33;
+    // the max Delivery time in behind window condition
+    static constexpr int PURGE_BEHIND_WINDOW_TIME = BEHIND_WINDOW_RELEASE_TIME - BEHIND_WINDOW_TIME_THRESHOLD;
     int32_t scbPid_ = 0;
     std::atomic<int> noUifirstNodeFrameCount_ = 0;
     NodeId entryViewNodeId_ = INVALID_NODEID; // desktop surfaceNode ID
@@ -320,6 +341,8 @@ private:
     std::unordered_map<NodeId, std::shared_ptr<RSSurfaceRenderNode>> pendingPostNodes_;
     std::unordered_map<NodeId, std::shared_ptr<RSSurfaceRenderNode>> pendingPostCardNodes_;
     std::unordered_map<NodeId, std::shared_ptr<RSSurfaceRenderNode>> pendingResetNodes_;
+    // record the release time of each pendingnode to control the release frequency
+    std::unordered_map<NodeId, NodeDataBehindWindow> pendingNodeBehindWindow_;
     std::list<NodeId> sortedSubThreadNodeIds_;
     std::vector<std::shared_ptr<RSSurfaceRenderNode>> pendingResetWindowCachedNodes_;
 
