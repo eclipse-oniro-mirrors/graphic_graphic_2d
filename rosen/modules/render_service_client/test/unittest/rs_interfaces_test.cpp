@@ -2587,5 +2587,19 @@ HWTEST_F(RSInterfacesTest, SetColorFollow002, Function | SmallTest | Level2)
     std::string nodeIdStr = "1";
     rsInterfaces->SetColorFollow(nodeIdStr, true);
 }
+
+/*
+ * @tc.name: SetLayerTopForHWCTest
+ * @tc.desc: Test SetLayerTopForHWC
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSInterfacesTest, SetLayerTopForHWCTest, Function | SmallTest | Level2)
+{
+    ASSERT_NE(rsInterfaces, nullptr);
+    RSSurfaceNodeConfig c;
+    auto node = RSSurfaceNode::Create(c);
+    std::string nodeIdStr = std::to_string(node->GetId());
+    rsInterfaces->SetLayerTopForHWC(nodeIdStr, true, static_cast<uint32_t>(TopLayerZOrder::CHARGE_ACTION_TEXT));
+}
 } // namespace Rosen
 } // namespace OHOS

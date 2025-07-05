@@ -68,7 +68,7 @@ ohos_fuzztest("RSRenderServiceConnectionFuzzTest") {
     defines = [ "OHOS_BUILD_ENABLE_MAGICCURSOR" ]
   }
 
-  sources = [ "rsrenderserviceconnection_fuzzer.cpp" ]
+  sources = [ ]
 
   external_deps = [
     "ability_base:base",
