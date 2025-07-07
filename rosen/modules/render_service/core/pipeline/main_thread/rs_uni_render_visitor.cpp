@@ -844,6 +844,7 @@ void RSUniRenderVisitor::QuickPrepareScreenRenderNode(RSScreenRenderNode& node)
         needRequestNextVsync_ = false;
     }
 
+    rsScreenNodeChildNum_ = 0;
     QuickPrepareChildren(node);
     TryNotifyUIBufferAvailable();
 
@@ -872,6 +873,7 @@ void RSUniRenderVisitor::QuickPrepareScreenRenderNode(RSScreenRenderNode& node)
     curScreenNode_->ResetMirroredScreenChangedFlag();
     PrepareForMultiScreenViewDisplayNode(node);
     node.ResetDirtyFlag();
+    RS_TRACE_NAME_FMT("RSUniRenderVisitor::QuickPrepareScreenRenderNode childNumber: %d", rsScreenNodeChildNum_);
 }
 
 bool RSUniRenderVisitor::InitLogicalDisplayInfo(RSLogicalDisplayRenderNode& node)
@@ -1735,6 +1737,7 @@ void RSUniRenderVisitor::QuickPrepareChildren(RSRenderNode& node)
             if (!child) {
                 return;
             }
+            rsScreenNodeChildNum_++;
             auto containerDirty = curContainerDirty_;
             curDirty_ = child->IsDirty();
             curContainerDirty_ = curContainerDirty_ || child->IsDirty();
@@ -1751,6 +1754,7 @@ void RSUniRenderVisitor::QuickPrepareChildren(RSRenderNode& node)
             if (!child) {
                 return;
             }
+            rsScreenNodeChildNum_++;
             curDirty_ = child->IsDirty();
             child->SetFirstLevelCrossNode(node.IsFirstLevelCrossNode() || child->IsCrossNode());
             child->GetHwcRecorder().SetZOrderForHwcEnableByFilter(hwcVisitor_->curZOrderForHwcEnableByFilter_++);
