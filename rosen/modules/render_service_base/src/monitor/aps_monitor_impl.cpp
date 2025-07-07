@@ -19,7 +19,6 @@
 #include <dlfcn.h>
 #endif
 #include "monitor/aps_monitor_impl.h"
-#include "platform/common/rs_log.h"
 
 namespace OHOS {
 namespace Rosen {
