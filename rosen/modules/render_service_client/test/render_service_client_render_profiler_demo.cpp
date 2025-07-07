@@ -36,9 +36,7 @@
 #include "ui/rs_ui_context.h"
 #include "ui/rs_ui_director.h"
 #include "rs_graphic_test_utils.h"
-#ifdef RS_PROFILER_ENABLED
 #include "rs_profiler_packet.h"
-#endif
 
 using namespace OHOS;
 using namespace OHOS::Rosen;
@@ -51,7 +49,6 @@ constexpr int SOCKET_CONNECT_MAX_NUM = 10000;
 
 class RenderServiceClientRenderProfilerDemo {
 public:
-#ifdef RS_PROFILER_ENABLED
     ~RenderServiceClientRenderProfilerDemo()
     {
         Stop();
@@ -236,11 +233,6 @@ private:
     bool runnig_ = false;
     std::mutex queue_mutex_;
     std::condition_variable cv_;
-#else
-    void Start() {}
-    void Stop() {}
-    void SendCommand(const std::string command) {}
-#endif
 };
 
 void RecordStart(std::shared_ptr<RenderServiceClientRenderProfilerDemo> profilerThread)
