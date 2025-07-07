@@ -1687,9 +1687,16 @@ void RSProfiler::RecordStart(const ArgList& args)
     ImageCache::Reset();
     g_lastCacheImageCount = 0;
 
+    std::string defaultPath = RSFile::GetDefaultPath();
+    std::string saveOption = args.String(0);
+    if (saveOption == "-f" && !args.String(1).empty()) {
+        defaultPath = args.String(1);
+        HRPI("Record: defaultPath = %{public}s", defaultPath.c_str());
+    }
+
     if (!OpenBetaRecordFile(g_recordFile)) {
         g_recordFile.SetVersion(RSFILE_VERSION_LATEST);
-        g_recordFile.Create(RSFile::GetDefaultPath());
+        g_recordFile.Create(defaultPath);
     }
 
     g_recordMinVsync = 0;
