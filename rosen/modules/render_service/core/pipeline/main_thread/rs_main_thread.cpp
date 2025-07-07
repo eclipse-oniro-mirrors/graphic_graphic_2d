@@ -162,6 +162,7 @@
 #include "rs_frame_blur_predict.h"
 #include "rs_frame_deadline_predict.h"
 #include "feature_cfg/feature_param/extend_feature/mem_param.h"
+#include "feature/hetero_hdr/rs_hdr_manager.h"
 
 #include "feature_cfg/graphic_feature_param_manager.h"
 #include "feature_cfg/feature_param/feature_param.h"
@@ -181,7 +182,7 @@ namespace Rosen {
 namespace {
 constexpr uint32_t VSYNC_LOG_ENABLED_TIMES_THRESHOLD = 500;
 constexpr uint32_t VSYNC_LOG_ENABLED_STEP_TIMES = 100;
-constexpr uint32_t REQUEST_VSYNC_NUMBER_LIMIT = 10;
+constexpr uint32_t REQUEST_VSYNC_NUMBER_LIMIT = 20;
 constexpr uint64_t REFRESH_PERIOD = 16666667;
 constexpr int32_t PERF_MULTI_WINDOW_REQUESTED_CODE = 10026;
 constexpr int32_t VISIBLEAREARATIO_FORQOS = 3;
@@ -225,7 +226,7 @@ constexpr const char* HIDE_NOTCH_STATUS = "persist.sys.graphic.hideNotch.status"
 constexpr const char* DRAWING_CACHE_DFX = "rosen.drawingCache.enabledDfx";
 constexpr const char* DEFAULT_SURFACE_NODE_NAME = "DefaultSurfaceNodeName";
 constexpr const char* ENABLE_DEBUG_FMT_TRACE = "sys.graphic.openTestModeTrace";
-constexpr int64_t ONE_SECOND_TIMESTAMP = 1e9;
+constexpr uint64_t ONE_SECOND_TIMESTAMP = 1e9;
 constexpr int SKIP_FIRST_FRAME_DRAWING_NUM = 1;
 
 #ifdef RS_ENABLE_GL
@@ -622,7 +623,7 @@ void RSMainThread::Init()
         renderEngine_ = std::make_shared<RSRenderEngine>();
         renderEngine_->Init();
     }
-    RSOpincManager::Instance().ReadOPIncCcmParam();
+    RSOpincManager::Instance().SetOPIncSwitch(OPIncParam::IsOPIncEnable());
     RSUifirstManager::Instance().ReadUIFirstCcmParam();
     auto PostTaskProxy = [](RSTaskMessage::RSTask task, const std::string& name, int64_t delayTime,
         AppExecFwk::EventQueue::Priority priority) {
@@ -743,27 +744,31 @@ void RSMainThread::GetFrontBufferDesiredPresentTimeStamp(
     const sptr<IConsumerSurface>& consumer, int64_t& desiredPresentTimeStamp)
 {
     if (consumer == nullptr) {
+        desiredPresentTimeStamp = 0;
         return;
     }
     bool isAutoTimeStamp = false;
     int64_t fronDesiredPresentTimeStamp = 0;
     if (consumer->GetFrontDesiredPresentTimeStamp(fronDesiredPresentTimeStamp, isAutoTimeStamp) !=
-            GSError::GSERROR_OK || fronDesiredPresentTimeStamp == 0) {
+        GSError::GSERROR_OK || fronDesiredPresentTimeStamp <= 0 || isAutoTimeStamp) {
         desiredPresentTimeStamp = 0;
         return;
     }
-    if (isAutoTimeStamp || fronDesiredPresentTimeStamp <= static_cast<int64_t>(timestamp_) ||
-        fronDesiredPresentTimeStamp - ONE_SECOND_TIMESTAMP > static_cast<int64_t>(timestamp_)) {
+
+    const uint64_t tmp = static_cast<uint64_t>(fronDesiredPresentTimeStamp);
+    if (tmp <= vsyncRsTimestamp_.load() ||
+        (tmp > ONE_SECOND_TIMESTAMP && tmp - ONE_SECOND_TIMESTAMP > vsyncRsTimestamp_.load())) {
         desiredPresentTimeStamp = 0;
         return;
     }
+    // vsyncRsTimestamp_ < fronDesiredPresentTimeStamp <= vsyncRsTimestamp_ + 1s
     desiredPresentTimeStamp = fronDesiredPresentTimeStamp;
 }
 
 void RSMainThread::NotifyUnmarshalTask(int64_t uiTimestamp)
 {
     if (isUniRender_ && rsVSyncDistributor_->IsUiDvsyncOn() && static_cast<uint64_t>(uiTimestamp) +
-        static_cast<uint64_t>(rsVSyncDistributor_->GetUiCommandDelayTime()) >= dvsyncRsTimestamp_.load()
+        static_cast<uint64_t>(rsVSyncDistributor_->GetUiCommandDelayTime()) >= vsyncRsTimestamp_.load()
         && waitForDVSyncFrame_.load()) {
         auto cachedTransactionData = RSUnmarshalThread::Instance().GetCachedTransactionData();
         MergeToEffectiveTransactionDataMap(cachedTransactionData);
@@ -1684,10 +1689,12 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
             if (isColorTemperatureOn_ && surfaceNode->GetVideoHdrStatus() == HdrStatus::NO_HDR) {
                 surfaceNode->SetSdrHasMetadata(RSHdrUtil::CheckIsSurfaceWithMetadata(*surfaceNode));
             }
+            RSHdrManager::Instance().UpdateHdrNodes(*surfaceNode, surfaceHandler->IsCurrentFrameBufferConsumed());
         };
     }
     RSJankStats::GetInstance().AvcodecVideoCollectBegin();
     nodeMap.TraverseSurfaceNodes(consumeAndUpdateNode_);
+
     RSJankStats::GetInstance().AvcodecVideoCollectFinish();
     prevHdrSwitchStatus_ = RSLuminanceControl::Get().IsHdrPictureOn();
     if (requestNextVsyncTime_ != -1) {
@@ -2517,6 +2524,12 @@ bool RSMainThread::DoDirectComposition(std::shared_ptr<RSBaseRenderNode> rootNod
                 params->SetOffsetY(0);
                 params->SetRogWidthRatio(1.0f);
             }
+            if (surfaceNode->GetDeviceOfflineEnable() && processor->ProcessOfflineLayer(surfaceNode)) {
+                // use offline buffer instead of original buffer,
+                // if succeed, params->SetBufferSynced will not be set true,
+                // origianl buffer will be released at next acquirement
+                continue;
+            }
             processor->CreateLayer(*surfaceNode, *params);
             // buffer is synced to directComposition
             params->SetBufferSynced(true);
@@ -3297,7 +3310,7 @@ void RSMainThread::OnVsync(uint64_t timestamp, uint64_t frameCount, void* data)
     const float onVsyncStartTimeSteadyFloat = GetCurrentSteadyTimeMsFloat();
     RSJankStatsOnVsyncStart(onVsyncStartTime, onVsyncStartTimeSteady, onVsyncStartTimeSteadyFloat);
     timestamp_ = timestamp;
-    dvsyncRsTimestamp_.store(timestamp_);
+    vsyncRsTimestamp_.store(timestamp_);
     drawingRequestNextVsyncNum_.store(requestNextVsyncNum_);
     curTime_ = static_cast<uint64_t>(
         std::chrono::duration_cast<std::chrono::nanoseconds>(
@@ -4441,7 +4454,7 @@ void RSMainThread::ForceRefreshForUni(bool needDelay)
                 std::chrono::steady_clock::now().time_since_epoch()).count();
             RS_PROFILER_PATCH_TIME(now);
             timestamp_ = timestamp_ + (now - curTime_);
-            dvsyncRsTimestamp_.store(timestamp_);
+            vsyncRsTimestamp_.store(timestamp_);
             int64_t vsyncPeriod = 0;
             VsyncError ret = VSYNC_ERROR_UNKOWN;
             if (receiver_) {
@@ -5178,8 +5191,11 @@ void RSMainThread::RequestNextVSyncInner(VSyncReceiver::FrameCallback callback, 
     if (Rosen::RSSystemProperties::GetTimeVsyncDisabled()) {
         receiver_->RequestNextVSync(callback, fromWhom, lastVSyncTS);
     } else {
-        receiver_->RequestNextVSync(callback, fromWhom, lastVSyncTS,
-            requestVsyncTime < static_cast<int64_t>(timestamp_) ? 0 : requestVsyncTime);
+        int64_t requestVsyncTimeTmp = 0;
+        if (requestVsyncTime > 0 && static_cast<uint64_t>(requestVsyncTime) > vsyncRsTimestamp_.load()) {
+            requestVsyncTimeTmp = requestVsyncTime;
+        }
+        receiver_->RequestNextVSync(callback, fromWhom, lastVSyncTS, requestVsyncTimeTmp);
     }
 }
 

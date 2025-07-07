@@ -2328,8 +2328,13 @@ HWTEST_F(RSRenderNodeTest, UpdateDrawableVecV2Test019, TestSize.Level1)
 
     nodeTest->UpdateDrawableVecV2();
 
+#if defined(MODIFIER_NG)
+    nodeTest->dirtyTypesNG_.set(static_cast<size_t>(ModifierNG::RSModifierType::BOUNDS), true);
+    nodeTest->dirtyTypesNG_.set(static_cast<size_t>(ModifierNG::RSModifierType::TRANSFORM), true);
+#else
     nodeTest->dirtyTypes_.set(static_cast<size_t>(RSModifierType::BOUNDS), true);
     nodeTest->dirtyTypes_.set(static_cast<size_t>(RSModifierType::ROTATION_X), true);
+#endif
     std::shared_ptr<DrawableTest> drawableTest1 = std::make_shared<DrawableTest>();
     nodeTest->drawableVec_.at(1) = drawableTest1;
     EXPECT_TRUE(nodeTest->dirtySlots_.empty());
@@ -2339,7 +2344,11 @@ HWTEST_F(RSRenderNodeTest, UpdateDrawableVecV2Test019, TestSize.Level1)
     auto sum = nodeTest->dirtySlots_.size();
     EXPECT_NE(nodeTest->dirtySlots_.size(), 0);
 
+#if defined(MODIFIER_NG)
+    nodeTest->dirtyTypesNG_.set(static_cast<size_t>(ModifierNG::RSModifierType::TRANSFORM), true);
+#else
     nodeTest->dirtyTypes_.set(static_cast<size_t>(RSModifierType::PIVOT), true);
+#endif
     std::shared_ptr<DrawableTest> drawableTest2 = std::make_shared<DrawableTest>();
     nodeTest->drawableVec_.at(4) = drawableTest2;
     RSShadow rsShadow;
@@ -3282,6 +3291,40 @@ HWTEST_F(RSRenderNodeTest, UpdateVirtualScreenWhiteListInfo, TestSize.Level1)
     ScreenId screenId = 1;
     node->hasVirtualScreenWhiteList_[screenId] = false;
     node->UpdateVirtualScreenWhiteListInfo();
+}
+
+/*
+ * @tc.name: CalcCmdlistDrawRegionFromOpItem
+ * @tc.desc: Test function CalcCmdlistDrawRegionFromOpItem
+ * @tc.type: FUNC
+ * @tc.require: issueICI6YB
+ */
+HWTEST_F(RSRenderNodeTest, CalcCmdlistDrawRegionFromOpItem, TestSize.Level1)
+{
+    auto node = std::make_shared<RSRenderNode>(1);
+    ASSERT_NE(node, nullptr);
+    ASSERT_EQ(node->cmdlistDrawRegion_.IsEmpty(), true);
+    node->SetNeedUseCmdlistDrawRegion(true);
+    ASSERT_EQ(node->cmdlistDrawRegion_.IsEmpty(), true);
+}
+
+/*
+ * @tc.name: GetNeedUseCmdlistDrawRegion
+ * @tc.desc: Test function GetNeedUseCmdlistDrawRegion
+ * @tc.type: FUNC
+ * @tc.require: issueICI6YB
+ */
+HWTEST_F(RSRenderNodeTest, GetNeedUseCmdlistDrawRegion, TestSize.Level1)
+{
+    auto node = std::make_shared<RSRenderNode>(1);
+    ASSERT_NE(node, nullptr);
+    RectF rect { 1.0f, 1.0f, 1.0f, 1.0f };
+    node->cmdlistDrawRegion_ = rect;
+    ASSERT_EQ(node->cmdlistDrawRegion_.IsEmpty(), false);
+    node->SetNeedUseCmdlistDrawRegion(false);
+    ASSERT_EQ(node->GetNeedUseCmdlistDrawRegion(), false);
+    node->SetNeedUseCmdlistDrawRegion(true);
+    ASSERT_EQ(node->GetNeedUseCmdlistDrawRegion(), true);
 }
 } // namespace Rosen
 } // namespace OHOS

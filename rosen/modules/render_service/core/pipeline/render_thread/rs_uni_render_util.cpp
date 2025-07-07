@@ -59,6 +59,7 @@
 #include "include/gpu/GrBackendSurface.h"
 #endif
 #include "platform/ohos/backend/native_buffer_utils.h"
+#include "platform/ohos/backend/rs_hdr_vulkan_task.h"
 #include "platform/ohos/backend/rs_surface_ohos_vulkan.h"
 #include "platform/ohos/backend/rs_vulkan_context.h"
 #endif
@@ -66,6 +67,7 @@
 #ifdef SOC_PERF_ENABLE
 #include "socperf_client.h"
 #endif
+#include "hetero_hdr/rs_hdr_pattern_manager.h"
 #include "render_frame_trace.h"
 
 namespace OHOS {
@@ -224,7 +226,7 @@ void RSUniRenderUtil::MergeDirtyHistoryForDrawable(DrawableV2::RSScreenRenderNod
             continue;
         }
         auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceNodeDrawable->GetRenderParams().get());
-        if (surfaceParams == nullptr || !surfaceParams->IsAppWindow()) {
+        if (surfaceParams == nullptr || !surfaceParams->IsLeashOrMainWindow()) {
             continue;
         }
         // for cross-display surface, only merge dirty history once.
@@ -269,7 +271,7 @@ Occlusion::Region RSUniRenderUtil::MergeVisibleDirtyRegion(
                 "dirty manager is nullptr", surfaceNodeDrawable->GetId());
             continue;
         }
-        if (!surfaceParams->IsAppWindow() || surfaceParams->GetDstRect().IsEmpty()) {
+        if (!surfaceParams->IsLeashOrMainWindow() || surfaceParams->GetDstRect().IsEmpty()) {
             continue;
         }
         // for cross-display surface, only consider the dirty region on the first display (use global dirty for others).
@@ -321,7 +323,7 @@ Occlusion::Region RSUniRenderUtil::MergeVisibleAdvancedDirtyRegion(
                 "dirty manager is nullptr", surfaceNodeDrawable->GetId());
             continue;
         }
-        if (!surfaceParams->IsAppWindow()) {
+        if (!surfaceParams->IsLeashOrMainWindow()) {
             continue;
         }
         //for cross-display surface, only consider the dirty region on the first display (use global dirty for others).
@@ -1031,6 +1033,28 @@ void RSUniRenderUtil::DrawRectForDfx(RSPaintFilterCanvas& canvas, const RectI& r
     canvas.DetachBrush();
 }
 
+#ifdef RS_ENABLE_VK
+
+std::vector<GrBackendSemaphore> RSUniRenderUtil::PrepareHdrSemaphoreVector(GrBackendSemaphore& backendSemaphore,
+    std::shared_ptr<Drawing::Surface>& surface)
+{
+    VkSemaphore notifySemaphore;
+    std::vector<GrBackendSemaphore> semphoreVec = {backendSemaphore};
+    std::vector<uint64_t> frameIdVec = RSHDRPatternManager::Instance().MHCGetFrameIdForGpuTask();
+    
+    for (auto frameId : frameIdVec) {
+        if (RSHDRVulkanTask::GetHTSNotifySemaphore(notifySemaphore, frameId)) {
+            GrBackendSemaphore htsSemaphore;
+            htsSemaphore.initVulkan(notifySemaphore);
+            semphoreVec.emplace_back(std::move(htsSemaphore));
+        }
+        RSHDRVulkanTask::InsertHTSWaitSemaphore(surface, frameId);
+    }
+
+    return semphoreVec;
+}
+#endif
+
 void RSUniRenderUtil::OptimizedFlushAndSubmit(std::shared_ptr<Drawing::Surface>& surface,
     Drawing::GPUContext* const grContext, bool optFenceWait)
 {
@@ -1067,10 +1091,12 @@ void RSUniRenderUtil::OptimizedFlushAndSubmit(std::shared_ptr<Drawing::Surface>&
         DestroySemaphoreInfo* destroyInfo =
             new DestroySemaphoreInfo(vkContext.vkDestroySemaphore, vkContext.GetDevice(), semaphore);
 
+        auto semphoreVec = PrepareHdrSemaphoreVector(backendSemaphore, surface);
+
         Drawing::FlushInfo drawingFlushInfo;
         drawingFlushInfo.backendSurfaceAccess = true;
-        drawingFlushInfo.numSemaphores = 1;
-        drawingFlushInfo.backendSemaphore = static_cast<void*>(&backendSemaphore);
+        drawingFlushInfo.numSemaphores = semphoreVec.size();
+        drawingFlushInfo.backendSemaphore = static_cast<void*>(semphoreVec.data());
         drawingFlushInfo.finishedProc = [](void *context) {
             DestroySemaphoreInfo::DestroySemaphore(context);
         };
@@ -1078,6 +1104,11 @@ void RSUniRenderUtil::OptimizedFlushAndSubmit(std::shared_ptr<Drawing::Surface>&
         surface->Flush(&drawingFlushInfo);
         grContext->Submit();
         DestroySemaphoreInfo::DestroySemaphore(destroyInfo);
+        
+        std::vector<uint64_t> frameIdVec = RSHDRPatternManager::Instance().MHCGetFrameIdForGpuTask();
+        for (auto frameId : frameIdVec) {
+            RSHDRVulkanTask::SubmitWaitEventToGPU(frameId);
+        }
     } else {
         surface->FlushAndSubmit(true);
     }

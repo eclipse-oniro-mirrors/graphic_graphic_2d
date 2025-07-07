@@ -125,7 +125,9 @@ RSDisplayNode::SharedPtr RSDisplayNode::Unmarshalling(Parcel& parcel)
     RSDisplayNodeConfig config { .screenId = screenId, .isMirrored = isMirror };
 
     SharedPtr displayNode(new RSDisplayNode(config, id));
-    RSNodeMap::MutableInstance().RegisterNode(displayNode);
+    if (!displayNode->isMultiInstanceOpen_) {
+        RSNodeMap::MutableInstance().RegisterNode(displayNode);
+    }
 
     // for nodes constructed by unmarshalling, we should not destroy the corresponding render node on destruction
     displayNode->skipDestroyCommandInDestructor_ = true;

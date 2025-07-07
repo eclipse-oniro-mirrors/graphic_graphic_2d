@@ -618,6 +618,11 @@ bool RSSystemProperties::GetOptimizeHwcComposeAreaEnabled()
     return true;
 }
 
+bool RSSystemProperties::GetOptimizeCanvasDrawRegionEnabled()
+{
+    return false;
+}
+
 bool RSSystemProperties::GetSurfaceOffscreenEnadbled()
 {
     return true;
@@ -759,6 +764,11 @@ bool RSSystemProperties::GetTypicalResidentProcess()
 
 void RSSystemProperties::SetTypicalResidentProcess(bool isTypicalResidentProcess)
 {
+}
+
+bool RSSystemProperties::GetAIBarOptEnabled()
+{
+    return false;
 }
 } // namespace Rosen
 } // namespace OHOS

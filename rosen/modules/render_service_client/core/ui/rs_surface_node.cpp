@@ -494,7 +494,9 @@ std::shared_ptr<RSSurfaceNode> RSSurfaceNode::Unmarshalling(Parcel& parcel)
     }
 
     SharedPtr surfaceNode(new RSSurfaceNode(config, isRenderServiceNode, id));
-    RSNodeMap::MutableInstance().RegisterNode(surfaceNode); // Planning
+    if (!surfaceNode->isMultiInstanceOpen_) {
+        RSNodeMap::MutableInstance().RegisterNode(surfaceNode);
+    }
 
     // for nodes constructed by unmarshalling, we should not destroy the corresponding render node on destruction
     surfaceNode->skipDestroyCommandInDestructor_ = true;
@@ -989,13 +991,11 @@ void RSSurfaceNode::DetachFromWindowContainer(ScreenId screenId)
         GetId(), screenId);
 }
 
-void RSSurfaceNode::SetRegionToBeMagnified(const Vector4f& regionToBeMagnified)
+void RSSurfaceNode::SetRegionToBeMagnified(const Vector4<int>& regionToBeMagnified)
 {
     std::unique_ptr<RSCommand> command =
         std::make_unique<RSSurfaceNodeSetRegionToBeMagnified>(GetId(), regionToBeMagnified);
     AddCommand(command, true);
-    RS_LOGI_LIMIT("RSSurfaceNode::SetRegionToBeMagnified, regionToBeMagnified left=%f, top=%f, width=%f, hight=%f",
-        regionToBeMagnified.x_, regionToBeMagnified.y_, regionToBeMagnified.z_, regionToBeMagnified.w_);
 }
 
 bool RSSurfaceNode::IsSelfDrawingNode() const
@@ -1014,15 +1014,21 @@ bool RSSurfaceNode::SetCompositeLayer(TopLayerZOrder zOrder)
     }
     RS_TRACE_NAME_FMT("RSSurfaceNode::SetCompositeLayer %llu zOrder: %u", GetId(), zOrder);
     uint32_t topLayerZOrder = static_cast<uint32_t>(zOrder);
-
-    compositeLayerUtils_ = std::make_shared<RSCompositeLayerUtils>(shared_from_this(), topLayerZOrder);
-    if (zOrder == TopLayerZOrder::CHARGE_3D_MOTION && GetChildren().size() == 1) {
-        bool ret = compositeLayerUtils_->DealWithSelfDrawCompositeNode(GetChildren()[0].lock(), topLayerZOrder);
-        compositeLayerUtils_ = nullptr;
-        return ret;
+    if (IsSelfDrawingNode()) {
+        RS_LOGI("RSSurfaceNode::SetCompositeLayer selfDrawingNode %{public}" PRIu64 " setLayerTop directly", GetId());
+        RSInterfaces::GetInstance().SetLayerTopForHWC(GetName(), true, topLayerZOrder);
+        return true;
     }
-
     name_ = "compositeLayer_" + std::to_string(GetId());
+    compositeLayerUtils_ = std::make_shared<RSCompositeLayerUtils>(shared_from_this(), topLayerZOrder);
+    if (zOrder == TopLayerZOrder::CHARGE_3D_MOTION) {
+        if (GetChildren().size() == 1) {
+            bool ret = compositeLayerUtils_->DealWithSelfDrawCompositeNode(GetChildren()[0].lock(), topLayerZOrder);
+            compositeLayerUtils_ = nullptr;
+            return ret;
+        }
+        return false;
+    }
     return compositeLayerUtils_->CreateCompositeLayer();
 }
 

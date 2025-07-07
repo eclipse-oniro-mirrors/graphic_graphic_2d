@@ -80,7 +80,23 @@ private:
     static inline BufferFlushConfig flushConfig = {
         .damage = { .w = 0x100, .h = 0x100, },
     };
+    static void SurfaceFlushBuffers(sptr<Surface> psurf1, const int32_t bufferNums,
+        const int64_t& desiredPresentTimestamp);
 };
+
+void RSMainThreadTest::SurfaceFlushBuffers(sptr<Surface> psurf1, const int32_t bufferNums,
+    const int64_t& desiredPresentTimestamp)
+{
+    for (int32_t i = 0; i <bufferNums; i++) {
+        BufferFlushConfig flushConfigTmp = { .damage = { .w = 0x100, .h = 0x100, },
+            .desiredPresentTimestamp = (bufferNums - i) * desiredPresentTimestamp - 200000,
+        };
+        sptr<SurfaceBuffer> buffer = nullptr;
+        sptr<SyncFence> requestFence = SyncFence::INVALID_FENCE;
+        ASSERT_EQ(psurf1->RequestBuffer(buffer, requestFence, requestConfig), GSERROR_OK);
+        ASSERT_EQ(psurf1->FlushBuffer(buffer, requestFence, flushConfigTmp), GSERROR_OK);
+    }
+}
 
 void RSMainThreadTest::SetUpTestCase()
 {
@@ -100,7 +116,7 @@ void RSMainThreadTest::SetUpTestCase()
     screenManager->SetDefaultScreenId(id);
 }
 
-void RSMainThreadTest::TearDownTestCase() 
+void RSMainThreadTest::TearDownTestCase()
 {
     auto screenManager = CreateOrGetScreenManager();
     ASSERT_NE(nullptr, screenManager);
@@ -473,7 +489,7 @@ HWTEST_F(RSMainThreadTest, SetFocusAppInfo, TestSize.Level1)
     std::string str = "";
     int32_t pid = INVALID_VALUE;
     int32_t uid = INVALID_VALUE;
-    
+
     FocusAppInfo info = {
         .pid = pid,
         .uid = uid,
@@ -1840,7 +1856,7 @@ HWTEST_F(RSMainThreadTest, IsFirstFrameOfOverdrawSwitch, TestSize.Level1)
 }
 
 /**
- * @tc.name: GetFrontBufferDesiredPresentTimeStamp
+ * @tc.name: GetFrontBufferDesiredPresentTimeStamp001
  * @tc.desc: test GetFrontBufferDesiredPresentTimeStamp
  * @tc.type: FUNC
  * @tc.require: issueIAKQC3
@@ -1858,7 +1874,7 @@ HWTEST_F(RSMainThreadTest, GetFrontBufferDesiredPresentTimeStamp001, TestSize.Le
 }
 
 /**
- * @tc.name: GetFrontBufferDesiredPresentTimeStamp
+ * @tc.name: GetFrontBufferDesiredPresentTimeStamp002
  * @tc.desc: test GetFrontBufferDesiredPresentTimeStamp
  * @tc.type: FUNC
  * @tc.require: issueIAKQC3
@@ -1877,6 +1893,148 @@ HWTEST_F(RSMainThreadTest, GetFrontBufferDesiredPresentTimeStamp002, TestSize.Le
     consumer->consumer_->bufferQueue_->bufferQueueCache_[seqId].isAutoTimestamp = true;
     mainThread->GetFrontBufferDesiredPresentTimeStamp(consumer, desiredPresentTimestamp);
     ASSERT_EQ(desiredPresentTimestamp, 0);
+}
+
+/**
+ * @tc.name: GetFrontBufferDesiredPresentTimeStamp003
+ * @tc.desc: test GetFrontBufferDesiredPresentTimeStamp
+ * @tc.type: FUNC
+ * @tc.require: issueIAKQC3
+ */
+HWTEST_F(RSMainThreadTest, GetFrontBufferDesiredPresentTimeStamp003, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    int64_t desiredPresentTimestamp = -1;
+    mainThread->GetFrontBufferDesiredPresentTimeStamp(nullptr, desiredPresentTimestamp);
+    EXPECT_EQ(desiredPresentTimestamp, 0);
+}
+
+/**
+ * @tc.name: GetFrontBufferDesiredPresentTimeStamp004
+ * @tc.desc: test GetFrontBufferDesiredPresentTimeStamp
+ * @tc.type: FUNC
+ * @tc.require: issueIAKQC3
+ */
+HWTEST_F(RSMainThreadTest, GetFrontBufferDesiredPresentTimeStamp004, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    const sptr<ConsumerSurface> consumer = new ConsumerSurface("test4");
+    consumer->Init();
+    int64_t desiredPresentTimestamp = 100000000;
+    int64_t getDesiredPresentTimestamp = -1;
+    uint32_t seqId = 1;
+    consumer->consumer_->bufferQueue_->dirtyList_.clear();
+    consumer->consumer_->bufferQueue_->dirtyList_.push_back(seqId);
+    consumer->consumer_->bufferQueue_->bufferQueueCache_[seqId].isAutoTimestamp = false;
+    consumer->consumer_->bufferQueue_->bufferQueueCache_[seqId].desiredPresentTimestamp = desiredPresentTimestamp;
+    mainThread->GetFrontBufferDesiredPresentTimeStamp(consumer, getDesiredPresentTimestamp);
+    EXPECT_EQ(getDesiredPresentTimestamp, desiredPresentTimestamp);
+}
+
+/**
+ * @tc.name: GetFrontBufferDesiredPresentTimeStamp005
+ * @tc.desc: test GetFrontBufferDesiredPresentTimeStamp
+ * @tc.type: FUNC
+ * @tc.require: issueIAKQC3
+ */
+HWTEST_F(RSMainThreadTest, GetFrontBufferDesiredPresentTimeStamp005, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    const sptr<ConsumerSurface> consumer = new ConsumerSurface("test5");
+    consumer->Init();
+    int64_t desiredPresentTimestamp = 100000000;
+    int64_t getDesiredPresentTimestamp = -1;
+    uint32_t seqId = 1;
+    consumer->consumer_->bufferQueue_->dirtyList_.clear();
+    consumer->consumer_->bufferQueue_->dirtyList_.push_back(seqId);
+    consumer->consumer_->bufferQueue_->bufferQueueCache_[seqId].isAutoTimestamp = false;
+    consumer->consumer_->bufferQueue_->bufferQueueCache_[seqId].desiredPresentTimestamp = desiredPresentTimestamp;
+
+    uint64_t vsyncRsTimestamp = mainThread->vsyncRsTimestamp_.load(); // record
+    mainThread->vsyncRsTimestamp_.store(desiredPresentTimestamp - 1);
+    mainThread->GetFrontBufferDesiredPresentTimeStamp(consumer, getDesiredPresentTimestamp);
+    EXPECT_EQ(getDesiredPresentTimestamp, desiredPresentTimestamp);
+
+    mainThread->vsyncRsTimestamp_.store(desiredPresentTimestamp);
+    mainThread->GetFrontBufferDesiredPresentTimeStamp(consumer, getDesiredPresentTimestamp);
+    EXPECT_EQ(getDesiredPresentTimestamp, 0);
+
+    mainThread->vsyncRsTimestamp_.store(desiredPresentTimestamp + 1);
+    mainThread->GetFrontBufferDesiredPresentTimeStamp(consumer, getDesiredPresentTimestamp);
+    EXPECT_EQ(getDesiredPresentTimestamp, 0);
+
+    mainThread->vsyncRsTimestamp_.store(desiredPresentTimestamp + 1000000000); // add 1s
+    mainThread->GetFrontBufferDesiredPresentTimeStamp(consumer, getDesiredPresentTimestamp);
+    EXPECT_EQ(getDesiredPresentTimestamp, 0);
+
+    mainThread->vsyncRsTimestamp_.store(desiredPresentTimestamp + 1000000001); // add 1+s
+    mainThread->GetFrontBufferDesiredPresentTimeStamp(consumer, getDesiredPresentTimestamp);
+    EXPECT_EQ(getDesiredPresentTimestamp, 0);
+
+    mainThread->vsyncRsTimestamp_.store(vsyncRsTimestamp); // reset
+}
+
+/**
+ * @tc.name: GetFrontBufferDesiredPresentTimeStamp006
+ * @tc.desc: test GetFrontBufferDesiredPresentTimeStamp
+ * @tc.type: FUNC
+ * @tc.require: issueIAKQC3
+ */
+HWTEST_F(RSMainThreadTest, GetFrontBufferDesiredPresentTimeStamp006, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    const sptr<ConsumerSurface> consumer = new ConsumerSurface("test6");
+    consumer->Init();
+    int64_t getDesiredPresentTimestamp = -1;
+    mainThread->GetFrontBufferDesiredPresentTimeStamp(consumer, getDesiredPresentTimestamp);
+    EXPECT_EQ(getDesiredPresentTimestamp, 0);
+
+    int64_t desiredPresentTimestamp = -1;
+    uint32_t seqId = 1;
+    consumer->consumer_->bufferQueue_->dirtyList_.clear();
+    consumer->consumer_->bufferQueue_->dirtyList_.push_back(seqId);
+    consumer->consumer_->bufferQueue_->bufferQueueCache_[seqId].isAutoTimestamp = false;
+    consumer->consumer_->bufferQueue_->bufferQueueCache_[seqId].desiredPresentTimestamp = desiredPresentTimestamp;
+    mainThread->GetFrontBufferDesiredPresentTimeStamp(consumer, getDesiredPresentTimestamp);
+    EXPECT_EQ(getDesiredPresentTimestamp, 0);
+}
+
+/**
+ * @tc.name: GetFrontBufferDesiredPresentTimeStamp007
+ * @tc.desc: test GetFrontBufferDesiredPresentTimeStamp
+ * @tc.type: FUNC
+ * @tc.require: issueIAKQC3
+ */
+HWTEST_F(RSMainThreadTest, GetFrontBufferDesiredPresentTimeStamp007, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    const sptr<ConsumerSurface> consumer = new ConsumerSurface("test7");
+    consumer->Init();
+    uint32_t seqId = 1;
+    int64_t desiredPresentTimestamp = 999999999; // 0.999ms
+    consumer->consumer_->bufferQueue_->dirtyList_.clear();
+    consumer->consumer_->bufferQueue_->dirtyList_.push_back(seqId);
+    consumer->consumer_->bufferQueue_->bufferQueueCache_[seqId].isAutoTimestamp = false;
+    consumer->consumer_->bufferQueue_->bufferQueueCache_[seqId].desiredPresentTimestamp = desiredPresentTimestamp;
+
+    int64_t getDesiredPresentTimestamp = -1;
+    uint64_t vsyncRsTimestamp = mainThread->vsyncRsTimestamp_.load(); // record
+
+    mainThread->vsyncRsTimestamp_.store(desiredPresentTimestamp / 2);
+    mainThread->GetFrontBufferDesiredPresentTimeStamp(consumer, getDesiredPresentTimestamp);
+    EXPECT_EQ(getDesiredPresentTimestamp, desiredPresentTimestamp);
+
+    desiredPresentTimestamp = 1100000000; // 1.1ms
+    consumer->consumer_->bufferQueue_->bufferQueueCache_[seqId].desiredPresentTimestamp = desiredPresentTimestamp;
+    mainThread->vsyncRsTimestamp_.store(0);
+    mainThread->GetFrontBufferDesiredPresentTimeStamp(consumer, getDesiredPresentTimestamp);
+    EXPECT_EQ(getDesiredPresentTimestamp, 0);
+    mainThread->vsyncRsTimestamp_.store(vsyncRsTimestamp); // reset
 }
 
 /**
@@ -2563,6 +2721,57 @@ HWTEST_F(RSMainThreadTest, ConsumeAndUpdateAllNodes004, TestSize.Level1)
     mainThread->ConsumeAndUpdateAllNodes();
     mainThread->isUniRender_ = isUniRender;
 #endif
+}
+
+/**
+ * @tc.name: ConsumeAndUpdateAllNodes005
+ * @tc.desc: ConsumeAndUpdateAllNodes005 Test
+ * @tc.type: FUNC
+ * @tc.require: issueIANQPF
+ */
+HWTEST_F(RSMainThreadTest, ConsumeAndUpdateAllNodes005, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    mainThread->isUniRender_ = true;
+    mainThread->timestamp_ = 1000;
+    // prepare nodemap
+    mainThread->context_->GetMutableNodeMap().renderNodeMap_.clear();
+    mainThread->context_->GetMutableNodeMap().surfaceNodeMap_.clear();
+
+    int64_t desiredPresentTimestamp = 1000000000;
+    uint64_t vsyncRsTimestamp = mainThread->vsyncRsTimestamp_.load(); // record
+    mainThread->vsyncRsTimestamp_.store(desiredPresentTimestamp);
+
+    auto rsSurfaceRenderNode1 = RSTestUtil::CreateSurfaceNode();
+    EXPECT_EQ(mainThread->context_->GetMutableNodeMap().RegisterRenderNode(rsSurfaceRenderNode1), true);
+    auto rsSurfaceRenderNode2 = RSTestUtil::CreateSurfaceNode();
+    EXPECT_EQ(mainThread->context_->GetMutableNodeMap().RegisterRenderNode(rsSurfaceRenderNode2), true);
+
+    auto surfaceConsumer1 = rsSurfaceRenderNode1->GetRSSurfaceHandler()->GetConsumer();
+    ASSERT_NE(surfaceConsumer1, nullptr);
+    sptr<IBufferConsumerListener> listener1 = new RSRenderServiceListener(rsSurfaceRenderNode1);
+    EXPECT_EQ(surfaceConsumer1->RegisterConsumerListener(listener1), SURFACE_ERROR_OK);
+    auto producer1 = surfaceConsumer1->GetProducer();
+    ASSERT_NE(producer1, nullptr);
+    sptr<Surface> psurf1 = Surface::CreateSurfaceAsProducer(producer1);
+    ASSERT_NE(psurf1, nullptr);
+    psurf1->SetQueueSize(5);
+    SurfaceFlushBuffers(psurf1, 5, desiredPresentTimestamp);
+
+    auto surfaceConsumer2 = rsSurfaceRenderNode2->GetRSSurfaceHandler()->GetConsumer();
+    ASSERT_NE(surfaceConsumer2, nullptr);
+    sptr<IBufferConsumerListener> listener2 = new RSRenderServiceListener(rsSurfaceRenderNode2);
+    EXPECT_EQ(surfaceConsumer2->RegisterConsumerListener(listener2), SURFACE_ERROR_OK);
+    auto producer2 = surfaceConsumer2->GetProducer();
+    ASSERT_NE(producer2, nullptr);
+    sptr<Surface> psurf2 = Surface::CreateSurfaceAsProducer(producer2);
+    ASSERT_NE(psurf2, nullptr);
+    psurf2->SetQueueSize(5);
+    SurfaceFlushBuffers(psurf2, 5, desiredPresentTimestamp);
+    mainThread->ConsumeAndUpdateAllNodes();
+    mainThread->ConsumeAndUpdateAllNodes();
+    mainThread->vsyncRsTimestamp_.store(vsyncRsTimestamp);
 }
 
 /**
@@ -3949,7 +4158,7 @@ HWTEST_F(RSMainThreadTest, UpdateNeedDrawFocusChange001, TestSize.Level2)
     ASSERT_NE(node, nullptr);
 
     ASSERT_NE(mainThread->context_, nullptr);
-    
+
     NodeId nodeId = node->GetId();
     pid_t pid = ExtractPid(nodeId);
     mainThread->context_->nodeMap.renderNodeMap_[pid][nodeId] = node;
@@ -4088,7 +4297,7 @@ HWTEST_F(RSMainThreadTest, UpdateFocusNodeId003, TestSize.Level2)
     NodeId newFocusNodeId = newFocusNode->GetId();
     pid_t newFocusNodePid = ExtractPid(newFocusNodeId);
     mainThread->context_->nodeMap.renderNodeMap_[newFocusNodePid][newFocusNodeId] = newFocusNode;
-    
+
     mainThread->focusNodeId_ = oldFocusNode->GetId();
     mainThread->UpdateFocusNodeId(newFocusNode->GetId());
     ASSERT_EQ(mainThread->GetFocusNodeId(), newFocusNode->GetId());
@@ -5233,14 +5442,14 @@ HWTEST_F(RSMainThreadTest, HandleTunnelLayerId001, TestSize.Level1)
 {
     auto mainThread = RSMainThread::Instance();
     ASSERT_NE(mainThread, nullptr);
- 
+
     auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(0, mainThread->context_);
     auto surfaceHandler = surfaceNode->surfaceHandler_;
- 
+
     mainThread->HandleTunnelLayerId(surfaceHandler, surfaceNode);
     EXPECT_EQ(surfaceNode->GetTunnelLayerId(), 0);
 }
- 
+
 /**
  * @tc.name: HandleTunnelLayerId002
  * @tc.desc: HandleTunnelLayerId002
@@ -5251,18 +5460,18 @@ HWTEST_F(RSMainThreadTest, HandleTunnelLayerId002, TestSize.Level1)
 {
     auto mainThread = RSMainThread::Instance();
     ASSERT_NE(mainThread, nullptr);
- 
+
     auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(0, mainThread->context_);
     auto surfaceHandler = surfaceNode->surfaceHandler_;
     ASSERT_NE(surfaceHandler, nullptr);
     surfaceHandler->consumer_ = nullptr;
- 
+
     EXPECT_EQ(surfaceHandler->sourceType_, 0);
- 
+
     mainThread->HandleTunnelLayerId(surfaceHandler, surfaceNode);
     EXPECT_EQ(surfaceNode->GetTunnelLayerId(), 0);
 }
- 
+
 /**
  * @tc.name: HandleTunnelLayerId003
  * @tc.desc: HandleTunnelLayerId003
@@ -5273,19 +5482,19 @@ HWTEST_F(RSMainThreadTest, HandleTunnelLayerId003, TestSize.Level1)
 {
     auto mainThread = RSMainThread::Instance();
     ASSERT_NE(mainThread, nullptr);
- 
+
     auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(0, mainThread->context_);
     auto surfaceHandler = surfaceNode->surfaceHandler_;
     ASSERT_NE(surfaceHandler, nullptr);
     auto consumer = surfaceHandler->GetConsumer();
     ASSERT_NE(consumer, nullptr);
- 
+
     EXPECT_EQ(surfaceHandler->sourceType_, 0);
- 
+
     mainThread->HandleTunnelLayerId(surfaceHandler, surfaceNode);
     EXPECT_EQ(surfaceNode->GetTunnelLayerId(), 0);
 }
- 
+
 /**
  * @tc.name: HandleTunnelLayerId004
  * @tc.desc: HandleTunnelLayerId004
@@ -5296,15 +5505,15 @@ HWTEST_F(RSMainThreadTest, HandleTunnelLayerId004, TestSize.Level1)
 {
     auto mainThread = RSMainThread::Instance();
     ASSERT_NE(mainThread, nullptr);
- 
+
     auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(0, mainThread->context_);
     auto surfaceHandler = surfaceNode->surfaceHandler_;
     ASSERT_NE(surfaceHandler, nullptr);
     auto consumer = surfaceHandler->GetConsumer();
     ASSERT_NE(consumer, nullptr);
- 
+
     EXPECT_EQ(surfaceHandler->sourceType_, 0);
- 
+
     surfaceHandler->sourceType_ = 5;
     EXPECT_EQ(surfaceHandler->GetSourceType(), 5);
     mainThread->HandleTunnelLayerId(surfaceHandler, surfaceNode);

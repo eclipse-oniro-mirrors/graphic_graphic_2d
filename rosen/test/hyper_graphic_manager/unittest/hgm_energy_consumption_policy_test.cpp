@@ -71,7 +71,7 @@ void HgmEnergyConsumptionPolicyTest::SetIdleStateEnable(bool isIdle)
  * @tc.type: FUNC
  * @tc.require: issuesIA96Q3
  */
-HWTEST_F(HgmEnergyConsumptionPolicyTest, SetEnergyConsumptionConfigTest1, TestSize.Level1)
+HWTEST_F(HgmEnergyConsumptionPolicyTest, SetEnergyConsumptionConfigTest1, TestSize.Level0)
 {
     SetConfigEnable("true");
     ASSERT_EQ(HgmEnergyConsumptionPolicy::Instance().isAnimationEnergyAssuranceEnable_, true);
@@ -83,7 +83,7 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, SetEnergyConsumptionConfigTest1, TestSi
  * @tc.type: FUNC
  * @tc.require: issuesIA96Q3
  */
-HWTEST_F(HgmEnergyConsumptionPolicyTest, SetEnergyConsumptionConfigTest2, TestSize.Level1)
+HWTEST_F(HgmEnergyConsumptionPolicyTest, SetEnergyConsumptionConfigTest2, TestSize.Level0)
 {
     SetConfigEnable("false");
     ASSERT_EQ(HgmEnergyConsumptionPolicy::Instance().isAnimationEnergyAssuranceEnable_, false);
@@ -95,7 +95,7 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, SetEnergyConsumptionConfigTest2, TestSi
  * @tc.type: FUNC
  * @tc.require: issuesIA96Q3
  */
-HWTEST_F(HgmEnergyConsumptionPolicyTest, SetEnergyConsumptionAssuranceModeTest1, TestSize.Level1)
+HWTEST_F(HgmEnergyConsumptionPolicyTest, SetEnergyConsumptionAssuranceModeTest1, TestSize.Level0)
 {
     SetConfigEnable("true");
     ASSERT_EQ(HgmEnergyConsumptionPolicy::Instance().isAnimationEnergyAssuranceEnable_, true);
@@ -111,7 +111,7 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, SetEnergyConsumptionAssuranceModeTest1,
  * @tc.type: FUNC
  * @tc.require: issuesIA96Q3
  */
-HWTEST_F(HgmEnergyConsumptionPolicyTest, SetEnergyConsumptionAssuranceModeTest2, TestSize.Level1)
+HWTEST_F(HgmEnergyConsumptionPolicyTest, SetEnergyConsumptionAssuranceModeTest2, TestSize.Level0)
 {
     SetConfigEnable("true");
     SetIdleStateEnable(true);
@@ -126,7 +126,7 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, SetEnergyConsumptionAssuranceModeTest2,
  * @tc.type: FUNC
  * @tc.require: issuesIA96Q3
  */
-HWTEST_F(HgmEnergyConsumptionPolicyTest, SetEnergyConsumptionAssuranceModeTest3, TestSize.Level1)
+HWTEST_F(HgmEnergyConsumptionPolicyTest, SetEnergyConsumptionAssuranceModeTest3, TestSize.Level0)
 {
     SetConfigEnable("false");
     SetIdleStateEnable(false);
@@ -173,7 +173,7 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, StatisticAnimationTimeTest2, TestSize.L
  * @tc.type: FUNC
  * @tc.require: issuesIA96Q3
  */
-HWTEST_F(HgmEnergyConsumptionPolicyTest, StatisticAnimationTimeTest3, TestSize.Level1)
+HWTEST_F(HgmEnergyConsumptionPolicyTest, StatisticAnimationTimeTest3, TestSize.Level0)
 {
     HgmEnergyConsumptionPolicy::Instance().lastAnimationTimestamp_ = 0;
     SetConfigEnable("true");
@@ -189,7 +189,7 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, StatisticAnimationTimeTest3, TestSize.L
  * @tc.type: FUNC
  * @tc.require: issuesIA96Q3
  */
-HWTEST_F(HgmEnergyConsumptionPolicyTest, StartNewAnimationTest1, TestSize.Level1)
+HWTEST_F(HgmEnergyConsumptionPolicyTest, StartNewAnimationTest1, TestSize.Level0)
 {
     HgmEnergyConsumptionPolicy::Instance().lastAnimationTimestamp_ = 0;
     SetConfigEnable("true");
@@ -205,7 +205,7 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, StartNewAnimationTest1, TestSize.Level1
  * @tc.type: FUNC
  * @tc.require: issuesIA96Q3
  */
-HWTEST_F(HgmEnergyConsumptionPolicyTest, GetAnimationIdleFpsTest1, TestSize.Level1)
+HWTEST_F(HgmEnergyConsumptionPolicyTest, GetAnimationIdleFpsTest1, TestSize.Level0)
 {
     SetConfigEnable("false");
     FrameRateRange rsRange = { DEFAULT_MAX_FPS, DEFAULT_MAX_FPS, DEFAULT_MAX_FPS };
@@ -221,7 +221,7 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, GetAnimationIdleFpsTest1, TestSize.Leve
  * @tc.type: FUNC
  * @tc.require: issuesIA96Q3
  */
-HWTEST_F(HgmEnergyConsumptionPolicyTest, GetAnimationIdleFpsTest2, TestSize.Level1)
+HWTEST_F(HgmEnergyConsumptionPolicyTest, GetAnimationIdleFpsTest2, TestSize.Level0)
 {
     SetConfigEnable("true");
     HgmEnergyConsumptionPolicy::Instance().lastAnimationTimestamp_ = 1719544264071;
@@ -239,7 +239,7 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, GetAnimationIdleFpsTest2, TestSize.Leve
  * @tc.type: FUNC
  * @tc.require: issuesIA96Q3
  */
-HWTEST_F(HgmEnergyConsumptionPolicyTest, GetAnimationIdleFpsTest3, TestSize.Level1)
+HWTEST_F(HgmEnergyConsumptionPolicyTest, GetAnimationIdleFpsTest3, TestSize.Level0)
 {
     SetConfigEnable("true");
     HgmEnergyConsumptionPolicy::Instance().lastAnimationTimestamp_ = 1719544264071;
@@ -257,7 +257,7 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, GetAnimationIdleFpsTest3, TestSize.Leve
  * @tc.type: FUNC
  * @tc.require: issuesIA96Q3
  */
-HWTEST_F(HgmEnergyConsumptionPolicyTest, GetUiAnimationIdleFpsTest1, TestSize.Level1)
+HWTEST_F(HgmEnergyConsumptionPolicyTest, GetUiAnimationIdleFpsTest1, TestSize.Level0)
 {
     FrameRateRange rsRange = { DEFAULT_MAX_FPS, DEFAULT_MAX_FPS, DEFAULT_MAX_FPS, UI_ANIMATION_FRAME_RATE_TYPE };
     SetConfigEnable("false");
@@ -281,7 +281,7 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, GetUiAnimationIdleFpsTest1, TestSize.Le
  * @tc.type: FUNC
  * @tc.require: issuesIA96Q3
  */
-HWTEST_F(HgmEnergyConsumptionPolicyTest, GetDisplaySyncIdleFpsTest1, TestSize.Level1)
+HWTEST_F(HgmEnergyConsumptionPolicyTest, GetDisplaySyncIdleFpsTest1, TestSize.Level0)
 {
     FrameRateRange rsRange = { DEFAULT_MAX_FPS, DEFAULT_MAX_FPS, DEFAULT_MAX_FPS, DISPLAY_SYNC_FRAME_RATE_TYPE };
     SetConfigEnable("false");
@@ -303,7 +303,7 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, GetDisplaySyncIdleFpsTest1, TestSize.Le
  * @tc.type: FUNC
  * @tc.require: issuesIA96Q3
  */
-HWTEST_F(HgmEnergyConsumptionPolicyTest, GetAceComponentIdleFpsTest1, TestSize.Level1)
+HWTEST_F(HgmEnergyConsumptionPolicyTest, GetAceComponentIdleFpsTest1, TestSize.Level0)
 {
     FrameRateRange rsRange = { DEFAULT_MAX_FPS, DEFAULT_MAX_FPS, DEFAULT_MAX_FPS, ACE_COMPONENT_FRAME_RATE_TYPE };
     SetConfigEnable("false");
@@ -325,7 +325,7 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, GetAceComponentIdleFpsTest1, TestSize.L
  * @tc.type: FUNC
  * @tc.require: issuesIA96Q3
  */
-HWTEST_F(HgmEnergyConsumptionPolicyTest, GetDisplaySoloistIdleFpsTest1, TestSize.Level1)
+HWTEST_F(HgmEnergyConsumptionPolicyTest, GetDisplaySoloistIdleFpsTest1, TestSize.Level0)
 {
     FrameRateRange rsRange = { DEFAULT_MAX_FPS, DEFAULT_MAX_FPS, DEFAULT_MAX_FPS, DISPLAY_SOLOIST_FRAME_RATE_TYPE };
     SetConfigEnable("false");
@@ -371,7 +371,7 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, EnergyConsumptionAssureanceTest, TestSi
  * @tc.type: FUNC
  * @tc.require: issuesIA96Q3
  */
-HWTEST_F(HgmEnergyConsumptionPolicyTest, GetCommponentFpsTest1, TestSize.Level1)
+HWTEST_F(HgmEnergyConsumptionPolicyTest, GetCommponentFpsTest1, TestSize.Level0)
 {
     auto& hgmEnergyConsumptionPolicy = HgmEnergyConsumptionPolicy::Instance();
     hgmEnergyConsumptionPolicy.isTouchIdle_ = true;
@@ -388,7 +388,7 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, GetCommponentFpsTest1, TestSize.Level1)
  * @tc.type: FUNC
  * @tc.require: issuesIA96Q3
  */
-HWTEST_F(HgmEnergyConsumptionPolicyTest, SetRefreshRateTest, TestSize.Level1)
+HWTEST_F(HgmEnergyConsumptionPolicyTest, SetRefreshRateTest, TestSize.Level0)
 {
     int32_t curRefreshRateMode = -1;
     std::string curScreenStragyId = "LTPO-DEFAULT";
@@ -403,7 +403,7 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, SetRefreshRateTest, TestSize.Level1)
  * @tc.type: FUNC
  * @tc.require: issuesIA96Q3
  */
-HWTEST_F(HgmEnergyConsumptionPolicyTest, PrintEnergyConsumptionLogTest, TestSize.Level1)
+HWTEST_F(HgmEnergyConsumptionPolicyTest, PrintEnergyConsumptionLogTest, TestSize.Level0)
 {
     FrameRateRange rsRange = { DEFAULT_MAX_FPS, DEFAULT_MAX_FPS, DEFAULT_MAX_FPS, DISPLAY_SOLOIST_FRAME_RATE_TYPE };
     rsRange.isEnergyAssurance_ = true;
@@ -420,7 +420,7 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, PrintEnergyConsumptionLogTest, TestSize
  * @tc.type: FUNC
  * @tc.require: issuesIA96Q3
  */
-HWTEST_F(HgmEnergyConsumptionPolicyTest, SetTouchStateTest, TestSize.Level1)
+HWTEST_F(HgmEnergyConsumptionPolicyTest, SetTouchStateTest, TestSize.Level0)
 {
     HgmEnergyConsumptionPolicy::Instance().SetTouchState(TouchState::DOWN_STATE);
     ASSERT_EQ(HgmEnergyConsumptionPolicy::Instance().isTouchIdle_, false);
@@ -432,7 +432,7 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, SetTouchStateTest, TestSize.Level1)
  * @tc.type: FUNC
  * @tc.require: issuesIA96Q3
  */
-HWTEST_F(HgmEnergyConsumptionPolicyTest, SetVideoCallSceneInfoTest, TestSize.Level1)
+HWTEST_F(HgmEnergyConsumptionPolicyTest, SetVideoCallSceneInfoTest, TestSize.Level0)
 {
     EventInfo eventInfo = {
         .eventName = "VOTER_VIDEO_CALL",
@@ -459,7 +459,7 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, SetVideoCallSceneInfoTest, TestSize.Lev
  * @tc.type: FUNC
  * @tc.require: issuesIA96Q3
  */
-HWTEST_F(HgmEnergyConsumptionPolicyTest, StatisticsVideoCallBufferCountTest, TestSize.Level1)
+HWTEST_F(HgmEnergyConsumptionPolicyTest, StatisticsVideoCallBufferCountTest, TestSize.Level0)
 {
     EventInfo eventInfo = {
         .eventName = "VOTER_VIDEO_CALL",
@@ -485,7 +485,7 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, StatisticsVideoCallBufferCountTest, Tes
  * @tc.type: FUNC
  * @tc.require: issuesIA96Q3
  */
-HWTEST_F(HgmEnergyConsumptionPolicyTest, CheckOnlyVideoCallExistTest, TestSize.Level1)
+HWTEST_F(HgmEnergyConsumptionPolicyTest, CheckOnlyVideoCallExistTest, TestSize.Level0)
 {
     auto& hgmEnergyConsumptionPolicy = HgmEnergyConsumptionPolicy::Instance();
     hgmEnergyConsumptionPolicy.isEnableVideoCall_.store(true);
@@ -500,7 +500,7 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, CheckOnlyVideoCallExistTest, TestSize.L
  * @tc.type: FUNC
  * @tc.require: issuesIA96Q3
  */
-HWTEST_F(HgmEnergyConsumptionPolicyTest, GetVideoCallVsyncChangeTest, TestSize.Level1)
+HWTEST_F(HgmEnergyConsumptionPolicyTest, GetVideoCallVsyncChangeTest, TestSize.Level0)
 {
     auto& hgmEnergyConsumptionPolicy = HgmEnergyConsumptionPolicy::Instance();
     hgmEnergyConsumptionPolicy.isVideoCallVsyncChange_.store(true);
@@ -515,7 +515,7 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, GetVideoCallVsyncChangeTest, TestSize.L
  * @tc.type: FUNC
  * @tc.require: issuesIA96Q3
  */
-HWTEST_F(HgmEnergyConsumptionPolicyTest, GetVideoCallFrameRateTest, TestSize.Level1)
+HWTEST_F(HgmEnergyConsumptionPolicyTest, GetVideoCallFrameRateTest, TestSize.Level0)
 {
     auto& hgmEnergyConsumptionPolicy = HgmEnergyConsumptionPolicy::Instance();
     EventInfo eventInfo = {
@@ -539,7 +539,7 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, GetVideoCallFrameRateTest, TestSize.Lev
  * @tc.type: FUNC
  * @tc.require: issuesIA96Q3
  */
-HWTEST_F(HgmEnergyConsumptionPolicyTest, SetCurrentPkgNameTest, TestSize.Level1)
+HWTEST_F(HgmEnergyConsumptionPolicyTest, SetCurrentPkgNameTest, TestSize.Level0)
 {
     std::vector<std::string> pkgNames;
     HgmEnergyConsumptionPolicy::Instance().SetCurrentPkgName(pkgNames);

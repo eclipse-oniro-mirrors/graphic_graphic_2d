@@ -1472,10 +1472,11 @@ void RSSurfaceRenderNode::SetTopLayerZOrder(uint32_t zOrder)
     topLayerZOrder_ = zOrder;
 }
 
-void RSSurfaceRenderNode::SetLayerTop(bool isTop)
+void RSSurfaceRenderNode::SetLayerTop(bool isTop, bool isTopLayerForceRefresh)
 {
 #ifdef RS_ENABLE_GPU
     isLayerTop_ = isTop;
+    isTopLayerForceRefresh_ = isTopLayerForceRefresh;
     SetContentDirty();
     auto surfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
     if (surfaceParams == nullptr) {
@@ -2041,6 +2042,7 @@ void RSSurfaceRenderNode::UpdateHwcNodeLayerInfo(GraphicTransformType transform,
     layer.ancoFlags = surfaceParams->GetAncoFlags();
     const Rect& cropRect = surfaceParams->GetAncoSrcCrop();
     layer.ancoCropRect = {cropRect.x, cropRect.y, cropRect.w, cropRect.h};
+    layer.useDeviceOffline = GetDeviceOfflineEnable();
     if (isHardCursorEnable) {
         layer.layerType = GraphicLayerType::GRAPHIC_LAYER_TYPE_CURSOR;
     } else {
@@ -3344,6 +3346,7 @@ void RSSurfaceRenderNode::UpdateRenderParams()
     surfaceParams->isMainWindowType_ = IsMainWindowType();
     surfaceParams->isLeashWindow_ = IsLeashWindow();
     surfaceParams->isAppWindow_ = IsAppWindow();
+    surfaceParams->isLeashorMainWindow_ = IsLeashOrMainWindow();
     surfaceParams->isCloneNode_ = isCloneNode_;
     surfaceParams->SetAncestorScreenNode(ancestorScreenNode_);
     surfaceParams->specialLayerManager_ = specialLayerManager_;

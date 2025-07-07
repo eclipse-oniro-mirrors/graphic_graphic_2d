@@ -799,7 +799,8 @@ void RSRenderServiceClient::SetForceRefresh(const std::string &nodeIdStr, bool i
 {
 }
 
-bool RSRenderServiceClient::RegisterTransactionDataCallback(int32_t pid, uint64_t timeStamp, std::function<void()> callback)
+bool RSRenderServiceClient::RegisterTransactionDataCallback(uint64_t token, uint64_t timeStamp,
+    std::function<void()> callback)
 {
     return false;
 }
@@ -850,6 +851,10 @@ bool RSRenderServiceClient::GetBehindWindowFilterEnabled(bool& enabled)
 int32_t RSRenderServiceClient::GetPidGpuMemoryInMB(pid_t pid, float &gpuMemInMB)
 {
     return {};
+}
+
+void RSRenderServiceClient::ClearUifirstCache(NodeId id)
+{
 }
 } // namespace Rosen
 } // namespace OHOS

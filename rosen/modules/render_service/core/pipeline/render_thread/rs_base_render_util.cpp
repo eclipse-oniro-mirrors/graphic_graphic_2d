@@ -944,6 +944,8 @@ Drawing::ColorType RSBaseRenderUtil::GetColorTypeFromBufferFormat(int32_t pixelF
         case GRAPHIC_PIXEL_FMT_YCRCB_P010:
         case GRAPHIC_PIXEL_FMT_RGBA_1010102:
             return Drawing::ColorType::COLORTYPE_RGBA_1010102;
+        case GRAPHIC_PIXEL_FMT_RGBA_1010108:
+            return Drawing::ColorType::COLORTYPE_RGBA_1010108;
         default:
             return Drawing::ColorType::COLORTYPE_RGBA_8888;
     }
@@ -969,7 +971,7 @@ void RSBaseRenderUtil::MergeBufferDamages(Rect& surfaceDamage, const std::vector
 
 CM_INLINE bool RSBaseRenderUtil::ConsumeAndUpdateBuffer(RSSurfaceHandler& surfaceHandler,
     uint64_t presentWhen, bool dropFrameByPidEnable, bool adaptiveDVSyncEnable, bool needConsume,
-    uint64_t parentNodeId)
+    uint64_t parentNodeId, bool deleteCacheDisable)
 {
     if (surfaceHandler.GetAvailableBufferCount() <= 0) {
         return true;
@@ -1069,7 +1071,7 @@ CM_INLINE bool RSBaseRenderUtil::ConsumeAndUpdateBuffer(RSSurfaceHandler& surfac
     DropFrameProcess(surfaceHandler, acquireTimeStamp, adaptiveDVSyncEnable);
 #ifdef RS_ENABLE_GPU
     auto renderEngine = RSUniRenderThread::Instance().GetRenderEngine();
-    if (!renderEngine) {
+    if (!renderEngine || deleteCacheDisable) {
         return true;
     }
     renderEngine->RegisterDeleteBufferListener(surfaceHandler);

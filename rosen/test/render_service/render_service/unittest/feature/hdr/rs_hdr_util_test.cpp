@@ -19,7 +19,7 @@
 #include "pipeline/render_thread/rs_render_engine.h"
 #include "pipeline/rs_screen_render_node.h"
 #include "pipeline/rs_test_util.h"
-#include "v2_1/cm_color_space.h"
+#include "v2_2/cm_color_space.h"
 #ifdef USE_VIDEO_PROCESSING_ENGINE
 #include "colorspace_converter_display.h"
 #endif
@@ -87,6 +87,26 @@ HWTEST_F(RSHdrUtilTest, CheckIsHdrSurfaceBufferTest, TestSize.Level1)
     buffer->GetBufferHandle()->format = GraphicPixelFormat::GRAPHIC_PIXEL_FMT_YCBCR_P010;
     ret = RSHdrUtil::CheckIsHdrSurfaceBuffer(buffer);
     ASSERT_EQ(ret, HdrStatus::NO_HDR);
+
+    uint32_t hdrType = HDI::Display::Graphic::Common::V2_2::CM_VIDEO_AI_HDR;
+    std::vector<uint8_t> metadataType;
+    metadataType.resize(sizeof(hdrType));
+    memcpy_s(metadataType.data(), metadataType.size(), &hdrType, sizeof(hdrType));
+    buffer->SetMetadata(HDI::Display::Graphic::Common::V1_0::ATTRKEY_HDR_METADATA_TYPE, metadataType);
+    ret = RSHdrUtil::CheckIsHdrSurfaceBuffer(buffer);
+    ASSERT_EQ(ret, HdrStatus::AI_HDR_VIDEO);
+ 
+    hdrType = HDI::Display::Graphic::Common::V2_2::CM_VIDEO_AI_HDR_HIGH_LIGHT;
+    memcpy_s(metadataType.data(), metadataType.size(), &hdrType, sizeof(hdrType));
+    buffer->SetMetadata(HDI::Display::Graphic::Common::V1_0::ATTRKEY_HDR_METADATA_TYPE, metadataType);
+    ret = RSHdrUtil::CheckIsHdrSurfaceBuffer(buffer);
+    ASSERT_EQ(ret, HdrStatus::AI_HDR_VIDEO);
+ 
+    hdrType = HDI::Display::Graphic::Common::V2_2::CM_VIDEO_AI_HDR_COLOR_ENHANCE;
+    memcpy_s(metadataType.data(), metadataType.size(), &hdrType, sizeof(hdrType));
+    buffer->SetMetadata(HDI::Display::Graphic::Common::V1_0::ATTRKEY_HDR_METADATA_TYPE, metadataType);
+    ret = RSHdrUtil::CheckIsHdrSurfaceBuffer(buffer);
+    ASSERT_EQ(ret, HdrStatus::AI_HDR_VIDEO);
 }
 
 /**
@@ -142,6 +162,17 @@ HWTEST_F(RSHdrUtilTest, UpdateSurfaceNodeNitTest, TestSize.Level1)
     ASSERT_NE(node, nullptr);
     node->SetVideoHdrStatus(HdrStatus::HDR_VIDEO);
     RSHdrUtil::UpdateSurfaceNodeNit(*node, 0);
+}
+
+/**
+ * @tc.name: GetRGBA1010108Enabled
+ * @tc.desc: Test GetRGBA1010108Enabled
+ * @tc.type: FUNC
+ * @tc.require: issueI6QM6E
+ */
+HWTEST_F(RSHdrUtilTest, GetRGBA1010108EnabledTest, TestSize.Level1)
+{
+    EXPECT_FALSE(RSHdrUtil::GetRGBA1010108Enabled());
 }
 
 /**
