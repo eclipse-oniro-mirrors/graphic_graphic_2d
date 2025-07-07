@@ -23,6 +23,7 @@ using namespace UIEffect;
 CJFilter::CJFilter()
 {
     m_FilterObj = std::make_shared<Filter>();
+    FILTER_LOG_D("CJFilter create success.");
 }
 
 int32_t CJFilter::SetBlur(float blur)

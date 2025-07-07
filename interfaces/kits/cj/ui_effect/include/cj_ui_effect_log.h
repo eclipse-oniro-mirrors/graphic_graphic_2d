@@ -15,13 +15,13 @@
 #ifndef CJ_UI_EFFECT_LOG_H
 #define CJ_UI_EFFECT_LOG_H
 
+#include <cstdint>
 #include <hilog/log.h>
 
 namespace OHOS {
 namespace Rosen {
 const int32_t CJ_OK = 0;
 const int32_t CJ_ERR_ILLEGAL_INSTANCE = -1;
-const int32_t CJ_ERR_NULL_PTR = -2;
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD001405
