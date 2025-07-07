@@ -48,8 +48,7 @@ public:
 HWTEST_F(RSCustomModifierHelperTest, CreateDrawingContextTest, TestSize.Level1)
 {
     std::shared_ptr<RSNode> node = nullptr;
-    RSCustomModifierHelper::CreateDrawingContext(node);
-    EXPECT_EQ(node, nullptr);
+    EXPECT_EQ(RSCustomModifierHelper::CreateDrawingContext(node), nullptr);
 
     RSDisplayNodeConfig config;
     std::shared_ptr<RSDisplayNode> node2 = RSDisplayNode::Create(config);
