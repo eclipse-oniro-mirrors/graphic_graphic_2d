@@ -464,7 +464,8 @@ HWTEST_F(RSModifierExtractorTest, GetQuaternionTest, TestSize.Level1)
 {
     NodeId id = 1;
     auto extractor = std::make_shared<RSModifierExtractor>(id);
-    EXPECT_NE(extractor->GetQuaternion(), nullptr);
+    Quaternion quaternion = extractor->GetQuaternion();
+    EXPECT_TRUE(quaternion.IsIdentity());
 }
 
 /**
