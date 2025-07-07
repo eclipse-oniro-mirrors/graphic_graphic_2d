@@ -25,6 +25,7 @@
 #include "modifier_ng/geometry/rs_frame_modifier.h"
 #include "modifier_ng/geometry/rs_transform_modifier.h"
 #include "platform/common/rs_log.h"
+#include "skia_txt/default_symbol_config.h"
 #include "utils/point.h"
 
 namespace OHOS {
@@ -296,8 +297,6 @@ bool RSSymbolAnimation::SetReplaceDisappear(
         effectStrategy = Drawing::DrawingEffectStrategy::REPLACE_DISAPPEAR;
     } else if (symbolAnimationConfig->effectStrategy == Drawing::DrawingEffectStrategy::QUICK_REPLACE_APPEAR) {
         effectStrategy = Drawing::DrawingEffectStrategy::QUICK_REPLACE_DISAPPEAR;
-    } else {
-        return false;
     }
 
     bool res = GetAnimationGroupParameters(symbolAnimationConfig, parameters, effectStrategy);
@@ -479,16 +478,14 @@ bool RSSymbolAnimation::GetAnimationGroupParameters(
     animationLevelNum = animationLevelNum + 1;
 
     // get animation group paramaters
-    if (std::count(upAndDownSupportAnimations_.begin(), upAndDownSupportAnimations_.end(),
-        effectStrategy) != 0) {
-        parameters = Drawing::HmSymbolConfigOhos::GetGroupParameters(
-            Drawing::DrawingAnimationType(effectStrategy),
-            static_cast<uint16_t>(animationLevelNum),
+    auto it = std::find(upAndDownSupportAnimations_.begin(), upAndDownSupportAnimations_.end(), effectStrategy);
+    if (it != upAndDownSupportAnimations_.end()) {
+        parameters = OHOS::Rosen::Symbol::DefaultSymbolConfig::GetInstance()->GetGroupParameters(
+            Drawing::DrawingAnimationType(effectStrategy), static_cast<uint16_t>(animationLevelNum),
             symbolAnimationConfig->animationMode, symbolAnimationConfig->commonSubType);
     } else {
-        parameters = Drawing::HmSymbolConfigOhos::GetGroupParameters(
-            Drawing::DrawingAnimationType(effectStrategy),
-            static_cast<uint16_t>(animationLevelNum),
+        parameters = OHOS::Rosen::Symbol::DefaultSymbolConfig::GetInstance()->GetGroupParameters(
+            Drawing::DrawingAnimationType(effectStrategy), static_cast<uint16_t>(animationLevelNum),
             symbolAnimationConfig->animationMode);
     }
     if (parameters.empty()) {

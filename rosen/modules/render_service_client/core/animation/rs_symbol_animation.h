@@ -25,7 +25,6 @@
 #include "common/rs_vector2.h"
 #include "common/rs_vector4.h"
 #include "draw/path.h"
-#include "include/text/hm_symbol_config_ohos.h"
 #include "modifier/rs_property.h"
 #include "modifier/rs_property_modifier.h"
 #include "symbol_animation_config.h"
