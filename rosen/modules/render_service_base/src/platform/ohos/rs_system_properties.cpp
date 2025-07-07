@@ -871,6 +871,14 @@ bool RSSystemProperties::GetUIFirstOptScheduleEnabled()
     return ConvertToInt(enable, 1) != 0;
 }
 
+bool RSSystemProperties::GetUIFirstBehindWindowEnabled()
+{
+    static CachedHandle g_Handle = CachedParameterCreate("rosen.ui.first.behindwindow.enabled", "1");
+    int changed = 0;
+    const char *enable = CachedParameterGetChanged(g_Handle, &changed);
+    return ConvertToInt(enable, 1) != 0;
+}
+
 bool RSSystemProperties::GetUIFirstDirtyEnabled()
 {
     static CachedHandle g_Handle = CachedParameterCreate("rosen.ui.first.dirty.enabled", "1");
@@ -1613,13 +1621,19 @@ int RSSystemProperties::GetSubThreadDropFrameInterval()
 bool RSSystemProperties::GetCompositeLayerEnabled()
 {
     static bool compositeLayerEnable =
-        system::GetBoolParameter("rosen.graphic.composite.layer", false);
+        system::GetBoolParameter("rosen.graphic.composite.layer", true);
     return compositeLayerEnable;
 }
 
 bool RSSystemProperties::GetEarlyZEnable()
 {
     return isEnableEarlyZ_;
+}
+
+bool RSSystemProperties::GetAIBarOptEnabled()
+{
+    static bool isAIBarOptEnabled = system::GetIntParameter("persist.rosend.setaibaropt.enabled", 0) != 0;
+    return isAIBarOptEnabled;
 }
 } // namespace Rosen
 } // namespace OHOS

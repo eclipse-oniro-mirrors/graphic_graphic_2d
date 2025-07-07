@@ -126,14 +126,24 @@ DECLARE_FILTER(SoundWave, SOUND_WAVE,
 DECLARE_FILTER(EdgeLight, EDGE_LIGHT,
     ADD_PROPERTY_TAG(EdgeLight, Color),
     ADD_PROPERTY_TAG(EdgeLight, Alpha),
-    ADD_PROPERTY_TAG(EdgeLight, Mask)
+    ADD_PROPERTY_TAG(EdgeLight, Mask),
+    ADD_PROPERTY_TAG(EdgeLight, Bloom),
+    ADD_PROPERTY_TAG(EdgeLight, UseRawColor)
 );
 
 DECLARE_FILTER(Dispersion, DISPERSION,
+    ADD_PROPERTY_TAG(Dispersion, Mask),
     ADD_PROPERTY_TAG(Dispersion, Opacity),
     ADD_PROPERTY_TAG(Dispersion, RedOffset),
     ADD_PROPERTY_TAG(Dispersion, GreenOffset),
     ADD_PROPERTY_TAG(Dispersion, BlueOffset)
+);
+
+DECLARE_FILTER(ColorGradient, COLOR_GRADIENT,
+    ADD_PROPERTY_TAG(ColorGradient, Colors),
+    ADD_PROPERTY_TAG(ColorGradient, Positions),
+    ADD_PROPERTY_TAG(ColorGradient, Strengths),
+    ADD_PROPERTY_TAG(ColorGradient, Mask)
 );
 
 DECLARE_FILTER(BezierWarp, BEZIER_WARP,
@@ -149,6 +159,13 @@ DECLARE_FILTER(BezierWarp, BEZIER_WARP,
     ADD_PROPERTY_TAG(BezierWarp, ControlPoint9),
     ADD_PROPERTY_TAG(BezierWarp, ControlPoint10),
     ADD_PROPERTY_TAG(BezierWarp, ControlPoint11)
+);
+
+DECLARE_FILTER(DirectionLight, DIRECTION_LIGHT,
+    ADD_PROPERTY_TAG(DirectionLight, Mask),
+    ADD_PROPERTY_TAG(DirectionLight, Direction),
+    ADD_PROPERTY_TAG(DirectionLight, Color),
+    ADD_PROPERTY_TAG(DirectionLight, Intensity)
 );
 
 #undef ADD_PROPERTY_TAG

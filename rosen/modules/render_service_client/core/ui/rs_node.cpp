@@ -4776,12 +4776,20 @@ void RSNode::RemoveCrossScreenChild(SharedPtr child)
 
 void RSNode::RemoveChildByNode(SharedPtr child)
 {
+    if (child == nullptr) {
+        RS_LOGE("RSNode::RemoveChildByNode %{public}" PRIu64 " failed:nullptr", GetId());
+        return;
+    }
     CHECK_FALSE_RETURN(CheckMultiThreadAccess(__func__));
-    RS_OPTIONAL_TRACE_NAME_FMT("RSNode::RemoveChildByNode id:%" PRIu64 "", child->GetId());
     auto itr = std::find_if(
         children_.begin(), children_.end(), [&](WeakPtr &ptr) -> bool {return ROSEN_EQ<RSNode>(ptr, child);});
     if (itr != children_.end()) {
+        RS_OPTIONAL_TRACE_NAME_FMT(
+            "RSNode::RemoveChildByNode parent:%" PRIu64 ", child:%" PRIu64 "", GetId(), child->GetId());
         children_.erase(itr);
+    } else {
+        RS_TRACE_NAME_FMT(
+            "RSNode::RemoveChildByNode failed:%" PRIu64 " not children of %" PRIu64 "", child->GetId(), GetId());
     }
 }
 
@@ -5093,10 +5101,12 @@ void RSNode::AddModifier(const std::shared_ptr<ModifierNG::RSModifier> modifier)
         RS_LOGE("RSNode::AddModifier: null modifier, nodeId=%{public}" PRIu64, GetId());
         return;
     }
-    if (modifiersNG_.count(modifier->GetId())) {
-        return;
+    {
+        std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
+        if (modifiersNG_.count(modifier->GetId())) {
+            return;
+        }
     }
-    modifiersNG_.emplace(modifier->GetId(), modifier);
     modifier->OnAttach(*this); // Attach properties of modifier here
     if (modifier->GetType() == ModifierNG::RSModifierType::NODE_MODIFIER) {
         return;
@@ -5112,6 +5122,10 @@ void RSNode::AddModifier(const std::shared_ptr<ModifierNG::RSModifier> modifier)
         }
     }
     NotifyPageNodeChanged();
+    {
+        std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
+        modifiersNG_.emplace(modifier->GetId(), modifier);
+    }
     std::unique_ptr<RSCommand> command = std::make_unique<RSAddModifierNG>(GetId(), modifier->CreateRenderModifier());
     AddCommand(command, IsRenderServiceNode(), GetFollowType(), GetId());
     if (NeedForcedSendToRemote()) {
@@ -5123,12 +5137,15 @@ void RSNode::AddModifier(const std::shared_ptr<ModifierNG::RSModifier> modifier)
 
 void RSNode::RemoveModifier(const std::shared_ptr<ModifierNG::RSModifier> modifier)
 {
-    if (modifier == nullptr || !modifiersNG_.count(modifier->GetId())) {
-        RS_LOGE("RSNode::RemoveModifier: null modifier or modifier not exist.");
-        return;
+    {
+        std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
+        if (modifier == nullptr || !modifiersNG_.count(modifier->GetId())) {
+            RS_LOGE("RSNode::RemoveModifier: null modifier or modifier not exist.");
+            return;
+        }
+        modifiersNG_.erase(modifier->GetId());
     }
     modifier->OnDetach(); // Detach properties of modifier here
-    modifiersNG_.erase(modifier->GetId());
     DetachUIFilterProperties(modifier);
     std::unique_ptr<RSCommand> command =
         std::make_unique<RSRemoveModifierNG>(GetId(), modifier->GetType(), modifier->GetId());

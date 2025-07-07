@@ -274,6 +274,7 @@ public:
     static bool GetHeterogComputingHDREnabled();
     static bool GetUIFirstDebugEnabled();
     static bool GetUIFirstOptScheduleEnabled();
+    static bool GetUIFirstBehindWindowEnabled();
     static bool GetUIFirstDirtyEnabled();
     static bool GetUIFirstDirtyDebugEnabled();
     static bool GetTargetUIFirstDfxEnabled(std::vector<std::string>& SurfaceNames);
@@ -381,6 +382,7 @@ public:
     static int GetSubThreadDropFrameInterval();
     static bool GetCompositeLayerEnabled();
     static bool GetEarlyZEnable();
+    static bool GetAIBarOptEnabled();
 
 private:
     RSSystemProperties() = default;

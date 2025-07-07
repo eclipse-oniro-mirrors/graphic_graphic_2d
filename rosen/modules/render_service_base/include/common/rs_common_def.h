@@ -341,10 +341,12 @@ struct RSSurfaceCapturePermissions {
         }                                        \
     } while (0)
 
-#define IS_SCB_WINDOW_TYPE(windowType)                                                                        \
-    (windowType == SurfaceWindowType::SYSTEM_SCB_WINDOW || windowType == SurfaceWindowType::SCB_DESKTOP ||    \
-    windowType == SurfaceWindowType::SCB_WALLPAPER || windowType == SurfaceWindowType::SCB_SCREEN_LOCK ||     \
-    windowType == SurfaceWindowType::SCB_NEGATIVE_SCREEN || windowType == SurfaceWindowType::SCB_DROPDOWN_PANEL)
+#define IS_SCB_WINDOW_TYPE(windowType)                                                                                 \
+    (windowType == SurfaceWindowType::SYSTEM_SCB_WINDOW || windowType == SurfaceWindowType::SCB_DESKTOP ||             \
+        windowType == SurfaceWindowType::SCB_WALLPAPER || windowType == SurfaceWindowType::SCB_SCREEN_LOCK ||          \
+        windowType == SurfaceWindowType::SCB_NEGATIVE_SCREEN || windowType == SurfaceWindowType::SCB_DROPDOWN_PANEL || \
+        windowType == SurfaceWindowType::SCB_VOLUME_PANEL ||                                                           \
+        windowType == SurfaceWindowType::SCB_BANNER_NOTIFICATION || windowType == SurfaceWindowType::SCB_GESTURE_BACK)
 
 enum class DeviceType : uint8_t {
     PHONE,
@@ -447,6 +449,9 @@ enum class SurfaceWindowType : uint8_t {
     SCB_SCREEN_LOCK = 4,
     SCB_NEGATIVE_SCREEN = 5,
     SCB_DROPDOWN_PANEL = 6,
+    SCB_VOLUME_PANEL = 7,
+    SCB_BANNER_NOTIFICATION = 8,
+    SCB_GESTURE_BACK = 9,
 };
 
 enum class SurfaceHwcNodeType : uint8_t {
