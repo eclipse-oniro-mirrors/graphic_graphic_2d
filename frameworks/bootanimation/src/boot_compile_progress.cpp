@@ -32,7 +32,7 @@
 
 namespace OHOS {
 namespace {
-    constexpr const char* OTA_COMPILE_TIME_LIMIT = "persist.bms.optimizing_apps.timing";
+    constexpr const char* OTA_COMPILE_TIME_LIMIT = "persist.bms.optimizing_apps.timing1";
     constexpr int32_t OTA_COMPILE_TIME_LIMIT_DEFAULT = 4 * 60;
     constexpr const char* OTA_COMPILE_DISPLAY_INFO = "const.bms.optimizing_apps.display_info";
     const std::string BOOTEVENT_BMS_MAIN_BUNDLES_READY = "bootevent.bms.main.bundles.ready";

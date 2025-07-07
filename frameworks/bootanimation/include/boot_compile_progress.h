@@ -58,6 +58,8 @@ private:
     int32_t fontSize_ = 0;
     Rosen::ScreenId screenId_;
     std::string displayInfo_ = "";
+    float currentRadius_ = 0.0f;
+    int screenStatus_ = -1;
 
     volatile bool isUpdateOptEnd_ = false;
     bool isWearable_ = false;
