@@ -46,7 +46,6 @@ private:
     void DrawMarginBrush(Rosen::Drawing::RecordingCanvas* canvas);
     void RecordDeviceType();
     void SetFrame();
-    void GetScreenStatus();
 
     int32_t windowWidth_ = 0;
     int32_t windowHeight_ = 0;
@@ -60,7 +59,7 @@ private:
     Rosen::ScreenId screenId_;
     std::string displayInfo_ = "";
     float currentRadius_ = 0.0f;
-    int screenStatus_ = -1;
+    std::string screenStatus_ = "";
 
     volatile bool isUpdateOptEnd_ = false;
     bool isWearable_ = false;
