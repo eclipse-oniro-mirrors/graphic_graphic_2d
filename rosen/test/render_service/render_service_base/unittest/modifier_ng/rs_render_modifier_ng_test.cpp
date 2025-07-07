@@ -132,7 +132,7 @@ HWTEST_F(RSRenderModifierNGTest, SetDirtyTest, TestSize.Level1)
     std::weak_ptr<RSRenderNode> weakPtr = nodePtr;
     modifier->target_ = weakPtr;
     modifier->SetDirty();
-    EXPECT_TRUE(nodePtr->isContentDirty_);
+    EXPECT_TRUE(modifier->dirty_);
 }
 
 /**

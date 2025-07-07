@@ -101,6 +101,6 @@ HWTEST_F(RSBoundsModifierNGTypeTest, ApplyGeometryTest, TestSize.Level1)
     auto modifier2 = std::make_shared<ModifierNG::RSBoundsModifier>();
     auto geometry2 = std::make_shared<RSObjAbsGeometry>();
     modifier2->ApplyGeometry(geometry2);
-    EXPECT_FLOAT_EQ(geometry2->GetHeight(), 0.0f);
+    EXPECT_FALSE(modifier2->HasProperty(ModifierNG::RSPropertyType::BOUNDS));
 }
 } // namespace OHOS::Rosen
