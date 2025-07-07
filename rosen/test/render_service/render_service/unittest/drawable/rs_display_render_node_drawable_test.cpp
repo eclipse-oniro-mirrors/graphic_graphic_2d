@@ -475,7 +475,7 @@ HWTEST_F(RSScreenRenderNodeDrawableTest, OnDrawTest001, TestSize.Level1)
     Drawing::Canvas canvas;
     // when renderParams_ is not nullptr default
     screenDrawable_->OnDraw(canvas);
-    ASSERT_NE(screenDrawable_->GerDrawSkipType(), DrawSkipType::RENDER_PARAMS_OR_UNI_PARAMS_NULL);
+    ASSERT_NE(screenDrawable_->GetDrawSkipType(), DrawSkipType::RENDER_PARAMS_OR_UNI_PARAMS_NULL);
 
     // when renderParams_ is nullptr
     screenDrawable_->renderParams_ = nullptr;
@@ -515,7 +515,7 @@ HWTEST_F(RSScreenRenderNodeDrawableTest, OnDrawTest003, TestSize.Level1)
     Drawing::Canvas canvas;
     pid_t realTid = gettid();
     // when realTid == RSUniRenderThread::Instance().GetTId()
-    RSUniRenderThread::Instance().tid = realTid;
+    RSUniRenderThread::Instance().tid_ = realTid;
     auto renderEngine = std::make_shared<RSRenderEngine>();
     auto renderContext = std::make_shared<RenderContext>();
     renderEngine->renderContext_ = renderContext;
@@ -1079,7 +1079,7 @@ HWTEST_F(RSScreenRenderNodeDrawableTest, SkipFrameIrregularRefreshRateTest001, T
         std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now().time_since_epoch())
             .count());
     uint64_t curTime = startTime;
-    while (curTime - startTime < 100000000) {
+    while (curTime - startTime < 150000000) {
         RSMainThread::Instance()->curTime_ = curTime;
         bool skipFrame = screenDrawable_->SkipFrame(refreshRate, screenInfo);
         if (!skipFrame) {
