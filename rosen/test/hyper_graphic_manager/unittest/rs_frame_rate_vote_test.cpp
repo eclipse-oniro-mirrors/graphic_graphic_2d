@@ -54,8 +54,6 @@ HWTEST_F(RSFrameRateVoteTest, SetTransactionFlags001, Function | SmallTest | Lev
     ASSERT_EQ(DelayedSingleton<RSFrameRateVote>::GetInstance()->transactionFlags_, transactionFlags);
 }
 
-//
-
 /**
  * @tc.name: CheckSurfaceAndUi001
  * @tc.desc: Verify the result of CheckSurfaceAndUi function
@@ -148,6 +146,55 @@ HWTEST_F(RSFrameRateVoteTest, VideoFrameRateVote001, Function | SmallTest | Leve
         1000, OHSurfaceSource::OH_SURFACE_SOURCE_VIDEO, buffer);
     usleep(500000);
     ASSERT_EQ(DelayedSingleton<RSFrameRateVote>::GetInstance()->surfaceVideoFrameRateVote_.size(), 1);
+     
+    std::shared_ptr<RSVideoFrameRateVote> rsVideoFrameRateVote = std::make_shared<RSVideoFrameRateVote>(0,
+        nullptr, nullptr);
+    DelayedSingleton<RSFrameRateVote>::GetInstance()->surfaceVideoFrameRateVote_.insert(
+        std::pair<uint64_t, std::shared_ptr<RSVideoFrameRateVote>>(1000, rsVideoFrameRateVote));
+ 
+    DelayedSingleton<RSFrameRateVote>::GetInstance()->transactionFlags_ = "";
+    DelayedSingleton<RSFrameRateVote>::GetInstance()->lastVotedPid_ = 1000;
+    DelayedSingleton<RSFrameRateVote>::GetInstance()->CheckSurfaceAndUi(OHSurfaceSource::OH_SURFACE_SOURCE_DEFAULT);
+    DelayedSingleton<RSFrameRateVote>::GetInstance()->lastVotedRate_ = 60;
+ 
+    DelayedSingleton<RSFrameRateVote>::GetInstance()->ffrtQueue_ =
+        std::make_shared<ffrt::queue>("frame_rate_vote_queue");
+    DelayedSingleton<RSFrameRateVote>::GetInstance()->lastSurfaceNodeId_ = 500;
+    DelayedSingleton<RSFrameRateVote>::GetInstance()->VideoFrameRateVote(
+        1000, OHSurfaceSource::OH_SURFACE_SOURCE_DEFAULT, buffer);
+    usleep(500000);
+    ASSERT_EQ(DelayedSingleton<RSFrameRateVote>::GetInstance()->lastVotedRate_, 0);
+    ASSERT_EQ(DelayedSingleton<RSFrameRateVote>::GetInstance()->surfaceVideoFrameRateVote_.size(), 0);
+ 
+    DelayedSingleton<RSFrameRateVote>::GetInstance()->surfaceVideoFrameRateVote_.insert(
+        std::pair<uint64_t, std::shared_ptr<RSVideoFrameRateVote>>(1000, rsVideoFrameRateVote));
+    DelayedSingleton<RSFrameRateVote>::GetInstance()->transactionFlags_ = "";
+    DelayedSingleton<RSFrameRateVote>::GetInstance()->lastVotedPid_ = 1000;
+    DelayedSingleton<RSFrameRateVote>::GetInstance()->lastVotedRate_ = 60;
+    DelayedSingleton<RSFrameRateVote>::GetInstance()->CheckSurfaceAndUi(OHSurfaceSource::OH_SURFACE_SOURCE_DEFAULT);
+    DelayedSingleton<RSFrameRateVote>::GetInstance()->ffrtQueue_ = nullptr;
+    DelayedSingleton<RSFrameRateVote>::GetInstance()->lastSurfaceNodeId_ = 1000;
+    DelayedSingleton<RSFrameRateVote>::GetInstance()->VideoFrameRateVote(
+        1000, OHSurfaceSource::OH_SURFACE_SOURCE_DEFAULT, buffer);
+    usleep(500000);
+    ASSERT_EQ(DelayedSingleton<RSFrameRateVote>::GetInstance()->lastVotedRate_, 60);
+    ASSERT_EQ(DelayedSingleton<RSFrameRateVote>::GetInstance()->surfaceVideoFrameRateVote_.size(), 1);
+ 
+    DelayedSingleton<RSFrameRateVote>::GetInstance()->transactionFlags_ = "";
+    DelayedSingleton<RSFrameRateVote>::GetInstance()->lastVotedPid_ = 1000;
+    DelayedSingleton<RSFrameRateVote>::GetInstance()->lastVotedRate_ = 60;
+    DelayedSingleton<RSFrameRateVote>::GetInstance()->CheckSurfaceAndUi(OHSurfaceSource::OH_SURFACE_SOURCE_DEFAULT);
+    DelayedSingleton<RSFrameRateVote>::GetInstance()->ffrtQueue_ =
+        std::make_shared<ffrt::queue>("frame_rate_vote_queue");
+    DelayedSingleton<RSFrameRateVote>::GetInstance()->surfaceVideoFrameRateVote_[1000] = nullptr;
+    DelayedSingleton<RSFrameRateVote>::GetInstance()->VideoFrameRateVote(
+        1000, OHSurfaceSource::OH_SURFACE_SOURCE_DEFAULT, buffer);
+    usleep(500000);
+    ASSERT_EQ(DelayedSingleton<RSFrameRateVote>::GetInstance()->lastVotedRate_, 0);
+    ASSERT_EQ(DelayedSingleton<RSFrameRateVote>::GetInstance()->surfaceVideoFrameRateVote_.size(), 1);
+    DelayedSingleton<RSFrameRateVote>::GetInstance()->surfaceVideoFrameRateVote_.erase(1000);
+    ASSERT_EQ(DelayedSingleton<RSFrameRateVote>::GetInstance()->surfaceVideoFrameRateVote_.size(), 0);
+    rsVideoFrameRateVote = nullptr;
 }
 
 /**
