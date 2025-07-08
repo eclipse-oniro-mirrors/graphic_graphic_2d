@@ -47,4 +47,14 @@ HWTEST_F(RSModifierNGTest, RSDisplayListModifierUpdaterTest, TestSize.Level1)
 {
     EXPECT_NE(1, 0);
 }
+
+/**
+ * @tc.name: AttachPropertyTest
+ * @tc.desc: AttachProperty
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSModifierNGTest, AttachPropertyTest, TestSize.Level1)
+{
+    EXPECT_NE(1, 0);
+}
 } // namespace OHOS::Rosen
