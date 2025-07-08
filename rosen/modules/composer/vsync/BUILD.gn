@@ -128,10 +128,13 @@ ohos_shared_library("libvsync") {
     "init:libbegetutil",
     "ipc:ipc_core",
     "qos_manager:qos",
-    "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
-  public_external_deps = [ "c_utils:utils" ]
+  public_external_deps = 
+  [ 
+    "c_utils:utils",
+    "safwk:system_ability_fwk"
+  ]
 
   if (defined(global_parts_info) &&
       defined(global_parts_info.resourceschedule_resource_schedule_service)) {
