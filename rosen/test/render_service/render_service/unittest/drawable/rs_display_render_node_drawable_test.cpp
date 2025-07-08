@@ -77,7 +77,7 @@ void RSScreenRenderNodeDrawableTest::SetUpTestCase()
 #endif
     // init vsync, default 60hz
     auto vsyncGenerator = sptr<impl::VSyncGenerator>::MakeSptr();
-    RSMainThread::Instance()->vsyncGenerator_ = VSyncGenerator;
+    RSMainThread::Instance()->vsyncGenerator_ = vsyncGenerator;
 }
 
 void RSScreenRenderNodeDrawableTest::TearDownTestCase() {}
@@ -122,10 +122,10 @@ void RSScreenRenderNodeDrawableTest::SetUp()
         RS_LOGE("RSScreenRenderNodeDrawableTest: failed to create drawable.");
         return;
     }
-    screenDrawable_->renderParams = std::make_unique<RSScreenRenderParams>(id);
-    mirroredScreenDrawable_->renderParams = std::make_unique<RSScreenRenderParams>(id + 1);
-    displayDrawable_->renderParams = std::make_unique<RSLogicalDisplayRenderParams>(id + 2);
-    mirroredDisplayDrawable_->renderParams = std::make_unique<RSLogicalDisplayRenderParams>(id + 3);
+    screenDrawable_->renderParams_ = std::make_unique<RSScreenRenderParams>(id);
+    mirroredScreenDrawable_->renderParams_ = std::make_unique<RSScreenRenderParams>(id + 1);
+    displayDrawable_->renderParams_ = std::make_unique<RSLogicalDisplayRenderParams>(id + 2);
+    mirroredDisplayDrawable_->renderParams_ = std::make_unique<RSLogicalDisplayRenderParams>(id + 3);
 
     auto params = static_cast<RSScreenRenderParams*>(screenDrawable_->GetRenderParams().get());
     params->mirrorSourceDrawable_ = mirroredNode_->GetRenderDrawable();
@@ -180,7 +180,7 @@ HWTEST_F(RSScreenRenderNodeDrawableTest, PrepareOffscreenRender001, TestSize.Lev
     ASSERT_NE(renderNode_, nullptr);
     screenDrawable_->PrepareOffscreenRender(*screenDrawable_);
 
-    auto type = RotateOffScreenParam::GetRotateOffScreenscreenNodeEnable();
+    auto type = RotateOffScreenParam::GetRotateOffScreenScreenNodeEnable();
     RotateOffScreenParam::SetRotateOffScreenDisplayNodeEnable(true);
 
     auto params = static_cast<RSScreenRenderParams*>(screenDrawable_->GetRenderParams().get());
@@ -378,7 +378,7 @@ HWTEST_F(RSScreenRenderNodeDrawableTest, CheckScreenNodeSkipTest, TestSize.Level
  * @tc.type: FUNC
  * @tc.require: issueIAL2EA
  */
-HWTEST_F(RSscreenRenderNodeDrawableTest, CheckAndUpdateFilterCacheOcclusionTest, TestSize.Level1)
+HWTEST_F(RSScreenRenderNodeDrawableTest, CheckAndUpdateFilterCacheOcclusionTest, TestSize.Level1)
 {
     ASSERT_NE(renderNode_, nullptr);
     ASSERT_NE(screenDrawable_, nullptr);
@@ -695,7 +695,7 @@ HWTEST_F(RSScreenRenderNodeDrawableTest, OnDrawTest009, TestSize.Level1)
     const Rect& visibleRect = { 1, 1, 1, 1 };
     screenManager->SetMirrorScreenVisibleRect(screenInfo.id, visibleRect);
     screenDrawable_->OnDraw(canvas);
-    EXPECT_EQ(RSUnirenderThread::Instance().GetVisibleRect().left_, visibleRect.x);
+    EXPECT_EQ(RSUniRenderThread::Instance().GetVisibleRect().left_, visibleRect.x);
     EXPECT_EQ(screenDrawable_->drawSkipType_, DrawSkipType::REQUEST_FRAME_FAIL);
     // when comositeType is not UNI_RENDER_MIRROR_COMPOSITE
     params->compositeType_ = CompositeType::UNI_RENDER_MIRROR_COMPOSITE;
@@ -862,7 +862,7 @@ HWTEST_F(RSScreenRenderNodeDrawableTest, ClearCanvasStencilTest001, TestSize.Lev
     auto alignedRegion = allDirtyRegion.GetAlignedRegion(128);
     ASSERT_TRUE(alignedRegion.IsEmpty());
 
-    uniparam->isStencilPixelOcclusionCullingEnabled_ = true;
+    uniParam->isStencilPixelOcclusionCullingEnabled_ = true;
     screenDrawable_->ClearCanvasStencil(canvas, *params, *uniParam);
     ASSERT_TRUE(params->topSurfaceOpaqueRects_.empty());
     params->topSurfaceOpaqueRects_.emplace_back(Occlusion::Rect { dirtyManager->GetDirtyRegion() });
@@ -1704,7 +1704,7 @@ HWTEST_F(RSScreenRenderNodeDrawableTest, RenderOverDraw_Enabled, TestSize.Level1
 HWTEST_F(RSScreenRenderNodeDrawableTest, PostClearMemoryTask, TestSize.Level1)
 {
     ASSERT_NE(screenDrawable_, nullptr);
-    screenDrawable_->postClearMemoryTask();
+    screenDrawable_->PostClearMemoryTask();
 }
 
 /**
