@@ -1079,7 +1079,7 @@ HWTEST_F(RSScreenRenderNodeDrawableTest, SkipFrameIrregularRefreshRateTest001, T
         std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now().time_since_epoch())
             .count());
     uint64_t curTime = startTime;
-    while (curTime - startTime < 150000000) {
+    while (curTime - startTime < 1500000000) {
         RSMainThread::Instance()->curTime_ = curTime;
         bool skipFrame = screenDrawable_->SkipFrame(refreshRate, screenInfo);
         if (!skipFrame) {
