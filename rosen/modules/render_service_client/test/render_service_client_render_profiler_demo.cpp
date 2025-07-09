@@ -51,14 +51,14 @@ public:
         system("param set persist.graphic.profiler.enabled 1");
         auto time = std::chrono::milliseconds(INIT_WAIT_TIME);
         std::this_thread::sleep_for(time);
-        runnig_ = true;
+        running_ = true;
         thread_ = std::thread(&RenderServiceClientRenderProfilerDemo::MainLoop, this);
     }
 
     void Stop()
     {
-        if (runnig_) {
-            runnig_ = false;
+        if (running_) {
+            running_ = false;
             cv_.notify_all();
         }
         if (socket_ != -1) {
@@ -69,6 +69,12 @@ public:
             thread_.join();
         }
         system("param set persist.graphic.profiler.enabled 0");
+        PurgeMessageQueue();
+    }
+
+    void PurgeMessageQueue()
+    {
+        std::lock_guard<std::mutex> lock(queueMutex_);
         while (!messageQueue_.empty()) {
             messageQueue_.pop();
         }
@@ -76,6 +82,7 @@ public:
 
     void SendCommand(const std::string command)
     {
+        if (!running_) return;
         std::unique_lock lock(queueMutex_);
         messageQueue_.push(command);
     }
@@ -121,17 +128,17 @@ private:
             }
         }
         std::cout << "profiler socket connect success" << std::endl;
-        runnig_ = true;
-        while (runnig_) {
+        running_ = true;
+        while (running_) {
             {
                 std::unique_lock lock(queueMutex_);
-                cv_.wait_for(lock, std::chrono::milliseconds(SOCKET_REFRESH_TIME), [this] { return !runnig_; });
+                cv_.wait_for(lock, std::chrono::milliseconds(SOCKET_REFRESH_TIME), [this] { return !running_; });
             }
             SendMessage();
             RecieveMessage();
         }
         close(socket_);
-        socket_ = -1
+        socket_ = -1;
     }
 
     void SendMessage()
@@ -223,7 +230,7 @@ private:
     int32_t socket_ = -1;
     std::thread thread_;
     std::queue<std::string> messageQueue_;
-    bool runnig_ = false;
+    bool running_ = false;
     std::mutex queueMutex_;
     std::condition_variable cv_;
 };
