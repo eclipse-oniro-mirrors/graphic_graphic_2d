@@ -82,7 +82,9 @@ public:
 
     void SendCommand(const std::string command)
     {
-        if (!running_) return;
+        if (!running_) {
+           return;
+        }
         std::unique_lock lock(queueMutex_);
         messageQueue_.push(command);
     }

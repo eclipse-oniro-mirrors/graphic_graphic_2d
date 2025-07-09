@@ -1687,7 +1687,6 @@ void RSProfiler::RecordStart(const ArgList& args)
     ImageCache::Reset();
     g_lastCacheImageCount = 0;
 
-
     if (!OpenBetaRecordFile(g_recordFile)) {
         const auto overridePath = args.String(1);
         const auto path = (!overridePath.empty() && args.String(0) == "-f") ? overridePath : RSFile::GetDefaultPath();
