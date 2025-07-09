@@ -457,10 +457,10 @@ RectI RSUniHwcComputeUtil::SrcRectRotateTransform(const SurfaceBuffer& buffer,
 {
     const auto bufferWidth = buffer.GetSurfaceBufferWidth();
     const auto bufferHeight = buffer.GetSurfaceBufferHeight();
-    int left = newSrcRect.GetLeft();
-    int top = newSrcRect.GetTop();
-    int width = newSrcRect.GetWidth();
-    int height = newSrcRect.GetHeight();
+    int32_t left = newSrcRect.GetLeft();
+    int32_t top = newSrcRect.GetTop();
+    int32_t width = newSrcRect.GetWidth();
+    int32_t height = newSrcRect.GetHeight();
     RectI srcRect(newSrcRect);
     switch (bufferRotateTransformType) {
         case GraphicTransformType::GRAPHIC_ROTATE_90: {
