@@ -15,7 +15,9 @@
 
 #include "gtest/gtest.h"
 #include "ui_effect/filter/include/filter_blur_para.h"
+#include "ui_effect/filter/include/filter_color_gradient_para.h"
 #include "ui_effect/filter/include/filter_direction_light_para.h"
+#include "ui_effect/filter/include/filter_dispersion_para.h"
 #include "ui_effect/filter/include/filter_displacement_distort_para.h"
 #include "ui_effect/filter/include/filter_edge_light_para.h"
 #include "ui_effect/filter/include/filter_mask_transition_para.h"
