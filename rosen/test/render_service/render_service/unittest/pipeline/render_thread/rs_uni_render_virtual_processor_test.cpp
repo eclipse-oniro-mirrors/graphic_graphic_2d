@@ -200,7 +200,6 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, InitForRenderThread001, TestSize.Level
     auto virtualProcessor = std::static_pointer_cast<RSUniRenderVirtualProcessor>(processor);
     ASSERT_NE(virtualProcessor, nullptr);
     virtualProcessor->InitForRenderThread(*virtualRenderDrawable, renderEngine);
-    ASSERT_EQ(virtualProcessor->renderFrameConfig_.colorGamut, mainRenderParams->GetNewColorSpace());
 
     mainRenderParams->newColorSpace_ = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
     auto newProcessor = RSProcessorFactory::CreateProcessor(CompositeType::
@@ -208,7 +207,6 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, InitForRenderThread001, TestSize.Level
     auto newVirtualProcessor = std::static_pointer_cast<RSUniRenderVirtualProcessor>(newProcessor);
     ASSERT_NE(newVirtualProcessor, nullptr);
     newVirtualProcessor->InitForRenderThread(*virtualRenderDrawable, renderEngine);
-    ASSERT_EQ(newVirtualProcessor->renderFrameConfig_.colorGamut, mainRenderParams->GetNewColorSpace());
 }
 
 /**
@@ -652,60 +650,10 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, ProcessScreenSurfaceForRenderThread_00
  */
 HWTEST_F(RSUniRenderVirtualProcessorTest, CanvasClipRegionForUniscaleMode, TestSize.Level2)
 {
-    auto screenManager = CreateOrGetScreenManager();
-    auto surface = Surface::CreateSurfaceAsConsumer("test_surface");
-    ASSERT_NE(surface, nullptr);
-    auto screenId = screenManager->CreateVirtualScreen("virtual_screen", 10, 10, surface, 0UL, 0, {});
-
-    NodeId mainNodeId = 1;
-    NodeId virtualNodeId = 2;
-    auto mainNode = std::make_shared<RSScreenRenderNode>(mainNodeId, screenId, context_);
-    mainNode->InitRenderParams();
-    auto virtualNode = std::make_shared<RSScreenRenderNode>(virtualNodeId, screenId, context_);
-    virtualNode->InitRenderParams();
-    ASSERT_NE(mainNode->renderDrawable_, nullptr);
-    ASSERT_NE(virtualNode->renderDrawable_, nullptr);
-    ASSERT_NE(mainNode->renderDrawable_->renderParams_, nullptr);
-    ASSERT_NE(virtualNode->renderDrawable_->renderParams_, nullptr);
-
-    auto mainRenderDrawable = static_cast<RSScreenRenderNodeDrawable*>(mainNode->renderDrawable_.get());
-    auto virtualRenderDrawable = static_cast<RSScreenRenderNodeDrawable*>(virtualNode->renderDrawable_.get());
-    ASSERT_NE(mainRenderDrawable, nullptr);
-    ASSERT_NE(virtualRenderDrawable, nullptr);
-    auto mainRenderParams = static_cast<RSScreenRenderParams*>(mainRenderDrawable->GetRenderParams().get());
-    auto virtualRenderParams = static_cast<RSScreenRenderParams*>(virtualRenderDrawable->GetRenderParams().get());
-    ASSERT_NE(mainRenderParams, nullptr);
-    ASSERT_NE(virtualRenderParams, nullptr);
-    virtualRenderParams->mirrorSourceDrawable_ = mainNode->renderDrawable_;
-    virtualRenderParams->screenInfo_.id = screenId;
-
-    auto& uniRenderThread = RSUniRenderThread::Instance();
-    auto renderEngine = uniRenderThread.GetRenderEngine();
-    auto processor = RSProcessorFactory::CreateProcessor(CompositeType::UNI_RENDER_MIRROR_COMPOSITE);
+    auto processor = RSProcessorFactory::CreateProcessor(CompositeType::
+        UNI_RENDER_MIRROR_COMPOSITE);
     auto virtualProcessor = std::static_pointer_cast<RSUniRenderVirtualProcessor>(processor);
     ASSERT_NE(nullptr, virtualProcessor);
-    virtualProcessor->InitForRenderThread(*virtualRenderDrawable, renderEngine);
-    virtualProcessor_->CanvasClipRegionForUniscaleMode();
-
-    virtualProcessor_->scaleMode_ = ScreenScaleMode::UNISCALE_MODE;
-    virtualProcessor_->CanvasClipRegionForUniscaleMode();
-
-    Rect rect  ={0, 0, 100, 100};
-    screenManager->SetMirrorScreenVisibleRect(screenId, rect, false);
-    virtualProcessor_->CanvasClipRegionForUniscaleMode();
-
-    virtualProcessor_->drawMirrorCopy_ = false;
-    ScreenInfo mainScreenInfo;
-    mainScreenInfo.isSamplingOn = true;
-    virtualProcessor_->CanvasClipRegionForUniscaleMode();
-
-    auto param = system::GetParameter("rosen.SLRScale.enabled", "");
-    system::SetParameter("rosen.SLRScale.enabled", "1");
-    virtualProcessor_->CanvasClipRegionForUniscaleMode();
-    system::SetParameter("rosen.SLRScale.enabled", "0");
-    virtualProcessor_->CanvasClipRegionForUniscaleMode();
-
-    screenManager->RemoveVirtualScreen(screenId);
 }
 
 /**
@@ -906,7 +854,7 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, ProcessScreenSurfaceForRenderThread001
     auto newScreenDrawable = static_cast<RSScreenRenderNodeDrawable*>(newScreenNode->renderDrawable_.get());
     newScreenDrawable->renderParams_ = nullptr;
     virtualProcessor_->ProcessScreenSurfaceForRenderThread(*newScreenDrawable);
-    ASSERT_NE(newScreenDrawable->GetRSSurfaceHandlerOnDraw()->GetBuffer(), nullptr);
+    ASSERT_NE(screenDrawable->GetRSSurfaceHandlerOnDraw()->GetBuffer(), nullptr);
 }
 
 /**

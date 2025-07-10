@@ -390,7 +390,7 @@ HWTEST_F(RSScreenRenderNodeTest, SetBrightnessRatioTest, TestSize.Level1)
     node->SetBrightnessRatio(1.0);
     node->stagingRenderParams_->SetNeedSync(true);
     node->SetBrightnessRatio(1.0);
-    ASSERT_EQ(node->stagingRenderParams_, nullptr);
+    ASSERT_NE(node->stagingRenderParams_, nullptr);
 }
 
 /**
@@ -407,7 +407,7 @@ HWTEST_F(RSScreenRenderNodeTest, SetColorSpaceTest002, TestSize.Level1)
     node->stagingRenderParams_->SetNeedSync(true);
     node->SetColorSpace(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3);
     auto colorSpace = node->GetColorSpace();
-    ASSERT_NE(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3, colorSpace);
+    ASSERT_EQ(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3, colorSpace);
 }
 
 /**
