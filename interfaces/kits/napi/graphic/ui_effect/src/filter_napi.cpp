@@ -1150,9 +1150,11 @@ napi_value FilterNapi::SetVariableRadiusBlur(napi_env env, napi_callback_info in
     float blurRadius = 0.0f;
     if (UIEffectNapiUtils::GetType(env, argv[NUM_0]) == napi_number) {
         double tmp = 0.0;
-        if (napi_get_value_double(env, argv[NUM_0], &tmp) == napi_ok) {
-            blurRadius = static_cast<float>(tmp);
+        if (napi_get_value_double(env, argv[NUM_0], &tmp) != napi_ok) {
+            FILTER_LOG_E("FilterNapi SetVariableRadiusBlur parsing blurRadius fail");
+            return thisVar;
         }
+        blurRadius = static_cast<float>(tmp);
     }
     para->SetBlurRadius(blurRadius);
 
