@@ -45,7 +45,6 @@ public:
 class RSMaxRenderModifier : public ModifierNG::RSRenderModifier {
 public:
     RSMaxRenderModifier() = default;
-    RSMaxRenderModifier(ModifierId id) : RSRenderModifier(id) {}
     ~RSMaxRenderModifier() override = default;
 
     static inline constexpr auto Type = ModifierNG::RSModifierType::MAX;
@@ -58,7 +57,6 @@ public:
 class RSInvalidRenderModifier : public ModifierNG::RSRenderModifier {
 public:
     RSInvalidRenderModifier() = default;
-    RSInvalidRenderModifier(ModifierId id) : RSRenderModifier(id) {}
     ~RSInvalidRenderModifier() override = default;
 
     static inline constexpr auto Type = ModifierNG::RSModifierType::INVALID;
