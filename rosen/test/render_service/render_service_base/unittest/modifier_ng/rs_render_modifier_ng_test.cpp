@@ -154,10 +154,9 @@ HWTEST_F(RSRenderModifierNGTest, MarshallingTest, TestSize.Level1)
  */
 HWTEST_F(RSRenderModifierNGTest, UnmarshallingTest, TestSize.Level1)
 {
-    auto modifier = std::make_shared<ModifierNG::RSAlphaRenderModifier>();
     Parcel parcel;
-    auto res = modifier->Unmarshalling(parcel);
-    EXPECT_EQ(res, nullptr);
+    auto renderModifier1 = ModifierNG::RSRenderModifier::Unmarshalling(parcel);
+    EXPECT_EQ(renderModifier1, nullptr);
 }
 
 /**
