@@ -44,6 +44,7 @@ class RSSurfaceHandler;
 class RSContext;
 class RSDirtyRegionManager;
 class RSDrawWindowCache;
+class RSRenderNodeGC;
 namespace Drawing {
 class Canvas;
 }
