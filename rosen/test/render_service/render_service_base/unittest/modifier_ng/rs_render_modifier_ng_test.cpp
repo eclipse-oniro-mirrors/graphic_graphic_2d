@@ -60,10 +60,10 @@ public:
     ~RSIllegalTypeRenderModifier() override = default;
 
     // 10000 is illegal modifier type for test
-    static inline constexpr auto Type = static_cast<ModifierNG::RSModifierType>(10000);
+    static inline constexpr auto type = static_cast<ModifierNG::RSModifierType>(10000);
     ModifierNG::RSModifierType GetType() const override
     {
-        return Type;
+        return type;
     };
 };
 
