@@ -42,6 +42,32 @@ public:
     void TearDown() override;
 };
 
+class RSMaxRenderModifier : public ModifierNG::RSRenderModifier {
+public:
+    RSMaxRenderModifier() = default;
+    RSMaxRenderModifier(ModifierId id) : RSRenderModifier(id) {}
+    ~RSMaxRenderModifier() override = default;
+
+    static inline constexpr auto Type = ModifierNG::RSModifierType::MAX;
+    ModifierNG::RSModifierType GetType() const override
+    {
+        return Type;
+    };
+};
+
+class RSInvalidRenderModifier : public ModifierNG::RSRenderModifier {
+public:
+    RSInvalidRenderModifier() = default;
+    RSInvalidRenderModifier(ModifierId id) : RSRenderModifier(id) {}
+    ~RSInvalidRenderModifier() override = default;
+
+    static inline constexpr auto Type = ModifierNG::RSModifierType::INVALID;
+    ModifierNG::RSModifierType GetType() const override
+    {
+        return Type;
+    };
+};
+
 void RSRenderModifierNGTest::SetUpTestCase() {}
 void RSRenderModifierNGTest::TearDownTestCase() {}
 void RSRenderModifierNGTest::SetUp() {}
@@ -157,6 +183,35 @@ HWTEST_F(RSRenderModifierNGTest, UnmarshallingTest, TestSize.Level1)
     Parcel parcel;
     auto renderModifier1 = ModifierNG::RSRenderModifier::Unmarshalling(parcel);
     EXPECT_EQ(renderModifier1, nullptr);
+
+    Parcel parcel1;
+    auto renderModifier2 = std::make_shared<ModifierNG::RSAlphaRenderModifier>();
+    bool ret = renderModifier2->Marshalling(parcel1);
+    EXPECT_TRUE(ret);
+    auto renderModifier3 = ModifierNG::RSRenderModifier::Unmarshalling(parcel1);
+    EXPECT_NE(renderModifier3, nullptr);
+
+    Parcel parcel2;
+    auto property = std::make_shared<RSRenderProperty<float>>();
+    renderModifier2->AttachProperty(ModifierNG::RSPropertyType::ALPHA, property);
+    ret = renderModifier2->Marshalling(parcel2);
+    EXPECT_TRUE(ret);
+    renderModifier3 = ModifierNG::RSRenderModifier::Unmarshalling(parcel2);
+    EXPECT_NE(renderModifier3, nullptr);
+
+    Parcel parcel3;
+    auto renderModifier4 = std::make_shared<RSMaxRenderModifier>();
+    ret = renderModifier4->Marshalling(parcel3);
+    EXPECT_TRUE(ret);
+    auto renderModifier5 = ModifierNG::RSRenderModifier::Unmarshalling(parcel3);
+    EXPECT_EQ(renderModifier5, nullptr);
+
+    Parcel parcel4;
+    auto renderModifier6 = std::make_shared<RSInvalidRenderModifier>();
+    ret = renderModifier6->Marshalling(parcel4);
+    EXPECT_TRUE(ret);
+    auto renderModifier7 = ModifierNG::RSRenderModifier::Unmarshalling(parcel4);
+    EXPECT_EQ(renderModifier7, nullptr);
 }
 
 /**
