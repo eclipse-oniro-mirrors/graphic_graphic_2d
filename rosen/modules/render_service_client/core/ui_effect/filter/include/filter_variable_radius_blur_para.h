@@ -14,10 +14,11 @@
  */
 #ifndef UIEFFECT_FILTER_VARIABLE_RADIUS_BLUR_PARA_H
 #define UIEFFECT_FILTER_VARIABLE_RADIUS_BLUR_PARA_H
+
+#include "common/rs_macros.h"
 #include "filter_para.h"
 #include "ui_effect/mask/include/mask_para.h"
 #include "ui_effect/utils.h"
-#include "common/rs_macros.h"
 
 namespace OHOS {
 namespace Rosen {
