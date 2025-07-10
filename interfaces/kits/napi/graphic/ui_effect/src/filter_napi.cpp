@@ -1146,17 +1146,13 @@ napi_value FilterNapi::SetVariableRadiusBlur(napi_env env, napi_callback_info in
         FILTER_LOG_E("FilterNapi SetVariableRadiusBlur parsing input fail"));
     
     auto para = std::make_shared<VariableRadiusBlurPara>();
-
-    float blurRadius = 0.0f;
-    if (UIEffectNapiUtils::GetType(env, argv[NUM_0]) == napi_number) {
-        double tmp = 0.0;
-        if (napi_get_value_double(env, argv[NUM_0], &tmp) != napi_ok) {
-            FILTER_LOG_E("FilterNapi SetVariableRadiusBlur parsing blurRadius fail");
-            return thisVar;
-        }
-        blurRadius = static_cast<float>(tmp);
+    double blurRadius = 0.0;
+    if (UIEffectNapiUtils::GetType(env, argv[NUM_0]) != napi_number ||
+        napi_get_value_double(env, argv[NUM_0], &blurRadius) != napi_ok) {
+        FILTER_LOG_E("FilterNapi SetVariableRadiusBlur parsing blurRadius fail");
+        return thisVar;
     }
-    para->SetBlurRadius(blurRadius);
+    para->SetBlurRadius(static_cast<float>(blurRadius));
 
     Mask* mask = nullptr;
     status = napi_unwrap(env, argv[NUM_1], reinterpret_cast<void**>(&mask));
