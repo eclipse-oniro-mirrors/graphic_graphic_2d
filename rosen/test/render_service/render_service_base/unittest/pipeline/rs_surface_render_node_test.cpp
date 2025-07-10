@@ -2368,6 +2368,13 @@ HWTEST_F(RSSurfaceRenderNodeTest, HDRPresentTest002, TestSize.Level1)
     EXPECT_TRUE(childNode->GetHDRPresent());
     childNode->ReduceHDRNum(HDRComponentType::UICOMPONENT);
     EXPECT_FALSE(childNode->GetHDRPresent());
+
+    childNode->IncreaseHDRNum(HDRComponentType::EFFECT);
+    EXPECT_TRUE(childNode->IsHdrEffectColorGamut());
+    childNode->ReduceHDRNum(HDRComponentType::EFFECT);
+    EXPECT_FALSE(childNode->IsHdrEffectColorGamut());
+    childNode->ReduceHDRNum(HDRComponentType::EFFECT); // different branch if call again
+    EXPECT_FALSE(childNode->IsHdrEffectColorGamut());
 }
 
 /**
@@ -2749,6 +2756,24 @@ HWTEST_F(RSSurfaceRenderNodeTest, GetSourceDisplayRenderNodeId, TestSize.Level1)
     NodeId sourceDisplayRenderNodeId = 1;
     testNode->SetSourceDisplayRenderNodeId(sourceDisplayRenderNodeId);
     ASSERT_EQ(testNode->GetSourceDisplayRenderNodeId(), sourceDisplayRenderNodeId);
+}
+
+/**
+ * @tc.name: SetTopLayerZOrderTest
+ * @tc.desc: Test SetTopLayerZOrder
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, SetTopLayerZOrderTest, TestSize.Level1)
+{
+    auto node = std::make_shared<RSSurfaceRenderNode>(id, context);
+    node->isLayerTop_ = false;
+    node->SetTopLayerZOrder(1);
+    EXPECT_NE(node->GetTopLayerZOrder(), 1);
+
+    node->isLayerTop_ = true;
+    node->SetTopLayerZOrder(1);
+    EXPECT_EQ(node->GetTopLayerZOrder(), 1);
 }
 } // namespace Rosen
 } // namespace OHOS

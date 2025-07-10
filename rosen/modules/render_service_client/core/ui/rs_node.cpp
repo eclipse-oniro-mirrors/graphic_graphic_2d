@@ -147,6 +147,12 @@ bool IsPathAnimatableModifier(const RSModifierType& type)
     return false;
 }
 #endif
+
+enum HdrEffectType : uint32_t {
+    HDR_EFFECT_NONE = 0,
+    HDR_EFFECT_FILTER = 1,
+    HDR_EFFECT_BRIGHTNESS_BLENDER = 2,
+};
 } // namespace
 
 RSNode::RSNode(bool isRenderServiceNode, NodeId id, bool isTextureExportNode, std::shared_ptr<RSUIContext> rsUIContext,
@@ -201,6 +207,11 @@ RSNode::~RSNode()
     // break current (ui) parent-child relationship.
     // render nodes will check if its child is expired and remove it, no need to manually remove it here.
     SharedPtr parentPtr = parent_.lock();
+    if (parentPtr) {
+        parentPtr->children_.erase(std::remove_if(parentPtr->children_.begin(), parentPtr->children_.end(),
+                                                  [](const auto& child) { return child.expired(); }),
+            parentPtr->children_.end());
+    }
     auto rsUIContext = rsUIContext_.lock();
     if (rsUIContext != nullptr) {
         // tell RT/RS to destroy related render node
@@ -234,12 +245,6 @@ RSNode::~RSNode()
             command = std::make_unique<RSBaseNodeDestroy>(id_);
             transactionProxy->AddCommand(command, !IsRenderServiceNode());
         }
-    }
-    if (parentPtr) {
-        parentPtr->children_.erase(std::remove_if(parentPtr->children_.begin(),
-                                                  parentPtr->children_.end(),
-                                                  [](const auto& child) { return child.expired(); }),
-                                   parentPtr->children_.end());
     }
 }
 
@@ -2448,7 +2453,7 @@ void RSNode::SetBackgroundUIFilter(const std::shared_ptr<RSUIFilter> backgroundF
     }
 
 #if defined(MODIFIER_NG)
-    SetEnableHDREffect(backgroundFilter->GetHdrEffectEnable());
+    SetEnableHDREffect(HdrEffectType::HDR_EFFECT_FILTER, backgroundFilter->GetHdrEffectEnable());
     SetUIFilterPropertyNG<ModifierNG::RSBackgroundFilterModifier,
         &ModifierNG::RSBackgroundFilterModifier::SetUIFilter>(backgroundFilter);
 #else
@@ -2466,7 +2471,7 @@ void RSNode::SetBackgroundUIFilter(const std::shared_ptr<RSUIFilter> backgroundF
             shouldAdd = false;
         }
     }
-    SetEnableHDREffect(backgroundFilter->GetHdrEffectEnable());
+    SetEnableHDREffect(HdrEffectType::HDR_EFFECT_FILTER, backgroundFilter->GetHdrEffectEnable());
 
     if (shouldAdd) {
         auto rsProperty = std::make_shared<RSProperty<std::shared_ptr<RSUIFilter>>>(backgroundFilter);
@@ -2629,6 +2634,7 @@ void RSNode::SetVisualEffect(const VisualEffect* visualEffect)
     }
     // To do: generate composed visual effect here. Now we just set background brightness in v1.0.
     auto visualEffectParas = visualEffect->GetAllPara();
+    bool hasHdrBrightnessBlender = false;
     for (const auto& visualEffectPara : visualEffectParas) {
         if (visualEffectPara == nullptr) {
             continue;
@@ -2645,6 +2651,9 @@ void RSNode::SetVisualEffect(const VisualEffect* visualEffect)
         if (brightnessBlender == nullptr) {
             continue;
         }
+        if (brightnessBlender->GetHdr() && ROSEN_GNE(brightnessBlender->GetFraction(), 0.0f)) {
+            hasHdrBrightnessBlender = true;
+        }
         auto fraction = brightnessBlender->GetFraction();
         SetBgBrightnessFract(fraction);
         SetBgBrightnessParams({ brightnessBlender->GetLinearRate(), brightnessBlender->GetDegree(),
@@ -2653,6 +2662,10 @@ void RSNode::SetVisualEffect(const VisualEffect* visualEffect)
                 brightnessBlender->GetPositiveCoeff().data_[2] },
             { brightnessBlender->GetNegativeCoeff().data_[0], brightnessBlender->GetNegativeCoeff().data_[1],
                 brightnessBlender->GetNegativeCoeff().data_[2] } });
+    }
+    // Update blender hdr status
+    if (hasHdrBrightnessBlender) {
+        SetEnableHDREffect(HdrEffectType::HDR_EFFECT_BRIGHTNESS_BLENDER, true);
     }
 }
 
@@ -2694,7 +2707,11 @@ void RSNode::SetBlender(const Blender* blender)
                 { brightnessBlender->GetPositiveCoeff().x_, brightnessBlender->GetPositiveCoeff().y_,
                     brightnessBlender->GetPositiveCoeff().z_ },
                 { brightnessBlender->GetNegativeCoeff().x_, brightnessBlender->GetNegativeCoeff().y_,
-                    brightnessBlender->GetNegativeCoeff().z_ } });
+                    brightnessBlender->GetNegativeCoeff().z_ }});
+            if (brightnessBlender->GetHdr()) {
+                SetFgBrightnessHdr(brightnessBlender->GetHdr());
+                SetEnableHDREffect(HdrEffectType::HDR_EFFECT_BRIGHTNESS_BLENDER, true);
+            }
         }
     }
 }
@@ -2957,6 +2974,15 @@ void RSNode::SetFgBrightnessFract(const float& fract)
 #else
     SetProperty<RSFgBrightnessFractModifier, RSAnimatableProperty<float>>(
         RSModifierType::FG_BRIGHTNESS_FRACTION, fract);
+#endif
+}
+
+void RSNode::SetFgBrightnessHdr(const bool hdr)
+{
+#if defined(MODIFIER_NG)
+    SetPropertyNG<ModifierNG::RSBlendModifier, &ModifierNG::RSBlendModifier::SetFgBrightnessHdr>(hdr);
+#else
+    SetProperty<RSFgBrightnessHdrModifier, RSProperty<bool>>(RSModifierType::FG_BRIGHTNESS_HDR, hdr);
 #endif
 }
 
@@ -3281,14 +3307,20 @@ void RSNode::SetAlwaysSnapshot(bool enable)
 #endif
 }
 
-void RSNode::SetEnableHDREffect(bool enableHdrEffect)
+void RSNode::SetEnableHDREffect(uint32_t type, bool enableHdrEffect)
 {
-    if (enableHdrEffect_ == enableHdrEffect) {
+    bool old = hdrEffectType_ > HdrEffectType::HDR_EFFECT_NONE;
+    if (enableHdrEffect) {
+        hdrEffectType_ |= type;
+    } else {
+        hdrEffectType_ &= ~type;
+    }
+    bool enabled = hdrEffectType_ > HdrEffectType::HDR_EFFECT_NONE;
+    if (old == enabled) {
         return;
     }
-    ROSEN_LOGD("RSNode::SetEnableHDREffect enableHdrEffect=%{public}d", static_cast<int>(enableHdrEffect));
-    enableHdrEffect_ = enableHdrEffect;
-    std::unique_ptr<RSCommand> command = std::make_unique<RSSetEnableHDREffect>(GetId(), enableHdrEffect);
+    ROSEN_LOGD("RSNode::SetEnableHDREffect hdrEffectType=%{public}d", static_cast<int>(hdrEffectType_));
+    std::unique_ptr<RSCommand> command = std::make_unique<RSSetEnableHDREffect>(GetId(), enabled);
     AddCommand(command, IsRenderServiceNode());
 }
 
@@ -3409,11 +3441,15 @@ void RSNode::SetTakeSurfaceForUIFlag()
     auto transaction = GetRSTransaction();
     if (transaction != nullptr) {
         transaction->AddCommand(command, IsRenderServiceNode());
+        ROSEN_LOGW("OffScreenIsSync SetTakeSurfaceForUIFlag AddCommand be processed. nodeId: [%{public}" PRIu64 "]"
+            ", IsRenderServiceNode: [%{public}s]", GetId(), IsRenderServiceNode() ? "true" : "false");
         transaction->FlushImplicitTransaction();
     } else {
         auto transactionProxy = RSTransactionProxy::GetInstance();
         if (transactionProxy != nullptr) {
             transactionProxy->AddCommand(command, IsRenderServiceNode());
+            ROSEN_LOGW("OffScreenIsSync SetTakeSurfaceForUIFlag AddCommand be processed. nodeId:[%{public}" PRIu64 "]"
+                ", IsRenderServiceNode: [%{public}s] (Proxy)", GetId(), IsRenderServiceNode() ? "true" : "false");
             transactionProxy->FlushImplicitTransaction();
         }
     }
@@ -4937,10 +4973,8 @@ void RSNode::Dump(std::string& out) const
         out += "null";
     }
     out += "], outOfParent[" + std::to_string(static_cast<int>(outOfParent_));
-#ifdef RS_ENABLE_VK
     out += "], hybridRenderCanvas[";
     out += hybridRenderCanvas_ ? "true" : "false";
-#endif
     out += "], animations[";
     for (const auto& [id, anim] : animations_) {
         out += "{id:" + std::to_string(id);
@@ -5064,29 +5098,33 @@ void RSNode::SetPropertyNodeChangeCallback(PropertyNodeChangeCallback callback)
 #if defined(MODIFIER_NG)
 void RSNode::AddModifier(const std::shared_ptr<ModifierNG::RSModifier> modifier)
 {
-    if (modifier == nullptr) {
-        RS_LOGE("RSNode::AddModifier: null modifier, nodeId=%{public}" PRIu64, GetId());
-        return;
-    }
-    if (modifiersNG_.count(modifier->GetId())) {
-        return;
-    }
-    modifiersNG_.emplace(modifier->GetId(), modifier);
-    modifier->OnAttach(*this); // Attach properties of modifier here
-    if (modifier->GetType() == ModifierNG::RSModifierType::NODE_MODIFIER) {
-        return;
-    }
-    if (modifier->GetType() != ModifierNG::RSModifierType::BOUNDS &&
-        modifier->GetType() != ModifierNG::RSModifierType::FRAME &&
-        modifier->GetType() != ModifierNG::RSModifierType::BACKGROUND_COLOR &&
-        modifier->GetType() != ModifierNG::RSModifierType::ALPHA) {
-        SetDrawNode();
-        SetDrawNodeType(DrawNodeType::DrawPropertyType);
-        if (modifier->GetType() == ModifierNG::RSModifierType::TRANSFORM) {
-            SetDrawNodeType(DrawNodeType::GeometryPropertyType);
+    {
+        std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
+        CHECK_FALSE_RETURN(CheckMultiThreadAccess(__func__));
+        if (modifier == nullptr) {
+            RS_LOGE("RSNode::AddModifier: null modifier, nodeId=%{public}" PRIu64, GetId());
+            return;
         }
+        if (modifiersNG_.count(modifier->GetId())) {
+            return;
+        }
+        modifier->OnAttach(*this); // Attach properties of modifier here
+        if (modifier->GetType() == ModifierNG::RSModifierType::NODE_MODIFIER) {
+            return;
+        }
+        if (modifier->GetType() != ModifierNG::RSModifierType::BOUNDS &&
+            modifier->GetType() != ModifierNG::RSModifierType::FRAME &&
+            modifier->GetType() != ModifierNG::RSModifierType::BACKGROUND_COLOR &&
+            modifier->GetType() != ModifierNG::RSModifierType::ALPHA) {
+            SetDrawNode();
+            SetDrawNodeType(DrawNodeType::DrawPropertyType);
+            if (modifier->GetType() == ModifierNG::RSModifierType::TRANSFORM) {
+                SetDrawNodeType(DrawNodeType::GeometryPropertyType);
+            }
+        }
+        NotifyPageNodeChanged();
+        modifiersNG_.emplace(modifier->GetId(), modifier);
     }
-    NotifyPageNodeChanged();
     std::unique_ptr<RSCommand> command = std::make_unique<RSAddModifierNG>(GetId(), modifier->CreateRenderModifier());
     AddCommand(command, IsRenderServiceNode(), GetFollowType(), GetId());
     if (NeedForcedSendToRemote()) {
@@ -5098,12 +5136,16 @@ void RSNode::AddModifier(const std::shared_ptr<ModifierNG::RSModifier> modifier)
 
 void RSNode::RemoveModifier(const std::shared_ptr<ModifierNG::RSModifier> modifier)
 {
-    if (modifier == nullptr || !modifiersNG_.count(modifier->GetId())) {
-        RS_LOGE("RSNode::RemoveModifier: null modifier or modifier not exist.");
-        return;
+    {
+        std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
+        CHECK_FALSE_RETURN(CheckMultiThreadAccess(__func__));
+        if (modifier == nullptr || !modifiersNG_.count(modifier->GetId())) {
+            RS_LOGE("RSNode::RemoveModifier: null modifier or modifier not exist.");
+            return;
+        }
+        modifiersNG_.erase(modifier->GetId());
     }
     modifier->OnDetach(); // Detach properties of modifier here
-    modifiersNG_.erase(modifier->GetId());
     DetachUIFilterProperties(modifier);
     std::unique_ptr<RSCommand> command =
         std::make_unique<RSRemoveModifierNG>(GetId(), modifier->GetType(), modifier->GetId());

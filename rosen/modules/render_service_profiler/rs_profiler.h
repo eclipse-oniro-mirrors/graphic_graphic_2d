@@ -502,7 +502,6 @@ public:
     RSB_EXPORT static void KeepDrawCmd(bool& drawCmdListNeedSync);
     RSB_EXPORT static void SetRenderNodeKeepDrawCmd(bool enable);
     RSB_EXPORT static bool IfNeedToSkipDuringReplay(Parcel& parcel, uint32_t skipBytes);
-    RSB_EXPORT static void SurfaceOnDrawMatchOptimize(bool& useNodeMatchOptimize);
 
     RSB_EXPORT static void RsMetricClear();
     RSB_EXPORT static void RsMetricSet(std::string name, std::string value);

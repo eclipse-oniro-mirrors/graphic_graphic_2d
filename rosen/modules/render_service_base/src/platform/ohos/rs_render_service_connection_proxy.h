@@ -404,6 +404,8 @@ public:
     RetCodeHrpService ProfilerServicePopulateFiles(const HrpServiceDirInfo& dirInfo,
         uint32_t firstFileIndex, std::vector<HrpServiceFileInfo>& outFiles) override;
     bool ProfilerIsSecureScreen() override;
+
+    void ClearUifirstCache(NodeId id) override;
 private:
     bool FillParcelWithTransactionData(
         std::unique_ptr<RSTransactionData>& transactionData, std::shared_ptr<MessageParcel>& data);
@@ -418,7 +420,7 @@ private:
 
     ErrCode SetAncoForceDoDirect(bool direct, bool& res) override;
     
-    ErrCode SetLayerTopForHWC(const std::string &nodeIdStr, bool isTop, uint32_t zOrder) override;
+    ErrCode SetLayerTopForHWC(NodeId nodeId, bool isTop, uint32_t zOrder) override;
 
     ErrCode SetLayerTop(const std::string &nodeIdStr, bool isTop) override;
 

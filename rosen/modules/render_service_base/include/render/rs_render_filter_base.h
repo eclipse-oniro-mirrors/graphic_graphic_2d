@@ -152,6 +152,9 @@ enum class RSUIFilterType : int16_t {
     LIGHT_POSITION,
     LIGHT_COLOR,
     LIGHT_INTENSITY,
+
+    // edge light if use raw color value type
+    EDGE_LIGHT_USE_RAW_COLOR, // bool
 };
 
 using RSUIFilterTypeUnderlying = std::underlying_type<RSUIFilterType>::type;
@@ -206,6 +209,8 @@ public:
 
     virtual void GenerateGEVisualEffect(std::shared_ptr<Drawing::GEVisualEffectContainer> visualEffectContainer) {};
     virtual void PostProcess(Drawing::Canvas& canvas) {};
+    
+    virtual void SetDisplayHeadroom(float headroom) {};
 
     uint32_t Hash() const
     {

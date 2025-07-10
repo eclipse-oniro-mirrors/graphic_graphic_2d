@@ -1130,9 +1130,9 @@ bool RSInterfaces::UnregisterSurfaceBufferCallback(pid_t pid, uint64_t uid)
     return renderServiceClient_->UnregisterSurfaceBufferCallback(pid, uid);
 }
 
-void RSInterfaces::SetLayerTopForHWC(const std::string &nodeIdStr, bool isTop, uint32_t zOrder)
+void RSInterfaces::SetLayerTopForHWC(NodeId nodeId, bool isTop, uint32_t zOrder)
 {
-    renderServiceClient_->SetLayerTopForHWC(nodeIdStr, isTop, zOrder);
+    renderServiceClient_->SetLayerTopForHWC(nodeId, isTop, zOrder);
 }
 
 void RSInterfaces::SetLayerTop(const std::string &nodeIdStr, bool isTop)
@@ -1216,6 +1216,11 @@ bool RSInterfaces::SetBehindWindowFilterEnabled(bool enabled)
 bool RSInterfaces::GetBehindWindowFilterEnabled(bool& enabled)
 {
     return renderServiceClient_->GetBehindWindowFilterEnabled(enabled);
+}
+
+void RSInterfaces::ClearUifirstCache(NodeId id)
+{
+    renderServiceClient_->ClearUifirstCache(id);
 }
 } // namespace Rosen
 } // namespace OHOS

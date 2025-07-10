@@ -787,7 +787,7 @@ bool RSRenderServiceClient::UnregisterSurfaceBufferCallback(pid_t pid, uint64_t 
     return false;
 }
 
-void RSRenderServiceClient::SetLayerTopForHWC(const std::string &nodeIdStr, bool isTop, uint32_t zOrder)
+void RSRenderServiceClient::SetLayerTopForHWC(NodeId nodeId, bool isTop, uint32_t zOrder)
 {
 }
 
@@ -858,6 +858,10 @@ bool RSRenderServiceClient::GetBehindWindowFilterEnabled(bool& enabled)
 int32_t RSRenderServiceClient::GetPidGpuMemoryInMB(pid_t pid, float &gpuMemInMB)
 {
     return {};
+}
+
+void RSRenderServiceClient::ClearUifirstCache(NodeId id)
+{
 }
 } // namespace Rosen
 } // namespace OHOS

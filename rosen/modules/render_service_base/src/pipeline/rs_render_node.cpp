@@ -30,6 +30,7 @@
 #include "common/rs_common_def.h"
 #include "common/rs_obj_abs_geometry.h"
 #include "common/rs_optional_trace.h"
+#include "dirty_region/rs_gpu_dirty_collector.h"
 #include "drawable/rs_misc_drawable.h"
 #include "drawable/rs_property_drawable_foreground.h"
 #include "drawable/rs_render_node_drawable_adapter.h"
@@ -852,7 +853,7 @@ bool RSRenderNode::IsFirstLevelNode()
     return id_ == firstLevelNodeId_;
 }
 
-void RSRenderNode::DumpTree(int32_t depth, std::string& out) const
+void RSRenderNode::DumpTree(int32_t depth, std::string& out, bool dumpSingleNode) const
 {
     // Exceed max depth for dumping render node tree, refuse to continue and add a warning.
     // Possible reason: loop in the render node tree
@@ -992,7 +993,10 @@ void RSRenderNode::DumpTree(int32_t depth, std::string& out) const
     DumpModifiers(out);
     animationManager_.DumpAnimations(out);
     ChildrenListDump(out);
-
+    if (dumpSingleNode) {
+        return;
+    }
+    
     for (auto& child : children_) {
         if (auto c = child.lock()) {
             c->DumpTree(depth + 1, out);
@@ -1366,7 +1370,7 @@ bool RSRenderNode::IsSubTreeNeedPrepare(bool filterInGlobal, bool isOccluded)
     // stop visit invisible or clean without filter subtree
     // Exception: If cross-display node is fully invisible under current visited display, its subtree can't be skipped,
     // since it may be visible on other displays, and it is only prepared once.
-    if (!shouldPaint_) {
+    if (!shouldPaint_ || (isOccluded && !IsFirstLevelCrossNode())) {
         // when subTreeOccluded, need to applyModifiers to node's children
         RS_OPTIONAL_TRACE_NAME_FMT("IsSubTreeNeedPrepare node[%llu] skip subtree ShouldPaint [%d], isOccluded [%d], "
             "CrossDisplay: %d", GetId(), shouldPaint_, isOccluded, IsFirstLevelCrossNode());
@@ -1720,6 +1724,17 @@ void RSRenderNode::UpdateBufferDirtyRegion()
         // Use the matrix from buffer to relative coordinate and the absolute matrix
         // to calculate the buffer damageRegion's absolute rect
         auto rect = surfaceNode->GetRSSurfaceHandler()->GetDamageRegion();
+        bool isUseSelfDrawingDirtyRegion = buffer->GetSurfaceBufferWidth() == rect.w &&
+            buffer->GetSurfaceBufferHeight() == rect.h;
+        if (isUseSelfDrawingDirtyRegion) {
+            Rect selfDrawingDirtyRect;
+            bool isDirtyRectValid = RSGpuDirtyCollector::DirtyRegionCompute(buffer, selfDrawingDirtyRect);
+            if (isDirtyRectValid) {
+                rect = { selfDrawingDirtyRect.x, selfDrawingDirtyRect.y,
+                    selfDrawingDirtyRect.w, selfDrawingDirtyRect.h };
+                RS_OPTIONAL_TRACE_NAME_FMT("selfDrawingDirtyRect:[%d, %d, %d, %d]", rect.x, rect.y, rect.w, rect.h);
+            }
+        }
         auto matrix = surfaceNode->GetBufferRelMatrix();
         auto bufferDirtyRect = GetRenderProperties().GetBoundsGeometry()->MapRect(
             RectF(rect.x, rect.y, rect.w, rect.h), matrix).ConvertTo<float>();
@@ -2282,7 +2297,7 @@ bool RSRenderNode::IsAIBarFilter() const
     return filterDrawable->IsAIBarFilter();
 }
 
-bool RSRenderNode::IsAIBarFilterCacheValid() const
+bool RSRenderNode::CheckAndUpdateAIBarCacheStatus(bool intersectHwcDamage) const
 {
 #ifdef RS_ENABLE_GPU
     if (!RSSystemProperties::GetBlurEnabled() || !RSProperties::filterCacheEnabled_) {
@@ -2294,7 +2309,7 @@ bool RSRenderNode::IsAIBarFilterCacheValid() const
     if (filterDrawable == nullptr) {
         return false;
     }
-    return filterDrawable->IsAIBarCacheValid();
+    return filterDrawable->CheckAndUpdateAIBarCacheStatus(intersectHwcDamage);
 #endif
 return false;
 }
@@ -2575,10 +2590,6 @@ void RSRenderNode::MarkFilterCacheFlags(std::shared_ptr<DrawableV2::RSFilterDraw
 
     RS_OPTIONAL_TRACE_NAME_FMT("MarkFilterCacheFlags:node[%llu], NeedPendingPurge:%d,"
         " forceClearWithoutNextVsync:%d, filterRegion: %s",
-        GetId(), filterDrawable->NeedPendingPurge(), (!needRequestNextVsync && filterDrawable->IsSkippingFrame()),
-        filterRegion_.ToString().c_str());
-    ROSEN_LOGD("MarkFilterCacheFlags:node[%{public}" PRIu64 "], NeedPendingPurge:%{public}d,"
-        " forceClearWithoutNextVsync:%{public}d, filterRegion: %{public}s",
         GetId(), filterDrawable->NeedPendingPurge(), (!needRequestNextVsync && filterDrawable->IsSkippingFrame()),
         filterRegion_.ToString().c_str());
     // force update if last frame use cache because skip-frame and current frame background is not dirty
@@ -4924,6 +4935,7 @@ void RSRenderNode::UpdateRenderParams()
     stagingRenderParams_->SetCacheSize(GetOptionalBufferSize());
     stagingRenderParams_->SetAlphaOffScreen(GetRenderProperties().GetAlphaOffscreen());
     stagingRenderParams_->SetForegroundFilterCache(GetRenderProperties().GetForegroundFilterCache());
+    stagingRenderParams_->SetBackgroundFilter(GetRenderProperties().GetBackgroundFilter());
     stagingRenderParams_->SetNeedFilter(GetRenderProperties().NeedFilter());
     stagingRenderParams_->SetHDRBrightness(GetHDRBrightness() *
         GetRenderProperties().GetCanvasNodeHDRBrightnessFactor());

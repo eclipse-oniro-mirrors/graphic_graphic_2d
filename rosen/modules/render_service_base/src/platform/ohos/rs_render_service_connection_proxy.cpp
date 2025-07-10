@@ -5238,7 +5238,7 @@ ErrCode RSRenderServiceConnectionProxy::UnregisterSurfaceBufferCallback(pid_t pi
     return ERR_OK;
 }
 
-ErrCode RSRenderServiceConnectionProxy::SetLayerTopForHWC(const std::string &nodeIdStr, bool isTop, uint32_t zOrder)
+ErrCode RSRenderServiceConnectionProxy::SetLayerTopForHWC(NodeId nodeId, bool isTop, uint32_t zOrder)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -5248,7 +5248,7 @@ ErrCode RSRenderServiceConnectionProxy::SetLayerTopForHWC(const std::string &nod
         return ERR_INVALID_VALUE;
     }
     option.SetFlags(MessageOption::TF_ASYNC);
-    if (data.WriteString(nodeIdStr) && data.WriteBool(isTop) && data.WriteUint32(zOrder)) {
+    if (data.WriteUint64(nodeId) && data.WriteBool(isTop) && data.WriteUint32(zOrder)) {
         uint32_t code =
             static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_LAYER_TOP_FOR_HARDWARE_COMPOSER);
         int32_t err = SendRequest(code, data, reply, option);
@@ -5713,6 +5713,28 @@ bool RSRenderServiceConnectionProxy::ProfilerIsSecureScreen()
         return false;
     }
     return retValue;
+}
+
+void RSRenderServiceConnectionProxy::ClearUifirstCache(NodeId id)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    if (!data.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor())) {
+        ROSEN_LOGE("RSRenderServiceConnectionProxy::ClearUifirstCache: write token err.");
+        return;
+    }
+    option.SetFlags(MessageOption::TF_ASYNC);
+    if (!data.WriteUint64(id)) {
+        ROSEN_LOGE("ClearUifirstCache: WriteUint64 id err.");
+        return;
+    }
+    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::CLEAR_UIFIRST_CACHE);
+    int32_t err = SendRequest(code, data, reply, option);
+    if (err != NO_ERROR) {
+        ROSEN_LOGE("RSRenderServiceConnectionProxy::ClearUifirstCache sendrequest error : %{public}d", err);
+        return;
+    }
 }
 } // namespace Rosen
 } // namespace OHOS
