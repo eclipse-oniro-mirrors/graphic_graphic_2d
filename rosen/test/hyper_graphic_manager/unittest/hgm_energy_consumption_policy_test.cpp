@@ -582,7 +582,6 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, HgmFrameRareManager, TestSize.Level1)
         ANIMATION_STATE_FIRST_FRAME));
     mgr.UpdateSoftVSync(true);
     EXPECT_EQ(mgr.currRefreshRate_, DEFAULT_MAX_FPS);
-
 }
 } // namespace Rosen
 } // namespace OHOS
