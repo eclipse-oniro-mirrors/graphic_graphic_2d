@@ -47,10 +47,10 @@ public:
     RSMaxRenderModifier() = default;
     ~RSMaxRenderModifier() override = default;
 
-    static inline constexpr auto TYPE = ModifierNG::RSModifierType::MAX;
+    static inline constexpr auto Type = ModifierNG::RSModifierType::MAX;
     ModifierNG::RSModifierType GetType() const override
     {
-        return TYPE;
+        return Type;
     };
 };
 
@@ -60,10 +60,10 @@ public:
     ~RSIllegalTypeRenderModifier() override = default;
 
     // 10000 is illegal modifier type for test
-    static inline constexpr auto TYPE = static_cast<ModifierNG::RSModifierType>(10000);
+    static inline constexpr auto Type = static_cast<ModifierNG::RSModifierType>(10000);
     ModifierNG::RSModifierType GetType() const override
     {
-        return TYPE;
+        return Type;
     };
 };
 
@@ -72,10 +72,10 @@ public:
     RSInvalidRenderModifier() = default;
     ~RSInvalidRenderModifier() override = default;
 
-    static inline constexpr auto TYPE = ModifierNG::RSModifierType::INVALID;
+    static inline constexpr auto Type = ModifierNG::RSModifierType::INVALID;
     ModifierNG::RSModifierType GetType() const override
     {
-        return TYPE;
+        return Type;
     };
 };
 
