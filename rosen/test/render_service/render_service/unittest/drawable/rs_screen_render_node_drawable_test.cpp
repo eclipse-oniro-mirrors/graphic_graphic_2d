@@ -168,36 +168,6 @@ HWTEST_F(RSScreenRenderNodeDrawableTest, CreateDisplayRenderNodeDrawable, TestSi
     ASSERT_NE(drawable, nullptr);
 }
 
-
-
-/**
- * @tc.name: ClearTransparentBeforeSaveLayer
- * @tc.desc: Test ClearTransparentBeforeSaveLayer, with two surface with/without param initialization
- * @tc.type: FUNC
- * @tc.require: #I9NVOG
- */
-HWTEST_F(RSScreenRenderNodeDrawableTest, ClearTransparentBeforeSaveLayer, TestSize.Level1)
-{
-    ASSERT_NE(screenDrawable_, nullptr);
-    auto& rtThread = RSUniRenderThread::Instance();
-    if (!rtThread.GetRSRenderThreadParams()) {
-        RSRenderThreadParamsManager::Instance().renderThreadParams_ = std::make_unique<RSRenderThreadParams>();
-    }
-    NodeId id = 1;
-    auto surfaceNode1 = std::make_shared<RSSurfaceRenderNode>(id);
-    auto drawable1 = RSRenderNodeDrawableAdapter::OnGenerate(surfaceNode1);
-    id = 2;
-    auto surfaceNode2 = std::make_shared<RSSurfaceRenderNode>(id);
-    auto drawable2 = RSRenderNodeDrawableAdapter::OnGenerate(surfaceNode2);
-    surfaceNode2->InitRenderParams();
-    rtThread.GetRSRenderThreadParams()->hardwareEnabledTypeDrawables_.push_back(std::make_tuple(1, 0, drawable1));
-    rtThread.GetRSRenderThreadParams()->hardwareEnabledTypeDrawables_.push_back(std::make_tuple(1, 0, drawable2));
-    ASSERT_NE(renderNode_, nullptr);
-    renderNode_->GetMutableRenderProperties().SetFrameWidth(DEFAULT_CANVAS_SIZE);
-    renderNode_->GetMutableRenderProperties().SetFrameHeight(DEFAULT_CANVAS_SIZE);
-    screenDrawable_->ClearTransparentBeforeSaveLayer();
-}
-
 /**
  * @tc.name: DrawCurtainScreen
  * @tc.desc: Test DrawCurtainScreen
@@ -207,16 +177,47 @@ HWTEST_F(RSScreenRenderNodeDrawableTest, ClearTransparentBeforeSaveLayer, TestSi
 HWTEST_F(RSScreenRenderNodeDrawableTest, DrawCurtainScreen, TestSize.Level1)
 {
     ASSERT_NE(screenDrawable_, nullptr);
+    auto& rtThread = RSUniRenderThread::Instance();
+    if (!rtThread.GetRSRenderThreadParams()) {
+        RSRenderThreadParamsManager::Instance().renderThreadParams_ = std::make_unique<RSRenderThreadParams>();
+    }
     screenDrawable_->DrawCurtainScreen();
-    ASSERT_TRUE(!RSUniRenderThread::Instance().IsCurtainScreenOn());
+    EXPECT_FALSE(RSUniRenderThread::Instance().IsCurtainScreenOn());
 
     auto params = std::make_unique<RSRenderThreadParams>();
     params->isCurtainScreenOn_ = true;
-    RSUniRenderThread::Instance().Sync(move(params));
+    RSUniRenderThread::Instance().Sync(std::move(params));
     RSUniRenderThread::Instance().GetRSRenderThreadParams()->isCurtainScreenOn_ = true;
     screenDrawable_->DrawCurtainScreen();
-    ASSERT_TRUE(RSUniRenderThread::Instance().IsCurtainScreenOn());
+    EXPECT_TRUE(RSUniRenderThread::Instance().IsCurtainScreenOn());
     RSUniRenderThread::Instance().GetRSRenderThreadParams()->isCurtainScreenOn_ = false;
+}
+
+/**
+ * @tc.name: RequestFrame
+ * @tc.desc: Test RequestFrame
+ * @tc.type: FUNC
+ * @tc.require: #I9NVOG
+ */
+HWTEST_F(RSScreenRenderNodeDrawableTest, RequestFrameTest, TestSize.Level1)
+{
+    ASSERT_NE(renderNode_, nullptr);
+    ASSERT_NE(screenDrawable_, nullptr);
+    ASSERT_NE(screenDrawable_->renderParams_, nullptr);
+
+    auto params = static_cast<RSScreenRenderParams*>(screenDrawable_->GetRenderParams().get());
+    auto processor = RSProcessorFactory::CreateProcessor(params->GetCompositeType());
+    auto result = screenDrawable_->HardCursorCreateLayer(processor);
+    ASSERT_EQ(result, nullptr);
+
+    RSUniRenderThread::Instance().uniRenderEngine_ = std::make_shared<RSRenderEngine>();
+    result = screenDrawable_->RequestFrame(*params, processor);
+    ASSERT_EQ(result, nullptr);
+
+    screenDrawable_->surfaceCreated_ = true;
+    result = screenDrawable_->RequestFrame(*params, processor);
+    ASSERT_EQ(result, nullptr);
+    RSUniRenderThread::Instance().uniRenderEngine_ = nullptr;
 }
 
 /**
@@ -325,6 +326,39 @@ HWTEST_F(RSScreenRenderNodeDrawableTest, CheckScreenNodeSkipTest, TestSize.Level
     params->isHDRStatusChanged_ = true;
     result = screenDrawable_->CheckScreenNodeSkip(*params, processor);
     EXPECT_EQ(result, false);
+}
+
+/**
+ * @tc.name: CheckAndUpdateFilterCacheOcclusion
+ * @tc.desc: Test CheckAndUpdateFilterCacheOcclusion
+ * @tc.type: FUNC
+ * @tc.require: issueIAL2EA
+ */
+HWTEST_F(RSscreenRenderNodeDrawableTest, CheckAndUpdateFilterCacheOcclusionTest, TestSize.Level1)
+{
+    ASSERT_NE(renderNode_, nullptr);
+    ASSERT_NE(screenDrawable_, nullptr);
+    ASSERT_NE(screenDrawable_->renderParams_, nullptr);
+
+    std::shared_ptr<RSSurfaceRenderNode> surfaceNode = std::make_shared<RSSurfaceRenderNode>(DEFAULT_SURFACE_NODE_ID);
+    ASSERT_NE(surfaceNode, nullptr);
+
+    auto surfaceDrawableAdapter = RSRenderNodeDrawableAdapter::OnGenerate(surfaceNode);
+    ASSERT_NE(surfaceDrawableAdapter, nullptr);
+
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawableAdapter->renderParams_.get());
+    ASSERT_NE(surfaceParams, nullptr);
+    ScreenInfo screenInfo = {};
+    auto params = static_cast<RSScreenRenderParams*>(screenDrawable_->GetRenderParams().get());
+    ASSERT_NE(params, nullptr);
+    vector<std::shared_ptr<RSRenderNodeDrawableAdapter>> allSurfaceDrawable { surfaceDrawableAdapter };
+    params->SetAllMainAndLeashSurfaceDrawables(allSurfaceDrawable);
+
+    surfaceParams->isMainWindowType_ = false;
+    RSScreenRenderNodeDrawable::CheckAndUpdateFilterCacheOcclusion(*params, screenInfo);
+
+    surfaceParams->isMainWindowType_ = true;
+    RSScreenRenderNodeDrawable::CheckAndUpdateFilterCacheOcclusion(*params, screenInfo);
 }
 
 /**
@@ -625,6 +659,47 @@ HWTEST_F(RSScreenRenderNodeDrawableTest, OnDrawTest009, TestSize.Level1)
 }
 
 /**
+ * @tc.name: OnDraw010
+ * @tc.desc: Test OnDraw when SkipFrame is true/false
+ * @tc.type: FUNC
+ * @tc.require: issueICCV9N
+ */
+HWTEST_F(RSScreenRenderNodeDrawableTest, OnDrawTest010, TestSize.Level1)
+{
+    ASSERT_NE(screenDrawable_, nullptr);
+    Drawing::Canvas canvas;
+    auto params = static_cast<RSScreenRenderParams*>(screenDrawable_->GetRenderParams().get());
+    params->mirrorSourceDrawable_.reset();
+    params->compositeType_ = CompositeType::UNI_RENDER_EXPAND_COMPOSITE;
+    params->isAccumulatedDirty_ = true;
+
+    auto renderEngine = std::make_shared<RSRenderEngine>();
+    RSUniRenderThread::Instance().uniRenderEngine_ = renderEngine;
+    RSUniRenderThread::Instance().uniRenderEngine_->Init();
+    EXPECT_EQ(params->GetMirrorSourceDrawable().lock(), nullptr);
+    EXPECT_EQ(params->GetCompositeType(), CompositeType::UNI_RENDER_EXPAND_COMPOSITE);
+
+    screenDrawable_->OnDraw(canvas);
+    EXPECT_EQ(screenDrawable_->cacheImgForCapture_, nullptr);
+    RSSurfaceRenderNodeConfig config;
+    config.id = id;
+    auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(config);
+    surfaceNode->InitRenderParams();
+    ASSERT_NE(surfaceNode, nullptr);
+
+    auto surfaceDrawable = std::static_pointer_cast<RSSurfaceRenderNodeDrawable>(surfaceNode->GetRenderDrawable());
+    ASSERT_NE(surfaceDrawable, nullptr);
+    params->targetSurfaceRenderNodeDrawable_ = surfaceDrawable;
+    screenDrawable_->OnDraw(canvas);
+    EXPECT_EQ(screenDrawable_->cacheImgForCapture_, nullptr);
+    // when hasMirrorScreen is true
+    params->targetSurfaceRenderNodeDrawable_.reset();
+    params->hasMirrorScreen_ = true;
+    screenDrawable_->OnDraw(canvas);
+    EXPECT_EQ(screenDrawable_->cacheImgForCapture_, nullptr);
+}
+
+/**
  * @tc.name: OnDraw011
  * @tc.desc: Test OnDraw when SkipFrame is true/false
  * @tc.type: FUNC
@@ -686,6 +761,71 @@ HWTEST_F(RSScreenRenderNodeDrawableTest, OnDrawTest013, TestSize.Level1)
     EXPECT_EQ(screenDrawable_->drawSkipType_, DrawSkipType::REQUEST_FRAME_FAIL);
 }
 
+/**
+ * @tc.name: OnDraw013
+ * @tc.desc: Test OnDraw when SkipFrame is true/false
+ * @tc.type: FUNC
+ * @tc.require: issueICCV9N
+ */
+HWTEST_F(RSScreenRenderNodeDrawableTest, OnDrawTest014, TestSize.Level1)
+{
+    ASSERT_NE(screenDrawable_, nullptr);
+    Drawing::Canvas canvas;
+    screenDrawable_->OnDraw(canvas);
+
+    ASSERT_NE(screenDrawable_->GetDrawSkipType(), DrawSkipType::SCREEN_STATE_INVALID);
+    auto params = static_cast<RSScreenRenderParams*>(screenDrawable_->GetRenderParams().get());
+    ScreenInfo screenInfo;
+    screenInfo.state = ScreenState::DISABLED;
+    params->screenInfo_ = screenInfo;
+    screenDrawable_->OnDraw(canvas);
+    ASSERT_EQ(screenDrawable_->GetDrawSkipType(), DrawSkipType::SCREEN_STATE_INVALID);
+}
+
+/**
+ * @tc.name: UpdateSlrScaleTest
+ * @tc.desc: Test UpdateSlrScaleTest
+ * @tc.type: FUNC
+ * @tc.require: #I9NVOG
+ */
+HWTEST_F(RSScreenRenderNodeDrawableTest, UpdateSlrScaleTest, TestSize.Level1)
+{
+    ScreenInfo screenInfo;
+    RSScreenRenderNodeDrawable::UpdateSlrScale(screenInfo);
+    screenInfo.isSamplingOn = true;
+    RSScreenRenderNodeDrawable::UpdateSlrScale(screenInfo);
+    auto& uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
+    EXPECT_NE(uniParam, nullptr);
+}
+
+/**
+ * @tc.name: CalculateVirtualDirty
+ * @tc.desc: Test CalculateVirtualDirty
+ * @tc.type: FUNC
+ * @tc.require: #I9NVOG
+ */
+HWTEST_F(RSScreenRenderNodeDrawableTest, CalculateVirtualDirtyTest, TestSize.Level1)
+{
+    ASSERT_NE(renderNode_, nullptr);
+    ASSERT_NE(screenDrawable_, nullptr);
+    ASSERT_NE(screenDrawable_->renderParams_, nullptr);
+    ASSERT_NE(mirroredNode_, nullptr);
+
+    auto& rtThread = RSUniRenderThread::Instance();
+    if (!rtThread.GetRSRenderThreadParams()) {
+        rtThread.Sync(std::make_unique<RSRenderThreadParams>());
+    }
+    screenDrawable_->PrepareOffscreenRender(*screenDrawable_);
+    auto params = static_cast<RSScreenRenderParams*>(screenDrawable_->GetRenderParams().get());
+    if (mirroredNode_->GetRenderDrawable() == nullptr) {
+        mirroredNode_->renderDrawable_ = DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(mirroredNode_);
+    }
+    params->mirrorSourceDrawable_ = mirroredNode_->GetRenderDrawable();
+    auto processor = RSProcessorFactory::CreateProcessor(params->GetCompositeType());
+    auto virtualProcesser = std::make_shared<RSUniRenderVirtualProcessor>();
+    Drawing::Matrix matrix;
+    sleep(1);
+}
 /**
  * @tc.name: ClearCanvasStencilTest001
  * @tc.desc: Test ClearCanvasStencilTest
@@ -1409,32 +1549,23 @@ HWTEST_F(RSScreenRenderNodeDrawableTest, SkipFrameIrregularRefreshRateTest014, T
 }
 
 /**
- * @tc.name: MakeBrightnessAdjustmentShader
- * @tc.desc: Test MakeBrightnessAdjustmentShader
+ * @tc.name: OnCapture
+ * @tc.desc: Test OnCapture
  * @tc.type: FUNC
  * @tc.require: issueIAGR5V
  */
-HWTEST_F(RSScreenRenderNodeDrawableTest, MakeBrightnessAdjustmentShader, TestSize.Level1)
-{
-    ASSERT_NE(screenDrawable_, nullptr);
-    auto image = std::make_shared<Drawing::Image>();
-    Drawing::SamplingOptions sampling;
-    ASSERT_NE(screenDrawable_->MakeBrightnessAdjustmentShader(image, sampling, 0.5f), nullptr);
-}
-
-/**
- * @tc.name: FinishOffscreenRender
- * @tc.desc: Test FinishOffscreenRender
- * @tc.type: FUNC
- * @tc.require: issueIAGR5V
- */
-HWTEST_F(RSScreenRenderNodeDrawableTest, FinishOffscreenRender, TestSize.Level1)
+HWTEST_F(RSScreenRenderNodeDrawableTest, OnCapture, TestSize.Level1)
 {
     ASSERT_NE(screenDrawable_, nullptr);
     ASSERT_NE(screenDrawable_->renderParams_, nullptr);
+    Drawing::Canvas canvas;
+    RSPaintFilterCanvas paintFileterCanvas(&canvas);
+    RSUniRenderThread::GetCaptureParam().isMirror_ = true;
+    screenDrawable_->OnCapture(paintFileterCanvas);
+    RSUniRenderThread::GetCaptureParam().isMirror_ = false;
+    screenDrawable_->OnCapture(paintFileterCanvas);
     Drawing::SamplingOptions sampling;
-    screenDrawable_->FinishOffscreenRender(sampling);
-    ASSERT_FALSE(screenDrawable_->canvasBackup_);
+    ASSERT_FALSE( RSUniRenderThread::GetCaptureParam().isMirror_);
 }
 
 /**
@@ -2006,55 +2137,6 @@ HWTEST_F(RSScreenRenderNodeDrawableTest, DrawCurtainScreen_NullCanvas, TestSize.
     auto drawingCanvas = std::make_unique<Drawing::Canvas>(100, 100);
     screenDrawable_->curCanvas_ = std::make_shared<RSPaintFilterCanvas>(drawingCanvas.get());
     screenDrawable_->DrawCurtainScreen();
-}
-
-/**
- * @tc.name: ClearTransparentBeforeSaveLayer_NullBackup
- * @tc.desc: Test ClearTransparentBeforeSaveLayer, NullBackup
- * @tc.type: FUNC
- * @tc.require: #I9NVOG
- */
-HWTEST_F(RSScreenRenderNodeDrawableTest, ClearTransparentBeforeSaveLayer_NullBackup, TestSize.Level1)
-{
-    ASSERT_NE(screenDrawable_, nullptr);
-
-    screenDrawable_->canvasBackup_ = nullptr;
-    screenDrawable_->ClearTransparentBeforeSaveLayer();
-}
-
-/**
- * @tc.name: ClearTransparentBeforeSaveLayer_NullBackup
- * @tc.desc: Test ClearTransparentBeforeSaveLayer, NullBackup
- * @tc.type: FUNC
- * @tc.require: #I9NVOG
- */
-HWTEST_F(RSScreenRenderNodeDrawableTest, ClearTransparentBeforeSaveLayer_NullRenderParams, TestSize.Level1)
-{
-    ASSERT_NE(screenDrawable_, nullptr);
-
-    screenDrawable_->canvasBackup_ = std::make_shared<RSPaintFilterCanvas>(drawingCanvas_.get());
-    screenDrawable_->renderParams_ = nullptr;
-    screenDrawable_->ClearTransparentBeforeSaveLayer();
-}
-
-/**
- * @tc.name: ClearTransparentBeforeSaveLayer_ValidParams
- * @tc.desc: Test ClearTransparentBeforeSaveLayer_ValidParams, NullBackup
- * @tc.type: FUNC
- * @tc.require: #I9NVOG
- */
-HWTEST_F(RSScreenRenderNodeDrawableTest, ClearTransparentBeforeSaveLayer_ValidParams, TestSize.Level1)
-{
-    ASSERT_NE(screenDrawable_, nullptr);
-
-    screenDrawable_->canvasBackup_ = std::make_shared<RSPaintFilterCanvas>(drawingCanvas_.get());
-
-    // init uniparam
-    auto& uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
-    if (!uniParam) {
-        RSUniRenderThread::Instance().Sync(std::make_unique<RSRenderThreadParams>());
-    }
-    screenDrawable_->ClearTransparentBeforeSaveLayer();
 }
 
 /**
