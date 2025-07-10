@@ -2322,7 +2322,7 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
         needGoDirectComposition, isDirty_.load(), isAccessibilityConfigChanged_, isCachedSurfaceUpdated_, pointerSkip);
     if (needGoDirectComposition) {
         doDirectComposition_ = isHardwareEnabledBufferUpdated_;
-        if (!isHardwareEnabledBufferUpdated_) {
+        if (!doDirectComposition_) {
             RS_OPTIONAL_TRACE_NAME("hwc debug: disable directComposition by buffer not updated");
         }
         if (isHardwareEnabledBufferUpdated_) {
