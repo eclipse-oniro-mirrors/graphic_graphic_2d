@@ -116,8 +116,7 @@ private:
 
 #if defined(MODULE_RSB) || defined(MODULE_RS)
 
-#define ROSEN_LOGI(format, ...) \
-    HILOG_INFO(LOG_CORE, format, ##__VA_ARGS__)
+#define ROSEN_LOGI(format, ...) HILOG_INFO(LOG_CORE, format, ##__VA_ARGS__)
 #define ROSEN_LOGD(format, ...)                   \
     HILOG_DEBUG(LOG_CORE, format, ##__VA_ARGS__); \
     OHOS::Rosen::RSLogDOutput(format, ##__VA_ARGS__)
