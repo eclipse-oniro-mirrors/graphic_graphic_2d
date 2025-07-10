@@ -4442,7 +4442,7 @@ bool RSMainThread::CheckAdaptiveCompose()
         return false;
     }
     auto adaptiveStatus = frameRateMgr->AdaptiveStatus();
-    if (adaptiveStatus == SupportASStatus::NOT_SUPPORT) {
+    if (adaptiveStatus != SupportASStatus::SUPPORT_AS) {
         return false;
     }
     bool onlyGameNodeOnTree = frameRateMgr->HandleGameNode(GetContext().GetNodeMap());
