@@ -551,14 +551,14 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, SetCurrentPkgNameTest, TestSize.Level0)
 }
 
 /**
- * @tc.name: HgmFrameRareManager
+ * @tc.name: HgmFrameRateManager
  * @tc.desc: test results of HgmFrameRareManager
  * @tc.type: FUNC
  * @tc.require: issuesICJ086
  */
-HWTEST_F(HgmEnergyConsumptionPolicyTest, HgmFrameRareManager, TestSize.Level1)
+HWTEST_F(HgmEnergyConsumptionPolicyTest, HgmFrameRateManager, TestSize.Level1)
 {
-    HgmFrameRareManager mgr;
+    HgmFrameRateManager mgr;
     mgr.rsFrameRateLinker_ = std::make_shared<RSRenderFrameRateLinker>();
     FrameRateLinkerMap appFrameRateLinkers_;
     mgr.currRefreshRate_ = DEFAULT_MAX_FPS;
