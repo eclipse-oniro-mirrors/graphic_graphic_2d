@@ -342,7 +342,6 @@ static bool ParsePixelMapMask(napi_env env, napi_value* argv, size_t realArgc, s
         MASK_LOG_E("ParsePixelMapMask parse src failed");
         return false;
     }
-    ClampVector4f(src, 0.f, 1.f);
     para->SetSrc(src);
 
     Vector4f dst;
@@ -350,7 +349,6 @@ static bool ParsePixelMapMask(napi_env env, napi_value* argv, size_t realArgc, s
         MASK_LOG_E("ParsePixelMapMask parse dst failed");
         return false;
     }
-    ClampVector4f(dst, 0.f, 1.f);
     para->SetDst(dst);
 
     if (realArgc >= NUM_4) {
