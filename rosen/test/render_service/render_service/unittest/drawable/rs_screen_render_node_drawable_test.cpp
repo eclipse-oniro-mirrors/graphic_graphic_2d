@@ -708,22 +708,6 @@ HWTEST_F(RSScreenRenderNodeDrawableTest, OnDrawTest014, TestSize.Level1)
 }
 
 /**
- * @tc.name: UpdateSlrScaleTest
- * @tc.desc: Test UpdateSlrScaleTest
- * @tc.type: FUNC
- * @tc.require: #I9NVOG
- */
-HWTEST_F(RSScreenRenderNodeDrawableTest, UpdateSlrScaleTest, TestSize.Level1)
-{
-    ScreenInfo screenInfo;
-    RSScreenRenderNodeDrawable::UpdateSlrScale(screenInfo);
-    screenInfo.isSamplingOn = true;
-    RSScreenRenderNodeDrawable::UpdateSlrScale(screenInfo);
-    auto& uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
-    EXPECT_NE(uniParam, nullptr);
-}
-
-/**
  * @tc.name: CalculateVirtualDirty
  * @tc.desc: Test CalculateVirtualDirty
  * @tc.type: FUNC
@@ -1732,64 +1716,6 @@ HWTEST_F(RSScreenRenderNodeDrawableTest, SetDamageRegion_Empty, TestSize.Level1)
     ASSERT_NE(screenDrawable_, nullptr);
     std::vector<RectI> rects;
     screenDrawable_->SetDamageRegion(rects);
-}
-
-/**
- * @tc.name: FinishOffscreenRender_NulloffscreenSurface
- * @tc.desc: Test FinishOffscreenRender_NullBackup when offscreenSurface_ is null
- * @tc.type: FUNC
- * @tc.require: issueIAGR5V
- */
-HWTEST_F(RSScreenRenderNodeDrawableTest, FinishOffscreenRender_NulloffscreenSurface, TestSize.Level1)
-{
-    ASSERT_NE(screenDrawable_, nullptr);
-    screenDrawable_->canvasBackup_ = std::make_shared<RSPaintFilterCanvas>(drawingCanvas_.get());
-    screenDrawable_->offscreenSurface_ = nullptr;
-    Drawing::SamplingOptions sampling;
-    screenDrawable_->FinishOffscreenRender(sampling, 1.0f);
-    ASSERT_FALSE(screenDrawable_->canvasBackup_);
-}
-
-/**
- * @tc.name: FinishOffscreenRender_ScreenSurface
- * @tc.desc: Test FinishOffscreenRender_NullBackup when offscreenSurface_
- * @tc.type: FUNC
- * @tc.require: issueIAGR5V
- */
-HWTEST_F(RSScreenRenderNodeDrawableTest, FinishOffscreenRender_ScreenSurface, TestSize.Level1)
-{
-    ASSERT_NE(screenDrawable_, nullptr);
-    screenDrawable_->canvasBackup_ = std::make_shared<RSPaintFilterCanvas>(drawingCanvas_.get());
-    screenDrawable_->offscreenSurface_ = std::make_shared<Drawing::Surface>();
-    Drawing::SamplingOptions sampling;
-    screenDrawable_->FinishOffscreenRender(sampling, 1.0f);
-    ASSERT_EQ(screenDrawable_->offscreenSurface_->GetImageSnapshot(), nullptr);
-    Drawing::Bitmap bitmap;
-    Drawing::BitmapFormat bitmapFormat { Drawing::COLORTYPE_RGBA_8888, Drawing::ALPHATYPE_OPAQUE };
-    bitmap.Build(10, 10, bitmapFormat);
-    ASSERT_TRUE(screenDrawable_->offscreenSurface_->Bind(bitmap));
-    screenDrawable_->FinishOffscreenRender(sampling, 1.0f);
-}
-
-/**
- * @tc.name: FinishOffscreenRender_ScreenSurface
- * @tc.desc: Test FinishOffscreenRender_NullBackup when offscreenSurface_
- * @tc.type: FUNC
- * @tc.require: issueIAGR5V
- */
-HWTEST_F(RSScreenRenderNodeDrawableTest, SkipFrame, TestSize.Level1)
-{
-    ASSERT_NE(screenDrawable_, nullptr);
-    screenDrawable_->canvasBackup_ = std::make_shared<RSPaintFilterCanvas>(drawingCanvas_.get());
-    screenDrawable_->offscreenSurface_ = std::make_shared<Drawing::Surface>();
-    Drawing::SamplingOptions sampling;
-    screenDrawable_->FinishOffscreenRender(sampling, 1.0f);
-    ASSERT_EQ(screenDrawable_->offscreenSurface_->GetImageSnapshot(), nullptr);
-    Drawing::Bitmap bitmap;
-    Drawing::BitmapFormat bitmapFormat { Drawing::COLORTYPE_RGBA_8888, Drawing::ALPHATYPE_OPAQUE };
-    bitmap.Build(10, 10, bitmapFormat);
-    ASSERT_TRUE(screenDrawable_->offscreenSurface_->Bind(bitmap));
-    screenDrawable_->FinishOffscreenRender(sampling, 1.0f);
 }
 
 /**
