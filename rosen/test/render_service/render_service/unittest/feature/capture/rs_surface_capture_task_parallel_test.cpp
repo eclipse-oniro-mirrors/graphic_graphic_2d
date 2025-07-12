@@ -272,7 +272,7 @@ HWTEST_F(RSSurfaceCaptureTaskParallelTest, CreatePixelMapByDisplayNode004, TestS
     ScreenId screenId = 0;
     std::shared_ptr<RSContext> context = std::make_shared<RSContext>();
     auto screenNode = std::make_shared<RSScreenRenderNode>(id, screenId, context);
-    ASSERT_NE(screenId, nullptr);
+    ASSERT_NE(screenNode, nullptr);
     node->SetAncestorScreenNode(screenNode);
     ASSERT_EQ(nullptr, task.CreatePixelMapByDisplayNode(node));
 }
