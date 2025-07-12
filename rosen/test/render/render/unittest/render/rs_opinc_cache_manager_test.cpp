@@ -50,8 +50,6 @@ HWTEST_F(RSOpincManagerTest, SetOPIncEnable, Function | SmallTest | Level1)
     ASSERT_EQ(opincManager_.GetOPIncSwitch(), true);
 }
 
-
-
 /**
 * @tc.name: OpincGetCanvasNodeSupportFlag
 * @tc.desc: Verify the OpincGetCanvasNodeSupportFlag function
@@ -63,7 +61,6 @@ HWTEST_F(RSOpincManagerTest, OpincGetCanvasNodeSupportFlag, Function | SmallTest
     NodeId id = 0;
     auto rsCanvasRenderNode = std::make_shared<RSCanvasRenderNode>(id);
     ASSERT_NE(rsCanvasRenderNode, nullptr);
-
     std::shared_ptr<RSRenderNode> inNode = std::make_shared<RSBaseRenderNode>(id + 1);
     std::shared_ptr<RSRenderNode> outNode = std::make_shared<RSBaseRenderNode>(id + 2);
     auto sharedTransitionParam = std::make_shared<SharedTransitionParam>(inNode, outNode, true);
@@ -73,12 +70,10 @@ HWTEST_F(RSOpincManagerTest, OpincGetCanvasNodeSupportFlag, Function | SmallTest
     ASSERT_TRUE(opincManager_.OpincGetCanvasNodeSupportFlag(*rsCanvasRenderNode));
 
     auto& property = rsCanvasRenderNode->GetMutableRenderProperties();
-
     property.isSpherizeValid_ = true;
     EXPECT_FALSE(opincManager_.OpincGetCanvasNodeSupportFlag(*rsCanvasRenderNode));
     property.isSpherizeValid_ = false;
     ASSERT_TRUE(opincManager_.OpincGetCanvasNodeSupportFlag(*rsCanvasRenderNode));
-
     property.isAttractionValid_ = true;
     EXPECT_FALSE(opincManager_.OpincGetCanvasNodeSupportFlag(*rsCanvasRenderNode));
     property.isAttractionValid_ = false;

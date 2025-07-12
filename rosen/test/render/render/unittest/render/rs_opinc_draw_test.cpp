@@ -468,6 +468,18 @@ HWTEST_F(RSOpincDrawCacheTest, IsOpincNodeInScreenRect, TestSize.Level1)
     RectI absRect = {10, 10, 10, 10};
     params.SetAbsDrawRect(absRect);
     ASSERT_FALSE(opincDrawCache.IsOpincNodeInScreenRect(params));
+
+    opincDrawCache.rootNodeStragyType_ = NodeStrategyType::OPINC_AUTOCACHE;
+    opincDrawCache.recordState_ = NodeRecordState::RECORD_CALCULATE;
+    opincDrawCache.isDrawAreaEnable_ = DrawAreaEnableState::DRAW_AREA_ENABLE;
+    opincDrawCache.AfterDrawCache(*canvasAlpha.get(), params, isOpincDropNodeExt, opincRootTotalCount);
+    ASSERT_TRUE(opincDrawCache.recordState_ == NodeRecordState::RECORD_CALCULATE);
+
+    opincDrawCache.rootNodeStragyType_ = NodeStrategyType::OPINC_AUTOCACHE;
+    opincDrawCache.recordState_ = NodeRecordState::RECORD_CALCULATE;
+    opincDrawCache.isDrawAreaEnable_ = DrawAreaEnableState::DRAW_AREA_DISABLE;
+    opincDrawCache.AfterDrawCache(*canvasAlpha.get(), params, isOpincDropNodeExt, opincRootTotalCount);
+    ASSERT_TRUE(opincDrawCache.recordState_ == NodeRecordState::RECORD_DISABLE);
 }
   
 /**
@@ -511,31 +523,16 @@ HWTEST_F(RSOpincDrawCacheTest, AfterDrawCache, TestSize.Level1)
     opincDrawCache.recordState_ = NodeRecordState::RECORD_CACHING;
     opincDrawCache.AfterDrawCache(canvas, params, isOpincDropNodeExt, opincRootTotalCount);
     ASSERT_TRUE(opincDrawCache.recordState_ == NodeRecordState::RECORD_CACHING);
-
     auto drawingCanvas = std::make_shared<Drawing::Canvas>();
     auto paintFilterCanvas = std::make_shared<RSPaintFilterCanvas>(drawingCanvas.get());
     float alpha = 0.5f;
     paintFilterCanvas->SetAlpha(alpha);
     auto canvasAlpha = std::static_pointer_cast<Drawing::Canvas>(paintFilterCanvas);
-
     opincDrawCache.rootNodeStragyType_ = NodeStrategyType::OPINC_AUTOCACHE;
     opincDrawCache.recordState_ = NodeRecordState::RECORD_CALCULATE;
     opincDrawCache.isDrawAreaEnable_ = DrawAreaEnableState::DRAW_AREA_ENABLE;
     opincDrawCache.AfterDrawCache(*canvasAlpha.get(), params, isOpincDropNodeExt, opincRootTotalCount);
     ASSERT_TRUE(opincDrawCache.recordState_ == NodeRecordState::RECORD_CALCULATE);
-
-    opincDrawCache.rootNodeStragyType_ = NodeStrategyType::OPINC_AUTOCACHE;
-    opincDrawCache.recordState_ = NodeRecordState::RECORD_CALCULATE;
-    opincDrawCache.isDrawAreaEnable_ = DrawAreaEnableState::DRAW_AREA_DISABLE;
-    opincDrawCache.AfterDrawCache(*canvasAlpha.get(), params, isOpincDropNodeExt, opincRootTotalCount);
-    ASSERT_TRUE(opincDrawCache.recordState_ == NodeRecordState::RECORD_DISABLE);
-
-    opincDrawCache.rootNodeStragyType_ = NodeStrategyType::OPINC_AUTOCACHE;
-    opincDrawCache.recordState_ = NodeRecordState::RECORD_CALCULATE;
-    opincDrawCache.isDrawAreaEnable_ = DrawAreaEnableState::DRAW_AREA_ENABLE;
-    opincDrawCache.AfterDrawCache(*canvasAlpha.get(), params, isOpincDropNodeExt, opincRootTotalCount);
-    ASSERT_TRUE(opincDrawCache.recordState_ == NodeRecordState::RECORD_CALCULATE);
-
     opincDrawCache.rootNodeStragyType_ = NodeStrategyType::OPINC_AUTOCACHE;
     opincDrawCache.recordState_ = NodeRecordState::RECORD_CALCULATE;
     opincDrawCache.isDrawAreaEnable_ = DrawAreaEnableState::DRAW_AREA_DISABLE;
