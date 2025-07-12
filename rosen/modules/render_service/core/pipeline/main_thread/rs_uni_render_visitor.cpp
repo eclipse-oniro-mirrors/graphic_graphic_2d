@@ -2966,8 +2966,18 @@ void RSUniRenderVisitor::MarkBlurIntersectWithDRM(std::shared_ptr<RSRenderNode> 
     if (appWindowNode == nullptr) {
         return;
     }
-    if (appWindowNode->GetSurfaceWindowType() == SurfaceWindowType::SCB_VOLUME_PANEL ||
-        appWindowNode->GetSurfaceWindowType() == SurfaceWindowType::SCB_BANNER_NOTIFICATION) {
+    static std::vector<std::string> drmKeyWins = { "SCBVolumePanel", "SCBBannerNotification", "HosKey",
+        "status_bar_control_center", "status_bar_input", "status_bar_tray" };
+    auto effectNode = node->ReinterpretCastTo<RSEffectRenderNode>() ?
+        node->ReinterpretCastTo<RSEffectRenderNode>() : nullptr;
+    if (effectNode) {
+        effectNode->SetEffectIntersectWithDRM(false);
+        effectNode->SetDarkColorMode(RSMainThread::Instance()->GetGlobalDarkColorMode());
+    }
+    for (const auto& win : drmKeyWins) {
+        if (appWindowNode->GetName().find(win) == std::string::npos) {
+            continue;
+        }
         for (auto& drmNode : drmNodes_) {
             auto drmNodePtr = drmNode.lock();
             if (drmNodePtr == nullptr) {
@@ -2977,6 +2987,9 @@ void RSUniRenderVisitor::MarkBlurIntersectWithDRM(std::shared_ptr<RSRenderNode> 
                 drmNodePtr->GetRenderProperties().GetBoundsGeometry()->GetAbsRect().Intersect(node->GetFilterRegion());
             if (isIntersect) {
                 node->MarkBlurIntersectWithDRM(true, RSMainThread::Instance()->GetGlobalDarkColorMode());
+                if (effectNode) {
+                    effectNode->SetEffectIntersectWithDRM(true);
+                }
             }
         }
     }
