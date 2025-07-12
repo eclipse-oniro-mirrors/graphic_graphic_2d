@@ -1373,6 +1373,7 @@ HWTEST_F(RSUniRenderComposerAdapterTest, SetBufferColorSpace003, TestSize.Level2
     SetUp();
 
     NodeId id = 1;
+    auto rsContext = std::make_shared<RSContext>();
     auto node = std::make_shared<RSScreenRenderNode>(id, 0, rsContext->weak_from_this());
     auto screenDrawable = std::static_pointer_cast<DrawableV2::RSScreenRenderNodeDrawable>(
         DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(node));
