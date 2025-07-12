@@ -1610,7 +1610,6 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateHwcNodeEnableByFilterRect007, TestSize.Level
     filterNode->instanceRootNodeId_ = 1;
     filterNode->GetHwcRecorder().SetZOrderForHwcEnableByFilter(100);
     filterNode->GetHwcRecorder().SetBlendWithBackground(true);
-
     surfaceNode2->SetHardwareForcedDisabledState(false);
     rsUniRenderVisitor->hwcVisitor_->UpdateHwcNodeEnableByFilterRect(surfaceNode1, *filterNode, 100);
     ASSERT_TRUE(surfaceNode2->IsHardwareForcedDisabled());
@@ -1629,7 +1628,7 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateHwcNodeEnableByFilterRect007, TestSize.Level
     surfaceNode2->SetHardwareForcedDisabledState(false);
     rsUniRenderVisitor->hwcVisitor_->UpdateHwcNodeEnableByFilterRect(surfaceNode1, *filterNode, 100);
     ASSERT_TRUE(surfaceNode2->IsHardwareForcedDisabled());
-    
+
     surfaceNode2->parent_ = filterNode;
     filterNode->parent_ = surfaceNode1;
     surfaceNode2->SetHardwareForcedDisabledState(false);
@@ -1675,6 +1674,7 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateHwcNodeEnableByFilterRect008, TestSize.Level
     RSMainThread::Instance()->GetContext().GetMutableNodeMap().RegisterRenderNode(filterNode);
     surfaceNode2->parent_ = surfaceNode1;
     filterNode->parent_ = surfaceNode1;
+
     surfaceNode2->SetHardwareForcedDisabledState(false);
     rsUniRenderVisitor->hwcVisitor_->UpdateHwcNodeEnableByFilterRect(surfaceNode1, *filterNode, 100);
     ASSERT_FALSE(surfaceNode2->IsHardwareForcedDisabled());
