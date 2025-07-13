@@ -144,10 +144,7 @@ if (graphic_2d_feature_enable_vulkan &&
 }
 
 if (graphic_2d_feature_subtree_parallel_enable) {
-  gpu_defines += [
-    "SUBTREE_PARALLEL_ENABLE",
-    "RS_ENABLE_FFRT"
-  ]
+  gpu_defines += [ "SUBTREE_PARALLEL_ENABLE" ]
 }
 
 if (graphic_2d_feature_parallel_upload_enable &&

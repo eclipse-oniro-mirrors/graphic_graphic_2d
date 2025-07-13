@@ -257,6 +257,7 @@ public:
 
     void RecordState(const RSPaintFilterCanvas& other);
     std::weak_ptr<Drawing::Surface> GetWeakSurface();
+    // just used in subtree, used for check whether a new surface need to be created in the subtree thread.
     void SetWeakSurface(std::shared_ptr<Drawing::Surface> surface);
     inline void SetQuickDraw(bool isQuickDraw)
     {

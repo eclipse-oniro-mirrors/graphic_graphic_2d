@@ -554,6 +554,7 @@ bool RSSurfaceRenderNodeDrawable::QuickDraw(Drawing::Canvas& canvas, Drawing::Re
     rscanvas->SetDisableFilterCache(isDisableFilterCache);
     RSRenderParams::SetParentSurfaceMatrix(parentSurfaceMatrix);
     if (surfaceParams->IsOcclusionCullingOn()) {
+        // Clear the culled list in this thread
         rscanvas->SetCulledNodes(std::unordered_set<NodeId>());
         rscanvas->SetCulledEntireSubtree(std::unordered_set<NodeId>());
     }

@@ -326,10 +326,10 @@ bool RSExtendImageObject::GetRsImageCache(Drawing::Canvas& canvas, const std::sh
         return false;
     }
     std::shared_ptr<Drawing::Image> imageCache = nullptr;
-#ifdef SUBTREE_PARALLEL_ENABLE
-    pid_t threadId = RSParallelMisc::GetThreadIndex(canvas);
-#else
     pid_t threadId = gettid();
+#ifdef SUBTREE_PARALLEL_ENABLE
+    // Adapt to the subtree feature to ensure the correct thread ID(TID) is set.
+    RSParallelMisc::AdaptSubTreeThreadId(canvas, threadId);
 #endif
     if (!pixelMap->IsEditable()) {
         imageCache = RSImageCache::Instance().GetRenderDrawingImageCacheByPixelMapId(

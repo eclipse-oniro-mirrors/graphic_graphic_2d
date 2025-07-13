@@ -504,12 +504,6 @@ ohos_shared_library("librender_service") {
     external_deps += [ "video_processing_engine:videoprocessingengine" ]
   }
 
-  if (graphic_2d_feature_subtree_parallel_enable) {
-    external_deps += [ 
-      "ffrt:libffrt",
-     ]
-  }
-
   if (tp_feature_enable) {
     external_deps += [ "drivers_interface_tp_extra:libtp_proxy_1.1"]
   }
@@ -615,10 +609,6 @@ ohos_executable("render_service") {
     "ipc:ipc_core",
     "samgr:samgr_proxy",
   ]
-
-  if (graphic_2d_feature_subtree_parallel_enable) {
-    external_deps += [ "ffrt:libffrt" ]
-  }
 
   if (defined(global_parts_info) && defined(global_parts_info.sensors_sensor)) {
     external_deps += [ "sensor:sensor_interface_native" ]

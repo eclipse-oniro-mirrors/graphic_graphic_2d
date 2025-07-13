@@ -1342,6 +1342,7 @@ void RSRenderNode::SubTreeSkipPrepare(
         UpdateSubTreeSkipDirtyForDFX(dirtyManager, dirtyRectClip);
     }
     if (isDirty && GetChildrenCount() == 0) {
+        ClearSubtreeParallelNodes();
         ResetChildRelevantFlags();
     }
     SetGeoUpdateDelay(accumGeoDirty);

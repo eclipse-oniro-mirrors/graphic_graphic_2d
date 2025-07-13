@@ -116,6 +116,7 @@ protected:
     explicit RSRenderNodeDrawable(std::shared_ptr<const RSRenderNode>&& node);
     using Registrar = RenderNodeDrawableRegistrar<RSRenderNodeType::RS_NODE, OnGenerate>;
     static Registrar instance_;
+    // indicate whether this drawable is generate from parallel node.
     bool subTreeParallel_ = false;
     // Only use in RSRenderNode::DrawCacheSurface to calculate scale factor
     float boundsWidth_ = 0.0f;

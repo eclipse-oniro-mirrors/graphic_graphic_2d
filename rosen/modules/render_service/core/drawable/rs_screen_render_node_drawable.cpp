@@ -917,6 +917,7 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
             } else {
                 curCanvas_->Clear(Drawing::Color::COLOR_TRANSPARENT);
             }
+            // just used in subTree, used for check whether a new surface need to be created in the subtree thread.
             curCanvas_->SetWeakSurface(drSurface);
 
             curCanvas_->SetHighContrast(RSUniRenderThread::Instance().IsHighContrastTextModeOn());
@@ -970,6 +971,7 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         RS_LOGI("Drawing Performance Flush start %{public}lld", Drawing::PerformanceCaculate::GetUpTime(false));
     }
 #ifdef SUBTREE_PARALLEL_ENABLE
+    // wait for all sub threads process complete
     RSParallelManager::Singleton().WaitUntilSubTreeFinish(curCanvas_);
 #endif
     RS_TRACE_BEGIN("RSScreenRenderNodeDrawable Flush");

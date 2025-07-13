@@ -1713,6 +1713,7 @@ void RSUniRenderVisitor::QuickPrepareCanvasRenderNode(RSCanvasRenderNode& node)
         RSOpincManager::Instance().OpincGetNodeSupportFlag(node));
     node.UpdateOpincParam();
     offscreenCanvasNodeId_ = preOffscreenCanvasNodeId;
+    // used in subtree, add node into parallel list
     node.UpdateSubTreeParallelNodes();
 
     // [Attention] Only used in PC window resize scene now

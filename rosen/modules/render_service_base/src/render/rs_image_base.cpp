@@ -578,10 +578,10 @@ void RSImageBase::ProcessYUVImage(std::shared_ptr<Drawing::GPUContext> gpuContex
     }
 
     std::shared_ptr<Drawing::Image> cache;
-#ifdef SUBTREE_PARALLEL_ENABLE
-    pid_t threadId = RSParallelMisc::GetThreadIndex(canvas);
-#else
     pid_t threadId = gettid();
+#ifdef SUBTREE_PARALLEL_ENABLE
+    // Adapt to the subtree feature to ensure the correct thread ID(TID) is set.
+    RSParallelMisc::AdaptSubTreeThreadId(canvas, threadId);
 #endif
     cache = RSImageCache::Instance().GetRenderDrawingImageCacheByPixelMapId(uniqueId_, threadId);
 
@@ -778,7 +778,12 @@ void RSImageBase::UploadGpu(Drawing::Canvas& canvas)
 {
 #if defined(ROSEN_OHOS) && (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
     if (compressData_) {
-        auto cache = RSImageCache::Instance().GetRenderDrawingImageCacheByPixelMapId(uniqueId_, gettid());
+        std::shared_ptr<Drawing::Image> cache;
+        if (RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) {
+            cache = RSImageCache::Instance().GetRenderDrawingImageCacheByPixelMapId(uniqueId_);
+        } else {
+            cache = RSImageCache::Instance().GetRenderDrawingImageCacheByPixelMapId(uniqueId_, gettid());
+        }
         std::lock_guard<std::mutex> lock(mutex_);
         if (cache) {
             image_ = cache;
@@ -800,7 +805,11 @@ void RSImageBase::UploadGpu(Drawing::Canvas& canvas)
             if (result) {
                 image_ = image;
                 SKResourceManager::Instance().HoldResource(image);
-                RSImageCache::Instance().CacheRenderDrawingImageByPixelMapId(uniqueId_, image, gettid());
+                if (RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) {
+                    RSImageCache::Instance().CacheRenderDrawingImageByPixelMapId(uniqueId_, image);
+                } else {
+                    RSImageCache::Instance().CacheRenderDrawingImageByPixelMapId(uniqueId_, image, gettid());
+                }
             } else {
                 RS_LOGE("make astc image %{public}d (%{public}d, %{public}d) failed",
                     (int)uniqueId_, (int)srcRect_.width_, (int)srcRect_.height_);
