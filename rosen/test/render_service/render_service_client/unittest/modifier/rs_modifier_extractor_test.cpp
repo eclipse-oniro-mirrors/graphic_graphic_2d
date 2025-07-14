@@ -538,4 +538,17 @@ HWTEST_F(RSModifierExtractorTest, GetMaskTest, TestSize.Level1)
     auto extractor = std::make_shared<RSModifierExtractor>(id);
     EXPECT_EQ(extractor->GetMask(), nullptr);
 }
+
+/**
+ * @tc.name: GetOutlineDashGapTest
+ * @tc.desc: test results of GetOutlineDashGap
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSModifierExtractorTest, GetOutlineDashGapTest, TestSize.Level1)
+{
+    NodeId id = 1;
+    RSModifierExtractor extractor(id);
+    Vector4f vector = extractor.GetOutlineDashGap();
+    EXPECT_EQ(vector, Vector4f(0.f));
+}
 } // namespace OHOS::Rosen
