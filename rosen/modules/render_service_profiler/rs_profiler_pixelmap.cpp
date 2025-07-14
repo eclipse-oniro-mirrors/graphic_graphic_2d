@@ -182,7 +182,7 @@ void PixelMapStorage::PushSharedMemory(uint64_t id, PixelMap& map)
     }
 
     constexpr size_t skipBytes = 24u;
-    const auto size = static_cast<size_t>(const_cast<PixelMap&>(map).GetByteCount());
+    const auto size = static_cast<size_t>(map.GetByteCount());
     const ImageProperties properties(map);
     if (auto image = MapImage(*reinterpret_cast<const int32_t*>(map.GetFd()), size, PROT_READ)) {
         PushImage(
@@ -219,6 +219,8 @@ bool PixelMapStorage::PullDmaMemory(uint64_t id, const ImageInfo& info, PixelMem
     if (!CopyImageData(image, memory.base, image->dmaSize)) {
         return false;
     }
+    // solve pink artefacts problem during replay (GPU reads texture when it's still not updated)
+    surfaceBuffer->FlushCache();
 
     memory.context = IncrementSurfaceBufferReference(surfaceBuffer);
     skipBytes = image->parcelSkipBytes;
@@ -802,7 +804,7 @@ Media::PixelMap* RSProfiler::UnmarshalPixelMap(Parcel& parcel,
 
     bool profilerEnabled = flags & PIXELMAP_FLAG_PROFILER;
     if (!profilerEnabled) {
-        return PixelMap::Unmarshalling(parcel, readSafeFdFunc);
+        return PixelMap::UnmarshallingWithIsDisplay(parcel, readSafeFdFunc, true);
     }
 
     bool pixelCheckEnabled = flags & PIXELMAP_FLAG_PIXEL_CHECK;

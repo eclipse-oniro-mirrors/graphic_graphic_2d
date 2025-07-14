@@ -16,7 +16,7 @@ import("//foundation/graphic/graphic_2d/frameworks/text/config.gni")
 import("//foundation/graphic/graphic_2d/graphic_config.gni")
 
 ohos_unittest("text_ndk_test") {
-  module_out_path = text_test_out_path
+  module_out_path = text_ut_out_path
 
   defines = []
   sources = [
@@ -30,6 +30,7 @@ ohos_unittest("text_ndk_test") {
     "text_lineTypography_test.cpp",
     "text_line_test.cpp",
     "text_run_test.cpp",
+    "text_style_copy_test.cpp",
     "text_typography_alignment_test.cpp",
     "text_typography_paint_attribute_test.cpp",
     "text_typography_strut_style_test.cpp",
@@ -57,6 +58,10 @@ ohos_unittest("text_ndk_test") {
     "$rosen_text_root/service/texgine/src",
   ]
 
+  if (ohos_indep_compiler_enable) {
+    include_dirs += ["//binarys/third_party/icu/innerapis/shared_icuuc/includes/common" ]
+  }
+
   deps = [
     "$graphic_2d_root/rosen/modules/2d_graphics:2d_graphics",
     "$graphic_2d_root/rosen/modules/2d_graphics/drawing_ndk:native_drawing_ndk",
@@ -68,6 +73,7 @@ ohos_unittest("text_ndk_test") {
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "hilog:libhilog",
+    "icu:shared_icuuc",
   ]
 
   platform = current_os

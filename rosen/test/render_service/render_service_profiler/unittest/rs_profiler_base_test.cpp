@@ -42,41 +42,4 @@ HWTEST_F(RSProfilerBaseTest, IsPlaybackParcel, Level1)
     EXPECT_FALSE(RSProfiler::IsPlaybackParcel(parcel));
 }
 
-/*
-* @tc.name: Interface Test
-* @tc.desc: RSProfiler Interface Test
-* @tc.type: FUNC
-* @tc.require:
-*/
-HWTEST_F(RSProfilerBaseTest, SurfaceOnDrawMatchOptimize, Level1)
-{
-    EXPECT_NO_THROW({
-        for (int default_bool_value = 0; default_bool_value < 2; ++default_bool_value) {
-            RSProfiler::testing_ = true;
-
-            bool useNodeMatchOptimize = default_bool_value;
-            RSProfiler::SetMode(Mode::READ_EMUL);
-            RSProfiler::SurfaceOnDrawMatchOptimize(useNodeMatchOptimize);
-            EXPECT_TRUE(useNodeMatchOptimize);
-
-            useNodeMatchOptimize = default_bool_value;
-            RSProfiler::SetMode(Mode::NONE);
-            RSProfiler::SurfaceOnDrawMatchOptimize(useNodeMatchOptimize);
-            EXPECT_FALSE(useNodeMatchOptimize);
-
-            RSProfiler::testing_ = false;
-
-            useNodeMatchOptimize = default_bool_value;
-            RSProfiler::SetMode(Mode::READ_EMUL);
-            RSProfiler::SurfaceOnDrawMatchOptimize(useNodeMatchOptimize);
-            EXPECT_FALSE(useNodeMatchOptimize);
-
-            useNodeMatchOptimize = default_bool_value;
-            RSProfiler::SetMode(Mode::NONE);
-            RSProfiler::SurfaceOnDrawMatchOptimize(useNodeMatchOptimize);
-            EXPECT_FALSE(useNodeMatchOptimize);
-        }
-    });
-}
-
 } // namespace OHOS::Rosen

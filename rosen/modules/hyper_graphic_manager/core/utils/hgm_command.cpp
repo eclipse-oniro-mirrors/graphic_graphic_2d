@@ -18,7 +18,7 @@
 
 namespace OHOS::Rosen {
 namespace {
-    const static PolicyConfigData::ScreenSetting NULL_SCREEN_SETTING{};
+const PolicyConfigData::ScreenSetting NULL_SCREEN_SETTING{};
 }
 
 PolicyConfigVisitorImpl::PolicyConfigVisitorImpl(const PolicyConfigData& configData)
@@ -33,11 +33,20 @@ const PolicyConfigData& PolicyConfigVisitorImpl::GetXmlData() const
 
 void PolicyConfigVisitorImpl::SetSettingModeId(int32_t settingModeId)
 {
+    if (settingModeId == HGM_REFRESHRATE_MODE_AUTO) {
+        HGM_LOGI("SetSettingModeId %{public}d -> 0", settingModeId);
+        settingModeId = 0; // index of auto mode is 0
+    }
     if (settingModeId_ == settingModeId) {
         return;
     }
+    auto xmlModeId = SettingModeId2XmlModeId(settingModeId);
+    if (!xmlModeId.has_value()) {
+        HGM_LOGE("SetSettingModeId %{public}d fail", settingModeId);
+        return;
+    }
     settingModeId_ = settingModeId;
-    xmlModeId_ = SettingModeId2XmlModeId(settingModeId);
+    xmlModeId_ = xmlModeId.value();
     OnUpdate();
 }
 
@@ -46,15 +55,22 @@ void PolicyConfigVisitorImpl::SetXmlModeId(const std::string& xmlModeId)
     if (xmlModeId_ == xmlModeId) {
         return;
     }
+    auto settingModeId = XmlModeId2SettingModeId(xmlModeId);
+    if (!settingModeId.has_value()) {
+        HGM_LOGE("SetXmlModeId %{public}s fail", xmlModeId.c_str());
+        return;
+    }
     xmlModeId_ = xmlModeId;
-    settingModeId_ = XmlModeId2SettingModeId(xmlModeId);
+    settingModeId_ = settingModeId.value();
     OnUpdate();
 }
 
 int32_t PolicyConfigVisitorImpl::GetRefreshRateModeName(int32_t refreshRateModeId) const
 {
     auto iter = std::find_if(configData_.refreshRateForSettings_.begin(), configData_.refreshRateForSettings_.end(),
-        [=] (auto nameModeId) { return nameModeId.second == refreshRateModeId; });
+        [&](auto nameModeId) {
+            return nameModeId.second == refreshRateModeId;
+        });
     if (iter != configData_.refreshRateForSettings_.end()) {
         return iter->first;
     }
@@ -82,9 +98,9 @@ HgmErrCode PolicyConfigVisitorImpl::GetStrategyConfig(
 
 const PolicyConfigData::ScreenSetting& PolicyConfigVisitorImpl::GetScreenSetting() const
 {
-    const auto &screenConfigs = configData_.screenConfigs_;
+    const auto& screenConfigs = configData_.screenConfigs_;
     if (auto screenConfigsIter = screenConfigs.find(screenConfigType_); screenConfigsIter != screenConfigs.end()) {
-        const auto &screenConfig = screenConfigsIter->second;
+        const auto& screenConfig = screenConfigsIter->second;
         if (auto iter = screenConfig.find(xmlModeId_); iter != screenConfig.end()) {
             return iter->second;
         } else {
@@ -105,12 +121,12 @@ std::string PolicyConfigVisitorImpl::GetAppStrategyConfigName(const std::string&
 {
     const auto& screenSetting = GetScreenSetting();
 
-    const auto &appConfigMap = screenSetting.appList;
+    const auto& appConfigMap = screenSetting.appList;
     if (auto iter = appConfigMap.find(pkgName); iter != appConfigMap.end()) {
         return iter->second;
     }
 
-    const auto &appTypes = screenSetting.appTypes;
+    const auto& appTypes = screenSetting.appTypes;
     if (auto iter = appTypes.find(appType); iter != appTypes.end()) {
         return iter->second;
     }
@@ -126,28 +142,39 @@ HgmErrCode PolicyConfigVisitorImpl::GetAppStrategyConfig(
 
 std::string PolicyConfigVisitorImpl::GetGameNodeName(const std::string& pkgName) const
 {
-    const auto &appNodeMap = GetScreenSetting().gameAppNodeList;
+    const auto& appNodeMap = GetScreenSetting().gameAppNodeList;
     if (auto iter = appNodeMap.find(pkgName); iter != appNodeMap.end()) {
         return iter->second;
     }
     return "";
 }
 
-std::string PolicyConfigVisitorImpl::SettingModeId2XmlModeId(int32_t settingModeId) const
+HgmErrCode PolicyConfigVisitorImpl::GetDynamicAppStrategyConfig(const std::string& pkgName,
+    PolicyConfigData::StrategyConfig& strategyRes) const
 {
-    if (settingModeId < 0 || settingModeId >= static_cast<int32_t>(configData_.refreshRateForSettings_.size())) {
-        return "";
-    }
-    return std::to_string(configData_.refreshRateForSettings_.at(settingModeId).second);
+    return HGM_ERROR;
 }
 
-int32_t PolicyConfigVisitorImpl::XmlModeId2SettingModeId(const std::string& xmlModeId) const
+std::optional<std::string> PolicyConfigVisitorImpl::SettingModeId2XmlModeId(int32_t settingModeId) const
 {
-    auto iter = std::find_if(configData_.refreshRateForSettings_.begin(), configData_.refreshRateForSettings_.end(),
-        [=] (auto nameModeId) { return std::to_string(nameModeId.second) == xmlModeId; });
-    if (iter != configData_.refreshRateForSettings_.end()) {
-        return static_cast<int32_t>(iter - configData_.refreshRateForSettings_.begin());
+    std::optional<std::string> xmlModeId;
+    if (settingModeId < 0 || settingModeId >= static_cast<int32_t>(configData_.refreshRateForSettings_.size())) {
+        return xmlModeId;
     }
-    return 0;
+    xmlModeId = std::to_string(configData_.refreshRateForSettings_.at(settingModeId).second);
+    return xmlModeId;
+}
+
+std::optional<int32_t> PolicyConfigVisitorImpl::XmlModeId2SettingModeId(const std::string& xmlModeId) const
+{
+    std::optional<int32_t> settingModeId;
+    auto iter = std::find_if(configData_.refreshRateForSettings_.begin(), configData_.refreshRateForSettings_.end(),
+        [&](auto nameModeId) {
+            return std::to_string(nameModeId.second) == xmlModeId;
+        });
+    if (iter != configData_.refreshRateForSettings_.end()) {
+        settingModeId = static_cast<int32_t>(iter - configData_.refreshRateForSettings_.begin());
+    }
+    return settingModeId;
 }
 } // namespace OHOS::Rosen

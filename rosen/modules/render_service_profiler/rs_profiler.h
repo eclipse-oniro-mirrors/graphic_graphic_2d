@@ -20,6 +20,7 @@
 
 #include "rs_profiler_test_tree.h"
 #include "common/rs_macros.h"
+#include "transaction/rs_hrp_service.h"
 #ifdef RS_PROFILER_ENABLED
 
 #include <map>
@@ -28,7 +29,7 @@
 #include "common/rs_vector4.h"
 #include "common/rs_occlusion_region.h"
 #include "pipeline/rs_render_node.h"
-#include "params/rs_display_render_params.h"
+#include "params/rs_screen_render_params.h"
 #include "recording/draw_cmd_list.h"
 
 #define RS_PROFILER_INIT(renderSevice) RSProfiler::Init(renderSevice)
@@ -73,8 +74,6 @@
 #define RS_PROFILER_PROCESS_ADD_CHILD(parent, child, index) RSProfiler::ProcessAddChild(parent, child, index)
 #define RS_PROFILER_IF_NEED_TO_SKIP_DRAWCMD_SURFACE(parcel, skipBytes) \
     RSProfiler::IfNeedToSkipDuringReplay(parcel, skipBytes)
-#define RS_PROFILER_SURFACE_ON_DRAW_MATCH_OPTIMIZE(useNodeMatchOptimize) \
-    RSProfiler::SurfaceOnDrawMatchOptimize(useNodeMatchOptimize)
 #else
 #define RS_PROFILER_INIT(renderSevice)
 #define RS_PROFILER_ON_FRAME_BEGIN(syncTime)
@@ -97,7 +96,8 @@
 #define RS_PROFILER_PUSH_OFFSETS(parcel, parcelNumber, commandOffsets)
 #define RS_PROFILER_EXECUTE_COMMAND(command)
 #define RS_PROFILER_MARSHAL_PIXELMAP(parcel, map) (map)->Marshalling(parcel)
-#define RS_PROFILER_UNMARSHAL_PIXELMAP(parcel, readSafeFdFunc) Media::PixelMap::Unmarshalling(parcel, readSafeFdFunc)
+#define RS_PROFILER_UNMARSHAL_PIXELMAP(parcel, readSafeFdFunc) \
+    Media::PixelMap::UnmarshallingWithIsDisplay(parcel, readSafeFdFunc, true)
 #define RS_PROFILER_SKIP_PIXELMAP(parcel) false
 #define RS_PROFILER_MARSHAL_DRAWINGIMAGE(image, compressData)
 #define RS_PROFILER_SET_DIRTY_REGION(dirtyRegion)
@@ -115,7 +115,6 @@
 #define RS_PROFILER_KEEP_DRAW_CMD(drawCmdListNeedSync) drawCmdListNeedSync = true
 #define RS_PROFILER_PROCESS_ADD_CHILD(parent, child, index) false
 #define RS_PROFILER_IF_NEED_TO_SKIP_DRAWCMD_SURFACE(parcel, skipBytes) false
-#define RS_PROFILER_SURFACE_ON_DRAW_MATCH_OPTIMIZE(useNodeMatchOptimize)
 #endif
 
 #ifdef RS_PROFILER_ENABLED
@@ -142,7 +141,7 @@ class RSRenderNode;
 class RSRenderModifier;
 class RSProperties;
 class RSContext;
-class RSDisplayRenderNode;
+class RSScreenRenderNode;
 class RSRenderNodeMap;
 class RSAnimationManager;
 class RSRenderAnimation;
@@ -233,6 +232,11 @@ public:
     RSB_EXPORT static void ReplayFixTrIndex(uint64_t curIndex, uint64_t& lastIndex);
 
     RSB_EXPORT static std::vector<RSRenderNode::WeakPtr>& GetChildOfDisplayNodesPostponed();
+
+    RSB_EXPORT static RetCodeHrpService HrpServiceOpenFile(const HrpServiceDirInfo& dirInfo,
+        const std::string& fileName, int32_t flags, int& outFd);
+    RSB_EXPORT static RetCodeHrpService HrpServicePopulateFiles(const HrpServiceDirInfo& dirInfo,
+        uint32_t firstFileIndex, std::vector<HrpServiceFileInfo>& outFiles);
 public:
     RSB_EXPORT static bool IsParcelMock(const Parcel& parcel);
     RSB_EXPORT static bool IsPlaybackParcel(const Parcel& parcel);
@@ -256,7 +260,6 @@ public:
     RSB_EXPORT static void KeepDrawCmd(bool& drawCmdListNeedSync);
     RSB_EXPORT static void SetRenderNodeKeepDrawCmd(bool enable);
     RSB_EXPORT static bool IfNeedToSkipDuringReplay(Parcel& parcel, uint32_t skipBytes);
-    RSB_EXPORT static void SurfaceOnDrawMatchOptimize(bool& useNodeMatchOptimize);
 
 private:
     static const char* GetProcessNameByPid(int pid);
@@ -290,6 +293,7 @@ private:
 
     RSB_EXPORT static void SetMode(Mode mode);
     RSB_EXPORT static bool IsEnabled();
+    RSB_EXPORT static bool IsHrpServiceEnabled();
 
     RSB_EXPORT static uint32_t GetCommandCount();
     RSB_EXPORT static uint32_t GetCommandExecuteCount();
@@ -312,7 +316,7 @@ private:
 
     RSB_EXPORT static bool IsSecureScreen();
 
-    RSB_EXPORT static std::shared_ptr<RSDisplayRenderNode> GetDisplayNode(const RSContext& context);
+    RSB_EXPORT static std::shared_ptr<RSScreenRenderNode> GetScreenNode(const RSContext& context);
     RSB_EXPORT static Vector4f GetScreenRect(const RSContext& context);
 
     // RSRenderNodeMap
@@ -368,11 +372,13 @@ private:
     RSB_EXPORT static void DumpNodeSubClassNode(const RSRenderNode& node, JsonWriter& out);
     RSB_EXPORT static void DumpNodeOptionalFlags(const RSRenderNode& node, JsonWriter& out);
     RSB_EXPORT static void DumpNodeDrawCmdModifiers(const RSRenderNode& node, JsonWriter& out);
+#if defined(MODIFIER_NG)
+    RSB_EXPORT static void DumpNodeDrawCmdModifier(
+        const RSRenderNode& node, JsonWriter& out, std::shared_ptr<ModifierNG::RSRenderModifier> modifier);
+#else
     RSB_EXPORT static void DumpNodeDrawCmdModifier(
         const RSRenderNode& node, JsonWriter& out, int type, RSRenderModifier& modifier);
-    RSB_EXPORT static void DumpNodeDrawCmdModifiersNG(const RSRenderNode& node, JsonWriter& out);
-    RSB_EXPORT static void DumpNodeDrawCmdModifierNG(
-        const RSRenderNode& node, JsonWriter& out, std::shared_ptr<ModifierNG::RSRenderModifier> modifier);
+#endif
     RSB_EXPORT static void DumpNodeProperties(const RSProperties& properties, JsonWriter& out);
     RSB_EXPORT static void DumpNodePropertiesClip(const RSProperties& properties, JsonWriter& out);
     RSB_EXPORT static void DumpNodePropertiesTransform(const RSProperties& properties, JsonWriter& out);
@@ -475,6 +481,9 @@ private:
     static void SaveSkp(const ArgList& args);
     static void SaveOffscreenSkp(const ArgList& args);
     static void SaveComponentSkp(const ArgList& args);
+    static void SaveSkpImgCache(const ArgList& args);
+    static void SaveSkpOnCapture(const ArgList& args);
+    static void SaveSkpExtended(const ArgList& args);
     static void SaveRdc(const ArgList& args);
     static void DrawingCanvasRedrawEnable(const ArgList& args);
     static void RenderNodeKeepDrawCmd(const ArgList& args);
@@ -525,11 +534,12 @@ private:
     static RSContext* context_;
     // flag for enabling profiler
     RSB_EXPORT static bool enabled_;
+    RSB_EXPORT static bool hrpServiceEnabled_;
     RSB_EXPORT static std::atomic_uint32_t mode_;
     // flag for enabling profiler beta recording feature
     RSB_EXPORT static bool betaRecordingEnabled_;
     // flag to start network thread
-    RSB_EXPORT static int8_t signalFlagChanged_;
+    RSB_EXPORT static std::atomic<int8_t> signalFlagChanged_;
 
     inline static const char SYS_KEY_ENABLED[] = "persist.graphic.profiler.enabled";
     inline static const char SYS_KEY_BETARECORDING[] = "persist.graphic.profiler.betarecording";
@@ -540,6 +550,7 @@ private:
 
     RSB_EXPORT static std::vector<std::shared_ptr<RSRenderNode>> testTree_;
     friend class TestTreeBuilder;
+    friend class RSRenderServiceConnection;
 };
 
 } // namespace OHOS::Rosen

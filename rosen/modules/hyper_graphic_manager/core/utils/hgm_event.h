@@ -29,7 +29,7 @@ public:
     HgmEvent();
     virtual ~HgmEvent();
     virtual void HandlePackageEvent(const std::vector<std::string>& packageList) {}
-    virtual void HandleSceneEvent(pid_t pid, EventInfo eventInfo) {}
+    virtual void HandleSceneEvent(pid_t pid, const EventInfo& eventInfo) {}
     virtual void HandleAppStrategyConfigEvent(const std::string& pkgName,
         const std::vector<std::pair<std::string, std::string>>& newConfig) {}
 private:
@@ -43,15 +43,15 @@ public:
     void HandlePackageEvent(const std::vector<std::string>& packageList)
     {
         std::lock_guard<std::mutex> lock(mutex_);
-        for (auto &event : events_) {
+        for (auto& event : events_) {
             event->HandlePackageEvent(packageList);
         }
     }
 
-    void HandleSceneEvent(pid_t pid, EventInfo eventInfo)
+    void HandleSceneEvent(pid_t pid, const EventInfo& eventInfo)
     {
         std::lock_guard<std::mutex> lock(mutex_);
-        for (auto &event : events_) {
+        for (auto& event : events_) {
             event->HandleSceneEvent(pid, eventInfo);
         }
     }
@@ -60,15 +60,16 @@ public:
         const std::vector<std::pair<std::string, std::string>>& newConfig)
     {
         std::lock_guard<std::mutex> lock(mutex_);
-        for (auto &event : events_) {
+        for (auto& event : events_) {
             event->HandleAppStrategyConfigEvent(pkgName, newConfig);
         }
     }
 
 private:
+    friend class HgmEvent;
+    friend class sptr<HgmEventDistributor>;
     HgmEventDistributor() = default;
     ~HgmEventDistributor() = default;
-    friend class HgmEvent;
 
     void AddEventInstance(HgmEvent* event);
     void RemoveEventInstance(HgmEvent* event);
@@ -94,7 +95,7 @@ inline HgmEvent::~HgmEvent()
 
 inline sptr<HgmEventDistributor> HgmEventDistributor::Instance()
 {
-    static sptr<HgmEventDistributor> instance(new HgmEventDistributor());
+    static sptr<HgmEventDistributor> instance = sptr<HgmEventDistributor>::MakeSptr();
     return instance;
 }
 

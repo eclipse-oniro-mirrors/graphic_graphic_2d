@@ -24,45 +24,47 @@ namespace OHOS::Rosen::ModifierNG {
 enum class RSModifierType : uint16_t {
     INVALID = 0,
 
-    BOUNDS,
-    FRAME,
-    TRANSFORM,
-    ALPHA,
+    BOUNDS = 1,
+    FRAME = 2,
+    TRANSFORM = 3,
+    ALPHA = 4,
 
-    FOREGROUND_COLOR,
-    BACKGROUND_COLOR,
-    BACKGROUND_SHADER,
-    BACKGROUND_IMAGE,
+    FOREGROUND_COLOR = 5,
+    BACKGROUND_COLOR = 6,
+    BACKGROUND_SHADER = 7,
+    BACKGROUND_IMAGE = 8,
 
-    BORDER,
-    OUTLINE,
-    CLIP_TO_BOUNDS,
-    CLIP_TO_FRAME,
-    VISIBILITY,
+    BORDER = 9,
+    OUTLINE = 10,
+    CLIP_TO_BOUNDS = 11,
+    CLIP_TO_FRAME = 12,
+    VISIBILITY = 13,
 
-    DYNAMIC_LIGHT_UP,
-    SHADOW,
-    MASK,
-    PIXEL_STRETCH,
-    USE_EFFECT,
-    BLENDER,
+    DYNAMIC_LIGHT_UP = 14,
+    SHADOW = 15,
+    MASK = 16,
+    PIXEL_STRETCH = 17,
+    USE_EFFECT = 18,
+    BLENDER = 19,
 
-    POINT_LIGHT,
-    PARTICLE_EFFECT,
-    COMPOSITING_FILTER,
-    BACKGROUND_FILTER,
-    FOREGROUND_FILTER,
+    POINT_LIGHT = 20,
+    PARTICLE_EFFECT = 21,
+    COMPOSITING_FILTER = 22,
+    BACKGROUND_FILTER = 23,
+    FOREGROUND_FILTER = 24,
 
-    TRANSITION_STYLE,
-    BACKGROUND_STYLE,
-    CONTENT_STYLE,
-    FOREGROUND_STYLE,
-    OVERLAY_STYLE,
-    NODE_MODIFIER,
+    TRANSITION_STYLE = 25,
+    BACKGROUND_STYLE = 26,
+    CONTENT_STYLE = 27,
+    FOREGROUND_STYLE = 28,
+    OVERLAY_STYLE = 29,
+    NODE_MODIFIER = 30,
 
-    ENV_FOREGROUND_COLOR,
-    HDR_BRIGHTNESS,
-    BEHIND_WINDOW_FILTER,
+    ENV_FOREGROUND_COLOR = 31,
+    HDR_BRIGHTNESS = 32,
+    BEHIND_WINDOW_FILTER = 33,
+    BACKGROUND_NG_SHADER = 34,
+    FOREGROUND_SHADER = 35,
 
     CHILDREN, // PLACEHOLDER, no such modifier, but we need a dirty flag
 
@@ -128,6 +130,7 @@ public:
             case RSPropertyType::BACKGROUND_COLOR: return "BackgroundColor";
             case RSPropertyType::BACKGROUND_SHADER: return "BackgroundShader";
             case RSPropertyType::BACKGROUND_SHADER_PROGRESS: return "BackgroundShaderProgress";
+            case RSPropertyType::BACKGROUND_NG_SHADER: return "BackgroundNGShader";
             case RSPropertyType::BG_IMAGE: return "BgImage";
             case RSPropertyType::BG_IMAGE_INNER_RECT: return "BgImageInnerRect";
             case RSPropertyType::BG_IMAGE_WIDTH: return "BgImageWidth";
@@ -149,11 +152,13 @@ public:
             case RSPropertyType::FG_BRIGHTNESS_POSCOEFF: return "FgBrightnessPoscoeff";
             case RSPropertyType::FG_BRIGHTNESS_NEGCOEFF: return "FgBrightnessNegcoeff";
             case RSPropertyType::FG_BRIGHTNESS_FRACTION: return "FgBrightnessFraction";
+            case RSPropertyType::FG_BRIGHTNESS_HDR: return "FgBrightnessHdr";
             case RSPropertyType::BG_BRIGHTNESS_RATES: return "BgBrightnessRates";
             case RSPropertyType::BG_BRIGHTNESS_SATURATION: return "BgBrightnessSaturation";
             case RSPropertyType::BG_BRIGHTNESS_POSCOEFF: return "BgBrightnessPoscoeff";
             case RSPropertyType::BG_BRIGHTNESS_NEGCOEFF: return "BgBrightnessNegcoeff";
             case RSPropertyType::BG_BRIGHTNESS_FRACTION: return "BgBrightnessFraction";
+            case RSPropertyType::SHADOW_BLENDER_PARAMS: return "ShadowBlenderParams";
             case RSPropertyType::FRAME_GRAVITY: return "FrameGravity";
             case RSPropertyType::CLIP_RRECT: return "ClipRrect";
             case RSPropertyType::CLIP_BOUNDS: return "ClipBounds";
@@ -238,6 +243,7 @@ public:
             case RSPropertyType::ATTRACTION_FRACTION: return "AttractionFraction";
             case RSPropertyType::ATTRACTION_DSTPOINT: return "AttractionDstpoint";
             case RSPropertyType::CUSTOM: return "Custom";
+            case RSPropertyType::CUSTOM_INDEX: return "CustomIndex";
             case RSPropertyType::TRANSITION_STYLE: return "TransitionStyle";
             case RSPropertyType::BACKGROUND_STYLE: return "BackgroundStyle";
             case RSPropertyType::CONTENT_STYLE: return "ContentStyle";
@@ -250,10 +256,13 @@ public:
             case RSPropertyType::HDR_BRIGHTNESS: return "HdrBrightness";
             case RSPropertyType::HDR_UI_BRIGHTNESS: return "HDRUIBrightness";
             case RSPropertyType::HDR_BRIGHTNESS_FACTOR: return "HdrBrightnessFactor";
+            case RSPropertyType::BACKGROUND_UI_FILTER: return "BackgroundUIFilter";
+            case RSPropertyType::FOREGROUND_UI_FILTER: return "ForegroundUIFilter";
             case RSPropertyType::BEHIND_WINDOW_FILTER_RADIUS: return "BehindWindowFilterRadius";
             case RSPropertyType::BEHIND_WINDOW_FILTER_SATURATION: return "BehindWindowFilterSaturation";
             case RSPropertyType::BEHIND_WINDOW_FILTER_BRIGHTNESS: return "BehindWindowFilterBrightness";
             case RSPropertyType::BEHIND_WINDOW_FILTER_MASK_COLOR: return "BehindWindowFilterMaskColor";
+            case RSPropertyType::FOREGROUND_SHADER: return "ForegroundShader";
             case RSPropertyType::CHILDREN: return "Children";
             default: return "Unknown";
         }

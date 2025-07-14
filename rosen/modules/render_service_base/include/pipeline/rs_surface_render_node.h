@@ -128,7 +128,8 @@ public:
 
     void SetIsOnTheTree(bool onTree, NodeId instanceRootNodeId = INVALID_NODEID,
         NodeId firstLevelNodeId = INVALID_NODEID, NodeId cacheNodeId = INVALID_NODEID,
-        NodeId uifirstRootNodeId = INVALID_NODEID, NodeId displayNodeId = INVALID_NODEID) override;
+        NodeId uifirstRootNodeId = INVALID_NODEID, NodeId screenNodeId = INVALID_NODEID,
+        NodeId logicalDisplayNodeId = INVALID_NODEID) override;
     bool IsAppWindow() const
     {
         return nodeType_ == RSSurfaceNodeType::APP_WINDOW_NODE;
@@ -187,11 +188,16 @@ public:
     bool GetHardCursorStatus() const;
     bool GetHardCursorLastStatus() const;
 
-    void SetLayerTop(bool isTop);
+    void SetLayerTop(bool isTop, bool isTopLayerForceRefresh = true);
 
     bool IsLayerTop() const
     {
         return isLayerTop_;
+    }
+
+    bool IsTopLayerForceRefresh() const
+    {
+        return isTopLayerForceRefresh_;
     }
 
     void SetForceRefresh(bool isForceRefresh);
@@ -401,9 +407,6 @@ public:
 
     bool IsHardwareForcedDisabled() const
     {
-        if (GetTunnelLayerId()) {
-            return false;
-        }
         // a protected node not on the tree need to release buffer when producer produce buffers
         // release buffer in ReleaseSelfDrawingNodeBuffer function
         // isForcedClipHole: for tv product, force clip hole in tvplayer
@@ -548,6 +551,10 @@ public:
     {
         arsrTag_ = arsrTag;
     }
+    
+    // hpae offline
+    bool GetDeviceOfflineEnable() const { return deviceOfflineEnable_; }
+    void SetDeviceOfflineEnable(bool enabled) { deviceOfflineEnable_ = enabled; }
 
     bool GetCopybitTag() const
     {
@@ -581,7 +588,7 @@ public:
     void SetHwcChildrenDisabledState();
 
     void SetContextBounds(const Vector4f bounds);
-    bool CheckParticipateInOcclusion();
+    virtual bool CheckParticipateInOcclusion();
 
     void OnApplyModifiers() override;
 
@@ -612,7 +619,7 @@ public:
     bool GetHwcGlobalPositionEnabled() const;
 
     void SetHwcCrossNode(bool isCrossNode);
-    bool IsDRMCrossNode() const;
+    bool IsHwcCrossNode() const;
 
     void SetSecurityLayer(bool isSecurityLayer);
     void SetLeashPersistentId(uint64_t leashPersistentId);
@@ -621,6 +628,8 @@ public:
     void SetProtectedLayer(bool isProtectedLayer);
     void SetIsOutOfScreen(bool isOutOfScreen);
     void UpdateBlackListStatus(ScreenId virtualScreenId, bool isBlackList);
+    void UpdateVirtualScreenWhiteListInfo(
+        const std::unordered_map<ScreenId, std::unordered_set<uint64_t>>& allWhiteListInfo);
 
     // get whether it is a security/skip layer itself
     LeashPersistentId GetLeashPersistentId() const;
@@ -697,10 +706,8 @@ public:
     void IncreaseHDRNum(HDRComponentType hdrType);
     void ReduceHDRNum(HDRComponentType hdrType);
 
-    bool GetIsWideColorGamut() const;
-
-    void IncreaseWideColorGamutNum();
-    void ReduceWideColorGamutNum();
+    void IncreaseCanvasGamutNum(GraphicColorGamut gamut);
+    void ReduceCanvasGamutNum(GraphicColorGamut gamut);
 
     bool IsHdrEffectColorGamut() const;
 
@@ -739,7 +746,7 @@ public:
         dstRectWithoutRenderFit_ = Drawing::Rect(rect.left_, rect.top_, rect.GetRight(), rect.GetBottom());
     }
 
-    void SetRegionToBeMagnified(Vector4f regionToBeMagnified)
+    void SetRegionToBeMagnified(const Vector4<int>& regionToBeMagnified)
     {
         regionToBeMagnified_ = regionToBeMagnified;
     }
@@ -861,22 +868,6 @@ public:
         RSVisibleLevel visibleLevel = RSVisibleLevel::RS_UNKNOW_VISIBLE_LEVEL,
         bool isSystemAnimatedScenes = false);
 
-    void SetLeashWindowVisibleRegionEmpty(bool isLeashWindowVisibleRegionEmpty)
-    {
-        if (!IsLeashWindow()) {
-            return;
-        }
-        isLeashWindowVisibleRegionEmpty_ = isLeashWindowVisibleRegionEmpty;
-        SetLeashWindowVisibleRegionEmptyParam();
-    }
-
-    bool GetLeashWindowVisibleRegionEmpty() const
-    {
-        return isLeashWindowVisibleRegionEmpty_;
-    }
-
-    void SetLeashWindowVisibleRegionEmptyParam();
-
     void SetExtraDirtyRegionAfterAlignment(const Occlusion::Region& region)
     {
         extraDirtyRegionAfterAlignment_ = region;
@@ -910,8 +901,8 @@ public:
     GraphicColorGamut GetColorSpace() const;
     // Only call this if the node is first level node.
     GraphicColorGamut GetFirstLevelNodeColorGamut() const;
-    void SetFirstLevelNodeColorGamutByResource(bool changeToP3);
-    void SetFirstLevelNodeColorGamutByWindow(bool changeToP3);
+    void SetFirstLevelNodeColorGamutByResource(bool isOnTree, GraphicColorGamut gamut);
+    void SetFirstLevelNodeColorGamutByWindow(bool isOnTree, GraphicColorGamut gamut);
 
     // Only call this if the node is self-drawing surface node.
     void UpdateColorSpaceWithMetadata();
@@ -1090,7 +1081,7 @@ public:
     void AddChildHardwareEnabledNode(WeakPtr childNode);
     const std::vector<WeakPtr>& GetChildHardwareEnabledNodes() const;
 
-    bool IsFocusedNode(uint64_t focusedNodeId)
+    bool IsFocusedNode(uint64_t focusedNodeId) const
     {
         return GetId() == focusedNodeId;
     }
@@ -1280,11 +1271,6 @@ public:
         return RSRenderNode::GetUifirstSupportFlag();
     }
 
-    bool OpincGetNodeSupportFlag() override
-    {
-        return false;
-    }
-
     void UpdateSurfaceCacheContentStaticFlag(bool isAccessibilityChanged);
 
     void UpdateSurfaceSubTreeDirtyFlag();
@@ -1332,9 +1318,9 @@ public:
     }
     bool GetNodeIsSingleFrameComposer() const override;
 
-    void SetAncestorDisplayNode(const RSBaseRenderNode::WeakPtr& ancestorDisplayNode)
+    void SetAncestorScreenNode(const RSBaseRenderNode::WeakPtr& ancestorScreenNode)
     {
-        ancestorDisplayNode_ = ancestorDisplayNode;
+        ancestorScreenNode_ = ancestorScreenNode;
     }
 
     bool SetUifirstNodeEnableParam(MultiThreadCacheType b);
@@ -1353,9 +1339,9 @@ public:
         return uifirstStartTime_;
     }
 
-    RSBaseRenderNode::WeakPtr GetAncestorDisplayNode() const
+    RSBaseRenderNode::WeakPtr GetAncestorScreenNode() const
     {
-        return ancestorDisplayNode_;
+        return ancestorScreenNode_;
     }
     bool QuerySubAssignable(bool isRotation);
     bool QueryIfAllHwcChildrenForceDisabledByFilter();
@@ -1367,7 +1353,7 @@ public:
     void UpdatePartialRenderParams();
     // This function is used for extending visibleRegion by dirty blurfilter node half-obscured
     void UpdateExtendVisibleRegion(Occlusion::Region& region);
-    void UpdateAncestorDisplayNodeInRenderParams();
+    void UpdateAncestorScreenNodeInRenderParams();
 
     void SetNeedDrawFocusChange(bool needDrawFocusChange)
     {
@@ -1419,6 +1405,9 @@ public:
     const std::map<NodeId, RSSurfaceRenderNode::WeakPtr>& GetChildSubSurfaceNodes() const;
     void GetAllSubSurfaceNodes(std::vector<std::pair<NodeId, RSSurfaceRenderNode::WeakPtr>>& allSubSurfaceNodes) const;
     std::string SubSurfaceNodesDump() const;
+
+    void SetIsNodeToBeCaptured(bool isNodeToBeCaptured);
+    bool IsNodeToBeCaptured() const;
 
     void SetDoDirectComposition(bool flag)
     {
@@ -1481,12 +1470,13 @@ public:
         return surfaceHandler_;
     }
 
-    void CheckContainerDirtyStatusAndUpdateDirty(bool containerDirty)
+    void CheckContainerDirtyStatusAndUpdateDirty(bool& containerDirty)
     {
-        if (!IsLeashOrMainWindow()) {
+        if (!containerDirty || !IsLeashOrMainWindow()) {
             return;
         }
-        dirtyStatus_ = containerDirty ? NodeDirty::DIRTY : dirtyStatus_;
+        dirtyStatus_ = NodeDirty::DIRTY;
+        containerDirty = false;
     }
 
     void SetWatermarkEnabled(const std::string& name, bool isEnabled);
@@ -1558,6 +1548,16 @@ public:
         hdrVideoSurface_ = hasHdrVideoSurface;
     }
 
+    float GetHDRBrightnessFactor() const
+    {
+        return hdrBrightnessFactor_;
+    }
+
+    void SetHDRBrightnessFactor(float hdrBrightnessFactor)
+    {
+        hdrBrightnessFactor_ = hdrBrightnessFactor;
+    }
+
     void SetApiCompatibleVersion(uint32_t apiCompatibleVersion);
     uint32_t GetApiCompatibleVersion()
     {
@@ -1601,6 +1601,13 @@ public:
     int32_t GetAppWindowZOrder() const
     {
         return appWindowZOrder_;
+    }
+
+    void SetTopLayerZOrder(uint32_t zOrder);
+
+    uint32_t GetTopLayerZOrder() const
+    {
+        return topLayerZOrder_;
     }
 
     // Enable HWCompose
@@ -1649,7 +1656,7 @@ private:
     bool isForcedClipHole() const;
 
 #ifdef ENABLE_FULL_SCREEN_RECONGNIZE
-    void SendSurfaceNodeTreeStatus(bool onTree);
+    void UpdateSurfaceNodeTreeStatusForAps(bool onTree);
     void SendSurfaceNodeBoundChange();
 #endif
 #ifndef ROSEN_CROSS_PLATFORM
@@ -1669,7 +1676,9 @@ private:
     bool qosPidCal_ = false;
     RSSurfaceNodeAbilityState abilityState_ = RSSurfaceNodeAbilityState::FOREGROUND;
     RSSurfaceNodeType nodeType_ = RSSurfaceNodeType::DEFAULT;
+    uint32_t topLayerZOrder_ = 0;
     bool isLayerTop_ = false;
+    bool isTopLayerForceRefresh_ = false;
     bool isForceRefresh_ = false; // the self-drawing node need force refresh
     // Specifying hardware enable is only a 'hint' to RS that
     // the self-drawing node use hardware composer in some condition,
@@ -1679,7 +1688,6 @@ private:
     const enum SurfaceWindowType surfaceWindowType_ = SurfaceWindowType::DEFAULT_WINDOW;
     bool isNotifyRTBufferAvailablePre_ = false;
     bool isRefresh_ = false;
-    bool isLeashWindowVisibleRegionEmpty_ = false;
     bool isOcclusionVisible_ = true;
     bool isOcclusionVisibleWithoutFilter_ = true;
     bool isOcclusionInSpecificScenes_ = false;
@@ -1749,12 +1757,17 @@ private:
     bool hasTransparentSurface_ = false;
     bool isGpuOverDrawBufferOptimizeNode_ = false;
     bool isSubSurfaceNode_ = false;
+    bool isNodeToBeCaptured_ = false;
     bool doDirectComposition_ = true;
     bool isSkipDraw_ = false;
     bool needHidePrivacyContent_ = false;
     bool isHardwareForcedByBackgroundAlpha_ = false;
     bool arsrTag_ = true;
     bool copybitTag_ = false;
+    
+    // hpae offline
+    bool deviceOfflineEnable_ = false;
+    
     bool subThreadAssignable_ = false;
     bool oldNeedDrawBehindWindow_ = false;
     RectI skipFrameDirtyRect_;
@@ -1774,6 +1787,12 @@ private:
     // Count the number of hdr UI components. If hdrUIComponentNum_ > 0, it means there are hdr UI components
     int hdrUIComponentNum_ = 0;
     int hdrEffectNum_ = 0;
+    int bt2020Num_ = 0;
+    int p3Num_ = 0;
+    int firstLevelNodeBt2020WindowNum_ = 0;
+    int firstLevelNodeP3WindowNum_ = 0;
+    int firstLevelNodeBt2020ResourceNum_ = 0;
+    int firstLevelNodeP3ResourceNum_ = 0;
     int wideColorGamutNum_ = 0;
     int32_t offsetX_ = 0;
     int32_t offsetY_ = 0;
@@ -1789,6 +1808,7 @@ private:
     // hdr
     int32_t displayNit_ = 500; // default sdr luminance
     float brightnessRatio_ = 1.0f; // no ratio by default
+    float hdrBrightnessFactor_ = 1.0f; // no discount by default
     float localZOrder_ = 0.0f;
     uint32_t processZOrder_ = -1;
     int32_t nodeCost_ = 0;
@@ -1817,13 +1837,13 @@ private:
 #ifdef USE_SURFACE_TEXTURE
     std::shared_ptr<RSSurfaceTexture> surfaceTexture_ {};
 #endif
-    RSBaseRenderNode::WeakPtr ancestorDisplayNode_;
+    RSBaseRenderNode::WeakPtr ancestorScreenNode_;
     RectI clipRegionFromParent_;
     RectI dstRect_;
     RectI srcRect_;
     RectI originalDstRect_;
     RectI originalSrcRect_;
-    Vector4f regionToBeMagnified_;
+    Vector4<int> regionToBeMagnified_;
     Drawing::Rect dstRectWithoutRenderFit_;
     RectI historyUnSubmittedOccludedDirtyRegion_;
     Vector4f overDrawBufferNodeCornerRadius_;

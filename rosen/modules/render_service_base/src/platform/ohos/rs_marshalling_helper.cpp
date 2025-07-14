@@ -42,6 +42,9 @@
 #include "common/rs_common_def.h"
 #include "common/rs_matrix3.h"
 #include "common/rs_vector4.h"
+#include "effect/rs_render_filter_base.h"
+#include "effect/rs_render_mask_base.h"
+#include "effect/rs_render_shader_base.h"
 #include "memory/rs_memory_flow_control.h"
 #include "memory/rs_memory_track.h"
 #include "modifier/rs_render_modifier.h"
@@ -51,16 +54,12 @@
 #include "render/rs_gradient_blur_para.h"
 #include "render/rs_image.h"
 #include "render/rs_image_base.h"
-#include "render/rs_light_up_effect_filter.h"
 #include "render/rs_magnifier_para.h"
 #include "render/rs_mask.h"
-#include "render/rs_material_filter.h"
 #include "render/rs_motion_blur_filter.h"
 #include "render/rs_path.h"
 #include "render/rs_pixel_map_shader.h"
 #include "render/rs_render_filter.h"
-#include "render/rs_render_filter_base.h"
-#include "render/rs_render_mask_base.h"
 #include "render/rs_shader.h"
 #include "transaction/rs_ashmem_helper.h"
 
@@ -1686,7 +1685,38 @@ bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<RSNG
 
 bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<RSNGRenderMaskBase>& val)
 {
-    return false;
+    bool success = RSNGRenderMaskBase::Unmarshalling(parcel, val);
+    if (!success) {
+        ROSEN_LOGE("RSMarshallingHelper::Unmarshalling RSNGRenderMaskBase failed");
+    }
+    return success;
+}
+
+// RSNGRenderShaderBase
+bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<RSNGRenderShaderBase>& val)
+{
+    if (val == nullptr) {
+        ROSEN_LOGW("RSMarshallingHelper::Marshalling RSNGRenderShaderBase is nullptr");
+        if (!RSMarshallingHelper::Marshalling(parcel, END_OF_CHAIN)) {
+            ROSEN_LOGE("RSMarshallingHelper::Marshalling RSNGRenderShaderBase write end failed");
+            return false;
+        }
+        return true;
+    }
+    bool success = val->Marshalling(parcel);
+    if (!success) {
+        ROSEN_LOGE("RSMarshallingHelper::Marshalling RSNGRenderShaderBase failed");
+    }
+    return success;
+}
+
+bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<RSNGRenderShaderBase>& val)
+{
+    bool success = RSNGRenderShaderBase::Unmarshalling(parcel, val);
+    if (!success) {
+        ROSEN_LOGE("RSMarshallingHelper::Unmarshalling RSNGRenderShaderBase failed");
+    }
+    return success;
 }
 
 // RSImageBase
@@ -2809,7 +2839,7 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<Modifier
     bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<TEMPLATE<T>>& val)     \
     {                                                                                              \
         PropertyId id = 0;                                                                         \
-        if (!parcel.ReadUint64(id)) {                                                              \
+        if (!RSMarshallingHelper::UnmarshallingPidPlusId(parcel, id)) {                            \
             ROSEN_LOGE("RSMarshallingHelper::Unmarshalling TEMPLATE<T> Read id failed");           \
             return false;                                                                          \
         }                                                                                          \
@@ -2817,7 +2847,6 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<Modifier
         if (!Unmarshalling(parcel, value)) {                                                       \
             return false;                                                                          \
         }                                                                                          \
-        RS_PROFILER_PATCH_NODE_ID(parcel, id);                                                     \
         val.reset(new TEMPLATE<T>(value, id));                                                     \
         return val != nullptr;                                                                     \
     }
@@ -2844,6 +2873,7 @@ MARSHALLING_AND_UNMARSHALLING(RSRenderAnimatableProperty)
     EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<RSRenderFilter>)              \
     EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<RSNGRenderFilterBase>)        \
     EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<RSNGRenderMaskBase>)          \
+    EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<RSNGRenderShaderBase>)        \
     EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<RSImage>)                     \
     EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<RSMask>)                      \
     EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<RSPath>)                      \
@@ -2860,6 +2890,8 @@ MARSHALLING_AND_UNMARSHALLING(RSRenderAnimatableProperty)
     EXPLICIT_INSTANTIATION(TEMPLATE, Vector4<Color>)                               \
     EXPLICIT_INSTANTIATION(TEMPLATE, Vector4f)                                     \
     EXPLICIT_INSTANTIATION(TEMPLATE, std::vector<float>)                           \
+    EXPLICIT_INSTANTIATION(TEMPLATE, std::vector<Vector2f>)                        \
+    EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<Media::PixelMap>)             \
     EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<Drawing::DrawCmdList>)        \
     EXPLICIT_INSTANTIATION(TEMPLATE, Drawing::Matrix)
 
@@ -3061,6 +3093,26 @@ bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<RSRe
 bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<RSRenderPropertyBase>& val)
 {
     return RSRenderPropertyBase::Unmarshalling(parcel, val);
+}
+
+bool RSMarshallingHelper::UnmarshallingPidPlusId(Parcel& parcel, uint64_t& val)
+{
+    uint64_t retCode = 0;
+    retCode = RSMarshallingHelper::Unmarshalling(parcel, val);
+    if (retCode) {
+        val = RS_PROFILER_PATCH_NODE_ID(parcel, val);
+    }
+    return retCode;
+}
+
+bool RSMarshallingHelper::UnmarshallingPidPlusIdNoChangeIfZero(Parcel& parcel, uint64_t& val)
+{
+    uint64_t retCode = 0;
+    retCode = RSMarshallingHelper::Unmarshalling(parcel, val);
+    if (retCode && val) {
+        val = RS_PROFILER_PATCH_NODE_ID(parcel, val);
+    }
+    return retCode;
 }
 
 bool RSMarshallingHelper::MarshallingTransactionVer(Parcel& parcel)

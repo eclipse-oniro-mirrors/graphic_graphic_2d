@@ -16,6 +16,7 @@
 #include "modifier_ng/rs_modifier_ng.h"
 
 #include "sandbox_utils.h"
+#include "ui_effect/property/include/rs_ui_filter.h"
 
 #include "command/rs_node_command.h"
 #include "modifier/rs_property.h"
@@ -74,6 +75,7 @@ static const std::unordered_map<RSPropertyType, ThresholdType> g_propertyTypeToT
     { RSPropertyType::FG_BRIGHTNESS_POSCOEFF, ThresholdType::COARSE },
     { RSPropertyType::FG_BRIGHTNESS_NEGCOEFF, ThresholdType::COARSE },
     { RSPropertyType::FG_BRIGHTNESS_FRACTION, ThresholdType::COARSE },
+    { RSPropertyType::FG_BRIGHTNESS_HDR, ThresholdType::ZERO },
     { RSPropertyType::BG_BRIGHTNESS_RATES, ThresholdType::COARSE },
     { RSPropertyType::BG_BRIGHTNESS_SATURATION, ThresholdType::COARSE },
     { RSPropertyType::BG_BRIGHTNESS_POSCOEFF, ThresholdType::COARSE },
@@ -172,11 +174,15 @@ static const std::unordered_map<RSPropertyType, ThresholdType> g_propertyTypeToT
     { RSPropertyType::ENV_FOREGROUND_COLOR_STRATEGY, ThresholdType::DEFAULT },
     { RSPropertyType::CUSTOM_CLIP_TO_FRAME, ThresholdType::DEFAULT },
     { RSPropertyType::HDR_BRIGHTNESS, ThresholdType::DEFAULT },
+    { RSPropertyType::HDR_UI_BRIGHTNESS, ThresholdType::COARSE },
     { RSPropertyType::HDR_BRIGHTNESS_FACTOR, ThresholdType::COARSE },
+    { RSPropertyType::BACKGROUND_UI_FILTER, ThresholdType::DEFAULT },
+    { RSPropertyType::FOREGROUND_UI_FILTER, ThresholdType::DEFAULT },
     { RSPropertyType::BEHIND_WINDOW_FILTER_RADIUS, ThresholdType::COARSE },
     { RSPropertyType::BEHIND_WINDOW_FILTER_SATURATION, ThresholdType::COARSE },
     { RSPropertyType::BEHIND_WINDOW_FILTER_BRIGHTNESS, ThresholdType::COARSE },
     { RSPropertyType::BEHIND_WINDOW_FILTER_MASK_COLOR, ThresholdType::COARSE },
+    { RSPropertyType::SHADOW_BLENDER_PARAMS, ThresholdType::ZERO },
     { RSPropertyType::CHILDREN, ThresholdType::DEFAULT }
 };
 
@@ -195,11 +201,18 @@ ModifierId RSModifier::GenerateModifierId()
 
 void RSModifier::AttachProperty(const std::shared_ptr<RSPropertyBase>& property)
 {
-    if (property != nullptr) {
-        property->target_ = node_;
-        property->SetIsCustom(true);
-        property->AttachModifier(shared_from_this());
-        property->MarkModifierDirty();
+    if (property == nullptr) {
+        RS_LOGE("Failed to attach property, property is null.");
+        return;
+    }
+    property->SetIsCustom(IsCustom());
+    property->AttachModifier(shared_from_this());
+    if (node_.expired()) {
+        return;
+    }
+    property->target_ = node_;
+    if (IsCustom()) {
+        property->MarkCustomModifierDirty();
     }
 }
 
@@ -209,11 +222,26 @@ void RSModifier::AttachProperty(RSPropertyType type, std::shared_ptr<RSPropertyB
         RS_LOGE("Failed to attach property with type %{public}d, property is null!", static_cast<int32_t>(type));
         return;
     }
+
+    std::shared_ptr<RSRenderPropertyBase> renderProperty = nullptr;
+    bool isUIFilter = (type == RSPropertyType::FOREGROUND_UI_FILTER || type == RSPropertyType::BACKGROUND_UI_FILTER);
+    if (isUIFilter) {
+        auto id = property->GetId();
+        auto filterProperty = std::static_pointer_cast<RSProperty<std::shared_ptr<RSUIFilter>>>(property);
+        if (filterProperty) {
+            auto uiFilter = filterProperty->Get();
+            renderProperty = uiFilter->CreateRenderProperty(id);
+            if (!renderProperty) {
+                return;
+            }
+        }
+    } else {
+        renderProperty = property->GetRenderProperty();
+    }
+
     property->SetPropertyTypeNG(type);
     // replace existing property if any
     properties_[type] = property;
-    // actually do the detach
-    property->AttachModifier(shared_from_this());
     SetPropertyThresholdType(type, property);
 
     auto node = node_.lock();
@@ -221,12 +249,20 @@ void RSModifier::AttachProperty(RSPropertyType type, std::shared_ptr<RSPropertyB
         // not attached yet
         return;
     }
-    property->target_ = node_;
-    node->AttachProperty(property);
+    auto shouldSetOption = node->motionPathOption_ != nullptr && property->IsPathAnimatable();
+    if (shouldSetOption) {
+        property->SetMotionPathOption(node->motionPathOption_);
+    }
+    property->Attach(*node, weak_from_this());
     MarkNodeDirty();
-    std::unique_ptr<RSCommand> command = std::make_unique<RSModifierNGAttachProperty>(
-        node->GetId(), id_, GetType(), type, property->GetRenderProperty());
-    node->AddCommand(command, node->IsRenderServiceNode());
+    std::unique_ptr<RSCommand> command =
+        std::make_unique<RSModifierNGAttachProperty>(node->GetId(), id_, GetType(), type, renderProperty);
+    node->AddCommand(command, node->IsRenderServiceNode(), node->GetFollowType(), node->GetId());
+    if (node->NeedForcedSendToRemote()) {
+        std::unique_ptr<RSCommand> cmdForRemote =
+            std::make_unique<RSModifierNGAttachProperty>(node->GetId(), id_, GetType(), type, renderProperty);
+        node->AddCommand(cmdForRemote, true, node->GetFollowType(), node->GetId());
+    }
 }
 
 void RSModifier::DetachProperty(RSPropertyType type)
@@ -238,13 +274,12 @@ void RSModifier::DetachProperty(RSPropertyType type)
     auto property = it->second;
     properties_.erase(it);
     // actually do the detach
-    property->target_.reset();
+    property->Detach();
     auto node = node_.lock();
     if (!node) {
         // not attached yet
         return;
     }
-    node->DettachProperty(property->GetId());
     std::unique_ptr<RSCommand> command =
         std::make_unique<RSModifierNGDetachProperty>(node->GetId(), id_, GetType(), type);
     node->AddCommand(command, node->IsRenderServiceNode());
@@ -264,25 +299,32 @@ void RSModifier::SetPropertyThresholdType(RSPropertyType type, std::shared_ptr<R
 void RSModifier::OnAttach(RSNode& node)
 {
     node_ = node.weak_from_this();
-    if (!properties_.empty()) {
-        for (auto& [_, property] : properties_) {
-            property->target_ = node_;
-        }
-        MarkNodeDirty();
+    if (properties_.empty()) {
+        return;
     }
+    auto weakPtr = weak_from_this();
+    for (auto& [_, property] : properties_) {
+        auto shouldSetOption = node.motionPathOption_ != nullptr && property->IsPathAnimatable();
+        if (shouldSetOption) {
+            property->SetMotionPathOption(node.motionPathOption_);
+        }
+        property->Attach(node, weakPtr);
+    }
+    MarkNodeDirty();
 }
 
 void RSModifier::OnDetach()
 {
     node_.reset();
     for (auto& [_, property] : properties_) {
-        property->target_.reset();
+        property->Detach();
     }
     MarkNodeDirty();
 }
 
 void RSModifier::SetDirty(bool isDirty, const std::shared_ptr<RSModifierManager>& modifierManager)
 {
+#if defined(MODIFIER_NG)
     if (isDirty_ == isDirty) {
         // not changed
         return;
@@ -299,6 +341,7 @@ void RSModifier::SetDirty(bool isDirty, const std::shared_ptr<RSModifierManager>
         return;
     }
     modifierManager->AddModifier(shared_from_this());
+#endif
 }
 
 std::shared_ptr<RSRenderModifier> RSModifier::CreateRenderModifier()

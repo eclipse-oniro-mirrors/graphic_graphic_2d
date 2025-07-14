@@ -146,6 +146,7 @@ HWTEST_F(RSSymbolAnimationTest, SetSymbolAnimation003, TestSize.Level1)
      * @tc.steps: step2.1 test TEXT FLip animation
      */
     symbolAnimationConfig->effectStrategy = Drawing::DrawingEffectStrategy::TEXT_FLIP;
+    symbolAnimationConfig->animationStart = true;
     bool flag1 = symbolAnimation.SetSymbolAnimation(symbolAnimationConfig);
     EXPECT_FALSE(flag1);
 }
@@ -305,16 +306,16 @@ HWTEST_F(RSSymbolAnimationTest, SetDisappearConfig001, TestSize.Level1)
      * @tc.steps: step2 start test SetDisappearConfig
      */
     bool flag1 = symbolAnimation.SetDisappearConfig(nullptrConfig, nullptrConfig, rootNode);
-    EXPECT_TRUE(flag1 == false);
+    EXPECT_FALSE(flag1);
 
     bool flag2 = symbolAnimation.SetDisappearConfig(symbolAnimationConfig, nullptrConfig, rootNode);
-    EXPECT_TRUE(flag2 == false);
+    EXPECT_FALSE(flag2);
 
     bool flag3 = symbolAnimation.SetDisappearConfig(nullptrConfig, disappearConfig, rootNode);
-    EXPECT_TRUE(flag3 == false);
+    EXPECT_FALSE(flag3);
 
     bool flag4 = symbolAnimation.SetDisappearConfig(symbolAnimationConfig, disappearConfig, rootNode);
-    EXPECT_TRUE(flag4 == true);
+    EXPECT_FALSE(flag4);
     GTEST_LOG_(INFO) << "RSSymbolAnimationTest SetDisappearConfig001 end";
 }
 
@@ -670,6 +671,7 @@ HWTEST_F(RSSymbolAnimationTest, InitSupportAnimationTableTest, TestSize.Level1)
     symbolAnimation.SetNode(rootNode);
     auto symbolAnimationConfig = std::make_shared<TextEngine::SymbolAnimationConfig>();
     symbolAnimation.InitSupportAnimationTable(symbolAnimationConfig); // init data
+    EXPECT_FALSE(symbolAnimation.isMaskSymbol_);
     symbolAnimation.InitSupportAnimationTable(symbolAnimationConfig); // if data exists, data will not init again
     EXPECT_FALSE(symbolAnimation.publicSupportAnimations_.empty());
 
@@ -1364,6 +1366,7 @@ HWTEST_F(RSSymbolAnimationTest, SetNodePivotTest001, TestSize.Level1)
     GTEST_LOG_(INFO) << "RSSymbolAnimationTest SetNodePivotTest001 end";
 }
 
+#ifndef MODIFIER_NG
 /**
  * @tc.name: SetNodePivotTest002
  * @tc.desc: move the scale center to the center of a node
@@ -1389,6 +1392,7 @@ HWTEST_F(RSSymbolAnimationTest, SetNodePivotTest002, TestSize.Level1)
     EXPECT_FALSE(symbolAnimation.rsNode_);
     GTEST_LOG_(INFO) << "RSSymbolAnimationTest SetNodePivotTest002 end";
 }
+#endif
 
 /**
  * @tc.name: SpliceAnimation001
@@ -1568,6 +1572,7 @@ HWTEST_F(RSSymbolAnimationTest, SetTextFlipAnimation001, TestSize.Level1)
      * @tc.steps: step2.1 test Text FLip animation with Invalid animation parameters
      */
     symbolAnimationConfig->effectStrategy = Drawing::DrawingEffectStrategy::TEXT_FLIP;
+    symbolAnimationConfig->animationStart = true;
     bool flag = symbolAnimation.SetTextFlipAnimation(symbolAnimationConfig);
     EXPECT_FALSE(flag);
 
@@ -1575,8 +1580,8 @@ HWTEST_F(RSSymbolAnimationTest, SetTextFlipAnimation001, TestSize.Level1)
      * @tc.steps: step2.2 test Text FLip animation with valid animation parameters
      */
     std::vector<std::vector<Drawing::DrawingPiecewiseParameter>> parameters;
-    parameters.push_back({DISAPPEAR_FIRST_PHASE_PARAS, DISAPPEAR_SECOND_PHASE_PARAS});
-    parameters.push_back({APPEAR_FIRST_PHASE_PARAS, APPEAR_SECOND_PHASE_PARAS});
+    parameters.push_back({DISAPPEAR_FIRST_PHASE_PARAS, DISAPPEAR_SECOND_PHASE_PARAS, TRANSITION_FIRST_PARAS});
+    parameters.push_back({APPEAR_FIRST_PHASE_PARAS, APPEAR_SECOND_PHASE_PARAS, TRANSITION_SECOND_PARAS});
     symbolAnimationConfig->effectStrategy = Drawing::DrawingEffectStrategy::TEXT_FLIP;
     symbolAnimationConfig->parameters = parameters;
     bool flag1 = symbolAnimation.SetTextFlipAnimation(symbolAnimationConfig);
@@ -1598,8 +1603,8 @@ HWTEST_F(RSSymbolAnimationTest, SetTextFlipAnimation002, TestSize.Level1)
      * @tc.steps: step1. init data
      */
     std::vector<std::vector<Drawing::DrawingPiecewiseParameter>> parameters;
-    parameters.push_back({DISAPPEAR_FIRST_PHASE_PARAS, DISAPPEAR_SECOND_PHASE_PARAS});
-    parameters.push_back({APPEAR_FIRST_PHASE_PARAS, APPEAR_SECOND_PHASE_PARAS});
+    parameters.push_back({DISAPPEAR_FIRST_PHASE_PARAS, DISAPPEAR_SECOND_PHASE_PARAS, BLUR_FIRST_PARAS});
+    parameters.push_back({APPEAR_FIRST_PHASE_PARAS, APPEAR_SECOND_PHASE_PARAS, BLUR_SECOND_PARAS});
     auto symbolAnimation = RSSymbolAnimation();
     symbolAnimation.SetNode(rootNode);
     auto symbolAnimationConfig = std::make_shared<TextEngine::SymbolAnimationConfig>();
@@ -1614,6 +1619,7 @@ HWTEST_F(RSSymbolAnimationTest, SetTextFlipAnimation002, TestSize.Level1)
     symbolAnimationConfig->effectElement.height = 40; // 40 height of path
     symbolAnimationConfig->effectElement.path = path;
     symbolAnimationConfig-> effectElement.offset = offset;
+    symbolAnimationConfig->animationStart = true;
     /**
      * @tc.steps: step2.1 test Text FLip animation with nullptr node
      */
@@ -1635,6 +1641,27 @@ HWTEST_F(RSSymbolAnimationTest, SetTextFlipAnimation002, TestSize.Level1)
     bool flag4 = symbolAnimation.SetTextFlipAnimation(symbolAnimationConfig);
     EXPECT_TRUE(flag4);
     NotifyStartAnimation();
+}
+
+/**
+ * @tc.name: SetTextFlipTestStartFalse
+ * @tc.desc: Test text flip animation with animationStart is false
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSymbolAnimationTest, SetTextFlipTestStartFalse, TestSize.Level1)
+{
+    /**
+     * @tc.steps: step1. init data
+     */
+    auto symbolAnimation = RSSymbolAnimation();
+    symbolAnimation.SetNode(rootNode);
+    auto symbolAnimationConfig = std::make_shared<TextEngine::SymbolAnimationConfig>();
+    /**
+     * @tc.steps: step2.1 test Text FLip animation with animationStart is false
+     */
+    symbolAnimationConfig->animationStart = false;
+    bool flag = symbolAnimation.SetTextFlipAnimation(symbolAnimationConfig);
+    EXPECT_TRUE(flag);
 }
 
 /**
@@ -1755,6 +1782,8 @@ HWTEST_F(RSSymbolAnimationTest, TranslateAnimationBase, TestSize.Level1)
     Drawing::DrawingPiecewiseParameter flipParameter1 = TRANSITION_FIRST_PARAS;
     flipParameter1.duration = 0;
     flipParameter1.delay = 300; // 300 is animation delay
+    FrameRateRange range = {60, 60, 60}; // the fixed frame rate is 60 of text flip animation
+    symbolAnimation.range_ = range;
     symbolAnimation.TranslateAnimationBase(canvasNode, translateProperty, flipParameter1, groupAnimation);
     EXPECT_FALSE(groupAnimation.empty());
     NotifyStartAnimation();
@@ -1807,7 +1836,8 @@ HWTEST_F(RSSymbolAnimationTest, SetSymbolAnimation004, TestSize.Level1) {
     auto symbolAnimation = RSSymbolAnimation();
     symbolAnimation.SetNode(rootNode);
     auto symbolAnimationConfig = std::make_shared<TextEngine::SymbolAnimationConfig>();
-    symbolAnimationConfig->symbolNodes.resize(1); // symbolNodes size is 3
+    symbolAnimationConfig->symbolNodes.resize(3); // symbolNodes size is 3
+    symbolAnimationConfig->numNodes = 3;
     symbolAnimationConfig->effectStrategy = Drawing::DrawingEffectStrategy::DISABLE;
     bool result = symbolAnimation.SetSymbolAnimation(symbolAnimationConfig);
     EXPECT_FALSE(result);
@@ -1953,6 +1983,22 @@ HWTEST_F(RSSymbolAnimationTest, SetDisableAnimation002, TestSize.Level1) {
 }
 
 /**
+ * @tc.name: SetDisableAnimation003
+ * @tc.desc: Test SetDisableAnimation by symbolNodes with path and parameters
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSymbolAnimationTest, SetDisableAnimation003, TestSize.Level1) {
+    /**
+     * @tc.steps: step1. init data
+     */
+    auto symbolAnimation = RSSymbolAnimation();
+    symbolAnimation.SetNode(rootNode);
+    InitSymbolConfigData();
+    bool result = symbolAnimation.SetDisableAnimation(symbolAnimationConfig_);
+    EXPECT_FALSE(result);
+}
+
+/**
  * @tc.name: SetDisableBaseLayer001
  * @tc.desc: Test SetDisableBaseLayer by canvasNodes is nullptr
  * @tc.type: FUNC
@@ -2089,6 +2135,14 @@ HWTEST_F(RSSymbolAnimationTest, SetSymbolShadow001, TestSize.Level1)
     symbolAnimation.isMaskSymbol_ = true;
     bool flag2 = symbolAnimation.SetPublicAnimation(symbolAnimationConfig_);
     EXPECT_FALSE(flag2);
+    /**
+     * @tc.steps: step2.3 start test with effect strategy BOUNCE
+     */
+    rootNode->canvasNodesListMap_[symbolId] = {};
+    symbolAnimation.InitSupportAnimationTable(symbolAnimationConfig_);
+    symbolAnimationConfig_->effectStrategy = Drawing::DrawingEffectStrategy::BOUNCE;
+    bool flag3 = symbolAnimation.SetPublicAnimation(symbolAnimationConfig_);
+    EXPECT_TRUE(flag3);
 }
 } // namespace Rosen
 } // namespace OHOS

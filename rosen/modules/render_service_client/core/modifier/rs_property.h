@@ -70,19 +70,22 @@ namespace OHOS {
 namespace Rosen {
 namespace ModifierNG {
 class RSModifier;
+class RSForegroundFilterModifier;
+class RSBackgroundFilterModifier;
 }
 class RSFilter;
 class RSImage;
 class RSMask;
 class RSPath;
 class RSNGFilterBase;
+class RSNGMaskBase;
 class RSLinearGradientBlurPara;
 class MotionBlurParam;
 class RSMagnifierParams;
 class ParticleNoiseFields;
 class RSShader;
 class RSUIFilter;
-class RSUIFilterUtils;
+class RSNGEffectUtils;
 
 /**
  * @brief Defines different types of thresholds for spring animation.
@@ -166,6 +169,13 @@ public:
 
     virtual void SetPropertyTypeNG(const ModifierNG::RSPropertyType type) {}
 
+    inline bool IsPathAnimatable() const
+    {
+        auto type = GetPropertyTypeNG();
+        return (type == ModifierNG::RSPropertyType::BOUNDS || type == ModifierNG::RSPropertyType::FRAME ||
+            type == ModifierNG::RSPropertyType::TRANSLATE);
+    }
+
 protected:
     virtual void SetIsCustom(bool isCustom) = 0;
     virtual bool GetIsCustom() const = 0;
@@ -189,34 +199,34 @@ protected:
         modifier_ = modifier;
     }
 
-    void Attach(const std::shared_ptr<RSNode>& node)
+    void Attach(RSNode& node, std::weak_ptr<ModifierNG::RSModifier> modifier = {})
     {
-        target_ = node;
-        if (node) {
-            node->RegisterProperty(shared_from_this());
-        }
-        OnAttach(node);
+        target_ = node.weak_from_this();
+        modifierNG_ = modifier;
+        node.RegisterProperty(shared_from_this());
+        OnAttach(node, modifier);
     }
 
-    virtual void OnAttach(const std::shared_ptr<RSNode>& node) {}
+    virtual void OnAttach(RSNode& node, std::weak_ptr<ModifierNG::RSModifier> modifier) {}
 
     void Detach()
     {
         if (auto node = target_.lock()) {
             node->UnregisterProperty(GetId());
-            OnDetach(node);
         }
+        OnDetach();
         target_.reset();
+        modifierNG_.reset();
     }
 
-    virtual void OnDetach(const std::shared_ptr<RSNode>& node) {}
+    virtual void OnDetach() {}
 
     void AttachModifier(const std::shared_ptr<ModifierNG::RSModifier>& modifier)
     {
         modifierNG_ = modifier;
     }
 
-    void MarkModifierDirty();
+    void MarkCustomModifierDirty();
 
     void MarkNodeDirty();
 
@@ -296,11 +306,38 @@ private:
     friend class RSCustomTransitionEffect;
     friend class RSCurveAnimation;
     friend class RSUIFilterParaBase;
+    friend class ModifierNG::RSForegroundFilterModifier;
+    friend class ModifierNG::RSBackgroundFilterModifier;
     template<typename T>
     friend class RSAnimatableProperty;
     template<uint16_t commandType, uint16_t commandSubType>
     friend class RSGetShowingValueAndCancelAnimationTask;
-    friend class RSUIFilterUtils;
+    friend class RSNGEffectUtils;
+};
+
+/**
+ * @struct RSRenderPropertyTraits
+ *
+ * @brief Helper for getting type of RSRenderProperty.
+ */
+template<typename T>
+struct RSRenderPropertyTraits {
+    using Type = RSRenderProperty<T>;
+};
+
+template<>
+struct RSRenderPropertyTraits<std::shared_ptr<RSNGFilterBase>> {
+    using Type = RSRenderProperty<std::shared_ptr<RSNGRenderFilterBase>>;
+};
+
+template<>
+struct RSRenderPropertyTraits<std::shared_ptr<RSNGShaderBase>> {
+    using Type = RSRenderProperty<std::shared_ptr<RSNGRenderShaderBase>>;
+};
+
+template<>
+struct RSRenderPropertyTraits<std::shared_ptr<RSNGMaskBase>> {
+    using Type = RSRenderProperty<std::shared_ptr<RSNGRenderMaskBase>>;
 };
 
 /**
@@ -335,7 +372,7 @@ public:
 
     using ValueType = T;
 
-    using RenderPropertyType = RSRenderProperty<T>;
+    using RenderPropertyType = typename RSRenderPropertyTraits<T>::Type;
 
     virtual void Set(const T& value)
     {
@@ -352,7 +389,7 @@ public:
         MarkNodeDirty();
         UpdateExtendModifierForGeometry(node);
         if (isCustom_) {
-            MarkModifierDirty();
+            MarkCustomModifierDirty();
         } else {
             UpdateToRender(stagingValue_, UPDATE_TYPE_OVERWRITE);
         }
@@ -397,9 +434,9 @@ protected:
         return std::make_shared<RSProperty<T>>(stagingValue_);
     }
 
-    void OnAttach(const std::shared_ptr<RSNode>& node) override {}
+    void OnAttach(RSNode& node, std::weak_ptr<ModifierNG::RSModifier> modifier) override {}
 
-    void OnDetach(const std::shared_ptr<RSNode>& node) override {}
+    void OnDetach() override {}
 
     bool IsValid(const T& value)
     {
@@ -431,7 +468,7 @@ protected:
     friend class RSImplicitAnimator;
     friend class RSExtendedModifier;
     friend class RSModifier;
-    friend class RSUIFilterUtils;
+    friend class RSNGEffectUtils;
 };
 
 /**
@@ -729,7 +766,7 @@ protected:
             }
         } else {
             showingValue_ = value;
-            RSProperty<T>::MarkModifierDirty();
+            RSProperty<T>::MarkCustomModifierDirty();
             if (renderProperty_ != nullptr) {
                 renderProperty_->Set(value);
             } else {
@@ -754,7 +791,7 @@ protected:
         if (renderProperty != nullptr) {
             showingValue_ = renderProperty->Get();
             NotifyPropertyChange();
-            RSProperty<T>::MarkModifierDirty();
+            RSProperty<T>::MarkCustomModifierDirty();
         }
     }
 
@@ -862,17 +899,37 @@ private:
     friend class RSPathAnimation;
     friend class RSExtendedModifier;
     friend class RSModifier;
-    friend class RSUIFilterUtils;
+    friend class RSNGEffectUtils;
 };
 
 template<>
-RSC_EXPORT void RSProperty<std::shared_ptr<RSNGFilterBase>>::OnAttach(const std::shared_ptr<RSNode>& node);
+RSC_EXPORT void RSProperty<std::shared_ptr<RSNGFilterBase>>::OnAttach(RSNode& node,
+    std::weak_ptr<ModifierNG::RSModifier> modifier);
 template<>
-RSC_EXPORT void RSProperty<std::shared_ptr<RSNGFilterBase>>::OnDetach(const std::shared_ptr<RSNode>& node);
+RSC_EXPORT void RSProperty<std::shared_ptr<RSNGFilterBase>>::OnDetach();
 template<>
 RSC_EXPORT void RSProperty<std::shared_ptr<RSNGFilterBase>>::Set(const std::shared_ptr<RSNGFilterBase>& value);
 template<>
 RSC_EXPORT std::shared_ptr<RSRenderPropertyBase> RSProperty<std::shared_ptr<RSNGFilterBase>>::GetRenderProperty();
+template<>
+RSC_EXPORT void RSProperty<std::shared_ptr<RSNGShaderBase>>::OnAttach(RSNode& node,
+    std::weak_ptr<ModifierNG::RSModifier> modifier);
+template<>
+RSC_EXPORT void RSProperty<std::shared_ptr<RSNGShaderBase>>::OnDetach();
+template<>
+RSC_EXPORT void RSProperty<std::shared_ptr<RSNGShaderBase>>::Set(const std::shared_ptr<RSNGShaderBase>& value);
+template<>
+RSC_EXPORT std::shared_ptr<RSRenderPropertyBase> RSProperty<std::shared_ptr<RSNGShaderBase>>::GetRenderProperty();
+
+template<>
+RSC_EXPORT void RSProperty<std::shared_ptr<RSNGMaskBase>>::OnAttach(RSNode& node,
+    std::weak_ptr<ModifierNG::RSModifier> modifier);
+template<>
+RSC_EXPORT void RSProperty<std::shared_ptr<RSNGMaskBase>>::OnDetach();
+template<>
+RSC_EXPORT void RSProperty<std::shared_ptr<RSNGMaskBase>>::Set(const std::shared_ptr<RSNGMaskBase>& value);
+template<>
+RSC_EXPORT std::shared_ptr<RSRenderPropertyBase> RSProperty<std::shared_ptr<RSNGMaskBase>>::GetRenderProperty();
 
 template<>
 RSC_EXPORT void RSProperty<bool>::UpdateToRender(const bool& value, PropertyUpdateType type) const;
@@ -944,6 +1001,12 @@ RSC_EXPORT void RSProperty<std::shared_ptr<RSUIFilter>>::UpdateToRender(
 template<>
 RSC_EXPORT void RSProperty<std::shared_ptr<RSNGFilterBase>>::UpdateToRender(
     const std::shared_ptr<RSNGFilterBase>& value, PropertyUpdateType type) const;
+template<>
+RSC_EXPORT void RSProperty<std::shared_ptr<RSNGShaderBase>>::UpdateToRender(
+    const std::shared_ptr<RSNGShaderBase>& value, PropertyUpdateType type) const;
+template<>
+RSC_EXPORT void RSProperty<std::shared_ptr<RSNGMaskBase>>::UpdateToRender(
+    const std::shared_ptr<RSNGMaskBase>& value, PropertyUpdateType type) const;
 
 template<>
 RSC_EXPORT bool RSProperty<float>::IsValid(const float& value);

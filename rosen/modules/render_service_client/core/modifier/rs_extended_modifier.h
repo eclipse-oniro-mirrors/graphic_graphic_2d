@@ -143,7 +143,7 @@ public:
         index_ = index;
     }
 
-    int16_t GetIndex()
+    int16_t GetIndex() const
     {
         return index_;
     }
@@ -205,7 +205,6 @@ private:
     bool lastDrawCmdListEmpty_ = false;
     bool noNeedUICaptured_ = false;
 };
-
 
 /**
  * @class RSGeometryTransModifier

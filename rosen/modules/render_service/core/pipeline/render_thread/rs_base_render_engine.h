@@ -20,7 +20,7 @@
 
 #include "hdi_layer_info.h"
 #include "pipeline/rs_paint_filter_canvas.h"
-#include "pipeline/rs_display_render_node.h"
+#include "pipeline/rs_screen_render_node.h"
 #include "pipeline/rs_surface_render_node.h"
 #ifdef USE_M133_SKIA
 #include "include/gpu/ganesh/GrDirectContext.h"
@@ -44,7 +44,6 @@
 namespace OHOS {
 namespace Rosen {
 namespace DrawableV2 {
-class RSDisplayRenderNodeDrawable;
 class RSSurfaceRenderNodeDrawable;
 }
 struct FrameContextConfig {
@@ -112,6 +111,13 @@ public:
                 CheckAndVerifyDamageRegion(rects, RectI(0, 0, surface->Width(), surface->Height())));
         }
     }
+    // some frame maynot need to call FlushFrame
+    void Reset()
+    {
+        targetSurface_ = nullptr;
+        surfaceFrame_ = nullptr;
+    }
+
 protected:
     std::vector<RectI> CheckAndVerifyDamageRegion(const std::vector<RectI>& rects,
         const RectI& surfaceRect) const;
@@ -167,9 +173,10 @@ public:
         DrawableV2::RSSurfaceRenderNodeDrawable& surfaceDrawable, BufferDrawParam& params,
         PreProcessFunc preProcess = nullptr, PostProcessFunc postProcess = nullptr) {}
 
-    void DrawDisplayNodeWithParams(RSPaintFilterCanvas& canvas, RSDisplayRenderNode& node,
+    virtual void DrawHDRCacheWithParams(RSPaintFilterCanvas& canvas, BufferDrawParam& params) = 0;
+    void DrawScreenNodeWithParams(RSPaintFilterCanvas& canvas, RSScreenRenderNode& node,
         BufferDrawParam& params);
-    void DrawDisplayNodeWithParams(RSPaintFilterCanvas& canvas, RSSurfaceHandler& surfaceHandler,
+    void DrawScreenNodeWithParams(RSPaintFilterCanvas& canvas, RSSurfaceHandler& surfaceHandler,
         BufferDrawParam& params);
     void RegisterDeleteBufferListener(const sptr<IConsumerSurface>& consumer, bool isForUniRedraw = false);
     void RegisterDeleteBufferListener(RSSurfaceHandler& handler);
@@ -207,8 +214,9 @@ public:
     }
 #endif // RS_ENABLE_EGLIMAGE
 #ifdef USE_VIDEO_PROCESSING_ENGINE
-    void ColorSpaceConvertor(std::shared_ptr<Drawing::ShaderEffect> &inputShader, BufferDrawParam& params,
-        Media::VideoProcessingEngine::ColorSpaceConverterDisplayParameter& parameter);
+    void ColorSpaceConvertor(std::shared_ptr<Drawing::ShaderEffect>& inputShader, BufferDrawParam& params,
+        Media::VideoProcessingEngine::ColorSpaceConverterDisplayParameter& parameter,
+        const RSPaintFilterCanvas::HDRProperties& hdrProperties = RSPaintFilterCanvas::HDRProperties{});
 #endif
     static std::shared_ptr<Drawing::ColorSpace> ConvertColorGamutToDrawingColorSpace(GraphicColorGamut colorGamut);
     static std::shared_ptr<Drawing::ColorSpace> ConvertColorSpaceNameToDrawingColorSpace(

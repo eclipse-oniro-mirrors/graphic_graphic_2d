@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef RENDER_SERVICE_CLIENT_CORE_ANIMATION_RS_RENDER_MODIFIER_H
-#define RENDER_SERVICE_CLIENT_CORE_ANIMATION_RS_RENDER_MODIFIER_H
+#ifndef RENDER_SERVICE_BASE_MODIFIER_RS_RENDER_MODIFIER_H
+#define RENDER_SERVICE_BASE_MODIFIER_RS_RENDER_MODIFIER_H
 
 #include <memory>
 
@@ -179,7 +179,7 @@ public:
         }
     }
 
-    int16_t GetIndex()
+    int16_t GetIndex() const
     {
         return index_;
     }
@@ -555,4 +555,4 @@ DECLARE_NOANIMATABLE_MODIFIER(Particles, RSRenderParticleVector, PARTICLE, Foreg
 } // namespace Rosen
 } // namespace OHOS
 
-#endif // RENDER_SERVICE_CLIENT_CORE_ANIMATION_RS_RENDER_MODIFIER_H
+#endif // RENDER_SERVICE_BASE_MODIFIER_RS_RENDER_MODIFIER_H

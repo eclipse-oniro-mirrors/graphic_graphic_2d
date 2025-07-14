@@ -16,7 +16,7 @@
 #include <gtest/gtest.h>
 
 #include "pipeline/rs_context.h"
-#include "pipeline/rs_display_render_node.h"
+#include "pipeline/rs_screen_render_node.h"
 #include "property/rs_properties.h"
 #include "common/rs_obj_abs_geometry.h"
 #include "pipeline/rs_canvas_render_node.h"
@@ -35,6 +35,7 @@ class PropertiesTest : public testing::Test {
 public:
     static void SetUpTestCase();
     static void TearDownTestCase();
+    static bool IsForegroundFilter(RSProperties& properties);
     void SetUp() override;
     void TearDown() override;
 };
@@ -43,6 +44,15 @@ void PropertiesTest::SetUpTestCase() {}
 void PropertiesTest::TearDownTestCase() {}
 void PropertiesTest::SetUp() {}
 void PropertiesTest::TearDown() {}
+bool PropertiesTest::IsForegroundFilter(RSProperties& properties)
+{
+    bool isUniRender = RSProperties::IS_UNI_RENDER;
+    if (isUniRender) {
+        return properties.foregroundFilterCache_ != nullptr;
+    } else {
+        return properties.foregroundFilter_ != nullptr;
+    }
+}
 
 /**
  * @tc.name: SetBgImageInnerRectTest
@@ -538,14 +548,14 @@ HWTEST_F(PropertiesTest, SetHDRBrightnessFactor003, TestSize.Level1)
     properties.backref_ = node;
     properties.SetHDRBrightnessFactor(initialFactor);
 
-    NodeId displayRenderNodeId = 2;
-    struct RSDisplayNodeConfig config;
+    NodeId screenRenderNodeId = 2;
+    ScreenId screenId = 0;
     auto context = std::make_shared<RSContext>();
-    auto displayRenderNode = std::make_shared<RSDisplayRenderNode>(displayRenderNodeId, config, context);
+    auto displayRenderNode = std::make_shared<RSScreenRenderNode>(screenRenderNodeId, screenId, context);
 
     properties.backref_ = displayRenderNode;
-    displayRenderNode->InsertHDRNode(displayRenderNodeId);
-    EXPECT_NE(displayRenderNode->hdrNodeList_.find(displayRenderNodeId), displayRenderNode->hdrNodeList_.end());
+    displayRenderNode->InsertHDRNode(screenRenderNodeId);
+    EXPECT_NE(displayRenderNode->hdrNodeList_.find(screenRenderNodeId), displayRenderNode->hdrNodeList_.end());
     properties.SetHDRBrightnessFactor(0.5f);
 
     NodeId nodeId1 = 0;
@@ -555,14 +565,14 @@ HWTEST_F(PropertiesTest, SetHDRBrightnessFactor003, TestSize.Level1)
     displayRenderNode->InsertHDRNode(nodeId1);
     properties.SetHDRBrightnessFactor(0.6f);
 
-    pid_t pid = ExtractPid(displayRenderNodeId);
-    context->GetMutableNodeMap().renderNodeMap_[pid][displayRenderNodeId] = displayRenderNode;
+    pid_t pid = ExtractPid(screenRenderNodeId);
+    context->GetMutableNodeMap().renderNodeMap_[pid][screenRenderNodeId] = displayRenderNode;
     properties.SetHDRBrightnessFactor(0.8f);
 
-    struct RSDisplayNodeConfig config2;
+    ScreenId screenId2 = 1;
     std::shared_ptr<RSContext> context2;
-    auto displayNode2 = std::make_shared<RSDisplayRenderNode>(3, config2, context2);
-    properties.backref_ = displayNode2;
+    auto screenNode2 = std::make_shared<RSScreenRenderNode>(3, screenId2, context2);
+    properties.backref_ = screenNode2;
     displayRenderNode->InsertHDRNode(3);
     EXPECT_NE(displayRenderNode->hdrNodeList_.find(3), displayRenderNode->hdrNodeList_.end());
     properties.SetHDRBrightnessFactor(0.9f);
@@ -1422,6 +1432,24 @@ HWTEST_F(PropertiesTest, GenerateBezierWarpFilter_001, TestSize.Level1)
 }
 
 /**
+ * @tc.name: SetShadowColorTest
+ * @tc.desc: test SetShadowColor with shadow mask
+ * @tc.type: FUNC
+ */
+HWTEST_F(PropertiesTest, SetShadowColorTest, TestSize.Level1)
+{
+    RSProperties properties;
+    Color color(0XFF0000FF); // 0XFF0000FF is RBGA
+    properties.SetShadowColor(color);
+    EXPECT_FALSE(properties.filterNeedUpdate_);
+
+    properties.SetShadowMask(2); // mask color blur
+    properties.filterNeedUpdate_ = false;
+    properties.SetShadowColor(color);
+    EXPECT_TRUE(properties.filterNeedUpdate_);
+}
+
+/**
  * @tc.name: UpdateForegroundFilterTest001
  * @tc.desc: test UpdateForegroundFilter with shadow mask
  * @tc.type: FUNC
@@ -1429,35 +1457,17 @@ HWTEST_F(PropertiesTest, GenerateBezierWarpFilter_001, TestSize.Level1)
 HWTEST_F(PropertiesTest, UpdateForegroundFilterTest001, TestSize.Level1)
 {
     RSProperties properties;
-    bool isUniRender = RSProperties::IS_UNI_RENDER;
-    if (isUniRender) {
-        EXPECT_TRUE(properties.foregroundFilterCache_ == nullptr);
-    } else {
-        EXPECT_TRUE(properties.foregroundFilter_ == nullptr);
-    }
     properties.SetShadowMask(0); // mask none
     properties.UpdateForegroundFilter();
-    if (isUniRender) {
-        EXPECT_TRUE(properties.foregroundFilterCache_ == nullptr);
-    } else {
-        EXPECT_TRUE(properties.foregroundFilter_ == nullptr);
-    }
+    EXPECT_FALSE(IsForegroundFilter(properties));
 
     properties.SetShadowMask(10); // 10 is invalid
     properties.UpdateForegroundFilter();
-    if (isUniRender) {
-        EXPECT_TRUE(properties.foregroundFilterCache_ == nullptr);
-    } else {
-        EXPECT_TRUE(properties.foregroundFilter_ == nullptr);
-    }
+    EXPECT_FALSE(IsForegroundFilter(properties));
 
     properties.SetShadowMask(2); // mask color blur
     properties.UpdateForegroundFilter();
-    if (isUniRender) {
-        EXPECT_FALSE(properties.foregroundFilterCache_ == nullptr);
-    } else {
-        EXPECT_FALSE(properties.foregroundFilter_ == nullptr);
-    }
+    EXPECT_TRUE(IsForegroundFilter(properties));
 }
 
 /**
@@ -1503,7 +1513,37 @@ HWTEST_F(PropertiesTest, SetEnableHDREffectTest, TestSize.Level1)
     properties.SetEnableHDREffect(true); // different branch if call again
     EXPECT_EQ(properties.GetEnableHDREffect(), true);
     properties.UpdateFilter();
-    EXPECT_TRUE(properties.needFilter_);
+    EXPECT_FALSE(properties.needFilter_);
+}
+
+/**
+ * @tc.name: ShadowBlenderTest
+ * @tc.desc: test ShadowBlender SetParams, GetParams, Invalid and Description.
+ * @tc.type: FUNC
+ */
+HWTEST_F(PropertiesTest, ShadowBlenderTest, TestSize.Level1)
+{
+    RSProperties properties;
+    std::optional<RSShadowBlenderPara> paramsNull = std::nullopt;
+    properties.SetShadowBlenderParams(paramsNull);
+    EXPECT_FALSE(properties.isDrawn_);
+    std::string description = "shadowBlenderParams_ is nullopt";
+    EXPECT_EQ(description, properties.GetShadowBlenderDescription());
+
+    float cubic = 0;
+    float quadratic = 0;
+    float linear = 0;
+    float constant = 0;
+    auto params = std::optional<RSShadowBlenderPara>({ cubic, quadratic, linear, constant });
+    properties.SetShadowBlenderParams(params);
+    EXPECT_TRUE(properties.isDrawn_);
+    EXPECT_TRUE(properties.GetShadowBlenderParams().has_value());
+    EXPECT_TRUE(properties.IsShadowBlenderValid());
+    description = "ShadowBlender, cubic: " + std::to_string(cubic) +
+        ", quadratic: " + std::to_string(quadratic) +
+        ", linear: " + std::to_string(linear) +
+        ", constant: " + std::to_string(constant);
+    EXPECT_EQ(description, properties.GetShadowBlenderDescription());
 }
 } // namespace Rosen
 } // namespace OHOS

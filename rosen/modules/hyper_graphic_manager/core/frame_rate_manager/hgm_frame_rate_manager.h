@@ -58,6 +58,9 @@ enum TouchStatus : uint32_t {
     TOUCH_DOWN = 2,
     TOUCH_MOVE = 3,
     TOUCH_UP = 4,
+    AXIS_BEGIN = 5,
+    AXIS_UPDATE = 6,
+    AXIS_END = 7,
     TOUCH_BUTTON_DOWN = 8,
     TOUCH_BUTTON_UP = 9,
     TOUCH_PULL_DOWN = 12,
@@ -138,7 +141,6 @@ public:
     void Init(sptr<VSyncController> rsController, sptr<VSyncController> appController,
         sptr<VSyncGenerator> vsyncGenerator, sptr<VSyncDistributor> appDistributor);
     void SetTimeoutParamsFromConfig(const std::shared_ptr<PolicyConfigData>& configData);
-    void InitTouchManager();
     // called by RSMainThread
     void ProcessPendingRefreshRate(uint64_t timestamp, int64_t vsyncId, uint32_t rsRate, bool isUiDvsyncOn);
     HgmMultiAppStrategy& GetMultiAppStrategy() { return multiAppStrategy_; }
@@ -164,8 +166,6 @@ public:
     // only called by RSMainThread
     bool HandleGameNode(const RSRenderNodeMap& nodeMap);
 
-    void HandleAppStrategyConfigEvent(pid_t pid, const std::string& pkgName,
-        const std::vector<std::pair<std::string, std::string>>& newConfig);
     HgmSimpleTimer& GetRsFrameRateTimer() { return rsFrameRateTimer_; };
     void SetChangeDssRefreshRateCb(ChangeDssRefreshRateCbType changeDssRefreshRateCb)
     {
@@ -174,14 +174,17 @@ public:
     void ProcessPageUrlVote(pid_t pid, std::string strategy, const bool isAddVoter);
     void CleanPageUrlVote(pid_t pid);
     void HandlePageUrlEvent();
-    void NotifyPageName(pid_t pid, const std::string &packageName, const std::string &pageName, bool isEnter);
+    void NotifyPageName(pid_t pid, const std::string& packageName, const std::string& pageName, bool isEnter);
     // called by OS_IPC thread
     bool SetVsyncRateDiscountLTPO(const std::vector<uint64_t>& linkerIds, uint32_t rateDiscount);
     HgmSoftVSyncManager& SoftVSyncMgrRef() { return softVSyncManager_; };
+    void HandleAppStrategyConfigEvent(pid_t pid, const std::string& pkgName,
+        const std::vector<std::pair<std::string, std::string>>& newConfig);
     HgmFrameVoter& FrameVoterRef() { return frameVoter_; }
 private:
     friend class HgmUserDefineImpl;
 
+    void InitTouchManager();
     void InitConfig();
     void Reset();
     void UpdateAppSupportedState();
@@ -204,7 +207,7 @@ private:
 
     void HandleIdleEvent(bool isIdle);
     void HandleStylusSceneEvent(const std::string& sceneName);
-    void HandleSceneEvent(pid_t pid, EventInfo eventInfo);
+    void HandleSceneEvent(pid_t pid, const EventInfo& eventInfo);
     void HandleVirtualDisplayEvent(pid_t pid, EventInfo eventInfo);
     void HandleGamesEvent(pid_t pid, EventInfo eventInfo);
     void HandleMultiSelfOwnedScreenEvent(pid_t pid, EventInfo eventInfo);
@@ -246,6 +249,12 @@ private:
     }
     void FrameRateReportTask(uint32_t leftRetryTimes);
     void CheckNeedUpdateAppOffset(uint32_t refreshRate, uint32_t controllerRate);
+    void CheckForceUpdateCallback(uint32_t refreshRate)
+    {
+        if (needForceUpdateUniRender_ && refreshRate != currRefreshRate_.load() && forceUpdateCallback_) {
+            forceUpdateCallback_(false, true);
+        }
+    }
 
     std::atomic<uint32_t> currRefreshRate_ = 0;
 
@@ -293,7 +302,7 @@ private:
     HgmPointerManager pointerManager_;
     HgmSoftVSyncManager softVSyncManager_;
     HgmFrameVoter frameVoter_;
-    HgmUserDefine userDefine_;;
+    HgmUserDefine userDefine_;
     std::atomic<bool> voterTouchEffective_ = false;
     // For the power consumption module, only monitor touch up 3s and 600ms without flashing frames
     std::atomic<bool> startCheck_ = false;
@@ -318,6 +327,8 @@ private:
 
     uint32_t lastLTPORefreshRate_ = 0;
     long lastLTPOVoteTime_ = 0;
+
+    bool needForceUpdateUniRender_ = false;
 };
 } // namespace Rosen
 } // namespace OHOS
