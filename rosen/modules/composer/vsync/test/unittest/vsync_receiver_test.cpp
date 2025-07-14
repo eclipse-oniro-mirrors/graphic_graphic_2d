@@ -428,7 +428,7 @@ HWTEST_F(VsyncReceiverTest, SetUiDvsyncConfigTest, Function | MediumTest| Level3
 HWTEST_F(VsyncReceiverTest, SetTouchEventTest, Function | MediumTest| Level3)
 {
     vsyncDistributor->AddConnection(conn);
-    ASSERT_EQ(vsyncReceiver->SetTouchEvent(0), VSYNC_ERROR_OK);
+    ASSERT_EQ(vsyncReceiver->SetTouchEvent(0), nullptr);
     vsyncDistributor->RemoveConnection(conn);
 }
 
