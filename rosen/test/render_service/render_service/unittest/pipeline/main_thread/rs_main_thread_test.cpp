@@ -1826,6 +1826,39 @@ HWTEST_F(RSMainThreadTest, UniRender003, TestSize.Level1)
 }
 
 /**
+ * @tc.name: UniRender004
+ * @tc.desc: UniRender test
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSMainThreadTest, UniRender004, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    mainThread->siUniRender_ = true;
+    mainThread->renderThreadParams_ = std::make_unique<RSRenderThreadParams>();
+    
+    auto rsContext = std::make_shared<RSContext>();
+    const std::shared_ptr<RSBaseRenderNode> rootNode = rsContext->GetGlobalRootRenderNode();
+    
+    NodeId id = 1;
+    auto childDisplayNode = std::make_shared<RSScreenRenderNode>(id, 0, rsContext->week_from_this());
+    rootNode->AddChild(childDisplayNode, 0);
+    rootNode->InitRenderParams();
+    screenNode->InitRenderParams();
+    childDisplayNode->InitRenderParams();
+    NodeId nodeId = 2;
+    RSUifirstManager::Instance().AddProcessSkippedNode(nodeId);
+    mainThread->doDirectComposition_ = true;
+    mainThread->isDirty_ = false;
+    mainThread->isAccessibilityConfigChanged_ = false;
+    mainThread->isCachedSurfaceUpdated_ = false;
+    mainThread->isHardwareEnabledBufferUpdated_ = false;
+    mainThread->UniRender(rootNode);
+    ASSERT_TRUE(mainThread->doDirectComposition_);
+}
+
+/**
  * @tc.name: IsFirstFrameOfOverdrawSwitch
  * @tc.desc: test IsFirstFrameOfOverdrawSwitch
  * @tc.type: FUNC
