@@ -59,8 +59,7 @@ void RSRenderServiceVisitorTest::TearDown() {}
 
 std::shared_ptr<RSRenderServiceVisitor> GetRenderServiceVisitor()
 {
-    auto visitor = std::make_shared<RSRenderServiceVisitor>(true);
-    visitor->isSecurityDisplay_ = true;
+    auto visitor = std::make_shared<RSRenderServiceVisitor>();
     EXPECT_NE(visitor, nullptr);
     return visitor;
 }
