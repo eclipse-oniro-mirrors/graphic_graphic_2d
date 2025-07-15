@@ -1239,6 +1239,7 @@ void RSUniHwcVisitor::UpdateHwcNodeInfo(RSSurfaceRenderNode& node,
     UpdateSrcRect(node, absMatrix);
     UpdateHwcNodeEnableByBackgroundAlpha(node);
     UpdateHwcNodeByTransform(node, absMatrix);
+    // dstRect transform to globalposition after UpdateHwcNodeByTransform
     UpdateDstRectByGlobalPosition(node);
     UpdateHwcNodeEnableByBufferSize(node);
 }
@@ -1251,6 +1252,7 @@ void RSUniHwcVisitor::UpdateDstRectByGlobalPosition(RSSurfaceRenderNode& node)
         dstRect.top_ += uniRenderVisitor_.curScreenNode_->GetScreenOffsetY();
         RS_OPTIONAL_TRACE_FMT("hwc debug: name:%s id:%" PRIu64 " dstRect:[%s] ",
             node.GetName().c_str(), node.GetId(), dstRect.ToString().c_str());
+        node.SetDstRect(dstRect);
     }
 }
 

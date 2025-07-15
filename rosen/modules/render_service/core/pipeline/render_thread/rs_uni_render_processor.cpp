@@ -342,7 +342,7 @@ LayerInfoPtr RSUniRenderProcessor::GetLayerInfo(RSSurfaceRenderParams& params, s
 
 void RSUniRenderProcessor::ScaleLayerIfNeeded(RSLayerInfo& layerInfo)
 {
-    if (!screenInfo_.isSamplingOn || !RSSystemProperties::GetSLRScaleEnabled()) {
+    if (!screenInfo_.isSamplingOn) {
         return;
     }
     Drawing::Matrix matrix;

@@ -47,7 +47,7 @@ private:
     void DrawHdiLayerWithParams(RSPaintFilterCanvas& canvas, const LayerInfoPtr& layer,
         BufferDrawParam& params);
     void DrawLayerPreProcess(RSPaintFilterCanvas& canvas, const LayerInfoPtr& layer,
-        const ScreenInfo& screenInfo = {});
+        const ScreenInfo& screenInfo);
 };
 } // namespace Rosen
 } // namespace OHOS
