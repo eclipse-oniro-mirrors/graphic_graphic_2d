@@ -861,7 +861,7 @@ bool RSSystemProperties::GetSubtreeParallelEnable()
 bool RSSystemProperties::GetSubtreeLogEnabled()
 {
     static const bool subtreeLogEnabled = std::atoi((system::GetParameter(
-        "persist.sys.graphic.subtreeLogEnabled", "1")).c_str()) != 0;
+        "persist.sys.graphic.subtreeLogEnabled", "0")).c_str()) != 0;
     return subtreeLogEnabled;
 }
 

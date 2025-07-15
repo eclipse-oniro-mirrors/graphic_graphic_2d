@@ -3401,6 +3401,9 @@ HWTEST_F(RSRenderNodeTest, UpdateSubTreeParallelNodesTest, TestSize.Level1)
     renderNode->childHasVisibleEffect_ = true;
     renderNode->UpdateSubTreeParallelNodes();
 
+    renderNode->childHasVisibleEffect_ = false;
+    renderNode->UpdateSubTreeParallelNodes();
+
     renderNode->drawingCacheType_ = RSDrawingCacheType::TARGETED_CACHE;
     renderNode->UpdateSubTreeParallelNodes();
 }

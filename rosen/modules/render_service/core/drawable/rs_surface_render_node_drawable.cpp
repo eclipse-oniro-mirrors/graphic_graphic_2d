@@ -529,7 +529,6 @@ bool RSSurfaceRenderNodeDrawable::QuickDraw(Drawing::Canvas& canvas, Drawing::Re
     }
 
     RSAutoCanvasRestore acr(rscanvas, RSPaintFilterCanvas::SaveType::kAll);
-    PreprocessUnobscuredUEC(*rscanvas);
     surfaceParams->ApplyAlphaAndMatrixToCanvas(*rscanvas);
     if (surfaceParams->IsMainWindowType()) {
         if (!(surfaceParams->GetNeedOffscreen() && RotateOffScreenParam::GetRotateOffScreenSurfaceNodeEnable())) {

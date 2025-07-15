@@ -71,20 +71,33 @@ void RSEffectRenderNodeDrawableTest::SetUp()
 }
 void RSEffectRenderNodeDrawableTest::TearDown() {}
 
+#ifdef SUBTREE_PARALLEL_ENABLE
 /**
- * @tc.name: CreateEffectRenderNodeDrawableTest
- * @tc.desc: Test If EffectRenderNodeDrawable Can Be Created
+ * @tc.name: OnDrawTest
+ * @tc.desc: Test OnDraw
  * @tc.type: FUNC
  * @tc.require: #I9NVOG
  */
-HWTEST_F(RSEffectRenderNodeDrawableTest, CreateEffectRenderNodeDrawable, TestSize.Level1)
+HWTEST_F(RSEffectRenderNodeDrawableTest, OnDrawTest, TestSize.Level1)
 {
-    auto rsContext = std::make_shared<RSContext>();
-    NodeId id = 1;
-    auto effectNode = std::make_shared<RSEffectRenderNode>(id, rsContext->weak_from_this());
-    auto drawable = RSEffectRenderNodeDrawable::OnGenerate(effectNode);
-    ASSERT_NE(drawable, nullptr);
+    auto effectNode = std::make_shared<RSEffectRenderNode>(DEFAULT_ID);
+    ASSERT_NE(effectNode, nullptr);
+    auto effectDrawable = static_cast<RSEffectRenderNodeDrawable*>(
+        RSRenderNodeDrawableAdapter::OnGenerate(effectNode).get());
+    ASSERT_NE(effectDrawable, nullptr);
+
+    auto canvas = std::make_shared<Drawing::Canvas>(DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
+    auto rsPaintFilterCanvas = std::make_shared<RSPaintFilterCanvas>(canvas.get());
+
+    // default case, shouldpaint == false
+    effectDrawable->OnDraw(*rsPaintFilterCanvas);
+
+    //if should paint
+    effectDrawable->renderParams_->shouldPaint_ = true;
+    effectDrawable->renderParams_->contentEmpty_ = true;
+    effectDrawable->OnDraw(*rsPaintFilterCanvas);
 }
+#endif
 
 /**
  * @tc.name: OnCaptureTest
