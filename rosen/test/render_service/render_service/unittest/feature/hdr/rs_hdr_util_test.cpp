@@ -322,5 +322,4 @@ HWTEST_F(RSHdrUtilTest, SetHDRParamTest, TestSize.Level1)
     screenNode->GetMutableRenderProperties().SetHDRBrightnessFactor(0.0f); // GetForceCloseHdr true
     RSHdrUtil::SetHDRParam(*screenNode, *childNode, true);
 }
-
 } // namespace OHOS::Rosen

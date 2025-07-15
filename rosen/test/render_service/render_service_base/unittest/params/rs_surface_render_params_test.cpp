@@ -506,12 +506,12 @@ HWTEST_F(RSSurfaceRenderParamsTest, LayerLinearMatrixTest, TestSize.Level1)
 }
 
 /**
- * @tc.name: GetSourceDisplayRenderNodeDrawable
- * @tc.desc: Test function GetSourceDisplayRenderNodeDrawable
+ * @tc.name: GetSourceScreenRenderNodeDrawable
+ * @tc.desc: Test function GetSourceScreenRenderNodeDrawable
  * @tc.type:FUNC
  * @tc.require: issueIBKU7U
  */
-HWTEST_F(RSSurfaceRenderParamsTest, GetSourceDisplayRenderNodeDrawable, TestSize.Level1)
+HWTEST_F(RSSurfaceRenderParamsTest, GetSourceScreenRenderNodeDrawable, TestSize.Level1)
 {
     constexpr NodeId id = 124;
     RSSurfaceRenderParams params(id);
