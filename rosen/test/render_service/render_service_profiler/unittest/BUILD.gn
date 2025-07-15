@@ -103,6 +103,7 @@ ohos_unittest("RSProfilerBaseTest") {
     "eventhandler:libeventhandler",
     "hilog:libhilog",
     "init:libbegetutil",
+    "ffrt:libffrt",
   ]
 
   if (defined(global_parts_info) && defined(global_parts_info.sensors_sensor)) {
