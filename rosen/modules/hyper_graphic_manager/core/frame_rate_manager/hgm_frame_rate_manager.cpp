@@ -1587,14 +1587,14 @@ void HgmFrameRateManager::CheckRefreshRateChange(
     if (HgmCore::Instance().GetLtpoEnabled() &&
         (frameRateChanged || (appOffsetChange && !CreateVSyncGenerator()->IsUiDvsyncOn()))) {
         HandleFrameRateChangeForLTPO(timestamp_.load(), followRs, frameRateChanged);
-        if (needChangeDssRefreshRate && changeDssRefreshRateCb_ != nullptr) {
-            changeDssRefreshRateCb_(curScreenId_.load(), refreshRate, true);
+        if (needChangeDssRefreshRate && forceUpdateCallback_ != nullptr) {
+            forceUpdateCallback_(false, true);
         }
     } else {
         std::lock_guard<std::mutex> lock(pendingMutex_);
         pendingRefreshRate_ = std::make_shared<uint32_t>(currRefreshRate_);
-        if (needChangeDssRefreshRate && changeDssRefreshRateCb_ != nullptr) {
-            changeDssRefreshRateCb_(curScreenId_.load(), refreshRate, true);
+        if (needChangeDssRefreshRate && forceUpdateCallback_ != nullptr) {
+            forceUpdateCallback_(false, true);
         }
         if (frameRateChanged) {
             softVSyncManager_.SetQosVSyncRate(currRefreshRate_, appFrameRateLinkers_);
