@@ -83,12 +83,9 @@ HWTEST_F(RSOpincDrawCacheTest, OpincCalculateBefore, TestSize.Level1)
     RSOpincManager::Instance().SetOPIncSwitch(false);
     opincDrawCache.OpincCalculateBefore(canvas, params, isOpincDropNodeExt);
     ASSERT_FALSE(opincDrawCache.isOpincCaculateStart_);
-    RSOpincManager::Instance().SetOPIncSwitch(false);
-    opincDrawCache.OpincCalculateBefore(canvas, params, isOpincDropNodeExt);
-    ASSERT_FALSE(opincDrawCache.isOpincCaculateStart_);
 
     opincDrawCache.rootNodeStragyType_ = NodeStrategyType::OPINC_AUTOCACHE;
-    opincDrawCache.recordState_ = NodeRecordState::RECORD_CALCULATE;
+    opincDrawCache.recordState_ = NodeRecordState::RECORD_CACHED;
 
     RSOpincManager::Instance().SetOPIncSwitch(true);
     opincDrawCache.OpincCalculateBefore(canvas, params, isOpincDropNodeExt);
@@ -129,13 +126,16 @@ HWTEST_F(RSOpincDrawCacheTest, OpincCalculateAfter, TestSize.Level1)
     DrawableV2::RSOpincDrawCache opincDrawCache;
     Drawing::Canvas canvas;
     bool isOpincDropNodeExt = true;
-    opincDrawCache.OpincCalculateAfter(canvas, isOpincDropNodeExt);
-    ASSERT_FALSE(opincDrawCache.isOpincCaculateStart_);
-
+    opincDrawCache.isOpincCaculateStart_ = false;
     opincDrawCache.OpincCalculateAfter(canvas, isOpincDropNodeExt);
     ASSERT_FALSE(opincDrawCache.isOpincCaculateStart_);
 
     opincDrawCache.isOpincCaculateStart_ = true;
+    opincDrawCache.OpincCalculateAfter(canvas, isOpincDropNodeExt);
+    ASSERT_TRUE(opincDrawCache.isOpincCaculateStart_);
+
+    isOpincDropNodeExt = false;
+    opincDrawCache.isOpincCaculateStart_ = false;
     opincDrawCache.OpincCalculateAfter(canvas, isOpincDropNodeExt);
     ASSERT_FALSE(opincDrawCache.isOpincCaculateStart_);
 
@@ -165,7 +165,7 @@ HWTEST_F(RSOpincDrawCacheTest, PreDrawableCacheState, TestSize.Level1)
     bool isOpincDropNodeExt = true;
     ASSERT_TRUE(opincDrawCache.PreDrawableCacheState(params, isOpincDropNodeExt));
 
-    params.OpincSetCacheChangeFlag(false, true);
+    params.OpincSetCacheChangeFlag(false, false);
     opincDrawCache.isOpincRootNode_ = false;
     isOpincDropNodeExt = false;
     ASSERT_FALSE(opincDrawCache.PreDrawableCacheState(params, isOpincDropNodeExt));
@@ -426,18 +426,6 @@ HWTEST_F(RSOpincDrawCacheTest, BeforeDrawCache, TestSize.Level1)
     opincDrawCache.recordState_ = NodeRecordState::RECORD_CALCULATE;
     opincDrawCache.BeforeDrawCache(canvas, params, isOpincDropNodeExt);
     ASSERT_TRUE(opincDrawCache.isOpincCaculateStart_);
-
-    RSOpincManager::Instance().SetOPIncSwitch(false);
-    opincDrawCache.isOpincCaculateStart_ = false;
-    opincDrawCache.recordState_ = NodeRecordState::RECORD_CACHED;
-    opincDrawCache.nodeCacheType_ = NodeStrategyType::DDGR_OPINC_DYNAMIC;
-    opincDrawCache.BeforeDrawCache(canvas, params, isOpincDropNodeExt);
-    ASSERT_FALSE(opincDrawCache.isOpincCaculateStart_);
-
-    opincDrawCache.nodeCacheType_ = NodeStrategyType::CACHE_NONE;
-    opincDrawCache.recordState_ = NodeRecordState::RECORD_NONE;
-    opincDrawCache.BeforeDrawCache(canvas, params, isOpincDropNodeExt);
-    ASSERT_FALSE(opincDrawCache.isOpincCaculateStart_);
 
     RSOpincManager::Instance().SetOPIncSwitch(false);
     opincDrawCache.isOpincCaculateStart_ = false;

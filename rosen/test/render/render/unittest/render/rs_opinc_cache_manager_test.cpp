@@ -42,7 +42,7 @@ void RSOpincManagerTest::TearDown() {}
 * @tc.name: SetOPIncSwitch
 * @tc.desc: Verify the SetOPIncSwitch function
 * @tc.type: FUNC
-* @tc.require: #ICLU8U
+* @tc.require: issueICLU8U
 */
 HWTEST_F(RSOpincManagerTest, SetOPIncEnable, Function | SmallTest | Level1)
 {
@@ -54,7 +54,7 @@ HWTEST_F(RSOpincManagerTest, SetOPIncEnable, Function | SmallTest | Level1)
 * @tc.name: OpincGetCanvasNodeSupportFlag
 * @tc.desc: Verify the OpincGetCanvasNodeSupportFlag function
 * @tc.type: FUNC
-* @tc.require: #ICLU8U
+* @tc.require: issueICLU8U
 */
 HWTEST_F(RSOpincManagerTest, OpincGetCanvasNodeSupportFlag, Function | SmallTest | Level1)
 {
@@ -112,7 +112,7 @@ HWTEST_F(RSOpincManagerTest, OpincGetCanvasNodeSupportFlag, Function | SmallTest
 * @tc.name: IsOpincSubTreeDirty
 * @tc.desc: Verify the IsOpincSubTreeDirty function
 * @tc.type: FUNC
-* @tc.require: #ICLU8U
+* @tc.require: issueICLU8U
 */
 HWTEST_F(RSOpincManagerTest, IsOpincSubTreeDirty, Function | SmallTest | Level1)
 {
@@ -130,7 +130,7 @@ HWTEST_F(RSOpincManagerTest, IsOpincSubTreeDirty, Function | SmallTest | Level1)
 * @tc.name: OpincGetNodeSupportFlag
 * @tc.desc: Verify the OpincGetNodeSupportFlag function
 * @tc.type: FUNC
-* @tc.require: #ICLU8U
+* @tc.require: issueICLU8U
 */
 HWTEST_F(RSOpincManagerTest, OpincGetNodeSupportFlag, Function | SmallTest | Level1)
 {
