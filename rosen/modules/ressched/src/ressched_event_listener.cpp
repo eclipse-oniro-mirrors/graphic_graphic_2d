@@ -77,7 +77,7 @@ void ResschedEventListener::ReportFrameToRSS()
             std::chrono::duration_cast<std::chrono::nanoseconds>(
                 std::chrono::steady_clock::now().time_since_epoch()).count());
         if (GetIsFirstReport() ||
-            lastReportTime_ == 0 || ( currTime > lastReportTime_ &&
+            lastReportTime_ == 0 || (currTime > lastReportTime_ &&
             currTime - lastReportTime_ >= SAMPLE_TIME)) {
             RS_TRACE_BEGIN("ReportFrameToRSS");
             uint32_t type = OHOS::ResourceSchedule::ResType::RES_TYPE_SEND_FRAME_EVENT;
