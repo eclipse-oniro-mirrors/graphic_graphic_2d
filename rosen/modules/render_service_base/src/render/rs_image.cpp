@@ -631,7 +631,7 @@ void RSImage::DrawImageOnCanvas(
             DrawImageWithFirMatrixRotateOnCanvas(samplingOptions, canvas);
             return;
         }
-
+        
         canvas.DrawImageRect(
             *image_, src_, dst_, samplingOptions, Drawing::SrcRectConstraint::FAST_SRC_RECT_CONSTRAINT);
     }
