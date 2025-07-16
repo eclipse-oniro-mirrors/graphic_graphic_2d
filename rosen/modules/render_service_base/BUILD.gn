@@ -322,6 +322,7 @@ ohos_source_set("render_service_base_src") {
     "src/render/rs_particles_drawable.cpp",
     "src/render/rs_path.cpp",
     "src/render/rs_pixel_map_shader.cpp",
+    "src/render/rs_pixel_map_shader_obj.cpp",
     "src/render/rs_pixel_map_util.cpp",
     "src/render/rs_render_aibar_filter.cpp",
     "src/render/rs_render_always_snapshot_filter.cpp",

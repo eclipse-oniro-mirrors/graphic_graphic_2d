@@ -96,7 +96,14 @@ template("graphics2d_source_set") {
       "$drawing_core_src_dir/effect/runtime_blender_builder.cpp",
       "$drawing_core_src_dir/effect/runtime_effect.cpp",
       "$drawing_core_src_dir/effect/runtime_shader_builder.cpp",
+      "$drawing_core_src_dir/effect/blend_shader_obj.cpp",
+      "$drawing_core_src_dir/effect/blur_image_filter_obj.cpp",
+      "$drawing_core_src_dir/effect/color_filter_image_filter_obj.cpp",
+      "$drawing_core_src_dir/effect/image_filter_lazy.cpp",
+      "$drawing_core_src_dir/effect/offset_image_filter_obj.cpp",
       "$drawing_core_src_dir/effect/shader_effect.cpp",
+      "$drawing_core_src_dir/effect/shader_effect_lazy.cpp",
+      "$drawing_core_src_dir/effect/shader_image_filter_obj.cpp",
       "$drawing_core_src_dir/engine_adapter/impl_factory.cpp",
       "$drawing_core_src_dir/engine_adapter/skia_adapter/rs_skia_memory_tracer.cpp",
       "$drawing_core_src_dir/engine_adapter/skia_adapter/skia_bitmap.cpp",
@@ -189,6 +196,7 @@ template("graphics2d_source_set") {
       "$drawing_core_src_dir/utils/string_util.cpp",
       "$drawing_core_src_dir/utils/vertices.cpp",
       "$drawing_core_src_dir/utils/canvas_utils.cpp",
+      "$drawing_core_src_dir/utils/object_helper.cpp",
     ]
 
     if (platform == "ohos" || platform == "ohos_ng") {
