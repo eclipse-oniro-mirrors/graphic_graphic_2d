@@ -197,7 +197,11 @@ std::unique_ptr<RSRenderFrame> RSScreenRenderNodeDrawable::RequestFrame(
         RS_LOGI("anco request frame not use hebc");
     }
     RSAncoManager::Instance()->SetAncoHebcStatus(AncoHebcStatus::INITIAL);
-
+    if (params.IsHDRStatusChanged()) {
+        RS_TRACE_NAME("RSScreenRenderNodeDrawable::SetBufferReallocFlag isHDRStatusChanged");
+        renderEngine->SetHDRStatusChanged(params.IsHDRStatusChanged());
+        RS_LOGI("RSScreenRenderNodeDrawable::SetBufferReallocFlag isHDRStatusChanged");
+    }
     auto renderFrame = renderEngine->RequestFrame(std::static_pointer_cast<RSSurfaceOhos>(rsSurface),
         bufferConfig, false, isHebc);
     if (!renderFrame) {
