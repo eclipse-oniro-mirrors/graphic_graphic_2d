@@ -213,6 +213,7 @@ HWTEST_F(RSScreenRenderNodeDrawableTest, RequestFrameTest, TestSize.Level1)
     result = screenDrawable_->RequestFrame(*params, processor);
     ASSERT_EQ(result, nullptr);
 
+    params->SetHDRStatusChanged(true);
     screenDrawable_->surfaceCreated_ = true;
     result = screenDrawable_->RequestFrame(*params, processor);
     ASSERT_EQ(result, nullptr);
