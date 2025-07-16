@@ -241,7 +241,14 @@ LayerInfoPtr RSUniRenderProcessor::GetLayerInfo(RSSurfaceRenderParams& params, s
     sptr<SurfaceBuffer>& preBuffer, const sptr<IConsumerSurface>& consumer, const sptr<SyncFence>& acquireFence)
 {
     LayerInfoPtr layer = HdiLayerInfo::CreateHdiLayerInfo();
-    auto& layerInfo = params.layerInfo_;
+    auto layerInfo = params.layerInfo_;
+    if (params.GetHwcGlobalPositionEnabled()) {
+        // dst and matrix transform to screen position
+        layerInfo.matrix.PostTranslate(-offsetX_, -offsetY_);
+        layerInfo.dstRect.x -= offsetX_;
+        layerInfo.dstRect.y -= offsetY_;
+    }
+    ScaleLayerIfNeeded(layerInfo);
     layer->SetNeedBilinearInterpolation(params.NeedBilinearInterpolation());
     layer->SetSurface(consumer);
     layer->SetBuffer(buffer, acquireFence);
@@ -264,13 +271,6 @@ LayerInfoPtr RSUniRenderProcessor::GetLayerInfo(RSSurfaceRenderParams& params, s
     if (layerInfo.layerType == GraphicLayerType::GRAPHIC_LAYER_TYPE_CURSOR &&
         ((layerInfo.dstRect.w != layerInfo.srcRect.w) || (layerInfo.dstRect.h != layerInfo.srcRect.h))) {
         dstRect = {layerInfo.dstRect.x, layerInfo.dstRect.y, layerInfo.srcRect.w, layerInfo.srcRect.h};
-    }
-    if (params.GetOffsetX() != 0 || params.GetOffsetY() != 0 || !ROSEN_EQ(params.GetRogWidthRatio(), 1.0f)) {
-        dstRect = {
-            static_cast<int>(std::round((layerInfo.dstRect.x - params.GetOffsetX()) * params.GetRogWidthRatio())),
-            static_cast<int>(std::round((layerInfo.dstRect.y - params.GetOffsetY()) * params.GetRogWidthRatio())),
-            static_cast<int>(std::round((layerInfo.dstRect.w * params.GetRogWidthRatio()))),
-            static_cast<int>(std::round((layerInfo.dstRect.h * params.GetRogWidthRatio())))};
     }
     layer->SetLayerSize(dstRect);
     layer->SetBoundSize(layerInfo.boundRect);
@@ -329,11 +329,9 @@ LayerInfoPtr RSUniRenderProcessor::GetLayerInfo(RSSurfaceRenderParams& params, s
         layer->SetZorder(static_cast<int32_t>(TopLayerZOrder::POINTER_WINDOW));
     }
     auto matrix = GraphicMatrix {layerInfo.matrix.Get(Drawing::Matrix::Index::SCALE_X),
-        layerInfo.matrix.Get(Drawing::Matrix::Index::SKEW_X),
-        layerInfo.matrix.Get(Drawing::Matrix::Index::TRANS_X) - params.GetOffsetX(),
+        layerInfo.matrix.Get(Drawing::Matrix::Index::SKEW_X), layerInfo.matrix.Get(Drawing::Matrix::Index::TRANS_X),
         layerInfo.matrix.Get(Drawing::Matrix::Index::SKEW_Y), layerInfo.matrix.Get(Drawing::Matrix::Index::SCALE_Y),
-        layerInfo.matrix.Get(Drawing::Matrix::Index::TRANS_Y) - params.GetOffsetY(),
-        layerInfo.matrix.Get(Drawing::Matrix::Index::PERSP_0),
+        layerInfo.matrix.Get(Drawing::Matrix::Index::TRANS_Y), layerInfo.matrix.Get(Drawing::Matrix::Index::PERSP_0),
         layerInfo.matrix.Get(Drawing::Matrix::Index::PERSP_1), layerInfo.matrix.Get(Drawing::Matrix::Index::PERSP_2)};
     layer->SetMatrix(matrix);
     layer->SetLayerSourceTuning(params.GetLayerSourceTuning());
@@ -341,6 +339,25 @@ LayerInfoPtr RSUniRenderProcessor::GetLayerInfo(RSSurfaceRenderParams& params, s
     layer->SetLayerCopybit(layerInfo.copybitTag);
     HandleTunnelLayerParameters(params, layer);
     return layer;
+}
+
+void RSUniRenderProcessor::ScaleLayerIfNeeded(RSLayerInfo& layerInfo)
+{
+    // dstRect transforms to physical screen
+    if (!screenInfo_.isSamplingOn) {
+        return;
+    }
+    Drawing::Matrix matrix;
+    matrix.PostTranslate(screenInfo_.samplingTranslateX, screenInfo_.samplingTranslateY);
+    matrix.PostScale(screenInfo_.samplingScale, screenInfo_.samplingScale);
+    Drawing::Rect dstRect = {layerInfo.dstRect.x, layerInfo.dstRect.y,
+        layerInfo.dstRect.x + layerInfo.dstRect.w, layerInfo.dstRect.y + layerInfo.dstRect.h
+    };
+    matrix.MapRect(dstRect, dstRect);
+    layerInfo.dstRect.x = static_cast<int>(std::floor(dstRect.left_));
+    layerInfo.dstRect.y = static_cast<int>(std::floor(dstRect.top_));
+    layerInfo.dstRect.w = static_cast<int>(std::ceil(dstRect.right_ - dstRect.left_));
+    layerInfo.dstRect.h = static_cast<int>(std::ceil(dstRect.bottom_ - dstRect.top_));
 }
 
 bool RSUniRenderProcessor::ProcessOfflineLayer(
