@@ -384,8 +384,8 @@ void RSLogicalDisplayRenderNodeDrawable::DrawWatermarkIfNeed(RSPaintFilterCanvas
     if (screenCorrection != ScreenRotation::INVALID_SCREEN_ROTATION &&
         screenCorrection != ScreenRotation::ROTATION_0) {
         // Recaculate rotation if mirrored screen has additional rotation angle
-        rotation = static_cast<ScreenRotation>((static_cast<int>(rotation) + SCREEN_ROTATION_NUM
-            - static_cast<int>(screenCorrection)) % SCREEN_ROTATION_NUM);
+        rotation = static_cast<ScreenRotation>((static_cast<int>(rotation) + SCREEN_ROTATION_NUM -
+            static_cast<int>(screenCorrection)) % SCREEN_ROTATION_NUM);
     }
 
     if ((static_cast<int32_t>(rotation) - static_cast<int32_t>(params->GetNodeRotation())) % 2) {
