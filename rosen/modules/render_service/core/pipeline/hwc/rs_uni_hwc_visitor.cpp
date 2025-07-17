@@ -890,12 +890,12 @@ bool RSUniHwcVisitor::IsBackgroundFilterUnderSurface(std::shared_ptr<RSSurfaceRe
         surfaceNodeStack.pop();
         filterNodeStack.pop();
     }
-    if (publicParentNode == nullptr) {
+    if (!publicParentNode) {
         return false;
     }
+
     auto surfaceParent = surfaceNodeStack.top();
     auto filterParent = filterNodeStack.top();
-
     if (surfaceParent == filterParent) {
         return (surfaceParent != hwcNode && filterParent == filterNode);
     } else {
