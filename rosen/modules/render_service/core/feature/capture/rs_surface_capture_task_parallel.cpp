@@ -218,7 +218,7 @@ bool RSSurfaceCaptureTaskParallel::CreateResources()
         displayNodeDrawable_ = std::static_pointer_cast<DrawableV2::RSRenderNodeDrawable>(
             DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(displayNode));
         pixelMap_ = CreatePixelMapByDisplayNode(displayNode);
-        auto screenNode = std::static_pointer_cast<RSScreenRenderNode>(displayNode->GetAncestorScreenNode().lock());
+        auto screenNode = std::static_pointer_cast<RSScreenRenderNode>(displayNode->GetParent().lock());
         // When the app calls HDR screenshot and the screen contains HDR content, two pixelmaps need to be captured.
         if (captureConfig_.isHdrCapture && screenNode && (screenNode->GetDisplayHdrStatus() != HdrStatus::NO_HDR)) {
             pixelMapHDR_ = CreatePixelMapByDisplayNode(displayNode, true);
@@ -254,8 +254,9 @@ bool RSSurfaceCaptureTaskParallel::Run(
     const Drawing::Rect& rect = captureConfig_.mainScreenRect;
     if (rect.GetWidth() > 0 && rect.GetHeight() > 0) {
         canvas.ClipRect({0, 0, rect.GetWidth(), rect.GetHeight()});
-        canvas.Translate(0 - rect.GetLeft(), 0 - rect.GetTop());
+        canvas.Translate(-rect.GetLeft(), -rect.GetTop());
     }
+    canvas.Translate(-boundsX_, -boundsY_);
     canvas.SetDisableFilterCache(true);
     RSSurfaceRenderParams* curNodeParams = nullptr;
     if (surfaceNodeDrawable_) {
@@ -487,12 +488,20 @@ std::unique_ptr<Media::PixelMap> RSSurfaceCaptureTaskParallel::CreatePixelMapByD
         RS_LOGE("RSSurfaceCaptureTaskParallel::CreatePixelMapByDisplayNode: screenManager is nullptr!");
         return nullptr;
     }
-    auto screenInfo = screenManager->QueryScreenInfo(screenId);
+
     screenCorrection_ = screenManager->GetScreenCorrection(screenId);
     screenRotation_ = node->GetScreenRotation();
     finalRotationAngle_ = CalPixelMapRotation();
-    uint32_t pixmapWidth = screenInfo.width;
-    uint32_t pixmapHeight = screenInfo.height;
+    auto bounds = node->GetRenderProperties().GetBoundsGeometry();
+    uint32_t pixmapWidth = static_cast<uint32_t>(bounds->GetWidth());
+    uint32_t pixmapHeight = static_cast<uint32_t>(bounds->GetHeight());
+    boundsX_ = bounds->GetX();
+    boundsY_ = bounds->GetY();
+    auto rotation = node->GetRotation();
+    if (rotation == ScreenRotation::ROTATION_90 || rotation == ScreenRotation::ROTATION_270) {
+        std::swap(pixmapWidth, pixmapHeight);
+    }
+
     const Drawing::Rect& rect = captureConfig_.mainScreenRect;
     float rectWidth = rect.GetWidth();
     float rectHeight = rect.GetHeight();
@@ -514,7 +523,7 @@ std::unique_ptr<Media::PixelMap> RSSurfaceCaptureTaskParallel::CreatePixelMapByD
         rect.GetLeft(), rect.GetTop(), rect.GetWidth(), rect.GetHeight(), captureConfig_.useDma, screenRotation_,
         screenCorrection_, captureConfig_.blackList.size(), isHDRCapture);
     std::unique_ptr<Media::PixelMap> pixelMap = Media::PixelMap::Create(opts);
-    auto screenNode = std::static_pointer_cast<RSScreenRenderNode>(node->GetAncestorScreenNode().lock());
+    auto screenNode = std::static_pointer_cast<RSScreenRenderNode>(node->GetParent().lock());
     if (pixelMap && screenNode) {
         GraphicColorGamut windowColorGamut = isHDRCapture ?
             GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB : screenNode->GetColorSpace();

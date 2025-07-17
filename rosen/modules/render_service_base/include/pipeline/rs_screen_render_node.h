@@ -72,8 +72,8 @@ public:
             isGeometryInitialized_ = true;
             properties.SetBounds({0, 0, info.width, info.height});
             properties.SetFrame({0, 0, info.width, info.height});
-            screenInfo_ = std::move(info);
         }
+        screenInfo_ = std::move(info);
     }
 
     const ScreenInfo& GetScreenInfo() const

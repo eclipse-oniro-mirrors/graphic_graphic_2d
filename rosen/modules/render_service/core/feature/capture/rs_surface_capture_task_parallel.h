@@ -108,6 +108,8 @@ private:
     RSSurfaceCaptureConfig captureConfig_;
     ScreenRotation screenCorrection_ = ScreenRotation::ROTATION_0;
     ScreenRotation screenRotation_ = ScreenRotation::ROTATION_0;
+    float boundsX_ = 0;
+    float boundsY_ = 0;
     int32_t finalRotationAngle_ = RS_ROTATION_0;
     // only used for RSUniRenderThread
     std::shared_ptr<Drawing::GPUContext> gpuContext_ = nullptr;
