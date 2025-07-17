@@ -298,7 +298,9 @@ LayerInfoPtr RSUniRenderProcessor::GetLayerInfo(RSSurfaceRenderParams& params, s
     std::vector<GraphicIRect> dirtyRegions;
     if (RSSystemProperties::GetHwcDirtyRegionEnabled()) {
         const auto& bufferDamage = params.GetBufferDamage();
-        GraphicIRect dirtyRect = params.GetIsBufferFlushed() ? GraphicIRect { bufferDamage.x, bufferDamage.y,
+        bool isTargetedHwcDirtyRegion = params.GetIsBufferFlushed() ||
+            RsCommonHook::Instance().GetHardwareEnabledByHwcnodeBelowSelfInAppFlag();
+        GraphicIRect dirtyRect = isTargetedHwcDirtyRegion ? GraphicIRect { bufferDamage.x, bufferDamage.y,
             bufferDamage.w, bufferDamage.h } : GraphicIRect { 0, 0, 0, 0 };
         Rect selfDrawingDirtyRect;
         bool isDirtyRectValid = RSGpuDirtyCollector::DirtyRegionCompute(buffer, selfDrawingDirtyRect);
