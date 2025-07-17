@@ -869,7 +869,7 @@ bool RSUniHwcVisitor::IsBackgroundFilterUnderSurface(std::shared_ptr<RSSurfaceRe
         auto currentNode = startNode;
         while (currentNode && currentNode != uniRenderVisitor_.curSurfaceNode_) {
             nodeStack.push(currentNode);
-            currentNode = filterParent->GetParent().lock();
+            currentNode = currentNode->GetParent().lock();
         }
         if (currentNode != nullptr) {
             nodeStack.push(currentNode);
@@ -895,7 +895,7 @@ bool RSUniHwcVisitor::IsBackgroundFilterUnderSurface(std::shared_ptr<RSSurfaceRe
     }
     auto surfaceParent = surfaceNodeStack.top();
     auto filterParent = filterNodeStack.top();
-    
+
     if (surfaceParent == filterParent) {
         return (surfaceParent != hwcNode && filterParent == filterNode);
     } else {
@@ -914,9 +914,9 @@ void RSUniHwcVisitor::CalcHwcNodeEnableByFilterRect(std::shared_ptr<RSSurfaceRen
     }
     if (filterZOrder != 0 && node->GetHwcRecorder().GetZOrderForHwcEnableByFilter() != 0 &&
         node->GetInstanceRootNodeId() == filterNode.GetInstanceRootNodeId() && uniRenderVisitor_.curSurfaceNode_ &&
-        uniRenderVisitor_.curSurfaceNode_.GetId() == node->GetInstanceRootNodeId() &&
+        uniRenderVisitor_.curSurfaceNode_->GetId() == node->GetInstanceRootNodeId() &&
         RSUniHwcComputeUtil::IsBlendNeedBackground(filterNode) && node->IsFilterUnderSurfaceEnableHwc()) {
-        if (IsBackgroundFilterUnderSurface(node, filterNode.GetId())) {
+        if (IsBackgroundFilterUnderSurface(node, filterNode.shared_from_this())) {
             return;
         }
     }
