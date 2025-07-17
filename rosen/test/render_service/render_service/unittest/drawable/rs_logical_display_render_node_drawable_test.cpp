@@ -25,7 +25,7 @@
 #include "pipeline/render_thread/rs_uni_render_virtual_processor.h"
 #include "platform/common/rs_system_properties.h"
 #include "screen_manager/rs_screen.h"
-
+#include "render/rs_pixel_map_util.h"
 #ifdef RS_PROFILER_ENABLED
 #include "rs_profiler_capture_recorder.h"
 #endif
@@ -3512,5 +3512,80 @@ HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, SetScreenRotationForPointLight,
     auto params = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
     ASSERT_NE(params, nullptr);
     displayDrawable_->SetScreenRotationForPointLight(*params);
+}
+
+/**
+ * @tc.name: DrawWatermarkIfNeed001
+ * @tc.desc: Test DrawWatermarkIfNeed001
+ * @tc.type: FUNC
+ * @tc.require: issueIBCH1W
+ */
+HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, DrawWatermarkIfNeed001, TestSize.Level2)
+{
+    auto screenManager = CreateOrGetScreenManager();
+    ASSERT_NE(nullptr, screenManager);
+    std::string name = "virtualScreen01";
+    uint32_t width = 400;
+    uint32_t height = 400;
+    auto csurface = IConsumerSurface::Create();
+    ASSERT_NE(csurface, nullptr);
+    auto producer = csurface->GetProducer();
+    auto psurface = Surface::CreateSurfaceAsProducer(producer);
+    ASSERT_NE(psurface, nullptr);
+    auto screenId = screenManager->CreateVirtualScreen(name, width, height, psurface);
+    ASSERT_NE(INVALID_SCREEN_ID, screenId);
+    screenManager->SetDefaultScreenId(screenId);
+
+    ASSERT_NE(displayDrawable_, nullptr);
+    ASSERT_NE(displayDrawable_->curCanvas_, nullptr);
+    auto params = static_cast<RSDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
+    ASSERT_TRUE(params);
+    params->SetScreenId(screenId);
+    // Create waterMask pixelMap
+    Media::InitializationOptions opts;
+    opts.size.width = width;
+    opts.size.height = height;
+    opts.editable = true;
+    std::shared_ptr<Media::PixelMap> pixelMap = Media::PixelMap::Create(opts);
+
+    ASSERT_TRUE(pixelMap != nullptr);
+    auto img = RSPixelMapUtil::ExtractDrawingImage(pixelMap);
+    ASSERT_TRUE(img != nullptr);
+
+    // Create canvas
+    auto rsRenderThreadParams = std::make_unique<RSRenderThreadParams>();
+    rsRenderThreadParams->SetWatermark(true, img);
+    RSUniRenderThread::Instance().Sync(std::move(rsRenderThreadParams));
+
+    Drawing::Canvas drawingCanvas(400, 400);
+    RSPaintFilterCanvas canvas(&drawingCanvas);
+    auto screen = static_cast<impl::RSScreenManager*>(screenManager.GetRefPtr())->GetScreen(screenId);
+    auto screenRawPtr = static_cast<impl::RSScreen*>(screen.get());
+    ASSERT_TRUE(screenRawPtr != nullptr);
+
+    // Test0 ScreenCorrection = INVALID_SCREEN_ROTATION && ScreenRotation = ROTATION_0
+    params->screenRotation_ = ScreenRotation::ROTATION_0;
+    screenRawPtr->screenRotation_ = ScreenRotation::INVALID_SCREEN_ROTATION;
+    displayDrawable_->DrawWatermarkIfNeed(canvas);
+
+    // Test1 ScreenCorrection = ROTATION_0 && ScreenRotation = ROTATION_180
+    params->screenRotation_ = ScreenRotation::ROTATION_180;
+    screenRawPtr->screenRotation_ = ScreenRotation::ROTATION_0;
+    displayDrawable_->DrawWatermarkIfNeed(canvas);
+
+    // Test2 ScreenCorrection = ROTATION_0 && ScreenRotation = ROTATION_90
+    params->screenRotation_ = ScreenRotation::ROTATION_90;
+    screenRawPtr->screenRotation_ = ScreenRotation::ROTATION_0;
+    displayDrawable_->DrawWatermarkIfNeed(canvas);
+
+    // Test3 ScreenCorrection = ROTATION_270 && ScreenRotation = ROTATION_180
+    params->screenRotation_ = ScreenRotation::ROTATION_180;
+    screenRawPtr->screenRotation_ = ScreenRotation::ROTATION_270;
+    displayDrawable_->DrawWatermarkIfNeed(canvas);
+
+    // Reset
+    rsRenderThreadParams = std::make_unique<RSRenderThreadParams>();
+    rsRenderThreadParams->SetWatermark(false, nullptr);
+    RSUniRenderThread::Instance().Sync(std::move(rsRenderThreadParams));
 }
 }
