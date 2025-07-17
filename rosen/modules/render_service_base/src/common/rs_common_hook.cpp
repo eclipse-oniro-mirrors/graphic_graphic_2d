@@ -115,8 +115,7 @@ void RsCommonHook::SetFilterUnderHwcConfigByApp(std::string appName, std::string
 
 const std::string& RsCommonHook::GetFilterUnderHwcConfigByApp(const std::string& appName)
 {
-    auto it = filterUnderHwcConfig_.find(appName);
-    if (it != filterUnderHwcConfig_.end()) {
+    if (auto it = filterUnderHwcConfig_.find(appName); it != filterUnderHwcConfig_.end()) {
         return it->second;
     }
     return "";

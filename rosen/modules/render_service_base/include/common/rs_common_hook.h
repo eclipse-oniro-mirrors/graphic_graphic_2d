@@ -62,6 +62,7 @@ private:
     std::atomic<bool> isAdaptiveColorGamutEnable_{false};
 
     std::string tvPlayerBundleName_;
+
     std::unordered_map<std::string, std::string> filterUnderHwcConfig_;
 
     // use in updating hwc node hardware state with background alpha

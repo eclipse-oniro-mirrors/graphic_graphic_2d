@@ -3901,7 +3901,7 @@ bool RSSurfaceRenderNode::isForcedClipHole() const
     return (tvPlayerBundleName == bundleName_);
 }
 
-bool RSSurfaceRenderNode::IsFilterUnderSurfaceForcedHwc() const
+bool RSSurfaceRenderNode::IsFilterUnderSurfaceEnableHwc() const
 {
     const std::string& filterUnderHwcConfig = RsCommonHook::Instance().GetFilterUnderHwcConfigByApp(bundleName_);
     return (filterUnderHwcConfig == "1");

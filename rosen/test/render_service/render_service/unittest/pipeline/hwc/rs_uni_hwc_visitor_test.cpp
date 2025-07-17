@@ -1578,7 +1578,7 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateHwcNodeEnableByFilterRect006, TestSize.Level
 
 /**
  * @tc.name: UpdateHwcNodeEnableByFilterRect
- * @tc.desc: Test RSUniHwcVisitorTest.UpdateHwcNodeEnableByFilterRect IsBackFilterBehindSurface
+ * @tc.desc: Test RSUniHwcVisitorTest.UpdateHwcNodeEnableByFilterRect IsBackgroundFilterUnderSurface
  * @tc.type: FUNC
  * @tc.require: issuesICKNNB
  */
@@ -1638,7 +1638,7 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateHwcNodeEnableByFilterRect007, TestSize.Level
 
 /**
  * @tc.name: UpdateHwcNodeEnableByFilterRect
- * @tc.desc: Test RSUniHwcVisitorTest.UpdateHwcNodeEnableByFilterRect IsBackFilterBehindSurface
+ * @tc.desc: Test RSUniHwcVisitorTest.UpdateHwcNodeEnableByFilterRect IsBackgroundFilterUnderSurface
  * @tc.type: FUNC
  * @tc.require: issuesICKNNB
  */

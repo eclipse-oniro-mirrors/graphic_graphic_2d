@@ -1569,7 +1569,7 @@ public:
     void ResetSurfaceNodeStates();
 
     bool IsUIBufferAvailable();
-    bool IsFilterUnderSurfaceForcedHwc() const;
+
     bool GetUIExtensionUnobscured() const;
 
     std::shared_ptr<RSDirtyRegionManager>& GetDirtyManagerForUifirst()
@@ -1624,6 +1624,8 @@ public:
         }
         return occlusionParams_;
     }
+
+    bool IsFilterUnderSurfaceEnableHwc() const;
 
 protected:
     void OnSync() override;

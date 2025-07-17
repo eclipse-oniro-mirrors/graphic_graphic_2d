@@ -1001,12 +1001,12 @@ HWTEST_F(RSSurfaceRenderNodeThreeTest, IsHardwareForcedDisabledTest002, TestSize
 }
 
 /**
- * @tc.name: IsFilterUnderSurfaceForcedHwcTest
- * @tc.desc: IsFilterUnderSurfaceForcedHwc test
+ * @tc.name: IsFilterUnderSurfaceEnableHwcTest
+ * @tc.desc: IsFilterUnderSurfaceEnableHwc test
  * @tc.type: FUNC
  * @tc.require: issuesICKNNB
  */
-HWTEST_F(RSSurfaceRenderNodeThreeTest, IsFilterUnderSurfaceForcedHwcTest, TestSize.Level1)
+HWTEST_F(RSSurfaceRenderNodeThreeTest, IsFilterUnderSurfaceEnableHwcTest, TestSize.Level1)
 {
     const std::string collaborationBundleName = "com.example.devicecollaboration";
 
@@ -1015,10 +1015,10 @@ HWTEST_F(RSSurfaceRenderNodeThreeTest, IsFilterUnderSurfaceForcedHwcTest, TestSi
     config.nodeType = RSSurfaceNodeType::SELF_DRAWING_NODE;
     config.bundleName = collaborationBundleName;
     auto node = std::make_shared<RSSurfaceRenderNode>(config);
-    ASSERT_FALSE(node->IsFilterUnderSurfaceForcedHwc());
+    ASSERT_FALSE(node->IsFilterUnderSurfaceEnableHwc());
 
     RsCommonHook::Instance().SetFilterUnderHwcConfigByApp(collaborationBundleName, "1");
-    ASSERT_TRUE(node->IsFilterUnderSurfaceForcedHwc());
+    ASSERT_TRUE(node->IsFilterUnderSurfaceEnableHwc());
 }
 } // namespace Rosen
 } // namespace OHOS

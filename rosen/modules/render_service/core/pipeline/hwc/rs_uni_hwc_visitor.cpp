@@ -857,52 +857,52 @@ void RSUniHwcVisitor::UpdateHardwareStateByHwcNodeBackgroundAlpha(
     }
 }
 
-bool RSUniHwcVisitor::IsBackFilterBehindSurface(std::shared_ptr<RSSurfaceRenderNode>& node, NodeId filterNodeId)
+bool RSUniHwcVisitor::IsBackgroundFilterUnderSurface(std::shared_ptr<RSSurfaceRenderNode>& hwcNode,
+    std::shared_ptr<RSRenderNode> filterNode)
 {
-    auto filterNode = RSMainThread::Instance()->GetContext().GetNodeMap().GetRenderNode<RSRenderNode>(filterNodeId);
-    if (filterNode == nullptr) {
+    if (!filterNode) {
         return false;
     }
-    std::stack<std::shared_ptr<RSRenderNode>> filterNodeStack;
-    auto filterParent = filterNode;
-    while (filterParent != nullptr && filterParent != uniRenderVisitor_.curSurfaceNode_) {
-        filterNodeStack.push(filterParent);
-        filterParent = (filterParent->GetParent()).lock();
-    }
-    if (filterParent != nullptr) {
-        filterNodeStack.push(filterParent);
-    }
-    std::stack<std::shared_ptr<RSRenderNode>> surfaceNodeStack;
-    std::shared_ptr<RSRenderNode> surfaceParent = node;
-    while (surfaceParent != nullptr && surfaceParent != uniRenderVisitor_.curSurfaceNode_) {
-        surfaceNodeStack.push(surfaceParent);
-        surfaceParent = surfaceParent->GetParent().lock();
-    }
-    if (surfaceParent != nullptr) {
-        surfaceNodeStack.push(surfaceParent);
-    }
+    auto buildRSRenderNodePath =
+        [&](const std::shared_ptr<RSRenderNode>& startNode) -> std::stack<std::shared_ptr<RSRenderNode>> {
+        std::stack<std::shared_ptr<RSRenderNode>> nodeStack;
+        auto currentNode = startNode;
+        while (currentNode && currentNode != uniRenderVisitor_.curSurfaceNode_) {
+            nodeStack.push(currentNode);
+            currentNode = filterParent->GetParent().lock();
+        }
+        if (currentNode != nullptr) {
+            nodeStack.push(currentNode);
+        }
+        return nodeStack;
+    };
+    std::stack<std::shared_ptr<RSRenderNode>> filterNodeStack = buildRSRenderNodePath(filterNode);
+    std::stack<std::shared_ptr<RSRenderNode>> surfaceNodeStack = buildRSRenderNodePath(hwcNode);
+
     if (surfaceNodeStack.top() != filterNodeStack.top()) {
         return false;
     }
-    std::shared_ptr<RSRenderNode> parentNode = nullptr;
+
+    std::shared_ptr<RSRenderNode> publicParentNode = nullptr;
     while (surfaceNodeStack.size() > 1 && filterNodeStack.size() > 1 &&
         surfaceNodeStack.top() == filterNodeStack.top()) {
-        parentNode = surfaceNodeStack.top();
+        publicParentNode = surfaceNodeStack.top();
         surfaceNodeStack.pop();
         filterNodeStack.pop();
     }
-    if (parentNode == nullptr) {
+    if (publicParentNode == nullptr) {
         return false;
     }
-    surfaceParent = surfaceNodeStack.top();
-    filterParent = filterNodeStack.top();
+    auto surfaceParent = surfaceNodeStack.top();
+    auto filterParent = filterNodeStack.top();
+    
     if (surfaceParent == filterParent) {
-        return (surfaceParent != node && filterParent == filterNode);
+        return (surfaceParent != hwcNode && filterParent == filterNode);
     } else {
         uint32_t surfaceZOrder = surfaceParent->GetHwcRecorder().GetZOrderForHwcEnableByFilter();
         uint32_t filterZOrder = filterParent->GetHwcRecorder().GetZOrderForHwcEnableByFilter();
-        return (parentNode->GetCurFrameInfoDetail().curFrameReverseChildren)?
-            (filterZOrder > surfaceZOrder):(filterZOrder < surfaceZOrder);
+        return (publicParentNode->GetCurFrameInfoDetail().curFrameReverseChildren) ?
+            (filterZOrder > surfaceZOrder) : (filterZOrder < surfaceZOrder);
     }
 }
 
@@ -913,9 +913,10 @@ void RSUniHwcVisitor::CalcHwcNodeEnableByFilterRect(std::shared_ptr<RSSurfaceRen
         return;
     }
     if (filterZOrder != 0 && node->GetHwcRecorder().GetZOrderForHwcEnableByFilter() != 0 &&
-        node->IsFilterUnderSurfaceForcedHwc() && node->GetInstanceRootNodeId() == filterNode.GetInstanceRootNodeId() &&
-        RSUniHwcComputeUtil::IsBlendNeedBackground(filterNode)) {
-        if (IsBackFilterBehindSurface(node, filterNode.GetId())) {
+        node->GetInstanceRootNodeId() == filterNode.GetInstanceRootNodeId() && uniRenderVisitor_.curSurfaceNode_ &&
+        uniRenderVisitor_.curSurfaceNode_.GetId() == node->GetInstanceRootNodeId() &&
+        RSUniHwcComputeUtil::IsBlendNeedBackground(filterNode) && node->IsFilterUnderSurfaceEnableHwc()) {
+        if (IsBackgroundFilterUnderSurface(node, filterNode.GetId())) {
             return;
         }
     }
