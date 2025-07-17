@@ -3495,7 +3495,7 @@ void RSRenderNode::SetBootAnimation(bool isBootAnimation)
         if (auto parent = GetParent().lock()) {
             parent->SetBootAnimation(isBootAnimation);
         }
-    } else if (GetType() == RSRenderNodeType::SCREEN_NODE || RSRenderNodeType::ROOT_NODE) {
+    } else if (GetType() == RSRenderNodeType::SCREEN_NODE || GetType() == RSRenderNodeType::ROOT_NODE) {
         if (!isBootAnimation) {
             return;
         }
