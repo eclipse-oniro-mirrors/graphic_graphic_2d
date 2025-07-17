@@ -28,20 +28,6 @@ constexpr int32_t MAX_SETRATE_RETRY_COUNT = 20;
 constexpr int32_t MAX_HAL_DISPLAY_ID = 20;
 }
 
-void HgmHardwareUtils::RegisterChangeDssRefreshRateCb()
-{
-    auto changeDssRefreshRateCb = [this](ScreenId screenId, uint32_t refreshRate, bool followPipeline) {
-        RSHardwareThread::Instance().PostTask([this, screenId, refreshRate, followPipeline]() {
-            ChangeDssRefreshRate(screenId, refreshRate, followPipeline);
-        });
-    };
-    HgmTaskHandleThread::Instance().PostTask([changeDssRefreshRateCb]() {
-        if (auto frameRateMgr = HgmCore::Instance().GetFrameRateMgr(); frameRateMgr != nullptr) {
-            frameRateMgr->SetChangeDssRefreshRateCb(changeDssRefreshRateCb);
-        }
-    });
-}
-
 void HgmHardwareUtils::ExecuteSwitchRefreshRate(
     const std::shared_ptr<HdiOutput> output, uint32_t refreshRate)
 {
@@ -58,7 +44,6 @@ void HgmHardwareUtils::ExecuteSwitchRefreshRate(
     }
     ScreenId id = output->GetScreenId();
     auto& hardwareThread = RSHardwareThread::Instance();
-    outputMap_[id] = output;
     auto screen = hgmCore.GetScreen(id);
     if (!screen || !screen->GetSelfOwnedScreenFlag()) {
         return;
@@ -70,7 +55,6 @@ void HgmHardwareUtils::ExecuteSwitchRefreshRate(
     }
     ScreenId curScreenId = hgmCore.GetFrameRateMgr()->GetCurScreenId();
     ScreenId lastCurScreenId = hgmCore.GetFrameRateMgr()->GetLastCurScreenId();
-    hgmCore.SetScreenSwitchDssEnable(id, true);
     bool needRetrySetRate = false;
     auto retryIter = setRateRetryMap_.find(id);
     if (retryIter != setRateRetryMap_.end()) {
@@ -194,44 +178,6 @@ void HgmHardwareUtils::UpdateRefreshRateParam()
             .isForceRefresh = RSUniRenderThread::Instance().GetForceRefreshFlag(),
             .fastComposeTimeStampDiff = RSUniRenderThread::Instance().GetFastComposeTimeStampDiff()
         };
-    }
-}
-
-void HgmHardwareUtils::ChangeDssRefreshRate(ScreenId screenId, uint32_t refreshRate, bool followPipeline)
-{
-    if (followPipeline) {
-        auto& hgmCore = OHOS::Rosen::HgmCore::Instance();
-        auto task = [this, screenId, refreshRate, vsyncId = refreshRateParam_.vsyncId]() {
-            if (vsyncId != refreshRateParam_.vsyncId || !HgmCore::Instance().IsSwitchDssEnable(screenId)) {
-                return;
-            }
-            // switch hardware vsync
-            ChangeDssRefreshRate(screenId, refreshRate, false);
-        };
-        int64_t period = hgmCore.GetIdealPeriod(hgmCore.GetScreenCurrentRefreshRate(screenId));
-        auto& hardwareThread = RSHardwareThread::Instance();
-        hardwareThread.PostDelayTask(
-            task, period / NS_MS_UNIT_CONVERSION + hardwareThread.GetDelayTime() + DELAY_TIME_OFFSET);
-    } else {
-        auto outputIter = outputMap_.find(screenId);
-        if (outputIter == outputMap_.end()) {
-            return;
-        }
-        auto output = outputIter->second.lock();
-        if (output == nullptr) {
-            outputMap_.erase(screenId);
-            return;
-        }
-        if (HgmCore::Instance().GetActiveScreenId() != screenId) {
-            return;
-        }
-        ExecuteSwitchRefreshRate(output, refreshRate);
-        PerformSetActiveMode(
-            output, refreshRateParam_.frameTimestamp, refreshRateParam_.constraintRelativeTime);
-        auto hdiBackend = HdiBackend::GetInstance();
-        if (hdiBackend != nullptr && output->IsDeviceValid()) {
-            hdiBackend->Repaint(output);
-        }
     }
 }
 } // namespace Rosen

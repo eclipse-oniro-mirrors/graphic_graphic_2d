@@ -96,7 +96,6 @@ enum SupportASStatus : int32_t {
 
 class HgmFrameRateManager {
 public:
-    using ChangeDssRefreshRateCbType = std::function<void(ScreenId, uint32_t, bool)>;
     HgmFrameRateManager();
     ~HgmFrameRateManager() = default;
 
@@ -167,10 +166,6 @@ public:
     bool HandleGameNode(const RSRenderNodeMap& nodeMap);
 
     HgmSimpleTimer& GetRsFrameRateTimer() { return rsFrameRateTimer_; };
-    void SetChangeDssRefreshRateCb(ChangeDssRefreshRateCbType changeDssRefreshRateCb)
-    {
-        changeDssRefreshRateCb_ = changeDssRefreshRateCb;
-    }
     void ProcessPageUrlVote(pid_t pid, std::string strategy, const bool isAddVoter);
     void CleanPageUrlVote(pid_t pid);
     void HandlePageUrlEvent();
@@ -252,6 +247,7 @@ private:
     void CheckForceUpdateCallback(uint32_t refreshRate)
     {
         if (needForceUpdateUniRender_ && refreshRate != currRefreshRate_.load() && forceUpdateCallback_) {
+            needForceUpdateUniRender_ = false;
             forceUpdateCallback_(false, true);
         }
     }
@@ -322,7 +318,6 @@ private:
     std::atomic<uint64_t> timestamp_ = 0;
     std::shared_ptr<RSRenderFrameRateLinker> rsFrameRateLinker_ = nullptr;
     FrameRateLinkerMap appFrameRateLinkers_;
-    ChangeDssRefreshRateCbType changeDssRefreshRateCb_;
     HgmAppPageUrlStrategy appPageUrlStrategy_;
 
     uint32_t lastLTPORefreshRate_ = 0;

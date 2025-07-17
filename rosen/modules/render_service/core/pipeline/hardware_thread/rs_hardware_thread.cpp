@@ -157,7 +157,6 @@ void RSHardwareThread::Start()
     if (hdiBackend_ != nullptr) {
         hdiBackend_->RegPrepareComplete(onPrepareCompleteFunc, this);
     }
-    hgmHardwareUtils_.RegisterChangeDssRefreshRateCb();
 }
 
 int RSHardwareThread::GetHardwareTid() const
