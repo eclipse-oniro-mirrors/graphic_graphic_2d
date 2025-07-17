@@ -1611,6 +1611,7 @@ public:
     }
 
     // Enable HWCompose
+    bool IsFilterUnderSurfaceEnableHwc() const;
     RSHwcSurfaceRecorder& HwcSurfaceRecorder() { return hwcSurfaceRecorder_; }
 
     void SetFrameGravityNewVersionEnabled(bool isEnabled);
@@ -1624,8 +1625,6 @@ public:
         }
         return occlusionParams_;
     }
-
-    bool IsFilterUnderSurfaceEnableHwc() const;
 
 protected:
     void OnSync() override;
