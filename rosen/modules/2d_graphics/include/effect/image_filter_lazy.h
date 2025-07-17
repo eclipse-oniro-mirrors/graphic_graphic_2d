@@ -27,7 +27,7 @@ namespace OHOS {
 namespace Rosen {
 namespace Drawing {
 
-// 仅支持 Drawing NDK 接口
+// Only supports the Drawing NDK interface.
 class DRAWING_API ImageFilterLazy : public ImageFilter {
 public:
     static std::shared_ptr<ImageFilterLazy> CreateBlur(scalar sigmaX, scalar sigmaY,

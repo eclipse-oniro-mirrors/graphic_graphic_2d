@@ -444,7 +444,7 @@ void HgmFrameRateManager::UpdateSoftVSync(bool followRs)
             linker.second->NativeVSyncIsTimeOut()) {
             continue;
         }
-        if (!HgmEnergyConsumptionPolicy::Instance().GetUiIdleFps(expectedRange) &&
+        if (!HgmEnergyConsumptionPolicy::Instance().GetUiIdleFps(expectedRange, ExtractPid(linker.first)) &&
             (expectedRange.type_ & ANIMATION_STATE_FIRST_FRAME) != 0 &&
             expectedRange.preferred_ < static_cast<int32_t>(currRefreshRate_)) {
             expectedRange.Set(currRefreshRate_, currRefreshRate_, currRefreshRate_);

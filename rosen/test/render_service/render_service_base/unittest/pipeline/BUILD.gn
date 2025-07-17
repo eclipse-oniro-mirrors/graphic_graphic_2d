@@ -1498,6 +1498,7 @@ group("unittest") {
     ":RSEffectRenderNodeTest",
     ":RSLogicalDisplayRenderNodeTest",
     ":RSExtendRecordingCanvasTest",
+    ":RSLogicalDisplayRenderNodeTest",
     ":RSOcclusionConfigTest",
     ":RSPaintFilterCanvasTest",
     ":RSProxyRenderNodeTest",

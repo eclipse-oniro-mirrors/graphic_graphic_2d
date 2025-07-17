@@ -823,7 +823,7 @@ HWTEST_F(RSSurfaceRenderNodeTest, SetHwcCrossNodeTest, TestSize.Level1)
 
 /**
  * @tc.name: AncestorDisplayNodeTest
- * @tc.desc: SetAncestorDisplayNode and GetAncestorDisplayNode
+ * @tc.desc: SetAncestorScreenNode and GetAncestorScreenNode
  * @tc.type:FUNC
  * @tc.require:
  */

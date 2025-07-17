@@ -661,11 +661,11 @@ HWTEST_F(HgmFrameRateMgrTest, CleanPidCallbackTest, Function | SmallTest | Level
     EventInfo eventInfo2 = { .eventName = "VOTER_SCENE", .eventStatus = true, .description = testScene };
     mgr->HandleRefreshRateEvent(0, eventInfo2);
     EventInfo eventInfo3 = { .eventName = "ENERGY_CONSUMPTION_ASSURANCE", .eventStatus = true,
-        .description = "DRAG_SCENE"};
-    mgr->HandleRefreshRateEvent(0, eventInfo2);
+        .description = "DRAG_SCENE:0"};
+    mgr->HandleRefreshRateEvent(0, eventInfo3);
     EventInfo eventInfo4 = { .eventName = "ENERGY_CONSUMPTION_ASSURANCE", .eventStatus = false,
-        .description = "DRAG_SCENE"};
-    mgr->HandleRefreshRateEvent(0, eventInfo2);
+        .description = "DRAG_SCENE:0"};
+    mgr->HandleRefreshRateEvent(0, eventInfo4);
     sleep(1);
 }
 

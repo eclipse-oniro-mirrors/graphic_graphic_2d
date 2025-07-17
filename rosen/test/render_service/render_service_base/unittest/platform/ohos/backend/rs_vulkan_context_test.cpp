@@ -731,7 +731,7 @@ HWTEST_F(RSVulkanContextTest, CreateDrawingContext007, TestSize.Level2)
     RsVulkanContext::GetSingleton().SetIsProtected(true);
     auto& singletonPtr = RsVulkanContext::GetRecyclableSingletonPtr("");
     singletonPtr.reset();
-    auto& context = RsVulkanContext::GetRecyclableSingleton();
+    RsVulkanContext::GetRecyclableSingleton();
     ASSERT_NE(RsVulkanContext::GetRecyclableSingletonPtr(), nullptr);
 }
 } // namespace Rosen

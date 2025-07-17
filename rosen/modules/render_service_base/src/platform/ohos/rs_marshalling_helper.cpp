@@ -26,6 +26,7 @@
 #include "image_type.h"
 #include "pixel_map.h"
 #include "recording/record_cmd.h"
+#include "utils/object_helper.h"
 #include "rs_profiler.h"
 #include "rs_trace.h"
 
@@ -76,10 +77,22 @@ namespace Rosen {
 namespace {
 bool g_useSharedMem = true;
 std::thread::id g_tid = std::thread::id();
+
 std::mutex g_writeMutex;
 constexpr size_t PIXELMAP_UNMARSHALLING_DEBUG_OFFSET = 12;
 thread_local pid_t g_callingPid = 0;
 constexpr size_t NUM_ITEMS_IN_VERSION = 4;
+
+// Static registration of Data marshalling/unmarshalling callbacks
+DATA_CALLBACKS_REGISTER(
+    [](Parcel& parcel, std::shared_ptr<Drawing::Data> data) -> bool {
+        return RSMarshallingHelper::Marshalling(parcel, data);
+    },
+    [](Parcel& parcel) -> std::shared_ptr<Drawing::Data> {
+        std::shared_ptr<Drawing::Data> data;
+        return RSMarshallingHelper::Unmarshalling(parcel, data) ? data : nullptr;
+    }
+);
 }
 
 static std::vector<uint8_t> supportedParcelVerFlags = { RSPARCELVER_ADD_ANIMTOKEN };
@@ -257,6 +270,81 @@ bool UnmarshallingExtendObjectToDrawCmdList(Parcel& parcel, std::shared_ptr<Draw
         objectVec.emplace_back(object);
     }
     return val->SetupExtendObject(objectVec);
+}
+
+static bool MarshallingDrawingObjectFromDrawCmdList(Parcel& parcel, const std::shared_ptr<Drawing::DrawCmdList>& val)
+{
+    std::vector<std::shared_ptr<Drawing::Object>> objectVec;
+    uint32_t objectSize = val->GetAllDrawingObject(objectVec);
+    if (!parcel.WriteUint32(objectSize)) {
+        ROSEN_LOGE("MarshallingDrawingObjectFromDrawCmdList WriteUint32 failed");
+        return false;
+    }
+    if (objectSize == 0) {
+        return true;
+    }
+    if (objectSize > USHRT_MAX) {
+        ROSEN_LOGE("unirender: RSMarshallingHelper::MarshallingDrawingObjectFromDrawCmdList failed with max limit");
+        return false;
+    }
+    for (const auto& object : objectVec) {
+        // Write type and subType from object for consistency
+        if (!parcel.WriteInt32(object->GetType()) ||
+            !parcel.WriteInt32(object->GetSubType())) {
+            ROSEN_LOGE("unirender: Failed to write type=%{public}d subType=%{public}d to parcel",
+                       object->GetType(), object->GetSubType());
+            return false;
+        }
+        // Object internal marshalling handles only specific data
+        if (!object->Marshalling(parcel)) {
+            ROSEN_LOGE("unirender: Failed to marshal object type=%{public}d subType=%{public}d",
+                       object->GetType(), object->GetSubType());
+            return false;
+        }
+    }
+    return true;
+}
+
+static bool UnmarshallingDrawingObjectToDrawCmdList(Parcel& parcel, std::shared_ptr<Drawing::DrawCmdList>& val)
+{
+    uint32_t objectSize = parcel.ReadUint32();
+    if (objectSize == 0) {
+        return true;
+    }
+    if (objectSize > USHRT_MAX) {
+        ROSEN_LOGE("unirender: RSMarshallingHelper::UnmarshallingDrawingObjectToDrawCmdList failed with max limit");
+        return false;
+    }
+    std::vector<std::shared_ptr<Drawing::Object>> objectVec;
+    for (uint32_t i = 0; i < objectSize; i++) {
+        // Read type and subType for ObjectHelper dispatch
+        int32_t type = parcel.ReadInt32();
+        int32_t subType = parcel.ReadInt32();
+        int32_t drawingObjDepth = 0;
+
+        // Use ObjectHelper to get unmarshalling function and create the appropriate object
+        auto func = Drawing::ObjectHelper::Instance().GetFunc(type, subType);
+        if (!func) {
+            ROSEN_LOGE("unirender: Failed to get unmarshalling function for "
+                "type=%{public}d subType=%{public}d", type, subType);
+            return false;
+        }
+        bool isValid = true;
+        auto obj = func(parcel, isValid, drawingObjDepth);
+        if (!obj) {
+            ROSEN_LOGE("unirender: Failed to create DrawingObject type=%{public}d subType=%{public}d", type, subType);
+            return false;
+        }
+
+        // Handle invalid objects by replacing with InvalidObj placeholder
+        if (!isValid) {
+            ROSEN_LOGD("unirender: DrawingObject type=%{public}d subType=%{public}d is invalid, "
+                       "replacing with InvalidObj", type, subType);
+            obj = std::make_shared<Drawing::InvalidObj>();
+        }
+        objectVec.emplace_back(obj);
+    }
+    return val->SetupDrawingObject(objectVec);
 }
 } // namespace
 
@@ -2072,6 +2160,12 @@ bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<Draw
         return ret;
     }
 
+    ret &= MarshallingDrawingObjectFromDrawCmdList(parcel, val);
+    if (!ret) {
+        ROSEN_LOGE("unirender: failed RSMarshallingHelper::Marshalling Drawing::DrawCmdList DrawingObject");
+        return ret;
+    }
+
 #ifdef ROSEN_OHOS
     std::vector<std::shared_ptr<Drawing::SurfaceBufferEntry>> surfaceBufferEntryVec;
     uint32_t surfaceBufferSize = val->GetAllSurfaceBufferEntry(surfaceBufferEntryVec);
@@ -2340,6 +2434,12 @@ bool RSMarshallingHelper::SafeUnmarshallingDrawCmdList(Parcel& parcel, std::shar
     ret &= UnmarshallingExtendObjectToDrawCmdList(parcel, val);
     if (!ret) {
         ROSEN_LOGE("unirender: failed RSMarshallingHelper::Marshalling Drawing::DrawCmdList ExtendObject");
+        return ret;
+    }
+
+    ret &= UnmarshallingDrawingObjectToDrawCmdList(parcel, val);
+    if (!ret) {
+        ROSEN_LOGE("unirender: failed RSMarshallingHelper::Unmarshalling Drawing::DrawCmdList DrawingObject");
         return ret;
     }
 
@@ -3123,7 +3223,7 @@ bool RSMarshallingHelper::MarshallingTransactionVer(Parcel& parcel)
     for (auto supportedFlag : supportedParcelVerFlags) {
         flags[supportedFlag / bitsPerUint64] |= static_cast<uint64_t>(1) << (supportedFlag % bitsPerUint64);
     }
-    for (int i = 0; i < NUM_ITEMS_IN_VERSION; i++) {
+    for (size_t i = 0; i < NUM_ITEMS_IN_VERSION; i++) {
         parcel.WriteUint64(flags[i]);
     }
     return true;
@@ -3135,7 +3235,7 @@ bool RSMarshallingHelper::UnmarshallingTransactionVer(Parcel& parcel)
     size_t offset = parcel.GetReadPosition();
     headerCode = parcel.ReadInt64();
     if (headerCode == -1) {
-        for (int i = 0; i < NUM_ITEMS_IN_VERSION; i++) {
+        for (size_t i = 0; i < NUM_ITEMS_IN_VERSION; i++) {
             parcel.ReadUint64();
         }
     } else {

@@ -291,7 +291,7 @@ FilterDirtyRegionInfo RSUniFilterDirtyComputeUtil::GenerateFilterDirtyRegionInfo
     FilterDirtyRegionInfo filterInfo = {
         .id_ = filterNode.GetId(),
         .intersectRegion_ = isSurface ? filterRegion : dirtyRegion,
-        .filterDirty_ = dirtyRegion,
+        .filterDirty_ = isSurface ? filterRegion : dirtyRegion,
         .alignedFilterDirty_ = dirtyRegion.GetAlignedRegion(MAX_DIRTY_ALIGNMENT_SIZE),
         .belowDirty_ = preDirty.value_or(Occlusion::Region()),
         .isBackgroundFilterClean_ =
