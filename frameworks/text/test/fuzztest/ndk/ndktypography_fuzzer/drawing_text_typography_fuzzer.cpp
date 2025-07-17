@@ -229,7 +229,7 @@ OH_Drawing_TypographyCreate* CreateTypographyHandler(OH_Drawing_TypographyCreate
         .baselineOffset = 0 };
     OH_Drawing_TypographyHandlerAddPlaceholder(handler, &placeholder);
     OH_Drawing_TypographyHandlerPushTextStyle(handler, txtStyle);
-    std::string dest = fdp.ConsumeRandomLengthString();
+    std::string dest = fdp.ConsumeBytesAsString(DATA_MAX_LAYOUT_WIDTH);
     std::u16string u16 = Str8ToStr16ByIcu(dest);
     icu::UnicodeString unicodeString(u16.data(), u16.size());
     unicodeString.toUTF8String(dest);
