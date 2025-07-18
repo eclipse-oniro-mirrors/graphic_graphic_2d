@@ -28,6 +28,7 @@
 #include "common/rs_obj_abs_geometry.h"
 #include "common/rs_vector4.h"
 #include "drawable/rs_property_drawable_utils.h"
+#include "effect/rs_render_filter_base.h"
 #include "pipeline/rs_canvas_render_node.h"
 #include "pipeline/rs_context.h"
 #include "pipeline/rs_screen_render_node.h"
@@ -1666,6 +1667,11 @@ void RSProperties::SetFgBrightnessParams(const std::optional<RSDynamicBrightness
 std::optional<RSDynamicBrightnessPara> RSProperties::GetFgBrightnessParams() const
 {
     return fgBrightnessParams_;
+}
+
+bool RSProperties::GetFgBrightnessEnableEDR() const
+{
+    return fgBrightnessParams_.has_value() && fgBrightnessParams_->enableHdr_ && IsFgBrightnessValid();
 }
 
 void RSProperties::SetBgBrightnessRates(const Vector4f& rates)
@@ -3838,20 +3844,6 @@ void RSProperties::SetNeedDrawBehindWindow(bool needDrawBehindWindow)
     UpdateFilter();
 }
 
-void RSProperties::SetEnableHDREffect(bool enableHDREffect)
-{
-    if (enableHDREffect_ != enableHDREffect) {
-        enableHDREffect_ = enableHDREffect;
-        filterNeedUpdate_ = true;
-        SetDirty();
-    }
-}
-
-bool RSProperties::GetEnableHDREffect() const
-{
-    return enableHDREffect_;
-}
-
 void RSProperties::SetUseShadowBatching(bool useShadowBatching)
 {
     if (useShadowBatching) {
@@ -4993,7 +4985,7 @@ void RSProperties::UpdateFilter()
         UpdateForegroundFilter();
     }
 
-    needFilter_ = backgroundFilter_ != nullptr || filter_ != nullptr || useEffect_ || enableHDREffect_ ||
+    needFilter_ = backgroundFilter_ != nullptr || filter_ != nullptr || useEffect_ ||
                   IsLightUpEffectValid() || IsDynamicLightUpValid() || greyCoef_.has_value() ||
                   linearGradientBlurPara_ != nullptr || IsDynamicDimValid() ||
                   GetShadowColorStrategy() != SHADOW_COLOR_STRATEGY::COLOR_STRATEGY_NONE ||

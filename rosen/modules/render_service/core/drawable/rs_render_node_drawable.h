@@ -210,9 +210,6 @@ private:
     void ClearDrawingCacheContiUpdateTimeMap();
     friend class RsSubThreadCache;
     RSOpincDrawCache opincDrawCache_;
-
-    // update hdr brightness for all effect filter applied
-    void UpdateFilterDisplayHeadroom(Drawing::Canvas& canvas);
 };
 } // namespace DrawableV2
 } // namespace OHOS::Rosen

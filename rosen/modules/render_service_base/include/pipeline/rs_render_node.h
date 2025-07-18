@@ -1122,6 +1122,7 @@ protected:
 
     void UpdateDrawableVecV2();
     void ClearDrawableVec2();
+    void UpdateDrawableEnableEDR();
 
     void DrawPropertyDrawable(RSDrawableSlot slot, RSPaintFilterCanvas& canvas);
     void DrawPropertyDrawableRange(RSDrawableSlot begin, RSDrawableSlot end, RSPaintFilterCanvas& canvas);
