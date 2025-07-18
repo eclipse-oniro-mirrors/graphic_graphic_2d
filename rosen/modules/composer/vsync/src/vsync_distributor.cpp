@@ -1888,7 +1888,6 @@ void VSyncDistributor::SetBufferInfo(uint64_t id, const std::string &name, uint3
     bool isNativeDVSyncEnable = DVSync::Instance().SetBufferInfo(id, name, queueSize,
         bufferCount, lastConsumeTime);
     if (isUrgent || !isNativeDVSyncEnable) {
-        RS_TRACE_NAME("SetBufferInfo, isUrgent");
         return;
     }
     bool isAppRequested = DVSync::Instance().IsAppRequested();
