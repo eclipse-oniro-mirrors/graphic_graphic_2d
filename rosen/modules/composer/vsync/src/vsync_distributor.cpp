@@ -1954,7 +1954,7 @@ bool VSyncDistributor::NeedSkipForSurfaceBuffer(uint64_t id)
 bool VSyncDistributor::NeedUpdateVSyncTime(uint32_t& pid)
 {
 #if defined(RS_ENABLE_DVSYNC_2)
-    return DVSync::Instance().NeedUpdateVSyncTime(id);
+    return DVSync::Instance().NeedUpdateVSyncTime(pid);
 #else
     return false;
 #endif
@@ -1967,10 +1967,10 @@ void VSyncDistributor::SetVSyncTimeUpdated()
 #endif
 }
 
-int64_t VSyncDistributor::GetlastUpdateTime()
+int64_t VSyncDistributor::GetLastUpdateTime()
 {
 #if defined(RS_ENABLE_DVSYNC_2)
-    return DVSync::Instance().GetlastUpdateTime();
+    return DVSync::Instance().GetLastUpdateTime();
 #else
     return 0;
 #endif

@@ -6060,8 +6060,8 @@ HWTEST_F(RSMainThreadTest, NeedConsumeDVSyncCommand001, TestSize.Level1)
 
     std::unique_ptr<RSTransactionData> rsTransactionData1 = std::make_unique<RSTransactionData>();
     std::unique_ptr<RSTransactionData> rsTransactionData2 = std::make_unique<RSTransactionData>();
-    rsTransactonData1->timestamp_ = 100;
-    rsTransactonData1->timestamp_ = 90;
+    rsTransactionData1->timestamp_ = 100;
+    rsTransactionData2->timestamp_ = 90;
 
     trans.push_back(std::move(rsTransactionData1));
     trans.push_back(std::move(rsTransactionData2));

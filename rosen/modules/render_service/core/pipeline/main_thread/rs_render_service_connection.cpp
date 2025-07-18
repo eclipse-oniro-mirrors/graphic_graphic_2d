@@ -355,7 +355,7 @@ ErrCode RSRenderServiceConnection::CommitTransaction(std::unique_ptr<RSTransacti
         return ERR_INVALID_VALUE;
     }
     if (transactionData && transactionData->GetDVSyncUpdate()) {
-        mainThread_->DVSyncUpdate(transactionData->GetDVSyncTime(), transactionData->GetTimeStamp());
+        mainThread_->DVSyncUpdate(transactionData->GetDVSyncTime(), transactionData->GetTimestamp());
     }
     bool isProcessBySingleFrame = mainThread_->IsNeedProcessBySingleFrameComposer(transactionData);
     if (isProcessBySingleFrame) {

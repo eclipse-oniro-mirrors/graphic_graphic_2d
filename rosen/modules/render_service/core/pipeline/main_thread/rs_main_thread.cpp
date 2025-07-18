@@ -1298,7 +1298,7 @@ bool RSMainThread::NeedConsumeMultiCommand(uint32_t& dvsyncPid)
     int64_t lastUpdateTime = rsVSyncDistributor_->GetLastUpdateTime();
     if (needUpdateDVSyncTime) {
         RS_TRACE_NAME("lastUpdateTime:" + std::to_string(lastUpdateTime));
-        if (lastUpdateTime + static_cast<uint64_t>(rsVSyncDistributor_->GetUiCommandDelayTime()) < timeStamp_) {
+        if (lastUpdateTime + static_cast<uint64_t>(rsVSyncDistributor_->GetUiCommandDelayTime()) < timestamp_) {
             RS_TRACE_NAME("needConsume:true");
             return true;
         }
