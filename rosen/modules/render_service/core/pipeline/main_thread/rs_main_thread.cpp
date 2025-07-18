@@ -5280,7 +5280,7 @@ void RSMainThread::SetBufferInfo(uint64_t id, const std::string &name, uint32_t 
 
 void RSMainThread::SetBufferQueueInfo(const std::string &name, int32_t bufferCount, int64_t lastFlushedTimeStamp)
 {
-    rsVSyncDistributor_->SetBufferInfo(name, bufferCount, lastFlushedTimeStamp);
+    rsVSyncDistributor_->SetBufferQueueInfo(name, bufferCount, lastFlushedTimeStamp);
 }
 
 void RSMainThread::SetTaskEndWithTime(int64_t time)
