@@ -3037,6 +3037,7 @@ HWTEST_F(RSUniRenderVisitorTest, CollectEffectInfo002, TestSize.Level2)
     parent->InitRenderParams();
     parent->AddChild(node);
     node->GetMutableRenderProperties().needFilter_ = true;
+    node->SetChildHasVisibleFilter(true);
     rsUniRenderVisitor->CollectEffectInfo(*node);
     ASSERT_TRUE(parent->ChildHasVisibleFilter());
 }
