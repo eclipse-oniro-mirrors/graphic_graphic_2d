@@ -1885,8 +1885,9 @@ void VSyncDistributor::SetBufferInfo(uint64_t id, const std::string &name, uint3
     int32_t bufferCount, int64_t lastConsumeTime, bool isUrgent)
 {
 #if defined(RS_ENABLE_DVSYNC_2)
-    DVSync::Instance().SetBufferInfo(id, name, queueSize, bufferCount, lastConsumeTime);
-    if (isUrgent) {
+    bool isNativeDVSyncEnable = DVSync::Instance().SetBufferInfo(id, name, queueSize,
+        bufferCount, lastConsumeTime);
+    if (isUrgent || !isNativeDVSyncEnable) {
         RS_TRACE_NAME("SetBufferInfo, isUrgent");
         return;
     }
@@ -1948,6 +1949,38 @@ bool VSyncDistributor::NeedSkipForSurfaceBuffer(uint64_t id)
     return DVSync::Instance().NeedSkipForSurfaceBuffer(id);
 #else
     return false;
+#endif
+}
+
+bool VSyncDistributor::NeedUpdateVSyncTime(uint32_t& pid)
+{
+#if defined(RS_ENABLE_DVSYNC_2)
+    return DVSync::Instance().NeedUpdateVSyncTime(id);
+#else
+    return false;
+#endif
+}
+
+void VSyncDistributor::SetVSyncTimeUpdated()
+{
+#if defined(RS_ENABLE_DVSYNC_2)
+    DVSync::Instance().SetVSyncTimeUpdated();
+#endif
+}
+
+int64_t VSyncDistributor::GetlastUpdateTime()
+{
+#if defined(RS_ENABLE_DVSYNC_2)
+    return DVSync::Instance().GetlastUpdateTime();
+#else
+    return 0;
+#endif
+}
+
+void VSyncDistributor::DVSyncUpdate(uint64_t dvsyncTime, uint64_t vsyncTime)
+{
+#if defined(RS_ENABLE_DVSYNC_2)
+    DVSync::Instance().DVSyncUpdate(dvsyncTime, vsyncTime);
 #endif
 }
 }

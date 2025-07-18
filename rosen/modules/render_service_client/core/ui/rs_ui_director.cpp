@@ -436,6 +436,13 @@ void RSUIDirector::SetTimeStamp(uint64_t timeStamp, const std::string& abilityNa
 {
     timeStamp_ = timeStamp;
     abilityName_ = abilityName;
+    dvsyncUpdate_ = false;
+}
+
+void RSUIDirector::SetDVSyncUpdate(uint64_t dvsyncTime)
+{
+    dvsyncUpdate_ = true;
+    dvsyncTime_ = dvsyncTime;
 }
 
 void RSUIDirector::SetCacheDir(const std::string& cacheFilePath)
