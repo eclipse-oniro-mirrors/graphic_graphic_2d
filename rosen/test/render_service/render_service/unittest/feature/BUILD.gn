@@ -132,7 +132,6 @@ ohos_unittest("RSSurfaceCaptureParallelTaskTest") {
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "samgr:samgr_proxy",
-    "ffrt:libffrt",
   ]
   if (defined(global_parts_info) && defined(global_parts_info.sensors_sensor)) {
     external_deps += [ "sensor:sensor_interface_native" ]
@@ -169,7 +168,6 @@ ohos_unittest("RSSurfaceCaptureTaskTest") {
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "samgr:samgr_proxy",
-    "ffrt:libffrt",
   ]
   if (defined(global_parts_info) && defined(global_parts_info.sensors_sensor)) {
     external_deps += [ "sensor:sensor_interface_native" ]
@@ -269,7 +267,6 @@ ohos_unittest("RSUiCaptureTaskParallelTest") {
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "samgr:samgr_proxy",
-    "ffrt:libffrt",
   ]
   if (defined(global_parts_info) && defined(global_parts_info.sensors_sensor)) {
     external_deps += [ "sensor:sensor_interface_native" ]
@@ -305,7 +302,6 @@ ohos_unittest("RSUiCaptureSoloTaskParallelTest") {
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "samgr:samgr_proxy",
-    "ffrt:libffrt",
   ]
   if (defined(global_parts_info) && defined(global_parts_info.sensors_sensor)) {
     external_deps += [ "sensor:sensor_interface_native" ]
@@ -341,7 +337,6 @@ ohos_unittest("RSUniUiCaptureTest") {
     "hisysevent:libhisysevent",
     "init:libbegetutil",
     "samgr:samgr_proxy",
-    "ffrt:libffrt",
   ]
   if (defined(global_parts_info) && defined(global_parts_info.sensors_sensor)) {
     external_deps += [ "sensor:sensor_interface_native" ]
@@ -379,7 +374,6 @@ ohos_unittest("RSUifirstManagerTest") {
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "samgr:samgr_proxy",
-    "ffrt:libffrt",
   ]
   if (defined(global_parts_info) && defined(global_parts_info.sensors_sensor)) {
     external_deps += [ "sensor:sensor_interface_native" ]
@@ -437,7 +431,6 @@ ohos_unittest("RSSubThreadManagerTest") {
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "samgr:samgr_proxy",
-    "ffrt:libffrt",
   ]
   if (defined(global_parts_info) && defined(global_parts_info.sensors_sensor)) {
     external_deps += [ "sensor:sensor_interface_native" ]
@@ -472,7 +465,6 @@ ohos_unittest("RSSubThreadTest") {
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "samgr:samgr_proxy",
-    "ffrt:libffrt",
   ]
   if (defined(global_parts_info) && defined(global_parts_info.sensors_sensor)) {
     external_deps += [ "sensor:sensor_interface_native" ]
@@ -507,7 +499,6 @@ ohos_unittest("RSSubThreadCacheTest") {
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "samgr:samgr_proxy",
-    "ffrt:libffrt",
   ]
   if (defined(global_parts_info) && defined(global_parts_info.sensors_sensor)) {
     external_deps += [ "sensor:sensor_interface_native" ]
@@ -527,7 +518,6 @@ ohos_unittest("RSVsyncRateReduceManagerTest") {
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "samgr:samgr_proxy",
-    "ffrt:libffrt",
   ]
   if (defined(global_parts_info) && defined(global_parts_info.sensors_sensor)) {
     external_deps += [ "sensor:sensor_interface_native" ]
@@ -556,7 +546,6 @@ ohos_unittest("RSUniHwcPrevalidateUtilTest") {
     "hisysevent:libhisysevent",
     "init:libbegetutil",
     "samgr:samgr_proxy",
-    "ffrt:libffrt",
   ]
   if (defined(global_parts_info) && defined(global_parts_info.sensors_sensor)) {
     external_deps += [ "sensor:sensor_interface_native" ]
@@ -632,7 +621,6 @@ ohos_unittest("RSEglImageManagerTest") {
     "hisysevent:libhisysevent",
     "init:libbegetutil",
     "samgr:samgr_proxy",
-    "ffrt:libffrt",
   ]
   if (defined(global_parts_info) && defined(global_parts_info.sensors_sensor)) {
     external_deps += [ "sensor:sensor_interface_native" ]
@@ -671,7 +659,6 @@ ohos_unittest("RSVBlankIdleCorrectorTest") {
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "samgr:samgr_proxy",
-    "ffrt:libffrt",
   ]
   if (defined(global_parts_info) && defined(global_parts_info.sensors_sensor)) {
     external_deps += [ "sensor:sensor_interface_native" ]
@@ -775,7 +762,6 @@ ohos_unittest("RSWindowKeyFrameTest") {
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "samgr:samgr_proxy",
-    "ffrt:libffrt",
   ]
   if (defined(global_parts_info) && defined(global_parts_info.sensors_sensor)) {
     external_deps += [ "sensor:sensor_interface_native" ]
@@ -874,7 +860,6 @@ ohos_unittest("RSUniHwcComputeUtilTest") {
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "samgr:samgr_proxy",
-    "ffrt:libffrt",
   ]
   if (defined(global_parts_info) && defined(global_parts_info.sensors_sensor)) {
     external_deps += [ "sensor:sensor_interface_native" ]
@@ -931,7 +916,6 @@ ohos_unittest("RSUniDirtyComputeUtilTest") {
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "samgr:samgr_proxy",
-    "ffrt:libffrt",
   ]
   if (defined(global_parts_info) && defined(global_parts_info.sensors_sensor)) {
     external_deps += [ "sensor:sensor_interface_native" ]
@@ -965,7 +949,6 @@ ohos_unittest("RSWindowCaptureTaskTest") {
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "samgr:samgr_proxy",
-    "ffrt:libffrt",
   ]
   if (defined(global_parts_info) && defined(global_parts_info.sensors_sensor)) {
     external_deps += [ "sensor:sensor_interface_native" ]
@@ -1019,7 +1002,6 @@ ohos_unittest("RSHpaeManagerTest") {
   external_deps = [
     "c_utils:utils",
     "hilog:libhilog",
-    "ffrt:libffrt",
   ]
   if (defined(global_parts_info) && defined(global_parts_info.sensors_sensor)) {
     external_deps += [ "sensor:sensor_interface_native" ]
