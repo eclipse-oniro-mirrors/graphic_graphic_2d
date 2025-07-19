@@ -1197,7 +1197,7 @@ VsyncError VSyncDistributor::RequestNextVSync(const sptr<VSyncConnection> &conne
         }
         EnableVSync(isUrgent);
         // Start of DVSync
-        DVSyncRecordRNV(connection, fromWhom, lastVSyncTS);
+        DVSyncRecordRNV(connection, fromWhom, lastVSyncTS, requestVsyncTime);
         // adaptive sync game mode, urgent scenario don't need to preexecute
         if (!isUrgent) {
             NeedPreexecute = DVSyncCheckPreexecuteAndUpdateTs(connection, timestamp, period, vsyncCount);
@@ -1804,10 +1804,10 @@ void VSyncDistributor::RecordEnableVsync()
 }
 
 void VSyncDistributor::DVSyncRecordRNV(const sptr<VSyncConnection> &connection, const std::string &fromWhom,
-    int64_t lastVSyncTS)
+    int64_t lastVSyncTS, int64_t requestVsyncTime)
 {
 #if defined(RS_ENABLE_DVSYNC_2)
-    DVSync::Instance().RecordRNV(connection, fromWhom, vsyncMode_, lastVSyncTS);
+    DVSync::Instance().RecordRNV(connection, fromWhom, vsyncMode_, lastVSyncTS, requestVsyncTime);
 #endif
 }
 
@@ -1858,11 +1858,10 @@ void VSyncDistributor::NotifyPackageEvent(const std::vector<std::string>& packag
 #endif
 }
 
-bool VSyncDistributor::AdaptiveDVSyncEnable(const std::string &nodeName, int64_t timeStamp, int32_t bufferCount,
-    bool &needConsume)
+bool VSyncDistributor::AdaptiveDVSyncEnable(const std::string &nodeName, int64_t timeStamp, int32_t bufferCount)
 {
 #if defined(RS_ENABLE_DVSYNC_2)
-    return DVSync::Instance().AdaptiveDVSyncEnable(nodeName, timeStamp, bufferCount, needConsume);
+    return DVSync::Instance().AdaptiveDVSyncEnable(nodeName, timeStamp, bufferCount);
 #else
     return false;
 #endif
@@ -1908,6 +1907,13 @@ void VSyncDistributor::SetBufferInfo(uint64_t id, const std::string &name, uint3
     if (needPreexecute) {
         ConnPostEvent(connection, timestamp, period, vsyncCount);
     }
+#endif
+}
+
+void VSyncDistributor::SetBufferQueueInfo(const std::string &name, int32_t bufferCount, int64_t lastFlushedTimeStamp)
+{
+#if defined(RS_ENABLE_DVSYNC_2)
+    DVSync::Instance().SetBufferQueueInfo(name, bufferCount, lastFlushedTimeStamp);
 #endif
 }
 
