@@ -3900,11 +3900,5 @@ bool RSSurfaceRenderNode::isForcedClipHole() const
     }
     return (tvPlayerBundleName == bundleName_);
 }
-
-bool RSSurfaceRenderNode::IsFilterUnderSurfaceEnableHwc() const
-{
-    const std::string& filterUnderHwcConfig = RsCommonHook::Instance().GetFilterUnderHwcConfigByApp(bundleName_);
-    return (filterUnderHwcConfig == "1");
-}
 } // namespace Rosen
 } // namespace OHOS

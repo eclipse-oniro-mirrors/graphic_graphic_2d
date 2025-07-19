@@ -909,9 +909,10 @@ void RSUniHwcVisitor::CalcHwcNodeEnableByFilterRect(std::shared_ptr<RSSurfaceRen
         return;
     }
     if (filterZOrder != 0 && node->GetHwcRecorder().GetZOrderForHwcEnableByFilter() != 0 &&
-        node->GetInstanceRootNodeId() == filterNode.GetInstanceRootNodeId() && uniRenderVisitor_.curSurfaceNode_ &&
+        node->GetInstanceRootNodeId() == filterNode.GetInstanceRootNodeId() &&
+        RSUniHwcComputeUtil::IsBlendNeedBackground(filterNode) && uniRenderVisitor_.curSurfaceNode_ &&
         uniRenderVisitor_.curSurfaceNode_->GetId() == node->GetInstanceRootNodeId() &&
-        RSUniHwcComputeUtil::IsBlendNeedBackground(filterNode) && node->IsFilterUnderSurfaceEnableHwc()) {
+        RsCommonHook::Instance().GetFilterUnderHwcConfigByApp(node->GetBundleName()) == "1") {
         if (IsBackgroundFilterUnderSurface(node, filterNode.shared_from_this())) {
             return;
         }
