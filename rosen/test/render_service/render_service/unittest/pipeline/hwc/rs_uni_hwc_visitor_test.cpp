@@ -1560,12 +1560,12 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateHwcNodeEnableByFilterRect006, TestSize.Level
     rsUniRenderVisitor->hwcVisitor_->UpdateHwcNodeEnableByFilterRect(surfaceNode1, *filterNode, 1);
     ASSERT_TRUE(surfaceNode2->IsHardwareForcedDisabled());
 
-    rsUniRenderVisitor->curSurfaceNode_ = surfaceNode1;
+    filterNode->GetHwcRecorder().SetBlendWithBackground(true);
     surfaceNode2->SetHardwareForcedDisabledState(false);
     rsUniRenderVisitor->hwcVisitor_->UpdateHwcNodeEnableByFilterRect(surfaceNode1, *filterNode, 1);
     ASSERT_TRUE(surfaceNode2->IsHardwareForcedDisabled());
-
-    filterNode->GetHwcRecorder().SetBlendWithBackground(true);
+    
+    rsUniRenderVisitor->curSurfaceNode_ = surfaceNode1;
     surfaceNode2->SetHardwareForcedDisabledState(false);
     rsUniRenderVisitor->hwcVisitor_->UpdateHwcNodeEnableByFilterRect(surfaceNode1, *filterNode, 1);
     ASSERT_TRUE(surfaceNode2->IsHardwareForcedDisabled());
