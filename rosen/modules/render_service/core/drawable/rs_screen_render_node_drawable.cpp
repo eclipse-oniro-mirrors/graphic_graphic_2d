@@ -359,7 +359,7 @@ bool RSScreenRenderNodeDrawable::CheckScreenNodeSkip(
     }
 
     RS_LOGD("ScreenNode skip");
-    RS_TRACE_NAME("ScreenNode skip");
+    RS_TRACE_NAME("DisplayNode skip");
     GpuDirtyRegionCollection::GetInstance().AddSkipProcessFramesNumberForDFX(RSBaseRenderUtil::GetLastSendingPid());
 #ifdef OHOS_PLATFORM
     RSJankStatsRenderFrameHelper::GetInstance().SetSkipJankAnimatorFrame(true);
@@ -369,10 +369,10 @@ bool RSScreenRenderNodeDrawable::CheckScreenNodeSkip(
     bool hardCursorNeedCommit = (hasHardCursor != hardCursorLastCommitSuccess_);
     auto forceCommitReason = uniParam->GetForceCommitReason();
     bool layersNeedCommit = IsForceCommit(forceCommitReason, params.GetNeedForceUpdateHwcNodes(), hasHardCursor);
-    RS_TRACE_NAME_FMT("ScreenNode skip, forceCommitReason: %d, forceUpdateByHwcNodes %d, "
+    RS_TRACE_NAME_FMT("DisplayNode skip, forceCommitReason: %d, forceUpdateByHwcNodes %d, "
         "byHardCursor: %d", forceCommitReason, params.GetNeedForceUpdateHwcNodes(), hardCursorNeedCommit);
     if (!layersNeedCommit && !hardCursorNeedCommit) {
-        RS_TRACE_NAME("ScreenNodeSkip skip commit");
+        RS_TRACE_NAME("DisplayNodeSkip skip commit");
         return true;
     }
 
