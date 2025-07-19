@@ -234,7 +234,8 @@ void PixelMapStorage::PushDmaMemory(uint64_t id, const ImageInfo& info, const Pi
     auto surfaceBuffer = reinterpret_cast<SurfaceBuffer*>(memory.context);
     auto buffer = surfaceBuffer ? surfaceBuffer->GetBufferHandle() : nullptr;
     if (buffer) {
-        const auto pixels = GenerateImageData(memory.base, buffer->size, memory.isAstc, GetBytesPerPixel(info));
+        const auto pixels = GenerateImageData(reinterpret_cast<const uint8_t*>(surfaceBuffer->GetVirAddr()),
+            buffer->size, memory.isAstc, GetBytesPerPixel(info));
         ImageProperties properties(info, AllocatorType::DMA_ALLOC);
         PushImage(id, pixels, skipBytes, buffer, &properties);
     }
