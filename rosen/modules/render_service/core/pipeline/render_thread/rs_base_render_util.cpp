@@ -970,9 +970,8 @@ void RSBaseRenderUtil::MergeBufferDamages(Rect& surfaceDamage, const std::vector
     surfaceDamage = { damage.left_, damage.top_, damage.width_, damage.height_ };
 }
 
-CM_INLINE bool RSBaseRenderUtil::ConsumeAndUpdateBuffer(RSSurfaceHandler& surfaceHandler,
-    uint64_t presentWhen, bool dropFrameByPidEnable, bool adaptiveDVSyncEnable, bool needConsume,
-    uint64_t parentNodeId, bool deleteCacheDisable)
+CM_INLINE bool RSBaseRenderUtil::ConsumeAndUpdateBuffer(RSSurfaceHandler& surfaceHandler, uint64_t presentWhen,
+    bool dropFrameByPidEnable, bool adaptiveDVSyncEnable, uint64_t parentNodeId, bool deleteCacheDisable)
 {
     if (surfaceHandler.GetAvailableBufferCount() <= 0) {
         return true;
@@ -980,10 +979,6 @@ CM_INLINE bool RSBaseRenderUtil::ConsumeAndUpdateBuffer(RSSurfaceHandler& surfac
     const auto& consumer = surfaceHandler.GetConsumer();
     if (consumer == nullptr) {
         RS_LOGE("Consume and update buffer fail for consumer is nullptr");
-        return false;
-    }
-    if (adaptiveDVSyncEnable && !needConsume) {
-        RS_LOGI("adaptiveDVSyncEnable and not needConsume");
         return false;
     }
 
@@ -1527,14 +1522,18 @@ bool RSBaseRenderUtil::CreateBitmap(sptr<OHOS::SurfaceBuffer> buffer, Drawing::B
     return true;
 }
 
-Drawing::BitmapFormat RSBaseRenderUtil::GenerateDrawingBitmapFormat(const sptr<OHOS::SurfaceBuffer>& buffer)
+Drawing::BitmapFormat RSBaseRenderUtil::GenerateDrawingBitmapFormat(const sptr<OHOS::SurfaceBuffer>& buffer,\
+    const Drawing::AlphaType alphaType)
 {
     Drawing::BitmapFormat format;
     if (buffer == nullptr) {
         return format;
     }
     Drawing::ColorType colorType = GetColorTypeFromBufferFormat(buffer->GetFormat());
-    Drawing::AlphaType alphaType = Drawing::AlphaType::ALPHATYPE_PREMUL;
+    if (alphaType == Drawing::AlphaType::ALPHATYPE_OPAQUE
+        && colorType == Drawing::ColorType::COLORTYPE_RGBA_8888) {
+        colorType = Drawing::ColorType::COLORTYPE_RGB_888X;
+    }
     format = { colorType, alphaType };
     return format;
 }

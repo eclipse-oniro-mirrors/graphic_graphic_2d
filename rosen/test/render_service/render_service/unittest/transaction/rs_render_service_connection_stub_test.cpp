@@ -888,7 +888,7 @@ HWTEST_F(RSRenderServiceConnectionStubTest, TestRSRenderServiceConnectionStub025
     MessageOption option;
     data.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor());
     uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REGISTER_TRANSACTION_DATA_CALLBACK);
-    data.WriteInt32(123);
+    data.WriteUint64(123);
     data.WriteUint64(456);
     int res = connectionStub_->OnRemoteRequest(code, data, reply, option);
     ASSERT_EQ(res, ERR_NULL_OBJECT);
@@ -914,7 +914,7 @@ HWTEST_F(RSRenderServiceConnectionStubTest, TestRSRenderServiceConnectionStub026
     MessageOption option;
     data.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor());
     uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REGISTER_TRANSACTION_DATA_CALLBACK);
-    data.WriteInt32(123);
+    data.WriteUint64(123);
     data.WriteUint64(456);
     sptr<RSTransactionDataCallbackStubMock> callback = new RSTransactionDataCallbackStubMock();
     data.WriteRemoteObject(callback->AsObject());

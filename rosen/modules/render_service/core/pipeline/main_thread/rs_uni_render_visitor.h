@@ -270,6 +270,7 @@ private:
 
     void UpdateSpecialLayersRecord(RSSurfaceRenderNode& node);
     void UpdateBlackListRecord(RSSurfaceRenderNode& node);
+    void DealWithSpecialLayer(RSSurfaceRenderNode& node);
     void SendRcdMessage(RSScreenRenderNode& node);
 
     bool ForcePrepareSubTree()
@@ -328,6 +329,8 @@ private:
     // Used to initialize the handler of control-level occlusion culling.
     void InitializeOcclusionHandler(RSSurfaceRenderNode& node);
     void HandleTunnelLayerId(RSSurfaceRenderNode& node);
+
+    void UpdateChildBlurBehindWindowAbsMatrix(RSRenderNode& node);
 
     friend class RSUniHwcVisitor;
     std::unique_ptr<RSUniHwcVisitor> hwcVisitor_;

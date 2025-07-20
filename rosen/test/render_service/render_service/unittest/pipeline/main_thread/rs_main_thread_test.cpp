@@ -25,6 +25,7 @@
 
 #include "command/rs_base_node_command.h"
 #include "drawable/rs_screen_render_node_drawable.h"
+#include "feature/uifirst/rs_uifirst_manager.h"
 #include "memory/rs_memory_track.h"
 #include "pipeline/render_thread/rs_render_engine.h"
 #include "pipeline/render_thread/rs_uni_render_engine.h"
@@ -1884,6 +1885,39 @@ HWTEST_F(RSMainThreadTest, UniRender003, TestSize.Level1)
     }
     mainThread->UniRender(rootNode);
     ASSERT_FALSE(mainThread->doDirectComposition_);
+}
+
+/**
+ * @tc.name: UniRender004
+ * @tc.desc: UniRender test
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSMainThreadTest, UniRender004, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    mainThread->isUniRender_ = true;
+    mainThread->renderThreadParams_ = std::make_unique<RSRenderThreadParams>();
+    
+    auto rsContext = std::make_shared<RSContext>();
+    auto rootNode = rsContext->GetGlobalRootRenderNode();
+    NodeId id = 1;
+    auto childDisplayNode = std::make_shared<RSScreenRenderNode>(id, 0, rsContext->weak_from_this());
+    rootNode->AddChild(childDisplayNode, 0);
+    rootNode->InitRenderParams();
+    childDisplayNode->InitRenderParams();
+
+    NodeId nodeId = 2;
+    RSUifirstManager::Instance().AddProcessSkippedNode(nodeId);
+
+    mainThread->doDirectComposition_ = true;
+    mainThread->isDirty_ = false;
+    mainThread->isAccessibilityConfigChanged_ = false;
+    mainThread->isCachedSurfaceUpdated_ = false;
+    mainThread->isHardwareEnabledBufferUpdated_ = false;
+    mainThread->UniRender(rootNode);
+    ASSERT_TRUE(mainThread->doDirectComposition_);
 }
 
 /**
@@ -5983,5 +6017,55 @@ HWTEST_F(RSMainThreadTest, DumpMem001, TestSize.Level1)
     // rootNode == nullptr
     context->globalRootRenderNode_ = nullptr;
     mainThread->DumpMem(args, dumpString, type, pid);
+}
+
+/**
+ * @tc.name: NeedConsumeMultiCommand001
+ * @tc.desc: NeedConsumeMultiCommand001
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSMainThreadTest, NeedConsumeMultiCommand001, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    if (mainThread->rsVSyncDistributor_ == nullptr) {
+        auto vsyncGenerator = CreateVSyncGenerator();
+        auto vsyncController = new VSyncController(vsyncGenerator, 0);
+        mainThread->rsVSyncDistributor_ = new VSyncDistributor(vsyncController, "rs");
+    }
+    uint32_t dvsyncPid = 100;
+    auto ret = mainThread->NeedConsumeMultiCommand(dvsyncPid);
+    ASSERT_EQ(ret, false);
+}
+
+/**
+ * @tc.name: NeedConsumeDVSyncCommand001
+ * @tc.desc: NeedConsumeDVSyncCommand001
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSMainThreadTest, NeedConsumeDVSyncCommand001, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    if (mainThread->rsVSyncDistributor_ == nullptr) {
+        auto vsyncGenerator = CreateVSyncGenerator();
+        auto vsyncController = new VSyncController(vsyncGenerator, 0);
+        mainThread->rsVSyncDistributor_ = new VSyncDistributor(vsyncController, "rs");
+    }
+
+    std::vector<std::unique_ptr<RSTransactionData>> trans;
+    uint32_t endIndex = 0;
+    auto ret = mainThread->NeedConsumeDVSyncCommand(endIndex, trans);
+    ASSERT_EQ(ret, false);
+
+    std::unique_ptr<RSTransactionData> rsTransactionData1 = std::make_unique<RSTransactionData>();
+    std::unique_ptr<RSTransactionData> rsTransactionData2 = std::make_unique<RSTransactionData>();
+    rsTransactionData1->timestamp_ = 100;
+    rsTransactionData2->timestamp_ = 90;
+
+    trans.push_back(std::move(rsTransactionData1));
+    trans.push_back(std::move(rsTransactionData2));
+    ret = mainThread->NeedConsumeDVSyncCommand(endIndex, trans);
+    ASSERT_EQ(ret, true);
 }
 } // namespace OHOS::Rosen

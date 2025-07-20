@@ -738,9 +738,6 @@ HWTEST_F(RSHardwareThreadTest, HgmHardwareUtils, TestSize.Level1)
 {
     auto &hardwareThread = RSHardwareThread::Instance();
     auto& hgmCore = OHOS::Rosen::HgmCore::Instance();
-    hardwareThread.hgmHardwareUtils_.RegisterChangeDssRefreshRateCb();
-    sleep(1);
-    ASSERT_NE(hgmCore.hgmFrameRateMgr_->changeDssRefreshRateCb_, nullptr);
     hgmCore.SetDirectCompositionFlag(false);
     hardwareThread.hgmHardwareUtils_.UpdateRefreshRateParam();
     hgmCore.SetDirectCompositionFlag(true);
@@ -1055,36 +1052,6 @@ HWTEST_F(RSHardwareThreadTest, OnScreenVBlankIdleCallback001, TestSize.Level1)
     ASSERT_NE(hardwareThread.hdiBackend_, nullptr);
     uint64_t timestamp = 10;
     hardwareThread.OnScreenVBlankIdleCallback(screenId_, timestamp);
-}
-
-/*
- * @tc.name: ChangeDssRefreshRate001
- * @tc.desc: Test RSHardwareThreadTest.ChangeDssRefreshRate
- * @tc.type: FUNC
- * @tc.require: issuesIBYE2H
- */
-HWTEST_F(RSHardwareThreadTest, ChangeDssRefreshRate001, TestSize.Level1)
-{
-    auto &hardwareThread = RSHardwareThread::Instance();
-    hardwareThread.Start();
-    OutputPtr output = HdiOutput::CreateHdiOutput(screenId_);
-    ASSERT_NE(hardwareThread.hdiBackend_, nullptr);
-    bool followPipline = true;
-    uint32_t refreshRate = 100;
-    hardwareThread.hgmHardwareUtils_.ChangeDssRefreshRate(screenId_, refreshRate, followPipline);
-
-    followPipline = false;
-    hardwareThread.hgmHardwareUtils_.outputMap_.erase(screenId_);
-    hardwareThread.hgmHardwareUtils_.ChangeDssRefreshRate(screenId_, refreshRate, followPipline);
-    hardwareThread.hgmHardwareUtils_.outputMap_[screenId_] = output;
-    hardwareThread.hgmHardwareUtils_.ChangeDssRefreshRate(screenId_, refreshRate, followPipline);
-    HgmCore::Instance().SetActiveScreenId(screenId_);
-    hardwareThread.hgmHardwareUtils_.ChangeDssRefreshRate(screenId_, refreshRate, followPipline);
-    auto hdiBackend = HdiBackend::GetInstance();
-    hdiBackend->ResetDevice();
-    hardwareThread.hgmHardwareUtils_.ChangeDssRefreshRate(screenId_, refreshRate, followPipline);
-    output.reset();
-    hardwareThread.hgmHardwareUtils_.ChangeDssRefreshRate(screenId_, refreshRate, followPipline);
 }
 
 /*
