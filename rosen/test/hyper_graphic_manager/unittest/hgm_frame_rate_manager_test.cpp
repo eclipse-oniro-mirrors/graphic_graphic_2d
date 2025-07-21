@@ -1431,8 +1431,10 @@ HWTEST_F(HgmFrameRateMgrTest, TestHandlePointerTask, Function | SmallTest | Leve
     pointerStatus = AXIS_END;
     mgr.HandlePointerTask(pid, pointerStatus, 1);
 
+    pointerStatus = AXIS_BEGIN;
     mgr.multiAppStrategy_.pkgs_ = {pkg0};
     mgr.HandlePointerTask(pid, pointerStatus, 1);
+    EXPECT_EQ(mgr.pointerManager_.pkgName_, "");
 
     mgr.multiAppStrategy_.pkgs_ = {pkg1};
     mgr.multiAppStrategy_.strategyConfigMapCache_[mgr.multiAppStrategy_.screenSettingCache_.strategy]
