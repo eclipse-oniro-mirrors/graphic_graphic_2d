@@ -1871,12 +1871,6 @@ void RSRenderNode::UpdateAbsDirtyRegion(RSDirtyRegionManager& dirtyManager, cons
     oldDirty_ = dirtyRect;
     oldDirtyInSurface_ = oldDirty_.IntersectRect(dirtyManager.GetSurfaceRect());
     dirtyManager.MergeDirtyRect(dirtyRect.JoinRect(oldDirtyRect));
-    // compute inward-rounding abs draw rect, used for opaque region calculations
-    auto dirtyRectF = isSelfDrawingNode_ ? selfDrawingNodeAbsDirtyRectF_ : absDrawRectF_;
-    innerAbsDrawRect_ = RSObjAbsGeometry::DeflateToRectI(dirtyRectF);
-    if (!IsFirstLevelCrossNode()) {
-        innerAbsDrawRect_ = innerAbsDrawRect_.IntersectRect(clipRect);
-    }
 }
 
 bool RSRenderNode::UpdateDrawRectAndDirtyRegion(RSDirtyRegionManager& dirtyManager, bool accumGeoDirty,
@@ -1916,6 +1910,7 @@ bool RSRenderNode::UpdateDrawRectAndDirtyRegion(RSDirtyRegionManager& dirtyManag
             isSelfDrawingNode_ || selfDrawRectChanged)) {
             absDrawRectF_ = geoPtr->MapRectWithoutRounding(selfDrawRect_, geoPtr->GetAbsMatrix());
             absDrawRect_ = geoPtr->InflateToRectI(absDrawRectF_);
+            innerAbsDrawRect_ = geoPtr->DeflateToRectI(absDrawRectF_);
             absCmdlistDrawRect_ = GetNeedUseCmdlistDrawRegion() ?
                 geoPtr->MapRect(cmdlistDrawRegion_, geoPtr->GetAbsMatrix()) : RectI(0, 0, 0, 0);
             if (isSelfDrawingNode_) {
