@@ -18,6 +18,7 @@
 #include <climits>
 
 #include "common/rs_common_def.h"
+#include "ffrt_inner.h"
 #include "hgm_config_callback_manager.h"
 #include "hgm_frame_rate_manager.h"
 #include "hgm_idle_detector.h"
@@ -124,12 +125,13 @@ public:
 void HgmFrameRateMgrTest::SetUpTestCase()
 {
     HgmTestBase::SetUpTestCase();
-    HgmTaskHandleThread::Instance();
 }
 
 void HgmFrameRateMgrTest::TearDownTestCase()
 {
-    HgmTaskHandleThread::Instance().queue_ = nullptr;
+    HgmTaskHandleThread::Instance().queue_ = std::make_shared<ffrt::queue>(
+        static_cast<ffrt::queue_type>(ffrt_inner_queue_type_t::ffrt_queue_eventhandler_adapter), "HgmTaskHandleThread",
+        ffrt::queue_attr().qos(ffrt::qos_user_interactive));
     HgmTestBase::TearDownTestCase();
 }
 
@@ -138,8 +140,9 @@ void HgmFrameRateMgrTest::SetUp()
     auto& hgmCore = HgmCore::Instance();
     hgmCore.hgmFrameRateMgr_ = std::make_unique<HgmFrameRateManager>();
     if (!HgmTaskHandleThread::Instance().queue_) {
-        HgmTaskHandleThread::Instance().queue_ =
-            std::make_shared<ffrt::queue>("HgmTaskHandleThread", ffrt::queue_attr().qos(ffrt::qos_user_interactive));
+        HgmTaskHandleThread::Instance().queue_ = std::make_shared<ffrt::queue>(
+            static_cast<ffrt::queue_type>(ffrt_inner_queue_type_t::ffrt_queue_eventhandler_adapter),
+            "HgmTaskHandleThread", ffrt::queue_attr().qos(ffrt::qos_user_interactive));
     }
 }
 
@@ -554,6 +557,7 @@ HWTEST_F(HgmFrameRateMgrTest, MultiThread001, Function | SmallTest | Level0)
         }
     });
     sleep(2); // wait for handler task finished
+    HgmTaskHandleThread::Instance().queue_ = nullptr;
 }
 
 /**
