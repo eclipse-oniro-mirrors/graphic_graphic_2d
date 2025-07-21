@@ -625,8 +625,8 @@ bool RSUiCaptureTaskParallel::UpdateStartAndEndNodeRect()
 
     endRect_ = endNode->GetRenderProperties().GetBoundsGeometry()->GetAbsRect();
     RS_LOGI("RSUiCaptureTaskParallel::UpdateStartAndEndNodeRect endRect %{public}s", endRect_.ToString().c_str());
-    startMatrix_ = startNode->GetRenderProperties()->GetBoundsGeometry()->GetAbsMatrix();
-    endMatrix_ = endNode->GetRenderProperties()->GetBoundsGeometry()->GetAbsMatrix();
+    startMatrix_ = startNode->GetRenderProperties().GetBoundsGeometry()->GetAbsMatrix();
+    endMatrix_ = endNode->GetRenderProperties().GetBoundsGeometry()->GetAbsMatrix();
 
     return true;
 }
