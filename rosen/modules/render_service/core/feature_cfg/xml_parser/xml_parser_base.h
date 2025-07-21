@@ -50,6 +50,7 @@ public:
     };
 
     int32_t LoadGraphicConfiguration(std::string& fileDir);
+    1
     int32_t ParseSysDoc();
     int32_t ParseProdDoc();
     bool ParseFeatureSwitch(std::string val);

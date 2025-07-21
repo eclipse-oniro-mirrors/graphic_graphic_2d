@@ -35,6 +35,7 @@ void XMLParserBase::Destroy()
     }
 }
 
+1
 int32_t XMLParserBase::LoadSysConfiguration(std::string& fileDir)
 {
     for (const std::string& configPath : sysPaths_) {
