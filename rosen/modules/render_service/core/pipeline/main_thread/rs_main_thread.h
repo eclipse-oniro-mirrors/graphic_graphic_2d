@@ -429,6 +429,7 @@ public:
         int32_t bufferCount, int64_t lastConsumeTime, bool isUrgent);
     void GetFrontBufferDesiredPresentTimeStamp(
         const sptr<IConsumerSurface>& consumer, int64_t& desiredPresentTimeStamp);
+    void SetBufferQueueInfo(const std::string &name, int32_t bufferCount, int64_t lastFlushedTimeStamp);
 
     // Enable HWCompose
     bool IsHardwareEnabledNodesNeedSync();
@@ -437,6 +438,7 @@ public:
     void SetTaskEndWithTime(int64_t time);
 
     uint32_t GetVsyncRefreshRate();
+    void DVSyncUpdate(uint64_t dvsyncTime, uint64_t vsyncTime);
 
 private:
     using TransactionDataIndexMap = std::unordered_map<pid_t,
@@ -574,6 +576,9 @@ private:
     void CheckIfHardwareForcedDisabled();
     bool DoDirectComposition(std::shared_ptr<RSBaseRenderNode> rootNode, bool waitForRT);
     bool ExistBufferIsVisibleAndUpdate();
+    bool NeedConsumeMultiCommand(uint32_t& dvsyncPid);
+    bool NeedConsumeDVSyncCommand(uint32_t& endIndex,
+        std::vector<std::unique_ptr<RSTransactionData>>& transactionVec);
     class RSScreenNodeListener : public RSIScreenNodeListener {
     public:
         ~RSScreenNodeListener() override = default;

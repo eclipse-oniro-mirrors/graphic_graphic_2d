@@ -68,6 +68,10 @@
 #include "feature/round_corner_display/rs_message_bus.h"
 
 #include "rs_profiler.h"
+#ifdef SUBTREE_PARALLEL_ENABLE
+#include "rs_parallel_manager.h"
+#endif
+
 #ifdef RS_PROFILER_ENABLED
 #include "rs_profiler_capture_recorder.h"
 #endif
@@ -540,6 +544,22 @@ void RSUniRenderVisitor::MarkHardwareForcedDisabled()
     hwcVisitor_->isHardwareForcedDisabled_ = true;
 }
 
+void RSUniRenderVisitor::DealWithSpecialLayer(RSSurfaceRenderNode& node)
+{
+    if (node.IsCloneCrossNode()) {
+        auto sourceNode = node.GetSourceCrossNode().lock();
+        auto sourceSurface = sourceNode ? sourceNode->ReinterpretCastTo<RSSurfaceRenderNode>() : nullptr;
+        if (sourceSurface == nullptr) {
+            return;
+        }
+        UpdateSpecialLayersRecord(*sourceSurface);
+    } else {
+        UpdateSpecialLayersRecord(node);
+    }
+    UpdateBlackListRecord(node);
+    node.UpdateVirtualScreenWhiteListInfo(screenWhiteList_);
+}
+
 void RSUniRenderVisitor::UpdateBlackListRecord(RSSurfaceRenderNode& node)
 {
     if (!hasMirrorDisplay_ || !screenManager_) {
@@ -869,6 +889,11 @@ void RSUniRenderVisitor::QuickPrepareScreenRenderNode(RSScreenRenderNode& node)
     curScreenNode_->UpdateScreenRenderParams();
     UpdateColorSpaceAfterHwcCalc(node);
     RSHdrUtil::UpdatePixelFormatAfterHwcCalc(node);
+
+#ifdef SUBTREE_PARALLEL_ENABLE
+    RSParallelManager::Singleton().HitPolicy(node);
+#endif
+
     HandleColorGamuts(node);
     HandlePixelFormat(node);
     if (UNLIKELY(!SharedTransitionParam::unpairedShareTransitions_.empty())) {
@@ -1079,9 +1104,7 @@ void RSUniRenderVisitor::QuickPrepareSurfaceRenderNode(RSSurfaceRenderNode& node
     }
 
     // avoid cross node subtree visited twice or more
-    UpdateSpecialLayersRecord(node);
-    UpdateBlackListRecord(node);
-    node.UpdateVirtualScreenWhiteListInfo(screenWhiteList_);
+    DealWithSpecialLayer(node);
     if (CheckSkipAndPrepareForCrossNode(node)) {
         RS_OPTIONAL_TRACE_END_LEVEL(TRACE_LEVEL_PRINT_NODEID);
         return;
@@ -1196,6 +1219,10 @@ void RSUniRenderVisitor::QuickPrepareSurfaceRenderNode(RSSurfaceRenderNode& node
     dirtyFlag_ = dirtyFlag;
     PrepareForUIFirstNode(node);
     PrepareForCrossNode(node);
+    if (node.GetSubThreadAssignable() || (!node.IsFocusedNode(RSMainThread::Instance()->GetFocusNodeId()) &&
+        !node.IsFocusedNode(RSMainThread::Instance()->GetFocusLeashWindowId()))) {
+        node.ClearSubtreeParallelNodes();
+    }
     node.UpdateInfoForClonedNode(clonedSourceNodeId_);
     node.GetOpincCache().OpincSetInAppStateEnd(unchangeMarkInApp_);
     ResetCurSurfaceInfoAsUpperSurfaceParent(node);
@@ -1686,6 +1713,8 @@ void RSUniRenderVisitor::QuickPrepareCanvasRenderNode(RSCanvasRenderNode& node)
         RSOpincManager::Instance().OpincGetNodeSupportFlag(node));
     node.UpdateOpincParam();
     offscreenCanvasNodeId_ = preOffscreenCanvasNodeId;
+    // used in subtree, add node into parallel list
+    node.UpdateSubTreeParallelNodes();
 
     // [Attention] Only used in PC window resize scene now
     NodeId linedRootNodeId = node.GetLinkedRootNodeId();
@@ -1746,14 +1775,14 @@ void RSUniRenderVisitor::QuickPrepareChildren(RSRenderNode& node)
     if (node.LastFrameSubTreeSkipped() && curSurfaceDirtyManager_) {
         node.ForceMergeSubTreeDirtyRegion(*curSurfaceDirtyManager_, prepareClipRect_);
     }
-    // Collect prepared node into the control-level occlusion culling handler.
-    CollectNodeForOcclusion(node);
+    CollectNodeForOcclusion(node); // Collect prepared node into the control-level occlusion culling handler.
     bool animationBackup = ancestorNodeHasAnimation_;
     ancestorNodeHasAnimation_ = ancestorNodeHasAnimation_ || node.GetCurFrameHasAnimation();
     node.ResetChildRelevantFlags();
     node.ResetChildUifirstSupportFlag();
+    node.ClearSubtreeParallelNodes();
+    node.ResetRepaintBoundaryInfo();
     auto children = node.GetSortedChildren();
-
     if (NeedPrepareChindrenInReverseOrder(node)) {
         auto& curFrameInfoDetail = node.GetCurFrameInfoDetail();
         curFrameInfoDetail.curFrameReverseChildren = true;
@@ -1771,6 +1800,7 @@ void RSUniRenderVisitor::QuickPrepareChildren(RSRenderNode& node)
             child->SetFirstLevelCrossNode(node.IsFirstLevelCrossNode() || child->IsCrossNode());
             child->GetHwcRecorder().SetZOrderForHwcEnableByFilter(hwcVisitor_->curZOrderForHwcEnableByFilter_++);
             child->QuickPrepare(shared_from_this());
+            node.MergeSubtreeParallelNodes(*child);
             curContainerDirty_ = containerDirty;
         });
     } else {
@@ -1786,6 +1816,7 @@ void RSUniRenderVisitor::QuickPrepareChildren(RSRenderNode& node)
             child->SetFirstLevelCrossNode(node.IsFirstLevelCrossNode() || child->IsCrossNode());
             child->GetHwcRecorder().SetZOrderForHwcEnableByFilter(hwcVisitor_->curZOrderForHwcEnableByFilter_++);
             child->QuickPrepare(shared_from_this());
+            node.MergeSubtreeParallelNodes(*child);
         });
     }
     ancestorNodeHasAnimation_ = animationBackup;
@@ -2895,6 +2926,9 @@ CM_INLINE void RSUniRenderVisitor::PostPrepare(RSRenderNode& node, bool subTreeS
     auto globalHwcFilterRect = node.IsInstanceOf<RSEffectRenderNode>() && !node.FirstFrameHasEffectChildren() ?
         hwcVisitor_->GetHwcVisibleEffectDirty(node, globalFilterRect) : globalFilterRect;
     if (node.NeedDrawBehindWindow()) {
+        if (isOccluded && !node.IsFirstLevelCrossNode()) {
+            UpdateChildBlurBehindWindowAbsMatrix(node);
+        }
         node.CalDrawBehindWindowRegion();
         globalFilterRect = node.GetFilterRect();
     }
@@ -2935,6 +2969,7 @@ CM_INLINE void RSUniRenderVisitor::PostPrepare(RSRenderNode& node, bool subTreeS
             RSOpincManager::Instance().OpincGetNodeSupportFlag(node),
             node.GetOpincCache().OpincGetRootFlag(),
             nodeParent->GetNodeGroupType() == RSRenderNode::NodeGroupType::NONE);
+        nodeParent->UpdateRepaintBoundaryInfo(node);
     }
     auto& stagingRenderParams = node.GetStagingRenderParams();
     if (stagingRenderParams != nullptr) {
@@ -3534,6 +3569,31 @@ void RSUniRenderVisitor::HandleTunnelLayerId(RSSurfaceRenderNode& node)
     RS_LOGI("%{public}s lpp surfaceid:%{public}" PRIu64 ", nodeid:%{public}" PRIu64,
         __func__, tunnelLayerId, node.GetId());
     RS_TRACE_NAME_FMT("%s lpp surfaceid:%" PRIu64 ", nodeid:%" PRIu64, __func__, tunnelLayerId, node.GetId());
+}
+
+void RSUniRenderVisitor::UpdateChildBlurBehindWindowAbsMatrix(RSRenderNode& node)
+{
+    auto surfaceNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(node.shared_from_this());
+    if (!surfaceNode) {
+        RS_LOGE("RSUniRenderVisitor::UpdateChildBlurBehindWindowAbsMatrix not surfaceNode");
+        return;
+    }
+    const auto& nodeMap = RSMainThread::Instance()->GetContext().GetNodeMap();
+    for (auto& childId : surfaceNode->GetChildBlurBehindWindow()) {
+        auto child = nodeMap.GetRenderNode<RSRenderNode>(childId);
+        if (!child) {
+            RS_LOGE("RSUniRenderVisitor::UpdateChildBlurBehindWindowAbsMatrix child[%{public}" PRIu64 "] nullptr",
+                childId);
+            continue;
+        }
+        Drawing::Matrix absMatrix;
+        if (!child->GetAbsMatrixReverse(node, absMatrix)) {
+            RS_LOGE("RSUniRenderVisitor::UpdateChildBlurBehindWindowAbsMatrix child[%{public}" PRIu64
+                "] GetAbsMatrixReverse fail", childId);
+            continue;
+        }
+        child->GetRenderProperties().GetBoundsGeometry()->SetAbsMatrix(absMatrix);
+    }
 }
 } // namespace Rosen
 } // namespace OHOS

@@ -36,6 +36,10 @@
 #include "rs_profiler_capture_recorder.h"
 #endif
 
+#ifdef SUBTREE_PARALLEL_ENABLE
+#include "rs_parallel_manager.h"
+#endif
+
 namespace OHOS::Rosen::DrawableV2 {
 
 namespace {
@@ -207,7 +211,14 @@ void RSLogicalDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     }
 
     // canvas draw
+#ifdef SUBTREE_PARALLEL_ENABLE
+    if (!RSParallelManager::Singleton().OnDrawLogicDisplayNodeDrawable(this, curCanvas_)) {
+        RSRenderNodeDrawable::OnDraw(*curCanvas_);
+    }
+#else
     RSRenderNodeDrawable::OnDraw(*curCanvas_);
+#endif
+   
     DrawAdditionalContent(*curCanvas_);
 
     if (needOffscreen && canvasBackup_) {
@@ -362,54 +373,56 @@ void RSLogicalDisplayRenderNodeDrawable::DrawWatermarkIfNeed(RSPaintFilterCanvas
         RS_LOGE("RSLogicalDisplayRenderNodeDrawable::DrawWatermarkIfNeed params is null");
         return;
     }
+    auto screenManager = CreateOrGetScreenManager();
+    if (UNLIKELY(screenManager == nullptr)) {
+        RS_LOGE("RSLogicalDisplayRenderNodeDrawable::DrawWatermarkIfNeed screenManager is null");
+        return;
+    }
     auto image = RSUniRenderThread::Instance().GetWatermarkImg();
     if (UNLIKELY(image == nullptr)) {
         RS_LOGE("RSLogicalDisplayRenderNodeDrawable::DrawWatermarkIfNeed image is null");
         return;
     }
-    if (auto screenManager = CreateOrGetScreenManager()) {
-        RS_TRACE_FUNC();
-        auto screenInfo = screenManager->QueryScreenInfo(params->GetScreenId());
-        auto mainWidth = static_cast<float>(screenInfo.width);
-        auto mainHeight = static_cast<float>(screenInfo.height);
-        canvas.Save();
-        canvas.ResetMatrix();
-        auto rotation = params->GetScreenRotation();
-        auto screenId = params->GetScreenId();
-        auto screenCorrection = screenManager->GetScreenCorrection(screenId);
-        if (screenCorrection != ScreenRotation::INVALID_SCREEN_ROTATION &&
-            screenCorrection != ScreenRotation::ROTATION_0) {
-            // Recaculate rotation if mirrored screen has additional rotation angle
-            rotation = static_cast<ScreenRotation>((static_cast<int>(rotation) + SCREEN_ROTATION_NUM
-                - static_cast<int>(screenCorrection)) % SCREEN_ROTATION_NUM);
-        }
+    RS_TRACE_FUNC();
+    canvas.Save();
+    canvas.ResetMatrix();
 
-        if (rotation == ScreenRotation::ROTATION_90 || rotation == ScreenRotation::ROTATION_270) {
-            std::swap(mainWidth, mainHeight);
-        }
+    auto rotation = params->GetScreenRotation();
+    auto screenCorrection = screenManager->GetScreenCorrection(params->GetScreenId());
+    auto mainWidth = params->GetFrameRect().GetWidth();
+    auto mainHeight = params->GetFrameRect().GetHeight();
 
-        if (rotation != ScreenRotation::ROTATION_0) {
-            if (rotation == ScreenRotation::ROTATION_90) {
-                canvas.Rotate(-(RS_ROTATION_90), 0, 0); // 90 degree
-                canvas.Translate(-(static_cast<float>(mainWidth)), 0);
-            } else if (rotation == ScreenRotation::ROTATION_180) {
-                canvas.Rotate(-(RS_ROTATION_180), static_cast<float>(mainWidth) / 2, // 2 half of screen width
-                    static_cast<float>(mainHeight) / 2); // 2 half of screen height
-            } else if (rotation == ScreenRotation::ROTATION_270) {
-                canvas.Rotate(-(RS_ROTATION_270), 0, 0); // 270 degree
-                canvas.Translate(0, -(static_cast<float>(mainHeight)));
-            }
-        }
-
-        auto srcRect = Drawing::Rect(0, 0, image->GetWidth(), image->GetHeight());
-        auto dstRect = Drawing::Rect(0, 0, mainWidth, mainHeight);
-        Drawing::Brush rectBrush;
-        canvas.AttachBrush(rectBrush);
-        canvas.DrawImageRect(*image, srcRect, dstRect, Drawing::SamplingOptions(),
-            Drawing::SrcRectConstraint::STRICT_SRC_RECT_CONSTRAINT);
-        canvas.DetachBrush();
-        canvas.Restore();
+    if (screenCorrection != ScreenRotation::INVALID_SCREEN_ROTATION &&
+        screenCorrection != ScreenRotation::ROTATION_0) {
+        // Recaculate rotation if mirrored screen has additional rotation angle
+        rotation = static_cast<ScreenRotation>((static_cast<int>(rotation) + SCREEN_ROTATION_NUM -
+            static_cast<int>(screenCorrection)) % SCREEN_ROTATION_NUM);
     }
+
+    if ((static_cast<int32_t>(rotation) - static_cast<int32_t>(params->GetNodeRotation())) % 2) {
+        std::swap(mainWidth, mainHeight);
+    }
+    if (rotation != ScreenRotation::ROTATION_0) {
+        if (rotation == ScreenRotation::ROTATION_90) {
+            canvas.Rotate(-(RS_ROTATION_90), 0, 0); // 90 degree
+            canvas.Translate(-(static_cast<float>(mainWidth)), 0);
+        } else if (rotation == ScreenRotation::ROTATION_180) {
+            canvas.Rotate(-(RS_ROTATION_180), static_cast<float>(mainWidth) / 2, // 2 half of screen width
+                static_cast<float>(mainHeight) / 2); // 2 half of screen height
+        } else if (rotation == ScreenRotation::ROTATION_270) {
+            canvas.Rotate(-(RS_ROTATION_270), 0, 0); // 270 degree
+            canvas.Translate(0, -(static_cast<float>(mainHeight)));
+        }
+    }
+
+    auto srcRect = Drawing::Rect(0, 0, image->GetWidth(), image->GetHeight());
+    auto dstRect = Drawing::Rect(0, 0, mainWidth, mainHeight);
+    Drawing::Brush rectBrush;
+    canvas.AttachBrush(rectBrush);
+    canvas.DrawImageRect(*image, srcRect, dstRect, Drawing::SamplingOptions(),
+        Drawing::SrcRectConstraint::STRICT_SRC_RECT_CONSTRAINT);
+    canvas.DetachBrush();
+    canvas.Restore();
 }
 
 void RSLogicalDisplayRenderNodeDrawable::UpdateDisplayDirtyManager(std::shared_ptr<RSDirtyRegionManager> dirtyManager,

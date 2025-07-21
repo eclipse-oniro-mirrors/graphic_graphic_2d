@@ -354,6 +354,9 @@ ErrCode RSRenderServiceConnection::CommitTransaction(std::unique_ptr<RSTransacti
         RS_LOGW("CommitTransaction data droped");
         return ERR_INVALID_VALUE;
     }
+    if (transactionData && transactionData->GetDVSyncUpdate()) {
+        mainThread_->DVSyncUpdate(transactionData->GetDVSyncTime(), transactionData->GetTimestamp());
+    }
     bool isProcessBySingleFrame = mainThread_->IsNeedProcessBySingleFrameComposer(transactionData);
     if (isProcessBySingleFrame) {
         mainThread_->ProcessDataBySingleFrameComposer(transactionData);
@@ -2335,8 +2338,12 @@ ErrCode RSRenderServiceConnection::GetPixelmap(NodeId id, const std::shared_ptr<
         } else if (tid == UNI_RENDER_THREAD_INDEX) {
             renderThread->PostTask(getDrawablePixelmapTask);
         } else {
-            RSTaskDispatcher::GetInstance().PostTask(
-                RSSubThreadManager::Instance()->GetReThreadIndexMap()[tid], getDrawablePixelmapTask, false);
+            auto tidMap = RSSubThreadManager::Instance()->GetReThreadIndexMap();
+            if (auto found = tidMap.find(tid); found != tidMap.end()) {
+                RSTaskDispatcher::GetInstance().PostTask(found->second, getDrawablePixelmapTask, false);
+            } else {
+                renderThread->PostTask(getDrawablePixelmapTask);
+            }
         }
     };
     mainThread_->PostTask(getPixelMapTask);
@@ -2679,6 +2686,9 @@ ErrCode RSRenderServiceConnection::NotifyLightFactorStatus(int32_t lightFactorSt
 
 void RSRenderServiceConnection::NotifyPackageEvent(uint32_t listSize, const std::vector<std::string>& packageList)
 {
+    if (!mainThread_) {
+        return;
+    }
     mainThread_->NotifyPackageEvent(packageList);
     HgmTaskHandleThread::Instance().PostTask([pid = remotePid_, listSize, packageList]() {
         auto frameRateMgr = HgmCore::Instance().GetFrameRateMgr();

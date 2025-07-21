@@ -1292,14 +1292,52 @@ void RSMainThread::RequestNextVsyncForCachedCommand(std::string& transactionFlag
 #endif
 }
 
+bool RSMainThread::NeedConsumeMultiCommand(uint32_t& dvsyncPid)
+{
+    bool needUpdateDVSyncTime = rsVSyncDistributor_->NeedUpdateVSyncTime(dvsyncPid);
+    int64_t lastUpdateTime = rsVSyncDistributor_->GetLastUpdateTime();
+    if (needUpdateDVSyncTime) {
+        RS_TRACE_NAME("lastUpdateTime:" + std::to_string(lastUpdateTime));
+        if (lastUpdateTime + static_cast<uint64_t>(rsVSyncDistributor_->GetUiCommandDelayTime()) < timestamp_) {
+            RS_TRACE_NAME("needConsume:true");
+            return true;
+        }
+    }
+    return false;
+}
+
+bool RSMainThread::NeedConsumeDVSyncCommand(uint32_t& endIndex,
+    std::vector<std::unique_ptr<RSTransactionData>>& transactionVec)
+{
+    uint64_t lastTime = 0;
+    for (auto it = transactionVec.begin(); it != transactionVec.end(); ++it) {
+        uint64_t curTime = (*it)->GetTimestamp();
+        if (curTime < lastTime) {
+            endIndex = (*it)->GetIndex();
+            rsVSyncDistributor_->SetVSyncTimeUpdated();
+            RS_TRACE_NAME("isDVSyncConsume:true");
+            return true;
+        }
+        lastTime = curTime;
+    }
+    return false;
+}
+
 void RSMainThread::CheckAndUpdateTransactionIndex(std::shared_ptr<TransactionDataMap>& transactionDataEffective,
     std::string& transactionFlags)
 {
+    uint32_t dvsyncPid = 0;
+    bool needConsume = NeedConsumeMultiCommand(dvsyncPid);
     for (auto& rsTransactionElem: effectiveTransactionDataIndexMap_) {
         auto pid = rsTransactionElem.first;
         auto& lastIndex = rsTransactionElem.second.first;
         auto& transactionVec = rsTransactionElem.second.second;
         auto iter = transactionVec.begin();
+        uint32_t endIndex = 0;
+        bool isDVSyncConsume = false;
+        if (needConsume && pid == dvsyncPid) {
+            isDVSyncConsume = NeedConsumeDVSyncCommand(endIndex, transactionVec);
+        }
         for (; iter != transactionVec.end(); ++iter) {
             if ((*iter) == nullptr) {
                 continue;
@@ -1311,7 +1349,8 @@ void RSMainThread::CheckAndUpdateTransactionIndex(std::shared_ptr<TransactionDat
             RS_PROFILER_REPLAY_FIX_TRINDEX(curIndex, lastIndex);
             if (curIndex == lastIndex + 1) {
                 if ((*iter)->GetTimestamp() + static_cast<uint64_t>(rsVSyncDistributor_->GetUiCommandDelayTime())
-                    + rsVSyncDistributor_->GetRsDelayTime(pid) >= timestamp_) {
+                    + rsVSyncDistributor_->GetRsDelayTime(pid)
+                    >= timestamp_ && (!isDVSyncConsume || curIndex > endIndex)) {
                     RequestNextVsyncForCachedCommand(transactionFlags, pid, curIndex);
                     break;
                 }
@@ -1604,15 +1643,14 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
                 }
             }
             surfaceHandler->ResetCurrentFrameBufferConsumed();
-            bool needConsume = true;
             bool enableAdaptive = rsVSyncDistributor_->AdaptiveDVSyncEnable(
-                surfaceNode->GetName(), timestamp_, surfaceHandler->GetAvailableBufferCount(), needConsume);
+                surfaceNode->GetName(), timestamp_, surfaceHandler->GetAvailableBufferCount());
             auto parentNode = surfaceNode->GetParent().lock();
             bool needSkip = IsSurfaceConsumerNeedSkip(surfaceHandler->GetConsumer());
             LppVideoHandler::Instance().AddLppSurfaceNode(surfaceNode);
             if (!needSkip && RSBaseRenderUtil::ConsumeAndUpdateBuffer(*surfaceHandler, timestamp_,
-                    IsNeedDropFrameByPid(surfaceHandler->GetNodeId()), enableAdaptive, needConsume,
-                    parentNode ? parentNode->GetId() : 0)) {
+                IsNeedDropFrameByPid(surfaceHandler->GetNodeId()), enableAdaptive,
+                parentNode ? parentNode->GetId() : 0)) {
                 HandleTunnelLayerId(surfaceHandler, surfaceNode);
                 if (!isUniRender_) {
                     this->dividedRenderbufferTimestamps_[surfaceNode->GetId()] =
@@ -5279,6 +5317,11 @@ void RSMainThread::SetBufferInfo(uint64_t id, const std::string &name, uint32_t 
     rsVSyncDistributor_->SetBufferInfo(id, name, queueSize, bufferCount, lastConsumeTime, isUrgent);
 }
 
+void RSMainThread::SetBufferQueueInfo(const std::string &name, int32_t bufferCount, int64_t lastFlushedTimeStamp)
+{
+    rsVSyncDistributor_->SetBufferQueueInfo(name, bufferCount, lastFlushedTimeStamp);
+}
+
 void RSMainThread::SetTaskEndWithTime(int64_t time)
 {
     rsVSyncDistributor_->SetTaskEndWithTime(time);
@@ -5381,6 +5424,11 @@ void RSMainThread::HandleTunnelLayerId(const std::shared_ptr<RSSurfaceHandler>& 
     surfaceNode->SetTunnelLayerId(newTunnelLayerId);
     RS_LOGI("%{public}s lpp surfaceid:%{public}" PRIu64, __func__, newTunnelLayerId);
     RS_TRACE_NAME_FMT("%s lpp surfaceid=%" PRIu64, __func__, newTunnelLayerId);
+}
+
+void RSMainThread::DVSyncUpdate(uint64_t dvsyncTime, uint64_t vsyncTime)
+{
+    rsVSyncDistributor_->DVSyncUpdate(dvsyncTime, vsyncTime);
 }
 } // namespace Rosen
 } // namespace OHOS
