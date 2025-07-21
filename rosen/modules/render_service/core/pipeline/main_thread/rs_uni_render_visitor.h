@@ -259,6 +259,7 @@ private:
     void MergeRemovedChildDirtyRegion(RSRenderNode& node, bool needMap = false);
     // Reset curSurface info as upper surfaceParent in case surfaceParent has multi children
     void ResetCurSurfaceInfoAsUpperSurfaceParent(RSSurfaceRenderNode& node);
+    bool CheckIfSkipDrawInVirtualScreen(RSSurfaceRenderNode& node);
 
     void CheckColorSpace(RSSurfaceRenderNode& node);
     void CheckColorSpaceWithSelfDrawingNode(RSSurfaceRenderNode& node);
@@ -282,7 +283,7 @@ private:
     inline bool IsValidInVirtualScreen(const RSSurfaceRenderNode& node) const
     {
         const auto& specialLayerMgr = node.GetSpecialLayerMgr();
-        if (specialLayerMgr.Find(IS_GENERAL_SPECIAL)) {
+        if (specialLayerMgr.Find(IS_GENERAL_SPECIAL) || isSkipDrawInVirtualScreen_) {
             return false; // surface is special layer
         }
         if (!allWhiteList_.empty() || allBlackList_.count(node.GetId()) != 0) {
@@ -472,6 +473,8 @@ private:
     NodeId offscreenCanvasNodeId_ = INVALID_NODEID;
 
     int32_t rsScreenNodeChildNum_ = 0;
+    
+    bool isSkipDrawInVirtualScreen_ = false;
 };
 } // namespace Rosen
 } // namespace OHOS
