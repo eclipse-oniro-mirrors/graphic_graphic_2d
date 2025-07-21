@@ -1633,15 +1633,23 @@ HWTEST_F(RSUniRenderVisitorTest, DealWithSpecialLayer, TestSize.Level1)
 {
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
     ASSERT_NE(rsUniRenderVisitor, nullptr);
+    NodeId displayNodeId = 1;
+    RSDisplayNodeConfig config;
+    rsUniRenderVisitor->curLogicalDisplayNode_ = std::make_shared<RSLogicalDisplayRenderNode>(displayNodeId, config);
 
     auto node = RSTestUtil::CreateSurfaceNode();
     ASSERT_NE(node, nullptr);
+    node->SetSecurityLayer(true);
     rsUniRenderVisitor->DealWithSpecialLayer(*node);
     node->isCloneCrossNode_ = true;
-    ASSERT_EQ(node->IsCrossNode(), true);
+    ASSERT_EQ(node->IsCloneCrossNode(), true);
     rsUniRenderVisitor->DealWithSpecialLayer(*node);
-    node->sourceCrossNode_ = RSTestUtil::CreateSurfaceNode();
+    ASSERT_TRUE(rsUniRenderVisitor->curLogicalDisplayNode_->GetSpecialLayerMgr().Find(SpecialLayerType::HAS_SECURITY));
+    auto sourceNode = RSTestUtil::CreateSurfaceNode();
+    node->sourceCrossNode_ = sourceNode;
+    ASSERT_NE(node->GetSourceCrossNode().lock(), nullptr);
     rsUniRenderVisitor->DealWithSpecialLayer(*node);
+    ASSERT_TRUE(rsUniRenderVisitor->curLogicalDisplayNode_->GetSpecialLayerMgr().Find(SpecialLayerType::HAS_SECURITY));
 }
 /**
  * @tc.name: CheckSkipCrossNodeTest
@@ -4754,6 +4762,51 @@ HWTEST_F(RSUniRenderVisitorTest, IsValidInVirtualScreen008, TestSize.Level2)
     ++otherSurfaceNodeId;
     rsUniRenderVisitor->allBlackList_.emplace(otherSurfaceNodeId);
     EXPECT_EQ(rsUniRenderVisitor->IsValidInVirtualScreen(*surfaceNode), true);
+}
+
+/*
+ * @tc.name: IsValidInVirtualScreen009
+ * @tc.desc: Test IsValidInVirtualScreen with is isSkipDrawInVirtualScreen_
+ * @tc.type: FUNC
+ * @tc.require: issueICNBRB
+ */
+HWTEST_F(RSUniRenderVisitorTest, IsValidInVirtualScreen009, TestSize.Level2)
+{
+    auto surfaceNode = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(surfaceNode, nullptr);
+    surfaceNode->SetSecurityLayer(true);
+    surfaceNode->SetIsOnTheTree(true, surfaceNode->GetId(), surfaceNode->GetId());
+    surfaceNode->nodeType_ = RSSurfaceNodeType::LEASH_WINDOW_NODE;
+
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    ASSERT_NE(rsUniRenderVisitor, nullptr);
+    rsUniRenderVisitor->isSkipDrawInVirtualScreen_ = true;
+    EXPECT_EQ(rsUniRenderVisitor->IsValidInVirtualScreen(*surfaceNode), false);
+    rsUniRenderVisitor->isSkipDrawInVirtualScreen_ = false;
+    EXPECT_EQ(rsUniRenderVisitor->IsValidInVirtualScreen(*surfaceNode), false);
+}
+
+/*
+ * @tc.name: CheckIfSkipDrawInVirtualScreen
+ * @tc.desc: Test CheckIfSkipDrawInVirtualScreen with is isSkipDrawInVirtualScreen_
+ * @tc.type: FUNC
+ * @tc.require: issueICNBRB
+ */
+HWTEST_F(RSUniRenderVisitorTest, CheckIfSkipDrawInVirtualScreen, TestSize.Level2)
+{
+    auto surfaceNode = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(surfaceNode, nullptr);
+    surfaceNode->SetSurfaceNodeType(RSSurfaceNodeType::LEASH_WINDOW_NODE);
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    ASSERT_NE(rsUniRenderVisitor, nullptr);
+
+    rsUniRenderVisitor->allBlackList_.emplace(surfaceNode->GetId());
+    ASSERT_TRUE(rsUniRenderVisitor->CheckIfSkipDrawInVirtualScreen(*surfaceNode));
+    rsUniRenderVisitor->allBlackList_.clear();
+    NodeId leashPersistentId = 5;
+    surfaceNode->SetLeashPersistentId(leashPersistentId);
+    rsUniRenderVisitor->allBlackList_.emplace(surfaceNode->GetLeashPersistentId());
+    ASSERT_TRUE(rsUniRenderVisitor->CheckIfSkipDrawInVirtualScreen(*surfaceNode));
 }
 
 /*
