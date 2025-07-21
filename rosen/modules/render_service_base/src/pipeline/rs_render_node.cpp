@@ -1048,6 +1048,7 @@ void RSRenderNode::DumpTree(int32_t depth, std::string& out) const
     DumpModifiers(out);
     animationManager_.DumpAnimations(out);
     ChildrenListDump(out);
+
     for (auto& child : children_) {
         if (auto c = child.lock()) {
             c->DumpTree(depth + 1, out);
