@@ -55,16 +55,11 @@ std::map<uint32_t, int64_t> IDEAL_PERIOD = {
 
 void HgmCore::SysModeChangeProcess(const char* key, const char* value, void* context)
 {
-    auto policyConfigData = reinterpret_cast<PolicyConfigData*>(context);
-    if (!policyConfigData) {
-        HGM_LOGE("policyConfigData nullptr");
-        return;
-    }
     std::string mode(value);
     HGM_LOGI("System mode change, mode is %{public}s", value);
-    HgmTaskHandleThread::Instance().PostTask([policyConfigData, mode] () {
+    HgmTaskHandleThread::Instance().PostTask([mode] () {
         auto curMode = HgmCore::Instance().GetCurrentRefreshRateMode();
-        policyConfigData->UpdateRefreshRateForSettings(mode);
+        HgmCore::Instance().GetPolicyConfigData()->UpdateRefreshRateForSettings(mode);
         auto setResult = HgmCore::Instance().SetRefreshRateMode(curMode);
         RSSystemProperties::SetHgmRefreshRateModesEnabled(std::to_string(curMode));
         if (setResult != 0) {
@@ -516,7 +511,7 @@ uint32_t HgmCore::GetScreenCurrentRefreshRate(ScreenId id) const
 int32_t HgmCore::GetCurrentRefreshRateMode() const
 {
     if (mPolicyConfigData_ != nullptr && mPolicyConfigData_->xmlCompatibleMode_) {
-        auto ret = mPolicyConfigData_->XmlModeId2SettingModeId(customFrameRateMode_);
+        auto ret = mPolicyConfigData_->XmlModeId2SettingModeId(std::to_string(customFrameRateMode_));
         HGM_LOGI("In GetCurrentRefreshRateMode, xmlid: %{public}d, setid: %{public}d", customFrameRateMode_, ret);
         return ret;
     }

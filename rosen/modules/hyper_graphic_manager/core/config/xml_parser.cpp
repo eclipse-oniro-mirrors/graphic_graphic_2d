@@ -217,7 +217,7 @@ int32_t XMLParser::ParseRefreshRate4Settings(xmlNode& node)
         mParsedData_->xmlCompatibleMode_ = true;
         setResult = ParseSimplex(node, refreshRateForSettingsTemp, "id");
     }
-    for (auto &[name, id]: refreshRateForSettingsTemp) {
+    for (auto& [name, id]: refreshRateForSettingsTemp) {
         if (IsNumber(name) && IsNumber(id)) {
             refreshRateForSettings.emplace_back(
                 std::pair<int32_t, int32_t>(std::stoi(name), std::stoi(id)));

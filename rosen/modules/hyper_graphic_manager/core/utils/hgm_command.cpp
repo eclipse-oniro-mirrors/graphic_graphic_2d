@@ -171,7 +171,7 @@ std::optional<std::string> PolicyConfigVisitorImpl::SettingModeId2XmlModeId(int3
 std::optional<int32_t> PolicyConfigVisitorImpl::XmlModeId2SettingModeId(const std::string& xmlModeId) const
 {
     std::optional<int32_t> settingModeId;
-    auto ret = configData_.XmlModeId2SettingModeId(std::stoi(xmlModeId));
+    auto ret = configData_.XmlModeId2SettingModeId(xmlModeId);
     if (ret == 0) {
         return settingModeId;
     }

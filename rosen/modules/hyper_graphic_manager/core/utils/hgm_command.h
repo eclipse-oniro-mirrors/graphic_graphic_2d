@@ -255,10 +255,10 @@ public:
         return refreshRateForSettings_[settingModeId].second;
     }
 
-    int32_t XmlModeId2SettingModeId(int32_t xmlModeId) const
+    int32_t XmlModeId2SettingModeId(const std::string& xmlModeId) const
     {
         auto iter = std::find_if(refreshRateForSettings_.begin(), refreshRateForSettings_.end(),
-            [=] (auto nameModeId) { return nameModeId.second == xmlModeId; });
+            [=] (auto nameModeId) { return std::to_string(nameModeId.second) == xmlModeId; });
         if (iter == refreshRateForSettings_.end()) {
             return 0;
         }
