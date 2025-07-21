@@ -582,6 +582,7 @@ void RSMainThread::Init()
     });
     RSTaskDispatcher::GetInstance().RegisterTaskDispatchFunc(gettid(), taskDispatchFunc);
     RsFrameReport::GetInstance().Init();
+    RSUniHwcPrevalidateUtil::GetInstance().Init();
     RSSystemProperties::WatchSystemProperty(HIDE_NOTCH_STATUS, OnHideNotchStatusCallback, nullptr);
     RSSystemProperties::WatchSystemProperty(DRAWING_CACHE_DFX, OnDrawingCacheDfxSwitchCallback, nullptr);
     if (isUniRender_) {
