@@ -5429,5 +5429,13 @@ void RSMainThread::DVSyncUpdate(uint64_t dvsyncTime, uint64_t vsyncTime)
 {
     rsVSyncDistributor_->DVSyncUpdate(dvsyncTime, vsyncTime);
 }
+
+void RSMainThread::SetForceRsDVsync()
+{
+    if (rsVSyncDistributor_ != nullptr) {
+        RS_TRACE_NAME("RSMainThread::SetForceRsDVsync");
+        rsVSyncDistributor_->ForceRsDVsync();
+    }
+}
 } // namespace Rosen
 } // namespace OHOS

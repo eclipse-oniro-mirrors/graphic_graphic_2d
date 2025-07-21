@@ -80,6 +80,7 @@
 #include "render/rs_typeface_cache.h"
 #include "transaction/rs_unmarshal_thread.h"
 #include "transaction/rs_transaction_data_callback_manager.h"
+#include "graphic_feature_param_manager.h"
 
 #ifdef TP_FEATURE_ENABLE
 #include "screen_manager/touch_screen.h"
@@ -87,6 +88,10 @@
 
 #ifdef RS_ENABLE_VK
 #include "platform/ohos/backend/rs_vulkan_context.h"
+#endif
+
+#if defined(RS_ENABLE_DVSYNC)
+#include "dvsync.h"
 #endif
 
 #undef LOG_TAG
@@ -2857,8 +2862,16 @@ ErrCode RSRenderServiceConnection::NotifyXComponentExpectedFrameRate(const std::
 
 ErrCode RSRenderServiceConnection::ReportEventResponse(DataBaseRs info)
 {
-    auto task = [info]() -> void {
+    auto task = [weakThis = wptr<RSRenderServiceConnection>(this), info]() -> void {
         RSJankStats::GetInstance().SetReportEventResponse(info);
+        sptr<RSRenderServiceConnection> connection = weakThis.promote();
+        if (connection == nullptr || connection->mainThread_ == nullptr) {
+            return;
+        }
+        std::unordered_map<std::string, std::string> forceRsDVsyncConfig_ = DVSyncParam::GetForceRsDVsyncConfig();
+        if (!forceRsDVsyncConfig_.empty() && forceRsDVsyncConfig_.find(info.sceneId) != forceRsDVsyncConfig_.end()) {
+            connection->mainThread_->SetForceRsDVsync();
+        }
     };
 #ifdef RS_ENABLE_GPU
     renderThread_.PostTask(task);

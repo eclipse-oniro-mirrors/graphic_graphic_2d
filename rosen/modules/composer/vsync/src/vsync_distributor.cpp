@@ -1988,5 +1988,13 @@ void VSyncDistributor::DVSyncUpdate(uint64_t dvsyncTime, uint64_t vsyncTime)
     DVSync::Instance().DVSyncUpdate(dvsyncTime, vsyncTime);
 #endif
 }
+
+void VSyncDistributor::ForceRsDVsync()
+{
+#if defined(RS_ENABLE_DVSYNC_2)
+    RS_TRACE_NAME("VSyncDistributor::ForceRsDVsync");
+    DVSync::Instance().ForceRsDVsync();
+#endif
+}
 }
 }
