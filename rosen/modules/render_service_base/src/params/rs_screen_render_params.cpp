@@ -186,7 +186,13 @@ bool RSScreenRenderParams::GetZoomed() const
 
 void RSScreenRenderParams::SetHasMirrorScreen(bool hasMirrorScreen)
 {
-    if (hasMirrorScreen_ == hasMirrorScreen) {
+    if (hasMirrorScreen) {
+        mirrorDstCount_++;
+    } else {
+        mirrorDstCount_--;
+    }
+    bool ret = (mirrorDstCount_ != 0);
+    if (hasMirrorScreen_ == ret) {
         return;
     }
     needSync_ = true;
@@ -271,20 +277,6 @@ std::string RSScreenRenderParams::ToString() const
 DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr RSScreenRenderParams::GetMirrorSourceDrawable()
 {
     return mirrorSourceDrawable_;
-}
-
-void RSScreenRenderParams::SetNeedOffscreen(bool needOffscreen)
-{
-    if (needOffscreen_ == needOffscreen) {
-        return;
-    }
-    needOffscreen_ = needOffscreen;
-    needSync_ = true;
-}
-
-bool RSScreenRenderParams::GetNeedOffscreen() const
-{
-    return needOffscreen_;
 }
 
 void RSScreenRenderParams::SetDrawnRegion(const Occlusion::Region& region)

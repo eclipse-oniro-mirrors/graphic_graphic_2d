@@ -2517,14 +2517,6 @@ bool RSMainThread::DoDirectComposition(std::shared_ptr<RSBaseRenderNode> rootNod
         return false;
     }
 
-    // children->size() is 1, the extended screen is not supported
-    // there is no visible hwc node or visible hwc nodes don't need update
-    if (children->size() == 1 && (!screenNode->HwcDisplayRecorder().HasVisibleHwcNodes() ||
-                                  !ExistBufferIsVisibleAndUpdate())) {
-        RS_TRACE_NAME_FMT("%s: no hwcNode in visibleRegion", __func__);
-        return true;
-    }
-
 #ifdef RS_ENABLE_GPU
     auto processor = RSProcessorFactory::CreateProcessor(screenNode->GetCompositeType());
     auto renderEngine = GetRenderEngine();
@@ -4889,13 +4881,13 @@ bool RSMainThread::IsSingleDisplay()
     return rootNode->GetChildrenCount() == 1;
 }
 
-// hsc todo
 bool RSMainThread::HasMirrorDisplay() const
 {
     bool hasWiredMirrorDisplay = false;
     bool hasVirtualMirrorDisplay = false;
     const std::shared_ptr<RSBaseRenderNode> rootNode = context_->GetGlobalRootRenderNode();
-    if (rootNode == nullptr || rootNode->GetChildrenCount() <= 1) {
+    bool isSingleNodeOrEmpty = rootNode == nullptr || rootNode->GetChildrenCount() <= 1;
+    if (isSingleNodeOrEmpty) {
         hasWiredMirrorDisplay_.store(false);
         hasVirtualMirrorDisplay_.store(false);
         LppVideoHandler::Instance().SetHasVirtualMirrorDisplay(false);
@@ -4903,7 +4895,8 @@ bool RSMainThread::HasMirrorDisplay() const
     }
 
     for (auto& child : *rootNode->GetSortedChildren()) {
-        if (!child || !child->IsInstanceOf<RSScreenRenderNode>()) {
+        bool isScreenNodeChild = child && child->IsInstanceOf<RSScreenRenderNode>();
+        if (!isScreenNodeChild) {
             continue;
         }
         auto screenNode = child->ReinterpretCastTo<RSScreenRenderNode>();

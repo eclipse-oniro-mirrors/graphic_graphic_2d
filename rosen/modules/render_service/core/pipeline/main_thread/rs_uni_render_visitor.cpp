@@ -302,7 +302,7 @@ void RSUniRenderVisitor::CheckColorSpaceWithSelfDrawingNode(RSSurfaceRenderNode&
         return;
     }
     if (curScreenNode_ == nullptr) {
-        RS_LOGD("CheckColorSpaceWithSelfDrawingNode curDisplayNode_ is nullptr");
+        RS_LOGD("CheckColorSpaceWithSelfDrawingNode curScreenNode_ is nullptr");
         return;
     }
     // currently, P3 is the only supported wide color gamut, this may be modified later.
@@ -360,10 +360,6 @@ bool IsScreenSupportedWideColorGamut(ScreenId id, const sptr<RSScreenManager>& s
 
 void RSUniRenderVisitor::HandleColorGamuts(RSScreenRenderNode& node)
 {
-    if (screenManager_ == nullptr) {
-        RS_LOGD("HandleColorGamuts screenManager is nullptr.");
-        return;
-    }
     RSScreenType screenType = BUILT_IN_TYPE_SCREEN;
     if (screenManager_->GetScreenType(node.GetScreenId(), screenType) != SUCCESS) {
         RS_LOGD("HandleColorGamuts get screen type failed.");
@@ -916,13 +912,12 @@ bool RSUniRenderVisitor::InitLogicalDisplayInfo(RSLogicalDisplayRenderNode& node
     curLogicalDisplayNode_->GetMultableSpecialLayerMgr().Set(HAS_GENERAL_SPECIAL, false);
     curLogicalDisplayNode_->SetCompositeType(curScreenNode_->GetCompositeType());
     curLogicalDisplayNode_->SetHasCaptureWindow(false);
-    curLogicalDisplayNode_->SetAncestorScreenNode(curScreenNode_);
     auto mirrorSourceNode = curLogicalDisplayNode_->GetMirrorSource().lock();
-    if (mirrorSourceNode) {
-        auto mirroredScreen = std::static_pointer_cast<RSScreenRenderNode>(
-            mirrorSourceNode->GetAncestorScreenNode().lock());
+    auto mirrorSourceScreenNode = mirrorSourceNode ?
+        std::static_pointer_cast<RSScreenRenderNode>(mirrorSourceNode->GetParent().lock()) : nullptr;
+    if (mirrorSourceScreenNode) {
         curScreenNode_->SetIsMirrorScreen(true);
-        curScreenNode_->SetMirrorSource(mirroredScreen);
+        curScreenNode_->SetMirrorSource(mirrorSourceScreenNode);
     } else {
         curScreenNode_->SetIsMirrorScreen(false);
         curScreenNode_->ResetMirrorSource();
@@ -1895,6 +1890,7 @@ bool RSUniRenderVisitor::InitScreenInfo(RSScreenRenderNode& node)
     allBlackList_ = screenManager_->GetAllBlackList();
     allWhiteList_ = screenManager_->GetAllWhiteList();
     screenWhiteList_ = screenManager_->GetScreenWhiteList();
+    node.GetLogicalDisplayNodeDrawables().clear();
 
     // 3 init Occlusion info
     needRecalculateOcclusion_ = false;
@@ -2471,12 +2467,12 @@ void RSUniRenderVisitor::UpdateHwcNodesIfVisibleForApp(std::shared_ptr<RSSurface
         auto visibleRegion = surfaceNode->GetVisibleRegion();
         visibleRegion.MakeBound();
         auto visibleRectI = visibleRegion.GetBound().ToRectI();
-        auto screenInfo = curScreenNode_->GetScreenInfo();
-        visibleRectI.left_ = static_cast<int>(std::round(visibleRectI.left_ * screenInfo.GetRogWidthRatio()));
-        visibleRectI.top_ = static_cast<int>(std::round(visibleRectI.top_ * screenInfo.GetRogHeightRatio()));
-        visibleRectI.width_ = static_cast<int>(std::round(visibleRectI.width_ * screenInfo.GetRogWidthRatio()));
-        visibleRectI.height_ =
-            static_cast<int>(std::round(visibleRectI.height_ * screenInfo.GetRogHeightRatio()));
+        auto widthRatio = curScreenNode_->GetScreenInfo().GetRogWidthRatio();
+        auto heightRatio = curScreenNode_->GetScreenInfo().GetRogHeightRatio();
+        visibleRectI.left_ = static_cast<int>(std::round(visibleRectI.left_ * widthRatio));
+        visibleRectI.top_ = static_cast<int>(std::round(visibleRectI.top_ * heightRatio));
+        visibleRectI.width_ = static_cast<int>(std::round(visibleRectI.width_ * widthRatio));
+        visibleRectI.height_ = static_cast<int>(std::round(visibleRectI.height_ * heightRatio));
         auto newRegionRect = Occlusion::Rect(visibleRectI, true);
         newRegionRect.Expand(EXPAND_ONE_PIX, EXPAND_ONE_PIX, EXPAND_ONE_PIX, EXPAND_ONE_PIX);
         Occlusion::Rect dstRect(hwcNodePtr->GetDstRect());
@@ -3400,43 +3396,59 @@ void RSUniRenderVisitor::ProcessUnpairedSharedTransitionNode()
 void RSUniRenderVisitor::CheckMergeDebugRectforRefreshRate(std::vector<RSBaseRenderNode::SharedPtr>& surfaces)
 {
     // Debug dirtyregion of show current refreshRation
-    if (RSRealtimeRefreshRateManager::Instance().GetShowRefreshRateEnabled()) {
-        if (curScreenNode_ == nullptr) {
-            RS_LOGE("RSUniRenderVisitor::CheckMergeDebugRectforRefreshRate  curScreenNode is nullptr");
-            return;
+    if (!RSRealtimeRefreshRateManager::Instance().GetShowRefreshRateEnabled()) {
+        return;
+    }
+    if (curScreenNode_ == nullptr) {
+        RS_LOGE("RSUniRenderVisitor::CheckMergeDebugRectforRefreshRate  curScreenNode is nullptr");
+        return;
+    }
+    static const RectI refreshDirtyRect = {100, 100, 500, 200};   // setDirtyRegion for RealtimeRefreshRate
+    bool surfaceNodeSet = false;
+    for (auto surface : surfaces) {
+        auto surfaceNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(surface);
+        if (surfaceNode == nullptr) {
+            RS_LOGE("RSUniRenderVisitor::CheckMergeDebugRectforRefreshRate surfaceNode is nullptr");
+            continue;
         }
-        RectI tempRect = {100, 100, 500, 200};   // setDirtyRegion for RealtimeRefreshRate
-        bool surfaceNodeSet = false;
-        bool needMapAbsRect = false;
-        for (auto surface : surfaces) {
-            auto surfaceNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(surface);
-            if (surfaceNode == nullptr) {
-                RS_LOGE("RSUniRenderVisitor::CheckMergeDebugRectforRefreshRate surfaceNode is nullptr");
+        if (surfaceNode->GetSurfaceWindowType() == SurfaceWindowType::SCB_GESTURE_BACK) {
+            // refresh rate rect for mainwindow
+            auto& surfaceGeoPtr = surfaceNode->GetRenderProperties().GetBoundsGeometry();
+            if (!surfaceGeoPtr) {
                 continue;
             }
-            if (surfaceNode->GetSurfaceWindowType() == SurfaceWindowType::SCB_GESTURE_BACK) {
-                // refresh rate rect for mainwindow
-                auto& geoPtr = surfaceNode->GetRenderProperties().GetBoundsGeometry();
-                if (!geoPtr) {
-                    break;
-                }
-                if (needMapAbsRect) {
-                    tempRect = geoPtr->MapAbsRect(tempRect.ConvertTo<float>());
-                }
-                curScreenNode_->GetDirtyManager()->MergeDirtyRect(tempRect, true);
-                surfaceNodeSet = true;
-                break;
+            auto displayNodeId = surfaceNode->GetLogicalDisplayNodeId();
+            const auto& nodeMap = RSMainThread::Instance()->GetContext().GetNodeMap();
+            auto displayNode = nodeMap.GetRenderNode<RSLogicalDisplayRenderNode>(displayNodeId);
+            if (!displayNode) {
+                continue;
             }
+            auto& displayGeoPtr = displayNode->GetRenderProperties().GetBoundsGeometry();
+            if (!displayGeoPtr) {
+                continue;
+            }
+            auto tmpRect = refreshDirtyRect;
+            auto windowContainer = displayNode->GetWindowContainer();
+            if (windowContainer &&
+                (!ROSEN_EQ(windowContainer->GetRenderProperties().GetScaleX(), 1.0f, EPSILON_SCALE) ||
+                 !ROSEN_EQ(windowContainer->GetRenderProperties().GetScaleY(), 1.0f, EPSILON_SCALE))) {
+                tmpRect = displayGeoPtr->MapAbsRect(tmpRect.ConvertTo<float>());
+            } else {
+                tmpRect = surfaceGeoPtr->MapAbsRect(tmpRect.ConvertTo<float>());
+            }
+            curScreenNode_->GetDirtyManager()->MergeDirtyRect(tmpRect, true);
+            surfaceNodeSet = true;
         }
-        if (!surfaceNodeSet) {
-            auto &geoPtr = curScreenNode_->GetRenderProperties().GetBoundsGeometry();
+    }
+    if (!surfaceNodeSet) {
+        for (auto& displayNode : *curScreenNode_->GetChildren()) {
+            auto& geoPtr = curScreenNode_->GetRenderProperties().GetBoundsGeometry();
             if (!geoPtr) {
-                return;
+                continue;
             }
-            if (needMapAbsRect) {
-                tempRect = geoPtr->MapAbsRect(tempRect.ConvertTo<float>());
-            }
-            curScreenNode_->GetDirtyManager()->MergeDirtyRect(tempRect, true);
+            auto tmpRect = refreshDirtyRect;
+            tmpRect = geoPtr->MapAbsRect(tmpRect.ConvertTo<float>());
+            curScreenNode_->GetDirtyManager()->MergeDirtyRect(tmpRect, true);
         }
     }
 }
