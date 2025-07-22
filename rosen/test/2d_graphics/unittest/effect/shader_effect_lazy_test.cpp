@@ -23,6 +23,7 @@
 #include "effect/blend_shader_obj.h"
 #include "effect/shader_effect.h"
 #include "effect/shader_effect_lazy.h"
+#include "effect_test_utils.h"
 #include "transaction/rs_marshalling_helper.h"
 #include "utils/object_helper.h"
 
@@ -38,46 +39,20 @@ public:
     static void TearDownTestCase();
     void SetUp() override;
     void TearDown() override;
-private:
-#ifdef ROSEN_OHOS
-    static std::function<bool(Parcel&, std::shared_ptr<Data>)> originalMarshallingCallback_;
-    static std::function<std::shared_ptr<Data>(Parcel&)> originalUnmarshallingCallback_;
-#endif
 };
 
-#ifdef ROSEN_OHOS
-std::function<bool(Parcel&, std::shared_ptr<Data>)> ShaderEffectLazyTest::originalMarshallingCallback_;
-std::function<std::shared_ptr<Data>(Parcel&)> ShaderEffectLazyTest::originalUnmarshallingCallback_;
-#endif
 
 void ShaderEffectLazyTest::SetUpTestCase()
 {
 #ifdef ROSEN_OHOS
-    // Save original callbacks
-    originalMarshallingCallback_ = ObjectHelper::Instance().GetDataMarshallingCallback();
-    originalUnmarshallingCallback_ = ObjectHelper::Instance().GetDataUnmarshallingCallback();
-
-    // Register Data marshalling/unmarshalling callbacks
-    ObjectHelper::Instance().SetDataMarshallingCallback(
-        [](Parcel& parcel, std::shared_ptr<Data> data) -> bool {
-            return OHOS::Rosen::RSMarshallingHelper::Marshalling(parcel, data);
-        }
-    );
-    ObjectHelper::Instance().SetDataUnmarshallingCallback(
-        [](Parcel& parcel) -> std::shared_ptr<Data> {
-            std::shared_ptr<Data> data;
-            return OHOS::Rosen::RSMarshallingHelper::Unmarshalling(parcel, data) ? data : nullptr;
-        }
-    );
+    EffectTestUtils::SetupMarshallingCallbacks();
 #endif
 }
 
 void ShaderEffectLazyTest::TearDownTestCase()
 {
 #ifdef ROSEN_OHOS
-    // Restore original callbacks
-    ObjectHelper::Instance().SetDataMarshallingCallback(originalMarshallingCallback_);
-    ObjectHelper::Instance().SetDataUnmarshallingCallback(originalUnmarshallingCallback_);
+    EffectTestUtils::RestoreMarshallingCallbacks();
 #endif
 }
 void ShaderEffectLazyTest::SetUp() {}
