@@ -139,7 +139,7 @@ protected:
 private:
     std::shared_ptr<RSSurfaceOhos> targetSurface_;
     std::unique_ptr<RSSurfaceFrame> surfaceFrame_;
-    sptr<SyncFence> acquireFence_ = nullptr;
+    sptr<SyncFence> acquireFence_ = SyncFence::InvalidFence();
 };
 
 // function that will be called before drawing Buffer / Image.

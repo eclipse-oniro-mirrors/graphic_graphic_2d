@@ -425,8 +425,8 @@ void RSUniRenderVirtualProcessor::MergeFenceForHardwareEnabledDrawables()
         return;
     }
     auto acquireFence = renderFrame_->GetAcquireFence();
-    if (!acquireFence) {
-        RS_LOGE("RSUniRenderVirtualProcessor::%{public}s acquireFence null!", __func__);
+    if (!acquireFence->IsValid()) {
+        RS_LOGE("RSUniRenderVirtualProcessor::%{public}s acquireFence not valid!", __func__);
         return;
     }
     for (const auto& [_, __, drawable] : renderThreadParams->GetHardwareEnabledTypeDrawables()) {

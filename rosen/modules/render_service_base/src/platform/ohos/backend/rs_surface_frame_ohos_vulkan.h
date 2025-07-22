@@ -47,7 +47,7 @@ public:
     int32_t GetBufferAge() const override;
 
 private:
-    sptr<SyncFence> acquireFence_ = nullptr;
+    sptr<SyncFence> acquireFence_ = SyncFence::InvalidFence();
     int32_t releaseFence_ = 0;
     std::shared_ptr<Drawing::Surface> surface_;
     int width_ = 0;
