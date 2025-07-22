@@ -109,6 +109,7 @@ namespace text {
       destroyRegister.register(this, this.cleaner!, unregisterToken);
     }
     native layoutSync(width: number): void;
+
     async layout(width: number): Promise<void> {
       await new Promise<void>((resolve, reject) => {
         try {
