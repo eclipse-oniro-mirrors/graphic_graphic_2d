@@ -306,10 +306,9 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, ProcessScreenSurface, TestSize.Level2)
 #ifdef RS_ENABLE_VK
 /**
  * @tc.name: MergeFenceForHardwareEnabledDrawables
- * @tc.desc:
- * @tc.type:
- * @tc.require:
- * @tc.author:
+ * @tc.desc: Test MergeFenceForHardwareEnabledDrawables
+ * @tc.type: FUNC
+ * @tc.require: issueICNZ6M
  */
 HWTEST_F(RSUniRenderVirtualProcessorTest, MergeFenceForHardwareEnabledDrawables, TestSize.Level2)
 {
