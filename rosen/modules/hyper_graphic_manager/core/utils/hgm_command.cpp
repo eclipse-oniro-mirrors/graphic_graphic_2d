@@ -33,9 +33,7 @@ const PolicyConfigData& PolicyConfigVisitorImpl::GetXmlData() const
 
 void PolicyConfigVisitorImpl::SetSettingModeId(int32_t settingModeId)
 {
-    if (settingModeId_ == settingModeId) {
-        HGM_LOGI("Mode may changed");
-    }
+    HGM_LOGI("Cur settingModeId: %{public}d, new settingModeId: %{public}d", settingModeId_, settingModeId);
     // index of non-auto mode is settingModeId
     auto xmlModeId = SettingModeId2XmlModeId(settingModeId);
     if (!xmlModeId.has_value()) {
@@ -46,6 +44,7 @@ void PolicyConfigVisitorImpl::SetSettingModeId(int32_t settingModeId)
     if (xmlModeId_ == xmlModeId.value()) {
         return;
     }
+    HGM_LOGI("Cur xmlModeId: %{public}d, new xmlModeId: %{public}d", xmlModeId_, xmlModeId.value());
     xmlModeId_ = xmlModeId.value();
     OnUpdate();
 }
