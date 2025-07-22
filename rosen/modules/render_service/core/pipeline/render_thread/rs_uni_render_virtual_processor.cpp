@@ -425,7 +425,7 @@ void RSUniRenderVirtualProcessor::MergeFenceForHardwareEnabledDrawables()
         return;
     }
     auto acquireFence = renderFrame_->GetAcquireFence();
-    if (!acquireFence->IsValid()) {
+    if (!acquireFence || !acquireFence->IsValid()) {
         RS_LOGE("RSUniRenderVirtualProcessor::%{public}s acquireFence not valid!", __func__);
         return;
     }
