@@ -27,6 +27,7 @@
 #include "effect/image_filter.h"
 #include "effect/image_filter_lazy.h"
 #include "effect/shader_effect.h"
+#include "effect_test_utils.h"
 #include "transaction/rs_marshalling_helper.h"
 #include "utils/object_helper.h"
 #include "utils/rect.h"
@@ -46,8 +47,19 @@ public:
     void TearDown() override;
 };
 
-void ImageFilterLazyTest::SetUpTestCase() {}
-void ImageFilterLazyTest::TearDownTestCase() {}
+void ImageFilterLazyTest::SetUpTestCase()
+{
+#ifdef ROSEN_OHOS
+    EffectTestUtils::SetupMarshallingCallbacks();
+#endif
+}
+
+void ImageFilterLazyTest::TearDownTestCase()
+{
+#ifdef ROSEN_OHOS
+    EffectTestUtils::RestoreMarshallingCallbacks();
+#endif
+}
 void ImageFilterLazyTest::SetUp() {}
 void ImageFilterLazyTest::TearDown() {}
 
