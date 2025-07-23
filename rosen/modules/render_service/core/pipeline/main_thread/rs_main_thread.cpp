@@ -1878,8 +1878,7 @@ bool GetMultiDisplay(const std::shared_ptr<RSBaseRenderNode>& rootNode)
     uint32_t count = 0;
     for (auto node : screenList) {
         auto screenNode = node.lock();
-        if (screenNode && screenNode->GetChildrenCount() > 0 )
-        {
+        if (screenNode && screenNode->GetChildrenCount() > 0) {
             count++;
         }
     }
