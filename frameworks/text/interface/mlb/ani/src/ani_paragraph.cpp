@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+#include "ani_paragraph.h"
+
 #include <codecvt>
 #include <cstddef>
 #include <cstdint>
