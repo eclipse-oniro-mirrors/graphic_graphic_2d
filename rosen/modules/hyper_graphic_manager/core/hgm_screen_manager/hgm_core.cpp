@@ -65,7 +65,7 @@ void HgmCore::SysModeChangeProcess(const char* key, const char* value, void* con
         if (setResult != 0) {
             HGM_LOGE("SetRefreshRateMode mode %{public}d is not supported", curMode);
         }
-    }, 0);
+    });
 }
 
 HgmCore& HgmCore::Instance()

@@ -272,6 +272,7 @@ public:
             return HGM_REFRESHRATE_MODE_AUTO;
         } else {
             return ret;
+        }
     }
 
     int32_t GetRefreshRateModeName(int32_t refreshRateModeId)
