@@ -121,7 +121,7 @@ void HgmCore::Init()
 int HgmCore::AddParamWatcher() const
 {
     // SysModeChangeProcess will be called when first WatchParameter
-    int ret = WatchParameter("persist.sys.mode", HgmCore::SysModeChangeProcess, mPolicyConfigData_.get());
+    int ret = WatchParameter("persist.sys.mode", HgmCore::SysModeChangeProcess, nullptr);
     if (ret != SUCCESS) {
         HGM_LOGE("WatchParameter fail: %{public}d", ret);
     }
