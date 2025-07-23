@@ -336,7 +336,7 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, MergeFenceForHardwareEnabledDrawablesT
     virtualProcessor->MergeFenceForHardwareEnabledDrawables();
 
     int fenceFd = open("/data/local/tmpfile", O_RDONLY | O_CREAT);
-    virtualProcessor->renderFrame_->acquireFence_ = sptr<SyncFence>(new SyncFence(100));
+    virtualProcessor->renderFrame_->acquireFence_ = sptr<SyncFence>(new SyncFence(::dup(fenceFd)));
     ASSERT_TRUE(virtualProcessor->renderFrame_->acquireFence_->IsValid());
     virtualProcessor->MergeFenceForHardwareEnabledDrawables();
 
@@ -359,10 +359,21 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, MergeFenceForHardwareEnabledDrawablesT
     drawable2->renderParams_ = std::make_unique<RSSurfaceRenderParams>(surfaceNodeId);
     ASSERT_NE(drawable2->renderParams_, nullptr);
     drawable2->renderParams_->SetBuffer(buffer, damageRect);
+
+    auto surfaceNode3 = std::make_shared<RSSurfaceRenderNode>(surfaceNodeId);
+    auto drawable3 = std::make_shared<DrawableV2::RSSurfaceRenderNodeDrawable>(std::move(surfaceNode3));
+    sptr<SurfaceBuffer> buffer1 = new SurfaceBufferImpl();
+    ASSERT_NE(buffer1, nullptr);
+    drawable3->renderParams_ = std::make_unique<RSSurfaceRenderParams>(surfaceNodeId);
+    ASSERT_NE(drawable3->renderParams_, nullptr);
+    drawable3->renderParams_->SetBuffer(buffer1, damageRect);
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(drawable3->renderParams_.get());
+    surfaceParams->GetMultableSpecialLayerMgr().Set(SpecialLayerType::PROTECTED, true);
     newUniParam->hardwareEnabledTypeDrawables_.push_back(std::make_tuple(surfaceNodeId, 0, nullptr));
     newUniParam->hardwareEnabledTypeDrawables_.push_back(std::make_tuple(surfaceNodeId, displayNodeId, drawable0));
     newUniParam->hardwareEnabledTypeDrawables_.push_back(std::make_tuple(surfaceNodeId, displayNodeId, drawable1));
     newUniParam->hardwareEnabledTypeDrawables_.push_back(std::make_tuple(surfaceNodeId, displayNodeId, drawable2));
+    newUniParam->hardwareEnabledTypeDrawables_.push_back(std::make_tuple(surfaceNodeId, displayNodeId, drawable3));
     RSUniRenderThread::Instance().Sync(std::move(newUniParam));
     virtualProcessor->MergeFenceForHardwareEnabledDrawables();
 
