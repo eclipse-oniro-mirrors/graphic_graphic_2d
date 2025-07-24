@@ -325,6 +325,8 @@ public:
     {
         return hfbcConfig_;
     }
+
+    static void SysModeChangeProcess(const char* key, const char* value, void* context);
 private:
     HgmCore();
     ~HgmCore() = default;
@@ -335,6 +337,7 @@ private:
     friend class HgmUserDefineImpl;
 
     void Init();
+    int AddParamWatcher() const;
     void CheckCustomFrameRateModeValid();
     int32_t InitXmlConfig();
     int32_t SetCustomRateMode(int32_t mode);
