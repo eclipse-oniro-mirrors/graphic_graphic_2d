@@ -139,7 +139,8 @@ private:
     RSModifiersDrawThread& operator=(const RSModifiersDrawThread&) = delete;
     RSModifiersDrawThread& operator=(const RSModifiersDrawThread&&) = delete;
     void ClearEventResource();
-    static bool LimitEnableHybridOpCnt(std::unique_ptr<RSTransactionData>& transactionData);
+    static bool LimitEnableHybridOpCnt(std::unique_ptr<RSTransactionData>& transactionData,
+        uint32_t& enableHybridOpCnt, uint32_t& enableTextHybridOpCnt);
 
     static bool TargetCommand(
         Drawing::DrawCmdList::HybridRenderType hybridRenderType, uint16_t type, uint16_t subType, bool cmdListEmpty);
