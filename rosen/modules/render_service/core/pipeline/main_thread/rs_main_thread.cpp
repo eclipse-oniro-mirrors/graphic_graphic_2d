@@ -1739,7 +1739,7 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
     }
     RSJankStats::GetInstance().AvcodecVideoCollectBegin();
     nodeMap.TraverseSurfaceNodes(consumeAndUpdateNode_);
-
+    DelayedSingleton<RSFrameRateVote>::GetInstance()->CheckSurfaceAndUi();
     RSJankStats::GetInstance().AvcodecVideoCollectFinish();
     prevHdrSwitchStatus_ = RSLuminanceControl::Get().IsHdrPictureOn();
     if (requestNextVsyncTime_ != -1) {
