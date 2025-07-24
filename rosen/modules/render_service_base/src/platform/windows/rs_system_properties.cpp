@@ -778,5 +778,10 @@ bool RSSystemProperties::GetAIBarOptEnabled()
 {
     return true;
 }
+
+bool RSSystemProperties::GetSelfDrawingDirtyRegionEnabled()
+{
+    return {};
+}
 } // namespace Rosen
 } // namespace OHOS

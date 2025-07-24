@@ -382,6 +382,7 @@ public:
     static bool GetEarlyZEnable();
     static bool GetAIBarOptEnabled();
     static bool GetRSMemoryInfoManagerParam();
+    static bool GetSelfDrawingDirtyRegionEnabled();
 
 private:
     RSSystemProperties() = default;

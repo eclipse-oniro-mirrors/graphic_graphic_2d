@@ -1671,5 +1671,13 @@ bool RSSystemProperties::GetRSMemoryInfoManagerParam()
 {
     return false;
 }
+
+bool RSSystemProperties::GetSelfDrawingDirtyRegionEnabled()
+{
+    static CachedHandle g_Handle = CachedParameterCreate("rosen.graphic.selfdrawingdirtyregion.enabled", "0");
+    int changed = 0;
+    const char *enable = CachedParameterGetChanged(g_Handle, &changed);
+    return ConvertToInt(enable, 0) != 0;
+}
 } // namespace Rosen
 } // namespace OHOS
