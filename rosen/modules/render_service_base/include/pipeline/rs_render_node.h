@@ -1201,12 +1201,12 @@ private:
     RectI absDrawRect_;
     RectF absDrawRectF_;
     RectI oldAbsDrawRect_;
+    // round in by absDrawRectF_, only used for opaque region calculations
+    RectI innerAbsDrawRect_;
     // map parentMatrix by cmdlist draw region
     RectI absCmdlistDrawRect_;
     RectF absCmdlistDrawRectF_;
     RectI oldAbsCmdlistDrawRect_;
-    // round in by absDrawRectF_ or selfDrawingNodeAbsDirtyRectF_, and apply the clip of parent component
-    RectI innerAbsDrawRect_;
     RectI oldDirty_;
     RectI oldDirtyInSurface_;
     RectI childrenRect_;
