@@ -2517,7 +2517,7 @@ bool RSMainThread::DoDirectComposition(std::shared_ptr<RSBaseRenderNode> rootNod
         return false;
     }
     RS_TRACE_NAME("DoDirectComposition");
-    std::share_ptr<RSScreenRenderNode> screenNode = nullptr;
+    std::shared_ptr<RSScreenRenderNode> screenNode = nullptr;
     {
         auto screenNodeList = rootNode->GetChildrenList();
         for (const auto& child : screenNodeList) {
