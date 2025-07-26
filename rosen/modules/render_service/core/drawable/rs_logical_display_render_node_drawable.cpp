@@ -650,7 +650,7 @@ void RSLogicalDisplayRenderNodeDrawable::DrawWiredMirrorCopy(RSLogicalDisplayRen
     }
     curCanvas_->Save();
     ScaleAndRotateMirrorForWiredScreen(mirroredDrawable);
-    RSDirtyRectsDfx RSDirtyRectsDfx(*curScreenDrawable);
+    RSDirtyRectsDfx rsDirtyRectsDfx(*curScreenDrawable);
     auto matrix = isMirrorSLRCopy_ ? scaleManager_->GetScaleMatrix : curCanvas_->GetTotalMatrix();
     matrix.PreTranslate(-mirroredParams->GetOffsetX(), -mirroredParams->GetOffsetY());
     std::vector<RectI> damageRegionRects = CalculateVirtualDirtyForWiredScreen(*curScreenDrawable, matrix);
