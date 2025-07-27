@@ -49,7 +49,6 @@ public:
     int64_t delayTime_ = 0;
     uint64_t dvsyncTime_ = 0;
     uint64_t vsyncTime_ = 0;
-
 };
 }
 }
