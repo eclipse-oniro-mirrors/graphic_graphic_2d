@@ -68,6 +68,8 @@ public:
     void SetPendingMode(const OutputPtr &output, int64_t period, int64_t timestamp);
     void SetVsyncSamplerEnabled(const OutputPtr &output, bool enabled);
     bool GetVsyncSamplerEnabled(const OutputPtr &output);
+    RosenError RegHwcEventCallback(RSHwcEventCallback func, void* data);
+
 private:
     HdiBackend() = default;
     virtual ~HdiBackend() = default;
