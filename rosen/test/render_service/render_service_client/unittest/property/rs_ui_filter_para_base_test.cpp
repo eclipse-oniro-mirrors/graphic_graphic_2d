@@ -61,6 +61,10 @@ HWTEST_F(RSUIFilterParaBaseTest, RSNGFilterBaseCreate001, TestSize.Level1)
     auto filter3 = RSNGFilterBase::Create(RSNGEffectType::VARIABLE_RADIUS_BLUR);
     EXPECT_NE(filter3, nullptr);
     EXPECT_EQ(filter3->GetType(), RSNGEffectType::VARIABLE_RADIUS_BLUR);
+
+    auto filter4 = RSNGFilterBase::Create(RSNGEffectType::CONTENT_LIGHT);
+    EXPECT_NE(filter4, nullptr);
+    EXPECT_EQ(filter4->GetType(), RSNGEffectType::CONTENT_LIGHT);
 }
 
 /**
