@@ -99,6 +99,10 @@ HWTEST_F(RSUIFilterParaBaseTest, RSNGFilterBaseCreate002, TestSize.Level1)
     auto para6 = std::make_shared<VariableRadiusBlurPara>();
     auto filter6 = RSNGFilterBase::Create(para6);
     EXPECT_NE(filter6, nullptr);
+
+    auto para7 = std::make_shared<ContentLightPara>();
+    auto filter7 = RSNGFilterBase::Create(para7);
+    EXPECT_NE(filter7, nullptr);
 }
 
 /**
