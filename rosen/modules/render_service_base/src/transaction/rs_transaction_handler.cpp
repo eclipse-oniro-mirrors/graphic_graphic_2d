@@ -23,6 +23,7 @@
 #include "rs_trace.h"
 
 #include "platform/common/rs_log.h"
+#include "sandbox_utils.h"
 #include "transaction/rs_transaction_proxy.h"
 
 #ifdef _WIN32
@@ -142,7 +143,8 @@ void RSTransactionHandler::SetCommitTransactionCallback(CommitTransactionCallbac
     RSTransactionHandler::commitTransactionCallback_ = commitTransactionCallback;
 }
 
-void RSTransactionHandler::FlushImplicitTransaction(uint64_t timestamp, const std::string& abilityName)
+void RSTransactionHandler::FlushImplicitTransaction(uint64_t timestamp, const std::string& abilityName,
+    bool dvsyncTimeUpdate, uint64_t dvsyncTime)
 {
     std::unique_lock<std::mutex> cmdLock(mutex_);
     if (!implicitRemoteTransactionDataStack_.empty() && needSync_) {
@@ -174,6 +176,7 @@ void RSTransactionHandler::FlushImplicitTransaction(uint64_t timestamp, const st
     transactionData->token_ = token_;
     transactionData->tid_ = tid;
     if (RSSystemProperties::GetHybridRenderEnabled() && RSTransactionHandler::commitTransactionCallback_ != nullptr) {
+        RS_TRACE_NAME_FMT("HybridRender transactionFlag:[%d,%" PRIu64 "]", GetRealPid(), transactionDataIndex_ + 1);
         RSTransactionHandler::commitTransactionCallback_(renderServiceClient_,
             std::move(transactionData), transactionDataIndex_);
         return;

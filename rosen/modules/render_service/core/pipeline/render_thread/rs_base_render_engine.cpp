@@ -205,6 +205,16 @@ std::unique_ptr<RSRenderFrame> RSBaseRenderEngine::RequestFrame(
         std::static_pointer_cast<RSSurfaceOhosVulkan>(rsSurface)->SetSkContext(skContext_);
     }
 #endif
+    if (isHDRStatusChanged_) {
+        if (rsSurface->GetSurface() == nullptr) {
+            RS_LOGE("RSBaseRenderEngine::rsSurface->GetSurface is nullptr!!");
+        } else {
+            RS_TRACE_NAME("RSBaseRenderEngine::SetBufferReallocFlag isHDRStatusChanged");
+            rsSurface->GetSurface()->SetBufferReallocFlag(isHDRStatusChanged_);
+            RS_LOGI("RSBaseRenderEngine::SetBufferReallocFlag isHDRStatusChanged");
+            isHDRStatusChanged_ = false;
+        }
+    }
     auto surfaceFrame = rsSurface->RequestFrame(config.width, config.height, 0, useAFBC,
         frameContextConfig.isProtected);
     RS_OPTIONAL_TRACE_END();
@@ -627,9 +637,7 @@ std::shared_ptr<Drawing::Image> RSBaseRenderEngine::CreateImageFromBuffer(RSPain
         RS_LOGE("RSBaseRenderEngine::CreateImageFromBuffer: imageManager is nullptr!");
         return nullptr;
     }
-    image = imageManager_->CreateImageFromBuffer(canvas,
-        params.buffer, params.acquireFence, params.threadIndex,
-        videoInfo.drawingColorSpace_);
+    image = imageManager_->CreateImageFromBuffer(canvas, params, videoInfo.drawingColorSpace_);
     if (image == nullptr) {
         RS_LOGE("RSBaseRenderEngine::CreateImageFromBuffer: vk image is nullptr!");
         return nullptr;

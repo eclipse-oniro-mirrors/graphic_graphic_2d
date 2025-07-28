@@ -121,6 +121,7 @@ public:
     void ResetAnimateNodeFlag();
     void GetAppMemoryInMB(float& cpuMemSize, float& gpuMemSize);
     void ClearMemoryCache(ClearMemoryMoment moment, bool deeply = false, pid_t pid = -1);
+    void SetForceRsDVsync();
 
     template<typename Task, typename Return = std::invoke_result_t<Task>>
     std::future<Return> ScheduleTask(Task&& task)
@@ -429,6 +430,7 @@ public:
         int32_t bufferCount, int64_t lastConsumeTime, bool isUrgent);
     void GetFrontBufferDesiredPresentTimeStamp(
         const sptr<IConsumerSurface>& consumer, int64_t& desiredPresentTimeStamp);
+    void SetBufferQueueInfo(const std::string &name, int32_t bufferCount, int64_t lastFlushedTimeStamp);
 
     // Enable HWCompose
     bool IsHardwareEnabledNodesNeedSync();
@@ -437,6 +439,7 @@ public:
     void SetTaskEndWithTime(int64_t time);
 
     uint32_t GetVsyncRefreshRate();
+    void DVSyncUpdate(uint64_t dvsyncTime, uint64_t vsyncTime);
 
 private:
     using TransactionDataIndexMap = std::unordered_map<pid_t,
@@ -574,6 +577,9 @@ private:
     void CheckIfHardwareForcedDisabled();
     bool DoDirectComposition(std::shared_ptr<RSBaseRenderNode> rootNode, bool waitForRT);
     bool ExistBufferIsVisibleAndUpdate();
+    bool NeedConsumeMultiCommand(uint32_t& dvsyncPid);
+    bool NeedConsumeDVSyncCommand(uint32_t& endIndex,
+        std::vector<std::unique_ptr<RSTransactionData>>& transactionVec);
     class RSScreenNodeListener : public RSIScreenNodeListener {
     public:
         ~RSScreenNodeListener() override = default;
@@ -851,6 +857,7 @@ private:
 
     std::function<void(const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode)> consumeAndUpdateNode_;
     HgmContext hgmContext_;
+    std::mutex dumpInfoMutex_;
 };
 } // namespace OHOS::Rosen
 #endif // RS_MAIN_THREAD

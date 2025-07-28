@@ -73,6 +73,11 @@
 #include "res_sched_client.h"
 #include "res_type.h"
 
+#ifdef SUBTREE_PARALLEL_ENABLE
+#include "rs_parallel_utils.h"
+#include "rs_parallel_manager.h"
+#endif
+
 namespace OHOS {
 namespace Rosen {
 namespace {
@@ -139,6 +144,11 @@ bool RSUniRenderThread::IsInCaptureProcess()
 bool RSUniRenderThread::IsExpandScreenMode()
 {
     return !captureParam_.isSnapshot_ && !captureParam_.isMirror_;
+}
+
+bool RSUniRenderThread::IsEndNodeIdValid()
+{
+    return captureParam_.endNodeId_ != INVALID_NODEID;
 }
 
 RSUniRenderThread& RSUniRenderThread::Instance()
@@ -218,6 +228,9 @@ void RSUniRenderThread::Start()
         return;
     }
     handler_ = std::make_shared<AppExecFwk::EventHandler>(runner_);
+#ifdef SUBTREE_PARALLEL_ENABLE
+    RSParallelUtils::SetFFrtConfig();
+#endif
     runner_->Run();
     auto postTaskProxy = [](RSTaskMessage::RSTask task, const std::string& name, int64_t delayTime,
         AppExecFwk::EventQueue::Priority priority) {
@@ -870,6 +883,9 @@ void RSUniRenderThread::PostClearMemoryTask(ClearMemoryMoment moment, bool deepl
         } else {
             MemoryManager::ReleaseUnlockGpuResource(grContext, this->exitedPidSet_);
         }
+#ifdef SUBTREE_PARALLEL_ENABLE
+        RSParallelManager::Singleton().ClearMemoryCache();
+#endif
         auto screenManager_ = CreateOrGetScreenManager();
         screenManager_->ClearFrameBufferIfNeed();
         grContext->FlushAndSubmit(true);

@@ -142,7 +142,7 @@ void HgmFrameRateManager::InitConfig()
             configVisitor->ChangeScreen(curScreenStrategyId_);
         }
         curScreenDefaultStrategyId_ = curScreenStrategyId_;
-        if (curRefreshRateMode_ != HGM_REFRESHRATE_MODE_AUTO && configData->xmlCompatibleMode_) {
+        if (configData->xmlCompatibleMode_) {
             curRefreshRateMode_ = configData->SettingModeId2XmlModeId(curRefreshRateMode_);
         }
         multiAppStrategy_.UpdateXmlConfigCache();
@@ -444,7 +444,7 @@ void HgmFrameRateManager::UpdateSoftVSync(bool followRs)
             linker.second->NativeVSyncIsTimeOut()) {
             continue;
         }
-        if (!HgmEnergyConsumptionPolicy::Instance().GetUiIdleFps(expectedRange) &&
+        if (!HgmEnergyConsumptionPolicy::Instance().GetUiIdleFps(expectedRange, ExtractPid(linker.first)) &&
             (expectedRange.type_ & ANIMATION_STATE_FIRST_FRAME) != 0 &&
             expectedRange.preferred_ < static_cast<int32_t>(currRefreshRate_)) {
             expectedRange.Set(currRefreshRate_, currRefreshRate_, currRefreshRate_);
@@ -1587,14 +1587,14 @@ void HgmFrameRateManager::CheckRefreshRateChange(
     if (HgmCore::Instance().GetLtpoEnabled() &&
         (frameRateChanged || (appOffsetChange && !CreateVSyncGenerator()->IsUiDvsyncOn()))) {
         HandleFrameRateChangeForLTPO(timestamp_.load(), followRs, frameRateChanged);
-        if (needChangeDssRefreshRate && changeDssRefreshRateCb_ != nullptr) {
-            changeDssRefreshRateCb_(curScreenId_.load(), refreshRate, true);
+        if (needChangeDssRefreshRate && forceUpdateCallback_ != nullptr) {
+            forceUpdateCallback_(false, true);
         }
     } else {
         std::lock_guard<std::mutex> lock(pendingMutex_);
         pendingRefreshRate_ = std::make_shared<uint32_t>(currRefreshRate_);
-        if (needChangeDssRefreshRate && changeDssRefreshRateCb_ != nullptr) {
-            changeDssRefreshRateCb_(curScreenId_.load(), refreshRate, true);
+        if (needChangeDssRefreshRate && forceUpdateCallback_ != nullptr) {
+            forceUpdateCallback_(false, true);
         }
         if (frameRateChanged) {
             softVSyncManager_.SetQosVSyncRate(currRefreshRate_, appFrameRateLinkers_);

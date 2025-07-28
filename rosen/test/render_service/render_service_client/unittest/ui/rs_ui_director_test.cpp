@@ -303,6 +303,7 @@ HWTEST_F(RSUIDirectorTest, UIDirectorTotal001, TestSize.Level1)
     std::shared_ptr<RSUIDirector> director = RSUIDirector::Create();
     ASSERT_NE(director, nullptr);
 
+    director->Init(true, true);
     director->SetRoot(rootNode->GetId());
 
     director->SetTimeStamp(345, "test");
@@ -379,6 +380,7 @@ HWTEST_F(RSUIDirectorTest, setflushEmptyCallbackTest, TestSize.Level1)
 {
     std::shared_ptr<RSUIDirector> director = RSUIDirector::Create();
     ASSERT_TRUE(director != nullptr);
+    director->Init(true, true);
     director->SetFlushEmptyCallback(nullptr);
 }
 
@@ -915,5 +917,20 @@ HWTEST_F(RSUIDirectorTest, SetTypicalResidentProcessTest001, TestSize.Level1)
     // recover isTypicalResidentProcess_
     RSSystemProperties::SetTypicalResidentProcess(enabled);
     EXPECT_EQ(RSSystemProperties::GetTypicalResidentProcess(), enabled);
+}
+
+/**
+ * @tc.name: SetDVSyncUpdate001
+ * @tc.desc: SetDVSyncUpdate Test
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSUIDirectorTest, SetDVSyncUpdate001, TestSize.Level1)
+{
+    std::shared_ptr<RSUIDirector> director = RSUIDirector::Create();
+    ASSERT_TRUE(director != nullptr);
+    const uint64_t time = 1000;
+    director->SetDVSyncUpdate(time);
+    EXPECT_EQ(time, director->dvsyncTime_);
+    EXPECT_EQ(true, director->dvsyncUpdate_);
 }
 } // namespace OHOS::Rosen

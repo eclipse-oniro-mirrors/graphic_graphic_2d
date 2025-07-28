@@ -139,9 +139,36 @@ public:
     CoreCanvas& DetachBrush() override;
     CoreCanvas& DetachPaint() override;
 
+    /**
+     * @brief DDK Draw HPS Effect on image
+     *
+     * DDK provides an interface for high-performance implementation of certain 2D visual effects
+     *
+     * @param image                 the image needed to draw
+     * @param hpsEffectParams       the params of different effects needed to excute on image
+     * @return true if DDK excute HPS Effect success; false when failed.
+     */
     bool DrawImageEffectHPS(const Drawing::Image& image,
         const std::vector<std::shared_ptr<Drawing::HpsEffectParameter>>& hpsEffectParams) override;
+    /**
+     * @brief DDK Draw Gaussian Blur on image
+     *
+     * DDK provides an interface for high-performance implementation of Gaussian Blur
+     *
+     * @param image                 the image needed to draw
+     * @param blurParams            the params of Gaussian Blur which will excute on image
+     * @return true if DDK excute Blur success; false when failed.
+     */
     bool DrawBlurImage(const Drawing::Image& image, const Drawing::HpsBlurParameter& blurParams) override;
+    /**
+     * @brief DDK calculate the size of the off-screen canvas that Blur Effect excute on
+     *
+     * DDK will excute Blur Effect on an off-screen canvas, the size of the off-screen canvas
+     *  will be calculated in DDK.
+     *
+     * @param blurParams            the params of Gaussian Blur which will excute on image
+     * @return size of the off-screen canvas.
+     */
     std::array<int, 2> CalcHpsBluredImageDimension(const Drawing::HpsBlurParameter& blurParams) override;
 
     bool IsClipRect() override;
@@ -250,8 +277,23 @@ public:
 
     void SetParallelThreadIdx(uint32_t idx);
     uint32_t GetParallelThreadIdx() const;
+    uint32_t GetParallelThreadId();
+    void SetParallelThreadId(int idx);
     void SetIsParallelCanvas(bool isParallel);
     bool GetIsParallelCanvas() const;
+
+    void RecordState(const RSPaintFilterCanvas& other);
+    std::weak_ptr<Drawing::Surface> GetWeakSurface();
+    // just used in subtree, used for check whether a new surface need to be created in the subtree thread.
+    void SetWeakSurface(std::shared_ptr<Drawing::Surface> surface);
+    inline void SetQuickDraw(bool isQuickDraw)
+    {
+        isQuickDraw_ = isQuickDraw;
+    }
+    inline bool IsQuickDraw()
+    {
+        return isQuickDraw_;
+    }
 
     void SetDisableFilterCache(bool disable);
     bool GetDisableFilterCache() const;
@@ -394,6 +436,9 @@ protected:
     bool OnFilter() const override;
     inline bool OnFilterWithBrush(Drawing::Brush& brush) const override
     {
+        if (isQuickDraw_) {
+            return false;
+        }
         float alpha = alphaStack_.top();
         // foreground color and foreground color strategy identification
         if (brush.GetColor().CastToColorQuad() == 0x00000001) {
@@ -464,6 +509,9 @@ private:
     std::shared_ptr<CacheBehindWindowData> cacheBehindWindowData_ = nullptr;
 
     Occlusion::Region drawnRegion_;
+    uint32_t threadId_;
+    std::weak_ptr<Drawing::Surface> weakSurface_;
+    bool isQuickDraw_= false;
 };
 
 #ifdef RS_ENABLE_VK

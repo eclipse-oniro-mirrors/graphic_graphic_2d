@@ -25,6 +25,7 @@
 
 #include "command/rs_base_node_command.h"
 #include "drawable/rs_screen_render_node_drawable.h"
+#include "feature/uifirst/rs_uifirst_manager.h"
 #include "memory/rs_memory_track.h"
 #include "pipeline/render_thread/rs_render_engine.h"
 #include "pipeline/render_thread/rs_uni_render_engine.h"
@@ -1884,6 +1885,39 @@ HWTEST_F(RSMainThreadTest, UniRender003, TestSize.Level1)
     }
     mainThread->UniRender(rootNode);
     ASSERT_FALSE(mainThread->doDirectComposition_);
+}
+
+/**
+ * @tc.name: UniRender004
+ * @tc.desc: UniRender test
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSMainThreadTest, UniRender004, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    mainThread->isUniRender_ = true;
+    mainThread->renderThreadParams_ = std::make_unique<RSRenderThreadParams>();
+    
+    auto rsContext = std::make_shared<RSContext>();
+    auto rootNode = rsContext->GetGlobalRootRenderNode();
+    NodeId id = 1;
+    auto childDisplayNode = std::make_shared<RSScreenRenderNode>(id, 0, rsContext->weak_from_this());
+    rootNode->AddChild(childDisplayNode, 0);
+    rootNode->InitRenderParams();
+    childDisplayNode->InitRenderParams();
+
+    NodeId nodeId = 2;
+    RSUifirstManager::Instance().AddProcessSkippedNode(nodeId);
+
+    mainThread->doDirectComposition_ = true;
+    mainThread->isDirty_ = false;
+    mainThread->isAccessibilityConfigChanged_ = false;
+    mainThread->isCachedSurfaceUpdated_ = false;
+    mainThread->isHardwareEnabledBufferUpdated_ = false;
+    mainThread->UniRender(rootNode);
+    ASSERT_TRUE(mainThread->doDirectComposition_);
 }
 
 /**
@@ -5804,6 +5838,30 @@ HWTEST_F(RSMainThreadTest, DoDirectComposition003, TestSize.Level1)
 }
 
 /**
+ * @tc.name: InitHgmTaskHandleThreadTest
+ * @tc.desc: InitHgmTaskHandleThreadTest
+ * @tc.type: FUNC
+ * @tc.require: issueIBZ6NM
+ */
+HWTEST_F(RSMainThreadTest, InitHgmTaskHandleThreadTest, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    mainThread->hgmContext_.InitHgmTaskHandleThread(mainThread->rsVSyncController_, mainThread->appVSyncController_,
+        mainThread->vsyncGenerator_, mainThread->appVSyncDistributor_);
+    ASSERT_EQ(mainThread->forceUpdateUniRenderFlag_, true);
+    mainThread->hgmContext_.ProcessHgmFrameRate(0, mainThread->rsVSyncDistributor_, mainThread->vsyncId_);
+
+    ASSERT_EQ(mainThread->hgmContext_.FrameRateGetFunc(static_cast<RSPropertyUnit>(0xff), 0.f, 0, 0), 0);
+    auto frameRateMgr = HgmCore::Instance().GetFrameRateMgr();
+    ASSERT_NE(frameRateMgr, nullptr);
+    HgmCore::Instance().hgmFrameRateMgr_ = nullptr;
+    ASSERT_EQ(HgmCore::Instance().GetFrameRateMgr(), nullptr);
+    ASSERT_EQ(mainThread->hgmContext_.FrameRateGetFunc(RSPropertyUnit::PIXEL_POSITION, 0.f, 0, 0), 0);
+    HgmCore::Instance().hgmFrameRateMgr_ = frameRateMgr;
+    ASSERT_NE(HgmCore::Instance().GetFrameRateMgr(), nullptr);
+}
+
+/**
  * @tc.name: DoDirectComposition004
  * @tc.desc: Test DoDirectComposition For HwcNodes
  * @tc.type: FUNC
@@ -5934,54 +5992,52 @@ HWTEST_F(RSMainThreadTest, CheckAdaptiveCompose002, TestSize.Level1)
 }
 
 /**
- * @tc.name: DumpMem001
- * @tc.desc: Test DumpMem
+ * @tc.name: NeedConsumeMultiCommand001
+ * @tc.desc: NeedConsumeMultiCommand001
  * @tc.type: FUNC
+ * @tc.require:
  */
-HWTEST_F(RSMainThreadTest, DumpMem001, TestSize.Level1)
+HWTEST_F(RSMainThreadTest, NeedConsumeMultiCommand001, TestSize.Level1)
 {
     auto mainThread = RSMainThread::Instance();
-    ASSERT_NE(mainThread, nullptr);
-    auto& uniRenderThread = RSUniRenderThread::Instance();
-    uniRenderThread.uniRenderEngine_ = std::make_shared<RSUniRenderEngine>();
-    mainThread->renderThreadParams_ = std::make_unique<RSRenderThreadParams>();
-    std::unordered_set<std::u16string> args;
-    std::string dumpString;
-    std::string type = "";
-    pid_t pid = 0;
+    if (mainThread->rsVSyncDistributor_ == nullptr) {
+        auto vsyncGenerator = CreateVSyncGenerator();
+        auto vsyncController = new VSyncController(vsyncGenerator, 0);
+        mainThread->rsVSyncDistributor_ = new VSyncDistributor(vsyncController, "rs");
+    }
+    uint32_t dvsyncPid = 100;
+    auto ret = mainThread->NeedConsumeMultiCommand(dvsyncPid);
+    ASSERT_EQ(ret, false);
+}
 
-    // prepare nodes
-    std::shared_ptr<RSContext> context = std::make_shared<RSContext>();
-    const std::shared_ptr<RSBaseRenderNode> rootNode = context->GetGlobalRootRenderNode();
-    RSRenderNodeMap& nodeMap = context->GetMutableNodeMap();
-    ASSERT_NE(rootNode, nullptr);
+/**
+ * @tc.name: NeedConsumeDVSyncCommand001
+ * @tc.desc: NeedConsumeDVSyncCommand001
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSMainThreadTest, NeedConsumeDVSyncCommand001, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    if (mainThread->rsVSyncDistributor_ == nullptr) {
+        auto vsyncGenerator = CreateVSyncGenerator();
+        auto vsyncController = new VSyncController(vsyncGenerator, 0);
+        mainThread->rsVSyncDistributor_ = new VSyncDistributor(vsyncController, "rs");
+    }
 
-    //prepare nodemap
-    RSSurfaceRenderNodeConfig config;
-    config.id = 1;
-    auto node1 = std::make_shared<RSSurfaceRenderNode>(config);
-    ASSERT_NE(node1, nullptr);
-    node1->SetIsOnTheTree(true);
-    nodeMap.renderNodeMap_[pid].insert({ config.id, node1 });
+    std::vector<std::unique_ptr<RSTransactionData>> trans;
+    uint32_t endIndex = 0;
+    auto ret = mainThread->NeedConsumeDVSyncCommand(endIndex, trans);
+    ASSERT_EQ(ret, false);
 
-    config.id = 2;
-    auto node2 = std::make_shared<RSSurfaceRenderNode>(config);
-    ASSERT_NE(node2, nullptr);
-    node2->SetIsOnTheTree(false);
-    node2->instanceRootNodeId_ = INVALID_NODEID;
-    nodeMap.renderNodeMap_[pid].insert({ config.id, node2 });
+    std::unique_ptr<RSTransactionData> rsTransactionData1 = std::make_unique<RSTransactionData>();
+    std::unique_ptr<RSTransactionData> rsTransactionData2 = std::make_unique<RSTransactionData>();
+    rsTransactionData1->timestamp_ = 100;
+    rsTransactionData2->timestamp_ = 90;
 
-    config.id = 3;
-    auto node3 = std::make_shared<RSSurfaceRenderNode>(config);
-    ASSERT_NE(node3, nullptr);
-    node3->SetIsOnTheTree(true);
-    node3->instanceRootNodeId_ = 1;
-    nodeMap.renderNodeMap_[pid].insert({ config.id, node3 });
-    nodeMap.renderNodeMap_[pid].insert({ 4, nullptr });
-    mainThread->DumpMem(args, dumpString, type, pid);
-
-    // rootNode == nullptr
-    context->globalRootRenderNode_ = nullptr;
-    mainThread->DumpMem(args, dumpString, type, pid);
+    trans.push_back(std::move(rsTransactionData1));
+    trans.push_back(std::move(rsTransactionData2));
+    ret = mainThread->NeedConsumeDVSyncCommand(endIndex, trans);
+    ASSERT_EQ(ret, true);
 }
 } // namespace OHOS::Rosen

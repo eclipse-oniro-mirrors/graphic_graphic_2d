@@ -353,6 +353,7 @@ public:
     const std::shared_ptr<RSMagnifierParams>& GetMagnifierPara() const;
     bool NeedFilter() const;
     bool NeedHwcFilter() const;
+    bool NeedSkipSubtreeParallel() const;
     void SetGreyCoef(const std::optional<Vector2f>& greyCoef);
     const std::optional<Vector2f>& GetGreyCoef() const;
     const std::shared_ptr<RSFilter>& GetForegroundFilter() const;
@@ -718,6 +719,7 @@ private:
     bool enableHDREffect_ = false;
     bool needDrawBehindWindow_ = false;
     bool alphaOffscreen_ = false;
+    std::optional<RRect> clipRRect_;
     bool alphaNeedApply_ = false;
     bool systemBarEffect_ = false;
     bool useShadowBatching_ = false;
@@ -809,7 +811,6 @@ private:
     Color foregroundMaskColor_ = RSColor();
 
     std::optional<Vector4f> aiInvert_;
-    std::optional<RRect> clipRRect_;
     std::optional<float> grayScale_;
     std::optional<float> brightness_;
     std::optional<float> contrast_;

@@ -46,11 +46,6 @@ config("render_service_link_config") {
         ]
       }
     }
-
-    ldflags += [
-      "-Wl,--emit-relocs",
-      "-Wl,--no-relax"
-    ]
   }
 }
 
@@ -82,10 +77,8 @@ ohos_shared_library("librender_service") {
     defines += [ "USE_VIDEO_PROCESSING_ENGINE" ]
   }
   defines += gpu_defines
+  defines += [ "MODULE_RS" ]
   cflags = [ "-DIMAGE_COLORSPACE_FLAG" ]
-  if (is_ohos && is_clang && target_cpu == "arm64") {
-    cflags += [ "-mno-fix-cortex-a53-843419" ]
-  }
   if (is_ohos && is_clang && (target_cpu == "arm" || target_cpu == "arm64")) {
     defines += [ "IS_OHOS" ]
     if (!use_libfuzzer) {
@@ -117,6 +110,8 @@ ohos_shared_library("librender_service") {
     }
   }
 
+  public_deps = []
+
   sources = [
     "core/feature/anco_manager/rs_anco_manager.cpp",
     "core/feature/capture/rs_surface_capture_task.cpp",
@@ -145,6 +140,7 @@ ohos_shared_library("librender_service") {
     "core/feature/vrate/rs_vsync_rate_reduce_manager.cpp",
     "core/feature/window_keyframe/rs_window_keyframe_buffer.cpp",
     "core/feature/window_keyframe/rs_window_keyframe_node_info.cpp",
+    "core/feature/chipset_vsync/rs_chipset_vsync.cpp",
     "core/pipeline/hardware_thread/rs_realtime_refresh_rate_manager.cpp",
     "core/pipeline/hwc/rs_uni_hwc_visitor.cpp",
     "core/pipeline/main_thread/rs_main_thread.cpp",
@@ -319,6 +315,22 @@ ohos_shared_library("librender_service") {
     ]
   }
 
+  if (defined(graphic_2d_feature_subtree_parallel_enable) && graphic_2d_feature_subtree_parallel_enable) {
+    sources += [
+      "$graphic_2d_ext_root/subtree/container/rs_parallel_container.cpp",
+      "$graphic_2d_ext_root/subtree/container/rs_parallel_data.cpp",
+      "$graphic_2d_ext_root/subtree/executor/multiwin/rs_parallel_executor_manager_multiwin.cpp",
+      "$graphic_2d_ext_root/subtree/executor/multiwin/rs_parallel_executor_multiwin.cpp",
+      "$graphic_2d_ext_root/subtree/executor/rb/rs_parallel_executor_manager_rb.cpp",
+      "$graphic_2d_ext_root/subtree/executor/rb/rs_parallel_executor_rb.cpp",
+      "$graphic_2d_ext_root/subtree/executor/rb/rs_parallel_task_pool.cpp",
+      "$graphic_2d_ext_root/subtree/policy/rs_parallel_rb_policy.cpp",
+      "$graphic_2d_ext_root/subtree/policy/rs_parallel_multiwin_policy.cpp",
+      "$graphic_2d_ext_root/subtree/policy/rs_parallel_policy.cpp",
+      "$graphic_2d_ext_root/subtree/rs_parallel_manager.cpp",
+    ]
+  }
+
   if (use_memmgr_plugin || use_memmgr) {
     sources += [ "core/memory/rs_app_state_listener.cpp" ]
   }
@@ -359,10 +371,19 @@ ohos_shared_library("librender_service") {
     "$graphic_2d_root/utils/socketpair/export",
   ]
 
+  public_deps += [
+    "$graphic_2d_root/rosen/modules/composer:libcomposer",
+  ]
+
+  if (graphic_2d_feature_subtree_parallel_enable) {
+    include_dirs += [ "$graphic_2d_ext_root/subtree" ]
+    include_dirs += [ "$graphic_2d_ext_root/subtree/executor" ]
+    include_dirs += [ "$graphic_2d_ext_root/subtree/policy" ]
+  }
+
   deps = [
     "$graphic_2d_root/frameworks/opengl_wrapper:EGL",
     "$graphic_2d_root/frameworks/opengl_wrapper:GLESv3",
-    "$graphic_2d_root/rosen/modules/composer:libcomposer",
     "$graphic_2d_root/rosen/modules/composer/vsync:libvsync",
     "$graphic_2d_root/rosen/modules/create_pixelmap_surface:create_pixelmap_surface",
     "$graphic_2d_root/rosen/modules/hyper_graphic_manager:libhyper_graphic_manager",
@@ -374,8 +395,7 @@ ohos_shared_library("librender_service") {
 
   if (graphic_2d_feature_enable_chipset_vsync) {
     defines += [ "RS_ENABLE_CHIPSET_VSYNC" ]
-    deps += [ "$graphic_2d_ext_root/chipset_vsync:libchipset_vsync" ]
-    include_dirs += [ "$graphic_2d_ext_root/chipset_vsync/include" ]
+    sources += [ "core/feature/chipset_vsync/rs_chipset_vsync.cpp" ]
   }
 
   if (graphic_2d_feature_overlay_display_enable) {
@@ -435,7 +455,7 @@ ohos_shared_library("librender_service") {
   }
 
   if (rs_enable_gpu) {
-    public_deps = [ "$graphic_2d_root:libvulkan" ]
+    public_deps += [ "$graphic_2d_root:libvulkan" ]
     deps += [
       "$graphic_2d_root/frameworks/opengl_wrapper:EGL",
       "$graphic_2d_root/frameworks/opengl_wrapper:GLESv3",
@@ -482,9 +502,6 @@ ohos_shared_library("librender_service") {
   }
   if (use_video_processing_engine) {
     external_deps += [ "video_processing_engine:videoprocessingengine" ]
-  }
-  if (tp_feature_enable) {
-    external_deps += [ "drivers_interface_tp_extra:libtp_proxy_1.1"]
   }
 
   if (defined(ddgr_ext_configs)) {

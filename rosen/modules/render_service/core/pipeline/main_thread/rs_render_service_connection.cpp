@@ -80,6 +80,7 @@
 #include "render/rs_typeface_cache.h"
 #include "transaction/rs_unmarshal_thread.h"
 #include "transaction/rs_transaction_data_callback_manager.h"
+#include "graphic_feature_param_manager.h"
 
 #ifdef TP_FEATURE_ENABLE
 #include "screen_manager/touch_screen.h"
@@ -87,6 +88,10 @@
 
 #ifdef RS_ENABLE_VK
 #include "platform/ohos/backend/rs_vulkan_context.h"
+#endif
+
+#if defined(RS_ENABLE_DVSYNC)
+#include "dvsync.h"
 #endif
 
 #undef LOG_TAG
@@ -353,6 +358,9 @@ ErrCode RSRenderServiceConnection::CommitTransaction(std::unique_ptr<RSTransacti
     if (shouldDrop) {
         RS_LOGW("CommitTransaction data droped");
         return ERR_INVALID_VALUE;
+    }
+    if (transactionData && transactionData->GetDVSyncUpdate()) {
+        mainThread_->DVSyncUpdate(transactionData->GetDVSyncTime(), transactionData->GetTimestamp());
     }
     bool isProcessBySingleFrame = mainThread_->IsNeedProcessBySingleFrameComposer(transactionData);
     if (isProcessBySingleFrame) {
@@ -1225,9 +1233,6 @@ void RSRenderServiceConnection::SetScreenPowerStatus(ScreenId id, ScreenPowerSta
     if (renderType == UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL) {
 #ifdef RS_ENABLE_GPU
         RSHardwareThread::Instance().ScheduleTask([=]() {
-            if (status == ScreenPowerStatus::POWER_STATUS_ON) {
-                HgmCore::Instance().SetScreenSwitchDssEnable(id, false);
-            }
             screenManager_->SetScreenPowerStatus(id, status);
         }).wait();
         screenManager_->WaitScreenPowerStatusTask();
@@ -2338,8 +2343,12 @@ ErrCode RSRenderServiceConnection::GetPixelmap(NodeId id, const std::shared_ptr<
         } else if (tid == UNI_RENDER_THREAD_INDEX) {
             renderThread->PostTask(getDrawablePixelmapTask);
         } else {
-            RSTaskDispatcher::GetInstance().PostTask(
-                RSSubThreadManager::Instance()->GetReThreadIndexMap()[tid], getDrawablePixelmapTask, false);
+            const auto& tidMap = RSSubThreadManager::Instance()->GetReThreadIndexMap();
+            if (auto found = tidMap.find(tid); found != tidMap.end()) {
+                RSTaskDispatcher::GetInstance().PostTask(found->second, getDrawablePixelmapTask, false);
+            } else {
+                renderThread->PostTask(getDrawablePixelmapTask);
+            }
         }
     };
     mainThread_->PostTask(getPixelMapTask);
@@ -2682,6 +2691,9 @@ ErrCode RSRenderServiceConnection::NotifyLightFactorStatus(int32_t lightFactorSt
 
 void RSRenderServiceConnection::NotifyPackageEvent(uint32_t listSize, const std::vector<std::string>& packageList)
 {
+    if (!mainThread_) {
+        return;
+    }
     mainThread_->NotifyPackageEvent(packageList);
     HgmTaskHandleThread::Instance().PostTask([pid = remotePid_, listSize, packageList]() {
         auto frameRateMgr = HgmCore::Instance().GetFrameRateMgr();
@@ -2850,8 +2862,16 @@ ErrCode RSRenderServiceConnection::NotifyXComponentExpectedFrameRate(const std::
 
 ErrCode RSRenderServiceConnection::ReportEventResponse(DataBaseRs info)
 {
-    auto task = [info]() -> void {
+    auto task = [weakThis = wptr<RSRenderServiceConnection>(this), info]() -> void {
         RSJankStats::GetInstance().SetReportEventResponse(info);
+        sptr<RSRenderServiceConnection> connection = weakThis.promote();
+        if (connection == nullptr || connection->mainThread_ == nullptr) {
+            return;
+        }
+        std::unordered_map<std::string, std::string> forceRsDVsyncConfig_ = DVSyncParam::GetForceRsDVsyncConfig();
+        if (!forceRsDVsyncConfig_.empty() && forceRsDVsyncConfig_.find(info.sceneId) != forceRsDVsyncConfig_.end()) {
+            connection->mainThread_->SetForceRsDVsync();
+        }
     };
 #ifdef RS_ENABLE_GPU
     renderThread_.PostTask(task);
@@ -3027,6 +3047,10 @@ ErrCode RSRenderServiceConnection::SetTpFeatureConfig(int32_t feature, const cha
 {
     switch (tpFeatureConfigType) {
         case TpFeatureConfigType::DEFAULT_TP_FEATURE: {
+            if (!TOUCH_SCREEN->IsSetFeatureConfigHandleValid()) {
+                RS_LOGW("SetTpFeatureConfig: SetFeatureConfigHandl is nullptr");
+                return ERR_INVALID_VALUE;
+            }
             if (TOUCH_SCREEN->SetFeatureConfig(feature, config) < 0) {
                 RS_LOGW("SetTpFeatureConfig: SetFeatureConfig failed");
                 return ERR_INVALID_VALUE;
@@ -3034,6 +3058,10 @@ ErrCode RSRenderServiceConnection::SetTpFeatureConfig(int32_t feature, const cha
             return ERR_OK;
         }
         case TpFeatureConfigType::AFT_TP_FEATURE: {
+            if (!TOUCH_SCREEN->IsSetAftConfigHandleValid()) {
+                RS_LOGW("SetTpFeatureConfig: SetAftConfigHandl is nullptr");
+                return ERR_INVALID_VALUE;
+            }
             if (TOUCH_SCREEN->SetAftConfig(config) < 0) {
                 RS_LOGW("SetTpFeatureConfig: SetAftConfig failed");
                 return ERR_INVALID_VALUE;
