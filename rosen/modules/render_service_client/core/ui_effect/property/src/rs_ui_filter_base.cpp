@@ -200,7 +200,7 @@ std::shared_ptr<RSNGFilterBase> ConvertContentLightFilterPara(std::shared_ptr<Fi
     contentLightFilter->Setter<ContentLightPositionTag>(contentLightFilterPara->GetLightPosition());
     contentLightFilter->Setter<ContentLightColorTag>(contentLightFilterPara->GetLightColor());
     contentLightFilter->Setter<ContentLightIntenSityTag>(contentLightFilterPara->GetLightIntensity());
-    return variableRadiusBlurFilter;
+    return contentLightFilter;
 }
 }
 
