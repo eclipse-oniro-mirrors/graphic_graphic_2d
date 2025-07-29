@@ -1172,7 +1172,6 @@ void RSPropertyDrawableUtils::BeginBlender(RSPaintFilterCanvas& canvas, std::sha
         // currently we only support DDGR backend, we thus use 1 << 1 as indicated in their code.
         saveLayerFlag = 1 << 1;
     }
-    ROSEN_LOGD("RSPropertyDrawableUtils::BeginBlender: saveLayerFlag = %{public}d", saveLayerFlag);
     Drawing::SaveLayerOps maskLayerRec(nullptr, &blendBrush_, saveLayerFlag);
     canvas.SaveLayer(maskLayerRec);
     canvas.SetBlender(nullptr);
