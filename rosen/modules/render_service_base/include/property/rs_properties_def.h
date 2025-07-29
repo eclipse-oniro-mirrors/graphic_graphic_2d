@@ -119,7 +119,7 @@ enum class RSColorBlendApplyType : int16_t {
     // init with a copy of the background for advanced use.
     //  Do NOT use this unless you have a clear understanding of what will happen!
     SAVE_LAYER_INIT_WITH_PREVIOUS_CONTENT,
-    MAX = SAVE_LAYER_INIT_WITH_PREVIOUS_CONTENT 
+    MAX = SAVE_LAYER_INIT_WITH_PREVIOUS_CONTENT
 };
 
 struct RSDynamicBrightnessPara {
