@@ -1932,7 +1932,7 @@ static bool CheckOverlayDisplayEnable()
 #endif
 }
 
-bool GetMultiDisplay(const std::shared_ptr<RSBaseRenderNode>& rootNode)
+bool RSMainThread::GetMultiDisplay(const std::shared_ptr<RSBaseRenderNode>& rootNode)
 {
     auto screenNodeList = rootNode->GetChildrenList();
     uint32_t validCount = 0;
