@@ -601,6 +601,10 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         return;
     }
 
+    if (CheckScreenFreezeSkip(*params)) {
+        return;
+    }
+
     PostClearMemoryTask();
 
     sptr<RSScreenManager> screenManager = CreateOrGetScreenManager();
