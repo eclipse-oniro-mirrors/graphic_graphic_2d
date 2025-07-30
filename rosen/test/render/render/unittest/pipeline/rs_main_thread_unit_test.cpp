@@ -4512,6 +4512,16 @@ HWTEST_F(RSMainThreadUnitTest, ProcessHgmFrameRate, TestSize.Level2)
 
     mainThread->rsVSyncDistributor_ = nullptr;
     mainThread->ProcessHgmFrameRate(timestamp);
+
+    auto frameRateMgr = OHOS::Rosen::HgmCore::Instance().GetFrameRateMgr();
+    if (frameRateMgr && frameRateMgr->forceUpdateCallback_) {
+        mainThread->vsyncId = mainThread->GetVsyncId() + 100;
+        EXPECT_NE(mainThread->hgmContext_.lastForceUpdateVsyncId_, mainThread->GetVsyncId());
+        frameRateMgr->forceUpdateCallback_(false, true);
+        EXPECT_EQ(mainThread->hgmContext_.lastForceUpdateVsyncId_, mainThread->GetVsyncId());
+        frameRateMgr->forceUpdateCallback_(false, true);
+        EXPECT_EQ(mainThread->hgmContext_.lastForceUpdateVsyncId_, mainThread->GetVsyncId());
+    }
     sleep(1);
 }
 
