@@ -292,6 +292,8 @@ void RSFilterCacheManager::TakeSnapshot(
     std::shared_ptr<Drawing::Image> snapshot;
     auto aibarShaderFilter = filter->GetShaderFilterWithType(RSUIFilterType::AIBAR);
     if ((aibarShaderFilter != nullptr) && (HveFilter::GetHveFilter().GetSurfaceNodeSize() > 0)) {
+        RS_TRACE_NAME_FMT("RSFilterCacheManager::TakeSnapshot surface wh:[%d, %d], snapshotlBounds:%s",
+            drawingSurface->Width(), drawingSurface->Height(), snapshotlBounds.ToString().c_str());
         snapshot = HveFilter::GetHveFilter().SampleLayer(canvas, srcRect);
     } else {
         // Take a screenshot
