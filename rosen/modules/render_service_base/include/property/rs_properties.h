@@ -402,6 +402,7 @@ public:
     bool GetFgBrightnessHdr() const;
     void SetFgBrightnessParams(const std::optional<RSDynamicBrightnessPara>& params);
     std::optional<RSDynamicBrightnessPara> GetFgBrightnessParams() const;
+    bool GetFgBrightnessEnableEDR() const;
 
     void SetShadowBlenderParams(const std::optional<RSShadowBlenderPara>& params);
     std::optional<RSShadowBlenderPara> GetShadowBlenderParams() const;
@@ -757,9 +758,6 @@ public:
         return needDrawBehindWindow_;
     }
 
-    void SetEnableHDREffect(bool useHDREffect);
-    bool GetEnableHDREffect() const;
-
     void SetColorBlendMode(int colorBlendMode);
     int GetColorBlendMode() const
     {
@@ -883,7 +881,6 @@ private:
     bool needHwcFilter_ = false;
     bool needForceSubmit_ = false;
     bool useEffect_ = false;
-    bool enableHDREffect_ = false;
     bool needDrawBehindWindow_ = false;
     bool alphaOffscreen_ = false;
     std::optional<RRect> clipRRect_;

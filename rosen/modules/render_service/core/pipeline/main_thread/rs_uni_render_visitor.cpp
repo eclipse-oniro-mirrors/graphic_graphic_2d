@@ -470,7 +470,7 @@ void RSUniRenderVisitor::HandlePixelFormat(RSScreenRenderNode& node)
     float brightnessRatio = RSLuminanceControl::Get().GetHdrBrightnessRatio(screenId, 0);
     float displayHeadroom =
         RSLuminanceControl::Get().GetDisplayNits(screenId) / RSLuminanceControl::Get().GetSdrDisplayNits(screenId);
-    RSEffectLuminanceManager::GetInstance().SetDisplayHeadroom(screenId, displayHeadroom);
+    RSEffectLuminanceManager::GetInstance().SetDisplayHeadroom(node.GetScreenNodeId(), displayHeadroom);
     RS_TRACE_NAME_FMT("HDR:%d, in Unirender:%d, brightnessRatio:%f, screenId:%" PRIu64 ", status:%d", isHdrOn,
         hasUniRenderHdrSurface, brightnessRatio, screenId, node.GetDisplayHdrStatus());
     RS_LOGD("HandlePixelFormat HDRService isHdrOn:%{public}d hasUniRenderHdrSurface:%{public}d "

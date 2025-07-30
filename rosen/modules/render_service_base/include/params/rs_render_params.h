@@ -129,9 +129,6 @@ public:
     }
     void SetForegroundFilterCache(const std::shared_ptr<RSFilter>& foregroundFilterCache);
 
-    const std::shared_ptr<RSFilter>& GetBackgroundFilter() const;
-    void SetBackgroundFilter(const std::shared_ptr<RSFilter>& backgroundFilter);
-
     inline NodeId GetId() const
     {
         return id_;
@@ -534,7 +531,6 @@ private:
     RSDrawingCacheType drawingCacheType_ = RSDrawingCacheType::DISABLED_CACHE;
     DirtyRegionInfoForDFX dirtyRegionInfoForDFX_;
     std::shared_ptr<RSFilter> foregroundFilterCache_ = nullptr;
-    std::shared_ptr<RSFilter> backgroundFilter_ = nullptr;
     bool isOpincSuggestFlag_ = false;
     bool isOpincSupportFlag_ = false;
     bool isOpincRootFlag_ = false;

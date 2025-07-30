@@ -77,6 +77,16 @@
 namespace OHOS {
 namespace Rosen {
 
+namespace {
+const std::unordered_set<RSDrawableSlot> edrDrawableSlots = {
+    RSDrawableSlot::FOREGROUND_FILTER,
+    RSDrawableSlot::BACKGROUND_FILTER,
+    RSDrawableSlot::BACKGROUND_NG_SHADER,
+    RSDrawableSlot::COMPOSITING_FILTER,
+    RSDrawableSlot::BLENDER
+};
+} // namespace
+
 std::unordered_map<pid_t, size_t> RSRenderNode::blurEffectCounter_ = {};
 void RSRenderNode::UpdateBlurEffectCounter(int deltaCount)
 {
@@ -3159,6 +3169,13 @@ void RSRenderNode::UpdateDrawableVecV2()
         UpdateDisplayList();
         UpdateBlurEffectCounter(GetBlurEffectDrawbleCount() - preBlurDrawableCnt);
     }
+    // If any effect drawable become dirty, check all effect drawable and do edr update
+    auto needUpdateEDR = std::any_of(edrDrawableSlots.begin(), edrDrawableSlots.end(), [&dirtySlots](auto slot) {
+         return dirtySlots.count(slot);
+    });
+    if (needUpdateEDR) {
+        UpdateDrawableEnableEDR();
+    }
     // Merge dirty slots
     if (dirtySlots_.empty()) {
         dirtySlots_ = std::move(dirtySlots);
@@ -4763,7 +4780,6 @@ void RSRenderNode::UpdateRenderParams()
     stagingRenderParams_->SetCacheSize(GetOptionalBufferSize());
     stagingRenderParams_->SetAlphaOffScreen(GetRenderProperties().GetAlphaOffscreen());
     stagingRenderParams_->SetForegroundFilterCache(GetRenderProperties().GetForegroundFilterCache());
-    stagingRenderParams_->SetBackgroundFilter(GetRenderProperties().GetBackgroundFilter());
     stagingRenderParams_->SetNeedFilter(GetRenderProperties().NeedFilter());
     stagingRenderParams_->SetHDRBrightness(GetHDRBrightness() *
         GetRenderProperties().GetCanvasNodeHDRBrightnessFactor());
@@ -5633,6 +5649,15 @@ void RSRenderNode::NodePostPrepare(
     if (curSurfaceNode == nullptr) {
         UpdateVirtualScreenWhiteListInfo();
     }
+}
+
+void RSRenderNode::UpdateDrawableEnableEDR()
+{
+    bool hasEDREffect = std::any_of(edrDrawableSlots.begin(), edrDrawableSlots.end(), [this](auto slot) {
+        auto drawable = this->drawableVec_[static_cast<int8_t>(slot)];
+        return drawable && drawable->GetEnableEDR();
+    });
+    SetEnableHdrEffect(hasEDREffect);
 }
 } // namespace Rosen
 } // namespace OHOS
