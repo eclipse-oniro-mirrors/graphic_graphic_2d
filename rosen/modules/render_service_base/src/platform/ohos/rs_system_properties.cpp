@@ -858,18 +858,11 @@ bool RSSystemProperties::GetSubtreeParallelEnable()
     return subtreeParallelEnable;
 }
 
-bool RSSystemProperties::GetSubtreeLogEnabled()
+int RSSystemProperties::GetSubtreeDebugOption()
 {
-    static const bool subtreeLogEnabled = std::atoi((system::GetParameter(
-        "persist.sys.graphic.subtreeLogEnabled", "0")).c_str()) != 0;
-    return subtreeLogEnabled;
-}
-
-bool RSSystemProperties::GetSubtreeDeviceControl()
-{
-    static const bool subtreeDeviceControl = std::atoi((system::GetParameter(
-        "persist.sys.graphic.subtreeDeviceControl", "0")).c_str()) != 0;
-    return subtreeDeviceControl;
+    static const int subtreeDebugOption =
+        std::atoi((system::GetParameter("persist.sys.graphic.subtreeDebugOption", "0")).c_str());
+    return subtreeDebugOption;
 }
 
 bool RSSystemProperties::GetUIFirstEnabled()
@@ -1058,19 +1051,19 @@ bool RSSystemProperties::IsSmallFoldDevice()
     return foldType == "2,0,0,0" || foldType == "4,2,0,0";
 }
 
-bool RSSystemProperties::GetTimeVsyncDisabled()
-{
-    static bool timeVsyncDisabled =
-        std::atoi((system::GetParameter("persist.sys.graphic.timeVsyncDisabled", "0")).c_str()) != 0;
-    return timeVsyncDisabled;
-}
-
 bool RSSystemProperties::GetCacheCmdEnabled()
 {
     static CachedHandle g_Handle = CachedParameterCreate("rosen.cacheCmd.enabled", "1");
     int changed = 0;
     const char *enable = CachedParameterGetChanged(g_Handle, &changed);
     return ConvertToInt(enable, 1) != 0;
+}
+
+bool RSSystemProperties::GetTimeVsyncDisabled()
+{
+    static bool timeVsyncDisabled =
+        std::atoi((system::GetParameter("persist.sys.graphic.timeVsyncDisabled", "0")).c_str()) != 0;
+    return timeVsyncDisabled;
 }
 
 bool RSSystemProperties::GetASTCEnabled()

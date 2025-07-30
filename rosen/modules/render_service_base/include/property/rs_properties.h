@@ -274,6 +274,11 @@ public:
         needSkipShadow_ = needSkipShadow;
     }
 
+    inline bool GetNeedForceSubmit() const
+    {
+        return needForceSubmit_;
+    }
+
     void SetHDRBrightnessFactor(float factor);
     float GetHDRBrightnessFactor() const
     {
@@ -876,6 +881,7 @@ private:
     bool foregroundEffectDirty_ = false;
     bool needFilter_ = false;
     bool needHwcFilter_ = false;
+    bool needForceSubmit_ = false;
     bool useEffect_ = false;
     bool enableHDREffect_ = false;
     bool needDrawBehindWindow_ = false;
