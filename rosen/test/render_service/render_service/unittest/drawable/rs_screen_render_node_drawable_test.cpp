@@ -810,41 +810,6 @@ HWTEST_F(RSScreenRenderNodeDrawableTest, CalculateVirtualDirtyTest, TestSize.Lev
     Drawing::Matrix matrix;
     sleep(1);
 }
-/**
- * @tc.name: ClearCanvasStencilTest001
- * @tc.desc: Test ClearCanvasStencilTest
- * @tc.type: FUNC
- * @tc.require: #IBO35Y
- */
-HWTEST_F(RSScreenRenderNodeDrawableTest, ClearCanvasStencilTest001, TestSize.Level1)
-{
-    Drawing::Canvas drawingCanvas;
-    RSPaintFilterCanvas canvas(&drawingCanvas);
-
-    auto params = static_cast<RSScreenRenderParams*>(screenDrawable_->GetRenderParams().get());
-    ASSERT_NE(params, nullptr);
-
-    auto uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams().get();
-    ASSERT_NE(uniParam, nullptr);
-
-    ASSERT_NE(screenDrawable_, nullptr);
-    screenDrawable_->ClearCanvasStencil(canvas, *params, *uniParam);
-
-    screenDrawable_->syncDirtyManager_ = std::make_shared<RSDirtyRegionManager>(false);
-    ASSERT_NE(screenDrawable_->syncDirtyManager_, nullptr);
-    auto dirtyManager = screenDrawable_->GetSyncDirtyManager();
-    ASSERT_NE(dirtyManager, nullptr);
-    Occlusion::Region allDirtyRegion { Occlusion::Rect { dirtyManager->GetDirtyRegion() } };
-    auto alignedRegion = allDirtyRegion.GetAlignedRegion(128);
-    ASSERT_TRUE(alignedRegion.IsEmpty());
-
-    uniParam->isStencilPixelOcclusionCullingEnabled_ = true;
-    screenDrawable_->ClearCanvasStencil(canvas, *params, *uniParam);
-    ASSERT_TRUE(params->topSurfaceOpaqueRects_.empty());
-    params->topSurfaceOpaqueRects_.emplace_back(Occlusion::Rect { dirtyManager->GetDirtyRegion() });
-    screenDrawable_->ClearCanvasStencil(canvas, *params, *uniParam);
-    ASSERT_FALSE(params->topSurfaceOpaqueRects_.empty());
-}
 
 /**
  * @tc.name: SkipFrameByIntervalTest001

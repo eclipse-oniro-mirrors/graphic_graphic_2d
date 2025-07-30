@@ -15,6 +15,7 @@
 
 #include "drawable/rs_logical_display_render_node_drawable.h"
 
+#include "common/rs_optional_trace.h"
 #include "rs_trace.h"
 #include "graphic_feature_param_manager.h"
 #include "feature/dirty/rs_uni_dirty_compute_util.h"
@@ -86,6 +87,35 @@ RSLogicalDisplayRenderNodeDrawable::~RSLogicalDisplayRenderNodeDrawable()
 RSRenderNodeDrawable::Ptr RSLogicalDisplayRenderNodeDrawable::OnGenerate(std::shared_ptr<const RSRenderNode> node)
 {
     return new RSLogicalDisplayRenderNodeDrawable(std::move(node));
+}
+
+void RSLogicalDisplayRenderNodeDrawable::ClearCanvasStencil(RSPaintFilterCanvas& canvas,
+    const RSLogicalDisplayRenderParams& params, const RSRenderThreadParams& uniParam, const ScreenInfo& screenInfo)
+{
+    if (!uniParam.IsStencilPixelOcclusionCullingEnabled()) {
+        return;
+    }
+    auto topSurfaceOpaqueRects = params.GetTopSurfaceOpaqueRects();
+    if (topSurfaceOpaqueRects.empty()) {
+        return;
+    }
+    RS_OPTIONAL_TRACE_NAME_FMT("ClearStencil, rect(0, 0, %d, %d), stencilVal: 0",
+        screenInfo.width, screenInfo.height);
+    canvas.ClearStencil({0, 0, screenInfo.width, screenInfo.height}, 0);
+    std::reverse(topSurfaceOpaqueRects.begin(), topSurfaceOpaqueRects.end());
+    auto maxStencilVal = TOP_OCCLUSION_SURFACES_NUM * OCCLUSION_ENABLE_SCENE_NUM;
+    canvas.SetMaxStencilVal(maxStencilVal);
+    for (size_t i = 0; i < topSurfaceOpaqueRects.size(); i++) {
+        Drawing::RectI rect {topSurfaceOpaqueRects[i].left_,
+            topSurfaceOpaqueRects[i].top_,
+            topSurfaceOpaqueRects[i].right_,
+            topSurfaceOpaqueRects[i].bottom_};
+        auto stencilVal = OCCLUSION_ENABLE_SCENE_NUM *
+            (TOP_OCCLUSION_SURFACES_NUM - topSurfaceOpaqueRects.size() + i + 1);
+        RS_OPTIONAL_TRACE_NAME_FMT("ClearStencil, rect(%" PRId32 ", %" PRId32 ", %" PRId32 ", %" PRId32 "), "
+            "stencilVal: %zu", rect.GetLeft(), rect.GetTop(), rect.GetWidth(), rect.GetHeight(), stencilVal);
+        canvas.ClearStencil(rect, static_cast<uint32_t>(stencilVal));
+    }
 }
 
 void RSLogicalDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
@@ -210,6 +240,8 @@ void RSLogicalDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     if (!params->GetNeedOffscreen()) {
         params->ApplyAlphaAndMatrixToCanvas(*curCanvas_);
     }
+
+    ClearCanvasStencil(*curCanvas_, *params, *uniParam, screenInfo);
 
     // canvas draw
 #ifdef SUBTREE_PARALLEL_ENABLE

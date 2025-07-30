@@ -251,11 +251,6 @@ public:
     void UpdateRenderParams() override;
     void UpdatePartialRenderParams();
     void UpdateScreenRenderParams();
-    Occlusion::Region GetTopSurfaceOpaqueRegion() const;
-    void RecordTopSurfaceOpaqueRects(Occlusion::Rect rect)
-    {
-        topSurfaceOpaqueRects_.push_back(rect);
-    }
     void RecordMainAndLeashSurfaces(RSBaseRenderNode::SharedPtr surface)
     {
         curMainAndLeashSurfaceNodes_.push_back(surface);
@@ -572,7 +567,6 @@ private:
 
     std::map<NodeId, RectI> lastFrameSurfacePos_;
     std::map<NodeId, RectI> currentFrameSurfacePos_;
-    std::vector<Occlusion::Rect> topSurfaceOpaqueRects_;
     std::vector<std::pair<NodeId, RectI>> lastFrameSurfacesByDescZOrder_;
     std::vector<std::pair<NodeId, RectI>> currentFrameSurfacesByDescZOrder_;
     std::vector<std::string> windowsName_;

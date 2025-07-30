@@ -51,11 +51,6 @@ void RSScreenRenderParams::SetMainAndLeashSurfaceDirty(bool isDirty)
     needSync_ = true;
 }
 
-const std::vector<Occlusion::Rect>& RSScreenRenderParams::GetTopSurfaceOpaqueRects() const
-{
-    return topSurfaceOpaqueRects_;
-}
-
 bool RSScreenRenderParams::GetMainAndLeashSurfaceDirty() const
 {
     return isMainAndLeashSurfaceDirty_;
@@ -263,8 +258,6 @@ void RSScreenRenderParams::OnSync(const std::unique_ptr<RSRenderParams>& target)
         allMainAndLeashSurfaceDrawables_.push_back(ptr);
     }
     targetScreenParams->allMainAndLeashSurfaceDrawables_ = allMainAndLeashSurfaceDrawables_;
-    targetScreenParams->topSurfaceOpaqueRects_.clear();
-    targetScreenParams->topSurfaceOpaqueRects_.assign(topSurfaceOpaqueRects_.begin(), topSurfaceOpaqueRects_.end());
     targetScreenParams->hasChildCrossNode_ = hasChildCrossNode_;
     targetScreenParams->isFirstVisitCrossNodeDisplay_ = isFirstVisitCrossNodeDisplay_;
     targetScreenParams->compositeType_ = compositeType_;
