@@ -1512,11 +1512,11 @@ HWTEST_F(RSRenderServiceConnectionProxyTest, SetScreenFreezeImmediatelyTest, Tes
     bool isFreeze = false;
     sptr<RSISurfaceCaptureCallback> callback;
     RSSurfaceCaptureConfig captureConfig;
-    auto ret = proxy->SetScreenFreezeImmediately(id, isFreeze, callback, captureConfig);
+    auto ret = proxy->SetScreenFreezeImmediately(nodeId, isFreeze, callback, captureConfig);
     EXPECT_EQ(ret, ERR_OK);
 
     isFreeze = true;
-    auto ret = proxy->SetScreenFreezeImmediately(id, isFreeze, callback, captureConfig);
+    auto ret = proxy->SetScreenFreezeImmediately(nodeId, isFreeze, callback, captureConfig);
     EXPECT_EQ(ret, ERR_INVALID_DATA);
 
     auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
@@ -1524,7 +1524,7 @@ HWTEST_F(RSRenderServiceConnectionProxyTest, SetScreenFreezeImmediatelyTest, Tes
     auto remoteObject = samgr->GetSystemAbility(RENDER_SERVICE);
     callback = iface_cast<RSISurfaceCaptureCallback>(remoteObject);
     ASSERT_EQ(proxy->SetScreenChangeCallback(callback), 0);
-    ret = proxy->SetScreenFreezeImmediately(id, isFreeze, callback, captureConfig);
+    ret = proxy->SetScreenFreezeImmediately(nodeId, isFreeze, callback, captureConfig);
     EXPECT_EQ(ret, ERR_OK);
 }
 } // namespace Rosen

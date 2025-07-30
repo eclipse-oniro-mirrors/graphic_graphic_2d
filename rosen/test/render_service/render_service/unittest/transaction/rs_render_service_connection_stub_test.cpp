@@ -1350,7 +1350,7 @@ HWTEST_F(RSRenderServiceConnectionStubTest, SetScreenFreezeImmediatelyTest003, T
     data4.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor());
     data4.WriteUint64(1);
     data4.WriteBool(true);
-    sptr<RSIScreenChangeCallback> callback1 = new RSScreenChangeCallbackStubMock();
+    sptr<RSScreenChangeCallbackStubMock> callback1 = new RSScreenChangeCallbackStubMock();
     ASSERT_NE(callback1, nullptr);
     data4.WriteRemoteObject(callback1->AsObject());
     res = connectionStub_->OnRemoteRequest(code, data4, reply, option);
