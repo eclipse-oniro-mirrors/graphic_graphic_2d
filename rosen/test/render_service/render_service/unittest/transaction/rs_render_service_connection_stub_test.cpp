@@ -1370,6 +1370,5 @@ HWTEST_F(RSRenderServiceConnectionStubTest, SetScreenFreezeImmediatelyTest003, T
     ASSERT_EQ(res, ERR_INVALID_DATA);
     delete callback2;
     callback2 = nullptr;
-    
 }
 } // namespace OHOS::Rosen
