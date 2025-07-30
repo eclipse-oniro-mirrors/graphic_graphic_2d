@@ -268,7 +268,7 @@ bool RSInterfaces::SetWindowFreezeImmediately(std::shared_ptr<RSSurfaceNode> nod
         node->GetId(), isFreeze, callback, captureConfig, blurParam);
 }
 
-bool RSInterfaces::SetScreenFreezeImmediately(std::shared_ptr<RSSurfaceNode> node, bool isFreeze,
+bool RSInterfaces::SetScreenFreezeImmediately(std::shared_ptr<RSDisplayNode> node, bool isFreeze,
     std::shared_ptr<SurfaceCaptureCallback> callback, RSSurfaceCaptureConfig captureConfig)
 {
     if (!node) {

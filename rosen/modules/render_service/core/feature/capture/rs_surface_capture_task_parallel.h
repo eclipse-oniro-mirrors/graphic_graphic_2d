@@ -20,6 +20,7 @@
 
 #include "drawable/rs_render_node_drawable.h"
 #include "feature/capture/rs_surface_capture_task.h"
+#include "pipeline/rs_paint_filter_canvas.h"
 #include "pixel_map.h"
 #include "system/rs_system_parameters.h"
 
@@ -99,7 +100,7 @@ private:
     int32_t CalPixelMapRotation();
 
     void CaptureDisplayNode(DrawableV2::RSRenderNodeDrawable& displayNodeDrawable, RSPaintFilterCanvas& canvas,
-        const RSSurfaceCaptureParam& captureParam, RSPaintFilterCanvas::SnapshotType type);
+        const RSSurfaceCaptureParam& captureParam, RSPaintFilterCanvas::ScreenshotType type);
 
     std::unique_ptr<Media::PixelMap> pixelMap_ = nullptr;
     std::unique_ptr<Media::PixelMap> pixelMapHDR_ = nullptr;

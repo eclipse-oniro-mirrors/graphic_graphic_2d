@@ -1438,7 +1438,7 @@ void RSRenderServiceConnection::TakeSelfSurfaceCapture(
 
 ErrCode RSRenderServiceConnection::SetScreenFreezeImmediately(NodeId id, bool isFreeze,
     sptr<RSISurfaceCaptureCallback> callback, const RSSurfaceCaptureConfig& captureConfig,
-    const RSSurfaceCapturePermissions& permissions)
+    RSSurfaceCapturePermissions permissions)
 {
     bool hasPermission = permissions.screenCapturePermission & permissions.isSystemCalling;
     if (!mainThread_ || !hasPermission) {
@@ -1466,9 +1466,9 @@ ErrCode RSRenderServiceConnection::SetScreenFreezeImmediately(NodeId id, bool is
             RSSurfaceCaptureParam captureParam;
             captureParam.id = id;
             captureParam.config = captureConfig;
-            captureParam.isSystemCalling = isSystemCalling;
+            captureParam.isSystemCalling = hasPermission;
             captureParam.isFreeze = isFreeze;
-            cpautreParam.secExemption = hasPermission;
+            captureParam.secExemption = hasPermission;
             RSSurfaceCaptureTaskParallel::CheckModifiers(id, captureConfig.useCurWindow);
             RSSurfaceCaptureTaskParallel::Capture(callback, captureParam);
         }

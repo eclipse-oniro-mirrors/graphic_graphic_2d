@@ -383,7 +383,8 @@ bool RSSurfaceCaptureTaskParallel::RunHDR(
 #endif
     auto surface = CreateSurface(pixelMap_);
     auto surfaceHDR = CreateSurface(pixelMapHDR_);
-    if (!DrawHDRSurfaceContent(surface, false) || !DrawHDRSurfaceContent(surfaceHDR, true)) {
+    if (!DrawHDRSurfaceContent(surface, false, captureParam) ||
+        !DrawHDRSurfaceContent(surfaceHDR, true, captureParam)) {
         RS_LOGE("RSSurfaceCaptureTaskParallel::RunHDR: DrawHDRSurfaceContent failed!");
         return false;
     }
