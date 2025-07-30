@@ -968,15 +968,12 @@ void RSLogicalDisplayRenderNodeDrawable::DrawSecurityMask()
     // Make sure the canvas is oriented accurately.
     curCanvas_->ResetMatrix();
 
-    Drawing::Brush brush;
-    curCanvas_->AttachBrush(brush);
     curCanvas_->DrawImageRect(*image, srcRect, dstRect, Drawing::SamplingOptions(),
         Drawing::SrcRectConstraint::STRICT_SRC_RECT_CONSTRAINT);
     if (watermark) {
         curCanvas_->DrawImageRect(*watermark, srcRect, dstRect, Drawing::SamplingOptions(),
             Drawing::SrcRectConstraint::STRICT_SRC_RECT_CONSTRAINT);
     }
-    curCanvas_->DetachBrush();
 
     RS_LOGI("DisplayDrawable::DrawSecurityMask");
     curCanvas_->SetDisableFilterCache(false);
