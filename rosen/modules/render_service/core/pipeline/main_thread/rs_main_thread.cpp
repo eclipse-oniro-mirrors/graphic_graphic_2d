@@ -584,6 +584,7 @@ void RSMainThread::Init()
     });
     RSTaskDispatcher::GetInstance().RegisterTaskDispatchFunc(gettid(), taskDispatchFunc);
     RsFrameReport::GetInstance().Init();
+    RSUniHwcPrevalidateUtil::GetInstance().Init();
     RSSystemProperties::WatchSystemProperty(HIDE_NOTCH_STATUS, OnHideNotchStatusCallback, nullptr);
     RSSystemProperties::WatchSystemProperty(DRAWING_CACHE_DFX, OnDrawingCacheDfxSwitchCallback, nullptr);
     if (isUniRender_) {
@@ -1298,10 +1299,10 @@ void RSMainThread::RequestNextVsyncForCachedCommand(std::string& transactionFlag
 #endif
 }
 
-bool RSMainThread::NeedConsumeMultiCommand(uint32_t& dvsyncPid)
+bool RSMainThread::NeedConsumeMultiCommand(int32_t& dvsyncPid)
 {
     bool needUpdateDVSyncTime = rsVSyncDistributor_->NeedUpdateVSyncTime(dvsyncPid);
-    int64_t lastUpdateTime = rsVSyncDistributor_->GetLastUpdateTime();
+    uint64_t lastUpdateTime = static_cast<uint64_t>(rsVSyncDistributor_->GetLastUpdateTime());
     if (needUpdateDVSyncTime) {
         RS_TRACE_NAME("lastUpdateTime:" + std::to_string(lastUpdateTime));
         if (lastUpdateTime + static_cast<uint64_t>(rsVSyncDistributor_->GetUiCommandDelayTime()) < timestamp_) {
@@ -1332,7 +1333,7 @@ bool RSMainThread::NeedConsumeDVSyncCommand(uint32_t& endIndex,
 void RSMainThread::CheckAndUpdateTransactionIndex(std::shared_ptr<TransactionDataMap>& transactionDataEffective,
     std::string& transactionFlags)
 {
-    uint32_t dvsyncPid = 0;
+    int32_t dvsyncPid = 0;
     bool needConsume = NeedConsumeMultiCommand(dvsyncPid);
     for (auto& rsTransactionElem: effectiveTransactionDataIndexMap_) {
         auto pid = rsTransactionElem.first;
@@ -1931,17 +1932,17 @@ static bool CheckOverlayDisplayEnable()
 #endif
 }
 
-bool GetMultiDisplay(const std::shared_ptr<RSBaseRenderNode>& rootNode)
+bool RSMainThread::GetMultiDisplay(const std::shared_ptr<RSBaseRenderNode>& rootNode)
 {
-    auto screenList = rootNode->GetChildrenList();
-    uint32_t count = 0;
-    for (auto node : screenList) {
+    auto screenNodeList = rootNode->GetChildrenList();
+    uint32_t validCount = 0;
+    for (const auto& node : screenNodeList) {
         auto screenNode = node.lock();
         if (screenNode && screenNode->GetChildrenCount() > 0) {
-            count++;
+            validCount++;
         }
     }
-    return count > 1;
+    return validCount > 1;
 }
 
 void RSMainThread::CheckIfHardwareForcedDisabled()
@@ -2512,12 +2513,19 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
 
 bool RSMainThread::DoDirectComposition(std::shared_ptr<RSBaseRenderNode> rootNode, bool waitForRT)
 {
-    auto children = rootNode->GetChildren();
-    if (children->empty()) {
+    auto children = rootNode->GetChildrenList();
+    if (children.empty()) {
         return false;
     }
     RS_TRACE_NAME("DoDirectComposition");
-    auto screenNode = RSRenderNode::ReinterpretCast<RSScreenRenderNode>(children->front());
+    std::shared_ptr<RSScreenRenderNode> screenNode = nullptr;
+    for (const auto& child : children) {
+        auto node = child.lock();
+        if (node && node->GetChildrenCount() > 0) {
+            screenNode = node->ReinterpretCastTo<RSScreenRenderNode>();
+            break;
+        }
+    }
     if (!screenNode ||
         screenNode->GetCompositeType() != CompositeType::UNI_RENDER_COMPOSITE) {
         RS_LOGE("DoDirectComposition screenNode state error");
@@ -3274,6 +3282,7 @@ void RSMainThread::RequestNextVSync(const std::string& fromWhom, int64_t lastVSy
 
 void RSMainThread::DumpEventHandlerInfo()
 {
+    std::lock_guard<std::mutex> lock(dumpInfoMutex_);
     RSEventDumper dumper;
     handler_->Dump(dumper);
     dumpInfo_ = dumper.GetOutput().c_str();
@@ -4262,7 +4271,7 @@ void RSMainThread::DumpMem(std::unordered_set<std::u16string>& argSets, std::str
     } else {
         MemoryManager::DumpMemoryUsage(log, type);
     }
-    if (type.empty() || type == MEM_GPU_TYPE) {
+    if ((type.empty() || type == MEM_GPU_TYPE) && RSSystemProperties::GetGpuApiType() != GpuApiType::DDGR) {
         auto subThreadManager = RSSubThreadManager::Instance();
         if (subThreadManager) {
             subThreadManager->DumpMem(log);

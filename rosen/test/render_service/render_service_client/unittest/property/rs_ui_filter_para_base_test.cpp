@@ -14,6 +14,7 @@
  */
 
 #include "gtest/gtest.h"
+#include "ui_effect/filter/include/filter_bezier_warp_para.h"
 #include "ui_effect/filter/include/filter_blur_para.h"
 #include "ui_effect/filter/include/filter_color_gradient_para.h"
 #include "ui_effect/filter/include/filter_content_light_para.h"
@@ -62,10 +63,14 @@ HWTEST_F(RSUIFilterParaBaseTest, RSNGFilterBaseCreate001, TestSize.Level1)
     auto filter3 = RSNGFilterBase::Create(RSNGEffectType::VARIABLE_RADIUS_BLUR);
     EXPECT_NE(filter3, nullptr);
     EXPECT_EQ(filter3->GetType(), RSNGEffectType::VARIABLE_RADIUS_BLUR);
-
-    auto filter4 = RSNGFilterBase::Create(RSNGEffectType::CONTENT_LIGHT);
+    
+    auto filter4 = RSNGFilterBase::Create(RSNGEffectType::BEZIER_WARP);
     EXPECT_NE(filter4, nullptr);
-    EXPECT_EQ(filter4->GetType(), RSNGEffectType::CONTENT_LIGHT);
+    EXPECT_EQ(filter4->GetType(), RSNGEffectType::BEZIER_WARP);
+
+    auto filter5 = RSNGFilterBase::Create(RSNGEffectType::CONTENT_LIGHT);
+    EXPECT_NE(filter5, nullptr);
+    EXPECT_EQ(filter5->GetType(), RSNGEffectType::CONTENT_LIGHT);
 }
 
 /**
@@ -100,10 +105,14 @@ HWTEST_F(RSUIFilterParaBaseTest, RSNGFilterBaseCreate002, TestSize.Level1)
     auto para6 = std::make_shared<VariableRadiusBlurPara>();
     auto filter6 = RSNGFilterBase::Create(para6);
     EXPECT_NE(filter6, nullptr);
-
-    auto para7 = std::make_shared<ContentLightPara>();
+    
+    auto para7 = std::make_shared<BezierWarpPara>();
     auto filter7 = RSNGFilterBase::Create(para7);
     EXPECT_NE(filter7, nullptr);
+
+    auto para8 = std::make_shared<ContentLightPara>();
+    auto filter8 = RSNGFilterBase::Create(para8);
+    EXPECT_NE(filter8, nullptr);
 }
 
 /**

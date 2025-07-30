@@ -32,7 +32,6 @@
 // dfx
 #include "drawable/dfx/rs_refresh_rate_dfx.h"
 #include "drawable/dfx/rs_dirty_rects_dfx.h"
-
 #ifdef RS_PROFILER_ENABLED
 #include "rs_profiler_capture_recorder.h"
 #endif
@@ -220,7 +219,7 @@ void RSLogicalDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
 #else
     RSRenderNodeDrawable::OnDraw(*curCanvas_);
 #endif
-   
+
     DrawAdditionalContent(*curCanvas_);
 
     if (needOffscreen && canvasBackup_) {
@@ -817,9 +816,12 @@ void RSLogicalDisplayRenderNodeDrawable::DrawMirrorScreen(
     }
 
     uniParam->SetScreenInfo(screenParams->GetScreenInfo());
+    // When mirrorSource is paused, mirrorScreen needs to redraw to avoid using an expired cacheImage
+    bool mirroredScreenIsPause =
+        CreateOrGetScreenManager()->GetVirtualScreenStatus(mirroredParams->GetScreenId()) == VIRTUAL_SCREEN_PAUSE;
     // if specialLayer is visible and no CacheImg
     if ((mirroredParams->IsSecurityDisplay() != params.IsSecurityDisplay() && specialLayerType == HAS_SPECIAL_LAYER)
-        || !cacheImage || params.GetVirtualScreenMuteStatus()) {
+        || !cacheImage || params.GetVirtualScreenMuteStatus() || mirroredScreenIsPause) {
         MirrorRedrawDFX(true, params.GetScreenId());
         virtualProcesser->SetDrawVirtualMirrorCopy(false);
         DrawMirror(params, virtualProcesser, *uniParam);

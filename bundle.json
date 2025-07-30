@@ -55,7 +55,6 @@
         "graphic_2d_feature_enable_vulkan",
         "graphic_2d_feature_use_aps_igameservice_func",
         "graphic_2d_feature_use_igraphics_extend_hooks",
-        "graphic_2d_feature_vkqueue_priority_enable",
         "graphic_2d_feature_bootanimation_ext_enable",
         "graphic_2d_feature_overlay_display_enable",
         "graphic_2d_feature_enable_opengl_to_vulkan",
@@ -519,6 +518,14 @@
                 "vsync_system_ability_listener.h"
               ],
               "header_base": "//foundation/graphic/graphic_2d/rosen/modules/composer/vsync/include"
+            }
+          },
+          {
+            "type": "so",
+            "name": "//foundation/graphic/graphic_2d/interfaces/kits/ani/color_manager:ani_color_space_object_convertor",
+            "header": {
+              "header_files": [ "ani_color_space_object_convertor.h" ],
+              "header_base": "//foundation/graphic/graphic_2d/interfaces/kits/ani/color_manager/src/color_space_object_convertor"
             }
           }
         ],

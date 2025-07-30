@@ -17,6 +17,7 @@
 
 #include <unordered_set>
 
+#include "ui_effect/filter/include/filter_bezier_warp_para.h"
 #include "ui_effect/filter/include/filter_blur_para.h"
 #include "ui_effect/filter/include/filter_color_gradient_para.h"
 #include "ui_effect/filter/include/filter_content_light_para.h"
@@ -77,10 +78,14 @@ static std::unordered_map<RSNGEffectType, FilterCreator> creatorLUT = {
             return std::make_shared<RSNGVariableRadiusBlurFilter>();
         }
     },
+    {RSNGEffectType::BEZIER_WARP, [] {
+            return std::make_shared<RSNGBezierWarpFilter>();
+        }
+    },
     {RSNGEffectType::CONTENT_LIGHT, [] {
             return std::make_shared<RSNGContentLightFilter>();
         }
-    },
+    }
 };
 
 namespace {
@@ -189,6 +194,7 @@ std::shared_ptr<RSNGFilterBase> ConvertVariableRadiusBlurFilterPara(std::shared_
     return variableRadiusBlurFilter;
 }
 
+
 std::shared_ptr<RSNGFilterBase> ConvertContentLightFilterPara(std::shared_ptr<FilterPara> filterPara)
 {
     auto filter = RSNGFilterBase::Create(RSNGEffectType::CONTENT_LIGHT);
@@ -202,6 +208,20 @@ std::shared_ptr<RSNGFilterBase> ConvertContentLightFilterPara(std::shared_ptr<Fi
     contentLightFilter->Setter<ContentLightIntensityTag>(contentLightFilterPara->GetLightIntensity());
     return contentLightFilter;
 }
+
+std::shared_ptr<RSNGFilterBase> ConvertBezierWarpFilterPara(std::shared_ptr<FilterPara> filterPara)
+{
+    auto filter = RSNGFilterBase::Create(RSNGEffectType::BEZIER_WARP);
+    if (filter == nullptr || filterPara == nullptr) {
+        return nullptr;
+    }
+    auto bezierWarpFilter = std::static_pointer_cast<RSNGBezierWarpFilter>(filter);
+    auto bezierWarpFilterPara = std::static_pointer_cast<BezierWarpPara>(filterPara);
+    auto& bezierCtrlPoints = bezierWarpFilterPara->GetBezierControlPoints();
+    // note: the order of values has to be same with the order of ADD_PROPERTY_ATG in DECLARE_TILTER
+    const auto& values = std::apply([](auto&... args) { return std::tie(args...); }, bezierCtrlPoints);
+    bezierWarpFilter->Setter(values);
+    return bezierWarpFilter;
 }
 
 static std::unordered_map<FilterPara::ParaType, FilterConvertor> convertorLUT = {
@@ -212,6 +232,7 @@ static std::unordered_map<FilterPara::ParaType, FilterConvertor> convertorLUT = 
     { FilterPara::ParaType::COLOR_GRADIENT, ConvertColorGradientFilterPara },
     { FilterPara::ParaType::MASK_TRANSITION, ConvertMaskTransitionFilterPara },
     { FilterPara::ParaType::VARIABLE_RADIUS_BLUR, ConvertVariableRadiusBlurFilterPara },
+    { FilterPara::ParaType::BEZIER_WARP, ConvertBezierWarpFilterPara },
     { FilterPara::ParaType::CONTENT_LIGHT, ConvertContentLightFilterPara },
 };
 

@@ -222,8 +222,9 @@ bool RSSystemProperties::GetRenderNodeTraceEnabled()
 
 bool RSSystemProperties::GetAnimationTraceEnabled()
 {
-    static bool isNeedTrace = system::GetParameter("persist.rosen.animationtrace.enabled", "0") != "0";
-    return isNeedTrace;
+    bool isAnimationTraceDebugEnabled = system::GetParameter("persist.rosen.animationtrace.enabled", "0") != "0";
+    bool isOpenTestModeTraceDebug = system::GetParameter("sys.graphic.openTestModeTrace", "0") != "0";
+    return isAnimationTraceDebugEnabled || isOpenTestModeTraceDebug;
 }
 
 bool RSSystemProperties::GetAnimationDelayOptimizeEnabled()
@@ -293,11 +294,11 @@ PartialRenderType RSSystemProperties::GetUniPartialRenderEnabled()
 
 StencilPixelOcclusionCullingType RSSystemProperties::GetStencilPixelOcclusionCullingEnabled()
 {
-    static CachedHandle g_Handle = CachedParameterCreate("rosen.stencilpixelocclusionculling.enabled", "-1");
+    static CachedHandle g_Handle = CachedParameterCreate("rosen.stencilpixelocclusionculling.enabled", "0");
     int changed = 0;
     const char *enable = CachedParameterGetChanged(g_Handle, &changed);
     return static_cast<StencilPixelOcclusionCullingType>(ConvertToInt(enable,
-        static_cast<int>(StencilPixelOcclusionCullingType::DEFAULT)));
+        static_cast<int>(StencilPixelOcclusionCullingType::DISABLED)));
 }
 
 AdvancedDirtyRegionType RSSystemProperties::GetAdvancedDirtyRegionEnabled()
@@ -858,18 +859,11 @@ bool RSSystemProperties::GetSubtreeParallelEnable()
     return subtreeParallelEnable;
 }
 
-bool RSSystemProperties::GetSubtreeLogEnabled()
+int RSSystemProperties::GetSubtreeDebugOption()
 {
-    static const bool subtreeLogEnabled = std::atoi((system::GetParameter(
-        "persist.sys.graphic.subtreeLogEnabled", "0")).c_str()) != 0;
-    return subtreeLogEnabled;
-}
-
-bool RSSystemProperties::GetSubtreeDeviceControl()
-{
-    static const bool subtreeDeviceControl = std::atoi((system::GetParameter(
-        "persist.sys.graphic.subtreeDeviceControl", "0")).c_str()) != 0;
-    return subtreeDeviceControl;
+    static const int subtreeDebugOption =
+        std::atoi((system::GetParameter("persist.sys.graphic.subtreeDebugOption", "0")).c_str());
+    return subtreeDebugOption;
 }
 
 bool RSSystemProperties::GetUIFirstEnabled()
@@ -1058,19 +1052,19 @@ bool RSSystemProperties::IsSmallFoldDevice()
     return foldType == "2,0,0,0" || foldType == "4,2,0,0";
 }
 
-bool RSSystemProperties::GetTimeVsyncDisabled()
-{
-    static bool timeVsyncDisabled =
-        std::atoi((system::GetParameter("persist.sys.graphic.timeVsyncDisabled", "0")).c_str()) != 0;
-    return timeVsyncDisabled;
-}
-
 bool RSSystemProperties::GetCacheCmdEnabled()
 {
     static CachedHandle g_Handle = CachedParameterCreate("rosen.cacheCmd.enabled", "1");
     int changed = 0;
     const char *enable = CachedParameterGetChanged(g_Handle, &changed);
     return ConvertToInt(enable, 1) != 0;
+}
+
+bool RSSystemProperties::GetTimeVsyncDisabled()
+{
+    static bool timeVsyncDisabled =
+        std::atoi((system::GetParameter("persist.sys.graphic.timeVsyncDisabled", "0")).c_str()) != 0;
+    return timeVsyncDisabled;
 }
 
 bool RSSystemProperties::GetASTCEnabled()
