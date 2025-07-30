@@ -2901,3 +2901,25 @@ HWTEST_F(RSUifirstManagerTest, ProcessMarkedNodeSubThreadCacheTest, TestSize.Lev
     ASSERT_TRUE(rsSubThreadCache.cacheSurface_ == nullptr);
     ASSERT_EQ(uifirstManager_.markedClearCacheNodes_.size(), 0);}
 }
+
+/**
+ * @tc.name: SnapshotRotation
+ * @tc.desc: Test SnapshotRotation
+ * @tc.type: FUNC
+ * @tc.require: issueICPMFO
+ */
+HWTEST_F(RSUifirstManagerTest, SnapshotRotation, TestSize.Level2)
+{
+    bool isSnapshotRotationScene = uifirstManager_.isSnapshotRotationScene_;
+    EXPECT_FALSE(uifirstManager_.IsSnapshotRotationScene());
+
+    auto scene = SystemAnimatedScenes::SNAPSHOT_ROTATION;
+    uifirstManager_.OnProcessAnimateScene(scene);
+    EXPECT_TRUE(uifirstManager_.IsSnapshotRotationScene());
+
+    scene = SystemAnimatedScenes::OTHERS;
+    uifirstManager_.OnProcessAnimateScene(scene);
+    EXPECT_FALSE(uifirstManager_.IsSnapshotRotationScene());
+
+    uifirstManager_.isSnapshotRotationScene_ = isSnapshotRotationScene;
+}
