@@ -41,7 +41,6 @@ public:
     [[nodiscard]] static bool Unmarshalling(Parcel& parcel, std::shared_ptr<RSNGRenderShaderBase>& val);
     void Dump(std::string& out) const;
 
-private:
     friend class RSNGRenderShaderHelper;
 };
 
@@ -79,6 +78,12 @@ protected:
 
 class RSB_EXPORT RSNGRenderShaderHelper {
 public:
+    static void SetRotationAngle(std::shared_ptr<RSNGRenderShaderBase> shader,
+        const Vector3f& rotationAngle);
+    
+    static void SetCornerRadius(std::shared_ptr<RSNGRenderShaderBase> shader,
+        float cornerRadius);
+    
     static bool CheckEnableEDR(std::shared_ptr<RSNGRenderShaderBase> shader);
 };
 
@@ -111,6 +116,15 @@ DECLARE_SHADER(ParticleCircularHalo, PARTICLE_CIRCULAR_HALO,
     ADD_PROPERTY_TAG(ParticleCircularHalo, Center),
     ADD_PROPERTY_TAG(ParticleCircularHalo, Radius),
     ADD_PROPERTY_TAG(ParticleCircularHalo, Noise)
+);
+
+DECLARE_SHADER(BorderLight, BORDER_LIGHT,
+    ADD_PROPERTY_TAG(BorderLight, Position),
+    ADD_PROPERTY_TAG(BorderLight, Color),
+    ADD_PROPERTY_TAG(BorderLight, Intensity),
+    ADD_PROPERTY_TAG(BorderLight, Width),
+    ADD_PROPERTY_TAG(BorderLight, RotationAngle),
+    ADD_PROPERTY_TAG(BorderLight, CornerRadius)
 );
 
 #undef ADD_PROPERTY_TAG

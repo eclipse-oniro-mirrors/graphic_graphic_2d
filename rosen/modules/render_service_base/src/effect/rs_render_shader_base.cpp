@@ -43,6 +43,10 @@ static std::unordered_map<RSNGEffectType, ShaderCreator> creatorLUT = {
     {RSNGEffectType::PARTICLE_CIRCULAR_HALO, [] {
             return std::make_shared<RSNGRenderParticleCircularHalo>();
         }
+    },
+    {RSNGEffectType::BORDER_LIGHT, [] {
+            return std::make_shared<RSNGRenderBorderLight>();
+        }
     }
 };
 
@@ -112,5 +116,30 @@ bool RSNGRenderShaderHelper::CheckEnableEDR(std::shared_ptr<RSNGRenderShaderBase
     return false;
 }
 
+void RSNGRenderShaderHelper::SetRotationAngle(std::shared_ptr<RSNGRenderShaderBase> shader,
+    const Vector3f& rotationAngle)
+{
+    auto current = shader;
+    while (current) {
+        if (current->GetType() == RSNGEffectType::BORDER_LIGHT) {
+            auto borderLightShader = std::static_pointer_cast<RSNGRenderBorderLight>(current);
+            borderLightShader->Setter<BorderLightRotationAngleRenderTag>(rotationAngle);
+        }
+        current =  current->nextEffect_;
+    }
+}
+
+void RSNGRenderShaderHelper::SetCornerRadius(std::shared_ptr<RSNGRenderShaderBase> shader,
+    float cornerRadius)
+{
+    auto current = shader;
+    while (current) {
+        if (current->GetType() == RSNGEffectType::BORDER_LIGHT) {
+            auto borderLightShader = std::static_pointer_cast<RSNGRenderBorderLight>(current);
+            borderLightShader->Setter<BorderLightCornerRadiusRenderTag>(cornerRadius);
+        }
+        current =  current->nextEffect_;
+    }
+}
 } // namespace Rosen
 } // namespace OHOS

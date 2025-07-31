@@ -2126,12 +2126,6 @@ void RSNode::SetUIForegroundFilter(const OHOS::Rosen::Filter* foregroundFilter)
             auto brightnessRatio = hdrBrightnessRatioPara->GetBrightnessRatio();
             SetHDRUIBrightness(brightnessRatio);
         }
-        if (filterPara->GetParaType() == FilterPara::CONTENT_LIGHT) {
-            auto contentLightProperty = std::make_shared<RSUIContentLightFilterPara>();
-            auto contentLightPara = std::static_pointer_cast<ContentLightPara>(filterPara);
-            contentLightProperty->SetContentLight(contentLightPara);
-            uiFilter->Insert(contentLightProperty);
-        }
     }
     if (!uiFilter->GetAllTypes().empty()) {
         SetForegroundUIFilter(uiFilter);
@@ -2170,7 +2164,7 @@ void RSNode::SetVisualEffect(const VisualEffect* visualEffect)
             continue;
         }
         if (visualEffectPara->GetParaType() == VisualEffectPara::BORDER_LIGHT_EFFECT) {
-            SetBorderLightShader(visualEffectPara);
+            SetBackgroundNGShader(RSNGShaderBase::Create(visualEffectPara));
         }
         if (visualEffectPara->GetParaType() != VisualEffectPara::BACKGROUND_COLOR_EFFECT) {
             continue;

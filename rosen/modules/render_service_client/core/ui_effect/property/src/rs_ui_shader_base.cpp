@@ -13,11 +13,14 @@
  * limitations under the License.
  */
 
+#include "ui_effect/effect/include/border_light_effect_para.h"
+
 #include "ui_effect/property/include/rs_ui_shader_base.h"
 
 namespace OHOS {
 namespace Rosen {
 using ShaderCreator = std::function<std::shared_ptr<RSNGShaderBase>()>;
+using ShaderConvertor = std::function<std::shared_ptr<RSNGShaderBase>(std::shared_ptr<VisualEffectPara>)>;
 
 static std::unordered_map<RSNGEffectType, ShaderCreator> creatorLUT = {
     {RSNGEffectType::CONTOUR_DIAGONAL_FLOW_LIGHT, [] {
@@ -35,7 +38,34 @@ static std::unordered_map<RSNGEffectType, ShaderCreator> creatorLUT = {
     {RSNGEffectType::PARTICLE_CIRCULAR_HALO, [] {
             return std::make_shared<RSNGParticleCircularHalo>();
         }
+    },
+    {RSNGEffectType::BORDER_LIGHT, [] {
+            return std::make_shared<RSNGBorderLight>();
+        }
     }
+};
+
+namespace {
+std::shared_ptr<RSNGShaderBase> ConvertBorderLightPara(std::shared_ptr<VisualEffectPara> effectPara)
+{
+    auto effect = RSNGShaderBase::Create(RSNGEffectType::BORDER_LIGHT);
+    bool isInvalid = (effect == nullptr || effectPara == nullptr);
+    if (isInvalid) {
+        return nullptr;
+    }
+    auto borderLightEffect = std::static_pointer_cast<RSNGBorderLight>(effect);
+    auto borderLightEffectPara = std::static_pointer_cast<BorderLightEffectPara>(effectPara);
+
+    borderLightEffect->Setter<BorderLightPositionTag>(borderLightEffectPara->GetLightPosition());
+    borderLightEffect->Setter<BorderLightColorTag>(borderLightEffectPara->GetLightColor());
+    borderLightEffect->Setter<BorderLightIntensityTag>(borderLightEffectPara->GetLightIntensity());
+    borderLightEffect->Setter<BorderLightWidthTag>(borderLightEffectPara->GetLightWidth());
+    return borderLightEffect;
+}
+}
+
+static std::unordered_map<VisualEffectPara::ParaType, ShaderConvertor> convertorLUT = {
+    { VisualEffectPara::ParaType::BORDER_LIGHT_EFFECT, ConvertBorderLightPara },
 };
 
 std::shared_ptr<RSNGShaderBase> RSNGShaderBase::Create(RSNGEffectType type)
@@ -44,5 +74,14 @@ std::shared_ptr<RSNGShaderBase> RSNGShaderBase::Create(RSNGEffectType type)
     return it != creatorLUT.end() ? it->second() : nullptr;
 }
 
+std::shared_ptr<RSNGShaderBase> RSNGShaderBase::Create(std::shared_ptr<VisualEffectPara> effectPara)
+{
+    if (!effectPara) {
+        return nullptr;
+    }
+
+    auto it = convertorLUT.find(effectPara->GetParaType());
+    return it != convertorLUT.end() ? it->second(effectPara) : nullptr;
+}
 } // namespace Rosen
 } // namespace OHOS

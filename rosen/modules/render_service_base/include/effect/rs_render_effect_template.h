@@ -44,6 +44,18 @@ public:
     virtual void SetModifierType(RSModifierType inType) = 0;
     virtual void Dump(std::string& out) const = 0;
 
+    bool ContainsType(RSNGEffectType type)
+    {
+        auto current = this;
+        while (current) {
+            if (current->GetType() == type) {
+                return true;
+            }
+        }
+        current = current->nextEffect_.get();
+        return false;
+    }
+
 protected:
     [[nodiscard]] virtual bool OnUnmarshalling(Parcel& parcel) = 0;
 
@@ -263,6 +275,8 @@ public:
             case RSNGEffectType::WAVE_GRADIENT_MASK: return "WaveGradientMask";
             case RSNGEffectType::MASK_TRANSITION: return "MaskTransition";
             case RSNGEffectType::VARIABLE_RADIUS_BLUR: return "VariableRadiusBlur";
+            case RSNGEffectType::CONTENT_LIGHT: return "ContentLight";
+            case RSNGEffectType::BORDER_LIGHT: return "BorderLight";
             default:
                 return "UNKNOWN";
         }
