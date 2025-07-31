@@ -157,6 +157,8 @@ public:
 
     bool isRunCombinated() { return paragraph_->isRunCombinated(); }
 
+    std::string_view GetDumpInfo() override;
+
 private:
     void ParagraphStyleUpdater(skt::Paragraph& skiaParagraph, const ParagraphStyle& spParagraphStyle,
         skt::InternalState& state);

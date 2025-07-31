@@ -1230,5 +1230,91 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographySplitRunsText005, TestS
     EXPECT_EQ(defaultRuns.size(), 1);
     EXPECT_EQ(runs.size(), paragraph->GetLineCount());
 }
+
+/*
+ * @tc.name: TypographyGetDumpInfoTest01
+ * @tc.desc: test for get dump info
+ * @tc.type: FUNC
+ */
+HWTEST_F(OH_Drawing_TypographyTest, TypographyGetDumpInfoTest01, TestSize.Level0)
+{
+    OHOS::Rosen::TypographyStyle typographyStyle;
+    std::shared_ptr<OHOS::Rosen::FontCollection> fontCollection =
+        OHOS::Rosen::FontCollection::From(std::make_shared<txt::FontCollection>());
+    std::unique_ptr<OHOS::Rosen::TypographyCreate> typographyCreate =
+        OHOS::Rosen::TypographyCreate::Create(typographyStyle, fontCollection);
+    ASSERT_NE(typographyCreate, nullptr);
+    OHOS::Rosen::TextStyle style1;
+    style1.fontSize = 50;
+    style1.color = Drawing::Color::ColorQuadSetARGB(255, 255, 0, 0);
+    std::u16string text = u"你好, 测试, DumpInfo中的paint flag,fontSize, fontColor, glyph的个数, paragraph的text的长度.";
+    typographyCreate->PushStyle(style1);
+    typographyCreate->AppendText(text);
+    OHOS::Rosen::TextStyle style2;
+    style2.fontSize = 60;
+    style2.color = Drawing::Color::ColorQuadSetARGB(255, 255, 255, 0);
+    typographyCreate->PushStyle(style2);
+    typographyCreate->AppendText(text);
+    std::unique_ptr<OHOS::Rosen::Typography> typography = typographyCreate->CreateTypography();
+    ASSERT_NE(typography, nullptr);
+    double maxWidth = 500;
+    typography->Layout(maxWidth);
+
+    std::string_view expectInfo1 = "This is paragraph dump info:\nText size: 208\nGlyph size: 156\n"
+        "Text span[0-77] font size: 50, font color: 4294901760\n"
+        "Text span[78-155] font size: 60, font color: 4294967040\n"
+        "Line: 1 painted Flag abnormal\n"
+        "Line: 2 painted Flag abnormal\n"
+        "Line: 3 painted Flag abnormal\n"
+        "Line: 4 painted Flag abnormal\n"
+        "Line: 5 painted Flag abnormal\n";
+    EXPECT_EQ(typography->GetDumpInfo(), expectInfo1);
+
+    OHOS::Rosen::Drawing::Canvas canvas;
+    typography->Paint(&canvas, 0, 0);
+    std::string_view expectInfo2 = "This is paragraph dump info:\nText size: 208\nGlyph size: 156\n"
+        "Text span[0-77] font size: 50, font color: 4294901760\n"
+        "Text span[78-155] font size: 60, font color: 4294967040\n";
+    EXPECT_EQ(typography->GetDumpInfo(), expectInfo2);
+}
+
+/*
+ * @tc.name: TypographyGetDumpInfoTest02
+ * @tc.desc: test for get dump info when set skip flag
+ * @tc.type: FUNC
+ */
+HWTEST_F(OH_Drawing_TypographyTest, TypographyGetDumpInfoTest02, TestSize.Level0)
+{
+    OHOS::Rosen::TypographyStyle typographyStyle;
+    std::shared_ptr<OHOS::Rosen::FontCollection> fontCollection =
+        OHOS::Rosen::FontCollection::From(std::make_shared<txt::FontCollection>());
+    std::unique_ptr<OHOS::Rosen::TypographyCreate> typographyCreate =
+        OHOS::Rosen::TypographyCreate::Create(typographyStyle, fontCollection);
+    ASSERT_NE(typographyCreate, nullptr);
+    OHOS::Rosen::TextStyle style1;
+    style1.fontSize = 50;
+    style1.color = Drawing::Color::ColorQuadSetARGB(255, 255, 0, 0);
+    std::u16string text = u"你好, 测试, DumpInfo中的paint flag,fontSize, fontColor, glyph的个数, paragraph的text的长度.";
+    typographyCreate->PushStyle(style1);
+    typographyCreate->AppendText(text);
+    OHOS::Rosen::TextStyle style2;
+    style2.fontSize = 60;
+    style2.color = Drawing::Color::ColorQuadSetARGB(255, 255, 255, 0);
+    typographyCreate->PushStyle(style2);
+    typographyCreate->AppendText(text);
+    std::unique_ptr<OHOS::Rosen::Typography> typography = typographyCreate->CreateTypography();
+    ASSERT_NE(typography, nullptr);
+    double maxWidth = 500;
+    typography->Layout(maxWidth);
+
+    OHOS::Rosen::Drawing::Canvas canvas;
+    typography->SetSkipTextBlobDrawing(true);
+    typography->Paint(&canvas, 0, 0);
+    std::string_view expectInfo = "This is paragraph dump info:\nText size: 208\nGlyph size: 156\n"
+        "Text span[0-77] font size: 50, font color: 4294901760\n"
+        "Text span[78-155] font size: 60, font color: 4294967040\n";
+    EXPECT_EQ(typography->GetDumpInfo(), expectInfo);
+}
+
 } // namespace Rosen
 } // namespace OHOS

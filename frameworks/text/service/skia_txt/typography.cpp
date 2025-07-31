@@ -560,6 +560,15 @@ void Typography::SetSkipTextBlobDrawing(bool state)
     paragraph_->SetSkipTextBlobDrawing(state);
 }
 
+std::string_view Typography::GetDumpInfo()
+{
+    std::shared_lock<std::shared_mutex> readLock(mutex_);
+    if (paragraph_ == nullptr) {
+        return "";
+    }
+    return paragraph_->GetDumpInfo();
+}
+
 } // namespace AdapterTxt
 } // namespace Rosen
 } // namespace OHOS
