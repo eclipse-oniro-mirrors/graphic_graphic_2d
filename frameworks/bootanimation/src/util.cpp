@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-1
+
 #include "util.h"
 
 #include <event_handler.h>
@@ -22,9 +22,6 @@
 #include <parameters.h>
 
 namespace OHOS {
-constexpr const float HALF = 2.0;
-constexpr const float RATIO_PHONE = 360.0;
-constexpr const float RATIO_OTHER = 800.0;
 
 void PostTask(std::function<void()> func, uint32_t delayTime)
 {
