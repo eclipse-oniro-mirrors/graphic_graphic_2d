@@ -38,8 +38,7 @@ void HgmContext::InitHgmTaskHandleThread(
         RSMainThread::Instance()->PostTask([this, idleTimerExpired, forceUpdate]() {
             RS_TRACE_NAME_FMT("HgmContext::TimerExpiredCallback Run idleTimerExpiredFlag: %s forceUpdateFlag: %s",
                 idleTimerExpired ? "True" : "False", forceUpdate ? "True" : "False");
-            if(lastForceUpdateVsyncId_ != currVsyncId_)
-            {
+            if(lastForceUpdateVsyncId_ != currVsyncId_) {
                 lastForceUpdateVsyncId_ = currVsyncId_;
                 RSMainThread::Instance()->SetForceUpdateUniRenderFlag(forceUpdate);
                 RSMainThread::Instance()->RequestNextVSync("ltpoForceUpdate");
