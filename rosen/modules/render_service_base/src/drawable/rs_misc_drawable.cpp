@@ -386,6 +386,7 @@ bool RSBeginBlenderDrawable::OnUpdate(const RSRenderNode& node)
         // map blendMode to Drawing::BlendMode and convert to Blender
         stagingBlender_ = Drawing::Blender::CreateWithBlendMode(static_cast<Drawing::BlendMode>(blendMode - 1));
         stagingIsDangerous_ = RSPropertyDrawableUtils::IsDangerousBlendMode(blendMode - 1, stagingBlendApplyType_);
+        stagingBlenderType_ = true; // use this flag to mark the shadowblender
     } else if (properties.IsShadowBlenderValid()) {
         if (Rosen::RSSystemProperties::GetDebugTraceLevel() >= TRACE_LEVEL_TWO) {
             stagingPropertyDescription_ = properties.GetShadowBlenderDescription();
@@ -410,6 +411,7 @@ void RSBeginBlenderDrawable::OnSync()
     blender_ = stagingBlender_;
     blendApplyType_ = stagingBlendApplyType_;
     propertyDescription_ = stagingPropertyDescription_;
+    blenderType_ = stagingBlenderType_;
     stagingPropertyDescription_.clear();
     needSync_ = false;
 }
@@ -429,7 +431,7 @@ Drawing::RecordingCanvas::DrawFunc RSBeginBlenderDrawable::CreateDrawFunc() cons
         RS_OPTIONAL_TRACE_NAME_FMT_LEVEL(TRACE_LEVEL_TWO, "RSBeginBlenderDrawable:: %s, bounds: %s",
             ptr->propertyDescription_.c_str(), rect->ToString().c_str());
         RSPropertyDrawableUtils::BeginBlender(*paintFilterCanvas, ptr->blender_, ptr->blendApplyType_,
-            ptr->isDangerous_);
+            ptr->isDangerous_, ptr->blenderType_);
     };
 }
 

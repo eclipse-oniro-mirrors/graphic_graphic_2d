@@ -1287,6 +1287,11 @@ void RSPaintFilterCanvas::SetBlender(std::shared_ptr<Drawing::Blender> blender)
     envStack_.top().blender_ = blender;
 }
 
+void RSPaintFilterCanvas::SetBlenderType(bool BlenderType)
+{
+    blenderType_ = BlenderType;
+}
+
 int RSPaintFilterCanvas::SaveEnv()
 {
     // make a copy of top of stack
