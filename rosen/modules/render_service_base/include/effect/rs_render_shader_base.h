@@ -79,13 +79,13 @@ protected:
 
 class RSB_EXPORT RSNGRenderShaderHelper {
 public:
+    static bool CheckEnableEDR(std::shared_ptr<RSNGRenderShaderBase> shader);
+
     static void SetRotationAngle(std::shared_ptr<RSNGRenderShaderBase> shader,
         const Vector3f& rotationAngle);
-    
+
     static void SetCornerRadius(std::shared_ptr<RSNGRenderShaderBase> shader,
         float cornerRadius);
-    
-    static bool CheckEnableEDR(std::shared_ptr<RSNGRenderShaderBase> shader);
 };
 
 #define ADD_PROPERTY_TAG(Effect, Prop) Effect##Prop##RenderTag
