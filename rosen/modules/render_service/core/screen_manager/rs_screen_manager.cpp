@@ -2295,7 +2295,7 @@ int32_t RSScreenManager::SetScreenSkipFrameInterval(ScreenId id, uint32_t skipFr
     }
     screen->SetScreenSkipFrameInterval(skipFrameInterval);
     screen->SetEqualVsyncPeriod(skipFrameInterval == 1);
-    RS_LOGI("%{public}s: screen(id %{public}" PRIu64 "), skipFrameInterval(%d).",
+    RS_LOGI("%{public}s: screen(id %{public}" PRIu64 "), skipFrameInterval(%{public}d).",
         __func__, id, skipFrameInterval);
     return StatusCode::SUCCESS;
 }
