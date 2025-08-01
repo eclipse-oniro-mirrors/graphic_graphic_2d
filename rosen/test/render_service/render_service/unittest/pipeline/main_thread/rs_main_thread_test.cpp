@@ -5878,8 +5878,8 @@ HWTEST_F(RSMainThreadTest, DoDirectComposition003, TestSize.Level1)
 HWTEST_F(RSMainThreadTest, InitHgmTaskHandleThreadTest, TestSize.Level1)
 {
     auto mainThread = RSMainThread::Instance();
-    std::shared_ptr<AppExecFwk::EventRunner> runner_ = mainThread->runner_;
-    std::shared_ptr<AppExecFwk::EventHandler> handler_ = mainThread->handler_;
+    std::shared_ptr<AppExecFwk::EventRunner> runner = mainThread->runner_;
+    std::shared_ptr<AppExecFwk::EventHandler> handler = mainThread->handler_;
     mainThread->runner_ = AppExecFwk::EventRunner::Create("RSMainThread");
     mainThread->handler_ = std::make_shared<AppExecFwk::EventHandler>(mainThread->runner_);
     mainThread->hgmContext_.InitHgmTaskHandleThread(mainThread->rsVSyncController_, mainThread->appVSyncController_,
@@ -5907,8 +5907,10 @@ HWTEST_F(RSMainThreadTest, InitHgmTaskHandleThreadTest, TestSize.Level1)
         EXPECT_EQ(mainThread->hgmContext_.lastForceUpdateVsyncId_, mainThread->hgmContext_.currVsyncId_);
     }
     usleep(200000);
-    mainThread->runner_ = runner_;
-    mainThread->handler_ = handler_;
+    mainThread->runner_ = runner;
+    mainThread->handler_ = handler;
+    runner = nullptr;
+    handler = nullptr;
     usleep(200000);
 }
 
