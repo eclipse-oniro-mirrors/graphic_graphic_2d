@@ -58,7 +58,7 @@
 #include "surface.h"
 #include "sync_fence.h"
 #include "system/rs_system_parameters.h"
-#include "pipeline/rs_surface_buffer_callback_manager.h
+#include "pipeline/rs_surface_buffer_callback_manager.h"
 #ifdef RES_SCHED_ENABLE
 #include <iservice_registry.h>
 #include "if_system_ability_manager.h"

@@ -242,7 +242,7 @@ void RSSurfaceBufferCallbackManager::RunSurfaceBufferCallback()
         if (callback) {
             if (data.bufferIds.empty()) {
                 continue;
-            } 
+            }
             RS_TRACE_NAME_FMT("RSSurfaceBufferCallbackManager::RunSurfaceBufferCallback"
                 "Release Buffer %s", SerializeBufferIdVec(data.bufferIds).c_str());
             callback->OnFinish({
