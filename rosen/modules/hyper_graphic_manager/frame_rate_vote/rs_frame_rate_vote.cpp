@@ -91,9 +91,8 @@ void RSFrameRateVote::VideoFrameRateVote(uint64_t surfaceNodeId, OHSurfaceSource
         strLastVotedPid = "[" + std::to_string(lastVotedPid_) + ",";
         lastVotedPid = lastVotedPid_;
     }
-    if (ExtractPid(surfaceNodeId) == lastVotedPid  &&
-        (sourceType != OHSurfaceSource::OH_SURFACE_SOURCE_VIDEO
-        || transactionFlags.find(strLastVotedPid) != std::string::npos)) {
+    if (sourceType != OHSurfaceSource::OH_SURFACE_SOURCE_VIDEO
+        || transactionFlags.find(strLastVotedPid) != std::string::npos) {
         hasUiOrSurface = true;
     }
     // OH SURFACE SOURCE VIDEO AN UI VOTE
@@ -166,7 +165,7 @@ void RSFrameRateVote::SurfaceVideoVote(uint64_t surfaceNodeId, uint32_t rate)
         [](const auto& lhs, const auto& rhs) { return lhs.second < rhs.second; });
     uint32_t maxRate = maxElement->second;
     pid_t maxPid = ExtractPid(maxElement->first);
-    lastSurfaceNodeId_ = surfaceNodeId;
+    lastSurfaceNodeId_ = maxElement->first;
     if (maxRate == lastVotedRate_ && maxPid == lastVotedPid_) {
         return;
     }
