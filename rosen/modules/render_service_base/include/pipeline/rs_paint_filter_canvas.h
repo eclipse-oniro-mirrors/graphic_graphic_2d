@@ -445,9 +445,6 @@ protected:
             brush.SetColor(envStack_.top().envForegroundColor_.AsArgbInt());
         }
 
-        // ShadowBlender causes blur and blendmode incompatible. 
-        // We thus disable it to avoid problems.
-
         // use alphaStack_.top() to multiply alpha
         if (alpha < 1 && alpha > 0) {
             brush.SetAlpha(brush.GetAlpha() * alpha);
