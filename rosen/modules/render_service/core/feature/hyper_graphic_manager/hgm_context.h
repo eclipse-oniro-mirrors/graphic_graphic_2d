@@ -43,8 +43,8 @@ public:
 private:
     FrameRateRange rsCurrRange_;
     std::shared_ptr<RSRenderFrameRateLinker> rsFrameRateLinker_ = nullptr;
-    uint64_t currVsyncId_;
-    uint64_t lastForceUpdateVsyncId_;
+    uint64_t currVsyncId_ = 0;
+    uint64_t lastForceUpdateVsyncId_ = UINT16_MAX;
 };
 } // namespace OHOS
 } // namespace Rosen
