@@ -43,7 +43,7 @@ struct RSLayerInfo {
     int32_t gravity = 0;
     int32_t zOrder = 0;
     float alpha = 1.f;
-    GraphicBlendType blendType;
+    GraphicBlendType blendType = GraphicBlendType::GRAPHIC_BLEND_NONE;
     GraphicTransformType transformType = GraphicTransformType::GRAPHIC_ROTATE_NONE;
     GraphicLayerType layerType = GraphicLayerType::GRAPHIC_LAYER_TYPE_GRAPHIC;
     int32_t layerSource;
