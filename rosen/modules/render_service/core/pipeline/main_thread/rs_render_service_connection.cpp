@@ -1576,7 +1576,7 @@ ErrCode RSRenderServiceConnection::GetTotalAppMemSize(float& cpuMemSize, float& 
 
 ErrCode RSRenderServiceConnection::GetMemoryGraphic(int pid, MemoryGraphic& memoryGraphic)
 {
-    if (!mainThread_ || !mainThread_->GetContext().GetNodeMap().ContainPid(pid)) {
+    if (pid == 0) {
         return ERR_INVALID_VALUE;
     }
     bool enable;
