@@ -15,6 +15,7 @@
 
 #include "rs_uni_render_processor.h"
 
+#include <parameters.h>
 #include <vector>
 
 #include "hdi_layer.h"
@@ -301,18 +302,19 @@ LayerInfoPtr RSUniRenderProcessor::GetLayerInfo(RSSurfaceRenderParams& params, s
     std::vector<GraphicIRect> dirtyRegions;
     if (RSSystemProperties::GetHwcDirtyRegionEnabled()) {
         const auto& bufferDamage = params.GetBufferDamage();
+        Rect selfDrawingDirtyRect = bufferDamage;
+        // When the size of the damage region equals that of the buffer, use dirty region from gpu crc
+        bool isUseSelfDrawingDirtyRegion = buffer != nullptr && buffer->GetSurfaceBufferWidth() == bufferDamage.w &&
+            buffer->GetSurfaceBufferHeight() == bufferDamage.h && bufferDamage.x == 0 && bufferDamage.y == 0;
+        if (isUseSelfDrawingDirtyRegion) {
+            RSGpuDirtyCollector::DirtyRegionCompute(buffer, selfDrawingDirtyRect);
+            RS_OPTIONAL_TRACE_NAME_FMT("selfDrawingDirtyRect:[%d, %d, %d, %d]",
+                selfDrawingDirtyRect.x, selfDrawingDirtyRect.y, selfDrawingDirtyRect.w, selfDrawingDirtyRect.h);
+        }
         bool isTargetedHwcDirtyRegion = params.GetIsBufferFlushed() ||
             RsCommonHook::Instance().GetHardwareEnabledByHwcnodeBelowSelfInAppFlag();
-        GraphicIRect dirtyRect = isTargetedHwcDirtyRegion ? GraphicIRect { bufferDamage.x, bufferDamage.y,
-            bufferDamage.w, bufferDamage.h } : GraphicIRect { 0, 0, 0, 0 };
-        Rect selfDrawingDirtyRect;
-        bool isDirtyRectValid = RSGpuDirtyCollector::DirtyRegionCompute(buffer, selfDrawingDirtyRect);
-        if (isDirtyRectValid) {
-            dirtyRect = { selfDrawingDirtyRect.x, selfDrawingDirtyRect.y,
-                selfDrawingDirtyRect.w, selfDrawingDirtyRect.h };
-            RS_OPTIONAL_TRACE_NAME_FMT("selfDrawingDirtyRect:[%d, %d, %d, %d]",
-                dirtyRect.x, dirtyRect.y, dirtyRect.w, dirtyRect.h);
-        }
+        GraphicIRect dirtyRect = isTargetedHwcDirtyRegion ? GraphicIRect { selfDrawingDirtyRect.x,
+            selfDrawingDirtyRect.y, selfDrawingDirtyRect.w, selfDrawingDirtyRect.h } : GraphicIRect { 0, 0, 0, 0 };
         auto intersectRect = RSUniDirtyComputeUtil::IntersectRect(layerInfo.srcRect, dirtyRect);
         RS_OPTIONAL_TRACE_NAME_FMT("intersectRect:[%d, %d, %d, %d]",
             intersectRect.x, intersectRect.y, intersectRect.w, intersectRect.h);

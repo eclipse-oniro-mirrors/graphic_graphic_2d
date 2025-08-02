@@ -1696,7 +1696,7 @@ void RSRenderNode::UpdateBufferDirtyRegion()
         // to calculate the buffer damageRegion's absolute rect
         auto rect = surfaceNode->GetRSSurfaceHandler()->GetDamageRegion();
         bool isUseSelfDrawingDirtyRegion = buffer->GetSurfaceBufferWidth() == rect.w &&
-            buffer->GetSurfaceBufferHeight() == rect.h;
+            buffer->GetSurfaceBufferHeight() == rect.h && rect.x == 0 && rect.y == 0;
         if (isUseSelfDrawingDirtyRegion) {
             Rect selfDrawingDirtyRect;
             bool isDirtyRectValid = RSGpuDirtyCollector::DirtyRegionCompute(buffer, selfDrawingDirtyRect);
