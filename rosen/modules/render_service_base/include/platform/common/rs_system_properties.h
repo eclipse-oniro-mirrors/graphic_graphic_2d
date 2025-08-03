@@ -381,6 +381,7 @@ public:
     static bool GetAIBarOptEnabled();
     static bool GetRSMemoryInfoManagerParam();
     static bool GetSelfDrawingDirtyRegionEnabled();
+    static bool GetOptBatchRemovingOnRemoteDiedEnabled();
 
 private:
     RSSystemProperties() = default;
