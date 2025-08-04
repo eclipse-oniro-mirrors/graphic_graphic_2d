@@ -137,10 +137,10 @@ void RSDrawFrame::EndCheck()
         exceptionCheck_.exceptionCnt_ = longFrameCount_;
         exceptionCheck_.exceptionMoment_ = timer_->GetSeconds();
         exceptionCheck_.UploadRenderExceptionData();
-        if (RSSystemProperties::GetVersionType() == "beta") {
-            sleep(1); // sleep 1s : abort will kill RS, sleep 1s for hisysevent report.
-            abort(); // The RS process needs to be restarted because 12 consecutive frames times out.
-        }
+        RS_LOGE("RSHardwareThread::EndCheck PID:%{public}d, UID:%{public}u, PROCESS_NAME:%{public}s, \
+            EXCEPTION_CNT:%{public}d, EXCEPTION_TIME:%{public}lld, EXCEPTION_POINT:%{public}s",
+            getpid(), getuid(), exceptionCheck_.processName_.c_str(), longFrameCount_,
+            exceptionCheck_.exceptionMoment_, exceptionCheck_.exceptionPoint_.c_str());
     }
 }
 
