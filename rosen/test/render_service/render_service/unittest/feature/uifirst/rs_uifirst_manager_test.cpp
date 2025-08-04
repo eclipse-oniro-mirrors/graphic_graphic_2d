@@ -2943,5 +2943,28 @@ HWTEST_F(RSUifirstManagerTest, ProcessMarkedNodeSubThreadCacheTest, TestSize.Lev
     // clear cachesurface
     uifirstManager_.ProcessMarkedNodeSubThreadCache();
     ASSERT_TRUE(rsSubThreadCache.cacheSurface_ == nullptr);
-    ASSERT_EQ(uifirstManager_.markedClearCacheNodes_.size(), 0);}
+    ASSERT_EQ(uifirstManager_.markedClearCacheNodes_.size(), 0);
+}
+
+/**
+ * @tc.name: OnProcessAnimateScene002
+ * @tc.desc: Test OnProcessAnimateScene when tablet snapshot rotation scene
+ * @tc.type: FUNC
+ * @tc.require: issueICQ74B
+ */
+HWTEST_F(RSUifirstManagerTest, OnProcessAnimateSceneTest002, TestSize.Level2)
+{
+    bool isSnapshotRotationScene = uifirstManager_.isSnapshotRotationScene_;
+    EXPECT_FALSE(uifirstManager_.IsSnapshotRotationScene());
+
+    auto scene = SystemAnimatedScenes::SNAPSHOT_ROTATION;
+    uifirstManager_.OnProcessAnimateScene(scene);
+    EXPECT_TRUE(uifirstManager_.IsSnapshotRotationScene());
+
+    scene = SystemAnimatedScenes::OTHERS;
+    uifirstManager_.OnProcessAnimateScene(scene);
+    EXPECT_FALSE(uifirstManager_.IsSnapshotRotationScene());
+
+    uifirstManager_.isSnapshotRotationScene_ = isSnapshotRotationScene;
+}
 }

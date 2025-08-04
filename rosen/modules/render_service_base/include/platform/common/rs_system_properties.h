@@ -382,6 +382,8 @@ public:
     static bool GetRSMemoryInfoManagerParam();
     static bool GetSelfDrawingDirtyRegionEnabled();
 
+    static bool GetSupportScreenFreezeEnabled();
+
 private:
     RSSystemProperties() = default;
 

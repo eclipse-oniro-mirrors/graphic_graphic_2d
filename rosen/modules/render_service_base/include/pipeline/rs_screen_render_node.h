@@ -516,6 +516,9 @@ public:
     // Enable HWCompose
     RSHwcDisplayRecorder& HwcDisplayRecorder() { return hwcDisplayRecorder_; }
 
+    void SetForceFreeze(bool forceFreeze);
+    bool GetForceFreeze() const;
+
 protected:
     void OnSync() override;
 private:
@@ -535,6 +538,8 @@ private:
     bool isLuminanceStatusChange_ = false;
     bool hasFingerprint_ = false;
     bool isGeometryInitialized_ = false;
+
+    bool forceFreeze_ = false;
 
     // Use in vulkan parallel rendering
     bool isParallelDisplayNode_ = false;

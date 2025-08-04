@@ -775,6 +775,11 @@ bool RSSystemProperties::GetAIBarOptEnabled()
     return true;
 }
 
+bool RSSystemProperties::GetSupportScreenFreezeEnabled()
+{
+    return false;
+}
+
 bool RSSystemProperties::GetSelfDrawingDirtyRegionEnabled()
 {
     return {};
