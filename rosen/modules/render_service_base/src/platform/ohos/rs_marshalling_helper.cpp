@@ -3276,5 +3276,15 @@ bool RSMarshallingHelper::TransactionVersionCheck(Parcel& parcel, uint8_t suppor
     parcel.RewindRead(offset);
     return false;
 }
+
+bool RSMarshallingHelper::Marshalling(Parcel& parcel, const RSRenderParticleVector& val)
+{
+    return false;
+}
+
+bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, RSRenderParticleVector& val)
+{
+    return false;
+}
 } // namespace Rosen
 } // namespace OHOS
