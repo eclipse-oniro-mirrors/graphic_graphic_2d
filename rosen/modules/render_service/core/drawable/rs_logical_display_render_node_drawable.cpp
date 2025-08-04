@@ -644,10 +644,6 @@ void RSLogicalDisplayRenderNodeDrawable::DrawWiredMirrorCopy(RSLogicalDisplayRen
         return;
     }
     auto [curScreenDrawable, curScreenParams] = GetScreenParams(params);
-    if (!curScreenDrawable || !curScreenParams) {
-        RS_LOGE("RSLogicalDisplayRenderNodeDrawable::DrawWiredMirrorCopy curScreen is null");
-        return;
-    }
     curCanvas_->Save();
     ScaleAndRotateMirrorForWiredScreen(mirroredDrawable);
     RSDirtyRectsDfx rsDirtyRectsDfx(*curScreenDrawable);
@@ -742,30 +738,24 @@ void RSLogicalDisplayRenderNodeDrawable::DrawWiredMirrorOnDraw(RSLogicalDisplayR
         return;
     }
     auto [curScreenDrawable, curScreenParam] = GetScreenParams(params);
-    if (!curScreenDrawable || !curScreenParam) {
-        RS_LOGE("RSLogicalDisplayRenderNodeDrawable::DrawWiredMirrorOnDraw curScreen is null");
-        return;
-    }
     auto [_, mirroredScreenParams] = GetScreenParams(*mirroredParams);
-    if (!mirroredScreenParams) {
-        RS_LOGE("RSLogicalDisplayRenderNodeDrawable::DrawWiredMirrorOnDraw mirroredScreenParams is null");
-        return;
-    }
     RS_TRACE_NAME("DrawWiredMirror with Redraw");
-    curCanvas_->Save();
     RSDirtyRectsDfx rsDirtyRectsDfx(*curScreenDrawable);
+
     // for HDR
     curCanvas_->SetOnMultipleScreen(true);
     curCanvas_->SetDisableFilterCache(true);
+
+    // Draw security mask if has security surface and external screen is not secure
     auto hasSecSurface = mirroredParams->GetSpecialLayerMgr().Find(SpecialLayerType::HAS_SECURITY);
     if (hasSecSurface && !MultiScreenParam::IsExternalScreenSecure()) {
         DrawSecurityMask();
         virtualDirtyNeedRefresh_ = true;
-        curCanvas_->Restore();
         rsDirtyRectsDfx.OnDrawVirtual(*curCanvas_);
         return;
     }
     
+    curCanvas_->Save();
     ScaleAndRotateMirrorForWiredScreen(mirroredDrawable);
     Drawing::Matrix canvasMatrix = curCanvas_->GetTotalMatrix();
     curCanvas_->SetHighContrast(RSUniRenderThread::Instance().IsHighContrastTextModeOn());
@@ -795,7 +785,7 @@ void RSLogicalDisplayRenderNodeDrawable::DrawWiredMirrorOnDraw(RSLogicalDisplayR
     curCanvas_->Restore();
     rsDirtyRectsDfx.OnDrawVirtual(*curCanvas_);
     if (mirroredParams->GetSpecialLayerMgr().Find(SpecialLayerType::HAS_PROTECTED)) {
-        RSDrmUtil::DRMCreateLayer(processor, curCanvas_->GetTotalMatrix());
+        RSDrmUtil::DRMCreateLayer(processor, canvasMatrix);
         curScreenParam->SetGlobalZOrder(curScreenParam->GetGlobalZOrder() + 1);
     }
 }
@@ -944,6 +934,7 @@ void RSLogicalDisplayRenderNodeDrawable::DrawMirrorCopy(RSLogicalDisplayRenderPa
 void RSLogicalDisplayRenderNodeDrawable::DrawSecurityMask()
 {
     RS_TRACE_FUNC();
+    RSAutoCanvasRestore acr(curCanvas_, RSPaintFilterCanvas::SaveType::kCanvasAndAlpha);
     auto params = static_cast<RSLogicalDisplayRenderParams*>(GetRenderParams().get());
     auto screenManager = CreateOrGetScreenManager();
     auto imagePtr = screenManager->GetScreenSecurityMask(params->GetScreenId());
@@ -968,12 +959,15 @@ void RSLogicalDisplayRenderNodeDrawable::DrawSecurityMask()
     // Make sure the canvas is oriented accurately.
     curCanvas_->ResetMatrix();
 
+    Drawing::Brush brush;
+    curCanvas_->AttachBrush(brush);
     curCanvas_->DrawImageRect(*image, srcRect, dstRect, Drawing::SamplingOptions(),
         Drawing::SrcRectConstraint::STRICT_SRC_RECT_CONSTRAINT);
     if (watermark) {
         curCanvas_->DrawImageRect(*watermark, srcRect, dstRect, Drawing::SamplingOptions(),
             Drawing::SrcRectConstraint::STRICT_SRC_RECT_CONSTRAINT);
     }
+    curCanvas_->DetachBrush();
 
     RS_LOGI("DisplayDrawable::DrawSecurityMask");
     curCanvas_->SetDisableFilterCache(false);
