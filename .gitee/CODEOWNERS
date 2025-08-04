@@ -15,12 +15,12 @@ interfaces/kits/napi/graphic/drawing/ @wanyanglan
 
 [display-effect]
 rosen/modules/render_service_client/core/ui/ @xiaojianfeng_jeffery
-rosen/modules/render_service_client/core/ui/rs_ui_context_manager.cpp @xiaojianfeng_jeffery
-rosen/modules/render_service_client/core/ui/rs_ui_context_manager.h @xiaojianfeng_jeffery
-rosen/modules/render_service_client/core/ui/rs_ui_context.h @xiaojianfeng_jeffery
-rosen/modules/render_service_client/core/ui/rs_ui_context.cpp @xiaojianfeng_jeffery
-rosen/modules/render_service_client/core/ui/rs_ui_director.cpp @xiaojianfeng_jeffery
-rosen/modules/render_service_client/core/ui/rs_ui_director.h @xiaojianfeng_jeffery
+rosen/modules/render_service_client/core/ui/rs_ui_context_manager.cpp @gaoshuai3011
+rosen/modules/render_service_client/core/ui/rs_ui_context_manager.h @gaoshuai3011
+rosen/modules/render_service_client/core/ui/rs_ui_context.h @gaoshuai3011
+rosen/modules/render_service_client/core/ui/rs_ui_context.cpp @gaoshuai3011
+rosen/modules/render_service_client/core/ui/rs_ui_director.cpp @gaoshuai3011
+rosen/modules/render_service_client/core/ui/rs_ui_director.h @gaoshuai3011
 
 rosen/modules/render_service_base/include/pipeline/ @xiaojianfeng_jeffery
 rosen/modules/render_service_base/src/pipeline/ @xiaojianfeng_jeffery
