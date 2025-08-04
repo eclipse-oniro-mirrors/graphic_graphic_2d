@@ -229,6 +229,7 @@ constexpr const char* ENABLE_DEBUG_FMT_TRACE = "sys.graphic.openTestModeTrace";
 constexpr uint64_t ONE_SECOND_TIMESTAMP = 1e9;
 constexpr int SKIP_FIRST_FRAME_DRAWING_NUM = 1;
 constexpr uint32_t MAX_ANIMATED_SCENES_NUM = 0xFFFF;
+constexpr size_t MAX_SURFACE_OCCLUSION_LISTENERS_SIZE = std::numeric_limits<uint16_t>::max();
 
 #ifdef RS_ENABLE_GL
 constexpr size_t DEFAULT_SKIA_CACHE_SIZE        = 96 * (1 << 20);
@@ -3805,7 +3806,14 @@ void RSMainThread::RegisterSurfaceOcclusionChangeCallback(
     if (!partitionPoints.empty()) {
         level = partitionPoints.size();
     }
-    surfaceOcclusionListeners_[id] = std::make_tuple(pid, callback, partitionPoints, level);
+    auto it = surfaceOcclusionListeners_.find(id);
+    if (it != surfaceOcclusionListeners_.end()) {
+        it->second = std::make_tuple(pid, callback, partitionPoints, level);
+    } else if (surfaceOcclusionListeners_.size() < MAX_SURFACE_OCCLUSION_LISTENERS_SIZE) {
+        surfaceOcclusionListeners_.emplace(id, std::make_tuple(pid, callback, partitionPoints, level));
+    } else {
+        RS_LOGW("%{public}s: register failed because surfaceOcclusionListeners_ reached max size", __func__);
+    }
 }
 
 void RSMainThread::UnRegisterSurfaceOcclusionChangeCallback(NodeId id)

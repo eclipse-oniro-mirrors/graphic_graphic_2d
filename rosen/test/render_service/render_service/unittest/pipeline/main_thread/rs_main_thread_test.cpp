@@ -3153,6 +3153,30 @@ HWTEST_F(RSMainThreadTest, RegisterSurfaceOcclusionChangeCallBack002, TestSize.L
 }
 
 /**
+ * @tc.name: RegisterSurfaceOcclusionChangeCallBack003
+ * @tc.desc: Test RegisterSurfaceOcclusionChangeCallBack with the container size reaches its limit
+ * @tc.type: FUNC
+ * @tc.require: issueICPT5N
+ */
+HWTEST_F(RSMainThreadTest, RegisterSurfaceOcclusionChangeCallBack003, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    NodeId id = 0;
+    pid_t pid = 0;
+    sptr<RSISurfaceOcclusionChangeCallback> callback = nullptr;
+    std::vector<float> partitionPoints;
+    mainThread->RegisterSurfaceOcclusionChangeCallback(id, pid, callback, partitionPoints);
+    EXPECT_EQ(mainThread->surfaceOcclusionListeners_.size(), 1);
+    for (; id <= std::numeric_limits<uint16_t>::max(); ++id) {
+        mainThread->RegisterSurfaceOcclusionChangeCallback(id, pid, callback, partitionPoints);
+    }
+    EXPECT_EQ(mainThread->surfaceOcclusionListeners_.size(), std::numeric_limits<uint16_t>::max());
+    mainThread->surfaceOcclusionListeners_.clear();
+    EXPECT_EQ(mainThread->surfaceOcclusionListeners_.size(), 0);
+}
+
+/**
  * @tc.name: ClearSurfaceOcclusionChangeCallBack
  * @tc.desc: RegisterSurfaceOcclusionChangeCallBack Test
  * @tc.type: FUNC
