@@ -78,7 +78,7 @@ def mian()
     for code_record in code_records:
         if code_check(code_record) == False:
             print(check, "OnDraw has been modified! \
-                            Please contact with ZhouYiyang 00945878, WeiPeizheng 00849484 CodeReview.")
+                            Please contact with Committer!")
             passed = False
         if passed == False
             sys.exit(-1)
