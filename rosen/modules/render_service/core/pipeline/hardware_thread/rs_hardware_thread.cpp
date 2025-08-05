@@ -395,10 +395,10 @@ void RSHardwareThread::EndCheck(RSTimer timer)
         exceptionCheck_.exceptionCnt_ = hardwareCount_;
         exceptionCheck_.exceptionMoment_ = timer.GetSeconds();
         exceptionCheck_.UploadRenderExceptionData();
-        if (RSSystemProperties::GetVersionType() == "beta") {
-            sleep(1); // sleep 1s : abort will kill RS, sleep 1s for hisysevent report.
-            abort(); // The RS process needs to be restarted because 30 consecutive frames in hardware times out.
-        }
+        RS_LOGE("RSHardwareThread::EndCheck PID:%{public}d, UID:%{public}u, PROCESS_NAME:%{public}s, \
+            EXCEPTION_CNT:%{public}d, EXCEPTION_TIME:%{public}lld, EXCEPTION_POINT:%{public}s",
+            getpid(), getuid(), PROCESS_NAME_FOR_HISYSEVENT.c_str(), hardwareCount_,
+            exceptionCheck_.exceptionMoment_, HARDWARE_PIPELINE_TIMEOUT.c_str());
     }
 }
 
