@@ -248,10 +248,10 @@ void DoSyncFrameRateRange()
 
     connectionStub_->OnRemoteRequest(code, dataParcel, replyParcel, option);
 
-    usleep(WAIT_TASK_RUN_TIME_NS);
+    usleep(OHOS::Rosen::WAIT_TASK_RUN_TIME_NS);
     CreateVSyncConnection(id);
 
-    usleep(WAIT_TASK_RUN_TIME_NS);
+    usleep(OHOS::Rosen::WAIT_TASK_RUN_TIME_NS);
     MessageOption option2;
     MessageParcel dataParcel2;
     MessageParcel replyParcel2;
@@ -266,7 +266,7 @@ void DoSyncFrameRateRange()
 
     connectionStub_->OnRemoteRequest(code, dataParcel2, replyParcel2, option2);
 
-    usleep(WAIT_TASK_RUN_TIME_NS);
+    usleep(OHOS::Rosen::WAIT_TASK_RUN_TIME_NS);
     UnregisterFrameRateLinker(id);
 }
 
@@ -526,6 +526,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
         default:
             return -1;
     }
-    usleep(WAIT_TASK_RUN_TIME_NS);
+    usleep(OHOS::Rosen::WAIT_TASK_RUN_TIME_NS);
     return 0;
 }
