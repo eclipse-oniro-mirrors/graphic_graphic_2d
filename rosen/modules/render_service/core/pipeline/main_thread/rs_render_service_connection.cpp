@@ -3197,7 +3197,6 @@ ErrCode RSRenderServiceConnection::DropFrameByPid(const std::vector<int32_t> pid
             if (connection == nullptr || connection->mainThread_ == nullptr) {
                 return;
             }
-            connection->mainThread_->ClearNeedDropframePidList();
             connection->mainThread_->AddPidNeedDropFrame(pidList);
         }
     );

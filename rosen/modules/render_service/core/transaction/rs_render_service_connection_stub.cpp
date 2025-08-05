@@ -56,7 +56,6 @@ constexpr uint32_t MAX_PID_SIZE_NUMBER = 100000;
 const uint32_t RS_IPC_QOS_LEVEL = 7;
 constexpr const char* RS_BUNDLE_NAME = "render_service";
 #endif
-static constexpr uint32_t MAX_DROP_FRAME_PID_LIST_SIZE = 1024;
 static constexpr std::array descriptorCheckList = {
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_FOCUS_APP_INFO),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_DEFAULT_SCREEN_ID),
