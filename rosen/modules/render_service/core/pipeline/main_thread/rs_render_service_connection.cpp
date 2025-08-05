@@ -2111,6 +2111,11 @@ ErrCode RSRenderServiceConnection::SetPixelFormat(ScreenId id, GraphicPixelForma
         resCode = StatusCode::SCREEN_NOT_FOUND;
         return ERR_INVALID_VALUE;
     }
+    if (pixelFormat < 0 ||
+        (pixelFormat >= GRAPHIC_PIXEL_FMT_END_OF_VALID && pixelFormat != GRAPHIC_PIXEL_FMT_VENDER_MASK)) {
+        resCode = StatusCode::INVALID_ARGUMENTS;
+        return ERR_INVALID_VALUE;
+    }
     auto renderType = RSUniRenderJudgement::GetUniRenderEnabledType();
     if (renderType == UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL) {
 #ifdef RS_ENABLE_GPU
