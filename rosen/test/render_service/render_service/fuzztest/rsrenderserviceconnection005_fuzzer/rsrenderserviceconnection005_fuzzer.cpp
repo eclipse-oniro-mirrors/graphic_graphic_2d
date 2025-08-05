@@ -63,6 +63,7 @@ const uint8_t DO_REGISTER_FRAME_RATE_LINKER_EXPECTED_FPS_CALLBACK = 14;
 const uint8_t DO_REFRESH_RATE_MODE_CHANGE_CALLBACK = 15;
 const uint8_t DO_GET_REFRESH_INFO_TO_SP = 16;
 const uint8_t TARGET_SIZE = 17;
+const uint8_t WAIT_TASK_RUN_TIME_NS = 10000;
 
 sptr<RSIRenderServiceConnection> CONN = nullptr;
 const uint8_t* DATA = nullptr;
@@ -247,10 +248,10 @@ void DoSyncFrameRateRange()
 
     connectionStub_->OnRemoteRequest(code, dataParcel, replyParcel, option);
 
-    usleep(10000);
+    usleep(WAIT_TASK_RUN_TIME_NS);
     CreateVSyncConnection(id);
 
-    usleep(10000);
+    usleep(WAIT_TASK_RUN_TIME_NS);
     MessageOption option2;
     MessageParcel dataParcel2;
     MessageParcel replyParcel2;
@@ -265,7 +266,7 @@ void DoSyncFrameRateRange()
 
     connectionStub_->OnRemoteRequest(code, dataParcel2, replyParcel2, option2);
 
-    usleep(10000);
+    usleep(WAIT_TASK_RUN_TIME_NS);
     UnregisterFrameRateLinker(id);
 }
 
@@ -525,6 +526,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
         default:
             return -1;
     }
-    usleep(20000);
+    usleep(WAIT_TASK_RUN_TIME_NS);
     return 0;
 }
