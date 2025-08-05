@@ -693,7 +693,7 @@ HWTEST_F(VSyncDistributorTest, OnVSyncTriggerTest004, Function | MediumTest| Lev
  * Type: Function
  * Rank: Important(2)
  * EnvConditions: N/A
- * CaseDescription: 1. create different components and add them to the VSyncDistributor
+ * CaseDescription: 1. create different conn(rate = 1) and add them to the VSyncDistributor
  *                  2. call OnVSyncTrigger with different parameters
  *                  3. check if the connections are removed correctly
  */
@@ -702,29 +702,77 @@ HWTEST_F(VSyncDistributorTest, OnVSyncTriggerTest006, Function | MediumTest| Lev
     std::vector<sptr<VSyncConnection>> conns;
     int count = 8;
     int64_t timestamp = 100;
-    for (int i = 0; i < count; ++i) {
-        int bit2 = (i >> 2) & 1;
-        int bit1 = (i >> 1) & 1;
-        int bit0 = i & 1;
-        sptr<VSyncConnection> conn = nullptr;
-        if (bit0) {
-            conn = new VSyncConnection(vsyncDistributor, "rs");
-            conn->AddRequestVsyncTimestamp(timestamp);
-        } else {
-            conn = new VSyncConnection(vsyncDistributor, "noRs");
-        }
-        if (conn) {
-            conn->rate_ = bit2;
-            conn->triggerThisTime_ = (bit1 == 1);
-            conns.emplace_back(conn);
-        }
-    }
-    for (size_t i = 0; i < conns.size(); ++i) {
-        ASSERT_EQ(vsyncDistributor->AddConnection(conns[i], 1), VSYNC_ERROR_OK);
-    }
+
+    conns.emplace_back(new VSyncConnection(vsyncDistributor, "noRs"));
+    conns[0]->rate_ = 1;
+    conns[0]->triggerThisTime_ = true;
+    ASSERT_EQ(vsyncDistributor->AddConnection(conns[0], 1), VSYNC_ERROR_OK);
+
+    conns.emplace_back(new VSyncConnection(vsyncDistributor, "noRs"));
+    conns[1]->rate_ = 1;
+    conns[1]->triggerThisTime_ = false;
+    ASSERT_EQ(vsyncDistributor->AddConnection(conns[1], 1), VSYNC_ERROR_OK);
+
+    conns.emplace_back(new VSyncConnection(vsyncDistributor, "rs"));
+    conns[2]->rate_ = 1;
+    conns[2]->triggerThisTime_ = true;
+    conns[2]->AddRequestVsyncTimestamp(timestamp);
+    ASSERT_EQ(vsyncDistributor->AddConnection(conns[2], 1), VSYNC_ERROR_OK);
+
+    conns.emplace_back(new VSyncConnection(vsyncDistributor, "rs"));
+    conns[3]->rate_ = 1;
+    conns[3]->triggerThisTime_ = false;
+    conns[3]->AddRequestVsyncTimestamp(timestamp);
+    ASSERT_EQ(vsyncDistributor->AddConnection(conns[3], 1), VSYNC_ERROR_OK);
+
     int64_t now = 1000000000, period = 8333333;
     uint32_t refreshRate = 120, vsyncMaxRefreshRate = 360;
-    vsyncDistributor->OnVSyncTrigger(now, period, refreshRate, VSYNC_MODE_LTPO, vsyncMaxRefreshRate);
+    vsyncDistributor->OnVSyncTrigger(now, period, refreshRate, VSYNC_MODE_LTPS, vsyncMaxRefreshRate);
+    for (size_t i = 0; i < conns.size(); ++i) {
+        ASSERT_EQ(vsyncDistributor->RemoveConnection(conns[i]), VSYNC_ERROR_OK);
+    }
+}
+
+/**
+ * Function: OnVSyncTriggerTest007
+ * Type: Function
+ * Rank: Important(2)
+ * EnvConditions: N/A
+ * CaseDescription: 1. create different conn(rate = 0) and add them to the VSyncDistributor
+ *                  2. call OnVSyncTrigger with different parameters
+ *                  3. check if the connections are removed correctly
+ */
+HWTEST_F(VSyncDistributorTest, OnVSyncTriggerTest007, Function | MediumTest| Level3)
+{
+    std::vector<sptr<VSyncConnection>> conns;
+    int count = 8;
+    int64_t timestamp = 100;
+
+    conns.emplace_back(new VSyncConnection(vsyncDistributor, "noRs"));
+    conns[0]->rate_ = 0;
+    conns[0]->triggerThisTime_ = true;
+    ASSERT_EQ(vsyncDistributor->AddConnection(conns[0], 1), VSYNC_ERROR_OK);
+
+    conns.emplace_back(new VSyncConnection(vsyncDistributor, "noRs"));
+    conns[1]->rate_ = 0;
+    conns[1]->triggerThisTime_ = false;
+    ASSERT_EQ(vsyncDistributor->AddConnection(conns[1], 1), VSYNC_ERROR_OK);
+
+    conns.emplace_back(new VSyncConnection(vsyncDistributor, "rs"));
+    conns[2]->rate_ = 0;
+    conns[2]->triggerThisTime_ = true;
+    conns[2]->AddRequestVsyncTimestamp(timestamp);
+    ASSERT_EQ(vsyncDistributor->AddConnection(conns[2], 1), VSYNC_ERROR_OK);
+
+    conns.emplace_back(new VSyncConnection(vsyncDistributor, "rs"));
+    conns[3]->rate_ = 0;
+    conns[3]->triggerThisTime_ = false;
+    conns[3]->AddRequestVsyncTimestamp(timestamp);
+    ASSERT_EQ(vsyncDistributor->AddConnection(conns[3], 1), VSYNC_ERROR_OK);
+
+    int64_t now = 1000000000, period = 8333333;
+    uint32_t refreshRate = 120, vsyncMaxRefreshRate = 360;
+    vsyncDistributor->OnVSyncTrigger(now, period, refreshRate, VSYNC_MODE_LTPS, vsyncMaxRefreshRate);
     for (size_t i = 0; i < conns.size(); ++i) {
         ASSERT_EQ(vsyncDistributor->RemoveConnection(conns[i]), VSYNC_ERROR_OK);
     }
