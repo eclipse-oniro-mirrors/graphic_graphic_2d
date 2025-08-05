@@ -719,7 +719,7 @@ HWTEST_F(VSyncDistributorTest, OnVSyncTriggerTest006, Function | MediumTest| Lev
             conns.emplace_back(conn);
         }
     }
-    for (size_t i = 0; i < conns.size(); ++i){
+    for (size_t i = 0; i < conns.size(); ++i) {
         ASSERT_EQ(vsyncDistributor->AddConnection(conns[i], 1), VSYNC_ERROR_OK);
     }
     int64_t now = 1000000000, period = 8333333;
