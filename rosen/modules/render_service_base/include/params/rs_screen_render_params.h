@@ -40,17 +40,6 @@ public:
     void SetAllMainAndLeashSurfaceDrawables(
         std::vector<DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr>& allMainAndLeashSurfaces);
 
-    inline void SetTopSurfaceOpaqueRects(const std::vector<Occlusion::Rect>& topSurfaceOpaqueRects)
-    {
-        topSurfaceOpaqueRects_ = topSurfaceOpaqueRects;
-    }
-
-    inline void SetTopSurfaceOpaqueRects(std::vector<Occlusion::Rect>&& topSurfaceOpaqueRects)
-    {
-        topSurfaceOpaqueRects_ = std::move(topSurfaceOpaqueRects);
-    }
-
-    const std::vector<Occlusion::Rect>& GetTopSurfaceOpaqueRects() const;
     int32_t GetScreenOffsetX() const
     {
         return screenInfo_.offsetX;
@@ -211,7 +200,6 @@ private:
     std::vector<DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr> logicalDisplayNodeDrawables_;
     std::vector<RSBaseRenderNode::SharedPtr> allMainAndLeashSurfaces_;
     std::vector<DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr> allMainAndLeashSurfaceDrawables_;
-    std::vector<Occlusion::Rect> topSurfaceOpaqueRects_;
     bool isDirtyAlignEnabled_ = false;
     DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr mirrorSourceDrawable_;
     ScreenInfo screenInfo_;

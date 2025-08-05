@@ -193,16 +193,6 @@ void RSScreenRenderNode::HandleCurMainAndLeashSurfaceNodes()
         surfaceCountForMultiLayersPerf_++;
     }
     curMainAndLeashSurfaceNodes_.clear();
-    topSurfaceOpaqueRects_.clear();
-}
-
-Occlusion::Region RSScreenRenderNode::GetTopSurfaceOpaqueRegion() const
-{
-    Occlusion::Region topSurfaceOpaqueRegion;
-    for (const auto& rect : topSurfaceOpaqueRects_) {
-        topSurfaceOpaqueRegion.OrSelf(rect);
-    }
-    return topSurfaceOpaqueRegion;
 }
 
 void RSScreenRenderNode::UpdateRenderParams()
@@ -254,7 +244,6 @@ void RSScreenRenderNode::UpdatePartialRenderParams()
         return;
     }
     screenParams->SetAllMainAndLeashSurfaces(curMainAndLeashSurfaceNodes_);
-    screenParams->SetTopSurfaceOpaqueRects(std::move(topSurfaceOpaqueRects_));
 }
 
 bool RSScreenRenderNode::SkipFrame(uint32_t refreshRate, uint32_t skipFrameInterval)

@@ -1197,6 +1197,43 @@ HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, DrawSecurityMaskTest002, TestSi
 }
 
 /**
+ * @tc.name: ClearCanvasStencil001
+ * @tc.desc: Test ClearCanvasStencil
+ * @tc.type: FUNC
+ * @tc.require: issueICPT5N
+ */
+HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, ClearCanvasStencil001, TestSize.Level2)
+{
+    ScreenInfo screenInfo = {
+        .phyWidth = DEFAULT_CANVAS_SIZE,
+        .phyHeight = DEFAULT_CANVAS_SIZE,
+        .width = DEFAULT_CANVAS_SIZE,
+        .height = DEFAULT_CANVAS_SIZE,
+        .isSamplingOn = false,
+    };
+
+    ASSERT_NE(displayDrawable_, nullptr);
+    ASSERT_NE(displayDrawable_->GetRenderParams(), nullptr);
+    auto renderParams = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
+    auto uniParams = std::make_unique<RSRenderThreadParams>();
+    auto tempCanvas = std::make_shared<Drawing::Canvas>(DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
+    auto tempFilterCanvas = std::make_shared<RSPaintFilterCanvas>(tempCanvas.get());
+
+    uniParams->isStencilPixelOcclusionCullingEnabled_ = false;
+    displayDrawable_->ClearCanvasStencil(*tempFilterCanvas, *renderParams, *uniParams, screenInfo);
+    EXPECT_EQ(tempFilterCanvas->GetMaxStencilVal(), 0);
+
+    uniParams->isStencilPixelOcclusionCullingEnabled_ = true;
+    displayDrawable_->ClearCanvasStencil(*tempFilterCanvas, *renderParams, *uniParams, screenInfo);
+    EXPECT_EQ(tempFilterCanvas->GetMaxStencilVal(), 0);
+
+    uniParams->isStencilPixelOcclusionCullingEnabled_ = true;
+    renderParams->SetTopSurfaceOpaqueRects({{0, 0, DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE}});
+    displayDrawable_->ClearCanvasStencil(*tempFilterCanvas, *renderParams, uniParams, screenInfo);
+    EXPECT_EQ(tempFilterCanvas->GetMaxStencilVal(), TOP_OCCLUSION_SURFACES_NUM * OCCLUSION_ENABLE_SCENE_NUM);
+}
+
+/**
  * @tc.name: ScaleAndRotateMirrorForWiredScreen
  * @tc.desc: Test ScaleAndRotateMirrorForWiredScreen
  * @tc.type: FUNC

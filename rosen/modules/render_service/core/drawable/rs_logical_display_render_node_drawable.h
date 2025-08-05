@@ -61,6 +61,8 @@ protected:
 
 private:
     void DrawSecurityMask();
+    void ClearCanvasStencil(RSPaintFilterCanvas& canvas, const RSLogicalDisplayRenderParams& params,
+        const RSRenderThreadParams& uniParam, const ScreenInfo& screenInfo);
     void CheckDirtyRefresh(CompositeType type, bool hasSecLayerInVisibleRect);
     void ScaleAndRotateMirrorForWiredScreen(RSLogicalDisplayRenderNodeDrawable& mirroredDrawable);
     void RotateMirrorCanvas(ScreenRotation& rotation, float width, float height);
