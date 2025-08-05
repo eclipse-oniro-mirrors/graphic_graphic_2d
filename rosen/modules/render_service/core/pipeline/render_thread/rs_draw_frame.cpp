@@ -174,7 +174,7 @@ void RSDrawFrame::PostAndWait()
                 unirenderInstance_.SetMainLooping(true);
                 RS_PROFILER_ON_PARALLEL_RENDER_BEGIN();
                 RenderFrame();
-                unirenderInstance_.RunImageReleaseTask();
+                unirenderInstance_.ClearResource();
                 RS_PROFILER_ON_PARALLEL_RENDER_END(renderFrameNumber);
                 unirenderInstance_.SetMainLooping(false);
             });
@@ -182,7 +182,7 @@ void RSDrawFrame::PostAndWait()
         }
         case RsParallelType::RS_PARALLEL_TYPE_SINGLE_THREAD: { // render in main thread
             RenderFrame();
-            unirenderInstance_.RunImageReleaseTask();
+            unirenderInstance_.ClearResource();
             break;
         }
         case RsParallelType::RS_PARALLEL_TYPE_ASYNC: // wait until sync finish in render thread
@@ -194,7 +194,7 @@ void RSDrawFrame::PostAndWait()
                 RS_PROFILER_ON_PARALLEL_RENDER_BEGIN();
                 RSMainThread::Instance()->GetRSVsyncRateReduceManager().FrameDurationBegin();
                 RenderFrame();
-                unirenderInstance_.RunImageReleaseTask();
+                unirenderInstance_.ClearResource();
                 RSMainThread::Instance()->GetRSVsyncRateReduceManager().FrameDurationEnd();
                 RS_PROFILER_ON_PARALLEL_RENDER_END(renderFrameNumber);
                 unirenderInstance_.SetMainLooping(false);
