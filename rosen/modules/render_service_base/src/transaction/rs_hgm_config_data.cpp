@@ -18,6 +18,8 @@
 
 namespace {
     static constexpr size_t PARCEL_MAX_CAPACITY = 2000 * 1024;
+    constexpr int32_t MAX_ANIM_DYNAMIC_ITEM_SIZE = 2048;
+    constexpr int32_t MAX_PAGE_NAME_SIZE = 2048;
 }
 
 namespace OHOS {
@@ -39,7 +41,7 @@ RSHgmConfigData* RSHgmConfigData::Unmarshalling(Parcel& parcel)
     }
     size_t readableSize = parcel.GetReadableBytes() / sizeof(uint64_t);
     size_t len = static_cast<size_t>(size);
-    if (len > readableSize || len > data->configData_.max_size()) {
+    if (len > readableSize || len > data->configData_.max_size() || size > MAX_ANIM_DYNAMIC_ITEM_SIZE) {
         RS_LOGE("RSHgmConfigData Unmarshalling Failed read vector, size:%zu, readableSize:%zu", len, readableSize);
         return data;
     }
@@ -63,7 +65,7 @@ RSHgmConfigData* RSHgmConfigData::Unmarshalling(Parcel& parcel)
         return data;
     }
     len = static_cast<size_t>(pageNameSize);
-    if (len > readableSize || len > data->configData_.max_size()) {
+    if (len > readableSize || len > data->configData_.max_size() || pageNameSize > MAX_PAGE_NAME_SIZE) {
         RS_LOGE("RSHgmConfigData Unmarshalling Failed read vector, size:%zu, readableSize:%zu", len, readableSize);
         return data;
     }

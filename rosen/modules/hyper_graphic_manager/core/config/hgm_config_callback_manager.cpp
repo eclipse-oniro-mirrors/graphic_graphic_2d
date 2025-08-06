@@ -248,6 +248,11 @@ void HgmConfigCallbackManager::UnRegisterHgmConfigChangeCallback(pid_t pid)
         HGM_LOGD("HgmRefreshRateModeCallbackManager %{public}s : remove a remote callback succeed.", __func__);
     }
 
+    if (refreshRateUpdateCallbacks_.find(pid) != refreshRateUpdateCallbacks_.end()) {
+        refreshRateUpdateCallbacks_.erase(pid);
+        HGM_LOGD("HgmRefreshRateModeCallbackManager %{public}s : remove a remote callback succeed.", __func__);
+    }
+
     for (auto& [_, listenerPidCb] : xcomponentExpectedFrameRateCallbacks_) {
         listenerPidCb.erase(pid);
     }
