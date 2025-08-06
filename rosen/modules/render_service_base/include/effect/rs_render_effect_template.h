@@ -248,7 +248,12 @@ public:
     void Dump(std::string& out) const
     {
         static_assert(is_render_property_tag_v<Tag>, "Tag must be a render property tag");
-        out += GetLastSegment(Tag::NAME, '_');
+        std::string tagName = Tag::NAME;
+        size_t pos = tagName.rfind('_');
+        if (pos != std::string::npos) {
+            tagName = tagName.substr(pos + 1);
+        }
+        out += tagName;
         out += "[";
         Getter<Tag>()->Dump(out);
         out += "]";
