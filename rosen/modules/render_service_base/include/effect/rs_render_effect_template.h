@@ -38,17 +38,6 @@ class GEVisualEffect;
 
 class RSNGRenderMaskBase;
 
-namespace {
-    std::string GetLastSegment(const std::string& str, char delimiter)
-    {
-        size_t pos = str.rfind(delimiter);
-        if (pos != std::string::npos) {
-            return str.substr(pos + 1);
-        }
-        return str;
-    }
-}
-
 class RSB_EXPORT RSNGRenderEffectHelper {
 public:
     template<typename Tag>
