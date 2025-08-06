@@ -688,6 +688,7 @@ HWTEST_F(VSyncDistributorTest, OnVSyncTriggerTest004, Function | MediumTest| Lev
     vsyncDistributor->vsyncMode_ = vsyncMode;
 }
 
+
 /**
  * Function: CollectConnections001
  * Type: Function
@@ -701,8 +702,7 @@ HWTEST_F(VSyncDistributorTest, CollectConnections001, Function | MediumTest| Lev
 {
     std::vector<sptr<VSyncConnection>> conns;
     std::vector<sptr<VSyncConnection>> rsConns;
-    int64_t now = 1000000000, period = 8333333;
-    uint32_t refreshRate = 120, vsyncMaxRefreshRate = 360;
+    int64_t now = 1000000000;
     int64_t timestamp = 100;
     bool waitForVSync = false;
 
@@ -730,8 +730,8 @@ HWTEST_F(VSyncDistributorTest, CollectConnections001, Function | MediumTest| Lev
 
         ASSERT_EQ(vsyncDistributor->AddConnection(conns[i], 1), VSYNC_ERROR_OK);
         vsyncDistributor->CollectConnections(waitForVSync, now, rsConns, 0, false);
-        EXPECT_TRUE(rsConns.size(), 1);
-        EXPECT_TRUE(waitForVSync, true);
+        EXPECT_EQ(rsConns.size(), 1);
+        EXPECT_TRUE(waitForVSync);
         ASSERT_EQ(vsyncDistributor->RemoveConnection(conns[i]), VSYNC_ERROR_OK);
     }
 }
@@ -749,8 +749,7 @@ HWTEST_F(VSyncDistributorTest, CollectConnections002, Function | MediumTest| Lev
 {
     std::vector<sptr<VSyncConnection>> conns;
     std::vector<sptr<VSyncConnection>> rsConns;
-    int64_t now = 1000000000, period = 8333333;
-    uint32_t refreshRate = 120, vsyncMaxRefreshRate = 360;
+    int64_t now = 1000000000;
     int64_t timestamp = 100;
     bool waitForVSync = false;
 
@@ -778,8 +777,8 @@ HWTEST_F(VSyncDistributorTest, CollectConnections002, Function | MediumTest| Lev
 
         ASSERT_EQ(vsyncDistributor->AddConnection(conns[i], 1), VSYNC_ERROR_OK);
         vsyncDistributor->CollectConnections(waitForVSync, now, rsConns, 0, false);
-        EXPECT_TRUE(rsConns.size(), 0);
-        EXPECT_TRUE(waitForVSync, !conns[i]->IsRequestVsyncTimestampEmpty());
+        EXPECT_EQ(rsConns.size(), 0);
+        EXPECT_EQ(waitForVSync, !conns[i]->IsRequestVsyncTimestampEmpty());
         ASSERT_EQ(vsyncDistributor->RemoveConnection(conns[i]), VSYNC_ERROR_OK);
     }
 }
