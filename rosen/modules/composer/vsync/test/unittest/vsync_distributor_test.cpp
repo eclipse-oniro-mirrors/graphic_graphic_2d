@@ -774,11 +774,14 @@ HWTEST_F(VSyncDistributorTest, CollectConnections002, Function | MediumTest| Lev
     for (size_t i = 0; i < conns.size(); i++) {
         waitForVSync = false;
         rsConns.clear();
-
         ASSERT_EQ(vsyncDistributor->AddConnection(conns[i], 1), VSYNC_ERROR_OK);
         vsyncDistributor->CollectConnections(waitForVSync, now, rsConns, 0, false);
         EXPECT_EQ(rsConns.size(), 0);
-        EXPECT_EQ(waitForVSync, !conns[i]->IsRequestVsyncTimestampEmpty());
+        if (!conns[i]->triggerThisTime_ && !conns[i]->NeedTriggeredVsync(timestamp)) {
+            EXPECT_EQ(waitForVSync, !conns[i]->IsRequestVsyncTimestampEmpty());
+        } else {
+            EXPECT_FALSE(waitForVSync);
+        }
         ASSERT_EQ(vsyncDistributor->RemoveConnection(conns[i]), VSYNC_ERROR_OK);
     }
 }
