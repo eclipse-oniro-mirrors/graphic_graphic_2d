@@ -70,7 +70,8 @@ public:
     void GenerateGEVisualEffect() override
     {
         RS_OPTIONAL_TRACE_FMT("RSNGRenderFilterTemplate::GenerateGEVisualEffect, Type: %s paramStr: %s",
-            RSNGRenderEffectHelper::GetEffectTypeString(Type).c_str(), EffectTemplateBase::DumpProperties().c_str());
+            RSNGRenderEffectHelper::GetEffectTypeString(Type).c_str(),
+            EffectTemplateBase::DumpProperties().c_str());
         auto geFilter = RSNGRenderEffectHelper::CreateGEVisualEffect(Type);
         OnGenerateGEVisualEffect(geFilter);
         std::apply([&geFilter](const auto&... propTag) {
