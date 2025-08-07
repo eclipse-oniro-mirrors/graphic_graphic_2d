@@ -39,6 +39,10 @@ tuple<bool, napi_value> NClass::DefineClass(napi_env env, string className, napi
     vector<napi_property_descriptor> &&properties)
 {
     napi_value classVal = nullptr;
+    NClass &nClass = NClass::GetInstance();
+    if (nClass.env != nullptr && env != nClass.env) {
+        return { false, nullptr };
+    }
     napi_status stat = napi_define_class(env, className.c_str(), className.length(), constructor,
         nullptr, properties.size(), properties.data(), &classVal);
     return { stat == napi_ok, classVal };
@@ -48,7 +52,10 @@ bool NClass::SaveClass(napi_env env, string className, napi_value exClass)
 {
     NClass &nClass = NClass::GetInstance();
     lock_guard(nClass.exClassMapLock);
-
+    if (nClass.env != nullptr && env != nClass.env) {
+        return false;
+    }
+    
     if (nClass.exClassMap.find(className) != nClass.exClassMap.end()) {
         return true;
     }
