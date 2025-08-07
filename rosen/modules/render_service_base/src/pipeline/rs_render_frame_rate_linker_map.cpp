@@ -29,7 +29,7 @@ RSRenderFrameRateLinkerMap::RSRenderFrameRateLinkerMap()
 
 bool RSRenderFrameRateLinkerMap::RegisterFrameRateLinker(const std::shared_ptr<RSRenderFrameRateLinker>& linkerPtr)
 {
-    if (frameRateLinkerMap_.size() > MAX_FRAME_RATE_LINKER_SIZE) {
+    if (frameRateLinkerMap_.size() >= MAX_FRAME_RATE_LINKER_SIZE) {
         return false;
     }
 

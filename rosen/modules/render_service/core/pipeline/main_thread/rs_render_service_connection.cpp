@@ -563,7 +563,7 @@ ErrCode RSRenderServiceConnection::CreateVSyncConnection(sptr<IVSyncConnection>&
     }
     auto ret = appVSyncDistributor_->AddConnection(conn, windowNodeId);
     if (ret != VSYNC_ERROR_OK) {
-        UnRegisterFrameRateLinker(conn->id_);
+        UnregisterFrameRateLinker(conn->id_);
         vsyncConn = nullptr;
         return ERR_INVALID_VALUE;
     }
