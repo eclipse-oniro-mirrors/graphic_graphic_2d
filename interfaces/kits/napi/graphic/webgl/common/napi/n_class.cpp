@@ -56,7 +56,7 @@ bool NClass::SaveClass(napi_env env, string className, napi_value exClass)
     napi_ref constructor;
     napi_status res = napi_create_reference(env, exClass, 2, &constructor);
     if (res == napi_ok) {
-        NClass.env = env;
+        nClass.env = env;
         nClass.exClassMap.insert({ className, constructor });
     }
     return res == napi_ok;
