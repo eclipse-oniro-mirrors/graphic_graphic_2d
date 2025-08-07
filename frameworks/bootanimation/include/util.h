@@ -29,6 +29,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include "zlib.h"
+#include <parameters.h>
 
 namespace OHOS {
 static const int NUMBER_TWO = 2;
@@ -62,7 +63,7 @@ constexpr const char* BOOT_SOUND = "const.bootanimation.bootsound";
 const std::string DEVICE_TYPE_PHONE = "phone";
 const std::string DEVICE_TYPE_WEARABLE = "wearable";
 
-const std::string FOLD_SCREEN_TYPE = system::GetParameter("const.window.foldscreen.type", ""); 
+const std::string FOLD_SCREEN_TYPE = system::GetParameter("const.window.foldscreen.type", "");
 
 enum class BootStrategyType {
     ASSOCIATIVE,
