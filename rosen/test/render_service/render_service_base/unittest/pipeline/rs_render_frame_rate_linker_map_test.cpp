@@ -40,7 +40,8 @@ class CustomFrameRateLinkerCallback : public IRemoteStub<RSIFrameRateLinkerExpec
 public:
     CustomFrameRateLinkerCallback() = default;
     ~CustomFrameRateLinkerCallback() = default;
-    void OnFrameRateLinkerExpectedFpsUpdate(pid_t dstPid, int32_t expectedFps) override {};
+    void OnFrameRateLinkerExpectedFpsUpdate(
+        pid_t dstPid, const std::string& xcomponentId, int32_t expectedFps) override {};
 };
 
 /**
