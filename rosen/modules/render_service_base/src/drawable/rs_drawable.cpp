@@ -597,7 +597,7 @@ std::unordered_set<RSDrawableSlot> RSDrawable::CalculateDirtySlots(
         dirtySlots.emplace(RSDrawableSlot::RESTORE_FOREGROUND_FILTER);
     }
 
-    // if pixel stretch changed, mark affected drawables as dirty
+    // if pixel-stretch changed, mark affected drawables as dirty
     if (dirtySlots.count(RSDrawableSlot::PIXEL_STRETCH)) {
         MarkAffectedSlots(stretchDirtyTypes, drawableVec, dirtySlots);
     }
