@@ -82,22 +82,27 @@ HWTEST_F(RSBackgroundFilterRenderModifierNGTypeTest, AttachRenderFilterPropertyT
     auto property = std::make_shared<RSRenderProperty<std::shared_ptr<RSRenderFilter>>>();
 
     modifier.AttachRenderFilterProperty(nullptr, ModifierNG::RSPropertyType::HDR_UI_BRIGHTNESS);
+    EXPECT_EQ(modifier.target_.lock(), nullptr);
     modifier.AttachRenderFilterProperty(nullptr, ModifierNG::RSPropertyType::BACKGROUND_UI_FILTER);
+    EXPECT_EQ(modifier.target_.lock(), nullptr);
     modifier.AttachRenderFilterProperty(property, ModifierNG::RSPropertyType::BACKGROUND_UI_FILTER);
+    EXPECT_EQ(modifier.target_.lock(), nullptr);
 
     RSCanvasRenderNode node(0);
     modifier.target_ = node.weak_from_this();
     modifier.AttachRenderFilterProperty(property, ModifierNG::RSPropertyType::BACKGROUND_UI_FILTER);
-
+    EXPECT_EQ(node.properties.empty(), true);
     auto property_int = std::make_shared<RSRenderProperty<int>>();
     EXPECT_NE(property_int, nullptr);
     modifier.AttachRenderFilterProperty(property_int, ModifierNG::RSPropertyType::BACKGROUND_UI_FILTER);
+    EXPECT_EQ(node.properties.empty(), true);
 
     auto rsRenderFilter = std::make_shared<RSRenderFilter>();
     auto rsRenderFilterParaBase = std::make_shared<RSRenderFilterParaBase>(RSUIFilterType::BLUR);
     rsRenderFilter->Insert(RSUIFilterType::BLUR, rsRenderFilterParaBase);
     auto rsRenderProperty = std::make_shared<RSRenderProperty<std::shared_ptr<RSRenderFilter>>>(rsRenderFilter, 0);
     modifier.AttachRenderFilterProperty(property, ModifierNG::RSPropertyType::BACKGROUND_UI_FILTER);
+    EXPECT_EQ(node.properties.empty(), true);
 }
 
 /**
@@ -111,21 +116,26 @@ HWTEST_F(RSBackgroundFilterRenderModifierNGTypeTest, DetachRenderFilterPropertyT
     auto property = std::make_shared<RSRenderProperty<std::shared_ptr<RSRenderFilter>>>();
 
     modifier.DetachRenderFilterProperty(nullptr, ModifierNG::RSPropertyType::HDR_UI_BRIGHTNESS);
+    EXPECT_EQ(modifier.target_.lock(), nullptr);
     modifier.DetachRenderFilterProperty(nullptr, ModifierNG::RSPropertyType::BACKGROUND_UI_FILTER);
+    EXPECT_EQ(modifier.target_.lock(), nullptr);
     modifier.DetachRenderFilterProperty(property, ModifierNG::RSPropertyType::BACKGROUND_UI_FILTER);
+    EXPECT_EQ(modifier.target_.lock(), nullptr);
 
     RSCanvasRenderNode node(0);
     modifier.target_ = node.weak_from_this();
     modifier.DetachRenderFilterProperty(property, ModifierNG::RSPropertyType::BACKGROUND_UI_FILTER);
-
+    EXPECT_EQ(node.properties.empty(), true);
     auto property_int = std::make_shared<RSRenderProperty<int>>();
     EXPECT_NE(property_int, nullptr);
     modifier.DetachRenderFilterProperty(property_int, ModifierNG::RSPropertyType::BACKGROUND_UI_FILTER);
+    EXPECT_EQ(node.properties.empty(), true);
 
     auto rsRenderFilter = std::make_shared<RSRenderFilter>();
     auto rsRenderFilterParaBase = std::make_shared<RSRenderFilterParaBase>(RSUIFilterType::BLUR);
     rsRenderFilter->Insert(RSUIFilterType::BLUR, rsRenderFilterParaBase);
     auto rsRenderProperty = std::make_shared<RSRenderProperty<std::shared_ptr<RSRenderFilter>>>(rsRenderFilter, 0);
     modifier.DetachRenderFilterProperty(property, ModifierNG::RSPropertyType::BACKGROUND_UI_FILTER);
+    EXPECT_EQ(node.properties.empty(), true);
 }
 } // namespace OHOS::Rosen
