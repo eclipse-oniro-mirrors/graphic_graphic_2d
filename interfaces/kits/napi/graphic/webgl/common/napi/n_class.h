@@ -71,7 +71,7 @@ public:
 private:
     NClass() = default;
     std::map<std::string, napi_ref> exClassMap;
-    static napi_env environment;
+    napi_env env = nullptr;
     std::mutex exClassMapLock;
 };
 } // namespace Rosen

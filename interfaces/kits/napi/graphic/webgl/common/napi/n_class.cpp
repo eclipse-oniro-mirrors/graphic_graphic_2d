@@ -18,7 +18,6 @@
 namespace OHOS {
 namespace Rosen {
 using namespace std;
-napi_env NClass::environment = nullptr;
 NClass &NClass::GetInstance()
 {
     static NClass nClass;
@@ -27,7 +26,6 @@ NClass &NClass::GetInstance()
 NClass::~NClass()
 {
     lock_guard<std::mutex> lock(exClassMapLock);
-    auto env = NClass::environment;
     if (env && !exClassMap.empty()) {
         auto it = exClassMap.begin();
         while (it != exClassMap.end()) {
@@ -58,7 +56,7 @@ bool NClass::SaveClass(napi_env env, string className, napi_value exClass)
     napi_ref constructor;
     napi_status res = napi_create_reference(env, exClass, 2, &constructor);
     if (res == napi_ok) {
-        NClass::environment = env;
+        NClass.env = env;
         nClass.exClassMap.insert({ className, constructor });
     }
     return res == napi_ok;
