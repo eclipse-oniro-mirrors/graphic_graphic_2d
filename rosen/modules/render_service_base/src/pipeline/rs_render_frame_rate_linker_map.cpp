@@ -21,7 +21,7 @@
 namespace OHOS {
 namespace Rosen {
 namespace {
-    constexpr int32_t MAX_FRAME_RATE_LINKER_SIZE = 2048;
+    constexpr uint32_t MAX_FRAME_RATE_LINKER_SIZE = 2048;
 }
 RSRenderFrameRateLinkerMap::RSRenderFrameRateLinkerMap()
 {

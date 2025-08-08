@@ -18,8 +18,8 @@
 
 namespace {
     static constexpr size_t PARCEL_MAX_CAPACITY = 2000 * 1024;
-    constexpr int32_t MAX_ANIM_DYNAMIC_ITEM_SIZE = 256;
-    constexpr int32_t MAX_PAGE_NAME_SIZE = 64;
+    constexpr uint32_t MAX_ANIM_DYNAMIC_ITEM_SIZE = 256;
+    constexpr uint32_t MAX_PAGE_NAME_SIZE = 64;
 }
 
 namespace OHOS {
