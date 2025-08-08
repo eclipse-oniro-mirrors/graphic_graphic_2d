@@ -225,7 +225,7 @@ HWTEST_F(RSOcclusionHandlerTest, CollectSubTree_WithNonAnomalous, TestSize.Level
     rsOcclusionHandler->rootNodeId_ = firstNodeId;
     rsOcclusionHandler->CollectNode(*nodePtr);
     std::shared_ptr<RSRenderNode> nodePtr2 = std::make_shared<RSRenderNode>(secondNodeId);
-    nodePtr2->renderContent_->renderProperties_.SetBounds(Vector4f{0, 0, 0, 0});
+    nodePtr2->renderProperties_.SetBounds(Vector4f{0, 0, 0, 0});
     nodePtr2->parent_ = nodePtr;
     rsOcclusionHandler->CollectSubTree(*nodePtr2, false);
     EXPECT_EQ(rsOcclusionHandler->occlusionNodes_[2]->isSubTreeIgnored_, false);
@@ -238,8 +238,8 @@ HWTEST_F(RSOcclusionHandlerTest, CollectSubTree_WithNonAnomalous, TestSize.Level
     nodePtr2->AddChild(nodePtr3);
     auto fullChildrenList = std::make_shared<std::vector<std::shared_ptr<RSRenderNode>>>();
     fullChildrenList->emplace_back(nodePtr3);
-    std::shared_ptr<const std::vector<std::shared_ptr<RSRenderNode>>> constFullChildrenList
-        = std::move(fullChildrenList);
+    std::shared_ptr<const std::vector<std::shared_ptr<RSRenderNode>>> constFullChildrenList =
+        std::move(fullChildrenList);
     std::atomic_store_explicit(&(nodePtr2->fullChildrenList_), constFullChildrenList, std::memory_order_release);
     // collected children which not collected
     rsOcclusionHandler->CollectSubTree(*nodePtr2, false);
@@ -340,7 +340,7 @@ HWTEST_F(RSOcclusionHandlerTest, UpdateSkippedSubTreeProp_WithIsSubTreeIgnored_E
     std::shared_ptr<RSRenderNode> nodePtr2 = std::make_shared<RSRenderNode>(secondNodeId);
     nodePtr2->parent_ = nodePtr;
     nodePtr2->instanceRootNodeId_ = firstNodeId;
-    nodePtr2->renderContent_->renderProperties_.SetBounds(Vector4f{0, 0, 0, 0});
+    nodePtr2->renderProperties_.SetBounds(Vector4f{0, 0, 0, 0});
     std::shared_ptr<RSRenderNode> nodePtr3 = std::make_shared<RSRenderNode>(thirdNodeId);
     nodePtr2->AddChild(nodePtr3);
     auto fullChildrenList = std::make_shared<std::vector<std::shared_ptr<RSRenderNode>>>();
