@@ -350,11 +350,11 @@ HWTEST_F(RSOcclusionNodeTest, CollectNodeProperties_WithClipToBounds_EqualsTrue,
         std::make_shared<OcclusionNode>(parentId, RSRenderNodeType::ROOT_NODE);
     std::shared_ptr<RSRenderNode> renderNode = std::make_shared<RSRenderNode>(parentId);
     Vector4f property(100.f, 100.f, 200.f, 300.f);
-    auto boundsProperty = std::make_shared<RSRenderPropertyBase>(propertyId);
+    auto boundsProperty = std::make_shared<RSRenderProperty<bool>>(true, propertyId);
     boundsProperty->modifierType_ = RSModifierType::BOUNDS;
     auto boundsModifier = std::make_shared<RSBoundsRenderModifier>(boundsProperty);
     renderNode->modifiers_.emplace(boundsModifier->GetPropertyId(), boundsModifier);
-    renderNode->renderContent_->renderProperties_.clipToBounds_ = true;
+    renderNode->renderProperties_.clipToBounds_ = true;
     rootNode->CollectNodeProperties(*renderNode);
     EXPECT_TRUE(rootNode->isSubTreeIgnored_);
 }
@@ -373,22 +373,22 @@ HWTEST_F(RSOcclusionNodeTest, CollectNodeProperties_WithInNonAnomalous, TestSize
         std::make_shared<OcclusionNode>(parentId, RSRenderNodeType::ROOT_NODE);
     rootNode->parentOcNode_ = parentOcNode;
     std::shared_ptr<RSRenderNode> renderNode = std::make_shared<RSRenderNode>(parentId);
-    auto boundsProperty = std::make_shared<RSRenderPropertyBase>(propertyId);
+    auto boundsProperty = std::make_shared<RSRenderProperty<bool>>(true, propertyId);
     boundsProperty->modifierType_ = RSModifierType::BOUNDS;
     auto boundsModifier = std::make_shared<RSBoundsRenderModifier>(boundsProperty);
     renderNode->modifiers_.emplace(boundsModifier->GetPropertyId(), boundsModifier);
     Vector4f cornerRadius(0.f, 0.f, 0.f, 0.f);
-    renderNode->renderContent_->renderProperties_.cornerRadius_ = cornerRadius;
-    renderNode->renderContent_->renderProperties_.boundsGeo_->x_ = 0;
-    renderNode->renderContent_->renderProperties_.boundsGeo_->y_ = 0;
-    renderNode->renderContent_->renderProperties_.boundsGeo_->width_ = 120.f;
-    renderNode->renderContent_->renderProperties_.boundsGeo_->height_ = 120.f;
+    renderNode->renderProperties_.cornerRadius_ = cornerRadius;
+    renderNode->renderProperties_.boundsGeo_->x_ = 0;
+    renderNode->renderProperties_.boundsGeo_->y_ = 0;
+    renderNode->renderProperties_.boundsGeo_->width_ = 120.f;
+    renderNode->renderProperties_.boundsGeo_->height_ = 120.f;
     rootNode->CollectNodeProperties(*renderNode);
     EXPECT_FALSE(rootNode->isSubTreeIgnored_);
-    EXPECT_FLOAT_EQ(rootNode->drawRect_.left_, renderNode->renderContent_->renderProperties_.boundsGeo_->x_);
-    EXPECT_FLOAT_EQ(rootNode->drawRect_.top_, renderNode->renderContent_->renderProperties_.boundsGeo_->y_);
-    EXPECT_FLOAT_EQ(rootNode->drawRect_.width_, renderNode->renderContent_->renderProperties_.boundsGeo_->width_);
-    EXPECT_FLOAT_EQ(rootNode->drawRect_.height_, renderNode->renderContent_->renderProperties_.boundsGeo_->height_);
+    EXPECT_FLOAT_EQ(rootNode->drawRect_.left_, renderNode->renderProperties_.boundsGeo_->x_);
+    EXPECT_FLOAT_EQ(rootNode->drawRect_.top_, renderNode->renderProperties_.boundsGeo_->y_);
+    EXPECT_FLOAT_EQ(rootNode->drawRect_.width_, renderNode->renderProperties_.boundsGeo_->width_);
+    EXPECT_FLOAT_EQ(rootNode->drawRect_.height_, renderNode->renderProperties_.boundsGeo_->height_);
 }
 
 /*
@@ -405,7 +405,7 @@ HWTEST_F(RSOcclusionNodeTest, CollectNodeProperties_WithIsBgOpaque_EqualTrue, Te
         std::make_shared<OcclusionNode>(parentId, RSRenderNodeType::ROOT_NODE);
     rootNode->parentOcNode_ = parentOcNode;
     std::shared_ptr<RSRenderNode> renderNode = std::make_shared<RSRenderNode>(parentId);
-    renderNode->renderContent_->renderProperties_.SetBackgroundColor(RgbPalette::White());
+    renderNode->renderProperties_.SetBackgroundColor(RgbPalette::White());
     rootNode->CollectNodeProperties(*renderNode);
     EXPECT_TRUE(rootNode->isBgOpaque_);
 }
@@ -424,10 +424,10 @@ HWTEST_F(RSOcclusionNodeTest, CollectNodeProperties_WithisNeedClip_EqualTrue, Te
         std::make_shared<OcclusionNode>(parentId, RSRenderNodeType::ROOT_NODE);
     rootNode->parentOcNode_ = parentOcNode;
     std::shared_ptr<RSRenderNode> renderNode = std::make_shared<RSRenderNode>(parentId);
-    renderNode->renderContent_->renderProperties_.GetClipRRect().rect_ = {10, 10, 10, 10};
+    renderNode->renderProperties_.GetClipRRect().rect_ = {10, 10, 10, 10};
     rootNode->isNeedClip_ = true;
     Vector4f bounds = {10, 10, 10, 10};
-    renderNode->renderContent_->renderProperties_.SetBounds(bounds);
+    renderNode->renderProperties_.SetBounds(bounds);
     rootNode->CollectNodeProperties(*renderNode);
     EXPECT_EQ(rootNode->drawRect_, bounds);
 }
@@ -466,11 +466,11 @@ HWTEST_F(RSOcclusionNodeTest, CalculateDrawRect, TestSize.Level1)
         std::make_shared<OcclusionNode>(parentId, RSRenderNodeType::ROOT_NODE);
     rootNode->parentOcNode_ = parentOcNode;
     std::shared_ptr<RSRenderNode> renderNode = std::make_shared<RSRenderNode>(nodeId);
-    renderNode->renderContent_->renderProperties_.SetBounds(Vector4f{0, 0, 0, 0});
-    rootNode->CalculateDrawRect(*renderNode, renderNode->renderContent_->renderProperties_);
+    renderNode->renderProperties_.SetBounds(Vector4f{0, 0, 0, 0});
+    rootNode->CalculateDrawRect(*renderNode, renderNode->renderProperties_);
     EXPECT_FALSE(rootNode->isSubTreeIgnored_);
-    renderNode->renderContent_->renderProperties_.boundsGeo_->x_ = std::nan("");
-    rootNode->CalculateDrawRect(*renderNode, renderNode->renderContent_->renderProperties_);
+    renderNode->renderProperties_.boundsGeo_->x_ = std::nan("");
+    rootNode->CalculateDrawRect(*renderNode, renderNode->renderProperties_);
     EXPECT_TRUE(rootNode->isSubTreeIgnored_);
 }
 
@@ -542,19 +542,19 @@ HWTEST_F(RSOcclusionNodeTest, UpdateClipRect, TestSize.Level1)
     std::shared_ptr<OcclusionNode> rootNode =
         std::make_shared<OcclusionNode>(nodeId, RSRenderNodeType::CANVAS_NODE);
     std::shared_ptr<RSRenderNode> renderNode = std::make_shared<RSRenderNode>(nodeId);
-    renderNode->renderContent_->renderProperties_.boundsGeo_->width_ = 100.0f;
-    renderNode->renderContent_->renderProperties_.boundsGeo_->height_ = 200.0f;
+    renderNode->renderProperties_.boundsGeo_->width_ = 100.0f;
+    renderNode->renderProperties_.boundsGeo_->height_ = 200.0f;
     rootNode->UpdateClipRect(*renderNode);
     int initLeft = 0 ;
     int initTop = 0;
     EXPECT_EQ(rootNode->clipOuterRect_.left_, initLeft);
     EXPECT_EQ(rootNode->clipOuterRect_.top_, initTop);
-    EXPECT_EQ(rootNode->clipOuterRect_.width_, renderNode->renderContent_->renderProperties_.boundsGeo_->width_);
-    EXPECT_EQ(rootNode->clipOuterRect_.height_, renderNode->renderContent_->renderProperties_.boundsGeo_->height_);
+    EXPECT_EQ(rootNode->clipOuterRect_.width_, renderNode->renderProperties_.boundsGeo_->width_);
+    EXPECT_EQ(rootNode->clipOuterRect_.height_, renderNode->renderProperties_.boundsGeo_->height_);
     EXPECT_EQ(rootNode->clipInnerRect_.left_, initLeft);
     EXPECT_EQ(rootNode->clipInnerRect_.top_, initTop);
-    EXPECT_EQ(rootNode->clipInnerRect_.width_, renderNode->renderContent_->renderProperties_.boundsGeo_->width_);
-    EXPECT_EQ(rootNode->clipInnerRect_.height_, renderNode->renderContent_->renderProperties_.boundsGeo_->height_);
+    EXPECT_EQ(rootNode->clipInnerRect_.width_, renderNode->renderProperties_.boundsGeo_->width_);
+    EXPECT_EQ(rootNode->clipInnerRect_.height_, renderNode->renderProperties_.boundsGeo_->height_);
 }
 
 /*
@@ -978,93 +978,6 @@ HWTEST_F(RSOcclusionNodeTest, DetectOcclusion_WithInNonAnomalous, TestSize.Level
     int expectSize = 1;
     EXPECT_EQ(culledNodes.size(), expectSize);
     EXPECT_EQ(culledEntireSubtree.size(), expectSize);
-}
-
-/*
- * @tc.name: DetectOcclusion_Ringed_OcclusionTree
- * @tc.desc: Test DetectOcclusion with ringed occlusion tree
- * @tc.type: FUNC
- * @tc.require: issueICICVE
- */
-HWTEST_F(RSOcclusionNodeTest, DetectOcclusion_Ringed_OcclusionTree, TestSize.Level1)
-{
-    std::shared_ptr<OcclusionNode> rootNode =
-        std::make_shared<OcclusionNode>(nodeId, RSRenderNodeType::ROOT_NODE);
-    NodeId firstChildId(1);
-    std::shared_ptr<OcclusionNode> firstChild =
-        std::make_shared<OcclusionNode>(firstChildId, RSRenderNodeType::CANVAS_NODE);
-    NodeId secondChildId(2);
-    std::shared_ptr<OcclusionNode> secondChild =
-        std::make_shared<OcclusionNode>(secondChildId, RSRenderNodeType::CANVAS_NODE);
-    NodeId thirdChildId(3);
-    std::shared_ptr<OcclusionNode> thirdChild =
-        std::make_shared<OcclusionNode>(thirdChildId, RSRenderNodeType::CANVAS_NODE);
-    thirdChild->isValidInCurrentFrame_ = true;
-    thirdChild->isBgOpaque_ = true;
-    thirdChild->isAlphaNeed_ = false;
-    secondChild->isValidInCurrentFrame_ = true;
-    secondChild->isBgOpaque_ = true;
-    secondChild->isAlphaNeed_ = false;
-    firstChild->isValidInCurrentFrame_ = true;
-    firstChild->isBgOpaque_ = true;
-    firstChild->isAlphaNeed_ = false;
-    rootNode->isValidInCurrentFrame_ = true;
-    rootNode->isBgOpaque_ = true;
-    rootNode->isAlphaNeed_ = false;
-    rootNode->lastChild_ = firstChild;
-    firstChild->lastChild_ = thirdChild;
-    firstChild->firstChild_ = secondChild;
-    secondChild->lastChild_ = thirdChild;
-    thirdChild->leftSibling_ = secondChild;
-    rootNode->innerRect_ = { 0, 0, 1260, 2720 };
-    rootNode->outerRect_ = { 0, 0, 1260, 2720 };
-    firstChild->innerRect_ = { 10, 10, 640, 780 };
-    firstChild->outerRect_ = { 10, 10, 640, 780 };
-    secondChild->innerRect_ = { 10, 10, 640, 390 };
-    secondChild->outerRect_ = { 10, 10, 640, 390 };
-    thirdChild->innerRect_ = { 9, 9, 641, 781 };
-    thirdChild->outerRect_ = { 9, 9, 641, 781 };
-    std::unordered_set<NodeId> culledNodes;
-    std::unordered_set<NodeId> offTreeNodes;
-    std::unordered_set<NodeId> culledEntireSubtree;
-    rootNode->DetectOcclusion(culledNodes, culledEntireSubtree, offTreeNodes);
-    EXPECT_NE(culledNodes.find(firstChildId), culledNodes.end());
-    EXPECT_NE(culledEntireSubtree.find(secondChildId), culledEntireSubtree.end());
-}
-
-/*
- * @tc.name: PreorderTraversal
- * @tc.desc: Test PreorderTraversal
- * @tc.type: FUNC
- * @tc.require: issueICICVE
- */
-HWTEST_F(RSOcclusionNodeTest, PreorderTraversal, TestSize.Level1)
-{
-    std::vector<std::shared_ptr<OcclusionNode>> result;
-    std::shared_ptr<OcclusionNode> rootNode =
-        std::make_shared<OcclusionNode>(nodeId, RSRenderNodeType::ROOT_NODE);
-    rootNode->isSubTreeIgnored_ = true;
-    rootNode->PreorderTraversal(result);
-    int expectSize = 0;
-    EXPECT_EQ(result.size(), expectSize);
-    NodeId firstChildId(1);
-    std::shared_ptr<OcclusionNode> firstChild =
-        std::make_shared<OcclusionNode>(firstChildId, RSRenderNodeType::CANVAS_NODE);
-    NodeId secondChildId(2);
-    std::shared_ptr<OcclusionNode> secondChild =
-        std::make_shared<OcclusionNode>(secondChildId, RSRenderNodeType::CANVAS_NODE);
-    NodeId thirdChildId(3);
-    std::shared_ptr<OcclusionNode> thirdChild =
-        std::make_shared<OcclusionNode>(thirdChildId, RSRenderNodeType::CANVAS_NODE);
-    rootNode->lastChild_ = firstChild;
-    rootNode->firstChild_ = firstChild;
-    firstChild->lastChild_ = thirdChild;
-    firstChild->firstChild_ = secondChild;
-    thirdChild->leftSibling_ = secondChild;
-    rootNode->isSubTreeIgnored_ = false;
-    rootNode->PreorderTraversal(result);
-    expectSize = 3;
-    EXPECT_EQ(result.size(), expectSize);
 }
 
 /*
