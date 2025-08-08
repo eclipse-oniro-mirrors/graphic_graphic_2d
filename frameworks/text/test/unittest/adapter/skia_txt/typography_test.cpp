@@ -1244,6 +1244,11 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyRtlClusterIndexOffset00
 {
     OHOS::Rosen::TypographyStyle typographyStyle;
     typographyStyle.verticalAlignment = TextVerticalAlign::CENTER;
+    std::shared_ptr<OHOS::Rosen::FontCollection> fontCollection =
+        OHOS::Rosen::FontCollection::From(std::make_shared<txt::FontCollection>());
+    std::unique_ptr<OHOS::Rosen::TypographyCreate> typographyCreate =
+        OHOS::Rosen::TypographyCreate::Create(typographyStyle, fontCollection);
+    ASSERT_NE(typographyCreate, nullptr);
     OHOS::Rosen::TextStyle style;
     // Special font size 11 for normal English characters situation
     style.fontSize = 11;
@@ -1267,11 +1272,11 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyRtlClusterIndexOffset00
 }
 
 /*
- * @tc.name: TypographyGetDumpInfoTest01
+ * @tc.name: TypographyGetDumpInfoTest
  * @tc.desc: test for get dump info
  * @tc.type: FUNC
  */
-HWTEST_F(OH_Drawing_TypographyTest, TypographyGetDumpInfoTest01, TestSize.Level0)
+HWTEST_F(OH_Drawing_TypographyTest, TypographyGetDumpInfoTest, TestSize.Level0)
 {
     OHOS::Rosen::TypographyStyle typographyStyle;
     std::shared_ptr<OHOS::Rosen::FontCollection> fontCollection =
@@ -1282,59 +1287,18 @@ HWTEST_F(OH_Drawing_TypographyTest, TypographyGetDumpInfoTest01, TestSize.Level0
     OHOS::Rosen::TextStyle style1;
     style1.fontSize = 50;
     style1.color = Drawing::Color::ColorQuadSetARGB(255, 255, 0, 0);
-    std::u16string text = u"你好, 测试, DumpInfo中的paint flag,fontSize, fontColor, glyph的个数, paragraph的text的长度.";
+    style1.fontWeight = FontWeight::W500;
+    style1.fontWidth = FontWidth::SEMI_EXPANDED;
+    style1.fontStyle = FontStyle::OBLIQUE;
+    std::u16string text = u"你好, 测试GetDumpInfo中返回的数据, 是否符合预期";
     typographyCreate->PushStyle(style1);
     typographyCreate->AppendText(text);
     OHOS::Rosen::TextStyle style2;
     style2.fontSize = 60;
     style2.color = Drawing::Color::ColorQuadSetARGB(255, 255, 255, 0);
-    typographyCreate->PushStyle(style2);
-    typographyCreate->AppendText(text);
-    std::unique_ptr<OHOS::Rosen::Typography> typography = typographyCreate->CreateTypography();
-    ASSERT_NE(typography, nullptr);
-    double maxWidth = 500;
-    typography->Layout(maxWidth);
-
-    std::string_view expectInfo1 = "This is paragraph dump info:\nText size: 208\nGlyph size: 156\n"
-        "Text span[0-77] font size: 50, font color: 4294901760\n"
-        "Text span[78-155] font size: 60, font color: 4294967040\n"
-        "Line: 1 painted Flag abnormal\n"
-        "Line: 2 painted Flag abnormal\n"
-        "Line: 3 painted Flag abnormal\n"
-        "Line: 4 painted Flag abnormal\n"
-        "Line: 5 painted Flag abnormal\n";
-    EXPECT_EQ(typography->GetDumpInfo(), expectInfo1);
-
-    OHOS::Rosen::Drawing::Canvas canvas;
-    typography->Paint(&canvas, 0, 0);
-    std::string_view expectInfo2 = "This is paragraph dump info:\nText size: 208\nGlyph size: 156\n"
-        "Text span[0-77] font size: 50, font color: 4294901760\n"
-        "Text span[78-155] font size: 60, font color: 4294967040\n";
-    EXPECT_EQ(typography->GetDumpInfo(), expectInfo2);
-}
-
-/*
- * @tc.name: TypographyGetDumpInfoTest02
- * @tc.desc: test for get dump info when set skip flag
- * @tc.type: FUNC
- */
-HWTEST_F(OH_Drawing_TypographyTest, TypographyGetDumpInfoTest02, TestSize.Level0)
-{
-    OHOS::Rosen::TypographyStyle typographyStyle;
-    std::shared_ptr<OHOS::Rosen::FontCollection> fontCollection =
-        OHOS::Rosen::FontCollection::From(std::make_shared<txt::FontCollection>());
-    std::unique_ptr<OHOS::Rosen::TypographyCreate> typographyCreate =
-        OHOS::Rosen::TypographyCreate::Create(typographyStyle, fontCollection);
-    ASSERT_NE(typographyCreate, nullptr);
-    OHOS::Rosen::TextStyle style1;
-    style1.fontSize = 50;
-    style1.color = Drawing::Color::ColorQuadSetARGB(255, 255, 0, 0);
-    std::u16string text = u"你好, 测试, DumpInfo中的paint flag,fontSize, fontColor, glyph的个数, paragraph的text的长度.";
-    typographyCreate->PushStyle(style1);
-    typographyCreate->AppendText(text);
-    OHOS::Rosen::TextStyle style2;
-    style2.fontSize = 60;
-    style2.color = Drawing::Color::ColorQuadSetARGB(255, 255, 255, 0);
+    style2.fontWeight = FontWeight::W300;
+    style2.fontWidth = FontWidth::EXPANDED;
+    style2.fontStyle = FontStyle::ITALIC;
     typographyCreate->PushStyle(style2);
     typographyCreate->AppendText(text);
     std::unique_ptr<OHOS::Rosen::Typography> typography = typographyCreate->CreateTypography();
@@ -1343,11 +1307,26 @@ HWTEST_F(OH_Drawing_TypographyTest, TypographyGetDumpInfoTest02, TestSize.Level0
     typography->Layout(maxWidth);
 
     OHOS::Rosen::Drawing::Canvas canvas;
-    typography->SetSkipTextBlobDrawing(true);
     typography->Paint(&canvas, 0, 0);
-    std::string_view expectInfo = "This is paragraph dump info:\nText size: 208\nGlyph size: 156\n"
-        "Text span[0-77] font size: 50, font color: 4294901760\n"
-        "Text span[78-155] font size: 60, font color: 4294967040\n";
+    std::string_view expectInfo = "This is paragraph dump info:\n"
+        "Text size: 126 fState: Drawn fSkipTextBlobDrawing: false\n"
+        "Run[0] glyph size: 6 text range: [0-14) cluster range: [0-6) block range: [0-1)\n"
+        "Run[1] glyph size: 11 text range: [14-25) cluster range: [6-17) block range: [0-1)\n"
+        "Run[2] glyph size: 14 text range: [25-63) cluster range: [17-31) block range: [0-1)\n"
+        "Run[3] glyph size: 6 text range: [63-77) cluster range: [31-37) block range: [1-2)\n"
+        "Run[4] glyph size: 11 text range: [77-88) cluster range: [37-48) block range: [1-2)\n"
+        "Run[5] glyph size: 14 text range: [88-126) cluster range: [48-62) block range: [1-2)\n"
+        "Block[0] text range[0-63) font size: 50 font color: ffff0000 font height: 0"
+        " font weight: 500 font width: 6 font slant: 2\n"
+        "Block[1] text range[63-126) font size: 60 font color: ffffff00 font height: 0"
+        " font weight: 300 font width: 7 font slant: 1\n"
+        "Paragraph glyph size: 62\n"
+        "Line[0] run range: [0-1]\n"
+        "Line[1] run range: [1-2]\n"
+        "Line[2] run range: [2-3]\n"
+        "Line[3] run range: [4-5]\n"
+        "Line[4] run range: [5-5]\n"
+        "Line[5] run range: [5-5]\n";
     EXPECT_EQ(typography->GetDumpInfo(), expectInfo);
 }
 
