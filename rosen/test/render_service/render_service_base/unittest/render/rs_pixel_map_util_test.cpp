@@ -483,7 +483,7 @@ HWTEST_F(RSPixelMapUtilTest, GetPixelmapColorSpaceTest001, TestSize.Level1)
     int height = 300;
     pixelmap = CreatePixelMap(width, height);
     auto grColorSpace = std::make_shared<uint8_t>(OHOS::ColorManager::ColorSpaceName::DISPLAY_BT2020_SRGB);
-    pixelmap->grColorSpace_ = grColorSpace
+    pixelmap->grColorSpace_ = grColorSpace;
     EXPECT_EQ(*(pixelmap->grColorSpace_), OHOS::ColorManager::ColorSpaceName::DISPLAY_BT2020_SRGB);
 }
 
@@ -499,7 +499,7 @@ HWTEST_F(RSPixelMapUtilTest, GetPixelmapColorSpaceTest002, TestSize.Level1)
     int height = 300;
     pixelmap = CreatePixelMap(width, height);
     auto grColorSpace = std::make_shared<uint8_t>(OHOS::ColorManager::ColorSpaceName::ADOBE_RGB);
-    pixelmap->grColorSpace_ = grColorSpace
+    pixelmap->grColorSpace_ = grColorSpace;
     EXPECT_EQ(*(pixelmap->grColorSpace_), OHOS::ColorManager::ColorSpaceName::ADOBE_RGB);
 }
 } // namespace Rosen
