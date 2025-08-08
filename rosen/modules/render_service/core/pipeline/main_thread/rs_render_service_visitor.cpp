@@ -171,9 +171,10 @@ void RSRenderServiceVisitor::ProcessLogicalDisplayRenderNode(RSLogicalDisplayRen
             return;
         }
         ProcessChildren(*existingSource);
-        return;
+    } else {
+        ProcessChildren(node);
     }
-    ProcessChildren(node);
+    
     for (auto& [_, funcs] : foregroundSurfaces_) {
         for (const auto& func : funcs) {
             func();
