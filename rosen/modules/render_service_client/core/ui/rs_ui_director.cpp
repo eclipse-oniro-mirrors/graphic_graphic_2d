@@ -676,7 +676,7 @@ void RSUIDirector::ProcessUIContextMessages(
             static_cast<unsigned long>(commands.size()), token);
         auto rsUICtx = RSUIContextManager::Instance().GetRSUIContext(token);
         if (rsUICtx == nullptr) {
-            ROSEN_LOGI(
+            ROSEN_LOGE(
                 "RSUIDirector::ProcessUIContextMessages, can not get rsUIContext with token:%{public}" PRIu64, token);
             continue;
         }
@@ -832,7 +832,8 @@ void RSUIDirector::PostDelayTask(const std::function<void()>& task, uint32_t del
         return;
     }
     if (instanceId != INSTANCE_ID_UNDEFINED) {
-        ROSEN_LOGW("RSUIDirector::PostTask instanceId=%{public}d not found", instanceId);
+        ROSEN_LOGW("RSUIDirector::PostTask instanceId=%{public}d not found, taskRunnerSize=%{public}zu", instanceId,
+            uiTaskRunners_.size());
     }
     for (const auto &[_, taskRunner] : uiTaskRunners_) {
         ROSEN_LOGD("RSUIDirector::PostTask success");
