@@ -43,6 +43,10 @@ static std::unordered_map<RSNGEffectType, ShaderCreator> creatorLUT = {
     {RSNGEffectType::PARTICLE_CIRCULAR_HALO, [] {
             return std::make_shared<RSNGRenderParticleCircularHalo>();
         }
+    },
+    {RSNGEffectType::LIGHT_CAVE, [] {
+            return std::make_shared<RSNGRenderLightCave>();
+        }
     }
 };
 
