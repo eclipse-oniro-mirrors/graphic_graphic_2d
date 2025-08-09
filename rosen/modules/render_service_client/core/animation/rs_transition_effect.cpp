@@ -123,16 +123,10 @@ void RSCustomTransitionEffect::Custom(const std::shared_ptr<RSPropertyBase>& pro
 
 void RSCustomTransitionEffect::Active()
 {
-    if (modifier_) {
-        modifier_->Active();
-    }
 }
 
 void RSCustomTransitionEffect::Identity()
 {
-    if (modifier_) {
-        modifier_->Identity();
-    }
 }
 } // namespace Rosen
 } // namespace OHOS

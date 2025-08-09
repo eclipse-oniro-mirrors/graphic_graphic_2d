@@ -159,6 +159,14 @@ void RSPropertyAnimation::InitAdditiveMode()
     if (property_ == nullptr) {
         return;
     }
+
+    switch (property_->type_) {
+        case ModifierNG::RSPropertyType::QUATERNION:
+            SetAdditive(false);
+            break;
+        default:
+            break;
+    }
 }
 
 void RSPropertyAnimation::DumpAnimationInfo(std::string& dumpInfo) const

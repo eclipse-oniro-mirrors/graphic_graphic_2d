@@ -236,6 +236,7 @@ protected:
     float GetThresholdByThresholdType(ThresholdType thresholdType) const;
 
     PropertyId id_;
+    ModifierNG::RSPropertyType type_ { ModifierNG::RSPropertyType::INVALID };
     std::weak_ptr<RSNode> target_;
     std::weak_ptr<ModifierNG::RSModifier> modifierNG_;
 
