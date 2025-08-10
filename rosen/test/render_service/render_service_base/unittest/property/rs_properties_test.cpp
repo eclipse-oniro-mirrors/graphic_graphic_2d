@@ -919,6 +919,42 @@ HWTEST_F(RSPropertiesTest, UpdateGeometryByParent002, TestSize.Level1)
 }
 
 /**
+ * @tc.name: UpdateGeometryByParent003
+ * @tc.desc: test results of UpdateGeometryByParent
+ * @tc.type: FUNC
+ * @tc.require: issueI9QKVM
+ */
+HWTEST_F(RSPropertiesTest, UpdateGeometryByParent003, TestSize.Level1)
+{
+    RSProperties properties;
+    Drawing::Matrix* parentMatrix = new Drawing::Matrix();
+    Drawing::Point point;
+    std::optional<Drawing::Point> offset = point;
+    RectI rect;
+    properties.lastRect_ = rect;
+    {
+        std::shared_ptr<RSNGRenderFilterBase> filter = RSNGRenderFilterBase::Create(RSNGEffectType::CONTENT_LIGHT);
+        properties.fgNGRenderFilter_ = nullptr;
+        properties.UpdateGeometryByParent(parentMatrix, offset);
+        EXPECT_FALSE(properties.filterNeedUpdate_);
+    }
+    {
+        std::shared_ptr<RSNGRenderFilterBase> filter = RSNGRenderFilterBase::Create(RSNGEffectType::BLUR);
+        properties.fgNGRenderFilter_ = filter;
+        properties.UpdateGeometryByParent(parentMatrix, offset);
+        EXPECT_FALSE(properties.filterNeedUpdate_);
+    }
+    {
+        std::shared_ptr<RSNGRenderFilterBase> filter = RSNGRenderFilterBase::Create(RSNGEffectType::CONTENT_LIGHT);
+        properties.fgNGRenderFilter_ = filter;
+        properties.UpdateGeometryByParent(parentMatrix, offset);
+        EXPECT_TRUE(properties.filterNeedUpdate_);
+    }
+    delete parentMatrix;
+    parentMatrix = nullptr;
+}
+
+/**
  * @tc.name: SandBox001
  * @tc.desc: test
  * @tc.type:FUNC
