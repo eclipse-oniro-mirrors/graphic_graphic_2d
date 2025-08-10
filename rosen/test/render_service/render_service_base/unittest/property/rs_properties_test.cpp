@@ -18,6 +18,7 @@
 #include "property/rs_properties.h"
 #include "common/rs_obj_abs_geometry.h"
 #include "effect/rs_render_filter_base.h"
+#include "effect/rs_render_shader_base.h"
 #include "property/rs_point_light_manager.h"
 #include "render/rs_drawing_filter.h"
 #include "render/rs_render_displacement_distort_filter.h"
