@@ -1232,6 +1232,29 @@ HWTEST_F(RSPropertiesTest, SetGet003, TestSize.Level1)
 }
 
 /**
+ * @tc.name: UpdateBackgroundShader003
+ * @tc.desc: test results of UpdateBackgroundShader
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSPropertiesTest, UpdateBackgroundShader003, TestSize.Level1)
+{
+    RSProperties properties;
+    std::vector<float> param = {0.5f, 0.5f};
+    properties.SetComplexShaderParam(param);
+    properties.bgNGRenderShader_ = nullptr;
+    properties.UpdateBackgroundShader();
+ 
+    auto head = RSNGRenderShaderBase::Create(RSNGEffectType::BORDER_LIGHT);
+    properties.bgNGRenderShader_ = head;
+    properties.UpdateBackgroundShader();
+ 
+    head = RSNGRenderShaderBase::Create(RSNGEffectType::AURORA_NOISE);
+    properties.bgNGRenderShader_ = head;
+    properties.UpdateBackgroundShader();
+    EXPECT_NE(head, nullptr);
+}
+
+/**
  * @tc.name: SetEmitterUpdater001
  * @tc.desc: test results of SetEmitterUpdater
  * @tc.type: FUNC
