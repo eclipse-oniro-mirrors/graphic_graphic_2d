@@ -135,15 +135,15 @@ void RSDrmUtil::MarkBlurIntersectWithDRM(std::shared_ptr<RSRenderNode>& node,
     const std::vector<std::weak_ptr<RSSurfaceRenderNode>>& drmNodes,
     const std::shared_ptr<RSScreenRenderNode>& curScreenNode)
 {
-    static bool isDrmMarkBlurEnable = DRMParam::IsDrmMarkBlurEnable();
-    if (isDrmMarkBlurEnable) {
-        MarkBlurIntersectWithDRMNew(node, drmNodes, curScreenNode);
+    static bool isDrmMarkAllParentBlurEnable = DRMParam::IsDrmMarkAllParentBlurEnable();
+    if (isDrmMarkAllParentBlurEnable) {
+        MarkBlurIntersectWithDRMForAllParentFilter(node, drmNodes, curScreenNode);
     } else {
         MarkBlurIntersectWithDRM(node, drmNodes);
     }
 }
 
-void RSDrmUtil::MarkBlurIntersectWithDRMNew(std::shared_ptr<RSRenderNode>& node,
+void RSDrmUtil::MarkBlurIntersectWithDRMForAllParentFilter(std::shared_ptr<RSRenderNode>& node,
     const std::vector<std::weak_ptr<RSSurfaceRenderNode>>& drmNodes,
     const std::shared_ptr<RSScreenRenderNode>& curScreenNode)
 {
@@ -204,11 +204,12 @@ void RSDrmUtil::MarkBlurIntersectWithDRM(std::shared_ptr<RSRenderNode>& node,
             }
             bool isIntersect =
                 drmNodePtr->GetRenderProperties().GetBoundsGeometry()->GetAbsRect().Intersect(node->GetFilterRegion());
-            if (isIntersect) {
-                node->MarkBlurIntersectWithDRM(true, RSMainThread::Instance()->GetGlobalDarkColorMode());
-                if (effectNode) {
-                    effectNode->SetEffectIntersectWithDRM(true);
-                }
+            if (!isIntersect) {
+                continue;
+            }
+            node->MarkBlurIntersectWithDRM(true, RSMainThread::Instance()->GetGlobalDarkColorMode());
+            if (effectNode) {
+                effectNode->SetEffectIntersectWithDRM(true);
             }
         }
     }

@@ -27,14 +27,14 @@ void DRMParam::SetDrmEnable(bool isEnable)
     isDrmEnable_ = isEnable;
 }
 
-bool DRMParam::IsDrmMarkBlurEnable()
+bool DRMParam::IsDrmMarkAllParentBlurEnable()
 {
-    return isDrmMarkBlurEnable_;
+    return isDrmMarkAllParentBlurEnable_;
 }
 
-void DRMParam::SetDrmMarkBlurEnable(bool isEnable)
+void DRMParam::SetDrmMarkAllParentBlurEnable(bool isEnable)
 {
-    isDrmMarkBlurEnable_ = isEnable;
+    isDrmMarkAllParentBlurEnable_ = isEnable;
 }
 
 void DRMParam::AddWhiteList(const std::string& name)

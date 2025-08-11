@@ -38,7 +38,7 @@ public:
         const std::vector<std::weak_ptr<RSSurfaceRenderNode>>& drmNodes,
         const std::shared_ptr<RSScreenRenderNode>& curScreenNode);
 private:
-    static void MarkBlurIntersectWithDRMNew(std::shared_ptr<RSRenderNode>& node,
+    static void MarkBlurIntersectWithDRMForAllParentFilter(std::shared_ptr<RSRenderNode>& node,
         const std::vector<std::weak_ptr<RSSurfaceRenderNode>>& drmNodes,
         const std::shared_ptr<RSScreenRenderNode>& curScreenNode);
     static void MarkBlurIntersectWithDRM(std::shared_ptr<RSRenderNode>& node,
