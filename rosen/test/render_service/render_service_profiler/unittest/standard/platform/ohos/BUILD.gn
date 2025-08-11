@@ -34,6 +34,7 @@ ohos_unittest("RSIRenderServiceIpcInterfaceCodeTest") {
   module_out_path = module_output_path
   sources = [ "rs_irender_service_connection_ipc_interface_code_test.cpp" ]
   deps = [ ":rs_test_common" ]
+  external_deps = [ "hilog:libhilog" ]
 }
 
 ## Build rs_test_common.a {{{
