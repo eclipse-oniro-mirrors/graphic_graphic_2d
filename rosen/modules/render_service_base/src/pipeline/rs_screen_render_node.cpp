@@ -62,9 +62,6 @@ RSScreenRenderNode::~RSScreenRenderNode()
     RS_LOGI("RSScreen RSScreenRenderNode dtor id:%{public}" PRIu64 ", screenId:%{public}" PRIu64, GetId(), screenId_);
     MemoryTrack::Instance().RemoveNodeRecord(GetId());
     MemorySnapshot::Instance().RemoveCpuMemory(ExtractPid(GetId()), sizeof(*this));
-    if (auto mirrorSource = mirrorSource_.lock()) {
-        mirrorSource->SetHasMirrorScreen(false);
-    }
 }
 
 void RSScreenRenderNode::CollectSurface(
