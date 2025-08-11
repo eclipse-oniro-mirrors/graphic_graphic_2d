@@ -46,13 +46,16 @@ public:
 
     bool ContainsType(RSNGEffectType type)
     {
+        if (GetType() == type) {
+            return true;
+        }
         auto current = this;
         while (current) {
             if (current->GetType() == type) {
                 return true;
             }
+            current = current->nextEffect_;
         }
-        current = current->nextEffect_.get();
         return false;
     }
 
