@@ -37,12 +37,21 @@ public:
     static const NodeId thirdNodeId;
     static const NodeId fouthNodeId;
     static const PropertyId propertyId;
+    static void SetNodeProperties(std::shared_ptr<OcclusionNode> node, bool isValid, bool isOpaque, bool needsAlpha, bool isIgnored);
     static void SetUpTestCase();
     static void TearDownTestCase();
     void SetUp() override;
     void TearDown() override;
 };
 
+void RSOcclusionNodeTest::SetNodeProperties(std::shared_ptr<OcclusionNode> node, bool isValid, bool isOpaque,
+    bool needsAlpha, bool isIgnored)
+{
+    node->isValidInCurrentFrame_ = isValid;
+    node->isBgOpaque_ = isOpaque;
+    node->isAlphaNeed_ = needsAlpha;
+    node->isSubTreeIgnored_ = isIgnored;
+}
 void RSOcclusionNodeTest::SetUpTestCase() {}
 void RSOcclusionNodeTest::TearDownTestCase() {}
 void RSOcclusionNodeTest::SetUp() {}
@@ -883,18 +892,10 @@ HWTEST_F(RSOcclusionNodeTest, DetectOcclusion_WithInnerAndOuterRect, TestSize.Le
         std::make_shared<OcclusionNode>(secondNodeId, RSRenderNodeType::CANVAS_NODE);
     std::shared_ptr<OcclusionNode> thirdChild =
         std::make_shared<OcclusionNode>(thirdNodeId, RSRenderNodeType::CANVAS_NODE);
-    thirdChild->isValidInCurrentFrame_ = true;
-    thirdChild->isBgOpaque_ = true;
-    thirdChild->isAlphaNeed_ = false;
-    secondChild->isValidInCurrentFrame_ = true;
-    secondChild->isBgOpaque_ = true;
-    secondChild->isAlphaNeed_ = false;
-    firstChild->isValidInCurrentFrame_ = true;
-    firstChild->isBgOpaque_ = true;
-    firstChild->isAlphaNeed_ = false;
-    rootNode->isValidInCurrentFrame_ = true;
-    rootNode->isBgOpaque_ = true;
-    rootNode->isAlphaNeed_ = false;
+    SetNodeProperties(thirdChild, true, true, false, false);
+    SetNodeProperties(secondChild, true, true, false, false);
+    SetNodeProperties(firstChild, true, true, false, false);
+    SetNodeProperties(rootNode, true, true, false, false);
     rootNode->lastChild_ = firstChild;
     firstChild->lastChild_ = thirdChild;
     firstChild->firstChild_ = secondChild;
@@ -940,22 +941,11 @@ HWTEST_F(RSOcclusionNodeTest, DetectOcclusion_WithInNonAnomalous, TestSize.Level
         std::make_shared<OcclusionNode>(thirdChildId, RSRenderNodeType::CANVAS_NODE);
     std::shared_ptr<OcclusionNode> fouthChild =
         std::make_shared<OcclusionNode>(fouthNodeId, RSRenderNodeType::CANVAS_NODE);
-    fouthChild->isValidInCurrentFrame_ = true;
-    fouthChild->isBgOpaque_ = true;
-    fouthChild->isAlphaNeed_ = false;
-    fouthChild->isSubTreeIgnored_ = true;
-    thirdChild->isValidInCurrentFrame_ = true;
-    thirdChild->isBgOpaque_ = true;
-    thirdChild->isAlphaNeed_ = false;
-    secondChild->isValidInCurrentFrame_ = true;
-    secondChild->isBgOpaque_ = true;
-    secondChild->isAlphaNeed_ = false;
-    firstChild->isValidInCurrentFrame_ = true;
-    firstChild->isBgOpaque_ = true;
-    firstChild->isAlphaNeed_ = false;
-    rootNode->isValidInCurrentFrame_ = true;
-    rootNode->isBgOpaque_ = true;
-    rootNode->isAlphaNeed_ = false;
+    SetNodeProperties(fouthChild, true, true, false, true);
+    SetNodeProperties(thirdChild, true, true, false, false);
+    SetNodeProperties(secondChild, true, true, false, false);
+    SetNodeProperties(firstChild, true, true, false, false);
+    SetNodeProperties(rootNode, true, true, false, false);
     rootNode->lastChild_ = firstChild;
     firstChild->lastChild_ = fouthChild;
     firstChild->firstChild_ = secondChild;
