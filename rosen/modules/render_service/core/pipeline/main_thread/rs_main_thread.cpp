@@ -5475,6 +5475,7 @@ void RSMainThread::RSScreenNodeListener::OnScreenDisconnect(ScreenId id)
         if (screenNode == nullptr) {
             return;
         }
+        screenNode->ResetMirrorSource();
         context->GetGlobalRootRenderNode()->RemoveChild(screenNode);
         nodeMap.UnregisterRenderNode(screenNode->GetId());
     };
