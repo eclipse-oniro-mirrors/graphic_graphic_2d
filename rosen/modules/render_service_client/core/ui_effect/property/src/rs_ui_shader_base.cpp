@@ -257,6 +257,7 @@ std::shared_ptr<RSNGShaderBase> ConvertBorderLightPara(std::shared_ptr<VisualEff
     borderLightEffect->Setter<BorderLightWidthTag>(borderLightEffectPara->GetLightWidth());
     return borderLightEffect;
 }
+}
 
 static std::unordered_map<VisualEffectPara::ParaType, ShaderConvertor> convertorLUT = {
     { VisualEffectPara::ParaType::COLOR_GRADIENT_EFFECT, ConvertColorGradientEffectPara },
