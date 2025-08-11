@@ -231,6 +231,7 @@ protected:
     float tranX_ = 0.f;
     float tranY_ = 0.f;
     Drawing::Matrix mat_;
+    uint32_t basicHash_ = 0;
     uint32_t hash_ = 0;
 };
 } // namespace Rosen
