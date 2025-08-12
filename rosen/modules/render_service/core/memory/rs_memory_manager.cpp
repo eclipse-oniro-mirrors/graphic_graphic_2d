@@ -506,7 +506,6 @@ void MemoryManager::DumpGpuStats(DfxString& log, const Drawing::GPUContext* gpuC
         log.AppendFormat("%s", statSubStr.c_str());
     }
     log.AppendFormat("\ndumpGpuStats end\n---------------\n");
-#if defined (SK_VULKAN) && defined (SKIA_DFX_FOR_RECORD_VKIMAGE)
     {
         static thread_local int tid = gettid();
         log.AppendFormat("\n------------------\n[%s:%d] dumpAllResource:\n", GetThreadName(), tid);
@@ -517,7 +516,6 @@ void MemoryManager::DumpGpuStats(DfxString& log, const Drawing::GPUContext* gpuC
             log.AppendFormat("%s\n", s.c_str());
         }
     }
-#endif
 }
 
 void ProcessJemallocString(std::string* sp, const char* str)
