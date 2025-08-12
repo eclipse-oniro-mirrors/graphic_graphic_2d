@@ -1187,8 +1187,8 @@ void RSUniRenderVisitor::QuickPrepareSurfaceRenderNode(RSSurfaceRenderNode& node
     }
 #ifdef SUBTREE_PARALLEL_ENABLE
     const bool isInFocusSurface = isInFocusSurface_;
-    isInFocusSurface_ = node.IsFocusedNode(currentFocusedNodeId_)
-        || node.IsFocusedNode(focusedLeashWindowId_) || isInFocusSurface_;
+    isInFocusSurface_ = node.IsFocusedNode(currentFocusedNodeId_) ||
+        node.IsFocusedNode(focusedLeashWindowId_) || isInFocusSurface_;
 #endif
     CollectSelfDrawingNodeRectInfo(node);
     hasAccumulatedClip_ = node.SetAccumulatedClipFlag(hasAccumulatedClip_);
