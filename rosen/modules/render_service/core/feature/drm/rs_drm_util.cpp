@@ -131,7 +131,7 @@ void RSDrmUtil::PreAllocateProtectedBuffer(const std::shared_ptr<RSSurfaceRender
     RSBackgroundThread::Instance().PostTask(preAllocateProtectedBufferTask);
 }
 
-void RSDrmUtil::MarkBlurIntersectWithDRM(std::shared_ptr<RSRenderNode>& node,
+void RSDrmUtil::MarkBlurIntersectWithDRM(const std::shared_ptr<RSRenderNode>& node,
     const std::vector<std::weak_ptr<RSSurfaceRenderNode>>& drmNodes,
     const std::shared_ptr<RSScreenRenderNode>& curScreenNode)
 {
@@ -143,7 +143,7 @@ void RSDrmUtil::MarkBlurIntersectWithDRM(std::shared_ptr<RSRenderNode>& node,
     }
 }
 
-void RSDrmUtil::MarkBlurIntersectWithDRMForAllParentFilter(std::shared_ptr<RSRenderNode>& node,
+void RSDrmUtil::MarkBlurIntersectWithDRMForAllParentFilter(const std::shared_ptr<RSRenderNode>& node,
     const std::vector<std::weak_ptr<RSSurfaceRenderNode>>& drmNodes,
     const std::shared_ptr<RSScreenRenderNode>& curScreenNode)
 {
@@ -177,7 +177,7 @@ void RSDrmUtil::MarkBlurIntersectWithDRMForAllParentFilter(std::shared_ptr<RSRen
     }
 }
 
-void RSDrmUtil::MarkBlurIntersectWithDRM(std::shared_ptr<RSRenderNode>& node,
+void RSDrmUtil::MarkBlurIntersectWithDRM(const std::shared_ptr<RSRenderNode>& node,
     const std::vector<std::weak_ptr<RSSurfaceRenderNode>>& drmNodes)
 {
     auto appWindowNodeId = node->GetInstanceRootNodeId();
@@ -244,7 +244,7 @@ bool RSDrmUtil::IsDRMBelowFilter(const std::shared_ptr<RSScreenRenderNode>& curS
     return drmNodeIndex > filterNodeIndex;
 }
 
-bool RSDrmUtil::GetDarkColorMode(std::shared_ptr<RSRenderNode>& node,
+bool RSDrmUtil::GetDarkColorMode(const std::shared_ptr<RSRenderNode>& node,
     const std::shared_ptr<RSSurfaceRenderNode>& appWindowNode)
 {
     bool isDarkColorMode = RSMainThread::Instance()->GetGlobalDarkColorMode();
