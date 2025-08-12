@@ -794,13 +794,6 @@ void CanvasFuzzTest017(const uint8_t* data, size_t size)
     g_size = size;
     g_pos = 0;
 
-    if (data == nullptr || size < DATA_MIN_SIZE) {
-        return;
-    }
-    g_data = data;
-    g_size = size;
-    g_pos = 0;
-
     OH_Drawing_Canvas* canvas = OH_Drawing_CanvasCreate();
 
     OH_Pixelmap_InitializationOptions *options = nullptr;
