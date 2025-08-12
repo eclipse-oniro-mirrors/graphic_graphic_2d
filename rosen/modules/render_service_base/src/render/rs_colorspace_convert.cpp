@@ -151,16 +151,16 @@ void RSColorSpaceConvert::GetFOVMetadata(const sptr<SurfaceBuffer>& surfaceBuffe
     }
 }
 
-void RSColorSpaceConvert::GetVideoDynamicMetadata(const sptr<SurfaceBuffer>& surfaceBuffer,
-    std::vector<uint8_t>& videoDynamicMetadata, GSError& ret)
+void RSColorSpaceConvert::GetSDRDynamicMetadata(const sptr<SurfaceBuffer>& surfaceBuffer,
+    std::vector<uint8_t>& sdrDynamicMetadata, GSError& ret)
 {
     if (surfaceBuffer == nullptr) {
-        RS_LOGE("surfaceBuffer is nullptr. Failed to get videoDynamicMetadata.");
+        RS_LOGE("surfaceBuffer is nullptr. Failed to get sdrDynamicMetadata.");
         return;
     }
-    ret = MetadataHelper::GetVideoDynamicMetadata(surfaceBuffer, videoDynamicMetadata);
+    ret = MetadataHelper::GetSDRDynamicMetadata(surfaceBuffer, sdrDynamicMetadata);
     if (ret != GSERROR_OK) {
-        RS_LOGD("RSColorSpaceConvert::GetVideoDynamicMetadata failed with ret: %{public}u.", ret);
+        RS_LOGD("RSColorSpaceConvert::GetSDRDynamicMetadata failed with ret: %{public}u.", ret);
     }
 }
 
