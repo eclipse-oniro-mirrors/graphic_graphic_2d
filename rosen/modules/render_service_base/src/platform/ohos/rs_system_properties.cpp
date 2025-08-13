@@ -380,7 +380,7 @@ bool RSSystemProperties::GetReleaseResourceEnabled()
 
 bool RSSystemProperties::GetReclaimMemoryEnabled()
 {
-    static CachedHandle g_Handle = CachedParameterCreate("persist.reclaim.memory.enabled", "1");
+    static CachedHandle g_Handle = CachedParameterCreate("persist.relcaim.memory.enabled", "1");
     int changed = 0;
     const char *enable = CachedParameterGetChanged(g_Handle, &changed);
     return ConvertToInt(enable, 1) != 0;
