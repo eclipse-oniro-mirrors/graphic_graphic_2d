@@ -186,7 +186,6 @@ ohos_unittest("RenderServiceRenderProfilerTest") {
   defines = []
   external_deps = [
     "c_utils:utils",
-    "googletest:gtest",
     "hilog:libhilog",
     "image_framework:image_native",
     "window_manager:libdm",
