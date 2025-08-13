@@ -42,7 +42,7 @@ DECLARE_INTERFACE_DESCRIPTOR(u"ohos.rosen.RenderServiceConnection");
 
 int32_t g_pid;
 sptr<OHOS::Rosen::RSScreenManager> screenManagerPtr_ = nullptr;
-[[maybe_unused]] auto& RSSurfaceBufferCallbackManager = RSSurfaceBufferCallbackManager::GetInstance();
+[[maybe_unused]] auto& RSSurfaceBufferCallbackManager = RSSurfaceBufferCallbackManager::Instance();
 RSMainThread* mainThread_ = RSMainThread::Instance();
 sptr<RSRenderServiceConnectionStub> connectionStub_ = nullptr;
 
@@ -1177,7 +1177,7 @@ extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
     auto appVSyncController = new OHOS::Rosen::VSyncController(generator, 0);
     OHOS::sptr<OHOS::Rosen::VSyncDistributor> appVSyncDistributor_ =
         new OHOS::Rosen::VSyncDistributor(appVSyncController, "app", dvsyncParam);
-    OHOS::Rosen connectionStub_ = new OHOS::Rosen::RSRenderServiceConnection(OHOS::Rosen::g_pid, nullptr,
+    OHOS::Rosen::connectionStub_ = new OHOS::Rosen::RSRenderServiceConnection(OHOS::Rosen::g_pid, nullptr,
         OHOS::Rosen::mainThread_, OHOS::Rosen::screenManagerPtr_, token_->AsObject(), appVSyncDistributor_);
     return 0;
 }
