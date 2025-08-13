@@ -1339,6 +1339,9 @@ void RSMainThread::CheckAndUpdateTransactionIndex(std::shared_ptr<TransactionDat
                     RequestNextVsyncForCachedCommand(transactionFlags, pid, curIndex);
                     break;
                 }
+                if (transactionDataLastWaitTime_[pid] != 0) {
+                    transactionDataLastWaitTime_[pid] = 0;
+                }
                 ++lastIndex;
                 transactionFlags += " [" + std::to_string(pid) + "," + std::to_string(curIndex) + "]";
             } else {
