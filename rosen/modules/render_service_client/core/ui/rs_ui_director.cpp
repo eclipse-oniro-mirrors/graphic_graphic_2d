@@ -574,7 +574,7 @@ void RSUIDirector::SendMessages(std::function<void()> callback)
 {
     if (rsUIContext_) {
         ROSEN_TRACE_BEGIN(HITRACE_TAG_GRAPHIC_AGP, "multi-intance SendCommands With Callback");
-        RS_TRACE_NAME_FMT("SendCommands, rsUIContext_:%lu", rsUIContext_->GetToken());
+        RS_TRACE_NAME_FMT("multi-instance SendCommands, rsUIContext_:%lu", rsUIContext_->GetToken());
         auto transaction = rsUIContext_->GetRSTransaction();
         if (transaction != nullptr && !transaction->IsEmpty()) {
             if (callback != nullptr) {
@@ -583,7 +583,7 @@ void RSUIDirector::SendMessages(std::function<void()> callback)
                 RSInterfaces::GetInstance().RegisterTransactionDataCallback(rsUIContext_->GetToken(),
                     timeStamp_, callback);
             }
-            transaction->FlushImplicitTransaction(timeStamp_, abilityName_);
+            transaction->FlushImplicitTransaction(timeStamp_, abilityName_, dvsyncUpdate_, dvsyncTime_);
             index_ = transaction->GetTransactionDataIndex();
         } else {
             RS_LOGE_LIMIT(__func__, __line__, "RSUIDirector:: multi-intance SendMessages failed, \
@@ -600,7 +600,7 @@ void RSUIDirector::SendMessages(std::function<void()> callback)
                     PRIu64 " pid: %{public}" PRIu64, timeStamp_, pid);
                 RSInterfaces::GetInstance().RegisterTransactionDataCallback(pid, timeStamp_, callback);
             }
-            transactionProxy->FlushImplicitTransaction(timeStamp_, abilityName_);
+            transactionProxy->FlushImplicitTransaction(timeStamp_, abilityName_, dvsyncUpdate_, dvsyncTime_);
             index_ = transactionProxy->GetTransactionDataIndex();
         } else {
             RS_LOGE_LIMIT(__func__, __line__, "RSUIDirector::SendMessages failed, transactionProxy is nullptr");
