@@ -3763,7 +3763,7 @@ void RSSurfaceRenderNode::SetFrameGravityNewVersionEnabled(bool isEnabled)
 
 bool RSSurfaceRenderNode::isForcedClipHole() const
 {
-    const std::string tvPlayerBundleName = RsCommonHook::Instance().GetTvPlayerBundleName();
+    const std::string& tvPlayerBundleName = RsCommonHook::Instance().GetTvPlayerBundleName();
     if (tvPlayerBundleName.empty()) {
         return false;
     }
