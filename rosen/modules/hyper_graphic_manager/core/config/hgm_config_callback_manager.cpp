@@ -122,6 +122,7 @@ void HgmConfigCallbackManager::RegisterXComponentExpectedFrameRateCallback(pid_t
             iter != xcomponentExpectedFrameRateCallbacks_.end()) {
             iter->second.erase(listenerPid);
             HGM_LOGD("refreshRateUpdateCallbacks unregister succ, remove pid %{public}u", listenerPid);
+            HGM_LOGD("refreshRateUpdateCallbacks unregister succ, remove pid %{public}u", listenerPid);
         }
         return;
     }

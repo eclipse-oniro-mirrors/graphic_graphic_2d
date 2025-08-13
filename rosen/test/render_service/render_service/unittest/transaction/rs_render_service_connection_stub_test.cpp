@@ -1013,7 +1013,7 @@ HWTEST_F(RSRenderServiceConnectionStubTest, NotifyWindowExpectedByVsyncNameTest0
     uint32_t code = static_cast<uint32_t>(
         RSIRenderServiceConnectionInterfaceCode::NOTIFY_WINDOW_EXPECTED_BY_VSYNC_NAME);
     data.WriteUint32(120);
-    int res = connectionStub_->OnRemoteRequest(code, data, reply, option);
+    int res = connection->OnRemoteRequest(code, data, reply, option);
     ASSERT_EQ(res, ERR_INVALID_DATA);
 }
 

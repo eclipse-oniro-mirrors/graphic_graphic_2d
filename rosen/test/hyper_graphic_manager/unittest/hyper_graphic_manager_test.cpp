@@ -345,7 +345,6 @@ HWTEST_F(HyperGraphicManagerTest, SetScreenRefreshRate, Function | MediumTest | 
     int32_t height0 = 2772;
     uint32_t rate0 = 60;
     int32_t mode0 = 0;
-    int32_t timestamp = 1704038400; // 2024-01-01 00:00:00
 
     PART("CaseDescription") {
         STEP("1. add a new screen") {
