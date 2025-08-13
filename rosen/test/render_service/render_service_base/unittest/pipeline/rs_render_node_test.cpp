@@ -18,6 +18,7 @@
 
 #include "common/rs_common_def.h"
 #include "common/rs_obj_abs_geometry.h"
+#include "dirty_region/rs_optimize_canvas_dirty_collector.h"
 #include "drawable/rs_property_drawable.h"
 #include "drawable/rs_property_drawable_background.h"
 #include "drawable/rs_property_drawable_foreground.h"
@@ -52,6 +53,8 @@ const std::string OUT_STR2 =
     "Frame[-inf -inf -inf -inf], RSUIContextToken: NO_RSUIContext, IsPureContainer: true\n";
 const int DEFAULT_BOUNDS_SIZE = 10;
 const int DEFAULT_NODE_ID = 1;
+const NodeId TARGET_NODE_ID = 9999999999;
+const NodeId INVALID_NODE_ID = 99999999999;
 class RSRenderNodeDrawableAdapterBoy : public DrawableV2::RSRenderNodeDrawableAdapter {
 public:
     explicit RSRenderNodeDrawableAdapterBoy(std::shared_ptr<const RSRenderNode> node)
@@ -2054,6 +2057,10 @@ HWTEST_F(RSRenderNodeTest, AddChildTest004, TestSize.Level1)
  */
 HWTEST_F(RSRenderNodeTest, AddChildTest005, TestSize.Level1)
 {
+    std::vector<pid_t> pidList;
+    pidList.emplace_back(ExtractPid(1));
+    RSOptimizeCanvasDirtyCollector::GetInstance().SetOptimizeCanvasDirtyPidList(pidList);
+    ASSERT_EQ(RSOptimizeCanvasDirtyCollector::GetInstance().IsOptimizeCanvasDirtyEnabled(1), true);
     auto optimizeCanvasDrawRegionEnabled = RSSystemProperties::GetOptimizeCanvasDrawRegionEnabled();
     if (!optimizeCanvasDrawRegionEnabled) {
         system::SetParameter("rosen.graphic.optimizeCanvasDrawRegion.enabled", "1");
@@ -2074,6 +2081,9 @@ HWTEST_F(RSRenderNodeTest, AddChildTest005, TestSize.Level1)
     nodeTest->AddChild(childTest, 0);
     system::SetParameter("rosen.graphic.optimizeCanvasDrawRegion.enabled",
         std::to_string(optimizeCanvasDrawRegionEnabled));
+    pidList.assign(1, ExtractPid(INVALID_NODE_ID));
+    RSOptimizeCanvasDirtyCollector::GetInstance().SetOptimizeCanvasDirtyPidList(pidList);
+    ASSERT_EQ(RSOptimizeCanvasDirtyCollector::GetInstance().IsOptimizeCanvasDirtyEnabled(TARGET_NODE_ID), false);
 }
 
 /**
@@ -2146,6 +2156,10 @@ HWTEST_F(RSRenderNodeTest, SetContainBootAnimationTest001, TestSize.Level1)
  */
 HWTEST_F(RSRenderNodeTest, ParentChildRelationshipTest006, TestSize.Level1)
 {
+    std::vector<pid_t> pidList;
+    pidList.emplace_back(ExtractPid(1));
+    RSOptimizeCanvasDirtyCollector::GetInstance().SetOptimizeCanvasDirtyPidList(pidList);
+    ASSERT_EQ(RSOptimizeCanvasDirtyCollector::GetInstance().IsOptimizeCanvasDirtyEnabled(1), true);
     auto optimizeCanvasDrawRegionEnabled = RSSystemProperties::GetOptimizeCanvasDrawRegionEnabled();
     if (!optimizeCanvasDrawRegionEnabled) {
         system::SetParameter("rosen.graphic.optimizeCanvasDrawRegion.enabled", "1");
@@ -2183,6 +2197,9 @@ HWTEST_F(RSRenderNodeTest, ParentChildRelationshipTest006, TestSize.Level1)
     nodeTest->isFullChildrenListValid_ = true;
     nodeTest->RemoveChild(child2, true);
     EXPECT_FALSE(nodeTest->isFullChildrenListValid_);
+    pidList.assign(1, ExtractPid(INVALID_NODE_ID));
+    RSOptimizeCanvasDirtyCollector::GetInstance().SetOptimizeCanvasDirtyPidList(pidList);
+    ASSERT_EQ(RSOptimizeCanvasDirtyCollector::GetInstance().IsOptimizeCanvasDirtyEnabled(TARGET_NODE_ID), false);
 }
 
 /**
@@ -3180,6 +3197,10 @@ HWTEST_F(RSRenderNodeTest, UpdateDrawRectAndDirtyRegion001, TestSize.Level1)
  */
 HWTEST_F(RSRenderNodeTest, UpdateDrawRectAndDirtyRegion002, TestSize.Level1)
 {
+    std::vector<pid_t> pidList;
+    pidList.emplace_back(ExtractPid(1));
+    RSOptimizeCanvasDirtyCollector::GetInstance().SetOptimizeCanvasDirtyPidList(pidList);
+    ASSERT_EQ(RSOptimizeCanvasDirtyCollector::GetInstance().IsOptimizeCanvasDirtyEnabled(1), true);
     auto optimizeCanvasDrawRegionEnabled = RSSystemProperties::GetOptimizeCanvasDrawRegionEnabled();
     if (!optimizeCanvasDrawRegionEnabled) {
         system::SetParameter("rosen.graphic.optimizeCanvasDrawRegion.enabled", "1");
@@ -3200,6 +3221,9 @@ HWTEST_F(RSRenderNodeTest, UpdateDrawRectAndDirtyRegion002, TestSize.Level1)
     ASSERT_TRUE(node.absCmdlistDrawRect_.IsEmpty());
     system::SetParameter("rosen.graphic.optimizeCanvasDrawRegion.enabled",
         std::to_string(optimizeCanvasDrawRegionEnabled));
+    pidList.assign(1, ExtractPid(INVALID_NODE_ID));
+    RSOptimizeCanvasDirtyCollector::GetInstance().SetOptimizeCanvasDirtyPidList(pidList);
+    ASSERT_EQ(RSOptimizeCanvasDirtyCollector::GetInstance().IsOptimizeCanvasDirtyEnabled(TARGET_NODE_ID), false);
 }
 
 /**
@@ -3645,80 +3669,18 @@ HWTEST_F(RSRenderNodeTest, UpdateVirtualScreenWhiteListInfo, TestSize.Level1)
 }
 
 /*
- * @tc.name: CalcCmdlistDrawRegionFromOpItem001
- * @tc.desc: Test function CalcCmdlistDrawRegionFromOpItem
+ * @tc.name: GetNeedUseCmdlistDrawRegion001
+ * @tc.desc: Test function GetNeedUseCmdlistDrawRegion when application to which the node belongs is not targetScene
  * @tc.type: FUNC
  * @tc.require: issueICI6YB
  */
-HWTEST_F(RSRenderNodeTest, CalcCmdlistDrawRegionFromOpItem001, TestSize.Level1)
+HWTEST_F(RSRenderNodeTest, GetNeedUseCmdlistDrawRegion001, TestSize.Level1)
 {
-    auto optimizeCanvasDrawRegionEnabled = RSSystemProperties::GetOptimizeCanvasDrawRegionEnabled();
-    if (!optimizeCanvasDrawRegionEnabled) {
-        system::SetParameter("rosen.graphic.optimizeCanvasDrawRegion.enabled", "1");
-    }
+    std::vector<pid_t> pidList;
+    pidList.emplace_back(ExtractPid(TARGET_NODE_ID));
+    RSOptimizeCanvasDirtyCollector::GetInstance().SetOptimizeCanvasDirtyPidList(pidList);
+    ASSERT_EQ(RSOptimizeCanvasDirtyCollector::GetInstance().IsOptimizeCanvasDirtyEnabled(1), false);
 
-    std::shared_ptr<Drawing::DrawCmdList> drawCmdList = nullptr;
-    auto property = std::make_shared<RSRenderProperty<Drawing::DrawCmdListPtr>>();
-    property->GetRef() = drawCmdList;
-    ModifierId id = 1;
-    auto modifier = ModifierNG::RSRenderModifier::MakeRenderModifier(
-        ModifierNG::RSModifierType::CONTENT_STYLE, property, id, ModifierNG::RSPropertyType::CONTENT_STYLE);
-    ASSERT_NE(modifier, nullptr);
-    auto node = std::make_shared<RSRenderNode>(1);
-    ASSERT_NE(node, nullptr);
-    node->needUseCmdlistDrawRegion_ = false;
-    node->CalcCmdlistDrawRegionFromOpItem(modifier);
-    ASSERT_EQ(node->cmdlistDrawRegion_.IsEmpty(), true);
- 
-    node->needUseCmdlistDrawRegion_ = true;
-    node->CalcCmdlistDrawRegionFromOpItem(modifier);
-    ASSERT_EQ(node->cmdlistDrawRegion_.IsEmpty(), true);
-    system::SetParameter("rosen.graphic.optimizeCanvasDrawRegion.enabled",
-        std::to_string(optimizeCanvasDrawRegionEnabled));
-}
- 
-/*
- * @tc.name: CalcCmdlistDrawRegionFromOpItem002
- * @tc.desc: Test function CalcCmdlistDrawRegionFromOpItem
- * @tc.type: FUNC
- * @tc.require: issueICI6YB
- */
-HWTEST_F(RSRenderNodeTest, CalcCmdlistDrawRegionFromOpItem002, TestSize.Level1)
-{
-    auto optimizeCanvasDrawRegionEnabled = RSSystemProperties::GetOptimizeCanvasDrawRegionEnabled();
-    if (!optimizeCanvasDrawRegionEnabled) {
-        system::SetParameter("rosen.graphic.optimizeCanvasDrawRegion.enabled", "1");
-    }
-
-    std::shared_ptr<Drawing::DrawCmdList> drawCmdList = std::make_shared<Drawing::DrawCmdList>();
-    ASSERT_NE(drawCmdList, nullptr);
-    ASSERT_EQ(drawCmdList->GetCmdlistDrawRegion().IsEmpty(), true);
-    drawCmdList->SetWidth(1024);
-    drawCmdList->SetHeight(1090);
-    auto property = std::make_shared<RSRenderProperty<Drawing::DrawCmdListPtr>>();
-    property->GetRef() = drawCmdList;
-    ModifierId id = 1;
-    auto modifier = ModifierNG::RSRenderModifier::MakeRenderModifier(
-        ModifierNG::RSModifierType::CONTENT_STYLE, property, id, ModifierNG::RSPropertyType::CONTENT_STYLE);
-    ASSERT_NE(modifier, nullptr);
-    auto node = std::make_shared<RSRenderNode>(1);
-    ASSERT_NE(node, nullptr);
-
-    node->needUseCmdlistDrawRegion_ = true;
-    node->CalcCmdlistDrawRegionFromOpItem(modifier);
-    ASSERT_EQ(node->cmdlistDrawRegion_.IsEmpty(), true);
-    system::SetParameter("rosen.graphic.optimizeCanvasDrawRegion.enabled",
-        std::to_string(optimizeCanvasDrawRegionEnabled));
-}
-
-/*
- * @tc.name: GetNeedUseCmdlistDrawRegion
- * @tc.desc: Test function GetNeedUseCmdlistDrawRegion
- * @tc.type: FUNC
- * @tc.require: issueICI6YB
- */
-HWTEST_F(RSRenderNodeTest, GetNeedUseCmdlistDrawRegion, TestSize.Level1)
-{
     auto optimizeCanvasDrawRegionEnabled = RSSystemProperties::GetOptimizeCanvasDrawRegionEnabled();
     if (!optimizeCanvasDrawRegionEnabled) {
         system::SetParameter("rosen.graphic.optimizeCanvasDrawRegion.enabled", "1");
@@ -3730,9 +3692,44 @@ HWTEST_F(RSRenderNodeTest, GetNeedUseCmdlistDrawRegion, TestSize.Level1)
     node->SetNeedUseCmdlistDrawRegion(false);
     ASSERT_EQ(node->GetNeedUseCmdlistDrawRegion(), false);
     node->SetNeedUseCmdlistDrawRegion(true);
+    ASSERT_EQ(node->GetNeedUseCmdlistDrawRegion(), false);
+    system::SetParameter("rosen.graphic.optimizeCanvasDrawRegion.enabled",
+        std::to_string(optimizeCanvasDrawRegionEnabled));
+    pidList.assign(1, ExtractPid(INVALID_NODE_ID));
+    RSOptimizeCanvasDirtyCollector::GetInstance().SetOptimizeCanvasDirtyPidList(pidList);
+    ASSERT_EQ(RSOptimizeCanvasDirtyCollector::GetInstance().IsOptimizeCanvasDirtyEnabled(TARGET_NODE_ID), false);
+}
+
+/*
+ * @tc.name: GetNeedUseCmdlistDrawRegion002
+ * @tc.desc: Test function GetNeedUseCmdlistDrawRegion when application to which the node belongs is not targetScene
+ * @tc.type: FUNC
+ * @tc.require: issueICI6YB
+ */
+HWTEST_F(RSRenderNodeTest, GetNeedUseCmdlistDrawRegion002, TestSize.Level1)
+{
+    std::vector<pid_t> pidList;
+    pidList.emplace_back(ExtractPid(TARGET_NODE_ID));
+    RSOptimizeCanvasDirtyCollector::GetInstance().SetOptimizeCanvasDirtyPidList(pidList);
+    ASSERT_EQ(RSOptimizeCanvasDirtyCollector::GetInstance().IsOptimizeCanvasDirtyEnabled(TARGET_NODE_ID), true);
+
+    auto optimizeCanvasDrawRegionEnabled = RSSystemProperties::GetOptimizeCanvasDrawRegionEnabled();
+    if (!optimizeCanvasDrawRegionEnabled) {
+        system::SetParameter("rosen.graphic.optimizeCanvasDrawRegion.enabled", "1");
+    }
+    auto node = std::make_shared<RSRenderNode>(TARGET_NODE_ID);
+    ASSERT_NE(node, nullptr);
+    RectF rect { 1.0f, 1.0f, 1.0f, 1.0f };
+    node->cmdlistDrawRegion_ = rect;
+    node->SetNeedUseCmdlistDrawRegion(false);
+    ASSERT_EQ(node->GetNeedUseCmdlistDrawRegion(), false);
+    node->SetNeedUseCmdlistDrawRegion(true);
     ASSERT_EQ(node->GetNeedUseCmdlistDrawRegion(), true);
     system::SetParameter("rosen.graphic.optimizeCanvasDrawRegion.enabled",
         std::to_string(optimizeCanvasDrawRegionEnabled));
+    pidList.assign(1, ExtractPid(INVALID_NODE_ID));
+    RSOptimizeCanvasDirtyCollector::GetInstance().SetOptimizeCanvasDirtyPidList(pidList);
+    ASSERT_EQ(RSOptimizeCanvasDirtyCollector::GetInstance().IsOptimizeCanvasDirtyEnabled(TARGET_NODE_ID), false);
 }
 
 /*
@@ -3762,6 +3759,10 @@ HWTEST_F(RSRenderNodeTest, ResetDirtyStatusTest001, TestSize.Level1)
  */
 HWTEST_F(RSRenderNodeTest, ResetParent, TestSize.Level1)
 {
+    std::vector<pid_t> pidList;
+    pidList.emplace_back(ExtractPid(1));
+    RSOptimizeCanvasDirtyCollector::GetInstance().SetOptimizeCanvasDirtyPidList(pidList);
+    ASSERT_EQ(RSOptimizeCanvasDirtyCollector::GetInstance().IsOptimizeCanvasDirtyEnabled(1), true);
     auto optimizeCanvasDrawRegionEnabled = RSSystemProperties::GetOptimizeCanvasDrawRegionEnabled();
     if (!optimizeCanvasDrawRegionEnabled) {
         system::SetParameter("rosen.graphic.optimizeCanvasDrawRegion.enabled", "1");
@@ -3777,6 +3778,9 @@ HWTEST_F(RSRenderNodeTest, ResetParent, TestSize.Level1)
     ASSERT_EQ(node2->parent_.lock(), nullptr);
     system::SetParameter("rosen.graphic.optimizeCanvasDrawRegion.enabled",
         std::to_string(optimizeCanvasDrawRegionEnabled));
+    pidList.assign(1, ExtractPid(INVALID_NODE_ID));
+    RSOptimizeCanvasDirtyCollector::GetInstance().SetOptimizeCanvasDirtyPidList(pidList);
+    ASSERT_EQ(RSOptimizeCanvasDirtyCollector::GetInstance().IsOptimizeCanvasDirtyEnabled(TARGET_NODE_ID), false);
 }
  
 class RSC_EXPORT MockRSRenderNode : public RSRenderNode {
@@ -3795,6 +3799,10 @@ public:
  */
 HWTEST_F(RSRenderNodeTest, ResetAndApplyModifiers, TestSize.Level1)
 {
+    std::vector<pid_t> pidList;
+    pidList.emplace_back(ExtractPid(TARGET_NODE_ID));
+    RSOptimizeCanvasDirtyCollector::GetInstance().SetOptimizeCanvasDirtyPidList(pidList);
+    ASSERT_EQ(RSOptimizeCanvasDirtyCollector::GetInstance().IsOptimizeCanvasDirtyEnabled(TARGET_NODE_ID), true);
     auto optimizeCanvasDrawRegionEnabled = RSSystemProperties::GetOptimizeCanvasDrawRegionEnabled();
     if (!optimizeCanvasDrawRegionEnabled) {
         system::SetParameter("rosen.graphic.optimizeCanvasDrawRegion.enabled", "1");
@@ -3813,6 +3821,9 @@ HWTEST_F(RSRenderNodeTest, ResetAndApplyModifiers, TestSize.Level1)
     node->ResetAndApplyModifiers();
     system::SetParameter("rosen.graphic.optimizeCanvasDrawRegion.enabled",
         std::to_string(optimizeCanvasDrawRegionEnabled));
+    pidList.assign(1, ExtractPid(INVALID_NODE_ID));
+    RSOptimizeCanvasDirtyCollector::GetInstance().SetOptimizeCanvasDirtyPidList(pidList);
+    ASSERT_EQ(RSOptimizeCanvasDirtyCollector::GetInstance().IsOptimizeCanvasDirtyEnabled(TARGET_NODE_ID), false);
 }
 
 /*

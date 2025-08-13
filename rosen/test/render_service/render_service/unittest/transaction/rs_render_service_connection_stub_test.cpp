@@ -1503,6 +1503,65 @@ HWTEST_F(RSRenderServiceConnectionStubTest, SetGpuCrcDirtyEnabledPidListTest005,
 }
 
 /**
+ * @tc.name: SetOptimizeCanvasDirtyPidListTest001
+ * @tc.desc: Test SetOptimizeCanvasDirtyPidList when data is invalid
+ * @tc.type: FUNC
+ * @tc.require: issueICSPON
+ */
+HWTEST_F(RSRenderServiceConnectionStubTest, SetOptimizeCanvasDirtyPidListTest001, TestSize.Level1)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    uint32_t code =
+        static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_OPTIMIZE_CANVAS_DIRTY_ENABLED_PIDLIST);
+    data.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor());
+    data.WriteInt32(-1);
+    int ret = connectionStub_->OnRemoteRequest(code, data, reply, option);
+    ASSERT_EQ(ret, ERR_INVALID_REPLY);
+}
+
+/**
+ * @tc.name: SetOptimizeCanvasDirtyPidListTest002
+ * @tc.desc: Test SetOptimizeCanvasDirtyPidList when data is valid
+ * @tc.type: FUNC
+ * @tc.require: issueICSPON
+ */
+HWTEST_F(RSRenderServiceConnectionStubTest, SetOptimizeCanvasDirtyPidListTest002, TestSize.Level1)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    uint32_t code =
+        static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_OPTIMIZE_CANVAS_DIRTY_ENABLED_PIDLIST);
+    data.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor());
+    std::vector<int32_t> pidList = {1};
+    data.WriteInt32Vector(pidList);
+    int ret = connectionStub_->OnRemoteRequest(code, data, reply, option);
+    ASSERT_EQ(ret, ERR_OK);
+}
+
+/**
+ * @tc.name: SetOptimizeCanvasDirtyPidListTest003
+ * @tc.desc: Test SetOptimizeCanvasDirtyPidList when pidlist is invalid
+ * @tc.type: FUNC
+ * @tc.require: issueICSPON
+ */
+HWTEST_F(RSRenderServiceConnectionStubTest, SetOptimizeCanvasDirtyPidListTest003, TestSize.Level1)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    uint32_t code =
+        static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_OPTIMIZE_CANVAS_DIRTY_ENABLED_PIDLIST);
+    data.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor());
+    std::vector<int32_t> pidList(INVALID_PIDLIST_SIZE, 0);
+    data.WriteInt32Vector(pidList);
+    int ret = connectionStub_->OnRemoteRequest(code, data, reply, option);
+    ASSERT_EQ(ret, ERR_NONE);
+}
+
+/**
  * @tc.name: CreateNodeAndSurfaceTest001
  * @tc.desc: Test CreateNodeAndSurfaceTest when surfacenode is self drawing node
  * @tc.type: FUNC

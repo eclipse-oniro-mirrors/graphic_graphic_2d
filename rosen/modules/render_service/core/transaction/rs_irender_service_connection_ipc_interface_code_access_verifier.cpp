@@ -604,6 +604,9 @@ bool RSIRenderServiceConnectionInterfaceCodeAccessVerifier::IsExclusiveVerificat
         case static_cast<CodeUnderlyingType>(CodeEnumType::GET_GPU_CRC_DIRTY_ENABLED_PIDLIST): {
             hasPermission = IsSystemCalling(codeEnumTypeName_ + "::GET_GPU_CRC_DIRTY_ENABLED_PIDLIST");
         }
+        case static_cast<CodeUnderlyingType>(CodeEnumType::GET_OPTIMIZE_CANVAS_DIRTY_ENABLED_PIDLIST): {
+            hasPermission = IsSystemCalling(codeEnumTypeName_ + "::GET_OPTIMIZE_CANVAS_DIRTY_ENABLED_PIDLIST");
+        }
         default: {
             break;
         }

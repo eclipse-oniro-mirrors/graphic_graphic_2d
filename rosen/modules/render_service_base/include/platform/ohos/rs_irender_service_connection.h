@@ -462,6 +462,8 @@ public:
     virtual void ClearUifirstCache(NodeId id) = 0;
 
     virtual ErrCode SetGpuCrcDirtyEnabledPidList(const std::vector<int32_t> pidList) = 0;
+
+    virtual ErrCode SetOptimizeCanvasDirtyPidList(const std::vector<int32_t>& pidList) = 0;
 };
 } // namespace Rosen
 } // namespace OHOS

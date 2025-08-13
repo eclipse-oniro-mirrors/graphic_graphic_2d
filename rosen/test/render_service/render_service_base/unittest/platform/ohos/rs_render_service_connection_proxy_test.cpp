@@ -1539,5 +1539,20 @@ HWTEST_F(RSRenderServiceConnectionProxyTest, DropFrameByPidWithInvalidParameter,
     std::vector<int32_t> vec(1025);
     ASSERT_EQ(proxy->DropFrameByPid(vec), ERR_INVALID_VALUE);
 }
+
+/*
+ * @tc.name: SetOptimizeCanvasDirtyPidList Test
+ * @tc.desc: SetOptimizeCanvasDirtyPidList Test whether the result is ERR_INVALID_VALUE
+ * @tc.type:FUNC
+ * @tc.require: issueICSPON
+ */
+HWTEST_F(RSRenderServiceConnectionProxyTest, SetOptimizeCanvasDirtyPidList, TestSize.Level1)
+{
+    std::vector<pid_t> pidList;
+    pidList.emplace_back(ExtractPid(1));
+
+    auto ret = proxy->SetOptimizeCanvasDirtyPidList(pidList);
+    ASSERT_EQ(ret, ERR_INVALID_VALUE);
+}
 } // namespace Rosen
 } // namespace OHOS

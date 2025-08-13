@@ -3587,6 +3587,34 @@ bool DoSetGpuCrcDirtyEnabledPidList()
     rsConnStub_->OnRemoteRequest(code, dataP, reply, option);
     return true;
 }
+
+bool DoSetOptimizeCanvasDirtyPidList()
+{
+    std::vector<int32_t> pidList;
+    uint8_t pidListSize = GetData<uint8_t>();
+    for (size_t i = 0; i < pidListSize; i++) {
+        pidList.push_back(GetData<int32_t>());
+    }
+
+    MessageParcel dataP;
+    MessageParcel reply;
+    MessageOption option;
+    if (!dataP.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor())) {
+        return false;
+    }
+    option.SetFlags(MessageOption::TF_ASYNC);
+    if (!dataP.WriteInt32Vector(pidList)) {
+        return false;
+    }
+
+    uint32_t code =
+        static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_OPTIMIZE_CANVAS_DIRTY_ENABLED_PIDLIST);
+    if (rsConnStub_ == nullptr) {
+        return false;
+    }
+    rsConnStub_->OnRemoteRequest(code, dataP, reply, option);
+    return true;
+}
 } // Rosen
 } // OHOS
 
@@ -3666,6 +3694,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::Rosen::DoSetCacheEnabledForRotation();
     OHOS::Rosen::DoSetVirtualScreenUsingStatus();
     OHOS::Rosen::DoSetGpuCrcDirtyEnabledPidList();
+    OHOS::Rosen::DoSetOptimizeCanvasDirtyPidList();
     OHOS::Rosen::DoCreatePixelMapFromSurface(data, size);
     OHOS::Rosen::DoNotifyTouchEvent();
     OHOS::Rosen::DoGetMemoryGraphics();
