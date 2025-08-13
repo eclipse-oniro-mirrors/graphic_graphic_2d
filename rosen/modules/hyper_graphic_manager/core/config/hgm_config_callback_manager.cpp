@@ -133,7 +133,7 @@ void HgmConfigCallbackManager::RegisterXComponentExpectedFrameRateCallback(pid_t
     xcomponentExpectedFrameRateCallbacks_[dstPid][listenerPid] = callback;
     if (auto iter = xcomponentExpectedFrameRate_.find(dstPid); iter != xcomponentExpectedFrameRate_.end()) {
         for (auto& [xcomponentId, frameRate] : iter->second) {
-            HGM_LOGD("%{public}d:[%{public}s,%{public}d]", dstPid, xcomponentId.c_str(), frameRate);
+            HGM_LOGI("%{public}d:[%{public}s,%{public}d]", dstPid, xcomponentId.c_str(), frameRate);
             callback->OnFrameRateLinkerExpectedFpsUpdate(dstPid, xcomponentId, frameRate);
         }
     }
