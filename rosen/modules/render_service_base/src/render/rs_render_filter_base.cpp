@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include "ge_shader_filter_params.h"
 #include "effect/rs_render_filter_base.h"
 
 #include <unordered_map>
