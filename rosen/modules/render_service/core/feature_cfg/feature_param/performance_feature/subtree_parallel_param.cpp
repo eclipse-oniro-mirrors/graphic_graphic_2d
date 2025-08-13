@@ -49,9 +49,9 @@ bool SubtreeParallelParam::GetMultiWinPolicyEnabled()
     return isMultiWinPolicyEnable_;
 }
 
-void SubtreeParallelParam::SetMultiWinSurfaceNum(int surfaceNumber)
+void SubtreeParallelParam::SetMultiWinSurfaceNum(int surfaceNum)
 {
-    multiWinSurfaceNum_ = surfaceNumber;
+    multiWinSurfaceNum_ = surfaceNum;
 }
 
 int SubtreeParallelParam::GetMultiWinSurfaceNum()
