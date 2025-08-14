@@ -28,6 +28,7 @@ ohos_fuzztest("ImageFuzzTest") {
     "-g",
     "-O0",
     "-Wno-unused-variable",
+    "-fno-omit-frame-pointer",
   ]
 
   include_dirs = [
@@ -35,6 +36,8 @@ ohos_fuzztest("ImageFuzzTest") {
     "$graphic_2d_root/rosen/modules/2d_graphics/src",
     "$graphic_2d_root/rosen/test/2d_graphics/fuzztest",
   ]
+
+  external_deps += [ "bounds_checking_function:libsec_shared" ]
 
   deps = [
     "$graphic_2d_root/rosen/modules/2d_graphics:2d_graphics",
