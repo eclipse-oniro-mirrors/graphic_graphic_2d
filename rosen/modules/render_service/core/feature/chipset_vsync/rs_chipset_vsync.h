@@ -46,7 +46,7 @@ private:
     SetVsyncFunc setVsyncFunc_ = nullptr;
     bool chipsetVsyncFuncLoaded = false;
     mutable std::shared_mutex mutex_;
-    mutable std::shared_mutex funcmutex_;
+    mutable std::shared_mutex funcMutex_;
 };
 
 } // OHOS rosen

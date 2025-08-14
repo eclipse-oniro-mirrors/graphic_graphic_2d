@@ -57,16 +57,16 @@ void RsChipsetVsync::GetChipsetVsyncFunc()
     std::unique_lock lock(funcMutex_);
     if (chipsetVsyncLibHandle_) {
         initChipsetVsyncFunc_ = (InitChipsetVsyncFunc)dlsym(chipsetVsyncLibHandle_, "InitChipsetVsyncImpl");
-        const char* dlsymeError = dlerror();
-        if (dlsymeError) {
-            RS_LOGW("GetChipsetVsyncFunc fail to load InitChipsetVsyncImpl: %{public}s", dlsymeError);
+        const char* dlsymError = dlerror();
+        if (dlsymError) {
+            RS_LOGW("GetChipsetVsyncFunc fail to load InitChipsetVsyncImpl: %{public}s", dlsymError);
             initChipsetVsyncFunc_ = nullptr;
             return;
         }
         setVsyncFunc_ = (SetVsyncFunc)dlsym(chipsetVsyncLibHandle_, "SetVsyncImpl");
-        dlsymeError = dlerror();
-        if (dlsymeError) {
-            RS_LOGW("GetChipsetVsyncFunc fail to load SetVsyncImpl: %{public}s", dlsymeError);
+        dlsymError = dlerror();
+        if (dlsymError) {
+            RS_LOGW("GetChipsetVsyncFunc fail to load SetVsyncImpl: %{public}s", dlsymError);
             setVsyncFunc_ = nullptr;
             initChipsetVsyncFunc_ = nullptr; // 重置已成功获取的函数指针
             return;
