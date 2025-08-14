@@ -14,7 +14,6 @@
  */
 
 #include <gtest/gtest.h>
-#include <iremote_stub.h>
 #include <test_header.h>
 
 #include "hgm_frame_rate_manager.h"
