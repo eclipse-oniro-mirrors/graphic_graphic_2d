@@ -32,7 +32,7 @@
 namespace OHOS {
 namespace Rosen {
 namespace {
-const uint8_t* DATA = nullptr;
+const uint8_t* g_data = nullptr;
 size_t g_size = 0;
 size_t g_pos;
 } // namespace
@@ -42,10 +42,10 @@ T GetData()
 {
     T object {};
     size_t objectSize = sizeof(object);
-    if (DATA == nullptr || objectSize > g_size - g_pos) {
+    if (g_data == nullptr || objectSize > g_size - g_pos) {
         return object;
     }
-    errno_t ret = memcpy_s(&object, objectSize, DATA + g_pos, objectSize);
+    errno_t ret = memcpy_s(&object, objectSize, g_data + g_pos, objectSize);
     if (ret != EOK) {
         return {};
     }
@@ -59,7 +59,7 @@ bool DoSomethingInterestingWithMyAPI(const uint8_t* data, size_t size)
     }
 
     // initialize
-    DATA = data;
+    g_data = data;
     g_size = size;
     g_pos = 0;
 
