@@ -14,6 +14,7 @@
  */
 
 #include <gtest/gtest.h>
+#include <iremote_stub.h>
 #include <test_header.h>
 #include <climits>
 
