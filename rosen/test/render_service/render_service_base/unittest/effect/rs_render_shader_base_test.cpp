@@ -224,10 +224,7 @@ HWTEST_F(RSNGRenderShaderBaseTest, CheckEnableEDR001, TestSize.Level1)
 HWTEST_F(RSNGRenderShaderBaseTest, SetRotationAngle001, TestSize.Level1)
 {
     auto head = RSNGRenderShaderBase::Create(RSNGEffectType::BORDER_LIGHT);
-    const Vector3f rotationAngle = {0.0f, 0.0f, 0.0f};
-    {
-        RSNGRenderShaderHelper::SetRotationAngle(head, rotationAngle);
-    }
+    const Vector3f rotationAngle = {1.0f, 0.0f, 0.0f};
     {
         RSNGRenderShaderHelper::SetRotationAngle(nullptr, rotationAngle);
     }
@@ -236,9 +233,17 @@ HWTEST_F(RSNGRenderShaderBaseTest, SetRotationAngle001, TestSize.Level1)
         RSNGRenderShaderHelper::SetRotationAngle(head, rotationAngle);
     }
     {
-        RSNGRenderShaderHelper::SetRotationAngle(head, rotationAngle);
+        RSNGRenderShaderHelper::SetRotationAngle(nullptr, rotationAngle);
     }
-    EXPECT_NE(head, nullptr);
+    {
+        head = RSNGRenderShaderBase::Create(RSNGEffectType::BORDER_LIGHT);
+        RSNGRenderShaderHelper::SetRotationAngle(head, rotationAngle);
+        auto filter = std::make_shared<RSNGRenderBorderLight>();
+        using TargetTag = BorderLightRotationAngleRenderTag;
+        auto val = filter->Getter<TargetTag>();
+        EXPECT_NE(val, nullptr);
+        EXPECT_FLOAT_EQ(val->Get(), rotationAngle);
+    }
 }
  
 /**
