@@ -3820,10 +3820,6 @@ void RSNode::AddCrossScreenChild(SharedPtr child, int index, bool autoClearClone
         ROSEN_LOGE("RSNode::AddCrossScreenChild, child is nullptr");
         return;
     }
-    if (!this->IsInstanceOf<RSDisplayNode>()) {
-        ROSEN_LOGE("RSNode::AddCrossScreenChild, only displayNode support AddCrossScreenChild");
-        return;
-    }
 
     if (!child->IsInstanceOf<RSSurfaceNode>()) {
         ROSEN_LOGE("RSNode::AddCrossScreenChild, child shoult be RSSurfaceNode");
@@ -3841,10 +3837,6 @@ void RSNode::RemoveCrossScreenChild(SharedPtr child)
 {
     if (child == nullptr) {
         ROSEN_LOGE("RSNode::RemoveCrossScreenChild, child is nullptr");
-        return;
-    }
-    if (!this->IsInstanceOf<RSDisplayNode>()) {
-        ROSEN_LOGE("RSNode::RemoveCrossScreenChild, only displayNode support RemoveCrossScreenChild");
         return;
     }
 
