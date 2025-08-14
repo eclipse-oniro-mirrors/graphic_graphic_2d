@@ -242,7 +242,7 @@ HWTEST_F(RSNGRenderShaderBaseTest, SetRotationAngle001, TestSize.Level1)
         using TargetTag = BorderLightRotationAngleRenderTag;
         auto val = filter->Getter<TargetTag>();
         EXPECT_NE(val, nullptr);
-        EXPECT_FLOAT_EQ(val->Get(), rotationAngle);
+        EXPECT_EQ(val->Get(), rotationAngle);
     }
 }
  
@@ -254,10 +254,7 @@ HWTEST_F(RSNGRenderShaderBaseTest, SetRotationAngle001, TestSize.Level1)
 HWTEST_F(RSNGRenderShaderBaseTest, SetCornerRadius001, TestSize.Level1)
 {
     auto head = RSNGRenderShaderBase::Create(RSNGEffectType::BORDER_LIGHT);
-    const float cornerRadius = 0.0f;
-    {
-        RSNGRenderShaderHelper::SetCornerRadius(head, cornerRadius);
-    }
+    const float cornerRadius = 1.0f;
     {
         RSNGRenderShaderHelper::SetCornerRadius(nullptr, cornerRadius);
     }
@@ -266,7 +263,16 @@ HWTEST_F(RSNGRenderShaderBaseTest, SetCornerRadius001, TestSize.Level1)
         RSNGRenderShaderHelper::SetCornerRadius(head, cornerRadius);
     }
     {
+        RSNGRenderShaderHelper::SetCornerRadius(nullptr, cornerRadius);
+    }
+    {
+        head = RSNGRenderShaderBase::Create(RSNGEffectType::BORDER_LIGHT);
         RSNGRenderShaderHelper::SetCornerRadius(head, cornerRadius);
+        auto filter = std::make_shared<RSNGRenderBorderLight>();
+        using TargetTag = BorderLightCornerRadiusRenderTag;
+        auto val = filter->Getter<TargetTag>();
+        EXPECT_NE(val, nullptr);
+        EXPECT_EQ(val->Get(), cornerRadius);
     }
     EXPECT_NE(head, nullptr);
 }
