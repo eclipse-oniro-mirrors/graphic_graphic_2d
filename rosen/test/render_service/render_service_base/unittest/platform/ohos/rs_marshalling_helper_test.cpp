@@ -487,6 +487,13 @@ HWTEST_F(RSMarshallingHelperTest, UnmarshallingNullTest010, TestSize.Level1)
     parcel.WriteInt32(-1);
     std::vector<std::shared_ptr<EmitterUpdater>> val;
     EXPECT_FALSE(RSMarshallingHelper::Unmarshalling(parcel, val));
+
+    std::vector<std::shared_ptr<EmitterUpdater>> marshVal;
+    uint32_t emitterIndex = 1;
+    auto emitterUpdater = std::make_shared<EmitterUpdater>(emitterIndex);
+    marshVal.push_back(emitterUpdater);
+    RSMarshallingHelper::Marshalling(parcel, marshVal);
+    EXPECT_TRUE(RSMarshallingHelper::Unmarshalling(parcel, val));
 }
 
 /**
@@ -589,6 +596,16 @@ HWTEST_F(RSMarshallingHelperTest, UnmarshallingNullTest013, TestSize.Level1)
     parcel.WriteUint32(1);
     parcel.WriteInt32(-1);
     std::shared_ptr<ParticleNoiseFields> val;
+    EXPECT_FALSE(RSMarshallingHelper::Unmarshalling(parcel, val));
+
+    Parcel parcel2;
+    std::shared_ptr<ParticleNoiseFields> marshVal = std::maked_shared<ParticleNoiseFields>;
+    Vector2f fieldSize;
+    Vector2f fieldCenter;
+    auto field = std::make_shared<ParticleNoiseFields>(1, ShapeType::RECT,
+        fieldSize, fieldCenter, 1, 1.0f, 1.0f, 1.0f);
+    marshVal->AddField(field);
+    RSMarshallingHelper::Marshalling(parcel2, marshVal);
     EXPECT_FALSE(RSMarshallingHelper::Unmarshalling(parcel, val));
 }
 
