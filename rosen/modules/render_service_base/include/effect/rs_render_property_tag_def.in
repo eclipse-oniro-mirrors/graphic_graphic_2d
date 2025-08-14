@@ -172,3 +172,15 @@ DECLARE_ANIMATABLE_PROPERTY_TAG(LightCave, ColorC, Vector4f);
 DECLARE_ANIMATABLE_PROPERTY_TAG(LightCave, Position, Vector2f);
 DECLARE_ANIMATABLE_PROPERTY_TAG(LightCave, RadiusXY, Vector2f);
 DECLARE_ANIMATABLE_PROPERTY_TAG(LightCave, Progress, float);
+
+DECLARE_ANIMATABLE_PROPERTY_TAG(ContentLight, Position, Vector3f);
+DECLARE_ANIMATABLE_PROPERTY_TAG(ContentLight, Color, Vector4f);
+DECLARE_ANIMATABLE_PROPERTY_TAG(ContentLight, Intensity, float);
+DECLARE_ANIMATABLE_PROPERTY_TAG(ContentLight, RotationAngle, Vector3f);
+
+DECLARE_ANIMATABLE_PROPERTY_TAG(BorderLight, Position, Vector3f);
+DECLARE_ANIMATABLE_PROPERTY_TAG(BorderLight, Color, Vector4f);
+DECLARE_ANIMATABLE_PROPERTY_TAG(BorderLight, Intensity, float);
+DECLARE_ANIMATABLE_PROPERTY_TAG(BorderLight, Width, float);
+DECLARE_ANIMATABLE_PROPERTY_TAG(BorderLight, RotationAngle, Vector3f);
+DECLARE_ANIMATABLE_PROPERTY_TAG(BorderLight, CornerRadius, float);
