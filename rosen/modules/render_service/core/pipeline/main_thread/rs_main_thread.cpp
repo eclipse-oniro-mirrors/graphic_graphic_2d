@@ -1656,7 +1656,8 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
 #ifdef RS_ENABLE_GPU
                     auto buffer = surfaceHandler->GetBuffer();
                     auto preBuffer = surfaceHandler->GetPreBuffer();
-                    RSGpuDirtyCollector::SetGpuDirtyEnabled(buffer, IsGpuDirtyEnable(surfaceNode->GetId()));
+                    RSGpuDirtyCollector::SetGpuDirtyEnabled(buffer,
+                        RSGpuDirtyCollector::GetInstance().IsGpuDirtyEnable(surfaceNode->GetId()));
                     surfaceNode->UpdateBufferInfo(
                         buffer, surfaceHandler->GetDamageRegion(), surfaceHandler->GetAcquireFence(), preBuffer);
                     if (surfaceHandler->GetBufferSizeChanged() || surfaceHandler->GetBufferTransformTypeChanged()) {
@@ -5128,20 +5129,6 @@ void RSMainThread::SetLuminanceChangingStatus(ScreenId id, bool isLuminanceChang
 {
     std::lock_guard<std::mutex> lock(luminanceMutex_);
     displayLuminanceChanged_[id] = isLuminanceChanged;
-}
-
-void RSMainThread::SetSelfDrawingGpuDirtyPidList(const std::vector<int32_t>& pidList)
-{
-    std::lock_guard<std::mutex> lock(pidListMutex_);
-    selfDrawingGpuDirtyPidList_.clear();
-    selfDrawingGpuDirtyPidList_.insert(pidList.begin(), pidList.end());
-}
-
-bool RSMainThread::IsGpuDirtyEnable(NodeId nodeId)
-{
-    std::lock_guard<std::mutex> lock(pidListMutex_);
-    int32_t pid = ExtractPid(nodeId);
-    return selfDrawingGpuDirtyPidList_.find(pid) != selfDrawingGpuDirtyPidList_.end();
 }
 
 bool RSMainThread::ExchangeLuminanceChangingStatus(ScreenId id)
