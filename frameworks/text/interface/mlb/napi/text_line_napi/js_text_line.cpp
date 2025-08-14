@@ -119,7 +119,7 @@ void JsTextLine::Destructor(napi_env env, void *nativeObject, void *finalize)
     }
 }
 
-napi_value JsTextLine::CreateTextLine(napi_env env, napi_callback_info info)
+napi_value JsTextLine::CreateTextLine(napi_env env)
 {
     if (!CreateConstructor(env)) {
         TEXT_LOGE("Failed to create constructor");
@@ -248,7 +248,7 @@ napi_value JsTextLine::OnGetGlyphRuns(napi_env env, napi_callback_info info)
     NAPI_CALL(env, napi_create_array(env, &array));
     uint32_t index = 0;
     for (std::unique_ptr<Run>& item : runs) {
-        napi_value itemObject = JsRun::CreateRun(env, info);
+        napi_value itemObject = JsRun::CreateRun(env);
         if (!itemObject) {
             TEXT_LOGE("Failed to create run");
             continue;
@@ -355,7 +355,7 @@ napi_value JsTextLine::OnCreateTruncatedLine(napi_env env, napi_callback_info in
         return NapiGetUndefined(env);
     }
 
-    napi_value itemObject = JsTextLine::CreateTextLine(env, info);
+    napi_value itemObject = JsTextLine::CreateTextLine(env);
     if (itemObject == nullptr) {
         TEXT_LOGE("Failed to create js textLine");
         return NapiGetUndefined(env);
