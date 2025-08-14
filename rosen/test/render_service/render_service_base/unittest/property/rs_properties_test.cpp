@@ -1286,7 +1286,7 @@ HWTEST_F(RSPropertiesTest, UpdateBackgroundShader003, TestSize.Level1)
     head = RSNGRenderShaderBase::Create(RSNGEffectType::AURORA_NOISE);
     properties.bgNGRenderShader_ = head;
     properties.UpdateBackgroundShader();
-    EXPECT_NE(head, nullptr);
+    EXPECT_FALSE(properties.filterNeedUpdate_);
 }
 
 /**
