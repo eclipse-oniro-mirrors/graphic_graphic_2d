@@ -44,7 +44,7 @@ DECLARE_INTERFACE_DESCRIPTOR(u"ohos.rosen.RenderServiceConnection");
 int32_t g_pid;
 sptr<OHOS::Rosen::RSScreenManager> screenManagerPtr_ = nullptr;
 [[maybe_unused]] auto& rsRenderNodeGC = RSRenderNodeGC::Instance();
-[[maybe_unused]] auto& RSSurfaceBufferCallbackManager = RSSurfaceBufferCallbackManager::Instance();
+[[maybe_unused]] auto& rsSurfaceBufferCallbackManager = RSSurfaceBufferCallbackManager::Instance();
 RSMainThread* mainThread_ = RSMainThread::Instance();
 sptr<RSRenderServiceConnectionStub> connectionStub_ = nullptr;
 
