@@ -487,6 +487,10 @@ HWTEST_F(RSMarshallingHelperTest, UnmarshallingNullTest010, TestSize.Level1)
     parcel.WriteInt32(-1);
     std::vector<std::shared_ptr<EmitterUpdater>> val;
     EXPECT_FALSE(RSMarshallingHelper::Unmarshalling(parcel, val));
+
+    parcel.WriteInt32(1);
+    parcel.WriteInt32(1);
+    EXPECT_FALSE(RSMarshallingHelper::Unmarshalling(parcel, val));
 }
 
 /**
@@ -589,6 +593,11 @@ HWTEST_F(RSMarshallingHelperTest, UnmarshallingNullTest013, TestSize.Level1)
     parcel.WriteUint32(1);
     parcel.WriteInt32(-1);
     std::shared_ptr<ParticleNoiseFields> val;
+    EXPECT_FALSE(RSMarshallingHelper::Unmarshalling(parcel, val));
+
+    parcel.WriteInt32(1);
+    parcel.WriteUint32(1);
+    parcel.WriteInt32(1);
     EXPECT_FALSE(RSMarshallingHelper::Unmarshalling(parcel, val));
 }
 
