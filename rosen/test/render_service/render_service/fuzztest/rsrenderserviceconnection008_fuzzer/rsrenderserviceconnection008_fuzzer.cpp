@@ -398,9 +398,9 @@ extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
     OHOS::Rosen::connectionStub_ = new OHOS::Rosen::RSRenderServiceConnection(OHOS::Rosen::g_pid, nullptr,
         OHOS::Rosen::mainThread_, OHOS::Rosen::screenManagerPtr_, token->AsObject(), appVSyncDistributor_);
 #ifdef RS_ENABLE_VK
-    RsVulkanContext::GetSingleton().InitVulkanContextForUniRender("");
+    OHOS::Rosen::RsVulkanContext::GetSingleton().InitVulkanContextForUniRender("");
 #endif
-    RSHardwareThread::Instance().Start();
+    OHOS::Rosen::RSHardwareThread::Instance().Start();
     return 0;
 }
 
