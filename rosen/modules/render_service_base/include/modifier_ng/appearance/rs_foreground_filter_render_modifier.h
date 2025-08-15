@@ -32,8 +32,6 @@ public:
 
     static void ResetProperties(RSProperties& properties);
 
-protected:
-
 private:
     static const LegacyPropertyApplierMap LegacyPropertyApplierMap_;
     const LegacyPropertyApplierMap& GetLegacyPropertyApplierMap() const override
