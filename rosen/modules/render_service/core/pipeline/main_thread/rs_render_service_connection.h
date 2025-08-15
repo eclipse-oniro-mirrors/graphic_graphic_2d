@@ -397,6 +397,8 @@ private:
 
     ErrCode SetGpuCrcDirtyEnabledPidList(const std::vector<int32_t> pidList) override;
 
+    ErrCode SetOptimizeCanvasDirtyPidList(const std::vector<int32_t>& pidList) override;
+
     ErrCode SetAncoForceDoDirect(bool direct, bool& res) override;
 
     void SetFreeMultiWindowStatus(bool enable) override;

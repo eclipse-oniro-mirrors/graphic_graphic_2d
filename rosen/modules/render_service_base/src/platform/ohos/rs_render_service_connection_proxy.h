@@ -418,6 +418,8 @@ public:
     void ClearUifirstCache(NodeId id) override;
 
     ErrCode SetGpuCrcDirtyEnabledPidList(const std::vector<int32_t> pidList) override;
+
+    ErrCode SetOptimizeCanvasDirtyPidList(const std::vector<int32_t>& pidList) override;
 private:
     bool FillParcelWithTransactionData(
         std::unique_ptr<RSTransactionData>& transactionData, std::shared_ptr<MessageParcel>& data);

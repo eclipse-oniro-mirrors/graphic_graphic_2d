@@ -5891,5 +5891,10 @@ ErrCode RSRenderServiceConnectionProxy::SetGpuCrcDirtyEnabledPidList(const std::
 {
     return ERR_INVALID_VALUE;
 }
+
+ErrCode RSRenderServiceConnectionProxy::SetOptimizeCanvasDirtyPidList(const std::vector<int32_t>& pidList)
+{
+    return ERR_INVALID_VALUE;
+}
 } // namespace Rosen
 } // namespace OHOS

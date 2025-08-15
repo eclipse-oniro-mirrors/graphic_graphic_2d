@@ -208,6 +208,7 @@ static constexpr std::array descriptorCheckList = {
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::AVCODEC_VIDEO_START),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::AVCODEC_VIDEO_STOP),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_GPU_CRC_DIRTY_ENABLED_PIDLIST),
+    static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_OPTIMIZE_CANVAS_DIRTY_ENABLED_PIDLIST),
 #ifdef RS_ENABLE_OVERLAY_DISPLAY
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_OVERLAY_DISPLAY_MODE),
 #endif
@@ -3761,6 +3762,18 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 break;
             }
             SetGpuCrcDirtyEnabledPidList(pidList);
+            break;
+        }
+        case static_cast<uint32_t>(
+            RSIRenderServiceConnectionInterfaceCode::GET_OPTIMIZE_CANVAS_DIRTY_ENABLED_PIDLIST): {
+            std::vector<int32_t> pidList;
+            if (!data.ReadInt32Vector(&pidList)) {
+                RS_LOGE(
+                    "RSRenderServiceConnectionStub::GET_OPTIMIZE_CANVAS_DIRTY_ENABLED_PIDLIST Read pidList failed!");
+                ret = ERR_INVALID_REPLY;
+                break;
+            }
+            ret = SetOptimizeCanvasDirtyPidList(pidList);
             break;
         }
         case static_cast<uint32_t>(
