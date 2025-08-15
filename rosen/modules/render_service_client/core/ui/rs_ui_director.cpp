@@ -76,12 +76,15 @@ RSUIDirector::~RSUIDirector()
     Destroy();
 }
 
-void RSUIDirector::Init(bool shouldCreateRenderThread, bool isMultiInstance)
+void RSUIDirector::Init(bool shouldCreateRenderThread, bool isMultiInstance, std::shared_ptr<RSUIContext> rsUIContext)
 {
     AnimationCommandHelper::SetAnimationCallbackProcessor(AnimationCallbackProcessor);
     std::call_once(g_initDumpNodeTreeProcessorFlag,
         []() { RSNodeCommandHelper::SetDumpNodeTreeProcessor(RSUIDirector::DumpNodeTreeProcessor); });
-    if (isMultiInstance) {
+
+    if (rsUIContext != nullptr) {
+        rsUIContext_ = rsUIContext;
+    } else if (isMultiInstance) {
         rsUIContext_ = RSUIContextManager::MutableInstance().CreateRSUIContext();
     }
 

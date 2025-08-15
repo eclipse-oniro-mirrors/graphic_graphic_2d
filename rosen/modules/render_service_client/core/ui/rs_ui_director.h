@@ -93,8 +93,10 @@ public:
      *
      * @param shouldCreateRenderThread Indicates whether a render thread should be created. Defaults to true.
      * @param isMultiInstance Indicates whether the instance supports multiple instances. Defaults to false.
+     * @param rsUIContext A shared pointer to the rsUIContext object to be set. Defaults to nullptr.
      */
-    void Init(bool shouldCreateRenderThread = true, bool isMultiInstance = false);
+    void Init(bool shouldCreateRenderThread = true, bool isMultiInstance = false,
+        std::shared_ptr<RSUIContext> rsUIContext = nullptr);
 
     /**
      * @brief Initiates the process of exporting texture data.
