@@ -6423,57 +6423,6 @@ HWTEST_F(RSMainThreadTest, SetForceRsDVsync001, TestSize.Level1)
 }
 
 /**
- * @tc.name: SetSelfDrawingGpuDirtyPidList
- * @tc.desc: Test SetSelfDrawingGpuDirtyPidList
- * @tc.type: FUNC
- * @tc.require: issueICR2M7
- */
-HWTEST_F(RSMainThreadTest, SetSelfDrawingGpuDirtyPidList, TestSize.Level1)
-{
-    auto mainThread = RSMainThread::Instance();
-    ASSERT_NE(mainThread, nullptr);
- 
-    NodeId id = 0;
-    auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(id, mainThread->context_);
-    mainThread->SetSelfDrawingGpuDirtyPidList({ExtractPid(surfaceNode->GetId())});
-    ASSERT_EQ(mainThread->selfDrawingGpuDirtyPidList_.size(), 1);
-}
-
-/**
- * @tc.name: IsGpuDirtyEnable001
- * @tc.desc: Test IsGpuDirtyEnable while pid satisfy
- * @tc.type: FUNC
- * @tc.require: issueICR2M7
- */
-HWTEST_F(RSMainThreadTest, IsGpuDirtyEnable001, TestSize.Level1)
-{
-    auto mainThread = RSMainThread::Instance();
-    ASSERT_NE(mainThread, nullptr);
- 
-    NodeId id = 0;
-    auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(id, mainThread->context_);
-    mainThread->SetSelfDrawingGpuDirtyPidList({ExtractPid(surfaceNode->GetId())});
-    ASSERT_TRUE(mainThread->IsGpuDirtyEnable(surfaceNode->GetId()));
-}
- 
-/**
- * @tc.name: IsGpuDirtyEnablePid002
- * @tc.desc: Test IsGpuDirtyEnable while pid not satisfy
- * @tc.type: FUNC
- * @tc.require: issueICR2M7
- */
-HWTEST_F(RSMainThreadTest, IsGpuDirtyEnable002, TestSize.Level1)
-{
-    auto mainThread = RSMainThread::Instance();
-    ASSERT_NE(mainThread, nullptr);
- 
-    NodeId id = 0;
-    auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(id, mainThread->context_);
-    mainThread->SetSelfDrawingGpuDirtyPidList({});
-    ASSERT_FALSE(mainThread->IsGpuDirtyEnable(surfaceNode->GetId()));
-}
-
-/**
  * @tc.name: surfaceNodeWatermarksLimit001
  * @tc.desc: Test surfaceNodeWatermarksLimit001
  * @tc.type: FUNC
@@ -6501,5 +6450,32 @@ HWTEST_F(RSMainThreadTest, surfaceNodeWatermarksLimit001, TestSize.Level1)
     // Try again
     mainThread->ClearWatermark(pid);
     EXPECT_EQ(mainThread->registerSurfaceWaterMaskCount_[pid], 0);
+}
+
+/**
+ * @tc.name: CreateNodeAndSurfaceTest001
+ * @tc.desc: Test CreateNodeAndSurfaceTest when surfacenode is self drawing node
+ * @tc.type: FUNC
+ * @tc.require: issueICSVLG
+ */
+HWTEST_F(RSMainThreadTest, CreateNodeAndSurfaceTest001, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    sptr<RSRenderServiceConnection> connection = new RSRenderServiceConnection(
+        0, nullptr, mainThread, nullptr, nullptr, nullptr);
+    RSSurfaceRenderNodeConfig config;
+    config.id = 1;
+    config.nodeType = RSSurfaceNodeType::SELF_DRAWING_NODE;
+    std::vector<int32_t> pidList;
+    pidList.emplace_back(ExtractPid(config.id));
+    RSGpuDirtyCollector::GetInstance().SetSelfDrawingGpuDirtyPidList(pidList);
+    auto ret = connection->CreateNodeAndSurface(config, false);
+    ASSERT_NE(ret, nullptr);
+
+    auto param = system::GetParameter("rosen.graphic.selfdrawingdirtyregion.enabled", "");
+    system::SetParameter("rosen.graphic.selfdrawingdirtyregion.enabled", "1");
+    ret = connection->CreateNodeAndSurface(config, false);
+    ASSERT_NE(ret, nullptr);
+    system::SetParameter("rosen.graphic.selfdrawingdirtyregion.enabled", param);
 }
 } // namespace OHOS::Rosen
