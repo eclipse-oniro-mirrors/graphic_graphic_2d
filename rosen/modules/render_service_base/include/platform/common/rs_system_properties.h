@@ -275,7 +275,7 @@ public:
     static bool GetUIFirstBehindWindowFilterEnabled();
     static bool GetWideColorSpaceEnabled();
     static bool GetSubtreeParallelEnable();
-    static int GetSubtreeDebugOption();
+    static uint32_t GetSubtreeDebugOption();
     static bool GetSurfaceOffscreenEnadbled();
     static bool GetDebugTraceEnabled();
     static int GetDebugTraceLevel();
@@ -302,8 +302,6 @@ public:
     static bool GetHdrVideoEnabled();
     static bool IsForceClient();
     static bool GetDrmMarkedFilterEnabled();
-    static bool GetUnmarshParallelFlag();
-    static uint32_t GetUnMarshParallelSize();
     static bool GetGpuOverDrawBufferOptimizeEnabled();
 
     static DdgrOpincType GetDdgrOpincType();

@@ -384,6 +384,23 @@ HWTEST_F(RSRenderServiceConnectionProxyTest, SetScreenChangeCallback, TestSize.L
 }
 
 /**
+ * @tc.name: SetScreenSwitchingNotifyCallback Test
+ * @tc.desc: SetScreenSwitchingNotifyCallback Test
+ * @tc.type:FUNC
+ * @tc.require
+ */
+HWTEST_F(RSRenderServiceConnectionProxyTest, SetScreenSwitchingNotifyCallback, TestSize.Level1)
+{
+    sptr<RSIScreenSwitchingNotifyCallback> callback;
+    proxy->SetScreenSwitchingNotifyCallback(callback);
+    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    ASSERT_NE(samgr, nullptr);
+    auto remoteObject = samgr->GetSystemAbility(RENDER_SERVICE);
+    callback = iface_cast<RSIScreenSwitchingNotifyCallback>(remoteObject);
+    ASSERT_EQ(proxy->SetScreenSwitchingNotifyCallback(callback), 0);
+}
+
+/**
  * @tc.name: SetScreenActiveMode Test
  * @tc.desc: SetScreenActiveMode Test
  * @tc.type:FUNC
@@ -1500,30 +1517,41 @@ HWTEST_F(RSRenderServiceConnectionProxyTest, ClearUifirstCacheTest, TestSize.Lev
 }
 
 /**
- * @tc.name: SetScreenFreezeImmediately Test
- * @tc.desc: SetScreenFreezeImmediately Test
+ * @tc.name: TaskSurfaceCaptureWithAllWindowsTest
+ * @tc.desc: TaskSurfaceCaptureWithAllWindows test to capture screen
  * @tc.type:FUNC
  * @tc.require: issueICQ74B
  */
-HWTEST_F(RSRenderServiceConnectionProxyTest, SetScreenFreezeImmediatelyTest, TestSize.Level1)
+HWTEST_F(RSRenderServiceConnectionProxyTest, TaskSurfaceCaptureWithAllWindowsTest, TestSize.Level1)
 {
     ASSERT_NE(proxy, nullptr);
     NodeId nodeId = 1;
-    bool isFreeze = false;
+    bool checkDrmAndSurfaceLock = false;
     sptr<RSISurfaceCaptureCallback> callback;
     RSSurfaceCaptureConfig captureConfig;
-    auto ret = proxy->SetScreenFreezeImmediately(nodeId, isFreeze, callback, captureConfig);
-    EXPECT_EQ(ret, ERR_OK);
-
-    isFreeze = true;
-    ret = proxy->SetScreenFreezeImmediately(nodeId, isFreeze, callback, captureConfig);
-    EXPECT_NE(ret, ERR_OK);
+    auto ret = proxy->TaskSurfaceCaptureWithAllWindows(nodeId, callback, captureConfig, checkDrmAndSurfaceLock);
+    EXPECT_EQ(ret, ERR_INVALID_VALUE);
 
     auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     ASSERT_NE(samgr, nullptr);
     auto remoteObject = samgr->GetSystemAbility(RENDER_SERVICE);
     callback = iface_cast<RSISurfaceCaptureCallback>(remoteObject);
-    ret = proxy->SetScreenFreezeImmediately(nodeId, isFreeze, callback, captureConfig);
+    ret = proxy->TaskSurfaceCaptureWithAllWindows(nodeId, callback, captureConfig, checkDrmAndSurfaceLock);
+    EXPECT_EQ(ret, ERR_OK);
+}
+
+/**
+ * @tc.name: FreezeScreenTest
+ * @tc.desc: FreezeScreen test to freeze or unfreeze screen.
+ * @tc.type:FUNC
+ * @tc.require: issueICS2J8
+ */
+HWTEST_F(RSRenderServiceConnectionProxyTest, FreezeScreenTest, TestSize.Level1)
+{
+    ASSERT_NE(proxy, nullptr);
+    NodeId nodeId = 1;
+    bool isFreeze = false;
+    auto ret = proxy->FreezeScreen(nodeId, isFreeze);
     EXPECT_EQ(ret, ERR_OK);
 }
 

@@ -1188,8 +1188,8 @@ void RSUniRenderVisitor::QuickPrepareSurfaceRenderNode(RSSurfaceRenderNode& node
     }
 #ifdef SUBTREE_PARALLEL_ENABLE
     const bool isInFocusSurface = isInFocusSurface_;
-    isInFocusSurface_ = node.IsFocusedNode(currentFocusedNodeId_)
-        || node.IsFocusedNode(focusedLeashWindowId_) || isInFocusSurface_;
+    isInFocusSurface_ = node.IsFocusedNode(currentFocusedNodeId_) ||
+        node.IsFocusedNode(focusedLeashWindowId_) || isInFocusSurface_;
 #endif
     CollectSelfDrawingNodeRectInfo(node);
     hasAccumulatedClip_ = node.SetAccumulatedClipFlag(hasAccumulatedClip_);
@@ -3256,7 +3256,8 @@ void RSUniRenderVisitor::PrepareRootRenderNode(RSRootRenderNode& node)
     curAlpha_ *= std::clamp(node.GetRenderProperties().GetAlpha(), 0.f, 1.f);
 
     if (curSurfaceDirtyManager_ == nullptr) {
-        RS_LOGE("RSUniRenderVisitor::PrepareRootRenderNode curSurfaceDirtyManager is nullptr");
+        RS_LOGE_LIMIT(
+            __func__, __line__, "RSUniRenderVisitor::PrepareRootRenderNode curSurfaceDirtyManager is nullptr");
         return;
     }
     dirtyFlag_ = node.UpdateDrawRectAndDirtyRegion(

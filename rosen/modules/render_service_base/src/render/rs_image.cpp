@@ -143,9 +143,11 @@ bool RSImage::HDRConvert(const Drawing::SamplingOptions& sampling, Drawing::Canv
 void RSImage::CanvasDrawImage(Drawing::Canvas& canvas, const Drawing::Rect& rect,
     const Drawing::SamplingOptions& samplingOptions, bool isBackground)
 {
+#ifdef ROSEN_OHOS
     if (canvas.GetRecordingState() && RSSystemProperties::GetDumpUICaptureEnabled() && pixelMap_) {
         CommonTools::SavePixelmapToFile(pixelMap_, "/data/rsImage_");
     }
+#endif
     isFitMatrixValid_ = !isBackground && imageFit_ == ImageFit::MATRIX &&
                                 fitMatrix_.has_value() && !fitMatrix_.value().IsIdentity();
     isOrientationValid_ = orientationFit_ != OrientationFit::NONE;
@@ -338,9 +340,10 @@ RectF ApplyImageFitSwitch(ImageParameter &imageParameter, ImageFit imageFit_, Re
     }
     constexpr float horizontalAlignmentFactor = 2.f;
     constexpr float verticalAlignmentFactor = 2.f;
-    tempRectF.SetAll((imageParameter.frameW - imageParameter.dstW) / horizontalAlignmentFactor,
-                     (imageParameter.frameH - imageParameter.dstH) / verticalAlignmentFactor,
-                     imageParameter.dstW, imageParameter.dstH);
+    tempRectF.SetAll(std::floor((imageParameter.frameW - imageParameter.dstW) / horizontalAlignmentFactor),
+                     std::floor((imageParameter.frameH - imageParameter.dstH) / verticalAlignmentFactor),
+                     std::ceil(imageParameter.dstW),
+                     std::ceil(imageParameter.dstH));
     return tempRectF;
 }
 

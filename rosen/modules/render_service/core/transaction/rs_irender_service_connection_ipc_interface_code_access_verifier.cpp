@@ -30,7 +30,7 @@ std::vector<std::pair<RSIRenderServiceConnectionInterfaceCodeAccessVerifier::Cod
             PermissionType::UPDATE_CONFIGURATION },
         { RSIRenderServiceConnectionInterfaceCodeAccessVerifier::CodeEnumType::CREATE_VIRTUAL_SCREEN,
             PermissionType::CAPTURE_SCREEN },
-        { RSIRenderServiceConnectionInterfaceCodeAccessVerifier::CodeEnumType::SET_SCREEN_FREEZE_IMMEDIATELY,
+        { RSIRenderServiceConnectionInterfaceCodeAccessVerifier::CodeEnumType::TAKE_SURFACE_CAPTURE_WITH_ALL_WINDOWS,
             PermissionType::CAPTURE_SCREEN }
 };
 
@@ -185,6 +185,10 @@ bool RSIRenderServiceConnectionInterfaceCodeAccessVerifier::IsExclusiveVerificat
         }
         case static_cast<CodeUnderlyingType>(CodeEnumType::SET_SCREEN_CHANGE_CALLBACK): {
             hasPermission = IsSystemCalling(codeEnumTypeName_ + "::SET_SCREEN_CHANGE_CALLBACK");
+            break;
+        }
+        case static_cast<CodeUnderlyingType>(CodeEnumType::SET_SCREEN_SWITCHING_NOTIFY_CALLBACK): {
+            hasPermission = IsSystemCalling(codeEnumTypeName_ + "::SET_SCREEN_SWITCHING_NOTIFY_CALLBACK");
             break;
         }
         case static_cast<CodeUnderlyingType>(CodeEnumType::SET_SCREEN_CORRECTION): {
@@ -597,8 +601,12 @@ bool RSIRenderServiceConnectionInterfaceCodeAccessVerifier::IsExclusiveVerificat
             hasPermission = IsSystemCalling(codeEnumTypeName_ + "::GET_SCREEN_HDR_STATUS");
             break;
         }
-        case static_cast<CodeUnderlyingType>(CodeEnumType::SET_SCREEN_FREEZE_IMMEDIATELY): {
+        case static_cast<CodeUnderlyingType>(CodeEnumType::TAKE_SURFACE_CAPTURE_WITH_ALL_WINDOWS): {
             hasPermission = CheckPermission(code);
+            break;
+        }
+        case static_cast<CodeUnderlyingType>(CodeEnumType::FREEZE_SCREEN): {
+            hasPermission = IsSystemCalling(codeEnumTypeName_ + "::FREEZE_SCREEN");
             break;
         }
         case static_cast<CodeUnderlyingType>(CodeEnumType::GET_GPU_CRC_DIRTY_ENABLED_PIDLIST): {
@@ -611,7 +619,7 @@ bool RSIRenderServiceConnectionInterfaceCodeAccessVerifier::IsExclusiveVerificat
             break;
         }
     }
-return hasPermission;
+    return hasPermission;
 }
 
 #ifdef ENABLE_IPC_SECURITY

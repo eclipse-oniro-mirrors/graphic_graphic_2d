@@ -33,6 +33,7 @@
 #include "ipc_callbacks/pointer_render/pointer_luminance_callback_stub.h"
 #include "ipc_callbacks/rs_surface_occlusion_change_callback_stub.h"
 #include "ipc_callbacks/screen_change_callback_stub.h"
+#include "ipc_callbacks/screen_switching_notify_callback_stub.h"
 #include "ipc_callbacks/surface_capture_callback_stub.h"
 #include "ipc_callbacks/buffer_available_callback_stub.h"
 #include "ipc_callbacks/buffer_clear_callback_stub.h"
@@ -415,17 +416,14 @@ bool RSRenderServiceClient::SetWindowFreezeImmediately(NodeId id, bool isFreeze,
     return true;
 }
 
-bool RSRenderServiceClient::SetScreenFreezeImmediately(NodeId id, bool isFreeze,
-    std::shared_ptr<SurfaceCaptureCallback> callback, const RSSurfaceCaptureConfig& captureConfig)
+bool RSRenderServiceClient::TaskSurfaceCaptureWithAllWindows(NodeId id,
+    std::shared_ptr<SurfaceCaptureCallback> callback, const RSSurfaceCaptureConfig& captureConfig,
+    bool checkDrmAndSurfaceLock)
 {
     auto renderService = RSRenderServiceConnectHub::GetRenderService();
     if (renderService == nullptr) {
         ROSEN_LOGE("%{public}s renderService == nullptr!", __func__);
         return false;
-    }
-    if (!isFreeze) {
-        renderService->SetScreenFreezeImmediately(id, isFreeze, nullptr, captureConfig);
-        return true;
     }
     if (callback == nullptr) {
         ROSEN_LOGE("%{public}s callback == nullptr!", __func__);
@@ -448,13 +446,25 @@ bool RSRenderServiceClient::SetScreenFreezeImmediately(NodeId id, bool isFreeze,
         }
     }
 
-    auto ret = renderService->SetScreenFreezeImmediately(id, isFreeze, surfaceCaptureCbDirector_, captureConfig);
+    auto ret = renderService->TaskSurfaceCaptureWithAllWindows(
+        id, surfaceCaptureCbDirector_, captureConfig, checkDrmAndSurfaceLock);
     if (ret != ERR_OK) {
         ROSEN_LOGE("%{public}s fail, ret[%{public}d]", __func__, ret);
         std::lock_guard<std::mutex> lock(mutex_);
         surfaceCaptureCbMap_.erase(key);
         return false;
     }
+    return true;
+}
+
+bool RSRenderServiceClient::FreezeScreen(NodeId id, bool isFreeze)
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService == nullptr) {
+        ROSEN_LOGE("%{public}s renderService == nullptr!", __func__);
+        return false;
+    }
+    renderService->FreezeScreen(id, isFreeze);
     return true;
 }
 
@@ -773,6 +783,39 @@ int32_t RSRenderServiceClient::SetScreenChangeCallback(const ScreenChangeCallbac
 
     screenChangeCb_ = new CustomScreenChangeCallback(callback);
     return renderService->SetScreenChangeCallback(screenChangeCb_);
+}
+
+class CustomScreenSwitchingNotifyCallback : public RSScreenSwitchingNotifyCallbackStub
+{
+public:
+    explicit CustomScreenSwitchingNotifyCallback(const ScreenSwitchingNotifyCallback &callback) : cb_(callback) {}
+    ~CustomScreenSwitchingNotifyCallback() override {};
+
+    void OnScreenSwitchingNotify(bool status) override
+    {
+        if (cb_ != nullptr) {
+            cb_(status);
+        }
+    }
+
+private:
+    ScreenSwitchingNotifyCallback cb_;
+};
+
+int32_t RSRenderServiceClient::SetScreenSwitchingNotifyCallback(const ScreenSwitchingNotifyCallback &callback)
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService == nullptr) {
+        ROSEN_LOGE("RSRenderServiceClient::%{public}s renderService is null", __func__);
+        return RENDER_SERVICE_NULL;
+    }
+
+    sptr<CustomScreenSwitchingNotifyCallback> cb = nullptr;
+    if (callback) {
+        cb = new CustomScreenSwitchingNotifyCallback(callback);
+    }
+
+    return renderService->SetScreenSwitchingNotifyCallback(cb);
 }
 
 void RSRenderServiceClient::SetScreenActiveMode(ScreenId id, uint32_t modeId)
@@ -1750,12 +1793,12 @@ public:
         const FrameRateLinkerExpectedFpsUpdateCallback& callback) : cb_(callback) {}
     ~CustomFrameRateLinkerExpectedFpsUpdateCallback() override {};
 
-    void OnFrameRateLinkerExpectedFpsUpdate(pid_t dstPid, int32_t expectedFps) override
+    void OnFrameRateLinkerExpectedFpsUpdate(pid_t dstPid, const std::string& xcomponentId, int32_t expectedFps) override
     {
         ROSEN_LOGD("CustomFrameRateLinkerExpectedFpsUpdateCallback::OnFrameRateLinkerExpectedFpsUpdate called,"
             " pid=%{public}d, fps=%{public}d", dstPid, expectedFps);
         if (cb_ != nullptr) {
-            cb_(dstPid, expectedFps);
+            cb_(dstPid, xcomponentId, expectedFps);
         }
     }
 

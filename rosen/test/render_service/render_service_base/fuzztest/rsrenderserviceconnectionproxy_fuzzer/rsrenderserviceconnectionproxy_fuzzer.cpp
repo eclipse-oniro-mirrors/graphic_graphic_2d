@@ -37,6 +37,7 @@ namespace OHOS {
 namespace Rosen {
 namespace {
 const uint8_t* g_data = nullptr;
+const std::string XCOMPONENT_ID = "xcomponentId";
 size_t g_size = 0;
 size_t g_pos;
 
@@ -125,6 +126,7 @@ bool DoSomethingInterestingWithMyAPI(const uint8_t* data, size_t size)
     sptr<RSISurfaceCaptureCallback> callback1;
     sptr<RSIBufferAvailableCallback> callback2;
     sptr<RSIBufferClearCallback> callback3;
+    sptr<RSIScreenSwitchingNotifyCallback> switchingNotifyCallback;
     auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     auto remoteObject = samgr->GetSystemAbility(RENDER_SERVICE);
     sptr<RSIOcclusionChangeCallback> rsIOcclusionChangeCallback = iface_cast<RSIOcclusionChangeCallback>(remoteObject);
@@ -142,6 +144,7 @@ bool DoSomethingInterestingWithMyAPI(const uint8_t* data, size_t size)
     std::vector<std::string> packageList;
     OnRemoteDiedCallback onRemoteDiedCallback = []() {};
     callback = iface_cast<RSIScreenChangeCallback>(remoteObject);
+    switchingNotifyCallback = iface_cast<RSIScreenSwitchingNotifyCallback>(remoteObject);
     std::shared_ptr<Media::PixelMap> pixelmap = std::make_shared<Media::PixelMap>();
     std::shared_ptr<Drawing::DrawCmdList> drawCmdList = std::make_shared<Drawing::DrawCmdList>();
     std::shared_ptr<Drawing::Typeface> typeface = Drawing::Typeface::MakeDefault();
@@ -204,6 +207,7 @@ bool DoSomethingInterestingWithMyAPI(const uint8_t* data, size_t size)
     rsRenderServiceConnectionProxy.SetVirtualScreenSurface(id1, surface);
     rsRenderServiceConnectionProxy.RemoveVirtualScreen(id1);
     rsRenderServiceConnectionProxy.SetScreenChangeCallback(callback);
+    rsRenderServiceConnectionProxy.SetScreenSwitchingNotifyCallback(switchingNotifyCallback);
     rsRenderServiceConnectionProxy.SetScreenActiveMode(id1, width);
     rsRenderServiceConnectionProxy.SetScreenActiveRect(id1, activeRect, retureCode);
     rsRenderServiceConnectionProxy.SetScreenRefreshRate(id1, pid1, uid);
@@ -296,7 +300,7 @@ bool DoSomethingInterestingWithMyAPI(const uint8_t* data, size_t size)
     rsRenderServiceConnectionProxy.SetFreeMultiWindowStatus(false);
     rsRenderServiceConnectionProxy.RegisterFrameRateLinkerExpectedFpsUpdateCallback(pid1,
         rsIFrameRateLinkerExpectedFpsUpdateCallback);
-    rsFrameRateLinkerExpectedFpsUpdateCallbackProxy.OnFrameRateLinkerExpectedFpsUpdate(pid, expectedFps);
+    rsFrameRateLinkerExpectedFpsUpdateCallbackProxy.OnFrameRateLinkerExpectedFpsUpdate(pid, XCOMPONENT_ID, expectedFps);
     return true;
 }
 
@@ -570,7 +574,28 @@ bool DoGetScreenHDRStatus(const uint8_t* data, size_t size)
     return true;
 }
 
-bool DoSetScreenFreezeImmediately(const uint8_t* data, size_t size)
+bool DoTaskSurfaceCaptureWithAllWindows(const uint8_t* data, size_t size)
+{
+    if (data == nullptr) {
+        return false;
+    }
+
+    // get data
+    uint64_t nodeId = GetData<uint64_t>();
+    bool checkDrmAndSurfaceLock = GetData<bool>();
+    sptr<RSISurfaceCaptureCallback> callback;
+    RSSurfaceCaptureConfig captureConfig;
+
+    // test
+    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    auto remoteObject = samgr->GetSystemAbility(RENDER_SERVICE);
+    RSRenderServiceConnectionProxy rsRenderServiceConnectionProxy(remoteObject);
+    rsRenderServiceConnectionProxy.TaskSurfaceCaptureWithAllWindows(
+        nodeId, callback, captureConfig, checkDrmAndSurfaceLock);
+    return true;
+}
+
+bool DoFreezeScreen(const uint8_t* data, size_t size)
 {
     if (data == nullptr) {
         return false;
@@ -579,14 +604,12 @@ bool DoSetScreenFreezeImmediately(const uint8_t* data, size_t size)
     // get data
     uint64_t nodeId = GetData<uint64_t>();
     bool isFreeze = GetData<bool>();
-    sptr<RSISurfaceCaptureCallback> callback;
-    RSSurfaceCaptureConfig captureConfig;
 
     // test
     auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     auto remoteObject = samgr->GetSystemAbility(RENDER_SERVICE);
     RSRenderServiceConnectionProxy rsRenderServiceConnectionProxy(remoteObject);
-    rsRenderServiceConnectionProxy.SetScreenFreezeImmediately(nodeId, isFreeze, callback, captureConfig);
+    rsRenderServiceConnectionProxy.FreezeScreen(nodeId, isFreeze);
     return true;
 }
 } // namespace Rosen
@@ -618,6 +641,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::Rosen::DoProfilerServiceFuzzTest(data, size);
     OHOS::Rosen::DoClearUifirstCache(data, size);
     OHOS::Rosen::DoGetScreenHDRStatus(data, size);
-    OHOS::Rosen::DoSetScreenFreezeImmediately(data, size);
+    OHOS::Rosen::DoTaskSurfaceCaptureWithAllWindows(data, size);
+    OHOS::Rosen::DoFreezeScreen(data, size);
     return 0;
 }
