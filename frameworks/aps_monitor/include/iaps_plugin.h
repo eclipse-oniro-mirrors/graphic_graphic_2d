@@ -68,8 +68,8 @@ public:
     IApsPlugin() = default;
     virtual ~IApsPlugin() = default;
 
-    virtual void InitGameFpsCtrol() {}
-    virtual void PowerCtrllofSwapbuffer() {}
+    virtual void InitGameFpsCtrl() {}
+    virtual void PowerControlOfSwapbuffer() {}
 };
 void* IApsPlugin::loadFileHandle_ = nullptr;
 sptr<IApsPlugin> IApsPlugin::instance_ = nullptr;

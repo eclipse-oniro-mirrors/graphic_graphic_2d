@@ -355,7 +355,7 @@ EGLBoolean EglInitializeImpl(EGLDisplay dpy, EGLint *major, EGLint *minor)
     OHOS::GameService::EglSliceReport::GetInstance().InitSliceReport();
 #endif
 #ifdef EGL_USE_APS_PLUGIN
-    OHOS::Rosen::IApsPlugin::Instance()->InitGameFpsCtrol();
+    OHOS::Rosen::IApsPlugin::Instance()->InitGameFpsCtrl();
 #endif
     EglWrapperDisplay *display = EglWrapperDisplay::GetWrapperDisplay(dpy);
     if (!display) {
@@ -466,7 +466,7 @@ EGLBoolean EglSwapBuffersImpl(EGLDisplay dpy, EGLSurface surf)
     OHOS::GameService::EglSliceReport::GetInstance().AddGraphicCount();
 #endif
 #ifdef EGL_USE_APS_PLUGIN
-    OHOS::Rosen::IApsPlugin::Instance()->PowerCtrllofSwapbuffer();
+    OHOS::Rosen::IApsPlugin::Instance()->PowerControlOfSwapbuffer();
 #endif
     EglWrapperDisplay *display = ValidateDisplay(dpy);
     if (!display) {
