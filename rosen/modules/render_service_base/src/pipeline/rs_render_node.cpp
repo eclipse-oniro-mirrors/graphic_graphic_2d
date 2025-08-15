@@ -2147,7 +2147,7 @@ void RSRenderNode::SetTreeStateChangeDirty(bool val)
 void RSRenderNode::SetParentTreeStateChangeDirty()
 {
     auto parentNode = parent_.lock();
-    if (parentNode && !parentNode->IsSubTreeDirty()) {
+    if (parentNode && !parentNode->IsTreeStateChangeDirty()) {
         parentNode->SetTreeStateChangeDirty(true);
         parentNode->SetParentTreeStateChangeDirty();
     }
