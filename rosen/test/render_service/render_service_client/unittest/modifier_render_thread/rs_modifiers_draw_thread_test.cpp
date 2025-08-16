@@ -19,6 +19,7 @@
 #include "command/rs_node_command.h"
 #include "command/rs_root_node_command.h"
 #include "modifier_render_thread/rs_modifiers_draw_thread.h"
+#include "modifier_render_thread/rs_modifiers_draw.h"
 #include "recording/draw_cmd.h"
 #include "render_context/shader_cache.h"
 #include "command/rs_animation_command.h"
@@ -76,7 +77,10 @@ void RSModifiersDrawThreadTest::SetUpTestCase()
 }
 void RSModifiersDrawThreadTest::TearDownTestCase() {}
 void RSModifiersDrawThreadTest::SetUp() {}
-void RSModifiersDrawThreadTest::TearDown() {}
+void RSModifiersDrawThreadTest::TearDown()
+{
+    RSModifiersDraw::ClearCanvasDrawingNodeMemory();
+}
 
 /**
  * @tc.name: FlushImplicitTransaction001
@@ -118,7 +122,8 @@ HWTEST_F(RSModifiersDrawThreadTest, FlushImplicitTransaction002, TestSize.Level1
     transaction->AddRemoteCommand(command, nodeId, FollowType::NONE);
     CommitTransactionCallback callback =
         [] (std::shared_ptr<RSIRenderClient> &renderServiceClient,
-        std::unique_ptr<RSTransactionData>&& rsTransactionData, uint32_t& transactionDataIndex) {};
+        std::unique_ptr<RSTransactionData>&& rsTransactionData, uint32_t& transactionDataIndex,
+        std::shared_ptr<RSTransactionHandler>) {};
     RSTransactionHandler::SetCommitTransactionCallback(callback);
     transaction->FlushImplicitTransaction(timestamp);
 }
@@ -201,42 +206,6 @@ HWTEST_F(RSModifiersDrawThreadTest, ScheduleTask001, TestSize.Level1)
 }
 
 /**
- * @tc.name: TargetCommand001
- * @tc.desc: test results of TargetCommand as (type,subtype) is (rsnode,updatexxx)
- * @tc.type: FUNC
- * @tc.require: issueIC1FSX
- */
-HWTEST_F(RSModifiersDrawThreadTest, TargetCommand001, TestSize.Level1)
-{
-    NodeId nodeId = 1;
-    auto cmdList = std::make_shared<Drawing::DrawCmdList>();
-    cmdList->SetHybridRenderType(Drawing::DrawCmdList::HybridRenderType::CANVAS);
-    uint64_t propertyId = 1;
-    auto cmd = std::make_unique<RSUpdatePropertyDrawCmdListNG>(nodeId, cmdList, propertyId);
-    ASSERT_TRUE(RSModifiersDrawThread::TargetCommand(Drawing::DrawCmdList::HybridRenderType::SVG, cmd->GetType(),
-        cmd->GetSubType(), false));
-}
-
-/**
- * @tc.name: TargetCommand002
- * @tc.desc: test results of TargetCommand invalid
- * @tc.type: FUNC
- * @tc.require: issueIC1FSX
- */
-HWTEST_F(RSModifiersDrawThreadTest, TargetCommand002, TestSize.Level1)
-{
-    NodeId nodeId = 1;
-    auto cmdList = std::make_shared<Drawing::DrawCmdList>();
-    cmdList->SetHybridRenderType(Drawing::DrawCmdList::HybridRenderType::NONE);
-    uint64_t propertyId = 1;
-    auto cmd = std::make_unique<RSUpdatePropertyDrawCmdListNG>(nodeId, cmdList, propertyId);
-    ASSERT_FALSE(RSModifiersDrawThread::TargetCommand(Drawing::DrawCmdList::HybridRenderType::NONE, cmd->GetType(),
-        cmd->GetSubType(), false));
-    ASSERT_FALSE(RSModifiersDrawThread::TargetCommand(Drawing::DrawCmdList::HybridRenderType::NONE, cmd->GetType(),
-        cmd->GetSubType(), true));
-}
-
-/**
  * @tc.name: ConvertTransactionTest001
  * @tc.desc: test results of ConvertTransaction of canvas drawing node
  * @tc.type: FUNC
@@ -316,7 +285,7 @@ HWTEST_F(RSModifiersDrawThreadTest, ConvertTransactionTest003, TestSize.Level1)
 
 /**
  * @tc.name: ConvertTransactionTest004
- * @tc.desc: test results of ConvertTransaction of drawCmdList = nullptr
+ * @tc.desc: test results of ConvertTransactionTest drawCmdList = nullptr
  * @tc.type: FUNC
  * @tc.require: issueICEFNX
  */
@@ -338,7 +307,7 @@ HWTEST_F(RSModifiersDrawThreadTest, ConvertTransactionTest004, TestSize.Level1)
 
 /**
  * @tc.name: ConvertTransactionTest005
- * @tc.desc: test results of ConvertTransaction of Canvas & MAX Width/Height
+ * @tc.desc: test results of ConvertTransactionTest of Canvas & MAX Width/Height
  * @tc.type: FUNC
  * @tc.require: issueICEFNX
  */
@@ -366,7 +335,7 @@ HWTEST_F(RSModifiersDrawThreadTest, ConvertTransactionTest005, TestSize.Level1)
 
 /**
  * @tc.name: ConvertTransactionTest006
- * @tc.desc: test results of ConvertTransaction of Text & MAX Width/Height
+ * @tc.desc: test results of ConvertTransactionTest of Text & MAX Width/Height
  * @tc.type: FUNC
  * @tc.require: issueICEFNX
  */
@@ -660,7 +629,7 @@ HWTEST_F(RSModifiersDrawThreadTest, GetIsFirstFrame002, TestSize.Level1)
 
 /**
  * @tc.name: CreateDrawingContext001
- * @tc.desc: test results of GetRecyclableSingletonPtr while reset singleton
+ * @tc.desc: test results of CreateDrawingContext while protectedDrawingContext isn't nullptr
  * @tc.type:FUNC
  * @tc.require: issueICDVVY
  */
@@ -674,7 +643,7 @@ HWTEST_F(RSModifiersDrawThreadTest, CreateDrawingContext001, TestSize.Level2)
 
 /**
  * @tc.name: CreateDrawingContext002
- * @tc.desc: test results of GetRecyclableSingletonPtr after GetRecyclableSingleton()
+ * @tc.desc: test results of CreateDrawingContext while protectedDrawingContext isn't nullptr
  * @tc.type:FUNC
  * @tc.require: issueICDVVY
  */

@@ -177,8 +177,6 @@ public:
     void HandleTouchEvent(int32_t touchStatus, int32_t touchCnt);
     void SetBufferInfo(uint64_t id, const std::string &name, uint32_t queueSize,
         int32_t bufferCount, int64_t lastConsumeTime, bool isUrgent);
-    bool AdaptiveDVSyncEnable(const std::string &nodeName, int64_t timeStamp, int32_t bufferCount);
-    void SetBufferQueueInfo(const std::string &name, int32_t bufferCount, int64_t lastFlushedTimeStamp);
     // forcefully enable DVsync in RS
     void ForceRsDVsync(const std::string &sceneId);
 
@@ -187,10 +185,10 @@ public:
     std::vector<uint64_t> GetVsyncNameLinkerIds(uint32_t pid, const std::string &name);
     void SetTaskEndWithTime(uint64_t time);
     bool NeedSkipForSurfaceBuffer(uint64_t id);
-    bool NeedUpdateVSyncTime(uint32_t &pid);
+    virtual bool NeedUpdateVSyncTime(int32_t& pid);
     void SetVSyncTimeUpdated();
-    int64_t GetLastUpdateTime();
-    void DVSyncUpdate(uint64_t dvsyncTime, uint64_t vsyncTime);
+    virtual int64_t GetLastUpdateTime();
+    virtual void DVSyncUpdate(uint64_t dvsyncTime, uint64_t vsyncTime);
 
 private:
 
@@ -297,5 +295,4 @@ private:
 };
 } // namespace Rosen
 } // namespace OHOS
-
 #endif

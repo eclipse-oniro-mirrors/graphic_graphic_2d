@@ -61,6 +61,7 @@ ohos_unittest("hyper_graphic_manager_test") {
     "$graphic_2d_root/rosen/modules/hyper_graphic_manager/core/utils",
     "$graphic_2d_root/rosen/modules/hyper_graphic_manager/frame_rate_vote",
     "$graphic_2d_root/rosen/modules/render_service_base/include",
+    "$graphic_2d_root/rosen/modules/render_service_base/src",
   ]
 
   deps = [
@@ -68,7 +69,6 @@ ohos_unittest("hyper_graphic_manager_test") {
     "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",
     "$graphic_2d_root/rosen/modules/render_service_base:render_service_base_src",
     "$graphic_2d_root/utils/test_header:test_header",
-    "$graphic_2d_root/utils:socketpair",
   ]
 
   external_deps = [
@@ -82,7 +82,6 @@ ohos_unittest("hyper_graphic_manager_test") {
     "init:libbeget_proxy",
     "init:libbegetutil",
     "libxml2:libxml2",
-    "samgr:samgr_proxy",
   ]
 
   part_name = "graphic_2d"
@@ -134,7 +133,6 @@ ohos_unittest("frame_rate_manager_test") {
     "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",
     "$graphic_2d_root/rosen/modules/render_service_base:render_service_base_src",
     "$graphic_2d_root/utils/test_header:test_header",
-    "$graphic_2d_root/utils:socketpair",
   ]
 
   external_deps = [
@@ -147,7 +145,6 @@ ohos_unittest("frame_rate_manager_test") {
     "init:libbeget_proxy",
     "init:libbegetutil",
     "libxml2:libxml2",
-    "samgr:samgr_proxy",
   ]
 
   part_name = "graphic_2d"
@@ -195,7 +192,6 @@ ohos_unittest("hgm_pointer_manager_test") {
     "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",
     "$graphic_2d_root/rosen/modules/render_service_base:render_service_base_src",
     "$graphic_2d_root/utils/test_header:test_header",
-    "$graphic_2d_root/utils:socketpair",
   ]
 
   external_deps = [
@@ -208,7 +204,6 @@ ohos_unittest("hgm_pointer_manager_test") {
     "init:libbeget_proxy",
     "init:libbegetutil",
     "libxml2:libxml2",
-    "samgr:samgr_proxy",
   ]
 
   part_name = "graphic_2d"
@@ -256,7 +251,6 @@ ohos_unittest("hgm_touch_manager_test") {
     "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",
     "$graphic_2d_root/rosen/modules/render_service_base:render_service_base_src",
     "$graphic_2d_root/utils/test_header:test_header",
-    "$graphic_2d_root/utils:socketpair",
   ]
 
   external_deps = [
@@ -269,7 +263,6 @@ ohos_unittest("hgm_touch_manager_test") {
     "init:libbeget_proxy",
     "init:libbegetutil",
     "libxml2:libxml2",
-    "samgr:samgr_proxy",
   ]
 
   part_name = "graphic_2d"
@@ -318,7 +311,6 @@ ohos_unittest("hgm_frame_voter_test") {
     "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",
     "$graphic_2d_root/rosen/modules/render_service_base:render_service_base_src",
     "$graphic_2d_root/utils/test_header:test_header",
-    "$graphic_2d_root/utils:socketpair",
   ]
 
   external_deps = [
@@ -384,7 +376,6 @@ ohos_unittest("hgm_user_define_test") {
     "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",
     "$graphic_2d_root/rosen/modules/render_service_base:render_service_base_src",
     "$graphic_2d_root/utils/test_header:test_header",
-    "$graphic_2d_root/utils:socketpair",
   ]
 
   external_deps = [

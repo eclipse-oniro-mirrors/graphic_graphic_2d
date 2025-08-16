@@ -98,6 +98,8 @@ public:
 
     virtual void DumpMemoryStatisticsByTag(TraceMemoryDump* traceMemoryDump, GPUResourceTag &tag) = 0;
 
+    virtual uint64_t NewDumpMemoryStatisticsByTag(TraceMemoryDump* traceMemoryDump, GPUResourceTag &tag) = 0;
+
     virtual void DumpMemoryStatistics(TraceMemoryDump* traceMemoryDump) = 0;
 
     virtual void SetCurrentGpuResourceTag(const GPUResourceTag &tag) = 0;
@@ -130,7 +132,7 @@ public:
 
     virtual void GetHpsEffectSupport(std::vector<const char*>& instanceExtensions) = 0;
 
-    virtual void SetEarlyZFlag(bool flag) = 0;
+    virtual void SetEarlyZEnabled(bool flag) = 0;
 };
 } // namespace Drawing
 } // namespace Rosen

@@ -164,8 +164,8 @@ RSRenderNodeDrawable::Ptr RSScreenRenderNodeDrawable::OnGenerate(std::shared_ptr
 std::unique_ptr<RSRenderFrame> RSScreenRenderNodeDrawable::RequestFrame(
     RSScreenRenderParams& params, std::shared_ptr<RSProcessor> processor)
 {
-    RS_TRACE_NAME_FMT("RSScreenRenderNodeDrawable:RequestFrame with colorSpace: %d, pixelformat: %d",
-        params.GetNewColorSpace(), params.GetNewPixelFormat());
+    RS_TRACE_NAME_FMT("RSScreenRenderNodeDrawable:RequestFrame with colorSpace: %d, pixelformat: %d, ",
+        "lastPixelFormat: %d", params.GetNewColorSpace(), params.GetNewPixelFormat(), GetLastPixelFormat());
     auto renderEngine = RSUniRenderThread::Instance().GetRenderEngine();
     if (UNLIKELY(!renderEngine)) {
         RS_LOGE("RSScreenRenderNodeDrawable::RequestFrame RenderEngine is null!");
@@ -192,8 +192,8 @@ std::unique_ptr<RSRenderFrame> RSScreenRenderNodeDrawable::RequestFrame(
     }
     auto bufferConfig = RSBaseRenderUtil::GetFrameBufferRequestConfig(params.GetScreenInfo(), false,
         params.GetNewColorSpace(), params.GetNewPixelFormat());
-    RS_LOGD("RequestFrame colorspace is %{public}d, pixelformat is %{public}d", params.GetNewColorSpace(),
-        params.GetNewPixelFormat());
+    RS_LOGD("RequestFrame colorspace is %{public}d, pixelformat is %{public}d, lastPixelFormat: %{public}d",
+        params.GetNewColorSpace(), params.GetNewPixelFormat(), GetLastPixelFormat());
 
     bool isHebc = true;
     if (RSAncoManager::Instance()->GetAncoHebcStatus() == AncoHebcStatus::NOT_USE_HEBC) {
@@ -201,11 +201,18 @@ std::unique_ptr<RSRenderFrame> RSScreenRenderNodeDrawable::RequestFrame(
         RS_LOGI("anco request frame not use hebc");
     }
     RSAncoManager::Instance()->SetAncoHebcStatus(AncoHebcStatus::INITIAL);
-    if (params.IsHDRStatusChanged()) {
-        RS_TRACE_NAME("RSScreenRenderNodeDrawable::SetBufferReallocFlag isHDRStatusChanged");
-        renderEngine->SetHDRStatusChanged(params.IsHDRStatusChanged());
-        RS_LOGI("RSScreenRenderNodeDrawable::SetBufferReallocFlag isHDRStatusChanged");
+    if (IsPixelFormatChanged(params)) {
+        auto ohosSurface = std::static_pointer_cast<RSSurfaceOhos>(rsSurface);
+        auto surface = ohosSurface->GetSurface();
+        if (surface == nullptr) {
+            RS_LOGE("RSScreenRenderNodeDrawable::rsSurface->GetSurface is nullptr!!");
+        } else {
+            RS_TRACE_NAME("RSScreenRenderNodeDrawable::SetBufferReallocFlag succeed");
+            surface->SetBufferReallocFlag(true);
+            RS_LOGI("RSScreenRenderNodeDrawable::SetBufferReallocFlag succeed");
+        }
     }
+    SetLastPixelFormat(params.GetNewPixelFormat());
     auto renderFrame = renderEngine->RequestFrame(std::static_pointer_cast<RSSurfaceOhos>(rsSurface),
         bufferConfig, false, isHebc);
     if (!renderFrame) {
@@ -437,9 +444,10 @@ void RSScreenRenderNodeDrawable::SetScreenNodeSkipFlag(RSRenderThreadParams& uni
 void RSScreenRenderNodeDrawable::CheckFilterCacheFullyCovered(RSSurfaceRenderParams& surfaceParams, RectI screenRect)
 {
     surfaceParams.SetFilterCacheFullyCovered(false);
-    if (!surfaceParams.IsTransparent() || surfaceParams.GetIsRotating()) {
-        RS_OPTIONAL_TRACE_NAME_FMT("CheckFilterCacheFullyCovered NodeId[%" PRIu64 "], isOpaque: %d, isRotating: %d",
-            surfaceParams.GetId(), !surfaceParams.IsTransparent(), surfaceParams.GetIsRotating());
+    if (!surfaceParams.IsTransparent() || surfaceParams.GetIsRotating() || surfaceParams.GetAttractionAnimation()) {
+        RS_OPTIONAL_TRACE_NAME_FMT("CheckFilterCacheFullyCovered NodeId[%" PRIu64 "], isOpaque: %d, "
+            "isRotating: %d, isAttractionAnimation: %d", surfaceParams.GetId(), !surfaceParams.IsTransparent(),
+            surfaceParams.GetIsRotating(), surfaceParams.GetAttractionAnimation());
         return;
     }
     bool dirtyBelowContainsFilterNode = false;
@@ -598,6 +606,10 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     isRenderSkipIfScreenOff_ = RSUniRenderUtil::CheckRenderSkipIfScreenOff(true, params->GetScreenId());
     if (isRenderSkipIfScreenOff_) {
         SetDrawSkipType(DrawSkipType::RENDER_SKIP_IF_SCREEN_OFF);
+        return;
+    }
+
+    if (CheckScreenFreezeSkip(*params)) {
         return;
     }
 
@@ -894,8 +906,9 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         {
             RSSkpCaptureDfx capture(curCanvas_);
             Drawing::AutoCanvasRestore acr(*curCanvas_, true);
+
 #ifdef SUBTREE_PARALLEL_ENABLE
-            RSParallelManager::Singleton().Reset(curCanvas_, params, needOffscreen, vsyncRefreshRate);
+            RSParallelManager::Singleton().Reset(curCanvas_, uniParam, params, vsyncRefreshRate);
 #endif
             if (uniParam->IsOpDropped()) {
                 if (uniParam->IsDirtyAlignEnabled()) {
@@ -908,11 +921,10 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
             } else {
                 curCanvas_->Clear(Drawing::Color::COLOR_TRANSPARENT);
             }
-            // just used in subTree, used for check whether a new surface need to be created in the subtree thread.
+            // just used in SubTree, used for check whether a new Surface needs to be created in the SubTree thread.
             curCanvas_->SetWeakSurface(drSurface);
 
             curCanvas_->SetHighContrast(RSUniRenderThread::Instance().IsHighContrastTextModeOn());
-            ClearCanvasStencil(*curCanvas_, *params, *uniParam);
             // cpu boost feature start
             ffrt_cpu_boost_start(CPUBOOST_START_POINT + 1);
             RSRenderNodeDrawable::OnDraw(*curCanvas_);
@@ -963,7 +975,7 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         RS_LOGI("Drawing Performance Flush start %{public}lld", Drawing::PerformanceCaculate::GetUpTime(false));
     }
 #ifdef SUBTREE_PARALLEL_ENABLE
-    // wait for all sub threads process complete
+    // Wait for all sub threads process completely.
     RSParallelManager::Singleton().WaitUntilSubTreeFinish(curCanvas_);
 #endif
     RS_TRACE_BEGIN("RSScreenRenderNodeDrawable Flush");
@@ -1040,36 +1052,6 @@ void RSScreenRenderNodeDrawable::UpdateSlrScale(ScreenInfo& screenInfo)
             screenInfo.phyWidth, screenInfo.phyHeight, screenInfo.width, screenInfo.height);
         screenInfo.samplingDistance = scaleManager->GetKernelSize();
         uniParam->SetSLRScaleManager(scaleManager);
-    }
-}
-
-void RSScreenRenderNodeDrawable::ClearCanvasStencil(RSPaintFilterCanvas& canvas,
-    RSScreenRenderParams& params, RSRenderThreadParams& uniParam)
-{
-    if (!uniParam.IsStencilPixelOcclusionCullingEnabled()) {
-        return;
-    }
-    auto topSurfaceOpaqueRects = params.GetTopSurfaceOpaqueRects();
-    if (topSurfaceOpaqueRects.empty()) {
-        return;
-    }
-    auto screenInfo = params.GetScreenInfo();
-    RS_OPTIONAL_TRACE_NAME_FMT("ClearStencil, rect(0, 0, %d, %d), stencilVal: 0",
-        screenInfo.width, screenInfo.height);
-    canvas.ClearStencil({0, 0, screenInfo.width, screenInfo.height}, 0);
-    std::reverse(topSurfaceOpaqueRects.begin(), topSurfaceOpaqueRects.end());
-    auto maxStencilVal = TOP_OCCLUSION_SURFACES_NUM * OCCLUSION_ENABLE_SCENE_NUM;
-    canvas.SetMaxStencilVal(maxStencilVal);
-    for (size_t i = 0; i < topSurfaceOpaqueRects.size(); i++) {
-        Drawing::RectI rect {topSurfaceOpaqueRects[i].left_,
-            topSurfaceOpaqueRects[i].top_,
-            topSurfaceOpaqueRects[i].right_,
-            topSurfaceOpaqueRects[i].bottom_};
-        auto stencilVal = OCCLUSION_ENABLE_SCENE_NUM *
-            (TOP_OCCLUSION_SURFACES_NUM - topSurfaceOpaqueRects.size() + i + 1);
-        RS_OPTIONAL_TRACE_NAME_FMT("ClearStencil, rect(%" PRId32 ", %" PRId32 ", %" PRId32 ", %" PRId32 "), "
-            "stencilVal: %zu", rect.GetLeft(), rect.GetTop(), rect.GetWidth(), rect.GetHeight(), stencilVal);
-        canvas.ClearStencil(rect, static_cast<uint32_t>(stencilVal));
     }
 }
 
@@ -1223,6 +1205,27 @@ void RSScreenRenderNodeDrawable::CheckAndPostAsyncProcessOfflineTask()
             }
         }
     }
+}
+
+bool RSScreenRenderNodeDrawable::CheckScreenFreezeSkip(RSScreenRenderParams& params)
+{
+    if (UNLIKELY(params.GetForceFreeze())) {
+        SetDrawSkipType(DrawSkipType::SCREEN_FREEZE);
+        RS_TRACE_NAME("Screen frozen, skip");
+        return true;
+    }
+
+    auto mirrorDrawable = params.GetMirrorSourceDrawable().lock();
+    if (!mirrorDrawable) {
+        return false;
+    }
+    auto mirrorParams = static_cast<RSScreenRenderParams*>(mirrorDrawable->GetRenderParams().get());
+    if (mirrorParams && UNLIKELY(mirrorParams->GetForceFreeze())) {
+        RS_TRACE_NAME("MirrorScreen frozen, skip");
+        SetDrawSkipType(DrawSkipType::SCREEN_FREEZE);
+        return true;
+    }
+    return false;
 }
 
 } // namespace OHOS::Rosen::DrawableV2

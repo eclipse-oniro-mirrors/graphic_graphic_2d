@@ -292,11 +292,11 @@ void SkiaGPUContext::DumpGpuStats(std::string& out)
 
 void SkiaGPUContext::DumpAllResource(std::stringstream& dump)
 {
+#if defined (SK_VULKAN) && defined (SKIA_DFX_FOR_RECORD_VKIMAGE)
     if (!grContext_) {
         LOGD("SkiaGPUContext::DumpAllResource, grContext_ is nullptr");
         return;
     }
-#ifndef TODO_M133_SKIA
     grContext_->dumpAllResource(dump);
 #endif
 }
@@ -414,6 +414,11 @@ void SkiaGPUContext::DumpMemoryStatisticsByTag(TraceMemoryDump* traceMemoryDump,
     }
     GrGpuResourceTag grTag(tag.fPid, tag.fTid, tag.fWid, tag.fFid, tag.fSid, tag.fName);
     grContext_->dumpMemoryStatisticsByTag(skTraceMemoryDump, grTag);
+}
+
+uint64_t SkiaGPUContext::NewDumpMemoryStatisticsByTag(TraceMemoryDump* traceMemoryDump, GPUResourceTag &tag)
+{
+    return 0;
 }
 
 void SkiaGPUContext::DumpMemoryStatistics(TraceMemoryDump* traceMemoryDump)
@@ -569,9 +574,10 @@ void SkiaGPUContext::GetHpsEffectSupport(std::vector<const char*>& instanceExten
     return;
 }
 
-void SkiaGPUContext::SetEarlyZFlag(bool flag)
+void SkiaGPUContext::SetEarlyZEnabled(bool flag)
 {
     // Skia Not Implement SetEarlyZflag
+    LOGD("SkiaGPUContext::SetEarlyZEnabled, not implement");
     return;
 }
 

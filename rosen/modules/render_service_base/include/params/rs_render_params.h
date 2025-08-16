@@ -129,9 +129,6 @@ public:
     }
     void SetForegroundFilterCache(const std::shared_ptr<RSFilter>& foregroundFilterCache);
 
-    const std::shared_ptr<RSFilter>& GetBackgroundFilter() const;
-    void SetBackgroundFilter(const std::shared_ptr<RSFilter>& backgroundFilter);
-
     inline NodeId GetId() const
     {
         return id_;
@@ -198,14 +195,14 @@ public:
         return globalAlpha_;
     }
 
-    inline bool NodeGroupHasChildInBlackList() const
+    inline bool NodeGroupHasChildInBlacklist() const
     {
-        return isNodeGroupHasChildInBlackList_;
+        return isNodeGroupHasChildInBlacklist_;
     }
 
-    inline void SetNodeGroupHasChildInBlackList(bool isInBlackList)
+    inline void SetNodeGroupHasChildInBlacklist(bool isInBlackList)
     {
-        isNodeGroupHasChildInBlackList_ = isInBlackList;
+        isNodeGroupHasChildInBlacklist_ = isInBlackList;
     }
     
     inline bool IsSnapshotSkipLayer() const
@@ -524,7 +521,7 @@ private:
     bool isDrawingCacheChanged_ = false;
     std::atomic_bool isNeedUpdateCache_ = false;
     bool drawingCacheIncludeProperty_ = false;
-    bool isNodeGroupHasChildInBlackList_ = false;
+    bool isNodeGroupHasChildInBlacklist_ = false;
     bool isSnapshotSkipLayer_ = false;
     bool shouldPaint_ = false;
     bool contentEmpty_  = false;
@@ -534,7 +531,6 @@ private:
     RSDrawingCacheType drawingCacheType_ = RSDrawingCacheType::DISABLED_CACHE;
     DirtyRegionInfoForDFX dirtyRegionInfoForDFX_;
     std::shared_ptr<RSFilter> foregroundFilterCache_ = nullptr;
-    std::shared_ptr<RSFilter> backgroundFilter_ = nullptr;
     bool isOpincSuggestFlag_ = false;
     bool isOpincSupportFlag_ = false;
     bool isOpincRootFlag_ = false;

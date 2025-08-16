@@ -431,8 +431,14 @@ void RSProfiler::OnWorkModeChanged()
     } else {
         HRPD("RSProfiler: Stop recording. Stop network.");
         StopBetaRecord();
-        RecordStop(ArgList());
         Network::Stop();
+        RecordStop(ArgList());
+        PlaybackStop(ArgList());
+
+        ImageCache::Reset();
+        g_recordFile.Close();
+        g_playbackFile.Close();
+        Utils::FileDelete(RSFile::GetDefaultPath());
     }
 }
 
@@ -998,8 +1004,10 @@ void RSProfiler::HiddenSpaceTurnOn()
         HRPE("RSProfiler::HiddenSpaceTurnOn Logical Display is nullptr");
         return;
     }
+
     if (auto rootNode = GetRenderNode(Utils::PatchNodeId(0))) {
         g_childOfDisplayNodes = *logicalDisplayNode->GetChildren();
+
         logicalDisplayNode->ClearChildren();
         logicalDisplayNode->AddChild(rootNode);
     }
@@ -1014,21 +1022,22 @@ std::shared_ptr<RSRenderNode> RSProfiler::GetLogicalDisplay()
     if (rootRenderNode == nullptr) {
         return nullptr;
     }
+
     const auto& children = *rootRenderNode->GetChildren();
     if (children.empty()) {
         return nullptr;
     }
-    auto& screenNode = children.front();
-    if (!screenNode) {
-        return nullptr;
+    for (const auto& screenNode : children) {   // apply multiple screen nodes
+        if (!screenNode) {
+            continue;
+        }
+        const auto& screenNodeChildren = screenNode->GetChildren();
+        if (screenNodeChildren->empty()) {
+            continue;
+        }
+        return screenNodeChildren->front(); // return display node
     }
-
-    const auto& children2 = screenNode->GetChildren();
-    if (children2->empty()) {
-        return nullptr;
-    }
-
-    return children2->front();
+    return nullptr;
 }
 
 void RSProfiler::HiddenSpaceTurnOff()
@@ -2273,6 +2282,7 @@ void RSProfiler::TestSaveSubTree(const ArgList& args)
         return;
     }
 
+    RSSystemProperties::SetProfilerPixelCheckMode(true);
     std::stringstream stream;
 
     // Save RSFILE_VERSION
@@ -2301,6 +2311,7 @@ void RSProfiler::TestSaveSubTree(const ArgList& args)
     } else {
         Respond("Save subTree Failed: save file faild!");
     }
+    RSSystemProperties::SetProfilerPixelCheckMode(false);
 }
 
 void RSProfiler::TestLoadSubTree(const ArgList& args)

@@ -80,7 +80,6 @@ class RSImplicitAnimator;
 class RSModifier;
 class RSObjAbsGeometry;
 class RSUIContext;
-class RSUIFilter;
 class RSNGFilterBase;
 class RSNGShaderBase;
 enum class CancelAnimationStatus;
@@ -879,7 +878,7 @@ public:
      *
      * @param color The color to set.
      */
-    void SetBackgroundColor(RSColor& color);
+    void SetBackgroundColor(RSColor color);
 
     /**
      * @brief Sets the background shader for this node.
@@ -1137,9 +1136,6 @@ public:
      * @param visualEffect Pointer to a VisualEffect that defines the visual effect.
      */
     void SetVisualEffect(const VisualEffect* visualEffect);
-
-    void SetBackgroundUIFilter(const std::shared_ptr<RSUIFilter> backgroundFilter);
-    void SetForegroundUIFilter(const std::shared_ptr<RSUIFilter> foregroundFilter);
 
     /**
      * @brief Sets the foreground effect radius.
@@ -1535,8 +1531,6 @@ public:
     void SetUseEffect(bool useEffect);
     void SetUseEffectType(UseEffectType useEffectType);
     void SetAlwaysSnapshot(bool enable);
-
-    void SetEnableHDREffect(uint32_t type, bool enableHdrEffect);
 
     void SetUseShadowBatching(bool useShadowBatching);
 
@@ -2048,8 +2042,6 @@ private:
     RSUIFirstSwitch uiFirstSwitch_ = RSUIFirstSwitch::NONE;
     std::weak_ptr<RSUIContext> rsUIContext_;
 
-    uint32_t hdrEffectType_ = 0;
-
     RSModifierExtractor stagingPropertiesExtractor_;
     RSShowingPropertiesFreezer showingPropertiesFreezer_;
     std::map<PropertyId, std::shared_ptr<RSModifier>> modifiers_;
@@ -2080,7 +2072,6 @@ private:
     friend class RSPropertyAnimation;
     friend class RSPathAnimation;
     friend class RSModifierExtractor;
-    friend class RSModifier;
     friend class ModifierNG::RSModifier;
     friend class ModifierNG::RSCustomModifier;
     friend class RSBackgroundUIFilterModifier;

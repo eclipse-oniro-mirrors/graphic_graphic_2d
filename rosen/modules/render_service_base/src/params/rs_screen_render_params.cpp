@@ -51,11 +51,6 @@ void RSScreenRenderParams::SetMainAndLeashSurfaceDirty(bool isDirty)
     needSync_ = true;
 }
 
-const std::vector<Occlusion::Rect>& RSScreenRenderParams::GetTopSurfaceOpaqueRects() const
-{
-    return topSurfaceOpaqueRects_;
-}
-
 bool RSScreenRenderParams::GetMainAndLeashSurfaceDirty() const
 {
     return isMainAndLeashSurfaceDirty_;
@@ -212,26 +207,6 @@ bool RSScreenRenderParams::GetZoomed() const
     return isZoomed_;
 }
 
-void RSScreenRenderParams::SetHasMirrorScreen(bool hasMirrorScreen)
-{
-    if (hasMirrorScreen) {
-        mirrorDstCount_++;
-    } else {
-        mirrorDstCount_--;
-    }
-    bool ret = (mirrorDstCount_ != 0);
-    if (hasMirrorScreen_ == ret) {
-        return;
-    }
-    needSync_ = true;
-    hasMirrorScreen_ = hasMirrorScreen;
-}
-
-bool RSScreenRenderParams::HasMirrorScreen() const
-{
-    return hasMirrorScreen_;
-}
-
 void RSScreenRenderParams::SetTargetSurfaceRenderNodeDrawable(
     DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr drawable)
 {
@@ -263,8 +238,6 @@ void RSScreenRenderParams::OnSync(const std::unique_ptr<RSRenderParams>& target)
         allMainAndLeashSurfaceDrawables_.push_back(ptr);
     }
     targetScreenParams->allMainAndLeashSurfaceDrawables_ = allMainAndLeashSurfaceDrawables_;
-    targetScreenParams->topSurfaceOpaqueRects_.clear();
-    targetScreenParams->topSurfaceOpaqueRects_.assign(topSurfaceOpaqueRects_.begin(), topSurfaceOpaqueRects_.end());
     targetScreenParams->hasChildCrossNode_ = hasChildCrossNode_;
     targetScreenParams->isFirstVisitCrossNodeDisplay_ = isFirstVisitCrossNodeDisplay_;
     targetScreenParams->compositeType_ = compositeType_;
@@ -288,6 +261,7 @@ void RSScreenRenderParams::OnSync(const std::unique_ptr<RSRenderParams>& target)
     targetScreenParams->needForceUpdateHwcNodes_ = needForceUpdateHwcNodes_;
     targetScreenParams->childDisplayCount_ =  childDisplayCount_;
     targetScreenParams->logicalDisplayNodeDrawables_ =  std::move(logicalDisplayNodeDrawables_);
+    targetScreenParams->forceFreeze_ = forceFreeze_;
 
     RSRenderParams::OnSync(target);
 }
@@ -309,6 +283,26 @@ DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr RSScreenRenderParams::GetMirror
     return mirrorSourceDrawable_;
 }
 
+void RSScreenRenderParams::SetHasMirrorScreen(bool hasMirrorScreen)
+{
+    if (hasMirrorScreen) {
+        mirrorDstCount_++;
+    } else {
+        mirrorDstCount_--;
+    }
+    bool ret = (mirrorDstCount_ != 0);
+    if (hasMirrorScreen_ == ret) {
+        return;
+    }
+    needSync_ = true;
+    hasMirrorScreen_ = hasMirrorScreen;
+}
+
+bool RSScreenRenderParams::HasMirrorScreen() const
+{
+    return hasMirrorScreen_;
+}
+
 void RSScreenRenderParams::SetDrawnRegion(const Occlusion::Region& region)
 {
     drawnRegion_ = region;
@@ -317,6 +311,20 @@ void RSScreenRenderParams::SetDrawnRegion(const Occlusion::Region& region)
 const Occlusion::Region& RSScreenRenderParams::GetDrawnRegion() const
 {
     return drawnRegion_;
+}
+
+void RSScreenRenderParams::SetForceFreeze(bool forceFreeze)
+{
+    if (forceFreeze_ == forceFreeze) {
+        return;
+    }
+    forceFreeze_ = forceFreeze;
+    needSync_ = true;
+}
+
+bool RSScreenRenderParams::GetForceFreeze() const
+{
+    return forceFreeze_ && RSSystemProperties::GetSupportScreenFreezeEnabled();
 }
 
 } // namespace OHOS::Rosen

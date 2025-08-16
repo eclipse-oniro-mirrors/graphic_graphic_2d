@@ -115,6 +115,17 @@ public:
     void SetUIContextToken(uint64_t token)
     {
         uiContextToken_ = token;
+        if (std::find(uiContextTokenList_.begin(), uiContextTokenList_.end(), token) == uiContextTokenList_.end()) {
+            uiContextTokenList_.emplace_back(token);
+        }
+    }
+    uint64_t GetUIContextToken() const
+    {
+        return uiContextToken_;
+    }
+    std::vector<uint64_t> GetUIContextTokenList() const
+    {
+        return uiContextTokenList_;
     }
     void RemoveFromTree(bool skipTransition = false);
 
@@ -246,6 +257,11 @@ public:
     inline RectI GetFilterRegion() const
     {
         return filterRegion_;
+    }
+
+    inline bool HasForceSubmit() const
+    {
+        return hasForceSubmit_;
     }
 
     inline bool IsRepaintBoundary() const
@@ -766,8 +782,6 @@ public:
     // mark cross node in physical extended screen model
     bool IsCrossNode() const;
 
-    std::string QuickGetNodeDebugInfo();
-
     // arkui mark
     void MarkSuggestOpincNode(bool isOpincNode, bool isNeedCalculate);
 
@@ -1056,7 +1070,6 @@ public:
     }
 
     void UpdateVirtualScreenWhiteListInfo();
-
     bool IsForegroundFilterEnable();
     void ResetPixelStretchSlot();
     bool CanFuzePixelStretch();
@@ -1103,7 +1116,6 @@ protected:
 
     static void SendCommandFromRT(std::unique_ptr<RSCommand>& command, NodeId nodeId);
     void AddGeometryModifier(const std::shared_ptr<RSRenderModifier>& modifier);
-    void AddUIFilterModifier(const std::shared_ptr<RSRenderModifier>& modifier);
 
     virtual void InitRenderParams();
     virtual void OnSync();
@@ -1118,6 +1130,7 @@ protected:
 
     void UpdateDrawableVecV2();
     void ClearDrawableVec2();
+    void UpdateDrawableEnableEDR();
 
     void DrawPropertyDrawable(RSDrawableSlot slot, RSPaintFilterCanvas& canvas);
     void DrawPropertyDrawableRange(RSDrawableSlot begin, RSDrawableSlot end, RSPaintFilterCanvas& canvas);
@@ -1177,6 +1190,7 @@ protected:
 private:
     // mark cross node in physical extended screen model
     bool isRepaintBoundary_ = false;
+    bool hasForceSubmit_ = false;
     bool isCrossNode_ = false;
     bool isCloneCrossNode_ = false;
     bool isFirstLevelCrossNode_ = false;
@@ -1271,6 +1285,7 @@ private:
     float boundsHeight_ = 0.0f;
     pid_t appPid_ = 0;
     uint64_t uiContextToken_ = 0;
+    std::vector<uint64_t> uiContextTokenList_;
     NodeId id_;
     NodeId instanceRootNodeId_ = INVALID_NODEID;
     NodeId firstLevelNodeId_ = INVALID_NODEID;
@@ -1315,8 +1330,6 @@ private:
     RectI innerAbsDrawRect_;
     // map parentMatrix by cmdlist draw region
     RectI absCmdlistDrawRect_;
-    RectF absCmdlistDrawRectF_;
-    RectI oldAbsCmdlistDrawRect_;
     RectI oldDirty_;
     RectI oldDirtyInSurface_;
     RectI childrenRect_;
@@ -1440,8 +1453,6 @@ private:
 
     void ResetAndApplyModifiers();
 
-    void CalcCmdlistDrawRegionFromOpItem(std::shared_ptr<ModifierNG::RSRenderModifier> modifier);
-
     friend class DrawFuncOpItem;
     friend class RSContext;
     friend class RSMainThread;
@@ -1464,7 +1475,7 @@ private:
 // backward compatibility
 using RSBaseRenderNode = RSRenderNode;
 
-struct SharedTransitionParam {
+struct RSB_EXPORT SharedTransitionParam {
     SharedTransitionParam(RSRenderNode::SharedPtr inNode, RSRenderNode::SharedPtr outNode, bool isInSameWindow);
 
     RSRenderNode::SharedPtr GetPairedNode(const NodeId nodeId) const;

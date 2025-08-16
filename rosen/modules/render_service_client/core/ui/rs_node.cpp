@@ -26,13 +26,6 @@
 #include "rs_trace.h"
 #include "sandbox_utils.h"
 #include "ui_effect/mask/include/ripple_mask_para.h"
-#include "ui_effect/property/include/rs_ui_bezier_warp_filter.h"
-#include "ui_effect/property/include/rs_ui_content_light_filter.h"
-#include "ui_effect/property/include/rs_ui_color_gradient_filter.h"
-#include "ui_effect/property/include/rs_ui_dispersion_filter.h"
-#include "ui_effect/property/include/rs_ui_displacement_distort_filter.h"
-#include "ui_effect/property/include/rs_ui_edge_light_filter.h"
-#include "ui_effect/property/include/rs_ui_filter.h"
 #include "ui_effect/property/include/rs_ui_filter_base.h"
 #include "ui_effect/property/include/rs_ui_shader_base.h"
 
@@ -53,7 +46,6 @@
 #include "feature/composite_layer/rs_composite_layer_utils.h"
 #include "modifier/rs_modifier_manager_map.h"
 #include "modifier/rs_property.h"
-#include "modifier/rs_property_modifier.h"
 #include "modifier_ng/appearance/rs_alpha_modifier.h"
 #include "modifier_ng/appearance/rs_background_filter_modifier.h"
 #include "modifier_ng/appearance/rs_blend_modifier.h"
@@ -122,6 +114,9 @@
 #define gettid []() -> int32_t { return static_cast<int32_t>(syscall(SYS_gettid)); }
 #endif
 
+#undef LOG_TAG
+#define LOG_TAG "RSNode"
+
 namespace OHOS {
 namespace Rosen {
 namespace {
@@ -139,12 +134,6 @@ static const std::unordered_map<RSUINodeType, std::string> RSUINodeTypeStrs = {
 };
 
 std::once_flag flag_;
-
-enum HdrEffectType : uint32_t {
-    HDR_EFFECT_NONE = 0,
-    HDR_EFFECT_FILTER = 1,
-    HDR_EFFECT_BRIGHTNESS_BLENDER = 2,
-};
 } // namespace
 
 RSNode::RSNode(bool isRenderServiceNode, NodeId id, bool isTextureExportNode, std::shared_ptr<RSUIContext> rsUIContext,
@@ -352,7 +341,9 @@ void RSNode::SetFrameNodeInfo(int32_t id, std::string tag)
 {
     frameNodeId_ = id;
     frameNodeTag_ = tag;
+#ifdef SUBTREE_PARALLEL_ENABLE
     MarkRepaintBoundary(tag);
+#endif
 }
 
 int32_t RSNode::GetFrameNodeId()
@@ -651,9 +642,6 @@ bool RSNode::FallbackAnimationsToContext()
     }
     std::unique_lock<std::recursive_mutex> lock(animationMutex_);
     for (auto& [animationId, animation] : animations_) {
-        if (animation && animation->GetRepeatCount() == -1) {
-            continue;
-        }
         rsUIContext->AddAnimationInner(std::move(animation));
     }
     animations_.clear();
@@ -669,9 +657,6 @@ void RSNode::FallbackAnimationsToRoot()
     }
     std::unique_lock<std::recursive_mutex> lock(animationMutex_);
     for (auto& [animationId, animation] : animations_) {
-        if (animation && animation->GetRepeatCount() == -1) {
-            continue;
-        }
         RSNodeMap::MutableInstance().RegisterAnimationInstanceId(animationId, id_, instanceId_); // delete
         target->AddAnimationInner(std::move(animation));
     }
@@ -940,13 +925,11 @@ template<typename ModifierType, auto Setter, typename T>
 void RSNode::SetPropertyNG(T value)
 {
     std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
-    auto type = static_cast<uint16_t>(ModifierType::Type);
-    auto& modifier = modifiersNGCreatedBySetter_[type];
+    auto& modifier = modifiersNGCreatedBySetter_[static_cast<uint16_t>(ModifierType::Type)];
     // Create corresponding modifier if not exist
     if (modifier == nullptr) {
         modifier = std::make_shared<ModifierType>();
         (*std::static_pointer_cast<ModifierType>(modifier).*Setter)(value);
-        modifiersNGCreatedBySetter_[type] = modifier;
         AddModifier(modifier);
     } else {
         (*std::static_pointer_cast<ModifierType>(modifier).*Setter)(value);
@@ -958,13 +941,11 @@ template<typename ModifierType, auto Setter, typename T>
 void RSNode::SetPropertyNG(T value, bool animatable)
 {
     std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
-    auto type = static_cast<uint16_t>(ModifierType::Type);
-    auto& modifier = modifiersNGCreatedBySetter_[type];
+    auto& modifier = modifiersNGCreatedBySetter_[static_cast<uint16_t>(ModifierType::Type)];
     // Create corresponding modifier if not exist
     if (modifier == nullptr) {
         modifier = std::make_shared<ModifierType>();
         (*std::static_pointer_cast<ModifierType>(modifier).*Setter)(value, animatable);
-        modifiersNGCreatedBySetter_[type] = modifier;
         AddModifier(modifier);
     } else {
         (*std::static_pointer_cast<ModifierType>(modifier).*Setter)(value, animatable);
@@ -976,12 +957,10 @@ template<typename ModifierType, auto Setter, typename T>
 void RSNode::SetUIFilterPropertyNG(T value)
 {
     std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
-    auto type = static_cast<uint16_t>(ModifierType::Type);
-    auto& modifier = modifiersNGCreatedBySetter_[type];
+    auto& modifier = modifiersNGCreatedBySetter_[static_cast<uint16_t>(ModifierType::Type)];
     // Create corresponding modifier if not exist
     if (modifier == nullptr) {
         modifier = std::make_shared<ModifierType>();
-        modifiersNGCreatedBySetter_[type] = modifier;
         AddModifier(modifier);
     }
     (*std::static_pointer_cast<ModifierType>(modifier).*Setter)(value);
@@ -1758,13 +1737,14 @@ void RSNode::SetBackgroundColor(uint32_t colorValue)
     SetBackgroundColor(color);
 }
 
-void RSNode::SetBackgroundColor(RSColor& color)
+void RSNode::SetBackgroundColor(RSColor color)
 {
-    RSColor colorInP3 = color;
-    colorInP3.ConvertToP3ColorSpace();
+#ifndef ROSEN_CROSS_PLATFORM
+    color.ConvertToP3ColorSpace();
+#endif
     SetPropertyNG<ModifierNG::RSBackgroundColorModifier, &ModifierNG::RSBackgroundColorModifier::SetBackgroundColor>(
-        colorInP3);
-    if (colorInP3.GetAlpha() > 0) {
+        color);
+    if (color.GetAlpha() > 0) {
         SetDrawNode();
         SetDrawNodeType(DrawNodeType::DrawPropertyType);
     }
@@ -1963,9 +1943,7 @@ void RSNode::SetUIBackgroundFilter(const OHOS::Rosen::Filter* backgroundFilter)
         ROSEN_LOGE("Failed to set backgroundFilter, backgroundFilter is null!");
         return;
     }
-    // planning: remove RSUIFilter and generate composed filter as RSNGFilterBase
     std::shared_ptr<RSNGFilterBase> headFilter = nullptr;
-    std::shared_ptr<RSUIFilter> uiFilter = std::make_shared<RSUIFilter>();
     auto filterParas = backgroundFilter->GetAllPara();
     for (auto it = filterParas.begin(); it != filterParas.end(); ++it) {
         auto filterPara = *it;
@@ -1999,54 +1977,12 @@ void RSNode::SetUIBackgroundFilter(const OHOS::Rosen::Filter* backgroundFilter)
                 SetWaterRippleParams(params, progress);
                 break;
             }
-            case FilterPara::DISPLACEMENT_DISTORT : {
-                auto distortProperty = std::make_shared<RSUIDispDistortFilterPara>();
-                auto filterDistortPara = std::static_pointer_cast<DisplacementDistortPara>(filterPara);
-                distortProperty->SetDisplacementDistort(filterDistortPara);
-                uiFilter->Insert(distortProperty);
-                break;
-            }
-            case FilterPara::COLOR_GRADIENT : {
-                auto filterColorGradientPara = std::static_pointer_cast<ColorGradientPara>(filterPara);
-                auto colorGradientProperty = std::make_shared<RSUIColorGradientFilterPara>();
-                colorGradientProperty->SetColorGradient(filterColorGradientPara);
-                uiFilter->Insert(colorGradientProperty);
-                break;
-            }
-            case FilterPara::EDGE_LIGHT: {
-                auto edgeLightProperty = std::make_shared<RSUIEdgeLightFilterPara>();
-                auto filterEdgeLightPara = std::static_pointer_cast<EdgeLightPara>(filterPara);
-                edgeLightProperty->SetEdgeLight(filterEdgeLightPara);
-                uiFilter->Insert(edgeLightProperty);
-                break;
-            }
-            case FilterPara::DISPERSION: {
-                auto dispersionProperty = std::make_shared<RSUIDispersionFilterPara>();
-                auto filterDispersionPara = std::static_pointer_cast<DispersionPara>(filterPara);
-                dispersionProperty->SetDispersion(filterDispersionPara);
-                uiFilter->Insert(dispersionProperty);
-                break;
-            }
+            
             default:
                 break;
         }
     }
-    if (!uiFilter->GetAllTypes().empty()) {
-        SetBackgroundUIFilter(uiFilter);
-    }
     SetBackgroundNGFilter(headFilter);
-}
-
-void RSNode::SetBackgroundUIFilter(const std::shared_ptr<RSUIFilter> backgroundFilter)
-{
-    if (!backgroundFilter) {
-        ROSEN_LOGE("RSNode::SetBackgroundUIFilter background RSUIFilter is nullptr");
-        return;
-    }
-
-    SetEnableHDREffect(HdrEffectType::HDR_EFFECT_FILTER, backgroundFilter->GetHdrEffectEnable());
-    SetUIFilterPropertyNG<ModifierNG::RSBackgroundFilterModifier,
-        &ModifierNG::RSBackgroundFilterModifier::SetUIFilter>(backgroundFilter);
 }
 
 void RSNode::SetUICompositingFilter(const OHOS::Rosen::Filter* compositingFilter)
@@ -2089,7 +2025,6 @@ void RSNode::SetUIForegroundFilter(const OHOS::Rosen::Filter* foregroundFilter)
     }
     // To do: generate composed filter here. Now we just set foreground blur in v1.0.
     std::shared_ptr<RSNGFilterBase> headFilter = nullptr;
-    std::shared_ptr<RSUIFilter> uiFilter = std::make_shared<RSUIFilter>();
     auto& filterParas = foregroundFilter->GetAllPara();
     for (const auto& filterPara : filterParas) {
         if (filterPara == nullptr) {
@@ -2120,39 +2055,13 @@ void RSNode::SetUIForegroundFilter(const OHOS::Rosen::Filter* foregroundFilter)
             auto distortionK = distortPara->GetDistortionK();
             SetDistortionK(distortionK);
         }
-        if (filterPara->GetParaType() == FilterPara::BEZIER_WARP) {
-            auto bezierWarpProperty = std::make_shared<RSUIBezierWarpFilterPara>();
-            auto bezierWarpPara = std::static_pointer_cast<BezierWarpPara>(filterPara);
-            bezierWarpProperty->SetBezierWarp(bezierWarpPara);
-            uiFilter->Insert(bezierWarpProperty);
-        }
         if (filterPara->GetParaType() == FilterPara::HDR_BRIGHTNESS_RATIO) {
             auto hdrBrightnessRatioPara = std::static_pointer_cast<HDRBrightnessRatioPara>(filterPara);
             auto brightnessRatio = hdrBrightnessRatioPara->GetBrightnessRatio();
             SetHDRUIBrightness(brightnessRatio);
         }
-        if (filterPara->GetParaType() == FilterPara::CONTENT_LIGHT) {
-            auto contentLightProperty = std::make_shared<RSUIContentLightFilterPara>();
-            auto contentLightPara = std::static_pointer_cast<ContentLightPara>(filterPara);
-            contentLightProperty->SetContentLight(contentLightPara);
-            uiFilter->Insert(contentLightProperty);
-        }
-    }
-    if (!uiFilter->GetAllTypes().empty()) {
-        SetForegroundUIFilter(uiFilter);
     }
     SetForegroundNGFilter(headFilter);
-}
-
-void RSNode::SetForegroundUIFilter(const std::shared_ptr<RSUIFilter> foregroundFilter)
-{
-    if (foregroundFilter == nullptr) {
-        ROSEN_LOGE("RSNode::SetForegroundUIFilter foregroundFilter is nullptr");
-        return;
-    }
-
-    SetUIFilterPropertyNG<ModifierNG::RSForegroundFilterModifier,
-        &ModifierNG::RSForegroundFilterModifier::SetUIFilter>(foregroundFilter);
 }
 
 void RSNode::SetHDRUIBrightness(float hdrUIBrightness)
@@ -2175,8 +2084,13 @@ void RSNode::SetVisualEffect(const VisualEffect* visualEffect)
             continue;
         }
         if (visualEffectPara->GetParaType() == VisualEffectPara::BORDER_LIGHT_EFFECT) {
-            SetBorderLightShader(visualEffectPara);
+            SetBackgroundNGShader(RSNGShaderBase::Create(visualEffectPara));
         }
+        if (visualEffectPara->GetParaType() == VisualEffectPara::COLOR_GRADIENT_EFFECT) {
+            std::shared_ptr<RSNGShaderBase> headVisualEffect = RSNGShaderBase::Create(visualEffectPara);
+            SetBackgroundNGShader(headVisualEffect);
+        }
+        
         if (visualEffectPara->GetParaType() != VisualEffectPara::BACKGROUND_COLOR_EFFECT) {
             continue;
         }
@@ -2197,10 +2111,6 @@ void RSNode::SetVisualEffect(const VisualEffect* visualEffect)
                 brightnessBlender->GetPositiveCoeff().data_[2] },
             { brightnessBlender->GetNegativeCoeff().data_[0], brightnessBlender->GetNegativeCoeff().data_[1],
                 brightnessBlender->GetNegativeCoeff().data_[2] } });
-    }
-    // Update blender hdr status
-    if (hasHdrBrightnessBlender) {
-        SetEnableHDREffect(HdrEffectType::HDR_EFFECT_BRIGHTNESS_BLENDER, true);
     }
 }
 
@@ -2245,7 +2155,6 @@ void RSNode::SetBlender(const Blender* blender)
                     brightnessBlender->GetNegativeCoeff().z_ }});
             if (brightnessBlender->GetHdr()) {
                 SetFgBrightnessHdr(brightnessBlender->GetHdr());
-                SetEnableHDREffect(HdrEffectType::HDR_EFFECT_BRIGHTNESS_BLENDER, true);
             }
         }
     } else if (Blender::SHADOW_BLENDER == blender->GetBlenderType()) {
@@ -2659,23 +2568,6 @@ void RSNode::SetAlwaysSnapshot(bool enable)
 {
     SetPropertyNG<ModifierNG::RSBackgroundFilterModifier, &ModifierNG::RSBackgroundFilterModifier::SetAlwaysSnapshot>(
         enable);
-}
-
-void RSNode::SetEnableHDREffect(uint32_t type, bool enableHdrEffect)
-{
-    bool old = hdrEffectType_ > HdrEffectType::HDR_EFFECT_NONE;
-    if (enableHdrEffect) {
-        hdrEffectType_ |= type;
-    } else {
-        hdrEffectType_ &= ~type;
-    }
-    bool enabled = hdrEffectType_ > HdrEffectType::HDR_EFFECT_NONE;
-    if (old == enabled) {
-        return;
-    }
-    ROSEN_LOGD("RSNode::SetEnableHDREffect hdrEffectType=%{public}d", static_cast<int>(hdrEffectType_));
-    std::unique_ptr<RSCommand> command = std::make_unique<RSSetEnableHDREffect>(GetId(), enabled);
-    AddCommand(command, IsRenderServiceNode());
 }
 
 void RSNode::SetUseShadowBatching(bool useShadowBatching)
@@ -3673,6 +3565,18 @@ void RSNode::AddChild(SharedPtr child, int index)
 
     AddCommand(command, IsRenderServiceNode(), GetFollowType(), id_);
     if (child->GetRSUIContext() != GetRSUIContext()) {
+        if (auto surfaceNode = child->ReinterpretCastTo<RSSurfaceNode>()) {
+            ROSEN_LOGI("RSNode::AddChild, ParentId:%{public}" PRIu64 ", ParentUIContext is %{public}" PRIu64
+                       " SurfaceNode:[Id: %{public}" PRIu64 ", name: %{public}s uiContext is %{public}" PRIu64 "]",
+                id_, GetRSUIContext() ? GetRSUIContext()->GetToken() : 0, surfaceNode->GetId(),
+                surfaceNode->GetName().c_str(),
+                surfaceNode->GetRSUIContext() ? surfaceNode->GetRSUIContext()->GetToken() : 0);
+            RS_TRACE_NAME_FMT("RSNode::AddChild, ParentId:%" PRIu64 ", ParentUIContext is %" PRIu64
+                              " SurfaceNode:[Id: %" PRIu64 ", name: %s uiContext is %" PRIu64 "]",
+                id_, GetRSUIContext() ? GetRSUIContext()->GetToken() : 0, surfaceNode->GetId(),
+                surfaceNode->GetName().c_str(),
+                surfaceNode->GetRSUIContext() ? surfaceNode->GetRSUIContext()->GetToken() : 0);
+        }
         std::unique_ptr<RSCommand> child_command = std::make_unique<RSBaseNodeAddChild>(id_, childId, index);
         child->AddCommand(child_command, IsRenderServiceNode(), GetFollowType(), id_);
     }
@@ -3879,7 +3783,7 @@ void RSNode::RemoveCrossScreenChild(SharedPtr child)
 void RSNode::RemoveChildByNode(SharedPtr child)
 {
     if (child == nullptr) {
-        RS_LOGE("RSNode::RemoveChildByNode %{public}" PRIu64 " failed:nullptr", GetId());
+        RS_LOGE("RemoveChildByNode %{public}" PRIu64 " failed:nullptr", GetId());
         return;
     }
     CHECK_FALSE_RETURN(CheckMultiThreadAccess(__func__));
@@ -3887,11 +3791,11 @@ void RSNode::RemoveChildByNode(SharedPtr child)
         children_.begin(), children_.end(), [&](WeakPtr &ptr) -> bool {return ROSEN_EQ<RSNode>(ptr, child);});
     if (itr != children_.end()) {
         RS_OPTIONAL_TRACE_NAME_FMT(
-            "RSNode::RemoveChildByNode parent:%" PRIu64 ", child:%" PRIu64 "", GetId(), child->GetId());
+            "RSNode::RemoveChildByNode parent:%" PRIu64 ", child:%" PRIu64, GetId(), child->GetId());
         children_.erase(itr);
     } else {
         RS_TRACE_NAME_FMT(
-            "RSNode::RemoveChildByNode failed:%" PRIu64 " not children of %" PRIu64 "", child->GetId(), GetId());
+            "RSNode::RemoveChildByNode failed:%" PRIu64 " not children of %" PRIu64, child->GetId(), GetId());
     }
 }
 
@@ -3902,6 +3806,18 @@ void RSNode::RemoveFromTree()
     MarkDirty(NodeDirtyType::APPEARANCE, true);
     auto parentPtr = parent_.lock();
     if (parentPtr) {
+        if (auto surfaceNode = ReinterpretCastTo<RSSurfaceNode>()) {
+            ROSEN_LOGI("RSNode::RemoveFromTree, ParentId:%{public}" PRIu64 ", ParentUIContext is %{public}" PRIu64
+                       " SurfaceNode:[Id: %{public}" PRIu64 ", name: %{public}s uiContext is %{public}" PRIu64 "]",
+                parentPtr->GetId(), parentPtr->GetRSUIContext() ? parentPtr->GetRSUIContext()->GetToken() : 0,
+                surfaceNode->GetId(), surfaceNode->GetName().c_str(),
+                surfaceNode->GetRSUIContext() ? surfaceNode->GetRSUIContext()->GetToken() : 0);
+            RS_TRACE_NAME_FMT("RSNode::RemoveFromTree, ParentId:%" PRIu64 ", ParentUIContext is %" PRIu64
+                              " SurfaceNode:[Id: %" PRIu64 ", name: %s uiContext is %" PRIu64 "]",
+                parentPtr->GetId(), parentPtr->GetRSUIContext() ? parentPtr->GetRSUIContext()->GetToken() : 0,
+                surfaceNode->GetId(), surfaceNode->GetName().c_str(),
+                surfaceNode->GetRSUIContext() ? surfaceNode->GetRSUIContext()->GetToken() : 0);
+        }
         parentPtr->RemoveChildByNode(shared_from_this());
         OnRemoveChildren();
         parent_.reset();
@@ -4190,35 +4106,35 @@ void RSNode::AddModifier(const std::shared_ptr<ModifierNG::RSModifier> modifier)
         std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
         CHECK_FALSE_RETURN(CheckMultiThreadAccess(__func__));
         if (modifier == nullptr) {
-            RS_LOGE("RSNode::AddModifier: null modifier, nodeId=%{public}" PRIu64, GetId());
+            RS_LOGE("RSNode::AddModifier: null modifier, nodeId=%{public}" PRIu64, id_);
             return;
         }
         if (modifiersNG_.count(modifier->GetId())) {
             return;
         }
         modifier->OnAttach(*this); // Attach properties of modifier here
-        if (modifier->GetType() == ModifierNG::RSModifierType::NODE_MODIFIER) {
+        auto modifierType = modifier->GetType();
+        if (modifierType == ModifierNG::RSModifierType::NODE_MODIFIER) {
             return;
         }
-        if (modifier->GetType() != ModifierNG::RSModifierType::BOUNDS &&
-            modifier->GetType() != ModifierNG::RSModifierType::FRAME &&
-            modifier->GetType() != ModifierNG::RSModifierType::BACKGROUND_COLOR &&
-            modifier->GetType() != ModifierNG::RSModifierType::ALPHA) {
+        if (modifierType != ModifierNG::RSModifierType::BOUNDS && modifierType != ModifierNG::RSModifierType::FRAME &&
+            modifierType != ModifierNG::RSModifierType::BACKGROUND_COLOR &&
+            modifierType != ModifierNG::RSModifierType::ALPHA) {
             SetDrawNode();
             SetDrawNodeType(DrawNodeType::DrawPropertyType);
-            if (modifier->GetType() == ModifierNG::RSModifierType::TRANSFORM) {
+            if (modifierType == ModifierNG::RSModifierType::TRANSFORM) {
                 SetDrawNodeType(DrawNodeType::GeometryPropertyType);
             }
         }
         NotifyPageNodeChanged();
         modifiersNG_.emplace(modifier->GetId(), modifier);
     }
-    std::unique_ptr<RSCommand> command = std::make_unique<RSAddModifierNG>(GetId(), modifier->CreateRenderModifier());
-    AddCommand(command, IsRenderServiceNode(), GetFollowType(), GetId());
+    std::unique_ptr<RSCommand> command = std::make_unique<RSAddModifierNG>(id_, modifier->CreateRenderModifier());
+    AddCommand(command, IsRenderServiceNode(), GetFollowType(), id_);
     if (NeedForcedSendToRemote()) {
         std::unique_ptr<RSCommand> cmdForRemote =
-            std::make_unique<RSAddModifierNG>(GetId(), modifier->CreateRenderModifier());
-        AddCommand(cmdForRemote, true, GetFollowType(), GetId());
+            std::make_unique<RSAddModifierNG>(id_, modifier->CreateRenderModifier());
+        AddCommand(cmdForRemote, true, GetFollowType(), id_);
     }
 }
 
@@ -4234,46 +4150,13 @@ void RSNode::RemoveModifier(const std::shared_ptr<ModifierNG::RSModifier> modifi
         modifiersNG_.erase(modifier->GetId());
     }
     modifier->OnDetach(); // Detach properties of modifier here
-    DetachUIFilterProperties(modifier);
     std::unique_ptr<RSCommand> command =
-        std::make_unique<RSRemoveModifierNG>(GetId(), modifier->GetType(), modifier->GetId());
-    AddCommand(command, IsRenderServiceNode(), GetFollowType(), GetId());
+        std::make_unique<RSRemoveModifierNG>(id_, modifier->GetType(), modifier->GetId());
+    AddCommand(command, IsRenderServiceNode(), GetFollowType(), id_);
     if (NeedForcedSendToRemote()) {
         std::unique_ptr<RSCommand> cmdForRemote =
-            std::make_unique<RSRemoveModifierNG>(GetId(), modifier->GetType(), modifier->GetId());
-        AddCommand(cmdForRemote, true, GetFollowType(), GetId());
-    }
-}
-
-void RSNode::DetachUIFilterProperties(const std::shared_ptr<ModifierNG::RSModifier>& modifier)
-{
-    std::shared_ptr<RSProperty<std::shared_ptr<RSUIFilter>>> property = nullptr;
-    if (modifier->GetType() == ModifierNG::RSModifierType::FOREGROUND_FILTER) {
-        property = std::static_pointer_cast<RSProperty<std::shared_ptr<RSUIFilter>>>(
-            modifier->GetProperty(ModifierNG::RSPropertyType::FOREGROUND_UI_FILTER));
-    } else if (modifier->GetType() == ModifierNG::RSModifierType::BACKGROUND_FILTER) {
-        property = std::static_pointer_cast<RSProperty<std::shared_ptr<RSUIFilter>>>(
-            modifier->GetProperty(ModifierNG::RSPropertyType::BACKGROUND_UI_FILTER));
-    }
-    if (!property) {
-        return;
-    }
-    auto uiFilter = property->Get();
-    if (!uiFilter) {
-        return;
-    }
-    for (auto type : uiFilter->GetUIFilterTypes()) {
-        auto paraGroup = uiFilter->GetUIFilterPara(type);
-        if (!paraGroup) {
-            continue;
-        }
-        for (auto& prop : paraGroup->GetLeafProperties()) {
-            if (!prop) {
-                continue;
-            }
-            prop->target_.reset();
-            UnregisterProperty(prop->GetId());
-        }
+            std::make_unique<RSRemoveModifierNG>(id_, modifier->GetType(), modifier->GetId());
+        AddCommand(cmdForRemote, true, GetFollowType(), id_);
     }
 }
 

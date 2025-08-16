@@ -30,12 +30,8 @@ constexpr uint64_t MAX_ALLOWED_DELAY = UINT64_MAX / 1000;
 
 uint64_t ConvertMillisecondsToMicroseconds(int64_t delayTime)
 {
-    if (delayTime < 0) {
-        delayTime = 0;
-    } else if (delayTime > MAX_ALLOWED_DELAY) {
-        delayTime = MAX_ALLOWED_DELAY;
-    }
-    return static_cast<uint64_t>(delayTime) * MILLISECONDS_TO_MICROSECONDS;
+    return (delayTime < 0) ? 0 :
+        std::min(static_cast<uint64_t>(delayTime), MAX_ALLOWED_DELAY) * MILLISECONDS_TO_MICROSECONDS;
 }
 }
 
@@ -96,7 +92,7 @@ void HgmTaskHandleThread::DetectMultiThreadingCalls()
     if (auto newTid = gettid(); curThreadId_ != newTid) {
         // -1 means default curThreadId
         if (curThreadId_ != -1) {
-            HGM_LOGE("Concurrent access tid1: %{public}d tid2: %{public}d", curThreadId_, newTid);
+            HGM_LOGD("Concurrent access tid1: %{public}d tid2: %{public}d", curThreadId_, newTid);
         }
         curThreadId_ = newTid;
     }

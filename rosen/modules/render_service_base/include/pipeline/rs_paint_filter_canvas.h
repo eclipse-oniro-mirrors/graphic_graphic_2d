@@ -224,6 +224,12 @@ public:
         int envSaveCount = -1;
     };
 
+    enum SubTreeStatus : uint8_t {
+        DEFAULT_STATE = 0x00,
+        SUBTREE_PARALLEL_STATE = 0x01,
+        SUBTREE_QUICK_DRAW_STATE = 0x02
+    };
+
     enum class ScreenshotType {
         NON_SHOT = 0,
         SDR_SCREENSHOT,
@@ -278,21 +284,25 @@ public:
     void SetParallelThreadIdx(uint32_t idx);
     uint32_t GetParallelThreadIdx() const;
     uint32_t GetParallelThreadId();
-    void SetParallelThreadId(int idx);
+    void SetParallelThreadId(uint32_t idx);
     void SetIsParallelCanvas(bool isParallel);
     bool GetIsParallelCanvas() const;
 
     void RecordState(const RSPaintFilterCanvas& other);
     std::weak_ptr<Drawing::Surface> GetWeakSurface();
-    // just used in subtree, used for check whether a new surface need to be created in the subtree thread.
+    // just used in SubTree, used for check whether a new Surface needs to be created in the SubTree thread.
     void SetWeakSurface(std::shared_ptr<Drawing::Surface> surface);
-    inline void SetQuickDraw(bool isQuickDraw)
+    inline void SetSubTreeParallelState(SubTreeStatus state)
     {
-        isQuickDraw_ = isQuickDraw;
+        subTreeDrawStatus_ = state;
     }
-    inline bool IsQuickDraw()
+    inline bool IsQuickGetDrawState() const
     {
-        return isQuickDraw_;
+        return subTreeDrawStatus_ == SUBTREE_QUICK_DRAW_STATE;
+    }
+    inline bool IsSubTreeInParallel() const
+    {
+        return subTreeDrawStatus_ != DEFAULT_STATE;
     }
 
     void SetDisableFilterCache(bool disable);
@@ -436,17 +446,13 @@ protected:
     bool OnFilter() const override;
     inline bool OnFilterWithBrush(Drawing::Brush& brush) const override
     {
-        if (isQuickDraw_) {
+        if (IsQuickGetDrawState()) {
             return false;
         }
         float alpha = alphaStack_.top();
         // foreground color and foreground color strategy identification
         if (brush.GetColor().CastToColorQuad() == 0x00000001) {
             brush.SetColor(envStack_.top().envForegroundColor_.AsArgbInt());
-        }
-
-        if (envStack_.top().blender_) {
-            brush.SetBlender(envStack_.top().blender_);
         }
 
         // use alphaStack_.top() to multiply alpha
@@ -507,11 +513,10 @@ private:
     std::stack<Drawing::Canvas*> storeMainScreenCanvas_; // store canvas_
 
     std::shared_ptr<CacheBehindWindowData> cacheBehindWindowData_ = nullptr;
-
     Occlusion::Region drawnRegion_;
     uint32_t threadId_;
     std::weak_ptr<Drawing::Surface> weakSurface_;
-    bool isQuickDraw_= false;
+    uint8_t subTreeDrawStatus_ = DEFAULT_STATE;
 };
 
 #ifdef RS_ENABLE_VK

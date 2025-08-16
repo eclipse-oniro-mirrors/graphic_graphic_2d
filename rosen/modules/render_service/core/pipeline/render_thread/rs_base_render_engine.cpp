@@ -12,13 +12,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "rs_base_render_engine.h"
+#include <memory>
+
+#include "v2_1/cm_color_space.h"
+#ifdef RS_ENABLE_EGLIMAGE
+#ifdef USE_M133_SKIA
+#include "src/gpu/ganesh/gl/GrGLDefines.h"
+#else
+#include "src/gpu/gl/GrGLDefines.h"
+#endif
+#endif
 
 #include "common/rs_optional_trace.h"
 #include "display_engine/rs_luminance_control.h"
 #ifdef RS_ENABLE_GPU
 #include "drawable/rs_screen_render_node_drawable.h"
 #endif
-#include <memory>
 #include "memory/rs_tag_tracker.h"
 #include "metadata_helper.h"
 #include "pipeline/render_thread/rs_divided_render_util.h"
@@ -39,16 +49,7 @@
 #endif
 #include "render/rs_drawing_filter.h"
 #include "render/rs_skia_filter.h"
-#include "rs_base_render_engine.h"
 #include "feature/hdr/rs_hdr_util.h"
-#ifdef RS_ENABLE_EGLIMAGE
-#ifdef USE_M133_SKIA
-#include "src/gpu/ganesh/gl/GrGLDefines.h"
-#else
-#include "src/gpu/gl/GrGLDefines.h"
-#endif
-#endif
-#include "v2_1/cm_color_space.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -205,16 +206,6 @@ std::unique_ptr<RSRenderFrame> RSBaseRenderEngine::RequestFrame(
         std::static_pointer_cast<RSSurfaceOhosVulkan>(rsSurface)->SetSkContext(skContext_);
     }
 #endif
-    if (isHDRStatusChanged_) {
-        if (rsSurface->GetSurface() == nullptr) {
-            RS_LOGE("RSBaseRenderEngine::rsSurface->GetSurface is nullptr!!");
-        } else {
-            RS_TRACE_NAME("RSBaseRenderEngine::SetBufferReallocFlag isHDRStatusChanged");
-            rsSurface->GetSurface()->SetBufferReallocFlag(isHDRStatusChanged_);
-            RS_LOGI("RSBaseRenderEngine::SetBufferReallocFlag isHDRStatusChanged");
-            isHDRStatusChanged_ = false;
-        }
-    }
     auto surfaceFrame = rsSurface->RequestFrame(config.width, config.height, 0, useAFBC,
         frameContextConfig.isProtected);
     RS_OPTIONAL_TRACE_END();
@@ -672,7 +663,6 @@ void RSBaseRenderEngine::DrawImage(RSPaintFilterCanvas& canvas, BufferDrawParam&
         return;
     }
 
-    // add for tv metadata
     Drawing::SamplingOptions samplingOptions;
     if (!RSSystemProperties::GetUniRenderEnabled()) {
         samplingOptions = Drawing::SamplingOptions();
@@ -683,9 +673,9 @@ void RSBaseRenderEngine::DrawImage(RSPaintFilterCanvas& canvas, BufferDrawParam&
             RS_LOGD_IF(DEBUG_COMPOSER, "  - Sampling options: Mirror mode (LINEAR, NEAREST)");
         } else {
             bool needBilinear = NeedBilinearInterpolation(params, canvas.GetTotalMatrix());
-            samplingOptions = needBilinear
-                ? Drawing::SamplingOptions(Drawing::FilterMode::LINEAR, Drawing::MipmapMode::NONE)
-                : Drawing::SamplingOptions();
+            samplingOptions =
+                needBilinear ? Drawing::SamplingOptions(Drawing::FilterMode::LINEAR, Drawing::MipmapMode::NONE) :
+                Drawing::SamplingOptions();
             RS_LOGD_IF(DEBUG_COMPOSER, "  - Sampling options: %{public}s",
                 needBilinear ? "Bilinear interpolation (LINEAR, NONE)" : "Default sampling options");
         }

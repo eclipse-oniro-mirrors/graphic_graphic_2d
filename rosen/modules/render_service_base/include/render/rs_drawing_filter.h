@@ -67,22 +67,28 @@ public:
         return nullptr;
     }
     void OnSync() override;
+    bool IsDrawingFilter() const override
+    {
+        return true;
+    }
     uint32_t Hash() const override;
     uint32_t ShaderHash() const;
     uint32_t ImageHash() const;
+    uint32_t RenderFilterHash() const;
     std::shared_ptr<RSDrawingFilter> Compose(const std::shared_ptr<RSDrawingFilter> other) const;
     std::shared_ptr<RSDrawingFilter> Compose(const std::shared_ptr<Drawing::ImageFilter> other, uint32_t hash) const;
     std::shared_ptr<RSDrawingFilter> Compose(const std::shared_ptr<RSRenderFilterParaBase> other) const;
-    inline void SetNGRenderFilter(std::shared_ptr<RSNGRenderFilterBase> filter)
-    {
-        renderFilter_ = filter;
-    }
+    void SetNGRenderFilter(std::shared_ptr<RSNGRenderFilterBase> filter);
+
     inline std::shared_ptr<RSNGRenderFilterBase> GetNGRenderFilter() const
     {
         return renderFilter_;
     }
 
+    void GenerateAndUpdateGEVisualEffect();
+
     void SetGeometry(Drawing::Canvas& canvas, float geoWidth, float geoHeight);
+    void SetDisplayHeadroom(float headroom);
 
     bool CanSkipFrame() const
     {
@@ -109,7 +115,7 @@ public:
     void ApplyColorFilter(Drawing::Canvas& canvas, const std::shared_ptr<Drawing::Image>& image,
         const Drawing::Rect& src, const Drawing::Rect& dst, float brushAlpha);
 
-    void SetDisplayHeadroom(float headroom) override;
+    bool NeedForceSubmit() const override;
 
 private:
     struct DrawImageRectAttributes {
@@ -172,7 +178,9 @@ private:
     std::shared_ptr<Drawing::ImageFilter> imageFilter_ = nullptr;
     std::vector<std::shared_ptr<RSRenderFilterParaBase>> shaderFilters_;
     std::shared_ptr<RSNGRenderFilterBase> renderFilter_ = nullptr;
+    std::shared_ptr<Drawing::GEVisualEffectContainer> visualEffectContainer_;
     uint32_t imageFilterHash_ = 0;
+    uint32_t renderFilterHash_ = 0;
     bool canSkipFrame_ = false;
     bool canSkipMaskColor_ = false;
     float saturationForHPS_ = 1.f;

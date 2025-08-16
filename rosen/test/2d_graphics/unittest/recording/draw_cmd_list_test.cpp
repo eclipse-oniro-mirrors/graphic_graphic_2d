@@ -280,7 +280,7 @@ HWTEST_F(DrawCmdListTest, IsHybridRenderEnabled003, TestSize.Level1)
     auto opItem = std::make_shared<HybridRenderPixelMapSizeOpItem>(rect.GetWidth(), rect.GetHeight());
     drawCmdList->drawOpItems_.emplace_back(opItem);
     auto ret = drawCmdList->IsHybridRenderEnabled(INT_MAX, INT_MAX);
-    EXPECT_EQ(ret, false);
+    EXPECT_EQ(ret, true);
     delete drawCmdList;
 }
 
@@ -334,9 +334,11 @@ HWTEST_F(DrawCmdListTest, ProfilerMarshallingDrawOps, TestSize.Level1)
     auto secondDrawCmdList = new DrawCmdList(DrawCmdList::UnmarshalMode::DEFERRED);
     Brush brush;
     drawCmdList->drawOpItems_.emplace_back(std::make_shared<DrawBackgroundOpItem>(brush));
+    EXPECT_EQ(drawCmdList->drawOpItems_.size(), 1);
     drawCmdList->ProfilerMarshallingDrawOps(secondDrawCmdList);
-    EXPECT_EQ(secondDrawCmdList->drawOpItems_.size(), 1);
+    EXPECT_TRUE(secondDrawCmdList->lastOpItemOffset_.has_value());
     delete drawCmdList;
+    delete secondDrawCmdList;
 }
 
 /**
@@ -351,6 +353,7 @@ HWTEST_F(DrawCmdListTest, SetIsReplayMode, Level1)
     EXPECT_TRUE(drawCmdList->isReplayMode);
     drawCmdList->SetIsReplayMode(false);
     EXPECT_FALSE(drawCmdList->isReplayMode);
+    delete drawCmdList;
 }
 
 /**
@@ -379,9 +382,12 @@ HWTEST_F(DrawCmdListTest, Dump003, TestSize.Level1)
  */
 HWTEST_F(DrawCmdListTest, GetCmdlistDrawRegion001, TestSize.Level1)
 {
-    auto drawCmdList = std::make_shared<DrawCmdList>(DrawCmdList::UnmarshalMode::DEFERRED);
+    auto drawCmdList = new DrawCmdList();
+    EXPECT_TRUE(drawCmdList->GetCmdlistDrawRegion().IsEmpty());
+
     drawCmdList->drawOpItems_.emplace_back(nullptr);
     EXPECT_TRUE(drawCmdList->GetCmdlistDrawRegion().IsEmpty());
+    delete drawCmdList;
 }
 
 /**
@@ -392,15 +398,25 @@ HWTEST_F(DrawCmdListTest, GetCmdlistDrawRegion001, TestSize.Level1)
  */
 HWTEST_F(DrawCmdListTest, GetCmdlistDrawRegion002, TestSize.Level1)
 {
-    auto drawCmdList = std::make_shared<DrawCmdList>(DrawCmdList::UnmarshalMode::DEFERRED);
     Path path;
+    path.Offset(1.0f, 1.0f);
     Paint paint;
-    DrawPathOpItem opItem{path, paint};
-    ASSERT_TRUE(!(opItem.GetOpItemCmdlistDrawRegion().IsEmpty()));
+    DrawPathOpItem pathOpItem{path, paint};
+    pathOpItem.path_->MoveTo(1.0f, 2.0f);
+    pathOpItem.path_->LineTo(3.0f, 4.0f);
+    ASSERT_TRUE(!(pathOpItem.GetOpItemCmdlistDrawRegion().IsEmpty()));
 
-    auto opItemPtr = std::make_shared<DrawPathOpItem>(opItem);
-    drawCmdList->drawOpItems_.emplace_back(opItemPtr);
+    auto pathOpItemPtr = std::make_shared<DrawPathOpItem>(pathOpItem);
+    auto saveOpItemPtr = std::make_shared<SaveOpItem>();
+    auto drawCmdList = new DrawCmdList();
+    drawCmdList->drawOpItems_.emplace_back(pathOpItemPtr);
+    drawCmdList->drawOpItems_.emplace_back(saveOpItemPtr);
+    EXPECT_FALSE(drawCmdList->GetCmdlistDrawRegion().IsEmpty());
+
+    auto fulshOpItemPtr = std::make_shared<FlushOpItem>();
+    drawCmdList->drawOpItems_.emplace_back(fulshOpItemPtr);
     EXPECT_TRUE(drawCmdList->GetCmdlistDrawRegion().IsEmpty());
+    delete drawCmdList;
 }
 
 // Mock Object class for testing

@@ -52,7 +52,7 @@ RSScreenRenderNode::RSScreenRenderNode(
 {
     RS_LOGI("RSScreen RSScreenRenderNode ctor id:%{public}" PRIu64 ", config[screenid:%{public}" PRIu64,
         id, screenId_);
-    MemoryInfo info = {sizeof(*this), ExtractPid(id), id, 0, MEMORY_TYPE::MEM_RENDER_NODE, ExtractPid(id)};
+    MemoryInfo info = {sizeof(*this), ExtractPid(id), id, MEMORY_TYPE::MEM_RENDER_NODE};
     MemoryTrack::Instance().AddNodeRecord(id, info);
     MemorySnapshot::Instance().AddCpuMemory(ExtractPid(id), sizeof(*this));
 }
@@ -116,8 +116,12 @@ void RSScreenRenderNode::SetForceSoftComposite(bool flag)
 
 void RSScreenRenderNode::SetMirrorSource(SharedPtr node)
 {
-    if (!isMirroredScreen_ || node == nullptr) {
+    if (!isMirroredScreen_ || node == nullptr || node == mirrorSource_.lock()) {
         return;
+    }
+
+    if (auto mirrorSource = mirrorSource_.lock()) {
+        mirrorSource->SetHasMirrorScreen(false);
     }
     node->SetHasMirrorScreen(true);
     mirrorSource_ = node;
@@ -193,16 +197,6 @@ void RSScreenRenderNode::HandleCurMainAndLeashSurfaceNodes()
         surfaceCountForMultiLayersPerf_++;
     }
     curMainAndLeashSurfaceNodes_.clear();
-    topSurfaceOpaqueRects_.clear();
-}
-
-Occlusion::Region RSScreenRenderNode::GetTopSurfaceOpaqueRegion() const
-{
-    Occlusion::Region topSurfaceOpaqueRegion;
-    for (const auto& rect : topSurfaceOpaqueRects_) {
-        topSurfaceOpaqueRegion.OrSelf(rect);
-    }
-    return topSurfaceOpaqueRegion;
 }
 
 void RSScreenRenderNode::UpdateRenderParams()
@@ -254,7 +248,6 @@ void RSScreenRenderNode::UpdatePartialRenderParams()
         return;
     }
     screenParams->SetAllMainAndLeashSurfaces(curMainAndLeashSurfaceNodes_);
-    screenParams->SetTopSurfaceOpaqueRects(std::move(topSurfaceOpaqueRects_));
 }
 
 bool RSScreenRenderNode::SkipFrame(uint32_t refreshRate, uint32_t skipFrameInterval)
@@ -563,6 +556,25 @@ void RSScreenRenderNode::SetHasMirrorScreen(bool hasMirrorScreen)
     if (stagingRenderParams_->NeedSync()) {
         AddToPendingSyncList();
     }
+}
+
+void RSScreenRenderNode::SetForceFreeze(bool forceFreeze)
+{
+    auto screenParams = static_cast<RSScreenRenderParams*>(stagingRenderParams_.get());
+    if (screenParams == nullptr) {
+        RS_LOGE("RSScreenRenderNode::SetForceFreeze screenParams is null");
+        return;
+    }
+    forceFreeze_ = forceFreeze;
+    screenParams->SetForceFreeze(forceFreeze);
+    if (stagingRenderParams_->NeedSync()) {
+        AddToPendingSyncList();
+    }
+}
+
+bool RSScreenRenderNode::GetForceFreeze() const
+{
+    return forceFreeze_ && RSSystemProperties::GetSupportScreenFreezeEnabled();
 }
 } // namespace Rosen
 } // namespace OHOS

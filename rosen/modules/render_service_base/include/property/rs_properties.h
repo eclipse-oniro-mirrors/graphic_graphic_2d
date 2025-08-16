@@ -39,7 +39,6 @@
 #include "render/rs_motion_blur_filter.h"
 #include "render/rs_particles_drawable.h"
 #include "render/rs_path.h"
-#include "render/rs_render_filter.h"
 #include "render/rs_shader.h"
 #include "render/rs_shadow.h"
 #include "render/rs_attraction_effect_filter.h"
@@ -274,6 +273,11 @@ public:
         needSkipShadow_ = needSkipShadow;
     }
 
+    inline bool GetNeedForceSubmit() const
+    {
+        return needForceSubmit_;
+    }
+
     void SetHDRBrightnessFactor(float factor);
     float GetHDRBrightnessFactor() const
     {
@@ -368,11 +372,6 @@ public:
     void SetDynamicLightUpDegree(const std::optional<float>& lightUpDegree);
     void SetDynamicDimDegree(const std::optional<float>& DimDegree);
 
-    void SetBackgroundUIFilter(const std::shared_ptr<RSRenderFilter>& renderFilter);
-    std::shared_ptr<RSRenderFilter> GetBackgroundUIFilter() const;
-    void SetForegroundUIFilter(const std::shared_ptr<RSRenderFilter>& renderFilter);
-    std::shared_ptr<RSRenderFilter> GetForegroundUIFilter() const;
-
     void SetBackgroundNGFilter(const std::shared_ptr<RSNGRenderFilterBase>& renderFilter);
     std::shared_ptr<RSNGRenderFilterBase> GetBackgroundNGFilter() const;
 
@@ -397,6 +396,7 @@ public:
     bool GetFgBrightnessHdr() const;
     void SetFgBrightnessParams(const std::optional<RSDynamicBrightnessPara>& params);
     std::optional<RSDynamicBrightnessPara> GetFgBrightnessParams() const;
+    bool GetFgBrightnessEnableEDR() const;
 
     void SetShadowBlenderParams(const std::optional<RSShadowBlenderPara>& params);
     std::optional<RSShadowBlenderPara> GetShadowBlenderParams() const;
@@ -752,9 +752,6 @@ public:
         return needDrawBehindWindow_;
     }
 
-    void SetEnableHDREffect(bool useHDREffect);
-    bool GetEnableHDREffect() const;
-
     void SetColorBlendMode(int colorBlendMode);
     int GetColorBlendMode() const
     {
@@ -832,15 +829,6 @@ private:
     void GenerateWaterRippleFilter();
     void GenerateLinearGradientBlurFilter();
     void GenerateMagnifierFilter();
-    void GenerateRenderFilter();
-    void GenerateDisplacementDistortFilter();
-    void GenerateRenderFilterColorGradient();
-    void GenerateSoundWaveFilter();
-    void GenerateRenderFilterEdgeLight();
-    void GenerateBezierWarpFilter();
-    void GenerateRenderFilterDispersion();
-    void GenerateForegroundRenderFilter();
-    void GenerateContentLightFilter();
     void ComposeNGRenderFilter(
         std::shared_ptr<RSFilter>& originFilter, std::shared_ptr<RSNGRenderFilterBase> filter);
 
@@ -876,8 +864,8 @@ private:
     bool foregroundEffectDirty_ = false;
     bool needFilter_ = false;
     bool needHwcFilter_ = false;
+    bool needForceSubmit_ = false;
     bool useEffect_ = false;
-    bool enableHDREffect_ = false;
     bool needDrawBehindWindow_ = false;
     bool alphaOffscreen_ = false;
     std::optional<RRect> clipRRect_;
@@ -925,13 +913,11 @@ private:
     std::shared_ptr<RSObjAbsGeometry> boundsGeo_;
     std::shared_ptr<RSFilter> foregroundFilter_ = nullptr; // view content filter
     std::shared_ptr<RSFilter> foregroundFilterCache_ = nullptr; // view content filter via cache
-    std::shared_ptr<RSRenderFilter> foregroundRenderFilter_ = nullptr;
     std::shared_ptr<RSNGRenderFilterBase> bgNGRenderFilter_ = nullptr;
     std::shared_ptr<RSNGRenderFilterBase> fgNGRenderFilter_ = nullptr;
     std::shared_ptr<RSNGRenderShaderBase> bgNGRenderShader_ = nullptr;
     std::shared_ptr<RSNGRenderShaderBase> fgRenderShader_ = nullptr;
     std::shared_ptr<RSFilter> backgroundFilter_ = nullptr;
-    std::shared_ptr<RSRenderFilter> backgroundRenderFilter_ = nullptr;
     std::shared_ptr<RSFilter> filter_ = nullptr;
     std::shared_ptr<RectF> drawRegion_ = nullptr;
     std::shared_ptr<RSLightSource> lightSourcePtr_ = nullptr;

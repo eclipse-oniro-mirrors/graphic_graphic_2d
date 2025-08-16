@@ -1006,6 +1006,13 @@ void VSyncDistributor::CollectConnections(bool &waitForVSync, int64_t timestamp,
 #endif
         int32_t rate = connections_[i]->highPriorityState_ ? connections_[i]->highPriorityRate_ :
                                                              connections_[i]->rate_;
+        // when this connection is not triggered this time and this connection should be triggered in future,
+        // only keep waiting for next vsync but do not post event to render service
+        if (rate <= 0 && (!connections_[i]->triggerThisTime_ && !connections_[i]->NeedTriggeredVsync(timestamp))) {
+            SCOPED_DEBUG_TRACE_FMT("CollectConnections, i:%d, name:%s", i, connections_[i]->info_.name_.c_str());
+            waitForVSync = (waitForVSync || !connections_[i]->IsRequestVsyncTimestampEmpty());
+            continue;
+        }
 
         if (rate < 0) {
             continue;
@@ -1870,15 +1877,6 @@ void VSyncDistributor::NotifyPackageEvent(const std::vector<std::string>& packag
 #endif
 }
 
-bool VSyncDistributor::AdaptiveDVSyncEnable(const std::string &nodeName, int64_t timeStamp, int32_t bufferCount)
-{
-#if defined(RS_ENABLE_DVSYNC_2)
-    return DVSync::Instance().AdaptiveDVSyncEnable(nodeName, timeStamp, bufferCount);
-#else
-    return false;
-#endif
-}
-
 void VSyncDistributor::HandleTouchEvent(int32_t touchStatus, int32_t touchCnt)
 {
 #if defined(RS_ENABLE_DVSYNC)
@@ -1922,13 +1920,6 @@ void VSyncDistributor::SetBufferInfo(uint64_t id, const std::string &name, uint3
 #endif
 }
 
-void VSyncDistributor::SetBufferQueueInfo(const std::string &name, int32_t bufferCount, int64_t lastFlushedTimeStamp)
-{
-#if defined(RS_ENABLE_DVSYNC_2)
-    DVSync::Instance().SetBufferQueueInfo(name, bufferCount, lastFlushedTimeStamp);
-#endif
-}
-
 void VSyncDistributor::PrintConnectionsStatus()
 {
     std::unique_lock<std::mutex> locker(mutex_);
@@ -1969,7 +1960,7 @@ bool VSyncDistributor::NeedSkipForSurfaceBuffer(uint64_t id)
 #endif
 }
 
-bool VSyncDistributor::NeedUpdateVSyncTime(uint32_t& pid)
+bool VSyncDistributor::NeedUpdateVSyncTime(int32_t& pid)
 {
 #if defined(RS_ENABLE_DVSYNC_2)
     return DVSync::Instance().NeedUpdateVSyncTime(pid);

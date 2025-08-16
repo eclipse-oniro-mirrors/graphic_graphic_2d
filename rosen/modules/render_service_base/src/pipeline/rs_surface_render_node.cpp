@@ -201,8 +201,7 @@ RSSurfaceRenderNode::RSSurfaceRenderNode(
       bundleName_(config.bundleName)
 {
 #ifndef ROSEN_ARKUI_X
-    MemoryInfo info = {sizeof(*this), ExtractPid(config.id), config.id, 0,
-        MEMORY_TYPE::MEM_RENDER_NODE, ExtractPid(config.id)};
+    MemoryInfo info = {sizeof(*this), ExtractPid(config.id), config.id, MEMORY_TYPE::MEM_RENDER_NODE};
     MemoryTrack::Instance().AddNodeRecord(config.id, info);
 #endif
     MemorySnapshot::Instance().AddCpuMemory(ExtractPid(config.id), sizeof(*this));
@@ -903,19 +902,19 @@ void RSSurfaceRenderNode::SetHwcGlobalPositionEnabled(bool isEnabled)
     isHwcGlobalPositionEnabled_ = isEnabled;
 }
 
-void RSSurfaceRenderNode::SetHwcCrossNode(bool isDRMCrossNode)
+void RSSurfaceRenderNode::SetHwcCrossNode(bool isHwcCrossNode)
 {
-    if (isHwcCrossNode_ == isDRMCrossNode) {
+    if (isHwcCrossNode_ == isHwcCrossNode) {
         return;
     }
     auto surfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
     if (surfaceParams == nullptr) {
         return;
     }
-    surfaceParams->SetHwcCrossNode(isDRMCrossNode);
+    surfaceParams->SetHwcCrossNode(isHwcCrossNode);
     AddToPendingSyncList();
 
-    isHwcCrossNode_ = isDRMCrossNode;
+    isHwcCrossNode_ = isHwcCrossNode;
 }
 
 bool RSSurfaceRenderNode::IsHwcCrossNode() const
@@ -2100,10 +2099,9 @@ void RSSurfaceRenderNode::ResetSurfaceOpaqueRegion(const RectI& screeninfo, cons
         DealWithDrawBehindWindowTransparentRegion();
         transparentRegion_.SubSelf(opaqueRegion_);
     }
-    Occlusion::Rect screen{screeninfo};
-    Occlusion::Region screenRegion{screen};
-    transparentRegion_.AndSelf(screenRegion);
-    opaqueRegion_.AndSelf(screenRegion);
+    Occlusion::Region clipRegion{Occlusion::Rect{GetOldDirtyInSurface()}};
+    transparentRegion_.AndSelf(clipRegion);
+    opaqueRegion_.AndSelf(clipRegion);
     occlusionRegionBehindWindow_ = Occlusion::Region(Occlusion::Rect(
         NeedDrawBehindWindow() ? GetFilterRect() : RectI()));
     opaqueRegionChanged_ = !oldOpaqueRegion.Xor(opaqueRegion_).IsEmpty();
@@ -3214,16 +3212,14 @@ void RSSurfaceRenderNode::UpdateRenderParams()
     surfaceParams->isCrossNode_ = IsCrossNode();
     surfaceParams->isSpherizeValid_ = properties.IsSpherizeValid();
     surfaceParams->isAttractionValid_ = properties.IsAttractionValid();
+    surfaceParams->isAttractionAnimation_ = isAttractionAnimation_;
     surfaceParams->rsSurfaceNodeType_ = GetSurfaceNodeType();
     surfaceParams->backgroundColor_ = properties.GetBackgroundColor();
     surfaceParams->rrect_ = properties.GetRRect();
     surfaceParams->selfDrawingType_ = GetSelfDrawingNodeType();
     surfaceParams->stencilVal_ = stencilVal_;
     surfaceParams->needBilinearInterpolation_ = NeedBilinearInterpolation();
-    surfaceParams->isMainWindowType_ = IsMainWindowType();
-    surfaceParams->isLeashWindow_ = IsLeashWindow();
-    surfaceParams->isAppWindow_ = IsAppWindow();
-    surfaceParams->isLeashorMainWindow_ = IsLeashOrMainWindow();
+    surfaceParams->SetWindowInfo(IsMainWindowType(), IsLeashWindow(), IsAppWindow());
     surfaceParams->isCloneNode_ = isCloneNode_;
     surfaceParams->SetAncestorScreenNode(ancestorScreenNode_);
     surfaceParams->specialLayerManager_ = specialLayerManager_;
@@ -3766,7 +3762,7 @@ void RSSurfaceRenderNode::SetFrameGravityNewVersionEnabled(bool isEnabled)
 
 bool RSSurfaceRenderNode::isForcedClipHole() const
 {
-    const std::string tvPlayerBundleName = RsCommonHook::Instance().GetTvPlayerBundleName();
+    const std::string& tvPlayerBundleName = RsCommonHook::Instance().GetTvPlayerBundleName();
     if (tvPlayerBundleName.empty()) {
         return false;
     }

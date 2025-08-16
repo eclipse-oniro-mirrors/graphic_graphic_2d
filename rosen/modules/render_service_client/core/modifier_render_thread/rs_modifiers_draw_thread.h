@@ -19,11 +19,11 @@
 #include <algorithm>
 #include <future>
 #include <mutex>
+#include <shared_mutex>
 #include <vector>
 
 #include "common/rs_common_def.h"
 #include "event_handler.h"
-#include "modifier_render_thread/rs_modifiers_draw.h"
 #include "refbase.h"
 #include "transaction/rs_irender_client.h"
 #include "transaction/rs_transaction_data.h"
@@ -110,7 +110,8 @@ private:
 class RSB_EXPORT RSModifiersDrawThread final {
 public:
     static RSModifiersDrawThread& Instance();
-    void SetCacheDir(const std::string& path);
+    static void SetCacheDir(const std::string& path);
+    static std::string GetCacheDir();
 #ifdef ACCESSIBILITY_ENABLE
     bool GetHighContrast() const;
 #endif
@@ -143,16 +144,6 @@ private:
     RSModifiersDrawThread& operator=(const RSModifiersDrawThread&&) = delete;
 
     void ClearEventResource();
-    static void SeperateHybridRenderCmdList(std::unique_ptr<RSTransactionData>& transactionData,
-        std::vector<DrawOpInfo>& targetCmds, uint32_t& enableTextHybridOpCnt);
-    static void TraverseDrawOpInfo(std::vector<DrawOpInfo>& targetCmds, std::atomic<size_t>& cmdIndex);
-    static void ConvertTransactionForCanvas(std::unique_ptr<RSTransactionData>& transactionData);
-    static void ConvertTransactionWithFFRT(std::unique_ptr<RSTransactionData>& transactionData,
-        std::shared_ptr<RSIRenderClient>& renderServiceClient, bool& isNeedCommit, std::vector<DrawOpInfo>& targetCmds);
-    static void ConvertTransactionWithoutFFRT(
-        std::unique_ptr<RSTransactionData>& transactionData, std::vector<DrawOpInfo>& targetCmds);
-    static bool TargetCommand(
-        Drawing::DrawCmdList::HybridRenderType hybridRenderType, uint16_t type, uint16_t subType, bool cmdListEmpty);
 #ifdef ACCESSIBILITY_ENABLE
     void SubscribeHighContrastChange();
     void UnsubscribeHighContrastChange();
@@ -163,10 +154,8 @@ private:
     std::mutex mutex_;
     static std::atomic<bool> isStarted_;
     static bool isFirstFrame_;
-    // attention : ffrtMutex_ only use for cv_
-    static std::mutex ffrtMutex_;
-    static std::condition_variable cv_;
-    static std::atomic<uint32_t> ffrtTaskNum_;
+    static std::string cacheDir_;
+    static std::shared_mutex cacheDirMtx_;
 
 #ifdef ACCESSIBILITY_ENABLE
     bool highContrast_ = false;

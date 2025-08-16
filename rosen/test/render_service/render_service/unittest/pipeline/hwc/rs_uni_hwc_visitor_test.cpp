@@ -219,13 +219,25 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateDstRect001, TestSize.Level2)
 
     RectI absRect(0, 0, 0, 0);
     RectI clipRect(0, 0, 0, 0);
-    rsUniRenderVisitor->curSurfaceNode_ = rsSurfaceRenderNode2;
     ASSERT_NE(rsUniRenderVisitor, nullptr);
-    rsUniHwcVisitor->UpdateDstRect(*rsSurfaceRenderNode, absRect, clipRect);
     ASSERT_NE(rsUniHwcVisitor, nullptr);
-    ASSERT_EQ(rsSurfaceRenderNode->GetDstRect().left_, 0);
+    rsUniRenderVisitor->curSurfaceNode_ = nullptr;
+    rsUniHwcVisitor->UpdateDstRect(*rsSurfaceRenderNode, absRect, clipRect);
+
+    rsUniRenderVisitor->curSurfaceNode_ = rsSurfaceRenderNode2;
     rsUniHwcVisitor->UpdateDstRect(*rsSurfaceRenderNode2, absRect, clipRect);
     ASSERT_EQ(rsSurfaceRenderNode2->GetDstRect().left_, 0);
+
+    rsUniHwcVisitor->UpdateDstRect(*rsSurfaceRenderNode, absRect, clipRect);
+    ASSERT_EQ(rsSurfaceRenderNode->GetDstRect().left_, 0);
+
+    rsSurfaceRenderNode->SetHwcGlobalPositionEnabled(false);
+    rsUniHwcVisitor->UpdateDstRect(*rsSurfaceRenderNode, absRect, clipRect);
+    ASSERT_EQ(rsSurfaceRenderNode->GetDstRect().left_, 0);
+
+    rsSurfaceRenderNode->SetHwcGlobalPositionEnabled(true);
+    rsUniHwcVisitor->UpdateDstRect(*rsSurfaceRenderNode, absRect, clipRect);
+    ASSERT_EQ(rsSurfaceRenderNode->GetDstRect().left_, 0);
 }
 
 /**
@@ -259,7 +271,23 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateDstRect002, TestSize.Level2)
     RectI clipRect(0, 0, 0, 0);
     rsUniHwcVisitor->UpdateDstRect(*rsSurfaceRenderNode, absRect, clipRect);
     ASSERT_EQ(rsSurfaceRenderNode->GetDstRect().left_, 0);
+
+    rsSurfaceRenderNode->SetHwcGlobalPositionEnabled(false);
+    rsUniHwcVisitor->UpdateDstRect(*rsSurfaceRenderNode, absRect, clipRect);
+    ASSERT_EQ(rsSurfaceRenderNode->GetDstRect().left_, 0);
+
     rsSurfaceRenderNode->GetMultableSpecialLayerMgr().Set(SpecialLayerType::PROTECTED, true);
+    rsUniHwcVisitor->UpdateDstRect(*rsSurfaceRenderNode, absRect, clipRect);
+    ASSERT_EQ(rsSurfaceRenderNode->GetDstRect().left_, 0);
+
+    ScreenInfo info { .width = 1.f };
+    rsUniHwcVisitor->uniRenderVisitor_.curScreenNode_->SetScreenInfo(info);
+    rsUniHwcVisitor->UpdateDstRect(*rsSurfaceRenderNode, absRect, clipRect);
+    ASSERT_EQ(rsSurfaceRenderNode->GetDstRect().left_, 0);
+
+    info.width = 0.f;
+    info.height = 1.f;
+    rsUniHwcVisitor->uniRenderVisitor_.curScreenNode_->SetScreenInfo(info);
     rsUniHwcVisitor->UpdateDstRect(*rsSurfaceRenderNode, absRect, clipRect);
     ASSERT_EQ(rsSurfaceRenderNode->GetDstRect().left_, 0);
 }
@@ -1696,6 +1724,36 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateHwcNodeEnableByFilterRect008, TestSize.Level
     surfaceNode2->SetHardwareForcedDisabledState(false);
     rsUniRenderVisitor->hwcVisitor_->UpdateHwcNodeEnableByFilterRect(surfaceNode1, *filterNode, 100);
     ASSERT_TRUE(surfaceNode2->IsHardwareForcedDisabled());
+}
+
+/**
+ * @tc.name: IntersectHwcDamage_001
+ * @tc.desc: Test IntersectHwcDamage function.
+ * @tc.type: FUNC
+ * @tc.require: issueIAJY2P
+ */
+HWTEST_F(RSUniHwcVisitorTest, IntersectHwcDamage_001, TestSize.Level2)
+{
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    ASSERT_NE(rsUniRenderVisitor, nullptr);
+
+    NodeId id = 1;
+    auto rsSurfaceRenderNode = std::make_shared<RSSurfaceRenderNode>(id);
+    ASSERT_NE(rsSurfaceRenderNode->surfaceHandler_, nullptr);
+    rsSurfaceRenderNode->surfaceHandler_->buffer_.damageRect = {10, 10, 160, 160};
+
+    const RectI filterRect = {0, 0, 300, 300};
+
+    auto backupHandler = rsSurfaceRenderNode->GetMutableRSSurfaceHandler();
+    rsSurfaceRenderNode->surfaceHandler_ = nullptr;
+    EXPECT_TRUE(rsUniRenderVisitor->hwcVisitor_->IntersectHwcDamage(*rsSurfaceRenderNode, filterRect));
+
+    rsSurfaceRenderNode->surfaceHandler_ = backupHandler;
+    rsSurfaceRenderNode->surfaceHandler_->isCurrentFrameBufferConsumed_ = false;
+    EXPECT_TRUE(rsUniRenderVisitor->hwcVisitor_->IntersectHwcDamage(*rsSurfaceRenderNode, filterRect));
+
+    rsSurfaceRenderNode->surfaceHandler_->isCurrentFrameBufferConsumed_ = true;
+    EXPECT_TRUE(rsUniRenderVisitor->hwcVisitor_->IntersectHwcDamage(*rsSurfaceRenderNode, filterRect));
 }
 
 /**

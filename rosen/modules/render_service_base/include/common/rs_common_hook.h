@@ -38,10 +38,10 @@ public:
     bool IsAdaptiveColorGamutEnabled() const;
 
     void SetTvPlayerBundleName(const std::string& bundleName);
-    std::string GetTvPlayerBundleName() const;
+    const std::string& GetTvPlayerBundleName() const;
 
-    void SetFilterUnderHwcConfigByApp(std::string appName, std::string val);
-    const std::string& GetFilterUnderHwcConfigByApp(const std::string& appName);
+    void SetFilterUnderHwcConfigByApp(const std::string& appName, const std::string& val);
+    std::string_view GetFilterUnderHwcConfigByApp(const std::string& appName);
 
     // use in updating hwcnode hardware state with background alpha
     void SetHardwareEnabledByHwcnodeBelowSelfInAppFlag(bool hardwareEnabledByHwcNodeSkippedFlag);
@@ -52,6 +52,10 @@ public:
     void GetComponentPowerFps(FrameRateRange& range);
     bool GetIsWhiteListForSolidColorLayerFlag() const;
     void SetIsWhiteListForSolidColorLayerFlag(bool isWhiteListForSolidColorLayerFlag);
+
+    // DISPLAY ENGINE
+    void SetCurrentPkgName(const std::string& pkgName);
+    std::string GetCurrentPkgName() const;
 
 private:
     std::function<void(const std::string&)> startNewAniamtionFunc_ = nullptr;
@@ -71,6 +75,9 @@ private:
     std::atomic<bool> isWhiteListForSolidColorLayerFlag_{false};
     
     std::function<void(FrameRateRange& range)> componentPowerFpsFunc_ = nullptr;
+
+    // DISPLAY ENGINE
+    std::string pkgName_{};
 };
 } // namespace OHOS::Rosen
 #endif
