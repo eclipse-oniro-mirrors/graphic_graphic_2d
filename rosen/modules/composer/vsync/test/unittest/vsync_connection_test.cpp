@@ -37,6 +37,7 @@ public:
 };
 
 constexpr int MAX_RETRY = 5;
+static constexpr uint32_t MAX_VSYNC_QUEUE_SIZE = 30;
 class MockIRemoteObject : public IRemoteObject {
 public:
     MockIRemoteObject() : IRemoteObject {u"MockIRemoteObject"}
@@ -252,7 +253,7 @@ HWTEST_F(VSyncConnectionTest, AddRequestVsyncTimestamp001, Function | MediumTest
     EXPECT_EQ(tmpConn1->AddRequestVsyncTimestamp(1000000000), false);
     EXPECT_EQ(tmpConn1->IsRequestVsyncTimestampEmpty(), true);
 
-    EXPECT_EQ(tmpConn1->NeedTriggeredVsync(0), false);
+    EXPECT_EQ(tmpConn1->NeedTriggeredVsyncLocked(0), true);
 }
 
 /**
@@ -263,8 +264,8 @@ HWTEST_F(VSyncConnectionTest, AddRequestVsyncTimestamp001, Function | MediumTest
  * CaseDescription: 1.create VsyncConnection with name "test"
  *                  2.call AddRequestVsyncTimestamp
  *                  3.call IsRequestVsyncTimestampEmpty
- *                  4.call NeedTriggeredVsync
- *                  5.call RemoveTriggeredVsync
+ *                  4.call NeedTriggeredVsyncLocked
+ *                  5.call RemoveTriggeredVsyncLocked
  */
 HWTEST_F(VSyncConnectionTest, AddRequestVsyncTimestamp002, Function | MediumTest| Level3)
 {
@@ -275,8 +276,8 @@ HWTEST_F(VSyncConnectionTest, AddRequestVsyncTimestamp002, Function | MediumTest
     EXPECT_EQ(tmpConn1->AddRequestVsyncTimestamp(-1), false);
     EXPECT_EQ(tmpConn1->AddRequestVsyncTimestamp(time), false);
     EXPECT_EQ(tmpConn1->IsRequestVsyncTimestampEmpty(), true);
-    EXPECT_EQ(tmpConn1->NeedTriggeredVsync(time), false);
-    tmpConn1->RemoveTriggeredVsync(time);
+    EXPECT_EQ(tmpConn1->NeedTriggeredVsyncLocked(time), true);
+    tmpConn1->RemoveTriggeredVsyncLocked(time);
 }
 
 /**
@@ -317,7 +318,6 @@ HWTEST_F(VSyncConnectionTest, AddRequestVsyncTimestamp004, Function | MediumTest
     sptr<VSyncConnection> tmpConn1 = new VSyncConnection(vsyncDistributor, "rs");
     EXPECT_EQ(tmpConn1->isRsConn_, true);
 
-    constexpr uint32_t MAX_VSYNC_QUEUE_SIZE = 30;
     int i;
     for (i = 0; i < MAX_VSYNC_QUEUE_SIZE; i++) {
         EXPECT_EQ(tmpConn1->AddRequestVsyncTimestamp(i + 1), true);
@@ -338,7 +338,6 @@ HWTEST_F(VSyncConnectionTest, AddRequestVsyncTimestamp005, Function | MediumTest
     sptr<VSyncConnection> tmpConn1 = new VSyncConnection(vsyncDistributor, "rs");
     EXPECT_EQ(tmpConn1->isRsConn_, true);
 
-    constexpr uint32_t MAX_VSYNC_QUEUE_SIZE = 30;
     int i;
     for (i = 0; i < MAX_VSYNC_QUEUE_SIZE; i++) {
         EXPECT_EQ(tmpConn1->AddRequestVsyncTimestamp(100000), true);
@@ -353,28 +352,88 @@ HWTEST_F(VSyncConnectionTest, AddRequestVsyncTimestamp005, Function | MediumTest
  * EnvConditions: N/A
  * CaseDescription: 1.create VsyncConnection with name "rs"
  *                  2.add time(1000000000) to VSyncConnection
- *                  3.call NeedTriggeredVsync with time/time + 1/time - 1
+ *                  3.call NeedTriggeredVsyncLocked with time/time + 1/time - 1
  */
-HWTEST_F(VSyncConnectionTest, NeedTriggeredVsync001, Function | MediumTest| Level3)
+HWTEST_F(VSyncConnectionTest, NeedTriggeredVsyncLocked001, Function | MediumTest| Level3)
 {
     sptr<VSyncConnection> tmpConn1 = new VSyncConnection(vsyncDistributor, "rs");
     EXPECT_EQ(tmpConn1->isRsConn_, true);
 
     int64_t time = 1000000000;
     EXPECT_EQ(tmpConn1->AddRequestVsyncTimestamp(time), true);
-    EXPECT_EQ(tmpConn1->NeedTriggeredVsync(time - 1), false);
-    EXPECT_EQ(tmpConn1->NeedTriggeredVsync(time), true);
-    EXPECT_EQ(tmpConn1->NeedTriggeredVsync(time + 1), true);
+    EXPECT_EQ(tmpConn1->NeedTriggeredVsyncLocked(time - 1), false);
+    EXPECT_EQ(tmpConn1->NeedTriggeredVsyncLocked(time), true);
+    EXPECT_EQ(tmpConn1->NeedTriggeredVsyncLocked(time + 1), true);
 
-    tmpConn1->RemoveTriggeredVsync(time - 1);
-    EXPECT_EQ(tmpConn1->NeedTriggeredVsync(time - 1), false);
-    EXPECT_EQ(tmpConn1->NeedTriggeredVsync(time), true);
-    EXPECT_EQ(tmpConn1->NeedTriggeredVsync(time + 1), true);
+    tmpConn1->RemoveTriggeredVsyncLocked(time - 1);
+    EXPECT_EQ(tmpConn1->NeedTriggeredVsyncLocked(time - 1), false);
+    EXPECT_EQ(tmpConn1->NeedTriggeredVsyncLocked(time), true);
+    EXPECT_EQ(tmpConn1->NeedTriggeredVsyncLocked(time + 1), true);
 
-    tmpConn1->RemoveTriggeredVsync(time);
-    EXPECT_EQ(tmpConn1->NeedTriggeredVsync(time - 1), false);
-    EXPECT_EQ(tmpConn1->NeedTriggeredVsync(time), false);
-    EXPECT_EQ(tmpConn1->NeedTriggeredVsync(time + 1), false);
+    tmpConn1->RemoveTriggeredVsyncLocked(time);
+    EXPECT_EQ(tmpConn1->requestVsyncTimestamp_.size(), 0);
+    EXPECT_EQ(tmpConn1->NeedTriggeredVsyncLocked(time - 1), true);
+    EXPECT_EQ(tmpConn1->NeedTriggeredVsyncLocked(time), true);
+    EXPECT_EQ(tmpConn1->NeedTriggeredVsyncLocked(time + 1), true);
+}
+
+/**
+ * Function: CheckIsReadyByTime001
+ * Type: Function
+ * Rank: Important(2)
+ * EnvConditions: N/A
+ * CaseDescription: 1.create VsyncConnection with name "rs"
+ *                  2.add time(1000000000) to VSyncConnection
+ *                  3.call NeedTriggeredVsyncLocked with time/time + 1/time - 1
+ */
+HWTEST_F(VSyncConnectionTest, CheckIsReadyByTime001, Function | MediumTest| Level3)
+{
+    int64_t currentTime = 1000000000; // ns
+    int64_t timeDiff = 1000000; // ns
+
+    sptr<VSyncConnection> tmpConn1 = new VSyncConnection(vsyncDistributor, "rs");
+    EXPECT_EQ(tmpConn1->isRsConn_, true);
+    for (int i = 0; i < MAX_VSYNC_QUEUE_SIZE; i++) {
+        int64_t addTime = currentTime + i * timeDiff;
+        EXPECT_EQ(tmpConn1->AddRequestVsyncTimestamp(addTime), true);
+    }
+    tmpConn1->isRequestWithTimestampOnly_ = false;
+    for (int i = 0; i < MAX_VSYNC_QUEUE_SIZE; i++) {
+        int64_t addTime = currentTime + i * timeDiff;
+        EXPECT_EQ(tmpConn1->CheckIsReadyByTime(addTime), true);
+        EXPECT_EQ(tmpConn1->requestVsyncTimestamp_.size(), MAX_VSYNC_QUEUE_SIZE - i - 1);
+    }
+}
+
+/**
+ * Function: CheckIsReadyByTime002
+ * Type: Function
+ * Rank: Important(2)
+ * EnvConditions: N/A
+ * CaseDescription: 1.create VsyncConnection with name "rs"
+ *                  2.add time(1000000000) to VSyncConnection
+ *                  3.call NeedTriggeredVsyncLocked with time/time + 1/time - 1
+ */
+HWTEST_F(VSyncConnectionTest, CheckIsReadyByTime002, Function | MediumTest| Level3)
+{
+    int64_t currentTime = 1000000000; // ns
+    int64_t timeDiff = 1000000; // ns
+    {
+        sptr<VSyncConnection> tmpConn1 = new VSyncConnection(vsyncDistributor, "NoRs");
+        EXPECT_EQ(tmpConn1->isRsConn_, false);
+        EXPECT_EQ(tmpConn1->CheckIsReadyByTime(currentTime), true);
+    }
+    {
+        sptr<VSyncConnection> tmpConn1 = new VSyncConnection(vsyncDistributor, "rs");
+        EXPECT_EQ(tmpConn1->isRsConn_, true);
+        for (int i = 0; i < MAX_VSYNC_QUEUE_SIZE; i++) {
+            int64_t addTime = currentTime + i * timeDiff;
+            EXPECT_EQ(tmpConn1->AddRequestVsyncTimestamp(addTime), true);
+        }
+        tmpConn1->isRequestWithTimestampOnly_ = true;
+        EXPECT_EQ(tmpConn1->CheckIsReadyByTime(2 * currentTime), true);
+        EXPECT_EQ(tmpConn1->requestVsyncTimestamp_.size(), 0);
+    }
 }
 } // namespace
 } // namespace Rosen
