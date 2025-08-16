@@ -69,7 +69,8 @@ public:
     virtual VsyncError SetVSyncRate(int32_t rate) override;
     virtual VsyncError Destroy() override;
     virtual VsyncError SetUiDvsyncSwitch(bool vsyncSwitch) override;
-    virtual VsyncError SetUiDvsyncConfig(int32_t bufferCount, bool delayEnable, bool nativeDelayEnable) override;
+    virtual VsyncError SetUiDvsyncConfig(int32_t bufferCount, bool compositeSceneEnable,
+        bool nativeDelayEnable, const std::vector<std::string>& rsDvsyncAnimationList) override;
     virtual VsyncError SetNativeDVSyncSwitch(bool dvsyncSwitch) override;
     bool AddRequestVsyncTimestamp(const int64_t& timestamp);
     bool CheckIsReadyByTime(const int64_t& currentTime);
@@ -162,8 +163,9 @@ public:
     void RecordVsyncModeChange(uint32_t refreshRate, int64_t period);
     bool IsUiDvsyncOn();
     VsyncError SetUiDvsyncSwitch(bool dvsyncSwitch, const sptr<VSyncConnection>& connection);
-    VsyncError SetUiDvsyncConfig(int32_t bufferCount, bool delayEnable, bool nativeDelayEnable);
-    virtual int64_t GetUiCommandDelayTime();
+    VsyncError SetUiDvsyncConfig(int32_t bufferCount, bool compositeSceneEnable,
+        bool nativeDelayEnable, const std::vector<std::string>& rsDvsyncAnimationList);
+    int64_t GetUiCommandDelayTime();
     // no input scene delay rs
     int64_t GetRsDelayTime(const int32_t pid);
     void UpdatePendingReferenceTime(int64_t &timeStamp);

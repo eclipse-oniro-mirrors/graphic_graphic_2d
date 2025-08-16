@@ -13,6 +13,11 @@
  * limitations under the License.
  */
 #include <gtest/gtest.h>
+
+#include <if_system_ability_manager.h>
+#include <iservice_registry.h>
+#include <system_ability_definition.h>
+
 #include "vsync_distributor.h"
 #include "vsync_generator.h"
 #include "vsync_controller.h"
@@ -32,6 +37,7 @@ public:
     static inline sptr<VSyncDistributor> vsyncDistributor = nullptr;
     static inline sptr<VSyncGenerator> vsyncGenerator = nullptr;
     static inline sptr<VSyncConnection> vsyncConnection = nullptr;
+    static inline sptr<VSyncConnectionProxy> vsyncConnectionProxy = nullptr;
     static inline sptr<VSyncConnectionProxy> vsyncConnectionProxyMock_ = nullptr;
     static constexpr const int32_t WAIT_SYSTEM_ABILITY_REPORT_DATA_SECONDS = 5;
 };
@@ -88,6 +94,10 @@ void VSyncConnectionTest::SetUpTestCase()
     vsyncController = new VSyncController(vsyncGenerator, 0);
     vsyncDistributor = new VSyncDistributor(vsyncController, "VSyncConnection");
     vsyncConnection = new VSyncConnection(vsyncDistributor, "VSyncConnection");
+    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    ASSERT_NE(samgr, nullptr);
+    auto remoteObject = samgr->GetSystemAbility(RENDER_SERVICE);
+    vsyncConnectionProxy = new VSyncConnectionProxy(remoteObject);
     auto vsyncConnectionObjectMock = new MockIRemoteObject();
     vsyncConnectionProxyMock_ = new VSyncConnectionProxy(vsyncConnectionObjectMock);
 }
@@ -100,6 +110,7 @@ void VSyncConnectionTest::TearDownTestCase()
     vsyncGenerator = nullptr;
     vsyncDistributor = nullptr;
     vsyncConnection = nullptr;
+    vsyncConnectionProxy = nullptr;
     vsyncConnectionProxyMock_ = nullptr;
 }
 
@@ -434,6 +445,63 @@ HWTEST_F(VSyncConnectionTest, CheckIsReadyByTime002, Function | MediumTest| Leve
         EXPECT_EQ(tmpConn1->CheckIsReadyByTime(2 * currentTime), true);
         EXPECT_EQ(tmpConn1->requestVsyncTimestamp_.size(), 0);
     }
+}
+
+/*
+* Function: SetUiDvsyncConfig001
+* Type: Function
+* Rank: Important(2)
+* EnvConditions: N/A
+* CaseDescription: 1. call SetUiDvsyncConfig
+ */
+HWTEST_F(VSyncConnectionTest, SetUiDvsyncConfig001, Function | MediumTest| Level3)
+{
+    uint32_t bufferCount = 1;
+    bool compositeSceneEnable = true;
+    bool nativeDelayEnable = true;
+    std::vector<std::string> rsDvsyncAnimationList {};
+    auto res = vsyncConnectionProxy->SetUiDvsyncConfig(bufferCount, compositeSceneEnable,
+        nativeDelayEnable, rsDvsyncAnimationList);
+    ASSERT_EQ(res, VSYNC_ERROR_OK);
+}
+
+/*
+* Function: SetUiDvsyncConfig002
+* Type: Function
+* Rank: Important(2)
+* EnvConditions: N/A
+* CaseDescription: 1. call SetUiDvsyncConfig
+ */
+HWTEST_F(VSyncConnectionTest, SetUiDvsyncConfig002, Function | MediumTest| Level3)
+{
+    uint32_t bufferCount = 1;
+    bool compositeSceneEnable = true;
+    bool nativeDelayEnable = true;
+    std::vector<std::string> rsDvsyncAnimationList = {"APP_SWIPER_FLING", "ABILITY_OR_PAGE_SWITCH"};
+    auto res = vsyncConnectionProxy->SetUiDvsyncConfig(bufferCount, compositeSceneEnable,
+        nativeDelayEnable, rsDvsyncAnimationList);
+    ASSERT_EQ(res, VSYNC_ERROR_OK);
+}
+
+/*
+* Function: SetUiDvsyncConfig003
+* Type: Function
+* Rank: Important(2)
+* EnvConditions: N/A
+* CaseDescription: 1. call SetUiDvsyncConfig
+ */
+HWTEST_F(VSyncConnectionTest, SetUiDvsyncConfig003, Function | MediumTest| Level3)
+{
+    uint32_t bufferCount = 1;
+    bool compositeSceneEnable = true;
+    bool nativeDelayEnable = true;
+    std::vector<std::string> rsDvsyncAnimationList = {"APP_SWIPER_FLING", "ABILITY_OR_PAGE_SWITCH",
+        "APP_LIST1", "APP_LIST2", "APP_LIST3", "APP_LIST4", "APP_LIST5", "APP_LIST6", "APP_LIST7",
+        "APP_LIST8", "APP_LIST9", "APP_LIST10", "APP_LIST11", "APP_LIST12", "APP_LIST13", "APP_LIST14",
+        "APP_LIST15", "APP_LIST16", "APP_LIST17", "APP_LIST18", "APP_LIST19", "APP_LIST20", "APP_LIST21"};
+    auto res = vsyncConnectionProxy->SetUiDvsyncConfig(bufferCount, compositeSceneEnable,
+        nativeDelayEnable, rsDvsyncAnimationList);
+    ASSERT_EQ(res, VSYNC_ERROR_OK);
 }
 } // namespace
 } // namespace Rosen
