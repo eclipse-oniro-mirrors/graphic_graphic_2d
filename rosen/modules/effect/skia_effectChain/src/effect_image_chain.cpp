@@ -23,7 +23,6 @@
 #include "platform/common/rs_system_properties.h"
 #include "render/rs_hps_blur.h"
 #include "render/rs_pixel_map_util.h"
-#include "render_context/render_context.h"
 
 #ifdef RS_ENABLE_VK
 #include "effect_vulkan_context.h"
