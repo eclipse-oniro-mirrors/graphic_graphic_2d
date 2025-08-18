@@ -39,6 +39,7 @@ ohos_unittest("RSRenderServiceBaseHwcTest") {
   include_dirs = [
     "$graphic_2d_root/rosen/include",
     "$graphic_2d_root/rosen/modules/render_service_base/include",
+    "$graphic_2d_root/rosen/modules/render_service_client/core",
     "$graphic_2d_root/rosen/test/include",
   ]
 
@@ -49,10 +50,8 @@ ohos_unittest("RSRenderServiceBaseHwcTest") {
 
   external_deps = [
     "c_utils:utils",
-    "eventhandler:libeventhandler",
     "googletest:gtest_main",
     "graphic_surface:surface",
-    "hilog:libhilog",
     "image_framework:image_native",
     "init:libbegetutil",
     "ipc:ipc_core",
