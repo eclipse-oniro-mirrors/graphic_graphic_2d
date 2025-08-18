@@ -183,7 +183,7 @@ public:
     // forcefully enable DVsync in RS
     void ForceRsDVsync(const std::string &sceneId);
 
-    // used by V Rate
+    // used by VRate
     std::vector<uint64_t> GetSurfaceNodeLinkerIds(uint64_t windowNodeId);
     std::vector<uint64_t> GetVsyncNameLinkerIds(uint32_t pid, const std::string &name);
     void SetTaskEndWithTime(uint64_t time);
