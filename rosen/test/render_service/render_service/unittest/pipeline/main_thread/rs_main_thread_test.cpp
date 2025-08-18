@@ -1122,6 +1122,76 @@ HWTEST_F(RSMainThreadTest, ProcessCommandForUniRender, TestSize.Level1)
 }
 
 /**
+ * @tc.name: ProcessCommandForUniRenderTest002
+ * @tc.desc: ProcessCommandForUniRender
+ * @tc.type: FUNC
+ * @tc.require: issueICSOBY
+ */
+HWTEST_F(RSMainThreadTest, ProcessCommandForUniRenderTest002, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    mainThread->effectiveTransactionDataIndexMap_.clear();
+    ASSERT_EQ(mainThread->effectiveTransactionDataIndexMap_.empty(), true);
+
+    uint32_t pid = 12345;
+    uint64_t curTime = 0;
+    mainThread->transactionDataLastWaitTime_[pid] = 0;
+    mainThread->effectiveTransactionDataIndexMap_[pid].first = 0;
+    if (mainThread->rsVSyncDistributor_ == nullptr) {
+        auto vsyncGenerator = CreateVSyncGenerator();
+        auto vsyncController = new VSyncController(vsyncGenerator, 0);
+        mainThread->rsVSyncDistributor_ = new VSyncDistributor(vsyncController, "rs");
+        vsyncGenerator->SetRSDistributor(mainThread->rsVSyncDistributor_);
+    }
+
+    NodeId nodeId = 1;
+    std::weak_ptr<RSContext> context = {};
+    auto rsCanvasDrawingRenderNode = std::make_shared<RSCanvasDrawingRenderNode>(nodeId, context);
+    auto drawableNode = DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(rsCanvasDrawingRenderNode);
+    drawableNode->SetNeedDraw(true);
+    mainThread->context_->nodeMap.RegisterRenderNode(rsCanvasDrawingRenderNode);
+
+    // default data with index 0
+    auto data = std::make_unique<RSTransactionData>();
+    ASSERT_NE(data, nullptr);
+    data->SetIndex(1);
+    mainThread->effectiveTransactionDataIndexMap_[pid].second.emplace_back(std::move(data));
+    mainThread->timestamp_ = curTime;
+    mainThread->ProcessCommandForUniRender();
+
+    // When the index values are not continuous, wait for the RSTransactionData with continuous index values.
+    data = std::make_unique<RSTransactionData>();
+    ASSERT_NE(data, nullptr);
+    data->SetIndex(3);
+    mainThread->effectiveTransactionDataIndexMap_[pid].second.emplace_back(std::move(data));
+    curTime += REFRESH_PERIOD;
+    mainThread->timestamp_ = curTime;
+    mainThread->ProcessCommandForUniRender();
+    ASSERT_EQ(mainThread->transactionDataLastWaitTime_[pid], curTime);
+    ASSERT_EQ(mainThread->effectiveTransactionDataIndexMap_[pid].second.empty(), false);
+
+    data = std::make_unique<RSTransactionData>();
+    ASSERT_NE(data, nullptr);
+    data->SetIndex(2);
+    mainThread->effectiveTransactionDataIndexMap_[pid].second.emplace_back(std::move(data));
+    curTime += REFRESH_PERIOD;
+    mainThread->timestamp_ = curTime;
+    mainThread->ProcessCommandForUniRender();
+    ASSERT_EQ(mainThread->transactionDataLastWaitTime_[pid], 0);
+    ASSERT_EQ(mainThread->effectiveTransactionDataIndexMap_[pid].second.empty(), true);
+
+    data = std::make_unique<RSTransactionData>();
+    ASSERT_NE(data, nullptr);
+    data->SetIndex(5);
+    mainThread->effectiveTransactionDataIndexMap_[pid].second.emplace_back(std::move(data));
+    curTime += REFRESH_PERIOD * SKIP_COMMAND_FREQ_LIMIT + 1;
+    mainThread->timestamp_ = curTime;
+    mainThread->ProcessCommandForUniRender();
+    ASSERT_EQ(mainThread->transactionDataLastWaitTime_[pid], curTime);
+    ASSERT_EQ(mainThread->effectiveTransactionDataIndexMap_[pid].second.empty(), false);
+}
+
+/**
  * @tc.name: GetWatermarkImg
  * @tc.desc: GetWatermarkImg test
  * @tc.type: FUNC

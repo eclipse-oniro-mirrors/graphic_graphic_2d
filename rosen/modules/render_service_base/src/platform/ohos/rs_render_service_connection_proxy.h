@@ -443,7 +443,7 @@ private:
     static inline BrokerDelegator<RSRenderServiceConnectionProxy> delegator_;
 
     pid_t pid_ = GetRealPid();
-    uint32_t transactionDataIndex_ = 0;
+    std::atomic<uint32_t> transactionDataIndex_ = 0;
     OnRemoteDiedCallback OnRemoteDiedCallback_;
 };
 } // namespace Rosen
