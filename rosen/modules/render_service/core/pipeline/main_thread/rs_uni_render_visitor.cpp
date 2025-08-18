@@ -1448,6 +1448,7 @@ void RSUniRenderVisitor::CollectTopOcclusionSurfacesInfo(RSSurfaceRenderNode& no
 
 CM_INLINE void RSUniRenderVisitor::PrepareForUIFirstNode(RSSurfaceRenderNode& node)
 {
+    node.UpdateUIFirstFrameGravity();
     RSUifirstManager::Instance().MarkSubHighPriorityType(node);
     if (isTargetUIFirstDfxEnabled_) {
         auto isTargetUIFirstDfxSurface = CheckIfSurfaceForUIFirstDFX(node.GetName());
@@ -1962,7 +1963,6 @@ CM_INLINE bool RSUniRenderVisitor::BeforeUpdateSurfaceDirtyCalc(RSSurfaceRenderN
     if (node.GetName().find(CAPTURE_WINDOW_NAME) != std::string::npos) {
         curLogicalDisplayNode_->SetHasCaptureWindow(true);
     }
-    node.UpdateUIFirstFrameGravity();
     if (node.IsMainWindowType() || node.IsLeashWindow()) {
         // if firstLevelNode has attration animation,
         // subsurface with main window type, set attraction animation flag to skip filter cache occlusion
