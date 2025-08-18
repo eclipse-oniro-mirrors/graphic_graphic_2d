@@ -477,7 +477,7 @@ void RSScreenRenderNode::SelectBestGamut(const std::vector<ScreenColorGamut>& mo
         return;
     };
     std::unordered_set<GraphicColorGamut> supported;
-    for(auto gamut : mode) {
+    for (auto gamut : mode) {
         if (gamut == COLOR_GAMUT_DISPLAY_BT2020) {
             supported.insert(GRAPHIC_COLOR_GAMUT_BT2020);
         } else {
@@ -493,7 +493,7 @@ void RSScreenRenderNode::SelectBestGamut(const std::vector<ScreenColorGamut>& mo
         GRAPHIC_COLOR_GAMUT_DISPLAY_P3,
         GRAPHIC_COLOR_GAMUT_BT2020,
         GRAPHIC_COLOR_GAMUT_SRGB,
-        static_cast<GraphicColorGamut>(modes[0])
+        static_cast<GraphicColorGamut>(mode[0])
     };
 
     for (auto& gamut : priority) {
