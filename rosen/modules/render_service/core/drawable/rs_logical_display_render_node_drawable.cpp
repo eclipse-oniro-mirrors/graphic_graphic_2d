@@ -836,6 +836,7 @@ void RSLogicalDisplayRenderNodeDrawable::DrawWiredMirrorOnDraw(RSLogicalDisplayR
     curCanvas_->Restore();
     rsDirtyRectsDfx.OnDrawVirtual(*curCanvas_);
     if (mirroredParams->GetSpecialLayerMgr().Find(SpecialLayerType::HAS_PROTECTED)) {
+        canvasMatrix.PreTranslate(-mirroredParams->GetOffsetX(), -mirroredParams->GetOffsetY());
         RSDrmUtil::DRMCreateLayer(processor, canvasMatrix);
         curScreenParam->SetGlobalZOrder(curScreenParam->GetGlobalZOrder() + 1);
     }
