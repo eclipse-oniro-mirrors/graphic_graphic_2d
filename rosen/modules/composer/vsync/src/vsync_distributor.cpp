@@ -28,6 +28,7 @@
 #include "vsync_type.h"
 #include "vsync_generator.h"
 #include <rs_trace.h>
+#include <vector>
 #include "scoped_trace_fmt.h"
 
 #ifdef COMPOSER_SCHED_ENABLE
