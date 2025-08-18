@@ -57,19 +57,6 @@ sptr<RSIConnectionToken> g_token = nullptr;
 sptr<RSRenderServiceConnectionStub> g_connectionStub = nullptr;
 std::string g_originTag = "";
 
-/* Call once in the Fuzzer Initialize function */
-int Initialize()
-{
-    g_token = new IRemoteStub<RSIConnectionToken>();
-    g_connectionStub = new RSRenderServiceConnection(
-        getpid(), nullptr, nullptr, impl::RSScreenManager::GetInstance(), g_token->AsObject(), nullptr);
-#ifdef RS_ENABLE_VK
-    RsVulkanContext::GetSingleton().InitVulkanContextForUniRender("");
-#endif
-    RSHardwareThread::Instance().Start();
-    return 0;
-}
-
 void WriteUnirenderConfig(std::string& tag)
 {
     std::ofstream file;
@@ -228,7 +215,14 @@ void DoSetColorFollow(FuzzedDataProvider& fdp)
 /* Fuzzer envirement */
 extern "C" int LLVMFuzzerInitialize(const uint8_t* data, size_t size)
 {
-    return OHOS::Rosen::Initialize();
+    OHOS::Rosen::g_token = new OHOS::IRemoteStub<OHOS::Rosen::RSIConnectionToken>();
+    OHOS::Rosen::g_connectionStub = new OHOS::Rosen::RSRenderServiceConnection(getpid(), nullptr, nullptr,
+        OHOS::Rosen::impl::RSScreenManager::GetInstance(), OHOS::Rosen::g_token->AsObject(), nullptr);
+#ifdef RS_ENABLE_VK
+    OHOS::Rosen::RsVulkanContext::GetSingleton().InitVulkanContextForUniRender("");
+#endif
+    OHOS::Rosen::RSHardwareThread::Instance().Start();
+    return 0;
 }
 
 /* Fuzzer entry point */
