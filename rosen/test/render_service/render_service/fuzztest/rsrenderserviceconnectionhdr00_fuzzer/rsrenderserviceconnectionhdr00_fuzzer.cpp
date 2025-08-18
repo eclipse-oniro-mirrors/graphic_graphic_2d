@@ -59,27 +59,6 @@ sptr<RSRenderServiceConnectionStub> g_connectionStub = nullptr;
 sptr<RSRenderServiceConnection> g_connection = nullptr;
 std::string g_originTag = "";
 
-/* Call once in the Fuzzer Initialize function */
-int Initialize()
-{
-    g_mainThread = RSMainThread::Instance();
-    g_mainThread->runner_ = AppExecFwk::EventRunner::Create(true);
-    g_mainThread->handler_ = std::make_shared<AppExecFwk::EventHandler>(g_mainThread->runner_);
-    g_token = new IRemoteStub<RSIConnectionToken>();
-    auto generator = impl::VSyncGenerator::GetInstance();
-    auto appVSyncController = new VSyncController(generator, 0);
-    DVSyncFeatureParam dvsyncParam;
-    auto appVSyncDistributor = new VSyncDistributor(appVSyncController, "app", dvsyncParam);
-    g_connection = new RSRenderServiceConnection(getpid(), nullptr, nullptr,
-        impl::RSScreenManager::GetInstance(), g_token->AsObject(), appVSyncDistributor);
-    g_connectionStub = g_connection;
-#ifdef RS_ENABLE_VK
-    RsVulkanContext::GetSingleton().InitVulkanContextForUniRender("");
-#endif
-    RSHardwareThread::Instance().Start();
-    return 0;
-}
-
 void WriteUnirenderConfig(std::string& tag)
 {
     std::ofstream file;
@@ -254,7 +233,23 @@ void DoSetColorFollow(FuzzedDataProvider& fdp)
 /* Fuzzer envirement */
 extern "C" int LLVMFuzzerInitialize(const uint8_t* data, size_t size)
 {
-    return OHOS::Rosen::Initialize();
+    OHOS::Rosen::g_mainThread = OHOS::Rosen::RSMainThread::Instance();
+    OHOS::Rosen::g_mainThread->runner_ = OHOS::AppExecFwk::EventRunner::Create(true);
+    OHOS::Rosen::g_mainThread->handler_ =
+        std::make_shared<OHOS::AppExecFwk::EventHandler>(OHOS::Rosen::g_mainThread->runner_);
+    OHOS::Rosen::g_token = new OHOS::IRemoteStub<OHOS::Rosen::RSIConnectionToken>();
+    auto generator = OHOS::Rosen::impl::VSyncGenerator::GetInstance();
+    auto appVSyncController = new OHOS::Rosen::VSyncController(generator, 0);
+    OHOS::Rosen::DVSyncFeatureParam dvsyncParam;
+    auto appVSyncDistributor = new OHOS::Rosen::VSyncDistributor(appVSyncController, "app", dvsyncParam);
+    OHOS::Rosen::g_connection = new OHOS::Rosen::RSRenderServiceConnection(getpid(), nullptr, nullptr,
+        OHOS::Rosen::impl::RSScreenManager::GetInstance(), OHOS::Rosen::g_token->AsObject(), appVSyncDistributor);
+    OHOS::Rosen::g_connectionStub = OHOS::Rosen::g_connection;
+#ifdef RS_ENABLE_VK
+    OHOS::Rosen::RsVulkanContext::GetSingleton().InitVulkanContextForUniRender("");
+#endif
+    OHOS::Rosen::RSHardwareThread::Instance().Start();
+    return 0;
 }
 
 /* Fuzzer entry point */
