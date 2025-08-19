@@ -407,6 +407,7 @@ HWTEST_F(RSRenderNodeDrawableTest, DrawTest, TestSize.Level1)
 
     CaptureParam param;
     param.isSnapshot_ = true;
+    param.isMirror_ = true;
     RSUniRenderThread::SetCaptureParam(param);
     ASSERT_TRUE(RSUniRenderThread::IsInCaptureProcess());
 }
