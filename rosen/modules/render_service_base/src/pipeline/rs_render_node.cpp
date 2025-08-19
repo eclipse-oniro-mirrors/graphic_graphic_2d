@@ -84,6 +84,9 @@ const std::unordered_set<RSDrawableSlot> edrDrawableSlots = {
     RSDrawableSlot::COMPOSITING_FILTER,
     RSDrawableSlot::BLENDER
 };
+
+constexpr uint32_t SET_IS_ON_THE_TREE_THRESHOLD = 50;
+static uint32_t g_setIsOntheTreeCnt = 0;
 } // namespace
 
 std::unordered_map<pid_t, size_t> RSRenderNode::blurEffectCounter_ = {};
@@ -280,6 +283,7 @@ void RSRenderNode::AddChild(SharedPtr child, int index)
     if (isOnTheTree_) {
         child->SetIsOnTheTree(true, instanceRootNodeId_, firstLevelNodeId_, drawingCacheRootId_,
             uifirstRootNodeId_, screenNodeId_, logicalDisplayNodeId_);
+        ShowSetIsOnetheTreeCntIfNeed(__func__, GetId(), GetNodeName());
     } else {
         if (child->GetType() == RSRenderNodeType::SURFACE_NODE) {
             auto surfaceNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(child);
@@ -508,6 +512,7 @@ void RSRenderNode::SetIsOnTheTree(bool flag, NodeId instanceRootNodeId, NodeId f
     if (flag == isOnTheTree_) {
         return;
     }
+    g_setIsOntheTreeCnt++;
 
 #ifdef RS_MEMORY_INFO_MANAGER
     RSMemoryInfoManager::RecordNodeOnTreeStatus(flag, GetId(), instanceRootNodeId);
@@ -716,6 +721,7 @@ void RSRenderNode::AddCrossParentChild(const SharedPtr& child, int32_t index)
     if (isOnTheTree_) {
         child->SetIsOnTheTree(true, instanceRootNodeId_, firstLevelNodeId_, drawingCacheRootId_, uifirstRootNodeId_,
             screenNodeId_, logicalDisplayNodeId_);
+        ShowSetIsOnetheTreeCntIfNeed(__func__, GetId(), GetNodeName());
     }
     if (child->IsCrossNode()) {
         child->SetDirty();
@@ -901,6 +907,7 @@ void RSRenderNode::ResetParent()
         AddSubSurfaceUpdateInfo(nullptr, parentNode);
     }
     SetIsOnTheTree(false);
+    ShowSetIsOnetheTreeCntIfNeed(__func__, GetId(), GetNodeName());
     parent_.reset();
     OnResetParent();
 }
@@ -1611,6 +1618,18 @@ bool RSRenderNode::SetAccumulatedClipFlag(bool clipChange)
         hasAccumulatedClipFlag_ = IsClipBound();
     }
     return isAccumulatedClipFlagChanged_;
+}
+
+void RSRenderNode::ShowSetIsOnetheTreeCntIfNeed(const std::string& funcName, NodeId nodeId, const std::string& nodeName)
+{
+    if (g_setIsOntheTreeCnt > SET_IS_ON_THE_TREE_THRESHOLD) {
+        RS_TRACE_NAME_FMT("SetIsOnetheTreeCnt too many funcName is %s count is %d nodeId is %" PRIu64 " name is %s",
+            funcName.c_str(),
+            g_setIsOntheTreeCnt,
+            nodeId,
+            nodeName.c_str());
+    }
+    g_setIsOntheTreeCnt = 0;
 }
 
 #ifdef RS_ENABLE_GPU
