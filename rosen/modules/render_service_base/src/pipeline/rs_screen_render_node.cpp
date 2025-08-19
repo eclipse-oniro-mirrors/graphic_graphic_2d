@@ -494,7 +494,7 @@ void RSScreenRenderNode::SelectBestGamut(const std::vector<ScreenColorGamut>& mo
         GRAPHIC_COLOR_GAMUT_BT2020,
         GRAPHIC_COLOR_GAMUT_SRGB,
         static_cast<GraphicColorGamut>(mode[0])
-    };
+    }; // 4 is total gamut to determine
 
     for (auto& gamut : priority) {
         if (supported.count(gamut)) {
