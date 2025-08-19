@@ -206,12 +206,8 @@ bool DoGetScreenType(const uint8_t* data, size_t size)
     return true;
 }
 
-bool DoGetBitmap(const uint8_t* data, size_t size)
+bool DoGetBitmap()
 {
-    if (data == nullptr) {
-        return false;
-    }
-
     auto newPid = getpid();
     auto screenManagerPtr = impl::RSScreenManager::GetInstance();
     sptr<RSIConnectionToken> token_ = new IRemoteStub<RSIConnectionToken>();
@@ -404,12 +400,21 @@ bool DoSetHwcNodeBounds(const uint8_t* data, size_t size)
     MessageParcel replyParcel;
     MessageOption option;
 
+    FuzzedDataProvider fdp(data, size);
+    uint8_t type = fdp.ConsumeIntegralInRange<uint8_t>(0, 13);
+    uint8_t surfaceWindowType = fdp.ConsumeIntegralInRange<uint8_t>(1, 6);
     NodeId id = static_cast<NodeId>(newPid) << 32;
+    bool isTextureExportNode = GetData<bool>();
+    bool isSync = GetData<bool>();
+    bool unobscured = GetData<bool>();
+    std::string surfaceName = GetData<std::string>();
     dataParcel.WriteUint64(id);
-    dataParcel.WriteFloat(1.0f);
-    dataParcel.WriteFloat(1.0f);
-    dataParcel.WriteFloat(1.0f);
-    dataParcel.WriteFloat(1.0f);
+    dataParcel.WriteString(surfaceName);
+    dataParcel.WriteUint8(type);
+    dataParcel.WriteBool(isTextureExportNode);
+    dataParcel.WriteBool(isSync);
+    dataParcel.WriteUint8(surfaceWindowType);
+    dataParcel.WriteBool(unobscured);
     connectionStub_->OnRemoteRequest(code, dataParcel, replyParcel, option);
     return true;
 }
@@ -1140,12 +1145,8 @@ bool DoCreateNodeAndSurface(const uint8_t* data, size_t size)
     return true;
 }
 
-bool DoExecuteSynchronousTask(const uint8_t* data, size_t size)
+bool DoExecuteSynchronousTask()
 {
-    if (data == nullptr) {
-        return false;
-    }
-
     auto newPid = getpid();
     auto screenManagerPtr = impl::RSScreenManager::GetInstance();
     auto mainThread = RSMainThread::Instance();
@@ -1834,12 +1835,8 @@ bool DoGetMemoryGraphics()
     return true;
 }
 
-bool DoGetTotalAppMemSize(const uint8_t* data, size_t size)
+bool DoGetTotalAppMemSize()
 {
-    if (data == nullptr) {
-        return false;
-    }
-
     MessageParcel dataP;
     MessageParcel reply;
     MessageOption option;
@@ -1898,12 +1895,8 @@ bool DoRegisterBufferClearListener(const uint8_t* data, size_t size)
     return true;
 }
 
-bool DoGetPixelmap(const uint8_t* data, size_t size)
+bool DoGetPixelmap()
 {
-    if (data == nullptr) {
-        return false;
-    }
-
     pid_t  newPid = getpid();
     NodeId nodeId = static_cast<NodeId>(newPid) << 32;
     MessageParcel dataP;
@@ -1921,12 +1914,8 @@ bool DoGetPixelmap(const uint8_t* data, size_t size)
     return true;
 }
 
-bool DoSetWatermark(const uint8_t* data, size_t size)
+bool DoSetWatermark()
 {
-    if (data == nullptr) {
-        return false;
-    }
-
     std::string name = "name";
     MessageParcel dataP;
     MessageParcel reply;
@@ -3018,12 +3007,8 @@ bool DoCreateVSyncConnection(const uint8_t* data, size_t size)
     return true;
 }
 
-bool DoCommitTransaction(const uint8_t* data, size_t size)
+bool DoCommitTransaction()
 {
-    if (data == nullptr) {
-        return false;
-    }
-
     uint32_t code =
         static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::COMMIT_TRANSACTION);
     auto newPid = getpid();
@@ -3108,12 +3093,8 @@ bool DoSetScreenSwitchingNotifyCallback(const uint8_t* data, size_t size)
     return true;
 }
 
-bool DoRegisterApplicationAgent(const uint8_t* data, size_t size)
+bool DoRegisterApplicationAgent()
 {
-    if (data == nullptr) {
-        return false;
-    }
-
     uint32_t code =
         static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REGISTER_APPLICATION_AGENT);
     auto newPid = getpid();
@@ -3155,8 +3136,9 @@ bool DoGetScreenPowerStatus(const uint8_t* data, size_t size)
     MessageParcel dataParcel;
     MessageParcel replyParcel;
 
+    ScreenId id = GetData<uint64_t>();
     dataParcel.WriteInterfaceToken(GetDescriptor());
-    dataParcel.WriteInt64(0);
+    dataParcel.WriteUint64(id);
     connectionStub_->OnRemoteRequest(code, dataParcel, replyParcel, option);
     return true;
 }
@@ -3194,12 +3176,8 @@ bool DoRegisterBufferAvailableListener(const uint8_t* data, size_t size)
     return true;
 }
 
-bool DoRegisterOcclusionChangeCallback(const uint8_t* data, size_t size)
+bool DoRegisterOcclusionChangeCallback()
 {
-    if (data == nullptr) {
-        return false;
-    }
-
     uint32_t code =
         static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REGISTER_OCCLUSION_CHANGE_CALLBACK);
     auto newPid = getpid();
@@ -3324,12 +3302,8 @@ bool DoGetScreenCurrentRefreshRate(const uint8_t* data, size_t size)
     return true;
 }
 
-bool DoCreateNode(const uint8_t* data, size_t size)
+bool DoCreateNode()
 {
-    if (data == nullptr) {
-        return false;
-    }
-
     pid_t newPid = getpid();
     sptr<RSIConnectionToken> token_ = new IRemoteStub<RSIConnectionToken>();
     sptr<RSRenderServiceConnectionStub> connectionStub_ =
@@ -3399,12 +3373,8 @@ bool DoSetBehindWindowFilterEnabled(const uint8_t* data, size_t size)
     return true;
 }
 
-bool DoGetBehindWindowFilterEnabled(const uint8_t* data, size_t size)
+bool DoGetBehindWindowFilterEnabled()
 {
-    if (data == nullptr) {
-        return false;
-    }
-
     auto newPid = getpid();
     auto screenManagerPtr = impl::RSScreenManager::GetInstance();
     auto mainThread = RSMainThread::Instance();
@@ -3707,7 +3677,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::Rosen::DoGetScreenGamutMap(data, size);
     OHOS::Rosen::DoGetScreenHDRCapability(data, size);
     OHOS::Rosen::DoGetScreenType(data, size);
-    OHOS::Rosen::DoGetBitmap(data, size);
+    OHOS::Rosen::DoGetBitmap();
     OHOS::Rosen::DoSetAppWindowNum(data, size);
     OHOS::Rosen::DoShowWatermark(data, size);
     OHOS::Rosen::DoSetScreenPowerStatus(data, size);
@@ -3739,7 +3709,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::Rosen::DoRegisterUIExtensionCallback(data, size);
     OHOS::Rosen::DoMarkPowerOffNeedProcessOneFrame(data, size);
     OHOS::Rosen::DoDisablePowerOffRenderControl(data, size);
-    OHOS::Rosen::DoExecuteSynchronousTask(data, size);
+    OHOS::Rosen::DoExecuteSynchronousTask();
     OHOS::Rosen::DoSetFreeMultiWindowStatus(data, size);
     OHOS::Rosen::DoCreateVirtualScreen(data, size);
     OHOS::Rosen::DoRemoveVirtualScreen(data, size);
@@ -3773,11 +3743,11 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::Rosen::DoCreatePixelMapFromSurface(data, size);
     OHOS::Rosen::DoNotifyTouchEvent();
     OHOS::Rosen::DoGetMemoryGraphics();
-    OHOS::Rosen::DoGetTotalAppMemSize(data, size);
+    OHOS::Rosen::DoGetTotalAppMemSize();
     OHOS::Rosen::DoGetUniRenderEnabled();
     OHOS::Rosen::DoRegisterBufferClearListener(data, size);
-    OHOS::Rosen::DoGetPixelmap(data, size);
-    OHOS::Rosen::DoSetWatermark(data, size);
+    OHOS::Rosen::DoGetPixelmap();
+    OHOS::Rosen::DoSetWatermark();
     OHOS::Rosen::DoReportGameStateData();
     OHOS::Rosen::DoSetHidePrivacyContent(data, size);
     OHOS::Rosen::DoNotifyLightFactorStatus(data, size);
@@ -3812,21 +3782,21 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::Rosen::DoTakeSurfaceCapture(data, size);
     OHOS::Rosen::DoNotifySoftVsyncEvent(data, size);
     OHOS::Rosen::DoCreateVSyncConnection(data, size);
-    OHOS::Rosen::DoCommitTransaction(data, size);
+    OHOS::Rosen::DoCommitTransaction();
     OHOS::Rosen::DoSetScreenChangeCallback(data, size);
     OHOS::Rosen::DoSetScreenSwitchingNotifyCallback(data, size);
-    OHOS::Rosen::DoRegisterApplicationAgent(data, size);
+    OHOS::Rosen::DoRegisterApplicationAgent();
     OHOS::Rosen::DoGetScreenPowerStatus(data, size);
     OHOS::Rosen::DoRegisterBufferAvailableListener(data, size);
-    OHOS::Rosen::DoRegisterOcclusionChangeCallback(data, size);
+    OHOS::Rosen::DoRegisterOcclusionChangeCallback();
     OHOS::Rosen::DoSetVirtualScreenRefreshRate();
     OHOS::Rosen::DoGetScreenSupportedMetaDataKeys(data, size);
     OHOS::Rosen::DoSetScreenRefreshRate(data, size);
     OHOS::Rosen::DoGetScreenCurrentRefreshRate(data, size);
-    OHOS::Rosen::DoCreateNode(data, size);
+    OHOS::Rosen::DoCreateNode();
     OHOS::Rosen::DoNotifySoftVsyncRateDiscountEvent(data, size);
     OHOS::Rosen::DoSetBehindWindowFilterEnabled(data, size);
-    OHOS::Rosen::DoGetBehindWindowFilterEnabled(data, size);
+    OHOS::Rosen::DoGetBehindWindowFilterEnabled();
     OHOS::Rosen::DoProfilerServiceOpenFile(data, size);
     OHOS::Rosen::DoProfilerServicePopulateFiles(data, size);
     OHOS::Rosen::DoProfilerIsSecureScreen(data, size);

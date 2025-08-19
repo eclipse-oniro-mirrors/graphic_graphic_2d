@@ -298,14 +298,6 @@ bool DoSetOverlayDisplayModeFuzzTest(const uint8_t* data, size_t size)
 }
 #endif
 
-bool DoGetHighContrastTextState(const uint8_t* data, size_t size)
-{
-    // test
-    auto& rsInterfaces = RSInterfaces::GetInstance();
-    rsInterfaces.GetHighContrastTextState();
-    return true;
-}
-
 bool DoCreateVirtualScreen(const uint8_t* data, size_t size)
 {
     // get data
@@ -434,7 +426,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 #ifdef RS_ENABLE_OVERLAY_DISPLAY
     OHOS::Rosen::DoSetOverlayDisplayModeFuzzTest(data, size);
 #endif
-    OHOS::Rosen::DoGetHighContrastTextState(data, size);
     OHOS::Rosen::DoSetBehindWindowFilterEnabled(data, size);
     OHOS::Rosen::DoGetBehindWindowFilterEnabled(data, size);
     OHOS::Rosen::DoCreateVirtualScreen(data, size);

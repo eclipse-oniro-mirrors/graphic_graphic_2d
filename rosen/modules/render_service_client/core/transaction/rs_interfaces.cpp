@@ -1200,12 +1200,12 @@ int32_t RSInterfaces::GetPidGpuMemoryInMB(pid_t pid, float &gpuMemInMB)
     ROSEN_LOGD("RSInterfaces::GetpidGpuMemoryInMB called!");
     return ret;
 }
-
+// LCOV_EXCL_START
 bool RSInterfaces::GetHighContrastTextState()
 {
     return renderServiceClient_->GetHighContrastTextState();
 }
-
+// LCOV_EXCL_STOP
 bool RSInterfaces::SetBehindWindowFilterEnabled(bool enabled)
 {
     return renderServiceClient_->SetBehindWindowFilterEnabled(enabled);

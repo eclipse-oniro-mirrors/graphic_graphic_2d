@@ -408,8 +408,7 @@ void RSRenderNode::SetHasUnobscuredUEC()
     if (hasUnobscuredUEC) {
         return stagingRenderParams_->SetHasUnobscuredUEC(hasUnobscuredUEC);
     }
-    std::lock_guard<std::mutex> lock(childrenMutex_);
-    for (auto childWeakPtr : children_) {
+    for (auto &childWeakPtr : children_) {
         if (auto child = childWeakPtr.lock()) {
             hasUnobscuredUEC |= child->HasUnobscuredUEC();
             if (hasUnobscuredUEC) {
