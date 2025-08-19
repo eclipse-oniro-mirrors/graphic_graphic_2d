@@ -568,12 +568,8 @@ bool DoMarshallingHelper015(const uint8_t* data, size_t size)
     return true;
 }
 
-bool DoMarshallingHelper016(const uint8_t* data, size_t size)
+bool DoMarshallingHelper016()
 {
-    if (data == nullptr) {
-        return false;
-    }
-
     Parcel parcel;
     std::shared_ptr<Image> image_null = nullptr;
     RSMarshallingHelper::Marshalling(parcel, image_null);
@@ -629,12 +625,8 @@ bool DoMarshallingHelper017(const uint8_t* data, size_t size)
     return true;
 }
 
-bool DoMarshallingHelper018(const uint8_t* data, size_t size)
+bool DoMarshallingHelper018()
 {
-    if (data == nullptr) {
-        return false;
-    }
-
     Parcel parcel;
     std::shared_ptr<EmitterUpdater> eu = nullptr;
     RSMarshallingHelper::Marshalling(parcel, eu);
@@ -710,7 +702,7 @@ bool DoMarshallingHelper020(const uint8_t* data, size_t size)
     RSMarshallingHelper::Marshalling(parcel, val);
     RSMarshallingHelper::Unmarshalling(parcel, val);
     Parcel parcel2;
-    parcel2.WriteUint32(1);
+    parcel2.WriteUint32(GetData<uint32_t>());
     std::vector<std::shared_ptr<ParticleRenderParams>> vals = {val};
     RSMarshallingHelper::Marshalling(parcel2, vals);
     RSMarshallingHelper::Unmarshalling(parcel2, vals);
@@ -764,12 +756,8 @@ bool DoMarshallingHelper021(const uint8_t* data, size_t size)
     return true;
 }
 
-bool DoMarshallingHelper022(const uint8_t* data, size_t size)
+bool DoMarshallingHelper022()
 {
-    if (data == nullptr) {
-        return false;
-    }
-
     Parcel parcel;
     std::shared_ptr<RSImageBase> base = std::make_shared<RSImageBase>();
     RSMarshallingHelper::Marshalling(parcel, base);
@@ -832,12 +820,12 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::Rosen::DoMarshallingHelper013(data, size);
     OHOS::Rosen::DoMarshallingHelper014(data, size);
     OHOS::Rosen::DoMarshallingHelper015(data, size);
-    OHOS::Rosen::DoMarshallingHelper016(data, size);
+    OHOS::Rosen::DoMarshallingHelper016();
     OHOS::Rosen::DoMarshallingHelper017(data, size);
-    OHOS::Rosen::DoMarshallingHelper018(data, size);
+    OHOS::Rosen::DoMarshallingHelper018();
     OHOS::Rosen::DoMarshallingHelper019(data, size);
     OHOS::Rosen::DoMarshallingHelper020(data, size);
     OHOS::Rosen::DoMarshallingHelper021(data, size);
-    OHOS::Rosen::DoMarshallingHelper022(data, size);
+    OHOS::Rosen::DoMarshallingHelper022();
     return 0;
 }
