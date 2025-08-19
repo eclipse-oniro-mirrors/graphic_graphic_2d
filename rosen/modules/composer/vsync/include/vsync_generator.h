@@ -88,6 +88,7 @@ public:
     virtual void SetFrameRateChangingStatus(bool frameRateChanging) = 0;
     virtual void SetAppDistributor(sptr<VSyncDistributor> &appVSyncDistributor) = 0;
     virtual int64_t GetVSyncOffset() = 0;
+    virtual void PrintGeneratorStatus() = 0;
     // Start of DVSync
     virtual int64_t SetCurrentRefreshRate(uint32_t currRefreshRate, uint32_t lastRefreshRate) = 0;
     virtual bool DVSyncRateChanged(uint32_t currRefreshRate, bool &frameRateChanged, bool needChangeDssRefreshRate) = 0;
@@ -95,7 +96,6 @@ public:
     virtual VsyncError AddDVSyncListener(int64_t phase, const sptr<OHOS::Rosen::VSyncGenerator::Callback>& cb) = 0;
     virtual bool IsUiDvsyncOn() = 0;
     // End of DVSync
-    virtual void PrintGeneratorStatus() = 0;
     virtual bool CheckSampleIsAdaptive(int64_t hardwareVsyncInterval) = 0;
     virtual bool NeedPreexecuteAndUpdateTs(
         int64_t& timestamp, int64_t& period, int64_t& offset, int64_t lastVsyncTime) = 0;
@@ -144,6 +144,7 @@ public:
     void SetFrameRateChangingStatus(bool frameRateChanging) override;
     void SetAppDistributor(sptr<VSyncDistributor> &appVSyncDistributor) override;
     int64_t GetVSyncOffset() override;
+    void PrintGeneratorStatus() override;
 
     // Start of DVSync
     int64_t SetCurrentRefreshRate(uint32_t currRefreshRate, uint32_t lastRefreshRate) override;
@@ -152,7 +153,6 @@ public:
     VsyncError AddDVSyncListener(int64_t phase, const sptr<OHOS::Rosen::VSyncGenerator::Callback>& cb) override;
     bool IsUiDvsyncOn() override;
     // End of DVSync
-    void PrintGeneratorStatus() override;
     bool CheckSampleIsAdaptive(int64_t hardwareVsyncInterval) override;
     bool NeedPreexecuteAndUpdateTs(
         int64_t& timestamp, int64_t& period, int64_t& offset, int64_t lastVsyncTime) override;
