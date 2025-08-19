@@ -103,6 +103,35 @@ namespace OHOS {
         }
         return true;
     }
+
+    void DoSomethingInterestingWithRequestVsyncTimestamp(const uint8_t* data, size_t size)
+    {
+        if (data == nullptr) {
+            return;
+        }
+        // initialize
+        data_ = data;
+        size_ = size;
+        pos = 0;
+
+        int64_t offset = GetData<int64_t>();
+        sptr<Rosen::VSyncGenerator> vsyncGenerator = Rosen::CreateVSyncGenerator();
+        sptr<Rosen::VSyncController> vsyncController = new Rosen::VSyncController(vsyncGenerator, offset);
+        sptr<Rosen::VSyncDistributor> vsyncDistributor = new Rosen::VSyncDistributor(vsyncController, "rs");
+        sptr<Rosen::VSyncConnection> vsyncConnection = new Rosen::VSyncConnection(vsyncDistributor, "rs");
+
+        // get data
+        int64_t requestTime = GetData<int64_t>();
+        int64_t currentTime = GetData<int64_t>();
+        int32_t rate = GetData<int32_t>();
+        vsyncConnection->AddRequestVsyncTimestamp(requestTime);
+        vsyncConnection->CheckIsReadyByTime(currentTime);
+        vsyncConnection->IsRequestVsyncTimestampEmpty();
+        vsyncConnection->MarkRequestWithTimestampOnlyFlag();
+        vsyncConnection->NeedTriggeredVsyncLocked(currentTime);
+        vsyncConnection->RemoveTriggeredVsyncLocked(currentTime);
+        vsyncDistributor->NeedForceUpdateRate(vsyncConnection, rate);
+    }
 }
 
 /* Fuzzer entry point */
@@ -110,6 +139,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
     /* Run your code on data */
     OHOS::DoSomethingInterestingWithMyAPI(data, size);
+    OHOS::DoSomethingInterestingWithRequestVsyncTimestamp(data, size);
     return 0;
 }
 
