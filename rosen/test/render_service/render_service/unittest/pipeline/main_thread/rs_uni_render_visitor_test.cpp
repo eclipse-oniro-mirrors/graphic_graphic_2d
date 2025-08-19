@@ -3161,7 +3161,33 @@ HWTEST_F(RSUniRenderVisitorTest, CollectEffectInfo003, TestSize.Level2)
     parent->AddChild(node);
     node->GetMutableRenderProperties().useEffect_ = true;
     rsUniRenderVisitor->CollectEffectInfo(*node);
-    ASSERT_TRUE(parent->ChildHasVisibleEffect());
+    EXPECT_FALSE(parent->ChildHasVisibleEffect());
+}
+
+/**
+ * @tc.name: CollectEffectInfo004
+ * @tc.desc: Test RSUnitRenderVisitorTest.CollectEffectInfo with parent node, oldDirtyInSurface is not empty
+ * @tc.type: FUNC
+ * @tc.require: issueICTQF4
+ */
+HWTEST_F(RSUniRenderVisitorTest, CollectEffectInfo004, TestSize.Level2)
+{
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    ASSERT_NE(rsUniRenderVisitor, nullptr);
+    constexpr NodeId nodeId = 1;
+    constexpr NodeId parentNodeId = 2;
+    auto node = std::make_shared<RSRenderNode>(nodeId);
+    ASSERT_NE(node, nullptr);
+    auto parent = std::make_shared<RSRenderNode>(parentNodeId);
+    ASSERT_NE(parent, nullptr);
+    node->InitRenderParams();
+    parent->InitRenderParams();
+    parent->AddChild(node);
+    node->GetMutableRenderProperties().useEffect_ = true;
+    node->SetOldDirtyInSurface(RectI(0, 0, 10, 10));
+    rsUniRenderVisitor->CollectEffectInfo(*node);
+    EXPECT_TRUE(parent->ChildHasVisibleEffect());
+    EXPECT_EQ(parent->GetVisibleEffectChild().count(nodeId), 1);
 }
 
 /*
