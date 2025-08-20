@@ -1381,6 +1381,7 @@ private:
     float absRotation_ = 0.f;
     void UpdateBlurEffectCounter(int deltaCount);
     int GetBlurEffectDrawbleCount();
+    void ShowSetIsOnetheTreeCntIfNeed(const std::string& funcName, NodeId nodeId, const std::string& nodeName);
 
     bool enableHdrEffect_ = false;
 
