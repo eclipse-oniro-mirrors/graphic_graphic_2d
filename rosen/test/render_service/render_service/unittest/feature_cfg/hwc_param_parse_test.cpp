@@ -25,8 +25,6 @@ using namespace testing::ext;
 
 namespace {
 const xmlChar NODE_NAME_SINGLE_PARAM[] = "FeatureSingleParam";
-const xmlChar NODE_NAME_MULTI_PARAM[] = "featureMultiParam";
-const xmlChar NODE_NAME_APP[] = "App";
 
 const xmlChar ATTRIBUTE_NAME[] = "name";
 const xmlChar ATTRIBUTE_VALUE[] = "value";
@@ -131,12 +129,12 @@ HWTEST_F(HwcParamParseTest, TestParseHwcInternal002, TestSize.Level1)
 }
 
 /**
- * @tc.name: TestParseFeatureMultiParamFoorApp001
- * @tc.desc: Verify the ParseFeatureMultiParamFoorApp function
+ * @tc.name: TestParseFeatureMultiParamForApp001
+ * @tc.desc: Verify the ParseFeatureMultiParamForApp function
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(HwcParamParseTest, TestParseFeatureMultiParamFoorApp001, TestSize.Level1)
+HWTEST_F(HwcParamParseTest, TestParseFeatureMultiParamForApp001, TestSize.Level1)
 {
     xmlNode childNode;
     childNode.xmlChildrenNode = nullptr;
