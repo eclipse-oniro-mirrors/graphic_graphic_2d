@@ -375,6 +375,10 @@ public:
     {
         return visibleEffectChild_;
     }
+    /* 1. add childNode to visibleEffectChild_ when it has useEffect and non-empty oldDirtySurface
+     * (refer to GetVisibleEffectRegion)
+     * 2. add childNode's visibleEffectChild_ to visibleEffectChild_
+     */
     void UpdateVisibleEffectChild(RSRenderNode& childNode);
 
     inline NodeId GetInstanceRootNodeId() const
