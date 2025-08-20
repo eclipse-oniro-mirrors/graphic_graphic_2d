@@ -30,7 +30,7 @@ namespace {
 const std::string RS_ENERGY_ASSURANCE_TASK_ID = "RS_ENERGY_ASSURANCE_TASK_ID";
 const std::string DESCISION_VIDEO_CALL_TASK_ID = "DESCISION_VIDEO_CALL_TASK_ID";
 const std::unordered_map<std::string, std::vector<uint32_t>> UI_RATE_TYPE_NAME_MAP = {
-    { "ui_animation", { UI_ANIMATION_FRAME_RATE_TYPE, DRAG_SCENE_FRAME_RATE_TYPE } },
+    { "ui_animation", { UI_ANIMATION_FRAME_RATE_TYPE } },
     { "display_sync", { DISPLAY_SYNC_FRAME_RATE_TYPE } },
     { "ace_component", { ACE_COMPONENT_FRAME_RATE_TYPE } },
     { "display_soloist", { DISPLAY_SOLOIST_FRAME_RATE_TYPE } },
@@ -214,7 +214,7 @@ bool HgmEnergyConsumptionPolicy::GetUiIdleFps(FrameRateRange& rsRange, pid_t pid
         return false;
     }
     auto type = rsRange.type_ & ~ANIMATION_STATE_FIRST_FRAME;
-    if (type == DRAG_SCENE_FRAME_RATE_TYPE && !dragSceneEnable_.load() &&
+    if (type & SCROLLABLE_MULTI_TASK_FRAME_RATE_TYPE && !dragSceneEnable_.load() &&
         pid == dragSceneDisablePid_.load()) {
         return false;
     }

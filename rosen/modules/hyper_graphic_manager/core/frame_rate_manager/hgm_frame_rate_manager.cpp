@@ -382,9 +382,11 @@ void HgmFrameRateManager::UpdateGuaranteedPlanVote(uint64_t timestamp)
 
 void HgmFrameRateManager::ProcessLtpoVote(const FrameRateRange& finalRange)
 {
-    frameVoter_.SetDragScene(finalRange.type_ == DRAG_SCENE_FRAME_RATE_TYPE);
+    frameVoter_.SetDragScene(finalRange.type_ & DRAG_SCENE_FRAME_RATE_TYPES);
     if (finalRange.IsValid()) {
         auto refreshRate = UpdateFrameRateWithDelay(CalcRefreshRate(curScreenId_.load(), finalRange));
+        HGM_LOGD("ltpo type: %{public}s", finalRange.GetAllTypeDescription().c_str());
+        RS_TRACE_NAME_FMT("ltpo type: %s", finalRange.GetAllTypeDescription().c_str());
         RS_TRACE_NAME_FMT("ProcessLtpoVote isDragScene_: [%d], refreshRate: [%d], lastLTPORefreshRate_: [%d]",
             frameVoter_.IsDragScene(), refreshRate, lastLTPORefreshRate_);
         DeliverRefreshRateVote(
@@ -429,9 +431,11 @@ void HgmFrameRateManager::UpdateSoftVSync(bool followRs)
     if (rsFrameRateLinker_ == nullptr) {
         return;
     }
-    FrameRateRange finalRange = rsFrameRateLinker_->GetExpectedRange();
-    HgmEnergyConsumptionPolicy::Instance().GetAnimationIdleFps(finalRange);
-    rsFrameRateLinker_->SetExpectedRange(finalRange);
+    FrameRateRange rsRange = rsFrameRateLinker_->GetExpectedRange();
+    HgmEnergyConsumptionPolicy::Instance().GetAnimationIdleFps(rsRange);
+    rsFrameRateLinker_->SetExpectedRange(rsRange);
+    FrameRateRange finalRange;
+    finalRange.Merge(rsRange);
     idleDetector_.SetAceAnimatorIdleState(true);
     for (auto linker : appFrameRateLinkers_) {
         if (linker.second == nullptr || !multiAppStrategy_.CheckPidValid(ExtractPid(linker.first))) {

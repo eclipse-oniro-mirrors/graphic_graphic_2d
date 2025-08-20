@@ -171,7 +171,7 @@ void RSModifierManager::SetFrameRateGetFunc(const FrameRateGetFunc& func)
 const FrameRateRange RSModifierManager::GetFrameRateRange() const
 {
     auto frameRateRange = rateDecider_.GetFrameRateRange();
-    frameRateRange.type_ = UI_ANIMATION_FRAME_RATE_TYPE;
+    frameRateRange.type_ |= UI_ANIMATION_FRAME_RATE_TYPE;
     return frameRateRange;
 }
 // LCOV_EXCL_STOP
