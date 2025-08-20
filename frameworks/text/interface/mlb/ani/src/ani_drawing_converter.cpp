@@ -86,4 +86,36 @@ ani_object AniDrawingConverter::ParseFontMetricsToAni(ani_env* env, const Drawin
     env->Object_SetPropertyByName_Double(aniObj, "strikethroughPosition", ani_double(fontMetrics.fStrikeoutPosition));
     return aniObj;
 }
+
+ani_status AniDrawingConverter::ParsePointToAni(ani_env* env, const OHOS::Rosen::Drawing::Point& point, ani_object& obj)
+{
+    ani_object aniObj = AniTextUtils::CreateAniObject(env, ANI_CLASS_POINT, ":V");
+    if (env->Object_SetPropertyByName_Double(aniObj, "x", ani_double(point.GetX())) != ANI_OK) {
+        return ANI_INVALID_ARGS;
+    }
+    if (env->Object_SetPropertyByName_Double(aniObj, "y", ani_double(point.GetY())) != ANI_OK) {
+        return ANI_INVALID_ARGS;
+    }
+    obj = aniObj;
+    return ANI_OK;
+}
+
+ani_status AniDrawingConverter::ParseColorToAni(ani_env* env, const OHOS::Rosen::Drawing::Color& color, ani_object& obj)
+{
+    ani_object aniObj = AniTextUtils::CreateAniObject(env, ANI_CLASS_COLOR, ":V");
+    if (ANI_OK != env->Object_SetPropertyByName_Double(aniObj, "alpha", ani_double(color.GetAlpha()))) {
+        return ANI_INVALID_ARGS;
+    }
+    if (ANI_OK != env->Object_SetPropertyByName_Double(aniObj, "red", ani_double(color.GetRed()))) {
+        return ANI_INVALID_ARGS;
+    }
+    if (ANI_OK != env->Object_SetPropertyByName_Double(aniObj, "green", ani_double(color.GetGreen()))) {
+        return ANI_INVALID_ARGS;
+    }
+    if (ANI_OK != env->Object_SetPropertyByName_Double(aniObj, "blue", ani_double(color.GetBlue()))) {
+        return ANI_INVALID_ARGS;
+    }
+    obj = aniObj;
+    return ANI_OK;
+}
 } // namespace OHOS::Text::ANI
