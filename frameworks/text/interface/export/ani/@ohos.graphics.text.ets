@@ -502,20 +502,6 @@ namespace text {
     direction: TextDirection;
   }
 
-  class RectInternal implements common2D.Rect {
-    left: double;
-    top: double;
-    right: double;
-    bottom: double;
-  }
-
-  class ColorInternal implements common2D.Color {
-    alpha: number;
-    red: number;
-    green: number;
-    blue: number;
-  }
-
   export interface Range {
     start: int;
     end: int;
@@ -708,23 +694,6 @@ namespace text {
     descent: double;
     leading: double;
     width: double;
-  }
-
-  class PointInternal implements common2D.Point {
-    x: number;
-    y: number;
-  }
-
-  class ColorInternal implements common2D.Color {
-    alpha: int;
-    red: int;
-    green: int;
-    blue: int;
-  }
-
-  class PointInternal implements common2D.Point {
-    x: double;
-    y: double;
   }
 
   native function getSystemFontFullNamesByTypeSync(fontType: SystemFontType): Array<string>;

@@ -160,6 +160,11 @@ namespace common2D {
   }
 
   class PointInternal implements common2D.Point {
+    x: double;
+    y: double;
+  }
+
+  class PointInternal implements common2D.Point {
     x: double = 0;
     y: double = 0;
     constructor(
