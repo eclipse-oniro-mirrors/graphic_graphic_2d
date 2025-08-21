@@ -18,63 +18,16 @@
 #include "command/rs_root_node_command.h"
 #include "pipeline/rs_node_map.h"
 #include "platform/common/rs_log.h"
-#include "transaction/rs_interfaces.h"
 #include "transaction/rs_transaction_proxy.h"
 #include "ui/rs_surface_node.h"
 #include "ui/rs_ui_context.h"
 #include "ui/rs_ui_director.h"
-#include "utils/typeface_map.h"
 
 namespace OHOS {
 namespace Rosen {
-namespace {
-bool RegisterTypefaceCallback()
-{
-    static std::once_flag flag;
-    std::call_once(flag, []() {
-        std::function<bool (std::shared_ptr<Drawing::Typeface>)> registerTypefaceFunc =
-            [] (std::shared_ptr<Drawing::Typeface> typeface) -> bool {
-                static Rosen::RSInterfaces& rsInterface = Rosen::RSInterfaces::GetInstance();
-                return rsInterface.RegisterTypeface(typeface);
-            };
-        Drawing::Typeface::RegisterCallBackFunc(registerTypefaceFunc);
-
-        std::function<void (uint32_t)> typefaceDestroyedFunc = [] (uint32_t uniqueId) {
-            static Rosen::RSInterfaces& rsInterface = Rosen::RSInterfaces::GetInstance();
-            rsInterface.UnRegisterTypeface(uniqueId);
-        };
-        Drawing::Typeface::RegisterOnTypefaceDestroyed(typefaceDestroyedFunc);
-        Drawing::Typeface::RegisterUniqueIdCallBack(TypefaceMap::GetTypefaceByUniqueId);
-    });
-    return true;
-}
-
-class TypefaceAutoRegister {
-public:
-    TypefaceAutoRegister()
-    {
-        RegisterTypefaceCallback();
-    }
-
-    ~TypefaceAutoRegister()
-    {
-        Drawing::Typeface::RegisterCallBackFunc(nullptr);
-        Drawing::Typeface::RegisterOnTypefaceDestroyed(nullptr);
-        Drawing::Typeface::RegisterUniqueIdCallBack(nullptr);
-    }
-};
-
-#ifndef ARKUI_X_ENABLE
-// Prohibiting resigter the callback function in advance when arkui-x use custom's font
-TypefaceAutoRegister g_typefaceAutoRegister;
-#endif
-}
-
 std::shared_ptr<RSNode> RSRootNode::Create(
     bool isRenderServiceNode, bool isTextureExportNode, std::shared_ptr<RSUIContext> rsUIContext)
 {
-    RegisterTypefaceCallback();
-
     std::shared_ptr<RSRootNode> node(new RSRootNode(isRenderServiceNode, isTextureExportNode, rsUIContext));
     if (rsUIContext != nullptr) {
         rsUIContext->GetMutableNodeMap().RegisterNode(node);
