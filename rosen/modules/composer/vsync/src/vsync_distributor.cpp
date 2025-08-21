@@ -740,6 +740,9 @@ void VSyncDistributor::EnableVSync(bool isUrgent)
         controller_->SetUrgent(isUrgent);
         controller_->SetRS(isRs_);
         controller_->SetEnable(true, vsyncEnabled_);
+        #if defined(RS_ENABLE_DVSYNC)
+            dvsync_->RecordEnableVsync();
+        #endif
         // Start of DVSync
         RecordEnableVsync();
     }
@@ -749,9 +752,6 @@ void VSyncDistributor::EnableVSync(bool isUrgent)
         dvsyncController_->SetEnable(true, dvsyncControllerEnabled_);
     }
     // End of DVSync
-#if defined(RS_ENABLE_DVSYNC)
-    dvsync_->RecordEnableVsync();
-#endif
 }
 
 void VSyncDistributor::DisableVSync()
