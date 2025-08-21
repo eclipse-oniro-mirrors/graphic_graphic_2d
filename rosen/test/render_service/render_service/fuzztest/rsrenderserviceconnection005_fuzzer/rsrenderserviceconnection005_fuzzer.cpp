@@ -374,32 +374,35 @@ void DoGetRefreshInfoFuzzer()
 
 void CreateSurfaceNode()
 {
-    RSSurfaceRenderNodeConfig config = { .id = GetData<uint64_t>(),
-        .name = "fuzzSurface",
-        .nodeType = RSSurfaceNodeType::SELF_DRAWING_NODE,
-        .isTextureExportNode = false,
-        .isSync = true,
-        .surfaceWindowType = SurfaceWindowType::DEFAULT_WINDOW,
-        .bundleName = "fuzzBundleName" };
-    connectionStub_->CreateNodeAndSurface(config, false);
+    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::CREATE_NODE_AND_SURFACE);
+
+    MessageOption option;
+    MessageParcel dataParcel;
+    MessageParcel replyParcel;
+    dataParcel.WriteUint64(GetData<uint64_t>());
+    dataParcel.WriteString("fuzzSurface");
+    dataParcel.WriteUint8(static_cast<uint8_t>(RSSurfaceNodeType::SELF_DRAWING_NODE));
+    dataParcel.WriteBool(false);
+    dataParcel.WriteBool(false);
+    dataParcel.WriteUint8(static_cast<uint8_t>(SurfaceWindowType::DEFAULT_WINDOW));
+    dataParcel.WriteBool(false);
+
+    connectionStub_->OnRemoteRequest(code, dataParcel, replyParcel, option);
 }
 
 void DoGetRefreshInfoWithoutSurfaceName()
 {
-    g_pos = 0;
     DoGetRefreshInfoFuzzer();
 }
 
 void DoGetRefreshInfoWithSurfaceName()
 {
-    g_pos = 0;
     CreateSurfaceNode();
     DoGetRefreshInfoFuzzer();
 }
 
 void DoGetRefreshInfoWithRenderDisable()
 {
-    g_pos = 0;
     auto originRenderType = RSUniRenderJudgement::uniRenderEnabledType_;
     RSUniRenderJudgement::uniRenderEnabledType_ = UniRenderEnabledType::UNI_RENDER_DISABLED;
     CreateSurfaceNode();
