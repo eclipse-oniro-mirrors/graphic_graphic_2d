@@ -855,7 +855,7 @@ HWTEST_F(EglWrapperDisplayTest, SwapBuffer001, Level1)
     EglWrapperSurface* invalidSurf = (EglWrapperSurface*)(0x01);
     result = eglWrapperDisplay->SwapBuffers(invalidSurf);
     ASSERT_EQ(EGL_FALSE, result);
-    
+}
  
 /**
  * @tc.name: SwapBuffersWithDamageEXT001
