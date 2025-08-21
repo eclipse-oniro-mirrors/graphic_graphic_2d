@@ -51,6 +51,19 @@ T GetData()
     return object;
 }
 
+bool Init(const uint8_t* data, size_t size)
+{
+    if (data == nullptr) {
+        return false;
+    }
+
+    // initialize
+    g_data = data;
+    g_size = size;
+    g_pos = 0;
+    return true;
+}
+
 /*
  * get a string from g_data
  */
@@ -326,10 +339,10 @@ bool RSPropertiesPainterFuzzTest(const uint8_t* data, size_t size)
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
+    if (!OHOS::Rosen::Init(data, size)) {
+        return -1;
+    }
     /* Run your code on data */
-    OHOS::Rosen::g_data = data;
-    OHOS::Rosen::g_size = size;
-    OHOS::Rosen::g_pos = 0;
 
     // Run FuzzTest
     OHOS::Rosen::RSPropertiesFuzzTest(data, size);
