@@ -120,7 +120,6 @@ public:
     static void ResetCaptureParam();
     static bool IsInCaptureProcess();
     static bool IsEndNodeIdValid();
-    static bool IsExpandScreenMode();
     std::vector<NodeId>& GetDrawStatusVec()
     {
         return curDrawStatusVec_;
