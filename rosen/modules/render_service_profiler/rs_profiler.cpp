@@ -1032,7 +1032,7 @@ std::shared_ptr<RSRenderNode> RSProfiler::GetLogicalDisplay()
             continue;
         }
         const auto& screenNodeChildren = screenNode->GetChildren();
-        if (screenNodeChildren->empty()) {
+        if (!screenNodeChildren || screenNodeChildren->empty()) {
             continue;
         }
         return screenNodeChildren->front(); // return display node

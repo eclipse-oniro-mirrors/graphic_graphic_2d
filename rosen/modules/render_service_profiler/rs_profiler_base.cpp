@@ -503,7 +503,7 @@ std::shared_ptr<RSScreenRenderNode> RSProfiler::GetScreenNode(const RSContext& c
             continue;
         }
         const auto& screenNodeChildren = screenNode->GetChildren();
-        if (screenNodeChildren->empty()) {
+        if (!screenNodeChildren || screenNodeChildren->empty()) {
             continue;
         }
         return RSBaseRenderNode::ReinterpretCast<RSScreenRenderNode>(screenNode);
