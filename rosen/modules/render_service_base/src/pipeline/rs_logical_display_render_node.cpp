@@ -22,7 +22,12 @@
 namespace OHOS::Rosen {
 RSLogicalDisplayRenderNode::RSLogicalDisplayRenderNode(NodeId id,
     const RSDisplayNodeConfig& config, const std::weak_ptr<RSContext>& context, bool isTextureExportNode)
-    : RSRenderNode(id, context, isTextureExportNode), screenId_(config.screenId) {}
+    : RSRenderNode(id, context, isTextureExportNode), screenId_(config.screenId)
+{
+    RS_LOGI("RSLogicalDisplayRenderNode ctor id:%{public}" PRIu64 ", config[screenid:%{public}" PRIu64
+            ", isMirrored:%{public}d, mirrorNodeId:%{public}" PRIu64 ", isSync:%{public}d",
+            id, screenId_, config.isMirrored, config.mirrorNodeId, config.isSync);
+}
 
 RSLogicalDisplayRenderNode::~RSLogicalDisplayRenderNode()
 {

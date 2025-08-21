@@ -382,6 +382,8 @@ public:
     static bool GetGpuDirtyApsEnabled();
     static bool GetSupportScreenFreezeEnabled();
 
+    static bool GetBootCompleted();
+
 private:
     RSSystemProperties() = default;
 
