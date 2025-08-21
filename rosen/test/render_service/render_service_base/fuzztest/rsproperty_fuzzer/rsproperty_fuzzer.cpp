@@ -273,15 +273,6 @@ void RSPropertiesFuzzTestInner04(RSProperties& properties)
 
 bool RSPropertiesFuzzTest(const uint8_t* data, size_t size)
 {
-    if (data == nullptr) {
-        return false;
-    }
-
-    // initialize
-    g_data = data;
-    g_size = size;
-    g_pos = 0;
-
     RSProperties properties;
 
     // test
@@ -295,15 +286,6 @@ bool RSPropertiesFuzzTest(const uint8_t* data, size_t size)
 
 bool RSPropertiesPainterFuzzTest(const uint8_t* data, size_t size)
 {
-    if (data == nullptr) {
-        return false;
-    }
-
-    // initialize
-    g_data = data;
-    g_size = size;
-    g_pos = 0;
-
     // getdata
     Drawing::Canvas tmpCanvas;
     float fLeft = GetData<float>();
@@ -344,7 +326,14 @@ bool RSPropertiesPainterFuzzTest(const uint8_t* data, size_t size)
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
-    /* Run your code on data */
+
+    // initialize
+    g_data = data;
+    g_size = size;
+    g_pos = 0;
+
+    // Run FuzzTest
+
     OHOS::Rosen::RSPropertiesFuzzTest(data, size);
     OHOS::Rosen::RSPropertiesPainterFuzzTest(data, size);
     return 0;
