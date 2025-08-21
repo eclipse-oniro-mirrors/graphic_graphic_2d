@@ -12,23 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef RSRENDERSERVICECONNECTION013_FUZZER_H
+#define RSRENDERSERVICECONNECTION013_FUZZER_H
 
-#ifndef PREVALIDATE_PARAM_PARSE_H
-#define PREVALIDATE_PARAM_PARSE_H
+#define FUZZ_PROJECT_NAME "rsrenderserviceconnection013_fuzzer"
 
-#include "xml_parser_base.h"
-#include "prevalidate_param.h"
-
-namespace OHOS::Rosen {
-class PrevalidateParamParse : public XMLParserBase {
-public:
-    PrevalidateParamParse() = default;
-    ~PrevalidateParamParse() = default;
-
-    int32_t ParseFeatureParam(FeatureParamMapType &featureMap, xmlNode &node) override;
-
-private:
-    int32_t ParsePrevalidateInternal(xmlNode &node);
-};
-} // namespace OHOS::Rosen
-#endif // PREVALIDATE_PARAM_PARSE_H
+#endif // RSRENDERSERVICECONNECTION013_FUZZER_H

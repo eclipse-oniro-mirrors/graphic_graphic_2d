@@ -93,6 +93,9 @@ void RSDrawFrame::RenderFrame()
     UnblockMainThread();
     RsFrameReport::GetInstance().CheckUnblockMainThreadPoint();
     Render();
+#ifdef SUBTREE_PARALLEL_ENABLE
+    RSParallelManager::Singleton().Clear();
+#endif
     ReleaseSpecialDrawingNodeBuffer();
     NotifyClearGpuCache();
     RSMainThread::Instance()->CallbackDrawContextStatusToWMS(true);
@@ -295,7 +298,7 @@ void RSDrawFrame::UnblockMainThread()
 
 void RSDrawFrame::Render()
 {
-    RS_TRACE_NAME_FMT("Render vsyncId: %" PRIu64 "", unirenderInstance_.GetVsyncId());
+    RS_TRACE_NAME_FMT("Render vsyncId:%" PRIu64 "", unirenderInstance_.GetVsyncId());
     unirenderInstance_.Render();
 }
 } // namespace Rosen

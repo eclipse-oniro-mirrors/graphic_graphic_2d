@@ -66,11 +66,11 @@ public:
         animationFunc);
 
     uint64_t GetSymbolUid() const;
- 
+
     void SetSymbolUid(uint64_t symbolUid);
- 
+
     void SetSymbolTxt(const HMSymbolTxt& hmsymbolTxt);
- 
+
     const HMSymbolTxt& GetSymbolTxt();
 
     void SetSymbolShadow(const std::optional<SymbolShadow>& symbolShadow);

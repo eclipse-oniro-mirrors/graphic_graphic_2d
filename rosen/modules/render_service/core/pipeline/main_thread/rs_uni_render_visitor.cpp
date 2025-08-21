@@ -940,6 +940,7 @@ void RSUniRenderVisitor::QuickPrepareLogicalDisplayRenderNode(RSLogicalDisplayRe
     auto dirtyManager = curScreenDirtyManager_;
     if (!dirtyManager) {
         RS_LOGE("QuickPrepareLogicalDisplayRenderNode dirtyManager is nullptr");
+        RS_OPTIONAL_TRACE_END_LEVEL(TRACE_LEVEL_PRINT_NODEID);
         return;
     }
     UpdateVirtualDisplayInfo(node);
@@ -1448,6 +1449,7 @@ void RSUniRenderVisitor::CollectTopOcclusionSurfacesInfo(RSSurfaceRenderNode& no
 
 CM_INLINE void RSUniRenderVisitor::PrepareForUIFirstNode(RSSurfaceRenderNode& node)
 {
+    node.UpdateUIFirstFrameGravity();
     RSUifirstManager::Instance().MarkSubHighPriorityType(node);
     if (isTargetUIFirstDfxEnabled_) {
         auto isTargetUIFirstDfxSurface = CheckIfSurfaceForUIFirstDFX(node.GetName());
@@ -1962,7 +1964,6 @@ CM_INLINE bool RSUniRenderVisitor::BeforeUpdateSurfaceDirtyCalc(RSSurfaceRenderN
     if (node.GetName().find(CAPTURE_WINDOW_NAME) != std::string::npos) {
         curLogicalDisplayNode_->SetHasCaptureWindow(true);
     }
-    node.UpdateUIFirstFrameGravity();
     if (node.IsMainWindowType() || node.IsLeashWindow()) {
         // if firstLevelNode has attration animation,
         // subsurface with main window type, set attraction animation flag to skip filter cache occlusion
@@ -2945,8 +2946,8 @@ void RSUniRenderVisitor::CollectEffectInfo(RSRenderNode& node)
         nodeParent->UpdateVisibleFilterChild(node);
     }
     if ((node.GetRenderProperties().GetUseEffect() || node.ChildHasVisibleEffect()) && node.ShouldPaint()) {
-        nodeParent->SetChildHasVisibleEffect(true);
         nodeParent->UpdateVisibleEffectChild(node);
+        nodeParent->SetChildHasVisibleEffect(!nodeParent->GetVisibleEffectChild().empty());
     }
     if (node.GetSharedTransitionParam() || node.ChildHasSharedTransition()) {
         nodeParent->SetChildHasSharedTransition(true);
@@ -3382,7 +3383,6 @@ void RSUniRenderVisitor::ProcessUnpairedSharedTransitionNode()
         if (parent == nullptr) {
             return;
         }
-        parent->AddDirtyType(RSModifierType::CHILDREN);
         parent->AddDirtyType(ModifierNG::RSModifierType::CHILDREN);
         parent->ApplyModifiers();
         // avoid changing the paired status or unpairedShareTransitions_
@@ -3462,7 +3462,7 @@ void RSUniRenderVisitor::CheckMergeDebugRectforRefreshRate(std::vector<RSBaseRen
     }
     if (!surfaceNodeSet) {
         for (auto& displayNode : *curScreenNode_->GetChildren()) {
-            auto& geoPtr = curScreenNode_->GetRenderProperties().GetBoundsGeometry();
+            auto& geoPtr = displayNode->GetRenderProperties().GetBoundsGeometry();
             if (!geoPtr) {
                 continue;
             }

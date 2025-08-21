@@ -52,17 +52,17 @@ RSRenderNodeDrawable::Ptr RSCanvasRenderNodeDrawable::OnGenerate(std::shared_ptr
 }
 
 #ifdef SUBTREE_PARALLEL_ENABLE
-bool RSCanvasRenderNodeDrawable::QuickGetDrawState(RSPaintFilterCanvas* rscanvas)
+bool RSCanvasRenderNodeDrawable::QuickGetDrawState(RSPaintFilterCanvas& rscanvas)
 {
-    if (!rscanvas->IsQuickGetDrawState()) {
+    if (!rscanvas.IsQuickGetDrawState()) {
         return false;
     }
     Drawing::Rect bounds = GetRenderParams() ? GetRenderParams()->GetFrameRect() : Drawing::Rect(0, 0, 0, 0);
-    if (SkipCulledNodeOrEntireSubtree(*rscanvas, bounds)) {
+    if (SkipCulledNodeOrEntireSubtree(rscanvas, bounds)) {
         return true;
     }
 
-    RSParallelManager::Singleton().OnQuickDraw(this, *rscanvas);
+    RSParallelManager::Singleton().OnQuickDraw(this, rscanvas);
     return true;
 }
 #endif
@@ -102,21 +102,22 @@ void RSCanvasRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
 
     auto linkedDrawable = std::static_pointer_cast<RSRootRenderNodeDrawable>(
         params->GetLinkedRootNodeDrawable().lock());
-    auto isOpincDraw = GetOpincDrawCache().PreDrawableCacheState(*params, isOpincDropNodeExt_);
+    auto needOcclusionSkip = paintFilterCanvas->IsQuickGetDrawState() ?
+        true : GetOpincDrawCache().PreDrawableCacheState(*params, isOpincDropNodeExt_);
     RSAutoCanvasRestore acr(paintFilterCanvas, RSPaintFilterCanvas::SaveType::kCanvasAndAlpha);
     params->ApplyAlphaAndMatrixToCanvas(*paintFilterCanvas);
     float hdrBrightness = paintFilterCanvas->GetHDRBrightness();
     paintFilterCanvas->SetHDRBrightness(params->GetHDRBrightness());
     auto& uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
     SetOcclusionCullingEnabled((!uniParam || uniParam->IsOpDropped()) && GetOpDropped() &&
-        isOpincDraw && !params->HasUnobscuredUEC() && LIKELY(linkedDrawable == nullptr));
+        needOcclusionSkip && !params->HasUnobscuredUEC() && LIKELY(linkedDrawable == nullptr));
     if (IsOcclusionCullingEnabled() && QuickReject(canvas, params->GetLocalDrawRect())) {
         SetDrawSkipType(DrawSkipType::OCCLUSION_SKIP);
         return;
     }
 
 #ifdef SUBTREE_PARALLEL_ENABLE
-    if (QuickGetDrawState(paintFilterCanvas)) {
+    if (QuickGetDrawState(*paintFilterCanvas)) {
         return;
     }
 #endif

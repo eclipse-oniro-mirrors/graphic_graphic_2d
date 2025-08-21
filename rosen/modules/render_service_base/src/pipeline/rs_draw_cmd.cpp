@@ -146,6 +146,7 @@ void RSExtendImageObject::SetNodeId(NodeId id)
 {
     if (rsImage_) {
         rsImage_->UpdateNodeIdToPicture(id);
+        rsImage_->SetNodeId(id);
     }
     nodeId_ = id;
 }
@@ -203,6 +204,9 @@ void RSExtendImageObject::Playback(Drawing::Canvas& canvas, const Drawing::Rect&
     RSImageBase::PixelMapUseCountGuard guard = {pixelmap, isPurgeable};
     if (isPurgeable) {
         rsImage_->DePurge();
+    }
+    if (pixelmap && canvas.GetUICapture()) {
+        canvas.SetExistCapturePixelMapFlag(true);
     }
     if (pixelmap && pixelmap->IsAstc()) {
         if (auto recordingCanvas = static_cast<ExtendRecordingCanvas*>(canvas.GetRecordingCanvas())) {

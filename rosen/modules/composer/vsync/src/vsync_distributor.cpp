@@ -28,6 +28,7 @@
 #include "vsync_type.h"
 #include "vsync_generator.h"
 #include <rs_trace.h>
+#include <vector>
 #include "scoped_trace_fmt.h"
 
 #ifdef COMPOSER_SCHED_ENABLE
@@ -1097,9 +1098,8 @@ void VSyncDistributor::CollectConnectionsLTPO(bool &waitForVSync, int64_t timest
         }
 #endif
         SCOPED_DEBUG_TRACE_FMT("CollectConnectionsLTPO, i:%d, name:%s, rate:%d, vsyncPulseFreq:%u"
-            ", referencePulseCount:%ld, vsyncCount:%d, highPriorityRate_:%d", i, connections_[i]->info_.name_.c_str(),
-            connections_[i]->rate_, connections_[i]->vsyncPulseFreq_, connections_[i]->referencePulseCount_,
-            vsyncCount, connections_[i]->highPriorityRate_);
+            ", referencePulseCount:%ld, vsyncCount:%d", i, connections_[i]->info_.name_.c_str(), connections_[i]->rate_,
+            connections_[i]->vsyncPulseFreq_, connections_[i]->referencePulseCount_, vsyncCount);
         // Start of DVSync
         if (DVSyncNeedSkipUi(connections_[i])) {
             waitForVSync = true;
@@ -1796,6 +1796,30 @@ void VSyncDistributor::SetHasNativeBuffer()
 #endif
 }
 
+void VSyncDistributor::PrintConnectionsStatus()
+{
+    std::unique_lock<std::mutex> locker(mutex_);
+    for (uint32_t i = 0; i < connections_.size(); i++) {
+        VLOGW("[Info]PrintConnectionsStatus, i:%{public}d, name:%{public}s, proxyPid:%{public}d"
+            ", highPriorityRate:%{public}d, rate:%{public}d, vsyncPulseFreq:%{public}u",
+            i, connections_[i]->info_.name_.c_str(), connections_[i]->proxyPid_, connections_[i]->highPriorityRate_,
+            connections_[i]->rate_, connections_[i]->vsyncPulseFreq_);
+    }
+    VLOGW("[Info]PrintVSyncInfo, beforeWaitRnvTime %{public}" PRId64 " afterWaitRnvTime %{public}" PRId64
+        " lastNotifyTime %{public}" PRId64 " beforePostEvent %{public}" PRId64 " startPostEvent %{public}" PRId64,
+        beforeWaitRnvTime_, afterWaitRnvTime_, lastNotifyTime_, beforePostEvent_.load(), startPostEvent_.load());
+#if defined(RS_ENABLE_DVSYNC)
+    VLOGW("[Info]DVSync featureEnable %{public}d on %{public}d needDVSyncRnv %{public}d, needDVSyncTrigger %{public}d",
+        dvsync_->IsFeatureEnabled(), IsDVsyncOn(), dvsync_->NeedDVSyncRNV(), dvsync_->NeedDVSyncTrigger());
+#endif
+}
+
+void VSyncDistributor::FirstRequestVsync()
+{
+    std::unique_lock<std::mutex> locker(mutex_);
+    isFirstRequest_ = true;
+}
+
 void VSyncDistributor::InitDVSync(DVSyncFeatureParam dvsyncParam)
 {
 #if defined(RS_ENABLE_DVSYNC_2)
@@ -1950,30 +1974,6 @@ void VSyncDistributor::SetBufferInfo(uint64_t id, const std::string &name, uint3
         ConnPostEvent(connection, timestamp, period, vsyncCount);
     }
 #endif
-}
-
-void VSyncDistributor::PrintConnectionsStatus()
-{
-    std::unique_lock<std::mutex> locker(mutex_);
-    for (uint32_t i = 0; i < connections_.size(); i++) {
-        VLOGW("[Info]PrintConnectionsStatus, i:%{public}d, name:%{public}s, proxyPid:%{public}d"
-            ", highPriorityRate:%{public}d, rate:%{public}d, vsyncPulseFreq:%{public}u",
-            i, connections_[i]->info_.name_.c_str(), connections_[i]->proxyPid_, connections_[i]->highPriorityRate_,
-            connections_[i]->rate_, connections_[i]->vsyncPulseFreq_);
-    }
-    VLOGW("[Info]PrintVSyncInfo, beforeWaitRnvTime %{public}" PRId64 " afterWaitRnvTime %{public}" PRId64
-        " lastNotifyTime %{public}" PRId64 " beforePostEvent %{public}" PRId64 " startPostEvent %{public}" PRId64,
-        beforeWaitRnvTime_, afterWaitRnvTime_, lastNotifyTime_, beforePostEvent_.load(), startPostEvent_.load());
-#if defined(RS_ENABLE_DVSYNC)
-    VLOGW("[Info]DVSync featureEnable %{public}d on %{public}d needDVSyncRnv %{public}d, needDVSyncTrigger %{public}d",
-        dvsync_->IsFeatureEnabled(), IsDVsyncOn(), dvsync_->NeedDVSyncRNV(), dvsync_->NeedDVSyncTrigger());
-#endif
-}
-
-void VSyncDistributor::FirstRequestVsync()
-{
-    std::unique_lock<std::mutex> locker(mutex_);
-    isFirstRequest_ = true;
 }
 
 void VSyncDistributor::SetTaskEndWithTime(uint64_t time)

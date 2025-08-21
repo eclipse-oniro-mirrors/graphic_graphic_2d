@@ -61,7 +61,7 @@ bool Init(const uint8_t* data, size_t size)
     return true;
 }
 
-bool DoCommitTransaction(const uint8_t* data, size_t size)
+bool DoCommitTransaction()
 {
     // test
     auto renderThreadClient = RSIRenderClient::CreateRenderThreadClient();
@@ -70,7 +70,7 @@ bool DoCommitTransaction(const uint8_t* data, size_t size)
     return true;
 }
 
-bool DoExecuteSynchronousTask(const uint8_t* data, size_t size)
+bool DoExecuteSynchronousTask()
 {
     // test
     auto renderThreadClient = RSIRenderClient::CreateRenderThreadClient();
@@ -82,14 +82,10 @@ bool DoExecuteSynchronousTask(const uint8_t* data, size_t size)
 } // namespace OHOS
 
 /* Fuzzer entry point */
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
+extern "C" int LLVMFuzzerTestOneInput()
 {
-    if (!OHOS::Rosen::Init(data, size)) {
-        return -1;
-    }
-    
     /* Run your code on data */
-    OHOS::Rosen::DoCommitTransaction(data, size);
-    OHOS::Rosen::DoExecuteSynchronousTask(data, size);
+    OHOS::Rosen::DoCommitTransaction();
+    OHOS::Rosen::DoExecuteSynchronousTask();
     return 0;
 }

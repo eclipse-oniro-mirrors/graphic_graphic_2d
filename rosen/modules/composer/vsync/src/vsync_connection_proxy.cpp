@@ -35,6 +35,7 @@ VsyncError VSyncConnectionProxy::RequestNextVSync()
 VsyncError VSyncConnectionProxy::RequestNextVSync(
     const std::string& fromWhom, int64_t lastVSyncTS, const int64_t& requestVsyncTime)
 {
+    (void)requestVsyncTime;
     MessageOption opt(MessageOption::TF_ASYNC);
     MessageParcel arg;
     MessageParcel ret;

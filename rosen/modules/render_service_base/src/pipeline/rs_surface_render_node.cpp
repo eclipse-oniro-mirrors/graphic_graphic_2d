@@ -807,11 +807,6 @@ void RSSurfaceRenderNode::SetContextMatrix(const std::optional<Drawing::Matrix>&
     }
     contextMatrix_ = matrix;
     SetContentDirty();
-    AddDirtyType(RSModifierType::SCALE);
-    AddDirtyType(RSModifierType::SKEW);
-    AddDirtyType(RSModifierType::SCALE_Z);
-    AddDirtyType(RSModifierType::PERSP);
-    AddDirtyType(RSModifierType::TRANSLATE);
     AddDirtyType(ModifierNG::RSModifierType::TRANSFORM);
     if (!sendMsg) {
         return;
@@ -828,7 +823,6 @@ void RSSurfaceRenderNode::SetContextAlpha(float alpha, bool sendMsg)
     }
     contextAlpha_ = alpha;
     SetContentDirty();
-    AddDirtyType(RSModifierType::ALPHA);
     AddDirtyType(ModifierNG::RSModifierType::ALPHA);
     if (!sendMsg) {
         return;
@@ -845,7 +839,6 @@ void RSSurfaceRenderNode::SetContextClipRegion(const std::optional<Drawing::Rect
     }
     contextClipRect_ = clipRegion;
     SetContentDirty();
-    AddDirtyType(RSModifierType::BOUNDS);
     AddDirtyType(ModifierNG::RSModifierType::BOUNDS);
     if (!sendMsg) {
         return;
@@ -3267,6 +3260,7 @@ void RSSurfaceRenderNode::UpdatePropertyFromConsumer()
     consumer->GetFrameGravity(gravity);
     if (gravity >= 0) {
         GetMutableRenderProperties().SetFrameGravity(static_cast<Gravity>(gravity));
+        SetFrameGravityNewVersionEnabled(true);
         RS_LOGD("RSSurfaceRenderNode, update frame gravity to = %{public}d", gravity);
     }
 

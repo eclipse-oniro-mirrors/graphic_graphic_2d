@@ -39,7 +39,6 @@ namespace OHOS {
 namespace Rosen {
 
 namespace {
-constexpr size_t STR_LEN = 10;
 const uint8_t* g_data = nullptr;
 size_t g_size = 0;
 size_t g_pos;
@@ -169,7 +168,7 @@ bool RSCanvasRenderNodeFuzzTest(const uint8_t* data, size_t size)
     // getdata
     NodeId id = GetData<NodeId>();
     DrawBuffer drawBuffer = GetData<DrawBuffer>();
-    RSModifierType type = GetData<RSModifierType>();
+    ModifierNG::RSModifierType type = GetData<ModifierNG::RSModifierType>();
     std::shared_ptr<Drawing::DrawCmdList> drawCmds = Drawing::DrawCmdList::CreateFromData(
         { &drawBuffer, sizeof(DrawBuffer) }, true);
     Drawing::Canvas tmpCanvas;
@@ -178,7 +177,7 @@ bool RSCanvasRenderNodeFuzzTest(const uint8_t* data, size_t size)
     RSCanvasRenderNode node(id);
 
     // test
-    node.UpdateRecording(drawCmds, type);
+    node.UpdateRecordingNG(drawCmds, type);
     node.ProcessRenderBeforeChildren(canvas);
     node.ProcessRenderContents(canvas);
     node.ProcessRenderAfterChildren(canvas);
@@ -302,7 +301,7 @@ bool RSOcclusionConfigFuzzTes(const uint8_t* data, size_t size)
     }
 
     RSOcclusionConfig config = RSOcclusionConfig::GetInstance();
-    std::string win = GetStringFromData(STR_LEN);
+    std::string win = GetData<std::string>();
     config.IsLeashWindow(win);
     config.IsStartingWindow(win);
     config.IsAlphaWindow(win);
@@ -332,22 +331,6 @@ bool RSContextFuzzerTest(const uint8_t* data, size_t size)
 
     RSContext::PurgeType type = GetData<RSContext::PurgeType>();
     context.MarkNeedPurge(moment, type);
-
-    return true;
-}
-
-bool RSRenderFrameRateFuzzerTest(const uint8_t* data, size_t size)
-{
-    if (data == nullptr) {
-        return false;
-    }
-
-    Rosen::RSRenderFrameRateLinker::ObserverType observer = nullptr;
-    std::shared_ptr<RSRenderFrameRateLinker> node = std::make_shared<RSRenderFrameRateLinker>(observer);
-    std::shared_ptr<RSRenderFrameRateLinker> node1 = std::make_shared<RSRenderFrameRateLinker>(observer);
-    std::shared_ptr<RSRenderFrameRateLinker> node2 = node;
-    node2 = node1;
-    std::shared_ptr<RSRenderFrameRateLinker> node3 = std::move(node);
 
     return true;
 }
@@ -486,19 +469,14 @@ bool RSSurfaceHandleFuzzerTest(const uint8_t* data, size_t size)
     return true;
 }
 
-bool RSSkResourceManagerFuzzerTest(const uint8_t* data, size_t size)
+bool RSSkResourceManagerFuzzerTest()
 {
-    if (data == nullptr) {
-        return false;
-    }
-
     SKResourceManager::Instance().DeleteSharedTextureContext(nullptr);
     std::list<std::shared_ptr<Drawing::Surface>> list;
     SKResourceManager::Instance().HaveReleaseableResourceCheck(list);
 
     return true;
 }
-
 } // namespace Rosen
 } // namespace OHOS
 
@@ -520,11 +498,10 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::Rosen::RSOcclusionConfigFuzzTes(data, size);
 
     OHOS::Rosen::RSContextFuzzerTest(data, size);
-    OHOS::Rosen::RSRenderFrameRateFuzzerTest(data, size);
     OHOS::Rosen::RSRenderNodeGcFuzzerTest(data, size);
     OHOS::Rosen::RSRenderNodeMapFuzzerTest(data, size);
     OHOS::Rosen::RSSurfaceCallbackManagerFuzzerTest(data, size);
     OHOS::Rosen::RSSurfaceHandleFuzzerTest(data, size);
-    OHOS::Rosen::RSSkResourceManagerFuzzerTest(data, size);
+    OHOS::Rosen::RSSkResourceManagerFuzzerTest();
     return 0;
 }

@@ -44,7 +44,6 @@
 #include "common/rs_vector2.h"
 #include "common/rs_vector4.h"
 #include "modifier/rs_animatable_arithmetic.h"
-#include "modifier/rs_modifier_type.h"
 #include "modifier/rs_render_property.h"
 #include "pipeline/rs_node_map.h"
 #include "transaction/rs_transaction_proxy.h"
@@ -192,6 +191,11 @@ protected:
     virtual void RemovePathAnimation() {}
 
     virtual void UpdateShowingValue(const std::shared_ptr<const RSRenderPropertyBase>& property) {}
+    
+    void AttachModifier(const std::shared_ptr<ModifierNG::RSModifier>& modifier)
+    {
+        modifierNG_ = modifier;
+    }
 
     void Attach(RSNode& node, std::weak_ptr<ModifierNG::RSModifier> modifier = {})
     {
@@ -215,11 +219,6 @@ protected:
 
     virtual void OnDetach() {}
 
-    void AttachModifier(const std::shared_ptr<ModifierNG::RSModifier>& modifier)
-    {
-        modifierNG_ = modifier;
-    }
-
     void MarkCustomModifierDirty();
 
     void MarkNodeDirty();
@@ -236,7 +235,6 @@ protected:
     float GetThresholdByThresholdType(ThresholdType thresholdType) const;
 
     PropertyId id_;
-    ModifierNG::RSPropertyType type_ { ModifierNG::RSPropertyType::INVALID };
     std::weak_ptr<RSNode> target_;
     std::weak_ptr<ModifierNG::RSModifier> modifierNG_;
 
@@ -912,7 +910,6 @@ template<>
 RSC_EXPORT void RSProperty<std::shared_ptr<RSNGShaderBase>>::Set(const std::shared_ptr<RSNGShaderBase>& value);
 template<>
 RSC_EXPORT std::shared_ptr<RSRenderPropertyBase> RSProperty<std::shared_ptr<RSNGShaderBase>>::GetRenderProperty();
-
 template<>
 RSC_EXPORT void RSProperty<std::shared_ptr<RSNGMaskBase>>::OnAttach(RSNode& node,
     std::weak_ptr<ModifierNG::RSModifier> modifier);

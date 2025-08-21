@@ -184,6 +184,8 @@ void RSDirtyRegionManager::OnSync(std::shared_ptr<RSDirtyRegionManager> targetMa
     if (!targetManager) {
         return;
     }
+    // Tell the compiler there is no alias and to select wider load/store
+    // instructions
     RSDirtyRegionManager *ptr = targetManager.get();
     ptr->lastActiveSurfaceRect_ = lastActiveSurfaceRect_;
     ptr->activeSurfaceRect_ = activeSurfaceRect_;

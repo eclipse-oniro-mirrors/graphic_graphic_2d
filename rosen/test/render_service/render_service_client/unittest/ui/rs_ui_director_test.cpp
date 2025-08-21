@@ -189,6 +189,22 @@ HWTEST_F(RSUIDirectorTest, Init001, TestSize.Level1)
 #endif
 
 /**
+ * @tc.name: Init002
+ * @tc.desc: Test Init
+ * @tc.type: FUNC
+ * @tc.require: issueICT195
+ */
+HWTEST_F(RSUIDirectorTest, Init002, TestSize.Level1)
+{
+    std::shared_ptr<RSUIDirector> director1 = RSUIDirector::Create();
+    director1->Init(true, true);
+    ASSERT_NE(director1->GetRSUIContext(), nullptr);
+    std::shared_ptr<RSUIDirector> director2 = RSUIDirector::Create();
+    director2->Init(true, true, director1->GetRSUIContext());
+    ASSERT_EQ(director1->GetRSUIContext(), director2->GetRSUIContext());
+}
+
+/**
  * @tc.name: SetUITaskRunner001
  * @tc.desc:
  * @tc.type:FUNC
