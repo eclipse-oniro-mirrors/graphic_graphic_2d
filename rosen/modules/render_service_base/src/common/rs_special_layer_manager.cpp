@@ -37,11 +37,6 @@ template <class TYPE_T> inline void SetType(TYPE_T& x, TYPE_T y, bool flag)
     }
 }
 
-template <class TYPE_T> inline bool EqualType(TYPE_T x, TYPE_T y)
-{
-    return (x & y) == y;
-}
-
 template <class TYPE_T> inline bool HasType(TYPE_T x, TYPE_T y)
 {
     return x & y;
@@ -51,7 +46,7 @@ namespace OHOS {
 namespace Rosen {
 bool RSSpecialLayerManager::Set(uint32_t type, bool is)
 {
-    if (EqualType(specialLayerType_, type) == is) {
+    if (HasType(specialLayerType_, type) == is) {
         return false;
     }
     SetType(specialLayerType_, type, is);
@@ -103,7 +98,7 @@ void RSSpecialLayerManager::RemoveIds(uint32_t type, NodeId id)
 bool RSSpecialLayerManager::SetWithScreen(uint64_t screenId, uint32_t type, bool is)
 {
     if (screenSpecialLayer_.find(screenId) != screenSpecialLayer_.end() &&
-        EqualType(screenSpecialLayer_.at(screenId), type) == is) {
+        HasType(screenSpecialLayer_.at(screenId), type) == is) {
         return false;
     }
     SetType(screenSpecialLayer_[screenId], type, is);
