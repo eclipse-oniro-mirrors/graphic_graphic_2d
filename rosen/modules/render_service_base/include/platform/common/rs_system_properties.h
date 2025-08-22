@@ -177,6 +177,7 @@ public:
     static bool GetRenderNodePurgeEnabled();
     static bool GetRSImagePurgeEnabled();
     static bool GetClosePixelMapFdEnabled();
+    static bool GetAceTestMode();
     static DirtyRegionDebugType GetDirtyRegionDebugType();
     static AdvancedDirtyRegionType GetAdvancedDirtyRegionEnabled();
     static DirtyAlignType GetDirtyAlignEnabled();
