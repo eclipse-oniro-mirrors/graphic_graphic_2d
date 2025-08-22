@@ -16,6 +16,7 @@
 #include <securec.h>
 
 #include "drawing_font_collection.h"
+#include "drawing_point.h"
 #include "drawing_rect.h"
 #include "drawing_text_line.h"
 #include "drawing_text_run.h"
@@ -35,6 +36,7 @@ public:
     void TearDown() override;
     void PrepareWorkForTypographyStyleTest();
     void PrepareWorkForAutoSpaceTest(std::string& text, double layoutWidth);
+    void PrepareCreateParagraphWithMulTextStyle(vector<std::string>& textVec, int maxLine, OH_Drawing_EllipsisModal ellipsisModal, double layoutWidth);
 
 protected:
     OH_Drawing_FontCollection* fontCollection_{nullptr};
@@ -159,6 +161,197 @@ HWTEST_F(NdkTypographyStyleTest, ParagraphTestGlyphPositionAtCoordinateWithClust
     for (int i = 0; i < 7; i++) {
         free(results[i]);
     }
+}
+void NdkTypographyStyleTest::PrepareCreateParagraphWithMulTextStyle(vector<std::string>& textVec, int maxLine,
+    OH_Drawing_EllipsisModal ellipsisModal, double layoutWidth)
+{
+    ASSERT_EQ(textVec.size(), 4);
+    
+    typoStyle_ = OH_Drawing_CreateTypographyStyle();
+    ASSERT_NE(typoStyle_, nullptr);
+    fontCollection_ = OH_Drawing_CreateSharedFontCollection();
+    ASSERT_NE(fontCollection_, nullptr);
+    // set paragraphStyle
+    OH_Drawing_SetTypographyTextMaxLines(typoStyle_, maxLine);
+    OH_Drawing_SetTypographyTextEllipsisModal(typoStyle_, ellipsisModal);
+    OH_Drawing_SetTypographyTextEllipsis(typoStyle_, "...");
+    
+    // textstyle span1
+    txtStyle_ = OH_Drawing_CreateTextStyle();
+    ASSERT_NE(txtStyle_, nullptr);
+    OH_Drawing_SetTextStyleColor(txtStyle_, OH_Drawing_ColorSetArgb(0xFF, 0x00, 0x00, 0x00));
+    OH_Drawing_SetTextStyleFontSize(txtStyle_, 40);
+    OH_Drawing_SetTextStyleDecoration(txtStyle_, TEXT_DECORATION_UNDERLINE);
+
+    //  textstyle span2
+    OH_Drawing_TextStyle* txtStyle2 = OH_Drawing_CreateTextStyle();
+    ASSERT_NE(txtStyle2, nullptr);
+    OH_Drawing_SetTextStyleColor(txtStyle2, OH_Drawing_ColorSetArgb(0xFF, 0x00, 0xFF, 0x00));
+    OH_Drawing_SetTextStyleFontSize(txtStyle2, 80);
+    OH_Drawing_SetTextStyleDecoration(txtStyle2, TEXT_DECORATION_LINE_THROUGH);
+
+    // textstyle span3
+    OH_Drawing_TextStyle* txtStyle3 = OH_Drawing_CreateTextStyle();
+    ASSERT_NE(txtStyle3, nullptr);
+    OH_Drawing_SetTextStyleColor(txtStyle3, OH_Drawing_ColorSetArgb(0xFF, 0xFF, 0x00, 0xFF));
+    OH_Drawing_SetTextStyleFontSize(txtStyle3, 50);
+    OH_Drawing_SetTextStyleDecoration(txtStyle3, TEXT_DECORATION_OVERLINE);
+
+    // placeholder span
+    OH_Drawing_PlaceholderSpan *PlaceholderSpan = new OH_Drawing_PlaceholderSpan();
+    ASSERT_NE(PlaceholderSpan, nullptr);
+    PlaceholderSpan->width = 100.0;
+    PlaceholderSpan->height = 100.0;
+    PlaceholderSpan->baselineOffset = 0;
+    PlaceholderSpan->alignment = OH_Drawing_PlaceholderVerticalAlignment::ALIGNMENT_CENTER_OF_ROW_BOX;
+    PlaceholderSpan->baseline = OH_Drawing_TextBaseline::TEXT_BASELINE_ALPHABETIC;
+    
+    // textstyle span4
+    OH_Drawing_TextStyle* txtStyle4 = OH_Drawing_CreateTextStyle();
+    ASSERT_NE(txtStyle4, nullptr);
+    OH_Drawing_SetTextStyleColor(txtStyle4, OH_Drawing_ColorSetArgb(0xFF, 0x00, 0xFF, 0xFF));
+    OH_Drawing_SetTextStyleFontSize(txtStyle4, 60);
+    OH_Drawing_SetTextStyleFontWeight(txtStyle4, FONT_WEIGHT_800);
+    OH_Drawing_SetTextStyleDecoration(txtStyle4, TEXT_DECORATION_UNDERLINE);
+
+    handler_ = OH_Drawing_CreateTypographyHandler(typoStyle_, fontCollection_);
+    ASSERT_NE(handler_, nullptr);
+    OH_Drawing_TypographyHandlerPushTextStyle(handler_, txtStyle_);
+    OH_Drawing_TypographyHandlerAddText(handler_, textVec[0].c_str());
+    OH_Drawing_TypographyHandlerPushTextStyle(handler_, txtStyle2);
+    OH_Drawing_TypographyHandlerAddText(handler_, textVec[1].c_str());
+    OH_Drawing_TypographyHandlerPushTextStyle(handler_, txtStyle3);
+    OH_Drawing_TypographyHandlerAddText(handler_, textVec[2].c_str());
+    OH_Drawing_TypographyHandlerAddPlaceholder(handler_, PlaceholderSpan);
+    OH_Drawing_TypographyHandlerPushTextStyle(handler_, txtStyle4);
+    OH_Drawing_TypographyHandlerAddText(handler_, textVec[3].c_str());
+    typography_ = OH_Drawing_CreateTypography(handler_);
+    ASSERT_NE(typography_, nullptr);
+    OH_Drawing_TypographyLayout(typography_, layoutWidth);
+
+    OH_Drawing_DestroyTextStyle(txtStyle2);
+    OH_Drawing_DestroyTextStyle(txtStyle3);
+    OH_Drawing_DestroyTextStyle(txtStyle4);
+}
+
+/*
+ * @tc.name: TypographyEllipsisStyleChange001
+ * @tc.desc: test for tail ellipsis style when span change, maxwidth = 10.
+ * @tc.type: FUNC
+ */
+HWTEST_F(NdkTypographyStyleTest, TypographyEllipsisStyleChange001, TestSize.Level0)
+{
+    vector<std::string> textVec = {"test ellipisis", "测试标题", "这是正文", "好"};
+    int maxline = 1;
+    OH_Drawing_EllipsisModal ellipsisModal = ELLIPSIS_MODAL_TAIL;
+
+    // When layoutWidth is very small and the paragraph contains only the ellipsis.
+    double layoutWidth = 10;
+    PrepareCreateParagraphWithMulTextStyle(textVec, maxline, ellipsisModal, layoutWidth);
+    
+    double longesline = OH_Drawing_TypographyGetLongestLine(typography_);
+    EXPECT_GT(longesline, layoutWidth);
+    EXPECT_NEAR(longesline, 27.719971, FLOAT_DATA_EPSILON);
+}
+
+/*
+ * @tc.name: TypographyEllipsisStyleChange002
+ * @tc.desc: test for tail ellipsis style when span change, maxwidth = 28.
+ * @tc.type: FUNC
+ */
+HWTEST_F(NdkTypographyStyleTest, TypographyEllipsisStyleChange002, TestSize.Level0)
+{
+    vector<std::string> textVec = {"test ellipisis", "测试标题", "这是正文", "好"};
+    int maxline = 1;
+    OH_Drawing_EllipsisModal ellipsisModal = ELLIPSIS_MODAL_TAIL;
+
+    // When layoutWidth is small and the paragraph contains only the ellipsis.
+    double layoutWidth = 28;
+    PrepareCreateParagraphWithMulTextStyle(textVec, maxline, ellipsisModal, layoutWidth);
+    
+    double longesline = OH_Drawing_TypographyGetLongestLine(typography_);
+    EXPECT_LT(longesline, layoutWidth);
+    EXPECT_NEAR(longesline, 27.719971, FLOAT_DATA_EPSILON);
+}
+
+/*
+ * @tc.name: TypographyEllipsisStyleChange003
+ * @tc.desc: test for tail ellipsis style when span change, maxwidth = 280.
+ * @tc.type: FUNC
+ */
+HWTEST_F(NdkTypographyStyleTest, TypographyEllipsisStyleChange003, TestSize.Level0)
+{
+    vector<std::string> textVec = {"test ellipisis", "测试标题", "这是正文", "好"};
+    int maxline = 1;
+    OH_Drawing_EllipsisModal ellipsisModal = ELLIPSIS_MODAL_TAIL;
+
+    // When layoutWidth is 280, the code will take the shapestring fallback branch.
+    double layoutWidth = 280;
+    PrepareCreateParagraphWithMulTextStyle(textVec, maxline, ellipsisModal, layoutWidth);
+    
+    double longesline = OH_Drawing_TypographyGetLongestLine(typography_);
+    EXPECT_LT(longesline, layoutWidth);
+    EXPECT_NEAR(longesline, 266.559723, FLOAT_DATA_EPSILON);
+}
+
+/*
+ * @tc.name: TypographyEllipsisStyleChange004
+ * @tc.desc: test for tail ellipsis style when span change, maxwidth = 580.
+ * @tc.type: FUNC
+ */
+HWTEST_F(NdkTypographyStyleTest, TypographyEllipsisStyleChange004, TestSize.Level0)
+{
+    vector<std::string> textVec = {"test ellipisis", "测试标题", "这是正文", "好"};
+    int maxline = 1;
+    OH_Drawing_EllipsisModal ellipsisModal = ELLIPSIS_MODAL_TAIL;
+
+    // When layoutWidth is 580, it marks the boundary between span2 and span3 in the text styles.
+    double layoutWidth = 580;
+    PrepareCreateParagraphWithMulTextStyle(textVec, maxline, ellipsisModal, layoutWidth);
+    
+    double longesline = OH_Drawing_TypographyGetLongestLine(typography_);
+    EXPECT_LT(longesline, layoutWidth);
+    EXPECT_NEAR(longesline, 565.769470, FLOAT_DATA_EPSILON);
+}
+
+/*
+ * @tc.name: TypographyEllipsisStyleChange005
+ * @tc.desc: test for tail ellipsis style when span change, maxwidth = 820.
+ * @tc.type: FUNC
+ */
+HWTEST_F(NdkTypographyStyleTest, TypographyEllipsisStyleChange005, TestSize.Level0)
+{
+    vector<std::string> textVec = {"test ellipisis", "测试标题", "这是正文", "好"};
+    int maxline = 1;
+    OH_Drawing_EllipsisModal ellipsisModal = ELLIPSIS_MODAL_TAIL;
+
+    // When layoutWidth is 820, it marks the boundary between span3 and placeholderspan in the text styles.
+    double layoutWidth = 820;
+    PrepareCreateParagraphWithMulTextStyle(textVec, maxline, ellipsisModal, layoutWidth);
+    
+    double longesline = OH_Drawing_TypographyGetLongestLine(typography_);
+    EXPECT_LT(longesline, layoutWidth);
+    EXPECT_NEAR(longesline, 765.769226, FLOAT_DATA_EPSILON);
+}
+
+/*
+ * @tc.name: TypographyEllipsisStyleChange006
+ * @tc.desc: test for tail ellipsis style when span change, maxwidth = 890.
+ * @tc.type: FUNC
+ */
+HWTEST_F(NdkTypographyStyleTest, TypographyEllipsisStyleChange006, TestSize.Level0)
+{
+    vector<std::string> textVec = {"test ellipisis", "测试标题", "这是正文", "好"};
+    int maxline = 1;
+    OH_Drawing_EllipsisModal ellipsisModal = ELLIPSIS_MODAL_TAIL;
+
+    // When layoutWidth is 890, it marks the boundary between placeholderspan and span4 in the text styles.
+    double layoutWidth = 890;
+    PrepareCreateParagraphWithMulTextStyle(textVec, maxline, ellipsisModal, layoutWidth);
+    
+    double longesline = OH_Drawing_TypographyGetLongestLine(typography_);
+    EXPECT_LT(longesline, layoutWidth);
+    EXPECT_NEAR(longesline, 880.259216, FLOAT_DATA_EPSILON);
 }
 
 /*
