@@ -18,7 +18,7 @@
 namespace OHOS {
 namespace Rosen {
 namespace {
-    const std::string FORCE_USE_APP_VSYNC = "FORCE_USE_APP_VSYNC";
+const std::string FORCE_USE_APP_VSYNC = "FORCE_USE_APP_VSYNC";
 }
 HgmVoter::HgmVoter(const std::vector<std::string>& voters) : voters_(voters)
 {
@@ -48,8 +48,8 @@ std::optional<VoteInfo> HgmVoter::ProcessVote()
         }
     }
     if (resultVoteInfo.has_value() != 0) {
-        resultVoteInfo.min = min;
-        resultVoteInfo.max = max;
+        resultVoteInfo->min = min;
+        resultVoteInfo->max = max;
     }
 
     return resultVoteInfo;
@@ -76,7 +76,7 @@ bool HgmVoter::ProcessVote(std::vector<std::string>::iterator& voterIter,
         if (resultVoteInfo.has_value() == 0) {
             resultVoteInfo = curVoteInfo;
         } else {
-            resultVoteInfo.Merge(curVoteInfo);
+            resultVoteInfo->Merge(curVoteInfo);
         }
     }
     if (mergeVoteRange) {
@@ -114,7 +114,7 @@ std::pair<bool, bool> HgmVoter::MergeRangeByPriority(VoteRange& rangeRes, const 
 bool HgmVoter::CheckForceUseAppVSync() {
     auto voterIter = voters_.begin();
     for (; voterIter != voters_.end(); ++voterIter) {
-        if (auto iter = voterRecord_find(*voterIter); iter != voteRecord_.end()) {
+        if (auto iter = voteRecord_.find(*voterIter); iter != voteRecord_.end()) {
             for (auto vec = iter->second.first.begin(); vec != iter->second.first.end(); vec++) {
                 if (FORCE_USE_APP_VSYNC == vec->extInfo) {
                     return true;
