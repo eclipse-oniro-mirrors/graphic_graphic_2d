@@ -88,6 +88,10 @@ ohos_fuzztest("RSRenderServiceConnection000FuzzTest") {
   if (defined(use_rosen_drawing) && use_rosen_drawing) {
     defines = [ "USE_ROSEN_DRAWING" ]
   }
+
+  if (tp_feature_enable) {
+    defines += tp_defines
+  }
 }
 
 ###############################################################################
