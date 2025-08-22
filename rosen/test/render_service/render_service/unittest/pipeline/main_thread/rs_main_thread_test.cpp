@@ -6247,7 +6247,7 @@ HWTEST_F(RSMainThreadTest, DoDirectComposition004_BufferSync, TestSize.Level1)
     ASSERT_NE(surfaceNode->surfaceHandler_, nullptr);
     surfaceNode->SetHardwareForcedDisabledState(false);
     surfaceNode->HwcSurfaceRecorder().SetLastFrameHasVisibleRegion(true);
-    displayNode->AddChild(surfaNode);
+    displayNode->AddChild(surfaceNode);
     mainThread->hardwareEnabledNodes_.clear();
     mainThread->hardwareEnabledNodes_.emplace_back(surfaceNode);
 
