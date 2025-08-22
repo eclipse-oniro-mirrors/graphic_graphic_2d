@@ -198,6 +198,7 @@ protected:
 
 private:
     bool CreateNode(const RSDisplayNodeConfig& displayNodeConfig, NodeId nodeId);
+    void OnBoundsSizeChanged() const override;
     void RegisterNodeMap() override;
     uint64_t screenId_;
     bool isSecurityDisplay_ = false;

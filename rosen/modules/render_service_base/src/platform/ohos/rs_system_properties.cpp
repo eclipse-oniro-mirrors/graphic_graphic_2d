@@ -1681,5 +1681,10 @@ bool RSSystemProperties::GetGpuDirtyApsEnabled()
     const char *enable = CachedParameterGetChanged(g_Handle, &changed);
     return ConvertToInt(enable, 0) != 0;
 }
+
+bool RSSystemProperties::GetBootCompleted()
+{
+    return system::GetBoolParameter("bootevent.boot.completed", false);
+}
 } // namespace Rosen
 } // namespace OHOS

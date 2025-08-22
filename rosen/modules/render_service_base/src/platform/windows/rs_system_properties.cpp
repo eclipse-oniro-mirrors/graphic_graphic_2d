@@ -783,5 +783,10 @@ bool RSSystemProperties::GetGpuDirtyApsEnabled()
 {
     return {};
 }
+
+bool RSSystemProperties::GetBootCompleted()
+{
+    return false;
+}
 } // namespace Rosen
 } // namespace OHOS
