@@ -165,7 +165,7 @@ public:
     VsyncError SetUiDvsyncSwitch(bool dvsyncSwitch, const sptr<VSyncConnection>& connection);
     VsyncError SetUiDvsyncConfig(int32_t bufferCount, bool compositeSceneEnable,
         bool nativeDelayEnable, const std::vector<std::string>& rsDvsyncAnimationList);
-    int64_t GetUiCommandDelayTime();
+    virtual int64_t GetUiCommandDelayTime();
     // no input scene delay rs
     int64_t GetRsDelayTime(const int32_t pid);
     void UpdatePendingReferenceTime(int64_t &timeStamp);
@@ -191,7 +191,6 @@ public:
     void SetVSyncTimeUpdated();
     virtual int64_t GetLastUpdateTime();
     virtual void DVSyncUpdate(uint64_t dvsyncTime, uint64_t vsyncTime);
-
 private:
 
     // check, add more info
@@ -262,6 +261,13 @@ private:
 #endif
     bool isRs_ = false;
     std::atomic<bool> hasVsync_ = false;
+    int64_t beforeWaitRnvTime_ = 0;
+    int64_t afterWaitRnvTime_ = 0;
+    int64_t lastNotifyTime_ = 0;
+    std::atomic<int64_t> beforePostEvent_ = 0;
+    std::atomic<int64_t> startPostEvent_ = 0;
+    bool isFirstRequest_ = false;
+    bool isFirstSend_ = false;
     void ConnectionsPostEvent(std::vector<sptr<VSyncConnection>> &conns, int64_t now, int64_t period,
         uint32_t generatorRefreshRate, int64_t vsyncCount, bool isDvsyncController);
     void ConnPostEvent(sptr<VSyncConnection> con, int64_t now, int64_t period, int64_t vsyncCount);
@@ -288,14 +294,8 @@ private:
     bool dvsyncControllerEnabled_ = false;
     std::map<pid_t, std::vector<sptr<VSyncConnection>>> unalliedWindowConnectionsMap_;
     // End of DVSync
-    int64_t beforeWaitRnvTime_ = 0;
-    int64_t afterWaitRnvTime_ = 0;
-    int64_t lastNotifyTime_ = 0;
-    std::atomic<int64_t> beforePostEvent_ = 0;
-    std::atomic<int64_t> startPostEvent_ = 0;
-    bool isFirstRequest_ = false;
-    bool isFirstSend_ = false;
 };
 } // namespace Rosen
 } // namespace OHOS
+
 #endif

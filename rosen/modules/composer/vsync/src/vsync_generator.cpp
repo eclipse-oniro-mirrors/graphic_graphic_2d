@@ -434,8 +434,6 @@ bool VSyncGenerator::DVSyncRateChanged(uint32_t currRefreshRate, bool &frameRate
         frameRateChanged = dvsyncRateChanged;
         isNeedDvsyncDelay = dvsyncRateChanged;
     }
-    RS_OPTIONAL_TRACE_NAME_FMT("isNeedDvsyncDelay: %d, frameRateChanged: %d, needChangeDssRefreshRate: %d.",
-        isNeedDvsyncDelay, frameRateChanged, needChangeDssRefreshRate);
 #endif
     return isNeedDvsyncDelay;
 }
