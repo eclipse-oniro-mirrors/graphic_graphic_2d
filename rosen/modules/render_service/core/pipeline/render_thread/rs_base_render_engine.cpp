@@ -178,7 +178,7 @@ std::unique_ptr<RSRenderFrame> RSBaseRenderEngine::RequestFrame(
     rsSurface->SetColorSpace(config.colorGamut);
     rsSurface->SetSurfacePixelFormat(config.format);
     if (frameContextConfig.isVirtual) {
-        RS_LOGD("RSBaseRenderEngine::RequestFrame: Mirror Screen Set Timeout to 0.");
+        RS_LOGD("RSBaseRenderEngine::RequestFrame: Virtual Screen Set Timeout to 0.");
         rsSurface->SetTimeOut(frameContextConfig.timeOut);
     }
     auto bufferUsage = config.usage;
@@ -316,13 +316,13 @@ void RSBaseRenderEngine::DrawScreenNodeWithParams(RSPaintFilterCanvas& canvas, R
 }
 
 void RSBaseRenderEngine::DrawScreenNodeWithParams(RSPaintFilterCanvas& canvas, RSSurfaceHandler& surfaceHandler,
-    BufferDrawParam& drawParam)
+    BufferDrawParam& params)
 {
-    if (drawParam.useCPU) {
-        DrawBuffer(canvas, drawParam);
+    if (params.useCPU) {
+        DrawBuffer(canvas, params);
     } else {
         RegisterDeleteBufferListener(surfaceHandler.GetConsumer());
-        DrawImage(canvas, drawParam);
+        DrawImage(canvas, params);
     }
 }
 
@@ -504,7 +504,7 @@ void RSBaseRenderEngine::ColorSpaceConvertor(std::shared_ptr<Drawing::ShaderEffe
         return;
     }
 
-    if(!inputShader) {
+    if (!inputShader) {
         RS_LOGE("RSBaseRenderEngine::ColorSpaceConvertor inputShader is null");
         RS_OPTIONAL_TRACE_END();
         return;
@@ -765,7 +765,7 @@ void RSBaseRenderEngine::DrawImage(RSPaintFilterCanvas& canvas, BufferDrawParam&
         return;
     }
 
-    auto& rsLuminance = RSLuminanceControl::Get();
+    const auto& rsLuminance = RSLuminanceControl::Get();
     // Fix tonemapping: all xxxNits reset to 500, layerLinearMatrix reset to 3x3 Identity matrix
     params.isTmoNitsFixed = canvas.IsOnMultipleScreen() ||
         (!canvas.GetHdrOn() &&
@@ -785,12 +785,13 @@ void RSBaseRenderEngine::DrawImage(RSPaintFilterCanvas& canvas, BufferDrawParam&
     auto sy = params.dstRect.GetHeight() / srcHeight;
     auto tx = params.dstRect.GetLeft() - params.srcRect.GetLeft() * sx;
     auto ty = params.dstRect.GetTop() - params.srcRect.GetTop() * sy;
+
     if (ROSEN_EQ(srcWidth, 0.0f) || ROSEN_EQ(srcHeight, 0.0f)) {
         RS_LOGE("RSBaseRenderEngine::DrawImage image srcRect params invalid.");
     }
     matrix.SetScaleTranslate(sx, sy, tx, ty);
 
-    RS_LOGD_IF(DEBUG_COMPOSER, "  - Image shader transformation:"
+    RS_LOGD_IF(DEBUG_COMPOSER, "- Image shader transformation:"
         "sx=%{public}.2f, sy=%{public}.2f, tx=%{public}.2f, ty=%{public}.2f", sx, sy, tx, ty);
 
     auto imageShader = Drawing::ShaderEffect::CreateImageShader(

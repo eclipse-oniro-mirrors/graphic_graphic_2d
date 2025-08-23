@@ -1919,7 +1919,7 @@ GraphicTransformType RSBaseRenderUtil::RotateEnumToInt(int angle, GraphicTransfo
 
 int RSBaseRenderUtil::GetAccumulatedBufferCount()
 {
-    return std::max(acquiredBufferCount_ -  1, 0);
+    return std::max(acquiredBufferCount_ - 1, 0);
 }
 
 void RSBaseRenderUtil::IncAcquiredBufferCount()

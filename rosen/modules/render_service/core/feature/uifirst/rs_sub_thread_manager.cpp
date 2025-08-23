@@ -302,7 +302,6 @@ void RSSubThreadManager::ScheduleRenderNodeDrawable(
             defaultThreadIndex_ = 0;
         }
     }
-
     auto subThread = threadList_[nowIdx];
     auto tid = reThreadIndexMap_[nowIdx];
     {
@@ -321,7 +320,6 @@ void RSSubThreadManager::ScheduleRenderNodeDrawable(
             RS_LOGE("ScheduleRenderNodeDrawable subThread param is nullptr");
             return;
         }
-
         std::unique_ptr<RSRenderThreadParams> uniParamUnique(uniParam);
         /* Task run in SubThread, the uniParamUnique which is copyed from uniRenderThread will sync to SubTread */
         RSRenderThreadParamsManager::Instance().SetRSRenderThreadParams(std::move(uniParamUnique));

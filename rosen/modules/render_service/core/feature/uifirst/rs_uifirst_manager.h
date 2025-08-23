@@ -263,10 +263,10 @@ private:
     static bool IsArkTsCardCache(RSSurfaceRenderNode& node, bool animation);
     // check if leash window enable uifirst
     static bool IsLeashWindowCache(RSSurfaceRenderNode& node, bool animation);
-    void SyncHDRDisplayParam(std::shared_ptr<DrawableV2::RSSurfaceRenderNodeDrawable> drawable,
-        const GraphicColorGamut& colorGamut);
     // check if non-focus window enable uifirst
     static bool IsNonFocusWindowCache(RSSurfaceRenderNode& node, bool animation);
+    void SyncHDRDisplayParam(std::shared_ptr<DrawableV2::RSSurfaceRenderNodeDrawable> drawable,
+        const GraphicColorGamut& colorGamut);
 
     // update node's uifirst state
     void UifirstStateChange(RSSurfaceRenderNode& node, MultiThreadCacheType currentFrameCacheType);
