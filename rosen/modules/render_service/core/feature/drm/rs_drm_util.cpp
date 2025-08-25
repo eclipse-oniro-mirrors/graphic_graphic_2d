@@ -68,6 +68,9 @@ void RSDrmUtil::DRMCreateLayer(std::shared_ptr<RSProcessor> processor, Drawing::
             continue;
         }
         auto surfaceDrawable = std::static_pointer_cast<DrawableV2::RSSurfaceRenderNodeDrawable>(drawable);
+        if (UNLIKELY(surfaceDrawable == nullptr)) {
+            continue;
+        }
         auto& params = surfaceDrawable->GetRenderParams();
         if (UNLIKELY(!params)) {
             continue;
