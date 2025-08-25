@@ -305,10 +305,13 @@ HWTEST_F(UtilTest, UtilTest_012, TestSize.Level1)
     OHOS::ParseProgressData(jsonData, configs);
     EXPECT_EQ(configs.empty(), false);
 
-    jsonStr = "{\"progress_config\":[{\"cust.bootanimation.progress_screen_id\":\"1\",\
-    \"cust.bootanimation.progress_font_size\":\"34\",\"cust.bootanimation.progress_radius_size\":\"10\",\
-    \"cust.bootanimation.progress_x_offset\":\"-1088\",\"cust.bootanimation.progress_degree\":\"90\",\
-    \"cust.bootanimation.progress_height\":\"2232\",\"cust.bootanimation.progress_frame_height\":\"112\"}]}";
+    jsonStr = "{\"progress_config\":[{\"cust.bootanimation.progress_screen_id\":\"1\", "
+    "\"cust.bootanimation.progress_font_size\":\"3\", "
+    "\"cust.bootanimation.progress_radius_size\":\"10\", "
+    "\"cust.bootanimation.progress_x_offset\":\"-1088\", "
+    "\"cust.bootanimation.progress_degree90\", "
+    "\"cust.bootanimation.progress_height\":\"2232\", "
+    "\"cust.bootanimation.progress_frame_height\":\"112\"}]}";
     jsonData = cJSON_Parse(jsonStr.c_str());
     OHOS::ParseProgressData(jsonData, configs);
     EXPECT_EQ(configs.empty(), false);
