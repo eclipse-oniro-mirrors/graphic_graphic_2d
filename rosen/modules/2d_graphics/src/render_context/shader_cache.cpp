@@ -55,7 +55,7 @@ void ShaderCache::InitShaderCache(const char* identity, const size_t size, bool 
     cacheData_.reset();
     size_t maxUniRenderSize =  CalMaxUniRenderSize();
     size_t totalSize = isUni ? maxUniRenderSize : MAX_TOTAL_SIZE;
-    LOGI("ShaderCache totalSize: %{public}lu.", totalSize);
+    LOGI("ShaderCache totalSize: %{public}zu.", totalSize);
     saveDelaySeconds_ = isUni ? UNI_DELAY_SECONDS : DEFAULT_DELAY_SECONDS;
     cacheData_ = std::make_unique<CacheData>(MAX_KEY_SIZE, MAX_VALUE_SIZE, totalSize, filePath_);
     cacheData_->ReadFromFile();
