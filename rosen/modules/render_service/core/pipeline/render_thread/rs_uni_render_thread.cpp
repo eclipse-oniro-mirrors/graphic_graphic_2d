@@ -460,15 +460,15 @@ void RSUniRenderThread::CollectReleaseTasks(std::vector<std::function<void()>>& 
     }
 }
 
-void RSUniRenderThread::ReleaseSurfaceBufferOpItemBuffer()
+void RSUniRenderThread::ReleaseSurfaceOpItemBuffer()
 {
-    auto fence = GetAcquireFence();
+    int32_t fenceFd = INVALID_FD;
     if (acquireFence_ && acquireFence_->GetStatus != SIGNALED) {
         fenceFd = acquireFence_->Dup();
     }
     RSSurfaceBufferCallbackManager::Instance().SetReleaseFence(fenceFd);
     RSSurfaceBufferCallbackManager::Instance().RunSurfaceBufferCallback();
-    if (fenceFd != INVAILD_FD) {
+    if (fenceFd != INVALID_FD) {
         ::close(fenceFd);
     }
 }
