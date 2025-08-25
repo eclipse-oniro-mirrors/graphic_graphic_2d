@@ -463,7 +463,7 @@ void RSUniRenderThread::CollectReleaseTasks(std::vector<std::function<void()>>& 
 void RSUniRenderThread::ReleaseSurfaceOpItemBuffer()
 {
     int32_t fenceFd = INVALID_FD;
-    if (acquireFence_ && acquireFence_->GetStatus != SIGNALED) {
+    if (acquireFence_ && acquireFence_->GetStatus() != SIGNALED) {
         fenceFd = acquireFence_->Dup();
     }
     RSSurfaceBufferCallbackManager::Instance().SetReleaseFence(fenceFd);
