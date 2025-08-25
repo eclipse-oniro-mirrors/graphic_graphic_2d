@@ -140,4 +140,18 @@ HWTEST_F(RsCommonHookTest, SetAndGetOverlappedHwcNodeInAppEnabledConfig, TestSiz
     auto result2 = RsCommonHook::Instance().GetOverlappedHwcNodeInAppEnabledConfig(testBundleName2);
     EXPECT_EQ(result2, "");
 }
+
+/**
+ * @tc.name: SetAndGetImageEnhancePidListTest
+ * @tc.desc: test results of SetImageEnhancePidList and GetImageEnhancePidList
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RsCommonHookTest, SetAndGetImageEnhancePidListTest, TestSize.Level1)
+{
+    const std::unordered_set<pid_t> testImageEnhancePidList = {};
+    RsCommonHook::Instance().SetImageEnhancePidList(testImageEnhancePidList);
+    auto result = RsCommonHook::Instance().GetImageEnhancePidList();
+    EXPECT_EQ(result, testImageEnhancePidList);
+}
 } // namespace OHOS::Rosen

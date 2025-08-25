@@ -48,6 +48,7 @@ public:
     void SetProcessStatus(uint64_t imageId, bool flag);
     bool GetProcessStatus(uint64_t imageId) const;
     bool GetEnableStatus() const;
+    bool IsEnableImageDetailEnhance(uint64_t nodeId) const;
 
 private:
     RSImageDetailEnhancerThread();
