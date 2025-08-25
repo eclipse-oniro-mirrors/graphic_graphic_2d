@@ -276,8 +276,7 @@ void ShaderCache::SetMaxUniRenderSize(int maxUniRenderSize)
  
 int ShaderCache::CalMaxUniRenderSize()
 {
-    if (maxUniRenderSize_ > 0)
-    {
+    if (maxUniRenderSize_ > 0) {
         return MAX_VALUE_SIZE * maxUniRenderSize_;
     }
     return MAX_UNIRENDER_SIZE;
