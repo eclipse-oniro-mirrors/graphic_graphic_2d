@@ -11,7 +11,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */1
+ */
 #include "boot_animation_controller.h"
 
 #include "boot_animation_factory.h"
@@ -46,6 +46,7 @@ void BootAnimationController::Start()
     BootStrategyType bootType = GetBootType();
     strategy_ = BootAnimationFactory::GetBootStrategy(bootType);
     if (strategy_) {
+        strategy_->configPath_ = path;
         strategy_->Display(duration_, animationConfigs_);
     }
 }
