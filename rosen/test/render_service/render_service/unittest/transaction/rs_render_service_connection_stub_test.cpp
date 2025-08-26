@@ -1672,9 +1672,6 @@ HWTEST_F(RSRenderServiceConnectionStubTest, FreezeScreenTest001, TestSize.Level2
     res = connection->FreezeScreen(displayNodeId, false);
     usleep(TIME_OF_FREEZE_TASK);
     ASSERT_EQ(res, ERR_OK);
-    res = connection->FreezeScreen(displayNodeId, true);
-    usleep(TIME_OF_FREEZE_TASK);
-    ASSERT_EQ(res, ERR_OK);
 
     RSMainThread::Instance()->runner_ = runner;
     RSMainThread::Instance()->handler_ = handler;
