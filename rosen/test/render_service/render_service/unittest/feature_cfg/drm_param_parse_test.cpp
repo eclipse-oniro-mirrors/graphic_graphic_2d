@@ -62,6 +62,11 @@ HWTEST_F(DrmParamParseTest, ParseFeatureParamTest001, Function | SmallTest | Lev
     res = paramParse.ParseDrmInternal(node);
     EXPECT_EQ(res, ParseErrCode::PARSE_EXEC_SUCCESS);
 
+    xmlSetProp(&node, (const xmlChar*)("name"), (const xmlChar*)("DrmMark"));
+    xmlSetProp(&node, (const xmlChar*)("value"), (const xmlChar*)("false"));
+    res = paramParse.ParseDrmInternal(node);
+    EXPECT_EQ(res, ParseErrCode::PARSE_EXEC_SUCCESS);
+
     name = "FeatureSingleParam";
     node.name = reinterpret_cast<const xmlChar*>(name.c_str());
     res = paramParse.ParseDrmInternal(node);
@@ -84,8 +89,8 @@ HWTEST_F(DrmParamParseTest, ParseFeatureParamTest001, Function | SmallTest | Lev
 }
 
 /**
- * @tc.name: ParseMultiParam
- * @tc.desc: Verify the ParseFeatureParam function
+ * @tc.name: ParseFeatureParam
+ * @tc.desc: Verify the ParseMultiParam function
  * @tc.type: FUNC
  * @tc.require: #IBIE4T
  */
@@ -128,7 +133,7 @@ HWTEST_F(DrmParamParseTest, ParseFeatureParamTest002, Function | SmallTest | Lev
 
     std::string windowName(101, 'c');
     xmlSetProp(&nextNode, (const xmlChar*)("name"), (const xmlChar*)(windowName.c_str()));
-    xmlSetProp(&nextNode, (const xmlChar*)("value"), (const xmlChar*)("2"));
+    xmlSetProp(&nextNode, (const xmlChar*)("value"), (const xmlChar*)("1"));
     res = paramParse.ParseFeatureMultiParam(node);
     EXPECT_EQ(res, ParseErrCode::PARSE_EXEC_SUCCESS);
 }

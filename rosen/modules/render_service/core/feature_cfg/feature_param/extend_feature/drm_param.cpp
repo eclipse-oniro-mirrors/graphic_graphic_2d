@@ -27,14 +27,14 @@ void DRMParam::SetDrmEnable(bool isEnable)
     isDrmEnable_ = isEnable;
 }
 
-bool DRMParam::IsDrmMarkAllParentBlurEnable()
+bool DRMParam::IsMockAllBlurEffectIntersectWithDRMEnable()
 {
-    return isDrmMarkAllParentBlurEnable_;
+    return isMockAllBlurEffectIntersectWithDRMEnable_;
 }
 
-void DRMParam::SetDrmMarkAllParentBlurEnable(bool isEnable)
+void DRMParam::SetMockAllBlurEffectIntersectWithDRMEnable(bool isEnable)
 {
-    isDrmMarkAllParentBlurEnable_ = isEnable;
+    isMockAllBlurEffectIntersectWithDRMEnable_ = isEnable;
 }
 
 void DRMParam::AddWhiteList(const std::string& name)
