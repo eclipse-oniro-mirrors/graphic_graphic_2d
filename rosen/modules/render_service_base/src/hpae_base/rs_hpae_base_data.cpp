@@ -87,7 +87,7 @@ NodeId RSHpaeBaseData::GetBlurNodeId()
 
 Vector4f RSHpaeBaseData::GetPixelStretch()
 {
-    if(hpaeStatus_.pixelStretch) {
+    if (hpaeStatus_.pixelStretch) {
         return *hpaeStatus_.pixelStretch;
     } else {
         return Vector4f(0.f, 0.f, 0.f, 0.f);
@@ -96,7 +96,7 @@ Vector4f RSHpaeBaseData::GetPixelStretch()
 
 Vector2f RSHpaeBaseData::GetGreyCoef()
 {
-    if(hpaeStatus_.greyCoef) {
+    if (hpaeStatus_.greyCoef) {
         return *hpaeStatus_.greyCoef;
     } else {
         return Vector2f(0.f, 0.f);

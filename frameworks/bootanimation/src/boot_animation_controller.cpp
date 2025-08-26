@@ -46,6 +46,7 @@ void BootAnimationController::Start()
     BootStrategyType bootType = GetBootType();
     strategy_ = BootAnimationFactory::GetBootStrategy(bootType);
     if (strategy_) {
+        strategy_->configPath_ = path;
         strategy_->Display(duration_, animationConfigs_);
     }
 }

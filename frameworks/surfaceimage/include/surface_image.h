@@ -181,7 +181,7 @@ class SurfaceImageListener : public IBufferConsumerListener {
 public:
     explicit SurfaceImageListener(const sptr<SurfaceImage> & surfaceImage) : surfaceImage_(surfaceImage)
     {
-        BLOGI("SurfaceImageListener");
+        BLOGD("SurfaceImageListener");
     };
     virtual ~SurfaceImageListener();
 

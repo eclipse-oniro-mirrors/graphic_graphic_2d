@@ -221,7 +221,6 @@ public:
     void CheckFastCompose(int64_t bufferTimeStamp);
     bool CheckAdaptiveCompose();
     void ForceRefreshForUni(bool needDelay = false);
-    void TrimMem(std::unordered_set<std::u16string>& argSets, std::string& result);
     void DumpMem(std::unordered_set<std::u16string>& argSets, std::string& result, std::string& type, pid_t pid = 0);
     void CountMem(int pid, MemoryGraphic& mem);
     void CountMem(std::vector<MemoryGraphic>& mems);
@@ -518,11 +517,11 @@ private:
     bool IsResidentProcess(pid_t pid) const;
     bool IsNeedSkip(NodeId instanceRootNodeId, pid_t pid);
     uint32_t GetForceCommitReason() const;
+    void RegisterHwcEvent();
 
     // UIFirst
     bool CheckParallelSubThreadNodesStatus();
     void CacheCommands();
-    bool IsSurfaceConsumerNeedSkip(sptr<IConsumerSurface> consumer);
     bool CheckSubThreadNodeStatusIsDoing(NodeId appNodeId) const;
 
     // used for informing hgm the bundle name of SurfaceRenderNodes

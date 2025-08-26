@@ -51,7 +51,6 @@ int RSHpaeFilterCacheManager::DrawFilter(RSPaintFilterCanvas& canvas, const std:
 {
     inputBufferInfo_ = RSHpaeBaseData::GetInstance().RequestHpaeInputBuffer();
     outputBufferInfo_ = RSHpaeBaseData::GetInstance().RequestHpaeOutputBuffer();
-
     if (inputBufferInfo_.canvas == nullptr || outputBufferInfo_.canvas == nullptr) {
         HPAE_LOGE("invalid canvas");
         ReleaseHpaeBufferInfo();

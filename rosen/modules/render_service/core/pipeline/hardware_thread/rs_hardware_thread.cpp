@@ -128,28 +128,28 @@ void RSHardwareThread::Start()
         return this->Redraw(surface, layers, screenId);
     };
     if (handler_) {
-        ScheduleTask(
-            [this]() {
+        ScheduleTask([this]() {
 #if defined (RS_ENABLE_VK)
-                // Change vk interface type from UNIRENDER into UNPROTECTED_REDRAW, this is necessary for hardware init.
-                if (RSSystemProperties::IsUseVulkan()) {
-                    RsVulkanContext::GetSingleton().SetIsProtected(false);
-                }
+            // Change vk interface type from UNIRENDER into UNPROTECTED_REDRAW, this is necessary for hardware init.
+            if (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
+                RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) {
+                RsVulkanContext::GetSingleton().SetIsProtected(false);
+            }
 #endif
-                auto screenManager = CreateOrGetScreenManager();
-                if (screenManager == nullptr || !screenManager->Init()) {
-                    RS_LOGE("RSHardwareThread CreateOrGetScreenManager or init fail.");
-                    return;
-                }
+            auto screenManager = CreateOrGetScreenManager();
+            if (screenManager == nullptr || !screenManager->Init()) {
+                RS_LOGE("RSHardwareThread CreateOrGetScreenManager or init fail.");
+                return;
+            }
 #ifdef RES_SCHED_ENABLE
-                SubScribeSystemAbility();
+            SubScribeSystemAbility();
 #endif
-                uniRenderEngine_ = std::make_shared<RSUniRenderEngine>();
-                uniRenderEngine_->Init();
-                // posttask for multithread safely release surface and image
-                ContextRegisterPostTask();
-                hardwareTid_ = gettid();
-            }).wait();
+            uniRenderEngine_ = std::make_shared<RSUniRenderEngine>();
+            uniRenderEngine_->Init();
+            // posttask for multithread safely release surface and image
+            ContextRegisterPostTask();
+            hardwareTid_ = gettid();
+        }).wait();
     }
     auto onPrepareCompleteFunc = [this](auto& surface, const auto& param, void* data) {
         OnPrepareComplete(surface, param, data);
@@ -237,6 +237,13 @@ void RSHardwareThread::ClearRefreshRateCounts(std::string& dumpString)
     RS_LOGD("RefreshRateCounts refresh rate counts info is cleared");
 }
 
+void PrintHiperfSurfaceLog(const std::string& counterContext, uint64_t counter)
+{
+#ifdef HIPERF_TRACE_ENABLE
+    RS_LOGW("hiperf_surface_%{public}s %{public}" PRIu64, counterContext.c_str(), counter);
+#endif
+}
+
 void RSHardwareThread::CommitAndReleaseLayers(OutputPtr output, const std::vector<LayerInfoPtr>& layers)
 {
     if (!handler_) {
@@ -257,9 +264,7 @@ void RSHardwareThread::CommitAndReleaseLayers(OutputPtr output, const std::vecto
 #endif
     RSTaskMessage::RSTask task = [this, output = output, layers = layers, param = param,
         currentRate = currentRate, hasGameScene = hasGameScene, curScreenId = curScreenId]() {
-#ifdef HIPERF_TRACE_ENABLE
-        RS_LOGW("hiperf_surface_counter3 %{public}" PRIu64 " ", static_cast<uint64_t>(layers.size()));
-#endif
+        PrintHiperfSurfaceLog("counter3", static_cast<uint64_t>(layers.size()));
         int64_t startTime = GetCurTimeCount();
         std::string surfaceName = GetSurfaceNameInLayers(layers);
         RS_LOGD("CommitAndReleaseLayers task execute, %{public}s", surfaceName.c_str());
@@ -1173,6 +1178,7 @@ void RSHardwareThread::ContextRegisterPostTask()
             context->RegisterPostFunc([this](const std::function<void()>& task) { PostTask(task); });
         }
         RsVulkanContext::GetSingleton().SetIsProtected(false);
+        context = RsVulkanContext::GetSingleton().GetDrawingContext();
         if (context) {
             context->RegisterPostFunc([this](const std::function<void()>& task) { PostTask(task); });
         }

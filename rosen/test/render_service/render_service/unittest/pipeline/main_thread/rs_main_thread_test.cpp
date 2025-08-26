@@ -1607,29 +1607,6 @@ HWTEST_F(RSMainThreadTest, ConsumeAndUpdateAllNodes002, TestSize.Level1)
 }
 
 /**
- * @tc.name: IsSurfaceConsumerNeedSkip001
- * @tc.desc: IsSurfaceConsumerNeedSkip test
- * @tc.type: FUNC
- * @tc.require: issueICKWDL
- */
-HWTEST_F(RSMainThreadTest, IsSurfaceConsumerNeedSkip001, TestSize.Level1)
-{
-    auto mainThread = RSMainThread::Instance();
-    ASSERT_NE(mainThread, nullptr);
-    auto distributor = mainThread->rsVSyncDistributor_;
-    sptr<IConsumerSurface> cSurface = nullptr;
-    auto res = mainThread->IsSurfaceConsumerNeedSkip(cSurface);
-    ASSERT_EQ(res, false);
-    cSurface = IConsumerSurface::Create();
-    auto vsyncGenerator = CreateVSyncGenerator();
-    auto vsyncController = new VSyncController(vsyncGenerator, 0);
-    mainThread->rsVSyncDistributor_ = new VSyncDistributor(vsyncController, "rs");
-    res = mainThread->IsSurfaceConsumerNeedSkip(cSurface);
-    ASSERT_EQ(res, false);
-    mainThread->rsVSyncDistributor_ = distributor;
-}
-
-/**
  * @tc.name: CheckSubThreadNodeStatusIsDoing001
  * @tc.desc: CheckSubThreadNodeStatusIsDoing test
  * @tc.type: FUNC
@@ -6168,10 +6145,6 @@ HWTEST_F(RSMainThreadTest, DoDirectComposition003, TestSize.Level1)
 HWTEST_F(RSMainThreadTest, InitHgmTaskHandleThreadTest, TestSize.Level1)
 {
     auto mainThread = RSMainThread::Instance();
-    std::shared_ptr<AppExecFwk::EventRunner> runner = mainThread->runner_;
-    std::shared_ptr<AppExecFwk::EventHandler> handler = mainThread->handler_;
-    mainThread->runner_ = AppExecFwk::EventRunner::Create("RSMainThread");
-    mainThread->handler_ = std::make_shared<AppExecFwk::EventHandler>(mainThread->runner_);
     mainThread->hgmContext_.InitHgmTaskHandleThread(mainThread->rsVSyncController_, mainThread->appVSyncController_,
         mainThread->vsyncGenerator_, mainThread->appVSyncDistributor_);
     ASSERT_EQ(mainThread->forceUpdateUniRenderFlag_, true);
@@ -6185,23 +6158,27 @@ HWTEST_F(RSMainThreadTest, InitHgmTaskHandleThreadTest, TestSize.Level1)
     ASSERT_EQ(mainThread->hgmContext_.FrameRateGetFunc(RSPropertyUnit::PIXEL_POSITION, 0.f, 0, 0), 0);
     HgmCore::Instance().hgmFrameRateMgr_ = frameRateMgr;
     ASSERT_NE(HgmCore::Instance().GetFrameRateMgr(), nullptr);
+}
 
-    if (frameRateMgr != nullptr && frameRateMgr->forceUpdateCallback_) {
-        mainThread->hgmContext_.currVsyncId_ = mainThread->hgmContext_.currVsyncId_ + 100;
-        EXPECT_NE(mainThread->hgmContext_.lastForceUpdateVsyncId_, mainThread->hgmContext_.currVsyncId_);
-        frameRateMgr->forceUpdateCallback_(false, true);
-        usleep(100000);
-        EXPECT_EQ(mainThread->hgmContext_.lastForceUpdateVsyncId_, mainThread->hgmContext_.currVsyncId_);
-        frameRateMgr->forceUpdateCallback_(false, true);
-        usleep(100000);
-        EXPECT_EQ(mainThread->hgmContext_.lastForceUpdateVsyncId_, mainThread->hgmContext_.currVsyncId_);
-    }
-    usleep(200000);
-    mainThread->runner_ = runner;
-    mainThread->handler_ = handler;
-    runner = nullptr;
-    handler = nullptr;
-    usleep(200000);
+/**
+ * @tc.name: RegisterHwcEvent
+ * @tc.desc: test RegisterHwcEvent
+ * @tc.type: FUNC
+ * @tc.require: issueICTY7B
+ */
+HWTEST_F(RSMainThreadTest, RegisterHwcEvent001, TestSize.Level1)
+{
+    auto screenManager = CreateOrGetScreenManager();
+    auto screenManagerImpl = static_cast<impl::RSScreenManager*>(screenManager.GetRefPtr());
+    ASSERT_NE(screenManagerImpl, nullptr);
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    mainThread->RegisterHwcEvent();
+    // test screenManager is nullptr
+    screenManagerImpl->instance_ = nullptr;
+    mainThread->RegisterHwcEvent();
+    // reset screenManager in TearDownTestCase, so it can't be nullptr
+    screenManagerImpl->instance_ = new impl::RSScreenManager();
 }
 
 /**
@@ -6247,6 +6224,7 @@ HWTEST_F(RSMainThreadTest, DoDirectComposition004_BufferSync, TestSize.Level1)
     ASSERT_NE(surfaceNode->surfaceHandler_, nullptr);
     surfaceNode->SetHardwareForcedDisabledState(false);
     surfaceNode->HwcSurfaceRecorder().SetLastFrameHasVisibleRegion(true);
+    displayNode->AddChild(surfaceNode);
     mainThread->hardwareEnabledNodes_.clear();
     mainThread->hardwareEnabledNodes_.emplace_back(surfaceNode);
 

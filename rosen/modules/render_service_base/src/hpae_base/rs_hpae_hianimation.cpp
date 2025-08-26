@@ -56,7 +56,7 @@ void HianimationManager::OpenDeviceAsync()
 #if defined(ROSEN_OHOS)
     ffrt::submit_h([this]() {
         this->OpenDevice();
-    }, {}, {});
+        }, {}, {});
 #else
     OpenDevice();
 #endif
@@ -98,7 +98,7 @@ void HianimationManager::AlgoDeInitAsync()
 #if defined(ROSEN_OHOS)
     ffrt::submit_h([this]() {
         this->HianimationAlgoDeInit();
-    }, {}, {});
+        }, {}, {});
 #else
     HianimationAlgoDeInit();
 #endif

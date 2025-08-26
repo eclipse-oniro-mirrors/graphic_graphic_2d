@@ -255,7 +255,7 @@ void RSDrawFrame::Sync()
     if (stagingRenderThreadParams_ && stagingRenderThreadParams_->HasDisplayHdrOn()) {
         isHdrOn = true;
     }
-#if defined(ROSEN_OHOS) && defined(ENABLE_HPAE_BLUR)
+#if defined(ROSEN_OHOS)
     RSHpaeManager::GetInstance().OnSync(isHdrOn);
 #endif
 

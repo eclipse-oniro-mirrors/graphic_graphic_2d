@@ -68,6 +68,9 @@ void RSDrmUtil::DRMCreateLayer(std::shared_ptr<RSProcessor> processor, Drawing::
             continue;
         }
         auto surfaceDrawable = std::static_pointer_cast<DrawableV2::RSSurfaceRenderNodeDrawable>(drawable);
+        if (UNLIKELY(surfaceDrawable == nullptr)) {
+            continue;
+        }
         auto& params = surfaceDrawable->GetRenderParams();
         if (UNLIKELY(!params)) {
             continue;
@@ -135,19 +138,28 @@ void RSDrmUtil::MarkBlurIntersectWithDRM(const std::shared_ptr<RSRenderNode>& no
     const std::vector<std::weak_ptr<RSSurfaceRenderNode>>& drmNodes,
     const std::shared_ptr<RSScreenRenderNode>& curScreenNode)
 {
-    static bool isDrmMarkAllParentBlurEnable = DRMParam::IsDrmMarkAllParentBlurEnable();
-    if (isDrmMarkAllParentBlurEnable) {
-        MarkBlurIntersectWithDRMForAllParentFilter(node, drmNodes, curScreenNode);
+    if (node == nullptr) {
+        return;
+    }
+    static bool isMockAllBlurEffectIntersectWithDRMEnabled = DRMParam::IsMockAllBlurEffectIntersectWithDRMEnable();
+    if (isMockAllBlurEffectIntersectWithDRMEnabled) {
+        // mark all blurEffect for pc
+        MarkAllBlurIntersectWithDRM(node, drmNodes, curScreenNode);
     } else {
         MarkBlurIntersectWithDRM(node, drmNodes);
     }
 }
 
-void RSDrmUtil::MarkBlurIntersectWithDRMForAllParentFilter(const std::shared_ptr<RSRenderNode>& node,
+void RSDrmUtil::MarkAllBlurIntersectWithDRM(const std::shared_ptr<RSRenderNode>& node,
     const std::vector<std::weak_ptr<RSSurfaceRenderNode>>& drmNodes,
     const std::shared_ptr<RSScreenRenderNode>& curScreenNode)
 {
+    if (curScreenNode == nullptr) {
+        return;
+    }
+    
     if (node->GetRenderProperties().GetBackgroundBlurMaskColor().GetAlpha() >= BLUR_MIN_ALPHA) {
+        // if alpha is greater than 100, blurEffect is not transparent
         return;
     }
     auto appWindowNodeId = node->GetInstanceRootNodeId();
@@ -230,7 +242,6 @@ bool RSDrmUtil::IsDRMBelowFilter(const std::shared_ptr<RSScreenRenderNode>& curS
         auto drmLeashNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(drmNode->GetInstanceRootNode());
         if (drmLeashNode == leashWindowNode) {
             drmNodeIndex = i;
-            break;
         }
     }
     return drmNodeIndex > filterNodeIndex;

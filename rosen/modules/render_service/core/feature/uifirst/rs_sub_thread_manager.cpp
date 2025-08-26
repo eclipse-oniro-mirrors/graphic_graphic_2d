@@ -20,7 +20,6 @@
 
 #include "common/rs_singleton.h"
 #include "common/rs_optional_trace.h"
-#include "feature/uifirst/rs_uifirst_manager.h"
 #include "pipeline/main_thread/rs_main_thread.h"
 #include "pipeline/rs_task_dispatcher.h"
 #include "memory/rs_memory_manager.h"
@@ -238,24 +237,6 @@ void RSSubThreadManager::AddToReleaseQueue(std::shared_ptr<Drawing::Surface>&& s
     threadList_[threadIndex]->AddToReleaseQueue(std::move(surface));
 }
 
-std::vector<MemoryGraphic> RSSubThreadManager::CountSubMem(int pid)
-{
-    std::vector<MemoryGraphic> memsContainer;
-    if (threadList_.empty()) {
-        return memsContainer;
-    }
-
-    for (auto& subThread : threadList_) {
-        if (!subThread) {
-            MemoryGraphic memoryGraphic;
-            memsContainer.push_back(memoryGraphic);
-            continue;
-        }
-        memsContainer.push_back(subThread->CountSubMem(pid));
-    }
-    return memsContainer;
-}
-
 std::unordered_map<uint32_t, pid_t> RSSubThreadManager::GetReThreadIndexMap() const
 {
     return reThreadIndexMap_;
@@ -302,7 +283,6 @@ void RSSubThreadManager::ScheduleRenderNodeDrawable(
             defaultThreadIndex_ = 0;
         }
     }
-
     auto subThread = threadList_[nowIdx];
     auto tid = reThreadIndexMap_[nowIdx];
     {
@@ -321,7 +301,6 @@ void RSSubThreadManager::ScheduleRenderNodeDrawable(
             RS_LOGE("ScheduleRenderNodeDrawable subThread param is nullptr");
             return;
         }
-
         std::unique_ptr<RSRenderThreadParams> uniParamUnique(uniParam);
         /* Task run in SubThread, the uniParamUnique which is copyed from uniRenderThread will sync to SubTread */
         RSRenderThreadParamsManager::Instance().SetRSRenderThreadParams(std::move(uniParamUnique));

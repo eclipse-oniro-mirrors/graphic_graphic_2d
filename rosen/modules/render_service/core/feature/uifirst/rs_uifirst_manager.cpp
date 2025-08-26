@@ -21,8 +21,8 @@
 #include "display_engine/rs_luminance_control.h"
 #include "drawable/rs_surface_render_node_drawable.h"
 #include "feature/uifirst/rs_sub_thread_manager.h"
-#include "feature/uifirst/rs_uifirst_manager.h"
 #include "feature/uifirst/rs_uifirst_frame_rate_control.h"
+#include "feature/uifirst/rs_uifirst_manager.h"
 #include "feature_cfg/graphic_feature_param_manager.h"
 #include "memory/rs_memory_manager.h"
 #include "params/rs_screen_render_params.h"
@@ -43,6 +43,7 @@ namespace {
     constexpr int EVENT_STOP_TIMEOUT = 150;
     constexpr int EVENT_DISABLE_UIFIRST_GAP = 100;
     constexpr int CLEAR_CACHE_DELAY = 400;
+    constexpr size_t MAX_CLEAR_CACHE_NODE_COUNT = 500; // 500 is the maximum number of nodes can be added to the list.
     const std::string CLEAR_CACHE_TASK_PREFIX = "uifirst_clear_cache_";
     constexpr std::string_view ARKTSCARDNODE_NAME = "ArkTSCardNode";
     constexpr std::string_view EVENT_DISABLE_UIFIRST = "APP_LIST_FLING";
@@ -140,6 +141,7 @@ void RSUifirstManager::ResetUifirstNode(std::shared_ptr<RSSurfaceRenderNode>& no
     RS_LOGI("ResetUifirstNode name:%{public}s,id:%{public}" PRIu64 ",isOnTheTree:%{public}d,"
         "toBeCaptured:%{public}d", nodePtr->GetName().c_str(), nodePtr->GetId(), nodePtr->IsOnTheTree(),
         nodePtr->IsNodeToBeCaptured());
+    nodePtr->SetLastFrameUifirstFlag(MultiThreadCacheType::NONE);
     pendingPostNodes_.erase(nodePtr->GetId());
     pendingPostCardNodes_.erase(nodePtr->GetId());
     nodePtr->SetUifirstUseStarting(false);
@@ -451,47 +453,6 @@ void RSUifirstManager::ProcessDoneNode()
     }
 }
 
-void RSUifirstManager::SyncHDRDisplayParam(std::shared_ptr<DrawableV2::RSSurfaceRenderNodeDrawable> drawable,
-    const GraphicColorGamut& colorGamut)
-{
-#ifdef RS_ENABLE_GPU
-    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(drawable->GetRenderParams().get());
-    if (!surfaceParams || !surfaceParams->GetAncestorScreenNode().lock()) {
-        return;
-    }
-    auto ancestor = surfaceParams->GetAncestorScreenNode().lock()->ReinterpretCastTo<RSScreenRenderNode>();
-    if (!ancestor) {
-        return;
-    }
-    auto screenParams = static_cast<RSScreenRenderParams*>(ancestor->GetRenderParams().get());
-    if (!screenParams) {
-        return;
-    }
-    bool isHdrOn = screenParams->GetHDRPresent();
-    ScreenId id = screenParams->GetScreenId();
-    auto& rsSubThreadCache = drawable->GetRsSubThreadCache();
-    rsSubThreadCache.SetHDRPresent(isHdrOn);
-    bool isScRGBEnable = RSSystemParameters::IsNeedScRGBForP3(screenParams->GetNewColorSpace()) &&
-        GetUiFirstSwitch();
-    bool changeColorSpace = rsSubThreadCache.GetTargetColorGamut() != colorGamut;
-    if (isHdrOn || isScRGBEnable || changeColorSpace) {
-        // When ScRGB or Adaptive P3 is enabled, some operations may cause the window color gamut to change.
-        // In this case, the uifirst cache needs to be cleared.
-        if ((isScRGBEnable || ColorGamutParam::IsAdaptiveColorGamutEnabled()) && changeColorSpace) {
-            RS_LOGI("UIFirstHDR SyncDisplayParam: ColorSpace change, ClearCacheSurface,"
-                "nodeID: [%{public}" PRIu64"]", id);
-            RS_TRACE_NAME_FMT("UIFirstHDR SyncScreenParam: ColorSpace change, ClearCacheSurface,"
-                "nodeID: [%{public}" PRIu64"]", id);
-            drawable->GetRsSubThreadCache().ClearCacheSurfaceInThread();
-        }
-        rsSubThreadCache.SetScreenId(id);
-        rsSubThreadCache.SetTargetColorGamut(colorGamut);
-    }
-    RS_LOGD("UIFirstHDR SyncDisplayParam:%{public}d, ratio:%{public}f", rsSubThreadCache.GetHDRPresent(),
-        surfaceParams->GetBrightnessRatio());
-#endif
-}
-
 bool RSUifirstManager::CurSurfaceHasVisibleDirtyRegion(const std::shared_ptr<RSSurfaceRenderNode>& node)
 {
     auto visibleRegion = node->GetVisibleRegion();
@@ -566,11 +527,53 @@ bool RSUifirstManager::CheckVisibleDirtyRegionIsEmpty(const std::shared_ptr<RSSu
     return false;
 }
 
+void RSUifirstManager::SyncHDRDisplayParam(std::shared_ptr<DrawableV2::RSSurfaceRenderNodeDrawable> drawable,
+    const GraphicColorGamut& colorGamut)
+{
+#ifdef RS_ENABLE_GPU
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(drawable->GetRenderParams().get());
+    if (!surfaceParams || !surfaceParams->GetAncestorScreenNode().lock()) {
+        return;
+    }
+    auto ancestor = surfaceParams->GetAncestorScreenNode().lock()->ReinterpretCastTo<RSScreenRenderNode>();
+    if (!ancestor) {
+        return;
+    }
+    auto screenParams = static_cast<RSScreenRenderParams*>(ancestor->GetRenderParams().get());
+    if (!screenParams) {
+        return;
+    }
+    bool isHdrOn = screenParams->GetHDRPresent();
+    ScreenId id = screenParams->GetScreenId();
+    auto& rsSubThreadCache = drawable->GetRsSubThreadCache();
+    rsSubThreadCache.SetHDRPresent(isHdrOn);
+    bool isScRGBEnable = RSSystemParameters::IsNeedScRGBForP3(screenParams->GetNewColorSpace()) &&
+        GetUiFirstSwitch();
+    bool changeColorSpace = rsSubThreadCache.GetTargetColorGamut() != colorGamut;
+    if (isHdrOn || isScRGBEnable || changeColorSpace) {
+        // When ScRGB or Adaptive P3 is enabled, some operations may cause the window color gamut to change.
+        // In this case, the uifirst cache needs to be cleared.
+        if ((isScRGBEnable || ColorGamutParam::IsAdaptiveColorGamutEnabled()) && changeColorSpace) {
+            RS_LOGI("UIFirstHDR SyncDisplayParam: ColorSpace change, ClearCacheSurface,"
+                "nodeID: [%{public}" PRIu64"]", id);
+            RS_TRACE_NAME_FMT("UIFirstHDR SyncScreenParam: ColorSpace change, ClearCacheSurface,"
+                "nodeID: [%{public}" PRIu64"]", id);
+            drawable->GetRsSubThreadCache().ClearCacheSurfaceInThread();
+        }
+        rsSubThreadCache.SetScreenId(id);
+        rsSubThreadCache.SetTargetColorGamut(colorGamut);
+    }
+    RS_LOGD("UIFirstHDR SyncDisplayParam:%{public}d, ratio:%{public}f", rsSubThreadCache.GetHDRPresent(),
+        surfaceParams->GetBrightnessRatio());
+#endif
+}
+
 bool RSUifirstManager::SubThreadControlFrameRate(NodeId id,
     std::shared_ptr<DrawableV2::RSSurfaceRenderNodeDrawable>& drawable,
     std::shared_ptr<RSSurfaceRenderNode>& node)
 {
     if (!RSSystemProperties::GetSubThreadControlFrameRate()) {
+        RS_LOGD("SubThread Control FrameRate Switch Status is Off");
         return false;
     }
 
@@ -1603,7 +1606,7 @@ void RSUifirstManager::ProcessFirstFrameCache(RSSurfaceRenderNode& node, MultiTh
                 parent->SetDrawingCacheType(RSDrawingCacheType::DISABLED_CACHE);
             }
             node.SetHwcChildrenDisabledState();
-            RS_OPTIONAL_TRACE_FMT("name:%s id:%" PRIu64 " children disabled by uifirst first frame",
+            RS_OPTIONAL_TRACE_NAME_FMT("name:%s id:%" PRIu64 " children disabled by uifirst first frame",
                 node.GetName().c_str(), node.GetId());
             // delte caches when node is not on the tree.
             auto func = &RSUifirstManager::ProcessTreeStateChange;
@@ -1942,6 +1945,7 @@ void RSUifirstManager::UifirstStateChange(RSSurfaceRenderNode& node, MultiThread
             RS_TRACE_NAME_FMT("UIFirst_switch enable -> disable %" PRIu64, node.GetId());
             RS_LOGI("uifirst enable -> disable. %{public}s id:%{public}" PRIu64, node.GetName().c_str(), node.GetId());
             node.SetUifirstStartTime(-1); // -1: default start time
+            NotifyUIStartingWindow(node.GetId(), false);
             AddPendingResetNode(node.GetId(), surfaceNode); // set false onsync when task done
             RemoveCardNodes(node.GetId());
             node.SetSubThreadAssignable(false);
@@ -2311,12 +2315,14 @@ bool RSUifirstManager::IsExceededWindowsThreshold(const RSSurfaceRenderNode& nod
 
 void RSUifirstManager::AddMarkedClearCacheNode(NodeId id)
 {
-    RS_TRACE_NAME_FMT("AddMarkedClearCacheNode %" PRIu64, id);
-    RS_LOGI("AddMarkedClearCacheNode %{public}" PRIu64, id);
-    if (id == INVALID_NODEID) {
+    if (id == INVALID_NODEID || markedClearCacheNodes_.size() >= MAX_CLEAR_CACHE_NODE_COUNT) {
+        RS_LOGE("AddMarkedClearCacheNode failed. id %{public}" PRIu64 ", size:%{public}zu",
+            id, markedClearCacheNodes_.size());
         return;
     }
-
+    
+    RS_TRACE_NAME_FMT("AddMarkedClearCacheNode %" PRIu64, id);
+    RS_LOGI("AddMarkedClearCacheNode %{public}" PRIu64, id);
     markedClearCacheNodes_.insert(id);
 }
 

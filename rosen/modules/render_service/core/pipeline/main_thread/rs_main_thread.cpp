@@ -586,7 +586,7 @@ void RSMainThread::Init()
     });
     RSTaskDispatcher::GetInstance().RegisterTaskDispatchFunc(gettid(), taskDispatchFunc);
     RsFrameReport::GetInstance().Init();
-    RSUniHwcPrevalidateUtil::GetInstance().Init();
+    RegisterHwcEvent();
     RSImageDetailEnhancerThread::Instance().RegisterCallback(
         std::bind(&RSMainThread::MarkNodeImageDirty, this, std::placeholders::_1));
     RSSystemProperties::WatchSystemProperty(HIDE_NOTCH_STATUS, OnHideNotchStatusCallback, nullptr);
@@ -1351,8 +1351,7 @@ void RSMainThread::CheckAndUpdateTransactionIndex(std::shared_ptr<TransactionDat
             auto curIndex = (*iter)->GetIndex();
             RS_PROFILER_REPLAY_FIX_TRINDEX(curIndex, lastIndex);
             if (curIndex == lastIndex + 1) {
-                if ((*iter)->GetTimestamp() + static_cast<uint64_t>(rsVSyncDistributor_->GetUiCommandDelayTime()) +
-                    rsVSyncDistributor_->GetRsDelayTime(pid)
+                if ((*iter)->GetTimestamp() + static_cast<uint64_t>(rsVSyncDistributor_->GetUiCommandDelayTime())
                     >= timestamp_ && (!isDVSyncConsume || curIndex > endIndex)) {
                     RequestNextVsyncForCachedCommand(transactionFlags, pid, curIndex);
                     break;
@@ -1413,8 +1412,7 @@ void RSMainThread::ProcessCommandForUniRender()
         CheckAndUpdateTransactionIndex(transactionDataEffective, transactionFlags);
     }
     DelayedSingleton<RSFrameRateVote>::GetInstance()->SetTransactionFlags(transactionFlags);
-    if ((transactionDataEffective != nullptr && !transactionDataEffective->empty()) ||
-        RSPointerWindowManager::Instance().GetBoundHasUpdate()) {
+    if (transactionDataEffective != nullptr && !transactionDataEffective->empty()) {
         doDirectComposition_ = false;
         RS_OPTIONAL_TRACE_NAME("hwc debug: disable directComposition by transactionDataEffective not empty");
     }
@@ -1650,9 +1648,8 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
             }
             surfaceHandler->ResetCurrentFrameBufferConsumed();
             auto parentNode = surfaceNode->GetParent().lock();
-            bool needSkip = IsSurfaceConsumerNeedSkip(surfaceHandler->GetConsumer());
             LppVideoHandler::Instance().ConsumeAndUpdateLppBuffer(surfaceNode);
-            if (!needSkip && RSBaseRenderUtil::ConsumeAndUpdateBuffer(
+            if (RSBaseRenderUtil::ConsumeAndUpdateBuffer(
                 *surfaceHandler, timestamp_, IsNeedDropFrameByPid(surfaceHandler->GetNodeId()),
                 parentNode ? parentNode->GetId() : 0)) {
                 HandleTunnelLayerId(surfaceHandler, surfaceNode);
@@ -1746,16 +1743,6 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
         RequestNextVSync("unknown", 0, requestNextVsyncTime_);
     }
     RS_OPTIONAL_TRACE_END();
-}
-
-bool RSMainThread::IsSurfaceConsumerNeedSkip(sptr<IConsumerSurface> consumer)
-{
-    bool needSkip = false;
-    if (consumer != nullptr && rsVSyncDistributor_ != nullptr) {
-        uint64_t uniqueId = consumer->GetUniqueId();
-        needSkip = rsVSyncDistributor_->NeedSkipForSurfaceBuffer(uniqueId);
-    }
-    return needSkip;
 }
 
 bool RSMainThread::CheckSubThreadNodeStatusIsDoing(NodeId appNodeId) const
@@ -2342,7 +2329,7 @@ void RSMainThread::ClearUnmappedCache()
 void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
 {
 #ifdef RS_ENABLE_GPU
-#if defined(ROSEN_OHOS) && defined(ENABLE_HPAE_BLUR)
+#if defined(ROSEN_OHOS)
     RSHpaeManager::GetInstance().OnUniRenderStart();
 #endif
     if (isAccessibilityConfigChanged_) {
@@ -2579,7 +2566,9 @@ bool RSMainThread::DoDirectComposition(std::shared_ptr<RSBaseRenderNode> rootNod
             auto params = static_cast<RSSurfaceRenderParams*>(surfaceNode->GetStagingRenderParams().get());
             HandleTunnelLayerId(surfaceHandler, surfaceNode);
             if (!surfaceHandler->IsCurrentFrameBufferConsumed() && params->GetPreBuffer() != nullptr) {
-                params->SetPreBuffer(nullptr);
+                if (!surfaceNode->GetDeviceOfflineEnable()) {
+                    params->SetPreBuffer(nullptr);
+                }
                 surfaceNode->AddToPendingSyncList();
             }
             if (surfaceNode->GetDeviceOfflineEnable() && processor->ProcessOfflineLayer(surfaceNode)) {
@@ -3355,7 +3344,7 @@ void RSMainThread::ProcessScreenHotPlugEvents()
 
 void RSMainThread::OnVsync(uint64_t timestamp, uint64_t frameCount, void* data)
 {
-    rsVSyncDistributor_->CheckVsyncTsAndReceived(timestamp);
+    rsVSyncDistributor_->CheckVsyncReceivedAndGetRelTs(timestamp);
     SetFrameInfo(frameCount, false);
     const int64_t onVsyncStartTime = GetCurrentSystimeMs();
     const int64_t onVsyncStartTimeSteady = GetCurrentSteadyTimeMs();
@@ -4228,22 +4217,6 @@ void RSMainThread::ClearTransactionDataPidInfo(pid_t remotePid)
 bool RSMainThread::IsResidentProcess(pid_t pid) const
 {
     return pid == ExtractPid(context_->GetNodeMap().GetEntryViewNodeId());
-}
-
-void RSMainThread::TrimMem(std::unordered_set<std::u16string>& argSets, std::string& dumpString)
-{
-#if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
-    if (!RSUniRenderJudgement::IsUniRender()) {
-        dumpString.append("\n---------------\nNot in UniRender and no resource can be released");
-        return;
-    }
-    std::string type;
-    argSets.erase(u"trimMem");
-    if (!argSets.empty()) {
-        type = std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> {}.to_bytes(*argSets.begin());
-    }
-    RSUniRenderThread::Instance().TrimMem(dumpString, type);
-#endif
 }
 
 void RSMainThread::DumpMem(std::unordered_set<std::u16string>& argSets, std::string& dumpString,
@@ -5464,6 +5437,21 @@ void RSMainThread::SetForceRsDVsync(const std::string& sceneId)
         RS_TRACE_NAME("RSMainThread::SetForceRsDVsync");
         rsVSyncDistributor_->ForceRsDVsync(sceneId);
     }
+}
+
+void RSMainThread::RegisterHwcEvent()
+{
+    RSUniHwcPrevalidateUtil::GetInstance().Init();
+#ifdef RS_ENABLE_GPU
+    auto screenManager = CreateOrGetScreenManager();
+    if (screenManager != nullptr) {
+        screenManager->RegisterHwcEvent([]() {
+            RSHardwareThread::Instance().PostTask([]() {
+                RSUniHwcPrevalidateUtil::GetInstance().Init();
+            });
+        });
+    }
+#endif
 }
 } // namespace Rosen
 } // namespace OHOS

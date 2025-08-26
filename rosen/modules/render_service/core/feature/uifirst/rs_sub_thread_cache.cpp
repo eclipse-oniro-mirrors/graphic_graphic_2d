@@ -289,7 +289,7 @@ void RsSubThreadCache::InitCacheSurface(Drawing::GPUContext* gpuContext,
     std::shared_ptr<DrawableV2::RSSurfaceRenderNodeDrawable> nodeDrawable,
     ClearCacheSurfaceFunc func, uint32_t threadIndex, bool isNeedFP16)
 {
-    RS_TRACE_NAME_FMT("InitCanvasSurface id:%" PRIu64" targetColorGamut:%d isNeedFP16:%d",
+    RS_TRACE_NAME_FMT("InitCacheSurface id:%" PRIu64" targetColorGamut:%d isNeedFP16:%d",
         nodeId_, targetColorGamut_, isNeedFP16);
     if (!nodeDrawable) {
         RS_LOGE("InitCacheSurface nodeDrawable is nullptr");
@@ -942,16 +942,11 @@ bool RsSubThreadCache::DrawUIFirstCache(DrawableV2::RSSurfaceRenderNodeDrawable*
             return false; // draw nothing
         }
 #if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
-        bool frameParamEnable = RsFrameReport::GetInstance().GetEnable();
-        if (frameParamEnable) {
-            RsFrameReport::GetInstance().SetFrameParam(
-                REQUEST_SET_FRAME_LOAD_ID, REQUEST_FRAME_AWARE_LOAD, 0, GetLastFrameUsedThreadIndex());
-        }
+        RsFrameReport::GetInstance().SetFrameParam(
+            REQUEST_SET_FRAME_LOAD_ID, REQUEST_FRAME_AWARE_LOAD, 0, GetLastFrameUsedThreadIndex());
         RSSubThreadManager::Instance()->WaitNodeTask(surfaceDrawable->nodeId_);
-        if (frameParamEnable) {
-            RsFrameReport::GetInstance().SetFrameParam(
-                REQUEST_SET_FRAME_LOAD_ID, REQUEST_FRAME_STANDARD_LOAD, 0, GetLastFrameUsedThreadIndex());
-        }
+        RsFrameReport::GetInstance().SetFrameParam(
+            REQUEST_SET_FRAME_LOAD_ID, REQUEST_FRAME_STANDARD_LOAD, 0, GetLastFrameUsedThreadIndex());
         UpdateCompletedCacheSurface();
 #endif
     }

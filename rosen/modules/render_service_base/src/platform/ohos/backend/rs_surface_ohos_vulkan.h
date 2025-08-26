@@ -108,10 +108,10 @@ private:
     std::mutex taskHandleMapMutex_;
     std::unordered_map<uint64_t, void*> taskHandleMap_;
     bool NeedSubmitWithFFTS();
-    void SetGpuSemaphore(bool& submitWithFFTS, const uint64_t& preFrameId, const uint64_t& curFramId,
+    void SetGpuSemaphore(bool& submitWithFFTS, const uint64_t& preFrameId, const uint64_t& curFrameId,
         std::vector<GrBackendSemaphore>& semphoreVec, NativeBufferUtils::NativeSurfaceInfo& surface);
     void SubmitGpuAndHpaeTask(const uint64_t& preFrameId, const uint64_t& curFrameId);
-    void SubmitHpaeTask(const uint64_t& curFrameId);
+    void SubmitHapeTask(const uint64_t& curFrameId);
 #endif
 };
 

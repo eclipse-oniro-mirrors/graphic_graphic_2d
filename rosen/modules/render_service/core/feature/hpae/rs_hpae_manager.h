@@ -59,7 +59,7 @@ public:
     // Functions @Process
     bool HasHpaeBlurNode() const;
 
-    void CheckHpaeBlur(bool isHdrOn, GraphicPixelFormate pixelFormat, GraphicColorGamut colorSpace, bool isHebc);
+    void CheckHpaeBlur(bool isHdrOn, GraphicPixelFormat pixelFormat, GraphicColorGamut colorSpace, bool isHebc);
 
     void InitIoBuffers();
     void SetUpHpaeSurface(GraphicPixelFormat pixelFormat, GraphicColorGamut colorSpace, bool isHebc);

@@ -23,6 +23,7 @@
 
 #include "feature/image_detail_enhancer/rs_image_detail_enhancer_thread.h"
 
+#include "common/rs_common_hook.h"
 #include "platform/common/rs_log.h"
 #include "platform/common/rs_system_properties.h"
 #include "render/rs_pixel_map_util.h"
@@ -326,6 +327,13 @@ bool RSImageDetailEnhancerThread::GetProcessReady(uint64_t imageId) const
 bool RSImageDetailEnhancerThread::GetEnableStatus() const
 {
     return isEnable_;
+}
+
+bool RSImageDetailEnhancerThread::IsEnableImageDetailEnhance(uint64_t nodeId) const
+{
+    pid_t pid = ExtractPid(nodeId);
+    std::unordered_set<pid_t> imageEnhancePidList = RsCommonHook::Instance().GetImageEnhancePidList();
+    return imageEnhancePidList.find(pid) != imageEnhancePidList.end();
 }
 
 DetailEnhancerUtils& DetailEnhancerUtils::Instance()

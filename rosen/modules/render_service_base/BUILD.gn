@@ -288,7 +288,6 @@ ohos_source_set("render_service_base_src") {
     "src/hpae_base/rs_hpae_ffrt_pattern_manager.cpp",
     "src/hpae_base/rs_hpae_filter_cache_manager.cpp",
     "src/hpae_base/rs_hpae_scheduler.cpp",
-    "src/hpae_base/rs_hpae_perf_thread.cpp",
     "src/hpae_base/rs_hpae_fusion_operator.cpp",
 
     #render

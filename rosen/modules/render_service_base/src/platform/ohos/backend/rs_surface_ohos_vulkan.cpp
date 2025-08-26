@@ -203,7 +203,7 @@ void RSSurfaceOhosVulkan::PreAllocateHpaeBuffer(int32_t width, int32_t height, i
         int fenceFd = -1;
         if (RequestNativeWindowBuffer(&nativeWindowBuffer, width, height, fenceFd, useAFBC, false) !=
             OHOS::GSERROR_OK) {
-            ROSEN_LOGW("PreallocateHpaeBuffer failed.");
+            ROSEN_LOGW("PreAllocateHpaeBuffer failed.");
             std::lock_guard<std::mutex> lock(hpaeSurfaceBufferListMutex_);
             for (auto& bufferPair : hpaeSurfaceBufferList_) {
                 NativeWindowCancelBuffer(mNativeWindow, bufferPair.first);
@@ -238,9 +238,9 @@ std::unique_ptr<RSSurfaceFrame> RSSurfaceOhosVulkan::RequestFrame(
         }
         nativeWindowBuffer = hpaeSurfaceBufferList_.front().first;
         fenceFd = hpaeSurfaceBufferList_.front().second;
-        mSurfaceList_.emplace_back(nativeWindowBuffer);
+        mSurfaceList.emplace_back(nativeWindowBuffer);
         hpaeSurfaceBufferList_.pop_front();
-    } else if {
+    } else {
         std::lock_guard<std::mutex> lock(protectedSurfaceBufferListMutex_);
         if (isProtected && !protectedSurfaceBufferList_.empty()) {
             RS_TRACE_NAME_FMT("protectedSurfaceBufferList_ size = %lu", protectedSurfaceBufferList_.size());
@@ -328,22 +328,22 @@ bool RSSurfaceOhosVulkan::NeedSubmitWithFFTS()
 }
 
 int GetFftsSemaphore(const uint64_t& frameId, const MHC_PatternTaskName& taskName,
-    VkSemaphore &semaNotifyFfts, VKSemaphore& semaWaitFfts)
+    VkSemaphore &semaNotifyFfts, VkSemaphore& semaWaitFfts)
 {
     HPAE_LOGD("GetFftsSemaphore. taskName:=%d, frameId=%lu", taskName, frameId);
 
     uint16_t eventId[FFRTEVENTLEN] = {0};
-    eventId[0] = RSHpaeFfrtPatternManager::Instance().MHCGetVulkanTaskWaitEvent(taskName, frameId);
-    eventId[1] = RSHpaeFfrtPatternManager::Instance().MHCGetVulkanTaskNotifyEvent(taskName, frameId);
+    eventId[0] = RSHpaeFfrtPatternManager::Instance().MHCGetVulkanTaskWaitEvent(frameId, taskName);
+    eventId[1] = RSHpaeFfrtPatternManager::Instance().MHCGetVulkanTaskNotifyEvent(frameId, taskName);
 
     if (eventId[0] == 0 || eventId[1] == 0) {
         // 0 is abnormal
-        HPAE_LOGW("GetFftsSemaphore mhc get Event fail. \n");
+        HPAE_LOGW("GetFftsSemaphore mhc get Event fail.\n");
         return -1;
     }
 
     HPAE_LOGD("mhc_so: taskName:%{public}d, waitevent:%{public}d, notifyevent:%{public}d,"
-         "frameId=${public}" PRIu64 "\n", taskName, eventId[0], eventId[1], frameId);
+         "frameId=%{public}" PRIu64 "\n", taskName, eventId[0], eventId[1], frameId);
 
     VkDevice vkDevice = RsVulkanContext::GetSingleton().GetDevice();
 
@@ -376,7 +376,7 @@ void RSSurfaceOhosVulkan::SubmitHapeTask(const uint64_t& curFrameId)
     }
     std::lock_guard<std::mutex> lock(taskHandleMapMutex_);
     taskHandleMap_[curFrameId] = hpaeTask.taskPtr;
-    HPAE_LOGD("mhc_so shenh: GP before aae submit, curFrameId=%{public}" PRIu64 ", "
+    HPAE_LOGD("mhc_so: GP before aae submit, curFrameId: %{public}" PRIu64 ", "
         "taskId: %{public}d", curFrameId, hpaeTask.taskId);
       
     void** taskHandleVec[3] = { &(taskHandleMap_[curFrameId]) }; // max count for multi-blur is 3
@@ -393,13 +393,13 @@ void RSSurfaceOhosVulkan::SubmitHapeTask(const uint64_t& curFrameId)
 
 void RSSurfaceOhosVulkan::SubmitGpuAndHpaeTask(const uint64_t& preFrameId, const uint64_t& curFrameId)
 {
-    HPAE_LOGD("SubmitGPGpuAndHpaeTask. preFrameId=%{public}" PRIu64 ", curFrameId=%{public}" PRIu64 "",
+    HPAE_LOGD("SubmitGpuAndHpaeTask. preFrameId=%{public}" PRIu64 ", curFrameId=%{public}" PRIu64 "",
         preFrameId, curFrameId);
 
     if (preFrameId > 0) {
         // Submit GPU1
         auto gpu1PostFunc = [preFrameId]() {
-            HPAE_LOGD("mhc_so GPU1 GP postFunc, preFrameId=%{public}" PRIu64 ". MHCReleaseEGrapg", preFrameId);
+            HPAE_LOGD("mhc_so GPU1 GP postFunc, preFrameId=%{public}" PRIu64 ". MHCReleaseEGraph", preFrameId);
             RSHpaeFfrtPatternManager::Instance().MHCReleaseEGraph(preFrameId);
         };
         RSHpaeFfrtPatternManager::Instance().MHCSubmitTask(preFrameId, MHC_PatternTaskName::BLUR_GPU1,
@@ -411,8 +411,8 @@ void RSSurfaceOhosVulkan::SubmitGpuAndHpaeTask(const uint64_t& preFrameId, const
         RSHpaeFfrtPatternManager::Instance().MHCSubmitTask(curFrameId, MHC_PatternTaskName::BLUR_GPU0,
             nullptr, nullptr, 0, nullptr);
 
-            // Submit HPAE
-            SubmitHapeTask(curFrameId);
+        // Submit HPAE
+        SubmitHapeTask(curFrameId);
     }
 
     RSHpaeScheduler::GetInstance().Reset();
@@ -427,7 +427,7 @@ void RSSurfaceOhosVulkan::SetGpuSemaphore(bool& submitWithFFTS, const uint64_t& 
         VkSemaphore preNotifySemaphore;
         VkSemaphore preWaitSemaphore;
 
-        ret = GetGPEventAndSemaphoreNew(preFrameId, MHC_PATTERN_TASK_BLUR_GPU1, preNotifySemaphore, preWaitSemaphore);
+        ret = GetFftsSemaphore(preFrameId, MHC_PatternTaskName::BLUR_GPU1, preNotifySemaphore, preWaitSemaphore);
         if (ret != -1) {
 #ifdef USE_M133_SKIA
             GrBackendSemaphore htsSemaphore = GrBackendSemaphores::MakeVk(preNotifySemaphore);
@@ -445,7 +445,7 @@ void RSSurfaceOhosVulkan::SetGpuSemaphore(bool& submitWithFFTS, const uint64_t& 
     if (curFrameId > 0) {
         VkSemaphore notifySemaphore;
         VkSemaphore waitSemaphore;
-        ret = GetFftsSemaphore(curFrameId, MHC_PATTERNTaskName::BLUR_GPU0, notifySemaphore, waitSemaphore);
+        ret = GetFftsSemaphore(curFrameId, MHC_PatternTaskName::BLUR_GPU0, notifySemaphore, waitSemaphore);
         if (ret != -1) {
 #ifdef USE_M133_SKIA
             GrBackendSemaphore htsSemaphore = GrBackendSemaphores::MakeVk(notifySemaphore);

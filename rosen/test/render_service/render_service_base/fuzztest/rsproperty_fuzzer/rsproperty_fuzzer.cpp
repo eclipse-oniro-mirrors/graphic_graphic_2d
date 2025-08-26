@@ -237,7 +237,6 @@ void RSPropertiesFuzzTestInner03(RSProperties& properties)
     int16_t green1 = GetData<int16_t>();
     int16_t blue1 = GetData<int16_t>();
     Color color1(red1, green1, blue1);
-    float alpha = GetData<float>();
 
     properties.SetBorderWidth(widthVector);
     properties.SetBorderDashWidth(widthVector);
@@ -248,7 +247,6 @@ void RSPropertiesFuzzTestInner03(RSProperties& properties)
     properties.SetShadowColor(color1);
     properties.SetShadowOffsetX(offsetX);
     properties.SetShadowOffsetY(offsetY);
-    properties.SetShadowAlpha(alpha);
     properties.SetShadowElevation(radius);
     properties.SetShadowRadius(radius);
     properties.SetShadowPath(shadowpath);
@@ -282,19 +280,6 @@ void RSPropertiesFuzzTestInner04(RSProperties& properties)
     properties.SetVisible(visible);
     properties.SetDistortionK(distortionK);
     properties.SetDistortionDirty(distortionDirty);
-}
-
-bool RSPropertiesFuzzTest(const uint8_t* data, size_t size)
-{
-    RSProperties properties;
-
-    // test
-    RSPropertiesFuzzTestInner01(properties);
-    RSPropertiesFuzzTestInner02(properties);
-    RSPropertiesFuzzTestInner03(properties);
-    RSPropertiesFuzzTestInner04(properties);
-
-    return true;
 }
 
 bool RSPropertiesPainterFuzzTest(const uint8_t* data, size_t size)
@@ -342,10 +327,14 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     if (!OHOS::Rosen::Init(data, size)) {
         return -1;
     }
-    /* Run your code on data */
 
     // Run FuzzTest
-    OHOS::Rosen::RSPropertiesFuzzTest(data, size);
+    OHOS::Rosen::RSProperties properties;
+    RSPropertiesFuzzTestInner01(properties);
+    RSPropertiesFuzzTestInner02(properties);
+    RSPropertiesFuzzTestInner03(properties);
+    RSPropertiesFuzzTestInner04(properties);
+
     OHOS::Rosen::RSPropertiesPainterFuzzTest(data, size);
     return 0;
 }

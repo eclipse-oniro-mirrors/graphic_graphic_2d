@@ -56,6 +56,7 @@ public:
     virtual ~RSScreenManager() noexcept = default;
 
     virtual bool Init() noexcept = 0;
+    virtual void InitFoldSensor() = 0;
     virtual void ProcessScreenHotPlugEvents() = 0;
     virtual bool TrySimpleProcessHotPlugEvents() = 0;
 #ifdef RS_SUBSCRIBE_SENSOR_ENABLE
@@ -218,6 +219,8 @@ public:
     virtual void SetScreenOffset(ScreenId id, int32_t offsetX, int32_t offsetY) = 0;
 
     virtual bool CheckPSurfaceChanged(ScreenId id) = 0;
+
+    virtual void RegisterHwcEvent(std::function<void()> func) = 0;
 };
 
 sptr<RSScreenManager> CreateOrGetScreenManager();
@@ -239,6 +242,7 @@ public:
     static sptr<OHOS::Rosen::RSScreenManager> GetInstance() noexcept;
 
     bool Init() noexcept override;
+    void InitFoldSensor() override;
     void ProcessScreenHotPlugEvents() override;
     bool TrySimpleProcessHotPlugEvents() override;
 #ifdef RS_SUBSCRIBE_SENSOR_ENABLE
@@ -398,6 +402,8 @@ public:
 
     void SetScreenOffset(ScreenId id, int32_t offsetX, int32_t offsetY) override;
     bool CheckPSurfaceChanged(ScreenId id) override;
+    void RegisterHwcEvent(std::function<void()> func) override;
+
 private:
     RSScreenManager() = default;
     ~RSScreenManager() override = default;
@@ -440,6 +446,8 @@ private:
 #ifdef RS_SUBSCRIBE_SENSOR_ENABLE
     void RegisterSensorCallback();
     void UnRegisterSensorCallback();
+    static void OnBootComplete(const char* key, const char* value, void *context);
+    void OnBootCompleteEvent();
     void HandleSensorData(float angle);
     FoldState TransferAngleToScreenState(float angle);
 #endif
@@ -507,6 +515,8 @@ private:
 
     std::atomic<bool> powerOffNeedProcessOneFrame_ = false;
 
+    std::function<void()> registerHwcEventFunc_ = nullptr;
+
     mutable std::mutex renderControlMutex_;
     std::unordered_set<ScreenId> disableRenderControlScreens_ = {};
 
@@ -519,10 +529,10 @@ private:
     ScreenId innerScreenId_ = 0;
     ScreenId externalScreenId_ = INVALID_SCREEN_ID;
     ScreenId activeScreenId_ = 0;
-    bool isFirstTimeToGetActiveScreenId_ = true;
     bool isPostureSensorDataHandled_ = false;
     std::condition_variable activeScreenIdAssignedCV_;
     mutable std::mutex activeScreenIdAssignedMutex_;
+    bool hasRegisterSensorCallback_ = false;
 #endif
     struct FoldScreenStatus {
         bool isConnected;

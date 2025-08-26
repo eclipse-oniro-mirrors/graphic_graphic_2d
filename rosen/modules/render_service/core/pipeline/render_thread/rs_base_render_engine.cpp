@@ -13,9 +13,41 @@
  * limitations under the License.
  */
 #include "rs_base_render_engine.h"
-#include <memory>
 
+#include <memory>
 #include "v2_1/cm_color_space.h"
+
+#include "common/rs_optional_trace.h"
+#include "display_engine/rs_luminance_control.h"
+#include "feature/hdr/rs_hdr_util.h"
+#include "memory/rs_tag_tracker.h"
+#include "metadata_helper.h"
+#include "pipeline/render_thread/rs_divided_render_util.h"
+#include "pipeline/rs_uni_render_judgement.h"
+#include "platform/common/rs_log.h"
+#include "platform/common/rs_system_properties.h"
+#include "platform/ohos/backend/rs_surface_ohos_raster.h"
+#include "render/rs_drawing_filter.h"
+#include "render/rs_skia_filter.h"
+
+#ifdef RS_ENABLE_GPU
+#include "drawable/rs_screen_render_node_drawable.h"
+#endif
+
+#if (defined(RS_ENABLE_GPU) && defined(RS_ENABLE_GL))
+#include "platform/ohos/backend/rs_surface_ohos_gl.h"
+#include "feature/gpuComposition/rs_image_manager.h"
+#endif
+
+#ifdef RS_ENABLE_VK
+#include "platform/ohos/backend/rs_surface_ohos_vulkan.h"
+#include "platform/ohos/backend/rs_vulkan_context.h"
+#endif
+
+#ifdef USE_VIDEO_PROCESSING_ENGINE
+#include "render/rs_colorspace_convert.h"
+#endif
+
 #ifdef RS_ENABLE_EGLIMAGE
 #ifdef USE_M133_SKIA
 #include "src/gpu/ganesh/gl/GrGLDefines.h"
@@ -23,33 +55,6 @@
 #include "src/gpu/gl/GrGLDefines.h"
 #endif
 #endif
-
-#include "common/rs_optional_trace.h"
-#include "display_engine/rs_luminance_control.h"
-#ifdef RS_ENABLE_GPU
-#include "drawable/rs_screen_render_node_drawable.h"
-#endif
-#include "memory/rs_tag_tracker.h"
-#include "metadata_helper.h"
-#include "pipeline/render_thread/rs_divided_render_util.h"
-#include "pipeline/rs_uni_render_judgement.h"
-#include "platform/common/rs_log.h"
-#include "platform/common/rs_system_properties.h"
-#if (defined(RS_ENABLE_GPU) && defined(RS_ENABLE_GL))
-#include "platform/ohos/backend/rs_surface_ohos_gl.h"
-#include "feature/gpuComposition/rs_image_manager.h"
-#endif
-#include "platform/ohos/backend/rs_surface_ohos_raster.h"
-#ifdef RS_ENABLE_VK
-#include "platform/ohos/backend/rs_surface_ohos_vulkan.h"
-#include "platform/ohos/backend/rs_vulkan_context.h"
-#endif
-#ifdef USE_VIDEO_PROCESSING_ENGINE
-#include "render/rs_colorspace_convert.h"
-#endif
-#include "render/rs_drawing_filter.h"
-#include "render/rs_skia_filter.h"
-#include "feature/hdr/rs_hdr_util.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -178,7 +183,7 @@ std::unique_ptr<RSRenderFrame> RSBaseRenderEngine::RequestFrame(
     rsSurface->SetColorSpace(config.colorGamut);
     rsSurface->SetSurfacePixelFormat(config.format);
     if (frameContextConfig.isVirtual) {
-        RS_LOGD("RSBaseRenderEngine::RequestFrame: Mirror Screen Set Timeout to 0.");
+        RS_LOGD("RSBaseRenderEngine::RequestFrame: Virtual Screen Set Timeout to 0.");
         rsSurface->SetTimeOut(frameContextConfig.timeOut);
     }
     auto bufferUsage = config.usage;
@@ -316,13 +321,13 @@ void RSBaseRenderEngine::DrawScreenNodeWithParams(RSPaintFilterCanvas& canvas, R
 }
 
 void RSBaseRenderEngine::DrawScreenNodeWithParams(RSPaintFilterCanvas& canvas, RSSurfaceHandler& surfaceHandler,
-    BufferDrawParam& drawParam)
+    BufferDrawParam& params)
 {
-    if (drawParam.useCPU) {
-        DrawBuffer(canvas, drawParam);
+    if (params.useCPU) {
+        DrawBuffer(canvas, params);
     } else {
         RegisterDeleteBufferListener(surfaceHandler.GetConsumer());
-        DrawImage(canvas, drawParam);
+        DrawImage(canvas, params);
     }
 }
 
@@ -504,7 +509,7 @@ void RSBaseRenderEngine::ColorSpaceConvertor(std::shared_ptr<Drawing::ShaderEffe
         return;
     }
 
-    if(!inputShader) {
+    if (!inputShader) {
         RS_LOGE("RSBaseRenderEngine::ColorSpaceConvertor inputShader is null");
         RS_OPTIONAL_TRACE_END();
         return;
@@ -512,10 +517,13 @@ void RSBaseRenderEngine::ColorSpaceConvertor(std::shared_ptr<Drawing::ShaderEffe
     if (params.isHdrRedraw) {
         parameter.disableHdrFloatHeadRoom = true;
     } else if (params.isTmoNitsFixed) {
-        parameter.sdrNits = DEFAULT_DISPLAY_NIT;
+        parameter.sdrNits = hdrProperties.screenshotType == RSPaintFilterCanvas::ScreenshotType::HDR_SCREENSHOT ?
+            RSLuminanceConst::DEFAULT_CAPTURE_SDR_NITS : DEFAULT_DISPLAY_NIT;
         parameter.tmoNits = hdrProperties.screenshotType == RSPaintFilterCanvas::ScreenshotType::HDR_SCREENSHOT ?
             RSLuminanceConst::DEFAULT_CAPTURE_HDR_NITS : DEFAULT_DISPLAY_NIT;
-        parameter.currentDisplayNits = DEFAULT_DISPLAY_NIT;
+        parameter.currentDisplayNits = hdrProperties.screenshotType ==
+            RSPaintFilterCanvas::ScreenshotType::HDR_SCREENSHOT ?
+            RSLuminanceConst::DEFAULT_CAPTURE_HDR_NITS : DEFAULT_DISPLAY_NIT;
         parameter.layerLinearMatrix = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f};
     } else if (hdrProperties.isHDREnabledVirtualScreen) {
         parameter.sdrNits = RSLuminanceConst::DEFAULT_CAST_SDR_NITS;
@@ -785,12 +793,13 @@ void RSBaseRenderEngine::DrawImage(RSPaintFilterCanvas& canvas, BufferDrawParam&
     auto sy = params.dstRect.GetHeight() / srcHeight;
     auto tx = params.dstRect.GetLeft() - params.srcRect.GetLeft() * sx;
     auto ty = params.dstRect.GetTop() - params.srcRect.GetTop() * sy;
+
     if (ROSEN_EQ(srcWidth, 0.0f) || ROSEN_EQ(srcHeight, 0.0f)) {
         RS_LOGE("RSBaseRenderEngine::DrawImage image srcRect params invalid.");
     }
     matrix.SetScaleTranslate(sx, sy, tx, ty);
 
-    RS_LOGD_IF(DEBUG_COMPOSER, "  - Image shader transformation:"
+    RS_LOGD_IF(DEBUG_COMPOSER, "- Image shader transformation:"
         "sx=%{public}.2f, sy=%{public}.2f, tx=%{public}.2f, ty=%{public}.2f", sx, sy, tx, ty);
 
     auto imageShader = Drawing::ShaderEffect::CreateImageShader(

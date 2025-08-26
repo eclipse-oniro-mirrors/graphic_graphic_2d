@@ -1188,7 +1188,7 @@ int32_t RSRenderServiceConnectionProxy::SetScreenSwitchingNotifyCallback(
         return WRITE_PARCEL_ERR;
     }
 
-    option.SetFlags(MessageOption::TF_ASYNC);
+    option.SetFlags(MessageOption::TF_SYNC);
 
     if (callback) {
         if (!data.WriteBool(true) || !data.WriteRemoteObject(callback->AsObject())) {
@@ -5217,7 +5217,7 @@ ErrCode RSRenderServiceConnectionProxy::SetVirtualScreenStatus(ScreenId id,
         success = false;
         return ERR_INVALID_VALUE;
     }
-    if (!data.WriteUint8(static_cast<uint8_t>(screenStatus))) {
+    if (!data.WriteUint32(static_cast<uint32_t>(screenStatus))) {
         ROSEN_LOGE("SetVirtualScreenStatus: WriteUint8 screenStatus err.");
         success = false;
         return ERR_INVALID_VALUE;

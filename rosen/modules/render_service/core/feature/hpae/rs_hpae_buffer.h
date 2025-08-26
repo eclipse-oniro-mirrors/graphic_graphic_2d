@@ -35,7 +35,7 @@ public:
     ~RSHpaeBuffer();
 
     void Init(const BufferRequestConfig& config, bool isHebc);
-    void PreAllocateBuffer(int32_t width, int32_t height. bool isHebc);
+    void PreAllocateBuffer(int32_t width, int32_t height, bool isHebc);
 
     std::unique_ptr<RSRenderFrame> RequestFrame(const BufferRequestConfig& config, bool isHebc);
     std::unique_ptr<RSRenderFrame> RequestFrame(int32_t width, int32_t height, bool isHebc);

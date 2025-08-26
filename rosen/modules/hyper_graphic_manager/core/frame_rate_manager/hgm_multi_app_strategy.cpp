@@ -53,6 +53,7 @@ HgmErrCode HgmMultiAppStrategy::HandlePkgsEvent(const std::vector<std::string>& 
     foregroundPidAppMap_.clear();
     pidAppTypeMap_.clear();
     CheckPackageInConfigList(pkgs_);
+    std::unordered_set<pid_t> imageEnhancePidList = {};
     for (auto& param : pkgs_) {
         RS_TRACE_NAME_FMT("pkg update:%s", param.c_str());
         HGM_LOGI("pkg update:%{public}s", param.c_str());
@@ -60,6 +61,9 @@ HgmErrCode HgmMultiAppStrategy::HandlePkgsEvent(const std::vector<std::string>& 
 
         // DISPLAY ENGINE
         RsCommonHook::Instance().SetCurrentPkgName(pkgName);
+        if (CheckImageEnhanceList(pkgName)) {
+            imageEnhancePidList.insert(pid);
+        }
 
         pidAppTypeMap_[pkgName] = { pid, appType };
         if (pid > DEFAULT_PID) {
@@ -67,6 +71,7 @@ HgmErrCode HgmMultiAppStrategy::HandlePkgsEvent(const std::vector<std::string>& 
             backgroundPid_.Erase(pid);
         }
     }
+    RsCommonHook::Instance().SetImageEnhancePidList(imageEnhancePidList);
     if (auto configCallbackManager = HgmConfigCallbackManager::GetInstance(); configCallbackManager != nullptr) {
         configCallbackManager->SyncHgmConfigChangeCallback(foregroundPidAppMap_);
     }
@@ -427,6 +432,11 @@ void HgmMultiAppStrategy::OnStrategyChange()
             callback(voteRes_.second);
         }
     }
+}
+
+bool HgmMultiAppStrategy::CheckImageEnhanceList(const std::string& appName) const
+{
+    return imageEnhanceScene_.find(appName) != imageEnhanceScene_.end();
 }
 
 // use in temporary scheme to check package name

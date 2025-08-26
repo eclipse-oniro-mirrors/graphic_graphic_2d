@@ -399,7 +399,7 @@ void RSFilterCacheManager::DrawCachedFilteredSnapshot(RSPaintFilterCanvas& canva
     if (isHpaeCachedFilteredSnapshot_) {
         auto cacheRect = cachedFilteredSnapshot_->cachedRect_;
         int32_t left = src.GetLeft() * cacheRect.GetWidth() / canvas.GetWidth();
-        int32_t top = src.GetTop() * cacheRect.GetHeight() / canvas.GetWidth();
+        int32_t top = src.GetTop() * cacheRect.GetHeight() / canvas.GetHeight();
         int32_t width = src.GetWidth() * cacheRect.GetWidth() / canvas.GetWidth();
         int32_t height = src.GetHeight() * cacheRect.GetHeight() / canvas.GetHeight();
         src = Drawing::Rect(left, top, left + width, top + height);

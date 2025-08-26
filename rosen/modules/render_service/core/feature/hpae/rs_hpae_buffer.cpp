@@ -58,7 +58,7 @@ RSHpaeBuffer::~RSHpaeBuffer()
 {
 }
 
-void RSHpaeBuffer::Init(const BufferRequeustConfig& config, bool isHebc)
+void RSHpaeBuffer::Init(const BufferRequestConfig& config, bool isHebc)
 {
     RS_OPTIONAL_TRACE_NAME("Init");
     bufferConfig_ = config;
@@ -77,7 +77,7 @@ void RSHpaeBuffer::Init(const BufferRequeustConfig& config, bool isHebc)
         }
     }
 
-    if (!surfaceCreate_) {
+    if (!surfaceCreated_) {
         sptr<IBufferConsumerListener> listener = new RSHpaeRenderListener(surfaceHandler_);
         RS_OPTIONAL_TRACE_NAME("create layer surface");
         if (!CreateSurface(listener)) {
@@ -92,11 +92,11 @@ void RSHpaeBuffer::Init(const BufferRequeustConfig& config, bool isHebc)
     }
 
 #ifdef RS_ENABLE_VK
-    if ((RSSystemProperties::GetGpuApiType() ==GpuApiType::VULKAN ||
-        RSSystemProperties::GetGpuApiType() ==GpuApiType::DDGR) && grContext_ != nullptr) {
+    if ((RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
+        RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) && grContext_ != nullptr) {
         auto vulkanSurface = std::static_pointer_cast<RSSurfaceOhosVulkan>(rsSurface_);
-        vulkanSurface->SetSKContext(grContext_);
-        vulkanSurface->MarkAsHpaeSurface();    
+        vulkanSurface->SetSkContext(grContext_);
+        vulkanSurface->MarkAsHpaeSurface();
     }
 #endif
     rsSurface_->SetColorSpace(config.colorGamut);
@@ -109,7 +109,7 @@ void RSHpaeBuffer::PreAllocateBuffer(int32_t width, int32_t height, bool isHebc)
 #ifdef RS_ENABLE_VK
     auto vulkanSurface = std::static_pointer_cast<RSSurfaceOhosVulkan>(rsSurface_);
     if (vulkanSurface == nullptr) {
-        RS_LOGE("PreAllocateBuffer: surface is null");
+        RS_LOGE("PreAllocateBuffer: surface is null!");
         return;
     }
 
@@ -124,8 +124,8 @@ std::unique_ptr<RSRenderFrame> RSHpaeBuffer::RequestFrame(int32_t width, int32_t
         return nullptr;
     }
 
-    constexpr uint64_t uiTimeStamp = 0;
-    auto surfaceFrame = rsSurface_ ->RequestFrame(width, height, uiTimeStamp, isHebc);
+    constexpr uint64_t uiTimestamp = 0;
+    auto surfaceFrame = rsSurface_ ->RequestFrame(width, height, uiTimestamp, isHebc);
     if (!surfaceFrame) {
         // buffer not ready
         return nullptr;
@@ -192,7 +192,7 @@ bool RSHpaeBuffer::FlushFrame()
             .h = bufferConfig_.height,
         },
     };
-    RS_OPTIONAL_TRACE_NAME_FMT("RSHpaeBuffer::FlushFrame");
+    RS_OPTIONAL_TRACE_NAME("RSHpaeBuffer::FlushFrame");
 
     auto fbBuffer = rsSurface_->GetCurrentBuffer();
 
@@ -228,7 +228,7 @@ GSError RSHpaeBuffer::ForceDropFrame(uint64_t presentWhen)
         return OHOS::GSERROR_NO_BUFFER;
     }
 
-    RS_OPTIONAL_TRACE_NAME_FMT("Force drop: DropFrame");
+    RS_OPTIONAL_TRACE_NAME("Force drop: DropFrame");
     ret = surfaceConsumer->ReleaseBuffer(returnValue.buffer, returnValue.fence);
     if (ret != OHOS::SURFACE_ERROR_OK) {
         RS_LOGE("RSHpaeBuffer::DropFrameProcess(node: %{public}" PRIu64

@@ -141,9 +141,9 @@ void RSHpaeManager::OnDeActive()
     RS_TRACE_NAME("HPAE::DEACTIVE");
     HPAE_LOGI("HPAE::DEACTIVE");
     releaseAllDone_.store(false, std::memory_order_release);
-    ffrt::submit_h([=](){
+    ffrt::submit_h([=]() {
         RSHpaeFfrtPatternManager::Instance().MHCReleaseAll();
-        HianimationManager::GetInstance().HianimationAlgoDeinit();
+        HianimationManager::GetInstance().HianimationAlgoDeInit();
         this->ReleaseIoBuffers();
         RSUniRenderThread::Instance().PostSyncTask([this]() {
             RS_OPTIONAL_TRACE_BEGIN("HPAE::ResetBuffer");
@@ -154,14 +154,14 @@ void RSHpaeManager::OnDeActive()
         });
         this->releaseAllDone_.store(true, std::memory_order_release);
         HPAE_LOGI("HPAE::DEACTIVE done");
-    }, {}, {}, ffrt::task_attr().qos(5));
+        }, {}, {}, ffrt::task_attr().qos(5));
 }
 
 void RSHpaeManager::HandleHpaeStateChange()
 {
     UpdateHpaeState();
     // note: bufferWidth/bufferHeight is done after prepare with IsHpaeBlurNode()
-    switch(hpaeFrameState_) {
+    switch (hpaeFrameState_) {
         case HpaeFrameState::ACTIVE: {
             OnActive();
             break;
@@ -250,12 +250,12 @@ bool RSHpaeManager::IsHpaeBlurNode(RSRenderNode& node, uint32_t phyWidth, uint32
 }
 void RSHpaeManager::RegisterHpaeCallback(RSRenderNode& node, std::shared_ptr<RSScreenRenderNode> screenNode)
 {
-    auto& rsFilter = node.GetRenderProperities().GetBackgroundFilter();
+    auto& rsFilter = node.GetRenderProperties().GetBackgroundFilter();
     if (rsFilter == nullptr) {
         return;
     }
 
-    if (!stagingHpaeStatus_.hpaeBlurEnabled || stagingHpaeStatus_.gotHapeBlurNode) {
+    if (!stagingHpaeStatus_.hpaeBlurEnabled || stagingHpaeStatus_.gotHpaeBlurNode) {
         // don't support multi-hpaeBlur now
         return;
     }
@@ -319,7 +319,7 @@ void RSHpaeManager::InitIoBuffers()
 void RSHpaeManager::ReleaseIoBuffers()
 {
     RS_OPTIONAL_TRACE_NAME("ReleaseIoBuffers");
-    HPAE_LOGI("ReleaseInfoBuffers +");
+    HPAE_LOGI("ReleaseIoBuffers +");
     std::unique_lock<std::mutex> lock(releaseIoBuffersMutex_);
     size_t i = 0;
     if (hpaeBufferIn_ != nullptr) {
@@ -340,8 +340,8 @@ void RSHpaeManager::ReleaseIoBuffers()
             layerFrameIn_[i] = nullptr;
         }
         if (layerFrameOut_[i]) {
-            layerFrameIn_[i]->Reset();
-            layerFrameIn_[i] = nullptr;
+            layerFrameOut_[i]->Reset();
+            layerFrameOut_[i] = nullptr;
         }
     }
     curIndex_ = 0;
@@ -361,7 +361,7 @@ bool RSHpaeManager::UpdateBufferIfNeed(const BufferRequestConfig& bufferConfig, 
         prevIsHebc_ != isHebc) {
         HPAE_LOGI("config change and reset");
         RS_OPTIONAL_TRACE_NAME_FMT("config change and reset: [%dx%d], %d, %d, %d",
-            bufferConfig.width, bufferConfig.height, bufferConfig,colorGamut, bufferConfig.format, isHebc);
+            bufferConfig.width, bufferConfig.height, bufferConfig.colorGamut, bufferConfig.format, isHebc);
         RSHpaeFfrtPatternManager::Instance().MHCReleaseAll();
         if (algoNeedInit) {
             HianimationManager::GetInstance().HianimationAlgoDeInit();
@@ -373,7 +373,7 @@ bool RSHpaeManager::UpdateBufferIfNeed(const BufferRequestConfig& bufferConfig, 
     return false;
 }
 
-void RSHpaeManager::CheckHpaeBlur(bool isHdrOn, GraphicColorGamut colorSpace,
+void RSHpaeManager::CheckHpaeBlur(bool isHdrOn, GraphicPixelFormat pixelFormat, GraphicColorGamut colorSpace,
     bool isHebc)
 {
     if (isHebc && !isHdrOn && (HasHpaeBlurNode() || hpaeFrameState_ == HpaeFrameState::ALLOC_BUF)) {
@@ -398,7 +398,7 @@ void RSHpaeManager::SetUpHpaeSurface(GraphicPixelFormat pixelFormat, GraphicColo
 
     if (hpaeFrameState_ != HpaeFrameState::ALLOC_BUF && UpdateBufferIfNeed(bufferConfig, isHebc)) {
         hpaeStatus_.gotHpaeBlurNode = false; // notify no hpae blur for this frame
-        hpaeFrameState_ = HpaeFrameStates::ALLOC_BUF; // try alloc buffer again
+        hpaeFrameState_ = HpaeFrameState::ALLOC_BUF; // try alloc buffer again
     }
 
     if (hpaeFrameState_ == HpaeFrameState::ALLOC_BUF) {
@@ -437,7 +437,7 @@ void RSHpaeManager::AllocBuffer(const BufferRequestConfig& bufferConfig, bool is
 
     hpaeBufferAllocating_.store(true, std::memory_order_release);
     curIndex_ = 0;
-    RSHpaeBaseData::GetInstance().SyncHpaeStatus(HpaeStatus()); // notify no hape blur
+    RSHpaeBaseData::GetInstance().SyncHpaeStatus(HpaeStatus()); // notify no hpae blur
     ffrt::submit_h([this, bufferConfig, isHebc]() {
         RS_TRACE_BEGIN("HpaePreAllocateBuffer");
         HPAE_LOGI("AllocBuf: +");
@@ -446,7 +446,7 @@ void RSHpaeManager::AllocBuffer(const BufferRequestConfig& bufferConfig, bool is
             this->hpaeBufferIn_->PreAllocateBuffer(bufferConfig.width, bufferConfig.height, isHebc);
             this->hpaeBufferOut_->PreAllocateBuffer(bufferConfig.width, bufferConfig.height, isHebc);
         }
-        this->hpaeBufferAllocating_store(false, std::memory_order_release);
+        this->hpaeBufferAllocating_.store(false, std::memory_order_release);
         HPAE_LOGI("AllocBuf: -");
         RS_TRACE_END();
     });
@@ -454,7 +454,7 @@ void RSHpaeManager::AllocBuffer(const BufferRequestConfig& bufferConfig, bool is
 
 void RSHpaeManager::SetUpSurfaceIn(const BufferRequestConfig& bufferConfig, bool isHebc)
 {
-    srd::unique_lock<std::mutex> lock(releaseIoBuffersMutex_);
+    std::unique_lock<std::mutex> lock(releaseIoBuffersMutex_);
     if (hpaeBufferIn_ == nullptr) {
         HPAE_LOGE("render layer IN is nullptr");
         return;

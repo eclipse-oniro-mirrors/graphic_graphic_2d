@@ -148,7 +148,7 @@ extern "C" void* dlsym(void* handle, const char* symbol)
     if (strcmp(symbol, "GetHianimationDevice") == 0) {
         return reinterpret_cast<void *>(MockGetHianimationDeviceFunc);
     }
-    return NULL;
+    return nullptr;
 }
 
 extern "C" void* dlopen(const char *filename, int flags)
@@ -159,7 +159,7 @@ extern "C" void* dlopen(const char *filename, int flags)
     if (strcmp(filename, "libanimation.z.so") == 0) {
         return reinterpret_cast<void *>(0x1234);
     }
-    return NULL;
+    return nullptr;
 }
 
 extern "C" int dlclose(void *handle)

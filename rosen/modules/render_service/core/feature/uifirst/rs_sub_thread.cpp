@@ -14,7 +14,6 @@
  */
 
 #define EGL_EGLEXT_PROTOTYPES
-
 #include "rs_sub_thread.h"
 
 #include <string>
@@ -25,8 +24,6 @@
 #include "feature/uifirst/rs_uifirst_manager.h"
 #include "GLES3/gl3.h"
 #include "include/core/SkCanvas.h"
-
-#include "memory/rs_memory_graphic.h"
 #include "memory/rs_memory_manager.h"
 #include "memory/rs_tag_tracker.h"
 #include "pipeline/render_thread/rs_uni_render_thread.h"
@@ -382,15 +379,6 @@ void RSSubThread::AddToReleaseQueue(std::shared_ptr<Drawing::Surface>&& surface)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     tmpSurfaces_.push(std::move(surface));
-}
-
-MemoryGraphic RSSubThread::CountSubMem(int pid)
-{
-    MemoryGraphic memoryGraphic;
-    PostSyncTask([&pid, &memoryGraphic, this]() {
-        memoryGraphic = MemoryManager::CountPidMemory(pid, grContext_.get());
-    });
-    return memoryGraphic;
 }
 
 void RSSubThread::ReleaseCacheSurfaceOnly(std::shared_ptr<DrawableV2::RSSurfaceRenderNodeDrawable> nodeDrawable)

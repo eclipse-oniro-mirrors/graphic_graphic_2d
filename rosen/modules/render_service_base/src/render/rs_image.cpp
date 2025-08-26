@@ -224,6 +224,7 @@ bool RSImage::EnhanceImageAsync(Drawing::Canvas& canvas, const Drawing::Sampling
 {
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
     bool isEnable = RSImageDetailEnhancerThread::Instance().GetEnableStatus();
+    isEnable = isEnable && RSImageDetailEnhancerThread::Instance().IsEnableImageDetailEnhance(nodeId_);
     if (!isEnable || pixelMap_ == nullptr) {
         return false;
     }
