@@ -97,6 +97,7 @@ private:
     void UpdateStrategyByTouch(
         PolicyConfigData::StrategyConfig& strategy, const std::string& pkgName, bool forceUpdate = false);
     void OnStrategyChange();
+    bool CheckImageEnhanceList(const std::string& appName) const;
 
     std::vector<std::string> pkgs_;
     std::unordered_map<std::string, std::pair<pid_t, int32_t>> pidAppTypeMap_;
@@ -121,6 +122,7 @@ private:
     PolicyConfigData::ScreenSetting& screenSettingCache_;
     PolicyConfigData::StrategyConfigMap& strategyConfigMapCache_;
     bool disableSafeVote_ = false;
+    std::unordered_set<std::string> imageEnhanceScene_{};
 };
 } // namespace Rosen
 } // namespace OHOS

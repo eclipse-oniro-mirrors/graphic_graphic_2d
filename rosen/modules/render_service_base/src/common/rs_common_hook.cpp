@@ -109,6 +109,18 @@ std::string RsCommonHook::GetCurrentPkgName() const
     return pkgName_;
 }
 
+void RsCommonHook::SetImageEnhancePidList(const std::unordered_set<pid_t>& imageEnhancePidList)
+{
+    std::lock_guard<std::mutex> setMutex(setMutex_);
+    imageEnhancePidList_ = imageEnhancePidList;
+}
+
+std::unordered_set<pid_t> RsCommonHook::GetImageEnhancePidList() const
+{
+    std::lock_guard<std::mutex> setMutex(setMutex_);
+    return imageEnhancePidList_;
+}
+
 void RsCommonHook::SetTvPlayerBundleName(const std::string& bundleName)
 {
     tvPlayerBundleName_ = bundleName;

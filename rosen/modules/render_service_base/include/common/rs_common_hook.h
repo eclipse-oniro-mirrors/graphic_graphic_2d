@@ -18,8 +18,11 @@
 
 #include <atomic>
 #include <functional>
+#include <mutex>
 #include <string>
+#include <unistd.h>
 #include <unordered_map>
+#include <unordered_set>
 
 #include "animation/rs_frame_rate_range.h"
 
@@ -59,6 +62,8 @@ public:
     // DISPLAY ENGINE
     void SetCurrentPkgName(const std::string& pkgName);
     std::string GetCurrentPkgName() const;
+    void SetImageEnhancePidList(const std::unordered_set<pid_t>& imageEnhancePidList);
+    std::unordered_set<pid_t> GetImageEnhancePidList() const;
 
 private:
     std::function<void(const std::string&)> startNewAniamtionFunc_ = nullptr;
@@ -83,6 +88,8 @@ private:
 
     // DISPLAY ENGINE
     std::string pkgName_{};
+    mutable std::mutex setMutex_{};
+    std::unordered_set<pid_t> imageEnhancePidList_{};
 };
 } // namespace OHOS::Rosen
 #endif

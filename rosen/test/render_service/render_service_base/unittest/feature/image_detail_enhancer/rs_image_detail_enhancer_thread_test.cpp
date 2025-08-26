@@ -251,6 +251,20 @@ HWTEST_F(RSImageDetailEnhancerThreadTest, GetProcessStatusTest, TestSize.Level1)
 }
 
 /**
+ * @tc.name: IsEnableImageDetailEnhanceTest
+ * @tc.desc: IsEnableImageDetailEnhanceTest
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSImageDetailEnhancerThreadTest, IsEnableImageDetailEnhanceTest, TestSize.Level1)
+{
+    RSImageDetailEnhancerThread& rsImageDetailEnhancerThread = RSImageDetailEnhancerThread::Instance();
+    uint64_t nodeId = 0;
+    bool result = rsImageDetailEnhancerThread.IsEnableImageDetailEnhance(nodeId);
+    EXPECT_FALSE(result);
+}
+
+/**
  * @tc.name: SetProcessStatusTest
  * @tc.desc: SetProcessStatusTest
  * @tc.type: FUNC
