@@ -3627,7 +3627,7 @@ void RSUniRenderVisitor::CollectSurfaceLockLayer(RSSurfaceRenderNode& node)
 {
     bool isSurfaceLockLayer = node.GetFixRotationByUser();
     auto hardwareEnabledNodes = node.GetChildHardwareEnabledNodes();
-    for(auto surfaceNode : hardwareEnabledNodes) {
+    for (auto surfaceNode : hardwareEnabledNodes) {
         auto surfaceNodePtr = surfaceNode.lock();
         if (!surfaceNodePtr || !surfaceNodePtr->IsOnTheTree()) {
             continue;
