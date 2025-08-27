@@ -46,6 +46,7 @@
 #endif
 #include "drawing_canvas.h"
 #include "drawing_color.h"
+#include "drawing_error_code.h"
 #include "drawing_font.h"
 #include "drawing_text_declaration.h"
 #include "drawing_types.h"
@@ -579,13 +580,13 @@ enum OH_Drawing_FontWidth {
  */
 typedef enum OH_Drawing_TextStyleAttributeId {
     /** Line height maximum */
-    TEXT_STYLE_ATTR_D_LINE_HEIGHT_MAXIMUM = 100,
+    TEXT_STYLE_ATTR_D_LINE_HEIGHT_MAXIMUM = 0,
     /** Line height minimum */
-    TEXT_STYLE_ATTR_D_LINE_HEIGHT_MINIMUM = 101,
+    TEXT_STYLE_ATTR_D_LINE_HEIGHT_MINIMUM = 1,
     /** Line height style */
-    TEXT_STYLE_ATTR_I_LINE_HEIGHT_STYLE = 102,
+    TEXT_STYLE_ATTR_I_LINE_HEIGHT_STYLE = 2,
     /** Font width */
-    TEXT_STYLE_ATTR_I_FONT_WIDTH = 103,
+    TEXT_STYLE_ATTR_I_FONT_WIDTH = 3,
 } OH_Drawing_TextStyleAttributeId;
 
 /**
@@ -607,15 +608,15 @@ typedef enum OH_Drawing_LineHeightStyle {
  */
 typedef enum OH_Drawing_TypographyStyleAttributeId {
     /** Line height maximum */
-    TYPOGRAPHY_STYLE_ATTR_D_LINE_HEIGHT_MAXIMUM = 300,
+    TYPOGRAPHY_STYLE_ATTR_D_LINE_HEIGHT_MAXIMUM = 0,
     /** Line height minimum */
-    TYPOGRAPHY_STYLE_ATTR_D_LINE_HEIGHT_MINIMUM = 301,
+    TYPOGRAPHY_STYLE_ATTR_D_LINE_HEIGHT_MINIMUM = 1,
     /** Line spacing */
-    TYPOGRAPHY_STYLE_ATTR_D_LINE_SPACING = 302,
+    TYPOGRAPHY_STYLE_ATTR_D_LINE_SPACING = 2,
     /** Line height style */
-    TYPOGRAPHY_STYLE_ATTR_I_LINE_HEIGHT_STYLE = 303,
+    TYPOGRAPHY_STYLE_ATTR_I_LINE_HEIGHT_STYLE = 3,
     /** Font width */
-    TYPOGRAPHY_STYLE_ATTR_I_FONT_WIDTH = 304,
+    TYPOGRAPHY_STYLE_ATTR_I_FONT_WIDTH = 4,
 } OH_Drawing_TypographyStyleAttributeId;
 
 /**
@@ -624,10 +625,15 @@ typedef enum OH_Drawing_TypographyStyleAttributeId {
  * @param style Indicates the pointer to an <b>OH_Drawing_TextStyle</b> object.
  * @param id Indicates the attribute id.
  * @param value Indicates the value to set.
- * @return Returns interface call status.
+ * @return Returns the error code.
+ *         Returns {@link OH_DRAWING_SUCCESS} if the operation is successful.
+ *         Returns {@link OH_DRAWING_ERROR_INVALID_PARAMETER} if the style is nullptr.
+ *         Returns {@link OH_DRAWING_ERROR_ATTRIBUTE_ID_MISMATCH} if the attribute id is not recognized or supported.
+ *         Returns {@link OH_DRAWING_ERROR_PARAMETER_OUT_OF_RANGE} if the value corresponding to the attribute id
+ *                  exceeds the allowable range.
  * @since 21
  */
-int OH_Drawing_SetTextStyleAttributeDouble(OH_Drawing_TextStyle* style,
+OH_Drawing_ErrorCode OH_Drawing_SetTextStyleAttributeDouble(OH_Drawing_TextStyle* style,
     OH_Drawing_TextStyleAttributeId id, double value);
 
 /**
@@ -636,10 +642,15 @@ int OH_Drawing_SetTextStyleAttributeDouble(OH_Drawing_TextStyle* style,
  * @param style Indicates the pointer to an <b>OH_Drawing_TextStyle</b> object.
  * @param id Indicates the attribute id.
  * @param value Indicates the return value of the interface.
- * @return Returns interface call status.
+ * @return Returns the error code.
+ *         Returns {@link OH_DRAWING_SUCCESS} if the operation is successful.
+ *         Returns {@link OH_DRAWING_ERROR_INVALID_PARAMETER} if the style or value is nullptr.
+ *         Returns {@link OH_DRAWING_ERROR_ATTRIBUTE_ID_MISMATCH} if the attribute id is not recognized or supported.
+ *         Returns {@link OH_DRAWING_ERROR_PARAMETER_OUT_OF_RANGE} if the value corresponding to the attribute id
+ *                  exceeds the allowable range.
  * @since 21
  */
-int OH_Drawing_GetTextStyleAttributeDouble(const OH_Drawing_TextStyle* style,
+OH_Drawing_ErrorCode OH_Drawing_GetTextStyleAttributeDouble(const OH_Drawing_TextStyle* style,
     OH_Drawing_TextStyleAttributeId id, double* value);
 
 /**
@@ -648,10 +659,15 @@ int OH_Drawing_GetTextStyleAttributeDouble(const OH_Drawing_TextStyle* style,
  * @param style Indicates the pointer to an <b>OH_Drawing_TextStyle</b> object.
  * @param id Indicates the attribute id.
  * @param value Indicates the value to set.
- * @return Returns interface call status.
+ * @return Returns the error code.
+ *         Returns {@link OH_DRAWING_SUCCESS} if the operation is successful.
+ *         Returns {@link OH_DRAWING_ERROR_INVALID_PARAMETER} if the style is nullptr.
+ *         Returns {@link OH_DRAWING_ERROR_ATTRIBUTE_ID_MISMATCH} if the attribute id is not recognized or supported.
+ *         Returns {@link OH_DRAWING_ERROR_PARAMETER_OUT_OF_RANGE} if the value corresponding to the attribute id
+ *                  exceeds the allowable range.
  * @since 21
  */
-int OH_Drawing_SetTextStyleAttributeInt(OH_Drawing_TextStyle* style,
+OH_Drawing_ErrorCode OH_Drawing_SetTextStyleAttributeInt(OH_Drawing_TextStyle* style,
     OH_Drawing_TextStyleAttributeId id, int value);
 
 /**
@@ -660,10 +676,15 @@ int OH_Drawing_SetTextStyleAttributeInt(OH_Drawing_TextStyle* style,
  * @param style Indicates the pointer to an <b>OH_Drawing_TextStyle</b> object.
  * @param id Indicates the attribute id.
  * @param value Indicates the return value of the interface.
- * @return Returns interface call status.
+ * @return Returns the error code.
+ *         Returns {@link OH_DRAWING_SUCCESS} if the operation is successful.
+ *         Returns {@link OH_DRAWING_ERROR_INVALID_PARAMETER} if the style or value is nullptr.
+ *         Returns {@link OH_DRAWING_ERROR_ATTRIBUTE_ID_MISMATCH} if the attribute id is not recognized or supported.
+ *         Returns {@link OH_DRAWING_ERROR_PARAMETER_OUT_OF_RANGE} if the value corresponding to the attribute id
+ *                  exceeds the allowable range.
  * @since 21
  */
-int OH_Drawing_GetTextStyleAttributeInt(const OH_Drawing_TextStyle* style,
+OH_Drawing_ErrorCode OH_Drawing_GetTextStyleAttributeInt(const OH_Drawing_TextStyle* style,
     OH_Drawing_TextStyleAttributeId id, int* value);
 
 /**
@@ -672,10 +693,15 @@ int OH_Drawing_GetTextStyleAttributeInt(const OH_Drawing_TextStyle* style,
  * @param style Indicates the pointer to an <b>OH_Drawing_TypographyStyle</b> object.
  * @param id Indicates the attribute id.
  * @param value Indicates the value to set.
- * @return Returns interface call status.
+ * @return Returns the error code.
+ *         Returns {@link OH_DRAWING_SUCCESS} if the operation is successful.
+ *         Returns {@link OH_DRAWING_ERROR_INVALID_PARAMETER} if the style is nullptr.
+ *         Returns {@link OH_DRAWING_ERROR_ATTRIBUTE_ID_MISMATCH} if the attribute id is not recognized or supported.
+ *         Returns {@link OH_DRAWING_ERROR_PARAMETER_OUT_OF_RANGE} if the value corresponding to the attribute id
+ *                  exceeds the allowable range.
  * @since 21
  */
-int OH_Drawing_SetTypographyStyleAttributeDouble(OH_Drawing_TypographyStyle* style,
+OH_Drawing_ErrorCode OH_Drawing_SetTypographyStyleAttributeDouble(OH_Drawing_TypographyStyle* style,
     OH_Drawing_TypographyStyleAttributeId id, double value);
 
 /**
@@ -684,10 +710,15 @@ int OH_Drawing_SetTypographyStyleAttributeDouble(OH_Drawing_TypographyStyle* sty
  * @param style Indicates the pointer to an <b>OH_Drawing_TypographyStyle</b> object.
  * @param id Indicates the attribute id.
  * @param value Indicates the return value of the interface.
- * @return Returns interface call status.
+ * @return Returns the error code.
+ *         Returns {@link OH_DRAWING_SUCCESS} if the operation is successful.
+ *         Returns {@link OH_DRAWING_ERROR_INVALID_PARAMETER} if the style or value is nullptr.
+ *         Returns {@link OH_DRAWING_ERROR_ATTRIBUTE_ID_MISMATCH} if the attribute id is not recognized or supported.
+ *         Returns {@link OH_DRAWING_ERROR_PARAMETER_OUT_OF_RANGE} if the value corresponding to the attribute id
+ *                  exceeds the allowable range.
  * @since 21
  */
-int OH_Drawing_GetTypographyStyleAttributeDouble(const OH_Drawing_TypographyStyle* style,
+OH_Drawing_ErrorCode OH_Drawing_GetTypographyStyleAttributeDouble(const OH_Drawing_TypographyStyle* style,
     OH_Drawing_TypographyStyleAttributeId id, double* value);
 
 /**
@@ -696,10 +727,15 @@ int OH_Drawing_GetTypographyStyleAttributeDouble(const OH_Drawing_TypographyStyl
  * @param style Indicates the pointer to an <b>OH_Drawing_TypographyStyle</b> object.
  * @param id Indicates the attribute id.
  * @param value Indicates the value to set.
- * @return Returns interface call status.
+ * @return Returns the error code.
+ *         Returns {@link OH_DRAWING_SUCCESS} if the operation is successful.
+ *         Returns {@link OH_DRAWING_ERROR_INVALID_PARAMETER} if the style is nullptr.
+ *         Returns {@link OH_DRAWING_ERROR_ATTRIBUTE_ID_MISMATCH} if the attribute id is not recognized or supported.
+ *         Returns {@link OH_DRAWING_ERROR_PARAMETER_OUT_OF_RANGE} if the value corresponding to the attribute id
+ *                  exceeds the allowable range.
  * @since 21
  */
-int OH_Drawing_SetTypographyStyleAttributeInt(OH_Drawing_TypographyStyle* style,
+OH_Drawing_ErrorCode OH_Drawing_SetTypographyStyleAttributeInt(OH_Drawing_TypographyStyle* style,
     OH_Drawing_TypographyStyleAttributeId id, int value);
 
 /**
@@ -708,10 +744,15 @@ int OH_Drawing_SetTypographyStyleAttributeInt(OH_Drawing_TypographyStyle* style,
  * @param style Indicates the pointer to an <b>OH_Drawing_TypographyStyle</b> object.
  * @param id Indicates the attribute id.
  * @param value Indicates the return value of the interface.
- * @return Returns interface call status.
+ * @return Returns the error code.
+ *         Returns {@link OH_DRAWING_SUCCESS} if the operation is successful.
+ *         Returns {@link OH_DRAWING_ERROR_INVALID_PARAMETER} if the style or value is nullptr.
+ *         Returns {@link OH_DRAWING_ERROR_ATTRIBUTE_ID_MISMATCH} if the attribute id is not recognized or supported.
+ *         Returns {@link OH_DRAWING_ERROR_PARAMETER_OUT_OF_RANGE} if the value corresponding to the attribute id
+ *                  exceeds the allowable range.
  * @since 21
  */
-int OH_Drawing_GetTypographyStyleAttributeInt(const OH_Drawing_TypographyStyle* style,
+OH_Drawing_ErrorCode OH_Drawing_GetTypographyStyleAttributeInt(const OH_Drawing_TypographyStyle* style,
     OH_Drawing_TypographyStyleAttributeId id, int* value);
 
 /**
