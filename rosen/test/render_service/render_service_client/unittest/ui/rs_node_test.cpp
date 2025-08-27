@@ -15,17 +15,9 @@
 
 #include <memory>
 
+#include "feature/composite_layer/rs_composite_layer_utils.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "ui_effect/effect/include/background_color_effect_para.h"
-#include "ui_effect/effect/include/border_light_effect_para.h"
-#include "ui_effect/effect/include/brightness_blender.h"
-#include "ui_effect/effect/include/color_gradient_effect_para.h"
-#include "ui_effect/filter/include/filter_content_light_para.h"
-#include "ui_effect/filter/include/filter_displacement_distort_para.h"
-#include "ui_effect/filter/include/filter_edge_light_para.h"
-#include "ui_effect/property/include/rs_ui_filter_base.h"
-#include "ui_effect/property/include/rs_ui_shader_base.h"
 
 #include "animation/rs_animation.h"
 #include "animation/rs_animation_callback.h"
@@ -34,7 +26,6 @@
 #include "animation/rs_implicit_animator_map.h"
 #include "animation/rs_transition.h"
 #include "common/rs_vector4.h"
-#include "feature/composite_layer/rs_composite_layer_utils.h"
 #include "modifier_ng/appearance/rs_background_filter_modifier.h"
 #include "modifier_ng/appearance/rs_foreground_filter_modifier.h"
 #include "render/rs_filter.h"
@@ -44,6 +35,17 @@
 #include "ui/rs_node.h"
 #include "ui/rs_surface_node.h"
 #include "ui/rs_ui_director.h"
+#include "ui_effect/effect/include/background_color_effect_para.h"
+#include "ui_effect/effect/include/border_light_effect_para.h"
+#include "ui_effect/effect/include/brightness_blender.h"
+#include "ui_effect/effect/include/color_gradient_effect_para.h"
+#include "ui_effect/filter/include/filter_blur_para.h"
+#include "ui_effect/filter/include/filter_content_light_para.h"
+#include "ui_effect/filter/include/filter_displacement_distort_para.h"
+#include "ui_effect/filter/include/filter_edge_light_para.h"
+#include "ui_effect/filter/include/filter_hdr_para.h"
+#include "ui_effect/property/include/rs_ui_filter_base.h"
+#include "ui_effect/property/include/rs_ui_shader_base.h"
 
 using namespace testing;
 using namespace testing::ext;

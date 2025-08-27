@@ -75,6 +75,7 @@ public:
     static GraphicColorGamut GetRandomGraphicColorGamut();
 #endif
     static RSSurfaceNodeAbilityState GetRandomRSSurfaceNodeAbilityState();
+    static std::optional<Drawing::Matrix> GetRandomOptionalDrawingMatrix();
 
     // RSAnimationCommand params
     static AnimationCallbackEvent GetRandomAnimationCallbackEvent();

@@ -574,10 +574,10 @@ template<>
 void RSRenderProperty<std::shared_ptr<RSNGRenderMaskBase>>::Set(
     const std::shared_ptr<RSNGRenderMaskBase>& value, PropertyUpdateType type);
 
-#if defined(_WIN32) || !defined(MODULE_RSB)
+#if defined(_WIN32)
 #define PROPERTY_EXPORT
 #else
-#define PROPERTY_EXPORT RSB_EXPORT
+#define PROPERTY_EXPORT RSB_EXPORT_TMP
 #endif
 
 #define DECLARE_PROPERTY(T, TYPE_ENUM)                      \

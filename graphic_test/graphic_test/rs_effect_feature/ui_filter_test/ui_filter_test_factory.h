@@ -21,6 +21,8 @@
 #include <variant>
 #include <vector>
 
+#include "effect/shader_effect.h"
+#include "render/rs_gradient_blur_para.h"
 #include "ui_effect/filter/include/filter.h"
 #include "ui_effect/filter/include/filter_bezier_warp_para.h"
 #include "ui_effect/filter/include/filter_blur_para.h"
@@ -39,10 +41,6 @@
 #include "ui_effect/mask/include/pixel_map_mask_para.h"
 #include "ui_effect/mask/include/radial_gradient_mask_para.h"
 #include "ui_effect/mask/include/ripple_mask_para.h"
-
-#include "effect/shader_effect.h"
-#include "render/rs_gradient_blur_para.h"
-#include "render/rs_render_pixel_map_mask.h"
 
 namespace OHOS {
 namespace Rosen {

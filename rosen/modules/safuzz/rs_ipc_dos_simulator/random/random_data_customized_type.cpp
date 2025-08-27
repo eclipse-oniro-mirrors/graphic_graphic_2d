@@ -425,6 +425,15 @@ RSSurfaceNodeAbilityState RandomDataCustomizedType::GetRandomRSSurfaceNodeAbilit
     return static_cast<RSSurfaceNodeAbilityState>(randomIndex);
 }
 
+std::optional<Drawing::Matrix> RandomDataCustomizedType::GetRandomOptionalDrawingMatrix()
+{
+    static constexpr float NULLOPT_PROBABILITY = 0.05f;
+    if (RandomEngine::ChooseByProbability(NULLOPT_PROBABILITY)) {
+        return std::nullopt;
+    }
+    return RandomDrawingMatrix::GetRandomDrawingMatrix();
+}
+
 AnimationCallbackEvent RandomDataCustomizedType::GetRandomAnimationCallbackEvent()
 {
     static constexpr int ANIMATION_CALLBACK_EVENT_INDEX_MAX = 2;
