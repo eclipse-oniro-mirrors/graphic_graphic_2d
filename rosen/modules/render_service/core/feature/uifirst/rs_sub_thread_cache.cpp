@@ -1157,4 +1157,15 @@ void RsSubThreadCache::DrawBehindWindowBeforeCache(RSPaintFilterCanvas& canvas,
     filter->PostProcess(canvas);
     RS_TRACE_NAME_FMT("RsSubThreadCache::DrawBehindWindowBeforeCache imageRect:%s", imageRect.ToString().c_str());
 }
+
+void RsSubThreadCache::SetUififrstSurfaceCacheContentStatic(bool staticContent)
+{
+    uifirstSurfaceCacheContentStatic_ = staticContent;
+}
+
+bool RsSubThreadCache::GetUififrstSurfaceCacheContentStatic() const
+{
+    return uifirstSurfaceCacheContentStatic_;
+}
+
 } // namespace OHOS::Rosen
