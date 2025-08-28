@@ -20,7 +20,6 @@
 #include <shared_mutex>
 #include <string>
 #include <unicode/brkiter.h>
-#include <unordered_map>
 #include <vector>
 
 #include "array_mgr.h"
@@ -31,7 +30,6 @@
 #include "rosen_text/font_collection.h"
 #include "rosen_text/typography.h"
 #include "rosen_text/typography_create.h"
-#include "txt/paragraph_style.h"
 #include "txt/text_bundle_config_parser.h"
 #include "typography_style.h"
 #include "unicode/putil.h"

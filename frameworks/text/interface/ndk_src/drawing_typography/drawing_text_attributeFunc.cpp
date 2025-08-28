@@ -200,7 +200,8 @@ OH_Drawing_ErrorCode OH_Drawing_GetTextStyleAttributeDouble(const OH_Drawing_Tex
     return it->second(style, value);
 }
 
-OH_Drawing_ErrorCode OH_Drawing_SetTextStyleAttributeInt(OH_Drawing_TextStyle* style, OH_Drawing_TextStyleAttributeId id, int value)
+OH_Drawing_ErrorCode OH_Drawing_SetTextStyleAttributeInt(OH_Drawing_TextStyle* style,
+    OH_Drawing_TextStyleAttributeId id, int value)
 {
     if (style == nullptr) {
         return OH_DRAWING_ERROR_INVALID_PARAMETER;
