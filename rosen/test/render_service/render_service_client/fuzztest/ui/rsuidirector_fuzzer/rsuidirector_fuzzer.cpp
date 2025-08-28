@@ -70,7 +70,12 @@ const uint8_t DO_DUMP_NODE_TREE_PROCESSOR = 34;
 const uint8_t DO_POST_DELAY_TASK = 35;
 const uint8_t DO_SET_TYPICAL_RESIDENT_PROCESS = 36;
 const uint8_t DO_GET_HYBRID_RENDER_SWITCH = 38;
-const uint8_t TARGET_SIZE = 40;
+const uint8_t DO_INIT_001 = 40;
+const uint8_t DO_SEND_MESSAGES_001 = 41;
+const uint8_t DO_PROCESS_MESSAGES_001 = 42;
+const uint8_t DO_PROCESS_MESSAGES_002 = 43;
+const uint8_t DO_PROCESS_MESSAGES_003 = 44;
+const uint8_t TARGET_SIZE = 45;
 
 const uint8_t* g_data = nullptr;
 size_t g_size = 0;
@@ -130,6 +135,16 @@ void DoInit(const uint8_t* data, size_t size)
     std::shared_ptr<RSUIDirector> director = RSUIDirector::Create();
     bool shouldCreateRenderThread = GetData<bool>();
     director->Init(shouldCreateRenderThread);
+}
+
+bool DoInit001()
+{
+    // test
+    bool isMuitiInstance = GetData<bool>();
+    std::shared_ptr<RSUIContext> context = RSUIContext::Create();
+    bool shouldCreateRenderThread = GetData<bool>();
+    director->Init(shouldCreateRenderThread, isMuitiInstance);
+    return true;
 }
 
 void DoStartTextureExport(const uint8_t* data, size_t size)
@@ -202,6 +217,17 @@ void DoSendMessages(const uint8_t* data, size_t size)
 {
     std::shared_ptr<RSUIDirector> director = RSUIDirector::Create();
     director->SendMessages();
+}
+
+bool DoSendMessages001()
+{
+    // test
+    std::shared_ptr<RSUIDirector> director = RSUIDirector::Create();
+    const std::function<void()>& callback = []() {
+        std::cout << "for test" << std::endl;
+    };
+    director->SendMessages(callback);
+    return true;
 }
 
 void DoSetTimeStamp(const uint8_t* data, size_t size)
@@ -311,6 +337,41 @@ void DoProcessMessages(const uint8_t* data, size_t size)
     std::shared_ptr<RSUIDirector> director = RSUIDirector::Create();
     std::shared_ptr<RSTransactionData> cmds = std::make_shared<RSTransactionData>();
     director->ProcessMessages(cmds);
+}
+
+bool DoProcessMessages001()
+{
+    // test
+    std::shared_ptr<RSUIDirector> director = RSUIDirector::Create();
+    std::shared_ptr<RSTransactionData> cmds = std::make_shared<RSTransactionData>();
+    NodeId id = GetData<NodeId>();
+    std::unique_ptr<RSCommand> command = std::make_unique<RSAnimationCallback>(1, 1, 1, FINISHED);
+    cmds->AddCommand(command, id, FollowType::FOLLOW_TO_SELF);
+    director->ProcessMessages(cmds);
+    return true;
+}
+
+bool DoProcessMessages002()
+{
+    // test
+    bool useMultiInstance = GetData<bool>();
+    std::shared_ptr<RSUIDirector> director = RSUIDirector::Create();
+    std::shared_ptr<RSTransactionData> cmds = std::make_shared<RSTransactionData>();
+    director->ProcessMessages(cmds, useMultiInstance);
+    return true;
+}
+
+bool DoProcessMessages003()
+{
+    // test
+    bool useMultiInstance = GetData<bool>();
+    std::shared_ptr<RSUIDirector> director = RSUIDirector::Create();
+    std::shared_ptr<RSTransactionData> cmds = std::make_shared<RSTransactionData>();
+    NodeId id = GetData<NodeId>();
+    std::unique_ptr<RSCommand> command = std::make_unique<RSAnimationCallback>(1, 1, 1, FINISHED);
+    cmds->AddCommand(command, id, FollowType::FOLLOW_TO_SELF);
+    director->ProcessMessages(cmds, useMultiInstance);
+    return true;
 }
 
 void DoAnimationCallbackProcessor(const uint8_t* data, size_t size)
@@ -513,6 +574,21 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
             break;
         case OHOS::Rosen::DO_GET_HYBRID_RENDER_SWITCH:
             OHOS::Rosen::DoGetHybridRenderSwitch();
+            break;
+        case OHOS::Rosen::DO_INIT_001:
+            OHOS::Rosen::DoInit001();
+            break;
+        case OHOS::Rosen::DO_SEND_MESSAGES_001:
+            OHOS::Rosen::DoSendMessages001();
+            break;
+        case OHOS::Rosen::DO_PROCESS_MESSAGES_001:
+            OHOS::Rosen::DoProcessMessages001();
+            break;
+        case OHOS::Rosen::DO_PROCESS_MESSAGES_002:
+            OHOS::Rosen::DoProcessMessages002();
+            break;
+        case OHOS::Rosen::DO_PROCESS_MESSAGES_003:
+            OHOS::Rosen::DoProcessMessages003();
             break;
         default:
             return -1;
