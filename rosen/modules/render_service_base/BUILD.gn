@@ -78,11 +78,6 @@ ohos_source_set("render_service_base_src") {
   defines = []
   defines += gpu_defines
   defines += [ "MODULE_RSB" ]
-  if (target_os == "android") {
-    defines += [ "ANDROID_PLATFORM" ]
-  } else if (target_os == "ios") {
-    defines += [ "IOS_PLATFORM" ]
-  }
 
   sources = [
     #animation
