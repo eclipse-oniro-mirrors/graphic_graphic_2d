@@ -90,8 +90,8 @@ bool GetColorQuadFromParam(ani_env* env, ani_object obj, Drawing::ColorQuad &col
     env->Object_InstanceOf(obj, doubleClass, &isNumber);
     if (isNumber) {
         ani_double aniColor;
-        if (ANI_OK != env->Object_CallMethodByName_Double(obj, "doubleValue", nullptr, &aniColor)) {
-            ROSEN_LOGE("GetColorQuadFromParam failed by double vaule");
+        if (ANI_OK != env->Object_CallMethodByName_Double(obj, "unboxed", ":D", &aniColor)) {
+            ROSEN_LOGE("GetColorQuadFromParam failed by double value");
             return false;
         }
         color = static_cast<ColorQuad>(aniColor);
