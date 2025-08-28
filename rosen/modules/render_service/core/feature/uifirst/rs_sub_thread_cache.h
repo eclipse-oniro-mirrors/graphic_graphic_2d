@@ -229,8 +229,8 @@ public:
     void DrawBehindWindowBeforeCache(RSPaintFilterCanvas& canvas,
         const Drawing::scalar px = 0.f, const Drawing::scalar py = 0.f);
 
-    void SetUififrstSurfaceCacheContentStatic(bool staticContent);
-    bool GetUififrstSurfaceCacheContentStatic() const;
+    void SetUifirstSurfaceCacheContentStatic(bool staticContent);
+    bool GetUifirstSurfaceCacheContentStatic() const;
 
 private:
     void ClearCacheSurface(bool isClearCompletedCacheSurface = true);

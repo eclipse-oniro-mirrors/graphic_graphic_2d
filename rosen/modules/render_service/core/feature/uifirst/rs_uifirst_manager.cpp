@@ -457,12 +457,12 @@ bool RSUifirstManager::GetDrawableDirtyRect(const std::shared_ptr<RSSurfaceRende
 {
     auto surfaceDrawable = std::static_pointer_cast<DrawableV2::RSSurfaceRenderNodeDrawable>(node->GetRenderDrawable());
     if (!surfaceDrawable) {
-        RS_TRACE_NAME_FMT("node id:%" PRIu64" surfaceDrawable is nullptr", node->GetId());
+        RS_LOGE("node id:%{public}" PRIu64" surfaceDrawable is nullptr", node->GetId());
         return false;
     }
     auto surfaceDirtyManager = surfaceDrawable->GetSyncDirtyManager();
     if (!surfaceDirtyManager) {
-        RS_TRACE_NAME_FMT("node id:%" PRIu64" surfaceDirtyManager is nullptr", node->GetId());
+        RS_LOGE("node id:%{public}" PRIu64" surfaceDirtyManager is nullptr", node->GetId());
         return false;
     }
     rect = surfaceDirtyManager->GetUifirstFrameDirtyRegion();
@@ -576,6 +576,7 @@ bool RSUifirstManager::SubThreadControlFrameRate(NodeId id,
     std::shared_ptr<DrawableV2::RSSurfaceRenderNodeDrawable>& drawable,
     std::shared_ptr<RSSurfaceRenderNode>& node)
 {
+    RS_OPTIONAL_TRACE_NAME_FMT("SubThreadControlFrameRate id:%" PRIu64, id);
     if (!RSSystemProperties::GetSubThreadControlFrameRate()) {
         RS_LOGD("SubThread Control FrameRate Switch Status is Off");
         return false;
@@ -596,6 +597,7 @@ bool RSUifirstManager::SubThreadControlFrameRate(NodeId id,
 bool RSUifirstManager::NeedPurgeByBehindWindow(NodeId id, bool hasTexture,
     const std::shared_ptr<RSSurfaceRenderNode>& node)
 {
+    RS_OPTIONAL_TRACE_NAME_FMT("NeedPurgeByBehindWindow id:%" PRIu64, id);
     if (GetUiFirstMode() != UiFirstModeType::MULTI_WINDOW_MODE) {
         return false;
     }
@@ -654,7 +656,7 @@ void RSUifirstManager::OnPurgePendingPostNodesInner(std::shared_ptr<RSSurfaceRen
         }
     }
 
-    subThreadCache.SetUififrstSurfaceCacheContentStatic(staticContent);
+    subThreadCache.SetUifirstSurfaceCacheContentStatic(staticContent);
 }
 
 bool RSUifirstManager::NeedPurgePendingPostNodesInner(
@@ -687,9 +689,9 @@ void RSUifirstManager::DoPurgePendingPostNodes(PendingPostNodeMap& pendingNode)
         node->SetForceDrawWithSkipped(false);
 
         auto& subThreadCache = drawable->GetRsSubThreadCache();
-        bool cachedStaticContent =  subThreadCache.GetUififrstSurfaceCacheContentStatic();
+        bool cachedStaticContent = subThreadCache.GetUifirstSurfaceCacheContentStatic();
         // Reset contentStatic if not purged
-        subThreadCache.SetUififrstSurfaceCacheContentStatic(true);
+        subThreadCache.SetUifirstSurfaceCacheContentStatic(true);
 
         SyncHDRDisplayParam(drawable, node->GetFirstLevelNodeColorGamut());
         auto surfaceParams = static_cast<RSSurfaceRenderParams*>(drawable->GetRenderParams().get());
@@ -1328,7 +1330,7 @@ void RSUifirstManager::AddPendingPostNode(NodeId id, std::shared_ptr<RSSurfaceRe
         pendingPostNodes_[id] = node;
         AddPendingNodeBehindWindow(id, node, currentFrameCacheType);
         RS_OPTIONAL_TRACE_NAME_FMT("Add pending id:%" PRIu64 " name:%s size:%zu",
-            node->GetId(), node->GetName().c_str(),pendingPostNodes_.size());
+            node->GetId(), node->GetName().c_str(), pendingPostNodes_.size());
     } else if (currentFrameCacheType == MultiThreadCacheType::ARKTS_CARD) {
         pendingPostCardNodes_[id] = node;
     }

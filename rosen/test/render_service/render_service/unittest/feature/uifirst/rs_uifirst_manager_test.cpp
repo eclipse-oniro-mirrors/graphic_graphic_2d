@@ -1891,7 +1891,7 @@ HWTEST_F(RSUifirstManagerTest, DoPurgePendingPostNodes000, TestSize.Level1)
     auto& subThreadCache = adapter->GetRsSubThreadCache();
     subThreadCache.isCacheCompletedValid_ = true;
     subThreadCache.SetSubThreadSkip(false);
-    subThreadCache.SetUififrstSurfaceCacheContentStatic(true);
+    subThreadCache.SetUifirstSurfaceCacheContentStatic(true);
     auto surfaceParams = static_cast<RSSurfaceRenderParams*>(adapter->GetRenderParams().get());
     EXPECT_NE(surfaceParams, nullptr);
     surfaceParams->surfaceCacheContentStatic_ = true;
