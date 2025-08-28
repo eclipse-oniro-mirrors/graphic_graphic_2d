@@ -96,7 +96,7 @@ void RSDrawFrame::RenderFrame()
 #ifdef SUBTREE_PARALLEL_ENABLE
     RSParallelManager::Singleton().Clear();
 #endif
-    ReleaseSpecialDrawingNodeBuffer();
+    ReleaseDrawingNodeBuffer();
     NotifyClearGpuCache();
     RSMainThread::Instance()->CallbackDrawContextStatusToWMS(true);
     RSRenderNodeGC::Instance().ReleaseDrawableMemory();
@@ -154,10 +154,10 @@ void RSDrawFrame::NotifyClearGpuCache()
     }
 }
 
-void RSDrawFrame::ReleaseSpecialDrawingNodeBuffer()
+void RSDrawFrame::ReleaseDrawingNodeBuffer()
 {
     unirenderInstance_.ReleaseSelfDrawingNodeBuffer();
-    unirenderInstance_.ReleaseSurfaceBufferOpItemBuffer();
+    unirenderInstance_.ReleaseSurfaceOpItemBuffer();
 }
 
 void RSDrawFrame::PostAndWait()
