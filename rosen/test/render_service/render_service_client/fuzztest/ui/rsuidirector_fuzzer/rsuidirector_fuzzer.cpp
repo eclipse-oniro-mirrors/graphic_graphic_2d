@@ -73,9 +73,7 @@ const uint8_t DO_GET_HYBRID_RENDER_SWITCH = 38;
 const uint8_t DO_INIT_001 = 40;
 const uint8_t DO_SEND_MESSAGES_001 = 41;
 const uint8_t DO_PROCESS_MESSAGES_001 = 42;
-const uint8_t DO_PROCESS_MESSAGES_002 = 43;
-const uint8_t DO_PROCESS_MESSAGES_003 = 44;
-const uint8_t TARGET_SIZE = 45;
+const uint8_t TARGET_SIZE = 43;
 
 const uint8_t* g_data = nullptr;
 size_t g_size = 0;
@@ -141,7 +139,7 @@ bool DoInit001()
 {
     // test
     bool isMuitiInstance = GetData<bool>();
-    std::shared_ptr<RSUIContext> context = RSUIContext::Create();
+    std::shared_ptr<RSUIDirector> director = RSUIDirector::Create();
     bool shouldCreateRenderThread = GetData<bool>();
     director->Init(shouldCreateRenderThread, isMuitiInstance);
     return true;
@@ -348,29 +346,6 @@ bool DoProcessMessages001()
     std::unique_ptr<RSCommand> command = std::make_unique<RSAnimationCallback>(1, 1, 1, FINISHED);
     cmds->AddCommand(command, id, FollowType::FOLLOW_TO_SELF);
     director->ProcessMessages(cmds);
-    return true;
-}
-
-bool DoProcessMessages002()
-{
-    // test
-    bool useMultiInstance = GetData<bool>();
-    std::shared_ptr<RSUIDirector> director = RSUIDirector::Create();
-    std::shared_ptr<RSTransactionData> cmds = std::make_shared<RSTransactionData>();
-    director->ProcessMessages(cmds, useMultiInstance);
-    return true;
-}
-
-bool DoProcessMessages003()
-{
-    // test
-    bool useMultiInstance = GetData<bool>();
-    std::shared_ptr<RSUIDirector> director = RSUIDirector::Create();
-    std::shared_ptr<RSTransactionData> cmds = std::make_shared<RSTransactionData>();
-    NodeId id = GetData<NodeId>();
-    std::unique_ptr<RSCommand> command = std::make_unique<RSAnimationCallback>(1, 1, 1, FINISHED);
-    cmds->AddCommand(command, id, FollowType::FOLLOW_TO_SELF);
-    director->ProcessMessages(cmds, useMultiInstance);
     return true;
 }
 
@@ -583,12 +558,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
             break;
         case OHOS::Rosen::DO_PROCESS_MESSAGES_001:
             OHOS::Rosen::DoProcessMessages001();
-            break;
-        case OHOS::Rosen::DO_PROCESS_MESSAGES_002:
-            OHOS::Rosen::DoProcessMessages002();
-            break;
-        case OHOS::Rosen::DO_PROCESS_MESSAGES_003:
-            OHOS::Rosen::DoProcessMessages003();
             break;
         default:
             return -1;
