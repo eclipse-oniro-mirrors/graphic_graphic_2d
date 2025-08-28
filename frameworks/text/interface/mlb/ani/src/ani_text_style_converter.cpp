@@ -355,8 +355,8 @@ ani_object AniTextStyleConverter::ParseTextShadowToAni(ani_env* env, const TextS
 ani_object AniTextStyleConverter::ParseDecorationToAni(ani_env* env, const TextStyle& textStyle)
 {
     ani_object aniColorObj = nullptr;
-    ani_status status = OHOS::Rosen::Drawing::CreateColorObj(env, textStyle.decorationColor, aniColorObj);
-    if (status == ANI_OK) {
+    ani_status status = AniDrawingConverter::ParseColorToAni(env, textStyle.decorationColor, aniColorObj);
+    if (status != ANI_OK) {
         TEXT_LOGE("Failed to parse color, ret %{public}d", status);
         aniColorObj = AniTextUtils::CreateAniUndefined(env);
     }
