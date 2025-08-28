@@ -131,7 +131,7 @@ void RSScreenManager::InitFoldSensor()
     bool bootCompleted = RSSystemProperties::GetBootCompleted();
     if (UNLIKELY(bootCompleted)) {
         RS_LOGW("%{public}s boot completed.", __func__);
-        RegisterSensorCallback();
+        UnRegisterSensorCallback();
         return;
     }
 }
