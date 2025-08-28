@@ -14,6 +14,11 @@
  */
 
 #include <gtest/gtest.h>
+#include <parameter.h>
+#include <parameters.h>
+#include <unistd.h>
+
+#include "param/sys_param.h"
 
 #include "iconsumer_surface.h"
 
@@ -156,6 +161,43 @@ HWTEST_F(RSSurfaceOhosVulkanTest, SetNativeWindowInfo001, TestSize.Level1)
 }
 
 /**
+ * @tc.name: SetNativeWindowInfo002
+ * @tc.desc: test results of SetNativeWindowInfo
+ * @tc.type:FUNC
+ * @tc.require: issueI9VVLE
+ */
+HWTEST_F(RSSurfaceOhosVulkanTest, SetNativeWindowInfo002, TestSize.Level1)
+{
+    sptr<Surface> producer = nullptr;
+    RSSurfaceOhosVulkan rsSurface(producer);
+    rsSurface.SetSurfaceBufferUsage(BUFFER_USAGE_GRAPHIC_2D_ACCEL);
+    int32_t width = 1;
+    int32_t height = -1;
+    rsSurface.SetNativeWindowInfo(width, height, false, false); // true
+
+    width = -1;
+    height = 1;
+    rsSurface.SetNativeWindowInfo(width, height, true, true); // true
+
+    width = 1;
+    height = 1;
+    rsSurface.SetNativeWindowInfo(width, height, true, false); // true
+
+    width = -1;
+    height = -1;
+    rsSurface.SetNativeWindowInfo(width, height, true, true); // false
+
+    width = -1;
+    height = -1;
+    auto afbcSwitch = OHOS::system::GetParameter("rosen.afbc.enabled", "1");
+    OHOS::system::SetParameter("rosen.afbc.enabled", "0");
+    rsSurface.SetNativeWindowInfo(width, height, true, true);
+    OHOS::system::SetParameter("rosen.afbc.enabled", afbcSwitch);
+
+    EXPECT_TRUE(rsSurface.mSurfaceMap.empty());
+}
+
+/**
  * @tc.name: RequestNativeWindowBuffer001
  * @tc.desc: test results of RequestNativeWindowBuffer
  * @tc.type:FUNC
@@ -174,6 +216,7 @@ HWTEST_F(RSSurfaceOhosVulkanTest, RequestNativeWindowBuffer001, TestSize.Level1)
     auto res = rsSurface.RequestNativeWindowBuffer(&nativeWindowBuffer, width, height, fenceFd, useAFBC);
     EXPECT_TRUE(res != GSERROR_OK);
 }
+
 /*
  * Function: PreAllocateProtectedBuffer
  * Type: Function
@@ -196,14 +239,14 @@ HWTEST_F(RSSurfaceOhosVulkanTest, PreAllocateProtectedBuffer001, TestSize.Level1
     EXPECT_TRUE(ret);
 }
 
-HWTEST_F(RSSurfaceOhosVulkanTest, PreAllocateHpaaeBuffer001, TestSize.Level1)
+HWTEST_F(RSSurfaceOhosVulkanTest, PreAllocateHpaeBuffer001, TestSize.Level1)
 {
     sptr<IConsumerSurface> cSurface = IConsumerSurface::Create("DisplayNode");
     ASSERT_TRUE(cSurface != nullptr);
     sptr<IBufferProducer> bp = cSurface->GetProducer();
     sptr<Surface> pSurface = Surface::CreateSurfaceAsProducer(bp);
     RSSurfaceOhosVulkan rsSurface(pSurface);
-    int32_t width =1;
+    int32_t width = 1;
     int32_t height = 1;
     rsSurface.PreAllocateHpaeBuffer(width, height, 1, true);
 
@@ -245,11 +288,11 @@ HWTEST_F(RSSurfaceOhosVulkanTest, RequestFrame002, TestSize.Level1)
     int32_t height = 1;
     uint64_t uiTimestamp = 1;
 
-    std::unique_ptr<RSSurfaceFrmae> ret = rsSurface.RequestFrame(width, height, uiTimestamp, true, false);
+    std::unique_ptr<RSSurfaceFrame> ret = rsSurface.RequestFrame(width, height, uiTimestamp, true, false);
     EXPECT_TRUE(ret == nullptr);
 
     std::shared_ptr<Drawing::GPUContext> skContext = std::make_shared<Drawing::GPUContext>();
-    rsSurface.SetSKContext(skContext);
+    rsSurface.SetSkContext(skContext);
     ret = rsSurface.RequestFrame(width, height, uiTimestamp, true, false);
 
     rsSurface.MarkAsHpaeSurface();
@@ -355,7 +398,7 @@ HWTEST_F(RSSurfaceOhosVulkanTest, FlushFrame001, TestSize.Level1)
 }
 
 /**
- * @tc.name: SubmitHpaeTaskTest
+ * @tc.name: SubmitHapeTaskTest
  * @tc.desc: test
  * @tc.type:FUNC
  * @tc.require: wz
@@ -403,12 +446,12 @@ HWTEST_F(RSSurfaceOhosVulkanTest, SubmitGpuAndHpaeTaskTest, TestSize.Level1)
 }
 
 /**
- * @tc.name: SubmitGpuSemaphoreTest
+ * @tc.name: SetGpuSemaphoreTest
  * @tc.desc: test
  * @tc.type:FUNC
  * @tc.require: wz
  */
-HWTEST_F(RSSurfaceOhosVulkanTest, SubmitGpuAndHpaeTaskTest, TestSize.Level1)
+HWTEST_F(RSSurfaceOhosVulkanTest, SetGpuSemaphoreTest, TestSize.Level1)
 {
     sptr<IConsumerSurface> cSurface = IConsumerSurface::Create("DisplayNode");
     ASSERT_TRUE(cSurface != nullptr);
@@ -421,13 +464,12 @@ HWTEST_F(RSSurfaceOhosVulkanTest, SubmitGpuAndHpaeTaskTest, TestSize.Level1)
     uint64_t curFrameId = 1;
     std::vector<GrBackendSemaphore> vec;
     NativeBufferUtils::NativeSurfaceInfo sur;
-    rsSurface.SubmitGpuSemaphore(submitWithFFTS, preFrameId, curFrameId, vec, sur);
+    rsSurface.SetGpuSemaphore(submitWithFFTS, preFrameId, curFrameId, vec, sur);
 
-    uint64_t preFrameId = 0;
-    uint64_t curFrameId = 0;
-    rsSurface.SubmitGpuSemaphore(submitWithFFTS, preFrameId, curFrameId, vec, sur);
+    preFrameId = 0;
+    curFrameId = 0;
+    rsSurface.SetGpuSemaphore(submitWithFFTS, preFrameId, curFrameId, vec, sur);
 }
-#endif
 
 } // namespace Rosen
 } // namespace OHOS

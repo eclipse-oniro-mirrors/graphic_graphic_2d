@@ -151,10 +151,10 @@ HWTEST_F(RSHpaeBufferTest, InitTest, TestSize.Level1)
     auto client = std::static_pointer_cast<RSRenderServiceClient>(RSIRenderClient::CreateRenderServiceClient());
     auto surface = client->CreateRSSurface(producerSurface);
     auto rsSurface = std::static_pointer_cast<RSSurfaceOhos>(surface);
-    auto hpaeBuffer3 = std::make_shared<DrawableV2::RSHpaeeBuffer>("HPAEInputLayer", 22);
+    auto hpaeBuffer3 = std::make_shared<DrawableV2::RSHpaeBuffer>("HPAEInputLayer", 22);
     hpaeBuffer3->rsSurface_ = rsSurface;
     hpaeBuffer3->surfaceCreated_ = false;
-    std::shared_ptr<Drawing::GPUContext> gpuContext = std::make_shared<Drawing::GPUContext>;
+    std::shared_ptr<Drawing::GPUContext> gpuContext = std::make_shared<Drawing::GPUContext>();
     auto renderEngine = std::make_shared<RSRenderEngine>();
     RSUniRenderThread::Instance().uniRenderEngine_ = renderEngine;
     hpaeBuffer3->grContext_ = nullptr;
@@ -168,13 +168,13 @@ HWTEST_F(RSHpaeBufferTest, InitTest, TestSize.Level1)
     hpaeBuffer3->surfaceCreated_ = true;
     hpaeBuffer3->Init(bufferConfig, false);
     hpaeBuffer3->PreAllocateBuffer(bufferConfig.width, bufferConfig.height, false);
-    hpaebUffer3->RequestFrame(bufferConfig.width, bufferConfig.height, false);
+    hpaeBuffer3->RequestFrame(bufferConfig.width, bufferConfig.height, false);
 
     hpaeBuffer3->rsSurface_ = nullptr;
     hpaeBuffer3->Init(bufferConfig, false);
     renderEngine->Init();
     hpaeBuffer3->Init(bufferConfig, false);
-    hpaeBuffer3->SurfaceCreated_ = false;
+    hpaeBuffer3->surfaceCreated_ = false;
     ASSERT_NE(hpaeBuffer3->grContext_, nullptr);
     RSUniRenderThread::Instance().uniRenderEngine_ = nullptr;
 }

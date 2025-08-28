@@ -732,6 +732,7 @@ private:
     static void Version(const ArgList& args);
     static void FileVersion(const ArgList& args);
 
+    static bool AbortOnSecureScreenSKP();
     static void SaveSkp(const ArgList& args);
     static void SaveOffscreenSkp(const ArgList& args);
     static void SaveComponentSkp(const ArgList& args);
