@@ -277,6 +277,12 @@ void SetTextStyleFontType(napi_env env, napi_value argValue, TextStyle& textStyl
         textStyle.fontWeight = FontWeight(fontWeight);
     }
 
+    napi_get_named_property(env, argValue, "fontWidth", &tempValue);
+    uint32_t fontWidth = 0;
+    if (tempValue != nullptr && napi_get_value_uint32(env, tempValue, &fontWidth) == napi_ok) {
+        textStyle.fontWidth = FontWidth(fontWidth);
+    }
+
     napi_get_named_property(env, argValue, "fontStyle", &tempValue);
     uint32_t fontStyle = 0;
     if (tempValue != nullptr && napi_get_value_uint32(env, tempValue, &fontStyle) == napi_ok) {
@@ -748,6 +754,8 @@ napi_value CreateTextStyleJsValue(napi_env env, TextStyle textStyle)
             (uint32_t)textStyle.color.CastToColorQuad()));
         napi_set_named_property(env, objValue, "fontWeight", CreateJsNumber(
             env, static_cast<uint32_t>(textStyle.fontWeight)));
+        napi_set_named_property(env, objValue, "fontWidth", CreateJsNumber(
+            env, static_cast<uint32_t>(textStyle.fontWidth)));
         napi_set_named_property(env, objValue, "fontStyle", CreateJsNumber(
             env, static_cast<uint32_t>(textStyle.fontStyle)));
         napi_set_named_property(env, objValue, "baseline", CreateJsNumber(

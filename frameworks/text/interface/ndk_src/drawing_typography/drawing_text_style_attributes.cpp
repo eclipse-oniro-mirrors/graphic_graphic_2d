@@ -54,6 +54,21 @@ namespace OHOS::Rosen::Text {
         return OH_DRAWING_SUCCESS;
     }
 
+    OH_Drawing_ErrorCode SetTextStyleFontWidth(OH_Drawing_TextStyle* style, int value)
+    {
+        if (value < FONT_WIDTH_ULTRA_CONDENSED || value > FONT_WIDTH_ULTRA_EXPANDED) {
+            return OH_DRAWING_ERROR_PARAMETER_OUT_OF_RANGE;
+        }
+        reinterpret_cast<TextStyle*>(style)->fontWidth = FontWidth(value);
+        return OH_DRAWING_SUCCESS;
+    }
+
+    OH_Drawing_ErrorCode GetTextStyleFontWidth(const OH_Drawing_TextStyle* style, int* value)
+    {
+        *value = static_cast<int>(reinterpret_cast<const TextStyle*>(style)->fontWidth);
+        return OH_DRAWING_SUCCESS;
+    }
+
     OH_Drawing_ErrorCode SetTextStyleLineHeightStyle(OH_Drawing_TextStyle* style, int value)
     {
         if (value < 0 || value > static_cast<int>(OHOS::Rosen::LineHeightStyle::kFontHeight)) {
@@ -81,10 +96,12 @@ namespace OHOS::Rosen::Text {
 
     static std::unordered_map<OH_Drawing_TextStyleAttributeId, TextStyleIntSetter> g_textStyleIntSetters = {
         { TEXT_STYLE_ATTR_I_LINE_HEIGHT_STYLE, SetTextStyleLineHeightStyle },
+        { TEXT_STYLE_ATTR_I_FONT_WIDTH, SetTextStyleFontWidth },
     };
 
     static std::unordered_map<OH_Drawing_TextStyleAttributeId, TextStyleIntGetter> g_textStyleIntGetters = {
         { TEXT_STYLE_ATTR_I_LINE_HEIGHT_STYLE, GetTextStyleLineHeightStyle },
+        { TEXT_STYLE_ATTR_I_FONT_WIDTH, GetTextStyleFontWidth },
     };
 }
 

@@ -4620,6 +4620,118 @@ HWTEST_F(NdkTypographyTest, TextStyleAddFontVariationTest001, TestSize.Level0)
 }
 
 /*
+ * @tc.name: TextStyleAddFontVariationTest002
+ * @tc.desc: test for the fontvariation wdth axis.
+ * @tc.type: FUNC
+ */
+HWTEST_F(NdkTypographyTest, TextStyleAddFontVariationTest002, TestSize.Level0)
+{
+    OH_Drawing_TypographyStyle* typoStyle = OH_Drawing_CreateTypographyStyle();
+    ASSERT_NE(typoStyle, nullptr);
+    OH_Drawing_TextStyle* textStyle = OH_Drawing_CreateTextStyle();
+    ASSERT_NE(textStyle, nullptr);
+    const char* fontFamilies[] = {"Noto Sans"};
+    OH_Drawing_SetTextStyleFontFamilies(textStyle, 1, fontFamilies);
+    // 50.0 is half of the maximum font width supported by the font
+    OH_Drawing_TextStyleAddFontVariation(textStyle, "wdth", 50.0);
+    OH_Drawing_FontCollection* fontCollection = OH_Drawing_CreateFontCollection();
+    ASSERT_NE(fontCollection, nullptr);
+    OH_Drawing_TypographyCreate* handler = OH_Drawing_CreateTypographyHandler(typoStyle, fontCollection);
+    ASSERT_NE(handler, nullptr);
+    OH_Drawing_TypographyHandlerPushTextStyle(handler, textStyle);
+    const char* text = "HelloWorld";
+    OH_Drawing_TypographyHandlerAddText(handler, text);
+    OH_Drawing_Typography* typography = OH_Drawing_CreateTypography(handler);
+    ASSERT_NE(typography, nullptr);
+    constexpr double maxWidth = 1000.0;
+    OH_Drawing_TypographyLayout(typography, maxWidth);
+
+    constexpr double expectedResult = 55.1037902832;
+    EXPECT_NEAR(OH_Drawing_TypographyGetLongestLine(typography), expectedResult, FLOAT_DATA_EPSILON);
+
+    OH_Drawing_DestroyTypography(typography);
+    OH_Drawing_DestroyTypographyHandler(handler);
+    OH_Drawing_DestroyFontCollection(fontCollection);
+    OH_Drawing_DestroyTypographyStyle(typoStyle);
+    OH_Drawing_DestroyTextStyle(textStyle);
+}
+
+/*
+ * @tc.name: TextStyleAttributeFontWidthTest001
+ * @tc.desc: test invalid data for font width.
+ * @tc.type: FUNC
+ */
+HWTEST_F(NdkTypographyTest, TextStyleAttributeFontWidthTest001, TestSize.Level0)
+{
+    OH_Drawing_TextStyle* txtStyle = OH_Drawing_CreateTextStyle();
+    ASSERT_NE(txtStyle, nullptr);
+    auto res = OH_Drawing_SetTextStyleAttributeInt(txtStyle, TEXT_STYLE_ATTR_I_FONT_WIDTH, 0);
+    EXPECT_EQ(res, OH_DRAWING_ERROR_PARAMETER_OUT_OF_RANGE);
+    constexpr int maxThanRange = 10;
+    res = OH_Drawing_SetTextStyleAttributeInt(txtStyle, TEXT_STYLE_ATTR_I_FONT_WIDTH, maxThanRange);
+    EXPECT_EQ(res, OH_DRAWING_ERROR_PARAMETER_OUT_OF_RANGE);
+    int outResult = 0;
+    res = OH_Drawing_GetTextStyleAttributeInt(txtStyle, TEXT_STYLE_ATTR_I_FONT_WIDTH, &outResult);
+    EXPECT_EQ(outResult, FONT_WIDTH_NORMAL);
+    OH_Drawing_DestroyTextStyle(txtStyle);
+}
+
+/*
+ * @tc.name: TextStyleAttributeFontWidthTest002
+ * @tc.desc: test valid data for font width.
+ * @tc.type: FUNC
+ */
+HWTEST_F(NdkTypographyTest, TextStyleAttributeFontWidthTest002, TestSize.Level0)
+{
+    OH_Drawing_TextStyle* txtStyle = OH_Drawing_CreateTextStyle();
+    ASSERT_NE(txtStyle, nullptr);
+    auto res = OH_Drawing_SetTextStyleAttributeInt(txtStyle, TEXT_STYLE_ATTR_I_FONT_WIDTH, FONT_WIDTH_SEMI_EXPANDED);
+    EXPECT_EQ(res, OH_DRAWING_SUCCESS);
+    int outResult = 0;
+    res = OH_Drawing_GetTextStyleAttributeInt(txtStyle, TEXT_STYLE_ATTR_I_FONT_WIDTH, &outResult);
+    EXPECT_EQ(outResult, FONT_WIDTH_SEMI_EXPANDED);
+    OH_Drawing_DestroyTextStyle(txtStyle);
+}
+
+/*
+ * @tc.name: TypographyStyleAttributeFontWidthTest001
+ * @tc.desc: test invalid data for font width.
+ * @tc.type: FUNC
+ */
+HWTEST_F(NdkTypographyTest, TypographyStyleAttributeFontWidthTest001, TestSize.Level0)
+{
+    OH_Drawing_TypographyStyle* typoStyle = OH_Drawing_CreateTypographyStyle();
+    ASSERT_NE(typoStyle, nullptr);
+    auto res = OH_Drawing_SetTypographyStyleAttributeInt(typoStyle, TYPOGRAPHY_STYLE_ATTR_I_FONT_WIDTH, 0);
+    EXPECT_EQ(res, OH_DRAWING_ERROR_PARAMETER_OUT_OF_RANGE);
+    constexpr int maxThanRange = 10;
+    res = OH_Drawing_SetTypographyStyleAttributeInt(typoStyle, TYPOGRAPHY_STYLE_ATTR_I_FONT_WIDTH, maxThanRange);
+    EXPECT_EQ(res, OH_DRAWING_ERROR_PARAMETER_OUT_OF_RANGE);
+    int outResult = 0;
+    res = OH_Drawing_GetTypographyStyleAttributeInt(typoStyle, TYPOGRAPHY_STYLE_ATTR_I_FONT_WIDTH, &outResult);
+    EXPECT_EQ(outResult, FONT_WIDTH_NORMAL);
+    OH_Drawing_DestroyTypographyStyle(typoStyle);
+}
+
+/*
+ * @tc.name: TypographyStyleAttributeFontWidthTest002
+ * @tc.desc: test valid data for font width.
+ * @tc.type: FUNC
+ */
+HWTEST_F(NdkTypographyTest, TypographyStyleAttributeFontWidthTest002, TestSize.Level0)
+{
+    OH_Drawing_TypographyStyle* typoStyle = OH_Drawing_CreateTypographyStyle();
+    ASSERT_NE(typoStyle, nullptr);
+    auto res = OH_Drawing_SetTypographyStyleAttributeInt(typoStyle,
+        TYPOGRAPHY_STYLE_ATTR_I_FONT_WIDTH, FONT_WIDTH_SEMI_EXPANDED);
+    EXPECT_EQ(res, OH_DRAWING_SUCCESS);
+    int outResult = 0;
+    res = OH_Drawing_GetTypographyStyleAttributeInt(typoStyle, TYPOGRAPHY_STYLE_ATTR_I_FONT_WIDTH, &outResult);
+    EXPECT_EQ(outResult, FONT_WIDTH_SEMI_EXPANDED);
+    OH_Drawing_DestroyTypographyStyle(typoStyle);
+}
+
+/*
 * @tc.name: TypographyLineInfoTest001
 * @tc.desc: test for getting line info and line font metrics for one line with white space
 * @tc.type: FUNC

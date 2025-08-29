@@ -122,6 +122,7 @@ struct RS_EXPORT TypographyStyle {
             this->verticalAlignment == rhs.verticalAlignment &&
             this->ELLIPSIS == rhs.ELLIPSIS &&
             this->fontWeight == rhs.fontWeight &&
+            this->fontWidth == rhs.fontWidth &&
             this->fontStyle == rhs.fontStyle &&
             this->fontFamily == rhs.fontFamily &&
             skia::textlayout::nearlyEqual(this->fontSize, rhs.fontSize) &&
