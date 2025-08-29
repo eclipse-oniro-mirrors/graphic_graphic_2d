@@ -1530,7 +1530,7 @@ ErrCode RSRenderServiceConnection::TaskSurfaceCaptureWithAllWindows(NodeId id,
             RS_LOGE("%{public}s failed, displayNode is nullptr", __func__);
             return;
         }
-        if (checkDrmAndSurfaceLock && RSMainThread::Instance()->HasDrmOrSurfaceLockLayer()) {
+        if (checkDrmAndSurfaceLock && RSMainThread::Instance()->HasDRMOrSurfaceLockLayer()) {
             if (callback) {
                 callback->OnSurfaceCapture(id, captureConfig, nullptr);
             }

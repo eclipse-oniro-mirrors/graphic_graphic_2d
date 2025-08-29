@@ -1475,7 +1475,7 @@ HWTEST_F(RSRenderServiceConnectionStubTest, TaskSurfaceCaptureWithAllWindowsTest
     data.WriteFloat(captureConfig.specifiedAreaRect.bottom_);
     data.WriteUint32(captureConfig.backGroundColor);
     auto res = connectionStub_->OnRemoteRequest(code, data, reply, option);
-    EXPECT_LE(res, ERR_PERMISSION_DENIED);
+    EXPECT_QE(res, ERR_OK);
 }
 
 /**
@@ -1757,7 +1757,7 @@ HWTEST_F(RSRenderServiceConnectionStubTest, TaskSurfaceCaptureWithAllWindowsTest
     RSMainThread::Instance()->SetHasSurfaceLockLayer(false);
     RSMainThread::Instance()->hasProtectedLayer_ = false;
     RSMainThread::Instance()->hasSurfaceLockLayer_ = false;
-    EXPECT_FALSE(RSMainThread::Instance()->HasDrmOrSurfaceLockLayer());
+    EXPECT_FALSE(RSMainThread::Instance()->HasDRMOrSurfaceLockLayer());
     ret = connection->TaskSurfaceCaptureWithAllWindows(displayNodeId, nullptr, captureConfig, true, permissions);
     usleep(TIME_OF_CAPTURE_TASK);
     EXPECT_EQ(ret, ERR_NONE);

@@ -5646,17 +5646,17 @@ HWTEST_F(RSUniRenderVisitorTest, CollectSurfaceLockLayer001, TestSize.Level2)
     RSMainThread::Instance()->hasProtectedLayer_ = false;
     RSMainThread::Instance()->hasSurfaceLockLayer_ = false;
     RSMainThread::Instance()->SetHasSurfaceLockLayer(false);
-    EXPECT_FALSE(RSMainThread::Instance()->HasDrmOrSurfaceLockLayer());
+    EXPECT_FALSE(RSMainThread::Instance()->HasDRMOrSurfaceLockLayer());
     NodeId id = 1;
     RSSurfaceRenderNode node(id);
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
     ASSERT_NE(rsUniRenderVisitor, nullptr);
     rsUniRenderVisitor->CollectSurfaceLockLayer(node);
-    EXPECT_FALSE(RSMainThread::Instance()->HasDrmOrSurfaceLockLayer());
+    EXPECT_FALSE(RSMainThread::Instance()->HasDRMOrSurfaceLockLayer());
 
     node.childHardwareEnabledNodes_.resize(1);
     rsUniRenderVisitor->CollectSurfaceLockLayer(node);
-    EXPECT_FALSE(RSMainThread::Instance()->HasDrmOrSurfaceLockLayer());
+    EXPECT_FALSE(RSMainThread::Instance()->HasDRMOrSurfaceLockLayer());
 
     node.childHardwareEnabledNodes_.clear();
     RSSurfaceRenderNodeConfig config;
@@ -5666,9 +5666,9 @@ HWTEST_F(RSUniRenderVisitorTest, CollectSurfaceLockLayer001, TestSize.Level2)
     childNode->SetIsOnTheTree(false);
     node.AddChildHardwareEnabledNode(std::weak_ptr<RSSurfaceRenderNode>(childNode));
     rsUniRenderVisitor->CollectSurfaceLockLayer(node);
-    EXPECT_FALSE(RSMainThread::Instance()->HasDrmOrSurfaceLockLayer());
+    EXPECT_FALSE(RSMainThread::Instance()->HasDRMOrSurfaceLockLayer());
     childNode->SetIsOnTheTree(true);
     rsUniRenderVisitor->CollectSurfaceLockLayer(node);
-    EXPECT_TRUE(RSMainThread::Instance()->HasDrmOrSurfaceLockLayer());
+    EXPECT_TRUE(RSMainThread::Instance()->HasDRMOrSurfaceLockLayer());
 }
 } // OHOS::Rosen

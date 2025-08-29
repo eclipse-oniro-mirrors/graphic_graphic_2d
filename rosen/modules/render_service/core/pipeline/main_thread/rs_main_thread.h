@@ -446,7 +446,7 @@ public:
     void MarkNodeImageDirty(uint64_t nodeId);
 
     void SetHasSurfaceLockLayer(bool hasSurfaceLockLayer);
-    bool HasDrmOrSurfaceLockLayer() const;
+    bool HasDRMOrSurfaceLockLayer() const;
 
 private:
     using TransactionDataIndexMap = std::unordered_map<pid_t,

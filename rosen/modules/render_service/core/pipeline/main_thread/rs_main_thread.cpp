@@ -5447,7 +5447,7 @@ void RSMainThread::SetHasSurfaceLockLayer(bool hasSurfaceLockLayer)
     hasSurfaceLockLayer_ = hasSurfaceLockLayer_ || hasSurfaceLockLayer;
 }
 
-bool RSMainThread::HasDrmOrSurfaceLockLayer() const
+bool RSMainThread::HasDRMOrSurfaceLockLayer() const
 {
     return hasSurfaceLockLayer_ || hasProtectedLayer_;
 }
