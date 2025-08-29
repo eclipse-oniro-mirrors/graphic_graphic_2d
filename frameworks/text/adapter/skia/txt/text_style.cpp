@@ -97,6 +97,7 @@ bool TextStyle::operator==(TextStyle const& other) const
         decorationStyle == other.decorationStyle &&
         skt::nearlyEqual(decorationThicknessMultiplier, other.decorationThicknessMultiplier) &&
         fontWeight == other.fontWeight &&
+        fontWidth == other.fontWidth &&
         fontStyle == other.fontStyle &&
         skt::nearlyEqual(letterSpacing, other.letterSpacing) &&
         skt::nearlyEqual(wordSpacing, other.wordSpacing) &&
