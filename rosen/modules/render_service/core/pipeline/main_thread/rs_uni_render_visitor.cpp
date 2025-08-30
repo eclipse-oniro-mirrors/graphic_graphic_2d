@@ -1855,8 +1855,8 @@ inline void RSUniRenderVisitor::CollectNodeForOcclusion(RSRenderNode& node)
 
 void RSUniRenderVisitor::RegisterHpaeCallback(RSRenderNode& node)
 {
-#if defined(ROSEN_OHOS) && defined(ENABLE_HPAE_BLUR)
-    RSHpaeManager::GetInstance().RegisterHpaeCallback(node, screenInfo_.phyWidth, screenInfo_.phyHeight);
+#if defined(ROSEN_OHOS)
+    RSHpaeManager::GetInstance().RegisterHpaeCallback(node, curScreenNode_);
 #endif
 }
 

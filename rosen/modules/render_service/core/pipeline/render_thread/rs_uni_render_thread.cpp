@@ -199,10 +199,6 @@ void RSUniRenderThread::InitGrContext()
             auto& schedClient = ResSchedClient::GetInstance();
             schedClient.ReportData(ResType::RES_TYPE_THREAD_QOS_CHANGE, 0, mapPayload);
         });
-#if defined(ROSEN_OHOS) && defined(ENABLE_HPAE_BLUR)
-    RSHpaeManager::GetInstance().InitIoBuffers();
-    RSHpaeManager::GetInstance().InitHpaeBlurResource();
-#endif
 }
 
 void RSUniRenderThread::Inittcache()
@@ -249,6 +245,9 @@ void RSUniRenderThread::Start()
         RS_LOGE("RSUniRenderThread Started ...");
         Inittcache();
         InitGrContext();
+#if defined(ROSEN_OHOS)
+        RSHpaeManager::GetInstance().InitHpaeBlurResource();
+#endif
         tid_ = gettid();
 #ifdef RES_SCHED_ENABLE
         SubScribeSystemAbility();
