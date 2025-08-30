@@ -694,7 +694,7 @@ enum class ComponentEnableSwitch : uint8_t {
 };
 
 typedef enum : uint32_t {
-    WATER_MARK_SCCUSS = 0,
+    WATER_MARK_SUCCESS = 0,
     WATER_MARK_NAME_ERROR = (1U << 1),
     WATER_MARK_RS_CONNECTION_ERROR = (1U << 2),
     WATER_MARK_IMG_ASTC_ERROR = (1U << 3),
@@ -709,13 +709,13 @@ typedef enum : uint32_t {
     WATER_MARK_NODE_NOT_SCREEN = (1U << 12),
     WATER_MARK_PIXELMAP_INVALID = (1U << 13),
     WATER_MARK_NOT_SURFACE_NODE_ERROR = (1U << 14),
-    WATER_MARK_INVLID_WATERMARK_TYPE = (1U << 15),
+    WATER_MARK_INVALID_WATERMARK_TYPE = (1U << 15),
 } SurfaceWatermarkStatusCode;
 
 typedef enum : uint8_t {
-    CUSTOM_WATERMARK = 0,
-    SYSTEM_WATERMARK = 1,
-    INVALID_WATERMARK = 2,
+    CUSTOM_WATER_MARK = 0,
+    SYSTEM_WATER_MARK = 1,
+    INVALID_WATER_MARK = 2,
 } SurfaceWatermarkType;
 } // namespace Rosen
 } // namespace OHOS
