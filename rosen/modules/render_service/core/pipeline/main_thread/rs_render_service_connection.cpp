@@ -107,7 +107,7 @@ constexpr uint32_t PIDLIST_SIZE_MAX = 128;
 constexpr uint64_t BUFFER_USAGE_GPU_RENDER_DIRTY = BUFFER_USAGE_HW_RENDER | BUFFER_USAGE_AUXILLARY_BUFFER0;
 constexpr uint64_t MAX_TIME_OUT_NS = 1e9;
 constexpr int64_t MAX_FREEZE_SCREEN_TIME = 3000;
-const std::string UNFREEZE_SCREEN_TASKE_NAME = "UNFREEZE_SCREEN_TASK";
+const std::string UNFREEZE_SCREEN_TASK_NAME = "UNFREEZE_SCREEN_TASK";
 }
 // we guarantee that when constructing this object,
 // all these pointers are valid, so will not check them.
@@ -1568,7 +1568,7 @@ ErrCode RSRenderServiceConnection::FreezeScreen(NodeId id, bool isFreeze)
         screenNode->SetForceFreeze(isFreeze);
 
         // cancel previous task, and unfreeze screen after 3 seconds in case unfreeze fail
-        std::string taskName(UNFREEZE_SCREEN_TASKE_NAME + std::to_string(id));
+        std::string taskName(UNFREEZE_SCREEN_TASK_NAME + std::to_string(id));
         RSMainThread::Instance()->RemoveTask(taskName);
         if (!isFreeze) {
             return;
