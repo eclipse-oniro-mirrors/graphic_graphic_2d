@@ -523,7 +523,7 @@ private:
     std::atomic<bool> isScreenSwitching_ = false;
 
 #ifdef RS_SUBSCRIBE_SENSOR_ENABLE
-    SensorUser user;
+    SensorUser user_;
     bool isFoldScreenFlag_ = false;
     ScreenId innerScreenId_ = 0;
     ScreenId externalScreenId_ = INVALID_SCREEN_ID;
