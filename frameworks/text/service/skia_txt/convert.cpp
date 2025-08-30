@@ -175,13 +175,11 @@ void SplitTextStyleConvert(SPText::TextStyle& textStyle, const TextStyle& style)
         }
     }
 
-    if (!style.fontVariations.GetAxisValues().empty()) {
-        for (const auto& [axis, value] : style.fontVariations.GetAxisValues()) {
-            textStyle.fontVariations.SetAxisValue(axis, value);
-        }
-    } else {
-        textStyle.fontVariations.SetAxisValue(WGHT_AXIS,
-            (static_cast<float>(style.fontWeight) + 1.0) * FONT_WEIGHT_MULTIPLE);
+    textStyle.fontVariations.SetAxisValue(WGHT_AXIS,
+        (static_cast<float>(style.fontWeight) + 1.0) * FONT_WEIGHT_MULTIPLE);
+
+    for (const auto& [axis, value] : style.fontVariations.GetAxisValues()) {
+        textStyle.fontVariations.SetAxisValue(axis, value);
     }
 }
 

@@ -64,6 +64,7 @@ TextStyle TypographyStyle::GetTextStyle() const
 {
     TextStyle style;
     style.fontWeight = fontWeight;
+    style.fontWidth = fontWidth;
     style.fontStyle = fontStyle;
     style.fontFamilies = { fontFamily };
     style.heightScale = heightScale;
