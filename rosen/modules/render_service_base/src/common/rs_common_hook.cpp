@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-//
+
 #include "common/rs_common_hook.h"
 
 namespace OHOS::Rosen {
@@ -129,6 +129,28 @@ void RsCommonHook::SetTvPlayerBundleName(const std::string& bundleName)
 const std::string& RsCommonHook::GetTvPlayerBundleName() const
 {
     return tvPlayerBundleName_;
+}
+
+void RsCommonHook::SetSolidColorLayerConfigFromHgm(
+    const std::unordered_map<std::string, std::string>& solidLayerConfigFromHgm)
+{
+    solidLayerConfigFromHgm_ = solidLayerConfigFromHgm;
+}
+ 
+std::unordered_map<std::string, std::string> RsCommonHook::GetSolidColorLayerConfigFromHgm() const
+{
+    return solidLayerConfigFromHgm_;
+}
+ 
+void RsCommonHook::SetHwcSolidColorLayerConfigFromHgm(
+    const std::unordered_map<std::string, std::string>& hwcSolidLayerConfigFromHgm)
+{
+    hwcSolidLayerConfigFromHgm_ = hwcSolidLayerConfigFromHgm;
+}
+ 
+std::unordered_map<std::string, std::string> RsCommonHook::GetHwcSolidColorLayerConfigFromHgm() const
+{
+    return hwcSolidLayerConfigFromHgm_;
 }
 
 void RsCommonHook::SetFilterUnderHwcConfigByApp(const std::string& appName, const std::string& val)
