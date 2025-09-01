@@ -89,7 +89,7 @@ bool CheckScbReadyToDraw(const std::shared_ptr<RSBaseRenderNode>& child)
 bool IsFirstFrameReadyToDraw(RSSurfaceRenderNode& node)
 {
     auto sortedChildren = node.GetSortedChildren();
-    if (node.IsScbScreen() || node.IsSCBNode()) {
+    if (IS_SCB_WINDOW_TYPE(node.GetSurfaceWindowType())) {
         for (const auto& child : *sortedChildren) {
             if (CheckScbReadyToDraw(child)) {
                 return true;
