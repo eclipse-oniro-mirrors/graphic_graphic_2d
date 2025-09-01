@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-//
 #include "hwc_param.h"
 #include "rs_uni_hwc_visitor.h"
 
@@ -40,8 +39,8 @@ constexpr float EPSILON_SCALE = 0.00001f;
 
 bool GetSolidLayerEnabled()
 {
-    return (HWCParam::IsSolidLayerEnable() || RsCommonHook::Instance().GetIsWhiteListForSolidColorLayerFlag()) &&
-        RSSystemParameters::GetSolidLayerHwcEnabled();
+    return (HWCParam::IsSolidLayerEnable() || RsCommonHook::Instance().GetIsWhiteListForSolidColorLayerFlag() ||
+        HWCParam::IsSolidLayerInMultiWindowEnable()) && RSSystemParameters::GetSolidLayerHwcEnabled();
 }
 }
 
@@ -386,6 +385,16 @@ void RSUniHwcVisitor::ProcessSolidLayerEnabled(RSSurfaceRenderNode& node)
     IncreaseSolidLayerHwcEnableCount();
 }
 
+bool RSUniHwcVisitor::IsTargetedSolidLayerScheme(RSSurfaceRenderNode& node)
+{
+    auto solidLayerConfigFromHgm = RsCommonHook::Instance().GetSolidColorLayerConfigFromHgm();
+    auto hwcSolidLayerConfigFromHgm = RsCommonHook::Instance().GetHwcSolidColorLayerConfigFromHgm();
+    auto iter = solidLayerConfigFromHgm.find(node.GetBundleName());
+    auto hwcIter = hwcSolidLayerConfigFromHgm.find(node.GetBundleName());
+    return (iter != solidLayerConfigFromHgm.end() || hwcIter != hwcSolidLayerConfigFromHgm.end());
+}
+
+
 void RSUniHwcVisitor::UpdateHwcNodeEnableByBackgroundAlpha(RSSurfaceRenderNode& node)
 {
     auto stagingSurfaceParams = static_cast<RSSurfaceRenderParams *>(node.GetStagingRenderParams().get());
@@ -415,8 +424,10 @@ void RSUniHwcVisitor::UpdateHwcNodeEnableByBackgroundAlpha(RSSurfaceRenderNode& 
         }
         return false;
     };
+    bool isTargetedAppBundle = IsTargetedSolidLayerScheme(node);
     bool isNodeOpaque = ROSEN_EQ(renderProperties.GetAlpha(), 1.0f, EPSILON_SCALE);
-    bool isSolidLayerEnabled = isTargetNodeType && isTargetColor && isNodeOpaque && !isSpecialNodeType;
+    bool isSolidLayerEnabled = 
+        isTargetNodeType && isTargetColor && isNodeOpaque && !isSpecialNodeType && isTargetedAppBundle;
     bool isHdrOn = false;
     bool hasBrightness = false;
     if (isSolidLayerEnabled) {
@@ -429,8 +440,9 @@ void RSUniHwcVisitor::UpdateHwcNodeEnableByBackgroundAlpha(RSSurfaceRenderNode& 
         }
     }
     RS_LOGD("solidLayer: SolidLayer enabling conditions, isTargetNodeType: %{public}d, isTargetColor: %{public}d, "
-        "Alpha: %{public}d, !isSpecialNodeType: %{public}d, !isHdrOn: %{public}d, !hasBrightness: %{public}d",
-        isTargetNodeType, isTargetColor, isNodeOpaque, !isSpecialNodeType, !isHdrOn, !hasBrightness);
+        "Alpha: %{public}d, isTargetedAppBundle: %{public}d, !isSpecialNodeType: %{public}d, !isHdrOn: %{public}d, "
+        "!hasBrightness: %{public}d",
+        isTargetNodeType, isTargetColor, isNodeOpaque, !isSpecialNodeType, isTargetedAppBundle, !isHdrOn, !hasBrightness);
     ProcessSolidLayerDisabled(node);
 }
 
