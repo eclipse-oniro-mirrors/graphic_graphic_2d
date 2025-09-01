@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-//
+
 #ifndef HWC_PARAM_H
 #define HWC_PARAM_H
 
@@ -28,16 +28,19 @@ public:
 
     static bool IsDisableHwcOnExpandScreen();
     static bool IsSolidLayerEnable();
+    static bool IsSolidLayerInMultiWindowEnable();
 
 protected:
     void SetSourceTuningForApp(std::string appName, std::string val);
     void SetSolidColorLayerForApp(std::string appName, std::string val);
     static void SetSolidLayerEnable(bool isEnable);
     static void SetDisableHwcOnExpandScreen(bool isEnable);
+    static void SetSolidLayerInMultiWindowEnable(bool isEnable);
     void MoveDataToHgmCore();
 
 private:
     inline static bool isSolidLayerEnable_ = false;
+    inline static bool isSolidLayerInMultiWindowEnable_ = false;
     inline static bool isDisableHwcOnExpandScreen_ = false;
     std::unordered_map<std::string, std::string> sourceTuningMap_;
     std::unordered_map<std::string, std::string> solidColorLayerMap_;
