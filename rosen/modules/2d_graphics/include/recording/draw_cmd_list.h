@@ -78,7 +78,7 @@ public:
      * @brief   Gets cmd list type.
      * @return  Returns DRAW_CMD_LIST
      */
-    uint32_t GetType() const override
+    virtual uint32_t GetType() const override
     {
         return Type::DRAW_CMD_LIST;
     }
@@ -262,33 +262,6 @@ public:
      * @brief Get cmdlist draw region from opItem.
      */
     RectF GetCmdlistDrawRegion();
-
-    virtual std::shared_ptr<DrawCmdList> GetEndDrawCmdList() const
-    {
-        return nullptr;
-    }
-
-    friend bool operator==(const std::shared_ptr<DrawCmdList>& lhs, const std::shared_ptr<DrawCmdList>& rhs)
-    {
-        return false;
-    }
-
-    friend std::shared_ptr<DrawCmdList> operator+(
-        const std::shared_ptr<DrawCmdList>& lhs, const std::shared_ptr<DrawCmdList>& rhs)
-    {
-        return lhs;
-    }
-
-    friend std::shared_ptr<DrawCmdList> operator-(
-        const std::shared_ptr<DrawCmdList>& lhs, const std::shared_ptr<DrawCmdList>& rhs)
-    {
-        return lhs;
-    }
-
-    friend std::shared_ptr<DrawCmdList> operator*(const std::shared_ptr<DrawCmdList>& lhs, float rhs)
-    {
-        return lhs;
-    }
 
 private:
     void ClearCache();

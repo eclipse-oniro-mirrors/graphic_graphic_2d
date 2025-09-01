@@ -30,16 +30,6 @@ Quaternion RSValueEstimator::Estimate(float fraction,
     return value.Slerp(endValue, fraction);
 }
 
-std::shared_ptr<Drawing::DrawCmdList> RSValueEstimator::Estimate(float fraction,
-    const std::shared_ptr<Drawing::DrawCmdList>& startValue, const std::shared_ptr<Drawing::DrawCmdList>& endValue)
-{
-    auto rsDrawCmdList = std::static_pointer_cast<RSDrawCmdList>(endValue);
-    if (rsDrawCmdList) {
-        rsDrawCmdList->Estimate(fraction);
-    }
-    return rsDrawCmdList;
-}
-
 template<>
 float RSCurveValueEstimator<float>::EstimateFraction(const std::shared_ptr<RSInterpolator>& interpolator)
 {
@@ -68,6 +58,34 @@ float RSCurveValueEstimator<float>::EstimateFraction(const std::shared_ptr<RSInt
     return FRACTION_MIN;
 }
 
+template<>
+void RSCurveValueEstimator<Drawing::DrawCmdListPtr>::InitCurveAnimationValue(
+    const std::shared_ptr<RSRenderPropertyBase>& property, const std::shared_ptr<RSRenderPropertyBase>& startValue,
+    const std::shared_ptr<RSRenderPropertyBase>& endValue, const std::shared_ptr<RSRenderPropertyBase>& lastValue)
+{
+    auto animatableProperty = std::static_pointer_cast<RSRenderAnimatableProperty<Drawing::DrawCmdListPtr>>(property);
+    auto animatableEndValue = std::static_pointer_cast<RSRenderAnimatableProperty<Drawing::DrawCmdListPtr>>(endValue);
+    if (animatableProperty && animatableEndValue) {
+        property_ = animatableProperty;
+        auto rsDrawCmdList = std::make_shared<RSDrawCmdList>(animatableProperty->Get(), animatableEndValue->Get());
+        animatableProperty->Set(rsDrawCmdList);
+    }
+}
+
+template<>
+void RSCurveValueEstimator<Drawing::DrawCmdListPtr>::UpdateAnimationValue(const float fraction, const bool isAdditive)
+{
+    if (property_ == nullptr) {
+        return;
+    }
+    auto animationValue = property_->Get();
+    if (animationValue && animationValue->GetType() == Drawing::CmdList::Type::RS_DRAW_CMD_LIST) {
+        auto rsDrawCmdList = std::static_pointer_cast<RSDrawCmdList>(animationValue);
+        rsDrawCmdList->Estimate(fraction);
+        property_->Set(rsDrawCmdList);
+    }
+}
 template class RSCurveValueEstimator<float>;
+template class RSCurveValueEstimator<Drawing::DrawCmdListPtr>;
 } // namespace Rosen
 } // namespace OHOS

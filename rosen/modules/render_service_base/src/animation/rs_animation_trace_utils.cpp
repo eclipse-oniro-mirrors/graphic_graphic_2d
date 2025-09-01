@@ -93,11 +93,6 @@ std::string RSAnimationTraceUtils::ParseRenderPropertyValueInner(
             str = "RRECT " + std::static_pointer_cast<RSRenderAnimatableProperty<RRect>>(value)->Get().ToString();
             break;
         }
-        case RSPropertyType::DRAW_CMD_LIST: {
-            str = "DRAW_CMD_LIST: " +
-                std::static_pointer_cast<RSRenderAnimatableProperty<RSDrawCmdListPtr>>(value)->Get()->ToString();
-            break;
-        }
         default: {
             str = "None";
             break;

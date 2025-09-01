@@ -50,9 +50,6 @@ public:
         return 0.0f;
     }
 
-    std::shared_ptr<Drawing::DrawCmdList> Estimate(float fraction,
-        const std::shared_ptr<Drawing::DrawCmdList>& startValue, const std::shared_ptr<Drawing::DrawCmdList>& endValue);
-
     virtual float EstimateFraction(const std::shared_ptr<RSInterpolator>& interpolator,
         float targetFraction, int duration)
     {
@@ -97,15 +94,6 @@ public:
             startValue_ = animatableStartValue->Get();
             endValue_ = animatableEndValue->Get();
             lastValue_ = animatableLastValue->Get();
-            if constexpr (std::is_same_v<T, Drawing::DrawCmdListPtr>) {
-                auto endDrawCmdList = animatableEndValue->Get();
-                auto startDrawCmdList = animatableProperty->Get();
-
-                auto rsDrawCmdList = std::make_shared<RSDrawCmdList>();
-                rsDrawCmdList->InitAnimationValue(startDrawCmdList, endDrawCmdList);
-                animatableProperty->Set(rsDrawCmdList);
-                endValue_ = rsDrawCmdList;
-            }
         }
     }
 
@@ -166,7 +154,16 @@ private:
 template<>
 float RSCurveValueEstimator<float>::EstimateFraction(const std::shared_ptr<RSInterpolator>& interpolator);
 
+template<>
+void RSCurveValueEstimator<Drawing::DrawCmdListPtr>::InitCurveAnimationValue(
+    const std::shared_ptr<RSRenderPropertyBase>& property, const std::shared_ptr<RSRenderPropertyBase>& startValue,
+    const std::shared_ptr<RSRenderPropertyBase>& endValue, const std::shared_ptr<RSRenderPropertyBase>& lastValue);
+
+template<>
+void RSCurveValueEstimator<Drawing::DrawCmdListPtr>::UpdateAnimationValue(const float fraction, const bool isAdditive);
+
 extern template class RSCurveValueEstimator<float>;
+extern template class RSCurveValueEstimator<Drawing::DrawCmdListPtr>;
 
 template<typename T>
 class RSKeyframeValueEstimator : public RSValueEstimator {

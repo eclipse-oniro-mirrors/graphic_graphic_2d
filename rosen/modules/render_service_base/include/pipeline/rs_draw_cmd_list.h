@@ -26,6 +26,10 @@ namespace Rosen {
 namespace Drawing {
 class DrawCmdList;
 class Canvas;
+RSB_EXPORT DrawCmdListPtr operator+(const DrawCmdListPtr& lhs, const DrawCmdListPtr& rhs);
+RSB_EXPORT DrawCmdListPtr operator-(const DrawCmdListPtr& lhs, const DrawCmdListPtr& rhs);
+RSB_EXPORT DrawCmdListPtr operator*(const DrawCmdListPtr& lhs, float rhs);
+RSB_EXPORT bool operator==(const DrawCmdListPtr& lhs, const DrawCmdListPtr& rhs);
 } // namespace Drawing
 
 struct DrawCmdListOpacity {
@@ -45,7 +49,8 @@ public:
     /**
      * @brief   Creates a RSDrawCmdList
      */
-    RSDrawCmdList() = default;
+    RSDrawCmdList(
+        const std::shared_ptr<Drawing::DrawCmdList> startValue, const std::shared_ptr<Drawing::DrawCmdList> endValue);
     /**
      * @brief   Destroy a RSDrawCmdList
      */
@@ -55,34 +60,18 @@ public:
         endValue_.first.reset();
     };
 
+    /**
+     * @brief   Gets cmd list type.
+     * @return  Returns RS_DRAW_CMD_LIST
+     */
+    uint32_t GetType() const override
+    {
+        return Type::RS_DRAW_CMD_LIST;
+    }
+
     bool IsEmpty() const override;
 
     void Estimate(float fraction);
-
-    friend bool operator==(const std::shared_ptr<RSDrawCmdList>& lhs, const std::shared_ptr<RSDrawCmdList>& rhs)
-    {
-        return false;
-    }
-
-    friend std::shared_ptr<RSDrawCmdList> operator+(
-        const std::shared_ptr<RSDrawCmdList>& lhs, const std::shared_ptr<RSDrawCmdList>& rhs)
-    {
-        return lhs;
-    }
-
-    friend std::shared_ptr<RSDrawCmdList> operator-(
-        const std::shared_ptr<RSDrawCmdList>& lhs, const std::shared_ptr<RSDrawCmdList>& rhs)
-    {
-        return lhs;
-    }
-
-    friend std::shared_ptr<RSDrawCmdList> operator*(const std::shared_ptr<RSDrawCmdList>& lhs, float rhs)
-    {
-        return lhs;
-    }
-
-    void InitAnimationValue(
-        const std::shared_ptr<Drawing::DrawCmdList> startValue, const std::shared_ptr<Drawing::DrawCmdList> endValue);
 
     /**
      * @brief  Gets the width of the RSDrawCmdList.
@@ -95,12 +84,12 @@ public:
     int32_t GetHeight() const override;
 
     void Playback(Drawing::Canvas& canvas, const Drawing::Rect* rect = nullptr) override;
-    std::shared_ptr<Drawing::DrawCmdList> GetEndDrawCmdList() const override;
 
     std::string ToString() const;
 
 private:
     void CleanOpacity();
+    std::shared_ptr<Drawing::DrawCmdList> GetEndDrawCmdList() const;
 
     std::pair<std::shared_ptr<Drawing::DrawCmdList>, DrawCmdListOpacity> startValue_;
     std::pair<std::shared_ptr<Drawing::DrawCmdList>, DrawCmdListOpacity> endValue_;

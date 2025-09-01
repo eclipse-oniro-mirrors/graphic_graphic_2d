@@ -165,7 +165,6 @@ std::shared_ptr<RSAnimation> RSImplicitCurveAnimationParam::CreateAnimation(std:
     std::shared_ptr<RSCurveAnimation> curveAnimation;
     if (property->GetPropertyType() == RSPropertyType::DRAW_CMD_LIST) {
         curveAnimation = std::make_shared<RSCurveAnimation>(property, startValue, endValue);
-        curveAnimation->SetAdditive(false);
     } else {
         curveAnimation = std::make_shared<RSCurveAnimation>(property, endValue - startValue);
     }

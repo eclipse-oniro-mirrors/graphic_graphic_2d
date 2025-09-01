@@ -352,11 +352,7 @@ protected:
 
 template<typename T>
 class RSB_EXPORT_TMP RSRenderAnimatableProperty : public RSRenderProperty<T> {
-    static_assert(std::is_floating_point_v<T> || std::is_same_v<Color, T> || std::is_same_v<Matrix3f, T> ||
-                  std::is_same_v<Vector2f, T> || std::is_same_v<Vector3f, T> || std::is_same_v<Vector4f, T> ||
-                  std::is_same_v<Quaternion, T> || std::is_same_v<Vector4<Color>, T> ||
-                  supports_animatable_arithmetic<T>::value || std::is_base_of_v<RSAnimatableArithmetic<T>, T> ||
-                  std::is_same_v<RRect, T> || std::is_same_v<Drawing::DrawCmdListPtr, T>);
+    static_assert(supports_animatable_arithmetic<T>::value || std::is_base_of_v<RSAnimatableArithmetic<T>, T>);
 
 public:
     RSRenderAnimatableProperty() : RSRenderProperty<T>() {}

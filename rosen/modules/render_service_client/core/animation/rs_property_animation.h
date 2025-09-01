@@ -31,8 +31,6 @@ public:
     virtual ~RSPropertyAnimation() = default;
 
     void SetIsCustom(const bool isCustom);
-    
-    void SetAdditive(bool isAdditive);
 
     void DumpAnimationInfo(std::string& dumpInfo) const override;
 
@@ -43,6 +41,8 @@ public:
 
 protected:
     RSPropertyAnimation(std::shared_ptr<RSPropertyBase> property);
+
+    void SetAdditive(bool isAdditive);
 
     bool GetAdditive() const;
 
