@@ -165,24 +165,24 @@ public:
     /**
      * @brief   Draw cmd is empty or not.
      */
-    bool IsEmpty() const;
+    virtual bool IsEmpty() const;
 
     /**
      * @brief         Calls the corresponding operations of all opitems in DrawCmdList to the canvas.
      * @param canvas  Implements the playback action of the DrawCmdList in the Canvas.
      * @param rect    Rect used to playback, may be nullptr.
      */
-    void Playback(Canvas& canvas, const Rect* rect = nullptr);
+    virtual void Playback(Canvas& canvas, const Rect* rect = nullptr);
 
     /**
      * @brief  Gets the width of the DrawCmdList.
      */
-    int32_t GetWidth() const;
+    virtual int32_t GetWidth() const;
 
     /**
      * @brief  Gets the height of the DrawCmdList.
      */
-    int32_t GetHeight() const;
+    virtual int32_t GetHeight() const;
 
     /**
      * @brief  Sets the width of the DrawCmdList.
@@ -262,6 +262,33 @@ public:
      * @brief Get cmdlist draw region from opItem.
      */
     RectF GetCmdlistDrawRegion();
+
+    virtual std::shared_ptr<DrawCmdList> GetEndDrawCmdList() const
+    {
+        return nullptr;
+    }
+
+    friend bool operator==(const std::shared_ptr<DrawCmdList>& lhs, const std::shared_ptr<DrawCmdList>& rhs)
+    {
+        return false;
+    }
+
+    friend std::shared_ptr<DrawCmdList> operator+(
+        const std::shared_ptr<DrawCmdList>& lhs, const std::shared_ptr<DrawCmdList>& rhs)
+    {
+        return lhs;
+    }
+
+    friend std::shared_ptr<DrawCmdList> operator-(
+        const std::shared_ptr<DrawCmdList>& lhs, const std::shared_ptr<DrawCmdList>& rhs)
+    {
+        return lhs;
+    }
+
+    friend std::shared_ptr<DrawCmdList> operator*(const std::shared_ptr<DrawCmdList>& lhs, float rhs)
+    {
+        return lhs;
+    }
 
 private:
     void ClearCache();

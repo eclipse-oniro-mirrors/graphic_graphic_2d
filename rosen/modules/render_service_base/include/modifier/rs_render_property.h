@@ -26,6 +26,7 @@
 #include "modifier/rs_animatable_arithmetic.h"
 #include "modifier_ng/rs_modifier_ng_type.h"
 #include "property/rs_properties_def.h"
+#include "recording/draw_cmd_list.h"
 #include "transaction/rs_marshalling_helper.h"
 #ifdef USE_M133_SKIA
 #include "include/core/SkMatrix.h"
@@ -355,7 +356,7 @@ class RSB_EXPORT_TMP RSRenderAnimatableProperty : public RSRenderProperty<T> {
                   std::is_same_v<Vector2f, T> || std::is_same_v<Vector3f, T> || std::is_same_v<Vector4f, T> ||
                   std::is_same_v<Quaternion, T> || std::is_same_v<Vector4<Color>, T> ||
                   supports_animatable_arithmetic<T>::value || std::is_base_of_v<RSAnimatableArithmetic<T>, T> ||
-                  std::is_same_v<RRect, T>);
+                  std::is_same_v<RRect, T> || std::is_same_v<Drawing::DrawCmdListPtr, T>);
 
 public:
     RSRenderAnimatableProperty() : RSRenderProperty<T>() {}

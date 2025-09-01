@@ -16,6 +16,7 @@
 #include "animation/rs_value_estimator.h"
 
 #include "common/rs_common_def.h"
+#include "pipeline/rs_draw_cmd_list.h"
 #include "platform/common/rs_log.h"
 #include "modifier/rs_render_property.h"
 #include "render/rs_material_filter.h"
@@ -27,6 +28,16 @@ Quaternion RSValueEstimator::Estimate(float fraction,
 {
     auto value = startValue;
     return value.Slerp(endValue, fraction);
+}
+
+std::shared_ptr<Drawing::DrawCmdList> RSValueEstimator::Estimate(float fraction,
+    const std::shared_ptr<Drawing::DrawCmdList>& startValue, const std::shared_ptr<Drawing::DrawCmdList>& endValue)
+{
+    auto rsDrawCmdList = std::static_pointer_cast<RSDrawCmdList>(endValue);
+    if (rsDrawCmdList) {
+        rsDrawCmdList->Estimate(fraction);
+    }
+    return rsDrawCmdList;
 }
 
 template<>

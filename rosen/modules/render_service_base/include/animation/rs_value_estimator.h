@@ -27,6 +27,7 @@
 #include "common/rs_matrix3.h"
 #include "common/rs_vector2.h"
 #include "common/rs_vector4.h"
+#include "pipeline/rs_draw_cmd_list.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -48,6 +49,9 @@ public:
     {
         return 0.0f;
     }
+
+    std::shared_ptr<Drawing::DrawCmdList> Estimate(float fraction,
+        const std::shared_ptr<Drawing::DrawCmdList>& startValue, const std::shared_ptr<Drawing::DrawCmdList>& endValue);
 
     virtual float EstimateFraction(const std::shared_ptr<RSInterpolator>& interpolator,
         float targetFraction, int duration)
@@ -93,6 +97,15 @@ public:
             startValue_ = animatableStartValue->Get();
             endValue_ = animatableEndValue->Get();
             lastValue_ = animatableLastValue->Get();
+            if constexpr (std::is_same_v<T, Drawing::DrawCmdListPtr>) {
+                auto endDrawCmdList = animatableEndValue->Get();
+                auto startDrawCmdList = animatableProperty->Get();
+
+                auto rsDrawCmdList = std::make_shared<RSDrawCmdList>();
+                rsDrawCmdList->InitAnimationValue(startDrawCmdList, endDrawCmdList);
+                animatableProperty->Set(rsDrawCmdList);
+                endValue_ = rsDrawCmdList;
+            }
         }
     }
 

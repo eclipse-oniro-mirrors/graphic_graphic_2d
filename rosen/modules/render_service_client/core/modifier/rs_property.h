@@ -471,7 +471,7 @@ class RSAnimatableProperty : public RSProperty<T> {
                   std::is_same_v<Vector2f, T> || std::is_same_v<Vector3f, T> || std::is_same_v<Vector4f, T> ||
                   std::is_same_v<Quaternion, T> || std::is_same_v<Vector4<Color>, T> ||
                   supports_animatable_arithmetic<T>::value || std::is_base_of_v<RSAnimatableArithmetic<T>, T> ||
-                  std::is_same_v<RRect, T>);
+                  std::is_same_v<RRect, T> || std::is_same_v<Drawing::DrawCmdListPtr, T>);
 
 public:
     /**
