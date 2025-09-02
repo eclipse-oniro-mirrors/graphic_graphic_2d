@@ -32,5 +32,17 @@ public:
     void SetUp() {}
     void TearDown() {}
 };
+
+/**
+ * @tc.name: Init
+ * @tc.desc: Verify the result of Init function
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(HgmUserDefineTest, Init, Function | SmallTest | Level0)
+{
+    HgmUserDefine userDefine;
+    ASSERT_NE(userDefine.impl_, nullptr);
+}
 } // namespace Rosen
 } // namespace OHOS
