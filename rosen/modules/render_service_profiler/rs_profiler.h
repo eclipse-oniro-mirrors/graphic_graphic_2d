@@ -141,7 +141,7 @@
 #define RS_PROFILER_KEEP_DRAW_CMD(drawCmdListNeedSync) drawCmdListNeedSync = true
 #define RS_PROFILER_PROCESS_ADD_CHILD(parent, child, index) false
 #define RS_PROFILER_IF_NEED_TO_SKIP_DRAWCMD_SURFACE(parcel, skipBytes) false
-#define RS_PROFILER_IS_FIRST_FRAME_PARCEL(parcel)
+#define RS_PROFILER_IS_FIRST_FRAME_PARCEL(parcel) false
 #define RS_PROFILER_SURFACE_ON_DRAW_MATCH_OPTIMIZE(useNodeMatchOptimize)
 #define RS_PROFILER_RSLOGEOUTPUT(format, argptr)
 #define RS_PROFILER_RSLOGWOUTPUT(format, argptr)

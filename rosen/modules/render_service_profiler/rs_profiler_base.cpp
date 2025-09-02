@@ -1707,7 +1707,7 @@ bool RSProfiler::IsFirstFrameParcel(const Parcel& parcel)
     if (!IsBetaRecordEnabled()) {
         return false;
     }
-    return (IsWriteEmulationMode() || IsReadEmulationMode()) ? true : false;
+    return IsWriteEmulationMode() || IsReadEmulationMode();
 }
 
 void RSProfiler::SurfaceOnDrawMatchOptimize(bool& useNodeMatchOptimize)
