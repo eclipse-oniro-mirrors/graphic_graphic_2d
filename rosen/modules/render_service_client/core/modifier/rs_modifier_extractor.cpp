@@ -290,7 +290,7 @@ float RSModifierExtractor::GetShadowAlpha() const
     }                                                                                              
     std::unique_lock<std::recursive_mutex> lock(node->GetPropertyMutex());                                                                                 
     for (auto& [_, modifier] : node->modifiersNG_) {                                               
-        if (modifier->GetType() == ModifierNG::RSModifierType::modifierType) {                     
+        if (modifier->GetType() == ModifierNG::RSModifierType::SHADOW) {                     
            alpha = std::static_pointer_cast<ModifierNG::RSShadowModifier>(modifier)->GetShadowAlpha();                                                     
         }                                                                                          
     }                                                                                              
