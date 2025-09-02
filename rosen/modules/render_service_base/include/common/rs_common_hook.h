@@ -95,6 +95,7 @@ private:
 
     std::unordered_map<std::string, std::string> solidLayerConfigFromHgm_;
     std::unordered_map<std::string, std::string> hwcSolidLayerConfigFromHgm_;
+    
     // DISPLAY ENGINE
     std::string pkgName_{};
     mutable std::mutex setMutex_{};
