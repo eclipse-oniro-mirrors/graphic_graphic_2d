@@ -60,10 +60,10 @@ public:
         const std::unordered_map<std::string, std::string>& solidLayerConfigFromHgm);
     void SetHwcSolidColorLayerConfigFromHgm(
         const std::unordered_map<std::string, std::string>& hwcSolidLayerConfigFromHgm);
+
     bool RsCommonHook::IsSolidColorLayerConfig(const std::string& bundleName) const {
         return solidLayerConfigFromHgm_.find(bundleName) != solidLayerConfigFromHgm_.end();
     }
-
     bool RsCommonHook::IsHwcSolidColorLayerConfig(const std::string& bundleName) const {
         return hwcSolidLayerConfigFromHgm_.find(bundleName) != hwcSolidLayerConfigFromHgm_.end();
     }
