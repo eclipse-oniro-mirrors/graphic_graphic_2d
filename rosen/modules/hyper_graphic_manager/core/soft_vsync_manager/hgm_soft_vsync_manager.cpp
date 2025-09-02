@@ -67,7 +67,7 @@ void HgmSoftVSyncManager::DeliverSoftVote(FrameRateLinkerId linkerId, const Vote
         if (std::optional<VoteInfo> resultVoteInfo = hgmVoter->ProcessVote()) {
             bool isForceUseAppVSync = eventStatus ? hgmVoter->CheckForceUseAppVSync() : false;
             if (auto appVoteDataIter = appVoteData_.find(linkerId);
-                appVoteDataIter == appVoteData_.end() ||appVoteDataIter->second.first != resultVoteInfo->max ||
+                appVoteDataIter == appVoteData_.end() || appVoteDataIter->second.first != resultVoteInfo->max ||
                 static_cast<bool>(appVoteDataIter->second.second) != isForceUseAppVSync) {
                 appVoteData_.insert_or_assign(linkerId,
                     std::pair<uint32_t, uint32_t>(resultVoteInfo->max, static_cast<uint32_t>(isForceUseAppVSync)));
@@ -133,7 +133,7 @@ void HgmSoftVSyncManager::SetWindowExpectedRefreshRate(pid_t pid,
 
         if (auto vsyncLinker = vsyncLinkerMap_.find(vsyncName); vsyncLinker != vsyncLinkerMap_.end()) {
             const std::vector<FrameRateLinkerId> linkerIds = vsyncLinker->second;
-            for (const auto& linkerId : linkerIds) {
+            for (auto linkerId : linkerIds) {
                 DeliverSoftVote(linkerId,
                     {eventInfo.eventName, eventInfo.minRefreshRate, eventInfo.maxRefreshRate, pid,
                      eventInfo.description},
