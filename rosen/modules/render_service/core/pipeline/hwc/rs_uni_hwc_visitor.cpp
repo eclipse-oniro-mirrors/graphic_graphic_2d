@@ -389,13 +389,18 @@ void RSUniHwcVisitor::ProcessSolidLayerEnabled(RSSurfaceRenderNode& node)
     IncreaseSolidLayerHwcEnableCount();
 }
 
+    bool RsCommonHook::IsSolidColorLayerConfig(const std::string& bundleName) const {
+        return solidLayerConfigFromHgm_.find(bundleName) != solidLayerConfigFromHgm_.end();
+    }
+    bool RsCommonHook::IsHwcSolidColorLayerConfig(const std::string& bundleName) const {
+        return hwcSolidLayerConfigFromHgm_.find(bundleName) != hwcSolidLayerConfigFromHgm_.end();
+    }
 bool RSUniHwcVisitor::IsTargetedSolidLayer(RSSurfaceRenderNode& node)
 {
-    const std::string& solidLayerConfigFromHgm = RsCommonHook::Instance().GetSolidColorLayerConfigFromHgm();
-    const std::string& hwcSolidLayerConfigFromHgm = RsCommonHook::Instance().GetHwcSolidColorLayerConfigFromHgm();
-    auto iter = solidLayerConfigFromHgm.find(node.GetBundleName());
-    auto hwcIter = hwcSolidLayerConfigFromHgm.find(node.GetBundleName());
-    return (iter != solidLayerConfigFromHgm.end() || hwcIter != hwcSolidLayerConfigFromHgm.end());
+    const std::string& bundleName = node.GetBundleName();
+    bool isSolidColorLayerConfig = RsCommonHook::Instance().IsSolidColorLayerConfig(undleName);
+    bool isHwcSolidColorLayerConfig = RsCommonHook::Instance().IsHwcSolidColorLayerConfig(undleName);
+    return (isSolidColorLayerConfig || isHwcSolidColorLayerConfig);
 }
 
 void RSUniHwcVisitor::UpdateHwcNodeEnableByBackgroundAlpha(RSSurfaceRenderNode& node)
