@@ -389,12 +389,11 @@ void RSUniHwcVisitor::ProcessSolidLayerEnabled(RSSurfaceRenderNode& node)
     IncreaseSolidLayerHwcEnableCount();
 }
 
-bool RSUniHwcVisitor::IsTargetedSolidLayer(RSSurfaceRenderNode& node)
+bool RSUniHwcVisitor::IsTargetSolidLayer(RSSurfaceRenderNode& node)
 {
     const std::string& bundleName = node.GetBundleName();
-    bool isSolidColorLayerConfig = RsCommonHook::Instance().IsSolidColorLayerConfig(bundleName);
-    bool isHwcSolidColorLayerConfig = RsCommonHook::Instance().IsHwcSolidColorLayerConfig(bundleName);
-    return (isSolidColorLayerConfig || isHwcSolidColorLayerConfig);
+    return RsCommonHook::Instance().IsSolidColorLayerConfig(bundleName) ||
+           RsCommonHook::Instance().IsHwcSolidColorLayerConfig(bundleName);
 }
 
 void RSUniHwcVisitor::UpdateHwcNodeEnableByBackgroundAlpha(RSSurfaceRenderNode& node)
