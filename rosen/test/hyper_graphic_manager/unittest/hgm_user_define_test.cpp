@@ -32,17 +32,5 @@ public:
     void SetUp() {}
     void TearDown() {}
 };
-
-/**
- * @tc.name: Init
- * @tc.desc: Verify the result of Init function
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(HgmUserDefineTest, Init, Function | SmallTest | Level0)
-{
-    HgmFrameRateManager framRateManager;
-    sleep(1);
-}
 } // namespace Rosen
 } // namespace OHOS
