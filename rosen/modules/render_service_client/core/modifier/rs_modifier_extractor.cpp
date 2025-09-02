@@ -294,7 +294,7 @@ float RSModifierExtractor::GetShadowAlpha() const
            alpha = std::static_pointer_cast<ModifierNG::RSShadowModifier>(modifier)->GetShadowAlpha();                                                     
         }                                                                                          
     }                                                                                              
-    return value; 
+    return alpha; 
 }
 
 float RSModifierExtractor::GetShadowElevation() const
