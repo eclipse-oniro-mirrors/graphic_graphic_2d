@@ -18,9 +18,7 @@
 #include "command/rs_node_command.h"
 #include "modifier/rs_modifier_manager_map.h"
 #include "platform/common/rs_log.h"
-#include "transaction/rs_interfaces.h"
 #include "ui/rs_ui_context_manager.h"
-#include "utils/typeface_map.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -162,39 +160,5 @@ void RSUIContext::DumpNodeTreeProcessor(NodeId nodeId, pid_t pid, uint32_t taskI
         transaction->FlushImplicitTransaction();
     }
 }
-
-namespace {
-class TypefaceAutoRegister {
-public:
-    TypefaceAutoRegister()
-    {
-        std::function<bool(std::shared_ptr<Drawing::Typeface>)> registerTypefaceFunc =
-            [](std::shared_ptr<Drawing::Typeface> typeface) -> bool {
-            static Rosen::RSInterfaces& rsInterface = Rosen::RSInterfaces::GetInstance();
-            return rsInterface.RegisterTypeface(typeface);
-        };
-        Drawing::Typeface::RegisterCallBackFunc(registerTypefaceFunc);
-
-        std::function<void(uint32_t)> typefaceDestroyedFunc = [](uint32_t uniqueID) {
-            static Rosen::RSInterfaces& rsInterface = Rosen::RSInterfaces::GetInstance();
-            rsInterface.UnRegisterTypeface(uniqueID);
-        };
-        Drawing::Typeface::RegisterOnTypefaceDestroyed(typefaceDestroyedFunc);
-        Drawing::Typeface::RegisterUniqueIdCallBack(TypefaceMap::GetTypefaceByUniqueId);
-    }
-
-    ~TypefaceAutoRegister()
-    {
-        Drawing::Typeface::RegisterCallBackFunc(nullptr);
-        Drawing::Typeface::RegisterOnTypefaceDestroyed(nullptr);
-        Drawing::Typeface::RegisterUniqueIdCallBack(nullptr);
-    }
-};
-
-#ifndef ARKUI_X_ENABLE
-// Prohibiting resigter the callback function in advance when arkui-x use custom's font
-TypefaceAutoRegister g_typefaceAutoRegister;
-#endif
-} // namespace
 } // namespace Rosen
 } // namespace OHOS
