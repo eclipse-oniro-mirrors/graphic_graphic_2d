@@ -63,6 +63,8 @@ RSRenderNodeDrawable::RSRenderNodeDrawable(std::shared_ptr<const RSRenderNode>&&
 {
     auto task = [this] { this->RSRenderNodeDrawable::ClearCachedSurface(); };
     RegisterClearSurfaceFunc(task);
+    MemoryInfo info = { sizeof(*this), ExtractPid(GetId()), GetId(), 0, MEMORY_TYPE::MEM_RENDER_DRAWABLE_NODE };
+    MemoryTrack::Instance().AddNodeRecord(GetId(), info);
 }
 
 RSRenderNodeDrawable::~RSRenderNodeDrawable()
@@ -70,6 +72,7 @@ RSRenderNodeDrawable::~RSRenderNodeDrawable()
     ClearDrawingCacheDataMap();
     ClearCachedSurface();
     ResetClearSurfaceFunc();
+    MemoryTrack::Instance().RemoveNodeRecord(GetId());
 }
 
 RSRenderNodeDrawable::Ptr RSRenderNodeDrawable::OnGenerate(std::shared_ptr<const RSRenderNode> node)

@@ -26,6 +26,7 @@
 #include "feature/opinc/rs_opinc_draw_cache.h"
 #include "image/gpu_context.h"
 #include "pipeline/rs_render_node.h"
+#include "memory/rs_memory_track.h"
 
 #ifdef RS_ENABLE_VK
 #include "platform/ohos/backend/native_buffer_utils.h"

@@ -25,6 +25,7 @@
 #include "screen_manager/screen_types.h"
 #include "utils/matrix.h"
 #include "utils/region.h"
+#include "memory/rs_memory_track.h"
 
 #ifndef ROSEN_CROSS_PLATFORM
 #include <iconsumer_surface.h>
@@ -57,8 +58,16 @@ typedef enum {
 
 class RSB_EXPORT RSRenderParams {
 public:
-    RSRenderParams(NodeId id) : id_(id) {}
-    virtual ~RSRenderParams() = default;
+    RSRenderParams(NodeId id) : id_(id)
+    {
+        MemoryInfo info = {sizeof(*this), ExtractPid(GetId()), GetId(), 0, MEMORY_TYPE::MEM_RENDER_DRAWABLE_NODE };
+        MemoryTrack::Instance().AddNodeRecord(GetId(), info);
+    }
+
+    virtual ~RSRenderParams()
+    {
+        MemoryTrack::Instance().RemoveNodeRecord(GetId());
+    }
 
     struct SurfaceParam {
         int width = 0;
