@@ -251,6 +251,7 @@ HWTEST_F(RSMemoryTrackTest, SetDrawableNodeInfoTest001, testing::ext::TestSize.L
     MemoryNodeOfPid testNode = { 0, testId };
     MemoryTrack::Instance().memNodeOfPidMap_[testInfo.pid] = { testNode };
     MemoryTrack::Instance().SetDrawableNodeInfo(testId, testInfo);
+    EXPECT_EQ(testNode.GetDrawableMemSize(), 1024);
 }
 
 /**
@@ -264,6 +265,7 @@ HWTEST_F(RSMemoryTrackTest, SetDrawableNodeInfoTest002, testing::ext::TestSize.L
     NodeId testId = -2;
     MemoryInfo testInfo = { 1024, -2 };
     MemoryTrack::Instance().SetDrawableNodeInfo(testId, testInfo);
+    EXPECT_NE(testNode.GetDrawableMemSize(), 1024);
 }
 
 /**
@@ -406,8 +408,9 @@ HWTEST_F(RSMemoryTrackTest, AddNodeRecordTest003, testing::ext::TestSize.Level1)
 HWTEST_F(RSMemoryTrackTest, AddNodeRecordTest004, testing::ext::TestSize.Level1)
 {
     NodeId id = 3001;
-    MemoryInfo info1 = { 2048, ExtractPid(id), id, 0, MEM_RENDER_DRAWABLE_NODE };
+    MemoryInfo info1 = { 2048, ExtractPid(id), id, 0, MEMORY_TYPE::MEM_RENDER_DRAWABLE_NODE };
     MemoryTrack::Instance().AddNodeRecord(id, info1);
+    EXPECT_EQ(info1.type, MEMORY_TYPE::MEM_RENDER_DRAWABLE_NODE);
     MemoryTrack::Instance().RemoveNodeRecord(id);
 }
 
