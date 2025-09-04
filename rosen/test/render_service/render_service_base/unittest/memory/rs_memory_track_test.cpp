@@ -203,7 +203,7 @@ HWTEST_F(RSMemoryTrackTest, FindNodeByIdTest001, testing::ext::TestSize.Level1)
     MemoryNodeOfPid node1 = { 1024, testId };
     MemoryNodeOfPid node2 = { 2048, 2 };
     std::vector<MemoryNodeOfPid> nodesVec = { node1, node2 };
-    MemoryNodeOfPid* result = MemoryTrack::Instance().FindNodeById(nodesVec. testId);
+    MemoryNodeOfPid* result = MemoryTrack::Instance().FindNodeById(nodesVec, testId);
     ASSERT_NE(result, nullptr);
     EXPECT_EQ(result->GetNodeId(), testId);
 }
@@ -234,7 +234,7 @@ HWTEST_F(RSMemoryTrackTest, FindNodeByIdTest003, testing::ext::TestSize.Level1)
 {
     NodeId testId = 1;
     std::vector<MemoryNodeOfPid> nodesVec = {};
-    MemoryNodeOfPid* result = MemoryTrack::Instance().FindNodeById(nodesVec. testId);
+    MemoryNodeOfPid* result = MemoryTrack::Instance().FindNodeById(nodesVec, testId);
     EXPECT_EQ(result, nullptr);
 }
 
@@ -280,6 +280,7 @@ HWTEST_F(RSMemoryTrackTest, SetDrawableNodeInfoTest003, testing::ext::TestSize.L
     NodeId testId = 1;
     NodeId nonExistId = 2;
     MemoryInfo testInfo = { 1024, 1 };
+    MemoryNodeOfPid testNode = { testId, 0 };
     MemoryTrack::Instance().memNodeOfPidMap_[testInfo.pid] = { testNode };
     MemoryTrack::Instance().SetDrawableNodeInfo(nonExistId, testInfo);
     auto& nodes = MemoryTrack::Instance().memNodeOfPidMap_[testInfo.pid];
