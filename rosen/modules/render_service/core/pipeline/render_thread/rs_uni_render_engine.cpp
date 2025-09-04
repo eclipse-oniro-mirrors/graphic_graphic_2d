@@ -15,6 +15,7 @@
 
 #include "common/rs_singleton.h"
 #include "display_engine/rs_luminance_control.h"
+#include "feature/hdr/hetero_hdr/rs_hetero_hdr_manager.h"
 #include "feature/hdr/rs_hdr_util.h"
 #include "info_collection/rs_layer_compose_collection.h"
 #include "rs_uni_render_engine.h"
@@ -47,10 +48,18 @@ void RSUniRenderEngine::DrawSurfaceNodeWithParams(RSPaintFilterCanvas& canvas,
     PostProcessFunc postProcess)
 {
     canvas.Save();
+    bool hdrHeteroRet = RSHeteroHDRManager::Instance().UpdateHDRHeteroParams(canvas, surfaceDrawable, params);
     canvas.ConcatMatrix(params.matrix);
     if (!params.useCPU) {
-        RegisterDeleteBufferListener(surfaceDrawable.GetConsumerOnDraw());
-        DrawImage(canvas, params);
+        if (hdrHeteroRet) {
+            std::shared_ptr<RSSurfaceHandler> hdrSurfaceHandler = RSHeteroHDRManager::Instance().GetHDRSurfaceHandler();
+            RegisterDeleteBufferListener(hdrSurfaceHandler->GetConsumer());
+            DrawImage(canvas, params);
+            RSBaseRenderUtil::ReleaseBuffer(*hdrSurfaceHandler);
+        } else {
+            RegisterDeleteBufferListener(surfaceDrawable.GetConsumerOnDraw());
+            DrawImage(canvas, params);
+        }
     } else {
         DrawBuffer(canvas, params);
     }
@@ -202,15 +211,6 @@ void RSUniRenderEngine::DrawHdiLayerWithParams(RSPaintFilterCanvas& canvas, cons
     canvas.ConcatMatrix(params.matrix);
     if (!params.useCPU) {
         RegisterDeleteBufferListener(layer->GetSurface(), !RSSystemProperties::GetVKImageUseEnabled());
-        DrawImage(canvas, params);
-    } else {
-        DrawBuffer(canvas, params);
-    }
-}
-
-void RSUniRenderEngine::DrawHDRCacheWithParams(RSPaintFilterCanvas& canvas, BufferDrawParam& params)
-{
-    if (!params.useCPU) {
         DrawImage(canvas, params);
     } else {
         DrawBuffer(canvas, params);

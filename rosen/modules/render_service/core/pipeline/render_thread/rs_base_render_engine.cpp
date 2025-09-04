@@ -708,28 +708,6 @@ void RSBaseRenderEngine::DrawImage(RSPaintFilterCanvas& canvas, BufferDrawParam&
         RS_LOGD_IF(DEBUG_COMPOSER, "RSBaseRenderEngine::DrawImage: SRGB color gamut drawing completed");
     } else {
 #ifdef USE_VIDEO_PROCESSING_ENGINE
-
-    if (params.isHeterog) {
-        RS_LOGD("hdr video comin heterog");
-        float hrRatio = std::pow((params.displayNits / params.sdrNits), DEGAMMA);
-        Drawing::Matrix scaleMat;
-        auto imageShader = Drawing::ShaderEffect::CreateImageShader(*image, Drawing::TileMode::CLAMP,
-            Drawing::TileMode::CLAMP, Drawing::SamplingOptions(Drawing::FilterMode::LINEAR), scaleMat);
-
-        RSHdrUtil util;
-        auto shader = util.MakeHdrHeadroomShader(hrRatio, imageShader);
-        if (shader == nullptr) {
-            RS_LOGE("RSHdrUtil::MakeHdrHeadroomShader shader is null");
-            return;
-        }
-        params.paint.SetShaderEffect(shader);
-
-        canvas.AttachBrush(params.paint);
-        canvas.DrawRect(params.dstRect);
-        canvas.DetachBrush();
-        return;
-    }
-
     // For sdr brightness ratio
     if (ROSEN_LNE(params.brightnessRatio, DEFAULT_BRIGHTNESS_RATIO) && !params.isHdrRedraw) {
         RS_LOGD_IF(DEBUG_COMPOSER, "  - Applying brightness ratio: %{public}.2f", params.brightnessRatio);
@@ -807,8 +785,22 @@ void RSBaseRenderEngine::DrawImage(RSPaintFilterCanvas& canvas, BufferDrawParam&
     if (imageShader == nullptr) {
         RS_LOGW("RSBaseRenderEngine::DrawImage imageShader is nullptr.");
     } else {
-        params.paint.SetShaderEffect(imageShader);
-        ColorSpaceConvertor(imageShader, params, videoInfo.parameter_, canvas.GetHDRProperties());
+        bool ret = (params.hdrHeteroType & RSHeteroHDRUtilConst::HDR_HETERO) && !ROSEN_LE(params.sdrNits, 0.0f);
+        if (ret) {
+            float hdrRatio = std::pow((params.displayNits / params.sdrNits), DEGAMMA);
+            std::shared_ptr<Drawing::ShaderEffect> shader =
+
+
+                RSHeteroHDRManager::Instance().GenerateHDRHeteroShader(hdrRatio, params, imageShader);
+            if (shader == nullptr) {
+                RS_LOGE("[hdrHetero]:RSBaseRenderEngine DrawImage GenerateHDRHeteroShader is nullptr");
+                return;
+            }
+            params.paint.SetShaderEffect(shader);
+        } else {
+            params.paint.SetShaderEffect(imageShader);
+            ColorSpaceConvertor(imageShader, params, videoInfo.parameter_, canvas.GetHDRProperties());
+        }
     }
     canvas.AttachBrush(params.paint);
     canvas.DrawRect(params.dstRect);
