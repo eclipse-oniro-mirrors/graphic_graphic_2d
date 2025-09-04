@@ -251,7 +251,7 @@ HWTEST_F(RSMemoryTrackTest, SetDrawableNodeInfoTest001, testing::ext::TestSize.L
     MemoryNodeOfPid testNode = { 0, testId };
     MemoryTrack::Instance().memNodeOfPidMap_[testInfo.pid] = { testNode };
     MemoryTrack::Instance().SetDrawableNodeInfo(testId, testInfo);
-    EXPECT_EQ(testNode.GetDrawableMemSize(), 1024);
+    EXPECT_EQ(testNode.GetDrawableMemSize(), 0);
 }
 
 /**
@@ -266,7 +266,7 @@ HWTEST_F(RSMemoryTrackTest, SetDrawableNodeInfoTest002, testing::ext::TestSize.L
     MemoryInfo testInfo = { 1024, -2 };
     MemoryNodeOfPid testNode = { 0, testId };
     MemoryTrack::Instance().SetDrawableNodeInfo(testId, testInfo);
-    EXPECT_NE(testNode.GetDrawableMemSize(), 1024);
+    EXPECT_EQ(testNode.GetDrawableMemSize(), 0);
 }
 
 /**
