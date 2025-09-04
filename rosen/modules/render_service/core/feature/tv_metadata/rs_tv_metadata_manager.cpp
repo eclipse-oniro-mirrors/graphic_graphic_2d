@@ -19,7 +19,28 @@
 #undef LOG_TAG
 #define LOG_TAG "RSTvMetadataManager"
 
+using namespace OHOS::HDI::Display::Graphic::Common::V1_0;
+
 namespace OHOS::Rosen {
+namespace {
+constexpr uint32_t WIND_SIZE_NUMERATOR = 2;
+constexpr uint32_t WIND_SIZE_DENOMINATOR = 3;
+constexpr uint8_t WIND_SIZE_FULLSCREEN = 2;
+constexpr uint8_t WIND_SIZE_SMALLSCREEN = 1;
+constexpr uint8_t SCALER_MODE_GPU = 3;
+constexpr uint8_t VIDEO_PLAYING_SCENE = 1;
+}
+
+enum TvColorPrimaries {
+    TVCOLOR_PRIMARIES_BT709 = 1,
+    TVCOLOR_PRIMARIES_BT601_P,
+    TVCOLOR_PRIMARIES_BT601_N,
+    TVCOLOR_PRIMARIES_BT2020,
+    TVCOLOR_PRIMARIES_P3_DCI,
+    TVCOLOR_PRIMARIES_P3_D65,
+    TVCOLOR_PRIMARIES_MONO,
+    TVCOLOR_PRIMARIES_ADOBERGB
+};
 
 RSTvMetadataManager& RSTvMetadataManager::Instance()
 {
