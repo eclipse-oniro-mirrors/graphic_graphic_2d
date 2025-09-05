@@ -20,12 +20,12 @@
 #include "common/rs_occlusion_region.h"
 #include "common/rs_rect.h"
 #include "drawable/rs_render_node_drawable_adapter.h"
+#include "memory/rs_memory_track.h"
 #include "pipeline/rs_render_node.h"
 #include "property/rs_properties.h"
 #include "screen_manager/screen_types.h"
 #include "utils/matrix.h"
 #include "utils/region.h"
-#include "memory/rs_memory_track.h"
 
 #ifndef ROSEN_CROSS_PLATFORM
 #include <iconsumer_surface.h>
