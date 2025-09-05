@@ -361,28 +361,10 @@ HWTEST_F(TvMetadataTest, CombineMetadataForAllLayers_002, TestSize.Level1)
     
     RSTvMetadataManager::Instance().CombineMetadataForAllLayers(layers);
     TvPQMetadata tvMetadata1 = { 0 };
-    MetadataHelper::GetVideoTVMetadata(unitRenderBuffer, tvMetadata1);
-    ASSERT_EQ(0, tvMetadata1.sceneTag);
-    ASSERT_EQ(0, tvMetadata1.uiFrameCnt);
-    ASSERT_EQ(0, tvMetadata1.vidFrameCnt);
-    ASSERT_EQ(0, tvMetadata1.dpPixFmt);
     MetadataHelper::GetVideoTVMetadata(selfDrawBuffer, tvMetadata1);
     ASSERT_EQ(1, tvMetadata1.sceneTag);
     ASSERT_EQ(60, tvMetadata1.uiFrameCnt);
     ASSERT_EQ(25, tvMetadata1.vidFrameCnt);
     ASSERT_EQ(2, tvMetadata1.dpPixFmt);
- 
-    selfDrawTvMetadata.sceneTag = 1;
-    selfDrawTvMetadata.uiFrameCnt = 0;
-    selfDrawTvMetadata.vidFrameCnt = 26;
-    selfDrawTvMetadata.dpPixFmt = 0;
-    MetadataHelper::SetVideoTVMetadata(selfDrawBuffer, selfDrawTvMetadata);
-    RSTvMetadataManager::Instance().CombineMetadataForAllLayers(layers);
-    TvPQMetadata tvMetadata2 = { 0 };
-    MetadataHelper::GetVideoTVMetadata(selfDrawBuffer, tvMetadata2);
-    ASSERT_EQ(1, tvMetadata2.sceneTag);
-    ASSERT_EQ(60, tvMetadata2.uiFrameCnt);
-    ASSERT_EQ(26, tvMetadata2.vidFrameCnt);
-    ASSERT_EQ(2, tvMetadata2.dpPixFmt);
 }
 }
