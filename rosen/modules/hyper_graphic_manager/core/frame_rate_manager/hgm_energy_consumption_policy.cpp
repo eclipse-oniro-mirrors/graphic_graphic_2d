@@ -14,7 +14,7 @@
  */
 
 #include "hgm_energy_consumption_policy.h"
-
+//
 #include <functional>
 
 #include "hgm_core.h"
