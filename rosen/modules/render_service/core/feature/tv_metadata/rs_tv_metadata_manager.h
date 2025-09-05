@@ -34,13 +34,13 @@ public:
     void Reset();
     void ResetDpPixelFormat();
     TvPQMetadata GetMetadata() const;
-    void CombineMetadataForAllLayers(const std::vector<LayerInfoPtr>& layers);
+    static void CombineMetadataForAllLayers(const std::vector<LayerInfoPtr>& layers);
     void UpdateTvMetadata(const RSSurfaceRenderParams& params, const sptr<SurfaceBuffer>& buffer);
     void RecordTvMetadata(const RSSurfaceRenderParams& params, const sptr<SurfaceBuffer>& buffer);
 
 private:
     static void CombineMetadata(TvPQMetadata& dstMetadata, const TvPQMetadata& srcMetadata);
-    void ClearVideoMetadata(TvPQMetadata& metadata);
+    static void ClearVideoMetadata(TvPQMetadata& metadata);
     void CollectTvMetadata(const RSSurfaceRenderParams& params,
         const sptr<SurfaceBuffer>& buffer, TvPQMetadata& metaData);
     void CollectSurfaceSize(const RSSurfaceRenderParams& params, TvPQMetadata& metaData);
