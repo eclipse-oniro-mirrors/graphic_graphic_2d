@@ -508,6 +508,7 @@ private:
 #ifdef RS_PROFILER_ENABLED
     friend class RSProfiler;
 #endif
+    friend class RSRenderServiceStub;
 };
 } // namespace Rosen
 } // namespace OHOS
