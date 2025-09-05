@@ -68,9 +68,9 @@ public:
     size_t GetMemSize();
     void SetMemSize(size_t size);
     bool operator==(const MemoryNodeOfPid& other);
-    size_t GetDrawableMemSize();
+    size_t GetDrawableMemSize() const;
     void SetDrawableMemSize(size_t size);
-    NodeId GetNodeId()
+    NodeId GetNodeId() const
     {
         return nodeId_;
     }
