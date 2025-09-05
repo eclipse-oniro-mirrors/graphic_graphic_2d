@@ -46,10 +46,12 @@ class MockRSHeteroHDRHpae : public RSHeteroHDRHpae {
 public:
     MockRSHeteroHDRHpae() = default;
     ~MockRSHeteroHDRHpae() = default;
-    void SetMdcDev() {
+    void SetMdcDev()
+    {
         MDCDev_ = &mockMdcDev;
     }
-    void resetMdcDev() {
+    void ResetMdcDev()
+    {
         mockMdcDev = backMdcDev;
     }
     MDCDeviceT mockMdcDev;
@@ -90,7 +92,7 @@ void RSHeteroHDRHpaeTest::TearDownTestCase()
 void RSHeteroHDRHpaeTest::SetUp()
 {
     RS_LOGI("SetUp------------------------------------");
-    SingletonMockRSHeteroHDRHpae::Instance().resetMdcDev();
+    SingletonMockRSHeteroHDRHpae::Instance().ResetMdcDev();
 }
 
 void RSHeteroHDRHpaeTest::TearDown() { RS_LOGI("TearDown------------------------------------"); }

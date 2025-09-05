@@ -13,8 +13,6 @@
  * limitations under the License.
  */
 
-#include "rs_hetero_hdr_hpae.h"
-
 namespace OHOS {
 namespace Rosen {
 inline constexpr int DVFS_LEVEL_MIDDLE = 3;

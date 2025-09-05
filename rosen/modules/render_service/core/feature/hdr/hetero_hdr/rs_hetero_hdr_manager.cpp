@@ -102,10 +102,9 @@ void RSHeteroHDRManager::GetFixedDstRectStatus(std::shared_ptr<DrawableV2::RSSur
         RS_LOGE("[hdrHetero]:RSHeteroHDRManager GetFixedDstRectStatus surfaceParams is nullptr");
         return;
     }
-    // The precondition has already determined that the srcBuffer is not nullptr(ValidateSurface)
-    sptr<SurfaceBuffer> srcBuffer = surfaceParams->GetBuffer();
-    auto bufferWidth = srcBuffer->GetSurfaceBufferWidth();
-    auto bufferHeight = srcBuffer->GetSurfaceBufferHeight();
+    // The precondition has already determined that the surfaceParams->GetBuffer() is not nullptr(ValidateSurface)
+    auto bufferWidth = surfaceParams->GetBuffer()->GetSurfaceBufferWidth();
+    auto bufferHeight = surfaceParams->GetBuffer()->GetSurfaceBufferHeight();
     // The precondition has already checked that this node is in nodeHdrStatusMap
     if (curHandleStatus_ == HdrStatus::AI_HDR_VIDEO_GAINMAP) {
         isFixedDstBuffer_ = true;
@@ -130,17 +129,16 @@ void RSHeteroHDRManager::GetFixedDstRectStatus(std::shared_ptr<DrawableV2::RSSur
     bool sizeJudge = !(ROSEN_EQ(matrix.Get(Drawing::Matrix::Index::SKEW_X), 0.0f) &&
         ROSEN_EQ(matrix.Get(Drawing::Matrix::Index::SKEW_Y), 0.0f));
 
-    if (bufferHeight == 0 or bufferWidth == 0) {
-        return;
-    }
+    if (bufferHeight == 0 or bufferWidth == 0) return;
+
     if (isVertical) {
         boundSize.y_ = hpaeBufferSize.y_;
-        boundSize.x_ = round(boundSize.y_ * bufferWidth / bufferHeight); // 除零
+        boundSize.x_ = round(boundSize.y_ * bufferWidth / bufferHeight);
         boundSize.x_ = (boundSize.x_ > hpaeBufferSize.x_) ? hpaeBufferSize.x_ : boundSize.x_;
         sizeJudge = true;
     } else {
         boundSize.x_ = hpaeBufferSize.x_;
-        boundSize.y_ = round(boundSize.x_ * bufferHeight / bufferWidth); // 除零
+        boundSize.y_ = round(boundSize.x_ * bufferHeight / bufferWidth);
         boundSize.y_ = (boundSize.y_ > hpaeBufferSize.y_) ? hpaeBufferSize.y_ : boundSize.y_;
     }
     dst_.left_ = 0;

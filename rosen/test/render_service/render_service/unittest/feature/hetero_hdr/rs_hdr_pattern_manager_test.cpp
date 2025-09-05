@@ -206,8 +206,10 @@ HWTEST_F(RSHDRPatternManagerTest, MHCSubmitHDRTaskTest, TestSize.Level1)
     SingletonMockRSHDRPatternManager::Instance().graphPatternInstance_ = reinterpret_cast<void*>(0x1234);
 
     auto graphPatternAnimationTaskSubmit = [](void*, uint64_t, MHCPatternTaskName, void*, void**, void*) { return; };
-    SingletonMockRSHDRPatternManager::Instance().MHCDevice_->graphPatternAnimationTaskSubmit = graphPatternAnimationTaskSubmit;
-    bool ret = SingletonMockRSHDRPatternManager::Instance().MHCSubmitHDRTask(0, MHC_PATTERN_TASK_HDR_HPAE, nullptr, nullptr, nullptr);
+    SingletonMockRSHDRPatternManager::Instance().MHCDevice_->graphPatternAnimationTaskSubmit =
+        graphPatternAnimationTaskSubmit;
+    bool ret = SingletonMockRSHDRPatternManager::Instance().MHCSubmitHDRTask(0,
+        MHC_PATTERN_TASK_HDR_HPAE, nullptr, nullptr, nullptr);
     EXPECT_EQ(ret, true);
 
     SingletonMockRSHDRPatternManager::Instance().graphPatternInstance_ = nullptr;
@@ -225,8 +227,10 @@ HWTEST_F(RSHDRPatternManagerTest, MHCSubmitVulkanTaskTest, TestSize.Level1)
 
     auto graphPatternVulkanTaskSubmit = [](void*, uint64_t, MHCPatternTaskName, void*, void*) { return; };
     auto func = []() { return 0; };
-    SingletonMockRSHDRPatternManager::Instance().MHCDevice_->graphPatternVulkanTaskSubmit = graphPatternVulkanTaskSubmit;
-    bool ret = SingletonMockRSHDRPatternManager::Instance().MHCSubmitVulkanTask(0, MHC_PATTERN_TASK_HDR_HPAE, func, nullptr);
+    SingletonMockRSHDRPatternManager::Instance().MHCDevice_->graphPatternVulkanTaskSubmit =
+        graphPatternVulkanTaskSubmit;
+    bool ret = SingletonMockRSHDRPatternManager::Instance().MHCSubmitVulkanTask(0,
+        MHC_PATTERN_TASK_HDR_HPAE, func, nullptr);
     EXPECT_EQ(ret, true);
 
     SingletonMockRSHDRPatternManager::Instance().graphPatternInstance_ = nullptr;
@@ -260,9 +264,12 @@ HWTEST_F(RSHDRPatternManagerTest, MHCGetVulkanTaskWaitEventTest, TestSize.Level1
 {
     SingletonMockRSHDRPatternManager::Instance().graphPatternInstance_ = reinterpret_cast<void*>(0x1234);
 
-    auto graphPatternGetVulkanWaitEvent = [](void*, uint64_t, MHCPatternTaskName) { return static_cast<uint16_t >(123); };
-    SingletonMockRSHDRPatternManager::Instance().MHCDevice_->graphPatternGetVulkanWaitEvent = graphPatternGetVulkanWaitEvent;
-    uint16_t ret = SingletonMockRSHDRPatternManager::Instance().MHCGetVulkanTaskWaitEvent(0, MHC_PATTERN_TASK_HDR_HPAE);
+    auto graphPatternGetVulkanWaitEvent = [](void*, uint64_t, MHCPatternTaskName) {
+        return static_cast<uint16_t >(123); };
+    SingletonMockRSHDRPatternManager::Instance().MHCDevice_->graphPatternGetVulkanWaitEvent =
+        graphPatternGetVulkanWaitEvent;
+    uint16_t ret = SingletonMockRSHDRPatternManager::Instance().MHCGetVulkanTaskWaitEvent(0,
+        MHC_PATTERN_TASK_HDR_HPAE);
     EXPECT_EQ(ret, 123);
 
     SingletonMockRSHDRPatternManager::Instance().graphPatternInstance_ = nullptr;
@@ -278,9 +285,12 @@ HWTEST_F(RSHDRPatternManagerTest, MHCGetVulkanTaskNotifyEventTest, TestSize.Leve
 {
     SingletonMockRSHDRPatternManager::Instance().graphPatternInstance_ = reinterpret_cast<void*>(0x1234);
 
-    auto graphPatternGetVulkanNotifyEvent = [](void*, uint64_t, MHCPatternTaskName) { return static_cast<uint16_t >(123); };
-    SingletonMockRSHDRPatternManager::Instance().MHCDevice_->graphPatternGetVulkanNotifyEvent = graphPatternGetVulkanNotifyEvent;
-    uint16_t ret = SingletonMockRSHDRPatternManager::Instance().MHCGetVulkanTaskNotifyEvent(0, MHC_PATTERN_TASK_HDR_HPAE);
+    auto graphPatternGetVulkanNotifyEvent = [](void*, uint64_t, MHCPatternTaskName) {
+        return static_cast<uint16_t >(123); };
+    SingletonMockRSHDRPatternManager::Instance().MHCDevice_->graphPatternGetVulkanNotifyEvent =
+        graphPatternGetVulkanNotifyEvent;
+    uint16_t ret = SingletonMockRSHDRPatternManager::Instance().MHCGetVulkanTaskNotifyEvent(0,
+        MHC_PATTERN_TASK_HDR_HPAE);
     EXPECT_EQ(ret, 123);
 
     SingletonMockRSHDRPatternManager::Instance().graphPatternInstance_ = nullptr;
@@ -369,83 +379,108 @@ HWTEST_F(RSHDRPatternManagerTest, MHCDlsymInvalidTest, TestSize.Level1)
 }
 
 /**
- * @tc.name: MHCGetFrameIdForGPUTaskTest
- * @tc.desc: Test MHCGetFrameIdForGPUTaskTask
+ * @tc.name: MHCGetFrameIdForGPUTaskTest_Branch1
+ * @tc.desc: Test MHCGetFrameIdForGPUTask branch 1 scenarios
  * @tc.type: FUNC
  * @tc.require: 
  */
-HWTEST_F(RSHDRPatternManagerTest, MHCGetFrameIdForGPUTaskTest, TestSize.Level1)
+HWTEST_F(RSHDRPatternManagerTest, MHCGetFrameIdForGPUTest_Branch1, TestSize.Level1)
 {
-    SingletonMockRSHDRPatternManager::Instance().lastFrameIdUsed_ = false;
-    SingletonMockRSHDRPatternManager::Instance().curFrameIdUsed_ = false;
-    SingletonMockRSHDRPatternManager::Instance().lastFrameConsumed_ = false;
-    SingletonMockRSHDRPatternManager::Instance().processConsumed_ = false;
-    // brach 1
-    auto ret = SingletonMockRSHDRPatternManager::Instance().MHCGetFrameIdForGPUTask();
-    EXPECT_EQ(ret.size(), 0);
-
-    SingletonMockRSHDRPatternManager::Instance().lastFrameIdUsed_ = true;
-    SingletonMockRSHDRPatternManager::Instance().curFrameIdUsed_ = false;
-    ret = SingletonMockRSHDRPatternManager::Instance().MHCGetFrameIdForGPUTask();
-    EXPECT_EQ(ret.size(), 0);
-
-    SingletonMockRSHDRPatternManager::Instance().lastFrameIdUsed_ = false;
-    SingletonMockRSHDRPatternManager::Instance().curFrameIdUsed_ = true;
-    ret = SingletonMockRSHDRPatternManager::Instance().MHCGetFrameIdForGPUTask();
-    EXPECT_EQ(ret.size(), 0);
-
-    SingletonMockRSHDRPatternManager::Instance().lastFrameIdUsed_ = true;
-    SingletonMockRSHDRPatternManager::Instance().curFrameIdUsed_ = true;
-    ret = SingletonMockRSHDRPatternManager::Instance().MHCGetFrameIdForGPUTask();
-    EXPECT_EQ(ret.size(), 0);
-
-    // brach 2
-    SingletonMockRSHDRPatternManager::Instance().curFrameIdUsed_ = false;  // bypass brach 1
-
-    SingletonMockRSHDRPatternManager::Instance().lastFrameIdUsed_ = false;
-    SingletonMockRSHDRPatternManager::Instance().lastFrameConsumed_ = false;
-    ret = SingletonMockRSHDRPatternManager::Instance().MHCGetFrameIdForGPUTask();
-    EXPECT_EQ(ret.size(), 0);
-
-    SingletonMockRSHDRPatternManager::Instance().lastFrameIdUsed_ = false;
-    SingletonMockRSHDRPatternManager::Instance().lastFrameConsumed_ = true;
-    ret = SingletonMockRSHDRPatternManager::Instance().MHCGetFrameIdForGPUTask();
-    EXPECT_EQ(ret.size(), 1);
-
-    SingletonMockRSHDRPatternManager::Instance().lastFrameIdUsed_ = true;
-    SingletonMockRSHDRPatternManager::Instance().lastFrameConsumed_ = false;
-    ret = SingletonMockRSHDRPatternManager::Instance().MHCGetFrameIdForGPUTask();
-    EXPECT_EQ(ret.size(), 0);
-
-    SingletonMockRSHDRPatternManager::Instance().lastFrameIdUsed_ = true;
-    SingletonMockRSHDRPatternManager::Instance().lastFrameConsumed_ = true;
-    ret = SingletonMockRSHDRPatternManager::Instance().MHCGetFrameIdForGPUTask();
-    EXPECT_EQ(ret.size(), 0);
-
-    // brach 3
-    SingletonMockRSHDRPatternManager::Instance().lastFrameIdUsed_ = false;  // bypass brach 1
-    SingletonMockRSHDRPatternManager::Instance().lastFrameConsumed_ = false;  // bypass brach 2
+    auto& instance = SingletonMockRSHDRPatternManager::Instance();
     
-    SingletonMockRSHDRPatternManager::Instance().curFrameIdUsed_ = false;
-    SingletonMockRSHDRPatternManager::Instance().processConsumed_ = false;
-    ret = SingletonMockRSHDRPatternManager::Instance().MHCGetFrameIdForGPUTask();
+    // Test branch 1 scenarios
+    instance.lastFrameIdUsed_ = false;
+    instance.curFrameIdUsed_ = false;
+    instance.lastFrameConsumed_ = false;
+    instance.processConsumed_ = false;
+    
+    auto ret = instance.MHCGetFrameIdForGPUTask();
     EXPECT_EQ(ret.size(), 0);
-
-    SingletonMockRSHDRPatternManager::Instance().curFrameIdUsed_ = true;
-    SingletonMockRSHDRPatternManager::Instance().processConsumed_ = false;
-    ret = SingletonMockRSHDRPatternManager::Instance().MHCGetFrameIdForGPUTask();
+    
+    instance.lastFrameIdUsed_ = true;
+    instance.curFrameIdUsed_ = false;
+    ret = instance.MHCGetFrameIdForGPUTask();
     EXPECT_EQ(ret.size(), 0);
+    
+    instance.lastFrameIdUsed_ = false;
+    instance.curFrameIdUsed_ = true;
+    ret = instance.MHCGetFrameIdForGPUTask();
+    EXPECT_EQ(ret.size(), 0);
+    
+    instance.lastFrameIdUsed_ = true;
+    instance.curFrameIdUsed_ = true;
+    ret = instance.MHCGetFrameIdForGPUTask();
+    EXPECT_EQ(ret.size(), 0);
+}
 
-    SingletonMockRSHDRPatternManager::Instance().curFrameIdUsed_ = false;
-    SingletonMockRSHDRPatternManager::Instance().processConsumed_ = true;
-    SingletonMockRSHDRPatternManager::Instance().tid_ = gettid();
-    ret = SingletonMockRSHDRPatternManager::Instance().MHCGetFrameIdForGPUTask();
+/**
+ * @tc.name: MHCGetFrameIdForGPUTaskTest_Branch2
+ * @tc.desc: Test MHCGetFrameIdForGPUTask branch 2 scenarios
+ * @tc.type: FUNC
+ * @tc.require: 
+ */
+HWTEST_F(RSHDRPatternManagerTest, MHCGetFrameIdForGPUTest_Branch2, TestSize.Level1)
+{
+    auto& instance = SingletonMockRSHDRPatternManager::Instance();
+    
+    // Test branch 2 scenarios
+    instance.curFrameIdUsed_ = false;  // bypass branch 1
+    instance.lastFrameIdUsed_ = false;
+    instance.lastFrameConsumed_ = false;
+    
+    auto ret = instance.MHCGetFrameIdForGPUTask();
+    EXPECT_EQ(ret.size(), 0);
+    
+    instance.lastFrameIdUsed_ = false;
+    instance.lastFrameConsumed_ = true;
+    ret = instance.MHCGetFrameIdForGPUTask();
     EXPECT_EQ(ret.size(), 1);
+    
+    instance.lastFrameIdUsed_ = true;
+    instance.lastFrameConsumed_ = false;
+    ret = instance.MHCGetFrameIdForGPUTask();
+    EXPECT_EQ(ret.size(), 0);
+    
+    instance.lastFrameIdUsed_ = true;
+    instance.lastFrameConsumed_ = true;
+    ret = instance.MHCGetFrameIdForGPUTask();
+    EXPECT_EQ(ret.size(), 0);
+}
 
-    SingletonMockRSHDRPatternManager::Instance().curFrameIdUsed_ = true;
-    SingletonMockRSHDRPatternManager::Instance().processConsumed_ = true;
-    SingletonMockRSHDRPatternManager::Instance().tid_ = gettid();
-    ret = SingletonMockRSHDRPatternManager::Instance().MHCGetFrameIdForGPUTask();
+/**
+ * @tc.name: MHCGetFrameIdForGPUTaskTest_Branch3
+ * @tc.desc: Test MHCGetFrameIdForGPUTask branch 3 scenarios
+ * @tc.type: FUNC
+ * @tc.require: 
+ */
+HWTEST_F(RSHDRPatternManagerTest, MHCGetFrameIdForGPUTest_Branch3, TestSize.Level1)
+{
+    auto& instance = SingletonMockRSHDRPatternManager::Instance();
+    
+    // Test branch 3 scenarios
+    instance.lastFrameIdUsed_ = false;  // bypass branch 1
+    instance.lastFrameConsumed_ = false;  // bypass branch 2
+    
+    instance.curFrameIdUsed_ = false;
+    instance.processConsumed_ = false;
+    auto ret = instance.MHCGetFrameIdForGPUTask();
+    EXPECT_EQ(ret.size(), 0);
+    
+    instance.curFrameIdUsed_ = true;
+    instance.processConsumed_ = false;
+    ret = instance.MHCGetFrameIdForGPUTask();
+    EXPECT_EQ(ret.size(), 0);
+    
+    instance.curFrameIdUsed_ = false;
+    instance.processConsumed_ = true;
+    instance.tid_ = gettid();
+    ret = instance.MHCGetFrameIdForGPUTask();
+    EXPECT_EQ(ret.size(), 1);
+    
+    instance.curFrameIdUsed_ = true;
+    instance.processConsumed_ = true;
+    instance.tid_ = gettid();
+    ret = instance.MHCGetFrameIdForGPUTask();
     EXPECT_EQ(ret.size(), 0);
 }
 

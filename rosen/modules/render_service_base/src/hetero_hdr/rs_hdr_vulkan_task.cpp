@@ -83,7 +83,7 @@ bool RSHDRVulkanTask::GetHTSNotifySemaphore(std::shared_ptr<VkSemaphore>& notify
             RS_LOGE("[hdrHetero]:RSHDRVulkanTask GetHTSNotifySemaphore waitSemaphore create failed");
             return false;
         }
-        auto sharedSemaphore = std::shared_ptr<VkSemaphore>(new VkSemaphore(notifySemaphore),
+        auto sharedSemaphore = std::make_shared<VkSemaphore>(new VkSemaphore(notifySemaphore),
             [vkDevice](VkSemaphore* semaphore) {
                 vkDestroySemaphore(vkDevice, *semaphore, nullptr);
                 delete semaphore;
