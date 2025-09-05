@@ -228,7 +228,7 @@ void RSUniRenderVisitor::PartialRenderOptionInit()
     isVirtualDirtyDfxEnabled_ = RSSystemProperties::GetVirtualDirtyDebugEnabled();
     isVirtualDirtyEnabled_ = RSSystemProperties::GetVirtualDirtyEnabled() &&
         (RSSystemProperties::GetGpuApiType() != GpuApiType::OPENGL) && !isRegionDebugEnabled_;
-    isExpandScreenDirtyEnabled_ = RSSystemProperties::GetExpandScreenDirtyEnabled();
+    isVirtualExpandScreenDirtyEnabled_ = RSSystemProperties::GetVirtualExpandScreenDirtyEnabled();
     advancedDirtyType_ = isAdvancedDirtyRegionEnabled_ ?
         RSSystemProperties::GetAdvancedDirtyRegionEnabled() : AdvancedDirtyRegionType::DISABLED;
     isDirtyAlignEnabled_ &= RSSystemProperties::GetDirtyAlignEnabled() != DirtyAlignType::DISABLED;
@@ -1482,7 +1482,11 @@ void RSUniRenderVisitor::UpdateNodeVisibleRegion(RSSurfaceRenderNode& node)
     needRecalculateOcclusion_ = needRecalculateOcclusion_ || node.CheckIfOcclusionChanged() ||
         node.IsBehindWindowOcclusionChanged();
     if (needRecalculateOcclusion_) {
-        Occlusion::Region subResult = selfDrawRegion.Sub(accumulatedOcclusionRegion_);
+        bool isSecVirtualExpandComposite =
+            curLogicalDisplayNode_->GetSecurityDisplay() &&
+            curScreenNode_->GetCompositeType() == CompositeType::UNI_RENDER_EXPAND_COMPOSITE;
+        Occlusion::Region subResult = isSecVirtualExpandComposite ?
+            selfDrawRegion.Sub(occlusionRegionWithoutSkipLayer_) : selfDrawRegion.Sub(accumulatedOcclusionRegion_);
         node.SetVisibleRegion(subResult);
         node.SetVisibleRegionBehindWindow(subResult.Sub(accumulatedOcclusionRegionBehindWindow_));
         Occlusion::Region subResultWithoutSkipLayer = selfDrawRegion.Sub(occlusionRegionWithoutSkipLayer_);
@@ -3349,7 +3353,7 @@ void RSUniRenderVisitor::SetUniRenderThreadParam(std::unique_ptr<RSRenderThreadP
     renderThreadParams->dfxTargetSurfaceNames_ = std::move(dfxTargetSurfaceNames_);
     renderThreadParams->isVirtualDirtyEnabled_ = isVirtualDirtyEnabled_;
     renderThreadParams->isVirtualDirtyDfxEnabled_ = isVirtualDirtyDfxEnabled_;
-    renderThreadParams->isExpandScreenDirtyEnabled_ = isExpandScreenDirtyEnabled_;
+    renderThreadParams->isVirtualExpandScreenDirtyEnabled_ = isVirtualExpandScreenDirtyEnabled_;
     renderThreadParams->advancedDirtyType_ = advancedDirtyType_;
     renderThreadParams->hasDisplayHdrOn_ = hasDisplayHdrOn_;
     renderThreadParams->hasMirrorDisplay_ = hasMirrorDisplay_;
