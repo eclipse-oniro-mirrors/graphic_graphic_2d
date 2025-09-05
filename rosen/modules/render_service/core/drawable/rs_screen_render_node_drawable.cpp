@@ -174,7 +174,7 @@ std::unique_ptr<RSRenderFrame> RSScreenRenderNodeDrawable::RequestFrame(
     }
 
     if (!processor->InitForRenderThread(*this, renderEngine)) {
-        RS_LOGE("RSScreenRenderNodeDrawable::RequestFrame processor init failed!");
+        HILOG_COMM_ERROR("RSScreenRenderNodeDrawable::RequestFrame processor init failed!");
         return nullptr;
     }
 
@@ -707,6 +707,7 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     }
 
     uniParam->SetRSProcessor(processor);
+    RSUniRenderThread::Instance().SetEnableVisibleRect(false);
     auto mirroredDrawable = params->GetMirrorSourceDrawable().lock();
     auto mirroredRenderParams = mirroredDrawable ?
         static_cast<RSScreenRenderParams*>(mirroredDrawable->GetRenderParams().get()) : nullptr;

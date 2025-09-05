@@ -92,9 +92,6 @@
 #include "pipeline/rs_unmarshal_task_manager.h"
 #include "rs_frame_rate_vote.h"
 #include "singleton.h"
-#ifdef RS_ENABLE_VK
-#include "pipeline/rs_vk_pipeline_config.h"
-#endif
 #include "pipeline/rs_render_node_gc.h"
 #include "pipeline/sk_resource_manager.h"
 #ifdef OHOS_BUILD_ENABLE_MAGICCURSOR
@@ -518,16 +515,6 @@ void RSMainThread::Init()
 #if defined(RS_ENABLE_CHIPSET_VSYNC)
         ConnectChipsetVsyncSer();
 #endif
-#ifdef RS_ENABLE_VK
-        if (needCreateVkPipeline_) {
-            needCreateVkPipeline_ = false;
-            RSBackgroundThread::Instance().PostTask([]() {
-                Rosen::RDC::RDCConfig rdcConfig;
-                rdcConfig.LoadAndAnalyze(std::string(Rosen::RDC::CONFIG_XML_FILE));
-            });
-        }
-#endif
-
         RS_PROFILER_ON_FRAME_END();
     };
     static std::function<void (std::shared_ptr<Drawing::Image> image)> holdDrawingImagefunc =
@@ -833,14 +820,12 @@ void RSMainThread::InitVulkanErrorCallback(Drawing::GPUContext* gpuContext)
         RS_LOGE("InitVulkanErrorCallback gpuContext is nullptr");
         return;
     }
-
     gpuContext->RegisterVulkanErrorCallback([this]() {
         RS_LOGE("FocusLeashWindowName:[%{public}s]", this->focusLeashWindowName_.c_str());
 
         char appWindowName[EVENT_NAME_MAX_LENGTH];
         char focusLeashWindowName[EVENT_NAME_MAX_LENGTH];
         char extinfodefault[EVENT_NAME_MAX_LENGTH] = "ext_info_default";
-
         auto cpyresult = strcpy_s(appWindowName, EVENT_NAME_MAX_LENGTH, appWindowName_.c_str());
         if (cpyresult != 0) {
             RS_LOGE("Copy appWindowName_ error, AppWindowName:%{public}s", appWindowName_.c_str());
@@ -851,30 +836,23 @@ void RSMainThread::InitVulkanErrorCallback(Drawing::GPUContext* gpuContext)
         }
 
         HiSysEventParam pPID = { .name = "PID", .t = HISYSEVENT_UINT32, .v = { .ui32 = appPid_ }, .arraySize = 0 };
-
         HiSysEventParam pAppNodeId = {
             .name = "AppNodeId", .t = HISYSEVENT_UINT64, .v = { .ui64 = appWindowId_ }, .arraySize = 0
         };
-
         HiSysEventParam pAppNodeName = {
             .name = "AppNodeName", .t = HISYSEVENT_STRING, .v = { .s = appWindowName }, .arraySize = 0
         };
-
         HiSysEventParam pLeashWindowId = {
             .name = "LeashWindowId", .t = HISYSEVENT_UINT64, .v = { .ui64 = focusLeashWindowId_ }, .arraySize = 0
         };
-
         HiSysEventParam pLeashWindowName = {
             .name = "LeashWindowName", .t = HISYSEVENT_STRING, .v = { .s = focusLeashWindowName }, .arraySize = 0
         };
-
         HiSysEventParam pExtInfo = {
             .name = "ExtInfo", .t = HISYSEVENT_STRING, .v = { .s = extinfodefault }, .arraySize = 0
         };
-
         HiSysEventParam paramsHebcFault[] = { pPID, pAppNodeId, pAppNodeName, pLeashWindowId, pLeashWindowName,
             pExtInfo };
-
         int ret = OH_HiSysEvent_Write("GRAPHIC", "RS_VULKAN_ERROR", HISYSEVENT_FAULT, paramsHebcFault,
             sizeof(paramsHebcFault) / sizeof(paramsHebcFault[0]));
         if (ret == 0) {
@@ -882,6 +860,8 @@ void RSMainThread::InitVulkanErrorCallback(Drawing::GPUContext* gpuContext)
         } else {
             RS_LOGE("Faild to upload rs_vulkan_error event, ret = %{public}d", ret);
         }
+
+        RSUniRenderThread::Instance().ProcessVulkanErrorTreeDump();
     });
 }
 
@@ -2314,7 +2294,7 @@ void RSMainThread::EndGPUDraw()
 
 void RSMainThread::ClearUnmappedCache()
 {
-    std::set<uint32_t> bufferIds;
+    std::set<uint64_t> bufferIds;
     {
         std::lock_guard<std::mutex> lock(unmappedCacheSetMutex_);
         bufferIds.swap(unmappedCacheSet_);

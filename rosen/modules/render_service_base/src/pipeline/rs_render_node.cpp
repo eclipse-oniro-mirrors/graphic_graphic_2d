@@ -3547,7 +3547,7 @@ bool RSRenderNode::GetNodeIsSingleFrameComposer() const
 // arkui mark
 void RSRenderNode::MarkSuggestOpincNode(bool isOpincNode, bool isNeedCalculate)
 {
-    RS_TRACE_NAME_FMT("mark opinc %llx, isopinc:%d. isCal:%d", GetId(), isOpincNode, isNeedCalculate);
+    RS_TRACE_NAME_FMT("mark opinc %" PRIu64 ", isopinc:%d. isCal:%d", GetId(), isOpincNode, isNeedCalculate);
     opincCache_.MarkSuggestOpincNode(isOpincNode, isNeedCalculate);
     if (stagingRenderParams_) {
         stagingRenderParams_->OpincSetIsSuggest(opincCache_.IsSuggestOpincNode());
@@ -4451,7 +4451,7 @@ void RSRenderNode::OnSync()
 #ifdef RS_ENABLE_GPU
         singleLocker.DrawableOnDrawMultiAccessEventReport(__func__);
 #endif
-        RS_LOGE("Drawable try to Sync when node %{public}" PRIu64 " onDraw!!!", GetId());
+        HILOG_COMM_ERROR("Drawable try to Sync when node %{public}" PRIu64 " onDraw!!!", GetId());
         if (RSSystemProperties::GetSingleDrawableLockerEnabled()) {
             return;
         }
