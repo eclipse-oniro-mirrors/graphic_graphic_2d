@@ -1876,7 +1876,7 @@ HWTEST_F(RSHeteroHDRManagerTest, GenDrawHDRBufferParamsTest001, TestSize.Level1)
     bool isFixedDstBuffer = false;
 
     // 测试没有renderParams的情况
-    RSHeteroHDRUtil::GenDrawHDRBufferParams(*surfaceDrawable, hpaeDstRect, 
+    RSHeteroHDRUtil::GenDrawHDRBufferParams(*surfaceDrawable, hpaeDstRect,
         isFixedDstBuffer, drawableParams);
     EXPECT_EQ(drawableParams.hdrHeteroType, RSHeteroHDRUtilConst::HDR_HETERO_NO);
     EXPECT_EQ(drawableParams.srcRect.GetRight(), 1.0f);
@@ -1885,7 +1885,7 @@ HWTEST_F(RSHeteroHDRManagerTest, GenDrawHDRBufferParamsTest001, TestSize.Level1)
     // 测试有renderParams但没有layerInfo的情况
     auto drawableParam = std::make_unique<RSSurfaceRenderParams>(surfaceDrawable->nodeId_);
     surfaceDrawable->renderParams_ = std::move(drawableParam);
-    RSHeteroHDRUtil::GenDrawHDRBufferParams(*surfaceDrawable, hpaeDstRect, 
+    RSHeteroHDRUtil::GenDrawHDRBufferParams(*surfaceDrawable, hpaeDstRect,
         isFixedDstBuffer, drawableParams);
     EXPECT_EQ(drawableParams.hdrHeteroType, RSHeteroHDRUtilConst::HDR_HETERO_NO);
 }
@@ -1933,7 +1933,7 @@ HWTEST_F(RSHeteroHDRManagerTest, GenDrawHDRBufferParamsTest002, TestSize.Level1)
     BufferDrawParam drawableParams;
     bool isFixedDstBuffer = false;
     
-    RSHeteroHDRUtil::GenDrawHDRBufferParams(*surfaceDrawable, hpaeDstRect, 
+    RSHeteroHDRUtil::GenDrawHDRBufferParams(*surfaceDrawable, hpaeDstRect,
         isFixedDstBuffer, drawableParams);
     
     EXPECT_EQ(drawableParams.hdrHeteroType, RSHeteroHDRUtilConst::HDR_HETERO_NO);
@@ -1970,7 +1970,7 @@ HWTEST_F(RSHeteroHDRManagerTest, GenDrawHDRBufferParamsTest003, TestSize.Level1)
     BufferDrawParam drawableParams;
     bool isFixedDstBuffer = false;
     
-    RSHeteroHDRUtil::GenDrawHDRBufferParams(*surfaceDrawable, hpaeDstRect, 
+    RSHeteroHDRUtil::GenDrawHDRBufferParams(*surfaceDrawable, hpaeDstRect,
         isFixedDstBuffer, drawableParams);
     
     // 验证矩阵变换是否被正确处理
@@ -2015,7 +2015,7 @@ HWTEST_F(RSHeteroHDRManagerTest, GenDrawHDRBufferParamsTest004, TestSize.Level1)
         &drawableParams](float right, float bottom) {
         drawableParams.srcRect.SetRight(right);
         drawableParams.srcRect.SetBottom(bottom);
-        RSHeteroHDRUtil::GenDrawHDRBufferParams(*surfaceDrawable, hpaeDstRect, 
+        RSHeteroHDRUtil::GenDrawHDRBufferParams(*surfaceDrawable, hpaeDstRect,
             isFixedDstBuffer, drawableParams);
         EXPECT_EQ(drawableParams.srcRect.GetRight(), right);
         EXPECT_EQ(drawableParams.srcRect.GetBottom(), bottom);
@@ -2058,7 +2058,7 @@ HWTEST_F(RSHeteroHDRManagerTest, GenDrawHDRBufferParamsTest005, TestSize.Level1)
     BufferDrawParam drawableParams;
     bool isFixedDstBuffer = true;
     
-    RSHeteroHDRUtil::GenDrawHDRBufferParams(*surfaceDrawable, hpaeDstRect, 
+    RSHeteroHDRUtil::GenDrawHDRBufferParams(*surfaceDrawable, hpaeDstRect,
         isFixedDstBuffer, drawableParams);
     
     // 验证缩放模式是否被正确处理
@@ -2131,7 +2131,7 @@ HWTEST_F(RSHeteroHDRManagerTest, GenDrawHDRBufferParamsTest007, TestSize.Level1)
     // 明确指定捕获的变量
     auto testRect = [surfaceDrawable, isFixedDstBuffer, &drawableParams](int w, int h) {
         MDCRectT rect = {0, 0, w, h};
-        RSHeteroHDRUtil::GenDrawHDRBufferParams(*surfaceDrawable, rect, 
+        RSHeteroHDRUtil::GenDrawHDRBufferParams(*surfaceDrawable, rect,
             isFixedDstBuffer, drawableParams);
         EXPECT_EQ(drawableParams.dstRect.width, w);
         EXPECT_EQ(drawableParams.dstRect.height, h);

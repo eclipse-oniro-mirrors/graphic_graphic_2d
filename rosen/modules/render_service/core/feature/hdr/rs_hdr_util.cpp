@@ -58,20 +58,6 @@ inline HdrStatus CheckAIHDRType(uint8_t metadataType)
     }
 }
 
-inline HdrStatus CheckAIHDRType(uint8_t metadataType)
-{
-    switch (metadataType) {
-        case HDI::Display::Graphic::Common::V2_2::CM_VIDEO_AI_HDR:
-            return HdrStatus::AI_HDR_VIDEO_GTM;
-        case HDI::Display::Graphic::Common::V2_2::CM_VIDEO_AI_HDR_HIGH_LIGHT:
-            return HdrStatus::AI_HDR_VIDEO_GAINMAP;
-        case HDI::Display::Graphic::Common::V2_2::CM_VIDEO_AI_HDR_COLOR_ENHANCE:
-            return HdrStatus::AI_HDR_VIDEO_GAINMAP;
-        default:
-            return HdrStatus::NO_HDR;
-    }
-}
-
 HdrStatus RSHdrUtil::CheckIsHdrSurface(const RSSurfaceRenderNode& surfaceNode)
 {
     if (!surfaceNode.IsOnTheTree()) {
