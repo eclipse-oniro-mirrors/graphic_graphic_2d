@@ -31,9 +31,7 @@
 #include "vulkan/vulkan.h"
 #include "rs_vulkan_mem_statistic.h"
 
-#include "draw/surface.h"
 #include "image/gpu_context.h"
-#include "rs_trace.h"
 
 typedef enum VkSemaphoreExtTypeHUAWEI {
     VK_SEMAPHORE_EXT_TYPE_HTS_HUAWEI = 0x80000000,
