@@ -514,6 +514,7 @@ bool HdiOutput::CheckIfDoArsrPre(const LayerInfoPtr &layerInfo)
         "xcomponentIdSurface",
         "componentIdSurface",
         "SceneViewer Model totemweather0",
+        "UnityPlayerSurface",
     };
 
     if (layerInfo == nullptr || layerInfo->GetSurface() == nullptr || layerInfo->GetBuffer() == nullptr) {
@@ -771,7 +772,7 @@ void HdiOutput::ReleaseLayers(sptr<SyncFence>& releaseFence)
     std::unique_lock<std::mutex> lock(mutex_);
     for (const auto& [id, layer] : layerIdMap_) {
         if (layer == nullptr || layer->GetLayerInfo() == nullptr || layer->GetLayerInfo()->GetSurface() == nullptr) {
-            HLOGW("HdiOutput::ReleaseLayers: layer or layerInfo or layer's cSurface is nullptr");
+            HLOGD("HdiOutput::ReleaseLayers: layer or layerInfo or layer's cSurface is nullptr");
             continue;
         }
         layerPresentTimestamp(layer->GetLayerInfo(), layer->GetLayerInfo()->GetSurface());

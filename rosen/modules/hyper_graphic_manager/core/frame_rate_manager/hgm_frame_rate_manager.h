@@ -37,7 +37,7 @@
 #include "hgm_vsync_generator_controller.h"
 #include "hgm_user_define.h"
 #include "vsync_distributor.h"
-#include "pipeline/rs_render_frame_rate_linker.h"
+#include "feature/hyper_graphic_manager/rs_render_frame_rate_linker.h"
 #include "pipeline/rs_render_node.h"
 #include "pipeline/rs_render_node_map.h"
 #include "screen_manager/screen_types.h"
@@ -187,7 +187,7 @@ private:
 
     void ProcessLtpoVote(const FrameRateRange& finalRange);
     void SetAceAnimatorVote(const std::shared_ptr<RSRenderFrameRateLinker>& linker);
-    void HandleFrameRateChangeForLTPO(uint64_t timestamp, bool followRs, bool frameRateChange);
+    void HandleFrameRateChangeForLTPO(uint64_t timestamp, bool followRs, bool isNeedDvsyncDelay);
     void DVSyncTaskProcessor(int64_t delayTime, uint64_t targetTime,
         std::vector<std::pair<FrameRateLinkerId, uint32_t>> appChangeData, int64_t controllerRate);
     void UpdateSoftVSync(bool followRs);

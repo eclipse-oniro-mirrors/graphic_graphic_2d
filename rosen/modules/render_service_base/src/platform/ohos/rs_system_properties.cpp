@@ -363,9 +363,9 @@ bool RSSystemProperties::GetVirtualDirtyEnabled()
     return ConvertToInt(enable, 0) != 0;
 }
 
-bool RSSystemProperties::GetExpandScreenDirtyEnabled()
+bool RSSystemProperties::GetVirtualExpandScreenDirtyEnabled()
 {
-    static CachedHandle g_Handle = CachedParameterCreate("rosen.uni.expandscreendirty.enabled", "0");
+    static CachedHandle g_Handle = CachedParameterCreate("rosen.uni.virtualexpandscreendirty.enabled", "1");
     int changed = 0;
     const char *enable = CachedParameterGetChanged(g_Handle, &changed);
     return ConvertToInt(enable, 0) != 0;
@@ -1063,7 +1063,7 @@ bool RSSystemProperties::IsFoldScreenFlag()
 bool RSSystemProperties::IsSmallFoldDevice()
 {
     static std::string foldType = system::GetParameter("const.window.foldscreen.type", "0,0,0,0");
-    return foldType == "2,0,0,0" || foldType == "4,2,0,0";
+    return foldType == "2,0,0,0" || foldType == "4,2,0,0" || foldType == "2,2,0,0";
 }
 
 bool RSSystemProperties::GetCacheCmdEnabled()
@@ -1154,6 +1154,13 @@ bool RSSystemProperties::GetSyncTransactionEnabled()
     static bool syncTransactionEnabled =
         std::atoi((system::GetParameter("persist.sys.graphic.syncTransaction.enabled", "1")).c_str()) != 0;
     return syncTransactionEnabled;
+}
+
+bool RSSystemProperties::GetAceTestMode()
+{
+    static bool aceTestMode =
+        std::atoi((system::GetParameter("persist.ace.testmode.enabled", "0")).c_str()) == 1;
+    return aceTestMode;
 }
 
 int RSSystemProperties::GetSyncTransactionWaitDelay()
@@ -1254,15 +1261,6 @@ bool RSSystemProperties::GetAutoCacheDebugEnabled()
 {
     return GetDdgrOpincDfxType() == DdgrOpincDfxType::OPINC_DFX_AUTO;
 }
-
-#ifdef RS_ENABLE_STACK_CULLING
-bool RSSystemProperties::GetViewOcclusionCullingEnabled()
-{
-    static bool stackViewCullingEnabled =
-        system::GetBoolParameter("persist.sys.graphic.stack.culling.enabled", true);
-    return stackViewCullingEnabled;
-}
-#endif
 
 bool RSSystemProperties::GetSecurityPermissionCheckEnabled()
 {
@@ -1373,7 +1371,8 @@ bool RSSystemProperties::GetBatchRemovingOnRemoteDiedEnabled()
 
 bool RSSystemProperties::GetOptBatchRemovingOnRemoteDiedEnabled()
 {
-    static CachedHandle g_Handle = CachedParameterCreate("rosen.graphic.optbatchRemovingOnRemoteDied.enabled", "1");
+    static CachedHandle g_Handle =
+        CachedParameterCreate("persist.rosen.graphic.optbatchRemovingOnRemoteDied.enabled", "1");
     int changed = 0;
     const char *num = CachedParameterGetChanged(g_Handle, &changed);
     return ConvertToInt(num, 1) != 0;
@@ -1387,10 +1386,9 @@ std::string RSSystemProperties::GetVersionType()
 
 bool RSSystemProperties::GetHwcDirtyRegionEnabled()
 {
-    static CachedHandle g_Handle = CachedParameterCreate("rosen.graphic.hwcdirtyregion.enabled", "1");
-    int changed = 0;
-    const char *num = CachedParameterGetChanged(g_Handle, &changed);
-    return ConvertToInt(num, 1) != 0;
+    static bool hwcDirtyRegionEnabled =
+        std::atoi((system::GetParameter("persist.rosen.graphic.hwcdirtyregion.enabled", "1")).c_str()) != 0;
+    return hwcDirtyRegionEnabled;
 }
 
 bool RSSystemProperties::GetDrmMarkedFilterEnabled()
@@ -1649,7 +1647,7 @@ bool RSSystemProperties::GetEarlyZEnable()
 
 bool RSSystemProperties::GetAIBarOptEnabled()
 {
-    static bool isAIBarOptEnabled = system::GetIntParameter("persist.rosen.aibaropt.enabled", 1) != 0;
+    static bool isAIBarOptEnabled = system::GetIntParameter("persist.rosen.aibaropt.enabled", 0) != 0;
     return isAIBarOptEnabled;
 }
 
@@ -1668,18 +1666,23 @@ bool RSSystemProperties::GetSupportScreenFreezeEnabled()
 
 bool RSSystemProperties::GetSelfDrawingDirtyRegionEnabled()
 {
-    static CachedHandle g_Handle = CachedParameterCreate("rosen.graphic.selfdrawingdirtyregion.enabled", "0");
+    static CachedHandle g_Handle = CachedParameterCreate("rosen.graphic.selfdrawingdirtyregion.enabled", "1");
     int changed = 0;
     const char *enable = CachedParameterGetChanged(g_Handle, &changed);
-    return ConvertToInt(enable, 0) != 0;
+    return ConvertToInt(enable, 1) != 0;
 }
 
 bool RSSystemProperties::GetGpuDirtyApsEnabled()
 {
-    static CachedHandle g_Handle = CachedParameterCreate("rosen.graphic.gpudirtyaps.enabled", "0");
+    static CachedHandle g_Handle = CachedParameterCreate("rosen.graphic.gpudirtyaps.enabled", "1");
     int changed = 0;
     const char *enable = CachedParameterGetChanged(g_Handle, &changed);
-    return ConvertToInt(enable, 0) != 0;
+    return ConvertToInt(enable, 1) != 0;
+}
+
+bool RSSystemProperties::GetBootCompleted()
+{
+    return system::GetBoolParameter("bootevent.boot.completed", false);
 }
 } // namespace Rosen
 } // namespace OHOS

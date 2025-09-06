@@ -17,7 +17,7 @@
 #include "graphic_common.h"
 #include "vsync_log.h"
 
-constexpr int MAX_RETRY = 3;
+constexpr int MAX_RETRY = 5;
 constexpr int RETRY_INTERVAL = 1000; // 1000us = 1ms
 constexpr unsigned int DVSYNC_ANIMATION_LIST_SIZE_MAX = 20;
 namespace OHOS {
@@ -35,6 +35,7 @@ VsyncError VSyncConnectionProxy::RequestNextVSync()
 VsyncError VSyncConnectionProxy::RequestNextVSync(
     const std::string& fromWhom, int64_t lastVSyncTS, const int64_t& requestVsyncTime)
 {
+    (void)requestVsyncTime;
     MessageOption opt(MessageOption::TF_ASYNC);
     MessageParcel arg;
     MessageParcel ret;

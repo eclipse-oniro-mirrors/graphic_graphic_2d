@@ -18,6 +18,7 @@
 #include "common/rs_obj_abs_geometry.h"
 #include "common/rs_optional_trace.h"
 #include "common/rs_special_layer_manager.h"
+#include "feature/hdr/rs_colorspace_util.h"
 #include "params/rs_screen_render_params.h"
 #include "pipeline/rs_render_node.h"
 #include "pipeline/rs_surface_render_node.h"
@@ -25,26 +26,10 @@
 #include "screen_manager/screen_types.h"
 #include "visitor/rs_node_visitor.h"
 #include "transaction/rs_render_service_client.h"
+
 namespace OHOS {
 namespace Rosen {
 constexpr int64_t MAX_JITTER_NS = 2000000; // 2ms
-
-namespace {
-GraphicColorGamut SelectBigGamut(GraphicColorGamut oldGamut, GraphicColorGamut newGamut)
-{
-    if (oldGamut == GRAPHIC_COLOR_GAMUT_DISPLAY_BT2020) {
-        return oldGamut;
-    }
-    if (oldGamut == GRAPHIC_COLOR_GAMUT_DISPLAY_P3) {
-        if (newGamut == GRAPHIC_COLOR_GAMUT_DISPLAY_BT2020) {
-            return newGamut;
-        } else {
-            return oldGamut;
-        }
-    }
-    return newGamut;
-}
-}
 
 RSScreenRenderNode::RSScreenRenderNode(
     NodeId id, ScreenId screenId, const std::weak_ptr<RSContext>& context)
@@ -149,7 +134,7 @@ void RSScreenRenderNode::InitRenderParams()
     stagingRenderParams_ = std::make_unique<RSScreenRenderParams>(GetId());
     DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(shared_from_this());
     if (renderDrawable_ == nullptr) {
-        RS_LOGE("RSScreenRenderNode::InitRenderParams failed");
+        HILOG_COMM_ERROR("RSScreenRenderNode::InitRenderParams failed");
         return;
     }
 #endif
@@ -449,7 +434,7 @@ void RSScreenRenderNode::SetColorSpace(const GraphicColorGamut& colorSpace)
 
 void RSScreenRenderNode::UpdateColorSpace(const GraphicColorGamut& colorSpace)
 {
-    GraphicColorGamut newColorSpace = SelectBigGamut(colorSpace_, colorSpace);
+    GraphicColorGamut newColorSpace = RSColorSpaceUtil::SelectBigGamut(colorSpace_, colorSpace);
     if (colorSpace_ == newColorSpace) {
         return;
     }
@@ -462,6 +447,7 @@ void RSScreenRenderNode::UpdateColorSpace(const GraphicColorGamut& colorSpace)
     if (stagingRenderParams_->NeedSync()) {
         AddToPendingSyncList();
     }
+
     colorSpace_ = newColorSpace;
 }
 
@@ -470,32 +456,33 @@ void RSScreenRenderNode::SelectBestGamut(const std::vector<ScreenColorGamut>& mo
     if (mode.empty()) {
         SetColorSpace(GRAPHIC_COLOR_GAMUT_SRGB);
         return;
+    };
+    std::unordered_set<GraphicColorGamut> supported;
+    for (auto gamut : mode) {
+        if (gamut == COLOR_GAMUT_DISPLAY_BT2020) {
+            supported.insert(GRAPHIC_COLOR_GAMUT_BT2020);
+        } else {
+            supported.insert(static_cast<GraphicColorGamut>(gamut));
+        }
     }
-    bool isSupportBt2020 = false;
-    bool isSupportP3 = false;
-    for (const auto& gamut : mode) {
-        auto temp = static_cast<GraphicColorGamut>(gamut);
-        if (colorSpace_ == temp) {
+
+    if (supported.count(colorSpace_)) {
+        return;
+    }
+
+    const std::array<GraphicColorGamut, 4> priority = {
+        GRAPHIC_COLOR_GAMUT_DISPLAY_P3,
+        GRAPHIC_COLOR_GAMUT_BT2020,
+        GRAPHIC_COLOR_GAMUT_SRGB,
+        static_cast<GraphicColorGamut>(mode[0])
+    }; // 4 is total gamut to determine
+
+    for (auto& gamut : priority) {
+        if (supported.count(gamut)) {
+            SetColorSpace(gamut);
             return;
         }
-        if (temp == GRAPHIC_COLOR_GAMUT_DISPLAY_BT2020) {
-            isSupportBt2020 = true;
-            continue;
-        }
-        if (temp == GRAPHIC_COLOR_GAMUT_DISPLAY_P3) {
-            isSupportP3 = true;
-            continue;
-        }
     }
-    GraphicColorGamut finalGamut;
-    if (colorSpace_ == GRAPHIC_COLOR_GAMUT_DISPLAY_BT2020) {
-        finalGamut = isSupportP3 ? GRAPHIC_COLOR_GAMUT_DISPLAY_P3 :
-            GRAPHIC_COLOR_GAMUT_SRGB;
-    } else {
-        finalGamut = isSupportBt2020 ? GRAPHIC_COLOR_GAMUT_DISPLAY_BT2020 :
-            GRAPHIC_COLOR_GAMUT_SRGB;
-    }
-    SetColorSpace(finalGamut);
 }
 
 void RSScreenRenderNode::SetForceCloseHdr(bool isForceCloseHdr)

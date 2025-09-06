@@ -58,7 +58,7 @@ RSDisplayNode::SharedPtr RSDisplayNode::Create(
             return nullptr;
         }
     }
-    ROSEN_LOGI("RSDisplayNode::Create, id:%{public}" PRIu64 " config[screenId=%{public}" PRIu64
+    HILOG_COMM_INFO("RSDisplayNode::Create, id:%{public}" PRIu64 " config[screenId=%{public}" PRIu64
         ", isMirror=%{public}d, mirroredNodeId=%{public}" PRIu64 ", isSync=%{public}d]",
         node->GetId(), displayNodeConfig.screenId, displayNodeConfig.isMirrored,
         displayNodeConfig.mirrorNodeId, displayNodeConfig.isSync);
@@ -72,7 +72,6 @@ bool RSDisplayNode::CreateNode(const RSDisplayNodeConfig& displayNodeConfig, Nod
         CreateNode(displayNodeConfig, nodeId);
 }
 
-// LCOV_EXCL_START
 void RSDisplayNode::RegisterNodeMap()
 {
     auto rsContext = GetRSUIContext();
@@ -82,27 +81,22 @@ void RSDisplayNode::RegisterNodeMap()
     auto& nodeMap = rsContext->GetMutableNodeMap();
     nodeMap.RegisterNode(shared_from_this());
 }
-// LCOV_EXCL_STOP
 
-// LCOV_EXCL_START
 void RSDisplayNode::AddDisplayNodeToTree()
 {
     std::unique_ptr<RSCommand> command = std::make_unique<RSDisplayNodeAddToTree>(GetId());
     AddCommand(command, true);
     SetIsOnTheTree(true);
-    ROSEN_LOGI("RSDisplayNode::AddDisplayNodeToTree, id:%{public}" PRIu64, GetId());
+    HILOG_COMM_INFO("RSDisplayNode::AddDisplayNodeToTree, id:%{public}" PRIu64, GetId());
 }
-// LCOV_EXCL_STOP
 
-// LCOV_EXCL_START
 void RSDisplayNode::RemoveDisplayNodeFromTree()
 {
     std::unique_ptr<RSCommand> command = std::make_unique<RSDisplayNodeRemoveFromTree>(GetId());
     AddCommand(command, true);
     SetIsOnTheTree(false);
-    ROSEN_LOGI("RSDisplayNode::RemoveDisplayNodeFromTree, id:%{public}" PRIu64, GetId());
+    HILOG_COMM_INFO("RSDisplayNode::RemoveDisplayNodeFromTree, id:%{public}" PRIu64, GetId());
 }
-// LCOV_EXCL_STOP
 
 bool RSDisplayNode::Marshalling(Parcel& parcel) const
 {
@@ -148,14 +142,11 @@ void RSDisplayNode::SetSecurityDisplay(bool isSecurityDisplay)
         " isSecurityDisplay:[%{public}s]", GetId(), isSecurityDisplay ? "true" : "false");
 }
 
-// LCOV_EXCL_START
 bool RSDisplayNode::GetSecurityDisplay() const
 {
     return isSecurityDisplay_;
 }
-// LCOV_EXCL_STOP
 
-// LCOV_EXCL_START
 void RSDisplayNode::ClearChildren()
 {
     auto children = GetChildren();
@@ -165,7 +156,6 @@ void RSDisplayNode::ClearChildren()
         }
     }
 }
-// LCOV_EXCL_STOP
 
 void RSDisplayNode::SetScreenId(uint64_t screenId)
 {
@@ -183,7 +173,7 @@ void RSDisplayNode::SetScreenId(uint64_t screenId)
         ROSEN_LOGE("SET_SCREENID Write HiSysEvent error, ret: %{public}d" PRIu64, ret);
     }
 #endif
-    ROSEN_LOGI(
+    HILOG_COMM_INFO(
         "RSDisplayNode::SetScreenId, DisplayNode: %{public}" PRIu64 ", ScreenId: %{public}" PRIu64, GetId(), screenId);
     RS_TRACE_NAME_FMT("RSDisplayNode::SetScreenId, DisplayNode: %" PRIu64 ", ScreenId: %" PRIu64, GetId(), screenId);
 }
@@ -206,12 +196,10 @@ void RSDisplayNode::SetDisplayNodeMirrorConfig(const RSDisplayNodeConfig& displa
         " isMirror:[%{public}d]", GetId(), displayNodeConfig.isMirrored);
 }
 
-// LCOV_EXCL_START
 bool RSDisplayNode::IsMirrorDisplay() const
 {
     return isMirrorDisplay_;
 }
-// LCOV_EXCL_STOP
 
 void RSDisplayNode::SetScreenRotation(const uint32_t& rotation)
 {
@@ -254,12 +242,10 @@ void RSDisplayNode::SetBootAnimation(bool isBootAnimation)
     AddCommand(command, true);
 }
 
-// LCOV_EXCL_START
 bool RSDisplayNode::GetBootAnimation() const
 {
     return isBootAnimation_;
 }
-// LCOV_EXCL_STOP
 
 void RSDisplayNode::SetScbNodePid(const std::vector<int32_t>& oldScbPids, int32_t currentScbPid)
 {
@@ -283,6 +269,14 @@ void RSDisplayNode::SetVirtualScreenMuteStatus(bool virtualScreenMuteStatus)
     AddCommand(command, true);
     ROSEN_LOGI("RSDisplayNode::SetVirtualScreenMuteStatus, displayNodeId:[%{public}" PRIu64 "] "
         "virtualScreenMuteStatus: %{public}d", GetId(), virtualScreenMuteStatus);
+}
+
+void RSDisplayNode::OnBoundsSizeChanged() const
+{
+    auto bounds = GetStagingProperties().GetBounds();
+    ROSEN_LOGI("RSDisplayNode::%{public}s, screenId:[%{public}" PRIu64 "], displayNodeId:[%{public}" PRIu64 "], "
+               "bounds:[%{public}.2f, %{public}.2f, %{public}.2f, %{public}.2f]",
+               __func__, screenId_, GetId(), bounds.x_, bounds.y_, bounds.z_, bounds.w_);
 }
 
 RSDisplayNode::~RSDisplayNode()

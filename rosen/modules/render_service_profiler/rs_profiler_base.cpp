@@ -15,6 +15,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <cstdint>
 #include <iostream>
 #include <memory>
 #include <string>
@@ -503,7 +504,7 @@ std::shared_ptr<RSScreenRenderNode> RSProfiler::GetScreenNode(const RSContext& c
             continue;
         }
         const auto& screenNodeChildren = screenNode->GetChildren();
-        if (screenNodeChildren->empty()) {
+        if (!screenNodeChildren || screenNodeChildren->empty()) {
             continue;
         }
         return RSBaseRenderNode::ReinterpretCast<RSScreenRenderNode>(screenNode);
@@ -783,7 +784,7 @@ static void MarshalRenderModifier(const ModifierNG::RSRenderModifier& modifier, 
     }
 }
 
-static void MarshalDrawCmdModifiers(ModifierNG::RSRenderModifier& modifier, std::stringstream& data)
+static void MarshalDrawCmdModifiers(ModifierNG::RSRenderModifier& modifier, bool includeImages, std::stringstream& data)
 {
     auto propertyType = ModifierNG::ModifierTypeConvertor::GetPropertyType(modifier.GetType());
     auto oldCmdList = modifier.Getter<Drawing::DrawCmdListPtr>(propertyType, nullptr);
@@ -794,19 +795,42 @@ static void MarshalDrawCmdModifiers(ModifierNG::RSRenderModifier& modifier, std:
 
     auto newCmdList = std::make_shared<Drawing::DrawCmdList>(
         oldCmdList->GetWidth(), oldCmdList->GetHeight(), Drawing::DrawCmdList::UnmarshalMode::IMMEDIATE);
-    oldCmdList->ProfilerMarshallingDrawOps(newCmdList.get());
+    oldCmdList->ProfilerMarshallingDrawOps(newCmdList.get(), includeImages);
     newCmdList->PatchTypefaceIds(oldCmdList);
     modifier.Setter<Drawing::DrawCmdListPtr>(propertyType, newCmdList);
     MarshalRenderModifier(modifier, data);
     modifier.Setter<Drawing::DrawCmdListPtr>(propertyType, oldCmdList);
 }
 
+static std::shared_ptr<ModifierNG::RSRenderModifier> CreateSnapshotModifier(const RSRenderNode& node, uint32_t version)
+{
+    if (!node.IsInstanceOf<RSCanvasDrawingRenderNode>() || (version < RSFILE_VERSION_SELF_DRAWING_RESTORES)) {
+        return nullptr;
+    }
+
+    const auto drawable = node.GetRenderDrawable();
+    const auto image = drawable ? drawable->Snapshot() : nullptr;
+    if (!image) {
+        return nullptr;
+    }
+
+    const auto drawOp = std::make_shared<Drawing::DrawImageOpItem>(*image, 0, 0,
+        Drawing::SamplingOptions(Drawing::FilterMode::LINEAR, Drawing::MipmapMode::LINEAR), Drawing::Paint());
+
+    auto cmdList = std::make_shared<Drawing::DrawCmdList>(
+        image->GetWidth(), image->GetHeight(), Drawing::DrawCmdList::UnmarshalMode::DEFERRED);
+    cmdList->AddDrawOp(drawOp);
+    cmdList->MarshallingDrawOps();
+
+    const auto property = std::make_shared<RSRenderProperty<Drawing::DrawCmdListPtr>>(cmdList, 0);
+    return ModifierNG::RSRenderModifier::MakeRenderModifier(ModifierNG::RSModifierType::CONTENT_STYLE, property);
+}
+
 void RSProfiler::MarshalNodeModifiers(const RSRenderNode& node, std::stringstream& data, uint32_t fileVersion)
 {
-    data.write(reinterpret_cast<const char*>(&node.instanceRootNodeId_), sizeof(node.instanceRootNodeId_));
-    data.write(reinterpret_cast<const char*>(&node.firstLevelNodeId_), sizeof(node.firstLevelNodeId_));
+    const auto snapshot = CreateSnapshotModifier(node, fileVersion);
 
-    uint32_t modifierNGCount = 0;
+    uint32_t modifierNGCount = snapshot ? 1u : 0u;
     for (const auto& slot : node.GetAllModifiers()) {
         for (auto& modifierNG : slot) {
             if (!modifierNG || modifierNG->GetType() == ModifierNG::RSModifierType::PARTICLE_EFFECT) {
@@ -815,18 +839,27 @@ void RSProfiler::MarshalNodeModifiers(const RSRenderNode& node, std::stringstrea
             modifierNGCount++;
         }
     }
+
+    data.write(reinterpret_cast<const char*>(&node.instanceRootNodeId_), sizeof(node.instanceRootNodeId_));
+    data.write(reinterpret_cast<const char*>(&node.firstLevelNodeId_), sizeof(node.firstLevelNodeId_));
     data.write(reinterpret_cast<const char*>(&modifierNGCount), sizeof(modifierNGCount));
+
+    const auto includeImageOps = !IsBetaRecordEnabled();
     for (const auto& slot : node.GetAllModifiers()) {
         for (auto& modifierNG : slot) {
             if (!modifierNG || modifierNG->GetType() == ModifierNG::RSModifierType::PARTICLE_EFFECT) {
                 continue;
             }
             if (modifierNG->IsCustom()) {
-                MarshalDrawCmdModifiers(*modifierNG, data);
+                MarshalDrawCmdModifiers(*modifierNG, includeImageOps, data);
             } else {
                 MarshalRenderModifier(*modifierNG, data);
             }
         }
+    }
+
+    if (snapshot) {
+        MarshalRenderModifier(*snapshot, data);
     }
 }
 
@@ -958,10 +991,11 @@ std::string RSProfiler::UnmarshalNode(RSContext& context, std::stringstream& dat
         RootNodeCommandHelper::Create(context, nodeId, isTextureExportNode);
     }
     
-    return UnmarshalNode(context, data, nodeId, fileVersion);
+    return UnmarshalNode(context, data, nodeId, fileVersion, nodeType);
 }
 
-std::string RSProfiler::UnmarshalNode(RSContext& context, std::stringstream& data, NodeId nodeId, uint32_t fileVersion)
+std::string RSProfiler::UnmarshalNode(
+    RSContext& context, std::stringstream& data, NodeId nodeId, uint32_t fileVersion, RSRenderNodeType nodeType)
 {
     float positionZ = 0.0f;
     data.read(reinterpret_cast<char*>(&positionZ), sizeof(positionZ));
@@ -990,7 +1024,7 @@ std::string RSProfiler::UnmarshalNode(RSContext& context, std::stringstream& dat
 #ifdef SUBTREE_PARALLEL_ENABLE
         node->MarkRepaintBoundary(isRepaintBoundary);
 #endif
-        return UnmarshalNodeModifiers(*node, data, fileVersion);
+        return UnmarshalNodeModifiers(*node, data, fileVersion, nodeType);
     }
     return "";
 }
@@ -1043,31 +1077,33 @@ static std::shared_ptr<ModifierNG::RSRenderModifier> UnmarshalRenderModifier(
     return ptr;
 }
 
-static void SetupCanvasDrawingRenderNode(RSCanvasDrawingRenderNode& node)
+static void SetupCanvasDrawingRenderNode(RSRenderNode& node)
 {
+    if (!node.IsInstanceOf<RSCanvasDrawingRenderNode>()) {
+        return;
+    }
+
     int32_t width = 0;
     int32_t height = 0;
-    for (uint16_t type = 0; type < ModifierNG::MODIFIER_TYPE_COUNT; type++) {
-        auto& slot = node.GetAllModifiers()[type];
-        if (slot.empty()) {
-            continue;
-        }
-        if (!slot[0]->IsCustom()) {
-            continue;
-        }
-        for (const auto& modifier : slot) {
-            const auto commandList = modifier ? modifier->GetPropertyDrawCmdList() : nullptr;
-            if (commandList) {
-                width = std::max(width, commandList->GetWidth());
-                height = std::max(height, commandList->GetHeight());
-            }
+    for (const auto& modifier : node.GetModifiersNG(ModifierNG::RSModifierType::CONTENT_STYLE)) {
+        const auto cmdList = modifier ? modifier->GetPropertyDrawCmdList() : nullptr;
+        if (cmdList) {
+            width = std::max(width, cmdList->GetWidth());
+            height = std::max(height, cmdList->GetHeight());
         }
     }
-    node.ResetSurface(width, height);
+
+    if ((width > 0) && (height > 0)) {
+        static_cast<RSCanvasDrawingRenderNode&>(node).ResetSurface(width, height);
+    }
 }
 
-std::string RSProfiler::UnmarshalNodeModifiers(RSRenderNode& node, std::stringstream& data, uint32_t fileVersion)
+std::string RSProfiler::UnmarshalNodeModifiers(
+    RSRenderNode& node, std::stringstream& data, uint32_t fileVersion, RSRenderNodeType nodeType)
 {
+    bool disableModifiers =
+        (nodeType == RSRenderNodeType::LOGICAL_DISPLAY_NODE || nodeType == RSRenderNodeType::SCREEN_NODE);
+
     data.read(reinterpret_cast<char*>(&node.instanceRootNodeId_), sizeof(node.instanceRootNodeId_));
     node.instanceRootNodeId_ = Utils::PatchNodeId(node.instanceRootNodeId_);
 
@@ -1083,17 +1119,16 @@ std::string RSProfiler::UnmarshalNodeModifiers(RSRenderNode& node, std::stringst
             RSProfiler::SendMessageBase("LOADERROR: Modifier format changed [" + errModifierCode + "]");
             continue;
         }
-        node.AddModifier(ptr);
+        if (!disableModifiers) {
+            node.AddModifier(ptr);
+        }
     }
 
     if (data.eof()) {
         return "UnmarshalNodeModifiers failed, file is damaged";
     }
 
-    if (node.GetType() == RSRenderNodeType::CANVAS_DRAWING_NODE) {
-        SetupCanvasDrawingRenderNode(static_cast<RSCanvasDrawingRenderNode&>(node));
-    }
-
+    SetupCanvasDrawingRenderNode(node);
     node.ApplyModifiers();
     return "";
 }
@@ -1689,6 +1724,17 @@ bool RSProfiler::IfNeedToSkipDuringReplay(Parcel& parcel, uint32_t skipBytes)
         return true;
     }
     return false;
+}
+
+bool RSProfiler::IsFirstFrameParcel(const Parcel& parcel)
+{
+    if (!IsEnabled()) {
+        return false;
+    }
+    if (!IsBetaRecordEnabled()) {
+        return false;
+    }
+    return IsWriteEmulationMode() || IsReadEmulationMode();
 }
 
 void RSProfiler::SurfaceOnDrawMatchOptimize(bool& useNodeMatchOptimize)

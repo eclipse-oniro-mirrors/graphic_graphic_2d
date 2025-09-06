@@ -38,7 +38,16 @@ public:
 
     bool Init();
     void Run();
-
+    sptr<RSIRenderServiceConnection> GetConnection(sptr<RSIConnectionToken>& token) override
+    {
+        auto tokenObj = token->AsObject();
+        auto iter = connections_.find(tokenObj);
+        if (iter == connections_.end()) {
+            RS_LOGE("GetConnection: connections_ cannot find token");
+            return nullptr;
+        }
+        return iter->second;
+    }
 private:
     int Dump(int fd, const std::vector<std::u16string>& args) override;
     void DoDump(std::unordered_set<std::u16string>& argSets, std::string& dumpString) const;
@@ -60,7 +69,6 @@ private:
     void WindowHitchsDump(std::unordered_set<std::u16string>& argSets, std::string& dumpString,
         const std::u16string& arg) const;
     void DumpMem(std::unordered_set<std::u16string>& argSets, std::string& dumpString) const;
-    void DumpNode(std::unordered_set<std::u16string>& argSets, std::string& dumpString) const;
     void FPSDumpProcess(std::unordered_set<std::u16string>& argSets, std::string& dumpString,
         const std::u16string& arg) const;
     void DumpFps(std::string& dumpString, std::string& layerName) const;
@@ -69,7 +77,7 @@ private:
     void ClearFps(std::string& dumpString, std::string& layerName) const;
 
     sptr<RSIRenderServiceConnection> CreateConnection(const sptr<RSIConnectionToken>& token) override;
-    void RemoveConnection(sptr<IRemoteObject> token);
+    bool RemoveConnection(const sptr<RSIConnectionToken>& token) override;
 
     // RS dump init
     void RSGfxDumpInit();

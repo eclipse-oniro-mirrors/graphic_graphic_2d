@@ -55,7 +55,6 @@
 #include "common/rs_vector2.h"
 #include "common/rs_vector4.h"
 #include "modifier/rs_modifier_extractor.h"
-#include "modifier/rs_modifier_type.h"
 #include "modifier/rs_showing_properties_freezer.h"
 #include "modifier_ng/rs_modifier_ng_type.h"
 #include "pipeline/rs_recording_canvas.h"
@@ -77,7 +76,6 @@ class RSAnimation;
 class RSCommand;
 class RSImplicitAnimParam;
 class RSImplicitAnimator;
-class RSModifier;
 class RSObjAbsGeometry;
 class RSUIContext;
 class RSNGFilterBase;
@@ -408,7 +406,7 @@ public:
      * @param type The type of modifier to be applied during the drawing process.
      * @param func The drawing function to be executed on the node.
      */
-    virtual void DrawOnNode(RSModifierType type, DrawFunc func) {}
+    virtual void DrawOnNode(ModifierNG::RSModifierType type, DrawFunc func) {}
 
     /**
      * @brief Retrieves the staging properties associated with this node.
@@ -1310,7 +1308,6 @@ public:
     void SetBgBrightnessFract(const float& fract);
     void SetBorderLightShader(std::shared_ptr<VisualEffectPara> visualEffectPara);
 
-
     /**
      * @brief Sets the grey coefficient.
      *
@@ -1902,7 +1899,6 @@ protected:
      */
     void SetIsOnTheTree(bool flag);
 
-    std::array<std::shared_ptr<ModifierNG::RSModifier>, ModifierNG::MODIFIER_TYPE_COUNT> modifiersNGCreatedBySetter_;
 private:
     static NodeId GenerateId();
     static void InitUniRenderEnabled();
@@ -1982,18 +1978,9 @@ private:
     void RemoveAnimationInner(const std::shared_ptr<RSAnimation>& animation);
     void CancelAnimationByProperty(const PropertyId& id, const bool needForceSync = false);
 
-
-    /**
-     * @brief Retrieves the modifier associated with the specified property ID.
-     *
-     * @param propertyId The identifier of the property whose modifier is to be retrieved.
-     * @return The shared pointer to the corresponding RSModifier,or nullptr if not found.
-     */
-    const std::shared_ptr<RSModifier> GetModifier(const PropertyId& propertyId);
     const std::shared_ptr<RSPropertyBase> GetProperty(const PropertyId& propertyId);
     void RegisterProperty(std::shared_ptr<RSPropertyBase> property);
     void UnregisterProperty(const PropertyId& propertyId);
-
 
     /**
      * @brief Called when the bounds size of the node has changed.
@@ -2005,6 +1992,8 @@ private:
     void SetParticleDrawRegion(std::vector<ParticleParams>& particleParams);
 
     void DetachUIFilterProperties(const std::shared_ptr<ModifierNG::RSModifier>& modifier);
+
+    std::shared_ptr<ModifierNG::RSModifier> GetModifierCreatedBySetter(ModifierNG::RSModifierType modifierType);
 
     /**
      * @brief Clears all modifiers associated with this node.
@@ -2043,10 +2032,9 @@ private:
 
     RSModifierExtractor stagingPropertiesExtractor_;
     RSShowingPropertiesFreezer showingPropertiesFreezer_;
-    std::map<PropertyId, std::shared_ptr<RSModifier>> modifiers_;
     std::map<PropertyId, std::shared_ptr<RSPropertyBase>> properties_;
-    std::map<uint16_t, std::shared_ptr<RSModifier>> modifiersTypeMap_;
     std::map<ModifierId, std::shared_ptr<ModifierNG::RSModifier>> modifiersNG_;
+    std::map<ModifierNG::RSModifierType, std::shared_ptr<ModifierNG::RSModifier>> modifiersNGCreatedBySetter_;
 
     std::shared_ptr<RectF> drawRegion_;
     OutOfParentType outOfParent_ = OutOfParentType::UNKNOWN;
@@ -2072,14 +2060,10 @@ private:
     friend class RSModifierExtractor;
     friend class ModifierNG::RSModifier;
     friend class ModifierNG::RSCustomModifier;
-    friend class RSBackgroundUIFilterModifier;
-    friend class RSForegroundUIFilterModifier;
     friend class RSKeyframeAnimation;
     friend class RSInterpolatingSpringAnimation;
     friend class RSImplicitCancelAnimationParam;
     friend class RSImplicitAnimator;
-    friend class RSGeometryTransModifier;
-    friend class RSExtendedModifier;
     friend class RSCurveAnimation;
     friend class RSAnimation;
     friend class ModifierNG::RSForegroundFilterModifier;

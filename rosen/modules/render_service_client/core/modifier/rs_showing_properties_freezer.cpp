@@ -37,7 +37,7 @@ std::optional<T> RSShowingPropertiesFreezer::GetPropertyImplNG() const
         return std::nullopt;
     }
     std::unique_lock<std::recursive_mutex> lock(node->propertyMutex_);
-    auto& modifier = node->modifiersNGCreatedBySetter_[static_cast<uint16_t>(ModifierType)];
+    auto modifier = node->GetModifierCreatedBySetter(ModifierType);
     if (!modifier) {
         ROSEN_LOGE("RSShowingPropertiesFreezer::GetPropertyImplNG Type %{public}d failed, modifierNG is null!",
             static_cast<int>(ModifierType));
@@ -231,7 +231,10 @@ std::optional<float> RSShowingPropertiesFreezer::GetShadowOffsetY() const
 
 std::optional<float> RSShowingPropertiesFreezer::GetShadowAlpha() const
 {
-    return GetPropertyImplNG<float, ModifierNG::RSModifierType::SHADOW, ModifierNG::RSPropertyType::SHADOW_ALPHA>();
+    if (auto color = GetShadowColor()) {
+        return color->GetAlphaF();
+    }
+    return std::nullopt;
 }
 
 std::optional<float> RSShowingPropertiesFreezer::GetShadowElevation() const

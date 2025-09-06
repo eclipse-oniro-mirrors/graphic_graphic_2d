@@ -14,7 +14,6 @@
  */
 
 #define EGL_EGLEXT_PROTOTYPES
-
 #include "rs_sub_thread.h"
 
 #include <string>
@@ -25,8 +24,6 @@
 #include "feature/uifirst/rs_uifirst_manager.h"
 #include "GLES3/gl3.h"
 #include "include/core/SkCanvas.h"
-
-#include "memory/rs_memory_graphic.h"
 #include "memory/rs_memory_manager.h"
 #include "memory/rs_tag_tracker.h"
 #include "pipeline/render_thread/rs_uni_render_thread.h"
@@ -160,26 +157,6 @@ void RSSubThread::DestroyShareEglContext()
 #endif
 }
 
-NodeId RSSubThread::GetSubAppNodeId(std::shared_ptr<DrawableV2::RSSurfaceRenderNodeDrawable> nodeDrawable,
-    RSSurfaceRenderParams* surfaceParams)
-{
-    NodeId tagNodeId = nodeDrawable->GetId();
-    for (const auto& subDrawable : nodeDrawable->GetDrawableVectorById(surfaceParams->GetAllSubSurfaceNodeIds())) {
-        if (UNLIKELY(!subDrawable)) {
-            continue;
-        }
-        auto subSurfaceParams = static_cast<RSSurfaceRenderParams*>(subDrawable->GetRenderParams().get());
-        if (UNLIKELY(!subSurfaceParams)) {
-            continue;
-        }
-        if (subSurfaceParams->IsAppWindow()) {
-            tagNodeId = subDrawable->GetId();
-            break;
-        }
-    }
-    return tagNodeId;
-}
-
 bool RSSubThread::CheckValid(std::shared_ptr<DrawableV2::RSSurfaceRenderNodeDrawable> nodeDrawable)
 {
     if (grContext_ == nullptr) {
@@ -207,13 +184,12 @@ void RSSubThread::DrawableCache(std::shared_ptr<DrawableV2::RSSurfaceRenderNodeD
 
     RS_TRACE_NAME_FMT("RSSubThread::DrawableCache [%s] id:[%" PRIu64 "]", nodeDrawable->GetName().c_str(), nodeId);
 
-    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(nodeDrawable->GetRenderParams().get());
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(nodeDrawable->GetUifirstRenderParams().get());
     if (UNLIKELY(!surfaceParams)) {
         return;
     }
 
-    RSTagTracker tagTracker(grContext_, GetSubAppNodeId(nodeDrawable, surfaceParams),
-            RSTagTracker::TAGTYPE::TAG_SUB_THREAD, nodeDrawable->GetName());
+    RSTagTracker tagTracker(grContext_, RSTagTracker::TAGTYPE::TAG_UIFIRST);
     // set cur firstlevel node in subThread
     RSUiFirstProcessStateCheckerHelper stateCheckerHelper(
         surfaceParams->GetFirstLevelNodeId(), surfaceParams->GetUifirstRootNodeId(), surfaceParams->GetId());
@@ -382,15 +358,6 @@ void RSSubThread::AddToReleaseQueue(std::shared_ptr<Drawing::Surface>&& surface)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     tmpSurfaces_.push(std::move(surface));
-}
-
-MemoryGraphic RSSubThread::CountSubMem(int pid)
-{
-    MemoryGraphic memoryGraphic;
-    PostSyncTask([&pid, &memoryGraphic, this]() {
-        memoryGraphic = MemoryManager::CountPidMemory(pid, grContext_.get());
-    });
-    return memoryGraphic;
 }
 
 void RSSubThread::ReleaseCacheSurfaceOnly(std::shared_ptr<DrawableV2::RSSurfaceRenderNodeDrawable> nodeDrawable)

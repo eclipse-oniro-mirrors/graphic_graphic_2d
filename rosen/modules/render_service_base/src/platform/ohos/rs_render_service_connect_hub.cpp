@@ -20,30 +20,23 @@
 #include <iservice_registry.h>
 #include <mutex>
 #include <system_ability_definition.h>
+#include <thread>
 #include <unistd.h>
 
 #include "message_parcel.h"
-#include "pipeline/rs_render_thread.h"
-#include "platform/common/rs_log.h"
 #include "rs_render_service_connection_proxy.h"
 #include "rs_render_service_proxy.h"
+
+#include "pipeline/rs_render_thread.h"
+#include "platform/common/rs_log.h"
 
 namespace OHOS {
 namespace Rosen {
 std::once_flag RSRenderServiceConnectHub::flag_;
 sptr<RSRenderServiceConnectHub> RSRenderServiceConnectHub::instance_ = nullptr;
 OnConnectCallback RSRenderServiceConnectHub::onConnectCallback_ = nullptr;
-
-extern "C" __attribute__((destructor)) void DeleteIPCConnectToken()
-{
-    auto connHub = OHOS::Rosen::RSRenderServiceConnectHub::GetConnectHubInstance();
-    if (connHub != nullptr) {
-        auto token = connHub->GetToken();
-        if (token != nullptr) {
-            delete token;
-        }
-    }
-}
+constexpr int32_t TOKEN_STRONG_REF_COUNT = 1;
+constexpr int32_t WAIT_TIME_FOR_DEC_STRONG_REF = 50;
 
 sptr<RSRenderServiceConnectHub> RSRenderServiceConnectHub::GetInstance()
 {
@@ -68,8 +61,19 @@ RSRenderServiceConnectHub::RSRenderServiceConnectHub()
 
 RSRenderServiceConnectHub::~RSRenderServiceConnectHub() noexcept
 {
-    if (renderService_ && renderService_->AsObject() && deathRecipient_) {
+    if (UNLIKELY(!renderService_)) {
+        ROSEN_LOGE(
+            "~RSRenderServiceConnectHub Remove connection token and deathRecipient_ failed, renderService_ is null");
+        return;
+    }
+    ROSEN_LOGI("~RSRenderServiceConnectHub");
+    renderService_->RemoveConnection(token_);
+    conn_ = nullptr;
+    if (renderService_->AsObject() && deathRecipient_) {
         renderService_->AsObject()->RemoveDeathRecipient(deathRecipient_);
+    }
+    if ((token_ != nullptr) && (token_->GetSptrRefCount() > TOKEN_STRONG_REF_COUNT)) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TIME_FOR_DEC_STRONG_REF));
     }
 }
 

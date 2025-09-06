@@ -498,8 +498,8 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, CaptureSurface008, TestSize.Level1)
     RSUniRenderThread::SetCaptureParam(captureParam);
     surfaceDrawable_->CaptureSurface(*canvas_, *surfaceParams);
 
-    surfaceParams->blackListIds_[virtualScreenId].insert(renderNode_->GetId());
-    ASSERT_EQ(surfaceParams->HasBlackListByScreenId(virtualScreenId), true);
+    surfaceParams->GetMultableSpecialLayerMgr().SetWithScreen(virtualScreenId, SpecialLayerType::HAS_BLACK_LIST, true);
+    ASSERT_TRUE(surfaceParams->GetSpecialLayerMgr().FindWithScreen(virtualScreenId, SpecialLayerType::HAS_BLACK_LIST));
     surfaceDrawable_->CaptureSurface(*canvas_, *surfaceParams);
 
     surfaceParams->uiFirstFlag_ = MultiThreadCacheType::LEASH_WINDOW;
@@ -508,15 +508,51 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, CaptureSurface008, TestSize.Level1)
     RSUniRenderThread::GetCaptureParam().isMirror_ = false;
     surfaceDrawable_->CaptureSurface(*canvas_, *surfaceParams);
 
-    surfaceParams->blackListIds_[virtualScreenId].clear();
+    surfaceParams->GetMultableSpecialLayerMgr().SetWithScreen(virtualScreenId, SpecialLayerType::HAS_BLACK_LIST, false);
     surfaceDrawable_->CaptureSurface(*canvas_, *surfaceParams);
 
     surfaceParams->uiFirstFlag_ = MultiThreadCacheType::NONE;
     surfaceDrawable_->CaptureSurface(*canvas_, *surfaceParams);
 
-    surfaceParams->blackListIds_[virtualScreenId].insert(renderNode_->GetId());
-    ASSERT_EQ(surfaceParams->HasBlackListByScreenId(virtualScreenId), true);
+    surfaceParams->GetMultableSpecialLayerMgr().SetWithScreen(virtualScreenId, SpecialLayerType::HAS_BLACK_LIST, true);
+    ASSERT_TRUE(surfaceParams->GetSpecialLayerMgr().FindWithScreen(virtualScreenId, SpecialLayerType::HAS_BLACK_LIST));
     surfaceDrawable_->CaptureSurface(*canvas_, *surfaceParams);
+
+    surfaceParams->GetMultableSpecialLayerMgr().ClearScreenSpecialLayer();
+}
+
+/**
+ * @tc.name: CaptureSurface009
+ * @tc.desc: Test CaptureSurface for ignore special layer
+ * @tc.type: FUNC
+ * @tc.require: issueICUQ08
+ */
+HWTEST_F(RSSurfaceRenderNodeDrawableTest, CaptureSurface009, TestSize.Level2)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->renderParams_.get());
+    ASSERT_NE(surfaceParams, nullptr);
+
+    RSRenderThreadParamsManager::Instance().renderThreadParams_ = std::make_unique<RSRenderThreadParams>();
+    auto& uniParams = RSUniRenderThread::Instance().GetRSRenderThreadParams();
+    ASSERT_NE(uniParams, nullptr);
+    uniParams->SetSecExemption(true);
+    RSSpecialLayerManager slManager;
+    surfaceParams->specialLayerManager_ = slManager;
+    surfaceParams->GetMultableSpecialLayerMgr().Set(SpecialLayerType::SKIP, true);
+
+    CaptureParam captureParam1;
+    captureParam1.isSingleSurface_ = false;
+    captureParam1.ignoreSpecialLayer_ = false;
+    RSUniRenderThread::SetCaptureParam(captureParam1);
+    surfaceDrawable_->CaptureSurface(*canvas_, *surfaceParams);
+
+    CaptureParam captureParam2;
+    captureParam2.isSingleSurface_ = false;
+    captureParam2.ignoreSpecialLayer_ = true;
+    RSUniRenderThread::SetCaptureParam(captureParam2);
+    surfaceDrawable_->CaptureSurface(*canvas_, *surfaceParams);
+    EXPECT_TRUE(uniParams->GetSecExemption());
 }
 
 /**
@@ -566,15 +602,19 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, CalculateVisibleDirtyRegion, TestSize.
 
     surfaceParams->SetWindowInfo(false, true, false);
     Drawing::Region result = surfaceDrawable_->CalculateVisibleDirtyRegion(*surfaceParams, *surfaceDrawable_, true);
+    ASSERT_FALSE(result.IsEmpty());
+
+    surfaceParams->windowInfo_.isMainWindowType_ = true;
+    surfaceParams->windowInfo_.isLeashWindow_ = true;
+    surfaceParams->windowInfo_.isAppWindow_ = false;
+    result = surfaceDrawable_->CalculateVisibleDirtyRegion(*surfaceParams, *surfaceDrawable_, true);
+    ASSERT_FALSE(result.IsEmpty());
+
+    surfaceParams->windowInfo_.isMainWindowType_ = false;
+    surfaceParams->windowInfo_.isLeashWindow_ = false;
+    surfaceParams->windowInfo_.isAppWindow_ = false;
+    result = surfaceDrawable_->CalculateVisibleDirtyRegion(*surfaceParams, *surfaceDrawable_, true);
     ASSERT_TRUE(result.IsEmpty());
-
-    surfaceParams->SetWindowInfo(true, true, false);
-    result = surfaceDrawable_->CalculateVisibleDirtyRegion(*surfaceParams, *surfaceDrawable_, true);
-    ASSERT_FALSE(result.IsEmpty());
-
-    surfaceParams->SetWindowInfo(false, false, false);
-    result = surfaceDrawable_->CalculateVisibleDirtyRegion(*surfaceParams, *surfaceDrawable_, true);
-    ASSERT_FALSE(result.IsEmpty());
 
     surfaceParams->SetWindowInfo(true, false, false);
     result = surfaceDrawable_->CalculateVisibleDirtyRegion(*surfaceParams, *surfaceDrawable_, true);
@@ -1377,7 +1417,7 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, CheckDrawAndCacheWindowContentTest, Te
     ASSERT_FALSE(surfaceDrawable_->CheckDrawAndCacheWindowContent(*surfaceParams, *uniParams));
 
     RSUniRenderThread::captureParam_.isSnapshot_ = true;
-    ASSERT_FALSE(RSUniRenderThread::IsExpandScreenMode());
+    ASSERT_TRUE(RSUniRenderThread::IsInCaptureProcess());
     ASSERT_FALSE(surfaceDrawable_->CheckDrawAndCacheWindowContent(*surfaceParams, *uniParams));
 }
 
@@ -1506,7 +1546,7 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, IsVisibleRegionEqualOnPhysicalAndVirtu
     ASSERT_NE(appDrawable, nullptr);
     auto appParams = static_cast<RSSurfaceRenderParams*>(appDrawable->GetRenderParams().get());
     ASSERT_NE(appParams, nullptr);
-    leashParams->SetWindowInfo(true, false, true);
+    appParams->SetWindowInfo(true, false, true);
     leashParams->allSubSurfaceNodeIds_.insert(appId);
 
     // all empty

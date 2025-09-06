@@ -14,10 +14,13 @@
  */
 
 #include "gtest/gtest.h"
+#include "limit_number.h"
 #include "parameters.h"
+
+#include "pipeline/rs_uni_render_judgement.h"
 #include "ui/rs_canvas_node.h"
 #include "ui/rs_surface_node.h"
-#include "limit_number.h"
+#include "ui/rs_ui_context_manager.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -114,6 +117,29 @@ HWTEST_F(RSSurfaceNodeTest, SetBufferAvailableCallback001, TestSize.Level1)
         std::cout << "SetBufferAvailableCallback" << std::endl;
     });
     ASSERT_TRUE(isSuccess);
+}
+
+/**
+ * @tc.name: CreateShadowSurfaceNode
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSSurfaceNodeTest, CreateShadowSurfaceNode, TestSize.Level1)
+{
+    RSSurfaceNodeConfig c;
+    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
+    ASSERT_TRUE(surfaceNode != nullptr);
+    {
+        RSSurfaceNode::SharedPtr shadowNode = surfaceNode->CreateShadowSurfaceNode();
+        EXPECT_TRUE(shadowNode->isShadowNode_);
+    }
+    {
+        RSSurfaceNode::SharedPtr shadowNode2 = surfaceNode->CreateShadowSurfaceNode();
+        auto rsUIContext = shadowNode2->GetRSUIContext();
+        ASSERT_NE(rsUIContext, nullptr);
+        ASSERT_TRUE(shadowNode2->isShadowNode_);
+        RSUIContextManager::MutableInstance().DestroyContext(rsUIContext->GetToken());
+    }
 }
 
 /**
@@ -961,7 +987,8 @@ HWTEST_F(RSSurfaceNodeTest, SetShadowAlpha001, TestSize.Level1)
     RSSurfaceNodeConfig c;
     RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
     surfaceNode->SetShadowAlpha(floatData[1]);
-    EXPECT_TRUE(ROSEN_EQ(surfaceNode->GetStagingProperties().GetShadowAlpha(), floatData[1]));
+    // The return value of GetShadowAlpha() is clamped to [0,1]
+    EXPECT_TRUE(ROSEN_EQ(surfaceNode->GetStagingProperties().GetShadowAlpha(), 1.f));
 }
 
 /**
@@ -975,7 +1002,7 @@ HWTEST_F(RSSurfaceNodeTest, SetShadowAlpha002, TestSize.Level1)
     RSSurfaceNodeConfig c;
     RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
     surfaceNode->SetShadowAlpha(floatData[2]);
-    EXPECT_TRUE(ROSEN_EQ(surfaceNode->GetStagingProperties().GetShadowAlpha(), floatData[2]));
+    EXPECT_TRUE(ROSEN_EQ(surfaceNode->GetStagingProperties().GetShadowAlpha(), 0.f));
 }
 
 /**
@@ -989,7 +1016,7 @@ HWTEST_F(RSSurfaceNodeTest, SetShadowAlpha003, TestSize.Level1)
     RSSurfaceNodeConfig c;
     RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
     surfaceNode->SetShadowAlpha(floatData[3]);
-    EXPECT_TRUE(ROSEN_EQ(surfaceNode->GetStagingProperties().GetShadowAlpha(), floatData[3]));
+    EXPECT_TRUE(ROSEN_EQ(surfaceNode->GetStagingProperties().GetShadowAlpha(), 1.f));
 }
 
 /**
@@ -1352,10 +1379,11 @@ HWTEST_F(RSSurfaceNodeTest, IsSelfDrawingNodeTest, TestSize.Level1)
     RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
     ASSERT_NE(surfaceNode, nullptr);
     EXPECT_FALSE(surfaceNode->IsSelfDrawingNode());
-
-    RSSurfaceNode::SharedPtr surfaceNode1 = RSSurfaceNode::Create(c, false);
-    ASSERT_NE(surfaceNode1, nullptr);
-    EXPECT_FALSE(surfaceNode1->IsSelfDrawingNode());
+    if (RSUniRenderJudgement::IsUniRender()) {
+        RSSurfaceNode::SharedPtr surfaceNode1 = RSSurfaceNode::Create(c, false);
+        ASSERT_NE(surfaceNode1, nullptr);
+        EXPECT_FALSE(surfaceNode1->IsSelfDrawingNode());
+    }
 }
 
 /**

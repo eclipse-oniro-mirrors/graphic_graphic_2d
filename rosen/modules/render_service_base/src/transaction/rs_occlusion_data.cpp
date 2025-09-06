@@ -28,6 +28,7 @@ RSOcclusionData* RSOcclusionData::Unmarshalling(Parcel& parcel)
     uint32_t size{0};
     if (!parcel.ReadUint32(size)) {
         ROSEN_LOGE("RSOcclusionData::Unmarshalling Read size failed");
+        delete data;
         return nullptr;
     }
     size_t readableSize = parcel.GetReadableBytes() / (sizeof(uint64_t) + sizeof(uint32_t));
@@ -42,6 +43,7 @@ RSOcclusionData* RSOcclusionData::Unmarshalling(Parcel& parcel)
         uint32_t visibelLevel{0};
         if (!parcel.ReadUint64(id) || !parcel.ReadUint32(visibelLevel)) {
             ROSEN_LOGE("RSOcclusionData::Unmarshalling Read parcel failed");
+            delete data;
             return nullptr;
         }
         data->visibleData_.emplace_back(std::make_pair(id, (WINDOW_LAYER_INFO_TYPE)visibelLevel));

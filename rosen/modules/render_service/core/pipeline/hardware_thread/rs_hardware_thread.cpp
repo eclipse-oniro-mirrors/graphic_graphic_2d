@@ -128,28 +128,28 @@ void RSHardwareThread::Start()
         return this->Redraw(surface, layers, screenId);
     };
     if (handler_) {
-        ScheduleTask(
-            [this]() {
+        ScheduleTask([this]() {
 #if defined (RS_ENABLE_VK)
-                // Change vk interface type from UNIRENDER into UNPROTECTED_REDRAW, this is necessary for hardware init.
-                if (RSSystemProperties::IsUseVulkan()) {
-                    RsVulkanContext::GetSingleton().SetIsProtected(false);
-                }
+            // Change vk interface type from UNIRENDER into UNPROTECTED_REDRAW, this is necessary for hardware init.
+            if (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
+                RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) {
+                RsVulkanContext::GetSingleton().SetIsProtected(false);
+            }
 #endif
-                auto screenManager = CreateOrGetScreenManager();
-                if (screenManager == nullptr || !screenManager->Init()) {
-                    RS_LOGE("RSHardwareThread CreateOrGetScreenManager or init fail.");
-                    return;
-                }
+            auto screenManager = CreateOrGetScreenManager();
+            if (screenManager == nullptr || !screenManager->Init()) {
+                RS_LOGE("RSHardwareThread CreateOrGetScreenManager or init fail.");
+                return;
+            }
 #ifdef RES_SCHED_ENABLE
-                SubScribeSystemAbility();
+            SubScribeSystemAbility();
 #endif
-                uniRenderEngine_ = std::make_shared<RSUniRenderEngine>();
-                uniRenderEngine_->Init();
-                // posttask for multithread safely release surface and image
-                ContextRegisterPostTask();
-                hardwareTid_ = gettid();
-            }).wait();
+            uniRenderEngine_ = std::make_shared<RSUniRenderEngine>();
+            uniRenderEngine_->Init();
+            // posttask for multithread safely release surface and image
+            ContextRegisterPostTask();
+            hardwareTid_ = gettid();
+        }).wait();
     }
     auto onPrepareCompleteFunc = [this](auto& surface, const auto& param, void* data) {
         OnPrepareComplete(surface, param, data);
@@ -200,7 +200,7 @@ uint32_t RSHardwareThread::GetunExecuteTaskNum()
     return unExecuteTaskNum_.load();
 }
 
-void RSHardwareThread::ClearRedrawGPUCompositionCache(const std::set<uint32_t>& bufferIds)
+void RSHardwareThread::ClearRedrawGPUCompositionCache(const std::set<uint64_t>& bufferIds)
 {
     std::weak_ptr<RSBaseRenderEngine> uniRenderEngine = uniRenderEngine_;
     PostDelayTask(
@@ -237,6 +237,13 @@ void RSHardwareThread::ClearRefreshRateCounts(std::string& dumpString)
     RS_LOGD("RefreshRateCounts refresh rate counts info is cleared");
 }
 
+void PrintHiperfSurfaceLog(const std::string& counterContext, uint64_t counter)
+{
+#ifdef HIPERF_TRACE_ENABLE
+    RS_LOGW("hiperf_surface_%{public}s %{public}" PRIu64, counterContext.c_str(), counter);
+#endif
+}
+
 void RSHardwareThread::CommitAndReleaseLayers(OutputPtr output, const std::vector<LayerInfoPtr>& layers)
 {
     if (!handler_) {
@@ -257,9 +264,7 @@ void RSHardwareThread::CommitAndReleaseLayers(OutputPtr output, const std::vecto
 #endif
     RSTaskMessage::RSTask task = [this, output = output, layers = layers, param = param,
         currentRate = currentRate, hasGameScene = hasGameScene, curScreenId = curScreenId]() {
-#ifdef HIPERF_TRACE_ENABLE
-        RS_LOGW("hiperf_surface_counter3 %{public}" PRIu64 " ", static_cast<uint64_t>(layers.size()));
-#endif
+        PrintHiperfSurfaceLog("counter3", static_cast<uint64_t>(layers.size()));
         int64_t startTime = GetCurTimeCount();
         std::string surfaceName = GetSurfaceNameInLayers(layers);
         RS_LOGD("CommitAndReleaseLayers task execute, %{public}s", surfaceName.c_str());
@@ -308,6 +313,9 @@ void RSHardwareThread::CommitAndReleaseLayers(OutputPtr output, const std::vecto
         }
         bool doRepaint = output->IsDeviceValid() && !shouldDropFrame;
         if (doRepaint) {
+#ifdef RS_ENABLE_TV_PQ_METADATA
+            RSTvMetadataManager::CombineMetadataForAllLayers(layers);
+#endif
             hdiBackend_->Repaint(output);
             RecordTimestamp(layers);
         }
@@ -899,9 +907,7 @@ void RSHardwareThread::Redraw(const sptr<Surface>& surface, const std::vector<La
                     break;
                 }
             }
-            if (RSSystemProperties::IsUseVulkan()) {
-                RsVulkanContext::GetSingleton().SetIsProtected(isProtected);
-            }
+            RsVulkanContext::GetSingleton().SetIsProtected(isProtected);
         } else {
             RsVulkanContext::GetSingleton().SetIsProtected(false);
         }
@@ -974,7 +980,7 @@ void RSHardwareThread::Redraw(const sptr<Surface>& surface, const std::vector<La
     RedrawScreenRCD(*canvas, layers);
 #ifdef RS_ENABLE_TV_PQ_METADATA
     auto rsSurface = renderFrame->GetSurface();
-    RSTvMetadataManager::Instance().CopyFromLayersToSurface(layers, rsSurface);
+    RSTvMetadataManager::CopyFromLayersToSurface(layers, rsSurface);
 #endif
     renderFrame->Flush();
     RS_LOGD("RsDebug Redraw flush frame buffer end");
@@ -1000,7 +1006,6 @@ void RSHardwareThread::AddRefreshRateCount(const OutputPtr& output)
     RSRealtimeRefreshRateManager::Instance().CountRealtimeFrame(output->GetScreenId());
     auto frameRateMgr = HgmCore::Instance().GetFrameRateMgr();
     if (frameRateMgr == nullptr) {
-        RS_LOGE("AddRefreshData fail, frameBufferSurfaceOhos_ is nullptr");
         return;
     }
     frameRateMgr->HandleRsFrame();
@@ -1169,13 +1174,15 @@ bool RSHardwareThread::ConvertColorGamutToSpaceType(const GraphicColorGamut& col
 void RSHardwareThread::ContextRegisterPostTask()
 {
 #if defined(RS_ENABLE_VK) && defined(IS_ENABLE_DRM)
-    if (RSSystemProperties::IsUseVulkan()) {
+    if (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
+        RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) {
         RsVulkanContext::GetSingleton().SetIsProtected(true);
         auto context = RsVulkanContext::GetSingleton().GetDrawingContext();
         if (context) {
             context->RegisterPostFunc([this](const std::function<void()>& task) { PostTask(task); });
         }
         RsVulkanContext::GetSingleton().SetIsProtected(false);
+        context = RsVulkanContext::GetSingleton().GetDrawingContext();
         if (context) {
             context->RegisterPostFunc([this](const std::function<void()>& task) { PostTask(task); });
         }

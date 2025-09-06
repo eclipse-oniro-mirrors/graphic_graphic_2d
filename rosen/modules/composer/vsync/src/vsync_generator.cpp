@@ -15,6 +15,7 @@
 
 #include "vsync_generator.h"
 #include "vsync_distributor.h"
+#include <cinttypes>
 #include <cstdint>
 #include "c/ffrt_ipc.h"
 #include "ffrt_inner.h"
@@ -148,7 +149,8 @@ VSyncGenerator::VSyncGenerator(bool isUseFfrt) : isUseFfrt_(isUseFfrt)
             ffrt_this_task_set_legacy_mode(true);
             this->ThreadLoop();
         });
-        // FFRT线程创建成功时返回；如果FFRT线程创建失败，设置isUseFfrt_为false，保留原逻辑通路，创建std::thread
+        // return when ffrt thread is successfully created
+        // if ffrt thread creation fails, set isUseFfrt_ to false, retain the original logic path and create std::thread
         if (ffrtThread_ != nullptr) {
             return;
         }
@@ -434,8 +436,6 @@ bool VSyncGenerator::DVSyncRateChanged(uint32_t currRefreshRate, bool &frameRate
         frameRateChanged = dvsyncRateChanged;
         isNeedDvsyncDelay = dvsyncRateChanged;
     }
-    RS_OPTIONAL_TRACE_NAME_FMT("isNeedDvsyncDelay: %d, frameRateChanged: %d, needChangeDssRefreshRate: %d.",
-        isNeedDvsyncDelay, frameRateChanged, needChangeDssRefreshRate);
 #endif
     return isNeedDvsyncDelay;
 }
@@ -745,8 +745,8 @@ void VSyncGenerator::SubScribeSystemAbility()
 VsyncError VSyncGenerator::UpdateMode(int64_t period, int64_t phase, int64_t referenceTime)
 {
     std::lock_guard<std::mutex> locker(mutex_);
-    RS_TRACE_NAME_FMT("UpdateMode, period:%ld, phase:%ld, referenceTime:%ld, referenceTimeOffsetPulseNum_:%d",
-        period, phase, referenceTime, referenceTimeOffsetPulseNum_);
+    RS_TRACE_NAME_FMT("UpdateMode, period:" PRId64 ", phase:" PRId64 ", referenceTime:" PRId64
+        ", referenceTimeOffsetPulseNum_:%d", period, phase, referenceTime, referenceTimeOffsetPulseNum_);
     if (period < 0 || referenceTime < 0) {
         VLOGE("wrong parameter, period:" VPUBI64 ", referenceTime:" VPUBI64, period, referenceTime);
         return VSYNC_ERROR_INVALID_ARGUMENTS;
@@ -978,14 +978,18 @@ VsyncError VSyncGenerator::SetVSyncPhaseByPulseNum(int32_t phaseByPulseNum)
 
 uint32_t VSyncGenerator::GetVsyncRefreshRate()
 {
-    std::lock_guard<std::mutex> locker(mutex_);
-    if (period_ == 0) {
+    int64_t period = 0;
+    {
+        std::lock_guard<std::mutex> locker(mutex_);
+        period = period_;
+    }
+    if (period == 0) {
         return UINT32_MAX;
     }
-    uint32_t refreshRate = CalculateRefreshRate(period_);
+    uint32_t refreshRate = CalculateRefreshRate(period);
     if (refreshRate == 0) {
         refreshRate = std::round(static_cast<double>(ONE_SECOND_FOR_CALCUTE_FREQUENCY)
-            / static_cast<double>(period_));
+            / static_cast<double>(period));
     }
     return refreshRate;
 }

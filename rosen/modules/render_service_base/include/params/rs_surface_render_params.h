@@ -195,14 +195,6 @@ public:
         return specialLayerManager_;
     }
 
-    bool HasBlackListByScreenId(ScreenId screenId)
-    {
-        if (blackListIds_.find(screenId) != blackListIds_.end()) {
-            return blackListIds_[screenId].size() != 0;
-        }
-        return false;
-    }
-
     bool HasPrivacyContentLayer()
     {
         return privacyContentLayerIds_.size() != 0;
@@ -422,6 +414,13 @@ public:
     bool IsBufferSynced() const
     {
         return bufferSynced_;
+    }
+    // hpae offline: when surface node using hpae offline and doing directly compotition,
+    // the origin buffer will not be synced by hwc.
+    // While taking capture, bufferSynced_ should be set to false
+    void SetOfflineOriginBufferSynced(bool bufferSynced)
+    {
+        offlineOriginBufferSynced_ = bufferSynced;
     }
 #endif
 
@@ -812,6 +811,7 @@ private:
     sptr<SyncFence> acquireFence_ = SyncFence::InvalidFence();
     Rect damageRect_ = {0, 0, 0, 0};
     bool bufferSynced_ = true;
+    bool offlineOriginBufferSynced_ = true;
 #endif
     bool isHardwareEnabled_ = false;
     bool needMakeImage_ = false;
@@ -829,7 +829,6 @@ private:
     Gravity uiFirstFrameGravity_ = Gravity::TOP_LEFT;
     bool isNodeToBeCaptured_ = false;
     RSSpecialLayerManager specialLayerManager_;
-    std::unordered_map<ScreenId, std::unordered_set<NodeId>> blackListIds_ = {};
     std::set<NodeId> privacyContentLayerIds_ = {};
     std::set<int32_t> bufferCacheSet_ = {};
     std::string name_= "";

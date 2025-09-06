@@ -109,6 +109,18 @@ std::string RsCommonHook::GetCurrentPkgName() const
     return pkgName_;
 }
 
+void RsCommonHook::SetImageEnhancePidList(const std::unordered_set<pid_t>& imageEnhancePidList)
+{
+    std::lock_guard<std::mutex> setMutex(setMutex_);
+    imageEnhancePidList_ = imageEnhancePidList;
+}
+
+std::unordered_set<pid_t> RsCommonHook::GetImageEnhancePidList() const
+{
+    std::lock_guard<std::mutex> setMutex(setMutex_);
+    return imageEnhancePidList_;
+}
+
 void RsCommonHook::SetTvPlayerBundleName(const std::string& bundleName)
 {
     tvPlayerBundleName_ = bundleName;
@@ -119,6 +131,28 @@ const std::string& RsCommonHook::GetTvPlayerBundleName() const
     return tvPlayerBundleName_;
 }
 
+void RsCommonHook::SetSolidColorLayerConfigFromHgm(
+    const std::unordered_map<std::string, std::string>& solidLayerConfigFromHgm)
+{
+    solidLayerConfigFromHgm_ = solidLayerConfigFromHgm;
+}
+
+bool RsCommonHook::IsSolidColorLayerConfig(const std::string& bundleName)
+{
+    return solidLayerConfigFromHgm_.find(bundleName) != solidLayerConfigFromHgm_.end();
+}
+
+void RsCommonHook::SetHwcSolidColorLayerConfigFromHgm(
+    const std::unordered_map<std::string, std::string>& hwcSolidLayerConfigFromHgm)
+{
+    hwcSolidLayerConfigFromHgm_ = hwcSolidLayerConfigFromHgm;
+}
+
+bool RsCommonHook::IsHwcSolidColorLayerConfig(const std::string& bundleName)
+{
+    return hwcSolidLayerConfigFromHgm_.find(bundleName) != hwcSolidLayerConfigFromHgm_.end();
+}
+
 void RsCommonHook::SetFilterUnderHwcConfigByApp(const std::string& appName, const std::string& val)
 {
     filterUnderHwcConfig_[appName] = val;
@@ -127,6 +161,20 @@ void RsCommonHook::SetFilterUnderHwcConfigByApp(const std::string& appName, cons
 std::string_view RsCommonHook::GetFilterUnderHwcConfigByApp(const std::string& appName)
 {
     if (auto it = filterUnderHwcConfig_.find(appName); it != filterUnderHwcConfig_.end()) {
+        return it->second;
+    }
+    return "";
+}
+
+void RsCommonHook::SetOverlappedHwcNodeInAppEnabledConfig(const std::string& appName, const std::string& val)
+{
+    overlappedHwcNodeInAppEnabledConfig_.insert_or_assign(appName, val);
+}
+
+std::string RsCommonHook::GetOverlappedHwcNodeInAppEnabledConfig(const std::string& appName)
+{
+    if (auto it = overlappedHwcNodeInAppEnabledConfig_.find(appName);
+        it != overlappedHwcNodeInAppEnabledConfig_.end()) {
         return it->second;
     }
     return "";

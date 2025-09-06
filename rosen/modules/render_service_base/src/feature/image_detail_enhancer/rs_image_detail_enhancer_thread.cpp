@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
-#if !defined(_WIN32) && !defined(_APPLE) && defined(A_PLATFORM) && !defined(MAC_PLATFORM) && \
-    !defined(IOS_PLATFORM) && !defined(ANDROID_PLATFORM)
+#ifdef ROSEN_OHOS
 #include <linux/dma-buf.h>
+#include <parameters.h>
 #include <sys/ioctl.h>
 #endif
 
@@ -23,6 +23,7 @@
 
 #include "feature/image_detail_enhancer/rs_image_detail_enhancer_thread.h"
 
+#include "common/rs_common_hook.h"
 #include "platform/common/rs_log.h"
 #include "platform/common/rs_system_properties.h"
 #include "render/rs_pixel_map_util.h"
@@ -78,10 +79,6 @@ void RSImageDetailEnhancerThread::PostTask(const std::function<void()>& task)
 
 bool RSImageDetailEnhancerThread::RegisterCallback(const std::function<void(uint64_t)>& callback)
 {
-    if (!isEnable_) {
-        RS_LOGE("RSImageDetailEnhancerThread RegisterCallback failed, enhanceImageAsync is not enable!");
-        return false;
-    }
     if (callback == nullptr) {
         RS_LOGE("RSImageDetailEnhancerThread RegisterCallback failed, callBack is invalid!");
         return false;
@@ -148,7 +145,6 @@ bool RSImageDetailEnhancerThread::IsTypeSupport(const std::shared_ptr<Media::Pix
 std::shared_ptr<Drawing::Image> RSImageDetailEnhancerThread::ScaleByAAE(sptr<SurfaceBuffer>& dstSurfaceBuffer,
     const std::shared_ptr<Drawing::Image>& srcImage, std::shared_ptr<Drawing::Canvas>& newCanvas)
 {
-#ifdef ENABLE_AAE
     if (newCanvas == nullptr || dstSurfaceBuffer == nullptr) {
         RS_LOGE("RSImageDetailEnhancerThread ScaleByAAE failed, input is invalid!");
         return nullptr;
@@ -170,7 +166,6 @@ std::shared_ptr<Drawing::Image> RSImageDetailEnhancerThread::ScaleByAAE(sptr<Sur
             return nullptr;
         }
     }
-#endif
     return nullptr;
 }
 
@@ -193,11 +188,7 @@ std::shared_ptr<Drawing::Image> RSImageDetailEnhancerThread::ScaleByHDSampler(in
         info.alpha = INFO_ALPHA;
         info.isUniformScale = false;
     } else if (srcWidth < dstWidth && srcHeight < dstHeight) {
-#ifdef ENABLE_ESR
         info.type = Drawing::HDSampleType::ESR;
-#else
-        return nullptr;
-#endif
     } else {
         RS_LOGE("RSImageDetailEnhancerThread ScaleByHDSampler failed, size is invalid!");
         return nullptr;
@@ -325,7 +316,17 @@ bool RSImageDetailEnhancerThread::GetProcessReady(uint64_t imageId) const
 
 bool RSImageDetailEnhancerThread::GetEnableStatus() const
 {
-    return isEnable_;
+#if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
+    return std::atoi((system::GetParameter("rosen.isEnabledScaleImageAsync.enabled", "0")).c_str()) != 0;
+#endif
+    return false;
+}
+
+bool RSImageDetailEnhancerThread::IsEnableImageDetailEnhance(uint64_t nodeId) const
+{
+    pid_t pid = ExtractPid(nodeId);
+    std::unordered_set<pid_t> imageEnhancePidList = RsCommonHook::Instance().GetImageEnhancePidList();
+    return imageEnhancePidList.find(pid) != imageEnhancePidList.end();
 }
 
 DetailEnhancerUtils& DetailEnhancerUtils::Instance()
@@ -435,8 +436,6 @@ Drawing::ColorType DetailEnhancerUtils::GetColorTypeWithVKFormat(VkFormat vkForm
 
 bool DetailEnhancerUtils::SetMemoryName(sptr<SurfaceBuffer>& buffer)
 {
-#if !defined(_WIN32) && !defined(_APPLE) && defined(A_PLATFORM) && !defined(MAC_PLATFORM) && \
-    !defined(IOS_PLATFORM) && !defined(ANDROID_PLATFORM)
     static std::string MemoryName = "hpae_memory_asyncscaling";
     if (buffer == nullptr) {
         RS_LOGE("DetailEnhancerUtils SetMemoryName failed, buffer is invalid!");
@@ -446,14 +445,11 @@ bool DetailEnhancerUtils::SetMemoryName(sptr<SurfaceBuffer>& buffer)
     if (fd < 0) {
         return false;
     }
-    int ret = TEMP_FAILURE_RETRY(ioctl(fd, DMA_BUF_SET_NAME_A, MemoryName.c_str()));
-    if (ret != 0) {
-        RS_LOGE("DetailEnhancerUtils SetMemoryName, set dma name failed!");
-        return false;
-    }
-    return true;
+    int ret = -1;
+#ifdef ROSEN_OHOS
+    ret = TEMP_FAILURE_RETRY(ioctl(fd, DMA_BUF_SET_NAME_A, MemoryName.c_str()));
 #endif
-    return false;
+    return ret == 0;
 }
 
 sptr<SurfaceBuffer> DetailEnhancerUtils::CreateSurfaceBuffer(int width, int height)

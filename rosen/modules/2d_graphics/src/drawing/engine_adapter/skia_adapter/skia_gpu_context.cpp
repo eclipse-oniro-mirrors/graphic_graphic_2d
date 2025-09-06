@@ -273,6 +273,15 @@ void SkiaGPUContext::FreeGpuResources()
     grContext_->freeGpuResources();
 }
 
+void SkiaGPUContext::FreeCpuCache(uint32_t uniqueId)
+{
+    if (!grContext_) {
+        LOGD("SkiaGPUContext::FreeCpuCache, grContext_ is nullptr");
+        return;
+    }
+    grContext_->freeCpuCache(uniqueId);
+}
+
 void SkiaGPUContext::ReclaimResources()
 {
     //Skia Not Implement ReclaimResources.
@@ -340,9 +349,7 @@ void SkiaGPUContext::PurgeUnlockedResourcesByPid(bool scratchResourcesOnly, cons
         LOGD("SkiaGPUContext::PurgeUnlockedResourcesByPid, grContext_ is nullptr");
         return;
     }
-#ifndef TODO_M133_SKIA
     grContext_->purgeUnlockedResourcesByPid(scratchResourcesOnly, exitedPidSet);
-#endif
 }
 
 void SkiaGPUContext::RegisterVulkanErrorCallback(const std::function<void()>& vulkanErrorCallback)
@@ -490,9 +497,7 @@ void SkiaGPUContext::GetUpdatedMemoryMap(std::unordered_map<pid_t, size_t> &out)
         LOGD("SkiaGPUContext::GetUpdatedMemoryMap, grContext_ is nullptr");
         return;
     }
-#ifndef TODO_M133_SKIA
     grContext_->getUpdatedMemoryMap(out);
-#endif
 }
 
 void SkiaGPUContext::InitGpuMemoryLimit(MemoryOverflowCalllback callback, uint64_t size)
@@ -501,9 +506,7 @@ void SkiaGPUContext::InitGpuMemoryLimit(MemoryOverflowCalllback callback, uint64
         LOGD("SkiaGPUContext::InitGpuMemoryLimit, grContext_ is nullptr");
         return;
     }
-#ifndef TODO_M133_SKIA
     grContext_->initGpuMemoryLimit(callback, size);
-#endif
 }
 #ifdef RS_ENABLE_VK
 void SkiaGPUContext::StoreVkPipelineCacheData()

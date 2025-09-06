@@ -18,6 +18,7 @@
 #include <parameter.h>
 #include <parameters.h>
 #include "param/sys_param.h"
+#include "pipeline/rs_uni_render_judgement.h"
 #include "screen_manager/rs_screen_manager.h"
 #include "screen_manager/rs_screen.h"
 #include "transaction/rs_interfaces.h"
@@ -40,7 +41,6 @@ public:
     static constexpr uint32_t SLEEP_TIME_FOR_DELAY = 1000000; // 1000ms
     static constexpr uint32_t LIGHT_LEVEL = 1;
     static constexpr uint64_t SCREEN_ID = 10;
-    static constexpr uint32_t MAX_BLACK_LIST_NUM = 1024;
     static inline ScreenId mockScreenId_;
     static inline Mock::HdiDeviceMock* hdiDeviceMock_;
 
@@ -106,6 +106,36 @@ HWTEST_F(RSScreenManagerTest, HandlePostureData, TestSize.Level1)
     uint8_t sensorData3[7] = {0, 0, 0, 0, 0, 0, 180};
     event[0].data = sensorData3;
     screenManager->HandlePostureData(event);
+}
+
+/*
+ * @tc.name: HandleSensorDataTest
+ * @tc.desc: Test HandleSensorData
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSScreenManagerTest, HandleSensorDataTest, TestSize.Level1)
+{
+    auto screenManager = CreateOrGetScreenManager();
+    ASSERT_NE(nullptr, screenManager);
+    impl::RSScreenManager& screenManagerImpl =
+        static_cast<impl::RSScreenManager&>(*screenManager);
+    screenManagerImpl.HandleSensorData(0.f);
+    EXPECT_EQ(screenManagerImpl.activeScreenId_, screenManagerImpl.externalScreenId_);
+    screenManagerImpl.HandleSensorData(0.f);
+    EXPECT_EQ(screenManagerImpl.activeScreenId_, screenManagerImpl.externalScreenId_);
+    screenManagerImpl.isPostureSensorDataHandled_ = false;
+    screenManagerImpl.HandleSensorData(0.f);
+    EXPECT_EQ(screenManagerImpl.activeScreenId_, screenManagerImpl.externalScreenId_);
+    screenManagerImpl.HandleSensorData(180.f);
+    EXPECT_EQ(screenManagerImpl.activeScreenId_, screenManagerImpl.innerScreenId_);
+    screenManagerImpl.HandleSensorData(180.f);
+    EXPECT_EQ(screenManagerImpl.activeScreenId_, screenManagerImpl.innerScreenId_);
+    screenManagerImpl.isPostureSensorDataHandled_ = false;
+    screenManagerImpl.HandleSensorData(180.f);
+    EXPECT_EQ(screenManagerImpl.activeScreenId_, screenManagerImpl.innerScreenId_);
+    screenManagerImpl.HandleSensorData(0.f);
+    EXPECT_EQ(screenManagerImpl.activeScreenId_, screenManagerImpl.externalScreenId_);
+    screenManagerImpl.activeScreenId_ = 0;
 }
 
 /*
@@ -4301,8 +4331,8 @@ HWTEST_F(RSScreenManagerTest, OnRefresh, TestSize.Level1)
  * @tc.type: FUNC
  * @tc.require: issueIBIQ0Q
  */
- HWTEST_F(RSScreenManagerTest, OnHwcDeadEvent, TestSize.Level1)
- {
+HWTEST_F(RSScreenManagerTest, OnHwcDeadEvent, TestSize.Level1)
+{
     auto screenManagerImpl = sptr<impl::RSScreenManager>::MakeSptr();
     EXPECT_NE(screenManagerImpl, nullptr);
 
@@ -4312,7 +4342,25 @@ HWTEST_F(RSScreenManagerTest, OnRefresh, TestSize.Level1)
     screenManagerImpl->screens_[sId1] = std::make_shared<impl::RSScreen>(sId1, true, nullptr, nullptr);
     screenManagerImpl->RSScreenManager::OnHwcDeadEvent();
     EXPECT_EQ(screenManagerImpl->screens_.size(), 1);
- }
+}
+
+/*
+ * @tc.name: OnHwcDead
+ * @tc.desc: Test OnHwcDead
+ * @tc.type: FUNC
+ * @tc.require: issueICTY7B
+ */
+HWTEST_F(RSScreenManagerTest, OnHwcDead, TestSize.Level1)
+{
+    auto screenManager = CreateOrGetScreenManager();
+    auto screenManagerImpl = static_cast<impl::RSScreenManager*>(screenManager.GetRefPtr());
+    EXPECT_NE(screenManagerImpl, nullptr);
+    screenManagerImpl->RSScreenManager::OnHwcDead(nullptr);
+    std::function<void()> func = []() {};
+    screenManagerImpl->RegisterHwcEvent(func);
+    EXPECT_NE(screenManagerImpl->registerHwcEventFunc_, nullptr);
+    screenManagerImpl->RSScreenManager::OnHwcDead(nullptr);
+}
 
 /*
  * @tc.name: OnHotPlug
@@ -4375,5 +4423,87 @@ HWTEST_F(RSScreenManagerTest, ProcessVSyncScreenIdWhilePowerStatusChangedTest, T
     static_cast<impl::RSScreenManager*>(screenManager.GetRefPtr())->ProcessVSyncScreenIdWhilePowerStatusChanged(
         0, ScreenPowerStatus::POWER_STATUS_OFF);
     ASSERT_EQ(static_cast<impl::VSyncSampler*>(sampler.GetRefPtr())->hardwareVSyncStatus_, false);
+}
+
+/*
+ * @tc.name: OnBootCompleteTest
+ * @tc.desc: Test OnBootComplete
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSScreenManagerTest, OnBootCompleteTest, TestSize.Level1)
+{
+    ASSERT_NE(impl::RSScreenManager::instance_, nullptr);
+    impl::RSScreenManager& screenManagerImpl =
+        static_cast<impl::RSScreenManager&>(*impl::RSScreenManager::instance_);
+    screenManagerImpl.isFoldScreenFlag_ = true;
+    impl::RSScreenManager::OnBootComplete("bootevent.boot.complete", "true", nullptr);
+    impl::RSScreenManager::OnBootComplete("bootevent.boot.completed", "true", nullptr);
+    impl::RSScreenManager::OnBootComplete("bootevent.boot.completed", "false", nullptr);
+    ASSERT_NE(impl::RSScreenManager::instance_, nullptr);
+    sptr<RSScreenManager> instanceTmp = impl::RSScreenManager::instance_;
+    impl::RSScreenManager::instance_ = nullptr;
+    ASSERT_EQ(impl::RSScreenManager::instance_, nullptr);
+    impl::RSScreenManager::OnBootComplete("bootevent.boot.completed", "true", nullptr);
+    impl::RSScreenManager::instance_ = instanceTmp;
+    screenManagerImpl.isFoldScreenFlag_ = false;
+    impl::RSScreenManager::OnBootComplete("bootevent.boot.completed", "true", nullptr);
+}
+
+/*
+ * @tc.name: OnBootCompleteEventTest
+ * @tc.desc: Test OnBootCompleteEvent
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSScreenManagerTest, OnBootCompleteEventTest, TestSize.Level1)
+{
+    ASSERT_NE(impl::RSScreenManager::instance_, nullptr);
+    impl::RSScreenManager& screenManagerImpl =
+        static_cast<impl::RSScreenManager&>(*impl::RSScreenManager::instance_);
+    screenManagerImpl.isFoldScreenFlag_ = true;
+    RSUniRenderJudgement::uniRenderEnabledType_ = UniRenderEnabledType::UNI_RENDER_DISABLED;
+    screenManagerImpl.OnBootCompleteEvent();
+    RSUniRenderJudgement::uniRenderEnabledType_ = UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL;
+    screenManagerImpl.OnBootCompleteEvent();
+    screenManagerImpl.isFoldScreenFlag_ = false;
+    screenManagerImpl.OnBootCompleteEvent();
+}
+
+/*
+ * @tc.name: InitFoldSensorTest
+ * @tc.desc: Test InitFoldSensor
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSScreenManagerTest, InitFoldSensorTest, TestSize.Level1)
+{
+    auto screenManager = CreateOrGetScreenManager();
+    ASSERT_NE(nullptr, screenManager);
+    impl::RSScreenManager& screenManagerImpl =
+        static_cast<impl::RSScreenManager&>(*screenManager);
+    screenManagerImpl.isFoldScreenFlag_ = true;
+    screenManagerImpl.InitFoldSensor();
+    screenManagerImpl.isFoldScreenFlag_ = false;
+    screenManagerImpl.InitFoldSensor();
+}
+
+/*
+ * @tc.name: RegisterSensorCallbackTest
+ * @tc.desc: Test RegisterSensorCallback && UnRegisterSensorCallback
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSScreenManagerTest, RegisterSensorCallbackTest, TestSize.Level1)
+{
+    auto screenManager = CreateOrGetScreenManager();
+    ASSERT_NE(nullptr, screenManager);
+    impl::RSScreenManager& screenManagerImpl =
+        static_cast<impl::RSScreenManager&>(*screenManager);
+    screenManagerImpl.hasRegisterSensorCallback_ = false;
+    screenManagerImpl.RegisterSensorCallback();
+    EXPECT_EQ(screenManagerImpl.hasRegisterSensorCallback_, true);
+    screenManagerImpl.RegisterSensorCallback();
+    EXPECT_EQ(screenManagerImpl.hasRegisterSensorCallback_, true);
+    screenManagerImpl.UnRegisterSensorCallback();
+    EXPECT_EQ(screenManagerImpl.hasRegisterSensorCallback_, false);
+    screenManagerImpl.UnRegisterSensorCallback();
+    EXPECT_EQ(screenManagerImpl.hasRegisterSensorCallback_, false);
 }
 } // namespace OHOS::Rosen

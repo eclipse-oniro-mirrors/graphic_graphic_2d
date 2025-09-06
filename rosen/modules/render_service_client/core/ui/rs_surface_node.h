@@ -91,12 +91,10 @@ public:
      * 
      * @return The type of the RSNode.
      */
-    // LCOV_EXCL_START
     RSUINodeType GetType() const override
     {
         return Type;
     }
-    // LCOV_EXCL_STOP
 
     /**
      * @brief Destructor for RSSurfaceNode.
@@ -238,28 +236,26 @@ public:
      */
     bool GetFrameGravityNewVersionEnabled() const;
 
+    SharedPtr CreateShadowSurfaceNode();
+
 #ifndef ROSEN_CROSS_PLATFORM
     sptr<OHOS::Surface> GetSurface() const;
 #endif
     void SetColorSpace(GraphicColorGamut colorSpace);
-    // LCOV_EXCL_START
     GraphicColorGamut GetColorSpace()
     {
         return colorSpace_;
     }
-    // LCOV_EXCL_STOP
 
     /**
      * @brief Get the name of the node.
      * 
      * @return A string representing the name of the node.
      */
-    // LCOV_EXCL_START
     inline std::string GetName() const
     {
         return name_;
     }
-    // LCOV_EXCL_STOP
 
     void ResetContextAlpha() const;
 
@@ -372,6 +368,7 @@ private:
     BufferAvailableCallback callback_;
     bool bufferAvailable_ = false;
     BoundsChangedCallback boundsChangedCallback_;
+    bool isShadowNode_ = false;
     GraphicColorGamut colorSpace_ = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
     bool isSecurityLayer_ = false;
     bool isSkipLayer_ = false;

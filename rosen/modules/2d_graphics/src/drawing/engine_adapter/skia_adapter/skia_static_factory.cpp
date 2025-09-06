@@ -87,6 +87,11 @@ std::vector<std::shared_ptr<Typeface>> SkiaStaticFactory::GetSystemFonts()
     return SkiaTypeface::GetSystemFonts();
 }
 
+void SkiaStaticFactory::RegisterOnTypefaceDestroyed(std::function<void(uint32_t)> cb)
+{
+    return SkiaTypeface::RegisterOnTypefaceDestroyed(cb);
+}
+
 #ifdef RS_ENABLE_GPU
 #ifdef RS_ENABLE_VK
 std::shared_ptr<Surface> SkiaStaticFactory::MakeFromBackendRenderTarget(GPUContext* gpuContext, const TextureInfo& info,
@@ -151,6 +156,12 @@ std::shared_ptr<Image> SkiaStaticFactory::MakeRasterData(const ImageInfo& info, 
     size_t rowBytes)
 {
     return SkiaImage::MakeRasterData(info, pixels, rowBytes);
+}
+
+ScaleImageResult SkiaStaticFactory::ScaleImage([[maybe_unused]] const std::shared_ptr<Image>& srcImage,
+    [[maybe_unused]] const std::shared_ptr<Image>& dstImage, [[maybe_unused]] const ScalingOption& optionData)
+{
+    return ScaleImageResult::SCALE_ERROR_UNSUPPORTED;
 }
 
 std::shared_ptr<TextBlob> SkiaStaticFactory::DeserializeTextBlob(const void* data, size_t size, void* ctx)

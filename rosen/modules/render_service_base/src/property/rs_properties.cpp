@@ -1765,21 +1765,6 @@ void RSProperties::SetShadowOffsetY(float offsetY)
     contentDirty_ = true;
 }
 
-void RSProperties::SetShadowAlpha(float alpha)
-{
-    if (!shadow_.has_value()) {
-        shadow_ = std::make_optional<RSShadow>();
-    }
-    shadow_->SetAlpha(alpha);
-    if (shadow_->IsValid()) {
-        isDrawn_ = true;
-    }
-    SetDirty();
-    // [planning] if shadow stores as texture and out of node
-    // node content would not be affected
-    contentDirty_ = true;
-}
-
 void RSProperties::SetShadowElevation(float elevation)
 {
     if (!shadow_.has_value()) {
@@ -1882,11 +1867,6 @@ float RSProperties::GetShadowOffsetX() const
 float RSProperties::GetShadowOffsetY() const
 {
     return shadow_ ? shadow_->GetOffsetY() : DEFAULT_SHADOW_OFFSET_Y;
-}
-
-float RSProperties::GetShadowAlpha() const
-{
-    return shadow_ ? shadow_->GetAlpha() : 1.f;
 }
 
 float RSProperties::GetShadowElevation() const
@@ -3399,6 +3379,9 @@ void RSProperties::SetLightIntensity(float lightIntensity)
     }
     auto preIntensity = lightSourcePtr_->GetPreLightIntensity();
     auto renderNode = backref_.lock();
+    if (renderNode == nullptr) {
+        return;
+    }
     bool preIntensityIsZero = ROSEN_EQ(preIntensity, 0.f);
     bool curIntensityIsZero = ROSEN_EQ(lightIntensity, 0.f);
     if (preIntensityIsZero && !curIntensityIsZero) { // 0 --> non-zero
@@ -3453,6 +3436,9 @@ void RSProperties::SetIlluminatedType(int illuminatedType)
         return;
     }
     auto renderNode = backref_.lock();
+    if (renderNode == nullptr) {
+        return;
+    }
     auto preIlluminatedType = illuminatedPtr_->GetPreIlluminatedType();
     bool preTypeIsNone = preIlluminatedType == IlluminatedType::NONE;
     bool curTypeIsNone = curIlluminateType == IlluminatedType::NONE;
@@ -4162,16 +4148,6 @@ std::string RSProperties::Dump() const
         dumpInfo.append(buffer);
     }
 
-    // ShadowAlpha
-    ret = memset_s(buffer, UINT8_MAX, 0, UINT8_MAX);
-    if (ret != EOK) {
-        return "Failed to memset_s for ShadowAlpha, ret=" + std::to_string(ret);
-    }
-    if (!ROSEN_EQ(GetShadowAlpha(), 0.f) &&
-        sprintf_s(buffer, UINT8_MAX, ", ShadowAlpha[%.1f]", GetShadowAlpha()) != -1) {
-        dumpInfo.append(buffer);
-    }
-
     // ShadowElevation
     ret = memset_s(buffer, UINT8_MAX, 0, UINT8_MAX);
     if (ret != EOK) {
@@ -4479,6 +4455,18 @@ void RSProperties::UpdateFilter()
                        IsFilterNeedForceSubmit(foregroundFilterCache_) ||
                        GetShadowColotStratergy() != SHADOW_COLOR_STRATEGY::COLOR_STRATEGY_NONE;
 #endif
+}
+
+bool RSProperties::DisableHWCForFilter() const
+{
+    // The difference compared to needFilter_ is no need to disable hwc when foregroundFilter is HDR_UI_BRIGHTNESS
+    return backgroundFilter_ != nullptr || filter_ != nullptr || useEffect_ || IsLightUpEffectValid() ||
+        IsDynamicLightUpValid() || greyCoef_.has_value() || linearGradientBlurPara_ != nullptr ||
+        IsDynamicDimValid() || GetShadowColorStrategy() != SHADOW_COLOR_STRATEGY::COLOR_STRATEGY_NONE ||
+        (foregroundFilter_ != nullptr && foregroundFilter_->GetFilterType() != RSFilter::HDR_UI_BRIGHTNESS) ||
+        IsFgBrightnessValid() || IsBgBrightnessValid() ||
+        (foregroundFilterCache_ != nullptr && foregroundFilterCache_->GetFilterType() != RSFilter::HDR_UI_BRIGHTNESS) ||
+        IsWaterRippleValid() || needDrawBehindWindow_ || mask_ || colorFilter_ != nullptr || localMagnificationCap_;
 }
 
 void RSProperties::UpdateForegroundFilter()

@@ -290,7 +290,7 @@ SurfaceError SurfaceImage::ValidateEglState()
     EGLContext context = eglGetCurrentContext();
 
     if ((eglDisplay_ != disp && eglDisplay_ != EGL_NO_DISPLAY) || (disp == EGL_NO_DISPLAY)) {
-        BLOGE("EGLDisplay is invalid, errno : 0x%{public}x, uniqueId: %{public}" PRIu64 ".",
+        BLOGD("EGLDisplay is invalid, errno : 0x%{public}x, uniqueId: %{public}" PRIu64 ".",
             eglGetError(), uniqueId_);
         return SURFACE_ERROR_EGL_STATE_UNKONW;
     }
@@ -449,7 +449,7 @@ SurfaceError SurfaceImage::UnsetOnBufferAvailableListener()
 
 SurfaceImageListener::~SurfaceImageListener()
 {
-    BLOGE("~SurfaceImageListener");
+    BLOGD("~SurfaceImageListener");
     surfaceImage_ = nullptr;
 }
 

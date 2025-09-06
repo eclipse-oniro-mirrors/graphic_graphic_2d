@@ -84,7 +84,7 @@ static std::vector<const char*> gOptionalDeviceExtensions = {
 };
 
 // enabled when persist.sys.graphic.openVkImageMemoryDfx is true
-static std::vector<const char*> gOptionalDeviceExtensionsDebug = {
+static const std::vector<const char*> gOptionalDeviceExtensionsDebug = {
     VK_KHR_MAINTENANCE_5_EXTENSION_NAME,
     VK_EXT_DEVICE_FAULT_EXTENSION_NAME,
     VK_EXT_DEVICE_ADDRESS_BINDING_REPORT_EXTENSION_NAME,
@@ -547,7 +547,7 @@ GrVkGetProc RsVulkanInterface::CreateSkiaGetProc() const
     };
 }
 
-std::shared_ptr<Drawing::GPUContext> RsVulkanInterface::CreateDrawingContext(std::string cacheDir)
+std::shared_ptr<Drawing::GPUContext> RsVulkanInterface::DoCreateDrawingContext(std::string cacheDir)
 {
     std::unique_lock<std::mutex> lock(vkMutex_);
 
@@ -558,6 +558,12 @@ std::shared_ptr<Drawing::GPUContext> RsVulkanInterface::CreateDrawingContext(std
     auto size = vkVersion.size();
     memHandler_->ConfigureContext(&options, vkVersion.c_str(), size, cacheDir);
     drawingContext->BuildFromVK(backendContext_, options);
+    return drawingContext;
+}
+
+std::shared_ptr<Drawing::GPUContext> RsVulkanInterface::CreateDrawingContext(std::string cacheDir)
+{
+    auto drawingContext = DoCreateDrawingContext(cacheDir);
     int maxResources = 0;
     size_t maxResourcesSize = 0;
     int cacheLimitsTimes = CACHE_LIMITS_TIMES;
@@ -568,16 +574,9 @@ std::shared_ptr<Drawing::GPUContext> RsVulkanInterface::CreateDrawingContext(std
     } else {
         drawingContext->SetResourceCacheLimits(GR_CACHE_MAX_COUNT, GR_CACHE_MAX_BYTE_SIZE);
     }
-    return drawingContext;
-}
-
-std::shared_ptr<Drawing::GPUContext> RsVulkanInterface::CreateDrawingContext(std::string cacheDir)
-{
-    auto drawingContext = DoCreateDrawingContext(cacheDir);
     RsVulkanContext::SaveNewDrawingContext(gettid(), drawingContext);
     return drawingContext;
 }
-
 
 void RsVulkanInterface::DestroyAllSemaphoreFence()
 {

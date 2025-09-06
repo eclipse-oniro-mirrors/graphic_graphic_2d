@@ -22,7 +22,12 @@
 namespace OHOS::Rosen {
 RSLogicalDisplayRenderNode::RSLogicalDisplayRenderNode(NodeId id,
     const RSDisplayNodeConfig& config, const std::weak_ptr<RSContext>& context, bool isTextureExportNode)
-    : RSRenderNode(id, context, isTextureExportNode), screenId_(config.screenId) {}
+    : RSRenderNode(id, context, isTextureExportNode), screenId_(config.screenId)
+{
+    RS_LOGI("RSLogicalDisplayRenderNode ctor id:%{public}" PRIu64 ", config[screenid:%{public}" PRIu64
+            ", isMirrored:%{public}d, mirrorNodeId:%{public}" PRIu64 ", isSync:%{public}d",
+            id, screenId_, config.isMirrored, config.mirrorNodeId, config.isSync);
+}
 
 RSLogicalDisplayRenderNode::~RSLogicalDisplayRenderNode()
 {
@@ -34,7 +39,7 @@ void RSLogicalDisplayRenderNode::InitRenderParams()
     stagingRenderParams_ = std::make_unique<RSLogicalDisplayRenderParams>(GetId());
     DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(shared_from_this());
     if (renderDrawable_ == nullptr) {
-        RS_LOGE("RSLogicalDisplayRenderNode::InitRenderParams failed");
+        HILOG_COMM_ERROR("RSLogicalDisplayRenderNode::InitRenderParams failed");
         return;
     }
 }
@@ -83,15 +88,16 @@ void RSLogicalDisplayRenderNode::UpdateRenderParams()
     logicalDisplayRenderParam->screenRotation_ = GetScreenRotation();
     logicalDisplayRenderParam->nodeRotation_ = GetRotation();
     logicalDisplayRenderParam->isMirrorDisplay_ = IsMirrorDisplay();
+    logicalDisplayRenderParam->specialLayerManager_ = specialLayerManager_;
     auto mirroredNode = GetMirrorSource().lock();
     if (mirroredNode) {
         logicalDisplayRenderParam->mirrorSourceDrawable_ = mirroredNode->GetRenderDrawable();
+        logicalDisplayRenderParam->specialLayerManager_ = mirroredNode->GetSpecialLayerMgr();
         logicalDisplayRenderParam->virtualScreenMuteStatus_ = virtualScreenMuteStatus_;
     } else {
         logicalDisplayRenderParam->mirrorSourceDrawable_.reset();
     }
     logicalDisplayRenderParam->isSecurityDisplay_ = GetSecurityDisplay();
-    logicalDisplayRenderParam->specialLayerManager_ = specialLayerManager_;
     logicalDisplayRenderParam->displaySpecialSurfaceChanged_ = displaySpecialSurfaceChanged_;
     logicalDisplayRenderParam->isSecurityExemption_ = isSecurityExemption_;
     logicalDisplayRenderParam->hasSecLayerInVisibleRect_ = hasSecLayerInVisibleRect_;

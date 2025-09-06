@@ -603,6 +603,19 @@ HWTEST_F(HgmMultiAppStrategyTest, HandleLowAmbientStatus, Function | SmallTest |
 }
 
 /**
+ * @tc.name: CheckImageEnhanceListTest
+ * @tc.desc: Verify the result of CheckImageEnhanceList
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(HgmMultiAppStrategyTest, CheckImageEnhanceListTest, Function | SmallTest | Level0)
+{
+    const std::string appName = "";
+    bool result = multiAppStrategy_->CheckImageEnhanceList(appName);
+    ASSERT_FALSE(result);
+}
+
+/**
  * @tc.name: BackgroundApp
  * @tc.desc: Verify the result of BackgroundApp
  * @tc.type: FUNC

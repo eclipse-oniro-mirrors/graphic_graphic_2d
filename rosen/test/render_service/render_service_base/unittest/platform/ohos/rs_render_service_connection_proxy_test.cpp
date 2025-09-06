@@ -397,7 +397,7 @@ HWTEST_F(RSRenderServiceConnectionProxyTest, SetScreenSwitchingNotifyCallback, T
     ASSERT_NE(samgr, nullptr);
     auto remoteObject = samgr->GetSystemAbility(RENDER_SERVICE);
     callback = iface_cast<RSIScreenSwitchingNotifyCallback>(remoteObject);
-    ASSERT_EQ(proxy->SetScreenSwitchingNotifyCallback(callback), 0);
+    ASSERT_EQ(proxy->SetScreenSwitchingNotifyCallback(callback), 2);
 }
 
 /**
@@ -1555,6 +1555,21 @@ HWTEST_F(RSRenderServiceConnectionProxyTest, FreezeScreenTest, TestSize.Level1)
     EXPECT_EQ(ret, ERR_OK);
 }
 
+/**
+ * @tc.name: SetVirtualScreenStatus Test
+ * @tc.desc: SetVirtualScreenStatus Test
+ * @tc.type:FUNC
+ * @tc.require: issueIK45M
+ */
+HWTEST_F(RSRenderServiceConnectionProxyTest, SetVirtualScreenStatusTest, TestSize.Level1)
+{
+    ScreenId screenId = 1;
+    VirtualScreenStatus virtualScreenStatus = VirtualScreenStatus::VIRTUAL_SCREEN_INVALID_STATUS;
+    bool success;
+    proxy->SetVirtualScreenStatus(screenId, virtualScreenStatus, success);
+    ASSERT_TRUE(proxy);
+}
+
 /*
  * @tc.name: DropFrameByPidWithInvalidParameter Test
  * @tc.desc: DropFrameByPidWithInvalidParameter Test
@@ -1581,6 +1596,37 @@ HWTEST_F(RSRenderServiceConnectionProxyTest, SetOptimizeCanvasDirtyPidList, Test
 
     auto ret = proxy->SetOptimizeCanvasDirtyPidList(pidList);
     ASSERT_EQ(ret, ERR_INVALID_VALUE);
+}
+
+/**
+ * @tc.name: AvcodecVideoStart Test
+ * @tc.desc: AvcodecVideoStart Test
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSRenderServiceConnectionProxyTest, AvcodecVideoStartTest, TestSize.Level1)
+{
+    std::vector<uint64_t> uniqueIdList = {1};
+    std::vector<std::string> surfaceNameList = {"surface1"};
+    uint32_t fps = 120;
+    uint64_t reportTime = 16;
+    proxy->AvcodecVideoStart(uniqueIdList, surfaceNameList, fps, reportTime);
+    ASSERT_TRUE(proxy);
+}
+
+/**
+ * @tc.name: AvcodecVideoStop Test
+ * @tc.desc: AvcodecVideoStop Test
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSRenderServiceConnectionProxyTest, AvcodecVideoStopTest, TestSize.Level1)
+{
+    std::vector<uint64_t> uniqueIdList = {1};
+    std::vector<std::string> surfaceNameList = {"surface1"};
+    uint32_t fps = 120;
+    proxy->AvcodecVideoStop(uniqueIdList, surfaceNameList, fps);
+    ASSERT_TRUE(proxy);
 }
 } // namespace Rosen
 } // namespace OHOS

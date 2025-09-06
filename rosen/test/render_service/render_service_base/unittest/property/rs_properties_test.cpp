@@ -382,8 +382,6 @@ HWTEST_F(RSPropertiesTest, Dump001, TestSize.Level1)
     EXPECT_EQ(properties.GetShadowOffsetX(), 1.f);
     properties.SetShadowOffsetY(1.f);
     EXPECT_EQ(properties.GetShadowOffsetY(), 1.f);
-    properties.SetShadowAlpha(1.f);
-    EXPECT_EQ(properties.GetShadowAlpha(), 1.f);
     properties.SetShadowElevation(1.f);
     EXPECT_EQ(properties.GetShadowElevation(), 1.f);
     properties.SetShadowRadius(1.f);
@@ -1317,24 +1315,6 @@ HWTEST_F(RSPropertiesTest, SetNGetForegroundEffectRadius001, TestSize.Level1)
 }
 
 /**
- * @tc.name: ResetProperty001
- * @tc.desc: test results of ResetProperty
- * @tc.type:FUNC
- * @tc.require:
- */
-HWTEST_F(RSPropertiesTest, ResetProperty001, TestSize.Level1)
-{
-    RSProperties properties;
-    std::bitset<static_cast<int>(RSModifierType::MAX_RS_MODIFIER_TYPE)> dirtyTypes;
-    properties.ResetProperty(dirtyTypes);
-
-    dirtyTypes.set(5);
-    dirtyTypes.set(0);
-    properties.ResetProperty(dirtyTypes);
-    EXPECT_TRUE(true);
-}
-
-/**
  * @tc.name: UpdateGeometry001
  * @tc.desc: test results of UpdateGeometry
  * @tc.type:FUNC
@@ -1886,27 +1866,6 @@ HWTEST_F(RSPropertiesTest, SetForegroundFilter001, TestSize.Level1)
     foregroundFilter = std::make_shared<RSFilter>();
     properties.SetForegroundFilter(foregroundFilter);
     EXPECT_NE(foregroundFilter, nullptr);
-}
-
-/**
- * @tc.name: SetShadowAlpha001
- * @tc.desc: test results of SetShadowAlpha
- * @tc.type: FUNC
- * @tc.require: issueI9QKVM
- */
-HWTEST_F(RSPropertiesTest, SetShadowAlpha001, TestSize.Level1)
-{
-    RSProperties properties;
-    float alpha = 0.f;
-    properties.SetShadowAlpha(alpha);
-
-    alpha = 1.f;
-    properties.shadow_ = std::make_optional<RSShadow>();
-    properties.shadow_->elevation_ = 1.f;
-    properties.shadow_->color_.alpha_ = 255;
-    properties.shadow_->radius_ = 1.f;
-    properties.SetShadowAlpha(alpha);
-    EXPECT_NE(alpha, 0.f);
 }
 
 /**
@@ -3047,6 +3006,25 @@ HWTEST_F(RSPropertiesTest, SetLightIntensity001, TestSize.Level1)
 }
 
 /**
+ * @tc.name: SetLightIntensity002
+ * @tc.desc: test results of SetLightIntensity
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSPropertiesTest, SetLightIntensity002, TestSize.Level1)
+{
+    RSProperties properties;
+    properties.SetLightIntensity(-1.f);
+    EXPECT_NE(properties.lightSourcePtr_, nullptr);
+    std::shared_ptr<RSRenderNode> node = nullptr;
+    properties.backref_ = node;
+    auto instance = RSPointLightManager::Instance();
+    instance->lightSourceNodeMap_.clear();
+    properties.SetLightIntensity(1.f);
+    EXPECT_TRUE(instance->lightSourceNodeMap_.empty());
+}
+
+/**
  * @tc.name: SetLightColor001
  * @tc.desc: test results of SetLightColor
  * @tc.type: FUNC
@@ -3133,6 +3111,27 @@ HWTEST_F(RSPropertiesTest, SetIlluminatedType001, TestSize.Level1)
     properties.SetIlluminatedType(static_cast<int>(illuminatedTypeBBC));
     EXPECT_EQ(properties.contentDirty_, true);
 }
+
+/**
+ * @tc.name: SetIlluminatedType002
+ * @tc.desc: test results of SetIlluminatedType
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSPropertiesTest, SetIlluminatedType002, TestSize.Level1)
+{
+    RSProperties properties;
+    properties.SetIlluminatedType(-1);
+    EXPECT_NE(properties.illuminatedPtr_, nullptr);
+
+    std::shared_ptr<RSRenderNode> node = nullptr;
+    properties.backref_ = node;
+    auto instance = RSPointLightManager::Instance();
+    instance->illuminatedNodeMap_.clear();
+    properties.SetIlluminatedType(1);
+    EXPECT_TRUE(instance->illuminatedNodeMap_.empty());
+}
+
 
 /**
  * @tc.name: SetBloom001

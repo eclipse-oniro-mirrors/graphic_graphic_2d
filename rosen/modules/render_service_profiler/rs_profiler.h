@@ -79,6 +79,7 @@
 #define RS_PROFILER_PROCESS_ADD_CHILD(parent, child, index) RSProfiler::ProcessAddChild(parent, child, index)
 #define RS_PROFILER_IF_NEED_TO_SKIP_DRAWCMD_SURFACE(parcel, skipBytes) \
     RSProfiler::IfNeedToSkipDuringReplay(parcel, skipBytes)
+#define RS_PROFILER_IS_FIRST_FRAME_PARCEL(parcel) RSProfiler::IsFirstFrameParcel(parcel)
 #define RS_PROFILER_RSLOGEOUTPUT(format, argptr) RSProfiler::RSLogOutput(RSProfilerLogType::ERROR, format, argptr)
 #define RS_PROFILER_RSLOGWOUTPUT(format, argptr) RSProfiler::RSLogOutput(RSProfilerLogType::WARNING, format, argptr)
 #define RS_PROFILER_RSLOGDOUTPUT(format, argptr) RSProfiler::RSLogOutput(RSProfilerLogType::WARNING, format, argptr)
@@ -140,6 +141,7 @@
 #define RS_PROFILER_KEEP_DRAW_CMD(drawCmdListNeedSync) drawCmdListNeedSync = true
 #define RS_PROFILER_PROCESS_ADD_CHILD(parent, child, index) false
 #define RS_PROFILER_IF_NEED_TO_SKIP_DRAWCMD_SURFACE(parcel, skipBytes) false
+#define RS_PROFILER_IS_FIRST_FRAME_PARCEL(parcel) false
 #define RS_PROFILER_SURFACE_ON_DRAW_MATCH_OPTIMIZE(useNodeMatchOptimize)
 #define RS_PROFILER_RSLOGEOUTPUT(format, argptr)
 #define RS_PROFILER_RSLOGWOUTPUT(format, argptr)
@@ -181,7 +183,6 @@ class RSIRenderServiceConnection;
 class RSRenderServiceConnection;
 class RSTransactionData;
 class RSRenderNode;
-class RSRenderModifier;
 class RSProperties;
 class RSContext;
 class RSScreenRenderNode;
@@ -504,6 +505,8 @@ public:
     RSB_EXPORT static bool IfNeedToSkipDuringReplay(Parcel& parcel, uint32_t skipBytes);
     RSB_EXPORT static void SurfaceOnDrawMatchOptimize(bool& useNodeMatchOptimize);
 
+    RSB_EXPORT static bool IsFirstFrameParcel(const Parcel& parcel);
+
     RSB_EXPORT static void RsMetricClear();
     RSB_EXPORT static void RsMetricSet(std::string name, std::string value);
     RSB_EXPORT static std::string RsMetricGetList();
@@ -575,6 +578,9 @@ private:
 
     RSB_EXPORT static bool IsSecureScreen();
 
+    RSB_EXPORT static bool IsRenderFrameWorking();
+    RSB_EXPORT static std::mutex& RenderFrameMutexGet();
+
     RSB_EXPORT static std::shared_ptr<RSScreenRenderNode> GetScreenNode(const RSContext& context);
     RSB_EXPORT static Vector4f GetScreenRect(const RSContext& context);
 
@@ -598,9 +604,9 @@ private:
     RSB_EXPORT static std::string UnmarshalTree(RSContext& context, std::stringstream& data, uint32_t fileVersion);
     RSB_EXPORT static std::string UnmarshalNode(RSContext& context, std::stringstream& data, uint32_t fileVersion);
     RSB_EXPORT static std::string UnmarshalNode(
-        RSContext& context, std::stringstream& data, NodeId nodeId, uint32_t fileVersion);
+        RSContext& context, std::stringstream& data, NodeId nodeId, uint32_t fileVersion, RSRenderNodeType nodeType);
     RSB_EXPORT static std::string UnmarshalNodeModifiers(
-        RSRenderNode& node, std::stringstream& data, uint32_t fileVersion);
+        RSRenderNode& node, std::stringstream& data, uint32_t fileVersion, RSRenderNodeType nodeType);
 
     RSB_EXPORT static void MarshalSubTree(RSContext& context, std::stringstream& data, const RSRenderNode& node,
         uint32_t fileVersion, bool clearImageCache = true);
@@ -732,6 +738,7 @@ private:
     static void Version(const ArgList& args);
     static void FileVersion(const ArgList& args);
 
+    static bool AbortOnSecureScreenSKP();
     static void SaveSkp(const ArgList& args);
     static void SaveOffscreenSkp(const ArgList& args);
     static void SaveComponentSkp(const ArgList& args);
@@ -816,6 +823,8 @@ private:
 
     friend class TestTreeBuilder;
     friend class RSRenderServiceConnection;
+
+    static uint64_t GetRootNodeId();
 };
 
 } // namespace OHOS::Rosen

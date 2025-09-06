@@ -29,6 +29,10 @@
 
 namespace OHOS {
 namespace Rosen {
+namespace {
+constexpr uint16_t MAX_VIDEO_RECT_PIXEL = 4096;
+constexpr uint16_t MIN_VIDEO_RECT_PIXEL = 360;
+}
 RSHdrManager &RSHdrManager::Instance()
 {
     static RSHdrManager instance;
@@ -38,14 +42,15 @@ RSHdrManager &RSHdrManager::Instance()
 RSHdrManager::RSHdrManager()
 {
     isHeterogComputingHdrOn_ = RSSystemProperties::GetHeterogComputingHDREnabled();
+    if (!RSHDRPatternManager::Instance().MHCGraphPatternInit(GRAPH_NUM)) {
+        RS_LOGE("MHCGraphPatternInit() failed!");
+        isHeterogComputingHdrOn_ = false;
+        return;
+    }
     if (!RSHDRPatternManager::Instance().MHCDlOpen()) {
         RS_LOGE("MHCDlOpen() failed!");
         isHeterogComputingHdrOn_ = false;
         return;
-    }
-    if (!RSHDRPatternManager::Instance().MHCGraphPatternInit(GRAPH_NUM)) {
-        RS_LOGE("MHCGraphPatternInit() failed!");
-        isHeterogComputingHdrOn_ = false;
     }
 }
 
@@ -81,11 +86,6 @@ void RSHdrManager::GetFixDstRectStatus(
     std::shared_ptr<DrawableV2::RSSurfaceRenderNodeDrawable> drawable,
     bool isUifistR, RSSurfaceRenderParams *surfaceParams, RectI &finalDstRect, bool &isFixDstRect)
 {
-    if (surfaceParams == nullptr) {
-        RS_LOGE("surfaceParams is nullptr");
-        return;
-    }
-
     auto srcRect = surfaceParams->GetLayerInfo().srcRect;
     auto dstRect = surfaceParams->GetLayerInfo().dstRect;
     Drawing::Matrix matrix = surfaceParams->GetLayerInfo().matrix;
@@ -97,17 +97,17 @@ void RSHdrManager::GetFixDstRectStatus(
 
     bool ratiojudge = (abs(ratio - 1.0) > 0.02);
     ScreenInfo curScreenInfo = CreateOrGetScreenManager()->QueryScreenInfo(GetScreenIDByDrawable(drawable));
-    int realRotation = RSBaseRenderUtil::RotateEnumToInt(
-        RSBaseRenderUtil::GetRotateTransform(surfaceParams->GetLayerInfo().transformType));
+    auto transform = RSBaseRenderUtil::GetRotateTransform(surfaceParams->GetLayerInfo().transformType);
 
-    Vector2f HpaeBufferSize = (realRotation == ROTATION_90 || realRotation == ROTATION_270)
-                               ? Vector2f(curScreenInfo.height, curScreenInfo.width)
-                               : Vector2f(curScreenInfo.width, curScreenInfo.height);
+    bool isVertical = (transform == GraphicTransformType::GRAPHIC_ROTATE_90 ||
+        transform == GraphicTransformType::GRAPHIC_ROTATE_270);
+    Vector2f HpaeBufferSize = isVertical ? Vector2f(curScreenInfo.height, curScreenInfo.width)
+                                : Vector2f(curScreenInfo.width, curScreenInfo.height);
     Vector2f boundSize = surfaceParams->GetCacheSize();
     bool sizejudge = abs(matrix.Get(1)) > HDR_EPSILON || abs(matrix.Get(3)) > HDR_EPSILON;
     sptr<SurfaceBuffer> srcBuffer = surfaceParams->GetBuffer();
 
-    if (realRotation == ROTATION_90 || realRotation == ROTATION_270) {
+    if (isVertical) {
         boundSize.y_ = HpaeBufferSize.y_;
         if (srcBuffer->GetSurfaceBufferHeight() > 0) {
             boundSize.x_ = round(boundSize.y_ * srcBuffer->GetSurfaceBufferWidth() /
@@ -129,7 +129,8 @@ void RSHdrManager::GetFixDstRectStatus(
     finalDstRect.top_ = 0;
     finalDstRect.width_ = boundSize.x_;
     finalDstRect.height_ = boundSize.y_;
-    isFixDstRect = isUifistR || ratiojudge || sizejudge;
+    isFixDstRect = isUifistR || ratiojudge || sizejudge ||
+        transform == GraphicTransformType::GRAPHIC_ROTATE_180;
     if (!isFixDstRect) {
         finalDstRect.width_ = dstRect.w;
         finalDstRect.height_ = dstRect.h;
@@ -260,10 +261,17 @@ bool RSHdrManager::ValidateSurface(RSSurfaceRenderParams* surfaceParams)
         RS_LOGE("surfaceParams is nullptr");
         return false;
     }
-
+    sptr<SurfaceBuffer> srcBuffer = surfaceParams->GetBuffer();
     const auto& dstRect = surfaceParams->GetLayerInfo().dstRect;
-    if (dstRect.w == 0 || dstRect.h == 0) {
-        RS_LOGE("dstRect is invalid");
+    const auto& srcRect = surfaceParams->GetLayerInfo().srcRect;
+
+    if (srcBuffer==nullptr ||
+        dstRect.w <= MIN_VIDEO_RECT_PIXEL || dstRect.w > MAX_VIDEO_RECT_PIXEL ||
+        dstRect.h <= MIN_VIDEO_RECT_PIXEL || dstRect.h > MAX_VIDEO_RECT_PIXEL ||
+        srcRect.w <= MIN_VIDEO_RECT_PIXEL || srcRect.w > MAX_VIDEO_RECT_PIXEL ||
+        srcRect.h <= MIN_VIDEO_RECT_PIXEL || srcRect.h > MAX_VIDEO_RECT_PIXEL ||
+        srcBuffer->GetSurfaceBufferWidth() == 0 || srcBuffer->GetSurfaceBufferHeight() == 0) {
+        RS_LOGE("[hdrHetero]:RSHdrManager ValidateSurface srcBuffer, dstRect or srcRect are invalid");
         return false;
     }
     return true;

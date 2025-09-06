@@ -24,13 +24,16 @@
 #include "pipeline/render_thread/rs_render_engine.h"
 #include "pipeline/render_thread/rs_uni_render_virtual_processor.h"
 #include "platform/common/rs_system_properties.h"
-#include "screen_manager/rs_screen.h"
-#include "policy/rs_parallel_rb_policy.h"
-#include "rs_parallel_manager.h"
-
 #include "render/rs_pixel_map_util.h"
+#include "screen_manager/rs_screen.h"
+
 #ifdef RS_PROFILER_ENABLED
 #include "rs_profiler_capture_recorder.h"
+#endif
+
+#ifdef SUBTREE_PARALLEL_ENABLE
+#include "policy/rs_parallel_rb_policy.h"
+#include "rs_parallel_manager.h"
 #endif
 
 using namespace testing;
@@ -473,6 +476,7 @@ HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, OnDrawTest009, TestSize.Level1)
     ASSERT_NE(displayDrawable_->GetScreenParams(*displayDrawable_->GetRenderParams()).second, nullptr);
 }
 
+#ifdef SUBTREE_PARALLEL_ENABLE
 /**
  * @tc.name: OnDrawTest010
  * @tc.desc: Test OnDraw When GetRotateOffScreenScreenNodeEnable is true
@@ -505,6 +509,7 @@ HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, OnDrawTest010, TestSize.Level1)
     ASSERT_EQ(mirroredDisplayDrawable_->GetRenderParams(), nullptr);
     ASSERT_TRUE(RotateOffScreenParam::GetRotateOffScreenScreenNodeEnable());
 }
+#endif
 
 /**
  * @tc.name: OnCaptureTest001
@@ -3177,8 +3182,14 @@ HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, GetSpecialLayerType, TestSize.L
     ASSERT_NE(params, nullptr);
     int32_t result = displayDrawable_->GetSpecialLayerType(*params);
     ASSERT_EQ(result, 0);
+    params->hasCaptureWindow_ = true;
+    result = displayDrawable_->GetSpecialLayerType(*params);
+    ASSERT_EQ(result, 2);
+    params->hasCaptureWindow_ = false;
 
-    displayDrawable_->currentBlackList_.insert(0);
+    ScreenId screenId = 1;
+    params->SetScreenId(screenId);
+    params->specialLayerManager_.SetWithScreen(screenId, SpecialLayerType::HAS_BLACK_LIST, true);
     result = displayDrawable_->GetSpecialLayerType(*params);
     ASSERT_EQ(result, 1);
     RSUniRenderThread::Instance().whiteList_.insert(0);
@@ -3189,7 +3200,7 @@ HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, GetSpecialLayerType, TestSize.L
     result = displayDrawable_->GetSpecialLayerType(*params);
     ASSERT_EQ(result, 0);
     RSUniRenderThread::GetCaptureParam().isSnapshot_ = false;
-    displayDrawable_->currentBlackList_.clear();
+    params->specialLayerManager_.ClearScreenSpecialLayer();
     RSUniRenderThread::Instance().whiteList_.clear();
 }
 
@@ -3734,6 +3745,30 @@ HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, DrawHardwareEnabledNodesTest001
     displayDrawable_->DrawHardwareEnabledNodes(canvas, *params);
     ASSERT_TRUE(RSUniRenderThread::Instance().GetRenderEngine());
     RSUniRenderThread::Instance().uniRenderEngine_ = nullptr;
+}
+
+/**
+ * @tc.name: DrawCurtainScreen
+ * @tc.desc: Test DrawCurtainScreen
+ * @tc.type: FUNC
+ * @tc.require: #I9NVOG
+ */
+HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, DrawCurtainScreen, TestSize.Level1)
+{
+    ASSERT_NE(displayDrawable_, nullptr);
+    ASSERT_NE(drawingFilterCanvas_, nullptr);
+    displayDrawable_->curCanvas_ = drawingFilterCanvas_;
+    auto params = std::make_unique<RSRenderThreadParams>();
+    params->isCurtainScreenOn_ = true;
+    RSUniRenderThread::Instance().Sync(std::move(params));
+    EXPECT_TRUE(RSUniRenderThread::Instance().IsCurtainScreenOn());
+    displayDrawable_->DrawCurtainScreen();
+    
+    params = std::make_unique<RSRenderThreadParams>();
+    params->isCurtainScreenOn_ = false;
+    RSUniRenderThread::Instance().Sync(std::move(params));
+    EXPECT_FALSE(RSUniRenderThread::Instance().IsCurtainScreenOn());
+    displayDrawable_->DrawCurtainScreen();
 }
 
 /**

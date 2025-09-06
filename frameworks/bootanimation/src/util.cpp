@@ -53,20 +53,7 @@ bool IsFileExisted(const std::string& filePath)
 bool ParseBootConfig(const std::string& path, int32_t& duration, bool& isCompatible, bool& isMultiDisplay,
     std::vector<BootAnimationConfig>& configs)
 {
-    char newpath[PATH_MAX + 1] = { 0x00 };
-    if (strlen(path.c_str()) > PATH_MAX || realpath(path.c_str(), newpath) == nullptr) {
-        LOGE("check config path fail! %{public}s %{public}d %{public}s", path.c_str(), errno, ::strerror(errno));
-        return false;
-    }
-
-    std::ifstream configFile;
-    configFile.open(newpath);
-    std::stringstream JFilterParamsStream;
-    JFilterParamsStream << configFile.rdbuf();
-    configFile.close();
-    std::string JParamsString = JFilterParamsStream.str();
-
-    cJSON* overallData = cJSON_Parse(JParamsString.c_str());
+    cJSON* overallData = ParseFileConfig(path);
     if (overallData == nullptr) {
         LOGE("can not parse config to json");
         return false;
@@ -105,12 +92,12 @@ void ParseOldConfigFile(cJSON* data, std::vector<BootAnimationConfig>& configs)
     }
     cJSON* rotateScreenJson = cJSON_GetObjectItem(data, "cust.bootanimation.rotate.screenid");
     if (rotateScreenJson != nullptr && cJSON_IsString(rotateScreenJson)) {
-        config.rotateScreenId = std::atoi(rotateScreenJson->valuestring);
+        config.rotateScreenId = StringToInt32(rotateScreenJson->valuestring);
         LOGI("cust rotateScreenId: %{public}d", config.rotateScreenId);
     }
     cJSON* rotateDegreeJson = cJSON_GetObjectItem(data, "cust.bootanimation.rotate.degree");
     if (rotateDegreeJson != nullptr && cJSON_IsString(rotateDegreeJson)) {
-        config.rotateDegree = std::atoi(rotateDegreeJson->valuestring);
+        config.rotateDegree = StringToInt32(rotateDegreeJson->valuestring);
         LOGI("cust rotateDegree: %{public}d", config.rotateDegree);
     }
     cJSON* extraVideoPath = cJSON_GetObjectItem(data, "cust.bootanimation.video_extensions");
@@ -155,7 +142,7 @@ void ParseNewConfigFile(cJSON* data, bool& isMultiDisplay, std::vector<BootAnima
             }
             cJSON* rotateDegreeJson = cJSON_GetObjectItem(item, "cust.bootanimation.rotate_degree");
             if (rotateDegreeJson != nullptr && cJSON_IsString(rotateDegreeJson)) {
-                config.rotateDegree = std::atoi(rotateDegreeJson->valuestring);
+                config.rotateDegree = StringToInt32(rotateDegreeJson->valuestring);
                 LOGI("cust rotateDegree: %{public}d", config.rotateDegree);
             }
             cJSON* extraVideoPath = cJSON_GetObjectItem(item, "cust.bootanimation.video_extensions");
@@ -166,6 +153,84 @@ void ParseNewConfigFile(cJSON* data, bool& isMultiDisplay, std::vector<BootAnima
             item = item->next;
         }
     }
+}
+
+void ParseProgressData(cJSON* data, std::map<int32_t, BootAnimationProgressConfig>& configs)
+{
+    LOGI("ParseProgressData");
+    cJSON* progressConfigs = cJSON_GetObjectItem(data, "progress_config");
+    if (progressConfigs != nullptr) {
+        BootAnimationProgressConfig config;
+        cJSON* item = progressConfigs->child;
+        while (item != nullptr) {
+            cJSON* progressScreenIdJson = cJSON_GetObjectItem(item, "cust.bootanimation.progress_screen_id");
+            if (progressScreenIdJson != nullptr && cJSON_IsString(progressScreenIdJson)) {
+                config.progressScreenId = StringToInt32(progressScreenIdJson->valuestring);
+            }
+            cJSON* progressHeightJson = cJSON_GetObjectItem(item, "cust.bootanimation.progress_height");
+            if (progressHeightJson != nullptr && cJSON_IsString(progressHeightJson)) {
+                config.progressHeight = StringToInt32(progressHeightJson->valuestring);
+            }
+            cJSON* progressFrameHeightJson = cJSON_GetObjectItem(item, "cust.bootanimation.progress_frame_height");
+            if (progressFrameHeightJson != nullptr && cJSON_IsString(progressFrameHeightJson)) {
+                config.progressFrameHeight = StringToInt32(progressFrameHeightJson->valuestring);
+            }
+            cJSON* progressOffsetJson = cJSON_GetObjectItem(item, "cust.bootanimation.progress_x_offset");
+            if (progressOffsetJson != nullptr && cJSON_IsString(progressOffsetJson)) {
+                config.progressOffset = StringToInt32(progressOffsetJson->valuestring);
+            }
+            cJSON* progressFontSizeJson = cJSON_GetObjectItem(item, "cust.bootanimation.progress_font_size");
+            if (progressFontSizeJson != nullptr && cJSON_IsString(progressFontSizeJson)) {
+                config.progressFontSize = StringToInt32(progressFontSizeJson->valuestring);
+            }
+            cJSON* progressRadiusSizeJson = cJSON_GetObjectItem(item, "cust.bootanimation.progress_radius_size");
+            if (progressRadiusSizeJson != nullptr && cJSON_IsString(progressRadiusSizeJson)) {
+                config.progressRadiusSize = StringToInt32(progressRadiusSizeJson->valuestring);
+            }
+            cJSON* progressDegreeJson = cJSON_GetObjectItem(item, "cust.bootanimation.progress_degree");
+            if (progressDegreeJson != nullptr && cJSON_IsString(progressDegreeJson)) {
+                config.progressDegree = StringToInt32(progressDegreeJson->valuestring);
+            }
+            configs.emplace(config.progressScreenId, config);
+            item = item->next;
+        }
+    }
+}
+
+void ParseProgressConfig(const std::string& path, std::map<int32_t, BootAnimationProgressConfig>& configs)
+{
+    LOGI("ParseProgressConfig");
+    cJSON* overallData = ParseFileConfig(path);
+    if (overallData == nullptr) {
+        LOGE("can not parse config to json");
+        return;
+    }
+    cJSON_bool hasProgressConfig = cJSON_HasObjectItem(overallData, "progress_config");
+    if (!hasProgressConfig) {
+        LOGE("has no progress config");
+        cJSON_Delete(overallData);
+        return;
+    }
+    ParseProgressData(overallData, configs);
+    cJSON_Delete(overallData);
+}
+
+cJSON* ParseFileConfig(const std::string& path)
+{
+    char newpath[PATH_MAX + 1] = { 0x00 };
+    if (strlen(path.c_str()) > PATH_MAX || realpath(path.c_str(), newpath) == nullptr) {
+        LOGE("check config path fail! %{public}s %{public}d %{public}s", path.c_str(), errno, ::strerror(errno));
+        return nullptr;
+    }
+
+    std::ifstream configFile;
+    configFile.open(newpath);
+    std::stringstream JFilterParamsStream;
+    JFilterParamsStream << configFile.rdbuf();
+    configFile.close();
+    std::string JParamsString = JFilterParamsStream.str();
+
+    return cJSON_Parse(JParamsString.c_str());
 }
 
 void ParseVideoExtraPath(cJSON* data, BootAnimationConfig& config)
@@ -184,7 +249,7 @@ void ParseBootDuration(cJSON* data, int32_t& duration)
 {
     cJSON* durationJson = cJSON_GetObjectItem(data, "cust.bootanimation.duration");
     if (durationJson != nullptr && cJSON_IsString(durationJson)) {
-        duration = std::atoi(durationJson->valuestring);
+        duration = StringToInt32(durationJson->valuestring);
         LOGI("cust duration: %{public}d", duration);
     }
 }
@@ -415,5 +480,21 @@ int64_t GetSystemCurrentTime()
 std::string GetDeviceType()
 {
     return system::GetParameter("const.product.devicetype", "phone");
+}
+
+int32_t StringToInt32(const std::string& str)
+{
+    if (str.empty() || str.length() > MAX_LENGTH) {
+        LOGE("invalid str: %{public}s", str.c_str());
+        return 0;
+    }
+    if (str[0] == '-' && std::all_of(str.begin() + 1, str.end(), isdigit)) {
+        return static_cast<int32_t>(std::stoi(str));
+    }
+    if (!std::all_of(str.begin(), str.end(), isdigit)) {
+        LOGE("not number str: %{public}s", str.c_str());
+        return 0;
+    }
+    return static_cast<int32_t>(std::stoi(str));
 }
 } // namespace OHOS

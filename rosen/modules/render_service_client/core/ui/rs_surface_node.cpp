@@ -22,6 +22,7 @@
 #include "command/rs_base_node_command.h"
 #include "command/rs_node_command.h"
 #include "command/rs_surface_node_command.h"
+#include "common/rs_optional_trace.h"
 #include "ipc_callbacks/rs_rt_refresh_callback.h"
 #include "pipeline/rs_node_map.h"
 #include "pipeline/rs_render_thread.h"
@@ -35,10 +36,10 @@
 #include "transaction/rs_render_service_client.h"
 #include "transaction/rs_transaction_proxy.h"
 #include "feature/composite_layer/rs_composite_layer_utils.h"
-#include "ui/rs_proxy_node.h"
 #include "rs_trace.h"
-#include "common/rs_optional_trace.h"
-#include "rs_ui_context.h"
+#include "ui/rs_proxy_node.h"
+#include "ui/rs_ui_context.h"
+#include "ui/rs_ui_context_manager.h"
 #include "transaction/rs_interfaces.h"
 
 #ifndef ROSEN_CROSS_PLATFORM
@@ -88,7 +89,7 @@ RSSurfaceNode::SharedPtr RSSurfaceNode::Create(const RSSurfaceNodeConfig& surfac
     node->surfaceNodeType_ = config.nodeType;
 
     RS_TRACE_NAME_FMT("RSSurfaceNode::Create name: %s type: %hhu, id: %lu, token:%lu", node->name_.c_str(),
-        config.nodeType, node->GetId(), rsUIContext ? rsUIContext->GetToken() : -1);
+        config.nodeType, node->GetId(), rsUIContext ? rsUIContext->GetToken() : 0);
     RS_LOGD("RSSurfaceNode::Create name:%{public}s type: %{public}hhu "
         "isWindow %{public}d %{public}d ", config.name.c_str(),
         config.nodeType, isWindow, node->IsRenderServiceNode());
@@ -160,7 +161,6 @@ RSSurfaceNode::SharedPtr RSSurfaceNode::Create(const RSSurfaceNodeConfig& surfac
     return node;
 }
 
-// LCOV_EXCL_START
 void RSSurfaceNode::CreateNodeInRenderThread()
 {
     if (!IsRenderServiceNode()) {
@@ -188,7 +188,6 @@ void RSSurfaceNode::CreateNodeInRenderThread()
         AddCommand(command, false);
     }
 }
-// LCOV_EXCL_STOP
 
 void RSSurfaceNode::AddChild(std::shared_ptr<RSBaseNode> child, int index)
 {
@@ -208,7 +207,6 @@ void RSSurfaceNode::RemoveChild(std::shared_ptr<RSBaseNode> child)
     RSBaseNode::RemoveChild(child);
 }
 
-// LCOV_EXCL_START
 void RSSurfaceNode::ClearChildren()
 {
     if (isChildOperationDisallowed_) {
@@ -217,9 +215,7 @@ void RSSurfaceNode::ClearChildren()
     }
     RSBaseNode::ClearChildren();
 }
-// LCOV_EXCL_STOP
 
-// LCOV_EXCL_START
 FollowType RSSurfaceNode::GetFollowType() const
 {
     if (IsRenderServiceNode()) {
@@ -228,7 +224,6 @@ FollowType RSSurfaceNode::GetFollowType() const
         return FollowType::FOLLOW_TO_PARENT;
     }
 }
-// LCOV_EXCL_STOP
 
 void RSSurfaceNode::MarkUIHidden(bool isHidden)
 {
@@ -250,7 +245,6 @@ void RSSurfaceNode::MarkUIHidden(bool isHidden)
     }
 }
 
-// LCOV_EXCL_START
 void RSSurfaceNode::OnBoundsSizeChanged() const
 {
     auto bounds = GetStagingProperties().GetBounds();
@@ -271,7 +265,6 @@ void RSSurfaceNode::OnBoundsSizeChanged() const
             GetName().c_str(), GetId(), bounds.x_, bounds.y_, bounds.z_, bounds.w_);
     }
 }
-// LCOV_EXCL_STOP
 
 void RSSurfaceNode::SetLeashPersistentId(LeashPersistentId leashPersistentId)
 {
@@ -283,12 +276,10 @@ void RSSurfaceNode::SetLeashPersistentId(LeashPersistentId leashPersistentId)
         surfaceNodeId:[%{public}" PRIu64 "] leashPersistentId:[%{public}" PRIu64 "]", GetId(), leashPersistentId);
 }
 
-// LCOV_EXCL_START
 LeashPersistentId RSSurfaceNode::GetLeashPersistentId() const
 {
     return leashPersistentId_;
 }
-// LCOV_EXCL_STOP
 
 void RSSurfaceNode::SetSecurityLayer(bool isSecurityLayer)
 {
@@ -300,12 +291,10 @@ void RSSurfaceNode::SetSecurityLayer(bool isSecurityLayer)
         GetId(), isSecurityLayer ? "true" : "false");
 }
 
-// LCOV_EXCL_START
 bool RSSurfaceNode::GetSecurityLayer() const
 {
     return isSecurityLayer_;
 }
-// LCOV_EXCL_STOP
 
 void RSSurfaceNode::SetSkipLayer(bool isSkipLayer)
 {
@@ -317,12 +306,10 @@ void RSSurfaceNode::SetSkipLayer(bool isSkipLayer)
         isSkipLayer ? "true" : "false");
 }
 
-// LCOV_EXCL_START
 bool RSSurfaceNode::GetSkipLayer() const
 {
     return isSkipLayer_;
 }
-// LCOV_EXCL_STOP
 
 void RSSurfaceNode::SetSnapshotSkipLayer(bool isSnapshotSkipLayer)
 {
@@ -334,12 +321,10 @@ void RSSurfaceNode::SetSnapshotSkipLayer(bool isSnapshotSkipLayer)
         isSnapshotSkipLayer ? "true" : "false");
 }
 
-// LCOV_EXCL_START
 bool RSSurfaceNode::GetSnapshotSkipLayer() const
 {
     return isSnapshotSkipLayer_;
 }
-// LCOV_EXCL_STOP
 
 void RSSurfaceNode::SetFingerprint(bool hasFingerprint)
 {
@@ -351,12 +336,10 @@ void RSSurfaceNode::SetFingerprint(bool hasFingerprint)
         hasFingerprint ? "true" : "false");
 }
 
-// LCOV_EXCL_START
 bool RSSurfaceNode::GetFingerprint() const
 {
     return hasFingerprint_;
 }
-// LCOV_EXCL_STOP
 
 void RSSurfaceNode::SetColorSpace(GraphicColorGamut colorSpace)
 {
@@ -366,7 +349,6 @@ void RSSurfaceNode::SetColorSpace(GraphicColorGamut colorSpace)
     AddCommand(command, true);
 }
 
-// LCOV_EXCL_START
 void RSSurfaceNode::CreateRenderNodeForTextureExportSwitch()
 {
     std::unique_ptr<RSCommand> command = std::make_unique<RSSurfaceNodeCreate>(GetId(),
@@ -384,7 +366,6 @@ void RSSurfaceNode::CreateRenderNodeForTextureExportSwitch()
         hasCreateRenderNodeInRS_ = true;
     }
 }
-// LCOV_EXCL_STOP
 
 void RSSurfaceNode::SetIsTextureExportNode(bool isTextureExportNode)
 {
@@ -459,12 +440,10 @@ bool RSSurfaceNode::SetBufferAvailableCallback(BufferAvailableCallback callback)
     });
 }
 
-// LCOV_EXCL_START
 bool RSSurfaceNode::IsBufferAvailable() const
 {
     return bufferAvailable_;
 }
-// LCOV_EXCL_STOP
 
 void RSSurfaceNode::SetBoundsChangedCallback(BoundsChangedCallback callback)
 {
@@ -472,7 +451,6 @@ void RSSurfaceNode::SetBoundsChangedCallback(BoundsChangedCallback callback)
     boundsChangedCallback_ = callback;
 }
 
-// LCOV_EXCL_START
 void RSSurfaceNode::SetAnimationFinished()
 {
     std::unique_ptr<RSCommand> command = std::make_unique<RSSurfaceNodeSetAnimationFinished>(GetId());
@@ -488,7 +466,6 @@ void RSSurfaceNode::SetAnimationFinished()
         }
     }
 }
-// LCOV_EXCL_STOP
 
 bool RSSurfaceNode::Marshalling(Parcel& parcel) const
 {
@@ -526,7 +503,17 @@ std::shared_ptr<RSSurfaceNode> RSSurfaceNode::Unmarshalling(Parcel& parcel)
     return surfaceNode;
 }
 
-// LCOV_EXCL_START
+RSSurfaceNode::SharedPtr RSSurfaceNode::CreateShadowSurfaceNode()
+{
+    RSSurfaceNodeConfig config = { GetName() };
+    SharedPtr surfaceNode(new RSSurfaceNode(config, isRenderServiceNode_, GetId()));
+    auto rsUIContext = RSUIContextManager::MutableInstance().CreateRSUIContext();
+    surfaceNode->SetRSUIContext(rsUIContext);
+    surfaceNode->isShadowNode_ = true;
+    surfaceNode->SetSkipCheckInMultiInstance(true);
+    return surfaceNode;
+}
+
 void RSSurfaceNode::SetSurfaceIdToRenderNode()
 {
 #ifndef ROSEN_CROSS_PLATFORM
@@ -538,7 +525,6 @@ void RSSurfaceNode::SetSurfaceIdToRenderNode()
     }
 #endif
 }
-// LCOV_EXCL_STOP
 
 RSNode::SharedPtr RSSurfaceNode::UnmarshallingAsProxyNode(Parcel& parcel)
 {
@@ -587,7 +573,6 @@ bool RSSurfaceNode::CreateNodeAndSurface(const RSSurfaceRenderNodeConfig& config
 }
 
 #ifndef ROSEN_CROSS_PLATFORM
-// LCOV_EXCL_START
 sptr<OHOS::Surface> RSSurfaceNode::GetSurface() const
 {
     if (surface_ == nullptr) {
@@ -597,10 +582,8 @@ sptr<OHOS::Surface> RSSurfaceNode::GetSurface() const
     auto ohosSurface = RSSurfaceConverter::ConvertToOhosSurface(surface_);
     return ohosSurface;
 }
-// LCOV_EXCL_STOP
 #endif
 
-// LCOV_EXCL_START
 bool RSSurfaceNode::NeedForcedSendToRemote() const
 {
     if (IsRenderServiceNode()) {
@@ -612,9 +595,7 @@ bool RSSurfaceNode::NeedForcedSendToRemote() const
         return true;
     }
 }
-// LCOV_EXCL_STOP
 
-// LCOV_EXCL_START
 void RSSurfaceNode::ResetContextAlpha() const
 {
     // temporarily fix: manually set contextAlpha in RT and RS to 0.0f, to avoid residual alpha/context matrix from
@@ -622,7 +603,6 @@ void RSSurfaceNode::ResetContextAlpha() const
     std::unique_ptr<RSCommand> commandRS = std::make_unique<RSSurfaceNodeSetContextAlpha>(GetId(), 0.0f);
     AddCommand(commandRS, true);
 }
-// LCOV_EXCL_STOP
 
 void RSSurfaceNode::SetContainerWindow(bool hasContainerWindow, RRect rrect)
 {
@@ -667,6 +647,13 @@ RSSurfaceNode::RSSurfaceNode(
 
 RSSurfaceNode::~RSSurfaceNode()
 {
+    if (isShadowNode_) {
+        auto rsUIContext = GetRSUIContext();
+        if (rsUIContext) {
+            RSUIContextManager::MutableInstance().DestroyContext(rsUIContext->GetToken());
+        }
+        return;
+    }
     RS_LOGI("RSSurfaceNode::~RSSurfaceNode, Node: %{public}" PRIu64 ", Name: %{public}s", GetId(), GetName().c_str());
     // both divided and unirender need to unregister listener when surfaceNode destroy
     auto renderServiceClient =
@@ -700,7 +687,7 @@ void RSSurfaceNode::AttachToDisplay(uint64_t screenId)
 {
     std::unique_ptr<RSCommand> command = std::make_unique<RSSurfaceNodeAttachToDisplay>(GetId(), screenId);
     if (AddCommand(command, IsRenderServiceNode())) {
-        RS_LOGI("RSSurfaceNode:attach to display, node:[name: %{public}s, id: %{public}" PRIu64 "], "
+        HILOG_COMM_INFO("RSSurfaceNode:attach to display, node:[name: %{public}s, id: %{public}" PRIu64 "], "
             "screen id: %{public}" PRIu64, GetName().c_str(), GetId(), screenId);
         RS_TRACE_NAME_FMT("RSSurfaceNode:attach to display, node:[name: %s, id: %" PRIu64 "], "
             "screen id: %" PRIu64, GetName().c_str(), GetId(), screenId);
@@ -711,7 +698,7 @@ void RSSurfaceNode::DetachToDisplay(uint64_t screenId)
 {
     std::unique_ptr<RSCommand> command = std::make_unique<RSSurfaceNodeDetachToDisplay>(GetId(), screenId);
     if (AddCommand(command, IsRenderServiceNode())) {
-        RS_LOGI("RSSurfaceNode:detach from display, node:[name: %{public}s, id: %{public}" PRIu64 "], "
+        HILOG_COMM_INFO("RSSurfaceNode:detach from display, node:[name: %{public}s, id: %{public}" PRIu64 "], "
                 "screen id: %{public}" PRIu64,
             GetName().c_str(), GetId(), screenId);
         RS_TRACE_NAME_FMT("RSSurfaceNode:detach from display, node:[name: %s, id: %" PRIu64 "], "
@@ -745,12 +732,10 @@ void RSSurfaceNode::SetBootAnimation(bool isBootAnimation)
         GetId(), isBootAnimation ? "true" : "false");
 }
 
-// LCOV_EXCL_START
 bool RSSurfaceNode::GetBootAnimation() const
 {
     return isBootAnimation_;
 }
-// LCOV_EXCL_STOP
 
 void RSSurfaceNode::SetGlobalPositionEnabled(bool isEnabled)
 {
@@ -766,12 +751,10 @@ void RSSurfaceNode::SetGlobalPositionEnabled(bool isEnabled)
         GetId(), isEnabled ? "true" : "false");
 }
 
-// LCOV_EXCL_START
 bool RSSurfaceNode::GetGlobalPositionEnabled() const
 {
     return isGlobalPositionEnabled_;
 }
-// LCOV_EXCL_STOP
 
 #ifdef USE_SURFACE_TEXTURE
 void RSSurfaceNode::CreateSurfaceExt(const RSSurfaceExtConfig& config)
@@ -925,14 +908,11 @@ void RSSurfaceNode::SetSkipDraw(bool skip)
         skip ? "true" : "false");
 }
 
-// LCOV_EXCL_START
 bool RSSurfaceNode::GetSkipDraw() const
 {
     return isSkipDraw_;
 }
-// LCOV_EXCL_STOP
 
-// LCOV_EXCL_START
 void RSSurfaceNode::RegisterNodeMap()
 {
     auto rsContext = GetRSUIContext();
@@ -942,7 +922,6 @@ void RSSurfaceNode::RegisterNodeMap()
     auto& nodeMap = rsContext->GetMutableNodeMap();
     nodeMap.RegisterNode(shared_from_this());
 }
-// LCOV_EXCL_STOP
 
 void RSSurfaceNode::SetWatermarkEnabled(const std::string& name, bool isEnabled)
 {
@@ -974,12 +953,10 @@ void RSSurfaceNode::SetAbilityState(RSSurfaceNodeAbilityState abilityState)
         GetId(), abilityState_ == RSSurfaceNodeAbilityState::FOREGROUND ? "foreground" : "background");
 }
 
-// LCOV_EXCL_START
 RSSurfaceNodeAbilityState RSSurfaceNode::GetAbilityState() const
 {
     return abilityState_;
 }
-// LCOV_EXCL_STOP
 
 RSInterfaceErrorCode RSSurfaceNode::SetHidePrivacyContent(bool needHidePrivacyContent)
 {
@@ -1038,7 +1015,6 @@ void RSSurfaceNode::SetRegionToBeMagnified(const Vector4<int>& regionToBeMagnifi
     AddCommand(command, true);
 }
 
-// LCOV_EXCL_START
 bool RSSurfaceNode::IsSelfDrawingNode() const
 {
     if (surfaceNodeType_ == RSSurfaceNodeType::SELF_DRAWING_NODE) {
@@ -1047,7 +1023,6 @@ bool RSSurfaceNode::IsSelfDrawingNode() const
         return false;
     }
 }
-// LCOV_EXCL_STOP
 
 bool RSSurfaceNode::SetCompositeLayer(TopLayerZOrder zOrder)
 {
@@ -1073,12 +1048,10 @@ bool RSSurfaceNode::SetCompositeLayer(TopLayerZOrder zOrder)
     return compositeLayerUtils_->CreateCompositeLayer();
 }
 
-// LCOV_EXCL_START
 std::shared_ptr<RSCompositeLayerUtils> RSSurfaceNode::GetCompositeLayerUtils() const
 {
     return compositeLayerUtils_;
 }
-// LCOV_EXCL_STOP
 
 void RSSurfaceNode::SetFrameGravityNewVersionEnabled(bool isEnabled)
 {
@@ -1092,11 +1065,9 @@ void RSSurfaceNode::SetFrameGravityNewVersionEnabled(bool isEnabled)
     AddCommand(command, true);
 }
 
-// LCOV_EXCL_START
 bool RSSurfaceNode::GetFrameGravityNewVersionEnabled() const
 {
     return isFrameGravityNewVersionEnabled_;
 }
-// LCOV_EXCL_STOP
 } // namespace Rosen
 } // namespace OHOS

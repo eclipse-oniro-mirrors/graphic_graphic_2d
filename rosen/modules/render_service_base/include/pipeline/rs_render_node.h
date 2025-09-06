@@ -296,7 +296,6 @@ public:
     std::list<WeakPtr> GetChildrenList() const;
 
     void DumpTree(int32_t depth, std::string& out) const;
-    void DumpNodeInfo(DfxString& log);
 
     virtual bool HasDisappearingTransition(bool recursive = true) const;
 
@@ -375,6 +374,10 @@ public:
     {
         return visibleEffectChild_;
     }
+    /* 1. add childNode to visibleEffectChild_ when it has useEffect and non-empty oldDirtySurface
+     * (refer to GetVisibleEffectRegion)
+     * 2. add childNode's visibleEffectChild_ to visibleEffectChild_
+     */
     void UpdateVisibleEffectChild(RSRenderNode& childNode);
 
     inline NodeId GetInstanceRootNodeId() const
@@ -771,8 +774,6 @@ public:
     // arkui mark
     void MarkSuggestOpincNode(bool isOpincNode, bool isNeedCalculate);
 
-    void UpdateOpincParam();
-
     /////////////////////////////////////////////
 
     void SetSharedTransitionParam(const std::shared_ptr<SharedTransitionParam>& sharedTransitionParam);
@@ -829,16 +830,7 @@ public:
 
     bool HasHpaeBackgroundFilter() const;
 
-#ifdef RS_ENABLE_STACK_CULLING
-    void SetFullSurfaceOpaqueMarks(const std::shared_ptr<RSRenderNode> curSurfaceNodeParam);
-    void SetSubNodesCovered();
-    void ResetSubNodesCovered();
-    bool isFullSurfaceOpaquCanvasNode_ = false;
-    bool hasChildFullSurfaceOpaquCanvasNode_ = false;
-    bool isCoveredByOtherNode_ = false;
-#define MAX_COLD_DOWN_NUM 20
-    int32_t coldDownCounter_ = 0;
-#endif
+    bool GetLastFrameSync() const { return lastFrameSynced_; }
 
     void MarkParentNeedRegenerateChildren() const;
 
@@ -1058,6 +1050,7 @@ public:
     bool IsForegroundFilterEnable();
     void ResetPixelStretchSlot();
     bool CanFuzePixelStretch();
+    bool IsPixelStretchValid() const;
 
     void ResetRepaintBoundaryInfo();
     void UpdateRepaintBoundaryInfo(RSRenderNode& node);
@@ -1126,6 +1119,11 @@ protected:
     bool IsForceClearOrUseFilterCache(std::shared_ptr<DrawableV2::RSFilterDrawable>& filterDrawable);
 #endif
     void UpdateDirtySlotsAndPendingNodes(RSDrawableSlot slot);
+    void ExpandDirtyRegionWithFilterRegion(RSDirtyRegionManager& dirtyManager)
+    {
+        dirtyManager.MergeDirtyRect(filterRegion_);
+        isDirtyRegionUpdated_ = true;
+    }
     // if true, it means currently it's in partial render mode and this node is intersect with dirtyRegion
     bool isRenderUpdateIgnored_ = false;
     bool isShadowValidLastFrame_ = false;
@@ -1377,6 +1375,7 @@ private:
     float absRotation_ = 0.f;
     void UpdateBlurEffectCounter(int deltaCount);
     int GetBlurEffectDrawbleCount();
+    void ShowSetIsOnetheTreeCntIfNeed(const std::string& funcName, NodeId nodeId, const std::string& nodeName);
 
     bool enableHdrEffect_ = false;
 

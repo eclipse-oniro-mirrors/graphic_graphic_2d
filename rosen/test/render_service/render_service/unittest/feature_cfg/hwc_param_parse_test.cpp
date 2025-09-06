@@ -26,11 +26,18 @@ using namespace testing::ext;
 namespace {
 const xmlChar NODE_NAME_SINGLE_PARAM[] = "FeatureSingleParam";
 
+const xmlChar NODE_NAME_SWITCH[] = "FeatureSwitch";
+const xmlChar SOLIDLAYER_IN_MULTI_WINDOW_ENABLED[] = "SolidLayerInMultiWindowEnabled";
+
 const xmlChar ATTRIBUTE_NAME[] = "name";
 const xmlChar ATTRIBUTE_VALUE[] = "value";
 
 const xmlChar TV_PLAYER_BUNDLE_NAME_KEY[] = "TvPlayerBundleName";
 const xmlChar TV_PLAYER_BUNDLE_NAME_VALUE[] = "com.example.tvplayer";
+
+const xmlChar OVERLAPPED_SURFACE_BUNDLE_KEY[] = "OverlappedHwcNodeInAppEnabledConfig";
+const xmlChar OVERLAPPED_SURFACE_BUNDLE_APP_KEY[] = "com.example.app";
+const xmlChar OVERLAPPED_SURFACE_BUNDLE_APP_VALUE[] = "1";
 
 const xmlChar ATTRIBUTE_OTHERS[] = "Others";
 
@@ -121,6 +128,73 @@ HWTEST_F(HwcParamParseTest, TestParseHwcInternal002, TestSize.Level1)
     featureParam["HwcConfig"] = std::make_shared<HWCParam>();
     HWCParamParse hwcParamParse;
     int32_t ret = hwcParamParse.ParseHwcInternal(featureParam, node);
+    EXPECT_EQ(ret, PARSE_EXEC_SUCCESS);
+}
+
+/**
+ * @tc.name: TestParseFeatureMultiParamForApp001
+ * @tc.desc: Verify the ParseFeatureMultiParamForApp function
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(HwcParamParseTest, TestParseFeatureMultiParamForApp001, TestSize.Level1)
+{
+    xmlNode childNode;
+    childNode.xmlChildrenNode = nullptr;
+    childNode.name = NODE_NAME_SINGLE_PARAM;
+    childNode.type = XML_ELEMENT_NODE;
+
+    xmlAttribute childAttrVal = CreateXmlAttribute(ATTRIBUTE_VALUE, OVERLAPPED_SURFACE_BUNDLE_APP_VALUE, nullptr);
+    xmlAttribute childAttrName = CreateXmlAttribute(ATTRIBUTE_NAME, OVERLAPPED_SURFACE_BUNDLE_APP_KEY, &childAttrVal);
+    childNode.properties = reinterpret_cast<xmlAttrPtr>(&childAttrName);
+
+    xmlNode node;
+    node.xmlChildrenNode = &childNode;
+    node.name = NODE_NAME_SINGLE_PARAM;
+    node.type = XML_ELEMENT_NODE;
+
+    xmlAttribute attrName = CreateXmlAttribute(ATTRIBUTE_VALUE, OVERLAPPED_SURFACE_BUNDLE_KEY, nullptr);
+    node.properties = reinterpret_cast<xmlAttrPtr>(&attrName);
+
+    HWCParamParse hwcParamParse;
+    hwcParamParse.hwcParam_ = std::make_shared<HWCParam>();
+
+    std::string name1 = "OverlappedHwcNodeInAppEnabledConfig";
+    int32_t ret1 = hwcParamParse.ParseFeatureMultiParamForApp(node, name1);
+    EXPECT_EQ(ret1, PARSE_EXEC_SUCCESS);
+
+    std::string name2 = "example";
+    int32_t ret2 = hwcParamParse.ParseFeatureMultiParamForApp(node, name2);
+    EXPECT_EQ(ret2, PARSE_NO_PARAM);
+}
+
+/**
+ * @tc.name: TestParseHwcInternal003
+ * @tc.desc: Verify the ParseHwcInternal function
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(HwcParamParseTest, TestParseHwcInternal003, TestSize.Level1)
+{
+    xmlNode node;
+    node.xmlChildrenNode = nullptr;
+    node.name = NODE_NAME_SWITCH;
+    node.type = XML_ELEMENT_NODE;
+ 
+    xmlAttribute attrVal = CreateXmlAttribute(ATTRIBUTE_VALUE, TV_PLAYER_BUNDLE_NAME_VALUE, nullptr);
+    xmlAttribute attrName = CreateXmlAttribute(ATTRIBUTE_NAME, SOLIDLAYER_IN_MULTI_WINDOW_ENABLED, &attrVal);
+    node.properties = reinterpret_cast<xmlAttrPtr>(&attrName);
+ 
+    FeatureParamMapType featureParam;
+    featureParam["HwcConfig"] = std::make_shared<HWCParam>();
+    HWCParamParse hwcParamParse;
+    int32_t ret = hwcParamParse.ParseHwcInternal(featureParam, node);
+    EXPECT_EQ(ret, PARSE_EXEC_SUCCESS);
+ 
+    attrName = CreateXmlAttribute(ATTRIBUTE_NAME, ATTRIBUTE_OTHERS, &attrVal);
+    node.properties = reinterpret_cast<xmlAttrPtr>(&attrName);
+ 
+    ret = hwcParamParse.ParseHwcInternal(featureParam, node);
     EXPECT_EQ(ret, PARSE_EXEC_SUCCESS);
 }
 }

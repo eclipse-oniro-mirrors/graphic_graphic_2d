@@ -3161,7 +3161,43 @@ HWTEST_F(RSUniRenderVisitorTest, CollectEffectInfo003, TestSize.Level2)
     parent->AddChild(node);
     node->GetMutableRenderProperties().useEffect_ = true;
     rsUniRenderVisitor->CollectEffectInfo(*node);
-    ASSERT_TRUE(parent->ChildHasVisibleEffect());
+    EXPECT_FALSE(parent->ChildHasVisibleEffect());
+}
+
+/**
+ * @tc.name: CollectEffectInfo004
+ * @tc.desc: Test RSUnitRenderVisitorTest.CollectEffectInfo with parent node, oldDirtyInSurface is not empty
+ * @tc.type: FUNC
+ * @tc.require: issueICTQF4
+ */
+HWTEST_F(RSUniRenderVisitorTest, CollectEffectInfo004, TestSize.Level2)
+{
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    ASSERT_NE(rsUniRenderVisitor, nullptr);
+    constexpr NodeId nodeId = 1;
+    constexpr NodeId parentNodeId = 2;
+    constexpr NodeId childNodeId = 3;
+    auto node = std::make_shared<RSRenderNode>(nodeId);
+    ASSERT_NE(node, nullptr);
+    auto parent = std::make_shared<RSRenderNode>(parentNodeId);
+    ASSERT_NE(parent, nullptr);
+    auto child = std::make_shared<RSRenderNode>(childNodeId);
+    ASSERT_NE(child, nullptr);
+    node->InitRenderParams();
+    parent->InitRenderParams();
+    child->InitRenderParams();
+    node->AddChild(child);
+    parent->AddChild(node);
+    child->GetMutableRenderProperties().useEffect_ = true;
+    child->SetOldDirtyInSurface(RectI(0, 0, 10, 10));
+    node->GetMutableRenderProperties().useEffect_ = true;
+    rsUniRenderVisitor->CollectEffectInfo(*child);
+    rsUniRenderVisitor->CollectEffectInfo(*node);
+    EXPECT_TRUE(node->ChildHasVisibleEffect());
+    EXPECT_EQ(node->GetVisibleEffectChild().count(childNodeId), 1);
+    EXPECT_TRUE(parent->ChildHasVisibleEffect());
+    EXPECT_EQ(parent->GetVisibleEffectChild().count(nodeId), 0);
+    EXPECT_EQ(parent->GetVisibleEffectChild().count(childNodeId), 1);
 }
 
 /*
@@ -5596,5 +5632,43 @@ HWTEST_F(RSUniRenderVisitorTest, QuickPrepareSufaceRenderNode005, TestSize.Level
     RSMainThread::Instance()->focusLeashWindowId_ = 1;
     rsUniRenderVisitor->QuickPrepareSurfaceRenderNode(*surfaceNode);
     ASSERT_NE(rsUniRenderVisitor->curScreenNode_, nullptr);
+}
+
+/*
+ * @tc.name: CollectSurfaceLockLayer001
+ * @tc.desc: Test function CollectSurfaceLockLayer
+ * @tc.type: FUNC
+ * @tc.require: issueICUQ08
+ */
+HWTEST_F(RSUniRenderVisitorTest, CollectSurfaceLockLayer001, TestSize.Level2)
+{
+    ASSERT_NE(RSMainThread::Instance(), nullptr);
+    RSMainThread::Instance()->hasProtectedLayer_ = false;
+    RSMainThread::Instance()->hasSurfaceLockLayer_ = false;
+    RSMainThread::Instance()->SetHasSurfaceLockLayer(false);
+    EXPECT_FALSE(RSMainThread::Instance()->HasDRMOrSurfaceLockLayer());
+    NodeId id = 1;
+    RSSurfaceRenderNode node(id);
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    ASSERT_NE(rsUniRenderVisitor, nullptr);
+    rsUniRenderVisitor->CollectSurfaceLockLayer(node);
+    EXPECT_FALSE(RSMainThread::Instance()->HasDRMOrSurfaceLockLayer());
+
+    node.childHardwareEnabledNodes_.resize(1);
+    rsUniRenderVisitor->CollectSurfaceLockLayer(node);
+    EXPECT_FALSE(RSMainThread::Instance()->HasDRMOrSurfaceLockLayer());
+
+    node.childHardwareEnabledNodes_.clear();
+    RSSurfaceRenderNodeConfig config;
+    auto childNode = std::make_shared<RSSurfaceRenderNode>(config);
+    ASSERT_NE(childNode, nullptr);
+    childNode->isFixRotationByUser_ = true;
+    childNode->SetIsOnTheTree(false);
+    node.AddChildHardwareEnabledNode(std::weak_ptr<RSSurfaceRenderNode>(childNode));
+    rsUniRenderVisitor->CollectSurfaceLockLayer(node);
+    EXPECT_FALSE(RSMainThread::Instance()->HasDRMOrSurfaceLockLayer());
+    childNode->SetIsOnTheTree(true);
+    rsUniRenderVisitor->CollectSurfaceLockLayer(node);
+    EXPECT_TRUE(RSMainThread::Instance()->HasDRMOrSurfaceLockLayer());
 }
 } // OHOS::Rosen

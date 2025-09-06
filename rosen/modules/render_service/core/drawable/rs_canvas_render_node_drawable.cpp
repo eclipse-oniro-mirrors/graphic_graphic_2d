@@ -67,11 +67,10 @@ bool RSCanvasRenderNodeDrawable::QuickGetDrawState(RSPaintFilterCanvas& rscanvas
 }
 #endif
 
-bool RSCanvasRenderNodeDrawable::IsUiRangeCaptureEndNode(Drawing::Canvas& canvas)
+bool RSCanvasRenderNodeDrawable::IsUiRangeCaptureEndNode()
 {
     auto& captureParam = RSUniRenderThread::GetCaptureParam();
-    return (canvas.GetUICapture() && captureParam.endNodeId_ != INVALID_NODEID &&
-        GetId() == captureParam.endNodeId_);
+    return (captureParam.endNodeId_ != INVALID_NODEID && GetId() == captureParam.endNodeId_);
 }
 
 /*
@@ -81,7 +80,8 @@ void RSCanvasRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
 {
 #ifdef RS_ENABLE_GPU
     SetDrawSkipType(DrawSkipType::NONE);
-    bool shouldPaint = ShouldPaint() || IsUiRangeCaptureEndNode(canvas);
+    // Draw only when should paint is valid or when this node is the end node of the range ui-capture
+    bool shouldPaint = ShouldPaint() || (canvas.GetUICapture() && IsUiRangeCaptureEndNode());
     if (!shouldPaint) {
         SetDrawSkipType(DrawSkipType::SHOULD_NOT_PAINT);
         return;
@@ -102,14 +102,15 @@ void RSCanvasRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
 
     auto linkedDrawable = std::static_pointer_cast<RSRootRenderNodeDrawable>(
         params->GetLinkedRootNodeDrawable().lock());
-    auto isOpincDraw = GetOpincDrawCache().PreDrawableCacheState(*params, isOpincDropNodeExt_);
+    auto needOcclusionSkip = paintFilterCanvas->IsQuickGetDrawState() ?
+        true : GetOpincDrawCache().PreDrawableCacheState(*params, isOpincDropNodeExt_);
     RSAutoCanvasRestore acr(paintFilterCanvas, RSPaintFilterCanvas::SaveType::kCanvasAndAlpha);
     params->ApplyAlphaAndMatrixToCanvas(*paintFilterCanvas);
     float hdrBrightness = paintFilterCanvas->GetHDRBrightness();
     paintFilterCanvas->SetHDRBrightness(params->GetHDRBrightness());
     auto& uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
     SetOcclusionCullingEnabled((!uniParam || uniParam->IsOpDropped()) && GetOpDropped() &&
-        isOpincDraw && !params->HasUnobscuredUEC() && LIKELY(linkedDrawable == nullptr));
+        needOcclusionSkip && !params->HasUnobscuredUEC() && LIKELY(linkedDrawable == nullptr));
     if (IsOcclusionCullingEnabled() && QuickReject(canvas, params->GetLocalDrawRect())) {
         SetDrawSkipType(DrawSkipType::OCCLUSION_SKIP);
         return;
@@ -124,7 +125,7 @@ void RSCanvasRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     RSRenderNodeSingleDrawableLocker singleLocker(this);
     if (UNLIKELY(!singleLocker.IsLocked())) {
         singleLocker.DrawableOnDrawMultiAccessEventReport(__func__);
-        RS_LOGE("RSCanvasRenderNodeDrawable::OnDraw node %{public}" PRIu64 " onDraw!!!", GetId());
+        HILOG_COMM_ERROR("RSCanvasRenderNodeDrawable::OnDraw node %{public}" PRIu64 " onDraw!!!", GetId());
         if (RSSystemProperties::GetSingleDrawableLockerEnabled()) {
             SetDrawSkipType(DrawSkipType::MULTI_ACCESS);
             return;
@@ -161,7 +162,8 @@ void RSCanvasRenderNodeDrawable::OnCapture(Drawing::Canvas& canvas)
 {
 #ifdef RS_ENABLE_GPU
     auto& captureParam = RSUniRenderThread::GetCaptureParam();
-    bool shouldPaint = ShouldPaint() || IsUiRangeCaptureEndNode(canvas);
+    // Capture only when should paint is valid or when this node is the end node of the range ui-capture
+    bool shouldPaint = ShouldPaint() || (canvas.GetUICapture() && IsUiRangeCaptureEndNode());
     if (!shouldPaint) {
         return;
     }
@@ -177,7 +179,7 @@ void RSCanvasRenderNodeDrawable::OnCapture(Drawing::Canvas& canvas)
     RSRenderNodeSingleDrawableLocker singleLocker(this);
     if (UNLIKELY(!singleLocker.IsLocked())) {
         singleLocker.DrawableOnDrawMultiAccessEventReport(__func__);
-        RS_LOGE("RSCanvasRenderNodeDrawable::OnCapture node %{public}" PRIu64 " onDraw!!!", GetId());
+        HILOG_COMM_ERROR("RSCanvasRenderNodeDrawable::OnCapture node %{public}" PRIu64 " onDraw!!!", GetId());
         if (RSSystemProperties::GetSingleDrawableLockerEnabled()) {
             return;
         }

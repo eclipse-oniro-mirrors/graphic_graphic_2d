@@ -25,7 +25,8 @@
 #include "sync_fence.h"
 #ifdef RS_ENABLE_VK
 #include "platform/ohos/backend/rs_surface_frame_ohos_vulkan.h"
-#endif // RS_ENABLE_VK
+#include "platform/ohos/backend/rs_surface_ohos_vulkan.h"
+#endif
 #ifdef USE_M133_SKIA
 #include "include/gpu/ganesh/GrDirectContext.h"
 #else
@@ -92,6 +93,21 @@ public:
             surfaceFrame_ = nullptr;
         }
     }
+
+    void CancelCurrentFrame()
+    {
+        if (targetSurface_ != nullptr) {
+#if defined(RS_ENABLE_VK)
+            if (RSSystemProperties::IsUseVulkan()) {
+                auto surfaceVk = static_cast<RSSurfaceOhosVulkan*>(targetSurface_.get());
+                if (surfaceVk != nullptr) {
+                    surfaceVk->CancelBufferForCurrentFrame();
+                }
+            }
+#endif
+        }
+    }
+
     const std::shared_ptr<RSSurfaceOhos>& GetSurface() const
     {
         return targetSurface_;
@@ -208,7 +224,7 @@ public:
     static void DrawBuffer(RSPaintFilterCanvas& canvas, BufferDrawParam& params);
 
     void ShrinkCachesIfNeeded(bool isForUniRedraw = false);
-    void ClearCacheSet(const std::set<uint32_t>& unmappedCache);
+    void ClearCacheSet(const std::set<uint64_t>& unmappedCache);
     static void SetColorFilterMode(ColorFilterMode mode);
     static ColorFilterMode GetColorFilterMode();
     static void SetHighContrast(bool enabled);
@@ -221,7 +237,6 @@ public:
     }
 #endif // RS_ENABLE_GL || RS_ENABLE_VK
     void ResetCurrentContext();
-
 #if (defined(RS_ENABLE_EGLIMAGE) && defined(RS_ENABLE_GPU)) || defined(RS_ENABLE_VK)
     const std::shared_ptr<RSImageManager>& GetImageManager()
     {
@@ -236,6 +251,7 @@ public:
     static std::shared_ptr<Drawing::ColorSpace> ConvertColorGamutToDrawingColorSpace(GraphicColorGamut colorGamut);
     static std::shared_ptr<Drawing::ColorSpace> ConvertColorSpaceNameToDrawingColorSpace(
         OHOS::ColorManager::ColorSpaceName colorSpaceName);
+    static std::shared_ptr<Drawing::ColorSpace> GetCanvasColorSpace(const RSPaintFilterCanvas& canvas);
 #ifdef RS_ENABLE_VK
     const std::shared_ptr<Drawing::GPUContext> GetSkContext() const
     {
@@ -259,8 +275,6 @@ private:
         BufferDrawParam& params, Drawing::SamplingOptions& samplingOptions);
 
     static bool NeedBilinearInterpolation(const BufferDrawParam& params, const Drawing::Matrix& matrix);
-
-    static std::shared_ptr<Drawing::ColorSpace> GetCanvasColorSpace(const RSPaintFilterCanvas& canvas);
 
 #if (defined RS_ENABLE_GL) || (defined RS_ENABLE_VK)
     std::shared_ptr<RenderContext> renderContext_ = nullptr;

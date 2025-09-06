@@ -280,7 +280,7 @@ DrawingError EffectImageChain::InitWithoutCanvas(const std::shared_ptr<Media::Pi
     auto dstPixelMap = Media::PixelMap::Create(opts);
     if (dstPixelMap == nullptr) {
         image_ = nullptr;
-        EFFECT_LOG_E("EffectImageChain::InitWithoutCanvas: Failed to create the dstPixelMap.");
+        EFFECT_COMM_LOG_E("EffectImageChain::InitWithoutCanvas: Failed to create the dstPixelMap.");
         return DrawingError::ERR_IMAGE_NULL;
     }
     dstPixelMap_ = std::shared_ptr<Media::PixelMap>(dstPixelMap.release());
@@ -304,28 +304,35 @@ std::shared_ptr<Drawing::Surface> EffectImageChain::CreateSurface(bool forceCPU)
     }
 
 #ifdef RS_ENABLE_GPU
-    std::shared_ptr<Drawing::GPUContext> context = nullptr;
     if (RSSystemProperties::GetGpuApiType() == GpuApiType::OPENGL) {
         renderContext_ = std::make_shared<RenderContext>();
         renderContext_->InitializeEglContext();
         renderContext_->SetUpGpuContext();
-        context = renderContext_->GetSharedDrGPUContext();
+        gpuContext_ = renderContext_->GetSharedDrGPUContext();
     }
 
 #ifdef RS_ENABLE_VK
     if (RSSystemProperties::IsUseVulkan()) {
-        context = EffectVulkanContext::GetSingleton().CreateDrawingContext();
+        gpuContext_ = EffectVulkanContext::GetSingleton().CreateDrawingContext();
     }
 #endif
 
-    if (context == nullptr) {
-        EFFECT_LOG_E("EffectImageChain::CreateGPUSurface: create gpuContext failed.");
+    if (gpuContext_ == nullptr) {
+        EFFECT_COMM_LOG_E("EffectImageChain::CreateGPUSurface: create gpuContext failed.");
         return nullptr;
     }
-    return Drawing::Surface::MakeRenderTarget(context.get(), false, imageInfo_);
+    return Drawing::Surface::MakeRenderTarget(gpuContext_.get(), false, imageInfo_);
 #else
     EFFECT_LOG_W("EffectImageChain::CreateGPUSurface: GPU rendering is not supported.");
     return nullptr;
 #endif
+}
+
+EffectImageChain::~EffectImageChain()
+{
+    if (gpuContext_) {
+        gpuContext_->ReleaseResourcesAndAbandonContext();
+        gpuContext_ = nullptr;
+    }
 }
 } // namespace OHOS::Rosen

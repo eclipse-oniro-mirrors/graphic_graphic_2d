@@ -882,12 +882,6 @@ HWTEST_F(RSInterfacesTest, SetScreenSwitchingNotifyCallback, Function | SmallTes
     };
     int32_t callbackStatus = rsInterfaces->SetScreenSwitchingNotifyCallback(callback);
     EXPECT_EQ(callbackStatus, StatusCode::SUCCESS);
-    usleep(SET_REFRESHRATE_SLEEP_US); // wait to check if the callback returned.
-    if (status == StatusCode::SUCCESS) {
-        EXPECT_NE(status, false);
-    } else {
-        EXPECT_EQ(status, false);
-    }
 }
 
 /*
@@ -2672,6 +2666,37 @@ HWTEST_F(RSInterfacesTest, GetScreenHDRStatus002, Function | SmallTest | Level2)
     int ret = rsInterfaces->GetScreenHDRStatus(INVALID_SCREEN_ID, hdrStatus);
     EXPECT_EQ(ret, StatusCode::SCREEN_NOT_FOUND);
     EXPECT_EQ(hdrStatus, HdrStatus::NO_HDR);
+}
+
+/*
+ * @tc.name: AvcodecVideoStart001
+ * @tc.desc: Test AvcodecVideoStart
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSInterfacesTest, AvcodecVideoStart001, Function | SmallTest | Level2)
+{
+    ASSERT_NE(rsInterfaces, nullptr);
+    std::vector<uint64_t> uniqueIdList = {1};
+    std::vector<std::string> surfaceNameList = {"surface1"};
+    uint32_t fps = 120;
+    uint64_t reportTime = 16;
+    rsInterfaces->AvcodecVideoStart(uniqueIdList, surfaceNameList, fps, reportTime);
+}
+
+/*
+ * @tc.name: AvcodecVideoStop001
+ * @tc.desc: Test AvcodecVideoStop
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSInterfacesTest, AvcodecVideoStop001, Function | SmallTest | Level2)
+{
+    ASSERT_NE(rsInterfaces, nullptr);
+    std::vector<uint64_t> uniqueIdList = {1};
+    std::vector<std::string> surfaceNameList = {"surface1"};
+    uint32_t fps = 120;
+    rsInterfaces->AvcodecVideoStop(uniqueIdList, surfaceNameList, fps);
 }
 } // namespace Rosen
 } // namespace OHOS

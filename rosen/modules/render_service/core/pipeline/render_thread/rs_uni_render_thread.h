@@ -64,7 +64,7 @@ public:
     bool IsIdle() const;
     void Render();
     void ReleaseSelfDrawingNodeBuffer();
-    void ReleaseSurfaceBufferOpItemBuffer();
+    void ReleaseSurfaceOpItemBuffer();
     std::shared_ptr<RSBaseRenderEngine> GetRenderEngine() const;
     void NotifyScreenNodeBufferReleased();
     bool WaitUntilScreenNodeBufferReleased(DrawableV2::RSScreenRenderNodeDrawable& screenNodeDrawable);
@@ -99,7 +99,6 @@ public:
     ClearMemoryMoment GetClearMoment() const;
     uint32_t GetRefreshRate() const;
     void DumpMem(DfxString& log);
-    void TrimMem(std::string& dumpString, std::string& type);
     std::shared_ptr<Drawing::Image> GetWatermarkImg();
     uint64_t GetFrameCount() const
     {
@@ -120,7 +119,6 @@ public:
     static void ResetCaptureParam();
     static bool IsInCaptureProcess();
     static bool IsEndNodeIdValid();
-    static bool IsExpandScreenMode();
     std::vector<NodeId>& GetDrawStatusVec()
     {
         return curDrawStatusVec_;
@@ -130,7 +128,16 @@ public:
         return RSRenderThreadParamsManager::Instance().GetRSRenderThreadParams();
     }
 
-    void RenderServiceTreeDump(std::string& dumpString);
+    bool IsPostedReclaimMemoryTask() const
+    {
+        return isPostedReclaimMemoryTask_.load();
+    }
+    void SetIsPostedReclaimMemoryTask(bool isPostedReclaimMemoryTask)
+    {
+        isPostedReclaimMemoryTask_.store(isPostedReclaimMemoryTask);
+    }
+    void RenderServiceTreeDump(std::string& dumpString, bool checkIsInUniRenderThread = false);
+    void ProcessVulkanErrorTreeDump();
     void ReleaseSurface();
     void AddToReleaseQueue(std::shared_ptr<Drawing::Surface>&& surface);
 
@@ -237,6 +244,7 @@ private:
     void PostReclaimMemoryTask(ClearMemoryMoment moment, bool isReclaim);
     void CollectReleaseTasks(std::vector<std::function<void()>>& releaseTasks);
 
+    std::atomic_bool isPostedReclaimMemoryTask_ = false;
     bool screenNodeBufferReleased_ = false;
     // Those variable is used to manage memory.
     bool clearMemoryFinished_ = true;

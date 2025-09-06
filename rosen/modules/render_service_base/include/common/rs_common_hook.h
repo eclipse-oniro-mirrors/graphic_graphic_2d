@@ -18,8 +18,11 @@
 
 #include <atomic>
 #include <functional>
+#include <mutex>
 #include <string>
+#include <unistd.h>
 #include <unordered_map>
+#include <unordered_set>
 
 #include "animation/rs_frame_rate_range.h"
 
@@ -53,9 +56,22 @@ public:
     bool GetIsWhiteListForSolidColorLayerFlag() const;
     void SetIsWhiteListForSolidColorLayerFlag(bool isWhiteListForSolidColorLayerFlag);
 
+    void SetSolidColorLayerConfigFromHgm(
+        const std::unordered_map<std::string, std::string>& solidLayerConfigFromHgm);
+    void SetHwcSolidColorLayerConfigFromHgm(
+        const std::unordered_map<std::string, std::string>& hwcSolidLayerConfigFromHgm);
+
+    bool IsSolidColorLayerConfig(const std::string& bundleName);
+    bool IsHwcSolidColorLayerConfig(const std::string& bundleName);
+
+    void SetOverlappedHwcNodeInAppEnabledConfig(const std::string& appName, const std::string& val);
+    std::string GetOverlappedHwcNodeInAppEnabledConfig(const std::string& appName);
+
     // DISPLAY ENGINE
     void SetCurrentPkgName(const std::string& pkgName);
     std::string GetCurrentPkgName() const;
+    void SetImageEnhancePidList(const std::unordered_set<pid_t>& imageEnhancePidList);
+    std::unordered_set<pid_t> GetImageEnhancePidList() const;
 
 private:
     std::function<void(const std::string&)> startNewAniamtionFunc_ = nullptr;
@@ -69,6 +85,8 @@ private:
 
     std::unordered_map<std::string, std::string> filterUnderHwcConfig_;
 
+    std::unordered_map<std::string, std::string> overlappedHwcNodeInAppEnabledConfig_;
+
     // use in updating hwc node hardware state with background alpha
     std::atomic<bool> hardwareEnabledByHwcnodeSkippedFlag_{false};
     std::atomic<bool> hardwareEnabledByBackgroundAlphaSkippedFlag_{false};
@@ -76,8 +94,13 @@ private:
     
     std::function<void(FrameRateRange& range)> componentPowerFpsFunc_ = nullptr;
 
+    std::unordered_map<std::string, std::string> solidLayerConfigFromHgm_;
+    std::unordered_map<std::string, std::string> hwcSolidLayerConfigFromHgm_;
+    
     // DISPLAY ENGINE
     std::string pkgName_{};
+    mutable std::mutex setMutex_{};
+    std::unordered_set<pid_t> imageEnhancePidList_{};
 };
 } // namespace OHOS::Rosen
 #endif

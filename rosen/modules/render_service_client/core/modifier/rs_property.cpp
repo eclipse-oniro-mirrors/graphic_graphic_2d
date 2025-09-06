@@ -58,6 +58,7 @@ PropertyId GeneratePropertyId()
 RSPropertyBase::RSPropertyBase() : id_(GeneratePropertyId())
 {}
 
+// LCOV_EXCL_START
 void RSPropertyBase::MarkCustomModifierDirty()
 {
     if (auto modifier = modifierNG_.lock()) {
@@ -76,6 +77,7 @@ void RSPropertyBase::MarkNodeDirty()
         modifier->MarkNodeDirty();
     }
 }
+// LCOV_EXCL_STOP
 
 void RSPropertyBase::UpdateExtendModifierForGeometry(const std::shared_ptr<RSNode>& node)
 {

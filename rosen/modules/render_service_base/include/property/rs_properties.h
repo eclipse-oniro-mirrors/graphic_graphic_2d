@@ -446,6 +446,7 @@ public:
     }
     const std::shared_ptr<MotionBlurParam>& GetMotionBlurPara() const;
     const std::shared_ptr<RSMagnifierParams>& GetMagnifierPara() const;
+    bool DisableHWCForFilter() const;
     bool NeedFilter() const;
     bool NeedHwcFilter() const;
     bool NeedSkipSubtreeParallel() const;
@@ -529,7 +530,6 @@ public:
     void SetShadowColor(Color color);
     void SetShadowOffsetX(float offsetX);
     void SetShadowOffsetY(float offsetY);
-    void SetShadowAlpha(float alpha);
     void SetShadowElevation(float radius);
     void SetShadowRadius(float radius);
     void SetShadowPath(std::shared_ptr<RSPath> shadowPath);
@@ -539,7 +539,6 @@ public:
     const Color& GetShadowColor() const;
     float GetShadowOffsetX() const;
     float GetShadowOffsetY() const;
-    float GetShadowAlpha() const;
     float GetShadowElevation() const;
     float GetShadowRadius() const;
     const std::optional<float>& GetDynamicLightUpRate() const;

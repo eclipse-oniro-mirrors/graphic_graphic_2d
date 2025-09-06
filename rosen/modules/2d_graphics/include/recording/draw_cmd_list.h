@@ -78,7 +78,7 @@ public:
      * @brief   Gets cmd list type.
      * @return  Returns DRAW_CMD_LIST
      */
-    uint32_t GetType() const override
+    virtual uint32_t GetType() const override
     {
         return Type::DRAW_CMD_LIST;
     }
@@ -149,7 +149,7 @@ public:
     /**
      * @brief   Marshalling Draw Ops Param from vector to contiguous buffers. For Profiler Only.
      */
-     void ProfilerMarshallingDrawOps(Drawing::DrawCmdList *cmdlist);
+    void ProfilerMarshallingDrawOps(Drawing::DrawCmdList *cmdlist, bool includeImageOps = false);
 
     /**
      * @brief   Unmarshalling Draw Ops from contiguous buffers to vector
@@ -165,24 +165,24 @@ public:
     /**
      * @brief   Draw cmd is empty or not.
      */
-    bool IsEmpty() const;
+    virtual bool IsEmpty() const;
 
     /**
      * @brief         Calls the corresponding operations of all opitems in DrawCmdList to the canvas.
      * @param canvas  Implements the playback action of the DrawCmdList in the Canvas.
      * @param rect    Rect used to playback, may be nullptr.
      */
-    void Playback(Canvas& canvas, const Rect* rect = nullptr);
+    virtual void Playback(Canvas& canvas, const Rect* rect = nullptr);
 
     /**
      * @brief  Gets the width of the DrawCmdList.
      */
-    int32_t GetWidth() const;
+    virtual int32_t GetWidth() const;
 
     /**
      * @brief  Gets the height of the DrawCmdList.
      */
-    int32_t GetHeight() const;
+    virtual int32_t GetHeight() const;
 
     /**
      * @brief  Sets the width of the DrawCmdList.

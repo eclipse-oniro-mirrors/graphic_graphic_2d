@@ -55,9 +55,12 @@ int32_t DRMParamParse::ParseDrmInternal(xmlNode &node)
         if (name == "DrmEnabled") {
             DRMParam::SetDrmEnable(isEnabled);
             RS_LOGI("DRMParamParse parse DrmEnabled %{public}d", DRMParam::IsDrmEnable());
-        } else if (name == "DrmMarkAllParentBlurEnabled") {
-            DRMParam::SetDrmMarkAllParentBlurEnable(isEnabled);
-            RS_LOGI("DRMParamParse parse DrmMaskBlurEnabled %{public}d", DRMParam::IsDrmMarkAllParentBlurEnable());
+        } else if (name == "MockAllBlurEffectIntersectWithDRMEnabled") {
+            DRMParam::SetMockAllBlurEffectIntersectWithDRMEnable(isEnabled);
+            RS_LOGI("DRMParamParse parse MockAllBlurEffectIntersectWithDRMEnabled %{public}d",
+                DRMParam::IsMockAllBlurEffectIntersectWithDRMEnable());
+        } else {
+            // do nothing
         }
     } else if (xmlParamType == PARSE_XML_FEATURE_MULTIPARAM) {
         if (ParseFeatureMultiParam(*currNode) != PARSE_EXEC_SUCCESS) {
@@ -88,9 +91,13 @@ int32_t DRMParamParse::ParseFeatureMultiParam(xmlNode &node)
             return PARSE_ERROR;
         }
         if (val == "1") {
+            RS_LOGI("DRMParamParse parse AddWhiteList windowName:%{public}s", paramName.c_str());
             DRMParam::AddWhiteList(paramName);
         } else if (val == "0") {
+            RS_LOGI("DRMParamParse parse AddBlackList windowName:%{public}s", paramName.c_str());
             DRMParam::AddBlackList(paramName);
+        } else {
+            // do nothing
         }
     }
     return PARSE_EXEC_SUCCESS;

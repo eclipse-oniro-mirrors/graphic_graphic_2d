@@ -394,8 +394,8 @@ HWTEST_F(VSyncConnectionTest, NeedTriggeredVsyncLocked001, Function | MediumTest
  * Rank: Important(2)
  * EnvConditions: N/A
  * CaseDescription: 1.create VsyncConnection with name "rs"
- *                  2.add time(1000000000) to VSyncConnection
- *                  3.call NeedTriggeredVsyncLocked with time/time + 1/time - 1
+ *                  2.add times to VSyncConnection
+ *                  3.call CheckIsReadyByTime and check ret
  */
 HWTEST_F(VSyncConnectionTest, CheckIsReadyByTime001, Function | MediumTest| Level3)
 {
@@ -422,8 +422,8 @@ HWTEST_F(VSyncConnectionTest, CheckIsReadyByTime001, Function | MediumTest| Leve
  * Rank: Important(2)
  * EnvConditions: N/A
  * CaseDescription: 1.create VsyncConnection with name "rs"
- *                  2.add time(1000000000) to VSyncConnection
- *                  3.call NeedTriggeredVsyncLocked with time/time + 1/time - 1
+ *                  2.add times to VSyncConnection
+ *                  3.call CheckIsReadyByTime and check ret
  */
 HWTEST_F(VSyncConnectionTest, CheckIsReadyByTime002, Function | MediumTest| Level3)
 {
@@ -445,6 +445,66 @@ HWTEST_F(VSyncConnectionTest, CheckIsReadyByTime002, Function | MediumTest| Leve
         EXPECT_EQ(tmpConn1->CheckIsReadyByTime(2 * currentTime), true);
         EXPECT_EQ(tmpConn1->requestVsyncTimestamp_.size(), 0);
     }
+}
+
+/**
+ * Function: CheckIsReadyByTime003
+ * Type: Function
+ * Rank: Important(2)
+ * EnvConditions: N/A
+ * CaseDescription: 1.create VsyncConnection with name "rs"
+ *                  2.force set isRsConn_ to false
+ *                  3.call CheckIsReadyByTime and check ret
+ */
+HWTEST_F(VSyncConnectionTest, CheckIsReadyByTime_003, Function | MediumTest| Level3)
+{
+    sptr<VSyncConnection> tmpConn1 = new VSyncConnection(vsyncDistributor, "rs");
+    tmpConn1->isRsConn_ = false;
+    const int64_t currentTime = 1000000000;
+    bool result = tmpConn1->CheckIsReadyByTime(currentTime);
+    EXPECT_TRUE(result);
+}
+
+/**
+ * Function: CheckIsReadyByTime004
+ * Type: Function
+ * Rank: Important(2)
+ * EnvConditions: N/A
+ * CaseDescription: 1.create VsyncConnection with name "rs"
+ *                  2.add times to VSyncConnection
+ *                  3.call CheckIsReadyByTime and check ret
+ */
+HWTEST_F(VSyncConnectionTest, CheckIsReadyByTime_004, Function | MediumTest| Level3)
+{
+    sptr<VSyncConnection> tmpConn1 = new VSyncConnection(vsyncDistributor, "rs");
+    tmpConn1->isRsConn_ = true;
+    tmpConn1->isRequestWithTimestampOnly_ = true;
+
+    const int64_t currentTime = 1000000000;
+    EXPECT_EQ(tmpConn1->AddRequestVsyncTimestamp(0.5 * currentTime), true);
+
+    bool result = tmpConn1->CheckIsReadyByTime(currentTime);
+    EXPECT_TRUE(result);
+}
+
+/**
+ * Function: CheckIsReadyByTime005
+ * Type: Function
+ * Rank: Important(2)
+ * EnvConditions: N/A
+ * CaseDescription: 1.create VsyncConnection with name "rs"
+ *                  2.add times to VSyncConnection
+ *                  3.call CheckIsReadyByTime and check ret
+ */
+HWTEST_F(VSyncConnectionTest, CheckIsReadyByTime_005, Function | MediumTest| Level3)
+{
+    sptr<VSyncConnection> tmpConn1 = new VSyncConnection(vsyncDistributor, "rs");
+    tmpConn1->isRsConn_ = true;
+    tmpConn1->isRequestWithTimestampOnly_ = true;
+    const int64_t currentTime = 1000000000;
+    EXPECT_EQ(tmpConn1->AddRequestVsyncTimestamp(2 * currentTime), true);
+    bool result = tmpConn1->CheckIsReadyByTime(currentTime);
+    EXPECT_FALSE(result);
 }
 
 /*
@@ -501,7 +561,7 @@ HWTEST_F(VSyncConnectionTest, SetUiDvsyncConfig003, Function | MediumTest| Level
         "APP_LIST15", "APP_LIST16", "APP_LIST17", "APP_LIST18", "APP_LIST19", "APP_LIST20", "APP_LIST21"};
     auto res = vsyncConnectionProxy->SetUiDvsyncConfig(bufferCount, compositeSceneEnable,
         nativeDelayEnable, rsDvsyncAnimationList);
-    ASSERT_EQ(res, VSYNC_ERROR_OK);
+    ASSERT_EQ(res, VSYNC_ERROR_INVALID_ARGUMENTS);
 }
 } // namespace
 } // namespace Rosen

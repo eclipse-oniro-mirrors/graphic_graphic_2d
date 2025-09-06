@@ -31,6 +31,7 @@ namespace RSEventName {
     const std::string EPS_LCD_FREQ = "EPS_LCD_FREQ";
     const std::string JANK_STATS_RS = "JANK_STATS_RS";
     const std::string JANK_FRAME_RS = "JANK_FRAME_RS";
+    const std::string CALENDAR_ICON_TRANSPARENT = "CALENDAR_ICON_TRANSPARENT";
     const std::string INTERACTION_RESPONSE_LATENCY = "INTERACTION_RESPONSE_LATENCY";
     const std::string INTERACTION_COMPLETED_LATENCY = "INTERACTION_COMPLETED_LATENCY";
     const std::string INTERACTION_RENDER_JANK = "INTERACTION_RENDER_JANK";
@@ -46,6 +47,7 @@ namespace RSEventName {
     const std::string RS_HARDWARE_THREAD_LOAD_WARNING = "RS_HARDWARE_THREAD_LOAD_WARNING";
     const std::string RENDER_DRAWABLE_MULTI_ACCESS = "RENDER_DRAWABLE_MULTI_ACCESS";
     const std::string RS_RENDER_EXCEPTION = "RS_RENDER_EXCEPTION";
+    const std::string RENDERFIT_TYPE_RT_MONITORING = "RENDERFIT_TYPE_RT_MONITORING";
 } // namespace RSEventName
 
 enum RSEventType {

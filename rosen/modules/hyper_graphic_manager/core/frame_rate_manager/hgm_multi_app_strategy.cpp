@@ -53,6 +53,7 @@ HgmErrCode HgmMultiAppStrategy::HandlePkgsEvent(const std::vector<std::string>& 
     foregroundPidAppMap_.clear();
     pidAppTypeMap_.clear();
     CheckPackageInConfigList(pkgs_);
+    std::unordered_set<pid_t> imageEnhancePidList = {};
     for (auto& param : pkgs_) {
         RS_TRACE_NAME_FMT("pkg update:%s", param.c_str());
         HGM_LOGI("pkg update:%{public}s", param.c_str());
@@ -60,6 +61,9 @@ HgmErrCode HgmMultiAppStrategy::HandlePkgsEvent(const std::vector<std::string>& 
 
         // DISPLAY ENGINE
         RsCommonHook::Instance().SetCurrentPkgName(pkgName);
+        if (CheckImageEnhanceList(pkgName)) {
+            imageEnhancePidList.insert(pid);
+        }
 
         pidAppTypeMap_[pkgName] = { pid, appType };
         if (pid > DEFAULT_PID) {
@@ -67,6 +71,7 @@ HgmErrCode HgmMultiAppStrategy::HandlePkgsEvent(const std::vector<std::string>& 
             backgroundPid_.Erase(pid);
         }
     }
+    RsCommonHook::Instance().SetImageEnhancePidList(imageEnhancePidList);
     if (auto configCallbackManager = HgmConfigCallbackManager::GetInstance(); configCallbackManager != nullptr) {
         configCallbackManager->SyncHgmConfigChangeCallback(foregroundPidAppMap_);
     }
@@ -429,6 +434,11 @@ void HgmMultiAppStrategy::OnStrategyChange()
     }
 }
 
+bool HgmMultiAppStrategy::CheckImageEnhanceList(const std::string& appName) const
+{
+    return imageEnhanceScene_.find(appName) != imageEnhanceScene_.end();
+}
+
 // use in temporary scheme to check package name
 void HgmMultiAppStrategy::CheckPackageInConfigList(const std::vector<std::string>& pkgs)
 {
@@ -447,6 +457,11 @@ void HgmMultiAppStrategy::CheckPackageInConfigList(const std::vector<std::string
     std::unordered_map<std::string, std::string>& hwcVideoConfigFromHgm = configData->hwcSourceTuningConfig_;
     std::unordered_map<std::string, std::string>& hwcSolidLayerConfigFromHgm = configData->hwcSolidLayerConfig_;
     HgmEnergyConsumptionPolicy::Instance().SetCurrentPkgName(pkgs);
+    static bool unused = [&solidLayerConfigFromHgm, &hwcSolidLayerConfigFromHgm, &rsCommonHook]() {
+        rsCommonHook.SetSolidColorLayerConfigFromHgm(solidLayerConfigFromHgm);
+        rsCommonHook.SetHwcSolidColorLayerConfigFromHgm(hwcSolidLayerConfigFromHgm);
+        return true;
+    }();
     if (pkgs.size() > 1) {
         return;
     }

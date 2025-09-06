@@ -24,6 +24,7 @@
 #include <system_ability_definition.h>
 #include <unistd.h>
 
+#include "feature/param_manager/rs_param_manager.h"
 #include "hgm_core.h"
 #include "memory/rs_memory_manager.h"
 #include "parameter.h"
@@ -220,6 +221,10 @@ void RSRenderService::Run()
         RS_LOGE("Run failed, mainThread is nullptr");
         return;
     }
+    mainThread_->PostTask([]() {
+        RS_LOGD("RSRenderService::Run(): Subscribe event.");
+        RSParamManager::GetInstance().SubscribeEvent();
+    });
     RS_LOGE("Run");
     mainThread_->Start();
 }
@@ -250,18 +255,27 @@ sptr<RSIRenderServiceConnection> RSRenderService::CreateConnection(const sptr<RS
     return newConn;
 }
 
-void RSRenderService::RemoveConnection(sptr<IRemoteObject> token)
+bool RSRenderService::RemoveConnection(const sptr<RSIConnectionToken>& token)
 {
+    if (token == nullptr) {
+        RS_LOGE("RemoveConnection: token is nullptr");
+        return false;
+    }
     // temporarily extending the life cycle
+    auto tokenObj = token->AsObject();
     std::unique_lock<std::mutex> lock(mutex_);
-    auto iter = connections_.find(token);
+    auto iter = connections_.find(tokenObj);
     if (iter == connections_.end()) {
         RS_LOGE("RemoveConnection: connections_ cannot find token");
-        return;
+        return false;
     }
-    auto tmp = iter->second;
-    connections_.erase(token);
+    auto rsConn = iter->second;
+    if (rsConn != nullptr) {
+        rsConn->RemoveToken();
+    }
+    connections_.erase(iter);
     lock.unlock();
+    return true;
 }
 
 int RSRenderService::Dump(int fd, const std::vector<std::u16string>& args)
@@ -560,24 +574,6 @@ void RSRenderService::DumpMem(std::unordered_set<std::u16string>& argSets, std::
         }).wait();
 }
 
-void RSRenderService::DumpNode(std::unordered_set<std::u16string>& argSets, std::string& dumpString) const
-{
-    std::string type;
-    bool isSuccess = ExtractDumpInfo(argSets, type, u"dumpNode");
-    if (!isSuccess) {
-        return;
-    }
-    uint64_t nodeId = 0;
-    if (!type.empty() && IsNumber(type) && type.length() < 20) {
-        nodeId = std::stoull(type);
-    }
-    mainThread_->ScheduleTask(
-        [this, &dumpString, &nodeId]() {
-            return mainThread_->DumpNode(dumpString, nodeId);
-        }).wait();
-    
-}
-
 void RSRenderService::DumpJankStatsRs(std::string& dumpString) const
 {
     dumpString.append("\n");
@@ -812,19 +808,12 @@ void RSRenderService::RegisterRSTreeFuncs()
         mainThread_->CollectClientNodeTreeResult(taskId, dumpString, CLIENT_DUMP_TREE_TIMEOUT);
     };
 
-    // Dump Node
-    RSDumpFunc dumpNodeFunc = [this](const std::u16string &cmd, std::unordered_set<std::u16string> &argSets,
-                                     std::string &dumpString) -> void {
-        DumpNode(argSets, dumpString);
-    };
-
     std::vector<RSDumpHander> handers = {
         { RSDumpID::RS_NOT_ON_TREE_INFO, rsNotOnTreeFunc },
         { RSDumpID::RENDER_NODE_INFO, rsTreeFunc, RS_MAIN_THREAD_TAG },
         { RSDumpID::SURFACENODE_INFO, surfaceNodeFunc },
         { RSDumpID::MULTI_RSTREES_INFO, multiRSTreesFunc },
         { RSDumpID::CLIENT_INFO, rsClientFunc, RS_CLIENT_TAG },
-        { RSDumpID::RS_RENDER_NODE_INFO, dumpNodeFunc },
     };
 
     RSDumpManager::GetInstance().Register(handers);
@@ -844,13 +833,6 @@ void RSRenderService::RegisterMemFuncs()
         mainThread_->ScheduleTask([this, &dumpString]() { DumpAllNodesMemSize(dumpString); }).wait();
     };
 
-    // trim mem
-    RSDumpFunc trimMemFunc = [this](const std::u16string &cmd, std::unordered_set<std::u16string> &argSets,
-                                    std::string &dumpString) -> void {
-        mainThread_->ScheduleTask([this, &argSets, &dumpString]() { return mainThread_->TrimMem(argSets, dumpString); })
-            .wait();
-    };
-
     // Mem
     RSDumpFunc memDumpFunc = [this](const std::u16string &cmd, std::unordered_set<std::u16string> &argSets,
                                     std::string &dumpString) -> void {
@@ -867,7 +849,6 @@ void RSRenderService::RegisterMemFuncs()
     std::vector<RSDumpHander> handers = {
         { RSDumpID::SURFACE_INFO, surfaceInfoFunc, RS_HW_THREAD_TAG },
         { RSDumpID::SURFACE_MEM_INFO, surfaceMemFunc },
-        { RSDumpID::TRIM_MEM_INFO, trimMemFunc },
         { RSDumpID::MEM_INFO, memDumpFunc },
         { RSDumpID::EXIST_PID_MEM_INFO, existPidMemFunc },
     };

@@ -18,6 +18,7 @@
 #include <cstddef>
 #include <memory>
 #include <unordered_set>
+#include <hilog/log.h>
 
 #include "recording/draw_cmd.h"
 #include "recording/recording_canvas.h"
@@ -231,7 +232,7 @@ void DrawCmdList::MarshallingDrawOps()
     }
 }
 
-void DrawCmdList::ProfilerMarshallingDrawOps(Drawing::DrawCmdList *cmdlist)
+void DrawCmdList::ProfilerMarshallingDrawOps(Drawing::DrawCmdList *cmdlist, bool includeImageOps)
 {
     if (mode_ == DrawCmdList::UnmarshalMode::IMMEDIATE) {
         return;
@@ -245,13 +246,14 @@ void DrawCmdList::ProfilerMarshallingDrawOps(Drawing::DrawCmdList *cmdlist)
         if (!op) {
             continue;
         }
-        if (op->GetType() == DrawOpItem::IMAGE_WITH_PARM_OPITEM) {
-            continue;
-        }
-        if (op->GetType() == DrawOpItem::IMAGE_OPITEM) {
-            continue;
-        }
-        if (op->GetType() == DrawOpItem::IMAGE_RECT_OPITEM) {
+        const auto type = includeImageOps ? DrawOpItem::OPITEM_HEAD : op->GetType();
+        if ((type == DrawOpItem::ATLAS_OPITEM) || (type == DrawOpItem::IMAGE_NINE_OPITEM) ||
+            (type == DrawOpItem::IMAGE_LATTICE_OPITEM) || (type == DrawOpItem::IMAGE_OPITEM) ||
+            (type == DrawOpItem::IMAGE_RECT_OPITEM) || (type == DrawOpItem::IMAGE_WITH_PARM_OPITEM) ||
+            (type == DrawOpItem::IMAGE_SNAPSHOT_OPITEM) || (type == DrawOpItem::PIXELMAP_WITH_PARM_OPITEM) ||
+            (type == DrawOpItem::PIXELMAP_RECT_OPITEM) || (type == DrawOpItem::PIXELMAP_NINE_OPITEM) ||
+            (type == DrawOpItem::PIXELMAP_LATTICE_OPITEM) || (type == DrawOpItem::HYBRID_RENDER_PIXELMAP_OPITEM) ||
+            (type == DrawOpItem::HYBRID_RENDER_PIXELMAP_SIZE_OPITEM)) {
             continue;
         }
         op->Marshalling(*cmdlist);
@@ -310,13 +312,13 @@ void DrawCmdList::UnmarshallingDrawOps(uint32_t* opItemCount)
     do {
         count++;
         if (opItemCount && ++(*opItemCount) > MAX_OPITEMSIZE) {
-            LOGE("DrawCmdList::UnmarshallingOps failed, opItem count exceed limit");
+            HILOG_COMM_ERROR("DrawCmdList::UnmarshallingOps failed, opItem count exceed limit");
             break;
         }
         void* itemPtr = opAllocator_.OffsetToAddr(offset, sizeof(OpItem));
         auto* curOpItemPtr = static_cast<OpItem*>(itemPtr);
         if (curOpItemPtr == nullptr) {
-            LOGE("DrawCmdList::UnmarshallingOps failed, opItem is nullptr");
+            HILOG_COMM_ERROR("DrawCmdList::UnmarshallingOps failed, opItem is nullptr");
             break;
         }
         uint32_t type = curOpItemPtr->GetType();
@@ -333,7 +335,7 @@ void DrawCmdList::UnmarshallingDrawOps(uint32_t* opItemCount)
             auto* replacePtr = opAllocator_.OffsetToAddr(
                 replacedOpListForBuffer_[opReplaceIndex].second, sizeof(OpItem));
             if (replacePtr == nullptr) {
-                LOGE("DrawCmdList::Unmarshalling replace Ops failed, replace op is nullptr");
+                HILOG_COMM_ERROR("DrawCmdList::Unmarshalling replace Ops failed, replace op is nullptr");
                 break;
             }
             auto* replaceOpItemPtr = static_cast<OpItem*>(replacePtr);
@@ -540,7 +542,7 @@ void DrawCmdList::GenerateCacheByBuffer(Canvas* canvas, const Rect* rect)
         void* itemPtr = opAllocator_.OffsetToAddr(offset, sizeof(OpItem));
         auto* curOpItemPtr = static_cast<OpItem*>(itemPtr);
         if (curOpItemPtr == nullptr) {
-            LOGE("DrawCmdList::GenerateCacheByBuffer failed, opItem is nullptr");
+            HILOG_COMM_ERROR("DrawCmdList::GenerateCacheByBuffer failed, opItem is nullptr");
             break;
         }
         size_t avaliableSize = opAllocator_.GetSize() - offset;
@@ -550,7 +552,7 @@ void DrawCmdList::GenerateCacheByBuffer(Canvas* canvas, const Rect* rect)
             itemPtr = opAllocator_.OffsetToAddr(offset, sizeof(OpItem));
             curOpItemPtr = static_cast<OpItem*>(itemPtr);
             if (curOpItemPtr == nullptr) {
-                LOGE("DrawCmdList::GenerateCache failed, opItem is nullptr");
+                HILOG_COMM_ERROR("DrawCmdList::GenerateCache failed, opItem is nullptr");
                 break;
             }
         }

@@ -514,7 +514,7 @@ void DoSetWindowFreezeImmediately()
 
 void DoSetHwcNodeBounds()
 {
-    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::CREATE_NODE_AND_SURFACE);
+    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_POINTER_POSITION);
     MessageParcel dataParcel;
     MessageParcel replyParcel;
     MessageOption option;
@@ -745,7 +745,10 @@ void DoSetTpFeatureConfig()
 
     int32_t feature = GetData<int32_t>();
     std::string config = GetData<std::string>();
-    uint8_t tpFeatureConfigType = GetData<uint8_t>();
+    // To ensure that tpFeatureConfigType falls within the valid range more frequently, apply a modulo operation
+    // to it. This allows a limited set of seeds to cover all valid values within the range.
+    uint8_t tpFeatureConfigType = GetData<uint8_t>() %
+        (static_cast<uint8_t>(TpFeatureConfigType::TpFeatureConfigType::AFT_TP_FEATURE) + 2);
 
     dataParcel.WriteInterfaceToken(GetDescriptor());
     dataParcel.WriteInt32(feature);
@@ -1045,7 +1048,33 @@ void DoRegisterSelfDrawingNodeRectChangeCallback()
     MessageOption option;
     MessageParcel dataParcel;
     MessageParcel replyParcel;
+
+    uint8_t size = GetData<uint8_t>();
+    std::vector<int32_t> pids(size);
+    for (int i = 0; i < size; i++) {
+        pids[i] = GetData<int32_t>();
+    }
+
+    int32_t lowLimitWidth = GetData<int32_t>();
+    int32_t lowLimitHeight = GetData<int32_t>();
+    int32_t highLimitWidth = GetData<int32_t>();
+    int32_t highLimitHeight = GetData<int32_t>();
+    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    auto remoteObject = samgr->GetSystemAbility(RENDER_SERVICE);
+    sptr<RSISelfDrawingNodeRectChangeCallback> callback =
+        iface_cast<RSISelfDrawingNodeRectChangeCallback>(remoteObject);
+ 
     dataParcel.WriteInterfaceToken(GetDescriptor());
+    dataParcel.WriteUint32(size);
+    for (const auto item : pids) {
+        dataParcel.WriteInt32(item);
+    }
+    dataParcel.WriteInt32(lowLimitWidth);
+    dataParcel.WriteInt32(lowLimitHeight);
+    dataParcel.WriteInt32(highLimitWidth);
+    dataParcel.WriteInt32(highLimitHeight);
+    dataParcel.WriteRemoteObject(callback->AsObject());
+
     connectionStub_->OnRemoteRequest(code, dataParcel, replyParcel, option);
 }
 

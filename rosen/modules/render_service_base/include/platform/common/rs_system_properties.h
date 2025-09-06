@@ -43,6 +43,7 @@ enum class DirtyRegionDebugType {
     EGL_DAMAGE, // all dirty region information, includes detailed app dirty region and global dirty.
     DISPLAY_DIRTY, // detailed global dirty (before merge rect).
     MERGED_DIRTY, // advanced dirty region information, includes merged dirty region
+    CURRENT_FRAME_VIS_DIRTY, // for hardware compose area optimization.
     CUR_DIRTY_DETAIL_ONLY_TRACE = 10,
     UPDATE_DIRTY_REGION, // dirty region for each node.
     OVERLAY_RECT,   // drawRegion
@@ -177,6 +178,7 @@ public:
     static bool GetRenderNodePurgeEnabled();
     static bool GetRSImagePurgeEnabled();
     static bool GetClosePixelMapFdEnabled();
+    static bool GetAceTestMode();
     static DirtyRegionDebugType GetDirtyRegionDebugType();
     static AdvancedDirtyRegionType GetAdvancedDirtyRegionEnabled();
     static DirtyAlignType GetDirtyAlignEnabled();
@@ -187,7 +189,7 @@ public:
     static bool GetAllSurfaceVisibleDebugEnabled();
     static bool GetVirtualDirtyDebugEnabled();
     static bool GetVirtualDirtyEnabled();
-    static bool GetExpandScreenDirtyEnabled();
+    static bool GetVirtualExpandScreenDirtyEnabled();
     static bool GetVirtualExpandScreenSkipEnabled();
     static bool GetOcclusionEnabled();
     static std::string GetRSEventProperty(const std::string &paraName);
@@ -312,9 +314,6 @@ public:
     static bool IsOpincRealDrawCacheEnable();
     static bool GetSkipDisplayIfScreenOffEnabled();
     static bool GetBatchRemovingOnRemoteDiedEnabled();
-#ifdef RS_ENABLE_STACK_CULLING
-    static bool GetViewOcclusionCullingEnabled();
-#endif
 
     static bool GetDumpUICaptureEnabled();
     static bool GetDumpUIPixelmapEnabled();
@@ -382,6 +381,8 @@ public:
     static bool GetOptBatchRemovingOnRemoteDiedEnabled();
     static bool GetGpuDirtyApsEnabled();
     static bool GetSupportScreenFreezeEnabled();
+
+    static bool GetBootCompleted();
 
 private:
     RSSystemProperties() = default;

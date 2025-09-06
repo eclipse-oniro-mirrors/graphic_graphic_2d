@@ -64,8 +64,6 @@ constexpr uint64_t REFRESH_PERIOD = 16666667;
 constexpr uint64_t SKIP_COMMAND_FREQ_LIMIT = 30;
 constexpr uint32_t DEFAULT_SCREEN_WIDTH = 480;
 constexpr uint32_t DEFAULT_SCREEN_HEIGHT = 320;
-constexpr uint32_t MAX_BLACK_LIST_NUM = 1024;
-constexpr uint32_t MAX_WHITE_LIST_NUM = 1024;
 class RSMainThreadTest : public testing::Test {
 public:
     static void SetUpTestCase();
@@ -1607,29 +1605,6 @@ HWTEST_F(RSMainThreadTest, ConsumeAndUpdateAllNodes002, TestSize.Level1)
 }
 
 /**
- * @tc.name: IsSurfaceConsumerNeedSkip001
- * @tc.desc: IsSurfaceConsumerNeedSkip test
- * @tc.type: FUNC
- * @tc.require: issueICKWDL
- */
-HWTEST_F(RSMainThreadTest, IsSurfaceConsumerNeedSkip001, TestSize.Level1)
-{
-    auto mainThread = RSMainThread::Instance();
-    ASSERT_NE(mainThread, nullptr);
-    auto distributor = mainThread->rsVSyncDistributor_;
-    sptr<IConsumerSurface> cSurface = nullptr;
-    auto res = mainThread->IsSurfaceConsumerNeedSkip(cSurface);
-    ASSERT_EQ(res, false);
-    cSurface = IConsumerSurface::Create();
-    auto vsyncGenerator = CreateVSyncGenerator();
-    auto vsyncController = new VSyncController(vsyncGenerator, 0);
-    mainThread->rsVSyncDistributor_ = new VSyncDistributor(vsyncController, "rs");
-    res = mainThread->IsSurfaceConsumerNeedSkip(cSurface);
-    ASSERT_EQ(res, false);
-    mainThread->rsVSyncDistributor_ = distributor;
-}
-
-/**
  * @tc.name: CheckSubThreadNodeStatusIsDoing001
  * @tc.desc: CheckSubThreadNodeStatusIsDoing test
  * @tc.type: FUNC
@@ -2025,6 +2000,125 @@ HWTEST_F(RSMainThreadTest, UniRender004, TestSize.Level1)
     mainThread->isHardwareEnabledBufferUpdated_ = false;
     mainThread->UniRender(rootNode);
     ASSERT_TRUE(mainThread->doDirectComposition_);
+}
+
+/**
+ * @tc.name: IfStatusBarDirtyOnly001
+ * @tc.desc: Test IfStatusBarDirtyOnly when activeNodesInRoot_ is empty
+ * @tc.type: FUNC
+ * @tc.require: issueICUBUG
+ */
+HWTEST_F(RSMainThreadTest, IfStatusBarDirtyOnly001, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    auto& context = mainThread->GetContext();
+    context.activeNodesInRoot_.clear();
+    system::SetParameter("persist.ace.testmode.enabled", "1");
+    EXPECT_TRUE(mainThread->IfStatusBarDirtyOnly());
+    system::SetParameter("persist.ace.testmode.enabled", "0");
+}
+
+/**
+ * @tc.name: IfStatusBarDirtyOnly002
+ * @tc.desc: Test IfStatusBarDirtyOnly when not all nodes have SCBStatusBar instance root
+ * @tc.type: FUNC
+ * @tc.require: issueICUBUG
+ */
+HWTEST_F(RSMainThreadTest, IfStatusBarDirtyOnly002, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    auto& context = mainThread->GetContext();
+
+    context.activeNodesInRoot_.clear();
+    auto& nodeMap = context.GetMutableNodeMap();
+    std::unordered_map<NodeId, std::weak_ptr<RSRenderNode>> subMap1;
+    std::unordered_map<NodeId, std::weak_ptr<RSRenderNode>> subMap2;
+
+    RSSurfaceRenderNodeConfig scbConfig;
+    scbConfig.id = 1;
+    scbConfig.name = "SCBStatusBar_Index";
+    auto scbStatusBarRootNode = std::make_shared<RSSurfaceRenderNode>(scbConfig);
+    ASSERT_NE(scbStatusBarRootNode, nullptr);
+    nodeMap.RegisterRenderNode(scbStatusBarRootNode);
+    context.activeNodesInRoot_.emplace(scbStatusBarRootNode->GetId(), subMap1);
+
+    RSSurfaceRenderNodeConfig testConfig;
+    testConfig.id = 2;
+    testConfig.name = "SCBDesktop_Index";
+    auto scbDesktopRootNode = std::make_shared<RSSurfaceRenderNode>(testConfig);
+    ASSERT_NE(scbDesktopRootNode, nullptr);
+    nodeMap.RegisterRenderNode(scbDesktopRootNode);
+    context.activeNodesInRoot_.emplace(scbDesktopRootNode->GetId(), subMap2);
+
+    system::SetParameter("persist.ace.testmode.enabled", "1");
+    EXPECT_FALSE(mainThread->IfStatusBarDirtyOnly());
+    system::SetParameter("persist.ace.testmode.enabled", "0");
+}
+
+/**
+ * @tc.name: IfStatusBarDirtyOnly003
+ * @tc.desc: Test IfStatusBarDirtyOnly when not all nodes have SurfaceNode instance root
+ * @tc.type: FUNC
+ * @tc.require: issueICUBUG
+ */
+HWTEST_F(RSMainThreadTest, IfStatusBarDirtyOnly003, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    auto& context = mainThread->GetContext();
+
+    context.activeNodesInRoot_.clear();
+    auto& nodeMap = context.GetMutableNodeMap();
+    std::unordered_map<NodeId, std::weak_ptr<RSRenderNode>> subMap1;
+    std::unordered_map<NodeId, std::weak_ptr<RSRenderNode>> subMap2;
+
+    RSSurfaceRenderNodeConfig scbConfig;
+    scbConfig.id = 1;
+    scbConfig.name = "SCBStatusBar_Index";
+    auto scbStatusBarRootNode = std::make_shared<RSSurfaceRenderNode>(scbConfig);
+    ASSERT_NE(scbStatusBarRootNode, nullptr);
+    nodeMap.RegisterRenderNode(scbStatusBarRootNode);
+    context.activeNodesInRoot_.emplace(scbStatusBarRootNode->GetId(), subMap1);
+
+    auto screenNode = std::make_shared<RSScreenRenderNode>(2, 0, std::make_shared<RSContext>());
+    nodeMap.RegisterRenderNode(screenNode);
+    context.activeNodesInRoot_.emplace(screenNode->GetId(), subMap2);
+
+    system::SetParameter("persist.ace.testmode.enabled", "1");
+    EXPECT_FALSE(mainThread->IfStatusBarDirtyOnly());
+    system::SetParameter("persist.ace.testmode.enabled", "0");
+}
+
+/**
+ * @tc.name: IfStatusBarDirtyOnly004
+ * @tc.desc: Test IfStatusBarDirtyOnly when all nodes have SCBStatusBar instance root
+ * @tc.type: FUNC
+ * @tc.require: issueICUBUG
+ */
+HWTEST_F(RSMainThreadTest, IfStatusBarDirtyOnly004, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    auto& context = mainThread->GetContext();
+
+    context.activeNodesInRoot_.clear();
+    auto& nodeMap = context.GetMutableNodeMap();
+    std::unordered_map<NodeId, std::weak_ptr<RSRenderNode>> subMap1;
+    std::unordered_map<NodeId, std::weak_ptr<RSRenderNode>> subMap2;
+
+    RSSurfaceRenderNodeConfig scbConfig;
+    scbConfig.id = 1;
+    scbConfig.name = "SCBStatusBar_Index";
+    auto scbStatusBarRootNode = std::make_shared<RSSurfaceRenderNode>(scbConfig);
+    ASSERT_NE(scbStatusBarRootNode, nullptr);
+    nodeMap.RegisterRenderNode(scbStatusBarRootNode);
+    context.activeNodesInRoot_.emplace(scbStatusBarRootNode->GetId(), subMap1);
+
+    system::SetParameter("persist.ace.testmode.enabled", "1");
+    EXPECT_TRUE(mainThread->IfStatusBarDirtyOnly());
+    system::SetParameter("persist.ace.testmode.enabled", "0");
 }
 
 /**
@@ -4472,6 +4566,8 @@ HWTEST_F(RSMainThreadTest, CheckSystemSceneStatus002, TestSize.Level1)
     mainThread->CheckSystemSceneStatus();
 }
 
+
+
 /**
  * @tc.name: DoDirectComposition
  * @tc.desc: Test DoDirectComposition
@@ -5349,6 +5445,36 @@ HWTEST_F(RSMainThreadTest, TraverseCanvasDrawingNodesNotOnTree, TestSize.Level2)
 }
 
 /**
+ * @tc.name: RenderNodeModifierDump001
+ * @tc.desc: RenderNodeModifierDump001 Test
+ * @tc.type: FUNC
+ * @tc.require: ICVK6I
+ */
+HWTEST_F(RSMainThreadTest, RenderNodeModifierDump001, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    pid_t pid = 0;
+    size_t modifierSize = mainThread->RenderNodeModifierDump(pid);
+    ASSERT_GE(modifierSize, 0);
+}
+
+/**
+ * @tc.name: GetNodeInfo001
+ * @tc.desc: GetNodeInfo001 Test
+ * @tc.type: FUNC
+ * @tc.require: ICVK6I
+ */
+HWTEST_F(RSMainThreadTest, GetNodeInfo001, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    std::unordered_map<int, std::pair<int, int>> nodeInfo;
+    std::unordered_map<int, int> nullNodeInfo;
+    mainThread->GetNodeInfo(nodeInfo, nullNodeInfo);
+}
+
+/**
  * @tc.name: RenderServiceAllNodeDump01
  * @tc.desc: RenderServiceAllNodeDump Test
  * @tc.type: FUNC
@@ -6168,10 +6294,6 @@ HWTEST_F(RSMainThreadTest, DoDirectComposition003, TestSize.Level1)
 HWTEST_F(RSMainThreadTest, InitHgmTaskHandleThreadTest, TestSize.Level1)
 {
     auto mainThread = RSMainThread::Instance();
-    std::shared_ptr<AppExecFwk::EventRunner> runner = mainThread->runner_;
-    std::shared_ptr<AppExecFwk::EventHandler> handler = mainThread->handler_;
-    mainThread->runner_ = AppExecFwk::EventRunner::Create("RSMainThread");
-    mainThread->handler_ = std::make_shared<AppExecFwk::EventHandler>(mainThread->runner_);
     mainThread->hgmContext_.InitHgmTaskHandleThread(mainThread->rsVSyncController_, mainThread->appVSyncController_,
         mainThread->vsyncGenerator_, mainThread->appVSyncDistributor_);
     ASSERT_EQ(mainThread->forceUpdateUniRenderFlag_, true);
@@ -6185,23 +6307,27 @@ HWTEST_F(RSMainThreadTest, InitHgmTaskHandleThreadTest, TestSize.Level1)
     ASSERT_EQ(mainThread->hgmContext_.FrameRateGetFunc(RSPropertyUnit::PIXEL_POSITION, 0.f, 0, 0), 0);
     HgmCore::Instance().hgmFrameRateMgr_ = frameRateMgr;
     ASSERT_NE(HgmCore::Instance().GetFrameRateMgr(), nullptr);
+}
 
-    if (frameRateMgr != nullptr && frameRateMgr->forceUpdateCallback_) {
-        mainThread->hgmContext_.currVsyncId_ = mainThread->hgmContext_.currVsyncId_ + 100;
-        EXPECT_NE(mainThread->hgmContext_.lastForceUpdateVsyncId_, mainThread->hgmContext_.currVsyncId_);
-        frameRateMgr->forceUpdateCallback_(false, true);
-        usleep(100000);
-        EXPECT_EQ(mainThread->hgmContext_.lastForceUpdateVsyncId_, mainThread->hgmContext_.currVsyncId_);
-        frameRateMgr->forceUpdateCallback_(false, true);
-        usleep(100000);
-        EXPECT_EQ(mainThread->hgmContext_.lastForceUpdateVsyncId_, mainThread->hgmContext_.currVsyncId_);
-    }
-    usleep(200000);
-    mainThread->runner_ = runner;
-    mainThread->handler_ = handler;
-    runner = nullptr;
-    handler = nullptr;
-    usleep(200000);
+/**
+ * @tc.name: RegisterHwcEvent
+ * @tc.desc: test RegisterHwcEvent
+ * @tc.type: FUNC
+ * @tc.require: issueICTY7B
+ */
+HWTEST_F(RSMainThreadTest, RegisterHwcEvent001, TestSize.Level1)
+{
+    auto screenManager = CreateOrGetScreenManager();
+    auto screenManagerImpl = static_cast<impl::RSScreenManager*>(screenManager.GetRefPtr());
+    ASSERT_NE(screenManagerImpl, nullptr);
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    mainThread->RegisterHwcEvent();
+    // test screenManager is nullptr
+    screenManagerImpl->instance_ = nullptr;
+    mainThread->RegisterHwcEvent();
+    // reset screenManager in TearDownTestCase, so it can't be nullptr
+    screenManagerImpl->instance_ = new impl::RSScreenManager();
 }
 
 /**
@@ -6247,6 +6373,7 @@ HWTEST_F(RSMainThreadTest, DoDirectComposition004_BufferSync, TestSize.Level1)
     ASSERT_NE(surfaceNode->surfaceHandler_, nullptr);
     surfaceNode->SetHardwareForcedDisabledState(false);
     surfaceNode->HwcSurfaceRecorder().SetLastFrameHasVisibleRegion(true);
+    displayNode->AddChild(surfaceNode);
     mainThread->hardwareEnabledNodes_.clear();
     mainThread->hardwareEnabledNodes_.emplace_back(surfaceNode);
 

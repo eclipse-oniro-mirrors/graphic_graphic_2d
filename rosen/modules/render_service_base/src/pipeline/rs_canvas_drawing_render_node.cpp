@@ -520,7 +520,7 @@ void RSCanvasDrawingRenderNode::InitRenderParams()
     stagingRenderParams_ = std::make_unique<RSCanvasDrawingRenderParams>(GetId());
     DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(shared_from_this());
     if (renderDrawable_ == nullptr) {
-        RS_LOGE("RSCanvasDrawingRenderNode::InitRenderParams failed");
+        HILOG_COMM_ERROR("RSCanvasDrawingRenderNode::InitRenderParams failed");
         return;
     }
 #endif
@@ -541,8 +541,7 @@ void RSCanvasDrawingRenderNode::CheckDrawCmdListSizeNG(ModifierNG::RSModifierTyp
         }
         // If such nodes are not drawn, The drawcmdlists don't clearOp during recording, As a result, there are
         // too many drawOp, so we need to add the limit of drawcmdlists.
-        while ((GetOldDirtyInSurface().IsEmpty() || !IsDirty() || renderDrawable_) &&
-               drawCmdListsNG_[type].size() > DRAWCMDLIST_COUNT_LIMIT) {
+        while (drawCmdListsNG_[type].size() > DRAWCMDLIST_COUNT_LIMIT) {
             drawCmdListsNG_[type].pop_front();
         }
         if (drawCmdListsNG_[type].size() > DRAWCMDLIST_COUNT_LIMIT) {

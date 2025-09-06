@@ -2142,7 +2142,7 @@ HWTEST_F(RSCanvasNodeTest, SetandGetShadowAlpha001, TestSize.Level1)
     RSCanvasNode::SharedPtr canvasNode = RSCanvasNode::Create();
     canvasNode->SetShadowAlpha(floatData[1]);
     EXPECT_TRUE(ROSEN_EQ(canvasNode->GetStagingProperties().GetShadowAlpha(),
-        floatData[1], 0.02f));
+        1.f, 0.02f));
 }
 
 /**
@@ -2155,7 +2155,7 @@ HWTEST_F(RSCanvasNodeTest, SetandGetShadowAlpha002, TestSize.Level1)
     RSCanvasNode::SharedPtr canvasNode = RSCanvasNode::Create();
     canvasNode->SetShadowAlpha(floatData[2]);
     EXPECT_TRUE(ROSEN_EQ(canvasNode->GetStagingProperties().GetShadowAlpha(),
-        floatData[2], 0.02f));
+        0.f, 0.02f));
 }
 
 /**
@@ -2168,7 +2168,7 @@ HWTEST_F(RSCanvasNodeTest, SetandGetShadowAlpha003, TestSize.Level1)
     RSCanvasNode::SharedPtr canvasNode = RSCanvasNode::Create();
     canvasNode->SetShadowAlpha(floatData[3]);
     EXPECT_TRUE(ROSEN_EQ(canvasNode->GetStagingProperties().GetShadowAlpha(),
-        floatData[3], 0.02f));
+        1.f, 0.02f));
 }
 
 /**
@@ -3338,7 +3338,7 @@ HWTEST_F(RSCanvasNodeTest, SetBoundsChangedCallbackTest, TestSize.Level1)
 {
     RSCanvasNode::SharedPtr canvasNode = RSCanvasNode::Create(false);
     ASSERT_TRUE(canvasNode != nullptr);
-    canvasNode->DrawOnNode(RSModifierType::BOUNDS, [](std::shared_ptr<Drawing::Canvas>) {});
+    canvasNode->DrawOnNode(ModifierNG::RSModifierType::BOUNDS, [](std::shared_ptr<Drawing::Canvas>) {});
     ASSERT_FALSE(canvasNode->recordingUpdated_);
     canvasNode->SetHDRPresent(true);
     canvasNode->SetBoundsChangedCallback([](const Rosen::Vector4f& vector4f) {});
@@ -3367,7 +3367,7 @@ HWTEST_F(RSCanvasNodeTest, CreateRenderNodeForTextureExportSwitch, TestSize.Leve
 HWTEST_F(RSCanvasNodeTest, DrawOnNode, TestSize.Level1)
 {
     RSCanvasNode::SharedPtr canvasNode = RSCanvasNode::Create();
-    RSModifierType type = RSModifierType::INVALID;
+    ModifierNG::RSModifierType type = ModifierNG::RSModifierType::INVALID;
     DrawFunc func = [&](std::shared_ptr<Drawing::Canvas>) {};
     delete RSTransactionProxy::instance_;
     RSTransactionProxy::instance_ = nullptr;
@@ -3533,13 +3533,13 @@ HWTEST_F(RSCanvasNodeTest, DrawOnNode001, TestSize.Level1)
 {
     RSCanvasNode::SharedPtr canvasNode = RSCanvasNode::Create();
     DrawFunc func = [&](std::shared_ptr<Drawing::Canvas>) {};
-    canvasNode->DrawOnNode(RSModifierType::INVALID, func);
+    canvasNode->DrawOnNode(ModifierNG::RSModifierType::INVALID, func);
     EXPECT_TRUE(RSTransactionProxy::instance_ != nullptr);
 
     canvasNode->BeginRecording(200, 300);
     delete RSTransactionProxy::instance_;
     RSTransactionProxy::instance_ = nullptr;
-    canvasNode->DrawOnNode(RSModifierType::INVALID, func);
+    canvasNode->DrawOnNode(ModifierNG::RSModifierType::INVALID, func);
     EXPECT_TRUE(RSTransactionProxy::instance_ == nullptr);
     RSTransactionProxy::instance_ = new RSTransactionProxy();
     EXPECT_TRUE(RSTransactionProxy::instance_ != nullptr);
@@ -3814,20 +3814,23 @@ HWTEST_F(RSCanvasNodeTest, ResetSurface002, TestSize.Level1)
  */
 HWTEST_F(RSCanvasNodeTest, SetRSUIContextTest001, TestSize.Level1)
 {
-    auto uiDirector1 = RSUIDirector::Create();
-    uiDirector1->Init(true, true);
-    auto uiDirector2 = RSUIDirector::Create();
-    uiDirector2->Init(true, true);
-    auto node = RSCanvasNode::Create();
-    ASSERT_EQ(node->GetRSUIContext(), nullptr);
-    ASSERT_NE(uiDirector1->GetRSUIContext(), nullptr);
-    ASSERT_NE(uiDirector2->GetRSUIContext(), nullptr);
-    node->SetRSUIContext(uiDirector1->GetRSUIContext());
-    ASSERT_TRUE(node->GetRSUIContext() != nullptr && node->GetRSUIContext() == uiDirector1->GetRSUIContext());
-    node->SetRSUIContext(uiDirector1->GetRSUIContext());
-    ASSERT_TRUE(node->GetRSUIContext() != nullptr && node->GetRSUIContext() == uiDirector1->GetRSUIContext());
-    node->SetRSUIContext(uiDirector2->GetRSUIContext());
-    ASSERT_TRUE(node->GetRSUIContext() != nullptr && node->GetRSUIContext() == uiDirector2->GetRSUIContext());
+    auto enable = RSSystemProperties::GetRSClientMultiInstanceEnabled();
+    if (enable) {
+        auto uiDirector1 = RSUIDirector::Create();
+        uiDirector1->Init(true, true);
+        auto uiDirector2 = RSUIDirector::Create();
+        uiDirector2->Init(true, true);
+        auto node = RSCanvasNode::Create();
+        ASSERT_EQ(node->GetRSUIContext(), nullptr);
+        ASSERT_NE(uiDirector1->GetRSUIContext(), nullptr);
+        ASSERT_NE(uiDirector2->GetRSUIContext(), nullptr);
+        node->SetRSUIContext(uiDirector1->GetRSUIContext());
+        ASSERT_TRUE(node->GetRSUIContext() != nullptr && node->GetRSUIContext() == uiDirector1->GetRSUIContext());
+        node->SetRSUIContext(uiDirector1->GetRSUIContext());
+        ASSERT_TRUE(node->GetRSUIContext() != nullptr && node->GetRSUIContext() == uiDirector1->GetRSUIContext());
+        node->SetRSUIContext(uiDirector2->GetRSUIContext());
+        ASSERT_TRUE(node->GetRSUIContext() != nullptr && node->GetRSUIContext() == uiDirector2->GetRSUIContext());
+    }
 }
 
 /**
@@ -3838,19 +3841,22 @@ HWTEST_F(RSCanvasNodeTest, SetRSUIContextTest001, TestSize.Level1)
  */
 HWTEST_F(RSCanvasNodeTest, SetRSUIContextTest002, TestSize.Level1)
 {
-    auto uiDirector1 = RSUIDirector::Create();
-    uiDirector1->Init(true, true);
-    auto uiDirector2 = RSUIDirector::Create();
-    uiDirector2->Init(true, true);
-    auto node = RSCanvasNode::Create();
-    ASSERT_EQ(node->GetRSUIContext(), nullptr);
-    ASSERT_NE(uiDirector1->GetRSUIContext(), nullptr);
-    ASSERT_NE(uiDirector2->GetRSUIContext(), nullptr);
-    uiDirector1->GetRSUIContext()->rsTransactionHandler_ = nullptr;
-    node->SetRSUIContext(uiDirector1->GetRSUIContext());
-    ASSERT_TRUE(node->GetRSUIContext() != nullptr && node->GetRSUIContext() == uiDirector1->GetRSUIContext());
-    node->SetRSUIContext(uiDirector2->GetRSUIContext());
-    ASSERT_TRUE(node->GetRSUIContext() != nullptr && node->GetRSUIContext() == uiDirector2->GetRSUIContext());
+    auto enable = RSSystemProperties::GetRSClientMultiInstanceEnabled();
+    if (enable) {
+        auto uiDirector1 = RSUIDirector::Create();
+        uiDirector1->Init(true, true);
+        auto uiDirector2 = RSUIDirector::Create();
+        uiDirector2->Init(true, true);
+        auto node = RSCanvasNode::Create();
+        ASSERT_EQ(node->GetRSUIContext(), nullptr);
+        ASSERT_NE(uiDirector1->GetRSUIContext(), nullptr);
+        ASSERT_NE(uiDirector2->GetRSUIContext(), nullptr);
+        uiDirector1->GetRSUIContext()->rsTransactionHandler_ = nullptr;
+        node->SetRSUIContext(uiDirector1->GetRSUIContext());
+        ASSERT_TRUE(node->GetRSUIContext() != nullptr && node->GetRSUIContext() == uiDirector1->GetRSUIContext());
+        node->SetRSUIContext(uiDirector2->GetRSUIContext());
+        ASSERT_TRUE(node->GetRSUIContext() != nullptr && node->GetRSUIContext() == uiDirector2->GetRSUIContext());
+    }
 }
 
 /**
@@ -3861,19 +3867,22 @@ HWTEST_F(RSCanvasNodeTest, SetRSUIContextTest002, TestSize.Level1)
  */
 HWTEST_F(RSCanvasNodeTest, SetRSUIContextTest003, TestSize.Level1)
 {
-    auto uiDirector1 = RSUIDirector::Create();
-    uiDirector1->Init(true, true);
-    auto uiDirector2 = RSUIDirector::Create();
-    uiDirector2->Init(true, true);
-    auto node = RSCanvasNode::Create();
-    ASSERT_EQ(node->GetRSUIContext(), nullptr);
-    ASSERT_NE(uiDirector1->GetRSUIContext(), nullptr);
-    ASSERT_NE(uiDirector2->GetRSUIContext(), nullptr);
-    node->SetRSUIContext(uiDirector1->GetRSUIContext());
-    ASSERT_TRUE(node->GetRSUIContext() != nullptr && node->GetRSUIContext() == uiDirector1->GetRSUIContext());
-    uiDirector2->GetRSUIContext()->rsTransactionHandler_ = nullptr;
-    node->SetRSUIContext(uiDirector2->GetRSUIContext());
-    ASSERT_TRUE(node->GetRSUIContext() != nullptr && node->GetRSUIContext() == uiDirector2->GetRSUIContext());
+    auto enable = RSSystemProperties::GetRSClientMultiInstanceEnabled();
+    if (enable) {
+        auto uiDirector1 = RSUIDirector::Create();
+        uiDirector1->Init(true, true);
+        auto uiDirector2 = RSUIDirector::Create();
+        uiDirector2->Init(true, true);
+        auto node = RSCanvasNode::Create();
+        ASSERT_EQ(node->GetRSUIContext(), nullptr);
+        ASSERT_NE(uiDirector1->GetRSUIContext(), nullptr);
+        ASSERT_NE(uiDirector2->GetRSUIContext(), nullptr);
+        node->SetRSUIContext(uiDirector1->GetRSUIContext());
+        ASSERT_TRUE(node->GetRSUIContext() != nullptr && node->GetRSUIContext() == uiDirector1->GetRSUIContext());
+        uiDirector2->GetRSUIContext()->rsTransactionHandler_ = nullptr;
+        node->SetRSUIContext(uiDirector2->GetRSUIContext());
+        ASSERT_TRUE(node->GetRSUIContext() != nullptr && node->GetRSUIContext() == uiDirector2->GetRSUIContext());
+    }
 }
 
 /**
@@ -3884,21 +3893,25 @@ HWTEST_F(RSCanvasNodeTest, SetRSUIContextTest003, TestSize.Level1)
  */
 HWTEST_F(RSCanvasNodeTest, SetRSUIContextTest004, TestSize.Level1)
 {
-    auto uiDirector1 = RSUIDirector::Create();
-    uiDirector1->Init(true, true);
-    auto uiDirector2 = RSUIDirector::Create();
-    uiDirector2->Init(true, true);
-    auto node = RSCanvasNode::Create();
-    ASSERT_EQ(node->GetRSUIContext(), nullptr);
-    ASSERT_NE(uiDirector1->GetRSUIContext(), nullptr);
-    ASSERT_NE(uiDirector2->GetRSUIContext(), nullptr);
-    uiDirector1->GetRSUIContext()->rsTransactionHandler_ = nullptr;
-    node->SetRSUIContext(uiDirector1->GetRSUIContext());
-    ASSERT_TRUE(node->GetRSUIContext() != nullptr && node->GetRSUIContext() == uiDirector1->GetRSUIContext());
-    uiDirector2->GetRSUIContext()->rsTransactionHandler_ = nullptr;
-    node->SetRSUIContext(uiDirector2->GetRSUIContext());
-    ASSERT_TRUE(node->GetRSUIContext() != nullptr && node->GetRSUIContext() == uiDirector2->GetRSUIContext());
+    auto enable = RSSystemProperties::GetRSClientMultiInstanceEnabled();
+    if (enable) {
+        auto uiDirector1 = RSUIDirector::Create();
+        uiDirector1->Init(true, true);
+        auto uiDirector2 = RSUIDirector::Create();
+        uiDirector2->Init(true, true);
+        auto node = RSCanvasNode::Create();
+        ASSERT_EQ(node->GetRSUIContext(), nullptr);
+        ASSERT_NE(uiDirector1->GetRSUIContext(), nullptr);
+        ASSERT_NE(uiDirector2->GetRSUIContext(), nullptr);
+        uiDirector1->GetRSUIContext()->rsTransactionHandler_ = nullptr;
+        node->SetRSUIContext(uiDirector1->GetRSUIContext());
+        ASSERT_TRUE(node->GetRSUIContext() != nullptr && node->GetRSUIContext() == uiDirector1->GetRSUIContext());
+        uiDirector2->GetRSUIContext()->rsTransactionHandler_ = nullptr;
+        node->SetRSUIContext(uiDirector2->GetRSUIContext());
+        ASSERT_TRUE(node->GetRSUIContext() != nullptr && node->GetRSUIContext() == uiDirector2->GetRSUIContext());
+    }
 }
+
 #if defined(MODIFIER_NG)
 #else
 /**

@@ -223,9 +223,6 @@ void RSDrawingFilter::GenerateAndUpdateGEVisualEffect()
 {
     visualEffectContainer_ = std::make_shared<Drawing::GEVisualEffectContainer>();
     for (const auto& filter : shaderFilters_) {
-        if (filter->GetType() == RSUIFilterType::KAWASE) {
-            continue;
-        }
         filter->GenerateGEVisualEffect(visualEffectContainer_);
     }
     if (!renderFilter_) {
@@ -494,10 +491,6 @@ bool RSDrawingFilter::ApplyHpsImageEffect(Drawing::Canvas& canvas, const std::sh
 {
     canSkipMaskColor_ = false;
     auto geRender = std::make_shared<GraphicsEffectEngine::GERender>();
-    auto hpsVisualEffectContainer = std::make_shared<Drawing::GEVisualEffectContainer>();
-    for (const auto& filter : shaderFilters_) {
-        filter->GenerateGEVisualEffect(hpsVisualEffectContainer);
-    }
     RSColor maskColorForHPS = RSColor();
     // if alpha equal 1.0, apply maskcolor
     if (ROSEN_EQ(attr.brushAlpha, 1.0f)) {
@@ -512,7 +505,7 @@ bool RSDrawingFilter::ApplyHpsImageEffect(Drawing::Canvas& canvas, const std::sh
         image, attr.src, attr.dst, Drawing::SamplingOptions(), true, brush.GetColor().GetAlphaF() * attr.brushAlpha,
         brush.GetFilter().GetColorFilter(), maskColor, saturationForHPS_, brightnessForHPS_};
 
-    bool kawaseHpsProcess = geRender->ApplyHpsGEImageEffect(canvas, *hpsVisualEffectContainer,
+    bool kawaseHpsProcess = geRender->ApplyHpsGEImageEffect(canvas, *visualEffectContainer_,
         context, outImage, brush);
     if (outImage == nullptr) {
         ROSEN_LOGD("RSDrawingFilter::ApplyHpsImageEffect ApplyHpsGEEffect failed");
@@ -544,37 +537,15 @@ void RSDrawingFilter::DrawKawaseEffect(Drawing::Canvas& canvas, const std::share
     RS_OPTIONAL_TRACE_NAME("ApplyKawaseBlur " + std::to_string(tmpFilter->GetRadius()));
 }
 
-bool RSDrawingFilter::ApplyGEImageEffect(Drawing::Canvas& canvas, const std::shared_ptr<Drawing::Image>& image,
-    const std::shared_ptr<Drawing::GEVisualEffectContainer>& visualEffectContainer,
-    std::shared_ptr<Drawing::Image>& outImage, const DrawImageRectAttributes& attr, Drawing::Brush& brush)
-{
-    if (outImage != nullptr) {
-        return false;
-    }
-    auto geRender = std::make_shared<GraphicsEffectEngine::GERender>();
-    auto kawaseShaderFilter = GetShaderFilterWithType(RSUIFilterType::KAWASE);
-    auto lightBlurShaderFilter = GetShaderFilterWithType(RSUIFilterType::LIGHT_BLUR);
-    if (kawaseShaderFilter == nullptr && lightBlurShaderFilter == nullptr) {
-        // If the below condition is false, the outImage is the same as the result of geRender->ApplyImageEffect.
-        if (geRender->DrawImageEffectToCanvas(canvas, *visualEffectContainer, image, outImage,
-            attr.src, attr.dst, brush)) {
-            ProfilerLogImageEffect(visualEffectContainer, image, attr.src, outImage);
-            return true;
-        }
-    } else {
-        // Here dst should be attr.src to be compatible with the following operations
-        auto imageDst = attr.src;
-        outImage = geRender->ApplyImageEffect(canvas, *visualEffectContainer, image, attr.src, imageDst,
-            Drawing::SamplingOptions());
-    }
-    ProfilerLogImageEffect(visualEffectContainer, image, attr.src, outImage);
-    return false;
-}
-
 void RSDrawingFilter::ApplyImageEffect(Drawing::Canvas& canvas, const std::shared_ptr<Drawing::Image>& image,
     const std::shared_ptr<Drawing::GEVisualEffectContainer>& visualEffectContainer,
     const DrawImageRectAttributes& attr)
 {
+    auto geRender = std::make_shared<GraphicsEffectEngine::GERender>();
+    if (geRender == nullptr) {
+        ROSEN_LOGE("RSDrawingFilter::DrawImageRect geRender is null");
+        return;
+    }
     std::shared_ptr<Drawing::Image> outImage = nullptr;
     auto brush = GetBrush(attr.brushAlpha);
     /*
@@ -594,15 +565,18 @@ void RSDrawingFilter::ApplyImageEffect(Drawing::Canvas& canvas, const std::share
     if (ApplyHpsImageEffect(canvas, image, outImage, attr, brush)) {
         return;
     }
-
-    if (ApplyGEImageEffect(canvas, image, visualEffectContainer, outImage, attr, brush)) {
-        return;
-    }
+    // RemoveFilterWithType because KAWASE_BLUR will excute in HPS 1.0 separately.
+    visualEffectContainer->RemoveFilterWithType(
+        static_cast<int32_t>(Drawing::GEVisualEffectImpl::FilterType::KAWASE_BLUR));
     if (outImage == nullptr) {
-        ROSEN_LOGE("RSDrawingFilter::DrawImageRect outImage is null");
-        return;
+        outImage = geRender->ApplyImageEffect(canvas, *visualEffectContainer, image, attr.src, attr.src,
+            Drawing::SamplingOptions());
+        ProfilerLogImageEffect(visualEffectContainer, image, attr.src, outImage);
+        if (outImage == nullptr) {
+            ROSEN_LOGE("RSDrawingFilter::DrawImageRect outImage is null");
+            return;
+        }
     }
-
     if (ApplyImageEffectWithLightBlur(canvas, outImage, attr, brush)) {
         return;
     }
@@ -685,6 +659,13 @@ void RSDrawingFilter::PreProcess(std::shared_ptr<Drawing::Image>& image)
 {
     std::for_each(shaderFilters_.begin(), shaderFilters_.end(), [&](auto& filter) {
         filter->PreProcess(image);
+    });
+}
+
+void RSDrawingFilter::ForcePostProcess(Drawing::Canvas& canvas)
+{
+    std::for_each(shaderFilters_.begin(), shaderFilters_.end(), [&](auto& filter) {
+        filter->PostProcess(canvas);
     });
 }
 

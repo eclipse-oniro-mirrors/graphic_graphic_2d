@@ -51,16 +51,8 @@ T GetData()
     return object;
 }
 
-bool DoSomethingInterestingWithMyAPI(const uint8_t* data, size_t size)
+bool DoSomethingInterestingWithMyAPI()
 {
-    if (data == nullptr) {
-        return false;
-    }
-
-    // initialize
-    g_data = data;
-    g_size = size;
-    g_pos = 0;
     NodeId id = 0;
 
     RSRenderParams rsRenderParams(id);
@@ -99,16 +91,8 @@ bool DoSomethingInterestingWithMyAPI(const uint8_t* data, size_t size)
     return true;
 }
 
-bool DoSetShadowRect(const uint8_t* data, size_t size)
+bool DoSetShadowRect()
 {
-    if (data == nullptr) {
-        return false;
-    }
-
-    // initialize
-    g_data = data;
-    g_size = size;
-    g_pos = 0;
     NodeId id = 0;
 
     RSRenderParams rsRenderParams(id);
@@ -148,16 +132,8 @@ bool DoSetShadowRect(const uint8_t* data, size_t size)
     return true;
 }
 
-bool DoOpincSetCacheChangeFlag(const uint8_t* data, size_t size)
+bool DoOpincSetCacheChangeFlag()
 {
-    if (data == nullptr) {
-        return false;
-    }
-
-    // initialize
-    g_data = data;
-    g_size = size;
-    g_pos = 0;
     NodeId id = 0;
 
     RSRenderParams rsRenderParams(id);
@@ -190,8 +166,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::Rosen::g_pos = 0;
 
     /* Run your code on data */
-    OHOS::Rosen::DoSomethingInterestingWithMyAPI(data, size);
-    OHOS::Rosen::DoSetShadowRect(data, size);
-    OHOS::Rosen::DoOpincSetCacheChangeFlag(data, size);
+    OHOS::Rosen::DoSomethingInterestingWithMyAPI();
+    OHOS::Rosen::DoSetShadowRect();
+    OHOS::Rosen::DoOpincSetCacheChangeFlag();
     return 0;
 }

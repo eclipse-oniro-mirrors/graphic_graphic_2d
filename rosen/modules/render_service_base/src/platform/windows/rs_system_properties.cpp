@@ -151,7 +151,7 @@ bool RSSystemProperties::GetVirtualDirtyEnabled()
     return {};
 }
 
-bool RSSystemProperties::GetExpandScreenDirtyEnabled()
+bool RSSystemProperties::GetVirtualExpandScreenDirtyEnabled()
 {
     return false;
 }
@@ -402,7 +402,7 @@ bool RSSystemProperties::GetForegroundFilterEnabled()
 const std::vector<float>& RSSystemProperties::GetAiInvertCoef()
 {
     // Configure AiInvertCoef: Low, High, Threshold, Opacity, Saturation, Filter Radius.
-    std::vector<float> aiInvertCoef = {0.0, 1.0, 0.55, 0.4, 1.6, 45.0};
+    static std::vector<float> aiInvertCoef = {0.0, 1.0, 0.55, 0.4, 1.6, 45.0};
     return aiInvertCoef;
 }
 
@@ -766,7 +766,7 @@ void RSSystemProperties::SetTypicalResidentProcess(bool isTypicalResidentProcess
 
 bool RSSystemProperties::GetAIBarOptEnabled()
 {
-    return true;
+    return false;
 }
 
 bool RSSystemProperties::GetSupportScreenFreezeEnabled()
@@ -782,6 +782,11 @@ bool RSSystemProperties::GetSelfDrawingDirtyRegionEnabled()
 bool RSSystemProperties::GetGpuDirtyApsEnabled()
 {
     return {};
+}
+
+bool RSSystemProperties::GetBootCompleted()
+{
+    return false;
 }
 } // namespace Rosen
 } // namespace OHOS

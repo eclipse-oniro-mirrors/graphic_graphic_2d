@@ -54,6 +54,8 @@ constexpr const char* ANI_CLASS_FONT_METRICS = "L@ohos/graphics/drawing/drawing/
 constexpr const char* ANI_CLASS_TEXTSHADOW = "L@ohos/graphics/text/text/TextShadowInternal;";
 constexpr const char* ANI_CLASS_RECT_STYLE = "L@ohos/graphics/text/text/RectStyleInternal;";
 constexpr const char* ANI_CLASS_DECORATION = "L@ohos/graphics/text/text/DecorationInternal;";
+constexpr const char* ANI_CLASS_POINT = "L@ohos/graphics/text/text/PointInternal;";
+constexpr const char* ANI_CLASS_COLOR = "L@ohos/graphics/text/text/ColorInternal;";
 /**
  * define enum
  */

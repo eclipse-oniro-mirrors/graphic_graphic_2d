@@ -91,6 +91,7 @@ RSUIExtensionData* RSUIExtensionData::Unmarshalling(Parcel& parcel)
     uint32_t mapSize{0};
     if (!parcel.ReadUint32(mapSize)) {
         ROSEN_LOGE("RSUIExtensionData::Unmarshalling Read mapSize failed");
+        delete uiExtensionData;
         return nullptr;
     }
     if (mapSize > uiExtensionData->secData_.max_size()) {
@@ -102,12 +103,14 @@ RSUIExtensionData* RSUIExtensionData::Unmarshalling(Parcel& parcel)
         uint64_t hostNodeId{0};
         if (!parcel.ReadUint64(hostNodeId)) {
             ROSEN_LOGE("RSUIExtensionData::Unmarshalling Read hostNodeId failed");
+            delete uiExtensionData;
             return nullptr;
         }
         uiExtensionData->secData_.insert(std::make_pair(hostNodeId, std::vector<SecSurfaceInfo>()));
         uint32_t uiExtensionNodesCount{0};
         if (!parcel.ReadUint32(uiExtensionNodesCount)) {
             ROSEN_LOGE("RSUIExtensionData::Unmarshalling Read uiExtensionNodesCount failed");
+            delete uiExtensionData;
             return nullptr;
         }
         if (uiExtensionNodesCount > uiExtensionData->secData_[hostNodeId].max_size()) {
@@ -125,15 +128,18 @@ RSUIExtensionData* RSUIExtensionData::Unmarshalling(Parcel& parcel)
             if (!parcel.ReadInt32(tempHostPid) || !parcel.ReadInt32(tempUiExtensionPid) ||
                 !parcel.ReadUint64(tempHostNodeId) || !parcel.ReadUint64(tempUiExtensionNodeId)) {
                 ROSEN_LOGE("RSUIExtensionData::Unmarshalling Read secSurfaceInfo failed");
+                delete uiExtensionData;
                 return nullptr;
             }
             secSurfaceInfo.hostPid = static_cast<pid_t>(tempHostPid);
             secSurfaceInfo.uiExtensionPid = static_cast<pid_t>(tempUiExtensionPid);
             secSurfaceInfo.hostNodeId = tempHostNodeId;
             secSurfaceInfo.uiExtensionNodeId = tempUiExtensionNodeId;
+
             uint32_t upperNodesCount{0};
             if (!parcel.ReadUint32(upperNodesCount)) {
                 ROSEN_LOGE("RSUIExtensionData::Unmarshalling Read upperNodesCount failed");
+                delete uiExtensionData;
                 return nullptr;
             }
             if (upperNodesCount > secSurfaceInfo.upperNodes.max_size()) {

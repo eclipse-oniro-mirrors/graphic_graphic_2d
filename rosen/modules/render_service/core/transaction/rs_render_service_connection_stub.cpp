@@ -3057,7 +3057,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 break;
             }
             if (mapSize > MAX_VOTER_SIZE) {
-                ret = ERR_INVALID_STATE;
+                ret = ERR_INVALID_DATA;
                 break;
             }
             bool shouldBreak = false;
@@ -3093,7 +3093,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 break;
             }
             if (mapSize > MAX_VOTER_SIZE) {
-                ret = ERR_INVALID_STATE;
+                ret = ERR_INVALID_DATA;
                 break;
             }
             bool shouldBreak = false;
@@ -3488,9 +3488,14 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_STATUS) : {
             ScreenId id{INVALID_SCREEN_ID};
-            uint8_t screenStatus{0};
-            if (!data.ReadUint64(id) || !data.ReadUint8(screenStatus)) {
+            uint32_t screenStatus{0};
+            if (!data.ReadUint64(id) || !data.ReadUint32(screenStatus)) {
                 RS_LOGE("RSRenderServiceConnectionStub::SET_VIRTUAL_SCREEN_STATUS Read parcel failed!");
+                ret = ERR_INVALID_DATA;
+                break;
+            }
+            if (screenStatus > static_cast<uint32_t>(VirtualScreenStatus::VIRTUAL_SCREEN_INVALID_STATUS)) {
+                RS_LOGE("RSRenderServiceConnectionStub::SET_VIRTUAL_SCREEN_STATUS screenStatus is invalid!");
                 ret = ERR_INVALID_DATA;
                 break;
             }
@@ -3874,17 +3879,17 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             break;
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::AVCODEC_VIDEO_START): {
-            uint64_t uniqueId{0};
-            std::string surfaceName;
+            std::vector<uint64_t> uniqueIdList;
+            std::vector<std::string> surfaceNameList;
             uint32_t fps{0};
             uint64_t reportTime{0};
-            if (!data.ReadUint64(uniqueId) || !data.ReadString(surfaceName)
-                || !data.ReadUint32(fps) || !data.ReadUint64(reportTime)) {
+            if (!data.ReadUInt64Vector(&uniqueIdList) || !data.ReadStringVector(&surfaceNameList) ||
+                !data.ReadUint32(fps) || !data.ReadUint64(reportTime)) {
                 RS_LOGE("RenderServiceConnectionStub::AVCODEC_VIDEO_START : read data err!");
                 ret = ERR_INVALID_DATA;
                 break;
             }
-            int32_t result = AvcodecVideoStart(uniqueId, surfaceName, fps, reportTime);
+            int32_t result = AvcodecVideoStart(uniqueIdList, surfaceNameList, fps, reportTime);
             if (!reply.WriteInt32(result)) {
                 RS_LOGE("RSRenderServiceConnectionStub::AVCODEC_VIDEO_START Write status failed!");
                 ret = ERR_INVALID_REPLY;
@@ -3892,15 +3897,16 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             break;
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::AVCODEC_VIDEO_STOP): {
-            uint64_t uniqueId{0};
-            std::string surfaceName;
+            std::vector<uint64_t> uniqueIdList;
+            std::vector<std::string> surfaceNameList;
             uint32_t fps{0};
-            if (!data.ReadUint64(uniqueId) || !data.ReadString(surfaceName) || !data.ReadUint32(fps)) {
+            if (!data.ReadUInt64Vector(&uniqueIdList) || !data.ReadStringVector(&surfaceNameList) ||
+                !data.ReadUint32(fps)) {
                 RS_LOGE("RSRenderServiceConnectionStub::AVCODEC_VIDEO_STOP : read data err!");
                 ret = ERR_INVALID_DATA;
                 break;
             }
-            int32_t result = AvcodecVideoStop(uniqueId, surfaceName, fps);
+            int32_t result = AvcodecVideoStop(uniqueIdList, surfaceNameList, fps);
             if (!reply.WriteInt32(result)) {
                 RS_LOGE("RSRenderServiceConnectionStub::AVCODEC_VIDEO_STOP Write status failed!");
                 ret = ERR_INVALID_REPLY;

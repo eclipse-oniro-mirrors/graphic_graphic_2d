@@ -181,7 +181,7 @@ HWTEST_F(RSUniDirtyComputeUtilTest, UpdateVirtualExpandScreenAccumulatedParams00
     ASSERT_NE(params, nullptr);
     params->SetMainAndLeashSurfaceDirty(true);
     params->SetHDRStatusChanged(true);
-    RSUniDirtyComputeUtil::UpdateVirtualExpandScreenAccumulatedParams(*params, *screenDrawable);
+    RSUniDirtyComputeUtil::UpdateVirtualExpandScreenAccumulatedParams(*params, *screenDrawable, nullptr);
     ASSERT_TRUE(params->GetAccumulatedDirty());
     ASSERT_TRUE(params->GetAccumulatedHdrStatusChanged());
 }
@@ -342,7 +342,7 @@ HWTEST_F(RSUniDirtyComputeUtilTest, GenerateFilterDirtyRegionInfo_001, TestSize.
     FilterDirtyRegionInfo filterInfo =
         RSUniFilterDirtyComputeUtil::GenerateFilterDirtyRegionInfo(*effectNode, std::nullopt, true);
     ASSERT_TRUE(filterInfo.intersectRegion_.Sub(Occlusion::Region(Occlusion::Rect(DEFAULT_RECT2))).IsEmpty());
-    ASSERT_FALSE(filterInfo.filterDirty_.Sub(filterInfo.intersectRegion_).IsEmpty());
+    ASSERT_TRUE(filterInfo.filterDirty_.Area() == filterInfo.intersectRegion_.Area());
 }
 
 /**
@@ -531,7 +531,7 @@ HWTEST_F(RSUniDirtyComputeUtilTest, DealWithFilterDirtyRegion_005, TestSize.Leve
  */
 HWTEST_F(RSUniDirtyComputeUtilTest, CheckMergeFilterDirty001, TestSize.Level1)
 {
-    auto testFunc = [](bool cacheValid, bool partialRender, bool expectation) {
+    auto testFunc = [](bool cacheValid, bool partialRender, bool forceDisable, bool expectation) {
         auto dirtyManager = std::make_shared<RSDirtyRegionManager>();
         ASSERT_NE(dirtyManager, nullptr);
         NodeId nodeId = 1;
@@ -539,6 +539,7 @@ HWTEST_F(RSUniDirtyComputeUtilTest, CheckMergeFilterDirty001, TestSize.Level1)
             .id_ = nodeId,
             .intersectRegion_ = Occlusion::Rect(DEFAULT_RECT1),
             .filterDirty_ = Occlusion::Rect(DEFAULT_RECT2),
+            .forceDisablePartialRender_ = forceDisable
         };
         dirtyManager->GetFilterCollector().CollectFilterDirtyRegionInfo(filterInfo, true);
 
@@ -551,9 +552,16 @@ HWTEST_F(RSUniDirtyComputeUtilTest, CheckMergeFilterDirty001, TestSize.Level1)
         ASSERT_EQ(damageRegion.Area() == DEFAULT_RECT1.GetWidth() * DEFAULT_RECT1.GetHeight(), expectation);
         RSFilterDirtyCollector::ResetFilterCacheValidForOcclusion();
     };
-    testFunc(false, false, false);
-    testFunc(false, true, false);
-    testFunc(true, false, false);
-    testFunc(true, true, true);
+    // check cache status, if cache is valid and no particular reson to disable partial render,
+    // dirty collection can be skipped.
+    testFunc(false, false, false, false);
+    testFunc(false, true, false, false);
+    testFunc(true, false, false, false);
+    testFunc(true, true, false, true);
+    // if pixel stretch is valid for this node, dirty region should be expanded.
+    testFunc(false, false, true, false);
+    testFunc(false, true, true, false);
+    testFunc(true, false, true, false);
+    testFunc(true, true, true, false);
 }
 } // namespace OHOS::Rosen

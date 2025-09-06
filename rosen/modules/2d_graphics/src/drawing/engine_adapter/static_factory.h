@@ -55,6 +55,7 @@ public:
         const FontArguments& fontArguments);
     static std::shared_ptr<Typeface> MakeFromName(const char familyName[], FontStyle fontStyle);
     static std::vector<std::shared_ptr<Typeface>> GetSystemFonts();
+    static void RegisterOnTypefaceDestroyed(std::function<void(uint32_t)> cb);
 #ifdef RS_ENABLE_GPU
 #ifdef RS_ENABLE_VK
     static std::shared_ptr<Surface> MakeFromBackendRenderTarget(GPUContext* gpuContext, const TextureInfo& info,
@@ -76,6 +77,8 @@ public:
         SerialProcs* procs, std::unique_ptr<SharingSerialContext>& serialContext);
     static std::shared_ptr<Image> MakeRasterData(const ImageInfo& info, std::shared_ptr<Data> pixels,
         size_t rowBytes);
+    static ScaleImageResult ScaleImage(const std::shared_ptr<Image>& srcImage, const std::shared_ptr<Image>& dstImage,
+        const ScalingOption& optionData);
     static std::shared_ptr<TextBlob> DeserializeTextBlob(const void* data, size_t size, void* ctx);
     static std::shared_ptr<Typeface> DeserializeTypeface(const void* data, size_t size);
     static bool GetFillPath(const Pen& pen, const Path& src, Path& dst, const Rect* rect, const Matrix& matrix);

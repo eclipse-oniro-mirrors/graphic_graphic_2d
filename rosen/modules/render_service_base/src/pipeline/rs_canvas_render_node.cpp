@@ -20,6 +20,7 @@
 
 #include "common/rs_obj_abs_geometry.h"
 #include "common/rs_common_def.h"
+#include "feature/hdr/rs_colorspace_util.h"
 #include "recording/recording_canvas.h"
 #include "memory/rs_memory_track.h"
 #include "memory/rs_tag_tracker.h"
@@ -30,9 +31,6 @@
 #include "pipeline/rs_surface_render_node.h"
 #include "property/rs_properties_painter.h"
 #include "render/rs_blur_filter.h"
-#ifdef USE_VIDEO_PROCESSING_ENGINE
-#include "render/rs_colorspace_convert.h"
-#endif
 #include "render/rs_light_up_effect_filter.h"
 #include "platform/common/rs_log.h"
 #include "platform/common/rs_system_properties.h"
@@ -86,7 +84,7 @@ void RSCanvasRenderNode::QuickPrepare(const std::shared_ptr<RSNodeVisitor>& visi
         return;
     }
     ApplyModifiers();
-#if defined(ROSEN_OHOS) && defined(ENABLE_HPAE_BLUR)
+#if defined(ROSEN_OHOS)
     visitor->RegisterHpaeCallback(*this);
 #endif
     visitor->QuickPrepareCanvasRenderNode(*this);
@@ -298,7 +296,7 @@ void RSCanvasRenderNode::SetColorGamut(uint32_t gamut)
     }
 #ifdef USE_VIDEO_PROCESSING_ENGINE
     GraphicColorGamut nowGamut = graphicColorGamut_;
-    graphicColorGamut_ = RSColorSpaceConvert::ColorSpaceNameToGraphicGamut(
+    graphicColorGamut_ = RSColorSpaceUtil::ColorSpaceNameToGraphicGamut(
         static_cast<OHOS::ColorManager::ColorSpaceName>(gamut));
     if (IsOnTheTree()) {
         ModifyWindowWideColorGamutNum(false, nowGamut);

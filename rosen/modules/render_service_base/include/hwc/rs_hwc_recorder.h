@@ -16,6 +16,8 @@
 #ifndef RENDER_SERVICE_BASE_PIPELINE_RS_HWC_RECORDER_H
 #define RENDER_SERVICE_BASE_PIPELINE_RS_HWC_RECORDER_H
 
+#include "common/rs_common_def.h"
+
 namespace OHOS {
 namespace Rosen {
 
@@ -33,9 +35,7 @@ public:
     bool IsBlendWithBackground() const { return isBlendWithBackground_; }
     void SetForegroundColorValid(bool isForegroundColorValid) { isForegroundColorValid_ = isForegroundColorValid; }
     bool IsForegroundColorValid() const { return isForegroundColorValid_; }
-
     bool GetZorderChanged() const { return zOrderChanged_; }
-
     void UpdatePositionZ(float positionZ)
     {
         zOrderChanged_ = !ROSEN_EQ(positionZ, positionZ_);
@@ -78,8 +78,8 @@ public:
     bool IsIntersectWithPreviousFilter() const { return isIntersectWithPreviousFilter_; }
 
 private:
-    bool lastFrameHasVisibleRegion_ = true;
     bool isIntersectWithPreviousFilter_ = false;
+    bool lastFrameHasVisibleRegion_ = true;
 };
 
 struct RSHwcDisplayRecorder {

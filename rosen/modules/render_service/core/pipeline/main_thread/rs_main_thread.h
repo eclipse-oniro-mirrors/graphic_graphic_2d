@@ -123,6 +123,9 @@ public:
     void GetAppMemoryInMB(float& cpuMemSize, float& gpuMemSize);
     void ClearMemoryCache(ClearMemoryMoment moment, bool deeply = false, pid_t pid = -1);
     void SetForceRsDVsync(const std::string& sceneId);
+    size_t RenderNodeModifierDump(pid_t pid);
+    void GetNodeInfo(std::unordered_map<int, std::pair<int, int>>& node_info,
+        std::unordered_map<int, int>& nullnode_info);
 
     template<typename Task, typename Return = std::invoke_result_t<Task>>
     std::future<Return> ScheduleTask(Task&& task)
@@ -221,9 +224,7 @@ public:
     void CheckFastCompose(int64_t bufferTimeStamp);
     bool CheckAdaptiveCompose();
     void ForceRefreshForUni(bool needDelay = false);
-    void TrimMem(std::unordered_set<std::u16string>& argSets, std::string& result);
     void DumpMem(std::unordered_set<std::u16string>& argSets, std::string& result, std::string& type, pid_t pid = 0);
-    void DumpNode(std::string& result, uint64_t nodeId) const;
     void CountMem(int pid, MemoryGraphic& mem);
     void CountMem(std::vector<MemoryGraphic>& mems);
     void SetAppWindowNum(uint32_t num);
@@ -399,6 +400,11 @@ public:
         return curTime_;
     }
 
+    bool GetIfStatusBarDirtyOnly() const
+    {
+        return ifStatusBarDirtyOnly_.load();
+    }
+
     void StartGPUDraw();
 
     void EndGPUDraw();
@@ -415,13 +421,13 @@ public:
         }
     };
 
-    void AddToUnmappedCacheSet(uint32_t bufferId)
+    void AddToUnmappedCacheSet(uint64_t bufferId)
     {
         std::lock_guard<std::mutex> lock(unmappedCacheSetMutex_);
         unmappedCacheSet_.insert(bufferId);
     }
 
-    void AddToUnmappedCacheSet(const std::set<uint32_t>& seqNumSet)
+    void AddToUnmappedCacheSet(const std::set<uint64_t>& seqNumSet)
     {
         std::lock_guard<std::mutex> lock(unmappedCacheSetMutex_);
         unmappedCacheSet_.insert(seqNumSet.begin(), seqNumSet.end());
@@ -446,6 +452,9 @@ public:
     uint32_t GetVsyncRefreshRate();
     void DVSyncUpdate(uint64_t dvsyncTime, uint64_t vsyncTime);
     void MarkNodeImageDirty(uint64_t nodeId);
+
+    void SetHasSurfaceLockLayer(bool hasSurfaceLockLayer);
+    bool HasDRMOrSurfaceLockLayer() const;
 
 private:
     using TransactionDataIndexMap = std::unordered_map<pid_t,
@@ -519,11 +528,11 @@ private:
     bool IsResidentProcess(pid_t pid) const;
     bool IsNeedSkip(NodeId instanceRootNodeId, pid_t pid);
     uint32_t GetForceCommitReason() const;
+    void RegisterHwcEvent();
 
     // UIFirst
     bool CheckParallelSubThreadNodesStatus();
     void CacheCommands();
-    bool IsSurfaceConsumerNeedSkip(sptr<IConsumerSurface> consumer);
     bool CheckSubThreadNodeStatusIsDoing(NodeId appNodeId) const;
 
     // used for informing hgm the bundle name of SurfaceRenderNodes
@@ -593,6 +602,8 @@ private:
         void OnScreenDisconnect(ScreenId id) override;
     };
 
+    bool IfStatusBarDirtyOnly();
+    
     void UpdateDirectCompositionByAnimate(bool animateNeedRequestNextVsync);
     void HandleTunnelLayerId(const std::shared_ptr<RSSurfaceHandler>& surfaceHandler,
         const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode);
@@ -606,6 +617,7 @@ private:
     // Used to refresh the whole display when curtain screen status is changed
     bool isCurtainScreenUsingStatusChanged_ = false;
 
+    std::atomic<bool> ifStatusBarDirtyOnly_ = false;
     const uint8_t opacity_ = 255;
     bool vsyncControlEnabled_ = true;
     bool systemAnimatedScenesEnabled_ = false;
@@ -623,6 +635,7 @@ private:
     bool watermarkFlag_ = false;
     bool lastWatermarkFlag_ = false;
     bool hasProtectedLayer_ = false;
+    bool hasSurfaceLockLayer_ = false;
     DeviceType deviceType_ = DeviceType::PHONE;
     bool isCachedSurfaceUpdated_ = false;
     // used for informing hgm the bundle name of SurfaceRenderNodes
@@ -645,9 +658,6 @@ private:
     // record multidisplay status change
     bool isMultiDisplayPre_ = false;
     bool isMultiDisplayChange_ = false;
-#ifdef RS_ENABLE_VK
-    bool needCreateVkPipeline_ = true;
-#endif
     std::atomic<bool> isDirty_ = false;
     bool prevHdrSwitchStatus_ = true;
     std::atomic<bool> screenPowerOnChanged_ = false;
@@ -725,7 +735,7 @@ private:
      * if an image is found in this set, it means that the image is no longer needed and can be safely
      * removed from the GPU cache.
      */
-    std::set<uint32_t> unmappedCacheSet_ = {}; // must protected by unmappedCacheSetMutex_
+    std::set<uint64_t> unmappedCacheSet_ = {}; // must protected by unmappedCacheSetMutex_
     std::mutex unmappedCacheSetMutex_;
 
     /**

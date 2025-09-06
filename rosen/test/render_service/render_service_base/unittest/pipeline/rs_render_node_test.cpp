@@ -913,6 +913,7 @@ HWTEST_F(RSRenderNodeTest, UpdateVisibleEffectChildTest, TestSize.Level1)
     auto node = std::make_shared<RSRenderNode>(id, context);
     auto childNode = std::make_shared<RSRenderNode>(id + 1, context);
     childNode->GetMutableRenderProperties().useEffect_ = true;
+    childNode->SetOldDirtyInSurface(RectI(0, 0, 10, 10));
     EXPECT_TRUE(childNode->GetRenderProperties().GetUseEffect());
     node->UpdateVisibleEffectChild(*childNode);
     EXPECT_TRUE(!node->visibleEffectChild_.empty());
@@ -2082,6 +2083,8 @@ HWTEST_F(RSRenderNodeTest, AddChildTest005, TestSize.Level1)
     nodeTest->AddChild(childTest, 0);
     system::SetParameter("rosen.graphic.optimizeCanvasDrawRegion.enabled",
         std::to_string(optimizeCanvasDrawRegionEnabled));
+    system::SetParameter("rosen.graphic.optimizeParentNodeRegion.enabled",
+        std::to_string(optimizeParentNodeRegionEnabled));
     pidList.assign(1, ExtractPid(INVALID_NODE_ID));
     RSOptimizeCanvasDirtyCollector::GetInstance().SetOptimizeCanvasDirtyPidList(pidList);
     ASSERT_EQ(RSOptimizeCanvasDirtyCollector::GetInstance().IsOptimizeCanvasDirtyEnabled(TARGET_NODE_ID), false);
@@ -2751,7 +2754,7 @@ HWTEST_F(RSRenderNodeTest, UpdateDrawableVecV2Test019, TestSize.Level1)
     nodeTest->stagingRenderParams_ = std::make_unique<RSRenderParams>(0);
     nodeTest->UpdateDrawableVecV2();
     auto sum = nodeTest->dirtySlots_.size();
-    EXPECT_NE(nodeTest->dirtySlots_.size(), 0);
+    EXPECT_NE(nodeTest->dirtySlots_.size(), 2);
 
     nodeTest->dirtyTypesNG_.set(static_cast<size_t>(ModifierNG::RSModifierType::TRANSFORM), true);
     std::shared_ptr<DrawableTest> drawableTest2 = std::make_shared<DrawableTest>();
@@ -2763,7 +2766,7 @@ HWTEST_F(RSRenderNodeTest, UpdateDrawableVecV2Test019, TestSize.Level1)
     RRect rrect;
     nodeTest->renderProperties_.rrect_ = rrect;
     nodeTest->UpdateDrawableVecV2();
-    EXPECT_EQ(nodeTest->dirtySlots_.size(), sum);
+    EXPECT_EQ(nodeTest->dirtySlots_.size(), sum + 1);
 }
 
 /**

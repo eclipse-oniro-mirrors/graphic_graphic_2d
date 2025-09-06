@@ -66,6 +66,9 @@ int32_t HWCParamParse::ParseHwcInternal(FeatureParamMapType& featureMap, xmlNode
         if (name == "DisableHwcOnExpandScreen") {
             HWCParam::SetDisableHwcOnExpandScreen(isEnabled);
             RS_LOGI("parse DisableHwcOnExpandScreen %{public}d", HWCParam::IsDisableHwcOnExpandScreen());
+        } else if (name == "SolidLayerInMultiWindowEnabled") {
+            HWCParam::SetSolidLayerInMultiWindowEnable(isEnabled);
+            RS_LOGI("parse SetSolidLayerInMultiWindowEnable %{public}d", HWCParam::IsSolidLayerInMultiWindowEnable());
         } else if (name == "SolidLayerEnabled") {
             HWCParam::SetSolidLayerEnable(isEnabled);
             RS_LOGI("parse SolidLayerEnabled %{public}d", HWCParam::IsSolidLayerEnable());
@@ -108,6 +111,9 @@ int32_t HWCParamParse::ParseFeatureMultiParamForApp(xmlNode& node, std::string& 
         } else if (name == "FilterUnderHwcConfig") {
             RsCommonHook::Instance().SetFilterUnderHwcConfigByApp(appName, val);
             RS_LOGD("parse FilterUnderHwcConfig ok");
+        } else if (name == "OverlappedHwcNodeInAppEnabledConfig") {
+            RsCommonHook::Instance().SetOverlappedHwcNodeInAppEnabledConfig(appName, val);
+            RS_LOGD("parse OverlappedHwcNodeInAppEnabledConfig ok");
         } else {
             RS_LOGD("ParseFeatureMultiParam cannot find name");
             return PARSE_NO_PARAM;

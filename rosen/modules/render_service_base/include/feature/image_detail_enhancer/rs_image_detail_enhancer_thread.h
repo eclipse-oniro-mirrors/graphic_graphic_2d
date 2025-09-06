@@ -48,6 +48,7 @@ public:
     void SetProcessStatus(uint64_t imageId, bool flag);
     bool GetProcessStatus(uint64_t imageId) const;
     bool GetEnableStatus() const;
+    bool IsEnableImageDetailEnhance(uint64_t nodeId) const;
 
 private:
     RSImageDetailEnhancerThread();
@@ -81,7 +82,6 @@ private:
     std::unordered_map<uint64_t, bool> processReadyMap_ = {};
     std::function<void(uint64_t)> callback_{};
     mutable std::mutex mapMutex_{};
-    bool isEnable_ = false;
 };
 
 class RSB_EXPORT DetailEnhancerUtils {

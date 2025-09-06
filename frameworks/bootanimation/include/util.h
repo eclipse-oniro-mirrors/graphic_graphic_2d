@@ -65,6 +65,8 @@ const std::string DEVICE_TYPE_WEARABLE = "wearable";
 
 const std::string FOLD_SCREEN_TYPE = system::GetParameter("const.window.foldscreen.type", "");
 
+const int MAX_LENGTH = 9;
+
 enum class BootStrategyType {
     ASSOCIATIVE,
     COMPATIBLE,
@@ -179,6 +181,14 @@ std::string GetHingeStatus();
 int64_t GetSystemCurrentTime();
 
 std::string GetDeviceType();
+
+void ParseProgressConfig(const std::string& path, std::map<int32_t, BootAnimationProgressConfig>& configs);
+
+void ParseProgressData(cJSON* data, std::map<int32_t, BootAnimationProgressConfig>& configs);
+
+cJSON* ParseFileConfig(const std::string& path);
+
+int32_t StringToInt32(const std::string& str);
 } // namespace OHOS
 
 #endif // FRAMEWORKS_BOOTANIMATION_INCLUDE_UTIL_H
