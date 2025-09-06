@@ -154,7 +154,7 @@ HWTEST_F(RSHeteroHDRBufferLayerTest, ConsumeAndUpdateBufferTest, TestSize.Level1
  * @tc.name: RequestSurfaceBufferTest
  * @tc.desc: Test RequestSurfaceBuffer
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require:
  */
 HWTEST_F(RSHeteroHDRBufferLayerTest, RequestSurfaceBufferTest, TestSize.Level1)
 {

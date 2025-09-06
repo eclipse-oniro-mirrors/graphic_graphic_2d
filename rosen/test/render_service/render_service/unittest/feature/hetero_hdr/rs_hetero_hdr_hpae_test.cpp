@@ -102,7 +102,7 @@ void RSHeteroHDRHpaeTest::TearDown() { RS_LOGI("TearDown------------------------
  * @tc.name: BuildHpaeHDRTaskTest001
  * @tc.desc: Test BuildHpaeHDRTask
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require:
  */
 HWTEST_F(RSHeteroHDRHpaeTest, BuildHpaeHDRTaskTest001, TestSize.Level1)
 {
@@ -134,7 +134,7 @@ HWTEST_F(RSHeteroHDRHpaeTest, BuildHpaeHDRTaskTest001, TestSize.Level1)
  * @tc.name: BuildHpaeHDRTaskTest002
  * @tc.desc: Test BuildHpaeHDRTask
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require:
  */
 HWTEST_F(RSHeteroHDRHpaeTest, BuildHpaeHDRTaskTest002, TestSize.Level1)
 {
@@ -160,7 +160,7 @@ HWTEST_F(RSHeteroHDRHpaeTest, BuildHpaeHDRTaskTest002, TestSize.Level1)
  * @tc.name: BuildHpaeHDRTaskTest003
  * @tc.desc: Test BuildHpaeHDRTask
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require:
  */
 HWTEST_F(RSHeteroHDRHpaeTest, BuildHpaeHDRTaskTest003, TestSize.Level1)
 {
@@ -203,7 +203,7 @@ HWTEST_F(RSHeteroHDRHpaeTest, BuildHpaeHDRTaskTest003, TestSize.Level1)
  * @tc.name: RequestHpaeChannelTest
  * @tc.desc: Test RequestHpaeChannel
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require:
  */
 HWTEST_F(RSHeteroHDRHpaeTest, RequestHpaeChannelTest, TestSize.Level1)
 {
@@ -283,7 +283,7 @@ HWTEST_F(RSHeteroHDRHpaeTest, CheckHpaeAccessibleTest, TestSize.Level1)
  * @tc.name: DestroyHpaeHDRTaskTest
  * @tc.desc: Test DestroyHpaeHDRTask
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require:
  */
 HWTEST_F(RSHeteroHDRHpaeTest, DestroyHpaeHDRTaskTest, TestSize.Level1)
 {
@@ -305,7 +305,7 @@ HWTEST_F(RSHeteroHDRHpaeTest, DestroyHpaeHDRTaskTest, TestSize.Level1)
  * @tc.name: ReleaseHpaeHDRChannelTest
  * @tc.desc: Test ReleaseHpaeHDRChannel
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require:
  */
 HWTEST_F(RSHeteroHDRHpaeTest, ReleaseHpaeHDRChannelTest, TestSize.Level1)
 {

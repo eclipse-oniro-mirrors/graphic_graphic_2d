@@ -129,7 +129,9 @@ void RSHeteroHDRManager::GetFixedDstRectStatus(std::shared_ptr<DrawableV2::RSSur
     bool sizeJudge = !(ROSEN_EQ(matrix.Get(Drawing::Matrix::Index::SKEW_X), 0.0f) &&
         ROSEN_EQ(matrix.Get(Drawing::Matrix::Index::SKEW_Y), 0.0f));
 
-    if (bufferHeight == 0 or bufferWidth == 0) return;
+    if (bufferHeight == 0 or bufferWidth == 0) {
+        return;
+    }
 
     if (isVertical) {
         boundSize.y_ = hpaeBufferSize.y_;
@@ -141,10 +143,8 @@ void RSHeteroHDRManager::GetFixedDstRectStatus(std::shared_ptr<DrawableV2::RSSur
         boundSize.y_ = round(boundSize.x_ * bufferHeight / bufferWidth);
         boundSize.y_ = (boundSize.y_ > hpaeBufferSize.y_) ? hpaeBufferSize.y_ : boundSize.y_;
     }
-    dst_.left_ = 0;
-    dst_.top_ = 0;
-    dst_.width_ = boundSize.x_;
-    dst_.height_ = boundSize.y_;
+    dst_.left_, st_.top_ = 0, 0;
+    dst_.width_, dst_.height_ = boundSize.x_, boundSize.y_;
     isFixedDstBuffer_ = isUiFirstMode || ratioJudge || sizeJudge ||
         transform == GraphicTransformType::GRAPHIC_ROTATE_180;
     if (!isFixedDstBuffer_) {

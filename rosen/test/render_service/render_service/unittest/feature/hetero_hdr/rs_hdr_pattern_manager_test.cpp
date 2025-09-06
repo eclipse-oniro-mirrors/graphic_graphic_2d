@@ -59,7 +59,8 @@ class MockRSHDRPatternManager : public RSHDRPatternManager {
 public:
     MockRSHDRPatternManager() = default;
     ~MockRSHDRPatternManager() = default;
-    void SetMhcDev() {
+    void SetMhcDev()
+    {
         MHCDevice_ = mockMhcDevice;
     }
     std::shared_ptr<MHCDevice> mockMhcDevice = std::make_shared<MHCDevice>();

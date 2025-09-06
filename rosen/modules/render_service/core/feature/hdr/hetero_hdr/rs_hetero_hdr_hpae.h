@@ -13,6 +13,11 @@
  * limitations under the License.
  */
 
+#ifndef RS_HETERO_HDR_HPAE_H 
+#define RS_HETERO_HDR_HPAE_H
+
+#include <cstdint>
+
 namespace OHOS {
 namespace Rosen {
 inline constexpr int DVFS_LEVEL_MIDDLE = 3;
@@ -215,3 +220,4 @@ void RSHeteroHDRHpae::ReleaseHpaeHDRChannel()
 }
 } // namespace Rosen
 } // namespace OHOS
+#endif // RS_HETERO_HDR_HPAE_H
