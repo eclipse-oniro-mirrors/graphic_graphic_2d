@@ -63,7 +63,7 @@ using MDCContentsT = struct MDCCopybitContents {
      */
     union {
         uint32_t powerMode;
-        uint32_t MDCPowerMode;
+        uint32_t mdcPowerMode;
     };
 
     /*
@@ -74,7 +74,7 @@ using MDCContentsT = struct MDCCopybitContents {
      * MDC_VOLTAGE_HIGH = 0x3,
      */
     union {
-        uint32_t MDCVoltaLev;
+        uint32_t mdcVoltaLev;
         uint32_t perfLev;
     };
 
@@ -246,13 +246,13 @@ private:
     void SetEffectResourceRequest(HdrStatus curHandleHdrStatus);
     uint64_t GetChannelCaps(HdrStatus curHandleHdrStatus);
 
-    void* MDCHandle_ = nullptr;
-    const char* MDCLib_ = "/vendor/lib64/libmediacomm.z.so";
+    void* mdcHandle_ = nullptr;
+    const char* mdcLib_ = "/vendor/lib64/libmediacomm.z.so";
     MDCDeviceT* (*getMDCDevice)() = nullptr;
-    MDCDeviceT* MDCDev_ = nullptr;
-    MDCContentsT MDCContent_;
-    std::atomic<bool> MDCStatus_{ false };
-    std::atomic<bool> MDCExistedStatus_{ false };
+    MDCDeviceT* mdcDev_ = nullptr;
+    MDCContentsT mdcContent_;
+    std::atomic<bool> mdcStatus_{ false };
+    std::atomic<bool> mdcExistedStatus_{ false };
     std::atomic<HdrStatus> existedChannelStatus_{ HdrStatus::NO_HDR };
 };
 } // namespace Rosen

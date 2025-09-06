@@ -41,20 +41,20 @@ RSHeteroHDRHpae& RSHeteroHDRHpae::GetInstance()
 
 RSHeteroHDRHpae::RSHeteroHDRHpae()
 {
-    MDCHandle_ = dlopen(MDCLib_, RTLD_NOW);
-    if (MDCHandle_ == nullptr) {
+    mdcHandle_ = dlopen(mdcLib_, RTLD_NOW);
+    if (mdcHandle_ == nullptr) {
         RS_LOGE("[hdrHetero]:RSHeteroHDRHpae dlopen MDClib is failed");
         return;
     }
-    *reinterpret_cast<void**>(&getMDCDevice) = dlsym(MDCHandle_, "GetMdcDevice");
+    *reinterpret_cast<void**>(&getMDCDevice) = dlsym(mdcHandle_, "GetMdcDevice");
     if (getMDCDevice == nullptr) {
-        dlclose(MDCHandle_);
-        MDCHandle_ = nullptr;
+        dlclose(mdcHandle_);
+        mdcHandle_ = nullptr;
     }
-    MDCDev_ = getMDCDevice();
-    if (MDCDev_ == nullptr) {
-        dlclose(MDCHandle_);
-        MDCHandle_ = nullptr;
+    mdcDev_ = getMDCDevice();
+    if (mdcDev_ == nullptr) {
+        dlclose(mdcHandle_);
+        mdcHandle_ = nullptr;
         getMDCDevice = nullptr;
         RS_LOGE("[hdrHetero]:RSHeteroHDRHpae getMDCDevice is failed");
         return;
@@ -63,38 +63,38 @@ RSHeteroHDRHpae::RSHeteroHDRHpae()
 
 RSHeteroHDRHpae::~RSHeteroHDRHpae()
 {
-    if (MDCHandle_) {
-        dlclose(MDCHandle_);
-        MDCHandle_ = nullptr;
-        MDCDev_ = nullptr;
+    if (mdcHandle_) {
+        dlclose(mdcHandle_);
+        mdcHandle_ = nullptr;
+        mdcDev_ = nullptr;
     }
 }
 
 bool RSHeteroHDRHpae::IsHpaeAvailable() const
 {
-    return (MDCDev_ && MDCHandle_);
+    return (mdcDev_ && mdcHandle_);
 }
 
 void RSHeteroHDRHpae::SetEffectResourceRequest(HdrStatus curHandleHdrStatus)
 {
     if (curHandleHdrStatus == AI_HDR_VIDEO_GAINMAP) {
-        MDCContent_.effectResourceRequest = AIHDR_HIGHLIGHT_MODE;
+        mdcContent_.effectResourceRequest = AIHDR_HIGHLIGHT_MODE;
         return;
     }
     /*
     * The precondition has already determined that the width and height of dstBuffer are not zero,
     * so there is no need to check them here.
     */
-    float wRatio = float(MDCContent_.srcRect.right - MDCContent_.srcRect.left) /
-                   float(MDCContent_.dstRect.right - MDCContent_.dstRect.left);
-    float hRatio = float(MDCContent_.srcRect.bottom - MDCContent_.srcRect.top) /
-                   float(MDCContent_.dstRect.bottom - MDCContent_.dstRect.top);
+    float wRatio = float(mdcContent_.srcRect.right - mdcContent_.srcRect.left) /
+                   float(mdcContent_.dstRect.right - mdcContent_.dstRect.left);
+    float hRatio = float(mdcContent_.srcRect.bottom - mdcContent_.srcRect.top) /
+                   float(mdcContent_.dstRect.bottom - mdcContent_.dstRect.top);
 
     bool scaleARSR = (wRatio < MAX_SCALE_ARSR && hRatio < MAX_SCALE_ARSR);
     if (scaleARSR) {
-        MDCContent_.effectResourceRequest = EFFECT_HDR | EFFECT_ARSR;
+        mdcContent_.effectResourceRequest = EFFECT_HDR | EFFECT_ARSR;
     } else {
-        MDCContent_.effectResourceRequest = EFFECT_HDR;
+        mdcContent_.effectResourceRequest = EFFECT_HDR;
     }
 }
 
@@ -105,37 +105,37 @@ int32_t RSHeteroHDRHpae::BuildHpaeHDRTask(HpaeTaskInfoT& taskInfo)
         RS_LOGE("[hdrHetero]:RSHeteroHDRHpae BuildHpaeHDRTask dstRect is invalid");
         return -1;
     }
-    if (!(MDCExistedStatus_.load())) {
+    if (!(mdcExistedStatus_.load())) {
         return -1;
     }
-    MDCContent_.srcRect = taskInfo.srcRect;
-    MDCContent_.dstRect = taskInfo.dstRect;
-    MDCContent_.perfLev = DVFS_LEVEL_HIGH;
-    MDCContent_.transform = taskInfo.transform;
-    MDCContent_.srcHandle = taskInfo.srcHandle;
-    MDCContent_.dstHandle = taskInfo.dstHandle;
-    MDCContent_.acquireFenceFd = taskInfo.acquireFenceFd;
-    MDCContent_.releaseFenceFd = taskInfo.releaseFenceFd;
-    MDCContent_.displaySdrNit = taskInfo.displaySdrNit;
-    MDCContent_.displayHdrNit = taskInfo.displayHdrNit;
-    MDCContent_.isAsyncTask = true;
-    MDCContent_.taskId = taskInfo.taskId;
-    MDCContent_.taskPtr = taskInfo.taskPtr;
+    mdcContent_.srcRect = taskInfo.srcRect;
+    mdcContent_.dstRect = taskInfo.dstRect;
+    mdcContent_.perfLev = DVFS_LEVEL_HIGH;
+    mdcContent_.transform = taskInfo.transform;
+    mdcContent_.srcHandle = taskInfo.srcHandle;
+    mdcContent_.dstHandle = taskInfo.dstHandle;
+    mdcContent_.acquireFenceFd = taskInfo.acquireFenceFd;
+    mdcContent_.releaseFenceFd = taskInfo.releaseFenceFd;
+    mdcContent_.displaySdrNit = taskInfo.displaySdrNit;
+    mdcContent_.displayHdrNit = taskInfo.displayHdrNit;
+    mdcContent_.isAsyncTask = true;
+    mdcContent_.taskId = taskInfo.taskId;
+    mdcContent_.taskPtr = taskInfo.taskPtr;
 
     SetEffectResourceRequest(taskInfo.curHandleStatus);
 
-    int ret = MDCDev_->copybit(MDCDev_, 0, &MDCContent_);
+    int ret = mdcDev_->copybit(mdcDev_, 0, &mdcContent_);
 
     RS_LOGD("[hdrHetero]:RSHeteroHDRHpae BuildHpaeHDRTask compose ret:%{public}d copybit taskId:%{public}d",
-        ret, *MDCContent_.taskId);
+        ret, *mdcContent_.taskId);
 
     if (ret != 0) {
-        MDCStatus_.store(false);
-        MDCDev_->destroyTask(*MDCContent_.taskId);
-        MDCContent_.taskPtr = nullptr;
+        mdcStatus_.store(false);
+        mdcDev_->destroyTask(*mdcContent_.taskId);
+        mdcContent_.taskPtr = nullptr;
         return -1;
     }
-    MDCStatus_.store(true);
+    mdcStatus_.store(true);
     return 0;
 }
 
@@ -152,28 +152,28 @@ uint64_t RSHeteroHDRHpae::GetChannelCaps(HdrStatus curHandleHdrStatus)
 
 int32_t RSHeteroHDRHpae::RequestHpaeChannel(HdrStatus curHandleHdrStatus)
 {
-    if (MDCExistedStatus_.load()) {
+    if (mdcExistedStatus_.load()) {
         if (existedChannelStatus_.load() == curHandleHdrStatus) {
             return 0;
         } else {
             ReleaseHpaeHDRChannel();
         }
     }
-    if (MDCDev_->requestChannelByCap == nullptr) {
+    if (mdcDev_->requestChannelByCap == nullptr) {
         RS_LOGE("[hdrHetero]:RSHeteroHDRHpae RequestHpaeChannel requestChannelByCap is null");
         return -1;
     }
     int channelStatus = -1;
     uint64_t channelCap = GetChannelCaps(curHandleHdrStatus);
     if (channelCap != 0) {
-        channelStatus = MDCDev_->requestChannelByCap(MDCDev_, channelCap);
+        channelStatus = mdcDev_->requestChannelByCap(mdcDev_, channelCap);
     }
     if (channelStatus < 0) {
         RS_LOGE("[hdrHetero]:RSHeteroHDRHpae RequestHpaeChannel request MDC channel failed caps:%{public}" PRIu64,
             channelCap);
         return channelStatus;
     }
-    MDCExistedStatus_.store(true);
+    mdcExistedStatus_.store(true);
     existedChannelStatus_.store(curHandleHdrStatus);
     return 0;
 }
@@ -186,7 +186,7 @@ bool RSHeteroHDRHpae::CheckHpaeAccessible(HdrStatus curHandleHdrStatus)
     bool isConflict = true;
     uint64_t channelCap = GetChannelCaps(curHandleHdrStatus);
     if (channelCap != 0) {
-        isConflict = MDCDev_->checkResourceConflict(MDCDev_, channelCap);
+        isConflict = mdcDev_->checkResourceConflict(mdcDev_, channelCap);
     } else {
         RS_LOGW("[hdrHetero]:RSHeteroHDRHpae CheckHpaeAccessible channelCap is invalid");
         return false;
@@ -201,18 +201,18 @@ bool RSHeteroHDRHpae::CheckHpaeAccessible(HdrStatus curHandleHdrStatus)
 
 void RSHeteroHDRHpae::DestroyHpaeHDRTask(uint32_t taskId)
 {
-    if (MDCStatus_.load()) {
-        MDCDev_->destroyTask(taskId);
-        MDCStatus_.store(true);
+    if (mdcStatus_.load()) {
+        mdcDev_->destroyTask(taskId);
+        mdcStatus_.store(true);
     }
 }
 
 void RSHeteroHDRHpae::ReleaseHpaeHDRChannel()
 {
-    if (MDCExistedStatus_.load() && MDCDev_ != nullptr) {
+    if (mdcExistedStatus_.load() && mdcDev_ != nullptr) {
         RS_TRACE_NAME("[hdrHetero]:RSHeteroHDRHpae ReleaseHpaeHDRChannel");
-        MDCDev_->releaseChannel(MDCDev_, 0);
-        MDCExistedStatus_.store(false);
+        mdcDev_->releaseChannel(mdcDev_, 0);
+        mdcExistedStatus_.store(false);
         existedChannelStatus_.store(HdrStatus::NO_HDR);
         RS_LOGD("[hdrHetero]:RSHeteroHDRHpae ReleaseHpaeHDRChannel done");
     }

@@ -458,7 +458,7 @@ void RSHeteroHDRManagerTest::TestPostHDRSubTasksWithMDCExisted()
     auto [screenNode, appNode, leashNode, surfaceNode] = GenerateTestNodes();
     SetupSurfaceContext(surfaceNode, appNode);
 
-    RSHeteroHDRHpae::GetInstance().MDCExistedStatus_.store(true);
+    RSHeteroHDRHpae::GetInstance().mdcExistedStatus_.store(true);
     mock.curHandleStatus_ = RSHeteroHDRHpae::GetInstance().existedChannelStatus_;
     
     mock.isHeteroComputingHdrOn_ = true;
@@ -737,7 +737,7 @@ HWTEST_F(RSHeteroHDRManagerTest, PostHDRSubTasksTest003, TestSize.Level1)
     EXPECT_CALL(mockRSHeteroHDRManager, MHCRequestEGraph(_)).WillRepeatedly(testing::Return(true));
     EXPECT_CALL(mockRSHeteroHDRManager, MHCSetCurFrameId(_)).WillRepeatedly(testing::Return(true));
     EXPECT_CALL(mockRSHeteroHDRManager, TryConsumeBuffer(_)).WillRepeatedly(testing::Return(true));
-    RSHeteroHDRHpae::GetInstance().MDCExistedStatus_.store(true);
+    RSHeteroHDRHpae::GetInstance().mdcExistedStatus_.store(true);
     mockRSHeteroHDRManager.curHandleStatus_ = RSHeteroHDRHpae::GetInstance().existedChannelStatus_;
 
     mockRSHeteroHDRManager.UpdateHDRNodes(*surfaceNode, surfaceHandler->IsCurrentFrameBufferConsumed());
@@ -816,7 +816,7 @@ HWTEST_F(RSHeteroHDRManagerTest, PrepareAndSubmitHDRTaskTest001, TestSize.Level1
     EXPECT_CALL(mockRSHeteroHDRManager, MHCRequestEGraph(_)).WillRepeatedly(testing::Return(true));
     EXPECT_CALL(mockRSHeteroHDRManager, MHCSetCurFrameId(_)).WillRepeatedly(testing::Return(true));
     EXPECT_CALL(mockRSHeteroHDRManager, TryConsumeBuffer(_)).WillRepeatedly(testing::Return(true));
-    RSHeteroHDRHpae::GetInstance().MDCExistedStatus_.store(true);
+    RSHeteroHDRHpae::GetInstance().mdcExistedStatus_.store(true);
     mockRSHeteroHDRManager.curHandleStatus_ = RSHeteroHDRHpae::GetInstance().existedChannelStatus_;
 
     // prev rect test
@@ -925,7 +925,7 @@ HWTEST_F(RSHeteroHDRManagerTest, PostHDRSubTasksTest020, TestSize.Level1)
     EXPECT_CALL(mockRSHeteroHDRManager, MHCRequestEGraph(_)).WillRepeatedly(testing::Return(false));
     EXPECT_CALL(mockRSHeteroHDRManager, MHCSetCurFrameId(_)).WillRepeatedly(testing::Return(true));
     EXPECT_CALL(mockRSHeteroHDRManager, TryConsumeBuffer(_)).WillRepeatedly(testing::Return(true));
-    RSHeteroHDRHpae::GetInstance().MDCExistedStatus_.store(true);
+    RSHeteroHDRHpae::GetInstance().mdcExistedStatus_.store(true);
     mockRSHeteroHDRManager.curHandleStatus_ = RSHeteroHDRHpae::GetInstance().existedChannelStatus_;
 
     mockRSHeteroHDRManager.UpdateHDRNodes(*surfaceNode, surfaceHandler->IsCurrentFrameBufferConsumed());
@@ -966,7 +966,7 @@ HWTEST_F(RSHeteroHDRManagerTest, PostHDRSubTasksTest021, TestSize.Level1)
     EXPECT_CALL(mockRSHeteroHDRManager, MHCRequestEGraph(_)).WillRepeatedly(testing::Return(true));
     EXPECT_CALL(mockRSHeteroHDRManager, MHCSetCurFrameId(_)).WillRepeatedly(testing::Return(false));
     EXPECT_CALL(mockRSHeteroHDRManager, TryConsumeBuffer(_)).WillRepeatedly(testing::Return(true));
-    RSHeteroHDRHpae::GetInstance().MDCExistedStatus_.store(true);
+    RSHeteroHDRHpae::GetInstance().mdcExistedStatus_.store(true);
     mockRSHeteroHDRManager.curHandleStatus_ = RSHeteroHDRHpae::GetInstance().existedChannelStatus_;
 
     mockRSHeteroHDRManager.UpdateHDRNodes(*surfaceNode, surfaceHandler->IsCurrentFrameBufferConsumed());
@@ -1007,7 +1007,7 @@ HWTEST_F(RSHeteroHDRManagerTest, PostHDRSubTasksTest022, TestSize.Level1)
     EXPECT_CALL(mockRSHeteroHDRManager, MHCRequestEGraph(_)).WillRepeatedly(testing::Return(true));
     EXPECT_CALL(mockRSHeteroHDRManager, MHCSetCurFrameId(_)).WillRepeatedly(testing::Return(true));
     EXPECT_CALL(mockRSHeteroHDRManager, TryConsumeBuffer(_)).WillRepeatedly(testing::Return(false));
-    RSHeteroHDRHpae::GetInstance().MDCExistedStatus_.store(true);
+    RSHeteroHDRHpae::GetInstance().mdcExistedStatus_.store(true);
     mockRSHeteroHDRManager.curHandleStatus_ = RSHeteroHDRHpae::GetInstance().existedChannelStatus_;
 
     mockRSHeteroHDRManager.UpdateHDRNodes(*surfaceNode, surfaceHandler->IsCurrentFrameBufferConsumed());
@@ -1606,7 +1606,7 @@ HWTEST_F(RSHeteroHDRManagerTest, GenDrawHDRBufferParamsTest001, TestSize.Level1)
     BufferDrawParam drawableParams;
     bool isFixedDstBuffer = false;
 
-    RSHeteroHDRUtil::GenDrawHDRBufferParams(*surfaceDrawable, hpaeDstRect, 
+    RSHeteroHDRUtil::GenDrawHDRBufferParams(*surfaceDrawable, hpaeDstRect,
         isFixedDstBuffer, drawableParams);
 
     auto drawableParam = std::make_unique<RSSurfaceRenderParams>(surfaceDrawable->nodeId_);
@@ -1650,7 +1650,7 @@ HWTEST_F(RSHeteroHDRManagerTest, GenDrawHDRBufferParamsTest002, TestSize.Level1)
 
     auto hdrSurfaceHandler = RSHeteroHDRManager::Instance().GetHDRSurfaceHandler();
     hdrSurfaceHandler->SetConsumer(IConsumerSurface::Create("test consumer"));
-    RSUniRenderThread::Instance().uniRenderEngine_ = 
+    RSUniRenderThread::Instance().uniRenderEngine_ =
         std::make_shared<RSRenderEngine>();
 
     MDCRectT hpaeDstRect {0, 0, 100, 100};
@@ -1716,17 +1716,17 @@ HWTEST_F(RSHeteroHDRManagerTest, GenDrawHDRBufferParamsTest004, TestSize.Level1)
     BufferDrawParam drawableParams;
     bool isFixedDstBuffer = true;
 
-    auto TestCombination = [&](float right, float bottom) {
+    auto testCombination = [surfaceDrawable, hpaeDstRect, isFixedDstBuffer, &drawableParams](float right, float bottom) {
         drawableParams.srcRect.SetRight(right);
         drawableParams.srcRect.SetBottom(bottom);
-        RSHeteroHDRUtil::GenDrawHDRBufferParams(*surfaceDrawable, hpaeDstRect, 
+        RSHeteroHDRUtil::GenDrawHDRBufferParams(*surfaceDrawable, hpaeDstRect,
             isFixedDstBuffer, drawableParams);
     };
 
-    TestCombination(0.0, 0.0);
-    TestCombination(0.0, 1.0);
-    TestCombination(1.0, 0.0);
-    TestCombination(1.0, 1.0);
+    testCombination(0.0, 0.0);
+    testCombination(0.0, 1.0);
+    testCombination(1.0, 0.0);
+    testCombination(1.0, 1.0);
 }
 
 /**
@@ -1781,15 +1781,15 @@ HWTEST_F(RSHeteroHDRManagerTest, GenDrawHDRBufferParamsTest006, TestSize.Level1)
     BufferDrawParam drawableParams;
     bool isFixedDstBuffer = true;
 
-    auto TestRotation = [&](GraphicTransformType rotation) {
+    auto testRotation = [surfaceParams, surfaceDrawable, hpaeDstRect, isFixedDstBuffer, &drawableParams](GraphicTransformType rotation) {
         surfaceParams->GetBuffer()->SetSurfaceBufferTransform(rotation);
         RSHeteroHDRUtil::GenDrawHDRBufferParams(*surfaceDrawable, hpaeDstRect, 
             isFixedDstBuffer, drawableParams);
     };
 
-    TestRotation(GRAPHIC_ROTATE_90);
-    TestRotation(GRAPHIC_ROTATE_180);
-    TestRotation(GRAPHIC_ROTATE_270);
+    testRotation(GRAPHIC_ROTATE_90);
+    testRotation(GRAPHIC_ROTATE_180);
+    testRotation(GRAPHIC_ROTATE_270);
 }
 
 /**
@@ -1815,18 +1815,18 @@ HWTEST_F(RSHeteroHDRManagerTest, GenDrawHDRBufferParamsTest007, TestSize.Level1)
     bool isFixedDstBuffer = true;
     BufferDrawParam drawableParams;
 
-    auto TestRect = [&](int w, int h) {
+    auto testRect = [&](int w, int h) {
         MDCRectT rect = {0, 0, w, h};
-        RSHeteroHDRUtil::GenDrawHDRBufferParams(*surfaceDrawable, rect, 
+        RSHeteroHDRUtil::GenDrawHDRBufferParams(*surfaceDrawable, rect,
             isFixedDstBuffer, drawableParams);
     };
 
-    TestRect(120, 20);
-    TestRect(120, 20);
-    TestRect(20, 20);
-    TestRect(100, 100);
-    TestRect(0, 100);
-    TestRect(100, 0);
+    testRect(120, 20);
+    testRect(120, 20);
+    testRect(20, 20);
+    testRect(100, 100);
+    testRect(0, 100);
+    testRect(100, 0);
 }
 
 /**
