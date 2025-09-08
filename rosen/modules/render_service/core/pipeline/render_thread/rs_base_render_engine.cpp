@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #include "rs_base_render_engine.h"
 
 #include <memory>
@@ -19,7 +20,8 @@
 
 #include "common/rs_optional_trace.h"
 #include "display_engine/rs_luminance_control.h"
-#include "feature/hdr/rs_hdr_util.h"
+#include "feature/hdr/hetero_hdr/rs_hetero_hdr_manager.h"
+#include "feature/hdr/hetero_hdr/rs_hetero_hdr_util.h"
 #include "memory/rs_tag_tracker.h"
 #include "metadata_helper.h"
 #include "pipeline/render_thread/rs_divided_render_util.h"
