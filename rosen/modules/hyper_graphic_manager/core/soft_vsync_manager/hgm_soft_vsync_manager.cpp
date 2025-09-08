@@ -70,7 +70,7 @@ void HgmSoftVSyncManager::DeliverSoftVote(FrameRateLinkerId linkerId, const Vote
                 appVoteDataIter == appVoteData_.end() || appVoteDataIter->second.first != resultVoteInfo->max ||
                 appVoteDataIter->second.second != isForceUseAppVSync) {
                 appVoteData_.insert_or_assign(linkerId,
-                    std::pair<int32_t, bool>(resultVoteInfo->max, isForceUseAppVSync));
+                    std::pair<uint32_t, bool>(resultVoteInfo->max, isForceUseAppVSync));
                 UpdateSoftVSync(false);
             }
         } else {
