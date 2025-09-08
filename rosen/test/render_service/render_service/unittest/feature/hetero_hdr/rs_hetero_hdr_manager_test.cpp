@@ -635,7 +635,7 @@ HWTEST_F(RSHeteroHDRManagerTest, PostHDRSubTasksTest002, TestSize.Level1)
     mockRSHeteroHDRManager.UpdateHDRNodes(*surfaceNode, surfaceHandler->IsCurrentFrameBufferConsumed());
     mockRSHeteroHDRManager.PostHDRSubTasks();
     surfaceParams->SetHardwareEnabled(false);
-} 
+}
 
 /**
  * @tc.name: PostHDRSubTasksTest003

@@ -800,6 +800,7 @@ void RSBaseRenderEngine::DrawImage(RSPaintFilterCanvas& canvas, BufferDrawParam&
 #else
     DrawImageRect(canvas, image, params, samplingOptions);
 #endif // USE_VIDEO_PROCESSING_ENGINE
+    }
 }
 
 void RSBaseRenderEngine::DrawImageRect(RSPaintFilterCanvas& canvas, std::shared_ptr<Drawing::Image> image,
