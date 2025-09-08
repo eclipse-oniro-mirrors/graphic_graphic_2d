@@ -802,15 +802,15 @@ static void KillProcessByPid(const pid_t pid, const MemorySnapshotInfo& info, co
         struct tm* time_struct = localtime(&now);
         char currentTime[80];
         strftime(currentTime, sizeof(currentTime), "%Y-%m-%d %H:%M:%S", time_struct);
-        std::string timeInfo = "Time is " + std::to_string(currentTime);
+        std::string timeInfo = "Time is " + std::string(currentTime);
         std::string filePath = "/data/service/el0/render_service/renderservice_killProcessByPid.txt";
         std::ofstream tempFile(filePath);
         if (tempFile.is_open()) {
-            tempFile << "\n******************************\n"
+            tempFile << "\n******************************\n";
             tempFile << timeInfo;
             tempFile << "\n";
             tempFile << logInfo;
-            tempFile << "\n************ endl ************\n"
+            tempFile << "\n************ endl ************\n";
             tempFile.close();
         } else {
             RS_LOGE("KillProcessByPid::file open fail!");
