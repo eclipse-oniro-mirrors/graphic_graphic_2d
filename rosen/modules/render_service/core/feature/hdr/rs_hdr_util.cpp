@@ -43,7 +43,6 @@ const std::vector<uint8_t> HDR_VIVID_METADATA = {
     81, 199, 178, 80, 255, 217, 150, 101, 201, 144, 114, 73, 65, 127, 160, 0, 0
 };
 }
-static std::shared_ptr<Drawing::RuntimeEffect> hdrHeadroomShaderEffect_;
 
 inline HdrStatus CheckAIHDRType(uint8_t metadataType)
 {
@@ -82,7 +81,8 @@ HdrStatus RSHdrUtil::CheckIsHdrSurfaceBuffer(const sptr<SurfaceBuffer> surfaceBu
 #ifdef USE_VIDEO_PROCESSING_ENGINE
     std::vector<uint8_t> metadataType{};
     if (surfaceBuffer->GetMetadata(ATTRKEY_HDR_METADATA_TYPE, metadataType) == GSERROR_OK && !metadataType.empty()) {
-        if (CheckAIHDRType(metadataType[0]) != HdrStatus::NO_HDR) {
+        auto AIHDRStatus = CheckAIHDRType(metadataType[0]);
+        if (AIHDRStatus != HdrStatus::NO_HDR) {
             return AIHDRStatus;
         }
     }
