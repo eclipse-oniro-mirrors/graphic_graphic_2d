@@ -4505,7 +4505,7 @@ bool RSMainThread::CheckAdaptiveCompose()
     if (adaptiveStatus != SupportASStatus::SUPPORT_AS) {
         return false;
     }
-    bool onlyGameNodeOnTree = frameRateMgr->HandleGameNode(GetContext().GetNodeMap());
+    bool onlyGameNodeOnTree = frameRateMgr->IsGameNodeOnTree();
     bool isNeedAdaptiveCompose = onlyGameNodeOnTree &&
         context_->GetAnimatingNodeList().empty() &&
         context_->GetNodeMap().GetVisibleLeashWindowCount() < MULTI_WINDOW_PERF_START_NUM;
