@@ -185,6 +185,7 @@ bool RSUniRenderVirtualProcessor::UpdateMirrorInfo(DrawableV2::RSLogicalDisplayR
     if (!params) {
         return false;
     }
+    mirrorSourceRotation_ = params->GetMirrorSourceRotation();
     auto screenManager = CreateOrGetScreenManager();
     if (screenManager == nullptr) {
         return false;
@@ -218,14 +219,16 @@ void RSUniRenderVirtualProcessor::CanvasInit(DrawableV2::RSLogicalDisplayRenderN
 {
     // Save the initial canvas state
     canvas_->Save();
-    if (displayDrawable.IsFirstTimeToProcessor() || canvasRotation_ || autoBufferRotation_) {
+    if (mirrorSourceRotation_ == ScreenRotation::INVALID_SCREEN_ROTATION) {
+        displayDrawable.SetOriginScreenRotation(mirrorSourceRotation_);
+    } else if (displayDrawable.IsFirstTimeToProcessor() || canvasRotation_ || autoBufferRotation_) {
         if (displayDrawable.IsFirstTimeToProcessor()) {
             RS_LOGI("RSUniRenderVirtualProcessor::FirstInit, id: %{public}" PRIu64 ", "
                 "screen(%{public}f, %{public}f, %{public}f, %{public}f), "
                 "rotation: %{public}d, correction: %{public}d, needRotation: %{public}d, scaleMode: %{public}d, "
-                "autoBufferRotation: %{public}d", virtualScreenId_, virtualScreenWidth_, virtualScreenHeight_,
+                "autoBufferRotation: %{public}d, mirrorSourceRotation: %{public}d", virtualScreenId_, virtualScreenWidth_, virtualScreenHeight_,
                 mirroredScreenWidth_, mirroredScreenHeight_, screenRotation_, screenCorrection_, canvasRotation_,
-                scaleMode_, autoBufferRotation_);
+                scaleMode_, autoBufferRotation_, mirrorSourceRotation_);
         }
         displayDrawable.SetOriginScreenRotation(screenRotation_);
     }
@@ -237,9 +240,9 @@ void RSUniRenderVirtualProcessor::CanvasInit(DrawableV2::RSLogicalDisplayRenderN
     RS_LOGD("RSUniRenderVirtualProcessor::CanvasInit, id: %{public}" PRIu64 ", "
         "screen(%{public}f, %{public}f, %{public}f, %{public}f), "
         "rotation: %{public}d, correction: %{public}d, needRotation: %{public}d, rotationAngle: %{public}d, "
-        "scaleMode: %{public}d, autoBufferRotation: %{public}d",
+        "scaleMode: %{public}d, autoBufferRotation: %{public}d, mirrorSourceRotation: %{public}d",
         virtualScreenId_, virtualScreenWidth_, virtualScreenHeight_, mirroredScreenWidth_, mirroredScreenHeight_,
-        screenRotation_, screenCorrection_, canvasRotation_, rotationAngle, scaleMode_, autoBufferRotation_);
+        screenRotation_, screenCorrection_, canvasRotation_, rotationAngle, scaleMode_, autoBufferRotation_, mirrorSourceRotation_);
 }
 
 int32_t RSUniRenderVirtualProcessor::GetBufferAge() const
