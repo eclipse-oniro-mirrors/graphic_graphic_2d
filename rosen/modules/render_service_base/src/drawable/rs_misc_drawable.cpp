@@ -25,7 +25,7 @@
 #include "modifier_ng/rs_render_modifier_ng.h"
 #include "pipeline/rs_canvas_drawing_render_node.h"
 #include "pipeline/rs_render_node.h"
-#include "platform/commmon/rs_system_properties.h"
+#include "platform/common/rs_system_properties.h"
 
 namespace OHOS::Rosen {
 namespace DrawableV2 {
