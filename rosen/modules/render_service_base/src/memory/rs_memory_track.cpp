@@ -143,7 +143,8 @@ size_t MemoryTrack::GetNodeMemoryOfPid(const pid_t pid, MEMORY_TYPE type)
     case MEMORY_TYPE::MEM_RENDER_DRAWABLE_NODE:
         return itr->second.second / BYTE_CONVERT;
         break;
-    }
+    case MEMORY_TYPE::MEM_PIXELMAP:
+    case MEMORY_TYPE::MEM_SKIMAGE:
     default:
         RS_LOGE("MemoryTrack::GetNodeMemoryOfPid: invalid memory type");
         break;
