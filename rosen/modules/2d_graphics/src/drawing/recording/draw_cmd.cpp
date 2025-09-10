@@ -2684,7 +2684,7 @@ void ClipAdaptiveRoundRectOpItem::Playback(Canvas* canvas, const Rect* rect)
 {
     bool isRoundRect = false;
     for (auto point : radiusData_) {
-        if (!(point.Getx() <= 0 && point.GetY() <= 0)) {
+        if (!(point.GetX() <= 0 && point.GetY() <= 0)) {
             isRoundRect = true;
         }
     }
