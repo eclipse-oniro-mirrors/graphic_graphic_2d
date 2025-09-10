@@ -1027,4 +1027,29 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, ProcessScreenSurfaceForRenderThread002
     virtualProcessor_->ProcessScreenSurfaceForRenderThread(*screenDrawable);
     ASSERT_EQ(screenDrawable->GetRSSurfaceHandlerOnDraw()->GetBuffer() == nullptr, true);
 }
+
+#ifdef RS_ENABLE_VK
+/**
+ * @tc.name: CancelCurrentFrame
+ * @tc.desc: Test CancelCurrentFrame
+ * @tc.type: FUNC
+ * @tc.require: issueICWRWD
+ */
+HWTEST_F(RSUniRenderVirtualProcessorTest, CancelCurrentFrame, TestSize.Level1)
+{
+    auto processor = RSProcessorFactory::CreateProcessor(CompositeType::UNI_RENDER_MIRROR_COMPOSITE);
+    auto virtualProcessor = std::static_pointer_cast<RSUniRenderVirtualProcessor>(processor);
+    virtualProcessor->CancelCurrentFrame();
+    ASSERT_EQ(virtualProcessor->renderFrame_, nullptr);
+
+    auto csurf = IConsumerSurface::Create();
+    auto producer = csurf->GetProducer();
+    auto pSurface = Surface::CreateSurfaceAsProducer(producer);
+    std::shared_ptr<RSSurfaceOhosVulkan> rsSurface = std::make_shared<RSSurfaceOhosVulkan>(pSurface);
+    ASSERT_NE(nullptr, rsSurface);
+    virtualProcessor->renderFrame_ = std::make_unique<RSRenderFrame>(rsSurface, nullptr);
+    virtualProcessor->renderFrame_->CancelCurrentFrame();
+    ASSERT_NE(virtualProcessor->renderFrame_, nullptr);
+}
+#endif // RS_ENABLE_VK
 } // namespace OHOS::Rosen
