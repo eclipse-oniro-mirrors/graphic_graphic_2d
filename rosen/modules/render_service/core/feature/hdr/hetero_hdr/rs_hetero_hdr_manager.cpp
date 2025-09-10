@@ -70,10 +70,10 @@ RSHeteroHDRManager::RSHeteroHDRManager()
 
 RectI RSHeteroHDRManager::RectRound(RectI srcRect)
 {
-    int32_t srcWidth = static_cast<int32_t>(static_cast<uint32_t>)(srcRect.width_ & ~1u);
-    int32_t srcHeight = static_cast<int32_t>(static_cast<uint32_t>)(srcRect.height_ & ~1u);
-    int32_t srcTop = static_cast<int32_t>(static_cast<uint32_t>)(srcRect.top_ & ~1u);
-    int32_t srcLeft = static_cast<int32_t>(static_cast<uint32_t>)(srcRect.left_ & ~1u);
+    int32_t srcWidth = static_cast<int32_t>(static_cast<uint32_t>srcRect.width_ & ~1u);
+    int32_t srcHeight = static_cast<int32_t>(static_cast<uint32_t>srcRect.height_ & ~1u);
+    int32_t srcTop = static_cast<int32_t>(static_cast<uint32_t>srcRect.top_ & ~1u);
+    int32_t srcLeft = static_cast<int32_t>(static_cast<uint32_t>srcRect.left_ & ~1u);
 
     RectI dstRect = { srcLeft, srcTop, srcWidth, srcHeight };
     return dstRect;
@@ -649,6 +649,7 @@ std::shared_ptr<Drawing::ShaderEffect> RSHeteroHDRManager::MakeAIHDRGainmapHeadr
     size_t childCount = 1;
     auto data = std::make_shared<Drawing::Data>();
     data->BuildWithCopy(&hdrRatio, sizeof(hdrRatio));
+    std::lock_guard<std::mutex> lock(shaderMutex_);
     auto shader = AIHDRHeadroomShaderEffect->MakeShader(data, children, childCount, nullptr, false);
     return shader;
 }
