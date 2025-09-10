@@ -446,8 +446,7 @@ void HgmFrameRateManager::UpdateSoftVSync(bool followRs)
         }
         SetAceAnimatorVote(linker.second);
         auto expectedRange = linker.second->GetExpectedRange();
-        if (expectedRange.type_ == OHOS::Rosen::NATIVE_VSYNC_FRAME_RATE_TYPE &&
-            linker.second->NativeVSyncIsTimeOut()) {
+        if (expectedRange.type_ == NATIVE_VSYNC_FRAME_RATE_TYPE && linker.second->NativeVSyncIsTimeOut()) {
             continue;
         }
         if (!HgmEnergyConsumptionPolicy::Instance().GetUiIdleFps(expectedRange, ExtractPid(linker.first)) &&
@@ -477,10 +476,8 @@ void HgmFrameRateManager::UpdateSoftVSync(bool followRs)
         needChangeDssRefreshRate = true;
         FrameRateReport();
     }
-    bool frameRateChanged = softVSyncManager_.CollectFrameRateChange(finalRange,
-        rsFrameRateLinker_,
-        appFrameRateLinkers_,
-        currRefreshRate_);
+    bool frameRateChanged = softVSyncManager_.CollectFrameRateChange(finalRange, rsFrameRateLinker_,
+        appFrameRateLinkers_, currRefreshRate_);
     CheckRefreshRateChange(followRs, frameRateChanged, refreshRate, needChangeDssRefreshRate);
     ReportHiSysEvent(lastVoteInfo_);
 }
@@ -1276,10 +1273,8 @@ void HgmFrameRateManager::MarkVoteChange(const std::string& voter)
 
     bool frameRateChanged = false;
     if (rsFrameRateLinker_ != nullptr) {
-        frameRateChanged = softVSyncManager_.CollectFrameRateChange(finalRange,
-            rsFrameRateLinker_,
-            appFrameRateLinkers_,
-            currRefreshRate_);
+        frameRateChanged = softVSyncManager_.CollectFrameRateChange(finalRange, rsFrameRateLinker_,
+            appFrameRateLinkers_, currRefreshRate_);
     }
     CheckRefreshRateChange(false, frameRateChanged, refreshRate, needChangeDssRefreshRate);
     ReportHiSysEvent(resultVoteInfo);

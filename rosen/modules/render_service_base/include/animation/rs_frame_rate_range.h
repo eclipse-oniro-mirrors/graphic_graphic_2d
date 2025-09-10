@@ -45,6 +45,8 @@ constexpr uint32_t ANIMATOR_DISPLAY_SYNC_FRAME_RATE_TYPE = (1 << 23);
 constexpr uint32_t OTHER_DISPLAY_SYNC_FRAME_RATE_TYPE = (1 << 24);
 constexpr uint32_t DISPLAY_SYNC_FRAME_RATE_TYPE = (0b111 << 22);
 
+constexpr uint32_t FRAME_RATE_TYPE_MAX_BIT = 32;
+
 enum ComponentScene : int32_t {
     UNKNOWN_SCENE = 0,
     SWIPER_FLING = 1,
@@ -171,7 +173,7 @@ public:
     std::string GetAllTypeDescription() const
     {
         std::string allTypeDescription("[" + std::to_string(type_) + "] ");
-        for (int32_t i =0; i < 32; i++) {
+        for (int32_t i = 0; i < FRAME_RATE_TYPE_MAX_BIT; i++) {
             if (auto typeDescription = FrameRateType2Str(type_ & (1 << i)); !typeDescription.empty()) {
                 allTypeDescription += typeDescription + ";";
             }
