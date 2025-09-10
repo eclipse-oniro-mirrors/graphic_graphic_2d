@@ -155,12 +155,6 @@ size_t MemoryTrack::GetNodeMemoryOfPid(const pid_t pid, MEMORY_TYPE type)
 void MemoryTrack::AddNodeRecord(const NodeId id, const MemoryInfo& info)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-
-    if (info.type == MEMORY_TYPE::MEM_RENDER_DRAWABLE_NODE) {
-        SetDrawableNodeInfo(id, info);
-        return;
-    }
-
     MemoryNodeOfPid nodeInfoOfPid(info.size, id);
     auto itr = memNodeMap_.find(id);
     if (itr == memNodeMap_.end()) {
