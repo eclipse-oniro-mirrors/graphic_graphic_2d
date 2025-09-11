@@ -29,7 +29,7 @@ RSProxyRenderNode::RSProxyRenderNode(
 #ifndef ROSEN_ARKUI_X
     MemoryInfo info = {sizeof(*this), ExtractPid(id), id, MEMORY_TYPE::MEM_RENDER_NODE};
     MemoryTrack::Instance().AddNodeRecord(id, info);
-    MemoryTrack::Instance().RegisterNodeMem(ExtractPid(GetId()),
+    MemoryTrack::Instance().RegisterNodeMem(ExtractPid(id),
         sizeof(*this), MEMORY_TYPE::MEM_RENDER_NODE);
 #endif
     MemorySnapshot::Instance().AddCpuMemory(ExtractPid(id), sizeof(*this));
