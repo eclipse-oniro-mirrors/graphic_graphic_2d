@@ -266,7 +266,7 @@ namespace drawing {
      TRIANGLESFAN_VERTEXMODE = 2,
   }
 
-  /*
+  /**
    * Enumerates the directions of a closed contour.
    * @enum { int }
    * @syscap SystemCapability.Graphics.Drawing
@@ -404,6 +404,29 @@ namespace drawing {
   }
 
   /**
+   * Enumerates the filter modes.
+   * @enum { int }
+   * @syscap SystemCapability.Graphics.Drawing
+   * @since 20
+   */
+  export enum FilterMode {
+
+    /**
+     * Nearest filter mode.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    FILTER_MODE_NEAREST = 0,
+
+    /**
+     * Linear filter mode.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    FILTER_MODE_LINEAR = 1,
+  }
+
+  /**
    * Provides an interface to the drawing, and samplingOptions used when sampling from the image.
    * @syscap SystemCapability.Graphics.Drawing
    * @since 12
@@ -443,6 +466,39 @@ namespace drawing {
      * @since 12
      */
     native constructorNative(filterMode: FilterMode): void;
+
+    static samplingOptionsTransferStatic(input: Any): Object {
+      let samplingOptions: SamplingOptions = new SamplingOptions();
+      return SamplingOptions.samplingOptionsTransferStaticNative(samplingOptions, ESValue.wrap(input));
+    }
+
+    private static native samplingOptionsTransferStaticNative(samplingOptions: SamplingOptions, input: ESValue): Object;
+
+    static samplingOptionsTransferDynamic(input: Object): Any {
+      let samplingOptions = input as SamplingOptions;
+      if (!samplingOptions) {
+        return null;
+      }
+      let addr = SamplingOptions.getSamplingOptionsAddr(samplingOptions);
+      if (addr == 0) {
+        return null;
+      }
+      let module = ESValue.load("@ohos.graphics.drawing");
+      let hasProperty: boolean = module.hasProperty("SamplingOptions");
+      if (!hasProperty) {
+        return null;
+      }
+      let cls = module.getProperty("SamplingOptions");
+      hasProperty = cls.hasProperty("__createTransfer__");
+      if (hasProperty) {
+        let initFunc = cls.getProperty("__createTransfer__");
+        let obj = initFunc.invoke(ESObject.wrap(addr));
+        return obj.unwrap();
+      }
+      return null;
+    }
+
+    private static native getSamplingOptionsAddr(input: SamplingOptions): long;
   }
 
   export class Canvas {
@@ -466,9 +522,45 @@ namespace drawing {
      * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
      * <br>2. Incorrect parameter types.
      * @syscap SystemCapability.Graphics.Drawing
-     * @since 11
+     * @since 20
      */
     native constructorNative(pixelmap: image.PixelMap): void;
+
+    static canvasTransferStatic(input: Any): Object {
+        return Canvas.canvasTransferStaticNative(ESValue.wrap(input));
+    }
+
+    private static native canvasTransferStaticNative(input: ESValue): Object;
+
+    static canvasTransferDynamic(input: Object): Any {
+      let canvas = input as Canvas;
+      if (!canvas) {
+        return null;
+      }
+      let canvasAddr = Canvas.getCanvasAddr(canvas);
+      if (canvasAddr == 0) {
+        return null;
+      }
+      let pixelMapAddr = Canvas.getPixelMapAddr(canvas);
+      let owned = Canvas.getOwned(canvas);
+      let module = ESValue.load("@ohos.graphics.drawing");
+      let hasProperty: boolean = module.hasProperty("Canvas");
+      if (!hasProperty) {
+        return null;
+      }
+      let cls = module.getProperty("Canvas");
+      hasProperty = cls.hasProperty("__createTransfer__");
+      if (hasProperty) {
+        let initFunc = cls.getProperty("__createTransfer__");
+        let obj = initFunc.invoke(ESObject.wrap(canvasAddr), ESObject.wrap(pixelMapAddr), owned);
+        return obj.unwrap();
+      }
+      return null;
+    }
+
+    private static native getCanvasAddr(input: Canvas): long;
+    private static native getPixelMapAddr(input: Canvas): long;
+    private static native getOwned(input: Canvas): boolean;
 
     /**
      * If rectangle is stroked, use pen to stroke width describes the line thickness,
@@ -477,7 +569,7 @@ namespace drawing {
      * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
      * <br>2. Incorrect parameter types.
      * @syscap SystemCapability.Graphics.Drawing
-     * @since 11
+     * @since 20
      */
     native drawRect(rect: common2D.Rect): void;
 
@@ -491,9 +583,150 @@ namespace drawing {
      * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
      * <br>2. Incorrect parameter types.
      * @syscap SystemCapability.Graphics.Drawing
-     * @since 12
+     * @since 20
      */
     native drawRect(left: double, top: double, right: double, bottom: double): void;
+
+    /**
+     * Draws a rounded rectangle.
+     * @param { RoundRect } roundRect - Indicates the RectRound object.
+     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
+     * <br>2. Incorrect parameter types.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native drawRoundRect(roundRect: RoundRect): void;
+
+    /**
+     * Draws two nested rounded rectangles. The outer rectangle boundary must contain the inner rectangle boundary.
+     * Otherwise, there is no drawing effect.
+     * @param { RoundRect } outer - Outer rounded rectangle.
+     * @param { RoundRect } inner - Inner rounded rectangle.
+     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
+     * <br>2. Incorrect parameter types.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native drawNestedRoundRect(outer: RoundRect, inner: RoundRect): void;
+
+    /**
+     * Uses a brush to fill the drawable area of the canvas.
+     * @param { Brush } brush - Indicates the Brush object.
+     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
+     * <br>2. Incorrect parameter types.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native drawBackground(brush: Brush): void;
+
+    /**
+     * Draws a spot shadow and uses a given path to outline the ambient shadow.
+     * @param { Path } path - Path object, which is used to outline the shadow.
+     * @param { common2D.Point3d } planeParams - 3D vector,
+     *     which is used to determine the z-axis offset of an occluder relative to the canvas,
+     *     based on its x and y coordinates.
+     * @param { common2D.Point3d } devLightPos - Position of the light relative to the canvas.
+     * @param { double } lightRadius - Radius of the light. The value is a floating point number.
+     * @param { common2D.Color } ambientColor - Color of the ambient shadow.
+     * @param { common2D.Color } spotColor - Color of the spot shadow.
+     * @param { ShadowFlag } flag - Shadow flag.
+     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
+     *     <br>2. Incorrect parameter types; 3. Parameter verification failed.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native drawShadow(path: Path, planeParams: common2D.Point3d, devLightPos: common2D.Point3d, lightRadius: double,
+      ambientColor: common2D.Color, spotColor: common2D.Color, flag: ShadowFlag) : void;
+
+    /**
+     * Draws a spot shadow and uses a given path to outline the ambient shadow.
+     * @param { Path } path - Path object, which is used to outline the shadow.
+     * @param { common2D.Point3d } planeParams - 3D vector, which is used to calculate the offset in the Z axis.
+     * @param { common2D.Point3d } devLightPos - Position of the light relative to the canvas.
+     * @param { double } lightRadius - Radius of the light. The value is a floating point number.
+     * @param { common2D.Color | int } ambientColor - Ambient shadow color,
+     *     represented by a 32-bit unsigned integer in hexadecimal ARGB format.
+     * @param { common2D.Color | int } spotColor - Spot shadow color,
+     *     represented by a 32-bit unsigned integer in hexadecimal ARGB format.
+     * @param { ShadowFlag } flag - Indicates the flag to control opaque occluder, shadow, and light position.
+     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
+     *     <br>2. Incorrect parameter types; 3. Parameter verification failed.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+
+    native drawShadow(path: Path, planeParams: common2D.Point3d, devLightPos: common2D.Point3d, lightRadius: double,
+      ambientColor: common2D.Color | int, spotColor: common2D.Color | int, flag: ShadowFlag) : void;
+
+    /**
+     * Draws a circle. If the radius is less than or equal to zero, nothing is drawn.
+     * By default, black is used for filling.
+     * @param { double } x - X coordinate of the center of the circle. The value is a floating point number.
+     * @param { double } y - Y coordinate of the center of the circle. The value is a floating point number.
+     * @param { double } radius - Radius of the circle. The value is a floating point number greater than 0.
+     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
+     *     <br>2. Incorrect parameter types; 3. Parameter verification failed.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native drawCircle(x: double, y: double, radius: double): void;
+
+    /**
+     * Draw a pixelmap, with the upper left corner at (left, top).
+     * @param { image.PixelMap } pixelmap - PixelMap.
+     * @param { double } left - Left side of image.
+     * @param { double } top - Top side of image.
+     * @throws { BusinessError } 401 - Parameter error.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    /**
+     * Draws an image. The coordinates of the upper left corner of the image are (left, top).
+     * @param { image.PixelMap } pixelmap - PixelMap.
+     * @param { double } left - X coordinate of the upper left corner of the image. The value is a floating point number.
+     * @param { double } top - Y coordinate of the upper left corner of the image. The value is a floating point number.
+     * @param { SamplingOptions } samplingOptions - Sampling options. By default, the SamplingOptions object created using the no-argument constructor is used.
+     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
+     * <br>2. Incorrect parameter types.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native drawImage(pixelmap: image.PixelMap, left: double, top: double, samplingOptions?: SamplingOptions): void;
+
+    /**
+     * Splits an image into multiple sections based on the lattice object's configuration and draws each section into the specified target rectangle on the canvas.
+     * The intersections of even-numbered rows and columns (starting from 0) are fixed points.
+     * If the fixed lattice area fits within the target rectangle, it will be drawn without scaling.
+     * Otherwise, it will be scaled proportionally to fit the target rectangle.
+     * Any remaining space will be filled by stretching or compressing the remaining sections to cover the entire target rectangle.
+     * @param { image.PixelMap } pixelmap - The source image.
+     * @param { Lattice } lattice - The area of source image.
+     * @param { common2D.Rect } dstRect - The area of destination canvas.
+     * @param { FilterMode } filterMode - Filter mode.
+     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
+     * <br>2. Incorrect parameter types; 3. Parameter verification failed.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native drawImageLattice(pixelmap: image.PixelMap, lattice: Lattice, dstRect: common2D.Rect,
+      filterMode: FilterMode): void;
+
+    /**
+     * Splits an image into nine sections using two horizontal and two vertical lines: four edge sections, four corner sections, and a central section.
+     * If the four corner sections are smaller than the target rectangle, they will be drawn in the target rectangle without scaling.
+     * Otherwise, they will be scaled to fit the target rectangle. Any remaining space will be filled by stretching or
+     * compressing the other five sections to cover the entire target rectangle.
+     * @param { image.PixelMap } pixelmap - PixelMap to split.
+     * @param { common2D.Rect } center - Central rectangle that divides the image into nine sections by extending its four edges.
+     * @param { common2D.Rect } dstRect - Target rectangle drawn on the canvas.
+     * @param { FilterMode } filterMode - Filter mode.
+     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
+     * <br>2. Incorrect parameter types; 3. Parameter verification failed.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native drawImageNine(pixelmap: image.PixelMap, center: common2D.Rect, dstRect: common2D.Rect,
+      filterMode: FilterMode): void;
 
     /**
      * Draws the specified source image onto the canvas,
@@ -504,9 +737,188 @@ namespace drawing {
      * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
      * <br>2. Incorrect parameter types.
      * @syscap SystemCapability.Graphics.Drawing
-     * @since 12
+     * @since 20
      */
     native drawImageRect(pixelmap: image.PixelMap, dstRect: common2D.Rect, samplingOptions?: SamplingOptions): void;
+
+    /**
+     * Draws a portion of an image onto a specified area of the canvas.
+     * @param { image.PixelMap } pixelmap - The source image.
+     * @param { common2D.Rect } srcRect - Rectangle object, which specifies the portion of the image to draw.
+     * @param { common2D.Rect } dstRect - Rectangle object, which specifies the area of the canvas onto which the image will be drawn.
+     * @param { SamplingOptions } samplingOptions - Sampling options. By default, the SamplingOptions object created using the no-argument constructor is used.
+     * @param { SrcRectConstraint } constraint - Constraint type of the source rectangle. The default value is STRICT.
+     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
+     * <br>2. Incorrect parameter types.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native drawImageRectWithSrc(pixelmap: image.PixelMap, srcRect: common2D.Rect, dstRect: common2D.Rect,
+      samplingOptions?: SamplingOptions, constraint?: SrcRectConstraint): void;
+
+    /**
+     * Draws the background color.
+     * @param { common2D.Color } color - The range of color channels must be [0, 255].
+     * @param { BlendMode } blendMode - Used to combine source color and destination. The default value is SRC_OVER.
+     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
+     * <br>2. Incorrect parameter types; 3. Parameter verification failed.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native drawColor(color: common2D.Color, blendMode?: BlendMode): void;
+
+    /**
+     * Fills the drawable area of the canvas with the specified color and blend mode. This API provides better performance and is recommended.
+     * @param { int } alpha - Alpha channel value of the color in ARGB format.
+     * The value is an integer ranging from 0 to 255. Any passed-in floating point number is rounded down.
+     * @param { int } red - Red channel value of the color in ARGB format.
+     * The value is an integer ranging from 0 to 255. Any passed-in floating point number is rounded down.
+     * @param { int } green - Green channel value of the color in ARGB format.
+     * The value is an integer ranging from 0 to 255. Any passed-in floating point number is rounded down.
+     * @param { int } blue - Blue channel value of the color in ARGB format.
+     * The value is an integer ranging from 0 to 255. Any passed-in floating point number is rounded down.
+     * @param { BlendMode } blendMode - Blend mode. The default mode is SRC_OVER.
+     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
+     * <br>2. Incorrect parameter types; 3. Parameter verification failed.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native drawColor(alpha: int, red: int, green: int, blue: int, blendMode?: BlendMode): void;
+
+    /**
+     * Fills the drawable area of the canvas with the specified color and blend mode.
+     * @param { int } color - Color in hexadecimal ARGB format.
+     * @param { BlendMode } blendMode - Blend mode. The default mode is SRC_OVER.
+     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
+     * <br>2. Incorrect parameter types; 3. Parameter verification failed.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native drawColor(color: int, blendMode?: BlendMode): void;
+
+    /**
+     * Draws an oval on the canvas, where the shape and position of the oval are defined by its bounding rectangle.
+     * @param { common2D.Rect } oval - Rectangle. The oval inscribed within the rectangle is the oval to draw.
+     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
+     * <br>2. Incorrect parameter types.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native drawOval(oval: common2D.Rect): void;
+
+    /**
+     * Draws an arc on the canvas, with the start angle and sweep angle specified.
+     * If the absolute value of the sweep angle exceeds 360 degrees, an ellipse is drawn.
+     * @param { common2D.Rect } arc - Rectangular boundary that encapsulates the oval including the arc.
+     * @param { double } startAngle - Start angle, in degrees. The value is a floating point number.
+     * When the degree is 0, the start point is located at the right end of the oval.
+     * A positive number indicates that the start point is placed clockwise,
+     * and a negative number indicates that the start point is placed counterclockwise.
+     * @param { double } sweepAngle - Angle to sweep, in degrees. The value is a floating point number.
+     * A positive number indicates a clockwise sweep, and a negative value indicates a counterclockwise swipe.
+     * The valid range is from -360 degrees to 360 degrees. If the absolute value of the sweep angle exceeds 360 degrees,
+     * an ellipse is drawn.
+     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
+     * <br>2. Incorrect parameter types.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native drawArc(arc: common2D.Rect, startAngle: double, sweepAngle: double): void;
+
+    /**
+     * Draws an arc on the canvas. It enables you to define the start angle, sweep angle,
+     * and whether the arc's endpoints should connect to its center.
+     * @param { common2D.Rect } arc - Rectangular boundary that encapsulates the oval including the arc.
+     * @param { double } startAngle - Start angle, in degrees. The value is a floating point number.
+     * When the degree is 0, the start point is located at the right end of the oval.
+     * A positive number indicates that the start point is placed clockwise,
+     * and a negative number indicates that the start point is placed counterclockwise.
+     * @param { double } sweepAngle - Angle to sweep, in degrees. The value is a floating point number.
+     * A positive number indicates a clockwise sweep, and a negative value indicates a counterclockwise swipe.
+     * The swipe angle can exceed 360 degrees, and a complete ellipse is drawn.
+     * @param { boolean } useCenter - Whether the start point and end point of the arc are connected to its center.
+     * The value true means that they are connected to the center; the value false means the opposite.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native drawArcWithCenter(arc: common2D.Rect, startAngle: double, sweepAngle: double, useCenter: boolean): void;
+
+    /**
+     * Draw a point.
+     * @param { double } x - X coordinate of the point. The value is a floating point number.
+     * @param { double } y - Y coordinate of the point. The value is a floating point number.
+     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
+     * <br>2. Incorrect parameter types.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native drawPoint(x: double, y: double): void;
+
+    /**
+     * Draws a group of points, line segments, or polygons on the canvas, with the specified drawing mode. An array is used to hold these points.
+     * @param { Array<common2D.Point> } points - Array that holds the points to draw. The length cannot be 0.
+     * @param { PointMode } mode - Mode in which the points are drawn. The default value is drawing.PointMode.POINTS.
+     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
+     * <br>2. Incorrect parameter types; 3. Parameter verification failed.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native drawPoints(points: Array<common2D.Point>, mode?: PointMode): void;
+
+    /**
+     * Draws a custom path, which contains a set of path outlines. Each path outline can be open or closed.
+     * @param { Path } path - Path object to draw.
+     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
+     * <br>2. Incorrect parameter types.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native drawPath(path: Path): void;
+
+    /**
+     * Draws a line segment from the start point to the end point. If the coordinates of the start point are the same as those of the end point,
+     * nothing is drawn.
+     * @param { double } x0 - X coordinate of the start point of the line segment. The value is a floating point number.
+     * @param { double } y0 - Y coordinate of the start point of the line segment. The value is a floating point number.
+     * @param { double } x1 - X coordinate of the end point of the line segment. The value is a floating point number.
+     * @param { double } y1 - Y coordinate of the end point of the line segment. The value is a floating point number.
+     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
+     * <br>2. Incorrect parameter types.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native drawLine(x0: double, y0: double, x1: double, y1: double): void;
+
+    /**
+     * Draws a single character. If the typeface of the current font does not support the character to draw,
+     * the system typeface is used to draw the character.
+     * @param { string } text - Single character to draw. The length of the string must be 1.
+     * @param { Font } font - Font object.
+     * @param { double } x - X coordinate of the left point (red point in the figure below) of the character baseline (blue line in the figure below).
+     * The value is a floating point number.
+     * @param { double } y - Y coordinate of the left point (red point in the figure below) of the character baseline (blue line in the figure below).
+     * The value is a floating point number.
+     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
+     * <br>2. Incorrect parameter types; 3. Parameter verification failed.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native drawSingleCharacter(text: string, font: Font, x: double, y: double): void;
+
+    /**
+     * Draws a text blob. If the typeface used to construct blob does not support a character,
+     * that character will not be drawn.
+     * @param { TextBlob } blob - TextBlob to draw.
+     * @param { double } x - X coordinate of the left point (red point in the figure below) of the text
+     *     baseline (blue line in the figure below). The value is a floating point number.
+     * @param { double } y - Y coordinate of the left point (red point in the figure below) of the text
+     * baseline (blue line in the figure below). The value is a floating point number.
+     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
+     *     <br>2. Incorrect parameter types.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native drawTextBlob(blob: TextBlob, x: double, y: double): void;
 
     /**
      * Draws the pixelmap base on the mesh which is evenly distributed across the pixelmap.
@@ -520,7 +932,7 @@ namespace drawing {
      * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
      * <br>2. Incorrect parameter types.
      * @syscap SystemCapability.Graphics.Drawing
-     * @since 12
+     * @since 20
      */
     native drawPixelMapMesh(pixelmap: image.PixelMap, meshWidth: int, meshHeight: int,
       vertices: Array<double>, vertOffset: int, colors: Array<int>, colorOffset: int): void;
@@ -546,12 +958,22 @@ namespace drawing {
       indices: Array<int> | null, mode: BlendMode): void;
 
     /**
+     * Draws a region.
+     * @param { Region } region - Region to draw.
+     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
+     * <br>2. Incorrect parameter types.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native drawRegion(region: Region): void;
+
+    /**
      * Set pen to a canvas.
      * @param { Pen } pen - object.
      * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
      * <br>2. Incorrect parameter types.
      * @syscap SystemCapability.Graphics.Drawing
-     * @since 11
+     * @since 20
      */
     native attachPen(pen: Pen): void;
 
@@ -561,21 +983,21 @@ namespace drawing {
      * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
      * <br>2. Incorrect parameter types.
      * @syscap SystemCapability.Graphics.Drawing
-     * @since 11
+     * @since 20
      */
     native attachBrush(brush: Brush): void;
 
     /**
      * Unset pen to a canvas.
      * @syscap SystemCapability.Graphics.Drawing
-     * @since 11
+     * @since 20
      */
     native detachPen(): void;
 
     /**
      * Unset brush to a canvas.
      * @syscap SystemCapability.Graphics.Drawing
-     * @since 11
+     * @since 20
      */
     native detachBrush(): void;
 
@@ -583,7 +1005,7 @@ namespace drawing {
      * Saves the current canvas status (canvas matrix) to the top of the stack.
      * @returns { int } Return the number of saved states.
      * @syscap SystemCapability.Graphics.Drawing
-     * @since 12
+     * @since 20
      */
     native save(): int;
 
@@ -595,24 +1017,114 @@ namespace drawing {
      * @returns { long } Return the number of saved states before this call.
      * @throws { BusinessError } 401 - Parameter error. Possible causes: Mandatory parameters are left unspecified.
      * @syscap SystemCapability.Graphics.Drawing
-     * @since 12
+     * @since 20
      */
     native saveLayer(rect?: common2D.Rect | null, brush?: Brush | null): long;
 
     /**
+     * Clears the canvas with a given color. This API has the same effect as drawcolor.
+     * @param { common2D.Color } color - Color in ARGB format. Each color channel is an integer ranging from 0 to 255.
+     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
+     * <br>2. Incorrect parameter types.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native clear(color: common2D.Color): void;
+
+    /**
+     * Clears the canvas with a given color.
+     * @param { common2D.Color | int } color - Color, represented by an unsigned integer in hexadecimal ARGB format.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native clear(color: common2D.Color | int): void;
+
+    /**
      * Restores the canvas status (canvas matrix) saved on the top of the stack.
      * @syscap SystemCapability.Graphics.Drawing
-     * @since 12
+     * @since 20
      */
     native restore(): void;
+
+    /**
+     * Restores the canvas state (canvas matrix and clipping area) to a specified number.
+     * @param { int } count - Depth of the canvas statuses to restore.
+     * The value is an integer. If the value is less than or equal to 1, the canvas is restored to the initial state.
+     * If the value is greater than the number of canvas statuses that have been saved, no operation is performed.
+     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
+     * <br>2. Incorrect parameter types.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native restoreToCount(count: int): void;
 
     /**
      * Gets the number of the canvas status (canvas matrix) saved in the stack.
      * @returns { int } Return represent depth of save state stack.
      * @syscap SystemCapability.Graphics.Drawing
-     * @since 12
+     * @since 20
      */
     native getSaveCount(): int;
+
+    /**
+     * Obtains the canvas width.
+     * @returns { int } Canvas width. The value is a floating point number.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native getWidth(): int;
+
+    /**
+     * Obtains the canvas height.
+     * @returns { int } Canvas height. The value is a floating point number.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native getHeight(): int;
+
+    /**
+     * Obtains the bounds of the cropping region of the canvas.
+     * @returns { common2D.Rect | undefined } Rect object.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native getLocalClipBounds(): common2D.Rect | undefined;
+
+    /**
+     * Obtains the canvas matrix.
+     * @returns { Matrix | undefined } Canvas matrix.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native getTotalMatrix(): Matrix | undefined;
+
+    /**
+     * Applies a scaling matrix on top of the current canvas matrix (identity matrix by default).
+     * Subsequent drawing and clipping operations will automatically have a scaling effect applied to the shapes and positions.
+     * @param { double } sx - Scale ratio on the X axis. The value is a floating point number.
+     * @param { double } sy - Scale ratio on the Y axis. The value is a floating point number.
+     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
+     * <br>2. Incorrect parameter types.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native scale(sx: double, sy: double): void;
+
+    /**
+     * Applies a skewing matrix on top of the current canvas matrix (identity matrix by default).
+     * Subsequent drawing and clipping operations will automatically have a skewing effect applied to the shapes and positions.
+     * @param { double } sx - Amount of tilt on the X axis. The value is a floating point number.
+     * A positive number tilts the drawing rightwards along the positive direction of the Y axis,
+     * and a negative number tilts the drawing leftwards along the positive direction of the Y axis.
+     * @param { double } sy - Amount of tilt on the Y axis. The value is a floating point number.
+     * A positive number tilts the drawing downwards along the positive direction of the X axis,
+     * and a negative number tilts the drawing upwards along the positive direction of the X axis.
+     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
+     * <br>2. Incorrect parameter types.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native skew(sx: double, sy: double) : void;
 
     /**
      * Rotates by degrees, positive degrees rotates clockwise.
@@ -622,9 +1134,151 @@ namespace drawing {
      * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
      * <br>2. Incorrect parameter types.
      * @syscap SystemCapability.Graphics.Drawing
-     * @since 12
+     * @since 20
      */
     native rotate(degrees: double, sx: double, sy: double) : void;
+
+    /**
+     * Applies a translation matrix on top of the current canvas matrix (identity matrix by default).
+     * Subsequent drawing and clipping operations will automatically have a translation effect applied to the shapes and positions.
+     * @param { double } dx - Distance to translate on the X axis. The value is a floating point number.
+     * @param { double } dy - Distance to translate on the Y axis. The value is a floating point number.
+     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
+     * <br>2. Incorrect parameter types.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native translate(dx: double, dy: double): void;
+
+    /**
+     * Clips the drawable area of the canvas using a custom path.
+     * @param { Path } path - To combine with clip.
+     * @param { ClipOp } clipOp - Clip mode. The default value is INTERSECT.
+     * @param { boolean } doAntiAlias - Whether to enable anti-aliasing. The value true means to enable anti-aliasing,
+     * and false means the opposite. The default value is false.
+     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
+     * <br>2. Incorrect parameter types.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native clipPath(path: Path, clipOp?: ClipOp, doAntiAlias?: boolean): void;
+
+    /**
+     * Clips the drawable area of the canvas using a rectangle.
+     * @param { common2D.Rect } rect - To combine with clipping area.
+     * @param { ClipOp } clipOp - Clip mode. The default value is INTERSECT.
+     * @param { boolean } doAntiAlias - Whether to enable anti-aliasing. The value true means to enable anti-aliasing,
+     * and false means the opposite. The default value is false.
+     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
+     * <br>2. Incorrect parameter types.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native clipRect(rect: common2D.Rect, clipOp?: ClipOp, doAntiAlias?: boolean): void;
+
+    /**
+     * Multiplies the current canvas matrix by the incoming matrix on the left. This API does not affect previous drawing operations,
+     * but subsequent drawing and clipping operations will be influenced by this matrix in terms of shape and position.
+     * @param { Matrix } matrix - Declares functions related to the matrix object in the drawing module.
+     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
+     * <br>2. Incorrect parameter types.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native concatMatrix(matrix: Matrix): void;
+  
+    /**
+     * Clips a region on the canvas.
+     * @param { Region } region - Region object, which indicates the range to clip.
+     * @param { ClipOp } clipOp - Clipping mode. The default value is INTERSECT.
+     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
+     * <br>2. Incorrect parameter types.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native clipRegion(region: Region, clipOp?: ClipOp): void;
+
+    /**
+     * Clips a rounded rectangle on the canvas.
+     * @param { RoundRect } roundRect - To combine with clipping area.
+     * @param { ClipOp } clipOp - Clipping mode. The default value is INTERSECT.
+     * @param { boolean } doAntiAlias - Whether to enable anti-aliasing. The value true means to enable anti-aliasing,
+     * and false means the opposite. The default value is false.
+     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
+     * <br>2. Incorrect parameter types.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native clipRoundRect(roundRect: RoundRect, clipOp?: ClipOp, doAntiAlias?: boolean): void;
+
+    /**
+     * Checks whether the region that can be drawn is empty after clipping.
+     * @returns { boolean } Returns true if drawable area is empty.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native isClipEmpty(): boolean;
+
+    /**
+     * Sets a matrix for the canvas. Subsequent drawing and clipping operations will be affected by this matrix in terms of shape and position.
+     * @param { Matrix } matrix - Declares functions related to the matrix object in the drawing module.
+     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
+     * <br>2. Incorrect parameter types.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native setMatrix(matrix: Matrix): void;
+
+    /**
+     * Resets the matrix of this canvas to an identity matrix.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native resetMatrix(): void;
+
+    /**
+     * Checks whether the path is not intersecting with the canvas area. The canvas area includes its boundaries.
+     * @param { Path } path - Path to draw.
+     * @returns { boolean } Returns true if path is not intersect; returns false otherwise.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native quickRejectPath(path: Path): boolean;
+
+    /**
+     * Checks whether the rectangle is not intersecting with the canvas area. The canvas area includes its boundaries.
+     * @param { common2D.Rect } rect - Rectangle to determines.
+     * @returns { boolean } Returns true if rect and region is not intersect; returns false otherwise.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native quickRejectRect(rect: common2D.Rect): boolean;
+  }
+
+  /**
+   * Enumerates the constraint types of the source rectangle.
+   *
+   * @enum { int }
+   * @syscap SystemCapability.Graphics.Drawing
+   * @since 20
+   */
+  export enum SrcRectConstraint {
+
+    /**
+     * The sampling range is strictly confined to the source rectangle, resulting in a slow sampling speed.
+     *
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    STRICT = 0,
+
+    /**
+     * The sampling range is not limited to the source rectangle and can extend beyond it, allowing for a high sampling speed.
+     *
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    FAST = 1
   }
 
   /**
@@ -632,28 +1286,28 @@ namespace drawing {
    *
    * @enum { int }
    * @syscap SystemCapability.Graphics.Drawing
-   * @since 12
+   * @since 20
    */
   export enum ClipOp {
     /**
      * Clips with difference.
      * @syscap SystemCapability.Graphics.Drawing
-     * @since 12
+     * @since 20
      */
     DIFFERENCE = 0,
     /**
      * Clips with intersection.
      * @syscap SystemCapability.Graphics.Drawing
-     * @since 12
+     * @since 20
      */
     INTERSECT = 1,
   }
 
   /**
-   * ColorFilters are optional objects in the drawing pipeline.
+   * Defines a color filter.
    *
    * @syscap SystemCapability.Graphics.Drawing
-   * @since 11
+   * @since 20
    */
   export class ColorFilter {
     static { loadLibraryWithPermissionCheck("drawing_ani_core", "@ohos.graphics.drawing"); }
@@ -672,31 +1326,115 @@ namespace drawing {
       }
     }
 
+    static colorFilterTransferStatic(input: Any): Object {
+      return ColorFilter.colorFilterTransferStaticNative(ESValue.wrap(input));
+    }
+
+    private static native colorFilterTransferStaticNative(input: ESValue): Object;
+
+    static colorFilterTransferDynamic(input: Object): Any {
+      let colorFilter = input as ColorFilter;
+      if (!colorFilter) {
+        return null;
+      }
+      let addr = ColorFilter.getColorFilterAddr(colorFilter);
+      if (addr == 0) {
+        return null;
+      }
+      let module = ESValue.load("@ohos.graphics.drawing");
+      let hasProperty: boolean = module.hasProperty("ColorFilter");
+      if (!hasProperty) {
+        return null;
+      }
+      let cls = module.getProperty("ColorFilter");
+      hasProperty = cls.hasProperty("__createTransfer__");
+      if (hasProperty) {
+        let initFunc = cls.getProperty("__createTransfer__");
+        let obj = initFunc.invoke(ESObject.wrap(addr));
+        return obj.unwrap();
+      }
+      return null;
+    }
+
+    private static native getColorFilterAddr(input: ColorFilter): long;
+
     /**
      * Creates a ColorFilter object with a given color and blend mode.
      * @param { common2D.Color } color - Color in ARGB format. The value of each color channel is an integer ranging from 0 to 255.
      * @param { BlendMode } mode - Blend mode.
-     * @returns { ColorFilter } Colorfilter object.
+     * @returns { ColorFilter | undefined } Colorfilter object.
      * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
      * <br>2. Incorrect parameter types; 3. Parameter verification failed.
      * @static
      * @syscap SystemCapability.Graphics.Drawing
-     * @since 11
+     * @since 20
      */
-    static native createBlendModeColorFilter(color: common2D.Color, mode: BlendMode): ColorFilter;
+    static native createBlendModeColorFilter(color: common2D.Color, mode: BlendMode): ColorFilter | undefined;
 
     /**
-     * Makes a color filter with the give n ARGB color of hexadecimal format and blend mode.
-     * @param { common2D.Color | int } color - Number must be ARGB color of hexadecimal format.
-     * @param { BlendMode } mode - BlendMode.
-     * @returns { ColorFilter } Colorfilter object.
+     * Creates a ColorFilter object with a given color and blend mode.
+     * @param { common2D.Color | int } color - Color, represented by an unsigned integer in hexadecimal ARGB format.
+     * @param { BlendMode } mode - Blend mode.
+     * @returns { ColorFilter | undefined } Colorfilter object.
      * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
      * <br>2. Incorrect parameter types; 3. Parameter verification failed.
      * @static
      * @syscap SystemCapability.Graphics.Drawing
-     * @since 18
+     * @since 20
      */
-    static native createBlendModeColorFilter(color: common2D.Color | int, mode: BlendMode): ColorFilter;
+    static native createBlendModeColorFilter(color: common2D.Color | int, mode: BlendMode): ColorFilter | undefined;
+
+    /**
+     * Creates a ColorFilter object by combining another two color filters.
+     * @param { ColorFilter } outer - Color filter that takes effect later in the new filter.
+     * @param { ColorFilter } inner - Color filter that takes effect first in the new filter.
+     * @returns { ColorFilter | undefined } Colorfilter object.
+     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
+     * <br>2. Incorrect parameter types.
+     * @static
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    static native createComposeColorFilter(outer: ColorFilter, inner: ColorFilter): ColorFilter | undefined;
+
+    /**
+     * Creates a ColorFilter object that applies the sRGB gamma curve to the RGB channels.
+     * @returns { ColorFilter | undefined } Colorfilter object.
+     * @static
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    static native createLinearToSRGBGamma(): ColorFilter | undefined;
+
+    /**
+     * Creates a ColorFilter object that applies the RGB channels to the sRGB gamma curve.
+     * @returns { ColorFilter | undefined } Colorfilter object.
+     * @static
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    static native createSRGBGammaToLinear(): ColorFilter | undefined;
+
+    /**
+     * Creates a ColorFilter object that multiplies the luma into the alpha channel and sets the RGB channels to zero.
+     * @returns {  | undefined } Colorfilter.
+     * @static
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    static native createLumaColorFilter(): ColorFilter | undefined;
+
+    /**
+     * Creates a color filter object with a 4*5 color matrix.
+     * @param { Array<double> } matrix - An array of 20 numbers, indicating the 4*5 matrix.
+     * @returns { ColorFilter | undefined } Colorfilter object.
+     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
+     * <br>2. Incorrect parameter types; 3. Parameter verification failed.
+     * @static
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    static native createMatrixColorFilter(matrix: Array<double>): ColorFilter | undefined;
   }
 
   /**
@@ -740,6 +1478,39 @@ namespace drawing {
      * @since 12
      */
     native constructorNative(pen: Pen): void;
+
+    static penTransferStatic(input: Any): Object {
+      let pen: Pen = new Pen();
+      return Pen.penTransferStaticNative(pen, ESValue.wrap(input));
+    }
+
+    private static native penTransferStaticNative(pen: Pen, input: ESValue): Object;
+
+    static penTransferDynamic(input: Object): Any {
+      let pen = input as Pen;
+      if (!pen) {
+        return null;
+      }
+      let addr = Pen.getPenAddr(pen);
+      if (addr == 0) {
+        return null;
+      }
+      let module = ESValue.load("@ohos.graphics.drawing");
+      let hasProperty: boolean = module.hasProperty("Pen");
+      if (!hasProperty) {
+        return null;
+      }
+      let cls = module.getProperty("Pen");
+      hasProperty = cls.hasProperty("__createTransfer__");
+      if (hasProperty) {
+        let initFunc = cls.getProperty("__createTransfer__");
+        let obj = initFunc.invoke(ESObject.wrap(addr));
+        return obj.unwrap();
+      }
+      return null;
+    }
+
+    private static native getPenAddr(input: Pen): long;
 
     /**
     * Replaces alpha, leaving RGB
@@ -1031,7 +1802,7 @@ namespace drawing {
   /**
    * Provides settings for brush fill when drawing.
    * @syscap SystemCapability.Graphics.Drawing
-   * @since 11
+   * @since 20
    */
   export class Brush {
     static { loadLibraryWithPermissionCheck("drawing_ani_core", "@ohos.graphics.drawing"); }
@@ -1056,7 +1827,7 @@ namespace drawing {
     /**
      * Constructor for the Brush.
      * @syscap SystemCapability.Graphics.Drawing
-     * @since 12
+     * @since 20
      */
     native constructorNative(): void;
 
@@ -1066,9 +1837,42 @@ namespace drawing {
      * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
      * <br>2. Incorrect parameter types.
      * @syscap SystemCapability.Graphics.Drawing
-     * @since 12
+     * @since 20
      */
     native constructorNative(brush: Brush): void;
+
+    static brushTransferStatic(input: Any): Object {
+      let brush: Brush = new Brush();
+      return Brush.brushTransferStaticNative(brush, ESValue.wrap(input));
+    }
+
+    private static native brushTransferStaticNative(brush: Brush, input: ESValue): Object;
+
+    static brushTransferDynamic(input: Object): Any {
+      let brush = input as Brush;
+      if (!brush) {
+        return null;
+      }
+      let addr = Brush.getBrushAddr(brush);
+      if (addr == 0) {
+        return null;
+      }
+      let module = ESValue.load("@ohos.graphics.drawing");
+      let hasProperty: boolean = module.hasProperty("Brush");
+      if (!hasProperty) {
+        return null;
+      }
+      let cls = module.getProperty("Brush");
+      hasProperty = cls.hasProperty("__createTransfer__");
+      if (hasProperty) {
+        let initFunc = cls.getProperty("__createTransfer__");
+        let obj = initFunc.invoke(ESObject.wrap(addr));
+        return obj.unwrap();
+      }
+      return null;
+    }
+
+    private static native getBrushAddr(input: Brush): long;
 
     /**
      * Replaces alpha, leaving RGB
@@ -1076,7 +1880,7 @@ namespace drawing {
      * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
      * <br>2. Incorrect parameter types; 3. Parameter verification failed.
      * @syscap SystemCapability.Graphics.Drawing
-     * @since 11
+     * @since 20
      */
     native setAlpha(alpha: int): void;
 
@@ -1084,9 +1888,80 @@ namespace drawing {
      * Obtains the alpha of a brush. The alpha is used by the brush to fill in a shape.
      * @returns { int } Returns a 8-bit variable that describes the alpha.
      * @syscap SystemCapability.Graphics.Drawing
-     * @since 12
+     * @since 20
      */
     native getAlpha(): int;
+
+    /**
+     * Sets a color for this brush.
+     * @param { common2D.Color } color - Color in ARGB format. The value of each color channel is an integer ranging from 0 to 255.
+     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
+     * <br>2. Incorrect parameter types; 3. Parameter verification failed.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native setColor(color: common2D.Color): void;
+
+    /**
+     * Sets a color for this brush. This API provides better performance than setColor and is recommended.
+     * @param { int } alpha - Alpha channel value of the color in ARGB format. The value is an integer ranging from 0 to 255.
+     * Any passed-in floating point number is rounded down.
+     * @param { int } red - Red channel value of the color in ARGB format. The value is an integer ranging from 0 to 255.
+     * Any passed-in floating point number is rounded down.
+     * @param { int } green - Green channel value of the color in ARGB format. The value is an integer ranging from 0 to 255.
+     * Any passed-in floating point number is rounded down.
+     * @param { int } blue - Blue channel value of the color in ARGB format. The value is an integer ranging from 0 to 255.
+     * Any passed-in floating point number is rounded down.
+     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
+     * <br>2. Incorrect parameter types; 3. Parameter verification failed.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native setColor(alpha: int, red: int, green: int, blue: int): void;
+
+    /**
+     * Sets a color for this brush.
+     * @param { int } color - Color in hexadecimal ARGB format.
+     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
+     * <br>2. Incorrect parameter types; 3. Parameter verification failed.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native setColor(color: int): void;
+
+    /**
+     * Obtains the color of this brush.
+     * @returns { common2D.Color | undefined } Returns a 32-bit (ARGB) variable that describes the color.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native getColor(): common2D.Color | undefined;
+
+    /**
+     * Obtains the color of this brush.
+     * @returns { int } Returns a 32-bit (ARGB) variable that describes the color of hexadecimal format.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native getHexColor(): int;
+
+    /**
+     * Enables anti-aliasing for this brush. Anti-aliasing makes the edges of the content smoother.
+     * @param { boolean } aa - Whether to enable anti-aliasing. The value true means to enable anti-aliasing, and false means the opposite.
+     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
+     * <br>2. Incorrect parameter types.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native setAntiAlias(aa: boolean): void;
+
+    /**
+     * Checks whether anti-aliasing is enabled for this brush.
+     * @returns { boolean } Returns true if anti-aliasing is enabled; returns false otherwise.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native isAntiAlias(): boolean;
 
     /**
      * Sets ColorFilter to brush
@@ -1094,9 +1969,60 @@ namespace drawing {
      * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
      * <br>2. Incorrect parameter types.
      * @syscap SystemCapability.Graphics.Drawing
-     * @since 11
+     * @since 20
      */
-    native setColorFilter(filter: ColorFilter): void;
+    native setColorFilter(filter: ColorFilter | null): void;
+
+    /**
+     * Obtains the color filter of this brush.
+     * @returns { ColorFilter | undefined } ColorFilter.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native getColorFilter(): ColorFilter | undefined;
+
+    /**
+     * Sets an image filter for this brush.
+     * @param { ImageFilter | null } filter - Image filter.
+     *     If null is passed in, the image filter effect of the brush will be cleared.
+     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
+     *     <br>2. Incorrect parameter types.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native setImageFilter(filter: ImageFilter | null): void;
+
+    /**
+     * Adds a mask filter for this brush.
+     * @param { MaskFilter | null } filter - Mask filter. If null is passed in, the mask filter is cleared.
+     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
+     *     <br>2. Incorrect parameter types.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native setMaskFilter(filter: MaskFilter | null): void;
+
+    /**
+     * Sets a shadow layer for this brush. The shadow layer effect takes effect only when text is drawn.
+     *
+     * @param { ShadowLayer | null } shadowLayer - Shadow layer. If null is passed in, the shadow layer is cleared.
+     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
+     *     <br>2. Incorrect parameter types.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native setShadowLayer(shadowLayer: ShadowLayer | null): void;
+
+    /**
+     * Sets the shader effect for this brush.
+     * @param { ShaderEffect | null } shaderEffect - ShaderEffect object.
+     *     If null is passed in, the shader effect will be cleared.
+     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
+     *     <br>2. Incorrect parameter types.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native setShaderEffect(shaderEffect: ShaderEffect | null): void;
 
     /**
      * Sets a blender that implements the specified blendmode enum.
@@ -1104,14 +2030,14 @@ namespace drawing {
      * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
      * <br>2. Incorrect parameter types; 3. Parameter verification failed.
      * @syscap SystemCapability.Graphics.Drawing
-     * @since 11
+     * @since 20
      */
     native setBlendMode(mode: BlendMode): void;
 
     /**
      * Resets all brush contents to their initial values.
      * @syscap SystemCapability.Graphics.Drawing
-     * @since 12
+     * @since 20
      */
     native reset(): void;
   }
@@ -1150,6 +2076,38 @@ namespace drawing {
      * @since 20
      */
     native constructorNative(): void;
+
+    static typefaceTransferStatic(input: Any): Object {
+      return Typeface.typefaceTransferStaticNative(ESValue.wrap(input));
+    }
+
+    private static native typefaceTransferStaticNative(input: ESValue): Object;
+
+    static typefaceTransferDynamic(input: Object): Any {
+      let typeface = input as Typeface;
+      if (!typeface) {
+        return null;
+      }
+      let addr = Typeface.getTypefaceAddr(typeface);
+      if (addr == 0) {
+        return null;
+      }
+      let module = ESValue.load("@ohos.graphics.drawing");
+      let hasProperty: boolean = module.hasProperty("Typeface");
+      if (!hasProperty) {
+        return null;
+      }
+      let cls = module.getProperty("Typeface");
+      hasProperty = cls.hasProperty("__createTransfer__");
+      if (hasProperty) {
+        let initFunc = cls.getProperty("__createTransfer__");
+        let obj = initFunc.invoke(ESObject.wrap(addr));
+        return obj.unwrap();
+      }
+      return null;
+    }
+
+    private static native getTypefaceAddr(input: Typeface): long;
 
     /**
      * Get the family name for this typeface.
@@ -1190,6 +2148,7 @@ namespace drawing {
      * @returns { Typeface } Typeface.
      * @static
      * @syscap SystemCapability.Graphics.Drawing
+     * @crossplatform
      * @since 20
      */
     static native makeFromFileWithArguments(filePath: string, typefaceArguments: TypefaceArguments): Typeface;
@@ -1266,7 +2225,7 @@ namespace drawing {
    * Font controls options applied when drawing and measuring text.
    *
    * @syscap SystemCapability.Graphics.Drawing
-   * @since 11
+   * @since 20
    */
   export class Font {
     static { loadLibraryWithPermissionCheck("drawing_ani_core", "@ohos.graphics.drawing"); }
@@ -1290,13 +2249,79 @@ namespace drawing {
      */
     native constructorNative(): void;
 
+    static fontTransferStatic(input: Any): Object {
+      let font: Font = new Font();
+      return Font.fontTransferStaticNative(font, ESValue.wrap(input));
+    }
+
+    private static native fontTransferStaticNative(font: Font, input: ESValue): Object;
+
+    static fontTransferDynamic(input: Object): Any {
+      let font = input as Font;
+      if (!font) {
+        return null;
+      }
+      let addr = Font.getFontAddr(font);
+      if (addr == 0) {
+        return null;
+      }
+      let module = ESValue.load("@ohos.graphics.drawing");
+      let hasProperty: boolean = module.hasProperty("Font");
+      if (!hasProperty) {
+        return null;
+      }
+      let cls = module.getProperty("Font");
+      hasProperty = cls.hasProperty("__createTransfer__");
+      if (hasProperty) {
+        let initFunc = cls.getProperty("__createTransfer__");
+        let obj = initFunc.invoke(ESObject.wrap(addr));
+        return obj.unwrap();
+      }
+      return null;
+    }
+
+    private static native getFontAddr(input: Font): long;
+
+    /**
+     * Enables subpixel font rendering.
+     * @param { boolean } isSubpixel - Whether to enable subpixel font rendering.
+     * The value true means to enable subpixel font rendering, and false means the opposite.
+     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
+     * <br>2. Incorrect parameter types.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native enableSubpixel(isSubpixel: boolean): void;
+
+    /**
+     * Enables emboldened fonts.
+     * @param { boolean } isEmbolden - Whether to enable emboldened fonts.
+     * The value true means to enable emboldened fonts, and false means the opposite.
+     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
+     * <br>2. Incorrect parameter types.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native enableEmbolden(isEmbolden: boolean): void;
+
+    /**
+     * Enables linear font scaling.
+     * @param { boolean } isLinearMetrics - Whether to enable linear font scaling.
+     * The value true means to enable linear font scaling, and false means the opposite.
+     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
+     * <br>2. Incorrect parameter types.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native enableLinearMetrics(isLinearMetrics: boolean): void;
+
     /**
      * Sets text size in points. Has no effect if textSize is not greater than or equal to zero.
      * @param { double } textSize - Typographic height of text. The height of the text must be greater than 0.
      * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
      * <br>2. Incorrect parameter types; 3. Parameter verification failed.
      * @syscap SystemCapability.Graphics.Drawing
-     * @since 11
+     * @since 20
      */
     native setSize(textSize: double): void;
 
@@ -1304,7 +2329,7 @@ namespace drawing {
      * Obtains the text size.
      * @returns { double } Text size.
      * @syscap SystemCapability.Graphics.Drawing
-     * @since 11
+     * @since 20
      */
     native getSize(): double;
 
@@ -1314,25 +2339,297 @@ namespace drawing {
      * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
      * <br>2. Incorrect parameter types.
      * @syscap SystemCapability.Graphics.Drawing
-     * @since 11
+     * @since 20
      */
     native setTypeface(typeface: Typeface): void;
 
     /**
      * Get Typeface to font.
-     * @returns { Typeface } Typeface.
+     * @returns { Typeface | undefined } Typeface.
      * @syscap SystemCapability.Graphics.Drawing
-     * @since 11
+     * @since 20
      */
-    native getTypeface(): Typeface;
+    native getTypeface(): Typeface | undefined;
 
     /**
      * Get fontMetrics associated with typeface.
-     * @returns { FontMetrics } The fontMetrics value returned to the caller.
+     * @returns { FontMetrics | undefined } The fontMetrics value returned to the caller.
      * @syscap SystemCapability.Graphics.Drawing
-     * @since 11
+     * @since 20
      */
-    native getMetrics(): FontMetrics;
+    native getMetrics(): FontMetrics | undefined;
+
+    /**
+     * Measures the width of a single character.
+     * If the typeface of the current font does not support the character to measure, the system typeface is used to measure the character width.
+     * @param { string } text - Single character to measure. The length of the string must be 1.
+     * @returns { double } Width of the character. The value is a floating point number.
+     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
+     * <br>2. Incorrect parameter types; 3. Parameter verification failed.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native measureSingleCharacter(text: string): double;
+
+    /**
+     * Measures the text width.
+     * @param { string } text - Text Symbol Content.
+     * @param { TextEncoding } encoding - Encoding format.
+     * @returns { double } Width of the text. The value is a floating point number.
+     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
+     * <br>2. Incorrect parameter types.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native measureText(text: string, encoding: TextEncoding): double;
+
+    /**
+     * Sets a horizontal scale factor for this font.
+     * @param { double } scaleX - Horizontal scale factor. The value is a floating point number.
+     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
+     * <br>2. Incorrect parameter types.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native setScaleX(scaleX: double): void;
+
+    /**
+     * Sets whether to request that baselines be snapped to pixels when the current canvas matrix is axis aligned.
+     * @param { boolean } isBaselineSnap - Whether to request that baselines be snapped to pixels.
+     * The value true means to request that baselines be snapped to pixels, and false means the opposite.
+     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
+     * <br>2. Incorrect parameter types.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native setBaselineSnap(isBaselineSnap: boolean): void;
+
+    /**
+     * Checks whether baselines are requested to be snapped to pixels when the current canvas matrix is axis aligned.
+     * @returns { boolean } Check result. The value true means that the baselines are requested to be snapped to pixels,
+     * and false means the opposite.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native isBaselineSnap(): boolean;
+
+    /**
+     * Sets whether to use bitmaps in this font.
+     * @param { boolean } isEmbeddedBitmaps - Whether to use bitmaps in the font. The value true means to use bitmaps in the font,
+     * and false means the opposite.
+     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
+     * <br>2. Incorrect parameter types.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native setEmbeddedBitmaps(isEmbeddedBitmaps: boolean): void;
+
+    /**
+     * Checks whether bitmaps are used in this font.
+     * @returns { boolean } Check result. The value true means that the bitmaps are used, and false means the opposite.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native isEmbeddedBitmaps(): boolean;
+
+    /**
+     * Sets whether to forcibly use auto hinting, that is, whether to always hint glyphs.
+     * @param { boolean } isForceAutoHinting - Whether to forcibly use auto hinting. The value true means to forcibly use auto hinting,
+     * and false means the opposite.
+     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
+     * <br>2. Incorrect parameter types.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native setForceAutoHinting(isForceAutoHinting: boolean): void;
+
+    /**
+     * Obtains the width of each glyph in an array.
+     * @param { Array<int> } glyphs - Glyph array, which can be generated by textToGlyphs.
+     * @returns { Array<double> | undefined } Glyph array, which can be generated by textToGlyphs.
+     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
+     * <br>2. Incorrect parameter types.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native getWidths(glyphs: Array<int>): Array<double> | undefined;
+
+    /**
+     * Converts text into glyph indexes.
+     * @param { string } text - Text string.
+     * @param { int } glyphCount - Number of glyphs represented by the text. The value must be the same as the value obtained from countText.
+     * The default value is the number of characters in the text string. The value is an integer.
+     * @returns { Array<int> | undefined } Returns the storage for glyph indices.
+     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
+     * <br>2. Incorrect parameter types.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native textToGlyphs(text: string, glyphCount?: int): Array<int> | undefined;
+
+    /**
+     * Checks whether sub-pixel rendering is used for this font.
+     * @returns { boolean } Check result. The value true means that sub-pixel rendering is used, and false means the opposite.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native isSubpixel(): boolean;
+
+    /**
+     * Checks whether linear scaling is used for this font.
+     * @returns { boolean } Checks whether linear scaling is used for this font.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native isLinearMetrics(): boolean;
+
+    /**
+     * Obtains the horizontal skew factor of this font.
+     * @returns { double } Horizontal skew factor.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native getSkewX(): double;
+
+    /**
+     * Checks whether the bold effect is set for this font.
+     * @returns { boolean } Check result. The value true means that the bold effect is set, and false means the opposite.
+     * returns false otherwise.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native isEmbolden(): boolean;
+
+    /**
+     * Sets a horizontal skew factor for this font.
+     * @param { double } skewX - Horizontal skew factor.
+     * A positive number means a skew to the left, and a negative number means a skew to the right. The value is a floating point number.
+     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
+     * <br>2. Incorrect parameter types.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native setSkewX(skewX: double): void;
+
+    /**
+     * Sets a font edging effect.
+     * @param { FontEdging } edging - Font edging effect.
+     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
+     * <br>2. Incorrect parameter types; 3. Parameter verification failed.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native setEdging(edging: FontEdging): void;
+
+    /**
+     * Sets a font hinting effect.
+     * @param { FontHinting } hinting - Font hinting effect.
+     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
+     * <br>2. Incorrect parameter types; 3. Parameter verification failed.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native setHinting(hinting: FontHinting): void;
+
+    /**
+     * Obtains the number of glyphs represented by text.
+     * @param { string } text - Indicates the character storage encoded with text encoding.
+     * @returns { int } Returns the count of text.
+     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
+     * <br>2. Incorrect parameter types.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native countText(text: string): int;
+
+    /**
+     * Checks whether auto hinting is forcibly used.
+     * @returns { boolean } Check result. The value true means that auto hinting is forcibly used, and false means the opposite.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native isForceAutoHinting(): boolean;
+
+    /**
+     * Obtains the horizontal scale ratio of this font.
+     * @returns { double } Horizontal scale ratio.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native getScaleX(): double;
+
+    /**
+     * Obtains the font hinting effect.
+     * @returns { FontHinting | undefined } Font hinting effect.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native getHinting(): FontHinting | undefined;
+
+    /**
+     * Obtains the font edging effect.
+     * @returns { FontEdging | undefined } Font edging effect.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native getEdging(): FontEdging | undefined;
+
+    /**
+     * Obtains the outline path of a glyph.
+     * @param { int } index - Index of the glyph.
+     * @returns { Path | undefined } Outline path of the glyph.
+     * Note: Path use y-axis-goes-down system, y axis is inverted to the y-axis-goes-up system.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native createPathForGlyph(index: int): Path | undefined;
+
+    /**
+     * Obtains the rectangular bounding box of each glyph in an array.
+     * @param { Array<int> } glyphs - Glyph array, which can be generated by textToGlyphs.
+     * @returns { Array<common2D.Rect> | undefined } Array that holds the rectangular bounding boxes.
+     * Note: 1. Rect use y-axis-goes-down system, y axis is inverted to the y-axis-goes-up system.
+     * <br>2. Rect use two points(left-bottom & right-top) to describe the bound.
+     * <br>3. The bound rect will be snap to integral boundaries.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native getBounds(glyphs: Array<int>): Array<common2D.Rect> | undefined;
+
+    /**
+     * Obtains the outline path of a text.
+     * @param { string } text - UTF-8 text-encoded characters.
+     * @param { int } byteLength - Length of the outline path,
+     * which is obtained based on the minimum value between the passed value of byteLength and the actual text byte size.
+     * @param { double } x - X coordinate of the text in the drawing area, with the origin as the start point.
+     * @param { double } y - Y coordinate of the text in the drawing area, with the origin as the start point.
+     * @returns { Path | undefined } Outline path of the text.
+     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
+     * <br>2. Incorrect parameter types; 3. Parameter verification failed.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native getTextPath(text: string, byteLength: int, x: double, y: double): Path | undefined;
+
+    /**
+     * Sets whether to follow the theme font. When followed is set to true,
+     * the theme font is used if it is enabled by the system and no typeface is set.
+     * @param { boolean } followed - Whether to follow the theme font.
+     * The value true means to follow the theme font, and false means the opposite.
+     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
+     * <br>2. Incorrect parameter types.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native setThemeFontFollowed(followed: boolean): void;
+
+    /**
+     * Checks whether the font follows the theme font. By default, the font follows the theme font.
+     * @returns { boolean } Check result. The value true means that the theme font is followed, and false means the opposite.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native isThemeFontFollowed(): boolean;
   }
 
   /**
@@ -1387,11 +2684,11 @@ namespace drawing {
   export interface FontMetrics {
     /**
      * Font measurement flags that are valid.
-     * @type { ?FontMetricsFlags }
+     * @type { ?int }
      * @syscap SystemCapability.Graphics.Drawing
      * @since 20
      */
-    flags?: FontMetricsFlags;
+    flags?: int;
 
     /**
      * Maximum range above the glyph bounding box.
@@ -1525,11 +2822,11 @@ namespace drawing {
   export class FontMetricsInner implements FontMetrics {
     /**
      * Font measurement flags that are valid.
-     * @type { ?FontMetricsFlags }
+     * @type { ?int }
      * @syscap SystemCapability.Graphics.Drawing
      * @since 20
      */
-    flags?: FontMetricsFlags;
+    flags?: int;
 
     /**
      * Maximum range above the glyph bounding box.
@@ -1586,6 +2883,42 @@ namespace drawing {
       this.leading = leading;
     }
 
+    constructor(
+      flags: int,
+      top: double,
+      ascent: double,
+      descent: double,
+      bottom: double,
+      leading: double,
+      avgCharWidth: double,
+      maxCharWidth: double,
+      xMin: double,
+      xMax: double,
+      xHeight: double,
+      capHeight: double,
+      underlineThickness: double,
+      underlinePosition: double,
+      strikethroughThickness: double,
+      strikethroughPosition: double
+    ) {
+      this.flags = flags;
+      this.top = top;
+      this.ascent = ascent;
+      this.descent = descent;
+      this.bottom = bottom;
+      this.leading = leading;
+      this.avgCharWidth = avgCharWidth;
+      this.maxCharWidth = maxCharWidth;
+      this.xMin = xMin;
+      this.xMax = xMax;
+      this.xHeight = xHeight;
+      this.capHeight = capHeight;
+      this.underlineThickness = underlineThickness;
+      this.underlinePosition = underlinePosition;
+      this.strikethroughThickness = strikethroughThickness;
+      this.strikethroughPosition = strikethroughPosition;
+    }
+
      avgCharWidth?: double;
      maxCharWidth?: double;
      xMin?: double;
@@ -1620,6 +2953,38 @@ namespace drawing {
       }
     }
 
+    static latticeTransferStatic(input: Any): Object {
+      return Lattice.latticeTransferStaticNative(ESValue.wrap(input));
+    }
+
+    private static native latticeTransferStaticNative(input: ESValue): Object;
+    
+    static latticeTransferDynamic(input: Object): Any {
+      let lattice = input as Lattice;
+      if (!lattice) {
+        return null;
+      }
+      let addr = Lattice.getLatticeAddr(lattice);
+      if (addr == 0) {
+        return null;
+      }
+      let module = ESValue.load("@ohos.graphics.drawing");
+      let hasProperty: boolean = module.hasProperty("Lattice");
+      if (!hasProperty) {
+        return null;
+      }
+      let cls = module.getProperty("Lattice");
+      hasProperty = cls.hasProperty("__createTransfer__");
+      if (hasProperty) {
+        let initFunc = cls.getProperty("__createTransfer__");
+        let obj = initFunc.invoke(ESObject.wrap(addr));
+        return obj.unwrap();
+      }
+      return null;
+    }
+
+    private static native getLatticeAddr(input: Lattice): long;
+
     /**
      * Divide an image into a rectangular grid. Grid entries on even columns and even rows are fixed;
      * these entries are always drawn at their original size if the destination is large enough. If the destination
@@ -1632,7 +2997,7 @@ namespace drawing {
      * @param { common2D.Rect | null } fBounds - Source bounds to draw from. The default value is null.
      * @param { Array<RectType> | null } fRectTypes - Array of fill types. The default value is null.
      * @param { Array<common2D.Color> | null } fColors - Array of colors. The default value is null.
-     * @returns { Lattice } Lattice object.
+     * @returns { Lattice | undefined } Lattice object.
      * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
      * <br>2. Incorrect parameter types; 3. Parameter verification failed.
      * @static
@@ -1640,7 +3005,35 @@ namespace drawing {
      * @since 12
      */
     static native createImageLattice(xDivs: Array<int>, yDivs: Array<int>, fXCount: int, fYCount: int,
-      fBounds?: common2D.Rect | null, fRectTypes?: Array<RectType> | null, fColors?: Array<common2D.Color> | Array<int> | null): Lattice;
+      fBounds?: common2D.Rect | null, fRectTypes?: Array<RectType> | null, fColors?: Array<common2D.Color> | Array<int> | null): Lattice  | undefined;
+
+    /**
+     * Divides the image into lattices. The lattices on both even columns and even rows are fixed,
+     * and they are drawn at their original size if the target is large enough.
+     * If the target is too small to hold the fixed lattices, all the fixed lattices are scaled down to fit the target,
+     * and the lattices that are not on even columns and even rows are scaled to accommodate the remaining space.
+     * @param { Array<int> } xDivs - Array of X coordinates used to divide the image. The value is an integer.
+     * @param { Array<int> } yDivs - Array of Y coordinates used to divide the image. The value is an integer.
+     * @param { int } fXCount - Size of the array that holds the X coordinates. The value range is [0, 5].
+     * @param { int } fYCount - Size of the array that holds the Y coordinates. The value range is [0, 5].
+     * @param { common2D.Rect | null } [fBounds] - Source bounds to draw. The rectangle parameter must be an integer.
+     *    The default value is the rectangle size of the original image. If the rectangle parameter is a decimal,
+     *    the decimal part is discarded and converted into an integer.
+     * @param { Array<RectType> | null } [fRectTypes] - Array that holds the rectangle types. The default value is null.
+     *    If this parameter is specified, the array size must be (fXCount + 1) * (fYCount + 1).
+     * @param { Array<int> | null } [fColors] - Array that holds the colors used to fill the lattices.
+     *    Each color is represented by a 32-bit unsigned integer in hexadecimal ARGB format.
+     *    The default value is null.
+     *    If this parameter is specified, the array size must be (fXCount + 1) * (fYCount + 1).
+     * @returns { Lattice | undefined } Lattice object.
+     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
+     *     <br>2. Incorrect parameter types; 3. Parameter verification failed.
+     * @static
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 22
+     */
+    static native createImageLatticeWithArrayInt(xDivs: Array<int>, yDivs: Array<int>, fXCount: int, fYCount: int,
+      fBounds?: common2D.Rect | null, fRectTypes?: Array<RectType> | null, fColors?: Array<int> | null): Lattice  | undefined;
   }
 
   /**
@@ -1680,9 +3073,42 @@ namespace drawing {
      * Creates a deep copy of the specified matrix object.
      * @param { Matrix } matrix - The matrix object to copy.
      * @syscap SystemCapability.Graphics.Drawing
+     * @crossplatform
      * @since 20
      */
     native constructorNative(matrix: Matrix): void;
+
+    static matrixTransferStatic(input: Any): Object {
+      let matrix: Matrix = new Matrix();
+      return Matrix.matrixTransferStaticNative(matrix, ESValue.wrap(input));
+    }
+
+    private static native matrixTransferStaticNative(matrix: Matrix, input: ESValue): Object;
+
+    static matrixTransferDynamic(input: Object): Any {
+      let matrix = input as Matrix;
+      if (!matrix) {
+        return null;
+      }
+      let addr = Matrix.getMatrixAddr(matrix);
+      if (addr == 0) {
+        return null;
+      }
+      let module = ESValue.load("@ohos.graphics.drawing");
+      let hasProperty: boolean = module.hasProperty("Matrix");
+      if (!hasProperty) {
+        return null;
+      }
+      let cls = module.getProperty("Matrix");
+      hasProperty = cls.hasProperty("__createTransfer__");
+      if (hasProperty) {
+        let initFunc = cls.getProperty("__createTransfer__");
+        let obj = initFunc.invoke(ESObject.wrap(addr));
+        return obj.unwrap();
+      }
+      return null;
+    }
+    private static native getMatrixAddr(input: Matrix): long;
 
     /**
      * Sets this matrix as an identity matrix and rotates it by a given degree around the rotation point (px, py).
@@ -1743,16 +3169,6 @@ namespace drawing {
      * @since 20
      */
     native setMatrix(values: Array<double>): void;
-
-    /**
-     * Preconcats the existing matrix with the passed-in matrix.
-     * @param { Matrix } matrix - Matrix object, which is on the right of a multiplication expression.
-     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
-     * <br>2. Incorrect parameter types.
-     * @syscap SystemCapability.Graphics.Drawing
-     * @since 20
-     */
-    native preConcat(matrix: Matrix): void;
 
     /**
      * Checks whether this matrix is equal to another matrix.
@@ -2005,7 +3421,7 @@ namespace drawing {
    * @since 20
    */
   export class MaskFilter {
-    static { loadLibrary("drawing_ani_core"); }
+    static { loadLibraryWithPermissionCheck("drawing_ani_core", "@ohos.graphics.drawing"); }
     private nativeObj : long = 0;
     private cleaner: Cleaner | null = null;
 
@@ -2070,7 +3486,7 @@ namespace drawing {
    * @since 20
    */
   export class PathEffect {
-    static { loadLibrary("drawing_ani_core"); }
+    static { loadLibraryWithPermissionCheck("drawing_ani_core", "@ohos.graphics.drawing"); }
     private nativeObj : long = 0;
     private cleaner: Cleaner | null = null;
 
@@ -2205,147 +3621,13 @@ namespace drawing {
   }
 
   /**
-   * Defines a color filter.
-   *
-   * @syscap SystemCapability.Graphics.Drawing
-   * @since 20
-   */
-  export class ColorFilter {
-    static { loadLibrary("drawing_ani_core"); }
-    private nativeObj : long = 0;
-    private cleaner: Cleaner | null = null;
-
-    registerCleaner(ptr: long): void {
-      this.cleaner = new Cleaner("ColorFilter", ptr);
-      destroyRegister.register(this, this.cleaner!, unregisterToken);
-    }
-
-    bindNativePtr(ptr: long): void {
-      if (this.nativeObj == 0) {
-        this.nativeObj = ptr;
-        this.registerCleaner(this.nativeObj);
-      }
-    }
-
-    static colorFilterTransferStatic(input: Any): Object {
-      return ColorFilter.colorFilterTransferStaticNative(ESValue.wrap(input));
-    }
-
-    private static native colorFilterTransferStaticNative(input: ESValue): Object;
-
-    static colorFilterTransferDynamic(input: Object): Any {
-      let colorFilter = input as ColorFilter;
-      if (!colorFilter) {
-        return null;
-      }
-      let addr = ColorFilter.getColorFilterAddr(colorFilter);
-      if (addr == 0) {
-        return null;
-      }
-      let module = ESValue.load("@ohos.graphics.drawing");
-      let hasProperty: boolean = module.hasProperty("ColorFilter");
-      if (!hasProperty) {
-        return null;
-      }
-      let cls = module.getProperty("ColorFilter");
-      hasProperty = cls.hasProperty("__createTransfer__");
-      if (hasProperty) {
-        let initFunc = cls.getProperty("__createTransfer__");
-        let obj = initFunc.invoke(ESObject.wrap(addr));
-        return obj.unwrap();
-      }
-      return null;
-    }
-
-    private static native getColorFilterAddr(input: ColorFilter): long;
-
-    /**
-     * Creates a ColorFilter object with a given color and blend mode.
-     * @param { common2D.Color } color - Color in ARGB format. The value of each color channel is an integer ranging from 0 to 255.
-     * @param { BlendMode } mode - Blend mode.
-     * @returns { ColorFilter } Colorfilter object.
-     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
-     * <br>2. Incorrect parameter types; 3. Parameter verification failed.
-     * @static
-     * @syscap SystemCapability.Graphics.Drawing
-     * @since 20
-     */
-    static native createBlendModeColorFilter(color: common2D.Color, mode: BlendMode): ColorFilter;
-
-    /**
-     * Creates a ColorFilter object with a given color and blend mode.
-     * @param { common2D.Color | int } color - Color, represented by an unsigned integer in hexadecimal ARGB format.
-     * @param { BlendMode } mode - Blend mode.
-     * @returns { ColorFilter } Colorfilter object.
-     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
-     * <br>2. Incorrect parameter types; 3. Parameter verification failed.
-     * @static
-     * @syscap SystemCapability.Graphics.Drawing
-     * @since 20
-     */
-    static native createBlendModeColorFilter(color: common2D.Color | int, mode: BlendMode): ColorFilter;
-
-    /**
-     * Creates a ColorFilter object by combining another two color filters.
-     * @param { ColorFilter } outer - Color filter that takes effect later in the new filter.
-     * @param { ColorFilter } inner - Color filter that takes effect first in the new filter.
-     * @returns { ColorFilter | undefined } Colorfilter object.
-     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
-     * <br>2. Incorrect parameter types.
-     * @static
-     * @syscap SystemCapability.Graphics.Drawing
-     * @since 20
-     */
-    static native createComposeColorFilter(outer: ColorFilter, inner: ColorFilter): ColorFilter | undefined;
-
-    /**
-     * Creates a ColorFilter object that applies the sRGB gamma curve to the RGB channels.
-     * @returns { ColorFilter | undefined } Colorfilter object.
-     * @static
-     * @syscap SystemCapability.Graphics.Drawing
-     * @since 20
-     */
-    static native createLinearToSRGBGamma(): ColorFilter | undefined;
-
-    /**
-     * Creates a ColorFilter object that applies the RGB channels to the sRGB gamma curve.
-     * @returns { ColorFilter | undefined } Colorfilter object.
-     * @static
-     * @syscap SystemCapability.Graphics.Drawing
-     * @since 20
-     */
-    static native createSRGBGammaToLinear(): ColorFilter | undefined;
-
-    /**
-     * Creates a ColorFilter object that multiplies the luma into the alpha channel and sets the RGB channels to zero.
-     * @returns {  | undefined } Colorfilter.
-     * @static
-     * @syscap SystemCapability.Graphics.Drawing
-     * @since 20
-     */
-    static native createLumaColorFilter(): ColorFilter | undefined;
-
-    /**
-     * Creates a color filter object with a 4*5 color matrix.
-     * @param { Array<double> } matrix - An array of 20 numbers, indicating the 4*5 matrix.
-     * @returns { ColorFilter | undefined } Colorfilter object.
-     * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
-     * <br>2. Incorrect parameter types; 3. Parameter verification failed.
-     * @static
-     * @syscap SystemCapability.Graphics.Drawing
-     * @since 20
-     */
-    static native createMatrixColorFilter(matrix: Array<double>): ColorFilter | undefined;
-  }
-
-  /**
    * Implements an image filter.
    *
    * @syscap SystemCapability.Graphics.Drawing
    * @since 20
    */
   export class ImageFilter {
-    static { loadLibrary("drawing_ani_core"); }
+    static { loadLibraryWithPermissionCheck("drawing_ani_core", "@ohos.graphics.drawing"); }
     private nativeObj : long = 0;
     private cleaner: Cleaner | null = null;
 
@@ -2645,6 +3927,39 @@ namespace drawing {
      * @since 12
      */
     native constructorNative(path: Path): void;
+
+    static pathTransferStatic(input: Any): Object {
+      let path: Path = new Path();
+      return Path.pathTransferStaticNative(path, ESValue.wrap(input));
+    }
+
+    private static native pathTransferStaticNative(output: Path, input: ESValue): Object;
+
+    static pathTransferDynamic(input: Object): Any {
+      let path = input as Path;
+      if (!path) {
+        return null;
+      }
+      let addr = Path.getPathAddr(path);
+      if (addr == 0) {
+        return null;
+      }
+      let module = ESValue.load("@ohos.graphics.drawing");
+      let hasProperty: boolean = module.hasProperty("Path");
+      if (!hasProperty) {
+        return null;
+      }
+      let cls = module.getProperty("Path");
+      hasProperty = cls.hasProperty("__createTransfer__");
+      if (hasProperty) {
+        let initFunc = cls.getProperty("__createTransfer__");
+        let obj = initFunc.invoke(ESObject.wrap(addr));
+        return obj.unwrap();
+      }
+      return null;
+    }
+
+    private static native getPathAddr(input: Path): long;
 
     /**
      * Sets the start point of this path.
@@ -3122,7 +4437,7 @@ namespace drawing {
    * @since 20
    */
   export class ShaderEffect {
-    static { loadLibrary("drawing_ani_core"); }
+    static { loadLibraryWithPermissionCheck("drawing_ani_core", "@ohos.graphics.drawing"); }
     private nativeObj : long = 0;
     private cleaner: Cleaner | null = null;
 
@@ -3255,7 +4570,7 @@ namespace drawing {
    * @since 20
    */
   export class ShadowLayer {
-    static { loadLibrary("drawing_ani_core"); }
+    static { loadLibraryWithPermissionCheck("drawing_ani_core", "@ohos.graphics.drawing"); }
     private nativeObj : long = 0;
     private cleaner: Cleaner | null = null;
 
@@ -3407,7 +4722,7 @@ namespace drawing {
    * @since 20
    */
   export class TextBlob {
-    static { loadLibrary("drawing_ani_core"); }
+    static { loadLibraryWithPermissionCheck("drawing_ani_core", "@ohos.graphics.drawing"); }
     private nativeObj : long = 0;
     private cleaner: Cleaner | null = null;
 
@@ -3487,26 +4802,68 @@ namespace drawing {
   }
 
   /**
-   * Enumerates the filter modes.
+   * Enumerates the modes for drawing multiple points in an array.
    * @enum { int }
    * @syscap SystemCapability.Graphics.Drawing
-   * @since 20
+   * @since 12
    */
-  export enum FilterMode {
+  export enum PointMode {
+    /**
+     * Draws each point separately.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 12
+     */
+    POINTS = 0,
 
     /**
-     * Nearest filter mode.
+     * Draws every two points as a line segment.
      * @syscap SystemCapability.Graphics.Drawing
-     * @since 20
+     * @since 12
      */
-    FILTER_MODE_NEAREST = 0,
+    LINES = 1,
 
     /**
-     * Linear filter mode.
+     * Draws an array of points as an open polygon.
      * @syscap SystemCapability.Graphics.Drawing
-     * @since 20
+     * @since 12
      */
-    FILTER_MODE_LINEAR = 1,
+    POLYGON = 2,
+  }
+
+  /**
+   * Enumerates the shadow drawing behaviors.
+   * @enum { int }
+   * @syscap SystemCapability.Graphics.Drawing
+   * @since 12
+   */
+  export enum ShadowFlag {
+    /**
+     * None of the flags are enabled.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 12
+     */
+    NONE = 0,
+
+    /**
+     * The occluder is transparent.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 12
+     */
+    TRANSPARENT_OCCLUDER = 1,
+
+    /**
+     * Only the geometric shadow effect is used.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 12
+     */
+    GEOMETRIC_ONLY = 2,
+
+    /**
+     * All the flags are enabled.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 12
+     */
+    ALL = 3,
   }
 
   /**
@@ -3542,6 +4899,7 @@ namespace drawing {
     /**
      * Creates an empty region.
      * @syscap SystemCapability.Graphics.Drawing
+     * @crossplatform
      * @since 20
      */
     native constructorNative(): void;
@@ -3550,6 +4908,7 @@ namespace drawing {
      * Creates a deep copy of the specified region object.
      * @param { Region } region - The region object to copy.
      * @syscap SystemCapability.Graphics.Drawing
+     * @crossplatform
      * @since 20
      */
     native constructorNative(region: Region): void;
@@ -3561,6 +4920,7 @@ namespace drawing {
      * @param { int } right - Indicates the right edge of the rectangle.
      * @param { int } bottom - Indicates the bottom edge of the rectangle.
      * @syscap SystemCapability.Graphics.Drawing
+     * @crossplatform
      * @since 20
      */
     native constructorNative(left: int, top: int, right: int, bottom: int): void;
@@ -3691,7 +5051,7 @@ namespace drawing {
    * @since 20
    */
   export class Tool {
-    static { loadLibrary("drawing_ani_core"); }
+    static { loadLibraryWithPermissionCheck("drawing_ani_core", "@ohos.graphics.drawing"); }
     private nativeObj : long = 0;
     private cleaner: Cleaner | null = null;
 
@@ -3753,6 +5113,7 @@ namespace drawing {
      * Creates a deep copy of the specified round rect object.
      * @param { RoundRect } roundRect - The round rect object to copy.
      * @syscap SystemCapability.Graphics.Drawing
+     * @crossplatform
      * @since 20
      */
     native constructorNative(roundRect: RoundRect): void;
@@ -3765,6 +5126,7 @@ namespace drawing {
      * @throws { BusinessError } 401 - Parameter error. Possible causes: 1. Mandatory parameters are left unspecified;
      * <br>2. Incorrect parameter types.
      * @syscap SystemCapability.Graphics.Drawing
+     * @crossplatform
      * @since 12
      */
     native constructorNative(rect: common2D.Rect, xRadii: double, yRadii: double): void;
@@ -3841,6 +5203,7 @@ namespace drawing {
   /**
    * Provides an interface to the drawing, and describe the arguments for a font.
    * @syscap SystemCapability.Graphics.Drawing
+   * @crossplatform
    * @since 20
    */
   export class TypefaceArguments {
@@ -3861,6 +5224,7 @@ namespace drawing {
     /**
      * Constructor for the TypefaceArguments.
      * @syscap SystemCapability.Graphics.Drawing
+     * @crossplatform
      * @since 20
      */
     native constructorNative(): void;

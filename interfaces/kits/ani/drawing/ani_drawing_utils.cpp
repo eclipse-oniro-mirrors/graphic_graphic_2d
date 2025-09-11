@@ -313,6 +313,25 @@ bool CreatePointObjAndCheck(ani_env* env, const Drawing::Point& point, ani_objec
     return !isUndefined;
 }
 
+bool ConvertFromAniPointsArray(ani_env* env, ani_object aniPointArray, Drawing::Point* points, uint32_t pointSize)
+{
+    for (uint32_t i = 0; i < pointSize; i++) {
+        ani_ref pointRef;
+        Drawing::Point point;
+        if (ANI_OK != env->Object_CallMethodByName_Ref(
+            aniPointArray, "$_get", "i:Y", &pointRef, (ani_int)i)) {
+            ROSEN_LOGE("aniPointArray get pointRef failed.");
+            return false;
+        }
+        if (!GetPointFromAniPointObj(env, static_cast<ani_object>(pointRef), point)) {
+            ROSEN_LOGE("pointRef is invalid");
+            return false;
+        }
+        points[i] = point;
+    }
+    return true;
+}
+
 bool GetPoint3FromPoint3dObj(ani_env* env, ani_object obj, Drawing::Point3& point3d)
 {
     ani_class point3dClass;

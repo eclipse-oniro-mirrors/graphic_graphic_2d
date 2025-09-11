@@ -195,6 +195,8 @@ ani_status CreateRectObj(ani_env* env, const Drawing::Rect& rect, ani_object& ob
 
 ani_status GetPointFromPointObj(ani_env* env, ani_object obj, Drawing::Point& point);
 
+bool ConvertFromAniPointsArray(ani_env* env, ani_object aniPointArray, Drawing::Point* points, uint32_t pointSize);
+
 ani_status CreatePointObj(ani_env* env, const Drawing::Point& point, ani_object& obj);
 
 bool CreatePointObjAndCheck(ani_env* env, const Drawing::Point& point, ani_object& obj);

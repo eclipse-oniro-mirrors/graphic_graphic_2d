@@ -25,7 +25,11 @@ group("ani_drawing") {
 }
 
 config("drawing_ani_config") {
-  include_dirs = [ "$graphic_2d_root/interfaces/kits/ani/drawing" ]
+  include_dirs = [
+    "$graphic_2d_root/interfaces/kits/ani/drawing",
+    "$graphic_2d_root/interfaces/kits/napi/graphic",
+    "$graphic_2d_root/interfaces/kits/napi/graphic/drawing"
+  ]
   defines = [ "ROSEN_OHOS" ]
 }
 
@@ -87,7 +91,16 @@ ohos_shared_library("drawing_ani_core") {
     "ipc:ipc_single",
     "runtime_core:ani",
     "runtime_core:libarkruntime",
+    "napi:ace_napi",
+    "runtime_core:ani_helpers",
   ]
+
+  if (current_os == "ohos" || current_os == "ohos_ng") {
+    external_deps += [
+      "ability_runtime:abilitykit_native",
+      "ability_runtime:app_context",
+    ]
+  }
 
   public_external_deps = [ "image_framework:image" ]
 
@@ -169,7 +182,16 @@ ohos_shared_library("drawing_ani") {
     "ipc:ipc_single",
     "runtime_core:ani",
     "runtime_core:libarkruntime",
+    "napi:ace_napi",
+    "runtime_core:ani_helpers",
   ]
+
+  if (current_os == "ohos" || current_os == "ohos_ng") {
+    external_deps += [
+      "ability_runtime:abilitykit_native",
+      "ability_runtime:app_context",
+    ]
+  }
 
   public_external_deps = [ "image_framework:image" ]
 
