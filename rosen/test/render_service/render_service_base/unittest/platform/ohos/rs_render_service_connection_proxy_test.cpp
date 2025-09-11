@@ -141,8 +141,8 @@ HWTEST_F(RSRenderServiceConnectionProxyTest, CreateNodeTest, TestSize.Level1)
 {
     RSDisplayNodeConfig rsDisplayNodeConfig;
     NodeId nodeId = 100;
-
-    ASSERT_FALSE(proxy->CreateNode(rsDisplayNodeConfig, nodeId));
+    bool success = false;
+    ASSERT_EQ(proxy->CreateNode(rsDisplayNodeConfig, nodeId, success), ERR_INVALID_VALUE);
 }
 
 /**
