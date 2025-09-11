@@ -60,6 +60,7 @@ private:
     RSHeteroHDRManager(const RSHeteroHDRManager&&) = delete;
     RSHeteroHDRManager& operator=(const RSHeteroHDRManager&) = delete;
     RSHeteroHDRManager& operator=(const RSHeteroHDRManager&&) = delete;
+    int32_t RoundDownToEven(int32_t value);
     RectI RectRound(RectI src);
 
     bool GetCurFrameHeteroHandleCanBeUsed(NodeId nodeId) const

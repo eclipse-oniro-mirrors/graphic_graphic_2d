@@ -68,12 +68,18 @@ RSHeteroHDRManager::RSHeteroHDRManager()
     }
 }
 
+int32_t RSHeteroHDRManager::RoundDownToEven(int32_t value)
+{
+    int32_t result = (value % 2 == 0) ? value : value - 1;
+    return (value > 0) ? result : 0;
+}
+
 RectI RSHeteroHDRManager::RectRound(RectI srcRect)
 {
-    int32_t srcWidth = static_cast<int32_t>(static_cast<uint32_t>srcRect.width_ & ~1u);
-    int32_t srcHeight = static_cast<int32_t>(static_cast<uint32_t>srcRect.height_ & ~1u);
-    int32_t srcTop = static_cast<int32_t>(static_cast<uint32_t>srcRect.top_ & ~1u);
-    int32_t srcLeft = static_cast<int32_t>(static_cast<uint32_t>srcRect.left_ & ~1u);
+    int32_t srcWidth = RoundDownToEven(srcRect.width_);
+    int32_t srcHeight = RoundDownToEven(srcRect.height_);
+    int32_t srcTop = RoundDownToEven(srcRect.top_);
+    int32_t srcLeft = RoundDownToEven(srcRect.left_);
 
     RectI dstRect = { srcLeft, srcTop, srcWidth, srcHeight };
     return dstRect;

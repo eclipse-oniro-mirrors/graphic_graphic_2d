@@ -213,13 +213,13 @@ struct MDCDeviceT {
 };
 
 struct HpaeTaskInfoT {
-    void** taskPtr;
-    uint32_t* taskId;
-    MDCRectT srcRect;
-    MDCRectT dstRect;
+    void** taskPtr = nullptr;
+    uint32_t* taskId = 0;
+    MDCRectT srcRect = { 0, 0, 0, 0 };
+    MDCRectT dstRect = { 0, 0, 0, 0 };
     uint32_t transform = 0;
-    BufferHandle* srcHandle;
-    BufferHandle* dstHandle;
+    BufferHandle* srcHandle = nullptr;
+    BufferHandle* dstHandle = nullptr;
     int32_t acquireFenceFd = -1;
     int32_t releaseFenceFd = -1;
     float displaySdrNit = 500.0f; // default SDR 500 nit
