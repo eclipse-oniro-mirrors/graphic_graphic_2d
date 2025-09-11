@@ -233,7 +233,7 @@ uint16_t RSHDRPatternManager::MHCGetVulkanTaskWaitEvent(uint64_t frameId, MHCPat
         return false;
     }
     auto eventId = MHCDevice_->graphPatternGetVulkanWaitEvent(graphPatternInstance_, frameId, taskName);
-    RS_LOGD("[hdrHetero]:RSHDRPatternManager MHCGetVulkanTaskWaitEvent event = %{public}" PRIu32 "",
+    RS_LOGD("[hdrHetero]:RSHDRPatternManager MHCGetVulkanTaskWaitEvent event = %{public}" PRIu32,
         static_cast<uint32_t>(eventId));
     return eventId;
 }
@@ -244,7 +244,7 @@ uint16_t RSHDRPatternManager::MHCGetVulkanTaskNotifyEvent(uint64_t frameId, MHCP
         return false;
     }
     auto eventId = MHCDevice_->graphPatternGetVulkanNotifyEvent(graphPatternInstance_, frameId, taskName);
-    RS_LOGD("[hdrHetero]:RSHDRPatternManager MHCGetVulkanTaskNotifyEvent event = %{public}" PRIu32 "",
+    RS_LOGD("[hdrHetero]:RSHDRPatternManager MHCGetVulkanTaskNotifyEvent event = %{public}" PRIu32,
          static_cast<uint32_t>(eventId));
     return eventId;
 }
