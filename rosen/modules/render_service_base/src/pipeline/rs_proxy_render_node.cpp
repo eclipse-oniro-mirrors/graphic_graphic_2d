@@ -42,7 +42,7 @@ RSProxyRenderNode::~RSProxyRenderNode()
 #ifndef ROSEN_ARKUI_X
     MemoryTrack::Instance().RemoveNodeRecord(GetId());
     MemoryTrack::Instance().UnRegisterNodeMem(ExtractPid(GetId()),
-        sizeof(*this), MEMORY_TYPE::MEM_RENDER_NODE); 
+        sizeof(*this), MEMORY_TYPE::MEM_RENDER_NODE);
 #endif
     MemorySnapshot::Instance().RemoveCpuMemory(ExtractPid(GetId()), sizeof(*this));
     CleanUp(true);
