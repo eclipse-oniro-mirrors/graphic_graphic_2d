@@ -597,7 +597,6 @@ HWTEST_F(RSNodeTest2, GetLocalGeometry, TestSize.Level1)
     auto localGeometry = rsNode->GetLocalGeometry();
     rsNode->MarkDirty(NodeDirtyType::GEOMETRY, false);
     EXPECT_NE(localGeometry, nullptr);
-    EXPECT_NE(localGeometry, nullptr);
     EXPECT_EQ(localGeometry->x_, 10.f);
     EXPECT_EQ(localGeometry->y_, 10.f);
     EXPECT_EQ(localGeometry->width_, 100.f);
@@ -609,9 +608,9 @@ HWTEST_F(RSNodeTest2, GetLocalGeometry, TestSize.Level1)
     rsNode->UpdateLocalGeometry();
     localGeometry = rsNode->GetLocalGeometry();
     EXPECT_NE(localGeometry, nullptr);
-    EXPECT_EQ(localGeometry->x_, -INFINITE);
-    EXPECT_EQ(localGeometry->y_, -INFINITE);
-    EXPECT_EQ(localGeometry->width_, -INFINITE);
-    EXPECT_EQ(localGeometry->height_, -INFINITE);
+    EXPECT_EQ(localGeometry->x_, -INFINITY);
+    EXPECT_EQ(localGeometry->y_, -INFINITY);
+    EXPECT_EQ(localGeometry->width_, -INFINITY);
+    EXPECT_EQ(localGeometry->height_, -INFINITY);
 }
 } // namespace OHOS::Rosen
