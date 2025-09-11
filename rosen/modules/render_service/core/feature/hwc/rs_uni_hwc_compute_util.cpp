@@ -438,7 +438,8 @@ void RSUniHwcComputeUtil::UpdateHwcNodeByScalingMode(RSSurfaceRenderNode& node, 
     IntersectRect(newDstRect, dstRectWithoutScaling);
     Drawing::Rect bounds = node.GetDstRectWithoutRenderFit();
     IntersectRect(newDstRect, bounds);
-    node.SetDstRect({std::floor(newDstRect.GetLeft()), std::floor(newDstRect.GetTop()),
+    node.SetDstRect({std::floor(std::round(newDstRect.GetLeft() * 100) / 100),
+        std::floor(std::round(newDstRect.GetTop() * 100) / 100),
         std::ceil(newDstRect.GetWidth()), std::ceil(newDstRect.GetHeight())});
     Drawing::Rect newSrcRect;
     inverseTotalMatrix.MapRect(newSrcRect, newDstRect);
