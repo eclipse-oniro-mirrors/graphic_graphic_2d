@@ -674,9 +674,10 @@ bool RSUifirstManager::NeedPurgePendingPostNodesInner(
         (cachedStaticContent || CheckVisibleDirtyRegionIsEmpty(node)) &&
         (subthreadProcessingNode_.find(id) == subthreadProcessingNode_.end()) && !subThreadCache.IsSubThreadSkip();
 
-    needPurge |= SubThreadControlFrameRate(id, drawable, node);
+    needPurge = needPurge || SubThreadControlFrameRate(id, drawable, node);
 
-    needPurge |= NeedPurgeByBehindWindow(id, subThreadCache.HasCachedTexture(), node) && HandlePurgeBehindWindow(it);
+    needPurge = needPurge ||
+        (NeedPurgeByBehindWindow(id, subThreadCache.HasCachedTexture(), node) && HandlePurgeBehindWindow(it));
 
     return needPurge;
 }
