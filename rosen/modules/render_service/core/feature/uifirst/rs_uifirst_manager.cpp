@@ -678,6 +678,7 @@ bool RSUifirstManager::NeedPurgePendingPostNodesInner(
 
     needPurge |= NeedPurgeByBehindWindow(id, subThreadCache.HasCachedTexture(), node) && HandlePurgeBehindWindow(it);
 
+    needPurge = needPurge || RSUniRenderUtil::CheckRenderSkipIfScreenOff();
     return needPurge;
 }
 
@@ -1192,11 +1193,6 @@ void RSUifirstManager::MarkPostNodesPriority()
 // post in drawframe sync time
 void RSUifirstManager::PostUifistSubTasks()
 {
-    // if screen is power-off, uifirst sub thread can be suspended.
-    if (RSUniRenderUtil::CheckRenderSkipIfScreenOff()) {
-        UifirstCurStateClear();
-        return;
-    }
     PurgePendingPostNodes();
     SortSubThreadNodesPriority();
     MarkPostNodesPriority();
