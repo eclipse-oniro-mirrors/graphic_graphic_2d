@@ -1015,7 +1015,6 @@ HWTEST_F(RSHeteroHDRManagerTest, ValidateSurfaceTest001, TestSize.Level1)
     ret = RSHeteroHDRUtil::ValidateSurface(surfaceParams);
     EXPECT_EQ(ret, true);
 
-
     layerInfo.srcRect.w = 0;
     layerInfo.srcRect.h = 400;
     layerInfo.dstRect.w = 400;
