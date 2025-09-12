@@ -165,6 +165,29 @@ HWTEST_F(RSModifierManagerTest, DrawTest, TestSize.Level1)
 }
 
 /**
+ * @tc.name: DrawTest002
+ * @tc.desc: test results of Draw
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSModifierManagerTest, DrawTest002, TestSize.Level1)
+{
+    RSModifierManager rsModifierManager;
+    rsModifierManager.Draw();
+    ASSERT_TRUE(rsModifierManager.modifiers_.empty());
+}
+
+/**
+ * @tc.name: HasUIRunningAnimationTest
+ * @tc.desc: test results of HasUIRunningAnimation
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSModifierManagerTest, HasUIRunningAnimationTest, TestSize.Level1)
+{
+    RSModifierManager rsModifierManager;
+    ASSERT_FALSE(rsModifierManager.HasUIRunningAnimation());
+}
+
+/**
  * @tc.name: AddAnimationTest002
  * @tc.desc: test results of AddAnimation
  * @tc.type: FUNC
@@ -247,5 +270,38 @@ HWTEST_F(RSModifierManagerTest, GetAnimationTest002, TestSize.Level1)
     RSModifierManager rsModifierManager;
     rsModifierManager.AddAnimation(animation);
     ASSERT_TRUE(rsModifierManager.GetAnimation(animId));
+}
+
+/**
+ * @tc.name: GetAndResetFirstFrameAnimationStateTest001
+ * @tc.desc: test results of GetAndResetFirstFrameAnimationStateTest
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSModifierManagerTest, GetAndResetFirstFrameAnimationStateTest001, TestSize.Level1)
+{
+    RSModifierManager rsModifierManager;
+    ASSERT_FALSE(rsModifierManager.GetAndResetFirstFrameAnimationState());
+}
+
+/**
+ * @tc.name: GetFrameRateRangeTest001
+ * @tc.desc: test results of GetFrameRateRange
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSModifierManagerTest, GetFrameRateRangeTest001, TestSize.Level1)
+{
+    RSModifierManager rsModifierManager;
+    EXPECT_GE(rsModifierManager.GetFrameRateRange().type_, 0);
+}
+
+/**
+ * @tc.name: IsDisplaySyncEnabledTest001
+ * @tc.desc: test results of IsDisplaySyncEnabled
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSModifierManagerTest, IsDisplaySyncEnabledTest001, TestSize.Level1)
+{
+    RSModifierManager rsModifierManager;
+    EXPECT_FALSE(rsModifierManager.IsDisplaySyncEnabled());
 }
 } // namespace OHOS::Rosen

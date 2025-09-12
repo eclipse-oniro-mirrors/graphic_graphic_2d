@@ -471,5 +471,36 @@ HWTEST_F(RSSurfaceOhosVulkanTest, SetGpuSemaphoreTest, TestSize.Level1)
     rsSurface.SetGpuSemaphore(submitWithFFTS, preFrameId, curFrameId, vec, sur);
 }
 
+/**
+ * @tc.name: CancelBufferForCurrentFrame
+ * @tc.desc: test results of CancelBufferForCurrentFrame
+ * @tc.type:FUNC
+ * @tc.require: issueICWRWD
+ */
+HWTEST_F(RSSurfaceOhosVulkanTest, CancelBufferForCurrentFrame, TestSize.Level1)
+{
+    sptr<IConsumerSurface> cSurface = IConsumerSurface::Create("DisplayNode");
+    ASSERT_TRUE(cSurface != nullptr);
+    sptr<IBufferProducer> bp = cSurface->GetProducer();
+    sptr<Surface> pSurface = Surface::CreateSurfaceAsProducer(bp);
+    int32_t fence;
+    sptr<OHOS::SurfaceBuffer> sBuffer = nullptr;
+    BufferRequestConfig requestConfig = {
+        .width = 0x100,
+        .height = 0x100,
+        .strideAlignment = 0x8,
+        .format = GRAPHIC_PIXEL_FMT_RGBA_8888,
+        .usage = BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA,
+        .timeout = 0,
+    };
+    pSurface->RequestBuffer(sBuffer, fence, requestConfig);
+    NativeWindowBuffer* nativeWindowBuffer = OH_NativeWindow_CreateNativeWindowBufferFromSurfaceBuffer(&sBuffer);
+    ASSERT_NE(nativeWindowBuffer, nullptr);
+    RSSurfaceOhosVulkan rsSurface(pSurface);
+    rsSurface.mSurfaceList.emplace_back(nativeWindowBuffer);
+    rsSurface.CancelBufferForCurrentFrame();
+    rsSurface.mSurfaceList.clear();
+    rsSurface.CancelBufferForCurrentFrame();
+}
 } // namespace Rosen
 } // namespace OHOS

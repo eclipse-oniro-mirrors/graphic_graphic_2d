@@ -152,6 +152,243 @@ HWTEST_F(RSMemoryTrackTest, MemoryNodeOfPidOperatorEqualTest, testing::ext::Test
 }
 
 /**
+ * @tc.name: RegisterNodeMemTest001
+ * @tc.desc: Test RegisterNodeMemTest001.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+
+HWTEST_F(RSMemoryTrackTest, RegisterNodeMemTest001, testing::ext::TestSize.Level1)
+{
+    pid_t testPid = 20;
+    size_t testSize = 100;
+    MemoryTrack::Instance().RegisterNodeMem(testPid, testSize, MEMORY_TYPE::MEM_RENDER_NODE);
+    auto& memData = MemoryTrack::Instance().nodeMemOfPid_[testPid];
+    EXPECT_EQ(memData.first, testSize);
+    MemoryTrack::Instance().UnRegisterNodeMem(testPid, testSize, MEMORY_TYPE::MEM_RENDER_NODE);
+}
+
+/**
+ * @tc.name: RegisterNodeMemTest002
+ * @tc.desc: Test RegisterNodeMemTest002.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+
+HWTEST_F(RSMemoryTrackTest, RegisterNodeMemTest002, testing::ext::TestSize.Level1)
+{
+    pid_t testPid = 20;
+    size_t testSize = 100;
+    MemoryTrack::Instance().RegisterNodeMem(testPid, testSize, MEMORY_TYPE::MEM_RENDER_DRAWABLE_NODE);
+    auto& memData = MemoryTrack::Instance().nodeMemOfPid_[testPid];
+    EXPECT_EQ(memData.second, testSize);
+    MemoryTrack::Instance().UnRegisterNodeMem(testPid, testSize, MEMORY_TYPE::MEM_RENDER_DRAWABLE_NODE);
+}
+
+/**
+ * @tc.name: RegisterNodeMemTest003
+ * @tc.desc: Test RegisterNodeMemTest003.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+
+HWTEST_F(RSMemoryTrackTest, RegisterNodeMemTest003, testing::ext::TestSize.Level1)
+{
+    pid_t testPid = 20;
+    size_t testSize = 150;
+    MemoryTrack::Instance().RegisterNodeMem(testPid, testSize, static_cast<MEMORY_TYPE>(999));
+    auto& memData = MemoryTrack::Instance().nodeMemOfPid_[testPid];
+    EXPECT_EQ(memData.first, 0);
+    EXPECT_EQ(memData.second, 0);
+}
+
+/**
+ * @tc.name: UnRegisterNodeMemTest001
+ * @tc.desc: Test RegisterNodeMemTest001.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+
+HWTEST_F(RSMemoryTrackTest, UnRegisterNodeMemTest001, testing::ext::TestSize.Level1)
+{
+    pid_t testPid = 20;
+    size_t initialSize = 200;
+    size_t unregisterSize = 100;
+    MemoryTrack::Instance().RegisterNodeMem(testPid, initialSize, MEMORY_TYPE::MEM_RENDER_NODE);
+    MemoryTrack::Instance().UnRegisterNodeMem(testPid, unregisterSize, MEMORY_TYPE::MEM_RENDER_NODE);
+    auto& memData = MemoryTrack::Instance().nodeMemOfPid_[testPid];
+    EXPECT_EQ(memData.first, initialSize - unregisterSize);
+    MemoryTrack::Instance().UnRegisterNodeMem(testPid, initialSize - unregisterSize,
+        MEMORY_TYPE::MEM_RENDER_NODE);
+}
+
+/**
+ * @tc.name: UnRegisterNodeMemTest002
+ * @tc.desc: Test RegisterNodeMemTest002.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+
+HWTEST_F(RSMemoryTrackTest, UnRegisterNodeMemTest002, testing::ext::TestSize.Level1)
+{
+    pid_t testPid = 20;
+    size_t initialSize = 300;
+    size_t unregisterSize = 150;
+    MemoryTrack::Instance().RegisterNodeMem(testPid, initialSize, MEMORY_TYPE::MEM_RENDER_DRAWABLE_NODE);
+    MemoryTrack::Instance().UnRegisterNodeMem(testPid, unregisterSize, MEMORY_TYPE::MEM_RENDER_DRAWABLE_NODE);
+    auto& memData = MemoryTrack::Instance().nodeMemOfPid_[testPid];
+    EXPECT_EQ(memData.first, initialSize - unregisterSize);
+    MemoryTrack::Instance().UnRegisterNodeMem(testPid, initialSize - unregisterSize,
+        MEMORY_TYPE::MEM_RENDER_DRAWABLE_NODE);
+}
+
+/**
+ * @tc.name: UnRegisterNodeMemTest003
+ * @tc.desc: Test RegisterNodeMemTest003.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+
+HWTEST_F(RSMemoryTrackTest, UnRegisterNodeMemTest003, testing::ext::TestSize.Level1)
+{
+    pid_t testPid = 20;
+    size_t initialSize = 200;
+    size_t unregisterSize = 100;
+    MemoryTrack::Instance().RegisterNodeMem(testPid, initialSize, MEMORY_TYPE::MEM_RENDER_NODE);
+    MemoryTrack::Instance().UnRegisterNodeMem(testPid, unregisterSize, static_cast<MEMORY_TYPE>(999));
+    auto& memData = MemoryTrack::Instance().nodeMemOfPid_[testPid];
+    EXPECT_EQ(memData.first, initialSize);
+    MemoryTrack::Instance().UnRegisterNodeMem(testPid, initialSize,
+        MEMORY_TYPE::MEM_RENDER_NODE);
+}
+
+/**
+ * @tc.name: UnRegisterNodeMemTest004
+ * @tc.desc: Test RegisterNodeMemTest004.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+
+HWTEST_F(RSMemoryTrackTest, UnRegisterNodeMemTest004, testing::ext::TestSize.Level1)
+{
+    pid_t testPid = 20;
+    size_t initialSize = 100;
+    size_t unregisterSize = 200;
+    MemoryTrack::Instance().RegisterNodeMem(testPid, initialSize, MEMORY_TYPE::MEM_RENDER_NODE);
+    MemoryTrack::Instance().UnRegisterNodeMem(testPid, unregisterSize, MEMORY_TYPE::MEM_RENDER_NODE);
+    auto& memData = MemoryTrack::Instance().nodeMemOfPid_[testPid];
+    EXPECT_EQ(memData.first, 0);
+}
+
+/**
+ * @tc.name: UnRegisterNodeMemTest005
+ * @tc.desc: Test RegisterNodeMemTest005.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+
+HWTEST_F(RSMemoryTrackTest, UnRegisterNodeMemTest005, testing::ext::TestSize.Level1)
+{
+    pid_t testPid = 20;
+    size_t initialSize = 100;
+    size_t unregisterSize = 200;
+    MemoryTrack::Instance().RegisterNodeMem(testPid, initialSize, MEMORY_TYPE::MEM_RENDER_DRAWABLE_NODE);
+    MemoryTrack::Instance().UnRegisterNodeMem(testPid, unregisterSize, MEMORY_TYPE::MEM_RENDER_DRAWABLE_NODE);
+    auto& memData = MemoryTrack::Instance().nodeMemOfPid_[testPid];
+    EXPECT_EQ(memData.second, 0);
+}
+
+/**
+ * @tc.name: UnRegisterNodeMemTest006
+ * @tc.desc: Test RegisterNodeMemTest006.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+
+HWTEST_F(RSMemoryTrackTest, UnRegisterNodeMemTest006, testing::ext::TestSize.Level1)
+{
+    pid_t testPid = 20;
+    size_t initialSize = 100;
+    MemoryTrack::Instance().RegisterNodeMem(testPid, initialSize, MEMORY_TYPE::MEM_RENDER_NODE);
+    MemoryTrack::Instance().RegisterNodeMem(testPid, initialSize, MEMORY_TYPE::MEM_RENDER_DRAWABLE_NODE);
+    MemoryTrack::Instance().UnRegisterNodeMem(testPid, initialSize, MEMORY_TYPE::MEM_RENDER_NODE);
+    MemoryTrack::Instance().UnRegisterNodeMem(testPid, initialSize, MEMORY_TYPE::MEM_RENDER_DRAWABLE_NODE);
+    EXPECT_TRUE(MemoryTrack::Instance().nodeMemOfPid_.find(testPid) ==
+        MemoryTrack::Instance().nodeMemOfPid_.end());
+}
+
+/**
+ * @tc.name: GetNodeMemoryOfPid001
+ * @tc.desc: Test GetNodeMemoryOfPid001.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+
+HWTEST_F(RSMemoryTrackTest, GetNodeMemoryOfPid001, testing::ext::TestSize.Level1)
+{
+    pid_t testPid = 20;
+    size_t registeredSize = 1000;
+    size_t expectedSize = registeredSize / BYTE_CONVERT;
+    MemoryTrack::Instance().RegisterNodeMem(testPid, registeredSize, MEMORY_TYPE::MEM_RENDER_NODE);
+    size_t result = MemoryTrack::Instance().GetNodeMemoryOfPid(testPid, MEMORY_TYPE::MEM_RENDER_NODE);
+    EXPECT_EQ(result, expectedSize);
+    MemoryTrack::Instance().UnRegisterNodeMem(testPid, registeredSize, MEMORY_TYPE::MEM_RENDER_NODE);
+}
+
+/**
+ * @tc.name: GetNodeMemoryOfPid002
+ * @tc.desc: Test GetNodeMemoryOfPid002.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+
+HWTEST_F(RSMemoryTrackTest, GetNodeMemoryOfPid002, testing::ext::TestSize.Level1)
+{
+    pid_t testPid = 20;
+    size_t registeredSize = 2000;
+    size_t expectedSize = registeredSize / BYTE_CONVERT;
+    MemoryTrack::Instance().RegisterNodeMem(testPid, registeredSize, MEMORY_TYPE::MEM_RENDER_DRAWABLE_NODE);
+    size_t result = MemoryTrack::Instance().GetNodeMemoryOfPid(testPid, MEMORY_TYPE::MEM_RENDER_DRAWABLE_NODE);
+    EXPECT_EQ(result, expectedSize);
+    MemoryTrack::Instance().UnRegisterNodeMem(testPid, registeredSize, MEMORY_TYPE::MEM_RENDER_DRAWABLE_NODE);
+}
+
+/**
+ * @tc.name: GetNodeMemoryOfPid003
+ * @tc.desc: Test GetNodeMemoryOfPid003.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+
+HWTEST_F(RSMemoryTrackTest, GetNodeMemoryOfPid003, testing::ext::TestSize.Level1)
+{
+    pid_t testPid = 20;
+    size_t registeredSize = 1000;
+    MemoryTrack::Instance().RegisterNodeMem(testPid, registeredSize, MEMORY_TYPE::MEM_RENDER_NODE);
+    size_t result = MemoryTrack::Instance().GetNodeMemoryOfPid(testPid, static_cast<MEMORY_TYPE>(999));
+    EXPECT_EQ(result, 0);
+    MemoryTrack::Instance().UnRegisterNodeMem(testPid, registeredSize, MEMORY_TYPE::MEM_RENDER_NODE);
+}
+
+/**
+ * @tc.name: GetNodeMemoryOfPid004
+ * @tc.desc: Test GetNodeMemoryOfPid004.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+
+HWTEST_F(RSMemoryTrackTest, GetNodeMemoryOfPid004, testing::ext::TestSize.Level1)
+{
+    pid_t testPid = 20;
+    pid_t noExistPid = -5;
+    size_t registeredSize = 1000;
+    MemoryTrack::Instance().RegisterNodeMem(testPid, registeredSize, MEMORY_TYPE::MEM_RENDER_NODE);
+    size_t result = MemoryTrack::Instance().GetNodeMemoryOfPid(noExistPid, MEMORY_TYPE::MEM_RENDER_NODE);
+    EXPECT_EQ(result, 0);
+    MemoryTrack::Instance().UnRegisterNodeMem(testPid, registeredSize, MEMORY_TYPE::MEM_RENDER_NODE);
+}
+
+/**
  * @tc.name: AddNodeRecordTest001
  * @tc.desc: Test adding a node record with valid parameters.
  * @tc.type: FUNC

@@ -108,9 +108,7 @@ bool SkiaGPUContext::BuildFromGL(const GPUContextOptions& options)
     grOptions.fPersistentCache = skiaPersistentCache_.get();
     grOptions.fExecutor = &g_defaultExecutor;
 #ifdef SKIA_OHOS
-#ifndef TODO_M133_SKIA
     grOptions.clearSmallTexture = options.GetIsUniRender();
-#endif
 #endif
 #ifdef USE_M133_SKIA
     grContext_ = GrDirectContexts::MakeGL(std::move(glInterface), grOptions);
@@ -273,6 +271,15 @@ void SkiaGPUContext::FreeGpuResources()
     grContext_->freeGpuResources();
 }
 
+void SkiaGPUContext::FreeCpuCache(uint32_t uniqueId)
+{
+    if (!grContext_) {
+        LOGD("SkiaGPUContext::FreeCpuCache, grContext_ is nullptr");
+        return;
+    }
+    grContext_->freeCpuCache(uniqueId);
+}
+
 void SkiaGPUContext::ReclaimResources()
 {
     //Skia Not Implement ReclaimResources.
@@ -340,9 +347,7 @@ void SkiaGPUContext::PurgeUnlockedResourcesByPid(bool scratchResourcesOnly, cons
         LOGD("SkiaGPUContext::PurgeUnlockedResourcesByPid, grContext_ is nullptr");
         return;
     }
-#ifndef TODO_M133_SKIA
     grContext_->purgeUnlockedResourcesByPid(scratchResourcesOnly, exitedPidSet);
-#endif
 }
 
 void SkiaGPUContext::RegisterVulkanErrorCallback(const std::function<void()>& vulkanErrorCallback)

@@ -37,6 +37,7 @@
 #include "mem_param.h"
 #include "params/rs_screen_render_params.h"
 #include "params/rs_surface_render_params.h"
+#include "feature/round_corner_display/rs_round_corner_display_manager.h"
 #include "pipeline/hardware_thread/rs_hardware_thread.h"
 #include "pipeline/main_thread/rs_main_thread.h"
 #include "pipeline/rs_render_node_gc.h"
@@ -53,6 +54,7 @@
 #include "surface.h"
 #include "sync_fence.h"
 #include "system/rs_system_parameters.h"
+#include "utils/system_properties.h"
 #include "pipeline/rs_surface_buffer_callback_manager.h"
 #ifdef RES_SCHED_ENABLE
 #include <iservice_registry.h>
@@ -947,6 +949,7 @@ void RSUniRenderThread::PostReclaimMemoryTask(ClearMemoryMoment moment, bool isR
         }
         this->isTimeToReclaim_.store(false);
         this->SetClearMoment(ClearMemoryMoment::NO_CLEAR);
+        SetIsPostedReclaimMemoryTask(false);
     };
 
     PostTask(task, RECLAIM_MEMORY, TIME_OF_RECLAIM_MEMORY);
@@ -967,11 +970,15 @@ void RSUniRenderThread::ResetClearMemoryTask(bool isDoDirectComposition)
             DefaultClearMemoryCache();
         }
     }
-    bool ifStatusBarDirtyOnly = RSMainThread::Instance()->GetIfStatusBarDirtyOnly();
-    if (isTimeToReclaim_.load() && !ifStatusBarDirtyOnly) {
+    if (isTimeToReclaim_.load()) {
+        bool ifStatusBarDirtyOnly = RSMainThread::Instance()->GetIfStatusBarDirtyOnly();
+        bool ifInterrupt = RSReclaimMemoryManager::Instance().IsReclaimInterrupt();
+        if (ifStatusBarDirtyOnly && !ifInterrupt) {
+            return;
+        }
         RemoveTask(RECLAIM_MEMORY);
         SetIsPostedReclaimMemoryTask(false);
-        if (RSReclaimMemoryManager::Instance().IsReclaimInterrupt()) {
+        if (ifInterrupt) {
             isTimeToReclaim_.store(false);
             RSReclaimMemoryManager::Instance().SetReclaimInterrupt(false);
         } else if (!isDoDirectComposition) {
@@ -1119,15 +1126,42 @@ void RSUniRenderThread::PurgeShaderCacheAfterAnimate()
 #endif
 }
 
-void RSUniRenderThread::RenderServiceTreeDump(std::string& dumpString)
+void RSUniRenderThread::RenderServiceTreeDump(std::string& dumpString, bool checkIsInUniRenderThread)
 {
-    PostSyncTask([this, &dumpString]() {
+    auto task = [this, &dumpString]() {
         if (!rootNodeDrawable_) {
             dumpString.append("rootNode is null\n");
             return;
         }
         rootNodeDrawable_->DumpDrawableTree(0, dumpString, RSMainThread::Instance()->GetContext());
-    });
+    };
+    if (checkIsInUniRenderThread) {
+        if (gettid() == tid_) {
+            task();
+        } else {
+            dumpString.append("not in RSUniRenderThread, skip tree dump\n");
+        }
+    } else {
+        PostSyncTask(task);
+    }
+}
+
+void RSUniRenderThread::ProcessVulkanErrorTreeDump()
+{
+#ifdef ROSEN_OHOS
+    if (!Drawing::SystemProperties::IsVkImageDfxEnabled()) {
+        return;
+    }
+    RS_LOGE("------ RSUniRenderThread tree dump start ------");
+    std::string rsTreeDump;
+    RenderServiceTreeDump(rsTreeDump, true);
+    std::istringstream stream(rsTreeDump);
+    std::string line;
+    while (std::getline(stream, line, '\n')) {
+        RS_LOGE("%{public}s", line.c_str());
+    }
+    RS_LOGE("------ RSUniRenderThread tree dump end ------");
+#endif
 }
 
 void RSUniRenderThread::UpdateScreenNodeScreenId()

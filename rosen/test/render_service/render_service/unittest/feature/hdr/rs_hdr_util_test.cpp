@@ -30,7 +30,7 @@
 #include "screen_manager/rs_screen.h"
 #include "system/rs_system_parameters.h"
 #include "utils/system_properties.h"
-#include "v2_0/buffer_handle_meta_key_type.h"
+#include "v2_2/buffer_handle_meta_key_type.h"
 #include "v2_2/cm_color_space.h"
 #ifdef USE_VIDEO_PROCESSING_ENGINE
 #include "colorspace_converter_display.h"
@@ -132,19 +132,21 @@ HWTEST_F(RSHdrUtilTest, CheckIsHdrSurfaceBufferTest, TestSize.Level1)
     memcpy_s(metadataType.data(), metadataType.size(), &hdrType, sizeof(hdrType));
     buffer->SetMetadata(HDI::Display::Graphic::Common::V1_0::ATTRKEY_HDR_METADATA_TYPE, metadataType);
     ret = RSHdrUtil::CheckIsHdrSurfaceBuffer(buffer);
-    ASSERT_EQ(ret, HdrStatus::AI_HDR_VIDEO);
+    ASSERT_EQ(ret, HdrStatus::AI_HDR_VIDEO_GTM);
  
     hdrType = HDI::Display::Graphic::Common::V2_2::CM_VIDEO_AI_HDR_HIGH_LIGHT;
+    metadataType.resize(sizeof(hdrType));
     memcpy_s(metadataType.data(), metadataType.size(), &hdrType, sizeof(hdrType));
-    buffer->SetMetadata(HDI::Display::Graphic::Common::V1_0::ATTRKEY_HDR_METADATA_TYPE, metadataType);
+    buffer->SetMetadata(Media::VideoProcessingEngine::ATTRKEY_HDR_METADATA_TYPE, metadataType);
     ret = RSHdrUtil::CheckIsHdrSurfaceBuffer(buffer);
-    ASSERT_EQ(ret, HdrStatus::AI_HDR_VIDEO);
- 
+    ASSERT_EQ(ret, HdrStatus::AI_HDR_VIDEO_GAINMAP);
+
     hdrType = HDI::Display::Graphic::Common::V2_2::CM_VIDEO_AI_HDR_COLOR_ENHANCE;
+    metadataType.resize(sizeof(hdrType));
     memcpy_s(metadataType.data(), metadataType.size(), &hdrType, sizeof(hdrType));
-    buffer->SetMetadata(HDI::Display::Graphic::Common::V1_0::ATTRKEY_HDR_METADATA_TYPE, metadataType);
+    buffer->SetMetadata(Media::VideoProcessingEngine::ATTRKEY_HDR_METADATA_TYPE, metadataType);
     ret = RSHdrUtil::CheckIsHdrSurfaceBuffer(buffer);
-    ASSERT_EQ(ret, HdrStatus::AI_HDR_VIDEO);
+    ASSERT_EQ(ret, HdrStatus::AI_HDR_VIDEO_GAINMAP);
 #endif
 }
 
@@ -720,6 +722,7 @@ HWTEST_F(RSHdrUtilTest, IsHDRCastTest, TestSize.Level2)
     EXPECT_EQ(ret, true);
 }
 
+#ifdef USE_VIDEO_PROCESSING_ENGINE
 /**
  * @tc.name: SetColorSpaceConverterDisplayParameter
  * @tc.desc: test SetColorSpaceConverterDisplayParameter with different screenshotType
@@ -765,5 +768,6 @@ HWTEST_F(RSHdrUtilTest, SetColorSpaceConverterDisplayParameter, TestSize.Level1)
     EXPECT_EQ(parameter.tmoNits, RSLuminanceConst::DEFAULT_CAPTURE_HDR_NITS);
     EXPECT_EQ(ret, true);
 }
+#endif
 
 } // namespace OHOS::Rosen

@@ -20,6 +20,7 @@
 #include "hgm_core.h"
 #include "hgm_log.h"
 #include "hgm_task_handle_thread.h"
+#include "rs_frame_rate_vote.h"
 #include "rs_trace.h"
 #include "xml_parser.h"
 
@@ -30,7 +31,7 @@ namespace {
 const std::string RS_ENERGY_ASSURANCE_TASK_ID = "RS_ENERGY_ASSURANCE_TASK_ID";
 const std::string DESCISION_VIDEO_CALL_TASK_ID = "DESCISION_VIDEO_CALL_TASK_ID";
 const std::unordered_map<std::string, std::vector<uint32_t>> UI_RATE_TYPE_NAME_MAP = {
-    { "ui_animation", { UI_ANIMATION_FRAME_RATE_TYPE, DRAG_SCENE_FRAME_RATE_TYPE } },
+    { "ui_animation", { UI_ANIMATION_FRAME_RATE_TYPE } },
     { "display_sync", { DISPLAY_SYNC_FRAME_RATE_TYPE } },
     { "ace_component", { ACE_COMPONENT_FRAME_RATE_TYPE } },
     { "display_soloist", { DISPLAY_SOLOIST_FRAME_RATE_TYPE } },
@@ -214,17 +215,25 @@ bool HgmEnergyConsumptionPolicy::GetUiIdleFps(FrameRateRange& rsRange, pid_t pid
         return false;
     }
     auto type = rsRange.type_ & ~ANIMATION_STATE_FIRST_FRAME;
-    if (type == DRAG_SCENE_FRAME_RATE_TYPE && !dragSceneEnable_.load() &&
+    if ((type & SCROLLABLE_MULTI_TASK_FRAME_RATE_TYPE) && !dragSceneEnable_.load() &&
         pid == dragSceneDisablePid_.load()) {
         return false;
     }
-    auto it = uiEnergyAssuranceMap_.find(type);
-    if (it == uiEnergyAssuranceMap_.end()) {
+    std::pair<bool, int> fpsInfo;
+    bool isEnergyAssured = false;
+    for (const auto& [key, value] : uiEnergyAssuranceMap_) {
+        if ((key & type) == type) {
+            fpsInfo = value;
+            isEnergyAssured = true;
+            break;
+        }
+    }
+    if (!isEnergyAssured) {
         HGM_LOGD("HgmEnergyConsumptionPolicy::GetUiIdleFps the rateType = %{public}d is invalid", rsRange.type_);
         return false;
     }
-    bool isEnergyAssuranceEnable = it->second.first;
-    int idleFps = it->second.second;
+    bool isEnergyAssuranceEnable = fpsInfo.first;
+    int idleFps = fpsInfo.second;
     if (isEnergyAssuranceEnable) {
         SetEnergyConsumptionRateRange(rsRange, idleFps);
     }
@@ -375,20 +384,27 @@ void HgmEnergyConsumptionPolicy::SetCurrentPkgName(const std::vector<std::string
     if (configData == nullptr) {
         std::lock_guard<std::mutex> lock(videoCallLock_);
         videoCallLayerName_ = "";
+        RSFrameRateVote::isVideoApp_.store(false);
         return;
     }
+    bool hasVideoApp = false;
+    const auto& videoCallLayerConfig = configData->videoCallLayerConfig_;
+    const auto& videoFrameRateList = configData->videoFrameRateList_;
+    std::string videoCallLayerNameStr = "";
     for (const auto& pkg: pkgs) {
         std::string pkgName = pkg.substr(0, pkg.find(":"));
-        auto& videoCallLayerConfig = configData->videoCallLayerConfig_;
-        auto videoCallLayerName = videoCallLayerConfig.find(pkgName);
-        if (videoCallLayerName != videoCallLayerConfig.end()) {
-            std::lock_guard<std::mutex> lock(videoCallLock_);
-            videoCallLayerName_ = videoCallLayerName->second;
-            return;
+        if (videoCallLayerName_ == "") {
+            if (const auto& videoCallLayerName = videoCallLayerConfig.find(pkgName);
+                videoCallLayerName != videoCallLayerConfig.end()) {
+                videoCallLayerNameStr = videoCallLayerName->second;
+            }
         }
+        bool isVideoApp = videoFrameRateList.find(pkgName) != videoFrameRateList.end();
+        hasVideoApp = hasVideoApp || isVideoApp;
     }
+    RSFrameRateVote::isVideoApp_.store(hasVideoApp);
     std::lock_guard<std::mutex> lock(videoCallLock_);
-    videoCallLayerName_ = "";
+    videoCallLayerName_ = videoCallLayerNameStr;
 }
 
 int32_t HgmEnergyConsumptionPolicy::GetComponentEnergyConsumptionConfig(const std::string& componentName)

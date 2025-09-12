@@ -26,6 +26,7 @@
 #include "system/rs_system_parameters.h"
 
 #include "feature/hwc/rs_uni_hwc_prevalidate_util.h"
+#include "feature/round_corner_display/rs_rcd_render_manager.h"
 #include "feature/window_keyframe/rs_window_keyframe_node_info.h"
 #include "common/rs_special_layer_manager.h"
 #include "params/rs_render_thread_params.h"
@@ -396,6 +397,7 @@ private:
     std::queue<NodeId> curMainAndLeashWindowNodesIds_;
     RectI prepareClipRect_{0, 0, 0, 0}; // renderNode clip rect used in Prepare
     Vector4f curCornerRadius_{ 0.f, 0.f, 0.f, 0.f };
+    RectI curCornerRect_;
     Drawing::Matrix parentSurfaceNodeMatrix_;
     bool isSwitchToSourceCrossNodePrepare_ = false;
     // visible filter in transparent surface or display must prepare
@@ -427,7 +429,7 @@ private:
     bool isUIFirstDebugEnable_ = false;
     bool isVirtualDirtyEnabled_ = false;
     bool isVirtualDirtyDfxEnabled_ = false;
-    bool isExpandScreenDirtyEnabled_ = false;
+    bool isVirtualExpandScreenDirtyEnabled_ = false;
     bool needRequestNextVsync_ = true;
     bool isTargetUIFirstDfxEnabled_ = false;
 #ifdef SUBTREE_PARALLEL_ENABLE
@@ -480,6 +482,8 @@ private:
     NodeId offscreenCanvasNodeId_ = INVALID_NODEID;
 
     int32_t rsScreenNodeChildNum_ = 0;
+
+    ScreenState screenState_ = ScreenState::UNKNOWN;
     
     bool isSkipDrawInVirtualScreen_ = false;
 };

@@ -132,6 +132,20 @@ HWTEST_F(RSRenderServiceConnectionProxyTest, FillParcelWithTransactionData002, T
 }
 
 /**
+ * @tc.name: CreateNode Test
+ * @tc.desc: CreateNode Test
+ * @tc.type: FUNC
+ * @tc.require: issueI9KXXE
+ */
+HWTEST_F(RSRenderServiceConnectionProxyTest, CreateNodeTest, TestSize.Level1)
+{
+    RSDisplayNodeConfig rsDisplayNodeConfig;
+    NodeId nodeId = 100;
+    bool success = false;
+    ASSERT_EQ(proxy->CreateNode(rsDisplayNodeConfig, nodeId, success), ERR_INVALID_VALUE);
+}
+
+/**
  * @tc.name: CreateNodeAndSurface Test
  * @tc.desc: CreateNodeAndSurface Test
  * @tc.type:FUNC
@@ -1517,26 +1531,26 @@ HWTEST_F(RSRenderServiceConnectionProxyTest, ClearUifirstCacheTest, TestSize.Lev
 }
 
 /**
- * @tc.name: TaskSurfaceCaptureWithAllWindowsTest
- * @tc.desc: TaskSurfaceCaptureWithAllWindows test to capture screen
+ * @tc.name: TakeSurfaceCaptureWithAllWindowsTest
+ * @tc.desc: TakeSurfaceCaptureWithAllWindows test to capture screen
  * @tc.type:FUNC
  * @tc.require: issueICQ74B
  */
-HWTEST_F(RSRenderServiceConnectionProxyTest, TaskSurfaceCaptureWithAllWindowsTest, TestSize.Level1)
+HWTEST_F(RSRenderServiceConnectionProxyTest, TakeSurfaceCaptureWithAllWindowsTest, TestSize.Level1)
 {
     ASSERT_NE(proxy, nullptr);
     NodeId nodeId = 1;
     bool checkDrmAndSurfaceLock = false;
     sptr<RSISurfaceCaptureCallback> callback;
     RSSurfaceCaptureConfig captureConfig;
-    auto ret = proxy->TaskSurfaceCaptureWithAllWindows(nodeId, callback, captureConfig, checkDrmAndSurfaceLock);
+    auto ret = proxy->TakeSurfaceCaptureWithAllWindows(nodeId, callback, captureConfig, checkDrmAndSurfaceLock);
     EXPECT_EQ(ret, ERR_INVALID_VALUE);
 
     auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     ASSERT_NE(samgr, nullptr);
     auto remoteObject = samgr->GetSystemAbility(RENDER_SERVICE);
     callback = iface_cast<RSISurfaceCaptureCallback>(remoteObject);
-    ret = proxy->TaskSurfaceCaptureWithAllWindows(nodeId, callback, captureConfig, checkDrmAndSurfaceLock);
+    ret = proxy->TakeSurfaceCaptureWithAllWindows(nodeId, callback, captureConfig, checkDrmAndSurfaceLock);
     EXPECT_EQ(ret, ERR_OK);
 }
 
@@ -1596,6 +1610,37 @@ HWTEST_F(RSRenderServiceConnectionProxyTest, SetOptimizeCanvasDirtyPidList, Test
 
     auto ret = proxy->SetOptimizeCanvasDirtyPidList(pidList);
     ASSERT_EQ(ret, ERR_INVALID_VALUE);
+}
+
+/**
+ * @tc.name: AvcodecVideoStart Test
+ * @tc.desc: AvcodecVideoStart Test
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSRenderServiceConnectionProxyTest, AvcodecVideoStartTest, TestSize.Level1)
+{
+    std::vector<uint64_t> uniqueIdList = {1};
+    std::vector<std::string> surfaceNameList = {"surface1"};
+    uint32_t fps = 120;
+    uint64_t reportTime = 16;
+    proxy->AvcodecVideoStart(uniqueIdList, surfaceNameList, fps, reportTime);
+    ASSERT_TRUE(proxy);
+}
+
+/**
+ * @tc.name: AvcodecVideoStop Test
+ * @tc.desc: AvcodecVideoStop Test
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSRenderServiceConnectionProxyTest, AvcodecVideoStopTest, TestSize.Level1)
+{
+    std::vector<uint64_t> uniqueIdList = {1};
+    std::vector<std::string> surfaceNameList = {"surface1"};
+    uint32_t fps = 120;
+    proxy->AvcodecVideoStop(uniqueIdList, surfaceNameList, fps);
+    ASSERT_TRUE(proxy);
 }
 } // namespace Rosen
 } // namespace OHOS

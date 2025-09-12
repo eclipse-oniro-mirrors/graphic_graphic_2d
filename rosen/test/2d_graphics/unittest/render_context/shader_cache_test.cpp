@@ -385,6 +385,7 @@ HWTEST_F(ShaderCacheTest, SetAndGetMaxUniRenderSizeTest, TestSize.Level1)
     const int maxUniRenderSize = 20;
     cache.SetMaxUniRenderSize(maxUniRenderSize);
     EXPECT_EQ(20, cache.GetMaxUniRenderSize());
+    cache.~ShaderCache();
 }
  
 /**
@@ -399,6 +400,7 @@ HWTEST_F(ShaderCacheTest, CalMaxUniRenderSize_test_001, TestSize.Level1)
     auto &cache = ShaderCache::Instance();
     int result = cache.CalMaxUniRenderSize();
     EXPECT_EQ(ShaderCache::MAX_UNIRENDER_SIZE, result);
+    cache.~ShaderCache();
 }
  
 /**
@@ -415,6 +417,7 @@ HWTEST_F(ShaderCacheTest, CalMaxUniRenderSize_test_002, TestSize.Level1)
     cache.SetMaxUniRenderSize(maxUniRenderSize);
     int result = cache.CalMaxUniRenderSize();
     EXPECT_EQ(ShaderCache::MAX_VALUE_SIZE * maxUniRenderSize, result);
+    cache.~ShaderCache();
 }
  
 /**
@@ -431,6 +434,7 @@ HWTEST_F(ShaderCacheTest, CalMaxUniRenderSize_test_003, TestSize.Level1)
     cache.SetMaxUniRenderSize(maxUniRenderSize);
     int result = cache.CalMaxUniRenderSize();
     EXPECT_EQ(ShaderCache::MAX_UNIRENDER_SIZE, result);
+    cache.~ShaderCache();
 }
 } // namespace Rosen
 } // namespace OHOS

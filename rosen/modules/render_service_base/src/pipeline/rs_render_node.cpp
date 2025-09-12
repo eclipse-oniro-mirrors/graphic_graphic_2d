@@ -24,7 +24,6 @@
 
 #include "offscreen_render/rs_offscreen_render_thread.h"
 #include "rs_trace.h"
-#include "sandbox_utils.h"
 
 #include "animation/rs_render_animation.h"
 #include "common/rs_common_def.h"
@@ -933,6 +932,9 @@ void RSRenderNode::DumpTree(int32_t depth, std::string& out) const
         if (surfaceNode->HasSubSurfaceNodes()) {
             out += surfaceNode->SubSurfaceNodesDump();
         }
+        if (surfaceNode->IsSubSurfaceNode()) {
+            out += ", isSubSurfaceId[" + std::to_string(GetId()) + "]";
+        }
         out += ", abilityState: " +
             std::string(surfaceNode->GetAbilityState() == RSSurfaceNodeAbilityState::FOREGROUND ?
             "foreground" : "background");
@@ -1422,6 +1424,12 @@ void RSRenderNode::UpdateDrawingCacheInfoBeforeChildren(bool isScreenRotation)
 #ifdef RS_ENABLE_GPU
     stagingRenderParams_->SetDrawingCacheIncludeProperty(nodeGroupIncludeProperty_);
 #endif
+    // renderGroup memory tagTracer
+    auto instanceRootNode = GetInstanceRootNode()->ReinterpretCastTo<RSSurfaceRenderNode>();
+    if (instanceRootNode && instanceRootNode->IsAppWindow()) {
+        stagingRenderParams_->SetInstanceRootNodeId(instanceRootNode->GetId());
+        stagingRenderParams_->SetInstanceRootNodeName(instanceRootNode->GetName());
+    }
 }
 
 void RSRenderNode::Process(const std::shared_ptr<RSNodeVisitor>& visitor)
@@ -1780,9 +1788,7 @@ bool RSRenderNode::UpdateDrawRectAndDirtyRegion(RSDirtyRegionManager& dirtyManag
             absCmdlistDrawRect_ = GetNeedUseCmdlistDrawRegion() ?
                 geoPtr->MapRect(cmdlistDrawRegion_, geoPtr->GetAbsMatrix()) : RectI(0, 0, 0, 0);
             if (isSelfDrawingNode_) {
-                selfDrawingNodeAbsDirtyRectF_ = geoPtr->MapRectWithoutRounding(
-                    selfDrawingNodeDirtyRect_, geoPtr->GetAbsMatrix());
-                selfDrawingNodeAbsDirtyRect_ = geoPtr->InflateToRectI(selfDrawingNodeAbsDirtyRectF_);
+                selfDrawingNodeAbsDirtyRect_ = geoPtr->MapAbsRect(selfDrawingNodeDirtyRect_);
             }
             UpdateSrcOrClipedAbsDrawRectChangeState(clipRect);
         }
@@ -2361,7 +2367,9 @@ bool RSRenderNode::UpdateFilterCacheWithBelowDirty(const Occlusion::Region& belo
 {
 #if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
     if (!RSProperties::filterCacheEnabled_) {
+#ifndef ROSEN_ARKUI_X
         ROSEN_LOGE("RSRenderNode::UpdateFilterCacheWithBelowDirty filter cache is disabled.");
+#endif
         return false;
     }
     auto filterDrawable = GetFilterDrawable(isForeground);
@@ -3547,7 +3555,7 @@ bool RSRenderNode::GetNodeIsSingleFrameComposer() const
 // arkui mark
 void RSRenderNode::MarkSuggestOpincNode(bool isOpincNode, bool isNeedCalculate)
 {
-    RS_TRACE_NAME_FMT("mark opinc %llx, isopinc:%d. isCal:%d", GetId(), isOpincNode, isNeedCalculate);
+    RS_TRACE_NAME_FMT("mark opinc %" PRIu64 ", isopinc:%d. isCal:%d", GetId(), isOpincNode, isNeedCalculate);
     opincCache_.MarkSuggestOpincNode(isOpincNode, isNeedCalculate);
     if (stagingRenderParams_) {
         stagingRenderParams_->OpincSetIsSuggest(opincCache_.IsSuggestOpincNode());
@@ -3933,21 +3941,6 @@ void RSRenderNode::ResetDirtyStatus()
     // The return of GetBoundsGeometry function must not be nullptr
     oldMatrix_ = properties.GetBoundsGeometry()->GetMatrix();
     cmdlistDrawRegion_.Clear();
-}
-
-NodeId RSRenderNode::GenerateId()
-{
-    static pid_t pid_ = GetRealPid();
-    static std::atomic<uint32_t> currentId_ = 0; // surfaceNode is seted correctly during boot when currentId is 1
-
-    auto currentId = currentId_.fetch_add(1, std::memory_order_relaxed);
-    if (currentId == UINT32_MAX) {
-        // [PLANNING]:process the overflow situations
-        ROSEN_LOGE("Node Id overflow");
-    }
-
-    // concat two 32-bit numbers to one 64-bit number
-    return ((NodeId)pid_ << 32) | currentId;
 }
 
 bool RSRenderNode::IsRenderUpdateIgnored() const
@@ -4392,9 +4385,16 @@ void RSRenderNode::UpdateAbsDrawRect()
     stagingRenderParams_->SetAbsDrawRect(absRect);
 }
 
-void RSRenderNode::UpdateCurCornerRadius(Vector4f& curCornerRadius)
+void RSRenderNode::UpdateCurCornerInfo(Vector4f& curCornerRadius, RectI& curCornerRect)
 {
-    Vector4f::Max(GetRenderProperties().GetCornerRadius(), curCornerRadius, curCornerRadius);
+    const auto& selfCornerRadius = GetRenderProperties().GetCornerRadius();
+    if (!selfCornerRadius.IsZero()) {
+        const auto& selfCornerRect = GetRenderProperties().GetBoundsGeometry()->GetAbsRect();
+        curCornerRect = curCornerRadius.IsZero() ? selfCornerRect : curCornerRect.IntersectRect(selfCornerRect);
+    }
+    globalCornerRect_ = curCornerRect;
+
+    Vector4f::Max(selfCornerRadius, curCornerRadius, curCornerRadius);
     globalCornerRadius_ = curCornerRadius;
 }
 

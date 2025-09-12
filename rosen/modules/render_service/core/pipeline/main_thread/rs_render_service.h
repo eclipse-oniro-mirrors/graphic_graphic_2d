@@ -38,7 +38,16 @@ public:
 
     bool Init();
     void Run();
-
+    sptr<RSIRenderServiceConnection> GetConnection(sptr<RSIConnectionToken>& token) override
+    {
+        auto tokenObj = token->AsObject();
+        auto iter = connections_.find(tokenObj);
+        if (iter == connections_.end()) {
+            RS_LOGE("GetConnection: connections_ cannot find token");
+            return nullptr;
+        }
+        return iter->second;
+    }
 private:
     int Dump(int fd, const std::vector<std::u16string>& args) override;
     void DoDump(std::unordered_set<std::u16string>& argSets, std::string& dumpString) const;
@@ -69,6 +78,7 @@ private:
 
     sptr<RSIRenderServiceConnection> CreateConnection(const sptr<RSIConnectionToken>& token) override;
     bool RemoveConnection(const sptr<RSIConnectionToken>& token) override;
+    void RegisterRcdMsg();
 
     // RS dump init
     void RSGfxDumpInit();
@@ -96,6 +106,7 @@ private:
     sptr<VSyncDistributor> rsVSyncDistributor_;
     sptr<VSyncDistributor> appVSyncDistributor_;
 
+    bool isRcdServiceRegister_ = false;
 #ifdef RS_PROFILER_ENABLED
     friend class RSProfiler;
 #endif

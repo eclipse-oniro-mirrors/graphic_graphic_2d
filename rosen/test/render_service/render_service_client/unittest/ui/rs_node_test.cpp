@@ -33,8 +33,11 @@
 #include "animation/rs_transition.h"
 #include "common/rs_vector4.h"
 #include "feature/composite_layer/rs_composite_layer_utils.h"
+#include "modifier_ng/appearance/rs_alpha_modifier.h"
 #include "modifier_ng/appearance/rs_background_filter_modifier.h"
 #include "modifier_ng/appearance/rs_foreground_filter_modifier.h"
+#include "modifier_ng/custom/rs_content_style_modifier.h"
+#include "modifier_ng/custom/rs_node_modifier.h"
 #include "render/rs_filter.h"
 #include "render/rs_material_filter.h"
 #include "ui/rs_node.h"
@@ -2685,6 +2688,7 @@ HWTEST_F(RSNodeTest, SetandGetShadowAlpha003, TestSize.Level1)
 HWTEST_F(RSNodeTest, SetandGetShadowAlpha004, TestSize.Level1)
 {
     auto rsNode = RSCanvasNode::Create();
+    rsNode->SetAlpha(1.f);
     rsNode->SetShadowAlpha(floatData[4]);
     EXPECT_TRUE(ROSEN_EQ(rsNode->GetStagingProperties().GetShadowAlpha(), floatData[4], 0.02f));
 }
@@ -4842,7 +4846,7 @@ HWTEST_F(RSNodeTest, RemoveChildByNodeSelf001, TestSize.Level1)
 HWTEST_F(RSNodeTest, DrawOnNode, TestSize.Level1)
 {
     auto rsNode = RSCanvasNode::Create();
-    rsNode->DrawOnNode(RSModifierType::BOUNDS, [](std::shared_ptr<Drawing::Canvas> canvasPtr) {});
+    rsNode->DrawOnNode(ModifierNG::RSModifierType::BOUNDS, [](std::shared_ptr<Drawing::Canvas> canvasPtr) {});
     ASSERT_FALSE(rsNode->recordingUpdated_);
     rsNode->SetFreeze(true);
     rsNode->InitUniRenderEnabled();
@@ -7720,6 +7724,33 @@ HWTEST_F(RSNodeTest, Dump, TestSize.Level1)
     std::string out6;
     rsNode->Dump(out6);
     ASSERT_TRUE(!out6.empty());
+}
+
+/**
+ * @tc.name: DumpModifiers
+ * @tc.desc: test results of DumpModifiers
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeTest, DumpModifiers, TestSize.Level1)
+{
+    auto rsNode = std::make_shared<RSCanvasNode>(true, false);
+    string out1;
+    rsNode->DumpModifiers(out1);
+    ASSERT_TRUE(out1.empty());
+    auto alphaModifier = std::make_shared<ModifierNG::RSAlphaModifier>();
+    alphaModifier->SetAlpha(1.f);
+    auto contentModifier = std::make_shared<ModifierNG::RSContentStyleModifier>();
+    rsNode->AddModifier(alphaModifier);
+    rsNode->AddModifier(contentModifier);
+    string out2;
+    rsNode->DumpModifiers(out2);
+    ASSERT_EQ(out2, "Alpha[1.0],ContentStyle:[drawCmdList[]]");
+    auto nodeModifier = std::make_shared<ModifierNG::RSNodeModifier>();
+    rsNode->modifiersNG_[nodeModifier->GetId()] = nodeModifier;
+    rsNode->modifiersNG_[0] = nullptr;
+    string out3;
+    rsNode->DumpModifiers(out3);
+    ASSERT_EQ(out3, "Alpha[1.0],ContentStyle:[drawCmdList[]]");
 }
 
 /**

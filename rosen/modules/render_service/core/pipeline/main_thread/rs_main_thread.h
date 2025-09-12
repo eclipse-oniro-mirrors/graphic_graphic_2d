@@ -123,6 +123,8 @@ public:
     void GetAppMemoryInMB(float& cpuMemSize, float& gpuMemSize);
     void ClearMemoryCache(ClearMemoryMoment moment, bool deeply = false, pid_t pid = -1);
     void SetForceRsDVsync(const std::string& sceneId);
+    void GetNodeInfo(std::unordered_map<int, std::pair<int, int>>& node_info,
+        std::unordered_map<int, int>& nullnode_info, std::unordered_map<pid_t, size_t>& modifierSize);
 
     template<typename Task, typename Return = std::invoke_result_t<Task>>
     std::future<Return> ScheduleTask(Task&& task)
@@ -402,6 +404,11 @@ public:
         return ifStatusBarDirtyOnly_.load();
     }
 
+    void SetIfStatusBarDirtyOnly(bool ifStatusBarDirtyOnly)
+    {
+        ifStatusBarDirtyOnly_.store(ifStatusBarDirtyOnly);
+    }
+
     void StartGPUDraw();
 
     void EndGPUDraw();
@@ -418,13 +425,13 @@ public:
         }
     };
 
-    void AddToUnmappedCacheSet(uint32_t bufferId)
+    void AddToUnmappedCacheSet(uint64_t bufferId)
     {
         std::lock_guard<std::mutex> lock(unmappedCacheSetMutex_);
         unmappedCacheSet_.insert(bufferId);
     }
 
-    void AddToUnmappedCacheSet(const std::set<uint32_t>& seqNumSet)
+    void AddToUnmappedCacheSet(const std::set<uint64_t>& seqNumSet)
     {
         std::lock_guard<std::mutex> lock(unmappedCacheSetMutex_);
         unmappedCacheSet_.insert(seqNumSet.begin(), seqNumSet.end());
@@ -655,9 +662,6 @@ private:
     // record multidisplay status change
     bool isMultiDisplayPre_ = false;
     bool isMultiDisplayChange_ = false;
-#ifdef RS_ENABLE_VK
-    bool needCreateVkPipeline_ = true;
-#endif
     std::atomic<bool> isDirty_ = false;
     bool prevHdrSwitchStatus_ = true;
     std::atomic<bool> screenPowerOnChanged_ = false;
@@ -735,7 +739,7 @@ private:
      * if an image is found in this set, it means that the image is no longer needed and can be safely
      * removed from the GPU cache.
      */
-    std::set<uint32_t> unmappedCacheSet_ = {}; // must protected by unmappedCacheSetMutex_
+    std::set<uint64_t> unmappedCacheSet_ = {}; // must protected by unmappedCacheSetMutex_
     std::mutex unmappedCacheSetMutex_;
 
     /**

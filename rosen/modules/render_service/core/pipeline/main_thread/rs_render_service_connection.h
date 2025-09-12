@@ -50,6 +50,11 @@ public:
         return token_;
     }
 
+    void RemoveToken() override
+    {
+        token_ = nullptr;
+    }
+
 private:
     void CleanVirtualScreens() noexcept;
     void CleanRenderNodes() noexcept;
@@ -191,7 +196,7 @@ private:
     ErrCode SetWindowFreezeImmediately(NodeId id, bool isFreeze, sptr<RSISurfaceCaptureCallback> callback,
         const RSSurfaceCaptureConfig& captureConfig, const RSSurfaceCaptureBlurParam& blurParam) override;
 
-    ErrCode TaskSurfaceCaptureWithAllWindows(NodeId id, sptr<RSISurfaceCaptureCallback> callback,
+    ErrCode TakeSurfaceCaptureWithAllWindows(NodeId id, sptr<RSISurfaceCaptureCallback> callback,
         const RSSurfaceCaptureConfig& captureConfig, bool checkDrmAndSurfaceLock,
         RSSurfaceCapturePermissions permissions = RSSurfaceCapturePermissions()) override;
 
@@ -439,9 +444,11 @@ private:
 
     ErrCode GetBehindWindowFilterEnabled(bool& enabled) override;
 
-    ErrCode AvcodecVideoStart(uint64_t uniqueId, std::string& surfaceName, uint32_t fps, uint64_t reportTime) override;
+    ErrCode AvcodecVideoStart(const std::vector<uint64_t>& uniqueIdList,
+        const std::vector<std::string>& surfaceNameList, uint32_t fps, uint64_t reportTime) override;
 
-    ErrCode AvcodecVideoStop(uint64_t uniqueId, std::string& surfaceName, uint32_t fps) override;
+    ErrCode AvcodecVideoStop(const std::vector<uint64_t>& uniqueIdList,
+        const std::vector<std::string>& surfaceNameList, uint32_t fps) override;
 
     int32_t GetPidGpuMemoryInMB(pid_t pid, float &gpuMemInMB) override;
 
@@ -501,6 +508,7 @@ private:
 #ifdef RS_PROFILER_ENABLED
     friend class RSProfiler;
 #endif
+    friend class RSRenderServiceStub;
 };
 } // namespace Rosen
 } // namespace OHOS

@@ -27,7 +27,6 @@
 #include "common/rs_common_hook.h"
 #include "common/rs_obj_abs_geometry.h"
 #include "drawable/rs_screen_render_node_drawable.h"
-#include "feature/round_corner_display/rs_rcd_surface_render_node_drawable.h"
 #include "pipeline/rs_surface_render_node.h"
 #include "platform/common/rs_log.h"
 
@@ -240,12 +239,10 @@ bool RSUniHwcPrevalidateUtil::CreateScreenNodeLayerInfo(uint32_t zorder,
 bool RSUniHwcPrevalidateUtil::CreateRCDLayerInfo(
     RSRcdSurfaceRenderNode::SharedPtr node, const ScreenInfo &screenInfo, uint32_t fps, RequestLayerInfo &info)
 {
-    if (!node || !node->GetRSSurfaceHandler() || !node->GetRSSurfaceHandler()->GetConsumer() ||
-        !node->GetRSSurfaceHandler()->GetBuffer()) {
+    if (!node || !node->GetConsumer() || !node->GetBuffer()) {
         return false;
     }
-
-    auto surfaceHandler = node->GetRSSurfaceHandler();
+    
     info.id = node->GetId();
     auto src = node->GetSrcRect();
     info.srcRect = {src.left_, src.top_, src.width_, src.height_};
@@ -254,12 +251,12 @@ bool RSUniHwcPrevalidateUtil::CreateRCDLayerInfo(
     info.dstRect.y = static_cast<uint32_t>(static_cast<float>(dst.top_) * screenInfo.GetRogHeightRatio());
     info.dstRect.w = static_cast<uint32_t>(static_cast<float>(dst.width_) * screenInfo.GetRogWidthRatio());
     info.dstRect.h = static_cast<uint32_t>(static_cast<float>(dst.height_) * screenInfo.GetRogHeightRatio());
-    info.zOrder = static_cast<uint32_t>(surfaceHandler->GetGlobalZOrder());
-    info.bufferUsage = surfaceHandler->GetBuffer()->GetUsage();
-    info.format = surfaceHandler->GetBuffer()->GetFormat();
+    info.zOrder = static_cast<uint32_t>(node->GetGlobalZOrder());
+    info.bufferUsage = node->GetBuffer()->GetUsage();
+    info.format = node->GetBuffer()->GetFormat();
     info.fps = fps;
     CopyCldInfo(node->GetCldInfo(), info);
-    LayerRotate(info, surfaceHandler->GetConsumer(), screenInfo);
+    LayerRotate(info, node->GetConsumer(), screenInfo);
     RS_LOGD_IF(DEBUG_PREVALIDATE, "CreateRCDLayerInfo %{public}" PRIu64 ","
         " src: %{public}d,%{public}d,%{public}d,%{public}d"
         " dst: %{public}d,%{public}d,%{public}d,%{public}d, z: %{public}" PRIu32 ","
@@ -276,11 +273,13 @@ void RSUniHwcPrevalidateUtil::CollectSurfaceNodeLayerInfo(
     std::vector<RequestLayerInfo>& prevalidLayers, std::vector<RSBaseRenderNode::SharedPtr>& surfaceNodes,
     uint32_t curFps, uint32_t &zOrder, const ScreenInfo& screenInfo)
 {
-    std::shared_ptr<RSSurfaceRenderNode> pointerWindow = nullptr;
     for (auto it = surfaceNodes.rbegin(); it != surfaceNodes.rend(); it++) {
         auto surfaceNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(*it);
         if (!surfaceNode) {
             continue;
+        }
+        if (RSUniHwcPrevalidateUtil::CheckHwcNode(surfaceNode)) {
+            RSUniHwcPrevalidateUtil::EmplaceSurfaceNodeLayer(prevalidLayers, surfaceNode, curFps, zOrder, screenInfo);
         }
         const auto& hwcNodes = surfaceNode->GetChildHardwareEnabledNodes();
         if (hwcNodes.empty()) {
@@ -288,14 +287,11 @@ void RSUniHwcPrevalidateUtil::CollectSurfaceNodeLayerInfo(
         }
         for (auto& hwcNode : hwcNodes) {
             auto hwcNodePtr = hwcNode.lock();
-            if (!RSUniHwcPrevalidateUtil::CheckHwcNodeAndGetPointerWindow(hwcNodePtr, pointerWindow)) {
+            if (!RSUniHwcPrevalidateUtil::CheckHwcNode(hwcNodePtr)) {
                 continue;
             }
             RSUniHwcPrevalidateUtil::EmplaceSurfaceNodeLayer(prevalidLayers, hwcNodePtr, curFps, zOrder, screenInfo);
         }
-    }
-    if (pointerWindow && pointerWindow->ShouldPaint()) {
-        RSUniHwcPrevalidateUtil::EmplaceSurfaceNodeLayer(prevalidLayers, pointerWindow, curFps, zOrder, screenInfo);
     }
 }
 
@@ -305,26 +301,35 @@ void RSUniHwcPrevalidateUtil::EmplaceSurfaceNodeLayer(
 {
     auto transform = RSUniHwcComputeUtil::GetLayerTransform(*node, screenInfo);
     RequestLayerInfo surfaceLayer;
+    uint32_t appWindowZOrder = 0;
+    if (IsPointerWindow(node)) {
+        appWindowZOrder = node->GetAppWindowZOrder();
+    } else {
+        appWindowZOrder = zOrder++;
+    }
     if (RSUniHwcPrevalidateUtil::GetInstance().CreateSurfaceNodeLayerInfo(
-        zOrder++, node, transform, curFps, surfaceLayer)) {
+        appWindowZOrder, node, transform, curFps, surfaceLayer)) {
         prevalidLayers.emplace_back(surfaceLayer);
     }
 }
 
-bool RSUniHwcPrevalidateUtil::CheckHwcNodeAndGetPointerWindow(
-    const RSSurfaceRenderNode::SharedPtr& node, RSSurfaceRenderNode::SharedPtr& pointerWindow)
+bool RSUniHwcPrevalidateUtil::CheckHwcNode(const RSSurfaceRenderNode::SharedPtr& node)
 {
     if (!node || !node->IsOnTheTree()) {
-        return false;
-    }
-    if (node->IsHardwareEnabledTopSurface()) {
-        pointerWindow = node;
         return false;
     }
     if (node->IsHardwareForcedDisabled() || node->GetAncoForceDoDirect()) {
         return false;
     }
     return true;
+}
+
+bool RSUniHwcPrevalidateUtil::IsPointerWindow(const RSSurfaceRenderNode::SharedPtr& node)
+{
+    if (!node || !node->IsOnTheTree()) {
+        return false;
+    }
+    return node->IsHardwareEnabledTopSurface();
 }
 
 void RSUniHwcPrevalidateUtil::LayerRotate(

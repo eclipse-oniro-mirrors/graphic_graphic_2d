@@ -41,9 +41,10 @@
 #include "params/rs_surface_render_params.h"
 #include "feature/dirty/rs_uni_dirty_compute_util.h"
 #include "feature/drm/rs_drm_util.h"
+#include "feature/round_corner_display/rs_rcd_render_manager.h"
+#include "feature/hdr/rs_hdr_util.h"
 #include "feature/round_corner_display/rs_round_corner_display_manager.h"
-#include "feature/round_corner_display/rs_rcd_surface_render_node_drawable.h"
-#include "feature/round_corner_display/rs_message_bus.h"
+#include "feature/uifirst/rs_sub_thread_manager.h"
 #include "pipeline/render_thread/rs_base_render_engine.h"
 #include "pipeline/rs_screen_render_node.h"
 #include "pipeline/main_thread/rs_main_thread.h"
@@ -121,32 +122,25 @@ Drawing::Region GetFlippedRegion(const std::vector<RectI>& rects, ScreenInfo& sc
 }
 }
 
-// Rcd node will be handled by RS tree in OH 6.0 rcd refactoring, should remove this later
-void DoScreenRcdTask(RSScreenRenderParams& params, std::shared_ptr<RSProcessor> &processor)
+void DoScreenRcdTask(NodeId id, std::shared_ptr<RSProcessor>& processor, std::unique_ptr<RcdInfo>& rcdInfo,
+    const ScreenInfo& screenInfo)
 {
-    if (processor == nullptr) {
-        RS_LOGD("DoScreenRcdTask has no processor");
+    if (rcdInfo == nullptr || processor == nullptr) {
+        RS_LOGD("DoScreenRcdTask has nullptr processor or rcdInfo");
         return;
     }
-    const auto &screenInfo = params.GetScreenInfo();
-    if (screenInfo.state != ScreenState::HDI_OUTPUT_ENABLE) {
+    if (!RoundCornerDisplayManager::CheckRcdRenderEnable(screenInfo)) {
         RS_LOGD("DoScreenRcdTask is not at HDI_OUPUT mode");
         return;
     }
-
-    bool res = true;
-    bool resourceChanged = false;
-    auto drawables = params.GetRoundCornerDrawables();
-    for (auto drawable : drawables) {
-        auto rcdDrawable = std::static_pointer_cast<DrawableV2::RSRcdSurfaceRenderNodeDrawable>(drawable);
-        if (rcdDrawable) {
-            resourceChanged |= rcdDrawable->IsResourceChanged();
-            res &= rcdDrawable->DoProcessRenderTask(processor);
-        }
-    }
-    if (resourceChanged && res) {
-        RSSingleton<RsMessageBus>::GetInstance().SendMsg<NodeId, bool>(
-            TOPIC_RCD_DISPLAY_HWRESOURCE, params.GetId(), true);
+    if (RSSingleton<RoundCornerDisplayManager>::GetInstance().GetRcdEnable()) {
+        RSSingleton<RoundCornerDisplayManager>::GetInstance().RunHardwareTask(id,
+            [id, &processor, &rcdInfo](void) {
+                auto hardInfo = RSSingleton<RoundCornerDisplayManager>::GetInstance().GetHardwareInfo(id, true);
+                rcdInfo->processInfo = {processor, hardInfo.topLayer, hardInfo.bottomLayer, hardInfo.displayRect,
+                    hardInfo.resourceChanged};
+                RSRcdRenderManager::GetInstance().DoProcessRenderTask(id, rcdInfo->processInfo);
+            });
     }
 }
 
@@ -420,8 +414,9 @@ bool RSScreenRenderNodeDrawable::CheckScreenNodeSkip(
     processor->ProcessScreenSurfaceForRenderThread(*this);
 
     // commit RCD layers
-
-    DoScreenRcdTask(params, processor);
+    auto rcdInfo = std::make_unique<RcdInfo>();
+    const auto& screenInfo = params.GetScreenInfo();
+    DoScreenRcdTask(params.GetId(), processor, rcdInfo, screenInfo);
     processor->PostProcess();
     return true;
 }
@@ -451,7 +446,12 @@ void RSScreenRenderNodeDrawable::CheckFilterCacheFullyCovered(RSSurfaceRenderPar
             surfaceParams.GetIsRotating(), surfaceParams.GetAttractionAnimation());
         return;
     }
-    bool dirtyBelowContainsFilterNode = false;
+    if (surfaceParams.IsSubSurfaceNode()) {
+        RS_OPTIONAL_TRACE_NAME_FMT("CheckFilterCacheFullyCovered NodeId[%" PRIu64 "], Name[%s], "
+            "subSurface's filter cache not participate in occlusion",
+            surfaceParams.GetId(), surfaceParams.GetName().c_str());
+        return;
+    }
     for (auto& filterNodeId : surfaceParams.GetVisibleFilterChild()) {
         auto drawableAdapter = DrawableV2::RSRenderNodeDrawableAdapter::GetDrawableById(filterNodeId);
         if (drawableAdapter == nullptr) {
@@ -471,10 +471,10 @@ void RSScreenRenderNodeDrawable::CheckFilterCacheFullyCovered(RSSurfaceRenderPar
         }
         // Filter cache occlusion need satisfy:
         // 1.The filter node global alpha equals 1;
-        // 2.There is no invalid filter cache node below, which should take snapshot;
+        // 2.The node type is not EFFECT_NODE;
         // 3.The filter node has no global corner;
-        // 4.The node type is not EFFECT_NODE;
-        if (ROSEN_EQ(filterParams->GetGlobalAlpha(), 1.f) && !dirtyBelowContainsFilterNode &&
+        // 4.There is no invalid filter cache node below, which should take snapshot;
+        if (ROSEN_EQ(filterParams->GetGlobalAlpha(), 1.f) &&
             !filterParams->HasGlobalCorner() && filterParams->GetType() != RSRenderNodeType::EFFECT_NODE) {
             bool cacheValid = filterNodeDrawable->IsFilterCacheValidForOcclusion();
             RectI filterCachedRect = filterNodeDrawable->GetFilterCachedRegion();
@@ -483,30 +483,17 @@ void RSScreenRenderNodeDrawable::CheckFilterCacheFullyCovered(RSSurfaceRenderPar
                 surfaceParams.IsMainWindowType() && cacheValid && screenRect.IsInsideOf(filterCachedRect));
         }
         RS_OPTIONAL_TRACE_NAME_FMT("CheckFilterCacheFullyCovered NodeId[%" PRIu64 "], globalAlpha: %f, "
-            "hasInvalidFilterCacheBefore: %d, hasNoCorner: %d, isNodeTypeCorrect: %d, isCacheValid: %d, "
-            "cacheRect: %s", filterNodeId, filterParams->GetGlobalAlpha(), !dirtyBelowContainsFilterNode,
-            !filterParams->HasGlobalCorner(), filterParams->GetType() != RSRenderNodeType::EFFECT_NODE,
+            "hasNoCorner: %d, isNodeTypeCorrect: %d, isCacheValid: %d, cacheRect: %s",
+            filterNodeId, filterParams->GetGlobalAlpha(), !filterParams->HasGlobalCorner(),
+            filterParams->GetType() != RSRenderNodeType::EFFECT_NODE,
             filterNodeDrawable->IsFilterCacheValidForOcclusion(),
             filterNodeDrawable->GetFilterCachedRegion().ToString().c_str());
         if (filterParams->GetEffectNodeShouldPaint() && !filterNodeDrawable->IsFilterCacheValidForOcclusion()) {
-            dirtyBelowContainsFilterNode = true;
+            RS_OPTIONAL_TRACE_NAME_FMT("CheckFilterCacheFullyCovered NodeId[%" PRIu64 "], Name[%s], "
+                "Has invalid filter cache before", surfaceParams.GetId(), surfaceParams.GetName().c_str());
+            break;
         }
     }
-}
-
-void RSScreenRenderNodeDrawable::CheckAndUpdateFilterCacheOcclusionFast()
-{
-    auto params = static_cast<RSScreenRenderParams*>(renderParams_.get());
-    ScreenId paramScreenId = params->GetScreenId();
-    sptr<RSScreenManager> screenManager = CreateOrGetScreenManager();
-    if (!screenManager) {
-        SetDrawSkipType(DrawSkipType::SCREEN_MANAGER_NULL);
-        RS_LOGE("RSScreenRenderNodeDrawable::OnDraw ScreenManager is nullptr");
-        return;
-    }
-    ScreenInfo curScreenInfo = screenManager->QueryScreenInfo(paramScreenId);
-    CheckAndUpdateFilterCacheOcclusion(*params, curScreenInfo);
-    filterCacheOcclusionUpdated_ = true;
 }
 
 void RSScreenRenderNodeDrawable::CheckAndUpdateFilterCacheOcclusion(
@@ -679,7 +666,7 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     bool isVirtualExpandComposite =
         params->GetCompositeType() == CompositeType::UNI_RENDER_EXPAND_COMPOSITE;
     if (isVirtualExpandComposite) {
-        RSUniDirtyComputeUtil::UpdateVirtualExpandScreenAccumulatedParams(*params, *this);
+        RSUniDirtyComputeUtil::UpdateVirtualExpandScreenAccumulatedParams(*params, *this, screenManager);
         if (RSUniDirtyComputeUtil::CheckVirtualExpandScreenSkip(*params, *this)) {
             RS_TRACE_NAME("VirtualExpandScreenNode skip");
             return;
@@ -692,6 +679,9 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         RS_TRACE_NAME_FMT("SkipFrame, screenId:%lu, strategy:%d, interval:%u, refreshrate:%u, dirty:%d",
             paramScreenId, screenInfo.skipFrameStrategy, screenInfo.skipFrameInterval,
             screenInfo.expectedRefreshRate, accumulateDirtyInSkipFrame_);
+        if (isVirtualExpandComposite) {
+            RSUniDirtyComputeUtil::AccumulateVirtualExpandScreenDirtyRegions(*this, *params);
+        }
         screenManager->PostForceRefreshTask();
         return;
     }
@@ -707,6 +697,7 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     }
 
     uniParam->SetRSProcessor(processor);
+    RSUniRenderThread::Instance().SetEnableVisibleRect(false);
     auto mirroredDrawable = params->GetMirrorSourceDrawable().lock();
     auto mirroredRenderParams = mirroredDrawable ?
         static_cast<RSScreenRenderParams*>(mirroredDrawable->GetRenderParams().get()) : nullptr;
@@ -759,11 +750,17 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
             }
             curCanvas_ = virtualProcessor->GetCanvas();
             RSRenderNodeDrawable::OnDraw(*curCanvas_);
+            if (virtualProcessor->GetDisplaySkipInMirror()) {
+                RS_TRACE_NAME("skip in virtual screen and cancelbuffer");
+                virtualProcessor->SetDisplaySkipInMirror(false);
+                virtualProcessor->CancelCurrentFrame();
+                return;
+            }
             params->ResetVirtualExpandAccumulatedParams();
         } else {
             RS_LOGD("RSScreenRenderNodeDrawable::OnDraw Expand screen.");
             bool isOpDropped = uniParam->IsOpDropped();
-            uniParam->SetOpDropped(false);
+            uniParam->SetOpDropped(uniParam->IsVirtualExpandScreenDirtyEnabled());
             auto expandProcessor = RSProcessor::ReinterpretCast<RSUniRenderVirtualProcessor>(processor);
             if (!expandProcessor) {
                 SetDrawSkipType(DrawSkipType::EXPAND_PROCESSOR_NULL);
@@ -772,23 +769,29 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
             }
             RSDirtyRectsDfx rsDirtyRectsDfx(*this);
             std::vector<RectI> damageRegionRects;
-            // disable expand screen dirty when isEqualVsyncPeriod is false, because the dirty history is incorrect
-            if (uniParam->IsExpandScreenDirtyEnabled() && uniParam->IsVirtualDirtyEnabled() &&
-                screenInfo.isEqualVsyncPeriod) {
-                int32_t bufferAge = expandProcessor->GetBufferAge();
-                damageRegionRects = RSUniRenderUtil::MergeDirtyHistory(
-                    *this, bufferAge, screenInfo, rsDirtyRectsDfx, *params);
-                uniParam->Reset();
-                if (!uniParam->IsVirtualDirtyDfxEnabled()) {
-                    expandProcessor->SetDirtyInfo(damageRegionRects);
-                }
+            RSUniDirtyComputeUtil::MergeVirtualExpandScreenAccumulatedDirtyRegions(*this, *params);
+            int32_t bufferAge = expandProcessor->GetBufferAge();
+            damageRegionRects = RSUniRenderUtil::MergeDirtyHistory(
+                *this, bufferAge, screenInfo, rsDirtyRectsDfx, *params);
+            uniParam->Reset();
+            if (uniParam->IsVirtualExpandScreenDirtyEnabled() && !uniParam->IsVirtualDirtyDfxEnabled()) {
+                expandProcessor->SetDirtyInfo(damageRegionRects);
             } else {
                 std::vector<RectI> emptyRects = {};
                 expandProcessor->SetRoiRegionToCodec(emptyRects);
             }
             rsDirtyRectsDfx.SetVirtualDirtyRects(damageRegionRects, screenInfo);
             curCanvas_ = expandProcessor->GetCanvas();
+            curCanvas_->Save();
+            if (uniParam->IsVirtualExpandScreenDirtyEnabled()) {
+                UpdateSurfaceDrawRegion(curCanvas_, params);
+                curCanvas_->SetDrawnRegion(params->GetDrawnRegion());
+                Drawing::Region clipRegion = GetFlippedRegion(damageRegionRects, screenInfo);
+                uniParam->SetClipRegion(clipRegion);
+                ClipRegion(*curCanvas_, clipRegion);
+            }
             curCanvas_->Clear(Drawing::Color::COLOR_TRANSPARENT);
+            RSUniDirtyComputeUtil::ClearVirtualExpandScreenAccumulatedDirtyRegions(*this, *params);
             RSRenderNodeDrawable::OnDraw(*curCanvas_);
             params->ResetVirtualExpandAccumulatedParams();
             auto targetSurfaceRenderNodeDrawable = std::static_pointer_cast<RSSurfaceRenderNodeDrawable>(
@@ -845,11 +848,7 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     SetScreenNodeSkipFlag(*uniParam, false);
     RSMainThread::Instance()->SetFrameIsRender(true);
 
-    if (filterCacheOcclusionUpdated_) {
-        filterCacheOcclusionUpdated_ = false;
-    } else {
-        CheckAndUpdateFilterCacheOcclusion(*params, screenInfo);
-    }
+    CheckAndUpdateFilterCacheOcclusion(*params, screenInfo);
     bool isRGBA1010108Enabled = RSHdrUtil::GetRGBA1010108Enabled();
     bool isNeed10bit = isHdrOn || (params->GetNewColorSpace() == GRAPHIC_COLOR_GAMUT_BT2020 && isRGBA1010108Enabled);
     if (isNeed10bit) {
@@ -1006,7 +1005,8 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     }
 
     // process round corner display
-    DoScreenRcdTask(*params, processor);
+    auto rcdInfo = std::make_unique<RcdInfo>();
+    DoScreenRcdTask(params->GetId(), processor, rcdInfo, screenInfo);
 
     if (!RSMainThread::Instance()->WaitHardwareThreadTaskExecute()) {
         RS_LOGW("RSScreenRenderNodeDrawable::ondraw: hardwareThread task has too many to Execute"

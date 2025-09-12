@@ -1214,20 +1214,27 @@ HWTEST_F(RSRenderNodeTest, UpdateRenderParamsTest, TestSize.Level1)
 }
 
 /**
- * @tc.name: UpdateCurCornerRadiusTest
- * @tc.desc:
+ * @tc.name: UpdateCurCornerInfoTest
+ * @tc.desc: Verify the boundary value handling when updating corner radius information,
+ *           including max/min float values and empty radius scenarios.
  * @tc.type: FUNC
- * @tc.require: issueI9T3XY
+ * @tc.require: issueICVCOG
  */
-HWTEST_F(RSRenderNodeTest, UpdateCurCornerRadiusTest, TestSize.Level1)
+HWTEST_F(RSRenderNodeTest, UpdateCurCornerInfoTest, TestSize.Level1)
 {
     auto node = std::make_shared<RSRenderNode>(id, context);
     auto maxFloatData = std::numeric_limits<float>::max();
     auto minFloatData = std::numeric_limits<float>::min();
     Vector4f curCornerRadius(floatData[0], floatData[1], floatData[2], minFloatData);
     Vector4f cornerRadius(floatData[0], floatData[1], floatData[2], maxFloatData);
+    RectI curCornerRect;
+    Vector4f emptyCornerRadius;
+    node->UpdateCurCornerInfo(curCornerRadius, curCornerRect);
+    EXPECT_TRUE(curCornerRadius[3] == minFloatData);
     node->GetMutableRenderProperties().SetCornerRadius(cornerRadius);
-    node->UpdateCurCornerRadius(curCornerRadius);
+    node->UpdateCurCornerInfo(emptyCornerRadius, curCornerRect);
+    EXPECT_TRUE(emptyCornerRadius[3] == maxFloatData);
+    node->UpdateCurCornerInfo(curCornerRadius, curCornerRect);
     EXPECT_TRUE(curCornerRadius[3] == maxFloatData);
 }
 
@@ -1930,6 +1937,21 @@ HWTEST_F(RSRenderNodeTest, RSRenderNodeDumpTest003, TestSize.Level1)
 }
 
 /**
+ * @tc.name: RSRenderNodeDumpTest004
+ * @tc.desc: DumpNodeType DumpTree and DumpSubClassNode test, node is subSurfaceNode
+ * @tc.type: FUNC
+ * @tc.require: issueIAJ6BA
+ */
+HWTEST_F(RSRenderNodeTest, RSRenderNodeDumpTest004, TestSize.Level1)
+{
+    std::string outTest = "";
+    auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(0);
+    surfaceNode->isSubSurfaceNode_ = true;
+    surfaceNode->DumpTree(0, outTest);
+    ASSERT_TRUE(outTest.find("isSubSurfaceId") != string::npos);
+}
+
+/**
  * @tc.name: RSSurfaceRenderNodeDumpTest
  * @tc.desc: DumpNodeType DumpTree and DumpSubClassNode test
  * @tc.type: FUNC
@@ -2556,6 +2578,43 @@ HWTEST_F(RSRenderNodeTest, UpdateDrawingCacheInfoBeforeChildrenTest013, TestSize
     EXPECT_FALSE(nodeTest->stagingRenderParams_->needSync_);
 }
 
+/**
+ * @tc.name: UpdateDrawingCacheInfoBeforeChildrenTest014
+ * @tc.desc: test instanceRootNodeInfo
+ * @tc.type: FUNC
+ * @tc.require: issueI9US6V
+ */
+HWTEST_F(RSRenderNodeTest, UpdateDrawingCacheInfoBeforeChildrenTest014, TestSize.Level1)
+{
+std::shared_ptr<RSRenderNode> nodeTest = std::make_shared<RSRenderNode>(0);
+    EXPECT_NE(nodeTest, nullptr);
+    nodeTest->InitRenderParams();
+    EXPECT_NE(nodeTest->stagingRenderParams_, nullptr);
+    nodeTest->nodeGroupType_ = RSRenderNode::GROUPED_BY_USER;
+    nodeTest->CheckDrawingCacheType();
+    EXPECT_EQ(nodeTest->GetDrawingCacheType(), RSDrawingCacheType::FORCED_CACHE);
+ 
+    std::shared_ptr<RSSurfaceRenderNode> surfaceNode = std::make_shared<RSSurfaceRenderNode>(10086);
+    EXPECT_NE(surfaceNode, nullptr);
+    surfaceNode->name_ = "instanceRootNode";
+    auto sContext = std::make_shared<RSContext>();
+    nodeTest->context_ = sContext;
+    nodeTest->instanceRootNodeId_ = surfaceNode->GetId();
+    auto& nodeMap = sContext->GetMutableNodeMap();
+    EXPECT_TRUE(nodeMap.RegisterRenderNode(surfaceNode));
+    auto instanceRootNode = nodeTest->GetInstanceRootNode()->ReinterpretCastTo<RSSurfaceRenderNode>();
+    EXPECT_NE(instanceRootNode, nullptr);
+    EXPECT_EQ(instanceRootNode->GetName(), surfaceNode->GetName());
+    nodeTest->UpdateDrawingCacheInfoBeforeChildren(false);
+    EXPECT_NE(nodeTest->stagingRenderParams_->GetInstanceRootNodeId(), surfaceNode->GetId());
+    EXPECT_NE(nodeTest->stagingRenderParams_->GetInstanceRootNodeName(), surfaceNode->GetName());
+ 
+    surfaceNode->nodeType_ = RSSurfaceNodeType::APP_WINDOW_NODE;
+    nodeTest->UpdateDrawingCacheInfoBeforeChildren(false);
+    EXPECT_EQ(nodeTest->stagingRenderParams_->GetInstanceRootNodeId(), surfaceNode->GetId());
+    EXPECT_EQ(nodeTest->stagingRenderParams_->GetInstanceRootNodeName(), surfaceNode->GetName());
+}
+
 #ifndef MODIFIER_NG
 /**
  * @tc.name: RemoveModifierTest014
@@ -2754,7 +2813,7 @@ HWTEST_F(RSRenderNodeTest, UpdateDrawableVecV2Test019, TestSize.Level1)
     nodeTest->stagingRenderParams_ = std::make_unique<RSRenderParams>(0);
     nodeTest->UpdateDrawableVecV2();
     auto sum = nodeTest->dirtySlots_.size();
-    EXPECT_NE(nodeTest->dirtySlots_.size(), 0);
+    EXPECT_NE(nodeTest->dirtySlots_.size(), 2);
 
     nodeTest->dirtyTypesNG_.set(static_cast<size_t>(ModifierNG::RSModifierType::TRANSFORM), true);
     std::shared_ptr<DrawableTest> drawableTest2 = std::make_shared<DrawableTest>();
@@ -2766,7 +2825,7 @@ HWTEST_F(RSRenderNodeTest, UpdateDrawableVecV2Test019, TestSize.Level1)
     RRect rrect;
     nodeTest->renderProperties_.rrect_ = rrect;
     nodeTest->UpdateDrawableVecV2();
-    EXPECT_EQ(nodeTest->dirtySlots_.size(), sum);
+    EXPECT_EQ(nodeTest->dirtySlots_.size(), sum + 1);
 }
 
 /**

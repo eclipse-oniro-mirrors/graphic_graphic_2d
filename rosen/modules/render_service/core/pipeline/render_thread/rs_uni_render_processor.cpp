@@ -34,9 +34,11 @@
 #include "params/rs_screen_render_params.h"
 #include "params/rs_surface_render_params.h"
 #include "feature/round_corner_display/rs_rcd_surface_render_node.h"
-#include "feature/round_corner_display/rs_rcd_surface_render_node_drawable.h"
 #include "feature/anco_manager/rs_anco_manager.h"
 #include "platform/common/rs_log.h"
+#ifdef RS_ENABLE_TV_PQ_METADATA
+#include "feature/tv_metadata/rs_tv_metadata_manager.h"
+#endif
 // hpae offline
 #include "feature/hwc/hpae_offline/rs_hpae_offline_processor.h"
 #include "feature/hwc/hpae_offline/rs_hpae_offline_util.h"
@@ -109,7 +111,9 @@ void RSUniRenderProcessor::CreateLayer(const RSSurfaceRenderNode& node, RSSurfac
     layer->SetDisplayNit(params.GetDisplayNit());
     layer->SetBrightnessRatio(params.GetBrightnessRatio());
     layer->SetLayerLinearMatrix(params.GetLayerLinearMatrix());
-
+#ifdef RS_ENABLE_TV_PQ_METADATA
+    RSTvMetadataManager::Instance().UpdateTvMetadata(params, buffer);
+#endif
     uniComposerAdapter_->SetMetaDataInfoToLayer(layer, params.GetBuffer(), surfaceHandler->GetConsumer());
     CreateSolidColorLayer(layer, params);
     auto& layerRect = layer->GetLayerSize();
@@ -174,6 +178,9 @@ void RSUniRenderProcessor::CreateLayerForRenderThread(DrawableV2::RSSurfaceRende
     layer->SetDisplayNit(renderParams.GetDisplayNit());
     layer->SetBrightnessRatio(renderParams.GetBrightnessRatio());
     layer->SetLayerLinearMatrix(renderParams.GetLayerLinearMatrix());
+#ifdef RS_ENABLE_TV_PQ_METADATA
+    RSTvMetadataManager::Instance().UpdateTvMetadata(params, buffer);
+#endif
     uniComposerAdapter_->SetMetaDataInfoToLayer(layer, params.GetBuffer(), surfaceDrawable.GetConsumerOnDraw());
     CreateSolidColorLayer(layer, params);
     layers_.emplace_back(layer);
@@ -485,18 +492,6 @@ void RSUniRenderProcessor::ProcessRcdSurface(RSRcdSurfaceRenderNode& node)
     if (layer == nullptr) {
         RS_LOGE("RSUniRenderProcessor::ProcessRcdSurface: failed to createLayer for node(id: %{public}" PRIu64 ")",
             node.GetId());
-        return;
-    }
-    layers_.emplace_back(layer);
-}
-
-void RSUniRenderProcessor::ProcessRcdSurfaceForRenderThread(DrawableV2::RSRcdSurfaceRenderNodeDrawable &rcdDrawable)
-{
-    auto layer = uniComposerAdapter_->CreateLayer(rcdDrawable);
-    if (layer == nullptr) {
-        RS_LOGE("RSUniRenderProcessor::ProcessRcdSurfaceForRenderThread: failed to createLayer for node(id: "
-                "%{public}" PRIu64 ")",
-            rcdDrawable.GetId());
         return;
     }
     layers_.emplace_back(layer);

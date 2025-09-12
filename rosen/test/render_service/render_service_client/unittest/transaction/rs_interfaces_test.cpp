@@ -207,7 +207,8 @@ HWTEST_F(RSInterfacesTest, UnRegisterTypeface001, TestSize.Level1)
     RSInterfaces& instance = RSInterfaces::GetInstance();
     auto typefaceImpl = std::make_shared<Drawing::SkiaTypeface>();
     auto typeface = std::make_shared<Drawing::Typeface>(typefaceImpl);
-    bool res = instance.UnRegisterTypeface(typeface);
+    ASSERT_NE(typeface, nullptr);
+    bool res = instance.UnRegisterTypeface(typeface->GetUniqueID());
     EXPECT_TRUE(res);
 }
 
@@ -720,7 +721,7 @@ HWTEST_F(RSInterfacesTest, GetPidGpuMemoryInMBTest001, TestSize.Level1)
  * @tc.type: FUNC
  * @tc.require: issueICQ74B
  */
-HWTEST_F(RSInterfacesTest, TaskSurfaceCaptureWithAllWindowsTest001, TestSize.Level1)
+HWTEST_F(RSInterfacesTest, TakeSurfaceCaptureWithAllWindowsTest001, TestSize.Level1)
 {
     class TestSurfaceCapture : public SurfaceCaptureCallback {
     public:
@@ -735,13 +736,13 @@ HWTEST_F(RSInterfacesTest, TaskSurfaceCaptureWithAllWindowsTest001, TestSize.Lev
     std::shared_ptr<TestSurfaceCapture> callback;
     RSSurfaceCaptureConfig captureConfig;
     bool checkDrmAndSurfaceLock = true;
-    bool ret = instance.TaskSurfaceCaptureWithAllWindows(displayNode, callback, captureConfig, checkDrmAndSurfaceLock);
+    bool ret = instance.TakeSurfaceCaptureWithAllWindows(displayNode, callback, captureConfig, checkDrmAndSurfaceLock);
     EXPECT_EQ(ret, false);
 
     RSDisplayNodeConfig config;
     displayNode = RSDisplayNode::Create(config);
     callback = std::make_shared<TestSurfaceCapture>();
-    ret = instance.TaskSurfaceCaptureWithAllWindows(displayNode, callback, captureConfig, checkDrmAndSurfaceLock);
+    ret = instance.TakeSurfaceCaptureWithAllWindows(displayNode, callback, captureConfig, checkDrmAndSurfaceLock);
     EXPECT_EQ(ret, true);
 }
 

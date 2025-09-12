@@ -541,8 +541,7 @@ void RSCanvasDrawingRenderNode::CheckDrawCmdListSizeNG(ModifierNG::RSModifierTyp
         }
         // If such nodes are not drawn, The drawcmdlists don't clearOp during recording, As a result, there are
         // too many drawOp, so we need to add the limit of drawcmdlists.
-        while ((GetOldDirtyInSurface().IsEmpty() || !IsDirty() || renderDrawable_) &&
-               drawCmdListsNG_[type].size() > DRAWCMDLIST_COUNT_LIMIT) {
+        while (drawCmdListsNG_[type].size() > DRAWCMDLIST_COUNT_LIMIT) {
             drawCmdListsNG_[type].pop_front();
         }
         if (drawCmdListsNG_[type].size() > DRAWCMDLIST_COUNT_LIMIT) {
@@ -567,6 +566,7 @@ void RSCanvasDrawingRenderNode::AddDirtyType(ModifierNG::RSModifierType modifier
         return;
     }
     size_t originCmdListSize = drawCmdListsNG_[modifierType].size();
+    ReportOpCount(drawCmdListsNG_[modifierType]);
     for (const auto& modifier : contentModifiers) {
         auto cmd = modifier->Getter<Drawing::DrawCmdListPtr>(
             ModifierNG::ModifierTypeConvertor::GetPropertyType(modifierType), nullptr);

@@ -79,13 +79,18 @@ HWTEST_F(RSPointerWindowManagerTest, UpdatePointerDirtyToGlobalDirtyTest002, Tes
     ASSERT_NE(rsPointerWindowManager, nullptr);
     auto rsContext = std::make_shared<RSContext>();
     NodeId id = 1;
-    auto displayNode = std::make_shared<RSScreenRenderNode>(id, 0, rsContext->weak_from_this());
+    auto displayNode = std::make_shared<RSScreenRenderNode>(id++, 0, rsContext->weak_from_this());
     displayNode->InitRenderParams();
-    auto node = RSTestUtil::CreateSurfaceNode();
+    auto node = std::make_shared<RSSurfaceRenderNode>(id);
     node->nodeType_ = RSSurfaceNodeType::CURSOR_NODE;
     node->name_ = "pointer window";
-    node->GetDirtyManager()->SetCurrentFrameDirtyRect(RectI{1, 1, 1, 1});
+    RectI rect = RectI{0, 0, 1, 1};
+    node->dirtyManager_ = std::make_shared<RSDirtyRegionManager>();
+    node->dirtyManager_->currentFrameDirtyRegion_ = rect;
     node->SetHardCursorStatus(true);
+    rsPointerWindowManager->UpdatePointerDirtyToGlobalDirty(node, displayNode);
+    ASSERT_EQ(rsPointerWindowManager->IsNeedForceCommitByPointer(), true);
+    rsPointerWindowManager->SetNeedForceCommitByPointer(false);
     // run
     std::shared_ptr<RSSurfaceRenderNode> node1 = nullptr;
     rsPointerWindowManager->UpdatePointerDirtyToGlobalDirty(node1, displayNode);
@@ -146,7 +151,6 @@ HWTEST_F(RSPointerWindowManagerTest, CheckHardCursorSupportTest, TestSize.Level2
     surfaceNode->name_ = "pointer window";
     surfaceNode->isOnTheTree_ = true;
     auto& rsPointerWindowManager = RSPointerWindowManager::Instance();
-    rsPointerWindowManager.isHardCursorEnable_ = true;
     bool res = rsPointerWindowManager.CheckHardCursorSupport(1);
     ASSERT_EQ(res, false);
 }

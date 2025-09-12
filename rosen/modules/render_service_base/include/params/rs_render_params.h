@@ -20,6 +20,7 @@
 #include "common/rs_occlusion_region.h"
 #include "common/rs_rect.h"
 #include "drawable/rs_render_node_drawable_adapter.h"
+#include "memory/rs_memory_track.h"
 #include "pipeline/rs_render_node.h"
 #include "property/rs_properties.h"
 #include "screen_manager/screen_types.h"
@@ -57,8 +58,17 @@ typedef enum {
 
 class RSB_EXPORT RSRenderParams {
 public:
-    RSRenderParams(NodeId id) : id_(id) {}
-    virtual ~RSRenderParams() = default;
+    RSRenderParams(NodeId id) : id_(id)
+    {
+        MemoryTrack::Instance().RegisterNodeMem(ExtractPid(id),
+            sizeof(*this), MEMORY_TYPE::MEM_RENDER_DRAWABLE_NODE);
+    }
+
+    virtual ~RSRenderParams()
+    {
+        MemoryTrack::Instance().UnRegisterNodeMem(ExtractPid(GetId()),
+            sizeof(*this), MEMORY_TYPE::MEM_RENDER_DRAWABLE_NODE);
+    }
 
     struct SurfaceParam {
         int width = 0;
@@ -339,6 +349,18 @@ public:
         return uifirstRootNodeId_;
     }
 
+    bool SetInstanceRootNodeId(NodeId instanceRootNodeId);
+    NodeId GetInstanceRootNodeId() const
+    {
+        return instanceRootNodeId_;
+    }
+
+    bool SetInstanceRootNodeName(const std::string& instanceRootNodeName);
+    std::string GetInstanceRootNodeName() const
+    {
+        return instanceRootNodeName_;
+    }
+
     // disable copy and move
     RSRenderParams(const RSRenderParams&) = delete;
     RSRenderParams(RSRenderParams&&) = delete;
@@ -543,6 +565,8 @@ private:
     SurfaceParam surfaceParams_;
     NodeId firstLevelNodeId_ = INVALID_NODEID;
     NodeId uifirstRootNodeId_ = INVALID_NODEID;
+    NodeId instanceRootNodeId_ = INVALID_NODEID;
+    std::string instanceRootNodeName_ = "";
     bool isFirstLevelCrossNode_ = false;
     DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr cloneSourceDrawable_;
     CrossNodeOffScreenRenderDebugType isCrossNodeOffscreenOn_ = CrossNodeOffScreenRenderDebugType::ENABLE;

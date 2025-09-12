@@ -230,6 +230,11 @@ ErrCode RSRenderServiceConnectionProxy::CreateNode(const RSDisplayNodeConfig& di
         success = false;
         return ERR_INVALID_VALUE;
     }
+    if (!data.WriteUint32(static_cast<uint32_t>(displayNodeConfig.mirrorSourceRotation))) {
+        ROSEN_LOGE("RSRenderServiceConnectionProxy::CreateNode: WriteUint32 Config.MirrorSourceRotation err.");
+        success = false;
+        return ERR_INVALID_VALUE;
+    }
     option.SetFlags(MessageOption::TF_SYNC);
     uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::CREATE_DISPLAY_NODE);
     int32_t err = SendRequest(code, data, reply, option);
@@ -1938,7 +1943,7 @@ ErrCode RSRenderServiceConnectionProxy::SetWindowFreezeImmediately(NodeId id, bo
     return ERR_OK;
 }
 
-ErrCode RSRenderServiceConnectionProxy::TaskSurfaceCaptureWithAllWindows(NodeId id,
+ErrCode RSRenderServiceConnectionProxy::TakeSurfaceCaptureWithAllWindows(NodeId id,
     sptr<RSISurfaceCaptureCallback> callback, const RSSurfaceCaptureConfig& captureConfig,
     bool checkDrmAndSurfaceLock, RSSurfaceCapturePermissions /*permissions*/)
 {
@@ -3854,8 +3859,8 @@ int32_t RSRenderServiceConnectionProxy::RegisterFirstFrameCommitCallback(
     return result;
 }
 
-ErrCode RSRenderServiceConnectionProxy::AvcodecVideoStart(
-    uint64_t uniqueId, std::string& surfaceName, uint32_t fps, uint64_t reportTime)
+ErrCode RSRenderServiceConnectionProxy::AvcodecVideoStart(const std::vector<uint64_t>& uniqueIdList,
+    const std::vector<std::string>& surfaceNameList, uint32_t fps, uint64_t reportTime)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -3866,12 +3871,12 @@ ErrCode RSRenderServiceConnectionProxy::AvcodecVideoStart(
         return RS_CONNECTION_ERROR;
     }
     option.SetFlags(MessageOption::TF_SYNC);
-    if (!data.WriteUint64(uniqueId)) {
-        ROSEN_LOGE("AvcodecVideoStart: WriteUint64 uniqueId err.");
+    if (!data.WriteUInt64Vector(uniqueIdList)) {
+        ROSEN_LOGE("AvcodecVideoStart: WriteUInt64Vector uniqueIdList err.");
         return ERR_INVALID_VALUE;
     }
-    if (!data.WriteString(surfaceName)) {
-        ROSEN_LOGE("AvcodecVideoStart: WriteString surfaceName err.");
+    if (!data.WriteStringVector(surfaceNameList)) {
+        ROSEN_LOGE("AvcodecVideoStart: WriteStringVector surfaceNameList err.");
         return ERR_INVALID_VALUE;
     }
     if (!data.WriteUint32(fps)) {
@@ -3896,7 +3901,8 @@ ErrCode RSRenderServiceConnectionProxy::AvcodecVideoStart(
     return result;
 }
 
-ErrCode RSRenderServiceConnectionProxy::AvcodecVideoStop(uint64_t uniqueId, std::string& surfaceName, uint32_t fps)
+ErrCode RSRenderServiceConnectionProxy::AvcodecVideoStop(const std::vector<uint64_t>& uniqueIdList,
+    const std::vector<std::string>& surfaceNameList, uint32_t fps)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -3907,12 +3913,12 @@ ErrCode RSRenderServiceConnectionProxy::AvcodecVideoStop(uint64_t uniqueId, std:
         return RS_CONNECTION_ERROR;
     }
     option.SetFlags(MessageOption::TF_SYNC);
-    if (!data.WriteUint64(uniqueId)) {
-        ROSEN_LOGE("AvcodecVideoStop: WriteUint64 uniqueId err.");
+    if (!data.WriteUInt64Vector(uniqueIdList)) {
+        ROSEN_LOGE("AvcodecVideoStop: WriteUInt64Vector uniqueIdList err.");
         return ERR_INVALID_VALUE;
     }
-    if (!data.WriteString(surfaceName)) {
-        ROSEN_LOGE("AvcodecVideoStop: WriteString surfaceName err.");
+    if (!data.WriteStringVector(surfaceNameList)) {
+        ROSEN_LOGE("AvcodecVideoStop: WriteStringVector surfaceNameList err.");
         return ERR_INVALID_VALUE;
     }
     if (!data.WriteUint32(fps)) {

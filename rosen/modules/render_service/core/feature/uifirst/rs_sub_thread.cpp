@@ -78,14 +78,20 @@ pid_t RSSubThread::Start()
 void RSSubThread::PostTask(const std::function<void()>& task, const std::string& name)
 {
     if (handler_) {
-        handler_->PostImmediateTask(task, name);
+        auto result = handler_->PostImmediateTask(task, name);
+        if (!result) {
+            RS_LOGE("subthread PostTask failed. name:%{public}s", name.c_str());
+        }
     }
 }
 
 void RSSubThread::PostSyncTask(const std::function<void()>& task)
 {
     if (handler_) {
-        handler_->PostSyncTask(task, AppExecFwk::EventQueue::Priority::IMMEDIATE);
+        auto result = handler_->PostSyncTask(task, AppExecFwk::EventQueue::Priority::IMMEDIATE);
+        if (!result) {
+            RS_LOGE("subthread PostSyncTask failed");
+        }
     }
 }
 
@@ -157,26 +163,6 @@ void RSSubThread::DestroyShareEglContext()
 #endif
 }
 
-NodeId RSSubThread::GetSubAppNodeId(std::shared_ptr<DrawableV2::RSSurfaceRenderNodeDrawable> nodeDrawable,
-    RSSurfaceRenderParams* surfaceParams)
-{
-    NodeId tagNodeId = nodeDrawable->GetId();
-    for (const auto& subDrawable : nodeDrawable->GetDrawableVectorById(surfaceParams->GetAllSubSurfaceNodeIds())) {
-        if (UNLIKELY(!subDrawable)) {
-            continue;
-        }
-        auto subSurfaceParams = static_cast<RSSurfaceRenderParams*>(subDrawable->GetRenderParams().get());
-        if (UNLIKELY(!subSurfaceParams)) {
-            continue;
-        }
-        if (subSurfaceParams->IsAppWindow()) {
-            tagNodeId = subDrawable->GetId();
-            break;
-        }
-    }
-    return tagNodeId;
-}
-
 bool RSSubThread::CheckValid(std::shared_ptr<DrawableV2::RSSurfaceRenderNodeDrawable> nodeDrawable)
 {
     if (grContext_ == nullptr) {
@@ -195,6 +181,7 @@ bool RSSubThread::CheckValid(std::shared_ptr<DrawableV2::RSSurfaceRenderNodeDraw
 void RSSubThread::DrawableCache(std::shared_ptr<DrawableV2::RSSurfaceRenderNodeDrawable> nodeDrawable)
 {
     if (!CheckValid(nodeDrawable)) {
+        RS_LOGE("DrawableCache nodeDrawable is invalid");
         return;
     }
 
@@ -204,13 +191,13 @@ void RSSubThread::DrawableCache(std::shared_ptr<DrawableV2::RSSurfaceRenderNodeD
 
     RS_TRACE_NAME_FMT("RSSubThread::DrawableCache [%s] id:[%" PRIu64 "]", nodeDrawable->GetName().c_str(), nodeId);
 
-    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(nodeDrawable->GetRenderParams().get());
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(nodeDrawable->GetUifirstRenderParams().get());
     if (UNLIKELY(!surfaceParams)) {
+        RS_LOGE("DrawableCache surfaceParams is nullptr");
         return;
     }
 
-    RSTagTracker tagTracker(grContext_, GetSubAppNodeId(nodeDrawable, surfaceParams),
-            RSTagTracker::TAGTYPE::TAG_SUB_THREAD, nodeDrawable->GetName());
+    RSTagTracker tagTracker(grContext_, RSTagTracker::TAGTYPE::TAG_UIFIRST);
     // set cur firstlevel node in subThread
     RSUiFirstProcessStateCheckerHelper stateCheckerHelper(
         surfaceParams->GetFirstLevelNodeId(), surfaceParams->GetUifirstRootNodeId(), surfaceParams->GetId());
@@ -391,7 +378,7 @@ void RSSubThread::ReleaseCacheSurfaceOnly(std::shared_ptr<DrawableV2::RSSurfaceR
         return;
     }
     NodeId nodeId = nodeDrawable->GetId();
-    RS_TRACE_NAME_FMT("ReleaseCacheSurfaceOnly id:" PRIu64, nodeId);
+    RS_TRACE_NAME_FMT("ReleaseCacheSurfaceOnly id:%" PRIu64, nodeId);
     RS_LOGI("ReleaseCacheSurfaceOnly id:%{public}" PRIu64, nodeId);
     nodeDrawable->GetRsSubThreadCache().ClearCacheSurfaceOnly();
 }

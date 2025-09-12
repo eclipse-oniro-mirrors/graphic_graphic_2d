@@ -16,8 +16,12 @@
 #include "modifier_ng/appearance/rs_shadow_modifier.h"
 
 namespace OHOS::Rosen::ModifierNG {
+RSShadowModifier::RSShadowModifier() : shadowAlpha_(0.f)
+{}
+
 void RSShadowModifier::SetShadowColor(Color color)
 {
+    shadowAlpha_ = color.GetAlphaF();
     Setter(RSPropertyType::SHADOW_COLOR, color);
 }
 
@@ -49,13 +53,15 @@ float RSShadowModifier::GetShadowOffsetY() const
 void RSShadowModifier::SetShadowAlpha(float alpha)
 {
     auto color = GetShadowColor();
-    color.SetAlpha(std::clamp(alpha, 0.0f, 1.0f) * UINT8_MAX);
-    SetShadowColor(color);
+    // Saving alpha value on the client side and ensure it is between 0 and 1
+    shadowAlpha_ = std::clamp(alpha, 0.0f, 1.0f);
+    color.SetAlpha(shadowAlpha_ * UINT8_MAX);
+    Setter(RSPropertyType::SHADOW_COLOR, color);
 }
 
 float RSShadowModifier::GetShadowAlpha() const
 {
-    return GetShadowColor().GetAlphaF();
+    return shadowAlpha_;
 }
 
 void RSShadowModifier::SetShadowElevation(float elevation)

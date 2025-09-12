@@ -33,6 +33,8 @@ RSEffectRenderNode::RSEffectRenderNode(NodeId id, const std::weak_ptr<RSContext>
 #ifndef ROSEN_ARKUI_X
     MemoryInfo info = { sizeof(*this), ExtractPid(id), id, MEMORY_TYPE::MEM_RENDER_NODE };
     MemoryTrack::Instance().AddNodeRecord(id, info);
+    MemoryTrack::Instance().RegisterNodeMem(ExtractPid(id),
+        sizeof(*this), MEMORY_TYPE::MEM_RENDER_NODE);
 #endif
     MemorySnapshot::Instance().AddCpuMemory(ExtractPid(id), sizeof(*this));
 }
@@ -41,6 +43,8 @@ RSEffectRenderNode::~RSEffectRenderNode()
 {
 #ifndef ROSEN_ARKUI_X
     MemoryTrack::Instance().RemoveNodeRecord(GetId());
+    MemoryTrack::Instance().UnRegisterNodeMem(ExtractPid(GetId()),
+        sizeof(*this), MEMORY_TYPE::MEM_RENDER_NODE);
 #endif
     MemorySnapshot::Instance().RemoveCpuMemory(ExtractPid(GetId()), sizeof(*this));
 }
@@ -170,12 +174,21 @@ void RSEffectRenderNode::UpdateFilterCacheWithSelfDirty()
 #endif
 }
 
+bool RSEffectRenderNode::IsForceClearFilterCache(std::shared_ptr<DrawableV2::RSFilterDrawable>& filterDrawable) const
+{
+    return filterDrawable && !filterDrawable->IsForceUseFilterCache() && filterDrawable->IsForceClearFilterCache();
+}
+
 #ifdef RS_ENABLE_GPU
 void RSEffectRenderNode::MarkFilterCacheFlags(std::shared_ptr<DrawableV2::RSFilterDrawable>& filterDrawable,
     RSDirtyRegionManager& dirtyManager, bool needRequestNextVsync)
 {
     lastFrameHasVisibleEffect_ = ChildHasVisibleEffect();
     if (IsForceClearOrUseFilterCache(filterDrawable)) {
+        // expand dirty region with filterRegion when effect render node needs to force clear filter cache
+        if (IsForceClearFilterCache(filterDrawable)) {
+            ExpandDirtyRegionWithFilterRegion(dirtyManager);
+        }
         return;
     }
     // use for skip-frame when screen rotation

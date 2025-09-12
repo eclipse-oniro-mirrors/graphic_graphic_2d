@@ -96,7 +96,16 @@ public:
     {
         return drawMirrorCopy_;
     }
+    void SetDisplaySkipInMirror(bool displaySkipInMirror)
+    {
+        displaySkipInMirror_ = displaySkipInMirror;
+    }
+    bool GetDisplaySkipInMirror() const
+    {
+        return displaySkipInMirror_;
+    }
     void CanvasInit(DrawableV2::RSLogicalDisplayRenderNodeDrawable& displayDrawable);
+    void CancelCurrentFrame();
 private:
     void MergeMirrorFenceToHardwareEnabledDrawables();
     void SetVirtualScreenSize(DrawableV2::RSScreenRenderNodeDrawable& screenDrawable,
@@ -127,6 +136,7 @@ private:
     ScreenScaleMode scaleMode_ = ScreenScaleMode::INVALID_MODE;
     ScreenRotation screenRotation_ = ScreenRotation::ROTATION_0;
     ScreenRotation screenCorrection_ = ScreenRotation::ROTATION_0;
+    ScreenRotation mirrorSourceRotation_ = ScreenRotation::INVALID_SCREEN_ROTATION;
     float mirrorScaleX_ = 1.0f;
     float mirrorScaleY_ = 1.0f;
     float mirroredTranslateX_ = 0.f;
@@ -139,6 +149,7 @@ private:
     NodeId mirroredScreenNodeId_ = INVALID_NODEID;
     std::shared_ptr<RSSLRScaleFunction> slrManager_ = nullptr;
     bool drawMirrorCopy_ = false;
+    bool displaySkipInMirror_ = false;
 };
 } // namespace Rosen
 } // namespace OHOS

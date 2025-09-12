@@ -26,7 +26,7 @@
 #include "animation/rs_render_interactive_implict_animator_map.h"
 #include "feature/capture/rs_ui_capture_helper.h"
 #include "pipeline/rs_render_node_map.h"
-#include "pipeline/rs_render_frame_rate_linker_map.h"
+#include "feature/hyper_graphic_manager/rs_render_frame_rate_linker_map.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -115,6 +115,7 @@ public:
     // add node info after cmd data process
     void AddActiveNode(const std::shared_ptr<RSRenderNode>& node);
     bool HasActiveNode(const std::shared_ptr<RSRenderNode>& node);
+    std::unordered_map<NodeId, std::unordered_map<NodeId, std::weak_ptr<RSRenderNode>>> GetActiveNodes();
 
     void AddPendingSyncNode(const std::shared_ptr<RSRenderNode> node);
 

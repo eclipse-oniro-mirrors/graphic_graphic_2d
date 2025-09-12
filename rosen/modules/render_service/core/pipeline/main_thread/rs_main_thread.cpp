@@ -92,9 +92,6 @@
 #include "pipeline/rs_unmarshal_task_manager.h"
 #include "rs_frame_rate_vote.h"
 #include "singleton.h"
-#ifdef RS_ENABLE_VK
-#include "pipeline/rs_vk_pipeline_config.h"
-#endif
 #include "pipeline/rs_render_node_gc.h"
 #include "pipeline/sk_resource_manager.h"
 #ifdef OHOS_BUILD_ENABLE_MAGICCURSOR
@@ -121,7 +118,7 @@
 #include "feature/capture/rs_ui_capture_task_parallel.h"
 #include "feature/capture/rs_ui_capture_solo_task_parallel.h"
 #include "feature/uifirst/rs_sub_thread_manager.h"
-#include "feature/round_corner_display/rs_rcd_surface_render_node.h"
+#include "feature/round_corner_display/rs_rcd_render_manager.h"
 #include "feature/round_corner_display/rs_round_corner_display_manager.h"
 #include "pipeline/render_thread/rs_uni_render_engine.h"
 #include "pipeline/render_thread/rs_uni_render_thread.h"
@@ -159,10 +156,12 @@
 #include "rs_frame_blur_predict.h"
 #include "rs_frame_deadline_predict.h"
 #include "feature_cfg/feature_param/extend_feature/mem_param.h"
-#include "feature/hetero_hdr/rs_hdr_manager.h"
 
 #include "feature_cfg/graphic_feature_param_manager.h"
 #include "feature_cfg/feature_param/feature_param.h"
+
+// HDRHeterogeneous
+#include "feature/hdr/hetero_hdr/rs_hetero_hdr_manager.h"
 
 using namespace FRAME_TRACE;
 static const std::string RS_INTERVAL_NAME = "renderservice";
@@ -278,31 +277,25 @@ void PerfRequest(int32_t perfRequestCode, bool onOffTag)
 }
 
 #ifdef RS_ENABLE_GPU
-// rcd node will be handled by RS tree in OH 6.0 rcd refactoring, should remove this later
-void DoScreenRcdTask(RSScreenRenderNode& screenNode, std::shared_ptr<RSProcessor> &processor)
+void DoScreenRcdTask(NodeId id, std::shared_ptr<RSProcessor>& processor, std::unique_ptr<RcdInfo>& rcdInfo,
+    const ScreenInfo& screenInfo)
 {
-    if (processor == nullptr) {
-        RS_LOGD("DoScreenRcdTask has no processor");
+    if (rcdInfo == nullptr || processor == nullptr) {
+        RS_LOGD("DoScreenRcdTask has nullptr processor or rcdInfo");
         return;
     }
-    auto screenInfo =
-        static_cast<RSScreenRenderParams *>(screenNode.GetStagingRenderParams().get())->GetScreenInfo();
-    if (screenInfo.state != ScreenState::HDI_OUTPUT_ENABLE) {
+    if (!RoundCornerDisplayManager::CheckRcdRenderEnable(screenInfo)) {
         RS_LOGD("DoScreenRcdTask is not at HDI_OUPUT mode");
         return;
     }
-    auto hardInfo = RSSingleton<RoundCornerDisplayManager>::GetInstance().GetHardwareInfo(screenNode.GetId());
-        auto rcdNodeTop = std::static_pointer_cast<RSRcdSurfaceRenderNode>(screenNode.GetRcdSurfaceNodeTop());
-    if (rcdNodeTop) {
-        rcdNodeTop->DoProcessRenderMainThreadTask(hardInfo.resourceChanged, processor);
-    } else {
-        RS_LOGD("Top rcdnode is null");
-    }
-    auto rcdNodeBottom = std::static_pointer_cast<RSRcdSurfaceRenderNode>(screenNode.GetRcdSurfaceNodeBottom());
-    if (rcdNodeBottom) {
-        rcdNodeBottom->DoProcessRenderMainThreadTask(hardInfo.resourceChanged, processor);
-    } else {
-        RS_LOGD("Bottom rcdnode is null");
+    if (RSSingleton<RoundCornerDisplayManager>::GetInstance().GetRcdEnable()) {
+        RSSingleton<RoundCornerDisplayManager>::GetInstance().RunHardwareTask(id,
+            [id, &processor, &rcdInfo](void) {
+                auto hardInfo = RSSingleton<RoundCornerDisplayManager>::GetInstance().GetHardwareInfo(id);
+                rcdInfo->processInfo = {processor, hardInfo.topLayer, hardInfo.bottomLayer, hardInfo.displayRect,
+                    hardInfo.resourceChanged};
+                RSRcdRenderManager::GetInstance().DoProcessRenderMainThreadTask(id, rcdInfo->processInfo);
+            });
     }
 }
 #endif
@@ -516,16 +509,6 @@ void RSMainThread::Init()
 #if defined(RS_ENABLE_CHIPSET_VSYNC)
         ConnectChipsetVsyncSer();
 #endif
-#ifdef RS_ENABLE_VK
-        if (needCreateVkPipeline_) {
-            needCreateVkPipeline_ = false;
-            RSBackgroundThread::Instance().PostTask([]() {
-                Rosen::RDC::RDCConfig rdcConfig;
-                rdcConfig.LoadAndAnalyze(std::string(Rosen::RDC::CONFIG_XML_FILE));
-            });
-        }
-#endif
-
         RS_PROFILER_ON_FRAME_END();
     };
     static std::function<void (std::shared_ptr<Drawing::Image> image)> holdDrawingImagefunc =
@@ -688,6 +671,9 @@ void RSMainThread::Init()
     /* move to render thread ? */
     RSBackgroundThread::Instance().InitRenderContext(GetRenderEngine()->GetRenderContext().get());
 #endif
+#ifdef RS_ENABLE_GPU
+    RSRcdRenderManager::InitInstance();
+#endif
 #ifdef OHOS_BUILD_ENABLE_MAGICCURSOR
 #if defined (RS_ENABLE_GL) && defined (RS_ENABLE_EGLIMAGE) || defined (RS_ENABLE_VK)
     RSMagicPointerRenderManager::InitInstance(GetRenderEngine()->GetImageManager());
@@ -831,14 +817,12 @@ void RSMainThread::InitVulkanErrorCallback(Drawing::GPUContext* gpuContext)
         RS_LOGE("InitVulkanErrorCallback gpuContext is nullptr");
         return;
     }
-
     gpuContext->RegisterVulkanErrorCallback([this]() {
         RS_LOGE("FocusLeashWindowName:[%{public}s]", this->focusLeashWindowName_.c_str());
 
         char appWindowName[EVENT_NAME_MAX_LENGTH];
         char focusLeashWindowName[EVENT_NAME_MAX_LENGTH];
         char extinfodefault[EVENT_NAME_MAX_LENGTH] = "ext_info_default";
-
         auto cpyresult = strcpy_s(appWindowName, EVENT_NAME_MAX_LENGTH, appWindowName_.c_str());
         if (cpyresult != 0) {
             RS_LOGE("Copy appWindowName_ error, AppWindowName:%{public}s", appWindowName_.c_str());
@@ -849,30 +833,23 @@ void RSMainThread::InitVulkanErrorCallback(Drawing::GPUContext* gpuContext)
         }
 
         HiSysEventParam pPID = { .name = "PID", .t = HISYSEVENT_UINT32, .v = { .ui32 = appPid_ }, .arraySize = 0 };
-
         HiSysEventParam pAppNodeId = {
             .name = "AppNodeId", .t = HISYSEVENT_UINT64, .v = { .ui64 = appWindowId_ }, .arraySize = 0
         };
-
         HiSysEventParam pAppNodeName = {
             .name = "AppNodeName", .t = HISYSEVENT_STRING, .v = { .s = appWindowName }, .arraySize = 0
         };
-
         HiSysEventParam pLeashWindowId = {
             .name = "LeashWindowId", .t = HISYSEVENT_UINT64, .v = { .ui64 = focusLeashWindowId_ }, .arraySize = 0
         };
-
         HiSysEventParam pLeashWindowName = {
             .name = "LeashWindowName", .t = HISYSEVENT_STRING, .v = { .s = focusLeashWindowName }, .arraySize = 0
         };
-
         HiSysEventParam pExtInfo = {
             .name = "ExtInfo", .t = HISYSEVENT_STRING, .v = { .s = extinfodefault }, .arraySize = 0
         };
-
         HiSysEventParam paramsHebcFault[] = { pPID, pAppNodeId, pAppNodeName, pLeashWindowId, pLeashWindowName,
             pExtInfo };
-
         int ret = OH_HiSysEvent_Write("GRAPHIC", "RS_VULKAN_ERROR", HISYSEVENT_FAULT, paramsHebcFault,
             sizeof(paramsHebcFault) / sizeof(paramsHebcFault[0]));
         if (ret == 0) {
@@ -880,6 +857,8 @@ void RSMainThread::InitVulkanErrorCallback(Drawing::GPUContext* gpuContext)
         } else {
             RS_LOGE("Faild to upload rs_vulkan_error event, ret = %{public}d", ret);
         }
+
+        RSUniRenderThread::Instance().ProcessVulkanErrorTreeDump();
     });
 }
 
@@ -1731,10 +1710,9 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
             if (isColorTemperatureOn_ && surfaceNode->GetVideoHdrStatus() == HdrStatus::NO_HDR) {
                 surfaceNode->SetSdrHasMetadata(RSHdrUtil::CheckIsSurfaceWithMetadata(*surfaceNode));
             }
-            RSHdrManager::Instance().UpdateHdrNodes(*surfaceNode, surfaceHandler->IsCurrentFrameBufferConsumed());
+            RSHeteroHDRManager::Instance().UpdateHDRNodes(*surfaceNode, surfaceHandler->IsCurrentFrameBufferConsumed());
         };
     }
-    RSJankStats::GetInstance().AvcodecVideoCollectBegin();
     nodeMap.TraverseSurfaceNodes(consumeAndUpdateNode_);
     DelayedSingleton<RSFrameRateVote>::GetInstance()->CheckSurfaceAndUi();
     RSJankStats::GetInstance().AvcodecVideoCollectFinish();
@@ -2312,7 +2290,7 @@ void RSMainThread::EndGPUDraw()
 
 void RSMainThread::ClearUnmappedCache()
 {
-    std::set<uint32_t> bufferIds;
+    std::set<uint64_t> bufferIds;
     {
         std::lock_guard<std::mutex> lock(unmappedCacheSetMutex_);
         bufferIds.swap(unmappedCacheSet_);
@@ -2481,14 +2459,14 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
 
 bool RSMainThread::IfStatusBarDirtyOnly()
 {
-    RS_TRACE_NAME_FMT("checkIfStatusBarDirtyOnly");
     if (RSSystemProperties::GetAceTestMode()) {
         return false;
     }
+    RS_TRACE_NAME_FMT("checkIfStatusBarDirtyOnly");
     if (renderThreadParams_->GetImplicitAnimationEnd()) {
         return false;
     }
-    auto& activeNodesInRoot = RSMainThread::Instance()->GetContext().activeNodesInRoot_;
+    const auto& activeNodesInRoot = context_->GetActiveNodes();
     for (const auto& rootPair : activeNodesInRoot) {
         NodeId rootId = rootPair.first;
         auto rootNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(
@@ -2614,7 +2592,8 @@ bool RSMainThread::DoDirectComposition(std::shared_ptr<RSBaseRenderNode> rootNod
 #endif
 #ifdef RS_ENABLE_GPU
     RSPointerWindowManager::Instance().HardCursorCreateLayerForDirect(processor);
-    DoScreenRcdTask(*screenNode, processor);
+    auto rcdInfo = std::make_unique<RcdInfo>();
+    DoScreenRcdTask(screenNode->GetId(), processor, rcdInfo, screenInfo);
 #endif
     if (waitForRT) {
 #ifdef RS_ENABLE_GPU
@@ -2789,6 +2768,7 @@ void RSMainThread::OnUniRenderDraw()
         isNeedResetClearMemoryTask_ = false;
     }
 
+    drawFrame_.ClearDrawableResource();
     UpdateScreenNodeScreenId();
     RsFrameReport::GetInstance().RenderEnd();
 #endif
@@ -3961,10 +3941,9 @@ static std::string Data2String(std::string data, uint32_t tagetNumber)
     }
 }
 
-void RSMainThread::RenderServiceAllNodeDump(DfxString& log)
+void RSMainThread::GetNodeInfo(std::unordered_map<int, std::pair<int, int>>& node_info,
+    std::unordered_map<int, int>& nullnode_info, std::unordered_map<pid_t, size_t>& modifierSize)
 {
-    std::unordered_map<int, std::pair<int, int>> node_info; // [pid, [count, ontreecount]]
-    std::unordered_map<int, int> nullnode_info; // [pid, count]
     for (auto& [nodeId, info] : MemoryTrack::Instance().GetMemNodeMap()) {
         auto node = context_->GetMutableNodeMap().GetRenderNode(nodeId);
         int pid = info.pid;
@@ -3976,6 +3955,7 @@ void RSMainThread::RenderServiceAllNodeDump(DfxString& log)
                 node_info[pid].first = 1;
                 node_info[pid].second = node->IsOnTheTree() ? 1 : 0;
             }
+            modifierSize[pid] += node->GetAllModifierSize();
         } else {
             if (nullnode_info.count(pid)) {
                 nullnode_info[pid]++;
@@ -3984,16 +3964,40 @@ void RSMainThread::RenderServiceAllNodeDump(DfxString& log)
             }
         }
     }
+}
+
+void RSMainThread::RenderServiceAllNodeDump(DfxString& log)
+{
+    std::unordered_map<int, std::pair<int, int>> node_info; // [pid, [count, ontreecount]]
+    std::unordered_map<int, int> nullnode_info; // [pid, count]
+    std::unordered_map<pid_t, size_t> modifierSize; //[pid, modifiersize]
+
+    GetNodeInfo(node_info, nullnode_info, modifierSize);
     std::string log_str = Data2String("Pid", NODE_DUMP_STRING_LEN) + "\t" +
         Data2String("Count", NODE_DUMP_STRING_LEN) + "\t" +
-        Data2String("OnTree", NODE_DUMP_STRING_LEN);
+        Data2String("OnTree", NODE_DUMP_STRING_LEN) + "\t" +
+        Data2String("NodeMemSize", NODE_DUMP_STRING_LEN) + "\t" +
+        Data2String("DrawableMem", NODE_DUMP_STRING_LEN) + "\t" +
+        Data2String("ModifierMem", NODE_DUMP_STRING_LEN);
     log.AppendFormat("%s\n", log_str.c_str());
+    size_t totalNodeSize = 0;
     for (auto& [pid, info]: node_info) {
+        size_t renderNodeSize = MemoryTrack::Instance().GetNodeMemoryOfPid(pid, MEMORY_TYPE::MEM_RENDER_NODE);
+        size_t drawableNodeSize = MemoryTrack::Instance().GetNodeMemoryOfPid(pid,
+            MEMORY_TYPE::MEM_RENDER_DRAWABLE_NODE);
+        size_t modifierNodeSize = modifierNodeSize = modifierSize[pid] / BYTE_CONVERT;
         log_str = Data2String(std::to_string(pid), NODE_DUMP_STRING_LEN) + "\t" +
-            Data2String(std::to_string(info.first), NODE_DUMP_STRING_LEN) + "\t" +
-            Data2String(std::to_string(info.second), NODE_DUMP_STRING_LEN);
+        Data2String(std::to_string(info.first), NODE_DUMP_STRING_LEN) + "\t" +
+        Data2String(std::to_string(info.second), NODE_DUMP_STRING_LEN) + "\t" +
+        Data2String(std::to_string(renderNodeSize), NODE_DUMP_STRING_LEN) + "\t" +
+        Data2String(std::to_string(drawableNodeSize), NODE_DUMP_STRING_LEN) + "\t" +
+        Data2String(std::to_string(modifierNodeSize), NODE_DUMP_STRING_LEN);
         log.AppendFormat("%s\n", log_str.c_str());
+        totalNodeSize += renderNodeSize + drawableNodeSize + modifierNodeSize;
     }
+    log_str = Data2String("Total Node Size(RenderNode/Drawable/Modifier)", NODE_DUMP_STRING_LEN) + "\t" +
+        Data2String(std::to_string(totalNodeSize), NODE_DUMP_STRING_LEN);
+    log.AppendFormat("%s\n", log_str.c_str());
     if (!nullnode_info.empty()) {
         log_str = "Purgeable node: \n" +
             Data2String("Pid", NODE_DUMP_STRING_LEN) + "\t" +
@@ -4492,7 +4496,7 @@ bool RSMainThread::CheckAdaptiveCompose()
     if (adaptiveStatus != SupportASStatus::SUPPORT_AS) {
         return false;
     }
-    bool onlyGameNodeOnTree = frameRateMgr->HandleGameNode(GetContext().GetNodeMap());
+    bool onlyGameNodeOnTree = frameRateMgr->IsGameNodeOnTree();
     bool isNeedAdaptiveCompose = onlyGameNodeOnTree &&
         context_->GetAnimatingNodeList().empty() &&
         context_->GetNodeMap().GetVisibleLeashWindowCount() < MULTI_WINDOW_PERF_START_NUM;

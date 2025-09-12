@@ -66,11 +66,11 @@ HWTEST_F(RSOpincManagerTest, OpincGetNodeSupportFlag, Function | SmallTest | Lev
 
     auto rsCanvasRenderNode = std::make_shared<RSCanvasRenderNode>(++id);
     ASSERT_NE(rsCanvasRenderNode, nullptr);
-    ASSERT_FALSE(opincManager_.OpincGetNodeSupportFlag(*rsCanvasRenderNode));
+    ASSERT_TRUE(opincManager_.OpincGetNodeSupportFlag(*rsCanvasRenderNode));
 
     auto rsCanvasDrawingRenderNode = std::make_shared<RSCanvasDrawingRenderNode>(++id);
     ASSERT_NE(rsCanvasDrawingRenderNode, nullptr);
-    ASSERT_FALSE(opincManager_.OpincGetNodeSupportFlag(*rsCanvasDrawingRenderNode));
+    ASSERT_TRUE(opincManager_.OpincGetNodeSupportFlag(*rsCanvasDrawingRenderNode));
 }
 
 /**
@@ -88,6 +88,12 @@ HWTEST_F(RSOpincManagerTest, OpincGetCanvasNodeSupportFlag, Function | SmallTest
     std::shared_ptr<RSRenderNode> inNode = std::make_shared<RSBaseRenderNode>(id + 1);
     std::shared_ptr<RSRenderNode> outNode = std::make_shared<RSBaseRenderNode>(id + 2);
     auto sharedTransitionParam = std::make_shared<SharedTransitionParam>(inNode, outNode, true);
+
+    rsCanvasRenderNode->hasHdrPresent_ = true;
+    EXPECT_FALSE(opincManager_.OpincGetCanvasNodeSupportFlag(*rsCanvasRenderNode));
+    rsCanvasRenderNode->hasHdrPresent_ = false;
+    ASSERT_TRUE(opincManager_.OpincGetCanvasNodeSupportFlag(*rsCanvasRenderNode));
+
     rsCanvasRenderNode->SetSharedTransitionParam(sharedTransitionParam);
     EXPECT_FALSE(opincManager_.OpincGetCanvasNodeSupportFlag(*rsCanvasRenderNode));
     rsCanvasRenderNode->SetSharedTransitionParam(nullptr);

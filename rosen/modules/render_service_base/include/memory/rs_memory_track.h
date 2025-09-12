@@ -32,7 +32,8 @@ constexpr int BYTE_CONVERT = 1024;
 enum MEMORY_TYPE {
     MEM_PIXELMAP,
     MEM_SKIMAGE,
-    MEM_RENDER_NODE
+    MEM_RENDER_NODE,
+    MEM_RENDER_DRAWABLE_NODE
 };
 
 #ifdef RS_MEMORY_INFO_MANAGER
@@ -63,13 +64,21 @@ class MemoryNodeOfPid {
 public:
     MemoryNodeOfPid() = default;
     ~MemoryNodeOfPid() = default;
-    MemoryNodeOfPid(size_t size, NodeId id);
+    MemoryNodeOfPid(size_t size, NodeId id, size_t drawableNodeSize = 0);
     size_t GetMemSize();
     void SetMemSize(size_t size);
     bool operator==(const MemoryNodeOfPid& other);
+    size_t GetDrawableMemSize() const;
+    void SetDrawableMemSize(size_t size);
+    NodeId GetNodeId() const
+    {
+        return nodeId_;
+    }
+
 private:
     size_t nodeSize_ = 0;
     NodeId nodeId_ = 0;
+    size_t drawableNodeSize_ = 0;
 };
 
 class RSB_EXPORT MemoryTrack {
@@ -93,6 +102,10 @@ public:
     NODE_ON_TREE_STATUS GetNodeOnTreeStatus(const void* addr);
     void SetNodeOnTreeStatus(NodeId nodeId, bool rootNodeStatusChangeFlag, bool isOnTree);
 #endif
+    void RegisterNodeMem(const pid_t pid, size_t size, MEMORY_TYPE type);
+    void UnRegisterNodeMem(const pid_t pid, size_t size, MEMORY_TYPE type);
+    size_t GetNodeMemoryOfPid(const pid_t pid, MEMORY_TYPE type);
+
 private:
     MemoryTrack() = default;
     ~MemoryTrack() = default;
@@ -118,6 +131,8 @@ private:
 
     // Data to statistic information of Pid
     std::unordered_map<pid_t, std::vector<MemoryNodeOfPid>> memNodeOfPidMap_;
+    // RS Node Size [pid, RenderNodeMemSize, DrawableNodeMemSize]
+    std::unordered_map<pid_t, std::pair<size_t, size_t>> nodeMemOfPid_;
 
 #ifdef RS_MEMORY_INFO_MANAGER
     std::atomic<bool> globalRootNodeStatusChangeFlag{false};

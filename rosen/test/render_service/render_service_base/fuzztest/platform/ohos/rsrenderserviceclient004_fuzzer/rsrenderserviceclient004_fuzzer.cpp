@@ -324,7 +324,7 @@ bool DoReportGameStateData()
 bool DoGetScreenHDRStatus()
 {
     static std::vector<HdrStatus> statusVec = { HdrStatus::NO_HDR, HdrStatus::HDR_PHOTO, HdrStatus::HDR_VIDEO,
-        HdrStatus::AI_HDR_VIDEO, HdrStatus::HDR_EFFECT };
+        HdrStatus::AI_HDR_VIDEO_GTM, HdrStatus::HDR_EFFECT };
     std::shared_ptr<RSRenderServiceClient> client = std::make_shared<RSRenderServiceClient>();
     ScreenId id = GetData<ScreenId>();
     HdrStatus status = statusVec[GetData<uint8_t>() % statusVec.size()];
@@ -332,14 +332,14 @@ bool DoGetScreenHDRStatus()
     return true;
 }
 
-bool DoTaskSurfaceCaptureWithAllWindows()
+bool DoTakeSurfaceCaptureWithAllWindows()
 {
     std::shared_ptr<RSRenderServiceClient> client = std::make_shared<RSRenderServiceClient>();
     NodeId nodeId = GetData<NodeId>();
     bool checkDrmAndSurfaceLock = GetData<bool>();
     std::shared_ptr<SurfaceCaptureCallback> callback;
     RSSurfaceCaptureConfig captureConfig;
-    client->TaskSurfaceCaptureWithAllWindows(nodeId, callback, captureConfig, checkDrmAndSurfaceLock);
+    client->TakeSurfaceCaptureWithAllWindows(nodeId, callback, captureConfig, checkDrmAndSurfaceLock);
     return true;
 }
 
@@ -424,7 +424,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
             OHOS::Rosen::DoGetScreenHDRStatus();
             break;
         case OHOS::Rosen::TAKE_SURFACE_CAPTURE_WITH_ALL_WINDOWS:
-            OHOS::Rosen::DoTaskSurfaceCaptureWithAllWindows();
+            OHOS::Rosen::DoTakeSurfaceCaptureWithAllWindows();
             break;
         case OHOS::Rosen::FREEZE_SCREEN:
             OHOS::Rosen::DoFreezeScreen();

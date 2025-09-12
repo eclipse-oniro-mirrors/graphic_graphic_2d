@@ -200,7 +200,7 @@ uint32_t RSHardwareThread::GetunExecuteTaskNum()
     return unExecuteTaskNum_.load();
 }
 
-void RSHardwareThread::ClearRedrawGPUCompositionCache(const std::set<uint32_t>& bufferIds)
+void RSHardwareThread::ClearRedrawGPUCompositionCache(const std::set<uint64_t>& bufferIds)
 {
     std::weak_ptr<RSBaseRenderEngine> uniRenderEngine = uniRenderEngine_;
     PostDelayTask(
@@ -313,6 +313,9 @@ void RSHardwareThread::CommitAndReleaseLayers(OutputPtr output, const std::vecto
         }
         bool doRepaint = output->IsDeviceValid() && !shouldDropFrame;
         if (doRepaint) {
+#ifdef RS_ENABLE_TV_PQ_METADATA
+            RSTvMetadataManager::CombineMetadataForAllLayers(layers);
+#endif
             hdiBackend_->Repaint(output);
             RecordTimestamp(layers);
         }
@@ -977,7 +980,7 @@ void RSHardwareThread::Redraw(const sptr<Surface>& surface, const std::vector<La
     RedrawScreenRCD(*canvas, layers);
 #ifdef RS_ENABLE_TV_PQ_METADATA
     auto rsSurface = renderFrame->GetSurface();
-    RSTvMetadataManager::Instance().CopyFromLayersToSurface(layers, rsSurface);
+    RSTvMetadataManager::CopyFromLayersToSurface(layers, rsSurface);
 #endif
     renderFrame->Flush();
     RS_LOGD("RsDebug Redraw flush frame buffer end");

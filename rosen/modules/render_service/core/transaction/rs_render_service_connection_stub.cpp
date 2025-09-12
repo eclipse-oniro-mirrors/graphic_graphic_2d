@@ -1520,7 +1520,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             permissions.isSystemCalling = RSInterfaceCodeAccessVerifierBase::IsSystemCalling(
                 RSIRenderServiceConnectionInterfaceCodeAccessVerifier::codeEnumTypeName_ + \
                 "::TAKE_SURFACE_CAPTURE_WITH_ALL_WINDOWS");
-            ret = TaskSurfaceCaptureWithAllWindows(id, cb, captureConfig, checkDrmAndSurfaceLock, permissions);
+            ret = TakeSurfaceCaptureWithAllWindows(id, cb, captureConfig, checkDrmAndSurfaceLock, permissions);
             break;
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::FREEZE_SCREEN): {
@@ -3561,9 +3561,11 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             uint64_t mirroredId{0};
             uint64_t screenId{0};
             bool isMirror{false};
+            uint32_t mirrorSourceRotation{static_cast<uint32_t>(ScreenRotation::INVALID_SCREEN_ROTATION)};
             if (!data.ReadUint64(mirroredId) ||
                 !data.ReadUint64(screenId) ||
-                !data.ReadBool(isMirror)) {
+                !data.ReadBool(isMirror) ||
+                !data.ReadUint32(mirrorSourceRotation)) {
                 RS_LOGE("RSRenderServiceConnectionStub::CREATE_DISPLAY_NODE Read config failed!");
                 ret = ERR_INVALID_DATA;
                 break;
@@ -3573,6 +3575,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 .isMirrored = isMirror,
                 .mirrorNodeId = mirroredId,
                 .isSync = true,
+                .mirrorSourceRotation = mirrorSourceRotation,
             };
             bool success;
             if (CreateNode(config, id, success) != ERR_OK || reply.WriteBool(success)) {
@@ -3879,17 +3882,17 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             break;
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::AVCODEC_VIDEO_START): {
-            uint64_t uniqueId{0};
-            std::string surfaceName;
+            std::vector<uint64_t> uniqueIdList;
+            std::vector<std::string> surfaceNameList;
             uint32_t fps{0};
             uint64_t reportTime{0};
-            if (!data.ReadUint64(uniqueId) || !data.ReadString(surfaceName)
-                || !data.ReadUint32(fps) || !data.ReadUint64(reportTime)) {
+            if (!data.ReadUInt64Vector(&uniqueIdList) || !data.ReadStringVector(&surfaceNameList) ||
+                !data.ReadUint32(fps) || !data.ReadUint64(reportTime)) {
                 RS_LOGE("RenderServiceConnectionStub::AVCODEC_VIDEO_START : read data err!");
                 ret = ERR_INVALID_DATA;
                 break;
             }
-            int32_t result = AvcodecVideoStart(uniqueId, surfaceName, fps, reportTime);
+            int32_t result = AvcodecVideoStart(uniqueIdList, surfaceNameList, fps, reportTime);
             if (!reply.WriteInt32(result)) {
                 RS_LOGE("RSRenderServiceConnectionStub::AVCODEC_VIDEO_START Write status failed!");
                 ret = ERR_INVALID_REPLY;
@@ -3897,15 +3900,16 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             break;
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::AVCODEC_VIDEO_STOP): {
-            uint64_t uniqueId{0};
-            std::string surfaceName;
+            std::vector<uint64_t> uniqueIdList;
+            std::vector<std::string> surfaceNameList;
             uint32_t fps{0};
-            if (!data.ReadUint64(uniqueId) || !data.ReadString(surfaceName) || !data.ReadUint32(fps)) {
+            if (!data.ReadUInt64Vector(&uniqueIdList) || !data.ReadStringVector(&surfaceNameList) ||
+                !data.ReadUint32(fps)) {
                 RS_LOGE("RSRenderServiceConnectionStub::AVCODEC_VIDEO_STOP : read data err!");
                 ret = ERR_INVALID_DATA;
                 break;
             }
-            int32_t result = AvcodecVideoStop(uniqueId, surfaceName, fps);
+            int32_t result = AvcodecVideoStop(uniqueIdList, surfaceNameList, fps);
             if (!reply.WriteInt32(result)) {
                 RS_LOGE("RSRenderServiceConnectionStub::AVCODEC_VIDEO_STOP Write status failed!");
                 ret = ERR_INVALID_REPLY;

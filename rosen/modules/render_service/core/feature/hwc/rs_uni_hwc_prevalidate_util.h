@@ -24,7 +24,6 @@
 #include "screen_manager/rs_screen_manager.h"
 #include "feature/hwc/rs_uni_hwc_prevalidate_common.h"
 #include "feature/round_corner_display/rs_rcd_surface_render_node.h"
-#include "feature/round_corner_display/rs_rcd_surface_render_node_drawable.h"
 #include "pipeline/rs_screen_render_node.h"
 #include "pipeline/rs_surface_render_node.h"
 
@@ -89,8 +88,8 @@ private:
     bool CheckIfDoArsrPre(const RSSurfaceRenderNode::SharedPtr node);
     void CheckIfDoCopybit(const RSSurfaceRenderNode::SharedPtr node, GraphicTransformType transform,
         RequestLayerInfo& info);
-    static bool CheckHwcNodeAndGetPointerWindow(
-        const RSSurfaceRenderNode::SharedPtr& node, RSSurfaceRenderNode::SharedPtr& pointerWindow);
+    static bool CheckHwcNode(const RSSurfaceRenderNode::SharedPtr& node);
+    static bool IsPointerWindow(const RSSurfaceRenderNode::SharedPtr& node);
     static void EmplaceSurfaceNodeLayer(
         std::vector<RequestLayerInfo>& prevalidLayers, RSSurfaceRenderNode::SharedPtr node,
         uint32_t curFps, uint32_t& zOrder, const ScreenInfo& screenInfo);
