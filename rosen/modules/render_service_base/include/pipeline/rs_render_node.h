@@ -749,7 +749,6 @@ public:
     bool IsForcedDrawInGroup() const;
     bool IsSuggestedDrawInGroup() const;
     void CheckDrawingCacheType();
-    bool HasCacheableAnim() const { return hasCacheableAnim_; }
     enum NodeGroupType : uint8_t {
         NONE = 0,
         GROUPED_BY_ANIM = 1,
@@ -1225,7 +1224,6 @@ private:
     bool isAncestorDirty_ = false;
     bool isParentLeashWindow_ = false;
     bool isParentScbScreen_ = false;
-    bool hasCacheableAnim_ = false;
     NodePriorityType priority_ = NodePriorityType::MAIN_PRIORITY;
     bool lastIsNeedAssignToSubThread_ = false;
     bool uifirstNeedSync_ = false; // both cmdlist&param
