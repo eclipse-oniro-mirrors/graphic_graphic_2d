@@ -4073,6 +4073,10 @@ bool RSRenderNode::GetDrawingCacheChanged() const
     return false;
 #endif
 }
+void RSRenderNode::ResetDrawingCacheNeedUpdate()
+{
+    drawingCacheNeedUpdate_ = false;
+}
 void RSRenderNode::SetGeoUpdateDelay(bool val)
 {
     geoUpdateDelay_ = geoUpdateDelay_ || val;
