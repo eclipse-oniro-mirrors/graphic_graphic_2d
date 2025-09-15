@@ -125,12 +125,12 @@ HWTEST_F(RSImplicitAnimatorTest, ApplyAnimationSpeedMultiplierTest, Level1)
 {
     RSImplicitAnimator rsImplicitAnimator;
     float multiplier = 2.0f;
-    ASSERT_TRUE(std::fabs(rsImplicitAnimator.speedMultiplier_ - 1.0f) < 1e-6f);
+    ASSERT_TRUE(std::fabs(rsImplicitAnimator.GetAnimationSpeedMultiplier() - 1.0f) < 1e-6f);
     rsImplicitAnimator.ApplyAnimationSpeedMultiplier(multiplier);
-    ASSERT_TRUE(std::fabs(rsImplicitAnimator.speedMultiplier_ - 2.0f) < 1e-6f);
+    ASSERT_TRUE(std::fabs(rsImplicitAnimator.GetAnimationSpeedMultiplier() - 2.0f) < 1e-6f);
     multiplier = 0.0f;
     rsImplicitAnimator.ApplyAnimationSpeedMultiplier(multiplier);
-    ASSERT_TRUE(std::fabs(rsImplicitAnimator.speedMultiplier_ - 1.0f) < 1e-6f);
+    ASSERT_TRUE(std::fabs(rsImplicitAnimator.GetAnimationSpeedMultiplier() - 1.0f) < 1e-6f);
 }
 
 /**

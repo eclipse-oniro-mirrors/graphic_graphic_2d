@@ -94,6 +94,10 @@ public:
         const std::shared_ptr<RSNode>& target, const std::shared_ptr<RSPropertyBase>& property);
     
     void ApplyAnimationSpeedMultiplier(float multiplier = 1.0f);
+    float GetAnimationSpeedMultiplier() const
+    {
+        return speedMultiplier_;
+    }
 
 private:
     void EndImplicitAnimation();

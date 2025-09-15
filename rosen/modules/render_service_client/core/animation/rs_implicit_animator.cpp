@@ -523,8 +523,7 @@ void RSImplicitAnimator::EndImplicitTransition()
 
 void RSImplicitAnimator::ApplyAnimationSpeedMultiplier(float multiplier)
 {
-    if (multiplier < MIN_SPEED)
-    {
+    if (multiplier < MIN_SPEED) {
         RS_LOGW("RSImplicitAnimator::ApplyAnimationSpeedMultiplier, invalid multiplier %{public}f", multiplier);
         speedMultiplier_ = 1.f;
         return;
