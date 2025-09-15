@@ -744,7 +744,7 @@ HWTEST_F(HdiOutputTest, ANCOTransactionOnComplete001, Function | MediumTest | Le
  * Type: Function
  * Rank: Important(1)
  * EnvConditions: N/A
- * CaseDescription: 1.call CreateLayerFailed()
+ * CaseDescription: 1.call CreateLayer()
  *                  2.check ret
  */
 HWTEST_F(HdiOutputTest, CreateLayerFailed, Function | MediumTest | Level1)
