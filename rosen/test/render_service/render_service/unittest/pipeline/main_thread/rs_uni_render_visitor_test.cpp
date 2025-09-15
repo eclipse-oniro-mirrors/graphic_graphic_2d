@@ -1010,6 +1010,46 @@ HWTEST_F(RSUniRenderVisitorTest, CheckMergeFilterDirtyWithPreDirty_002, TestSize
     ASSERT_FALSE(dirtyManager->GetFilterCollector().GetFilterDirtyRegionInfoList(true).size() == 0);
 }
 
+/*
+ * @tc.name: CheckMergeFilterDirtyWithPreDirty_003
+ * @tc.desc: Test difference between opauqe/transparent surface node when intersect with accumulated dirty.
+ * @tc.type: FUNC
+ * @tc.require: #issues19848
+ */
+HWTEST_F(RSUniRenderVisitorTest, CheckMergeFilterDirtyWithPreDirty_003, TestSize.Level2)
+{
+    ASSERT_NE(RSMainThread::Instance(), nullptr);
+    auto& nodeMap = RSMainThread::Instance()->GetContext().GetMutableNodeMap();
+
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    auto dirtyManager = std::make_shared<RSDirtyRegionManager>();
+    // mock different filter, case1: no below dirty. case2: below dirty.
+    NodeId id = 1;
+    nodeMap.UnregisterRenderNode(id);
+    auto filterNode1 = std::make_shared<RSRenderNode>(id);
+    filterNode1->GetMutableRenderProperties().backgroundFilter_ = std::make_shared< RSFilter>();
+    filterNode1->GetMutableRenderProperties().boundsGeo_ = std::make_shared<RSObjAbsGeometry>();
+    filterNode1->GetMutableRenderProperties().boundsGeo_->absRect_ = DEFAULT_FILTER_RECT;
+
+    // register filter node
+    nodeMap.RegisterRenderNode(filterNode1);
+    FilterDirtyRegionInfo filterInfo1 = {
+        .id_ = filterNode1->GetId(),
+        .filterDirty_ = Occlusion::Rect(DEFAULT_FILTER_RECT)
+    };
+
+    dirtyManager->GetFilterCollector().CollectFilterDirtyRegionInfo(filterInfo1, false);
+    rsUniRenderVisitor->CheckMergeFilterDirtyWithPreDirty(
+        dirtyManager, Occlusion::Region(Occlusion::Rect(DEFAULT_RECT)), FilterDirtyType::OPAQUE_SURFACE_FILTER);
+    ASSERT_TRUE(dirtyManager->GetCurrentFrameDirtyRegion().IsEmpty());
+
+    dirtyManager->GetFilterCollector().CollectFilterDirtyRegionInfo(filterInfo1, false);
+    rsUniRenderVisitor->CheckMergeFilterDirtyWithPreDirty(
+        dirtyManager, Occlusion::Region(Occlusion::Rect(DEFAULT_RECT)), FilterDirtyType::TRANSPARENT_SURFACE_FILTER);
+    ASSERT_FALSE(dirtyManager->GetCurrentFrameDirtyRegion().IsEmpty());
+    nodeMap.UnregisterRenderNode(id);
+}
+
 /**
  * @tc.name: InitializeOcclusionHandler001
  * @tc.desc: test InitializeOcclusionHandler with the switch is enabled or not enabled

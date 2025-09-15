@@ -2423,10 +2423,15 @@ void RSUniRenderVisitor::UpdateSurfaceDirtyAndGlobalDirty()
 }
 
 void RSUniRenderVisitor::CheckMergeFilterDirtyWithPreDirty(const std::shared_ptr<RSDirtyRegionManager>& dirtyManager,
-    const Occlusion::Region& accumulatedDirtyRegion, FilterDirtyType filterDirtyType)
+    Occlusion::Region accumulatedDirtyRegion, FilterDirtyType filterDirtyType)
 {
     if (UNLIKELY(dirtyManager == nullptr)) {
         return;
+    }
+    // for transparent surface filter or container filter, accumulated surface dirty should be considered.
+    // for filter in surface, accumulated dirty within surface should be considered.
+    if (filterDirtyType == FilterDirtyType::OPAQUE_SURFACE_FILTER) {
+        accumulatedDirtyRegion.Reset();
     }
     const auto& nodeMap = RSMainThread::Instance()->GetContext().GetNodeMap();
     auto update = [&] (const FilterDirtyRegionInfo& filterInfo) {
@@ -2434,13 +2439,8 @@ void RSUniRenderVisitor::CheckMergeFilterDirtyWithPreDirty(const std::shared_ptr
         if (!filterNode) {
             return;
         }
-        Occlusion::Region belowDirtyToConsider;
-        // for transparent surface filter or container filter, accumulated surface dirty should be considered.
-        belowDirtyToConsider.OrSelf(filterDirtyType != FilterDirtyType::OPAQUE_SURFACE_FILTER ?
-            accumulatedDirtyRegion : Occlusion::Region());
-        // for filter in surface, accumulated dirty within surface should be considered.
-        belowDirtyToConsider.OrSelf(filterDirtyType != FilterDirtyType::CONTAINER_FILTER ?
-            filterInfo.belowDirty_ : Occlusion::Region());
+        Occlusion::Region belowDirtyToConsider = filterDirtyType == FilterDirtyType::CONTAINER_FILTER ?
+            accumulatedDirtyRegion : accumulatedDirtyRegion.Or(filterInfo.belowDirty_);
         bool effectNodeIntersectBgDirty = false;
         if (filterNode->GetRenderProperties().GetBackgroundFilter() ||
             filterNode->GetRenderProperties().GetNeedDrawBehindWindow()) {

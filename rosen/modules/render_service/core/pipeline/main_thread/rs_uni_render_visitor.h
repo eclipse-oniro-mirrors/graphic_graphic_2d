@@ -253,7 +253,7 @@ private:
     void CheckMergeSurfaceDirtysForDisplay(std::shared_ptr<RSSurfaceRenderNode>& surfaceNode) const;
     void CheckMergeDisplayDirtyByTransparentRegions(RSSurfaceRenderNode& surfaceNode) const;
     void CheckMergeFilterDirtyWithPreDirty(const std::shared_ptr<RSDirtyRegionManager>& dirtyManager,
-        const Occlusion::Region& accumulatedDirtyRegion, FilterDirtyType filterDirtyType);
+        Occlusion::Region accumulatedDirtyRegion, FilterDirtyType filterDirtyType);
 
     void CheckMergeDebugRectforRefreshRate(std::vector<RSBaseRenderNode::SharedPtr>& surfaces);
     void CheckMergeScreenDirtyByRoundCornerDisplay() const;
