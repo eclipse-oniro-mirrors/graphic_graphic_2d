@@ -84,7 +84,6 @@ template("render_service_client_source_set") {
       #animation
       "core/animation/rs_animation.cpp",
       "core/animation/rs_animation_callback.cpp",
-      "core/animation/rs_animation_group.cpp",
       "core/animation/rs_animation_timing_curve.cpp",
       "core/animation/rs_curve_animation.cpp",
       "core/animation/rs_implicit_animation_param.cpp",

@@ -664,11 +664,6 @@ void RSImplicitAnimator::CreateImplicitAnimation(const std::shared_ptr<RSNode>& 
             animation = pathImplicitParam->CreateAnimation(property, startValue, endValue);
             break;
         }
-        case ImplicitAnimationParamType::TRANSITION: {
-            auto implicitTransitionParam = static_cast<RSImplicitTransitionParam*>(params.get());
-            animation = implicitTransitionParam->CreateAnimation(property, startValue, endValue);
-            break;
-        }
         case ImplicitAnimationParamType::CANCEL: {
             // CreateEmptyAnimation
             if (property->id_ == 0) {
@@ -715,9 +710,7 @@ void RSImplicitAnimator::CreateImplicitAnimation(const std::shared_ptr<RSNode>& 
         animation->GetDuration(), protocol.GetRepeatCount(), protocol.GetInterfaceName(), target->GetFrameNodeId(),
         target->GetFrameNodeTag(), target->GetType());
 
-    if (params->GetType() == ImplicitAnimationParamType::TRANSITION ||
-        params->GetType() == ImplicitAnimationParamType::KEYFRAME) {
-        // for transition this will create custom transition animation, there is no need to add it to target.
+    if (params->GetType() == ImplicitAnimationParamType::KEYFRAME) {
         // for keyframe animations, we don't add it to target now, we will add it later in
         // RSImplicitAnimator::CloseImplicitAnimation.
         return;

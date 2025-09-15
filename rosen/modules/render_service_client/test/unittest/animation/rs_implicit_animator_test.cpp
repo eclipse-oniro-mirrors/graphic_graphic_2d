@@ -566,5 +566,61 @@ HWTEST_F(RSImplicitAnimatorTest, CloseInterActiveImplicitAnimationTest002, TestS
     EXPECT_TRUE(implicitAnimator->implicitAnimations_.empty());
     implicitAnimator->CloseInterActiveImplicitAnimation(true);
 }
+
+/**
+ * @tc.name: CreateImplicitAnimationTest001
+ * @tc.desc: Verify the CreateImplicitAnimation
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSImplicitAnimatorTest, CreateImplicitAnimationTest001, TestSize.Level1)
+{
+    RSImplicitAnimator implicitAnimator;
+    auto protocol = RSAnimationTimingProtocol::DEFAULT;
+    auto timingCurve = RSAnimationTimingCurve::DEFAULT;
+    implicitAnimator.OpenImplicitAnimation(protocol, timingCurve);
+    ASSERT_FALSE(implicitAnimator.globalImplicitParams_.empty());
+    implicitAnimator.BeginImplicitCurveAnimation();
+    ASSERT_FALSE(implicitAnimator.implicitAnimationParams_.empty());
+    ASSERT_NE(protocol.GetRepeatCount(), -1); // finite
+
+    auto target = RSCanvasNode::Create();
+    auto property = std::make_shared<RSAnimatableProperty<float>>(1.f);
+    auto startValue = std::make_shared<RSAnimatableProperty<float>>(0.f);
+    auto endValue = std::make_shared<RSAnimatableProperty<float>>(1.f);
+
+    implicitAnimator.CreateImplicitAnimation(target, property, startValue, endValue);
+    implicitAnimator.EndImplicitAnimation();
+    implicitAnimator.CloseImplicitAnimation();
+    ASSERT_TRUE(implicitAnimator.globalImplicitParams_.empty());
+    ASSERT_TRUE(implicitAnimator.implicitAnimationParams_.empty());
+}
+
+/**
+ * @tc.name: CreateImplicitAnimationTest002
+ * @tc.desc: Verify the CreateImplicitAnimation
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSImplicitAnimatorTest, CreateImplicitAnimationTest002, TestSize.Level1)
+{
+    RSImplicitAnimator implicitAnimator;
+    auto protocol = RSAnimationTimingProtocol::DEFAULT;
+    auto timingCurve = RSAnimationTimingCurve::LINEAR;
+    implicitAnimator.OpenImplicitAnimation(protocol, timingCurve);
+    ASSERT_FALSE(implicitAnimator.globalImplicitParams_.empty());
+    implicitAnimator.BeginImplicitKeyFrameAnimation(1.f);
+    ASSERT_FALSE(implicitAnimator.implicitAnimationParams_.empty());
+    ASSERT_NE(protocol.GetRepeatCount(), -1); // finite
+
+    auto target = RSCanvasNode::Create();
+    auto property = std::make_shared<RSAnimatableProperty<float>>(0.5f);
+    auto startValue = std::make_shared<RSAnimatableProperty<float>>(0.f);
+    auto endValue = std::make_shared<RSAnimatableProperty<float>>(0.5f);
+
+    implicitAnimator.CreateImplicitAnimation(target, property, startValue, endValue);
+    implicitAnimator.EndImplicitAnimation();
+    implicitAnimator.CloseImplicitAnimation();
+    ASSERT_TRUE(implicitAnimator.globalImplicitParams_.empty());
+    ASSERT_TRUE(implicitAnimator.implicitAnimationParams_.empty());
+}
 } // namespace Rosen
 } // namespace OHOS

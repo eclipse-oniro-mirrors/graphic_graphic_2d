@@ -203,25 +203,5 @@ HWTEST_F(RSRenderTransitionEffectTest, UpdateFractionTest001, TestSize.Level1)
 
     GTEST_LOG_(INFO) << "RSRenderTransitionEffectTest UpdateFractionTest001 end";
 }
-
-/**
- * @tc.name: RSTransitionCustomTest001
- * @tc.desc: Verify the RSTransitionFade Unmarshalling
- * @tc.type:FUNC
- */
-HWTEST_F(RSRenderTransitionEffectTest, RSTransitionCustomTest001, TestSize.Level1)
-{
-    GTEST_LOG_(INFO) << "RSRenderTransitionEffectTest RSTransitionCustomTest001 start";
-
-    auto property = std::make_shared<RSRenderProperty<bool>>();
-    auto startProp = std::make_shared<RSRenderProperty<bool>>();
-    auto endProp = std::make_shared<RSRenderProperty<bool>>();
-    RSTransitionCustom custom(property, startProp, endProp);
-    custom.property_ = property;
-    custom.InitValueEstimator();
-    EXPECT_TRUE(custom.valueEstimator_ == nullptr);
-
-    GTEST_LOG_(INFO) << "RSRenderTransitionEffectTest RSTransitionCustomTest001 end";
-}
 } // namespace Rosen
 } // namespace OHOS

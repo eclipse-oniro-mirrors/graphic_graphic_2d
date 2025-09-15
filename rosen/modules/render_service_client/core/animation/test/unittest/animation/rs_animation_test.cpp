@@ -21,7 +21,6 @@
 #include "animation/rs_animation_timing_protocol.h"
 #include "render/rs_path.h"
 #include "rs_animation_callback.h"
-#include "rs_animation_group.h"
 #include "rs_animation_timing_curve.h"
 #include "rs_canvas_node.h"
 #include "rs_curve_animation.h"
@@ -277,46 +276,6 @@ HWTEST_F(RSAnimationTest, AnimationStatusTest001, TestSize.Level1)
     std::weak_ptr<RSNode> target = animation->GetTarget();
     auto targetNode = target.lock();
     EXPECT_TRUE(targetNode != nullptr);
-}
-
-/**
- * @tc.name: AnimationGroupTest001
- * @tc.desc: Verify the status of animationGroup
- * @tc.type: FUNC
- * @tc.require:
- * @tc.author:
- */
-HWTEST_F(RSAnimationTest, AnimationGroupTest001, TestSize.Level1)
-{
-    GTEST_LOG_(INFO) << "RSAnimationTest AnimationGroupTest001 start";
-    /**
-     * @tc.steps: step1. init animation group
-     */
-    RSCanvasNode::SharedPtr node = RSCanvasNode::Create();
-    node->SetBoundsWidth(200);
-    RSAnimatableProperty<float> property1(0.0f);
-    std::shared_ptr<RSCurveAnimation<float>> animation1 =
-        std::make_shared<RSCurveAnimation<float>>(property1, 200, 500);
-    animation1->SetDuration(1000);
-    animation1->SetTimingCurve(RSAnimationTimingCurve::EASE_IN_OUT);
-    RSAnimatableProperty<float> property2(0.0f);
-    std::shared_ptr<RSCurveAnimation<float>> animation2 =
-        std::make_shared<RSCurveAnimation<float>>(property2, 200, 500);
-    animation2->SetDuration(1000);
-    animation2->SetTimingCurve(RSAnimationTimingCurve::EASE_IN_OUT);
-    std::unique_ptr<RSAnimationGroup> animationGroup = std::make_unique<RSAnimationGroup>();
-    animationGroup->AddAnimation(animation1);
-    animationGroup->AddAnimation(animation2);
-    animationGroup->RemoveAnimation(animation1);
-    /**
-     * @tc.steps: step2. start animation group test
-     */
-    animationGroup->Start(node);
-    EXPECT_FALSE(animation1->IsRunning());
-    EXPECT_TRUE(animation2->IsRunning());
-    animationGroup->Pause();
-    EXPECT_FALSE(animation1->IsPaused());
-    EXPECT_TRUE(animation2->IsPaused());
 }
 
 /**

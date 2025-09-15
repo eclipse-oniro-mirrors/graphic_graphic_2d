@@ -114,46 +114,6 @@ private:
     const std::shared_ptr<ModifierNG::RSRenderModifier> CreateModifierNG() override;
 };
 
-class RSTransitionCustom : public RSRenderTransitionEffect {
-public:
-    RSTransitionCustom(std::shared_ptr<RSRenderPropertyBase> property, std::shared_ptr<RSRenderPropertyBase> startValue,
-        std::shared_ptr<RSRenderPropertyBase> endValue)
-        : property_(property), startValue_(startValue), endValue_(endValue)
-    {
-        InitValueEstimator();
-    }
-    ~RSTransitionCustom() override = default;
-
-    void UpdateFraction(float fraction) const override
-    {
-        if (!valueEstimator_) {
-            return;
-        }
-        valueEstimator_->UpdateAnimationValue(fraction, true);
-    }
-
-private:
-    const std::shared_ptr<ModifierNG::RSRenderModifier> CreateModifierNG() override
-    {
-        return nullptr;
-    }
-
-    void InitValueEstimator()
-    {
-        if (valueEstimator_ == nullptr) {
-            valueEstimator_ = property_->CreateRSValueEstimator(RSValueEstimatorType::CURVE_VALUE_ESTIMATOR);
-        }
-        if (valueEstimator_ == nullptr) {
-            return;
-        }
-        valueEstimator_->InitCurveAnimationValue(property_, endValue_, startValue_, startValue_);
-    }
-
-    std::shared_ptr<RSRenderPropertyBase> property_;
-    std::shared_ptr<RSRenderPropertyBase> startValue_;
-    std::shared_ptr<RSRenderPropertyBase> endValue_;
-    std::shared_ptr<RSValueEstimator> valueEstimator_;
-};
 } // namespace Rosen
 } // namespace OHOS
 

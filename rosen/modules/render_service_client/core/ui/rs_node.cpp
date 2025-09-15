@@ -31,7 +31,6 @@
 
 #include "animation/rs_animation.h"
 #include "animation/rs_animation_callback.h"
-#include "animation/rs_animation_group.h"
 #include "animation/rs_implicit_animation_param.h"
 #include "animation/rs_implicit_animator.h"
 #include "animation/rs_implicit_animator_map.h"
@@ -1643,7 +1642,7 @@ void RSNode::SetParticleParams(std::vector<ParticleParams>& particleParams, cons
     SetParticleDrawRegion(particleParams);
     auto property = std::make_shared<RSProperty<int>>();
     auto propertyId = property->GetId();
-    auto uiAnimation = std::make_shared<RSAnimationGroup>();
+    auto uiAnimation = std::make_shared<RSDummyAnimation>();
     auto animationId = uiAnimation->GetId();
     AddAnimation(uiAnimation);
     if (finishCallback != nullptr) {
@@ -2693,21 +2692,7 @@ void RSNode::NotifyTransition(const std::shared_ptr<const RSTransitionEffect>& e
     if (!implicitAnimator->NeedImplicitAnimation()) {
         return;
     }
-
-    auto& customEffects = isTransitionIn ? effect->customTransitionInEffects_ : effect->customTransitionOutEffects_;
-    // temporary close the implicit animation
-    ExecuteWithoutAnimation(
-        [&customEffects] {
-            for (auto& customEffect : customEffects) {
-                customEffect->Active();
-            }
-        },
-        rsUIContext, implicitAnimator);
-
     implicitAnimator->BeginImplicitTransition(effect, isTransitionIn);
-    for (auto& customEffect : customEffects) {
-        customEffect->Identity();
-    }
     implicitAnimator->CreateImplicitTransition(*this);
     implicitAnimator->EndImplicitTransition();
 }
