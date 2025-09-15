@@ -195,7 +195,7 @@ public:
         }
         std::unique_lock<std::mutex> lock(funcMutex_);
         if (!submitFuncs_.empty) {
-            for (auto it = submitFuncs_.begin; it != submitFuncs_.end; it++) {
+            for (auto it = submitFuncs_.begin(); it != submitFuncs_.end(); it++) {
                 auto func = it->second;
                 func();
             }
