@@ -31,6 +31,7 @@
 #include "common/rs_optional_trace.h"
 #include "common/rs_singleton.h"
 #include "feature/hdr/rs_hdr_util.h"
+#include "feature/lpp/lpp_video_handler.h"
 #include "feature/round_corner_display/rs_round_corner_display_manager.h"
 #include "pipeline/render_thread/rs_base_render_util.h"
 #include "pipeline/main_thread/rs_main_thread.h"
@@ -125,6 +126,7 @@ void RSHardwareThread::Start()
     runner_ = AppExecFwk::EventRunner::Create("RSHardwareThread");
     handler_ = std::make_shared<AppExecFwk::EventHandler>(runner_);
     redrawCb_ = [this](const sptr<Surface>& surface, const std::vector<LayerInfoPtr>& layers, uint32_t screenId) {
+        LppVideoHandler::Instance().RemoveLayerId(layers);
         return this->Redraw(surface, layers, screenId);
     };
     if (handler_) {
@@ -307,8 +309,10 @@ void RSHardwareThread::CommitAndReleaseLayers(OutputPtr output, const std::vecto
         if (RSSystemProperties::IsSuperFoldDisplay() && output->GetScreenId() == 0) {
             std::vector<LayerInfoPtr> reviseLayers = layers;
             ChangeLayersForActiveRectOutside(reviseLayers, curScreenId);
+            LppVideoHandler::Instance().AddLppLayerId(reviseLayers);
             output->SetLayerInfo(reviseLayers);
         } else {
+            LppVideoHandler::Instance().AddLppLayerId(layers);
             output->SetLayerInfo(layers);
         }
         bool doRepaint = output->IsDeviceValid() && !shouldDropFrame;
@@ -351,6 +355,7 @@ void RSHardwareThread::CommitAndReleaseLayers(OutputPtr output, const std::vecto
             RSHiSysEvent::EventWrite(RSEventName::RS_HARDWARE_THREAD_LOAD_WARNING, RSEventType::RS_STATISTIC,
                 "FRAME_RATE", frameRate, "MISSED_FRAMES", missedFrames, "FRAME_TIME", frameTime);
         }
+        LppVideoHandler::Instance().JudgeLppLayer(param.vsyncId);
     };
     RSBaseRenderUtil::IncAcquiredBufferCount();
     unExecuteTaskNum_++;

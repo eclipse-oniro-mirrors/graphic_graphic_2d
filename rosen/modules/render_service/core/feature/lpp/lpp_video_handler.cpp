@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 #include "feature/lpp/lpp_video_handler.h"
- 
+
 #include "rs_trace.h"
- 
+
 #include "common/rs_optional_trace.h"
 #include "pipeline/main_thread/rs_main_thread.h"
 #include "platform/common/rs_log.h"
@@ -25,21 +25,31 @@ LppVideoHandler& LppVideoHandler::Instance()
     static LppVideoHandler instance;
     return instance;
 }
- 
-void LppVideoHandler::ConsumeAndUpdateLppBuffer(const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode)
+
+void LppVideoHandler::ConsumeAndUpdateLppBuffer(
+    uint64_t vsyncId, const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     std::shared_ptr<RSSurfaceHandler> surfaceHandler;
-    if (UNLIKELY(surfaceNode == nullptr) || (surfaceHandler = surfaceNode->GetMutableRSSurfaceHandler()) == nullptr ||
-        surfaceHandler->GetSourceType() != OHSurfaceSource::OH_SURFACE_SOURCE_LOWPOWERVIDEO) {
+    bool isInvalidNode = UNLIKELY(surfaceNode == nullptr) ||
+                         surfaceNode->GetAbilityState() == RSSurfaceNodeAbilityState::BACKGROUND ||
+                         (surfaceHandler = surfaceNode->GetMutableRSSurfaceHandler()) == nullptr ||
+                         surfaceHandler->GetConsumer() == nullptr;
+    if (isInvalidNode) {
         return;
     }
- 
     const auto& consumer = surfaceHandler->GetConsumer();
-    if (consumer == nullptr) {
+    surfaceHandler->SetSourceType(static_cast<uint32_t>(consumer->GetSurfaceSourceType()));
+    if (consumer->GetSurfaceSourceType() != OHSurfaceSource::OH_SURFACE_SOURCE_LOWPOWERVIDEO) {
         return;
     }
-    lowPowerSurfaceNode_.push_back(surfaceNode);
+    bool needRemoveTopNode = lppConsumerMap_.find(vsyncId) == lppConsumerMap_.end() &&
+                             lppConsumerMap_.size() >= LPP_SURFACE_NODE_MAX_SIZE;
+    if (needRemoveTopNode) {
+        RS_TRACE_NAME_FMT("ConsumeAndUpdateLowPowerBuffer erase Node Id = %ld", lppConsumerMap_.begin()->first);
+        lppConsumerMap_.erase(lppConsumerMap_.begin());
+    }
+    lppConsumerMap_[vsyncId].push_back(consumer);
     sptr<SurfaceBuffer> buffer = nullptr;
     sptr<SyncFence> acquireFence = SyncFence::InvalidFence();
     int64_t timestamp = 0;
@@ -64,65 +74,126 @@ void LppVideoHandler::ConsumeAndUpdateLppBuffer(const std::shared_ptr<RSSurfaceR
     RS_TRACE_NAME_FMT("ConsumeAndUpdateLowPowerBuffer node: [%lu]", surfaceHandler->GetNodeId());
     surfaceBuffer = nullptr;
 }
- 
-void LppVideoHandler::JudgeRsDrawLppState(bool needDrawFrame, bool doDirectComposition)
+
+void LppVideoHandler::JudgeRequestVsyncForLpp(uint64_t vsyncId)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    bool requestVsync = false;
-    for (const auto& surfaceNode : lowPowerSurfaceNode_) {
-        sptr<IConsumerSurface> consumer;
-        if (UNLIKELY(surfaceNode == nullptr) ||
-            surfaceNode->GetAbilityState() == RSSurfaceNodeAbilityState::BACKGROUND ||
-            surfaceNode->GetMutableRSSurfaceHandler() == nullptr ||
-            (consumer = surfaceNode->GetMutableRSSurfaceHandler()->GetConsumer()) == nullptr) {
+    RS_TRACE_NAME_FMT("JudgeRequestVsyncForLpp vsyncId = %ld", vsyncId);
+    if (lppConsumerMap_.find(vsyncId) == lppConsumerMap_.end()) {
+        return;
+    }
+    // When first awakened
+    if (!isRequestedVsync_ && lppRsState_ == LppState::LPP_LAYER) {
+        lppRsState_ = LppState::UNKOWN;
+    }
+
+    if (lppConsumerMap_.size() >= LPP_SURFACE_NODE_MAX_SIZE - 1 && lppRsState_ == LppState::UNKOWN) {
+        RS_TRACE_NAME("JudgeRequestVsyncForLpp skip lpp");
+        lppConsumerMap_.clear();
+        isRequestedVsync_ = false;
+        return;
+    }
+    bool isRsDrawLpp =
+        lppRsState_ == LppState::UNKOWN || lppRsState_ == LppState::UNI_RENDER || hasVirtualMirrorDisplay_.load();
+    bool isStopVsyncForCount = true;
+    bool isForceRequestVsync = false;
+    for (const auto& lppConsumer : lppConsumerMap_[vsyncId]) {
+        auto consumer = lppConsumer.promote();
+        if (consumer == nullptr) {
             continue;
         }
- 
-        bool isHardware = !(surfaceNode->IsHardwareForcedDisabled());
-        bool requestNextVsyncForLpp = false;
-        bool isShbDrawLpp = true;
- 
-        if (!needDrawFrame) {
-            // Render nothing to update
-            requestNextVsyncForLpp = true;
-            isShbDrawLpp = false;
-        } else {
-            if (!doDirectComposition && !isHardware) {
-                // GPU
-                requestNextVsyncForLpp = true;
-                isShbDrawLpp = false;
-            }
-            if (doDirectComposition || (!doDirectComposition && isHardware)) {
-                // Hareware
-                requestNextVsyncForLpp = false;
-                isShbDrawLpp = true;
-            }
+        auto ret = consumer->SetLppDrawSource(lppShbState_ == LppState::LPP_LAYER, lppRsState_ != LppState::LPP_LAYER);
+        bool isStopLppVsyncForCount = false;
+        if (ret == GSERROR_NO_CONSUMER) {
+            RS_TRACE_NAME("Force RequiestNextVsync for comsume lpp");
+            isForceRequestVsync = true;
+        } else if (ret != GSERROR_OK) {
+            RS_TRACE_NAME("Stop By SetLppDrawSource");
+            isStopLppVsyncForCount = true;
         }
- 
-        if (hasVirtualMirrorDisplay_.load()) {
-            // Virtual screen needs to keep Vsync awake
-            RS_TRACE_NAME_FMT("Virtual screen needs to keep Vsync awake");
-            requestNextVsyncForLpp = true;
-        }
-        if (consumer->SetLppDrawSource(isShbDrawLpp, requestNextVsyncForLpp) != GSError::GSERROR_OK) {
-            RS_TRACE_NAME_FMT("Stop By SetLppDrawSource");
-            requestNextVsyncForLpp = false;
-        }
-        requestVsync = requestVsync || requestNextVsyncForLpp;
+        isStopVsyncForCount = isStopVsyncForCount && isStopLppVsyncForCount;
     }
-    if (requestVsync) {
+    RS_TRACE_NAME_FMT("JudgeRequestVsyncForLpp vsyncId: %ld, [%d, %d, %d]", vsyncId, lppRsState_,
+        hasVirtualMirrorDisplay_.load(), isStopVsyncForCount);
+
+    isRequestedVsync_ = (isRsDrawLpp && !isStopVsyncForCount) || isForceRequestVsync;
+    if (isRequestedVsync_) {
         RSMainThread::Instance()->RequestNextVSync();
+    } else {
+        lppConsumerMap_.clear();
     }
 }
- 
+
+void LppVideoHandler::AddLppLayerId(const std::vector<LayerInfoPtr>& layers)
+{
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        lppLayerId_.clear();
+    }
+    for (const auto& layer : layers) {
+        bool isLppLayer = layer != nullptr &&
+            layer->GetTunnelLayerId() != 0 && layer->GetTunnelLayerProperty() == LPP_LAYER_PROPERTY;
+        if (!isLppLayer) {
+            continue;
+        }
+        std::lock_guard<std::mutex> lock(mutex_);
+        lppLayerId_.insert(layer->GetNodeId());
+    }
+}
+
 void LppVideoHandler::SetHasVirtualMirrorDisplay(bool hasVirtualMirrorDisplay)
 {
     hasVirtualMirrorDisplay_.store(hasVirtualMirrorDisplay);
 }
- 
-void LppVideoHandler::ClearLppSurfaceNode()
+
+void LppVideoHandler::RemoveLayerId(const std::vector<LayerInfoPtr>& layers)
+{
+    for (const auto& layer : layers) {
+        bool isLppLayer = layer != nullptr &&
+            layer->GetTunnelLayerId() != 0 && layer->GetTunnelLayerProperty() == LPP_LAYER_PROPERTY;
+        if (!isLppLayer) {
+            continue;
+        }
+        std::lock_guard<std::mutex> lock(mutex_);
+        lppLayerId_.erase(layer->GetNodeId());
+    }
+}
+
+void LppVideoHandler::JudgeLppLayer(uint64_t vsyncId)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    lowPowerSurfaceNode_.clear();
+    RS_TRACE_NAME_FMT("JudgeLppLayer vsyncId: %ld", vsyncId);
+    if (lppConsumerMap_.find(vsyncId) == lppConsumerMap_.end()) {
+        return;
+    }
+    bool hasLppLayer = !lppLayerId_.empty();
+    lppShbState_ = hasLppLayer ? LppState::LPP_LAYER : LppState::UNI_RENDER;
+    size_t lppNodeSize = lppConsumerMap_[vsyncId].size();
+    for (const auto& lppConsumer : lppConsumerMap_[vsyncId]) {
+        auto consumer = lppConsumer.promote();
+        if (consumer == nullptr) {
+            continue;
+        }
+        auto ret = consumer->SetLppDrawSource(hasLppLayer, lppRsState_ != LppState::LPP_LAYER);
+        if (ret != GSERROR_NO_CONSUMER && ret != GSERROR_OK) {
+            RS_TRACE_NAME("JudgeLppLayer Stop By SetLppDrawSource");
+            lppNodeSize--;
+        }
+    }
+    bool isAllLppLayer = lppNodeSize != 0 && lppNodeSize == lppLayerId_.size();
+    LppState lastLppRsState = lppRsState_;
+    lppRsState_ = isAllLppLayer ? LppState::LPP_LAYER : LppState::UNI_RENDER;
+    if (lastLppRsState == LppState::LPP_LAYER && lppRsState_ == LppState::UNI_RENDER) {
+        RSMainThread::Instance()->RequestNextVSync();
+        isRequestedVsync_ = true;
+    }
+    RS_TRACE_NAME_FMT("JudgeLppLayer lppState: [%d, %d]", hasLppLayer, isAllLppLayer);
+    for (auto it = lppConsumerMap_.begin(); it != lppConsumerMap_.end();) {
+        if (it->first <= vsyncId) {
+            it = lppConsumerMap_.erase(it);
+        } else {
+            break;
+        }
+    }
 }
 } // namespace OHOS::Rosen
