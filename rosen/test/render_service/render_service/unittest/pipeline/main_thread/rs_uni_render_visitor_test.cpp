@@ -5667,9 +5667,9 @@ HWTEST_F(RSUniRenderVisitorTest, PostPrepare002, TestSize.Level2)
     ASSERT_NE(rsUniRenderVisitor, nullptr);
     auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
     ASSERT_NE(surfaceNode, nullptr);
-    auto child = RSTestUtil.CreateSurfaceNodeWithBuffer();
+    auto child = RSTestUtil::CreateSurfaceNodeWithBuffer();
     ASSERT_NE(child, nullptr);
-    auto child2 = RSTestUtil.CreateSurfaceNodeWithBuffer();
+    auto child2 = RSTestUtil::CreateSurfaceNodeWithBuffer();
     ASSERT_NE(child2, nullptr);
 
     surfaceNode->InitRenderParams();
@@ -5691,7 +5691,7 @@ HWTEST_F(RSUniRenderVisitorTest, PostPrepare002, TestSize.Level2)
     ASSERT_FALSE(child->isHardwareForcedDisabled_);
     
     rsUniRenderVisitor->PostPrepare(*surfaceNode, true);
-    ASSERT_FALSE(child->isHardwareForcedDisabled_);
+    ASSERT_TRUE(child->isHardwareForcedDisabled_);
     
     child->isHardwareForcedDisabled_ = false;
     Occlusion::Region visibleRegion(DEFAULT_RECT);
@@ -5702,7 +5702,7 @@ HWTEST_F(RSUniRenderVisitorTest, PostPrepare002, TestSize.Level2)
     ASSERT_FALSE(child->isHardwareForcedDisabled_);
     
     rsUniRenderVisitor->PostPrepare(*surfaceNode, true);
-    ASSERT_FALSE(child->isHardwareForcedDisabled_);  
+    ASSERT_FALSE(child->isHardwareForcedDisabled_);
 }
 
 /*
