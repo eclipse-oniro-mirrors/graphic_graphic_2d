@@ -21,6 +21,8 @@
 #include <dlfcn.h>
 #include <vector>
 #include "common/rs_optional_trace.h"
+#include "hetero_hdr/rs_hdr_pattern_manager.h"
+#include "hetero_hdr/rs_hdr_vulkan_task.h"
 #include "platform/common/rs_log.h"
 #include "render_context/memory_handler.h"
 #ifdef USE_M133_SKIA
