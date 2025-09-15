@@ -235,7 +235,7 @@ void RSUniRenderThread::Start()
     }
     handler_ = std::make_shared<AppExecFwk::EventHandler>(runner_);
 #ifdef SUBTREE_PARALLEL_ENABLE
-    RSParallelUtils::SetFFrtConfig();
+    RSParallelManager::Singleton().SetFFrtConfig();
 #endif
     runner_->Run();
     auto postTaskProxy = [](RSTaskMessage::RSTask task, const std::string& name, int64_t delayTime,
