@@ -1144,7 +1144,7 @@ int32_t RSScreenManager::SetVirtualScreenBlackList(ScreenId id, const std::vecto
         RS_LOGI("%{public}s: Cast screen blacklists for id %{public}" PRIu64, __func__, id);
         std::lock_guard<std::mutex> lock(blackListMutex_);
         castScreenBlackList_ = std::move(screenBlackList);
-        PrintVirtualScreenBlackList(std::string(__func__), id, castScreenBlackList_);
+        PrintScreenBlackList(std::string(__func__), id, castScreenBlackList_);
         return SUCCESS;
     }
     auto virtualScreen = GetScreen(id);
@@ -1154,7 +1154,7 @@ int32_t RSScreenManager::SetVirtualScreenBlackList(ScreenId id, const std::vecto
     }
     RS_LOGI("%{public}s: Record screen blacklists for id %{public}" PRIu64, __func__, id);
     virtualScreen->SetBlackList(screenBlackList);
-    PrintVirtualScreenBlackList(std::string(__func__), id, virtualScreen->GetBlackList());
+    PrintScreenBlackList(std::string(__func__), id, screenBlackList);
     {
         std::lock_guard<std::mutex> lock(blackListMutex_);
         for (const auto& [nodeId, screenIdSet] : blackListInVirtualScreen_) {
@@ -1214,7 +1214,7 @@ int32_t RSScreenManager::AddVirtualScreenBlackList(ScreenId id, const std::vecto
         }
         RS_LOGI("%{public}s: Cast screen blacklists", __func__);
         castScreenBlackList_.insert(blackList.cbegin(), blackList.cend());
-        PrintVirtualScreenBlackList(std::string(__func__), id, castScreenBlackList_);
+        PrintScreenBlackList(std::string(__func__), id, castScreenBlackList_);
         return SUCCESS;
     }
     auto virtualScreen = GetScreen(id);
@@ -1228,7 +1228,7 @@ int32_t RSScreenManager::AddVirtualScreenBlackList(ScreenId id, const std::vecto
     }
     RS_LOGI("%{public}s: Record screen blacklists for id %{public}" PRIu64, __func__, id);
     virtualScreen->AddBlackList(blackList);
-    PrintVirtualScreenBlackList(std::string(__func__), id, virtualScreen->GetBlackList());
+    PrintScreenBlackList(std::string(__func__), id, virtualScreen->GetBlackList());
     {
         std::lock_guard<std::mutex> lock(blackListMutex_);
         for (const auto& nodeId : blackList) {
@@ -1260,7 +1260,7 @@ int32_t RSScreenManager::RemoveVirtualScreenBlackList(ScreenId id, const std::ve
         for (const auto& list : blackList) {
             castScreenBlackList_.erase(list);
         }
-        PrintVirtualScreenBlackList(std::string(__func__), id, castScreenBlackList_);
+        PrintScreenBlackList(std::string(__func__), id, castScreenBlackList_);
         return SUCCESS;
     }
     auto virtualScreen = GetScreen(id);
@@ -1270,7 +1270,7 @@ int32_t RSScreenManager::RemoveVirtualScreenBlackList(ScreenId id, const std::ve
     }
     RS_LOGI("%{public}s: Record screen blacklists for id %{public}" PRIu64, __func__, id);
     virtualScreen->RemoveBlackList(blackList);
-    PrintVirtualScreenBlackList(std::string(__func__), id, virtualScreen->GetBlackList());
+    PrintScreenBlackList(std::string(__func__), id, virtualScreen->GetBlackList());
     {
         std::lock_guard<std::mutex> lock(blackListMutex_);
         for (const auto& nodeId : blackList) {
@@ -1290,7 +1290,7 @@ int32_t RSScreenManager::RemoveVirtualScreenBlackList(ScreenId id, const std::ve
     return SUCCESS;
 }
 
-void RSScreenManager::PrintVirtualScreenBlackList(
+void RSScreenManager::PrintScreenBlackList(
     std::string funcName, ScreenId id, const std::unordered_set<uint64_t> &set) const
 {
     std::string out = "[";

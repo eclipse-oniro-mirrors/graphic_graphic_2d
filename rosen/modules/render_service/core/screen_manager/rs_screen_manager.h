@@ -198,8 +198,7 @@ public:
     virtual std::unordered_set<uint64_t> GetAllWhiteList() = 0;
     virtual std::unordered_set<uint64_t> GetBlackListVirtualScreenByNode(uint64_t nodeId) = 0;
 
-    // print screenBlackList when changed
-    virtual void PrintVirtualScreenBlackList(
+    virtual void PrintScreenBlackList(
         std::string funcName, ScreenId id, const std::unordered_set<uint64_t> &set) const = 0;
 
     virtual int32_t SetVirtualScreenSecurityExemptionList(
@@ -386,8 +385,7 @@ public:
     std::unordered_set<uint64_t> GetAllWhiteList() override;
     std::unordered_set<uint64_t> GetBlackListVirtualScreenByNode(uint64_t nodeId) override;
 
-    // print screenBlackList when changed
-    void PrintVirtualScreenBlackList(
+    void PrintScreenBlackList(
         std::string funcName, ScreenId id, const std::unordered_set<uint64_t> &set) const override;
 
     int32_t SetVirtualScreenSecurityExemptionList(
