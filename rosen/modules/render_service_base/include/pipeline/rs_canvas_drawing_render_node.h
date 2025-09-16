@@ -110,8 +110,11 @@ private:
     std::map<ModifierNG::RSModifierType, ModifierCmdList> drawCmdListsNG_;
     uint32_t cmdCount_ = 0;
 
+    int64_t lastResetSurfaceTime_ = 0;
+    size_t opCountAfterReset_ = 0;
 
     friend class RSCanvasDrawingNodeCommandHelper;
+    friend class RSRenderNode;
 };
 
 } // namespace Rosen
