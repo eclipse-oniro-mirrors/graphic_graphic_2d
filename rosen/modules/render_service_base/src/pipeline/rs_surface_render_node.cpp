@@ -970,6 +970,8 @@ void RSSurfaceRenderNode::SetSkipLayer(bool isSkipLayer)
     } else {
         specialLayerManager_.RemoveIds(SpecialLayerType::SKIP, GetId());
     }
+    ROSEN_LOGI("RSSurfaceRenderNode::SetSkipLayer, NodeId: %{public}" PRIu64 ", SkipLayer:%{public}d",
+        GetId(), isSkipLayer);
     UpdateSpecialLayerInfoByTypeChange(SpecialLayerType::SKIP, isSkipLayer);
 }
 
@@ -985,6 +987,8 @@ void RSSurfaceRenderNode::SetSnapshotSkipLayer(bool isSnapshotSkipLayer)
     } else {
         specialLayerManager_.RemoveIds(SpecialLayerType::SNAPSHOT_SKIP, GetId());
     }
+    ROSEN_LOGI("RSSurfaceRenderNode::SetSnapshotSkipLayer, NodeId: %{public}" PRIu64 ", SnapshotSkipLayer:%{public}d",
+        GetId(), isSnapshotSkipLayer);
     UpdateSpecialLayerInfoByTypeChange(SpecialLayerType::SNAPSHOT_SKIP, isSnapshotSkipLayer);
 }
 
