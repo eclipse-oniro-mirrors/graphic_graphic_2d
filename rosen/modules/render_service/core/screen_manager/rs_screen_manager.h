@@ -198,9 +198,6 @@ public:
     virtual std::unordered_set<uint64_t> GetAllWhiteList() = 0;
     virtual std::unordered_set<uint64_t> GetBlackListVirtualScreenByNode(uint64_t nodeId) = 0;
 
-    virtual void PrintScreenBlackList(
-        std::string funcName, ScreenId id, const std::unordered_set<uint64_t> &set) const = 0;
-
     virtual int32_t SetVirtualScreenSecurityExemptionList(
         ScreenId id, const std::vector<uint64_t>& securityExemptionList) = 0;
     virtual const std::vector<uint64_t> GetVirtualScreenSecurityExemptionList(ScreenId id) const = 0;
@@ -385,9 +382,6 @@ public:
     std::unordered_set<uint64_t> GetAllWhiteList() override;
     std::unordered_set<uint64_t> GetBlackListVirtualScreenByNode(uint64_t nodeId) override;
 
-    void PrintScreenBlackList(
-        std::string funcName, ScreenId id, const std::unordered_set<uint64_t> &set) const override;
-
     int32_t SetVirtualScreenSecurityExemptionList(
         ScreenId id, const std::vector<uint64_t>& securityExemptionList) override;
     const std::vector<uint64_t> GetVirtualScreenSecurityExemptionList(ScreenId id) const override;
@@ -426,6 +420,9 @@ private:
 
     static void OnScreenVBlankIdle(uint32_t devId, uint64_t ns, void *data);
     void OnScreenVBlankIdleEvent(uint32_t devId, uint64_t ns);
+
+    void PrintScreenBlackList(
+        std::string funcName, ScreenId id, const std::unordered_set<uint64_t> &set) const override;
 
     // physical screen
     void ProcessScreenConnected(std::shared_ptr<HdiOutput>& output);
