@@ -1221,8 +1221,8 @@ void RSRenderNode::DumpSubClassNode(std::string& out) const
         }
     } else if (GetType() == RSRenderNodeType::CANVAS_DRAWING_NODE) {
         auto canvasDrawingNode = static_cast<const RSCanvasDrawingRenderNode*>(this);
-        out += ", lastResetSurfaceTime_: " + std::to_string(canvasDrawingNode->lastResetSurfaceTime_);
-        out += ", opCountAfterReset_: " + std::to_string(canvasDrawingNode->opCountAfterReset_);
+        out += ", lastResetSurfaceTime: " + std::to_string(canvasDrawingNode->lastResetSurfaceTime_);
+        out += ", opCountAfterReset: " + std::to_string(canvasDrawingNode->opCountAfterReset_);
     }
 }
 
