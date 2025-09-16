@@ -83,7 +83,7 @@ private:
 
     void WriteToDisk();
 
-    int CalMaxUniRenderSize();
+    size_t CalMaxUniRenderSize();
 
     bool initialized_ = false;
     std::unique_ptr<CacheData> cacheData_;
