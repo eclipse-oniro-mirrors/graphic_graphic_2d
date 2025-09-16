@@ -1298,7 +1298,7 @@ void RSScreenManager::PrintScreenBlackList(
         out += std::to_string(nodeId) + " ";
     }
     out += "]";
-    RS_LOGI("%{public}s: screenId: %{public}" PRIu64 " blacklist: %{public}s", funcName.c_str(), id, out.c_str());
+    RS_LOGI("%{public}s: screenId: %{public}" PRIu64 "; blacklist: %{public}s", funcName.c_str(), id, out.c_str());
 }
 
 int32_t RSScreenManager::SetVirtualScreenSecurityExemptionList(
