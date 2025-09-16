@@ -109,8 +109,8 @@ void RSCanvasRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     float hdrBrightness = paintFilterCanvas->GetHDRBrightness();
     paintFilterCanvas->SetHDRBrightness(params->GetHDRBrightness());
     auto& uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
-    SetOcclusionCullingEnabled((!uniParam || uniParam->IsOpDropped()) && GetOpDropped() &&
-        needOcclusionSkip && !params->HasUnobscuredUEC() && LIKELY(linkedDrawable == nullptr));
+    SetOcclusionCullingEnabled((!uniParam || uniParam->IsOpDropped()) && GetOpDropped() && needOcclusionSkip &&
+        !params->HasUnobscuredUEC() && LIKELY(linkedDrawable == nullptr) && !params->GetDrawingCacheChanged());
     if (IsOcclusionCullingEnabled() && QuickReject(canvas, params->GetLocalDrawRect())) {
         SetDrawSkipType(DrawSkipType::OCCLUSION_SKIP);
         return;
