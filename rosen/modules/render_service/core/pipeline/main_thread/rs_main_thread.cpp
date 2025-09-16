@@ -1589,7 +1589,6 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
         dividedRenderbufferTimestamps_.clear();
     }
     RSDrmUtil::ClearDrmNodes();
-    LppVideoHandler::Instance().ClearLppSurfaceNode();
     const auto& nodeMap = GetContext().GetNodeMap();
     isHdrSwitchChanged_ = RSLuminanceControl::Get().IsHdrPictureOn() != prevHdrSwitchStatus_;
     isColorTemperatureOn_ = RSColorTemperature::Get().IsColorTemperatureOn();
@@ -1634,10 +1633,11 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
             }
             surfaceHandler->ResetCurrentFrameBufferConsumed();
             auto parentNode = surfaceNode->GetParent().lock();
-            LppVideoHandler::Instance().ConsumeAndUpdateLppBuffer(surfaceNode);
-            if (RSBaseRenderUtil::ConsumeAndUpdateBuffer(
+            auto comsumeResult = RSBaseRenderUtil::ConsumeAndUpdateBuffer(
                 *surfaceHandler, timestamp_, IsNeedDropFrameByPid(surfaceHandler->GetNodeId()),
-                parentNode ? parentNode->GetId() : 0)) {
+                parentNode ? parentNode->GetId() : 0);
+            LppVideoHandler::Instance().ConsumeAndUpdateLppBuffer(vsyncId_, surfaceNode);
+            if (comsumeResult) {
                 HandleTunnelLayerId(surfaceHandler, surfaceNode);
                 if (!isUniRender_) {
                     this->dividedRenderbufferTimestamps_[surfaceNode->GetId()] =
@@ -1725,6 +1725,7 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
         };
     }
     nodeMap.TraverseSurfaceNodes(consumeAndUpdateNode_);
+    LppVideoHandler::Instance().JudgeRequestVsyncForLpp(vsyncId_);
     DelayedSingleton<RSFrameRateVote>::GetInstance()->CheckSurfaceAndUi();
     RSJankStats::GetInstance().AvcodecVideoCollectFinish();
     prevHdrSwitchStatus_ = RSLuminanceControl::Get().IsHdrPictureOn();
@@ -2748,7 +2749,6 @@ void RSMainThread::Render()
     }
     CheckSystemSceneStatus();
     UpdateLuminanceAndColorTemp();
-    LppVideoHandler::Instance().JudgeRsDrawLppState(needDrawFrame_, doDirectComposition_);
 }
 
 void RSMainThread::OnUniRenderDraw()
