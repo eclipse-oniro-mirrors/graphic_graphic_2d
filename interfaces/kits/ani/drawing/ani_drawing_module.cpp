@@ -20,6 +20,7 @@
 #include "color_filter_ani/ani_color_filter.h"
 #include "font_ani/ani_font.h"
 #include "text_blob_ani/ani_text_blob.h"
+#include "tool_ani/ani_tool.h"
 #include "matrix_ani/ani_matrix.h"
 #include "path_ani/ani_path.h"
 #include "path_iterator_ani/ani_path_iterator.h"
@@ -75,6 +76,7 @@ static void Clean(ani_env* env, ani_object object)
         {"Font", SafeDelete<OHOS::Rosen::Drawing::AniFont>},
         {"Lattice", SafeDelete<OHOS::Rosen::Drawing::AniLattice>},
         {"Matrix", SafeDelete<OHOS::Rosen::Drawing::AniMatrix>},
+        {"Tool", SafeDelete<OHOS::Rosen::Drawing::AniTool>},
         {"Path", SafeDelete<OHOS::Rosen::Drawing::AniPath>},
         {"PathIterator", SafeDelete<OHOS::Rosen::Drawing::AniPathIterator>},
         {"PathEffect", SafeDelete<OHOS::Rosen::Drawing::AniPathEffect>},
@@ -148,6 +150,7 @@ ANI_EXPORT ani_status ANI_Constructor(ani_vm* vm, uint32_t* result)
         OHOS::Rosen::Drawing::AniShaderEffect::AniInit(env) != ANI_OK ||
         OHOS::Rosen::Drawing::AniRegion::AniInit(env) != ANI_OK ||
         OHOS::Rosen::Drawing::AniRoundRect::AniInit(env) != ANI_OK ||
+        OHOS::Rosen::Drawing::AniTool::AniInit(env) != ANI_OK ||
         OHOS::Rosen::Drawing::AniTypefaceArguments::AniInit(env) != ANI_OK ||
         OHOS::Rosen::Drawing::AniRectUtils::AniInit(env) != ANI_OK ||
         OHOS::Rosen::Drawing::AniImageFilter::AniInit(env) != ANI_OK ||
