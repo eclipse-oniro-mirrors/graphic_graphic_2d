@@ -334,6 +334,11 @@ bool RSSystemProperties::IsSmallFoldDevice()
     return false;
 }
 
+bool RSSystemProperties::IsFoldDeviceOfOldDss()
+{
+    return false;
+}
+
 int RSSystemProperties::GetFilterCacheSizeThreshold()
 {
     return 0;
@@ -390,6 +395,11 @@ bool RSSystemProperties::GetKawaseOriginalEnabled()
 }
 
 bool RSSystemProperties::GetBlurEnabled()
+{
+    return true;
+}
+
+bool RSSystemProperties::GetFgBlenderEnabled()
 {
     return true;
 }

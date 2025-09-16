@@ -807,6 +807,13 @@ bool RSSystemProperties::GetBlurEnabled()
     return blurEnabled;
 }
 
+bool RSSystemProperties::GetFgBlenderEnabled()
+{
+    bool blenderEnabled_ =
+        std::atoi((system::GetParameter("rosen.graphic.blenderEnabled", "1")).c_str()) != 0;
+    return blenderEnabled_;
+}
+
 bool RSSystemProperties::GetForegroundFilterEnabled()
 {
     static bool foregroundFilterEnabled =
@@ -1060,6 +1067,13 @@ bool RSSystemProperties::IsSmallFoldDevice()
 {
     static std::string foldType = system::GetParameter("const.window.foldscreen.type", "0,0,0,0");
     return foldType == "2,0,0,0" || foldType == "4,2,0,0" || foldType == "2,2,0,0";
+}
+
+bool RSSystemProperties::IsFoldDeviceOfOldDss()
+{
+    static bool isFoldDeviceOfOldDss =
+        system::GetParameter("const.window.foldscreen.type", "0,0,0,0") == "2,2,0,0";
+    return isFoldDeviceOfOldDss;
 }
 
 bool RSSystemProperties::GetCacheCmdEnabled()

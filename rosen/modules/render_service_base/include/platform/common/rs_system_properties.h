@@ -246,6 +246,7 @@ public:
     static bool GetImageReleaseUsingPostTask();
     static bool GetKawaseOriginalEnabled();
     static bool GetBlurEnabled();
+    static bool GetFgBlenderEnabled();
     static bool GetForegroundFilterEnabled();
     static const std::vector<float>& GetAiInvertCoef();
     static bool GetSkipForAlphaZeroEnabled();
@@ -285,6 +286,7 @@ public:
     static bool FindNodeInTargetList(std::string node);
     static bool IsFoldScreenFlag();
     static bool IsSmallFoldDevice();
+    static bool IsFoldDeviceOfOldDss();
     static bool GetCacheCmdEnabled();
     static bool GetASTCEnabled();
     static bool GetCachedBlurPartialRenderEnabled();

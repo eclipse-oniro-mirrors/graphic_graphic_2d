@@ -340,6 +340,11 @@ bool RSSystemProperties::IsSmallFoldDevice()
     return false;
 }
 
+bool RSSystemProperties::IsFoldDeviceOfOldDss()
+{
+    return false;
+}
+
 bool RSSystemProperties::GetKawaseEnabled()
 {
     return false;
@@ -391,6 +396,11 @@ bool RSSystemProperties::GetKawaseOriginalEnabled()
 }
 
 bool RSSystemProperties::GetBlurEnabled()
+{
+    return true;
+}
+
+bool RSSystemProperties::GetFgBlenderEnabled()
 {
     return true;
 }
