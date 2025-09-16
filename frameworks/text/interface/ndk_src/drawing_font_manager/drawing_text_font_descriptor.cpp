@@ -188,3 +188,41 @@ void OH_Drawing_DestroySystemFontFullNames(OH_Drawing_Array* fullNameArray)
     fullNameList->type = ObjectType::INVALID;
     delete fullNameList;
 }
+
+const OH_Drawing_FontFullDescriptor* OH_Drawing_GetFontFullDescriptorByIndex(OH_Drawing_Array* descriptor, size_t index)
+{
+    if (descriptor == nullptr) {
+        return nullptr;
+    }
+
+    auto arrayFontFullDescriptors = reinterpret_cast<ObjectArray*>(descriptor);
+    if (arrayFontFullDescriptors != nullptr && arrayFontFullDescriptors->addr != nullptr &&
+        arrayFontFullDescriptors->type == FONT_FULL_DESCRIPTOR && index < arrayFontFullDescriptors->num) {
+        Drawing::FontParser::FontDescriptor* fontFullDescriptor =
+            reinterpret_cast<Drawing::FontParser::FontDescriptor*>(arrayFontFullDescriptors->addr);
+        return reinterpret_cast<OH_Drawing_FontFullDescriptor*>(&fontFullDescriptor[index]);
+    }
+
+    return nullptr;
+}
+
+OH_Drawing_Array* OH_Drawing_GetFontFullDescriptorssFromPath(char* path)
+{
+    std::vector<std::shared_ptr<Drawing::FontParser::FontDescriptor>> fontFullDescriptors =
+        TextEngine::FontParser::ParserFontDescriptorsFromPath(path);
+    if (fontFullDescriptors.empty()) {
+        return nullptr;
+    }
+    std::unique_ptr array = std::make_unique<ObjectArray>();
+    std::unique_ptr addr = std::make_unique<Drawing::FontParser::FontDescriptor*[]>(fontFullDescriptors.size());
+    array->type = ObjectType::FONT_FULL_DESCRIPTOR;
+
+    size_t num = 0;
+    for (const auto& fontFullDescriptor : fontFullDescriptors) {
+        addr[num] = new Drawing::FontParser::FontDescriptor(*fontFullDescriptor);
+        num += 1;
+    }
+    array->addr = addr.release();
+    array->num = num;
+    return reinterpret_cast<OH_Drawing_Array*>(array.release());
+}
