@@ -19,6 +19,7 @@
 #include "canvas_ani/ani_canvas.h"
 #include "color_filter_ani/ani_color_filter.h"
 #include "font_ani/ani_font.h"
+#include "text_blob_ani/ani_text_blob.h"
 #include "matrix_ani/ani_matrix.h"
 #include "path_ani/ani_path.h"
 #include "path_iterator_ani/ani_path_iterator.h"
@@ -83,6 +84,7 @@ static void Clean(ani_env* env, ani_object object)
         {"RoundRect", SafeDelete<OHOS::Rosen::Drawing::AniRoundRect>},
         {"SamplingOptions", SafeDelete<OHOS::Rosen::Drawing::AniSamplingOptions>},
         {"Typeface", SafeDelete<OHOS::Rosen::Drawing::AniTypeface>},
+        {"TextBlob", SafeDelete<OHOS::Rosen::Drawing::AniTextBlob>},
         {"TypefaceArguments", SafeDelete<OHOS::Rosen::Drawing::AniTypefaceArguments>},
         {"RectUtils", SafeDelete<OHOS::Rosen::Drawing::AniRectUtils>},
         {"ImageFilter", SafeDelete<OHOS::Rosen::Drawing::AniImageFilter>},
@@ -134,6 +136,7 @@ ANI_EXPORT ani_status ANI_Constructor(ani_vm* vm, uint32_t* result)
         OHOS::Rosen::Drawing::AniCanvas::AniInit(env) != ANI_OK ||
         OHOS::Rosen::Drawing::AniColorFilter::AniInit(env) != ANI_OK ||
         OHOS::Rosen::Drawing::AniFont::AniInit(env) != ANI_OK ||
+        OHOS::Rosen::Drawing::AniTextBlob::AniInit(env) != ANI_OK ||
         OHOS::Rosen::Drawing::AniPen::AniInit(env) != ANI_OK ||
         OHOS::Rosen::Drawing::AniSamplingOptions::AniInit(env) != ANI_OK ||
         OHOS::Rosen::Drawing::AniTypeface::AniInit(env) != ANI_OK ||
