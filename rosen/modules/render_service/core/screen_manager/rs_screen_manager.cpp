@@ -2651,7 +2651,7 @@ void RSScreenManager::TriggerCallbacks(ScreenId id, ScreenEvent event, ScreenCha
     HILOG_COMM_INFO("%{public}s: id %{public}" PRIu64
             "event %{public}u reason %{public}u screenChangeCallbacks_.size() %{public}zu",
             __func__, id, static_cast<uint8_t>(event), static_cast<uint8_t>(reason), screenChangeCallbacks_.size());
-    auto task = [this, screenChangeCallbacks = screenChangeCallbacks_, id, event, reason] {
+    auto task = [screenChangeCallbacks = screenChangeCallbacks_, id, event, reason] {
         for (const auto& cb: screenChangeCallbacks) {
             cb->OnScreenChanged(id, event, reason);
         }
