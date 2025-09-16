@@ -39,11 +39,12 @@ using namespace testing;
 using namespace testing::ext;
 using namespace OHOS::Rosen::DrawableV2;
 
+namespace OHOS::Rosen {
 namespace {
     constexpr uint32_t DEFAULT_CANVAS_WIDTH = 800;
     constexpr uint32_t DEFAULT_CANVAS_HEIGHT = 600;
+    constexpr NodeId DEFAULT_ID = 0xFFFF;
 }
-namespace OHOS::Rosen {
 BufferRequestConfig requestConfig = {
     .width = 0x100,
     .height = 0x100,
@@ -550,7 +551,6 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, CanvasInit_001, TestSize.Level2)
 {
     ASSERT_NE(screenDrawable_, nullptr);
     ASSERT_NE(virtualProcessor_, nullptr);
-    constexpr NodeId DEFAULT_ID = 0xFFFF;
     RSDisplayNodeConfig config;
     auto renderNode = std::make_shared<RSLogicalDisplayRenderNode>(DEFAULT_ID, config);
     renderNode->InitRenderParams();
@@ -571,7 +571,6 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, CanvasInit_001, TestSize.Level2)
 HWTEST_F(RSUniRenderVirtualProcessorTest, CanvasInit_002, TestSize.Level2)
 {
     ASSERT_NE(virtualProcessor_, nullptr);
-    constexpr NodeId DEFAULT_ID = 0xFFFF;
     RSDisplayNodeConfig config;
     auto renderNode = std::make_shared<RSLogicalDisplayRenderNode>(DEFAULT_ID, config);
     renderNode->InitRenderParams();
@@ -592,7 +591,6 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, CanvasInit_002, TestSize.Level2)
 HWTEST_F(RSUniRenderVirtualProcessorTest, CanvasInit_003, TestSize.Level2)
 {
     ASSERT_NE(virtualProcessor_, nullptr);
-    constexpr NodeId DEFAULT_ID = 0xFFFF;
     RSDisplayNodeConfig config;
     auto renderNode = std::make_shared<RSLogicalDisplayRenderNode>(DEFAULT_ID, config);
     renderNode->InitRenderParams();
