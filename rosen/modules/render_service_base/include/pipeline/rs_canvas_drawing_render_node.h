@@ -110,6 +110,7 @@ private:
     std::map<ModifierNG::RSModifierType, ModifierCmdList> drawCmdListsNG_;
     uint32_t cmdCount_ = 0;
 
+
     friend class RSCanvasDrawingNodeCommandHelper;
 };
 
