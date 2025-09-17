@@ -576,6 +576,7 @@ void RSCanvasDrawingRenderNode::AddDirtyType(ModifierNG::RSModifierType modifier
         cmd->SetCanvasDrawingOpLimitEnable(true);
         drawCmdListsNG_[modifierType].emplace_back(cmd);
         ++cmdCount_;
+        opCountAfterReset_ += cmd->GetOpItemSize();
         SetNeedProcess(true);
     }
     CheckDrawCmdListSizeNG(modifierType, originCmdListSize);
@@ -621,6 +622,9 @@ void RSCanvasDrawingRenderNode::ResetSurface(int width, int height)
     stagingRenderParams_->SetCanvasDrawingSurfaceChanged(true);
     stagingRenderParams_->SetCanvasDrawingSurfaceParams(width, height, colorSpace);
 #endif
+    lastResetSurfaceTime_ = std::chrono::time_point_cast<std::chrono::milliseconds>(
+        std::chrono::system_clock::now()).time_since_epoch().count();
+    opCountAfterReset_ = 0;
 }
 
 const std::map<ModifierNG::RSModifierType, ModifierCmdList>& RSCanvasDrawingRenderNode::GetDrawCmdListsNG() const

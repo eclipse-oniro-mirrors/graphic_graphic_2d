@@ -1186,8 +1186,7 @@ void RSRenderNode::DumpSubClassNode(std::string& out) const
         out += ", Parent [" + (p != nullptr ? std::to_string(p->GetId()) : "null") + "]";
         out += ", Name [" + surfaceNode->GetName() + "]";
         out += ", hasConsumer: " + std::to_string(surfaceNode->GetRSSurfaceHandler()->HasConsumer());
-        std::string propertyAlpha = std::to_string(surfaceNode->GetRenderProperties().GetAlpha());
-        out += ", Alpha: " + propertyAlpha;
+        out += ", Alpha: " + std::to_string(surfaceNode->GetRenderProperties().GetAlpha());
         if (surfaceNode->contextAlpha_ < 1.0f) {
             std::string contextAlpha = std::to_string(surfaceNode->contextAlpha_);
             out += " (ContextAlpha: " + contextAlpha + ")";
@@ -1219,6 +1218,10 @@ void RSRenderNode::DumpSubClassNode(std::string& out) const
         if (linkedRootNodeId != INVALID_NODEID) {
             out += ", linkedRootNodeId: " + std::to_string(linkedRootNodeId);
         }
+    } else if (GetType() == RSRenderNodeType::CANVAS_DRAWING_NODE) {
+        auto canvasDrawingNode = static_cast<const RSCanvasDrawingRenderNode*>(this);
+        out += ", lastResetSurfaceTime: " + std::to_string(canvasDrawingNode->lastResetSurfaceTime_);
+        out += ", opCountAfterReset: " + std::to_string(canvasDrawingNode->opCountAfterReset_);
     }
 }
 
@@ -3675,7 +3678,7 @@ void RSRenderNode::UpdateFullScreenFilterCacheRect(
 
 void RSRenderNode::OnTreeStateChanged()
 {
-    if (GetType() == RSRenderNodeType::CANVAS_DRAWING_NODE) {
+    if (isOnTheTree_ && GetType() == RSRenderNodeType::CANVAS_DRAWING_NODE) {
         ClearNeverOnTree();
     }
 
