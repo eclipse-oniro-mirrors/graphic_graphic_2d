@@ -4647,6 +4647,15 @@ bool RSRenderNode::GetUifirstSupportFlag()
     return isChildSupportUifirst_ && isUifirstNode_;
 }
 
+void RSRenderNode::UpdateDrawableEnableEDR()
+{
+    bool hasEDREffect = std::any_of(edrDrawableSlots.begin(), edrDrawableSlots.end(), [this](auto slot) {
+        auto drawable = this->drawableVec_[static_cast<int8_t>(slot)];
+        return drawable && drawable->GetEnableEDR();
+    });
+    SetEnableHdrEffect(hasEDREffect);
+}
+
 void RSRenderNode::UpdatePointLightDirtySlot()
 {
     UpdateDirtySlotsAndPendingNodes(RSDrawableSlot::POINT_LIGHT);
@@ -5244,15 +5253,6 @@ void RSRenderNode::NodePostPrepare(
     if (curSurfaceNode == nullptr) {
         UpdateVirtualScreenWhiteListInfo();
     }
-}
-
-void RSRenderNode::UpdateDrawableEnableEDR()
-{
-    bool hasEDREffect = std::any_of(edrDrawableSlots.begin(), edrDrawableSlots.end(), [this](auto slot) {
-        auto drawable = this->drawableVec_[static_cast<int8_t>(slot)];
-        return drawable && drawable->GetEnableEDR();
-    });
-    SetEnableHdrEffect(hasEDREffect);
 }
 } // namespace Rosen
 } // namespace OHOS
