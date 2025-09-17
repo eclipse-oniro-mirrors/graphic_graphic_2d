@@ -289,7 +289,6 @@ private:
     friend class RSImplicitCancelAnimationParam;
     friend class RSImplicitCurveAnimationParam;
     friend class RSImplicitAnimator;
-    friend class RSCustomTransitionEffect;
     friend class RSCurveAnimation;
     friend class ModifierNG::RSForegroundFilterModifier;
     friend class ModifierNG::RSBackgroundFilterModifier;

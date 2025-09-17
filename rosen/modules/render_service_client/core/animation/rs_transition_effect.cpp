@@ -44,9 +44,7 @@ std::shared_ptr<RSTransitionEffect> RSTransitionEffect::Asymmetric(
 RSTransitionEffect::RSTransitionEffect(
     const std::shared_ptr<RSTransitionEffect>& transitionIn, const std::shared_ptr<RSTransitionEffect>& transitionOut)
     : transitionInEffects_(transitionIn->transitionInEffects_),
-      transitionOutEffects_(transitionOut->transitionOutEffects_),
-      customTransitionInEffects_(transitionIn->customTransitionInEffects_),
-      customTransitionOutEffects_(transitionOut->customTransitionOutEffects_)
+      transitionOutEffects_(transitionOut->transitionOutEffects_)
 {}
 
 std::shared_ptr<RSTransitionEffect> RSTransitionEffect::Opacity(float opacity)
@@ -98,35 +96,6 @@ std::shared_ptr<RSTransitionEffect> RSTransitionEffect::Rotate(const Vector4f& a
     transitionInEffects_.push_back(rotateEffect);
     transitionOutEffects_.push_back(rotateEffect);
     return shared_from_this();
-}
-
-std::shared_ptr<RSTransitionEffect> RSTransitionEffect::Custom(const std::shared_ptr<RSTransitionModifier>& modifier)
-{
-    if (modifier == nullptr) {
-        ROSEN_LOGI("RSTransitionEffect::Custom: Skip empty transition effect case modifier is nullptr");
-        return shared_from_this();
-    }
-    auto customEffect = std::make_shared<RSCustomTransitionEffect>(modifier);
-    customTransitionInEffects_.push_back(customEffect);
-    customTransitionOutEffects_.push_back(customEffect);
-    return shared_from_this();
-}
-
-void RSCustomTransitionEffect::Custom(const std::shared_ptr<RSPropertyBase>& property,
-    const std::shared_ptr<RSPropertyBase>& startValue, const std::shared_ptr<RSPropertyBase>& endValue)
-{
-    properties_.emplace_back(property, endValue);
-    auto customEffect = std::make_shared<RSTransitionCustom>(property->GetRenderProperty(),
-        startValue->GetRenderProperty(), endValue->GetRenderProperty());
-    customTransitionEffects_.push_back(customEffect);
-}
-
-void RSCustomTransitionEffect::Active()
-{
-}
-
-void RSCustomTransitionEffect::Identity()
-{
 }
 } // namespace Rosen
 } // namespace OHOS

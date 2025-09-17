@@ -269,7 +269,6 @@ private:
     friend class RSRenderKeyframeAnimation;
     template<typename T>
     friend class RSSpringModel;
-    friend class RSTransitionCustom;
     friend class RSAnimationTraceUtils;
     friend class ModifierNG::RSRenderModifier;
 };

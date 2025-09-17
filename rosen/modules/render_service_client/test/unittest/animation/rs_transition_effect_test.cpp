@@ -96,19 +96,20 @@ HWTEST_F(RSTransitionEffectTest, Scale001, TestSize.Level1)
 }
 
 /**
- * @tc.name: Custom001
- * @tc.desc: Verify the Custom
+ * @tc.name: RSTransitionEffectConstructorTest
+ * @tc.desc: Verify the RSTransitionEffect Constructor
  * @tc.type:FUNC
  */
-HWTEST_F(RSTransitionEffectTest, Custom001, TestSize.Level1)
+HWTEST_F(RSTransitionEffectTest, RSTransitionEffectConstructorTest, TestSize.Level1)
 {
-    GTEST_LOG_(INFO) << "RSTransitionEffectTest Custom001 start";
-    std::shared_ptr<RSTransitionModifier> modifier = nullptr;
-    auto effect = RSTransitionEffect::Create();
-    EXPECT_TRUE(effect != nullptr);
-    effect->Custom(modifier);
-    EXPECT_TRUE(effect != nullptr);
-    GTEST_LOG_(INFO) << "RSTransitionEffectTest Custom001 end";
+    GTEST_LOG_(INFO) << "RSTransitionEffectTest RSTransitionEffectConstructorTest start";
+    auto transitionIn = RSTransitionEffect::Create();
+    EXPECT_TRUE(transitionIn);
+    auto transitionOut = RSTransitionEffect::Create();
+    EXPECT_TRUE(transitionOut);
+    auto transitionEffect = std::make_shared<RSTransitionEffect>(transitionIn, transitionOut);
+    EXPECT_TRUE(transitionEffect);
+    GTEST_LOG_(INFO) << "RSTransitionEffectTest RSTransitionEffectConstructorTest end";
 }
 } // namespace Rosen
 } // namespace OHOS
