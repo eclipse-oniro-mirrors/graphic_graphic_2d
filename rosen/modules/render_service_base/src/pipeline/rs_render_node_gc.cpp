@@ -104,15 +104,13 @@ void RSRenderNodeGC::ReleaseNodeBucket()
         if (nodeBucket_.empty()) {
             return;
         }
-        toDele = nodeBucket_.front();
+        toDele.swap(nodeBucket_.front());
+        nodeBucket_.pop();
         remainBucketSize = nodeBucket_.size();
-     }
-    bool shouldPop = true;
-    for (auto &ptr : toDele) {
-        if (isEnable_.load() == false) {
-            shouldPop = false;
-            break;
-        }
+    }
+    nodeBucketThrDetector_.Detect(remainBucketSize, callback);
+    RS_TRACE_NAME_FMT("ReleaseNodeMemory %zu, remain node buckets %u", toDele.size(), remainBucketSize);
+    for (auto ptr : toDele) {
         if (ptr) {
             if (RSRenderNodeAllocator::Instance().AddNodeToAllocator(ptr)) {
                 continue;
@@ -125,13 +123,6 @@ void RSRenderNodeGC::ReleaseNodeBucket()
             ptr = nullptr;
         }
     }
-    if (shouldPop) {
-        std::lock_guard<std::mutex> lock(nodeMutex_);
-        nodeBucket_.pop();
-        --remainBucketSize;
-    }
-    nodeBucketThrDetector_.Detect(remainBucketSize, callback);
-    RS_TRACE_NAME_FMT("ReleaseNodeMemory %zu, remain node buckets %u", toDele.size(), remainBucketSize);
 }
 
 void RSRenderNodeGC::ReleaseNodeMemory()
