@@ -1916,4 +1916,20 @@ HWTEST_F(RSSurfaceNodeTest, SetFrameGravityNewVersionEnabledTest, TestSize.Level
     surfaceNode->SetFrameGravityNewVersionEnabled(false);
     ASSERT_EQ(false, surfaceNode->GetFrameGravityNewVersionEnabled());
 }
+
+/**
+ * @tc.name: SetSurfaceBufferOpaqueTest
+ * @tc.desc: SetSurfaceBufferOpaque and GetSurfaceBufferOpaque
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSSurfaceNodeTest, SetSurfaceBufferOpaqueTest, TestSize.Level1)
+{
+    RSSurfaceNodeConfig c;
+    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
+    surfaceNode->SetSurfaceBufferOpaque(true);
+    ASSERT_EQ(true, surfaceNode->GetSurfaceBufferOpaque());
+    surfaceNode->SetSurfaceBufferOpaque(false);
+    ASSERT_EQ(false, surfaceNode->GetSurfaceBufferOpaque());
+}
 } // namespace OHOS::Rosen

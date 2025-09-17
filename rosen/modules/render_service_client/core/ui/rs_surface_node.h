@@ -236,6 +236,13 @@ public:
      */
     bool GetFrameGravityNewVersionEnabled() const;
 
+    /**
+     * @brief Set the value of the surface buffer opaque.
+     *
+     * @param bool The value of the surface buffer opaque.
+     */
+    void SetSurfaceBufferOpaque(bool isOpaque);
+
     SharedPtr CreateShadowSurfaceNode();
 
 #ifndef ROSEN_CROSS_PLATFORM
@@ -380,6 +387,7 @@ private:
     RSSurfaceNodeAbilityState abilityState_ = RSSurfaceNodeAbilityState::FOREGROUND;
     bool isGlobalPositionEnabled_ = false;
     bool isFrameGravityNewVersionEnabled_ = false;
+    bool isSurfaceBufferOpaque_ = false;
     LeashPersistentId leashPersistentId_ = INVALID_LEASH_PERSISTENTID;
     RSSurfaceNodeType surfaceNodeType_ = RSSurfaceNodeType::DEFAULT;
     std::shared_ptr<RSCompositeLayerUtils> compositeLayerUtils_;
