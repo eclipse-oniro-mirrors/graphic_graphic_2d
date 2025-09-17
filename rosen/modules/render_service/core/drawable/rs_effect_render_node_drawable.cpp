@@ -69,7 +69,7 @@ void RSEffectRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     }
 
 #ifdef SUBTREE_PARALLEL_ENABLE
-    if (paintFilterCanvas->IsQuickGetDrawState()) {
+    if (paintFilterCanvas->IsQuickDrawState()) {
         RSParallelManager::Singleton().OnQuickDraw(this, canvas, false);
         return;
     }

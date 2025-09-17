@@ -54,7 +54,7 @@ RSRenderNodeDrawable::Ptr RSCanvasRenderNodeDrawable::OnGenerate(std::shared_ptr
 #ifdef SUBTREE_PARALLEL_ENABLE
 bool RSCanvasRenderNodeDrawable::QuickGetDrawState(RSPaintFilterCanvas& rscanvas)
 {
-    if (!rscanvas.IsQuickGetDrawState()) {
+    if (!rscanvas.IsQuickDrawState()) {
         return false;
     }
     Drawing::Rect bounds = GetRenderParams() ? GetRenderParams()->GetFrameRect() : Drawing::Rect(0, 0, 0, 0);
@@ -102,7 +102,7 @@ void RSCanvasRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
 
     auto linkedDrawable = std::static_pointer_cast<RSRootRenderNodeDrawable>(
         params->GetLinkedRootNodeDrawable().lock());
-    auto needOcclusionSkip = paintFilterCanvas->IsQuickGetDrawState() ?
+    auto needOcclusionSkip = paintFilterCanvas->IsQuickDrawState() ?
         true : GetOpincDrawCache().PreDrawableCacheState(*params, isOpincDropNodeExt_);
     RSAutoCanvasRestore acr(paintFilterCanvas, RSPaintFilterCanvas::SaveType::kCanvasAndAlpha);
     params->ApplyAlphaAndMatrixToCanvas(*paintFilterCanvas);

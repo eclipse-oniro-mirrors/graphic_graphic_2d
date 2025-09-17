@@ -296,7 +296,7 @@ public:
     {
         subTreeDrawStatus_ = state;
     }
-    inline bool IsQuickGetDrawState() const
+    inline bool IsQuickDrawState() const
     {
         return subTreeDrawStatus_ == SUBTREE_QUICK_DRAW_STATE;
     }
@@ -446,7 +446,7 @@ protected:
     bool OnFilter() const override;
     inline bool OnFilterWithBrush(Drawing::Brush& brush) const override
     {
-        if (IsQuickGetDrawState()) {
+        if (IsQuickDrawState()) {
             return false;
         }
         float alpha = alphaStack_.top();
