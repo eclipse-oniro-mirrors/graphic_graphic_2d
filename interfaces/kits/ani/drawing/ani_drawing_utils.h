@@ -22,8 +22,12 @@
 #include <memory>
 #include <string>
 #include "effect/color_filter.h"
-#include "utils/rect.h"
+#include "text/font.h"
+#include "text/font_mgr.h"
+#include "text/font_metrics.h"
+#include "text/font_types.h"
 #include "utils/point.h"
+#include "utils/rect.h"
 
 #ifdef ROSEN_OHOS
 
@@ -58,6 +62,13 @@ enum class DrawingErrorCode : int32_t {
     ERROR_PARAM_VERIFICATION_FAILED = 25900001, // after api 18, no throw 401
 };
 
+struct RectPropertyConfig {
+    const char* propertyName;
+    const char* methodName;
+    ani_method& method;
+    ani_double& result;
+};
+
 constexpr char NATIVE_OBJ[] = "nativeObj";
 constexpr size_t ARGC_ZERO = 0;
 constexpr size_t ARGC_ONE = 1;
@@ -70,6 +81,13 @@ constexpr size_t ARGC_SEVEN = 7;
 constexpr size_t ARGC_EIGHT = 8;
 constexpr size_t ARGC_NINE = 9;
 constexpr int MAX_PAIRS_PATHVERB = 4;
+constexpr int MAX_ELEMENTSIZE = 3000 * 3000;
+constexpr int RGBA_MAX = 255;
+constexpr const char* ANI_DOUBLE_STRING = "std.core.Double";
+constexpr const char* ANI_INT_STRING = "std.core.Int";
+constexpr const char* ANI_CLASS_MATRIX_NAME = "@ohos.graphics.drawing.drawing.Matrix";
+constexpr const char* ANI_CLASS_COLORFILTER_NAME = "@ohos.graphics.drawing.drawing.ColorFilter";
+constexpr const char* ANI_CLASS_PATH_NAME = "@ohos.graphics.drawing.drawing.Path";
 
 ani_status AniThrowError(ani_env* env, const std::string& message);
 
@@ -95,6 +113,8 @@ inline std::string CreateStdString(ani_env* env, ani_string aniStr)
     return std::string(buffer.get());
 }
 
+ani_status CreateStdStringUtf16(ani_env* env, const ani_string& str, std::u16string& utf16Str);
+
 template<typename T>
 T* GetNativeFromObj(ani_env* env, ani_object obj)
 {
@@ -116,6 +136,8 @@ ani_object CreateAniUndefined(ani_env* env);
 ani_object CreateAniObject(ani_env* env, const char* className, const char* methodSig, ...);
 
 ani_object CreateAniNull(ani_env* env);
+
+bool CreateAniEnumByEnumIndex(ani_env* env, const char* enumDescripter, ani_size index, ani_enum_item& enumItem);
 
 bool GetPointFromAniPointObj(ani_env* env, ani_object obj, Drawing::Point& point);
 
@@ -145,7 +167,7 @@ ani_object CreateAniObjectStatic(ani_env* env, const char* className, T* obj)
     }
 
     ani_method innerMethod;
-    if (env->Class_FindMethod(aniClass, "bindNativePtr", "J:V", &innerMethod) != ANI_OK) {
+    if (env->Class_FindMethod(aniClass, "bindNativePtr", "l:", &innerMethod) != ANI_OK) {
         ROSEN_LOGE("[Drawing] CreateAniObjectStatic Class_FindMethod bindNativePtr failed");
         return CreateAniUndefined(env);
     }
@@ -158,6 +180,8 @@ ani_object CreateAniObjectStatic(ani_env* env, const char* className, T* obj)
 }
 
 bool GetPointFromAniPointObj(ani_env* env, ani_object obj, Drawing::Point& point);
+
+ani_object CreateAniArrayWithSize(ani_env* env, size_t size);
 
 bool GetColorQuadFromParam(ani_env* env, ani_object obj, Drawing::ColorQuad &color);
 
@@ -174,6 +198,10 @@ ani_status GetPointFromPointObj(ani_env* env, ani_object obj, Drawing::Point& po
 ani_status CreatePointObj(ani_env* env, const Drawing::Point& point, ani_object& obj);
 
 bool CreatePointObjAndCheck(ani_env* env, const Drawing::Point& point, ani_object& obj);
+
+bool GetPoint3FromPoint3dObj(ani_env* env, ani_object obj, Drawing::Point3& point3d);
+
+bool SetPointToAniPointArrayWithIndex(ani_env* env, Drawing::Point& point, ani_object& pointArray, uint32_t index);
 
 inline bool CheckDoubleOutOfRange(ani_double val, double lowerBound, double upperBound)
 {
@@ -192,6 +220,12 @@ inline void DrawingRectConvertToAniRect(ani_env* env, ani_object obj, const Draw
     env->Object_SetPropertyByName_Double(obj, "right", rect.GetRight());
     env->Object_SetPropertyByName_Double(obj, "bottom", rect.GetBottom());
 }
+
+std::shared_ptr<Font> GetThemeFont(std::shared_ptr<Font> font);
+
+std::shared_ptr<Font> MatchThemeFont(std::shared_ptr<Font> font, int32_t unicode);
+
+std::shared_ptr<FontMgr> GetFontMgr(std::shared_ptr<Font> font);
 
 } // namespace Drawing
 } // namespace Rosen
