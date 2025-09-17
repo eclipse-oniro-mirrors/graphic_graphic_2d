@@ -396,6 +396,8 @@ bool RSUniRenderProcessor::ProcessOfflineLayer(
                 surfaceDrawable->GetId());
             return false;
         }
+        auto& params = *(static_cast<RSSurfaceRenderParams*>(surfaceDrawable->GetRenderParams().get()));
+        CreateSolidColorLayer(layer, params);
         layers_.emplace_back(layer);
         return true;
     } else {
@@ -422,6 +424,8 @@ bool RSUniRenderProcessor::ProcessOfflineLayer(std::shared_ptr<RSSurfaceRenderNo
                 node->GetId());
             return false;
         }
+        auto& params = *(static_cast<RSSurfaceRenderParams*>(node->GetStagingRenderParams().get()));
+        CreateSolidColorLayer(layer, params);
         layers_.emplace_back(layer);
         return true;
     } else {
