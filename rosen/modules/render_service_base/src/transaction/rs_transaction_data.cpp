@@ -130,7 +130,7 @@ bool RSTransactionData::Marshalling(Parcel& parcel) const
                     marshallingIndex_);
                 success = false;
             }
-            if (OHOS::Rosen::RSSystemProperties::GetDebugFmtTraceEnabled()) {
+            if (OHOS::Rosen::RSSystemProperties::GetAnimationTraceEnabled()) {
                 RS_OPTIONAL_TRACE_NAME_TESTMODE("RSTransactionData::Marshalling nodeId:%ld type:%s",
                     command->GetNodeId(), command->PrintType().c_str());
             }
