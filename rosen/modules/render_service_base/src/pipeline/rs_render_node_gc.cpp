@@ -117,7 +117,7 @@ void RSRenderNodeGC::ReleaseNodeBucket()
         remainBucketSize = nodeBucket_.size();
     }
     nodeBucketThrDetector_.Detect(remainBucketSize, callback);
-    RS_TRACE_NAME_FMT("Expected ReleaseNode(including null) %zu, remain node buckets %u", toDele.size(), remainBucketSize);
+    RS_TRACE_NAME_FMT("ReleaseNodeMemory %zu, remain node buckets %u", toDele.size(), remainBucketSize);
     bool vsyncArrived = false;
     uint32_t realDelNodeNum = 0;
     for (auto ptr : toDele) {
