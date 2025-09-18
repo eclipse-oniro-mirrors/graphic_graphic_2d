@@ -530,7 +530,7 @@ bool RSSurfaceRenderNodeDrawable::DrawCacheImageForMultiScreenView(RSPaintFilter
 bool RSSurfaceRenderNodeDrawable::QuickGetDrawState(RSPaintFilterCanvas* rscanvas,
     Drawing::Region& curSurfaceDrawRegion, RSSurfaceRenderParams* surfaceParams)
 {
-    if (!rscanvas->IsQuickGetDrawState()) {
+    if (!rscanvas->IsQuickDrawState()) {
         return false;
     }
 
