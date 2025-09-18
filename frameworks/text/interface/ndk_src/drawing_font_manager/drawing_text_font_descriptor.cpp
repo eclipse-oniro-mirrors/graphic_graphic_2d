@@ -192,16 +192,16 @@ void OH_Drawing_DestroySystemFontFullNames(OH_Drawing_Array* fullNameArray)
 const OH_Drawing_FontFullDescriptor* OH_Drawing_GetFontFullDescriptorByIndex(OH_Drawing_Array* descriptorArray,
     size_t index)
 {
-    if (descriptor == nullptr) {
+    if (descriptorArray == nullptr) {
         return nullptr;
     }
 
-    auto arrayFontFullDescriptors = reinterpret_cast<ObjectArray*>(descriptor);
+    auto arrayFontFullDescriptors = reinterpret_cast<ObjectArray*>(descriptorArray);
     if (arrayFontFullDescriptors != nullptr && arrayFontFullDescriptors->addr != nullptr &&
         arrayFontFullDescriptors->type == FONT_FULL_DESCRIPTOR && index < arrayFontFullDescriptors->num) {
-        Drawing::FontParser::FontDescriptor* fontFullDescriptor =
-            reinterpret_cast<Drawing::FontParser::FontDescriptor*>(arrayFontFullDescriptors->addr);
-        return reinterpret_cast<OH_Drawing_FontFullDescriptor*>(&fontFullDescriptor[index]);
+        Drawing::FontParser::FontDescriptor** fontFullDescriptor =
+            reinterpret_cast<Drawing::FontParser::FontDescriptor**>(arrayFontFullDescriptors->addr);
+        return reinterpret_cast<OH_Drawing_FontFullDescriptor*>(fontFullDescriptor[index]);
     }
 
     return nullptr;

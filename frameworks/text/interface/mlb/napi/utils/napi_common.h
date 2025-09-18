@@ -50,7 +50,7 @@ struct ResourceInfo {
 struct FontPathResourceContext : public ContextBase {
     std::string filePath;
     ResourceInfo info;
-}
+};
 
 enum class ResourceType {
     COLOR = 10001,

@@ -186,7 +186,7 @@ bool JsFontDescriptor::CreateAndSetProperties(napi_env env, napi_value fontDescr
     return true;
 }
 
-napi_value JsFontDescriptor::CreateFontDescriptorArray(napi_env env, std::set<FontDescSharedPtr>& result)
+napi_value JsFontDescriptor::CreateFontDescriptorArray(napi_env env, const std::set<FontDescSharedPtr>& result)
 {
     TEXT_ERROR_CHECK(env != nullptr, return nullptr, "env is nullptr");
     napi_value descArray = nullptr;

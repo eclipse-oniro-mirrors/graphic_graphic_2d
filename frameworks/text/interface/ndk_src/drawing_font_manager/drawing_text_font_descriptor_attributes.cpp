@@ -31,7 +31,7 @@ typedef OH_Drawing_ErrorCode (*FontFullDescriptorBoolGetter)(const Drawing::Font
 typedef OH_Drawing_ErrorCode (*FontFullDescriptorStrGetter)(const Drawing::FontParser::FontDescriptor&,
     OH_Drawing_String&);
 
-OH_Drawing_ErrorCode TranslateStringToOHDrawingString(std::string fontFullDescriptorString, OH_Drawing_String& value)
+OH_Drawing_ErrorCode TranslateStringToOHDrawingString(const std::string& fontFullDescriptorString, OH_Drawing_String& value)
 {
     std::u16string utf16String = OHOS::Str8ToStr16(fontFullDescriptorString);
     if (utf16String.empty()) {
@@ -126,7 +126,7 @@ static std::unordered_map<OH_Drawing_FontFullDescriptorAttributeId, FontFullDesc
 
 static std::unordered_map<OH_Drawing_FontFullDescriptorAttributeId, FontFullDescriptorStrGetter>
     g_fontFullDescriptorStrGetters = {
-        { FULL_DESCRIPTOR_ATTR_B_MONO, GetFontFullDescriptorPath },
+        { FULL_DESCRIPTOR_ATTR_S_PATH, GetFontFullDescriptorPath },
         { FULL_DESCRIPTOR_ATTR_S_POSTSCRIPT_NAME, GetFontFullDescriptorPostScriptName },
         { FULL_DESCRIPTOR_ATTR_S_FULL_NAME, GetFontFullDescriptorFullName },
         { FULL_DESCRIPTOR_ATTR_S_FAMILY_NAME, GetFontFullDescriptorFamilyName },
@@ -144,7 +144,7 @@ OH_Drawing_ErrorCode OH_Drawing_GetFontFullDescriptorAttributeInt(const OH_Drawi
     if (it == Text::g_fontFullDescriptorIntGetters.end()) {
         return OH_DRAWING_ERROR_ATTRIBUTE_ID_MISMATCH;
     }
-    return it->second(*reinterpret_cast<Drawing::FontParser::FontDescriptor*>(descriptor), *value);
+    return it->second(*reinterpret_cast<const Drawing::FontParser::FontDescriptor*>(descriptor), *value);
 }
 
 OH_Drawing_ErrorCode OH_Drawing_GetFontFullDescriptorAttributeBool(const OH_Drawing_FontFullDescriptor* descriptor,
@@ -157,7 +157,7 @@ OH_Drawing_ErrorCode OH_Drawing_GetFontFullDescriptorAttributeBool(const OH_Draw
     if (it == Text::g_fontFullDescriptorBoolGetters.end()) {
         return OH_DRAWING_ERROR_ATTRIBUTE_ID_MISMATCH;
     }
-    return it->second(*reinterpret_cast<Drawing::FontParser::FontDescriptor*>(descriptor), *value);
+    return it->second(*reinterpret_cast<const Drawing::FontParser::FontDescriptor*>(descriptor), *value);
 }
 
 OH_Drawing_ErrorCode OH_Drawing_GetFontFullDescriptorAttributeString(const OH_Drawing_FontFullDescriptor* descriptor,

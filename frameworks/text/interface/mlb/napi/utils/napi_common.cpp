@@ -22,7 +22,7 @@
 namespace OHOS::Rosen {
 namespace {
 constexpr size_t FILE_HEAD_LENGTH = 7; // 7 is the size of "file://"
-}
+};
 
 void BindNativeFunction(napi_env env, napi_value object, const char* name, const char* moduleName, napi_callback func)
 {
@@ -1080,7 +1080,6 @@ bool ProcessResource(ResourceInfo& info, std::function<bool(std::string&)> pathC
     return false;
 }
 
-
 bool SplitAbsoluteFontPath(std::string& absolutePath)
 {
     auto iter = absolutePath.find_first_of(':');
@@ -1190,9 +1189,7 @@ bool ParseResourceType(napi_env env, napi_value value, ResourceInfo& info)
     return true;
 }
 
-
-
-bool ParseContextFilePath(napi_env env, napi_value* argv, sptr<FontArgumentsConcreteContext> context)
+bool ParseContextFilePath(napi_env env, napi_value* argv, sptr<FontPathResourceContext> context)
 {
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, argv[ARGC_ONE], &valueType);
