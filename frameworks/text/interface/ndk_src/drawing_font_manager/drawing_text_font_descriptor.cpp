@@ -189,7 +189,8 @@ void OH_Drawing_DestroySystemFontFullNames(OH_Drawing_Array* fullNameArray)
     delete fullNameList;
 }
 
-const OH_Drawing_FontFullDescriptor* OH_Drawing_GetFontFullDescriptorByIndex(OH_Drawing_Array* descriptor, size_t index)
+const OH_Drawing_FontFullDescriptor* OH_Drawing_GetFontFullDescriptorByIndex(OH_Drawing_Array* descriptorArray,
+    size_t index)
 {
     if (descriptor == nullptr) {
         return nullptr;
@@ -206,7 +207,7 @@ const OH_Drawing_FontFullDescriptor* OH_Drawing_GetFontFullDescriptorByIndex(OH_
     return nullptr;
 }
 
-OH_Drawing_Array* OH_Drawing_GetFontFullDescriptorssFromPath(char* path)
+OH_Drawing_Array* OH_Drawing_GetFontFullDescriptorsFromPath(char* path)
 {
     std::vector<std::shared_ptr<Drawing::FontParser::FontDescriptor>> fontFullDescriptors =
         TextEngine::FontParser::ParserFontDescriptorsFromPath(path);
@@ -225,4 +226,28 @@ OH_Drawing_Array* OH_Drawing_GetFontFullDescriptorssFromPath(char* path)
     array->addr = addr.release();
     array->num = num;
     return reinterpret_cast<OH_Drawing_Array*>(array.release());
+}
+
+void OH_Drawing_DestroyFontFullDescriptors(OH_Drawing_Array* descriptorArray)
+{
+    ObjectArray* fullNameList = ConvertToOriginalText<ObjectArray>(descriptorArray);
+    if (fullNameList == nullptr || fullNameList->type != ObjectType::STRING) {
+        return;
+    }
+    OH_Drawing_String* drawingStringArray = ConvertToOriginalText<OH_Drawing_String>(fullNameList->addr);
+    if (drawingStringArray == nullptr) {
+        return;
+    }
+    for (size_t i = 0; i < fullNameList->num; ++i) {
+        if (drawingStringArray[i].strData == nullptr) {
+            continue;
+        }
+        delete[] drawingStringArray[i].strData;
+        drawingStringArray[i].strData = nullptr;
+    }
+    delete[] drawingStringArray;
+    fullNameList->addr = nullptr;
+    fullNameList->num = 0;
+    fullNameList->type = ObjectType::INVALID;
+    delete fullNameList;
 }

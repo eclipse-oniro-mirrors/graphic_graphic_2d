@@ -96,19 +96,19 @@ OH_Drawing_ErrorCode GetFontFullDescriptorPostScriptName(const Drawing::FontPars
 OH_Drawing_ErrorCode GetFontFullDescriptorFullName(const Drawing::FontParser::FontDescriptor& fontFullDescriptor,
     OH_Drawing_String& value)
 {
-    return TranslateStringToOHDrawingString(fontFullDescriptor.postScriptName, value);
+    return TranslateStringToOHDrawingString(fontFullDescriptor.fullName, value);
 }
 
 OH_Drawing_ErrorCode GetFontFullDescriptorFamilyName(const Drawing::FontParser::FontDescriptor& fontFullDescriptor,
     OH_Drawing_String& value)
 {
-    return TranslateStringToOHDrawingString(fontFullDescriptor.postScriptName, value);
+    return TranslateStringToOHDrawingString(fontFullDescriptor.fontFamily, value);
 }
 
 OH_Drawing_ErrorCode GetFontFullDescriptorSubFamilyName(const Drawing::FontParser::FontDescriptor& fontFullDescriptor,
     OH_Drawing_String& value)
 {
-    return TranslateStringToOHDrawingString(fontFullDescriptor.postScriptName, value);
+    return TranslateStringToOHDrawingString(fontFullDescriptor.fontSubfamily, value);
 }
 
 static std::unordered_map<OH_Drawing_FontFullDescriptorAttributeId, FontFullDescriptorIntGetter>
@@ -134,7 +134,7 @@ static std::unordered_map<OH_Drawing_FontFullDescriptorAttributeId, FontFullDesc
     };
 } // namespace OHOS::Rosen::Text
 
-OH_Drawing_ErrorCode OH_Drawing_GetFontFullDescriptorAttributeInt(OH_Drawing_FontFullDescriptor* descriptor,
+OH_Drawing_ErrorCode OH_Drawing_GetFontFullDescriptorAttributeInt(const OH_Drawing_FontFullDescriptor* descriptor,
     OH_Drawing_FontFullDescriptorAttributeId id, int* value)
 {
     if (descriptor == nullptr || value == nullptr) {
@@ -147,7 +147,7 @@ OH_Drawing_ErrorCode OH_Drawing_GetFontFullDescriptorAttributeInt(OH_Drawing_Fon
     return it->second(*reinterpret_cast<Drawing::FontParser::FontDescriptor*>(descriptor), *value);
 }
 
-OH_Drawing_ErrorCode OH_Drawing_GetFontFullDescriptorAttributeBool(OH_Drawing_FontFullDescriptor* descriptor,
+OH_Drawing_ErrorCode OH_Drawing_GetFontFullDescriptorAttributeBool(const OH_Drawing_FontFullDescriptor* descriptor,
     OH_Drawing_FontFullDescriptorAttributeId id, bool* value)
 {
     if (descriptor == nullptr || value == nullptr) {
@@ -160,7 +160,7 @@ OH_Drawing_ErrorCode OH_Drawing_GetFontFullDescriptorAttributeBool(OH_Drawing_Fo
     return it->second(*reinterpret_cast<Drawing::FontParser::FontDescriptor*>(descriptor), *value);
 }
 
-OH_Drawing_ErrorCode OH_Drawing_GetFontFullDescriptorAttributeString(OH_Drawing_FontFullDescriptor* descriptor,
+OH_Drawing_ErrorCode OH_Drawing_GetFontFullDescriptorAttributeString(const OH_Drawing_FontFullDescriptor* descriptor,
     OH_Drawing_FontFullDescriptorAttributeId id, OH_Drawing_String* str)
 {
     if (descriptor == nullptr || str == nullptr) {
@@ -172,5 +172,5 @@ OH_Drawing_ErrorCode OH_Drawing_GetFontFullDescriptorAttributeString(OH_Drawing_
         return OH_DRAWING_ERROR_ATTRIBUTE_ID_MISMATCH;
     }
 
-    return it->second(*reinterpret_cast<Drawing::FontParser::FontDescriptor*>(descriptor), *str);
+    return it->second(*reinterpret_cast<const Drawing::FontParser::FontDescriptor*>(descriptor), *str);
 }

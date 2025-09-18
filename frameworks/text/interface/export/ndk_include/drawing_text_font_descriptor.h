@@ -237,7 +237,7 @@ void OH_Drawing_DestroyFontFullDescriptors(OH_Drawing_Array* descriptorArray);
  *         Returns <b>OH_DRAWING_ERROR_ATTRIBUTE_ID_MISMATCH</b> if parameter type mismatch occurs.
  * @since 22
  */
-OH_Drawing_ErrorCode OH_Drawing_GetFontFullDescriptorAttributeInt(OH_Drawing_FontFullDescriptor* descriptor,
+OH_Drawing_ErrorCode OH_Drawing_GetFontFullDescriptorAttributeInt(const OH_Drawing_FontFullDescriptor* descriptor,
     OH_Drawing_FontFullDescriptorAttributeId id, int* value);
 
 /**
@@ -252,7 +252,7 @@ OH_Drawing_ErrorCode OH_Drawing_GetFontFullDescriptorAttributeInt(OH_Drawing_Fon
  *         Returns <b>OH_DRAWING_ERROR_ATTRIBUTE_ID_MISMATCH</b> if parameter type mismatch occurs.
  * @since 22
  */
-OH_Drawing_ErrorCode OH_Drawing_GetFontFullDescriptorAttributeBool(OH_Drawing_FontFullDescriptor* descriptor,
+OH_Drawing_ErrorCode OH_Drawing_GetFontFullDescriptorAttributeBool(const OH_Drawing_FontFullDescriptor* descriptor,
     OH_Drawing_FontFullDescriptorAttributeId id, bool* value);
 
 /**
@@ -270,7 +270,7 @@ OH_Drawing_ErrorCode OH_Drawing_GetFontFullDescriptorAttributeBool(OH_Drawing_Fo
  *         Returns <b>OH_DRAWING_ERROR_ATTRIBUTE_ID_MISMATCH</b> if parameter type mismatch occurs.
  * @since 22
  */
-OH_Drawing_ErrorCode OH_Drawing_GetFontFullDescriptorAttributeString(OH_Drawing_FontFullDescriptor* descriptor,
+OH_Drawing_ErrorCode OH_Drawing_GetFontFullDescriptorAttributeString(const OH_Drawing_FontFullDescriptor* descriptor,
     OH_Drawing_FontFullDescriptorAttributeId id, OH_Drawing_String* str);
 #ifdef __cplusplus
 }
