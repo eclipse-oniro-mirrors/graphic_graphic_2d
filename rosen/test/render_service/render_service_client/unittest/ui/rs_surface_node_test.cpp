@@ -1921,12 +1921,12 @@ HWTEST_F(RSSurfaceNodeTest, SetFrameGravityNewVersionEnabledTest, TestSize.Level
  * @tc.name: SetSurfaceBufferOpaqueTest
  * @tc.desc: SetSurfaceBufferOpaque and GetSurfaceBufferOpaque
  * @tc.type: FUNC
- * @tc.require:
  */
 HWTEST_F(RSSurfaceNodeTest, SetSurfaceBufferOpaqueTest, TestSize.Level1)
 {
     RSSurfaceNodeConfig c;
     RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
+    surfaceNode->SetSurfaceBufferOpaque(false);
     surfaceNode->SetSurfaceBufferOpaque(true);
     ASSERT_NE(surfaceNode, nullptr);
 }
