@@ -14,6 +14,7 @@
  */
 
 #include "rs_render_service_connection.h"
+#include "rs_profiler.h"
 #include <string>
 
 #include "frame_report.h"
@@ -181,7 +182,9 @@ void RSRenderServiceConnection::CleanRenderNodes() noexcept
     auto& nodeMap = context.GetMutableNodeMap();
     MemoryTrack::Instance().RemovePidRecord(remotePid_);
 
+    RS_PROFILER_KILL_PID(remotePid_);
     nodeMap.FilterNodeByPid(remotePid_);
+    RS_PROFILER_KILL_PID_END();
 }
 
 void RSRenderServiceConnection::CleanFrameRateLinkers() noexcept
