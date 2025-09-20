@@ -104,6 +104,7 @@ static bool g_playbackImmediate = false;
 static std::mutex g_renderFrameMutex;
 static std::atomic<bool> g_renderFrameWorking = false;
 static std::unordered_map<std::string, std::string> g_recordRsMetric;
+static std::mutex g_mutexFirstFrameMarshalling;
 } // namespace
 
 RSContext* RSProfiler::context_ = nullptr;
@@ -114,6 +115,26 @@ struct AlignedMessageParcel {
     MessageParcel parcel;
 };
 #pragma pack(pop)
+
+void RSProfiler::JobMarshallingKillPid(pid_t pid)
+{
+    // FirstFrameMarshalling can be executing same time resulting the crash
+    g_mutexFirstFrameMarshalling.lock();
+}
+
+void RSProfiler::JobMarshallingKillPidEnd()
+{
+    g_mutexFirstFrameMarshalling.unlock();
+}
+
+bool RSProfiler::IsPowerOffScreen()
+{
+    auto screenManager = CreateOrGetScreenManager();
+    if (!screenManager) {
+        return false;
+    }
+    return screenManager->IsAllScreensPowerOff();
+}
 
 void DeviceInfoToCaptureData(double time, const DeviceInfo& in, RSCaptureData& out)
 {
@@ -1726,10 +1747,14 @@ void RSProfiler::RecordStart(const ArgList& args)
 
     g_recordFile.AddLayer(); // add 0 layer
 
-    FilterMockNode(*context_);
-    RSTypefaceCache::Instance().ReplayClear();
+    {
+        std::unique_lock<std::mutex> lockFFM(g_mutexFirstFrameMarshalling);
 
-    g_recordFile.AddHeaderFirstFrame(FirstFrameMarshalling(g_recordFile.GetVersion()));
+        FilterMockNode(*context_);
+        RSTypefaceCache::Instance().ReplayClear();
+
+        g_recordFile.AddHeaderFirstFrame(FirstFrameMarshalling(g_recordFile.GetVersion()));
+    }
 
     const std::vector<pid_t> pids = GetConnectionsPids();
     for (pid_t pid : pids) {

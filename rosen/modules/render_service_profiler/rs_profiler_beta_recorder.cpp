@@ -36,7 +36,7 @@ static double g_recordsTimestamp = 0.0;
 static double g_currentFrameDirtyRegion = 0.0;
 static uint64_t g_lastParcelTime = 0;
 static int g_animationCount = 0;
-static std::mutex g_mutexBetaRecording;
+static std::timed_mutex g_mutexBetaRecording;
 static bool g_mutexBetaRecordingLocked = false;
 
 // implemented in rs_profiler.cpp
@@ -95,9 +95,10 @@ void RSProfiler::LaunchBetaRecordMetricsUpdateThread()
 void RSProfiler::BetaRecordOnFrameBegin()
 {
     if (IsBetaRecordStarted() && IsBetaRecordEnabled()) {
-        g_mutexBetaRecording.lock();
+        const long long waitingTime = 1000;
+        g_mutexBetaRecording.try_lock_until(std::chrono::steady_clock::now() + std::chrono::milliseconds(waitingTime));
         g_mutexBetaRecordingLocked = true;
-        if (!IsNoneMode() && IsSecureScreen()) {
+        if (!IsNoneMode() && (IsSecureScreen() || IsPowerOffScreen())) {
             // don't record secure screens
             std::vector<std::string> argList;
             argList.push_back("REMOVELAST");
@@ -125,7 +126,7 @@ void RSProfiler::StartBetaRecord()
 
         LaunchBetaRecordMetricsUpdateThread();
 
-        if (!IsSecureScreen()) {
+        if (!IsSecureScreen() && !IsPowerOffScreen()) {
             // Start recording for the first file
             RecordStart(ArgList());
         }
@@ -169,14 +170,15 @@ void RSProfiler::SaveBetaRecord()
     bool saveMustBeDone = recordLength > recordMaxLengthSeconds;
 
     if (IsNoneMode()) {
-        if (!IsSecureScreen() && !g_animationCount && g_inactiveTimestamp + INACTIVITY_THRESHOLD_SECONDS < Now() &&
-            RSUniRenderThread::Instance().IsTaskQueueEmpty() && !IsRenderFrameWorking()) {
+        if (!g_animationCount && g_inactiveTimestamp + INACTIVITY_THRESHOLD_SECONDS < Now() &&
+            RSUniRenderThread::Instance().IsTaskQueueEmpty() && !IsRenderFrameWorking() && !IsSecureScreen() &&
+            !IsPowerOffScreen()) {
             // rendering thread doesn't work
             constexpr int minMemoryNecessary = 32'000'000;
             auto ptr = new (std::nothrow) uint8_t[minMemoryNecessary];
             if (ptr) {
                 delete[] ptr;
-                std::unique_lock<std::mutex> lockMainTread(g_mutexBetaRecording);
+                std::unique_lock<std::timed_mutex> lockMainTread(g_mutexBetaRecording);
                 std::unique_lock<std::mutex> lockRenderTread(RenderFrameMutexGet());
                 RecordStart(ArgList());
             }
@@ -194,7 +196,7 @@ void RSProfiler::SaveBetaRecord()
         return;
     }
 
-    std::unique_lock<std::mutex> lock(g_mutexBetaRecording);
+    std::unique_lock<std::timed_mutex> lock(g_mutexBetaRecording);
     RecordStop(ArgList());
     EnableBetaRecord();
 }
