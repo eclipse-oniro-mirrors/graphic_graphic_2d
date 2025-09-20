@@ -66,6 +66,11 @@ FontCollection::~FontCollection()
     });
 }
 
+void FontCollection::EnableGlobalFontMgr()
+{
+    fontCollection_->SetGlobalFontManager(FontCollection::Create()->GetFontMgr());
+}
+
 void FontCollection::DisableFallback()
 {
     fontCollection_->DisableFontFallback();
