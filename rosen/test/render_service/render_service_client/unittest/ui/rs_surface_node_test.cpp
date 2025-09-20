@@ -1933,5 +1933,9 @@ HWTEST_F(RSSurfaceNodeTest, SetSurfaceBufferOpaqueTest, TestSize.Level1)
     if (transactionProxy != nullptr) {
         transactionProxy->FlushImplicitTransaction();
     }
+    surfaceNode->SetSurfaceBufferOpaque(false);
+    if (transactionProxy != nullptr) {
+        transactionProxy->FlushImplicitTransaction();
+    }
 }
 } // namespace OHOS::Rosen
