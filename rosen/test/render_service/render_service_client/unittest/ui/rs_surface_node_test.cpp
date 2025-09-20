@@ -1934,6 +1934,7 @@ HWTEST_F(RSSurfaceNodeTest, SetSurfaceBufferOpaqueTest, TestSize.Level1)
         transactionProxy->FlushImplicitTransaction();
     }
     surfaceNode->SetSurfaceBufferOpaque(false);
+    transactionProxy = RSTransactionProxy::GetInstance();
     if (transactionProxy != nullptr) {
         transactionProxy->FlushImplicitTransaction();
     }
