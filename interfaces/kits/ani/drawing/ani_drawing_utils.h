@@ -22,7 +22,6 @@
 #include <memory>
 #include <string>
 #include "effect/color_filter.h"
-#include "utils/point.h"
 #include "utils/rect.h"
 #include "utils/point.h"
 
