@@ -72,6 +72,7 @@ ohos_source_set("rosen_text_skia") {
 
   external_deps = [
     "bounds_checking_function:libsec_shared",
+    "c_utils:utils",
     "hilog:libhilog",
     "jsoncpp:jsoncpp",
     "skia:skia_canvaskit",

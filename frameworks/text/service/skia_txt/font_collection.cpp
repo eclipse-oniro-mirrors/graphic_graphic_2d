@@ -15,6 +15,7 @@
 
 #include "font_collection.h"
 
+#include "ashmem.h"
 #include "convert.h"
 #include "custom_symbol_config.h"
 #include "texgine/src/font_descriptor_mgr.h"
@@ -81,7 +82,7 @@ std::shared_ptr<Drawing::FontMgr> FontCollection::GetFontMgr()
     return dfmanager_;
 }
 
-RegisterError FontCollection::RegisterTypeface(const TypefaceWithAlias& ta)
+RegisterError FontCollection::RegisterTypeface(TypefaceWithAlias& ta)
 {
     if (ta.GetTypeface() == nullptr || Drawing::Typeface::GetTypefaceRegisterCallBack() == nullptr) {
         return RegisterError::INVALID_INPUT;
@@ -93,13 +94,22 @@ RegisterError FontCollection::RegisterTypeface(const TypefaceWithAlias& ta)
             "Find same typeface, family name: %{public}s, hash: %{public}u", ta.GetAlias().c_str(), ta.GetHash());
         return RegisterError::ALREADY_EXIST;
     }
-    if (!Drawing::Typeface::GetTypefaceRegisterCallBack()(ta.GetTypeface())) {
+    auto typeface = TypefaceMap::GetTypefaceByHash(ta.GetTypeface()->GetHash());
+    if (typeface != nullptr) {
+        typefaceSet_.insert(ta);
+        return RegisterError::SUCCESS;
+    }
+    int32_t result = Drawing::Typeface::GetTypefaceRegisterCallBack()(ta.GetTypeface());
+    if (result == -1) {
+        TEXT_LOGE("Failed to register typeface %{public}s", ta.GetAlias().c_str());
         return RegisterError::REGISTER_FAILED;
+    } else if (result >= 0 && result != ta.GetTypeface()->GetFd()) {
+        ta.UpdateTypefaceAshmem(result, ta.GetTypeface()->GetSize());
     }
     TEXT_LOGI("Succeed in registering typeface, family name: %{public}s, hash: %{public}u", ta.GetAlias().c_str(),
         ta.GetHash());
     typefaceSet_.insert(ta);
-    TypefaceMap::InsertTypeface(ta.GetTypeface()->GetUniqueID(), ta.GetTypeface());
+    TypefaceMap::InsertTypeface(ta.GetTypeface()->GetHash(), ta.GetTypeface());
     return RegisterError::SUCCESS;
 }
 
@@ -107,7 +117,7 @@ std::shared_ptr<Drawing::Typeface> FontCollection::LoadFont(
     const std::string& familyName, const uint8_t* data, size_t datalen)
 {
     TEXT_TRACE_FUNC();
-    std::shared_ptr<Drawing::Typeface> typeface(dfmanager_->LoadDynamicFont(familyName, data, datalen));
+    std::shared_ptr<Drawing::Typeface> typeface = CreateTypeface(familyName, data, datalen);
     if (typeface == nullptr) {
         TEXT_LOGE("Failed to load font %{public}s", familyName.c_str());
         return nullptr;
@@ -115,12 +125,15 @@ std::shared_ptr<Drawing::Typeface> FontCollection::LoadFont(
     TypefaceWithAlias ta(familyName, typeface);
     FontCallbackGuard cb(this, ta.GetAlias(), loadFontStartCallback_, loadFontFinishCallback_);
     RegisterError err = RegisterTypeface(ta);
-    if (err != RegisterError::SUCCESS && err != RegisterError::ALREADY_EXIST) {
+    if (err != RegisterError::SUCCESS) {
         TEXT_LOGE("Failed to register typeface %{public}s", ta.GetAlias().c_str());
         return nullptr;
+    } else if (err != RegisterError::ALREADY_EXIST) {
+        typeface = ta.GetTypeface();
+        dfmanager_->LoadDynamicFont(familyName, typeface);
+        FontDescriptorMgrInstance.CacheDynamicTypeface(typeface, ta.GetAlias());
+        fontCollection_->ClearFontFamilyCache();
     }
-    FontDescriptorMgrInstance.CacheDynamicTypeface(typeface, ta.GetAlias());
-    fontCollection_->ClearFontFamilyCache();
     return typeface;
 }
 
@@ -147,13 +160,16 @@ LoadSymbolErrorCode FontCollection::LoadSymbolJson(const std::string& familyName
     return OHOS::Rosen::Symbol::CustomSymbolConfig::GetInstance()->ParseConfig(familyName, data, datalen);
 }
 
-static std::shared_ptr<Drawing::Typeface> CreateTypeface(const uint8_t *data, size_t datalen)
+std::shared_ptr<Drawing::Typeface> FontCollection::CreateTypeface(
+    const std::string& familyName, const uint8_t* data, size_t datalen)
 {
-    if (datalen != 0 && data != nullptr) {
-        auto stream = std::make_unique<Drawing::MemoryStream>(data, datalen, true);
-        return Drawing::Typeface::MakeFromStream(std::move(stream));
+    uint32_t hash = Drawing::Typeface::CalculateHash(data, datalen);
+    auto typeface = TypefaceMap::GetTypefaceByHash(hash);
+    if (typeface != nullptr) {
+        TEXT_LOGI("Find same typeface local, family name: %{public}s", typeface->GetFamilyName().c_str());
+        return typeface;
     }
-    return nullptr;
+    return Drawing::Typeface::MakeFromAshmem(data, datalen, hash, familyName);
 }
 
 std::shared_ptr<Drawing::Typeface> FontCollection::LoadThemeFont(
@@ -176,7 +192,7 @@ std::vector<std::shared_ptr<Drawing::Typeface>> FontCollection::LoadThemeFont(
     size_t index = 0;
     for (size_t i = 0; i < data.size(); i += 1) {
         std::string themeFamily = SPText::DefaultFamilyNameMgr::GetInstance().GenerateThemeFamilyName(index);
-        auto face = CreateTypeface(data[i].first, data[i].second);
+        auto face = CreateTypeface(familyName, data[i].first, data[i].second);
         TypefaceWithAlias ta(themeFamily, face);
         RegisterError err = RegisterTypeface(ta);
         if (err == RegisterError::ALREADY_EXIST) {
@@ -303,6 +319,20 @@ const std::string& TypefaceWithAlias::GetAlias() const
 bool TypefaceWithAlias::operator==(const TypefaceWithAlias& other) const
 {
     return other.alias_ == this->alias_ && other.GetHash() == this->GetHash();
+}
+
+void TypefaceWithAlias::UpdateTypefaceAshmem(int32_t fd, uint32_t size)
+{
+    auto ashmem = new Ashmem(fd, size);
+    bool mapResult = ashmem->MapReadOnlyAshmem();
+    const void* readPtr = ashmem->ReadFromAshmem(size, 0);
+    if (mapResult && readPtr != nullptr && typeface_ != nullptr) {
+        auto stream = std::make_unique<Drawing::MemoryStream>(
+            readPtr, size, [](const void* ptr, void* context) { delete reinterpret_cast<Ashmem*>(context); }, ashmem);
+        typeface_->UpdateStream(std::move(stream));
+    } else {
+        delete ashmem;
+    }
 }
 } // namespace AdapterTxt
 

@@ -59,12 +59,12 @@ HWTEST_F(TypefaceMapTest, TypefaceMapTest001, TestSize.Level0)
     uint32_t uniqueId = typeface->GetUniqueID();
     instance.InsertTypeface(uniqueId, typeface);
     instance.InsertTypeface(uniqueId, nullptr);
-    auto result = instance.GetTypefaceByUniqueId(GenGlobalUniqueId(uniqueId));
+    auto result = instance.GetTypefaceById(GenGlobalUniqueId(uniqueId));
     ASSERT_NE(result, nullptr);
     EXPECT_EQ(result.get(), typeface.get());
     typeface.reset();
     EXPECT_EQ(instance.typefaceMap_.size(), 1);
-    EXPECT_EQ(instance.GetTypefaceByUniqueId(GenGlobalUniqueId(uniqueId)), nullptr);
+    EXPECT_EQ(instance.GetTypefaceById(GenGlobalUniqueId(uniqueId)), nullptr);
     EXPECT_TRUE(instance.typefaceMap_.empty());
 }
 
