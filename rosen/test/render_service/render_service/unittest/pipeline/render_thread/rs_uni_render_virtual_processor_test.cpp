@@ -894,7 +894,7 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, SetColorSpaceForMetadata, TestSize.Lev
     GraphicColorGamut colorGamut2 = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DCI_P3;
     virtualProcessor->renderFrame_ = std::make_unique<RSRenderFrame>(rsSurface2, nullptr);
     res = virtualProcessor->SetColorSpaceForMetadata(colorGamut2);
-    EXPECT_EQ(GSERROR_OK, res);
+    EXPECT_EQ(GSERROR_INVALID_ARGUMENTS, res);
 
     res = virtualProcessor->SetColorSpaceForMetadata(colorGamut1);
     EXPECT_EQ(GSERROR_NOT_INIT, res);
