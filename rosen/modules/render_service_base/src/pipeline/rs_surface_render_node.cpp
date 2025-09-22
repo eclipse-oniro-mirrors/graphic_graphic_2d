@@ -3716,11 +3716,13 @@ void RSSurfaceRenderNode::SetSurfaceBufferOpaque(bool isOpaque)
         return;
     }
     surfaceParams->SetSurfaceBufferOpaque(isOpaque);
-    // if (isOpaque) {
-    //     SetBlendType(GRAPHIC_BLEND_NONE);
-    // }
     AddToPendingSyncList();
     isSurfaceBufferOpaque_ = isOpaque;
+    if (isOpaque) {
+        SetBlendType(GRAPHIC_BLEND_NONE);
+    } else {
+        SetBlendType(GRAPHIC_BLEND_SRCOVER);
+    }
 }
 
 bool RSSurfaceRenderNode::GetSurfaceBufferOpaque() const
