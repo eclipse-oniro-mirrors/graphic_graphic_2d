@@ -209,6 +209,9 @@ const OH_Drawing_FontFullDescriptor* OH_Drawing_GetFontFullDescriptorByIndex(OH_
 
 OH_Drawing_Array* OH_Drawing_GetFontFullDescriptorsFromPath(char* path)
 {
+    if (path == nullptr) {
+        return nullptr;
+    }
     std::vector<std::shared_ptr<Drawing::FontParser::FontDescriptor>> fontFullDescriptors =
         TextEngine::FontParser::ParserFontDescriptorsFromPath(path);
     if (fontFullDescriptors.empty()) {
