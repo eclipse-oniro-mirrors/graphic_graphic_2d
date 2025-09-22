@@ -3719,11 +3719,7 @@ void RSSurfaceRenderNode::SetSurfaceBufferOpaque(bool isOpaque)
     AddToPendingSyncList();
     isSurfaceBufferOpaque_ = isOpaque;
 #ifndef ROSEN_CROSS_PLATFORM
-    if (isOpaque) {
-        SetBlendType(GraphicBlendType::GRAPHIC_BLEND_NONE);
-    } else {
-        SetBlendType(GraphicBlendType::GRAPHIC_BLEND_SRCOVER);
-    }
+    SetBlendType(isOpaque ? GraphicBlendType::GRAPHIC_BLEND_NONE : GraphicBlendType::GRAPHIC_BLEND_SRCOVER);
 #endif
 }
 
