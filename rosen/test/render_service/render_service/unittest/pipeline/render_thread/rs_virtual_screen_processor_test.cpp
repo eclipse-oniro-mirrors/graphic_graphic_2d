@@ -78,14 +78,14 @@ HWTEST_F(RSVirtualScreenProcessorTest, Init, TestSize.Level1)
     int32_t offsetX = 0;
     int32_t offsetY = 0;
     auto rsContext = std::make_shared<RSContext>();
-    RSScreenRenderNode rsDisplayRenderNode(id, 0, rsContext->weak_from_this());
+    RSScreenRenderNode rsScreenRenderNode(id, 0, rsContext->weak_from_this());
     auto rsSoftwareProcessor = RSProcessorFactory::CreateProcessor(CompositeType::
         SOFTWARE_COMPOSITE);
     auto& uniRenderThread = RSUniRenderThread::Instance();
     uniRenderThread.uniRenderEngine_ = std::make_shared<RSUniRenderEngine>();
     auto renderEngine = uniRenderThread.GetRenderEngine();
     ASSERT_NE(nullptr, rsSoftwareProcessor);
-    ASSERT_EQ(false, rsSoftwareProcessor->Init(rsDisplayRenderNode, offsetX, offsetY, INVALID_SCREEN_ID, renderEngine));
+    ASSERT_EQ(false, rsSoftwareProcessor->Init(rsScreenRenderNode, offsetX, offsetY, INVALID_SCREEN_ID, renderEngine));
 
     RSSurfaceRenderNodeConfig sConfig;
     RSSurfaceRenderNode rsSurfaceRenderNode(sConfig);
@@ -94,28 +94,22 @@ HWTEST_F(RSVirtualScreenProcessorTest, Init, TestSize.Level1)
 
 /**
  * @tc.name: InitTest002
- * @tc.desc: test init when renderFrame_ == nullptr
+ * @tc.desc: test Init when producerSurface_ == nullptr
  * @tc.type:
  * @tc.require:
  * @tc.author:
  */
 HWTEST_F(RSVirtualScreenProcessorTest, InitTest002, TestSize.Level1)
 {
-    auto csurface = Surface::CreateSurfaceAsConsumer();
-    csurface->SetDefaultUsage(
-        BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA | BUFFER_USAGE_MEM_FB);
-    auto producer = csurface->GetProducer();
-    auto producerSurface = Surface::CreateSurfaceAsProducer(producer);
-    EXPECT_NE(producerSurface, nullptr);
-
     auto screenManager = CreateOrGetScreenManager();
-    ScreenId screenId = screenManager->CreateVirtualScreen("Test", 200, 100, producerSurface, 0, 0, {});
-    EXPECT_NE(nullptr, screenManager->GetProducerSurface(screenId));
+    ScreenId screenId = screenManager->CreateVirtualScreen("Test", 1280, 720, nullptr, 0, 0, {});
 
-    NodeId nodeId = 10086;
+    NodeId nodeId = 100;
     auto screenRenderNode = std::make_shared<RSScreenRenderNode>(nodeId, screenId);
     auto virtualScreenProcessor = RSProcessorFactory::CreateProcessor(CompositeType::SOFTWARE_COMPOSITE);
-    auto renderEngine = RSMainThread::Instance()->GetRenderEngine();
+    auto& uniRenderThread = RSUniRenderThread::Instance();
+    uniRenderThread.uniRenderEngine_ = std::make_shared<RSUniRenderEngine>();
+    auto renderEngine = uniRenderThread.GetRenderEngine();
     renderEngine->Init();
 
     int32_t offsetX = 10;
