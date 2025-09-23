@@ -920,7 +920,7 @@ void RSUniHwcVisitor::UpdateHwcNodeEnableByFilterRect(std::shared_ptr<RSSurfaceR
                 if (!hwcNodePtr) {
                     continue;
                 }
-                CalcHwcNodeEnableByFilterRect(hwcNode, filterNode, filterZOrder);
+                CalcHwcNodeEnableByFilterRect(hwcNodePtr, filterNode, filterZOrder);
             }
         }
     } else {
