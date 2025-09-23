@@ -25,7 +25,7 @@ constexpr int32_t UP_TIMEOUT_MS = 3000;
 
 int32_t XMLParser::LoadConfiguration(const char* fileDir)
 {
-    HGM_LOGI("XMLParser opening xml file");
+    HGM_LOGD("XMLParser opening xml file");
     xmlDocument_ = xmlReadFile(fileDir, nullptr, 0);
     if (!xmlDocument_) {
         HGM_LOGE("XMLParser xmlReadFile failed");
@@ -119,7 +119,7 @@ bool XMLParser::ParseInternal(xmlNode& node)
 
 int32_t XMLParser::ParseParam(xmlNode& node)
 {
-    HGM_LOGI("XMLParser parsing a parameter");
+    HGM_LOGD("XMLParser parsing a parameter");
     if (!mParsedData_) {
         HGM_LOGE("XMLParser mParsedData_ is not initialized");
         return HGM_ERROR;
@@ -131,7 +131,7 @@ int32_t XMLParser::ParseParam(xmlNode& node)
         std::string mode = ExtractPropertyValue("value", node);
         mParsedData_->defaultRefreshRateMode_ = mode;
 
-        HGM_LOGI("HgmXMLParser ParseParam default_refreshrate_mode %{public}s",
+        HGM_LOGD("HgmXMLParser ParseParam default_refreshrate_mode %{public}s",
                  mParsedData_->defaultRefreshRateMode_.c_str());
     }
 
@@ -199,7 +199,7 @@ int32_t XMLParser::ParseParams(xmlNode& node)
     }
 
     if (setResult != EXEC_SUCCESS) {
-        HGM_LOGI("XMLParser failed to ParseParams %{public}s", paraName.c_str());
+        HGM_LOGD("XMLParser failed to ParseParams %{public}s", paraName.c_str());
     }
     return EXEC_SUCCESS;
 }
@@ -260,7 +260,7 @@ int32_t XMLParser::ParseStrategyConfig(xmlNode& node)
         }
         ParseBufferStrategyList(*currNode, strategy);
         mParsedData_->strategyConfigs_[name] = strategy;
-        HGM_LOGI("HgmXMLParser ParseStrategyConfig name=%{public}s min=%{public}d drawMin=%{public}d",
+        HGM_LOGD("HgmXMLParser ParseStrategyConfig name=%{public}s min=%{public}d drawMin=%{public}d",
                  name.c_str(), mParsedData_->strategyConfigs_[name].min, mParsedData_->strategyConfigs_[name].drawMin);
     }
 
@@ -325,7 +325,7 @@ int32_t XMLParser::ParseScreenConfig(xmlNode& node)
         if (name == "supported_mode") {
             PolicyConfigData::SupportedModeConfig supportedModeConfig;
             if (ParseSupportedModeConfig(*currNode, supportedModeConfig) != EXEC_SUCCESS) {
-                HGM_LOGI("XMLParser failed to ParseScreenConfig %{public}s", name.c_str());
+                HGM_LOGD("XMLParser failed to ParseScreenConfig %{public}s", name.c_str());
             }
             mParsedData_->supportedModeConfigs_[type] = supportedModeConfig;
             continue;
@@ -337,7 +337,7 @@ int32_t XMLParser::ParseScreenConfig(xmlNode& node)
             ParseSubScreenConfig(*thresholdNode, screenSetting);
         }
         screenConfig[id] = screenSetting;
-        HGM_LOGI("HgmXMLParser ParseScreenConfig id=%{public}s", id.c_str());
+        HGM_LOGD("HgmXMLParser ParseScreenConfig id=%{public}s", id.c_str());
     }
     for (const auto& screenExtStrategy : HGM_CONFIG_SCREENEXT_STRATEGY_MAP) {
         if (size_t pos = type.find(screenExtStrategy.first); pos != std::string::npos) {
@@ -395,7 +395,7 @@ int32_t XMLParser::ParseSubScreenConfig(xmlNode& node, PolicyConfigData::ScreenS
     }
 
     if (setResult != EXEC_SUCCESS) {
-        HGM_LOGI("XMLParser failed to ParseScreenConfig %{public}s", name.c_str());
+        HGM_LOGD("XMLParser failed to ParseScreenConfig %{public}s", name.c_str());
     }
     return setResult;
 }
@@ -434,7 +434,7 @@ int32_t XMLParser::ParseSimplex(xmlNode& node, std::unordered_map<std::string, s
 
         config[key] = value;
 
-        HGM_LOGI("HgmXMLParser ParseSimplex %{public}s=%{public}s %{public}s=%{public}s",
+        HGM_LOGD("HgmXMLParser ParseSimplex %{public}s=%{public}s %{public}s=%{public}s",
                  keyName.c_str(), key.c_str(), valueName.c_str(), config[key].c_str());
     }
 
@@ -447,7 +447,7 @@ int32_t XMLParser::ParsePowerStrategy(xmlNode& node, std::unordered_map<std::str
     auto result = ParseSimplex(node, configs);
     powerConfig.clear();
     if (result != EXEC_SUCCESS) {
-        HGM_LOGI("XMLParser failed to powerConfig component_power_config");
+        HGM_LOGD("XMLParser failed to powerConfig component_power_config");
         return result;
     }
     for (const auto& item: configs) {
@@ -505,7 +505,7 @@ int32_t XMLParser::ParseDynamicSetting(xmlNode& node, PolicyConfigData::DynamicS
             dynamicConfig.preferredFps = std::stoi(preferredFps);
             dynamicSettingMap[dynamicSettingType][name] = dynamicConfig;
 
-            HGM_LOGI("HgmXMLParser ParseDynamicSetting dynamicType=%{public}s name=%{public}s min=%{public}d",
+            HGM_LOGD("HgmXMLParser ParseDynamicSetting dynamicType=%{public}s name=%{public}s min=%{public}d",
                      dynamicSettingType.c_str(), name.c_str(), dynamicSettingMap[dynamicSettingType][name].min);
         }
     }
@@ -535,7 +535,7 @@ int32_t XMLParser::ParseSceneList(xmlNode& node, PolicyConfigData::SceneConfigMa
         sceneConfig.doNotAutoClear = ExtractPropertyValue("doNotAutoClear", *currNode) == "1";
         sceneConfig.disableSafeVote = ExtractPropertyValue("disableSafeVote", *currNode) == "1";
         sceneList[name] = sceneConfig;
-        HGM_LOGI("HgmXMLParser ParseSceneList name=%{public}s strategy=%{public}s priority=%{public}s \
+        HGM_LOGD("HgmXMLParser ParseSceneList name=%{public}s strategy=%{public}s priority=%{public}s \
                  doNotAutoClear=%{public}s disableSafeVote=%{public}s", name.c_str(),
                  sceneList[name].strategy.c_str(), sceneList[name].priority.c_str(),
                  sceneList[name].doNotAutoClear ? "true" : "false",
@@ -567,7 +567,7 @@ int32_t XMLParser::ParseSupportedModeConfig(xmlNode& node, PolicyConfigData::Sup
         supportedModeVec = StringToVector(value);
 
         supportedModeConfig[name] = supportedModeVec;
-        HGM_LOGI("HgmXMLParser ParseSupportedModeConfig name=%{public}s value=%{public}s",
+        HGM_LOGD("HgmXMLParser ParseSupportedModeConfig name=%{public}s value=%{public}s",
             name.c_str(), value.c_str());
     }
     return EXEC_SUCCESS;
@@ -612,7 +612,7 @@ int32_t XMLParser::ParseAppTypes(xmlNode& node, std::unordered_map<int32_t, std:
         }
         auto strategy = ExtractPropertyValue("strategy", *currNode);
         appTypes[std::stoi(name)] = strategy;
-        HGM_LOGI("HgmXMLParser ParseAppTypes name=%{public}s strategy=%{public}s", name.c_str(), strategy.c_str());
+        HGM_LOGD("HgmXMLParser ParseAppTypes name=%{public}s strategy=%{public}s", name.c_str(), strategy.c_str());
     }
 
     return EXEC_SUCCESS;
@@ -707,7 +707,7 @@ int32_t XMLParser::ParsePerformanceConfig(
         }
         auto name = ExtractPropertyValue("name", *currNode);
         auto value = ExtractPropertyValue("value", *currNode);
-        HGM_LOGI("HgmXMLParser performanceConfig name=%{public}s strategy=%{public}s", name.c_str(), value.c_str());
+        HGM_LOGD("HgmXMLParser performanceConfig name=%{public}s strategy=%{public}s", name.c_str(), value.c_str());
         performanceConfig[std::move(name)] = std::move(value);
     }
 
