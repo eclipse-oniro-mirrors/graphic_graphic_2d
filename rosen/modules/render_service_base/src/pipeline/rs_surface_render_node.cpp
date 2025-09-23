@@ -3718,9 +3718,9 @@ void RSSurfaceRenderNode::SetSurfaceBufferOpaque(bool isOpaque)
     surfaceParams->SetSurfaceBufferOpaque(isOpaque);
     AddToPendingSyncList();
     isSurfaceBufferOpaque_ = isOpaque;
-#ifndef ROSEN_CROSS_PLATFORM
-    SetBlendType(isOpaque ? GraphicBlendType::GRAPHIC_BLEND_NONE : GraphicBlendType::GRAPHIC_BLEND_SRCOVER);
-#endif
+// #ifndef ROSEN_CROSS_PLATFORM
+//     SetBlendType(isOpaque ? GraphicBlendType::GRAPHIC_BLEND_NONE : GraphicBlendType::GRAPHIC_BLEND_SRCOVER);
+// #endif
 }
 
 bool RSSurfaceRenderNode::GetSurfaceBufferOpaque() const
