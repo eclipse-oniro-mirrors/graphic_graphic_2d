@@ -209,7 +209,7 @@ bool RSHDRPatternManager::MHCSubmitHDRTask(uint64_t frameId, MHCPatternTaskName 
 void RSHDRPatternManager::MHCGraphQueryTaskError(uint64_t frameId, MHCPatternTaskName taskName)
 {
     if (!MHCCheck("MHCGraphQueryTaskError")) {
-        return false;
+        return;
     }
     int32_t queryResult = MHCDevice_->graphPatternHpaeTaskExecutionQuery(graphPatternInstance_, frameId, taskName);
     if (queryResult == 0) {
