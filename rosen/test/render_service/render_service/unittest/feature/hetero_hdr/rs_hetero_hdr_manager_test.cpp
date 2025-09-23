@@ -1550,7 +1550,6 @@ HWTEST_F(RSHeteroHDRManagerTest, UpdateHDRHeteroParamsTest002, TestSize.Level1)
     auto ret1 = RSHDRVulkanTask::IsInterfaceTypeBasicRender();
     mockRSHeteroHDRManager.UpdateHDRHeteroParams(canvas, *surfaceDrawable, drawableParams);
     EXPECT_EQ(ret1, false);
-
     RsVulkanContext::GetSingleton().vulkanInterfaceType_ = interfaceTypeTmp;
 }
 

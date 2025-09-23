@@ -642,7 +642,6 @@ HWTEST_F(RSHDRPatternManagerTest, MHCSubmitGPUTaskTest, TestSize.Level1)
 {
     auto tmpFunc = SingletonMockRSHDRPatternManager::Instance().submitFuncs_;
     SingletonMockRSHDRPatternManager::Instance().submitFuncs_.clear();
-
     VkSemaphore waitSemaphore = {};
     std::function<void()> func = []() { return; };
     VkSubmitInfo submitInfo1 = {};
