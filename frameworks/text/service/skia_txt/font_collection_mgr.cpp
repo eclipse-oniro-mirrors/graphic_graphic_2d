@@ -82,11 +82,11 @@ bool FontCollectionMgr::CheckInstanceIsValid(uint64_t envId, std::shared_ptr<Fon
     return iter->second == fontCollection;
 }
 
-uint64_t FontCollectionMgr::GetEnvByFontCollection(std::shared_ptr<FontCollection> fontCollection)
+uint64_t FontCollectionMgr::GetEnvByFontCollection(const FontCollection* fontCollection)
 {
     std::shared_lock<std::shared_mutex> lock(mutex_);
     for (auto iter = localCollections_.begin(); iter != localCollections_.end(); iter++) {
-        if (iter->second == fontCollection) {
+        if (iter->second.get() == fontCollection) {
             return iter->first;
         }
     }

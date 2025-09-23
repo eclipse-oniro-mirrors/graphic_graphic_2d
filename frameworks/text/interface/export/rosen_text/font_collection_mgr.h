@@ -33,7 +33,7 @@ public:
     std::shared_ptr<FontCollection> GetLocalInstance(uint64_t envId);
     void DestroyLocalInstance(uint64_t envId);
     bool CheckInstanceIsValid(uint64_t envId, std::shared_ptr<FontCollection> fontCollection);
-    uint64_t GetEnvByFontCollection(std::shared_ptr<FontCollection> fontCollection);
+    uint64_t GetEnvByFontCollection(const FontCollection* fontCollection);
 
     void InsertSharedFontColleciton(void* key, std::shared_ptr<FontCollection> fontCollection);
     std::shared_ptr<FontCollection> FindSharedFontColleciton(void* key);

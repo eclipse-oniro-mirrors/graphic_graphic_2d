@@ -157,7 +157,7 @@ HWTEST_F(FontCollectionMgrTest, FontCollectionMgrTest0010, TestSize.Level0) {
  */
 HWTEST_F(FontCollectionMgrTest, FontCollectionMgrTest0011, TestSize.Level0) {
     mgr.InsertLocalInstance(envId1, fc1);
-    uint64_t envId = mgr.GetEnvByFontCollection(fc1);
+    uint64_t envId = mgr.GetEnvByFontCollection(fc1.get());
     EXPECT_EQ(envId, envId1);
 }
 
@@ -167,7 +167,7 @@ HWTEST_F(FontCollectionMgrTest, FontCollectionMgrTest0011, TestSize.Level0) {
  * @tc.type: FUNC
  */
 HWTEST_F(FontCollectionMgrTest, FontCollectionMgrTest0012, TestSize.Level0) {
-    uint64_t envId = mgr.GetEnvByFontCollection(fc1);
+    uint64_t envId = mgr.GetEnvByFontCollection(fc1.get());
     EXPECT_EQ(envId, 0);
 }
 
@@ -179,7 +179,7 @@ HWTEST_F(FontCollectionMgrTest, FontCollectionMgrTest0012, TestSize.Level0) {
 HWTEST_F(FontCollectionMgrTest, FontCollectionMgrTest0013, TestSize.Level0) {
     mgr.InsertLocalInstance(envId1, fc1);
     mgr.InsertLocalInstance(envId2, fc2);
-    uint64_t envId = mgr.GetEnvByFontCollection(fc2);
+    uint64_t envId = mgr.GetEnvByFontCollection(fc2.get());
     EXPECT_EQ(envId, envId2);
 }
 } // namespace OHOS::Rosen
