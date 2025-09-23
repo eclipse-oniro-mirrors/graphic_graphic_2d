@@ -1206,6 +1206,7 @@ bool ParseContextFilePath(napi_env env, napi_value* argv, sptr<FontPathResourceC
             TEXT_LOGE("%{public}s", errMessage.c_str());
         }
     }
+    TEXT_LOGE("Path valueType is incorrect, valueType: %{public}d", valueType);
     return true;
 }
 } // namespace OHOS::Rosen

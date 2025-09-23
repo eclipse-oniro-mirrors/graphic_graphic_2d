@@ -39,7 +39,8 @@ struct FontDescriptorsListContext : public FontPathResourceContext {
     std::vector<FontDescSharedPtr> fontDescripterList;
 };
 
-bool ProcessFontPath (sptr<FontDescriptorsListContext> context, std::string& path) {
+bool ProcessFontPath(sptr<FontDescriptorsListContext> context, std::string& path)
+{
     if (SplitAbsoluteFontPath(path)) {
         context->fontDescripterList = TextEngine::FontParser::ParserFontDescriptorsFromPath(path);
         return true;

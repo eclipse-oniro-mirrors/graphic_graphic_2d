@@ -68,7 +68,8 @@ bool ExistStylishFontConfigFile()
     return fs::exists(STYLISH_FONT_CONFIG_FILE) || fs::exists(STYLISH_FONT_CONFIG_PROD_FILE);
 }
 
-std::string ConvertUtf16ToUtf8(const uint8_t* utf16Data, uint32_t utf16Len) {
+std::string ConvertUtf16ToUtf8(const uint8_t* utf16Data, uint32_t utf16Len)
+{
     std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> converter;
     std::u16string utf16String(reinterpret_cast<const char16_t*>(utf16Data), utf16Len / 2);
     return converter.to_bytes(utf16String);
@@ -155,6 +156,7 @@ HWTEST_F(NdkFontDescriptorTest, NdkFontFullDescriptorTest002, TestSize.Level0)
     EXPECT_EQ(desc1, nullptr);
  
     OH_Drawing_DestroyFontFullDescriptors(fontFullDescArr);
+    free(invalidPath);
 }
 
 /*
@@ -176,6 +178,7 @@ HWTEST_F(NdkFontDescriptorTest, NdkFontFullDescriptorTest003, TestSize.Level0)
  
     OH_Drawing_DestroyFontFullDescriptors(fontFullDescArr);
     OH_Drawing_DestroyFontFullDescriptors(nullptr);
+    free(invalidPath);
 }
  
 /*
@@ -187,7 +190,7 @@ HWTEST_F(NdkFontDescriptorTest, NdkFontFullDescriptorTest004, TestSize.Level0)
 {
     char *validPath = strdup("/system/fonts/HarmonyOS_Sans.ttf");
     OH_Drawing_Array* fontFullDescArr = OH_Drawing_GetFontFullDescriptorsFromPath(validPath);
-    ASSERT_NE(fontFullDescArr, nullptr);
+    EXPECT_NE(fontFullDescArr, nullptr);
     EXPECT_EQ(OH_Drawing_GetDrawingArraySize(fontFullDescArr), 1);
  
     const OH_Drawing_FontFullDescriptor *desc = OH_Drawing_GetFontFullDescriptorByIndex(fontFullDescArr, 0);
@@ -227,6 +230,10 @@ HWTEST_F(NdkFontDescriptorTest, NdkFontFullDescriptorTest004, TestSize.Level0)
     EXPECT_STREQ(ConvertUtf16ToUtf8(subFamilyName.strData, subFamilyName.strLen).c_str(), realSubFamilyName);
  
     OH_Drawing_DestroyFontFullDescriptors(fontFullDescArr);
+    free(validPath);
+    free(realPostscriptName);
+    free(realFullAndFamilyName);
+    free(realSubFamilyName);
 }
 
 /*
@@ -240,7 +247,7 @@ HWTEST_F(NdkFontDescriptorTest, NdkFontFullDescriptorTest005, TestSize.Level0)
     int weight, width, italic = 0;
     bool mono, symblic = false;
     OH_Drawing_Array* fontFullDescArr = OH_Drawing_GetFontFullDescriptorsFromPath(validPath);
-    ASSERT_NE(fontFullDescArr, nullptr);
+    EXPECT_NE(fontFullDescArr, nullptr);
 
     const OH_Drawing_FontFullDescriptor *desc = OH_Drawing_GetFontFullDescriptorByIndex(fontFullDescArr, 0);
 
@@ -268,6 +275,7 @@ HWTEST_F(NdkFontDescriptorTest, NdkFontFullDescriptorTest005, TestSize.Level0)
     EXPECT_FALSE(symblic);
 
     OH_Drawing_DestroyFontFullDescriptors(fontFullDescArr);
+    free(validPath);
 }
 
 /*
@@ -283,7 +291,7 @@ HWTEST_F(NdkFontDescriptorTest, NdkFontFullDescriptorTest006, TestSize.Level0)
     bool mono = false, symblic = false;
     constexpr int initialValue = -1;
     OH_Drawing_Array* fontFullDescArr = OH_Drawing_GetFontFullDescriptorsFromPath(validPath);
-    ASSERT_NE(fontFullDescArr, nullptr);
+    EXPECT_NE(fontFullDescArr, nullptr);
     const OH_Drawing_FontFullDescriptor *desc = OH_Drawing_GetFontFullDescriptorByIndex(fontFullDescArr, 0);
 
     OH_Drawing_ErrorCode errorCode = OH_Drawing_GetFontFullDescriptorAttributeInt(desc, FULL_DESCRIPTOR_ATTR_S_PATH,
@@ -306,6 +314,7 @@ HWTEST_F(NdkFontDescriptorTest, NdkFontFullDescriptorTest006, TestSize.Level0)
     EXPECT_EQ(errorCode, OH_DRAWING_ERROR_PARAMETER_OUT_OF_RANGE);
 
     OH_Drawing_DestroyFontFullDescriptors(fontFullDescArr);
+    free(validPath);
 }
 
 /*
@@ -317,7 +326,7 @@ HWTEST_F(NdkFontDescriptorTest, NdkFontFullDescriptorTest007, TestSize.Level0)
 {
     char *validPath = strdup("/system/fonts/HarmonyOS_Sans.ttf");
     OH_Drawing_Array* fontFullDescArr = OH_Drawing_GetFontFullDescriptorsFromPath(validPath);
-    ASSERT_NE(fontFullDescArr, nullptr);
+    EXPECT_NE(fontFullDescArr, nullptr);
     const OH_Drawing_FontFullDescriptor *desc = OH_Drawing_GetFontFullDescriptorByIndex(fontFullDescArr, 0);
 
     // Assign it an initial value
@@ -336,6 +345,7 @@ HWTEST_F(NdkFontDescriptorTest, NdkFontFullDescriptorTest007, TestSize.Level0)
     EXPECT_EQ(errorCode, OH_DRAWING_ERROR_PARAMETER_OUT_OF_RANGE);
 
     OH_Drawing_DestroyFontFullDescriptors(fontFullDescArr);
+    free(validPath);
 }
 
 /*
@@ -347,7 +357,7 @@ HWTEST_F(NdkFontDescriptorTest, NdkFontFullDescriptorTest008, TestSize.Level0)
 {
     char* ttcPath = strdup("/system/fonts/NotoSerifCJK-Regular.ttc");
     OH_Drawing_Array* fontFullDescArr = OH_Drawing_GetFontFullDescriptorsFromPath(ttcPath);
-    ASSERT_NE(fontFullDescArr, nullptr);
+    EXPECT_NE(fontFullDescArr, nullptr);
     constexpr int fontFullDescriptorsSize = 5;
     EXPECT_EQ(OH_Drawing_GetDrawingArraySize(fontFullDescArr), fontFullDescriptorsSize);
 
@@ -355,7 +365,8 @@ HWTEST_F(NdkFontDescriptorTest, NdkFontFullDescriptorTest008, TestSize.Level0)
     EXPECT_NE(desc0, nullptr);
     const OH_Drawing_FontFullDescriptor* desc1 = OH_Drawing_GetFontFullDescriptorByIndex(fontFullDescArr, 1);
     EXPECT_NE(desc1, nullptr);
-    const OH_Drawing_FontFullDescriptor* desc4 = OH_Drawing_GetFontFullDescriptorByIndex(fontFullDescArr, 4);
+    const OH_Drawing_FontFullDescriptor* desc4 = OH_Drawing_GetFontFullDescriptorByIndex(fontFullDescArr,
+        fontFullDescriptorsSize - 1);
     EXPECT_NE(desc4, nullptr);
 
     OH_Drawing_String path = { .strData = nullptr, .strLen = 0 };
@@ -390,6 +401,10 @@ HWTEST_F(NdkFontDescriptorTest, NdkFontFullDescriptorTest008, TestSize.Level0)
     EXPECT_EQ(weight, realFontWeight);
 
     OH_Drawing_DestroyFontFullDescriptors(fontFullDescArr);
+    free(ttcPath);
+    free(realPostscriptName);
+    free(realPostscriptName1);
+    free(realFullAndFamilyName);
 }
 
 /*
