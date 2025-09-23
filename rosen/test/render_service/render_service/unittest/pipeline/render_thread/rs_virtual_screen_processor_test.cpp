@@ -115,7 +115,7 @@ HWTEST_F(RSVirtualScreenProcessorTest, InitTest002, TestSize.Level1)
     NodeId nodeId = 10086;
     auto screenRenderNode = std::make_shared<RSScreenRenderNode>(nodeId, screenId);
     auto virtualScreenProcessor = RSProcessorFactory::CreateProcessor(CompositeType::SOFTWARE_COMPOSITE);
-    auto renderEngine = RSMainThread::Instance().GetRenderEngine();
+    auto renderEngine = RSMainThread::Instance()->GetRenderEngine();
     renderEngine->Init();
 
     int32_t offsetX = 10;
