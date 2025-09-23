@@ -93,6 +93,37 @@ HWTEST_F(RSVirtualScreenProcessorTest, Init, TestSize.Level1)
 }
 
 /**
+ * @tc.name: InitTest002
+ * @tc.desc: test init when renderFrame_ == nullptr
+ * @tc.type:
+ * @tc.require:
+ * @tc.author:
+ */
+HWTEST_F(RSVirtualScreenProcessorTest, InitTest002, TestSize.Level1)
+{
+    auto csurface = Surface::CreateSurfaceAsConsumer();
+    csurface->SetDefaultUsage(
+        BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA | BUFFER_USAGE_MEM_FB);
+    auto producer = csurface->GetProducer();
+    auto producerSurface = Surface::CreateSurfaceAsProducer(producer);
+    EXPECT_NE(producerSurface, nullptr);
+
+    auto screenManager = CreateOrGetScreenManager();
+    ScreenId screenId = screenManager->CreateVirtualScreen("Test", 200, 100, producerSurface, 0, 0, {});
+    EXPECT_NE(nullptr, screenManager->GetProducerSurface(screenId));
+
+    NodeId nodeId = 10086;
+    auto screenRenderNode = std::make_shared<RSScreenRenderNode>(nodeId, screenId);
+    auto virtualScreenProcessor = RSProcessorFactory::CreateProcessor(CompositeType::SOFTWARE_COMPOSITE);
+    renderEngine->Init();
+
+    int32_t offsetX = 10;
+    int32_t offsetY = 10;
+    ScreenId mirroredId = 0;
+    ASSERT_FALSE(virtualScreenProcessor->Init(*screenRenderNode, offsetX, offsetY, mirroredId, renderEngine));
+}
+
+/**
  * @tc.name: ProcessSurface001
  * @tc.desc:
  * @tc.type:
