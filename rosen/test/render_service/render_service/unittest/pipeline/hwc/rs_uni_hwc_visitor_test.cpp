@@ -1941,7 +1941,7 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateHwcNodeEnableByFilterRect009, TestSize.Level
     filterNode->GetHwcRecorder().SetBlendWithBackground(true);
 
     std::shared_ptr<RSSurfaceRenderNode> surfaceNode4 = nullptr;
-    rsUniRenderVisitor->hwcVisitor_->UpdateHwcNodeEnableByFilterRect(surfaceNode4);
+    rsUniRenderVisitor->hwcVisitor_->UpdateHwcNodeEnableByFilterRect(surfaceNode4, *filterNode, 10);
     ASSERT_TRUE(surfaceNode1->isHardwareForcedDisabled_);
 }
 
