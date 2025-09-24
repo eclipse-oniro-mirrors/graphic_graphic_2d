@@ -2102,8 +2102,6 @@ void RSScreenManager::NotifyBrightnessInfoChangeCallback(ScreenId screenId, cons
 {
     std::shared_lock<std::shared_mutex> lock(brightnessInfoChangeCallbackMutex_);
     if (brightnessInfoChangeCallback_ == nullptr) {
-        RS_LOGD("%{public}s: brightnessInfoChangeCallback_ is nullptr! screenId: %{public}" PRIu64 "",
-            __func__, screenId);
         return;
     }
     brightnessInfoChangeCallback_->OnBrightnessInfoChange(screenId, brightnessInfo);

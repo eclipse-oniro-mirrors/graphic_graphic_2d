@@ -1286,7 +1286,7 @@ int32_t RSRenderServiceConnectionProxy::GetBrightnessInfo(ScreenId screenId, Bri
         ROSEN_LOGE("RSRenderServiceConnectionProxy::GetBrightnessInfo Read result failed");
         return READ_PARCEL_ERR;
     }
-    if (ReadBrightnessInfo(brightnessInfo, reply)) {
+    if (!ReadBrightnessInfo(brightnessInfo, reply)) {
         ROSEN_LOGE("RSRenderServiceConnectionProxy::ReadBrightnessInfo ReadBrightnessInfo failed!");
         return READ_PARCEL_ERR;
     }

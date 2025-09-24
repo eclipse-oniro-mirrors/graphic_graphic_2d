@@ -21,11 +21,11 @@
 namespace OHOS {
 namespace Rosen {
 RSBrightnessInfoChangeCallbackProxy::RSBrightnessInfoChangeCallbackProxy(const sptr<IRemoteObject>& impl)
-    : IRemoteProxy<RSIScreenChangeCallback>(impl)
+    : IRemoteProxy<RSIBrightnessInfoChangeCallback>(impl)
 {
 }
 
-bool WriteBrightnessInfo(const BrightnessInfo& brightnessInfo, MessageParcel& data)
+bool RSBrightnessInfoChangeCallbackProxy::WriteBrightnessInfo(const BrightnessInfo& brightnessInfo, MessageParcel& data)
 {
     if (!data.WriteFloat(brightnessInfo.currentHeadroom) ||
         !data.WriteFloat(brightnessInfo.maxHeadroom) ||
