@@ -505,7 +505,7 @@ HWTEST_F(OH_Drawing_FontCollectionTest, OH_Drawing_FontCollectionTest015, TestSi
     auto typefaces = fontCollection_->LoadThemeFont(
         familyName, { { sansData.data(), sansData.size() }, { cjkData.data(), cjkData.size() } });
     // 2 is the theme families' size
-    ASSERT_EQ(typefaces.size(), 2);
+    EXPECT_EQ(typefaces.size(), 2);
     for (auto& typeface : typefaces) {
         ASSERT_NE(typeface, nullptr);
         EXPECT_TRUE(typeface->IsCustomTypeface());
