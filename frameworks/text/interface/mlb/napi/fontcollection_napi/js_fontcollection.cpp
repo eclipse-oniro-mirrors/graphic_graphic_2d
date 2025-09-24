@@ -209,10 +209,14 @@ napi_value JsFontCollection::GetLocalInstance(napi_env env, napi_callback_info i
         TEXT_LOGE("Failed to unwrap font collection");
         return nullptr;
     }
-    jsLocalFontCollection->fontcollection_->EnableGlobalFontMgr();
     uint64_t envAddress = static_cast<uint64_t>(reinterpret_cast<uintptr_t>(env));
+    auto localInstance = FontCollectionMgr::GetInstance().GetLocalInstance(envAddress);
+    if (localInstance != nullptr) {
+        jsLocalFontCollection->fontcollection_ = localInstance;
+        return object;
+    }
+    jsLocalFontCollection->fontcollection_->EnableGlobalFontMgr();
     FontCollectionMgr::GetInstance().InsertLocalInstance(envAddress, jsLocalFontCollection->fontcollection_);
-
     return object;
 }
 

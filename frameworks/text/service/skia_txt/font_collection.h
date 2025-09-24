@@ -63,6 +63,7 @@ public:
     std::shared_ptr<txt::FontCollection> Get();
 
     void EnableGlobalFontMgr() override;
+    bool HasGlobalFontMgr() override;
     void DisableFallback() override;
     void DisableSystemFont() override;
     std::shared_ptr<Drawing::Typeface> LoadFont(
@@ -98,6 +99,7 @@ private:
     std::shared_ptr<Drawing::FontMgr> dfmanager_ = nullptr;
     std::unordered_set<TypefaceWithAlias, TypefaceWithAlias::Hasher> typefaceSet_;
     std::shared_mutex mutex_;
+    bool enableGlobalFontMgr_{false};
 };
 } // namespace AdapterTxt
 } // namespace Rosen

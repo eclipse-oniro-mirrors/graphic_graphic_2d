@@ -69,6 +69,12 @@ FontCollection::~FontCollection()
 void FontCollection::EnableGlobalFontMgr()
 {
     fontCollection_->SetGlobalFontManager(FontCollection::Create()->GetFontMgr());
+    enableGlobalFontMgr_ = true;
+}
+
+bool FontCollection::HasGlobalFontMgr()
+{
+    return enableGlobalFontMgr_;
 }
 
 void FontCollection::DisableFallback()
