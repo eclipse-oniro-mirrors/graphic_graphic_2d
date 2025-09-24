@@ -179,12 +179,12 @@ void AniParagraph::PaintOnPath(
         return;
     }
     Drawing::AniPath* aniPath = AniTextUtils::GetNativeFromObj<Drawing::AniPath>(env, path);
-    if (aniPath == nullptr || aniPath->GetPath() == nullptr) {
+    if (aniPath == nullptr) {
         TEXT_LOGE("Path is null");
         AniTextUtils::ThrowBusinessError(env, TextErrorCode::ERROR_INVALID_PARAM, "Path unavailable.");
         return;
     }
-    aniParagraph->typography_->Paint(aniCanvas->GetCanvas(), aniPath->GetPath().get(), hOffset, vOffset);
+    aniParagraph->typography_->Paint(aniCanvas->GetCanvas(), &aniPath->GetPath(), hOffset, vOffset);
 }
 
 ani_double AniParagraph::GetMaxWidth(ani_env* env, ani_object object)
