@@ -27,6 +27,7 @@
 #include <unordered_set>
 
 #include <hdi_backend.h>
+#include <ipc_callbacks/brightness_info_change_callback.h>
 #include <ipc_callbacks/screen_change_callback.h>
 #include <ipc_callbacks/screen_switching_notify_callback.h>
 #include <refbase.h>
@@ -142,6 +143,8 @@ public:
     virtual int32_t SetScreenGamutMap(ScreenId id, ScreenGamutMap mode) = 0;
     virtual int32_t GetScreenGamutMap(ScreenId id, ScreenGamutMap& mode) const = 0;
 
+    virtual int32_t SetBrightnessInfoChangeCallback(const sptr<RSIBrightnessInfoChangeCallback>& callback) = 0;
+    virtual void NotifyBrightnessInfoChangeCallback(ScreenId screenId, const BrightnessInfo& brightnessInfo) const = 0;
     virtual int32_t SetScreenHDRFormat(ScreenId id, int32_t modeIdx) = 0;
     virtual int32_t GetScreenHDRFormat(ScreenId id, ScreenHDRFormat& hdrFormat) const = 0;
     virtual int32_t GetScreenSupportedHDRFormats(ScreenId id, std::vector<ScreenHDRFormat>& hdrFormats) const = 0;
@@ -262,6 +265,8 @@ public:
     void RemoveScreenChangeCallback(const sptr<RSIScreenChangeCallback>& callback) override;
     int32_t SetScreenSwitchingNotifyCallback(const sptr<RSIScreenSwitchingNotifyCallback>& callback) override;
     void RegisterScreenNodeListener(std::shared_ptr<RSIScreenNodeListener> listener) override;
+    int32_t SetBrightnessInfoChangeCallback(const sptr<RSIBrightnessInfoChangeCallback>& callback) override;
+    void NotifyBrightnessInfoChangeCallback(ScreenId screenId, const BrightnessInfo& brightnessInfo) const override;
 
     void DisplayDump(std::string& dumpString) override;
     void SurfaceDump(std::string& dumpString) override;
@@ -482,6 +487,9 @@ private:
     mutable std::shared_mutex screenSwitchingNotifyCallbackMutex_;
     sptr<RSIScreenSwitchingNotifyCallback> screenSwitchingNotifyCallback_;
     std::shared_ptr<RSIScreenNodeListener> screenNodeListener_;
+
+    mutable std::shared_mutex brightnessInfoChangeCallbackMutex_;
+    sptr<RSIBrightnessInfoChangeCallback> brightnessInfoChangeCallback_;
 
     std::atomic<bool> mipiCheckInFirstHotPlugEvent_ = false;
     std::atomic<bool> isHwcDead_ = false;

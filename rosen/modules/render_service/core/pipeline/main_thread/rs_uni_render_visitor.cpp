@@ -472,11 +472,19 @@ void RSUniRenderVisitor::HandlePixelFormat(RSScreenRenderNode& node)
     float displayHeadroom =
         RSLuminanceControl::Get().GetDisplayNits(screenId) / RSLuminanceControl::Get().GetSdrDisplayNits(screenId);
     RSEffectLuminanceManager::GetInstance().SetDisplayHeadroom(node.GetScreenNodeId(), displayHeadroom);
-    RS_TRACE_NAME_FMT("HDR:%d, in Unirender:%d, brightnessRatio:%f, screenId:%" PRIu64 ", status:%d", isHdrOn,
-        hasUniRenderHdrSurface, brightnessRatio, screenId, node.GetDisplayHdrStatus());
+    bool isBrightnessInfoChanged = RSLuminanceControl::Get().IsBrightnessInfoChanged(screenId);
+    if (isBrightnessInfoChanged) {
+        BrightnessInfo info = RSLuminanceControl::Get().GetBrightnessInfo(screenId);
+        RS_LOGD("HandlePixelFormat curHeadroom:%{public}f maxHeadroom:%{public}f sdrNits:%{public}f",
+            info.currentHeadroom, info.maxHeadroom, info.sdrNits);
+    }
+    RS_TRACE_NAME_FMT("HDR:%d, in Unirender:%d, brightnessRatio:%f, screenId:%" PRIu64 ", status:%d, "
+        "isBrightnessInfoChanged:%d", isHdrOn, hasUniRenderHdrSurface, brightnessRatio, screenId,
+        node.GetDisplayHdrStatus(), isBrightnessInfoChanged);
     RS_LOGD("HandlePixelFormat HDRService isHdrOn:%{public}d hasUniRenderHdrSurface:%{public}d "
-        "brightnessRatio:%{public}f screenId:%{public}" PRIu64 " status:%{public}d", isHdrOn, hasUniRenderHdrSurface,
-        brightnessRatio, screenId, node.GetDisplayHdrStatus());
+        "brightnessRatio:%{public}f screenId:%{public}" PRIu64 " status:%{public}d, isBrightnessInfoChanged:%{public}d",
+        isHdrOn, hasUniRenderHdrSurface, brightnessRatio, screenId, node.GetDisplayHdrStatus(),
+        isBrightnessInfoChanged);
     if ((!hasUniRenderHdrSurface && !RSLuminanceControl::Get().IsCloseHardwareHdr()) || node.GetForceCloseHdr()) {
         isHdrOn = false;
     }

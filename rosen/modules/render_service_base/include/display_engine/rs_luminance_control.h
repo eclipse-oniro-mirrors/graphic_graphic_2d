@@ -51,6 +51,13 @@ enum HdrStatus : uint32_t {
     AI_HDR_VIDEO_GAINMAP = 0x10000,
 };
 
+struct BrightnessInfo {
+    float currentHeadroom = 1.0f;
+    float maxHeadroom = 1.0f;
+    float sdrNits = 500.0f;
+};
+
+
 class RSLuminanceControlInterface {
 public:
     virtual ~RSLuminanceControlInterface() = default;

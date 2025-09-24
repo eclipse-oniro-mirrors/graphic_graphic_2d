@@ -1045,6 +1045,21 @@ int32_t RSRenderServiceConnection::SetScreenSwitchingNotifyCallback(sptr<RSIScre
     return status;
 }
 
+int32_t RSRenderServiceConnection::SetBrightnessInfoChangeCallback(sptr<RSIBrightnessInfoChangeCallback> callback)
+{
+    if (screenManager_ == nullptr) {
+        RS_LOGE("%{public}s: screenManager_ is nullptr", __func__);
+        return SCREEN_NOT_FOUND;
+    }
+    return screenManager_->SetBrightnessInfoChangeCallback(callback);
+}
+
+int32_t RSRenderServiceConnection::GetBrightnessInfo(ScreenId screenId, BrightnessInfo& brightnessInfo)
+{
+    brightnessInfo = RSLuminanceControl::Get().GetBrightnessInfo(screenId);
+    return StatusCode::SUCCESS;
+}
+
 void RSRenderServiceConnection::SetScreenActiveMode(ScreenId id, uint32_t modeId)
 {
     if (!screenManager_) {
