@@ -198,12 +198,12 @@ OH_Drawing_Array* OH_Drawing_GetFontFullDescriptorsFromStream(const void* data, 
 /**
  * @brief Obtains an array of font full descriptors from font file path.
  *
- * @param path Indicates the pointer to the path to set.
+ * @param path The font file path.
  * @return Returns a pointer to <b>OH_Drawing_Array</b> structure containing font full descriptors.
  *         Returns <b>NULL</b> if no fonts are found, invalid path, no permission, or non-font file.
  * @since 22
  */
-OH_Drawing_Array* OH_Drawing_GetFontFullDescriptorsFromPath(char* path);
+OH_Drawing_Array* OH_Drawing_GetFontFullDescriptorsFromPath(const char* path);
 
 /**
  * @brief Retrieves a font full descriptor from an array by index.

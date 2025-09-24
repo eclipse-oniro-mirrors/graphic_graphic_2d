@@ -1080,7 +1080,7 @@ bool ProcessResource(ResourceInfo& info, std::function<bool(std::string&)> pathC
     return false;
 }
 
-bool SplitAbsoluteFontPath(std::string& absolutePath)
+bool SplitAbsolutePath(std::string& absolutePath)
 {
     auto iter = absolutePath.find_first_of(':');
     if (iter == std::string::npos) {
@@ -1113,6 +1113,11 @@ bool GetResourcePartData(napi_env env, ResourceInfo& info, napi_value paramsNApi
 
     uint32_t arrayLength = 0;
     napi_get_array_length(env, paramsNApi, &arrayLength);
+    // Prevent array length overflow
+    if (arrayLength >= 0xffffffff) {
+        TEXT_LOGE("Invalid array length: %{public}u", arrayLength);
+        return false;
+    }
     for (uint32_t i = 0; i < arrayLength; i++) {
         size_t ret = 0;
         napi_value indexValue = nullptr;
@@ -1205,6 +1210,7 @@ bool ParseContextFilePath(napi_env env, napi_value* argv, sptr<FontPathResourceC
             (context)->errCode = static_cast<int32_t>(TextErrorCode::ERROR_INVALID_PARAM);
             TEXT_LOGE("%{public}s", errMessage.c_str());
         }
+        return true;
     }
     TEXT_LOGE("Path valueType is incorrect, valueType: %{public}d", valueType);
     return true;

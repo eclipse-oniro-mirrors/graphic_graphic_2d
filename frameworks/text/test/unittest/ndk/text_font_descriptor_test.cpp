@@ -145,8 +145,8 @@ HWTEST_F(NdkFontDescriptorTest, NdkFontFullDescriptorTest001, TestSize.Level0)
  */
 HWTEST_F(NdkFontDescriptorTest, NdkFontFullDescriptorTest002, TestSize.Level0)
 {
-    char *invalidPath = strdup("/test/invalid.ttf");
-    OH_Drawing_Array* fontFullDescArr = OH_Drawing_GetFontFullDescriptorsFromPath(invalidPath);
+    string invalidPath = "/test/invalid.ttf";
+    OH_Drawing_Array* fontFullDescArr = OH_Drawing_GetFontFullDescriptorsFromPath(invalidPath.c_str());
     EXPECT_EQ(fontFullDescArr, nullptr);
  
     size_t num = OH_Drawing_GetDrawingArraySize(fontFullDescArr);
@@ -156,7 +156,6 @@ HWTEST_F(NdkFontDescriptorTest, NdkFontFullDescriptorTest002, TestSize.Level0)
     EXPECT_EQ(desc1, nullptr);
  
     OH_Drawing_DestroyFontFullDescriptors(fontFullDescArr);
-    free(invalidPath);
 }
 
 /*

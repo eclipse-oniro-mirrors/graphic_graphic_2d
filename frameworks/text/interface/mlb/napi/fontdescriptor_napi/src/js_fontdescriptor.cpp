@@ -35,14 +35,13 @@ std::unordered_map<int, int> g_weightMap = {
 };
 
 struct FontDescriptorsListContext : public FontPathResourceContext {
-    FontDescSharedPtr resultDesc = nullptr;
-    std::vector<FontDescSharedPtr> fontDescripterList;
+    std::vector<FontDescSharedPtr> fontDescriptersOutput;
 };
 
 bool ProcessFontPath(sptr<FontDescriptorsListContext> context, std::string& path)
 {
-    if (SplitAbsoluteFontPath(path)) {
-        context->fontDescripterList = TextEngine::FontParser::ParserFontDescriptorsFromPath(path);
+    if (SplitAbsolutePath(path)) {
+        context->fontDescriptersOutput = TextEngine::FontParser::ParserFontDescriptorsFromPath(path);
         return true;
     }
     return false;
@@ -285,19 +284,17 @@ napi_value JsFontDescriptor::CreateFontList(napi_env env, std::unordered_set<std
 napi_value JsFontDescriptor::GetFontDescriptorsFromPath(napi_env env, napi_callback_info info)
 {
     sptr<FontDescriptorsListContext> context = sptr<FontDescriptorsListContext>::MakeSptr();
-    NAPI_CHECK_AND_THROW_ERROR(
-        context != nullptr, TextErrorCode::ERROR_NO_MEMORY, "Failed to get font descriptors from path, no memory");
+    NAPI_CHECK_AND_THROW_ERROR(context != nullptr, TextErrorCode::ERROR_NO_MEMORY,
+        "Failed to get font descriptors, no memory");
 
     auto inputParser = [env, context](size_t argc, napi_value* argv) {
         TEXT_ERROR_CHECK(argv != nullptr, return, "Argv is nullptr");
-        NAPI_CHECK_ARGS(context, context->status == napi_ok, napi_invalid_arg, TextErrorCode::ERROR_INVALID_PARAM,
-            return, "Status error, status=%d", static_cast<int>(context->status));
-        NAPI_CHECK_ARGS(context, argc == ARGC_ONE, napi_invalid_arg, TextErrorCode::ERROR_INVALID_PARAM, return,
-            "Argc is invalid %zu", argc);
+        TEXT_ERROR_CHECK(context->status == napi_ok, return, "Status error, status=%{public}d",
+            static_cast<int>(context->status));
+        TEXT_ERROR_CHECK(argc == ARGC_ONEad, return, "Argc is invalid %{public}zu", argc);
         constexpr size_t argvPathNum = 0;
         if (!ParseContextFilePath(env, argv, context, argvPathNum)) {
-            NAPI_CHECK_ARGS(context, ParseResourceType(env, argv[ARGC_ONE], context->info), napi_invalid_arg,
-                TextErrorCode::ERROR_INVALID_PARAM, return, "Parse resource error");
+            TEXT_ERROR_CHECK(ParseResourceType(env, argv[argvPathNum], context->info), return, "Parse resource error");
         }
     };
 
@@ -306,21 +303,18 @@ napi_value JsFontDescriptor::GetFontDescriptorsFromPath(napi_env env, napi_callb
     auto executor = [context]() {
         TEXT_ERROR_CHECK(context != nullptr, return, "Context is null");
         if (!context->filePath.empty()) {
-            NAPI_CHECK_ARGS(context, SplitAbsoluteFontPath(context->filePath), napi_invalid_arg,
-                TextErrorCode::ERROR_INVALID_PARAM, return, "Failed to split absolute font path");
-            context->fontDescripterList = TextEngine::FontParser::ParserFontDescriptorsFromPath(context->filePath);
+            TEXT_ERROR_CHECK(SplitAbsolutePath(context->filePath), return, "Failed to split absolute font path");
+            context->fontDescriptersOutput = TextEngine::FontParser::ParserFontDescriptorsFromPath(context->filePath);
         } else {
-            auto pathCB = [context](std::string& path) -> bool {
-                return ProcessFontPath(context, path);
-            };
+            auto pathCB = [context](std::string& path) -> bool { return ProcessFontPath(context, path); };
             auto fileCB = [context](const void* data, size_t size) -> bool { return true; };
-            NAPI_CHECK_ARGS(context, ProcessResource(context->info, pathCB, fileCB), napi_invalid_arg,
-                TextErrorCode::ERROR_INVALID_PARAM, return, "Failed to execute function, path is invalid");
+            TEXT_ERROR_CHECK(ProcessResource(context->info, pathCB, fileCB), return,
+                "Failed to execute function, path is invalid");
         }
     };
     auto complete = [env, context](napi_value& output) {
         std::set<FontDescSharedPtr> fontDescripters(
-            context->fontDescripterList.begin(), context->fontDescripterList.end());
+            context->fontDescriptersOutput.begin(), context->fontDescriptersOutput.end());
         output = JsFontDescriptor::CreateFontDescriptorArray(env, fontDescripters);
     };
 

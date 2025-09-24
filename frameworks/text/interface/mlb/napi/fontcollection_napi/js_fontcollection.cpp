@@ -192,14 +192,14 @@ napi_value JsFontCollection::OnLoadFont(napi_env env, napi_callback_info info)
         TEXT_LOGE("Failed to convert family name");
         return nullptr;
     }
-    if (ConvertFromJsValue(env, argv[1], familySrc) && SplitAbsoluteFontPath(familySrc)) {
+    if (ConvertFromJsValue(env, argv[1], familySrc) && SplitAbsolutePath(familySrc)) {
         TEXT_ERROR_CHECK(LoadFontFromPath(familySrc, familyName), return nullptr, "Failed to load font from path");
         return NapiGetUndefined(env);
     }
     ResourceInfo resourceInfo;
     if (ParseResourceType(env, argv[1], resourceInfo)) {
         auto pathCB = [this, familyName](std::string& path) -> bool {
-            return SplitAbsoluteFontPath(path) && this->LoadFontFromPath(path, familyName);
+            return SplitAbsolutePath(path) && this->LoadFontFromPath(path, familyName);
         };
         auto fileCB = [this, familyName](const void* data, size_t size) -> bool {
             return this->fontcollection_->LoadFont(familyName.c_str(), static_cast<const uint8_t*>(data), size) !=
@@ -271,14 +271,14 @@ napi_value JsFontCollection::OnLoadFontAsync(napi_env env, napi_callback_info in
             TextErrorCode::ERROR_INVALID_PARAM, return, "Inner fontcollection is null");
 
         if (!context->filePath.empty()) {
-            NAPI_CHECK_ARGS(context, SplitAbsoluteFontPath(context->filePath),
+            NAPI_CHECK_ARGS(context, SplitAbsolutePath(context->filePath),
                 napi_invalid_arg, TextErrorCode::ERROR_INVALID_PARAM, return, "Failed to split absolute font path");
 
             NAPI_CHECK_ARGS(context, fontCollection->LoadFontFromPath(context->filePath, context->familyName),
                 napi_invalid_arg, TextErrorCode::ERROR_INVALID_PARAM, return, "Failed to get font file properties");
         } else {
             auto pathCB = [context, fontCollection](std::string& path) -> bool {
-                return SplitAbsoluteFontPath(path) && fontCollection->LoadFontFromPath(path, context->familyName);
+                return SplitAbsolutePath(path) && fontCollection->LoadFontFromPath(path, context->familyName);
             };
             auto fileCB = [context, fontCollection](const void* data, size_t size) -> bool {
                 return fontCollection->fontcollection_->LoadFont(context->familyName.c_str(),

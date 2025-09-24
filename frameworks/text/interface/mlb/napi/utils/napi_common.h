@@ -572,7 +572,7 @@ napi_value GetTypographicBoundsAndConvertToJsValue(napi_env env, float ascent,
 
 bool GetStartEndParams(napi_env env, napi_value arg, int64_t &start, int64_t &end);
 
-bool SplitAbsoluteFontPath(std::string& absolutePath);
+bool SplitAbsolutePath(std::string& absolutePath);
 
 std::shared_ptr<Global::Resource::ResourceManager> GetResourceManager(const std::string& moduleName);
 
