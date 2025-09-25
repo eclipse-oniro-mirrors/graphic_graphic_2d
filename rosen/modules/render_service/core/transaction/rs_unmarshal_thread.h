@@ -62,7 +62,6 @@ private:
     std::mutex transactionDataMutex_;
     TransactionDataMap cachedTransactionDataMap_;
     bool willHaveCachedData_ = false;
-    int unmarshalTid_ = -1;
     int unmarshalLoad_ = 0;
 
     std::mutex statisticsMutex_;

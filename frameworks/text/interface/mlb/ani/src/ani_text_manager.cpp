@@ -13,20 +13,30 @@
  * limitations under the License.
  */
 #include <ani.h>
+#include <cinttypes>
 #include <tuple>
 
 #include "ani_common.h"
 #include "ani_font_collection.h"
+#include "ani_fontdescriptor.h"
+#include "ani_line_typeset.h"
 #include "ani_paragraph.h"
 #include "ani_paragraph_builder.h"
+#include "ani_run.h"
+#include "ani_text_line.h"
 #include "ani_text_utils.h"
+#include "line_typography.h"
+#include "text_line_base.h"
+#include "typography.h"
+#include "typography_create.h"
 #include "utils/text_log.h"
 
 namespace OHOS::Text::ANI {
 #define STRUCT_LIST(...) using AniTypes = std::tuple<__VA_ARGS__>
 
 // add new struct in this macro
-STRUCT_LIST(AniFontCollection, AniParagraph, AniParagraphBuilder);
+STRUCT_LIST(
+    AniFontCollection, AniParagraph, AniParagraphBuilder, AniLineTypeset, AniTextLine, AniRun, AniFontDescriptor);
 
 template <typename T>
 static ani_status InitOneStruct(ani_vm* vm, uint32_t* result)
@@ -44,68 +54,78 @@ static ani_status InitAllStruct(ani_vm* vm, uint32_t* result, std::index_sequenc
 }
 
 template <typename T>
-void SafeDelete(ani_long& ptr)
+void SafeDelete(ani_long& ptrAddr)
 {
-    if (ptr != 0) {
-        T* pointer = reinterpret_cast<T*>(ptr);
+    if (ptrAddr != 0) {
+        T* pointer = reinterpret_cast<T*>(ptrAddr);
         delete pointer;
         pointer = nullptr;
-        ptr = 0;
+        ptrAddr = 0;
     }
 }
 
 static void Clean(ani_env* env, ani_object object)
 {
-    ani_long ptr;
-    ani_status ret = env->Object_GetFieldByName_Long(object, "ptr", &ptr);
+    ani_long ptrAddr = 0;
+    ani_status ret = env->Object_GetFieldByName_Long(object, "ptr", &ptrAddr);
     if (ret != ANI_OK) {
+        TEXT_LOGE("Failed to get ptrAddr");
         return;
     }
+
     ani_ref stringRef = nullptr;
     ret = env->Object_GetFieldByName_Ref(object, "className", &stringRef);
     if (ret != ANI_OK) {
+        TEXT_LOGE("Failed to get className");
         return;
     }
-
     std::string className;
     ret = AniTextUtils::AniToStdStringUtf8(env, reinterpret_cast<ani_string>(stringRef), className);
     if (ret != ANI_OK) {
+        TEXT_LOGE("Failed to convert className to string");
         return;
     }
+
+    if (ptrAddr == 0) {
+        TEXT_LOGE("Failed to clean, undefined ptrAddr, className %{public}s", className.c_str());
+        return;
+    }
+   
     using DeleteFunc = void (*)(ani_long&);
     static const std::unordered_map<std::string, DeleteFunc> deleteMap = {
         {"ParagraphBuilder", SafeDelete<AniParagraphBuilder>}, {"Paragraph", SafeDelete<AniParagraph>},
-        {"FontCollection", SafeDelete<AniFontCollection>}};
+        {"FontCollection", SafeDelete<AniFontCollection>}, {"LineTypeset", SafeDelete<AniLineTypeset>},
+        {"TextLine", SafeDelete<AniTextLine>}, {"Run", SafeDelete<AniRun>}};
 
     if (deleteMap.count(className)) {
-        deleteMap.at(className)(ptr);
+        deleteMap.at(className)(ptrAddr);
     }
 }
 
 static ani_status AniCleanerInit(ani_vm* vm)
 {
-    ani_env* env;
+    ani_env* env = nullptr;
     ani_status ret = vm->GetEnv(ANI_VERSION_1, &env);
-    if (ret != ANI_OK) {
-        TEXT_LOGE("null env, ret %{public}d", ret);
-        return ANI_NOT_FOUND;
+    if (ret != ANI_OK || env == nullptr) {
+        TEXT_LOGE("Failed to get env, ret %{public}d", ret);
+        return ret;
     }
 
     ani_class cls = nullptr;
-    ret = env->FindClass(ANI_CLASS_CLEANER, &cls);
+    ret = AniTextUtils::FindClassWithCache(env, ANI_CLASS_CLEANER, cls);
     if (ret != ANI_OK) {
         TEXT_LOGE("Failed to find class, ret %{public}d", ret);
-        return ANI_NOT_FOUND;
+        return ret;
     }
 
     std::array methods = {
-        ani_native_function{"clean", ":V", reinterpret_cast<void*>(Clean)},
+        ani_native_function{"clean", ":", reinterpret_cast<void*>(Clean)},
     };
 
     ret = env->Class_BindNativeMethods(cls, methods.data(), methods.size());
     if (ret != ANI_OK) {
-        TEXT_LOGE("Failed to bind methods, ret %{public}d", ret);
-        return ANI_NOT_FOUND;
+        TEXT_LOGE("Failed to bind methods for Manager, ret %{public}d", ret);
+        return ret;
     }
     return ANI_OK;
 }
@@ -124,6 +144,8 @@ extern "C"
         ani_status status = OHOS::Text::ANI::Init(vm, result);
         if (status == ANI_OK) {
             *result = ANI_VERSION_1;
+        } else {
+            TEXT_LOGE("Failed to init ANI, ret %{public}d", status);
         }
         return status;
     }

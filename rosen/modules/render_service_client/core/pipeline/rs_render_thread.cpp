@@ -17,17 +17,19 @@
 
 #include <cstdint>
 
+#include "delegate/rs_functional_delegate.h"
+#include "rs_frame_report.h"
 #include "rs_trace.h"
 #include "sandbox_utils.h"
 
 #include "animation/rs_animation_fraction.h"
 #include "command/rs_surface_node_command.h"
 #include "common/rs_background_thread.h"
-#include "delegate/rs_functional_delegate.h"
+#include "pipeline/rs_draw_cmd.h"
 #include "pipeline/rs_draw_cmd_list.h"
 #include "pipeline/rs_node_map.h"
-#include "pipeline/rs_render_node_map.h"
 #include "pipeline/rs_render_node_gc.h"
+#include "pipeline/rs_render_node_map.h"
 #include "pipeline/rs_root_render_node.h"
 #include "pipeline/rs_surface_buffer_callback_manager.h"
 #include "pipeline/rs_surface_render_node.h"
@@ -38,11 +40,11 @@
 #include "render/rs_typeface_cache.h"
 #include "render_context/shader_cache.h"
 #include "rosen_text/font_collection.h"
-#include "rs_frame_report.h"
 #include "transaction/rs_render_service_client.h"
 #include "ui/rs_surface_extractor.h"
 #include "ui/rs_surface_node.h"
 #include "ui/rs_ui_director.h"
+
 #ifdef RS_ENABLE_VK
 #include "platform/ohos/backend/rs_vulkan_context.h"
 #endif
@@ -137,6 +139,7 @@ RSRenderThread::RSRenderThread()
         }
         RSRenderNodeGC::Instance().ReleaseNodeMemory();
         ReleasePixelMapInBackgroundThread();
+        TrimMemory();
         context_->pendingSyncNodes_.clear();
 #ifdef ROSEN_OHOS
         FRAME_TRACE::RenderFrameTrace::GetInstance().RenderEndFrameTrace(RT_INTERVAL_NAME);
@@ -603,6 +606,25 @@ void RSRenderThread::PostPreTask()
     if (handler_ && preTask_) {
         handler_->PostTask(preTask_);
     }
+}
+
+void RSRenderThread::TrimMemory()
+{
+#if (defined(RS_ENABLE_GL) || defined (RS_ENABLE_VK)) && !defined(ROSEN_PREVIEW)
+    PostSyncTask([this]() {
+        if (!renderContext_) {
+            RS_LOGE("RSRenderThread::renderContext_ is nullptr");
+            return;
+        }
+        auto gpuContext = renderContext_->GetSharedDrGPUContext();
+        if (!gpuContext) {
+            RS_LOGE("RSRenderThread::gpuContext is nullptr");
+            return;
+        }
+        RS_TRACE_NAME_FMT("RSRenderThread::TrimMemory");
+        gpuContext->PurgeUnlockedResources(false);
+    });
+#endif
 }
 } // namespace Rosen
 } // namespace OHOS

@@ -38,6 +38,7 @@
 #include "common/rs_common_def.h"
 #include "modifier/rs_modifier_manager.h"
 #include "pipeline/rs_node_map_v2.h"
+#include "transaction/rs_sync_transaction_handler.h"
 #include "transaction/rs_transaction_handler.h"
 
 namespace OHOS {
@@ -177,6 +178,8 @@ public:
 
     void DetachFromUI();
     bool HasDetachedFromUI() const;
+
+    void MoveModifier(std::shared_ptr<RSUIContext> dstUIContext, NodeId nodeId);
 
 private:
     RSUIContext();

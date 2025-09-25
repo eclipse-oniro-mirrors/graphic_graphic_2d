@@ -22,7 +22,6 @@
 
 #include "font_collection.h"
 #include "napi_common.h"
-#include "resource_manager.h"
 
 namespace OHOS::Rosen {
 class JsFontCollection final {
@@ -39,6 +38,8 @@ public:
     static napi_value LoadFontAsync(napi_env env, napi_callback_info info);
     static napi_value UnloadFontSync(napi_env env, napi_callback_info info);
     static napi_value UnloadFontAsync(napi_env env, napi_callback_info info);
+    static napi_status CreateFontCollection(napi_env env, napi_value exportObj, napi_value* obj);
+    static napi_status SetFontCollection(napi_env env, napi_value obj, std::shared_ptr<FontCollection> fontCollection);
 
     std::shared_ptr<FontCollection> GetFontCollection();
 private:
@@ -51,11 +52,6 @@ private:
     napi_value OnUnloadFont(napi_env env, napi_callback_info info);
     napi_value OnUnloadFontAsync(napi_env env, napi_callback_info info);
     napi_value OnClearCaches(napi_env env, napi_callback_info info);
-    bool SplitAbsoluteFontPath(std::string& absolutePath);
-    bool LoadFontFromResource(const std::string familyName, ResourceInfo& info);
-    bool ParseResourceType(napi_env env, napi_value value, ResourceInfo& info);
-    bool GetResourcePartData(napi_env env, ResourceInfo& info, napi_value paramsNApi,
-        napi_value bundleNameNApi, napi_value moduleNameNApi);
     bool LoadFontFromPath(const std::string path, const std::string familyName);
     napi_value OnLoadFontAsync(napi_env env, napi_callback_info info);
 

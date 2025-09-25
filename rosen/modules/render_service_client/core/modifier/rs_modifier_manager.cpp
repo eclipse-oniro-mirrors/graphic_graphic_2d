@@ -177,7 +177,8 @@ void RSModifierManager::OnAnimationFinished(const std::shared_ptr<RSRenderAnimat
 
     RSAnimationTraceUtils::GetInstance().AddAnimationFinishTrace(
         "Animation Send Finish", targetId, animationId, false);
-    std::unique_ptr<RSCommand> command = std::make_unique<RSAnimationCallback>(targetId, animationId, token, FINISHED);
+    std::unique_ptr<RSCommand> command =
+        std::make_unique<RSAnimationCallback>(targetId, animationId, token, AnimationCallbackEvent::FINISHED);
     RSMessageProcessor::Instance().AddUIMessage(ExtractPid(animationId), command);
 
     animation->Detach();
@@ -224,6 +225,24 @@ void RSModifierManager::SetDisplaySyncEnable(bool isDisplaySyncEnabled)
 bool RSModifierManager::IsDisplaySyncEnabled() const
 {
     return isDisplaySyncEnabled_;
+}
+
+void RSModifierManager::MoveModifier(std::shared_ptr<RSModifierManager> dstModifierManager, NodeId nodeId)
+{
+    if (modifiers_.empty()) {
+        return;
+    }
+    for (auto iter = modifiers_.begin(); iter != modifiers_.end();) {
+        if (*iter) {
+            auto node = (*iter)->node_.lock();
+            if (node && node->GetId() == nodeId) {
+                dstModifierManager->modifiers_.insert(*iter);
+                iter = modifiers_.erase(iter);
+                continue;
+            }
+        }
+        ++iter;
+    }
 }
 } // namespace Rosen
 } // namespace OHOS

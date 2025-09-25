@@ -12,8 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "ani_common.h"
+
 #include "ani_paragraph_style_converter.h"
+
+#include "ani_common.h"
 #include "ani_text_style_converter.h"
 #include "ani_text_utils.h"
 #include "utils/text_log.h"
@@ -23,7 +25,7 @@ using namespace OHOS::Rosen;
 std::unique_ptr<TypographyStyle> AniParagraphStyleConverter::ParseParagraphStyleToNative(ani_env* env, ani_object obj)
 {
     ani_class cls = nullptr;
-    ani_status ret = env->FindClass(ANI_INTERFACE_PARAGRAPH_STYLE, &cls);
+    ani_status ret = AniTextUtils::FindClassWithCache(env, ANI_INTERFACE_PARAGRAPH_STYLE, cls);
     if (ret != ANI_OK) {
         TEXT_LOGE("Failed to find class, ret %{public}d", ret);
         return nullptr;
@@ -36,8 +38,9 @@ std::unique_ptr<TypographyStyle> AniParagraphStyleConverter::ParseParagraphStyle
     }
     std::unique_ptr<TypographyStyle> paragraphStyle = std::make_unique<TypographyStyle>();
 
-    double maxLines;
-    if (AniTextUtils::ReadOptionalDoubleField(env, obj, "maxLines", maxLines) == ANI_OK) {
+    int maxLines;
+    if (AniTextUtils::ReadOptionalIntField(env, obj, "maxLines", maxLines) == ANI_OK) {
+        maxLines = maxLines < 0 ? 0 : maxLines;
         paragraphStyle->maxLines = static_cast<size_t>(maxLines);
     }
 

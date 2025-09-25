@@ -20,6 +20,7 @@
 #include <string>
 #include <vector>
 
+#include "ani_cache_manager.h"
 #include "ani_common.h"
 #include "utils/text_log.h"
 
@@ -29,11 +30,12 @@ public:
     static ani_status ThrowBusinessError(ani_env* env, TextErrorCode errorCode, const char* message);
     static ani_status CreateBusinessError(ani_env* env, int32_t error, const char* message, ani_object& err);
     template <typename T>
-    static T* GetNativeFromObj(ani_env* env, ani_object obj);
+    static T* GetNativeFromObj(ani_env* env, ani_object obj, const char* name = NATIVE_OBJ);
 
     static ani_object CreateAniUndefined(ani_env* env);
+    static bool IsUndefined(ani_env* env, ani_ref ref);
     template <typename... Args>
-    static ani_object CreateAniObject(ani_env* env, const std::string name, const char* signature, Args... params);
+    static ani_object CreateAniObject(ani_env* env, const std::string& name, const char* signature, Args... params);
     static ani_object CreateAniArray(ani_env* env, size_t size);
     template <typename T, typename Converter>
     static ani_object CreateAniArrayAndInitData(ani_env* env, const std::vector<T>& t, size_t size, Converter convert);
@@ -52,30 +54,40 @@ public:
 
     static ani_status ReadOptionalField(ani_env* env, ani_object obj, const char* fieldName, ani_ref& ref);
     static ani_status ReadOptionalDoubleField(ani_env* env, ani_object obj, const char* fieldName, double& value);
+    static ani_status ReadOptionalIntField(ani_env* env, ani_object obj, const char* fieldName, int& value);
     static ani_status ReadOptionalStringField(ani_env* env, ani_object obj, const char* fieldName, std::string& str);
     static ani_status ReadOptionalU16StringField(
         ani_env* env, ani_object obj, const char* fieldName, std::u16string& str);
     static ani_status ReadOptionalBoolField(ani_env* env, ani_object obj, const char* fieldName, bool& value);
     template <typename EnumType>
     static ani_status ReadOptionalEnumField(ani_env* env, ani_object obj, const char* fieldName, EnumType& value);
+    template <typename EnumType>
+    static ani_status ReadEnumField(ani_env* env, ani_object obj, const char* fieldName, EnumType& value);
     template <typename T, typename Converter>
     static ani_status ReadOptionalArrayField(
         ani_env* env, ani_object obj, const char* fieldName, std::vector<T>& array, Converter convert);
+    static ani_status FindClassWithCache(ani_env* env, const char* clsName, ani_class& cls);
 };
 
 template <typename... Args>
-ani_object AniTextUtils::CreateAniObject(ani_env* env, const std::string name, const char* signature, Args... params)
+ani_object AniTextUtils::CreateAniObject(ani_env* env, const std::string& name, const char* signature, Args... params)
 {
     ani_class cls = nullptr;
-    if (env->FindClass(name.c_str(), &cls) != ANI_OK) {
+    if (FindClassWithCache(env, name.c_str(), cls) != ANI_OK) {
         TEXT_LOGE("Failed to found %{public}s", name.c_str());
         return CreateAniUndefined(env);
     }
-    ani_method ctor;
-    if (env->Class_FindMethod(cls, "<ctor>", signature, &ctor) != ANI_OK) {
+
+    ani_method ctor = nullptr;
+    std::string methodKey = name + (signature == nullptr ? "" : std::string(signature));
+    if (AniCacheManager::Instance().FindMethod(methodKey, ctor)) {
+    } else if (env->Class_FindMethod(cls, "<ctor>", signature, &ctor) == ANI_OK) {
+        AniCacheManager::Instance().InsertMethod(methodKey, ctor);
+    } else {
         TEXT_LOGE("Failed to get ctor %{public}s", name.c_str());
         return CreateAniUndefined(env);
     }
+
     ani_object obj = {};
     if (env->Object_New(cls, ctor, &obj, params...) != ANI_OK) {
         TEXT_LOGE("Failed to create object %{public}s", name.c_str());
@@ -92,9 +104,9 @@ ani_object AniTextUtils::CreateAniArrayAndInitData(
     ani_size index = 0;
     for (const T& item : t) {
         ani_object aniObj = convert(env, item);
-        ani_status ret = env->Object_CallMethodByName_Void(arrayObj, "$_set", "ILstd/core/Object;:V", index, aniObj);
+        ani_status ret = env->Object_CallMethodByName_Void(arrayObj, "$_set", "iC{std.core.Object}:", index, aniObj);
         if (ret != ANI_OK) {
-            TEXT_LOGE("Array $_set failed, ret:%{public}d", ret);
+            TEXT_LOGE("Array $_set failed, ret %{public}d", ret);
             continue;
         }
         index++;
@@ -103,12 +115,12 @@ ani_object AniTextUtils::CreateAniArrayAndInitData(
 }
 
 template <typename T>
-T* AniTextUtils::GetNativeFromObj(ani_env* env, ani_object obj)
+T* AniTextUtils::GetNativeFromObj(ani_env* env, ani_object obj, const char* name)
 {
     ani_status ret;
     ani_long nativeObj{};
-    if ((ret = env->Object_GetFieldByName_Long(obj, NATIVE_OBJ, &nativeObj)) != ANI_OK) {
-        TEXT_LOGE("Failed to get native obj");
+    if ((ret = env->Object_GetFieldByName_Long(obj, name, &nativeObj)) != ANI_OK) {
+        TEXT_LOGE("Failed to get native obj, ret %{public}d", ret);
         return nullptr;
     }
     T* object = reinterpret_cast<T*>(nativeObj);
@@ -125,7 +137,22 @@ ani_status AniTextUtils::ReadOptionalEnumField(ani_env* env, ani_object obj, con
     ani_ref ref = nullptr;
     ani_status result = AniTextUtils::ReadOptionalField(env, obj, fieldName, ref);
     if (result == ANI_OK && ref != nullptr) {
-        ani_size index;
+        ani_size index = 0;
+        result = env->EnumItem_GetIndex(reinterpret_cast<ani_enum_item>(ref), &index);
+        if (result == ANI_OK) {
+            value = static_cast<EnumType>(index);
+        }
+    }
+    return result;
+};
+
+template <typename EnumType>
+ani_status AniTextUtils::ReadEnumField(ani_env* env, ani_object obj, const char* fieldName, EnumType& value)
+{
+    ani_ref ref = nullptr;
+    ani_status result = env->Object_GetPropertyByName_Ref(obj, fieldName, &ref);
+    if (result == ANI_OK && ref != nullptr) {
+        ani_size index = 0;
         result = env->EnumItem_GetIndex(reinterpret_cast<ani_enum_item>(ref), &index);
         if (result == ANI_OK) {
             value = static_cast<EnumType>(index);
@@ -141,22 +168,23 @@ ani_status AniTextUtils::ReadOptionalArrayField(
     ani_ref ref = nullptr;
     ani_status result = AniTextUtils::ReadOptionalField(env, obj, fieldName, ref);
     if (result != ANI_OK || ref == nullptr) {
+        TEXT_LOGE("Failed to read optional field %{public}s, ret: %{public}d", fieldName, result);
         return result;
     }
 
     ani_object arrayObj = reinterpret_cast<ani_object>(ref);
-    ani_double length;
-    result = env->Object_GetPropertyByName_Double(arrayObj, "length", &length);
+    ani_int length;
+    result = env->Object_GetPropertyByName_Int(arrayObj, "length", &length);
     if (result != ANI_OK) {
-        TEXT_LOGE("Failed to get length,%{public}s", fieldName);
+        TEXT_LOGE("Failed to get length of %{public}s, ret: %{public}d", fieldName, result);
         return result;
     }
 
     for (size_t i = 0; i < static_cast<size_t>(length); i++) {
         ani_ref entryRef = nullptr;
-        result = env->Object_CallMethodByName_Ref(arrayObj, "$_get", "I:Lstd/core/Object;", &entryRef, i);
+        result = env->Object_CallMethodByName_Ref(arrayObj, "$_get", "i:C{std.core.Object}", &entryRef, i);
         if (result != ANI_OK || entryRef == nullptr) {
-            TEXT_LOGE("Failed to get array object,%{public}s", fieldName);
+            TEXT_LOGE("Failed to get array object of %{public}s, ret: %{public}d", fieldName, result);
             continue;
         }
         array.emplace_back(convert(env, entryRef));

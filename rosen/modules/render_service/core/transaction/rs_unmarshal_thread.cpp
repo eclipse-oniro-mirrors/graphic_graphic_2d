@@ -101,9 +101,10 @@ void RSUnmarshalThread::RecvParcel(std::shared_ptr<MessageParcel>& parcel, bool 
         if (ashmemFdWorker) {
             ashmemFdWorker->PushFdsToContainer();
         }
-        RsFrameReport::GetInstance().ReportUnmarshalData(unmarshalTid_, parcel->GetDataSize());
+        static thread_local int unmarshalTid = gettid();
+        RsFrameReport::GetInstance().ReportUnmarshalData(unmarshalTid, parcel->GetDataSize());
         auto transData = RSBaseRenderUtil::ParseTransactionData(*parcel, parcelNumber);
-        RsFrameReport::GetInstance().ReportUnmarshalData(unmarshalTid_, 0);
+        RsFrameReport::GetInstance().ReportUnmarshalData(unmarshalTid, 0);
         if (ashmemFdWorker) {
             // ashmem parcel fds will be closed in ~AshmemFdWorker() instead of ~MessageParcel()
             parcel->FlushBuffer();
