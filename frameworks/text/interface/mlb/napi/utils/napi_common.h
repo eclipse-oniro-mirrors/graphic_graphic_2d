@@ -32,6 +32,7 @@
 #include "utils/text_log.h"
 
 namespace OHOS::Rosen {
+constexpr size_t ARGC_ZERO = 0;
 constexpr size_t ARGC_ONE = 1;
 constexpr size_t ARGC_TWO = 2;
 constexpr size_t ARGC_THREE = 3;
@@ -571,6 +572,9 @@ napi_value GetTypographicBoundsAndConvertToJsValue(napi_env env, float ascent,
     float descent, float leading, float width);
 
 bool GetStartEndParams(napi_env env, napi_value arg, int64_t &start, int64_t &end);
+
+napi_status NewInstanceFromConstructor(
+    napi_env env, napi_value constructor, const char* clsName, napi_value* obj);
 
 bool SplitAbsolutePath(std::string& absolutePath);
 

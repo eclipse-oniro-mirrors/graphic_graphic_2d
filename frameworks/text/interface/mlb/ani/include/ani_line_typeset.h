@@ -13,28 +13,25 @@
  * limitations under the License.
  */
 
-#ifndef OHOS_TEXT_ANI_FONT_COLLECTION_H
-#define OHOS_TEXT_ANI_FONT_COLLECTION_H
+#ifndef OHOS_TEXT_ANI_LINE_TYPESET_H
+#define OHOS_TEXT_ANI_LINE_TYPESET_H
 
 #include <ani.h>
 #include <memory>
 
-#include "font_collection.h"
-#include "resource_manager.h"
+#include "line_typography.h"
 
 namespace OHOS::Text::ANI {
-class AniFontCollection final {
+class AniLineTypeset final {
 public:
-    AniFontCollection();
-    static ani_object GetGlobalInstance(ani_env* env, ani_class cls);
-    static void LoadFontSync(ani_env* env, ani_object obj, ani_string name, ani_object path);
-    static void ClearCaches(ani_env* env, ani_object obj);
-    static void Constructor(ani_env* env, ani_object object);
+    explicit AniLineTypeset(std::shared_ptr<Rosen::LineTypography> lineTypography);
     static ani_status AniInit(ani_vm* vm, uint32_t* result);
-    std::shared_ptr<OHOS::Rosen::FontCollection> GetFontCollection();
 
 private:
-    std::shared_ptr<OHOS::Rosen::FontCollection> fontCollection_{nullptr};
+    static ani_int GetLineBreak(ani_env* env, ani_object object, ani_int startIndex, ani_double width);
+    static ani_object CreateLine(ani_env* env, ani_object object, ani_int startIndex, ani_int count);
+
+    std::shared_ptr<Rosen::LineTypography> lineTypography_{nullptr};
 };
 } // namespace OHOS::Text::ANI
-#endif // OHOS_TEXT_ANI_FONT_COLLECTION_H
+#endif // OHOS_TEXT_ANI_LINE_TYPESET_H

@@ -1206,4 +1206,21 @@ bool ParseContextFilePath(napi_env env, napi_value* argv, sptr<FontPathResourceC
     TEXT_LOGE("Path valueType is incorrect, valueType: %{public}d", valueType);
     return true;
 }
+
+napi_status NewInstanceFromConstructor(
+    napi_env env, napi_value constructor, const char* clsName, napi_value* obj)
+{
+    napi_value instance = nullptr;
+    napi_status status = napi_get_named_property(env, constructor, clsName, &instance);
+    if (status != napi_ok || instance == nullptr) {
+        TEXT_LOGE("Failed to get prototype, status: %{public}d", status);
+        return status;
+    }
+    status = napi_new_instance(env, instance, 0, nullptr, obj);
+    if (status != napi_ok) {
+        TEXT_LOGE("Failed to create instance, status: %{public}d", status);
+        return status;
+    }
+    return napi_ok;
+}
 } // namespace OHOS::Rosen

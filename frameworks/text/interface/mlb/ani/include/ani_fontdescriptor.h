@@ -13,28 +13,24 @@
  * limitations under the License.
  */
 
-#ifndef OHOS_TEXT_ANI_FONT_COLLECTION_H
-#define OHOS_TEXT_ANI_FONT_COLLECTION_H
+#ifndef OHOS_TEXT_ANI_FONT_DESCRIPTOR_H
+#define OHOS_TEXT_ANI_FONT_DESCRIPTOR_H
 
 #include <ani.h>
 #include <memory>
 
-#include "font_collection.h"
-#include "resource_manager.h"
+#include "font_parser.h"
+#include "run.h"
 
 namespace OHOS::Text::ANI {
-class AniFontCollection final {
+class AniFontDescriptor final {
 public:
-    AniFontCollection();
-    static ani_object GetGlobalInstance(ani_env* env, ani_class cls);
-    static void LoadFontSync(ani_env* env, ani_object obj, ani_string name, ani_object path);
-    static void ClearCaches(ani_env* env, ani_object obj);
-    static void Constructor(ani_env* env, ani_object object);
     static ani_status AniInit(ani_vm* vm, uint32_t* result);
-    std::shared_ptr<OHOS::Rosen::FontCollection> GetFontCollection();
 
 private:
-    std::shared_ptr<OHOS::Rosen::FontCollection> fontCollection_{nullptr};
+    static ani_object GetSystemFontFullNamesByType(ani_env* env, ani_enum_item fontType);
+    static ani_object GetFontDescriptorByFullName(ani_env* env, ani_string fullName, ani_enum_item fontType);
+    static ani_object MatchFontDescriptors(ani_env* env, ani_object desc);
 };
 } // namespace OHOS::Text::ANI
-#endif // OHOS_TEXT_ANI_FONT_COLLECTION_H
+#endif // OHOS_TEXT_ANI_FONT_DESCRIPTOR_H
