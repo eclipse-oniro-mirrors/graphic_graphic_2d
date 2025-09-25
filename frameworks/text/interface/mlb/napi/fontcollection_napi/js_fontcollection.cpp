@@ -23,6 +23,17 @@ const std::string CLASS_NAME = "FontCollection";
 struct FontArgumentsConcreteContext : public FontPathResourceContext {
     std::string familyName;
 };
+
+void GetFilePathResource(napi_env env, napi_value* argv, sptr<FontArgumentsConcreteContext> context)
+{
+    if (!ParseContextFilePath(env, argv, context, ARGC_ONE)) {
+        auto* fontCollection = reinterpret_cast<JsFontCollection*>(context->native);
+        NAPI_CHECK_ARGS(context, fontCollection != nullptr, napi_invalid_arg,
+            TextErrorCode::ERROR_INVALID_PARAM, return, "FontCollection is null");
+        NAPI_CHECK_ARGS(context, ParseResourceType(env, argv[ARGC_ONE], context->info),
+            napi_invalid_arg, TextErrorCode::ERROR_INVALID_PARAM, return, "Parse resource error");
+    }
+}
 }
 
 std::mutex JsFontCollection::constructorMutex_;
@@ -248,14 +259,7 @@ napi_value JsFontCollection::OnLoadFontAsync(napi_env env, napi_callback_info in
             return, "Argc is invalid %zu", argc);
         NAPI_CHECK_ARGS(context, ConvertFromJsValue(env, argv[0], context->familyName), napi_invalid_arg,
             TextErrorCode::ERROR_INVALID_PARAM, return, "FamilyName is invalid %s", context->familyName.c_str());
-
-        if (!ParseContextFilePath(env, argv, context, ARGC_ONE)) {
-            auto* fontCollection = reinterpret_cast<JsFontCollection*>(context->native);
-            NAPI_CHECK_ARGS(context, fontCollection != nullptr, napi_invalid_arg,
-                TextErrorCode::ERROR_INVALID_PARAM, return, "FontCollection is null");
-            NAPI_CHECK_ARGS(context, ParseResourceType(env, argv[ARGC_ONE], context->info),
-                napi_invalid_arg, TextErrorCode::ERROR_INVALID_PARAM, return, "Parse resource error");
-        }
+        GetFilePathResource(env, argv, context);
     };
 
     context->GetCbInfo(env, info, inputParser);

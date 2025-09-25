@@ -131,10 +131,10 @@ HWTEST_F(NdkFontDescriptorTest, NdkFontFullDescriptorTest001, TestSize.Level0)
     EXPECT_EQ(fontFullDescArr, nullptr);
     size_t num = OH_Drawing_GetDrawingArraySize(fontFullDescArr);
     EXPECT_EQ(num, 0);
- 
+
     const OH_Drawing_FontFullDescriptor *desc = OH_Drawing_GetFontFullDescriptorByIndex(fontFullDescArr, 0);
     EXPECT_EQ(desc, nullptr);
- 
+
     OH_Drawing_DestroyFontFullDescriptors(fontFullDescArr);
 }
  
@@ -148,13 +148,13 @@ HWTEST_F(NdkFontDescriptorTest, NdkFontFullDescriptorTest002, TestSize.Level0)
     string invalidPath = "/test/invalid.ttf";
     OH_Drawing_Array* fontFullDescArr = OH_Drawing_GetFontFullDescriptorsFromPath(invalidPath.c_str());
     EXPECT_EQ(fontFullDescArr, nullptr);
- 
+
     size_t num = OH_Drawing_GetDrawingArraySize(fontFullDescArr);
     EXPECT_EQ(num, 0);
- 
+
     const OH_Drawing_FontFullDescriptor *desc1 = OH_Drawing_GetFontFullDescriptorByIndex(fontFullDescArr, 1);
     EXPECT_EQ(desc1, nullptr);
- 
+
     OH_Drawing_DestroyFontFullDescriptors(fontFullDescArr);
 }
 
@@ -168,13 +168,13 @@ HWTEST_F(NdkFontDescriptorTest, NdkFontFullDescriptorTest003, TestSize.Level0)
     char *invalidPath = strdup("");
     OH_Drawing_Array* fontFullDescArr = OH_Drawing_GetFontFullDescriptorsFromPath(invalidPath);
     EXPECT_EQ(fontFullDescArr, nullptr);
- 
+
     size_t num = OH_Drawing_GetDrawingArraySize(fontFullDescArr);
     EXPECT_EQ(num, 0);
- 
+
     const OH_Drawing_FontFullDescriptor *desc1 = OH_Drawing_GetFontFullDescriptorByIndex(fontFullDescArr, 1);
     EXPECT_EQ(desc1, nullptr);
- 
+
     OH_Drawing_DestroyFontFullDescriptors(fontFullDescArr);
     OH_Drawing_DestroyFontFullDescriptors(nullptr);
     free(invalidPath);
@@ -187,51 +187,53 @@ HWTEST_F(NdkFontDescriptorTest, NdkFontFullDescriptorTest003, TestSize.Level0)
  */
 HWTEST_F(NdkFontDescriptorTest, NdkFontFullDescriptorTest004, TestSize.Level0)
 {
-    char *validPath = strdup("/system/fonts/HarmonyOS_Sans.ttf");
+    char *validPath = strdup("/system/fonts/HMSymbolVF.ttf");
     OH_Drawing_Array* fontFullDescArr = OH_Drawing_GetFontFullDescriptorsFromPath(validPath);
     EXPECT_NE(fontFullDescArr, nullptr);
     EXPECT_EQ(OH_Drawing_GetDrawingArraySize(fontFullDescArr), 1);
- 
+
     const OH_Drawing_FontFullDescriptor *desc = OH_Drawing_GetFontFullDescriptorByIndex(fontFullDescArr, 0);
     EXPECT_NE(desc, nullptr);
     const OH_Drawing_FontFullDescriptor *desc1 = OH_Drawing_GetFontFullDescriptorByIndex(fontFullDescArr, 1);
     EXPECT_EQ(desc1, nullptr);
- 
+
     OH_Drawing_String path = {.strData = nullptr, .strLen = 0};
     OH_Drawing_ErrorCode errorCode0 = OH_Drawing_GetFontFullDescriptorAttributeString(desc, FULL_DESCRIPTOR_ATTR_S_PATH,
         &path);
     EXPECT_EQ(errorCode0, 0);
     EXPECT_STREQ(ConvertUtf16ToUtf8(path.strData, path.strLen).c_str(), validPath);
- 
+
     OH_Drawing_String postscriptName = {.strData = nullptr, .strLen = 0};
     errorCode0 = OH_Drawing_GetFontFullDescriptorAttributeString(desc, FULL_DESCRIPTOR_ATTR_S_POSTSCRIPT_NAME,
         &postscriptName);
     EXPECT_EQ(errorCode0, 0);
-    char *realPostscriptName = strdup("HarmonyOS_Sans");
+    char *realPostscriptName = strdup("HMSymbol-Regular");
     EXPECT_STREQ(ConvertUtf16ToUtf8(postscriptName.strData, postscriptName.strLen).c_str(), realPostscriptName);
- 
-    char *realFullAndFamilyName = strdup("HarmonyOS Sans");
+
+    char *realFullName = strdup("HM Symbol Regular");
     OH_Drawing_String fullName = {.strData = nullptr, .strLen = 0};
     errorCode0 = OH_Drawing_GetFontFullDescriptorAttributeString(desc, FULL_DESCRIPTOR_ATTR_S_FULL_NAME, &fullName);
     EXPECT_EQ(errorCode0, 0);
-    EXPECT_STREQ(ConvertUtf16ToUtf8(fullName.strData, fullName.strLen).c_str(), realFullAndFamilyName);
- 
+    EXPECT_STREQ(ConvertUtf16ToUtf8(fullName.strData, fullName.strLen).c_str(), realFullName);
+
+    char *realFamilyName = strdup("HM Symbol");
     OH_Drawing_String familyName = {.strData = nullptr, .strLen = 0};
     errorCode0 = OH_Drawing_GetFontFullDescriptorAttributeString(desc, FULL_DESCRIPTOR_ATTR_S_FAMILY_NAME, &familyName);
     EXPECT_EQ(errorCode0, 0);
-    EXPECT_STREQ(ConvertUtf16ToUtf8(familyName.strData, familyName.strLen).c_str(), realFullAndFamilyName);
- 
+    EXPECT_STREQ(ConvertUtf16ToUtf8(familyName.strData, familyName.strLen).c_str(), realFamilyName);
+
     char *realSubFamilyName = strdup("Regular");
     OH_Drawing_String subFamilyName = {.strData = nullptr, .strLen = 0};
     errorCode0 = OH_Drawing_GetFontFullDescriptorAttributeString(desc, FULL_DESCRIPTOR_ATTR_S_SUB_FAMILY_NAME,
         &subFamilyName);
     EXPECT_EQ(errorCode0, 0);
     EXPECT_STREQ(ConvertUtf16ToUtf8(subFamilyName.strData, subFamilyName.strLen).c_str(), realSubFamilyName);
- 
+
     OH_Drawing_DestroyFontFullDescriptors(fontFullDescArr);
     free(validPath);
     free(realPostscriptName);
-    free(realFullAndFamilyName);
+    free(realFullName);
+    free(realFamilyName);
     free(realSubFamilyName);
 }
 
@@ -242,7 +244,7 @@ HWTEST_F(NdkFontDescriptorTest, NdkFontFullDescriptorTest004, TestSize.Level0)
  */
 HWTEST_F(NdkFontDescriptorTest, NdkFontFullDescriptorTest005, TestSize.Level0)
 {
-    char *validPath = strdup("/system/fonts/HarmonyOS_Sans.ttf");
+    char *validPath = strdup("/system/fonts/HMSymbolVF.ttf");
     int weight, width, italic = 0;
     bool mono, symblic = false;
     OH_Drawing_Array* fontFullDescArr = OH_Drawing_GetFontFullDescriptorsFromPath(validPath);
@@ -284,7 +286,7 @@ HWTEST_F(NdkFontDescriptorTest, NdkFontFullDescriptorTest005, TestSize.Level0)
  */
 HWTEST_F(NdkFontDescriptorTest, NdkFontFullDescriptorTest006, TestSize.Level0)
 {
-    char *validPath = strdup("/system/fonts/HarmonyOS_Sans.ttf");
+    char *validPath = strdup("/system/fonts/HMSymbolVF.ttf");
     // Assign it an initial value
     int weight = -1, italic = -1;
     bool mono = false, symblic = false;
@@ -323,7 +325,7 @@ HWTEST_F(NdkFontDescriptorTest, NdkFontFullDescriptorTest006, TestSize.Level0)
  */
 HWTEST_F(NdkFontDescriptorTest, NdkFontFullDescriptorTest007, TestSize.Level0)
 {
-    char *validPath = strdup("/system/fonts/HarmonyOS_Sans.ttf");
+    char *validPath = strdup("/system/fonts/HMSymbolVF.ttf");
     OH_Drawing_Array* fontFullDescArr = OH_Drawing_GetFontFullDescriptorsFromPath(validPath);
     EXPECT_NE(fontFullDescArr, nullptr);
     const OH_Drawing_FontFullDescriptor *desc = OH_Drawing_GetFontFullDescriptorByIndex(fontFullDescArr, 0);

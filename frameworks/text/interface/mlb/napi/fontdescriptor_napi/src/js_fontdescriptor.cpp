@@ -291,7 +291,7 @@ napi_value JsFontDescriptor::GetFontDescriptorsFromPath(napi_env env, napi_callb
         TEXT_ERROR_CHECK(argv != nullptr, return, "Argv is nullptr");
         TEXT_ERROR_CHECK(context->status == napi_ok, return, "Status error, status=%{public}d",
             static_cast<int>(context->status));
-        TEXT_ERROR_CHECK(argc == ARGC_ONEad, return, "Argc is invalid %{public}zu", argc);
+        TEXT_ERROR_CHECK(argc == ARGC_ONE, return, "Argc is invalid %{public}zu", argc);
         constexpr size_t argvPathNum = 0;
         if (!ParseContextFilePath(env, argv, context, argvPathNum)) {
             TEXT_ERROR_CHECK(ParseResourceType(env, argv[argvPathNum], context->info), return, "Parse resource error");

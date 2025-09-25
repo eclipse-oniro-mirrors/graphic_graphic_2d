@@ -1102,22 +1102,13 @@ bool GetResourcePartData(napi_env env, ResourceInfo& info, napi_value paramsNApi
 {
     napi_valuetype valueType = napi_undefined;
     bool isArray = false;
-    if (napi_is_array(env, paramsNApi, &isArray) != napi_ok) {
-        TEXT_LOGE("Failed to get array type");
-        return false;
-    }
-    if (!isArray) {
-        TEXT_LOGE("Invalid array type");
-        return false;
-    }
+    TEXT_ERROR_CHECK(napi_is_array(env, paramsNApi, &isArray) == napi_ok, return false, "Failed to get array type");
+    TEXT_ERROR_CHECK(isArray, return false, "Invalid array type");
 
     uint32_t arrayLength = 0;
     napi_get_array_length(env, paramsNApi, &arrayLength);
     // Prevent array length overflow
-    if (arrayLength >= 0xffffffff) {
-        TEXT_LOGE("Invalid array length: %{public}u", arrayLength);
-        return false;
-    }
+    TEXT_ERROR_CHECK(arrayLength < 0xffffffff, return false, "Invalid array length: %{public}u", arrayLength);
     for (uint32_t i = 0; i < arrayLength; i++) {
         size_t ret = 0;
         napi_value indexValue = nullptr;
