@@ -20,8 +20,10 @@
 #include <map>
 
 #include "draw/color.h"
+#include "napi_async_work.h"
 #include "native_engine/native_engine.h"
 #include "native_engine/native_value.h"
+#include "resource_manager.h"
 #include "text_style.h"
 #include "typography.h"
 #include "typography_create.h"
@@ -44,6 +46,11 @@ struct ResourceInfo {
     std::vector<std::string> params;
     std::string bundleName;
     std::string moduleName;
+};
+
+struct FontPathResourceContext : public ContextBase {
+    std::string filePath;
+    ResourceInfo info;
 };
 
 enum class ResourceType {
@@ -568,5 +575,19 @@ bool GetStartEndParams(napi_env env, napi_value arg, int64_t &start, int64_t &en
 
 napi_status NewInstanceFromConstructor(
     napi_env env, napi_value constructor, const char* clsName, napi_value* obj);
+
+bool SplitAbsolutePath(std::string& absolutePath);
+
+std::shared_ptr<Global::Resource::ResourceManager> GetResourceManager(const std::string& moduleName);
+
+bool ProcessResource(ResourceInfo& info, std::function<bool(std::string&)> pathCB,
+    std::function<bool(const void*, size_t)> fileCB);
+
+bool ParseResourceType(napi_env env, napi_value value, ResourceInfo& info);
+
+bool GetResourcePartData(napi_env env, ResourceInfo& info, napi_value paramsNApi, napi_value bundleNameNApi,
+    napi_value moduleNameNApi);
+
+bool ParseContextFilePath(napi_env env, napi_value* argv, sptr<FontPathResourceContext> context, size_t argvPathNum);
 } // namespace OHOS::Rosen
 #endif // OHOS_JS_TEXT_UTILS_H

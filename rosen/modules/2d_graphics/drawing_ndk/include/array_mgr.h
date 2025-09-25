@@ -24,6 +24,7 @@ enum ObjectType {
     TEXT_LINE = 1,
     TEXT_RUN = 2,
     DRAWING_RECT = 3,
+    FONT_FULL_DESCRIPTOR = 4,
 };
 
 struct ObjectArray {

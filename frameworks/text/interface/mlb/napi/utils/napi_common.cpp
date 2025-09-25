@@ -15,10 +15,15 @@
 
 #include <cstdint>
 
+#include "ability.h"
 #include "napi_common.h"
 #include "text_style.h"
 
 namespace OHOS::Rosen {
+namespace {
+constexpr size_t FILE_HEAD_LENGTH = 7; // 7 is the size of "file://"
+};
+
 void BindNativeFunction(napi_env env, napi_value object, const char* name, const char* moduleName, napi_callback func)
 {
     std::string fullName;
@@ -1032,6 +1037,173 @@ bool GetStartEndParams(napi_env env, napi_value arg, int64_t &start, int64_t &en
         return false;
     }
 
+    return true;
+}
+
+std::shared_ptr<Global::Resource::ResourceManager> GetResourceManager(const std::string& moduleName)
+{
+    std::shared_ptr<AbilityRuntime::ApplicationContext> context =
+        AbilityRuntime::ApplicationContext::GetApplicationContext();
+    TEXT_ERROR_CHECK(context != nullptr, return nullptr, "Failed to get application context");
+    auto moduleContext = context->CreateModuleContext(moduleName);
+    if (moduleContext != nullptr) {
+        return moduleContext->GetResourceManager();
+    } else {
+        TEXT_LOGW("Failed to get module context, bundle: %{public}s, module: %{public}s",
+            context->GetBundleName().c_str(), moduleName.c_str());
+        return context->GetResourceManager();
+    }
+}
+
+bool ProcessResource(ResourceInfo& info, std::function<bool(std::string&)> pathCB,
+    std::function<bool(const void*, size_t)> fileCB)
+{
+    auto resourceManager = GetResourceManager(info.moduleName);
+    TEXT_ERROR_CHECK(resourceManager != nullptr, return false,
+        "Failed to get resourceManager, resourceManager is nullptr");
+
+    if (info.type == static_cast<int32_t>(ResourceType::STRING)) {
+        std::string rPath;
+        TEXT_ERROR_CHECK(resourceManager->GetStringById(info.resId, rPath) == Global::Resource::RState::SUCCESS,
+            return false, "Failed to get string by id");
+        return pathCB(rPath);
+    } else if (info.type == static_cast<int32_t>(ResourceType::RAWFILE)) {
+        size_t dataLen = 0;
+        std::unique_ptr<uint8_t[]> rawData;
+        TEXT_ERROR_CHECK(!info.params.empty(), return false, "Failed to get info params");
+        TEXT_ERROR_CHECK(
+            resourceManager->GetRawFileFromHap(info.params[0], dataLen, rawData) == Global::Resource::RState::SUCCESS,
+            return false, "Failed to get raw file");
+        return fileCB(rawData.get(), dataLen);
+    }
+    TEXT_LOGE("Invalid resource type %{public}d", info.type);
+    return false;
+}
+
+bool SplitAbsolutePath(std::string& absolutePath)
+{
+    auto iter = absolutePath.find_first_of(':');
+    if (iter == std::string::npos) {
+        TEXT_LOGE("Failed to find separator in path:%{public}s", absolutePath.c_str());
+        return false;
+    }
+    std::string head = absolutePath.substr(0, iter);
+    if ((head == "file" && absolutePath.size() > FILE_HEAD_LENGTH)) {
+        absolutePath = absolutePath.substr(iter + 3); // 3 means skip "://"
+        // the file format is like "file:///system/fonts...",
+        return true;
+    }
+
+    return false;
+}
+
+bool GetResourcePartData(napi_env env, ResourceInfo& info, napi_value paramsNApi,
+    napi_value bundleNameNApi, napi_value moduleNameNApi)
+{
+    napi_valuetype valueType = napi_undefined;
+    bool isArray = false;
+    TEXT_ERROR_CHECK(napi_is_array(env, paramsNApi, &isArray) == napi_ok, return false, "Failed to get array type");
+    TEXT_ERROR_CHECK(isArray, return false, "Invalid array type");
+
+    uint32_t arrayLength = 0;
+    napi_get_array_length(env, paramsNApi, &arrayLength);
+    // Prevent array length overflow
+    TEXT_ERROR_CHECK(arrayLength < 0xffffffff, return false, "Invalid array length: %{public}u", arrayLength);
+    for (uint32_t i = 0; i < arrayLength; i++) {
+        size_t ret = 0;
+        napi_value indexValue = nullptr;
+        napi_get_element(env, paramsNApi, i, &indexValue);
+        napi_typeof(env, indexValue, &valueType);
+        if (valueType == napi_string) {
+            size_t strLen = GetParamLen(env, indexValue) + 1;
+            std::unique_ptr<char[]> indexStr = std::make_unique<char[]>(strLen);
+            napi_get_value_string_utf8(env, indexValue, indexStr.get(), strLen, &ret);
+            info.params.emplace_back(indexStr.get());
+        } else if (valueType == napi_number) {
+            int32_t num = 0;
+            napi_get_value_int32(env, indexValue, &num);
+            info.params.emplace_back(std::to_string(num));
+        } else {
+            TEXT_LOGE("Invalid value type %{public}d", valueType);
+            return false;
+        }
+    }
+
+    napi_typeof(env, bundleNameNApi, &valueType);
+    if (valueType == napi_string) {
+        size_t ret = 0;
+        size_t strLen = GetParamLen(env, bundleNameNApi) + 1;
+        std::unique_ptr<char[]> bundleNameStr = std::make_unique<char[]>(strLen);
+        napi_get_value_string_utf8(env, bundleNameNApi, bundleNameStr.get(), strLen, &ret);
+        info.bundleName = bundleNameStr.get();
+    }
+
+    napi_typeof(env, moduleNameNApi, &valueType);
+    if (valueType == napi_string) {
+        size_t ret = 0;
+        size_t strLen = GetParamLen(env, moduleNameNApi) + 1;
+        std::unique_ptr<char[]> moduleNameStr = std::make_unique<char[]>(strLen);
+        napi_get_value_string_utf8(env, moduleNameNApi, moduleNameStr.get(), strLen, &ret);
+        info.moduleName = moduleNameStr.get();
+    }
+
+    return true;
+}
+
+bool ParseResourceType(napi_env env, napi_value value, ResourceInfo& info)
+{
+    napi_value idNApi = nullptr;
+    napi_value typeNApi = nullptr;
+    napi_value paramsNApi = nullptr;
+    napi_value bundleNameNApi = nullptr;
+    napi_value moduleNameNApi = nullptr;
+    napi_valuetype valueType = napi_undefined;
+    napi_typeof(env, value, &valueType);
+    if (valueType == napi_object) {
+        napi_get_named_property(env, value, "id", &idNApi);
+        napi_get_named_property(env, value, "type", &typeNApi);
+        napi_get_named_property(env, value, "params", &paramsNApi);
+        napi_get_named_property(env, value, "bundleName", &bundleNameNApi);
+        napi_get_named_property(env, value, "moduleName", &moduleNameNApi);
+    } else {
+        return false;
+    }
+
+    napi_typeof(env, idNApi, &valueType);
+    if (valueType == napi_number) {
+        napi_get_value_int32(env, idNApi, &info.resId);
+    }
+
+    napi_typeof(env, typeNApi, &valueType);
+    if (valueType == napi_number) {
+        napi_get_value_int32(env, typeNApi, &info.type);
+    }
+    if (!GetResourcePartData(env, info, paramsNApi, bundleNameNApi, moduleNameNApi)) {
+        return false;
+    }
+
+    return true;
+}
+
+bool ParseContextFilePath(napi_env env, napi_value* argv, sptr<FontPathResourceContext> context, size_t argvPathNum)
+{
+    napi_valuetype valueType = napi_undefined;
+    napi_typeof(env, argv[argvPathNum], &valueType);
+
+    if (valueType == napi_object) {
+        return false;
+    } else if (valueType == napi_string) {
+        if (!ConvertFromJsValue(env, argv[argvPathNum], context->filePath)) {
+            std::string errMessage("Failed to convert file path:");
+            errMessage += context->filePath;
+            context->status = napi_invalid_arg;
+            context->errMessage = errMessage;
+            (context)->errCode = static_cast<int32_t>(TextErrorCode::ERROR_INVALID_PARAM);
+            TEXT_LOGE("%{public}s", errMessage.c_str());
+        }
+        return true;
+    }
+    TEXT_LOGE("Path valueType is incorrect, valueType: %{public}d", valueType);
     return true;
 }
 

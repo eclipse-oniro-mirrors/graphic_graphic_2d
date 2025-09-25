@@ -45,6 +45,7 @@ ohos_source_set("text_ndk") {
     "drawing_font_manager/drawing_font_mgr.cpp",
     "drawing_font_manager/drawing_register_font.cpp",
     "drawing_font_manager/drawing_text_font_descriptor.cpp",
+    "drawing_font_manager/drawing_text_font_descriptor_attributes.cpp",
     "drawing_font_manager/font_utils.cpp",
     "drawing_typography/drawing_text_global.cpp",
     "drawing_typography/drawing_text_line.cpp",

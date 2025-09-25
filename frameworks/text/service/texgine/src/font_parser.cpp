@@ -219,13 +219,13 @@ using TableTypes = std::tuple<CmapTables, NameTable, PostTable>;
 
 template<typename Tuple, size_t... Is>
 bool FontParser::ParseAllTables(std::shared_ptr<Drawing::Typeface> typeface, FontParser::FontDescriptor& fontDescriptor,
-    std::index_sequence<Is...>) const
+    std::index_sequence<Is...>)
 {
     return (ParseOneTable<std::tuple_element_t<Is, Tuple>>(typeface, fontDescriptor) && ...);
 }
 
 bool FontParser::ParseTable(
-    std::shared_ptr<Drawing::Typeface> typeface, FontParser::FontDescriptor& fontDescriptor) const
+    std::shared_ptr<Drawing::Typeface> typeface, FontParser::FontDescriptor& fontDescriptor)
 {
     return ParseAllTables<TableTypes>(
         typeface, fontDescriptor, std::make_index_sequence<std::tuple_size_v<TableTypes>>());
@@ -349,7 +349,7 @@ std::shared_ptr<FontParser::FontDescriptor> FontParser::ParserFontDescriptorFrom
 }
 
 std::vector<std::shared_ptr<FontParser::FontDescriptor>> FontParser::ParserFontDescriptorsFromPath(
-    const std::string& path, const std::string& locale) const
+    const std::string& path, const std::string& locale)
 {
     std::vector<std::shared_ptr<Drawing::Typeface>> typefaces;
     int index = 0;
@@ -362,7 +362,7 @@ std::vector<std::shared_ptr<FontParser::FontDescriptor>> FontParser::ParserFontD
 }
 
 std::shared_ptr<FontParser::FontDescriptor> FontParser::CreateFontDescriptor(
-    const std::shared_ptr<Drawing::Typeface>& typeface, unsigned int languageId) const
+    const std::shared_ptr<Drawing::Typeface>& typeface, unsigned int languageId)
 {
     if (typeface == nullptr) {
         return nullptr;
@@ -380,7 +380,7 @@ std::shared_ptr<FontParser::FontDescriptor> FontParser::CreateFontDescriptor(
 }
 
 std::vector<std::shared_ptr<FontParser::FontDescriptor>> FontParser::CreateFontDescriptors(
-    const std::vector<std::shared_ptr<Drawing::Typeface>>& typefaces, const std::string& locale) const
+    const std::vector<std::shared_ptr<Drawing::Typeface>>& typefaces, const std::string& locale)
 {
     if (typefaces.empty()) {
         return {};
