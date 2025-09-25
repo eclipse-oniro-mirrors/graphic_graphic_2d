@@ -24,9 +24,9 @@ namespace OHOS::Text::ANI {
 using namespace OHOS::Rosen;
 using namespace OHOS::Rosen::SrvText;
 namespace {
-    const std::string SET_TEXT_HIGH_CONTRAST_SIGN = std::string(ANI_ENUM_TEXT_HIGH_CONTRAST) + ":V";
+    const std::string SET_TEXT_HIGH_CONTRAST_SIGN = "E{" + std::string(ANI_ENUM_TEXT_HIGH_CONTRAST) + "}:";
     const std::string SET_TEXT_UNDEFINED_GLYPH_DISPLAY_SIGN =
-        std::string(ANI_ENUM_TEXT_UNDEFINED_GLYPH_DISPLAY) + ":V";
+        "E{" + std::string(ANI_ENUM_TEXT_UNDEFINED_GLYPH_DISPLAY) + "}:";
 } // namespace
 
 std::vector<ani_native_function> AniTextGlobal::InitMethods(ani_env* env)
