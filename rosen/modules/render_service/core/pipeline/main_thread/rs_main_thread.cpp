@@ -5186,14 +5186,7 @@ void RSMainThread::UpdateLuminanceAndColorTemp()
                 rsColorTemperature.DimmingIncrease(screenId);
                 isNeedRefreshAll = true;
             }
-            bool needNotifyCallback = screenManager->IsBrightnessInfoChangeCallbackRegister() &&
-                rsLuminance.IsBrightnessInfoChanged(screenId);
-            if (needNotifyCallback) {
-                BrightnessInfo info = rsLuminance.GetBrightnessInfo(screenId);
-                screenManager->NotifyBrightnessInfoChangeCallback(screenId, info);
-                RS_TRACE_NAME_FMT("%s curHeadroom:%f maxHeadroom:%f sdrNits:%f screenId:%" PRIu64 "",
-                    __func__, info.currentHeadroom, info.maxHeadroom, info.sdrNits, screenId);
-            }
+            RSHdrUtil::CheckNotifyCallback(screenManager);
         }
     }
     if (isNeedRefreshAll) {

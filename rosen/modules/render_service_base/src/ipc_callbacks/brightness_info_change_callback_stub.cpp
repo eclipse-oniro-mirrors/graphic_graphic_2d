@@ -29,7 +29,7 @@ int RSBrightnessInfoChangeCallbackStub::OnRemoteRequest(
     int ret = ERR_NONE;
     switch (code) {
         case static_cast<uint32_t>(RSIBrightnessInfoChangeCallbackInterfaceCode::ON_BRIGHTNESS_INFO_CHANGE): {
-            ScreenId screenId{0};
+            ScreenId screenId = 0;
             if (!data.ReadUint64(screenId)) {
                 RS_LOGE("RSBrightnessInfoChangeCallbackStub::ON_BRIGHTNESS_INFO_CHANGE read screenId failed!");
                 ret = ERR_INVALID_DATA;

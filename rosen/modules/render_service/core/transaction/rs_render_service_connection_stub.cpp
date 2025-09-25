@@ -894,14 +894,14 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             break;
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_BRIGHTNESS_INFO_CHANGE_CALLBACK): {
-            bool readRemoteObject = false;
-            if (!data.ReadBool(readRemoteObject)) {
+            bool enableReadRemoteObject = false;
+            if (!data.ReadBool(enableReadRemoteObject)) {
                 RS_LOGE("RSRenderServiceConnectionStub::SET_BRIGHTNESS_INFO_CHANGE_CALLBACK Read parcel failed!");
                 ret = ERR_INVALID_DATA;
                 break;
             }
             sptr<IRemoteObject> remoteObject = nullptr;
-            if (readRemoteObject) {
+            if (enableReadRemoteObject) {
                 remoteObject = data.ReadRemoteObject();
             }
             sptr<RSIBrightnessInfoChangeCallback> callback = nullptr;
@@ -916,7 +916,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             break;
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_BRIGHTNESS_INFO): {
-            ScreenId screenId{INVALID_SCREEN_ID};
+            ScreenId screenId = INVALID_SCREEN_ID;
             if (!data.ReadUint64(screenId)) {
                 RS_LOGE("RSRenderServiceConnectionStub::GET_BRIGHTNESS_INFO Read screenId failed!");
                 ret = ERR_INVALID_DATA;
