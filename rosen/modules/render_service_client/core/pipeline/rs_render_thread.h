@@ -97,6 +97,8 @@ public:
         cacheDir_ = filePath;
     }
 
+    void TrimMemory();
+
     // If disabled partial render, rt forces to render whole frame
     void SetRTRenderForced(bool isRenderForced)
     {
