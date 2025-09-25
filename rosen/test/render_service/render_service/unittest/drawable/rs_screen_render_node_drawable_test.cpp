@@ -420,6 +420,53 @@ HWTEST_F(RSScreenRenderNodeDrawableTest, CheckFilterCacheFullyCoveredTest, TestS
 }
 
 /**
+ * @tc.name: CheckFilterCacheFullyCoveredTest002
+ * @tc.desc: Test CheckFilterCacheFullyCovered
+ * @tc.type: FUNC
+ * @tc.require: issueIAL2EA
+ */
+HWTEST_F(RSScreenRenderNodeDrawableTest, CheckFilterCacheFullyCoveredTest002, TestSize.Level1)
+{
+    auto surfaceParams = std::make_unique<RSSurfaceRenderParams>(DEFAULT_SURFACE_NODE_ID);
+    ASSERT_NE(surfaceParams, nullptr);
+    surfaceParams->visibleFilterChild_ = {DEFAULT_RENDER_NODE_ID};
+    std::shared_ptr<RSRenderNode> renderNode = std::make_shared<RSRenderNode>(DEFAULT_RENDER_NODE_ID);
+    ASSERT_NE(renderNode, nullptr);
+    auto renderDrawableAdapter = RSRenderNodeDrawableAdapter::OnGenerate(renderNode);
+    ASSERT_NE(renderDrawableAdapter, nullptr);
+    RSRenderNodeDrawableAdapter::RenderNodeDrawableCache_.emplace(DEFAULT_RENDER_NODE_ID, renderDrawableAdapter);
+    auto filterNodeDrawable = std::static_pointer_cast<DrawableV2::RSRenderNodeDrawable>(renderDrawableAdapter);
+    ASSERT_NE(filterNodeDrawable, nullptr);
+    auto filterParams = filterNodeDrawable->GetRenderParams().get();
+    ASSERT_NE(filterParams, nullptr);
+    filterParams->SetHasBlurFilter(true);
+    filterParams->SetGlobalAlpha(1.f);
+    filterParams->SetHasGlobalCorner(false);
+    filterParams->SetNodeType(RSRenderNodeType::CANVAS_NODE);
+
+    surfaceParams->isTransparent_ = true;
+    surfaceParams->isRotating_ = false;
+    surfaceParams->isAttractionAnimation_ = false;
+    surfaceParams->isSubSurfaceNode_ = false;
+    int width = 100;
+    int height = 100;
+    RectI screenRect(0, 0, width, height);
+    RSScreenRenderNodeDrawable::CheckFilterCacheFullyCovered(*surfaceParams, screenRect);
+
+    filterParams->SetNodeType(RSRenderNodeType::EFFECT_NODE);
+    RSScreenRenderNodeDrawable::CheckFilterCacheFullyCovered(*surfaceParams, screenRect);
+
+    filterParams->SetHasGlobalCorner(true);
+    RSScreenRenderNodeDrawable::CheckFilterCacheFullyCovered(*surfaceParams, screenRect);
+
+    filterParams->SetGlobalAlpha(0);
+    RSScreenRenderNodeDrawable::CheckFilterCacheFullyCovered(*surfaceParams, screenRect);
+
+    filterParams->SetHasBlurFilter(false);
+    RSScreenRenderNodeDrawable::CheckFilterCacheFullyCovered(*surfaceParams, screenRect);
+}
+
+/**
  * @tc.name: OnDraw001
  * @tc.desc: Test OnDraw when renderParams_ is/not nullptr
  * @tc.type: FUNC
