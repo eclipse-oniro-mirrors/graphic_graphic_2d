@@ -151,9 +151,6 @@ void RSRenderTransitionEffectFuzzerTest()
     transitionRotate->Marshalling(parcel);
     auto copyTransitionRotate =
         std::shared_ptr<RSRenderTransitionEffect>(RSTransitionRotate::Unmarshalling(parcel));
-
-    auto transitionCustom = std::make_shared<RSTransitionCustom>(property, startValue, endValue);
-    transitionCustom->UpdateFraction(fraction);
 }
 
 bool DoSomethingInterestingWithMyAPI(const uint8_t* data, size_t size)

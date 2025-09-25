@@ -38,6 +38,7 @@
 #include "common/rs_common_def.h"
 #include "modifier/rs_modifier_manager.h"
 #include "pipeline/rs_node_map_v2.h"
+#include "transaction/rs_sync_transaction_handler.h"
 #include "transaction/rs_transaction_handler.h"
 
 namespace OHOS {
@@ -175,6 +176,9 @@ public:
         return bool(taskRunner_);
     }
 
+    void DetachFromUI();
+    bool HasDetachedFromUI() const;
+
 private:
     RSUIContext();
     RSUIContext(uint64_t token);
@@ -199,6 +203,7 @@ private:
 
     TaskRunner taskRunner_ = TaskRunner();
     std::mutex implicitAnimatorMutex_;
+    bool detachedFromUI_ = false;
 
     friend class RSUIContextManager;
     friend class RSUIDirector;

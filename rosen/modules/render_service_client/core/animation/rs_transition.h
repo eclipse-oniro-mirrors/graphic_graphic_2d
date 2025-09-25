@@ -42,19 +42,11 @@ public:
         timingCurve_ = timingCurve;
     }
 
-    void SetIsCustom(bool isCustom)
-    {
-        isCustom_ = isCustom;
-    }
-
 protected:
     void OnStart() override;
-    void OnUpdateStagingValue(bool isFirstStart) override;
-    void StartCustomTransition();
     void StartRenderTransition();
 
 private:
-    bool isCustom_ { false };
     bool isTransitionIn_ { false };
     std::shared_ptr<const RSTransitionEffect> effect_;
     RSAnimationTimingCurve timingCurve_ { RSAnimationTimingCurve::DEFAULT };

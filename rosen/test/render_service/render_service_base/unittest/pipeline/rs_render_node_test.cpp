@@ -25,6 +25,7 @@
 #include "modifier_ng/custom/rs_custom_modifier.h"
 #include "offscreen_render/rs_offscreen_render_thread.h"
 #include "params/rs_render_params.h"
+#include "pipeline/rs_canvas_drawing_render_node.h"
 #include "pipeline/rs_context.h"
 #include "pipeline/rs_dirty_region_manager.h"
 #include "pipeline/rs_logical_display_render_node.h"
@@ -757,6 +758,14 @@ HWTEST_F(RSRenderNodeTest, OnTreeStateChangedTest, TestSize.Level1)
     node.isOnTheTree_ = true;
     node.OnTreeStateChanged();
     EXPECT_TRUE(node.IsDirty());
+
+    auto canvasDrawingNode = std::make_shared<RSCanvasDrawingRenderNode>(1);
+    canvasDrawingNode->isNeverOnTree_ = false;
+    canvasDrawingNode->OnTreeStateChanged();
+    EXPECT_FALSE(canvasDrawingNode->isNeverOnTree_);
+    canvasDrawingNode->isOnTheTree_ = true;
+    canvasDrawingNode->OnTreeStateChanged();
+    EXPECT_FALSE(canvasDrawingNode->isNeverOnTree_);
 }
 
 /**

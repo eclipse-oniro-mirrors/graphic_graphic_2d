@@ -89,7 +89,7 @@ HWTEST_F(RSVKImageManagerTest, MapAndUnMapVkImage001, TestSize.Level1)
     image = vkImageManager_->MapVkImageFromSurfaceBuffer(buffer_, BufferFence_, fakeTid_);
     EXPECT_NE(image, nullptr);
     EXPECT_EQ(size + 1, vkImageManager_->imageCacheSeqs_.size());
-    vkImageManager_->UnMapImageFromSurfaceBuffer(buffer_->GetSeqNum());
+    vkImageManager_->UnMapImageFromSurfaceBuffer(buffer_->GetBufferId());
     EXPECT_EQ(size, vkImageManager_->imageCacheSeqs_.size());
 }
 
@@ -103,12 +103,12 @@ HWTEST_F(RSVKImageManagerTest, MapAndUnMapVkImage001, TestSize.Level1)
 HWTEST_F(RSVKImageManagerTest, MapAndUnMapVkImage002, TestSize.Level1)
 {
     const uint32_t cacheNums = 10;
-    uint32_t bufferSeqNums[10] = { 0 };
+    uint64_t bufferSeqNums[10] = { 0 };
     for (uint32_t i = 1; i <= cacheNums; i++) {
         auto buffer = CreateBuffer();
         ASSERT_NE(buffer, nullptr);
 
-        bufferSeqNums[i - 1] = buffer->GetSeqNum();
+        bufferSeqNums[i - 1] = buffer->GetBufferId();
         auto imageCache = vkImageManager_->MapVkImageFromSurfaceBuffer(
             buffer, SyncFence::INVALID_FENCE, fakeTid_);
         EXPECT_NE(imageCache, nullptr);
@@ -135,13 +135,13 @@ HWTEST_F(RSVKImageManagerTest, MapAndUnMapVkImage002, TestSize.Level1)
 HWTEST_F(RSVKImageManagerTest, MapAndUnMapVkImage003, TestSize.Level1)
 {
     const uint32_t cacheNums = 50;
-    uint32_t bufferSeqNums[50] = { 0 };
+    uint64_t bufferSeqNums[50] = { 0 };
     const uint32_t MAX_CACHE_SIZE = 40;
     for (uint32_t i = 1; i <= cacheNums; i++) {
         auto buffer = CreateBuffer();
         ASSERT_NE(buffer, nullptr);
 
-        bufferSeqNums[i - 1] = buffer->GetSeqNum();
+        bufferSeqNums[i - 1] = buffer->BufferId();
         auto imageCache = vkImageManager_->MapVkImageFromSurfaceBuffer(
             buffer, SyncFence::INVALID_FENCE, fakeTid_);
         EXPECT_NE(imageCache, nullptr);
@@ -191,7 +191,7 @@ HWTEST_F(RSVKImageManagerTest, MapAndUnMapVKImage004, TestSize.Level1)
     }
 
     for (uint32_t i = cacheNums; i >= 1; i--) {
-        vkImageManager_->UnMapImageFromSurfaceBuffer(bufferVector[i - 1]->GetSeqNum());
+        vkImageManager_->UnMapImageFromSurfaceBuffer(bufferVector[i - 1]->GetBufferId());
     }
     EXPECT_EQ(0, vkImageManager_->imageCacheSeqs_.size());
 }
@@ -229,7 +229,7 @@ HWTEST_F(RSVKImageManagerTest, MapAndUnMapVKImage005, TestSize.Level1)
     }
 
     auto size = vkImageManager_->imageCacheSeqs_.size();
-    vkImageManager_->UnMapImageFromSurfaceBuffer(buffer_->GetSeqNum());
+    vkImageManager_->UnMapImageFromSurfaceBuffer(buffer_->GetBufferId());
     EXPECT_EQ(size - 1, vkImageManager_->imageCacheSeqs_.size());
 }
 
@@ -252,7 +252,7 @@ HWTEST_F(RSVKImageManagerTest, MapAndUnMapVKImage006, TestSize.Level1)
     }
     RsVulkanContext::GetSingleton().GetRsVulkanInterface().device_ = device;
     auto size = vkImageManager_->imageCacheSeqs_.size();
-    vkImageManager_->UnMapImageFromSurfaceBuffer(buffer_->GetSeqNum());
+    vkImageManager_->UnMapImageFromSurfaceBuffer(buffer_->GetBufferId());
     EXPECT_EQ(size, vkImageManager_->imageCacheSeqs_.size());
 
     sptr<SyncFence> tempFence = new SyncFence(-1);
@@ -260,7 +260,7 @@ HWTEST_F(RSVKImageManagerTest, MapAndUnMapVKImage006, TestSize.Level1)
         buffer_, tempFence, fakeTid_, drawingSurface.get());
     EXPECT_NE(image, nullptr);
     size = vkImageManager_->imageCacheSeqs_.size();
-    vkImageManager_->UnMapImageFromSurfaceBuffer(buffer_->GetSeqNum());
+    vkImageManager_->UnMapImageFromSurfaceBuffer(buffer_->GetBufferId());
     EXPECT_EQ(size - 1, vkImageManager_->imageCacheSeqs_.size());
 }
 
@@ -317,6 +317,7 @@ HWTEST_F(RSVKImageManagerTest, CreateImageFromBufferTest, TestSize.Level1)
     params.buffer = nullptr;
     params.acquireFence = nullptr;
     params.threadIndex = 0;
+    params.ignoreAlpha = false;
     std::shared_ptr<Drawing::ColorSpace> drawingColorSpace = nullptr;
     std::shared_ptr<RSImageManager> imageManager = std::make_shared<RSVkImageManager>();
     auto res = imageManager->CreateImageFromBuffer(*canvas, params, drawingColorSpace);
@@ -343,6 +344,7 @@ HWTEST_F(RSVKImageManagerTest, CreateImageFromBufferTest002, TestSize.Level1)
     BufferDrawParam params;
     std::shared_ptr<Drawing::ColorSpace> drawingColorSpace = nullptr;
     params.buffer = CreateBuffer();
+    params.ignoreAlpha = true;
     EXPECT_NE(params.buffer, nullptr);
     if (params.buffer && recordingCanvas) {
         params.buffer->SetBufferDeleteFromCacheFlag(false);
@@ -366,16 +368,18 @@ HWTEST_F(RSVKImageManagerTest, GetIntersectImageTest, TestSize.Level1)
     std::shared_ptr<RSImageManager> imageManager = std::make_shared<RSVkImageManager>();
     Drawing::RectI imgCutRect = Drawing::RectI{0, 0, 10, 10};
     std::shared_ptr<Drawing::GPUContext> context = std::make_shared<Drawing::GPUContext>();
-    sptr<OHOS::SurfaceBuffer> buffer = nullptr;
-    sptr<SyncFence> acquireFence = nullptr;
-    pid_t threadIndex = 0;
-    auto res = imageManager->GetIntersectImage(imgCutRect, context, buffer, acquireFence, threadIndex);
+    BufferDrawParam params;
+    params.acquireFence = nullptr;
+    params.threadIndex = 0;
+    params.buffer = nullptr;
+    auto res = imageManager->GetIntersectImage(imgCutRect, context, params);
     EXPECT_EQ(res, nullptr);
-    buffer = SurfaceBuffer::Create();
-    res = imageManager->GetIntersectImage(imgCutRect, context, buffer, acquireFence, threadIndex);
+    params.buffer = SurfaceBuffer::Create();
+    res = imageManager->GetIntersectImage(imgCutRect, context, params);
     EXPECT_EQ(res, nullptr);
-
-    res = imageManager->GetIntersectImage(imgCutRect, context, buffer_, BufferFence_, threadIndex);
+    params.buffer = buffer_;
+    params.acquireFence = BufferFence_;
+    res = imageManager->GetIntersectImage(imgCutRect, context, params);
     EXPECT_EQ(res, nullptr);
 }
 

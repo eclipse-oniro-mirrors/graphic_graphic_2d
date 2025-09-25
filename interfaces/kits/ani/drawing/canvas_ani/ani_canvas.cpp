@@ -280,7 +280,9 @@ void AniCanvas::NotifyDirty()
 
 void AniCanvas::Constructor(ani_env* env, ani_object obj, ani_object pixelmapObj)
 {
-    if (pixelmapObj == nullptr) {
+    ani_boolean isUndefined = ANI_TRUE;
+    env->Reference_IsUndefined(pixelmapObj, &isUndefined);
+    if (isUndefined) {
         AniCanvas *aniCanvas = new AniCanvas();
         if (ANI_OK != env->Object_SetFieldByName_Long(obj, NATIVE_OBJ, reinterpret_cast<ani_long>(aniCanvas))) {
             ROSEN_LOGE("AniCanvas::Constructor failed create AniCanvas with nullptr");
@@ -406,9 +408,78 @@ void AniCanvas::DrawImageRectInner(std::shared_ptr<Media::PixelMap> pixelmap,
 }
 #endif
 
+#ifdef ROSEN_OHOS
+bool AniCanvas::GetVertices(ani_env* env, ani_object verticesObj, float* vertices, uint32_t verticesSize)
+{
+    for (uint32_t i = 0; i < verticesSize; i++) {
+        ani_double vertex;
+        ani_ref vertexRef;
+        if (ANI_OK !=  env->Object_CallMethodByName_Ref(
+            verticesObj, "$_get", "I:Lstd/core/Object;", &vertexRef, (ani_int)i) ||
+            ANI_OK !=  env->Object_CallMethodByName_Double(
+                static_cast<ani_object>(vertexRef), "unboxed", ":D", &vertex)) {
+            delete []vertices;
+            return false;
+        }
+        vertices[i] = vertex;
+    }
+    return true;
+}
+#endif
+
+#ifdef ROSEN_OHOS
+void AniCanvas::GetColorsAndDraw(ani_env* env, ani_object colorsObj, int32_t colorOffset,
+    DrawPixelMapMeshArgs& args, AniCanvas* aniCanvas)
+{
+    float* verticesMesh = args.verticesSize ? (args.vertices + args.vertOffset * 2) : nullptr;
+    ani_double aniLength;
+    if (ANI_OK != env->Object_GetPropertyByName_Double(colorsObj, "length", &aniLength)) {
+        AniThrowError(env, "Invalid params.");
+        return;
+    }
+    uint32_t colorsSize = aniLength;
+    int64_t tempColorsSize = (args.column + 1) * (args.row + 1) + colorOffset;
+    if (colorsSize != 0 && colorsSize != tempColorsSize) {
+        ROSEN_LOGE("AniCanvas::GetColorsAndDraw colors are invalid");
+        AniThrowError(env, "Incorrect parameter5 type");
+        return;
+    }
+    auto canvas = aniCanvas->GetCanvas();
+    
+    if (colorsSize == 0) {
+        DrawingPixelMapMesh(args.pixelMap, args.column, args.row, verticesMesh, nullptr, canvas);
+        aniCanvas->NotifyDirty();
+        return;
+    }
+
+    auto colors = new (std::nothrow) uint32_t[colorsSize];
+    if (!colors) {
+        ROSEN_LOGE("AniCanvas::GetColorsAndDraw create array with size of colors failed");
+        AniThrowError(env, "Size of colors exceed memory limit.");
+        return;
+    }
+    for (uint32_t i = 0; i < colorsSize; i++) {
+        ani_double color;
+        ani_ref colorRef;
+        if (ANI_OK != env->Object_CallMethodByName_Ref(
+            colorsObj, "$_get", "I:Lstd/core/Object;", &colorRef, (ani_int)i) ||
+            ANI_OK != env->Object_CallMethodByName_Double(static_cast<ani_object>(colorRef), "unboxed", ":D", &color)) {
+            delete []colors;
+            AniThrowError(env, "Incorrect DrawPixelMapMesh parameter color type.");
+            return;
+        }
+        colors[i] = color;
+    }
+    uint32_t* colorsMesh = colors + colorOffset;
+    DrawingPixelMapMesh(args.pixelMap, args.column, args.row, verticesMesh, colorsMesh, canvas);
+    aniCanvas->NotifyDirty();
+    delete []colors;
+}
+#endif
+
 void AniCanvas::DrawPixelMapMesh(ani_env* env, ani_object obj,
-    ani_object pixelmapObj, ani_double aniMeshWidth, ani_double aniMeshHeight,
-    ani_object verticesObj, ani_double aniVertOffset, ani_object colorsObj, ani_double aniColorOffset)
+    ani_object pixelmapObj, ani_int aniMeshWidth, ani_int aniMeshHeight,
+    ani_object verticesObj, ani_int aniVertOffset, ani_object colorsObj, ani_int aniColorOffset)
 {
     auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
@@ -426,15 +497,14 @@ void AniCanvas::DrawPixelMapMesh(ani_env* env, ani_object obj,
     int32_t column = aniMeshWidth;
     int32_t row = aniMeshHeight;
     int32_t vertOffset = aniVertOffset;
-    int32_t colorOffset = aniColorOffset;
     if (column == 0 || row == 0) {
         ROSEN_LOGE("AniCanvas::DrawPixelMapMesh column or row is invalid");
         AniThrowError(env, "Invalid column or row params.");
         return;
     }
 
-    ani_double aniLength;
-    if (ANI_OK != env->Object_GetPropertyByName_Double(verticesObj, "length", &aniLength)) {
+    ani_int aniLength;
+    if (ANI_OK != env->Object_GetPropertyByName_Int(verticesObj, "length", &aniLength)) {
         AniThrowError(env, "Invalid params.");
         return;
     }
@@ -446,76 +516,18 @@ void AniCanvas::DrawPixelMapMesh(ani_env* env, ani_object obj,
         AniThrowError(env, "Incorrect parameter3 type.");
         return;
     }
-
     auto vertices = new (std::nothrow) float[verticesSize];
     if (!vertices) {
         ROSEN_LOGE("AniCanvas::DrawPixelMapMesh create array with size of vertices failed");
         AniThrowError(env, "Size of vertices exceed memory limit.");
         return;
     }
-    for (uint32_t i = 0; i < verticesSize; i++) {
-        ani_double vertex;
-        ani_ref vertexRef;
-        if (ANI_OK !=  env->Object_CallMethodByName_Ref(
-            verticesObj, "$_get", "I:Lstd/core/Object;", &vertexRef, (ani_int)i) ||
-            ANI_OK !=  env->Object_CallMethodByName_Double(
-                static_cast<ani_object>(vertexRef), "unboxed", ":D", &vertex)) {
-            delete []vertices;
-            AniThrowError(env, "Incorrect DrawPixelMapMesh parameter vertex type.");
-            return;
-        }
-        vertices[i] = vertex;
-    }
-
-    float* verticesMesh = verticesSize ? (vertices + vertOffset * 2) : nullptr; // offset two coordinates
-
-    if (ANI_OK != env->Object_GetPropertyByName_Double(colorsObj, "length", &aniLength)) {
-        delete []vertices;
-        AniThrowError(env, "Invalid params.");
+    if (!GetVertices(env, verticesObj, vertices, verticesSize)) {
+        AniThrowError(env, "Incorrect DrawPixelMapMesh parameter vertex type.");
         return;
     }
-    uint32_t colorsSize = aniLength;
-    int64_t tempColorsSize = (column + 1) * (row + 1) + colorOffset;
-    if (colorsSize != 0 && colorsSize != tempColorsSize) {
-        ROSEN_LOGE("AniCanvas::DrawPixelMapMesh colors are invalid");
-        delete []vertices;
-        AniThrowError(env, "Incorrect parameter5 type");
-        return;
-    }
-
-    if (colorsSize == 0) {
-        DrawingPixelMapMesh(pixelMap, column, row, verticesMesh, nullptr, aniCanvas->GetCanvas());
-        aniCanvas->NotifyDirty();
-        delete []vertices;
-        return;
-    }
-
-    auto colors = new (std::nothrow) uint32_t[colorsSize];
-    if (!colors) {
-        ROSEN_LOGE("AniCanvas::DrawPixelMapMesh create array with size of colors failed");
-        delete []vertices;
-        AniThrowError(env, "Size of colors exceed memory limit.");
-        return;
-    }
-    for (uint32_t i = 0; i < colorsSize; i++) {
-        ani_double color;
-        ani_ref colorRef;
-        if (ANI_OK !=  env->Object_CallMethodByName_Ref(
-            colorsObj, "$_get", "I:Lstd/core/Object;", &colorRef, (ani_int)i) ||
-            ANI_OK !=  env->Object_CallMethodByName_Double(
-                static_cast<ani_object>(colorRef), "unboxed", ":D", &color)) {
-            delete []vertices;
-            delete []colors;
-            AniThrowError(env, "Incorrect DrawPixelMapMesh parameter color type.");
-            return;
-        }
-        colors[i] = color;
-    }
-    uint32_t* colorsMesh = colors + colorOffset;
-    DrawingPixelMapMesh(pixelMap, column, row, verticesMesh, colorsMesh, aniCanvas->GetCanvas());
-    aniCanvas->NotifyDirty();
-    delete []vertices;
-    delete []colors;
+    DrawPixelMapMeshArgs args {pixelMap, vertices, verticesSize, vertOffset, column, row};
+    GetColorsAndDraw(env, colorsObj, static_cast<int32_t>(aniColorOffset), args, aniCanvas);
 #endif
 }
 
@@ -575,7 +587,7 @@ void AniCanvas::DetachPen(ani_env* env, ani_object obj)
     canvas->DetachPen();
 }
 
-ani_double AniCanvas::Save(ani_env* env, ani_object obj)
+ani_int AniCanvas::Save(ani_env* env, ani_object obj)
 {
     auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
@@ -587,7 +599,7 @@ ani_double AniCanvas::Save(ani_env* env, ani_object obj)
 }
 
 
-ani_double AniCanvas::SaveLayer(ani_env* env, ani_object obj, ani_object rectObj, ani_object brushObj)
+ani_long AniCanvas::SaveLayer(ani_env* env, ani_object obj, ani_object rectObj, ani_object brushObj)
 {
     auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
@@ -599,7 +611,7 @@ ani_double AniCanvas::SaveLayer(ani_env* env, ani_object obj, ani_object rectObj
     ani_boolean rectIsUndefined = ANI_TRUE;
     env->Reference_IsUndefined(rectObj, &rectIsUndefined);
     if (rectIsUndefined) {
-        ani_double ret = canvas->GetSaveCount();
+        ani_long ret = canvas->GetSaveCount();
         canvas->SaveLayer(SaveLayerOps());
         return ret;
     }
@@ -611,7 +623,7 @@ ani_double AniCanvas::SaveLayer(ani_env* env, ani_object obj, ani_object rectObj
     Drawing::Rect* drawingRectPtr = GetRectFromAniRectObj(env, rectObj, drawingRect) ?  &drawingRect : nullptr;
 
     if (brushIsUndefined) {
-        ani_double ret = canvas->GetSaveCount();
+        ani_long ret = canvas->GetSaveCount();
         canvas->SaveLayer(SaveLayerOps(drawingRectPtr, nullptr));
         return ret;
     }
@@ -619,7 +631,7 @@ ani_double AniCanvas::SaveLayer(ani_env* env, ani_object obj, ani_object rectObj
     Drawing::AniBrush* aniBrush = GetNativeFromObj<AniBrush>(env, brushObj);
     Drawing::Brush* drawingBrushPtr = aniBrush ? &aniBrush->GetBrush() : nullptr;
 
-    ani_double ret = canvas->GetSaveCount();
+    ani_long ret = canvas->GetSaveCount();
     SaveLayerOps saveLayerOps = SaveLayerOps(drawingRectPtr, drawingBrushPtr);
     canvas->SaveLayer(saveLayerOps);
     return ret;
@@ -636,7 +648,7 @@ void AniCanvas::Restore(ani_env* env, ani_object obj)
     canvas->Restore();
 }
 
-ani_double AniCanvas::GetSaveCount(ani_env* env, ani_object obj)
+ani_int AniCanvas::GetSaveCount(ani_env* env, ani_object obj)
 {
     auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
@@ -670,8 +682,10 @@ ani_object AniCanvas::CreateAniCanvas(ani_env* env, Canvas* canvas)
         return CreateAniUndefined(env);
     }
 
+    ani_ref aniRef;
+    env->GetUndefined(&aniRef);
     auto aniCanvas = new AniCanvas(canvas);
-    ani_object aniObj = CreateAniObject(env, ANI_CLASS_CANVAS_NAME, nullptr, nullptr);
+    ani_object aniObj = CreateAniObject(env, ANI_CLASS_CANVAS_NAME, nullptr, aniRef);
     if (ANI_OK != env->Object_SetFieldByName_Long(aniObj,
         NATIVE_OBJ, reinterpret_cast<ani_long>(aniCanvas))) {
         ROSEN_LOGE("aniCanvas failed cause by Object_SetFieldByName_Long");

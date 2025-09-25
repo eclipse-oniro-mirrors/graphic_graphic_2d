@@ -40,7 +40,6 @@
 #include "render/rs_typeface_cache.h"
 #include "rs_trace.h"
 #include "rs_profiler.h"
-#include "app_mgr_client.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -155,6 +154,7 @@ static constexpr std::array descriptorCheckList = {
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::EXECUTE_SYNCHRONOUS_TASK),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_LIGHT_FACTOR_STATUS),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_PACKAGE_EVENT),
+    static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_APP_STRATEGY_CONFIG_CHANGE_EVENT),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_REFRESH_RATE_EVENT),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_WINDOW_EXPECTED_BY_VSYNC_NAME),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_WINDOW_EXPECTED_BY_WINDOW_ID),
@@ -345,19 +345,6 @@ bool CheckCreateNodeAndSurface(pid_t pid, RSSurfaceNodeType nodeType, SurfaceWin
     }
 
     return true;
-}
-
-std::string GetBundleName(pid_t pid)
-{
-    std::string bundleName;
-    static const auto appMgrClient = std::make_shared<AppExecFwk::AppMgrClient>();
-    if (appMgrClient == nullptr) {
-        RS_LOGE("GetBundleName get appMgrClient fail.");
-        return bundleName;
-    }
-    int32_t uid = 0;
-    appMgrClient->GetBundleNameByPid(pid, bundleName, uid);
-    return bundleName;
 }
 
 bool IsValidCallingPid(pid_t pid, pid_t callingPid)

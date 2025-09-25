@@ -218,4 +218,19 @@ HWTEST_F(RSAnimationTest, GetPropertyType, Level1)
     auto animation = std::make_shared<RSAnimation>();
     EXPECT_EQ(animation->GetPropertyType(), ModifierNG::RSPropertyType::INVALID);
 }
+
+/**
+ * @tc.name: CreateDummyAnimation
+ * @tc.desc: test results of CreateDummyAnimation
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSAnimationTest, CreateDummyAnimation, Level1)
+{
+    auto dummyAnimation = std::make_shared<RSDummyAnimation>();
+    EXPECT_NE(dummyAnimation, nullptr);
+    auto nextDummyAnimation = std::make_shared<RSDummyAnimation>();
+    EXPECT_NE(nextDummyAnimation, nullptr);
+    auto idStep = nextDummyAnimation->GetId() - dummyAnimation->GetId();
+    EXPECT_EQ(idStep, 1);
+}
 }

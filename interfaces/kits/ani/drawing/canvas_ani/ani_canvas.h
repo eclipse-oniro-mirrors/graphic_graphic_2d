@@ -25,6 +25,20 @@
 
 namespace OHOS::Rosen {
 namespace Drawing {
+struct DrawPixelMapMeshArgs {
+    ~DrawPixelMapMeshArgs()
+    {
+        if (vertices != nullptr) {
+            delete []vertices;
+        }
+    }
+    std::shared_ptr<Media::PixelMap>& pixelMap;
+    float* vertices = nullptr;
+    uint32_t verticesSize = 0;
+    int32_t vertOffset = 0;
+    int32_t column = 0;
+    int32_t row = 0;
+};
 class AniCanvas final {
 public:
     AniCanvas() = default;
@@ -40,17 +54,17 @@ public:
         ani_object pixelmapObj, ani_object rectObj, ani_object samplingOptionsObj);
 
     static void DrawPixelMapMesh(ani_env* env, ani_object obj,
-        ani_object pixelmapObj, ani_double aniMeshWidth, ani_double aniMeshHeight,
-        ani_object verticesObj, ani_double aniVertOffset, ani_object colorsObj, ani_double aniColorOffset);
+        ani_object pixelmapObj, ani_int aniMeshWidth, ani_int aniMeshHeight,
+        ani_object verticesObj, ani_int aniVertOffset, ani_object colorsObj, ani_int aniColorOffset);
 
     static void AttachBrush(ani_env* env, ani_object obj, ani_object brushObj);
     static void AttachPen(ani_env* env, ani_object obj, ani_object penObj);
     static void DetachBrush(ani_env* env, ani_object obj);
     static void DetachPen(ani_env* env, ani_object obj);
-    static ani_double Save(ani_env* env, ani_object obj);
-    static ani_double SaveLayer(ani_env* env, ani_object obj, ani_object rectObj, ani_object brushObj);
+    static ani_int Save(ani_env* env, ani_object obj);
+    static ani_long SaveLayer(ani_env* env, ani_object obj, ani_object rectObj, ani_object brushObj);
     static void Restore(ani_env* env, ani_object obj);
-    static ani_double GetSaveCount(ani_env* env, ani_object obj);
+    static ani_int GetSaveCount(ani_env* env, ani_object obj);
     static void Rotate(ani_env* env, ani_object obj, ani_double degrees, ani_double sx, ani_double sy);
 
     Canvas* GetCanvas();
@@ -65,6 +79,9 @@ private:
 #ifdef ROSEN_OHOS
     void DrawImageRectInner(std::shared_ptr<Media::PixelMap> pixelmap,
         Drawing::Rect& rect, AniSamplingOptions* samplingOptions);
+    static bool GetVertices(ani_env* env, ani_object verticesObj, float* vertices, uint32_t verticesSize);
+    static void GetColorsAndDraw(ani_env* env, ani_object colorsObj, int32_t colorOffset,
+        DrawPixelMapMeshArgs& args, AniCanvas* aniCanvas);
 #endif
     Canvas* m_canvas = nullptr;
     bool owned_ = false;

@@ -833,7 +833,8 @@ void RSProfiler::MarshalNodeModifiers(const RSRenderNode& node, std::stringstrea
     uint32_t modifierNGCount = snapshot ? 1u : 0u;
     for (const auto& slot : node.GetAllModifiers()) {
         for (auto& modifierNG : slot) {
-            if (!modifierNG || modifierNG->GetType() == ModifierNG::RSModifierType::PARTICLE_EFFECT) {
+            if (!modifierNG || modifierNG->GetType() == ModifierNG::RSModifierType::PARTICLE_EFFECT ||
+                modifierNG->GetType() == ModifierNG::RSModifierType::INVALID) {
                 continue;
             }
             modifierNGCount++;
@@ -847,7 +848,8 @@ void RSProfiler::MarshalNodeModifiers(const RSRenderNode& node, std::stringstrea
     const auto includeImageOps = !IsBetaRecordEnabled();
     for (const auto& slot : node.GetAllModifiers()) {
         for (auto& modifierNG : slot) {
-            if (!modifierNG || modifierNG->GetType() == ModifierNG::RSModifierType::PARTICLE_EFFECT) {
+            if (!modifierNG || modifierNG->GetType() == ModifierNG::RSModifierType::PARTICLE_EFFECT ||
+                modifierNG->GetType() == ModifierNG::RSModifierType::INVALID) {
                 continue;
             }
             if (modifierNG->IsCustom()) {

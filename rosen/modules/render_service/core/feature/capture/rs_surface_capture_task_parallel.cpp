@@ -356,6 +356,8 @@ bool RSSurfaceCaptureTaskParallel::DrawHDRSurfaceContent(
     if (rect.GetWidth() > 0 && rect.GetHeight() > 0) {
         canvas.ClipRect({0, 0, rect.GetWidth(), rect.GetHeight()});
         canvas.Translate(0 - rect.GetLeft(), 0 - rect.GetTop());
+    } else {
+        canvas.Translate(-boundsX_, -boundsY_);
     }
     canvas.SetDisableFilterCache(true);
     RSSurfaceRenderParams* curNodeParams = nullptr;
@@ -494,15 +496,11 @@ std::unique_ptr<Media::PixelMap> RSSurfaceCaptureTaskParallel::CreatePixelMapByD
     screenCorrection_ = screenManager->GetScreenCorrection(screenId);
     screenRotation_ = node->GetScreenRotation();
     finalRotationAngle_ = CalPixelMapRotation();
+    uint32_t pixmapWidth = node->GetFixedWidth();
+    uint32_t pixmapHeight = node->GetFixedHeight();
     auto bounds = node->GetRenderProperties().GetBoundsGeometry();
-    uint32_t pixmapWidth = static_cast<uint32_t>(bounds->GetWidth());
-    uint32_t pixmapHeight = static_cast<uint32_t>(bounds->GetHeight());
     boundsX_ = bounds->GetX();
     boundsY_ = bounds->GetY();
-    auto rotation = node->GetRotation();
-    if (rotation == ScreenRotation::ROTATION_90 || rotation == ScreenRotation::ROTATION_270) {
-        std::swap(pixmapWidth, pixmapHeight);
-    }
 
     const Drawing::Rect& rect = captureConfig_.mainScreenRect;
     float rectWidth = rect.GetWidth();

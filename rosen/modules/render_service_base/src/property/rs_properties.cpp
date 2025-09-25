@@ -30,6 +30,7 @@
 #include "drawable/rs_property_drawable_utils.h"
 #include "effect/rs_render_filter_base.h"
 #include "effect/rs_render_shader_base.h"
+#include "effect/runtime_blender_builder.h"
 #include "pipeline/rs_canvas_render_node.h"
 #include "pipeline/rs_context.h"
 #include "pipeline/rs_screen_render_node.h"
@@ -47,6 +48,7 @@
 #include "render/rs_foreground_effect_filter.h"
 #include "render/rs_hdr_ui_brightness_filter.h"
 #include "render/rs_material_filter.h"
+#include "render/rs_particles_drawable.h"
 #include "render/rs_render_aibar_filter.h"
 #include "render/rs_render_always_snapshot_filter.h"
 #include "render/rs_render_filter_base.h"
@@ -3211,7 +3213,7 @@ void RSProperties::ComposeNGRenderFilter(
         originDrawingFilter->SetFilterType(RSFilter::COMPOUND_EFFECT);
         if (filter->ContainsType(RSNGEffectType::CONTENT_LIGHT)) {
             Vector3f rotationAngle(boundsGeo_->GetRotationX(), boundsGeo_->GetRotationY(), boundsGeo_->GetRotation());
-            RSUIFilterHelper::SetRotationAngle(filter, rotationAngle);
+            RSNGRenderFilterHelper::SetRotationAngle(filter, rotationAngle);
         }
     }
     originFilter = originDrawingFilter;
@@ -4401,6 +4403,7 @@ void RSProperties::OnApplyModifiers()
     }
     if (pixelStretchNeedUpdate_ || geoDirty_) {
         CalculatePixelStretch();
+        filterNeedUpdate_ = true;
     }
 
     if (bgShaderNeedUpdate_) {
@@ -4443,12 +4446,13 @@ void RSProperties::UpdateFilter()
                   GetShadowColorStrategy() != SHADOW_COLOR_STRATEGY::COLOR_STRATEGY_NONE ||
                   foregroundFilter_ != nullptr || IsFgBrightnessValid() || IsBgBrightnessValid() ||
                   foregroundFilterCache_ != nullptr || IsWaterRippleValid() || needDrawBehindWindow_ || mask_ ||
-                  colorFilter_ != nullptr || localMagnificationCap_;
+                  colorFilter_ != nullptr || localMagnificationCap_ || pixelStretch_.has_value();
 
     needHwcFilter_ = backgroundFilter_ != nullptr || filter_ != nullptr || IsLightUpEffectValid() ||
                      IsDynamicLightUpValid() || linearGradientBlurPara_ != nullptr ||
                      IsDynamicDimValid() || IsFgBrightnessValid() || IsBgBrightnessValid() || IsWaterRippleValid() ||
-                     needDrawBehindWindow_ || colorFilter_ != nullptr || localMagnificationCap_;
+                     needDrawBehindWindow_ || colorFilter_ != nullptr || localMagnificationCap_ ||
+                     pixelStretch_.has_value();
 #ifdef SUBTREE_PARALLEL_ENABLE
     // needForceSubmit_ is used to determine whether the subtree needs to read/scale pixels
     needForceSubmit_ = IsFilterNeedForceSubmit(filter_) ||
@@ -4468,7 +4472,8 @@ bool RSProperties::DisableHWCForFilter() const
         (foregroundFilter_ != nullptr && foregroundFilter_->GetFilterType() != RSFilter::HDR_UI_BRIGHTNESS) ||
         IsFgBrightnessValid() || IsBgBrightnessValid() ||
         (foregroundFilterCache_ != nullptr && foregroundFilterCache_->GetFilterType() != RSFilter::HDR_UI_BRIGHTNESS) ||
-        IsWaterRippleValid() || needDrawBehindWindow_ || mask_ || colorFilter_ != nullptr || localMagnificationCap_;
+        IsWaterRippleValid() || needDrawBehindWindow_ || mask_ || colorFilter_ != nullptr || localMagnificationCap_ ||
+        pixelStretch_.has_value();
 }
 
 void RSProperties::UpdateForegroundFilter()

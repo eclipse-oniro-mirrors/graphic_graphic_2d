@@ -19,7 +19,6 @@
 
 #include "rs_animation.h"
 #include "rs_animation_callback.h"
-#include "rs_animation_group.h"
 #include "rs_animation_timing_curve.h"
 #include "rs_curve_animation.h"
 #include "rs_implicit_animation_param.h"
@@ -87,31 +86,10 @@ namespace OHOS {
         return str;
     }
 
-    void RsAnimationGroupFuzzTest()
+    void RsDummyAnimationFuzzTest()
     {
-        float fraction = GetData<float>();
-        auto firstTransition = std::make_shared<RSTransition>(RSTransitionEffect::EMPTY, true);
-        auto secondTransition = std::make_shared<RSTransition>(RSTransitionEffect::SCALE, true);
-
-        auto animationGroup = std::make_shared<RSAnimationGroup>();
-        animationGroup->AddAnimation(firstTransition);
-        animationGroup->AddAnimation(secondTransition);
-        animationGroup->RemoveAnimation(secondTransition);
-        animationGroup->SetFinishCallback([]() {});
-        animationGroup->Start(nullptr);
-        animationGroup->GetId();
-        animationGroup->GetTarget();
-        animationGroup->Pause();
-        animationGroup->Resume();
-        animationGroup->Finish();
-        animationGroup->Reverse();
-        animationGroup->SetFraction(fraction);
-        animationGroup->IsStarted();
-        animationGroup->IsRunning();
-        animationGroup->IsPaused();
-        animationGroup->IsFinished();
+        auto dummyAnimation = std::make_shared<RSDummyAnimation>();
     }
-
     void RsAnimationTimingCurveFuzzTest()
     {
         float ctrlX1 = GetData<float>();
@@ -615,7 +593,6 @@ namespace OHOS {
         g_pos = 0;
         // get data
         RSModifierManagerMap::Instance()->GetModifierManager();
-        RsAnimationGroupFuzzTest();
         RsAnimationTimingCurveFuzzTest();
         RsCurveAnimationFuzzTest();
         RsKeyframeAnimationFuzzTest();

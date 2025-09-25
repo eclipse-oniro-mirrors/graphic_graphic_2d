@@ -2789,5 +2789,24 @@ HWTEST_F(RSSurfaceRenderNodeTest, SetTopLayerZOrderTest, TestSize.Level1)
     node->SetTopLayerZOrder(1);
     EXPECT_EQ(node->GetTopLayerZOrder(), 1);
 }
+
+/**
+ * @tc.name: SetSurfaceBufferOpaqueTest
+ * @tc.desc: SetSurfaceBufferOpaque and GetSurfaceBufferOpaque
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, SetSurfaceBufferOpaqueTest, TestSize.Level1)
+{
+    auto node = std::make_shared<RSSurfaceRenderNode>(id, context);
+    node->SetSurfaceBufferOpaque(true);
+    node->stagingRenderParams_ = std::make_unique<RSRenderParams>(id);
+    node->SetSurfaceBufferOpaque(true);
+    node->SetSurfaceBufferOpaque(true);
+    ASSERT_EQ(node->GetSurfaceBufferOpaque(), true);
+    ASSERT_EQ(node->GetBlendType(), GraphicBlendType::GRAPHIC_BLEND_NONE);
+    node->SetSurfaceBufferOpaque(false);
+    ASSERT_FALSE(node->GetSurfaceBufferOpaque());
+    ASSERT_EQ(node->GetBlendType(), GraphicBlendType::GRAPHIC_BLEND_SRCOVER);
+}
 } // namespace Rosen
 } // namespace OHOS

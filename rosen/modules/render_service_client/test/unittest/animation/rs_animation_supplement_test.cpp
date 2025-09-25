@@ -17,7 +17,6 @@
 #include "rs_animation_test_utils.h"
 
 #include "animation/rs_animation_callback.h"
-#include "animation/rs_animation_group.h"
 #include "animation/rs_animation_timing_protocol.h"
 #include "animation/rs_curve_animation.h"
 #include "animation/rs_keyframe_animation.h"
@@ -132,53 +131,6 @@ public:
         RSRenderAnimation::DumpAnimation(out);
     }
 };
-
-class RSAnimationGroupMock : public RSAnimationGroup {
-public:
-    RSAnimationGroupMock() : RSAnimationGroup() {}
-    ~RSAnimationGroupMock() = default;
-
-    void OnStart() override
-    {
-        RSAnimationGroup::OnStart();
-    }
-
-    void OnPause() override
-    {
-        RSAnimationGroup::OnPause();
-    }
-
-    void OnResume() override
-    {
-        RSAnimationGroup::OnResume();
-    }
-
-    void OnFinish() override
-    {
-        RSAnimationGroup::OnFinish();
-    }
-
-    void OnReverse() override
-    {
-        RSAnimationGroup::OnReverse();
-    }
-
-    void OnSetFraction(float fraction) override
-    {
-        RSAnimationGroup::OnSetFraction(fraction);
-    }
-
-    PropertyId GetPropertyId() const override
-    {
-        return RSAnimationGroup::GetPropertyId();
-    }
-
-    void StartInner(const std::shared_ptr<RSNode>& target)
-    {
-        RSAnimation::StartInner(target);
-    }
-};
-
 class RSKeyframeAnimationMock : public RSKeyframeAnimation {
 public:
     explicit RSKeyframeAnimationMock(std::shared_ptr<RSPropertyBase> property) : RSKeyframeAnimation(property) {}
@@ -590,11 +542,6 @@ public:
     {
         RSTransition::OnStart();
     }
-
-    void SetIsCustom(bool isCustom)
-    {
-        RSTransition::SetIsCustom(isCustom);
-    }
 };
 
 /**
@@ -631,73 +578,6 @@ HWTEST_F(RSAnimationTest, AnimationSupplementTest010, TestSize.Level1)
     AnimationFinishCallback* finishCallback2 = new AnimationFinishCallback(callback);
     delete finishCallback2;
     GTEST_LOG_(INFO) << "RSAnimationTest AnimationSupplementTest010 end";
-}
-
-/**
- * @tc.name: AnimationSupplementTest011
- * @tc.desc: Verify the setcallback of Animation
- * @tc.type: FUNC
- */
-HWTEST_F(RSAnimationTest, AnimationSupplementTest011, TestSize.Level1)
-{
-    GTEST_LOG_(INFO) << "RSAnimationTest AnimationSupplementTest011 start";
-    /**
-     * @tc.steps: step1. init
-     */
-    std::shared_ptr<RSAnimationMock> animation;
-    std::shared_ptr<RSAnimationGroupMock> animationGroup = std::make_shared<RSAnimationGroupMock>();
-    animationGroup->AddAnimation(animation);
-    animationGroup->RemoveAnimation(animation);
-    animation = std::make_shared<RSAnimationMock>();
-    std::shared_ptr<RSNode> node = RSCanvasNode::Create();
-    animationGroup->StartInner(node);
-    animationGroup->AddAnimation(animation);
-    animationGroup->RemoveAnimation(animation);
-    animationGroup->Pause();
-    animation->StartInner(node);
-    animationGroup->AddAnimation(animation);
-    animationGroup->RemoveAnimation(animation);
-    animation->Pause();
-    animationGroup->AddAnimation(animation);
-    animationGroup->AddAnimation(animation);
-    animationGroup->RemoveAnimation(animation);
-    animationGroup->RemoveAnimation(animation);
-    auto id = animationGroup->GetPropertyId();
-    EXPECT_TRUE(id == 0);
-    GTEST_LOG_(INFO) << "RSAnimationTest AnimationSupplementTest011 end";
-}
-
-/**
- * @tc.name: AnimationSupplementTest012
- * @tc.desc: Verify the setcallback of Animation
- * @tc.type: FUNC
- */
-HWTEST_F(RSAnimationTest, AnimationSupplementTest012, TestSize.Level1)
-{
-    GTEST_LOG_(INFO) << "RSAnimationTest AnimationSupplementTest012 start";
-    /**
-     * @tc.steps: step1. init
-     */
-    std::shared_ptr<RSAnimationGroupMock> animationGroup = std::make_shared<RSAnimationGroupMock>();
-    animationGroup->OnStart();
-    animationGroup->OnPause();
-    animationGroup->OnResume();
-    animationGroup->OnFinish();
-    animationGroup->OnReverse();
-    animationGroup->OnSetFraction(0.1f);
-    std::shared_ptr<RSAnimationMock> animation = std::make_shared<RSAnimationMock>();
-    animationGroup->AddAnimation(animation);
-    animationGroup->OnStart();
-    std::shared_ptr<RSNode> node = RSCanvasNode::Create();
-    animationGroup->StartInner(node);
-    animationGroup->OnStart();
-    animationGroup->OnPause();
-    animationGroup->OnResume();
-    animationGroup->OnFinish();
-    animationGroup->OnReverse();
-    animationGroup->OnSetFraction(0.1f);
-    EXPECT_TRUE(animationGroup != nullptr);
-    GTEST_LOG_(INFO) << "RSAnimationTest AnimationSupplementTest012 end";
 }
 
 /**

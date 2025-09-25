@@ -30,32 +30,7 @@
 namespace OHOS {
 namespace Rosen {
 class RSRenderTransitionEffect;
-// to delete
-class RSTransitionModifier;
 class RSPropertyBase;
-
-class RSC_EXPORT RSCustomTransitionEffect final {
-public:
-    RSCustomTransitionEffect(const std::shared_ptr<RSTransitionModifier>& modifier) : modifier_(modifier)
-    {}
-
-private:
-    void Custom(const std::shared_ptr<RSPropertyBase>& property,
-        const std::shared_ptr<RSPropertyBase>& startValue, const std::shared_ptr<RSPropertyBase>& endValue);
-
-    void Active();
-    void Identity();
-
-    std::shared_ptr<RSTransitionModifier> modifier_;
-    std::vector<std::shared_ptr<RSRenderTransitionEffect>> customTransitionEffects_;
-    std::vector<std::pair<std::shared_ptr<RSPropertyBase>, std::shared_ptr<RSPropertyBase>>> properties_;
-
-    friend class RSNode;
-    friend class RSTransition;
-    friend class RSTransitionEffect;
-    friend class RSImplicitTransitionParam;
-};
-
 class RSC_EXPORT RSTransitionEffect final : public std::enable_shared_from_this<RSTransitionEffect> {
 public:
     static const std::shared_ptr<const RSTransitionEffect> EMPTY;
@@ -71,7 +46,6 @@ public:
     std::shared_ptr<RSTransitionEffect> Scale(const Vector3f& scale);
     std::shared_ptr<RSTransitionEffect> Translate(const Vector3f& translate);
     std::shared_ptr<RSTransitionEffect> Rotate(const Vector4f& axisAngle);
-    std::shared_ptr<RSTransitionEffect> Custom(const std::shared_ptr<RSTransitionModifier>& modifier);
 
 private:
     RSTransitionEffect() = default;
@@ -81,9 +55,6 @@ private:
 
     std::vector<std::shared_ptr<RSRenderTransitionEffect>> transitionInEffects_;
     std::vector<std::shared_ptr<RSRenderTransitionEffect>> transitionOutEffects_;
-
-    std::vector<std::shared_ptr<RSCustomTransitionEffect>> customTransitionInEffects_;
-    std::vector<std::shared_ptr<RSCustomTransitionEffect>> customTransitionOutEffects_;
 
     friend class RSNode;
     friend class RSTransition;

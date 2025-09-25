@@ -138,6 +138,7 @@ std::shared_ptr<Typeface> SkiaTypeface::MakeClone(const FontArguments& args) con
         return nullptr;
     }
     cloned->setIsCustomTypeface(skTypeface_->isCustomTypeface());
+    cloned->setIsThemeTypeface(skTypeface_->isThemeTypeface());
     std::shared_ptr<TypefaceImpl> typefaceImpl = std::make_shared<SkiaTypeface>(cloned);
     return std::make_shared<Typeface>(typefaceImpl);
 }
@@ -280,6 +281,7 @@ std::shared_ptr<Typeface> SkiaTypeface::MakeFromStream(std::unique_ptr<MemoryStr
     auto skFontMgr = SkFontMgr::RefDefault();
     if (skFontMgr == nullptr) {
         LOGE("SkiaTypeface::MakeFromStream, skFontMgr nullptr");
+        return nullptr;
     }
     SkFontArguments skFontArguments;
     SkiaConvertUtils::DrawingFontArgumentsCastToSkFontArguments(fontArguments, skFontArguments);

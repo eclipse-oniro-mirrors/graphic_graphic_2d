@@ -87,23 +87,6 @@ constexpr uint32_t SET_IS_ON_THE_TREE_THRESHOLD = 50;
 static uint32_t g_setIsOntheTreeCnt = 0;
 } // namespace
 
-std::unordered_map<pid_t, size_t> RSRenderNode::blurEffectCounter_ = {};
-void RSRenderNode::UpdateBlurEffectCounter(int deltaCount)
-{
-    if (LIKELY(deltaCount == 0)) {
-        return;
-    }
-
-    auto pid = ExtractPid(GetId());
-    // Try to insert pid with value 0 and we got an iterator to the inserted element or to the existing element.
-    auto it = blurEffectCounter_.emplace(std::make_pair(pid, 0)).first;
-    if (deltaCount > 0 || (static_cast<int>(it->second) > -deltaCount)) {
-        it->second += deltaCount;
-    } else {
-        blurEffectCounter_.erase(it);
-    }
-}
-
 void RSRenderNode::OnRegister(const std::weak_ptr<RSContext>& context)
 {
     context_ = context;
@@ -115,28 +98,6 @@ void RSRenderNode::OnRegister(const std::weak_ptr<RSContext>& context)
 bool RSRenderNode::IsPureContainer() const
 {
     return (!GetRenderProperties().isDrawn_ && !GetRenderProperties().alphaNeedApply_ && !HasDrawCmdModifiers());
-}
-
-bool RSRenderNode::IsPureBackgroundColor() const
-{
-    static const std::unordered_set<RSDrawableSlot> pureBackgroundColorSlots = {
-        RSDrawableSlot::BG_SAVE_BOUNDS,
-        RSDrawableSlot::CLIP_TO_BOUNDS,
-        RSDrawableSlot::BACKGROUND_COLOR,
-        RSDrawableSlot::BG_RESTORE_BOUNDS,
-        RSDrawableSlot::SAVE_FRAME,
-        RSDrawableSlot::FRAME_OFFSET,
-        RSDrawableSlot::CLIP_TO_FRAME,
-        RSDrawableSlot::CHILDREN,
-        RSDrawableSlot::RESTORE_FRAME
-    };
-    for (int8_t i = 0; i < static_cast<int8_t>(RSDrawableSlot::MAX); ++i) {
-        if (drawableVec_[i] &&
-            !pureBackgroundColorSlots.count(static_cast<RSDrawableSlot>(i))) {
-            return false;
-        }
-    }
-    return true;
 }
 
 void RSRenderNode::SetDrawNodeType(DrawNodeType nodeType)
@@ -1186,8 +1147,7 @@ void RSRenderNode::DumpSubClassNode(std::string& out) const
         out += ", Parent [" + (p != nullptr ? std::to_string(p->GetId()) : "null") + "]";
         out += ", Name [" + surfaceNode->GetName() + "]";
         out += ", hasConsumer: " + std::to_string(surfaceNode->GetRSSurfaceHandler()->HasConsumer());
-        std::string propertyAlpha = std::to_string(surfaceNode->GetRenderProperties().GetAlpha());
-        out += ", Alpha: " + propertyAlpha;
+        out += ", Alpha: " + std::to_string(surfaceNode->GetRenderProperties().GetAlpha());
         if (surfaceNode->contextAlpha_ < 1.0f) {
             std::string contextAlpha = std::to_string(surfaceNode->contextAlpha_);
             out += " (ContextAlpha: " + contextAlpha + ")";
@@ -1196,6 +1156,7 @@ void RSRenderNode::DumpSubClassNode(std::string& out) const
         out += ", Visible" + surfaceNode->GetVisibleRegion().GetRegionInfo();
         out += ", Opaque" + surfaceNode->GetOpaqueRegion().GetRegionInfo();
         out += ", OcclusionBg: " + std::to_string(surfaceNode->GetAbilityBgAlpha());
+        out += ", IsContainerTransparent: " + std::to_string(surfaceNode->IsContainerWindowTransparent());
         const auto specialLayerManager = surfaceNode->GetSpecialLayerMgr();
         out += ", SpecialLayer: " + std::to_string(specialLayerManager.Get());
         out += ", surfaceType: " + std::to_string((int)surfaceNode->GetSurfaceNodeType());
@@ -1219,6 +1180,10 @@ void RSRenderNode::DumpSubClassNode(std::string& out) const
         if (linkedRootNodeId != INVALID_NODEID) {
             out += ", linkedRootNodeId: " + std::to_string(linkedRootNodeId);
         }
+    } else if (GetType() == RSRenderNodeType::CANVAS_DRAWING_NODE) {
+        auto canvasDrawingNode = static_cast<const RSCanvasDrawingRenderNode*>(this);
+        out += ", lastResetSurfaceTime: " + std::to_string(canvasDrawingNode->lastResetSurfaceTime_);
+        out += ", opCountAfterReset: " + std::to_string(canvasDrawingNode->opCountAfterReset_);
     }
 }
 
@@ -2926,14 +2891,6 @@ void RSRenderNode::MarkParentNeedRegenerateChildren() const
     parent->isChildrenSorted_ = false;
 }
 
-int RSRenderNode::GetBlurEffectDrawbleCount()
-{
-    bool fgFilterValid = drawableVec_[static_cast<int32_t>(RSDrawableSlot::FOREGROUND_FILTER)] != nullptr;
-    bool bgFilterValid = drawableVec_[static_cast<int32_t>(RSDrawableSlot::BACKGROUND_FILTER)] != nullptr;
-    bool cpFilterValid = drawableVec_[static_cast<int32_t>(RSDrawableSlot::COMPOSITING_FILTER)] != nullptr;
-    return static_cast<int>(fgFilterValid) + static_cast<int>(bgFilterValid) + static_cast<int>(cpFilterValid);
-}
-
 void RSRenderNode::UpdateDrawableVecV2()
 {
 #ifdef RS_ENABLE_GPU
@@ -2943,7 +2900,6 @@ void RSRenderNode::UpdateDrawableVecV2()
         RS_LOGD("RSRenderNode::update drawable VecV2 dirtySlots is empty");
         return;
     }
-    auto preBlurDrawableCnt = GetBlurEffectDrawbleCount();
     // Step 2: Update or regenerate drawable if needed
     bool drawableChanged = RSDrawable::UpdateDirtySlots(*this, drawableVec_, dirtySlots);
     // Step 2.1 (optional): fuze some drawables
@@ -2967,7 +2923,6 @@ void RSRenderNode::UpdateDrawableVecV2()
         RSDrawable::UpdateDirtySlots(*this, drawableVec_, dirtySlotShadow);
         // Step 4: Generate drawCmdList from drawables
         UpdateDisplayList();
-        UpdateBlurEffectCounter(GetBlurEffectDrawbleCount() - preBlurDrawableCnt);
     }
     // If any effect drawable become dirty, check all effect drawable and do edr update
     auto needUpdateEDR = std::any_of(edrDrawableSlots.begin(), edrDrawableSlots.end(), [&dirtySlots](auto slot) {
@@ -3675,13 +3630,11 @@ void RSRenderNode::UpdateFullScreenFilterCacheRect(
 
 void RSRenderNode::OnTreeStateChanged()
 {
-    if (GetType() == RSRenderNodeType::CANVAS_DRAWING_NODE) {
+    if (isOnTheTree_ && GetType() == RSRenderNodeType::CANVAS_DRAWING_NODE) {
         ClearNeverOnTree();
     }
 
-    auto curBlurDrawableCnt = GetBlurEffectDrawbleCount();
     if (!isOnTheTree_) {
-        UpdateBlurEffectCounter(-curBlurDrawableCnt);
         startingWindowFlag_ = false;
         if (stagingUECChildren_ && !stagingUECChildren_->empty()) {
             for (auto uiExtension : *stagingUECChildren_) {
@@ -3690,7 +3643,6 @@ void RSRenderNode::OnTreeStateChanged()
         }
     }
     if (isOnTheTree_) {
-        UpdateBlurEffectCounter(curBlurDrawableCnt);
         // Set dirty and force add to active node list, re-generate children list if needed
         SetDirty(true);
         SetParentSubTreeDirty();
@@ -4644,6 +4596,15 @@ bool RSRenderNode::GetUifirstSupportFlag()
     return isChildSupportUifirst_ && isUifirstNode_;
 }
 
+void RSRenderNode::UpdateDrawableEnableEDR()
+{
+    bool hasEDREffect = std::any_of(edrDrawableSlots.begin(), edrDrawableSlots.end(), [this](auto slot) {
+        auto drawable = this->drawableVec_[static_cast<int8_t>(slot)];
+        return drawable && drawable->GetEnableEDR();
+    });
+    SetEnableHdrEffect(hasEDREffect);
+}
+
 void RSRenderNode::UpdatePointLightDirtySlot()
 {
     UpdateDirtySlotsAndPendingNodes(RSDrawableSlot::POINT_LIGHT);
@@ -5241,15 +5202,6 @@ void RSRenderNode::NodePostPrepare(
     if (curSurfaceNode == nullptr) {
         UpdateVirtualScreenWhiteListInfo();
     }
-}
-
-void RSRenderNode::UpdateDrawableEnableEDR()
-{
-    bool hasEDREffect = std::any_of(edrDrawableSlots.begin(), edrDrawableSlots.end(), [this](auto slot) {
-        auto drawable = this->drawableVec_[static_cast<int8_t>(slot)];
-        return drawable && drawable->GetEnableEDR();
-    });
-    SetEnableHdrEffect(hasEDREffect);
 }
 } // namespace Rosen
 } // namespace OHOS

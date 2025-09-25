@@ -28,7 +28,6 @@ ohos_unittest("RSAnimationTest") {
     #client_animation
     "$rosen_root/modules/render_service_client/core/animation/rs_animation.cpp",
     "$rosen_root/modules/render_service_client/core/animation/rs_animation_callback.cpp",
-    "$rosen_root/modules/render_service_client/core/animation/rs_animation_group.cpp",
     "$rosen_root/modules/render_service_client/core/animation/rs_curve_animation.cpp",
     "$rosen_root/modules/render_service_client/core/animation/rs_implicit_animation_param.cpp",
     "$rosen_root/modules/render_service_client/core/animation/rs_implicit_animator.cpp",

@@ -21,6 +21,8 @@ rosen/modules/render_service_client/core/ui/rs_ui_context.h @gaoshuai3011
 rosen/modules/render_service_client/core/ui/rs_ui_context.cpp @gaoshuai3011
 rosen/modules/render_service_client/core/ui/rs_ui_director.cpp @gaoshuai3011
 rosen/modules/render_service_client/core/ui/rs_ui_director.h @gaoshuai3011
+rosen/modules/render_service_client/core/transaction/rs_interfaces.h @liuchao-huawei
+rosen/modules/render_service_client/core/transaction/rs_interfaces.cpp @liuchao-huawei
 
 rosen/modules/render_service_base/include/pipeline/ @xiaojianfeng_jeffery
 rosen/modules/render_service_base/src/pipeline/ @xiaojianfeng_jeffery
@@ -113,10 +115,10 @@ rosen/modules/render_service_base/include/common/rs_common_def.h @huang_kaixing
 rosen/modules/render_service_base/include/platform/ohos/rs_irender_service_connection_ipc_interface_code.h @huang_kaixing
 
 [HWC]
-rosen/modules/render_service/core/pipeline/hwc/ @whqwe
-rosen/modules/render_service/core/feature/hwc/ @whqwe
-rosen/modules/render_service_base/include/hwc/ @whqwe
-rosen/modules/render_service_base/src/hwc/ @whqwe
+rosen/modules/render_service/core/pipeline/hwc/ @wh_qwe
+rosen/modules/render_service/core/feature/hwc/ @wh_qwe
+rosen/modules/render_service_base/include/hwc/ @wh_qwe
+rosen/modules/render_service_base/src/hwc/ @wh_qwe
 
 [screen manager]
 rosen/modules/render_service/core/screen_manager/ @pengquan1

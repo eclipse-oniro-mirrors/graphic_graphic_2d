@@ -34,6 +34,8 @@
 #include "common/rs_common_def.h"
 #include "common/rs_matrix3.h"
 #include "common/rs_vector4.h"
+#include "effect/rs_render_filter_base.h"
+#include "effect/rs_render_mask_base.h"
 #include "modifier_ng/rs_render_modifier_ng.h"
 #include "platform/common/rs_log.h"
 #include "property/rs_properties_def.h"
@@ -519,11 +521,11 @@ MARSHALLING_AND_UNMARSHALLING(RSRenderAnimatableProperty)
     EXPLICIT_INSTANTIATION(TEMPLATE, bool)                                         \
     EXPLICIT_INSTANTIATION(TEMPLATE, float)                                        \
     EXPLICIT_INSTANTIATION(TEMPLATE, int)                                          \
+    EXPLICIT_INSTANTIATION(TEMPLATE, short)                                        \
     EXPLICIT_INSTANTIATION(TEMPLATE, Color)                                        \
     EXPLICIT_INSTANTIATION(TEMPLATE, RSWaterRipplePara)                            \
     EXPLICIT_INSTANTIATION(TEMPLATE, RSFlyOutPara)                                 \
     EXPLICIT_INSTANTIATION(TEMPLATE, Gravity)                                      \
-    EXPLICIT_INSTANTIATION(TEMPLATE, ForegroundColorStrategyType)                  \
     EXPLICIT_INSTANTIATION(TEMPLATE, Matrix3f)                                     \
     EXPLICIT_INSTANTIATION(TEMPLATE, Quaternion)                                   \
     EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<RSNGRenderFilterBase>)        \
@@ -547,8 +549,7 @@ MARSHALLING_AND_UNMARSHALLING(RSRenderAnimatableProperty)
     EXPLICIT_INSTANTIATION(TEMPLATE, std::vector<float>)                           \
     EXPLICIT_INSTANTIATION(TEMPLATE, std::vector<Vector2f>)                        \
     EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<Media::PixelMap>)             \
-    EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<Drawing::DrawCmdList>)        \
-    EXPLICIT_INSTANTIATION(TEMPLATE, Drawing::Matrix)
+    EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<Drawing::DrawCmdList>)
 BATCH_EXPLICIT_INSTANTIATION(RSRenderProperty)
 
 #undef EXPLICIT_INSTANTIATION
@@ -596,21 +597,28 @@ bool RSMarshallingHelper::SkipFromParcel(Parcel& parcel, size_t size)
 {
     return {};
 }
+
 void RSMarshallingHelper::BeginNoSharedMem(std::thread::id tid) {}
+
 void RSMarshallingHelper::EndNoSharedMem() {}
+
 bool RSMarshallingHelper::GetUseSharedMem(std::thread::id tid)
 {
     return true;
 }
+
 void RSMarshallingHelper::SetCallingPid(pid_t callingPid) {}
+
 bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<RSRenderPropertyBase>& val)
 {
     return true;
 }
+
 bool RSMarshallingHelper::CheckReadPosition(Parcel& parcel)
 {
     return true;
 }
+
 bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<RSRenderPropertyBase>& val)
 {
     return true;
