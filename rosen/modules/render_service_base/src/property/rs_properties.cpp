@@ -4359,7 +4359,7 @@ std::string RSProperties::Dump() const
     }
     // SDFMask
     auto sdfMask = GetSDFMask();
-    if (sdfMask)
+    if (sdfMask) {
         dumpInfo.append(", SDFMask[" + sdfMask->Dump() + "]");
     }
     return dumpInfo;

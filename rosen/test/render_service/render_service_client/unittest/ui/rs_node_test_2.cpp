@@ -656,7 +656,7 @@ HWTEST_F(RSNodeTest2, SetSDFUnionOPMask, TestSize.Level1)
  * @tc.desc: test results of SDF_SMOOTH_UNION_OP_MASK
  * @tc.type: FUNC
  */
-HWTEST_F(RSNodeTest2, SetSDFRRectMask, TestSize.Level1)
+HWTEST_F(RSNodeTest2, SetSDFSmoothUnionOPMask, TestSize.Level1)
 {
     auto modifierType = ModifierNG::RSModifierType::UNION;
     auto rsNode = RSCanvasNode::Create();
@@ -666,8 +666,8 @@ HWTEST_F(RSNodeTest2, SetSDFRRectMask, TestSize.Level1)
     // create SDF Mask
     auto mask0 = RSNGMaskBase::Create(RSNGEffectType::SDF_SMOOTH_UNION_OP_MASK);
     auto mask = std::static_pointer_cast<RSNGSDFSmoothUnionOpmask>(mask0);
-    auto maskX = RSNGMaskBase::Create(RSNGEffectType::SDF_SMOOTH_UNION_OP_MASK);
-    auto maskY = RSNGMaskBase::Create(RSNGEffectType::SDF_SMOOTH_UNION_OP_MASK);
+    auto maskX = RSNGMaskBase::Create(RSNGEffectType::SDF_RRECT_MASK);
+    auto maskY = RSNGMaskBase::Create(RSNGEffectType::SDF_RRECT_MASK);
 
     maskX = std::static_pointer_cast<RSNGMaskBase>(maskX);
     maskY = std::static_pointer_cast<RSNGMaskBase>(maskY);
@@ -692,10 +692,10 @@ HWTEST_F(RSNodeTest2, SetSDFRRectMask, TestSize.Level1)
 
 /**
  * @tc.name: SetSDFRRectMask
- * @tc.desc: test results of SDF_RRECT_MASK
+ * @tc.desc: test results of SDF_RRECT_MASK and modifier path
  * @tc.type: FUNC
  */
-HWTEST_F(RSNodeTest2, SetSDFSmoothUnionOPMask, TestSize.Level1)
+HWTEST_F(RSNodeTest2, SetSDFRRectMask, TestSize.Level1)
 {
     auto modifierType = ModifierNG::RSModifierType::UNION;
     auto rsNode = RSCanvasNode::Create();
@@ -704,17 +704,23 @@ HWTEST_F(RSNodeTest2, SetSDFSmoothUnionOPMask, TestSize.Level1)
 
     // create SDF Mask
     auto mask0 = RSNGMaskBase::Create(RSNGEffectType::SDF_RRECT_MASK);
-    auto mask = std::static_pointer_cast<RSNGSDFSmoothUnionOpmask>(mask0);
-    // set mask
-    rsNode->SetSDFMask(mask);
-    EXPECT_NE(rsNode->GetModifierCreatedBySetter(modifierType), nullptr);
+    auto mask = std::static_pointer_cast<RSNGSDFRRectMask>(mask0);
 
-    auto& properties = rsNode->GetModifierCreatedBySetter(modifierType)->properties_;
-    EXPECT_NE(properties.find(ModifierNG::RSPropertyType::SDF_MASK), properties.end());
-    rsNode->SetSDFMask(nullptr);
-    EXPECT_NE(properties.find(ModifierNG::RSPropertyType::SDF_MASK), properties.end());
-    rsNode->SetSDFMask(nullptr);
-    EXPECT_NE(properties.find(ModifierNG::RSPropertyType::SDF_MASK), properties.end());
+    auto sdfUnionModifier = std::make_shared<ModifierNG::RSUnionModifier>();
+    rsNode->AddModifier(sdfUnionModifier);
+
+    EXPECT_EQ(sdfUnionModifier->GetSDFMask(), nullptr);
+    EXPECT_EQ(sdfUnionModifier->GetUnionSpacing(), 0.0f);
+    EXPECT_EQ(sdfUnionModifier->GetUseUnion(), false);
+
+    // test the path of using modifier to set these properties
+    sdfUnionModifier->SetSDFMask(mask);
+    sdfUnionModifier->SetUnionSpacing(0.5f);
+    sdfUnionModifier->SetUseUnion(true);
+
+    EXPECT_NE(sdfUnionModifier->GetSDFMask(), nullptr);
+    EXPECT_EQ(sdfUnionModifier->GetUnionSpacing(), 0.5f);
+    EXPECT_EQ(sdfUnionModifier->GetUseUnion(), true);
 }
 
 /**
@@ -722,7 +728,7 @@ HWTEST_F(RSNodeTest2, SetSDFSmoothUnionOPMask, TestSize.Level1)
  * @tc.desc: test results of RSNode::SetUseUnion
  * @tc.type: FUNC
  */
-HWTEST_F(RSNodeTest2, SetSDFSmoothUnionOPMask, TestSize.Level1)
+HWTEST_F(RSNodeTest2, SetUseUnion, TestSize.Level1)
 {
     auto modifierType = ModifierNG::RSModifierType::UNION;
     auto rsNode = RSCanvasNode::Create();

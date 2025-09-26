@@ -17,12 +17,12 @@
 #include "ge_visual_effect_container.h"
 #include "parcel.h" // Assumed definition of Parcel
 
-#include "effet/rs_render_mask_base.h"
+#include "effect/rs_render_mask_base.h"
 using namespace testing;
 using namespace testing::ext;
 
 namespace OHOS::Rosen {
-class RSRenderMaskrBaseTest : public testing::Test {
+class RSRenderMaskBaseTest : public testing::Test {
 public:
     static void SetUpTestCase();
     static void TearDownTestCase();

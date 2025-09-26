@@ -54,7 +54,7 @@ HWTEST_F(RSRenderFilterBaseTest, UpdateVisualEffectParamImpl001, TestSize.Level1
 
     RectT<float> rect;
     RRect testRRect(rect, 0.5f, 0.5f);
-    RSNGEffectHelper::UpdateVisualEffectParamImpl(*testEffect, "test", testRRect);
+    RSNGRenderEffectHelper::UpdateVisualEffectParamImpl(*testEffect, "test", testRRect);
 }
 
 /**

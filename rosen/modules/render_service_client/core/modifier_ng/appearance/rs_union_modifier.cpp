@@ -44,6 +44,6 @@ void RSUnionModifier::SetSDFMask(const std::shared_ptr<RSNGMaskBase>& mask)
 
 std::shared_ptr<RSNGMaskBase> RSUnionModifier::GetSDFMask() const
 {
-    return Getter(RSPropertyType::SDF_MASK, nullptr);
+    return Getter<std::shared_ptr<RSNGMaskBase>>(RSPropertyType::SDF_MASK, nullptr);
 }
 } // namespace OHOS::Rosen::ModifierNG
