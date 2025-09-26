@@ -2090,29 +2090,6 @@ int32_t RSScreenManager::SetScreenSwitchingNotifyCallback(const sptr<RSIScreenSw
     return SUCCESS;
 }
 
-int32_t RSScreenManager::SetBrightnessInfoChangeCallback(const sptr<RSIBrightnessInfoChangeCallback>& callback)
-{
-    std::lock_guard<std::shared_mutex> lock(brightnessInfoChangeCallbackMutex_);
-    brightnessInfoChangeCallback_ = callback;
-    RS_LOGI("%{public}s: set brightness info change callback succeed.", __func__);
-    return SUCCESS;
-}
-
-void RSScreenManager::NotifyBrightnessInfoChangeCallback(ScreenId screenId, const BrightnessInfo& brightnessInfo) const
-{
-    std::shared_lock<std::shared_mutex> lock(brightnessInfoChangeCallbackMutex_);
-    if (brightnessInfoChangeCallback_ == nullptr) {
-        RS_LOGD("%{public}s: brightnessInfoChangeCallback is nullptr", __func__);
-        return;
-    }
-    brightnessInfoChangeCallback_->OnBrightnessInfoChange(screenId, brightnessInfo);
-}
-
-bool RSScreenManager::IsBrightnessInfoChangeCallbackRegister() const
-{
-    return brightnessInfoChangeCallback_ != nullptr;
-}
-
 void RSScreenManager::RegisterScreenNodeListener(std::shared_ptr<RSIScreenNodeListener> listener)
 {
     if (listener == nullptr) {
