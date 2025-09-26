@@ -21,7 +21,7 @@ int RSBrightnessInfoChangeCallbackStub::OnRemoteRequest(
     uint32_t code, MessageParcel& data, MessageParcel& reply, MessageOption& option)
 {
     auto token = data.ReadInterfaceToken();
-    if (token != RSIBrightnessInfoChangeCallback::GetDescriptor()) {
+    if (token != GetDescriptor()) {
         ROSEN_LOGE("RSBrightnessInfoChangeCallbackStub::OnRemoteRequest ERR_INVALID_STATE");
         return ERR_INVALID_STATE;
     }
@@ -52,7 +52,7 @@ int RSBrightnessInfoChangeCallbackStub::OnRemoteRequest(
     return ret;
 }
 
-bool RSBrightnessInfoChangeCallbackStub::ReadBrightnessInfo(const BrightnessInfo& brightnessInfo, MessageParcel& data)
+bool RSBrightnessInfoChangeCallbackStub::ReadBrightnessInfo(BrightnessInfo& brightnessInfo, MessageParcel& data)
 {
     if (!data.ReadFloat(brightnessInfo.currentHeadroom) ||
         !data.ReadFloat(brightnessInfo.maxHeadroom) ||

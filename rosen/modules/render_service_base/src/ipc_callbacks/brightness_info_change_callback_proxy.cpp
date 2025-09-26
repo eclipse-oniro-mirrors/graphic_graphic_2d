@@ -43,7 +43,7 @@ void RSBrightnessInfoChangeCallbackProxy::OnBrightnessInfoChange(ScreenId screen
     MessageParcel reply;
     MessageOption option;
 
-    if (!data.WriteInterfaceToken(RSIBrightnessInfoChangeCallback::GetDescriptor())) {
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
         ROSEN_LOGE("RSBrightnessInfoChangeCallbackProxy::OnBrightnessInfoChange WriteInterfaceToken failed");
         return;
     }

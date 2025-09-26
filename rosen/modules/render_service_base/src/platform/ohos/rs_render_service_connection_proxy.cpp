@@ -1293,7 +1293,7 @@ int32_t RSRenderServiceConnectionProxy::GetBrightnessInfo(ScreenId screenId, Bri
     return result;
 }
 
-bool RSRenderServiceConnectionProxy::ReadBrightnessInfo(const BrightnessInfo& brightnessInfo, MessageParcel& data)
+bool RSRenderServiceConnectionProxy::ReadBrightnessInfo(BrightnessInfo& brightnessInfo, MessageParcel& data)
 {
     if (!data.ReadFloat(brightnessInfo.currentHeadroom) ||
         !data.ReadFloat(brightnessInfo.maxHeadroom) ||
