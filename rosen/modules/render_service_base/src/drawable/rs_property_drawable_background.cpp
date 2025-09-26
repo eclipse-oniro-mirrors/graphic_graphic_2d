@@ -57,7 +57,7 @@ namespace OHOS::Rosen {
 namespace DrawableV2 {
 namespace {
 constexpr int TRACE_LEVEL_TWO = 2;
-#if defined(ROSEN_OHOS) && (defined(RS_ENABLE_VK))
+#if defined(ROSEN_OHOS) && (defined(RS_ENABLE_VK) || defined(RS_ENABLE_GL))
 constexpr uint8_t ASTC_HEADER_SIZE = 16;
 #endif
 }
@@ -448,7 +448,9 @@ std::shared_ptr<Drawing::Image> RSBackgroundImageDrawable::MakeFromTextureForVK(
     }
     return dmaImage;
 }
+#endif
 
+#if defined(ROSEN_OHOS) && (defined(RS_ENABLE_VK) || defined(RS_ENABLE_GL))
 void RSBackgroundImageDrawable::SetCompressedDataForASTC()
 {
     std::shared_ptr<Media::PixelMap> pixelMap = bgImage_->GetPixelMap();
@@ -458,6 +460,7 @@ void RSBackgroundImageDrawable::SetCompressedDataForASTC()
     }
     std::shared_ptr<Drawing::Data> fileData = std::make_shared<Drawing::Data>();
     // After RS is switched to Vulkan, the judgment of GpuApiType can be deleted.
+#if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
     if (pixelMap->GetAllocatorType() == Media::AllocatorType::DMA_ALLOC &&
         (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
         RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR)) {
@@ -474,7 +477,9 @@ void RSBackgroundImageDrawable::SetCompressedDataForASTC()
             RS_LOGE("SetCompressedDataForASTC data BuildFromOHNativeBuffer fail");
             return;
         }
-    } else {
+    } else
+#endif
+    {
         const void* data = pixelMap->GetPixels();
         if (pixelMap->GetCapacity() > ASTC_HEADER_SIZE &&
             (data == nullptr || !fileData->BuildWithoutCopy(
@@ -526,9 +531,9 @@ Drawing::RecordingCanvas::DrawFunc RSBackgroundImageDrawable::CreateDrawFunc() c
         if (!bgImage) {
             return;
         }
-#if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
         RSTagTracker tagTracker(canvas->GetGPUContext(),
             RSTagTracker::SOURCETYPE::SOURCE_RSBACKGROUNDIMAGEDRAWABLE);
+#if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
         if (bgImage->GetPixelMap() && !bgImage->GetPixelMap()->IsAstc() &&
             bgImage->GetPixelMap()->GetAllocatorType() == Media::AllocatorType::DMA_ALLOC) {
             if (!bgImage->GetPixelMap()->GetFd()) {
@@ -538,6 +543,8 @@ Drawing::RecordingCanvas::DrawFunc RSBackgroundImageDrawable::CreateDrawFunc() c
                 ptr->MakeFromTextureForVK(*canvas, reinterpret_cast<SurfaceBuffer*>(bgImage->GetPixelMap()->GetFd()));
             bgImage->SetDmaImage(dmaImage);
         }
+#endif
+#if defined(ROSEN_OHOS) && (defined(RS_ENABLE_VK) || defined(RS_ENABLE_GL))
         if (bgImage->GetPixelMap() && bgImage->GetPixelMap()->IsAstc()) {
             ptr->SetCompressedDataForASTC();
         }
