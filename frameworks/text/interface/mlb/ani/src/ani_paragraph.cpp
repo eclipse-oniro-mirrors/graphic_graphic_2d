@@ -111,7 +111,8 @@ std::vector<ani_native_function> AniParagraph::InitMethods(ani_env* env)
         ani_native_function{"nativeGetLineMetricsAt", "i:C{@ohos.graphics.text.text.LineMetrics}",
             reinterpret_cast<void*>(GetLineMetricsAt)},
         ani_native_function{"updateColor", UPDATE_COLOR_SIGN.c_str(), reinterpret_cast<void*>(UpdateColor)},
-        ani_native_function{"updateDecoration", UPDATE_DECORATION_SIGN.c_str(), reinterpret_cast<void*>(UpdateDecoration)},
+        ani_native_function{"updateDecoration",
+            UPDATE_DECORATION_SIGN.c_str(), reinterpret_cast<void*>(UpdateDecoration)},
     };
     return methods;
 }

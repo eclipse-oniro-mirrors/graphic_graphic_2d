@@ -48,15 +48,9 @@ ani_status ParseDrawingColorToNative(
 
 ani_status AniTextStyleConverter::ParseTextStyleToNative(ani_env* env, ani_object obj, TextStyle& textStyle)
 {
-    ani_class cls = nullptr;
-    ani_status ret = AniTextUtils::FindClassWithCache(env, ANI_INTERFACE_TEXT_STYLE, cls);
-    if (ret != ANI_OK) {
-        TEXT_LOGE("Failed to find class, ret %{public}d", ret);
-        return ret;
-    }
     ani_boolean isObj = false;
-    ret = env->Object_InstanceOf(obj, cls, &isObj);
-    if (!isObj) {
+    ani_status ret = AniTextUtils::Object_InstanceOf(env, obj, ANI_INTERFACE_TEXT_STYLE, &isObj);
+    if (ret != ANI_OK || !isObj) {
         TEXT_LOGE("Object mismatch, ret %{public}d", ret);
         return ret;
     }
@@ -176,15 +170,9 @@ void AniTextStyleConverter::ParseTextShadowToNative(ani_env* env, ani_object obj
     AniTextUtils::ReadOptionalArrayField<std::string>(
         env, obj, "textShadows", array, [&textShadow](ani_env* env, ani_ref ref) {
             ani_object shadowObj = reinterpret_cast<ani_object>(ref);
-            ani_class cls = nullptr;
-            ani_status ret = AniTextUtils::FindClassWithCache(env, ANI_INTERFACE_TEXTSHADOW, cls);
-            if (ret != ANI_OK) {
-                TEXT_LOGE("Failed to find class, ret %{public}d", ret);
-                return "";
-            }
             ani_boolean isObj = false;
-            ret = env->Object_InstanceOf(shadowObj, cls, &isObj);
-            if (!isObj) {
+            ani_status ret = AniTextUtils::Object_InstanceOf(env, shadowObj, ANI_INTERFACE_TEXTSHADOW, &isObj);
+            if (ret != ANI_OK || !isObj) {
                 TEXT_LOGE("Object mismatch, ret %{public}d", ret);
                 return "";
             }
@@ -213,15 +201,9 @@ void AniTextStyleConverter::ParseFontFeatureToNative(ani_env* env, ani_object ob
     AniTextUtils::ReadOptionalArrayField<std::string>(
         env, obj, "fontFeatures", array, [&fontFeatures](ani_env* env, ani_ref ref) {
             ani_object obj = reinterpret_cast<ani_object>(ref);
-            ani_class cls = nullptr;
-            ani_status ret = AniTextUtils::FindClassWithCache(env, ANI_INTERFACE_FONT_FEATURE, cls);
-            if (ret != ANI_OK) {
-                TEXT_LOGE("Failed to find class, ret %{public}d", ret);
-                return "";
-            }
             ani_boolean isObj = false;
-            ret = env->Object_InstanceOf(obj, cls, &isObj);
-            if (!isObj) {
+            ani_status ret = AniTextUtils::Object_InstanceOf(env, obj, ANI_INTERFACE_FONT_FEATURE, &isObj);
+            if (ret != ANI_OK || !isObj) {
                 TEXT_LOGE("Object mismatch, ret %{public}d", ret);
                 return "";
             }
@@ -254,15 +236,9 @@ void AniTextStyleConverter::ParseFontVariationToNative(ani_env* env, ani_object 
     AniTextUtils::ReadOptionalArrayField<std::string>(
         env, obj, "fontVariations", array, [&fontVariations](ani_env* env, ani_ref ref) {
             ani_object obj = reinterpret_cast<ani_object>(ref);
-            ani_class cls = nullptr;
-            ani_status ret = AniTextUtils::FindClassWithCache(env, ANI_INTERFACE_FONT_VARIATION, cls);
-            if (ret != ANI_OK) {
-                TEXT_LOGE("Failed to find class, ret %{public}d", ret);
-                return "";
-            }
             ani_boolean isObj = false;
-            ret = env->Object_InstanceOf(obj, cls, &isObj);
-            if (!isObj) {
+            ani_status ret = AniTextUtils::Object_InstanceOf(env, obj, ANI_INTERFACE_FONT_VARIATION, &isObj);
+            if (ret != ANI_OK || !isObj) {
                 TEXT_LOGE("Object mismatch, ret %{public}d", ret);
                 return "";
             }
@@ -291,15 +267,9 @@ void AniTextStyleConverter::ParseFontVariationToNative(ani_env* env, ani_object 
 
 void AniTextStyleConverter::ParseRectStyleToNative(ani_env* env, ani_object obj, RectStyle& rectStyle)
 {
-    ani_class cls = nullptr;
-    ani_status ret = AniTextUtils::FindClassWithCache(env, ANI_INTERFACE_RECT_STYLE, cls);
-    if (ret != ANI_OK) {
-        TEXT_LOGE("Failed to find class, ret %{public}d", ret);
-        return;
-    }
     ani_boolean isObj = false;
-    ret = env->Object_InstanceOf(obj, cls, &isObj);
-    if (!isObj) {
+    ani_status ret = AniTextUtils::Object_InstanceOf(env, obj, ANI_INTERFACE_RECT_STYLE, &isObj);
+    if (ret != ANI_OK || !isObj) {
         TEXT_LOGE("Object mismatch, ret %{public}d", ret);
         return;
     }

@@ -44,7 +44,8 @@ const std::string GET_TYPOGRAPHIC_BOUNDS_SIGNATURE = ":C{" + std::string(ANI_INT
 const std::string GET_IMAGE_BOUNDS_SIGNATURE = ":C{" + std::string(ANI_INTERFACE_RECT) + "}";
 const std::string RETURN_ARRAY_SIGN = ":C{" + std::string(ANI_ARRAY) + "}";
 const std::string GET_TEXT_DIRECTION_SIGNATURE = ":E{" + std::string(ANI_ENUM_TEXT_DIRECTION) + "}";
-const std::string GET_ADVANCES_SIGNATURE = "C{" + std::string(ANI_INTERFACE_RANGE) + "}:C{" + std::string(ANI_ARRAY) + "}";
+const std::string GET_ADVANCES_SIGNATURE =
+    "C{" + std::string(ANI_INTERFACE_RANGE) + "}:C{" + std::string(ANI_ARRAY) + "}";
 } // namespace
 
 std::vector<ani_native_function> AniRun::InitMethods(ani_env* env)
@@ -470,7 +471,8 @@ ani_object AniRun::GetTextDirection(ani_env* env, ani_object object)
         return AniTextUtils::CreateAniUndefined(env);
     }
     TextDirection textDirection = aniRun->run_->GetTextDirection();
-    ani_enum_item textDirectionEnum = AniTextUtils::CreateAniEnum(env, ANI_ENUM_TEXT_DIRECTION, static_cast<int>(textDirection));
+    ani_enum_item textDirectionEnum = AniTextUtils::CreateAniEnum(
+        env, ANI_ENUM_TEXT_DIRECTION, static_cast<int>(textDirection));
     return static_cast<ani_object>(textDirectionEnum);
 }
 

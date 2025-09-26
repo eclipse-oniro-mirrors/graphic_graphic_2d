@@ -192,7 +192,8 @@ void AniFontCollection::ClearCaches(ani_env* env, ani_object obj)
     aniFontCollection->fontCollection_->ClearCaches();
 }
 
-void AniFontCollection::UnloadFontSync(ani_env* env, ani_object obj, ani_string name) {
+void AniFontCollection::UnloadFontSync(ani_env* env, ani_object obj, ani_string name)
+{
     std::string familyName;
     ani_status ret = AniTextUtils::AniToStdStringUtf8(env, name, familyName);
     if (ret != ANI_OK) {
