@@ -1119,6 +1119,14 @@ namespace drawing {
      * @since 12
      */
     native getValue(index: int): double;
+
+    /**
+     * Compute the left mltiplication of the marix.
+     * @param { Matrix } matrix - The matrix object to copy.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 20
+     */
+    native preConcat(matrix: Matrix): void;
   }
 
   /**
@@ -1276,6 +1284,14 @@ namespace drawing {
      * @since 20
      */
     native constructorNative(left: int, top: int, right: int, bottom: int): void;
+
+    /**
+     * Set the current region to empty.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @crossplatform
+     * @since 20
+     */
+    native setEmpty(): void;
   }
 
   /**
@@ -1434,6 +1450,57 @@ namespace drawing {
      * @since 12
      */
     REPLACE = 5
+  }
+
+  /**
+   * This class offers a comprehensive set of operations to handle for common2D Rect object.
+   *
+   * @syscap SystemCapability.Graphics.Drawing
+   * @crossplatform
+   * @since 20
+   */
+  export class RectUtils {
+    static { loadLibraryWithPermissionCheck("drawing_ani_core", "@ohos.graphics.drawing"); }
+    private nativeObj: long = 0;
+    private cleaner: Cleaner | null = null;
+
+    registerCleaner(ptr: long): void {
+      this.cleaner = new Cleaner("RectUtils", ptr);
+      destroyRegister.register(this, this.cleaner!, unregisterToken);
+    }
+
+    bindNativePtr(ptr: long): void {
+      if (this.nativeObj == 0) {
+        this.nativeObj = ptr;
+        this.registerCleaner(this.nativeObj);
+      }
+    }
+
+    /**
+     * Determine whether one 2D rectangular object totally contains another 2D rectangular object.
+     * @param { common2D.Rect } rect - Indicates the Rect object.
+     * @param { common2D.Rect } other - Indicates the other Rect object.
+     * @returns { boolean } - Returns true if rect totally contains other; returns false otherwise.
+     * @static
+     * @syscap SystemCapability.Graphics.Drawing
+     * @crossplatform
+     * @since 20
+     */
+    static native contains(rect: common2D.Rect, other: common2D.Rect): boolean;
+
+    /**
+     * Add the specified values to the left and top boundaried of an 2D rectangular object.
+     * @param { common2D.Rect } rect - Indicates the Rect object.
+     * @param { double } left - Indicates the value added to the left boundary of the rectangle.
+     * @param { double } top - Indicates the value added to the top boundary of the rectangle.
+     * @param { double } right - Indicates the value added to the right boundary of the rectangle.
+     * @param { double } bottom - Indicates the value added to the bottom boundary of the rectangle.
+     * @static
+     * @syscap SystemCapability.Graphics.Drawing
+     * @crossplatform
+     * @since 20
+     */
+    static native inset(rect: common2D.Rect, left: double, top: double, right: double, bottom: double): void;
   }
 }
 
