@@ -543,13 +543,13 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, CaptureSurface009, TestSize.Level2)
 
     CaptureParam captureParam1;
     captureParam1.isSingleSurface_ = false;
-    captureParam1.ignoreSpecialLayer_ = false;
+    captureParam1.needCaptureSpecialLayer_ = false;
     RSUniRenderThread::SetCaptureParam(captureParam1);
     surfaceDrawable_->CaptureSurface(*canvas_, *surfaceParams);
 
     CaptureParam captureParam2;
     captureParam2.isSingleSurface_ = false;
-    captureParam2.ignoreSpecialLayer_ = true;
+    captureParam2.needCaptureSpecialLayer_ = true;
     RSUniRenderThread::SetCaptureParam(captureParam2);
     surfaceDrawable_->CaptureSurface(*canvas_, *surfaceParams);
     EXPECT_TRUE(uniParams->GetSecExemption());
