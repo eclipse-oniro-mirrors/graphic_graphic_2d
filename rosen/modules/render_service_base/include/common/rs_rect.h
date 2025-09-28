@@ -38,6 +38,8 @@ public:
         };
         T data_[4]; // 4 is size of data or structure
     };
+    static constexpr size_t NUM_4 = 4;
+    static constexpr size_t DATA_SIZE = sizeof(T) * NUM_4;
 
     RectT()
     {
@@ -317,7 +319,7 @@ class RRectT {
 public:
     RectT<T> rect_ = RectT<T>();
     Vector2f radius_[4] = { { 0, 0 } };
-    static size_t DATA_SIZE = sizeof(radius_) + sizeof(rect_);
+    static constexpr size_t V2F_DATA_SIZE = sizeof(Vector2f);
     RRectT() {}
     ~RRectT() = default;
 
