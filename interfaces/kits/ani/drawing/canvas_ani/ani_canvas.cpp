@@ -432,8 +432,8 @@ void AniCanvas::GetColorsAndDraw(ani_env* env, ani_object colorsObj, int32_t col
     DrawPixelMapMeshArgs& args, AniCanvas* aniCanvas)
 {
     float* verticesMesh = args.verticesSize ? (args.vertices + args.vertOffset * 2) : nullptr;
-    ani_double aniLength;
-    if (ANI_OK != env->Object_GetPropertyByName_Double(colorsObj, "length", &aniLength)) {
+    ani_int aniLength;
+    if (ANI_OK != env->Object_GetPropertyByName_Int(colorsObj, "length", &aniLength)) {
         AniThrowError(env, "Invalid params.");
         return;
     }
@@ -459,11 +459,11 @@ void AniCanvas::GetColorsAndDraw(ani_env* env, ani_object colorsObj, int32_t col
         return;
     }
     for (uint32_t i = 0; i < colorsSize; i++) {
-        ani_double color;
+        ani_int color;
         ani_ref colorRef;
         if (ANI_OK != env->Object_CallMethodByName_Ref(
-            colorsObj, "$_get", "I:Lstd/core/Object;", &colorRef, (ani_int)i) ||
-            ANI_OK != env->Object_CallMethodByName_Double(static_cast<ani_object>(colorRef), "unboxed", ":D", &color)) {
+            colorsObj, "$_get", "i:C{std.core.Object}", &colorRef, (ani_int)i) ||
+            ANI_OK != env->Object_CallMethodByName_Int(static_cast<ani_object>(colorRef), "unboxed", ":i", &color)) {
             delete []colors;
             AniThrowError(env, "Incorrect DrawPixelMapMesh parameter color type.");
             return;
