@@ -78,7 +78,7 @@ DECLARE_MASK(FrameGradientMask, FRAME_GRADIENT_MASK,
     ADD_PROPERTY_TAG(FrameGradientMask, FrameWidth)
 );
 
-// SDF OP mask 
+// SDF OP mask
 DECLARE_MASK(SDFUnionOpMask, SDF_UNION_OP_MASK,
     ADD_PROPERTY_TAG(SDFUnionOpMask, MaskX),
     ADD_PROPERTY_TAG(SDFUnionOpMask, MaskY)
