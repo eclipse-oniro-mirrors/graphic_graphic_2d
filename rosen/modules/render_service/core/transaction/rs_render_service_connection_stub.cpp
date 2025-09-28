@@ -2533,7 +2533,13 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             int32_t fd{-1};
             uint32_t size{0};
             int32_t needUpdate{0};
-            if (!data.ReadUint64(id) || (fd = data.ReadFileDescriptor()) == -1 || !data.ReadUint32(size) ) {
+            if (!data.ReadUint64(id) || !data.ReadUint32(size)) {
+                RS_LOGE("RSRenderServiceConnectionStub::REGISTER_SHARED_TYPEFACE read parcel failed!");
+                ret = ERR_INVALID_DATA;
+                break;
+            }
+            fd = data.ReadFileDescriptor();
+            if (fd == -1) {
                 RS_LOGE("RSRenderServiceConnectionStub::REGISTER_SHARED_TYPEFACE read parcel failed!");
                 ret = ERR_INVALID_DATA;
                 break;

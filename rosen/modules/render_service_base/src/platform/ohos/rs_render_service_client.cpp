@@ -1522,7 +1522,7 @@ bool RSRenderServiceClient::RegisterTypeface(std::shared_ptr<Drawing::Typeface>&
 }
 
 
-int32_t RSRenderServiceClient::RegisterTypeface(uint32_t hash, int32_t fd, uint32_t size)
+int32_t RSRenderServiceClient::RegisterTypeface(uint32_t hash, uint32_t size, int32_t fd)
 {
     auto renderService = RSRenderServiceConnectHub::GetRenderService();
     if (renderService == nullptr) {
@@ -1533,7 +1533,7 @@ int32_t RSRenderServiceClient::RegisterTypeface(uint32_t hash, int32_t fd, uint3
     ROSEN_LOGD("RSRenderServiceClient::RegisterTypeface: pid[%{public}d] register typface[%{public}u]",
         RSTypefaceCache::GetTypefacePid(id), RSTypefaceCache::GetTypefaceId(id));
     int32_t needUpdate = 0;
-    return renderService->RegisterTypeface(RSTypefaceCache::GenGlobalUniqueId(hash), fd, size, needUpdate);
+    return renderService->RegisterTypeface(id, size, fd, needUpdate);
 }
 
 bool RSRenderServiceClient::UnRegisterTypeface(uint32_t uniqueId)

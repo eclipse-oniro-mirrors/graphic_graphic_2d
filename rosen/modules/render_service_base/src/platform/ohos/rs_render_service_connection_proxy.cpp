@@ -3391,7 +3391,7 @@ bool RSRenderServiceConnectionProxy::RegisterTypeface(uint64_t globalUniqueId,
     return result;
 }
 
-int32_t RSRenderServiceConnectionProxy::RegisterTypeface(uint64_t id, int32_t fd, uint32_t size, int32_t& needUpdate)
+int32_t RSRenderServiceConnectionProxy::RegisterTypeface(uint64_t id, uint32_t size, int32_t fd, int32_t& needUpdate)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -3405,12 +3405,12 @@ int32_t RSRenderServiceConnectionProxy::RegisterTypeface(uint64_t id, int32_t fd
         RS_LOGE("RegisterTypeface: WriteUint64 id err.");
         return -1;
     }
-    if (!data.WriteFileDescriptor(fd)) {
-        RS_LOGE("RegisterTypeface: WriteFileDescriptor fd err.");
-        return -1;
-    }
     if (!data.WriteUint32(size)) {
         RS_LOGE("RegisterTypeface: WriteUint32 size err.");
+        return -1;
+    }
+    if (!data.WriteFileDescriptor(fd)) {
+        RS_LOGE("RegisterTypeface: WriteFileDescriptor fd err.");
         return -1;
     }
 

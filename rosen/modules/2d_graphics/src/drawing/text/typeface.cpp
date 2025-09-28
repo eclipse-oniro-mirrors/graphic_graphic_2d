@@ -79,6 +79,9 @@ std::shared_ptr<Typeface> Typeface::MakeFromAshmem(int32_t fd, uint32_t size, ui
     auto stream = std::make_unique<MemoryStream>(
         ptr, size, [](const void* ptr, void* context) { delete reinterpret_cast<Ashmem*>(context); }, ashmem.release());
     auto tf = Typeface::MakeFromStream(std::move(stream));
+    if (tf == nullptr) {
+        return nullptr;
+    }
     tf->SetFd(fd);
     if (hash == 0) {
         hash = CalculateHash(reinterpret_cast<const uint8_t*>(ptr), size);
@@ -102,6 +105,9 @@ std::shared_ptr<Typeface> Typeface::MakeFromAshmem(
     auto stream = std::make_unique<MemoryStream>(
         ptr, size, [](const void* ptr, void* context) { delete reinterpret_cast<Ashmem*>(context); }, ashmem.release());
     auto tf = Typeface::MakeFromStream(std::move(stream));
+    if (tf == nullptr) {
+        return nullptr;
+    }
     tf->SetFd(fd);
     if (hash == 0) {
         hash = CalculateHash(data, size);

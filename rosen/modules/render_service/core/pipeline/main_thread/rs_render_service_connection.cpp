@@ -2594,7 +2594,7 @@ bool RSRenderServiceConnection::RegisterTypeface(uint64_t globalUniqueId,
     return true;
 }
 
-int32_t RSRenderServiceConnection::RegisterTypeface(uint64_t id, int32_t fd, uint32_t size, int32_t& needUpdate)
+int32_t RSRenderServiceConnection::RegisterTypeface(uint64_t id, uint32_t size, int32_t fd, int32_t& needUpdate)
 {
     auto tf = RSTypefaceCache::Instance().UpdateDrawingTypefaceRef(id);
     if (tf != nullptr) {
