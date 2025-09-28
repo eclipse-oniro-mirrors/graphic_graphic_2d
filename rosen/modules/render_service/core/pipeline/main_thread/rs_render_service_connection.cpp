@@ -1647,7 +1647,7 @@ ErrCode RSRenderServiceConnection::TakeSurfaceCaptureWithAllWindows(NodeId id,
         captureParam.id = id;
         captureParam.config = captureConfig;
         captureParam.isSystemCalling = hasPermission;
-        captureParam.ignoreSpecialLayer = hasPermission;
+        captureParam.needCaptureSpecialLayer = hasPermission;
         RSSurfaceCaptureTaskParallel::CheckModifiers(id, captureConfig.useCurWindow);
         RSSurfaceCaptureTaskParallel::Capture(callback, captureParam);
     };

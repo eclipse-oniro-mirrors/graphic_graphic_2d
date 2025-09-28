@@ -1187,7 +1187,7 @@ bool RSSurfaceRenderNodeDrawable::DrawSpecialLayer(RSPaintFilterCanvas& canvas, 
     auto isSnapshotSkipLayer =
         RSUniRenderThread::GetCaptureParam().isSnapshot_ && specialLayerManager.Find(SpecialLayerType::SNAPSHOT_SKIP);
     if ((specialLayerManager.Find(SpecialLayerType::SKIP) || isSnapshotSkipLayer) &&
-        !RSUniRenderThread::GetCaptureParam().ignoreSpecialLayer_) {
+        !RSUniRenderThread::GetCaptureParam().needCaptureSpecialLayer_) {
         RS_LOGD("RSSurfaceRenderNodeDrawable::DrawSpecialLayer: "
             "process RSSurfaceRenderNode(id:[%{public}" PRIu64 "] name:[%{public}s])"
             "skip layer or snapshotskip layer", surfaceParams.GetId(), name_.c_str());

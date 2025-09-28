@@ -3678,6 +3678,9 @@ void RSUniRenderVisitor::CollectSurfaceLockLayer(RSSurfaceRenderNode& node)
             continue;
         }
         isSurfaceLockLayer = isSurfaceLockLayer || surfaceNodePtr->GetFixRotationByUser();
+        if (isSurfaceLockLayer) {
+            break;
+        }
     }
     RSMainThread::Instance()->SetHasSurfaceLockLayer(isSurfaceLockLayer);
 }
