@@ -99,12 +99,12 @@ RegisterError FontCollection::RegisterTypeface(TypefaceWithAlias& ta)
         typefaceSet_.insert(ta);
         return RegisterError::SUCCESS;
     }
-    int32_t result = Drawing::Typeface::GetTypefaceRegisterCallBack()(ta.GetTypeface());
-    if (result == -1) {
+    int32_t fd = Drawing::Typeface::GetTypefaceRegisterCallBack()(ta.GetTypeface());
+    if (fd == -1) {
         TEXT_LOGE("Failed to register typeface %{public}s", ta.GetAlias().c_str());
         return RegisterError::REGISTER_FAILED;
-    } else if (result >= 0 && result != ta.GetTypeface()->GetFd()) {
-        ta.UpdateTypefaceAshmem(result, ta.GetTypeface()->GetSize());
+    } else if (fd >= 0 && fd != ta.GetTypeface()->GetFd()) {
+        ta.UpdateTypefaceAshmem(fd, ta.GetTypeface()->GetSize());
     }
     TEXT_LOGI("Succeed in registering typeface, family name: %{public}s, hash: %{public}u", ta.GetAlias().c_str(),
         ta.GetHash());
@@ -128,7 +128,8 @@ std::shared_ptr<Drawing::Typeface> FontCollection::LoadFont(
     if (err != RegisterError::SUCCESS) {
         TEXT_LOGE("Failed to register typeface %{public}s", ta.GetAlias().c_str());
         return nullptr;
-    } else if (err != RegisterError::ALREADY_EXIST) {
+    }
+    if (err != RegisterError::ALREADY_EXIST) {
         typeface = ta.GetTypeface();
         dfmanager_->LoadDynamicFont(familyName, typeface);
         FontDescriptorMgrInstance.CacheDynamicTypeface(typeface, ta.GetAlias());
@@ -323,16 +324,19 @@ bool TypefaceWithAlias::operator==(const TypefaceWithAlias& other) const
 
 void TypefaceWithAlias::UpdateTypefaceAshmem(int32_t fd, uint32_t size)
 {
-    auto ashmem = new Ashmem(fd, size);
-    bool mapResult = ashmem->MapReadOnlyAshmem();
-    const void* readPtr = ashmem->ReadFromAshmem(size, 0);
-    if (mapResult && readPtr != nullptr && typeface_ != nullptr) {
-        auto stream = std::make_unique<Drawing::MemoryStream>(
-            readPtr, size, [](const void* ptr, void* context) { delete reinterpret_cast<Ashmem*>(context); }, ashmem);
-        typeface_->UpdateStream(std::move(stream));
-    } else {
-        delete ashmem;
+    if (typeface_ == nullptr) {
+        return;
     }
+    auto ashmem = std::make_unique<Ashmem>(fd, size);
+    bool mapResult = ashmem->MapReadOnlyAshmem();
+    const void* ptr = ashmem->ReadFromAshmem(size, 0);
+    if (!mapResult || ptr == nullptr) {
+        TEXT_LOGE("Failed to update ashmem: %{public}d -> %{public}d", typeface_->GetFd(), fd);
+        return;
+    }
+    auto stream = std::make_unique<Drawing::MemoryStream>(
+        ptr, size, [](const void* ptr, void* context) { delete reinterpret_cast<Ashmem*>(context); }, ashmem.release());
+    typeface_->UpdateStream(std::move(stream));
 }
 } // namespace AdapterTxt
 

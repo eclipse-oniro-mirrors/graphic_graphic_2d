@@ -70,18 +70,18 @@ std::shared_ptr<Typeface> Typeface::MakeFromStream(std::unique_ptr<MemoryStream>
 
 std::shared_ptr<Typeface> Typeface::MakeFromAshmem(int32_t fd, uint32_t size, uint32_t hash)
 {
-    auto ashmem = new Ashmem(fd, size);
+    auto ashmem = std::make_unique<Ashmem>(fd, size);
     bool mapResult = ashmem->MapReadOnlyAshmem();
-    const void* readPtr = ashmem->ReadFromAshmem(size, 0);
-    if (!mapResult || readPtr == nullptr) {
+    const void* ptr = ashmem->ReadFromAshmem(size, 0);
+    if (!mapResult || ptr == nullptr) {
         return nullptr;
     }
     auto stream = std::make_unique<MemoryStream>(
-        readPtr, size, [](const void* ptr, void* context) { delete reinterpret_cast<Ashmem*>(context); }, ashmem);
+        ptr, size, [](const void* ptr, void* context) { delete reinterpret_cast<Ashmem*>(context); }, ashmem.release());
     auto tf = Typeface::MakeFromStream(std::move(stream));
     tf->SetFd(fd);
     if (hash == 0) {
-        hash = CalculateHash(reinterpret_cast<const uint8_t*>(readPtr), size);
+        hash = CalculateHash(reinterpret_cast<const uint8_t*>(ptr), size);
     }
     tf->SetHash(hash);
     tf->SetSize(size);
@@ -92,15 +92,15 @@ std::shared_ptr<Typeface> Typeface::MakeFromAshmem(
     const uint8_t* data, uint32_t size, uint32_t hash, const std::string& name)
 {
     int32_t fd = OHOS::AshmemCreate(name.c_str(), size);
-    auto ashmem = new Ashmem(fd, size);
+    auto ashmem = std::make_unique<Ashmem>(fd, size);
     bool mapResult = ashmem->MapReadAndWriteAshmem();
     bool writeResult = ashmem->WriteToAshmem(data, size, 0);
-    const void* readPtr = ashmem->ReadFromAshmem(size, 0);
-    if (!mapResult || !writeResult || readPtr == nullptr) {
+    const void* ptr = ashmem->ReadFromAshmem(size, 0);
+    if (!mapResult || !writeResult || ptr == nullptr) {
         return nullptr;
     }
     auto stream = std::make_unique<MemoryStream>(
-        readPtr, size, [](const void* ptr, void* context) { delete reinterpret_cast<Ashmem*>(context); }, ashmem);
+        ptr, size, [](const void* ptr, void* context) { delete reinterpret_cast<Ashmem*>(context); }, ashmem.release());
     auto tf = Typeface::MakeFromStream(std::move(stream));
     tf->SetFd(fd);
     if (hash == 0) {
@@ -335,9 +335,9 @@ uint32_t Typeface::CalculateHash(const uint8_t* data, size_t datalen)
         size_t size =
             extraOffset + STATIC_HEADER_LEN + TABLE_ENTRY_LEN * read<uint16_t>(data + extraOffset + TABLE_COUNT);
 #ifdef USE_M133_SKIA
-        hash ^= SkChecksum::Hash32(data, size, 0);
+        hash ^= SkChecksum::Hash32(data, size, datalen);
 #else
-        hash ^= SkOpts::hash(data, size, 0);
+        hash ^= SkOpts::hash(data, size, datalen);
 #endif
     }
     return hash;

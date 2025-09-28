@@ -23,7 +23,7 @@ class TypefaceAutoRegister {
 public:
     TypefaceAutoRegister()
     {
-        Drawing::Typeface::RegisterCallBackFunc([](std::shared_ptr<Drawing::Typeface> tf) -> bool {
+        Drawing::Typeface::RegisterCallBackFunc([](std::shared_ptr<Drawing::Typeface> tf) {
             return Rosen::RSInterfaces::GetInstance().RegisterTypeface(tf);
         });
 
