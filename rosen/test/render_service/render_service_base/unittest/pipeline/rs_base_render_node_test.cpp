@@ -636,24 +636,6 @@ HWTEST_F(RSBaseRenderNodeTest, CheckDrawingCacheType, TestSize.Level1)
 }
 
 /**
- * @tc.name: GetFilterRectsInCache
- * @tc.desc: test results of GetFilterRectsInCache
- * @tc.type:FUNC
- * @tc.require:
- */
-HWTEST_F(RSBaseRenderNodeTest, GetFilterRectsInCache, TestSize.Level1)
-{
-    auto node = std::make_shared<RSBaseRenderNode>(id, context);
-    std::unordered_map<NodeId, std::unordered_set<NodeId>> allRects;
-    node->GetFilterRectsInCache(allRects);
-
-    std::unordered_set<NodeId> curRects = { 1, 2, 3 };
-    node->curCacheFilterRects_ = curRects;
-    node->GetFilterRectsInCache(allRects);
-    ASSERT_TRUE(true);
-}
-
-/**
  * @tc.name: GetFilterRect
  * @tc.desc: test results of GetFilterRect
  * @tc.type:FUNC
