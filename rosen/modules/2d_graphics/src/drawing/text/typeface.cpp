@@ -15,7 +15,9 @@
 
 #include "text/typeface.h"
 
+#ifdef ENABLE_OHOS_ENHANCE
 #include "ashmem.h"
+#endif
 #include "static_factory.h"
 
 #include "impl_interface/typeface_impl.h"
@@ -70,6 +72,7 @@ std::shared_ptr<Typeface> Typeface::MakeFromStream(std::unique_ptr<MemoryStream>
 
 std::shared_ptr<Typeface> Typeface::MakeFromAshmem(int32_t fd, uint32_t size, uint32_t hash)
 {
+#ifdef ENABLE_OHOS_ENHANCE
     auto ashmem = std::make_unique<Ashmem>(fd, size);
     bool mapResult = ashmem->MapReadOnlyAshmem();
     const void* ptr = ashmem->ReadFromAshmem(size, 0);
@@ -89,11 +92,16 @@ std::shared_ptr<Typeface> Typeface::MakeFromAshmem(int32_t fd, uint32_t size, ui
     tf->SetHash(hash);
     tf->SetSize(size);
     return tf;
+#else
+    return nullptr;
+#endif
+
 }
 
 std::shared_ptr<Typeface> Typeface::MakeFromAshmem(
     const uint8_t* data, uint32_t size, uint32_t hash, const std::string& name)
 {
+#ifdef ENABLE_OHOS_ENHANCE
     int32_t fd = OHOS::AshmemCreate(name.c_str(), size);
     auto ashmem = std::make_unique<Ashmem>(fd, size);
     bool mapResult = ashmem->MapReadAndWriteAshmem();
@@ -115,6 +123,9 @@ std::shared_ptr<Typeface> Typeface::MakeFromAshmem(
     tf->SetHash(hash);
     tf->SetSize(size);
     return tf;
+#else
+    return nullptr;
+#endif
 }
 
 std::shared_ptr<Typeface> Typeface::MakeFromName(const char familyName[], FontStyle fontStyle)

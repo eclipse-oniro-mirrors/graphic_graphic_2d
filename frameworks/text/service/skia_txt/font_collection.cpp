@@ -15,7 +15,9 @@
 
 #include "font_collection.h"
 
+#ifdef ENABLE_OHOS_ENHANCE
 #include "ashmem.h"
+#endif
 #include "convert.h"
 #include "custom_symbol_config.h"
 #include "texgine/src/font_descriptor_mgr.h"
@@ -331,6 +333,7 @@ void TypefaceWithAlias::UpdateTypefaceAshmem(int32_t fd, uint32_t size)
     if (typeface_ == nullptr) {
         return;
     }
+#ifdef ENABLE_OHOS_ENHANCE
     auto ashmem = std::make_unique<Ashmem>(fd, size);
     bool mapResult = ashmem->MapReadOnlyAshmem();
     const void* ptr = ashmem->ReadFromAshmem(size, 0);
@@ -341,6 +344,7 @@ void TypefaceWithAlias::UpdateTypefaceAshmem(int32_t fd, uint32_t size)
     auto stream = std::make_unique<Drawing::MemoryStream>(
         ptr, size, [](const void* ptr, void* context) { delete reinterpret_cast<Ashmem*>(context); }, ashmem.release());
     typeface_->UpdateStream(std::move(stream));
+#endif
 }
 } // namespace AdapterTxt
 
