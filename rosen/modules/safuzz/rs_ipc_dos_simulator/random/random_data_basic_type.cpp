@@ -114,6 +114,18 @@ uint8_t RandomDataBasicType::GetRandomUint8()
     return data;
 }
 
+short RandomDataBasicType::GetRandomShort()
+{
+    short data = 0;
+    std::string s_str = RandomEngine::GetRandomShort();
+    if (strncmp(s_str.c_str(), "0x", 2) == 0 || strncmp(s_str.c_str(), "0X", 2) == 0) {
+        data = static_cast<short>(strtol(s_str.c_str(), nullptr, 16));
+    } else {
+        data = static_cast<short>(strtol(s_str.c_str(), nullptr, 10));
+    }
+    return data;
+}
+
 uint16_t RandomDataBasicType::GetRandomUint16()
 {
     uint16_t data = 0;
