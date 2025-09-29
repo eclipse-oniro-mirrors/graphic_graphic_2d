@@ -2547,7 +2547,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             // safe check
             if (IsValidCallingPid(ExtractPid(id), callingPid)) {
                 RS_PROFILER_PATCH_TYPEFACE_GLOBALID(data, id);
-                result = RegisterTypeface(id, fd, size, needUpdate);
+                result = RegisterTypeface(id, size, fd, needUpdate);
             } else {
                 RS_LOGE("RSRenderServiceConnectionStub::OnRemoteRequest callingPid[%{public}d] "
                     "no permission REGISTER_SHARED_TYPEFACE", callingPid);
