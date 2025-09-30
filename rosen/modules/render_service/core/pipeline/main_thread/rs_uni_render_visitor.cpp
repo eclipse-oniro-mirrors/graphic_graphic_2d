@@ -2227,7 +2227,8 @@ void RSUniRenderVisitor::PrevalidateHwcNode()
     }
 }
 
-void RSUniRenderVisitor::UpdateHwcNodeDirtyRegionAndCreateLayer(std::shared_ptr<RSSurfaceRenderNode>& node)
+void RSUniRenderVisitor::UpdateHwcNodeDirtyRegionAndCreateLayer(
+    std::shared_ptr<RSSurfaceRenderNode>& node, std::vector<std::shared_ptr<RSSurfaceRenderNode>>& topLayers)
 {
     const auto& hwcNodes = node->GetChildHardwareEnabledNodes();
     if (hwcNodes.empty() || !curScreenNode_) {
@@ -2240,7 +2241,7 @@ void RSUniRenderVisitor::UpdateHwcNodeDirtyRegionAndCreateLayer(std::shared_ptr<
         }
         auto surfaceHandler = hwcNodePtr->GetMutableRSSurfaceHandler();
         if (hwcNodePtr->IsLayerTop()) {
-            topLayers_.emplace_back(hwcNodePtr);
+            topLayers.emplace_back(hwcNodePtr);
             if (hasMirrorDisplay_ && hwcNodePtr->GetRSSurfaceHandler() &&
                 hwcNodePtr->GetRSSurfaceHandler()->IsCurrentFrameBufferConsumed() &&
                 !(node->GetVisibleRegion().IsEmpty()) && curScreenDirtyManager_) {
@@ -2366,40 +2367,43 @@ void RSUniRenderVisitor::UpdateSurfaceDirtyAndGlobalDirty()
     // this is used to record mainAndLeash surface accumulatedDirtyRegion by Pre-order traversal
     Occlusion::Region accumulatedDirtyRegion;
     bool hasMainAndLeashSurfaceDirty = false;
-    topLayers_.clear();
+    std::vector<std::shared_ptr<RSSurfaceRenderNode>> topLayers;
     std::for_each(curMainAndLeashSurfaces.rbegin(), curMainAndLeashSurfaces.rend(),
-        [this, &accumulatedDirtyRegion, &hasMainAndLeashSurfaceDirty](RSBaseRenderNode::SharedPtr& nodePtr) {
-        auto surfaceNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(nodePtr);
-        if (!surfaceNode) {
-            RS_LOGE("RSUniRenderVisitor::UpdateSurfaceDirtyAndGlobalDirty surfaceNode is nullptr");
-            return;
-        }
-        accumulatedDirtyRegion.OrSelf(curScreenNode_->GetDisappearedSurfaceRegionBelowCurrent(surfaceNode->GetId()));
-        auto dirtyManager = surfaceNode->GetDirtyManager();
-        RSMainThread::Instance()->GetContext().AddPendingSyncNode(nodePtr);
-        // 0. update hwc node dirty region and create layer
-        UpdateHwcNodeDirtyRegionAndCreateLayer(surfaceNode);
-        // cal done node dirtyRegion for uifirst
-        RSUifirstManager::Instance().MergeOldDirtyToDirtyManager(surfaceNode);
-        UpdatePointWindowDirtyStatus(surfaceNode);
-        // 1. calculate abs dirtyrect and update partialRenderParams
-        // currently only sync visible region info
-        surfaceNode->UpdatePartialRenderParams();
-        // 2. check surface node dirtyrect need merge into displayDirtyManager
-        CheckMergeSurfaceDirtysForDisplay(surfaceNode);
-        // 3. check merge transparent filter when it intersects with pre-dirty.
-        CheckMergeFilterDirtyWithPreDirty(dirtyManager, accumulatedDirtyRegion, surfaceNode->IsTransparent() ?
-            FilterDirtyType::TRANSPARENT_SURFACE_FILTER : FilterDirtyType::OPAQUE_SURFACE_FILTER);
-        // 4. for cross-display node, process its filter (which is not collected during prepare).
-        CollectFilterInCrossDisplayWindow(surfaceNode, accumulatedDirtyRegion);
-        // 5. accumulate dirty region of this surface.
-        AccumulateSurfaceDirtyRegion(surfaceNode, accumulatedDirtyRegion);
-        hasMainAndLeashSurfaceDirty |=
-            dirtyManager && dirtyManager->IsCurrentFrameDirty() &&
-            surfaceNode->GetVisibleRegion().IsIntersectWith(dirtyManager->GetCurrentFrameDirtyRegion());
-    });
-    if (!topLayers_.empty()) {
-        UpdateTopLayersDirtyStatus(topLayers_);
+        [this, &accumulatedDirtyRegion, &hasMainAndLeashSurfaceDirty, &topLayers](
+            RSBaseRenderNode::SharedPtr& nodePtr) {
+            auto surfaceNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(nodePtr);
+            if (!surfaceNode) {
+                RS_LOGE("RSUniRenderVisitor::UpdateSurfaceDirtyAndGlobalDirty surfaceNode is nullptr");
+                return;
+            }
+            accumulatedDirtyRegion.OrSelf(
+                curScreenNode_->GetDisappearedSurfaceRegionBelowCurrent(surfaceNode->GetId()));
+            auto dirtyManager = surfaceNode->GetDirtyManager();
+            RSMainThread::Instance()->GetContext().AddPendingSyncNode(nodePtr);
+            // 0. update hwc node dirty region and create layer
+            UpdateHwcNodeDirtyRegionAndCreateLayer(surfaceNode, topLayers);
+            // cal done node dirtyRegion for uifirst
+            RSUifirstManager::Instance().MergeOldDirtyToDirtyManager(surfaceNode);
+            UpdatePointWindowDirtyStatus(surfaceNode);
+            // 1. calculate abs dirtyrect and update partialRenderParams
+            // currently only sync visible region info
+            surfaceNode->UpdatePartialRenderParams();
+            // 2. check surface node dirtyrect need merge into displayDirtyManager
+            CheckMergeSurfaceDirtysForDisplay(surfaceNode);
+            // 3. check merge transparent filter when it intersects with pre-dirty.
+            CheckMergeFilterDirtyWithPreDirty(dirtyManager, accumulatedDirtyRegion,
+                surfaceNode->IsTransparent() ? FilterDirtyType::TRANSPARENT_SURFACE_FILTER
+                                             : FilterDirtyType::OPAQUE_SURFACE_FILTER);
+            // 4. for cross-display node, process its filter (which is not collected during prepare).
+            CollectFilterInCrossDisplayWindow(surfaceNode, accumulatedDirtyRegion);
+            // 5. accumulate dirty region of this surface.
+            AccumulateSurfaceDirtyRegion(surfaceNode, accumulatedDirtyRegion);
+            hasMainAndLeashSurfaceDirty |=
+                dirtyManager && dirtyManager->IsCurrentFrameDirty() &&
+                surfaceNode->GetVisibleRegion().IsIntersectWith(dirtyManager->GetCurrentFrameDirtyRegion());
+        });
+    if (!topLayers.empty()) {
+        UpdateTopLayersDirtyStatus(topLayers);
     }
     curScreenNode_->SetMainAndLeashSurfaceDirty(hasMainAndLeashSurfaceDirty);
     CheckMergeDebugRectforRefreshRate(curMainAndLeashSurfaces);

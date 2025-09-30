@@ -213,7 +213,8 @@ private:
     void UpdateHwcNodeInfoForAppNode(RSSurfaceRenderNode& node);
     void ProcessAncoNode(const std::shared_ptr<RSSurfaceRenderNode>& hwcNodePtr, bool& ancoHasGpu);
     void UpdateAncoNodeHWCDisabledState(const std::vector<std::shared_ptr<RSSurfaceRenderNode>>& ancoNodes);
-    void UpdateHwcNodeDirtyRegionAndCreateLayer(std::shared_ptr<RSSurfaceRenderNode>& node);
+    void UpdateHwcNodeDirtyRegionAndCreateLayer(
+        std::shared_ptr<RSSurfaceRenderNode>& node, std::vector<std::shared_ptr<RSSurfaceRenderNode>>& topLayers);
     void AllSurfacesDrawnInUniRender(const std::vector<std::weak_ptr<RSSurfaceRenderNode>>& hwcNodes);
     void UpdatePointWindowDirtyStatus(std::shared_ptr<RSSurfaceRenderNode>& pointWindow);
     void UpdateTopLayersDirtyStatus(const std::vector<std::shared_ptr<RSSurfaceRenderNode>>& topLayers);
@@ -488,8 +489,6 @@ private:
     ScreenState screenState_ = ScreenState::UNKNOWN;
     
     bool isSkipDrawInVirtualScreen_ = false;
-
-    std::vector<std::shared_ptr<RSSurfaceRenderNode>> topLayers_;
 
     // used for finding the first effect render node to check to need to enabled debug
     bool hasEffectNodeInParent_ = false;
