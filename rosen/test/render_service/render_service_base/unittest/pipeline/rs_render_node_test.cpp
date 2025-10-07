@@ -206,7 +206,6 @@ HWTEST_F(RSRenderNodeTest, SetDrawingCacheTypeTest, TestSize.Level2)
     ASSERT_EQ(node.GetDrawingCacheType(), RSDrawingCacheType::TARGETED_CACHE);
 }
 
-
 /**
  * @tc.name: SetDrawNodeType
  * @tc.desc: test results of SetDrawNodeType
@@ -235,7 +234,7 @@ HWTEST_F(RSRenderNodeTest, SetDrawNodeType002, TestSize.Level1)
 
 /**
  * @tc.name: ManageDrawingCacheTest001
- * @tc.desc: SetDrawingCacheChanged and ResetDrawingCacheNeedUpdate test
+ * @tc.desc: SetDrawingCacheChanged test
  * @tc.type: FUNC
  * @tc.require: issueI9US6V
  */
@@ -263,61 +262,8 @@ HWTEST_F(RSRenderNodeTest, ManageDrawingCacheTest001, TestSize.Level2)
     EXPECT_TRUE(nodeTest->stagingRenderParams_->needSync_);
     EXPECT_TRUE(nodeTest->stagingRenderParams_->isDrawingCacheChanged_);
 
-    // ResetDrawingCacheNeedUpdate test
-    nodeTest->drawingCacheNeedUpdate_ = true;
-    nodeTest->ResetDrawingCacheNeedUpdate();
-    EXPECT_FALSE(nodeTest->drawingCacheNeedUpdate_);
-
     // GetDrawingCacheChanged test
     EXPECT_TRUE(nodeTest->GetDrawingCacheChanged());
-}
-
-/**
- * @tc.name: ResetDrawingCacheNeedUpdateTest001
- * @tc.desc: test ResetDrawingCacheNeedUpdateTest api
- * @tc.type: FUNC
- * @tc.require: issueI84LBZ
- */
-HWTEST_F(RSRenderNodeTest, ResetDrawingCacheNeedUpdateTest001, TestSize.Level2)
-{
-    auto node = std::make_shared<RSRenderNode>(id, context);
-    node->InitRenderParams();
-    bool isDrawingCacheChanged = true;
-
-    node->SetDrawingCacheChanged(isDrawingCacheChanged);
-    node->ResetDrawingCacheNeedUpdate();
-    ASSERT_EQ(node->drawingCacheNeedUpdate_, false);
-}
-
-/**
- * @tc.name: ResetDrawingCacheNeedUpdateTest002
- * @tc.desc: don't reset DrawingCacheNeedUpdate after set DrawingCacheChanged
- * @tc.type: FUNC
- * @tc.require: issueI84LBZ
- */
-HWTEST_F(RSRenderNodeTest, ResetDrawingCacheNeedUpdateTest002, TestSize.Level2)
-{
-    auto node = std::make_shared<RSRenderNode>(id, context);
-    node->InitRenderParams();
-    node->SetDrawingCacheChanged(true);
-    ASSERT_EQ(node->GetDrawingCacheChanged(), true);
-}
-
-/**
- * @tc.name: SetVisitedCacheRootIdsTest
- * @tc.desc: test SetVisitedCacheRootIds api
- * @tc.type: FUNC
- * @tc.require: issueI84LBZ
- */
-HWTEST_F(RSRenderNodeTest, SetVisitedCacheRootIdsTest, TestSize.Level2)
-{
-    RSRenderNode node(id, context);
-    RSRenderNode cacheNode(id + 1, context);
-    std::unordered_set<NodeId> VisitedIds = {};
-    VisitedIds.insert(cacheNode.GetId());
-
-    node.SetVisitedCacheRootIds(VisitedIds);
-    ASSERT_NE(node.GetVisitedCacheRootIds().size(), 0);
 }
 
 /**
@@ -3058,23 +3004,6 @@ HWTEST_F(RSRenderNodeTest, MarkForceClearFilterCacheWithInvisible, TestSize.Leve
     properties.backgroundFilter_ = std::make_shared<RSFilter>();
     properties.filter_ = std::make_shared<RSFilter>();
     node.MarkForceClearFilterCacheWithInvisible();
-    ASSERT_TRUE(true);
-}
-
-/**
- * @tc.name: SetOccludedStatus
- * @tc.desc: test
- * @tc.type: FUNC
- * @tc.require: issueI9T3XY
- */
-HWTEST_F(RSRenderNodeTest, SetOccludedStatus, TestSize.Level1)
-{
-    RSRenderNode node(id, context);
-    auto& properties = node.GetMutableRenderProperties();
-    properties.backgroundFilter_ = std::make_shared<RSFilter>();
-    properties.filter_ = std::make_shared<RSFilter>();
-    bool occluded = true;
-    node.SetOccludedStatus(occluded);
     ASSERT_TRUE(true);
 }
 

@@ -1840,7 +1840,7 @@ HWTEST_F(RSRenderNodeTest2, PostPrepareForBlurFilterNode03, TestSize.Level1)
 
 /**
  * @tc.name: ManageDrawingCacheTest02
- * @tc.desc: SetDrawingCacheChanged and ResetDrawingCacheNeedUpdate test
+ * @tc.desc: SetDrawingCacheChanged and test
  * @tc.type: FUNC
  * @tc.require: issueI9US6V
  */
@@ -1868,18 +1868,13 @@ HWTEST_F(RSRenderNodeTest2, ManageDrawingCacheTest02, TestSize.Level2)
     EXPECT_TRUE(nodeTest->stagingRenderParams_->needSync_);
     EXPECT_TRUE(nodeTest->stagingRenderParams_->isDrawingCacheChanged_);
 
-    // ResetDrawingCacheNeedUpdate test
-    nodeTest->drawingCacheNeedUpdate_ = true;
-    nodeTest->ResetDrawingCacheNeedUpdate();
-    EXPECT_FALSE(nodeTest->drawingCacheNeedUpdate_);
-
     // GetDrawingCacheChanged test
     EXPECT_TRUE(nodeTest->GetDrawingCacheChanged());
 }
 
 /**
  * @tc.name: ManageDrawingCacheTest03
- * @tc.desc: SetDrawingCacheChanged and ResetDrawingCacheNeedUpdate test
+ * @tc.desc: SetDrawingCacheChanged test
  * @tc.type: FUNC
  * @tc.require: issueI9US6V
  */
@@ -1907,18 +1902,13 @@ HWTEST_F(RSRenderNodeTest2, ManageDrawingCacheTest03, TestSize.Level2)
     EXPECT_TRUE(nodeTest->stagingRenderParams_->needSync_);
     EXPECT_TRUE(nodeTest->stagingRenderParams_->isDrawingCacheChanged_);
 
-    // ResetDrawingCacheNeedUpdate test
-    nodeTest->drawingCacheNeedUpdate_ = false;
-    nodeTest->ResetDrawingCacheNeedUpdate();
-    EXPECT_FALSE(nodeTest->drawingCacheNeedUpdate_);
-
     // GetDrawingCacheChanged test
     EXPECT_TRUE(nodeTest->GetDrawingCacheChanged());
 }
 
 /**
  * @tc.name: ManageDrawingCacheTest04
- * @tc.desc: SetDrawingCacheChanged and ResetDrawingCacheNeedUpdate test
+ * @tc.desc: SetDrawingCacheChanged test
  * @tc.type: FUNC
  * @tc.require: issueI9US6V
  */
@@ -1946,18 +1936,13 @@ HWTEST_F(RSRenderNodeTest2, ManageDrawingCacheTest04, TestSize.Level2)
     EXPECT_TRUE(nodeTest->stagingRenderParams_->needSync_);
     EXPECT_TRUE(nodeTest->stagingRenderParams_->isDrawingCacheChanged_);
 
-    // ResetDrawingCacheNeedUpdate test
-    nodeTest->drawingCacheNeedUpdate_ = true;
-    nodeTest->ResetDrawingCacheNeedUpdate();
-    EXPECT_FALSE(nodeTest->drawingCacheNeedUpdate_);
-
     // GetDrawingCacheChanged test
     EXPECT_TRUE(nodeTest->GetDrawingCacheChanged());
 }
 
 /**
  * @tc.name: ManageDrawingCacheTest05
- * @tc.desc: SetDrawingCacheChanged and ResetDrawingCacheNeedUpdate test
+ * @tc.desc: SetDrawingCacheChanged test
  * @tc.type: FUNC
  * @tc.require: issueI9US6V
  */
@@ -1984,11 +1969,6 @@ HWTEST_F(RSRenderNodeTest2, ManageDrawingCacheTest05, TestSize.Level2)
     nodeTest->SetDrawingCacheChanged(true);
     EXPECT_TRUE(nodeTest->stagingRenderParams_->needSync_);
     EXPECT_TRUE(nodeTest->stagingRenderParams_->isDrawingCacheChanged_);
-
-    // ResetDrawingCacheNeedUpdate test
-    nodeTest->drawingCacheNeedUpdate_ = false;
-    nodeTest->ResetDrawingCacheNeedUpdate();
-    EXPECT_FALSE(nodeTest->drawingCacheNeedUpdate_);
 
     // GetDrawingCacheChanged test
     EXPECT_TRUE(nodeTest->GetDrawingCacheChanged());

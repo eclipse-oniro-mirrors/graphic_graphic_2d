@@ -2329,10 +2329,10 @@ void RSRenderNode::MarkFilterStatusChanged(bool isForeground, bool isFilterRegio
     if (filterDrawable == nullptr) {
         return;
     }
-    auto& flag = isForeground ?
-        (isFilterRegionChanged ? foregroundFilterRegionChanged_ : foregroundFilterInteractWithDirty_) :
-        (isFilterRegionChanged ? backgroundFilterRegionChanged_ : backgroundFilterInteractWithDirty_);
-    flag = true;
+    if (!isForeground) {
+        auto& flag = isFilterRegionChanged ? backgroundFilterRegionChanged_ : backgroundFilterInteractWithDirty_;
+        flag = true;
+    }
     isFilterRegionChanged ?
         filterDrawable->MarkFilterRegionChanged() : filterDrawable->MarkFilterRegionInteractWithDirty();
 #endif
@@ -2522,25 +2522,6 @@ void RSRenderNode::MarkForceClearFilterCacheWithInvisible()
             CheckFilterCacheAndUpdateDirtySlots(filterDrawable, RSDrawableSlot::COMPOSITING_FILTER);
         }
     }
-#endif
-}
-
-void RSRenderNode::SetOccludedStatus(bool occluded)
-{
-#ifdef RS_ENABLE_GPU
-    if (GetRenderProperties().GetBackgroundFilter()) {
-        auto filterDrawable = GetFilterDrawable(false);
-        if (filterDrawable != nullptr) {
-            filterDrawable->MarkNodeIsOccluded(occluded);
-        }
-    }
-    if (GetRenderProperties().GetFilter()) {
-        auto filterDrawable = GetFilterDrawable(true);
-        if (filterDrawable != nullptr) {
-            filterDrawable->MarkNodeIsOccluded(occluded);
-        }
-    }
-    isOccluded_ = occluded;
 #endif
 }
 
@@ -3274,23 +3255,6 @@ void RSRenderNode::CheckDrawingCacheType()
     }
 }
 
-void RSRenderNode::ResetFilterRectsInCache(const std::unordered_set<NodeId>& curRects)
-{
-    curCacheFilterRects_ = curRects;
-}
-
-void RSRenderNode::GetFilterRectsInCache(std::unordered_map<NodeId, std::unordered_set<NodeId>>& allRects) const
-{
-    if (!curCacheFilterRects_.empty()) {
-        allRects.emplace(GetId(), curCacheFilterRects_);
-    }
-}
-
-bool RSRenderNode::IsFilterRectsInCache() const
-{
-    return !curCacheFilterRects_.empty();
-}
-
 RectI RSRenderNode::GetFilterRect() const
 {
     auto& properties = GetRenderProperties();
@@ -3697,14 +3661,6 @@ void RSRenderNode::SetCacheType(CacheType cacheType)
 {
     cacheType_ = cacheType;
 }
-int RSRenderNode::GetShadowRectOffsetX() const
-{
-    return shadowRectOffsetX_;
-}
-int RSRenderNode::GetShadowRectOffsetY() const
-{
-    return shadowRectOffsetY_;
-}
 void RSRenderNode::SetDrawingCacheType(RSDrawingCacheType cacheType)
 {
     drawingCacheType_ = cacheType;
@@ -3723,10 +3679,6 @@ bool RSRenderNode::GetDrawingCacheChanged() const
     return false;
 #endif
 }
-void RSRenderNode::ResetDrawingCacheNeedUpdate()
-{
-    drawingCacheNeedUpdate_ = false;
-}
 void RSRenderNode::SetGeoUpdateDelay(bool val)
 {
     geoUpdateDelay_ = geoUpdateDelay_ || val;
@@ -3740,14 +3692,6 @@ bool RSRenderNode::GetGeoUpdateDelay() const
     return geoUpdateDelay_;
 }
 
-void RSRenderNode::SetVisitedCacheRootIds(const std::unordered_set<NodeId>& visitedNodes)
-{
-    visitedCacheRoots_ = visitedNodes;
-}
-const std::unordered_set<NodeId>& RSRenderNode::GetVisitedCacheRootIds() const
-{
-    return visitedCacheRoots_;
-}
 void RSRenderNode::AddSubSurfaceUpdateInfo(SharedPtr curParent, SharedPtr preParent)
 {
     if (!selfAddForSubSurfaceCnt_ && GetType() == RSRenderNodeType::SURFACE_NODE) {
@@ -3800,61 +3744,6 @@ bool RSRenderNode::HasAnimation() const
 {
     return !animationManager_.animations_.empty();
 }
-void RSRenderNode::SetHasFilter(bool hasFilter)
-{
-    hasFilter_ = hasFilter;
-}
-
-void RSRenderNode::SetHasAbilityComponent(bool hasAbilityComponent)
-{
-    hasAbilityComponent_ = hasAbilityComponent;
-}
-
-bool RSRenderNode::IsMainThreadNode() const
-{
-    return isMainThreadNode_;
-}
-void RSRenderNode::SetIsMainThreadNode(bool isMainThreadNode)
-{
-    isMainThreadNode_ = isMainThreadNode;
-}
-bool RSRenderNode::IsScaleInPreFrame() const
-{
-    return isScaleInPreFrame_;
-}
-void RSRenderNode::SetPriority(NodePriorityType priority)
-{
-    priority_ = priority;
-}
-NodePriorityType RSRenderNode::GetPriority()
-{
-    return priority_;
-}
-bool RSRenderNode::IsAncestorDirty() const
-{
-    return isAncestorDirty_;
-}
-void RSRenderNode::SetIsAncestorDirty(bool isAncestorDirty)
-{
-    isAncestorDirty_ = isAncestorDirty;
-}
-bool RSRenderNode::IsParentLeashWindow() const
-{
-    return isParentLeashWindow_;
-}
-void RSRenderNode::SetParentLeashWindow()
-{
-    isParentLeashWindow_ = true;
-}
-bool RSRenderNode::IsParentScbScreen() const
-{
-    return isParentScbScreen_;
-}
-void RSRenderNode::SetParentScbScreen()
-{
-    isParentScbScreen_ = true;
-}
-
 void RSRenderNode::SetDrawRegion(const std::shared_ptr<RectF>& rect)
 {
     if (rect && (rect->GetHeight() >= std::numeric_limits<uint16_t>::max() ||
@@ -3909,24 +3798,6 @@ void RSRenderNode::UpdateVirtualScreenWhiteListInfo()
 void RSRenderNode::MarkNonGeometryChanged()
 {
     geometryChangeNotPerceived_ = true;
-}
-
-bool RSRenderNode::GetIsUsedBySubThread() const
-{
-    return isUsedBySubThread_.load();
-}
-void RSRenderNode::SetIsUsedBySubThread(bool isUsedBySubThread)
-{
-    isUsedBySubThread_.store(isUsedBySubThread);
-}
-
-bool RSRenderNode::GetLastIsNeedAssignToSubThread() const
-{
-    return lastIsNeedAssignToSubThread_;
-}
-void RSRenderNode::SetLastIsNeedAssignToSubThread(bool lastIsNeedAssignToSubThread)
-{
-    lastIsNeedAssignToSubThread_ = lastIsNeedAssignToSubThread;
 }
 
 void RSRenderNode::InitRenderParams()
@@ -4159,8 +4030,6 @@ void RSRenderNode::OnSync()
     // Reset FilterCache Flags
     backgroundFilterRegionChanged_ = false;
     backgroundFilterInteractWithDirty_ = false;
-    foregroundFilterRegionChanged_ = false;
-    foregroundFilterInteractWithDirty_ = false;
 
     // Reset Sync Flag
     // only canvas drawing node use SetNeedDraw function

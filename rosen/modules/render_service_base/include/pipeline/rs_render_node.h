@@ -581,22 +581,13 @@ public:
         return cacheType_;
     }
 
-    int GetShadowRectOffsetX() const;
-    int GetShadowRectOffsetY() const;
-
     void SetDrawingCacheType(RSDrawingCacheType cacheType);
     RSDrawingCacheType GetDrawingCacheType() const
     {
         return drawingCacheType_;
     }
-    void ResetFilterRectsInCache(const std::unordered_set<NodeId>& curRects);
-    void GetFilterRectsInCache(std::unordered_map<NodeId, std::unordered_set<NodeId>>& allRects) const;
-    bool IsFilterRectsInCache() const;
     void SetDrawingCacheChanged(bool cacheChanged);
     bool GetDrawingCacheChanged() const;
-    void ResetDrawingCacheNeedUpdate();
-    void SetVisitedCacheRootIds(const std::unordered_set<NodeId>& visitedNodes);
-    const std::unordered_set<NodeId>& GetVisitedCacheRootIds() const;
     // manage cache root nodeid
     void SetDrawingCacheRootId(NodeId id);
     NodeId GetDrawingCacheRootId() const;
@@ -615,11 +606,6 @@ public:
     }
 
     float GetHDRBrightness() const;
-    bool HasFilter() const
-    {
-        return hasFilter_;
-    }
-    void SetHasFilter(bool hasFilter);
     bool GetCommandExecuted() const
     {
         return commandExecuted_;
@@ -630,15 +616,6 @@ public:
         commandExecuted_ = commandExecuted;
     }
 
-    bool HasAbilityComponent() const
-    {
-        return hasAbilityComponent_;
-    }
-    void SetHasAbilityComponent(bool hasAbilityComponent);
-
-    bool IsMainThreadNode() const;
-    void SetIsMainThreadNode(bool isMainThreadNode);
-
     bool IsScale() const
     {
         return isScale_;
@@ -647,24 +624,6 @@ public:
     {
         isScale_ = isScale;
     }
-
-    bool IsScaleInPreFrame() const;
-    void SetIsScaleInPreFrame(bool isScale)
-    {
-        isScaleInPreFrame_ = isScale;
-    }
-
-    void SetPriority(NodePriorityType priority);
-    NodePriorityType GetPriority();
-
-    bool IsAncestorDirty() const;
-    void SetIsAncestorDirty(bool isAncestorDirty);
-
-    bool IsParentLeashWindow() const;
-    void SetParentLeashWindow();
-
-    bool IsParentScbScreen() const;
-    void SetParentScbScreen();
 
     void SetDrawRegion(const std::shared_ptr<RectF>& rect);
     const std::shared_ptr<RectF>& GetDrawRegion() const;
@@ -773,11 +732,6 @@ public:
 
     virtual RectI GetFilterRect() const;
     void CalVisibleFilterRect(const std::optional<RectI>& clipRect);
-    void SetIsUsedBySubThread(bool isUsedBySubThread);
-    bool GetIsUsedBySubThread() const;
-
-    void SetLastIsNeedAssignToSubThread(bool lastIsNeedAssignToSubThread);
-    bool GetLastIsNeedAssignToSubThread() const;
 
     void SetIsTextureExportNode(bool isTextureExportNode)
     {
@@ -876,7 +830,6 @@ public:
         return uiFirstSwitch_;
     }
 
-    void SetOccludedStatus(bool occluded);
     const RectI GetFilterCachedRegion() const;
     virtual bool EffectNodeShouldPaint() const { return true; };
     virtual bool FirstFrameHasEffectChildren() const { return false; }
@@ -1169,25 +1122,12 @@ private:
     bool isContainBootAnimation_ = false;
     CacheType cacheType_ = CacheType::NONE;
     bool isDrawingCacheChanged_ = false;
-    bool drawingCacheNeedUpdate_ = false;
-    bool isMainThreadNode_ = true;
     bool isScale_ = false;
-    bool isScaleInPreFrame_ = false;
-    bool hasFilter_ = false;
-    bool hasAbilityComponent_ = false;
-    bool isAncestorDirty_ = false;
-    bool isParentLeashWindow_ = false;
-    bool isParentScbScreen_ = false;
-    NodePriorityType priority_ = NodePriorityType::MAIN_PRIORITY;
-    bool lastIsNeedAssignToSubThread_ = false;
     bool uifirstNeedSync_ = false; // both cmdlist&param
     bool uifirstSkipPartialSync_ = false;
     bool forceUpdateByUifirst_ = false;
     bool backgroundFilterRegionChanged_ = false;
     bool backgroundFilterInteractWithDirty_ = false;
-    bool foregroundFilterRegionChanged_ = false;
-    bool foregroundFilterInteractWithDirty_ = false;
-    bool isOccluded_ = false;
     // for UIExtension info collection
     bool childrenHasUIExtension_ = false;
     bool isAccessibilityConfigChanged_ = false;
@@ -1195,19 +1135,12 @@ private:
     DrawNodeType drawNodeType_ = DrawNodeType::PureContainerType;
     std::atomic<bool> isTunnelHandleChange_ = false;
     std::atomic<bool> commandExecuted_ = false;
-    std::atomic_bool isUsedBySubThread_ = false;
-    // shadowRectOffset means offset between shadowRect and absRect of node
-    int shadowRectOffsetX_ = 0;
-    int shadowRectOffsetY_ = 0;
     int32_t preparedDisplayOffsetX_ = 0;
     int32_t preparedDisplayOffsetY_ = 0;
     uint32_t disappearingTransitionCount_ = 0;
     float globalAlpha_ = 1.0f;
     // collect subtree's surfaceNode including itself
     OutOfParentType outOfParent_ = OutOfParentType::UNKNOWN;
-    // Only use in RSRenderNode::DrawCacheSurface to calculate scale factor
-    float boundsWidth_ = 0.0f;
-    float boundsHeight_ = 0.0f;
     pid_t appPid_ = 0;
     uint64_t uiContextToken_ = 0;
     std::vector<uint64_t> uiContextTokenList_;
