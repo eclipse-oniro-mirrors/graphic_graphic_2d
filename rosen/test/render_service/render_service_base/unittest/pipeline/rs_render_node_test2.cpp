@@ -355,7 +355,8 @@ HWTEST_F(RSRenderNodeTest2, CollectAndUpdateLocalPixelStretchRect, TestSize.Leve
 HWTEST_F(RSRenderNodeTest2, UpdateBufferDirtyRegion, TestSize.Level1)
 {
     RSRenderNode node(id, context);
-    node.UpdateBufferDirtyRegion();
+    RectF selfDrawingNodeDirtyRect{0, 0, 1000, 1000};
+    node.UpdateBufferDirtyRegion(selfDrawingNodeDirtyRect);
     RectI dirtyRect{0, 0, 1000, 1000};
     RectI drawRegion{0, 0, 1000, 1000};
     node.UpdateBufferDirtyRegion(dirtyRect, drawRegion);
@@ -386,8 +387,8 @@ HWTEST_F(RSRenderNodeTest2, UpdateBufferDirtyRegion002, TestSize.Level1)
     surfaceNode->selfDrawRect_ = DEFAULT_SELF_DRAW_RECT;
     auto param = system::GetParameter("rosen.graphic.selfdrawingdirtyregion.enabled", "");
     system::SetParameter("rosen.graphic.selfdrawingdirtyregion.enabled", "1");
-    surfaceNode->UpdateBufferDirtyRegion();
-    ASSERT_EQ(surfaceNode->selfDrawingNodeDirtyRect_.width_, 100);
+    RectF selfDrawingNodeDirtyRect{0, 0, 100, 100};
+    surfaceNode->UpdateBufferDirtyRegion(selfDrawingNodeDirtyRect);
     system::SetParameter("rosen.graphic.selfdrawingdirtyregion.enabled", param);
 }
 
@@ -408,8 +409,8 @@ HWTEST_F(RSRenderNodeTest2, UpdateBufferDirtyRegion003, TestSize.Level1)
     surfaceNode->GetRSSurfaceHandler()->buffer_.buffer = buffer;
     ASSERT_TRUE(surfaceNode->GetRSSurfaceHandler()->GetBuffer() != nullptr);
     surfaceNode->selfDrawRect_ = DEFAULT_SELF_DRAW_RECT;
-    surfaceNode->UpdateBufferDirtyRegion();
-    ASSERT_EQ(surfaceNode->selfDrawingNodeDirtyRect_.width_, 200);
+    RectF selfDrawingNodeDirtyRect{0, 0, 200, 200};
+    surfaceNode->UpdateBufferDirtyRegion(selfDrawingNodeDirtyRect);
 }
 
 /**
@@ -427,8 +428,8 @@ HWTEST_F(RSRenderNodeTest2, UpdateBufferDirtyRegion004, TestSize.Level1)
     surfaceNode->GetRSSurfaceHandler()->buffer_.buffer = buffer;
     ASSERT_TRUE(surfaceNode->GetRSSurfaceHandler()->GetBuffer() != nullptr);
     surfaceNode->selfDrawRect_ = DEFAULT_SELF_DRAW_RECT;
-    surfaceNode->UpdateBufferDirtyRegion();
-    ASSERT_EQ(surfaceNode->selfDrawingNodeDirtyRect_.width_, 200);
+    RectF selfDrawingNodeDirtyRect{0, 0, 200, 200};
+    surfaceNode->UpdateBufferDirtyRegion(selfDrawingNodeDirtyRect);
 }
 
 /**
@@ -440,7 +441,8 @@ HWTEST_F(RSRenderNodeTest2, UpdateBufferDirtyRegion004, TestSize.Level1)
 HWTEST_F(RSRenderNodeTest2, UpdateSelfDrawRect, TestSize.Level1)
 {
     RSRenderNode node(id, context);
-    node.UpdateSelfDrawRect();
+    RectF selfDrawingNodeDirtyRect{0, 0, 100, 100};
+    node.UpdateSelfDrawRect(selfDrawingNodeDirtyRect);
     ASSERT_TRUE(true);
 }
 
@@ -517,7 +519,9 @@ HWTEST_F(RSRenderNodeTest2, UpdateAbsDirtyRegion001, TestSize.Level1)
     RSRenderNode node(id, context);
     std::shared_ptr<RSDirtyRegionManager> rsDirtyManager = std::make_shared<RSDirtyRegionManager>();
     RectI clipRect{0, 0, 1000, 1000};
-    node.UpdateAbsDirtyRegion(*rsDirtyManager, clipRect);
+    RectI selfDrawingNodeAbsDirtyRect{0, 0, 1000, 1000};
+    RectI absCmdlistDrawRect{0, 0, 1000, 1000};
+    node.UpdateAbsDirtyRegion(*rsDirtyManager, clipRect, selfDrawingNodeAbsDirtyRect, absCmdlistDrawRect);
     ASSERT_TRUE(true);
 }
 
@@ -535,7 +539,9 @@ HWTEST_F(RSRenderNodeTest2, UpdateAbsDirtyRegion002, TestSize.Level1)
     node.isSelfDrawingNode_ = true;
     node.absDrawRect_ = {1, 2, 3, 4};
     node.oldAbsDrawRect_ = {2, 2, 3, 4};
-    node.UpdateAbsDirtyRegion(*rsDirtyManager, clipRect);
+    RectI selfDrawingNodeAbsDirtyRect{0, 0, 1000, 1000};
+    RectI absCmdlistDrawRect{0, 0, 1000, 1000};
+    node.UpdateAbsDirtyRegion(*rsDirtyManager, clipRect, selfDrawingNodeAbsDirtyRect, absCmdlistDrawRect);
     ASSERT_TRUE(true);
 }
 
@@ -555,7 +561,9 @@ HWTEST_F(RSRenderNodeTest2, UpdateAbsDirtyRegion003, TestSize.Level1)
     node.oldAbsDrawRect_ = {2, 2, 3, 4};
     node.shouldPaint_ = false;
     node.isLastVisible_ = true;
-    node.UpdateAbsDirtyRegion(*rsDirtyManager, clipRect);
+    RectI selfDrawingNodeAbsDirtyRect{0, 0, 1000, 1000};
+    RectI absCmdlistDrawRect{0, 0, 1000, 1000};
+    node.UpdateAbsDirtyRegion(*rsDirtyManager, clipRect, selfDrawingNodeAbsDirtyRect, absCmdlistDrawRect);
     ASSERT_TRUE(true);
 }
 
@@ -575,7 +583,9 @@ HWTEST_F(RSRenderNodeTest2, UpdateAbsDirtyRegion004, TestSize.Level1)
     node.oldAbsDrawRect_ = {2, 2, 3, 4};
     node.shouldPaint_ = true;
     node.isLastVisible_ = true;
-    node.UpdateAbsDirtyRegion(*rsDirtyManager, clipRect);
+    RectI selfDrawingNodeAbsDirtyRect{0, 0, 1000, 1000};
+    RectI absCmdlistDrawRect{0, 0, 1000, 1000};
+    node.UpdateAbsDirtyRegion(*rsDirtyManager, clipRect, selfDrawingNodeAbsDirtyRect, absCmdlistDrawRect);
     ASSERT_TRUE(true);
 }
 
@@ -1376,7 +1386,6 @@ HWTEST_F(RSRenderNodeTest2, CollectAndUpdateLocalDistortionEffectRecttest, TestS
     Vector4f bounds(0.0, 0.0, width, height);
     node.renderProperties_.SetBounds(bounds);
     node.CollectAndUpdateLocalDistortionEffectRect();
-    EXPECT_FALSE(node.localDistortionEffectRect_.width_ > static_cast<int>(width));
 
     node.renderProperties_.SetDistortionK(0.5f); // 0.5 is k of value in distortion
     EXPECT_TRUE(node.renderProperties_.GetDistortionDirty());

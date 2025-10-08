@@ -981,18 +981,6 @@ void RSRenderNode::DumpTree(int32_t depth, std::string& out) const
     if (!innerAbsDrawRect_.IsEmpty()) {
         out += ", innerAbsDrawRect: " + innerAbsDrawRect_.ToString();
     }
-    if (!localShadowRect_.IsEmpty()) {
-        out += ", localShadowRect: " + localShadowRect_.ToString();
-    }
-    if (!localOutlineRect_.IsEmpty()) {
-        out += ", localOutlineRect: " + localOutlineRect_.ToString();
-    }
-    if (!localPixelStretchRect_.IsEmpty()) {
-        out += ", localPixelStretchRect: " + localPixelStretchRect_.ToString();
-    }
-    if (!localForegroundEffectRect_.IsEmpty()) {
-        out += ", localForegroundEffectRect: " + localForegroundEffectRect_.ToString();
-    }
     if (auto drawRegion = GetRenderProperties().GetDrawRegion()) {
         if (!drawRegion->IsEmpty()) {
             out += ", drawRegion: " + drawRegion->ToString();
@@ -1610,60 +1598,65 @@ void RSRenderNode::CollectAndUpdateRenderFitRect()
 void RSRenderNode::CollectAndUpdateLocalShadowRect()
 {
     // update shadow if shadow changes
+    RectI localShadowRect;
     if (dirtySlots_.find(RSDrawableSlot::SHADOW) != dirtySlots_.end()) {
         auto& properties = GetRenderProperties();
         if (properties.IsShadowValid()) {
             SetShadowValidLastFrame(true);
             if (IsInstanceOf<RSSurfaceRenderNode>()) {
                 RRect absClipRRect = RRect(properties.GetBoundsRect(), properties.GetCornerRadius());
-                RSPropertiesPainter::GetShadowDirtyRect(localShadowRect_, properties, &absClipRRect, false, true);
+                RSPropertiesPainter::GetShadowDirtyRect(localShadowRect, properties, &absClipRRect, false, true);
             } else {
-                RSPropertiesPainter::GetShadowDirtyRect(localShadowRect_, properties, nullptr, false, true);
+                RSPropertiesPainter::GetShadowDirtyRect(localShadowRect, properties, nullptr, false, true);
             }
         }
     }
-    selfDrawRect_ = selfDrawRect_.JoinRect(localShadowRect_.ConvertTo<float>());
+    selfDrawRect_ = selfDrawRect_.JoinRect(localShadowRect.ConvertTo<float>());
 }
 
 void RSRenderNode::CollectAndUpdateLocalOutlineRect()
 {
     // update outline if oueline changes
+    RectI localOutlineRect;
     if (dirtySlots_.find(RSDrawableSlot::OUTLINE) != dirtySlots_.end()) {
-        RSPropertiesPainter::GetOutlineDirtyRect(localOutlineRect_, GetRenderProperties(), false);
+        RSPropertiesPainter::GetOutlineDirtyRect(localOutlineRect, GetRenderProperties(), false);
     }
-    selfDrawRect_ = selfDrawRect_.JoinRect(localOutlineRect_.ConvertTo<float>());
+    selfDrawRect_ = selfDrawRect_.JoinRect(localOutlineRect.ConvertTo<float>());
 }
 
 void RSRenderNode::CollectAndUpdateLocalPixelStretchRect()
 {
     // update outline if oueline changes
+    RectI localPixelStretchRect;
     if (dirtySlots_.find(RSDrawableSlot::PIXEL_STRETCH) != dirtySlots_.end()) {
-        RSPropertiesPainter::GetPixelStretchDirtyRect(localPixelStretchRect_, GetRenderProperties(), false);
+        RSPropertiesPainter::GetPixelStretchDirtyRect(localPixelStretchRect, GetRenderProperties(), false);
     }
-    selfDrawRect_ = selfDrawRect_.JoinRect(localPixelStretchRect_.ConvertTo<float>());
+    selfDrawRect_ = selfDrawRect_.JoinRect(localPixelStretchRect.ConvertTo<float>());
 }
 
 void RSRenderNode::CollectAndUpdateLocalForegroundEffectRect()
 {
     // update foreground effect's dirty region if it changes
+    RectI localForegroundEffectRect;
     if (GetRenderProperties().GetForegroundEffectDirty()) {
-        RSPropertiesPainter::GetForegroundEffectDirtyRect(localForegroundEffectRect_, GetRenderProperties(), false);
+        RSPropertiesPainter::GetForegroundEffectDirtyRect(localForegroundEffectRect, GetRenderProperties(), false);
         GetMutableRenderProperties().SetForegroundEffectDirty(false);
     }
-    selfDrawRect_ = selfDrawRect_.JoinRect(localForegroundEffectRect_.ConvertTo<float>());
+    selfDrawRect_ = selfDrawRect_.JoinRect(localForegroundEffectRect.ConvertTo<float>());
 }
 
 void RSRenderNode::CollectAndUpdateLocalDistortionEffectRect()
 {
     // update distortion effect's dirty region if it changes
+    RectI localDistortionEffectRect;
     if (GetRenderProperties().GetDistortionDirty()) {
-        RSPropertiesPainter::GetDistortionEffectDirtyRect(localDistortionEffectRect_, GetRenderProperties());
+        RSPropertiesPainter::GetDistortionEffectDirtyRect(localDistortionEffectRect, GetRenderProperties());
         GetMutableRenderProperties().SetDistortionDirty(false);
     }
-    selfDrawRect_ = selfDrawRect_.JoinRect(localDistortionEffectRect_.ConvertTo<float>());
+    selfDrawRect_ = selfDrawRect_.JoinRect(localDistortionEffectRect.ConvertTo<float>());
 }
 
-void RSRenderNode::UpdateBufferDirtyRegion()
+void RSRenderNode::UpdateBufferDirtyRegion(RectF& selfDrawingNodeDirtyRect)
 {
 #ifndef ROSEN_CROSS_PLATFORM
     isSelfDrawingNode_ = false;
@@ -1695,22 +1688,22 @@ void RSRenderNode::UpdateBufferDirtyRegion()
         auto bufferDirtyRect = GetRenderProperties().GetBoundsGeometry()->MapRect(
             RectF(rect.x, rect.y, rect.w, rect.h), matrix).ConvertTo<float>();
         // The buffer's dirtyRect should not be out of the scope of the node's dirtyRect
-        selfDrawingNodeDirtyRect_ = bufferDirtyRect.IntersectRect(selfDrawRect_);
+        selfDrawingNodeDirtyRect = bufferDirtyRect.IntersectRect(selfDrawRect_);
         RS_OPTIONAL_TRACE_NAME_FMT("RSRenderNode id: %" PRIu64 ", buffer size [%d,%d], "
             "buffer damageRegion [%d,%d,%d,%d], dirtyRect %s", GetId(),
             buffer->GetSurfaceBufferWidth(), buffer->GetSurfaceBufferHeight(),
-            rect.x, rect.y, rect.w, rect.h, selfDrawingNodeDirtyRect_.ToString().c_str());
+            rect.x, rect.y, rect.w, rect.h, selfDrawingNodeDirtyRect.ToString().c_str());
     }
 #endif
 }
 
-bool RSRenderNode::UpdateSelfDrawRect()
+bool RSRenderNode::UpdateSelfDrawRect(RectF& selfDrawingNodeDirtyRect)
 {
     auto prevSelfDrawRect = selfDrawRect_;
     // empty rect would not join and doesn't need to check
     auto& properties = GetRenderProperties();
     selfDrawRect_ = properties.GetLocalBoundsAndFramesRect();
-    UpdateBufferDirtyRegion();
+    UpdateBufferDirtyRegion(selfDrawingNodeDirtyRect);
     if (auto drawRegion = properties.GetDrawRegion()) {
         selfDrawRect_ = selfDrawRect_.JoinRect(*drawRegion);
     }
@@ -1722,7 +1715,8 @@ bool RSRenderNode::UpdateSelfDrawRect()
     return !selfDrawRect_.IsNearEqual(prevSelfDrawRect);
 }
 
-void RSRenderNode::UpdateAbsDirtyRegion(RSDirtyRegionManager& dirtyManager, const RectI& clipRect)
+void RSRenderNode::UpdateAbsDirtyRegion(RSDirtyRegionManager& dirtyManager, const RectI& clipRect,
+    RectI& selfDrawingNodeAbsDirtyRect, RectI& absCmdlistDrawRect)
 {
     // merge old children draw rect if node's sub tree is all dirty
     const auto& renderProperties = GetRenderProperties();
@@ -1738,7 +1732,7 @@ void RSRenderNode::UpdateAbsDirtyRegion(RSDirtyRegionManager& dirtyManager, cons
         if (isSelfDrawingNode_) {
             // merge self drawing node last frame size and join current frame size to absDrawRect_ when changed
             dirtyManager.MergeDirtyRect(oldAbsDrawRect_.IntersectRect(clipRect));
-            selfDrawingNodeAbsDirtyRect_.JoinRect(absDrawRect_);
+            selfDrawingNodeAbsDirtyRect.JoinRect(absDrawRect_);
         }
         oldAbsDrawRect_ = absDrawRect_;
     }
@@ -1747,8 +1741,8 @@ void RSRenderNode::UpdateAbsDirtyRegion(RSDirtyRegionManager& dirtyManager, cons
         dirtyManager.MergeDirtyRect(oldDirtyRect);
         return;
     }
-    auto dirtyRect = isSelfDrawingNode_ ? selfDrawingNodeAbsDirtyRect_ :
-        (!absCmdlistDrawRect_.IsEmpty() ? absCmdlistDrawRect_ : absDrawRect_);
+    auto dirtyRect = isSelfDrawingNode_ ? selfDrawingNodeAbsDirtyRect :
+        (!absCmdlistDrawRect.IsEmpty() ? absCmdlistDrawRect : absDrawRect_);
     dirtyRect = IsFirstLevelCrossNode() ? dirtyRect : dirtyRect.IntersectRect(clipRect);
     oldDirty_ = dirtyRect;
     oldDirtyInSurface_ = oldDirty_.IntersectRect(dirtyManager.GetSurfaceRect());
@@ -1765,7 +1759,8 @@ bool RSRenderNode::UpdateDrawRectAndDirtyRegion(RSDirtyRegionManager& dirtyManag
     __builtin_prefetch(&(properties.frameGeo_), 0, 2);
 #endif
     // 1. update self drawrect if dirty
-    bool selfDrawRectChanged = IsDirty() ? UpdateSelfDrawRect() : false;
+    RectF selfDrawingNodeDirtyRect;
+    bool selfDrawRectChanged = IsDirty() ? UpdateSelfDrawRect(selfDrawingNodeDirtyRect) : false;
     if (selfDrawRectChanged) {
         UpdateChildrenOutOfRectFlag(!childrenRect_.ConvertTo<float>().IsInsideOf(selfDrawRect_));
     }
@@ -1782,6 +1777,8 @@ bool RSRenderNode::UpdateDrawRectAndDirtyRegion(RSDirtyRegionManager& dirtyManag
         oldAbsMatrix_ = parent->oldAbsMatrix_;
         oldAbsMatrix_.PostConcat(oldMatrix_);
     }
+    RectI selfDrawingNodeAbsDirtyRect;
+    RectI absCmdlistDrawRect;
     if (accumGeoDirty || properties.NeedClip() || properties.geoDirty_ || (dirtyStatus_ != NodeDirty::CLEAN)) {
         UpdateDrawRect(accumGeoDirty, clipRect, parentSurfaceMatrix);
         // planning: double check if it would be covered by updateself without geo update
@@ -1793,10 +1790,10 @@ bool RSRenderNode::UpdateDrawRectAndDirtyRegion(RSDirtyRegionManager& dirtyManag
             absDrawRectF_ = geoPtr->MapRectWithoutRounding(selfDrawRect_, geoPtr->GetAbsMatrix());
             absDrawRect_ = geoPtr->InflateToRectI(absDrawRectF_);
             innerAbsDrawRect_ = geoPtr->DeflateToRectI(absDrawRectF_);
-            absCmdlistDrawRect_ = GetNeedUseCmdlistDrawRegion() ?
+            absCmdlistDrawRect = GetNeedUseCmdlistDrawRegion() ?
                 geoPtr->MapRect(cmdlistDrawRegion_, geoPtr->GetAbsMatrix()) : RectI(0, 0, 0, 0);
             if (isSelfDrawingNode_) {
-                selfDrawingNodeAbsDirtyRect_ = geoPtr->MapAbsRect(selfDrawingNodeDirtyRect_);
+                selfDrawingNodeAbsDirtyRect = geoPtr->MapAbsRect(selfDrawingNodeDirtyRect);
             }
             UpdateSrcOrClipedAbsDrawRectChangeState(clipRect);
         }
@@ -1813,7 +1810,7 @@ bool RSRenderNode::UpdateDrawRectAndDirtyRegion(RSDirtyRegionManager& dirtyManag
     if ((IsDirty() || srcOrClipedAbsDrawRectChangeFlag_ || (parent && (parent->GetAccumulatedClipFlagChange() ||
         parent->GetGeoUpdateDelay()))) && (shouldPaint_ || isLastVisible_ || properties.IsSubTreeAllDirty())) {
         // update ForegroundFilterCache
-        UpdateAbsDirtyRegion(dirtyManager, clipRect);
+        UpdateAbsDirtyRegion(dirtyManager, clipRect, selfDrawingNodeAbsDirtyRect, absCmdlistDrawRect);
         UpdateDirtyRegionInfoForDFX(dirtyManager);
     }
     // 4. reset dirty status
@@ -1867,10 +1864,6 @@ void RSRenderNode::UpdateDirtyRegionInfoForDFX(RSDirtyRegionManager& dirtyManage
             dirtyManager.UpdateDirtyRegionInfoForDfx(
                 GetId(), GetType(), DirtyRegionType::OVERLAY_RECT, geoPtr->MapAbsRect(*drawRegion));
         }
-        dirtyManager.UpdateDirtyRegionInfoForDfx(
-            GetId(), GetType(), DirtyRegionType::SHADOW_RECT, geoPtr->MapAbsRect(localShadowRect_.ConvertTo<float>()));
-        dirtyManager.UpdateDirtyRegionInfoForDfx(GetId(),
-            GetType(), DirtyRegionType::OUTLINE_RECT, geoPtr->MapAbsRect(localOutlineRect_.ConvertTo<float>()));
     }
 
     // update dirty region information in abs Coords.
