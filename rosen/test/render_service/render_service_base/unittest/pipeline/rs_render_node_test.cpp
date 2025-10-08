@@ -2922,12 +2922,14 @@ HWTEST_F(RSRenderNodeTest, UpdateAbsDirtyRegion001, TestSize.Level1)
     node.oldClipRect_ = RectI(0, 0, defaultWidth, defaultHeight);
 
     RectI clipRect(0, 0, surfaceWidth, surfaceHeight);
-    node.UpdateAbsDirtyRegion(*rsDirtyManager, clipRect);
+    RectI selfDrawingNodeAbsDirtyRect{0, 0, 1000, 2000};
+    RectI absCmdlistDrawRect{0, 0, 1000, 2000};
+    node.UpdateAbsDirtyRegion(*rsDirtyManager, clipRect, selfDrawingNodeAbsDirtyRect, absCmdlistDrawRect);
     EXPECT_EQ(rsDirtyManager->GetCurrentFrameDirtyRegion(), node.oldChildrenRect_.IntersectRect(node.oldClipRect_));
 
     rsDirtyManager->Clear();
     node.isFirstLevelCrossNode_ = true;
-    node.UpdateAbsDirtyRegion(*rsDirtyManager, clipRect);
+    node.UpdateAbsDirtyRegion(*rsDirtyManager, clipRect, selfDrawingNodeAbsDirtyRect, absCmdlistDrawRect);
     EXPECT_EQ(rsDirtyManager->GetCurrentFrameDirtyRegion(), node.oldChildrenRect_);
 }
 
@@ -2978,12 +2980,10 @@ HWTEST_F(RSRenderNodeTest, UpdateDrawRectAndDirtyRegion002, TestSize.Level1)
     node.cmdlistDrawRegion_ = RectF(0.f, 0.f, 0.f, 0.f);
     node.needUseCmdlistDrawRegion_ = true;
     node.UpdateDrawRectAndDirtyRegion(rsDirtyManager, false, RectI(), Drawing::Matrix());
-    ASSERT_TRUE(node.absCmdlistDrawRect_.IsEmpty());
 
     // not use cmdlistDrawRegion
     node.needUseCmdlistDrawRegion_ = false;
     node.UpdateDrawRectAndDirtyRegion(rsDirtyManager, false, RectI(), Drawing::Matrix());
-    ASSERT_TRUE(node.absCmdlistDrawRect_.IsEmpty());
     system::SetParameter("rosen.graphic.optimizeCanvasDrawRegion.enabled",
         std::to_string(optimizeCanvasDrawRegionEnabled));
     pidList.assign(1, ExtractPid(INVALID_NODE_ID));

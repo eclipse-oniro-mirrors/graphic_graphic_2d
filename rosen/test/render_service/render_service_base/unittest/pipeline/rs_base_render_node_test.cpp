@@ -765,10 +765,6 @@ HWTEST_F(RSBaseRenderNodeTest, DumpTree002, TestSize.Level1)
     int32_t depth = 0;
     std::string out = "";
     node->oldDirty_ = DEFAULT_RECT;
-    node->localShadowRect_ = DEFAULT_RECT;
-    node->localOutlineRect_ = DEFAULT_RECT;
-    node->localPixelStretchRect_ = DEFAULT_RECT;
-    node->localForegroundEffectRect_ = DEFAULT_RECT;
     node->DumpTree(depth, out);
     ASSERT_TRUE(out.length() > 0);
 }
