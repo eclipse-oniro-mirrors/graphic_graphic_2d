@@ -400,6 +400,11 @@ bool RSSystemProperties::GetBlurEnabled()
     return true;
 }
 
+bool RSSystemProperties::GetFgBlenderEnabled()
+{
+    return true;
+}
+
 bool RSSystemProperties::GetForegroundFilterEnabled()
 {
     return true;
@@ -502,6 +507,11 @@ bool RSSystemProperties::GetWideColorSpaceEnabled()
     return true;
 }
 
+bool RSSystemProperties::GetSkipUnpremulEnabled()
+{
+    return true;
+}
+
 bool RSSystemProperties::GetSecurityPermissionCheckEnabled()
 {
     return false;
@@ -560,11 +570,6 @@ bool RSSystemProperties::GetRenderParallelEnabled()
 bool RSSystemProperties::IsForceClient()
 {
     return false;
-}
-
-uint32_t RSSystemProperties::GetBlurEffectTerminateLimit()
-{
-    return 0;
 }
 
 bool RSSystemProperties::GetDrmMarkedFilterEnabled()

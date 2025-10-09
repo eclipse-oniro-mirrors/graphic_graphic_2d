@@ -24,6 +24,7 @@
 #include "metadata_helper.h"
 #include "offscreen_render/rs_offscreen_render_thread.h"
 #include "params/rs_render_params.h"
+#include "pipeline/rs_canvas_drawing_render_node.h"
 #include "pipeline/rs_context.h"
 #include "pipeline/rs_canvas_render_node.h"
 #include "pipeline/rs_dirty_region_manager.h"
@@ -43,7 +44,8 @@ namespace Rosen {
 const std::string OUT_STR3 =
     ", Parent [null], Name [SurfaceNode], hasConsumer: 0, Alpha: 1.000000, Visible: 1, VisibleRegion [Empty], "
     "OpaqueRegion [Empty], OcclusionBg: 0, SpecialLayer: 0, surfaceType: 0, "
-    "ContainerConfig: [outR: 0 inR: 0 x: 0 y: 0 w: 0 h: 0], colorSpace: 4, uifirstColorGamut: 4";
+    "ContainerConfig: [outR: 0 inR: 0 x: 0 y: 0 w: 0 h: 0], colorSpace: 4, uifirstColorGamut: 4"
+    ", isSurfaceBufferOpaque: 0";
 const std::string OUT_STR4 = ", Visible: 1, Size: [-inf, -inf], EnableRender: 1";
 const std::string OUT_STR5 = ", skipLayer: 0";
 const Rect DEFAULT_RECT = { 0, 0, 200, 200 };
@@ -353,7 +355,8 @@ HWTEST_F(RSRenderNodeTest2, CollectAndUpdateLocalPixelStretchRect, TestSize.Leve
 HWTEST_F(RSRenderNodeTest2, UpdateBufferDirtyRegion, TestSize.Level1)
 {
     RSRenderNode node(id, context);
-    node.UpdateBufferDirtyRegion();
+    RectF selfDrawingNodeDirtyRect{0, 0, 1000, 1000};
+    node.UpdateBufferDirtyRegion(selfDrawingNodeDirtyRect);
     RectI dirtyRect{0, 0, 1000, 1000};
     RectI drawRegion{0, 0, 1000, 1000};
     node.UpdateBufferDirtyRegion(dirtyRect, drawRegion);
@@ -384,8 +387,8 @@ HWTEST_F(RSRenderNodeTest2, UpdateBufferDirtyRegion002, TestSize.Level1)
     surfaceNode->selfDrawRect_ = DEFAULT_SELF_DRAW_RECT;
     auto param = system::GetParameter("rosen.graphic.selfdrawingdirtyregion.enabled", "");
     system::SetParameter("rosen.graphic.selfdrawingdirtyregion.enabled", "1");
-    surfaceNode->UpdateBufferDirtyRegion();
-    ASSERT_EQ(surfaceNode->selfDrawingNodeDirtyRect_.width_, 100);
+    RectF selfDrawingNodeDirtyRect{0, 0, 100, 100};
+    surfaceNode->UpdateBufferDirtyRegion(selfDrawingNodeDirtyRect);
     system::SetParameter("rosen.graphic.selfdrawingdirtyregion.enabled", param);
 }
 
@@ -406,8 +409,8 @@ HWTEST_F(RSRenderNodeTest2, UpdateBufferDirtyRegion003, TestSize.Level1)
     surfaceNode->GetRSSurfaceHandler()->buffer_.buffer = buffer;
     ASSERT_TRUE(surfaceNode->GetRSSurfaceHandler()->GetBuffer() != nullptr);
     surfaceNode->selfDrawRect_ = DEFAULT_SELF_DRAW_RECT;
-    surfaceNode->UpdateBufferDirtyRegion();
-    ASSERT_EQ(surfaceNode->selfDrawingNodeDirtyRect_.width_, 200);
+    RectF selfDrawingNodeDirtyRect{0, 0, 200, 200};
+    surfaceNode->UpdateBufferDirtyRegion(selfDrawingNodeDirtyRect);
 }
 
 /**
@@ -425,8 +428,8 @@ HWTEST_F(RSRenderNodeTest2, UpdateBufferDirtyRegion004, TestSize.Level1)
     surfaceNode->GetRSSurfaceHandler()->buffer_.buffer = buffer;
     ASSERT_TRUE(surfaceNode->GetRSSurfaceHandler()->GetBuffer() != nullptr);
     surfaceNode->selfDrawRect_ = DEFAULT_SELF_DRAW_RECT;
-    surfaceNode->UpdateBufferDirtyRegion();
-    ASSERT_EQ(surfaceNode->selfDrawingNodeDirtyRect_.width_, 200);
+    RectF selfDrawingNodeDirtyRect{0, 0, 200, 200};
+    surfaceNode->UpdateBufferDirtyRegion(selfDrawingNodeDirtyRect);
 }
 
 /**
@@ -438,7 +441,8 @@ HWTEST_F(RSRenderNodeTest2, UpdateBufferDirtyRegion004, TestSize.Level1)
 HWTEST_F(RSRenderNodeTest2, UpdateSelfDrawRect, TestSize.Level1)
 {
     RSRenderNode node(id, context);
-    node.UpdateSelfDrawRect();
+    RectF selfDrawingNodeDirtyRect{0, 0, 100, 100};
+    node.UpdateSelfDrawRect(selfDrawingNodeDirtyRect);
     ASSERT_TRUE(true);
 }
 
@@ -515,7 +519,9 @@ HWTEST_F(RSRenderNodeTest2, UpdateAbsDirtyRegion001, TestSize.Level1)
     RSRenderNode node(id, context);
     std::shared_ptr<RSDirtyRegionManager> rsDirtyManager = std::make_shared<RSDirtyRegionManager>();
     RectI clipRect{0, 0, 1000, 1000};
-    node.UpdateAbsDirtyRegion(*rsDirtyManager, clipRect);
+    RectI selfDrawingNodeAbsDirtyRect{0, 0, 1000, 1000};
+    RectI absCmdlistDrawRect{0, 0, 1000, 1000};
+    node.UpdateAbsDirtyRegion(*rsDirtyManager, clipRect, selfDrawingNodeAbsDirtyRect, absCmdlistDrawRect);
     ASSERT_TRUE(true);
 }
 
@@ -533,7 +539,9 @@ HWTEST_F(RSRenderNodeTest2, UpdateAbsDirtyRegion002, TestSize.Level1)
     node.isSelfDrawingNode_ = true;
     node.absDrawRect_ = {1, 2, 3, 4};
     node.oldAbsDrawRect_ = {2, 2, 3, 4};
-    node.UpdateAbsDirtyRegion(*rsDirtyManager, clipRect);
+    RectI selfDrawingNodeAbsDirtyRect{0, 0, 1000, 1000};
+    RectI absCmdlistDrawRect{0, 0, 1000, 1000};
+    node.UpdateAbsDirtyRegion(*rsDirtyManager, clipRect, selfDrawingNodeAbsDirtyRect, absCmdlistDrawRect);
     ASSERT_TRUE(true);
 }
 
@@ -553,7 +561,9 @@ HWTEST_F(RSRenderNodeTest2, UpdateAbsDirtyRegion003, TestSize.Level1)
     node.oldAbsDrawRect_ = {2, 2, 3, 4};
     node.shouldPaint_ = false;
     node.isLastVisible_ = true;
-    node.UpdateAbsDirtyRegion(*rsDirtyManager, clipRect);
+    RectI selfDrawingNodeAbsDirtyRect{0, 0, 1000, 1000};
+    RectI absCmdlistDrawRect{0, 0, 1000, 1000};
+    node.UpdateAbsDirtyRegion(*rsDirtyManager, clipRect, selfDrawingNodeAbsDirtyRect, absCmdlistDrawRect);
     ASSERT_TRUE(true);
 }
 
@@ -573,7 +583,9 @@ HWTEST_F(RSRenderNodeTest2, UpdateAbsDirtyRegion004, TestSize.Level1)
     node.oldAbsDrawRect_ = {2, 2, 3, 4};
     node.shouldPaint_ = true;
     node.isLastVisible_ = true;
-    node.UpdateAbsDirtyRegion(*rsDirtyManager, clipRect);
+    RectI selfDrawingNodeAbsDirtyRect{0, 0, 1000, 1000};
+    RectI absCmdlistDrawRect{0, 0, 1000, 1000};
+    node.UpdateAbsDirtyRegion(*rsDirtyManager, clipRect, selfDrawingNodeAbsDirtyRect, absCmdlistDrawRect);
     ASSERT_TRUE(true);
 }
 
@@ -1282,6 +1294,11 @@ HWTEST_F(RSRenderNodeTest2, DumpSubClassNodeTest032, TestSize.Level1)
     nodeTest->modifiersNG_[static_cast<uint16_t>(ModifierNG::RSModifierType::ALPHA)].emplace_back(modifier2);
     nodeTest->DumpDrawCmdModifiers(outTest6);
     EXPECT_NE(outTest6, "");
+
+    std::string outTest7;
+    auto canvasDrawingNode = std::make_shared<RSCanvasDrawingRenderNode>(1);
+    canvasDrawingNode->DumpSubClassNode(outTest7);
+    EXPECT_EQ(outTest7, ", lastResetSurfaceTime: 0, opCountAfterReset: 0");
 }
 
 /**
@@ -1369,7 +1386,6 @@ HWTEST_F(RSRenderNodeTest2, CollectAndUpdateLocalDistortionEffectRecttest, TestS
     Vector4f bounds(0.0, 0.0, width, height);
     node.renderProperties_.SetBounds(bounds);
     node.CollectAndUpdateLocalDistortionEffectRect();
-    EXPECT_FALSE(node.localDistortionEffectRect_.width_ > static_cast<int>(width));
 
     node.renderProperties_.SetDistortionK(0.5f); // 0.5 is k of value in distortion
     EXPECT_TRUE(node.renderProperties_.GetDistortionDirty());
@@ -1833,7 +1849,7 @@ HWTEST_F(RSRenderNodeTest2, PostPrepareForBlurFilterNode03, TestSize.Level1)
 
 /**
  * @tc.name: ManageDrawingCacheTest02
- * @tc.desc: SetDrawingCacheChanged and ResetDrawingCacheNeedUpdate test
+ * @tc.desc: SetDrawingCacheChanged and test
  * @tc.type: FUNC
  * @tc.require: issueI9US6V
  */
@@ -1861,18 +1877,13 @@ HWTEST_F(RSRenderNodeTest2, ManageDrawingCacheTest02, TestSize.Level2)
     EXPECT_TRUE(nodeTest->stagingRenderParams_->needSync_);
     EXPECT_TRUE(nodeTest->stagingRenderParams_->isDrawingCacheChanged_);
 
-    // ResetDrawingCacheNeedUpdate test
-    nodeTest->drawingCacheNeedUpdate_ = true;
-    nodeTest->ResetDrawingCacheNeedUpdate();
-    EXPECT_FALSE(nodeTest->drawingCacheNeedUpdate_);
-
     // GetDrawingCacheChanged test
     EXPECT_TRUE(nodeTest->GetDrawingCacheChanged());
 }
 
 /**
  * @tc.name: ManageDrawingCacheTest03
- * @tc.desc: SetDrawingCacheChanged and ResetDrawingCacheNeedUpdate test
+ * @tc.desc: SetDrawingCacheChanged test
  * @tc.type: FUNC
  * @tc.require: issueI9US6V
  */
@@ -1900,18 +1911,13 @@ HWTEST_F(RSRenderNodeTest2, ManageDrawingCacheTest03, TestSize.Level2)
     EXPECT_TRUE(nodeTest->stagingRenderParams_->needSync_);
     EXPECT_TRUE(nodeTest->stagingRenderParams_->isDrawingCacheChanged_);
 
-    // ResetDrawingCacheNeedUpdate test
-    nodeTest->drawingCacheNeedUpdate_ = false;
-    nodeTest->ResetDrawingCacheNeedUpdate();
-    EXPECT_FALSE(nodeTest->drawingCacheNeedUpdate_);
-
     // GetDrawingCacheChanged test
     EXPECT_TRUE(nodeTest->GetDrawingCacheChanged());
 }
 
 /**
  * @tc.name: ManageDrawingCacheTest04
- * @tc.desc: SetDrawingCacheChanged and ResetDrawingCacheNeedUpdate test
+ * @tc.desc: SetDrawingCacheChanged test
  * @tc.type: FUNC
  * @tc.require: issueI9US6V
  */
@@ -1939,18 +1945,13 @@ HWTEST_F(RSRenderNodeTest2, ManageDrawingCacheTest04, TestSize.Level2)
     EXPECT_TRUE(nodeTest->stagingRenderParams_->needSync_);
     EXPECT_TRUE(nodeTest->stagingRenderParams_->isDrawingCacheChanged_);
 
-    // ResetDrawingCacheNeedUpdate test
-    nodeTest->drawingCacheNeedUpdate_ = true;
-    nodeTest->ResetDrawingCacheNeedUpdate();
-    EXPECT_FALSE(nodeTest->drawingCacheNeedUpdate_);
-
     // GetDrawingCacheChanged test
     EXPECT_TRUE(nodeTest->GetDrawingCacheChanged());
 }
 
 /**
  * @tc.name: ManageDrawingCacheTest05
- * @tc.desc: SetDrawingCacheChanged and ResetDrawingCacheNeedUpdate test
+ * @tc.desc: SetDrawingCacheChanged test
  * @tc.type: FUNC
  * @tc.require: issueI9US6V
  */
@@ -1977,11 +1978,6 @@ HWTEST_F(RSRenderNodeTest2, ManageDrawingCacheTest05, TestSize.Level2)
     nodeTest->SetDrawingCacheChanged(true);
     EXPECT_TRUE(nodeTest->stagingRenderParams_->needSync_);
     EXPECT_TRUE(nodeTest->stagingRenderParams_->isDrawingCacheChanged_);
-
-    // ResetDrawingCacheNeedUpdate test
-    nodeTest->drawingCacheNeedUpdate_ = false;
-    nodeTest->ResetDrawingCacheNeedUpdate();
-    EXPECT_FALSE(nodeTest->drawingCacheNeedUpdate_);
 
     // GetDrawingCacheChanged test
     EXPECT_TRUE(nodeTest->GetDrawingCacheChanged());
@@ -2344,63 +2340,6 @@ HWTEST_F(RSRenderNodeTest2, IsPixelStretchValid, TestSize.Level1)
             }
         }
     }
-}
-
-/**
- * @tc.name: InitCacheSurfaceTest02
- * @tc.desc: InitCacheSurface test
- * @tc.type: FUNC
- * @tc.require: issueI9V3BK
- */
-HWTEST_F(RSRenderNodeTest2, InitCacheSurfaceTest02, TestSize.Level1)
-{
-    std::shared_ptr<RSRenderNode> nodeTest = std::make_shared<RSRenderNode>(0);
-    EXPECT_NE(nodeTest, nullptr);
-    nodeTest->boundsModifierNG_ = nullptr;
-    nodeTest->frameModifierNG_ = nullptr;
-
-    RSRenderNode::ClearCacheSurfaceFunc funcTest1 = nullptr;
-    Drawing::GPUContext gpuContextTest1;
-    nodeTest->cacheType_ = CacheType::ANIMATE_PROPERTY;
-    RSShadow rsShadow;
-    std::optional<RSShadow> shadow(rsShadow);
-    nodeTest->renderProperties_.shadow_ = shadow;
-    nodeTest->renderProperties_.shadow_->radius_ = 1.0f;
-    nodeTest->renderProperties_.isSpherizeValid_ = true;
-    nodeTest->renderProperties_.isAttractionValid_ = true;
-    nodeTest->cacheSurface_ = nullptr;
-    nodeTest->InitCacheSurface(&gpuContextTest1, funcTest1, 1);
-    EXPECT_EQ(nodeTest->cacheSurface_, nullptr);
-
-    nodeTest->cacheSurface_ = std::make_shared<Drawing::Surface>();
-    EXPECT_NE(nodeTest->cacheSurface_, nullptr);
-    nodeTest->cacheSurfaceThreadIndex_ = 1;
-    nodeTest->completedSurfaceThreadIndex_ = 1;
-    Drawing::GPUContext gpuContextTest2;
-    nodeTest->cacheType_ = CacheType::CONTENT;
-    std::shared_ptr<Drawing::Surface> surfaceTest1 = std::make_shared<Drawing::Surface>();
-    EXPECT_NE(surfaceTest1, nullptr);
-    std::shared_ptr<Drawing::Surface> surfaceTest2 = std::make_shared<Drawing::Surface>();
-    EXPECT_NE(surfaceTest2, nullptr);
-    RSRenderNode::ClearCacheSurfaceFunc funcTest2 = [surfaceTest1, surfaceTest2](std::shared_ptr<Drawing::Surface>&& s1,
-                                                        std::shared_ptr<Drawing::Surface>&& s2, uint32_t w,
-                                                        uint32_t h) {};
-    nodeTest->InitCacheSurface(&gpuContextTest2, funcTest2, 1);
-    EXPECT_EQ(nodeTest->cacheSurface_, nullptr);
-
-    Drawing::GPUContext* gpuContextTest3 = nullptr;
-    std::shared_ptr<Drawing::Surface> surfaceTest3 = std::make_shared<Drawing::Surface>();
-    EXPECT_NE(surfaceTest3, nullptr);
-    std::shared_ptr<Drawing::Surface> surfaceTest4 = std::make_shared<Drawing::Surface>();
-    EXPECT_NE(surfaceTest4, nullptr);
-    RSRenderNode::ClearCacheSurfaceFunc funcTest3 = [surfaceTest3, surfaceTest4](std::shared_ptr<Drawing::Surface>&& s1,
-                                                        std::shared_ptr<Drawing::Surface>&& s2, uint32_t w,
-                                                        uint32_t h) {};
-    nodeTest->clearCacheSurfaceFunc_ = nullptr;
-    nodeTest->cacheSurfaceThreadIndex_ = 1;
-    nodeTest->completedSurfaceThreadIndex_ = 1;
-    nodeTest->InitCacheSurface(gpuContextTest3, funcTest3, 1);
-    EXPECT_EQ(nodeTest->cacheSurface_, nullptr);
 }
 
 /**

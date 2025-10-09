@@ -35,13 +35,12 @@ public:
 
     virtual ~RSImageManager() = default;
 
-    virtual void UnMapImageFromSurfaceBuffer(int32_t seqNum) = 0;
+    virtual void UnMapImageFromSurfaceBuffer(uint64_t seqNum) = 0;
     virtual std::shared_ptr<Drawing::Image> CreateImageFromBuffer(
         RSPaintFilterCanvas& canvas, const BufferDrawParam& params,
         const std::shared_ptr<Drawing::ColorSpace>& drawingColorSpace) = 0;
     virtual std::shared_ptr<Drawing::Image> GetIntersectImage(Drawing::RectI& imgCutRect,
-        const std::shared_ptr<Drawing::GPUContext>& context, const sptr<OHOS::SurfaceBuffer>& buffer,
-        const sptr<SyncFence>& acquireFence, pid_t threadIndex = 0) = 0;
+        const std::shared_ptr<Drawing::GPUContext>& context, const BufferDrawParam& params) = 0;
 
     // Vulkan specific functions
     virtual void DumpVkImageInfo(std::string &dumpString) { return; }

@@ -191,7 +191,7 @@ void RSFilterDrawable::PostUpdate(const RSRenderNode& node)
     }
     auto drawingFilter = std::static_pointer_cast<RSDrawingFilter>(stagingFilter_);
     auto renderFilter = drawingFilter->GetNGRenderFilter();
-    enableEDREffect_ = RSUIFilterHelper::CheckEnableEDR(renderFilter);
+    enableEDREffect_ = RSNGRenderFilterHelper::CheckEnableEDR(renderFilter);
     if (enableEDREffect_) {
         screenNodeId_ = node.GetScreenNodeId();
     }
@@ -528,5 +528,12 @@ void RSFilterDrawable::SetDrawBehindWindowRegion(RectI region)
     stagingDrawBehindWindowRegion_ = region;
 }
 
+void RSFilterDrawable::MarkDebugEnabled()
+{
+    if (stagingCacheManager_ == nullptr) {
+        return;
+    }
+    stagingCacheManager_->MarkDebugEnabled();
+}
 } // namespace DrawableV2
 } // namespace OHOS::Rosen

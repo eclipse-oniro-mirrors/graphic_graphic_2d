@@ -309,16 +309,5 @@ std::shared_ptr<RSAnimation> RSImplicitTransitionParam::CreateAnimation()
     return transition_;
 }
 
-std::shared_ptr<RSAnimation> RSImplicitTransitionParam::CreateAnimation(const std::shared_ptr<RSPropertyBase>& property,
-    const std::shared_ptr<RSPropertyBase>& startValue, const std::shared_ptr<RSPropertyBase>& endValue)
-{
-    if (transition_ == nullptr) {
-        transition_ = std::make_shared<RSTransition>(effect_, isTransitionIn_);
-        transition_->SetTimingCurve(timingCurve_);
-        transition_->SetIsCustom(true);
-        ApplyTimingProtocol(transition_);
-    }
-    return transition_;
-}
 } // namespace Rosen
 } // namespace OHOS

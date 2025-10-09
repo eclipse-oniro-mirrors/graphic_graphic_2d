@@ -30,11 +30,12 @@ public:
     JsFontDescriptor();
     static napi_value Init(napi_env env, napi_value exportObj);
     static napi_value MatchFontDescriptorsAsync(napi_env env, napi_callback_info info);
-    static napi_value CreateFontDescriptorArray(napi_env env, std::set<FontDescSharedPtr>& result);
+    static napi_value CreateFontDescriptorArray(napi_env env, const std::set<FontDescSharedPtr>& result);
     static napi_value CreateFontDescriptor(napi_env env, FontDescSharedPtr& result);
     static napi_value GetSystemFontFullNamesByType(napi_env env, napi_callback_info info);
     static napi_value GetFontDescriptorByFullName(napi_env env, napi_callback_info info);
     static napi_value CreateFontList(napi_env env, std::unordered_set<std::string>& fontList);
+    static napi_value GetFontDescriptorsFromPath(napi_env env, napi_callback_info info);
 
 private:
     template <typename T>

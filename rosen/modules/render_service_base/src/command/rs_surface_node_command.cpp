@@ -468,5 +468,20 @@ void SurfaceNodeCommandHelper::SetAncoSrcCrop(RSContext& context, NodeId nodeId,
         node->SetAncoSrcCrop(srcCrop);
     }
 }
+
+void SurfaceNodeCommandHelper::SetSurfaceBufferOpaque(RSContext& context, NodeId nodeId, bool isOpaque)
+{
+    if (auto node = context.GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(nodeId)) {
+        node->SetSurfaceBufferOpaque(isOpaque);
+    }
+}
+
+void SurfaceNodeCommandHelper::SetContainerWindowTransparent(
+    RSContext& context, NodeId nodeId, bool isContainerWindowTransparent)
+{
+    if (const auto& node = context.GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(nodeId)) {
+        node->SetContainerWindowTransparent(isContainerWindowTransparent);
+    }
+}
 } // namespace Rosen
 } // namespace OHOS

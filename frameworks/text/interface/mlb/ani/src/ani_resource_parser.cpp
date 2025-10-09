@@ -13,8 +13,9 @@
  * limitations under the License.
  */
 
-#include "ability.h"
 #include "ani_resource_parser.h"
+
+#include "ability.h"
 #include "ani_text_utils.h"
 
 namespace OHOS::Text::ANI {
@@ -53,11 +54,11 @@ std::vector<std::string> AniToStdVectorString(ani_env* env, ani_array array)
 AniResource AniResourceParser::ParseResource(ani_env* env, ani_object obj)
 {
     AniResource result;
-    ani_double aniId{0};
-    ani_ref aniBundleName{nullptr};
-    ani_ref aniModuleName{nullptr};
-    ani_ref aniParams{nullptr};
-    ani_double aniType{0};
+    ani_double aniId = 0;
+    ani_ref aniBundleName = nullptr;
+    ani_ref aniModuleName = nullptr;
+    ani_ref aniParams = nullptr;
+    ani_double aniType = 0;
     env->Object_GetPropertyByName_Double(obj, "id", &aniId);
     env->Object_GetPropertyByName_Ref(obj, "bundleName", &aniBundleName);
     env->Object_GetPropertyByName_Ref(obj, "moduleName", &aniModuleName);
@@ -83,7 +84,7 @@ bool AniResourceParser::ResolveResource(const AniResource& resource, size_t& dat
 {
     auto context = AbilityRuntime::ApplicationContext::GetApplicationContext();
     TEXT_ERROR_CHECK(context != nullptr, return false, "Failed to get application context");
-    auto moduleContext = context->CreateModuleContext(resource.moduleName);
+    auto moduleContext = context->CreateModuleContext(resource.bundleName, resource.moduleName);
     std::shared_ptr<Global::Resource::ResourceManager> resourceManager;
     if (moduleContext != nullptr) {
         resourceManager = moduleContext->GetResourceManager();

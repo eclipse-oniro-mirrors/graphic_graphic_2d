@@ -465,7 +465,6 @@ HWTEST_F(RSFilterCacheManagerTest, GetCachedTypeTest, TestSize.Level1)
     manager->cachedFilteredSnapshot_ = nullptr;
     manager->GetCachedType();
     EXPECT_TRUE(manager->cachedSnapshot_);
-    EXPECT_TRUE(manager->cachedFilteredSnapshot_ == nullptr);
 
     manager->cachedFilteredSnapshot_ = std::make_shared<RSPaintFilterCanvas::CachedEffectData>();
     manager->GetCachedType();
@@ -1337,6 +1336,25 @@ HWTEST_F(RSFilterCacheManagerTest, ClearEffectCacheWithDrawnRegionEmptyDrawnRegi
         Drawing::RectI(0, 0, NUM_10, NUM_10));
     EXPECT_NE(rsFilterCacheManager->cachedFilteredSnapshot_, nullptr);
     EXPECT_NE(rsFilterCacheManager->cachedSnapshot_, nullptr);
+}
+
+/**
+ * @tc.name: PrintDebugInfo001
+ * @tc.desc: test results of PrintDebugInfo
+ * @tc.type: FUNC
+ * @tc.require: issue20057
+ */
+HWTEST_F(RSFilterCacheManagerTest, PrintDebugInfo001, TestSize.Level1)
+{
+    auto rsFilterCacheManager = std::make_shared<RSFilterCacheManager>();
+    rsFilterCacheManager->PrintDebugInfo(0);
+    rsFilterCacheManager->MarkDebugEnabled();
+    EXPECT_TRUE(rsFilterCacheManager->debugEnabled_);
+    rsFilterCacheManager->lastStagingFilterInteractWithDirty_ = false;
+    rsFilterCacheManager->stagingFilterInteractWithDirty_ = false;
+    rsFilterCacheManager->PrintDebugInfo(0);
+    rsFilterCacheManager->stagingFilterInteractWithDirty_ = true;
+    rsFilterCacheManager->PrintDebugInfo(0);
 }
 } // namespace Rosen
 } // namespace OHOS

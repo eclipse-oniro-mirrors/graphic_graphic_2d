@@ -43,6 +43,7 @@ void RSContext::AddActiveNode(const std::shared_ptr<RSRenderNode>& node)
     activeNodesInRoot_[rootNodeId].emplace(node->GetId(), node);
 }
 
+// replication method takes long
 std::unordered_map<NodeId, std::unordered_map<NodeId, std::weak_ptr<RSRenderNode>>> RSContext::GetActiveNodes()
 {
     std::lock_guard<std::mutex> lock(activeNodesInRootMutex_);
@@ -57,6 +58,32 @@ bool RSContext::HasActiveNode(const std::shared_ptr<RSRenderNode>& node)
     auto rootNodeId = node->GetInstanceRootNodeId();
     std::lock_guard<std::mutex> lock(activeNodesInRootMutex_);
     return activeNodesInRoot_[rootNodeId].count(node->GetId()) > 0;
+}
+
+int32_t RSContext::SetBrightnessInfoChangeCallback(pid_t remotePid,
+    const sptr<RSIBrightnessInfoChangeCallback>& callback)
+{
+    if (callback == nullptr) {
+        brightnessInfoChangeCallbackMap_.erase(remotePid);
+        return SUCCESS;
+    }
+    brightnessInfoChangeCallbackMap_[remotePid] = callback;
+    return SUCCESS;
+}
+
+void RSContext::NotifyBrightnessInfoChangeCallback(ScreenId screenId, const BrightnessInfo& brightnessInfo) const
+{
+    for (auto& [_, callback] : brightnessInfoChangeCallbackMap_) {
+        if (callback == nullptr) {
+            continue;
+        }
+        callback->OnBrightnessInfoChange(screenId, brightnessInfo);
+    }
+}
+
+bool RSContext::IsBrightnessInfoChangeCallbackMapEmpty() const
+{
+    return brightnessInfoChangeCallbackMap_.empty();
 }
 
 void RSContext::AddPendingSyncNode(const std::shared_ptr<RSRenderNode> node)

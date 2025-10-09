@@ -31,6 +31,7 @@
 #include "common/rs_optional_trace.h"
 #include "common/rs_singleton.h"
 #include "feature/hdr/rs_hdr_util.h"
+#include "feature/lpp/lpp_video_handler.h"
 #include "feature/round_corner_display/rs_round_corner_display_manager.h"
 #include "pipeline/render_thread/rs_base_render_util.h"
 #include "pipeline/main_thread/rs_main_thread.h"
@@ -125,6 +126,7 @@ void RSHardwareThread::Start()
     runner_ = AppExecFwk::EventRunner::Create("RSHardwareThread");
     handler_ = std::make_shared<AppExecFwk::EventHandler>(runner_);
     redrawCb_ = [this](const sptr<Surface>& surface, const std::vector<LayerInfoPtr>& layers, uint32_t screenId) {
+        LppVideoHandler::Instance().RemoveLayerId(layers);
         return this->Redraw(surface, layers, screenId);
     };
     if (handler_) {
@@ -311,8 +313,10 @@ void RSHardwareThread::CommitAndReleaseLayers(OutputPtr output, const std::vecto
         if (RSSystemProperties::IsSuperFoldDisplay() && output->GetScreenId() == 0) {
             std::vector<LayerInfoPtr> reviseLayers = layers;
             ChangeLayersForActiveRectOutside(reviseLayers, curScreenId);
+            LppVideoHandler::Instance().AddLppLayerId(reviseLayers);
             output->SetLayerInfo(reviseLayers);
         } else {
+            LppVideoHandler::Instance().AddLppLayerId(layers);
             output->SetLayerInfo(layers);
         }
         bool doRepaint = output->IsDeviceValid() && !shouldDropFrame;
@@ -333,8 +337,8 @@ void RSHardwareThread::CommitAndReleaseLayers(OutputPtr output, const std::vecto
         }
 
         unExecuteTaskNum_--;
-        RS_LOGD_IF(DEBUG_COMPOSER, "CommitAndReleaseData unExecuteTaskNum_:%{public}d,"
-            " HARDWARE_THREAD_TASK_NUM:%{public}d, %{public}s",
+        RS_LOGD_IF(DEBUG_COMPOSER, "CommitAndReleaseData unExecuteTaskNum_:%{public}u,"
+            " HARDWARE_THREAD_TASK_NUM:%{public}u, %{public}s",
             unExecuteTaskNum_.load(), HARDWARE_THREAD_TASK_NUM, surfaceName.c_str());
         if (unExecuteTaskNum_ <= HARDWARE_THREAD_TASK_NUM) {
             RSMainThread::Instance()->NotifyHardwareThreadCanExecuteTask();
@@ -355,6 +359,7 @@ void RSHardwareThread::CommitAndReleaseLayers(OutputPtr output, const std::vecto
             RSHiSysEvent::EventWrite(RSEventName::RS_HARDWARE_THREAD_LOAD_WARNING, RSEventType::RS_STATISTIC,
                 "FRAME_RATE", frameRate, "MISSED_FRAMES", missedFrames, "FRAME_TIME", frameTime);
         }
+        LppVideoHandler::Instance().JudgeLppLayer(param.vsyncId);
     };
     RSBaseRenderUtil::IncAcquiredBufferCount();
     unExecuteTaskNum_++;
@@ -514,7 +519,7 @@ std::string RSHardwareThread::GetSurfaceNameInLayersForTrace(const std::vector<L
         surfaceName.append(std::to_string(layer->GetZorder()));
         surfaceName.append(",");
         if (layer->GetType() == GraphicLayerType::GRAPHIC_LAYER_TYPE_CURSOR && layer->GetZorder() < max) {
-            RS_LOGE("RSHardcursor is not on the top, hardcursor zorder:%{public}d", layer->GetZorder());
+            RS_LOGE("RSHardcursor is not on the top, hardcursor zorder:%{public}u", layer->GetZorder());
         }
     }
 
@@ -725,7 +730,7 @@ int32_t RSHardwareThread::AdaptiveModeStatus(const OutputPtr &output)
     auto frameRateMgr = hgmCore.GetFrameRateMgr();
     if (frameRateMgr != nullptr) {
         int32_t adaptiveStatus = frameRateMgr->AdaptiveStatus();
-        RS_LOGD("CommitAndReleaseLayers send layer adaptiveStatus: %{public}u", adaptiveStatus);
+        RS_LOGD("CommitAndReleaseLayers send layer adaptiveStatus: %{public}d", adaptiveStatus);
         if (adaptiveStatus == SupportASStatus::SUPPORT_AS) {
             return SupportASStatus::SUPPORT_AS;
         }
@@ -926,7 +931,7 @@ void RSHardwareThread::Redraw(const sptr<Surface>& surface, const std::vector<La
     GraphicColorGamut colorGamut = ComputeTargetColorGamut(layers);
     GraphicPixelFormat pixelFormat = ComputeTargetPixelFormat(layers);
     RS_LOGD("Redraw computed target color gamut: %{public}d,"
-        "pixel format: %{public}d, frame width: %{public}d, frame height: %{public}d",
+        "pixel format: %{public}d, frame width: %{public}u, frame height: %{public}u",
         colorGamut, pixelFormat, screenInfo.phyWidth, screenInfo.phyHeight);
     auto renderFrameConfig = RSBaseRenderUtil::GetFrameBufferRequestConfig(screenInfo,
         isProtected, colorGamut, pixelFormat);

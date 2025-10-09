@@ -22,16 +22,26 @@
 #include <string>
 #include <vector>
 
+#include "feature/composite_layer/rs_composite_layer_utils.h"
 #include "feature/hyper_graphic_manager/rs_frame_rate_policy.h"
 #include "rs_trace.h"
 #include "sandbox_utils.h"
+#include "ui_effect/effect/include/background_color_effect_para.h"
+#include "ui_effect/effect/include/border_light_effect_para.h"
+#include "ui_effect/filter/include/filter_blur_para.h"
+#include "ui_effect/filter/include/filter_distort_para.h"
+#include "ui_effect/filter/include/filter_fly_out_para.h"
+#include "ui_effect/filter/include/filter_hdr_para.h"
+#include "ui_effect/filter/include/filter_pixel_stretch_para.h"
+#include "ui_effect/filter/include/filter_radius_gradient_blur_para.h"
+#include "ui_effect/filter/include/filter_water_ripple_para.h"
 #include "ui_effect/mask/include/ripple_mask_para.h"
 #include "ui_effect/property/include/rs_ui_filter_base.h"
 #include "ui_effect/property/include/rs_ui_shader_base.h"
+#include "ui_effect/property/include/rs_ui_mask_base.h"
 
 #include "animation/rs_animation.h"
 #include "animation/rs_animation_callback.h"
-#include "animation/rs_animation_group.h"
 #include "animation/rs_implicit_animation_param.h"
 #include "animation/rs_implicit_animator.h"
 #include "animation/rs_implicit_animator_map.h"
@@ -43,7 +53,6 @@
 #include "common/rs_obj_abs_geometry.h"
 #include "common/rs_optional_trace.h"
 #include "common/rs_vector4.h"
-#include "feature/composite_layer/rs_composite_layer_utils.h"
 #include "modifier/rs_modifier_manager_map.h"
 #include "modifier/rs_property.h"
 #include "modifier_ng/appearance/rs_alpha_modifier.h"
@@ -61,6 +70,7 @@
 #include "modifier_ng/appearance/rs_point_light_modifier.h"
 #include "modifier_ng/appearance/rs_shadow_modifier.h"
 #include "modifier_ng/appearance/rs_use_effect_modifier.h"
+#include "modifier_ng/appearance/rs_union_modifier.h"
 #include "modifier_ng/appearance/rs_visibility_modifier.h"
 #include "modifier_ng/background/rs_background_color_modifier.h"
 #include "modifier_ng/background/rs_background_image_modifier.h"
@@ -83,6 +93,7 @@
 #include "render/rs_filter.h"
 #include "render/rs_material_filter.h"
 #include "render/rs_path.h"
+#include "transaction/rs_sync_transaction_handler.h"
 #include "transaction/rs_transaction_proxy.h"
 #include "ui/rs_canvas_drawing_node.h"
 #include "ui/rs_canvas_node.h"
@@ -143,7 +154,7 @@ RSNode::RSNode(bool isRenderServiceNode, NodeId id, bool isTextureExportNode, st
       showingPropertiesFreezer_(id, rsUIContext), isOnTheTree_(isOnTheTree)
 {
     InitUniRenderEnabled();
-    if (auto rsUIContextPtr = rsUIContext_.lock()) {
+    if (auto rsUIContextPtr = rsUIContext_) {
         auto transaction = rsUIContextPtr->GetRSTransaction();
         if (transaction != nullptr && g_isUniRenderEnabled && isTextureExportNode) {
             std::call_once(flag_, [transaction]() {
@@ -193,7 +204,7 @@ RSNode::~RSNode()
                                                   [](const auto& child) { return child.expired(); }),
             parentPtr->children_.end());
     }
-    auto rsUIContext = rsUIContext_.lock();
+    auto rsUIContext = rsUIContext_;
     // To prevent a process from repeatedly serializing and generating different node objects, it is necessary to place
     // the nodes in a globally static map. Therefore, when disassembling, the global map needs to be deleted
     if (skipDestroyCommandInDestructor_ && rsUIContext) {
@@ -236,7 +247,7 @@ RSNode::~RSNode()
 
 std::shared_ptr<RSTransactionHandler> RSNode::GetRSTransaction() const
 {
-    auto rsUIContext = rsUIContext_.lock();
+    auto rsUIContext = rsUIContext_;
     if (!rsUIContext) {
         return nullptr;
     }
@@ -636,7 +647,7 @@ void RSNode::ExecuteWithoutAnimation(
 
 bool RSNode::FallbackAnimationsToContext()
 {
-    auto rsUIContext = rsUIContext_.lock();
+    auto rsUIContext = rsUIContext_;
     if (rsUIContext == nullptr) {
         return false;
     }
@@ -1472,7 +1483,7 @@ void RSNode::SetRSUIContext(std::shared_ptr<RSUIContext> rsUIContext)
     if (rsUIContext == nullptr) {
         return;
     }
-    auto preUIContext = rsUIContext_.lock();
+    auto preUIContext = rsUIContext_;
     if ((preUIContext != nullptr) && (preUIContext == rsUIContext)) {
         return;
     }
@@ -1499,6 +1510,7 @@ void RSNode::SetRSUIContext(std::shared_ptr<RSUIContext> rsUIContext)
     // step3 register node to new nodeMap and move the command to the new RSUIContext
     RegisterNodeMap();
     if (preUIContext != nullptr) {
+        preUIContext->MoveModifier(rsUIContext, GetId());
         auto preTransaction = preUIContext->GetRSTransaction();
         auto curTransaction = rsUIContext->GetRSTransaction();
         if (preTransaction && curTransaction) {
@@ -1643,7 +1655,7 @@ void RSNode::SetParticleParams(std::vector<ParticleParams>& particleParams, cons
     SetParticleDrawRegion(particleParams);
     auto property = std::make_shared<RSProperty<int>>();
     auto propertyId = property->GetId();
-    auto uiAnimation = std::make_shared<RSAnimationGroup>();
+    auto uiAnimation = std::make_shared<RSDummyAnimation>();
     auto animationId = uiAnimation->GetId();
     AddAnimation(uiAnimation);
     if (finishCallback != nullptr) {
@@ -2568,6 +2580,26 @@ void RSNode::SetAlwaysSnapshot(bool enable)
         enable);
 }
 
+void RSNode::SetUseUnion(bool useUnion)
+{
+    SetPropertyNG<ModifierNG::RSUnionModifier, &ModifierNG::RSUnionModifier::SetUseUnion>(useUnion);
+}
+
+void RSNode::SetSDFMask(const std::shared_ptr<RSNGMaskBase>& mask)
+{
+    if (!mask) {
+        std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
+        CHECK_FALSE_RETURN(CheckMultiThreadAccess(__func__));
+        auto modifier = GetModifierCreatedBySetter(ModifierNG::RSModifierType::UNION);
+        if (modifier == nullptr || !modifier->HasProperty(ModifierNG::RSPropertyType::SDF_MASK)) {
+            return;
+        }
+        modifier->DetachProperty(ModifierNG::RSPropertyType::SDF_MASK);
+        return;
+    }
+    SetPropertyNG<ModifierNG::RSUnionModifier, &ModifierNG::RSUnionModifier::SetSDFMask>(mask);
+}
+
 void RSNode::SetUseShadowBatching(bool useShadowBatching)
 {
     SetPropertyNG<ModifierNG::RSShadowModifier, &ModifierNG::RSShadowModifier::SetUseShadowBatching>(useShadowBatching);
@@ -2682,7 +2714,7 @@ void RSNode::SetAttractionEffectDstPoint(const Vector2f& destinationPoint)
 
 void RSNode::NotifyTransition(const std::shared_ptr<const RSTransitionEffect>& effect, bool isTransitionIn)
 {
-    auto rsUIContext = rsUIContext_.lock();
+    auto rsUIContext = rsUIContext_;
     auto implicitAnimator = rsUIContext ? rsUIContext->GetRSImplicitAnimator()
                                         : RSImplicitAnimatorMap::Instance().GetAnimator();
     if (implicitAnimator == nullptr) {
@@ -2693,21 +2725,7 @@ void RSNode::NotifyTransition(const std::shared_ptr<const RSTransitionEffect>& e
     if (!implicitAnimator->NeedImplicitAnimation()) {
         return;
     }
-
-    auto& customEffects = isTransitionIn ? effect->customTransitionInEffects_ : effect->customTransitionOutEffects_;
-    // temporary close the implicit animation
-    ExecuteWithoutAnimation(
-        [&customEffects] {
-            for (auto& customEffect : customEffects) {
-                customEffect->Active();
-            }
-        },
-        rsUIContext, implicitAnimator);
-
     implicitAnimator->BeginImplicitTransition(effect, isTransitionIn);
-    for (auto& customEffect : customEffects) {
-        customEffect->Identity();
-    }
     implicitAnimator->CreateImplicitTransition(*this);
     implicitAnimator->EndImplicitTransition();
 }
@@ -2841,18 +2859,18 @@ bool RSNode::AnimationCallback(AnimationId animationId, AnimationCallbackEvent e
         ROSEN_LOGE("Failed to callback animation[%{public}" PRIu64 "], animation is null!", animationId);
         return false;
     }
-    if (event == FINISHED) {
+    if (event == AnimationCallbackEvent::FINISHED) {
         RemoveAnimationInner(animation);
         animation->CallFinishCallback();
         return true;
-    } else if (event == REPEAT_FINISHED) {
+    } else if (event == AnimationCallbackEvent::REPEAT_FINISHED) {
         animation->CallRepeatCallback();
         return true;
-    } else if (event == LOGICALLY_FINISHED) {
+    } else if (event == AnimationCallbackEvent::LOGICALLY_FINISHED) {
         animation->CallLogicallyFinishCallback();
         return true;
     }
-    ROSEN_LOGE("Failed to callback animation event[%{public}d], event is null!", event);
+    ROSEN_LOGE("Failed to callback animation event[%{public}d], event is null!", static_cast<int>(event));
     return false;
 }
 
@@ -2892,9 +2910,6 @@ void RSNode::DoFlushModifier()
             std::unique_ptr<RSCommand> command =
                 std::make_unique<RSAddModifierNG>(GetId(), modifier->CreateRenderModifier());
             AddCommand(command, IsRenderServiceNode(), GetFollowType(), GetId());
-            if (modifier->IsCustom()) {
-                std::static_pointer_cast<ModifierNG::RSCustomModifier>(modifier)->ClearDrawCmdList();
-            }
         }
     }
 }
@@ -2971,7 +2986,7 @@ bool RSNode::CheckMultiThreadAccess(const std::string& func) const
     if (isSkipCheckInMultiInstance_) {
         return true;
     }
-    auto rsContext = rsUIContext_.lock();
+    auto rsContext = rsUIContext_;
     if (rsContext == nullptr) {
         return true;
     }
@@ -3014,7 +3029,7 @@ void RSNode::MarkAllExtendModifierDirty()
         return;
     }
 
-    auto rsUIContext = rsUIContext_.lock();
+    auto rsUIContext = rsUIContext_;
     auto modifierManager = rsUIContext ? rsUIContext->GetRSModifierManager()
                                        : RSModifierManagerMap::Instance()->GetModifierManager();
     extendModifierIsDirty_ = true;
@@ -3889,17 +3904,9 @@ void RSNode::DumpModifiers(std::string& out) const
         if (modifier == nullptr) {
             continue;
         }
-        auto customModifier =
-            modifier->IsCustom() ? std::static_pointer_cast<ModifierNG::RSCustomModifier>(modifier) : nullptr;
-        if (customModifier != nullptr) {
-            customModifier->UpdateDrawCmdList();
-        }
         auto renderModifier = modifier->CreateRenderModifier();
         if (renderModifier != nullptr) {
             renderModifier->Dump(modifierInfo, ",");
-        }
-        if (customModifier != nullptr) {
-            customModifier->ClearDrawCmdList();
         }
     }
     if (!modifierInfo.empty()) {
@@ -3911,7 +3918,7 @@ void RSNode::DumpModifiers(std::string& out) const
 void RSNode::Dump(std::string& out) const
 {
     auto iter = RSUINodeTypeStrs.find(GetType());
-    auto rsUIContextPtr = rsUIContext_.lock();
+    auto rsUIContextPtr = rsUIContext_;
     out += (iter != RSUINodeTypeStrs.end() ? iter->second : "RSNode");
     out += "[" + std::to_string(id_);
     out += "], parent[" + std::to_string(parent_.lock() ? parent_.lock()->GetId() : -1);
@@ -3982,7 +3989,7 @@ std::string RSNode::DumpNode(int depth) const
             ss << " animationInfo:" << animation->DumpAnimation();
         }
     }
-    auto rsUIContextPtr = rsUIContext_.lock();
+    auto rsUIContextPtr = rsUIContext_;
     ss << " token:" << (rsUIContextPtr ? std::to_string(rsUIContextPtr->GetToken()) : "null");
     ss << " " << GetStagingProperties().Dump();
     return ss.str();
@@ -4014,7 +4021,7 @@ template bool RSNode::IsInstanceOf<RSEffectNode>() const;
 void RSNode::SetInstanceId(int32_t instanceId)
 {
     instanceId_ = instanceId;
-    auto rsUIContext = rsUIContext_.lock();
+    auto rsUIContext = rsUIContext_;
     // use client multi don’t need
     if (rsUIContext == nullptr) {
         RSNodeMap::MutableInstance().RegisterNodeInstanceId(id_, instanceId_);
@@ -4104,9 +4111,6 @@ void RSNode::AddModifier(const std::shared_ptr<ModifierNG::RSModifier> modifier)
         std::unique_ptr<RSCommand> cmdForRemote =
             std::make_unique<RSAddModifierNG>(id_, modifier->CreateRenderModifier());
         AddCommand(cmdForRemote, true, GetFollowType(), id_);
-    }
-    if (modifier->IsCustom()) {
-        std::static_pointer_cast<ModifierNG::RSCustomModifier>(modifier)->ClearDrawCmdList();
     }
 }
 

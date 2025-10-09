@@ -189,7 +189,7 @@ void RSOcclusionHandler::DumpSubTreeOcclusionInfo(const RSRenderNode& node)
     auto sortChildren = node.GetSortedChildren();
     auto it = occlusionNodes_.find(node.GetId());
     if (it == occlusionNodes_.end() || it->second == nullptr) {
-        RS_TRACE_NAME_FMT("DumpSubTreeOcclusionInfo: error, node id: %lld not collect", node.GetId());
+        RS_TRACE_NAME_FMT("DumpSubTreeOcclusionInfo: error, node id: %" PRIu64 " not collect", node.GetId());
         for (const auto& child : *sortChildren) {
             DumpSubTreeOcclusionInfo(*child);
         }

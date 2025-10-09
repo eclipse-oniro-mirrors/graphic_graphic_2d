@@ -30,42 +30,8 @@ RSTransition::RSTransition(const std::shared_ptr<const RSTransitionEffect>& effe
 
 void RSTransition::OnStart()
 {
-    if (isCustom_) {
-        StartCustomTransition();
-    }
     StartRenderTransition();
 }
-
-void RSTransition::OnUpdateStagingValue(bool isFirstStart)
-{
-    if (!isCustom_) {
-        return;
-    }
-    auto& customEffects = isTransitionIn_ ? effect_->customTransitionInEffects_ : effect_->customTransitionOutEffects_;
-    for (auto& customEffect : customEffects) {
-        for (auto& [property, endValue] : customEffect->properties_) {
-            property->SetValue(endValue);
-        }
-        customEffect->properties_.clear();
-        customEffect->customTransitionEffects_.clear();
-    }
-}
-
-void RSTransition::StartCustomTransition()
-{
-    std::vector<std::shared_ptr<RSRenderTransitionEffect>> transitionEffects;
-    auto& customEffects = isTransitionIn_ ? effect_->customTransitionInEffects_ : effect_->customTransitionOutEffects_;
-    for (auto& customEffect : customEffects) {
-        transitionEffects.insert(transitionEffects.end(), customEffect->customTransitionEffects_.begin(),
-            customEffect->customTransitionEffects_.end());
-    }
-    auto transition = std::make_shared<RSRenderTransition>(GetId(), transitionEffects, isTransitionIn_);
-    auto interpolator = timingCurve_.GetInterpolator(GetDuration());
-    transition->SetInterpolator(interpolator);
-    UpdateParamToRenderAnimation(transition);
-    StartCustomAnimation(transition);
-}
-
 void RSTransition::StartRenderTransition()
 {
     auto target = GetTarget().lock();

@@ -80,6 +80,8 @@
 #define RS_PROFILER_IF_NEED_TO_SKIP_DRAWCMD_SURFACE(parcel, skipBytes) \
     RSProfiler::IfNeedToSkipDuringReplay(parcel, skipBytes)
 #define RS_PROFILER_IS_FIRST_FRAME_PARCEL(parcel) RSProfiler::IsFirstFrameParcel(parcel)
+#define RS_PROFILER_KILL_PID(pid) RSProfiler::JobMarshallingKillPid(pid)
+#define RS_PROFILER_KILL_PID_END() RSProfiler::JobMarshallingKillPidEnd()
 #define RS_PROFILER_RSLOGEOUTPUT(format, argptr) RSProfiler::RSLogOutput(RSProfilerLogType::ERROR, format, argptr)
 #define RS_PROFILER_RSLOGWOUTPUT(format, argptr) RSProfiler::RSLogOutput(RSProfilerLogType::WARNING, format, argptr)
 #define RS_PROFILER_RSLOGDOUTPUT(format, argptr) RSProfiler::RSLogOutput(RSProfilerLogType::WARNING, format, argptr)
@@ -142,6 +144,8 @@
 #define RS_PROFILER_PROCESS_ADD_CHILD(parent, child, index) false
 #define RS_PROFILER_IF_NEED_TO_SKIP_DRAWCMD_SURFACE(parcel, skipBytes) false
 #define RS_PROFILER_IS_FIRST_FRAME_PARCEL(parcel) false
+#define RS_PROFILER_KILL_PID(pid) RSProfiler::JobMarshallingKillPid(pid)
+#define RS_PROFILER_KILL_PID_END() RSProfiler::JobMarshallingKillPidEnd()
 #define RS_PROFILER_SURFACE_ON_DRAW_MATCH_OPTIMIZE(useNodeMatchOptimize)
 #define RS_PROFILER_RSLOGEOUTPUT(format, argptr)
 #define RS_PROFILER_RSLOGWOUTPUT(format, argptr)
@@ -503,6 +507,8 @@ public:
     RSB_EXPORT static void KeepDrawCmd(bool& drawCmdListNeedSync);
     RSB_EXPORT static void SetRenderNodeKeepDrawCmd(bool enable);
     RSB_EXPORT static bool IfNeedToSkipDuringReplay(Parcel& parcel, uint32_t skipBytes);
+    RSB_EXPORT static void JobMarshallingKillPid(pid_t pid);
+    RSB_EXPORT static void JobMarshallingKillPidEnd();
     RSB_EXPORT static void SurfaceOnDrawMatchOptimize(bool& useNodeMatchOptimize);
 
     RSB_EXPORT static bool IsFirstFrameParcel(const Parcel& parcel);
@@ -577,6 +583,7 @@ private:
     RSB_EXPORT static uint64_t TimePauseGet();
 
     RSB_EXPORT static bool IsSecureScreen();
+    RSB_EXPORT static bool IsPowerOffScreen();
 
     RSB_EXPORT static bool IsRenderFrameWorking();
     RSB_EXPORT static std::mutex& RenderFrameMutexGet();

@@ -246,6 +246,7 @@ public:
     static bool GetImageReleaseUsingPostTask();
     static bool GetKawaseOriginalEnabled();
     static bool GetBlurEnabled();
+    static bool GetFgBlenderEnabled();
     static bool GetForegroundFilterEnabled();
     static const std::vector<float>& GetAiInvertCoef();
     static bool GetSkipForAlphaZeroEnabled();
@@ -277,6 +278,7 @@ public:
     static bool GetTargetUIFirstDfxEnabled(std::vector<std::string>& SurfaceNames);
     static bool GetUIFirstBehindWindowFilterEnabled();
     static bool GetWideColorSpaceEnabled();
+    static bool GetSkipUnpremulEnabled();
     static bool GetSubtreeParallelEnable();
     static uint32_t GetSubtreeDebugOption();
     static bool GetSurfaceOffscreenEnadbled();
@@ -321,7 +323,6 @@ public:
     static bool GetDumpImgEnabled();
 
     static bool GetTransactionTerminateEnabled();
-    static uint32_t GetBlurEffectTerminateLimit();
 
     static int GetVirtualScreenScaleModeDFX();
     static bool GetTextBlobAsPixelMap();
@@ -382,6 +383,7 @@ public:
     static bool GetOptBatchRemovingOnRemoteDiedEnabled();
     static bool GetGpuDirtyApsEnabled();
     static bool GetSupportScreenFreezeEnabled();
+    static bool GetMemoryWatermarkEnabled();
 
     static bool GetBootCompleted();
 

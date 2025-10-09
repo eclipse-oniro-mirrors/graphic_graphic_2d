@@ -566,6 +566,7 @@ bool RSSystemProperties::GetDrawTextAsBitmap()
 void RSSystemProperties::SetCacheEnabledForRotation(bool flag)
 {
     cacheEnabledForRotation_ = flag;
+    RS_LOGI("SetCacheEnabledForRotation flag:%{public}d", flag);
 }
 
 bool RSSystemProperties::GetCacheEnabledForRotation()
@@ -807,6 +808,13 @@ bool RSSystemProperties::GetBlurEnabled()
     return blurEnabled;
 }
 
+bool RSSystemProperties::GetFgBlenderEnabled()
+{
+    bool blenderEnabled_ =
+        std::atoi((system::GetParameter("rosen.graphic.blenderEnabled", "1")).c_str()) != 0;
+    return blenderEnabled_;
+}
+
 bool RSSystemProperties::GetForegroundFilterEnabled()
 {
     static bool foregroundFilterEnabled =
@@ -978,6 +986,14 @@ bool RSSystemProperties::GetWideColorSpaceEnabled()
     return ConvertToInt(enable, 1) != 0;
 }
 
+bool RSSystemProperties::GetSkipUnpremulEnabled()
+{
+    static CachedHandle g_Handle = CachedParameterCreate("rosen.skipUnpremul.enabled", "1");
+    int changed = 0;
+    const char *enable = CachedParameterGetChanged(g_Handle, &changed);
+    return ConvertToInt(enable, 1) != 0;
+}
+
 bool RSSystemProperties::GetDebugTraceEnabled()
 {
     static bool openDebugTrace = system::GetIntParameter("persist.sys.graphic.openDebugTrace", 0) != 0;
@@ -1010,13 +1026,6 @@ bool RSSystemProperties::GetTransactionTerminateEnabled()
     static bool terminateEnabled =
         std::atoi((system::GetParameter("persist.sys.graphic.transactionTerminateEnabled", "0")).c_str()) != 0;
     return terminateEnabled;
-}
-
-uint32_t RSSystemProperties::GetBlurEffectTerminateLimit()
-{
-    static int terminateLimit =
-        std::atoi((system::GetParameter("persist.sys.graphic.blurEffectTerminateLimit", "50")).c_str());
-    return terminateLimit > 0 ? static_cast<uint32_t>(terminateLimit) : 0;
 }
 
 bool RSSystemProperties::FindNodeInTargetList(std::string node)
@@ -1686,6 +1695,17 @@ bool RSSystemProperties::GetGpuDirtyApsEnabled()
 bool RSSystemProperties::GetBootCompleted()
 {
     return system::GetBoolParameter("bootevent.boot.completed", false);
+}
+
+bool RSSystemProperties::GetMemoryWatermarkEnabled()
+{
+    static CachedHandle g_Handle = CachedParameterCreate("resourceschedule.memmgr.min.memory.watermark", "false");
+    int changed = 0;
+    const char *enable = CachedParameterGetChanged(g_Handle, &changed);
+    if (enable == nullptr || strcmp(enable, "true") == 0) {
+        return false;
+    }
+    return true;
 }
 } // namespace Rosen
 } // namespace OHOS

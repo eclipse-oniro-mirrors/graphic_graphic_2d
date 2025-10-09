@@ -23,7 +23,7 @@ compile_check_file = [
     ('rs_logical_display_render_node_drawable.cpp', '::OnDraw(Drawing::Canvas& canvas)', 'RSParallelManager::Singleton().OnDrawLogicDisplayNodeDrawable'),
     ('rs_surface_render_node_drawable.cpp', '::OnDraw(Drawing::Canvas& canvas)', 'QuickGetDrawState(canvas'),
     ('rs_canvas_render_node_drawable.cpp', '::OnDraw(Drawing::Canvas& canvas)', 'QuickGetDrawState(canvas)'),
-    ('rs_effect_render_node_drawable.cpp', '::OnDraw(Drawing::Canvas& canvas)', '->IsQuickGetDrawState()'),
+    ('rs_effect_render_node_drawable.cpp', '::OnDraw(Drawing::Canvas& canvas)', '->IsQuickDrawState()'),
     ('rs_render_node_drawable.cpp', '::OnDraw(Drawing::Canvas& canvas)', 'RSParallelManager::Singleton().OnDrawNodeDrawable'),
 ]
 compile_check_groundtruth = [

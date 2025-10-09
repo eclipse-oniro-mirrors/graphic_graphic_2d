@@ -40,8 +40,15 @@ const GpuApiType SystemProperties::systemGpuApiType_ = GpuApiType::VULKAN;
 bool SystemProperties::IsVkImageDfxEnabled()
 {
     static const bool dfxEnabled =
-        std::atoi(OHOS::system::GetParameter("persist.sys.graphic.openVkImageMemoryDfx", "1").c_str()) != 0;
+        std::atoi(OHOS::system::GetParameter("persist.sys.graphic.openVkImageMemoryDfx", "0").c_str()) != 0;
     return dfxEnabled;
+}
+
+bool SystemProperties::IsDebugGpuMem()
+{
+    static bool isDebugEnabled =
+        (std::atoi(OHOS::system::GetParameter("persist.sys.graphic.debug.gpumem", "0").c_str()) != 0);
+    return isDebugEnabled;
 }
 #endif
 } // namespace Drawing

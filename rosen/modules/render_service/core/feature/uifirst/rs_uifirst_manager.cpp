@@ -59,6 +59,7 @@ namespace {
         auto curTime = std::chrono::system_clock::now().time_since_epoch();
         return std::chrono::duration_cast<std::chrono::milliseconds>(curTime).count();
     }
+    constexpr float CACHE_SIZE_SPIKE_THRESHOLD = 0.1f;
 };
 
 RSUifirstManager& RSUifirstManager::Instance()
@@ -333,7 +334,7 @@ void RSUifirstManager::ProcessDoneNodeInner()
         }
         std::swap(tmp, subthreadProcessDoneNode_);
     }
-    RS_TRACE_NAME_FMT("ProcessDoneNode num:%d", tmp.size());
+    RS_TRACE_NAME_FMT("ProcessDoneNode num:%zu", tmp.size());
     for (auto& id : tmp) {
         RS_OPTIONAL_TRACE_NAME_FMT("Done %" PRIu64"", id);
         auto drawable = GetSurfaceDrawableByID(id);
@@ -831,7 +832,7 @@ void RSUifirstManager::PostReleaseCacheSurfaceSubTasks()
 
 void RSUifirstManager::PostReleaseCacheSurfaceSubTask(NodeId id)
 {
-    RS_OPTIONAL_TRACE_NAME_FMT("post ReleaseCacheSurface %d", id);
+    RS_OPTIONAL_TRACE_NAME_FMT("post ReleaseCacheSurface %" PRIu64, id);
 
     if (subthreadProcessingNode_.find(id) != subthreadProcessingNode_.end()) { // drawable is doing, do not send
         RS_TRACE_NAME_FMT("node %" PRIu64" is doing", id);
@@ -854,7 +855,7 @@ void RSUifirstManager::UpdateSkipSyncNode()
     processingNodeSkipSync_.clear();
     processingNodePartialSync_.clear();
     processingCardNodeSkipSync_.clear();
-    RS_OPTIONAL_TRACE_NAME_FMT("UpdateSkipSyncNode doning%d", subthreadProcessingNode_.size());
+    RS_OPTIONAL_TRACE_NAME_FMT("UpdateSkipSyncNode doing%zu", subthreadProcessingNode_.size());
     if (subthreadProcessingNode_.size() == 0) {
         return;
     }
@@ -1010,7 +1011,7 @@ void RSUifirstManager::RestoreSkipSyncNode()
         if (processingNodeSkipSync_.count(it.first) == 0 && processingNodePartialSync_.count(it.first) == 0 &&
             processingCardNodeSkipSync_.count(it.first) == 0) {
             todele.push_back(it.first);
-            RS_OPTIONAL_TRACE_NAME_FMT("RestoreSkipSyncNode %" PRIu64" num%d", it.first, it.second.size());
+            RS_OPTIONAL_TRACE_NAME_FMT("RestoreSkipSyncNode %" PRIu64" num:%zu", it.first, it.second.size());
             for (auto& node : it.second) {
                 node->SetUifirstSkipPartialSync(false);
                 node->AddToPendingSyncList();
@@ -1697,6 +1698,60 @@ bool RSUifirstManager::IsArkTsCardCache(RSSurfaceRenderNode& node, bool animatio
     return isNeedAssignToSubThread;
 }
 
+bool RSUifirstManager::IsCacheSizeValid(RSSurfaceRenderNode& node)
+{
+    auto stagingSurfaceParams = static_cast<RSSurfaceRenderParams*>(node.GetStagingRenderParams().get());
+    if (!stagingSurfaceParams) {
+        RS_TRACE_NAME_FMT("[%s] cachedSize invalid stagingSurfaceParams is nullptr", node.GetName().c_str());
+        RS_LOGE("[%{public}s] cachedSize invalid stagingSurfaceParams is nullptr", node.GetName().c_str());
+        return false;
+    }
+
+    auto lastUifirstFlag = node.GetLastFrameUifirstFlag();
+    if (lastUifirstFlag == MultiThreadCacheType::NONE) {
+        RS_OPTIONAL_TRACE_NAME_FMT("[%s] cachedSize valid lastUifirstFlag is %d",
+            node.GetName().c_str(), static_cast<int>(lastUifirstFlag));
+        return true;
+    }
+
+    auto gravity = static_cast<int32_t>(stagingSurfaceParams->GetUIFirstFrameGravity());
+    if (gravity >= static_cast<int32_t>(Gravity::RESIZE) &&
+        gravity <= static_cast<int32_t>(Gravity::RESIZE_ASPECT_FILL_BOTTOM_RIGHT)) {
+        RS_OPTIONAL_TRACE_NAME_FMT("cachedSize valid gravity is resize %d", static_cast<int32_t>(gravity));
+        return true;
+    }
+
+    const auto& cachedSize = stagingSurfaceParams->GetCacheSize();
+    const auto& lastCachedSize = stagingSurfaceParams->GetLastCacheSize();
+    if (ROSEN_EQ(cachedSize.x_, 0.f) || ROSEN_EQ(cachedSize.y_, 0.f)) {
+        RS_TRACE_NAME_FMT("[%s] cachedSize invalid cur[%f %f]", node.GetName().c_str(), cachedSize.x_, cachedSize.y_);
+        RS_LOGW("[%{public}s] cachedSize invalid cur[%{public}f %{public}f]",
+            node.GetName().c_str(), cachedSize.x_, cachedSize.y_);
+        return true;
+    }
+
+    bool cacheSizeStable = ROSEN_EQ(lastCachedSize.x_ / cachedSize.x_,
+        lastCachedSize.y_ / cachedSize.y_, CACHE_SIZE_SPIKE_THRESHOLD);
+    if (cacheSizeStable) {
+        RS_OPTIONAL_TRACE_NAME_FMT("[%s] cacheSizeStable cur[%f %f] last[%f %f]", node.GetName().c_str(),
+            cachedSize.x_, cachedSize.y_, lastCachedSize.x_, lastCachedSize.y_);
+        return true;
+    }
+
+    bool isCacheSizeRotated = !ROSEN_EQ(cachedSize.x_, cachedSize.y_) &&
+            ROSEN_EQ(cachedSize.x_, lastCachedSize.y_) && ROSEN_EQ(cachedSize.y_, lastCachedSize.x_);
+    // Rotated check will be deleted when threshold has been setted by CCM
+    if (!isCacheSizeRotated) {
+        RS_OPTIONAL_TRACE_NAME_FMT("[%s] CacheSizeRotated cur[%f %f] last[%f %f]", node.GetName().c_str(),
+            cachedSize.x_, cachedSize.y_, lastCachedSize.x_, lastCachedSize.y_);
+        return true;
+    }
+
+    RS_TRACE_NAME_FMT("[%s] cachedSize invalid cur[%f %f] last[%f %f] gravity %d", node.GetName().c_str(),
+        cachedSize.x_, cachedSize.y_, lastCachedSize.x_, lastCachedSize.y_, static_cast<int32_t>(gravity));
+    return false;
+}
+
 // animation first, may reuse last image cache
 bool RSUifirstManager::IsLeashWindowCache(RSSurfaceRenderNode& node, bool animation)
 {
@@ -1722,7 +1777,6 @@ bool RSUifirstManager::IsLeashWindowCache(RSSurfaceRenderNode& node, bool animat
 
     bool isNeedAssignToSubThread = false;
     bool isScale = node.IsScale();
-    bool hasFilter = node.HasFilter();
     bool isRotate = RSUifirstManager::Instance().rotationChanged_ &&
         !RSUifirstManager::Instance().IsSnapshotRotationScene();
     bool isRecentScene = RSUifirstManager::Instance().IsRecentTaskScene();
@@ -1732,21 +1786,22 @@ bool RSUifirstManager::IsLeashWindowCache(RSSurfaceRenderNode& node, bool animat
         isNeedAssignToSubThread = animation;
     }
     isNeedAssignToSubThread = (isNeedAssignToSubThread ||
-        (node.GetForceUIFirst() || node.GetUIFirstSwitch() == RSUIFirstSwitch::FORCE_ENABLE_LIMIT)) &&
-        !hasFilter && !isRotate;
+        (node.GetForceUIFirst() || node.GetUIFirstSwitch() == RSUIFirstSwitch::FORCE_ENABLE_LIMIT)) && !isRotate;
+
+    isNeedAssignToSubThread = isNeedAssignToSubThread && RSUifirstManager::Instance().IsCacheSizeValid(node);
 
     bool needFilterSCB = IS_SCB_WINDOW_TYPE(node.GetSurfaceWindowType());
     if (needFilterSCB || node.IsSelfDrawingType()) {
         RS_TRACE_NAME_FMT("IsLeashWindowCache: needFilterSCB [%d]", needFilterSCB);
         return false;
     }
-    RS_TRACE_NAME_FMT("IsLeashWindowCache: toSubThread[%d] recent[%d] IsScale[%d]"
-        " filter[%d] rotate[%d] captured[%d] snapshotRotation[%d]",
+    RS_TRACE_NAME_FMT("IsLeashWindowCache: toSubThread[%d] recent[%d] IsScale[%d] "
+        "rotate[%d] captured[%d] snapshotRotation[%d]",
         isNeedAssignToSubThread, isRecentScene, node.IsScale(),
-        node.HasFilter(), RSUifirstManager::Instance().rotationChanged_, node.IsNodeToBeCaptured(),
+        RSUifirstManager::Instance().rotationChanged_, node.IsNodeToBeCaptured(),
         RSUifirstManager::Instance().IsSnapshotRotationScene());
-    RS_LOGD("IsLeashWindowCache: toSubThread[%{public}d] recent[%{public}d] scale[%{public}d] filter[%{public}d] "
-        "rotate[%{public}d] snapshotRotation[%{public}d]", isNeedAssignToSubThread, isRecentScene, isScale, hasFilter,
+    RS_LOGD("IsLeashWindowCache: toSubThread[%{public}d] recent[%{public}d] scale[%{public}d] "
+        "rotate[%{public}d] snapshotRotation[%{public}d]", isNeedAssignToSubThread, isRecentScene, isScale,
         isRotate, RSUifirstManager::Instance().IsSnapshotRotationScene());
     return isNeedAssignToSubThread;
 }
@@ -1872,7 +1927,6 @@ bool RSUifirstManager::QuerySubAssignable(RSSurfaceRenderNode& node, bool isRota
     }
 
     auto childHasVisibleFilter = node.ChildHasVisibleFilter();
-    auto hasFilter = node.HasFilter();
     auto globalAlpha = node.GetGlobalAlpha();
     auto hasProtectedLayer = node.GetSpecialLayerMgr().Find(SpecialLayerType::HAS_PROTECTED);
     std::string dfxMsg;
@@ -1881,10 +1935,10 @@ bool RSUifirstManager::QuerySubAssignable(RSSurfaceRenderNode& node, bool isRota
     bool rotateOptimize = RSSystemProperties::GetCacheOptimizeRotateEnable() ?
         !(isRotation && ROSEN_EQ(globalAlpha, 0.0f)) : !isRotation;
     bool assignable = !(hasTransparentSurface && childHasVisibleFilter) &&
-        !hasFilter && rotateOptimize && !hasProtectedLayer;
-    RS_TRACE_NAME_FMT("SubThreadAssignable node[%lld] assignable[%d] hasTransparent[%d] childHasVisibleFilter[%d]"
-        " hasFilter[%d] isRotation:[%d & %d] globalAlpha[%f], hasProtectedLayer[%d] %s",
-        node.GetId(), assignable, hasTransparentSurface, childHasVisibleFilter, hasFilter, isRotation,
+        rotateOptimize && !hasProtectedLayer;
+    RS_TRACE_NAME_FMT("SubThreadAssignable node[%" PRIu64 "] assignable[%d] hasTransparent[%d] "
+        "childHasVisibleFilter[%d] isRotation:[%d & %d] globalAlpha[%f], hasProtectedLayer[%d] %s",
+        node.GetId(), assignable, hasTransparentSurface, childHasVisibleFilter, isRotation,
         RSSystemProperties::GetCacheOptimizeRotateEnable(), globalAlpha, hasProtectedLayer, dfxMsg.c_str());
     return assignable;
 }
@@ -1932,7 +1986,7 @@ bool RSUifirstManager::ForceUpdateUifirstNodes(RSSurfaceRenderNode& node)
 
 void RSUifirstManager::UpdateUifirstNodes(RSSurfaceRenderNode& node, bool ancestorNodeHasAnimation)
 {
-    RS_TRACE_NAME_FMT("UpdateUifirstNodes: Id[%llu] name[%s] FLId[%llu] Ani[%d] Support[%d] isUiFirstOn[%d]"
+    RS_TRACE_NAME_FMT("UpdateUifirstNodes: Id[%" PRIu64 "] name[%s] FLId[%llu] Ani[%d] Support[%d] isUiFirstOn[%d]"
         " isCardOn[%d] isForceFlag[%d], hasProtectedLayer[%d] switch:[%d] curUifirstWindowNum[%d] threshold[%d]",
         node.GetId(), node.GetName().c_str(), node.GetFirstLevelNodeId(), ancestorNodeHasAnimation,
         node.GetUifirstSupportFlag(), isUiFirstOn_, isCardUiFirstOn_, node.isForceFlag_,
@@ -2391,7 +2445,7 @@ void RSUifirstManager::AddMarkedClearCacheNode(NodeId id)
 
 void RSUifirstManager::ProcessMarkedNodeSubThreadCache()
 {
-    RS_OPTIONAL_TRACE_NAME_FMT("ProcessMarkedNodeSubThreadCache size:%d", markedClearCacheNodes_.size());
+    RS_OPTIONAL_TRACE_NAME_FMT("ProcessMarkedNodeSubThreadCache size:%zu", markedClearCacheNodes_.size());
     for (auto& markedNode : markedClearCacheNodes_) {
         if (subthreadProcessingNode_.find(markedNode) == subthreadProcessingNode_.end()) {
             auto drawable = GetSurfaceDrawableByID(markedNode);

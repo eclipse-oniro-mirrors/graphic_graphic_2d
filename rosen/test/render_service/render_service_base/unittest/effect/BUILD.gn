@@ -23,6 +23,7 @@ ohos_unittest("RSRenderServiceBaseRSEffectTest") {
 
   sources = [
     "rs_render_shader_base_test.cpp",
+    "rs_render_mask_base_test.cpp"
   ]
 
   cflags = [
@@ -46,6 +47,7 @@ ohos_unittest("RSRenderServiceBaseRSEffectTest") {
   ]
 
   deps = [
+    "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",
     "$graphic_2d_root/rosen/modules/render_service_base:render_service_base_src",
     "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
     "$graphic_2d_root/rosen/modules/render_service_client:render_service_client_src",

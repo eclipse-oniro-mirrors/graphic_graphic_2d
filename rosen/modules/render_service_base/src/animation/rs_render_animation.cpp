@@ -121,7 +121,6 @@ void RSRenderAnimation::Detach(bool forceDetach)
         OnDetach();
     }
     target_ = nullptr;
-    targetId_ = 0;
     targetName_ = "";
 }
 
@@ -274,7 +273,7 @@ void RSRenderAnimation::ProcessFillModeOnFinish(float endFraction)
 void RSRenderAnimation::ProcessOnRepeatFinish()
 {
     std::unique_ptr<RSCommand> command =
-        std::make_unique<RSAnimationCallback>(targetId_, id_, token_, REPEAT_FINISHED);
+        std::make_unique<RSAnimationCallback>(targetId_, id_, token_, AnimationCallbackEvent::REPEAT_FINISHED);
     RSMessageProcessor::Instance().AddUIMessage(ExtractPid(id_), command);
 }
 

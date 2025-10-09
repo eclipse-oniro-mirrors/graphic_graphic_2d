@@ -727,9 +727,6 @@ void RSProfiler::MarshalNode(const RSRenderNode& node, std::stringstream& data, 
     const float pivotZ = node.GetRenderProperties().GetPivotZ();
     data.write(reinterpret_cast<const char*>(&pivotZ), sizeof(pivotZ));
 
-    const NodePriorityType priority = const_cast<RSRenderNode&>(node).GetPriority();
-    data.write(reinterpret_cast<const char*>(&priority), sizeof(priority));
-
     const bool isOnTree = node.IsOnTheTree();
     data.write(reinterpret_cast<const char*>(&isOnTree), sizeof(isOnTree));
 
@@ -833,7 +830,8 @@ void RSProfiler::MarshalNodeModifiers(const RSRenderNode& node, std::stringstrea
     uint32_t modifierNGCount = snapshot ? 1u : 0u;
     for (const auto& slot : node.GetAllModifiers()) {
         for (auto& modifierNG : slot) {
-            if (!modifierNG || modifierNG->GetType() == ModifierNG::RSModifierType::PARTICLE_EFFECT) {
+            if (!modifierNG || modifierNG->GetType() == ModifierNG::RSModifierType::PARTICLE_EFFECT ||
+                modifierNG->GetType() == ModifierNG::RSModifierType::INVALID) {
                 continue;
             }
             modifierNGCount++;
@@ -847,7 +845,8 @@ void RSProfiler::MarshalNodeModifiers(const RSRenderNode& node, std::stringstrea
     const auto includeImageOps = !IsBetaRecordEnabled();
     for (const auto& slot : node.GetAllModifiers()) {
         for (auto& modifierNG : slot) {
-            if (!modifierNG || modifierNG->GetType() == ModifierNG::RSModifierType::PARTICLE_EFFECT) {
+            if (!modifierNG || modifierNG->GetType() == ModifierNG::RSModifierType::PARTICLE_EFFECT ||
+                modifierNG->GetType() == ModifierNG::RSModifierType::INVALID) {
                 continue;
             }
             if (modifierNG->IsCustom()) {
@@ -1019,7 +1018,6 @@ std::string RSProfiler::UnmarshalNode(
     if (auto node = context.GetMutableNodeMap().GetRenderNode(nodeId)) {
         node->GetMutableRenderProperties().SetPositionZ(positionZ);
         node->GetMutableRenderProperties().SetPivotZ(pivotZ);
-        node->SetPriority(priority);
         node->nodeGroupType_ = nodeGroupType;
 #ifdef SUBTREE_PARALLEL_ENABLE
         node->MarkRepaintBoundary(isRepaintBoundary);

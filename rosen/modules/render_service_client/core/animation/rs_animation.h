@@ -148,11 +148,16 @@ private:
     std::shared_ptr<RSRenderAnimation> uiAnimation_;
 
     friend class RSCurveImplicitAnimParam;
-    friend class RSAnimationGroup;
     friend class RSNode;
     friend class RSImplicitAnimator;
     friend class RSInteractiveImplictAnimator;
     friend class RSUIContext;
+};
+
+class RSC_EXPORT RSDummyAnimation : public RSAnimation {
+public:
+    RSDummyAnimation() = default;
+    ~RSDummyAnimation() = default;
 };
 } // namespace Rosen
 } // namespace OHOS

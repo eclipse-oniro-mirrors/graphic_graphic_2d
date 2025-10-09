@@ -197,19 +197,14 @@ bool RSUniRenderVirtualProcessor::UpdateMirrorInfo(DrawableV2::RSLogicalDisplayR
         if (mirroredParams) {
             auto mirroredDisplayParams = static_cast<RSLogicalDisplayRenderParams*>(mirroredParams.get());
             auto mainScreenInfo = screenManager->QueryScreenInfo(mirroredDisplayParams->GetScreenId());
-            mirroredScreenWidth_ = mirroredDisplayParams->GetBounds().GetWidth();
-            mirroredScreenHeight_ = mirroredDisplayParams->GetBounds().GetHeight();
-            if (mirroredDisplayParams->GetNodeRotation() == ScreenRotation::ROTATION_90 ||
-                mirroredDisplayParams->GetNodeRotation() == ScreenRotation::ROTATION_270) {
-                std::swap(mirroredScreenWidth_, mirroredScreenHeight_);
-            }
+            mirroredScreenWidth_ = mirroredDisplayParams->GetFixedWidth();
+            mirroredScreenHeight_ = mirroredDisplayParams->GetFixedHeight();
             if (mainScreenInfo.isSamplingOn) {
                 mirroredScreenWidth_ *= mainScreenInfo.samplingScale;
                 mirroredScreenHeight_ *= mainScreenInfo.samplingScale;
             }
             mirroredTranslateX_ = mirroredDisplayParams->GetOffsetX();
             mirroredTranslateY_ = mirroredDisplayParams->GetOffsetY();
-            isMirroredDisplayRotating_ = mirroredDisplayParams->IsRotationChanged();
         }
     }
     return true;
@@ -274,7 +269,7 @@ GSError RSUniRenderVirtualProcessor::SetColorSpaceForMetadata(GraphicColorGamut 
     using namespace HDI::Display::Graphic::Common::V1_0;
     auto iter = COLORSPACE_TYPE.find(colorSpace);
     if (iter == COLORSPACE_TYPE.end()) {
-        return GSERROR_OK;
+        return GSERROR_INVALID_ARGUMENTS;
     }
     CM_ColorSpaceInfo colorSpaceInfo;
     GSError ret = MetadataHelper::ConvertColorSpaceTypeToInfo(iter->second, colorSpaceInfo);
@@ -478,6 +473,24 @@ void RSUniRenderVirtualProcessor::MergeMirrorFenceToHardwareEnabledDrawables()
     }
 }
 
+void RSUniRenderVirtualProcessor::SetVirtualScreenFenceToRenderThread()
+{
+    if (renderFrame_ == nullptr) {
+        RS_LOGE("RSUniRenderVirtualProcessor::%{public}s renderFrame_ null!", __func__);
+        return;
+    }
+    auto acquireFence = renderFrame_->GetAcquireFence();
+    if (!acquireFence || !acquireFence->IsValid()) {
+        RS_LOGE("RSUniRenderVirtualProcessor::%{public}s acquireFence not valid!", __func__);
+        return;
+    }
+    RSUniRenderThread::Instance().SetAcquireFence(acquireFence);
+    RS_TRACE_NAME_FMT("RSUniRenderVirtualProcessor::%s: screen: %" PRIu64 " fence set to render thread!",
+            __func__, virtualScreenId_);
+    RS_LOGD("RSUniRenderVirtualProcessor::%{public}s: screen: %{public}" PRIu64 " fence set to render thread!",
+        __func__, virtualScreenId_);
+}
+
 void RSUniRenderVirtualProcessor::PostProcess()
 {
     if (renderFrame_ == nullptr || renderEngine_ == nullptr) {
@@ -491,6 +504,7 @@ void RSUniRenderVirtualProcessor::PostProcess()
     if (isMirror_) {
         MergeMirrorFenceToHardwareEnabledDrawables();
     }
+    SetVirtualScreenFenceToRenderThread();
     RS_LOGD("RSUniRenderVirtualProcessor::PostProcess, FlushFrame succeed.");
     RS_OPTIONAL_TRACE_NAME_FMT("RSUniRenderVirtualProcessor::PostProcess, FlushFrame succeed.");
 }
@@ -532,6 +546,8 @@ void RSUniRenderVirtualProcessor::Fill(RSPaintFilterCanvas& canvas,
         mirrorScaleX_ = mirrorWidth / mainWidth;
         mirrorScaleY_ = mirrorHeight / mainHeight;
         canvas.Scale(mirrorScaleX_, mirrorScaleY_);
+        RS_LOGD("RSUniRenderVirtualProcessor::Fill: scaleX: %{public}f, scaleY: %{public}f",
+            mirrorScaleX_, mirrorScaleY_);
     }
 }
 
@@ -553,7 +569,7 @@ void RSUniRenderVirtualProcessor::UniScale(RSPaintFilterCanvas& canvas,
         startY = (mirrorHeight / mirrorScaleY_ - mainHeight) / 2; // 2 for calc Y
     }
 
-    if (EnableSlrScale() && !isMirroredDisplayRotating_) {
+    if (EnableSlrScale()) {
         if (slrManager_ == nullptr) {
             slrManager_ = std::make_shared<RSSLRScaleFunction>(virtualScreenWidth_, virtualScreenHeight_,
                 mirroredScreenWidth_, mirroredScreenHeight_);
@@ -570,7 +586,8 @@ void RSUniRenderVirtualProcessor::UniScale(RSPaintFilterCanvas& canvas,
 
     canvas.Scale(mirrorScaleX_, mirrorScaleY_);
     canvas.Translate(startX, startY);
-    RS_LOGD("RSUniRenderVirtualProcessor::UniScale: Translate startX: %{public}f, startY: %{public}f", startX, startY);
+    RS_LOGD("RSUniRenderVirtualProcessor::UniScale: Translate startX: %{public}f, startY: %{public}f"
+        " scaleX: %{public}f, scaleY: %{public}f", startX, startY, mirrorScaleX_, mirrorScaleY_);
 }
 
 bool RSUniRenderVirtualProcessor::EnableSlrScale()

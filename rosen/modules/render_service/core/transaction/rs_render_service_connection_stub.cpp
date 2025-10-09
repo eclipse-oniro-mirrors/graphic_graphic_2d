@@ -40,7 +40,6 @@
 #include "render/rs_typeface_cache.h"
 #include "rs_trace.h"
 #include "rs_profiler.h"
-#include "app_mgr_client.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -73,6 +72,8 @@ static constexpr std::array descriptorCheckList = {
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_SCREEN_SECURITY_MASK),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_MIRROR_SCREEN_VISIBLE_RECT),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REMOVE_VIRTUAL_SCREEN),
+    static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_BRIGHTNESS_INFO_CHANGE_CALLBACK),
+    static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_BRIGHTNESS_INFO),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_SCREEN_CHANGE_CALLBACK),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_SCREEN_SWITCHING_NOTIFY_CALLBACK),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_SCREEN_ACTIVE_MODE),
@@ -155,6 +156,7 @@ static constexpr std::array descriptorCheckList = {
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::EXECUTE_SYNCHRONOUS_TASK),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_LIGHT_FACTOR_STATUS),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_PACKAGE_EVENT),
+    static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_APP_STRATEGY_CONFIG_CHANGE_EVENT),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_REFRESH_RATE_EVENT),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_WINDOW_EXPECTED_BY_VSYNC_NAME),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_WINDOW_EXPECTED_BY_WINDOW_ID),
@@ -345,19 +347,6 @@ bool CheckCreateNodeAndSurface(pid_t pid, RSSurfaceNodeType nodeType, SurfaceWin
     }
 
     return true;
-}
-
-std::string GetBundleName(pid_t pid)
-{
-    std::string bundleName;
-    static const auto appMgrClient = std::make_shared<AppExecFwk::AppMgrClient>();
-    if (appMgrClient == nullptr) {
-        RS_LOGE("GetBundleName get appMgrClient fail.");
-        return bundleName;
-    }
-    int32_t uid = 0;
-    appMgrClient->GetBundleNameByPid(pid, bundleName, uid);
-    return bundleName;
 }
 
 bool IsValidCallingPid(pid_t pid, pid_t callingPid)
@@ -904,6 +893,48 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             RemoveVirtualScreen(id);
             break;
         }
+        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_BRIGHTNESS_INFO_CHANGE_CALLBACK): {
+            bool enableReadRemoteObject = false;
+            if (!data.ReadBool(enableReadRemoteObject)) {
+                RS_LOGE("RSRenderServiceConnectionStub::SET_BRIGHTNESS_INFO_CHANGE_CALLBACK Read parcel failed!");
+                ret = ERR_INVALID_DATA;
+                break;
+            }
+            sptr<IRemoteObject> remoteObject = nullptr;
+            if (enableReadRemoteObject) {
+                remoteObject = data.ReadRemoteObject();
+            }
+            sptr<RSIBrightnessInfoChangeCallback> callback = nullptr;
+            if (remoteObject != nullptr) {
+                callback = iface_cast<RSIBrightnessInfoChangeCallback>(remoteObject);
+            }
+            int32_t status = SetBrightnessInfoChangeCallback(callback);
+            if (!reply.WriteInt32(status)) {
+                RS_LOGE("RSRenderServiceConnectionStub::SET_BRIGHTNESS_INFO_CHANGE_CALLBACK Write status failed!");
+                ret = ERR_INVALID_REPLY;
+            }
+            break;
+        }
+        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_BRIGHTNESS_INFO): {
+            ScreenId screenId = INVALID_SCREEN_ID;
+            if (!data.ReadUint64(screenId)) {
+                RS_LOGE("RSRenderServiceConnectionStub::GET_BRIGHTNESS_INFO Read screenId failed!");
+                ret = ERR_INVALID_DATA;
+                break;
+            }
+            BrightnessInfo brightnessInfo;
+            int32_t result = GetBrightnessInfo(screenId, brightnessInfo);
+            if (!reply.WriteInt32(result)) {
+                RS_LOGE("RSRenderServiceConnectionStub::GET_BRIGHTNESS_INFO Write result failed!");
+                ret = ERR_INVALID_REPLY;
+                break;
+            }
+            if (!WriteBrightnessInfo(brightnessInfo, reply)) {
+                RS_LOGE("RSRenderServiceConnectionStub::GET_BRIGHTNESS_INFO Write brightnessInfo failed!");
+                ret = ERR_INVALID_REPLY;
+            }
+            break;
+        }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_SCREEN_CHANGE_CALLBACK): {
             auto remoteObject = data.ReadRemoteObject();
             if (remoteObject == nullptr) {
@@ -1018,7 +1049,11 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 ret = ERR_INVALID_DATA;
                 break;
             }
-            SetScreenActiveMode(id, modeId);
+            uint32_t status = SetScreenActiveMode(id, modeId);
+            if (!reply.WriteInt32(status)) {
+                RS_LOGE("RSRenderServiceConnectionStub::SET_SCREEN_ACTIVE_MODE Write status failed!");
+                ret = ERR_INVALID_REPLY;
+            }
             break;
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_SCREEN_REFRESH_RATE): {
@@ -4121,6 +4156,17 @@ bool RSRenderServiceConnectionStub::ReadGameStateDataRs(GameStateData& info, Mes
         !data.ReadInt32(info.state) || !data.ReadInt32(info.renderTid) ||
         !data.ReadString(info.bundleName)) {
         RS_LOGE("RSRenderServiceConnectionStub::ReadGameStateDataRs Read parcel failed!");
+        return false;
+    }
+    return true;
+}
+
+bool RSRenderServiceConnectionStub::WriteBrightnessInfo(const BrightnessInfo& brightnessInfo, MessageParcel& data)
+{
+    if (!data.WriteFloat(brightnessInfo.currentHeadroom) ||
+        !data.WriteFloat(brightnessInfo.maxHeadroom) ||
+        !data.WriteFloat(brightnessInfo.sdrNits)) {
+        RS_LOGE("RSRenderServiceConnectionStub::WriteBrightnessInfo write brightnessInfo failed!");
         return false;
     }
     return true;

@@ -53,7 +53,8 @@ constexpr uint8_t ASTC_HEADER_SIZE = 16;
 bool PixelMapCanBePurge(std::shared_ptr<Media::PixelMap>& pixelMap)
 {
     return RSSystemProperties::GetRSImagePurgeEnabled() && pixelMap &&
-        pixelMap->GetAllocatorType() == Media::AllocatorType::SHARE_MEM_ALLOC &&
+        (pixelMap->GetAllocatorType() == Media::AllocatorType::SHARE_MEM_ALLOC ||
+        pixelMap->GetAllocatorType() == Media::AllocatorType::DMA_ALLOC) &&
         !RSPixelMapUtil::IsYUVFormat(pixelMap) &&
         !pixelMap->IsEditable() && !pixelMap->IsAstc() && !pixelMap->IsHdr();
 }
@@ -403,7 +404,7 @@ static bool UnmarshallingAndCachePixelMap(Parcel& parcel, std::shared_ptr<Media:
             // unmarshalling the pixelmap and cache it
             RSImageCache::Instance().CachePixelMap(uniqueId, pixelMap);
         }
-    } else if (RSMarshallingHelper::Unmarshalling(parcel, pixelMap)) {
+    } else if (RSMarshallingHelper::Unmarshalling(parcel, pixelMap, uniqueId)) {
         if (pixelMap) {
             // unmarshalling the pixelMap and cache it
             RSImageCache::Instance().CachePixelMap(uniqueId, pixelMap);

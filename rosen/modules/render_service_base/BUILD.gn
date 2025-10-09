@@ -134,6 +134,7 @@ ohos_source_set("render_service_base_src") {
     "src/modifier_ng/appearance/rs_point_light_render_modifier.cpp",
     "src/modifier_ng/appearance/rs_shadow_render_modifier.cpp",
     "src/modifier_ng/appearance/rs_use_effect_render_modifier.cpp",
+    "src/modifier_ng/appearance/rs_union_render_modifier.cpp",
     "src/modifier_ng/appearance/rs_visibility_render_modifier.cpp",
     "src/modifier_ng/background/rs_background_color_render_modifier.cpp",
     "src/modifier_ng/background/rs_background_image_render_modifier.cpp",
@@ -221,6 +222,8 @@ ohos_source_set("render_service_base_src") {
     "src/ipc_callbacks/rs_uiextension_callback_stub.cpp",
     "src/ipc_callbacks/screen_change_callback_proxy.cpp",
     "src/ipc_callbacks/screen_change_callback_stub.cpp",
+    "src/ipc_callbacks/brightness_info_change_callback_proxy.cpp",
+    "src/ipc_callbacks/brightness_info_change_callback_stub.cpp",
     "src/ipc_callbacks/screen_switching_notify_callback_proxy.cpp",
     "src/ipc_callbacks/screen_switching_notify_callback_stub.cpp",
     "src/ipc_callbacks/surface_capture_callback_proxy.cpp",
@@ -586,6 +589,10 @@ ohos_source_set("render_service_base_src") {
     "graphics_effect:graphics_effect_core",
     "hilog:libhilog",
   ]
+
+  if (graphic_2d_feature_rs_enable_uni_render) {
+    external_deps += [ "ability_runtime:ability_manager" ]
+  }
 
   if (use_memmgr_plugin || use_memmgr) {
     external_deps += [ "memmgr:memmgrclient" ]

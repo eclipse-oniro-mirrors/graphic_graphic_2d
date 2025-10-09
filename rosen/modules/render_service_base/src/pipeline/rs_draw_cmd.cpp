@@ -200,6 +200,7 @@ void RSExtendImageObject::Playback(Drawing::Canvas& canvas, const Drawing::Rect&
     if (!rsImage_) {
         return;
     }
+    std::unique_lock<std::mutex> lock(drawingImageMutex_);
     std::shared_ptr<Media::PixelMap> pixelmap = rsImage_->GetPixelMap();
     bool isPurgeable = rsImage_->IsPurgeable();
     RSImageBase::PixelMapUseCountGuard guard = {pixelmap, isPurgeable};
@@ -269,7 +270,11 @@ void RSExtendImageObject::PreProcessPixelMap(Drawing::Canvas& canvas, const std:
         pixelMap->IsHdr());
 #ifdef USE_VIDEO_PROCESSING_ENGINE
     if (pixelMap->IsHdr()) {
-        colorSpace = Drawing::ColorSpace::CreateSRGB();
+        auto surface = canvas.GetSurface();
+        if (surface == nullptr) {
+            return;
+        }
+        colorSpace = surface->GetImageInfo().GetColorSpace();
     }
 #endif
     if (!pixelMap->IsAstc() && RSPixelMapUtil::IsSupportZeroCopy(pixelMap, sampling)) {
@@ -281,7 +286,7 @@ void RSExtendImageObject::PreProcessPixelMap(Drawing::Canvas& canvas, const std:
 #endif
 #if defined(RS_ENABLE_VK)
         if (RSSystemProperties::IsUseVukan() &&
-            GetRsImageCache(canvas, pixelMap, reinterpret_cast<SurfaceBuffer*>(pixelMap->GetFd()), colorSpace)) {
+            GetRsImageCache(canvas, pixelMap, reinterpret_cast<SurfaceBuffer*>(pixelMap->GetFd()), sampling, colorSpace)) {
             rsImage_->SetDmaImage(image_);
         }
 #endif
@@ -322,7 +327,8 @@ void RSExtendImageObject::PreProcessPixelMap(Drawing::Canvas& canvas, const std:
 
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
 bool RSExtendImageObject::GetRsImageCache(Drawing::Canvas& canvas, const std::shared_ptr<Media::PixelMap>& pixelMap,
-    SurfaceBuffer *surfaceBuffer, const std::shared_ptr<Drawing::ColorSpace>& colorSpace)
+    SurfaceBuffer *surfaceBuffer, const Drawing::SamplingOptions& sampling,
+    const std::shared_ptr<Drawing::ColorSpace>& colorSpace)
 {
     if (pixelMap == nullptr) {
         return false;
@@ -340,11 +346,13 @@ bool RSExtendImageObject::GetRsImageCache(Drawing::Canvas& canvas, const std::sh
         imageCache = RSImageCache::Instance().GetRenderDrawingImageCacheByPixelMapId(
             rsImage_->GetUniqueId(), threadId);
     }
-    if (imageCache) {
+    bool needMakeFromTexture = !imageCache || (imageCache && pixelmap->IsHdr() &&
+        !colorSpace->Equals(imageCache->GetImageInfo().GetColorSpace()))
+    if (!needMakeFromTexture) {
         this->image_ = imageCache;
     } else {
         bool ret = MakeFromTextureForVK(
-            canvas, reinterpret_cast<SurfaceBuffer*>(pixelMap->GetFd()), colorSpace);
+            canvas, reinterpret_cast<SurfaceBuffer*>(pixelMap->GetFd()), sampling, colorSpace);
         if (ret && image_ && !pixelMap->IsEditable()) {
             SKResourceManager::Instance().HoldResource(image_);
             RSImageCache::Instance().CacheRenderDrawingImageByPixelMapId(
@@ -429,6 +437,7 @@ bool RSExtendImageObject::GetDrawingImageFromSurfaceBuffer(Drawing::Canvas& canv
 
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
 bool RSExtendImageObject::MakeFromTextureForVK(Drawing::Canvas& canvas, SurfaceBuffer *surfaceBuffer,
+    const Drawing::SamplingOptions& sampling,
     const std::shared_ptr<Drawing::ColorSpace>& colorSpace)
 {
     if (!RSSystemProperties::IsUseVulkan()) {
@@ -478,10 +487,25 @@ bool RSExtendImageObject::MakeFromTextureForVK(Drawing::Canvas& canvas, SurfaceB
         Drawing::TextureOrigin::TOP_LEFT, bitmapFormat, colorSpace,
         NativeBufferUtils::DeleteVkImage,
         cleanUpHelper_->Ref())) {
-        RS_LOGE("MakeFromTextureForVK build image failed");
+        RS_LOGE_LIMIT(__func__, __line__, "MakeFromTextureForVK build image failed");
         return false;
     }
+#if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
+    if (sampling.GetMipmapMode() != Drawing::MipmapMode::NONE) {
+        RSImageCache::Instance().ReserveImageInfo(rsImage_, GetNodeId(), weak_from_this());
+    }
+#endif
     return true;
+}
+
+void RSExtendImageObject::PurgeMipmapMem()
+{
+    if (drawingImageMutex_.try_lock()) {
+        if (image_ && image_.use_count() == 1) {
+            image_ = nullptr;
+        }
+        drawingImageMutex_.unlock();
+    }
 }
 #endif
 
@@ -1126,7 +1150,7 @@ DrawSurfaceBufferOpItem::DrawSurfaceBufferOpItem(
           handle->surfaceBufferInfo.dstRect_.GetTop(), handle->surfaceBufferInfo.dstRect_.GetWidth(),
           handle->surfaceBufferInfo.dstRect_.GetHeight(), handle->surfaceBufferInfo.pid_,
           handle->surfaceBufferInfo.uid_, nullptr, handle->surfaceBufferInfo.transform_,
-          handle->surfaceBufferInfo.srcRect_),
+          handle->surfaceBufferInfo.srcRect_, handle->surfaceBufferInfo.isIgnoreAlpha_),
       isNeedDrawDirectly_(!IsValidRemoteAddress(handle->surfaceBufferInfo.pid_,
           handle->surfaceBufferInfo.uid_))
 {
@@ -1158,7 +1182,8 @@ void DrawSurfaceBufferOpItem::Marshalling(DrawCmdList& cmdList)
     cmdList.AddOp<ConstructorHandle>(CmdListHelper::AddSurfaceBufferEntryToCmdList(cmdList, surfaceBufferEntry),
         surfaceBufferInfo_.dstRect_.GetLeft(), surfaceBufferInfo_.dstRect_.GetTop(),
         surfaceBufferInfo_.dstRect_.GetWidth(), surfaceBufferInfo_.dstRect_.GetHeight(), surfaceBufferInfo_.pid_,
-        surfaceBufferInfo_.uid_, surfaceBufferInfo_.transform_, surfaceBufferInfo_.srcRect_, paintHandle);
+        surfaceBufferInfo_.uid_, surfaceBufferInfo_.transform_, surfaceBufferInfo_.srcRect_,
+        surfaceBufferInfo_.isIgnoreAlpha_, paintHandle);
 }
 
 namespace {
@@ -1481,8 +1506,8 @@ void DrawSurfaceBufferOpItem::DrawWithVulkan(Canvas* canvas)
     auto vkTextureInfo = backendTexture.GetTextureInfo().GetVKTextureInfo();
     if (!vkTextureInfo || !image->BuildFromTexture(*canvas->GetGPUContext(), backendTexture.GetTextureInfo(),
         Drawing::TextureOrigin::TOP_LEFT, bitmapFormat, nullptr, NativeBufferUtils::DeleteVkImage,
-        new NativeBufferUtils::VulkanCleanupHelper(
-            RsVulkanContext::GetSingleton(), vkTextureInfo->vkImage, vkTextureInfo->vkAlloc.memory))) {
+        new NativeBufferUtils::VulkanCleanupHelper(RsVulkanContext::GetSingleton(), vkTextureInfo->vkImage,
+            vkTextureInfo->vkAlloc.memory), surfaceBufferInfo_.isIgnoreAlpha_)) {
         LOGE("DrawSurfaceBufferOpItem::Draw image BuildFromTexture failed");
         return;
     }
@@ -1537,7 +1562,7 @@ void DrawSurfaceBufferOpItem::DrawWithGles(Canvas* canvas)
     }
     auto newImage = std::make_shared<Drawing::Image>();
     if (!newImage->BuildFromTexture(*canvas->GetGPUContext(), externalTextureInfo,
-        Drawing::TextureOrigin::TOP_LEFT, bitmapFormat, nullptr)) {
+        Drawing::TextureOrigin::TOP_LEFT, bitmapFormat, nullptr, nullptr, nullptr, surfaceBufferInfo_.isIgnoreAlpha_)) {
         LOGE("DrawSurfaceBufferOpItem::Draw: image BuildFromTexture failed");
         return;
     }

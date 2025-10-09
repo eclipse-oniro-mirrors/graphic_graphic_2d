@@ -34,7 +34,7 @@ namespace Rosen {
 namespace {
 constexpr float DEGAMMA = 1.0f / 2.2f;
 constexpr float GAMMA2_2 = 2.2f;
-constexpr int GRAPH_NUM = 2;
+constexpr int GRAPH_NUM = 3;
 constexpr int MAX_RELEASE_FRAME_NUM = 5;
 constexpr float RATIO_CHANGE_TH = 0.02f;
 }
@@ -347,6 +347,7 @@ bool RSHeteroHDRManager::PrepareAndSubmitHDRTask(std::shared_ptr<DrawableV2::RSS
         [this, curFrameId] {
             RS_TRACE_NAME("[hdrHetero]:RSHeteroHDRManager PrepareAndSubmitHDRTask afterFunc finished");
             RSHeteroHDRHpae::GetInstance().DestroyHpaeHDRTask(this->taskId_.load());
+            RSHDRPatternManager::Instance().MHCGraphQueryTaskError(curFrameId, MHC_PATTERN_TASK_HDR_HPAE);
             this->taskPtr_ = nullptr;
             destroyedFlag_.store(true);
         });
@@ -495,7 +496,7 @@ bool RSHeteroHDRManager::IsHDRSurfaceNodeSkipped(
         RS_TRACE_NAME("[hdrHetero]:RSHeteroHDRManager IsHDRSurfaceNodeSkipped FilterCache Skip");
         return true;
     }
-    if (RSUniRenderUtil::CheckRenderSkipIfScreenOff(true, GetScreenIDByDrawable(surfaceDrawable))) {
+    if (RSUniRenderUtil::CheckRenderSkipIfScreenOff()) {
         return true;
     }
     if (!surfaceDrawable->ShouldPaint()) {
@@ -542,6 +543,7 @@ bool RSHeteroHDRManager::UpdateHDRHeteroParams(RSPaintFilterCanvas& canvas,
             RS_LOGE("[hdrHetero]:RSHeteroHDRManager UpdateHDRHeteroParams hdrSurfaceHandler is nullptr");
             return false;
         }
+        rsHeteroHDRBufferLayer_.ReleaseBuffer();
         bool invalidBuffer =
             !RSBaseRenderUtil::ConsumeAndUpdateBuffer(*hdrSurfaceHandler, CONSUME_DIRECTLY, false, 0) ||
             !hdrSurfaceHandler->GetBuffer();
@@ -549,7 +551,7 @@ bool RSHeteroHDRManager::UpdateHDRHeteroParams(RSPaintFilterCanvas& canvas,
             RS_LOGE("[hdrHetero]:RSHeteroHDRManager UpdateHDRHeteroParams ConsumeAndUpdateBuffer or GetBuffer failed");
             return false;
         }
-        RSHDRPatternManager::Instance().SetThreadId();
+        RSHDRPatternManager::Instance().SetThreadId(canvas);
 
         ProcessParamsUpdate(canvas, surfaceDrawable, drawableParams);
         RS_LOGD("[hdrHetero]:RSHeteroHDRManager UpdateHDRHeteroParams done");

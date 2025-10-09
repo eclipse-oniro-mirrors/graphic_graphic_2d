@@ -19,6 +19,10 @@
 #include "pipeline/rs_render_node.h"
 #include "render/rs_render_filter_base.h"
 #include "transaction/rs_marshalling_helper.h"
+#include "ge_visual_effect.h"
+#include "ge_visual_effect_container.h"
+#include "parcel.h"
+#include "render/rs_path.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -38,6 +42,22 @@ void RSRenderFilterBaseTest::SetUp() {}
 void RSRenderFilterBaseTest::TearDown() {}
 
 /**
+ * @tc.name: UpdateVisualEffectParamImpl001
+ * @tc.desc: Test the UpdateVisualEffectParamImpl
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderFilterBaseTest, UpdateVisualEffectParamImpl001, TestSize.Level1)
+{
+    auto testEffect = std::make_shared<Drawing::GEVisualEffect>(
+        RSNGRenderEffectHelper::GetEffectTypeString(RSNGEffectType::DISPLACEMENT_DISTORT));
+    EXPECT_NE(testEffect, nullptr);
+
+    RectT<float> rect;
+    RRect testRRect(rect, 0.5f, 0.5f);
+    RSNGRenderEffectHelper::UpdateVisualEffectParamImpl(*testEffect, "test", testRRect);
+}
+
+/**
  * @tc.name: GenerateGEVisualEffect
  * @tc.desc: Test the GenerateGEVisualEffect method
  * @tc.type: FUNC
@@ -45,9 +65,9 @@ void RSRenderFilterBaseTest::TearDown() {}
 HWTEST_F(RSRenderFilterBaseTest, GenerateGEVisualEffect, TestSize.Level1)
 {
     std::shared_ptr<RSNGRenderFilterBase> filterNull = nullptr;
-    RSUIFilterHelper::GenerateGEVisualEffect(filterNull);
+    RSNGRenderFilterHelper::GenerateGEVisualEffect(filterNull);
     std::shared_ptr<RSNGRenderFilterBase> filter = std::make_shared<RSNGRenderBlurFilter>();
-    RSUIFilterHelper::GenerateGEVisualEffect(filter);
+    RSNGRenderFilterHelper::GenerateGEVisualEffect(filter);
     EXPECT_NE(filter->geFilter_, nullptr);
 }
 
@@ -89,19 +109,19 @@ HWTEST_F(RSRenderFilterBaseTest, UpdateCacheData, TestSize.Level1)
     auto src = std::make_shared<Drawing::GEVisualEffect>("KAWASE_BLUR");
     auto dest = std::make_shared<Drawing::GEVisualEffect>("KAWASE_BLUR");
     auto other = std::make_shared<Drawing::GEVisualEffect>("MESA_BLUR");
-    RSUIFilterHelper::UpdateCacheData(src, dest);
+    RSNGRenderFilterHelper::UpdateCacheData(src, dest);
     EXPECT_EQ(dest->GetImpl()->GetCache(), nullptr);
     src->GetImpl()->SetCache(std::make_shared<std::any>(std::make_any<float>(1.0)));
     std::shared_ptr<Drawing::GEVisualEffect> null = nullptr;
-    RSUIFilterHelper::UpdateCacheData(null, null);
+    RSNGRenderFilterHelper::UpdateCacheData(null, null);
     EXPECT_EQ(null, nullptr);
-    RSUIFilterHelper::UpdateCacheData(null, dest);
-    RSUIFilterHelper::UpdateCacheData(src, null);
+    RSNGRenderFilterHelper::UpdateCacheData(null, dest);
+    RSNGRenderFilterHelper::UpdateCacheData(src, null);
     EXPECT_EQ(null, nullptr);
     ASSERT_NE(src->GetImpl()->GetFilterType(), other->GetImpl()->GetFilterType());
-    RSUIFilterHelper::UpdateCacheData(src, other);
+    RSNGRenderFilterHelper::UpdateCacheData(src, other);
     EXPECT_EQ(other->GetImpl()->GetCache(), nullptr);
-    RSUIFilterHelper::UpdateCacheData(src, dest);
+    RSNGRenderFilterHelper::UpdateCacheData(src, dest);
     auto cachePtr = dest->GetImpl()->GetCache();
     auto cache = std::any_cast<float>(*cachePtr);
     EXPECT_EQ(cache, 1.0);
@@ -384,10 +404,24 @@ HWTEST_F(RSRenderFilterBaseTest, CheckEnableEDR001, TestSize.Level1)
     std::shared_ptr<RSNGRenderFilterBase> filter1 = std::make_shared<RSNGRenderBlurFilter>();
     auto filter2 = std::make_shared<RSNGRenderEdgeLightFilter>();
     filter1->nextEffect_ = filter2;
-    EXPECT_FALSE(RSUIFilterHelper::CheckEnableEDR(filter1));
+    EXPECT_FALSE(RSNGRenderFilterHelper::CheckEnableEDR(filter1));
 
     Vector4f color{0.5f, 0.5f, 1.5f, 1.0f};
     filter2->Setter<EdgeLightColorRenderTag>(color);
-    EXPECT_TRUE(RSUIFilterHelper::CheckEnableEDR(filter1));
+    EXPECT_TRUE(RSNGRenderFilterHelper::CheckEnableEDR(filter1));
+}
+
+/**
+ * @tc.name: CalculatePropTagHashImplRRect
+ * @tc.desc: test CalculatePropTagHashImpl(uint32_t& hash, const RRect& value)
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderFilterBaseTest, CalculatePropTagHashImplRRect, TestSize.Level1)
+{
+    uint32_t hash = 0;
+
+    RectT<float> rect;
+    RRect value(rect, 0.5f, 0.5f);
+    RSNGRenderEffectHelper::CalculatePropTagHashImpl(hash, value);
 }
 } // namespace OHOS::Rosen

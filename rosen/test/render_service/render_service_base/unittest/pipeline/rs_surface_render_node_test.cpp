@@ -1187,7 +1187,6 @@ HWTEST_F(RSSurfaceRenderNodeTest, QuerySubAssignable002, TestSize.Level2)
     if (RSUniRenderJudgement::IsUniRender()) {
         node->InitRenderParams();
     }
-    node->SetHasFilter(true);
     
     ASSERT_EQ(node->QuerySubAssignable(false), false);
 }
@@ -1209,9 +1208,8 @@ HWTEST_F(RSSurfaceRenderNodeTest, QuerySubAssignable003, TestSize.Level2)
         node->InitRenderParams();
         childNode->InitRenderParams();
     }
-    childNode->SetHasFilter(true);
     node->SetChildHasVisibleFilter(true);
-    
+
     ASSERT_EQ(node->QuerySubAssignable(false), false);
 }
 
@@ -1233,10 +1231,9 @@ HWTEST_F(RSSurfaceRenderNodeTest, QuerySubAssignable004, TestSize.Level2)
         node->InitRenderParams();
         childNode->InitRenderParams();
     }
-    childNode->SetHasFilter(true);
     node->SetChildHasVisibleFilter(true);
     node->SetAbilityBGAlpha(MAX_ALPHA);
-    
+
     ASSERT_EQ(node->QuerySubAssignable(false), true);
 }
 
@@ -2788,6 +2785,25 @@ HWTEST_F(RSSurfaceRenderNodeTest, SetTopLayerZOrderTest, TestSize.Level1)
     node->isLayerTop_ = true;
     node->SetTopLayerZOrder(1);
     EXPECT_EQ(node->GetTopLayerZOrder(), 1);
+}
+
+/**
+ * @tc.name: SetSurfaceBufferOpaqueTest
+ * @tc.desc: SetSurfaceBufferOpaque and GetSurfaceBufferOpaque
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, SetSurfaceBufferOpaqueTest, TestSize.Level1)
+{
+    auto node = std::make_shared<RSSurfaceRenderNode>(id, context);
+    node->SetSurfaceBufferOpaque(true);
+    node->stagingRenderParams_ = std::make_unique<RSRenderParams>(id);
+    node->SetSurfaceBufferOpaque(true);
+    node->SetSurfaceBufferOpaque(true);
+    ASSERT_EQ(node->GetSurfaceBufferOpaque(), true);
+    ASSERT_EQ(node->GetBlendType(), GraphicBlendType::GRAPHIC_BLEND_NONE);
+    node->SetSurfaceBufferOpaque(false);
+    ASSERT_FALSE(node->GetSurfaceBufferOpaque());
+    ASSERT_EQ(node->GetBlendType(), GraphicBlendType::GRAPHIC_BLEND_SRCOVER);
 }
 } // namespace Rosen
 } // namespace OHOS

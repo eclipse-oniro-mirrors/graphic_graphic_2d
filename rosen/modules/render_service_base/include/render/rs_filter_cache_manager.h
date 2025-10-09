@@ -20,16 +20,12 @@
 #if (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
 #include <condition_variable>
 
-#include "draw/canvas.h"
-#include "draw/surface.h"
-#include "utils/rect.h"
-
 #include "common/rs_macros.h"
 #include "common/rs_rect.h"
 #include "pipeline/rs_dirty_region_manager.h"
 #include "pipeline/rs_paint_filter_canvas.h"
-#include "platform/common/rs_system_properties.h"
 #include "render/rs_filter.h"
+#include "utils/rect.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -144,6 +140,8 @@ public:
         if all two conditions are met, the cache needs to be cleared.
     */
     void ClearEffectCacheWithDrawnRegion(const RSPaintFilterCanvas& canvas, const Drawing::RectI& filterBound);
+
+    void MarkDebugEnabled();
 private:
     void TakeSnapshot(RSPaintFilterCanvas& canvas, const std::shared_ptr<RSDrawingFilter>& filter,
         const Drawing::RectI& srcRect);
@@ -166,6 +164,8 @@ private:
 
     void UpdateFlags(FilterCacheType type, bool cacheValid);
     void ClearFilterCache();
+
+    void PrintDebugInfo(NodeId nodeID);
 
     // We keep both the snapshot and filtered snapshot in the cache, and clear unneeded one in next frame.
     // Note: rect in cachedSnapshot_ and cachedFilteredSnapshot_ is in device coordinate.
@@ -226,10 +226,14 @@ private:
     // last stagingInForegroundFilter_ value
     NodeId lastInForegroundFilter_ = INVALID_NODEID;
 
+    bool lastStagingFilterInteractWithDirty_ = false;
+
     bool takeNewSnapshot_ = false;
     std::shared_ptr<RSHpaeFilterCacheManager> hpaeCacheManager_;
     bool isHpaeCachedFilteredSnapshot_ = false;
     bool snapshotNeedUpdate_ = false;
+
+    bool debugEnabled_ = false;
 public:
     static bool isCCMFilterCacheEnable_;
     static bool isCCMEffectMergeEnable_;

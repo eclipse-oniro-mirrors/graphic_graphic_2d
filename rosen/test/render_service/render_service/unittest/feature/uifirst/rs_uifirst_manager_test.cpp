@@ -753,7 +753,6 @@ HWTEST_F(RSUifirstManagerTest, UpdateUifirstNodesPhone001, TestSize.Level1)
     uifirstManager_.UpdateUifirstNodes(*surfaceNode1, false);
     ASSERT_EQ(surfaceNode1->lastFrameUifirstFlag_, MultiThreadCacheType::NONE);
     // 3. surfaceNode1 has animation and filter.
-    surfaceNode1->SetHasFilter(true);
     uifirstManager_.UpdateUifirstNodes(*surfaceNode1, true);
     ASSERT_EQ(surfaceNode1->lastFrameUifirstFlag_, MultiThreadCacheType::NONE);
     // 4. surfaceNode1 has animation, filter and rotation.
@@ -886,7 +885,6 @@ HWTEST_F(RSUifirstManagerTest, UpdateUifirstNodesPC, TestSize.Level1)
     ASSERT_EQ(surfaceNode1->lastFrameUifirstFlag_, MultiThreadCacheType::NONFOCUS_WINDOW);
     // 5. surfaceNode1 is focus window, has animation and filter, not has transparent.
     surfaceNode1->hasTransparentSurface_ = false;
-    surfaceNode1->SetHasFilter(true);
     uifirstManager_.UpdateUifirstNodes(*surfaceNode1, true);
     ASSERT_EQ(surfaceNode1->lastFrameUifirstFlag_, MultiThreadCacheType::NONE);
     mainThread_->focusNodeId_ = 0;
@@ -905,12 +903,10 @@ HWTEST_F(RSUifirstManagerTest, UpdateUifirstNodesPC, TestSize.Level1)
     uifirstManager_.UpdateUifirstNodes(*surfaceNode2, false);
     ASSERT_EQ(surfaceNode2->lastFrameUifirstFlag_, MultiThreadCacheType::NONFOCUS_WINDOW);
     // 8. surfaceNode2 is not focus window, has filter and transparent.
-    surfaceNode2->SetHasFilter(true);
     uifirstManager_.UpdateUifirstNodes(*surfaceNode2, true);
     ASSERT_EQ(surfaceNode2->lastFrameUifirstFlag_, MultiThreadCacheType::NONE);
     // 9. surfaceNode2 is not focus window, not has filter and transparent, has display rotation.
     surfaceNode2->hasTransparentSurface_ = false;
-    surfaceNode2->SetHasFilter(false);
     uifirstManager_.rotationChanged_ = true;
     uifirstManager_.UpdateUifirstNodes(*surfaceNode2, true);
     ASSERT_EQ(surfaceNode2->lastFrameUifirstFlag_, MultiThreadCacheType::NONE);
@@ -2164,7 +2160,6 @@ HWTEST_F(RSUifirstManagerTest, UpdateUifirstNodes002, TestSize.Level1)
     surfaceNode->firstLevelNodeId_ = surfaceNode->GetId();
     surfaceNode->forceUIFirst_ = true;
     surfaceNode->hasSharedTransitionNode_ = false;
-    surfaceNode->hasFilter_ = false;
     surfaceNode->lastFrameUifirstFlag_ = MultiThreadCacheType::NONE;
     uifirstManager_.rotationChanged_ = false;
     uifirstManager_.UpdateUifirstNodes(*surfaceNode, true);
@@ -3139,6 +3134,69 @@ HWTEST_F(RSUifirstManagerTest, AddMarkedClearCacheNodeTest, TestSize.Level1)
     uifirstManager_.markedClearCacheNodes_.clear();
     uifirstManager_.AddMarkedClearCacheNode(1);
     ASSERT_EQ(uifirstManager_.markedClearCacheNodes_.size(), 1);
+}
+
+/**
+ * @tc.name: IsCacheSizeValid
+ * @tc.desc: Test IsCacheSizeValid for Rotate situation
+ * @tc.type: FUNC
+ * @tc.require: issue
+ */
+HWTEST_F(RSUifirstManagerTest, IsCacheSizeValid, TestSize.Level2)
+{
+    auto surfaceNodePtr = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(surfaceNodePtr, nullptr);
+    auto& surfaceNode = *surfaceNodePtr;
+
+    auto stagingSurfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceNode.GetStagingRenderParams().get());
+    ASSERT_NE(stagingSurfaceParams, nullptr);
+
+    auto ret = false;
+
+    /* test case: defaultValue
+    */
+    ret = uifirstManager_.IsCacheSizeValid(surfaceNode);
+    EXPECT_TRUE(ret);
+
+    /* test case: lastUifirstFlag
+    */
+    surfaceNode.SetLastFrameUifirstFlag(MultiThreadCacheType::LEASH_WINDOW);
+    ret = uifirstManager_.IsCacheSizeValid(surfaceNode);
+    EXPECT_TRUE(ret);
+
+    /* test case: cachedSize
+    */
+    stagingSurfaceParams->SetCacheSize({0.f, 1.f});
+    ret = uifirstManager_.IsCacheSizeValid(surfaceNode);
+    EXPECT_TRUE(ret);
+    stagingSurfaceParams->SetCacheSize({1.f, 0.f});
+    ret = uifirstManager_.IsCacheSizeValid(surfaceNode);
+    EXPECT_TRUE(ret);
+    stagingSurfaceParams->SetCacheSize({1.f, 2.f});
+    ret = uifirstManager_.IsCacheSizeValid(surfaceNode);
+    EXPECT_TRUE(ret);
+
+    /* test case: lastCachedSize Rotate
+    */
+    stagingSurfaceParams->UpdateLastCacheSize();
+    ret = uifirstManager_.IsCacheSizeValid(surfaceNode);
+    EXPECT_TRUE(ret);
+
+    stagingSurfaceParams->SetCacheSize({2.f, 1.f});
+    ret = uifirstManager_.IsCacheSizeValid(surfaceNode);
+    EXPECT_FALSE(ret);
+
+    /* test case: Gravity::RESIZE
+    */
+    stagingSurfaceParams->SetUIFirstFrameGravity(Gravity::RESIZE);
+    ret = uifirstManager_.IsCacheSizeValid(surfaceNode);
+    EXPECT_TRUE(ret);
+
+    /* test case: invalid stagingSurfaceParams
+    */
+    surfaceNode.GetStagingRenderParams() = nullptr;
+    ret = uifirstManager_.IsCacheSizeValid(surfaceNode);
+    EXPECT_FALSE(ret);
 }
 
 /**

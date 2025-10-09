@@ -534,4 +534,18 @@ HWTEST_F(RSSurfaceRenderParamsTest, SetFrameGravityNewVersionEnabledTest, TestSi
     params.SetFrameGravityNewVersionEnabled(true);
     EXPECT_EQ(params.GetFrameGravityNewVersionEnabled(), true);
 }
+
+/**
+ * @tc.name: SetSurfaceBufferOpaqueTest
+ * @tc.desc: SetSurfaceBufferOpaque and GetSurfaceBufferOpaque
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceRenderParamsTest, SetSurfaceBufferOpaqueTest, TestSize.Level1)
+{
+    RSSurfaceRenderParams params(129);
+    params.SetSurfaceBufferOpaque(false);
+    EXPECT_EQ(params.GetSurfaceBufferOpaque(), false);
+    params.SetSurfaceBufferOpaque(true);
+    EXPECT_EQ(params.GetSurfaceBufferOpaque(), true);
+}
 } // namespace OHOS::Rosen

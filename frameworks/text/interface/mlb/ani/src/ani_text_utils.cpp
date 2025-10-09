@@ -13,13 +13,14 @@
  * limitations under the License.
  */
 
+#include "ani_text_utils.h"
+
 #include <cstdarg>
 #include <cstdint>
 #include <fstream>
 #include <sstream>
 #include <string>
 
-#include "ani_text_utils.h"
 #include "typography_style.h"
 
 namespace OHOS::Text::ANI {
@@ -29,12 +30,12 @@ ani_status AniTextUtils::ThrowBusinessError(ani_env* env, TextErrorCode errorCod
     ani_object aniError;
     ani_status status = AniTextUtils::CreateBusinessError(env, static_cast<int32_t>(errorCode), message, aniError);
     if (status != ANI_OK) {
-        TEXT_LOGE("Failed to create business, status:%{public}d", static_cast<int32_t>(status));
+        TEXT_LOGE("Failed to create business, status %{public}d", static_cast<int32_t>(status));
         return status;
     }
     status = env->ThrowError(static_cast<ani_error>(aniError));
     if (status != ANI_OK) {
-        TEXT_LOGE("Fail to throw err, status:%{public}d", static_cast<int32_t>(status));
+        TEXT_LOGE("Fail to throw err, status %{public}d", static_cast<int32_t>(status));
         return status;
     }
     return ANI_OK;
@@ -42,27 +43,33 @@ ani_status AniTextUtils::ThrowBusinessError(ani_env* env, TextErrorCode errorCod
 
 ani_status AniTextUtils::CreateBusinessError(ani_env* env, int32_t error, const char* message, ani_object& err)
 {
-    ani_class aniClass;
-    ani_status status = env->FindClass("L@ohos/base/BusinessError;", &aniClass);
+    ani_class aniClass = nullptr;
+    ani_status status = AniTextUtils::FindClassWithCache(env, ANI_BUSINESS_ERROR, aniClass);
     if (status != ANI_OK) {
-        TEXT_LOGE("Failed to find class, status:%{public}d", static_cast<int32_t>(status));
+        TEXT_LOGE("Failed to find class, status %{public}d", static_cast<int32_t>(status));
         return status;
     }
-    ani_method aniCtor;
-    status = env->Class_FindMethod(aniClass, "<ctor>", "Lstd/core/String;Lescompat/ErrorOptions;:V", &aniCtor);
-    if (status != ANI_OK) {
-        TEXT_LOGE("Failed to find ctor, status:%{public}d", static_cast<int32_t>(status));
+
+    ani_method aniCtor = nullptr;
+    static std::string methodSign = "C{std.core.String}C{escompat.ErrorOptions}:";
+    static std::string methodKey = "C{" + std::string(ANI_BUSINESS_ERROR) + "}" + methodSign;
+    if (AniCacheManager::Instance().FindMethod(methodKey, aniCtor)) {
+    } else if ((status = env->Class_FindMethod(aniClass, "<ctor>", methodSign.c_str(), &aniCtor)) == ANI_OK) {
+        AniCacheManager::Instance().InsertMethod(methodKey, aniCtor);
+    } else {
+        TEXT_LOGE("Failed to find ctor, status %{public}d", static_cast<int32_t>(status));
         return status;
     }
+
     ani_string aniMsg = AniTextUtils::CreateAniStringObj(env, message);
     status = env->Object_New(aniClass, aniCtor, &err, aniMsg, AniTextUtils::CreateAniUndefined(env));
     if (status != ANI_OK) {
-        TEXT_LOGE("Failed to new err, status:%{public}d", static_cast<int32_t>(status));
+        TEXT_LOGE("Failed to new err, status %{public}d", static_cast<int32_t>(status));
         return status;
     }
-    status = env->Object_SetPropertyByName_Double(err, "code", static_cast<ani_int>(error));
+    status = env->Object_SetPropertyByName_Int(err, "code", static_cast<ani_int>(error));
     if (status != ANI_OK) {
-        TEXT_LOGE("Failed to set code, status:%{public}d", static_cast<int32_t>(status));
+        TEXT_LOGE("Failed to set code, status %{public}d", static_cast<int32_t>(status));
         return status;
     }
     return ANI_OK;
@@ -75,18 +82,37 @@ ani_object AniTextUtils::CreateAniUndefined(ani_env* env)
     return reinterpret_cast<ani_object>(aniRef);
 }
 
+bool AniTextUtils::IsUndefined(ani_env* env, ani_ref ref)
+{
+    ani_boolean isUndefined = 0;
+    ani_status status = env->Reference_IsUndefined(ref, &isUndefined);
+    if (status != ANI_OK) {
+        TEXT_LOGE("Failed to check if undefined, status %{public}d", static_cast<int32_t>(status));
+        return false;
+    }
+    return isUndefined != 0;
+}
+
 ani_object AniTextUtils::CreateAniArray(ani_env* env, size_t size)
 {
-    ani_class arrayCls;
-    if (env->FindClass(ANI_ARRAY, &arrayCls) != ANI_OK) {
-        TEXT_LOGE("Failed to findClass Lescompat/Array;");
+    ani_class arrayCls = nullptr;
+    ani_status ret = AniTextUtils::FindClassWithCache(env, ANI_ARRAY, arrayCls);
+    if (ret != ANI_OK) {
+        TEXT_LOGE("Failed to find class, ret %{public}d", ret);
         return CreateAniUndefined(env);
     }
-    ani_method arrayCtor;
-    if (env->Class_FindMethod(arrayCls, "<ctor>", "I:V", &arrayCtor) != ANI_OK) {
-        TEXT_LOGE("Failed to find <ctor>");
+
+    ani_method arrayCtor = nullptr;
+    static std::string methodSign = "i:";
+    static std::string methodKey = "C{" + std::string(ANI_ARRAY) + "}" + methodSign;
+    if (AniCacheManager::Instance().FindMethod(methodKey, arrayCtor)) {
+    } else if ((ret = env->Class_FindMethod(arrayCls, "<ctor>", methodSign.c_str(), &arrayCtor)) == ANI_OK) {
+        AniCacheManager::Instance().InsertMethod(methodKey, arrayCtor);
+    } else {
+        TEXT_LOGE("Failed to find ctor, status:%{public}d", static_cast<int32_t>(ret));
         return CreateAniUndefined(env);
     }
+
     ani_object arrayObj = nullptr;
     if (env->Object_New(arrayCls, arrayCtor, &arrayObj, size) != ANI_OK) {
         TEXT_LOGE("Failed to create object Array");
@@ -97,16 +123,21 @@ ani_object AniTextUtils::CreateAniArray(ani_env* env, size_t size)
 
 ani_object AniTextUtils::CreateAniMap(ani_env* env)
 {
-    return AniTextUtils::CreateAniObject(env, ANI_MAP, ":V");
+    return AniTextUtils::CreateAniObject(env, ANI_MAP, ":");
 }
 
 ani_enum_item AniTextUtils::CreateAniEnum(ani_env* env, const char* enum_descriptor, ani_size index)
 {
-    ani_enum enumType;
-    ani_status ret = env->FindEnum(enum_descriptor, &enumType);
-    if (ret != ANI_OK) {
-        TEXT_LOGE("Failed to find enum,%{public}s", enum_descriptor);
-        return nullptr;
+    ani_enum enumType = nullptr;
+    bool found = AniCacheManager::Instance().FindEnum(enum_descriptor, enumType);
+    if (!found) {
+        ani_status ret = env->FindEnum(enum_descriptor, &enumType);
+        if (ret == ANI_OK) {
+            AniCacheManager::Instance().InsertEnum(env, enum_descriptor, enumType);
+        } else {
+            TEXT_LOGE("Failed to find enum, %{public}s, ret %{public}d", enum_descriptor, ret);
+            return nullptr;
+        }
     }
     ani_enum_item enumItem;
     env->Enum_GetEnumItemByIndex(enumType, index, &enumItem);
@@ -115,17 +146,17 @@ ani_enum_item AniTextUtils::CreateAniEnum(ani_env* env, const char* enum_descrip
 
 ani_object AniTextUtils::CreateAniDoubleObj(ani_env* env, double val)
 {
-    return AniTextUtils::CreateAniObject(env, ANI_OBJECT, "D:V", val);
+    return AniTextUtils::CreateAniObject(env, ANI_DOUBLE, "d:", val);
 }
 
 ani_object AniTextUtils::CreateAniIntObj(ani_env* env, int val)
 {
-    return AniTextUtils::CreateAniObject(env, ANI_INT, "I:V", val);
+    return AniTextUtils::CreateAniObject(env, ANI_INT, "i:", val);
 }
 
 ani_object AniTextUtils::CreateAniBooleanObj(ani_env* env, bool val)
 {
-    return AniTextUtils::CreateAniObject(env, ANI_BOOLEAN, "Z:V", val);
+    return AniTextUtils::CreateAniObject(env, ANI_BOOLEAN, "z:", val);
 }
 
 ani_string AniTextUtils::CreateAniStringObj(ani_env* env, const std::string& str)
@@ -262,7 +293,17 @@ ani_status AniTextUtils::ReadOptionalDoubleField(ani_env* env, ani_object obj, c
     ani_ref ref = nullptr;
     ani_status result = AniTextUtils::ReadOptionalField(env, obj, fieldName, ref);
     if (result == ANI_OK && ref != nullptr) {
-        env->Object_CallMethodByName_Double(reinterpret_cast<ani_object>(ref), "unboxed", ":D", &value);
+        result = env->Object_CallMethodByName_Double(reinterpret_cast<ani_object>(ref), "unboxed", ":d", &value);
+    }
+    return result;
+}
+
+ani_status AniTextUtils::ReadOptionalIntField(ani_env* env, ani_object obj, const char* fieldName, int& value)
+{
+    ani_ref ref = nullptr;
+    ani_status result = AniTextUtils::ReadOptionalField(env, obj, fieldName, ref);
+    if (result == ANI_OK && ref != nullptr) {
+        result = env->Object_CallMethodByName_Int(reinterpret_cast<ani_object>(ref), "unboxed", ":i", &value);
     }
     return result;
 }
@@ -272,11 +313,7 @@ ani_status AniTextUtils::ReadOptionalStringField(ani_env* env, ani_object obj, c
     ani_ref ref = nullptr;
     ani_status result = AniTextUtils::ReadOptionalField(env, obj, fieldName, ref);
     if (result == ANI_OK && ref != nullptr) {
-        std::string familyName;
-        ani_status ret = AniTextUtils::AniToStdStringUtf8(env, reinterpret_cast<ani_string>(ref), str);
-        if (ret != ANI_OK) {
-            return result;
-        }
+        result = AniTextUtils::AniToStdStringUtf8(env, reinterpret_cast<ani_string>(ref), str);
     }
     return result;
 }
@@ -298,11 +335,34 @@ ani_status AniTextUtils::ReadOptionalBoolField(ani_env* env, ani_object obj, con
     ani_status result = AniTextUtils::ReadOptionalField(env, obj, fieldName, ref);
     if (result == ANI_OK && ref != nullptr) {
         ani_boolean aniBool;
-        result = env->Object_CallMethodByName_Boolean(reinterpret_cast<ani_object>(ref), "isTrue", ":Z", &aniBool);
+        result = env->Object_CallMethodByName_Boolean(reinterpret_cast<ani_object>(ref), "unboxed", ":z", &aniBool);
         if (result == ANI_OK) {
             value = static_cast<bool>(aniBool);
         }
     }
     return result;
+}
+
+ani_status AniTextUtils::FindClassWithCache(ani_env* env, const char* clsName, ani_class& cls)
+{
+    if (AniCacheManager::Instance().FindClass(clsName, cls)) {
+        return ANI_OK;
+    }
+    ani_status ret = env->FindClass(clsName, &cls);
+    if (ret == ANI_OK) {
+        AniCacheManager::Instance().InsertClass(env, clsName, cls);
+    }
+    return ret;
+}
+
+ani_status AniTextUtils::Object_InstanceOf(ani_env* env, ani_object obj, const char* clsName, ani_boolean* result)
+{
+    ani_class cls = nullptr;
+    ani_status ret = FindClassWithCache(env, clsName, cls);
+    if (ret != ANI_OK) {
+        TEXT_LOGE("Failed to find class %{public}s, ret %{public}d", clsName, ret);
+        return ret;
+    }
+    return env->Object_InstanceOf(obj, cls, result);
 }
 } // namespace OHOS::Text::ANI

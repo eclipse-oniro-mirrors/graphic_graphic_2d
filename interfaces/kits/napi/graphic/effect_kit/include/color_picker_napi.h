@@ -39,6 +39,8 @@ public:
     ColorPickerNapi();
     ~ColorPickerNapi();
     static napi_value Init(napi_env env, napi_value exports);
+    static napi_value CreateColorPickerFromPtr(napi_env env, std::shared_ptr<ColorPicker> picker);
+    std::shared_ptr<ColorPicker> GetColorPicker(){ return nativeColorPicker_; }
 
 private:
     // methods constructor

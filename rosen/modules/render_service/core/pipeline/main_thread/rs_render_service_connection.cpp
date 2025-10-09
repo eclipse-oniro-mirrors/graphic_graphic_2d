@@ -14,6 +14,7 @@
  */
 
 #include "rs_render_service_connection.h"
+#include "rs_profiler.h"
 #include <string>
 
 #include "frame_report.h"
@@ -93,6 +94,8 @@
 
 #undef LOG_TAG
 #define LOG_TAG "RSRenderServiceConnection"
+
+#include "app_mgr_client.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -179,7 +182,9 @@ void RSRenderServiceConnection::CleanRenderNodes() noexcept
     auto& nodeMap = context.GetMutableNodeMap();
     MemoryTrack::Instance().RemovePidRecord(remotePid_);
 
+    RS_PROFILER_KILL_PID(remotePid_);
     nodeMap.FilterNodeByPid(remotePid_);
+    RS_PROFILER_KILL_PID_END();
 }
 
 void RSRenderServiceConnection::CleanFrameRateLinkers() noexcept
@@ -236,6 +241,7 @@ void RSRenderServiceConnection::CleanAll(bool toDelete) noexcept
             connection->CleanRenderNodes();
             connection->CleanFrameRateLinkers();
             connection->CleanFrameRateLinkerExpectedFpsCallbacks();
+            connection->CleanBrightnessInfoChangeCallbacks();
         }).wait();
     mainThread_->ScheduleTask(
         [weakThis = wptr<RSRenderServiceConnection>(this)]() {
@@ -300,6 +306,12 @@ void RSRenderServiceConnection::CleanAll(bool toDelete) noexcept
             RS_LOGW("CleanAll() RenderService is dead.");
         }
     }
+
+    {
+        std::lock_guard<std::mutex> lock(pidToBundleMutex_);
+        pidToBundleName_.clear();
+    }
+
     RS_LOGD("CleanAll() end.");
     RS_TRACE_NAME("RSRenderServiceConnection CleanAll end, remotePid: " + std::to_string(remotePid_));
 }
@@ -1034,21 +1046,49 @@ int32_t RSRenderServiceConnection::SetScreenSwitchingNotifyCallback(sptr<RSIScre
     return status;
 }
 
-void RSRenderServiceConnection::SetScreenActiveMode(ScreenId id, uint32_t modeId)
+int32_t RSRenderServiceConnection::SetBrightnessInfoChangeCallback(sptr<RSIBrightnessInfoChangeCallback> callback)
+{
+    if (mainThread_ == nullptr) {
+        return INVALID_ARGUMENTS;
+    }
+    auto task = [this, &callback]() {
+        auto& context = mainThread_->GetContext();
+        return context.SetBrightnessInfoChangeCallback(remotePid_, callback);
+    };
+    return mainThread_->ScheduleTask(task).get();
+}
+
+void RSRenderServiceConnection::CleanBrightnessInfoChangeCallbacks() noexcept
+{
+    if (mainThread_ == nullptr) {
+        return;
+    }
+    auto& context = mainThread_->GetContext();
+    context.SetBrightnessInfoChangeCallback(remotePid_, nullptr);
+}
+
+int32_t RSRenderServiceConnection::GetBrightnessInfo(ScreenId screenId, BrightnessInfo& brightnessInfo)
+{
+    brightnessInfo = RSLuminanceControl::Get().GetBrightnessInfo(screenId);
+    return StatusCode::SUCCESS;
+}
+
+uint32_t RSRenderServiceConnection::SetScreenActiveMode(ScreenId id, uint32_t modeId)
 {
     if (!screenManager_) {
-        return;
+        return StatusCode::SCREEN_MANAGER_NULL;
     }
     auto renderType = RSUniRenderJudgement::GetUniRenderEnabledType();
     if (renderType == UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL) {
 #ifdef RS_ENABLE_GPU
         return RSHardwareThread::Instance().ScheduleTask(
-            [=]() { screenManager_->SetScreenActiveMode(id, modeId); }).wait();
+            [=]() { return screenManager_->SetScreenActiveMode(id, modeId); }).get();
 #endif
     } else if (mainThread_ != nullptr) {
         return mainThread_->ScheduleTask(
-            [=]() { screenManager_->SetScreenActiveMode(id, modeId); }).wait();
+            [=]() { return screenManager_->SetScreenActiveMode(id, modeId); }).get();
     }
+    return StatusCode::RS_CONNECTION_ERROR;
 }
 
 void RSRenderServiceConnection::SetScreenRefreshRate(ScreenId id, int32_t sceneId, int32_t rate)
@@ -1608,7 +1648,7 @@ ErrCode RSRenderServiceConnection::TakeSurfaceCaptureWithAllWindows(NodeId id,
         captureParam.id = id;
         captureParam.config = captureConfig;
         captureParam.isSystemCalling = hasPermission;
-        captureParam.ignoreSpecialLayer = hasPermission;
+        captureParam.needCaptureSpecialLayer = hasPermission;
         RSSurfaceCaptureTaskParallel::CheckModifiers(id, captureConfig.useCurWindow);
         RSSurfaceCaptureTaskParallel::Capture(callback, captureParam);
     };
@@ -3766,6 +3806,31 @@ void RSRenderServiceConnection::ClearUifirstCache(NodeId id)
         RSUifirstManager::Instance().AddMarkedClearCacheNode(id);
     };
     mainThread_->PostTask(task);
+}
+
+std::string RSRenderServiceConnection::GetBundleName(pid_t pid)
+{
+    std::lock_guard<std::mutex> lock(pidToBundleMutex_);
+    if (auto it = pidToBundleName_.find(pid); it != pidToBundleName_.end()) {
+        return it->second;
+    }
+
+    static const auto appMgrClient = std::make_shared<AppExecFwk::AppMgrClient>();
+    if (appMgrClient == nullptr) {
+        RS_LOGE("GetBundleName get appMgrClient fail.");
+        return {};
+    }
+
+    std::string bundleName{};
+    int32_t uid{0};
+    int32_t ret = appMgrClient->GetBundleNameByPid(pid, bundleName, uid);
+    if ((ret != ERR_OK) || bundleName.empty()) {
+        RS_LOGE("GetBundleName failed, ret=%{public}d.", ret);
+        return {};
+    }
+
+    pidToBundleName_.emplace(pid, bundleName);
+    return bundleName;
 }
 } // namespace Rosen
 } // namespace OHOS

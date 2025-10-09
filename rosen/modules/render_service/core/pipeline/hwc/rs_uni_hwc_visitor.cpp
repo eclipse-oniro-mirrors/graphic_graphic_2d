@@ -180,13 +180,13 @@ bool RSUniHwcVisitor::CheckNodeOcclusion(const std::shared_ptr<RSRenderNode>& no
     const auto& nodeProperties = node->GetRenderProperties();
     auto absRect = nodeProperties.GetBoundsGeometry()->GetAbsRect();
     // The canvas node intersects with the surface node.
-    if (!absRect.IsEmpty() && !surfaceNodeAbsRect.IsEmpty() && !absRect.IntersectRect(surfaceNodeAbsRect).IsEmpty()) {
+    if (!absRect.IsEmpty() && !surfaceNodeAbsRect.IsEmpty() && absRect.Intersect(surfaceNodeAbsRect)) {
         if (node->GetType() != RSRenderNodeType::CANVAS_NODE) {
             RS_LOGD("solidLayer: node type isn't canvas node, id:%{public}" PRIu64, node->GetId());
             return true;
         }
 
-        bool willNotDraw = node->IsPureBackgroundColor();
+        bool willNotDraw = !node->HasDrawCmdModifiers();
         RS_LOGD("solidLayer: id:%{public}" PRIu64 ", willNotDraw: %{public}d", node->GetId(), willNotDraw);
         if (!willNotDraw) {
             RS_LOGD("solidLayer: presence drawing, id:%{public}" PRIu64, node->GetId());
@@ -426,24 +426,21 @@ void RSUniHwcVisitor::UpdateHwcNodeEnableByBackgroundAlpha(RSSurfaceRenderNode& 
         return false;
     };
     bool isTargetAppBundle = IsTargetSolidLayer(node);
-    bool isNodeOpaque = ROSEN_EQ(renderProperties.GetAlpha(), 1.0f, EPSILON_SCALE);
     bool isSolidLayerEnabled =
-        isTargetNodeType && isTargetColor && isNodeOpaque && !isSpecialNodeType && isTargetAppBundle;
+        isTargetNodeType && isTargetColor && renderProperties.GetAlpha() == 1 &&
+        !isSpecialNodeType && isTargetAppBundle;
     bool isHdrOn = false;
-    bool hasBrightness = false;
     if (isSolidLayerEnabled) {
         isHdrOn = uniRenderVisitor_.curScreenNode_->GetHasUniRenderHdrSurface() || GetHwcNodeHdrEnabled();
-        hasBrightness = renderProperties.GetBgBrightnessParams().has_value() &&
-                        ROSEN_EQ(renderProperties.GetBgBrightnessFract(), 1.0f, EPSILON_SCALE);
-        if (!isHdrOn && !hasBrightness) {
+        if (!isHdrOn) {
             ProcessSolidLayerEnabled(node);
             return;
         }
     }
     RS_LOGD("solidLayer: SolidLayer enabling conditions, isTargetNodeType: %{public}d, isTargetColor: %{public}d, "
-        "Alpha: %{public}d, isTargetAppBundle: %{public}d, !isSpecialNodeType: %{public}d, !isHdrOn: %{public}d, "
-        "!hasBrightness: %{public}d",
-        isTargetNodeType, isTargetColor, isNodeOpaque, !isSpecialNodeType, isTargetAppBundle, !isHdrOn, !hasBrightness);
+        "Alpha: %{public}d, isTargetAppBundle: %{public}d, !isSpecialNodeType: %{public}d, !isHdrOn: %{public}d, ",
+        isTargetNodeType, isTargetColor, renderProperties.GetAlpha() == 1,
+        !isSpecialNodeType, isTargetAppBundle, !isHdrOn);
     ProcessSolidLayerDisabled(node);
 }
 
@@ -525,7 +522,7 @@ void RSUniHwcVisitor::UpdateHwcNodeEnableByAlpha(const std::shared_ptr<RSSurface
 
 void RSUniHwcVisitor::UpdateHwcNodeEnable()
 {
-    std::unordered_set<std::shared_ptr<RSSurfaceRenderNode>> ancoNodes;
+    std::vector<std::shared_ptr<RSSurfaceRenderNode>> ancoNodes;
     int inputHwclayers = 3;
     auto& curMainAndLeashSurfaces = uniRenderVisitor_.curScreenNode_->GetAllMainAndLeashSurfaces();
     std::for_each(curMainAndLeashSurfaces.rbegin(), curMainAndLeashSurfaces.rend(),
@@ -571,7 +568,7 @@ void RSUniHwcVisitor::UpdateHwcNodeEnable()
             UpdateHwcNodeEnableByRotate(hwcNodePtr);
             UpdateHwcNodeEnableByHwcNodeBelowSelfInApp(hwcNodePtr, hwcRects);
             if ((hwcNodePtr->GetAncoFlags() & static_cast<uint32_t>(AncoFlags::IS_ANCO_NODE)) != 0) {
-                ancoNodes.insert(hwcNodePtr);
+                ancoNodes.push_back(hwcNodePtr);
             }
         }
     });
@@ -911,12 +908,17 @@ void RSUniHwcVisitor::UpdateHwcNodeEnableByFilterRect(std::shared_ptr<RSSurfaceR
         return;
     }
     if (!node) {
-        const auto& selfDrawingNodes = RSMainThread::Instance()->GetSelfDrawingNodes();
-        if (selfDrawingNodes.empty()) {
-            return;
-        }
-        for (auto hwcNode : selfDrawingNodes) {
-            CalcHwcNodeEnableByFilterRect(hwcNode, filterNode, filterZOrder);
+        auto& curMainAndLeashSurfaces = uniRenderVisitor_.curScreenNode_->GetAllMainAndLeashSurfaces();
+        for (auto it = curMainAndLeashSurfaces.rbegin(); it != curMainAndLeashSurfaces.rend(); ++it) {
+            auto surfaceNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(*it);
+            if (surfaceNode == nullptr) {
+                continue;
+            }
+            const auto& hwcNodes = surfaceNode->GetChildHardwareEnabledNodes();
+            for (auto& hwcNode : hwcNodes) {
+                auto hwcNodePtr = hwcNode.lock();
+                CalcHwcNodeEnableByFilterRect(hwcNodePtr, filterNode, filterZOrder);
+            }
         }
     } else {
         const auto& hwcNodes = node->GetChildHardwareEnabledNodes();

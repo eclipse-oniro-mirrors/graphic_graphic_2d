@@ -41,6 +41,7 @@ public:
 private:
     static const RSInterfaceCodeSecurityManager securityManager_;
 
+    bool WriteBrightnessInfo(const BrightnessInfo& brightnessInfo, MessageParcel& data);
     bool ReadDataBaseRs(DataBaseRs& info, MessageParcel& data);
     bool ReadAppInfo(AppInfo& info, MessageParcel& data);
     bool ReadGameStateDataRs(GameStateData& info, MessageParcel& data);
@@ -48,6 +49,9 @@ private:
     bool ReadSurfaceCaptureBlurParam(RSSurfaceCaptureBlurParam& blurParam, MessageParcel& data);
     bool ReadSurfaceCaptureAreaRect(Drawing::Rect& specifiedAreaRect, MessageParcel& data);
     void SetQos();
+
+    virtual std::string GetBundleName(pid_t pid) { return {}; }
+
     RSRenderServiceSecurityUtils securityUtils_;
     std::unordered_set<int> tids_;
     std::mutex mutex_;

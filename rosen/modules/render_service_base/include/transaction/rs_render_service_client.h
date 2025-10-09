@@ -65,6 +65,7 @@ namespace OHOS {
 namespace Rosen {
 // normal callback functor for client users.
 using ScreenChangeCallback = std::function<void(ScreenId, ScreenEvent, ScreenChangeReason)>;
+using BrightnessInfoChangeCallback = std::function<void(ScreenId, BrightnessInfo)>;
 using ScreenSwitchingNotifyCallback = std::function<void(bool)>;
 #ifdef OHOS_BUILD_ENABLE_MAGICCURSOR
 using PointerLuminanceChangeCallback = std::function<void(int32_t)>;
@@ -246,7 +247,7 @@ public:
     int32_t SetScreenSwitchingNotifyCallback(const ScreenSwitchingNotifyCallback& callback);
 
 #ifndef ROSEN_ARKUI_X
-    void SetScreenActiveMode(ScreenId id, uint32_t modeId);
+    uint32_t SetScreenActiveMode(ScreenId id, uint32_t modeId);
 #endif // !ROSEN_ARKUI_X
     void SetScreenRefreshRate(ScreenId id, int32_t sceneId, int32_t rate);
 
@@ -256,6 +257,10 @@ public:
         int32_t animatorExpectedFrameRate);
 
     void UnregisterFrameRateLinker(FrameRateLinkerId id);
+
+    int32_t SetBrightnessInfoChangeCallback(const BrightnessInfoChangeCallback& callback);
+
+    int32_t GetBrightnessInfo(ScreenId screenId, BrightnessInfo& brightnessInfo);
 
     uint32_t GetScreenCurrentRefreshRate(ScreenId id);
 

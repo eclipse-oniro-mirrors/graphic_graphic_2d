@@ -18,6 +18,7 @@
 
 #include <mutex>
 #include <unordered_set>
+#include <unordered_map>
 
 #include "hgm_config_callback_manager.h"
 #include "ipc_callbacks/buffer_available_callback.h"
@@ -60,6 +61,7 @@ private:
     void CleanRenderNodes() noexcept;
     void CleanFrameRateLinkers() noexcept;
     void CleanFrameRateLinkerExpectedFpsCallbacks() noexcept;
+    void CleanBrightnessInfoChangeCallbacks() noexcept;
     void CleanAll(bool toDelete = false) noexcept;
 
     // IPC RSIRenderServiceConnection Interfaces
@@ -141,7 +143,11 @@ private:
 
     int32_t SetScreenSwitchingNotifyCallback(sptr<RSIScreenSwitchingNotifyCallback> callback) override;
 
-    void SetScreenActiveMode(ScreenId id, uint32_t modeId) override;
+    int32_t SetBrightnessInfoChangeCallback(sptr<RSIBrightnessInfoChangeCallback> callback) override;
+
+    int32_t GetBrightnessInfo(ScreenId screenId, BrightnessInfo& brightnessInfo) override;
+
+    uint32_t SetScreenActiveMode(ScreenId id, uint32_t modeId) override;
 
     void SetScreenRefreshRate(ScreenId id, int32_t sceneId, int32_t rate) override;
 
@@ -469,6 +475,8 @@ private:
 
     void ClearUifirstCache(NodeId id) override;
 
+    std::string GetBundleName(pid_t pid) override;
+
     pid_t remotePid_;
     wptr<RSRenderService> renderService_;
     RSMainThread* mainThread_ = nullptr;
@@ -477,6 +485,9 @@ private:
 #endif
     sptr<RSScreenManager> screenManager_;
     sptr<IRemoteObject> token_;
+
+    std::unordered_map<pid_t, std::string> pidToBundleName_;
+    mutable std::mutex pidToBundleMutex_;
 
     class RSConnectionDeathRecipient : public IRemoteObject::DeathRecipient {
     public:

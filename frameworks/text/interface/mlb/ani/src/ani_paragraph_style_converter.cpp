@@ -12,8 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "ani_common.h"
+
 #include "ani_paragraph_style_converter.h"
+
+#include "ani_common.h"
 #include "ani_text_style_converter.h"
 #include "ani_text_utils.h"
 #include "utils/text_log.h"
@@ -22,22 +24,17 @@ namespace OHOS::Text::ANI {
 using namespace OHOS::Rosen;
 std::unique_ptr<TypographyStyle> AniParagraphStyleConverter::ParseParagraphStyleToNative(ani_env* env, ani_object obj)
 {
-    ani_class cls = nullptr;
-    ani_status ret = env->FindClass(ANI_INTERFACE_PARAGRAPH_STYLE, &cls);
-    if (ret != ANI_OK) {
-        TEXT_LOGE("Failed to find class, ret %{public}d", ret);
-        return nullptr;
-    }
     ani_boolean isObj = false;
-    ret = env->Object_InstanceOf(obj, cls, &isObj);
-    if (!isObj) {
+    ani_status ret = AniTextUtils::Object_InstanceOf(env, obj, ANI_INTERFACE_PARAGRAPH_STYLE, &isObj);
+    if (ret != ANI_OK || !isObj) {
         TEXT_LOGE("Object mismatch, ret %{public}d", ret);
         return nullptr;
     }
     std::unique_ptr<TypographyStyle> paragraphStyle = std::make_unique<TypographyStyle>();
 
-    double maxLines;
-    if (AniTextUtils::ReadOptionalDoubleField(env, obj, "maxLines", maxLines) == ANI_OK) {
+    int maxLines;
+    if (AniTextUtils::ReadOptionalIntField(env, obj, "maxLines", maxLines) == ANI_OK) {
+        maxLines = maxLines < 0 ? 0 : maxLines;
         paragraphStyle->maxLines = static_cast<size_t>(maxLines);
     }
 
@@ -67,6 +64,10 @@ std::unique_ptr<TypographyStyle> AniParagraphStyleConverter::ParseParagraphStyle
     if (AniTextUtils::ReadOptionalField(env, obj, "tab", tabRef) == ANI_OK && tabRef != nullptr) {
         ParseTextTabToNative(env, reinterpret_cast<ani_object>(tabRef), paragraphStyle->tab);
     }
+
+    AniTextUtils::ReadOptionalBoolField(env, obj, "trailingSpaceOptimized", paragraphStyle->isTrailingSpaceOptimized);
+    AniTextUtils::ReadOptionalBoolField(env, obj, "autoSpace", paragraphStyle->enableAutoSpace);
+    AniTextUtils::ReadOptionalEnumField(env, obj, "verticalAlign", paragraphStyle->verticalAlignment);
 
     return paragraphStyle;
 }

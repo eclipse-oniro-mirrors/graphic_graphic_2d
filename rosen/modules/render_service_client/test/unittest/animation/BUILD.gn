@@ -26,7 +26,6 @@ ohos_unittest("RSAnimationTest") {
   sources = [
     "rs_animation_base_test.cpp",
     "rs_animation_callback_test.cpp",
-    "rs_animation_group_test.cpp",
     "rs_animation_supplement_test.cpp",
     "rs_animation_test.cpp",
   ]

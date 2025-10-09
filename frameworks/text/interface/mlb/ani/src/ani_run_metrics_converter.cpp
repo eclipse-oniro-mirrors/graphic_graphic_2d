@@ -13,11 +13,12 @@
  * limitations under the License.
  */
 
-#include "ani_common.h"
-#include "ani_drawing_converter.h"
 #include "ani_run_metrics_converter.h"
+
+#include "ani_common.h"
 #include "ani_text_style_converter.h"
 #include "ani_text_utils.h"
+#include "font_ani/ani_font.h"
 
 namespace OHOS::Text::ANI {
 using namespace OHOS::Rosen;
@@ -26,20 +27,20 @@ ani_object AniRunMetricsConverter::ParseRunMetricsToAni(ani_env* env, const std:
     ani_object mapAniObj = AniTextUtils::CreateAniMap(env);
     ani_ref mapRef = nullptr;
     for (const auto& [key, runMetrics] : runMetrics) {
-        ani_object aniObj = AniTextUtils::CreateAniObject(env, ANI_CLASS_RUNMETRICS, ":V");
         if (runMetrics.textStyle != nullptr) {
-            env->Object_SetPropertyByName_Ref(
-                aniObj, "textStyle", AniTextStyleConverter::ParseTextStyleToAni(env, *runMetrics.textStyle));
-            env->Object_SetPropertyByName_Ref(
-                aniObj, "fontMetrics", AniDrawingConverter::ParseFontMetricsToAni(env, runMetrics.fontMetrics));
+            static std::string sign =
+                "C{" + std::string(ANI_INTERFACE_TEXT_STYLE) + "}C{" + std::string(ANI_INTERFACE_FONT_METRICS) + "}:";
+            ani_object aniObj = AniTextUtils::CreateAniObject(env, ANI_CLASS_RUNMETRICS, sign.c_str(),
+                AniTextStyleConverter::ParseTextStyleToAni(env, *runMetrics.textStyle),
+                OHOS::Rosen::Drawing::CreateAniFontMetrics(env, runMetrics.fontMetrics));
+            ani_status status =
+                env->Object_CallMethodByName_Ref(mapAniObj, "set",
+                "C{std.core.Object}C{std.core.Object}:C{escompat.Map}",
+                &mapRef, AniTextUtils::CreateAniIntObj(env, static_cast<int>(key)), aniObj);
+            if (status != ANI_OK) {
+                TEXT_LOGE("Failed to set run metrics map, key %{public}zu, ret %{public}d", key, status);
+            }
         }
-        ani_status status =
-            env->Object_CallMethodByName_Ref(mapAniObj, "set", "Lstd/core/Object;Lstd/core/Object;:Lescompat/Map;",
-                &mapRef, AniTextUtils::CreateAniDoubleObj(env, static_cast<ani_double>(key)), aniObj);
-        if (status != ANI_OK) {
-            TEXT_LOGE("Failed to set run metrics map, ret %{public}d", status);
-            continue;
-        };
     }
     return mapAniObj;
 }

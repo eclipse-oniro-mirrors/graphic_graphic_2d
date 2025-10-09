@@ -115,7 +115,13 @@ public:
 
     int32_t SetScreenSwitchingNotifyCallback(sptr<RSIScreenSwitchingNotifyCallback> callback) override;
 
-    void SetScreenActiveMode(ScreenId id, uint32_t modeId) override;
+    int32_t SetBrightnessInfoChangeCallback(sptr<RSIBrightnessInfoChangeCallback> callback) override;
+
+    int32_t GetBrightnessInfo(ScreenId screenId, BrightnessInfo& brightnessInfo) override;
+
+    bool ReadBrightnessInfo(BrightnessInfo& brightnessInfo, MessageParcel& data);
+
+    uint32_t SetScreenActiveMode(ScreenId id, uint32_t modeId) override;
 
     void SetScreenRefreshRate(ScreenId id, int32_t sceneId, int32_t rate) override;
 

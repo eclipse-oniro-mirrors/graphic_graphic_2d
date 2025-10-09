@@ -748,11 +748,24 @@ public:
     void SetFrameGravityNewVersionEnabled(bool isEnabled);
     bool GetFrameGravityNewVersionEnabled() const;
 
+    void SetSurfaceBufferOpaque(bool isOpaque);
+    bool GetSurfaceBufferOpaque() const;
+
     void SetUseDeviceOffline(bool useDeviceOffline)
     {
 #ifndef ROSEN_CROSS_PLATFORM
         layerInfo_.useDeviceOffline = useDeviceOffline;
 #endif
+    }
+
+    inline void UpdateLastCacheSize()
+    {
+        lastCacheSize_ = GetCacheSize();
+    }
+
+    inline Vector2f GetLastCacheSize() const
+    {
+        return lastCacheSize_;
     }
 
 private:
@@ -833,6 +846,7 @@ private:
     bool isSubSurfaceNode_ = false;
     bool isGlobalPositionEnabled_ = false;
     Gravity uiFirstFrameGravity_ = Gravity::TOP_LEFT;
+    Vector2f lastCacheSize_ = {0.f, 0.f};
     bool isNodeToBeCaptured_ = false;
     RSSpecialLayerManager specialLayerManager_;
     std::set<NodeId> privacyContentLayerIds_ = {};
@@ -889,6 +903,7 @@ private:
 
     bool isBufferFlushed_ = false;
     bool isFrameGravityNewVersionEnabled_ = false;
+    bool isSurfaceBufferOpaque_ = false;
 };
 } // namespace OHOS::Rosen
 #endif // RENDER_SERVICE_BASE_PARAMS_RS_SURFACE_RENDER_PARAMS_H

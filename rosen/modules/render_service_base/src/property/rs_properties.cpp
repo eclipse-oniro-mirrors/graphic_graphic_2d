@@ -30,6 +30,8 @@
 #include "drawable/rs_property_drawable_utils.h"
 #include "effect/rs_render_filter_base.h"
 #include "effect/rs_render_shader_base.h"
+#include "effect/rs_render_mask_base.h"
+#include "effect/runtime_blender_builder.h"
 #include "pipeline/rs_canvas_render_node.h"
 #include "pipeline/rs_context.h"
 #include "pipeline/rs_screen_render_node.h"
@@ -47,6 +49,7 @@
 #include "render/rs_foreground_effect_filter.h"
 #include "render/rs_hdr_ui_brightness_filter.h"
 #include "render/rs_material_filter.h"
+#include "render/rs_particles_drawable.h"
 #include "render/rs_render_aibar_filter.h"
 #include "render/rs_render_always_snapshot_filter.h"
 #include "render/rs_render_filter_base.h"
@@ -3211,7 +3214,7 @@ void RSProperties::ComposeNGRenderFilter(
         originDrawingFilter->SetFilterType(RSFilter::COMPOUND_EFFECT);
         if (filter->ContainsType(RSNGEffectType::CONTENT_LIGHT)) {
             Vector3f rotationAngle(boundsGeo_->GetRotationX(), boundsGeo_->GetRotationY(), boundsGeo_->GetRotation());
-            RSUIFilterHelper::SetRotationAngle(filter, rotationAngle);
+            RSNGRenderFilterHelper::SetRotationAngle(filter, rotationAngle);
         }
     }
     originFilter = originDrawingFilter;
@@ -3298,6 +3301,33 @@ void RSProperties::SetNeedDrawBehindWindow(bool needDrawBehindWindow)
 {
     needDrawBehindWindow_ = needDrawBehindWindow;
     UpdateFilter();
+}
+
+void RSProperties::SetUseUnion(bool useUnion)
+{
+    useUnion_ = useUnion;
+    if (GetUseUnion()) {
+        isDrawn_ = true;
+    }
+    SetDirty();
+}
+
+bool RSProperties::GetUseUnion() const
+{
+    return useUnion_;
+}
+
+void RSProperties::SetUnionSpacing(float spacing)
+{
+    unionSpacing_ = spacing;
+    geoDirty_ = true;
+    contentDirty_ = true;
+    SetDirty();
+}
+
+float RSProperties::GetUnionSpacing() const
+{
+    return unionSpacing_;
 }
 
 void RSProperties::SetUseShadowBatching(bool useShadowBatching)
@@ -4313,6 +4343,25 @@ std::string RSProperties::Dump() const
         dumpInfo.append(buffer);
     }
 
+    // UseUnion
+    if (GetUseUnion()) {
+        dumpInfo.append(", UseUnion[true]");
+    }
+    // UnionSpacing
+    ret = memset_s(buffer, UINT8_MAX, 0, UINT8_MAX);
+    if (ret != EOK) {
+        return "Failed to memset_s for UnionSpacing, ret=" + std::to_string(ret);
+    }
+    float spacing = GetUnionSpacing();
+    if (!ROSEN_EQ(spacing, 0.f) &&
+        sprintf_s(buffer, UINT8_MAX, ", UnionSpacing[%.2f]", spacing) != -1) {
+        dumpInfo.append(buffer);
+    }
+    // SDFMask
+    auto sdfMask = GetSDFMask();
+    if (sdfMask) {
+        dumpInfo.append(", SDFMask[" + sdfMask->Dump() + "]");
+    }
     return dumpInfo;
 }
 
@@ -4401,6 +4450,7 @@ void RSProperties::OnApplyModifiers()
     }
     if (pixelStretchNeedUpdate_ || geoDirty_) {
         CalculatePixelStretch();
+        filterNeedUpdate_ = true;
     }
 
     if (bgShaderNeedUpdate_) {
@@ -4443,12 +4493,13 @@ void RSProperties::UpdateFilter()
                   GetShadowColorStrategy() != SHADOW_COLOR_STRATEGY::COLOR_STRATEGY_NONE ||
                   foregroundFilter_ != nullptr || IsFgBrightnessValid() || IsBgBrightnessValid() ||
                   foregroundFilterCache_ != nullptr || IsWaterRippleValid() || needDrawBehindWindow_ || mask_ ||
-                  colorFilter_ != nullptr || localMagnificationCap_;
+                  colorFilter_ != nullptr || localMagnificationCap_ || pixelStretch_.has_value();
 
     needHwcFilter_ = backgroundFilter_ != nullptr || filter_ != nullptr || IsLightUpEffectValid() ||
                      IsDynamicLightUpValid() || linearGradientBlurPara_ != nullptr ||
                      IsDynamicDimValid() || IsFgBrightnessValid() || IsBgBrightnessValid() || IsWaterRippleValid() ||
-                     needDrawBehindWindow_ || colorFilter_ != nullptr || localMagnificationCap_;
+                     needDrawBehindWindow_ || colorFilter_ != nullptr || localMagnificationCap_ ||
+                     pixelStretch_.has_value();
 #ifdef SUBTREE_PARALLEL_ENABLE
     // needForceSubmit_ is used to determine whether the subtree needs to read/scale pixels
     needForceSubmit_ = IsFilterNeedForceSubmit(filter_) ||
@@ -4468,7 +4519,8 @@ bool RSProperties::DisableHWCForFilter() const
         (foregroundFilter_ != nullptr && foregroundFilter_->GetFilterType() != RSFilter::HDR_UI_BRIGHTNESS) ||
         IsFgBrightnessValid() || IsBgBrightnessValid() ||
         (foregroundFilterCache_ != nullptr && foregroundFilterCache_->GetFilterType() != RSFilter::HDR_UI_BRIGHTNESS) ||
-        IsWaterRippleValid() || needDrawBehindWindow_ || mask_ || colorFilter_ != nullptr || localMagnificationCap_;
+        IsWaterRippleValid() || needDrawBehindWindow_ || mask_ || colorFilter_ != nullptr || localMagnificationCap_ ||
+        pixelStretch_.has_value();
 }
 
 void RSProperties::UpdateForegroundFilter()
@@ -4678,6 +4730,19 @@ void RSProperties::SetForegroundShader(const std::shared_ptr<RSNGRenderShaderBas
 std::shared_ptr<RSNGRenderShaderBase> RSProperties::GetForegroundShader() const
 {
     return fgRenderShader_;
+}
+
+void RSProperties::SetSDFMask(const std::shared_ptr<RSNGRenderMaskBase>& mask)
+{
+    renderSDFMask_ = mask;
+    isDrawn_ = true;
+    SetDirty();
+    contentDirty_ = true;
+}
+
+std::shared_ptr<RSNGRenderMaskBase> RSProperties::GetSDFMask() const
+{
+    return renderSDFMask_;
 }
 
 } // namespace Rosen

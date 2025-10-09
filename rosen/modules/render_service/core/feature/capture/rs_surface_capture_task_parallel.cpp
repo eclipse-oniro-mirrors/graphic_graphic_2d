@@ -356,6 +356,8 @@ bool RSSurfaceCaptureTaskParallel::DrawHDRSurfaceContent(
     if (rect.GetWidth() > 0 && rect.GetHeight() > 0) {
         canvas.ClipRect({0, 0, rect.GetWidth(), rect.GetHeight()});
         canvas.Translate(0 - rect.GetLeft(), 0 - rect.GetTop());
+    } else {
+        canvas.Translate(-boundsX_, -boundsY_);
     }
     canvas.SetDisableFilterCache(true);
     RSSurfaceRenderParams* curNodeParams = nullptr;
@@ -494,15 +496,11 @@ std::unique_ptr<Media::PixelMap> RSSurfaceCaptureTaskParallel::CreatePixelMapByD
     screenCorrection_ = screenManager->GetScreenCorrection(screenId);
     screenRotation_ = node->GetScreenRotation();
     finalRotationAngle_ = CalPixelMapRotation();
+    uint32_t pixmapWidth = node->GetFixedWidth();
+    uint32_t pixmapHeight = node->GetFixedHeight();
     auto bounds = node->GetRenderProperties().GetBoundsGeometry();
-    uint32_t pixmapWidth = static_cast<uint32_t>(bounds->GetWidth());
-    uint32_t pixmapHeight = static_cast<uint32_t>(bounds->GetHeight());
     boundsX_ = bounds->GetX();
     boundsY_ = bounds->GetY();
-    auto rotation = node->GetRotation();
-    if (rotation == ScreenRotation::ROTATION_90 || rotation == ScreenRotation::ROTATION_270) {
-        std::swap(pixmapWidth, pixmapHeight);
-    }
 
     const Drawing::Rect& rect = captureConfig_.mainScreenRect;
     float rectWidth = rect.GetWidth();
@@ -747,6 +745,11 @@ std::function<void()> RSSurfaceCaptureTaskParallel::CreateSurfaceSyncCopyTaskWit
             HDI::Display::Graphic::Common::V1_0::CM_HDR_Metadata_Type::CM_IMAGE_HDR_VIVID_DUAL);
         if (ret != GSERROR_OK) {
             RS_LOGE("RSSurfaceCaptureTaskParallel: Set SDR metadata error with: %{public}d", ret);
+            callback->OnSurfaceCapture(id, captureConfig, nullptr, nullptr);
+            RSUniRenderUtil::ClearNodeCacheSurface(
+                std::move(std::get<0>(*wrapperSf)), nullptr, UNI_MAIN_THREAD_INDEX, 0);
+            RSUniRenderUtil::ClearNodeCacheSurface(
+                std::move(std::get<1>(*wrapperSf)), nullptr, UNI_MAIN_THREAD_INDEX, 0);
             return;
         }
         ret = RSHdrUtil::SetMetadata(reinterpret_cast<SurfaceBuffer*>(pixelmapHDR->GetFd()),
@@ -754,6 +757,11 @@ std::function<void()> RSSurfaceCaptureTaskParallel::CreateSurfaceSyncCopyTaskWit
             HDI::Display::Graphic::Common::V1_0::CM_HDR_Metadata_Type::CM_IMAGE_HDR_VIVID_SINGLE);
         if (ret != GSERROR_OK) {
             RS_LOGE("RSSurfaceCaptureTaskParallel: Set HDR metadata error with: %{public}d", ret);
+            callback->OnSurfaceCapture(id, captureConfig, nullptr, nullptr);
+            RSUniRenderUtil::ClearNodeCacheSurface(
+                std::move(std::get<0>(*wrapperSf)), nullptr, UNI_MAIN_THREAD_INDEX, 0);
+            RSUniRenderUtil::ClearNodeCacheSurface(
+                std::move(std::get<1>(*wrapperSf)), nullptr, UNI_MAIN_THREAD_INDEX, 0);
             return;
         }
 #endif
@@ -843,10 +851,10 @@ void RSSurfaceCaptureTaskParallel::CaptureDisplayNode(DrawableV2::RSRenderNodeDr
     auto& uniParams = RSUniRenderThread::Instance().GetRSRenderThreadParams();
     if (uniParams) {
         secExemption = uniParams->GetSecExemption();
-        uniParams->SetSecExemption(captureParam.ignoreSpecialLayer || secExemption);
+        uniParams->SetSecExemption(captureParam.needCaptureSpecialLayer || secExemption);
     }
     CaptureParam param(true, false, false);
-    param.ignoreSpecialLayer_ = captureParam.ignoreSpecialLayer;
+    param.needCaptureSpecialLayer_ = captureParam.needCaptureSpecialLayer;
     RSUniRenderThread::SetCaptureParam(param);
     canvas.SetScreenshotType(type);
     // Screenshot blacklist, exclude surfaceNode in blacklist while capturing displaynode
