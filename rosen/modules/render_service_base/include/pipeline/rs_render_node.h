@@ -1210,7 +1210,11 @@ private:
     std::unordered_set<NodeId> visibleEffectChild_;
     Drawing::Matrix oldMatrix_;
     Drawing::Matrix oldAbsMatrix_;
-    RSDrawable::Vec drawableVec_;
+#ifdef RS_ENABLE_MEMORY_DOWNTREE
+    mutable std::unique_ptr<RSDrawable::Vec> drawableVec_;
+#else
+    mutable RSDrawable::Vec drawableVec_;
+#endif
     RSAnimationManager animationManager_;
     RSOpincCache opincCache_;
     std::unordered_set<NodeId> subtreeParallelNodes_;
@@ -1283,6 +1287,19 @@ private:
 
     void ResetAndApplyModifiers();
 
+    void InitRenderDrawableAndDrawableVec();
+
+    bool IsNodeMemClearEnable()
+    {
+#ifdef NOT_BUILDFOR_OHOS_SDK
+        return RSSystemProperties::GetNodeMemClearEnable() && GetType() == RSRenderNodeType::CANVAS_NODE
+        && RSProperties::IS_UNI_RENDER && !isTextureExportNode_;
+#else
+        return false;
+#endif
+    }
+
+    RSDrawable::Vec& GetDrawableVec(const char*) const;
     friend class DrawFuncOpItem;
     friend class RSContext;
     friend class RSMainThread;
