@@ -237,6 +237,7 @@ enum class IlluminatedType : uint32_t {
     BLEND_CONTENT,
     BLEND_BORDER_CONTENT,
     FEATHERING_BORDER,
+    NORMAL_BORDER_CONTENT
 };
 
 class RSLightSource final {
