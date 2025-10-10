@@ -40,9 +40,9 @@ public:
     std::shared_ptr<FontCollection> FindSharedFontColleciton(void* key);
     bool RemoveSharedFontColleciton(void* key);
 
-    bool InsertHapPath(std::string bundle, std::string module, std::string path);
-    void DestoryHapPath(std::string bundle, std::string module);
-    std::string GetHapPath(std::string bundle, std::string module);
+    bool InsertHapPath(const std::string& bundle, const std::string& module, const std::string& path);
+    void DestoryHapPath(const std::string& bundle, const std::string& module);
+    std::string GetHapPath(const std::string& bundle, const std::string& module);
 
 private:
     FontCollectionMgr() = default;

@@ -97,7 +97,7 @@ uint64_t FontCollectionMgr::GetEnvByFontCollection(const FontCollection* fontCol
     return 0;
 }
 
-bool FontCollectionMgr::InsertHapPath(std::string bundle, std::string module, std::string path)
+bool FontCollectionMgr::InsertHapPath(const std::string& bundle, const std::string& module, const std::string& path)
 {
     bool invalidCheck = bundle.empty() || module.empty() || path.empty();
     if (invalidCheck) {
@@ -108,7 +108,7 @@ bool FontCollectionMgr::InsertHapPath(std::string bundle, std::string module, st
     return true;
 }
 
-void FontCollectionMgr::DestoryHapPath(std::string bundle, std::string module)
+void FontCollectionMgr::DestoryHapPath(const std::string& bundle, const std::string& module)
 {
     std::unique_lock<std::shared_mutex> lock(mutex_);
     auto bundleIter = hapPaths_.find(bundle);
@@ -127,7 +127,7 @@ void FontCollectionMgr::DestoryHapPath(std::string bundle, std::string module)
     }
 }
 
-std::string FontCollectionMgr::GetHapPath(std::string bundle, std::string module)
+std::string FontCollectionMgr::GetHapPath(const std::string& bundle, const std::string& module)
 {
     std::shared_lock<std::shared_mutex> lock(mutex_);
     auto bundleIter = hapPaths_.find(bundle);
