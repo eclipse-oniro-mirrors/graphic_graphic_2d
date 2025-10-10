@@ -283,7 +283,7 @@ void RSCanvasDrawingRenderNode::SetNeedProcess(bool needProcess)
 bool RSCanvasDrawingRenderNode::ResetSurface(int width, int height, RSPaintFilterCanvas& canvas)
 {
     {
-        std::lock_guard<std::mutex> lock(drawCmdListMutex_);
+        std::lock_guard<std::mutex> lock(drawCmdListsMutex_);
         outOfLimitCmdList_.clear();
         cachedOpCount_ = 0;
     }
@@ -512,7 +512,7 @@ void RSCanvasDrawingRenderNode::InitRenderParams()
 #endif
 }
 
-void RSCanvasDrawingRenderNode::ApplyModifiers()
+CM_INLINE void RSCanvasDrawingRenderNode::ApplyModifiers()
 {
     if (cachedOpCount_ > 0 && !dirtyTypesNG_.test(static_cast<size_t>(ModifierNG::RSModifierType::CONTENT_STYLE))) {
         dirtyTypesNG_.set(static_cast<int>(ModifierNG::RSModifierType::CONTENT_STYLE), true);
@@ -663,7 +663,7 @@ void RSCanvasDrawingRenderNode::ClearOp()
 void RSCanvasDrawingRenderNode::ResetSurface(int width, int height)
 {
     {
-        std::lock_guard<std::mutex> lock(drawCmdListMutex_);
+        std::lock_guard<std::mutex> lock(drawCmdListsMutex_);
         outOfLimitCmdList_.clear();
         cachedOpCount_ = 0;
     }

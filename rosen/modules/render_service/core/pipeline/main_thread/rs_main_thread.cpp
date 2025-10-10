@@ -444,7 +444,7 @@ void RSMainThread::TraverseCanvasDrawingNodes()
         });
     if (hasCachedOp) {
         hasCanvasDrawingNodeCachedOp_ = true;
-        RequestNextVsync();
+        RequestNextVSync();
     }
 }
 
