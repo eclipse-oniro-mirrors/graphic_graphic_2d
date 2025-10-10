@@ -159,14 +159,14 @@ bool RSImageDetailEnhancerThread::IsTypeSupport(const std::shared_ptr<Media::Pix
 }
 
 std::shared_ptr<Drawing::Image> RSImageDetailEnhancerThread::ScaleByAAE(sptr<SurfaceBuffer>& dstSurfaceBuffer,
-    const std::shared_ptr<Drawing::Image>& srcImage, std::shared_ptr<Drawing::Canvas>& newCanvas)
+    const std::shared_ptr<Drawing::Image>& srcImage)
 {
-    if (newCanvas == nullptr || dstSurfaceBuffer == nullptr) {
+    if (dstSurfaceBuffer == nullptr) {
         RS_LOGE("RSImageDetailEnhancerThread ScaleByAAE failed, input is invalid!");
         return nullptr;
     }
     std::shared_ptr<Drawing::Image> dstImage = DetailEnhancerUtils::Instance().MakeImageFromSurfaceBuffer(
-        newCanvas, dstSurfaceBuffer, srcImage);
+        dstSurfaceBuffer, srcImage);
     if (srcImage && dstImage) {
         Drawing::RectI srcRect = Drawing::RectI(0, 0, srcImage->GetWidth(), srcImage->GetHeight());
         Drawing::RectI dstRect = Drawing::RectI(0, 0, dstSurfaceBuffer->GetWidth(), dstSurfaceBuffer->GetHeight());
@@ -186,9 +186,15 @@ std::shared_ptr<Drawing::Image> RSImageDetailEnhancerThread::ScaleByAAE(sptr<Sur
 }
 
 std::shared_ptr<Drawing::Image> RSImageDetailEnhancerThread::ScaleByHDSampler(int dstWidth, int dstHeight,
-    std::shared_ptr<Drawing::Surface>& newSurface, std::shared_ptr<Drawing::Canvas>& newCanvas,
-    const std::shared_ptr<Drawing::Image>& srcImage)
+    sptr<SurfaceBuffer>& dstSurfaceBuffer, const std::shared_ptr<Drawing::Image>& srcImage)
 {
+    std::shared_ptr<Drawing::Surface> newSurface =
+        DetailEnhancerUtils::Instance().InitSurface(dstWidth, dstHeight, dstSurfaceBuffer, srcImage);
+    if (newSurface == nullptr) {
+        RS_LOGE("RSImageDetailEnhancerThread ScaleByHDSampler create newSurface failed!");
+        return nullptr;
+    }
+    auto newCanvas = newSurface->GetCanvas();
     if (newCanvas == nullptr) {
         RS_LOGE("RSImageDetailEnhancerThread ScaleByHDSampler failed, newCanvas is invalid!");
         return nullptr;
@@ -235,6 +241,10 @@ void RSImageDetailEnhancerThread::ExecuteTaskAsync(int dstWidth, int dstHeight,
     const std::shared_ptr<Drawing::Image>& image, uint64_t nodeId, uint64_t imageId)
 {
     RS_TRACE_NAME_FMT("RSImageDetailEnhancerThread::ExecuteTaskAsync");
+    if (image == nullptr) {
+        RS_LOGE("RSImageDetailEnhancerThread ExecuteTaskAsync image is nullptr!");
+        return;
+    }
     sptr<SurfaceBuffer> dstSurfaceBuffer = DetailEnhancerUtils::Instance().CreateSurfaceBuffer(dstWidth, dstHeight);
     if (dstSurfaceBuffer == nullptr) {
         RS_LOGE("RSImageDetailEnhancerThread ExecuteTaskAsync create dstSurfaceBuffer failed!");
@@ -243,21 +253,14 @@ void RSImageDetailEnhancerThread::ExecuteTaskAsync(int dstWidth, int dstHeight,
     if (!DetailEnhancerUtils::Instance().SetMemoryName(dstSurfaceBuffer)) {
         return;
     }
-    std::shared_ptr<Drawing::Surface> newSurface =
-        DetailEnhancerUtils::Instance().InitSurface(dstWidth, dstHeight, dstSurfaceBuffer, image);
-    if (newSurface == nullptr) {
-        RS_LOGE("RSImageDetailEnhancerThread ExecuteTaskAsync create newSurface failed!");
-        return;
-    }
-    auto newCanvas = newSurface->GetCanvas();
     std::shared_ptr<Drawing::Image> dstImage = nullptr;
     int srcWidth = image->GetWidth();
     int srcHeight = image->GetHeight();
     if (srcWidth < dstWidth && srcHeight < dstHeight) {
-        dstImage = ScaleByAAE(dstSurfaceBuffer, image, newCanvas);
+        dstImage = ScaleByAAE(dstSurfaceBuffer, image);
     }
     if (dstImage == nullptr) {
-        dstImage = ScaleByHDSampler(dstWidth, dstHeight, newSurface, newCanvas, image);
+        dstImage = ScaleByHDSampler(dstWidth, dstHeight, dstSurfaceBuffer, image);
     }
     if (dstImage != nullptr) {
         SetOutImage(imageId, dstImage);
@@ -393,15 +396,16 @@ std::shared_ptr<Drawing::Surface> DetailEnhancerUtils::InitSurface(int dstWidth,
 }
 
 std::shared_ptr<Drawing::Image> DetailEnhancerUtils::MakeImageFromSurfaceBuffer(
-    std::shared_ptr<Drawing::Canvas>& canvas, sptr<SurfaceBuffer>& surfaceBuffer,
-    const std::shared_ptr<Drawing::Image>& image)
+    sptr<SurfaceBuffer>& surfaceBuffer, const std::shared_ptr<Drawing::Image>& image)
 {
     if (RSSystemProperties::GetGpuApiType() != GpuApiType::VULKAN &&
         RSSystemProperties::GetGpuApiType() != GpuApiType::DDGR) {
         RS_LOGE("DetailEnhancerUtils MakeImageFromSurfaceBuffer failed, GpuApiType is not support!");
         return nullptr;
     }
-    if (!canvas || !surfaceBuffer || !image || !(canvas->GetGPUContext())) {
+    auto drawingContext = RsVulkanContext::GetSingleton().CreateDrawingContext();
+    std::shared_ptr<Drawing::GPUContext> gpuContext(drawingContext);
+    if (!surfaceBuffer || !image || !gpuContext) {
         RS_LOGE("DetailEnhancerUtils MakeImageFromSurfaceBuffer failed, input is invalid!");
         return nullptr;
     }
@@ -432,7 +436,7 @@ std::shared_ptr<Drawing::Image> DetailEnhancerUtils::MakeImageFromSurfaceBuffer(
     Drawing::TextureOrigin origin = Drawing::TextureOrigin::TOP_LEFT;
     image->GetBackendTexture(false, &origin);
     Drawing::BitmapFormat bitmapFormat = {GetColorTypeWithVKFormat(vkTextureInfo->format), image->GetAlphaType()};
-    if (!dmaImage->BuildFromTexture(*canvas->GetGPUContext(), backendTexture.GetTextureInfo(), origin,
+    if (!dmaImage->BuildFromTexture(*gpuContext, backendTexture.GetTextureInfo(), origin,
         bitmapFormat, nullptr, NativeBufferUtils::DeleteVkImage, cleanUpHelper->Ref())) {
         RS_LOGE("DetailEnhancerUtils MakeImageFromSurfaceBuffer build image failed!");
         NativeBufferUtils::DeleteVkImage(cleanUpHelper);
