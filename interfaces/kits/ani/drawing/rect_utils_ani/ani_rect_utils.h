@@ -13,34 +13,24 @@
  * limitations under the License.
  */
 
-#ifndef OHOS_ROSEN_ANI_MATRIX_H
-#define OHOS_ROSEN_ANI_MATRIX_H
+#ifndef OHOS_ROSEN_ANI_RECT_UTILS_H
+#define OHOS_ROSEN_ANI_RECT_UTILS_H
 
 #include "ani_drawing_utils.h"
-#include "utils/matrix.h"
 
 namespace OHOS::Rosen {
 namespace Drawing {
-class AniMatrix final {
+class AniRectUtils final {
 public:
-    AniMatrix() = default;
-    explicit AniMatrix(const Matrix& matrix) : matrix_(matrix) {}
-    ~AniMatrix() = default;
+    AniRectUtils() = default;
+    ~AniRectUtils() = default;
 
     static ani_status AniInit(ani_env *env);
 
-    static void Constructor(ani_env* env, ani_object obj);
-    static void ConstructorWithMatrix(ani_env* env, ani_object obj, ani_object aniMatrixObj);
-    static void SetTranslation(ani_env* env, ani_object obj, ani_double dx, ani_double dy);
-    static ani_double GetValue(ani_env* env, ani_object obj, ani_int index);
-    static void Reset(ani_env* env, ani_object obj);
-    static void preConcat(ani_env* env, ani_object obj, ani_object aniMatrixObj);
-
-    Matrix& GetMatrix();
-
-private:
-    Matrix matrix_;
+    static ani_boolean Contains(ani_env* env, ani_object obj, ani_object aniRectObj, ani_object aniOtherRect);
+    static void Inset(ani_env* env, ani_object obj, ani_object aniRectObj,
+        ani_double left, ani_double top, ani_double right, ani_double bottom);
 };
 } // namespace Drawing
 } // namespace OHOS::Rosen
-#endif // OHOS_ROSEN_ANI_MATRIX_H
+#endif // OHOS_ROSEN_ANI_RECT_UTILS_H
