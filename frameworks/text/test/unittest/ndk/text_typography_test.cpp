@@ -5505,7 +5505,7 @@ bool CheckEllipsisRunIndex(skia::textlayout::ParagraphImpl* paragraph, size_t ru
 
 /*
  * @tc.name: OH_Drawing_TypographySplitRunsEllipsisTest001
- * @tc.desc: test for after split runs paragraph's ellipsis
+ * @tc.desc: test for thai language triggering ellipsis and split runs scenarios
  * @tc.type: FUNC
  */
 HWTEST_F(NdkTypographyTest, OH_Drawing_TypographySplitRunsEllipsisTest001, TestSize.Level0)
@@ -5525,7 +5525,7 @@ HWTEST_F(NdkTypographyTest, OH_Drawing_TypographySplitRunsEllipsisTest001, TestS
 
 /*
  * @tc.name: OH_Drawing_TypographySplitRunsEllipsisTest002
- * @tc.desc: test for after split runs paragraph's ellipsis
+ * @tc.desc: test for thai language triggering ellipsis and split runs scenarios but layout width is 64
  * @tc.type: FUNC
  */
 HWTEST_F(NdkTypographyTest, OH_Drawing_TypographySplitRunsEllipsisTest002, TestSize.Level0)
@@ -5546,7 +5546,7 @@ HWTEST_F(NdkTypographyTest, OH_Drawing_TypographySplitRunsEllipsisTest002, TestS
 
 /*
  * @tc.name: OH_Drawing_TypographySplitRunsEllipsisTest003
- * @tc.desc: test for after split runs paragraph's ellipsis
+ * @tc.desc: test for uyghur language triggering ellipsis and split runs scenarios
  * @tc.type: FUNC
  */
 HWTEST_F(NdkTypographyTest, OH_Drawing_TypographySplitRunsEllipsisTest003, TestSize.Level0)
@@ -5568,7 +5568,7 @@ HWTEST_F(NdkTypographyTest, OH_Drawing_TypographySplitRunsEllipsisTest003, TestS
 
 /*
  * @tc.name: OH_Drawing_TypographySplitRunsEllipsisTest004
- * @tc.desc: test for after split runs paragraph's ellipsis
+ * @tc.desc: test for chinese language triggering ellipsis and split runs scenarios
  * @tc.type: FUNC
  */
 HWTEST_F(NdkTypographyTest, OH_Drawing_TypographySplitRunsEllipsisTest004, TestSize.Level0)
