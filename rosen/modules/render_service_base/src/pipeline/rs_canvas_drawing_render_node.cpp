@@ -572,13 +572,72 @@ void RSCanvasDrawingRenderNode::AddDirtyType(ModifierNG::RSModifierType modifier
 
 void RSCanvasDrawingRenderNode::ApplyCachedCmdList(size_t& opCount)
 {
-
+    while (!outOfLimitCmdList_.empty() && opCount < OP_COUNT_LIMIT_PER_FRAME) {
+        auto drawCmdList = outOfLimitCmdList_.front();
+        auto opItemSize = drawCmdList->GetOpItemSize();
+        auto lastOpCount = opCount;
+        opCount += opItemSize;
+        if (opCount > OP_COUNT_LIMIT_PER_FRAME) {
+            outOfLimitCmdList_.pop_front();
+            SplitDrawCmdList(OP_COUNT_LIMIT_PER_FRAME - lastOpCount, drawCmdList, false);
+            break;
+        }
+        drawCmdListsNG_[ModifierNG::RSModifierType::CONTENT_STYLE].emplace_back(drawCmdList);
+        cachedOpCount_ -= opItemSize;
+        opCountAfterReset_ += opItemSize;
+        outOfLimitCmdList_.pop_front();
+    }
 }
 
 void RSCanvasDrawingRenderNode::SplitDrawCmdList(
     size_t firstOpCount, Drawing::DrawCmdListPtr drawCmdList, bool splitOrigin)
 {
-
+    if (splitOrigin && cachedOpCount_ > OP_COUNT_LIMIT_FOR_CACHE) {
+        RS_LOGE("RSCanvasDrawingRenderNode::SplitDrawCmdList: OP count(%{public}zu) out of limit", cachedOpCount_);
+        return;
+    }
+    auto firstCmdList = std::make_shared<Drawing::DrawCmdList>(
+        drawCmdList->GetWidth(), drawCmdList->GetHeight(), Drawing::DrawCmdList::UnmarshalMode::DEFERRED);
+    Drawing::DrawCmdListPtr cmdList = nullptr;
+    auto drawOpItems = drawCmdList->GetDrawOpItems();
+    auto opCount = drawOpItems.size();
+    size_t splitCount = 0;
+    for (size_t index = 0; index < opCount; index++) {
+        if (index < firstOpCount) {
+            firstCmdList->AddDrawOp(std::move(drawOpItems[index]));
+            continue;
+        }
+        if (cmdList == nullptr) {
+            cmdList = std::make_shared<Drawing::DrawCmdList>(
+                drawCmdList->GetWidth(), drawCmdList->GetHeight(), Drawing::DrawCmdList::UnmarshalMode::DEFERRED);
+        }
+        cmdList->AddDrawOp(std::move(drawOpItems[index]));
+        if (((index - firstOpCount) % OP_COUNT_LIMIT_PER_FRAME == OP_COUNT_LIMIT_PER_FRAME - 1) ||
+            index == opCount - 1) {
+            if (splitOrigin) {
+                outOfLimitCmdList_.emplace_back(cmdList);
+                cachedOpCount_ += cmdList->GetOpItemSize();
+            } else {
+                auto it = outOfLimitCmdList_.begin();
+                std::advance(it, splitCount);
+                outOfLimitCmdList_.insert(it, cmdList);
+                splitCount++;
+            }
+            cmdList = nullptr;
+            if (splitOrigin && cachedOpCount_ > OP_COUNT_LIMIT_FOR_CACHE) {
+                RS_LOGE(
+                    "RSCanvasDrawingRenderNode::SplitDrawCmdList: OP count(%{public}zu) out of limit", cachedOpCount_);
+                break;
+            }
+        }
+    }
+    if (!firstCmdList->IsEmpty()) {
+        if (!splitOrigin) {
+            cachedOpCount_ -= firstCmdList->GetOpItemSize();
+        }
+        drawCmdListsNG_[ModifierNG::RSModifierType::CONTENT_STYLE].emplace_back(firstCmdList);
+        opCountAfterReset_ += firstCmdList->GetOpItemSize();
+    }
 }
 
 void RSCanvasDrawingRenderNode::ReportOpCount(const std::list<Drawing::DrawCmdListPtr>& cmdLists) const
