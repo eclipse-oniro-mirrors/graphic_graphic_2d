@@ -36,6 +36,7 @@ constexpr size_t MAX_ARRAY_SIZE = 5000;
 constexpr size_t FONTENDING_SIZE = 3;
 constexpr size_t FONTHINTING_SIZE = 4;
 constexpr size_t TEXTENCODING_SIZE = 4;
+constexpr size_t MAX_GLYPH_COUNT = 500;
 } // namespace
 
 namespace Drawing {
