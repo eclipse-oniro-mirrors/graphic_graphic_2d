@@ -1023,7 +1023,6 @@ struct CommonEffectParams {
     bool needFilter_ = false;
     bool needHwcFilter_ = false;
     bool needForceSubmit_ = false;
-    bool useEffect_ = false;
     bool hasHarmonium_ = false;
     bool useUnion_ = false;
     bool alphaOffscreen_ = false;
