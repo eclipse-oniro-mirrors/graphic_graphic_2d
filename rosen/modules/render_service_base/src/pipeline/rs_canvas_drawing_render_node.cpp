@@ -547,7 +547,7 @@ void RSCanvasDrawingRenderNode::AddDirtyType(ModifierNG::RSModifierType modifier
     for (const auto& modifier : contentModifiers) {
         auto drawCmdList = modifier->Getter<Drawing::DrawCmdListPtr>(
             ModifierNG::ModifierTypeConvertor::GetPropertyType(modifierType), nullptr);
-        if (drawCmdList == nullptr || drawCmdList->IsEmpty()) {
+        if (drawCmdList == nullptr) {
             continue;
         }
         auto opItemSize = drawCmdList->GetOpItemSize();
