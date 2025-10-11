@@ -1707,5 +1707,11 @@ bool RSSystemProperties::GetMemoryWatermarkEnabled()
     }
     return true;
 }
+
+bool RSSystemProperties::GetClipRRectOptimizationEnabled()
+{
+    static bool enable = system::GetIntParameter("persist.sys.graphic.clipRRectOptimizationEnabled", 0) != 0;
+    return enable;
+}
 } // namespace Rosen
 } // namespace OHOS

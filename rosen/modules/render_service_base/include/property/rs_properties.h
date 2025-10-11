@@ -147,6 +147,12 @@ public:
 
     void SetCornerRadius(const Vector4f& cornerRadius);
     const Vector4f& GetCornerRadius() const;
+    void SetCornerApplyType(int type);
+    int GetCornerApplyType() const
+    {
+        return cornerApplyType_;
+    }
+    bool NeedCornerOptimization() const;
 
     void SetQuaternion(Quaternion quaternion);
     void SetRotation(float degree);
@@ -1050,6 +1056,7 @@ struct CommonEffectParams {
     RRect rrect_ = RRect{};
     RSObjGeometry frameGeo_;
     std::optional<Vector4f> cornerRadius_;
+    int cornerApplyType_ = 0;
 
     std::optional<Decoration> decoration_;
     std::optional<Matrix3f> sublayerTransform_;
