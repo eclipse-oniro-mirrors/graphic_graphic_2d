@@ -476,6 +476,22 @@ const Vector4f& RSProperties::GetCornerRadius() const
     return cornerRadius_ ? cornerRadius_.value() : Vector4fZero;
 }
 
+void RSProperties::SetCornerApplyType(int type)
+{
+    cornerApplyType_ = std::clamp<int>(type, 0, static_cast<int>(RSCornerApplyType::MAX));
+    isDrawn_ = true;
+    SetDirty();
+    contentDirty_ = true;
+}
+
+bool RSProperties::NeedCornerOptimization() const
+{
+    bool isSameRadius = ROSEN_EQ(GetCornerRadius().x_, GetCornerRadius().y_) &&
+                        ROSEN_EQ(GetCornerRadius().y_, GetCornerRadius().z_) &&
+                        ROSEN_EQ(GetCornerRadius().z_, GetCornerRadius().w_);
+    return isSameRadius && cornerApplyType_ != static_cast<int>(RSCornerApplyType::FAST);
+}
+
 void RSProperties::SetQuaternion(Quaternion quaternion)
 {
     boundsGeo_->SetQuaternion(quaternion);

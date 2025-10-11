@@ -386,6 +386,7 @@ public:
     static bool GetMemoryWatermarkEnabled();
 
     static bool GetBootCompleted();
+    static bool GetClipRRectOptimizationEnabled();
 
 private:
     RSSystemProperties() = default;
