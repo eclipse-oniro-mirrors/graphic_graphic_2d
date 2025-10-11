@@ -1313,7 +1313,7 @@ void RSProperties::SetDistortionK(const std::optional<float>& distortionK)
     GetEffect().distortionK_ = distortionK;
     if (distortionK.has_value()) {
         isDrawn_ = true;
-        GetEffect().distortionEffectDirty_ = ROSEN_GNE(*distortionK_, 0.0f) && ROSEN_LE(*distortionK_, 1.0f);
+        GetEffect().distortionEffectDirty_ = ROSEN_GNE(*distortionK, 0.0f) && ROSEN_LE(*distortionK, 1.0f);
     }
     filterNeedUpdate_ = true;
     SetDirty();
@@ -1582,7 +1582,7 @@ std::string RSProperties::GetFgBrightnessDescription() const
         ", saturation: " + std::to_string(GetFgBrightnessParams()->saturation_) +
         ", fgBrightnessFract: " + std::to_string(GetFgBrightnessParams()->fraction_) +
         ", fgBrightnessHdr: " + std::to_string(GetFgBrightnessParams()->enableHdr_);
-     return description;
+    return description;
 }
 
 std::string RSProperties::GetBgBrightnessDescription() const
@@ -1598,7 +1598,7 @@ std::string RSProperties::GetBgBrightnessDescription() const
         ", saturation: " + std::to_string(GetBgBrightnessParams()->saturation_) +
         ", bgBrightnessFract: " + std::to_string(GetBgBrightnessParams()->fraction_) +
         ", bgBrightnessHdr: " + std::to_string(GetBgBrightnessParams()->enableHdr_);
-     return description;
+    return description;
 }
 
 void RSProperties::SetShadowBlenderParams(const std::optional<RSShadowBlenderPara>& params)
@@ -1633,7 +1633,7 @@ std::string RSProperties::GetShadowBlenderDescription() const
     }
     std::string description =
         "ShadowBlender, cubic: " + std::to_string(GetShadowBlenderParams()->cubic_) +
-        ", quadratic: " + std::to_string(shadowBlenderParamGetShadowBlenderParams()->quadratic_) +
+        ", quadratic: " + std::to_string(GetShadowBlenderParams()->quadratic_) +
         ", linear: " + std::to_string(GetShadowBlenderParams()->linear_) +
         ", constant: " + std::to_string(GetShadowBlenderParams()->constant_);
     return description;
@@ -4717,7 +4717,7 @@ void RSProperties::UpdateFilter()
                        IsFilterNeedForceSubmit(GetBackgroundFilter()) ||
                        IsFilterNeedForceSubmit(GetForegroundFilter()) ||
                        IsFilterNeedForceSubmit(GetForegroundFilterCache()) ||
-                       GetShadowColotStratergy() != SHADOW_COLOR_STRATEGY::COLOR_STRATEGY_NONE;
+                       GetShadowColorStrategy() != SHADOW_COLOR_STRATEGY::COLOR_STRATEGY_NONE;
 #endif
 }
 
@@ -4745,7 +4745,7 @@ void RSProperties::UpdateForegroundFilter()
         if (IS_UNI_RENDER) {
             GetEffect().foregroundFilterCache_ = motionBlurFilter;
         } else {
-        GetEffect().foregroundFilter_ = motionBlurFilter;
+            GetEffect().foregroundFilter_ = motionBlurFilter;
         }
     } else if (IsForegroundEffectRadiusValid()) {
         auto foregroundEffectFilter = std::make_shared<RSForegroundEffectFilter>(GetForegroundEffectRadius());
@@ -4775,11 +4775,11 @@ void RSProperties::UpdateForegroundFilter()
             GetEffect().foregroundFilter_ = colorfulShadowFilter;
         }
     } else if (IsDistortionKValid()) {
-        GetEffect().foregroundFilter_ = std::make_shared<RSDistortionFilter>(*distortionK_);
+        GetEffect().foregroundFilter_ = std::make_shared<RSDistortionFilter>(*GetDistortionK());
     } else if (IsHDRUIBrightnessValid()) {
         CreateHDRUIBrightnessFilter();
     } else if (GetForegroundNGFilter()) {
-        ComposeNGRenderFilter(GetEffect().foregroundFilter_, fgNGRenderFilter_);
+        ComposeNGRenderFilter(GetEffect().foregroundFilter_, GetForegroundNGFilter());
     }
 }
 
@@ -4823,7 +4823,7 @@ void RSProperties::CalculatePixelStretch()
     // parameter check: near zero
     if (abs(GetPixelStretch()->x_) < EPS && abs(GetPixelStretch()->y_) < EPS && abs(GetPixelStretch()->z_) < EPS &&
         abs(GetPixelStretch()->w_) < EPS) {
-        GetEffect().pixelStretch_ std::nullopt;
+        GetEffect().pixelStretch_ = std::nullopt;
         return;
     }
     // parameter check: all >= 0 or all <= 0
@@ -4834,7 +4834,7 @@ void RSProperties::CalculatePixelStretch()
         isDrawn_ = true;
         return;
     }
-    GetEffect().pixelStretch_ std::nullopt;
+    GetEffect().pixelStretch_ = std::nullopt;
 }
 
 bool RSProperties::NeedBlurFuzed()

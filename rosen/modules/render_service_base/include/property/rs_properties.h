@@ -255,7 +255,7 @@ public:
     inline bool GetUseShadowBatching() const
     {
         if (effect_) {
-            return effect->useShadowBatching_;
+            return effect_->useShadowBatching_;
         }
         return false;
     }
@@ -457,7 +457,7 @@ public:
     {
         static const std::shared_ptr<RSFilter> defaultValue = nullptr;
         if (effect_) {
-            return effect->filter_;
+            return effect_->filter_;
         }
         return defaultValue;
     }
@@ -996,7 +996,7 @@ struct CommonEffectParams {
         if (effect_ == nullptr) {
             effect_ = std::make_unique<CommonEffectParams>();
         }
-        reutrn *effect_;
+        return *effect_;
     }
 
     bool isDirty_ = false;
