@@ -474,7 +474,6 @@ static bool ParseHarmoniumEffectMask(napi_env env, napi_value* argv,
 napi_value MaskNapi::CreateHarmoniumEffectMask(napi_env env, napi_callback_info info)
 {
     static const size_t maxArgc = NUM_1;
-    static const size_t minArgc = NUM_1;
     size_t realArgc = maxArgc;
     napi_value result = nullptr;
     napi_get_undefined(env, &result);
@@ -482,7 +481,7 @@ napi_value MaskNapi::CreateHarmoniumEffectMask(napi_env env, napi_callback_info 
     napi_value argv[maxArgc];
     napi_value thisVar = nullptr;
     UIEFFECT_JS_ARGS(env, info, status, realArgc, argv, thisVar);
-    UIEFFECT_NAPI_CHECK_RET_D(status == napi_ok && minArgc <= realArgc && realArgc <= maxArgc, nullptr,
+    UIEFFECT_NAPI_CHECK_RET_D(status == napi_ok && realArgc == maxArgc, nullptr,
         MASK_LOG_E("MaskNapi CreateHarmoniumEffectMask parsing input fail."));
     auto para = std::make_shared<HarmoniumEffectMaskPara>();
     if (!ParseHarmoniumEffectMask(env, argv, realArgc, para)) {
