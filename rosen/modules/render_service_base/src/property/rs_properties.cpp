@@ -5010,6 +5010,7 @@ void RSProperties::SetBackgroundNGShader(const std::shared_ptr<RSNGRenderShaderB
     SetDirty();
     contentDirty_ = true;
     hasHarmonium_ = false;
+    const auto& bgNGRenderShader_ = GetBackgroundNGShader();
     if (bgNGRenderShader_ && bgNGRenderShader_->ContainsType(RSNGEffectType::HARMONIUM_EFFECT)) {
         hasHarmonium_ = true;
     }
