@@ -847,7 +847,8 @@ HWTEST_F(PropertiesTest, GenerateForegroundFilterTest, TestSize.Level1)
 
     std::vector<std::pair<float, float>> fractionStops;
     GradientDirection direction;
-    properties.GetEffect().linearGradientBlurPara_ = std::make_shared<RSLinearGradientBlurPara>(-1.f, fractionStops, direction);
+    properties.GetEffect().linearGradientBlurPara_ =
+        std::make_shared<RSLinearGradientBlurPara>(-1.f, fractionStops, direction);
     properties.GetEffect().linearGradientBlurPara_->blurRadius_ = 1.f;
     properties.GenerateForegroundFilter();
     EXPECT_TRUE(properties.GetEffect().linearGradientBlurPara_);

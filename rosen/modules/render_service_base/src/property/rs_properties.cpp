@@ -3069,8 +3069,8 @@ void RSProperties::GenerateBackgroundMaterialBlurFilter()
             GetBackgroundBlurColorMode(), GetBackgroundBlurMaskColor());
         return;
     }
-    std::shared_ptr<Drawing::ImageFilter> blurColorFilter =
-        Drawing::ImageFilter::CreateColorBlurImageFilter(*colorFilter, GetBackgroundBlurRadius(), GetBackgroundBlurRadius());
+    std::shared_ptr<Drawing::ImageFilter> blurColorFilter = Drawing::ImageFilter::CreateColorBlurImageFilter(
+        *colorFilter, GetBackgroundBlurRadius(), GetBackgroundBlurRadius());
 
     std::shared_ptr<RSDrawingFilter> originalFilter = nullptr;
 
