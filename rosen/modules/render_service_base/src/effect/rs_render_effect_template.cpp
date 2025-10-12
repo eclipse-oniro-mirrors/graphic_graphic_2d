@@ -85,7 +85,7 @@ void RSNGRenderEffectHelper::UpdateVisualEffectParamImpl(Drawing::GEVisualEffect
 {
     OHOS::Rosen::Drawing::GERRect geRRect;
     geRRect.left_ = value.rect_.left_;
-    geRRect.top_ = value.rect_.top;
+    geRRect.top_ = value.rect_.top_;
     geRRect.width_ = value.rect_.width_;
     geRRect.height_ = value.rect_.height_;
     geRRect.radiusX_ = value.radius_->x_;
