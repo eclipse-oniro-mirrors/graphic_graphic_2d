@@ -43,7 +43,7 @@ static const std::string ANI_STRING_DESCRIPTOR = "C{" + std::string(ANI_STRING) 
 static const std::string FONT_DESCRIPTOR_SIGN = ANI_STRING_DESCRIPTOR + ANI_STRING_DESCRIPTOR + ANI_STRING_DESCRIPTOR +
     ANI_STRING_DESCRIPTOR + ANI_STRING_DESCRIPTOR + "E{" + std::string(ANI_ENUM_FONT_WEIGHT) +
     "}iizz:";
-static const std::string GET_FONT_DESCRIPTORS_FROM_PATH_IN_SIGN = "X{C{global.resource.Resource}C{std.core.String}}";
+const std::string GET_FONT_DESCRIPTORS_FROM_PATH_IN_SIGN = "X{C{global.resource.Resource}C{std.core.String}}";
 
 }
 
