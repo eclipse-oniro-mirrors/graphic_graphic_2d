@@ -1215,7 +1215,7 @@ void RSRenderNode::DumpDrawCmdModifiers(std::string& out) const
 {
     const std::string splitStr = ", ";
     std::string modifierDesc = "";
-    for (auto& slot : modifiersNG_) {
+    for (const auto& [_, slot] : modifiersNG_) {
         for (auto& modifier : slot) {
             if (!modifier->IsCustom()) {
                 continue;
@@ -1234,7 +1234,7 @@ void RSRenderNode::DumpModifiers(std::string& out) const
 {
     const std::string splitStr = ", ";
     std::string propertyDesc = "";
-    for (auto& slot : modifiersNG_) {
+    for (const auto& [_, slot] : modifiersNG_) {
         for (auto& modifier : slot) {
             if (modifier->IsCustom()) {
                 continue;
@@ -1586,7 +1586,7 @@ const std::unique_ptr<RSRenderParams>& RSRenderNode::GetRenderParams() const
 
 RectI RSRenderNode::GetDrawCmdListRect() const
 {
-    for (auto& slot : modifiersNG_) {
+    for (auto& [_, slot] : modifiersNG_) {
         for (auto& modifier : slot) {
             if (!modifier->IsCustom()) {
                 continue;
@@ -2744,7 +2744,7 @@ void RSRenderNode::ApplyPositionZModifier()
     if (!dirtyTypesNG_.test(transformModifierTypeNG)) {
         return;
     }
-    auto& transformModifiers = modifiersNG_[transformModifierTypeNG];
+    auto transformModifiers = GetModifiersNG(ModifierNG::RSModifierType::TRANSFORM);
     if (transformModifiers.empty()) {
         return;
     }
@@ -2789,7 +2789,7 @@ void RSRenderNode::ResetAndApplyModifiers()
         }
     }
     for (uint16_t type = 0; type < ModifierNG::MODIFIER_TYPE_COUNT; type++) {
-        auto& slot = modifiersNG_[type];
+        auto slot = GetModifiersNG(static_cast<ModifierNG::RSModifierType>(type));
         if (slot.empty() || !dirtyTypesNG_.test(type)) {
             continue;
         }
@@ -3096,7 +3096,7 @@ void RSRenderNode::UpdateEffectRegion(std::optional<Drawing::RectI>& region, boo
 
 void RSRenderNode::FilterModifiersByPid(pid_t pid)
 {
-    for (auto& slot : modifiersNG_) {
+    for (auto& [_, slot] : modifiersNG_) {
         auto it = std::find_if(slot.begin(), slot.end(),
             [pid](const auto& modifier) -> bool { return ExtractPid(modifier->GetId()) == pid; });
         if (it != slot.end()) {
@@ -3515,10 +3515,11 @@ std::list<RSRenderNode::WeakPtr> RSRenderNode::GetChildrenList() const
 
 float RSRenderNode::GetHDRBrightness() const
 {
-    if (modifiersNG_[static_cast<uint16_t>(ModifierNG::RSModifierType::HDR_BRIGHTNESS)].empty()) {
+    auto modifiers = GetModifiersNG(ModifierNG::RSModifierType::HDR_BRIGHTNESS);
+    if (modifiers.empty()) {
         return 1.0f; // 1.0f make sure HDR video is still HDR state if RSNode::SetHDRBrightness not called
     }
-    auto modifier = modifiersNG_[static_cast<uint16_t>(ModifierNG::RSModifierType::HDR_BRIGHTNESS)].back();
+    auto modifier = modifiers.back();
     return modifier->Getter<float>(ModifierNG::RSPropertyType::HDR_BRIGHTNESS, 1.f); // 1.f defaule value
 }
 
@@ -4405,7 +4406,7 @@ void RSRenderNode::UpdateDrawableBehindWindow()
 size_t RSRenderNode::GetAllModifierSize()
 {
     size_t totalSize = 0;
-    for (auto& slot : modifiersNG_) {
+    for (auto& [_, slot] : modifiersNG_) {
         for (auto& modifier : slot) {
             if (modifier) {
                 totalSize += modifier->GetPropertySize();
@@ -4454,6 +4455,7 @@ void RSRenderNode::AddModifier(
         ROSEN_LOGW("RSRenderNode::AddModifier: null modifier, add failed.");
         return;
     }
+    auto type = modifier->GetType();
     if (RSSystemProperties::GetSingleFrameComposerEnabled() &&
         GetNodeIsSingleFrameComposer() && isSingleFrameComposer) {
         SetDirty();
@@ -4462,7 +4464,7 @@ void RSRenderNode::AddModifier(
         }
         singleFrameComposer_->SingleFrameAddModifierNG(modifier);
         ROSEN_LOGI_IF(DEBUG_MODIFIER, "RSRenderNode:add modifierNG for single frame, node id: %{public}" PRIu64 ","
-            "type: %{public}d", GetId(), (int)modifier->GetType());
+            "type: %{public}d", GetId(), (int)type);
         return;
     }
     if (modifier->IsAttached()) {
@@ -4470,22 +4472,32 @@ void RSRenderNode::AddModifier(
         modifier->OnDetachModifier();
     }
     // bounds and frame modifiers must be unique
-    if (modifier->GetType() == ModifierNG::RSModifierType::BOUNDS) {
+    if (type == ModifierNG::RSModifierType::BOUNDS) {
         boundsModifierNG_ = modifier;
     }
-    if (modifier->GetType() == ModifierNG::RSModifierType::FRAME) {
+    if (type == ModifierNG::RSModifierType::FRAME) {
         frameModifierNG_ = modifier;
     }
     if (modifier->IsCustom()) {
         modifier->SetSingleFrameModifier(false);
     }
-    modifiersNG_[static_cast<uint16_t>(modifier->GetType())].emplace_back(modifier);
+    const auto& modifiersIt = modifiersNG_.find(type);
+    if (modifiersIt == modifiersNG_.end()) {
+        ModifierNGContainer modifiers { modifier };
+        modifiersNG_.emplace(type, modifiers);
+    } else {
+        modifiersIt->second.emplace_back(modifier);
+    }
     modifier->OnAttachModifier(*this);
 }
 
 void RSRenderNode::RemoveModifier(ModifierNG::RSModifierType type, ModifierId id)
 {
-    auto& slot = modifiersNG_[static_cast<uint16_t>(type)];
+    const auto& modifiersIt = modifiersNG_.find(type);
+    if (modifiersIt == modifiersNG_.end()) {
+        return;
+    }
+    auto& slot = modifiersIt->second;
     auto it =
         std::find_if(slot.begin(), slot.end(), [id](const auto& modifier) -> bool { return modifier->GetId() == id; });
     if (it == slot.end()) {
@@ -4498,7 +4510,7 @@ void RSRenderNode::RemoveModifier(ModifierNG::RSModifierType type, ModifierId id
 void RSRenderNode::RemoveModifierNG(ModifierId id)
 {
     SetDirty();
-    for (auto& slot : modifiersNG_) {
+    for (auto& [_, slot] : modifiersNG_) {
         auto it = std::find_if(
             slot.begin(), slot.end(), [id](const auto& modifier) -> bool { return modifier->GetId() == id; });
         if (it == slot.end()) {
@@ -4512,7 +4524,7 @@ void RSRenderNode::RemoveModifierNG(ModifierId id)
 
 void RSRenderNode::RemoveAllModifiersNG()
 {
-    for (auto& slot : modifiersNG_) {
+    for (auto& [_, slot] : modifiersNG_) {
         for (auto& modifier : slot) {
             modifier->OnDetachModifier();
         }
@@ -4523,7 +4535,7 @@ void RSRenderNode::RemoveAllModifiersNG()
 std::shared_ptr<ModifierNG::RSRenderModifier> RSRenderNode::GetModifierNG(
     ModifierNG::RSModifierType type, ModifierId id) const
 {
-    auto& slot = modifiersNG_[static_cast<uint16_t>(type)];
+    auto slot = GetModifiersNG(type);
     if (id == 0) {
         return slot.empty() ? nullptr : slot.back();
     }
@@ -4535,12 +4547,16 @@ std::shared_ptr<ModifierNG::RSRenderModifier> RSRenderNode::GetModifierNG(
     return *it;
 }
 
-const RSRenderNode::ModifierNGContainer& RSRenderNode::GetModifiersNG(ModifierNG::RSModifierType type) const
+RSRenderNode::ModifierNGContainer RSRenderNode::GetModifiersNG(ModifierNG::RSModifierType type) const
 {
-    return modifiersNG_[static_cast<uint16_t>(type)];
+    auto it = modifiersNG_.find(type);
+    if (it != modifiersNG_.end()) {
+        return it->second;
+    }
+    return {};
 }
 
-const RSRenderNode::ModifiersNGContainer& RSRenderNode::GetAllModifiers() const
+const RSRenderNode::ModifiersNGMap& RSRenderNode::GetAllModifiers() const
 {
     return modifiersNG_;
 }

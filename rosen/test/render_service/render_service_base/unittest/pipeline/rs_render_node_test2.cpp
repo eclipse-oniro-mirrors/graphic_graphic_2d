@@ -280,7 +280,7 @@ HWTEST_F(RSRenderNodeTest2, CollectAndUpdateRenderFitRect, TestSize.Level1)
     auto modifier = std::make_shared<ModifierNG::RSCustomRenderModifier<ModifierNG::RSModifierType::CONTENT_STYLE>>();
     auto property = std::make_shared<RSRenderProperty<Drawing::DrawCmdListPtr>>();
     modifier->AttachProperty(ModifierNG::RSPropertyType::CONTENT_STYLE, property);
-    node.modifiersNG_[static_cast<uint16_t>(ModifierNG::RSModifierType::CONTENT_STYLE)].emplace_back(modifier);
+    node.modifiersNG_[ModifierNG::RSModifierType::CONTENT_STYLE].emplace_back(modifier);
 
     auto modifierCmdList =
         std::make_shared<ModifierNG::RSCustomRenderModifier<ModifierNG::RSModifierType::CONTENT_STYLE>>();
@@ -288,12 +288,12 @@ HWTEST_F(RSRenderNodeTest2, CollectAndUpdateRenderFitRect, TestSize.Level1)
     PropertyId id = 1;
     auto propertyCmdList = std::make_shared<RSRenderProperty<Drawing::DrawCmdListPtr>>(ptr, id);
     modifierCmdList->AttachProperty(ModifierNG::RSPropertyType::CONTENT_STYLE, propertyCmdList);
-    node.modifiersNG_[static_cast<uint16_t>(ModifierNG::RSModifierType::CONTENT_STYLE)].emplace_back(modifierCmdList);
+    node.modifiersNG_[ModifierNG::RSModifierType::CONTENT_STYLE].emplace_back(modifierCmdList);
 
     auto modifierAlpha = std::make_shared<ModifierNG::RSAlphaRenderModifier>();
     auto propertyAlpha = std::make_shared<RSRenderProperty<float>>();
     modifierAlpha->AttachProperty(ModifierNG::RSPropertyType::ALPHA, property);
-    node.modifiersNG_[static_cast<uint16_t>(ModifierNG::RSModifierType::ALPHA)].emplace_back(modifierAlpha);
+    node.modifiersNG_[ModifierNG::RSModifierType::ALPHA].emplace_back(modifierAlpha);
     node.CollectAndUpdateRenderFitRect();
     ASSERT_TRUE(true);
 }
@@ -1287,11 +1287,11 @@ HWTEST_F(RSRenderNodeTest2, DumpSubClassNodeTest032, TestSize.Level1)
     auto modifier = std::make_shared<ModifierNG::RSCustomRenderModifier<ModifierNG::RSModifierType::CONTENT_STYLE>>();
     auto property = std::make_shared<RSRenderProperty<Drawing::DrawCmdListPtr>>();
     modifier->AttachProperty(ModifierNG::RSPropertyType::CONTENT_STYLE, property);
-    nodeTest->modifiersNG_[static_cast<uint16_t>(ModifierNG::RSModifierType::CONTENT_STYLE)].emplace_back(modifier);
+    nodeTest->modifiersNG_[ModifierNG::RSModifierType::CONTENT_STYLE].emplace_back(modifier);
     auto modifier2 = std::make_shared<ModifierNG::RSAlphaRenderModifier>();
     auto property2 = std::make_shared<RSRenderProperty<float>>();
     modifier2->AttachProperty(ModifierNG::RSPropertyType::ALPHA, property2);
-    nodeTest->modifiersNG_[static_cast<uint16_t>(ModifierNG::RSModifierType::ALPHA)].emplace_back(modifier2);
+    nodeTest->modifiersNG_[ModifierNG::RSModifierType::ALPHA].emplace_back(modifier2);
     nodeTest->DumpDrawCmdModifiers(outTest6);
     EXPECT_NE(outTest6, "");
 
@@ -2444,7 +2444,7 @@ HWTEST_F(RSRenderNodeTest2, DumpModifiersTest, TestSize.Level1)
     auto modifier = std::make_shared<ModifierNG::RSAlphaRenderModifier>();
     auto property = std::make_shared<RSRenderProperty<float>>();
     modifier->AttachProperty(ModifierNG::RSPropertyType::ALPHA, property);
-    nodeTest->modifiersNG_[static_cast<uint16_t>(ModifierNG::RSModifierType::ALPHA)].emplace_back(modifier);
+    nodeTest->modifiersNG_[ModifierNG::RSModifierType::ALPHA].emplace_back(modifier);
     nodeTest->DumpModifiers(outTest);
     EXPECT_NE(outTest, "");
 }
@@ -2492,15 +2492,14 @@ HWTEST_F(RSRenderNodeTest2, ApplyPositionZModifierTest, TestSize.Level1)
  */
 HWTEST_F(RSRenderNodeTest2, FilterModifiersByPidTest, TestSize.Level1)
 {
-    constexpr auto transformModifierType = static_cast<uint16_t>(ModifierNG::RSModifierType::TRANSFORM);
     auto node = std::make_shared<RSRenderNode>(1);
     EXPECT_NE(node, nullptr);
     auto transformModifier = std::make_shared<ModifierNG::RSTransformRenderModifier>();
     node->AddModifier(transformModifier);
     node->FilterModifiersByPid(1);
-    EXPECT_FALSE(node->modifiersNG_[transformModifierType].empty());
+    EXPECT_FALSE(node->GetModifiersNG(ModifierNG::RSModifierType::TRANSFORM).empty());
     node->FilterModifiersByPid(0);
-    EXPECT_TRUE(node->modifiersNG_[transformModifierType].empty());
+    EXPECT_TRUE(node->GetModifiersNG(ModifierNG::RSModifierType::TRANSFORM).empty());
 }
 
 /**

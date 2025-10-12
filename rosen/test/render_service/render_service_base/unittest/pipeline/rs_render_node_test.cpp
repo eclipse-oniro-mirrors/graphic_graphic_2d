@@ -163,17 +163,39 @@ HWTEST_F(RSRenderNodeTest, ProcessTransitionBeforeChildrenTest, TestSize.Level1)
 }
 
 /**
- * @tc.name: AddModifierTest
+ * @tc.name: AddModifierTest001
  * @tc.desc: test
  * @tc.type:FUNC
  * @tc.require:
  */
-HWTEST_F(RSRenderNodeTest, AddModifierTest, TestSize.Level1)
+HWTEST_F(RSRenderNodeTest, AddModifierTest001, TestSize.Level1)
 {
     std::shared_ptr<ModifierNG::RSRenderModifier> modifier = nullptr;
     RSRenderNode node(id, context);
     node.AddModifier(modifier);
     ASSERT_FALSE(node.IsDirty());
+}
+
+/**
+ * @tc.name: AddModifierTest002
+ * @tc.desc: test AddModifierTest
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSRenderNodeTest, AddModifierTest002, TestSize.Level1)
+{
+    std::shared_ptr<Drawing::DrawCmdList> drawCmdList = nullptr;
+    auto property = std::make_shared<RSRenderProperty<Drawing::DrawCmdListPtr>>();
+    property->GetRef() = drawCmdList;
+    ModifierId id = 1;
+    auto modifier = ModifierNG::RSRenderModifier::MakeRenderModifier(
+        ModifierNG::RSModifierType::BOUNDS, property, id, ModifierNG::RSPropertyType::BOUNDS);
+    auto modifier1 = ModifierNG::RSRenderModifier::MakeRenderModifier(
+        ModifierNG::RSModifierType::FRAME, property, ++id, ModifierNG::RSPropertyType::FRAME);
+    RSRenderNode node(id, context);
+    node.AddModifier(modifier);
+    node.AddModifier(modifier1);
+    ASSERT_TRUE(node.IsDirty());
 }
 
 /**
@@ -3552,7 +3574,7 @@ public:
  * @tc.type:FUNC
  * @tc.require: issueICI6YB
  */
-HWTEST_F(RSRenderNodeTest, ResetAndApplyModifiers, TestSize.Level1)
+HWTEST_F(RSRenderNodeTest, ResetAndApplyModifiers001, TestSize.Level1)
 {
     std::vector<pid_t> pidList;
     pidList.emplace_back(ExtractPid(TARGET_NODE_ID));
@@ -3572,7 +3594,8 @@ HWTEST_F(RSRenderNodeTest, ResetAndApplyModifiers, TestSize.Level1)
     auto modifier = ModifierNG::RSRenderModifier::MakeRenderModifier(
         ModifierNG::RSModifierType::CONTENT_STYLE, property, id, ModifierNG::RSPropertyType::CONTENT_STYLE);
     ASSERT_NE(modifier, nullptr);
-    node->modifiersNG_[static_cast<uint16_t>(ModifierNG::RSModifierType::CONTENT_STYLE)].emplace_back(modifier);
+    RSRootRenderNode::ModifierNGContainer modifiers { modifier };
+    node->modifiersNG_.emplace(ModifierNG::RSModifierType::CONTENT_STYLE, modifiers);
     node->ResetAndApplyModifiers();
     system::SetParameter("rosen.graphic.optimizeCanvasDrawRegion.enabled",
         std::to_string(optimizeCanvasDrawRegionEnabled));
@@ -3636,5 +3659,52 @@ HWTEST_F(RSRenderNodeTest, UpdateSubTreeParallelNodesTest, TestSize.Level1)
     renderNode->UpdateSubTreeParallelNodes();
 }
 #endif
+
+/*
+ * @tc.name: RemoveModifier
+ * @tc.desc: Test function RemoveModifier
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSRenderNodeTest, RemoveModifier, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderNode> nodeTest = std::make_shared<RSRenderNode>(0);
+    EXPECT_NE(nodeTest, nullptr);
+
+    std::shared_ptr<Drawing::DrawCmdList> drawCmdList = nullptr;
+    auto property = std::make_shared<RSRenderProperty<Drawing::DrawCmdListPtr>>();
+    property->GetRef() = drawCmdList;
+    ModifierId id = 1;
+    auto modifier = ModifierNG::RSRenderModifier::MakeRenderModifier(
+        ModifierNG::RSModifierType::CONTENT_STYLE, property, id, ModifierNG::RSPropertyType::CONTENT_STYLE);
+    
+    nodeTest->RemoveModifier(ModifierNG::RSModifierType::BOUNDS, id);
+    RSRootRenderNode::ModifierNGContainer modifiers { modifier };
+    nodeTest->modifiersNG_.emplace(ModifierNG::RSModifierType::BOUNDS, modifiers);
+    nodeTest->RemoveModifier(ModifierNG::RSModifierType::BOUNDS, id);
+}
+
+/*
+ * @tc.name: GetHDRBrightness
+ * @tc.desc: Test function GetHDRBrightness
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSRenderNodeTest, GetHDRBrightness, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderNode> nodeTest = std::make_shared<RSRenderNode>(0);
+    EXPECT_NE(nodeTest, nullptr);
+
+    std::shared_ptr<Drawing::DrawCmdList> drawCmdList = nullptr;
+    auto property = std::make_shared<RSRenderProperty<Drawing::DrawCmdListPtr>>();
+    property->GetRef() = drawCmdList;
+    ModifierId id = 1;
+    auto modifier = ModifierNG::RSRenderModifier::MakeRenderModifier(
+        ModifierNG::RSModifierType::HDR_BRIGHTNESS, property, id, ModifierNG::RSPropertyType::HDR_BRIGHTNESS);
+    RSRootRenderNode::ModifierNGContainer modifiers { modifier };
+    nodeTest->modifiersNG_.emplace(ModifierNG::RSModifierType::HDR_BRIGHTNESS, modifiers);
+    float result = nodeTest->GetHDRBrightness();
+    ASSERT_EQ(result, 1.0f);
+}
 } // namespace Rosen
 } // namespace OHOS

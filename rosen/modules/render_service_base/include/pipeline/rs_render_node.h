@@ -85,7 +85,7 @@ public:
     using WeakPtr = std::weak_ptr<RSRenderNode>;
     using SharedPtr = std::shared_ptr<RSRenderNode>;
     using ModifierNGContainer = std::vector<std::shared_ptr<ModifierNG::RSRenderModifier>>;
-    using ModifiersNGContainer = std::array<ModifierNGContainer, ModifierNG::MODIFIER_TYPE_COUNT>;
+    using ModifiersNGMap = std::map<ModifierNG::RSModifierType, ModifierNGContainer>;
     static inline constexpr RSRenderNodeType Type = RSRenderNodeType::RS_NODE;
     virtual RSRenderNodeType GetType() const
     {
@@ -540,8 +540,8 @@ public:
     void RemoveAllModifiersNG();
     std::shared_ptr<ModifierNG::RSRenderModifier> GetModifierNG(
         ModifierNG::RSModifierType type, ModifierId id = 0) const;
-    const ModifierNGContainer& GetModifiersNG(ModifierNG::RSModifierType type) const;
-    const ModifiersNGContainer& GetAllModifiers() const;
+    ModifierNGContainer GetModifiersNG(ModifierNG::RSModifierType type) const;
+    const ModifiersNGMap& GetAllModifiers() const;
     bool HasDrawCmdModifiers() const;
     bool HasContentStyleModifierOnly() const;
 
@@ -1200,7 +1200,7 @@ private:
     std::vector<SharedPtr> cloneCrossNodeVec_;
     bool hasVisitedCrossNode_ = false;
 
-    std::array<ModifierNGContainer, ModifierNG::MODIFIER_TYPE_COUNT> modifiersNG_;
+    ModifiersNGMap modifiersNG_;
     std::map<PropertyId, std::shared_ptr<RSRenderPropertyBase>> properties_;
 
     std::unordered_set<RSDrawableSlot> dirtySlots_;
