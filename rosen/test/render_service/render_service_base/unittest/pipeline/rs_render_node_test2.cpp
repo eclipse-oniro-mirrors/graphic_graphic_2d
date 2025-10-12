@@ -35,7 +35,7 @@
 #include "pipeline/rs_root_render_node.h"
 #include "pipeline/rs_surface_render_node.h"
 #include "skia_adapter/skia_canvas.h"
-
+#include "drawable/rs_property_drawable_background.h"
 using namespace testing;
 using namespace testing::ext;
 
@@ -1242,7 +1242,7 @@ HWTEST_F(RSRenderNodeTest2, PostPrepareForBlurFilterNode002, TestSize.Level1)
     properties.needDrawBehindWindow_ = true;
     node.PostPrepareForBlurFilterNode(*rsDirtyManager, needRequestNextVsync);
     RSDrawableSlot slot = RSDrawableSlot::BACKGROUND_FILTER;
-    node.drawableVec_[static_cast<uint32_t>(slot)] = std::make_shared<DrawableV2::RSFilterDrawable>();
+    node.GetDrawableVec(__func__)[static_cast<uint32_t>(slot)] = std::make_shared<DrawableV2::RSFilterDrawable>();
     node.PostPrepareForBlurFilterNode(*rsDirtyManager, needRequestNextVsync);
     ASSERT_NE(node.GetFilterDrawable(false), nullptr);
     ASSERT_TRUE(true);
@@ -1842,7 +1842,7 @@ HWTEST_F(RSRenderNodeTest2, PostPrepareForBlurFilterNode03, TestSize.Level1)
     properties.needDrawBehindWindow_ = false;
     node.PostPrepareForBlurFilterNode(*rsDirtyManager, needRequestNextVsync);
     RSDrawableSlot slot = RSDrawableSlot::BACKGROUND_FILTER;
-    node.drawableVec_[static_cast<uint32_t>(slot)] = std::make_shared<DrawableV2::RSFilterDrawable>();
+    node.GetDrawableVec(__func__)[static_cast<uint32_t>(slot)] = std::make_shared<DrawableV2::RSFilterDrawable>();
     node.PostPrepareForBlurFilterNode(*rsDirtyManager, needRequestNextVsync);
     ASSERT_NE(node.GetFilterDrawable(false), nullptr);
 }
@@ -2325,7 +2325,7 @@ HWTEST_F(RSRenderNodeTest2, IsPixelStretchValid, TestSize.Level1)
         // mock pixel stretch in drawable vec.
         RSDrawableSlot slot = RSDrawableSlot::PIXEL_STRETCH;
         auto pixelStretchDrawable = std::make_shared<DrawableV2::RSPixelStretchDrawable>();
-        node.drawableVec_[static_cast<uint32_t>(slot)] = drawableValid ? pixelStretchDrawable : nullptr;
+        node.GetDrawableVec(__func__)[static_cast<uint32_t>(slot)] = drawableValid ? pixelStretchDrawable : nullptr;
         // mock pixel stretch param in  drawable.
         pixelStretchDrawable->SetPixelStretch(
             paramValid ? std::make_optional<Vector4f>(1.f, 1.f, 1.f, 1.f) : std::nullopt);
@@ -2501,6 +2501,91 @@ HWTEST_F(RSRenderNodeTest2, FilterModifiersByPidTest, TestSize.Level1)
     EXPECT_FALSE(node->modifiersNG_[transformModifierType].empty());
     node->FilterModifiersByPid(0);
     EXPECT_TRUE(node->modifiersNG_[transformModifierType].empty());
+}
+
+/**
+ * @tc.name: GetDrawableVecTest001
+ * @tc.desc: GetDrawableVec test
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSRenderNodeTest2, GetDrawableVecTest001, TestSize.Level1)
+{
+#ifdef RS_ENABLE_MEMORY_DOWNTREE
+    auto rsContext = std::make_shared<RSContext>();
+    auto node = std::make_shared<RSRenderNode>(0, rsContext);
+    EXPECT_NE(node, nullptr);
+    node->drawableVec_ = nullptr;
+    node->GetDrawableVec(__func__);
+    EXPECT_NE(node->drawableVec, nullptr);
+#endif
+    ASSERT_TRUE(true);
+}
+
+/**
+ * @tc.name: SetIsOnTheTreeTest002
+ * @tc.desc: SetIsOnTheTree test
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSRenderNodeTest2, SetIsOnTheTreeTest002, TestSize.Level1)
+{
+#ifdef RS_ENABLE_MEMORY_DOWNTREE
+    auto node = std::make_shared<RSRenderNode>(0);
+    EXPECT_NE(node, nullptr);
+    node->isTextureExportNode_ = true;
+    node->isOnTheTree_ = false;
+    node->SetIsOnTheTree(true, 0, 1, 1, 1);
+    node->isOnTheTree_ = true;
+    node->SetIsOnTheTree(false, 0, 1, 1, 1);
+#endif
+    ASSERT_TRUE(true);
+}
+
+/**
+ * @tc.name: ClearDrawableVec2Test001
+ * @tc.desc: ClearDrawableVec2 test
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSRenderNodeTest2, ClearDrawableVec2Test001, TestSize.Level1)
+{
+#ifdef RS_ENABLE_MEMORY_DOWNTREE
+    auto rsContext = std::make_shared<RSContext>();
+    auto node = std::make_shared<RSRenderNode>(0, rsContext);
+    EXPECT_NE(node, nullptr);
+    node->drawableVecNeedClear_ = true;
+    node->GetDrawableVec(__func__)[static_cast<int8_t>(RSDrawableSlot::CONTENT_STYLE)] =
+        std::make_shared<DrawableV2::RSBackgroundColorDrawable>();
+    node->ClearDrawableVec2();
+    EXPECT_EQ(node->GetDrawableVec(__func__)[static_cast<int8_t>(RSDrawableSlot::CONTENT_STYLE)], nullptr);
+
+    auto backgroundColorDrawable =
+        std::make_shared<DrawableV2::RSBackgroundColorDrawable>();
+    node->drawableVecNeedClear_ = true;
+    node->GetDrawableVec(__func__)[static_cast<int8_t>(RSDrawableSlot::TRANSITION)] =
+        std::make_shared<DrawableV2::RSBackgroundColorDrawable>();
+    node->ClearDrawableVec2();
+    EXPECT_EQ(node->GetDrawableVec(__func__)[static_cast<int8_t>(RSDrawableSlot::TRANSITION)], nullptr);
+    node->drawableVecNeedClear_ = true;
+    node->GetDrawableVec(__func__)[static_cast<int8_t>(RSDrawableSlot::BACKGROUND_STYLE)] =
+        std::make_shared<DrawableV2::RSBackgroundColorDrawable>();
+    node->ClearDrawableVec2();
+    EXPECT_EQ(node->GetDrawableVec(__func__)[static_cast<int8_t>(RSDrawableSlot::BACKGROUND_STYLE)], nullptr);
+
+    node->drawableVecNeedClear_ = true;
+    node->GetDrawableVec(__func__)[static_cast<int8_t>(RSDrawableSlot::FOREGROUND_STYLE)] =
+        std::make_shared<DrawableV2::RSBackgroundColorDrawable>();
+    node->ClearDrawableVec2();
+    EXPECT_EQ(node->GetDrawableVec(__func__)[static_cast<int8_t>(RSDrawableSlot::FOREGROUND_STYLE)], nullptr);
+
+    node->drawableVecNeedClear_ = true;
+    node->GetDrawableVec(__func__)[static_cast<int8_t>(RSDrawableSlot::OVERLAY)] =
+        std::make_shared<DrawableV2::RSBackgroundColorDrawable>();
+    node->ClearDrawableVec2();
+    EXPECT_EQ(node->GetDrawableVec(__func__)[static_cast<int8_t>(RSDrawableSlot::OVERLAY)], nullptr);
+#endif
+    ASSERT_TRUE(true);
 }
 } // namespace Rosen
 } // namespace OHOS
