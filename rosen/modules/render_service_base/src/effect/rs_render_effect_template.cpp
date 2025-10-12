@@ -83,7 +83,15 @@ void RSNGRenderEffectHelper::UpdateVisualEffectParamImpl(Drawing::GEVisualEffect
 void RSNGRenderEffectHelper::UpdateVisualEffectParamImpl(Drawing::GEVisualEffect& geFilter,
     const std::string& desc, const RRect& value)
 {
-    geFilter.SetParam(desc, value);
+    OHOS::Rosen::Drawing::GERRect geRRect;
+    geRRect.left_ = value.rect_.left_;
+    geRRect.top_ = value.rect_.top;
+    geRRect.width_ = value.rect_.width_;
+    geRRect.height_ = value.rect_.height_;
+    geRRect.radiusX_ = value.radius_->x_;
+    geRRect.radiusY_ = value.radius_->y_;
+
+    geFilter.SetParam(desc, geRRect);
 }
 
 void RSNGRenderEffectHelper::UpdateVisualEffectParamImpl(Drawing::GEVisualEffect& geFilter,
