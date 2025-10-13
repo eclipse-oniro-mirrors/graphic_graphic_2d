@@ -565,6 +565,14 @@ public:
     void SetCornerRadius(const Vector4f& cornerRadius);
 
     /**
+     * @brief Sets the corner apply type of the node.
+     *
+     * @param type The type applied to each rounded corner, when the four corner radius are different,
+     * the offscreen type cannot be enabled.
+     */
+    void SetCornerApplyType(RSCornerApplyType type);
+
+    /**
      * @brief Sets the rotation of the node.
      *
      * @param quaternion A Quaternion representing the rotation to be applied to the node.
@@ -846,6 +854,8 @@ public:
         std::vector<ParticleParams>& particleParams, const std::function<void()>& finishCallback = nullptr);
     void SetEmitterUpdater(const std::vector<std::shared_ptr<EmitterUpdater>>& para);
     void SetParticleNoiseFields(const std::shared_ptr<ParticleNoiseFields>& para);
+    void SetParticleRippleFields(const std::shared_ptr<ParticleRippleFields>& para);
+    void SetParticleVelocityFields(const std::shared_ptr<ParticleVelocityFields>& para);
 
     /**
      * @brief Sets the foreground color of the node.

@@ -170,6 +170,7 @@ public:
             case RSPropertyType::TRANSLATE_Z: return "TranslateZ";
             case RSPropertyType::SUBLAYER_TRANSFORM: return "SublayerTransform";
             case RSPropertyType::CORNER_RADIUS: return "CornerRadius";
+            case RSPropertyType::CORNER_APPLY_TYPE: return "CornerApplyType";
             case RSPropertyType::ALPHA: return "Alpha";
             case RSPropertyType::ALPHA_OFFSCREEN: return "AlphaOffscreen";
             case RSPropertyType::FOREGROUND_COLOR: return "ForegroundColor";
@@ -262,6 +263,8 @@ public:
             case RSPropertyType::MOTION_BLUR_PARA: return "MotionBlurPara";
             case RSPropertyType::PARTICLE_EMITTER_UPDATER: return "ParticleEmitterUpdater";
             case RSPropertyType::PARTICLE_NOISE_FIELD: return "ParticleNoiseField";
+            case RSPropertyType::PARTICLE_RIPPLE_FIELD: return "ParticleRippleField";
+            case RSPropertyType::PARTICLE_VELOCITY_FIELD: return "ParticleVelocityField";
             case RSPropertyType::FLY_OUT_DEGREE: return "FlyOutDegree";
             case RSPropertyType::FLY_OUT_PARAMS: return "FlyOutParams";
             case RSPropertyType::DISTORTION_K: return "DistortionK";

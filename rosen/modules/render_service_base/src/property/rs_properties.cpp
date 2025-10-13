@@ -23,6 +23,8 @@
 
 #include "src/core/SkOpts.h"
 
+#include "animation/rs_particle_ripple_field.h"
+#include "animation/rs_particle_velocity_field.h"
 #include "animation/rs_render_particle_animation.h"
 #include "common/rs_common_def.h"
 #include "common/rs_obj_abs_geometry.h"
@@ -474,6 +476,22 @@ void RSProperties::SetCornerRadius(const Vector4f& cornerRadius)
 const Vector4f& RSProperties::GetCornerRadius() const
 {
     return cornerRadius_ ? cornerRadius_.value() : Vector4fZero;
+}
+
+void RSProperties::SetCornerApplyType(int type)
+{
+    cornerApplyType_ = std::clamp<int>(type, 0, static_cast<int>(RSCornerApplyType::MAX));
+    isDrawn_ = true;
+    SetDirty();
+    contentDirty_ = true;
+}
+
+bool RSProperties::NeedCornerOptimization() const
+{
+    bool isSameRadius = ROSEN_EQ(GetCornerRadius().x_, GetCornerRadius().y_) &&
+                        ROSEN_EQ(GetCornerRadius().y_, GetCornerRadius().z_) &&
+                        ROSEN_EQ(GetCornerRadius().z_, GetCornerRadius().w_);
+    return isSameRadius && cornerApplyType_ != static_cast<int>(RSCornerApplyType::FAST);
 }
 
 void RSProperties::SetQuaternion(Quaternion quaternion)
@@ -1184,6 +1202,52 @@ void RSProperties::SetParticleNoiseFields(const std::shared_ptr<ParticleNoiseFie
         auto particleAnimation = std::static_pointer_cast<RSRenderParticleAnimation>(animation);
         if (particleAnimation) {
             particleAnimation->UpdateNoiseField(particleNoiseFields_);
+        }
+    }
+    filterNeedUpdate_ = true;
+    SetDirty();
+    contentDirty_ = true;
+}
+
+void RSProperties::SetParticleRippleFields(const std::shared_ptr<ParticleRippleFields>& para)
+{
+    particleRippleFields_ = para;
+    if (particleRippleFields_) {
+        isDrawn_ = true;
+        auto renderNode = backref_.lock();
+        if (renderNode == nullptr) {
+            return;
+        }
+        auto animation = renderNode->GetAnimationManager().GetParticleAnimation();
+        if (animation == nullptr) {
+            return;
+        }
+        auto particleAnimation = std::static_pointer_cast<RSRenderParticleAnimation>(animation);
+        if (particleAnimation) {
+            particleAnimation->UpdateRippleField(particleRippleFields_);
+        }
+    }
+    filterNeedUpdate_ = true;
+    SetDirty();
+    contentDirty_ = true;
+}
+ 
+void RSProperties::SetParticleVelocityFields(const std::shared_ptr<ParticleVelocityFields>& para)
+{
+    particleVelocityFields_ = para;
+    if (particleVelocityFields_) {
+        isDrawn_ = true;
+        auto renderNode = backref_.lock();
+        if (renderNode == nullptr) {
+            return;
+        }
+        auto animation = renderNode->GetAnimationManager().GetParticleAnimation();
+        if (animation == nullptr) {
+            return;
+        }
+        auto particleAnimation = std::static_pointer_cast<RSRenderParticleAnimation>(animation);
+        if (particleAnimation) {
+            particleAnimation->UpdateVelocityField(particleVelocityFields_);
         }
     }
     filterNeedUpdate_ = true;

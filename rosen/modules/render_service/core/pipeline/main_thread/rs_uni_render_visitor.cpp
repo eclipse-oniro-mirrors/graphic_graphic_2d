@@ -37,6 +37,7 @@
 #include "feature/hpae/rs_hpae_manager.h"
 #include "feature/uifirst/rs_sub_thread_manager.h"
 #include "feature/uifirst/rs_uifirst_manager.h"
+#include "feature/hdr/hetero_hdr/rs_hetero_hdr_manager.h"
 #include "feature/hdr/rs_hdr_util.h"
 #include "memory/rs_tag_tracker.h"
 #include "monitor/self_drawing_node_monitor.h"
@@ -67,6 +68,8 @@
 #include "feature_cfg/graphic_feature_param_manager.h"
 #include "feature/round_corner_display/rs_round_corner_display_manager.h"
 #include "feature/round_corner_display/rs_message_bus.h"
+// hpae offline
+#include "feature/hwc/hpae_offline/rs_hpae_offline_processor.h"
 
 #include "rs_profiler.h"
 #ifdef SUBTREE_PARALLEL_ENABLE
@@ -204,7 +207,7 @@ void RSUniRenderVisitor::PartialRenderOptionInit()
         isStencilPixelOcclusionCullingEnabled_ =
             RSSystemProperties::GetStencilPixelOcclusionCullingEnabled() != StencilPixelOcclusionCullingType::DISABLED;
     }
-    
+
     partialRenderType_ = RSSystemProperties::GetUniPartialRenderEnabled();
     isPartialRenderEnabled_ &= (partialRenderType_ > PartialRenderType::DISABLED);
 
@@ -2210,6 +2213,7 @@ void RSUniRenderVisitor::PrevalidateHwcNode()
             continue;
         }
         if (it.second == RequestCompositionType::OFFLINE_DEVICE &&
+            !RSHeteroHDRManager::Instance().HasHdrHeteroNode() &&
             RSHpaeOfflineProcessor::GetOfflineProcessor().IsRSHpaeOfflineProcessorReady()) {
             node->SetDeviceOfflineEnable(true);
             continue;
@@ -2531,7 +2535,7 @@ void RSUniRenderVisitor::UpdateHwcNodesIfVisibleForApp(std::shared_ptr<RSSurface
             needForceUpdateHwcNodes = true;
             continue;
         }
-        
+
         auto visibleRegion = surfaceNode->GetVisibleRegion();
         visibleRegion.MakeBound();
         auto visibleRectI = visibleRegion.GetBound().ToRectI();

@@ -387,6 +387,12 @@ public:
 
     static bool GetBootCompleted();
 
+    static bool GetClipRRectOptimizationEnabled();
+
+    static bool GetNodeMemClearEnabled();
+
+    static bool GetRSNodeExceedKillEnabled();
+
 private:
     RSSystemProperties() = default;
 
