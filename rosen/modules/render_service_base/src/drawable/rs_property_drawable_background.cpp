@@ -101,7 +101,7 @@ bool RSShadowDrawable::OnUpdate(const RSRenderNode& node)
             stagingColor_.GetRed(), stagingColor_.GetGreen(), stagingColor_.GetBlue(), stagingColor_.GetAlpha());
         
         sdfEffectFilter->SetShadow(color, stagingOffsetX_, stagingOffsetY_,
-                                        stagingRadius_, stagingPath_, stagingIsFilled_);
+            stagingRadius_, stagingPath_, stagingIsFilled_);
     }
     return true;
 }
