@@ -4592,13 +4592,10 @@ void RSProperties::UpdateForegroundFilter()
         if (!sdfFilter_) {
             sdfFilter_ = std::make_shared<RSSDFEffectFilter>(renderSDFMask_);
         }
-
         if (IS_UNI_RENDER) {
             foregroundFilterCache_ = sdfFilter_;
         } else {
             foregroundFilter_ = sdfFilter_;
-
-            
         }
     }
 }

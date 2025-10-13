@@ -48,7 +48,7 @@ RSSDFEffectFilter::RSSDFEffectFilter(std::shared_ptr<RSNGRenderMaskBase> SDFMask
 
     std::shared_ptr<Drawing::GEVisualEffect> geVisualEffect = SDFMask_ ? SDFMask_->GenerateGEVisualEffect() : nullptr;
     std::shared_ptr<Drawing::GEShaderMask> geMask = geVisualEffect ? geVisualEffect->GenerateShaderMask() : nullptr;
-    geFilter_ = 
+    geFilter_ =
         std::make_shared<Drawing::GEVisualEffect>(Drawing::GE_FILTER_SDF, Drawing::DrawingPaintType::BRUSH);
     
     geContainer_ = std::make_shared<Drawing::GEVisualEffectContainer>();
