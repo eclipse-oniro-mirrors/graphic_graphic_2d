@@ -161,7 +161,7 @@ ani_object CreateFontDescriptorArray(ani_env* env, const std::vector<FontDescSha
     std::set<FontDescSharedPtr> fontDescripterList(fontDescripters.begin(), fontDescripters.end());
 
     ani_object arrayObj = AniTextUtils::CreateAniArray(env, fontDescripterList.size());
-    ani_boolean isUndefined;
+    ani_boolean isUndefined = false;
     env->Reference_IsUndefined(arrayObj, &isUndefined);
     if (isUndefined) {
         TEXT_LOGE("Failed to create arrayObject");
@@ -330,7 +330,6 @@ ani_object AniFontDescriptor::GetFontDescriptorsFromPath(ani_env* env, ani_objec
 
     ani_boolean isString = false;
     env->Object_InstanceOf(path, stringClass, &isString);
-
     if (isString) {
         return ProcessStringPath(env, path);
     }
@@ -341,9 +340,9 @@ ani_object AniFontDescriptor::GetFontDescriptorsFromPath(ani_env* env, ani_objec
         TEXT_LOGE("Failed to found class, ret %{public}d", ret);
         return AniTextUtils::CreateAniArray(env, 0);
     }
+
     ani_boolean isResource = false;
     env->Object_InstanceOf(path, resourceClass, &isResource);
-
     if (isResource) {
         return ProcessResourcePath(env, path);
     }
