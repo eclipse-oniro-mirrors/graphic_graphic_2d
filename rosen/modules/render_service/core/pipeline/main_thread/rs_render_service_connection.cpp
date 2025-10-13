@@ -437,6 +437,9 @@ ErrCode RSRenderServiceConnection::CreateNode(const RSDisplayNodeConfig& display
         if (mainThread_ == nullptr) {
             return;
         }
+        RS_LOGI("On registerNode scheduled by mainThread. NodeID: %{public}" PRIu64 ", screenID: %{public}" PRIu64,
+                nodeId, displayNodeConfig.screenId);
+
         auto& context = mainThread_->GetContext();
         auto& nodeMap = context.GetMutableNodeMap();
         nodeMap.RegisterRenderNode(node);
@@ -449,7 +452,13 @@ ErrCode RSRenderServiceConnection::CreateNode(const RSDisplayNodeConfig& display
 
         DisplayNodeCommandHelper::SetDisplayMode(context, nodeId, displayNodeConfig);
     };
-    mainThread_->PostSyncTask(registerNode);
+    // when the event runner has not started to rotate, synchronous tasks will not be executed,
+    // so asynchronous tasks need to be dispatched at this time.
+    if (!mainThread_->IsReadyForSyncTask() || !mainThread_->PostSyncTask(registerNode)) {
+        RS_LOWG("Post async tasks instead. Sync task processor ready? %{public}d",
+                static_cast<int>(mainThread_->IsReadyForSyncTask()));
+                mainThread_->PostTask(registerNode);
+    }
     success = true;
     return ERR_OK;
 }

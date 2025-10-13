@@ -516,7 +516,7 @@ void RSScreen::SetRogResolution(uint32_t width, uint32_t height)
     if ((width == 0 || height == 0) ||
         (width == width_ && height == height_) ||
         (width > phyWidth_ || height > phyHeight_)) {
-        RS_LOGD("%{public}s: width: %{public}d, height: %{public}d.", __func__, width, height);
+        RS_LOGD("%{public}s: width: %{public}u, height: %{public}u.", __func__, width, height);
         return;
     }
     sharedLock.unlock();
@@ -527,8 +527,8 @@ void RSScreen::SetRogResolution(uint32_t width, uint32_t height)
     std::lock_guard<std::shared_mutex> lock(screenMutex_);
     width_ = width;
     height_ = height;
-    RS_LOGI("%{public}s: RSScreen(id %{public}" PRIu64 "), width: %{public}d,"
-        " height: %{public}d, phywidth: %{public}d, phyHeight: %{public}d.",
+    RS_LOGI("%{public}s: RSScreen(id %{public}" PRIu64 "), width: %{public}u,"
+        " height: %{public}u, phywidth: %{public}u, phyHeight: %{public}u.",
         __func__, id_, width_, height_, phyWidth_, phyHeight_);
 }
 
@@ -658,7 +658,7 @@ uint32_t RSScreen::GetPowerStatus()
         return INVALID_POWER_STATUS;
     }
     powerStatus_ = static_cast<ScreenPowerStatus>(status);
-    RS_LOGW("%{public}s cached powerStatus is INVALID_POWER_STATUS and GetScreenPowerStatus %{public}d",
+    RS_LOGW("%{public}s cached powerStatus is INVALID_POWER_STATUS and GetScreenPowerStatus %{public}u",
         __func__, static_cast<uint32_t>(status));
     return static_cast<uint32_t>(status);
 }
@@ -1082,7 +1082,7 @@ int32_t RSScreen::SetScreenGamutMap(ScreenGamutMap mode)
 
 void RSScreen::SetScreenCorrection(ScreenRotation screenRotation)
 {
-    RS_LOGI("%{public}s: RSScreen(id %{public}" PRIu64 ") ,ScreenRotation: %{public}d.", __func__,
+    RS_LOGI("%{public}s: RSScreen(id %{public}" PRIu64 ") ,ScreenRotation: %{public}u.", __func__,
         id_, static_cast<uint32_t>(screenRotation));
     screenRotation_ = screenRotation;
 }

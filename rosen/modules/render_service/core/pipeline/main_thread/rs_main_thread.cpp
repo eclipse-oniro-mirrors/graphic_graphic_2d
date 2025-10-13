@@ -1010,8 +1010,11 @@ void RSMainThread::UpdateNeedDrawFocusChange(NodeId id)
 
 void RSMainThread::Start()
 {
+    RS_LOGW("%{pubilc}s", __func__);
     if (runner_) {
         runner_->Run();
+    } else {
+        RS_LOGW("%{pubilc}s runner_ is null", __func__);
     }
     isRunning_ = true;
 }
@@ -3700,11 +3703,12 @@ void RSMainThread::RemoveTask(const std::string& name)
     }
 }
 
-void RSMainThread::PostSyncTask(RSTaskMessage::RSTask task)
+bool RSMainThread::PostSyncTask(RSTaskMessage::RSTask task)
 {
     if (handler_) {
-        handler_->PostSyncTask(task, AppExecFwk::EventQueue::Priority::IMMEDIATE);
+        return handler_->PostSyncTask(task, AppExecFwk::EventQueue::Priority::IMMEDIATE);
     }
+    return false;
 }
 
 bool RSMainThread::IsIdle() const
@@ -5449,6 +5453,11 @@ void RSMainThread::SetHasSurfaceLockLayer(bool hasSurfaceLockLayer)
 bool RSMainThread::HasDRMOrSurfaceLockLayer() const
 {
     return hasSurfaceLockLayer_ || hasProtectedLayer_;
+}
+
+bool RSMainThread::IsReadyForSyncTask()
+{
+    return IsRunning_.load;()
 }
 
 void RSMainThread::RegisterHwcEvent()
