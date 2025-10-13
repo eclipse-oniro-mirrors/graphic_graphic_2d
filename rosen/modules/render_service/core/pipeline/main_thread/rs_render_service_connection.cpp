@@ -452,10 +452,10 @@ ErrCode RSRenderServiceConnection::CreateNode(const RSDisplayNodeConfig& display
 
         DisplayNodeCommandHelper::SetDisplayMode(context, nodeId, displayNodeConfig);
     };
-    // when the event runner has not started to rotate, synchronous tasks will not be executed,
+    // When the event runner has not started to rotate, synchronous tasks will not be executed,
     // so asynchronous tasks need to be dispatched at this time.
     if (!mainThread_->IsReadyForSyncTask() || !mainThread_->PostSyncTask(registerNode)) {
-        RS_LOWG("Post async tasks instead. Sync task processor ready? %{public}d",
+        RS_LOGW("Post async tasks instead. Sync task processor ready? %{public}d",
                 static_cast<int>(mainThread_->IsReadyForSyncTask()));
                 mainThread_->PostTask(registerNode);
     }

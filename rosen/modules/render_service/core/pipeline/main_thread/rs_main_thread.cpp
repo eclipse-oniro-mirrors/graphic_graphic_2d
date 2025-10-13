@@ -1010,11 +1010,11 @@ void RSMainThread::UpdateNeedDrawFocusChange(NodeId id)
 
 void RSMainThread::Start()
 {
-    RS_LOGW("%{pubilc}s", __func__);
+    RS_LOGW("%{public}s", __func__);
     if (runner_) {
         runner_->Run();
     } else {
-        RS_LOGW("%{pubilc}s runner_ is null", __func__);
+        RS_LOGW("%{public}s runner_ is null", __func__);
     }
     isRunning_ = true;
 }
@@ -5455,9 +5455,9 @@ bool RSMainThread::HasDRMOrSurfaceLockLayer() const
     return hasSurfaceLockLayer_ || hasProtectedLayer_;
 }
 
-bool RSMainThread::IsReadyForSyncTask()
+bool RSMainThread::IsReadyForSyncTask() const
 {
-    return IsRunning_.load;()
+    return isRunning_.load();
 }
 
 void RSMainThread::RegisterHwcEvent()

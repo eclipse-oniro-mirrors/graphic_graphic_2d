@@ -271,16 +271,16 @@ HWTEST_F(RSRenderServiceConnectionTest, CreateNode, TestSize.Level1)
         0, nullptr, mainThread, CreateOrGetScreenManager(), token->AsObject(), nullptr);
     
     // create displayNode with async postTask (sync task processor not ready)
-    RSDisplayNodeConfig rsDisplayNodeConfig = {};
+    RSDisplayNodeConfig displayNodeConfig = {};
     NodeId nodeId = 1;
-    EXPECT_TRUE(rsRenderServiceConnection->CreateNode(rsDisplayNodeConfig, nodeId));
+    EXPECT_TRUE(rsRenderServiceConnection->CreateNode(displayNodeConfig, nodeId));
 
-    // create dispalyNode with async postTask (sync task processor not ready, but isRunning_ was set to true)
+    // create displayNode with async postTask (sync task processor not ready, but isRunning_ was set to true)
     // at this time, CreateNode will first try to post sync task
     nodeId = 2;
     mainThread->isRunning_ = true;
-    EXPECT_TRUE(rsRenderServiceConnection->CreateNode(rsDisplayNodeConfig, nodeId));
-
+    EXPECT_TRUE(rsRenderServiceConnection->CreateNode(displayNodeConfig, nodeId));
+}
 /**
  * @tc.name: RegisterTypefaceTest001
  * @tc.desc: test register typeface and unregister typeface

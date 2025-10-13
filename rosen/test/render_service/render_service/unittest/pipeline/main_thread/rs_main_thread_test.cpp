@@ -6670,9 +6670,9 @@ HWTEST_F(RSMainThreadTest, MarkNodeImageDirty001, TestSize.Level1)
 
 /**
  * @tc.name: IsReadyForSyncTask001
- * @tc.desc: Test RSMainThreadTest.IsReadyForSyncTask001
+ * @tc.desc: Test RSMainThreadTest.IsReadyForSyncTask
  * @tc.type: FUNC
- * @tc.require:IBZ6NM
+ * @tc.require:
  */
 HWTEST_F(RSMainThreadTest, IsReadyForSyncTask001, TestSize.Level1)
 {
@@ -6688,29 +6688,30 @@ HWTEST_F(RSMainThreadTest, IsReadyForSyncTask001, TestSize.Level1)
  * @tc.name: IsReadyForSyncTask002
  * @tc.desc: Test RSMainThreadTest.IsReadyForSyncTask
  * @tc.type: FUNC
- * @tc.require:IBZ6NM
+ * @tc.require:
  */
 HWTEST_F(RSMainThreadTest, IsReadyForSyncTask, TestSize.Level1)
 {
     auto mainThread = RSMainThread::Instance();
     ASSERT_NE(mainThread, nullptr);
 
-    // launch multiple threads to read the state (expect fasle)
+    // launch multiple threads to read the state (expect false)
     mainThread->isRunning_ = false;
     const int numThreads = 11;
     std::thread threads[numThreads];
     for (int idx = 0; idx < numThreads; ++idx) {
-        thread[idx] = std::thread([] () {
+        threads[idx] = std::thread([] () {
             EXPECT_FALSE(RSMainThread::Instance()->IsReadyForSyncTask());
         });
+    }
+    for (int idx = 0; idx < numThreads; ++idx) {
+        threads[idx].join();
     }
 
     // launch multiple threads to read the state (expect true)
     mainThread->isRunning_ = true;
-    const int numThreads = 11;
-    std::thread threads[numThreads];
     for (int idx = 0; idx < numThreads; ++idx) {
-        thread[idx] = std::thread([] () {
+        threads[idx] = std::thread([] () {
             EXPECT_TRUE(RSMainThread::Instance()->IsReadyForSyncTask());
         });
     }
