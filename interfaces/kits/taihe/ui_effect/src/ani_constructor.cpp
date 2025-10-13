@@ -14,6 +14,7 @@
  */
 
 #include "ohos.graphics.uiEffect.ani.hpp"
+#include "ohos.graphics.uiEffect.uiEffect.ani.hpp"
 
 ANI_EXPORT ani_status ANI_Constructor(ani_vm *vm, uint32_t *result)
 {
