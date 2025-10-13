@@ -489,6 +489,43 @@ HWTEST_F(RSPropertyDrawableForegroundTest, DrawLightTest001, TestSize.Level1)
     pointLightDrawableTest->lightSourcesAndPosVec_.emplace_back(
         std::make_shared<RSLightSource>(), Vector4f(0.0f, 0.0f, 1.0f, 1.0f));
     pointLightDrawableTest->DrawLight(&canvasTest5);
+
+    Drawing::Canvas canvasTest6;
+    pointLightDrawableTest->illuminatedType_ = IlluminatedType::NORMAL_BORDER_CONTENT;
+    pointLightDrawableTest->lightSourcesAndPosVec_.emplace_back(
+        std::make_shared<RSLightSource>(), Vector4f(0.0f, 0.0f, 1.0f, 1.0f));
+    pointLightDrawableTest->DrawLight(&canvasTest6);
+}
+
+/**
+ * @tc.name: DrawLightTest002
+ * @tc.desc: DrawLight test
+ * @tc.type: FUNC
+ * @tc.require:issueI9SCBR
+ */
+HWTEST_F(RSPropertyDrawableForegroundTest, DrawLightTest002, TestSize.Level1)
+{
+    RSProperties propertiesTest;
+    std::shared_ptr<DrawableV2::RSPointLightDrawable> pointLightDrawableTest =
+        std::make_shared<DrawableV2::RSPointLightDrawable>(propertiesTest);
+    EXPECT_NE(pointLightDrawableTest, nullptr);
+    propertiesTest.SetBoundsWidth(200);
+    propertiesTest.SetBoundsHeight(200);
+    Drawing::Canvas canvasTest1;
+    pointLightDrawableTest->DrawLight(&canvasTest1);
+
+    Drawing::Canvas canvasTest2;
+    pointLightDrawableTest->illuminatedType_ = IlluminatedType::NORMAL_BORDER_CONTENT;
+    pointLightDrawableTest->lightSourcesAndPosVec_.emplace_back(
+        std::make_shared<RSLightSource>(), Vector4f(0.0f, 0.0f, 1.0f, 1.0f));
+    pointLightDrawableTest->DrawLight(&canvasTest2);
+
+    Drawing::Canvas canvasTest3;
+    pointLightDrawableTest->illuminatedType_ = IlluminatedType::NORMAL_BORDER_CONTENT;
+    pointLightDrawableTest->lightSourcesAndPosVec_.emplace_back(
+        std::make_shared<RSLightSource>(), Vector4f(0.0f, 0.0f, 1.0f, 1.0f));
+    pointLightDrawableTest->contentRRect_.SetRect(Drawing::RectF(0.f, 0.f, 200.f, 200.f));
+    pointLightDrawableTest->DrawLight(&canvasTest3);
 }
 
 /**
@@ -505,6 +542,41 @@ HWTEST_F(RSPropertyDrawableForegroundTest, GetShaderTest001, TestSize.Level1)
     EXPECT_NE(pointLightDrawableTest, nullptr);
     EXPECT_NE(pointLightDrawableTest->GetPhongShaderBuilder(), nullptr);
     EXPECT_NE(pointLightDrawableTest->GetFeatheringBoardLightShaderBuilder(), nullptr);
+}
+
+/**
+ * @tc.name: GetShaderTest002
+ * @tc.desc: GetPhongShaderBuilder GetFeatheringBoardLightShaderBuilder GetNormalLightShaderBuilder test
+ * @tc.type: FUNC
+ * @tc.require:issueI9SCBR
+ */
+HWTEST_F(RSPropertyDrawableForegroundTest, GetShaderTest002, TestSize.Level1)
+{
+    RSProperties propertiesTest;
+    std::shared_ptr<DrawableV2::RSPointLightDrawable> pointLightDrawableTest =
+        std::make_shared<DrawableV2::RSPointLightDrawable>(propertiesTest);
+    EXPECT_NE(pointLightDrawableTest, nullptr);
+    EXPECT_NE(pointLightDrawableTest->GetPhongShaderBuilder(), nullptr);
+    EXPECT_NE(pointLightDrawableTest->GetFeatheringBoardLightShaderBuilder(), nullptr);
+    EXPECT_NE(pointLightDrawableTest->GetNormalLightShaderBuilder(), nullptr);
+    static constexpr char shaderString[] = "";
+    EXPECT_NE(pointLightDrawableTest->GetLightShaderBuilder<shaderString>(), nullptr);
+}
+
+/**
+ * @tc.name: MakeShaderTest001
+ * @tc.desc: MakeFeatheringBoardLightShaderBuilder MakeNormalLightShaderBuilder test
+ * @tc.type: FUNC
+ * @tc.require:issueI9SCBR
+ */
+HWTEST_F(RSPropertyDrawableForegroundTest, MakeShaderTest001, TestSize.Level1)
+{
+    RSProperties propertiesTest;
+    std::shared_ptr<DrawableV2::RSPointLightDrawable> pointLightDrawableTest =
+        std::make_shared<DrawableV2::RSPointLightDrawable>(propertiesTest);
+    EXPECT_NE(pointLightDrawableTest, nullptr);
+    EXPECT_NE(pointLightDrawableTest->MakeFeatheringBoardLightShaderBuilder(), nullptr);
+    EXPECT_NE(pointLightDrawableTest->MakeNormalLightShaderBuilder(), nullptr);
 }
 
 /**
