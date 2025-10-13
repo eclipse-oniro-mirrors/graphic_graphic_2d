@@ -5110,16 +5110,16 @@ std::shared_ptr<RSNGRenderMaskBase> RSProperties::GetSDFMask() const
     return renderSDFMask_;
 }
 
-const std::shared_ptr<RSSDFEffectFilter> RSProperties::GetSDFEffectFilter()
+const std::shared_ptr<RSSDFEffectFilter> RSProperties::GetSDFEffectFilter() const
 {
-    if (!GetSDFMask()) {
+    if (!GetSDFMask() || !effect_) {
         return nullptr;
     }
 
     if (IS_UNI_RENDER) {
-        return std::static_pointer_cast<RSSDFEffectFilter>(GetEffect().foregroundFilterCache_);
+        return std::static_pointer_cast<RSSDFEffectFilter>(effect_->foregroundFilterCache_);
     }
-    return std::static_pointer_cast<RSSDFEffectFilter>(GetEffect().foregroundFilter_);
+    return std::static_pointer_cast<RSSDFEffectFilter>(effect_->foregroundFilter_);
 }
 
 } // namespace Rosen

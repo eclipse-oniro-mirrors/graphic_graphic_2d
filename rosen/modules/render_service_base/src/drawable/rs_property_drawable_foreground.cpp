@@ -571,8 +571,8 @@ bool RSBorderDrawable::OnUpdate(const RSRenderNode& node)
 void RSBorderDrawable::DrawBorder(const RSProperties& properties, Drawing::Canvas& canvas,
     const std::shared_ptr<RSBorder>& border, const bool& isOutline)
 {
-    if (auto sdfEffectFilter = properties.GetSDFEffectFilter();
-            sdfEffectFilter && border->GetStyle() == BorderStyle::SOLID) {
+    const std::shared_ptr<RSSDFEffectFilter> sdfEffectFilter = properties.GetSDFEffectFilter();
+    if (sdfEffectFilter && border->GetStyle() == BorderStyle::SOLID) {
         auto borderColor = border->GetColor();
         Drawing::Color color(
             borderColor.GetRed(), borderColor.GetGreen(), borderColor.GetBlue(), borderColor.GetAlpha());

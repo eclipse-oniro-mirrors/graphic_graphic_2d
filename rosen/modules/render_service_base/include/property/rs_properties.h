@@ -500,7 +500,7 @@ public:
     }
     void SetForegroundFilter(const std::shared_ptr<RSFilter>& foregroundFilter);
 
-    [[nodiscard]] const std::shared_ptr<RSSDFEffectFilter> GetSDFEffectFilter();
+    [[nodiscard]] const std::shared_ptr<RSSDFEffectFilter> GetSDFEffectFilter() const;
 
     void SetBackgroundBlurRadius(float backgroundBlurRadius);
     float GetBackgroundBlurRadius() const;
