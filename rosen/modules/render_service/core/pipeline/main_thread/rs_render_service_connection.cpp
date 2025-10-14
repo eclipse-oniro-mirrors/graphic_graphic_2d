@@ -457,7 +457,7 @@ ErrCode RSRenderServiceConnection::CreateNode(const RSDisplayNodeConfig& display
     if (!mainThread_->IsReadyForSyncTask() || !mainThread_->PostSyncTask(registerNode)) {
         RS_LOGW("Post async tasks instead. Sync task processor ready? %{public}d",
                 static_cast<int>(mainThread_->IsReadyForSyncTask()));
-                mainThread_->PostTask(registerNode);
+        mainThread_->PostTask(registerNode);
     }
     success = true;
     return ERR_OK;
