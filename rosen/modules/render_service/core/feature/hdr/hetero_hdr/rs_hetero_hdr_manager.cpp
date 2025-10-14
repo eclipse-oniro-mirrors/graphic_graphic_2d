@@ -299,36 +299,37 @@ void RSHeteroHDRManager::ClearBufferCache()
 void RSHeteroHDRManager::GenerateHpaeRect(RSSurfaceRenderParams* surfaceParams, RectI& hapeSrcRect,
     RectI& validHpaeDstRect)
 {
-    // The precondition has already determined that the srcBuffer and surfaceParams are not nullptr(ValidateSurface)
+    // The precondition has already determined that the surfaceParams and srcBuffer are not nullptr(ValidateSurface)
     sptr<SurfaceBuffer> srcBuffer = surfaceParams->GetBuffer();
     const auto& srcRect = surfaceParams->GetLayerInfo().srcRect;
     const auto& dstRect = surfaceParams->GetLayerInfo().dstRect;
-    auto bufferWidth = srcBuffer->GetSurfaceBufferWidth();
     auto bufferHeight = srcBuffer->GetSurfaceBufferHeight();
+    auto bufferWidth = srcBuffer->GetSurfaceBufferWidth();
     /*
     * isFixedDstBuffer_ is true when hpae and GPU are used separately for scaling.
     * The precondition has already determined that the width and height of srcBuffer are not zero
     */
     if (isFixedDstBuffer_) {
         // this condition, crop and scale need to be handle by gpu
-        hapeSrcRect = RectRound(RectI(0, 0, bufferWidth, bufferHeight), bufferWidth, bufferHeight);
+        hpaeSrcRect = RectRound(RectI(0, 0, bufferWidth, bufferHeight), bufferWidth, bufferHeight);
         dst_ = RectRound(dst_, hpaeBufferSize_.x_, hpaeBufferSize_.y_);
-        auto validW = round(static_cast<float>(dst_.width_) / static_cast<float>(hapeSrcRect.width_ ) *
+        // The precondition has already determined that width and height of hpaeSrcRect are not zero
+        auto validW = round(static_cast<float>(dst_.width_) / static_cast<float>(hpaeSrcRect.width_ ) *
             static_cast<float>(bufferWidth));
-        auto validH = round(static_cast<float>(dst_.height_) / static_cast<float>(hapeSrcRect.height_ ) *
+        auto validH = round(static_cast<float>(dst_.height_) / static_cast<float>(hpaeSrcRect.height_ ) *
             static_cast<float>(bufferHeight));
         validHpaeDstRect = { 0, 0, validW, validH };
     } else {
-        hapeSrcRect = RectRound(RectI(srcRect.x, srcRect.y, srcRect.w, srcRect.h), bufferWidth, bufferHeight);
-        // The precondition has already determined that srcRect.w and srcRect.h are not zero
+        hpaeSrcRect = RectRound(RectI(srcRect.x, srcRect.y, srcRect.w, srcRect.h), bufferWidth, bufferHeight);
+        // The precondition has already determined that width and height of srcRect and hpaeSrcRect are not zero
         dst_.width_ = round(static_cast<float>(dstRect.w) / static_cast<float>(srcRect.w) *
-            static_cast<float>(hapeSrcRect.width_));
+            static_cast<float>(hpaeSrcRect.width_));
         dst_.height_ = round(static_cast<float>(dstRect.h) / static_cast<float>(srcRect.h) *
-            static_cast<float>(hapeSrcRect.height_));
+            static_cast<float>(hpaeSrcRect.height_));
         dst_ = RectRound(dst_, hpaeBufferSize_.x_, hpaeBufferSize_.y_);
-        auto validW = round(static_cast<float>(dst_.width_) / static_cast<float>(hapeSrcRect.width_ ) *
+        auto validW = round(static_cast<float>(dst_.width_) / static_cast<float>(hpaeSrcRect.width_ ) *
             static_cast<float>(srcRect.w));
-        auto validH = round(static_cast<float>(dst_.height_) / static_cast<float>(hapeSrcRect.height_ ) *
+        auto validH = round(static_cast<float>(dst_.height_) / static_cast<float>(hpaeSrcRect.height_ ) *
             static_cast<float>(srcRect.h));
         validHpaeDstRect = { 0, 0, validW, validH };
     }

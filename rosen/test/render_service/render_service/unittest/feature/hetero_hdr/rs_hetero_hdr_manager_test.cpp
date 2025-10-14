@@ -824,12 +824,12 @@ HWTEST_F(RSHeteroHDRManagerTest, PrepareAndSubmitHDRTaskTest002, TestSize.Level1
 }
 
 /**
- * @tc.name: PrepareAndSubmitHDRTaskTest001
+ * @tc.name: PrepareAndSubmitHDRTaskTest010
  * @tc.desc: Test PrepareAndSubmitHDRTask
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSHeteroHDRManagerTest, PrepareAndSubmitHDRTaskTest001, TestSize.Level1)
+HWTEST_F(RSHeteroHDRManagerTest, PrepareAndSubmitHDRTaskTest010, TestSize.Level1)
 {
     MockRSHeteroHDRManager mockRSHeteroHDRManager;
 
