@@ -90,8 +90,8 @@ sptr<SurfaceBuffer> RSHeteroHDRBufferLayer::PrepareHDRDstBuffer(RSSurfaceRenderP
             config.width = static_cast<int32_t>(curScreenInfo.height);
             config.height = static_cast<int32_t>(curScreenInfo.width);
         } else {
-                config.width = static_cast<int32_t>(curScreenInfo.width);
-                config.height = static_cast<int32_t>(curScreenInfo.height);
+            config.width = static_cast<int32_t>(curScreenInfo.width);
+            config.height = static_cast<int32_t>(curScreenInfo.height);
         }
     } else {
         RS_LOGW("[hdrHetero]:RSHeteroHDRBufferLayer PrepareHDRDstBuffer this hdrStatus is not supported");
