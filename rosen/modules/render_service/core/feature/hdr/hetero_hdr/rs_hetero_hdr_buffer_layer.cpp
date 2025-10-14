@@ -91,14 +91,14 @@ sptr<SurfaceBuffer> RSHeteroHDRBufferLayer::PrepareHDRDstBuffer(RSSurfaceRenderP
             config.colorGamut = GRAPHIC_COLOR_GAMUT_SRGB;
             break;
         case HdrStatus::HDR_VIDEO:
+            config.format = GRAPHIC_PIXEL_FMT_YCBCR_P010;
             config.colorGamut = GRAPHIC_COLOR_GAMUT_BT2020;
+            config.width = static_cast<int32_t>(curScreenInfo.width);
+            config.height = static_cast<int32_t>(curScreenInfo.height);
             if (transform == GraphicTransformType::GRAPHIC_ROTATE_90 ||
                 transform == GraphicTransformType::GRAPHIC_ROTATE_270) {
                 config.width = static_cast<int32_t>(curScreenInfo.height);
                 config.height = static_cast<int32_t>(curScreenInfo.width);
-            } else {
-                config.width = static_cast<int32_t>(curScreenInfo.width);
-                config.height = static_cast<int32_t>(curScreenInfo.height);
             }
             break;
         default:
