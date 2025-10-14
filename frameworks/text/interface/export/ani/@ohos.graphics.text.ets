@@ -794,7 +794,7 @@ namespace text {
 
   native function getFontDescriptorsFromPathSync(path: Resource | string): Array<FontDescriptor>;
 
-  export async function getSystemFontFullNamesByType(path: Resource | string): Promise<Array<FontDescriptor>> {
+  export async function getFontDescriptorsFromPath(path: Resource | string): Promise<Array<FontDescriptor>> {
     return await new Promise<Array<FontDescriptor>>((resolve, reject) => {
       try {
         taskpool.execute((): Array<FontDescriptor> => {
@@ -807,7 +807,7 @@ namespace text {
       }
     });
   }
-  
+
   export enum SystemFontType {
     ALL = 1 << 0,
     GENERIC = 1 << 1,

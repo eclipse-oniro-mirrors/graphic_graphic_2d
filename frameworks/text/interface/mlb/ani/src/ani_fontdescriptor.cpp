@@ -322,7 +322,7 @@ ani_object AniFontDescriptor::MatchFontDescriptors(ani_env* env, ani_object desc
 ani_object AniFontDescriptor::GetFontDescriptorsFromPath(ani_env* env, ani_object path)
 {
     ani_class stringClass = nullptr;
-    ani_status ret = AniTextUtils::FindClassWithCache(env, ANI_ARRAY, stringClass);
+    ani_status ret = AniTextUtils::FindClassWithCache(env, ANI_STRING, stringClass);
     if (ret != ANI_OK) {
         TEXT_LOGE("Failed to found class, ret %{public}d", ret);
         return AniTextUtils::CreateAniArray(env, 0);
