@@ -53,12 +53,14 @@ ani_boolean AniRectUtils::Contains(ani_env* env, ani_object obj, ani_object aniR
 {
     Drawing::Rect drawingRect;
     if (!GetRectFromAniRectObj(env, aniRectObj, drawingRect)) {
-        AniThrowError(env, "AniRectUtils::Contains invalid params: aniRectObj. ");
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
+            "AniRectUtils::Contains invalid params: aniRectObj. ");
         return false;
     }
     Drawing::Rect otherRect;
     if (!GetRectFromAniRectObj(env, aniOtherRect, otherRect)) {
-        AniThrowError(env, "AniRectUtils::Contains invalid params: aniOtherRect. ");
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
+            "AniRectUtils::Contains invalid params: aniOtherRect. ");
         return false;
     }
     bool isContains = drawingRect.Contains(otherRect);
@@ -70,7 +72,8 @@ void AniRectUtils::Inset(ani_env* env, ani_object obj, ani_object aniRectObj,
 {
     Drawing::Rect drawingRect;
     if (!GetRectFromAniRectObj(env, aniRectObj, drawingRect)) {
-        AniThrowError(env, "AniRectUtils::Inset invalid params: aniRectObj. ");
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
+            "AniRectUtils::Inset invalid params: aniRectObj. ");
     }
 
     float originalLeft = drawingRect.GetLeft();

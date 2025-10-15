@@ -88,7 +88,8 @@ void AniRegion::SetEmpty(ani_env* env, ani_object obj)
 {
     auto aniRegion = GetNativeFromObj<AniRegion>(env, obj);
     if (aniRegion == nullptr) {
-        AniThrowError(env, "AniRegion::SetEmpty invalid params: obj. ");
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
+            "AniRegion::SetEmpty invalid params: obj. ");
         return;
     }
 
