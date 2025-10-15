@@ -117,7 +117,8 @@ void AniMatrix::preConcat(ani_env* env, ani_object obj, ani_object aniMatrixObj)
 {
     auto aniMatrix = GetNativeFromObj<AniMatrix>(env, obj);
     if (aniMatrix == nullptr) {
-        AniThrowError(env, "AniMatrix::preConcat invalid params: aniMatrix. ");
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
+            "AniMatrix::preConcat invalid params: aniMatrix. ");
         return;
     }
 

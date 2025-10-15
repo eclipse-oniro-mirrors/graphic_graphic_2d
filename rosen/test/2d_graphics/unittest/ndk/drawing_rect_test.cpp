@@ -730,8 +730,8 @@ HWTEST_F(NativeDrawingRectTest, NativeDrawingRectTest_Inset007, TestSize.Level1)
     EXPECT_EQ(OH_Drawing_RectInset(nullptr, left, top, right, bottom), OH_DRAWING_ERROR_INCORRECT_PARAMETER);
     EXPECT_EQ(OH_Drawing_RectInset(rect, left, top, right, bottom), OH_DRAWING_SUCCESS);
     EXPECT_EQ(OH_Drawing_RectGetLeft(rect), 11);
-    EXPECT_EQ(OH_Drawing_RectGetRight(rect), 25);
-    EXPECT_EQ(OH_Drawing_RectGetTop(rect), 38);
+    EXPECT_EQ(OH_Drawing_RectGetTop(rect), 25);
+    EXPECT_EQ(OH_Drawing_RectGetRight(rect), 38);
     EXPECT_EQ(OH_Drawing_RectGetBottom(rect), 24);
     OH_Drawing_RectDestroy(rect);
 }

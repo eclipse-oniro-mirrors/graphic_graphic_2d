@@ -308,5 +308,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::Rosen::Drawing::NativeMatrixTest004(data, size);
     OHOS::Rosen::Drawing::NativeMatrixTest005(data, size);
     OHOS::Rosen::Drawing::NativeMatrixTest006(data, size);
+    OHOS::Rosen::Drawing::NativeMatrixTest007(data, size);
     return 0;
 }
