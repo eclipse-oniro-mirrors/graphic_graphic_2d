@@ -1012,5 +1012,6 @@ group("unittest") {
     ":RSMaterialFilterTest",
     ":RSPixelMapShaderObjTest",
     ":RSPixelMapUtilTest",
+    ":RSImageBaseTest",
   ]
 }
