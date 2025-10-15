@@ -122,9 +122,6 @@ bool RSProcessor::Init(RSScreenRenderNode& node, int32_t offsetX, int32_t offset
         }
     }
 
-    auto mirrorNode = node.GetMirrorSource().lock();
-    CalculateScreenTransformMatrix(mirrorNode ? *mirrorNode : node);
-
     if (mirroredId_ != INVALID_SCREEN_ID) {
         mirroredScreenInfo_ = screenManager->QueryScreenInfo(mirroredId_);
         CalculateMirrorAdaptiveMatrix();
