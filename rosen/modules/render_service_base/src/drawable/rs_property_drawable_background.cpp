@@ -707,6 +707,15 @@ Drawing::RecordingCanvas::DrawFunc RSBackgroundEffectDrawable::CreateDrawFunc() 
             std::ceil(absRect.GetHeight()));
         bounds = bounds.IntersectRect(deviceRect);
         Drawing::RectI boundsRect(bounds.GetLeft(), bounds.GetTop(), bounds.GetRight(), bounds.GetBottom());
+        // When the drawing area of a useEffect node is empty in the current frame,
+        // it won't be collected by the effect node, effect data is null(RSRenderNode::UpdateVisibleEffectChild).
+        // if useEffect is within a node group, it will draw with fallback branch,
+        // causing an increase in RSPropertyDrawableUtils::DrawBackgroundEffect g_blurCnt and
+        // triggering frequency boosting. so add check for boundsRect: skip DrawBackgroundEffect to reduce blur count.
+        if (boundsRect.IsEmpty()) {
+            RS_TRACE_NAME_FMT("RSBackgroundEffectDrawable::DrawBackgroundEffect boundsRect is empty");
+            return;
+        }
         RS_TRACE_NAME_FMT("RSBackgroundEffectDrawable::DrawBackgroundEffect nodeId[%lld]", ptr->renderNodeId_);
         RSPropertyDrawableUtils::DrawBackgroundEffect(
             paintFilterCanvas, ptr->filter_, ptr->cacheManager_, boundsRect);
