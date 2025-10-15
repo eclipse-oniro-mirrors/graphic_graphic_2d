@@ -451,6 +451,7 @@ RSDrawable::Ptr RSForegroundFilterRestoreDrawable::OnGenerate(const RSRenderNode
 
 bool RSForegroundFilterRestoreDrawable::OnUpdate(const RSRenderNode& node)
 {
+    stagingNodeId_ = node.GetId();
     auto& rsFilter = node.GetRenderProperties().GetForegroundFilter();
     if (rsFilter == nullptr) {
         return false;
@@ -469,6 +470,7 @@ Drawing::RecordingCanvas::DrawFunc RSForegroundFilterRestoreDrawable::CreateDraw
         RSTagTracker tagTracker(paintFilterCanvas ? paintFilterCanvas->GetGPUContext() : nullptr,
             RSTagTracker::SOURCETYPE::SOURCE_RSFOREGROUNDFILTERRESTOREDRAWABLE);
 #endif
+        RS_TRACE_NAME_FMT("RSForegroundFilterRestoreDrawable::CreateDrawFunc node[%llu] ", ptr->renderNodeId_);
         RSPropertyDrawableUtils::DrawForegroundFilter(*paintFilterCanvas, ptr->foregroundFilter_);
     };
 }
@@ -478,6 +480,7 @@ void RSForegroundFilterRestoreDrawable::OnSync()
     if (needSync_ == false) {
         return;
     }
+    renderNodeId_ = stagingNodeId_;
     foregroundFilter_ = std::move(stagingForegroundFilter_);
     if (foregroundFilter_) {
         foregroundFilter_->OnSync();

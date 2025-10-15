@@ -146,6 +146,9 @@ private:
     bool needSync_ = false;
     std::shared_ptr<RSFilter> foregroundFilter_;
     std::shared_ptr<RSFilter> stagingForegroundFilter_;
+
+    NodeId stagingNodeId_ = INVALID_NODEID;
+    NodeId renderNodeId_ = INVALID_NODEID;
 };
 
 class RSForegroundColorDrawable : public RSPropertyDrawable {
