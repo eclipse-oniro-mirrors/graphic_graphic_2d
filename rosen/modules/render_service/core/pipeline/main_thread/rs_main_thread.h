@@ -109,7 +109,7 @@ public:
     void PostTask(RSTaskMessage::RSTask task, const std::string& name, int64_t delayTime,
         AppExecFwk::EventQueue::Priority priority = AppExecFwk::EventQueue::Priority::IDLE);
     void RemoveTask(const std::string& name);
-    void PostSyncTask(RSTaskMessage::RSTask task);
+    bool PostSyncTask(RSTaskMessage::RSTask task);
     bool IsIdle() const;
     void TransactionDataMapDump(const TransactionDataMap& transactionDataMap, std::string& dumpString);
     void RenderServiceTreeDump(std::string& dumpString, bool forceDumpSingleFrame = true,
@@ -465,6 +465,8 @@ public:
 
     void SetHasSurfaceLockLayer(bool hasSurfaceLockLayer);
     bool HasDRMOrSurfaceLockLayer() const;
+
+    bool IsReadyForSyncTask() const;
 
 private:
     using TransactionDataIndexMap = std::unordered_map<pid_t,

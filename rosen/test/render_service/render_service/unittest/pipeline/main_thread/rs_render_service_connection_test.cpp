@@ -315,6 +315,35 @@ HWTEST_F(RSRenderServiceConnectionTest, SetSurfaceCustomWatermarkTest001, TestSi
 }
 
 /**
+ * @tc.name: CreateNode
+ * @tc.desc: CreateNode
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSRenderServiceConnectionTest, CreateNode, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    sptr<RSIConnectionToken> token = new IRemoteStub<RSIConnectionToken>();
+    auto rsRenderServiceConnection = new RSRenderServiceConnection(
+        0, nullptr, mainThread, CreateOrGetScreenManager(), token->AsObject(), nullptr);
+    
+    // create displayNode with async postTask (sync task processor not ready)
+    RSDisplayNodeConfig displayNodeConfig = {};
+    NodeId nodeId = 1;
+    bool result = true;
+    rsRenderServiceConnection->CreateNode(displayNodeConfig, nodeId, result);
+    EXPECT_TRUE(result);
+
+    // create displayNode with async postTask (sync task processor not ready, but isRunning_ was set to true)
+    // at this time, CreateNode will first try to post sync task
+    nodeId = 2;
+    mainThread->isRunning_ = true;
+    rsRenderServiceConnection->CreateNode(displayNodeConfig, nodeId, result);
+    EXPECT_TRUE(result);
+}
+
+/**
  * @tc.name: RegisterTypefaceTest001
  * @tc.desc: test register typeface and unregister typeface
  * @tc.type: FUNC

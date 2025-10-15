@@ -6746,4 +6746,56 @@ HWTEST_F(RSMainThreadTest, MarkNodeImageDirty001, TestSize.Level1)
     uint64_t nodeId = 12345;
     mainThread->MarkNodeImageDirty(nodeId);
 }
+
+/**
+ * @tc.name: IsReadyForSyncTask001
+ * @tc.desc: Test RSMainThreadTest.IsReadyForSyncTask
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSMainThreadTest, IsReadyForSyncTask001, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    mainThread->isRunning_ = false;
+    EXPECT_FALSE(mainThread->IsReadyForSyncTask());
+    mainThread->isRunning_ = true;
+    EXPECT_TRUE(mainThread->IsReadyForSyncTask());
+}
+
+/**
+ * @tc.name: IsReadyForSyncTask002
+ * @tc.desc: Test RSMainThreadTest.IsReadyForSyncTask
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSMainThreadTest, IsReadyForSyncTask, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+
+    // launch multiple threads to read the state (expect false)
+    mainThread->isRunning_ = false;
+    const int numThreads = 11;
+    std::thread threads[numThreads];
+    for (int idx = 0; idx < numThreads; ++idx) {
+        threads[idx] = std::thread([] () {
+            EXPECT_FALSE(RSMainThread::Instance()->IsReadyForSyncTask());
+        });
+    }
+    for (int idx = 0; idx < numThreads; ++idx) {
+        threads[idx].join();
+    }
+
+    // launch multiple threads to read the state (expect true)
+    mainThread->isRunning_ = true;
+    for (int idx = 0; idx < numThreads; ++idx) {
+        threads[idx] = std::thread([] () {
+            EXPECT_TRUE(RSMainThread::Instance()->IsReadyForSyncTask());
+        });
+    }
+    for (int idx = 0; idx < numThreads; ++idx) {
+        threads[idx].join();
+    }
+}
 } // namespace OHOS::Rosen
