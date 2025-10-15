@@ -136,12 +136,13 @@ HWTEST_F(RSPropertyDrawableForegroundTest, OnGenerateAndOnUpdateTest002, TestSiz
  */
 HWTEST_F(RSPropertyDrawableForegroundTest, OnGenerateAndOnUpdateTest003, TestSize.Level1)
 {
-    RSRenderNode renderNodeTest8(0);
+    RSRenderNode renderNodeTest8(1);
     std::shared_ptr<DrawableV2::RSForegroundFilterRestoreDrawable> foregroundFilterRestoreDrawable =
         std::make_shared<DrawableV2::RSForegroundFilterRestoreDrawable>();
     EXPECT_NE(foregroundFilterRestoreDrawable, nullptr);
     renderNodeTest8.renderProperties_.GetEffect().foregroundFilter_ = nullptr;
     EXPECT_FALSE(foregroundFilterRestoreDrawable->OnUpdate(renderNodeTest8));
+    EXPECT_EQ(foregroundFilterRestoreDrawable->stagingNodeId_, renderNodeTest8.GetId());
     EXPECT_EQ(foregroundFilterRestoreDrawable->OnGenerate(renderNodeTest8), nullptr);
     std::shared_ptr<RSFilter> foregroundFilterTest2 = std::make_shared<RSFilter>();
     EXPECT_NE(foregroundFilterTest2, nullptr);
@@ -284,6 +285,8 @@ HWTEST_F(RSPropertyDrawableForegroundTest, OnSyncTest001, TestSize.Level1)
  */
 HWTEST_F(RSPropertyDrawableForegroundTest, OnSyncTest002, TestSize.Level1)
 {
+    const NodeId nodeID = 10;
+
     std::shared_ptr<DrawableV2::RSDynamicDimDrawable> dynamicDimDrawable =
         std::make_shared<DrawableV2::RSDynamicDimDrawable>();
     EXPECT_NE(dynamicDimDrawable, nullptr);
@@ -308,10 +311,12 @@ HWTEST_F(RSPropertyDrawableForegroundTest, OnSyncTest002, TestSize.Level1)
     foregroundFilterRestoreDrawable->OnSync();
     std::shared_ptr<RSFilter> stagingForegroundFilter = std::make_shared<RSFilter>();
     EXPECT_NE(stagingForegroundFilter, nullptr);
+    foregroundFilterRestoreDrawable->stagingNodeId_ = nodeID;
     foregroundFilterRestoreDrawable->stagingForegroundFilter_ = stagingForegroundFilter;
     foregroundFilterRestoreDrawable->needSync_ = true;
     foregroundFilterRestoreDrawable->OnSync();
     EXPECT_FALSE(foregroundFilterRestoreDrawable->needSync_);
+    EXPECT_EQ(foregroundFilterRestoreDrawable->renderNodeId_, nodeID);
     foregroundFilterRestoreDrawable->OnSync();
 
     std::shared_ptr<DrawableV2::RSPixelStretchDrawable> pixelStretchDrawable =
