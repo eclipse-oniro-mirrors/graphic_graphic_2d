@@ -1010,7 +1010,6 @@ protected:
     virtual void OnSync();
     virtual void OnSkipSync();
     virtual void ClearResource() {};
-    virtual void ClearNeverOnTree() {};
 
     void AddUIExtensionChild(SharedPtr child);
     void MoveUIExtensionChild(SharedPtr child);

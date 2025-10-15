@@ -350,6 +350,14 @@ HWTEST_F(RSCanvasDrawingRenderNodeTest, GetBitmap, TestSize.Level1)
     ASSERT_NE(rsCanvasDrawingRenderNode.GetBitmap(tid).bmpImplPtr, nullptr);
 
     rsCanvasDrawingRenderNode.GetBitmap();
+
+    rsCanvasDrawingRenderNode.drawingNodeRenderID = UINT32_MAX - 1;
+    rsCanvasDrawingRenderNode.cachedOpCount_ = 1;
+    ASSERT_TRUE(rsCanvasDrawingRenderNode.HasCachedOp());
+    ASSERT_NE(rsCanvasDrawingRenderNode.GetBitmap(UINT32_MAX - 1).bmpImplPtr, nullptr);
+    rsCanvasDrawingRenderNode.cachedOpCount_ = 0;
+    ASSERT_FALSE(rsCanvasDrawingRenderNode.HasCachedOp());
+    ASSERT_NE(rsCanvasDrawingRenderNode.GetBitmap(UINT32_MAX - 1).bmpImplPtr, nullptr);
 }
 
 /**
@@ -412,6 +420,9 @@ HWTEST_F(RSCanvasDrawingRenderNodeTest, GetPixelmapSurfaceImgValidTest, TestSize
     EXPECT_FALSE(rsCanvasDrawingRenderNode->GetPixelmap(pixelmap, &rect, tid, drawCmdList));
 
     tid = rsCanvasDrawingRenderNode->GetTid();
+    rsCanvasDrawingRenderNode->cachedOpCount_ = 1;
+    EXPECT_FALSE(rsCanvasDrawingRenderNode->GetPixelmap(pixelmap, &rect, tid, drawCmdList));
+    rsCanvasDrawingRenderNode->cachedOpCount_ = 0;
     EXPECT_FALSE(rsCanvasDrawingRenderNode->GetPixelmap(pixelmap, &rect, tid, drawCmdList));
 
 #if (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
@@ -667,12 +678,10 @@ HWTEST_F(RSCanvasDrawingRenderNodeTest, ContentStyleSlotUpdateTest, TestSize.Lev
 
     node->waitSync_ = false;
     node->isOnTheTree_ = false;
-    node->isNeverOnTree_ = true;
     node->ContentStyleSlotUpdate();
 
     node->waitSync_ = false;
     node->isOnTheTree_ = false;
-    node->isNeverOnTree_ = false;
     node->isTextureExportNode_ = true;
     node->ContentStyleSlotUpdate();
 }
@@ -714,8 +723,52 @@ HWTEST_F(RSCanvasDrawingRenderNodeTest, ApplyCachedCmdListTest, TestSize.Level1)
     auto drawCmdList = std::make_shared<Drawing::DrawCmdList>(10, 10);
     auto node = std::make_shared<RSCanvasDrawingRenderNode>(9);
     node->outOfLimitCmdList_.emplace_back(drawCmdList);
-    size_t opCount = 0;
-    node->ApplyCachedCmdList(opCount);
+    node->ApplyCachedCmdList();
     EXPECT_TRUE(node->outOfLimitCmdList_.empty());
+    node->ApplyCachedCmdList();
+    EXPECT_TRUE(node->outOfLimitCmdList_.empty());
+}
+
+/**
+ * @tc.name: ApplyModifiersTest
+ * @tc.desc: Test ApplyModifiers
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSCanvasDrawingRenderNodeTest, ApplyModifiersTest, TestSize.Level1)
+{
+    auto node = std::make_shared<RSCanvasDrawingRenderNode>(10);
+    node->cachedOpCount_ = 0;
+    node->dirtyTypesNG_.set(static_cast<int>(ModifierNG::RSModifierType::CONTENT_STYLE), false);
+    node->ApplyModifiers();
+    EXPECT_FALSE(node->HasCachedOp());
+    node->cachedOpCount_ = 1;
+    node->dirtyTypesNG_.set(static_cast<int>(ModifierNG::RSModifierType::CONTENT_STYLE), true);
+    node->ApplyModifiers();
+    EXPECT_TRUE(node->HasCachedOp());
+    node->cachedOpCount_ = 0;
+    node->dirtyTypesNG_.set(static_cast<int>(ModifierNG::RSModifierType::CONTENT_STYLE), true);
+    node->ApplyModifiers();
+    EXPECT_FALSE(node->HasCachedOp());
+    node->cachedOpCount_ = 1;
+    node->dirtyTypesNG_.set(static_cast<int>(ModifierNG::RSModifierType::CONTENT_STYLE), false);
+    node->ApplyModifiers();
+    EXPECT_TRUE(node->HasCachedOp());
+}
+
+/**
+ * @tc.name: CheckCachedOpTest
+ * @tc.desc: Test CheckCachedOp
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSCanvasDrawingRenderNodeTest, CheckCachedOpTest, TestSize.Level1)
+{
+    auto node = std::make_shared<RSCanvasDrawingRenderNode>(11);
+    node->cachedOpCount_ = 0;
+    EXPECT_FALSE(node->CheckCachedOp());
+    node->cachedOpCount_ = 1;
+    EXPECT_TRUE(node->CheckCachedOp());
+    node->cachedOpCount_ = 1;
+    node->isOnTheTree_ = true;
+    EXPECT_TRUE(node->CheckCachedOp());
 }
 } // namespace OHOS::Rosen
