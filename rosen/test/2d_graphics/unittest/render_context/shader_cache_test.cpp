@@ -402,7 +402,6 @@ HWTEST_F(ShaderCacheTest, CalMaxUniRenderSize_test_001, TestSize.Level1)
     EXPECT_EQ(ShaderCache::MAX_UNIRENDER_SIZE, result);
     const int maxUniRenderSize = 20;
     cache.SetMaxUniRenderSize(maxUniRenderSize);
-    int result = cache.CalMaxUniRenderSize();
     EXPECT_EQ(ShaderCache::MAX_VALUE_SIZE * maxUniRenderSize, result);
     cache.~ShaderCache();
 }
