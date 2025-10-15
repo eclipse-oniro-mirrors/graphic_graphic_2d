@@ -215,17 +215,10 @@ void RSCanvasDrawingRenderNode::ContentStyleSlotUpdate()
     // update content_style when node not on tree, need check (waitSync_ false, not on tree, never on tree
     // not texture exportnode, unirender mode)
     // if canvas drawing node never on tree, should not update, it will lost renderParams->localDrawRect_
-#ifdef RS_ENABLE_GPU
-    if (IsWaitSync() || IsOnTheTree() || isNeverOnTree_ || !stagingRenderParams_ ||
+    if (IsWaitSync() || IsOnTheTree() || !stagingRenderParams_ ||
         !RSUniRenderJudgement::IsUniRender() || GetIsTextureExportNode()) {
         return;
     }
-#else
-    if (IsWaitSync() || IsOnTheTree() || isNeverOnTree_ || !stagingRenderParams_ ||
-        !RSUniRenderJudgement::IsUniRender() || GetIsTextureExportNode()) {
-        return;
-    }
-#endif
 
     if (!dirtyTypesNG_.test(static_cast<size_t>(ModifierNG::RSModifierType::CONTENT_STYLE))) {
         return;
@@ -391,6 +384,9 @@ Drawing::Bitmap RSCanvasDrawingRenderNode::GetBitmap(const uint64_t tid)
     if (!image_->AsLegacyBitmap(bitmap)) {
         RS_LOGE("RSCanvasDrawingRenderNode::GetBitmap: asLegacyBitmap failed");
     }
+    if (HasCachedOp()) {
+        RS_LOGE("RSCanvasDrawingRenderNode::GetBitmap: has unused OP, bitmap may be incorrect.");
+    }
     return bitmap;
 }
 
@@ -417,6 +413,10 @@ bool RSCanvasDrawingRenderNode::GetPixelmap(std::shared_ptr<Media::PixelMap> pix
     if (GetTid() != tid) {
         RS_LOGE("RSCanvasDrawingRenderNode::GetPixelmap: surface used by multi threads");
         return false;
+    }
+
+    if (HasCachedOp()) {
+        RS_LOGE("RSCanvasDrawingRenderNode::GetPixelmap: has unused OP, pixelMap may be incorrect.");
     }
 
     Drawing::ImageInfo info = Drawing::ImageInfo { pixelmap->GetWidth(), pixelmap->GetHeight(),
@@ -514,14 +514,11 @@ void RSCanvasDrawingRenderNode::InitRenderParams()
 
 CM_INLINE void RSCanvasDrawingRenderNode::ApplyModifiers()
 {
-    if (cachedOpCount_ > 0 && !dirtyTypesNG_.test(static_cast<size_t>(ModifierNG::RSModifierType::CONTENT_STYLE))) {
+    if (HasCachedOp() && !dirtyTypesNG_.test(static_cast<size_t>(ModifierNG::RSModifierType::CONTENT_STYLE))) {
         dirtyTypesNG_.set(static_cast<int>(ModifierNG::RSModifierType::CONTENT_STYLE), true);
         std::lock_guard<std::mutex> lock(drawCmdListsMutex_);
-        size_t opCount = 0;
-        ApplyCachedCmdList(opCount);
-        if (opCount > 0) {
-            SetNeedProcess(true);
-        }
+        ApplyCachedCmdList();
+        SetNeedProcess(true);
     }
     RSRenderNode::ApplyModifiers();
 }
@@ -542,8 +539,7 @@ void RSCanvasDrawingRenderNode::AddDirtyType(ModifierNG::RSModifierType modifier
     if (hasContentModifiers) {
         ReportOpCount(drawCmdListsNG_[modifierType]);
     }
-    size_t opCount = 0;
-    ApplyCachedCmdList(opCount);
+    size_t opCount = ApplyCachedCmdList();
     for (const auto& modifier : contentModifiers) {
         auto drawCmdList = modifier->Getter<Drawing::DrawCmdListPtr>(
             ModifierNG::ModifierTypeConvertor::GetPropertyType(modifierType), nullptr);
@@ -570,23 +566,24 @@ void RSCanvasDrawingRenderNode::AddDirtyType(ModifierNG::RSModifierType modifier
     }
 }
 
-void RSCanvasDrawingRenderNode::ApplyCachedCmdList(size_t& opCount)
+size_t RSCanvasDrawingRenderNode::ApplyCachedCmdList()
 {
+    size_t opCount = 0;
     while (!outOfLimitCmdList_.empty() && opCount < OP_COUNT_LIMIT_PER_FRAME) {
         auto drawCmdList = outOfLimitCmdList_.front();
+        outOfLimitCmdList_.pop_front();
         auto opItemSize = drawCmdList->GetOpItemSize();
         auto lastOpCount = opCount;
         opCount += opItemSize;
         if (opCount > OP_COUNT_LIMIT_PER_FRAME) {
-            outOfLimitCmdList_.pop_front();
             SplitDrawCmdList(OP_COUNT_LIMIT_PER_FRAME - lastOpCount, drawCmdList, false);
             break;
         }
         drawCmdListsNG_[ModifierNG::RSModifierType::CONTENT_STYLE].emplace_back(drawCmdList);
         cachedOpCount_ -= opItemSize;
         opCountAfterReset_ += opItemSize;
-        outOfLimitCmdList_.pop_front();
     }
+    return opCount;
 }
 
 void RSCanvasDrawingRenderNode::SplitDrawCmdList(
@@ -702,11 +699,6 @@ void RSCanvasDrawingRenderNode::ClearResource()
     }
 }
 
-void RSCanvasDrawingRenderNode::ClearNeverOnTree()
-{
-    isNeverOnTree_ = false;
-}
-
 void RSCanvasDrawingRenderNode::CheckCanvasDrawingPostPlaybacked()
 {
     if (!isPostPlaybacked_) {
@@ -730,11 +722,21 @@ bool RSCanvasDrawingRenderNode::GetIsPostPlaybacked()
 
 bool RSCanvasDrawingRenderNode::CheckCachedOp()
 {
-    if (cachedOpCount_ > 0) {
-        SetDirty(true);
-        return true;
+    if (!HasCachedOp()) {
+        return false;
     }
-    return false;
+    SetDirty(true);
+    if (!IsOnTheTree()) {
+        std::lock_guard<std::mutex> lock(drawCmdListsMutex_);
+        ApplyCachedCmdList();
+        dirtyTypesNG_.set(static_cast<int>(ModifierNG::RSModifierType::CONTENT_STYLE), true);
+    }
+    return true;
+}
+
+bool RSCanvasDrawingRenderNode::HasCachedOp() const
+{
+    return cachedOpCount_ > 0;
 }
 } // namespace Rosen
 } // namespace OHOS

@@ -437,10 +437,10 @@ void RSMainThread::TraverseCanvasDrawingNodes()
             if (canvasDrawingNode == nullptr) {
                 return;
             }
-            // Check on tree status
-            canvasDrawingNode->ContentStyleSlotUpdate();
             // Whether has cached op, if has, need render in next frame.
             hasCachedOp |= canvasDrawingNode->CheckCachedOp();
+            // Check on tree status
+            canvasDrawingNode->ContentStyleSlotUpdate();
         });
     if (hasCachedOp) {
         hasCanvasDrawingNodeCachedOp_ = true;

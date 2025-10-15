@@ -70,12 +70,12 @@ public:
     void SetNeedProcess(bool needProcess);
     const std::map<ModifierNG::RSModifierType, ModifierCmdList>& GetDrawCmdListsNG() const;
     void ClearResource() override;
-    void ClearNeverOnTree() override;
     void CheckCanvasDrawingPostPlaybacked();
     bool GetIsPostPlaybacked();
 
     void ApplyModifiers() override;
     bool CheckCachedOp();
+    bool HasCachedOp() const;
 
 private:
     explicit RSCanvasDrawingRenderNode(
@@ -87,7 +87,7 @@ private:
     void InitRenderParams() override;
     void ReportOpCount(const std::list<Drawing::DrawCmdListPtr>& cmdLists) const;
     void SplitDrawCmdList(size_t firstOpCount, Drawing::DrawCmdListPtr drawCmdList, bool splitOrigin);
-    void ApplyCachedCmdList(size_t& opCount);
+    size_t ApplyCachedCmdList();
 #if (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
     bool ResetSurfaceWithTexture(int width, int height, RSPaintFilterCanvas& canvas);
 #endif
@@ -95,7 +95,6 @@ private:
 #if (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
     bool isGpuSurface_ = true;
 #endif
-    bool isNeverOnTree_ = true;
     bool isPostPlaybacked_ = false;
     std::atomic<bool> isNeedProcess_ = false;
     pid_t threadId_ = 0;

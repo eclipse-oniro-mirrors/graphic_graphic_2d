@@ -3348,10 +3348,6 @@ void RSRenderNode::UpdateFullScreenFilterCacheRect(
 
 void RSRenderNode::OnTreeStateChanged()
 {
-    if (isOnTheTree_ && GetType() == RSRenderNodeType::CANVAS_DRAWING_NODE) {
-        ClearNeverOnTree();
-    }
-
     if (!isOnTheTree_) {
         startingWindowFlag_ = false;
         if (stagingUECChildren_ && !stagingUECChildren_->empty()) {
