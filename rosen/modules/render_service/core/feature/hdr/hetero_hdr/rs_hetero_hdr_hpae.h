@@ -51,7 +51,7 @@ enum EffectResourceRequest {
     AIHDR_HIGHLIGHT_MODE = 1ULL << 4,
     AIHDR_ENHANCE_LUT = 1ULL << 5,
     AIHDR_HIGHLIGHT_LUT = 1ULL << 6,
-    HDR_3D_LUT = 1ULL << 7,
+    3D_LUT = 1ULL << 7, // Camera use HDR GMP
 };
 
 enum GenericDataTag {
