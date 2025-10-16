@@ -313,9 +313,9 @@ void RSHeteroHDRManager::GenerateHpaeRect(RSSurfaceRenderParams* surfaceParams, 
     auto bufferHeight = srcBuffer->GetSurfaceBufferHeight();
     auto bufferWidth = srcBuffer->GetSurfaceBufferWidth();
     /*
-    * isFixedDstBuffer_ is true when hpae and GPU are used separately for scaling.
-    * The precondition has already determined that the width and height of srcBuffer are not zero
-    */
+     * isFixedDstBuffer_ is true when hpae and GPU are used separately for scaling.
+     * The precondition has already determined that the width and height of srcBuffer are not zero
+     */
     if (isFixedDstBuffer_) {
         // this condition, crop and scale need to be handle by gpu
         hpaeSrcRect = RectRound(RectI(0, 0, bufferWidth, bufferHeight), bufferWidth, bufferHeight);
