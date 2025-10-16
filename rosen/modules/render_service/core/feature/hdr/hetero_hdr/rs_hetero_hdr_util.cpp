@@ -15,8 +15,7 @@
 
 #include "rs_hetero_hdr_util.h"
 
-#include "feature/
-hdr/hetero_hdr/rs_hetero_hdr_hpae.h"
+#include "feature/hdr/hetero_hdr/rs_hetero_hdr_hpae.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -54,11 +53,6 @@ void RSHeteroHDRUtil::GenDrawHDRBufferParams(const DrawableV2::RSSurfaceRenderNo
         matrixLoc.SetScaleTranslate(sx, sy, tx, ty);
         localParam.matrix = drawableParams.matrix;
         localParam.matrix.PreConcat(matrixLoc);
-        if (!matrix.Invert(matrixInv)) {
-            RS_LOGE("[hdrHetero]:RSHeteroHDRUtil GenDrawHDRBufferParams canvas matrix is not invertible");
-            return;
-        }
-        localParam.matrix.PostConcat(matrixInv);
     } else {
         ScalingMode scalingMode = surfaceBuffer->GetSurfaceBufferScalingMode();
         if (ROSEN_EQ(drawableParams.srcRect.GetWidth(), 0.0f) || ROSEN_EQ(drawableParams.srcRect.GetHeight(), 0.0f)) {
