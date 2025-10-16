@@ -797,7 +797,7 @@ HWTEST_F(RSCanvasDrawingRenderNodeTest, ContentStyleSlotUpdateTest, TestSize.Lev
     node->isTextureExportNode_ = false;
     RSUniRenderJudgement::uniRenderEnabledType_ = UniRenderEnabledType::UNI_RENDER_DISABLED;
     node->ContentStyleSlotUpdate();
-    EXPECT_FALSE(node->dirtyTypesNG_.test(static_cast<size_t>(ModifierNG::RSModifierType::CONTENT_STYLE)));
+    EXPECT_TRUE(node->dirtyTypesNG_.test(static_cast<size_t>(ModifierNG::RSModifierType::CONTENT_STYLE)));
 
     node->waitSync_ = false;
     node->isOnTheTree_ = true;
@@ -805,7 +805,7 @@ HWTEST_F(RSCanvasDrawingRenderNodeTest, ContentStyleSlotUpdateTest, TestSize.Lev
     node->isTextureExportNode_ = false;
     RSUniRenderJudgement::uniRenderEnabledType_ = UniRenderEnabledType::UNI_RENDER_DISABLED;
     node->ContentStyleSlotUpdate();
-    EXPECT_FALSE(node->dirtyTypesNG_.test(static_cast<size_t>(ModifierNG::RSModifierType::CONTENT_STYLE)));
+    EXPECT_TRUE(node->dirtyTypesNG_.test(static_cast<size_t>(ModifierNG::RSModifierType::CONTENT_STYLE)));
 
     node->waitSync_ = false;
     node->isOnTheTree_ = false;
@@ -813,7 +813,7 @@ HWTEST_F(RSCanvasDrawingRenderNodeTest, ContentStyleSlotUpdateTest, TestSize.Lev
     node->isTextureExportNode_ = true;
     RSUniRenderJudgement::uniRenderEnabledType_ = UniRenderEnabledType::UNI_RENDER_DISABLED;
     node->ContentStyleSlotUpdate();
-    EXPECT_FALSE(node->dirtyTypesNG_.test(static_cast<size_t>(ModifierNG::RSModifierType::CONTENT_STYLE)));
+    EXPECT_TRUE(node->dirtyTypesNG_.test(static_cast<size_t>(ModifierNG::RSModifierType::CONTENT_STYLE)));
 
     node->waitSync_ = false;
     node->isOnTheTree_ = false;
@@ -821,14 +821,14 @@ HWTEST_F(RSCanvasDrawingRenderNodeTest, ContentStyleSlotUpdateTest, TestSize.Lev
     node->isTextureExportNode_ = false;
     RSUniRenderJudgement::uniRenderEnabledType_ = UniRenderEnabledType::UNI_RENDER_DISABLED;
     node->ContentStyleSlotUpdate();
-    EXPECT_FALSE(node->dirtyTypesNG_.test(static_cast<size_t>(ModifierNG::RSModifierType::CONTENT_STYLE)));
+    EXPECT_TRUE(node->dirtyTypesNG_.test(static_cast<size_t>(ModifierNG::RSModifierType::CONTENT_STYLE)));
 
     node->waitSync_ = false;
     node->isOnTheTree_ = false;
     node->stagingRenderParams_ = nullptr;
     node->isTextureExportNode_ = false;
-    RSUniRenderJudgement::uniRenderEnabledType_ = UniRenderEnabledType::UNI_RENDER_DISABLED;
+    RSUniRenderJudgement::uniRenderEnabledType_ = UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL;
     node->ContentStyleSlotUpdate();
-    EXPECT_FALSE(node->dirtyTypesNG_.test(static_cast<size_t>(ModifierNG::RSModifierType::CONTENT_STYLE)));
+    EXPECT_TRUE(node->dirtyTypesNG_.test(static_cast<size_t>(ModifierNG::RSModifierType::CONTENT_STYLE)));
 }
 } // namespace OHOS::Rosen

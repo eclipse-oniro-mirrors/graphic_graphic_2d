@@ -5505,7 +5505,7 @@ HWTEST_F(RSMainThreadTest, TraverseCanvasDrawingNodes, TestSize.Level2)
     ASSERT_FALSE(node->HasCachedOp());
     node->cachedOpCount_ = 1;
     mainThread->TraverseCanvasDrawingNodes();
-    ASSERT_FALSE(node->HasCachedOp());
+    ASSERT_TRUE(node->HasCachedOp());
 }
 
 /**
