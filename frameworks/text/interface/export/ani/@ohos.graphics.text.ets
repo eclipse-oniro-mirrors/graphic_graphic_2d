@@ -62,6 +62,7 @@ namespace text {
     }
 
     native static getGlobalInstance(): FontCollection;
+    native static getLocalInstance(): FontCollection;
     native loadFontSync(name: string, path: Resource | string): void;
     async loadFont(name: string, path: string | Resource): Promise<void> {
       await new Promise<void>((resolve, reject) => {
