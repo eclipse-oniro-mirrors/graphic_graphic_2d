@@ -151,6 +151,7 @@ void RSHeteroHDRManager::GetFixedDstRectStatus(std::shared_ptr<DrawableV2::RSSur
     dst_.width_ = boundSize.x_;
     dst_.height_ = boundSize.y_;
     isFixedDstBuffer_ = isUiFirstMode || ratioJudge || sizeJudge;
+    //test
     if (!isFixedDstBuffer_) {
         dst_.width_ = dstRect.w;
         dst_.height_ = dstRect.h;
