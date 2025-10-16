@@ -524,12 +524,33 @@ HWTEST_F(RSRSBinarizationDrawableTest, RSBackgroundFilterDrawable002, TestSize.L
 #endif
 
 /**
- * @tc.name: RSBackgroundEffectDrawable
+ * @tc.name: RSBackgroundEffectDrawableCreateDrawFuncTest001
  * @tc.desc: Test CreateDrawFunc
  * @tc.type:FUNC
  * @tc.require: issueI9QIQO
  */
-HWTEST_F(RSRSBinarizationDrawableTest, RSBackgroundEffectDrawable, TestSize.Level1)
+HWTEST_F(RSRSBinarizationDrawableTest, RSBackgroundEffectDrawableCreateDrawFuncTest001, TestSize.Level1)
+{
+    auto drawable = std::make_shared<DrawableV2::RSBackgroundEffectDrawable>();
+    int width = 1270;
+    int height = 2560;
+    Drawing::ImageInfo imageInfo { width, height, Drawing::COLORTYPE_RGBA_8888, Drawing::ALPHATYPE_PREMUL };
+    std::shared_ptr<Drawing::Surface> surface = Drawing::Surface::MakeRaster(imageInfo);
+    Drawing::Surface* surfacePtr = surface.get();
+    auto filterCanvas = std::make_shared<RSPaintFilterCanvas>(surfacePtr);
+    auto rect = std::make_shared<Drawing::Rect>(0, 0, 100, 100);
+    auto drawFunc = drawable->CreateDrawFunc();
+    drawFunc(filterCanvas.get(), rect.get());
+    ASSERT_TRUE(true);
+}
+
+/**
+ * @tc.name: RSBackgroundEffectDrawableCreateDrawFuncTest002
+ * @tc.desc: Test CreateDrawFunc with empty rect
+ * @tc.type:FUNC
+ * @tc.require: issue20322
+ */
+HWTEST_F(RSRSBinarizationDrawableTest, RSBackgroundEffectDrawableCreateDrawFuncTest002, TestSize.Level1)
 {
     auto drawable = std::make_shared<DrawableV2::RSBackgroundEffectDrawable>();
     int width = 1270;
