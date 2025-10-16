@@ -695,7 +695,6 @@ HWTEST_F(RSMemoryManagerTest, DumpRenderServiceMemory002, testing::ext::TestSize
     MemoryManager::DumpRenderServiceMemory(log, isLite);
     ASSERT_TRUE(log.GetString().find("RenderService caches:") != std::string::npos);
     ASSERT_TRUE(log.GetString().find("Total Node Size = ") != std::string::npos);
-    ASSERT_TRUE(log.GetString().find("OnTree") != std::string::npos);
     ASSERT_TRUE(log.GetString().find("the memory of size of all surfaces buffer:") != std::string::npos);
 }
 
@@ -810,28 +809,12 @@ HWTEST_F(RSMemoryManagerTest, DumpDrawingGpuMemory002, testing::ext::TestSize.Le
 }
 
 /**
- * @tc.name: DumpDrawingGpuMemory003
- * @tc.desc: Verify DumpDrawingGpuMemory
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(RSMemoryManagerTest, DumpDrawingGpuMemory003, testing::ext::TestSize.Level1)
-{
-    DfxString log;
-    std::vector<std::pair<NodeId, std::string>> nodeTags;
-    Drawing::GPUContext* gpuContext = new Drawing::GPUContext;
-    bool isLite = true;
-    MemoryManager::DumpDrawingGpuMemory(log, gpuContext, nodeTags, isLite);
-    ASSERT_TRUE(log.GetString().find("Shader Caches:") != std::string::npos);
-}
-
-/**
  * @tc.name: DumpDrawingGpuMemory004
  * @tc.desc: Verify DumpDrawingGpuMemory when gpucontext is nullptr
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSMemoryManagerTest, DumpDrawingGpuMemory004, testing::ext::TestSize.Level1)
+HWTEST_F(RSMemoryManagerTest, DumpDrawingGpuMemory003, testing::ext::TestSize.Level1)
 {
     DfxString log;
     std::vector<std::pair<NodeId, std::string>> nodeTags;

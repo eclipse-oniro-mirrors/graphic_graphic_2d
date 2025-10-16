@@ -106,11 +106,7 @@ uint64_t MemoryManager::totalMemoryReportTime_ = 0;
 void MemoryManager::DumpMemoryUsage(DfxString& log, std::string& type, bool isLite)
 {
     if (type.empty() || type == MEM_RS_TYPE) {
-        if (isLite) {
-            DumpRenderServiceMemory(log, isLite);
-        } else {
-            DumpRenderServiceMemory(log);
-        }
+        DumpRenderServiceMemory(log, isLite);
     }
     if (type.empty() || type == MEM_CPU_TYPE) {
         DumpDrawingCpuMemory(log);
@@ -366,12 +362,8 @@ static std::tuple<uint64_t, std::string, RectI, bool> FindGeoById(uint64_t nodeI
 
 static std::tuple<uint64_t, std::string, RectI, bool> FindGeoByIdLite(uint64_t nodeId)
 {
-    const auto& nodeMap = RSMainThread::Instance()->GetContext().GetNodeMap();
-    auto node = nodeMap.GetRenderNode<RSRenderNode>(nodeId);
-    if (!node) {
-        return { 0, "", RectI(), true };
-    }
-    return { 0, "", RectI(), false};
+    auto node = RSMainThread::Instance()->GetContext().GetNodeMap().GetRenderNode<RSRenderNode>(nodeId);
+    return { 0ULL, "", RectI(), !node };
 }
 
 void MemoryManager::DumpRenderServiceMemory(DfxString& log, bool isLite)

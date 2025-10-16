@@ -604,11 +604,7 @@ void RSRenderService::DumpMem(std::unordered_set<std::u16string>& argSets, std::
 
     mainThread_->ScheduleTask(
         [this, &argSets, &dumpString, &type, &pid, isLite]() {
-            if (isLite) {
-                return mainThread_->DumpMem(argSets, dumpString, type, pid, isLite);
-            } else {
-                return mainThread_->DumpMem(argSets, dumpString, type, pid);
-            }
+            return mainThread_->DumpMem(argSets, dumpString, type, pid, isLite);
         }).wait();
 }
 
