@@ -15,7 +15,8 @@
 
 #include "rs_hetero_hdr_util.h"
 
-#include "feature/hdr/hetero_hdr/rs_hetero_hdr_hpae.h"
+#include "feature/
+hdr/hetero_hdr/rs_hetero_hdr_hpae.h"
 
 namespace OHOS {
 namespace Rosen {
