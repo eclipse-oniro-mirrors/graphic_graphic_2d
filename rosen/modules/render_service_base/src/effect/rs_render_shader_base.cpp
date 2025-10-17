@@ -160,6 +160,10 @@ std::shared_ptr<RSPaintFilterCanvas::CachedEffectData> RSNGRenderShaderHelper::G
 {
     auto paintFilterCanvas = static_cast<RSPaintFilterCanvas*>(canvas);
     const auto& effectData = paintFilterCanvas->GetEffectData();
+    if (effectData == nullptr) {
+        ROSEN_LOGE("HarmoniumEffect effectData null");
+        return nullptr;
+    }
     return effectData;
 }
 } // namespace Rosen
