@@ -583,7 +583,7 @@ std::vector<RectI> RSLogicalDisplayRenderNodeDrawable::CalculateVirtualDirtyForW
     }
     const auto& uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
     if (uniParam == nullptr || !uniParam->IsVirtualDirtyEnabled() ||
-        (enableVisibleRect_ && curVisibleRect_.GetTop() > 0)) {
+        (enableVisibleRect_ && (curVisibleRect_.GetTop() > 0 || curVisibleRect_.GetLeft() > 0))) {
         RS_LOGE("RSLogicalDisplayRenderNodeDrawable::CalculateVirtualDirtyForWiredScreen invalid uniparam");
         return damageRegionRects;
     }
@@ -949,7 +949,8 @@ void RSLogicalDisplayRenderNodeDrawable::DrawMirrorCopy(RSLogicalDisplayRenderPa
         RS_LOGE("RSLogicalDisplayRenderNodeDrawable::DrawMirrorCopy failed to get canvas.");
         return;
     }
-    if (!uniParam.IsVirtualDirtyEnabled() || (enableVisibleRect_ && curVisibleRect_.GetTop() > 0)) {
+    if (!uniParam.IsVirtualDirtyEnabled() ||
+        (enableVisibleRect_ && (curVisibleRect_.GetTop() > 0 || curVisibleRect_.GetLeft() > 0))) {
         std::vector<RectI> emptyRects = {};
         virtualProcesser->SetRoiRegionToCodec(emptyRects);
     } else {
