@@ -583,7 +583,7 @@ std::vector<RectI> RSLogicalDisplayRenderNodeDrawable::CalculateVirtualDirtyForW
     }
     const auto& uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
     /*
-     * If Top and Left in curVisibleRect_ are not zero,that means the regional screen mirror position may be offset, 
+     * If Top and Left in curVisibleRect_ are not zero,that means the regional screen mirror position may be offset,
      * and the dirty area location may be incorrect. Need to disable the dirty area.
      */
     if (uniParam == nullptr || !uniParam->IsVirtualDirtyEnabled() ||
@@ -954,7 +954,7 @@ void RSLogicalDisplayRenderNodeDrawable::DrawMirrorCopy(RSLogicalDisplayRenderPa
         return;
     }
     /*
-     * If Top and Left in curVisibleRect_ are not zero,that means the regional screen mirror position may be offset, 
+     * If Top and Left in curVisibleRect_ are not zero,that means the regional screen mirror position may be offset,
      * and the dirty area location may be incorrect. Need to disable the dirty area.
      */
     if (!uniParam.IsVirtualDirtyEnabled() ||
