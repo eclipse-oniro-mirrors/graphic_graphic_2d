@@ -32,8 +32,6 @@ public:
     }
     ~GasifyScaleTwistPara() override = default;
 
-    GasifyScaleTwistPara(const GasifyScaleTwistPara& other);
-
     void SetProgress(float progress)
     {
         progress_ = progress;
@@ -73,14 +71,6 @@ public:
     {
         return scale_;
     }
-
-    bool Marshalling(Parcel& parcel) const override;
-
-    static void RegisterUnmarshallingCallback();
-
-    [[nodiscard]] static bool OnUnmarshalling(Parcel& parcel, std::shared_ptr<FilterPara>& val);
-
-    std::shared_ptr<FilterPara> Clone() const override;
 private:
     float progress_ = 0.0f;
     std::shared_ptr<Media::PixelMap> sourceImage_;

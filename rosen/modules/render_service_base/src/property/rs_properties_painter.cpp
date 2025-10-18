@@ -41,6 +41,7 @@
 #include "draw/canvas.h"
 #include "draw/clip.h"
 #include "drawing/draw/core_canvas.h"
+#include "effect/rs_render_filter_base.h"
 #include "effect/runtime_blender_builder.h"
 #include "effect/runtime_effect.h"
 #include "effect/runtime_shader_builder.h"
@@ -810,6 +811,28 @@ void RSPropertiesPainter::GetForegroundEffectDirtyRect(RectI& dirtyForegroundEff
         if (properties.IsShadowValid()) {
             GetShadowDirtyRect(dirtyForegroundEffect, properties, nullptr, false, true);
         }
+    }
+}
+
+void RSPropertiesPainter::GetForegroundNGFilterDirtyRect(RectI& dirtyForegroundEffect,
+    const RSProperties& properties, const bool isAbsCoordinate)
+{
+    auto foregroundNGFilter = properties.GetForegroundNGFilter();
+    if (!foregroundNGFilter) {
+        return;
+    }
+    if (foregroundNGFilter->GetType() == RSNGEffectType::GASIFY_SCALE_TWIST) {
+        auto boundsRect = properties.GetBoundsRect();
+        auto& geoPtr = properties.GetBoundsGeometry();
+        Drawing::Matrix matrix = (geoPtr && isAbsCoordinate) ? geoPtr->GetAbsMatrix() : Drawing::Matrix();
+        auto drawingRect = Rect2DrawingRect(boundsRect);
+        matrix.MapRect(drawingRect, drawingRect);
+        auto filter = std::static_pointer_cast<RSNGRenderGasifyScaleTwistFilter>(foregroundNGFilter);
+        auto scale = filter->Getter<GasifyScaleTwistScaleRenderTag>()->Get();
+        dirtyForegroundEffect.left_ = std::floor(drawingRect.GetLeft());
+        dirtyForegroundEffect.top_ = std::floor(drawingRect.GetTop());
+        dirtyForegroundEffect.width_ = scale.x_;
+        dirtyForegroundEffect.height_ = scale.y_;
     }
 }
 

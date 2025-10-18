@@ -1686,6 +1686,9 @@ void RSRenderNode::CollectAndUpdateLocalForegroundEffectRect()
         RSPropertiesPainter::GetForegroundEffectDirtyRect(localForegroundEffectRect, GetRenderProperties(), false);
         GetMutableRenderProperties().SetForegroundEffectDirty(false);
     }
+    if (GetRenderProperties().GetForegroundNGFilter()) {
+        RSPropertiesPainter::GetForegroundNGFilterDirtyRect(localForegroundEffectRect, GetRenderProperties(), false);
+    }
     selfDrawRect_ = selfDrawRect_.JoinRect(localForegroundEffectRect.ConvertTo<float>());
 }
 

@@ -599,9 +599,20 @@ void RSDrawingFilter::ApplyImageEffect(Drawing::Canvas& canvas, const std::share
         }
         return;
     }
-    canvas.AttachBrush(brush);
-    canvas.DrawImageRect(*outImage, attr.src, attr.dst, Drawing::SamplingOptions());
-    canvas.DetachBrush();
+    if (geRender->IsGasifyFilter()) {
+        Drawing::Rect rect;
+        rect.SetTop(attr.dst.GetTop());
+        rect.SetLeft(attr.dst.GetLeft());
+        rect.SetRight(attr.src.GetWidth() + rect.GetLeft());
+        rect.SetBottom(attr.src.GetHeight() + rect.GetTop());
+        canvas.AttachBrush(brush);
+        canvas.DrawImageRect(*outImage, attr.src, rect, Drawing::SamplingOptions());
+        canvas.DetachBrush();
+    } else {
+        canvas.AttachBrush(brush);
+        canvas.DrawImageRect(*outImage, attr.src, attr.dst, Drawing::SamplingOptions());
+        canvas.DetachBrush();
+    }
 }
 
 float RSDrawingFilter::PrepareAlphaForOnScreenDraw(RSPaintFilterCanvas& paintFilterCanvas)
