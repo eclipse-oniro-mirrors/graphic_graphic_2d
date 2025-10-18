@@ -1138,6 +1138,35 @@ HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, CalculateVirtualDirtyForWiredSc
 }
 
 /**
+ * @tc.name: CalculateVirtualDirtyForWiredScreenTest002
+ * @tc.desc: Test CalculateVirtualDirtyForWiredScreen, curVisibleRect_.top/left is not zero
+ * @tc.type: FUNC
+ * @tc.require: #IA76UC
+ */
+HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, CalculateVirtualDirtyForWiredScreenTest008, TestSize.Level1)
+{
+    ASSERT_NE(renderNode_, nullptr);
+    ASSERT_NE(displayDrawable_, nullptr);
+    ASSERT_NE(mirroredNode_, nullptr);
+    ASSERT_NE(screenDrawable_, nullptr);
+
+    auto renderParams = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
+    ASSERT_NE(renderParams, nullptr);
+    auto renderFrame = std::make_unique<RSRenderFrame>(nullptr, nullptr);
+    ASSERT_NE(renderFrame, nullptr);
+    Drawing::Matrix canvasMatrix;
+    RSRenderThreadParamsManager::Instance().renderThreadParams_->isVirtualDirtyEnabled_ = true;
+    displayDrawable_->enableVisibleRect_ = true;
+    displayDrawable_->curVisibleRect_ = {1, 0, 1, 1};
+    auto damageRects = displayDrawable_->CalculateVirtualDirtyForWiredScreen(*screenDrawable_, canvasMatrix);
+    ASSERT_EQ(damageRects.size(), 0);
+
+    displayDrawable_->curVisibleRect_ = {0, 1, 1, 1};
+    damageRects = displayDrawable_->CalculateVirtualDirtyForWiredScreen(*screenDrawable_, canvasMatrix);
+    ASSERT_EQ(damageRects.size(), 0);
+}
+
+/**
  * @tc.name: DrawSecurityMaskTest001
  * @tc.desc: Test DrawSecurityMask when image is nullptr
  * @tc.type: FUNC
