@@ -270,11 +270,6 @@ bool JsFontCollection::LoadFontFromPath(const std::string path, const std::strin
 
 napi_value JsFontCollection::OnLoadFont(napi_env env, napi_callback_info info)
 {
-    uint64_t envAddress = static_cast<uint64_t>(reinterpret_cast<uintptr_t>(env));
-    if (!FontCollectionMgr::GetInstance().CheckInstanceIsValid(envAddress, fontcollection_)) {
-        TEXT_LOGE("Failed to check local instance");
-        return nullptr;
-    }
     size_t argc = ARGC_TWO;
     napi_value argv[ARGC_TWO] = { nullptr };
     if (napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr) != napi_ok || argc < ARGC_TWO) {
@@ -289,6 +284,11 @@ napi_value JsFontCollection::OnLoadFont(napi_env env, napi_callback_info info)
     std::string familySrc;
     if (!ConvertFromJsValue(env, argv[0], familyName)) {
         TEXT_LOGE("Failed to convert family name");
+        return nullptr;
+    }
+    uint64_t envAddress = static_cast<uint64_t>(reinterpret_cast<uintptr_t>(env));
+    if (!FontCollectionMgr::GetInstance().CheckInstanceIsValid(envAddress, fontcollection_)) {
+        TEXT_LOGE("Failed to check local instance, familyName %{public}s", familyName.c_str());
         return nullptr;
     }
     if (ConvertFromJsValue(env, argv[1], familySrc) && SplitAbsolutePath(familySrc)) {
@@ -368,7 +368,8 @@ napi_value JsFontCollection::OnLoadFontAsync(napi_env env, napi_callback_info in
             TextErrorCode::ERROR_INVALID_PARAM, return, "Inner fontcollection is null");
         NAPI_CHECK_ARGS(context, FontCollectionMgr::GetInstance().CheckInstanceIsValid(
             static_cast<uint64_t>(reinterpret_cast<uintptr_t>(env)), fontCollection->fontcollection_),
-            napi_generic_failure, TextErrorCode::ERROR_INVALID_PARAM, return, "Failed to check local instance");
+            napi_generic_failure, TextErrorCode::ERROR_INVALID_PARAM, return,
+            "Failed to check local instance, familyName %{public}s", context->familyName.c_str());
 
         if (!context->filePath.empty()) {
             NAPI_CHECK_ARGS(context, SplitAbsolutePath(context->filePath),
@@ -435,7 +436,8 @@ napi_value JsFontCollection::OnUnloadFontAsync(napi_env env, napi_callback_info 
             TextErrorCode::ERROR_INVALID_PARAM, return, "Inner fontcollection is null");
         NAPI_CHECK_ARGS(context, FontCollectionMgr::GetInstance().CheckInstanceIsValid(
             static_cast<uint64_t>(reinterpret_cast<uintptr_t>(env)), fontCollection->fontcollection_),
-            napi_generic_failure, TextErrorCode::ERROR_INVALID_PARAM, return, "Failed to check local instance");
+            napi_generic_failure, TextErrorCode::ERROR_INVALID_PARAM, return,
+            "Failed to check local instance, familyName %{public}s", context->familyName.c_str());
         fontCollection->fontcollection_->UnloadFont(context->familyName);
     };
 
@@ -447,12 +449,6 @@ napi_value JsFontCollection::OnUnloadFontAsync(napi_env env, napi_callback_info 
 
 napi_value JsFontCollection::OnUnloadFont(napi_env env, napi_callback_info info)
 {
-    uint64_t envAddress = static_cast<uint64_t>(reinterpret_cast<uintptr_t>(env));
-    if (!FontCollectionMgr::GetInstance().CheckInstanceIsValid(envAddress, fontcollection_)) {
-        TEXT_LOGE("Failed to check local instance");
-        return nullptr;
-    }
-    
     size_t argc = ARGC_ONE;
     napi_value argv[ARGC_ONE] = { nullptr };
     if (napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr) != napi_ok || argc < ARGC_ONE) {
@@ -467,6 +463,12 @@ napi_value JsFontCollection::OnUnloadFont(napi_env env, napi_callback_info info)
     if (!ConvertFromJsValue(env, argv[0], familyName)) {
         TEXT_LOGE("Failed to convert argv[0]");
         return NapiThrowError(env, TextErrorCode::ERROR_INVALID_PARAM, "Failed to get argument");
+    }
+
+    uint64_t envAddress = static_cast<uint64_t>(reinterpret_cast<uintptr_t>(env));
+    if (!FontCollectionMgr::GetInstance().CheckInstanceIsValid(envAddress, fontcollection_)) {
+        TEXT_LOGE("Failed to check local instance, familyName %{public}s", familyName.c_str());
+        return nullptr;
     }
 
     fontcollection_->UnloadFont(familyName);
