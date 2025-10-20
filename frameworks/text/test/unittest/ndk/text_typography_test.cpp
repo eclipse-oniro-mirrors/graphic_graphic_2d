@@ -5660,8 +5660,7 @@ HWTEST_F(NdkTypographyTest, TypographyBalanceStrategy003, TestSize.Level0)
 {
     OH_Drawing_TypographyStyle* typoStyle = OH_Drawing_CreateTypographyStyle();
     ASSERT_NE(typoStyle, nullptr);
-    // Test for balance strategy 2
-    OH_Drawing_SetTypographyTextBreakStrategy(typoStyle, 2);
+    OH_Drawing_SetTypographyTextBreakStrategy(typoStyle, BREAK_STRATEGY_BALANCED);
     // Test for maxLines limit 2
     size_t maxLines{2};
     OH_Drawing_SetTypographyTextMaxLines(typoStyle, maxLines);
