@@ -582,8 +582,12 @@ std::vector<RectI> RSLogicalDisplayRenderNodeDrawable::CalculateVirtualDirtyForW
         return damageRegionRects;
     }
     const auto& uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
+    /*
+     * If Top and Left in curVisibleRect_ are not zero,that means the regional screen mirror position may be offset,
+     * and the dirty area location may be incorrect. Need to disable the dirty area.
+     */
     if (uniParam == nullptr || !uniParam->IsVirtualDirtyEnabled() ||
-        (enableVisibleRect_ && curVisibleRect_.GetTop() > 0)) {
+        (enableVisibleRect_ && (curVisibleRect_.GetTop() > 0 || curVisibleRect_.GetLeft() > 0))) {
         RS_LOGE("RSLogicalDisplayRenderNodeDrawable::CalculateVirtualDirtyForWiredScreen invalid uniparam");
         return damageRegionRects;
     }
@@ -950,7 +954,12 @@ void RSLogicalDisplayRenderNodeDrawable::DrawMirrorCopy(RSLogicalDisplayRenderPa
         RS_LOGE("RSLogicalDisplayRenderNodeDrawable::DrawMirrorCopy failed to get canvas.");
         return;
     }
-    if (!uniParam.IsVirtualDirtyEnabled() || (enableVisibleRect_ && curVisibleRect_.GetTop() > 0)) {
+    /*
+     * If Top and Left in curVisibleRect_ are not zero,that means the regional screen mirror position may be offset,
+     * and the dirty area location may be incorrect. Need to disable the dirty area.
+     */
+    if (!uniParam.IsVirtualDirtyEnabled() ||
+        (enableVisibleRect_ && (curVisibleRect_.GetTop() > 0 || curVisibleRect_.GetLeft() > 0))) {
         std::vector<RectI> emptyRects = {};
         virtualProcesser->SetRoiRegionToCodec(emptyRects);
     } else {
