@@ -113,15 +113,9 @@ void RSSubThread::DumpMem(DfxString& log, bool isLite)
         std::string name = node->GetName() + " " + std::to_string(node->GetId());
         nodeTags.push_back({node->GetId(), name});
     });
-    if (isLite) {
-        PostSyncTask([&log, &nodeTags, this, isLite]() {
+    PostSyncTask([&log, &nodeTags, this, isLite]() {
         MemoryManager::DumpDrawingGpuMemory(log, grContext_.get(), nodeTags, isLite);
     });
-    } else {
-        PostSyncTask([&log, &nodeTags, this]() {
-        MemoryManager::DumpDrawingGpuMemory(log, grContext_.get(), nodeTags);
-    });
-    }
 }
 
 float RSSubThread::GetAppGpuMemoryInMB()

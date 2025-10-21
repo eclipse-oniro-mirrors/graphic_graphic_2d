@@ -746,7 +746,10 @@ HWTEST_F(RSMemoryTrackTest, DumpMemoryPicStatisticsTest001, testing::ext::TestSi
 {
     DfxString log;
     bool isLite = false;
-    std::function<std::tuple<uint64_t, std::string, RectI, bool> (uint64_t)> func;
+    std::function<std::tuple<uint64_t, std::string, RectI, bool> (uint64_t)> func =
+        [] (uint64_t) {
+            return std::make_tuple(0ULL, "", RectI(), false);
+        };
     MemoryTrack::Instance().DumpMemoryPicStatistics(log, func, isLite);
     std::string  str = log.GetString();
     EXPECT_NE("", str);
@@ -762,7 +765,10 @@ HWTEST_F(RSMemoryTrackTest, DumpMemoryPicStatisticsTest002, testing::ext::TestSi
 {
     DfxString log;
     bool isLite = true;
-    std::function<std::tuple<uint64_t, std::string, RectI, bool> (uint64_t)> func;
+    std::function<std::tuple<uint64_t, std::string, RectI, bool> (uint64_t)> func =
+        [] (uint64_t) {
+            return std::make_tuple(0ULL, "", RectI(), false);
+        };
     MemoryTrack::Instance().DumpMemoryPicStatistics(log, func, isLite);
     std::string  str = log.GetString();
     EXPECT_NE("", str);

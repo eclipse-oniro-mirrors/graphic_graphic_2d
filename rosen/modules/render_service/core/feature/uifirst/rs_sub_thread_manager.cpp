@@ -82,11 +82,7 @@ void RSSubThreadManager::DumpMem(DfxString& log, bool isLite)
         if (!subThread) {
             continue;
         }
-        if (isLite) {
-            subThread->DumpMem(log, isLite);
-        } else {
-            subThread->DumpMem(log);
-        }
+        subThread->DumpMem(log, isLite);
     }
 }
 

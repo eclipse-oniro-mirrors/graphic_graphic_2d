@@ -4264,21 +4264,13 @@ void RSMainThread::DumpMem(std::unordered_set<std::u16string>& argSets, std::str
                 RSUniRenderThread::Instance().GetRenderEngine()->GetRenderContext()->GetDrGPUContext());
         });
     } else {
-        if (isLite) {
-            MemoryManager::DumpMemoryUsage(log, type, isLite);
-        } else {
-            MemoryManager::DumpMemoryUsage(log, type);
-        }
+        MemoryManager::DumpMemoryUsage(log, type, isLite);
     }
 
     if ((type.empty() || type == MEM_GPU_TYPE) && RSSystemProperties::GetGpuApiType() != GpuApiType::DDGR) {
         auto subThreadManager = RSSubThreadManager::Instance();
         if (subThreadManager) {
-            if (isLite) {
-                subThreadManager->DumpMem(log, isLite);
-            } else {
-                subThreadManager->DumpMem(log);
-            }
+            subThreadManager->DumpMem(log, isLite);
         }
     }
     dumpString.append("dumpMem: " + type + "\n");
