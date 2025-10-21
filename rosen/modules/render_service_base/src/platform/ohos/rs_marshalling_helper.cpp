@@ -3436,7 +3436,7 @@ bool RSMarshallingHelper::UnmarshallingPidPlusId(Parcel& parcel, uint64_t& val)
     uint64_t retCode = 0;
     retCode = RSMarshallingHelper::Unmarshalling(parcel, val);
     if (retCode) {
-        val = RS_PROFILER_PATCH_NODE_ID(parcel, val);
+        RS_PROFILER_PATCH_NODE_ID(parcel, val);
     }
     return retCode;
 }
@@ -3446,7 +3446,7 @@ bool RSMarshallingHelper::UnmarshallingPidPlusIdNoChangeIfZero(Parcel& parcel, u
     uint64_t retCode = 0;
     retCode = RSMarshallingHelper::Unmarshalling(parcel, val);
     if (retCode && val) {
-        val = RS_PROFILER_PATCH_NODE_ID(parcel, val);
+        RS_PROFILER_PATCH_NODE_ID(parcel, val);
     }
     return retCode;
 }
