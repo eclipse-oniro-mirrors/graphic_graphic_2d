@@ -235,6 +235,27 @@ bool RSInterfaceCodeAccessVerifierBase::IsStylusServiceCalling(const std::string
     return false;
 }
 
+bool RSInterfaceCodeAccessVerifierBase::IsExfusionServiceCalling(const std::string& callingCode) const
+{
+    // Exfusion service calls only
+    static constexpr uint32_t EXFUSION_SERVICE_UID = 7015;
+    static const std::string EXFUSION_SERVICE_PROCESS_NAME = "exfusion_display_service";
+    Security::AccessToken::NativeTokenInfo tokenInfo;
+    int32_t ret = Security::AccessToken::AccessTokenKit::GetNativeTokenInfo(GetTokenID(), tokenInfo);
+    if (ret == ERR_OK) {
+        bool isExfusionServiceProcessName = (tokenInfo.processName == EXFUSION_SERVICE_PROCESS_NAME);
+        bool isNativeCalling = (GetTokenType() == Security::AccessToken::ATokenTypeEnum::TOKEN_NATIVE);
+        bool isExfusionServiceUid = (OHOS::IPCSkeleton::GetCallingUid() == EXFUSION_SERVICE_UID);
+        bool isExfusionServiceCalling = isNativeCalling && isExfusionServiceUid && isExfusionServiceProcessName;
+        if (!isExfusionServiceCalling) {
+            RS_LOGE("%{public}s ipc interface code access denied: not Exfusion service calling", callingCode.c_str());
+        }
+        return isExfusionServiceCalling;
+    }
+    RS_LOGE("%{public}s ipc interface code access denied: GetNativeTokenInfo error", callingCode.c_str());
+    return false;
+}
+
 bool RSInterfaceCodeAccessVerifierBase::IsTaskManagerCalling(const std::string& callingCode) const
 {
     static constexpr uint32_t TASK_MANAGER_SERVICE_UID = 7005;

@@ -536,7 +536,8 @@ bool RSIRenderServiceConnectionInterfaceCodeAccessVerifier::IsExclusiveVerificat
             break;
         }
         case static_cast<CodeUnderlyingType>(CodeEnumType::SET_FORCE_REFRESH): {
-            hasPermission = IsStylusServiceCalling(codeEnumTypeName_ + "::SET_FORCE_REFRESH");
+            hasPermission = IsStylusServiceCalling(codeEnumTypeName_ + "::SET_FORCE_REFRESH") ||
+                IsExfusionServiceCalling(codeEnumTypeName_ + "::SET_FORCE_REFRESH");
             break;
         }
         case static_cast<CodeUnderlyingType>(CodeEnumType::SET_COLOR_FOLLOW): {
