@@ -562,6 +562,7 @@ public:
         tunnelLayerId_ = layerInfo->GetTunnelLayerId();
         tunnelLayerProperty_ = layerInfo->GetTunnelLayerProperty();
         ancoFlags_ = layerInfo->GetAncoFlags();
+        ignoreAlpha_ = layerInfo->GetIgnoreAlpha();
     }
 
     void Dump(std::string &result) const
@@ -664,6 +665,15 @@ public:
     void SetUseDeviceOffline(bool useOffline) { useDeviceOffline_ = useOffline; }
     bool GetUseDeviceOffline() const { return useDeviceOffline_; }
 
+    void SetIgnoreAlpha(bool ignoreAlpha)
+    {
+        ignoreAlpha_ = ignoreAlpha;
+    }
+
+    bool GetIgnoreAlpha()
+    {
+        return ignoreAlpha_;
+    }
     /* hdiLayer get layer info end */
 
 private:
@@ -718,6 +728,7 @@ private:
     uint32_t ancoFlags_ = 0;
     // hpae offline
     bool useDeviceOffline_ = false;
+    bool ignoreAlpha_ = false;
 };
 } // namespace Rosen
 } // namespace OHOS
