@@ -230,7 +230,6 @@ void BootCompileProgress::DrawCompileProgress()
     }
     std::shared_ptr<Rosen::Drawing::TextBlob> textBlob = Rosen::Drawing::TextBlob::MakeFromString(info, font);
     if (textBlob == nullptr) {
-        LOGE("textBlob is null");
         return;
     }
     auto textBound = textBlob->Bounds();
