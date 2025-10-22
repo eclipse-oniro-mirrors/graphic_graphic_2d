@@ -572,7 +572,6 @@ void RSCanvasDrawingRenderNode::AddDirtyType(ModifierNG::RSModifierType modifier
         return;
     }
 
-    size_t originCmdListSize = drawCmdListsNG_[modifierType].size();
     if (hasContentModifiers) {
         ReportOpCount(drawCmdListsNG_[modifierType]);
     }
@@ -602,7 +601,7 @@ void RSCanvasDrawingRenderNode::AddDirtyType(ModifierNG::RSModifierType modifier
     if (opCount > 0) {
         SetNeedProcess(true);
     }
-    CheckDrawCmdListSizeNG(modifierType, originCmdListSize);
+    CheckDrawCmdListSizeNG(modifierType);
 }
 
 size_t RSCanvasDrawingRenderNode::ApplyCachedCmdList()
