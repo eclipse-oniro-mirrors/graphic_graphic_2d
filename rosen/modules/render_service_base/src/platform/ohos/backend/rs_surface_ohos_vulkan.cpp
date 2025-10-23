@@ -53,7 +53,8 @@ namespace Rosen {
 
 static constexpr int64_t PROTECTEDBUFFERSIZE = 2;
 static constexpr uint16_t FFRTEVENTLEN = 2;
-static constexpr int MAXBUFFERSIZE = 6;
+// framebuffer max size, 3 buffers used for drm, 3 buffers used for other
+static constexpr int MAXFRAMEBUFFERSIZE = 6;
 
 RSSurfaceOhosVulkan::RSSurfaceOhosVulkan(const sptr<Surface>& producer) : RSSurfaceOhos(producer)
 {
@@ -168,7 +169,7 @@ bool RSSurfaceOhosVulkan::PreAllocateProtectedBuffer(int32_t width, int32_t heig
         ROSEN_LOGD("PreAllocateProtectedBuffer: create native window");
     }
     if (producer_ != nullptr) {
-        producer_->SetQueueSize(MAXBUFFERSIZE);
+        producer_->SetQueueSize(MAXFRAMEBUFFERSIZE);
     }
     for (int num = 0; num < PROTECTEDBUFFERSIZE; num++) {
         NativeWindowBuffer* nativeWindowBuffer = nullptr;
