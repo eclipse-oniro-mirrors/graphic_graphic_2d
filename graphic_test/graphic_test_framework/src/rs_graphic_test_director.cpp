@@ -312,6 +312,7 @@ std::pair<double, double> RSGraphicTestDirector::ReceiveProfilerTimeInfo()
     }
     return {};
 }
+
 void RSGraphicTestDirector::SendProfilerCommand(const std::string command, int outTime)
 {
     if (profilerThread_) {
