@@ -742,6 +742,56 @@ HWTEST_F(RSUIDirectorTest, ProcessMessagesTest003, TestSize.Level1)
 }
 
 /**
+ * @tc.name: ProcessInstanceMessagesTest
+ * @tc.desc: Test the ProcessInstanceMessages
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSUIDirectorTest, ProcessInstanceMessagesTest, TestSize.Level1)
+{
+    std::shared_ptr<RSUIDirector> director = RSUIDirector::Create();
+    ASSERT_NE(director, nullptr);
+    director->Init(true, true);
+    std::shared_ptr<RSTransactionData> cmds = std::make_shared<RSTransactionData>();
+    auto uiContext = director->GetRSUIContext();
+    ASSERT_NE(uiContext, nullptr);
+    int32_t instanceId = 1;
+    director->SetUITaskRunner([](const std::function<void()>& task, uint32_t delay) { task(); }, instanceId, true);
+    auto node = RSCanvasNode::Create();
+    node->SetInstanceId(instanceId);
+    std::unique_ptr<RSCommand> command =
+        std::make_unique<RSAnimationCallback>(node->GetId(), 0, 0, AnimationCallbackEvent::FINISHED);
+    cmds->AddCommand(command, node->GetId(), FollowType::FOLLOW_TO_SELF);
+    ASSERT_FALSE(cmds->IsEmpty());
+    std::map<int32_t, std::vector<std::unique_ptr<RSCommand>>> instanceCmdMap;
+    for (auto& [id, _, cmd] : cmds->GetPayload()) {
+        instanceCmdMap[instanceId].push_back(std::move(cmd));
+    }
+    director->ProcessInstanceMessages(instanceCmdMap, 0);
+    ASSERT_FALSE(director->RequestVsyncCallback(instanceId));
+    director->SetRequestVsyncCallback([]() -> void {});
+    director->ProcessInstanceMessages(instanceCmdMap, 0);
+    ASSERT_TRUE(director->RequestVsyncCallback(instanceId));
+}
+
+/**
+ * @tc.name: RequestVsyncCallbackTest
+ * @tc.desc: Test the RequestVsyncCallback
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSUIDirectorTest, RequestVsyncCallbackTest, TestSize.Level1)
+{
+    std::shared_ptr<RSUIDirector> director = RSUIDirector::Create();
+    ASSERT_NE(director, nullptr);
+    director->Init(true, true);
+    director->instanceId_ = 1;
+    ASSERT_FALSE(director->RequestVsyncCallback(1));
+    director->SetRequestVsyncCallback([]() -> void {});
+    ASSERT_TRUE(director->RequestVsyncCallback(1));
+    ASSERT_TRUE(director->RequestVsyncCallback(0));
+    ASSERT_TRUE(director->RequestVsyncCallback(INSTANCE_ID_UNDEFINED));
+}
+
+/**
  * @tc.name: ProcessUIContextMessagesTest001
  * @tc.desc:
  * @tc.type:FUNC
