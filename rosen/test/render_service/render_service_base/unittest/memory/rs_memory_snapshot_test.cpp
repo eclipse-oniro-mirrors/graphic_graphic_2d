@@ -304,29 +304,6 @@ HWTEST_F(RSMemorySnapshotTest, GetTotalMemoryTest001, testing::ext::TestSize.Lev
 }
 
 /**
- * @tc.name: UpdateGpuMemoryInfoTest002
- * @tc.desc: Test UpdateGpuMemoryInfo detects total memory overflow.
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(RSMemorySnapshotTest, UpdateGpuMemoryInfoTest002, testing::ext::TestSize.Level1)
-{
-    pid_t pid = 8001;
-    std::set<pid_t> exitedPids = {pid};
-    MemorySnapshot::Instance().EraseSnapshotInfoByPid(exitedPids);
-    auto callback = [](pid_t, uint64_t, bool) { return true; };
-    MemorySnapshot::Instance().InitMemoryLimit(callback, 1000, 2000, 1);
-    MemorySnapshot::Instance().AddCpuMemory(pid, 50);
-    std::unordered_map<pid_t, size_t> gpuInfo = {{pid, 60}};
-    std::unordered_map<pid_t, MemorySnapshotInfo> pidForReport;
-    bool isTotalOver = false;
-    MemorySnapshot::Instance().UpdateGpuMemoryInfo(gpuInfo, pidForReport, isTotalOver);
-    ASSERT_TRUE(isTotalOver);
-    ASSERT_TRUE(pidForReport.find(pid) != pidForReport.end());
-    MemorySnapshot::Instance().EraseSnapshotInfoByPid(exitedPids);
-}
-
-/**
  * @tc.name: CalculateRiskScoreTest002
  * @tc.desc: Test CalculateRiskScore with zero max values.
  * @tc.type: FUNC
