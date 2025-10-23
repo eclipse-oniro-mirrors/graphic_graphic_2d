@@ -381,6 +381,7 @@ LayerInfoPtr RSUniRenderProcessor::GetLayerInfo(RSSurfaceRenderParams& params, s
     layer->SetLayerSourceTuning(params.GetLayerSourceTuning());
     layer->SetLayerArsr(layerInfo.arsrTag);
     layer->SetLayerCopybit(layerInfo.copybitTag);
+    layer->SetIgnoreAlpha(params.GetSurfaceBufferOpaque());
     HandleTunnelLayerParameters(params, layer);
     return layer;
 }
