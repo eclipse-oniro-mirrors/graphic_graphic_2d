@@ -1359,17 +1359,18 @@ HWTEST_F(HgmFrameRateMgrTest, HandleLowPowerSlideSceneEvent, Function | SmallTes
     }
     
     frameRateMgr->controller_ = std::make_shared<HgmVSyncGeneratorController>(nullptr, nullptr, nullptr);
-    frameRateMgr->isNeedUpdateAppOffset_ = false;
     frameRateMgr->currRefreshRate_ = OLED_60_HZ;
     EventInfo eventInfo1 = { .eventName = "VOTER_LOW_POWER_SLIDE", .eventStatus = true,
         .description = "LOW_POWER_SLIDE_MODE"};
     frameRateMgr->HandleRefreshRateEvent(0, eventInfo1);
     frameRateMgr->FrameRateReport();
+    frameRateMgr->isNeedUpdateAppOffset_ = false;
     frameRateMgr->CheckNeedUpdateAppOffset(OLED_60_HZ, OLED_60_HZ);
     EventInfo eventInfo2 = { .eventName = "VOTER_LOW_POWER_SLIDE", .eventStatus = false,
         .description = "LOW_POWER_SLIDE_MODE"};
     frameRateMgr->HandleRefreshRateEvent(0, eventInfo2);
     frameRateMgr->FrameRateReport();
+    frameRateMgr->isNeedUpdateAppOffset_ = false;
     frameRateMgr->CheckNeedUpdateAppOffset(OLED_60_HZ, OLED_60_HZ);
     
     frameRateMgr->currRefreshRate_ = OLED_30_HZ;
@@ -1377,17 +1378,18 @@ HWTEST_F(HgmFrameRateMgrTest, HandleLowPowerSlideSceneEvent, Function | SmallTes
         .description = "LOW_POWER_SLIDE_MODE"};
     frameRateMgr->HandleRefreshRateEvent(0, eventInfo3);
     frameRateMgr->FrameRateReport();
+    frameRateMgr->isNeedUpdateAppOffset_ = false;
     frameRateMgr->CheckNeedUpdateAppOffset(OLED_30_HZ, OLED_30_HZ);
     EventInfo eventInfo4 = { .eventName = "VOTER_LOW_POWER_SLIDE", .eventStatus = false,
         .description = "LOW_POWER_SLIDE_MODE"};
     frameRateMgr->HandleRefreshRateEvent(0, eventInfo4);
     frameRateMgr->FrameRateReport();
+    frameRateMgr->isNeedUpdateAppOffset_ = false;
     frameRateMgr->CheckNeedUpdateAppOffset(OLED_30_HZ, OLED_30_HZ);
     EventInfo eventInfo5 = { .eventName = "VOTER_LOW_POWER_SLIDE", .eventStatus = false,
         .description = "HIGH_PERFORMANCE_SLIDE_MODE"};
     frameRateMgr->HandleRefreshRateEvent(0, eventInfo5);
     
-    sleep(1);
     EXPECT_EQ(frameRateMgr->currRefreshRate_, OLED_30_HZ);
 }
 
