@@ -105,7 +105,8 @@ bool RSHeteroHDRManager::FixConditionPrejudgment(bool isUiFirstMode, RSSurfaceRe
     auto dstRect = surfaceParams->GetLayerInfo().dstRect;
     // The precondition has already checked that srcRect w and dstRect h are not zero (ValidateSurface)
     float ratio = static_cast<float>(srcRect.h * dstRect.w) / (static_cast<float>(dstRect.h * srcRect.w));
-    bool ratioJudge = !ROSEN_EQ<float>(ratio, 1.0, RATIO_CHANGE_TH);
+    bool ratioJudge = !ROSEN_EQ<float>(ratio, 1.0, RATIO_CHANGE_TH) ||
+        (!ROSEN_EQ<float>(boundSize.x_, curScreenInfo.width) && !ROSEN_EQ<float>(boundSize.y_, curScreenInfo.height));
 
     sptr<SurfaceBuffer> srcBuffer = surfaceParams->GetBuffer();
     ScalingMode scalingMode = srcBuffer->GetSurfaceBufferScalingMode();
