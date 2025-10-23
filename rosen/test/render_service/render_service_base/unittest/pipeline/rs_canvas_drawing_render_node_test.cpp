@@ -759,16 +759,17 @@ HWTEST_F(RSCanvasDrawingRenderNodeTest, CheckCachedOpTest, TestSize.Level1)
 }
 
 /**
- * @tc.name: ContentStyleSlotUpdateTest
+ * @tc.name: ContentStyleSlotUpdateTest001
  * @tc.desc: Test ContentStyleSlotUpdate
  * @tc.type: FUNC
  */
-HWTEST_F(RSCanvasDrawingRenderNodeTest, ContentStyleSlotUpdateTest, TestSize.Level1)
+HWTEST_F(RSCanvasDrawingRenderNodeTest, ContentStyleSlotUpdateTest001, TestSize.Level1)
 {
     auto node = std::make_shared<RSCanvasDrawingRenderNode>(12);
     node->dirtyTypesNG_.set(static_cast<int>(ModifierNG::RSModifierType::CONTENT_STYLE), true);
     node->waitSync_ = false;
     node->isOnTheTree_ = false;
+    node->isNeverOnTree_ = false;
     node->stagingRenderParams_ = std::make_unique<RSRenderParams>(node->GetId());
     node->stagingRenderParams_->surfaceParams_ = { 100, 100, GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB };
     node->isTextureExportNode_ = false;
@@ -779,6 +780,7 @@ HWTEST_F(RSCanvasDrawingRenderNodeTest, ContentStyleSlotUpdateTest, TestSize.Lev
     node->dirtyTypesNG_.set(static_cast<int>(ModifierNG::RSModifierType::CONTENT_STYLE), true);
     node->waitSync_ = true;
     node->isOnTheTree_ = false;
+    node->isNeverOnTree_ = false;
     node->stagingRenderParams_ = nullptr;
     node->isTextureExportNode_ = false;
     RSUniRenderJudgement::uniRenderEnabledType_ = UniRenderEnabledType::UNI_RENDER_DISABLED;
@@ -787,6 +789,7 @@ HWTEST_F(RSCanvasDrawingRenderNodeTest, ContentStyleSlotUpdateTest, TestSize.Lev
 
     node->waitSync_ = false;
     node->isOnTheTree_ = true;
+    node->isNeverOnTree_ = false;
     node->stagingRenderParams_ = nullptr;
     node->isTextureExportNode_ = false;
     RSUniRenderJudgement::uniRenderEnabledType_ = UniRenderEnabledType::UNI_RENDER_DISABLED;
@@ -795,6 +798,26 @@ HWTEST_F(RSCanvasDrawingRenderNodeTest, ContentStyleSlotUpdateTest, TestSize.Lev
 
     node->waitSync_ = false;
     node->isOnTheTree_ = false;
+    node->isNeverOnTree_ = true;
+    node->stagingRenderParams_ = nullptr;
+    node->isTextureExportNode_ = false;
+    RSUniRenderJudgement::uniRenderEnabledType_ = UniRenderEnabledType::UNI_RENDER_DISABLED;
+    node->ContentStyleSlotUpdate();
+    EXPECT_TRUE(node->dirtyTypesNG_.test(static_cast<size_t>(ModifierNG::RSModifierType::CONTENT_STYLE)));
+}
+
+/**
+ * @tc.name: ContentStyleSlotUpdateTest002
+ * @tc.desc: Test ContentStyleSlotUpdate
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSCanvasDrawingRenderNodeTest, ContentStyleSlotUpdateTest002, TestSize.Level1)
+{
+    auto node = std::make_shared<RSCanvasDrawingRenderNode>(12);
+    node->dirtyTypesNG_.set(static_cast<int>(ModifierNG::RSModifierType::CONTENT_STYLE), true);
+    node->waitSync_ = false;
+    node->isOnTheTree_ = false;
+    node->isNeverOnTree_ = false;
     node->stagingRenderParams_ = nullptr;
     node->isTextureExportNode_ = true;
     RSUniRenderJudgement::uniRenderEnabledType_ = UniRenderEnabledType::UNI_RENDER_DISABLED;
@@ -803,6 +826,7 @@ HWTEST_F(RSCanvasDrawingRenderNodeTest, ContentStyleSlotUpdateTest, TestSize.Lev
 
     node->waitSync_ = false;
     node->isOnTheTree_ = false;
+    node->isNeverOnTree_ = false;
     node->stagingRenderParams_ = std::make_unique<RSRenderParams>(node->GetId());
     node->isTextureExportNode_ = false;
     RSUniRenderJudgement::uniRenderEnabledType_ = UniRenderEnabledType::UNI_RENDER_DISABLED;
@@ -811,6 +835,7 @@ HWTEST_F(RSCanvasDrawingRenderNodeTest, ContentStyleSlotUpdateTest, TestSize.Lev
 
     node->waitSync_ = false;
     node->isOnTheTree_ = false;
+    node->isNeverOnTree_ = false;
     node->stagingRenderParams_ = nullptr;
     node->isTextureExportNode_ = false;
     RSUniRenderJudgement::uniRenderEnabledType_ = UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL;
