@@ -15,7 +15,6 @@
 
 #include "rs_graphic_rootnode.h"
 #include "transaction/rs_interfaces.h"
-
 namespace OHOS {
 namespace Rosen {
 RSGraphicRootNode::RSGraphicRootNode()
