@@ -430,7 +430,7 @@ void RSRenderThreadVisitor::ProcessRootRenderNode(RSRootRenderNode& node)
 #ifdef RS_ENABLE_VK
     if (RSSystemProperties::IsUseVulkan()) {
         std::static_pointer_cast<RSSurfaceOhosVulkan>(rsSurface)->SetCleanUpHelper(
-            [](std::unordered_map<NativeWindowBuffer*, NativeBufferUtils::NativeSurfaceInfo> mSurfaceMap) {
+            [](std::unordered_map<NativeWindowBuffer*, NativeBufferUtils::NativeSurfaceInfo>& mSurfaceMap) {
                 RSRenderThread::Instance().PostSyncTask([&mSurfaceMap]() mutable {
                     mSurfaceMap.clear();
                     RSRenderThread::Instance().TrimMemory();
