@@ -50,6 +50,7 @@ namespace OHOS {
 namespace Rosen {
 static std::mutex drawingMutex_;
 namespace {
+constexpr uint32_t DRAWCMDLIST_COUNT_LIMIT = 300; // limit of the drawcmdlists.
 constexpr uint32_t DRAWCMDLIST_OPSIZE_TOTAL_COUNT_LIMIT = 10000;
 constexpr uint32_t OP_COUNT_LIMIT_PER_FRAME = 10000;
 constexpr uint32_t OP_COUNT_LIMIT_FOR_CACHE = 200000;
@@ -518,6 +519,7 @@ CM_INLINE void RSCanvasDrawingRenderNode::ApplyModifiers()
         dirtyTypesNG_.set(static_cast<int>(ModifierNG::RSModifierType::CONTENT_STYLE), true);
         std::lock_guard<std::mutex> lock(drawCmdListsMutex_);
         ApplyCachedCmdList();
+        CheckDrawCmdListSizeNG(ModifierNG::RSModifierType::CONTENT_STYLE);
         SetNeedProcess(true);
     }
     RSRenderNode::ApplyModifiers();
@@ -532,18 +534,19 @@ void RSCanvasDrawingRenderNode::CheckDrawCmdListSizeNG(ModifierNG::RSModifierTyp
     }
     size_t originOpCount = 0;
     size_t opCount = 0;
+    size_t cmdListSize = 0;
     auto it = drawCmdLists.end();
     while (it != drawCmdLists.begin()) {
         it--;
         originOpCount += (*it)->GetOpItemSize();
-        if (originOpCount > OP_COUNT_LIMIT_PER_FRAME) {
+        if (originOpCount > OP_COUNT_LIMIT_PER_FRAME || cmdListSize >= DRAWCMDLIST_COUNT_LIMIT) {
             it = drawCmdLists.erase(it);
             continue;
         }
         opCount = originOpCount;
+        cmdListSize++;
     }
-    auto cmdListSize = drawCmdLists.size();
-    bool overflow = originOpCount > OP_COUNT_LIMIT_PER_FRAME;
+    bool overflow = originOpCount > OP_COUNT_LIMIT_PER_FRAME || originCmdListSize > DRAWCMDLIST_COUNT_LIMIT;
     if (overflow) {
         RS_OPTIONAL_TRACE_NAME_FMT("CheckDrawCmdListSizeNG nodeId:[%" PRIu64 "] modifierType:[%hd] stateOnTheTree:[%d]"
             " originCmdListSize:[%zu] cmdListSize:[%zu] originOpCount:[%zu] opCount:[%zu]", GetId(), type,
@@ -770,6 +773,7 @@ bool RSCanvasDrawingRenderNode::CheckCachedOp()
     if (!IsOnTheTree()) {
         std::lock_guard<std::mutex> lock(drawCmdListsMutex_);
         ApplyCachedCmdList();
+        CheckDrawCmdListSizeNG(ModifierNG::RSModifierType::CONTENT_STYLE);
         dirtyTypesNG_.set(static_cast<int>(ModifierNG::RSModifierType::CONTENT_STYLE), true);
     }
     return true;
