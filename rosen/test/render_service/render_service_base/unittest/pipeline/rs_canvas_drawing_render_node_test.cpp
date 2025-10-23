@@ -851,5 +851,21 @@ HWTEST_F(RSCanvasDrawingRenderNodeTest, ContentStyleSlotUpdateTest002, TestSize.
 HWTEST_F(RSCanvasDrawingRenderNodeTest, SplitDrawCmdListTest, TestSize.Level1)
 {
     auto node = std::make_shared<RSCanvasDrawingRenderNode>(13);
+    auto drawCmdList = std::make_shared<Drawing::DrawCmdList>();
+    Drawing::Brush brush;
+    drawCmdList->AddDrawOp(std::make_shared<Drawing::DrawBackgroundOpItem>(brush));
+    node->SplitDrawCmdList(1, drawCmdList, true);
+    EXPECT_TRUE(drawCmdList->IsEmpty());
+    drawCmdList->AddDrawOp(std::make_shared<Drawing::DrawBackgroundOpItem>(brush));
+    node->SplitDrawCmdList(1, drawCmdList, false);
+    EXPECT_TRUE(drawCmdList->IsEmpty());
+    node->cachedOpCount_ = 300000;
+    drawCmdList->AddDrawOp(std::make_shared<Drawing::DrawBackgroundOpItem>(brush));
+    node->SplitDrawCmdList(1, drawCmdList, true);
+    EXPECT_TRUE(drawCmdList->IsEmpty());
+    node->cachedOpCount_ = 300000;
+    drawCmdList->AddDrawOp(std::make_shared<Drawing::DrawBackgroundOpItem>(brush));
+    node->SplitDrawCmdList(1, drawCmdList, false);
+    EXPECT_TRUE(drawCmdList->IsEmpty());
 }
 } // namespace OHOS::Rosen
