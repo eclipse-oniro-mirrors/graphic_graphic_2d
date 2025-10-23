@@ -115,6 +115,7 @@ void RSHeteroHDRManager::GetFixedDstRectStatus(std::shared_ptr<DrawableV2::RSSur
     if (curHandleStatus_ == HdrStatus::AI_HDR_VIDEO_GAINMAP) {
         isFixedDstBuffer_ = true;
         dst_ = { 0, 0, bufferWidth, bufferHeight };
+        hpaeBufferSize_ = Vector2f(bufferWidth, bufferHeight);
         return;
     }
     auto srcRect = surfaceParams->GetLayerInfo().srcRect;
@@ -150,7 +151,8 @@ void RSHeteroHDRManager::GetFixedDstRectStatus(std::shared_ptr<DrawableV2::RSSur
     dst_.top_ = 0;
     dst_.width_ = boundSize.x_;
     dst_.height_ = boundSize.y_;
-    isFixedDstBuffer_ = isUiFirstMode || ratioJudge || sizeJudge;
+    ScalingMode scalingMode = srcBuffer->GetSurfaceBufferScalingMode();
+    isFixedDstBuffer_ = isUiFirstMode || ratioJudge || sizeJudge || scalingMode = ScalingMode::SCALING_MODE_SCALE_FIT;
     if (!isFixedDstBuffer_) {
         dst_.width_ = dstRect.w;
         dst_.height_ = dstRect.h;
@@ -298,6 +300,7 @@ void RSHeteroHDRManager::ClearBufferCache()
         rsHeteroHDRBufferLayer_.CleanCache();
         framesNoApplyCnt_ = 0;
         nodeSrcRectMap_.clear();
+        RSHDRPatternManager::Instance().MHCReleaseAll();
     } else {
         framesNoApplyCnt_++;
     }
