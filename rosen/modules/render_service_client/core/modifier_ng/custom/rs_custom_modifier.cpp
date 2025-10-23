@@ -126,7 +126,7 @@ void RSCustomModifier::UpdateProperty(
     std::shared_ptr<RSNode> node, std::shared_ptr<Drawing::DrawCmdList> drawCmdList, PropertyId propertyId)
 {
     if (contentTransitionType_ == ContentTransitionType::OPACITY &&
-        timingCurve_.type_ == RSAnimationTimingCurve::CurveType::INTERPOLATING) {
+        timingCurve_.type_ == RSAnimationTimingCurve::CurveType::INTERPOLATING && timingProtocol_.GetDuration() > 0) {
         auto propertyCallback = [this, &drawCmdList]() {
             Setter<RSAnimatableProperty, std::shared_ptr<Drawing::DrawCmdList>>(GetInnerPropertyType(), drawCmdList);
         };

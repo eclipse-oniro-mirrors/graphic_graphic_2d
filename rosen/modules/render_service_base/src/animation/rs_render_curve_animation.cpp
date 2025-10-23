@@ -17,6 +17,7 @@
 
 #include "animation/rs_animation_trace_utils.h"
 #include "animation/rs_value_estimator.h"
+#include "pipeline/rs_render_node.h"
 #include "platform/common/rs_log.h"
 #include "transaction/rs_marshalling_helper.h"
 
@@ -101,6 +102,28 @@ void RSRenderCurveAnimation::InitValueEstimator()
         return;
     }
     valueEstimator_->InitCurveAnimationValue(property_, startValue_, endValue_, lastValue_);
+}
+
+void RSRenderCurveAnimation::OnAttach()
+{
+    auto target = GetTarget();
+    if (target == nullptr) {
+        ROSEN_LOGE("RSRenderCurveAnimation::OnAttach, target is nullptr.");
+        return;
+    }
+    if (property_ == nullptr) {
+        ROSEN_LOGE("RSRenderCurveAnimation::OnAttach, property_ is nullptr.");
+        return;
+    }
+    if (property_->GetPropertyType() != RSPropertyType::DRAW_CMD_LIST) {
+        return;
+    }
+    auto animationId = target->GetAnimationManager().preDrawCmdListAnimationId_;
+    auto preAnimation = target->GetAnimationManager().GetAnimation(animationId);
+    if (preAnimation && preAnimation->GetPropertyId() == property_->GetId()) {
+        preAnimation->FinishOnCurrentPosition();
+    }
+    target->GetAnimationManager().preDrawCmdListAnimationId_ = id_;
 }
 } // namespace Rosen
 } // namespace OHOS

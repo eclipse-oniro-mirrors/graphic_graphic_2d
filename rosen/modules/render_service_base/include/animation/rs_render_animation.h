@@ -261,6 +261,7 @@ private:
     uint64_t token_ = 0;
 
     friend class RSAnimation;
+    friend class RSRenderCurveAnimation;
     friend class RSModifierManager;
 #ifdef RS_PROFILER_ENABLED
     friend class RSProfiler;
