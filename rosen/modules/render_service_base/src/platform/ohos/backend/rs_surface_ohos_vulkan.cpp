@@ -62,7 +62,7 @@ RSSurfaceOhosVulkan::RSSurfaceOhosVulkan(const sptr<Surface>& producer) : RSSurf
 RSSurfaceOhosVulkan::~RSSurfaceOhosVulkan()
 {
     if (cleanUpHelper_) {
-        cleanUpHelper_(std::move(mSurfaceMap));
+        cleanUpHelper_(mSurfaceMap);
     } else {
         mSurfaceMap.clear();
     }
@@ -73,7 +73,7 @@ RSSurfaceOhosVulkan::~RSSurfaceOhosVulkan()
     if (mReservedFlushFd != -1) {
         fdsan_close_with_tag(mReservedFlushFd, LOG_DOMAIN);
         mReservedFlushFd = -1;
-    } 
+    }
 }
 
 void RSSurfaceOhosVulkan::SetNativeWindowInfo(int32_t width, int32_t height, bool useAFBC, bool isProtected)
