@@ -666,7 +666,7 @@ void RSSurfaceOhosVulkan::ResetBufferAge()
 }
 
 void RSSurfaceOhosVulkan::SetCleanUpHelper(std::function<void(std::unordered_map<NativeWindowBuffer*,
-    NativeBufferUtils::NativeSurfaceInfo>&)> func)
+    NativeBufferUtils::NativeSurfaceInfo>& mSurfaceMap)> func)
 {
     cleanUpHelper_ = func;
 }
