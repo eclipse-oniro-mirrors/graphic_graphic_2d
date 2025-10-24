@@ -342,15 +342,15 @@ HWTEST_F(RSRenderServiceVisitorTest, PrepareLogicalDisplayRenderNode001, TestSiz
     RSDisplayNodeConfig config;
     NodeId nodeId = 100;
     auto rsLogicalDisplayRenderNode = std::make_shared<RSLogicalDisplayRenderNode>(nodeId, config);
-    rsLogicalDisplayRenderNode->GetMultableRenderProperties().SetRotation(0.0f);
+    rsLogicalDisplayRenderNode->GetMutableRenderProperties().SetRotation(0.0f);
     EXPECT_EQ(rsLogicalDisplayRenderNode->GetRotation(), ScreenRotation::ROTATION_0);
     rsRenderServiceVisitor.PrepareLogicalDisplayRenderNode(*rsLogicalDisplayRenderNode);
 
-    rsLogicalDisplayRenderNode->GetMultableRenderProperties().SetRotation(-450.0f);
+    rsLogicalDisplayRenderNode->GetMutableRenderProperties().SetRotation(-450.0f);
     EXPECT_EQ(rsLogicalDisplayRenderNode->GetRotation(), ScreenRotation::ROTATION_90);
     rsRenderServiceVisitor.PrepareLogicalDisplayRenderNode(*rsLogicalDisplayRenderNode);
 
-    rsLogicalDisplayRenderNode->GetMultableRenderProperties().SetRotation(-630.0f);
+    rsLogicalDisplayRenderNode->GetMutableRenderProperties().SetRotation(-630.0f);
     rsRenderServiceVisitor.PrepareLogicalDisplayRenderNode(*rsLogicalDisplayRenderNode);
     ASSERT_EQ(rsLogicalDisplayRenderNode->GetRotation(), ScreenRotation::ROTATION_270);
 }
@@ -367,7 +367,7 @@ HWTEST_F(RSRenderServiceVisitorTest, PrepareLogicalDisplayRenderNode002, TestSiz
     RSDisplayNodeConfig config;
     NodeId nodeId = 100;
     auto rsLogicalDisplayRenderNode = std::make_shared<RSLogicalDisplayRenderNode>(nodeId, config);
-    rsLogicalDisplayRenderNode->GetMultableRenderProperties().SetRotation(0.0f);
+    rsLogicalDisplayRenderNode->GetMutableRenderProperties().SetRotation(0.0f);
     rsLogicalDisplayRenderNode->SetIsMirrorDisplay(false);
     EXPECT_EQ(rsLogicalDisplayRenderNode->GetRotation(), ScreenRotation::ROTATION_0);
     EXPECT_FALSE(rsLogicalDisplayRenderNode->IsMirrorDisplay());
@@ -390,10 +390,10 @@ HWTEST_F(RSRenderServiceVisitorTest, PrepareLogicalDisplayRenderNode003, TestSiz
     RSDisplayNodeConfig config;
     NodeId nodeId = 100;
     auto rsLogicalDisplayRenderNode = std::make_shared<RSLogicalDisplayRenderNode>(nodeId, config);
-    rsLogicalDisplayRenderNode->GetMultableRenderProperties().SetRotation(0.0f);
+    rsLogicalDisplayRenderNode->GetMutableRenderProperties().SetRotation(0.0f);
     rsLogicalDisplayRenderNode->SetIsMirrorDisplay(true);
     EXPECT_EQ(rsLogicalDisplayRenderNode->GetRotation(), ScreenRotation::ROTATION_0);
-    
+
     rsRenderServiceVisitor.PrepareLogicalDisplayRenderNode(*rsLogicalDisplayRenderNode);
     ASSERT_TRUE(rsLogicalDisplayRenderNode->IsMirrorDisplay());
 }
@@ -1244,7 +1244,7 @@ HWTEST_F(RSRenderServiceVisitorTest, ProcessLogicalDisplayRenderNodeTest002, Tes
 
     RSDisplayNodeConfig config;
     NodeId displayNodeId = 101;
-    auto rsLogicalDisplayRenderNode = std::make_shared<RSLogicalDisplayRenderNode>(nodeId, config);
+    auto rsLogicalDisplayRenderNode = std::make_shared<RSLogicalDisplayRenderNode>(displayNodeId, config);
 
     rsLogicalDisplayRenderNode->SetIsMirrorDisplay(false);
     rsRenderServiceVisitor.ProcessLogicalDisplayRenderNode(*rsLogicalDisplayRenderNode);

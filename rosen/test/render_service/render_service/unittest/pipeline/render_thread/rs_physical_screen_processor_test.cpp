@@ -331,6 +331,7 @@ HWTEST_F(RSPhysicalScreenProcessorTest, CalculateScreenTransformMatrix, TestSize
 {
     auto rsHardwareProcessor = RSProcessorFactory::CreateProcessor(CompositeType::HARDWARE_COMPOSITE);
     NodeId displayNodeId = 0;
+    RSDisplayNodeConfig config;
     auto context = std::make_shared<RSContext>();
     auto rsLogicalDisplayRenderNode = std::make_shared<RSLogicalDisplayRenderNode>(displayNodeId, config,
         context->weak_from_this());
