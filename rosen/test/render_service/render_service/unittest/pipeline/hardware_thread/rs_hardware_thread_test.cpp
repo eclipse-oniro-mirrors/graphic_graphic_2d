@@ -487,10 +487,10 @@ HWTEST_F(RSHardwareThreadTest, ExecuteSwitchRefreshRate, TestSize.Level1)
     auto frameRateMgr = hgmCore.GetFrameRateMgr();
     ASSERT_NE(frameRateMgr, nullptr);
     hgmCore.hgmFrameRateMgr_ = nullptr;
-    hardwareThread.hgmHardwareUtils_.ExecuteSwitchRefreshRate(output, 0);
+    hardwareThread.hgmHardwareUtils_.ExecuteSwitchRefreshRate(screenId_);
 
     hgmCore.hgmFrameRateMgr_ = frameRateMgr;
-    hardwareThread.hgmHardwareUtils_.ExecuteSwitchRefreshRate(output, 0);
+    hardwareThread.hgmHardwareUtils_.ExecuteSwitchRefreshRate(screenId_);
 
     //  设置屏幕尺寸为1080p，物理屏尺寸包含1080p即可
     ScreenSize sSize = {720, 1080, 685, 1218};
@@ -498,16 +498,16 @@ HWTEST_F(RSHardwareThreadTest, ExecuteSwitchRefreshRate, TestSize.Level1)
     auto screen = hgmCore.GetScreen(screenId_);
     screen->SetSelfOwnedScreenFlag(true);
     hgmCore.SetScreenRefreshRateImme(1);
-    hardwareThread.hgmHardwareUtils_.ExecuteSwitchRefreshRate(output, 0);
+    hardwareThread.hgmHardwareUtils_.ExecuteSwitchRefreshRate(screenId_);
 
     hardwareThread.hgmHardwareUtils_.setRateRetryMap_[screenId_] = std::make_pair(true, 1);
-    hardwareThread.hgmHardwareUtils_.ExecuteSwitchRefreshRate(output, 0);
+    hardwareThread.hgmHardwareUtils_.ExecuteSwitchRefreshRate(screenId_);
     hardwareThread.hgmHardwareUtils_.setRateRetryMap_[screenId_] = std::make_pair(false, 0);
-    hardwareThread.hgmHardwareUtils_.ExecuteSwitchRefreshRate(output, 0);
+    hardwareThread.hgmHardwareUtils_.ExecuteSwitchRefreshRate(screenId_);
     hgmCore.GetFrameRateMgr()->curScreenId_.store(hgmCore.GetFrameRateMgr()->GetLastCurScreenId());
-    hardwareThread.hgmHardwareUtils_.ExecuteSwitchRefreshRate(output, 0);
+    hardwareThread.hgmHardwareUtils_.ExecuteSwitchRefreshRate(screenId_);
     hgmCore.GetFrameRateMgr()->curScreenId_.store(-1);
-    hardwareThread.hgmHardwareUtils_.ExecuteSwitchRefreshRate(output, 0);
+    hardwareThread.hgmHardwareUtils_.ExecuteSwitchRefreshRate(screenId_);
     int32_t status = hgmCore.SetScreenRefreshRate(0, screenId_, 0);
     ASSERT_TRUE(status < EXEC_SUCCESS);
 }
@@ -528,17 +528,17 @@ HWTEST_F(RSHardwareThreadTest, PerformSetActiveMode, TestSize.Level1)
     auto screenManager = CreateOrGetScreenManager();
     ASSERT_NE(screenManager, nullptr);
     OHOS::Rosen::impl::RSScreenManager::instance_ = nullptr;
-    hardwareThread.hgmHardwareUtils_.PerformSetActiveMode(output, 0, 0);
+    hardwareThread.hgmHardwareUtils_.PerformSetActiveMode(output);
 
     OHOS::Rosen::impl::RSScreenManager::instance_ = screenManager;
     hardwareThread.hgmHardwareUtils_.hgmRefreshRates_ = HgmRefreshRates::SET_RATE_120;
-    hardwareThread.hgmHardwareUtils_.PerformSetActiveMode(output, 0, 0);
+    hardwareThread.hgmHardwareUtils_.PerformSetActiveMode(output);
 
     auto &hgmCore = HgmCore::Instance();
     hgmCore.modeListToApply_ = std::make_unique<std::unordered_map<ScreenId, int32_t>>();
     int32_t rate = 3;
     hgmCore.modeListToApply_->try_emplace(screenId_, rate);
-    hardwareThread.hgmHardwareUtils_.PerformSetActiveMode(output, 0, 0);
+    hardwareThread.hgmHardwareUtils_.PerformSetActiveMode(output);
 
     uint64_t timestamp = 0;
     auto supportedModes = screenManager->GetScreenSupportedModes(screenId_);
@@ -546,14 +546,14 @@ HWTEST_F(RSHardwareThreadTest, PerformSetActiveMode, TestSize.Level1)
     auto hgm = HgmCore::Instance().hgmFrameRateMgr_;
     HgmCore::Instance().hgmFrameRateMgr_->isAdaptive_ = true;
     HgmCore::Instance().hgmFrameRateMgr_->isGameNodeOnTree_ = true;
-    hardwareThread.hgmHardwareUtils_.PerformSetActiveMode(output, 0, 0);
+    hardwareThread.hgmHardwareUtils_.PerformSetActiveMode(output);
     HgmCore::Instance().hgmFrameRateMgr_ = nullptr;
-    hardwareThread.hgmHardwareUtils_.PerformSetActiveMode(output, 0, 0);
+    hardwareThread.hgmHardwareUtils_.PerformSetActiveMode(output);
     HgmCore::Instance().hgmFrameRateMgr_ = hgm;
     HgmCore::Instance().vBlankIdleCorrectSwitch_.store(true);
     hardwareThread.hgmHardwareUtils_.vblankIdleCorrector_.isVBlankIdle_ = true;
     hardwareThread.OnScreenVBlankIdleCallback(screenId_, timestamp);
-    hardwareThread.hgmHardwareUtils_.PerformSetActiveMode(output, 0, 0);
+    hardwareThread.hgmHardwareUtils_.PerformSetActiveMode(output);
 }
 
 /**
@@ -585,7 +585,7 @@ HWTEST_F(RSHardwareThreadTest, PerformSetActiveMode_002, TestSize.Level1)
         hgmCore.modeListToApply_ = std::make_unique<std::unordered_map<ScreenId, int32_t>>();
     }
     hgmCore.modeListToApply_->try_emplace(screenIdInvalid_, rate);
-    hardwareThread.hgmHardwareUtils_.PerformSetActiveMode(outputInvalid, 0, 0);
+    hardwareThread.hgmHardwareUtils_.PerformSetActiveMode(outputInvalid);
 
     // 1. The number of consecutive failed retries donsnot exceed MAX_SETRATE_RETRY_COUNT
     for (int i = 0; i < MAX_SETRATE_RETRY_COUNT; ++i) {
@@ -593,7 +593,7 @@ HWTEST_F(RSHardwareThreadTest, PerformSetActiveMode_002, TestSize.Level1)
             hgmCore.modeListToApply_ = std::make_unique<std::unordered_map<ScreenId, int32_t>>();
         }
         hgmCore.modeListToApply_->try_emplace(screenId_, rate);
-        hardwareThread.hgmHardwareUtils_.PerformSetActiveMode(output, 0, 0);
+        hardwareThread.hgmHardwareUtils_.PerformSetActiveMode(output);
         ASSERT_EQ(hardwareThread.hgmHardwareUtils_.setRateRetryMap_[screenId_].first, true);
         ASSERT_EQ(hardwareThread.hgmHardwareUtils_.setRateRetryMap_[screenId_].second, i + 1);
     }
@@ -603,7 +603,7 @@ HWTEST_F(RSHardwareThreadTest, PerformSetActiveMode_002, TestSize.Level1)
             hgmCore.modeListToApply_ = std::make_unique<std::unordered_map<ScreenId, int32_t>>();
         }
         hgmCore.modeListToApply_->try_emplace(screenId_, rate);
-        hardwareThread.hgmHardwareUtils_.PerformSetActiveMode(output, 0, 0);
+        hardwareThread.hgmHardwareUtils_.PerformSetActiveMode(output);
         ASSERT_EQ(hardwareThread.hgmHardwareUtils_.setRateRetryMap_[screenId_].first, false);
         ASSERT_EQ(hardwareThread.hgmHardwareUtils_.setRateRetryMap_[screenId_].second, MAX_SETRATE_RETRY_COUNT);
     }
@@ -745,6 +745,52 @@ HWTEST_F(RSHardwareThreadTest, HgmHardwareUtils, TestSize.Level1)
     hgmCore.SetDirectCompositionFlag(true);
     hardwareThread.hgmHardwareUtils_.UpdateRefreshRateParam();
     ASSERT_EQ(hgmCore.GetDirectCompositionFlag(), false);
+}
+
+/**
+ * @tc.name: TransactRefreshRateParam
+ * @tc.desc: Test RSHardwareThreadTest.TransactRefreshRateParam
+ * @tc.type: FUNC
+ * @tc.require: issueIBH6WN
+ */
+HWTEST_F(RSHardwareThreadTest, TransactRefreshRateParam, TestSize.Level1)
+{
+    auto &hardwareThread = RSHardwareThread::Instance();
+    uint32_t currentRate = 0;
+    RefreshRateParam param;
+    HgmCore::Instance().hgmFrameRateMgr_->curScreenId_.store(0);
+    hardwareThread.hgmHardwareUtils_.TransactRefreshRateParam(currentRate, param);
+    ASSERT_EQ(currentRate, 0);
+}
+
+/**
+ * @tc.name: SwitchRefreshRate
+ * @tc.desc: Test RSHardwareThreadTest.SwitchRefreshRate
+ * @tc.type: FUNC
+ * @tc.require: issueIBH6WN
+ */
+HWTEST_F(RSHardwareThreadTest, SwitchRefreshRate, TestSize.Level1)
+{
+    auto &hardwareThread = RSHardwareThread::Instance();
+    OutputPtr output = HdiOutput::CreateHdiOutput(screenId_);
+    ASSERT_NE(output, nullptr);
+    // switch refresh rate 120.
+    hardwareThread.hgmHardwareUtils_.refreshRateParam_.rate = 120;
+    hardwareThread.hgmHardwareUtils_.SwitchRefreshRate(output);
+
+    OutputPtr outputInvalid = HdiOutput::CreateHdiOutput(screenIdInvalid_);
+    ASSERT_NE(outputInvalid, nullptr);
+    hardwareThread.hgmHardwareUtils_.SwitchRefreshRate(outputInvalid);
+
+    // test if SelfOwnedScreenFlag is false
+    auto screen = HgmCore::Instance().GetScreen(screenId_);
+    screen->SetSelfOwnedScreenFlag(false);
+    hardwareThread.hgmHardwareUtils_.SwitchRefreshRate(output);
+    screen->SetSelfOwnedScreenFlag(true);
+
+    // test switch invalid refresh rate 0.
+    hardwareThread.hgmHardwareUtils_.refreshRateParam_.rate = 0;
+    hardwareThread.hgmHardwareUtils_.SwitchRefreshRate(output);
 }
 
 /**
