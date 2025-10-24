@@ -574,7 +574,7 @@ HWTEST(RSProfilerMarshalTest, MarshalNodes, TestSize.Level1 | Standard)
     auto context_sptr = std::make_shared<RSContext>();
     RSRenderNode node(123, context_sptr, false);
     std::stringstream data;
-    RSProfiler::MarshalNodes(*context_sptr, data, RSFILE_VERSION_LATEST);
+    RSProfiler::MarshalNodes(*context_sptr, data, RSFILE_VERSION_LATEST, nullptr);
 
     std::string buffer;
     size_t size = 0;
@@ -634,7 +634,7 @@ HWTEST(RSProfilerMarshalTest, MarshalNodeModifiers, TestSize.Level1 | Standard)
     auto context_sptr = std::make_shared<RSContext>();
     RSRenderNode node(123, context_sptr, false);
     std::stringstream data;
-    RSProfiler::MarshalNodeModifiers(node, data, RSFILE_VERSION_LATEST);
+    RSProfiler::MarshalNodeModifiers(node, data, RSFILE_VERSION_LATEST, false, false);
 
     std::string buffer;
     size_t size = 0;
