@@ -347,8 +347,14 @@ void RSUIDirector::Destroy(bool isTextureExport)
         RSUIContextManager::MutableInstance().DestroyContext(rsUIContext_->GetToken());
         rsUIContext_ = nullptr;
     }
-    std::unique_lock<std::mutex> lock(uiTaskRunnersVisitorMutex_);
-    uiTaskRunners_.erase(this); // to del
+    {
+        std::unique_lock<std::mutex> lock(uiTaskRunnersVisitorMutex_);
+        uiTaskRunners_.erase(this);
+    }
+    {
+        std::unique_lock<std::mutex> lock(g_vsyncCallbackMutex);
+        requestVsyncCallbacks_.erase(this);
+    }
 }
 
 void RSUIDirector::SetRSSurfaceNode(std::shared_ptr<RSSurfaceNode> surfaceNode)
@@ -428,8 +434,12 @@ void RSUIDirector::SetAppFreeze(bool isAppFreeze)
 
 void RSUIDirector::SetRequestVsyncCallback(const std::function<void()>& callback)
 {
+    if (callback == nullptr) {
+        return;
+    }
     std::unique_lock<std::mutex> lock(g_vsyncCallbackMutex);
     requestVsyncCallback_ = callback;
+    requestVsyncCallbacks_[this] = callback;
 }
 
 void RSUIDirector::SetTimeStamp(uint64_t timeStamp, const std::string& abilityName)
@@ -643,12 +653,11 @@ void RSUIDirector::RecvMessages(std::shared_ptr<RSTransactionData> cmds)
 void RSUIDirector::ProcessInstanceMessages(
     std::map<int32_t, std::vector<std::unique_ptr<RSCommand>>>& cmdMap, uint32_t messageId)
 {
-    auto counter = std::make_shared<std::atomic_size_t>(cmdMap.size());
     for (auto& [instanceId, commands] : cmdMap) {
         ROSEN_LOGD("Post messageId:%{public}u, cmdCount:%{public}lu, instanceId:%{public}d", messageId,
             static_cast<unsigned long>(commands.size()), instanceId);
         PostTask(
-            [cmds = std::make_shared<std::vector<std::unique_ptr<RSCommand>>>(std::move(commands)), counter, messageId,
+            [cmds = std::make_shared<std::vector<std::unique_ptr<RSCommand>>>(std::move(commands)), messageId,
                 tempInstanceId = instanceId] {
                 RS_TRACE_NAME_FMT("RSUIDirector::ProcessInstanceMessages Process messageId:%lu", messageId);
                 ROSEN_LOGD("Process messageId:%{public}u, cmdCount:%{public}lu, instanceId:%{public}d", messageId,
@@ -657,15 +666,8 @@ void RSUIDirector::ProcessInstanceMessages(
                     RSContext context; // RSCommand->process() needs it
                     cmd->Process(context);
                 }
-                if (counter->fetch_sub(1) == 1) {
-                    std::unique_lock<std::mutex> lock(g_vsyncCallbackMutex);
-                    if (requestVsyncCallback_ != nullptr) {
-                        requestVsyncCallback_();
-                    } else {
-                        RSTransaction::FlushImplicitTransaction();
-                    }
-                    ROSEN_LOGD("ProcessInstanceMessages end");
-                }
+                RequestVsyncCallback(tempInstanceId); // request vsync callback for each instance
+                ROSEN_LOGD("ProcessInstanceMessages end");
             },
             instanceId);
     }
@@ -849,6 +851,31 @@ void RSUIDirector::PostDelayTask(const std::function<void()>& task, uint32_t del
         taskRunner(task, delay);
         return;
     }
+}
+
+bool RSUIDirector::RequestVsyncCallback(int32_t instanceId)
+{
+    std::unique_lock<std::mutex> lock(g_vsyncCallbackMutex);
+    if (requestVsyncCallbacks_.empty()) {
+        return false;
+    }
+    auto iter = std::find_if(requestVsyncCallbacks_.begin(), requestVsyncCallbacks_.end(),
+        [instanceId](const auto &callbacks) -> bool { return callbacks.first->instanceId_ == instanceId; });
+    if (iter != requestVsyncCallbacks_.end()) {
+        ROSEN_LOGD("RSUIDirector::RequestVsyncCallback for target instance[%{public}d]", iter->first->instanceId_);
+        iter->second();
+        return true;
+    }
+    if (instanceId != INSTANCE_ID_UNDEFINED) {
+        ROSEN_LOGW(
+            "RSUIDirector::RequestVsyncCallback instanceId=%{public}d not found, requestVsyncCallback size=%{public}zu",
+            instanceId, requestVsyncCallbacks_.size());
+    }
+    for (const auto &[director, requestVsyncCallback] : requestVsyncCallbacks_) {
+        ROSEN_LOGD("RSUIDirector::RequestVsyncCallback for each instance[%{public}d]", director->instanceId_);
+        requestVsyncCallback();
+    }
+    return true;
 }
 
 int32_t RSUIDirector::GetCurrentRefreshRateMode()

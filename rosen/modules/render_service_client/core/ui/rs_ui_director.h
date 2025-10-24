@@ -350,6 +350,7 @@ private:
     static void PostDelayTask(
         const std::function<void()>& task, uint32_t delay = 0, int32_t instanceId = INSTANCE_ID_UNDEFINED); // planing
     static void SetTypicalResidentProcessOnce(bool isResidentProcess);
+    static bool RequestVsyncCallback(int32_t instanceId);
 
     void InitHybridRender();
     void SetCommitTransactionCallback(CommitTransactionCallback commitTransactionCallback);
@@ -361,6 +362,7 @@ private:
     RSUIDirector& operator=(const RSUIDirector&&) = delete;
 
     inline static std::unordered_map<RSUIDirector*, TaskRunner> uiTaskRunners_;
+    inline static std::unordered_map<RSUIDirector*, std::function<void()>> requestVsyncCallbacks_;
     inline static std::mutex uiTaskRunnersVisitorMutex_;
 
     std::mutex mutex_;
