@@ -280,7 +280,7 @@ void RSPathAnimation::SetRotation(const std::shared_ptr<RSNode>& node, const flo
     }
     auto propertyRotation = modifier->GetProperty(ModifierNG::RSPropertyType::ROTATION);
     if (propertyRotation && propertyRotation->GetId() == rotationId_) {
-        std::static_pointer_cast<RSProperty<float>>(property)->stagingValue_ = rotation;
+        std::static_pointer_cast<RSProperty<float>>(propertyRotation)->stagingValue_ = rotation;
     }
 }
 

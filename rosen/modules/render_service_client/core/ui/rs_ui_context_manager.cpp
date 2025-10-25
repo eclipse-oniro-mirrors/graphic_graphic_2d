@@ -166,6 +166,7 @@ void RSUIContextManager::StartCloseSyncTransactionFallbackTask(bool isOpen, cons
             RS_TRACE_NAME_FMT("CloseSyncTransaction timeout syncId:%" PRIu64 "", syncId);
             ROSEN_LOGE("CloseSyncTransaction timeout syncId:%{public}" PRIu64 "", syncId);
             CloseAllSyncTransaction(syncId);
+            std::unique_lock<std::mutex> lock(closeSyncFallBackMutex_);
             if (!taskNames_.empty() && taskNames_.front() == taskName) {
                 taskNames_.pop();
             }

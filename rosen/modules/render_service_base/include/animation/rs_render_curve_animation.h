@@ -50,6 +50,8 @@ protected:
 
     void InitValueEstimator() override;
 
+    void OnAttach() override;
+
 private:
     bool ParseParam(Parcel& parcel) override;
     RSRenderCurveAnimation() = default;

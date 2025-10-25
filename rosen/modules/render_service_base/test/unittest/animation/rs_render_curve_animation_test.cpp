@@ -32,8 +32,10 @@ public:
     void TearDown() override;
 
     static constexpr uint64_t ANIMATION_ID = 12345;
+    static constexpr uint64_t ANIMATION_ID_2 = 2223;
     static constexpr uint64_t PROPERTY_ID = 54321;
     static constexpr uint64_t PROPERTY_ID_2 = 54322;
+    static constexpr uint64_t NODE_ID = 111;
 };
 
 void RSRenderCurveAnimationTest::SetUpTestCase() {}
@@ -692,5 +694,193 @@ HWTEST_F(RSRenderCurveAnimationTest, OnAnimateInner003, TestSize.Level1)
     renderCurveAnimation->OnAnimateInner(fraction, renderCurveAnimation->interpolator_);
     EXPECT_NE(renderCurveAnimation->lastValueFraction_, 0.1f);
 }
+
+class MockCmdListProperty : public RSRenderAnimatableProperty<float> {
+public:
+    explicit MockCmdListProperty(const float& value, const PropertyId& id)
+        : RSRenderAnimatableProperty<float>(value, id)
+    {}
+    ~MockCmdListProperty() = default;
+
+    RSPropertyType typeTest_ = RSPropertyType::DRAW_CMD_LIST;
+
+protected:
+    RSPropertyType GetPropertyType() const override
+    {
+        return typeTest_;
+    }
+};
+
+/**
+ * @tc.name: RSRenderCurveAnimationTest_OnAttach
+ * @tc.desc: Verify the OnAttach function.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderCurveAnimationTest, OnAttach001, TestSize.Level1)
+{
+    auto property = std::make_shared<MockCmdListProperty>(0.0f, PROPERTY_ID);
+    auto property1 = std::make_shared<MockCmdListProperty>(0.0f, PROPERTY_ID);
+    auto property2 = std::make_shared<MockCmdListProperty>(1.0f, PROPERTY_ID);
+
+    auto renderCurveAnimation =
+        std::make_shared<RSRenderCurveAnimation>(ANIMATION_ID, PROPERTY_ID, property, property1, property2);
+    ASSERT_NE(renderCurveAnimation, nullptr);
+    renderCurveAnimation->AttachRenderProperty(property);
+    auto target = renderCurveAnimation->GetTarget();
+    EXPECT_EQ(target, nullptr);
+    renderCurveAnimation->OnAttach();
+}
+
+/**
+ * @tc.name: RSRenderCurveAnimationTest_OnAttach
+ * @tc.desc: Verify the OnAttach function.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderCurveAnimationTest, OnAttach002, TestSize.Level1)
+{
+    auto property = std::make_shared<MockCmdListProperty>(0.0f, PROPERTY_ID);
+    auto property1 = std::make_shared<MockCmdListProperty>(0.0f, PROPERTY_ID);
+    auto property2 = std::make_shared<MockCmdListProperty>(1.0f, PROPERTY_ID);
+    // test property type not DRAW_CMD_LIST
+    property->typeTest_ = RSPropertyType::RS_COLOR;
+
+    auto renderCurveAnimation =
+        std::make_shared<RSRenderCurveAnimation>(ANIMATION_ID, PROPERTY_ID, property, property1, property2);
+    ASSERT_NE(renderCurveAnimation, nullptr);
+    renderCurveAnimation->AttachRenderProperty(property);
+    auto renderNode = std::make_shared<RSCanvasRenderNode>(NODE_ID);
+    std::string nodeName = "1"; // for test
+    renderNode->SetNodeName(nodeName);
+    renderCurveAnimation->Attach(renderNode.get());
+    auto target = renderCurveAnimation->GetTarget();
+    EXPECT_NE(target, nullptr);
+    renderCurveAnimation->OnAttach();
+}
+
+/**
+ * @tc.name: RSRenderCurveAnimationTest_OnAttach
+ * @tc.desc: Verify the OnAttach function.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderCurveAnimationTest, OnAttach003, TestSize.Level1)
+{
+    auto property = std::make_shared<MockCmdListProperty>(0.0f, PROPERTY_ID);
+    auto property1 = std::make_shared<MockCmdListProperty>(0.0f, PROPERTY_ID);
+    auto property2 = std::make_shared<MockCmdListProperty>(1.0f, PROPERTY_ID);
+
+    auto renderCurveAnimation =
+        std::make_shared<RSRenderCurveAnimation>(ANIMATION_ID, PROPERTY_ID, property, property1, property2);
+    ASSERT_NE(renderCurveAnimation, nullptr);
+    renderCurveAnimation->AttachRenderProperty(property);
+    auto renderNode = std::make_shared<RSCanvasRenderNode>(NODE_ID);
+    std::string nodeName = "1"; // for test
+    renderNode->SetNodeName(nodeName);
+    renderCurveAnimation->Attach(renderNode.get());
+    auto target = renderCurveAnimation->GetTarget();
+    EXPECT_NE(target, nullptr);
+    // test property type is DRAW_CMD_LIST
+    // test preDrawCmdListAnimationId_ is 0
+    target->GetAnimationManager().preDrawCmdListAnimationId_ = 0;
+    renderCurveAnimation->OnAttach();
+    // test preDrawCmdListAnimationId_ > 0
+    target->GetAnimationManager().preDrawCmdListAnimationId_ = ANIMATION_ID;
+    // test target->GetAnimationManager().GetAnimation(ANIMATION_ID) is null
+    EXPECT_EQ(target->GetAnimationManager().GetAnimation(ANIMATION_ID), nullptr);
+    renderCurveAnimation->OnAttach();
+}
+
+/**
+ * @tc.name: RSRenderCurveAnimationTest_OnAttach
+ * @tc.desc: Verify the OnAttach function.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderCurveAnimationTest, OnAttach004, TestSize.Level1)
+{
+    auto property = std::make_shared<MockCmdListProperty>(0.0f, PROPERTY_ID);
+    auto property1 = std::make_shared<MockCmdListProperty>(0.0f, PROPERTY_ID);
+    auto property2 = std::make_shared<MockCmdListProperty>(1.0f, PROPERTY_ID);
+
+    auto renderCurveAnimation2 =
+        std::make_shared<RSRenderCurveAnimation>(ANIMATION_ID_2, PROPERTY_ID_2, property, property1, property2);
+    auto renderCurveAnimation =
+        std::make_shared<RSRenderCurveAnimation>(ANIMATION_ID, PROPERTY_ID, property, property1, property2);
+    ASSERT_NE(renderCurveAnimation, nullptr);
+    renderCurveAnimation->AttachRenderProperty(property);
+    auto renderNode = std::make_shared<RSCanvasRenderNode>(NODE_ID);
+    std::string nodeName = "1"; // for test
+    renderNode->SetNodeName(nodeName);
+    renderCurveAnimation->Attach(renderNode.get());
+    auto target = renderCurveAnimation->GetTarget();
+    EXPECT_NE(target, nullptr);
+    // test property type is DRAW_CMD_LIST
+    // test preDrawCmdListAnimationId_ > 0
+    target->GetAnimationManager().preDrawCmdListAnimationId_ = ANIMATION_ID_2;
+    target->GetAnimationManager().AddAnimation(renderCurveAnimation2);
+    auto preAnimation = target->GetAnimationManager().GetAnimation(ANIMATION_ID_2);
+    ASSERT_NE(preAnimation, nullptr);
+    // test preAnimaton propertyId is not equal this propertyId
+    EXPECT_NE(preAnimation->GetPropertyId(), renderCurveAnimation->property_->GetId());
+    renderCurveAnimation->OnAttach();
+}
+
+/**
+ * @tc.name: RSRenderCurveAnimationTest_OnAttach
+ * @tc.desc: Verify the OnAttach function.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderCurveAnimationTest, OnAttach005, TestSize.Level1)
+{
+    auto property = std::make_shared<MockCmdListProperty>(0.0f, PROPERTY_ID);
+    auto property1 = std::make_shared<MockCmdListProperty>(0.0f, PROPERTY_ID);
+    auto property2 = std::make_shared<MockCmdListProperty>(1.0f, PROPERTY_ID);
+
+    auto renderCurveAnimation =
+        std::make_shared<RSRenderCurveAnimation>(ANIMATION_ID, PROPERTY_ID, property, property1, property2);
+    ASSERT_NE(renderCurveAnimation, nullptr);
+    renderCurveAnimation->AttachRenderProperty(property);
+    auto renderNode = std::make_shared<RSCanvasRenderNode>(NODE_ID);
+    std::string nodeName = "1"; // for test
+    renderNode->SetNodeName(nodeName);
+    renderCurveAnimation->Attach(renderNode.get());
+    auto target = renderCurveAnimation->GetTarget();
+    EXPECT_NE(target, nullptr);
+    // test property type is DRAW_CMD_LIST
+    // test preAnimaton is not nullptr
+    target->GetAnimationManager().preDrawCmdListAnimationId_ = ANIMATION_ID;
+    target->GetAnimationManager().AddAnimation(renderCurveAnimation);
+    auto preAnimation = target->GetAnimationManager().GetAnimation(ANIMATION_ID);
+    ASSERT_NE(preAnimation, nullptr);
+    // test preAnimaton propertyId is equal this propertyId
+    EXPECT_EQ(preAnimation->GetPropertyId(), renderCurveAnimation->property_->GetId());
+    renderCurveAnimation->OnAttach();
+}
+
+/**
+ * @tc.name: RSRenderCurveAnimationTest_OnAttach
+ * @tc.desc: Verify the OnAttach function.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderCurveAnimationTest, OnAttach006, TestSize.Level1)
+{
+    auto property = std::make_shared<MockCmdListProperty>(0.0f, PROPERTY_ID);
+    auto property1 = std::make_shared<MockCmdListProperty>(0.0f, PROPERTY_ID);
+    auto property2 = std::make_shared<MockCmdListProperty>(1.0f, PROPERTY_ID);
+    // test property type not DRAW_CMD_LIST
+    property->typeTest_ = RSPropertyType::RS_COLOR;
+
+    auto renderCurveAnimation =
+        std::make_shared<RSRenderCurveAnimation>(ANIMATION_ID, PROPERTY_ID, property, property1, property2);
+    ASSERT_NE(renderCurveAnimation, nullptr);
+    auto renderNode = std::make_shared<RSCanvasRenderNode>(NODE_ID);
+    std::string nodeName = "1"; // for test
+    renderNode->SetNodeName(nodeName);
+    renderCurveAnimation->Attach(renderNode.get());
+    auto target = renderCurveAnimation->GetTarget();
+    EXPECT_NE(target, nullptr);
+    // test property_ is nullptr
+    EXPECT_EQ(renderCurveAnimation->property_, nullptr);
+    renderCurveAnimation->OnAttach();
+}
+
 } // namespace Rosen
 } // namespace OHOS

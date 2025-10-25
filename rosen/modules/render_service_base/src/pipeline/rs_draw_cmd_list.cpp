@@ -86,6 +86,9 @@ void RSDrawCmdList::Estimate(float fraction)
         CleanOpacity();
         return;
     }
+    startValue_.second.lastOpacity = startValue_.second.opacity;
+    startValue_.second.opacity =
+        startValue_.second.startOpacity * (1.0f - fraction) + startValue_.second.endOpacity * fraction;
 
     endValue_.second.lastOpacity = endValue_.second.opacity;
     endValue_.second.opacity =
