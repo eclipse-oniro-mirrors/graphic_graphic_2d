@@ -927,6 +927,7 @@ void RSInterfaces::ShowWatermark(const std::shared_ptr<Media::PixelMap> &waterma
     if (watermarkImg == nullptr) {
         ROSEN_LOGE("RSInterfaces::ShowWatermark watermarkImg is nullptr");
     }
+    ROSEN_LOGI("RSInterfaces::ShowWatermark Enable:%{public}d", isShow);
     renderServiceClient_->ShowWatermark(watermarkImg, isShow);
 }
 

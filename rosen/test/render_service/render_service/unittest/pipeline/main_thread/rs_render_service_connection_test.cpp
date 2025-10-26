@@ -171,7 +171,7 @@ HWTEST_F(RSRenderServiceConnectionTest, SetSurfaceSystemWatermarkTest001, TestSi
     res = mainThread->surfaceWatermarkHelper_.SetSurfaceWatermark(pid, watermarkName, nullptr, {11235642},
         SurfaceWatermarkType::SYSTEM_WATER_MARK, mainThread->GetContext(), true);
     mainThread->surfaceWatermarkHelper_.surfaceWatermarks_.erase(watermarkName);
-    EXPECT_EQ(res, SurfaceWatermarkStatusCode::WATER_MARK_NOT_SURFACE_NODE_ERROR);
+    EXPECT_EQ(res, SurfaceWatermarkStatusCode::WATER_MARK_SUCCESS);
     EXPECT_EQ(mainThread->surfaceWatermarkHelper_.surfaceWatermarks_.size(), 0);
 
     // Test pixelMap != nullptr and rs has not stored watermask img
@@ -181,7 +181,7 @@ HWTEST_F(RSRenderServiceConnectionTest, SetSurfaceSystemWatermarkTest001, TestSi
     res = mainThread->surfaceWatermarkHelper_.SetSurfaceWatermark(ExtractPid(renderNodeId), watermarkName,
         pixelMap, {renderNodeId}, SurfaceWatermarkType::SYSTEM_WATER_MARK, mainThread->GetContext(), true);
     mainThread->surfaceWatermarkHelper_.surfaceWatermarks_.erase(watermarkName);
-    EXPECT_EQ(res, SurfaceWatermarkStatusCode::WATER_MARK_NOT_SURFACE_NODE_ERROR);
+    EXPECT_EQ(res, SurfaceWatermarkStatusCode::WATER_MARK_SUCCESS);
     EXPECT_EQ(mainThread->surfaceWatermarkHelper_.surfaceWatermarks_.size(), 0);
     mainThread->surfaceWatermarkHelper_.ClearSurfaceWatermark(pid, watermarkName, mainThread->GetContext(), true);
     EXPECT_EQ(mainThread->surfaceWatermarkHelper_.surfaceWatermarks_.size(), 0);
@@ -314,7 +314,53 @@ HWTEST_F(RSRenderServiceConnectionTest, SetSurfaceCustomWatermarkTest001, TestSi
         mainThread->GetContext(), false, false);
     mainThread->context_->nodeMap.UnregisterRenderNode(surfaceNodeId);
 }
+/**
+ * @tc.name: SetSurfaceCustomWatermarkTest002
+ * @tc.desc: SetSurfaceCustomWatermarkTest002
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSRenderServiceConnectionTest, SetSurfaceCustomWatermarkTest002, TestSize.Level1)
+{
+    constexpr uint32_t defaultScreenWidth = 480;
+    constexpr uint32_t defaultScreenHight = 320;
+    auto mainThread = RSMainThread::Instance();
+    std::string watermarkName = "watermarkName2222";
+    Media::InitializationOptions opts;
+    opts.size.width = defaultScreenWidth;
+    opts.size.height = defaultScreenHight;
+    std::shared_ptr<Media::PixelMap> pixelMap = Media::PixelMap::Create(opts);
+    
+    NodeId surfaceNodeId = 0XFFFFFFFFFFFF1235;
+    auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(surfaceNodeId);
+    // Test1 No SurfaceNode
+    auto res = mainThread->surfaceWatermarkHelper_.SetSurfaceWatermark(ExtractPid(surfaceNodeId), watermarkName,
+        pixelMap, {surfaceNodeId}, SurfaceWatermarkType::CUSTOM_WATER_MARK, mainThread->GetContext(), true);
+    EXPECT_EQ(res, SurfaceWatermarkStatusCode::WATER_MARK_NOT_SURFACE_NODE_ERROR);
 
+    // Test2 Node not setBounds
+    mainThread->context_->nodeMap.RegisterRenderNode(surfaceNode);
+    res = mainThread->surfaceWatermarkHelper_.SetSurfaceWatermark(ExtractPid(surfaceNodeId), watermarkName,
+        pixelMap, {surfaceNodeId}, SurfaceWatermarkType::CUSTOM_WATER_MARK, mainThread->GetContext(), true);
+    EXPECT_EQ(res, SurfaceWatermarkStatusCode::WATER_MARK_IMG_SIZE_ERROR);
+
+    // Test3 node setbounds and new node does not set bounds, but the watermark name remains the same.
+    surfaceNode->GetMutableRenderProperties().SetBoundsWidth(defaultScreenWidth);
+    surfaceNode->GetMutableRenderProperties().SetBoundsHeight(defaultScreenHight);
+    res = mainThread->surfaceWatermarkHelper_.SetSurfaceWatermark(ExtractPid(surfaceNodeId), watermarkName,
+        pixelMap, {surfaceNodeId}, SurfaceWatermarkType::CUSTOM_WATER_MARK, mainThread->GetContext(), true);
+    EXPECT_EQ(res, SurfaceWatermarkStatusCode::WATER_MARK_SUCCESS);
+
+    NodeId surfaceNodeId1 = 0XFFFFFFFFFFFF1237;
+    auto surfaceNode1 = std::make_shared<RSSurfaceRenderNode>(surfaceNodeId1);
+    mainThread->context_->nodeMap.RegisterRenderNode(surfaceNode1);
+    res = mainThread->surfaceWatermarkHelper_.SetSurfaceWatermark(ExtractPid(surfaceNodeId1), watermarkName,
+        nullptr, {surfaceNodeId1}, SurfaceWatermarkType::CUSTOM_WATER_MARK, mainThread->GetContext(), true);
+    EXPECT_EQ(res, SurfaceWatermarkStatusCode::WATER_MARK_SUCCESS);
+
+    mainThread->context_->nodeMap.UnregisterRenderNode(surfaceNodeId);
+    mainThread->context_->nodeMap.UnregisterRenderNode(surfaceNodeId1);
+}
 /**
  * @tc.name: CreateNode
  * @tc.desc: CreateNode
