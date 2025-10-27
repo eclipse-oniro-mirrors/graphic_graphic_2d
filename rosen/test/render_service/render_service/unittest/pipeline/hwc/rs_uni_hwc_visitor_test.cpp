@@ -2834,14 +2834,12 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateHwcNodeEnableByBackgroundAlpha005, TestSize.
     RsCommonHook::Instance().SetSolidColorLayerConfigFromHgm(solidLayerConfigFromHgm);
     RsCommonHook::Instance().SetHwcSolidColorLayerConfigFromHgm(hwcSolidLayerConfigFromHgm);
     auto surfaceNode = RSTestUtil::CreateSurfaceNode(surfaceConfig);
-    ASSERT_NE(surfaceNode, nullptr);
     surfaceNode->SetAncoForceDoDirect(false);
     auto& renderProperties = surfaceNode->GetMutableRenderProperties();
     Color solidColor(136, 136, 136, MAX_ALPHA);
     renderProperties.SetBackgroundColor(solidColor);
     renderProperties.SetAlpha(1);
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
-    ASSERT_NE(rsUniRenderVisitor, nullptr);
     rsUniRenderVisitor->curSurfaceNode_ = RSTestUtil::CreateSurfaceNode();
     ASSERT_NE(rsUniRenderVisitor->curSurfaceNode_, nullptr);
     NodeId screenNodeId = 1;
