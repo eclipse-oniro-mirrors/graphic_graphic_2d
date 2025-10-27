@@ -257,5 +257,18 @@ bool RSDrmUtil::GetDarkColorMode(const std::shared_ptr<RSRenderNode>& node,
     }
     return isDarkColorMode;
 }
+
+bool RSDrmUtil::IsDRMNodesOnTheTree()
+{
+    for (const auto& pair : drmNodes_) {
+        for (const auto& drmNode : pair.second) {
+            const auto& instanceNode = drmNode->GetInstanceRootNode();
+            if (instanceNode && instanceNode->IsOnTheTree()) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
 } // namespace Rosen
 } // namespace OHOS

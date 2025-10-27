@@ -561,4 +561,73 @@ HWTEST_F(RSDrmUtilTest, MarkAllBlurIntersectWithDRM009, TestSize.Level1)
     RSMainThread::Instance()->GetContext().GetMutableNodeMap().UnregisterRenderNode(drmNode->GetId());
     ASSERT_FALSE(drmNodes.empty());
 }
+
+/**
+ * Function: IsDRMNodesOnTheTree
+ * Type: Function
+ * Rank: Important(2)
+ * EnvCondition: N/A
+ * CaseDescription: 1. preSetup: CreateSurfaceNode, set normal parameters
+ *                  2. operation: IsDRMNodesOnTheTree
+ *                  3. result: drmNodes is not OnTheTree
+ */
+HWTEST_F(RSDrmUtilTest, IsDRMNodesOnTheTree001, TestSize.Level1)
+{
+    auto surfaceNode = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(surfaceNode, nullptr);
+    surfaceNode->firstLevelNodeId_ = surfaceNode->GetId();
+    surfaceNode->isOnTheTree_ = true;
+    surfaceNode->instanceRootNodeId_ = surfaceNode->GetId();
+    RSMainThread::Instance()->GetContext().GetMutableNodeMap().RegisterRenderNode(surfaceNode);
+    RSDrmUtil::CollectDrmNodes(surfaceNode);
+    EXPECT_TRUE(RSDrmUtil::IsDRMNodesOnTheTree());
+    RSDrmUtil::ClearDrmNodes();
+    RSMainThread::Instance()->GetContext().GetMutableNodeMap().UnregisterRenderNode(surfaceNode->GetId());
+}
+
+/**
+ * Function: IsDRMNodesOnTheTree
+ * Type: Function
+ * Rank: Important(2)
+ * EnvCondition: N/A
+ * CaseDescription: 1. preSetup: CreateSurfaceNode, set abnormal parameters
+ *                  2. operation: IsDRMNodesOnTheTree
+ *                  3. result: drmNodes is not OnTheTree
+ */
+HWTEST_F(RSDrmUtilTest, IsDRMNodesOnTheTree002, TestSize.Level1)
+{
+    auto surfaceNode = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(surfaceNode, nullptr);
+    surfaceNode->firstLevelNodeId_ = surfaceNode->GetId();
+    surfaceNode->isOnTheTree_ = true;
+    RSMainThread::Instance()->GetContext().GetMutableNodeMap().RegisterRenderNode(surfaceNode);
+    RSDrmUtil::CollectDrmNodes(surfaceNode);
+    EXPECT_FALSE(RSDrmUtil::IsDRMNodesOnTheTree());
+    RSDrmUtil::ClearDrmNodes();
+    RSMainThread::Instance()->GetContext().GetMutableNodeMap().UnregisterRenderNode(surfaceNode->GetId());
+}
+
+/**
+ * Function: IsDRMNodesOnTheTree
+ * Type: Function
+ * Rank: Important(2)
+ * EnvCondition: N/A
+ * CaseDescription: 1. preSetup: CreateSurfaceNode, set abnormal parameters
+ *                  2. operation: IsDRMNodesOnTheTree
+ *                  3. result: drmNodes is not OnTheTree
+ */
+HWTEST_F(RSDrmUtilTest, IsDRMNodesOnTheTree003, TestSize.Level1)
+{
+    auto surfaceNode = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(surfaceNode, nullptr);
+    surfaceNode->firstLevelNodeId_ = surfaceNode->GetId();
+    surfaceNode->isOnTheTree_ = true;
+    surfaceNode->instanceRootNodeId_ = surfaceNode->GetId();
+    RSMainThread::Instance()->GetContext().GetMutableNodeMap().RegisterRenderNode(surfaceNode);
+    RSDrmUtil::CollectDrmNodes(surfaceNode);
+    surfaceNode->isOnTheTree_ = false;
+    EXPECT_FALSE(RSDrmUtil::IsDRMNodesOnTheTree());
+    RSDrmUtil::ClearDrmNodes();
+    RSMainThread::Instance()->GetContext().GetMutableNodeMap().UnregisterRenderNode(surfaceNode->GetId());
+}
 }

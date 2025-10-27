@@ -1722,7 +1722,6 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
                 }
                 const auto& instanceNode = surfaceNode->GetInstanceRootNode();
                 if (instanceNode && instanceNode->IsOnTheTree()) {
-                    hasProtectedLayer_ = true;
                     RSDrmUtil::CollectDrmNodes(surfaceNode);
                     RSDrmUtil::PreAllocateProtectedBuffer(surfaceNode, surfaceHandler);
                 }
@@ -1799,6 +1798,7 @@ void RSMainThread::CollectInfoForHardwareComposer()
         SetDirtyFlag();
     }
     renderThreadParams_->overlayDisplayEnable_ = CheckOverlayDisplayEnable();
+    hasProtectedLayer_ = RSDrmUtil::IsDRMNodesOnTheTree();
 #endif
     CheckIfHardwareForcedDisabled();
     if (!pendingUiCaptureTasks_.empty()) {
