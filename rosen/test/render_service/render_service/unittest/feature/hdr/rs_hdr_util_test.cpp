@@ -770,4 +770,27 @@ HWTEST_F(RSHdrUtilTest, SetColorSpaceConverterDisplayParameter, TestSize.Level1)
 }
 #endif
 
+/*
+ * @tc.name: CheckPixelFormatForHdrEffect001
+ * @tc.desc: Test function CheckPixelFormatForHdrEffect
+ * @tc.type: FUNC
+ * @tc.require: issueI9NLRF
+ */
+HWTEST_F(RSHdrUtilTest, CheckPixelFormatForHdrEffect001, TestSize.Level2)
+{
+    NodeId id = 1;
+    ScreenId screenId = 1;
+    std::shared_ptr<RSContext> context = std::make_shared<RSContext>();
+    auto screenNode = std::make_shared<RSScreenRenderNode>(id, screenId, context);
+    ASSERT_NE(screenNode, nullptr);
+    auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
+    RSHdrUtil::CheckPixelFormatForHdrEffect(*surfaceNode, nullptr);
+    EXPECT_NE(static_cast<int>(screenNode->GetDisplayHdrStatus()), static_cast<int>(HdrStatus::HDR_EFFECT));
+    RSHdrUtil::CheckPixelFormatForHdrEffect(*surfaceNode, screenNode);
+    EXPECT_NE(static_cast<int>(screenNode->GetDisplayHdrStatus()), static_cast<int>(HdrStatus::HDR_EFFECT));
+    surfaceNode->hdrEffectNum_ = 1;
+    RSHdrUtil::CheckPixelFormatForHdrEffect(*surfaceNode, screenNode);
+    EXPECT_EQ(static_cast<int>(screenNode->GetDisplayHdrStatus()), static_cast<int>(HdrStatus::HDR_EFFECT));
+}
+
 } // namespace OHOS::Rosen
