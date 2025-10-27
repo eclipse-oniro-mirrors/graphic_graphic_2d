@@ -87,10 +87,12 @@ enum class RSPropertyType : uint8_t {
     SK_MATRIX,
     RRECT,
     DRAW_CMD_LIST,
+    HRP_PLACEHOLDER_1, // HRP: delete it
     RS_SHADER,
     RS_IMAGE,
     RS_PATH,
     GRAVITY,
+    HRP_PLACEHOLDER_2, // HRP: delete it
     LINEAR_GRADIENT_BLUR_PARA,
     MAGNIFIER_PARAMS,
     MOTION_BLUR_PARAM,
