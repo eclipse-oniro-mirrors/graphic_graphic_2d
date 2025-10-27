@@ -507,7 +507,7 @@ void HgmFrameRateManager::ReportHiSysEvent(const VoteInfo& frameRateVoteInfo)
 
 void HgmFrameRateManager::FrameRateReport()
 {
-    if (!schedulePreferredFpsChange_ && !slideModeChange) {
+    if (!schedulePreferredFpsChange_ && !slideModeChange_) {
         return;
     }
     std::unordered_map<pid_t, uint32_t> rates;
@@ -519,9 +519,9 @@ void HgmFrameRateManager::FrameRateReport()
     } else {
         rates[UNI_APP_PID] = OLED_120_HZ;
     }
-    if (isLowPowerSlide && currRefreshRate_ == OLED_60_HZ) {
+    if (isLowPowerSlide_ && currRefreshRate_ == OLED_60_HZ) {
         rates[UNI_APP_PID] = OLED_60_HZ;
-        slideModeChange = false;
+        slideModeChange_ = false;
     }
     HGM_LOGD("FrameRateReport: RS(%{public}d) = %{public}d, APP(%{public}d) = %{public}d",
         GetRealPid(), rates[GetRealPid()], UNI_APP_PID, rates[UNI_APP_PID]);
@@ -833,6 +833,7 @@ void HgmFrameRateManager::HandlePackageEvent(pid_t pid, const std::vector<std::s
     if (pid != DEFAULT_PID) {
         cleanPidCallback_[pid].insert(CleanPidCallbackType::PACKAGE_EVENT);
     }
+    isLowPowerSlide_ = false;
     // check whether to enable HFBC
     HgmHfbcConfig& hfbcConfig = HgmCore::Instance().GetHfbcConfig();
     hfbcConfig.HandleHfbcConfig(packageList);
@@ -1186,11 +1187,11 @@ void HgmFrameRateManager::HandleStylusSceneEvent(const std::string& sceneName)
 
 void HgmFrameRateManager::HandleLowPowerSlideSceneEvent(const std::string& sceneName, bool eventStatus)
 {
-    bool slideMode = isLowPowerSlide;
+    bool slideMode = isLowPowerSlide_;
     if (sceneName == "LOW_POWER_SLIDE_MODE") {
-        isLowPowerSlide = eventStatus;
+        isLowPowerSlide_ = eventStatus;
     }
-    slideModeChange = (slideMode != isLowPowerSlide);
+    slideModeChange_ = (slideMode != isLowPowerSlide_);
 }
 
 void HgmFrameRateManager::HandleSceneEvent(pid_t pid, const EventInfo& eventInfo)
@@ -1588,7 +1589,7 @@ void HgmFrameRateManager::CheckNeedUpdateAppOffset(uint32_t refreshRate, uint32_
         isNeedUpdateAppOffset_ = true;
         return;
     }
-    if (isLowPowerSlide && refreshRate == OLED_60_HZ) {
+    if (isLowPowerSlide_ && refreshRate == OLED_60_HZ) {
         isNeedUpdateAppOffset_ = true;
         return;
     }

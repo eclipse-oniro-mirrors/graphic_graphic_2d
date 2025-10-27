@@ -202,7 +202,6 @@ private:
 
     void HandleIdleEvent(bool isIdle);
     void HandleStylusSceneEvent(const std::string& sceneName);
-    void HandleLowPowerSlideSceneEvent(const std::string& sceneName, bool eventStatus);
     void HandleSceneEvent(pid_t pid, const EventInfo& eventInfo);
     void HandleVirtualDisplayEvent(pid_t pid, EventInfo eventInfo);
     void HandleGamesEvent(pid_t pid, EventInfo eventInfo);
@@ -251,6 +250,7 @@ private:
             forceUpdateCallback_(false, true);
         }
     }
+    void HandleLowPowerSlideSceneEvent(const std::string& sceneName, bool eventStatus);
 
     std::atomic<uint32_t> currRefreshRate_ = 0;
 
@@ -292,8 +292,6 @@ private:
     int32_t isAmbientStatus_ = 0;
     bool isAmbientEffect_ = false;
     bool isStylusWakeUp_ = false;
-    bool isLowPowerSlide = false;
-    bool slideModeChange = false;
     VoteInfo lastVoteInfo_;
     HgmMultiAppStrategy multiAppStrategy_;
     HgmTouchManager touchManager_;
@@ -326,6 +324,9 @@ private:
     long lastLTPOVoteTime_ = 0;
 
     bool needForceUpdateUniRender_ = false;
+    
+    bool isLowPowerSlide_ = false;
+    bool slideModeChange_ = false;
 };
 } // namespace Rosen
 } // namespace OHOS
