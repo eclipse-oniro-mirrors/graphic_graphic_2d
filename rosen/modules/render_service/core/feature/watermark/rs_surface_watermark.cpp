@@ -12,65 +12,66 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <algorithm>
 #include "feature/watermark/rs_surface_watermark.h"
 #include "pipeline/rs_screen_render_node.h"
 namespace OHOS {
 namespace Rosen {
 constexpr uint32_t MAX_LIMIT_SURFACE_WATER_MARK_IMG = 1000;
+
 uint32_t RSSurfaceWatermarkHelper::SetSurfaceWatermark(pid_t pid,
     const std::string& name, std::shared_ptr<Media::PixelMap> pixelMap, const std::vector<NodeId>& nodeIdList,
     SurfaceWatermarkType watermarkType,
     RSContext& mainContext, bool isSystemCalling)
 {
+    // 0. Clear history residual node and get maxSize for same watermark name
+    RS_LOGI("RSSurfaceWatermarkHelper::SetSurfaceWatermark pid:[%{public}d], watermarkType:[%{public}d]",
+        pid, static_cast<int32_t>(watermarkType));
+    std::unordered_set<NodeId> historyWatermarkNode =
+        (watermarkNameMapNodeId_.find(name) != watermarkNameMapNodeId_.end()) ?
+        watermarkNameMapNodeId_[name].first : std::unordered_set<NodeId>{};
+    RSSurfaceWatermarkSpecialParam param;
+    TraverseAndOperateNodeList(pid, name, historyWatermarkNode,
+        mainContext, [&param, &mainContext, this](const std::string& name,
+        std::shared_ptr<RSSurfaceRenderNode> node) {
+            auto screenInfo = GetScreenInfo(node, mainContext);
+            param.maxWidth_ = std::max(node->GetRenderProperties().GetBoundsWidth(),
+                std::max(param.maxWidth_, static_cast<float>(screenInfo.width)));
+            param.maxHeight_ = std::max(node->GetRenderProperties().GetBoundsHeight(),
+                std::max(param.maxHeight_, static_cast<float>(screenInfo.height)));
+            return WATER_MARK_SUCCESS;
+        },
+        isSystemCalling, watermarkType);
+    // 1. Check the conditions for setting the watermark
     auto iter = surfaceWatermarks_.find(name);
     if (iter == surfaceWatermarks_.end() && pixelMap == nullptr) {
         return WATER_MARK_PIXELMAP_INVALID;
     }
     // When SCB is restored, the pixelMap is passed as a null pointer.
-    std::shared_ptr<Drawing::Image> tmpImagePtr = (pixelMap == nullptr) ? iter->second.first :
+    param.isWatermarkChange_ = (pixelMap == nullptr) ? false : true;
+    std::shared_ptr<Drawing::Image> tmpImagePtr = (!param.isWatermarkChange_) ? iter->second.first :
         RSPixelMapUtil::ExtractDrawingImage(pixelMap);
 
+    // 2.Check pixelMap is Invaild
     if (tmpImagePtr == nullptr) {
         RS_LOGE("RSSurfaceWatermarkHelper::SetSurfaceWatermark tmpImagePtr is nullptr");
         return WATER_MARK_RS_CONNECTION_ERROR;
     }
 
-    auto func = [&tmpImagePtr, &watermarkType, &mainContext,
-        &isSystemCalling, this](const std::string& name, std::shared_ptr<RSSurfaceRenderNode> node) {
-        node->SetWatermarkEnabled(name, true, watermarkType);
-        AddWatermarkNameMapNodeId(name, node->GetId(), watermarkType);
+    auto checkfunc = [&tmpImagePtr, &watermarkType, &mainContext,
+        &isSystemCalling, this, &param](const std::string& name, std::shared_ptr<RSSurfaceRenderNode> node) {
         // CUSTOM_WATER_MARK need limit screen size and surface size
-        bool needCompareWindowSize = (watermarkType == CUSTOM_WATER_MARK);
-        if (!hasNodeOperationSuccess_ && needCompareWindowSize) {
-            auto imgHeight = tmpImagePtr->GetHeight();
-            auto imgWidth = tmpImagePtr->GetWidth();
-            auto screenInfo = GetScreenInfo(node, mainContext);
-            auto pixelMapSize = imgHeight * imgWidth;
-
-            bool upperNodeSize = (pixelMapSize > (node->GetRenderProperties().GetBoundsHeight() *
-                node->GetRenderProperties().GetBoundsWidth()));
-            bool upperscreenSize = (pixelMapSize > (static_cast<int32_t>(screenInfo.height) *
-                static_cast<int32_t>(screenInfo.width)));
-            if (upperNodeSize && upperscreenSize) {
-                RS_LOGE("RSSurfaceWatermarkHelper::SetSurfaceWatermark watermark size error imgWidth:[%{public}d],"
-                    "imgHeight:[%{public}d] nodeWidth:[%{public}d], nodeHeight:[%{public}d],"
-                    "screenWidth:[%{public}d], scrrenHeight:[%{public}d], nodeId:[%{public}" PRIu64 "]",
-                    imgWidth, imgHeight,
-                    static_cast<int32_t>(node->GetRenderProperties().GetBoundsWidth()),
-                    static_cast<int32_t>(node->GetRenderProperties().GetBoundsHeight()),
-                    static_cast<int32_t>(screenInfo.width),
-                    static_cast<int32_t>(screenInfo.height),
-                    node->GetId()
-                );
-                return WATER_MARK_IMG_SIZE_ERROR;
-            }
+        if (watermarkType == CUSTOM_WATER_MARK) {
+            return CheckCustomWatermarkCondition(tmpImagePtr, mainContext, node, param);
         }
-        return WATER_MARK_SUCCESS;
+        return static_cast<uint32_t>(WATER_MARK_SUCCESS);
     };
-    TraverseAndOperateNodeList(pid, name, nodeIdList, mainContext, func, isSystemCalling);
+    // 3.Check watermarkType == CUSTOM_WATER_MARK condition
+    auto [errocode, hasNodeOperationSuccess] = TraverseAndOperateNodeList(pid, name, nodeIdList,
+        mainContext, checkfunc, isSystemCalling, watermarkType);
     // As long as one watermark is successfully applied to the node, the watermark image can be stored.
-    if (watermarkType == CUSTOM_WATER_MARK && !hasNodeOperationSuccess_) {
-        return globalErrorCode_;
+    if (!hasNodeOperationSuccess) {
+        return errocode;
     }
     // Adding a new watermark image requires verification to check if the limit has been reached.
     if (iter == surfaceWatermarks_.end()) {
@@ -80,25 +81,39 @@ uint32_t RSSurfaceWatermarkHelper::SetSurfaceWatermark(pid_t pid,
         }
         registerSurfaceWatermarkCount_++;
     }
+    errocode &= ~(static_cast<uint32_t>(WATER_MARK_IMG_SIZE_ERROR));
+    // 4. Enable watermark
+    auto doFunc = [this, &watermarkType](const std::string& name,
+        std::shared_ptr<RSSurfaceRenderNode> node) {
+        node->SetWatermarkEnabled(name, true, watermarkType);
+        AddWatermarkNameMapNodeId(name, node->GetId(), watermarkType);
+        return WATER_MARK_SUCCESS;
+    };
 
-    globalErrorCode_ &= ~(static_cast<uint32_t>(WATER_MARK_IMG_ASTC_ERROR));
+    auto [newErrocode, _] = TraverseAndOperateNodeList(pid, name,
+        nodeIdList, mainContext, doFunc, isSystemCalling, watermarkType);
+    errocode |= newErrocode;
     surfaceWatermarks_[name] = {tmpImagePtr, pid};
-    return globalErrorCode_;
+    return errocode;
 }
 
 template<typename Container>
-void RSSurfaceWatermarkHelper::TraverseAndOperateNodeList(const pid_t& pid, const std::string& name,
+std::pair<uint32_t, bool> RSSurfaceWatermarkHelper::TraverseAndOperateNodeList(const pid_t& pid,
+    const std::string& name,
     const Container& nodeIdList, RSContext& mainContext,
     std::function<uint32_t(const std::string& name, std::shared_ptr<RSSurfaceRenderNode>)> func,
-    const bool& isSystemCalling)
+    const bool& isSystemCalling, const SurfaceWatermarkType& watermarkType)
 {
-    globalErrorCode_ = 0;
-    hasNodeOperationSuccess_ = false;
+    uint32_t returnErrorCode = 0;
+    bool hasNodeOperationSuccess = false;
+    if (watermarkType == SYSTEM_WATER_MARK) {
+        return {WATER_MARK_SUCCESS, true};
+    }
     for (const auto& nodeId : nodeIdList) {
         // Not System calls must have the same pid.
         bool isErrorPermission = (!isSystemCalling && pid != ExtractPid(nodeId));
         if (isErrorPermission) {
-            globalErrorCode_ |= static_cast<uint32_t>(WATER_MARK_PERMISSION_ERROR);
+            returnErrorCode |= static_cast<uint32_t>(WATER_MARK_PERMISSION_ERROR);
             continue;
         }
 
@@ -107,17 +122,18 @@ void RSSurfaceWatermarkHelper::TraverseAndOperateNodeList(const pid_t& pid, cons
             RemoveNodeIdForWatermarkNameMapNodeId(name, nodeId);
             RS_LOGE("RSSurfaceWatermarkHelper::TraverseAndOperateNodeList not find node"
                 "nodeId:[%{public}" PRIu64 "]", nodeId);
-            globalErrorCode_ |= WATER_MARK_NOT_SURFACE_NODE_ERROR;
+            returnErrorCode |= static_cast<uint32_t>(WATER_MARK_NOT_SURFACE_NODE_ERROR);
             continue;
         }
-        
+         
         auto errorCode = func(name, surfaceNode);
         if (errorCode > 0) {
-            globalErrorCode_ |= errorCode;
+            returnErrorCode |= errorCode;
         } else {
-            hasNodeOperationSuccess_ = true;
+            hasNodeOperationSuccess = true;
         }
     }
+    return {returnErrorCode, hasNodeOperationSuccess};
 }
 
 ScreenInfo RSSurfaceWatermarkHelper::GetScreenInfo(const std::shared_ptr<RSSurfaceRenderNode>& node,
@@ -147,7 +163,7 @@ void RSSurfaceWatermarkHelper::ClearSurfaceWatermarkForNodes(pid_t pid, const st
         RemoveNodeIdForWatermarkNameMapNodeId(name, node->GetId());
         return WATER_MARK_SUCCESS;
     };
-    TraverseAndOperateNodeList(pid, name, nodeIdList, mainContext, func, isSystemCalling);
+    TraverseAndOperateNodeList(pid, name, nodeIdList, mainContext, func, isSystemCalling, watermarkType);
 }
 
 void RSSurfaceWatermarkHelper::ClearSurfaceWatermark(pid_t pid, const std::string& name,
@@ -169,11 +185,13 @@ void RSSurfaceWatermarkHelper::ClearSurfaceWatermark(pid_t pid, const std::strin
         return WATER_MARK_SUCCESS;
     };
     std::vector<NodeId> vecNodeIdList(nodeIdList.begin(), nodeIdList.end()); // compiler adapter
-    TraverseAndOperateNodeList(pid, name, vecNodeIdList, mainContext, func, isSystemCalling);
+    TraverseAndOperateNodeList(pid, name, vecNodeIdList, mainContext, func, isSystemCalling, watermarkType);
     registerSurfaceWatermarkCount_ = (registerSurfaceWatermarkCount_ > 0) ? --registerSurfaceWatermarkCount_ : 0;
     if (!isDeathMonitor) {
         surfaceWatermarks_.erase(name);
     }
+    RS_LOGI("RSSurfaceWatermarkHelper::ClearSurfaceWatermark pid:[%{public}d], watermarkType:[%{public}d]",
+        pid, static_cast<int32_t>(watermarkType));
 }
 
 void RSSurfaceWatermarkHelper::ClearSurfaceWatermark(pid_t pid, RSContext& mainContext)
@@ -198,6 +216,42 @@ void RSSurfaceWatermarkHelper::AddWatermarkNameMapNodeId(std::string name, NodeI
     } else {
         iter->second.first.insert(id);
     }
+}
+
+uint32_t RSSurfaceWatermarkHelper::CheckCustomWatermarkCondition(const std::shared_ptr<Drawing::Image>& tmpImagePtr,
+    RSContext& mainContext, std::shared_ptr<RSSurfaceRenderNode> node, RSSurfaceWatermarkSpecialParam& param)
+{
+            auto imgHeight = tmpImagePtr->GetHeight();
+            auto imgWidth = tmpImagePtr->GetWidth();
+            auto screenInfo = GetScreenInfo(node, mainContext);
+            auto pixelMapSize = imgHeight * imgWidth;
+
+            float nodeWidth = (node->GetRenderProperties().GetBoundsWidth() < 0 ?
+                0.0 : node->GetRenderProperties().GetBoundsWidth());
+            float nodeHeight = (node->GetRenderProperties().GetBoundsHeight() < 0 ?
+                0.0 : node->GetRenderProperties().GetBoundsHeight());
+
+            nodeWidth = (nodeWidth == 0 && !param.isWatermarkChange_) ? param.maxWidth_ : nodeWidth;
+            nodeHeight = (nodeHeight == 0 && !param.isWatermarkChange_) ? param.maxHeight_ : nodeHeight;
+            
+            bool upperNodeSize = (pixelMapSize > nodeWidth * nodeHeight);
+
+            bool upperscreenSize = (pixelMapSize > (static_cast<int32_t>(screenInfo.height) *
+                static_cast<int32_t>(screenInfo.width)));
+            RS_LOGI("RSSurfaceWatermarkHelper::SetSurfaceWatermark watermark size imgWidth:[%{public}d],"
+                    "imgHeight:[%{public}d] nodeWidth:[%{public}d], nodeHeight:[%{public}d],"
+                    "screenWidth:[%{public}d], scrrenHeight:[%{public}d], nodeId:[%{public}" PRIu64 "]",
+                    imgWidth, imgHeight,
+                    static_cast<int32_t>(nodeWidth),
+                    static_cast<int32_t>(nodeHeight),
+                    static_cast<int32_t>(screenInfo.width),
+                    static_cast<int32_t>(screenInfo.height),
+                    node->GetId()
+            );
+            if (upperNodeSize && upperscreenSize) {
+                return WATER_MARK_IMG_SIZE_ERROR;
+            }
+            return WATER_MARK_SUCCESS;
 }
 }
 }

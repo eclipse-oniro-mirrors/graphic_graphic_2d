@@ -462,6 +462,7 @@ void RSLogicalDisplayRenderNodeDrawable::DrawWatermarkIfNeed(RSPaintFilterCanvas
     auto dstRect = Drawing::Rect(0, 0, mainWidth, mainHeight);
     Drawing::Brush rectBrush;
     canvas.AttachBrush(rectBrush);
+    RS_TRACE_NAME("RSLogicalDisplayRenderNodeDrawable::DrawWatermarkIfNeed DrawImageRect");
     canvas.DrawImageRect(*image, srcRect, dstRect, Drawing::SamplingOptions(),
         Drawing::SrcRectConstraint::STRICT_SRC_RECT_CONSTRAINT);
     canvas.DetachBrush();

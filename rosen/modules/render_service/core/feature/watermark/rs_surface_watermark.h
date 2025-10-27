@@ -25,6 +25,12 @@
 namespace OHOS {
 namespace Rosen {
 
+struct RSSurfaceWatermarkSpecialParam {
+    float maxWidth_ = 0;
+    float maxHeight_ = 0;
+    bool isWatermarkChange_ = true;
+};
+
 class RSSurfaceWatermarkHelper {
 public:
     RSSurfaceWatermarkHelper() = default;
@@ -44,10 +50,10 @@ public:
     }
 private:
     template<typename Container>
-    void TraverseAndOperateNodeList(const pid_t& pid, const std::string& name,
+    std::pair<uint32_t, bool> TraverseAndOperateNodeList(const pid_t& pid, const std::string& name,
         const Container& nodeIdList, RSContext& mainContext,
         std::function<uint32_t(const std::string& name, std::shared_ptr<RSSurfaceRenderNode>)> func,
-        const bool& isSystemCalling);
+        const bool& isSystemCalling, const SurfaceWatermarkType& watermarkType);
     inline void ClearWatermarkNameMapNodeId(const std::string& name)
     {
         watermarkNameMapNodeId_.erase(name);
@@ -83,13 +89,13 @@ private:
     }
     ScreenInfo GetScreenInfo(const std::shared_ptr<RSSurfaceRenderNode>& node, RSContext& mainContext);
     void AddWatermarkNameMapNodeId(std::string name, NodeId id, SurfaceWatermarkType watermarkType);
+    uint32_t CheckCustomWatermarkCondition(const std::shared_ptr<Drawing::Image>& tmpImagePtr, RSContext& mainContext,
+        std::shared_ptr<RSSurfaceRenderNode> node, RSSurfaceWatermarkSpecialParam& param);
     std::unordered_map<std::string, std::pair<std::shared_ptr<Drawing::Image>, pid_t>> surfaceWatermarks_ = {};
     // Quickly clear watermark when the process is destroyed.
     std::unordered_map<std::string, std::pair<std::unordered_set<NodeId>,
         SurfaceWatermarkType>> watermarkNameMapNodeId_ = {};
-    uint32_t globalErrorCode_ = 0;
     uint32_t registerSurfaceWatermarkCount_ = 0;
-    bool hasNodeOperationSuccess_ = false;
 };
 } // Rosen
 } // OHOS

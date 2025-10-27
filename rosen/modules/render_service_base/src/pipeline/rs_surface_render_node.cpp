@@ -3451,7 +3451,7 @@ void RSSurfaceRenderNode::SetWatermarkEnabled(const std::string& name, bool isEn
 {
     SetDirty();
     if (isEnabled) {
-        RS_LOGI("RSSurfaceRenderNode::SetWatermarkEnabled[%{public}d], Name:%{public}s", isEnabled, name.c_str());
+        RS_LOGI("RSSurfaceRenderNode::SetWatermarkEnabled enable, NodeId::%{public}" PRIu64, GetId());
     }
 #ifdef RS_ENABLE_GPU
     auto surfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
@@ -3469,6 +3469,7 @@ void RSSurfaceRenderNode::SetWatermarkEnabled(const std::string& name, bool isEn
 void RSSurfaceRenderNode::ClearWatermarkEnabled(const std::string& name, SurfaceWatermarkType watermarkType)
 {
     SetDirty();
+    RS_LOGI("RSSurfaceRenderNode::ClearWatermarkEnabled NodeId:[%{public}" PRIu64 "]", GetId());
 #ifdef RS_ENABLE_GPU
     auto surfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
     if (surfaceParams) {
