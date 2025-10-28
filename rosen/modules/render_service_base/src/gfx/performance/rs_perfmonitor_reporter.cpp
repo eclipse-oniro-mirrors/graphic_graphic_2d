@@ -336,7 +336,6 @@ void RSPerfMonitorReporter::ProcessRendergroupSubhealth(NodeId& nodeId, int upda
             HiSysEventWrite(OHOS::HiviewDFX::HiSysEvent::Domain::GRAPHIC, RENDERGROUP_SUBHEALTH_EVENT_NAME,
                 OHOS::HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
                 "NODE_ID", nodeId,
-                "NODE_NAME", nodeName,
                 "BUNDLE_NAME", bundleName,
                 "CONTINUOUS_UPDATE_CACHE_TIMES", updateTimes,
                 "UPDATE_CACHE_TIME_TAKEN", timeTaken);
