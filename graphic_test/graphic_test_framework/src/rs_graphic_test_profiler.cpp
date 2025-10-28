@@ -164,7 +164,6 @@ void RSGraphicTestProfiler::AnalysePlaybackInfo(
     } else if (info.ohrType == OHR_FOR_PERFORMANCE || checkNum == OHR_INFO_NUM) {
         LoadPlaybackProfilerFile(filePath, savePath, info);
     }
-
 }
 
 void RSGraphicTestProfiler::PlaybackWithoutJson(
@@ -174,13 +173,13 @@ void RSGraphicTestProfiler::PlaybackWithoutJson(
     // NOT MODIFY THE COMMENTS
     cout << "[   RUN   ] " << filePath << std::endl;
 
-    //playback prepare
+    // playback prepare
     std::string command =
         "rsrecord_replay_prepare VSYNC" + std::to_string(0) + " " + filePath;
     RSGraphicTestDirector::Instance().SendProfilerCommand(command, PLAYBACK_PREPARE_OUT_TIME);
     WaitTimeout(PLAYBACK_OPERATE_INTERVAL_TIME);
 
-    //playback get startTime and endTime
+    // playback get startTime and endTime
     command = "rsreplay_time";
     RSGraphicTestDirector::Instance().SendProfilerCommand(command, PLAY_BACK_REPLAY_TIME_OUT_TIME);
     pair<double, double> startAndEndTime = RSGraphicTestDirector::Instance().ReceiveProfilerTimeInfo();
@@ -203,7 +202,6 @@ void RSGraphicTestProfiler::PlaybackWithoutJson(
             std::cout << "Playback Pause At: " << command << std::endl;
             RSGraphicTestDirector::Instance().SendProfilerCommand(command, PLAYBACK_PAUSE_OUT_TIME);
         }
-
         WaitTimeout(NORMAL_WAIT_TIME);
         std::string filename;
         size_t lastDotPos = savePath.find_last_of(".");
@@ -262,6 +260,8 @@ void RSGraphicTestProfiler::GetFilePath(std::filesystem::path rootPath, std::vec
     }
 }
 
+void
+
 int RSGraphicTestProfiler::RunPlaybackTest(const std::string& filePath)
 {
     if (!std::filesystem::exists(filePath)) {
@@ -277,44 +277,33 @@ int RSGraphicTestProfiler::RunPlaybackTest(const std::string& filePath)
 
     std::filesystem::path configPath = rootPath / OHR_CONFIG_FILE_NAME;
     if (!std::filesystem::exists(configPath)) {
-        vector<std::string> fileNameList;
-        GetFilePath(rootPath, fileNameList);
-
-        if (fileNameList.empty()) {
-            return 0;
-        }
-
-        for (auto& fileName : fileNameList) {
-            std::filesystem::path profilerFilePath = rootPath / fileName;
-            std::filesystem::path savePath = imagePath / MakePlaybackSaveDirectories(fileName);
-            if (!std::filesystem::exists(filePath)) {
-                std::cout << "playback file is not exist :" << filePath << std::endl;
-                return 0;
-            }
-            if (savePath.has_parent_path()) {
-                std::filesystem::create_directories(savePath.parent_path());
-            }
-            PlaybackWithoutJson(profilerFilePath, imagePath);
-        }
-    } else {
-        cJSON* rootData = ParseFileConfig(configPath);
-        if (rootData == nullptr) {
-            cJSON_Delete(rootData);
-            std::cout << "parse config file failed, check it path is:" << configPath << std::endl;
-            return 0;
-        }
-        auto playbackConfig = cJSON_GetObjectItem(rootData, OHR_LIST.c_str());
-        if (cJSON_IsArray(playbackConfig)) {
-            int listSize = cJSON_GetArraySize(playbackConfig);
-            for (int i = 0; i < listSize; i++) {
-                cJSON* item = cJSON_GetArrayItem(playbackConfig, i);
-                if (cJSON_IsObject(item)) {
-                    AnalysePlaybackInfo(rootPath, imagePath, item);
-                }
-            }
-        }
-        cJSON_Delete(rootData);
+        std::cout << "ohr config is not exist :" << configPath << std::endl;
+        return 0;
     }
+
+    // read config json file
+    cJSON* rootData = ParseFileConfig(configPath);
+
+    if (rootData == nullptr) {
+        cJSON_Delete(rootData);
+        std::cout << "parse config file failed, check it path is:" << configPath << std::endl;
+        return 0;
+    }
+
+    // parse json file
+    auto playbackConfig = cJSON_GetObjectItem(rootData, OHR_LIST.c_str());
+    if (cJSON_IsArray(playbackConfig)) {
+        int listSize = cJSON_GetArraySize(playbackConfig);
+        for (int i = 0; i < listSize; i++) {
+            cJSON* item = cJSON_GetArrayItem(playbackConfig, i);
+            if (cJSON_IsObject(item)) {
+                AnalysePlaybackInfo(rootPath, imagePath, item);
+            }
+        }
+    }
+    cJSON_Delete(rootData);
+
+    // delete ScreenSurfaceNode
     TearDown();
     // NOT MODIFY THE COMMENTS
     cout << "[   PASSED   ] " << runTestCaseNum_ << " test." << std::endl;
