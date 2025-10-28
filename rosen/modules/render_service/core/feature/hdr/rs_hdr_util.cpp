@@ -23,6 +23,7 @@
 #include "metadata_helper.h"
 #include "pipeline/main_thread/rs_main_thread.h"
 #include "platform/common/rs_log.h"
+#include "platform/common/rs_system_properties.h"
 #include "utils/system_properties.h"
 #include "v2_2/cm_color_space.h"
 #ifdef USE_VIDEO_PROCESSING_ENGINE
@@ -323,6 +324,27 @@ void RSHdrUtil::CheckPixelFormatWithSelfDrawingNode(RSSurfaceRenderNode& surface
         }
         RS_LOGD("RSHdrUtil::CheckPixelFormatWithSelfDrawingNode HDRService surfaceNode %{public}s is HDR",
             surfaceNode.GetName().c_str());
+    }
+}
+
+
+void RSHdrUtil::CheckPixelFormatForHdrEffect(RSSurfaceRenderNode& surfaceNode,
+    std::shared_ptr<RSScreenRenderNode> screenNode)
+{
+    if (!screenNode) {
+        RS_LOGE("CheckPixelFormatForHdrEffect screenNode is nullptr");
+        return;
+    }
+    if (!RSSystemProperties::GetHdrImageEnabled()) {
+        RS_LOGD("CheckPixelFormatForHdrEffect HdrImageEnabled false");
+        return;
+    }
+    if (surfaceNode.IsHdrEffectColorGamut()) {
+        RS_LOGD("CheckPixelFormatForHdrEffect IsHdrEffectColorGamut: %{public}d, id: %{public}" PRIu64 "",
+            surfaceNode.IsHdrEffectColorGamut(), surfaceNode.GetId());
+        screenNode->SetHasUniRenderHdrSurface(true);
+        screenNode->CollectHdrStatus(HdrStatus::HDR_EFFECT);
+        SetHDRParam(*screenNode, surfaceNode, true);
     }
 }
 

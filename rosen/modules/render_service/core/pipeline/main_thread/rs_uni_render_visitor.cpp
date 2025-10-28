@@ -439,16 +439,11 @@ void RSUniRenderVisitor::CheckPixelFormat(RSSurfaceRenderNode& node)
         RS_LOGD("CheckPixelFormat curScreenNode_ forceclosehdr.");
         return;
     }
-    if (node.GetHDRPresent() || node.IsHdrEffectColorGamut()) {
+    if (node.GetHDRPresent()) {
         RS_LOGD("CheckPixelFormat HDRService SetHDRPresent true, surfaceNode: %{public}" PRIu64 "",
             node.GetId());
         curScreenNode_->SetHasUniRenderHdrSurface(true);
-        if (node.GetHDRPresent()) {
-            curScreenNode_->CollectHdrStatus(HdrStatus::HDR_PHOTO);
-        }
-        if (node.IsHdrEffectColorGamut()) {
-            curScreenNode_->CollectHdrStatus(HdrStatus::HDR_EFFECT);
-        }
+        curScreenNode_->CollectHdrStatus(HdrStatus::HDR_PHOTO);
         RSHdrUtil::SetHDRParam(*curScreenNode_, node, true);
     }
 }
@@ -1237,6 +1232,7 @@ void RSUniRenderVisitor::QuickPrepareSurfaceRenderNode(RSSurfaceRenderNode& node
     if (node.IsLeashWindow() && RSSystemProperties::GetGpuOverDrawBufferOptimizeEnabled()) {
         CheckIsGpuOverDrawBufferOptimizeNode(node);
     }
+    RSHdrUtil::CheckPixelFormatForHdrEffect(node, curScreenNode_);
     PostPrepare(node, !isSubTreeNeedPrepare);
     if (node.IsHardwareEnabledTopSurface() && node.shared_from_this()) {
         RSUniHwcComputeUtil::UpdateHwcNodeProperty(node.shared_from_this()->ReinterpretCastTo<RSSurfaceRenderNode>());
