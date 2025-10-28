@@ -256,17 +256,15 @@ void RSHardwareThread::CommitAndReleaseLayers(OutputPtr output, const std::vecto
     delayTime_ = 0;
     RSTimer timer("Hardware", HARDWARE_TIMEOUT);
     LayerComposeCollection::GetInstance().UpdateUniformOrOfflineComposeFrameNumberForDFX(layers.size());
-    hgmHardwareUtils_.UpdateRefreshRateParam();
-    RefreshRateParam param = hgmHardwareUtils_.GetRefreshRateParam();
-    auto& hgmCore = OHOS::Rosen::HgmCore::Instance();
-    ScreenId curScreenId = hgmCore.GetActiveScreenId();
-    uint32_t currentRate = hgmCore.GetScreenCurrentRefreshRate(curScreenId);
+    uint32_t currentRate = 0;
+    RefreshRateParam param;
+    hgmHardwareUtils_.TransactRefreshRateParam(currentRate, param);
     bool hasGameScene = FrameReport::GetInstance().HasGameScene();
 #ifdef RES_SCHED_ENABLE
     ResschedEventListener::GetInstance()->ReportFrameToRSS();
 #endif
     RSTaskMessage::RSTask task = [this, output = output, layers = layers, param = param,
-        currentRate = currentRate, hasGameScene = hasGameScene, curScreenId = curScreenId]() {
+        currentRate = currentRate, hasGameScene = hasGameScene]() {
         PrintHiperfSurfaceLog("counter3", static_cast<uint64_t>(layers.size()));
         int64_t startTime = GetCurTimeCount();
         std::string surfaceName = GetSurfaceNameInLayers(layers);
@@ -305,15 +303,13 @@ void RSHardwareThread::CommitAndReleaseLayers(OutputPtr output, const std::vecto
         bool shouldDropFrame = isScreenPowerOff || isScreenPoweringOff ||
                                IsDropDirtyFrame(layers, output->GetScreenId());
         if (!shouldDropFrame) {
-            hgmHardwareUtils_.ExecuteSwitchRefreshRate(output, param.rate);
-            hgmHardwareUtils_.PerformSetActiveMode(
-                output, param.frameTimestamp, param.constraintRelativeTime);
+            hgmHardwareUtils_.SwitchRefreshRate(output);
             AddRefreshRateCount(output);
         }
 
         if (RSSystemProperties::IsSuperFoldDisplay() && output->GetScreenId() == 0) {
             std::vector<LayerInfoPtr> reviseLayers = layers;
-            ChangeLayersForActiveRectOutside(reviseLayers, curScreenId);
+            ChangeLayersForActiveRectOutside(reviseLayers, HgmCore::Instance().GetActiveScreenId());
             LppVideoHandler::Instance().AddLppLayerId(reviseLayers);
             output->SetLayerInfo(reviseLayers);
         } else {
@@ -365,6 +361,7 @@ void RSHardwareThread::CommitAndReleaseLayers(OutputPtr output, const std::vecto
     RSBaseRenderUtil::IncAcquiredBufferCount();
     unExecuteTaskNum_++;
     RSMainThread::Instance()->SetHardwareTaskNum(unExecuteTaskNum_.load());
+    auto& hgmCore = HgmCore::Instance();
     RS_LOGI_IF(DEBUG_COMPOSER, "CommitAndReleaseData hgmCore's LtpoEnabled is %{public}d", hgmCore.GetLtpoEnabled());
     int64_t currTime = SystemTime();
     if (IsDelayRequired(hgmCore, param, output, hasGameScene)) {

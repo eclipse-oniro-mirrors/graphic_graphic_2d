@@ -18,6 +18,7 @@
 #include "feature/hyper_graphic_manager/rs_vblank_idle_corrector.h"
 #include "hdi_backend.h"
 #include "hgm_frame_rate_manager.h"
+#include "hgm_core.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -36,8 +37,8 @@ public:
     HgmHardwareUtils() = default;
     ~HgmHardwareUtils() noexcept = default;
 
-    void ExecuteSwitchRefreshRate(const std::shared_ptr<HdiOutput> output, uint32_t refreshRate);
-    void PerformSetActiveMode(std::shared_ptr<HdiOutput> output, uint64_t timestamp, uint64_t constraintRelativeTime);
+    void ExecuteSwitchRefreshRate(ScreenId screenId);
+    void PerformSetActiveMode(const std::shared_ptr<HdiOutput>& output);
     void UpdateRefreshRateParam();
     void SetScreenVBlankIdle(ScreenId screenId)
     {
@@ -49,9 +50,14 @@ public:
         return refreshRateParam_;
     }
 
+    void SwitchRefreshRate(const std::shared_ptr<HdiOutput>& hdiOutput);
+
+    void TransactRefreshRateParam(uint32_t& currentRate, RefreshRateParam& param);
+
 private:
     void UpdateRetrySetRateStatus(ScreenId id, int32_t modeId, uint32_t setRateRet);
 
+    HgmCore& hgmCore_ = HgmCore::Instance();
     // key: ScreenId, value: <needRetrySetRate, retryCount>
     std::unordered_map<ScreenId, std::pair<bool, int32_t>> setRateRetryMap_;
     HgmRefreshRates hgmRefreshRates_ = HgmRefreshRates::SET_RATE_NULL;

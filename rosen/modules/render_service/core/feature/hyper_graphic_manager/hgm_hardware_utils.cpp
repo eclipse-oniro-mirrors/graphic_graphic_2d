@@ -28,53 +28,47 @@ constexpr int32_t MAX_SETRATE_RETRY_COUNT = 20;
 constexpr ScreenId MAX_HAL_DISPLAY_ID = 20;
 }
 
-void HgmHardwareUtils::ExecuteSwitchRefreshRate(
-    const std::shared_ptr<HdiOutput> output, uint32_t refreshRate)
+void HgmHardwareUtils::ExecuteSwitchRefreshRate(ScreenId screenId)
 {
+    uint32_t refreshRate = refreshRateParam_.rate;
     static bool refreshRateSwitch = system::GetBoolParameter("persist.hgm.refreshrate.enabled", true);
     if (!refreshRateSwitch) {
         RS_LOGD("refreshRateSwitch is off, currRefreshRate is %{public}d", refreshRate);
         return;
     }
 
-    auto& hgmCore = OHOS::Rosen::HgmCore::Instance();
-    if (hgmCore.GetFrameRateMgr() == nullptr) {
+    auto frameRateMgr = hgmCore_.GetFrameRateMgr();
+    if (frameRateMgr == nullptr) {
         RS_LOGD("FrameRateMgr is null");
         return;
     }
-    ScreenId id = output->GetScreenId();
-    auto& hardwareThread = RSHardwareThread::Instance();
-    auto screen = hgmCore.GetScreen(id);
-    if (!screen || !screen->GetSelfOwnedScreenFlag()) {
-        return;
-    }
-    auto screenRefreshRateImme = hgmCore.GetScreenRefreshRateImme();
+    auto screenRefreshRateImme = hgmCore_.GetScreenRefreshRateImme();
     if (screenRefreshRateImme > 0) {
         RS_LOGD("ExecuteSwitchRefreshRate:rate change: %{public}u -> %{public}u", refreshRate, screenRefreshRateImme);
         refreshRate = screenRefreshRateImme;
     }
-    ScreenId curScreenId = hgmCore.GetFrameRateMgr()->GetCurScreenId();
-    ScreenId lastCurScreenId = hgmCore.GetFrameRateMgr()->GetLastCurScreenId();
-    bool shouldSetRefreshRate = (refreshRate != hgmCore.GetScreenCurrentRefreshRate(id) ||
+    ScreenId curScreenId = frameRateMgr->GetCurScreenId();
+    ScreenId lastCurScreenId = frameRateMgr->GetLastCurScreenId();
+    bool shouldSetRefreshRate = (refreshRate != hgmCore_.GetScreenCurrentRefreshRate(screenId) ||
                                  lastCurScreenId != curScreenId);
     bool needRetrySetRate = false;
-    auto retryIter = setRateRetryMap_.find(id);
+    auto retryIter = setRateRetryMap_.find(screenId);
     if (retryIter != setRateRetryMap_.end()) {
         needRetrySetRate = retryIter->second.first;
     }
     if (shouldSetRefreshRate || needRetrySetRate) {
         RS_LOGD("CommitAndReleaseLayers screenId %{public}d refreshRate %{public}d \
-            needRetrySetRate %{public}d", static_cast<int>(id), refreshRate, needRetrySetRate);
+            needRetrySetRate %{public}d", static_cast<int>(screenId), refreshRate, needRetrySetRate);
         int32_t sceneId = (lastCurScreenId != curScreenId || needRetrySetRate) ? SWITCH_SCREEN_SCENE : 0;
-        hgmCore.GetFrameRateMgr()->SetLastCurScreenId(curScreenId);
-        int32_t status = hgmCore.SetScreenRefreshRate(id, sceneId, refreshRate, shouldSetRefreshRate);
+        frameRateMgr->SetLastCurScreenId(curScreenId);
+        int32_t status = hgmCore_.SetScreenRefreshRate(screenId, sceneId, refreshRate, shouldSetRefreshRate);
         if (retryIter != setRateRetryMap_.end()) {
             retryIter->second.first = false;
             retryIter->second.second = shouldSetRefreshRate ? 0 : retryIter->second.second;
         }
         if (status < EXEC_SUCCESS) {
             RS_LOGD("HgmContext: failed to set refreshRate %{public}d, screenId %{public}" PRIu64 "",
-                refreshRate, id);
+                refreshRate, screenId);
         }
     }
 }
@@ -98,28 +92,28 @@ void HgmHardwareUtils::UpdateRetrySetRateStatus(ScreenId id, int32_t modeId, uin
     }
 }
 
-void HgmHardwareUtils::PerformSetActiveMode(
-    std::shared_ptr<HdiOutput> output, uint64_t timestamp, uint64_t constraintRelativeTime)
+void HgmHardwareUtils::PerformSetActiveMode(const std::shared_ptr<HdiOutput>& output)
 {
-    auto& hgmCore = OHOS::Rosen::HgmCore::Instance();
     auto screenManager = CreateOrGetScreenManager();
     if (screenManager == nullptr) {
         return;
     }
+    uint64_t timestamp = refreshRateParam_.frameTimestamp;
+    uint64_t constraintRelativeTime = refreshRateParam_.constraintRelativeTime;
     vblankIdleCorrector_.ProcessScreenConstraint(timestamp, constraintRelativeTime);
     HgmRefreshRates newRate = RSSystemProperties::GetHgmRefreshRatesEnabled();
     if (hgmRefreshRates_ != newRate) {
         hgmRefreshRates_ = newRate;
-        hgmCore.SetScreenRefreshRate(screenManager->GetDefaultScreenId(), 0, static_cast<int32_t>(hgmRefreshRates_));
+        hgmCore_.SetScreenRefreshRate(screenManager->GetDefaultScreenId(), 0, static_cast<int32_t>(hgmRefreshRates_));
     }
 
-    std::unique_ptr<std::unordered_map<ScreenId, int32_t>> modeMap(hgmCore.GetModesToApply());
+    std::unique_ptr<std::unordered_map<ScreenId, int32_t>> modeMap(hgmCore_.GetModesToApply());
     if (modeMap == nullptr) {
         return;
     }
 
     RS_TRACE_NAME_FMT("HgmContext::PerformSetActiveMode setting active mode. rate: %d",
-        HgmCore::Instance().GetScreenCurrentRefreshRate(HgmCore::Instance().GetActiveScreenId()));
+        hgmCore_.GetScreenCurrentRefreshRate(hgmCore_.GetActiveScreenId()));
     for (auto mapIter = modeMap->begin(); mapIter != modeMap->end(); ++mapIter) {
         ScreenId id = mapIter->first;
         int32_t modeId = mapIter->second;
@@ -139,7 +133,7 @@ void HgmHardwareUtils::PerformSetActiveMode(
             RS_LOGD("UpdateRetrySetRateStatus fail, invalid ScreenId:%{public}" PRIu64, id);
         }
 
-        auto pendingPeriod = hgmCore.GetIdealPeriod(hgmCore.GetScreenCurrentRefreshRate(id));
+        auto pendingPeriod = hgmCore_.GetIdealPeriod(hgmCore_.GetScreenCurrentRefreshRate(id));
         int64_t pendingTimestamp = static_cast<int64_t>(timestamp);
         if (auto hdiBackend = HdiBackend::GetInstance(); hdiBackend != nullptr) {
             hdiBackend->SetPendingMode(output, pendingPeriod, pendingTimestamp);
@@ -152,21 +146,20 @@ void HgmHardwareUtils::UpdateRefreshRateParam()
 {
     // need to sync the hgm data from main thread.
     // Temporary sync the timestamp to fix the duplicate time stamp issue.
-    auto& hgmCore = OHOS::Rosen::HgmCore::Instance();
-    bool directComposition = hgmCore.GetDirectCompositionFlag();
+    bool directComposition = hgmCore_.GetDirectCompositionFlag();
     RS_LOGI_IF(DEBUG_COMPOSER, "GetRefreshRateData period is %{public}d", directComposition);
     if (directComposition) {
-        hgmCore.SetDirectCompositionFlag(false);
+        hgmCore_.SetDirectCompositionFlag(false);
     }
     if (directComposition) {
         refreshRateParam_ = {
-            .rate = hgmCore.GetPendingScreenRefreshRate(),
-            .frameTimestamp = hgmCore.GetCurrentTimestamp(),
-            .actualTimestamp = hgmCore.GetActualTimestamp(),
-            .vsyncId = hgmCore.GetVsyncId(),
-            .constraintRelativeTime = hgmCore.GetPendingConstraintRelativeTime(),
-            .isForceRefresh = hgmCore.GetForceRefreshFlag(),
-            .fastComposeTimeStampDiff = hgmCore.GetFastComposeTimeStampDiff()
+            .rate = hgmCore_.GetPendingScreenRefreshRate(),
+            .frameTimestamp = hgmCore_.GetCurrentTimestamp(),
+            .actualTimestamp = hgmCore_.GetActualTimestamp(),
+            .vsyncId = hgmCore_.GetVsyncId(),
+            .constraintRelativeTime = hgmCore_.GetPendingConstraintRelativeTime(),
+            .isForceRefresh = hgmCore_.GetForceRefreshFlag(),
+            .fastComposeTimeStampDiff = hgmCore_.GetFastComposeTimeStampDiff()
         };
     } else {
         refreshRateParam_ = {
@@ -179,6 +172,27 @@ void HgmHardwareUtils::UpdateRefreshRateParam()
             .fastComposeTimeStampDiff = RSUniRenderThread::Instance().GetFastComposeTimeStampDiff()
         };
     }
+}
+
+void HgmHardwareUtils::TransactRefreshRateParam(uint32_t& currentRate, RefreshRateParam& param)
+{
+    UpdateRefreshRateParam();
+    param = refreshRateParam_;
+    ScreenId curScreenId = hgmCore_.GetActiveScreenId();
+    currentRate = hgmCore_.GetScreenCurrentRefreshRate(curScreenId);
+}
+
+void HgmHardwareUtils::SwitchRefreshRate(const std::shared_ptr<HdiOutput>& hdiOutput)
+{
+    RS_TRACE_NAME_FMT("%s rate:%u", __func__, refreshRateParam_.rate);
+    ScreenId screenId = hdiOutput->GetScreenId();
+    auto screen = hgmCore_.GetScreen(screenId);
+    if (!screen || !screen->GetSelfOwnedScreenFlag() || refreshRateParam_.rate == 0) {
+        return;
+    }
+
+    ExecuteSwitchRefreshRate(screenId);
+    PerformSetActiveMode(hdiOutput);
 }
 } // namespace Rosen
 } // namespace OHOS
