@@ -106,7 +106,47 @@ void RSRenderParticleSystem::UpdateNoiseField(const std::shared_ptr<ParticleNois
 
 void RSRenderParticleSystem::UpdateRippleField(const std::shared_ptr<ParticleRippleFields>& particleRippleFields)
 {
-    particleRippleFields_ = particleRippleFields;
+    if (!particleRippleFields) {
+        particleRippleFields_ = nullptr;
+        return;
+    }
+
+    if (!particleRippleFields_) {
+        particleRippleFields_ = particleRippleFields;
+        return;
+    }
+
+    auto& existingFields = particleRippleFields_->rippleFields_;
+    auto& newFields = particleRippleFields->rippleFields_;
+
+    std::vector<std::shared_ptr<ParticleRippleField>> mergedFields;
+
+    for (const auto& newField : newFields) {
+        if (!newField) continue;
+
+        bool found = false;
+        for (const auto& existingField : existingFields) {
+            if (existingField &&
+                existingField->center_ == newField->center_ &&
+                ROSEN_EQ(existingField->amplitude_, newField->amplitude_) &&
+                ROSEN_EQ(existingField->wavelength_, newField->wavelength_) &&
+                ROSEN_EQ(existingField->waveSpeed_, newField->waveSpeed_) &&
+                ROSEN_EQ(existingField->attenuation_, newField->attenuation_) &&
+                existingField->regionShape_ == newField->regionShape_ &&
+                existingField->regionPosition_ == newField->regionPosition_ &&
+                existingField->regionSize_ == newField->regionSize_) {
+                mergedFields.push_back(existingField);
+                found = true;
+                break;
+            }
+        }
+
+        if (!found) {
+            mergedFields.push_back(newField);
+        }
+    }
+
+    particleRippleFields_->rippleFields_ = mergedFields;
 }
 void RSRenderParticleSystem::UpdateVelocityField(const std::shared_ptr<ParticleVelocityFields>& particleVelocityFields)
 {
