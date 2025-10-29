@@ -140,7 +140,7 @@ uint32_t RSLuminanceControl::ScalerFloatToLevel(float& scaler) const
     return 0;
 }
 
-float RSLuminanceControl::ScalerLevelToFloat(uint32_t level) const
+float RSLuminanceControl::ScalerLevelToFloat(uint32_t& level) const
 {
     return 1.0;
 }
