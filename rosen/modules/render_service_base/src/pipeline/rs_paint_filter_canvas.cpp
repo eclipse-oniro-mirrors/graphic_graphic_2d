@@ -1405,6 +1405,33 @@ void RSPaintFilterCanvas::CopyHDRConfiguration(const RSPaintFilterCanvas& other)
     hdrProperties_ = other.hdrProperties_;
 }
 
+bool RSPaintFilterCanvas::CopyCachedEffectData(std::shared_ptr<CachedEffectData>& dstEffectData,
+    const std::shared_ptr<CachedEffectData>& srcEffectData, const RSPaintFilterCanvas& srcCanvas)
+{
+    if (srcEffectData == nullptr) {
+        return true;
+    }
+
+    // make a deep copy of effect data
+    auto copiedEffectData = std::make_shared<CachedEffectData>(*srcEffectData);
+    if (copiedEffectData == nullptr) {
+        ROSEN_LOGE("RSPaintFilterCanvas::CopyCachedEffectData fail to alloc effectData");
+        return false;
+    }
+
+    // calculate the mapping matrix from local coordinate system to global coordinate system
+    Drawing::Matrix inverse;
+    if (srcCanvas.GetTotalMatrix().Invert(inverse)) {
+        copiedEffectData->cachedMatrix_.PostConcat(inverse);
+    } else {
+        ROSEN_LOGE("RSPaintFilterCanvas::CopyCachedEffectData get invert matrix failed!");
+    }
+
+    dstEffectData = copiedEffectData;
+    return true;
+}
+
+
 void RSPaintFilterCanvas::CopyConfigurationToOffscreenCanvas(const RSPaintFilterCanvas& other)
 {
     // Note:
@@ -1413,25 +1440,18 @@ void RSPaintFilterCanvas::CopyConfigurationToOffscreenCanvas(const RSPaintFilter
     // copy high contrast flag
     isHighContrastEnabled_.store(other.isHighContrastEnabled_.load());
     // copy env
-    envStack_.top() = other.envStack_.top();
-    // update effect matrix
-    auto effectData = other.envStack_.top().effectData_;
-    if (effectData != nullptr) {
-        // make a deep copy of effect data, and calculate the mapping matrix from
-        // local coordinate system to global coordinate system.
-        auto copiedEffectData = std::make_shared<CachedEffectData>(*effectData);
-        if (copiedEffectData == nullptr) {
-            ROSEN_LOGE("RSPaintFilterCanvas::CopyConfigurationToOffscreenCanvas fail to create effectData");
-            return;
-        }
-        Drawing::Matrix inverse;
-        if (other.GetTotalMatrix().Invert(inverse)) {
-            copiedEffectData->cachedMatrix_.PostConcat(inverse);
-        } else {
-            ROSEN_LOGE("RSPaintFilterCanvas::CopyConfigurationToOffscreenCanvas get invert matrix failed!");
-        }
-        envStack_.top().effectData_ = copiedEffectData;
+    const auto& otherEnv = other.envStack_.top();
+    auto& curEnv = envStack_.top();
+    curEnv = otherEnv;
+    if (!CopyCachedEffectData(curEnv.effectData_, otherEnv.effectData_, other)) {
+        ROSEN_LOGE("RSPaintFilterCanvas::CopyConfigurationToOffscreenCanvas fail to copy effectData");
+        return;
     }
+    if (!CopyCachedEffectData(curEnv.behindWindowData_, otherEnv.behindWindowData_, other)) {
+        ROSEN_LOGE("RSPaintFilterCanvas::CopyConfigurationToOffscreenCanvas fail to copy behindWindowData");
+        return;
+    }
+
     // cache related
     if (other.isHighContrastEnabled()) {
         // explicit disable cache for high contrast mode

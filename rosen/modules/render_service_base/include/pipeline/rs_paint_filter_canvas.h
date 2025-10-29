@@ -500,6 +500,9 @@ protected:
         return &brush;
     }
 
+    bool CopyCachedEffectData(std::shared_ptr<CachedEffectData>& dstEffectData,
+        const std::shared_ptr<CachedEffectData>& srcEffectData, const RSPaintFilterCanvas& srcCanvas);
+
 private:
     bool isParallelCanvas_ = false;
     bool disableFilterCache_ = false;

@@ -1309,6 +1309,36 @@ HWTEST_F(RSPaintFilterCanvasTest, CopyConfigurationToOffscreenCanvasTest, TestSi
 }
 
 /**
+ * @tc.name: CopyConfigurationToOffscreenCanvas2
+ * @tc.desc: Test CopyConfigurationToOffscreenCanvas with behindWindowData
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSPaintFilterCanvasTest, CopyConfigurationToOffscreenCanvasTest2, TestSize.Level1)
+{
+    auto drawingCanvas = std::make_unique<Drawing::Canvas>();
+    RSPaintFilterCanvas::Env env;
+    RSPaintFilterCanvas::Env envOther;
+    RSPaintFilterCanvas rsPaintFilterCanvas(drawingCanvas.get());
+ 
+    envOther.behindWindowData_ = std::make_shared<RSPaintFilterCanvas::CachedEffectData>();
+    ASSERT_NE(envOther.behindWindowData_, nullptr);
+    envOther.behindWindowData_->cachedImage_ = std::make_shared<Drawing::Image>();
+    ASSERT_NE(envOther.behindWindowData_->cachedImage_, nullptr);
+ 
+    paintFilterCanvas_->envStack_.push(env);
+    rsPaintFilterCanvas.envStack_.push(envOther);
+    paintFilterCanvas_->CopyConfigurationToOffscreenCanvas(rsPaintFilterCanvas);
+    EXPECT_NE(paintFilterCanvas_->envStack_.top().behindWindowData_, nullptr);
+    EXPECT_NE(paintFilterCanvas_->envStack_.top().behindWindowData_,
+        rsPaintFilterCanvas.envStack_.top().behindWindowData_);
+ 
+    rsPaintFilterCanvas.Scale(NAN, NAN);
+    paintFilterCanvas_->CopyConfigurationToOffscreenCanvas(rsPaintFilterCanvas);
+    EXPECT_TRUE(EnvStackClear());
+}
+
+/**
  * @tc.name: ReplaceOrSwapMainScreenTest001
  * @tc.desc: ReplaceMainScreenData and SwapBackMainScreenData Test
  * @tc.type:FUNC
