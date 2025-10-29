@@ -56,9 +56,10 @@ public:
     MOCK_METHOD(bool, IsBrightnessInfoChanged, (ScreenId screenId), (override));
     MOCK_METHOD(void, HandleGamutSpecialRender, (std::vector<ScreenColorGamut>& modes), (override));
     MOCK_METHOD(uint32_t, ScalerFloatToLevel, (float& scaler), (override, const));
-    MOCK_METHOD(float, ScalerLevelToFloat, (uint32_t level), (override, const));
+    MOCK_METHOD(float, ScalerLevelToFloat, (uint32_t& level), (override, const));
     using HdrToBrightnessRatioMap = std::unordered_map<HdrStatus, std::unordered_map<uint32_t, uint32_t>>;
-    MOCK_METHOD(void, UpdateCurDisplayHdrBrightnessScaler, (ScreenId screenId, HdrToBrightnessRatioMap& curDisplayHdrBrightnessRatio), (override));
+    MOCK_METHOD(void, UpdateCurDisplayHdrBrightnessScaler, (ScreenId screenId,
+        HdrToBrightnessRatioMap& curDisplayHdrBrightnessRatio), (override));
 
     float CalScaler(const float& maxContentLightLevel,
         const std::vector<uint8_t>& dynamicMetadata, const float& ratio, HdrStatus hdrStatus) override;
@@ -98,7 +99,7 @@ HWTEST_F(RSLuminanceControlTest, LuminanceControl001, TestSize.Level1)
     ScreenId screenId{};
     uint32_t level{};
     std::vector<ScreenColorGamut> mode{};
-    std::unordered_map<HdrStatus, std::unordered_map<uint32_t, uint32_t>>& displayHdrBrightnessRatio;
+    std::unordered_map<HdrStatus, std::unordered_map<uint32_t, uint32_t>> displayHdrBrightnessRatio;
     auto& luminCtrl = RSLuminanceControl::Get();
     luminCtrl.Init();
     luminCtrl.initStatus_ = true;
