@@ -27,6 +27,9 @@ HgmContext::HgmContext()
 {
     rsFrameRateLinker_ = std::make_shared<RSRenderFrameRateLinker>(
         [](const RSRenderFrameRateLinker& linker) { HgmCore::Instance().SetHgmTaskFlag(true); });
+    convertFrameRateFunc_ = [this](const RSPropertyUnit unit, float velocity, int32_t area, int32_t length) -> int32_t {
+        return rpFrameRatePolicy_.GetExpectedFrameRate(unit, velocity, area, length);
+    };
 }
 
 void HgmContext::InitHgmTaskHandleThread(
@@ -55,16 +58,31 @@ void HgmContext::InitHgmTaskHandleThread(
             frameRateMgr->SetForceUpdateCallback(forceUpdateTask);
             frameRateMgr->Init(rsVSyncController, appVSyncController, vsyncGenerator, appVSyncDistributor);
         });
+
+    InitHgmUpdateCallback();
 }
 
-int32_t HgmContext::FrameRateGetFunc(
-    const RSPropertyUnit unit, float velocity, int32_t area, int32_t length)
+void HgmContext::InitHgmUpdateCallback()
 {
-    auto frameRateMgr = HgmCore::Instance().GetFrameRateMgr();
-    if (frameRateMgr != nullptr) {
-        return frameRateMgr->GetExpectedFrameRate(unit, velocity, area, length);
-    }
-    return 0;
+    auto hgmConfigUpdateCallbackTask = [this](std::shared_ptr<RPHgmConfigData> configData,
+        bool ltpoEnabled, bool isDelayMode, int32_t pipelineOffsetPulseNum) {
+        RSMainThread::Instance()->PostTask([this, configData, ltpoEnabled, isDelayMode, pipelineOffsetPulseNum]() {
+            rpHgmConfigDataChange_ = true;
+            rpHgmConfigData_ = std::move(configData);
+            ltpoEnabled_ = ltpoEnabled;
+            isDelayMode_ = isDelayMode;
+            pipelineOffsetPulseNum_ = pipelineOffsetPulseNum;
+        });
+    };
+
+    HgmTaskHandleThread::Instance().PostTask([
+        hgmConfigUpdateCallbackTask]() {
+        auto frameRateMgr = HgmCore::Instance().GetFrameRateMgr();
+        if (frameRateMgr == nullptr) {
+            return;
+        }
+        frameRateMgr->SetHgmConfigUpdateCallback(hgmConfigUpdateCallbackTask);
+    });
 }
 
 void HgmContext::ProcessHgmFrameRate(
@@ -75,6 +93,12 @@ void HgmContext::ProcessHgmFrameRate(
     if (bool enable = RSSystemParameters::GetShowRefreshRateEnabled(&changed); changed != 0) {
         RSRealtimeRefreshRateManager::Instance().SetShowRefreshRateEnabled(enable, 1);
     }
+
+    if (rpHgmConfigDataChange_) {
+        rpHgmConfigDataChange_ = false;
+        rpFrameRatePolicy_.HgmConfigUpdateCallback(rpHgmConfigData_);
+    }
+
     bool isUiDvsyncOn = rsVSyncDistributor != nullptr ? rsVSyncDistributor->IsUiDvsyncOn() : false;
     auto frameRateMgr = HgmCore::Instance().GetFrameRateMgr();
     if (frameRateMgr == nullptr || rsVSyncDistributor == nullptr) {
@@ -91,7 +115,7 @@ void HgmContext::ProcessHgmFrameRate(
     if (frameRateMgr->AdaptiveStatus() == SupportASStatus::SUPPORT_AS) {
         frameRateMgr->HandleGameNode(RSMainThread::Instance()->GetContext().GetNodeMap());
     }
-    
+
     // Check and processing refresh rate task.
     frameRateMgr->ProcessPendingRefreshRate(
         timestamp, vsyncId, rsVSyncDistributor->GetRefreshRate(), isUiDvsyncOn);
