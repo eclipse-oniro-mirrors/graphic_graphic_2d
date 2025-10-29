@@ -189,26 +189,31 @@ void RSGraphicTestProfilerThread::RecieveMessage()
     }
 
     if (packet.GetType() == Packet::LOG) {
-        std::string out(data.begin(), data.end()); // get message from RSProfiler
-        std::cout << "received message:" << out << std::endl;
+        ProcessLogMessage(data);
+    }
+}
 
-        if (out.rfind(expectedMessages[REPLAY_TIME_INDEX], 0) == 0) {
-            std::istringstream iss(out.substr(expectedMessages[REPLAY_TIME_INDEX].size()));
-            double startTime = 0.0;
-            double endTime = 0.0;
-            if (iss >> startTime >> endTime) {
-                std::lock_guard<std::mutex> lock{timeRange_mutex_};
-                timeRange_ = {startTime, endTime};
-            }
+void RSGraphicTestProfilerThread::ProcessLogMessage(const std::vector<char>& data)
+{
+    std::string out(data.begin(), data.end()); // get message from RSProfiler
+    std::cout << "received message:" << out << std::endl;
+
+    if (out.rfind(expectedMessages[REPLAY_TIME_INDEX], 0) == 0) {
+        std::istringstream iss(out.substr(expectedMessages[REPLAY_TIME_INDEX].size()));
+        double startTime = 0.0;
+        double endTime = 0.0;
+        if (iss >> startTime >> endTime) {
+            std::lock_guard<std::mutex> lock{timeRange_mutex_};
+            timeRange_ = {startTime, endTime};
         }
+    }
 
-        if (waitReceive_) {
-            bool reveive = IsReceiveWaitMessage(out); // judge expected information
-            if (reveive) {
-                std::unique_lock lock(wait_mutex_);
-                waitReceive_ = false;
-                cv_.notify_one();
-            }
+    if (waitReceive_) {
+        bool reveive = IsReceiveWaitMessage(out); // judge expected information
+        if (reveive) {
+            std::unique_lock lock(wait_mutex_);
+            waitReceive_ = false;
+            cv_.notify_one();
         }
     }
 }

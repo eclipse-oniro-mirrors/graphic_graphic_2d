@@ -43,6 +43,7 @@ private:
     void RecieveMessage();
     bool RecieveHeader(void* data, size_t& size);
     bool IsReceiveWaitMessage(const std::string& message);
+    void ProcessLogMessage(const std::vector<char>& data);
 private:
     int32_t socket_ = -1;
     std::thread thread_;

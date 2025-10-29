@@ -166,6 +166,38 @@ void RSGraphicTestProfiler::AnalysePlaybackInfo(
     }
 }
 
+void RSGraphicTestProfiler::PlayBackPauseAtVsync(
+    const int& startTime, const int& endTime, const int& timeInterval, const std::string& savePath)
+{
+    int frame = 1;
+    for (int time = startTime; time <= endTime; time += timeInterval) {
+        if (frame != 1) {
+            float pauseTime = static_cast<float>(time) / static_cast<float>(UNIT_SEC_TO_MS);
+            std::string command = "rsrecord_pause_at " + std::to_string(pauseTime);
+            std::cout << "Playback Pause At: " << command << std::endl;
+            RSGraphicTestDirector::Instance().SendProfilerCommand(command, PLAYBACK_PAUSE_OUT_TIME);
+        }
+
+        WaitTimeout(NORMAL_WAIT_TIME);
+        std::string filename;
+        size_t lastDotPos = savePath.find_last_of(".");
+        if (lastDotPos == std::string::npos || lastDotPos == 0) {
+            filename = savePath;
+        } else {
+            filename = savePath.substr(0, lastDotPos);
+        }
+        std::ostringstream frameStr;
+        frameStr << std::setw(FRAME_WIDTH_NUM) << setfill('0') << frame;
+        filename = filename + "_frame_" + frameStr.str() + "_" + std::to_string(time);
+        if (useBufferDump_) {
+            TestCaseBufferDump(true, filename);
+        } else {
+            TestCaseCapture(true, filename);
+        }
+        frame++;
+    }
+}
+
 void RSGraphicTestProfiler::PlaybackWithoutJson(
     const std::string& filePath, const std::string& savePath)
 {
@@ -192,32 +224,8 @@ void RSGraphicTestProfiler::PlaybackWithoutJson(
     RSGraphicTestDirector::Instance().SendProfilerCommand(command);
     WaitTimeout(startTime + NORMAL_WAIT_TIME);
 
-    int frame = 1;
-    for (int time = startTime; time <= endTime; time += DEFAULT_TIME_INTERVAL) {
-        if (frame != 1) {
-            float pauseTime = static_cast<float>(time) / static_cast<float>(UNIT_SEC_TO_MS);
-            command = "rsrecord_pause_at " +  std::to_string(pauseTime);
-            std::cout << "Playback Pause At: " << command << std::endl;
-            RSGraphicTestDirector::Instance().SendProfilerCommand(command, PLAYBACK_PAUSE_OUT_TIME);
-        }
-        WaitTimeout(NORMAL_WAIT_TIME);
-        std::string filename;
-        size_t lastDotPos = savePath.find_last_of(".");
-        if (lastDotPos == std::string::npos || lastDotPos == 0) {
-            filename = savePath;
-        } else {
-            filename = savePath.substr(0, lastDotPos);
-        }
-        std::ostringstream frameStr;
-        frameStr << std::setw(FRAME_WIDTH_NUM) << setfill('0') << frame;
-        filename = filename + "_frame_" + frameStr.str() + "_" + std::to_string(time);
-        if (useBufferDump_) {
-            TestCaseBufferDump(true, filename);
-        } else {
-            TestCaseCapture(true, filename);
-        }
-        frame++;
-    }
+    PlayBackPauseAtVsync(startTime, endTime, DEFAULT_TIME_INTERVAL, savePath);
+
     // playback stop
     command = "rsrecord_replay_stop";
     std::cout << "Playback Stop: " << command << std::endl;
@@ -241,21 +249,6 @@ cJSON* ParseFileConfig(const std::string& path)
 
     cJSON* rootData = cJSON_Parse(configString.c_str());
     return rootData;
-}
-
-void RSGraphicTestProfiler::GetFilePath(std::filesystem::path rootPath, std::vector<std::string>& fileNameList)
-{
-    fileNameList.clear();
-
-    if (!std::filesystem::exists(rootPath) || !std::filesystem::is_directory(rootPath)) {
-        return;
-    }
-
-    for (const auto& entry : std::filesystem::directory_iterator(rootPath)) {
-        if (entry.is_regular_file() && entry.path().extension() == ".ohr") {
-            fileNameList.push_back(entry.path().string());
-        }
-    }
 }
 
 int RSGraphicTestProfiler::RunPlaybackTest(const std::string& filePath)
@@ -422,33 +415,8 @@ void RSGraphicTestProfiler::LoadPlaybackProfilerFile(
     RSGraphicTestDirector::Instance().SendProfilerCommand(command);
     WaitTimeout(info.startTime + NORMAL_WAIT_TIME);
 
-    int frame = 1;
-    for (int time = info.startTime; time <= info.endTime; time += info.timeInterval) {
-        if (frame != 1) {
-            float pauseTime = static_cast<float>(time) / static_cast<float>(UNIT_SEC_TO_MS);
-            command = "rsrecord_pause_at " +  std::to_string(pauseTime);
-            std::cout << "Playback Pause At: " << command << std::endl;
-            RSGraphicTestDirector::Instance().SendProfilerCommand(command, PLAYBACK_PAUSE_OUT_TIME);
-        }
+    PlayBackPauseAtVsync(info.startTime, info.endTime, info.timeInterval, savePath);
 
-        WaitTimeout(NORMAL_WAIT_TIME);
-        std::string filename;
-        size_t lastDotPos = savePath.find_last_of(".");
-        if (lastDotPos == std::string::npos || lastDotPos == 0) {
-            filename = savePath;
-        } else {
-            filename = savePath.substr(0, lastDotPos);
-        }
-        std::ostringstream frameStr;
-        frameStr << std::setw(FRAME_WIDTH_NUM) << setfill('0') << frame;
-        filename = filename + "_frame_" + frameStr.str() + "_" + std::to_string(time);
-        if (useBufferDump_) {
-            TestCaseBufferDump(true, filename);
-        } else {
-            TestCaseCapture(true, filename);
-        }
-        frame++;
-    }
     // playback stop
     command = "rsrecord_replay_stop";
     std::cout << "Playback Stop: " << command << std::endl;

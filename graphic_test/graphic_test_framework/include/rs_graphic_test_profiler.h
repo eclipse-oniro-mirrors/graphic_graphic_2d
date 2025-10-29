@@ -65,7 +65,8 @@ private:
     void DumpBufferSetUp();
     void DumpBufferTearDown();
     std::string GetImageSavePath();
-    void GetFilePath(std::filesystem::path rootPath, std::vector<std::string>& fileNameList);
+    void PlayBackPauseAtVsync(
+        const int& startTime, const int& endTime, const int& timeInterval, const std::string& savePath);
 
     std::string rootPath_ = "";
     int runTestCaseNum_ = 0;
