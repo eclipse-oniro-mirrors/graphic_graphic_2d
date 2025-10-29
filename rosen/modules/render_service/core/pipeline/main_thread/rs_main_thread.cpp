@@ -1736,7 +1736,10 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
                     requestNextVsyncTime_ = nextVsyncTime;
                 }
             }
-            surfaceNode->SetVideoHdrStatus(RSHdrUtil::CheckIsHdrSurface(*surfaceNode));
+            auto videoHdrStatus = RSHdrUtil::CheckIsHdrSurface(*surfaceNode);
+            surfaceNode->ClearHDRVideoStatus();
+            surfaceNode->UpdateHDRStatus(videoHdrStatus, true);
+            surfaceNode->SetVideoHdrStatus(videoHdrStatus);
             if (isColorTemperatureOn_ && surfaceNode->GetVideoHdrStatus() == HdrStatus::NO_HDR) {
                 surfaceNode->SetSdrHasMetadata(RSHdrUtil::CheckIsSurfaceWithMetadata(*surfaceNode));
             }

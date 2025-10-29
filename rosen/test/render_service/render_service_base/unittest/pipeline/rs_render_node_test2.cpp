@@ -1567,6 +1567,30 @@ HWTEST_F(RSRenderNodeTest2, SetIsOnTheTreeTest02, TestSize.Level1)
 }
 
 /**
+ * @tc.name: HDRStatusTest
+ * @tc.desc: Test function GetHDRStatus UpdateHDRStatus ClearHDRVideoStatus
+ * @tc.type: FUNC
+ * @tc.require: issueI9US6V
+ */
+HWTEST_F(RSRenderNodeTest2, HDRStatusTest, TestSize.Level1)
+{
+    auto rsContext = std::make_shared<RSContext>();
+    EXPECT_NE(rsContext, nullptr);
+    auto node = std::make_shared<RSRenderNode>(0, rsContext);
+    std::unique_ptr<RSRenderParams> stagingRenderParams = std::make_unique<RSRenderParams>(0);
+    EXPECT_NE(stagingRenderParams, nullptr);
+    node->stagingRenderParams_ = std::move(stagingRenderParams);
+    EXPECT_EQ(node->GetHDRStatus(), HdrStatus::NO_HDR);
+    node->UpdateHDRStatus(HdrStatus::HDR_PHOTO, true);
+    EXPECT_EQ(node->GetHDRStatus(), HdrStatus::HDR_PHOTO);
+    node->UpdateHDRStatus(HdrStatus::HDR_PHOTO, false);
+    EXPECT_EQ(node->GetHDRStatus(), HdrStatus::NO_HDR);
+    node->UpdateHDRStatus(HdrStatus::HDR_VIDEO, true);
+    node->ClearHDRVideoStatus();
+    EXPECT_EQ(node->GetHDRStatus(), HdrStatus::NO_HDR);
+}
+
+/**
  * @tc.name: SetHdrNum
  * @tc.desc: SetHdrNum test
  * @tc.type: FUNC

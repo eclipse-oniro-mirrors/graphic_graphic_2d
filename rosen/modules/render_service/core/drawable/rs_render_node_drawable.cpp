@@ -931,7 +931,7 @@ void RSRenderNodeDrawable::UpdateCacheSurface(Drawing::Canvas& canvas, const RSR
     RSParallelMisc::AdaptSubTreeThreadId(canvas, threadId);
 #endif
 
-    bool isHdrOn = false; // todo: temporary set false, fix in future
+    bool isHdrOn = params.ChildHasVisibleHDRContent() || params.GetHDRStatus() != HdrStatus::NO_HDR;
     bool isScRGBEnable = RSSystemParameters::IsNeedScRGBForP3(curCanvas->GetTargetColorGamut()) &&
         RSUifirstManager::Instance().GetUiFirstSwitch();
     bool isNeedFP16 = isHdrOn || isScRGBEnable;
@@ -944,7 +944,8 @@ void RSRenderNodeDrawable::UpdateCacheSurface(Drawing::Canvas& canvas, const RSR
         } else {
             tagTracer.emplace(curCanvas->GetGPUContext(), RSTagTracker::TAGTYPE::TAG_RENDER_GROUP);
         }
-        RS_TRACE_NAME_FMT("InitCachedSurface size:[%.2f, %.2f]", params.GetCacheSize().x_, params.GetCacheSize().y_);
+        RS_TRACE_NAME_FMT("InitCachedSurface size:[%.2f, %.2f], isFP16:%d, HdrStatus:%d, isScRGBEnable:%d",
+            params.GetCacheSize().x_, params.GetCacheSize().y_, isNeedFP16, params.GetHDRStatus(), isScRGBEnable);
         InitCachedSurface(curCanvas->GetGPUContext().get(), params.GetCacheSize(), threadId, isNeedFP16,
             curCanvas->GetTargetColorGamut());
         cacheSurface = GetCachedSurface(threadId);

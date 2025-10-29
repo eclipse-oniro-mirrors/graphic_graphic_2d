@@ -422,13 +422,15 @@ HWTEST_F(PropertiesTest, SetHDRUIBrightnessTest, TestSize.Level1)
     auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(surfaceNodeId);
     properties.backref_ = canvasNode;
     canvasNode->instanceRootNodeId_ = surfaceNodeId;
-    canvasNode->isOnTheTree_ = true;
+    canvasNode->isOnTheTree_ = false;
+    properties.SetHDRUIBrightness(1.0f);
+    EXPECT_EQ(properties.GetHDRUIBrightness(), 1.0f);
     float hdrBrightness = 2.0f; // hdr brightness
     properties.SetHDRUIBrightness(hdrBrightness);
     EXPECT_EQ(properties.GetHDRUIBrightness(), hdrBrightness);
-
-    properties.SetHDRUIBrightness(1.0f);
-    EXPECT_EQ(properties.GetHDRUIBrightness(), 1.0f);
+    canvasNode->isOnTheTree_ = true;
+    properties.SetHDRUIBrightness(hdrBrightness);
+    EXPECT_EQ(properties.GetHDRUIBrightness(), hdrBrightness);
 }
 
 /**

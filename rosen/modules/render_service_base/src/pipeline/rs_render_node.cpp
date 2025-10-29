@@ -439,7 +439,45 @@ void RSRenderNode::SetEnableHdrEffect(bool enableHdrEffect)
     if (IsOnTheTree()) {
         SetHdrNum(enableHdrEffect, GetInstanceRootNodeId(), HDRComponentType::EFFECT);
     }
+    UpdateHDRStatus(HdrStatus::HDR_EFFECT, enableHdrEffect);
     enableHdrEffect_ = enableHdrEffect;
+}
+
+void RSRenderNode::UpdateHDRStatus(HdrStatus hdrStatus, bool isAdd)
+{
+#ifdef RS_ENABLE_GPU
+    stagingRenderParams_->UpdateHDRStatus(hdrStatus, isAdd);
+#endif
+}
+
+void RSRenderNode::ClearHDRVideoStatus()
+{
+#ifdef RS_ENABLE_GPU
+    stagingRenderParams_->ClearHDRVideoStatus();
+#endif
+}
+
+HdrStatus RSRenderNode::GetHDRStatus() const
+{
+#ifdef RS_ENABLE_GPU
+    return stagingRenderParams_->GetHDRStatus();
+#endif
+    return HdrStatus::NO_HDR;
+}
+
+void RSRenderNode::SetChildHasVisibleHDRContent(bool val)
+{
+#ifdef RS_ENABLE_GPU
+    stagingRenderParams_->SetChildHasVisibleHDRContent(val);
+#endif
+}
+
+bool RSRenderNode::ChildHasVisibleHDRContent() const
+{
+#ifdef RS_ENABLE_GPU
+    return stagingRenderParams_->ChildHasVisibleHDRContent();
+#endif
+    return false;
 }
 
 void RSRenderNode::SetIsOnTheTree(bool flag, NodeId instanceRootNodeId, NodeId firstLevelNodeId,
@@ -963,7 +1001,7 @@ void RSRenderNode::DumpTree(int32_t depth, std::string& out) const
         out += sharedTransitionParam_->Dump();
     }
     if (IsSuggestedDrawInGroup()) {
-        out += ", [nodeGroup" + std::to_string(nodeGroupType_) + "]"; // adapt for SmartPerf Editor tree tool
+        out += ", nodeGroup:[" + std::to_string(nodeGroupType_) + "]"; // adapt for SmartPerf Editor tree tool
     }
     if (HasChildrenOutOfRect()) {
         out += ", [ChildrenOutOfParent: true]";
@@ -3604,6 +3642,7 @@ void RSRenderNode::SetChildHasVisibleEffect(bool val)
     stagingRenderParams_->SetChildHasVisibleEffect(val);
 #endif
 }
+
 void RSRenderNode::UpdateVisibleFilterChild(RSRenderNode& childNode)
 {
     if (childNode.GetRenderProperties().NeedFilter() || childNode.GetHwcRecorder().IsBlendWithBackground() ||
