@@ -99,7 +99,7 @@ public:
     virtual bool IsBrightnessInfoChanged(ScreenId screenId) = 0;
     virtual void HandleGamutSpecialRender(std::vector<ScreenColorGamut>& modes) = 0;
     virtual uint32_t ScalerFloatToLevel(float& scaler) const = 0;
-    virtual float ScalerLevelToFloat(uint32_t level) const = 0;
+    virtual float ScalerLevelToFloat(uint32_t& level) const = 0;
     virtual void UpdateCurDisplayHdrBrightnessScaler(ScreenId screenId,
         std::unordered_map<HdrStatus, std::unordered_map<uint32_t, uint32_t>>& curDisplayHdrBrightnessRatio) = 0;
 };
