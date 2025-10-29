@@ -392,7 +392,7 @@ Drawing::Bitmap RSCanvasDrawingRenderNode::GetBitmap(const uint64_t tid)
 }
 
 bool RSCanvasDrawingRenderNode::GetPixelmap(std::shared_ptr<Media::PixelMap> pixelmap, const Drawing::Rect* rect,
-    const uint64_t tid, Drawing::DrawCmdListPtr drawCmdList, Drawing::DrawCmdList lastDrawCmdList)
+    const uint64_t tid, Drawing::DrawCmdListPtr drawCmdList, Drawing::DrawCmdListPtr lastDrawCmdList)
 {
     std::lock_guard<std::mutex> lock(drawingMutex_);
     if (!pixelmap || !rect) {
@@ -460,7 +460,7 @@ bool RSCanvasDrawingRenderNode::GetPixelmap(std::shared_ptr<Media::PixelMap> pix
     return false;
 #endif
     canvas->DrawImage(*image, 0, 0, Drawing::SamplingOptions());
-    if (GetIsTextureExportNode() && lastDrawCmdList != nullptr && !lastDrawCmdList.IsEmpty()) {
+    if (GetIsTextureExportNode() && lastDrawCmdList != nullptr && !lastDrawCmdList->IsEmpty()) {
         lastDrawCmdList->Playback(*canvas, rect);
     }
     drawCmdList->Playback(*canvas, rect);
