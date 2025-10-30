@@ -274,9 +274,11 @@ HWTEST_F(RSCanvasDrawingRenderNodeDrawableTest, FlushForGLTest, TestSize.Level1)
     drawable->FlushForGL(width, height, context, nodeId, rscanvas);
     ASSERT_FALSE(drawable->recordingCanvas_);
 
+#if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
     drawable->curThreadInfo_.first = INVALID_NODEID;
     drawable->FlushForGL(width, height, context, nodeId, rscanvas);
     ASSERT_FALSE(drawable->backendTexture_.IsValid());
+#endif
 
     drawable->backendTexture_.isValid_ = true;
     drawable->FlushForGL(width, height, context, nodeId, rscanvas);
@@ -351,9 +353,11 @@ HWTEST_F(RSCanvasDrawingRenderNodeDrawableTest, FlushTest, TestSize.Level1)
     drawable->Flush(width, height, context, id, canvas);
     EXPECT_EQ(drawable->recordingCanvas_, nullptr);
 
+#if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
     drawable->curThreadInfo_.first = INVALID_NODEID;
     drawable->Flush(width, height, context, id, canvas);
     EXPECT_EQ(drawable->recordingCanvas_, nullptr);
+#endif
 
     drawable->recordingCanvas_ = std::make_unique<ExtendRecordingCanvas>(0, 0);
     drawable->Flush(width, height, context, id, canvas);
@@ -456,7 +460,9 @@ HWTEST_F(RSCanvasDrawingRenderNodeDrawableTest, ResetSurfaceTest001, TestSize.Le
     drawable->ResetSurface();
     EXPECT_EQ(drawable->recordingCanvas_, nullptr);
 
+#if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
     drawable->preThreadInfo_.second = [](std::shared_ptr<Drawing::Surface> surface) {};
+#endif
     drawable->surface_ = std::make_shared<Drawing::Surface>();
     drawable->ResetSurface();
     EXPECT_EQ(drawable->recordingCanvas_, nullptr);
@@ -517,7 +523,11 @@ HWTEST_F(RSCanvasDrawingRenderNodeDrawableTest, GetPixelmapTest, TestSize.Level1
     ASSERT_FALSE(res);
 
     auto rrect = std::make_shared<Drawing::Rect>(0.f, 0.f, 1.f, 1.f);
+#if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
     tid = drawable->preThreadInfo_.first;
+#else
+    tid = UNI_RENDER_THREAD_INDEX;
+#endif
     auto canvas = std::make_shared<Drawing::Canvas>();
     drawable->canvas_ = std::make_shared<RSPaintFilterCanvas>(canvas.get());
     res = drawable->GetPixelmap(pixelmap, rrect.get(), tid, drawCmdList);
