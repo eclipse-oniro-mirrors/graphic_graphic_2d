@@ -2001,5 +2001,21 @@ HWTEST_F(RSPaintFilterCanvasTest, DrawImageEffectHPSTest, TestSize.Level1)
     paintFilterCanvasBase->DrawImageEffectHPS(image, hpsEffectParams);
 }
 
+/**
+ * @tc.name: SaveDamageRegionRects
+ * @tc.desc: Test SaveDamageRegionRects
+ * @tc.type: FUNC
+ * @tc.require:issuesICI3Q0
+ */
+HWTEST_F(RSPaintFilterCanvasTest, SaveDamageRegionRects, TestSize.Level1)
+{
+    Drawing::Canvas canvas;
+    std::shared_ptr<RSPaintFilterCanvas> paintFilterCanvasBase = std::make_shared<RSPaintFilterCanvas>(&canvas);
+    EXPECT_NE(paintFilterCanvasBase, nullptr);
+    std::vector<RectI> drawAreas{{0, 0, 1316, 2832}};
+    paintFilterCanvasBase->SaveDamageRegionRects(drawAreas);
+    EXPECT_EQ(paintFilterCanvasBase->GetDamageRegionrects(), drawAreas);
+}
+
 } // namespace Rosen
 } // namespace OHOS

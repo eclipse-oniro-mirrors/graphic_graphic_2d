@@ -462,6 +462,16 @@ public:
         return culledEntireSubtree_;
     }
 
+    void SaveDamageRegionrects(const std::vector<RectI>& drawAreas)
+    {
+        damageRegionRects = drawAreas;
+    }
+
+    const std::vector<RectI>& GetDamageRegionrects() const
+    {
+        return damageRegionRects;
+    }
+
 protected:
     using Env = struct {
         Color envForegroundColor_;
@@ -545,6 +555,7 @@ private:
     uint32_t threadId_;
     std::weak_ptr<Drawing::Surface> weakSurface_;
     uint8_t subTreeDrawStatus_ = DEFAULT_STATE;
+    std::vector<RectI> damageRegionRects;
 };
 
 #ifdef RS_ENABLE_VK
