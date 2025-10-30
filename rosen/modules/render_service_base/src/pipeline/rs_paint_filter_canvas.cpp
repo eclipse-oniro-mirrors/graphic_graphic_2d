@@ -1431,7 +1431,6 @@ bool RSPaintFilterCanvas::CopyCachedEffectData(std::shared_ptr<CachedEffectData>
     return true;
 }
 
-
 void RSPaintFilterCanvas::CopyConfigurationToOffscreenCanvas(const RSPaintFilterCanvas& other)
 {
     // Note:
