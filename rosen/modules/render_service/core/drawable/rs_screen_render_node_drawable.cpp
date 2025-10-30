@@ -908,7 +908,7 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     curCanvas_->SetHdrOn(isHdrOn);
     curCanvas_->SetDisableFilterCache(params->GetZoomed());
     if (uniParam->IsPartialRenderEnabled() && (!uniParam->IsRegionDebugEnabled())) {
-        curCanvas_->SaveDamageRegionrects(damageRegionRects);
+        curCanvas_->SaveDamageRegionrects(damageRegionrects);
     }
 
 #ifdef DDGR_ENABLE_FEATURE_OPINC
