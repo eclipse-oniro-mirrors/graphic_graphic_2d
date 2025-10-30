@@ -135,18 +135,18 @@ void RSLuminanceControl::HandleGamutSpecialRender(std::vector<ScreenColorGamut>&
     // Update screen supported color gamut
 }
 
-uint32_t RSLuminanceControl::ScalerFloatToLevel(float& scaler) const
+uint32_t RSLuminanceControl::ConvertScalerFromFloatToLevel(float& scaler) const
 {
     return 0;
 }
 
-float RSLuminanceControl::ScalerLevelToFloat(uint32_t& level) const
+float RSLuminanceControl::ConvertScalerFromLevelToFloat(uint32_t& level) const
 {
     return 1.0f;
 }
 
-void RSLuminanceControl::UpdateCurDisplayHdrBrightnessScaler(ScreenId screenId,
-    std::unordered_map<HdrStatus, std::unordered_map<uint32_t, uint32_t>>& curDisplayHdrBrightnessRatio)
+void RSLuminanceControl::SetCurDisplayHdrBrightnessScaler(ScreenId screenId,
+    std::unordered_map<HdrStatus, std::unordered_map<uint32_t, uint32_t>>& curDisplayHdrBrightnessScaler)
 {
     return;
 }

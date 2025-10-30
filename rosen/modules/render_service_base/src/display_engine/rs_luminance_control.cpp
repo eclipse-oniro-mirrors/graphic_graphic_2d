@@ -233,23 +233,23 @@ void RSLuminanceControl::HandleGamutSpecialRender(std::vector<ScreenColorGamut>&
     }
 }
 
-uint32_t RSLuminanceControl::ScalerFloatToLevel(float& scaler) const
+uint32_t RSLuminanceControl::ConvertScalerFromFloatToLevel(float& scaler) const
 {
     return (rSLuminanceControlInterface_ != nullptr) ?
-        rSLuminanceControlInterface_->ScalerFloatToLevel(scaler) : 0;
+        rSLuminanceControlInterface_->ConvertScalerFromFloatToLevel(scaler) : 0;
 }
 
-float RSLuminanceControl::ScalerLevelToFloat(uint32_t& level) const
+float RSLuminanceControl::ConvertScalerFromLevelToFloat(uint32_t& level) const
 {
     return (rSLuminanceControlInterface_ != nullptr) ?
-        rSLuminanceControlInterface_->ScalerLevelToFloat(level) : 1.0;
+        rSLuminanceControlInterface_->ConvertScalerFromLevelToFloat(level) : 1.0f;
 }
 
-void RSLuminanceControl::UpdateCurDisplayHdrBrightnessScaler(ScreenId screenId,
-    std::unordered_map<HdrStatus, std::unordered_map<uint32_t, uint32_t>>& curDisplayHdrBrightnessRatio)
+void RSLuminanceControl::SetCurDisplayHdrBrightnessScaler(ScreenId screenId,
+    std::unordered_map<HdrStatus, std::unordered_map<uint32_t, uint32_t>>& curDisplayHdrBrightnessScaler)
 {
     if (rSLuminanceControlInterface_ != nullptr) {
-        rSLuminanceControlInterface_->UpdateCurDisplayHdrBrightnessScaler(screenId, curDisplayHdrBrightnessRatio);
+        rSLuminanceControlInterface_->SetCurDisplayHdrBrightnessScaler(screenId, curDisplayHdrBrightnessScaler);
     }
 }
 } // namespace Rosen
