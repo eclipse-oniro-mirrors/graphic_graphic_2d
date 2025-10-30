@@ -16,17 +16,36 @@
 #include "feature/hyper_graphic_manager/hgm_context.h"
 
 #include "common/rs_optional_trace.h"
+#include "rp_hgm_xml_parser.h"
 #include "parameters.h"
 #include "pipeline/hardware_thread/rs_realtime_refresh_rate_manager.h"
 #include "pipeline/main_thread/rs_main_thread.h"
 
 namespace OHOS {
 namespace Rosen {
+namespace {
+constexpr const char* HGM_CONFIG_PATH = "/syc_prod/etc/graphic/hgm_policy_config.xml";
+}
 
 HgmContext::HgmContext()
 {
     rsFrameRateLinker_ = std::make_shared<RSRenderFrameRateLinker>(
         [](const RSRenderFrameRateLinker& linker) { HgmCore::Instance().SetHgmTaskFlag(true); });
+}
+
+int32_t HgmContext::InitHgmCore(std::unordered_map<std::string, std::string>& sourceTuningConfig, 
+    std::unordered_map<std::string, std::string>& solidLayerConfig)
+{
+    auto parser = std:make_unique<RPHgmXMLParser>();
+
+    if (paser->LoadConfiguration(HGM_CONFIG_PATH) != EXEC_SUCCESS) {
+        RS_LOGW("HgmRPContext failed to load hgm xml configuration file");
+        return XML_FILE_LOAD_FAIL;
+    }
+    sourceTuningConfig = parser->GetSourceTuningConfig();
+    solidLayerConfig = parser->GetSolidLayerConfig();
+
+    return EXEC_SUCCESS;
 }
 
 void HgmContext::InitHgmTaskHandleThread(

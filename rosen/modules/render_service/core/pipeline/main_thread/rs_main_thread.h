@@ -468,6 +468,8 @@ public:
 
     bool IsReadyForSyncTask() const;
 
+    const std::shared_ptr<RSContext>& GetRSContext() const { return hwcContext_; }
+
 private:
     using TransactionDataIndexMap = std::unordered_map<pid_t,
         std::pair<uint64_t, std::vector<std::unique_ptr<RSTransactionData>>>>;
@@ -800,6 +802,7 @@ private:
     bool doDirectComposition_ = true;
     bool lastAnimateNeedRequestNextVsync_ = false;
     RSDirectCompositionHelper directComposeHelper_;
+    std::shared_ptr<RSHwcContext_> hwcContext_ = nullptr;
 
     // for client node tree dump
     struct NodeTreeDumpTask {

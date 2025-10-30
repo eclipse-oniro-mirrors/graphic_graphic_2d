@@ -2995,6 +2995,8 @@ void RSRenderServiceConnection::NotifyPackageEvent(uint32_t listSize, const std:
         return;
     }
     mainThread_->NotifyPackageEvent(packageList);
+    const auto& hwcContext = mainThread_->GetHWCContext();
+    hwcContext->CheckPackageInConfigList(packageList);
     HgmTaskHandleThread::Instance().PostTask([pid = remotePid_, listSize, packageList]() {
         auto frameRateMgr = HgmCore::Instance().GetFrameRateMgr();
         if (frameRateMgr != nullptr) {
