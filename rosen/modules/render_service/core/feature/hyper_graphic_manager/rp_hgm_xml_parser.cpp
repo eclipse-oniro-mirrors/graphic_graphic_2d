@@ -72,11 +72,11 @@ int32_t RPHgmXMLParser::Parse()
         }
         std::string paramName = ExtractPropertyValue("name", *currNode);
         if (paramName == ADDITIONAL_TOUCH_RATE_CONFIG) {
-            setResult = ParseNode(*curNode, appBufferList_);
+            setResult = ParseNode(*currNode, appBufferList_);
         } else if (paramName == SOURCE_TUNING_FOR_YUV420) {
-            setResult = ParseNode(*curNode, sourceTuningConfig_);
+            setResult = ParseNode(*currNode, sourceTuningConfig_);
         } else if (paramName == RS_SOLID_COLOR_LAYER_CONFIG) {
-            setResult = ParseNode(*curNode, solidLayerConfig_);
+            setResult = ParseNode(*currNode, solidLayerConfig_);
         }
     }
     return setResult;

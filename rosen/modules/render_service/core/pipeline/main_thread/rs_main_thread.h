@@ -60,7 +60,7 @@
 #endif
 
 #include "hgm_core.h"
-
+#include "pipeline/hwc/rs_hwc_context.h"
 namespace OHOS::Rosen {
 #if defined(ACCESSIBILITY_ENABLE)
 class AccessibilityObserver;
@@ -468,7 +468,7 @@ public:
 
     bool IsReadyForSyncTask() const;
 
-    const std::shared_ptr<RSContext>& GetRSContext() const { return hwcContext_; }
+    const std::shared_ptr<RSHwcContext>& GetRSHwcContext() const { return hwcContext_; }
 
 private:
     using TransactionDataIndexMap = std::unordered_map<pid_t,

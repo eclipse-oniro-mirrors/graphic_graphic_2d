@@ -36,7 +36,7 @@ HgmContext::HgmContext()
     };
 }
 
-int32_t HgmContext::InitHgmCore(std::unordered_map<std::string, std::string>& sourceTuningConfig,std::make_unique<RPHgmXMLParser>();
+int32_t HgmContext::InitHgmCore(std::unordered_map<std::string, std::string>& sourceTuningConfig,
     std::unordered_map<std::string, std::string>& solidLayerConfig)
 {
     auto parser = std::make_unique<RPHgmXMLParser>();

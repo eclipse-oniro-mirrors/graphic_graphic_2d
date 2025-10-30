@@ -36,7 +36,7 @@ public:
     RSHWCContext& operator=(const RSHWCContext&&) = delete;
 
     // use in temporary scheme with background alpha
-    void CheckPackageChange(const std::vector<std::string>& pkgs);
+    void CheckPackageInConfigList(const std::vector<std::string>& pkgs);
 
     std::unordered_map<std::string, std::string>& GetMutableSourceTuningConfig()
     {
