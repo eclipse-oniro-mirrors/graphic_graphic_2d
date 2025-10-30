@@ -242,7 +242,7 @@ uint32_t RSLuminanceControl::ScalerFloatToLevel(float& scaler) const
 float RSLuminanceControl::ScalerLevelToFloat(uint32_t& level) const
 {
     return (rSLuminanceControlInterface_ != nullptr) ?
-        rSLuminanceControlInterface_->ScalerLevelToFloat(level) : 1.0;
+        rSLuminanceControlInterface_->ScalerLevelToFloat(level) : 1.0f;
 }
 
 void RSLuminanceControl::UpdateCurDisplayHdrBrightnessScaler(ScreenId screenId,
