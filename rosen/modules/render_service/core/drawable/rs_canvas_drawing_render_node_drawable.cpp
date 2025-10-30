@@ -300,7 +300,7 @@ void RSCanvasDrawingRenderNodeDrawable::PostPlaybackInCorrespondThread()
         }
 
 #if defined(RS_ENABLE_GPU) && defined(RS_ENABLE_PARALLEL_RENDER)
-        uint32_t threadIdx = CheckAndSetThreadIdx();
+        auto threadIdx = CheckAndSetThreadIdx();
         auto clearFunc = [idx = threadIdx](std::shared_ptr<Drawing::Surface> surface) {
             // The second param is null, 0 is an invalid value.
             RSUniRenderUtil::ClearNodeCacheSurface(std::move(surface), nullptr, idx, 0);
