@@ -2760,7 +2760,8 @@ void RSMainThread::OnUniRenderDraw()
     }
 #ifdef RS_ENABLE_GPU
     isLastFrameNeedPostAndWait_ = needPostAndWait_;
-    needPostAndWait_ = !doDirectComposition_ && needDrawFrame_;
+    needPostAndWait_ = (!doDirectComposition_ && needDrawFrame_) ||
+        (RSSurfaceBufferCallbackManager::Instance().needReleaseSurfaceBuffer());
     if (needPostAndWait_) {
         renderThreadParams_->SetContext(context_);
         renderThreadParams_->SetDiscardJankFrames(GetDiscardJankFrames());
@@ -3535,7 +3536,7 @@ void RSMainThread::Animate(uint64_t timestamp)
         }
         totalAnimationSize += node->animationManager_.GetAnimationsSize();
         node->animationManager_.SetRateDeciderEnable(
-            isRateDeciderEnabled, hgmContext_.FrameRateGetFunc);
+            isRateDeciderEnabled, hgmContext_.GetConvertFrameRateFunc());
         auto [hasRunningAnimation, nodeNeedRequestNextVsync, nodeCalculateAnimationValue] =
             node->Animate(timestamp, minLeftDelayTime, period, isDisplaySyncEnabled);
         if (!hasRunningAnimation) {
