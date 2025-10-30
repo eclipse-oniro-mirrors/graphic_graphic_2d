@@ -460,7 +460,8 @@ bool RSCanvasDrawingRenderNode::GetPixelmap(std::shared_ptr<Media::PixelMap> pix
     return false;
 #endif
     canvas->DrawImage(*image, 0, 0, Drawing::SamplingOptions());
-    if (GetIsTextureExportNode() && lastDrawCmdList != nullptr && !lastDrawCmdList->IsEmpty()) {
+    if ((GetIsTextureExportNode() || !RSUniRenderJudgement::IsUniRender()) && lastDrawCmdList != nullptr &&
+        !lastDrawCmdList->IsEmpty()) {
         lastDrawCmdList->Playback(*canvas, rect);
     }
     drawCmdList->Playback(*canvas, rect);
