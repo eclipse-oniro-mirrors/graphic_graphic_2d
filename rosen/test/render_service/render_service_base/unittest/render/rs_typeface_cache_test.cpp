@@ -86,7 +86,7 @@ HWTEST_F(RSTypefaceCacheTest, MemorySnapshotTest001, TestSize.Level1)
 
     // branch1: pid1 register typeface
     uint8_t retHasTypeface = RSTypefaceCache::Instance().HasTypeface(uniqueId1, hash);
-    EXPECT_EQ(retHasTypeface, NO_REGISTER);
+    EXPECT_EQ(retHasTypeface, Drawing::NO_REGISTER);
     RSTypefaceCache::Instance().CacheDrawingTypeface(uniqueId1, typeface);
     MemorySnapshotInfo currentInfo;
     ret = MemorySnapshot::Instance().GetMemorySnapshotInfoByPid(pid1, currentInfo);
@@ -94,7 +94,7 @@ HWTEST_F(RSTypefaceCacheTest, MemorySnapshotTest001, TestSize.Level1)
     EXPECT_EQ(currentInfo.cpuMemory, baseInfo1.cpuMemory + size);
     // branch2: whether pid2 typeface exits
     retHasTypeface = RSTypefaceCache::Instance().HasTypeface(uniqueId2, hash);
-    EXPECT_EQ(retHasTypeface, REGISTERED);
+    EXPECT_EQ(retHasTypeface, Drawing::REGISTERED);
     currentInfo = { 0 };
     ret = MemorySnapshot::Instance().GetMemorySnapshotInfoByPid(pid2, currentInfo);
     EXPECT_EQ(ret, true);
@@ -297,7 +297,7 @@ HWTEST_F(RSTypefaceCacheTest, HasTypeFaceTest001, TestSize.Level1)
     uint64_t uniqueId = 1;
     uint32_t hash = 2;
     uint8_t result = RSTypefaceCache::Instance().HasTypeface(uniqueId, hash);
-    EXPECT_EQ(result, REGISTERED);
+    EXPECT_EQ(result, Drawing::REGISTERED);
 }
 
 /**
@@ -337,7 +337,7 @@ HWTEST_F(RSTypefaceCacheTest, HasTypeface_001, TestSize.Level2)
     typefaceHashCode.clear();
     EXPECT_FALSE(typefaceHashCode.find(uniqueId) != typefaceHashCode.end());
 
-    EXPECT_EQ(RSTypefaceCache::Instance().HasTypeface(uniqueId, hash), NO_REGISTER);
+    EXPECT_EQ(RSTypefaceCache::Instance().HasTypeface(uniqueId, hash), Drawing::NO_REGISTER);
 }
 
 /**
@@ -355,7 +355,7 @@ HWTEST_F(RSTypefaceCacheTest, HasTypeface_002, TestSize.Level2)
     RSTypefaceCache::Instance().typefaceHashQueue_[hash] = std::unordered_set<uint64_t>{};
     EXPECT_TRUE(RSTypefaceCache::Instance().typefaceHashQueue_.find(hash) !=
         RSTypefaceCache::Instance().typefaceHashQueue_.end());
-    EXPECT_EQ(RSTypefaceCache::Instance().HasTypeface(uniqueId, hash), REGISTERING);
+    EXPECT_EQ(RSTypefaceCache::Instance().HasTypeface(uniqueId, hash), Drawing::REGISTERING);
 }
 
 /**

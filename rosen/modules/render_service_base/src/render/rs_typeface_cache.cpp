@@ -79,14 +79,14 @@ uint8_t RSTypefaceCache::HasTypeface(uint64_t uniqueId, uint32_t hash)
     std::lock_guard<std::mutex> lock(mapMutex_);
     if (typefaceHashCode_.find(uniqueId) != typefaceHashCode_.end()) {
         // this client has already registered this typeface
-        return REGISTERED;
+        return Drawing::REGISTERED;
     }
 
     if (hash) {
         // check if someone else has already registered this typeface, add ref count and
         // mapping if so.
         if (AddIfFound(uniqueId, hash)) {
-            return REGISTERED;
+            return Drawing::REGISTERED;
         }
 
         // check if someone else is about to register this typeface -> queue uid
@@ -94,13 +94,13 @@ uint8_t RSTypefaceCache::HasTypeface(uint64_t uniqueId, uint32_t hash)
         if (iterator != typefaceHashQueue_.end()) {
             iterator->second.insert(uniqueId);
             RS_LOGD("TypefaceHashQueue find same hash:%{public}u, size:%{public}zu", hash, iterator->second.size());
-            return REGISTERING;
+            return Drawing::REGISTERING;
         } else {
             typefaceHashQueue_[hash] = { uniqueId };
         }
     }
 
-    return NO_REGISTER;
+    return Drawing::NO_REGISTER;
 }
 
 void RSTypefaceCache::CacheDrawingTypeface(uint64_t uniqueId,

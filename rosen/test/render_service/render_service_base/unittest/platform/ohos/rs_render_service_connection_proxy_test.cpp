@@ -1147,12 +1147,12 @@ HWTEST_F(RSRenderServiceConnectionProxyTest, UnRegisterTypeface, TestSize.Level1
     EXPECT_FALSE(proxy->RegisterTypeface(1, typeface));
     ASSERT_TRUE(proxy->UnRegisterTypeface(1));
     int retryCount = 10;
-    WaitNeedRegisterTypefaceReply(REGISTERING, retryCount);
+    WaitNeedRegisterTypefaceReply(Drawing::REGISTERING, retryCount);
     EXPECT_EQ(retryCount, 11);
-    WaitNeedRegisterTypefaceReply(REGISTERED, retryCount);
+    WaitNeedRegisterTypefaceReply(Drawing::REGISTERED, retryCount);
     EXPECT_EQ(retryCount, 12);
     retryCount = 21;
-    WaitNeedRegisterTypefaceReply(REGISTERING, retryCount);
+    WaitNeedRegisterTypefaceReply(Drawing::REGISTERING, retryCount);
     EXPECT_EQ(retryCount, 21);
 }
 

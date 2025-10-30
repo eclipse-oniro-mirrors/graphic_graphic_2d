@@ -2499,7 +2499,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             break;
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NEED_REGISTER_TYPEFACE): {
-            uint8_t result = NO_REGISTER;
+            uint8_t result = Drawing::NO_REGISTER;
             uint64_t uniqueId{0};
             uint32_t hash{0};
             if (!data.ReadUint64(uniqueId) || !data.ReadUint32(hash)) {
