@@ -12,22 +12,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- #include <map>
- #include <string>
+#include <map>
+#include <string>
 
- #include "egl_defs.h"
- #include "egl_wrapper_loader.h"
- #include "parameters.h"
- #include "wrapper_log.h"
- #ifdef OPENGL_WRAPPER_ENABLE_GL4
- EGLBoolean OHGraphicsQueryGLImpl(void)
- {
+#include "egl_defs.h"
+#include "egl_wrapper_loader.h"
+#include "parameters.h"
+#include "wrapper_log.h"
+#ifdef OPENGL_WRAPPER_ENABLE_GL4
+EGLBoolean OHGraphicsQueryGLImpl(void)
+{
     EGLBoolean supportOpengl = OHOS::system::GetBoolParameter(OHOS::SUPPORT_GL_TO_VK, false) ? EGL_TRUE : EGL_FALSE;
     return supportOpengl;
- }
+}
 
- __eglMustCastToProperFunctionPointerType EglGetProcAddressCustomImpl(const char *procname)
- {
+__eglMustCastToProperFunctionPointerType EglGetProcAddressCustomImpl(const char *procname)
+{
     void* func = nullptr;
     if (OHOS::gGetProcAddress && OHOS::gGetProcAddress != &EglGetProcAddressCustomImpl) {
         func = reinterpret_cast<void *>(OHOS::gGetProcAddress(procname));
@@ -43,12 +43,12 @@
     }
     WLOGD("EglGetProcAddressCustomImpl did not find an entry for %{public}s", procname);
     return nullptr;
- }
+}
 
- const std::map<std::string, EglWrapperFuncPointer> OHOS::gCustomMap = {
-    // OH_Graphic_QueryGL
-    { "OH_Graphic_QueryGL", (EglWrapperFuncPointer)&OHGraphicsQueryGLImpl },
- };
+const std::map<std::string, EglWrapperFuncPointer> OHOS::gCustomMap = {
+    // OH_Graphics_QueryGL
+    { "OH_Graphics_QueryGL", (EglWrapperFuncPointer)&OHGraphicsQueryGLImpl },
+};
 
- PENEGLGETPROCADDRESSPROC OHOS::gGetProcAddress = &EglGetProcAddressCustomImpl;
- #endif
+PFNEGLGETPROCADDRESSPROC OHOS::gGetProcAddress = &EglGetProcAddressCustomImpl;
+#endif

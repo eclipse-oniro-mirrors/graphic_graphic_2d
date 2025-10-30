@@ -346,7 +346,7 @@ __eglMustCastToProperFunctionPointerType EglGetProcAddressImpl(const char *procn
 
 #ifdef OPENGL_WRAPPER_ENABLE_GL4
     auto it = gCustomMap.find(procname);
-    if (it != gCustomMap.end) {
+    if (it != gCustomMap.end()) {
         return __eglMustCastToProperFunctionPointerType(it->second);
     }
 #endif

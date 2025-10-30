@@ -161,7 +161,7 @@ bool EglWrapperLoader::LoadVendorDriver(EglWrapperDispatchTable *table)
         }
 
         std::swap(table->egl.eglGetProcAddress, gGetProcAddress);
-        
+
         WLOGD("GL/GLES (mesa)");
         if (!LoadGlFromMesa(gGlApiNames1, (FunctionPointerType *)&table->gl.table1) ||
             !LoadGlFromMesa(gGlApiNames2, (FunctionPointerType *)&table->gl.table2) ||

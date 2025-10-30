@@ -23,7 +23,7 @@
 #if USE_IGRAPHICS_EXTENDS_HOOKS
 #include "egl_wrapper_hook.h"
 #endif
-#if OPENGL_WRAPPER_ENABLE_GL4
+#ifdef OPENGL_WRAPPER_ENABLE_GL4
 #include "parameters.h"
 #endif
 #include "wrapper_log.h"
