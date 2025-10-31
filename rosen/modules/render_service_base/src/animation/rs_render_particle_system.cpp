@@ -104,7 +104,8 @@ void RSRenderParticleSystem::UpdateNoiseField(const std::shared_ptr<ParticleNois
     particleNoiseFields_ = particleNoiseFields;
 }
 
-void RSRenderParticleSystem::UpdateRippleField(const std::shared_ptr<ParticleRippleFields>& particleRippleFields, bool isIncrementalUpdate)
+void RSRenderParticleSystem::UpdateRippleField(const std::shared_ptr<ParticleRippleFields>& particleRippleFields,
+    bool isIncrementalUpdate)
 {
     if (!isIncrementalUpdate) {
         particleRippleFields_ = particleRippleFields;
