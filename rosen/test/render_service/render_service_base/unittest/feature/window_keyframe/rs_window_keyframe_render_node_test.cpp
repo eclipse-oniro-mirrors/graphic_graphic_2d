@@ -31,7 +31,7 @@ namespace OHOS::Rosen {
 class MockNodeDrawable : public DrawableV2::RSRenderNodeDrawableAdapter {
 public:
     explicit MockNodeDrawable(std::shared_ptr<const RSRenderNode> node)
-    : RSRenderNodeDrawableAdapter(std::move(node)) {}
+        : RSRenderNodeDrawableAdapter(std::move(node)) {}
     void Draw(Drawing::Canvas& canvas) override {}
 };
 
