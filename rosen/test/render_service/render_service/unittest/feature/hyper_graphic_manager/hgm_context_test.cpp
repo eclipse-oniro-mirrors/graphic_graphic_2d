@@ -50,8 +50,6 @@ HWTEST_F(HgmContextTest, TestInitHgmConfig, TestSize.Level1)
     int32_t ret = hgmContext.InitHgmConfig(sourceTuningConfig, solidLayerConfig, appBufferList);
     
     EXPECT_EQ(ret, EXEC_SUCCESS);
-    // EXPECT_FALSE(sourceTuningConfig.empty());
-    // EXPECT_FALSE(solidLayerConfig.empty());
 }
 
 /**

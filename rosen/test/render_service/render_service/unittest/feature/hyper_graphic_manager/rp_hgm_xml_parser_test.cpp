@@ -92,7 +92,7 @@ HWTEST_F(RPHgmXmlParserTest, TestParse, TestSize.Level1)
                                     <Params name="additional_touch_rate_config">
                                     </Params>         
                                     <Params name="source_tuning_for_yuv420">
-                                    </Params>                           
+                                    </Params>
                                 </HgmConfig>)");
 
     auto parser = std::make_shared<RPHgmXMLParser>();
