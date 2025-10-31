@@ -34,9 +34,6 @@ RPHgmXMLParser::~RPHgmXMLParser()
         xmlFreeDoc(xmlDocument_);
         xmlDocument_ = nullptr;
     }
-    appBufferList_.clear();
-    sourceTuningConfig_.clear();
-    solidLayerConfig_.clear();
 }
 
 int32_t RPHgmXMLParser::LoadConfiguration(const char* fileDir)
@@ -90,7 +87,6 @@ int32_t RPHgmXMLParser::ParseNode(xmlNode& node, std::vector<std::string>& data)
         HGM_LOGD("%{public}s stop parsing ParseNode, no children nodes", __func__);
         return XML_PARSE_INTERNAL_FAIL;
     }
-
     currNode = currNode->xmlChildrenNode;
     for (; currNode; currNode = currNode->next) {
         if (currNode->type != XML_ELEMENT_NODE) {
@@ -113,7 +109,6 @@ int32_t RPHgmXMLParser::ParseNode(xmlNode& node, std::unordered_map<std::string,
         HGM_LOGD("%{public}s stop parsing ParseNode, no children nodes", __func__);
         return XML_PARSE_INTERNAL_FAIL;
     }
-
     currNode = currNode->xmlChildrenNode;
     for (; currNode; currNode = currNode->next) {
         if (currNode->type != XML_ELEMENT_NODE) {

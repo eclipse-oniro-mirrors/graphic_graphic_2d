@@ -166,10 +166,7 @@ public:
 
     // For LTPO: Transmit data in uiFrameworkTypeTable and uiFrameworkDirtyNodes
     // between RSRenderNode and HGM model by RSContext.
-    std::vector<std::string>& GetMutableUiFrameworkTypeTable()
-    {
-        return uiFrameworkTypeTable_;
-    }
+    std::vector<std::string>& GetMutableUiFrameworkTypeTable() { return uiFrameworkTypeTable_; }
 
     const std::vector<std::string>& GetUiFrameworkTypeTable() const
     {

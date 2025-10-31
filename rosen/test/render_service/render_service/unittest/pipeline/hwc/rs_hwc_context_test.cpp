@@ -54,7 +54,7 @@ HWTEST_F(RSHwcContextTest, CheckPackageInConfigList, TestSize.Level1)
     std::unordered_map<std::string, std::string> sourceTuningConfig = {{"com.youku.next", "1"}};
     std::unordered_map<std::string, std::string> solidLayerConfig = {{"com.youku.next", "1"}};
     auto hwcContext = std::make_shared<RSHwcContext>(sourceTuningConfig, solidLayerConfig);
-    std::vector<std::string> pkgs = {};
+    std::vector<std::string> pkgs;
     pkgs.push_back("com.youku.next");
     auto& rsCommonHook = RsCommonHook::Instance();
     hwcContext->sourceTuningConfig_["com.youku.next"] = "1";

@@ -27,13 +27,13 @@ class RSHwcContext {
 public:
     RSHwcContext(const std::unordered_map<std::string, std::string>& sourceTuningConfig,
         const std::unordered_map<std::string, std::string>& solidLayerConfig)
-        : hwcSourceTuningConfig_(sourceTuningConfig), hwcSolidLayerConfig_(solidLayerConfig) {};
+        : hwcSourceTuningConfig_(sourceTuningConfig), hwcSolidLayerConfig_(solidLayerConfig) {}
     ~RSHwcContext() = default;
 
     RSHwcContext(const RSHwcContext&) = delete;
-    RSHwcContext(const RSHwcContext&&) = delete;
+    RSHwcContext(RSHwcContext&&) = delete;
     RSHwcContext& operator=(const RSHwcContext&) = delete;
-    RSHwcContext& operator=(const RSHwcContext&&) = delete;
+    RSHwcContext& operator=(RSHwcContext&&) = delete;
 
     // use in temporary scheme with background alpha
     void CheckPackageInConfigList(const std::vector<std::string>& pkgs);
