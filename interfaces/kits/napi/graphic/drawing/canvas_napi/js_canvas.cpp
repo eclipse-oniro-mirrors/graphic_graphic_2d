@@ -14,10 +14,11 @@
  */
 
 #include "js_canvas.h"
-#include "js_native_api.h"
+
 #include <mutex>
 #include <cstdint>
 #include <vector>
+
 #ifdef USE_M133_SKIA
 #include "src/base/SkUTF.h"
 #else
@@ -28,9 +29,9 @@
 #include "pixel_map_napi.h"
 #endif
 #include "native_value.h"
+#include "draw/blend_mode.h"
 #include "draw/canvas.h"
 #include "draw/path.h"
-#include "draw/blend_mode.h"
 #include "image/image.h"
 #include "render/rs_pixel_map_shader.h"
 #include "text/text.h"
@@ -51,6 +52,7 @@
 #include "text_blob_napi/js_text_blob.h"
 #include "roundRect_napi/js_roundrect.h"
 #include "js_drawing_utils.h"
+#include "js_native_api.h"
 #include "utils/performanceCaculate.h"
 #if defined(OHOS_PLATFORM) || defined(ROSEN_ARKUI_X)
 #include "pipeline/rs_recording_canvas.h"
@@ -1338,7 +1340,11 @@ bool GetPositions(napi_env env, uint32_t pointLength, napi_value& positionsArray
     std::vector<Drawing::Point>& positions)
 {
     uint32_t positionsSize = 0;
-    napi_get_array_length(env, positionsArray, &positionsSize);
+    if (napi_get_array_length(env, positionsArray, &positionsSize) != napi_ok) {
+        ROSEN_LOGE("JsCanvas::OnDrawVertices positionsArray is invalid");
+        NapiThrowError(env, DrawingErrorCode::ERROR_PARAM_VERIFICATION_FAILED, "Invalid positions params.");
+        return false;
+    };
     if (positionsSize != pointLength) {
         ROSEN_LOGE("JsCanvas::OnDrawVertices positionsSize is invalid");
         NapiThrowError(env, DrawingErrorCode::ERROR_PARAM_VERIFICATION_FAILED, "Invalid positions params.");
@@ -1407,11 +1413,12 @@ bool GetIndices(napi_env env, uint32_t indicesLength, napi_value& indicesArray,
 {
     uint32_t indicesSize = 0;
     napi_get_array_length(env, indicesArray, &indicesSize);
-    if (indicesSize != indicesLength) {
-        ROSEN_LOGE("JsCanvas::OnDrawVertices IndicesSize is Invalid");
-        NapiThrowError(env, DrawingErrorCode::ERROR_PARAM_VERIFICATION_FAILED, "Invalid indices params.");
-        return false;
-    } else if (indicesSize != 0 && indicesSize == indicesLength) {
+    if (indicesSize != 0) {
+        if (indicesSize != indicesLength) {
+            ROSEN_LOGE("JsCanvas::OnDrawVertices IndicesSize is Invalid");
+            NapiThrowError(env, DrawingErrorCode::ERROR_PARAM_VERIFICATION_FAILED, "Invalid indices params.");
+            return false;
+        }
         indices = std::make_unique<uint16_t[]>(indicesSize);
         auto indicesPtr = indices.get();
         for (uint32_t i = 0; i < indicesSize; i++) {
@@ -1420,6 +1427,11 @@ bool GetIndices(napi_env env, uint32_t indicesLength, napi_value& indicesArray,
             uint32_t vertex = 0;
             if (napi_get_value_uint32(env, tempVertex, &vertex) != napi_ok) {
                 ROSEN_LOGE("JsCanvas::OnDrawVertices indices is Invalid");
+                NapiThrowError(env, DrawingErrorCode::ERROR_PARAM_VERIFICATION_FAILED, "Invalid indices params.");
+                return false;
+            }
+            if (vertex > std::numeric_limits<uint16_t>::max()) {
+                ROSEN_LOGE("AniCanvas::OnDrawVertices indices value exceeds uint16_t range");
                 NapiThrowError(env, DrawingErrorCode::ERROR_PARAM_VERIFICATION_FAILED, "Invalid indices params.");
                 return false;
             }
@@ -1470,13 +1482,12 @@ napi_value JsCanvas::OnDrawVertices(napi_env env, napi_callback_info info)
     auto vertexMode = static_cast<VertexMode>(modeTemp);
     GET_ENUM_PARAM(ARGC_SEVEN, modeTemp, 0, static_cast<int32_t>(BlendMode::LUMINOSITY));
     auto blendMode = static_cast<BlendMode>(modeTemp);
-    Vertices* vertices = new Vertices();
+    std::unique_ptr<Vertices> vertices = std::make_unique<Vertices>();
     bool result = vertices->MakeCopy(vertexMode, vertexCount, positions.data(),
         texs.data(), colors.get(), indices.get() ? indexCount : 0, indices.get());
     if (result) {
         JS_CALL_DRAWING_FUNC(m_canvas->DrawVertices(*vertices, blendMode));
     }
-    delete vertices;
     return nullptr;
 }
 

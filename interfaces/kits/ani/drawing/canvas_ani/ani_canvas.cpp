@@ -13,16 +13,18 @@
  * limitations under the License.
  */
 
-#include <cstdint>
-#include "ani.h"
 #include "ani_canvas.h"
-#include "utils/point.h"
-#include "utils/vertices.h"
+
+#include <cstdint>
+
+#include "ani.h"
 #include "brush_ani/ani_brush.h"
 #include "effect/color_space.h"
 #include "pixel_map_taihe_ani.h"
 #include "image/image.h"
 #include "pen_ani/ani_pen.h"
+#include "utils/point.h"
+#include "utils/vertices.h"
 #include "sampling_options_ani/ani_sampling_options.h"
 
 namespace OHOS::Rosen {
@@ -444,6 +446,10 @@ bool AniCanvas::GetVerticesUint16(ani_env* env, ani_object verticesObj, uint16_t
             ROSEN_LOGE("AniCanvas::GetVerticesUint16 vertices is invalid");
             return false;
         }
+        if (vertex > std::numeric_limits<uint16_t>::max() || vertex < 0) {
+            ROSEN_LOGE("AniCanvas::GetVerticesUint16 vertices value out of uint16_t range [0, 65535]");
+            return false;
+        }
         vertices[i] = static_cast<uint16_t>(vertex);
     }
     return true;
@@ -459,6 +465,10 @@ bool AniCanvas::GetVerticesUint32(ani_env* env, ani_object verticesObj, uint32_t
             ANI_OK != env->Object_CallMethodByName_Int(
                 static_cast<ani_object>(vertexRef), "unboxed", ":i", &vertex)) {
             ROSEN_LOGE("AniCanvas::GetVerticesUint32 vertices is invalid");
+            return false;
+        }
+        if (vertex < 0) {
+            ROSEN_LOGE("AniCanvas::GetVerticesUint32 vertices value is negative value");
             return false;
         }
         vertices[i] = static_cast<uint32_t>(vertex);
@@ -692,12 +702,12 @@ bool AniCanvas::GetIndices(ani_env* env, ani_int indexCount,
         return false;
     }
     int32_t indicesSize = aniIndicesLength;
-    if (indicesSize != indexCount) {
-        ROSEN_LOGE("AniCanvas::DrawVertices indicesSize is Invalid");
-        ThrowBusinessError(env, DrawingErrorCode::ERROR_PARAM_VERIFICATION_FAILED, "Invalid indices params.");
-        return false;
-    }
     if (indicesSize != 0) {
+        if (indicesSize != indexCount) {
+            ROSEN_LOGE("AniCanvas::DrawVertices indicesSize is Invalid");
+            ThrowBusinessError(env, DrawingErrorCode::ERROR_PARAM_VERIFICATION_FAILED, "Invalid indices params.");
+            return false;
+        }
         indices = std::make_unique<uint16_t[]>(indicesSize);
         if (!GetVerticesUint16(env, indicesObj, indices.get(), indicesSize)) {
             ROSEN_LOGE("AniCanvas::DrawVertices GetIndices is invalid");
