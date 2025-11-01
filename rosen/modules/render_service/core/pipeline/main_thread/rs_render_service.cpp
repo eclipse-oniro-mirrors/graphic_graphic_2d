@@ -143,8 +143,8 @@ if (Drawing::SystemProperties::IsUseVulkan()) {
         if (RSUniRenderJudgement::GetUniRenderEnabledType() == UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL) {
             offset = HgmCore::Instance().IsDelayMode() ? UNI_RENDER_VSYNC_OFFSET_DELAY_MODE : UNI_RENDER_VSYNC_OFFSET;
         }
-        rsVSyncController_ = new VSyncController(generator, offset);
-        appVSyncController_ = new VSyncController(generator, offset);
+        rsVSyncController_ = new VSyncController(generator, HgmCore::Instance().GetRsPhaseOffset(offset));
+        appVSyncController_ = new VSyncController(generator, HgmCore::Instance().GetAppPhaseOffset(offset));
     } else {
         rsVSyncController_ = new VSyncController(generator, 0);
         appVSyncController_ = new VSyncController(generator, 0);

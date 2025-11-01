@@ -51,6 +51,8 @@ std::map<uint32_t, int64_t> IDEAL_PERIOD = {
     { 15, 66666666 },
     { 10, 100000000 },
 };
+constexpr int64_t RENDER_VSYNC_OFFSET_DELAY_MIN = -16000000; // ns
+constexpr int64_t RENDER_VSYNC_OFFSET_DELAY_MAX = 16000000; // ns
 } // namespace
 
 void HgmCore::SysModeChangeProcess(const char* key, const char* value, void* context)
@@ -298,6 +300,22 @@ void HgmCore::SetPerformanceConfig()
     } else {
         isDelayMode_ = true;
         HGM_LOGW("HgmCore failed to find piplineDelayModeEnable_ strategy for LTPO");
+    }
+    if (curScreenSetting.performanceConfig.count("rsPhaseOffset") != 0 &&
+        XMLParser::IsNumber(curScreenSetting.performanceConfig.at("rsPhaseOffset"))) {
+        rsPhaseOffset_ = std::stoll(curScreenSetting.performanceConfig.at("rsPhaseOffset"));
+        if (rsPhaseOffset_ < RENDER_VSYNC_OFFSET_DELAY_MIN || rsPhaseOffset_ > RENDER_VSYNC_OFFSET_DELAY_MAX) {
+            rsPhaseOffset_ = 0;
+        }
+        isVsyncOffsetCustomized_ = true;
+    }
+    if (curScreenSetting.performanceConfig.count("appPhaseOffset") != 0 &&
+        XMLParser::IsNumber(curScreenSetting.performanceConfig.at("appPhaseOffset"))) {
+        appPhaseOffset_ = std::stoll(curScreenSetting.performanceConfig.at("appPhaseOffset"));
+        if (appPhaseOffset_ < RENDER_VSYNC_OFFSET_DELAY_MIN || appPhaseOffset_ > RENDER_VSYNC_OFFSET_DELAY_MAX) {
+            appPhaseOffset_ = 0;
+        }
+        isVsyncOffsetCustomized_ = true;
     }
 }
 

@@ -321,6 +321,16 @@ public:
         return isDelayMode_;
     }
 
+    int64_t GetRsPhaseOffset(const int64_t orgValue) const
+    {
+        return isVsyncOffsetCustomized_ ? rsPhaseOffset_ : orgValue;
+    }
+
+    int64_t GetAppPhaseOffset(const int64_t orgValue) const
+    {
+        return isVsyncOffsetCustomized_ ? appPhaseOffset_ : orgValue;
+    }
+
     void SetMultiSelfOwnedScreenEnable(bool multiSelfOwnedScreenEnable)
     {
         multiSelfOwnedScreenEnable_.store(multiSelfOwnedScreenEnable);
@@ -400,6 +410,9 @@ private:
     std::atomic<bool> multiSelfOwnedScreenEnable_{ false };
     std::atomic<bool> postHgmTaskFlag_{ true };
     HgmHfbcConfig hfbcConfig_;
+    int64_t rsPhaseOffset_ = 0;
+    int64_t appPhaseOffset_ = 0;
+    bool isVsyncOffsetCustomized_ = false;
 
     friend class HWCParam;
 };
