@@ -2984,6 +2984,15 @@ void RSRenderServiceConnection::NotifyPackageEvent(uint32_t listSize, const std:
         return;
     }
     mainThread_->NotifyPackageEvent(packageList);
+    auto task = [weakThis = wptr<RSRenderServiceConnection>(this), packageList]() -> void {
+        sptr<RSRenderServiceConnection> connection = weakThis.promote();
+        if (!connection || connection->mainThread_) {
+            return;
+        }
+        connection->mainThread_->GetHwcContext()->CheckPackageInConfigList(packageList);
+    };
+    mainThread_->PostTask(task);
+
     HgmTaskHandleThread::Instance().PostTask([pid = remotePid_, listSize, packageList]() {
         auto frameRateMgr = HgmCore::Instance().GetFrameRateMgr();
         if (frameRateMgr != nullptr) {

@@ -60,7 +60,7 @@
 #endif
 
 #include "hgm_core.h"
-
+#include "pipeline/hwc/rs_hwc_context.h"
 namespace OHOS::Rosen {
 #if defined(ACCESSIBILITY_ENABLE)
 class AccessibilityObserver;
@@ -468,6 +468,8 @@ public:
 
     bool IsReadyForSyncTask() const;
 
+    const std::shared_ptr<RSHwcContext>& GetHwcContext() const { return hwcContext_; }
+
 private:
     using TransactionDataIndexMap = std::unordered_map<pid_t,
         std::pair<uint64_t, std::vector<std::unique_ptr<RSTransactionData>>>>;
@@ -800,6 +802,7 @@ private:
     bool doDirectComposition_ = true;
     bool lastAnimateNeedRequestNextVsync_ = false;
     RSDirectCompositionHelper directComposeHelper_;
+    std::shared_ptr<RSHwcContext> hwcContext_ = nullptr;
 
     // for client node tree dump
     struct NodeTreeDumpTask {

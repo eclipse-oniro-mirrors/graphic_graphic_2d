@@ -19,9 +19,13 @@
 #include "parameters.h"
 #include "pipeline/hardware_thread/rs_realtime_refresh_rate_manager.h"
 #include "pipeline/main_thread/rs_main_thread.h"
+#include "rp_hgm_xml_parser.h"
 
 namespace OHOS {
 namespace Rosen {
+namespace {
+constexpr const char* HGM_CONFIG_PATH = "/sys_prod/etc/graphic/hgm_policy_config.xml";
+}
 
 HgmContext::HgmContext()
 {
@@ -30,6 +34,21 @@ HgmContext::HgmContext()
     convertFrameRateFunc_ = [this](const RSPropertyUnit unit, float velocity, int32_t area, int32_t length) -> int32_t {
         return rpFrameRatePolicy_.GetExpectedFrameRate(unit, velocity, area, length);
     };
+}
+
+int32_t HgmContext::InitHgmConfig(std::unordered_map<std::string, std::string>& sourceTuningConfig,
+    std::unordered_map<std::string, std::string>& solidLayerConfig, std::vector<std::string>& appBufferList)
+{
+    auto parser = std::make_unique<RPHgmXMLParser>();
+    if (parser->LoadConfiguration(HGM_CONFIG_PATH) != EXEC_SUCCESS) {
+        HGM_LOGW("HgmRPContext failed to load hgm xml configuration file");
+        return XML_FILE_LOAD_FAIL;
+    }
+    sourceTuningConfig = parser->GetSourceTuningConfig();
+    solidLayerConfig = parser->GetSolidLayerConfig();
+    appBufferList = parser->GetAppBufferList();
+
+    return EXEC_SUCCESS;
 }
 
 void HgmContext::InitHgmTaskHandleThread(
@@ -104,13 +123,6 @@ void HgmContext::ProcessHgmFrameRate(
     if (frameRateMgr == nullptr || rsVSyncDistributor == nullptr) {
         return;
     }
-
-    static std::once_flag initUIFwkTableFlag;
-    std::call_once(initUIFwkTableFlag, [this]() {
-        if (auto config = HgmCore::Instance().GetPolicyConfigData(); config != nullptr) {
-            RSMainThread::Instance()->GetContext().SetUiFrameworkTypeTable(config->appBufferList_);
-        }
-    });
 
     if (frameRateMgr->AdaptiveStatus() == SupportASStatus::SUPPORT_AS) {
         frameRateMgr->HandleGameNode(RSMainThread::Instance()->GetContext().GetNodeMap());

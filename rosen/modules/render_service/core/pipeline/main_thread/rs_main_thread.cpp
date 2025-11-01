@@ -726,6 +726,10 @@ void RSMainThread::Init()
     RS_LOGI("HgmTaskHandleThread init");
     hgmContext_.InitHgmTaskHandleThread(
         rsVSyncController_, appVSyncController_, vsyncGenerator_, appVSyncDistributor_);
+    hwcContext_ = std::make_shared<RSHwcContext>(
+        HWCParam::GetSourceTuningForAppMap(), HWCParam::GetSolidColorLayerMap());
+    hgmContext_.InitHgmConfig(hwcContext_->GetMutableSourceTuningConfig(), hwcContext_->GetMutableSolidLayerConfig(),
+        context_->GetMutableUiFrameworkTypeTable());
     SubscribeAppState();
     PrintCurrentStatus();
     RS_LOGI("UpdateGpuContextCacheSize");

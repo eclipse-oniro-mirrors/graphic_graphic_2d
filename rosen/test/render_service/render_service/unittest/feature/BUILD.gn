@@ -34,6 +34,7 @@ group("unittest") {
     ":RSUniHwcComputeUtilTest",
     ":RSUniUiCaptureTest",
     ":RSVBlankIdleCorrectorTest",
+    ":HgmContextTest",
     ":LppVideoHandlerTest",
     ":RSWindowKeyFrameTest",
     ":RSWindowCaptureTaskTest",
@@ -720,6 +721,7 @@ ohos_unittest("HgmContextTest") {
   module_out_path = module_output_path
   sources = [
     "hyper_graphic_manager/hgm_context_test.cpp",
+    "hyper_graphic_manager/rp_hgm_xml_parser_test.cpp",
     "hyper_graphic_manager/rp_frame_rate_policy_test.cpp",
   ]
   deps = [
@@ -728,6 +730,7 @@ ohos_unittest("HgmContextTest") {
   ]
   external_deps = [
     "c_utils:utils",
+    "ffrt:libffrt",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "init:libbegetutil",
