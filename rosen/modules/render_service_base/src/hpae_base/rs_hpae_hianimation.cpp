@@ -297,7 +297,7 @@ void HianimationManager::HianimationDumpDebugInfo(uint32_t taskId)
 
     if (hianimationDevice_ == nullptr) {
         HPAE_LOGE("device is nullptr");
-        return -1;
+        return;
     }
 
     RS_OPTIONAL_TRACE_NAME_FMT("Hianimation: HianimationDumpDebugInfo: %d", taskId);

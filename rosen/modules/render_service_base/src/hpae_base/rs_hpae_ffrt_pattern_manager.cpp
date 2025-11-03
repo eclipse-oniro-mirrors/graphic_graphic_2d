@@ -125,8 +125,8 @@ bool RSHpaeFfrtPatternManager::MHCDlOpen()
         dlsym(g_mhcHandle, "mhc_gp_vulkan_task_get_notify_event"));
     g_GPTaskSubmit = reinterpret_cast<GPGPTaskSubmitFunc>(dlsym(g_mhcHandle, "mhc_gp_task_submit"));
 
-    bool dlsymDone =  g_getGPInstance && g_GPInit && g_GPDestroy && g_GPRequestEGraph && g_GPReleaseEGraph && g_GPWait &&
-        g_GPQueryTask && g_GPGetVulkanWaitEvent && g_GPGetVulkanNotifyEvent && g_GPTaskSubmit && g_GPReleaseAll {
+    bool dlsymDone = g_getGPInstance && g_GPInit && g_GPDestroy && g_GPRequestEGraph && g_GPReleaseEGraph && g_GPWait &&
+        g_GPQueryTask && g_GPGetVulkanWaitEvent && g_GPGetVulkanNotifyEvent && g_GPTaskSubmit && g_GPReleaseAll;
     if (!dlsymDone) {
         HPAE_LOGE("mhc_so dlsym error\n");
         dlclose(g_mhcHandle);
