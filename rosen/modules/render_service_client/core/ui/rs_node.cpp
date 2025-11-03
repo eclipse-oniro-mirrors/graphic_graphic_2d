@@ -70,7 +70,6 @@
 #include "modifier_ng/appearance/rs_point_light_modifier.h"
 #include "modifier_ng/appearance/rs_shadow_modifier.h"
 #include "modifier_ng/appearance/rs_use_effect_modifier.h"
-#include "modifier_ng/appearance/rs_union_modifier.h"
 #include "modifier_ng/appearance/rs_visibility_modifier.h"
 #include "modifier_ng/background/rs_background_color_modifier.h"
 #include "modifier_ng/background/rs_background_image_modifier.h"
@@ -2596,7 +2595,7 @@ void RSNode::SetAlwaysSnapshot(bool enable)
 
 void RSNode::SetUseUnion(bool useUnion)
 {
-    SetPropertyNG<ModifierNG::RSUnionModifier, &ModifierNG::RSUnionModifier::SetUseUnion>(useUnion);
+    SetPropertyNG<ModifierNG::RSBoundsModifier, &ModifierNG::RSBoundsModifier::SetUseUnion>(useUnion);
 }
 
 void RSNode::SetSDFMask(const std::shared_ptr<RSNGMaskBase>& mask)
@@ -2604,14 +2603,14 @@ void RSNode::SetSDFMask(const std::shared_ptr<RSNGMaskBase>& mask)
     if (!mask) {
         std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
         CHECK_FALSE_RETURN(CheckMultiThreadAccess(__func__));
-        auto modifier = GetModifierCreatedBySetter(ModifierNG::RSModifierType::UNION);
+        auto modifier = GetModifierCreatedBySetter(ModifierNG::RSModifierType::BOUNDS);
         if (modifier == nullptr || !modifier->HasProperty(ModifierNG::RSPropertyType::SDF_MASK)) {
             return;
         }
         modifier->DetachProperty(ModifierNG::RSPropertyType::SDF_MASK);
         return;
     }
-    SetPropertyNG<ModifierNG::RSUnionModifier, &ModifierNG::RSUnionModifier::SetSDFMask>(mask);
+    SetPropertyNG<ModifierNG::RSBoundsModifier, &ModifierNG::RSBoundsModifier::SetSDFMask>(mask);
 }
 
 void RSNode::SetUseShadowBatching(bool useShadowBatching)

@@ -622,7 +622,7 @@ HWTEST_F(RSNodeTest2, GetLocalGeometry, TestSize.Level1)
  */
 HWTEST_F(RSNodeTest2, SetSDFUnionOPMask, TestSize.Level1)
 {
-    auto modifierType = ModifierNG::RSModifierType::UNION;
+    auto modifierType = ModifierNG::RSModifierType::BOUNDS;
     auto rsNode = RSCanvasNode::Create();
     rsNode->SetSDFMask(nullptr);
     EXPECT_EQ(rsNode->GetModifierCreatedBySetter(modifierType), nullptr);
@@ -658,7 +658,7 @@ HWTEST_F(RSNodeTest2, SetSDFUnionOPMask, TestSize.Level1)
  */
 HWTEST_F(RSNodeTest2, SetSDFSmoothUnionOPMask, TestSize.Level1)
 {
-    auto modifierType = ModifierNG::RSModifierType::UNION;
+    auto modifierType = ModifierNG::RSModifierType::BOUNDS;
     auto rsNode = RSCanvasNode::Create();
     rsNode->SetSDFMask(nullptr);
     EXPECT_EQ(rsNode->GetModifierCreatedBySetter(modifierType), nullptr);
@@ -689,7 +689,6 @@ HWTEST_F(RSNodeTest2, SetSDFSmoothUnionOPMask, TestSize.Level1)
     EXPECT_EQ(properties.find(ModifierNG::RSPropertyType::SDF_MASK), properties.end());
 }
 
-
 /**
  * @tc.name: SetSDFRRectMask
  * @tc.desc: test results of SDF_RRECT_MASK and modifier path
@@ -697,7 +696,7 @@ HWTEST_F(RSNodeTest2, SetSDFSmoothUnionOPMask, TestSize.Level1)
  */
 HWTEST_F(RSNodeTest2, SetSDFRRectMask, TestSize.Level1)
 {
-    auto modifierType = ModifierNG::RSModifierType::UNION;
+    auto modifierType = ModifierNG::RSModifierType::BOUNDS;
     auto rsNode = RSCanvasNode::Create();
     rsNode->SetSDFMask(nullptr);
     EXPECT_EQ(rsNode->GetModifierCreatedBySetter(modifierType), nullptr);
@@ -706,21 +705,21 @@ HWTEST_F(RSNodeTest2, SetSDFRRectMask, TestSize.Level1)
     auto mask0 = RSNGMaskBase::Create(RSNGEffectType::SDF_RRECT_MASK);
     auto mask = std::static_pointer_cast<RSNGSDFRRectMask>(mask0);
 
-    auto sdfUnionModifier = std::make_shared<ModifierNG::RSUnionModifier>();
-    rsNode->AddModifier(sdfUnionModifier);
+    auto boundsModifier = std::make_shared<ModifierNG::RSBoundsModifier>();
+    rsNode->AddModifier(boundsModifier);
 
-    EXPECT_EQ(sdfUnionModifier->GetSDFMask(), nullptr);
-    EXPECT_EQ(sdfUnionModifier->GetUnionSpacing(), 0.0f);
-    EXPECT_EQ(sdfUnionModifier->GetUseUnion(), false);
+    EXPECT_EQ(boundsModifier->GetSDFMask(), nullptr);
+    EXPECT_EQ(boundsModifier->GetUnionSpacing(), 0.0f);
+    EXPECT_EQ(boundsModifier->GetUseUnion(), false);
 
     // test the path of using modifier to set these properties
-    sdfUnionModifier->SetSDFMask(mask);
-    sdfUnionModifier->SetUnionSpacing(0.5f);
-    sdfUnionModifier->SetUseUnion(true);
+    boundsModifier->SetSDFMask(mask);
+    boundsModifier->SetUnionSpacing(0.5f);
+    boundsModifier->SetUseUnion(true);
 
-    EXPECT_NE(sdfUnionModifier->GetSDFMask(), nullptr);
-    EXPECT_EQ(sdfUnionModifier->GetUnionSpacing(), 0.5f);
-    EXPECT_EQ(sdfUnionModifier->GetUseUnion(), true);
+    EXPECT_NE(boundsModifier->GetSDFMask(), nullptr);
+    EXPECT_EQ(boundsModifier->GetUnionSpacing(), 0.5f);
+    EXPECT_EQ(boundsModifier->GetUseUnion(), true);
 }
 
 /**
@@ -730,7 +729,7 @@ HWTEST_F(RSNodeTest2, SetSDFRRectMask, TestSize.Level1)
  */
 HWTEST_F(RSNodeTest2, SetUseUnion, TestSize.Level1)
 {
-    auto modifierType = ModifierNG::RSModifierType::UNION;
+    auto modifierType = ModifierNG::RSModifierType::BOUNDS;
     auto rsNode = RSCanvasNode::Create();
 
     EXPECT_EQ(rsNode->GetModifierCreatedBySetter(modifierType), nullptr);

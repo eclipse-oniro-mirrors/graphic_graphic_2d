@@ -18,5 +18,16 @@
 namespace OHOS::Rosen::ModifierNG {
 const RSBoundsRenderModifier::LegacyPropertyApplierMap RSBoundsRenderModifier::LegacyPropertyApplierMap_ = {
     { RSPropertyType::BOUNDS, RSRenderModifier::PropertyApplyHelper<Vector4f, &RSProperties::SetBounds> },
+    { RSPropertyType::USE_UNION, RSRenderModifier::PropertyApplyHelper<bool, &RSProperties::SetUseUnion> },
+    { RSPropertyType::UNION_SPACING, RSRenderModifier::PropertyApplyHelper<float, &RSProperties::SetUnionSpacing> },
+    { RSPropertyType::SDF_MASK,
+        RSRenderModifier::PropertyApplyHelper<std::shared_ptr<RSNGRenderMaskBase>, &RSProperties::SetSDFMask> },
 };
+
+void RSBoundsRenderModifier::ResetProperties(RSProperties& properties)
+{
+    properties.SetUseUnion(false);
+    properties.SetUnionSpacing(0.f);
+    properties.SetSDFMask(nullptr);
+}
 } // namespace OHOS::Rosen::ModifierNG

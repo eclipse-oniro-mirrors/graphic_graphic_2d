@@ -107,4 +107,33 @@ void RSBoundsModifier::ApplyGeometry(const std::shared_ptr<RSObjAbsGeometry>& ge
         geometry->SetRect(bounds.x_, bounds.y_, bounds.z_, bounds.w_);
     }
 }
+void RSBoundsModifier::SetUseUnion(bool useUnion)
+{
+    Setter<RSProperty>(RSPropertyType::USE_UNION, useUnion);
+}
+
+bool RSBoundsModifier::GetUseUnion() const
+{
+    return Getter(RSPropertyType::USE_UNION, false);
+}
+
+void RSBoundsModifier::SetUnionSpacing(float spacing)
+{
+    Setter(RSPropertyType::UNION_SPACING, spacing);
+}
+
+float RSBoundsModifier::GetUnionSpacing() const
+{
+    return Getter(RSPropertyType::UNION_SPACING, 0.f);
+}
+
+void RSBoundsModifier::SetSDFMask(const std::shared_ptr<RSNGMaskBase>& mask)
+{
+    Setter<RSProperty, std::shared_ptr<RSNGMaskBase>>(RSPropertyType::SDF_MASK, mask);
+}
+
+std::shared_ptr<RSNGMaskBase> RSBoundsModifier::GetSDFMask() const
+{
+    return Getter<std::shared_ptr<RSNGMaskBase>>(RSPropertyType::SDF_MASK, nullptr);
+}
 } // namespace OHOS::Rosen::ModifierNG
