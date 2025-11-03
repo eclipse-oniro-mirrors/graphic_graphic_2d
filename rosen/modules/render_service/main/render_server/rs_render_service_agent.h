@@ -26,7 +26,7 @@ class ScheduledTask : public RefBase {
 public:
     static auto Create(Task&& task)
     {
-        sptr<ScheduledTask<Task>> t(new ScheduledTask(std::forward<Task&&>(task)));
+        sptr<ScheduledTask<Task>> t(new ScheduledTask(std::move(task)));
         return std::make_pair(t, t->task_.get_future());
     }
 
@@ -37,7 +37,7 @@ private:
     ~ScheduledTask() override = default;
 
     using Return = std::invoke_result_t<Task>;
-    std::packaged_task<Return()> task_;
+    std:: <Return()> task_;
 };
 } // namespace St
 
@@ -52,8 +52,8 @@ public:
     template<typename Task, typename Return = std::invoke_result_t<Task>>
     std::future<Return> ScheduleTask(Task&& task)
     {
-        auto [scheduledTask, taskFuture] = St::ScheduledTask<Task>::Create(std::forward<Task&&>(task));
-        PostTask([t(std::move(scheduledTask))]() { t->Run(); });
+        auto [scheduledTask, taskFuture] = St::ScheduledTask<Task>::Create(std::move(task));
+        PostTaskImmediate([t(std::move(scheduledTask))]() { t->Run(); });
         return std::move(taskFuture);
     }
 
