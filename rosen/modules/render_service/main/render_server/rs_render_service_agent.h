@@ -37,7 +37,7 @@ private:
     ~ScheduledTask() override = default;
 
     using Return = std::invoke_result_t<Task>;
-    std:: <Return()> task_;
+    std::packaged_task<Return()> task_;
 };
 } // namespace St
 
