@@ -120,14 +120,15 @@ bool RSRenderNode::IsPureBackgroundColor() const
         RS_LOGE("drawableVec_ is nullptr");
         return false;
     }
-    auto &drawableVec = *drawableVec_;
+    auto& drawableVec = *drawableVec_;
 #else
-    auto &drawableVec = drawableVec_;
+    auto& drawableVec = drawableVec_;
 #endif
 
+    // node is a pure background node when its drawableVec is within pureBackgroundColorSlots
     for (int8_t i = 0; i < static_cast<int8_t>(RSDrawableSlot::MAX); ++i) {
         if (drawableVec[i] &&
-                !pureBackgroundColorSlots.count(static_cast<RSDrawableSlot>(i))) {
+            !pureBackgroundColorSlots.count(static_cast<RSDrawableSlot>(i))) {
             return false;
         }
     }
