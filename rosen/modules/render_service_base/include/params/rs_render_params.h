@@ -252,6 +252,11 @@ public:
     {
         return isDrawingCacheChanged_;
     }
+    void SetForceDisableNodeGroup(bool forceDisable);
+    bool IsForceDisableNodeGroup() const
+    {
+        return isForceDisableNodeGroup_;
+    }
     void SetNeedUpdateCache(bool needUpdateCache)
     {
         isNeedUpdateCache_ = needUpdateCache;
@@ -541,6 +546,7 @@ private:
     bool childHasVisibleFilter_ = false;
     bool hasSandBox_ = false;
     bool isDrawingCacheChanged_ = false;
+    bool isForceDisableNodeGroup_ = false;
     std::atomic_bool isNeedUpdateCache_ = false;
     bool drawingCacheIncludeProperty_ = false;
     bool isNodeGroupHasChildInBlacklist_ = false;
