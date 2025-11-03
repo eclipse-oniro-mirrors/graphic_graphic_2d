@@ -442,7 +442,7 @@ void RSUniHwcVisitor::UpdateHwcNodeEnableByBackgroundAlpha(RSSurfaceRenderNode& 
     }
     RS_LOGD("solidLayer: SolidLayer enabling conditions, isTargetNodeType: %{public}d, isTargetColor: %{public}d, "
         "Alpha: %{public}d, isTargetAppBundle: %{public}d, !isSpecialNodeType: %{public}d, !isHdrOn: %{public}d, "
-        " !hasBrightness: %{public}d",
+        "!hasBrightness: %{public}d",
         isTargetNodeType, isTargetColor, renderProperties.GetAlpha() == 1,
         !isSpecialNodeType, isTargetAppBundle, !isHdrOn, !hasBrightness);
     ProcessSolidLayerDisabled(node);
