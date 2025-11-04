@@ -169,7 +169,7 @@ int32_t RSHeteroHDRHpae::RequestHpaeChannel(HdrStatus curHandleHdrStatus)
         channelStatus = mdcDev_->requestChannelByCap(mdcDev_, channelCap);
     }
     if (channelStatus < 0) {
-        if(channelStatus == -1) {
+        if (channelStatus == -1) {
             RS_LOGE("[hdrHetero]:RSHeteroHDRHpae RequestHpaeChannel request MDC channel failed caps:%{public}" PRIu64,
                 channelCap);
         } else {
