@@ -166,12 +166,6 @@ bool RSAncoManager::IsAncoSfv(const uint32_t ancoFlags)
            static_cast<uint32_t>(AncoFlags::ANCO_SFV_NODE);
 }
 
-bool RSAncoManager::IsInSmartWindow(const uint32_t ancoFlags)
-{
-    return (ancoFlags & static_cast<uint32_t>(AncoFlags::SMART_WINDOW)) ==
-           static_cast<uint32_t>(AncoFlags::SMART_WINDOW);
-}
-
 bool RSAncoManager::ValidCropRect(const GraphicIRect& cropRect)
 {
     if (cropRect.w > 0 && cropRect.h > 0 && cropRect.x >= 0 && cropRect.y >= 0) {
