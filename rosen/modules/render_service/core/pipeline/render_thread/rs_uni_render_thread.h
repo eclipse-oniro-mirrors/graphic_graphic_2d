@@ -98,7 +98,7 @@ public:
     void SetClearMoment(ClearMemoryMoment moment);
     ClearMemoryMoment GetClearMoment() const;
     uint32_t GetRefreshRate() const;
-    void DumpMem(DfxString& log);
+    void DumpMem(DfxString& log, bool isLite = false);
     std::shared_ptr<Drawing::Image> GetWatermarkImg();
     uint64_t GetFrameCount() const
     {

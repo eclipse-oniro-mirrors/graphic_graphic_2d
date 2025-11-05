@@ -785,7 +785,7 @@ static void TrimMemGpuLimitType(Drawing::GPUContext* gpuContext, std::string& du
         + "==>" + FormatNumber(maxResourcesBytes) + "\n");
 }
 
-void RSUniRenderThread::DumpMem(DfxString& log)
+void RSUniRenderThread::DumpMem(DfxString& log, bool isLite)
 {
     std::vector<std::pair<NodeId, std::string>> nodeTags;
     const auto& nodeMap = RSMainThread::Instance()->GetContext().GetNodeMap();
@@ -794,7 +794,7 @@ void RSUniRenderThread::DumpMem(DfxString& log)
         std::string name = node->GetName() + " " + std::to_string(ExtractPid(nodeId)) + " " + std::to_string(nodeId);
         nodeTags.push_back({nodeId, name});
     });
-    PostSyncTask([&log, &nodeTags, this]() {
+    PostSyncTask([&log, &nodeTags, this, isLite]() {
         if (!uniRenderEngine_) {
             return;
         }
@@ -803,7 +803,7 @@ void RSUniRenderThread::DumpMem(DfxString& log)
             return;
         }
         auto gpuContext = renderContext->GetDrGPUContext();
-        MemoryManager::DumpDrawingGpuMemory(log, gpuContext, nodeTags);
+        MemoryManager::DumpDrawingGpuMemory(log, gpuContext, nodeTags, isLite);
     });
 }
 
