@@ -272,7 +272,7 @@ bool RSOpincDrawCache::IsOpincCacheMemExceedThreshold()
         return false;
     }
     int64_t cacheMem = RSOpincManager::Instance().GetOpincCacheMem();
-    static int64_t cacheMemThreshold = static_cast<int64_t>(screenRectInfo_.GetWidth()) *
+    int64_t cacheMemThreshold = static_cast<int64_t>(screenRectInfo_.GetWidth()) *
         static_cast<int64_t>(screenRectInfo_.GetHeight()) * SCREEN_RATIO;
     bool isExceed = cacheMem > cacheMemThreshold;
     if (isExceed) {

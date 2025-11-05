@@ -39,7 +39,7 @@ void RSOpincManager::AddOpincCacheMem(int64_t cacheMem)
 void RSOpincManager::ReduceOpincCacheMem(int64_t cacheMem)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    if (cacheMem_ > cacheMem) {
+    if (cacheMem_ >= cacheMem) {
         cacheMem_ -= cacheMem;
         cacheCount_--;
         return;
