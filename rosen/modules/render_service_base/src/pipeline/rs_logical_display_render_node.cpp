@@ -392,9 +392,9 @@ void RSLogicalDisplayRenderNode::SetCompositeType(CompositeType type)
     compositeType_ = type;
 }
 
-void RSLogicalDisplayRenderNode::UpdateFixedSize(bool isSnapshotRotation)
+void RSLogicalDisplayRenderNode::UpdateFixedSize(bool needSkip)
 {
-    if (IsRotationChanged() || isSnapshotRotation) {
+    if (needSkip) {
         // to get fixed size during rotation, use the width and height before rotation.
         return;
     }

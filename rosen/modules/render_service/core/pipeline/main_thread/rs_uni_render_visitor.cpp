@@ -966,7 +966,7 @@ void RSUniRenderVisitor::QuickPrepareLogicalDisplayRenderNode(RSLogicalDisplayRe
         node.UpdateDrawRectAndDirtyRegion(*dirtyManager, dirtyFlag_, prepareClipRect_, parentSurfaceNodeMatrix_);
     node.UpdateCurCornerInfo(curCornerRadius_, curCornerRect_);
     node.UpdateRotation();
-    node.UpdateFixedSize(
+    node.UpdateFixedSize(node.IsRotationChanged() ||
         RSMainThread::Instance()->GetSystemAnimatedScenes() == SystemAnimatedScenes::SNAPSHOT_ROTATION);
     RSUifirstManager::Instance().PreStatusProcess(displayNodeRotationChanged_ || isScreenRotationAnimating_);
 
