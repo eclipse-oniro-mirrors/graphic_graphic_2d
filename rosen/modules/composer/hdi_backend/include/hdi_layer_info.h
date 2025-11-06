@@ -653,6 +653,7 @@ public:
         nodeId_ = nodeId;
     }
 
+    // only anco use these interfaces
     void SetAncoFlags(const uint32_t ancoFlags) { ancoFlags_ = ancoFlags; }
     uint32_t GetAncoFlags() const { return ancoFlags_; }
     bool IsAncoNative() const
