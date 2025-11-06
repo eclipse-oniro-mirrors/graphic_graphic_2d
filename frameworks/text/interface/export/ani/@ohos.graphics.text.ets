@@ -291,7 +291,7 @@ namespace text {
     BREAK_HYPHEN,
   }
 
-  interface StrutStyle {
+  export interface StrutStyle {
     fontFamilies?: Array<string>;
     fontStyle?: FontStyle;
     fontWidth?: FontWidth;
@@ -305,7 +305,7 @@ namespace text {
     halfLeading?: boolean;
   }
 
-  interface TextTab {
+  export interface TextTab {
     alignment: TextAlign;
     location: double;
   }
@@ -325,7 +325,7 @@ namespace text {
     verticalAlign?: TextVerticalAlign;
   }
 
-  interface TextShadow {
+  export interface TextShadow {
     color?: common2D.Color;
     point?: common2D.Point;
     blurRadius?: double;
@@ -437,7 +437,7 @@ namespace text {
     }
   }
 
-  interface LineMetrics {
+  export interface LineMetrics {
     startIndex: int;
     endIndex: int;
     ascent: double;
