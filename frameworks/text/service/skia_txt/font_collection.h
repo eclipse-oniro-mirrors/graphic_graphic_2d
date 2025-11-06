@@ -103,6 +103,7 @@ private:
     std::unordered_set<TypefaceWithAlias, TypefaceWithAlias::Hasher> typefaceSet_;
     std::shared_mutex mutex_;
     bool enableGlobalFontMgr_{false};
+    uint32_t registeredFontSize_{0};
 };
 } // namespace AdapterTxt
 } // namespace Rosen
