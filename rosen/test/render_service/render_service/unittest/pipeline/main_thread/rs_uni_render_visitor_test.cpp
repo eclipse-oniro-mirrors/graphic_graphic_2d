@@ -5571,39 +5571,6 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateTopLayersDirtyStatusTest, TestSize.Level2
 }
 
 /*
- * @tc.name: QuickPrepareLogicalDisplayRenderNode002
- * @tc.desc: Test QuickPrepareLogicalDisplayRenderNode for snapshot rotation scene
- * @tc.type: FUNC
- * @tc.require: issue20572
- */
-HWTEST_F(RSUniRenderVisitorTest, QuickPrepareLogicalDisplayRenderNode002, TestSize.Level2)
-{
-    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
-    ASSERT_NE(rsUniRenderVisitor, nullptr);
-    NodeId id = 0;
-    RSDisplayNodeConfig config;
-    auto node = std::make_shared<RSLogicalDisplayRenderNode>(id, config);
-    ASSERT_NE(node, nullptr);
-    node->InitRenderParams();
-    auto rsContext = std::make_shared<RSContext>();
-    auto rsScreenRenderNode = std::make_shared<RSScreenRenderNode>(id + 1, 0, rsContext->weak_from_this());
-    ASSERT_NE(rsScreenRenderNode, nullptr);
-    rsScreenRenderNode->InitRenderParams();
-    rsUniRenderVisitor->curScreenNode_ = rsScreenRenderNode;
-    rsUniRenderVisitor->curScreenDirtyManager_ = std::make_shared<RSDirtyRegionManager>();
-    ASSERT_NE(rsUniRenderVisitor->curScreenDirtyManager_, nullptr);
-
-    auto mainThread = RSMainThread::Instance();
-    ASSERT_NE(mainThread, nullptr);
-    mainThread->systemAnimatedScenes_ = SystemAnimatedScenes::SNAPSHOT_ROTATION;
-    rsUniRenderVisitor->QuickPrepareLogicalDisplayRenderNode(*node);
-    EXPECT_EQ(mainThread->GetSystemAnimatedScenes(), SystemAnimatedScenes::SNAPSHOT_ROTATION);
-    mainThread->systemAnimatedScenes_ = SystemAnimatedScenes::OTHERS;
-    rsUniRenderVisitor->QuickPrepareLogicalDisplayRenderNode(*node);
-    EXPECT_NE(mainThread->GetSystemAnimatedScenes(), SystemAnimatedScenes::SNAPSHOT_ROTATION);
-}
-
-/*
  * @tc.name: ResetDisplayDirtyRegion
  * @tc.desc: Test function ResetDisplayDirtyRegion
  * @tc.type: FUNC
@@ -5968,5 +5935,40 @@ HWTEST_F(RSUniRenderVisitorTest, CheckFilterNeedEnableDebug001, TestSize.Level2)
     config.surfaceWindowType = SurfaceWindowType::SCB_DESKTOP;
     rsUniRenderVisitor->curSurfaceNode_ = std::make_shared<RSSurfaceRenderNode>(config);
     rsUniRenderVisitor->CheckFilterNeedEnableDebug(node, false);
+}
+
+/*
+ * @tc.name: UpdateFixedSize
+ * @tc.desc: Test function UpdateFixedSize for display node
+ * @tc.type: FUNC
+ * @tc.require: issue20599
+ */
+HWTEST_F(RSUniRenderVisitorTest, UpdateFixedSize, TestSize.Level2)
+{
+    auto visitor = std::make_shared<RSUniRenderVisitor>();
+    ASSERT_NE(visitor, nullptr);
+    NodeId id = 0;
+    RSDisplayNodeConfig displayConfig;
+    auto node = std::make_shared<RSLogicalDisplayRenderNode>(id, displayConfig);
+    ASSERT_NE(node, nullptr);
+    node->InitRenderParams();
+    auto& geo = node->GetRenderProperties().GetBoundsGeometry();
+    ASSERT_NE(geo, nullptr);
+
+    float degree = 90;
+    geo->SetRotation(degree);
+    node->UpdateRotation();
+    RSMainThread::Instance()->systemAnimatedScenes_ = SystemAnimatedScenes::OTHERS;
+    visitor->UpdateFixedSize(*node);
+    RSMainThread::Instance()->systemAnimatedScenes_ = SystemAnimatedScenes::SNAPSHOT_ROTATION;
+    visitor->UpdateFixedSize(*node);
+    degree = 1;
+    geo->SetRotation(degree);
+    node->UpdateRotation();
+    RSMainThread::Instance()->systemAnimatedScenes_ = SystemAnimatedScenes::OTHERS;
+    visitor->UpdateFixedSize(*node);
+    RSMainThread::Instance()->systemAnimatedScenes_ = SystemAnimatedScenes::SNAPSHOT_ROTATION;
+    visitor->UpdateFixedSize(*node);
+    EXPECT_EQ(node->GetCompositeType(), CompositeType::HARDWARE_COMPOSITE);
 }
 } // OHOS::Rosen
