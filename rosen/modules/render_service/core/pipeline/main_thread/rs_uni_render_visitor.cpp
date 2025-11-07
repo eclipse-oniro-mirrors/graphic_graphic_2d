@@ -3697,7 +3697,7 @@ void RSUniRenderVisitor::UpdateFixedSize(RSLogicalDisplayRenderNode& node)
 {
     if (node.IsRotationChanged() ||
         RSMainThread::Instance()->GetSystemAnimatedScenes() == SystemAnimatedScenes::SNAPSHOT_ROTATION) {
-        // skip getting fixed size during rotation and snapshot rotation
+        // skip getting fixed size during rotation and snapshot rotation.
         return;
     }
 
