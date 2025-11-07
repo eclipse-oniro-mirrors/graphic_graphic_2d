@@ -302,7 +302,7 @@ protected:
     bool CheckPixelsFormat(napi_env env, GLenum format);
     bool CheckPixelsType(napi_env env, GLenum type);
     bool CheckReadBufferMode(GLenum mode);
-    bool CheckCompressedTexSubDimensions(const TexSubImage2DArg& imgArg, WebGLTexture* texture);
+    GLenum CheckCompressedTexSubDimensions(const TexSubImage2DArg& imgArg, WebGLTexture* texture);
     bool CheckTexImageInternalFormat(napi_env env, int32_t func, GLenum internalFormat);
     bool CheckTexInternalFormatColorBufferCombination(GLenum texInternalFormat, GLenum colorBufferFormat);
     bool CheckStencil(napi_env env);
