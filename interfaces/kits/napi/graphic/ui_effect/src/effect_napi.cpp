@@ -845,6 +845,8 @@ napi_value EffectNapi::CreateHarmoniumEffect(napi_env env, napi_callback_info in
             "EffectNapi CreateHarmoniumEffect failed, is not system app");
         return nullptr;
     }
+    static const size_t maxArgc = NUM_4;
+    static const size_t minArgc = NUM_2;
     static const size_t requireArgc = NUM_4;
     size_t realArgc = NUM_4;
     napi_value result = nullptr;
@@ -853,7 +855,7 @@ napi_value EffectNapi::CreateHarmoniumEffect(napi_env env, napi_callback_info in
     napi_value argv[requireArgc] = {0};
     napi_value thisVar = nullptr;
     UIEFFECT_JS_ARGS(env, info, status, realArgc, argv, thisVar);
-    UIEFFECT_NAPI_CHECK_RET_D(status == napi_ok && requireArgc == realArgc, nullptr,
+    UIEFFECT_NAPI_CHECK_RET_D(status == napi_ok && minArgc <= realArgc && realArgc <= maxArgc, nullptr,
         UIEFFECT_LOG_E("EffectNapi CreateHarmoniumEffect parsing input fail"));
 
     std::shared_ptr<HarmoniumEffectPara> para = std::make_shared<HarmoniumEffectPara>();
