@@ -4083,6 +4083,12 @@ HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, DrawWatermarkIfNeed002, TestSiz
     rsRenderThreadParams->SetWatermark(true, img);
     displayDrawable_->DrawWatermarkIfNeed(canvas, true);
 
+    totalMatrix.SetMatrix(1, 2, 3, 0, 1, 4, 5, 6, 0);
+    params->SetMatrix(totalMatrix);
+    rsRenderThreadParams = std::make_unique<RSRenderThreadParams>();
+    rsRenderThreadParams->SetWatermark(true, img);
+    displayDrawable_->DrawWatermarkIfNeed(canvas, true);
+
 }
 /**
  * @tc.name: GetScreenParamsTest
