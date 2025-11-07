@@ -16,6 +16,7 @@
 #include <gtest/gtest.h>
 
 #include "effect/rs_render_filter_base.h"
+#include "params/rs_render_params.h"
 #include "pipeline/rs_context.h"
 #include "pipeline/rs_screen_render_node.h"
 #include "property/rs_properties.h"
@@ -421,16 +422,21 @@ HWTEST_F(PropertiesTest, SetHDRUIBrightnessTest, TestSize.Level1)
     NodeId surfaceNodeId = 2; // surface node id
     auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(surfaceNodeId);
     properties.backref_ = canvasNode;
+    auto stagingRenderParams = std::make_unique<RSRenderParams>(0);
+    ASSERT_NE(stagingRenderParams, nullptr);
+    canvasNode->stagingRenderParams_ = std::move(stagingRenderParams);
     canvasNode->instanceRootNodeId_ = surfaceNodeId;
+
     canvasNode->isOnTheTree_ = false;
     properties.SetHDRUIBrightness(1.0f);
     EXPECT_EQ(properties.GetHDRUIBrightness(), 1.0f);
     float hdrBrightness = 2.0f; // hdr brightness
     properties.SetHDRUIBrightness(hdrBrightness);
     EXPECT_EQ(properties.GetHDRUIBrightness(), hdrBrightness);
+
     canvasNode->isOnTheTree_ = true;
-    properties.SetHDRUIBrightness(hdrBrightness);
-    EXPECT_EQ(properties.GetHDRUIBrightness(), hdrBrightness);
+    properties.SetHDRUIBrightness(1.0f);
+    EXPECT_EQ(properties.GetHDRUIBrightness(), 1.0f);
 }
 
 /**

@@ -3358,10 +3358,16 @@ HWTEST_F(RSUniRenderVisitorTest, CollectEffectInfo006, TestSize.Level2)
     node->InitRenderParams();
     parent->InitRenderParams();
     parent->AddChild(node);
-    node->SetChildHasVisibleHDRContent(true);
-    EXPECT_TRUE(node->ChildHasVisibleHDRContent());
+
+    node->SetChildHasVisibleHDRContent(false);
+    node->UpdateHDRStatus(HdrStatus::HDR_PHOTO, true);
     rsUniRenderVisitor->CollectEffectInfo(*node);
-    EXPECT_TRUE(parent->ChildHasVisibleEffect());
+    EXPECT_TRUE(parent->ChildHasVisibleHDRContent());
+
+    node->SetChildHasVisibleHDRContent(true);
+    parent->SetChildHasVisibleHDRContent(false);
+    rsUniRenderVisitor->CollectEffectInfo(*node);
+    EXPECT_TRUE(parent->ChildHasVisibleHDRContent());
 }
 
 /*
