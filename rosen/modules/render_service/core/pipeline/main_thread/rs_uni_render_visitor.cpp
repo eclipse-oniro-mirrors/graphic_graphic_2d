@@ -966,8 +966,7 @@ void RSUniRenderVisitor::QuickPrepareLogicalDisplayRenderNode(RSLogicalDisplayRe
         node.UpdateDrawRectAndDirtyRegion(*dirtyManager, dirtyFlag_, prepareClipRect_, parentSurfaceNodeMatrix_);
     node.UpdateCurCornerInfo(curCornerRadius_, curCornerRect_);
     node.UpdateRotation();
-    node.UpdateFixedSize(node.IsRotationChanged() ||
-        RSMainThread::Instance()->GetSystemAnimatedScenes() == SystemAnimatedScenes::SNAPSHOT_ROTATION);
+    UpdateFixedSize(node);
     RSUifirstManager::Instance().PreStatusProcess(displayNodeRotationChanged_ || isScreenRotationAnimating_);
 
     hasAccumulatedClip_ = node.SetAccumulatedClipFlag(hasAccumulatedClip_);
@@ -3692,6 +3691,17 @@ void RSUniRenderVisitor::CheckFilterNeedEnableDebug(RSEffectRenderNode& node,
     }
 
     node.MarkFilterDebugEnabled();
+}
+
+void RSUniRenderVisitor::UpdateFixedSize(RSLogicalDisplayRenderNode& node)
+{
+    if (node.IsRotationChanged() ||
+        RSMainThread::Instance()->GetSystemAnimatedScenes() == SystemAnimatedScenes::SNAPSHOT_ROTATION) {
+        // skip getting fixed size during rotation and snapshot rotation
+        return;
+    }
+
+    node.UpdateFixedSize();
 }
 } // namespace Rosen
 } // namespace OHOS

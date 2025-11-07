@@ -392,13 +392,8 @@ void RSLogicalDisplayRenderNode::SetCompositeType(CompositeType type)
     compositeType_ = type;
 }
 
-void RSLogicalDisplayRenderNode::UpdateFixedSize(bool needSkip)
+void RSLogicalDisplayRenderNode::UpdateFixedSize()
 {
-    if (needSkip) {
-        // to get fixed size during rotation, use the width and height before rotation.
-        return;
-    }
-
     auto& boundGeo = GetRenderProperties().GetBoundsGeometry();
     fixedWidth_ = boundGeo->GetWidth();
     fixedHeight_ = boundGeo->GetHeight();

@@ -502,15 +502,15 @@ HWTEST_F(RSLogicalDisplayRenderNodeTest, UpdateDimensionsTest, TestSize.Level1)
     auto& geo = renderNode->GetRenderProperties().GetBoundsGeometry();
     geo->SetRotation(90);
     renderNode->UpdateRotation();
-    renderNode->UpdateFixedSize(false);
+    renderNode->UpdateFixedSize();
 
     renderNode->UpdateRotation();
-    renderNode->UpdateFixedSize(true);
+    renderNode->UpdateFixedSize();
 
     geo->SetRotation(270);
     renderNode->UpdateRotation();
     renderNode->UpdateRotation();
-    renderNode->UpdateFixedSize(false);
+    renderNode->UpdateFixedSize();
     EXPECT_EQ(renderNode->GetCompositeType(), CompositeType::HARDWARE_COMPOSITE);
 }
 } // namespace OHOS::Rosen
