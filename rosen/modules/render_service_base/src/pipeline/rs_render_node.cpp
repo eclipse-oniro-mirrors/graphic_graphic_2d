@@ -1561,7 +1561,7 @@ void RSRenderNode::FallbackAnimationsToRoot()
 void RSRenderNode::ActivateDisplaySync()
 {
     if (!displaySync_) {
-        displaySync_ = std::make_shared<RSRenderDisplaySync>(GetId());
+        displaySync_ = std::make_unique<RSRenderDisplaySync>(GetId());
     }
 }
 
