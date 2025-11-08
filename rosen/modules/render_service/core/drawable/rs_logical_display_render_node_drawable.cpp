@@ -403,7 +403,7 @@ void RSLogicalDisplayRenderNodeDrawable::DrawExpandDisplay(RSLogicalDisplayRende
 void RSLogicalDisplayRenderNodeDrawable::DrawAdditionalContent(RSPaintFilterCanvas& canvas, bool isOffScreenCanvas)
 {
     RS_TRACE_FUNC();
-    DrawWatermarkIfNeed(canvas);
+    DrawWatermarkIfNeed(canvas, isOffScreenCanvas);
     RSRefreshRateDfx(*this).OnDraw(canvas);
 }
 
