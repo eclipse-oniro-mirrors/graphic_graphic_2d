@@ -977,6 +977,7 @@ public:
     bool GetNeedUseCmdlistDrawRegion();
     void ReleaseNodeMem();
     bool IsNodeMemClearEnable();
+    virtual void AfterTreeStatueChanged() {}
 
 protected:
     void ResetDirtyStatus();

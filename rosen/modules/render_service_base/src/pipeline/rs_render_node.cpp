@@ -593,6 +593,17 @@ void RSRenderNode::SetIsOnTheTree(bool flag, NodeId instanceRootNodeId, NodeId f
     }
 #endif
 #endif
+    auto context = GetContext().lock();
+    auto task = [weakThis = weak_from_this()] () {
+        auto node = RSBaseRenderNode::ReinterpretCast<RSRenderNode>(weakThis.lock());
+        if (node == nullptr) {
+            return;
+        }
+        node->AfterTreeStatueChanged();
+    };
+    if (context) {
+        context->PostTask(task, false);
+    }
 }
 
 void RSRenderNode::ReleaseNodeMem()
