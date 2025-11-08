@@ -58,7 +58,7 @@ HWTEST_F(RSHwcContextTest, CheckPackageInConfigList001, TestSize.Level1)
     pkgs.push_back("com.youku.next");
     auto& rsCommonHook = RsCommonHook::Instance();
     hwcContext->sourceTuningConfig_["com.youku.next"] = "1";
-    hwcContext->solidLayerConfig["com.youku.next"] = "1";
+    hwcContext->solidLayerConfig_["com.youku.next"] = "1";
     hwcContext->CheckPackageInConfigList(pkgs);
     EXPECT_TRUE(rsCommonHook.GetVideoSurfaceFlag());
     EXPECT_FALSE(rsCommonHook.GetHardwareEnabledByHwcnodeBelowSelfInAppFlag());
@@ -66,7 +66,7 @@ HWTEST_F(RSHwcContextTest, CheckPackageInConfigList001, TestSize.Level1)
     EXPECT_TRUE(rsCommonHook.GetIsWhiteListForSolidColorLayerFlag());
 
     hwcContext->sourceTuningConfig_["com.youku.next"] = "2";
-    hwcContext->solidLayerConfig["com.youku.next"] = "2";
+    hwcContext->solidLayerConfig_["com.youku.next"] = "2";
     hwcContext->CheckPackageInConfigList(pkgs);
     EXPECT_TRUE(rsCommonHook.GetVideoSurfaceFlag());
     EXPECT_FALSE(rsCommonHook.GetHardwareEnabledByHwcnodeBelowSelfInAppFlag());
@@ -74,7 +74,7 @@ HWTEST_F(RSHwcContextTest, CheckPackageInConfigList001, TestSize.Level1)
     EXPECT_TRUE(rsCommonHook.GetIsWhiteListForSolidColorLayerFlag());
 
     hwcContext->hwcSourceTuningConfig_["com.youku.next"] = "2";
-    hwcContext->hwcSolidLayerConfig["com.youku.next"] = "2";
+    hwcContext->hwcSolidLayerConfig_["com.youku.next"] = "2";
     hwcContext->CheckPackageInConfigList(pkgs);
     EXPECT_FALSE(rsCommonHook.GetVideoSurfaceFlag());
     EXPECT_TRUE(rsCommonHook.GetHardwareEnabledByHwcnodeBelowSelfInAppFlag());
@@ -82,7 +82,7 @@ HWTEST_F(RSHwcContextTest, CheckPackageInConfigList001, TestSize.Level1)
     EXPECT_FALSE(rsCommonHook.GetIsWhiteListForSolidColorLayerFlag());
 
     hwcContext->sourceTuningConfig_["com.youku.next"] = "1";
-    hwcContext->solidLayerConfig["com.youku.next"] = "1";
+    hwcContext->solidLayerConfig_["com.youku.next"] = "1";
     hwcContext->CheckPackageInConfigList(pkgs);
     EXPECT_TRUE(rsCommonHook.GetVideoSurfaceFlag());
     EXPECT_FALSE(rsCommonHook.GetHardwareEnabledByHwcnodeBelowSelfInAppFlag());
@@ -125,7 +125,7 @@ HWTEST_F(RSHwcContextTest, CheckPackageInConfigList003, TestSize.Level1)
     pkgs.push_back("com.youku.next");
     auto& rsCommonHook = RsCommonHook::Instance();
     hwcContext->sourceTuningConfig_["com.youku.next"] = "1";
-    hwcContext->solidLayerConfig["com.youku.next"] = "2";
+    hwcContext->solidLayerConfig_["com.youku.next"] = "2";
     hwcContext->CheckPackageInConfigList(pkgs);
     EXPECT_TRUE(rsCommonHook.GetVideoSurfaceFlag());
     EXPECT_FALSE(rsCommonHook.GetHardwareEnabledByHwcnodeBelowSelfInAppFlag());
@@ -133,7 +133,7 @@ HWTEST_F(RSHwcContextTest, CheckPackageInConfigList003, TestSize.Level1)
     EXPECT_TRUE(rsCommonHook.GetIsWhiteListForSolidColorLayerFlag());
 
     hwcContext->sourceTuningConfig_["com.youku.next"] = "2";
-    hwcContext->solidLayerConfig["com.youku.next"] = "1";
+    hwcContext->solidLayerConfig_["com.youku.next"] = "1";
     hwcContext->CheckPackageInConfigList(pkgs);
     EXPECT_TRUE(rsCommonHook.GetVideoSurfaceFlag());
     EXPECT_FALSE(rsCommonHook.GetHardwareEnabledByHwcnodeBelowSelfInAppFlag());
@@ -141,7 +141,7 @@ HWTEST_F(RSHwcContextTest, CheckPackageInConfigList003, TestSize.Level1)
     EXPECT_TRUE(rsCommonHook.GetIsWhiteListForSolidColorLayerFlag());
 
     hwcContext->hwcSourceTuningConfig_["com.youku.next"] = "2";
-    hwcContext->hwcSolidLayerConfig["com.youku.next"] = "2";
+    hwcContext->hwcSolidLayerConfig_["com.youku.next"] = "2";
     hwcContext->CheckPackageInConfigList(pkgs);
     EXPECT_FALSE(rsCommonHook.GetVideoSurfaceFlag());
     EXPECT_TRUE(rsCommonHook.GetHardwareEnabledByHwcnodeBelowSelfInAppFlag());
@@ -149,7 +149,7 @@ HWTEST_F(RSHwcContextTest, CheckPackageInConfigList003, TestSize.Level1)
     EXPECT_TRUE(rsCommonHook.GetIsWhiteListForSolidColorLayerFlag());
 
     hwcContext->sourceTuningConfig_["com.youku.next"] = "1";
-    hwcContext->solidLayerConfig["com.youku.next"] = "2";
+    hwcContext->solidLayerConfig_["com.youku.next"] = "2";
     hwcContext->CheckPackageInConfigList(pkgs);
     EXPECT_TRUE(rsCommonHook.GetVideoSurfaceFlag());
     EXPECT_FALSE(rsCommonHook.GetHardwareEnabledByHwcnodeBelowSelfInAppFlag());
@@ -179,7 +179,7 @@ HWTEST_F(RSHwcContextTest, CheckPackageInConfigList004, TestSize.Level1)
     pkgs.push_back("yylx.danmaku.bili");
     auto& rsCommonHook = RsCommonHook::Instance();
     hwcContext->sourceTuningConfig_["com.youku.next"] = "1";
-    hwcContext->solidLayerConfig["com.youku.next"] = "1";
+    hwcContext->solidLayerConfig_["com.youku.next"] = "1";
     hwcContext->CheckPackageInConfigList(pkgs);
     EXPECT_FALSE(rsCommonHook.GetVideoSurfaceFlag());
     EXPECT_FALSE(rsCommonHook.GetHardwareEnabledByHwcnodeBelowSelfInAppFlag());
