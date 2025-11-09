@@ -108,7 +108,7 @@ void RSCanvasDrawingRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         return;
     }
 
-    if (uniParam->IsSecurityDisplay() && RSRenderNodeDrawable::SkipDrawByWhiteList(canvas)) {
+    if (LIKELY(uniParam) && uniParam->IsSecurityDisplay() && RSRenderNodeDrawable::SkipDrawByWhiteList(canvas)) {
         return;
     }
 

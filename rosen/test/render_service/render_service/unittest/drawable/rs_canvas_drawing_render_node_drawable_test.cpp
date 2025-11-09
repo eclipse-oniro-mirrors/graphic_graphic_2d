@@ -826,6 +826,30 @@ HWTEST_F(RSCanvasDrawingRenderNodeDrawableTest, OnDraw003, TestSize.Level2)
     // restore
     RSUniRenderThread::Instance().Sync(std::make_unique<RSRenderThreadParams>());
 }
+
+/**
+ * @tc.name: OnDraw004
+ * @tc.desc: Test OnDraw while renderThreadParams_ is nullptr
+ * @tc.type: FUNC
+ * @tc.require: issue20602
+ */
+HWTEST_F(RSCanvasDrawingRenderNodeDrawableTest, OnDraw004, TestSize.Level2)
+{
+    auto drawable = RSCanvasDrawingRenderNodeDrawableTest::CreateDrawable();
+    drawable->renderParams_ = std::make_unique<RSRenderParams>(0);
+    drawable->renderParams_->shouldPaint_ = true;
+
+    RSUniRenderThread::Instance().Sync(nullptr);
+    RSUniRenderThread::Instance().SetWhiteList({});
+
+    Drawing::Canvas drawingCanvas;
+    RSPaintFilterCanvas canvas(&drawingCanvas);
+    ASSERT_FALSE(drawable->SkipDrawByWhiteList(canvas));
+    drawable->OnDraw(canvas);
+
+    // restore
+    RSUniRenderThread::Instance().Sync(std::make_unique<RSRenderThreadParams>());
+}
 #endif
 
 #if defined(RS_ENABLE_GPU) && defined(RS_ENABLE_PARALLEL_RENDER)

@@ -115,7 +115,7 @@ void RSCanvasRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         SetDrawSkipType(DrawSkipType::OCCLUSION_SKIP);
         return;
     }
-    if (uniParam->IsSecurityDisplay() && RSRenderNodeDrawable::SkipDrawByWhiteList(canvas)) {
+    if (LIKELY(uniParam) && uniParam->IsSecurityDisplay() && RSRenderNodeDrawable::SkipDrawByWhiteList(canvas)) {
         return;
     }
 
@@ -189,7 +189,7 @@ void RSCanvasRenderNodeDrawable::OnCapture(Drawing::Canvas& canvas)
     }
 
     const auto& uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
-    if (uniParam->IsSecurityDisplay() && RSRenderNodeDrawable::SkipDrawByWhiteList(canvas)) {
+    if (LIKELY(uniParam) && uniParam->IsSecurityDisplay() && RSRenderNodeDrawable::SkipDrawByWhiteList(canvas)) {
         return;
     }
     bool stopDrawForRangeCapture = (canvas.GetUICapture() &&
