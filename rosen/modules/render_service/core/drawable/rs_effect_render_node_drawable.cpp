@@ -67,7 +67,7 @@ void RSEffectRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         SetDrawSkipType(DrawSkipType::OCCLUSION_SKIP);
         return;
     }
-    if (uniParam->IsSecurityDisplay() && RSRenderNodeDrawable::SkipDrawByWhiteList(canvas)) {
+    if (LIKELY(uniParam) && uniParam->IsSecurityDisplay() && RSRenderNodeDrawable::SkipDrawByWhiteList(canvas)) {
         return;
     }
 

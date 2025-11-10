@@ -225,4 +225,30 @@ HWTEST_F(RSEffectRenderNodeDrawableTest, OnDraw003, TestSize.Level2)
     // restore
     RSUniRenderThread::Instance().Sync(std::make_unique<RSRenderThreadParams>());
 }
+
+/**
+ * @tc.name: OnDraw004
+ * @tc.desc: Test OnDraw while renderThreadParams_ is nullptr
+ * @tc.type: FUNC
+ * @tc.require: issue20602
+ */
+HWTEST_F(RSEffectRenderNodeDrawableTest, OnDraw004, TestSize.Level2)
+{
+    auto effectNode = std::make_shared<RSEffectRenderNode>(DEFAULT_ID);
+    ASSERT_NE(effectNode, nullptr);
+    auto effectDrawable =
+        static_cast<RSEffectRenderNodeDrawable*>(RSRenderNodeDrawableAdapter::OnGenerate(effectNode).get());
+    effectDrawable->renderParams_->shouldPaint_ = true;
+
+    RSUniRenderThread::Instance().Sync(nullptr);
+    RSUniRenderThread::Instance().SetWhiteList({});
+
+    Drawing::Canvas drawingCanvas;
+    RSPaintFilterCanvas canvas(&drawingCanvas);
+    effectDrawable->OnDraw(canvas);
+    ASSERT_FALSE(effectDrawable->SkipDrawByWhiteList(canvas));
+
+    // restore
+    RSUniRenderThread::Instance().Sync(std::make_unique<RSRenderThreadParams>());
+}
 }
