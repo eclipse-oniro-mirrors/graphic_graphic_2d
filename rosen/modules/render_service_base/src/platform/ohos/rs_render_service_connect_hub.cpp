@@ -24,7 +24,8 @@
 #include <unistd.h>
 
 #include "message_parcel.h"
-#include "rs_render_service_connection_proxy.h"
+#include "rs_client_to_service_connection_proxy.h"
+#include "rs_client_to_render_connection_proxy.h"
 #include "rs_render_service_proxy.h"
 
 #include "pipeline/rs_render_thread.h"
@@ -69,6 +70,7 @@ RSRenderServiceConnectHub::~RSRenderServiceConnectHub() noexcept
     ROSEN_LOGI("~RSRenderServiceConnectHub");
     renderService_->RemoveConnection(token_);
     conn_ = nullptr;
+    renderConn_ = nullptr;
     if (renderService_->AsObject() && deathRecipient_) {
         renderService_->AsObject()->RemoveDeathRecipient(deathRecipient_);
     }
@@ -79,25 +81,25 @@ RSRenderServiceConnectHub::~RSRenderServiceConnectHub() noexcept
     }
 }
 
-sptr<RSIRenderServiceConnection> RSRenderServiceConnectHub::GetRenderService()
+std::pair<sptr<RSIClientToServiceConnection>, sptr<RSIClientToRenderConnection>> RSRenderServiceConnectHub::GetRenderService()
 {
     auto connHub = RSRenderServiceConnectHub::GetInstance();
-    return connHub == nullptr ? nullptr : connHub->GetRenderServiceConnection();
+    return connHub == nullptr ? std::make_pair(nullptr, nullptr) : connHub->GetRenderServiceConnection();
 }
 
-sptr<RSIRenderServiceConnection> RSRenderServiceConnectHub::GetRenderServiceConnection()
+std::pair<sptr<RSIClientToServiceConnection>, sptr<RSIClientToRenderConnection>> RSRenderServiceConnectHub::GetRenderServiceConnection()
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    if (conn_ != nullptr && renderService_ != nullptr) {
-        return conn_;
+    if (conn_ != nullptr && renderConn_ && renderService_ != nullptr) {
+        return {conn_, renderConn_};
     }
 
     if (!Connect()) {
         ROSEN_LOGE("RenderService connect fail");
-        return nullptr;
+        return {nullptr, nullptr};
     }
 
-    return conn_;
+    return {conn_, renderConn_};
 }
 
 bool RSRenderServiceConnectHub::Connect()
@@ -142,9 +144,9 @@ bool RSRenderServiceConnectHub::Connect()
     if (token_ == nullptr) {
         token_ = new IRemoteStub<RSIConnectionToken>();
     }
-    sptr<RSIRenderServiceConnection> conn = renderService->CreateConnection(token_);
+    auto [conn, renderConn] = renderService->CreateConnection(token_);
 
-    if (conn == nullptr) {
+    if (conn == nullptr || renderConn == nullptr) {
         ROSEN_LOGD("RSRenderServiceConnectHub::Connect, failed to CreateConnection to render service.");
         return false;
     }
