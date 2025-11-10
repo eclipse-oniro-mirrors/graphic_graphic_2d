@@ -247,7 +247,7 @@ napi_value JsFontCollection::LoadFontSyncWithCheck(napi_env env, napi_callback_i
     }
     auto result = me->OnLoadFont(env, info);
     if (result.success) {
-        return nullptr;
+        return NapiGetUndefined(env);
     } else {
         return NapiThrowError(env, result.errorCode, result.ToString());
     }
@@ -261,7 +261,7 @@ napi_value JsFontCollection::LoadFontAsyncWithCheck(napi_env env, napi_callback_
     }
     auto result = me->OnLoadFontAsync(env, info);
     if (result.success) {
-        return nullptr;
+        return NapiGetUndefined(env);
     } else {
         return NapiThrowError(env, result.errorCode, result.ToString());
     }
