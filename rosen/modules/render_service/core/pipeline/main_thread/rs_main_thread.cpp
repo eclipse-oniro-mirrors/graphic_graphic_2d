@@ -5510,5 +5510,28 @@ void RSMainThread::RegisterHwcEvent()
     }
 #endif
 }
+
+bool RSMainThread::TransitionDataMutexLockIfNoCommands()
+{
+    transitionDataMutex_.lock();
+    for (auto& rsTransactionElem : cachedTransactionDataMap_) {
+        if (rsTransactionElem.second.size()) {
+            transitionDataMutex_.unlock();
+            return false;
+        }
+    }
+    for (auto& rsTransactionElem : effectiveTransactionDataIndexMap_) {
+        if (rsTransactionElem.second.second.size()) {
+            transitionDataMutex_.unlock();
+            return false;
+        }
+    }
+    return true;
+}
+
+void RSMainThread::TransitionDataMutexUnlock()
+{
+    transitionDataMutex_.unlock();
+}
 } // namespace Rosen
 } // namespace OHOS
