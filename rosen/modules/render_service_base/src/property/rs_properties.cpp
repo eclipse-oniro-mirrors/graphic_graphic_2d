@@ -3538,6 +3538,18 @@ void RSProperties::GenerateForegroundFilter()
     }
 }
 
+void RSProperties::GenerateMaterialFilter()
+{
+    // not support compose yet, so do not use ComposeNGRenderFilter
+    if (!GetMaterialNGFilter()) {
+        return;
+    }
+    auto filter = std::make_shared<RSDrawingFilter>();
+    filter->SetNGRenderFilter(GetMaterialNGFilter());
+    filter->SetFilterType(RSFilter::COMPOUND_EFFECT);
+    GetEffect().materialFilter_ = filter;
+}
+
 void RSProperties::SetUseEffect(bool useEffect)
 {
     GetEffect().useEffect_ = useEffect;
@@ -4812,6 +4824,7 @@ void RSProperties::OnApplyModifiers()
 void RSProperties::UpdateFilter()
 {
     filterNeedUpdate_ = false;
+    GenerateMaterialFilter();
     GenerateBackgroundFilter();
     GenerateForegroundFilter();
     if (GetShadowColorStrategy() != SHADOW_COLOR_STRATEGY::COLOR_STRATEGY_NONE) {
@@ -4834,19 +4847,21 @@ void RSProperties::UpdateFilter()
                   GetShadowColorStrategy() != SHADOW_COLOR_STRATEGY::COLOR_STRATEGY_NONE ||
                   GetForegroundFilter() != nullptr || IsFgBrightnessValid() || IsBgBrightnessValid() ||
                   GetForegroundFilterCache() != nullptr || IsWaterRippleValid() || GetNeedDrawBehindWindow() ||
-                  GetMask() || GetColorFilter() != nullptr || localMagnificationCap_ || GetPixelStretch().has_value();
+                  GetMask() || GetColorFilter() != nullptr || localMagnificationCap_ || GetPixelStretch().has_value() ||
+                  GetMaterialFilter() != nullptr;
 
     needHwcFilter_ = GetBackgroundFilter() != nullptr || GetFilter() != nullptr || IsLightUpEffectValid() ||
                      IsDynamicLightUpValid() || GetLinearGradientBlurPara() != nullptr ||
                      IsDynamicDimValid() || IsFgBrightnessValid() || IsBgBrightnessValid() || IsWaterRippleValid() ||
                      GetNeedDrawBehindWindow() || GetColorFilter() != nullptr || localMagnificationCap_ ||
-                     GetPixelStretch().has_value();
+                     GetPixelStretch().has_value() || GetMaterialFilter() != nullptr;
 #ifdef SUBTREE_PARALLEL_ENABLE
     // needForceSubmit_ is used to determine whether the subtree needs to read/scale pixels
     needForceSubmit_ = IsFilterNeedForceSubmit(GetFilter()) ||
                        IsFilterNeedForceSubmit(GetBackgroundFilter()) ||
                        IsFilterNeedForceSubmit(GetForegroundFilter()) ||
                        IsFilterNeedForceSubmit(GetForegroundFilterCache()) ||
+                       IsFilterNeedForceSubmit(GetMaterialFilter()) ||
                        GetShadowColorStrategy() != SHADOW_COLOR_STRATEGY::COLOR_STRATEGY_NONE;
 #endif
 }
@@ -4862,7 +4877,7 @@ bool RSProperties::DisableHWCForFilter() const
         (GetForegroundFilterCache() != nullptr &&
         GetForegroundFilterCache()->GetFilterType() != RSFilter::HDR_UI_BRIGHTNESS) ||
         IsWaterRippleValid() || GetNeedDrawBehindWindow() || GetMask() || GetColorFilter() != nullptr ||
-        localMagnificationCap_ || GetPixelStretch().has_value() || HasHarmonium();
+        localMagnificationCap_ || GetPixelStretch().has_value() || HasHarmonium() || GetMaterialFilter() != nullptr;
 }
 
 void RSProperties::UpdateForegroundFilter()
@@ -5130,6 +5145,23 @@ const std::shared_ptr<RSSDFEffectFilter> RSProperties::GetSDFEffectFilter() cons
         return std::static_pointer_cast<RSSDFEffectFilter>(effect_->foregroundFilterCache_);
     }
     return std::static_pointer_cast<RSSDFEffectFilter>(effect_->foregroundFilter_);
+}
+
+void RSProperties::SetMaterialNGFilter(const std::shared_ptr<RSNGRenderFilterBase>& renderFilter)
+{
+    GetEffect().mtNGRenderFilter_ = renderFilter;
+    isDrawn_ = true;
+    filterNeedUpdate_ = true;
+    SetDirty();
+    contentDirty_ = true;
+}
+
+std::shared_ptr<RSNGRenderFilterBase> RSProperties::GetMaterialNGFilter() const
+{
+    if (effect_) {
+        return effect_->mtNGRenderFilter_;
+    }
+    return nullptr;
 }
 
 } // namespace Rosen
