@@ -6791,14 +6791,14 @@ HWTEST_F(RSMainThreadTest, SetScreenPowerOnChangedTest, TestSize.Level1)
     EXPECT_FALSE(mainThread->screenPowerOnChanged_);
     mainThread->isUniRender_ = false;
     mainThread->SetScreenPowerOnChanged(true);
-    EXPECT_TURE(mainThread->screenPowerOnChanged_);
+    EXPECT_TRUE(mainThread->screenPowerOnChanged_);
 
     mainThread->SetScreenPowerOnChanged(false);
     EXPECT_FALSE(mainThread->screenPowerOnChanged_);
 
     mainThread->isUniRender_ = true;
     mainThread->SetScreenPowerOnChanged(true);
-    EXPECT_TURE(mainThread->screenPowerOnChanged_);
+    EXPECT_TRUE(mainThread->screenPowerOnChanged_);
 
     mainThread->SetScreenPowerOnChanged(false);
     EXPECT_FALSE(mainThread->screenPowerOnChanged_);
