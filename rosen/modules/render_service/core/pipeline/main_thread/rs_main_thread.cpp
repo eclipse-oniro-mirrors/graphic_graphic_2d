@@ -5393,6 +5393,7 @@ void RSMainThread::RSScreenNodeListener::OnScreenConnect(ScreenId id)
     auto mainThread = RSMainThread::Instance();
     auto task = [context = mainThread->context_, id]() {
         RS_TRACE_NAME_FMT("OnScreenConnect execute task ScreenId[%" PRIu64 "]", id);
+        RS_LOGI("OnScreenConnect execute task ScreenId[%{public}" PRIu64 "]", id);
         auto& nodeMap = context->GetMutableNodeMap();
         auto node = std::shared_ptr<RSScreenRenderNode>(new RSScreenRenderNode(GenerateUniqueNodeIdForRS(),
             id, context->weak_from_this()), RSRenderNodeGC::NodeDestructor);
@@ -5410,6 +5411,7 @@ void RSMainThread::RSScreenNodeListener::OnScreenConnect(ScreenId id)
     };
     if (mainThread->isRunning_) {
         RS_TRACE_NAME_FMT("OnScreenConnect post task ScreenId[%" PRIu64 "]", id);
+        RS_LOGI("OnScreenConnect post task ScreenId[%{public}" PRIu64 "]", id);
         mainThread->PostTask(task);
     } else {
         task();
