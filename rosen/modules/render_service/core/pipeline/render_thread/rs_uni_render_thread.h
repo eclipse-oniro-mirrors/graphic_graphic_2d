@@ -236,6 +236,8 @@ public:
     void DumpVkImageInfo(std::string &dumpString);
 
     void InitDrawOpOverCallback(Drawing::GPUContext* gpuContext);
+
+    void SetScreenPowerOnChanged(bool val);
 private:
     RSUniRenderThread();
     ~RSUniRenderThread() noexcept;
@@ -302,6 +304,8 @@ private:
     void SubScribeSystemAbility();
     sptr<VSyncSystemAbilityListener> saStatusChangeListener_ = nullptr;
 #endif
+
+    std::atomic<bool> screenPowerOnChanged_ = false;
 };
 } // namespace Rosen
 } // namespace OHOS

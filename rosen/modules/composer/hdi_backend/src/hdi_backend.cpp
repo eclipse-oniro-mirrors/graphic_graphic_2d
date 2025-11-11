@@ -204,6 +204,11 @@ void HdiBackend::Repaint(const OutputPtr &output)
         }
     }
 
+    if (screenPowerOnChanged_) {
+        HLOGI("Power On First Frame commit finish");
+        screenPowerOnChanged_ = false;
+    }
+
     if (IsTagEnabled(HITRACE_TAG_GRAPHIC_AGP)) {
         static SyncFenceTracker presentFenceThread("Present Fence");
         presentFenceThread.TrackFence(fbFence);
@@ -405,6 +410,11 @@ RosenError HdiBackend::RegHwcEventCallback(RSHwcEventCallback func, void* data)
         return ROSEN_ERROR_API_FAILED;
     }
     return ROSEN_ERROR_OK;
+}
+
+void HdiBackend::SetScreenPowerOnChanged(bool flag)
+{
+    screenPowerOnChanged_ = flag;
 }
 } // namespace Rosen
 } // namespace OHOS

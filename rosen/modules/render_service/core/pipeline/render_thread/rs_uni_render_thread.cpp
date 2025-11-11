@@ -394,6 +394,11 @@ void RSUniRenderThread::Render()
     rootNodeDrawable_->OnDraw(paintFilterCanvas);
     RSNodeStats::GetInstance().ReportRSNodeLimitExceeded();
     PerfForBlurIfNeeded();
+
+    if (screenPowerOnChanged_) {
+        RS_LOGI("RSUniRenderThread Power On First Frame finish");
+        SetScreenPowerOnChanged(false);
+    }
 }
 
 void RSUniRenderThread::CollectReleaseTasks(std::vector<std::function<void()>>& releaseTasks)
@@ -1216,6 +1221,11 @@ void RSUniRenderThread::DumpVkImageInfo(std::string &dumpString)
             engine->DumpVkImageInfo(dumpString);
         }
     });
+}
+
+void RSUniRenderThread::SetScreenPowerOnChanged(bool val)
+{
+    screenPowerOnChanged_ = val;
 }
 } // namespace Rosen
 } // namespace OHOS

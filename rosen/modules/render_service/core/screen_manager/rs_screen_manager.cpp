@@ -1728,6 +1728,9 @@ void RSScreenManager::UpdateScreenPowerStatus(ScreenId id, ScreenPowerStatus sta
     if (status == ScreenPowerStatus::POWER_STATUS_ON ||
         status == ScreenPowerStatus::POWER_STATUS_ON_ADVANCED) {
         RSFirstFrameNotifier::GetInstance().AddFirstFrameCommitScreen(id);
+        if (composer_) {
+            composer_->SetScreenPowerOnChanged(true);
+        }
         auto mainThread = RSMainThread::Instance();
         if (mainThread == nullptr) {
             RS_LOGE("[UL_POWER] %{public}s: mainThread is nullptr", __func__);
