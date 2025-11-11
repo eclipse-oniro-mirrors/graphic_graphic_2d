@@ -3544,9 +3544,10 @@ void RSProperties::GenerateMaterialFilter()
     if (!GetMaterialNGFilter()) {
         return;
     }
-    GetEffect().materialFilter_ = std::make_shared<RSDrawingFilter>();
-    GetEffect().materialFilter_->SetNGRenderFilter(GetMaterialNGFilter());
-    GetEffect().materialFilter_->SetFilterType(RSFilter::COMPOUND_EFFECT);
+    auto filter = std::make_shared<RSDrawingFilter>();
+    filter->SetNGRenderFilter(GetMaterialNGFilter());
+    filter->SetFilterType(RSFilter::COMPOUND_EFFECT);
+    GetEffect().materialFilter_ = filter;
 }
 
 void RSProperties::SetUseEffect(bool useEffect)

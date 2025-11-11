@@ -1186,18 +1186,18 @@ public:
     void SetForegroundShader(const std::shared_ptr<RSNGShaderBase>& foregroundShader);
 
     /**
-     * @brief Sets the material filter.
-     *
-     * @param materialFilter Indicates the material filter to be applied.
-     */
-    void SetMaterialNGFilter(const std::shared_ptr<RSNGFilterBase>& materialFilter);
-
-    /**
      * @brief Sets the filter.
      *
      * @param filter Indicates the filter to be applied.
      */
     void SetFilter(const std::shared_ptr<RSFilter>& filter);
+
+    /**
+     * @brief Sets the material filter.
+     *
+     * @param materialFilter Indicates the material filter to be applied.
+     */
+    void SetMaterialNGFilter(const std::shared_ptr<RSNGFilterBase>& materialFilter);
 
     /**
      * @brief Sets the parameters for linear gradient blur.
