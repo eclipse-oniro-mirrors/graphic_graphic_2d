@@ -1919,6 +1919,9 @@ HWTEST_F(RSMainThreadTest, UniRender002, TestSize.Level1)
     rootNode->InitRenderParams();
     childDisplayNode->InitRenderParams();
     mainThread->UniRender(rootNode);
+
+    mainThread->SetScreenPowerOnChanged(true);
+    mainThread->UniRender(rootNode);
     // status recover
     mainThread->doDirectComposition_ = doDirectComposition;
     mainThread->isDirty_ = isDirty;
@@ -6773,5 +6776,31 @@ HWTEST_F(RSMainThreadTest, IsReadyForSyncTask, TestSize.Level1)
     for (int idx = 0; idx < numThreads; ++idx) {
         threads[idx].join();
     }
+}
+
+/**
+ * @tc.name: SetScreenPowerOnChanged
+ * @tc.desc: Test RSetScreenPowerOnChanged
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSMainThreadTest, SetScreenPowerOnChangedTest, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    EXPECT_FALSE(mainThread->screenPowerOnChanged_);
+    mainThread->isUniRender_ = false;
+    mainThread->SetScreenPowerOnChanged(true);
+    EXPECT_TURE(mainThread->screenPowerOnChanged_);
+
+    mainThread->SetScreenPowerOnChanged(false);
+    EXPECT_FALSE(mainThread->screenPowerOnChanged_)
+
+    mainThread->isUniRender_ = true;
+    mainThread->SetScreenPowerOnChanged(true);
+    EXPECT_TURE(mainThread->screenPowerOnChanged_)
+
+    mainThread->SetScreenPowerOnChanged(false);
+    EXPECT_FALSE(mainThread->screenPowerOnChanged_)
 }
 } // namespace OHOS::Rosen

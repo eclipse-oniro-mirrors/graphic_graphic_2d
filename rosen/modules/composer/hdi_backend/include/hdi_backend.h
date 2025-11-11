@@ -64,7 +64,7 @@ public:
     void SetVsyncSamplerEnabled(const OutputPtr &output, bool enabled);
     bool GetVsyncSamplerEnabled(const OutputPtr &output);
     RosenError RegHwcEventCallback(RSHwcEventCallback func, void* data);
-    void SetIsFirstFrameAfterPowerOn(bool flag);
+    void SetScreenPowerOnChanged(bool flag);
 
 private:
     HdiBackend() = default;
@@ -94,7 +94,7 @@ private:
     void ReorderLayerInfo(std::vector<LayerInfoPtr> &newLayerInfos);
     void OnPrepareComplete(bool needFlush, const OutputPtr &output, std::vector<LayerInfoPtr> &newLayerInfos);
     int32_t PrepareCompleteIfNeed(const OutputPtr &output, bool needFlush);
-    bool isFirstFrameAfterPowerOn_ = false;
+    bool screenPowerOnChanged_ = false;
 };
 } // namespace Rosen
 } // namespace OHOS

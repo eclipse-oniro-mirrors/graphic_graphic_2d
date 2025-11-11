@@ -187,6 +187,11 @@ void HdiBackend::Repaint(const OutputPtr &output)
         HLOGE("first commit failed, ret is %{public}d, skipState is %{public}d", ret, skipState);
     }
 
+    if (screenPowerOnChanged_) {
+        HLOGI("Power On First Frame commit finish");
+        screenPowerOnChanged_ = false;
+    }
+
     if (skipState != GRAPHIC_DISPLAY_SUCCESS) {
         ret = output->UpdateLayerCompType();
         if (ret != GRAPHIC_DISPLAY_SUCCESS) {
@@ -202,11 +207,6 @@ void HdiBackend::Repaint(const OutputPtr &output)
         if (ret != GRAPHIC_DISPLAY_SUCCESS) {
             HLOGE("second commit failed, ret is %{public}d", ret);
         }
-    }
-
-    if (screenPowerOnChanged_) {
-        HLOGI("Power On First Frame commit finish");
-        screenPowerOnChanged_ = false;
     }
 
     if (IsTagEnabled(HITRACE_TAG_GRAPHIC_AGP)) {

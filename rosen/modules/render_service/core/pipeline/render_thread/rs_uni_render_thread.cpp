@@ -396,9 +396,11 @@ void RSUniRenderThread::Render()
     PerfForBlurIfNeeded();
 
     if (screenPowerOnChanged_) {
-        RS_LOGI("RSUniRenderThread Power On First Frame finish");
-        SetScreenPowerOnChanged(false);
+        RS_LOGI("RSUniRenderThread Power On First Frame finish, processNode:%{public}d",
+        totalProcessNodeNum_);
+        screenPowerOnChanged_ = false;
     }
+    totalProcessNodeNum_ = 0;
 }
 
 void RSUniRenderThread::CollectReleaseTasks(std::vector<std::function<void()>>& releaseTasks)
@@ -1226,6 +1228,16 @@ void RSUniRenderThread::DumpVkImageInfo(std::string &dumpString)
 void RSUniRenderThread::SetScreenPowerOnChanged(bool val)
 {
     screenPowerOnChanged_ = val;
+}
+
+bool RSUniRenderThread::GetSetScreenPowerOnChanged()
+{
+    return screenPowerOnChanged_;
+}
+
+void RSUniRenderThread::CollectProcessNodeNum(int num)
+{
+    totalProcessNodeNum_ += num;
 }
 } // namespace Rosen
 } // namespace OHOS

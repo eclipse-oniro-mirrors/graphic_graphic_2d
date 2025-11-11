@@ -238,6 +238,10 @@ public:
     void InitDrawOpOverCallback(Drawing::GPUContext* gpuContext);
 
     void SetScreenPowerOnChanged(bool val);
+
+    bool GetSetScreenPowerOnChanged();
+
+    void CollectProcessNodeNum(int num);
 private:
     RSUniRenderThread();
     ~RSUniRenderThread() noexcept;
@@ -306,6 +310,7 @@ private:
 #endif
 
     std::atomic<bool> screenPowerOnChanged_ = false;
+    uint32_t totalProcessNodeNum_ = 0;
 };
 } // namespace Rosen
 } // namespace OHOS

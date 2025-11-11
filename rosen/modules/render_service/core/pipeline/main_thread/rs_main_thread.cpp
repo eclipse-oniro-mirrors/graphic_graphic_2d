@@ -2442,7 +2442,9 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
 
     PrepareUiCaptureTasks(uniVisitor);
     if (screenPowerOnChanged_) {
-        RS_LOGI("RSMainThread Power On First Frame finish");
+        int nodeNum = context_ ? context_->GetNodeMap().GetSize() : 0;
+        RS_LOGI("RSMainThread Power On First Frame finish, node:%{public}d",
+                nodeNum);
     }
     screenPowerOnChanged_ = false;
     forceUpdateUniRenderFlag_ = false;
