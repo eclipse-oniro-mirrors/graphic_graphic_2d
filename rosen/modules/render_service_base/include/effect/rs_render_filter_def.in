@@ -119,15 +119,11 @@ DECLARE_FILTER(FrostedGlass, FROSTED_GLASS,
     ADD_PROPERTY_TAG(FrostedGlass, BorderWidth),
     ADD_PROPERTY_TAG(FrostedGlass, Offset),
     ADD_PROPERTY_TAG(FrostedGlass, DownSampleFactor),
-    
     ADD_PROPERTY_TAG(FrostedGlass, BgFactor),
-
     ADD_PROPERTY_TAG(FrostedGlass, InnerShadowParams),
     ADD_PROPERTY_TAG(FrostedGlass, SdParams),
-
     ADD_PROPERTY_TAG(FrostedGlass, RefractOutPx),
     ADD_PROPERTY_TAG(FrostedGlass, EnvParams),
-
     ADD_PROPERTY_TAG(FrostedGlass, HighLightParams),
-    ADD_PROPERTY_TAG(FrostedGlass, HlParams),
+    ADD_PROPERTY_TAG(FrostedGlass, HlParams)
 );
