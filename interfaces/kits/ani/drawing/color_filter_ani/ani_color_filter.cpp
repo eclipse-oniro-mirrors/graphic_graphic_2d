@@ -141,12 +141,12 @@ ani_object AniColorFilter::ColorFilterTransferStatic(ani_env* env, [[maybe_unuse
     }
 
     auto aniColorFilter = new AniColorFilter(jsColorFilter->GetColorFilterPtr());
-    ani_object aniColorFilterObj = CreateAniObjectStatic(env, ANI_CLASS_COLORFILTER_NAME, nullptr);
-    if (ANI_OK != env->Object_SetFieldByName_Long(aniColorFilterObj,
-        NATIVE_OBJ, reinterpret_cast<ani_long>(aniColorFilter))) {
-        ROSEN_LOGE("AniColorFilter::ColorFilterTransferStatic failed create aniColorFilter");
+    ani_object aniColorFilterObj = CreateAniObjectStatic(env, ANI_CLASS_COLORFILTER_NAME, aniColorFilter);
+    ani_boolean isUndefined;
+    env->Reference_IsUndefined(aniColorFilterObj, &isUndefined);
+    if (isUndefined) {
         delete aniColorFilter;
-        return nullptr;
+        ROSEN_LOGE("AniColorFilter::ColorFilterTransferStatic failed cause aniObj is undefined");
     }
     return aniColorFilterObj;
 }
@@ -188,7 +188,7 @@ ani_object AniColorFilter::CreateLightingColorFilterWithColor(
     env->Reference_IsUndefined(aniObj, &isUndefined);
     if (isUndefined) {
         delete colorFilter;
-        ROSEN_LOGE("AniImageFilter::CreateLightingColorFilterWithColor failed cause aniObj is undefined");
+        ROSEN_LOGE("AniColorFilter::CreateLightingColorFilterWithColor failed cause aniObj is undefined");
     }
     return aniObj;
 }
