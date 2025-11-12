@@ -387,7 +387,7 @@ void RSTypefaceCache::Dump(DfxString& log) const
     constexpr double KB = 1024.0;
     constexpr double MB = KB * KB;
     log.AppendFormat("------------------------------------\n");
-    log.AppendFormat("RSTypefaceCache Dump:\nTotal: %uB, %.2fKB, %.2fMB\n", totalMem,
+    log.AppendFormat("RSTypefaceCache Dump:\nTotal: %.2fKB, %.2fMB\n",
         static_cast<double>(totalMem) / KB, static_cast<double>(totalMem) / MB);
     double pssMem = static_cast<double>(CalcCustomFontPss());
     log.AppendFormat("Pss:   %.2fKB %.2fMB\n", pssMem, pssMem / KB);
