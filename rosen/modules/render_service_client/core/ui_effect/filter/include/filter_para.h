@@ -64,7 +64,7 @@ public:
         VARIABLE_RADIUS_BLUR,
         GASIFY_SCALE_TWIST,
         GASIFY_BLUR,
-        GASIFY,        
+        GASIFY,
         FROSTED_GLASS,
     };
 
