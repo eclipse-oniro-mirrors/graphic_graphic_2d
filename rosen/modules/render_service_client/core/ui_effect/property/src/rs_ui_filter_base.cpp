@@ -101,7 +101,11 @@ static std::unordered_map<RSNGEffectType, FilterCreator> creatorLUT = {
     {RSNGEffectType::GASIFY, [] {
             return std::make_shared<RSNGGasifyFilter>();
         }
-    }
+    },
+    {RSNGEffectType::FROSTED_GLASS, [] {
+            return std::make_shared<RSNGFrostedGlassFilter>();
+        }
+    },
 };
 
 namespace {
