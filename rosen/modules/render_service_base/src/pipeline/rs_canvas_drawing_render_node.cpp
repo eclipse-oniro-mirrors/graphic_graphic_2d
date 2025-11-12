@@ -54,7 +54,7 @@ constexpr uint32_t DRAWCMDLIST_COUNT_LIMIT = 300; // limit of the drawcmdlists.
 constexpr uint32_t DRAWCMDLIST_OPSIZE_TOTAL_COUNT_LIMIT = 10000;
 constexpr uint32_t OP_COUNT_LIMIT_PER_FRAME = 10000;
 constexpr uint32_t OP_COUNT_LIMIT_FOR_CACHE = 200000;
-constexpr size_t DRAWCMDLIST_DUMP_LIMIT = 200000; // limit of the DrawCmdListDump.
+constexpr size_t DRAWCMDLIST_DUMP_LIMIT = 10; // limit of the DrawCmdListDump.
 constexpr size_t OP_DUMP_LIMIT_PER_CMD = 15; // limit of the DrawOpItemsDump.
 }
 RSCanvasDrawingRenderNode::RSCanvasDrawingRenderNode(
@@ -510,8 +510,8 @@ CM_INLINE void RSCanvasDrawingRenderNode::ApplyModifiers()
 
 void RSCanvasDrawingRenderNode::DumpSubClassNode(std::string& out) const
 {
-    out += ", lastResetSurfaceTime: " + std::to_string(canvasDrawingNode->lastResetSurfaceTime_);
-    out += ", opCountAfterReset: " + std::to_string(canvasDrawingNode->opCountAfterReset_);
+    out += ", lastResetSurfaceTime: " + std::to_string(lastResetSurfaceTime_);
+    out += ", opCountAfterReset: " + std::to_string(opCountAfterReset_);
     out += ", drawOpInfo: [";
 
     for (auto it = cachedReversedOpTypes_.begin(); it != cachedReversedOpTypes_.end(); ++it) {
@@ -519,8 +519,8 @@ void RSCanvasDrawingRenderNode::DumpSubClassNode(std::string& out) const
         const auto& drawOpTypes = cachedReversedOpType.drawOpTypes;
 
         out += "[";
-        out +=  std::to_string(cachedReversedOpType.width) + ",";
-        out +=  std::to_string(cachedReversedOpType.height) + ",";
+        out += std::to_string(cachedReversedOpType.width) + ",";
+        out += std::to_string(cachedReversedOpType.height) + ",";
         auto opItemSize = cachedReversedOpType.opItemSize;
         out += std::to_string(opItemSize) + "][";
 
@@ -641,6 +641,8 @@ void RSCanvasDrawingRenderNode::AddDirtyType(ModifierNG::RSModifierType modifier
             continue;
         }
         auto opItemSize = drawCmdList->GetOpItemSize();
+        GetDrawOpItemInfo(drawCmdList, opItemSize);
+
         if (opCount > OP_COUNT_LIMIT_PER_FRAME) {
             outOfLimitCmdList_.emplace_back(drawCmdList);
             cachedOpCount_ += opItemSize;

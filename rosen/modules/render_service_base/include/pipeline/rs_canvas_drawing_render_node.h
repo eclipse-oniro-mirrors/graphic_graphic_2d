@@ -116,11 +116,11 @@ private:
         std::vector<uint32_t> drawOpTypes;
         int32_t width = 0;
         int32_t height = 0;
-        int32_t opItemSize = 0;
+        size_t opItemSize = 0;
         CachedReversedOpInfo() : drawOpTypes{}, width(0), height(0), opItemSize(0) {}
     };
     std::deque<CachedReversedOpInfo> cachedReversedOpTypes_;
-    virtual void DumpSubClassNode(std::string& out) const override;
+    void DumpSubClassNode(std::string& out) const override;
     void GetDrawOpItemInfo(const Drawing::DrawCmdListPtr& drawCmdList, size_t opItemSize);
 
 
