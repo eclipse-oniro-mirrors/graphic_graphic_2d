@@ -2419,8 +2419,11 @@ void RSProperties::SetHDRUIBrightness(float hdrUIBrightness)
     if (auto node = RSBaseRenderNode::ReinterpretCast<RSCanvasRenderNode>(backref_.lock())) {
         bool oldHDRUIStatus = IsHDRUIBrightnessValid();
         bool newHDRUIStatus = ROSEN_GNE(hdrUIBrightness, 1.0f);
-        if ((oldHDRUIStatus != newHDRUIStatus) && node->IsOnTheTree()) {
-            node->SetHdrNum(newHDRUIStatus, node->GetInstanceRootNodeId(), HDRComponentType::UICOMPONENT);
+        if (oldHDRUIStatus != newHDRUIStatus) {
+            node->UpdateHDRStatus(HdrStatus::HDR_UICOMPONENT, newHDRUIStatus);
+            if (node->IsOnTheTree()) {
+                node->SetHdrNum(newHDRUIStatus, node->GetInstanceRootNodeId(), HDRComponentType::UICOMPONENT);
+            }
         }
     }
     hdrUIBrightness_ = hdrUIBrightness;

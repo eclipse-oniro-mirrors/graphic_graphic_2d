@@ -3343,6 +3343,37 @@ HWTEST_F(RSUniRenderVisitorTest, CollectEffectInfo005, TestSize.Level2)
     ASSERT_FALSE(parent->ChildHasVisibleEffect());
 }
 
+/**
+ * @tc.name: CollectEffectInfo006
+ * @tc.desc: Test RSUnitRenderVisitorTest.CollectEffectInfo with parent node, hasHDRContent
+ * @tc.type: FUNC
+ * @tc.require: issueIAG8BF
+ */
+HWTEST_F(RSUniRenderVisitorTest, CollectEffectInfo006, TestSize.Level2)
+{
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    ASSERT_NE(rsUniRenderVisitor, nullptr);
+    constexpr NodeId nodeId = 1;
+    constexpr NodeId parentNodeId = 2;
+    auto node = std::make_shared<RSRenderNode>(nodeId);
+    ASSERT_NE(node, nullptr);
+    auto parent = std::make_shared<RSRenderNode>(parentNodeId);
+    ASSERT_NE(parent, nullptr);
+    node->InitRenderParams();
+    parent->InitRenderParams();
+    parent->AddChild(node);
+
+    node->SetChildHasVisibleHDRContent(false);
+    node->UpdateHDRStatus(HdrStatus::HDR_PHOTO, true);
+    rsUniRenderVisitor->CollectEffectInfo(*node);
+    EXPECT_TRUE(parent->ChildHasVisibleHDRContent());
+
+    node->SetChildHasVisibleHDRContent(true);
+    parent->SetChildHasVisibleHDRContent(false);
+    rsUniRenderVisitor->CollectEffectInfo(*node);
+    EXPECT_TRUE(parent->ChildHasVisibleHDRContent());
+}
+
 /*
  * @tc.name: CheckIsGpuOverDrawBufferOptimizeNode001
  * @tc.desc: Verify function CheckIsGpuOverDrawBufferOptimizeNode while node has no child

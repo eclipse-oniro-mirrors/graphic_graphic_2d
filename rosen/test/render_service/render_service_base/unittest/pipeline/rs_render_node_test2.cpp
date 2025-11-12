@@ -1383,6 +1383,7 @@ HWTEST_F(RSRenderNodeTest2, ForceMergeSubTreeDirtyRegionTest033, TestSize.Level1
 {
     std::shared_ptr<RSSurfaceRenderNode> nodeTest = std::make_shared<RSSurfaceRenderNode>(0);
     EXPECT_NE(nodeTest, nullptr);
+    nodeTest->InitRenderParams();
 
     RSDirtyRegionManager dirtyManagerTest1;
     RectI clipRectTest1 = RectI { 0, 0, 1, 1 };
@@ -1639,6 +1640,30 @@ HWTEST_F(RSRenderNodeTest2, SetIsOnTheTreeTest02, TestSize.Level1)
 }
 
 /**
+ * @tc.name: HDRStatusTest
+ * @tc.desc: Test function GetHDRStatus UpdateHDRStatus ClearHDRVideoStatus
+ * @tc.type: FUNC
+ * @tc.require: issueI9US6V
+ */
+HWTEST_F(RSRenderNodeTest2, HDRStatusTest, TestSize.Level1)
+{
+    auto rsContext = std::make_shared<RSContext>();
+    EXPECT_NE(rsContext, nullptr);
+    auto node = std::make_shared<RSRenderNode>(0, rsContext);
+    std::unique_ptr<RSRenderParams> stagingRenderParams = std::make_unique<RSRenderParams>(0);
+    EXPECT_NE(stagingRenderParams, nullptr);
+    node->stagingRenderParams_ = std::move(stagingRenderParams);
+    EXPECT_EQ(node->GetHDRStatus(), HdrStatus::NO_HDR);
+    node->UpdateHDRStatus(HdrStatus::HDR_PHOTO, true);
+    EXPECT_EQ(node->GetHDRStatus(), HdrStatus::HDR_PHOTO);
+    node->UpdateHDRStatus(HdrStatus::HDR_PHOTO, false);
+    EXPECT_EQ(node->GetHDRStatus(), HdrStatus::NO_HDR);
+    node->UpdateHDRStatus(HdrStatus::HDR_VIDEO, true);
+    node->ClearHDRVideoStatus();
+    EXPECT_EQ(node->GetHDRStatus(), HdrStatus::NO_HDR);
+}
+
+/**
  * @tc.name: SetHdrNum
  * @tc.desc: SetHdrNum test
  * @tc.type: FUNC
@@ -1673,8 +1698,10 @@ HWTEST_F(RSRenderNodeTest2, SetEnableHdrEffect, TestSize.Level1)
     auto rsContext = std::make_shared<RSContext>();
     EXPECT_NE(rsContext, nullptr);
     auto node = std::make_shared<RSRenderNode>(0, rsContext);
+    node->InitRenderParams();
     auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(1);
     EXPECT_NE(surfaceNode, nullptr);
+    surfaceNode->InitRenderParams();
     rsContext->nodeMap.renderNodeMap_[ExtractPid(1)][1] = surfaceNode;
     node->SetEnableHdrEffect(false);
     EXPECT_EQ(surfaceNode->hdrEffectNum_, 0);

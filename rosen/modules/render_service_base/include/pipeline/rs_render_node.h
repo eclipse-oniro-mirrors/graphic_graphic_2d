@@ -888,6 +888,17 @@ public:
     {
         isFirstLevelCrossNode_ = isFirstLevelCrossNode;
     }
+
+    void UpdateHDRStatus(HdrStatus hdrStatus, bool isAdd);
+
+    void ClearHDRVideoStatus();
+
+    HdrStatus GetHDRStatus() const;
+
+    void SetChildHasVisibleHDRContent(bool val);
+
+    bool ChildHasVisibleHDRContent() const;
+
     void SetHdrNum(bool flag, NodeId instanceRootNodeId, HDRComponentType hdrType);
 
     void SetEnableHdrEffect(bool enableHdrEffect);

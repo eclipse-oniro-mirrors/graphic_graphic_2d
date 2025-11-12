@@ -2967,6 +2967,9 @@ void RSUniRenderVisitor::CollectEffectInfo(RSRenderNode& node)
     if (node.GetSharedTransitionParam() || node.ChildHasSharedTransition()) {
         nodeParent->SetChildHasSharedTransition(true);
     }
+    if (node.ChildHasVisibleHDRContent() || node.GetHDRStatus() != HdrStatus::NO_HDR) {
+        nodeParent->SetChildHasVisibleHDRContent(true);
+    }
 }
 
 CM_INLINE void RSUniRenderVisitor::PostPrepare(RSRenderNode& node, bool subTreeSkipped)

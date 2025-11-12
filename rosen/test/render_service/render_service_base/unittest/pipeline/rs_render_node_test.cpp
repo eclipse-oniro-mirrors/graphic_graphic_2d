@@ -2136,6 +2136,7 @@ HWTEST_F(RSRenderNodeTest, RSRenderNodeTreeTest007, TestSize.Level1)
     // SetIsOnTheTree test
     std::shared_ptr<RSRenderNode> nodeTest = std::make_shared<RSRenderNode>(0);
     EXPECT_NE(nodeTest, nullptr);
+    nodeTest->InitRenderParams();
 
     nodeTest->isOnTheTree_ = false;
     nodeTest->SetIsOnTheTree(false, 0, 1, 1, 1);

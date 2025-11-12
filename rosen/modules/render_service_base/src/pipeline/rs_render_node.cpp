@@ -476,7 +476,45 @@ void RSRenderNode::SetEnableHdrEffect(bool enableHdrEffect)
     if (IsOnTheTree()) {
         SetHdrNum(enableHdrEffect, GetInstanceRootNodeId(), HDRComponentType::EFFECT);
     }
+    UpdateHDRStatus(HdrStatus::HDR_EFFECT, enableHdrEffect);
     enableHdrEffect_ = enableHdrEffect;
+}
+
+void RSRenderNode::UpdateHDRStatus(HdrStatus hdrStatus, bool isAdd)
+{
+#ifdef RS_ENABLE_GPU
+    stagingRenderParams_->UpdateHDRStatus(hdrStatus, isAdd);
+#endif
+}
+
+void RSRenderNode::ClearHDRVideoStatus()
+{
+#ifdef RS_ENABLE_GPU
+    stagingRenderParams_->ClearHDRVideoStatus();
+#endif
+}
+
+HdrStatus RSRenderNode::GetHDRStatus() const
+{
+#ifdef RS_ENABLE_GPU
+    return stagingRenderParams_->GetHDRStatus();
+#endif
+    return HdrStatus::NO_HDR;
+}
+
+void RSRenderNode::SetChildHasVisibleHDRContent(bool val)
+{
+#ifdef RS_ENABLE_GPU
+    stagingRenderParams_->SetChildHasVisibleHDRContent(val);
+#endif
+}
+
+bool RSRenderNode::ChildHasVisibleHDRContent() const
+{
+#ifdef RS_ENABLE_GPU
+    return stagingRenderParams_->ChildHasVisibleHDRContent();
+#endif
+    return false;
 }
 
 void RSRenderNode::SetIsOnTheTree(bool flag, NodeId instanceRootNodeId, NodeId firstLevelNodeId,
@@ -642,6 +680,7 @@ void RSRenderNode::ResetChildRelevantFlags()
     visibleEffectChild_.clear();
     childrenRect_.Clear();
     hasChildrenOutOfRect_ = false;
+    SetChildHasVisibleHDRContent(false);
 }
 
 void RSRenderNode::ResetPixelStretchSlot()
