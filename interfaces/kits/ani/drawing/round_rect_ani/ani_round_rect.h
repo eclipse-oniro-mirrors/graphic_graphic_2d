@@ -23,9 +23,9 @@ namespace OHOS::Rosen {
 namespace Drawing {
 class AniRoundRect final {
 public:
-    explicit AniRoundRect(const Rect& rect, float x, float y) : roundRect_(RoundRect(rect, x, y)) {}
-    explicit AniRoundRect(const RoundRect& roundRect) : roundRect_(roundRect) {}
-    ~AniRoundRect() = default;
+    explicit AniRoundRect(const Rect& rect, float x, float y) : roundRect_(std::make_shared<RoundRect>(rect, x, y)) {}
+    explicit AniRoundRect(std::shared_ptr<RoundRect> roundRect) : roundRect_(roundRect) {}
+    ~AniRoundRect();
 
     static ani_status AniInit(ani_env *env);
     static void ConstructorWithRect(ani_env* env, ani_object obj, ani_object aniRectObj, ani_double xRadii,
@@ -35,10 +35,13 @@ public:
     static ani_object GetCorner(ani_env* env, ani_object obj, ani_enum_item aniPos);
     static void Offset(ani_env* env, ani_object obj, ani_double x, ani_double y);
 
-    RoundRect& GetRoundRect();
+    std::shared_ptr<RoundRect> GetRoundRect();
 
 private:
-    RoundRect roundRect_;
+    static ani_object RoundRectTransferStatic(ani_env*  env, [[maybe_unused]]ani_object obj, ani_object input);
+    static ani_long GetRoundRectAddr(ani_env* env, [[maybe_unused]]ani_object obj, ani_object input);
+    std::shared_ptr<RoundRect>* GetRoundRectPtrAddr();
+    std::shared_ptr<RoundRect> roundRect_ = nullptr;
 };
 } // namespace Drawing
 } // namespace OHOS::Rosen

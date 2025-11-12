@@ -14,10 +14,15 @@
  */
 
 #include "ani_round_rect.h"
+#include "interop_js/arkts_esvalue.h"
+#include "interop_js/arkts_interop_js_api.h"
+#include "interop_js/hybridgref_ani.h"
+#include "interop_js/hybridgref_napi.h"
+#include "drawing/roundRect_napi/js_roundrect.h"
 
 namespace OHOS::Rosen {
 namespace Drawing {
-const char* ANI_CLASS_ROUND_RECT_NAME = "L@ohos/graphics/drawing/drawing/RoundRect;";
+const char* ANI_CLASS_ROUND_RECT_NAME = "@ohos.graphics.drawing.drawing.RoundRect";
 
 ani_status AniRoundRect::AniInit(ani_env *env)
 {
@@ -29,9 +34,9 @@ ani_status AniRoundRect::AniInit(ani_env *env)
     }
 
     std::array methods = {
-        ani_native_function { "constructorNative", "L@ohos/graphics/common2D/common2D/Rect;DD:V",
+        ani_native_function { "constructorNative", "C{@ohos.graphics.common2D.common2D.Rect}dd:",
             reinterpret_cast<void*>(ConstructorWithRect) },
-        ani_native_function { "constructorNative", "L@ohos/graphics/drawing/drawing/RoundRect;:V",
+        ani_native_function { "constructorNative", "C{@ohos.graphics.drawing.drawing.RoundRect}:",
             reinterpret_cast<void*>(ConstructorWithRoundRect) },
         ani_native_function { "setCorner", "C{@ohos.graphics.drawing.drawing.CornerPos}dd:",
             reinterpret_cast<void*>(SetCorner) },
@@ -43,6 +48,18 @@ ani_status AniRoundRect::AniInit(ani_env *env)
     ret = env->Class_BindNativeMethods(cls, methods.data(), methods.size());
     if (ret != ANI_OK) {
         ROSEN_LOGE("[ANI] bind methods fail: %{public}s", ANI_CLASS_ROUND_RECT_NAME);
+        return ANI_NOT_FOUND;
+    }
+
+    std::array staticMethods = {
+        ani_native_function { "roundRectTransferStaticNative", nullptr,
+            reinterpret_cast<void*>(RoundRectTransferStatic) },
+        ani_native_function { "getRoundRectAddr", nullptr, reinterpret_cast<void*>(GetRoundRectAddr) },
+    };
+
+    ret = env->Class_BindStaticNativeMethods(cls, staticMethods.data(), staticMethods.size());
+    if (ret != ANI_OK) {
+        ROSEN_LOGE("[ANI] bind static methods fail: %{public}s", ANI_CLASS_ROUND_RECT_NAME);
         return ANI_NOT_FOUND;
     }
 
@@ -72,8 +89,10 @@ void AniRoundRect::ConstructorWithRoundRect(ani_env* env, ani_object obj, ani_ob
         AniThrowError(env, "Invalid params. "); // message length must be a multiple of 4, for example 16, 20, etc
         return;
     }
-
-    AniRoundRect* newAniRoundRect = new AniRoundRect(aniRoundRect->GetRoundRect());
+    std::shared_ptr<RoundRect> other = aniRoundRect->GetRoundRect();
+    std::shared_ptr<RoundRect> roundRect = other == nullptr ? std::make_shared<RoundRect>() :
+        std::make_shared<RoundRect>(*other);
+    AniRoundRect* newAniRoundRect = new AniRoundRect(roundRect);
     if (ANI_OK != env->Object_SetFieldByName_Long(obj, NATIVE_OBJ, reinterpret_cast<ani_long>(newAniRoundRect))) {
         ROSEN_LOGE("AniRoundRect::Constructor failed create AniRoundRect");
         delete newAniRoundRect;
@@ -149,7 +168,7 @@ ani_object AniRoundRect::RoundRectTransferStatic(ani_env* env, [[maybe_unused]]a
     }
 
     auto aniRoundRect = new AniRoundRect(jsRoundRect->GetRoundRectPtr());
-    ani_object aniRoundRectObj = CreateAniObject(env, ANI_CLASS_ROUND_RECT_NAME, ":V");
+    ani_object aniRoundRectObj = CreateAniObject(env, ANI_CLASS_ROUND_RECT_NAME, ":");
     if (ANI_OK != env->Object_SetFieldByName_Long(aniRoundRectObj,
         NATIVE_OBJ, reinterpret_cast<ani_long>(aniRoundRect))) {
         ROSEN_LOGE("AniRoundRect::RoundRectTransferStatic failed create aniRoundRect");
@@ -177,6 +196,11 @@ std::shared_ptr<RoundRect>* AniRoundRect::GetRoundRectPtrAddr()
 std::shared_ptr<RoundRect> AniRoundRect::GetRoundRect()
 {
     return roundRect_;
+}
+
+AniRoundRect::~AniRoundRect()
+{
+    roundRect_ = nullptr;
 }
 } // namespace Drawing
 } // namespace OHOS::Rosen
