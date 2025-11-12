@@ -298,10 +298,10 @@ HWTEST_F(HdiBackendTest, RegHwcEventCallback001, Function | MediumTest| Level3)
 HWTEST_F(HdiBackendTest, SetScreenPowerOnChangedTest, Function | MediumTest| Level3)
 {
     hdiBackend_->SetScreenPowerOnChanged(true);
-    EXPECT_TRUE(screenPowerOnChanged_);
+    EXPECT_TRUE(hdiBackend_->screenPowerOnChanged_);
 
     hdiBackend_->SetScreenPowerOnChanged(false);
-    EXPECT_FALSE(screenPowerOnChanged_);
+    EXPECT_FALSE(hdiBackend_->screenPowerOnChanged_);
 }
 } // namespace
 } // namespace Rosen
