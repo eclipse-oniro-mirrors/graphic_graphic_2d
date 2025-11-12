@@ -1317,7 +1317,7 @@ static bool FillFrostedGlassParaFromArgs(napi_env env, napi_value* argv, Frosted
 // ===================== main  =====================
 napi_value FilterNapi::SetFrostedGlass(napi_env env, napi_callback_info info)
 {
-    constexpr size_t REQUIRE_ARGC = NUM_13;
+    constexpr size_t REQUIRE_ARGC = 13;
 
     napi_status status;
     napi_value thisVar = nullptr;
