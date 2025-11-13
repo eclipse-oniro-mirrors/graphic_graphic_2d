@@ -406,7 +406,8 @@ bool RSInterfaces::TakeSurfaceCaptureForUI(std::shared_ptr<RSNode> node,
     std::shared_ptr<SurfaceCaptureCallback> callback, float scaleX, float scaleY,
     bool isSync, const Drawing::Rect& specifiedAreaRect)
 {
-    return RSRenderInterface::GetInstance().TakeSurfaceCaptureForUI(node, callback, scaleX, scaleY, isSync, specifiedAreaRect);
+    return RSRenderInterface::GetInstance().TakeSurfaceCaptureForUI(
+        node, callback, scaleX, scaleY, isSync, specifiedAreaRect);
 }
 
 std::vector<std::pair<NodeId, std::shared_ptr<Media::PixelMap>>>

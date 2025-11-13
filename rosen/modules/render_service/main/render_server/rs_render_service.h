@@ -106,7 +106,8 @@ private:
 
     friend class RSRenderServiceConnection;
     mutable std::mutex mutex_;
-    std::map<sptr<IRemoteObject>, std::pair<sptr<RSIClientToServiceConnection>, sptr<RSIClientToRenderConnection>>> connections_;
+    std::map<sptr<IRemoteObject>, std::pair<sptr<RSIClientToServiceConnection>, sptr<RSIClientToRenderConnection>>>
+        connections_;
 
     sptr<VSyncController> rsVSyncController_;
     sptr<VSyncController> appVSyncController_;

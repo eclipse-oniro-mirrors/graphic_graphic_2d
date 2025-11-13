@@ -179,7 +179,7 @@ void RSClientToRenderConnection::CleanFrameRateLinkers() noexcept
 }
 
 void RSClientToRenderConnection::CleanAll(bool toDelete) noexcept
-{  
+{
 }
 
 RSClientToRenderConnection::RSConnectionDeathRecipient::RSConnectionDeathRecipient(

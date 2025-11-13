@@ -163,8 +163,8 @@ HWTEST_F(RSRenderServiceConnectionTest, GetBrightnessInfoTest, TestSize.Level1)
 
     // case 1: mainThread null
     {
-        sptr<RSClientToServiceConnection> connection =
-            new RSClientToServiceConnection(0, nullptr, nullptr, CreateOrGetScreenManager(), token->AsObject(), nullptr);
+        sptr<RSClientToServiceConnection> connection = new RSClientToServiceConnection(
+            0, nullptr, nullptr, CreateOrGetScreenManager(), token->AsObject(), nullptr);
         BrightnessInfo brightnessInfo;
         ASSERT_EQ(connection->GetBrightnessInfo(0, brightnessInfo), SUCCESS);
     }

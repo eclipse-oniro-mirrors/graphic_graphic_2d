@@ -1206,8 +1206,8 @@ bool DoSetFreeMultiWindowStatus(const uint8_t* data, size_t size)
 
     auto newPid = getpid();
     sptr<RSIConnectionToken> token_ = new IRemoteStub<RSIConnectionToken>();
-    sptr<RSClientToServiceConnectionStub> toServiceConnectionStub_ =
-        new RSClientToServiceConnection(newPid, nullptr, RSMainThread::Instance(), nullptr, token_->AsObject(), nullptr);
+    sptr<RSClientToServiceConnectionStub> toServiceConnectionStub_ = new RSClientToServiceConnection(
+        newPid, nullptr, RSMainThread::Instance(), nullptr, token_->AsObject(), nullptr);
 
     uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_FREE_MULTI_WINDOW_STATUS);
     MessageParcel dataParcel;
@@ -1234,7 +1234,8 @@ bool Init(const uint8_t* data, size_t size)
     if (token_ == nullptr) {
         return false;
     }
-    rsToServiceConnStub_ = new RSClientToServiceConnection(newPid, nullptr, nullptr, nullptr, token_->AsObject(), nullptr);
+    rsToServiceConnStub_ =
+        new RSClientToServiceConnection(newPid, nullptr, nullptr, nullptr, token_->AsObject(), nullptr);
     if (rsToServiceConnStub_ == nullptr) {
         return false;
     }

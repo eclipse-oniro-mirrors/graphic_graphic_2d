@@ -99,7 +99,8 @@ bool Init(const uint8_t* data, size_t size)
     g_size = size;
     g_pos = 0;
     sptr<RSIConnectionToken> token_ = new IRemoteStub<RSIConnectionToken>();
-    rsToServiceConnStub_ = new RSClientToServiceConnection(g_pid, nullptr, nullptr, nullptr, token_->AsObject(), nullptr);
+    rsToServiceConnStub_ =
+        new RSClientToServiceConnection(g_pid, nullptr, nullptr, nullptr, token_->AsObject(), nullptr);
     return true;
 }
 } // namespace

@@ -116,8 +116,7 @@ void RSRenderPipelineClient::TriggerSurfaceCaptureCallback(NodeId id, const RSSu
     }
 }
 
-class SurfaceCaptureCallbackDirector : public RSSurfaceCaptureCallbackStub
-{
+class SurfaceCaptureCallbackDirector : public RSSurfaceCaptureCallbackStub {
 public:
     explicit SurfaceCaptureCallbackDirector(RSRenderPipelineClient* client) : client_(client) {}
     ~SurfaceCaptureCallbackDirector() override {};

@@ -332,7 +332,8 @@ HWTEST_F(RSPipelineClientTest, TakeSurfaceCaptureWithAllWindowsTest002, TestSize
 {
     class MockClientToRenderConnection : public RSClientToRenderConnectionProxy {
     public:
-        explicit MockClientToRenderConnection(const sptr<IRemoteObject>& impl) : RSClientToRenderConnectionProxy(impl) {};
+        explicit MockClientToRenderConnection(const sptr<IRemoteObject>& impl)
+            : RSClientToRenderConnectionProxy(impl) {};
         ErrCode TakeSurfaceCaptureWithAllWindows(NodeId id, sptr<RSISurfaceCaptureCallback> callback,
             const RSSurfaceCaptureConfig& captureConfig, bool checkDrmAndSurfaceLock,
             RSSurfaceCapturePermissions permissions) override

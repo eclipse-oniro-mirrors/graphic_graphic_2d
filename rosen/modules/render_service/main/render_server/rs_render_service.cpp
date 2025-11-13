@@ -264,8 +264,8 @@ void RSRenderService::RegisterRcdMsg()
 #endif
 }
 
-std::pair<sptr<RSIClientToServiceConnection>, sptr<RSIClientToRenderConnection>>
-    RSRenderService::CreateConnection(const sptr<RSIConnectionToken>& token)
+std::pair<sptr<RSIClientToServiceConnection>, sptr<RSIClientToRenderConnection>> RSRenderService::CreateConnection(
+    const sptr<RSIConnectionToken>& token)
 {
     if (!mainThread_ || !token) {
         RS_LOGE("CreateConnection failed, mainThread or token is nullptr");

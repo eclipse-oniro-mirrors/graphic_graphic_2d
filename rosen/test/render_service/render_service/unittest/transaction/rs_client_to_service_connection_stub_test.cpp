@@ -91,8 +91,9 @@ private:
 
 uint32_t RSClientToServiceConnectionStubTest::screenId_ = 0;
 sptr<RSIConnectionToken> RSClientToServiceConnectionStubTest::token_ = new IRemoteStub<RSIConnectionToken>();
-sptr<RSClientToServiceConnectionStub> RSClientToServiceConnectionStubTest::connectionStub_ = new RSClientToServiceConnection(
-    0, nullptr, RSMainThread::Instance(), CreateOrGetScreenManager(), token_->AsObject(), nullptr);
+sptr<RSClientToServiceConnectionStub> RSClientToServiceConnectionStubTest::connectionStub_ =
+    new RSClientToServiceConnection(
+        0, nullptr, RSMainThread::Instance(), CreateOrGetScreenManager(), token_->AsObject(), nullptr);
 std::shared_ptr<RSSurfaceRenderNode> RSClientToServiceConnectionStubTest::surfaceNode_ =
     std::shared_ptr<RSSurfaceRenderNode>(new RSSurfaceRenderNode(10003, std::make_shared<RSContext>(), true),
     RSRenderNodeGC::NodeDestructor);
@@ -1552,8 +1553,8 @@ HWTEST_F(RSClientToServiceConnectionStubTest, SetScreenGamutMapTest004, TestSize
  */
 HWTEST_F(RSClientToServiceConnectionStubTest, SetBrightnessInfoChangeCallbackTest, TestSize.Level2)
 {
-    sptr<RSClientToServiceConnectionStub> connectionStub =
-        new RSClientToServiceConnection(0, nullptr, mainThread_, CreateOrGetScreenManager(), token_->AsObject(), nullptr);
+    sptr<RSClientToServiceConnectionStub> connectionStub = new RSClientToServiceConnection(
+        0, nullptr, mainThread_, CreateOrGetScreenManager(), token_->AsObject(), nullptr);
     ASSERT_NE(connectionStub, nullptr);
 
     // case 1: no data

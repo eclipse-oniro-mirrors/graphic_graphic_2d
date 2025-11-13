@@ -914,7 +914,8 @@ HWTEST_F(RSSurfaceCaptureTaskTest, TakeSurfaceCaptureWithBlurTest, Function | Sm
 
     // test blurRadius is negative
     float blurRadius = -10;
-    bool ret = rsRenderInterfaces_->TakeSurfaceCaptureWithBlur(surfaceNode_, surfaceCaptureCb_, captureConfig, blurRadius);
+    bool ret =
+        rsRenderInterfaces_->TakeSurfaceCaptureWithBlur(surfaceNode_, surfaceCaptureCb_, captureConfig, blurRadius);
     ASSERT_EQ(ret, true);
     ASSERT_EQ(CheckSurfaceCaptureCallback(), true);
 #if defined(RS_ENABLE_UNI_RENDER)

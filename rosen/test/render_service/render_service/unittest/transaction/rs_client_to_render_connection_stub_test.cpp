@@ -90,8 +90,9 @@ private:
 
 uint32_t RSClientToRenderConnectionStubTest::screenId_ = 0;
 sptr<RSIConnectionToken> RSClientToRenderConnectionStubTest::token_ = new IRemoteStub<RSIConnectionToken>();
-sptr<RSClientToRenderConnectionStub> RSClientToRenderConnectionStubTest::connectionStub_ = new RSClientToRenderConnection(
-    0, nullptr, RSMainThread::Instance(), CreateOrGetScreenManager(), token_->AsObject(), nullptr);
+sptr<RSClientToRenderConnectionStub> RSClientToRenderConnectionStubTest::connectionStub_ =
+    new RSClientToRenderConnection(
+        0, nullptr, RSMainThread::Instance(), CreateOrGetScreenManager(), token_->AsObject(), nullptr);
 std::shared_ptr<RSSurfaceRenderNode> RSClientToRenderConnectionStubTest::surfaceNode_ =
     std::shared_ptr<RSSurfaceRenderNode>(new RSSurfaceRenderNode(10003, std::make_shared<RSContext>(), true),
     RSRenderNodeGC::NodeDestructor);

@@ -91,13 +91,15 @@ sptr<RSIClientToServiceConnection> RSRenderServiceConnectHub::GetClientToService
     return GetRenderService().first;
 }
 
-std::pair<sptr<RSIClientToServiceConnection>, sptr<RSIClientToRenderConnection>> RSRenderServiceConnectHub::GetRenderService()
+std::pair<sptr<RSIClientToServiceConnection>, sptr<RSIClientToRenderConnection>>
+RSRenderServiceConnectHub::GetRenderService()
 {
     auto connHub = RSRenderServiceConnectHub::GetInstance();
     return connHub == nullptr ? std::make_pair(nullptr, nullptr) : connHub->GetRenderServiceConnection();
 }
 
-std::pair<sptr<RSIClientToServiceConnection>, sptr<RSIClientToRenderConnection>> RSRenderServiceConnectHub::GetRenderServiceConnection()
+std::pair<sptr<RSIClientToServiceConnection>, sptr<RSIClientToRenderConnection>>
+RSRenderServiceConnectHub::GetRenderServiceConnection()
 {
     std::lock_guard<std::mutex> lock(mutex_);
     if (conn_ != nullptr && renderConn_ && renderService_ != nullptr) {

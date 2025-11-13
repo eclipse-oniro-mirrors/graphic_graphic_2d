@@ -935,7 +935,8 @@ bool RSClientToRenderConnectionStub::ReadDataBaseRs(DataBaseRs& info, MessagePar
     return true;
 }
 
-bool RSClientToRenderConnectionStub::ReadSurfaceCaptureConfig(RSSurfaceCaptureConfig& captureConfig, MessageParcel& data)
+bool RSClientToRenderConnectionStub::ReadSurfaceCaptureConfig(
+    RSSurfaceCaptureConfig& captureConfig, MessageParcel& data)
 {
     uint8_t captureType { 0 };
     if (!data.ReadFloat(captureConfig.scaleX) || !data.ReadFloat(captureConfig.scaleY) ||

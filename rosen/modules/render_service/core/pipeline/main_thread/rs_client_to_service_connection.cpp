@@ -335,7 +335,8 @@ RSClientToServiceConnection::RSApplicationRenderThreadDeathRecipient::RSApplicat
     wptr<RSClientToServiceConnection> conn) : conn_(conn)
 {}
 
-void RSClientToServiceConnection::RSApplicationRenderThreadDeathRecipient::OnRemoteDied(const wptr<IRemoteObject>& token)
+void RSClientToServiceConnection::RSApplicationRenderThreadDeathRecipient::OnRemoteDied(
+    const wptr<IRemoteObject>& token)
 {
     auto tokenSptr = token.promote();
     if (tokenSptr == nullptr) {
@@ -538,10 +539,8 @@ ErrCode RSClientToServiceConnection::CreateNodeAndSurface(const RSSurfaceRenderN
     return ERR_OK;
 }
 
-ErrCode RSClientToServiceConnection::CreateVSyncConnection(sptr<IVSyncConnection>& vsyncConn,
-                                                         const std::string& name,
-                                                         const sptr<VSyncIConnectionToken>& token,
-                                                         VSyncConnParam vsyncConnParam)
+ErrCode RSClientToServiceConnection::CreateVSyncConnection(sptr<IVSyncConnection>& vsyncConn, const std::string& name,
+    const sptr<VSyncIConnectionToken>& token, VSyncConnParam vsyncConnParam)
 {
     if (mainThread_ == nullptr || appVSyncDistributor_ == nullptr) {
         vsyncConn = nullptr;
@@ -1793,7 +1792,8 @@ int32_t RSClientToServiceConnection::GetScreenSupportedColorGamuts(ScreenId id, 
     }
 }
 
-int32_t RSClientToServiceConnection::GetScreenSupportedMetaDataKeys(ScreenId id, std::vector<ScreenHDRMetadataKey>& keys)
+int32_t RSClientToServiceConnection::GetScreenSupportedMetaDataKeys(
+    ScreenId id, std::vector<ScreenHDRMetadataKey>& keys)
 {
     if (!screenManager_) {
         return StatusCode::SCREEN_NOT_FOUND;
@@ -2343,7 +2343,8 @@ int32_t RSClientToServiceConnection::GetDisplayIdentificationData(ScreenId id, u
     return screenManager_->GetDisplayIdentificationData(id, outPort, edidData);
 }
 
-ErrCode RSClientToServiceConnection::SetScreenSkipFrameInterval(uint64_t id, uint32_t skipFrameInterval, int32_t& resCode)
+ErrCode RSClientToServiceConnection::SetScreenSkipFrameInterval(
+    uint64_t id, uint32_t skipFrameInterval, int32_t& resCode)
 {
     if (!screenManager_) {
         resCode = StatusCode::SCREEN_NOT_FOUND;

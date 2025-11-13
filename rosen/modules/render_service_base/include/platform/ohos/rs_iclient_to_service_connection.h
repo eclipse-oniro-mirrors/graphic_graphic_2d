@@ -64,7 +64,7 @@ namespace OHOS {
 namespace Rosen {
 class RSIClientToServiceConnection : public IRemoteBroker {
 public:
-    DECLARE_INTERFACE_DESCRIPTOR(u"ohos.rosen.RenderServiceConnection");
+    DECLARE_INTERFACE_DESCRIPTOR(u"ohos.rosen.ClientToServiceConnection");
 
     RSIClientToServiceConnection() = default;
     virtual ~RSIClientToServiceConnection() noexcept = default;

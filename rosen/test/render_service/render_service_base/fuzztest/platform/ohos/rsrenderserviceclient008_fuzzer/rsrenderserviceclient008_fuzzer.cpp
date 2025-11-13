@@ -439,7 +439,8 @@ bool DoRegisterOcclusionChangeCallback002()
     RSRenderServiceConnectHub::GetInstance()->Destroy();
 
     renderServiceClient->RegisterOcclusionChangeCallback(occlusionChangeCallback);
-    renderServiceClient->RegisterSurfaceOcclusionChangeCallback(nodeId, surfaceOcclusionChangeCallback, partitionPoints);
+    renderServiceClient->RegisterSurfaceOcclusionChangeCallback(
+        nodeId, surfaceOcclusionChangeCallback, partitionPoints);
     renderServiceClient->UnRegisterSurfaceOcclusionChangeCallback(nodeId);
     renderServiceClient->RegisterHgmConfigChangeCallback(hgmConfigChangeCallback);
     renderServiceClient->RegisterHgmRefreshRateModeChangeCallback(hgmRefreshRateModeChangeCallback);

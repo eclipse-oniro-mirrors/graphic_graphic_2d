@@ -135,7 +135,8 @@ bool Init(const uint8_t* data, size_t size)
     DATA = data;
     g_size = size;
     g_pos = 0;
-    rsToServiceConnStub_ = new RSClientToServiceConnection(g_pid, nullptr, nullptr, nullptr, token_->AsObject(), nullptr);
+    rsToServiceConnStub_ =
+        new RSClientToServiceConnection(g_pid, nullptr, nullptr, nullptr, token_->AsObject(), nullptr);
     rsToRenderConnStub_ = new RSClientToRenderConnection(g_pid, nullptr, nullptr, nullptr, token_->AsObject(), nullptr);
     g_originTag = ReadUnirenderConfig();
     bool enableForAll = GetData<bool>();

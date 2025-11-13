@@ -333,9 +333,7 @@ ErrCode RSClientToServiceConnectionProxy::CreateNodeAndSurface(const RSSurfaceRe
 }
 
 ErrCode RSClientToServiceConnectionProxy::CreateVSyncConnection(sptr<IVSyncConnection>& vsyncConn,
-                                                              const std::string& name,
-                                                              const sptr<VSyncIConnectionToken>& token,
-                                                              VSyncConnParam vsyncConnParam)
+    const std::string& name, const sptr<VSyncIConnectionToken>& token, VSyncConnParam vsyncConnParam)
 {
     if (token == nullptr) {
         ROSEN_LOGE("RSClientToServiceConnectionProxy::CreateVSyncConnection: token is nullptr.");
@@ -547,7 +545,8 @@ std::vector<ScreenId> RSClientToServiceConnectionProxy::GetAllScreenIds()
     size_t readableSize = reply.GetReadableBytes() / sizeof(ScreenId);
     size_t len = static_cast<size_t>(size);
     if (len > readableSize || len > screenIds.max_size()) {
-        RS_LOGE("RSClientToServiceConnectionProxy::GetDescriptor() GetAllScreenIds Failed read vector, size:%{public}zu,"
+        RS_LOGE(
+            "RSClientToServiceConnectionProxy::GetDescriptor() GetAllScreenIds Failed read vector, size:%{public}zu,"
             " readableSize:%{public}zu", len, readableSize);
         return screenIds;
     }
@@ -1176,7 +1175,8 @@ int32_t RSClientToServiceConnectionProxy::SetScreenSwitchingNotifyCallback(
     return result;
 }
 
-int32_t RSClientToServiceConnectionProxy::SetBrightnessInfoChangeCallback(sptr<RSIBrightnessInfoChangeCallback> callback)
+int32_t RSClientToServiceConnectionProxy::SetBrightnessInfoChangeCallback(
+    sptr<RSIBrightnessInfoChangeCallback> callback)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -2047,8 +2047,9 @@ std::vector<RSScreenModeInfo> RSClientToServiceConnectionProxy::GetScreenSupport
     size_t readableSize = reply.GetReadableBytes();
     size_t len = static_cast<size_t>(modeCount);
     if (len > readableSize || len > screenSupportedModes.max_size()) {
-        RS_LOGE("RSClientToServiceConnectionProxy::GetDescriptor() GetScreenSupportedModes Fail read vector, size:%{public}zu,"
-            "readableSize:%{public}zu", len, readableSize);
+        RS_LOGE("RSClientToServiceConnectionProxy::GetDescriptor() GetScreenSupportedModes Fail read vector, "
+                "size:%{public}zu, readableSize:%{public}zu",
+            len, readableSize);
         return screenSupportedModes;
     }
     screenSupportedModes.resize(modeCount);
@@ -2089,8 +2090,9 @@ ErrCode RSClientToServiceConnectionProxy::GetMemoryGraphics(std::vector<MemoryGr
     size_t readableSize = reply.GetReadableBytes();
     size_t len = static_cast<size_t>(count);
     if (len > readableSize || len > memoryGraphics.max_size()) {
-        RS_LOGE("RSClientToServiceConnectionProxy::GetDescriptor() GetMemoryGraphics Failed to read vector, size:%{public}zu,"
-            " readableSize:%{public}zu", len, readableSize);
+        RS_LOGE("RSClientToServiceConnectionProxy::GetDescriptor() GetMemoryGraphics Failed to read vector, "
+                "size:%{public}zu, readableSize:%{public}zu",
+            len, readableSize);
         return ERR_INVALID_VALUE;
     }
     memoryGraphics.resize(count);
@@ -2363,7 +2365,8 @@ ErrCode RSClientToServiceConnectionProxy::RegisterBufferAvailableListener(
     return ERR_OK;
 }
 
-int32_t RSClientToServiceConnectionProxy::GetScreenSupportedColorGamuts(ScreenId id, std::vector<ScreenColorGamut>& mode)
+int32_t RSClientToServiceConnectionProxy::GetScreenSupportedColorGamuts(
+    ScreenId id, std::vector<ScreenColorGamut>& mode)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -2597,7 +2600,8 @@ int32_t RSClientToServiceConnectionProxy::GetScreenGamutMap(ScreenId id, ScreenG
     return result;
 }
 
-int32_t RSClientToServiceConnectionProxy::GetScreenHDRCapability(ScreenId id, RSScreenHDRCapability& screenHdrCapability)
+int32_t RSClientToServiceConnectionProxy::GetScreenHDRCapability(
+    ScreenId id, RSScreenHDRCapability& screenHdrCapability)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -4399,7 +4403,8 @@ ErrCode RSClientToServiceConnectionProxy::SetHardwareEnabled(NodeId id, bool isE
     return ERR_OK;
 }
 
-ErrCode RSClientToServiceConnectionProxy::SetHidePrivacyContent(NodeId id, bool needHidePrivacyContent, uint32_t& resCode)
+ErrCode RSClientToServiceConnectionProxy::SetHidePrivacyContent(
+    NodeId id, bool needHidePrivacyContent, uint32_t& resCode)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -4454,7 +4459,8 @@ ErrCode RSClientToServiceConnectionProxy::NotifyLightFactorStatus(int32_t lightF
     return ERR_OK;
 }
 
-void RSClientToServiceConnectionProxy::NotifyPackageEvent(uint32_t listSize, const std::vector<std::string>& packageList)
+void RSClientToServiceConnectionProxy::NotifyPackageEvent(
+    uint32_t listSize, const std::vector<std::string>& packageList)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -4591,7 +4597,8 @@ void RSClientToServiceConnectionProxy::NotifyAppStrategyConfigChangeEvent(const 
 
     for (const auto& [key, value] : newConfig) {
         if (!data.WriteString(key) || !data.WriteString(value)) {
-            ROSEN_LOGE("RSClientToServiceConnectionProxy::NotifyAppStrategyConfigChangeEvent Write key or value failed.");
+            ROSEN_LOGE(
+                "RSClientToServiceConnectionProxy::NotifyAppStrategyConfigChangeEvent Write key or value failed.");
             return;
         }
     }
@@ -4968,8 +4975,9 @@ HwcDisabledReasonInfos RSClientToServiceConnectionProxy::GetHwcDisabledReasonInf
     size_t readableSize = reply.GetReadableBytes() / HWC_DISABLED_REASON_INFO_MINIMUM_SIZE;
     size_t len = static_cast<size_t>(size);
     if (len > readableSize || len > hwcDisabledReasonInfos.max_size()) {
-        RS_LOGE("RSClientToServiceConnectionProxy::GetDescriptor() GetHwcDisabledReasonInfo Failed read vector, size:%{public}zu,"
-            " readableSize:%{public}zu", len, readableSize);
+        RS_LOGE("RSClientToServiceConnectionProxy::GetDescriptor() GetHwcDisabledReasonInfo Failed read vector, "
+                "size:%{public}zu, readableSize:%{public}zu",
+            len, readableSize);
         return hwcDisabledReasonInfos;
     }
 
@@ -5457,7 +5465,8 @@ ErrCode RSClientToServiceConnectionProxy::SetBehindWindowFilterEnabled(bool enab
     uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_BEHIND_WINDOW_FILTER_ENABLED);
     int32_t err = SendRequest(code, data, reply, option);
     if (err != NO_ERROR) {
-        ROSEN_LOGE("RSClientToServiceConnectionProxy::SetBehindWindowFilterEnabled sendrequest error : %{public}d", err);
+        ROSEN_LOGE(
+            "RSClientToServiceConnectionProxy::SetBehindWindowFilterEnabled sendrequest error : %{public}d", err);
         return ERR_INVALID_VALUE;
     }
     return ERR_OK;
@@ -5476,7 +5485,8 @@ ErrCode RSClientToServiceConnectionProxy::GetBehindWindowFilterEnabled(bool& ena
     uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_BEHIND_WINDOW_FILTER_ENABLED);
     int32_t err = SendRequest(code, data, reply, option);
     if (err != NO_ERROR) {
-        ROSEN_LOGE("RSClientToServiceConnectionProxy::GetBehindWindowFilterEnabled sendrequest error : %{public}d", err);
+        ROSEN_LOGE(
+            "RSClientToServiceConnectionProxy::GetBehindWindowFilterEnabled sendrequest error : %{public}d", err);
         return ERR_INVALID_VALUE;
     }
     if (!reply.ReadBool(enabled)) {
@@ -5571,7 +5581,8 @@ RetCodeHrpService RSClientToServiceConnectionProxy::ProfilerServicePopulateFiles
 
     int32_t err = SendRequest(code, data, reply, option);
     if (err != ERR_NONE) {
-        ROSEN_LOGE("RSClientToServiceConnectionProxy::ProfilerServicePopulateFiles sendrequest error : %{public}d", err);
+        ROSEN_LOGE(
+            "RSClientToServiceConnectionProxy::ProfilerServicePopulateFiles sendrequest error : %{public}d", err);
         return RET_HRP_SERVICE_ERR_PROXY_SEND_REQUEST;
     }
 

@@ -156,7 +156,8 @@ void RSClientToRenderConnectionProxy::TakeSurfaceCapture(NodeId id, sptr<RSISurf
     }
 }
 
-std::vector<std::pair<NodeId, std::shared_ptr<Media::PixelMap>>> RSClientToRenderConnectionProxy::TakeSurfaceCaptureSoloNode(
+std::vector<std::pair<NodeId, std::shared_ptr<Media::PixelMap>>>
+RSClientToRenderConnectionProxy::TakeSurfaceCaptureSoloNode(
     NodeId id, const RSSurfaceCaptureConfig& captureConfig, RSSurfaceCapturePermissions)
 {
     MessageParcel data;

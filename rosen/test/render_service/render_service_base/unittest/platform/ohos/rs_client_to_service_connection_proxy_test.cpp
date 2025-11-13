@@ -492,8 +492,6 @@ HWTEST_F(RSClientToServiceConnectionProxyTest, SetScreenOffset, TestSize.Level1)
     ASSERT_NE(proxy->transactionDataIndex_, 5);
 }
 
-
-
 /**
  * @tc.name: SetScreenRefreshRate Test
  * @tc.desc: SetScreenRefreshRate Test

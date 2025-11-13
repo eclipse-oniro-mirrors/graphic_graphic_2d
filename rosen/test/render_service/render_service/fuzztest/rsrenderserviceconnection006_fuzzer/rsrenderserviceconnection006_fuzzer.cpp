@@ -47,8 +47,6 @@ DVSyncFeatureParam dvsyncParam;
 auto generator = CreateVSyncGenerator();
 auto appVSyncController = new VSyncController(generator, 0);
 sptr<VSyncDistributor> appVSyncDistributor_ = new VSyncDistributor(appVSyncController, "app", dvsyncParam);
-// sptr<RSClientToServiceConnectionStub> connectionStub_ = new RSRenderServiceConnection(
-//     g_pid, nullptr, mainThread_, screenManagerPtr_, token_->AsObject(), appVSyncDistributor_);
 sptr<RSClientToServiceConnectionStub> rsToServiceConnStub_ = nullptr;
 namespace {
 const uint8_t DO_GET_SCREEN_ACTIVE_MODE = 0;
@@ -106,7 +104,8 @@ bool Init(const uint8_t* data, size_t size)
     DATA = data;
     g_size = size;
     g_pos = 0;
-    rsToServiceConnStub_ = new RSClientToServiceConnection(g_pid, nullptr, nullptr, nullptr, token_->AsObject(), nullptr);
+    rsToServiceConnStub_ =
+        new RSClientToServiceConnection(g_pid, nullptr, nullptr, nullptr, token_->AsObject(), nullptr);
     return true;
 }
 } // namespace

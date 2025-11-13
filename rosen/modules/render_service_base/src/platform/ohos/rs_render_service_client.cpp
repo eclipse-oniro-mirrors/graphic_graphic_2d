@@ -69,7 +69,8 @@ void RSRenderServiceClient::CommitTransaction(std::unique_ptr<RSTransactionData>
     if (clientToService != nullptr) {
         clientToService->CommitTransaction(transactionData);
     } else {
-        RS_LOGE_LIMIT(__func__, __line__, "RSRenderServiceClient::CommitTransaction failed, clientToService is nullptr");
+        RS_LOGE_LIMIT(
+            __func__, __line__, "RSRenderServiceClient::CommitTransaction failed, clientToService is nullptr");
     }
 }
 
@@ -1611,7 +1612,8 @@ int32_t RSRenderServiceClient::RegisterFrameRateLinkerExpectedFpsUpdateCallback(
 {
     auto clientToService = RSRenderServiceConnectHub::GetClientToServiceConnection();
     if (clientToService == nullptr) {
-        ROSEN_LOGE("RSRenderServiceClient::RegisterFrameRateLinkerExpectedFpsUpdateCallback clientToService == nullptr");
+        ROSEN_LOGE(
+            "RSRenderServiceClient::RegisterFrameRateLinkerExpectedFpsUpdateCallback clientToService == nullptr");
         return RENDER_SERVICE_NULL;
     }
 

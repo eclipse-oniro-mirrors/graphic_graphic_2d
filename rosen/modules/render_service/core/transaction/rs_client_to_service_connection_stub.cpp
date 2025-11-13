@@ -551,7 +551,8 @@ int RSClientToServiceConnectionStub::OnRemoteRequest(
             bool unobscured { false };
             if (!data.ReadString(surfaceName) || !data.ReadUint8(type) || !data.ReadBool(isTextureExportNode) ||
                 !data.ReadBool(isSync) || !data.ReadUint8(surfaceWindowType) || !data.ReadBool(unobscured)) {
-                RS_LOGE("RSClientToServiceConnectionStub::CREATE_NODE_AND_SURFACE read surfaceRenderNodeConfig failed!");
+                RS_LOGE(
+                    "RSClientToServiceConnectionStub::CREATE_NODE_AND_SURFACE read surfaceRenderNodeConfig failed!");
                 ret = ERR_INVALID_DATA;
                 break;
             }
@@ -2948,14 +2949,16 @@ int RSClientToServiceConnectionStub::OnRemoteRequest(
             for (uint32_t i = 0; i < mapSize; ++i) {
                 std::string vsyncName;
                 if (!data.ReadString(vsyncName)) {
-                    RS_LOGE("RSClientToServiceConnectionStub::NOTIFY_WINDOW_EXPECTED_BY_VSYNC_NAME Read parcel failed!");
+                    RS_LOGE(
+                        "RSClientToServiceConnectionStub::NOTIFY_WINDOW_EXPECTED_BY_VSYNC_NAME Read parcel failed!");
                     ret = ERR_INVALID_DATA;
                     shouldBreak = true;
                     break;
                 }
                 EventInfo eventInfo;
                 if (!EventInfo::Deserialize(data, eventInfo)) {
-                    RS_LOGE("RSClientToServiceConnectionStub::NOTIFY_WINDOW_EXPECTED_BY_VSYNC_NAME Read parcel failed!");
+                    RS_LOGE(
+                        "RSClientToServiceConnectionStub::NOTIFY_WINDOW_EXPECTED_BY_VSYNC_NAME Read parcel failed!");
                     ret = ERR_INVALID_DATA;
                     shouldBreak = true;
                     break;
@@ -3137,8 +3140,9 @@ int RSClientToServiceConnectionStub::OnRemoteRequest(
             }
             int32_t status = RegisterFrameRateLinkerExpectedFpsUpdateCallback(dstPid, callback);
             if (!reply.WriteInt32(status)) {
-                RS_LOGE("RSClientToServiceConnectionStub::REGISTER_FRAME_RATE_LINKER_EXPECTED_FPS_CALLBACK Write status "
-                        "failed!");
+                RS_LOGE(
+                    "RSClientToServiceConnectionStub::REGISTER_FRAME_RATE_LINKER_EXPECTED_FPS_CALLBACK Write status "
+                    "failed!");
                 ret = ERR_INVALID_REPLY;
             }
             break;
@@ -3156,8 +3160,9 @@ int RSClientToServiceConnectionStub::OnRemoteRequest(
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_ACTIVE_DIRTY_REGION_INFO) : {
             const auto& activeDirtyRegionInfos = GetActiveDirtyRegionInfo();
             if (!reply.WriteInt32(activeDirtyRegionInfos.size())) {
-                RS_LOGE("RSClientToServiceConnectionStub::GET_ACTIVE_DIRTY_REGION_INFO Write activeDirtyRegionInfosSize "
-                        "failed!");
+                RS_LOGE(
+                    "RSClientToServiceConnectionStub::GET_ACTIVE_DIRTY_REGION_INFO Write activeDirtyRegionInfosSize "
+                    "failed!");
                 ret = ERR_INVALID_REPLY;
                 break;
             }
@@ -3166,8 +3171,9 @@ int RSClientToServiceConnectionStub::OnRemoteRequest(
                     !reply.WriteInt32(activeDirtyRegionInfo.activeFramesNumber) ||
                     !reply.WriteInt32(activeDirtyRegionInfo.pidOfBelongsApp) ||
                     !reply.WriteString(activeDirtyRegionInfo.windowName)) {
-                    RS_LOGE("RSClientToServiceConnectionStub::GET_ACTIVE_DIRTY_REGION_INFO Write activeDirtyRegionInfos "
-                            "failed!");
+                    RS_LOGE(
+                        "RSClientToServiceConnectionStub::GET_ACTIVE_DIRTY_REGION_INFO Write activeDirtyRegionInfos "
+                        "failed!");
                     ret = ERR_INVALID_REPLY;
                     break;
                 }
@@ -3180,8 +3186,8 @@ int RSClientToServiceConnectionStub::OnRemoteRequest(
                 !reply.WriteInt32(globalDirtyRegionInfo.globalFramesNumber) ||
                 !reply.WriteInt32(globalDirtyRegionInfo.skipProcessFramesNumber) ||
                 !reply.WriteInt32(globalDirtyRegionInfo.mostSendingPidWhenDisplayNodeSkip)) {
-                RS_LOGE(
-                    "RSClientToServiceConnectionStub::GET_GLOBAL_DIRTY_REGION_INFO Write globalDirtyRegionInfo failed!");
+                RS_LOGE("RSClientToServiceConnectionStub::GET_GLOBAL_DIRTY_REGION_INFO Write globalDirtyRegionInfo "
+                        "failed!");
                 ret = ERR_INVALID_REPLY;
             }
             break;
@@ -3457,8 +3463,8 @@ int RSClientToServiceConnectionStub::OnRemoteRequest(
             RSIRenderServiceConnectionInterfaceCode::REGISTER_SELF_DRAWING_NODE_RECT_CHANGE_CALLBACK): {
             uint32_t size;
             if (!data.ReadUint32(size)) {
-                ROSEN_LOGE(
-                    "RSClientToServiceConnectionStub::REGISTER_SELF_DRAWING_NODE_RECT_CHANGE_CALLBACK Read size failed");
+                ROSEN_LOGE("RSClientToServiceConnectionStub::REGISTER_SELF_DRAWING_NODE_RECT_CHANGE_CALLBACK Read size "
+                           "failed");
                 ret = ERR_INVALID_REPLY;
                 break;
             }
@@ -3763,7 +3769,8 @@ bool RSClientToServiceConnectionStub::WriteBrightnessInfo(const BrightnessInfo& 
     return true;
 }
 
-bool RSClientToServiceConnectionStub::ReadSurfaceCaptureConfig(RSSurfaceCaptureConfig& captureConfig, MessageParcel& data)
+bool RSClientToServiceConnectionStub::ReadSurfaceCaptureConfig(
+    RSSurfaceCaptureConfig& captureConfig, MessageParcel& data)
 {
     uint8_t captureType { 0 };
     if (!data.ReadFloat(captureConfig.scaleX) || !data.ReadFloat(captureConfig.scaleY) ||
