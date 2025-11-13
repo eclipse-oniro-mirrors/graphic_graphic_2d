@@ -16,6 +16,7 @@
 #define UIEFFECT_FILTER_FROSTED_GLASS_PARA_H
 #include <iostream>
 #include "common/rs_vector2.h"
+#include "common/rs_vector3.h"
 #include "filter_para.h"
 
 namespace OHOS {
@@ -38,12 +39,12 @@ public:
         return borderSize_;
     }
 
-    void SetBlurParams(std::vector<float>& blurParams)
+    void SetBlurParams(Vector2f& blurParams)
     {
         blurParams_ = blurParams;
     }
 
-    const std::vector<float> GetBlurParams() const
+    const Vector2f GetBlurParams() const
     {
         return blurParams_;
     }
@@ -98,22 +99,22 @@ public:
         return bgFactor_;
     }
 
-    void SetInnerShadowParams(std::vector<float>& innerShadowParams)
+    void SetInnerShadowParams(Vector3f& innerShadowParams)
     {
         innerShadowParams_ = innerShadowParams;
     }
 
-    const std::vector<float> GetInnerShadowParams() const
+    const Vector3f GetInnerShadowParams() const
     {
         return innerShadowParams_;
     }
 
-    void SetSdParams(std::vector<float>& sdParams)
+    void SetSdParams(Vector3f& sdParams)
     {
         sdParams_ = sdParams;
     }
 
-    const std::vector<float> GetSdParams() const
+    const Vector3f GetSdParams() const
     {
         return sdParams_;
     }
@@ -128,50 +129,72 @@ public:
         return refractOutPx_;
     }
 
-    void SetEnvParams(std::vector<float>& envParams)
+    void SetEnvParams(Vector3f& envParams)
     {
         envParams_ = envParams;
     }
 
-    const std::vector<float> GetEnvParams() const
+    const Vector3f GetEnvParams() const
     {
         return envParams_;
     }
 
-    void SetHighLightParams(std::vector<float>& highLightParams)
+    void SetEdgeLightAngleParams(Vector3f& edgeLightAngle)
     {
-        highLightParams_ = highLightParams;
+        edgeLightAngle_ = edgeLightAngle;
     }
 
-    const std::vector<float> GetHighLightParams() const
+    const Vector3f GetEdgeLightAngleParams() const
     {
-        return highLightParams_;
+        return edgeLightAngle_;
     }
 
-    void SetHlParams(std::vector<float>& hlParams)
+    void SetEdgeLightBlurParams(Vector2f& edgeLightBlur)
+    {
+        edgeLightBlur_ = edgeLightBlur;
+    }
+
+    const Vector2f GetEdgeLightBlurParams() const
+    {
+        return edgeLightBlur_;
+    }
+
+    void SetEdgeLightDirParams(Vector2f& edgeLightDir)
+    {
+        edgeLightDir_ = edgeLightDir;
+    }
+
+    const Vector2f GetEdgeLightDirParams() const
+    {
+        return edgeLightDir_;
+    }
+
+    void SetHlParams(Vector3f& hlParams)
     {
         hlParams_ = hlParams;
     }
 
-    const std::vector<float> GetHlParams() const
+    const Vector3f GetHlParams() const
     {
         return hlParams_;
     }
 
 private:
-    Vector2f borderSize_;
-    std::vector<float> blurParams_;
-    float cornerRadius_;
-    float borderWidth_;
-    float offset_;
-    float downSampleFactor_;
-    float bgFactor_;
-    std::vector<float> innerShadowParams_;
-    std::vector<float> sdParams_;
-    float refractOutPx_;
-    std::vector<float> envParams_;
-    std::vector<float> highLightParams_;
-    std::vector<float> hlParams_;
+    Vector2f borderSize_ = Vector2f(0.0f, 0.0f);
+    Vector2f blurParams_ = Vector2f(0.0f, 0.0f);
+    float cornerRadius_ = 0.0f;
+    float borderWidth_ = 0.0f;
+    float offset_ = 0.0f;
+    float downSampleFactor_ = 0.0f;
+    float bgFactor_ = 0.0f;
+    Vector3f innerShadowParams_ = Vector3f(0.0f, 0.0f, 0.0f);
+    Vector3f sdParams_ = Vector3f(0.0f, 0.0f, 0.0f);
+    float refractOutPx_ = 0.0f;
+    Vector3f envParams_ = Vector3f(0.0f, 0.0f, 0.0f);
+    Vector3f edgeLightAngle_ = Vector3f(0.0f, 0.0f, 0.0f);
+    Vector2f edgeLightBlur_ = Vector2f(0.0f, 0.0f);
+    Vector2f edgeLightDir_ = Vector2f(0.0f, 0.0f);
+    Vector3f hlParams_ = Vector2f(0.0f, 0.0f, 0.0f);
 };
 } // namespace Rosen
 } // namespace OHOS
