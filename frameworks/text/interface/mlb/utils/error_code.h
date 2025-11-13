@@ -55,7 +55,7 @@ struct TextResult {
         return TextResult(true, ERROR_NONE, "", r);
     }
 
-    static TextResult Error(TextErrorCode code, T value = nullptr, const std::string& detail = "")
+    static TextResult Error(TextErrorCode code, const std::string& detail = "", T value = nullptr)
     {
         return TextResult(false, code, detail, value);
     }

@@ -24,6 +24,14 @@
 #include "utils/napi_common.h"
 
 namespace OHOS::Rosen {
+namespace {
+struct FontArgumentsConcreteContext : public FontPathResourceContext {
+    std::string familyName;
+    NapiTextResult result;
+    uint32_t index { 0 };
+};
+} // namespace
+
 class JsFontCollection final {
 public:
     JsFontCollection();
@@ -53,8 +61,9 @@ private:
     NapiTextResult OnUnloadFont(napi_env env, napi_callback_info info);
     NapiTextResult OnUnloadFontAsync(napi_env env, napi_callback_info info);
     NapiTextResult OnClearCaches(napi_env env, napi_callback_info info);
-    NapiTextResult LoadFontFromPath(const std::string path, const std::string familyName);
-    NapiTextResult OnLoadFontAsync(napi_env env, napi_callback_info info);
+    NapiTextResult LoadFontFromPath(napi_env env, const std::string path, const std::string familyName);
+    NapiTextResult OnLoadFontAsync(napi_env env, napi_callback_info info, bool withCheck = false);
+    void OnLoadFontAsyncExecutor(sptr<FontArgumentsConcreteContext>& context);
 
     std::shared_ptr<FontCollection> fontcollection_ = nullptr;
 };
