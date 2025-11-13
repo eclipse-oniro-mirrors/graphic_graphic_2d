@@ -2444,6 +2444,11 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
     }
 
     PrepareUiCaptureTasks(uniVisitor);
+    if (screenPowerOnChanged_) {
+        int nodeNum = context_ ? context_->GetNodeMap().GetSize() : 0;
+        RS_LOGI("RSMainThread Power On First Frame finish, node:%{public}d",
+                nodeNum);
+    }
     screenPowerOnChanged_ = false;
     forceUpdateUniRenderFlag_ = false;
     if (context_) {
@@ -4349,6 +4354,9 @@ bool RSMainThread::GetDirtyFlag()
 void RSMainThread::SetScreenPowerOnChanged(bool val)
 {
     screenPowerOnChanged_ = val;
+    if (isUniRender_) {
+        RSUniRenderThread::Instance().SetScreenPowerOnChanged(val);
+    }
 }
 
 bool RSMainThread::GetScreenPowerOnChanged() const

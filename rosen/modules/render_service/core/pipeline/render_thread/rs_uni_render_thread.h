@@ -236,6 +236,12 @@ public:
     void DumpVkImageInfo(std::string &dumpString);
 
     void InitDrawOpOverCallback(Drawing::GPUContext* gpuContext);
+
+    void SetScreenPowerOnChanged(bool val);
+
+    bool GetSetScreenPowerOnChanged();
+
+    void CollectProcessNodeNum(int num);
 private:
     RSUniRenderThread();
     ~RSUniRenderThread() noexcept;
@@ -302,6 +308,9 @@ private:
     void SubScribeSystemAbility();
     sptr<VSyncSystemAbilityListener> saStatusChangeListener_ = nullptr;
 #endif
+
+    std::atomic<bool> screenPowerOnChanged_ = false;
+    uint32_t totalProcessNodeNum_ = 0;
 };
 } // namespace Rosen
 } // namespace OHOS
