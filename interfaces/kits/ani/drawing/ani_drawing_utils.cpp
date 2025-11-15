@@ -92,7 +92,11 @@ ani_status CreateBusinessError(ani_env* env, int32_t error, const char* message,
 bool GetColorQuadFromColorObj(ani_env* env, ani_object obj, Drawing::ColorQuad &color)
 {
     ani_class colorClass;
-    env->FindClass("L@ohos/graphics/common2D/common2D/Color;", &colorClass);
+    ani_status status = env->FindClass("L@ohos/graphics/common2D/common2D/Color;", &colorClass);
+    if (status != ANI_OK) {
+        ROSEN_LOGE("Failed to find class, status:%{public}d", static_cast<int32_t>(status));
+        return false;
+    }
     ani_boolean isColorClass;
     env->Object_InstanceOf(obj, colorClass, &isColorClass);
 
@@ -129,8 +133,11 @@ bool GetColorQuadFromColorObj(ani_env* env, ani_object obj, Drawing::ColorQuad &
 bool GetColorQuadFromParam(ani_env* env, ani_object obj, Drawing::ColorQuad &color)
 {
     ani_class doubleClass;
-    env->FindClass("Lstd/core/Double;", &doubleClass);
-    
+    ani_status status = env->FindClass("Lstd/core/Double;", &doubleClass);
+    if (status != ANI_OK) {
+        ROSEN_LOGE("Failed to find class, status:%{public}d", static_cast<int32_t>(status));
+        return false;
+    }
     ani_boolean isNumber;
     env->Object_InstanceOf(obj, doubleClass, &isNumber);
     if (isNumber) {
@@ -160,7 +167,11 @@ ani_status CreateColorObj(ani_env* env, const Drawing::Color& color, ani_object&
 bool GetRectFromAniRectObj(ani_env* env, ani_object obj, Drawing::Rect& rect)
 {
     ani_class rectClass;
-    env->FindClass("L@ohos/graphics/common2D/common2D/Rect;", &rectClass);
+    ani_status status = env->FindClass("L@ohos/graphics/common2D/common2D/Rect;", &rectClass);
+    if (status != ANI_OK) {
+        ROSEN_LOGE("Failed to find class, status:%{public}d", static_cast<int32_t>(status));
+        return false;
+    }
     ani_boolean isRectClass;
     env->Object_InstanceOf(obj, rectClass, &isRectClass);
 
@@ -265,7 +276,11 @@ ani_object CreateAniObject(ani_env* env, const char* className, const char* meth
 bool GetPointFromAniPointObj(ani_env* env, ani_object obj, Drawing::Point& point)
 {
     ani_class pointClass;
-    env->FindClass("@ohos.graphics.common2D.common2D.Point", &pointClass);
+    ani_status status = env->FindClass("@ohos.graphics.common2D.common2D.Point", &pointClass);
+    if (status != ANI_OK) {
+        ROSEN_LOGE("Failed to find class, status:%{public}d", static_cast<int32_t>(status));
+        return false;
+    }
     ani_boolean isPointClass;
     env->Object_InstanceOf(obj, pointClass, &isPointClass);
     if (!isPointClass) {
