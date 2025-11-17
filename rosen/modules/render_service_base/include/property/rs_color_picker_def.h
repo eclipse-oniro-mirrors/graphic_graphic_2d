@@ -24,7 +24,8 @@ enum class ColorPlaceholder : uint8_t {
     SURFACE_CONTRAST,
     TEXT_CONTRAST,
     ACCENT,
-    MAX = ACCENT
+    FOREGROUND,
+    MAX = FOREGROUND
 };
 
 enum class ColorPickStrategyType : int16_t {
