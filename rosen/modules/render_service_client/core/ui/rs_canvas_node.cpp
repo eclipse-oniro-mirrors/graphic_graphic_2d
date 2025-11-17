@@ -56,6 +56,12 @@ RSCanvasNode::SharedPtr RSCanvasNode::Create(
 RSCanvasNode::RSCanvasNode(bool isRenderServiceNode, bool isTextureExportNode, std::shared_ptr<RSUIContext> rsUIContext)
     : RSNode(isRenderServiceNode, isTextureExportNode, rsUIContext) {}
 
+RSCanvasNode::RSCanvasNode(bool isRenderServiceNode, NodeId id, bool isTextureExportNode,
+    std::shared_ptr<RSUIContext> rsUIContext)
+    : RSNode(isRenderServiceNode, id, isTextureExportNode, rsUIContext)
+{
+}
+
 RSCanvasNode::~RSCanvasNode()
 {
 #ifdef RS_ENABLE_VK
