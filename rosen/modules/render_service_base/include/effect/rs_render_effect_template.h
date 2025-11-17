@@ -182,7 +182,7 @@ public:
     virtual ~RSNGRenderEffectBase() = default;
     virtual RSNGEffectType GetType() const = 0;
     virtual bool Marshalling(Parcel& parcel) const = 0;
-    virtual bool SetValue(const std::shared<Derived>& other, RSRenderNode& node,
+    virtual bool SetValue(const std::shared_ptr<Derived>& other, RSRenderNode& node,
         const std::weak_ptr<ModifierNG::RSRenderModifier>& modifier) = 0;
     virtual void Attach(RSRenderNode& node, const std::weak_ptr<ModifierNG::RSRenderModifier>& modifier) = 0;
     virtual void Detach() = 0;
@@ -333,7 +333,7 @@ public:
         return RSMarshallingHelper::Marshalling(parcel, END_OF_CHAIN);
     }
 
-    bool SetValue(const std::shared<Derived>& other, RSRenderNode& node,
+    bool SetValue(const std::shared_ptr<Base>& other, RSRenderNode& node,
         const std::weak_ptr<ModifierNG::RSRenderModifier>& modifier) override
     {
         if (other == nullptr || GetType() != other->GetType()) {

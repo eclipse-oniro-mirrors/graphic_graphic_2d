@@ -13,12 +13,10 @@
  * limitations under the License.
  */
 
-#include <queue>
 #include "pipeline/rs_union_render_node.h"
 
 #include "common/rs_obj_abs_geometry.h"
 #include "common/rs_optional_trace.h"
-#include "effect/rs_render_shape_base.h"
 #include "memory/rs_memory_track.h"
 #include "params/rs_render_params.h"
 #include "pipeline/rs_context.h"
@@ -76,10 +74,10 @@ void RSUnionRenderNode::ResetVisibleUnionChildren()
 
 void RSUnionRenderNode::ProcessSDFShape()
 {
-    if (visivisibleUnionChildren_.empty()) {
+    if (visibleUnionChildren_.empty()) {
         return;
     }
-    std::queue<std::shared_ptr<RSNGRenderShapeBase>>& shapeQueue;
+    std::queue<std::shared_ptr<RSNGRenderShapeBase>> shapeQueue;
     std::shared_ptr<RSNGRenderShapeBase> root;
     if (ROSEN_NE(GetRenderProperties().GetUnionSpacing(), 0.f)) {
         root = GenerateSDFNonLeaf<RSNGEffectType::SDF_SMOOTH_UNION_OP_SHAPE, RSNGRenderSDFSmoothUnionOpShape,
@@ -100,7 +98,7 @@ void RSUnionRenderNode::ProcessSDFShape()
         stagingRenderParams_->SetDrawingCacheIncludeProperty(true);
         stagingRenderParams_->SetForegroundFilterCache(GetRenderProperties().GetForegroundFilterCache());
     }
-    UpdateDrawableAfterPostPrepare(ModifierNG::RSModidierType::BOUNDS);
+    UpdateDrawableAfterPostPrepare(ModifierNG::RSModifierType::BOUNDS);
 }
 
 template<RSNGEffectType Type, typename NonLeafClass, typename NonLeafShapeX, typename NonLeafShapeY>
@@ -115,8 +113,8 @@ std::shared_ptr<RSNGRenderShapeBase> RSUnionRenderNode::GenerateSDFNonLeaf(
         return root;
     }
     while (!shapeQueue.empty() && count > 0) {
-        curShape = std::static_pointer_cast<NonLeafClass>(shapeQueue.front());
-        auto addedOpShape = CreateSDFShapeWithBaseInitialization(Type);
+        auto curShape = std::static_pointer_cast<NonLeafClass>(shapeQueue.front());
+        auto addedOpShape = CreateSDFOpShapeWithBaseInitialization(Type);
         if (!curshape->template Getter<NonLeafShapeX>()->Get()) {
             curShape->template Setter<NonLeafShapeX>(addedOpShape);
         } else {
@@ -126,12 +124,13 @@ std::shared_ptr<RSNGRenderShapeBase> RSUnionRenderNode::GenerateSDFNonLeaf(
         shapeQueue.push(addedOpShape);
         count--;
     }
+    return root;
 }
 
 template<typename NonLeafClass, typename NonLeafShapeX, typename NonLeafShapeY>
 void RSUnionRenderNode::GenerateSDFLeaf(std::queue<std::shared_ptr<RSNGRenderShapeBase>>& shapeQueue)
 {
-    auto context = Getcontext().lock();
+    auto context = GetContext().lock();
     if (!context) {
         RS_LOGE("RSUnionRenderNode::GenerateSDFLeaf GetContext fail");
         return;
@@ -156,8 +155,8 @@ void RSUnionRenderNode::GenerateSDFLeaf(std::queue<std::shared_ptr<RSNGRenderSha
             RS_LOGE("RSUnionRenderNode::GenerateSDFLeaf, shapeTree full");
             break;
         } else {
-            curShape = std::static_pointer_cast<NonLeafClass>(shapeQueue.front());
-            if (!curshape->template Getter<NonLeafShapeX>()->Get()) {
+            auto curShape = std::static_pointer_cast<NonLeafClass>(shapeQueue.front());
+            if (!curShape->template Getter<NonLeafShapeX>()->Get()) {
                 curShape->template Setter<NonLeafShapeX>(childShape);
             } else {
                 curShape->template Setter<NonLeafShapeY>(childShape);
@@ -218,7 +217,7 @@ std::shared_ptr<RSNGRenderShapeBase> RSUnionRenderNode::GetOrCreateChildSDFShape
     std::shared_ptr<RSRenderNode>& child)
 {
     if (child->GetRenderProperties().GetSDFShape()) {
-        return child->RenderProperties().GetSDFShape();
+        return child->GetRenderProperties().GetSDFShape();
     }
     auto geoPtr = GetRenderProperties().GetBoundsGeometry();
     if (!geoPtr) {
@@ -228,10 +227,10 @@ std::shared_ptr<RSNGRenderShapeBase> RSUnionRenderNode::GetOrCreateChildSDFShape
     RRect sdfRRect{};
     if (child->GetRenderProperties().GetClipToRRect()) {
         auto childRRect = child->GetRenderProperties().GetClipRRect();
-        sdfRRect = RRect(childRRect.rect_, childRRect.radius[0].x_, childRRect.radius[0].y_);
+        sdfRRect = RRect(childRRect.rect_, childRRect.radius_[0].x_, childRRect.radius_[0].y_);
     } else if (!child->GetRenderProperties().GetCornerRadius().IsZero()) {
         auto childRRect = child->GetRenderProperties().GetRRect();
-        sdfRRect = RRect(childRRect.rect_, childRRect.radius[0].x_, childRRect.radius[0].y_);
+        sdfRRect = RRect(childRRect.rect_, childRRect.radius_[0].x_, childRRect.radius_[0].y_);
     } else {
         sdfRRect.rect_ = child->GetRenderProperties().GetBoundsRect();
     }

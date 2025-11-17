@@ -1956,7 +1956,7 @@ protected:
      * @param value The value to assign to the property.
      */
     template<typename ModifierType, auto Setter, typename T>
-    void RSNode::SetPropertyNG(T value)
+    void SetPropertyNG(T value)
     {
         std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
         auto modifier = GetModifierCreatedBySetter(ModifierType::Type);
@@ -1982,7 +1982,7 @@ protected:
      * @param animatable The property is animatable or not.
      */
     template<typename ModifierType, auto Setter, typename T>
-    void RSNode::SetPropertyNG(T value, bool animatable)
+    void SetPropertyNG(T value, bool animatable)
     {
         std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
         auto modifier = GetModifierCreatedBySetter(ModifierType::Type);
