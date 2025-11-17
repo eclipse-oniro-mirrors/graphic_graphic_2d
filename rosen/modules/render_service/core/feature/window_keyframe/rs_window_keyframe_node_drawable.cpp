@@ -110,7 +110,6 @@ void RSWindowKeyFrameNodeDrawable::DrawLinkedNodeOffscreenBuffer(
 bool RSWindowKeyFrameNodeDrawable::OnLinkedNodeDraw(Drawing::Canvas& canvas,
     RSCanvasRenderNodeDrawable& linkedNodeDrawable, const RSRenderParams& linkedNodeParams)
 {
-    RS_LOGD("RSWindowKeyFrameNodeDrawable::OnLinkedNodeDraw");
     const auto& params = GetRenderParams();
     const auto& uniParams = RSUniRenderThread::Instance().GetRSRenderThreadParams();
     if (UNLIKELY(params == nullptr || uniParams == nullptr)) {
