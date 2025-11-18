@@ -15,19 +15,13 @@
 
 #include "pipeline/rs_union_render_node.h"
 
-#include "common/rs_obj_abs_geometry.h"
 #include "common/rs_optional_trace.h"
 #include "memory/rs_memory_track.h"
 #include "params/rs_render_params.h"
-#include "pipeline/rs_context.h"
-#include "platform/common/rs_log.h"
 #include "visitor/rs_node_visitor.h"
 
 namespace OHOS {
 namespace Rosen {
-namespace {
-constexpr size_t ROOT_VOLUME = 2;
-}
 
 RSUnionRenderNode::RSUnionRenderNode(NodeId id, const std::weak_ptr<RSContext>& context, bool isTextureExportNode)
     : RSCanvasRenderNode(id, context, isTextureExportNode)
@@ -62,7 +56,8 @@ void RSUnionRenderNode::QuickPrepare(const std::shared_ptr<RSNodeVisitor>& visit
 
 void RSUnionRenderNode::UpdateVisibleUnionChildren(RSRenderNode& childNode)
 {
-    if (childNode.GetRenderProperties().GetUseUnion() && !childNode.GetOldDirtyInSurface().IsEmpty()) {
+    if ((childNode.GetRenderProperties().GetUseUnion() || childNode.GetRenderProperties().GetSDFShape() != nullptr) &&
+        !childNode.GetOldDirtyInSurface().IsEmpty()) {
         visibleUnionChildren_.emplace(childNode.GetId());
     }
 }
@@ -74,6 +69,8 @@ void RSUnionRenderNode::ResetVisibleUnionChildren()
 
 void RSUnionRenderNode::ProcessSDFShape()
 {
+    RS_TRACE_NAME_FMT("RSUnionRenderNode::ProcessSDFShape, visibleUnionChildren_[%lu], UnionSpacing[%f]",
+        visibleUnionChildren_.size(), GetRenderProperties().GetUnionSpacing());
     if (visibleUnionChildren_.empty()) {
         return;
     }
@@ -99,71 +96,6 @@ void RSUnionRenderNode::ProcessSDFShape()
         stagingRenderParams_->SetForegroundFilterCache(GetRenderProperties().GetForegroundFilterCache());
     }
     UpdateDrawableAfterPostPrepare(ModifierNG::RSModifierType::BOUNDS);
-}
-
-template<RSNGEffectType Type, typename NonLeafClass, typename NonLeafShapeX, typename NonLeafShapeY>
-std::shared_ptr<RSNGRenderShapeBase> RSUnionRenderNode::GenerateSDFNonLeaf(
-    std::queue<std::shared_ptr<RSNGRenderShapeBase>>& shapeQueue)
-{
-    auto root = CreateSDFOpShapeWithBaseInitialization(Type);
-    shapeQueue.push(root);
-    // one Op can have two leaf shape, now we have a root Op
-    auto count = visibleUnionChildren_.size();
-    if (count <= ROOT_VOLUME) {
-        return root;
-    }
-    while (!shapeQueue.empty() && count > 0) {
-        auto curShape = std::static_pointer_cast<NonLeafClass>(shapeQueue.front());
-        auto addedOpShape = CreateSDFOpShapeWithBaseInitialization(Type);
-        if (!curshape->template Getter<NonLeafShapeX>()->Get()) {
-            curShape->template Setter<NonLeafShapeX>(addedOpShape);
-        } else {
-            curShape->template Setter<NonLeafShapeY>(addedOpShape);
-            shapeQueue.pop();
-        }
-        shapeQueue.push(addedOpShape);
-        count--;
-    }
-    return root;
-}
-
-template<typename NonLeafClass, typename NonLeafShapeX, typename NonLeafShapeY>
-void RSUnionRenderNode::GenerateSDFLeaf(std::queue<std::shared_ptr<RSNGRenderShapeBase>>& shapeQueue)
-{
-    auto context = GetContext().lock();
-    if (!context) {
-        RS_LOGE("RSUnionRenderNode::GenerateSDFLeaf GetContext fail");
-        return;
-    }
-    for (auto& childId : visibleUnionChildren_) {
-        auto child = context->GetNodeMap().GetRenderNode<RSRenderNode>(childId);
-        if (!child) {
-            RS_LOGE("RSUnionRenderNode::GenerateSDFLeaf, child[%{public}" PRIu64 "] Get fail", childId);
-            continue;
-        }
-        Drawing::Matrix childRelativeMatrix;
-        if (!GetChildRelativeMatrixToUnionNode(childRelativeMatrix, child)) {
-            RS_LOGE("RSUnionRenderNode::GenerateSDFLeaf, child[%{public}" PRIu64 "] GetRelativeMatrix fail", childId);
-            continue;
-        }
-        auto childShape = GetOrCreateChildSDFShape(childRelativeMatrix, child);
-        if (!childShape) {
-            RS_LOGE("RSUnionRenderNode::GenerateSDFLeaf, child[%{public}" PRIu64 "] GetChildSDFShape fail", childId);
-            continue;
-        }
-        if (shapeQueue.empty()) {
-            RS_LOGE("RSUnionRenderNode::GenerateSDFLeaf, shapeTree full");
-            break;
-        } else {
-            auto curShape = std::static_pointer_cast<NonLeafClass>(shapeQueue.front());
-            if (!curShape->template Getter<NonLeafShapeX>()->Get()) {
-                curShape->template Setter<NonLeafShapeX>(childShape);
-            } else {
-                curShape->template Setter<NonLeafShapeY>(childShape);
-                shapeQueue.pop();
-            }
-        }
-    }
 }
 
 bool RSUnionRenderNode::GetChildRelativeMatrixToUnionNode(Drawing::Matrix& relativeMatrix,
@@ -207,6 +139,7 @@ std::shared_ptr<RSNGRenderShapeBase> RSUnionRenderNode::CreateSDFOpShapeWithBase
         }
         default: {
             RS_LOGE("RSUnionRenderNode::CreateSDFOpShapeWithBaseInitialization childGeoPtr no matching type found");
+            opShape = nullptr;
             break;
         }
     }

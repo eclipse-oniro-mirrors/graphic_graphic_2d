@@ -1359,5 +1359,60 @@ HWTEST_F(PropertiesTest, GenerateMaterialFilter002, TestSize.Level1)
     properties.GenerateMaterialFilter();
     ASSERT_NE(properties.GetEffect().materialFilter_, nullptr);
 }
+
+/**
+ * @tc.name: OnSDFShapeChangeTest001
+ * @tc.desc: test when NeedGenerateForegroundFilterCache returns true
+ * @tc.type: FUNC
+ */
+HWTEST_F(PropertiesTest, OnSDFShapeChangeTest001, TestSize.Level1)
+{
+    RSProperties properties;
+    EXPECT_EQ(properties.NeedGenerateForegroundFilterCache(), true);
+
+    auto sdfShape = RSNGRenderShapeBase::Create(RSNGEffectType::SDF_UNION_OP_SHAPE);
+    EXPECT_NE(sdfShape, nullptr);
+    properties.SetSDFShape(sdfShape);
+
+    properties.OnSDFShapeChange();
+
+    EXPECT_NE(properties.GetEffect().foregroundFilterCache_, nullptr);
+}
+
+/**
+ * @tc.name: OnSDFShapeChangeTest002
+ * @tc.desc: test when NeedGenerateForegroundFilterCache returns false
+ * @tc.type: FUNC
+ */
+HWTEST_F(PropertiesTest, OnSDFShapeChangeTest002, TestSize.Level1)
+{
+    RSProperties properties;
+    EXPECT_EQ(properties.NeedGenerateForegroundFilterCache(), true);
+    properties.SetIsTextureExportNode(true);
+    EXPECT_EQ(properties.NeedGenerateForegroundFilterCache(), false);
+    auto sdfShape = RSNGRenderShapeBase::Create(RSNGEffectType::SDF_UNION_OP_SHAPE);
+    EXPECT_NE(sdfShape, nullptr);
+    properties.SetSDFShape(sdfShape);
+
+    properties.OnSDFShapeChange();
+
+    EXPECT_NE(properties.GetEffect().foregroundFilter_, nullptr);
+}
+
+/**
+ * @tc.name: OnSDFShapeChangeTest003
+ * @tc.desc: test when renderSDFShape_ is false
+ * @tc.type: FUNC
+ */
+HWTEST_F(PropertiesTest, OnSDFShapeChangeTest003, TestSize.Level1)
+{
+    RSProperties properties;
+    properties.SetSDFShape(nullptr);
+
+    properties.OnSDFShapeChange();
+
+    EXPECT_EQ(properties.GetEffect().foregroundFilter_, nullptr);
+    EXPECT_EQ(properties.GetEffect().foregroundFilterCache_, nullptr);
+}
 } // namespace Rosen
 } // namespace OHOS

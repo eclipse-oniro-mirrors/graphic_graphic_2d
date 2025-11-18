@@ -25,7 +25,7 @@
 
 namespace OHOS {
 namespace Rosen {
-RSEffectNode::SharedPtr RSUnionNode::Create(
+RSUnionNode::SharedPtr RSUnionNode::Create(
     bool isRenderServiceNode, bool isTextureExportNode, std::shared_ptr<RSUIContext> rsUIContext)
 {
     SharedPtr node(new RSUnionNode(isRenderServiceNode, isTextureExportNode, rsUIContext));
