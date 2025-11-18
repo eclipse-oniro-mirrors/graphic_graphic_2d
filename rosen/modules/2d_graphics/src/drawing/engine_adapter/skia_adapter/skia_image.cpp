@@ -165,7 +165,7 @@ std::shared_ptr<Image> SkiaImage::MakeFromYUVAPixmaps(GPUContext& gpuContext, co
     auto skImage = SkImages::TextureFromYUVAPixmaps(grContext.get(), skYUVAPixmaps, skgpu::Mipmapped::kNo, false,
         skColorSpace);
 #else
-    auto skImage = SkImage::MakeFromYUVAPixmaps(grContext.get(), skYUVAPixmaps, skgpu::Mipmapped::kNo, false,
+    auto skImage = SkImage::MakeFromYUVAPixmaps(grContext.get(), skYUVAPixmaps, GrMipmapped::kNo, false,
         skColorSpace);
 #endif
     if (skImage == nullptr) {
