@@ -590,6 +590,8 @@ public:
     }
     void SetDrawingCacheChanged(bool cacheChanged);
     bool GetDrawingCacheChanged() const;
+    void SetForceDisableNodeGroup(bool forceDisable);
+    bool IsForceDisableNodeGroup() const;
     // manage cache root nodeid
     void SetDrawingCacheRootId(NodeId id);
     NodeId GetDrawingCacheRootId() const;
