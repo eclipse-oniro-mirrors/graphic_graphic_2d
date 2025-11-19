@@ -38,7 +38,7 @@ public:
         TAG_RENDER_GROUP,
         TAG_OPINC,
         TAG_SUBTREE_PARALLEL,
-        CANVAS_DRAWING_NODE,
+        TAG_CANVAS_DRAWING_NODE,
         TAG_UNTAGGED,
         TAG_CAPTURE,
     };

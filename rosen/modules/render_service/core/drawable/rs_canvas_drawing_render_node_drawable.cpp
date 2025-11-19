@@ -345,8 +345,8 @@ bool RSCanvasDrawingRenderNodeDrawable::InitSurface(int width, int height, RSPai
 {
 #if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
     std::optional<RSTagTracker> tagTracer;
-    if (renderParams_ && canvas_) {
-        tagTracer.emplace(canvas_->GetGPUContext(), renderParams_->GetInstanceRootNodeId(),
+    if (renderParams_) {
+        tagTracer.emplace(canvas->GetGPUContext(), renderParams_->GetInstanceRootNodeId(),
             RSTagTracker::TAGTYPE::TAG_CANVAS_DRAWING_NODE, renderParams_->GetInstanceRootNodeName());
     }
     if (RSSystemProperties::GetGpuApiType() == GpuApiType::OPENGL) {
