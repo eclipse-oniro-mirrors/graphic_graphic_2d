@@ -1363,7 +1363,7 @@ HWTEST_F(PropertiesTest, GenerateMaterialFilter002, TestSize.Level1)
 
 /**
  * @tc.name: OnSDFShapeChangeTest001
- * @tc.desc: test when NeedGenerateForegroundFilterCache returns true
+ * @tc.desc: test OnSDFShapeChangeTest
  * @tc.type: FUNC
  */
 HWTEST_F(PropertiesTest, OnSDFShapeChangeTest001, TestSize.Level1)
@@ -1381,7 +1381,7 @@ HWTEST_F(PropertiesTest, OnSDFShapeChangeTest001, TestSize.Level1)
 
 /**
  * @tc.name: OnSDFShapeChangeTest002
- * @tc.desc: test when NeedGenerateForegroundFilterCache returns false
+ * @tc.desc: test OnSDFShapeChangeTest
  * @tc.type: FUNC
  */
 HWTEST_F(PropertiesTest, OnSDFShapeChangeTest002, TestSize.Level1)
@@ -1400,7 +1400,7 @@ HWTEST_F(PropertiesTest, OnSDFShapeChangeTest002, TestSize.Level1)
 
 /**
  * @tc.name: OnSDFShapeChangeTest003
- * @tc.desc: test when renderSDFShape_ is false
+ * @tc.desc: test OnSDFShapeChangeTest
  * @tc.type: FUNC
  */
 HWTEST_F(PropertiesTest, OnSDFShapeChangeTest003, TestSize.Level1)
