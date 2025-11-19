@@ -406,7 +406,6 @@ void RSPropertyDrawableUtils::BeginForegroundFilter(RSPaintFilterCanvas& canvas,
     canvas.SavePCanvasList();
     canvas.RemoveAll();
     canvas.AddCanvas(offscreenCanvas.get());
-    canvas.SetEffectData(offscreenCanvas->GetEffectData());
 }
 
 void RSPropertyDrawableUtils::DrawForegroundFilter(RSPaintFilterCanvas& canvas,
